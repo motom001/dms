@@ -21,7 +21,8 @@ export function jpegMasse(b: Buffer): { breite: number; hoehe: number; komponent
     if (b[i] !== 0xff) return null;
     const m = b[i + 1];
     const l = b.readUInt16BE(i + 2);
-    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { hoehe: b.readUInt16BE(i + 5), breite: b.readUInt16BE(i + 7), komponenten: b[i + 9] };
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc)
+      return { hoehe: b.readUInt16BE(i + 5), breite: b.readUInt16BE(i + 7), komponenten: b[i + 9] };
     i += 2 + l;
   }
   return null;
@@ -31,7 +32,8 @@ export function jpegMasse(b: Buffer): { breite: number; hoehe: number; komponent
 export function exifAusrichtung(b: Buffer): number {
   let i = 2;
   while (i + 4 < b.length && b[i] === 0xff) {
-    const m = b[i + 1], l = b.readUInt16BE(i + 2);
+    const m = b[i + 1],
+      l = b.readUInt16BE(i + 2);
     if (m === 0xda) break;
     if (m === 0xe1 && b.toString('latin1', i + 4, i + 10) === 'Exif\0\0') {
       const t = i + 10;
@@ -45,7 +47,9 @@ export function exifAusrichtung(b: Buffer): number {
           const e = ifd + 2 + k * 12;
           if (u16(e) === 0x0112) return u16(e + 8);
         }
-      } catch { return 1; }
+      } catch {
+        return 1;
+      }
       return 1;
     }
     i += 2 + l;

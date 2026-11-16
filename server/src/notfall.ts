@@ -29,7 +29,11 @@ export interface NotfallQuelle {
 /** Mail an alle mit „Gesamte Verwaltung“; darf fehlschlagen (kein Versand eingerichtet). */
 export type AnAdmins = (betreff: import('./mail').MailText, text: import('./mail').MailText) => Promise<void>;
 
-interface Eintrag { benutzerId: string; name: string; erstellt: string }
+interface Eintrag {
+  benutzerId: string;
+  name: string;
+  erstellt: string;
+}
 
 export class Notfallzugang {
   private gemeldet = '';
@@ -49,7 +53,9 @@ export class Notfallzugang {
     this.zeitgeber = setInterval(lauf, ms);
     this.zeitgeber.unref?.();
   }
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+  }
 
   /** Einmal prüfen: anlegen, aufräumen oder melden. Liefert, was geschehen ist. */
   async pruefe(): Promise<'nichts' | 'angelegt' | 'geloescht' | 'gemeldet' | 'wartet'> {
@@ -58,7 +64,8 @@ export class Notfallzugang {
     try {
       [inhalt, geaendert] = await Promise.all([readFile(this.datei, 'utf8'), stat(this.datei).then((s) => s.mtimeMs)]);
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') log.error('RESCUE-Datei nicht lesbar', { datei: this.datei, fehler: (e as Error).message });
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT')
+        log.error('RESCUE-Datei nicht lesbar', { datei: this.datei, fehler: (e as Error).message });
       return 'nichts';
     }
     const jetzt = this.jetzt();
@@ -74,35 +81,46 @@ export class Notfallzugang {
       const merkmal = `${geaendert}:${inhalt.length}`;
       if (this.gemeldet !== merkmal) {
         this.gemeldet = merkmal;
-        log.warn(`RESCUE-Datei ohne das Schlüsselwort ${SCHLUESSELWORT} gefunden – es geschieht nichts`, { datei: this.datei, inhalt: inhalt.length ? 'fremd' : 'leer' });
+        log.warn(`RESCUE-Datei ohne das Schlüsselwort ${SCHLUESSELWORT} gefunden – es geschieht nichts`, {
+          datei: this.datei,
+          inhalt: inhalt.length ? 'fremd' : 'leer',
+        });
       }
       return 'gemeldet';
     }
 
     const { benutzer, link, ablauf } = await this.quelle.notfallzugang(GUELTIG_MIN, jetzt);
     const bis = ablauf.toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'short', timeStyle: 'short' });
-    await writeFile(this.datei, [
-      t('notfall.rescue.fuer', { kennung: KENNUNG, name: benutzer.name }),
-      t('notfall.rescue.erstellt', { zeit: jetzt.toISOString() }),
-      '',
-      t('notfall.notfall.oeffne-diesen-link-bis', { bis }),
-      '',
-      link,
-      '',
-      'Steht im Link „localhost“, ersetze es durch die Adresse deines NAS, z. B. http://nas.home.arpa:8080.',
-      t('notfall.notfall.der-link-gilt-nur'),
-      t('notfall.notfall.benenne-den-notfall-admin'),
-      '',
-    ].join('\n'), { mode: 0o600 });
+    await writeFile(
+      this.datei,
+      [
+        t('notfall.rescue.fuer', { kennung: KENNUNG, name: benutzer.name }),
+        t('notfall.rescue.erstellt', { zeit: jetzt.toISOString() }),
+        '',
+        t('notfall.notfall.oeffne-diesen-link-bis', { bis }),
+        '',
+        link,
+        '',
+        'Steht im Link „localhost“, ersetze es durch die Adresse deines NAS, z. B. http://nas.home.arpa:8080.',
+        t('notfall.notfall.der-link-gilt-nur'),
+        t('notfall.notfall.benenne-den-notfall-admin'),
+        '',
+      ].join('\n'),
+      { mode: 0o600 },
+    );
     const liste = ((await this.einstellungen.lies('notfallzugaenge')) as Eintrag[] | null) ?? [];
     liste.push({ benutzerId: benutzer.id, name: benutzer.name, erstellt: jetzt.toISOString() });
     await this.einstellungen.schreibe('notfallzugaenge', liste.slice(-20));
     log.warn('Notfallzugang angelegt (RESCUE-Datei)', { benutzer: benutzer.name, gueltigBis: ablauf.toISOString(), datei: this.datei });
     try {
       // Je Empfänger in seiner Sprache (#729).
-      await this.anAdmins(() => t('notfall.notfall.ablago-notfallzugang-angelegt'),
-        () => t('notfall.notfall.warst-du-das-nicht', { wert: t('notfall.notfall.auf-dem-nas-wurde', { name: benutzer.name, bis }) }));
-    } catch (e) { log.warn('Mail zum Notfallzugang nicht verschickt', { fehler: (e as Error).message }); }
+      await this.anAdmins(
+        () => t('notfall.notfall.ablago-notfallzugang-angelegt'),
+        () => t('notfall.notfall.warst-du-das-nicht', { wert: t('notfall.notfall.auf-dem-nas-wurde', { name: benutzer.name, bis }) }),
+      );
+    } catch (e) {
+      log.warn('Mail zum Notfallzugang nicht verschickt', { fehler: (e as Error).message });
+    }
     return 'angelegt';
   }
 
@@ -111,7 +129,11 @@ export class Notfallzugang {
     const liste = ((await this.einstellungen.lies('notfallzugaenge')) as Eintrag[] | null) ?? [];
     if (!liste.length) return [];
     const benutzer = new Map((await this.quelle.listeBenutzer()).map((b) => [b.id, b]));
-    return liste.filter((e) => { const b = benutzer.get(e.benutzerId); return b?.aktiv && b.name === e.name; })
+    return liste
+      .filter((e) => {
+        const b = benutzer.get(e.benutzerId);
+        return b?.aktiv && b.name === e.name;
+      })
       .map((e) => ({ id: e.benutzerId, name: e.name, erstellt: e.erstellt }));
   }
 }

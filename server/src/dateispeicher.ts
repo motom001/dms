@@ -30,7 +30,10 @@ export interface Dateispeicher {
  * Nach außen nur ein Satz (404) – Prüfwert und Pfad stehen nur im Protokoll, nie in der Antwort.
  */
 export class DateiFehlt extends Fachfehler {
-  constructor(readonly sha256: string, name?: string) {
+  constructor(
+    readonly sha256: string,
+    name?: string,
+  ) {
     super(404, name ? t('meldungen.dateispeicher.datei-fehlt-name', { name }) : t('meldungen.dateispeicher.datei-fehlt'));
   }
 }
@@ -40,7 +43,9 @@ const log = protokoll.modul('dokumente');
 /** Was beim ersten Fehlen einer Datei passiert (Protokoll mit Mappe, Hinweis in der Werkbank); setzt der Start. */
 export type FehlendMelder = (f: { sha256: string; pfad: string; ablage: string }) => void;
 let melder: FehlendMelder | null = null;
-export function beiFehlenderDatei(f: FehlendMelder | null) { melder = f; }
+export function beiFehlenderDatei(f: FehlendMelder | null) {
+  melder = f;
+}
 /** Je Prozess einmal je Datei melden – fragt jemand dieselbe Datei immer wieder ab, bleibt das Protokoll lesbar. */
 const gemeldet = new Set<string>();
 const GEMELDET_MAX = 10_000;
@@ -48,11 +53,20 @@ function meldeFehlend(sha256: string, pfad: string, ablage: string) {
   if (gemeldet.has(sha256)) return;
   if (gemeldet.size >= GEMELDET_MAX) gemeldet.clear();
   gemeldet.add(sha256);
-  if (melder) { try { melder({ sha256, pfad, ablage }); return; } catch { /* dann wenigstens die Zeile unten */ } }
+  if (melder) {
+    try {
+      melder({ sha256, pfad, ablage });
+      return;
+    } catch {
+      /* dann wenigstens die Zeile unten */
+    }
+  }
   log.error('Datei eines Dokuments fehlt im Ablageordner', { sha256, pfad, ablage });
 }
 /** Für Tests: wieder von vorn melden. */
-export function vergissFehlendeDateien() { gemeldet.clear(); }
+export function vergissFehlendeDateien() {
+  gemeldet.clear();
+}
 
 /**
  * Datei als Strom (#877): erst öffnen, dann lesen. Fehlt sie, lehnt das Promise ab (ENOENT) – mit `createReadStream`
@@ -80,7 +94,13 @@ export function ordnerSpeicher(wurzel: string, haushaltId: string): Dateispeiche
   return {
     async schreibe(sha, inhalt) {
       const ziel = pfad(sha);
-      if (await stat(ziel).then(() => true, () => false)) return; // gleicher Inhalt liegt schon da
+      if (
+        await stat(ziel).then(
+          () => true,
+          () => false,
+        )
+      )
+        return; // gleicher Inhalt liegt schon da
       await mkdir(join(ziel, '..'), { recursive: true });
       const tmp = `${ziel}.${process.pid}.${Date.now()}.tmp`;
       await writeFile(tmp, inhalt, { flag: 'wx' });
@@ -88,11 +108,21 @@ export function ordnerSpeicher(wurzel: string, haushaltId: string): Dateispeiche
     },
     async uebernimm(sha, datei) {
       const ziel = pfad(sha);
-      if (await stat(ziel).then(() => true, () => false)) { await rm(datei, { force: true }); return; }
+      if (
+        await stat(ziel).then(
+          () => true,
+          () => false,
+        )
+      ) {
+        await rm(datei, { force: true });
+        return;
+      }
       await mkdir(join(ziel, '..'), { recursive: true });
       // Rechte wie bei writeFile (temporäre Uploads sind 0600).
       await chmod(datei, 0o644);
-      try { await rename(datei, ziel); } catch (e) {
+      try {
+        await rename(datei, ziel);
+      } catch (e) {
         // Anderes Laufwerk (eigenes Volume für files/hochladen): kopieren, dann wie oben erst vollständig sichtbar.
         if ((e as NodeJS.ErrnoException).code !== 'EXDEV') throw e;
         const tmp = `${ziel}.${process.pid}.${Date.now()}.tmp`;
@@ -103,25 +133,47 @@ export function ordnerSpeicher(wurzel: string, haushaltId: string): Dateispeiche
     },
     async lies(sha) {
       const p = pfad(sha);
-      try { return await oeffneStrom(p); } catch (e) {
+      try {
+        return await oeffneStrom(p);
+      } catch (e) {
         if (!fehlt(e)) throw e;
         meldeFehlend(sha, p, haushaltId);
         throw new DateiFehlt(sha);
       }
     },
-    async vorhanden(sha) { return stat(pfad(sha)).then((x) => x.isFile(), () => false); },
-    async loesche(sha) { await rm(pfad(sha), { force: true }); },
+    async vorhanden(sha) {
+      return stat(pfad(sha)).then(
+        (x) => x.isFile(),
+        () => false,
+      );
+    },
+    async loesche(sha) {
+      await rm(pfad(sha), { force: true });
+    },
   };
 }
 
 export function speicherDateien(): Dateispeicher & { anzahl(): number } {
   const m = new Map<string, Buffer>();
   return {
-    async schreibe(sha, inhalt) { m.set(pruefeSha(sha), Buffer.from(inhalt)); },
-    async uebernimm(sha, datei) { m.set(pruefeSha(sha), await readFile(datei)); await rm(datei, { force: true }); },
-    async lies(sha) { const b = m.get(sha); if (!b) throw new DateiFehlt(sha); return b; },
-    async vorhanden(sha) { return m.has(sha); },
-    async loesche(sha) { m.delete(sha); },
+    async schreibe(sha, inhalt) {
+      m.set(pruefeSha(sha), Buffer.from(inhalt));
+    },
+    async uebernimm(sha, datei) {
+      m.set(pruefeSha(sha), await readFile(datei));
+      await rm(datei, { force: true });
+    },
+    async lies(sha) {
+      const b = m.get(sha);
+      if (!b) throw new DateiFehlt(sha);
+      return b;
+    },
+    async vorhanden(sha) {
+      return m.has(sha);
+    },
+    async loesche(sha) {
+      m.delete(sha);
+    },
     anzahl: () => m.size,
   };
 }
@@ -129,8 +181,18 @@ export function speicherDateien(): Dateispeicher & { anzahl(): number } {
 /** Vor jedem Schreiben prüfen, z. B. ob noch genug Speicherplatz frei ist (#116). */
 export function mitPruefung(s: Dateispeicher, vorher: () => Promise<void>): Dateispeicher {
   return {
-    async schreibe(sha, inhalt) { await vorher(); await s.schreibe(sha, inhalt); },
-    ...(s.uebernimm ? { uebernimm: async (sha: string, datei: string) => { await vorher(); await s.uebernimm!(sha, datei); } } : {}),
+    async schreibe(sha, inhalt) {
+      await vorher();
+      await s.schreibe(sha, inhalt);
+    },
+    ...(s.uebernimm
+      ? {
+          uebernimm: async (sha: string, datei: string) => {
+            await vorher();
+            await s.uebernimm!(sha, datei);
+          },
+        }
+      : {}),
     lies: (sha) => s.lies(sha),
     ...(s.vorhanden ? { vorhanden: (sha: string) => s.vorhanden!(sha) } : {}),
     loesche: (sha) => s.loesche(sha),

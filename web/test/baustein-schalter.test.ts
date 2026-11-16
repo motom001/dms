@@ -8,11 +8,19 @@ import { describe, it } from 'node:test';
 import React, { createElement as h } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location ??= new URL('http://127.0.0.1/');
 g.localStorage ??= speicher();
@@ -20,7 +28,14 @@ g.sessionStorage ??= speicher();
 g.addEventListener ??= () => {};
 g.removeEventListener ??= () => {};
 g.window ??= globalThis;
-g.document ??= { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document ??= {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
@@ -39,18 +54,28 @@ describe('Baustein Schalter (#1188)', () => {
   });
 
   it('Hinweis über aria-describedby; gesperrt ist disabled; Beschriftung nur für Screenreader', () => {
-    const html = renderToStaticMarkup(h(Schalter, { an: false, setze: nichts, beschriftung: 'WebDAV-Laufwerk', hinweis: 'Aus: nicht gefunden.', gesperrt: true }));
+    const html = renderToStaticMarkup(
+      h(Schalter, { an: false, setze: nichts, beschriftung: 'WebDAV-Laufwerk', hinweis: 'Aus: nicht gefunden.', gesperrt: true }),
+    );
     const id = /aria-describedby="([^"]+)"/.exec(html)?.[1];
     assert.ok(id);
     assert.match(html, new RegExp(`<small id="${id}" class="hinweis">Aus: nicht gefunden\\.</small>`));
     assert.match(html, /disabled=""/);
-    assert.match(renderToStaticMarkup(h(Schalter, { an: true, setze: nichts, beschriftung: 'Automatisierung an oder aus', beschriftungVerbergen: true })), /<span class="sr">Automatisierung an oder aus<\/span>/);
+    assert.match(
+      renderToStaticMarkup(
+        h(Schalter, { an: true, setze: nichts, beschriftung: 'Automatisierung an oder aus', beschriftungVerbergen: true }),
+      ),
+      /<span class="sr">Automatisierung an oder aus<\/span>/,
+    );
   });
 
   it('Ein/Aus-Stellen der Werkbank sind Schalter, keine Haken (#1188)', () => {
     const stellen: Array<[string, string]> = [
-      ['werkbank/Webdav.tsx', 'webdav-aktiv'], ['werkbank/Eingangsordner.tsx', 'eingang-aktiv'], ['werkbank/Postfaecher.tsx', 'pf-aktiv'],
-      ['werkbank/Sprachen.tsx', 'uebersetzen-an'], ['werkbank/Anmeldeschutz.tsx', 'oidc-aktiv'],
+      ['werkbank/Webdav.tsx', 'webdav-aktiv'],
+      ['werkbank/Eingangsordner.tsx', 'eingang-aktiv'],
+      ['werkbank/Postfaecher.tsx', 'pf-aktiv'],
+      ['werkbank/Sprachen.tsx', 'uebersetzen-an'],
+      ['werkbank/Anmeldeschutz.tsx', 'oidc-aktiv'],
     ];
     for (const [datei, id] of stellen) {
       const q = readFileSync(new URL(datei, WEB), 'utf8');
@@ -58,7 +83,15 @@ describe('Baustein Schalter (#1188)', () => {
       assert.doesNotMatch(q, new RegExp(`<input\\s+id="${id}"\\s+type="checkbox"`), `${datei}: ${id} nicht mehr als Haken`);
     }
     // Werkbank anpassen hat seit #987 keinen Ein/Aus-Schalter mehr (Expertenmodus ersetzt durch „Meine Leiste“).
-    for (const datei of ['werkbank/MailVersand.tsx', 'werkbank/Sicherung.tsx', 'werkbank/Verkleinern.tsx', 'werkbank/DatenEinstellungen.tsx', 'werkbank/SucheEinstellungen.tsx', 'werkbank/Automatisierungen.tsx', 'werkbank/Ablaufvorlagen.tsx']) {
+    for (const datei of [
+      'werkbank/MailVersand.tsx',
+      'werkbank/Sicherung.tsx',
+      'werkbank/Verkleinern.tsx',
+      'werkbank/DatenEinstellungen.tsx',
+      'werkbank/SucheEinstellungen.tsx',
+      'werkbank/Automatisierungen.tsx',
+      'werkbank/Ablaufvorlagen.tsx',
+    ]) {
       assert.match(readFileSync(new URL(datei, WEB), 'utf8'), /<Schalter\s/, datei);
     }
     // Keine doppelte Zustandsanzeige beim WebDAV-Laufwerk.

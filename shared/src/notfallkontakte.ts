@@ -53,13 +53,20 @@ export interface NotfallkontakteStand {
 }
 
 /** Eingabe beim Anlegen und Ändern. */
-export interface NotfallkontaktEingabe { name: string; email: string; telefon: string; notiz: string; antwortAn: boolean }
+export interface NotfallkontaktEingabe {
+  name: string;
+  email: string;
+  telefon: string;
+  notiz: string;
+  antwortAn: boolean;
+}
 
 /** Steuer-, Format- und Trennzeichen (auch Zeilenumbrüche, Richtungszeichen, Zeichen ohne Breite). */
 const UNSICHTBAR = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu;
 
 /** Ein Name, wie er in eine Mail (auch in den Betreff) kommt: eine Zeile, ohne Steuerzeichen, höchstens 60 Zeichen. */
-export const mailName = (s: string): string => [...s.replace(UNSICHTBAR, ' ').replace(/\s+/g, ' ').trim()].slice(0, NOTFALLKONTAKT_NAME_MAX).join('').trim();
+export const mailName = (s: string): string =>
+  [...s.replace(UNSICHTBAR, ' ').replace(/\s+/g, ' ').trim()].slice(0, NOTFALLKONTAKT_NAME_MAX).join('').trim();
 
 /** Würde ein Mailprogramm daraus einen Link machen? Dann gehört es nicht in einen Namen. */
 export const linkartig = (s: string): boolean => /:\/\/|www\.|@/i.test(s.replace(UNSICHTBAR, ''));
@@ -109,6 +116,13 @@ export function blattFingerabdruck(kontakte: Array<Pick<Notfallkontakt, 'name' |
   if (!kontakte.length) return '';
   const s = JSON.stringify(kontakte.map((k) => [k.name, k.telefon, k.email, k.notiz]));
   // FNV-1a, 32 Bit, zweimal mit anderem Startwert: Es geht nur um „hat sich etwas geändert“, nicht um Geheimhaltung.
-  const fnv = (start: number) => { let h = start; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
+  const fnv = (start: number) => {
+    let h = start;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, '0');
+  };
   return fnv(0x811c9dc5) + fnv(0x01000193);
 }

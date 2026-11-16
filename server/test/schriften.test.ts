@@ -22,15 +22,28 @@ import { BEISPIELE, beispielBrief, inhaltsstrom, NFD } from './hilfen-schriften'
 
 after(() => beendeArbeiter());
 
-const hatPoppler = (() => { try { execFileSync('pdftoppm', ['-v'], { stdio: 'ignore' }); return true; } catch { return false; } })();
+const hatPoppler = (() => {
+  try {
+    execFileSync('pdftoppm', ['-v'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
 const ohnePoppler = !hatPoppler && 'ohne poppler (pdftoppm, pdftotext)';
 
 function mitDatei<T>(pdf: Uint8Array, f: (pfad: string, dir: string) => T): T {
   const dir = mkdtempSync(join(tmpdir(), 'schriften-'));
-  try { writeFileSync(join(dir, 'a.pdf'), pdf); return f(join(dir, 'a.pdf'), dir); } finally { rmSync(dir, { recursive: true, force: true }); }
+  try {
+    writeFileSync(join(dir, 'a.pdf'), pdf);
+    return f(join(dir, 'a.pdf'), dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 /** Text wie beim Kopieren, nach NFC (pdftotext gibt Akzente teils zerlegt aus). */
-const pdftext = (pdf: Uint8Array, ...args: string[]) => mitDatei(pdf, (p) => execFileSync('pdftotext', [...args, p, '-'], { encoding: 'utf8' })).normalize('NFC');
+const pdftext = (pdf: Uint8Array, ...args: string[]) =>
+  mitDatei(pdf, (p) => execFileSync('pdftotext', [...args, p, '-'], { encoding: 'utf8' })).normalize('NFC');
 
 /** Seite als Graustufenbild (PGM): Breite, Höhe, Bildpunkte. */
 function graubild(pdf: Uint8Array, dpi: number): { b: number; h: number; px: Buffer } {
@@ -43,9 +56,14 @@ function graubild(pdf: Uint8Array, dpi: number): { b: number; h: number; px: Buf
 }
 
 /** Alle Zeichen der Beispiele (ohne Leerzeichen), einmal. */
-const ZEICHEN = [...new Set([...Object.values(BEISPIELE).join(''), ...NFD.normalize('NFC'), ...'Kód: ŁÓDŹ-ŞİĞ-ЖЁ'])].filter((z) => z.trim());
+const ZEICHEN = [...new Set([...Object.values(BEISPIELE).join(''), ...NFD.normalize('NFC'), ...'Kód: ŁÓDŹ-ŞİĞ-ЖЁ'])].filter((z) =>
+  z.trim(),
+);
 
-const FELD = 24, SPALTEN = 20, RAND = 24, GROESSE = 16;
+const FELD = 24,
+  SPALTEN = 20,
+  RAND = 24,
+  GROESSE = 16;
 /** Jedes Zeichen in einem eigenen Feld, ein Schnitt je Seite. */
 async function zeichenTafel(schnitt: Schnitt): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
@@ -53,21 +71,26 @@ async function zeichenTafel(schnitt: Schnitt): Promise<Uint8Array> {
   const zeilen = Math.ceil(ZEICHEN.length / SPALTEN);
   const seite = doc.addPage([2 * RAND + SPALTEN * FELD, 2 * RAND + zeilen * FELD]);
   ZEICHEN.forEach((z, i) => {
-    const x = RAND + (i % SPALTEN) * FELD, y = seite.getHeight() - RAND - (Math.floor(i / SPALTEN) + 1) * FELD;
+    const x = RAND + (i % SPALTEN) * FELD,
+      y = seite.getHeight() - RAND - (Math.floor(i / SPALTEN) + 1) * FELD;
     seite.drawText(pdfText(z, f), { x: x + 4, y: y + 6, size: GROESSE, font: f, color: rgb(0, 0, 0) });
   });
   return doc.save();
 }
 
 describe('Schriften der eigenen PDFs (#826)', () => {
-  it('Brief mit Türkisch, Polnisch, Tschechisch, Russisch, Griechisch, Vietnamesisch: Text auslesbar, kein „?“', { skip: ohnePoppler }, async () => {
-    const r = await briefPdf(beispielBrief());
-    assert.ok('pdf' in r);
-    const text = pdftext(r.pdf, '-raw').replace(/\s+/g, ' ');
-    for (const [sprache, zeile] of Object.entries(BEISPIELE)) assert.ok(text.includes(zeile), `${sprache}: ${zeile}`);
-    assert.ok(text.includes('Kód: ŁÓDŹ-ŞİĞ-ЖЁ'), 'Code in Noto Sans Mono');
-    assert.ok(!text.includes('?') && !text.includes(ERSATZZEICHEN), 'weder „?“ noch Ersatzzeichen');
-  });
+  it(
+    'Brief mit Türkisch, Polnisch, Tschechisch, Russisch, Griechisch, Vietnamesisch: Text auslesbar, kein „?“',
+    { skip: ohnePoppler },
+    async () => {
+      const r = await briefPdf(beispielBrief());
+      assert.ok('pdf' in r);
+      const text = pdftext(r.pdf, '-raw').replace(/\s+/g, ' ');
+      for (const [sprache, zeile] of Object.entries(BEISPIELE)) assert.ok(text.includes(zeile), `${sprache}: ${zeile}`);
+      assert.ok(text.includes('Kód: ŁÓDŹ-ŞİĞ-ЖЁ'), 'Code in Noto Sans Mono');
+      assert.ok(!text.includes('?') && !text.includes(ERSATZZEICHEN), 'weder „?“ noch Ersatzzeichen');
+    },
+  );
 
   it('ccmp aus: Kopieren von „Thị Liste office“ liefert genau diesen Text', { skip: ohnePoppler }, async () => {
     const pdf = await textdokumentPdf({ titel: 'ccmp', anweisungen: [{ art: 'text', text: 'Thị Liste office' }] });
@@ -88,9 +111,11 @@ describe('Schriften der eigenen PDFs (#826)', () => {
       const bild = graubild(pdf, dpi);
       const leer: string[] = [];
       ZEICHEN.forEach((z, i) => {
-        const x0 = RAND + (i % SPALTEN) * FELD, y0 = RAND + Math.floor(i / SPALTEN) * FELD;
+        const x0 = RAND + (i % SPALTEN) * FELD,
+          y0 = RAND + Math.floor(i / SPALTEN) * FELD;
         let tinte = 0;
-        for (let y = y0 + 1; y < y0 + FELD - 1; y++) for (let x = x0 + 1; x < x0 + FELD - 1; x++) if (bild.px[y * bild.b + x] < 128) tinte++;
+        for (let y = y0 + 1; y < y0 + FELD - 1; y++)
+          for (let x = x0 + 1; x < x0 + FELD - 1; x++) if (bild.px[y * bild.b + x] < 128) tinte++;
         if (tinte < 3) leer.push(z);
       });
       assert.deepEqual(leer, [], `ohne sichtbare Form: ${leer.join(' ')}`);
@@ -126,7 +151,10 @@ describe('Schriften der eigenen PDFs (#826)', () => {
     const doc = await PDFDocument.create();
     const { normal } = await schriften(doc, ['normal']);
     fehlendeZeichen();
-    assert.equal(pdfText('Merhaba مر 中 ❤️\u200b!', normal), `Merhaba ${ERSATZZEICHEN}${ERSATZZEICHEN} ${ERSATZZEICHEN} ${ERSATZZEICHEN}\u200b!`);
+    assert.equal(
+      pdfText('Merhaba مر 中 ❤️\u200b!', normal),
+      `Merhaba ${ERSATZZEICHEN}${ERSATZZEICHEN} ${ERSATZZEICHEN} ${ERSATZZEICHEN}\u200b!`,
+    );
     assert.deepEqual(fehlendeZeichen().sort(), ['م', 'ر', '中', '❤'].sort());
     assert.deepEqual(fehlendeZeichen(), [], 'je Auftrag einmal, danach leer');
     assert.equal(pdfText('a\tb\r\nc\u0007', normal), 'a    b\nc', 'Tabulator, Zeilenende, Steuerzeichen');
@@ -148,22 +176,45 @@ describe('Schriften der eigenen PDFs (#826)', () => {
   it('alle Erzeuger: Stempel, Textdokument, Export, Aufkleber und Textebene beim Schwärzen', { skip: ohnePoppler }, async () => {
     const zeile = `${BEISPIELE.tuerkisch} ${BEISPIELE.russisch}`;
     // Textdokument (Auskunft, Löschkonzept …) und darauf ein Stempel.
-    const dok = await textdokumentPdf({ titel: zeile, anweisungen: [{ art: 'text', text: zeile }, { art: 'tabelle', kopf: ['Ad', 'Ώρα'], zeilen: [[BEISPIELE.polnisch, BEISPIELE.griechisch]], gewichte: [1, 1] }] });
+    const dok = await textdokumentPdf({
+      titel: zeile,
+      anweisungen: [
+        { art: 'text', text: zeile },
+        { art: 'tabelle', kopf: ['Ad', 'Ώρα'], zeilen: [[BEISPIELE.polnisch, BEISPIELE.griechisch]], gewichte: [1, 1] },
+      ],
+    });
     assert.ok(pdftext(dok, '-raw').replace(/\s+/g, ' ').includes(zeile), 'Textdokument');
     assert.equal((await PDFDocument.load(dok)).getTitle(), zeile, 'Titel in den Eigenschaften');
-    const gestempelt = await stempelePdf({ name: 'a.pdf', mime: 'application/pdf', inhalt: dok, stempel: { ...NEUER_STEMPEL, text: 'x' }, text: `Kopie für ${BEISPIELE.tschechisch}` });
+    const gestempelt = await stempelePdf({
+      name: 'a.pdf',
+      mime: 'application/pdf',
+      inhalt: dok,
+      stempel: { ...NEUER_STEMPEL, text: 'x' },
+      text: `Kopie für ${BEISPIELE.tschechisch}`,
+    });
     assert.ok((await inhaltsstrom(gestempelt)).text.includes(`Kopie für ${BEISPIELE.tschechisch}`), 'Stempel');
     // Export mehrerer Mappen.
-    const exp = await mappenPdfZeichnen({ titel: 'Export', uebersicht: { zeile: '1 Mappe', kopf: ['Titel'], zeilen: [[BEISPIELE.vietnamesisch]] }, mappen: [{ titel: BEISPIELE.griechisch, zeile: '', register: [{ name: null, felder: [['Mieter', BEISPIELE.tuerkisch]] }], dokumente: [] }] });
+    const exp = await mappenPdfZeichnen({
+      titel: 'Export',
+      uebersicht: { zeile: '1 Mappe', kopf: ['Titel'], zeilen: [[BEISPIELE.vietnamesisch]] },
+      mappen: [
+        { titel: BEISPIELE.griechisch, zeile: '', register: [{ name: null, felder: [['Mieter', BEISPIELE.tuerkisch]] }], dokumente: [] },
+      ],
+    });
     const et = pdftext(exp, '-raw').replace(/\s+/g, ' ');
     for (const z of [BEISPIELE.vietnamesisch, BEISPIELE.griechisch, BEISPIELE.tuerkisch]) assert.ok(et.includes(z), `Export: ${z}`);
     // Aufkleber: die lesbare Nummer.
-    const auf = await aufkleberbogenPdf({ etikett: { breite: 70, hoehe: 37, spalten: 3, zeilen: 8 }, start: 1, aufkleber: [{ nummer: 'ŞİĞ-0001', striche: [2, 1, 2, 2, 2, 2] }] });
+    const auf = await aufkleberbogenPdf({
+      etikett: { breite: 70, hoehe: 37, spalten: 3, zeilen: 8 },
+      start: 1,
+      aufkleber: [{ nummer: 'ŞİĞ-0001', striche: [2, 1, 2, 2, 2, 2] }],
+    });
     assert.ok(pdftext(auf, '-raw').includes('ŞİĞ-0001'), 'Aufkleber');
     // Schwärzen: Die neue, unsichtbare Textebene liefert beim Kopieren dieselben Buchstaben.
     const a = await analysiereSchwaerzen(dok, 'application/pdf');
     const s = await schwaerze(dok, 'application/pdf', a, []);
     const st = pdftext(s.inhalt, '-raw').replace(/\s+/g, ' ');
-    for (const w of ['Şahin', 'Özdemir,', 'İstanbul,', 'ılık,', 'Съешь', 'французских', 'Zażółć', 'ψυχοφθόρα']) assert.ok(st.includes(w), `Textebene: ${w}`);
+    for (const w of ['Şahin', 'Özdemir,', 'İstanbul,', 'ılık,', 'Съешь', 'французских', 'Zażółć', 'ψυχοφθόρα'])
+      assert.ok(st.includes(w), `Textebene: ${w}`);
   });
 });

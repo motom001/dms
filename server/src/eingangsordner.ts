@@ -30,26 +30,47 @@ import { GB } from './grenzen';
  */
 
 export interface EingangEinstellung {
-  aktiv: boolean; abstand: number; nachher: 'erledigt' | 'loeschen';
+  aktiv: boolean;
+  abstand: number;
+  nachher: 'erledigt' | 'loeschen';
   /** Doppelte Dateien (#333): gleiche Datei liegt schon im DMS → nicht als Post übernehmen, nur wegräumen. */
   doppelteUeberspringen?: boolean;
   /** Ordner je Person (#915) für neue Benutzer von selbst anlegen. */
   ordnerAutomatisch?: boolean;
   /** Warnungen (#915): Dateien älter als … Tage, alle zusammen über … GB, mehr als … Dateien; 0 = keine Warnung. */
-  warnTage?: number; warnGb?: number; warnDateien?: number;
+  warnTage?: number;
+  warnGb?: number;
+  warnDateien?: number;
 }
 /**
  * Vorgaben. „Nach dem Übernehmen löschen“ (#915) gilt für neu eingerichtete Eingangsordner; wer schon ein `erledigt/`
  * hat und nie gespeichert hat, behält „verschieben“ (siehe `einstellung()`).
  */
-export const EINGANG_STANDARD: EingangEinstellung = { aktiv: true, abstand: 30, nachher: 'loeschen', doppelteUeberspringen: false, ordnerAutomatisch: false, warnTage: 180, warnGb: 2, warnDateien: 100 };
+export const EINGANG_STANDARD: EingangEinstellung = {
+  aktiv: true,
+  abstand: 30,
+  nachher: 'loeschen',
+  doppelteUeberspringen: false,
+  ordnerAutomatisch: false,
+  warnTage: 180,
+  warnGb: 2,
+  warnDateien: 100,
+};
 
-export interface EingangEreignis { datei: string; zeit: string; mappeId?: string; grund?: string }
+export interface EingangEreignis {
+  datei: string;
+  zeit: string;
+  mappeId?: string;
+  grund?: string;
+}
 
 /** Ein Ordner der Überwachung (#915): Zahlen für alles darunter; `pfad` relativ zu /eingang ('' = der Eingangsordner selbst). */
 export interface EingangKnoten {
-  pfad: string; name: string;
-  dateien: number; bytes: number; aeltester: string | null;
+  pfad: string;
+  name: string;
+  dateien: number;
+  bytes: number;
+  aeltester: string | null;
   /** Dateien tiefer als 5 Ebenen (außerhalb von erledigt/ und fehler/): Ablago übernimmt sie nicht. */
   zuTief: number;
   kinder: EingangKnoten[];
@@ -57,7 +78,9 @@ export interface EingangKnoten {
 export interface EingangUeberblick {
   berechnet: string;
   /** Alles unter /eingang, auch erledigt/ und fehler/. */
-  dateien: number; bytes: number; aeltester: string | null;
+  dateien: number;
+  bytes: number;
+  aeltester: string | null;
   /** Dateien in fehler/ (ohne die Textdateien mit dem Grund). */
   fehler: number;
   zuTief: number;
@@ -67,21 +90,33 @@ export interface EingangUeberblick {
 }
 export type EingangWarnung = 'alt' | 'groesse' | 'fehler' | 'anzahl';
 /** Personenordner, dessen Benutzer eine neue E-Mail-Adresse hat, der sich aber nicht umbenennen ließ (#915). */
-export interface EingangUmbenennen { alt: string; neu: string }
+export interface EingangUmbenennen {
+  alt: string;
+  neu: string;
+}
 /** Was die Werkbank-Übersicht (#915) braucht. */
 export interface EingangMeldungen {
   warnungen: EingangWarnung[];
-  dateien: number; bytes: number; aeltester: string | null; fehler: number;
+  dateien: number;
+  bytes: number;
+  aeltester: string | null;
+  fehler: number;
   grenzen: { tage: number; gb: number; dateien: number };
   ohnePerson: string[];
   umbenennen: EingangUmbenennen[];
 }
 
 /** Welche Grenzen der Überblick überschreitet (#915); 0 schaltet eine Warnung ab. */
-export function eingangWarnungen(u: Pick<EingangUeberblick, 'dateien' | 'bytes' | 'aeltester' | 'fehler'> | null, e: EingangEinstellung, jetzt = Date.now()): EingangWarnung[] {
+export function eingangWarnungen(
+  u: Pick<EingangUeberblick, 'dateien' | 'bytes' | 'aeltester' | 'fehler'> | null,
+  e: EingangEinstellung,
+  jetzt = Date.now(),
+): EingangWarnung[] {
   if (!u) return [];
   const w: EingangWarnung[] = [];
-  const tage = e.warnTage ?? EINGANG_STANDARD.warnTage!, gb = e.warnGb ?? EINGANG_STANDARD.warnGb!, dateien = e.warnDateien ?? EINGANG_STANDARD.warnDateien!;
+  const tage = e.warnTage ?? EINGANG_STANDARD.warnTage!,
+    gb = e.warnGb ?? EINGANG_STANDARD.warnGb!,
+    dateien = e.warnDateien ?? EINGANG_STANDARD.warnDateien!;
   if (tage > 0 && u.aeltester && jetzt - Date.parse(u.aeltester) > tage * 86_400_000) w.push('alt');
   if (gb > 0 && u.bytes > gb * GB) w.push('groesse');
   if (u.fehler > 0) w.push('fehler');
@@ -110,7 +145,13 @@ export interface EingangStand {
   ohneOrdner: number;
 }
 
-interface Journal { pfad: string; sha256: string; groesse: number; seit: string; mappeId?: string }
+interface Journal {
+  pfad: string;
+  sha256: string;
+  groesse: number;
+  seit: string;
+  mappeId?: string;
+}
 
 export interface EingangDeps {
   dienst: Dienst;
@@ -127,10 +168,21 @@ const SYSTEMNAME = 'Eingangsordner';
 const UEBERSPRINGEN_DATEI = /^(\..*|~.*|.*\.(tmp|part|crdownload|partial)|thumbs\.db|desktop\.ini)$/i;
 const UEBERSPRINGEN_ORDNER = /^(\..*|@eadir|#recycle|\.@__thumb|@recycle|\.trash.*|erledigt|fehler)$/i;
 export const MIME: Record<string, string> = {
-  '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp',
-  '.tif': 'image/tiff', '.tiff': 'image/tiff', '.txt': 'text/plain', '.eml': 'message/rfc822', '.xml': 'application/xml',
-  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  '.odt': 'application/vnd.oasis.opendocument.text', '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
+  '.pdf': 'application/pdf',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.tif': 'image/tiff',
+  '.tiff': 'image/tiff',
+  '.txt': 'text/plain',
+  '.eml': 'message/rfc822',
+  '.xml': 'application/xml',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.odt': 'application/vnd.oasis.opendocument.text',
+  '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
 };
 /** NAS-eigene Ordner zählt auch die Überwachung nicht mit (Vorschaubilder, Papierkorb des NAS). */
 const NAS_ORDNER = /^(@eadir|#recycle|\.@__thumb|@recycle|\.trash.*)$/i;
@@ -146,19 +198,29 @@ const MAX_EREIGNISSE = 20;
 export function pruefeEingangEinstellung(x: unknown, alt: EingangEinstellung): EingangEinstellung {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const abstand = o.abstand === undefined ? alt.abstand : Math.round(Number(o.abstand));
-  if (!Number.isFinite(abstand) || abstand < 5 || abstand > 3600) throw new Fachfehler(422, t('meldungen.eingangsordner.pruefabstand-5-bis-3600'));
+  if (!Number.isFinite(abstand) || abstand < 5 || abstand > 3600)
+    throw new Fachfehler(422, t('meldungen.eingangsordner.pruefabstand-5-bis-3600'));
   const nachher = o.nachher === undefined ? alt.nachher : o.nachher;
-  if (nachher !== 'erledigt' && nachher !== 'loeschen') throw new Fachfehler(422, t('meldungen.eingangsordner.nach-dem-uebernehmen-verschieben'));
-  const doppelteUeberspringen = o.doppelteUeberspringen === undefined ? alt.doppelteUeberspringen === true : o.doppelteUeberspringen === true;
+  if (nachher !== 'erledigt' && nachher !== 'loeschen')
+    throw new Fachfehler(422, t('meldungen.eingangsordner.nach-dem-uebernehmen-verschieben'));
+  const doppelteUeberspringen =
+    o.doppelteUeberspringen === undefined ? alt.doppelteUeberspringen === true : o.doppelteUeberspringen === true;
   const ordnerAutomatisch = o.ordnerAutomatisch === undefined ? alt.ordnerAutomatisch === true : o.ordnerAutomatisch === true;
   const grenze = (k: 'warnTage' | 'warnGb' | 'warnDateien', max: number, ganz: boolean) => {
-    const v = o[k] === undefined ? alt[k] ?? EINGANG_STANDARD[k]! : Number(o[k]);
-    if (!Number.isFinite(v) || v < 0 || v > max || (ganz && !Number.isInteger(v))) throw new Fachfehler(422, t('meldungen.eingangsordner.grenze-ungueltig', { max }));
+    const v = o[k] === undefined ? (alt[k] ?? EINGANG_STANDARD[k]!) : Number(o[k]);
+    if (!Number.isFinite(v) || v < 0 || v > max || (ganz && !Number.isInteger(v)))
+      throw new Fachfehler(422, t('meldungen.eingangsordner.grenze-ungueltig', { max }));
     return v;
   };
   return {
-    aktiv: o.aktiv === undefined ? alt.aktiv : o.aktiv === true, abstand, nachher, doppelteUeberspringen, ordnerAutomatisch,
-    warnTage: grenze('warnTage', 3650, true), warnGb: grenze('warnGb', 100_000, false), warnDateien: grenze('warnDateien', 1_000_000, true),
+    aktiv: o.aktiv === undefined ? alt.aktiv : o.aktiv === true,
+    abstand,
+    nachher,
+    doppelteUeberspringen,
+    ordnerAutomatisch,
+    warnTage: grenze('warnTage', 3650, true),
+    warnGb: grenze('warnGb', 100_000, false),
+    warnDateien: grenze('warnDateien', 1_000_000, true),
   };
 }
 
@@ -179,9 +241,14 @@ export class Eingangsordner {
   /** Wann die Überwachung (#915) zuletzt gerechnet hat (0 = noch nie seit dem Start). */
   private ueberblickZeit = 0;
 
-  constructor(readonly pfad: string, private d: EingangDeps) {}
+  constructor(
+    readonly pfad: string,
+    private d: EingangDeps,
+  ) {}
 
-  get vorhanden() { return existsSync(this.pfad); }
+  get vorhanden() {
+    return existsSync(this.pfad);
+  }
 
   async einstellung(): Promise<EingangEinstellung> {
     const g = (await this.d.einstellungen.lies('eingangsordner')) as Partial<EingangEinstellung> | null;
@@ -198,8 +265,18 @@ export class Eingangsordner {
     return this.stand();
   }
 
-  private async ereignisse(): Promise<{ uebernommen: EingangEreignis[]; fehler: EingangEreignis[]; ohnePerson: string[]; umbenennen: EingangUmbenennen[] }> {
-    const g = (await this.d.einstellungen.lies('eingangsordner_ereignisse')) as { uebernommen?: EingangEreignis[]; fehler?: EingangEreignis[]; ohnePerson?: string[]; umbenennen?: EingangUmbenennen[] } | null;
+  private async ereignisse(): Promise<{
+    uebernommen: EingangEreignis[];
+    fehler: EingangEreignis[];
+    ohnePerson: string[];
+    umbenennen: EingangUmbenennen[];
+  }> {
+    const g = (await this.d.einstellungen.lies('eingangsordner_ereignisse')) as {
+      uebernommen?: EingangEreignis[];
+      fehler?: EingangEreignis[];
+      ohnePerson?: string[];
+      umbenennen?: EingangUmbenennen[];
+    } | null;
     return { uebernommen: g?.uebernommen ?? [], fehler: g?.fehler ?? [], ohnePerson: g?.ohnePerson ?? [], umbenennen: g?.umbenennen ?? [] };
   }
   private async merke(art: 'uebernommen' | 'fehler', e: EingangEreignis) {
@@ -221,7 +298,11 @@ export class Eingangsordner {
   }
   /** Ordner direkt unter /eingang. */
   private async oberste(): Promise<string[]> {
-    try { return (await readdir(this.pfad, { withFileTypes: true })).filter((x) => x.isDirectory()).map((x) => x.name); } catch { return []; }
+    try {
+      return (await readdir(this.pfad, { withFileTypes: true })).filter((x) => x.isDirectory()).map((x) => x.name);
+    } catch {
+      return [];
+    }
   }
 
   async stand(): Promise<EingangStand> {
@@ -230,9 +311,17 @@ export class Eingangsordner {
     const vorhanden = new Set(oben.map(adresse));
     const emails = new Set(personen.map((p) => adresse(p.email)));
     return {
-      vorhanden: this.vorhanden, pfad: this.pfad, einstellung: e, letztePruefung: this.letztePruefung,
-      wartend: this.wartend, pausiert: this.pausiert, uebernommen: ev.uebernommen, fehler: ev.fehler, andereInstanz: this.gesperrt,
-      ueberblick, warnungen: eingangWarnungen(ueberblick, e),
+      vorhanden: this.vorhanden,
+      pfad: this.pfad,
+      einstellung: e,
+      letztePruefung: this.letztePruefung,
+      wartend: this.wartend,
+      pausiert: this.pausiert,
+      uebernommen: ev.uebernommen,
+      fehler: ev.fehler,
+      andereInstanz: this.gesperrt,
+      ueberblick,
+      warnungen: eingangWarnungen(ueberblick, e),
       // Nur, solange der Ordner noch da ist und noch zu niemandem gehört.
       ohnePerson: ev.ohnePerson.filter((o) => vorhanden.has(adresse(o)) && !emails.has(adresse(o))),
       umbenennen: ev.umbenennen,
@@ -246,9 +335,14 @@ export class Eingangsordner {
     const s = await this.stand();
     const u = s.ueberblick;
     return {
-      warnungen: s.warnungen, dateien: u?.dateien ?? 0, bytes: u?.bytes ?? 0, aeltester: u?.aeltester ?? null, fehler: u?.fehler ?? 0,
+      warnungen: s.warnungen,
+      dateien: u?.dateien ?? 0,
+      bytes: u?.bytes ?? 0,
+      aeltester: u?.aeltester ?? null,
+      fehler: u?.fehler ?? 0,
       grenzen: { tage: s.einstellung.warnTage ?? 0, gb: s.einstellung.warnGb ?? 0, dateien: s.einstellung.warnDateien ?? 0 },
-      ohnePerson: s.ohnePerson, umbenennen: s.umbenennen,
+      ohnePerson: s.ohnePerson,
+      umbenennen: s.umbenennen,
     };
   }
 
@@ -256,7 +350,9 @@ export class Eingangsordner {
   async start() {
     if (!this.vorhanden) return;
     const e = await this.einstellung();
-    log.info(`Eingangsordner ${this.pfad} gefunden${e.aktiv ? ` – wird alle ${e.abstand} Sekunden geprüft` : ' – ausgeschaltet (Werkbank → Eingangsordner)'}`);
+    log.info(
+      `Eingangsordner ${this.pfad} gefunden${e.aktiv ? ` – wird alle ${e.abstand} Sekunden geprüft` : ' – ausgeschaltet (Werkbank → Eingangsordner)'}`,
+    );
     this.plane(e.abstand);
   }
   /**
@@ -267,10 +363,15 @@ export class Eingangsordner {
   private plane(sekunden: number) {
     if (this.zeitgeber) clearInterval(this.zeitgeber);
     if (!this.vorhanden) return;
-    this.zeitgeber = setInterval(() => void this.pruefe().catch((x) => log.error('Eingangsordner prüfen fehlgeschlagen', { fehler: (x as Error).message })), sekunden * 1000);
+    this.zeitgeber = setInterval(
+      () => void this.pruefe().catch((x) => log.error('Eingangsordner prüfen fehlgeschlagen', { fehler: (x as Error).message })),
+      sekunden * 1000,
+    );
     this.zeitgeber.unref?.();
   }
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+  }
 
   /**
    * Eine Prüfung: Personenordner abgleichen, fertige Dateien übernehmen (nur eingeschaltet oder `sofort`), höchstens
@@ -281,7 +382,10 @@ export class Eingangsordner {
     const e = await this.einstellung();
     this.pausiert = this.d.pause?.() ?? null;
     if (this.pausiert) return 0;
-    if (this.d.sperre && !(await this.d.sperre())) { this.gesperrt = true; return 0; }
+    if (this.d.sperre && !(await this.d.sperre())) {
+      this.gesperrt = true;
+      return 0;
+    }
     this.gesperrt = false;
     this.laeuft = true;
     try {
@@ -292,7 +396,9 @@ export class Eingangsordner {
       const n = e.aktiv || sofort ? await this.uebernimmFertige(e, personen) : 0;
       if (sofort || !this.ueberblickZeit || Date.now() - this.ueberblickZeit >= UEBERBLICK_MS) await this.merkeUeberblick();
       return n;
-    } finally { this.laeuft = false; }
+    } finally {
+      this.laeuft = false;
+    }
   }
 
   private async uebernimmFertige(e: EingangEinstellung, personen: Person[]): Promise<number> {
@@ -322,12 +428,24 @@ export class Eingangsordner {
     const aus: Array<{ pfad: string; groesse: number; mtime: number }> = [];
     const gehe = async (ordner: string, tiefe: number) => {
       let eintraege;
-      try { eintraege = await readdir(ordner, { withFileTypes: true }); } catch { return; }
+      try {
+        eintraege = await readdir(ordner, { withFileTypes: true });
+      } catch {
+        return;
+      }
       for (const x of eintraege) {
         const p = join(ordner, x.name);
-        if (x.isDirectory()) { if (tiefe < MAX_TIEFE && !UEBERSPRINGEN_ORDNER.test(x.name)) await gehe(p, tiefe + 1); continue; }
+        if (x.isDirectory()) {
+          if (tiefe < MAX_TIEFE && !UEBERSPRINGEN_ORDNER.test(x.name)) await gehe(p, tiefe + 1);
+          continue;
+        }
         if (!x.isFile() || UEBERSPRINGEN_DATEI.test(x.name)) continue;
-        try { const s = await stat(p); aus.push({ pfad: p, groesse: s.size, mtime: s.mtimeMs }); } catch { /* inzwischen weg */ }
+        try {
+          const s = await stat(p);
+          aus.push({ pfad: p, groesse: s.size, mtime: s.mtimeMs });
+        } catch {
+          /* inzwischen weg */
+        }
       }
     };
     await gehe(this.pfad, 0);
@@ -361,10 +479,17 @@ export class Eingangsordner {
       const p = personen.find((x) => x.id === id);
       // Deaktiviert oder gelöscht: Der Ordner bleibt, wie er ist.
       if (!p || adresse(p.email) === adresse(name)) continue;
-      const alt = join(this.pfad, name), neu = join(this.pfad, p.email);
+      const alt = join(this.pfad, name),
+        neu = join(this.pfad, p.email);
       // Von Hand entfernt: nicht mehr Ablagos Ordner.
-      if (!existsSync(alt)) { delete reg[id]; continue; }
-      if (!ordnerName(p.email) || existsSync(neu)) { umbenennen.push({ alt: name, neu: p.email }); continue; }
+      if (!existsSync(alt)) {
+        delete reg[id];
+        continue;
+      }
+      if (!ordnerName(p.email) || existsSync(neu)) {
+        umbenennen.push({ alt: name, neu: p.email });
+        continue;
+      }
       try {
         await rename(alt, neu);
         reg[id] = p.email;
@@ -377,7 +502,8 @@ export class Eingangsordner {
     if (e.ordnerAutomatisch) await this.legeOrdnerAn(personen, reg, true);
     if (JSON.stringify(reg) !== vorher) await this.d.einstellungen.schreibe('eingangsordner_personen', reg);
     const ev = await this.ereignisse();
-    if (JSON.stringify(ev.umbenennen) !== JSON.stringify(umbenennen)) await this.d.einstellungen.schreibe('eingangsordner_ereignisse', { ...ev, umbenennen });
+    if (JSON.stringify(ev.umbenennen) !== JSON.stringify(umbenennen))
+      await this.d.einstellungen.schreibe('eingangsordner_ereignisse', { ...ev, umbenennen });
   }
 
   /** Fehlende Personenordner anlegen; `nurNeue`: nur für Personen, für die Ablago noch nie einen angelegt hat. */
@@ -390,7 +516,9 @@ export class Eingangsordner {
         await mkdir(join(this.pfad, p.email));
         reg[p.id] = p.email;
         angelegt.push(p.email);
-      } catch (x) { log.warn('Eingangsordner: Personenordner nicht angelegt', { ordner: p.email, fehler: (x as Error).message }); }
+      } catch (x) {
+        log.warn('Eingangsordner: Personenordner nicht angelegt', { ordner: p.email, fehler: (x as Error).message });
+      }
     }
     if (angelegt.length) log.info('Eingangsordner: Ordner je Person angelegt', { ordner: angelegt });
     return angelegt;
@@ -412,28 +540,64 @@ export class Eingangsordner {
    * Ordner Anzahl, Größe und älteste Datei. Nur Verzeichnisse lesen und `stat` – kein Inhalt.
    */
   async rechneUeberblick(): Promise<EingangUeberblick> {
-    let knoten = 0, gekuerzt = false, fehler = 0;
-    const gehe = async (ordner: string, rel: string[], tiefe: number, erledigt: boolean, inFehler: boolean, zeigen: boolean): Promise<EingangKnoten> => {
-      const k: EingangKnoten = { pfad: rel.join('/'), name: rel.at(-1) ?? '', dateien: 0, bytes: 0, aeltester: null, zuTief: 0, kinder: [] };
+    let knoten = 0,
+      gekuerzt = false,
+      fehler = 0;
+    const gehe = async (
+      ordner: string,
+      rel: string[],
+      tiefe: number,
+      erledigt: boolean,
+      inFehler: boolean,
+      zeigen: boolean,
+    ): Promise<EingangKnoten> => {
+      const k: EingangKnoten = {
+        pfad: rel.join('/'),
+        name: rel.at(-1) ?? '',
+        dateien: 0,
+        bytes: 0,
+        aeltester: null,
+        zuTief: 0,
+        kinder: [],
+      };
       let eintraege;
-      try { eintraege = await readdir(ordner, { withFileTypes: true }); } catch { return k; }
+      try {
+        eintraege = await readdir(ordner, { withFileTypes: true });
+      } catch {
+        return k;
+      }
       for (const x of eintraege.sort((a, b) => a.name.localeCompare(b.name))) {
         const p = join(ordner, x.name);
         if (x.isDirectory()) {
           if (NAS_ORDNER.test(x.name) || tiefe >= UEBERBLICK_TIEFE) continue;
           const zeigeKind = zeigen && knoten < UEBERBLICK_KNOTEN;
-          if (zeigeKind) knoten++; else if (zeigen) gekuerzt = true;
-          const kind = await gehe(p, [...rel, x.name], tiefe + 1, erledigt || /^(erledigt|fehler)$/i.test(x.name), inFehler || (tiefe === 0 && /^fehler$/i.test(x.name)), zeigeKind);
-          k.dateien += kind.dateien; k.bytes += kind.bytes; k.zuTief += kind.zuTief;
+          if (zeigeKind) knoten++;
+          else if (zeigen) gekuerzt = true;
+          const kind = await gehe(
+            p,
+            [...rel, x.name],
+            tiefe + 1,
+            erledigt || /^(erledigt|fehler)$/i.test(x.name),
+            inFehler || (tiefe === 0 && /^fehler$/i.test(x.name)),
+            zeigeKind,
+          );
+          k.dateien += kind.dateien;
+          k.bytes += kind.bytes;
+          k.zuTief += kind.zuTief;
           if (kind.aeltester && (!k.aeltester || kind.aeltester < k.aeltester)) k.aeltester = kind.aeltester;
           if (zeigeKind) k.kinder.push(kind);
           continue;
         }
         if (!x.isFile()) continue;
         let s;
-        try { s = await stat(p); } catch { continue; }
+        try {
+          s = await stat(p);
+        } catch {
+          continue;
+        }
         const am = new Date(s.mtimeMs).toISOString();
-        k.dateien++; k.bytes += s.size;
+        k.dateien++;
+        k.bytes += s.size;
         if (!k.aeltester || am < k.aeltester) k.aeltester = am;
         if (inFehler && !x.name.endsWith('.grund.txt')) fehler++;
         // Tiefer als 5 Ebenen: bleibt liegen (liste() sieht dort nicht nach).
@@ -442,27 +606,54 @@ export class Eingangsordner {
       return k;
     };
     const baum = await gehe(this.pfad, [], 0, false, false, true);
-    return { berechnet: new Date().toISOString(), dateien: baum.dateien, bytes: baum.bytes, aeltester: baum.aeltester, fehler, zuTief: baum.zuTief, baum, ...(gekuerzt ? { gekuerzt } : {}) };
+    return {
+      berechnet: new Date().toISOString(),
+      dateien: baum.dateien,
+      bytes: baum.bytes,
+      aeltester: baum.aeltester,
+      fehler,
+      zuTief: baum.zuTief,
+      baum,
+      ...(gekuerzt ? { gekuerzt } : {}),
+    };
   }
   private async merkeUeberblick() {
     this.ueberblickZeit = Date.now();
-    try { await this.d.einstellungen.schreibe('eingangsordner_ueberblick', await this.rechneUeberblick()); }
-    catch (x) { log.warn('Eingangsordner: Überwachung nicht berechnet', { fehler: (x as Error).message }); }
+    try {
+      await this.d.einstellungen.schreibe('eingangsordner_ueberblick', await this.rechneUeberblick());
+    } catch (x) {
+      log.warn('Eingangsordner: Überwachung nicht berechnet', { fehler: (x as Error).message });
+    }
   }
 
   private async uebernimm(pfad: string, groesse: number, e: EingangEinstellung, personen: Person[]): Promise<boolean> {
     const rel = relative(this.pfad, pfad);
     const anzeige = `eingang/${rel.split(sep).join('/')}`;
     const person = this.personIn(rel, personen);
-    if (groesse === 0) { await this.ablehnen(pfad, rel, t('meldungen.eingangsordner.die-datei-ist-leer')); return false; }
-    if (groesse > MAX_DATEIGROESSE) { await this.ablehnen(pfad, rel, t('meldungen.eingangsordner.die-datei-ist-groesser')); return false; }
+    if (groesse === 0) {
+      await this.ablehnen(pfad, rel, t('meldungen.eingangsordner.die-datei-ist-leer'));
+      return false;
+    }
+    if (groesse > MAX_DATEIGROESSE) {
+      await this.ablehnen(pfad, rel, t('meldungen.eingangsordner.die-datei-ist-groesser'));
+      return false;
+    }
     let inhalt: Buffer;
-    try { inhalt = await readFile(pfad); } catch (x) { log.warn('Eingangsordner: Datei nicht lesbar', { datei: anzeige, fehler: (x as Error).message }); return false; }
+    try {
+      inhalt = await readFile(pfad);
+    } catch (x) {
+      log.warn('Eingangsordner: Datei nicht lesbar', { datei: anzeige, fehler: (x as Error).message });
+      return false;
+    }
     const sha256 = createHash('sha256').update(inhalt).digest('hex');
     // Doppelt (#333): auf Wunsch gar nicht erst als Post übernehmen.
     if (e.doppelteUeberspringen && (await this.d.dienst.eingangskanaele.dokumenteMitInhalt(sha256)).length) {
       await this.nachher(pfad, rel, e, person);
-      await this.merke('uebernommen', { datei: anzeige, zeit: new Date().toISOString(), grund: t('meldungen.eingangsordner.doppelt-liegt-schon-in') });
+      await this.merke('uebernommen', {
+        datei: anzeige,
+        zeit: new Date().toISOString(),
+        grund: t('meldungen.eingangsordner.doppelt-liegt-schon-in'),
+      });
       log.info('Eingangsordner: doppelte Datei übersprungen', { datei: anzeige });
       return true;
     }
@@ -471,20 +662,40 @@ export class Eingangsordner {
     let mappeId: string;
     try {
       const gleich = await this.d.dienst.eingangskanaele.dokumenteMitInhalt(sha256);
-      const post = await this.d.dienst.post.legePostAn({ betreff: basename(rel, extname(rel)).slice(0, 250), ...(person ? { an: person.id } : {}) },
-        { id: null, name: SYSTEMNAME }, undefined, POST_KANAL.ordner,
+      const post = await this.d.dienst.post.legePostAn(
+        { betreff: basename(rel, extname(rel)).slice(0, 250), ...(person ? { an: person.id } : {}) },
+        { id: null, name: SYSTEMNAME },
+        undefined,
+        POST_KANAL.ordner,
         // Doppelt (#333): nur die Anzahl – Titel sähe jeder, der die Post lesen darf, auch für fremde Mappen.
-        { text: t('meldungen.eingangsordner.aus-dem-eingangsordner-uebernommen', { anzeige }), datei: anzeige, ...(gleich.length ? { doppelt: gleich.length } : {}) });
+        {
+          text: t('meldungen.eingangsordner.aus-dem-eingangsordner-uebernommen', { anzeige }),
+          datei: anzeige,
+          ...(gleich.length ? { doppelt: gleich.length } : {}),
+        },
+      );
       mappeId = post.id;
       await this.d.einstellungen.schreibe('eingangsordner_journal', { ...journal, mappeId });
       const typ = await this.d.dienst.eingangskanaele.postTyp();
       const register = typ.register.find((r) => r.art === 'dokumente')?.key;
-      await this.d.dienst.dokumente.ladeHoch(post.id, { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null);
+      await this.d.dienst.dokumente.ladeHoch(
+        post.id,
+        { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] },
+        inhalt,
+        null,
+      );
     } catch (x) {
       await this.d.einstellungen.schreibe('eingangsordner_journal', null);
       const f = x as Error & { status?: number };
       // Speicherplatz-Grenze: Die Datei bleibt liegen und kommt beim nächsten Mal dran.
-      if (x instanceof Fachfehler && x.status === 507) { await this.merke('fehler', { datei: anzeige, zeit: new Date().toISOString(), grund: t('meldungen.eingangsordner.die-datei-bleibt-im', { message: f.message }) }); return false; }
+      if (x instanceof Fachfehler && x.status === 507) {
+        await this.merke('fehler', {
+          datei: anzeige,
+          zeit: new Date().toISOString(),
+          grund: t('meldungen.eingangsordner.die-datei-bleibt-im', { message: f.message }),
+        });
+        return false;
+      }
       await this.ablehnen(pfad, rel, f.message);
       return false;
     }
@@ -513,7 +724,18 @@ export class Eingangsordner {
         // Dokument fehlt noch (Absturz zwischen Post und Hochladen)? Dann jetzt nachholen.
         if (!(await this.d.dienst.eingangskanaele.postMitDatei(j.sha256, j.seit))) {
           const typ = await this.d.dienst.eingangskanaele.postTyp();
-          await this.d.dienst.dokumente.ladeHoch(mappeId, { register: typ.register.find((r) => r.art === 'dokumente')?.key, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] }, inhalt, null).catch(() => {});
+          await this.d.dienst.dokumente
+            .ladeHoch(
+              mappeId,
+              {
+                register: typ.register.find((r) => r.art === 'dokumente')?.key,
+                name: basename(rel),
+                typ: MIME[extname(rel).toLowerCase()],
+              },
+              inhalt,
+              null,
+            )
+            .catch(() => {});
         }
         await this.nachher(j.pfad, rel, e, this.personIn(rel, personen));
         log.warn('Eingangsordner: nach einem Abbruch aufgeräumt – keine doppelte Post', { datei: rel, mappe: mappeId });
@@ -524,9 +746,14 @@ export class Eingangsordner {
 
   /** Wegräumen: löschen oder nach erledigt/ – bei Personenordnern nach <e-mail>/erledigt/ (#915), nicht in ein gemeinsames. */
   private async nachher(pfad: string, rel: string, e: EingangEinstellung, person: { ebene: number } | null) {
-    if (e.nachher === 'loeschen') { await rm(pfad, { force: true }); return; }
+    if (e.nachher === 'loeschen') {
+      await rm(pfad, { force: true });
+      return;
+    }
     const teile = rel.split(sep);
-    const ziel = person ? join(this.pfad, ...teile.slice(0, person.ebene + 1), 'erledigt', ...teile.slice(person.ebene + 1)) : join(this.pfad, 'erledigt', rel);
+    const ziel = person
+      ? join(this.pfad, ...teile.slice(0, person.ebene + 1), 'erledigt', ...teile.slice(person.ebene + 1))
+      : join(this.pfad, 'erledigt', rel);
     await this.verschiebe(pfad, ziel);
   }
 

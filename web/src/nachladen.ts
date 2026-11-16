@@ -56,13 +56,23 @@ export interface Umgebung {
 }
 
 /** Nur das Nötige vom Dokument – die Datei bleibt so auch ohne DOM-Typen übersetzbar (Tests im Server). */
-interface Dokument { visibilityState: string; addEventListener(art: string, f: () => void): void; removeEventListener(art: string, f: () => void): void }
+interface Dokument {
+  visibilityState: string;
+  addEventListener(art: string, f: () => void): void;
+  removeEventListener(art: string, f: () => void): void;
+}
 const dokument = () => (globalThis as { document?: Dokument }).document;
 
 export const browserUmgebung = (): Umgebung => ({
   sichtbar: () => (dokument()?.visibilityState ?? 'visible') === 'visible',
-  beiSichtbarkeit: (f) => { dokument()?.addEventListener('visibilitychange', f); return () => dokument()?.removeEventListener('visibilitychange', f); },
-  spaeter: (ms, f) => { const id = setTimeout(f, ms); return () => clearTimeout(id); },
+  beiSichtbarkeit: (f) => {
+    dokument()?.addEventListener('visibilitychange', f);
+    return () => dokument()?.removeEventListener('visibilitychange', f);
+  },
+  spaeter: (ms, f) => {
+    const id = setTimeout(f, ms);
+    return () => clearTimeout(id);
+  },
   zufall: Math.random,
 });
 
@@ -88,7 +98,13 @@ export function starteNachladen<T>(o: Nachladen<T>): () => void {
   let abbrechen: (() => void) | null = null;
   const plane = () => {
     abbrechen?.();
-    abbrechen = aus || !u.sichtbar() ? null : u.spaeter(von + Math.floor(u.zufall() * (bis - von + 1)), () => { abbrechen = null; void runde(); });
+    abbrechen =
+      aus || !u.sichtbar()
+        ? null
+        : u.spaeter(von + Math.floor(u.zufall() * (bis - von + 1)), () => {
+            abbrechen = null;
+            void runde();
+          });
   };
   async function runde() {
     // Im Hintergrund-Tab nicht fragen; der Wechsel zurück stößt die nächste Runde an.
@@ -100,15 +116,29 @@ export function starteNachladen<T>(o: Nachladen<T>): () => void {
       const s = schritt(zustand, schluessel(wert), o);
       zustand = s.zustand;
       if (s.melden) o.melde(wert);
-    } catch { /* nicht erreichbar oder abgemeldet: nichts melden, weiter im Takt */ } finally {
+    } catch {
+      /* nicht erreichbar oder abgemeldet: nichts melden, weiter im Takt */
+    } finally {
       laeuft = false;
       plane();
     }
   }
   const weg = u.beiSichtbarkeit(() => {
     if (aus) return;
-    if (u.sichtbar()) { abbrechen?.(); abbrechen = null; void runde(); } else { abbrechen?.(); abbrechen = null; }
+    if (u.sichtbar()) {
+      abbrechen?.();
+      abbrechen = null;
+      void runde();
+    } else {
+      abbrechen?.();
+      abbrechen = null;
+    }
   });
   void runde();
-  return () => { aus = true; abbrechen?.(); abbrechen = null; weg(); };
+  return () => {
+    aus = true;
+    abbrechen?.();
+    abbrechen = null;
+    weg();
+  };
 }

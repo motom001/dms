@@ -17,9 +17,42 @@ import { inSprache } from './sprache';
 import { bereicheVon, findeBegriff, type Bereich, type SchwaerzSeite } from './schwaerzen';
 
 const MONATE: Record<string, number> = {
-  januar: 1, jan: 1, january: 1, februar: 2, feb: 2, february: 2, maerz: 3, märz: 3, mrz: 3, march: 3, mar: 3, april: 4, apr: 4,
-  mai: 5, may: 5, juni: 6, jun: 6, june: 6, juli: 7, jul: 7, july: 7, august: 8, aug: 8, september: 9, sep: 9, sept: 9,
-  oktober: 10, okt: 10, october: 10, oct: 10, november: 11, nov: 11, dezember: 12, dez: 12, december: 12, dec: 12,
+  januar: 1,
+  jan: 1,
+  january: 1,
+  februar: 2,
+  feb: 2,
+  february: 2,
+  maerz: 3,
+  märz: 3,
+  mrz: 3,
+  march: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  mai: 5,
+  may: 5,
+  juni: 6,
+  jun: 6,
+  june: 6,
+  juli: 7,
+  jul: 7,
+  july: 7,
+  august: 8,
+  aug: 8,
+  september: 9,
+  sep: 9,
+  sept: 9,
+  oktober: 10,
+  okt: 10,
+  october: 10,
+  oct: 10,
+  november: 11,
+  nov: 11,
+  dezember: 12,
+  dez: 12,
+  december: 12,
+  dec: 12,
 };
 const MONATSNAMEN = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const zwei = (n: number) => String(n).padStart(2, '0');
@@ -44,11 +77,18 @@ export function textformen(f: Pick<Feld, 'typ' | 'beschriftungen'>, w: Wert): st
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(w);
     if (!m) return [w];
     const [j, mo, t] = [Number(m[1]), Number(m[2]), Number(m[3])];
-    return [`${t}. ${MONATSNAMEN[mo - 1]} ${j}`, `${zwei(t)}.${zwei(mo)}.${j}`, `${t}.${mo}.${j}`, w, `${zwei(t)}.${zwei(mo)}.${String(j).slice(2)}`];
+    return [
+      `${t}. ${MONATSNAMEN[mo - 1]} ${j}`,
+      `${zwei(t)}.${zwei(mo)}.${j}`,
+      `${t}.${mo}.${j}`,
+      w,
+      `${zwei(t)}.${zwei(mo)}.${String(j).slice(2)}`,
+    ];
   }
   if (f.typ === 'betrag' && typeof w === 'object' && typeof (w as Betrag).betrag === 'number') return betragTexte((w as Betrag).betrag);
   if (f.typ === 'zeitraum' || f.typ === 'prozent') return textformenNeu(f.typ, w);
-  if (f.typ === 'zahl' && typeof w === 'number') return [...new Set([String(w), String(w).replace('.', ','), ...(Number.isInteger(w) ? [] : betragTexte(w))])];
+  if (f.typ === 'zahl' && typeof w === 'number')
+    return [...new Set([String(w), String(w).replace('.', ','), ...(Number.isInteger(w) ? [] : betragTexte(w))])];
   if (f.typ === 'auswahl' && typeof w === 'string') return [...new Set([w, ...optionTexte(f, w)])].sort((a, b) => b.length - a.length);
   return [String(w)];
 }
@@ -121,7 +161,8 @@ export function zahlAusText(text: string): number | null {
   const m = /-?\d[\d.,' ]*/.exec(text.replace(/ /g, ' '));
   if (!m) return null;
   let s = m[0].replace(/[' ]/g, '').replace(/[.,]$/, '');
-  const komma = s.lastIndexOf(','), punkt = s.lastIndexOf('.');
+  const komma = s.lastIndexOf(','),
+    punkt = s.lastIndexOf('.');
   if (komma > punkt) s = s.replace(/\./g, '').replace(',', '.');
   else if (punkt > komma && komma >= 0) s = s.replace(/,/g, '');
   // „1.234“ ohne Komma: deutscher Tausenderpunkt, wenn genau drei Ziffern folgen.
@@ -130,7 +171,12 @@ export function zahlAusText(text: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const WAEHRUNG: Array<[RegExp, string]> = [[/€|\beur\b|\beuro\b/i, 'EUR'], [/\$|\busd\b/i, 'USD'], [/£|\bgbp\b/i, 'GBP'], [/\bchf\b|\bfr\./i, 'CHF']];
+const WAEHRUNG: Array<[RegExp, string]> = [
+  [/€|\beur\b|\beuro\b/i, 'EUR'],
+  [/\$|\busd\b/i, 'USD'],
+  [/£|\bgbp\b/i, 'GBP'],
+  [/\bchf\b|\bfr\./i, 'CHF'],
+];
 
 /**
  * Text vom Dokument als Wert für ein Feld (#934). Text, Langtext und formatierter Text nehmen ihn, wie er ist (ohne
@@ -141,11 +187,20 @@ export function wertAusText(f: Pick<Feld, 'typ' | 'optionen' | 'beschriftungen' 
   const roh = text.replace(/ /g, ' ').trim();
   if (!roh) return null;
   switch (f.typ) {
-    case 'text': { const s = roh.replace(/\s+/g, ' '); return f.maxLen ? s.slice(0, f.maxLen) : s; }
-    case 'langtext': case 'formatiert': return f.maxLen ? roh.slice(0, f.maxLen) : roh;
-    case 'datum': return datumAusText(roh);
-    case 'zahl': return zahlAusText(roh);
-    case 'prozent': case 'zeitraum': return neuerWertAusText(f.typ, roh);
+    case 'text': {
+      const s = roh.replace(/\s+/g, ' ');
+      return f.maxLen ? s.slice(0, f.maxLen) : s;
+    }
+    case 'langtext':
+    case 'formatiert':
+      return f.maxLen ? roh.slice(0, f.maxLen) : roh;
+    case 'datum':
+      return datumAusText(roh);
+    case 'zahl':
+      return zahlAusText(roh);
+    case 'prozent':
+    case 'zeitraum':
+      return neuerWertAusText(f.typ, roh);
     case 'betrag': {
       const n = zahlAusText(roh);
       if (n === null) return null;
@@ -157,12 +212,26 @@ export function wertAusText(f: Pick<Feld, 'typ' | 'optionen' | 'beschriftungen' 
       const o = (f.optionen ?? []).find((x) => [x, ...optionTexte(f, x)].some((y) => y.toLocaleLowerCase('de-DE') === klein));
       return o ?? null;
     }
-    default: return null;
+    default:
+      return null;
   }
 }
 
 /** Arten mit festem Aufbau (#934): Nummern, Kontodaten, Kontakt, Anschrift in Ziffern – dort hat ein Betreff nichts zu suchen. */
-const FESTE_ARTEN: Erkennungsart[] = ['nummer', 'iban', 'ustid', 'email', 'internet', 'telefon', 'mobil', 'fax', 'plz', 'hausnummer', 'datum', 'betrag'];
+const FESTE_ARTEN: Erkennungsart[] = [
+  'nummer',
+  'iban',
+  'ustid',
+  'email',
+  'internet',
+  'telefon',
+  'mobil',
+  'fax',
+  'plz',
+  'hausnummer',
+  'datum',
+  'betrag',
+];
 
 /**
  * Feld für den Betreff der Post als schwachen Vorschlag (#934, Thomas 08.11.2026): das **erste Feld der Titel-Vorlage**,

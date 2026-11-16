@@ -51,15 +51,30 @@ export function typGegenstand(a: GegenstaendeAnschluss): Gegenstand {
       const jetzt = await a.repo().holeTyp(id);
       // Was in der Fassung fehlt, ist dort „nicht gesetzt“ – ausdrücklich, sonst behielte das Speichern den heutigen Wert.
       await a.aendereTyp(id, {
-        ...d, beschriftungen: d.beschriftungen ?? null, berechtigungen: d.berechtigungen ?? OFFENES_REGELWERK, stempel: d.stempel ?? null, ausDokument: d.ausDokument ?? null,
-        autoZuordnen: !!d.autoZuordnen, teilVon: d.teilVon ?? null, inSuche: d.inSuche ?? null, archiv: d.archiv ?? null,
-        felder: d.felder.map((f) => ({ ...f, beschriftungen: f.beschriftungen ?? null, ausgeblendet: !!f.ausgeblendet, anzeigen: f.anzeigen ?? null })),
+        ...d,
+        beschriftungen: d.beschriftungen ?? null,
+        berechtigungen: d.berechtigungen ?? OFFENES_REGELWERK,
+        stempel: d.stempel ?? null,
+        ausDokument: d.ausDokument ?? null,
+        autoZuordnen: !!d.autoZuordnen,
+        teilVon: d.teilVon ?? null,
+        inSuche: d.inSuche ?? null,
+        archiv: d.archiv ?? null,
+        felder: d.felder.map((f) => ({
+          ...f,
+          beschriftungen: f.beschriftungen ?? null,
+          ausgeblendet: !!f.ausgeblendet,
+          anzeigen: f.anzeigen ?? null,
+        })),
         register: d.register.map((r) => ({ ...r, beschriftungen: r.beschriftungen ?? null, ausgeblendet: !!r.ausgeblendet })),
-        stand: jetzt?.geaendert, bestaetigt: o.bestaetigt, doppelteBestaetigt: o.doppelteBestaetigt,
+        stand: jetzt?.geaendert,
+        bestaetigt: o.bestaetigt,
+        doppelteBestaetigt: o.doppelteBestaetigt,
       });
     },
     async hinweise(id, jetzt, ziel) {
-      const j = jetzt as TypStand, z = ziel as TypStand;
+      const j = jetzt as TypStand,
+        z = ziel as TypStand;
       const repo = a.repo();
       const h: string[] = [];
       const belegung = await repo.belegung(id);
@@ -69,9 +84,10 @@ export function typGegenstand(a: GegenstaendeAnschluss): Gegenstand {
         if (n) h.push(t('meldungen.fassungen.feld-mit-werten', { label: f.label, anzahl: n }));
       }
       const dokumente = await repo.dokumenteJeRegister(id);
-      for (const [key, n] of dokumente) if (n && !z.register.some((r) => r.key === key && r.art === 'dokumente')) {
-        h.push(t('meldungen.fassungen.register-mit-dokumenten', { name: j.register.find((r) => r.key === key)?.name ?? key, anzahl: n }));
-      }
+      for (const [key, n] of dokumente)
+        if (n && !z.register.some((r) => r.key === key && r.art === 'dokumente')) {
+          h.push(t('meldungen.fassungen.register-mit-dokumenten', { name: j.register.find((r) => r.key === key)?.name ?? key, anzahl: n }));
+        }
       const typ = await repo.holeTyp(id);
       if (typ) {
         const n = await a.unpassendMit({ ...typ, ...z } as Mappentyp);
@@ -93,12 +109,22 @@ export function sichtGegenstand(a: GegenstaendeAnschluss): Gegenstand {
   };
   return {
     art: 'sicht',
-    stand: async (id, repo) => { const s = (await repo.listeSichten()).find((x) => x.id === id); return s && { name: s.name, daten: daten(s) }; },
+    stand: async (id, repo) => {
+      const s = (await repo.listeSichten()).find((x) => x.id === id);
+      return s && { name: s.name, daten: daten(s) };
+    },
     alle: async (repo) => (await repo.listeSichten()).map((s) => s.id),
     async stelleHer(id, d) {
       const s = d as SichtStand;
       const jetzt = (await a.repo().listeSichten()).find((x) => x.id === id);
-      await a.aendereSicht(id, { ...s, berechtigungen: s.berechtigungen ?? null, symbol: s.symbol ?? null, beschriftungen: s.beschriftungen ?? null, trefferliste: s.trefferliste ?? null, stand: jetzt?.geaendert });
+      await a.aendereSicht(id, {
+        ...s,
+        berechtigungen: s.berechtigungen ?? null,
+        symbol: s.symbol ?? null,
+        beschriftungen: s.beschriftungen ?? null,
+        trefferliste: s.trefferliste ?? null,
+        stand: jetzt?.geaendert,
+      });
     },
     async hinweise(_id, _jetzt, ziel) {
       const z = ziel as SichtStand;
@@ -113,7 +139,10 @@ export function sichtGegenstand(a: GegenstaendeAnschluss): Gegenstand {
     async kontext() {
       const repo = a.repo();
       const [typen, sichten] = [await repo.listeTypen(), await repo.listeSichten()];
-      return { typName: (x: string) => (x === ALLE_TYPEN ? t('meldungen.fassungen.alle-typen') : typen.find((y) => y.id === x)?.name), sichtName: (x: string) => sichten.find((y) => y.id === x)?.name };
+      return {
+        typName: (x: string) => (x === ALLE_TYPEN ? t('meldungen.fassungen.alle-typen') : typen.find((y) => y.id === x)?.name),
+        sichtName: (x: string) => sichten.find((y) => y.id === x)?.name,
+      };
     },
   };
 }
@@ -124,10 +153,17 @@ export function nummernkreisGegenstand(a: GegenstaendeAnschluss): Gegenstand {
     art: 'nummernkreis',
     stand: async (id, repo) => {
       const k = (await repo.listeNummernkreise()).find((x) => x.schluessel === id);
-      return k && { name: k.name, daten: { schluessel: k.schluessel, name: k.name, muster: k.muster, start: k.start } satisfies NummernkreisStand };
+      return (
+        k && {
+          name: k.name,
+          daten: { schluessel: k.schluessel, name: k.name, muster: k.muster, start: k.start } satisfies NummernkreisStand,
+        }
+      );
     },
     alle: async (repo) => (await repo.listeNummernkreise()).map((k) => k.schluessel),
-    async stelleHer(id, d, o) { await a.speichereNummernkreis({ ...(d as NummernkreisStand), schluessel: id, neu: false }, von(o)); },
+    async stelleHer(id, d, o) {
+      await a.speichereNummernkreis({ ...(d as NummernkreisStand), schluessel: id, neu: false }, von(o));
+    },
     async hinweise(_id, jetzt, ziel) {
       return (jetzt as NummernkreisStand).muster !== (ziel as NummernkreisStand).muster ? [t('meldungen.fassungen.muster-kuenftig')] : [];
     },
@@ -144,6 +180,8 @@ export function stempelGegenstand(a: GegenstaendeAnschluss): Gegenstand {
       return { name: v.name, daten: ohne(v, 'id', 'umgestellt') satisfies StempelStand };
     },
     alle: async () => (await a.stempelVorlagen()).map((v) => v.id),
-    async stelleHer(id, d, o) { await a.speichereStempelVorlage(id, { ...(d as StempelStand) }, von(o)); },
+    async stelleHer(id, d, o) {
+      await a.speichereStempelVorlage(id, { ...(d as StempelStand) }, von(o));
+    },
   };
 }

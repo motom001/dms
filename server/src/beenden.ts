@@ -11,7 +11,10 @@
 /** Gesamtfrist für das Beenden (#1340): unter den 8 s des Hauptprozesses (#1328) und den 10 s von `docker stop`. */
 export const BEENDEN_FRIST_MS = 7_000;
 
-export interface Stoppschritt { name: string; f: () => unknown }
+export interface Stoppschritt {
+  name: string;
+  f: () => unknown;
+}
 
 interface BeendenOptionen {
   log: { error(text: string, kontext?: Record<string, unknown>): void; warn(text: string, kontext?: Record<string, unknown>): void };
@@ -25,7 +28,12 @@ export async function beendeGeordnet(schritte: Stoppschritt[], o: BeendenOptione
   let gescheitert = 0;
   let aktuell = 0;
   let vorbei = false;
-  const ende = (code: number) => { if (vorbei) return; vorbei = true; clearTimeout(uhr); o.ende(code); };
+  const ende = (code: number) => {
+    if (vorbei) return;
+    vorbei = true;
+    clearTimeout(uhr);
+    o.ende(code);
+  };
   // Nicht unref: Die Uhr hält den Prozess wach, falls ein hängender Schritt sonst nichts mehr zu tun hätte.
   const uhr = setTimeout(() => {
     o.log.warn(`Beenden: nach ${frist / 1000} s noch nicht fertig – hängt bei „${schritte[aktuell]?.name ?? '?'}“, Prozess wird beendet`, {
@@ -35,7 +43,12 @@ export async function beendeGeordnet(schritte: Stoppschritt[], o: BeendenOptione
   }, frist);
   for (; aktuell < schritte.length && !vorbei; aktuell++) {
     const s = schritte[aktuell];
-    try { await s.f(); } catch (e) { gescheitert++; o.log.error(`Beenden: ${s.name} fehlgeschlagen`, { fehler: (e as Error).message }); }
+    try {
+      await s.f();
+    } catch (e) {
+      gescheitert++;
+      o.log.error(`Beenden: ${s.name} fehlgeschlagen`, { fehler: (e as Error).message });
+    }
   }
   ende(gescheitert ? 1 : 0);
 }

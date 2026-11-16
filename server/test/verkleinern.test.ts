@@ -24,7 +24,8 @@ import { eigeneDatenbank } from './hilfe-db';
 
 const ich = { id: '00000000-0000-4000-8000-000000000001', name: 'Anna Beispiel', email: 'anna@example.org' };
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));
-const alsPuffer = async (x: Buffer | NodeJS.ReadableStream) => (Buffer.isBuffer(x) ? x : Buffer.concat(await (x as unknown as { toArray(): Promise<Buffer[]> }).toArray()));
+const alsPuffer = async (x: Buffer | NodeJS.ReadableStream) =>
+  Buffer.isBuffer(x) ? x : Buffer.concat(await (x as unknown as { toArray(): Promise<Buffer[]> }).toArray());
 
 /** Text mit pdftotext (poppler), wie ihn auch die Volltextsuche liest. */
 async function pdftext(pdf: Buffer): Promise<string> {
@@ -32,7 +33,9 @@ async function pdftext(pdf: Buffer): Promise<string> {
   try {
     await writeFile(join(dir, 'a.pdf'), pdf);
     return await new Promise((ok, f) => execFile('pdftotext', ['-layout', join(dir, 'a.pdf'), '-'], (e, out) => (e ? f(e) : ok(out))));
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 let gross: Buffer;
@@ -57,7 +60,12 @@ describe('Bausteine (#393)', () => {
 
   it('Inhaltsstrom: cm und Do werden erkannt, Zeichenketten und eingebettete Bilder übersprungen', () => {
     const ops: string[] = [];
-    operatoren(Buffer.from('q 100 0 0 200 10 20 cm (Klammer \\) (x) cm Do) Tj /Im1 Do Q BI /W 2 /H 1 ID \x00Do\xff EI q /OC <</A 1>> BDC /Im#202 Do'), (op, a) => ops.push(op === 'BDC' ? op : `${op}:${a.join(',')}`));
+    operatoren(
+      Buffer.from(
+        'q 100 0 0 200 10 20 cm (Klammer \\) (x) cm Do) Tj /Im1 Do Q BI /W 2 /H 1 ID \x00Do\xff EI q /OC <</A 1>> BDC /Im#202 Do',
+      ),
+      (op, a) => ops.push(op === 'BDC' ? op : `${op}:${a.join(',')}`),
+    );
     assert.deepEqual(ops, ['q:', 'cm:100,0,0,200,10,20', 'Tj:', 'Do:Im1', 'Q:', 'q:', 'BDC', 'Do:Im 2']);
   });
 
@@ -79,7 +87,11 @@ describe('Verkleinern (#393)', () => {
   it('Größe sinkt deutlich, Seitenzahl gleich, Text extrahierbar, Bild in Ziel-Auflösung', async () => {
     const vorher = await pdftext(gross);
     assert.match(vorher, /Rechnung Nummer 4711/);
-    for (const [stufe, px] of [['bildschirm', 827], ['standard', 1240], ['druck', 2481]] as const) {
+    for (const [stufe, px] of [
+      ['bildschirm', 827],
+      ['standard', 1240],
+      ['druck', 2481],
+    ] as const) {
       const r = await verkleinere(gross, stufe);
       assert.equal(r.lohnt, true, stufe);
       assert.ok(r.nachher < r.vorher * (stufe === 'druck' ? 0.7 : 0.25), `${stufe}: ${r.vorher} → ${r.nachher}`);
@@ -100,15 +112,36 @@ describe('Verkleinern (#393)', () => {
     const [b, h] = [2480, 3508];
     const px = Buffer.alloc(b * h);
     let s = 1;
-    for (let i = 0; i < px.length; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; px[i] = 200 + ((s >> 16) & 31) - ((i % b) < 400 ? 150 : 0); }
+    for (let i = 0; i < px.length; i++) {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      px[i] = 200 + ((s >> 16) & 31) - (i % b < 400 ? 150 : 0);
+    }
     const seite = quelle.addPage([595.28, 841.89]);
-    const name = seite.node.newXObject('Im', quelle.context.register(quelle.context.flateStream(px, { Type: 'XObject', Subtype: 'Image', Width: b, Height: h, ColorSpace: 'DeviceGray', BitsPerComponent: 8 })));
-    seite.node.set(PDFName.of('Contents'), quelle.context.register(quelle.context.flateStream(`q 595.28 0 0 841.89 0 0 cm ${name.toString()} Do Q`)));
+    const name = seite.node.newXObject(
+      'Im',
+      quelle.context.register(
+        quelle.context.flateStream(px, {
+          Type: 'XObject',
+          Subtype: 'Image',
+          Width: b,
+          Height: h,
+          ColorSpace: 'DeviceGray',
+          BitsPerComponent: 8,
+        }),
+      ),
+    );
+    seite.node.set(
+      PDFName.of('Contents'),
+      quelle.context.register(quelle.context.flateStream(`q 595.28 0 0 841.89 0 0 cm ${name.toString()} Do Q`)),
+    );
     const g = Buffer.from(await quelle.save());
     const r = await verkleinere(g, 'standard');
     assert.ok(r.lohnt && r.nachher < g.length / 2);
     const doc = await PDFDocument.load(r.inhalt);
-    const bilder = doc.context.enumerateIndirectObjects().map(([, o]) => o).filter((o): o is PDFRawStream => o instanceof PDFRawStream && o.dict.get(PDFName.of('Subtype')) === PDFName.of('Image'));
+    const bilder = doc.context
+      .enumerateIndirectObjects()
+      .map(([, o]) => o)
+      .filter((o): o is PDFRawStream => o instanceof PDFRawStream && o.dict.get(PDFName.of('Subtype')) === PDFName.of('Image'));
     assert.equal(bilder.length, 1);
     const k = jpegMasse(Buffer.from(bilder[0].getContents()))!.komponenten;
     assert.equal(bilder[0].dict.get(PDFName.of('ColorSpace')), PDFName.of(k === 1 ? 'DeviceGray' : 'DeviceRGB'));
@@ -135,24 +168,40 @@ async function aufbau(versionierung = true) {
   const dateien = speicherDateien();
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen });
-  const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
-    { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
-  ] });
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
+      { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
+    ],
+  });
   const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom' } }, null);
   const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, gross, null);
   const mails: Array<{ an: string; o?: MailOptionen }> = [];
-  const mailer: Mailer = { async sende(an, _b, _t, o) { mails.push({ an, o }); } };
+  const mailer: Mailer = {
+    async sende(an, _b, _t, o) {
+      mails.push({ an, o });
+    },
+  };
   const ereignisse: string[] = [];
   const melde = d.kern.ereignis.bind(d.kern);
-  d.kern.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
+  d.kern.ereignis = async (art, ...rest) => {
+    ereignisse.push(art);
+    return melde(art, ...rest);
+  };
   return { d, t, m, dokument, mails, mailer, ereignisse };
 }
 
 describe('Am Dokument (#393)', () => {
   it('neue Version, Volltext bleibt, Historie, kein Ereignis dokument.hochgeladen', async () => {
     const { d, m, dokument, ereignisse } = await aufbau();
-    await (d as unknown as { repo: { ocrSetze(id: string, e: object): Promise<void> } }).repo.ocrSetze(dokument.id, { stand: 'fertig', text: 'erkannter Text', seiten: 2, info: 'Texterkennung' });
+    await (d as unknown as { repo: { ocrSetze(id: string, e: object): Promise<void> } }).repo.ocrSetze(dokument.id, {
+      stand: 'fertig',
+      text: 'erkannter Text',
+      seiten: 2,
+      info: 'Texterkennung',
+    });
     const v = await d.pdfVerkleinern.verkleinernVorschau(dokument.id);
     assert.equal(v.versioniert, true);
     assert.equal(v.groesse, gross.length);
@@ -188,18 +237,28 @@ describe('Am Dokument (#393)', () => {
 
   it('Sammelaktion: Liste nach Größe mit Schätzung, Hintergrundauftrag, ohne Original', async () => {
     const { d, m, dokument } = await aufbau();
-    const klein = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf', typ: 'application/pdf' }, await textPdf(), null)).dokument;
+    const klein = (
+      await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf', typ: 'application/pdf' }, await textPdf(), null)
+    ).dokument;
     const l = await d.pdfVerkleinern.grosseDokumente({ ab: 1 });
-    assert.deepEqual(l.eintraege.map((x) => x.id), [dokument.id], 'nur große PDFs');
+    assert.deepEqual(
+      l.eintraege.map((x) => x.id),
+      [dokument.id],
+      'nur große PDFs',
+    );
     assert.equal(l.eintraege[0].mappeTitel, 'Strom');
     assert.ok(l.eintraege[0].lohnt && l.geschaetzteErsparnis > gross.length / 2);
     assert.equal((await d.pdfVerkleinern.grosseDokumente({ ab: 0 })).eintraege.at(-1)!.id, klein.id, 'größte zuerst');
-    const a = d.pdfVerkleinern.verkleinereViele({ ids: [dokument.id, klein.id], stufe: 'bildschirm', ohneOriginal: true }, { id: ich.id, email: ich.email });
+    const a = d.pdfVerkleinern.verkleinereViele(
+      { ids: [dokument.id, klein.id], stufe: 'bildschirm', ohneOriginal: true },
+      { id: ich.id, email: ich.email },
+    );
     assert.equal(a.phasen[0].einheit, 'Dokumente');
     const fertig = (await d.auftraege.warte())!;
     assert.equal(fertig.status, 'fertig');
     const e = fertig.ergebnis as { verkleinert: number; unveraendert: number; vorher: number; nachher: number };
-    assert.equal(e.verkleinert, 1); assert.equal(e.unveraendert, 1);
+    assert.equal(e.verkleinert, 1);
+    assert.equal(e.unveraendert, 1);
     const neu = await d.dokumente.holeDokument(dokument.id);
     assert.equal(neu.version, 2);
     assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere.length, 0, 'ohne Original: Version 1 ist weg');
@@ -216,24 +275,58 @@ describe('Am Dokument (#393)', () => {
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'dokument_hochgeladen' && x.daten.dokument === 'neu.pdf')!;
     assert.match(String(h.daten.verkleinert), /^automatisch von .* \(Standard\)$/);
     // Im DMS Bearbeitetes wird nicht automatisch verkleinert; kleine Dateien auch nicht.
-    const b = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf', herkunft: 'bearbeitet' }, gross, null);
+    const b = await d.dokumente.ladeHoch(
+      m.id,
+      { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf', herkunft: 'bearbeitet' },
+      gross,
+      null,
+    );
     assert.equal(b.dokument.groesse, gross.length);
   });
 });
 
 describe('Ausgabe „verkleinert“ (#393)', () => {
   it('fuerAusgabe: erst verkleinern, dann stempeln; Kopie, kein PDF bleibt', async () => {
-    const r = await fuerAusgabe({ name: 'scan.pdf', mime: 'application/pdf', inhalt: gross }, { verkleinern: 'standard' }, { benutzer: 'A', mappe: 'M' });
+    const r = await fuerAusgabe(
+      { name: 'scan.pdf', mime: 'application/pdf', inhalt: gross },
+      { verkleinern: 'standard' },
+      { benutzer: 'A', mappe: 'M' },
+    );
     assert.ok(r.verkleinert && r.inhalt.length < gross.length / 4);
-    const s = await fuerAusgabe({ name: 'scan.pdf', mime: 'application/pdf', inhalt: gross }, {
-      verkleinern: 'standard', stempel: { stempel: { text: 'KOPIE', lage: 'kopf', deckkraft: 0.3, seiten: 'alle', tinte: false, drehung: 0, x: 0.5, y: 0.5, farbe: 'rot', groesse: 100 }, empfaenger: '', vorlage: null, pflicht: false },
-    }, { benutzer: 'A', mappe: 'M' });
+    const s = await fuerAusgabe(
+      { name: 'scan.pdf', mime: 'application/pdf', inhalt: gross },
+      {
+        verkleinern: 'standard',
+        stempel: {
+          stempel: {
+            text: 'KOPIE',
+            lage: 'kopf',
+            deckkraft: 0.3,
+            seiten: 'alle',
+            tinte: false,
+            drehung: 0,
+            x: 0.5,
+            y: 0.5,
+            farbe: 'rot',
+            groesse: 100,
+          },
+          empfaenger: '',
+          vorlage: null,
+          pflicht: false,
+        },
+      },
+      { benutzer: 'A', mappe: 'M' },
+    );
     assert.equal(s.gestempelt, true);
     assert.ok(s.inhalt.length < gross.length / 4, 'gestempelt bleibt es klein');
     assert.match(await pdftext(s.inhalt), /KOPIE/);
     assert.match(await pdftext(s.inhalt), /Rechnung Nummer 4711/);
     assert.equal(weitergabeWas([s]), `mit Stempel „KOPIE“, verkleinert (${mb(gross.length)} → ${mb(s.verkleinert!.nachher)})`);
-    const txt = await fuerAusgabe({ name: 'a.txt', mime: 'text/plain', inhalt: Buffer.from('x') }, { verkleinern: 'standard' }, { benutzer: 'A', mappe: 'M' });
+    const txt = await fuerAusgabe(
+      { name: 'a.txt', mime: 'text/plain', inhalt: Buffer.from('x') },
+      { verkleinern: 'standard' },
+      { benutzer: 'A', mappe: 'M' },
+    );
     assert.ok(txt.unveraendert && !txt.verkleinert);
   });
 
@@ -247,18 +340,32 @@ describe('Ausgabe „verkleinert“ (#393)', () => {
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
     assert.match(String(h.daten.text), /^verkleinert \(.* MB → .* KB\) \(heruntergeladen: scan\.pdf\)$/);
 
-    await d.ausgangEmail.versendeMappe(m.id, { an: 'steuer@example.org', betreff: 'Scan', dokumente: [dokument.id], verkleinern: 'standard' }, ich, mailer);
+    await d.ausgangEmail.versendeMappe(
+      m.id,
+      { an: 'steuer@example.org', betreff: 'Scan', dokumente: [dokument.id], verkleinern: 'standard' },
+      ich,
+      mailer,
+    );
     const anhang = mails[0].o!.anhaenge![0].inhalt as Buffer;
     assert.ok(anhang.length < gross.length / 4);
     assert.match(await pdftext(anhang), /Rechnung Nummer 4711/);
     assert.match(String((await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'email')!.daten.text), /, verkleinert \(/);
 
     const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
-    const ex = await d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], verkleinern: 'standard' }, z);
+    const ex = await d.ausgangExport.exportiere(
+      { id: ich.id, rolle: 'admin', name: ich.name },
+      { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], verkleinern: 'standard' },
+      z,
+    );
     assert.ok(ex.groesse < gross.length / 2, 'ZIP mit verkleinertem PDF');
     assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(gross), 'Original weiter unverändert');
     // Kein PDF und ohne Stempel: beim einzelnen Herunterladen 422.
-    const { dokument: txt } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('hallo'), null);
+    const { dokument: txt } = await d.dokumente.ladeHoch(
+      m.id,
+      { register: 'dokumente', name: 'a.txt', typ: 'text/plain' },
+      Buffer.from('hallo'),
+      null,
+    );
     await assert.rejects(d.ausgang.dokumentFuerAusgabe(txt.id, { verkleinern: 'standard', ich }), status(422, /kein PDF/));
   });
 });
@@ -280,16 +387,26 @@ async function pgRepo(): Promise<Repo> {
 }
 
 describe('Große PDFs in PostgreSQL (#393)', { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  after(async () => { for (const s of offen.splice(0)) await s.end(); });
+  after(async () => {
+    for (const s of offen.splice(0)) await s.end();
+  });
   it('grossePdfs nach Größe, Sammelaktion ohne Original entfernt die alte Version', async () => {
     const d = new Dienst(await pgRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
-      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
-    ] });
+    const t = await d.mappentypen.legeTypAn({
+      name: 'Vertrag',
+      felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+      register: [
+        { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
+        { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
+      ],
+    });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Strom' } }, null);
     const g = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf' }, gross, null)).dokument;
     const k = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'text.pdf' }, await textPdf(), null)).dokument;
-    assert.deepEqual((await d.pdfVerkleinern.grosseDokumente({ ab: 0 })).eintraege.map((x) => x.id), [g.id, k.id]);
+    assert.deepEqual(
+      (await d.pdfVerkleinern.grosseDokumente({ ab: 0 })).eintraege.map((x) => x.id),
+      [g.id, k.id],
+    );
     d.pdfVerkleinern.verkleinereViele({ ids: [g.id], ohneOriginal: true }, { id: null, email: 'admin@example.org' });
     assert.equal((await d.auftraege.warte())!.status, 'fertig');
     const neu = await d.dokumente.holeDokument(g.id);

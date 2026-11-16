@@ -11,7 +11,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location ??= new URL('http://127.0.0.1/');
 g.localStorage ??= speicher();
@@ -19,7 +28,14 @@ g.sessionStorage ??= speicher();
 g.addEventListener ??= () => {};
 g.removeEventListener ??= () => {};
 g.window ??= globalThis;
-g.document ??= { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document ??= {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
@@ -34,13 +50,25 @@ describe('Baustein KopfSuche (#1218)', () => {
     assert.match(html, /^<div class="[^"]*" role="search" aria-label="In deiner Ablage suchen" data-anker="startseite.suche">/);
     assert.match(html, /<input [^>]*type="search"[^>]*placeholder="Suchen in deiner Ablage …"[^>]*aria-keyshortcuts="\/"/);
     assert.match(html, /<kbd [^>]*aria-hidden="true">\/<\/kbd>/);
-    assert.match(html, /aria-label="Suchen"[^>]*aria-expanded="false"|aria-expanded="false"[^>]*aria-label="Suchen"/, 'Lupe (am Handy) mit Zustand');
+    assert.match(
+      html,
+      /aria-label="Suchen"[^>]*aria-expanded="false"|aria-expanded="false"[^>]*aria-label="Suchen"/,
+      'Lupe (am Handy) mit Zustand',
+    );
     assert.doesNotMatch(html, /Bereich entfernen/);
     assert.doesNotMatch(html, /Suche leeren/);
   });
 
   it('in einer Ansicht: Chip mit „×“, „Suchen in ▾“ zu; mit Text das Leeren statt „/“', () => {
-    const html = renderToStaticMarkup(h(KopfSuche, { ...GRUND, wert: 'Haus', bereich: { text: 'in: Verträge', weg: nichts }, suchenIn: { text: 'Suchen in', inhalt: 'x' }, tastenkuerzel: false }));
+    const html = renderToStaticMarkup(
+      h(KopfSuche, {
+        ...GRUND,
+        wert: 'Haus',
+        bereich: { text: 'in: Verträge', weg: nichts },
+        suchenIn: { text: 'Suchen in', inhalt: 'x' },
+        tastenkuerzel: false,
+      }),
+    );
     assert.match(html, />in: Verträge<\/span>/);
     assert.match(html, /aria-label="Bereich entfernen, in allem suchen"/);
     assert.match(html, /aria-label="Suche leeren"/);

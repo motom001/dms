@@ -47,20 +47,46 @@ export function Schalter({ an, setze, beschriftung, hinweis, beschriftungVerberg
     const r = setze(!an);
     if (!r || typeof (r as Promise<unknown>).then !== 'function') return;
     setLaeuft(true);
-    try { await r; } catch (x) { setFehler(fehlerText(x)); } finally { setLaeuft(false); }
+    try {
+      await r;
+    } catch (x) {
+      setFehler(fehlerText(x));
+    } finally {
+      setLaeuft(false);
+    }
   }
 
   return (
     <div className={klassen(s.feld, className)}>
-      <button id={id} type="button" role="switch" aria-checked={an} aria-busy={laeuft || undefined} disabled={gesperrt}
+      <button
+        id={id}
+        type="button"
+        role="switch"
+        aria-checked={an}
+        aria-busy={laeuft || undefined}
+        disabled={gesperrt}
         aria-describedby={klassen(hinweis ? hinweisId : null, fehler ? fehlerId : null) || undefined}
-        className={klassen(s.schalter, an && s.an)} onClick={() => void klick()} data-schalter={an ? 'an' : 'aus'}>
-        <span className={s.spur} aria-hidden="true"><span className={s.griff} /></span>
+        className={klassen(s.schalter, an && s.an)}
+        onClick={() => void klick()}
+        data-schalter={an ? 'an' : 'aus'}>
+        <span className={s.spur} aria-hidden="true">
+          <span className={s.griff} />
+        </span>
         <span className={beschriftungVerbergen ? s.sr : s.beschriftung}>{beschriftung}</span>
-        <span className={s.zustand} aria-hidden="true">{an ? t('oberflaeche.schalter.an') : t('oberflaeche.schalter.aus')}</span>
+        <span className={s.zustand} aria-hidden="true">
+          {an ? t('oberflaeche.schalter.an') : t('oberflaeche.schalter.aus')}
+        </span>
       </button>
-      {hinweis && <small id={hinweisId} className={s.hinweis}>{hinweis}</small>}
-      {fehler && <span id={fehlerId} className={s.fehler} role="alert">{fehler}</span>}
+      {hinweis && (
+        <small id={hinweisId} className={s.hinweis}>
+          {hinweis}
+        </small>
+      )}
+      {fehler && (
+        <span id={fehlerId} className={s.fehler} role="alert">
+          {fehler}
+        </span>
+      )}
     </div>
   );
 }

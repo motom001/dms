@@ -20,7 +20,10 @@ import { t } from './texte';
 
 export const ZEITRAUM_EINHEITEN = ['tage', 'wochen', 'monate', 'jahre'] as const;
 export type Zeitraumeinheit = (typeof ZEITRAUM_EINHEITEN)[number];
-export interface Zeitraum { anzahl: number; einheit: Zeitraumeinheit }
+export interface Zeitraum {
+  anzahl: number;
+  einheit: Zeitraumeinheit;
+}
 /** Größte Anzahl eines Zeitraums (9999 Jahre reichen für jede Frist). */
 export const ZEITRAUM_ANZAHL_MAX = 9999;
 
@@ -29,7 +32,8 @@ export const TAGE_JE_EINHEIT: Readonly<Record<Zeitraumeinheit, number>> = { tage
 const ISO_BUCHSTABE: Readonly<Record<Zeitraumeinheit, string>> = { tage: 'D', wochen: 'W', monate: 'M', jahre: 'Y' };
 const AUS_ISO: Readonly<Record<string, Zeitraumeinheit>> = { D: 'tage', W: 'wochen', M: 'monate', Y: 'jahre' };
 
-export const istZeitraumeinheit = (e: unknown): e is Zeitraumeinheit => typeof e === 'string' && (ZEITRAUM_EINHEITEN as readonly string[]).includes(e);
+export const istZeitraumeinheit = (e: unknown): e is Zeitraumeinheit =>
+  typeof e === 'string' && (ZEITRAUM_EINHEITEN as readonly string[]).includes(e);
 /** Sieht der Wert aus wie ein Zeitraum (Objekt mit Einheit)? Ob er gültig ist, sagt `istZeitraum`. */
 export const hatZeitraumform = (v: unknown): v is { anzahl?: unknown; einheit?: unknown } =>
   !!v && typeof v === 'object' && !Array.isArray(v) && 'einheit' in v;
@@ -94,7 +98,10 @@ export function einheitText(e: Zeitraumeinheit, anzahl: number = 2): string {
 export function leseProzent(v: unknown): number | null {
   if (v == null) return null;
   if (typeof v === 'number') return v;
-  const s = String(v).replace(/[\s\u00a0\u202f]+/g, '').replace(/\u2212/g, '-').replace(/%$/, '');
+  const s = String(v)
+    .replace(/[\s\u00a0\u202f]+/g, '')
+    .replace(/\u2212/g, '-')
+    .replace(/%$/, '');
   if (s === '') return null;
   const norm = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s;
   return /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(norm) ? Number(norm) : NaN;

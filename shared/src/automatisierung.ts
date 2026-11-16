@@ -20,9 +20,24 @@
  * sie wird dann rot und angehalten, die Arbeit im DMS blockiert das nie („Bearbeiten geht vor Automatisierung“).
  */
 import { EREIGNISKATALOG, KATALOG_ARTEN, wennFaehig, type BetriebWenn, type KatalogArt } from './ereignisse';
-import { bereinigeBetrieb, betriebKurz, betriebPlatzhalter, betriebProbleme, istBetrieb, type WennBetrieb } from './automatisierung-werkbank';
+import {
+  bereinigeBetrieb,
+  betriebKurz,
+  betriebPlatzhalter,
+  betriebProbleme,
+  istBetrieb,
+  type WennBetrieb,
+} from './automatisierung-werkbank';
 import { aufrufKurz, aufrufPlatzhalter, bereinigeAufruf, istAufruf, type WennAufruf } from './automatisierung-aufruf';
-import { aussenKurz, aussenProbleme, bereinigeAussen, istAussenKarte, type AussenZiel, type DannEmail, type DannUrl } from './automatisierung-aussen';
+import {
+  aussenKurz,
+  aussenProbleme,
+  bereinigeAussen,
+  istAussenKarte,
+  type AussenZiel,
+  type DannEmail,
+  type DannUrl,
+} from './automatisierung-aussen';
 import { VORLAUF_EINHEITEN, vorlaufText, type VorlaufEinheit } from './fristen';
 // „Datum erreicht“ (#724): seit #671 in fristen.ts (dort passt es hin, und diese Datei bleibt unter 400 Zeilen).
 export { erreichteDaten, vorlaufText } from './fristen';
@@ -78,7 +93,10 @@ export const REIHENFOLGE = { min: 1, max: 99, eigen: 50, dms: 10, paket: 30 } as
  * „Datum erreicht“ (#724).
  */
 export const WENN_EREIGNISSE = KATALOG_ARTEN.filter((a) => wennFaehig(a) && a !== 'frist.erreicht') as Array<WennEreignis | BetriebWenn>;
-export type WennEreignis = Exclude<{ [K in KatalogArt]: (typeof EREIGNISKATALOG)[K]['gruppe'] extends 'zaehler' | 'betrieb' | 'auftrag' ? never : K }[KatalogArt], 'frist.erreicht'>;
+export type WennEreignis = Exclude<
+  { [K in KatalogArt]: (typeof EREIGNISKATALOG)[K]['gruppe'] extends 'zaehler' | 'betrieb' | 'auftrag' ? never : K }[KatalogArt],
+  'frist.erreicht'
+>;
 
 export type WennKarte =
   /**
@@ -102,7 +120,15 @@ export type WennKarte =
    * Benutzer-Mappe, Platzhalter {benutzer}. `profilzeit`: Uhrzeit, Wochentage und Feiertage aus dem Profil des
    * Benutzers (wie die Tägliche Zusammenfassung), sonst die Werte der Karte.
    */
-  | { art: 'zeitplan'; uhrzeit: string; tage: number[]; feiertage: boolean; jeBenutzer: boolean; rolle?: string | null; profilzeit?: boolean };
+  | {
+      art: 'zeitplan';
+      uhrzeit: string;
+      tage: number[];
+      feiertage: boolean;
+      jeBenutzer: boolean;
+      rolle?: string | null;
+      profilzeit?: boolean;
+    };
 
 /** Wochentage 1 = Montag … 7 = Sonntag (wie im Profil). */
 export const WOCHENTAGE = [1, 2, 3, 4, 5, 6, 7] as const;
@@ -122,7 +148,9 @@ export const PERSONEN_IM_EREIGNIS: Partial<Record<string, string[]>> = {
   'benutzer.abwesenheit_gesetzt': ['vertreter', 'benutzer'],
   'benutzer.abwesenheit_beendet': ['vertreter', 'benutzer'],
   'benutzer.vertretung_zurueckgezogen': ['vertreter', 'benutzer'],
-  'benutzer.gesperrt': ['benutzer'], 'benutzer.deaktiviert': ['benutzer'], 'benutzer.aktiviert': ['benutzer'],
+  'benutzer.gesperrt': ['benutzer'],
+  'benutzer.deaktiviert': ['benutzer'],
+  'benutzer.aktiviert': ['benutzer'],
   'favorit.neu': ['benutzer'],
 };
 
@@ -135,7 +163,10 @@ export type UndKarte =
   | { art: 'favorit'; von: Empfaenger; nicht?: boolean }
   | { art: 'gruppe'; modus: 'alle' | 'eine'; karten: UndKarte[]; nicht?: boolean };
 
-export interface UndBereich { modus: 'alle' | 'eine'; karten: UndKarte[] }
+export interface UndBereich {
+  modus: 'alle' | 'eine';
+  karten: UndKarte[];
+}
 
 /** Dann-Karten; die Liste wächst mit #676 (Feld, Aufgabe) und Stufe 2 (#677, #671). */
 export type DannKarte =
@@ -161,19 +192,41 @@ export type DannKarte =
    * Mitgelieferte Automatisierungen rufen nur ihr eigenes Paket, selbst angelegte nur Pakete, die das Ereignis abonnieren.
    * Die Karte gibt dem Paket keine Rechte – es arbeitet mit seinen eigenen.
    */
-  | { id: string; art: 'paket'; paket: string; aufgabe?: string | null; /** Werte einer Karte aus dem Paket (#680). */ werte?: Record<string, string | number | boolean> }
+  | {
+      id: string;
+      art: 'paket';
+      paket: string;
+      aufgabe?: string | null;
+      /** Werte einer Karte aus dem Paket (#680). */ werte?: Record<string, string | number | boolean>;
+    }
   /** „Sicherung anstoßen“ (#677): eine neue Sicherung – Ergebnis nur „angestoßen“ oder „läuft schon“. */
   | { id: string; art: 'sicherung' }
   /** Nach außen (#671): „URL aufrufen“ (freigegebenes Ziel, Inhaltsstufe, signiert) und „E-Mail senden“ – über den Ausgangskorb. */
-  | DannUrl | DannEmail;
+  | DannUrl
+  | DannEmail;
 export type DannArt = DannKarte['art'];
-export const DANN_ARTEN: DannArt[] = ['feld', 'aufgabe', 'zusammenfassung', 'favoriten', 'anmeldeschutz', 'paket', 'sicherung', 'url', 'email', 'stopp'];
+export const DANN_ARTEN: DannArt[] = [
+  'feld',
+  'aufgabe',
+  'zusammenfassung',
+  'favoriten',
+  'anmeldeschutz',
+  'paket',
+  'sicherung',
+  'url',
+  'email',
+  'stopp',
+];
 
 export type Herkunft = 'eigen' | 'dms' | 'paket';
 
 /** Warum eine Automatisierung angehalten ist (getrennt von „von Hand aus“). */
 /** `ziel` (#671): Eine Zustellung nach außen ist dauerhaft gescheitert (Ziel nicht erreichbar, abgelehnt, nicht mehr freigegeben). */
-export interface Angehalten { grund: 'fehlerhaft' | 'bremse' | 'wiederherstellung' | 'ziel'; text: string; zeit: string }
+export interface Angehalten {
+  grund: 'fehlerhaft' | 'bremse' | 'wiederherstellung' | 'ziel';
+  text: string;
+  zeit: string;
+}
 
 export interface AutomatisierungDaten {
   name: string;
@@ -195,34 +248,56 @@ export interface Automatisierung extends AutomatisierungDaten {
   paketId?: string | null;
   /** Fortlaufende Fassung (Änderungsverlauf, Schutz gegen gleichzeitiges Speichern). */
   version: number;
-  erstellt: string; erstelltVon: string | null;
-  geaendert: string; geaendertVon: string | null;
+  erstellt: string;
+  erstelltVon: string | null;
+  geaendert: string;
+  geaendertVon: string | null;
 }
 
 export type LaufZustand = 'laeuft' | 'abgeschlossen' | 'unzutreffend' | 'fehlgeschlagen' | 'uebersprungen' | 'wiederholt';
 export type SchrittZustand = 'offen' | 'laeuft' | 'ok' | 'nein' | 'fehler' | 'uebersprungen';
-export interface Schritt { teil: 'wenn' | 'und' | 'dann' | 'sonst'; karte?: string; zustand: SchrittZustand; text?: string }
+export interface Schritt {
+  teil: 'wenn' | 'und' | 'dann' | 'sonst';
+  karte?: string;
+  zustand: SchrittZustand;
+  text?: string;
+}
 
 export interface Lauf {
-  id: string; automatisierungId: string; ereignisId: string; art: string;
+  id: string;
+  automatisierungId: string;
+  ereignisId: string;
+  art: string;
   /** Angaben des Ereignisses (nur Ids, Schlüssel, Datum) – zum Wiederholen. */
   daten: Record<string, unknown>;
   mappeId: string | null;
   zustand: LaufZustand;
   /** Trockenlauf: zeigt nur, was passieren würde. Testlauf: von Hand mit einer gewählten Mappe. */
-  trocken: boolean; test: boolean;
+  trocken: boolean;
+  test: boolean;
   schritte: Schritt[];
   fehler: string | null;
-  gestartet: string; beendet: string | null;
+  gestartet: string;
+  beendet: string | null;
   wiederholtVon?: string | null;
   /** Fehlgeschlagen, aber bewusst nicht wiederholt (#707): wer und wann. Bleibt im Verlauf, zählt nicht mehr im Hinweis. */
   nichtWiederholt?: { von: string | null; zeit: string } | null;
 }
 
 /** Ein fehlgeschlagener Lauf für den Hinweis über der Liste (#707). */
-export interface Fehlschlag { id: string; automatisierungId: string; name: string; gestartet: string }
+export interface Fehlschlag {
+  id: string;
+  automatisierungId: string;
+  name: string;
+  gestartet: string;
+}
 
-export interface Fassung { version: number; zeit: string; von: string | null; daten: AutomatisierungDaten & { aktiv: boolean } }
+export interface Fassung {
+  version: number;
+  zeit: string;
+  von: string | null;
+  daten: AutomatisierungDaten & { aktiv: boolean };
+}
 
 /** Für Liste und Editor: Automatisierung mit Kurzform, Problemen und letztem Lauf. */
 export interface AutomatisierungAnsicht extends Automatisierung {
@@ -251,13 +326,25 @@ export interface AutomatisierungAnsicht extends Automatisierung {
  * `zeitplan.ausgefuehrt`; `aufgaben` = Kennungen, die seine mitgelieferten Automatisierungen benutzen.
  */
 /** karten: eigene Dann-Karten des Pakets (#680, `code.karten`, paketkarten.ts). */
-export interface KontextPaket { id: string; name: string; zeitplan: boolean; aufgaben: string[]; karten?: PaketKarte[] }
+export interface KontextPaket {
+  id: string;
+  name: string;
+  zeitplan: boolean;
+  aufgaben: string[];
+  karten?: PaketKarte[];
+}
 
 /** Was eine Prüfung über das DMS wissen muss. */
-export interface Kontextdaten { typen: Mappentyp[]; sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[]; benutzer: Array<{ id: string; name: string; aktiv?: boolean }>; rollen: Array<{ id: string; name: string }>;
+export interface Kontextdaten {
+  typen: Mappentyp[];
+  sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[];
+  benutzer: Array<{ id: string; name: string; aktiv?: boolean }>;
+  rollen: Array<{ id: string; name: string }>;
   /** Installierte Pakete (#1082); fehlt bei älteren Aufrufern. */
   /** Dazu die freigegebenen Ziele nach außen (#671); fehlt = nicht geprüft (z. B. Vorschau beim Installieren eines Pakets). */
-  pakete?: KontextPaket[]; ziele?: AussenZiel[] }
+  pakete?: KontextPaket[];
+  ziele?: AussenZiel[];
+}
 
 /** Passt die Wenn-Karte zur Karte „Paket nach Zeitplan ausführen“ (#1082)? Nur „Zeitplan“, nicht „für jeden Benutzer“. */
 export const zeitplanFuerPaket = (w: WennKarte) => w.art === 'zeitplan' && !w.jeBenutzer;
@@ -274,16 +361,17 @@ export function paketKarteLeer(paket: string, pakete: KontextPaket[] | undefined
 
 /** Mappentyp der Wenn-Karte (null = jeder Typ bzw. Benutzer bei Benutzer-Ereignissen). */
 export function kontextTyp(w: WennKarte, typen: Mappentyp[]): Mappentyp | null {
-  if (w.art === 'zeitplan') return w.jeBenutzer ? typen.find((t) => t.system === 'benutzer') ?? null : null;
+  if (w.art === 'zeitplan') return w.jeBenutzer ? (typen.find((t) => t.system === 'benutzer') ?? null) : null;
   if (istBetrieb(w) || istAufruf(w)) return null;
   if (w.art !== 'datum' && EREIGNISKATALOG[w.art].gruppe === 'benutzer') return typen.find((t) => t.system === 'benutzer') ?? null;
   const id = w.typ;
-  return id ? typen.find((t) => t.id === id) ?? null : null;
+  return id ? (typen.find((t) => t.id === id) ?? null) : null;
 }
 
 /** Schlüssel des Auslösers: gleiche Schlüssel = laufen nacheinander für dasselbe Ereignis. */
 export function ausloeserSchluessel(w: WennKarte): string {
-  if (w.art === 'zeitplan') return `zeitplan|${w.uhrzeit}|${w.tage.join('')}|${w.feiertage ? 'f' : ''}|${w.jeBenutzer ? `b:${w.rolle ?? ''}${w.profilzeit ? ':p' : ''}` : ''}`;
+  if (w.art === 'zeitplan')
+    return `zeitplan|${w.uhrzeit}|${w.tage.join('')}|${w.feiertage ? 'f' : ''}|${w.jeBenutzer ? `b:${w.rolle ?? ''}${w.profilzeit ? ':p' : ''}` : ''}`;
   if (w.art === 'protokoll.meldung') return `${w.art}|${w.stufe}|${w.modul ?? ''}|${w.enthaelt ?? ''}`;
   // Aufruf von außen (#679): je Automatisierung eine eigene Adresse – der Server hängt die Id an (laufen nie gemeinsam).
   if (istBetrieb(w) || istAufruf(w)) return w.art;
@@ -294,13 +382,28 @@ export function ausloeserSchluessel(w: WennKarte): string {
 export function platzhalterFuer(w: WennKarte, typ: Mappentyp | null): Array<{ key: string; label: string }> {
   if (istBetrieb(w)) return betriebPlatzhalter(w);
   if (istAufruf(w)) return aufrufPlatzhalter(w);
-  const fest = [{ key: 'titel', label: t('gemeinsam.automatisierung.titel-der-mappe') }, { key: 'mappentyp', label: t('gemeinsam.automatisierung.mappentyp') }, { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') }, { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') }];
-  if (w.art === 'datum') fest.push({ key: 'datum', label: t('gemeinsam.automatisierung.erreichtes-datum') }, { key: 'tage', label: t('gemeinsam.automatisierung.tage-bis-dahin') });
+  const fest = [
+    { key: 'titel', label: t('gemeinsam.automatisierung.titel-der-mappe') },
+    { key: 'mappentyp', label: t('gemeinsam.automatisierung.mappentyp') },
+    { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') },
+    { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') },
+  ];
+  if (w.art === 'datum')
+    fest.push(
+      { key: 'datum', label: t('gemeinsam.automatisierung.erreichtes-datum') },
+      { key: 'tage', label: t('gemeinsam.automatisierung.tage-bis-dahin') },
+    );
   if (w.art === 'zeitplan' && w.jeBenutzer) fest.push({ key: 'benutzer', label: t('gemeinsam.automatisierung.benutzer') });
   // Aus dem Ereignis (#678/#712): Personen mit Namen, Zeitraum einer Abwesenheit.
   for (const p of PERSONEN_IM_EREIGNIS[w.art] ?? []) fest.push({ key: p, label: EREIGNIS_PERSON[p] ?? p });
-  if (w.art === 'zeitplan') return [...fest, ...(typ?.felder ?? []).filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label }))];
-  if (w.art === 'benutzer.abwesenheit_gesetzt') fest.push({ key: 'von', label: t('gemeinsam.automatisierung.abwesend-von') }, { key: 'bis', label: t('gemeinsam.automatisierung.abwesend-bis') }, { key: 'zeitraum', label: t('gemeinsam.automatisierung.zeitraum-der-abwesenheit') });
+  if (w.art === 'zeitplan')
+    return [...fest, ...(typ?.felder ?? []).filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label }))];
+  if (w.art === 'benutzer.abwesenheit_gesetzt')
+    fest.push(
+      { key: 'von', label: t('gemeinsam.automatisierung.abwesend-von') },
+      { key: 'bis', label: t('gemeinsam.automatisierung.abwesend-bis') },
+      { key: 'zeitraum', label: t('gemeinsam.automatisierung.zeitraum-der-abwesenheit') },
+    );
   return [...fest, ...(typ?.felder ?? []).filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label }))];
 }
 
@@ -313,7 +416,8 @@ const UHRZEIT = /^([01]\d|2[0-3]):[0-5]\d$/;
 function bereinigeEmpfaenger(e: unknown): Empfaenger | null {
   const x = (e ?? {}) as Record<string, unknown>;
   if ((x.art === 'person' || x.art === 'rolle') && id(x.id)) return { art: x.art, id: id(x.id) };
-  if (x.art === 'feld' && id(x.feld)) return { art: 'feld', feld: id(x.feld), ...(x.sonst === 'ersteller' ? { sonst: 'ersteller' as const } : {}) };
+  if (x.art === 'feld' && id(x.feld))
+    return { art: 'feld', feld: id(x.feld), ...(x.sonst === 'ersteller' ? { sonst: 'ersteller' as const } : {}) };
   if (x.art === 'ersteller') return { art: 'ersteller' };
   if (x.art === 'ereignis' && id(x.feld)) return { art: 'ereignis', feld: id(x.feld) };
   return null;
@@ -328,14 +432,28 @@ function bereinigeWenn(e: unknown): WennKarte {
     const grenze = einheit === 'tage' ? 3650 : einheit === 'wochen' ? 520 : 120;
     const vorlauf = Math.max(-grenze, Math.min(grenze, Math.trunc(Number(alt ? x.tage : x.vorlauf) || 0)));
     const w = Math.trunc(Number(x.wiederholung) || 0);
-    return { art: 'datum', typ: id(x.typ), feld: x.art === 'datum' ? id(x.feld) : '', vorlauf, einheit, uhrzeit: typeof x.uhrzeit === 'string' && UHRZEIT.test(x.uhrzeit) ? x.uhrzeit : '07:00', wiederholung: w >= 1 && w <= 120 ? w : null };
+    return {
+      art: 'datum',
+      typ: id(x.typ),
+      feld: x.art === 'datum' ? id(x.feld) : '',
+      vorlauf,
+      einheit,
+      uhrzeit: typeof x.uhrzeit === 'string' && UHRZEIT.test(x.uhrzeit) ? x.uhrzeit : '07:00',
+      wiederholung: w >= 1 && w <= 120 ? w : null,
+    };
   }
   if (x.art === 'zeitplan') {
-    const tage = [...new Set((Array.isArray(x.tage) ? x.tage : WOCHENTAGE).map(Number).filter((t) => Number.isInteger(t) && t >= 1 && t <= 7))].sort();
+    const tage = [
+      ...new Set((Array.isArray(x.tage) ? x.tage : WOCHENTAGE).map(Number).filter((t) => Number.isInteger(t) && t >= 1 && t <= 7)),
+    ].sort();
     const jeBenutzer = x.jeBenutzer === true;
     return {
-      art: 'zeitplan', uhrzeit: typeof x.uhrzeit === 'string' && UHRZEIT.test(x.uhrzeit) ? x.uhrzeit : '07:00', tage: tage.length ? tage : [...WOCHENTAGE],
-      feiertage: x.feiertage === true, jeBenutzer, ...(jeBenutzer ? { rolle: id(x.rolle) || null, profilzeit: x.profilzeit === true } : {}),
+      art: 'zeitplan',
+      uhrzeit: typeof x.uhrzeit === 'string' && UHRZEIT.test(x.uhrzeit) ? x.uhrzeit : '07:00',
+      tage: tage.length ? tage : [...WOCHENTAGE],
+      feiertage: x.feiertage === true,
+      jeBenutzer,
+      ...(jeBenutzer ? { rolle: id(x.rolle) || null, profilzeit: x.profilzeit === true } : {}),
     };
   }
   // Werkbank-Karten (#677): ohne Mappentyp; „Protokollmeldung“ mit Stufe (Vorgabe Fehler), Modul und Text.
@@ -352,11 +470,20 @@ function bereinigeWenn(e: unknown): WennKarte {
 function bereinigeUnd(e: unknown, tiefe = 0): UndKarte | null {
   const x = (e ?? {}) as Record<string, unknown>;
   const nicht = x.nicht === true ? { nicht: true } : {};
-  if (x.art === 'bedingung') { const [b] = bereinigeBedingungen([x.bedingung]); return b ? { art: 'bedingung', bedingung: b, ...nicht } : null; }
+  if (x.art === 'bedingung') {
+    const [b] = bereinigeBedingungen([x.bedingung]);
+    return b ? { art: 'bedingung', bedingung: b, ...nicht } : null;
+  }
   if (x.art === 'ansicht' && id(x.sicht)) return { art: 'ansicht', sicht: id(x.sicht), ...nicht };
-  if (x.art === 'favorit') { const v = bereinigeEmpfaenger(x.von); return v ? { art: 'favorit', von: v, ...nicht } : null; }
+  if (x.art === 'favorit') {
+    const v = bereinigeEmpfaenger(x.von);
+    return v ? { art: 'favorit', von: v, ...nicht } : null;
+  }
   if (x.art === 'gruppe' && tiefe === 0) {
-    const karten = (Array.isArray(x.karten) ? x.karten : []).slice(0, AUTOMATISIERUNG_GRENZEN.bedingungen).map((k) => bereinigeUnd(k, 1)).filter((k): k is UndKarte => !!k);
+    const karten = (Array.isArray(x.karten) ? x.karten : [])
+      .slice(0, AUTOMATISIERUNG_GRENZEN.bedingungen)
+      .map((k) => bereinigeUnd(k, 1))
+      .filter((k): k is UndKarte => !!k);
     return { art: 'gruppe', modus: x.modus === 'eine' ? 'eine' : 'alle', karten, ...nicht };
   }
   return null;
@@ -371,7 +498,8 @@ const UND_ARTEN = ['bedingung', 'ansicht', 'favorit', 'gruppe'];
  */
 export function undEingabeFehler(roh: unknown): string[] {
   if (roh === undefined || roh === null) return [];
-  if (typeof roh !== 'object' || Array.isArray(roh) || !Array.isArray((roh as Record<string, unknown>).karten)) return [t('gemeinsam.bedingungspruefung.und-form')];
+  if (typeof roh !== 'object' || Array.isArray(roh) || !Array.isArray((roh as Record<string, unknown>).karten))
+    return [t('gemeinsam.bedingungspruefung.und-form')];
   return undKartenFehler(roh as Record<string, unknown>, 'und', 0);
 }
 
@@ -379,8 +507,10 @@ function undKartenFehler(x: Record<string, unknown>, wo: string, tiefe: number):
   const karten = Array.isArray(x.karten) ? x.karten : [];
   const aus: string[] = [];
   const stelle = (teil: string, grund: string) => aus.push(t('gemeinsam.bedingungspruefung.und-stelle', { wo: teil, grund }));
-  if (x.modus !== undefined && x.modus !== 'alle' && x.modus !== 'eine') stelle(wo, t('gemeinsam.bedingungspruefung.modus', { wert: String(x.modus) }));
-  if (karten.length > AUTOMATISIERUNG_GRENZEN.bedingungen) stelle(wo, t('gemeinsam.bedingungspruefung.zu-viele', { max: AUTOMATISIERUNG_GRENZEN.bedingungen }));
+  if (x.modus !== undefined && x.modus !== 'alle' && x.modus !== 'eine')
+    stelle(wo, t('gemeinsam.bedingungspruefung.modus', { wert: String(x.modus) }));
+  if (karten.length > AUTOMATISIERUNG_GRENZEN.bedingungen)
+    stelle(wo, t('gemeinsam.bedingungspruefung.zu-viele', { max: AUTOMATISIERUNG_GRENZEN.bedingungen }));
   karten.forEach((k, i) => {
     const hier = `${wo}.karten[${i + 1}]`;
     const fehler = undKarteFehler(k, hier, tiefe);
@@ -393,7 +523,9 @@ function undKartenFehler(x: Record<string, unknown>, wo: string, tiefe: number):
 function undArtFehler(c: Record<string, unknown>): string | null {
   if (c.nicht !== undefined && typeof c.nicht !== 'boolean') return t('gemeinsam.bedingungspruefung.nicht');
   if (c.art === undefined) return t('gemeinsam.bedingungspruefung.art-fehlt', { arten: UND_ARTEN.join(', ') });
-  return UND_ARTEN.includes(String(c.art)) ? null : t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(c.art), arten: UND_ARTEN.join(', ') });
+  return UND_ARTEN.includes(String(c.art))
+    ? null
+    : t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(c.art), arten: UND_ARTEN.join(', ') });
 }
 
 /** Eine Und-Karte: ein Grund (diese Stelle), sonst die Gründe aus einer Gruppe ([] = in Ordnung). */
@@ -402,7 +534,10 @@ function undKarteFehler(k: unknown, hier: string, tiefe: number): string | strin
   const c = k as Record<string, unknown>;
   const form = undArtFehler(c);
   if (form) return form;
-  if (c.art === 'bedingung') { const g = bedingungEingabeFehler(c.bedingung); return g ? t('gemeinsam.bedingungspruefung.innen', { grund: g }) : []; }
+  if (c.art === 'bedingung') {
+    const g = bedingungEingabeFehler(c.bedingung);
+    return g ? t('gemeinsam.bedingungspruefung.innen', { grund: g }) : [];
+  }
   if (c.art === 'ansicht') return id(c.sicht) ? [] : t('gemeinsam.bedingungspruefung.sicht-fehlt');
   if (c.art === 'favorit') return bereinigeEmpfaenger(c.von) ? [] : t('gemeinsam.bedingungspruefung.von-fehlt');
   if (tiefe > 0) return t('gemeinsam.bedingungspruefung.gruppe-in-gruppe');
@@ -412,9 +547,16 @@ function undKarteFehler(k: unknown, hier: string, tiefe: number): string | strin
 /** „Paket nach Zeitplan ausführen“ (#1082): Paket-Id und Aufgabe nur mit gültiger Kennung, sonst leer. */
 function bereinigePaketKarte(x: Record<string, unknown>, i: number): DannKarte {
   const kid = id(x.id) || `k${i + 1}`;
-  const paket = id(x.paket), aufgabe = id(x.aufgabe);
+  const paket = id(x.paket),
+    aufgabe = id(x.aufgabe);
   const werte = kartenWerteRoh(x.werte);
-  return { id: kid, art: 'paket', paket: PAKET_ID.test(paket) ? paket : '', aufgabe: SCHLUESSEL.test(aufgabe) ? aufgabe : null, ...(Object.keys(werte).length ? { werte } : {}) };
+  return {
+    id: kid,
+    art: 'paket',
+    paket: PAKET_ID.test(paket) ? paket : '',
+    aufgabe: SCHLUESSEL.test(aufgabe) ? aufgabe : null,
+    ...(Object.keys(werte).length ? { werte } : {}),
+  };
 }
 
 /** „Favoriten-Änderungen melden“ (#1001): Rollen (ohne Dubletten, leer = alle) und Vorgabe nur, wenn aus. */
@@ -435,20 +577,47 @@ function bereinigeDann(e: unknown, i: number): DannKarte | null {
   if (x.art === 'anmeldeschutz') return { id: kid, art: 'anmeldeschutz', was: x.was === 'konto' ? 'konto' : 'sammel' };
   if (x.art === 'feld') {
     const w = x.werte && typeof x.werte === 'object' && !Array.isArray(x.werte) ? (x.werte as Record<string, unknown>) : {};
-    return { id: kid, art: 'feld', werte: Object.fromEntries(Object.entries(w).slice(0, 50).map(([k, v]) => [id(k), typeof v === 'string' ? v.slice(0, AUTOMATISIERUNG_GRENZEN.text) : v]).filter(([k]) => k)) };
+    return {
+      id: kid,
+      art: 'feld',
+      werte: Object.fromEntries(
+        Object.entries(w)
+          .slice(0, 50)
+          .map(([k, v]) => [id(k), typeof v === 'string' ? v.slice(0, AUTOMATISIERUNG_GRENZEN.text) : v])
+          .filter(([k]) => k),
+      ),
+    };
   }
   if (x.art === 'aufgabe') {
-    const empfaenger = (Array.isArray(x.empfaenger) ? x.empfaenger : []).slice(0, 20).map(bereinigeEmpfaenger).filter((v): v is Empfaenger => !!v);
-    const faellig = x.faellig === null || x.faellig === undefined || x.faellig === '' ? null : Math.max(0, Math.min(3650, Math.trunc(Number(x.faellig) || 0)));
-    return { id: kid, art: 'aufgabe', empfaenger, text: text(x.text, AUTOMATISIERUNG_GRENZEN.text), als: x.als === 'benachrichtigung' ? 'benachrichtigung' : 'aufgabe', faellig: x.als === 'benachrichtigung' ? null : faellig };
+    const empfaenger = (Array.isArray(x.empfaenger) ? x.empfaenger : [])
+      .slice(0, 20)
+      .map(bereinigeEmpfaenger)
+      .filter((v): v is Empfaenger => !!v);
+    const faellig =
+      x.faellig === null || x.faellig === undefined || x.faellig === ''
+        ? null
+        : Math.max(0, Math.min(3650, Math.trunc(Number(x.faellig) || 0)));
+    return {
+      id: kid,
+      art: 'aufgabe',
+      empfaenger,
+      text: text(x.text, AUTOMATISIERUNG_GRENZEN.text),
+      als: x.als === 'benachrichtigung' ? 'benachrichtigung' : 'aufgabe',
+      faellig: x.als === 'benachrichtigung' ? null : faellig,
+    };
   }
   return null;
 }
 
-const istPaketKarte = (e: unknown): e is Record<string, unknown> => !!e && typeof e === 'object' && (e as Record<string, unknown>).art === 'paket';
-const dannListe = (e: unknown) => (Array.isArray(e) ? e : []).slice(0, AUTOMATISIERUNG_GRENZEN.karten).map((k, i) => (istPaketKarte(k) ? bereinigePaketKarte(k, i) : bereinigeDann(k, i))).filter((k): k is DannKarte => !!k)
-  // Eindeutige Ids je Karte (Verlauf, Live-Fortschritt).
-  .map((k, i, alle) => (alle.findIndex((x) => x.id === k.id) === i ? k : { ...k, id: `${k.id}-${i + 1}` }));
+const istPaketKarte = (e: unknown): e is Record<string, unknown> =>
+  !!e && typeof e === 'object' && (e as Record<string, unknown>).art === 'paket';
+const dannListe = (e: unknown) =>
+  (Array.isArray(e) ? e : [])
+    .slice(0, AUTOMATISIERUNG_GRENZEN.karten)
+    .map((k, i) => (istPaketKarte(k) ? bereinigePaketKarte(k, i) : bereinigeDann(k, i)))
+    .filter((k): k is DannKarte => !!k)
+    // Eindeutige Ids je Karte (Verlauf, Live-Fortschritt).
+    .map((k, i, alle) => (alle.findIndex((x) => x.id === k.id) === i ? k : { ...k, id: `${k.id}-${i + 1}` }));
 
 export function bereinigeAutomatisierung(e: unknown): AutomatisierungDaten {
   const x = (e ?? {}) as Record<string, unknown>;
@@ -459,7 +628,13 @@ export function bereinigeAutomatisierung(e: unknown): AutomatisierungDaten {
     beschreibung: text(x.beschreibung, AUTOMATISIERUNG_GRENZEN.text),
     reihenfolge: Number.isFinite(r) ? Math.max(REIHENFOLGE.min, Math.min(REIHENFOLGE.max, r)) : REIHENFOLGE.eigen,
     wenn: bereinigeWenn(x.wenn),
-    und: { modus: und.modus === 'eine' ? 'eine' : 'alle', karten: (Array.isArray(und.karten) ? und.karten : []).slice(0, AUTOMATISIERUNG_GRENZEN.bedingungen).map((k) => bereinigeUnd(k)).filter((k): k is UndKarte => !!k) },
+    und: {
+      modus: und.modus === 'eine' ? 'eine' : 'alle',
+      karten: (Array.isArray(und.karten) ? und.karten : [])
+        .slice(0, AUTOMATISIERUNG_GRENZEN.bedingungen)
+        .map((k) => bereinigeUnd(k))
+        .filter((k): k is UndKarte => !!k),
+    },
     dann: dannListe(x.dann),
     sonst: dannListe(x.sonst),
   };
@@ -470,7 +645,14 @@ export function bereinigeAutomatisierung(e: unknown): AutomatisierungDaten {
 const feldIn = (typ: Mappentyp | null, key: string): Feld | undefined => typ?.felder.find((f) => f.key === key);
 
 function empfaengerProblem(e: Empfaenger, typ: Mappentyp | null, k: Kontextdaten): string | null {
-  if (e.art === 'person') { const b = k.benutzer.find((x) => x.id === e.id); return !b ? t('gemeinsam.automatisierung.diese-person-gibt-es') : b.aktiv === false ? t('gemeinsam.automatisierung.ist-deaktiviert', { name: b.name }) : null; }
+  if (e.art === 'person') {
+    const b = k.benutzer.find((x) => x.id === e.id);
+    return !b
+      ? t('gemeinsam.automatisierung.diese-person-gibt-es')
+      : b.aktiv === false
+        ? t('gemeinsam.automatisierung.ist-deaktiviert', { name: b.name })
+        : null;
+  }
   if (e.art === 'rolle') return k.rollen.some((x) => x.id === e.id) ? null : t('gemeinsam.automatisierung.diese-rolle-gibt-es');
   if (e.art === 'ersteller') return null;
   // Person aus dem Ereignis: fehlt sie im einzelnen Ereignis, gibt es eben nichts zu tun (kein Fehler).
@@ -478,15 +660,23 @@ function empfaengerProblem(e: Empfaenger, typ: Mappentyp | null, k: Kontextdaten
   const f = feldIn(typ, e.feld);
   if (!f) return t('gemeinsam.automatisierung.das-feld-gibt-es', { feld: e.feld });
   const benutzerTyp = k.typen.find((t) => t.system === 'benutzer');
-  return f.typ === 'referenz' && (!zieleVon(f).length && !jedeMappe(f) || einzigesZiel(f) === benutzerTyp?.id) ? null : t('gemeinsam.automatisierung.verweist-nicht-auf-benutzer', { label: f.label });
+  return f.typ === 'referenz' && ((!zieleVon(f).length && !jedeMappe(f)) || einzigesZiel(f) === benutzerTyp?.id)
+    ? null
+    : t('gemeinsam.automatisierung.verweist-nicht-auf-benutzer', { label: f.label });
 }
 
 function undProbleme(u: UndKarte, typ: Mappentyp | null, k: Kontextdaten): string[] {
   if (u.art === 'gruppe') return u.karten.flatMap((x) => undProbleme(x, typ, k));
   if (u.art === 'ansicht') return k.sichten.some((s) => s.id === u.sicht) ? [] : [t('gemeinsam.automatisierung.die-ansicht-der-bedingung')];
-  if (u.art === 'favorit') { const p = empfaengerProblem(u.von, typ, k); return p ? [p] : []; }
+  if (u.art === 'favorit') {
+    const p = empfaengerProblem(u.von, typ, k);
+    return p ? [p] : [];
+  }
   // Merkmal der Ablage (#1032): braucht weder Mappentyp noch Mappe.
-  if (u.bedingung.art === 'merkmal') { const p = bedingungsProblem(u.bedingung, []); return p ? [p] : []; }
+  if (u.bedingung.art === 'merkmal') {
+    const p = bedingungsProblem(u.bedingung, []);
+    return p ? [p] : [];
+  }
   if (!typ) return [t('gemeinsam.automatisierung.bedingungen-auf-felder-brauchen')];
   const p = bedingungsProblem(u.bedingung, [typ]);
   return p ? [p] : [];
@@ -504,7 +694,11 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
 export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextdaten): Array<{ ort: AutomatisierungOrt; text: string }> {
   const erg: Array<{ ort: AutomatisierungOrt; text: string }> = [];
   let ort: AutomatisierungOrt = 'grunddaten';
-  const p = { push: (...x: string[]) => { for (const text of x) erg.push({ ort, text }); } };
+  const p = {
+    push: (...x: string[]) => {
+      for (const text of x) erg.push({ ort, text });
+    },
+  };
   if (!a.name) p.push(t('gemeinsam.automatisierung.bitte-einen-namen-angeben'));
   ort = 'wenn';
   const w = a.wenn;
@@ -512,12 +706,14 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
   if (w.art === 'datum') {
     if (!typ) p.push(t('gemeinsam.automatisierung.den-mappentyp-der-wenn'));
     else if (!w.feld) p.push(t('gemeinsam.automatisierung.datum-erreicht-bitte-ein'));
-    else if (feldIn(typ, w.feld)?.typ !== 'datum') p.push(t('gemeinsam.automatisierung.das-datumsfeld-gibt-es', { feld: w.feld, name: typ.name }));
+    else if (feldIn(typ, w.feld)?.typ !== 'datum')
+      p.push(t('gemeinsam.automatisierung.das-datumsfeld-gibt-es', { feld: w.feld, name: typ.name }));
   } else if (w.art === 'zeitplan') {
     if (w.jeBenutzer && w.rolle && !k.rollen.some((r) => r.id === w.rolle)) p.push(t('gemeinsam.automatisierung.die-rolle-der-zeitplan'));
   } else if (istBetrieb(w) || istAufruf(w)) p.push(...betriebProbleme(a));
   else if (w.typ && !typ) p.push(t('gemeinsam.automatisierung.den-mappentyp-der-wenn'));
-  else if (w.felder?.length && typ) for (const f of w.felder) if (!feldIn(typ, f)) p.push(t('gemeinsam.automatisierung.das-feld-gibt-es-2', { f, name: typ.name }));
+  else if (w.felder?.length && typ)
+    for (const f of w.felder) if (!feldIn(typ, f)) p.push(t('gemeinsam.automatisierung.das-feld-gibt-es-2', { f, name: typ.name }));
   if (!istBetrieb(w) && !istAufruf(w)) for (const u of a.und.karten) p.push(...undProbleme(u, typ, k));
   ort = 'dann';
   if (!a.dann.length) p.push(t('gemeinsam.automatisierung.bitte-mindestens-eine-dann'));
@@ -525,19 +721,24 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
     if (d.art === 'feld') {
       if (!typ) p.push(t('gemeinsam.automatisierung.feld-aendern-braucht-einen'));
       else if (!Object.keys(d.werte).length) p.push(t('gemeinsam.automatisierung.feld-aendern-bitte-mindestens'));
-      else for (const key of Object.keys(d.werte)) {
-        const f = feldIn(typ, key);
-        if (!f) p.push(t('gemeinsam.automatisierung.feld-aendern-das-feld', { key, name: typ.name }));
-        else if (f.typ === 'passwort') p.push(t('gemeinsam.automatisierung.feld-aendern-passwortfelder-setzt', { label: f.label }));
-        // Berechnete Felder (#1034, „nie überschreiben“): schreibt nur ihr Paket – der Server lehnt es ohnehin ab.
-        else if (f.berechnetVon) p.push(t('gemeinsam.automatisierung.feld-aendern-berechnet', { label: f.label }));
-      }
+      else
+        for (const key of Object.keys(d.werte)) {
+          const f = feldIn(typ, key);
+          if (!f) p.push(t('gemeinsam.automatisierung.feld-aendern-das-feld', { key, name: typ.name }));
+          else if (f.typ === 'passwort') p.push(t('gemeinsam.automatisierung.feld-aendern-passwortfelder-setzt', { label: f.label }));
+          // Berechnete Felder (#1034, „nie überschreiben“): schreibt nur ihr Paket – der Server lehnt es ohnehin ab.
+          else if (f.berechnetVon) p.push(t('gemeinsam.automatisierung.feld-aendern-berechnet', { label: f.label }));
+        }
     }
-    if (d.art === 'zusammenfassung' && !(w.art === 'zeitplan' && w.jeBenutzer)) p.push(t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden'));
+    if (d.art === 'zusammenfassung' && !(w.art === 'zeitplan' && w.jeBenutzer))
+      p.push(t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden'));
     if (d.art === 'favoriten' && w.art !== 'favorit.geaendert') p.push(t('gemeinsam.automatisierung.favoriten-aenderungen-melden-braucht'));
-    if (d.art === 'favoriten' && d.rollen?.some((r) => !k.rollen.some((x) => x.id === r))) p.push(t('gemeinsam.automatisierung.favoriten-rolle-fehlt'));
-    if (d.art === 'anmeldeschutz' && d.was === 'sammel' && !(w.art === 'zeitplan' && !w.jeBenutzer)) p.push(t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-braucht'));
-    if (d.art === 'anmeldeschutz' && d.was === 'konto' && w.art !== 'benutzer.gesperrt') p.push(t('gemeinsam.automatisierung.kontosperre-melden-braucht-die'));
+    if (d.art === 'favoriten' && d.rollen?.some((r) => !k.rollen.some((x) => x.id === r)))
+      p.push(t('gemeinsam.automatisierung.favoriten-rolle-fehlt'));
+    if (d.art === 'anmeldeschutz' && d.was === 'sammel' && !(w.art === 'zeitplan' && !w.jeBenutzer))
+      p.push(t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-braucht'));
+    if (d.art === 'anmeldeschutz' && d.was === 'konto' && w.art !== 'benutzer.gesperrt')
+      p.push(t('gemeinsam.automatisierung.kontosperre-melden-braucht-die'));
     // #1082: Ein entferntes Paket ist kein Problem (die Karte läuft ins Leere, s. paketKarteLeer) – nur Wenn-Karte und Wahl.
     if (d.art === 'paket' && !zeitplanFuerPaket(w)) p.push(t('gemeinsam.automatisierung.paket-braucht-zeitplan'));
     if (d.art === 'paket' && !d.paket) p.push(t('gemeinsam.automatisierung.paket-waehlen'));
@@ -546,7 +747,10 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
     if (d.art === 'aufgabe') {
       if (!d.text) p.push(t('gemeinsam.automatisierung.aufgabe-bitte-beschreiben-was'));
       if (!d.empfaenger.length) p.push(t('gemeinsam.automatisierung.aufgabe-bitte-mindestens-einen'));
-      for (const e of d.empfaenger) { const x = empfaengerProblem(e, typ, k); if (x) p.push(`„Aufgabe“: ${x}`); }
+      for (const e of d.empfaenger) {
+        const x = empfaengerProblem(e, typ, k);
+        if (x) p.push(`„Aufgabe“: ${x}`);
+      }
     }
   }
   return erg;
@@ -555,40 +759,91 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
 /* ---------- Kurzform ---------- */
 
 const NAMEN: Record<string, string> = {
-  'mappe.angelegt': 'angelegt', 'mappe.geaendert': 'gespeichert', 'mappe.verknuepft': 'verknüpft', 'dokument.hochgeladen': t('gemeinsam.automatisierung.dokument-hochgeladen'),
-  'mappe.notiz': t('gemeinsam.automatisierung.notiz-hinzugefuegt'), 'mappe.geloescht': 'gelöscht', 'mappe.geloescht_verknuepft': t('gemeinsam.automatisierung.mit-verknuepften-geloescht'),
-  'mappe.endgueltig_geloescht': t('gemeinsam.automatisierung.endgueltig-geloescht'), 'mappe.wiederhergestellt': 'wiederhergestellt', 'frist.erreicht': t('gemeinsam.automatisierung.frist-erreicht'),
+  'mappe.angelegt': 'angelegt',
+  'mappe.geaendert': 'gespeichert',
+  'mappe.verknuepft': 'verknüpft',
+  'dokument.hochgeladen': t('gemeinsam.automatisierung.dokument-hochgeladen'),
+  'mappe.notiz': t('gemeinsam.automatisierung.notiz-hinzugefuegt'),
+  'mappe.geloescht': 'gelöscht',
+  'mappe.geloescht_verknuepft': t('gemeinsam.automatisierung.mit-verknuepften-geloescht'),
+  'mappe.endgueltig_geloescht': t('gemeinsam.automatisierung.endgueltig-geloescht'),
+  'mappe.wiederhergestellt': 'wiederhergestellt',
+  'frist.erreicht': t('gemeinsam.automatisierung.frist-erreicht'),
 };
 
 /** „Wenn Vertrag gespeichert → Aufgabe an Verantwortlich“. */
-export function kurzform(a: AutomatisierungDaten, k: Pick<Kontextdaten, 'typen' | 'benutzer' | 'rollen' | 'pakete'>, ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x): string {
+export function kurzform(
+  a: AutomatisierungDaten,
+  k: Pick<Kontextdaten, 'typen' | 'benutzer' | 'rollen' | 'pakete'>,
+  ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x,
+): string {
   const typ = kontextTyp(a.wenn, k.typen);
   const dann = zweigeKurz(a, (d) => dannText(d, typ, k));
-  return t('gemeinsam.automatisierung.wenn', { wenn: wennText(a.wenn, k, ereignisName), wert: a.und.karten.length ? ` und ${t('gemeinsam.automatisierung.bedingungen', { anzahl: a.und.karten.length })}` : '', wert2: dann || '…' });
+  return t('gemeinsam.automatisierung.wenn', {
+    wenn: wennText(a.wenn, k, ereignisName),
+    wert: a.und.karten.length ? ` und ${t('gemeinsam.automatisierung.bedingungen', { anzahl: a.und.karten.length })}` : '',
+    wert2: dann || '…',
+  });
 }
 
 /** Der Wenn-Teil der Kurzform, z. B. „Vertrag angelegt“ – auch für die Fassungen (#1006). */
-export function wennText(w: WennKarte, k: Pick<Kontextdaten, 'typen' | 'rollen'>, ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x): string {
+export function wennText(
+  w: WennKarte,
+  k: Pick<Kontextdaten, 'typen' | 'rollen'>,
+  ereignisName: (art: string) => string = (x) => NAMEN[x] ?? x,
+): string {
   const typ = kontextTyp(w, k.typen);
   return w.art === 'datum'
     ? `${typ?.name ?? '?'}: ${feldIn(typ, w.feld)?.label ?? (w.feld || '?')} ${vorlaufText(w.vorlauf, w.einheit)}`
-    : istBetrieb(w) ? betriebKurz(w, ereignisName) : istAufruf(w) ? aufrufKurz(w)
-    : w.art === 'zeitplan' ? `${zeitplanText(w)}${w.jeBenutzer ? t('gemeinsam.automatisierung.fuer-jeden-benutzer', { wert: w.rolle ? t('gemeinsam.automatisierung.der-rolle', { wert: k.rollen.find((r) => r.id === w.rolle)?.name ?? '?' }) : '' }) : ''}`
-    : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${w.art === 'mappe.geaendert' && w.angelegt ? t('gemeinsam.automatisierung.angelegt-oder', { wert: ereignisName(w.art) }) : ereignisName(w.art)}`;
+    : istBetrieb(w)
+      ? betriebKurz(w, ereignisName)
+      : istAufruf(w)
+        ? aufrufKurz(w)
+        : w.art === 'zeitplan'
+          ? `${zeitplanText(w)}${w.jeBenutzer ? t('gemeinsam.automatisierung.fuer-jeden-benutzer', { wert: w.rolle ? t('gemeinsam.automatisierung.der-rolle', { wert: k.rollen.find((r) => r.id === w.rolle)?.name ?? '?' }) : '' }) : ''}`
+          : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${w.art === 'mappe.geaendert' && w.angelegt ? t('gemeinsam.automatisierung.angelegt-oder', { wert: ereignisName(w.art) }) : ereignisName(w.art)}`;
 }
 
 /** Eine Dann- oder Sonst-Karte kurz, z. B. „Aufgabe an Markus“ – Kurzform und Fassungen (#1006). */
 export function dannText(d: DannKarte, typ: Mappentyp | null, k: Pick<Kontextdaten, 'benutzer' | 'rollen' | 'pakete'>): string {
-  const wer = (e: Empfaenger) => e.art === 'person' ? k.benutzer.find((b) => b.id === e.id)?.name ?? '?' : e.art === 'rolle' ? k.rollen.find((r) => r.id === e.id)?.name ?? '?' : e.art === 'ersteller' ? 'Ersteller' : e.art === 'ereignis' ? EREIGNIS_PERSON[e.feld] ?? e.feld : feldIn(typ, e.feld)?.label ?? e.feld;
-  return d.art === 'stopp' ? t('gemeinsam.automatisierung.danach-keine-weiteren')
-    : d.art === 'zusammenfassung' ? t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden-2')
-    : d.art === 'favoriten' ? (d.rollen?.length ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden-an', { rollen: d.rollen.map((r) => k.rollen.find((x) => x.id === r)?.name ?? '?').join(', ') }) : t('gemeinsam.automatisierung.favoriten-aenderungen-melden'))
-    : d.art === 'anmeldeschutz' ? (d.was === 'sammel' ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden') : t('gemeinsam.automatisierung.kontosperre-an-administratoren'))
-    : d.art === 'sicherung' ? t('gemeinsam.automatisierung.sicherung-anstossen')
-    : d.art === 'url' || d.art === 'email' ? aussenKurz(d, wer)
-    : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${aufgabeName(d.paket, d.aufgabe, k.pakete)})` : '' })
-    : d.art === 'feld' ? `${Object.keys(d.werte).map((x) => feldIn(typ, x)?.label ?? x).join(', ')} setzen`
-      : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`;
+  const wer = (e: Empfaenger) =>
+    e.art === 'person'
+      ? (k.benutzer.find((b) => b.id === e.id)?.name ?? '?')
+      : e.art === 'rolle'
+        ? (k.rollen.find((r) => r.id === e.id)?.name ?? '?')
+        : e.art === 'ersteller'
+          ? 'Ersteller'
+          : e.art === 'ereignis'
+            ? (EREIGNIS_PERSON[e.feld] ?? e.feld)
+            : (feldIn(typ, e.feld)?.label ?? e.feld);
+  return d.art === 'stopp'
+    ? t('gemeinsam.automatisierung.danach-keine-weiteren')
+    : d.art === 'zusammenfassung'
+      ? t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden-2')
+      : d.art === 'favoriten'
+        ? d.rollen?.length
+          ? t('gemeinsam.automatisierung.favoriten-aenderungen-melden-an', {
+              rollen: d.rollen.map((r) => k.rollen.find((x) => x.id === r)?.name ?? '?').join(', '),
+            })
+          : t('gemeinsam.automatisierung.favoriten-aenderungen-melden')
+        : d.art === 'anmeldeschutz'
+          ? d.was === 'sammel'
+            ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden')
+            : t('gemeinsam.automatisierung.kontosperre-an-administratoren')
+          : d.art === 'sicherung'
+            ? t('gemeinsam.automatisierung.sicherung-anstossen')
+            : d.art === 'url' || d.art === 'email'
+              ? aussenKurz(d, wer)
+              : d.art === 'paket'
+                ? t('gemeinsam.automatisierung.paket-ausfuehren', {
+                    name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'),
+                    wert: d.aufgabe ? ` (${aufgabeName(d.paket, d.aufgabe, k.pakete)})` : '',
+                  })
+                : d.art === 'feld'
+                  ? `${Object.keys(d.werte)
+                      .map((x) => feldIn(typ, x)?.label ?? x)
+                      .join(', ')} setzen`
+                  : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`;
 }
 
 /** Dann und Sonst kurz (#677): „Aufgabe an Petra; sonst Benachrichtigung an Jonas“. */
@@ -603,5 +858,9 @@ export function zeitplanText(w: Extract<WennKarte, { art: 'zeitplan' }>): string
   if (w.jeBenutzer && w.profilzeit) return t('gemeinsam.automatisierung.zur-uhrzeit-im-profil');
   const text2 = w.tage.join('');
   const tage = text2 === '1234567' ? 'täglich' : text2 === '12345' ? 'werktags' : w.tage.map((x) => TAG_KURZ[x]).join(', ');
-  return t('gemeinsam.automatisierung.um', { tage, uhrzeit: w.uhrzeit, wert: w.feiertage ? t('gemeinsam.automatisierung.nicht-an-feiertagen') : '' });
+  return t('gemeinsam.automatisierung.um', {
+    tage,
+    uhrzeit: w.uhrzeit,
+    wert: w.feiertage ? t('gemeinsam.automatisierung.nicht-an-feiertagen') : '',
+  });
 }

@@ -28,7 +28,8 @@ async function repo(pg: boolean): Promise<Repo> {
   offen.push(sql);
   await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
-  for (const b of [ADMIN, ANNA]) await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${b.id}, ${HAUSHALT}, ${`${b.rolle}@example.org`}, ${b.rolle}, ${b.rolle})`;
+  for (const b of [ADMIN, ANNA])
+    await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${b.id}, ${HAUSHALT}, ${`${b.rolle}@example.org`}, ${b.rolle}, ${b.rolle})`;
   return pgRepo(sql, HAUSHALT) as never;
 }
 
@@ -36,19 +37,27 @@ async function aufbau(pg: boolean) {
   const dateien = speicherDateien();
   const r = await repo(pg);
   const d = new Dienst(r, dateien, { einstellungen: speicherEinstellungen() });
-  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung: true },
-  ] });
+  const typ = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung: true },
+    ],
+  });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Stromvertrag' } }, ANNA.id);
-  const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 Version 1'), ANNA.id)).dokument;
+  const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 Version 1'), ANNA.id))
+    .dokument;
   await d.dokumentVersionen.ersetzeDokument(doc.id, {}, Buffer.from('%PDF-1.4 Version 2'), ANNA.id);
   return { d, dateien, r, typ, m, doc };
 }
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   describe(`Papierkorb für Dokumente (#344, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => { for (const s of offen.splice(0)) await s.end(); });
+    after(async () => {
+      for (const s of offen.splice(0)) await s.end();
+    });
 
     it('Löschen legt das Dokument mit Versionen in den Papierkorb; Wiederherstellen legt es ins selbe Register zurück', async () => {
       const { d, dateien, m, doc } = await aufbau(pg);
@@ -68,12 +77,19 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ADMIN, true)).length, 1, 'in der Werkbank alles');
       assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_papierkorb'));
 
-      await assert.rejects(d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ADMIN, undefined), status(404), 'Fremdes nur über die Werkbank');
+      await assert.rejects(
+        d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ADMIN, undefined),
+        status(404),
+        'Fremdes nur über die Werkbank',
+      );
       const r = await d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined);
       assert.equal(r.dokument.registerKey, 'dokumente');
       assert.equal(r.dokument.version, 2);
       const x = (await d.mappen.holeMappe(m.id)).dokumente;
-      assert.deepEqual(x.map((y) => y.name), ['Vertrag.pdf']);
+      assert.deepEqual(
+        x.map((y) => y.name),
+        ['Vertrag.pdf'],
+      );
       assert.equal((await d.dokumentVersionen.versionen(doc.id)).aeltere.length, 1, 'ältere Version wieder da');
       assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 0);
       assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'dokument_wiederhergestellt'));
@@ -84,7 +100,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.dokumente.loescheDokument(doc.id, ANNA.id);
       await d.loeschen.loescheMappe(m.id, ANNA.id);
       assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA))[0].mappe, 'papierkorb');
-      await assert.rejects(d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined), (f) => f instanceof Fachfehler && f.status === 409 && /zuerst die Mappe/.test(f.message));
+      await assert.rejects(
+        d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined),
+        (f) => f instanceof Fachfehler && f.status === 409 && /zuerst die Mappe/.test(f.message),
+      );
       // Mappe zurück → Dokument zurück.
       await d.papierkorbVerwaltung.stelleWiederHer(m.id, ANNA);
       await d.papierkorbVerwaltung.stelleDokumentWiederHer(doc.id, ANNA, undefined);
@@ -118,7 +137,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('ohne Papierkorb (0 Tage) ist Löschen endgültig wie bisher; Ausschalten leert auch die Dokumente', async () => {
       const { d, dateien, m, doc } = await aufbau(pg);
-      const d2 = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'zwei.pdf' }, Buffer.from('%PDF-1.4 zwei'), ANNA.id)).dokument;
+      const d2 = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'zwei.pdf' }, Buffer.from('%PDF-1.4 zwei'), ANNA.id))
+        .dokument;
       await d.dokumente.loescheDokument(d2.id, ANNA.id);
       assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente(ANNA)).length, 1);
       const r = await d.papierkorbVerwaltung.setzePapierkorbTage(0);

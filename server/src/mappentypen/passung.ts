@@ -18,10 +18,17 @@ export interface PassungAnschluss {
 }
 
 export class Passung {
-  constructor(private readonly kern: Kern, private readonly anschluss: PassungAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly anschluss: PassungAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) { return this.anschluss.passungsAufgaben(liste); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) {
+    return this.anschluss.passungsAufgaben(liste);
+  }
 
   /** Prüft alle Mappen eines Typs (nach einer Änderung des Typs) und speichert das Ergebnis. */
   async pruefePassung(typId: string): Promise<number> {
@@ -44,7 +51,9 @@ export class Passung {
   }
 
   /** Passung aller Mappen eines Typs gegen diese Definition (nur rechnen). */
-  private async ergebnis(typ: Mappentyp): Promise<Array<{ id: string; problem: string | null; alt: string | null; passtAlt: boolean | undefined }>> {
+  private async ergebnis(
+    typ: Mappentyp,
+  ): Promise<Array<{ id: string; problem: string | null; alt: string | null; passtAlt: boolean | undefined }>> {
     const mappen = await this.repo.listeMappen(typ.id);
     const typVon = await this.repo.typenVon(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)).filter(istUuid));
     // Eindeutige Felder: gleiche Werte im Arbeitsspeicher suchen statt je Mappe in der Datenbank.
@@ -64,10 +73,14 @@ export class Passung {
     const eigeneOrganisation = await this.eigeneOrganisation(typ);
     return mappen.map((m) => {
       const p = pruefeMitAnzeige(typ, m.werte, {
-        merkmale, eigeneOrganisation,
+        merkmale,
+        eigeneOrganisation,
         typVon: (id) => typVon.get(id),
         doppelt: (k, v) => {
-          const andere = gleiche.get(k)?.get(String(v).trim().toLowerCase())?.find((x) => x.id !== m.id);
+          const andere = gleiche
+            .get(k)
+            ?.get(String(v).trim().toLowerCase())
+            ?.find((x) => x.id !== m.id);
           return andere ? andere.titel || t('meldungen.dienst.ohne-titel') : undefined;
         },
       });
@@ -96,14 +109,27 @@ export class Passung {
     const liste: Array<{ id: string; problem: string | null }> = [];
     const mappen = await this.repo.holeMappen(ids);
     // In einem Zug statt je Mappe (#743): Typen der Verweisziele und „Bereits vergeben“ über den Index.
-    const typen = await this.repo.typenVon([...new Set(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)))].filter(istUuid));
+    const typen = await this.repo.typenVon(
+      [...new Set(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)))].filter(istUuid),
+    );
     const eindeutig = typ.felder.filter((f) => f.eindeutig && hatEindeutig(f));
-    const funde = await this.repo.findeDoppelte(typ.id, mappen.flatMap((m) => eindeutig.filter((f) => !istLeer(m.werte[f.key])).map((f) => ({ mappeId: m.id, feldKey: f.key, wert: String(m.werte[f.key]) }))));
+    const funde = await this.repo.findeDoppelte(
+      typ.id,
+      mappen.flatMap((m) =>
+        eindeutig.filter((f) => !istLeer(m.werte[f.key])).map((f) => ({ mappeId: m.id, feldKey: f.key, wert: String(m.werte[f.key]) })),
+      ),
+    );
     const merkmale = await this.kern.merkmale();
     const eigeneOrganisation = await this.eigeneOrganisation(typ);
     for (const m of mappen) {
-      const doppelt = (k: string) => { const d = funde.get(`${m.id}|${k}`); return d ? d.titel || t('meldungen.dienst.ohne-titel') : undefined; };
-      const problem = ersterGrund(typ, pruefeMitAnzeige(typ, m.werte, { typVon: (id) => typen.get(id), doppelt, merkmale, eigeneOrganisation }));
+      const doppelt = (k: string) => {
+        const d = funde.get(`${m.id}|${k}`);
+        return d ? d.titel || t('meldungen.dienst.ohne-titel') : undefined;
+      };
+      const problem = ersterGrund(
+        typ,
+        pruefeMitAnzeige(typ, m.werte, { typVon: (id) => typen.get(id), doppelt, merkmale, eigeneOrganisation }),
+      );
       if (problem !== m.problem) liste.push({ id: m.id, problem });
     }
     await this.repo.setzePassung(liste);
@@ -114,7 +140,10 @@ export class Passung {
   async passungNachziehen(fortschritt: (fertig: number, gesamt: number) => void = () => {}): Promise<number> {
     const typen = await this.repo.typenOhnePassung();
     // Fortschritt für die Startseite (#802).
-    for (const [i, t] of typen.entries()) { fortschritt(i, typen.length); await this.pruefePassung(t); }
+    for (const [i, t] of typen.entries()) {
+      fortschritt(i, typen.length);
+      await this.pruefePassung(t);
+    }
     return typen.length;
   }
 }

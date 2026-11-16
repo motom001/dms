@@ -9,7 +9,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 
-const echtesFastify = await import('fastify').then((m) => typeof m.default === 'function', () => false);
+const echtesFastify = await import('fastify').then(
+  (m) => typeof m.default === 'function',
+  () => false,
+);
 
 describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fastify nicht installiert' }, () => {
   let app: { inject(o: { method: string; url: string }): Promise<{ statusCode: number; body: string }>; close(): Promise<unknown> };
@@ -34,9 +37,11 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
-    app = await baueApp(dienst, konten, { webDir: web }) as unknown as typeof app;
+    app = (await baueApp(dienst, konten, { webDir: web })) as unknown as typeof app;
   });
-  after(async () => { await app?.close(); });
+  after(async () => {
+    await app?.close();
+  });
 
   it('liefert Dateien und index.html für Browser-Routen', async () => {
     const js = await app.inject({ method: 'GET', url: '/assets/app.js' });
@@ -49,15 +54,19 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
   });
 
   it('setzt Sicherheits-Header (#239)', async () => {
-    const r = await app.inject({ method: 'GET', url: '/ablage/eingang' }) as unknown as { headers: Record<string, string> };
+    const r = (await app.inject({ method: 'GET', url: '/ablage/eingang' })) as unknown as { headers: Record<string, string> };
     assert.equal(r.headers['x-frame-options'], 'SAMEORIGIN');
     assert.match(r.headers['content-security-policy'], /default-src 'self'/);
-    const api = await app.inject({ method: 'GET', url: '/api/gibtsnicht' }) as unknown as { headers: Record<string, string> };
+    const api = (await app.inject({ method: 'GET', url: '/api/gibtsnicht' })) as unknown as { headers: Record<string, string> };
     assert.equal(api.headers['x-content-type-options'], 'nosniff');
   });
 
   it('liefert die Offline-Hilfe (#219)', async () => {
-    for (const [url, text] of [['/hilfe/', 'HILFE-START'], ['/hilfe/admin/', 'ADMIN-HANDBUCH'], ['/hilfe/admin/sicherung/', 'SICHERUNG-SEITE']] as const) {
+    for (const [url, text] of [
+      ['/hilfe/', 'HILFE-START'],
+      ['/hilfe/admin/', 'ADMIN-HANDBUCH'],
+      ['/hilfe/admin/sicherung/', 'SICHERUNG-SEITE'],
+    ] as const) {
       const r = await app.inject({ method: 'GET', url });
       assert.equal(r.statusCode, 200, url);
       assert.match(r.body, new RegExp(text), url);
@@ -71,7 +80,16 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
   });
 
   it('nichts außerhalb von web/, auch mit Pfad-Tricks', async () => {
-    for (const url of ['/../geheim.txt', '/assets/../../geheim.txt', '/%2e%2e/geheim.txt', '/assets/%2E%2E/%2E%2E/geheim.txt', '/assets%2F..%2F..%2Fgeheim.txt', '//geheim.txt', '/assets//../../geheim.txt', '/..%5Cgeheim.txt']) {
+    for (const url of [
+      '/../geheim.txt',
+      '/assets/../../geheim.txt',
+      '/%2e%2e/geheim.txt',
+      '/assets/%2E%2E/%2E%2E/geheim.txt',
+      '/assets%2F..%2F..%2Fgeheim.txt',
+      '//geheim.txt',
+      '/assets//../../geheim.txt',
+      '/..%5Cgeheim.txt',
+    ]) {
       const r = await app.inject({ method: 'GET', url });
       assert.doesNotMatch(r.body, /GEHEIM/, url);
     }

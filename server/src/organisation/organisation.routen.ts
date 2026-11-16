@@ -10,13 +10,28 @@ export function organisationRouten(k: RoutenKontext): Route[] {
   const { dienst, zg } = k;
   return [
     { methode: 'GET', pfad: '/api/werkbank/organisation', zugang: 'admin', handler: async () => ok(await dienst.organisation.stand()) },
-    { methode: 'PUT', pfad: '/api/werkbank/organisation', zugang: 'admin', handler: async (a) => ok(await dienst.organisation.setze(a.body, ich(a).email)) },
-    { methode: 'POST', pfad: '/api/werkbank/organisation/uebernehmen', zugang: 'admin', handler: async (a) => {
-      const r = await dienst.organisation.uebernehmen(await zg(a), ich(a).id);
-      L.datenschutz.info('Eigene Organisation aus der bisherigen Angabe angelegt', { von: ich(a).email });
-      return ok(r, 201);
-    } },
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/organisation',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.organisation.setze(a.body, ich(a).email)),
+    },
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/organisation/uebernehmen',
+      zugang: 'admin',
+      handler: async (a) => {
+        const r = await dienst.organisation.uebernehmen(await zg(a), ich(a).id);
+        L.datenschutz.info('Eigene Organisation aus der bisherigen Angabe angelegt', { von: ich(a).email });
+        return ok(r, 201);
+      },
+    },
     // Einrichtungsassistent (#1045): „Deine Organisation“ anlegen – nur, solange es keine eigene gibt.
-    { methode: 'POST', pfad: '/api/werkbank/organisation/anlegen', zugang: 'admin', handler: async (a) => ok(await dienst.organisation.anlegen(a.body, await zg(a), ich(a).id), 201) },
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/organisation/anlegen',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.organisation.anlegen(a.body, await zg(a), ich(a).id), 201),
+    },
   ];
 }

@@ -8,9 +8,22 @@ import { t } from './texte';
  * fehlen bewusst. Ostern nach der Gaußschen Osterformel (gregorianisch).
  */
 export const BUNDESLAENDER = {
-  BW: t('gemeinsam.feiertage.baden-wuerttemberg'), BY: 'Bayern', BE: 'Berlin', BB: 'Brandenburg', HB: 'Bremen', HH: 'Hamburg',
-  HE: 'Hessen', MV: t('gemeinsam.feiertage.mecklenburg-vorpommern'), NI: 'Niedersachsen', NW: t('gemeinsam.feiertage.nordrhein-westfalen'),
-  RP: t('gemeinsam.feiertage.rheinland-pfalz'), SL: 'Saarland', SN: 'Sachsen', ST: t('gemeinsam.feiertage.sachsen-anhalt'), SH: t('gemeinsam.feiertage.schleswig-holstein'), TH: 'Thüringen',
+  BW: t('gemeinsam.feiertage.baden-wuerttemberg'),
+  BY: 'Bayern',
+  BE: 'Berlin',
+  BB: 'Brandenburg',
+  HB: 'Bremen',
+  HH: 'Hamburg',
+  HE: 'Hessen',
+  MV: t('gemeinsam.feiertage.mecklenburg-vorpommern'),
+  NI: 'Niedersachsen',
+  NW: t('gemeinsam.feiertage.nordrhein-westfalen'),
+  RP: t('gemeinsam.feiertage.rheinland-pfalz'),
+  SL: 'Saarland',
+  SN: 'Sachsen',
+  ST: t('gemeinsam.feiertage.sachsen-anhalt'),
+  SH: t('gemeinsam.feiertage.schleswig-holstein'),
+  TH: 'Thüringen',
 } as const;
 export type Bundesland = keyof typeof BUNDESLAENDER;
 export const istBundesland = (v: unknown): v is Bundesland => typeof v === 'string' && v in BUNDESLAENDER;
@@ -42,12 +55,18 @@ export function bussUndBettag(jahr: number): Date {
 /** Feiertage eines Jahres für ein Bundesland: Datum (JJJJ-MM-TT) → Name. */
 export function feiertage(jahr: number, land: Bundesland): Map<string, string> {
   const f = new Map<string, string>();
-  const setze = (d: Date, name: string, gilt = true) => { if (gilt) f.set(iso(d), name); };
+  const setze = (d: Date, name: string, gilt = true) => {
+    if (gilt) f.set(iso(d), name);
+  };
   const in_ = (...l: Bundesland[]) => l.includes(land);
   const ostern = ostersonntag(jahr);
   setze(tag(jahr, 1, 1), 'Neujahr');
   setze(tag(jahr, 1, 6), t('gemeinsam.feiertage.heilige-drei-koenige'), in_('BW', 'BY', 'ST'));
-  setze(tag(jahr, 3, 8), t('gemeinsam.feiertage.internationaler-frauentag'), (land === 'BE' && jahr >= 2019) || (land === 'MV' && jahr >= 2023));
+  setze(
+    tag(jahr, 3, 8),
+    t('gemeinsam.feiertage.internationaler-frauentag'),
+    (land === 'BE' && jahr >= 2019) || (land === 'MV' && jahr >= 2023),
+  );
   setze(plus(ostern, -2), 'Karfreitag');
   setze(ostern, 'Ostersonntag', in_('BB'));
   setze(plus(ostern, 1), 'Ostermontag');
@@ -59,7 +78,11 @@ export function feiertage(jahr: number, land: Bundesland): Map<string, string> {
   setze(tag(jahr, 8, 15), t('gemeinsam.feiertage.mariae-himmelfahrt'), in_('SL'));
   setze(tag(jahr, 9, 20), 'Weltkindertag', land === 'TH' && jahr >= 2019);
   setze(tag(jahr, 10, 3), t('gemeinsam.feiertage.tag-der-deutschen-einheit'));
-  setze(tag(jahr, 10, 31), 'Reformationstag', jahr === 2017 || in_('BB', 'MV', 'SN', 'ST', 'TH') || (in_('HB', 'HH', 'NI', 'SH') && jahr >= 2018));
+  setze(
+    tag(jahr, 10, 31),
+    'Reformationstag',
+    jahr === 2017 || in_('BB', 'MV', 'SN', 'ST', 'TH') || (in_('HB', 'HH', 'NI', 'SH') && jahr >= 2018),
+  );
   setze(tag(jahr, 11, 1), 'Allerheiligen', in_('BW', 'BY', 'NW', 'RP', 'SL'));
   setze(bussUndBettag(jahr), t('gemeinsam.feiertage.buss-und-bettag'), in_('SN'));
   setze(tag(jahr, 12, 25), '1. Weihnachtstag');

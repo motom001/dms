@@ -16,17 +16,39 @@ import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';
 import { SAMMEL_WEITERGABE } from './vertretung';
 
 export class OhneLeserecht {
-  constructor(private readonly kern: Kern, private readonly teile: AufgabenTeile, private readonly anschluss: AufgabenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: AufgabenTeile,
+    private readonly anschluss: AufgabenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private inAnfrage(): boolean { return this.kern.inAnfrage(); }
-  private nachDerAntwort(f: () => Promise<unknown>): Promise<void> | void { return this.kern.nachDerAntwort(f); }
-  private zugriff(ich: Zugreifender): Promise<Zugriff> { return this.teile.rechte.zugriff(ich); }
-  private bildeZugriff(ich: Zugreifender, o: { ohneAufZeit?: boolean } = {}): Promise<Zugriff> { return this.teile.rechte.bildeZugriff(ich, o); }
-  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.teile.rechte.lesbare(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private name(benutzerId: string | null): Promise<string> {
+    return this.kern.name(benutzerId);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private inAnfrage(): boolean {
+    return this.kern.inAnfrage();
+  }
+  private nachDerAntwort(f: () => Promise<unknown>): Promise<void> | void {
+    return this.kern.nachDerAntwort(f);
+  }
+  private zugriff(ich: Zugreifender): Promise<Zugriff> {
+    return this.teile.rechte.zugriff(ich);
+  }
+  private bildeZugriff(ich: Zugreifender, o: { ohneAufZeit?: boolean } = {}): Promise<Zugriff> {
+    return this.teile.rechte.bildeZugriff(ich, o);
+  }
+  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) {
+    return this.teile.rechte.lesbare(...a);
+  }
 
   /**
    * Automatische Aufgaben zu Mappen, die der Empfänger nicht lesen darf (#798): Statt des Textes steht nur „Aufgabe zu
@@ -39,13 +61,24 @@ export class OhneLeserecht {
     const fremd = liste.filter((a) => !lesbar.has(a.mappeId));
     if (!fremd.length) return liste;
     const menschen = new Set(this.konten?.benutzer ? (await this.konten.benutzer()).map((b) => b.id) : []);
-    const vonHand = (a: Aufgabe) => (a.art === 'manuell' || a.art === 'erinnerung') && !a.anlass
-      && (!a.feldKey || a.feldKey === SAMMEL_WEITERGABE) && !!a.erstelltVon && menschen.has(a.erstelltVon);
-    const ersteller = new Map((await this.repo.holeMappen([...new Set(fremd.map((a) => a.mappeId))])).map((m) => [m.id, m.erstelltVon] as const));
+    const vonHand = (a: Aufgabe) =>
+      (a.art === 'manuell' || a.art === 'erinnerung') &&
+      !a.anlass &&
+      (!a.feldKey || a.feldKey === SAMMEL_WEITERGABE) &&
+      !!a.erstelltVon &&
+      menschen.has(a.erstelltVon);
+    const ersteller = new Map(
+      (await this.repo.holeMappen([...new Set(fremd.map((a) => a.mappeId))])).map((m) => [m.id, m.erstelltVon] as const),
+    );
     const text = new Map<string, string>();
     for (const id of new Set(fremd.map((a) => a.mappeId))) {
       const e = ersteller.get(id);
-      text.set(id, e && e !== ich && menschen.has(e) ? t('mappen.aufgabe.ohne-leserecht', { name: await this.name(e) }) : t('mappen.aufgabe.ohne-leserecht.admin'));
+      text.set(
+        id,
+        e && e !== ich && menschen.has(e)
+          ? t('mappen.aufgabe.ohne-leserecht', { name: await this.name(e) })
+          : t('mappen.aufgabe.ohne-leserecht.admin'),
+      );
     }
     // #958: Bei Fristen (und Aufgaben zu einem Datumsfeld) sind Datum und Feld Werte der Mappe – ohne Leserecht weg.
     const ausFeld = (a: Aufgabe) => a.art === 'frist' || a.anlass?.art === 'datum';
@@ -77,7 +110,9 @@ export class OhneLeserecht {
   async faelleAbgleichen(f: { mappeIds?: string[] } = {}): Promise<{ neu: number; beendet: number }> {
     if (!this.konten?.benutzer || (f.mappeIds && !f.mappeIds.length)) return { neu: 0, beendet: 0 };
     const menschen = new Map((await this.konten.benutzer()).map((b) => [b.id, b] as const));
-    const offen = (await this.repo.offeneAufgaben(f.mappeIds ? { mappeIds: f.mappeIds } : {})).filter((a) => a.empfaengerId && menschen.has(a.empfaengerId));
+    const offen = (await this.repo.offeneAufgaben(f.mappeIds ? { mappeIds: f.mappeIds } : {})).filter(
+      (a) => a.empfaengerId && menschen.has(a.empfaengerId),
+    );
     const jeEmpfaenger = new Map<string, Aufgabe[]>();
     for (const a of offen) jeEmpfaenger.set(a.empfaengerId!, [...(jeEmpfaenger.get(a.empfaengerId!) ?? []), a]);
     const ohne = new Set<string>();
@@ -97,26 +132,47 @@ export class OhneLeserecht {
       else {
         const g = await this.repo.holeAufgabe(x.aufgabeId);
         if (!g || !(await this.repo.holeMappe(g.mappeId))) grund = 'geloescht';
-        else if (g.erledigt) { grund = 'erledigt'; zeit = g.erledigt; }
-        else if (g.empfaengerId !== x.benutzerId) grund = 'weitergegeben';
+        else if (g.erledigt) {
+          grund = 'erledigt';
+          zeit = g.erledigt;
+        } else if (g.empfaengerId !== x.benutzerId) grund = 'weitergegeben';
         // Offen bei ihm, aber kein Mensch ohne Admin-Rechte mehr (z. B. Administrator geworden): Er darf jetzt lesen.
         else grund = 'lesbar';
       }
-      if (!grund) { bleiben.add(`${x.aufgabeId}|${x.benutzerId}`); continue; }
+      if (!grund) {
+        bleiben.add(`${x.aufgabeId}|${x.benutzerId}`);
+        continue;
+      }
       if (!(await this.repo.beendeFall(x.id, grund, zeit))) continue;
       beendet++;
       if (x.leserechtSeit) {
         const name = await this.name(x.benutzerId);
-        await this.notiere(x.mappeId, null, 'leserecht', { text: t.frei(`mappen.leserecht.entzogen.${grund}`, { name }), fall: x.id, fuer: x.benutzerId, aufgabe: x.aufgabeId, entzogen: true });
+        await this.notiere(x.mappeId, null, 'leserecht', {
+          text: t.frei(`mappen.leserecht.entzogen.${grund}`, { name }),
+          fall: x.id,
+          fuer: x.benutzerId,
+          aufgabe: x.aufgabeId,
+          entzogen: true,
+        });
         protokoll.modul('ablage').info('Leserecht auf Zeit beendet', { mappeId: x.mappeId, fuer: name, grund });
       }
     }
     let neu = 0;
     for (const a of offen) {
       if (!ohne.has(a.id) || bleiben.has(`${a.id}|${a.empfaengerId}`)) continue;
-      if (await this.repo.legeFallAn({ id: randomUUID(), aufgabeId: a.id, mappeId: a.mappeId, benutzerId: a.empfaengerId!, aufgabentext: a.text })) {
+      if (
+        await this.repo.legeFallAn({
+          id: randomUUID(),
+          aufgabeId: a.id,
+          mappeId: a.mappeId,
+          benutzerId: a.empfaengerId!,
+          aufgabentext: a.text,
+        })
+      ) {
         neu++;
-        protokoll.modul('ablage').info('Aufgabe bei einer Person ohne Leserecht', { mappeId: a.mappeId, fuer: await this.name(a.empfaengerId) });
+        protokoll
+          .modul('ablage')
+          .info('Aufgabe bei einer Person ohne Leserecht', { mappeId: a.mappeId, fuer: await this.name(a.empfaengerId) });
       }
     }
     return { neu, beendet };
@@ -133,20 +189,32 @@ export class OhneLeserecht {
   async faelleNach(mappeIds: string[]) {
     const ids = [...new Set(mappeIds)];
     const abgleichen = async () => {
-      try { await this.faelleAbgleichen({ mappeIds: ids }); }
-      catch (e) { protokoll.modul('ablage').warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message }); }
+      try {
+        await this.faelleAbgleichen({ mappeIds: ids });
+      } catch (e) {
+        protokoll.modul('ablage').warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message });
+      }
     };
     if (!ids.length || !this.konten?.benutzer) return;
     if (this.inAnfrage()) {
       let mitRecht = true;
-      try { mitRecht = (await this.repo.faelleOhneLeserecht({ offen: true, mappeIds: ids })).some((f) => f.leserechtSeit); } catch { /* dann sofort */ }
-      if (!mitRecht) { void this.nachDerAntwort(abgleichen); return; }
+      try {
+        mitRecht = (await this.repo.faelleOhneLeserecht({ offen: true, mappeIds: ids })).some((f) => f.leserechtSeit);
+      } catch {
+        /* dann sofort */
+      }
+      if (!mitRecht) {
+        void this.nachDerAntwort(abgleichen);
+        return;
+      }
     }
     await abgleichen();
   }
 
   /** Offene Fälle (#798) – für den Hinweis in der Werkbank und die Mail an die Administratoren (#719). */
-  async offeneFaelle(): Promise<FallOhneLeserecht[]> { return this.repo.faelleOhneLeserecht({ offen: true }); }
+  async offeneFaelle(): Promise<FallOhneLeserecht[]> {
+    return this.repo.faelleOhneLeserecht({ offen: true });
+  }
 
   /** Werkbank → Aufgaben → Ohne Leserecht (#798): erst abgleichen, dann offene Fälle oben, vergangene darunter. */
   async faelleUebersicht(): Promise<{ offen: FallOhneLeserecht[]; vergangen: FallOhneLeserecht[] }> {
@@ -169,14 +237,24 @@ export class OhneLeserecht {
       if (!(await this.repo.gibLeserechtAufZeit(f.id, von))) throw new Fachfehler(409, t('werkbank.ohne-leserecht.fehler.weg'));
       const name = await this.name(f.benutzerId);
       const aufgabe = f.aufgabentext.length > 80 ? `${f.aufgabentext.slice(0, 79)}…` : f.aufgabentext;
-      await this.notiere(f.mappeId, von, 'leserecht', { text: t('mappen.leserecht.vergeben', { name, aufgabe, von: await this.name(von) }), fall: f.id, fuer: f.benutzerId, aufgabe: f.aufgabeId, vergeben: true });
+      await this.notiere(f.mappeId, von, 'leserecht', {
+        text: t('mappen.leserecht.vergeben', { name, aufgabe, von: await this.name(von) }),
+        fall: f.id,
+        fuer: f.benutzerId,
+        aufgabe: f.aufgabeId,
+        vergeben: true,
+      });
       protokoll.modul('werkbank').info('Leserecht auf Zeit gegeben', { mappeId: f.mappeId, fuer: name, von: await this.name(von) });
     }
     return (await this.repo.faelleOhneLeserecht({ offen: true, mappeIds: [f.mappeId] })).find((x) => x.id === f.id) ?? f;
   }
 
   /** Werkbank: alle offenen oder die zuletzt erledigten. */
-  async alleAufgaben(erledigt = false) { return erledigt ? this.repo.erledigteAufgaben(500) : this.repo.offeneAufgaben(); }
+  async alleAufgaben(erledigt = false) {
+    return erledigt ? this.repo.erledigteAufgaben(500) : this.repo.offeneAufgaben();
+  }
 
-  aufgabenVon(mappeId: string) { return this.repo.aufgabenVon(mappeId); }
+  aufgabenVon(mappeId: string) {
+    return this.repo.aufgabenVon(mappeId);
+  }
 }

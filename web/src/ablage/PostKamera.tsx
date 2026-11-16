@@ -20,7 +20,12 @@ import { t, tn } from '../sprache';
  * Fotostapel des Servers geladen; „Fertig“ schickt nur noch die Kennungen.
  */
 
-export interface KameraZiel { mappeId: string; dokumentId?: string; titel: string; fertig?: () => void }
+export interface KameraZiel {
+  mappeId: string;
+  dokumentId?: string;
+  titel: string;
+  fertig?: () => void;
+}
 const KAMERA = 'dms:post-kamera';
 let kameraEingabe: HTMLInputElement | null = null;
 
@@ -39,15 +44,24 @@ export async function verkleinere(f: File): Promise<Blob> {
     const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
     const k = Math.min(1, LAENGSTE / Math.max(bmp.width, bmp.height));
     const c = document.createElement('canvas');
-    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.width = Math.round(bmp.width * k);
+    c.height = Math.round(bmp.height * k);
     c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
     bmp.close();
     const b = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', 0.85));
-    return b && b.size < f.size ? b : f.type === 'image/jpeg' || f.type === 'image/png' ? f : b ?? f;
-  } catch { return f; }
+    return b && b.size < f.size ? b : f.type === 'image/jpeg' || f.type === 'image/png' ? f : (b ?? f);
+  } catch {
+    return f;
+  }
 }
 
-interface Seite { schluessel: number; datei: File; id?: string; fehler?: string; laden: Promise<void> }
+interface Seite {
+  schluessel: number;
+  datei: File;
+  id?: string;
+  fehler?: string;
+  laden: Promise<void>;
+}
 type Phase = 'zu' | 'aufnehmen' | 'speichert' | 'gespeichert' | 'ende';
 
 export function PostKamera() {
@@ -68,12 +82,17 @@ export function PostKamera() {
     kameraEingabe = kamera.current;
     const auf = (e: Event) => {
       const z = (e as CustomEvent<KameraZiel | null>).detail;
-      setZiel(z); setFehler(undefined); setSeiten([]);
+      setZiel(z);
+      setFehler(undefined);
+      setSeiten([]);
       setSerie((s) => (z ? [] : s));
       setPhase('aufnehmen');
     };
     addEventListener(KAMERA, auf);
-    return () => { removeEventListener(KAMERA, auf); if (kameraEingabe === kamera.current) kameraEingabe = null; };
+    return () => {
+      removeEventListener(KAMERA, auf);
+      if (kameraEingabe === kamera.current) kameraEingabe = null;
+    };
   }, []);
   // Bildschirm-Adressen der Vorschaubilder wieder freigeben.
 
@@ -86,18 +105,25 @@ export function PostKamera() {
         try {
           const { id } = await dokumenteApi.fotoAblegen(await verkleinere(f));
           setSeiten((s) => s.map((x) => (x.schluessel === schluessel ? { ...x, id } : x)));
-        } catch (e) { setSeiten((s) => s.map((x) => (x.schluessel === schluessel ? { ...x, fehler: (e as Error).message } : x))); }
+        } catch (e) {
+          setSeiten((s) => s.map((x) => (x.schluessel === schluessel ? { ...x, fehler: (e as Error).message } : x)));
+        }
       })();
       setSeiten((s) => [...s, { schluessel, datei: f, laden }]);
     }
   }
 
   async function fertig() {
-    setPhase('speichert'); setFehler(undefined);
+    setPhase('speichert');
+    setFehler(undefined);
     await Promise.all(seitenRef.current.map((s) => s.laden));
     const alle = seitenRef.current;
     const kaputt = alle.find((s) => s.fehler);
-    if (kaputt) { setFehler(t('ablage.postkamera.eine-seite-liess-sich', { fehler: String(kaputt.fehler) })); setPhase('aufnehmen'); return; }
+    if (kaputt) {
+      setFehler(t('ablage.postkamera.eine-seite-liess-sich', { fehler: String(kaputt.fehler) }));
+      setPhase('aufnehmen');
+      return;
+    }
     const stapel = alle.map((s) => s.id!);
     try {
       if (ziel) {
@@ -111,27 +137,82 @@ export function PostKamera() {
       setSerie((x) => [...x, { id: r.post.id, typId: r.post.typId, titel: titelOder(r.post.titel), seiten: r.seiten }]);
       setPhase('gespeichert');
       void d.neuLaden();
-    } catch (e) { setFehler((e as Error).message); setPhase('aufnehmen'); }
+    } catch (e) {
+      setFehler((e as Error).message);
+      setPhase('aufnehmen');
+    }
   }
 
   function seiteWeg(schluessel: number) {
     setSeiten((s) => s.filter((y) => y.schluessel !== schluessel));
   }
   function schliessen() {
-    setSeiten([]); setPhase('zu'); setZiel(null); setSerie([]);
+    setSeiten([]);
+    setPhase('zu');
+    setZiel(null);
+    setSerie([]);
   }
   async function abbrechen() {
-    if (seiten.length && !(await rueckfrage({ titel: t('ablage.postkamera.fotos-verwerfen', { anzahl: seiten.length }), text: t('ablage.postkamera.daraus-wird-keine-post'), ja: t('ablage.postkamera.verwerfen'), nein: t('ablage.postkamera.weiter-fotografieren'), gefahr: true }))) return;
-    if (serie.length) { setSeiten([]); setPhase('ende'); } else schliessen();
+    if (
+      seiten.length &&
+      !(await rueckfrage({
+        titel: t('ablage.postkamera.fotos-verwerfen', { anzahl: seiten.length }),
+        text: t('ablage.postkamera.daraus-wird-keine-post'),
+        ja: t('ablage.postkamera.verwerfen'),
+        nein: t('ablage.postkamera.weiter-fotografieren'),
+        gefahr: true,
+      }))
+    )
+      return;
+    if (serie.length) {
+      setSeiten([]);
+      setPhase('ende');
+    } else schliessen();
   }
-  const naechster = () => { setPhase('aufnehmen'); setSeiten([]); kamera.current?.click(); };
+  const naechster = () => {
+    setPhase('aufnehmen');
+    setSeiten([]);
+    kamera.current?.click();
+  };
 
-  const eingaben = <>
-    <input ref={kamera} type="file" accept="image/*" capture="environment" hidden data-pk="kamera" onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; nimm(f); }} />
-    <input ref={galerie} type="file" accept="image/*" multiple hidden data-pk="galerie" onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; nimm(f); }} />
-  </>;
+  const eingaben = (
+    <>
+      <input
+        ref={kamera}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        data-pk="kamera"
+        onChange={(e) => {
+          const f = [...(e.target.files ?? [])];
+          e.target.value = '';
+          nimm(f);
+        }}
+      />
+      <input
+        ref={galerie}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        data-pk="galerie"
+        onChange={(e) => {
+          const f = [...(e.target.files ?? [])];
+          e.target.value = '';
+          nimm(f);
+        }}
+      />
+    </>
+  );
   // Die Eingaben stehen immer an derselben Stelle: Würden sie beim Öffnen neu eingehängt, ginge das Foto verloren.
-  if (phase === 'zu' || (!ziel && !darfPostAnlegen(postTyp))) return <>{eingaben}{null}</>;
+  if (phase === 'zu' || (!ziel && !darfPostAnlegen(postTyp)))
+    return (
+      <>
+        {eingaben}
+        {null}
+      </>
+    );
   const neuePostSicht = d.zaehler.neuePost;
   const letzte = serie.at(-1);
   const laedt = seiten.some((s) => !s.id && !s.fehler);
@@ -140,54 +221,131 @@ export function PostKamera() {
     <>
       {eingaben}
       <>
-      <div className="pk-schleier" aria-hidden="true" />
-      <section className="pk-blatt" role="dialog" aria-modal="true" aria-label={ziel ? t('ablage.postkamera.seite-hinzufuegen') : t('ablage.postkamera.post-fotografieren')}>
-        {phase === 'gespeichert' && letzte ? <>
-          <p className="pk-titel pk-gut" role="status">{tn('ablage.postkamera.post-gespeichert', { symbol: <Symbol name="haken" /> })}</p>
-          <p className="leise">{t('ablage.postkamera.seiten-zuordnen-kannst-du', { anzahl: letzte.seiten, titel: letzte.titel })}</p>
-          <div className="pk-knoepfe">
-            {/* Blau ist die Hauptaktion (Leitsatz 1), Grün bleibt „+ …“ (Leitsatz 2). */}
-            <Knopf art="haupt" className="pk-gross" symbol="kamera" autoFocus onClick={naechster}>{t('ablage.postkamera.naechsten-beleg-fotografieren')}</Knopf>
-            <Knopf className="pk-gross" onClick={() => { schliessen(); geheZu(`/ablage/${letzte.typId}/${letzte.id}`); }}>{t('ablage.postkamera.jetzt-zuordnen')}</Knopf>
-            <Knopf className="pk-gross" onClick={() => setPhase('ende')}>{t('ablage.postkamera.fertig')}</Knopf>
-          </div>
-        </> : phase === 'ende' ? <>
-          <p className="pk-titel pk-gut" role="status"><Symbol name="haken" /> {t('ablage.postkamera.belege-erfasst', { anzahl: serie.length })}</p>
-          <p>{t('ablage.postkamera.sie-liegen-unter', { anzahl: serie.length })}{' '}{neuePostSicht ? <Knopf art="link" onClick={() => { schliessen(); geheZu(`/ablage/${neuePostSicht}`); }}>{t('ablage.postkamera.neue-post')}</Knopf> : t('ablage.postkamera.neue-post')}{t('ablage.postkamera.zuordnen-und-einordnen-geht')}</p>
-          <div className="pk-knoepfe"><Knopf art="haupt" className="pk-gross" autoFocus onClick={schliessen}>{t('ablage.postkamera.schliessen')}</Knopf></div>
-        </> : <>
-          <p className="pk-titel">{ziel ? t('ablage.postkamera.seite-hinzufuegen-2', { titel: ziel.titel }) : seiten.length ? (t('ablage.postkamera.seiten-aufgenommen', { anzahl: seiten.length })) : t('ablage.postkamera.post-fotografieren')}</p>
-          {serie.length > 0 && !ziel && <p className="leise klein">{t('ablage.postkamera.belege-schon-gespeichert-das', { anzahl: serie.length })}</p>}
-          {seiten.length > 0 && (
-            <ol className="pk-seiten" aria-label={t('ablage.postkamera.aufgenommene-seiten')}>
-              {seiten.map((s, i) => (
-                <li key={s.schluessel} className={s.fehler ? 'pk-fehler' : ''}>
-                  <Daumen datei={s.datei} titel={t('ablage.postkamera.seite', { wert: i + 1 })} />
-                  <span className="pk-nr">{s.fehler ? '!' : !s.id ? '…' : i + 1}</span>
-                  <Knopf art="link" className="pk-weg" nurSymbol={t('ablage.postkamera.seite-verwerfen', { wert: i + 1 })} onClick={() => seiteWeg(s.schluessel)}><Symbol name="schliessen" /></Knopf>
-                </li>
-              ))}
-            </ol>
-          )}
-          {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
-          {seiten.length === 0 ? (
-            <div className="pk-knoepfe">
-              <Knopf art="haupt" className="pk-gross" symbol="kamera" onClick={() => kamera.current?.click()}>{t('ablage.postkamera.foto-aufnehmen')}</Knopf>
-              <Knopf className="pk-gross" onClick={() => galerie.current?.click()}>{t('ablage.postkamera.foto-aus-der-mediathek')}</Knopf>
-              <Knopf art="link" className="pk-gross" onClick={() => abbrechen()}>{serie.length ? t('ablage.postkamera.fertig') : t('ablage.postkamera.abbrechen')}</Knopf>
-            </div>
+        <div className="pk-schleier" aria-hidden="true" />
+        <section
+          className="pk-blatt"
+          role="dialog"
+          aria-modal="true"
+          aria-label={ziel ? t('ablage.postkamera.seite-hinzufuegen') : t('ablage.postkamera.post-fotografieren')}>
+          {phase === 'gespeichert' && letzte ? (
+            <>
+              <p className="pk-titel pk-gut" role="status">
+                {tn('ablage.postkamera.post-gespeichert', { symbol: <Symbol name="haken" /> })}
+              </p>
+              <p className="leise">{t('ablage.postkamera.seiten-zuordnen-kannst-du', { anzahl: letzte.seiten, titel: letzte.titel })}</p>
+              <div className="pk-knoepfe">
+                {/* Blau ist die Hauptaktion (Leitsatz 1), Grün bleibt „+ …“ (Leitsatz 2). */}
+                <Knopf art="haupt" className="pk-gross" symbol="kamera" autoFocus onClick={naechster}>
+                  {t('ablage.postkamera.naechsten-beleg-fotografieren')}
+                </Knopf>
+                <Knopf
+                  className="pk-gross"
+                  onClick={() => {
+                    schliessen();
+                    geheZu(`/ablage/${letzte.typId}/${letzte.id}`);
+                  }}>
+                  {t('ablage.postkamera.jetzt-zuordnen')}
+                </Knopf>
+                <Knopf className="pk-gross" onClick={() => setPhase('ende')}>
+                  {t('ablage.postkamera.fertig')}
+                </Knopf>
+              </div>
+            </>
+          ) : phase === 'ende' ? (
+            <>
+              <p className="pk-titel pk-gut" role="status">
+                <Symbol name="haken" /> {t('ablage.postkamera.belege-erfasst', { anzahl: serie.length })}
+              </p>
+              <p>
+                {t('ablage.postkamera.sie-liegen-unter', { anzahl: serie.length })}{' '}
+                {neuePostSicht ? (
+                  <Knopf
+                    art="link"
+                    onClick={() => {
+                      schliessen();
+                      geheZu(`/ablage/${neuePostSicht}`);
+                    }}>
+                    {t('ablage.postkamera.neue-post')}
+                  </Knopf>
+                ) : (
+                  t('ablage.postkamera.neue-post')
+                )}
+                {t('ablage.postkamera.zuordnen-und-einordnen-geht')}
+              </p>
+              <div className="pk-knoepfe">
+                <Knopf art="haupt" className="pk-gross" autoFocus onClick={schliessen}>
+                  {t('ablage.postkamera.schliessen')}
+                </Knopf>
+              </div>
+            </>
           ) : (
-            <div className="pk-knoepfe">
-              <Knopf className="pk-gross" symbol="kamera" gesperrt={phase === 'speichert'} onClick={() => kamera.current?.click()}>{t('ablage.postkamera.weitere-seite')}</Knopf>
-              <Knopf art="haupt" className="pk-gross" laeuft={phase === 'speichert'} laeuftText={laedt ? t('ablage.postkamera.lade-fotos-hoch') : t('ablage.postkamera.speichere')} onClick={() => fertig()}>
-                {ziel ? t('ablage.postkamera.fertig-seiten-anhaengen') : t('ablage.postkamera.fertig-als-post-speichern')}
-              </Knopf>
-              <Knopf art="link" className="pk-gross" gesperrt={phase === 'speichert'} onClick={() => abbrechen()}>{t('ablage.postkamera.abbrechen')}</Knopf>
-            </div>
+            <>
+              <p className="pk-titel">
+                {ziel
+                  ? t('ablage.postkamera.seite-hinzufuegen-2', { titel: ziel.titel })
+                  : seiten.length
+                    ? t('ablage.postkamera.seiten-aufgenommen', { anzahl: seiten.length })
+                    : t('ablage.postkamera.post-fotografieren')}
+              </p>
+              {serie.length > 0 && !ziel && (
+                <p className="leise klein">{t('ablage.postkamera.belege-schon-gespeichert-das', { anzahl: serie.length })}</p>
+              )}
+              {seiten.length > 0 && (
+                <ol className="pk-seiten" aria-label={t('ablage.postkamera.aufgenommene-seiten')}>
+                  {seiten.map((s, i) => (
+                    <li key={s.schluessel} className={s.fehler ? 'pk-fehler' : ''}>
+                      <Daumen datei={s.datei} titel={t('ablage.postkamera.seite', { wert: i + 1 })} />
+                      <span className="pk-nr">{s.fehler ? '!' : !s.id ? '…' : i + 1}</span>
+                      <Knopf
+                        art="link"
+                        className="pk-weg"
+                        nurSymbol={t('ablage.postkamera.seite-verwerfen', { wert: i + 1 })}
+                        onClick={() => seiteWeg(s.schluessel)}>
+                        <Symbol name="schliessen" />
+                      </Knopf>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {fehler && (
+                <p className="fehlertext" role="alert">
+                  {fehler}
+                </p>
+              )}
+              {seiten.length === 0 ? (
+                <div className="pk-knoepfe">
+                  <Knopf art="haupt" className="pk-gross" symbol="kamera" onClick={() => kamera.current?.click()}>
+                    {t('ablage.postkamera.foto-aufnehmen')}
+                  </Knopf>
+                  <Knopf className="pk-gross" onClick={() => galerie.current?.click()}>
+                    {t('ablage.postkamera.foto-aus-der-mediathek')}
+                  </Knopf>
+                  <Knopf art="link" className="pk-gross" onClick={() => abbrechen()}>
+                    {serie.length ? t('ablage.postkamera.fertig') : t('ablage.postkamera.abbrechen')}
+                  </Knopf>
+                </div>
+              ) : (
+                <div className="pk-knoepfe">
+                  <Knopf className="pk-gross" symbol="kamera" gesperrt={phase === 'speichert'} onClick={() => kamera.current?.click()}>
+                    {t('ablage.postkamera.weitere-seite')}
+                  </Knopf>
+                  <Knopf
+                    art="haupt"
+                    className="pk-gross"
+                    laeuft={phase === 'speichert'}
+                    laeuftText={laedt ? t('ablage.postkamera.lade-fotos-hoch') : t('ablage.postkamera.speichere')}
+                    onClick={() => fertig()}>
+                    {ziel ? t('ablage.postkamera.fertig-seiten-anhaengen') : t('ablage.postkamera.fertig-als-post-speichern')}
+                  </Knopf>
+                  <Knopf art="link" className="pk-gross" gesperrt={phase === 'speichert'} onClick={() => abbrechen()}>
+                    {t('ablage.postkamera.abbrechen')}
+                  </Knopf>
+                </div>
+              )}
+              <p className="leise klein">{t('ablage.postkamera.weitere-seite-gehoert-zum')}</p>
+            </>
           )}
-          <p className="leise klein">{t('ablage.postkamera.weitere-seite-gehoert-zum')}</p>
-        </>}
-      </section>
+        </section>
       </>
     </>
   );
@@ -198,15 +356,25 @@ function Daumen({ datei, titel }: { datei: File; titel: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let aus = false;
-    void createImageBitmap(datei).then((bild) => {
-      const c = ref.current;
-      if (aus || !c) { bild.close(); return; }
-      const b = 132, h = 176, m = Math.max(b / bild.width, h / bild.height);
-      c.width = b; c.height = h;
-      c.getContext('2d')?.drawImage(bild, (b - bild.width * m) / 2, (h - bild.height * m) / 2, bild.width * m, bild.height * m);
-      bild.close();
-    }).catch(() => undefined);
-    return () => { aus = true; };
+    void createImageBitmap(datei)
+      .then((bild) => {
+        const c = ref.current;
+        if (aus || !c) {
+          bild.close();
+          return;
+        }
+        const b = 132,
+          h = 176,
+          m = Math.max(b / bild.width, h / bild.height);
+        c.width = b;
+        c.height = h;
+        c.getContext('2d')?.drawImage(bild, (b - bild.width * m) / 2, (h - bild.height * m) / 2, bild.width * m, bild.height * m);
+        bild.close();
+      })
+      .catch(() => undefined);
+    return () => {
+      aus = true;
+    };
   }, [datei]);
   return <canvas ref={ref} role="img" aria-label={titel} />;
 }

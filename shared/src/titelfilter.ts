@@ -18,7 +18,10 @@ import { gebietsschema } from './sprache';
 /** Platzhalter mit optionalen Filtern; Gruppe 1 = Schlüssel, Gruppe 2 = Filterkette samt führendem „|“. */
 export const PLATZHALTER_MIT_FILTERN = /\{([a-z][a-z0-9_]*)((?:\|[^{}|]*)*)\}/g;
 
-export interface Filter { name: string; arg?: string }
+export interface Filter {
+  name: string;
+  arg?: string;
+}
 
 export const FILTER = {
   jahr: { text: t('gemeinsam.titelfilter.jahr-eines-datums'), arten: ['datum'] },
@@ -37,26 +40,41 @@ const istFilter = (n: string): n is FilterName => Object.prototype.hasOwnPropert
 /** „|jahr|kurz:20|sonst:"x"“ → Liste; Argumente in "…" oder „…“ dürfen alles außer | { } enthalten. */
 export function liesFilter(kette: string): Filter[] {
   if (!kette) return [];
-  return kette.split('|').slice(1).map((teil) => {
-    const t = teil.trim();
-    const i = t.indexOf(':');
-    if (i < 0) return { name: t };
-    let arg = t.slice(i + 1).trim();
-    const m = /^"(.*)"$/.exec(arg) ?? /^„(.*)“$/.exec(arg);
-    if (m) arg = m[1];
-    return { name: t.slice(0, i).trim(), arg };
-  });
+  return kette
+    .split('|')
+    .slice(1)
+    .map((teil) => {
+      const t = teil.trim();
+      const i = t.indexOf(':');
+      if (i < 0) return { name: t };
+      let arg = t.slice(i + 1).trim();
+      const m = /^"(.*)"$/.exec(arg) ?? /^„(.*)“$/.exec(arg);
+      if (m) arg = m[1];
+      return { name: t.slice(0, i).trim(), arg };
+    });
 }
 
 /** Fehler einer Filterkette für ein Feld der Art `art` (undefined = unbekannt), sonst leer. */
 export function pruefeFilter(schluessel: string, kette: string, art: string | undefined): string[] {
   const m: string[] = [];
   for (const f of liesFilter(kette)) {
-    if (!istFilter(f.name)) { m.push(t('gemeinsam.titelfilter.unbekannter-filter-moeglich', { schluessel, name: f.name, keys: Object.keys(FILTER).join(', ') })); continue; }
+    if (!istFilter(f.name)) {
+      m.push(t('gemeinsam.titelfilter.unbekannter-filter-moeglich', { schluessel, name: f.name, keys: Object.keys(FILTER).join(', ') }));
+      continue;
+    }
     const d = FILTER[f.name];
-    if (d.arten && art && !(d.arten as readonly string[]).includes(art)) m.push(t('gemeinsam.titelfilter.geht-nur-bei', { schluessel, name: f.name, map: d.arten.map((a) => (a === 'datum' ? 'Datumsfeldern' : 'Betragsfeldern')).join(' oder ') }));
-    if ('arg' in d && d.arg === 'zahl' && !/^\d{1,3}$/.test(f.arg ?? '')) m.push(t('gemeinsam.titelfilter.bitte-eine-zahl-angeben', { schluessel, name: f.name }));
-    if ('arg' in d && d.arg === 'text' && f.arg === undefined) m.push(t('gemeinsam.titelfilter.bitte-einen-text-in', { schluessel, name: f.name }));
+    if (d.arten && art && !(d.arten as readonly string[]).includes(art))
+      m.push(
+        t('gemeinsam.titelfilter.geht-nur-bei', {
+          schluessel,
+          name: f.name,
+          map: d.arten.map((a) => (a === 'datum' ? 'Datumsfeldern' : 'Betragsfeldern')).join(' oder '),
+        }),
+      );
+    if ('arg' in d && d.arg === 'zahl' && !/^\d{1,3}$/.test(f.arg ?? ''))
+      m.push(t('gemeinsam.titelfilter.bitte-eine-zahl-angeben', { schluessel, name: f.name }));
+    if ('arg' in d && d.arg === 'text' && f.arg === undefined)
+      m.push(t('gemeinsam.titelfilter.bitte-einen-text-in', { schluessel, name: f.name }));
     if (!('arg' in d) && f.arg !== undefined) m.push(t('gemeinsam.titelfilter.hat-keinen-zusatz-nach', { schluessel, name: f.name }));
   }
   return m;
@@ -67,7 +85,10 @@ function datumNach(iso: string, muster: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return '';
   const [, j, mo, t] = m;
-  return muster.replace(/JJJJ|JJ|TT|T|MM|M/g, (x) => ({ JJJJ: j, JJ: j.slice(2), TT: t, T: String(Number(t)), MM: mo, M: String(Number(mo)) } as Record<string, string>)[x]);
+  return muster.replace(
+    /JJJJ|JJ|TT|T|MM|M/g,
+    (x) => (({ JJJJ: j, JJ: j.slice(2), TT: t, T: String(Number(t)), MM: mo, M: String(Number(mo)) }) as Record<string, string>)[x],
+  );
 }
 
 /**
@@ -80,23 +101,40 @@ export function wendeFilterAn(text: string, roh: unknown, art: string | undefine
   for (const f of filter) {
     if (!istFilter(f.name)) continue;
     switch (f.name) {
-      case 'jahr': s = s && typeof roh === 'string' ? datumNach(roh, 'JJJJ') || s : s; break;
-      case 'monat': s = s && typeof roh === 'string' ? datumNach(roh, 'MM') || s : s; break;
-      case 'datum': s = s && typeof roh === 'string' ? datumNach(roh, f.arg ?? 'TT.MM.JJJJ') || s : s; break;
+      case 'jahr':
+        s = s && typeof roh === 'string' ? datumNach(roh, 'JJJJ') || s : s;
+        break;
+      case 'monat':
+        s = s && typeof roh === 'string' ? datumNach(roh, 'MM') || s : s;
+        break;
+      case 'datum':
+        s = s && typeof roh === 'string' ? datumNach(roh, f.arg ?? 'TT.MM.JJJJ') || s : s;
+        break;
       case 'ohne_waehrung': {
         const b = roh as { betrag?: unknown } | null;
-        if (s && art === 'betrag' && b && typeof b.betrag === 'number') s = b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (s && art === 'betrag' && b && typeof b.betrag === 'number')
+          s = b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         break;
       }
-      case 'gross': s = s.toLocaleUpperCase('de-DE'); break;
-      case 'klein': s = s.toLocaleLowerCase('de-DE'); break;
+      case 'gross':
+        s = s.toLocaleUpperCase('de-DE');
+        break;
+      case 'klein':
+        s = s.toLocaleLowerCase('de-DE');
+        break;
       case 'kurz': {
         const n = Number(f.arg);
         const zeichen = [...s];
-        if (n > 0 && zeichen.length > n) s = `${zeichen.slice(0, Math.max(1, n - 1)).join('').trimEnd()}…`;
+        if (n > 0 && zeichen.length > n)
+          s = `${zeichen
+            .slice(0, Math.max(1, n - 1))
+            .join('')
+            .trimEnd()}…`;
         break;
       }
-      case 'sonst': if (!s.trim()) s = f.arg ?? ''; break;
+      case 'sonst':
+        if (!s.trim()) s = f.arg ?? '';
+        break;
     }
   }
   return s;
@@ -116,7 +154,7 @@ export function ohneLeereTeile(s: string): string {
   let neu = s;
   do {
     alt = neu;
-    neu = alt.replace(LEER_MIT_TRENNER, (_m, vor: string, nach: string | undefined) => (vor.trim() === '' ? '' : nach ?? ''));
+    neu = alt.replace(LEER_MIT_TRENNER, (_m, vor: string, nach: string | undefined) => (vor.trim() === '' ? '' : (nach ?? '')));
   } while (neu !== alt);
   return neu.split(LEER).join('');
 }

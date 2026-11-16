@@ -47,29 +47,61 @@ export const SCHRIFT_NEU_JE_LAUF = 10;
 /** Pause vor jedem geprüften PDF (Raspberry Pi). */
 const SCHRIFT_PAUSE_MS = 500;
 const SCHRIFT_LOG = protokoll.modul('archivfassung');
-export interface SchriftNachlaufStand { bis: string; geprueft: number; neu: number; seit: string; fertig?: string }
+export interface SchriftNachlaufStand {
+  bis: string;
+  geprueft: number;
+  neu: number;
+  seit: string;
+  fertig?: string;
+}
 
 export class DokumentArchivfassung {
-  constructor(private readonly kern: Kern, private readonly fassungen: DokumentUmwandlung, private readonly anschluss: ArchivfassungAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly fassungen: DokumentUmwandlung,
+    private readonly anschluss: ArchivfassungAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get umwandlung() { return this.fassungen.umwandlung; }
-  private get paketKonten() { return this.kern.paketKonten; }
-  private auftrag(...a: Parameters<ArchivfassungAnschluss['auftrag']>) { return this.anschluss.auftrag(...a); }
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
-  private paketEinstellungen(paket: string) { return this.anschluss.paketEinstellungen(paket); }
-  private typVon(mappeId: string) { return this.kern.typVon(mappeId); }
-  private notiere(...a: Parameters<Kern['historie']['schreibe']>) { return this.kern.historie.schreibe(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get umwandlung() {
+    return this.fassungen.umwandlung;
+  }
+  private get paketKonten() {
+    return this.kern.paketKonten;
+  }
+  private auftrag(...a: Parameters<ArchivfassungAnschluss['auftrag']>) {
+    return this.anschluss.auftrag(...a);
+  }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.anschluss.ereignis(...a);
+  }
+  private paketEinstellungen(paket: string) {
+    return this.anschluss.paketEinstellungen(paket);
+  }
+  private typVon(mappeId: string) {
+    return this.kern.typVon(mappeId);
+  }
+  private notiere(...a: Parameters<Kern['historie']['schreibe']>) {
+    return this.kern.historie.schreibe(...a);
+  }
 
   /* ---------- Archivfassung (PDF/A, #631) ---------- */
 
   archiv?: Archivfassung;
-  verbindeArchivfassung(a: Archivfassung) { this.archiv = a; }
-  get archivfassung() { return this.archiv; }
+  verbindeArchivfassung(a: Archivfassung) {
+    this.archiv = a;
+  }
+  get archivfassung() {
+    return this.archiv;
+  }
 
   /** Vorschaubilder aus der Archivfassung (#1216): neue Archivfassung → Bild, Nachlauf für den Bestand, Stand. */
   private vorschau?: VorschauAusArchiv;
-  verbindeVorschau(v: VorschauAusArchiv) { this.vorschau = v; }
+  verbindeVorschau(v: VorschauAusArchiv) {
+    this.vorschau = v;
+  }
 
   /** Nachlauf (Zeitplan, #1216): Dateien mit Archivfassung und ohne Vorschaubild nachholen. Liefert, wie viele offen sind. */
   async vorschauNachlauf(): Promise<number> {
@@ -86,29 +118,40 @@ export class DokumentArchivfassung {
    */
   async schriftNachlauf(o: { pruefe?: () => Promise<boolean | undefined>; pauseMs?: number } = {}): Promise<SchriftNachlaufStand | null> {
     const e = this.kern.einstellungen;
-    const alt = e ? (await e.lies(SCHRIFT_NACHLAUF)) as SchriftNachlaufStand | null : null;
+    const alt = e ? ((await e.lies(SCHRIFT_NACHLAUF)) as SchriftNachlaufStand | null) : null;
     if (!e || alt?.fertig) return null;
     if ((await (o.pruefe ?? pruefeSchriften)().catch(() => undefined)) !== true) return null;
     const stand: SchriftNachlaufStand = alt ?? { bis: '', geprueft: 0, neu: 0, seit: new Date().toISOString() };
-    if (!alt) SCHRIFT_LOG.info('Archivfassungen und Vorschaubilder von PDFs mit nicht eingebetteten Schriften werden einmalig neu erzeugt (#1329)');
+    if (!alt)
+      SCHRIFT_LOG.info('Archivfassungen und Vorschaubilder von PDFs mit nicht eingebetteten Schriften werden einmalig neu erzeugt (#1329)');
     const jeSha = new Map<string, Dokument[]>();
     for (const d of await this.repo.dokumenteMitTyp(['application/pdf'])) {
       if (d.sha256 > stand.bis) jeSha.set(d.sha256, [...(jeSha.get(d.sha256) ?? []), d]);
     }
     const offen = [...jeSha.keys()].sort();
     const pause = o.pauseMs ?? SCHRIFT_PAUSE_MS;
-    let neu = 0, n = 0;
+    let neu = 0,
+      n = 0;
     for (const sha of offen) {
       if (n >= SCHRIFT_STAPEL || neu >= SCHRIFT_NEU_JE_LAUF) break;
       n++;
-      if (pause) await new Promise((ok) => { setTimeout(ok, pause); });
+      if (pause)
+        await new Promise((ok) => {
+          setTimeout(ok, pause);
+        });
       stand.bis = sha;
       stand.geprueft++;
-      if (await this.schriftNeu(sha, jeSha.get(sha)!)) { neu++; stand.neu++; }
+      if (await this.schriftNeu(sha, jeSha.get(sha)!)) {
+        neu++;
+        stand.neu++;
+      }
     }
     if (n >= offen.length) {
       stand.fertig = new Date().toISOString();
-      SCHRIFT_LOG.info('PDFs mit nicht eingebetteten Schriften: einmalige Neuerzeugung abgeschlossen (#1329)', { geprueft: stand.geprueft, neu: stand.neu });
+      SCHRIFT_LOG.info('PDFs mit nicht eingebetteten Schriften: einmalige Neuerzeugung abgeschlossen (#1329)', {
+        geprueft: stand.geprueft,
+        neu: stand.neu,
+      });
     }
     await e.schreibe(SCHRIFT_NACHLAUF, stand);
     return stand;
@@ -116,13 +159,26 @@ export class DokumentArchivfassung {
 
   /** Eine Datei: Bettet sie Schriften nicht ein, Archivfassung (nur eine eigene) und Vorschaubild neu anstoßen. */
   private async schriftNeu(sha: string, docs: Dokument[]): Promise<boolean> {
-    const fehlt = await this.kern.liesGanz(sha).then((b) => nichtEingebettet(b), () => null);
+    const fehlt = await this.kern.liesGanz(sha).then(
+      (b) => nichtEingebettet(b),
+      () => null,
+    );
     if (!fehlt?.length) return false;
     const info = await this.archiv?.info(sha);
-    const archiv = !!info && !info.imOriginal && await this.archiv!.anfordern(docs[0], { neu: true, grund: t('pakete.archiv.grund.schriften') })
-      .catch((x: Error) => { SCHRIFT_LOG.warn('Archivfassung nicht neu angefordert', { dokument: docs[0].id, fehler: x.message }); return false; });
+    const archiv =
+      !!info &&
+      !info.imOriginal &&
+      (await this.archiv!.anfordern(docs[0], { neu: true, grund: t('pakete.archiv.grund.schriften') }).catch((x: Error) => {
+        SCHRIFT_LOG.warn('Archivfassung nicht neu angefordert', { dokument: docs[0].id, fehler: x.message });
+        return false;
+      }));
     const bild = (this.vorschau?.neuErzeugen(docs) ?? 0) > 0;
-    SCHRIFT_LOG.info('PDF mit nicht eingebetteten Schriften: neu erzeugt', { dokument: docs[0].id, schriften: fehlt.slice(0, 10), archivfassung: archiv, vorschaubild: bild });
+    SCHRIFT_LOG.info('PDF mit nicht eingebetteten Schriften: neu erzeugt', {
+      dokument: docs[0].id,
+      schriften: fehlt.slice(0, 10),
+      archivfassung: archiv,
+      vorschaubild: bild,
+    });
     return true;
   }
 
@@ -147,7 +203,11 @@ export class DokumentArchivfassung {
       notiere: async (d, paket, daten) => {
         const konto = [...this.paketKonten.entries()].find(([, p]) => p === paket)?.[0] ?? null;
         await this.notiere(d.mappeId, konto, 'archivfassung', daten);
-        await this.ereignis('archivfassung.erstellt', { dokument: d.id, mappe: d.mappeId, typ: await this.typVon(d.mappeId), paket }, konto);
+        await this.ereignis(
+          'archivfassung.erstellt',
+          { dokument: d.id, mappe: d.mappeId, typ: await this.typVon(d.mappeId), paket },
+          konto,
+        );
       },
     };
   }
@@ -161,7 +221,9 @@ export class DokumentArchivfassung {
     try {
       const d = await this.repo.holeDokument(id);
       if (d) await this.archiv.anfordern(d, { neu });
-    } catch (e) { protokoll.modul('archivfassung').warn('Dokument nicht zur Archivfassung gemeldet', { dokument: id, fehler: (e as Error).message }); }
+    } catch (e) {
+      protokoll.modul('archivfassung').warn('Dokument nicht zur Archivfassung gemeldet', { dokument: id, fehler: (e as Error).message });
+    }
   }
 
   /** Paket für die Archivfassung installiert, neue Dateitypen oder eine Art nachträglich angekreuzt: Bestand melden (#631, #660). */
@@ -216,9 +278,11 @@ export class DokumentArchivfassung {
   /** Stand der Archivfassung je Dokument (#631), nur wenn es eine gibt oder ein Paket dran ist. */
   async mitArchivStand(docs: Dokument[]): Promise<Dokument[]> {
     if (!this.archiv || !docs.length) return docs;
-    return Promise.all(docs.map(async (d) => {
-      const s = await this.archiv!.stand(d).catch(() => null);
-      return s ? { ...d, archivfassung: s } : d;
-    }));
+    return Promise.all(
+      docs.map(async (d) => {
+        const s = await this.archiv!.stand(d).catch(() => null);
+        return s ? { ...d, archivfassung: s } : d;
+      }),
+    );
   }
 }

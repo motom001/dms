@@ -29,7 +29,8 @@ export const formatName = (f: Feldformat) => t.frei(`felder.format.${f}`);
 /** Relative Datumsgrenze: der Tag, an dem geprüft wird. */
 export const HEUTE = 'heute';
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
-const gueltigesDatum = (s: string) => ISO.test(s) && !Number.isNaN(Date.parse(s)) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+const gueltigesDatum = (s: string) =>
+  ISO.test(s) && !Number.isNaN(Date.parse(s)) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
 /** Ist das eine erlaubte Datumsgrenze? „heute“ oder ein Datum JJJJ-MM-TT. */
 export const istDatumsgrenze = (v: unknown): v is string => typeof v === 'string' && (v === HEUTE || gueltigesDatum(v));
 /** Datumsgrenze als Tag; null = keine. */
@@ -42,11 +43,16 @@ const datumText = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso
 /** Handy-Tastatur je Format (#535, #490/#497). */
 export function eingabemodus(f: Pick<Feld, 'format'>, deutschePlz = true): 'email' | 'tel' | 'url' | 'numeric' | undefined {
   switch (f.format) {
-    case 'email': return 'email';
-    case 'telefon': return 'tel';
-    case 'internetseite': return 'url';
-    case 'plz': return deutschePlz ? 'numeric' : undefined;
-    default: return undefined;
+    case 'email':
+      return 'email';
+    case 'telefon':
+      return 'tel';
+    case 'internetseite':
+      return 'url';
+    case 'plz':
+      return deutschePlz ? 'numeric' : undefined;
+    default:
+      return undefined;
   }
 }
 
@@ -71,14 +77,20 @@ export function istInternetseite(s: string): boolean {
   try {
     const u = new URL(x);
     return (u.protocol === 'http:' || u.protocol === 'https:') && /^[^.]+(\.[^.]+)+$/.test(u.hostname) && !u.hostname.endsWith('.');
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 const ibanKompakt = (s: string) => s.replace(/\s/g, '').toUpperCase();
 /** IBAN in Vierergruppen, z. B. „DE89 3704 0044 0532 0130 00“. */
 export const ibanGruppen = (s: string) => ibanKompakt(s).replace(/(.{4})(?=.)/g, '$1 ');
 const landName = (code: string) => {
-  try { return new Intl.DisplayNames([sprache()], { type: 'region' }).of(code) ?? code; } catch { return code; }
+  try {
+    return new Intl.DisplayNames([sprache()], { type: 'region' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
 };
 /** Fehler einer IBAN oder null. Länge je Land, Prüfziffer nach ISO 13616 (aus der Erkennung). */
 export function ibanFehler(s: string): string | null {
@@ -95,7 +107,12 @@ export function ibanFehler(s: string): string | null {
 const DEUTSCHLAND = new Set(['deutschland', 'de', 'deu', 'd', 'germany', 'bundesrepublik deutschland', 'brd']);
 /** Steht hier Deutschland? Leer zählt als Deutschland (Vorgabe). */
 export const istDeutschland = (land: unknown) => {
-  const s = (Array.isArray(land) ? land[0] : land) == null ? '' : String(Array.isArray(land) ? land[0] : land).trim().toLowerCase();
+  const s =
+    (Array.isArray(land) ? land[0] : land) == null
+      ? ''
+      : String(Array.isArray(land) ? land[0] : land)
+          .trim()
+          .toLowerCase();
   return !s || DEUTSCHLAND.has(s);
 };
 /**
@@ -130,18 +147,26 @@ export function formatFehler(f: Feld, v: Wert | undefined, k: FormatKontext): st
   if (v == null || v === '') return null;
   if (f.typ === 'text' && istFeldformat(f.format) && typeof v === 'string') {
     switch (f.format) {
-      case 'email': return istEmail(v) ? null : t('felder.fehler.email');
-      case 'telefon': return istTelefon(v) ? null : t('felder.fehler.telefon');
-      case 'internetseite': return istInternetseite(v) ? null : t('felder.fehler.internetseite');
-      case 'iban': return ibanFehler(v);
-      case 'plz': return !deutschePlz(f, k.felder, k.werte) || /^\d{5}$/.test(v.trim()) ? null : t('felder.fehler.plz');
+      case 'email':
+        return istEmail(v) ? null : t('felder.fehler.email');
+      case 'telefon':
+        return istTelefon(v) ? null : t('felder.fehler.telefon');
+      case 'internetseite':
+        return istInternetseite(v) ? null : t('felder.fehler.internetseite');
+      case 'iban':
+        return ibanFehler(v);
+      case 'plz':
+        return !deutschePlz(f, k.felder, k.werte) || /^\d{5}$/.test(v.trim()) ? null : t('felder.fehler.plz');
     }
   }
   if (f.typ === 'datum' && typeof v === 'string' && ISO.test(v)) {
     const heute = k.heute ?? heuteIn();
-    const min = grenzeAlsTag(f.min, heute), max = grenzeAlsTag(f.max, heute);
-    if (min && v < min) return f.min === HEUTE ? t('felder.fehler.datum.vergangenheit') : t('felder.fehler.datum.vor', { datum: datumText(min) });
-    if (max && v > max) return f.max === HEUTE ? t('felder.fehler.datum.zukunft') : t('felder.fehler.datum.nach', { datum: datumText(max) });
+    const min = grenzeAlsTag(f.min, heute),
+      max = grenzeAlsTag(f.max, heute);
+    if (min && v < min)
+      return f.min === HEUTE ? t('felder.fehler.datum.vergangenheit') : t('felder.fehler.datum.vor', { datum: datumText(min) });
+    if (max && v > max)
+      return f.max === HEUTE ? t('felder.fehler.datum.zukunft') : t('felder.fehler.datum.nach', { datum: datumText(max) });
   }
   return null;
 }
@@ -188,10 +213,19 @@ export function gleicheFormateAn(typ: Pick<Mappentyp, 'felder'>, werte: Werte, a
 
 /* ---------- Bestand (Werkbank) ---------- */
 
-export interface UnpassendeAngabe { mappeId: string; feldKey: string; wert: string; grund: string }
+export interface UnpassendeAngabe {
+  mappeId: string;
+  feldKey: string;
+  wert: string;
+  grund: string;
+}
 
 /** Gespeicherte Angaben, die nicht (mehr) zum Format bzw. zu den Grenzen passen. */
-export function unpassendeAngaben(typ: Pick<Mappentyp, 'felder'>, mappen: Array<{ id: string; werte: Werte }>, heute = heuteIn()): UnpassendeAngabe[] {
+export function unpassendeAngaben(
+  typ: Pick<Mappentyp, 'felder'>,
+  mappen: Array<{ id: string; werte: Werte }>,
+  heute = heuteIn(),
+): UnpassendeAngabe[] {
   const felderMit = typ.felder.filter(hatVorgaben);
   if (!felderMit.length) return [];
   const aus: UnpassendeAngabe[] = [];
@@ -213,11 +247,21 @@ export function pruefeFormatDefinition(f: Feld, alle: Feld[]): string[] {
   if (f.landFeld) {
     const lf = alle.find((x) => x.key === f.landFeld);
     if (f.format !== 'plz') m.push(t('felder.definition.landfeld.nurplz'));
-    else if (!lf || lf.key === f.key || (lf.typ !== 'text' && lf.typ !== 'auswahl')) m.push(t('felder.definition.landfeld.fehlt', { feld: f.landFeld }));
+    else if (!lf || lf.key === f.key || (lf.typ !== 'text' && lf.typ !== 'auswahl'))
+      m.push(t('felder.definition.landfeld.fehlt', { feld: f.landFeld }));
   }
   if (f.typ === 'datum') {
     for (const g of [f.min, f.max]) if (g != null && g !== '' && !istDatumsgrenze(g)) m.push(t('felder.definition.datum.grenze'));
-    if (typeof f.min === 'string' && typeof f.max === 'string' && f.min !== HEUTE && f.max !== HEUTE && istDatumsgrenze(f.min) && istDatumsgrenze(f.max) && f.min > f.max) m.push(t('felder.definition.datum.reihenfolge'));
+    if (
+      typeof f.min === 'string' &&
+      typeof f.max === 'string' &&
+      f.min !== HEUTE &&
+      f.max !== HEUTE &&
+      istDatumsgrenze(f.min) &&
+      istDatumsgrenze(f.max) &&
+      f.min > f.max
+    )
+      m.push(t('felder.definition.datum.reihenfolge'));
   }
   return m;
 }

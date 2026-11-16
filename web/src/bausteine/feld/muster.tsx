@@ -29,25 +29,38 @@ export function FeldMuster() {
   const [tage, setTage] = useState<string[]>(['mi']);
   const tag = (k: string) => (
     <label key={k} className="haken">
-      <input type="checkbox" checked={tage.includes(k)} onChange={(e) => setTage(e.target.checked ? [...tage, k] : tage.filter((x) => x !== k))} />
+      <input
+        type="checkbox"
+        checked={tage.includes(k)}
+        onChange={(e) => setTage(e.target.checked ? [...tage, k] : tage.filter((x) => x !== k))}
+      />
       <span>{t.frei(`oberflaeche.muster.option.${k}`)}</span>
     </label>
   );
   return (
     <div className={s.raster}>
       <Karte zustand="leer" titel={t('oberflaeche.muster.zustand.leer')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.name')}><input type="text" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.name')}>
+          <input type="text" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} />
+        </Feld>
       </Karte>
       <Karte zustand="gefuellt" titel={t('oberflaeche.muster.zustand.gefuellt')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.email')}><input type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.email')}>
+          <input type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Feld>
       </Karte>
       <Karte zustand="hinweis" titel={t('oberflaeche.muster.zustand.hinweis')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.kundennummer')} hinweis={t('oberflaeche.muster.hinweis.kundennummer')} hilfe="einrichtung.konto">
+        <Feld
+          beschriftung={t('oberflaeche.muster.beschriftung.kundennummer')}
+          hinweis={t('oberflaeche.muster.hinweis.kundennummer')}
+          hilfe="einrichtung.konto">
           <input type="text" autoComplete="off" defaultValue="" />
         </Feld>
       </Karte>
       <Karte zustand="optional" titel={t('oberflaeche.muster.zustand.optional')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.telefon')} optional><input type="tel" autoComplete="off" defaultValue="" /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.telefon')} optional>
+          <input type="tel" autoComplete="off" defaultValue="" />
+        </Feld>
       </Karte>
       <Karte zustand="fehler" titel={t('oberflaeche.muster.zustand.fehler')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.plz')} fehler={PLZ.test(plz) ? null : t('oberflaeche.muster.fehler.plz')}>
@@ -56,7 +69,9 @@ export function FeldMuster() {
       </Karte>
       {/* Fehler steht direkt unter der Eingabe, der Hinweis danach (Prüfung Qualität zu #967). */}
       <Karte zustand="fehler-hinweis" titel={t('oberflaeche.muster.zustand.fehler-hinweis')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.email')} hinweis={t('oberflaeche.muster.hinweis.email')}
+        <Feld
+          beschriftung={t('oberflaeche.muster.beschriftung.email')}
+          hinweis={t('oberflaeche.muster.hinweis.email')}
           fehler={/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(rueckfrage) ? null : t('oberflaeche.muster.fehler.email')}>
           <input type="email" autoComplete="off" value={rueckfrage} onChange={(e) => setRueckfrage(e.target.value)} />
         </Feld>
@@ -67,26 +82,39 @@ export function FeldMuster() {
         </Feld>
       </Karte>
       <Karte zustand="nur-lesen" titel={t('oberflaeche.muster.zustand.nur-lesen')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.angelegt')}><input type="text" readOnly value="Jonas Beispiel" /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.angelegt')}>
+          <input type="text" readOnly value="Jonas Beispiel" />
+        </Feld>
       </Karte>
       {/* Ein Aussehen für alles, was sich nicht ändern lässt (#1034, Hinweis Qualität) – nur die Herkunft unterscheidet sich. */}
       <Karte zustand="berechnet" titel={t('oberflaeche.muster.zustand.berechnet')}>
-        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.status')} herkunft={t('felder.berechnet.von', { paket: 'Verträge' })} symbol="rechnen">
+        <NurLesenFeld
+          beschriftung={t('oberflaeche.muster.beschriftung.status')}
+          herkunft={t('felder.berechnet.von', { paket: 'Verträge' })}
+          symbol="rechnen">
           {t('oberflaeche.muster.wert.status')}
         </NurLesenFeld>
       </Karte>
       <Karte zustand="nicht-mehr-berechnet" titel={t('oberflaeche.muster.zustand.nicht-mehr-berechnet')}>
-        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.kuendigen-bis')} herkunft={t('felder.berechnet.nicht-mehr', { paket: 'Verträge' })} symbol="rechnen">
+        <NurLesenFeld
+          beschriftung={t('oberflaeche.muster.beschriftung.kuendigen-bis')}
+          herkunft={t('felder.berechnet.nicht-mehr', { paket: 'Verträge' })}
+          symbol="rechnen">
           14.02.2028
         </NurLesenFeld>
       </Karte>
       <Karte zustand="zusammengesetzt" titel={t('oberflaeche.muster.zustand.zusammengesetzt')}>
-        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.bezeichnung')} herkunft={t('oberflaeche.muster.hinweis.zusammengesetzt')} symbol="link">
+        <NurLesenFeld
+          beschriftung={t('oberflaeche.muster.beschriftung.bezeichnung')}
+          herkunft={t('oberflaeche.muster.hinweis.zusammengesetzt')}
+          symbol="link">
           {t('oberflaeche.muster.wert.bezeichnung')}
         </NurLesenFeld>
       </Karte>
       <Karte zustand="geschuetzt" titel={t('oberflaeche.muster.zustand.geschuetzt')}>
-        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.email')} herkunft={t('oberflaeche.muster.hinweis.geschuetzt')}>lena@example.org</NurLesenFeld>
+        <NurLesenFeld beschriftung={t('oberflaeche.muster.beschriftung.email')} herkunft={t('oberflaeche.muster.hinweis.geschuetzt')}>
+          lena@example.org
+        </NurLesenFeld>
       </Karte>
       <Karte zustand="auswahl" titel={t('oberflaeche.muster.zustand.auswahl')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.mappentyp')}>
@@ -97,15 +125,22 @@ export function FeldMuster() {
         </Feld>
       </Karte>
       <Karte zustand="mehrzeilig" titel={t('oberflaeche.muster.zustand.mehrzeilig')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.notiz')} optional><textarea rows={3} defaultValue="" /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.notiz')} optional>
+          <textarea rows={3} defaultValue="" />
+        </Feld>
       </Karte>
       <Karte zustand="haken" titel={t('oberflaeche.muster.zustand.haken')}>
-        <HakenFeld beschriftung={t('oberflaeche.muster.beschriftung.erinnerung')} hinweis={t('oberflaeche.muster.hinweis.erinnerung')} hilfe="einrichtung.optional">
+        <HakenFeld
+          beschriftung={t('oberflaeche.muster.beschriftung.erinnerung')}
+          hinweis={t('oberflaeche.muster.hinweis.erinnerung')}
+          hilfe="einrichtung.optional">
           <input type="checkbox" defaultChecked />
         </HakenFeld>
       </Karte>
       <Karte zustand="haken-fehler" titel={t('oberflaeche.muster.zustand.haken-fehler')}>
-        <HakenFeld beschriftung={t('oberflaeche.muster.beschriftung.gelesen')} fehler={gelesen ? null : t('oberflaeche.muster.fehler.gelesen')}>
+        <HakenFeld
+          beschriftung={t('oberflaeche.muster.beschriftung.gelesen')}
+          fehler={gelesen ? null : t('oberflaeche.muster.fehler.gelesen')}>
           <input type="checkbox" checked={gelesen} onChange={(e) => setGelesen(e.target.checked)} />
         </HakenFeld>
       </Karte>
@@ -115,10 +150,14 @@ export function FeldMuster() {
         </FeldGruppe>
       </Karte>
       <Karte zustand="hover" titel={t('oberflaeche.muster.zustand.hover')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.ort')} hinweis={t('oberflaeche.muster.hinweis.ausprobieren')}><input type="text" autoComplete="off" defaultValue="" /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.ort')} hinweis={t('oberflaeche.muster.hinweis.ausprobieren')}>
+          <input type="text" autoComplete="off" defaultValue="" />
+        </Feld>
       </Karte>
       <Karte zustand="fokus" titel={t('oberflaeche.muster.zustand.fokus')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.strasse')} hinweis={t('oberflaeche.muster.hinweis.ausprobieren')}><input type="text" autoComplete="off" defaultValue="" /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.strasse')} hinweis={t('oberflaeche.muster.hinweis.ausprobieren')}>
+          <input type="text" autoComplete="off" defaultValue="" />
+        </Feld>
       </Karte>
     </div>
   );

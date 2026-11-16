@@ -47,7 +47,10 @@ const unescape = (s: string) => s.replace(/\\040/g, ' ');
 /** Woher ein Pfad kommt: Gerät und Pfad innerhalb dieses Dateisystems (aus /proc/self/mountinfo). */
 export function herkunft(pfad: string, mountinfo: string): { geraet: string; pfad: string } | null {
   const punkt = punktFuer(pfad, mountinfo);
-  const zeile = mountinfo.split('\n').map((z) => z.split(' ')).find((f) => f[4] !== undefined && unescape(f[4]) === punkt);
+  const zeile = mountinfo
+    .split('\n')
+    .map((z) => z.split(' '))
+    .find((f) => f[4] !== undefined && unescape(f[4]) === punkt);
   if (!zeile?.[2] || !zeile[3]) return null;
   const rest = relative(punkt, resolve(pfad));
   return { geraet: zeile[2], pfad: rest ? join(unescape(zeile[3]), rest) : unescape(zeile[3]) };
@@ -64,7 +67,13 @@ export async function liegtIn(innen: string, aussen: string, mountinfo?: string 
   const echt = async (p: string) => realpath(p).catch(() => resolve(p));
   if (innerhalb(await echt(innen), await echt(aussen))) return true;
   let text = mountinfo;
-  if (text === undefined) { try { text = readFileSync('/proc/self/mountinfo', 'utf8'); } catch { text = null; } }
+  if (text === undefined) {
+    try {
+      text = readFileSync('/proc/self/mountinfo', 'utf8');
+    } catch {
+      text = null;
+    }
+  }
   if (!text) return false;
   const a = herkunft(innen, text);
   const b = herkunft(aussen, text);
@@ -85,7 +94,9 @@ const namen = async (p: string) => readdir(p).catch(() => [] as string[]);
 async function exportPfade(wurzel: string): Promise<string[]> {
   const erg = (await namen(wurzel)).filter((x) => x.startsWith('dms-export-'));
   for (const b of await namen(join(wurzel, 'persoenlich'))) {
-    erg.push(...(await namen(join(wurzel, 'persoenlich', b))).filter((x) => x.startsWith('dms-export-')).map((x) => join('persoenlich', b, x)));
+    erg.push(
+      ...(await namen(join(wurzel, 'persoenlich', b))).filter((x) => x.startsWith('dms-export-')).map((x) => join('persoenlich', b, x)),
+    );
   }
   return erg;
 }
@@ -108,7 +119,10 @@ async function verschiebe(quelle: string, ziel: string, umbenennen: Umbenennen):
   if (q.isDirectory() && z?.isDirectory()) {
     let alles = true;
     for (const n of await readdir(quelle)) if (!(await verschiebe(join(quelle, n), join(ziel, n), umbenennen))) alles = false;
-    if (alles) await rmdir(quelle).catch(() => { alles = false; });
+    if (alles)
+      await rmdir(quelle).catch(() => {
+        alles = false;
+      });
     return alles;
   }
   if (z) return false;
@@ -125,38 +139,68 @@ async function verschiebe(quelle: string, ziel: string, umbenennen: Umbenennen):
   return true;
 }
 
-export interface Umzug { anzahl: number; uebrig: boolean }
+export interface Umzug {
+  anzahl: number;
+  uebrig: boolean;
+}
 
 /**
  * Beim Start (#797): Was noch in `sicherung/export/` liegt, wandert in den Export-Ordner. Mehrfach ausführbar;
  * nichts zu tun, wenn es den alten Ordner nicht gibt oder er derselbe ist wie der neue (Volume in die Sicherung –
  * dafür gibt es die Warnung). `uebrig`: Es blieb etwas liegen (gleichnamig am Ziel oder nicht verschiebbar).
  */
-export async function zieheExporteUm(alt: string, neu: string, x: { umbenennen?: Umbenennen; mountinfo?: string | null; jetzt?: Date } = {}): Promise<Umzug> {
-  if (!(await lstat(alt).then((s) => s.isDirectory(), () => false))) return { anzahl: 0, uebrig: false };
+export async function zieheExporteUm(
+  alt: string,
+  neu: string,
+  x: { umbenennen?: Umbenennen; mountinfo?: string | null; jetzt?: Date } = {},
+): Promise<Umzug> {
+  if (
+    !(await lstat(alt).then(
+      (s) => s.isDirectory(),
+      () => false,
+    ))
+  )
+    return { anzahl: 0, uebrig: false };
   await mkdir(neu, { recursive: true });
-  if (await liegtIn(neu, alt, x.mountinfo) || await liegtIn(alt, neu, x.mountinfo)) return { anzahl: 0, uebrig: false };
+  if ((await liegtIn(neu, alt, x.mountinfo)) || (await liegtIn(alt, neu, x.mountinfo))) return { anzahl: 0, uebrig: false };
   const vorher = await zaehleExporte(alt);
   const exporte = await exportPfade(alt);
   let uebrig = false;
   for (const n of await readdir(alt)) {
-    try { if (!(await verschiebe(join(alt, n), join(neu, n), x.umbenennen ?? rename))) uebrig = true; } catch { uebrig = true; }
+    try {
+      if (!(await verschiebe(join(alt, n), join(neu, n), x.umbenennen ?? rename))) uebrig = true;
+    } catch {
+      uebrig = true;
+    }
   }
   // Schonfrist: Bis zum Update galt für Vollexporte „bis zum Löschen“. Damit keiner gleich nach dem Update
   // verschwindet, zählen die 7 Tage für verschobene Exporte ab jetzt (Zeitstempel des Manifests, siehe exporteIn).
   const jetzt = x.jetzt ?? new Date();
   for (const r of exporte) {
-    if (await lstat(join(alt, r)).then(() => false, () => true)) await utimes(join(neu, r, 'manifest.json'), jetzt, jetzt).catch(() => {});
+    if (
+      await lstat(join(alt, r)).then(
+        () => false,
+        () => true,
+      )
+    )
+      await utimes(join(neu, r, 'manifest.json'), jetzt, jetzt).catch(() => {});
   }
   // Gezählt wird, was wirklich umzog – Liegengebliebenes nicht (es kommt beim nächsten Start wieder als „übrig“).
-  const anzahl = Math.max(0, vorher - await zaehleExporte(alt));
-  if (!uebrig) await rmdir(alt).catch(() => { uebrig = true; });
+  const anzahl = Math.max(0, vorher - (await zaehleExporte(alt)));
+  if (!uebrig)
+    await rmdir(alt).catch(() => {
+      uebrig = true;
+    });
   return { anzahl, uebrig };
 }
 
 /** Einstellung, unter der der Umzug für den Hinweis in der Werkbank steht – bis ihn ein Administrator gelesen hat. */
 const UMZUG = 'export_umzug';
-export interface UmzugHinweis { am: string; anzahl: number; uebrig: boolean }
+export interface UmzugHinweis {
+  am: string;
+  anzahl: number;
+  uebrig: boolean;
+}
 
 export async function merkeUmzug(e: Einstellungen, u: Umzug, jetzt = new Date()): Promise<void> {
   if (u.anzahl || u.uebrig) await e.schreibe(UMZUG, { am: jetzt.toISOString(), anzahl: u.anzahl, uebrig: u.uebrig, gesehen: false });
@@ -184,7 +228,9 @@ export async function raeumeExporteAuf(wurzel: string, jetzt = new Date()): Prom
   for (const b of await readdir(join(wurzel, 'persoenlich')).catch(() => [] as string[])) {
     const ordner = join(wurzel, 'persoenlich', b);
     await exporteIn(ordner, jetzt);
-    await rmdir(ordner).catch(() => { /* nicht leer */ });
+    await rmdir(ordner).catch(() => {
+      /* nicht leer */
+    });
   }
   await auskuenfteIn(auskunftOrdner(wurzel), jetzt);
 }

@@ -27,7 +27,16 @@ export interface LaeuferSchnappschuss {
   pid: number | null;
 }
 
-const LEER: LaeuferSchnappschuss = { vektorPaket: null, antworten: null, erkennen: [], klassifizieren: [], uebersetzen: [], aktionen: [], paketKonten: [], pid: null };
+const LEER: LaeuferSchnappschuss = {
+  vektorPaket: null,
+  antworten: null,
+  erkennen: [],
+  klassifizieren: [],
+  uebersetzen: [],
+  aktionen: [],
+  paketKonten: [],
+  pid: null,
+};
 /** So oft vergleicht der Leiter den Schnappschuss und schickt ihn bei einer Änderung. */
 export const SCHNAPPSCHUSS_MS = 2000;
 
@@ -41,26 +50,42 @@ export interface LaeuferSicht {
 
 export function schnappschuss(l: Paketlaeufer, d: Dienst): LaeuferSchnappschuss {
   return {
-    vektorPaket: l.vektorPaket(), antworten: l.paketMit('dms:antworten'),
-    erkennen: d.erkennung.anbieter?.pakete() ?? [], klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], aktionen: l.aktionPakete(), paketKonten: [...d.kern.paketKonten.entries()], pid: l.pid,
+    vektorPaket: l.vektorPaket(),
+    antworten: l.paketMit('dms:antworten'),
+    erkennen: d.erkennung.anbieter?.pakete() ?? [],
+    klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [],
+    uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [],
+    aktionen: l.aktionPakete(),
+    paketKonten: [...d.kern.paketKonten.entries()],
+    pid: l.pid,
   };
 }
 
 /** Im Leiter: Aufrufe der anderen Prozesse ausführen, Änderungen am Schnappschuss melden. */
 export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
   v.bediene('laeufer.zustand', () => schnappschuss(l, d));
-  v.bediene('laeufer.aktion', ([paket, aktion, einstellungen]) => l.aktion(String(paket), String(aktion), einstellungen as Record<string, unknown>));
+  v.bediene('laeufer.aktion', ([paket, aktion, einstellungen]) =>
+    l.aktion(String(paket), String(aktion), einstellungen as Record<string, unknown>),
+  );
   v.bediene('laeufer.codeGeaendert', () => l.codeGeaendert());
   v.bediene('laeufer.ereignis', ([paket, felder]) => l.ereignis(String(paket), 'paket.einstellungen_geaendert', felder as string[]));
   v.bediene('laeufer.vektorFuer', ([text, ms]) => l.vektorFuer(String(text), Number(ms)));
   v.bediene('laeufer.schnittstelle', ([paket, aktion, eingang, opt], teil) => {
     const o = opt as { bezeichnung: string; ms?: number; mitTeil?: boolean };
-    return l.schnittstelle(String(paket), String(aktion), eingang as Record<string, unknown>, { bezeichnung: o.bezeichnung, ...(o.ms ? { ms: o.ms } : {}), ...(o.mitTeil ? { teil: (x: string) => teil(x) } : {}) });
+    return l.schnittstelle(String(paket), String(aktion), eingang as Record<string, unknown>, {
+      bezeichnung: o.bezeichnung,
+      ...(o.ms ? { ms: o.ms } : {}),
+      ...(o.mitTeil ? { teil: (x: string) => teil(x) } : {}),
+    });
   });
   // Paket-Aktionen (#1039): der Zugriff kommt als Daten mit, abgelegte Dateien gehen mit dem Ergebnis zurück.
-  v.bediene('laeufer.ausprobieren', ([paket, eingang, probe]) => l.ausprobieren(String(paket), eingang as Record<string, unknown>, probe as Probedatei));
+  v.bediene('laeufer.ausprobieren', ([paket, eingang, probe]) =>
+    l.ausprobieren(String(paket), eingang as Record<string, unknown>, probe as Probedatei),
+  );
   v.bediene('laeufer.pruefeEinstellungen', ([paket, werte]) => l.pruefeEinstellungen(String(paket), werte as Record<string, unknown>));
-  v.bediene('laeufer.mappenaktion', ([paket, eingang, opt]) => l.mappenaktion(String(paket), eingang as Record<string, unknown>, opt as { ms: number; zugang: Zugang; bezeichnung: string }));
+  v.bediene('laeufer.mappenaktion', ([paket, eingang, opt]) =>
+    l.mappenaktion(String(paket), eingang as Record<string, unknown>, opt as { ms: number; zugang: Zugang; bezeichnung: string }),
+  );
   v.bediene('laeufer.uebersicht', () => l.uebersicht());
   v.bediene('laeufer.vektorenNeu', () => l.vektorenNeu());
   v.hoere('laeufer.stelleZu', () => void l.stelleZu());
@@ -69,7 +94,10 @@ export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
   setInterval(() => {
     const z = schnappschuss(l, d);
     const j = JSON.stringify(z);
-    if (j !== zuletzt) { zuletzt = j; v.melde('laeufer.zustand', z, 'andere'); }
+    if (j !== zuletzt) {
+      zuletzt = j;
+      v.melde('laeufer.zustand', z, 'andere');
+    }
   }, SCHNAPPSCHUSS_MS).unref();
 }
 
@@ -77,7 +105,10 @@ export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
 export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
   private z: LaeuferSchnappschuss = LEER;
 
-  constructor(private v: Verbund, private dienst: Dienst) {
+  constructor(
+    private v: Verbund,
+    private dienst: Dienst,
+  ) {
     dienst.ereignisWecker = () => v.melde('laeufer.stelleZu');
     dienst.suche.vektorAnbieter = {
       paket: () => this.z.vektorPaket,
@@ -85,21 +116,38 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
     };
     dienst.fragen.anbieter = {
       paket: () => this.z.antworten,
-      antworte: (paket, eingang, teil) => v.rufe('laeufer.schnittstelle', [paket, 'dms:antworten', eingang, { bezeichnung: 'Frage beantwortet', mitTeil: true }], { teil: (x) => teil(String(x)) }),
+      antworte: (paket, eingang, teil) =>
+        v.rufe('laeufer.schnittstelle', [paket, 'dms:antworten', eingang, { bezeichnung: 'Frage beantwortet', mitTeil: true }], {
+          teil: (x) => teil(String(x)),
+        }),
     };
     dienst.erkennung.anbieter = {
       pakete: () => this.z.erkennen,
-      erkenne: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:erkennen', eingang, { bezeichnung: 'Felder erkannt', ms }], { ms: ms + 5000 }),
+      erkenne: (paket, eingang, ms) =>
+        v.rufe('laeufer.schnittstelle', [paket, 'dms:erkennen', eingang, { bezeichnung: 'Felder erkannt', ms }], { ms: ms + 5000 }),
     };
     dienst.erkennung.klassifizierung.anbieter = {
       pakete: () => this.z.klassifizieren ?? [],
-      klassifiziere: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:klassifizieren', eingang, { bezeichnung: 'Mappentyp vorgeschlagen', ms }], { ms: ms + 5000 }),
+      klassifiziere: (paket, eingang, ms) =>
+        v.rufe('laeufer.schnittstelle', [paket, 'dms:klassifizieren', eingang, { bezeichnung: 'Mappentyp vorgeschlagen', ms }], {
+          ms: ms + 5000,
+        }),
     };
     dienst.uebersetzung.anbieter = {
       pakete: () => this.z.uebersetzen ?? [],
-      uebersetze: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:uebersetzen', eingang, { bezeichnung: 'Text übersetzt', ms }], { ms: ms + 5000 }),
+      uebersetze: (paket, eingang, ms) =>
+        v.rufe('laeufer.schnittstelle', [paket, 'dms:uebersetzen', eingang, { bezeichnung: 'Text übersetzt', ms }], { ms: ms + 5000 }),
     };
-    dienst.sicherungHolen = { rufe: async (paket, eingang, ms) => ((await v.rufe('laeufer.schnittstelle', [paket, 'dms:sicherung-holen', eingang, { bezeichnung: 'Sicherung außer Haus', ...(ms ? { ms } : {}) }], ms ? { ms: ms + 5000 } : {})) as { text: string }).text };
+    dienst.sicherungHolen = {
+      rufe: async (paket, eingang, ms) =>
+        (
+          (await v.rufe(
+            'laeufer.schnittstelle',
+            [paket, 'dms:sicherung-holen', eingang, { bezeichnung: 'Sicherung außer Haus', ...(ms ? { ms } : {}) }],
+            ms ? { ms: ms + 5000 } : {},
+          )) as { text: string }
+        ).text,
+    };
     dienst.paketaktionen.laeufer = {
       geladen: (paket) => (this.z.aktionen ?? []).includes(paket),
       rufe: (paket, eingang, o) => v.rufe('laeufer.mappenaktion', [paket, eingang, o], { ms: o.ms + 5000 }),
@@ -107,17 +155,38 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
     v.hoere('laeufer.zustand', (z) => this.setze(z as LaeuferSchnappschuss));
   }
 
-  private setze(z: LaeuferSchnappschuss) { this.z = z; this.dienst.kern.paketKonten = new Map(z.paketKonten); }
+  private setze(z: LaeuferSchnappschuss) {
+    this.z = z;
+    this.dienst.kern.paketKonten = new Map(z.paketKonten);
+  }
 
   /** Beim Start den Stand des Leiters holen. */
-  async start() { this.setze(await this.v.rufe<LaeuferSchnappschuss>('laeufer.zustand')); }
+  async start() {
+    this.setze(await this.v.rufe<LaeuferSchnappschuss>('laeufer.zustand'));
+  }
 
-  get pid() { return this.z.pid; }
-  aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>) { return this.v.rufe<string>('laeufer.aktion', [paket, aktion, einstellungen]); }
-  ausprobieren(paket: string, eingang: Record<string, unknown>, probe: Probedatei) { return this.v.rufe<Awaited<ReturnType<Paketlaeufer['ausprobieren']>>>('laeufer.ausprobieren', [paket, eingang, probe], { ms: 180_000 }); }
-  pruefeEinstellungen(paket: string, werte: Record<string, unknown>) { return this.v.rufe<Record<string, string> | null>('laeufer.pruefeEinstellungen', [paket, werte], { ms: 20_000 }); }
-  async codeGeaendert() { await this.v.rufe('laeufer.codeGeaendert'); }
-  ereignis(paket: string, _name: 'paket.einstellungen_geaendert', felder: string[]) { void this.v.rufe('laeufer.ereignis', [paket, felder]).catch(() => {}); }
-  uebersicht() { return this.v.rufe<Awaited<ReturnType<Paketlaeufer['uebersicht']>>>('laeufer.uebersicht'); }
-  vektorenNeu() { return this.v.rufe<{ entfernt: number }>('laeufer.vektorenNeu'); }
+  get pid() {
+    return this.z.pid;
+  }
+  aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>) {
+    return this.v.rufe<string>('laeufer.aktion', [paket, aktion, einstellungen]);
+  }
+  ausprobieren(paket: string, eingang: Record<string, unknown>, probe: Probedatei) {
+    return this.v.rufe<Awaited<ReturnType<Paketlaeufer['ausprobieren']>>>('laeufer.ausprobieren', [paket, eingang, probe], { ms: 180_000 });
+  }
+  pruefeEinstellungen(paket: string, werte: Record<string, unknown>) {
+    return this.v.rufe<Record<string, string> | null>('laeufer.pruefeEinstellungen', [paket, werte], { ms: 20_000 });
+  }
+  async codeGeaendert() {
+    await this.v.rufe('laeufer.codeGeaendert');
+  }
+  ereignis(paket: string, _name: 'paket.einstellungen_geaendert', felder: string[]) {
+    void this.v.rufe('laeufer.ereignis', [paket, felder]).catch(() => {});
+  }
+  uebersicht() {
+    return this.v.rufe<Awaited<ReturnType<Paketlaeufer['uebersicht']>>>('laeufer.uebersicht');
+  }
+  vektorenNeu() {
+    return this.v.rufe<{ entfernt: number }>('laeufer.vektorenNeu');
+  }
 }

@@ -17,7 +17,12 @@ import { Kopf } from './Kopf';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'medium' });
 const tag = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(), { dateStyle: 'medium' });
-export const groesse = (b: number) => (b < 1024 ** 2 ? `${Math.max(1, Math.round(b / 1024)).toLocaleString(gebietsschema())} KB` : b < 1024 ** 3 ? `${Math.round(b / 1024 ** 2).toLocaleString(gebietsschema())} MB` : `${(b / 1024 ** 3).toLocaleString(gebietsschema(), { maximumFractionDigits: 1 })} GB`);
+export const groesse = (b: number) =>
+  b < 1024 ** 2
+    ? `${Math.max(1, Math.round(b / 1024)).toLocaleString(gebietsschema())} KB`
+    : b < 1024 ** 3
+      ? `${Math.round(b / 1024 ** 2).toLocaleString(gebietsschema())} MB`
+      : `${(b / 1024 ** 3).toLocaleString(gebietsschema(), { maximumFractionDigits: 1 })} GB`;
 
 /** Baum der Überwachung als Zeilen mit Einrückung. */
 function zeilen(k: EingangKnoten, tiefe = 0, aus: Array<{ k: EingangKnoten; tiefe: number }> = []) {
@@ -37,22 +42,35 @@ function Baum({ u, w, e }: { u: EingangUeberblick; w: EingangWarnung[]; e: Einga
   return (
     <div className="tabellenrahmen">
       <table className="tabelle klein eo-baum">
-        <thead><tr><th>{t('werkbank.eingangsordner.baum.ordner')}</th><th>{t('werkbank.eingangsordner.baum.dateien')}</th><th>{t('werkbank.eingangsordner.baum.groesse')}</th><th>{t('werkbank.eingangsordner.baum.aelteste')}</th></tr></thead>
-        <tbody>{z.map(({ k, tiefe }) => {
-          const fehlerZeile = w.includes('fehler') && /^fehler(\/|$)/i.test(k.pfad) && k.dateien > 0;
-          const alt = w.includes('alt') && !!k.aeltester && Date.parse(k.aeltester) < grenzeAlt;
-          const viel = w.includes('anzahl') && k.dateien * 4 >= u.dateien;
-          const gross = w.includes('groesse') && k.bytes * 4 >= u.bytes;
-          return (
-            <tr key={k.pfad || '/'} className={fehlerZeile ? 'eo-hervor' : undefined}>
-              <td style={{ paddingLeft: `${8 + tiefe * 16}px` }}><code>{k.pfad ? `${k.name}/` : 'eingang/'}</code>
-                {k.zuTief > 0 && <span className="eo-hervor-text klein"> {t('werkbank.eingangsordner.baum.zu-tief', { anzahl: k.zuTief })}</span>}</td>
-              <td className={viel ? 'eo-hervor-text' : undefined}>{k.dateien.toLocaleString(gebietsschema())}</td>
-              <td className={gross ? 'eo-hervor-text' : undefined}>{k.dateien ? groesse(k.bytes) : '–'}</td>
-              <td className={alt ? 'eo-hervor-text' : undefined}>{k.aeltester ? tag(k.aeltester) : '–'}</td>
-            </tr>
-          );
-        })}</tbody>
+        <thead>
+          <tr>
+            <th>{t('werkbank.eingangsordner.baum.ordner')}</th>
+            <th>{t('werkbank.eingangsordner.baum.dateien')}</th>
+            <th>{t('werkbank.eingangsordner.baum.groesse')}</th>
+            <th>{t('werkbank.eingangsordner.baum.aelteste')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {z.map(({ k, tiefe }) => {
+            const fehlerZeile = w.includes('fehler') && /^fehler(\/|$)/i.test(k.pfad) && k.dateien > 0;
+            const alt = w.includes('alt') && !!k.aeltester && Date.parse(k.aeltester) < grenzeAlt;
+            const viel = w.includes('anzahl') && k.dateien * 4 >= u.dateien;
+            const gross = w.includes('groesse') && k.bytes * 4 >= u.bytes;
+            return (
+              <tr key={k.pfad || '/'} className={fehlerZeile ? 'eo-hervor' : undefined}>
+                <td style={{ paddingLeft: `${8 + tiefe * 16}px` }}>
+                  <code>{k.pfad ? `${k.name}/` : 'eingang/'}</code>
+                  {k.zuTief > 0 && (
+                    <span className="eo-hervor-text klein"> {t('werkbank.eingangsordner.baum.zu-tief', { anzahl: k.zuTief })}</span>
+                  )}
+                </td>
+                <td className={viel ? 'eo-hervor-text' : undefined}>{k.dateien.toLocaleString(gebietsschema())}</td>
+                <td className={gross ? 'eo-hervor-text' : undefined}>{k.dateien ? groesse(k.bytes) : '–'}</td>
+                <td className={alt ? 'eo-hervor-text' : undefined}>{k.aeltester ? tag(k.aeltester) : '–'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
       </table>
     </div>
   );
@@ -62,9 +80,16 @@ export function useEingangsordner(offen: boolean) {
   const [stand, setStand] = useState<EingangStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await eingaengeApi.eingangsordner()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try {
+      setStand(await eingaengeApi.eingangsordner());
+      setFehler(undefined);
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }, []);
-  useEffect(() => { void laden(); }, [laden]);
+  useEffect(() => {
+    void laden();
+  }, [laden]);
   useEffect(() => {
     if (!offen) return;
     const timer = setInterval(() => void laden(), 10_000);
@@ -79,13 +104,24 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   const [e, setE] = useState<EingangEinstellung | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { if (s?.einstellung && !e) setE(s.einstellung); }, [s, e]);
-  const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !e, zuruecksetzen: () => { setE(s?.einstellung ?? null); setMeldung(undefined); } });
+  useEffect(() => {
+    if (s?.einstellung && !e) setE(s.einstellung);
+  }, [s, e]);
+  const ent = useEntwurf(s?.einstellung ?? null, e, {
+    aus: !e,
+    zuruecksetzen: () => {
+      setE(s?.einstellung ?? null);
+      setMeldung(undefined);
+    },
+  });
   if (!s) return <p className="leise">{z.fehler ?? t('werkbank.eingangsordner.lade')}</p>;
   if (!s.vorhanden || !e) {
     return (
       <div className="einspaltig">
-        <Kopf titel={t('werkbank.eingangsordner.eingangsordner')} ueber={t('werkbank.eingangsordner.werkbank')} hilfe="werkbank.eingangsordner">
+        <Kopf
+          titel={t('werkbank.eingangsordner.eingangsordner')}
+          ueber={t('werkbank.eingangsordner.werkbank')}
+          hilfe="werkbank.eingangsordner">
           <p className="leise">{tn('werkbank.eingangsordner.es-ist-kein-eingangsordner', { code: <code>{'/eingang'}</code> })}</p>
         </Kopf>
       </div>
@@ -93,55 +129,149 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   }
   async function speichern() {
     setSendet(true);
-    try { const n = await eingaengeApi.eingangsordnerSetzen(e!); z.setStand(n); setE(n.einstellung ?? e); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try {
+      const n = await eingaengeApi.eingangsordnerSetzen(e!);
+      z.setStand(n);
+      setE(n.einstellung ?? e);
+      setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.gespeichert') });
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    } finally {
+      setSendet(false);
+    }
   }
   async function personen() {
     setSendet(true);
-    try { const r = await eingaengeApi.eingangsordnerPersonen(); z.setStand(r.stand); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.personen.angelegt', { anzahl: r.angelegt.length }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try {
+      const r = await eingaengeApi.eingangsordnerPersonen();
+      z.setStand(r.stand);
+      setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.personen.angelegt', { anzahl: r.angelegt.length }) });
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    } finally {
+      setSendet(false);
+    }
   }
   // „Jetzt prüfen“ (#986): Ergebnis und Fehler stehen am Knopf, nicht oben auf der Seite.
   async function jetzt(): Promise<KnopfErgebnis> {
     const r = await eingaengeApi.eingangsordnerPruefen();
     z.setStand(r.stand);
-    return { art: 'gut', text: r.uebernommen ? t('werkbank.eingangsordner.dateien-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.eingangsordner.geprueft-nichts-fertiges-gefunden') };
+    return {
+      art: 'gut',
+      text: r.uebernommen
+        ? t('werkbank.eingangsordner.dateien-uebernommen', { anzahl: r.uebernommen })
+        : t('werkbank.eingangsordner.geprueft-nichts-fertiges-gefunden'),
+    };
   }
   return (
     <div className="einspaltig">
-      <Kopf titel={t('werkbank.eingangsordner.eingangsordner')} ueber={t('werkbank.eingangsordner.werkbank')} hilfe="werkbank.eingangsordner">
-        <p className="leise">{tn('werkbank.eingangsordner.jede-fertige-datei-im', { code: <code>{s.pfad}</code>, code2: <code>{t('werkbank.eingangsordner.eingang-lena')}</code> })}</p>
+      <Kopf
+        titel={t('werkbank.eingangsordner.eingangsordner')}
+        ueber={t('werkbank.eingangsordner.werkbank')}
+        hilfe="werkbank.eingangsordner">
+        <p className="leise">
+          {tn('werkbank.eingangsordner.jede-fertige-datei-im', {
+            code: <code>{s.pfad}</code>,
+            code2: <code>{t('werkbank.eingangsordner.eingang-lena')}</code>,
+          })}
+        </p>
       </Kopf>
-      {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
-      {s.pausiert && <div className="hinweis warn"><p>{t('werkbank.eingangsordner.ruht-gerade', { pausiert: s.pausiert })}</p></div>}
-      {s.andereInstanz && <div className="hinweis warn"><p>{t('werkbank.eingangsordner.eine-andere-instanz-von')}</p></div>}
-      {(s.ohnePerson ?? []).map((o) => <div key={o} className="hinweis warn"><p><strong>{t('werkbank.eingangsordner.ohne-person', { ordner: o })}</strong> {t('werkbank.eingangsordner.ohne-person.text')}</p></div>)}
-      {(s.umbenennen ?? []).map((x) => <div key={x.neu} className="hinweis warn"><p><strong>{t('werkbank.eingangsordner.umbenennen', { alt: x.alt, neu: x.neu })}</strong> {t('werkbank.eingangsordner.umbenennen.text')}</p></div>)}
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+      {meldung && (
+        <div className={`hinweis ${meldung.art}`}>
+          <p>{meldung.text}</p>
+        </div>
+      )}
+      {s.pausiert && (
+        <div className="hinweis warn">
+          <p>{t('werkbank.eingangsordner.ruht-gerade', { pausiert: s.pausiert })}</p>
+        </div>
+      )}
+      {s.andereInstanz && (
+        <div className="hinweis warn">
+          <p>{t('werkbank.eingangsordner.eine-andere-instanz-von')}</p>
+        </div>
+      )}
+      {(s.ohnePerson ?? []).map((o) => (
+        <div key={o} className="hinweis warn">
+          <p>
+            <strong>{t('werkbank.eingangsordner.ohne-person', { ordner: o })}</strong> {t('werkbank.eingangsordner.ohne-person.text')}
+          </p>
+        </div>
+      ))}
+      {(s.umbenennen ?? []).map((x) => (
+        <div key={x.neu} className="hinweis warn">
+          <p>
+            <strong>{t('werkbank.eingangsordner.umbenennen', { alt: x.alt, neu: x.neu })}</strong>{' '}
+            {t('werkbank.eingangsordner.umbenennen.text')}
+          </p>
+        </div>
+      ))}
+      <form
+        className="blatt"
+        onSubmit={(x) => {
+          x.preventDefault();
+          void speichern();
+        }}
+        onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.eingangsordner.einstellungen')}</h2>
-        <Schalter id="eingang-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.eingangsordner.schalter')} />
+        <Schalter
+          id="eingang-aktiv"
+          an={e.aktiv}
+          setze={(an) => setE({ ...e, aktiv: an })}
+          beschriftung={t('werkbank.eingangsordner.schalter')}
+        />
         <div className="raster">
           <Feld beschriftung={t('werkbank.eingangsordner.pruefabstand')} hinweis={t('werkbank.eingangsordner.in-sekunden-5-bis')}>
-            <input id="eingang-abstand" type="number" min={5} max={3600} value={e.abstand} onChange={(x) => setE({ ...e, abstand: Number(x.target.value) })} />
+            <input
+              id="eingang-abstand"
+              type="number"
+              min={5}
+              max={3600}
+              value={e.abstand}
+              onChange={(x) => setE({ ...e, abstand: Number(x.target.value) })}
+            />
           </Feld>
           <Feld beschriftung={t('werkbank.eingangsordner.nach-dem-uebernehmen')}>
-            <select id="eingang-nachher" value={e.nachher} onChange={(x) => setE({ ...e, nachher: x.target.value as EingangEinstellung['nachher'] })}>
+            <select
+              id="eingang-nachher"
+              value={e.nachher}
+              onChange={(x) => setE({ ...e, nachher: x.target.value as EingangEinstellung['nachher'] })}>
               <option value="erledigt">{t('werkbank.eingangsordner.in-erledigt-verschieben')}</option>
               <option value="loeschen">{t('werkbank.eingangsordner.loeschen')}</option>
             </select>
           </Feld>
         </div>
-        <HakenFeld beschriftung={t('werkbank.eingangsordner.doppelte-dateien-ueberspringen')} hinweis={t('werkbank.eingangsordner.liegt-genau-diese-datei')}>
-          <input type="checkbox" checked={e.doppelteUeberspringen === true} onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })} />
+        <HakenFeld
+          beschriftung={t('werkbank.eingangsordner.doppelte-dateien-ueberspringen')}
+          hinweis={t('werkbank.eingangsordner.liegt-genau-diese-datei')}>
+          <input
+            type="checkbox"
+            checked={e.doppelteUeberspringen === true}
+            onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })}
+          />
         </HakenFeld>
         {/* Ordner je Person (#1187): kein eigener Abschnitt mehr – die Erklärung steht einmal am Haken (mehr im Handbuch),
             darunter eine kurze Zeile, nur wenn es etwas zu tun gibt. `#personen` bleibt Sprungziel der Übersicht. */}
         <div id="personen">
-          <HakenFeld beschriftung={t('werkbank.eingangsordner.ordner-automatisch')} hinweis={t('werkbank.eingangsordner.ordner-automatisch.text')} hilfe="werkbank.eingangsordner.personen">
-            <input id="eingang-automatisch" type="checkbox" checked={e.ordnerAutomatisch === true} onChange={(x) => setE({ ...e, ordnerAutomatisch: x.target.checked })} />
+          <HakenFeld
+            beschriftung={t('werkbank.eingangsordner.ordner-automatisch')}
+            hinweis={t('werkbank.eingangsordner.ordner-automatisch.text')}
+            hilfe="werkbank.eingangsordner.personen">
+            <input
+              id="eingang-automatisch"
+              type="checkbox"
+              checked={e.ordnerAutomatisch === true}
+              onChange={(x) => setE({ ...e, ordnerAutomatisch: x.target.checked })}
+            />
           </HakenFeld>
           {(s.ohneOrdner ?? 0) > 0 && (
             <div className="hakenzeile">
-              <span><Symbol name="info" /> {t('werkbank.eingangsordner.personen.ohne', { anzahl: s.ohneOrdner ?? 0 })}</span>
-              <Knopf gesperrt={sendet} onClick={() => void personen()}>{t('werkbank.eingangsordner.personen.anlegen')}</Knopf>
+              <span>
+                <Symbol name="info" /> {t('werkbank.eingangsordner.personen.ohne', { anzahl: s.ohneOrdner ?? 0 })}
+              </span>
+              <Knopf gesperrt={sendet} onClick={() => void personen()}>
+                {t('werkbank.eingangsordner.personen.anlegen')}
+              </Knopf>
             </div>
           )}
         </div>
@@ -149,50 +279,116 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         <p className="leise klein">{t('werkbank.eingangsordner.warnen.text')}</p>
         <div className="raster">
           <Feld beschriftung={t('werkbank.eingangsordner.warn-tage')}>
-            <input id="eingang-warn-tage" type="number" min={0} max={3650} value={e.warnTage ?? 180} onChange={(x) => setE({ ...e, warnTage: Number(x.target.value) })} />
+            <input
+              id="eingang-warn-tage"
+              type="number"
+              min={0}
+              max={3650}
+              value={e.warnTage ?? 180}
+              onChange={(x) => setE({ ...e, warnTage: Number(x.target.value) })}
+            />
           </Feld>
           <Feld beschriftung={t('werkbank.eingangsordner.warn-gb')}>
-            <input id="eingang-warn-gb" type="number" min={0} step="0.1" value={e.warnGb ?? 2} onChange={(x) => setE({ ...e, warnGb: Number(x.target.value) })} />
+            <input
+              id="eingang-warn-gb"
+              type="number"
+              min={0}
+              step="0.1"
+              value={e.warnGb ?? 2}
+              onChange={(x) => setE({ ...e, warnGb: Number(x.target.value) })}
+            />
           </Feld>
           <Feld beschriftung={t('werkbank.eingangsordner.warn-dateien')}>
-            <input id="eingang-warn-dateien" type="number" min={0} value={e.warnDateien ?? 100} onChange={(x) => setE({ ...e, warnDateien: Number(x.target.value) })} />
+            <input
+              id="eingang-warn-dateien"
+              type="number"
+              min={0}
+              value={e.warnDateien ?? 100}
+              onChange={(x) => setE({ ...e, warnDateien: Number(x.target.value) })}
+            />
           </Feld>
         </div>
         <div className="knoepfe">
-          <Knopf onClick={jetzt} laeuftText={t('werkbank.eingangsordner.prueft')}>{t('werkbank.eingangsordner.jetzt-pruefen')}</Knopf>
+          <Knopf onClick={jetzt} laeuftText={t('werkbank.eingangsordner.prueft')}>
+            {t('werkbank.eingangsordner.jetzt-pruefen')}
+          </Knopf>
         </div>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.eingangsordner.einstellungen')} sendet={sendet} />
       </form>
       <div className="blatt" id="ueberwachung">
         <h2 className="h3">{t('werkbank.eingangsordner.ueberwachung')}</h2>
-        {!s.ueberblick ? <p className="leise">{t('werkbank.eingangsordner.ueberwachung.noch-nicht')}</p> : <>
-          {(s.warnungen ?? []).length > 0 && <div className="hinweis warn"><ul>{(s.warnungen ?? []).map((w) => <li key={w}>{t.frei(`werkbank.eingangsordner.warnung.${w}`, { anzahl: w === 'fehler' ? s.ueberblick!.fehler : s.ueberblick!.dateien, tage: e.warnTage ?? 180, groesse: groesse(s.ueberblick!.bytes), zahl: (w === 'fehler' ? s.ueberblick!.fehler : s.ueberblick!.dateien).toLocaleString(gebietsschema()) })}</li>)}</ul></div>}
-          <p className="leise klein">{t('werkbank.eingangsordner.ueberwachung.text', { zeit: zeit(s.ueberblick.berechnet) })}</p>
-          <Baum u={s.ueberblick} w={s.warnungen ?? []} e={s.einstellung ?? e} />
-          {s.ueberblick.gekuerzt && <p className="leise klein">{t('werkbank.eingangsordner.ueberwachung.gekuerzt')}</p>}
-          {s.ueberblick.zuTief > 0 && <p className="leise klein">{t('werkbank.eingangsordner.ueberwachung.zu-tief', { anzahl: s.ueberblick.zuTief })}</p>}
-        </>}
+        {!s.ueberblick ? (
+          <p className="leise">{t('werkbank.eingangsordner.ueberwachung.noch-nicht')}</p>
+        ) : (
+          <>
+            {(s.warnungen ?? []).length > 0 && (
+              <div className="hinweis warn">
+                <ul>
+                  {(s.warnungen ?? []).map((w) => (
+                    <li key={w}>
+                      {t.frei(`werkbank.eingangsordner.warnung.${w}`, {
+                        anzahl: w === 'fehler' ? s.ueberblick!.fehler : s.ueberblick!.dateien,
+                        tage: e.warnTage ?? 180,
+                        groesse: groesse(s.ueberblick!.bytes),
+                        zahl: (w === 'fehler' ? s.ueberblick!.fehler : s.ueberblick!.dateien).toLocaleString(gebietsschema()),
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="leise klein">{t('werkbank.eingangsordner.ueberwachung.text', { zeit: zeit(s.ueberblick.berechnet) })}</p>
+            <Baum u={s.ueberblick} w={s.warnungen ?? []} e={s.einstellung ?? e} />
+            {s.ueberblick.gekuerzt && <p className="leise klein">{t('werkbank.eingangsordner.ueberwachung.gekuerzt')}</p>}
+            {s.ueberblick.zuTief > 0 && (
+              <p className="leise klein">{t('werkbank.eingangsordner.ueberwachung.zu-tief', { anzahl: s.ueberblick.zuTief })}</p>
+            )}
+          </>
+        )}
       </div>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.eingangsordner.stand')}</h2>
         <dl className="eigenschaften">
-          <dt>{t('werkbank.eingangsordner.letzte-pruefung')}</dt><dd>{s.letztePruefung ? zeit(s.letztePruefung) : '–'}</dd>
-          <dt>{t('werkbank.eingangsordner.noch-nicht-fertig')}</dt><dd>{s.wartend ?? 0} {s.wartend === 1 ? t('werkbank.eingangsordner.datei') : t('werkbank.eingangsordner.dateien')} <span className="leise klein">{t('werkbank.eingangsordner.werden-uebernommen-sobald-sie')}</span></dd>
+          <dt>{t('werkbank.eingangsordner.letzte-pruefung')}</dt>
+          <dd>{s.letztePruefung ? zeit(s.letztePruefung) : '–'}</dd>
+          <dt>{t('werkbank.eingangsordner.noch-nicht-fertig')}</dt>
+          <dd>
+            {s.wartend ?? 0} {s.wartend === 1 ? t('werkbank.eingangsordner.datei') : t('werkbank.eingangsordner.dateien')}{' '}
+            <span className="leise klein">{t('werkbank.eingangsordner.werden-uebernommen-sobald-sie')}</span>
+          </dd>
         </dl>
-        {(s.fehler ?? []).length > 0 && <>
-          <h3 className="h4">{t('werkbank.eingangsordner.fehler')}</h3>
-          <ul>{(s.fehler ?? []).map((f) => <li key={`${f.datei}-${f.zeit}`}><strong>{f.datei}</strong> ({zeit(f.zeit)}): {f.grund}</li>)}</ul>
-          <p className="leise klein">{tn('werkbank.eingangsordner.abgelehnte-dateien-liegen-in', { code: <code>{t('werkbank.eingangsordner.fehler-2')}</code> })}</p>
-        </>}
+        {(s.fehler ?? []).length > 0 && (
+          <>
+            <h3 className="h4">{t('werkbank.eingangsordner.fehler')}</h3>
+            <ul>
+              {(s.fehler ?? []).map((f) => (
+                <li key={`${f.datei}-${f.zeit}`}>
+                  <strong>{f.datei}</strong> ({zeit(f.zeit)}): {f.grund}
+                </li>
+              ))}
+            </ul>
+            <p className="leise klein">
+              {tn('werkbank.eingangsordner.abgelehnte-dateien-liegen-in', { code: <code>{t('werkbank.eingangsordner.fehler-2')}</code> })}
+            </p>
+          </>
+        )}
       </div>
       <div className="blatt" id="uebernommen">
         <h2 className="h3">{t('werkbank.eingangsordner.zuletzt-uebernommen')}</h2>
-        {!(s.uebernommen ?? []).length ? <p className="leise">{t('werkbank.eingangsordner.noch-nichts-uebernommen')}</p> : (
+        {!(s.uebernommen ?? []).length ? (
+          <p className="leise">{t('werkbank.eingangsordner.noch-nichts-uebernommen')}</p>
+        ) : (
           <ul className="sitzungsliste festhoehe">
             {(s.uebernommen ?? []).map((u) => (
               <li key={`${u.datei}-${u.zeit}`}>
-                <span><strong>{u.datei}</strong> <span className="leise klein">{zeit(u.zeit)}</span></span>
-                {u.mappeId && <Link to={`/ablage/eingang/${u.mappeId}`} className="verweis klein">{t('werkbank.eingangsordner.post-oeffnen')}</Link>}
+                <span>
+                  <strong>{u.datei}</strong> <span className="leise klein">{zeit(u.zeit)}</span>
+                </span>
+                {u.mappeId && (
+                  <Link to={`/ablage/eingang/${u.mappeId}`} className="verweis klein">
+                    {t('werkbank.eingangsordner.post-oeffnen')}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

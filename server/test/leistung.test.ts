@@ -32,7 +32,12 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
     sql = verbinde(alsUrl(a));
     await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
     ordner = await mkdtemp(join(tmpdir(), 'dms-leistung-'));
-    await baueLeistungsdaten(sql, ordnerSpeicher(ordner, HAUSHALT), { mappen: 1200, startwert: 'leistung-test', dokumente: { von: 1, bis: 3 }, text: { von: 5_000, bis: 20_000 } });
+    await baueLeistungsdaten(sql, ordnerSpeicher(ordner, HAUSHALT), {
+      mappen: 1200,
+      startwert: 'leistung-test',
+      dokumente: { von: 1, bis: 3 },
+      text: { von: 5_000, bis: 20_000 },
+    });
     await sql`ANALYZE`;
   });
   after(async () => {
@@ -68,7 +73,9 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
     // Jede andere Spalte der Tabelle steht in der Liste – neue Spalten fallen hier auf. Auch den Suchindex (#356)
     // lesen Listen nie.
     assert.ok(!(DOKUMENT_SPALTEN as readonly string[]).includes('suchindex'));
-    const spalten = (await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'dokumente' AND column_name NOT IN ('volltext', 'suchindex')`).map((z) => z.column_name as string);
+    const spalten = (
+      await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'dokumente' AND column_name NOT IN ('volltext', 'suchindex')`
+    ).map((z) => z.column_name as string);
     assert.deepEqual([...spalten].sort(), [...DOKUMENT_SPALTEN].sort());
   });
 
@@ -82,17 +89,28 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
     const { HAUSHALT } = await import('./leistung-daten');
     const z = zaehlend(pgRepo(sql, HAUSHALT));
     const d = new Dienst(z.repo, ordnerSpeicher(ordner, HAUSHALT), { einstellungen: speicherEinstellungen() });
-    const q = d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const q = d.vollexport.vollexportQuelle({
+      mandant: 'Test',
+      version: '0',
+      benutzer: async () => ({ benutzer: [], vertretungen: [] }),
+      designs: async () => [],
+      protokoll: () => [],
+    });
     // Nur 300 Mappen (PDF je Mappe kostet Zeit); reicht für mehrere Pakete.
     let rest = 300;
     const mappen = q.mappen;
-    q.mappen = async (typId) => { const ms = (await mappen(typId)).slice(0, Math.max(0, rest)); rest -= ms.length; return ms; };
+    q.mappen = async (typId) => {
+      const ms = (await mappen(typId)).slice(0, Math.max(0, rest));
+      rest -= ms.length;
+      return ms;
+    };
     const ziel = await mkdtemp(join(tmpdir(), 'dms-leistung-export-'));
     try {
       const r = await vollexport(q, ziel, {});
       assert.ok(r.dokumente > 300, `nur ${r.dokumente} Dokumente`);
       const je = z.je();
-      for (const einzeln of ['listeDokumente', 'volltext', 'versionenVon', 'notizen', 'aufgabenVon', 'historie']) assert.equal(je.get(einzeln)?.n ?? 0, 0, `${einzeln} je Mappe/Dokument`);
+      for (const einzeln of ['listeDokumente', 'volltext', 'versionenVon', 'notizen', 'aufgabenVon', 'historie'])
+        assert.equal(je.get(einzeln)?.n ?? 0, 0, `${einzeln} je Mappe/Dokument`);
       const typen = (await d.mappentypen.listeTypen()).length;
       assert.ok((je.get('dokumenteVon')?.n ?? 0) <= typen + 2, `dokumenteVon ${je.get('dokumenteVon')?.n}×`);
       assert.ok((je.get('volltexte')?.n ?? 0) <= Math.ceil(r.dokumente / 100) + typen + 2, `volltexte ${je.get('volltexte')?.n}×`);
@@ -100,6 +118,8 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
       // Volltext im Export vollständig
       const [x] = await sql`SELECT count(*)::int AS n FROM dokumente WHERE volltext IS NOT NULL`;
       assert.ok(x.n > 0);
-    } finally { await rm(ziel, { recursive: true, force: true }); }
+    } finally {
+      await rm(ziel, { recursive: true, force: true });
+    }
   });
 });

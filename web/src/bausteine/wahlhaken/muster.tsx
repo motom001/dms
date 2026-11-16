@@ -25,13 +25,23 @@ export function WahlhakenMuster() {
       <Karte zustand="liste" titel={t('oberflaeche.muster.wahlhaken.liste')}>
         <div className="stapel">
           <div className={w.musterzeile}>
-            <Wahlhaken an={alle} teilweise={!alle && gewaehlt.length > 0} beschriftung={t('oberflaeche.muster.wahlhaken.alle')} setze={(an) => setGewaehlt(an ? ZEILEN : [])} />
-            <span aria-hidden="true" className="klein">{t('oberflaeche.muster.wahlhaken.alle')}</span>
+            <Wahlhaken
+              an={alle}
+              teilweise={!alle && gewaehlt.length > 0}
+              beschriftung={t('oberflaeche.muster.wahlhaken.alle')}
+              setze={(an) => setGewaehlt(an ? ZEILEN : [])}
+            />
+            <span aria-hidden="true" className="klein">
+              {t('oberflaeche.muster.wahlhaken.alle')}
+            </span>
           </div>
           {ZEILEN.map((z) => (
             <div key={z} className={w.musterzeile}>
-              <Wahlhaken an={gewaehlt.includes(z)} beschriftung={t('oberflaeche.muster.wahlhaken.auswaehlen', { titel: z })}
-                setze={(an) => setGewaehlt((g) => (an ? [...g, z] : g.filter((x) => x !== z)))} />
+              <Wahlhaken
+                an={gewaehlt.includes(z)}
+                beschriftung={t('oberflaeche.muster.wahlhaken.auswaehlen', { titel: z })}
+                setze={(an) => setGewaehlt((g) => (an ? [...g, z] : g.filter((x) => x !== z)))}
+              />
               <span>{z}</span>
             </div>
           ))}

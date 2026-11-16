@@ -25,7 +25,10 @@ rauchtest('Handy: Anmelden und Startseite', { handy: true }, async (s) => {
 
 rauchtest('Handy: Neue Post öffnen', { handy: true, als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  await s.getByRole('link', { name: /^Neue Post 2/ }).first().click();
+  await s
+    .getByRole('link', { name: /^Neue Post 2/ })
+    .first()
+    .click();
   await s.locator(`a[href$="/${daten.briefHandy.id}"]`).click();
   // „Dokument übernehmen“ (#934): bis zur mobilen Fassung alles in einer Spalte untereinander.
   await s.waitForURL(/\/uebernehmen$/);
@@ -48,7 +51,10 @@ rauchtest('Handy: Suche über die Lupe oben', { handy: true, als: LENA }, async 
   await feld.fill('Stromvertrag');
   await feld.press('Enter');
   await s.waitForURL(/\/ablage\/suche\?volltext=Stromvertrag$/);
-  await s.getByRole('link', { name: /Stromvertrag Haus/ }).first().click();
+  await s
+    .getByRole('link', { name: /Stromvertrag Haus/ })
+    .first()
+    .click();
   await s.getByRole('heading', { name: 'Stromvertrag Haus', level: 1 }).waitFor();
   await keineWaagerechteRolle(s);
 });
@@ -102,27 +108,31 @@ rauchtest('Tabelle: Positionen zwischen den Feldern, „+ Position“ im Fenster
   await s.getByRole('status').filter({ hasText: 'angelegt' }).waitFor();
 });
 
-rauchtest('Tabelle: Hinweis „Du siehst 2 von 3 Positionen“ bei verborgenen Zeilen, axe hell und dunkel (#1208)', { als: LENA }, async (s) => {
-  const { auftrag, mappe, teils } = daten.tabelle;
-  const hinweis = s.locator('[data-anker="mappe.tabelle-verborgen"]');
-  // axe frisch geladen und ohne Maus über Knöpfen (Hover und Farbübergang verfälschen sonst den Kontrast).
-  const funde = [];
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    await s.goto(BASIS + `/ablage/${auftrag.id}/${teils.id}`);
-    await hinweis.waitFor();
-    for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`${schema}: ${v}`);
-  }
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-  assert.equal((await hinweis.textContent()).trim(), 'Du siehst 2 von 3 Positionen. Die übrigen darfst du nicht sehen.');
-  const tabelle = s.getByRole('table', { name: 'Positionen' });
-  assert.deepEqual(await tabelle.getByRole('row').count(), 3);
-  assert.equal(await s.getByText('Vertraulich').count(), 0);
-  // Ohne verborgene Zeilen kein Hinweis.
-  await s.goto(BASIS + `/ablage/${auftrag.id}/${mappe.id}`);
-  await tabelle.getByRole('link', { name: '1' }).waitFor();
-  assert.equal(await hinweis.count(), 0);
-});
+rauchtest(
+  'Tabelle: Hinweis „Du siehst 2 von 3 Positionen“ bei verborgenen Zeilen, axe hell und dunkel (#1208)',
+  { als: LENA },
+  async (s) => {
+    const { auftrag, mappe, teils } = daten.tabelle;
+    const hinweis = s.locator('[data-anker="mappe.tabelle-verborgen"]');
+    // axe frisch geladen und ohne Maus über Knöpfen (Hover und Farbübergang verfälschen sonst den Kontrast).
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      await s.goto(BASIS + `/ablage/${auftrag.id}/${teils.id}`);
+      await hinweis.waitFor();
+      for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`${schema}: ${v}`);
+    }
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+    assert.equal((await hinweis.textContent()).trim(), 'Du siehst 2 von 3 Positionen. Die übrigen darfst du nicht sehen.');
+    const tabelle = s.getByRole('table', { name: 'Positionen' });
+    assert.deepEqual(await tabelle.getByRole('row').count(), 3);
+    assert.equal(await s.getByText('Vertraulich').count(), 0);
+    // Ohne verborgene Zeilen kein Hinweis.
+    await s.goto(BASIS + `/ablage/${auftrag.id}/${mappe.id}`);
+    await tabelle.getByRole('link', { name: '1' }).waitFor();
+    assert.equal(await hinweis.count(), 0);
+  },
+);
 
 rauchtest('Handy: Hinweis zu verborgenen Zeilen passt, Tippflächen 44 px (#1208)', { handy: true, als: LENA }, async (s) => {
   const { auftrag, teils } = daten.tabelle;
@@ -187,6 +197,9 @@ rauchtest('Fassungen: Bereich im Mappentyp, Liste mit der ersten Fassung (#1006)
   await bereich.getByText('Aktuell', { exact: true }).waitFor();
   await bereich.locator('.historie summary').first().click();
   await bereich.getByText('Angelegt', { exact: false }).first().waitFor();
-  assert.ok(await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Fassungen' }).count() > 0, 'Fassungen in der Sprungleiste');
+  assert.ok(
+    (await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Fassungen' }).count()) > 0,
+    'Fassungen in der Sprungleiste',
+  );
   await keineWaagerechteRolle(s);
 });

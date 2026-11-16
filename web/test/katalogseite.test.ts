@@ -51,7 +51,13 @@ describe('Im Katalog ansehen (#622)', () => {
 
   const web = new URL('../../web/src', import.meta.url).pathname;
   const dateien: string[] = [];
-  const lauf = (d: string) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) lauf(p); else if (/\.tsx?$/.test(p)) dateien.push(p); } };
+  const lauf = (d: string) => {
+    for (const n of readdirSync(d)) {
+      const p = join(d, n);
+      if (statSync(p).isDirectory()) lauf(p);
+      else if (/\.tsx?$/.test(p)) dateien.push(p);
+    }
+  };
   lauf(web);
 
   it('jeder Link mit Version öffnet im neuen Tab mit rel="noopener noreferrer"', () => {
@@ -74,7 +80,11 @@ describe('Im Katalog ansehen (#622)', () => {
       assert.doesNotMatch(text, /[?&]dms=/, `${p}: Version als Query`);
       assert.doesNotMatch(text, /(?:searchParams|URLSearchParams)[^;\n]*['"`]dms['"`]/, `${p}: Version als Query`);
       // Links auf die Katalog-Webseite nur über katalogSeiteMitVersion/sammelSeiteMitVersion.
-      assert.doesNotMatch(text, /KATALOG_SEITE\b|sammeldatei\.html|motom001\.github\.io\/dms-registry/, `${p}: Adresse der Katalog-Webseite selbst gebaut`);
+      assert.doesNotMatch(
+        text,
+        /KATALOG_SEITE\b|sammeldatei\.html|motom001\.github\.io\/dms-registry/,
+        `${p}: Adresse der Katalog-Webseite selbst gebaut`,
+      );
     }
   });
 });

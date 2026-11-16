@@ -34,11 +34,26 @@ export const ZWECK = 'dms-sicherung';
  */
 export const ABLEITUNG = `HKDF-SHA256 „${ZWECK}“ aus dem Schlüssel der Werkbank`;
 
-export interface Dateikopf { format: number; verfahren: string; ableitung: string; kompression: string; fingerabdruck: string; nonce: string }
+export interface Dateikopf {
+  format: number;
+  verfahren: string;
+  ableitung: string;
+  kompression: string;
+  fingerabdruck: string;
+  nonce: string;
+}
 export type Art = 'M' | 'T' | 'D' | 'E';
-export interface Eintrag { art: Art; kopf: Record<string, unknown>; daten?: AsyncIterable<Buffer> | Buffer }
+export interface Eintrag {
+  art: Art;
+  kopf: Record<string, unknown>;
+  daten?: AsyncIterable<Buffer> | Buffer;
+}
 
-const u32 = (n: number) => { const b = Buffer.alloc(4); b.writeUInt32BE(n); return b; };
+const u32 = (n: number) => {
+  const b = Buffer.alloc(4);
+  b.writeUInt32BE(n);
+  return b;
+};
 
 /** Einträge in Bytes umwandeln (unverschlüsselt, unkomprimiert). */
 async function* eintraegeAlsBytes(eintraege: AsyncIterable<Eintrag>): AsyncGenerator<Buffer> {
@@ -59,15 +74,31 @@ async function* eintraegeAlsBytes(eintraege: AsyncIterable<Eintrag>): AsyncGener
   }
 }
 
-export interface Geschrieben { bytes: number; sha256: string }
+export interface Geschrieben {
+  bytes: number;
+  sha256: string;
+}
 
 /**
  * Schreibt eine Sicherung nach `ziel` (die Datei darf noch nicht existieren).
  * `fortschritt` bekommt die Anzahl unverschlüsselter Bytes, die schon verarbeitet sind.
  */
-export async function schreibeSicherung(ziel: string, schluessel: Buffer, fingerabdruck: string, eintraege: AsyncIterable<Eintrag>, fortschritt: (bytes: number) => void = () => {}): Promise<Geschrieben> {
+export async function schreibeSicherung(
+  ziel: string,
+  schluessel: Buffer,
+  fingerabdruck: string,
+  eintraege: AsyncIterable<Eintrag>,
+  fortschritt: (bytes: number) => void = () => {},
+): Promise<Geschrieben> {
   const nonce = randomBytes(12);
-  const kopf: Dateikopf = { format: FORMAT, verfahren: 'AES-256-GCM', ableitung: ABLEITUNG, kompression: 'gzip', fingerabdruck, nonce: nonce.toString('base64url') };
+  const kopf: Dateikopf = {
+    format: FORMAT,
+    verfahren: 'AES-256-GCM',
+    ableitung: ABLEITUNG,
+    kompression: 'gzip',
+    fingerabdruck,
+    nonce: nonce.toString('base64url'),
+  };
   const kopfBytes = Buffer.from(JSON.stringify(kopf), 'utf8');
   const vorspann = Buffer.concat([MAGIE, u32(kopfBytes.length), kopfBytes]);
   const cipher = createCipheriv('aes-256-gcm', schluessel, nonce);
@@ -76,12 +107,23 @@ export async function schreibeSicherung(ziel: string, schluessel: Buffer, finger
   const datei = await open(ziel, 'wx', 0o600);
   let bytes = 0;
   try {
-    const schreibe = async (b: Buffer) => { if (!b.length) return; hash.update(b); bytes += b.length; await datei.write(b); };
+    const schreibe = async (b: Buffer) => {
+      if (!b.length) return;
+      hash.update(b);
+      bytes += b.length;
+      await datei.write(b);
+    };
     await schreibe(vorspann);
     let klar = 0;
-    const quelle = Readable.from((async function* () {
-      for await (const b of eintraegeAlsBytes(eintraege)) { klar += b.length; fortschritt(klar); yield b; }
-    })());
+    const quelle = Readable.from(
+      (async function* () {
+        for await (const b of eintraegeAlsBytes(eintraege)) {
+          klar += b.length;
+          fortschritt(klar);
+          yield b;
+        }
+      })(),
+    );
     const gzip = createGzip({ level: 3 });
     quelle.pipe(gzip);
     quelle.on('error', (e) => gzip.destroy(e));
@@ -89,7 +131,8 @@ export async function schreibeSicherung(ziel: string, schluessel: Buffer, finger
       for await (const z of gzip) await schreibe(cipher.update(z as Buffer));
     } catch (e) {
       // Quelle schließen: beendet die Generatoren und damit offene COPY-Abfragen.
-      quelle.destroy(); gzip.destroy();
+      quelle.destroy();
+      gzip.destroy();
       await new Promise((r) => setImmediate(r));
       throw e;
     }
@@ -106,7 +149,11 @@ export async function schreibeSicherung(ziel: string, schluessel: Buffer, finger
 export async function sha256Von(pfad: string, fortschritt: (bytes: number) => void = () => {}): Promise<string> {
   const h = createHash('sha256');
   let n = 0;
-  for await (const c of createReadStream(pfad)) { h.update(c as Buffer); n += (c as Buffer).length; fortschritt(n); }
+  for await (const c of createReadStream(pfad)) {
+    h.update(c as Buffer);
+    n += (c as Buffer).length;
+    fortschritt(n);
+  }
   return h.digest('hex');
 }
 
@@ -116,15 +163,19 @@ export async function liesKopf(pfad: string): Promise<{ kopf: Dateikopf; vorspan
   try {
     const anfang = Buffer.alloc(MAGIE.length + 4);
     const { bytesRead } = await f.read(anfang, 0, anfang.length, 0);
-    if (bytesRead < anfang.length || !anfang.subarray(0, MAGIE.length).equals(MAGIE)) throw new Error('Das ist keine Sicherungsdatei von Ablago (oder ein unbekanntes Format).');
+    if (bytesRead < anfang.length || !anfang.subarray(0, MAGIE.length).equals(MAGIE))
+      throw new Error('Das ist keine Sicherungsdatei von Ablago (oder ein unbekanntes Format).');
     const laenge = anfang.readUInt32BE(MAGIE.length);
     if (laenge > SICHERUNGSKOPF_MAX) throw new Error('Der Kopf der Sicherungsdatei ist beschädigt.');
     const kopfBytes = Buffer.alloc(laenge);
     await f.read(kopfBytes, 0, laenge, anfang.length);
     const kopf = JSON.parse(kopfBytes.toString('utf8')) as Dateikopf;
-    if (kopf.format !== FORMAT) throw new Error(`Die Sicherung hat das Format ${kopf.format}; dieser Installation kennt Format ${FORMAT}. Aktualisiere Ablago.`);
+    if (kopf.format !== FORMAT)
+      throw new Error(`Die Sicherung hat das Format ${kopf.format}; dieser Installation kennt Format ${FORMAT}. Aktualisiere Ablago.`);
     return { kopf, vorspann: Buffer.concat([anfang, kopfBytes]) };
-  } finally { await f.close(); }
+  } finally {
+    await f.close();
+  }
 }
 
 /** Liest genau so viele Bytes aus einem Strom, wie verlangt. */
@@ -137,7 +188,8 @@ class Byteleser {
       const { value, done } = await this.quelle.next();
       if (done) throw new Error('Die Sicherungsdatei endet unerwartet (unvollständig oder beschädigt).');
       const b = Buffer.isBuffer(value) ? value : Buffer.from(value as Uint8Array);
-      this.puffer.push(b); this.vorrat += b.length;
+      this.puffer.push(b);
+      this.vorrat += b.length;
     }
     const alles = this.puffer.length === 1 ? this.puffer[0] : Buffer.concat(this.puffer);
     this.puffer = alles.length > n ? [alles.subarray(n)] : [];
@@ -149,12 +201,19 @@ class Byteleser {
     const { value, done } = await this.quelle.next();
     if (done) return true;
     const b = Buffer.isBuffer(value) ? value : Buffer.from(value as Uint8Array);
-    if (b.length) { this.puffer.push(b); this.vorrat += b.length; }
+    if (b.length) {
+      this.puffer.push(b);
+      this.vorrat += b.length;
+    }
     return !b.length ? this.ende() : false;
   }
 }
 
-export interface Gelesen { art: Art; kopf: Record<string, unknown>; daten: AsyncGenerator<Buffer> }
+export interface Gelesen {
+  art: Art;
+  kopf: Record<string, unknown>;
+  daten: AsyncGenerator<Buffer>;
+}
 
 /**
  * Liest eine Sicherung Eintrag für Eintrag. Jeder Eintrag muss vollständig gelesen (oder mit
@@ -162,24 +221,43 @@ export interface Gelesen { art: Art; kopf: Record<string, unknown>; daten: Async
  * fest, wenn alles gelesen ist (GCM-Tag) – bis dahin darf nichts endgültig übernommen werden.
  * Bei falschem Schlüssel oder veränderter Datei wirft das Lesen spätestens am Ende.
  */
-export async function* liesSicherung(pfad: string, schluessel: Buffer, fortschritt: (bytes: number) => void = () => {}): AsyncGenerator<Gelesen> {
+export async function* liesSicherung(
+  pfad: string,
+  schluessel: Buffer,
+  fortschritt: (bytes: number) => void = () => {},
+): AsyncGenerator<Gelesen> {
   const { vorspann, kopf } = await liesKopf(pfad);
   const groesse = (await stat(pfad)).size;
   if (groesse < vorspann.length + 16) throw new Error('Die Sicherungsdatei ist unvollständig.');
   const tag = Buffer.alloc(16);
   const f = await open(pfad, 'r');
-  try { await f.read(tag, 0, 16, groesse - 16); } finally { await f.close(); }
+  try {
+    await f.read(tag, 0, 16, groesse - 16);
+  } finally {
+    await f.close();
+  }
   const decipher = createDecipheriv('aes-256-gcm', schluessel, Buffer.from(kopf.nonce, 'base64url'));
   decipher.setAAD(vorspann);
   decipher.setAuthTag(tag);
   let gelesen = vorspann.length;
   const geheim = createReadStream(pfad, { start: vorspann.length, end: groesse - 17 });
-  geheim.on('data', (c) => { gelesen += (c as Buffer).length; fortschritt(gelesen); });
+  geheim.on('data', (c) => {
+    gelesen += (c as Buffer).length;
+    fortschritt(gelesen);
+  });
   const gunzip = createGunzip();
   geheim.pipe(decipher).pipe(gunzip);
   const fehler = (e: Error) => gunzip.destroy(e);
   geheim.on('error', fehler);
-  decipher.on('error', (e) => gunzip.destroy(new Error(/auth/i.test(e.message) ? 'Die Sicherung ließ sich nicht entschlüsseln: falscher Schlüssel oder die Datei wurde verändert.' : e.message)));
+  decipher.on('error', (e) =>
+    gunzip.destroy(
+      new Error(
+        /auth/i.test(e.message)
+          ? 'Die Sicherung ließ sich nicht entschlüsseln: falscher Schlüssel oder die Datei wurde verändert.'
+          : e.message,
+      ),
+    ),
+  );
   const leser = new Byteleser(gunzip[Symbol.asyncIterator]());
   try {
     for (;;) {
@@ -190,19 +268,26 @@ export async function* liesSicherung(pfad: string, schluessel: Buffer, fortschri
       const daten = (async function* () {
         for (;;) {
           const n = (await leser.lies(4)).readUInt32BE();
-          if (!n) { fertig = true; return; }
+          if (!n) {
+            fertig = true;
+            return;
+          }
           yield await leser.lies(n);
         }
       })();
       yield { art, kopf: k, daten };
-      if (!fertig) for await (const _ of daten) { /* Rest überspringen */ }
+      if (!fertig)
+        for await (const _ of daten) {
+          /* Rest überspringen */
+        }
       if (art === 'E') break;
     }
     if (!(await leser.ende())) throw new Error('Nach dem Ende der Sicherung folgen noch Daten – die Datei ist beschädigt.');
   } catch (e) {
     geheim.destroy();
     const z = e as NodeJS.ErrnoException;
-    if (typeof z.code === 'string' && z.code.startsWith('Z_')) throw new Error('Die Sicherung ließ sich nicht entschlüsseln: falscher Schlüssel oder die Datei wurde verändert.');
+    if (typeof z.code === 'string' && z.code.startsWith('Z_'))
+      throw new Error('Die Sicherung ließ sich nicht entschlüsseln: falscher Schlüssel oder die Datei wurde verändert.');
     throw e;
   } finally {
     // Auch wenn nur der Anfang gelesen wird (Inhaltsangabe, #585): Datei schließen.

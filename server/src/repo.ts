@@ -1,4 +1,22 @@
-import type { Aufgabe, Ausschnitt, FallEnde, FallOhneLeserecht, Dokument, DokumentVersion, Herkunft, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
+import type {
+  Aufgabe,
+  Ausschnitt,
+  FallEnde,
+  FallOhneLeserecht,
+  Dokument,
+  DokumentVersion,
+  Herkunft,
+  Historienart,
+  Historieneintrag,
+  Mappe,
+  Notiz,
+  MappenBezug,
+  Mappentyp,
+  MappentypDaten,
+  OcrStandArt,
+  Systemtyp,
+  Werte,
+} from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
 import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, MappenAblauf } from '../../shared/src/ablaufvorlagen';
@@ -18,11 +36,22 @@ import { t } from './sprache';
 import type { Auslastung, VerlaufEintrag, VerlaufNeu } from '../../shared/src/paketreiter';
 
 /** Seitenweises Lesen der Historie (#800). */
-export interface HistorieAbfrage { arten?: readonly string[]; max?: number; vor?: number }
+export interface HistorieAbfrage {
+  arten?: readonly string[];
+  max?: number;
+  vor?: number;
+}
 
-export interface Verweis { feldKey: string; zielId: string }
+export interface Verweis {
+  feldKey: string;
+  zielId: string;
+}
 /** Texte und Beschriftungen eines Sprachpakets (#731). */
-export interface SprachpaketDaten { kennung: string; texte: Sprachtexte; beschriftungen: Record<string, SprachBeschriftung> }
+export interface SprachpaketDaten {
+  kennung: string;
+  texte: Sprachtexte;
+  beschriftungen: Record<string, SprachBeschriftung>;
+}
 
 /**
  * Gleichzeitig bearbeiten (#609): Mappe feldweise schreiben. `basis` sind die Werte, auf denen die neuen
@@ -32,7 +61,9 @@ export interface SprachpaketDaten { kennung: string; texte: Sprachtexte; beschri
  * schreibt die Datenbank nur, wenn die Mappe noch genau diesen Stand hat, sonst kommt `StandVeraltet`.
  */
 export interface FeldweiseSchreiben {
-  basis: Werte; verweise: (werte: Werte) => Verweis[]; stand?: string;
+  basis: Werte;
+  verweise: (werte: Werte) => Verweis[];
+  stand?: string;
   /**
    * Titel zu den Werten, die tatsächlich geschrieben werden (#743): im selben UPDATE gesetzt. undefined = nicht
    * bekannt (z. B. ein Verweis, dessen Titel nicht vorab gelesen wurde) – dann bleibt der Titel, wie er ist.
@@ -42,7 +73,9 @@ export interface FeldweiseSchreiben {
 
 /** Die Mappe hat sich zwischen Lesen und Schreiben geändert (#609) – neu lesen und noch einmal versuchen. */
 export class StandVeraltet extends Error {
-  constructor() { super(t('meldungen.repo.die-mappe-hat-sich')); }
+  constructor() {
+    super(t('meldungen.repo.die-mappe-hat-sich'));
+  }
 }
 
 /**
@@ -50,7 +83,10 @@ export class StandVeraltet extends Error {
  * gespeichert. Nichts wurde geändert; der Dienst macht daraus eine 409.
  */
 export class KonfigurationVeraltet extends Error {
-  constructor() { super('Stand veraltet'); this.name = 'KonfigurationVeraltet'; }
+  constructor() {
+    super('Stand veraltet');
+    this.name = 'KonfigurationVeraltet';
+  }
 }
 
 /** Neue Werte feldweise auf den aktuellen Stand legen (#609): nur Felder, die sich gegenüber `basis` ändern. */
@@ -58,18 +94,38 @@ export function feldweise(aktuell: Werte, basis: Werte, werte: Werte): Werte {
   const r: Werte = { ...aktuell };
   for (const k of new Set([...Object.keys(basis), ...Object.keys(werte)])) {
     if (JSON.stringify(basis[k] ?? null) === JSON.stringify(werte[k] ?? null)) continue;
-    if (k in werte) r[k] = werte[k]; else delete r[k];
+    if (k in werte) r[k] = werte[k];
+    else delete r[k];
   }
   return r;
 }
 /** Abruf-Link (#455) mit den Hashes von Schlüssel und Abrufcode – verlässt den Server nie. */
-export interface AuskunftLinkIntern extends AuskunftLink { schluessel: string; code: string }
+export interface AuskunftLinkIntern extends AuskunftLink {
+  schluessel: string;
+  code: string;
+}
 /** Ein gespeicherter Verweis mit beiden Enden (#396). */
-export interface Kante { quelleId: string; feldKey: string; zielId: string }
+export interface Kante {
+  quelleId: string;
+  feldKey: string;
+  zielId: string;
+}
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
 export interface SortierungIntern {
   /** Prozent sortiert wie Zahl; Zeitraum nach seiner Länge in Tagen (#1035). */
-  art: 'titel' | 'typ' | 'erstellt' | 'geaendert' | 'erstelltVon' | 'geaendertVon' | 'text' | 'zahl' | 'betrag' | 'zeitraum' | 'datum' | 'janein';
+  art:
+    | 'titel'
+    | 'typ'
+    | 'erstellt'
+    | 'geaendert'
+    | 'erstelltVon'
+    | 'geaendertVon'
+    | 'text'
+    | 'zahl'
+    | 'betrag'
+    | 'zeitraum'
+    | 'datum'
+    | 'janein';
   key?: string;
   absteigend: boolean;
 }
@@ -132,14 +188,30 @@ export interface SeitenAnfrage {
   mitVerborgenen?: boolean;
 }
 /** Mappe als Kandidat für Termine (#918): nur, was die Termine brauchen. */
-export interface FristKandidat { id: string; typId: string; titel?: string | null; werte: Werte }
+export interface FristKandidat {
+  id: string;
+  typId: string;
+  titel?: string | null;
+  werte: Werte;
+}
 /**
  * Gruppe gleichbedeutender Wörter (#356); quelle „werkbank“ oder die Id eines Pakets. Die Reihenfolge der Wörter zählt
  * (#992): Unter dem ersten steht die Gruppe in der Liste. `geaendert` ist der Stand für den Konfliktschutz (#917).
  */
-export interface Synonymgruppe { id: string; woerter: string[]; quelle: string; geaendert: string }
+export interface Synonymgruppe {
+  id: string;
+  woerter: string[];
+  quelle: string;
+  geaendert: string;
+}
 export interface NeueMappe {
-  id: string; typId: string; werte: Werte; verweise: Verweis[]; titel: string; benutzerId: string | null; demo: boolean;
+  id: string;
+  typId: string;
+  werte: Werte;
+  verweise: Verweis[];
+  titel: string;
+  benutzerId: string | null;
+  demo: boolean;
 }
 
 /** Ergebnis der Texterkennung für ein Dokument. */
@@ -147,7 +219,10 @@ export interface NeueMappe {
 export const WOERTER_JE_LAUF = 20_000;
 
 export interface OcrErgebnis {
-  stand: OcrStandArt; text?: string | null; info?: string | null; seiten?: number | null;
+  stand: OcrStandArt;
+  text?: string | null;
+  info?: string | null;
+  seiten?: number | null;
   /** Sprache des Texts (#400, Tesseract-Kennung); undefined = unverändert lassen, null = keine (Deutsch). */
   sprache?: string | null;
   /**
@@ -160,14 +235,31 @@ export interface OcrErgebnis {
 export type OcrZaehler = Record<OcrStandArt, number>;
 
 /** Ein Dokument in der Liste der Texterkennung (#61). */
-export interface OcrAuftrag { dokument: Dokument; mappeTitel: string; typId: string }
-export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
+export interface OcrAuftrag {
+  dokument: Dokument;
+  mappeTitel: string;
+  typId: string;
+}
+export interface Rueckverweis {
+  quelleId: string;
+  quelleTypId: string;
+  feldKey: string;
+  titel: string;
+}
 
 /** Eine Mappe im Papierkorb (#43), mit ihren Werten, wie sie beim Löschen waren. */
 export interface PapierkorbEintrag {
-  id: string; typId: string; titel: string; werte: Werte; demo: boolean;
-  erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
-  geloescht: string; geloeschtVon: string | null;
+  id: string;
+  typId: string;
+  titel: string;
+  werte: Werte;
+  demo: boolean;
+  erstellt: string;
+  erstelltVon: string | null;
+  geaendert: string;
+  geaendertVon: string | null;
+  geloescht: string;
+  geloeschtVon: string | null;
   /** Anzahl Dokumente, die mit ihr im Papierkorb liegen. */
   dokumente: number;
   /** Mit verknüpften Mappen gelöscht (#424): gemeinsame Id des Vorgangs, sonst null. */
@@ -176,16 +268,33 @@ export interface PapierkorbEintrag {
   entkoppelt: Array<{ quelleId: string; feldKey: string }>;
 }
 /** Eine Mappe im Papierkorb, wie das Löschprotokoll sie braucht (#470). */
-export interface KorbInhalt { id: string; typId: string; werte: Werte; demo: boolean; vorgang: string | null; entkoppelt: number; notizen: number; dokumente: LoeschDokument[] }
+export interface KorbInhalt {
+  id: string;
+  typId: string;
+  werte: Werte;
+  demo: boolean;
+  vorgang: string | null;
+  entkoppelt: number;
+  notizen: number;
+  dokumente: LoeschDokument[];
+}
 /** Ein einzelnes Dokument im Papierkorb (#344). */
 export interface DokumentImPapierkorb {
-  id: string; mappeId: string; registerKey: string; name: string; mime: string; groesse: number; sha256: string;
-  erstellt: string; erstelltVon: string | null;
+  id: string;
+  mappeId: string;
+  registerKey: string;
+  name: string;
+  mime: string;
+  groesse: number;
+  sha256: string;
+  erstellt: string;
+  erstelltVon: string | null;
   /** Anlagen (#998): Hauptdokument, an dem es beim Löschen hing (kommt mit ihm zurück). */
   anlageZu?: string | null;
   /** Anzahl älterer Versionen, die mitgegangen sind. */
   versionen: number;
-  geloescht: string; geloeschtVon: string | null;
+  geloescht: string;
+  geloeschtVon: string | null;
 }
 export interface PapierkorbFilter {
   /** Nur, was dieser Benutzer gelöscht hat. */
@@ -200,17 +309,50 @@ export interface PapierkorbFilter {
  * Schnittstelle; PostgreSQL und der Arbeitsspeicher (für Tests) setzen sie um.
  */
 /** Ein Ereignis für ein Paket (#338). */
-export interface PaketEreignis { id: string; paketId: string; art: string; daten: Record<string, unknown>; erstellt: string; versuche: number }
+export interface PaketEreignis {
+  id: string;
+  paketId: string;
+  art: string;
+  daten: Record<string, unknown>;
+  erstellt: string;
+  versuche: number;
+}
 
 /** Anzahl fertiger Dokumente je Herkunft des Volltexts (#459). */
-export interface VolltextHerkunftZahlen { pdf: number; paket: number; api: number; eingebaut: number; sonst: number; ohneText: number }
+export interface VolltextHerkunftZahlen {
+  pdf: number;
+  paket: number;
+  api: number;
+  eingebaut: number;
+  sonst: number;
+  ohneText: number;
+}
 
 /** Stand der Zahlen eines Benutzers (#625), in der Datenbank. */
-export interface Zaehlerstand { stand: number; abdruck: string; geaendert: string }
+export interface Zaehlerstand {
+  stand: number;
+  abdruck: string;
+  geaendert: string;
+}
 
 /** Ein Ereignis des Katalogs (#670), wie es geschrieben wird. */
-export interface NeuesKatalogEreignis { id: string; art: string; daten: Record<string, unknown>; ausloeser: Record<string, unknown>; buendel?: string; buendelS?: number }
-export interface GespeichertesKatalogEreignis { id: string; nr: number; art: string; daten: Record<string, unknown>; ausloeser: Record<string, unknown>; erstellt: string; versuche: number }
+export interface NeuesKatalogEreignis {
+  id: string;
+  art: string;
+  daten: Record<string, unknown>;
+  ausloeser: Record<string, unknown>;
+  buendel?: string;
+  buendelS?: number;
+}
+export interface GespeichertesKatalogEreignis {
+  id: string;
+  nr: number;
+  art: string;
+  daten: Record<string, unknown>;
+  ausloeser: Record<string, unknown>;
+  erstellt: string;
+  versuche: number;
+}
 
 export interface Repo {
   /**
@@ -250,7 +392,16 @@ export interface Repo {
   feldwerte(typId: string, key: string): Promise<string[]>;
   holeMappe(id: string): Promise<Mappe | undefined>;
   /** `nummern` (#171): in derselben Transaktion je Feld eine Nummer aus dem Kreis ziehen und eintragen. */
-  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean, systemKennung?: string | null, nummern?: NummernZiehen): Promise<Mappe>;
+  legeMappeAn(
+    id: string,
+    typId: string,
+    werte: Werte,
+    verweise: Verweis[],
+    benutzerId: string | null,
+    demo?: boolean,
+    systemKennung?: string | null,
+    nummern?: NummernZiehen,
+  ): Promise<Mappe>;
   /* ---------- Pakete (#188) ---------- */
   listePakete(): Promise<InstalliertesPaket[]>;
   /** Anlegen oder ersetzen (gleiche Id). */
@@ -371,7 +522,11 @@ export interface Repo {
   /** Zähler für die Sichten. `lesen` gilt für typen und favoriten; eingang zählt immer ohne Lesefilter (#127: auch Aufgaben zu nicht lesbaren Mappen, #477: eigene schnelle Abfrage). */
   /** Gibt es mindestens eine Mappe dieser Typen? (Startseite, #334 – ohne alle zu zählen, #615) */
   gibtMappen(typIds: string[]): Promise<boolean>;
-  zaehler(benutzerId: string, admin: boolean, lesen?: Lesefilter | null): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
+  zaehler(
+    benutzerId: string,
+    admin: boolean,
+    lesen?: Lesefilter | null,
+  ): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
   /** Favoriten (#62): setzen/entfernen; welche der Mappen Favoriten des Benutzers sind. */
   setzeFavorit(benutzerId: string, mappeId: string, an: boolean): Promise<void>;
   /** Vollexport (#254): alle Favoriten. */
@@ -416,13 +571,21 @@ export interface Repo {
    * Zahlen der Ablage in **einem** Lauf über alle Mappen (#742): je Typ (davon unpassend, Demo) und je Klauselliste
    * (eine je Sicht, gleiche Reihenfolge). Hängt nur von den Klauseln und vom Lesefilter ab, nicht von der Person.
    */
-  zaehleBestand(liste: Klausel[][], lesen?: Lesefilter | null): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; sichten: number[] }>;
+  zaehleBestand(
+    liste: Klausel[][],
+    lesen?: Lesefilter | null,
+  ): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; sichten: number[] }>;
   /**
    * Zahlen einer Person (#742) in einer Abfrage: Eingang (offene Aufgaben für sie, mit `ohneEmpfaenger` auch die ohne
    * Empfänger; ohne Lesefilter, #127), lesbare Favoriten, eigene Einträge im Papierkorb und die Ansichten, deren
    * Bedingungen die Person selbst meinen (`liste`, z. B. „ist mein Favorit“; gleiche Reihenfolge).
    */
-  zaehlePersoenlich(benutzerId: string, ohneEmpfaenger: boolean, lesen?: Lesefilter | null, liste?: Klausel[][]): Promise<{ eingang: number; favoriten: number; papierkorb: number; sichten: number[] }>;
+  zaehlePersoenlich(
+    benutzerId: string,
+    ohneEmpfaenger: boolean,
+    lesen?: Lesefilter | null,
+    liste?: Klausel[][],
+  ): Promise<{ eingang: number; favoriten: number; papierkorb: number; sichten: number[] }>;
   /** Haushaltsstand `zahlen` aus der Datenbank (#742, Migration 077); fehlt ohne Datenbank (nur dieser Prozess). */
   haushaltsstand?(): Promise<number>;
   /** Haushaltsstand `zahlen` hochzählen; liefert den neuen Stand. */
@@ -477,7 +640,10 @@ export interface Repo {
    * eine andere Mappe desselben Typs mit gleichem Wert (ohne Groß-/Kleinschreibung und Leerzeichen am Rand).
    * Schlüssel des Ergebnisses: `${mappeId}|${feldKey}`.
    */
-  findeDoppelte(typId: string, liste: Array<{ mappeId: string | null; feldKey: string; wert: string }>): Promise<Map<string, { id: string; titel: string }>>;
+  findeDoppelte(
+    typId: string,
+    liste: Array<{ mappeId: string | null; feldKey: string; wert: string }>,
+  ): Promise<Map<string, { id: string; titel: string }>>;
   rueckverweise(zielId: string): Promise<Rueckverweis[]>;
   /** Baum-Sammlung (#396, #424): alle Verweise, deren Quelle oder Ziel eine dieser Mappen ist (beide Richtungen). */
   kantenVon(ids: string[]): Promise<Kante[]>;
@@ -559,7 +725,12 @@ export interface Repo {
    * Mit verknüpften Mappen löschen (#424): alle in einer Transaktion in den Papierkorb, als ein Vorgang –
    * auch bei Kreisen (Verweise untereinander gehen mit). `entkoppelt`: je Mappe die entfernten Verweise.
    */
-  legeVorgangInPapierkorb(ids: string[], benutzerId: string | null, vorgang: string, entkoppelt: Record<string, Array<{ quelleId: string; feldKey: string }>>): Promise<void>;
+  legeVorgangInPapierkorb(
+    ids: string[],
+    benutzerId: string | null,
+    vorgang: string,
+    entkoppelt: Record<string, Array<{ quelleId: string; feldKey: string }>>,
+  ): Promise<void>;
   /** Mehrere zusammen wiederherstellen (#424): erst alle Mappen, dann die Verweise (auch untereinander). */
   stelleMehrereWiederHer(ids: string[]): Promise<{ verweiseEntfallen: number }>;
   /** Löscht endgültig; liefert die Prüfwerte der Dateien, die dabei frei werden könnten. */
@@ -631,7 +802,10 @@ export interface Repo {
    */
   legeNotfallkontaktAn(k: Notfallkontakt, max: number): Promise<boolean>;
   /** Angaben ändern (nicht Id, Eingetragen-von, Erstellt); false, wenn es ihn nicht gibt. */
-  aendereNotfallkontakt(id: string, w: Pick<Notfallkontakt, 'name' | 'email' | 'telefon' | 'notiz' | 'antwortAn' | 'mailStand' | 'mailAm' | 'mailFehler'>): Promise<boolean>;
+  aendereNotfallkontakt(
+    id: string,
+    w: Pick<Notfallkontakt, 'name' | 'email' | 'telefon' | 'notiz' | 'antwortAn' | 'mailStand' | 'mailAm' | 'mailFehler'>,
+  ): Promise<boolean>;
   /** Stand der Info-Mail setzen (ohne `geaendert` zu berühren); false, wenn es ihn nicht (mehr) gibt. */
   setzeNotfallkontaktMail(id: string, m: Pick<Notfallkontakt, 'mailStand' | 'mailAm' | 'mailFehler'>): Promise<boolean>;
   /** Löschen; liefert den gelöschten Kontakt (für die Mail) oder null. */
@@ -645,7 +819,10 @@ export interface Repo {
   /** Vektoren eines Pakets löschen, außer denen des Modells `ausser` (Modellwechsel, Neuberechnung); liefert die Anzahl. */
   vektorenLoeschePaket(paket: string, ausser?: string): Promise<number>;
   /** Alle Vektoren eines Modells mit der Mappe des Dokuments, in Teilen (für den Zwischenspeicher, ohne alles auf einmal im Speicher). */
-  vektorenLaden(modell: string, jeTeil: (teil: Array<{ dokumentId: string; mappeId: string; vektor: Float32Array }>) => void): Promise<void>;
+  vektorenLaden(
+    modell: string,
+    jeTeil: (teil: Array<{ dokumentId: string; mappeId: string; vektor: Float32Array }>) => void,
+  ): Promise<void>;
   /** Vektor eines Dokuments für ein Modell. */
   vektorVon(dokumentId: string, modell: string): Promise<Float32Array | null>;
   /** Anzahl je Paket und Modell. */
@@ -662,7 +839,20 @@ export interface Repo {
   ocrNaechster(): Promise<Dokument | undefined>;
   ocrSetze(id: string, e: OcrErgebnis): Promise<void>;
   /** Fertiger Volltext eines anderen Dokuments mit derselben Datei. */
-  ocrVonSha(sha256: string, ausser: string): Promise<{ text: string; seiten: number | null; info: string | null; sprache?: string | null; weitere?: string[] | null; seitensprachen?: Seitensprache[] | null } | undefined>;
+  ocrVonSha(
+    sha256: string,
+    ausser: string,
+  ): Promise<
+    | {
+        text: string;
+        seiten: number | null;
+        info: string | null;
+        sprache?: string | null;
+        weitere?: string[] | null;
+        seitensprachen?: Seitensprache[] | null;
+      }
+    | undefined
+  >;
   /**
    * Sprache eines Dokuments setzen (#400); false, wenn es das Dokument nicht gibt. Mit `weitere` (#579) auch die
    * weiteren Sprachen – die Seitensprachen entfallen dann (die Angabe gilt fürs ganze Dokument).
@@ -705,7 +895,12 @@ export interface Repo {
    * Dokumente (Volltext, ein Wort genügt) mit Ausschnitten um die Treffer; mappen: Mappen, deren Titel oder Werte
    * Wörter enthalten (meiste Wörter zuerst). woerter: nur Buchstaben und Ziffern (frageWoerter).
    */
-  fragenFundstellen(o: { woerter: string[]; lesen: Lesefilter | null; dokumente: number; mappen: number }): Promise<{ dokumente: Array<{ id: string; mappeId: string; name: string; text: string }>; mappen: Mappe[] }>;
+  fragenFundstellen(o: {
+    woerter: string[];
+    lesen: Lesefilter | null;
+    dokumente: number;
+    mappen: number;
+  }): Promise<{ dokumente: Array<{ id: string; mappeId: string; name: string; text: string }>; mappen: Mappe[] }>;
 
   /* ---------- Aufgaben (#54) ---------- */
   /** Passung → Aufgaben: offene „passt nicht“-Aufgabe anlegen oder Text nachziehen; passt sie, erledigt. */
@@ -740,13 +935,20 @@ export interface Repo {
    * Wirksame Leserechte auf Zeit eines Benutzers: offener Fall mit Leserecht, dessen Aufgabe noch offen bei ihm liegt.
    * Mit Typ der Mappe für den Lesefilter.
    */
-  leserechteAufZeit(benutzerId: string): Promise<Array<{ fallId: string; mappeId: string; typId: string; aufgabeId: string; aufgabentext: string; seit: string; von: string | null }>>;
+  leserechteAufZeit(
+    benutzerId: string,
+  ): Promise<
+    Array<{ fallId: string; mappeId: string; typId: string; aufgabeId: string; aufgabentext: string; seit: string; von: string | null }>
+  >;
 
   /**
    * Schlüsselwechsel (#47): alle verschlüsselten Werte (Mappen, Papierkorb, Einstellungen) umschlüsseln
    * und die angegebenen Einstellungen setzen – in einer Transaktion.
    */
-  umschluesseln(um: (wert: string) => string | null, einstellungen: Record<string, unknown>): Promise<{ umgeschluesselt: number; unlesbar: number }>;
+  umschluesseln(
+    um: (wert: string) => string | null,
+    einstellungen: Record<string, unknown>,
+  ): Promise<{ umgeschluesselt: number; unlesbar: number }>;
   /**
    * Alle verschlüsselten Werte mit Fundstelle (#410) – genau die, die `umschluesseln` anfasst
    * (Mappen, Papierkorb, Einstellungen außer den beim Wechsel neu gesetzten).
@@ -755,7 +957,14 @@ export interface Repo {
 
   /* ---------- Mappen-Abläufe (#1044; früher freie Erinnerungen, #131), solange sie nicht gelaufen sind ---------- */
   /** `empfaengerId`: Antwort auf „Empfänger“; `personId`: wer ihn angelegt hat; `bis`: läuft bis dahin. */
-  ablaeufe(f?: { mappeId?: string; empfaengerId?: string; personId?: string; vorlage?: string; bis?: string; angehalten?: boolean }): Promise<MappenAblauf[]>;
+  ablaeufe(f?: {
+    mappeId?: string;
+    empfaengerId?: string;
+    personId?: string;
+    vorlage?: string;
+    bis?: string;
+    angehalten?: boolean;
+  }): Promise<MappenAblauf[]>;
   holeAblauf(id: string): Promise<MappenAblauf | undefined>;
   legeAblaufAn(e: MappenAblauf): Promise<MappenAblauf>;
   aendereAblauf(id: string, e: { datum: string; text: string; empfaengerId: string | null }): Promise<MappenAblauf | undefined>;
@@ -802,7 +1011,9 @@ export interface Repo {
   loescheNotiz(id: string): Promise<void>;
 
   /* ---------- Änderungshistorie (#57) ---------- */
-  historieSchreibe(e: Array<{ mappeId: string; benutzerId: string | null; art: Historienart; daten?: Historieneintrag['daten'] }>): Promise<void>;
+  historieSchreibe(
+    e: Array<{ mappeId: string; benutzerId: string | null; art: Historienart; daten?: Historieneintrag['daten'] }>,
+  ): Promise<void>;
   /**
    * Historie einer Mappe, neueste zuerst. Mit `arten` nur diese Arten (#800: was ein Register zeigt), mit `max`
    * höchstens so viele, mit `vor` (Id eines Eintrags) nur die Einträge danach in dieser Reihenfolge – zum seitenweisen Laden.
@@ -812,7 +1023,15 @@ export interface Repo {
    * Letzter Abruf derselben Datei durch dieselbe Person auf demselben Weg seit `seit` (#800, Rauschen unterdrücken):
    * Zeitpunkt oder null. `fassung`/`version` wie in den Daten des Eintrags.
    */
-  letzterAbruf(mappeId: string, art: Historienart, benutzerId: string | null, dokumentId: string, fassung: string, version: number | null, seit: string): Promise<string | null>;
+  letzterAbruf(
+    mappeId: string,
+    art: Historienart,
+    benutzerId: string | null,
+    dokumentId: string,
+    fassung: string,
+    version: number | null,
+    seit: string,
+  ): Promise<string | null>;
   /** Historie mehrerer Mappen (#367), je Mappe neueste zuerst. */
   historieVon(mappeIds: string[]): Promise<Historieneintrag[]>;
   /**
@@ -861,11 +1080,20 @@ export const dienstEmail = (paketId: string, haushaltId: string) => `paket-${pak
 export const istUuid = (s: unknown): s is string => typeof s === 'string' && UUID.test(s);
 
 /** Nummern ziehen beim Anlegen (#171): Feld → Kreis, Tag des Ziehens. */
-export interface NummernZiehen { felder: Array<{ feldKey: string; kreis: string }>; jetzt: Date }
+export interface NummernZiehen {
+  felder: Array<{ feldKey: string; kreis: string }>;
+  jetzt: Date;
+}
 
 /** Neue Version eines Dokuments (#194). */
 export interface NeueVersion {
-  name: string; mime: string; groesse: number; sha256: string; anzeigbar: boolean; erstelltVon: string | null; herkunft: Herkunft;
+  name: string;
+  mime: string;
+  groesse: number;
+  sha256: string;
+  anzeigbar: boolean;
+  erstelltVon: string | null;
+  herkunft: Herkunft;
   /** Volltext übernehmen (Zurückholen); undefined = Texterkennung neu. */
   volltext?: string | null;
 }

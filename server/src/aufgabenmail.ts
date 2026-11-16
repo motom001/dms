@@ -14,10 +14,18 @@ import { mitSpracheVon, t } from './sprache';
  */
 
 /** Vorgaben für das Profil: Versand an (eine Automatisierung schickt sie), Uhrzeit der Automatisierung, Bundesland der Region. */
-export interface MailEinstellung { aktiv: boolean; uhrzeit: string; bundesland: Bundesland | null }
+export interface MailEinstellung {
+  aktiv: boolean;
+  uhrzeit: string;
+  bundesland: Bundesland | null;
+}
 export const MAIL_STANDARD: MailEinstellung = { aktiv: true, uhrzeit: '07:00', bundesland: null };
 /** Je Benutzer (#92, #94): eigene Uhrzeit (null = Standard), Wochentage 1 = Mo … 7 = So, „nicht an Feiertagen“. */
-export interface MailZeit { uhrzeit: string | null; tage: number[]; feiertage: boolean }
+export interface MailZeit {
+  uhrzeit: string | null;
+  tage: number[];
+  feiertage: boolean;
+}
 export const STANDARD_TAGE = [1, 2, 3, 4, 5];
 const UHRZEIT = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -35,7 +43,8 @@ export function wirksameZeit(eigen: unknown, std: MailEinstellung): MailZeit & {
 export function pruefeZeit(e: unknown): MailZeit {
   const x = (e ?? {}) as Record<string, unknown>;
   const uhrzeit = x.uhrzeit == null || x.uhrzeit === '' ? null : String(x.uhrzeit);
-  if (uhrzeit !== null && (!UHRZEIT.test(uhrzeit) || Number(uhrzeit.slice(3)) % 15)) throw new Fachfehler(422, t('mail.aufgabenmail.uhrzeit-als-hh-mm'));
+  if (uhrzeit !== null && (!UHRZEIT.test(uhrzeit) || Number(uhrzeit.slice(3)) % 15))
+    throw new Fachfehler(422, t('mail.aufgabenmail.uhrzeit-als-hh-mm'));
   if (x.tage !== undefined && !Array.isArray(x.tage)) throw new Fachfehler(422, t('mail.aufgabenmail.wochentage-als-liste-1'));
   const tage = x.tage === undefined ? STANDARD_TAGE : [...new Set((x.tage as unknown[]).map(Number))].sort();
   if (tage.some((t) => !Number.isInteger(t) || t < 1 || t > 7)) throw new Fachfehler(422, t('mail.aufgabenmail.wochentage-als-liste-1'));
@@ -53,8 +62,13 @@ export interface AufgabenQuelle {
   favoritenErwaehntGesendet?(b: Benutzer): Promise<void>;
 }
 /** Eine Zeile „Favorit erwähnt“ in der Zusammenfassung (#889). */
-export interface FavoritErwaehntZeile { ziel: string; quelle: string; quelleId: string; typId: string; ort: string }
-
+export interface FavoritErwaehntZeile {
+  ziel: string;
+  quelle: string;
+  quelleId: string;
+  typId: string;
+  ort: string;
+}
 
 export class Aufgabenmail {
   constructor(
@@ -67,7 +81,10 @@ export class Aufgabenmail {
    * Dann-Karte „Tägliche Zusammenfassung senden“ (#678): an genau einen Benutzer, mit Grund für den Verlauf. Abbestellt
    * im Profil, abwesend oder nichts offen → nichts (wie bisher). Wann, entscheidet die Wenn-Karte „Zeitplan“.
    */
-  async fuerAutomatisierung(benutzerId: string, trocken: boolean): Promise<{ gesendet: boolean; grund: string; schluessel: string; name: string; anzahl: number }> {
+  async fuerAutomatisierung(
+    benutzerId: string,
+    trocken: boolean,
+  ): Promise<{ gesendet: boolean; grund: string; schluessel: string; name: string; anzahl: number }> {
     const b = (await this.quelle.benutzer()).find((x) => x.id === benutzerId);
     const name = b?.name || b?.email || '?';
     const r = (schluessel: string, gesendet = false, anzahl = 0) => ({ gesendet, schluessel, name, anzahl, grund: '' });
@@ -93,11 +110,43 @@ export class Aufgabenmail {
       if (!liste.length && !favoriten.length) return false;
       const basis = this.adresse().replace(/\/+$/, '');
       // Erwähnte Favoriten (#889): eigener Abschnitt; ohne offene Aufgaben eine Mail nur dafür.
-      const abschnitt = favoriten.length ? [t('mail.aufgabenmail.favoriten.kopf'), ...favoriten.map((f) => t('mail.aufgabenmail.favoriten.zeile', { ...f, basis }))].join('\n') : '';
-      if (!liste.length) return this.versende(b, mailer, `Ablago: ${t('mail.aufgabenmail.favoriten.betreff')}`, t('mail.aufgabenmail.favoriten.nur', { name: b.name || b.email, abschnitt }), true);
-      const zeilen = await Promise.all(liste.map(async (a) => t('mail.aufgabenmail.ablage-eingang', { titel: a.mappeTitel || t('mail.aufgabenmail.ohne-titel'), typName: await this.quelle.typName(a.typId), text: a.text, basis, mappeId: a.mappeId })));
-      const text = t('mail.aufgabenmail.hallo-du-hast-offene', { anzahl: liste.length, name: b.name || b.email, zeilen: zeilen.join('\n'), basis });
-      return this.versende(b, mailer, `Ablago: ${t('mail.aufgabenmail.offene-aufgaben', { anzahl: liste.length })}`, abschnitt ? `${text}\n${abschnitt}\n` : text, favoriten.length > 0);
+      const abschnitt = favoriten.length
+        ? [t('mail.aufgabenmail.favoriten.kopf'), ...favoriten.map((f) => t('mail.aufgabenmail.favoriten.zeile', { ...f, basis }))].join(
+            '\n',
+          )
+        : '';
+      if (!liste.length)
+        return this.versende(
+          b,
+          mailer,
+          `Ablago: ${t('mail.aufgabenmail.favoriten.betreff')}`,
+          t('mail.aufgabenmail.favoriten.nur', { name: b.name || b.email, abschnitt }),
+          true,
+        );
+      const zeilen = await Promise.all(
+        liste.map(async (a) =>
+          t('mail.aufgabenmail.ablage-eingang', {
+            titel: a.mappeTitel || t('mail.aufgabenmail.ohne-titel'),
+            typName: await this.quelle.typName(a.typId),
+            text: a.text,
+            basis,
+            mappeId: a.mappeId,
+          }),
+        ),
+      );
+      const text = t('mail.aufgabenmail.hallo-du-hast-offene', {
+        anzahl: liste.length,
+        name: b.name || b.email,
+        zeilen: zeilen.join('\n'),
+        basis,
+      });
+      return this.versende(
+        b,
+        mailer,
+        `Ablago: ${t('mail.aufgabenmail.offene-aufgaben', { anzahl: liste.length })}`,
+        abschnitt ? `${text}\n${abschnitt}\n` : text,
+        favoriten.length > 0,
+      );
     });
   }
 

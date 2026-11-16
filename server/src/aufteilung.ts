@@ -50,14 +50,20 @@ const STAND_MS = 5000;
 export const NACHLADEN_MS = 2000;
 
 /** Was alle Prozesse über Sicherung und Wiederherstellung wissen (vom Leiter). */
-export interface Spiegel { sicherung: Lauf | null; wiederherstellung: Wiederherstellungslauf | null; whLaeuft: boolean }
+export interface Spiegel {
+  sicherung: Lauf | null;
+  wiederherstellung: Wiederherstellungslauf | null;
+  whLaeuft: boolean;
+}
 
 /** Stand eines Prozesses für Systemzustand und Lasttest. */
 export interface Prozessstand {
-  rssMb: number; heapMb: number;
+  rssMb: number;
+  heapMb: number;
   /** Rechenzeit dieses Prozesses in Prozent eines Kerns seit der letzten Abfrage (mindestens 1 s, sonst die davor). */
   cpu: number | null;
-  schleife: { median: number; p99: number; max: number } | null; schleifeWarnung: string | null;
+  schleife: { median: number; p99: number; max: number } | null;
+  schleifeWarnung: string | null;
   anfragen: ReturnType<Ueberlastschutz['stand']>;
   verbindungen: { max: number; median: number | null; p95: number | null };
   /** Nur für den Lasttest (`prozess.last`, #874): Wartezeit auf Verbindungen und belegte Verbindungen dieses Prozesses. */
@@ -66,7 +72,8 @@ export interface Prozessstand {
 
 /** Für ein Dokument genügt dem Leiter, was die Vorschaubilder brauchen. */
 type VorschauDok = { sha256: string; mime: string; groesse: number; name: string };
-const klein = (docs: VorschauDok[]): VorschauDok[] => docs.filter(Boolean).map((d) => ({ sha256: d.sha256, mime: d.mime, groesse: d.groesse, name: d.name }));
+const klein = (docs: VorschauDok[]): VorschauDok[] =>
+  docs.filter(Boolean).map((d) => ({ sha256: d.sha256, mime: d.mime, groesse: d.groesse, name: d.name }));
 
 export interface TeilungsDeps {
   dienst: Dienst;
@@ -94,8 +101,12 @@ export interface TeilungsDeps {
 
 let cpuVorher: { t: number; u: NodeJS.CpuUsage; wert: number | null } | null = null;
 function cpuJetzt(): number | null {
-  const t = performance.now(), u = process.cpuUsage();
-  if (!cpuVorher) { cpuVorher = { t, u, wert: null }; return null; }
+  const t = performance.now(),
+    u = process.cpuUsage();
+  if (!cpuVorher) {
+    cpuVorher = { t, u, wert: null };
+    return null;
+  }
   if (t - cpuVorher.t < 1000) return cpuVorher.wert;
   const wert = Math.round(((u.user + u.system - cpuVorher.u.user - cpuVorher.u.system) / 1000 / (t - cpuVorher.t)) * 1000) / 10;
   cpuVorher = { t, u, wert };
@@ -106,12 +117,16 @@ function cpuJetzt(): number | null {
 export function prozessstand(o: Pick<TeilungsDeps, 'messung' | 'ueberlast' | 'verbindungen'>): Prozessstand {
   const m = process.memoryUsage();
   const s = o.messung.auslastung.stand();
-  const w = s.aktuell && (s.aktuell.seitSekunden >= 5 || !s.vorher) ? s.aktuell : s.vorher ?? s.aktuell;
+  const w = s.aktuell && (s.aktuell.seitSekunden >= 5 || !s.vorher) ? s.aktuell : (s.vorher ?? s.aktuell);
   const v = o.verbindungen.stand();
   return {
-    rssMb: Math.round(m.rss / MB), heapMb: Math.round(m.heapUsed / MB), cpu: cpuJetzt(),
-    schleife: w ? { median: w.median, p99: w.p99, max: w.max } : null, schleifeWarnung: s.warnungSeit,
-    anfragen: o.ueberlast.stand(), verbindungen: { max: v.max, median: v.median, p95: v.p95 },
+    rssMb: Math.round(m.rss / MB),
+    heapMb: Math.round(m.heapUsed / MB),
+    cpu: cpuJetzt(),
+    schleife: w ? { median: w.median, p99: w.p99, max: w.max } : null,
+    schleifeWarnung: s.warnungSeit,
+    anfragen: o.ueberlast.stand(),
+    verbindungen: { max: v.max, median: v.median, p95: v.p95 },
   };
 }
 
@@ -119,7 +134,10 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
   const uhren: NodeJS.Timeout[] = [];
   v.bediene('prozess.stand', () => prozessstand(o));
   // Lasttest (#874): schaltet die Messung der Wartezeit auf Verbindungen ein (für einige Minuten) und liefert sie mit.
-  v.bediene('prozess.last', () => { o.pool?.an(); return { ...prozessstand(o), ...(o.pool ? { pool: o.pool.stand() } : {}) }; });
+  v.bediene('prozess.last', () => {
+    o.pool?.an();
+    return { ...prozessstand(o), ...(o.pool ? { pool: o.pool.stand() } : {}) };
+  });
   cpuJetzt();
 
   // Zustand, der über die Prozesse geteilt werden muss (nur mit mehreren; ein Prozess bleibt wie bisher).
@@ -145,7 +163,11 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
           nochmal = !ok;
         }
         stand = neu;
-      } catch (e) { log.debug('Einstellungen nicht abgeglichen', { fehler: (e as Error).message }); } finally { laeuft = false; }
+      } catch (e) {
+        log.debug('Einstellungen nicht abgeglichen', { fehler: (e as Error).message });
+      } finally {
+        laeuft = false;
+      }
     };
     void pruefe();
     uhren.push(setInterval(() => void pruefe(), NACHLADEN_MS));
@@ -163,38 +185,75 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
     v.bediene('eingang.pruefe', ([sofort]) => o.eingangsordner.pruefe(sofort === true));
     v.bediene('eingang.stand', () => o.eingangsordner.stand());
     // Neu planen nach dem Speichern in einem anderen Prozess (#1341): mit dem gespeicherten Abstand.
-    v.hoere('eingang.plane', () => void o.eingangsordner.einstellung().then((e) => o.eingangsordner.neuPlanen(e.abstand)).catch((e: Error) => log.warn('Eingangsordner nicht neu geplant', { fehler: e.message })));
+    v.hoere(
+      'eingang.plane',
+      () =>
+        void o.eingangsordner
+          .einstellung()
+          .then((e) => o.eingangsordner.neuPlanen(e.abstand))
+          .catch((e: Error) => log.warn('Eingangsordner nicht neu geplant', { fehler: e.message })),
+    );
     v.bediene('texterkennung.status', ([neu]) => te.status(neu === true));
     v.bediene('sicherung.starte', async ([art, von]) => (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von))).lauf);
     v.bediene('sicherung.pruefe', ([name, von]) => si.pruefe(String(name), String(von)));
-    v.bediene('wiederherstellung.starte', ([e, admin, code]) => wh.starte(e as Parameters<Wiederherstellung['starte']>[0], admin as { email: string } | null, code));
-    v.bediene('wiederherstellung.probe', async ([name, von]) => (await wh.starteProbe(name === null ? null : String(name), String(von))).lauf);
+    v.bediene('wiederherstellung.starte', ([e, admin, code]) =>
+      wh.starte(e as Parameters<Wiederherstellung['starte']>[0], admin as { email: string } | null, code),
+    );
+    v.bediene(
+      'wiederherstellung.probe',
+      async ([name, von]) => (await wh.starteProbe(name === null ? null : String(name), String(von))).lauf,
+    );
     const spiegel = (): Spiegel => ({ sicherung: si.aktuellerLauf(), wiederherstellung: wh.aktuellerLauf(), whLaeuft: wh.laeuft() });
     v.bediene('spiegel', () => spiegel());
     if (o.paketlaeufer) bedieneLaeufer(v, o.paketlaeufer, o.dienst);
     if (v.mehrere) {
       let zuletzt = '';
-      uhren.push(setInterval(() => {
-        const s = spiegel();
-        const j = JSON.stringify(s);
-        if (j !== zuletzt) { zuletzt = j; v.melde('spiegel', s, 'andere'); }
-      }, SPIEGEL_MS));
+      uhren.push(
+        setInterval(() => {
+          const s = spiegel();
+          const j = JSON.stringify(s);
+          if (j !== zuletzt) {
+            zuletzt = j;
+            v.melde('spiegel', s, 'andere');
+          }
+        }, SPIEGEL_MS),
+      );
     }
     for (const u of uhren) u.unref?.();
-    return { start: async () => {}, stop: () => { for (const u of uhren) clearInterval(u); } };
+    return {
+      start: async () => {},
+      stop: () => {
+        for (const u of uhren) clearInterval(u);
+      },
+    };
   }
 
   // ---------- Weitere Prozesse: Hintergrundarbeit an den Leiter ----------
   const { texterkennung: te, vorschau: vs, sicherung: si, wiederherstellung: wh, dienst } = o;
   te.anstossen = () => v.melde('texterkennung.anstossen');
   vs.anstossen = () => {};
-  vs.einreihen = (docs) => { const d = klein(docs as VorschauDok[]); if (d.length) v.melde('vorschau.einreihen', d); return d.length; };
-  vs.ausFassung = (docs) => { const d = klein(docs as VorschauDok[]); if (d.length) v.melde('vorschau.ausFassung', d); return d.length; };
+  vs.einreihen = (docs) => {
+    const d = klein(docs as VorschauDok[]);
+    if (d.length) v.melde('vorschau.einreihen', d);
+    return d.length;
+  };
+  vs.ausFassung = (docs) => {
+    const d = klein(docs as VorschauDok[]);
+    if (d.length) v.melde('vorschau.ausFassung', d);
+    return d.length;
+  };
   // Archivfassung (#1216): eine neue kommt über die Schnittstelle in jedem Prozess an, das Bild entsteht im Leiter.
-  vs.ausArchiv = (docs) => { const d = klein(docs as VorschauDok[]); if (d.length) v.melde('vorschau.ausArchiv', d); return d.length; };
+  vs.ausArchiv = (docs) => {
+    const d = klein(docs as VorschauDok[]);
+    if (d.length) v.melde('vorschau.ausArchiv', d);
+    return d.length;
+  };
   vs.nachholen = (docs) => v.rufe<number>('vorschau.nachholen', [klein(docs as VorschauDok[])]);
   dienst.ereignisse.wecke = () => v.melde('ereignisse.wecke');
-  dienst.ereignisse.verteile = async () => { v.melde('ereignisse.wecke'); return 0; };
+  dienst.ereignisse.verteile = async () => {
+    v.melde('ereignisse.wecke');
+    return 0;
+  };
   o.postfaecher.abrufen = (id) => v.rufe<number>('postfach.abrufen', [id]);
   o.eingangsordner.pruefe = (sofort = false) => v.rufe<number>('eingang.pruefe', [sofort]);
   // Letzte Prüfung, wartende Dateien, Pause und Sperre kennt nur der Leiter (#1341).
@@ -205,27 +264,52 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
   te.status = (neu = false) => v.rufe<Awaited<ReturnType<Texterkennung['status']>>>('texterkennung.status', [neu], { ms: STAND_MS });
 
   let s: Spiegel = { sicherung: null, wiederherstellung: null, whLaeuft: false };
-  v.hoere('spiegel', (x) => { s = x as Spiegel; });
+  v.hoere('spiegel', (x) => {
+    s = x as Spiegel;
+  });
   /** Stand frisch vom Leiter (#1341); antwortet er nicht (z. B. Neustart), gilt der Spiegel. */
-  const frisch = async () => { s = await v.rufe<Spiegel>('spiegel', [], { ms: STAND_MS }).catch(() => s); };
+  const frisch = async () => {
+    s = await v.rufe<Spiegel>('spiegel', [], { ms: STAND_MS }).catch(() => s);
+  };
   si.aktuellerLauf = () => (s.sicherung ? { ...s.sicherung } : null);
   si.laeuft = () => s.sicherung?.status === 'laeuft';
-  si.laufStand = async () => { await frisch(); return si.aktuellerLauf(); };
+  si.laufStand = async () => {
+    await frisch();
+    return si.aktuellerLauf();
+  };
   // Den gestarteten Lauf gleich in den Spiegel – nicht erst mit dem nächsten Spiegeln (#1341).
-  const merkeSi = (lauf: Lauf) => { s = { ...s, sicherung: lauf }; return lauf; };
-  const merkeWh = (lauf: Wiederherstellungslauf) => { s = { ...s, wiederherstellung: lauf, whLaeuft: s.whLaeuft || lauf.status === 'laeuft' }; return lauf; };
+  const merkeSi = (lauf: Lauf) => {
+    s = { ...s, sicherung: lauf };
+    return lauf;
+  };
+  const merkeWh = (lauf: Wiederherstellungslauf) => {
+    s = { ...s, wiederherstellung: lauf, whLaeuft: s.whLaeuft || lauf.status === 'laeuft' };
+    return lauf;
+  };
   si.starte = async (art, von) => ({ lauf: merkeSi(await v.rufe<Lauf>('sicherung.starte', [art, von])), fertig: Promise.resolve(null) });
   // Gibt hier ein Versprechen statt des Laufs zurück; die Route wartet darauf (await).
-  si.pruefe = (async (name: string, von: string) => merkeSi(await v.rufe<Lauf>('sicherung.pruefe', [name, von]))) as unknown as Sicherung['pruefe'];
+  si.pruefe = (async (name: string, von: string) =>
+    merkeSi(await v.rufe<Lauf>('sicherung.pruefe', [name, von]))) as unknown as Sicherung['pruefe'];
   wh.aktuellerLauf = () => (s.wiederherstellung ? { ...s.wiederherstellung } : null);
-  wh.laufStand = async () => { await frisch(); return wh.aktuellerLauf(); };
+  wh.laufStand = async () => {
+    await frisch();
+    return wh.aktuellerLauf();
+  };
   wh.laeuft = () => s.whLaeuft;
-  wh.starte = async (e, admin, code) => merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.starte', [e, admin ? JSON.parse(JSON.stringify(admin)) : null, code]));
-  wh.starteProbe = async (name, von) => ({ lauf: merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.probe', [name, von])), fertig: Promise.resolve(false) });
+  wh.starte = async (e, admin, code) =>
+    merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.starte', [e, admin ? JSON.parse(JSON.stringify(admin)) : null, code]));
+  wh.starteProbe = async (name, von) => ({
+    lauf: merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.probe', [name, von])),
+    fertig: Promise.resolve(false),
+  });
 
   for (const u of uhren) u.unref?.();
   return {
-    start: async () => { s = await v.rufe<Spiegel>('spiegel').catch(() => s); },
-    stop: () => { for (const u of uhren) clearInterval(u); },
+    start: async () => {
+      s = await v.rufe<Spiegel>('spiegel').catch(() => s);
+    },
+    stop: () => {
+      for (const u of uhren) clearInterval(u);
+    },
   };
 }

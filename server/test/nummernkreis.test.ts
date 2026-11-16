@@ -1,7 +1,16 @@
 /** Nummernkreise (#171): Muster, Zeiträume, Vergabe beim Anlegen, Schreibschutz, Wartung. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { datumIn, formatiereNummer, naechste, neubeginn, pruefeMuster, ziehe, zeitraumVon, type Nummernkreis } from '../../shared/src/nummernkreis';
+import {
+  datumIn,
+  formatiereNummer,
+  naechste,
+  neubeginn,
+  pruefeMuster,
+  ziehe,
+  zeitraumVon,
+  type Nummernkreis,
+} from '../../shared/src/nummernkreis';
 import { geschuetzteFelder } from '../../shared/src/model';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -14,11 +23,18 @@ const okt = { jahr: 2026, monat: 10, tag: 31 };
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: '{jjjj}{mm}-R{zaehler:7}', start: 1 }, 'test');
-  const t = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
-    { key: 'nr', label: 'Rechnungsnummer', typ: 'text', standard: '{nummernkreis:rechnung}', pflicht: true, eindeutig: true },
-    { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
-  ] });
+  await d.nummernkreise.speichereNummernkreis(
+    { neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: '{jjjj}{mm}-R{zaehler:7}', start: 1 },
+    'test',
+  );
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    titelVorlage: '{nr}',
+    felder: [
+      { key: 'nr', label: 'Rechnungsnummer', typ: 'text', standard: '{nummernkreis:rechnung}', pflicht: true, eindeutig: true },
+      { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
+    ],
+  });
   return { d, t };
 }
 
@@ -43,7 +59,11 @@ describe('Nummernkreise (#171)', () => {
 
   it('beginnt je Zeitraum neu', () => {
     let k: Nummernkreis = { schluessel: 'r', name: 'R', muster: '{jjjj}{mm}-{zaehler:3}', start: 1, staende: {}, zuletzt: [] };
-    const nr = (d: typeof okt) => { const r = ziehe(k, d, null, ''); k = r.kreis; return r.nummer; };
+    const nr = (d: typeof okt) => {
+      const r = ziehe(k, d, null, '');
+      k = r.kreis;
+      return r.nummer;
+    };
     assert.equal(nr(okt), '202610-001');
     assert.equal(nr(okt), '202610-002');
     assert.equal(nr({ jahr: 2026, monat: 11, tag: 1 }), '202611-001');
@@ -63,7 +83,9 @@ describe('Nummernkreise (#171)', () => {
     const b = await d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: 'B' } });
     assert.match(String(b.werte.nr), /-R0000002$/);
     // Gleichzeitig
-    const viele = await Promise.all(Array.from({ length: 25 }, (_, i) => d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: `x${i}` } })));
+    const viele = await Promise.all(
+      Array.from({ length: 25 }, (_, i) => d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: `x${i}` } })),
+    );
     assert.equal(new Set(viele.map((m) => m.werte.nr)).size, 25);
     // Ändern abgelehnt, sonst speichern ok
     await assert.rejects(d.mappen.aendereMappe(a.id, { werte: { ...a.werte, nr: '1' } }), status(403));
@@ -80,11 +102,23 @@ describe('Nummernkreise (#171)', () => {
 
   it('Mappentyp: nur Textfeld, Kreis muss existieren; Löschen nur unbenutzt; Zählerstand setzen', async () => {
     const { d, t } = await aufbau();
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text', standard: '{nummernkreis:gibtsnicht}' }] }), status(422));
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Y', felder: [{ key: 'n', label: 'N', typ: 'zahl', standard: '{nummernkreis:rechnung}' }] }), status(422));
+    await assert.rejects(
+      d.mappentypen.legeTypAn({ name: 'X', felder: [{ key: 'n', label: 'N', typ: 'text', standard: '{nummernkreis:gibtsnicht}' }] }),
+      status(422),
+    );
+    await assert.rejects(
+      d.mappentypen.legeTypAn({ name: 'Y', felder: [{ key: 'n', label: 'N', typ: 'zahl', standard: '{nummernkreis:rechnung}' }] }),
+      status(422),
+    );
     await assert.rejects(d.nummernkreise.loescheNummernkreis('rechnung', 'test'), /Rechnung · Rechnungsnummer/);
-    await assert.rejects(d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Doppelt', muster: '{zaehler}' }, 't'), status(409));
-    await assert.rejects(d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'Falsch!', name: 'x', muster: '{zaehler}' }, 't'), status(422));
+    await assert.rejects(
+      d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Doppelt', muster: '{zaehler}' }, 't'),
+      status(409),
+    );
+    await assert.rejects(
+      d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'Falsch!', name: 'x', muster: '{zaehler}' }, 't'),
+      status(422),
+    );
     await d.nummernkreise.setzeZaehler('rechnung', { naechster: 500 }, 'test');
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { betreff: 'Umstieg' } });
     assert.match(String(m.werte.nr), /-R0000500$/);
@@ -95,11 +129,29 @@ describe('Nummernkreise (#171)', () => {
 
   it('Wartung: Nummern nachträglich vergeben, in der Reihenfolge des Anlegens', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }, { key: 'name', label: 'Name', typ: 'text' }] });
+    const t = await d.mappentypen.legeTypAn({
+      name: 'Vertrag',
+      felder: [
+        { key: 'nr', label: 'Nr', typ: 'text' },
+        { key: 'name', label: 'Name', typ: 'text' },
+      ],
+    });
     const alt = [];
-    for (const n of ['a', 'b', 'c']) { alt.push(await d.mappen.legeMappeAn({ typId: t.id, werte: { name: n } })); await new Promise((r) => setTimeout(r, 2)); }
-    await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'vertrag', name: 'Verträge', muster: 'V-{zaehler:3}', start: 1 }, 't');
-    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [{ key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:vertrag}' }, { key: 'name', label: 'Name', typ: 'text' }] });
+    for (const n of ['a', 'b', 'c']) {
+      alt.push(await d.mappen.legeMappeAn({ typId: t.id, werte: { name: n } }));
+      await new Promise((r) => setTimeout(r, 2));
+    }
+    await d.nummernkreise.speichereNummernkreis(
+      { neu: true, schluessel: 'vertrag', name: 'Verträge', muster: 'V-{zaehler:3}', start: 1 },
+      't',
+    );
+    await d.mappentypen.aendereTyp(t.id, {
+      ...t,
+      felder: [
+        { key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:vertrag}' },
+        { key: 'name', label: 'Name', typ: 'text' },
+      ],
+    });
     assert.deepEqual(await d.nummernkreise.nummernVorschau(t.id, 'nr'), { anzahl: 3, von: 'V-001', bis: 'V-003' });
     await assert.rejects(d.nummernkreise.nummernVorschau(t.id, 'name'), status(422));
     d.nummernkreise.nummernNachtragen(t.id, 'nr', 'test');

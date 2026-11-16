@@ -8,14 +8,21 @@ import { setzeZusammengesetzte, zusammengesetzteFelder, zusammengesetztSchluesse
 import type { Repo } from '../repo';
 
 /** Ein Feld, dessen Kombination nach der Änderung bei mehreren Mappen gleich wäre. */
-export interface DoppelteKombination { feld: string; label: string; anzahl: number }
+export interface DoppelteKombination {
+  feld: string;
+  label: string;
+  anzahl: number;
+}
 
 /** Hat sich an der Definition etwas geändert, das die Werte des Felds ändern kann? */
 function neuZuPruefen(neu: Feld, alt: Pick<Mappentyp, 'felder'>, d: Pick<MappentypDaten, 'felder'>): boolean {
   const vorher = alt.felder.find((x) => x.key === neu.key);
   if (!vorher || vorher.typ !== 'zusammengesetzt' || !vorher.eindeutig || vorher.vorlage !== neu.vorlage) return true;
   // Eine Feldart eines Teils hat sich geändert (z. B. Text → Verweis): Die Werte entstehen anders.
-  return d.felder.some((x) => { const a = alt.felder.find((y) => y.key === x.key); return !!a && a.typ !== x.typ; });
+  return d.felder.some((x) => {
+    const a = alt.felder.find((y) => y.key === x.key);
+    return !!a && a.typ !== x.typ;
+  });
 }
 
 /**
@@ -31,7 +38,10 @@ export async function doppelteNachher(repo: Repo, alt: Mappentyp, d: Pick<Mappen
     const je = new Map<string, number>();
     for (const m of mappen) {
       const s = zusammengesetztSchluessel(d.felder, f, m.werte);
-      if (s) { const k = s.trim().toLowerCase(); je.set(k, (je.get(k) ?? 0) + 1); }
+      if (s) {
+        const k = s.trim().toLowerCase();
+        je.set(k, (je.get(k) ?? 0) + 1);
+      }
     }
     const anzahl = [...je.values()].filter((n) => n > 1).reduce((a, n) => a + n, 0);
     if (anzahl) erg.push({ feld: f.key, label: f.label || f.key, anzahl });

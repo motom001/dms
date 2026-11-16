@@ -12,7 +12,10 @@ async function hole(adresse: string): Promise<Buffer> {
   for (let i = 0; i < 5; i++) {
     if (u.protocol !== 'https:') throw new Error(`${adresse}: Weiterleitung auf ${u.href} ist nicht https`);
     const r = await fetch(u, { redirect: 'manual' });
-    if (r.status >= 300 && r.status < 400 && r.headers.get('location')) { u = new URL(r.headers.get('location')!, u); continue; }
+    if (r.status >= 300 && r.status < 400 && r.headers.get('location')) {
+      u = new URL(r.headers.get('location')!, u);
+      continue;
+    }
     if (!r.ok) throw new Error(`${u.href}: HTTP ${r.status}`);
     return Buffer.from(await r.arrayBuffer());
   }
@@ -22,5 +25,7 @@ async function hole(adresse: string): Promise<Buffer> {
 const katalog = await hole(OFFIZIELLER_KATALOG);
 const sig = await hole(new URL('katalog.sig', OFFIZIELLER_KATALOG).href);
 const ergebnis = pruefeSignatur(katalog, sig, projektSchluessel());
-console.log(`${OFFIZIELLER_KATALOG}: ${katalog.length} Bytes, Signatur ${ergebnis.ok ? `gültig (Schlüssel ${ergebnis.schluessel.kennung})` : `ungültig: ${ergebnis.grund}`}`);
+console.log(
+  `${OFFIZIELLER_KATALOG}: ${katalog.length} Bytes, Signatur ${ergebnis.ok ? `gültig (Schlüssel ${ergebnis.schluessel.kennung})` : `ungültig: ${ergebnis.grund}`}`,
+);
 if (!ergebnis.ok) process.exit(1);

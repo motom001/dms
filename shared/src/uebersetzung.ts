@@ -29,9 +29,7 @@ export const UEBERSETZBARE_FELDER = ['text', 'langtext', 'formatiert'] as const;
 
 /** Was übersetzt werden soll – nur Kennungen; den Text liest der Kern selbst. */
 export type Uebersetzungsquelle =
-  | { art: 'feld'; mappe: string; feld: string }
-  | { art: 'notiz'; notiz: string }
-  | { art: 'volltext'; dokument: string };
+  { art: 'feld'; mappe: string; feld: string } | { art: 'notiz'; notiz: string } | { art: 'volltext'; dokument: string };
 
 /** Einstellung „uebersetzen“ (Werkbank → Sprachen): an für alle, welches Paket, Abfluss bestätigt. */
 export interface UebersetzenEinstellung {
@@ -84,7 +82,10 @@ export interface Uebersetzt {
 }
 
 /** Ein Abschnitt des Originals und der Leerraum danach; `text + trenner` aller Abschnitte ergibt das Original. */
-export interface Abschnitt { text: string; trenner: string }
+export interface Abschnitt {
+  text: string;
+  trenner: string;
+}
 
 /**
  * Text in Abschnitte von höchstens `max` Zeichen teilen – bevorzugt an Seitenvorschub, Absatz, Zeilenende, Satzende,
@@ -98,7 +99,11 @@ export function abschnitte(text: string, max = ABSCHNITT_MAX): Abschnitt[] {
     let ende = rest.length;
     if (rest.length > max) {
       const fenster = rest.slice(0, max);
-      const stelle = (re: RegExp) => { let p = -1; for (const m of fenster.matchAll(re)) p = (m.index ?? 0) + m[0].length; return p > max / 4 ? p : -1; };
+      const stelle = (re: RegExp) => {
+        let p = -1;
+        for (const m of fenster.matchAll(re)) p = (m.index ?? 0) + m[0].length;
+        return p > max / 4 ? p : -1;
+      };
       ende = [/\f/g, /\n\s*\n/g, /\n/g, /[.!?…:;]["“”»)]?\s/g, /\s/g].map(stelle).find((p) => p > 0) ?? max;
     }
     const stueck = rest.slice(0, ende);
@@ -116,8 +121,21 @@ export function abschnitte(text: string, max = ABSCHNITT_MAX): Abschnitt[] {
 }
 
 /** Tesseract-Kennung der Texterkennung (#400, „fra“) → Sprachkennung wie in der Oberfläche („fr“). */
-const TESSERACT: Record<string, string> = { deu: 'de', eng: 'en', fra: 'fr', spa: 'es', ita: 'it', nld: 'nl', tur: 'tr', pol: 'pl', por: 'pt', rus: 'ru', ukr: 'uk', ara: 'ar' };
-export const spracheAusTesseract = (s: string | null | undefined): string | null => (s ? TESSERACT[s] ?? null : null);
+const TESSERACT: Record<string, string> = {
+  deu: 'de',
+  eng: 'en',
+  fra: 'fr',
+  spa: 'es',
+  ita: 'it',
+  nld: 'nl',
+  tur: 'tr',
+  pol: 'pl',
+  por: 'pt',
+  rus: 'ru',
+  ukr: 'uk',
+  ara: 'ar',
+};
+export const spracheAusTesseract = (s: string | null | undefined): string | null => (s ? (TESSERACT[s] ?? null) : null);
 
 /** Sprachkennung wie „de“, „en“ oder „pt-BR“ (BCP 47, kurz). */
 export const SPRACHKENNUNG_KURZ = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/;

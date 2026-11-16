@@ -15,7 +15,16 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import {
-  alterExportOrdner, exportOrdnerVon, exportOrt, herkunft, liegtIn, merkeUmzug, persoenlicherOrdner, raeumeExporteAuf, umzugHinweis, zieheExporteUm,
+  alterExportOrdner,
+  exportOrdnerVon,
+  exportOrt,
+  herkunft,
+  liegtIn,
+  merkeUmzug,
+  persoenlicherOrdner,
+  raeumeExporteAuf,
+  umzugHinweis,
+  zieheExporteUm,
 } from '../src/exportordner';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
@@ -26,7 +35,11 @@ import { exporteIn } from '../src/vollexport';
 
 const TAG = 24 * 3600 * 1000;
 const name = (d: Date) => `dms-export-${d.toISOString().slice(0, 19).replace(/[T:]/g, '-')}`;
-const da = (p: string) => stat(p).then(() => true, () => false);
+const da = (p: string) =>
+  stat(p).then(
+    () => true,
+    () => false,
+  );
 
 /** Ein Export, wie vollexport() ihn schreibt: Ordner mit manifest.json und einer Datei. */
 async function legeExport(ziel: string, erstellt: Date, mitManifest = true) {
@@ -34,19 +47,28 @@ async function legeExport(ziel: string, erstellt: Date, mitManifest = true) {
   await mkdir(join(ordner, 'daten'), { recursive: true });
   await writeFile(join(ordner, 'daten', 'mappen.csv'), 'titel\r\nStromvertrag Lena\r\n');
   if (mitManifest) {
-    await writeFile(join(ordner, 'manifest.json'), JSON.stringify({ erstellt: erstellt.toISOString(), dateien: [{ pfad: 'daten/mappen.csv', bytes: 30, sha256: 'x' }], anzahlen: { mappen: 1 }, passwoerter: false }));
+    await writeFile(
+      join(ordner, 'manifest.json'),
+      JSON.stringify({
+        erstellt: erstellt.toISOString(),
+        dateien: [{ pfad: 'daten/mappen.csv', bytes: 30, sha256: 'x' }],
+        anzahlen: { mappen: 1 },
+        passwoerter: false,
+      }),
+    );
     await utimes(join(ordner, 'manifest.json'), erstellt, erstellt);
   }
   return ordner;
 }
 
 /** /proc/self/mountinfo eines Containers: zwei Volumes vom selben Gerät (98:1). */
-const mountinfo = (sicherung: string, exporte: string) => [
-  '500 400 0:61 / / rw,relatime - overlay overlay rw',
-  '510 500 98:1 /volume1/docker/dms/files /data/files rw,relatime - btrfs /dev/md2 rw',
-  `511 500 98:1 ${sicherung} /data/sicherung rw,relatime - btrfs /dev/md2 rw`,
-  ...(exporte ? [`512 500 98:1 ${exporte} /data/export rw,relatime - btrfs /dev/md2 rw`] : []),
-].join('\n');
+const mountinfo = (sicherung: string, exporte: string) =>
+  [
+    '500 400 0:61 / / rw,relatime - overlay overlay rw',
+    '510 500 98:1 /volume1/docker/dms/files /data/files rw,relatime - btrfs /dev/md2 rw',
+    `511 500 98:1 ${sicherung} /data/sicherung rw,relatime - btrfs /dev/md2 rw`,
+    ...(exporte ? [`512 500 98:1 ${exporte} /data/export rw,relatime - btrfs /dev/md2 rw`] : []),
+  ].join('\n');
 
 describe('Export-Ordner (#797): Ablageort', () => {
   it('liegt neben files/, nicht im Sicherungsordner – im Container wie ohne Docker', () => {
@@ -76,7 +98,10 @@ describe('Export-Ordner (#797): Warnung im Sicherungsordner', () => {
     await mkdir(exportOrdnerVon(o), { recursive: true });
     assert.equal((await exportOrt(o, null)).imSicherungsordner, false);
     // Volume für /data/export neben dem Sicherungsordner – ähnlicher Name, aber nicht darin.
-    assert.equal(await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung-export')), false);
+    assert.equal(
+      await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung-export')),
+      false,
+    );
     // Ohne eigenes Volume liegt der Ordner im Container (anderes Gerät als die Sicherung).
     assert.equal(await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '')), false);
   });
@@ -91,10 +116,19 @@ describe('Export-Ordner (#797): Warnung im Sicherungsordner', () => {
   });
 
   it('über die Volumes: /data/export zeigt auf einen Unterordner der Sicherung (oder auf sie selbst)', async () => {
-    assert.equal(await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung/export')), true);
-    assert.equal(await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung')), true);
+    assert.equal(
+      await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung/export')),
+      true,
+    );
+    assert.equal(
+      await liegtIn('/data/export', '/data/sicherung', mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung')),
+      true,
+    );
     // Gleicher Pfad auf einem anderen Gerät: nicht derselbe Ort.
-    const anders = mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung/export').replace('512 500 98:1', '512 500 98:2');
+    const anders = mountinfo('/volume1/docker/dms/sicherung', '/volume1/docker/dms/sicherung/export').replace(
+      '512 500 98:1',
+      '512 500 98:2',
+    );
     assert.equal(await liegtIn('/data/export', '/data/sicherung', anders), false);
   });
 });
@@ -123,7 +157,10 @@ describe('Export-Ordner (#797): Umzug aus sicherung/export/', () => {
     assert.deepEqual(await readdir(o.sicherung), ['dms-2026-11-04.dms-sicherung']);
     assert.match(await readFile(join(neu, voll.split('/').pop()!, 'daten', 'mappen.csv'), 'utf8'), /Stromvertrag Lena/);
     assert.ok(await da(join(neu, 'persoenlich', 'jonas', pers.split('/').pop()!, 'manifest.json')));
-    assert.deepEqual((await readdir(join(neu, 'auskunft'))).sort(), ['00000000-0000-4000-8000-000000000001.json', '00000000-0000-4000-8000-000000000001.zip']);
+    assert.deepEqual((await readdir(join(neu, 'auskunft'))).sort(), [
+      '00000000-0000-4000-8000-000000000001.json',
+      '00000000-0000-4000-8000-000000000001.zip',
+    ]);
     // Mehrfach ausführbar: beim nächsten Start ist nichts mehr zu tun.
     assert.deepEqual(await zieheExporteUm(alt, neu, { mountinfo: null }), { anzahl: 0, uebrig: false });
   });
@@ -151,7 +188,10 @@ describe('Export-Ordner (#797): Umzug aus sicherung/export/', () => {
   it('anderes Dateisystem (EXDEV): kopieren, dann löschen', async () => {
     const { alt, neu, voll } = await alterStand();
     let versuche = 0;
-    const umbenennen = async () => { versuche++; throw Object.assign(new Error('cross-device link not permitted'), { code: 'EXDEV' }); };
+    const umbenennen = async () => {
+      versuche++;
+      throw Object.assign(new Error('cross-device link not permitted'), { code: 'EXDEV' });
+    };
     const u = await zieheExporteUm(alt, neu, { umbenennen, mountinfo: null });
     assert.deepEqual(u, { anzahl: 3, uebrig: false });
     assert.ok(versuche > 0);
@@ -204,7 +244,14 @@ describe('Export-Ordner (#797): Löschfrist', () => {
     await mkdir(auskunftOrdner(wurzel), { recursive: true });
     const aid = '00000000-0000-4000-8000-0000000000a1';
     await writeFile(join(auskunftOrdner(wurzel), `${aid}.zip`), 'zip');
-    await writeFile(join(auskunftOrdner(wurzel), `${aid}.json`), JSON.stringify({ id: aid, erstellt: new Date(jetzt.getTime() - 8 * TAG).toISOString(), bis: new Date(jetzt.getTime() - TAG).toISOString() }));
+    await writeFile(
+      join(auskunftOrdner(wurzel), `${aid}.json`),
+      JSON.stringify({
+        id: aid,
+        erstellt: new Date(jetzt.getTime() - 8 * TAG).toISOString(),
+        bis: new Date(jetzt.getTime() - TAG).toISOString(),
+      }),
+    );
 
     const liste = await exporteIn(wurzel, jetzt);
     assert.deepEqual(liste.map((e) => e.name).sort(), [frisch, laeuft].map((p) => p.split('/').pop()).sort());
@@ -237,16 +284,29 @@ describe('Export-Ordner (#797): Werkbank und Herunterladen', () => {
     const tabelle = routen(d, konten, { exporte: { pfad, imSicherungsordner, volume: false } });
     const route = (m: string, p: string) => tabelle.find((x) => x.methode === m && x.pfad === p)!;
     const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-    const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) } as Anfrage);
+    const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
+      route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) } as Anfrage);
     return { einstellungen, katrin, jonas, pfad, rufe };
   }
-  const leer = async (inhalt: unknown) => { for await (const _ of inhalt as AsyncIterable<Buffer>) { /* lesen */ } await new Promise((r) => setTimeout(r, 20)); };
+  const leer = async (inhalt: unknown) => {
+    for await (const _ of inhalt as AsyncIterable<Buffer>) {
+      /* lesen */
+    }
+    await new Promise((r) => setTimeout(r, 20));
+  };
 
   it('Vollexport: Frist, Ort, Umzug-Hinweis und Löschen nach dem Herunterladen; Prüfsummen bleiben (#1195)', async () => {
     const { einstellungen, katrin, pfad, rufe } = await aufbau();
     const ordner = await legeExport(pfad, new Date());
     await merkeUmzug(einstellungen, { anzahl: 1, uebrig: false });
-    const s = (await rufe(katrin, 'GET', '/api/werkbank/export')).body as { ordner: string; tage: number; imSicherungsordner: boolean; volume: boolean | null; umzug: { anzahl: number } | null; exporte: Array<{ name: string; bis: string }> };
+    const s = (await rufe(katrin, 'GET', '/api/werkbank/export')).body as {
+      ordner: string;
+      tage: number;
+      imSicherungsordner: boolean;
+      volume: boolean | null;
+      umzug: { anzahl: number } | null;
+      exporte: Array<{ name: string; bis: string }>;
+    };
     assert.equal(s.ordner, pfad);
     assert.equal(s.tage, 7);
     assert.equal(s.imSicherungsordner, false);
@@ -266,10 +326,16 @@ describe('Export-Ordner (#797): Werkbank und Herunterladen', () => {
     for (let i = 0; i < 100 && (await da(join(ordner, 'manifest.json'))); i++) await new Promise((r) => setTimeout(r, 20));
     assert.equal(await da(join(ordner, 'daten')), false);
     // #1195: Der Eintrag bleibt mit der SHA-256 der ZIP, die Prüfsummen-Datei lässt sich weiter laden.
-    const nachher = ((await rufe(katrin, 'GET', '/api/werkbank/export')).body as { exporte: Array<{ name: string; heruntergeladen?: { sha256: string; bytes: number } }> }).exporte;
+    const nachher = (
+      (await rufe(katrin, 'GET', '/api/werkbank/export')).body as {
+        exporte: Array<{ name: string; heruntergeladen?: { sha256: string; bytes: number } }>;
+      }
+    ).exporte;
     assert.equal(nachher[0].name, name);
-    assert.deepEqual(nachher[0].heruntergeladen && { sha256: nachher[0].heruntergeladen.sha256, bytes: nachher[0].heruntergeladen.bytes },
-      { sha256: createHash('sha256').update(Buffer.concat(zip)).digest('hex'), bytes: Buffer.concat(zip).length });
+    assert.deepEqual(nachher[0].heruntergeladen && { sha256: nachher[0].heruntergeladen.sha256, bytes: nachher[0].heruntergeladen.bytes }, {
+      sha256: createHash('sha256').update(Buffer.concat(zip)).digest('hex'),
+      bytes: Buffer.concat(zip).length,
+    });
     const summen = await rufe(katrin, 'GET', '/api/werkbank/export/:name/pruefsummen', { params: { name } });
     assert.equal(String(summen.datei!.inhalt), 'x  daten/mappen.csv\n');
     assert.equal(summen.datei!.name, `${name}.SHA256SUMS`);

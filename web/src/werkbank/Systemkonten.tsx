@@ -12,7 +12,21 @@ import { systemkontenKopf } from '../../../shared/src/systemkonten';
  * Testlauf (#710). Wer aufklappt, entscheidet der Aufrufer (z. B. je Person gemerkt). `zumFehler` (#1181): Link unter
  * der Kopfzeile direkt zum ersten Konto mit Fehler, auch eingeklappt.
  */
-export function SystemkontenGruppe({ liste, auf, setzeAuf, id, kinder, zumFehler }: { liste: Systemkonto[]; auf: boolean; setzeAuf: (auf: boolean) => void; id: string; kinder: ReactNode; zumFehler?: (k: Systemkonto) => string }) {
+export function SystemkontenGruppe({
+  liste,
+  auf,
+  setzeAuf,
+  id,
+  kinder,
+  zumFehler,
+}: {
+  liste: Systemkonto[];
+  auf: boolean;
+  setzeAuf: (auf: boolean) => void;
+  id: string;
+  kinder: ReactNode;
+  zumFehler?: (k: Systemkonto) => string;
+}) {
   const k = systemkontenKopf(liste);
   const mitFehler = liste.find((x) => x.fehler);
   const teile = [
@@ -21,16 +35,39 @@ export function SystemkontenGruppe({ liste, auf, setzeAuf, id, kinder, zumFehler
   ];
   return (
     <section className="aufklappbereich systemkontengruppe">
-      <Knopf art="link" className="aufklappkopf" aria-expanded={auf} aria-controls={id} onClick={() => setzeAuf(!auf)}
+      <Knopf
+        art="link"
+        className="aufklappkopf"
+        aria-expanded={auf}
+        aria-controls={id}
+        onClick={() => setzeAuf(!auf)}
         title={auf ? t('konten.systemkonten.gruppe.auf') : t('konten.systemkonten.gruppe.zu')}>
         <Symbol name={auf ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
         <span>{t('konten.systemkonten.gruppe', { anzahl: k.anzahl })}</span>
         {teile.length > 0 && <span className="leise klein">· {teile.join(' · ')}</span>}
-        {k.fehler > 0 && <span className="chip schlecht klein"><Symbol name="warnung" /> {t('konten.systemkonten.gruppe.fehler', { anzahl: k.fehler })}</span>}
-        {k.weitreichend > 0 && <span className="chip warn klein"><Symbol name="schloss" /> {t('konten.systemkonten.gruppe.weitreichend', { anzahl: k.weitreichend })}</span>}
+        {k.fehler > 0 && (
+          <span className="chip schlecht klein">
+            <Symbol name="warnung" /> {t('konten.systemkonten.gruppe.fehler', { anzahl: k.fehler })}
+          </span>
+        )}
+        {k.weitreichend > 0 && (
+          <span className="chip warn klein">
+            <Symbol name="schloss" /> {t('konten.systemkonten.gruppe.weitreichend', { anzahl: k.weitreichend })}
+          </span>
+        )}
       </Knopf>
-      {zumFehler && mitFehler && <p className="klein systemkonten-zumfehler"><Link to={zumFehler(mitFehler)} className="verweis">{t('konten.systemkonten.gruppe.zum-fehler', { name: mitFehler.name })}</Link></p>}
-      {auf && <div id={id} className="aufklappinhalt">{kinder}</div>}
+      {zumFehler && mitFehler && (
+        <p className="klein systemkonten-zumfehler">
+          <Link to={zumFehler(mitFehler)} className="verweis">
+            {t('konten.systemkonten.gruppe.zum-fehler', { name: mitFehler.name })}
+          </Link>
+        </p>
+      )}
+      {auf && (
+        <div id={id} className="aufklappinhalt">
+          {kinder}
+        </div>
+      )}
     </section>
   );
 }
@@ -39,8 +76,22 @@ export function SystemkontenGruppe({ liste, auf, setzeAuf, id, kinder, zumFehler
 export function SystemkontoKennzeichen({ k }: { k: Systemkonto }) {
   return (
     <>
-      {k.fehler && <> <span className="chip schlecht klein"><Symbol name="warnung" /> {t.frei(`konten.systemkonten.fehler.${k.fehler}`)}</span></>}
-      {k.weitreichend && <> <span className="chip warn klein"><Symbol name="schloss" /> {t('konten.systemkonten.weitreichend')}</span></>}
+      {k.fehler && (
+        <>
+          {' '}
+          <span className="chip schlecht klein">
+            <Symbol name="warnung" /> {t.frei(`konten.systemkonten.fehler.${k.fehler}`)}
+          </span>
+        </>
+      )}
+      {k.weitreichend && (
+        <>
+          {' '}
+          <span className="chip warn klein">
+            <Symbol name="schloss" /> {t('konten.systemkonten.weitreichend')}
+          </span>
+        </>
+      )}
     </>
   );
 }

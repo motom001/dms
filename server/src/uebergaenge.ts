@@ -48,29 +48,24 @@ export const UEBERGAENGE: Uebergang[] = [
     was: 'Ältere Pakete: fremde_typen mit Kennung der Form <paket>_<schluessel> (vor #1084) – Zuordnung über die installierten Pakete',
     seit: '#1084, 0.229',
     entfaelltMit: '1.0.0',
-    fundstellen: [
-      { datei: 'server/src/pakete.ts', text: 'export function neueKennung(kennung: string' },
-    ],
+    fundstellen: [{ datei: 'server/src/pakete.ts', text: 'export function neueKennung(kennung: string' }],
   },
   {
     was: 'Zusatzsprachen der Texterkennung unter der Id <paket>_<kennung> (vor dem Umzug auf <paket>.<kennung>, #1084)',
     seit: '#1084, 0.229',
     entfaelltMit: '1.0.0',
-    fundstellen: [
-      { datei: 'server/src/volltext/volltext.dienst.ts', text: "x.id.startsWith(`${p.id}_`)" },
-    ],
+    fundstellen: [{ datei: 'server/src/volltext/volltext.dienst.ts', text: 'x.id.startsWith(`${p.id}_`)' }],
   },
   {
     was: 'Einrichtungsdatei der Versionen 0.191 und 0.192 (administrator statt konto, erster-benutzer)',
     seit: '#821 (Abschnitt konto)',
     entfaelltMit: '1.0.0',
-    fundstellen: [
-      { datei: 'server/src/einrichtungsdatei.ts', text: 'function aelter(wert: unknown)' },
-    ],
+    fundstellen: [{ datei: 'server/src/einrichtungsdatei.ts', text: 'function aelter(wert: unknown)' }],
   },
   {
-    was: 'Post: alte Feldnamen absender und fuer (jetzt von und an) – Schnittstelle v1 nimmt sie beim Schreiben an und liefert sie an der Post mit; '
-      + 'Post anlegen und aus Fotos mit absender/fuer; Ereignis post.angelegt mit fuer; Platzhalter {absender}/{fuer}; Links über Mappentyp und Feldwerte',
+    was:
+      'Post: alte Feldnamen absender und fuer (jetzt von und an) – Schnittstelle v1 nimmt sie beim Schreiben an und liefert sie an der Post mit; ' +
+      'Post anlegen und aus Fotos mit absender/fuer; Ereignis post.angelegt mit fuer; Platzhalter {absender}/{fuer}; Links über Mappentyp und Feldwerte',
     seit: '#1042, 0.242',
     entfaelltMit: '1.0.0',
     fundstellen: [
@@ -79,7 +74,10 @@ export const UEBERGAENGE: Uebergang[] = [
       { datei: 'server/src/api-v1.ts', text: 'export function mitAltenPostNamen(body: unknown, postId: string, tiefe = 0): unknown' },
       { datei: 'server/src/post/post.dienst.ts', text: 'const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);' },
       { datei: 'server/src/post/foto.ts', text: 'const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);' },
-      { datei: 'shared/src/ereignisse.ts', text: "'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'an', 'fuer'], paket: true }," },
+      {
+        datei: 'shared/src/ereignisse.ts',
+        text: "'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'an', 'fuer'], paket: true },",
+      },
       { datei: 'server/src/automatisierung.ts', text: "const alias = typ?.system === 'post';" },
       { datei: 'shared/src/direktlink.ts', text: "typ.system === 'post' ? postKennung(rohKey) : rohKey" },
     ],

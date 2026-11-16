@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { abwesenheitWirkt, AUFGABENARTEN, KEINE_ABWESENHEIT, type Abwesenheit, type Aufgabe, type Aufgabenart } from '../../../shared/src/model';
+import {
+  abwesenheitWirkt,
+  AUFGABENARTEN,
+  KEINE_ABWESENHEIT,
+  type Abwesenheit,
+  type Aufgabe,
+  type Aufgabenart,
+} from '../../../shared/src/model';
 import { FAELLIGKEITEN, filterAktiv, filtereAufgaben, type AufgabenFilter, type Faelligkeit } from '../../../shared/src/aufgabenfilter';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { SammelHaken, SammelKopf, SammelLeiste, useSammelauswahl } from '../ablage/Sammelweitergabe';
@@ -20,12 +27,33 @@ import { gebietsschema } from '../../../shared/src/sprache';
 const datum = (eintrag: string | null) => (eintrag ? eintrag.split('-').reverse().join('.') : '');
 
 export function zeitraumText(a: Abwesenheit): string {
-  return a.von && a.bis ? t('profil.abwesenheit.vom-bis', { datum: datum(a.von), datum2: datum(a.bis) }) : a.von ? t('profil.abwesenheit.ab', { datum: datum(a.von) }) : a.bis ? t('profil.abwesenheit.bis', { datum: datum(a.bis) }) : t('profil.abwesenheit.ohne-enddatum');
+  return a.von && a.bis
+    ? t('profil.abwesenheit.vom-bis', { datum: datum(a.von), datum2: datum(a.bis) })
+    : a.von
+      ? t('profil.abwesenheit.ab', { datum: datum(a.von) })
+      : a.bis
+        ? t('profil.abwesenheit.bis', { datum: datum(a.bis) })
+        : t('profil.abwesenheit.ohne-enddatum');
 }
 
-export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, speichern, uebergeben, nachSpeichern, hilfe = 'profil.abwesenheit' }: {
-  benutzerId: string; wer: 'du' | string; wert: Abwesenheit; offeneAufgaben: number; hilfe?: Hilfeort;
-  speichern: (a: Abwesenheit) => Promise<unknown>; uebergeben: () => Promise<{ uebergeben: number }>; nachSpeichern?: () => Promise<void>;
+export function AbwesenheitFormular({
+  benutzerId,
+  wer,
+  wert,
+  offeneAufgaben,
+  speichern,
+  uebergeben,
+  nachSpeichern,
+  hilfe = 'profil.abwesenheit',
+}: {
+  benutzerId: string;
+  wer: 'du' | string;
+  wert: Abwesenheit;
+  offeneAufgaben: number;
+  hilfe?: Hilfeort;
+  speichern: (a: Abwesenheit) => Promise<unknown>;
+  uebergeben: () => Promise<{ uebergeben: number }>;
+  nachSpeichern?: () => Promise<void>;
 }) {
   const d = useDaten();
   const [a, setA] = useState<Abwesenheit>(wert);
@@ -35,36 +63,74 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
   const geaendert = JSON.stringify(a) !== JSON.stringify(wert);
 
   async function tu(f: () => Promise<string>) {
-    setSendet(true); setMeldung(undefined);
-    try { setMeldung({ art: 'gut', text: await f() }); await d.neuLaden(); await nachSpeichern?.(); }
-    catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
-    finally { setSendet(false); }
+    setSendet(true);
+    setMeldung(undefined);
+    try {
+      setMeldung({ art: 'gut', text: await f() });
+      await d.neuLaden();
+      await nachSpeichern?.();
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    } finally {
+      setSendet(false);
+    }
   }
 
   return (
-    <form className="blatt" onSubmit={(e) => { e.preventDefault(); void tu(async () => { await speichern(a); return a.an ? t('profil.abwesenheit.abwesenheit-gespeichert') : t('profil.abwesenheit.abwesenheit-ausgeschaltet'); }); }}>
+    <form
+      className="blatt"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void tu(async () => {
+          await speichern(a);
+          return a.an ? t('profil.abwesenheit.abwesenheit-gespeichert') : t('profil.abwesenheit.abwesenheit-ausgeschaltet');
+        });
+      }}>
       <h2 className="h3">{tn('profil.abwesenheit.abwesenheit', { hilfe: <Hilfe ort={hilfe} /> })}</h2>
       <AbwesenheitFelder a={a} setA={setA} wert={wert} wer={wer} benutzerId={benutzerId} offeneAufgaben={offeneAufgaben} />
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
       <div className="knoepfe">
-        <AufgabenUebergeben wert={wert} offeneAufgaben={offeneAufgaben} gesperrt={sendet || geaendert} uebergeben={() => tu(async () => uebergebenText(await uebergeben(), d.personen.find((p) => p.id === wert.vertreterId)?.name))} />
-        <Knopf art="haupt" type="submit" laeuft={sendet} laeuftText={t('profil.abwesenheit.speichere')} gesperrt={!geaendert}>{t('profil.abwesenheit.speichern')}</Knopf>
+        <AufgabenUebergeben
+          wert={wert}
+          offeneAufgaben={offeneAufgaben}
+          gesperrt={sendet || geaendert}
+          uebergeben={() => tu(async () => uebergebenText(await uebergeben(), d.personen.find((p) => p.id === wert.vertreterId)?.name))}
+        />
+        <Knopf art="haupt" type="submit" laeuft={sendet} laeuftText={t('profil.abwesenheit.speichere')} gesperrt={!geaendert}>
+          {t('profil.abwesenheit.speichern')}
+        </Knopf>
       </div>
     </form>
   );
 }
 
 /** Ergebnis von „Alle offenen Aufgaben an … geben“. */
-export const uebergebenText = (r: { uebergeben: number }, vertreter?: string) => t('profil.abwesenheit.aufgaben-an-gegeben', { anzahl: r.uebergeben, wert: vertreter ?? t('profil.abwesenheit.den-vertreter') });
+export const uebergebenText = (r: { uebergeben: number }, vertreter?: string) =>
+  t('profil.abwesenheit.aufgaben-an-gegeben', { anzahl: r.uebergeben, wert: vertreter ?? t('profil.abwesenheit.den-vertreter') });
 
 /** „Alle offenen Aufgaben an … geben“ (#78): Sofortaktion – erst nach dem Speichern einer geänderten Abwesenheit. */
-export function AufgabenUebergeben({ wert, offeneAufgaben, gesperrt, uebergeben }: { wert: Abwesenheit; offeneAufgaben: number; gesperrt: boolean; uebergeben: () => Promise<unknown> }) {
+export function AufgabenUebergeben({
+  wert,
+  offeneAufgaben,
+  gesperrt,
+  uebergeben,
+}: {
+  wert: Abwesenheit;
+  offeneAufgaben: number;
+  gesperrt: boolean;
+  uebergeben: () => Promise<unknown>;
+}) {
   const d = useDaten();
   if (!wert.vertreterId || offeneAufgaben <= 0) return null;
   const vertreter = d.personen.find((p) => p.id === wert.vertreterId);
   return (
     <Knopf gesperrt={gesperrt} title={gesperrt ? t('profil.abwesenheit.erst-speichern') : undefined} onClick={uebergeben}>
-      {t('profil.abwesenheit.alle-offenen-aufgaben-an', { offeneAufgaben, wert: vertreter?.name ?? t('profil.abwesenheit.vertreter-2') })}</Knopf>
+      {t('profil.abwesenheit.alle-offenen-aufgaben-an', { offeneAufgaben, wert: vertreter?.name ?? t('profil.abwesenheit.vertreter-2') })}
+    </Knopf>
   );
 }
 
@@ -72,8 +138,20 @@ export function AufgabenUebergeben({ wert, offeneAufgaben, gesperrt, uebergeben 
  * Die Angaben der Abwesenheit (#78) ohne Formular: im eigenen Profil im Formular oben, in der Werkbank (#1000) im
  * Bereich „Vertretung“ des Benutzers, den die Speicherleiste des Benutzers mitspeichert.
  */
-export function AbwesenheitFelder({ a, setA, wert, wer, benutzerId, offeneAufgaben }: {
-  a: Abwesenheit; setA: (a: Abwesenheit) => void; wert: Abwesenheit; wer: 'du' | string; benutzerId: string; offeneAufgaben: number;
+export function AbwesenheitFelder({
+  a,
+  setA,
+  wert,
+  wer,
+  benutzerId,
+  offeneAufgaben,
+}: {
+  a: Abwesenheit;
+  setA: (a: Abwesenheit) => void;
+  wert: Abwesenheit;
+  wer: 'du' | string;
+  benutzerId: string;
+  offeneAufgaben: number;
 }) {
   const d = useDaten();
   const vertreter = d.personen.find((p) => p.id === wert.vertreterId);
@@ -82,23 +160,56 @@ export function AbwesenheitFelder({ a, setA, wert, wer, benutzerId, offeneAufgab
   const wirkt = abwesenheitWirkt(wert, heuteIn());
   return (
     <>
-      <p className="leise">{t('profil.abwesenheit.solange-abwesend-gehen-neue', { wert: du ? t('profil.abwesenheit.du') : wer, wert2: du ? t('profil.abwesenheit.bist') : t('profil.abwesenheit.ist') })}</p>
-      {wert.an && <div className={`hinweis ${wirkt ? 'warn' : 'info'}`}><p>{t('profil.abwesenheit.vertreten-durch', { wert: du ? t('profil.abwesenheit.du-bist') : t('profil.abwesenheit.ist-2', { wer }), wert2: wirkt ? t('profil.abwesenheit.abwesend') : t('profil.abwesenheit.demnaechst-abwesend'), zeitraumText: zeitraumText(wert), wert3: vertreter?.name ?? '–' })}</p></div>}
+      <p className="leise">
+        {t('profil.abwesenheit.solange-abwesend-gehen-neue', {
+          wert: du ? t('profil.abwesenheit.du') : wer,
+          wert2: du ? t('profil.abwesenheit.bist') : t('profil.abwesenheit.ist'),
+        })}
+      </p>
+      {wert.an && (
+        <div className={`hinweis ${wirkt ? 'warn' : 'info'}`}>
+          <p>
+            {t('profil.abwesenheit.vertreten-durch', {
+              wert: du ? t('profil.abwesenheit.du-bist') : t('profil.abwesenheit.ist-2', { wer }),
+              wert2: wirkt ? t('profil.abwesenheit.abwesend') : t('profil.abwesenheit.demnaechst-abwesend'),
+              zeitraumText: zeitraumText(wert),
+              wert3: vertreter?.name ?? '–',
+            })}
+          </p>
+        </div>
+      )}
       <Schalter an={a.an} setze={(an) => setA({ ...a, an })} beschriftung={t('profil.abwesenheit.abwesend-2')} />
       {/* #419: Die Abwesenheit leitet nur neue Aufgaben um – auf die vorhandenen hinweisen. */}
       {du && a.an && !wert.an && offeneAufgaben > 0 && (
-        <div className="hinweis info hinweiszeile"><p>{t('profil.abwesenheit.du-hast-offene-aufgaben', { anzahl: offeneAufgaben })}</p>
-          <KnopfLink to="/ablage/eingang/weitergeben" groesse="klein">{t('profil.abwesenheit.zu-meinen-aufgaben')}</KnopfLink></div>
+        <div className="hinweis info hinweiszeile">
+          <p>{t('profil.abwesenheit.du-hast-offene-aufgaben', { anzahl: offeneAufgaben })}</p>
+          <KnopfLink to="/ablage/eingang/weitergeben" groesse="klein">
+            {t('profil.abwesenheit.zu-meinen-aufgaben')}
+          </KnopfLink>
+        </div>
       )}
       <div className="raster">
-        <Feld beschriftung={t('profil.abwesenheit.von')} optional><input type="date" value={a.von ?? ''} onChange={(e) => setA({ ...a, von: e.target.value || null })} /></Feld>
-        <Feld beschriftung={t('profil.abwesenheit.bis-2')} optional hinweis={t('profil.abwesenheit.einschliesslich')}><input type="date" value={a.bis ?? ''} min={a.von ?? undefined} onChange={(e) => setA({ ...a, bis: e.target.value || null })} /></Feld>
+        <Feld beschriftung={t('profil.abwesenheit.von')} optional>
+          <input type="date" value={a.von ?? ''} onChange={(e) => setA({ ...a, von: e.target.value || null })} />
+        </Feld>
+        <Feld beschriftung={t('profil.abwesenheit.bis-2')} optional hinweis={t('profil.abwesenheit.einschliesslich')}>
+          <input type="date" value={a.bis ?? ''} min={a.von ?? undefined} onChange={(e) => setA({ ...a, bis: e.target.value || null })} />
+        </Feld>
         {/* Vertreter: Pflicht, sobald „Abwesend“ an ist (nicht markiert, C4); sonst freiwillig und für später hinterlegt. */}
-        <Feld beschriftung={t('profil.abwesenheit.vertreter')} optional={!a.an} hinweis={!a.an && t('profil.abwesenheit.bleibt-fuer-das-naechste')}>
+        <Feld
+          beschriftung={t('profil.abwesenheit.vertreter')}
+          optional={!a.an}
+          hinweis={!a.an && t('profil.abwesenheit.bleibt-fuer-das-naechste')}>
           <select value={a.vertreterId ?? ''} onChange={(e) => setA({ ...a, vertreterId: e.target.value || null })}>
             <option value="">{t('profil.abwesenheit.waehlen')}</option>
-            {kandidaten.map((p) => <option key={p.id} value={p.id}>{p.name}{p.abwesend ? ` (${p.abwesend.wirkt ? 'abwesend' : t('profil.abwesenheit.demnaechst-abwesend')})` : ''}</option>)}
-          </select></Feld>
+            {kandidaten.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {p.abwesend ? ` (${p.abwesend.wirkt ? 'abwesend' : t('profil.abwesenheit.demnaechst-abwesend')})` : ''}
+              </option>
+            ))}
+          </select>
+        </Feld>
       </div>
     </>
   );
@@ -110,22 +221,56 @@ export function MeineAbwesenheit() {
   const [stand, setStand] = useState<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number } | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [neu, setNeu] = useState(0);
-  const laden = async () => { try { setStand(await kontoApi.abwesenheit()); } catch (e) { setFehler((e as Error).message); } };
-  useEffect(() => { void laden(); }, []);
+  const laden = async () => {
+    try {
+      setStand(await kontoApi.abwesenheit());
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  };
+  useEffect(() => {
+    void laden();
+  }, []);
   return (
     <div className="einspaltig schmal">
       <div className="mappenkopf">
         <p className="ueber">{t('profil.abwesenheit.mein-konto-abwesenheit')}</p>
         <h1>{ich.name || ich.email}</h1>
       </div>
-      {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
-      {!stand ? <p className="leise">{t('profil.abwesenheit.lade')}</p> : (
-        <AbwesenheitFormular benutzerId={ich.id} wer="du" wert={stand.abwesenheit ?? KEINE_ABWESENHEIT} offeneAufgaben={stand.offeneAufgaben}
-          speichern={(a) => kontoApi.abwesenheitSetzen(a)} uebergeben={() => kontoApi.aufgabenAnVertreter()}
-          nachSpeichern={async () => { await laden(); await aktualisieren(); setNeu((n) => n + 1); }} />
+      {fehler && (
+        <div className="hinweis schlecht">
+          <p>{fehler}</p>
+        </div>
+      )}
+      {!stand ? (
+        <p className="leise">{t('profil.abwesenheit.lade')}</p>
+      ) : (
+        <AbwesenheitFormular
+          benutzerId={ich.id}
+          wer="du"
+          wert={stand.abwesenheit ?? KEINE_ABWESENHEIT}
+          offeneAufgaben={stand.offeneAufgaben}
+          speichern={(a) => kontoApi.abwesenheitSetzen(a)}
+          uebergeben={() => kontoApi.aufgabenAnVertreter()}
+          nachSpeichern={async () => {
+            await laden();
+            await aktualisieren();
+            setNeu((n) => n + 1);
+          }}
+        />
       )}
       {/* #725: Die Liste der eigenen Aufgaben steht jetzt unter „Zu erledigen“. */}
-      {stand && stand.offeneAufgaben > 0 && <p className="leise" key={neu}>{tn('profil.abwesenheit.einzelne-aufgaben-oder-gruppen', { link: <Link to="/ablage/eingang/weitergeben" className="verweis">{t('profil.abwesenheit.zu-erledigen-mehrere-aufgaben')}</Link> })}</p>}
+      {stand && stand.offeneAufgaben > 0 && (
+        <p className="leise" key={neu}>
+          {tn('profil.abwesenheit.einzelne-aufgaben-oder-gruppen', {
+            link: (
+              <Link to="/ablage/eingang/weitergeben" className="verweis">
+                {t('profil.abwesenheit.zu-erledigen-mehrere-aufgaben')}
+              </Link>
+            ),
+          })}
+        </p>
+      )}
     </div>
   );
 }
@@ -134,12 +279,28 @@ export function MeineAbwesenheit() {
 export function AufgabenWeitergeben() {
   const [stand, setStand] = useState<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number } | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = async () => { try { setStand(await kontoApi.abwesenheit()); } catch (e) { setFehler((e as Error).message); } };
-  useEffect(() => { void laden(); }, []);
+  const laden = async () => {
+    try {
+      setStand(await kontoApi.abwesenheit());
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  };
+  useEffect(() => {
+    void laden();
+  }, []);
   return (
     <div className="einspaltig">
-      {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
-      {!stand ? <p className="leise">{t('profil.abwesenheit.lade')}</p> : <MeineOffenenAufgaben vertreter={stand.abwesenheit?.vertreterId ?? null} geaendert={laden} />}
+      {fehler && (
+        <div className="hinweis schlecht">
+          <p>{fehler}</p>
+        </div>
+      )}
+      {!stand ? (
+        <p className="leise">{t('profil.abwesenheit.lade')}</p>
+      ) : (
+        <MeineOffenenAufgaben vertreter={stand.abwesenheit?.vertreterId ?? null} geaendert={laden} />
+      )}
     </div>
   );
 }
@@ -157,68 +318,142 @@ function MeineOffenenAufgaben({ vertreter, geaendert }: { vertreter: string | nu
   const [fehler, setFehler] = useState<string>();
   const [f, setF] = useState<AufgabenFilter>({});
   const laden = useCallback(async () => {
-    try { setAlle((await aufgabenApi.meineAufgaben()).filter((a) => a.empfaengerId === ich.id)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try {
+      setAlle((await aufgabenApi.meineAufgaben()).filter((a) => a.empfaengerId === ich.id));
+      setFehler(undefined);
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }, [ich.id]);
-  useEffect(() => { void laden(); }, [laden]);
+  useEffect(() => {
+    void laden();
+  }, [laden]);
   const liste = filtereAufgaben(alle ?? [], f, { jetzt: new Date(), ohneVertretung: () => false });
   const wahl = useSammelauswahl(liste.map((a) => a.id));
-  const titelVon = (id: string) => { const a = alle?.find((x) => x.id === id); return a ? `${titelOder(a.mappeTitel)} – ${a.text}` : t('profil.abwesenheit.aufgabe'); };
-  const nachher = async () => { await laden(); await geaendert(); await d.neuLaden(); };
+  const titelVon = (id: string) => {
+    const a = alle?.find((x) => x.id === id);
+    return a ? `${titelOder(a.mappeTitel)} – ${a.text}` : t('profil.abwesenheit.aufgabe');
+  };
+  const nachher = async () => {
+    await laden();
+    await geaendert();
+    await d.neuLaden();
+  };
   async function einzeln(a: Aufgabe, an: string) {
     setFehler(undefined);
-    try { await aufgabenApi.aufgabeDelegieren(a.id, an); await nachher(); } catch (e) { setFehler((e as Error).message); }
+    try {
+      await aufgabenApi.aufgabeDelegieren(a.id, an);
+      await nachher();
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }
   return (
     <section className="blatt" id="meine-aufgaben">
       <h2 className="h3">{t('termine.weitergeben.titel')}</h2>
       <p className="leise">{t('termine.weitergeben.text')}</p>
-      {alle === null ? <p className="leise">{t('profil.abwesenheit.lade')}</p> : !alle.length ? <p className="leise">{t('profil.abwesenheit.du-hast-keine-offenen')}</p> : <>
-        <div className="aufgabenfilter stapel">
-          <Suchfeld wert={f.text ?? ''} setze={(text) => setF({ ...f, text: text || undefined })} beschriftung={t('profil.abwesenheit.im-titel-suchen')} platzhalter={t('profil.abwesenheit.im-titel-suchen-2')} />
-          <div className="filterraster">
-            <Feld className="klein" beschriftung={t('profil.abwesenheit.art')}>
-              <select value={f.art ?? ''} onChange={(e) => setF({ ...f, art: (e.target.value || undefined) as Aufgabenart | undefined })}>
-                <option value="">{t('profil.abwesenheit.alle')}</option>
-                {Object.entries(AUFGABENARTEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select></Feld>
-            <Feld className="klein" beschriftung={t('profil.abwesenheit.mappentyp')}>
-              <select value={f.typ ?? ''} onChange={(e) => setF({ ...f, typ: e.target.value || undefined })}>
-                <option value="">{t('profil.abwesenheit.alle')}</option>
-                {d.typen.filter((mappentyp) => alle.some((a) => a.typId === mappentyp.id)).map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}
-              </select></Feld>
-            <Feld className="klein" beschriftung={t('profil.abwesenheit.faelligkeit')}>
-              <select value={f.faellig ?? ''} onChange={(e) => setF({ ...f, faellig: (e.target.value || undefined) as Faelligkeit | undefined })}>
-                <option value="">{t('profil.abwesenheit.alle')}</option>
-                {Object.entries(FAELLIGKEITEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select></Feld>
+      {alle === null ? (
+        <p className="leise">{t('profil.abwesenheit.lade')}</p>
+      ) : !alle.length ? (
+        <p className="leise">{t('profil.abwesenheit.du-hast-keine-offenen')}</p>
+      ) : (
+        <>
+          <div className="aufgabenfilter stapel">
+            <Suchfeld
+              wert={f.text ?? ''}
+              setze={(text) => setF({ ...f, text: text || undefined })}
+              beschriftung={t('profil.abwesenheit.im-titel-suchen')}
+              platzhalter={t('profil.abwesenheit.im-titel-suchen-2')}
+            />
+            <div className="filterraster">
+              <Feld className="klein" beschriftung={t('profil.abwesenheit.art')}>
+                <select value={f.art ?? ''} onChange={(e) => setF({ ...f, art: (e.target.value || undefined) as Aufgabenart | undefined })}>
+                  <option value="">{t('profil.abwesenheit.alle')}</option>
+                  {Object.entries(AUFGABENARTEN).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </Feld>
+              <Feld className="klein" beschriftung={t('profil.abwesenheit.mappentyp')}>
+                <select value={f.typ ?? ''} onChange={(e) => setF({ ...f, typ: e.target.value || undefined })}>
+                  <option value="">{t('profil.abwesenheit.alle')}</option>
+                  {d.typen
+                    .filter((mappentyp) => alle.some((a) => a.typId === mappentyp.id))
+                    .map((mappentyp) => (
+                      <option key={mappentyp.id} value={mappentyp.id}>
+                        {mappentyp.name}
+                      </option>
+                    ))}
+                </select>
+              </Feld>
+              <Feld className="klein" beschriftung={t('profil.abwesenheit.faelligkeit')}>
+                <select
+                  value={f.faellig ?? ''}
+                  onChange={(e) => setF({ ...f, faellig: (e.target.value || undefined) as Faelligkeit | undefined })}>
+                  <option value="">{t('profil.abwesenheit.alle')}</option>
+                  {Object.entries(FAELLIGKEITEN).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </Feld>
+            </div>
+            <p className="listenzahl leise klein" role="status">
+              {filterAktiv(f) ? t('profil.abwesenheit.von-2', { liste: liste.length, alle: alle.length }) : alle.length}{' '}
+              {t('profil.abwesenheit.aufgaben', { anzahl: alle.length })}
+              {filterAktiv(f) && (
+                <>
+                  {' '}
+                  ·{' '}
+                  <Knopf art="link" onClick={() => setF({})}>
+                    {t('profil.abwesenheit.filter-zuruecksetzen')}
+                  </Knopf>
+                </>
+              )}
+            </p>
+            <SammelKopf s={wahl} />
           </div>
-          <p className="listenzahl leise klein" role="status">
-            {filterAktiv(f) ? t('profil.abwesenheit.von-2', { liste: liste.length, alle: alle.length }) : alle.length} {t('profil.abwesenheit.aufgaben', { anzahl: alle.length })}
-            {filterAktiv(f) && <> · <Knopf art="link" onClick={() => setF({})}>{t('profil.abwesenheit.filter-zuruecksetzen')}</Knopf></>}
-          </p>
-          <SammelKopf s={wahl} />
-        </div>
-        <SammelLeiste s={wahl} titel={titelVon} vorschlag={vertreter} ohne={ich.id} nachher={nachher} />
-        {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
-        {!liste.length ? <p className="leise">{t('profil.abwesenheit.keine-aufgabe-passt-zum')}</p> : (
-          <ul className="mappenliste sammel-liste">
-            {liste.map((a) => (
-              <li key={a.id} className={`mit-haken${wahl.ist(a.id) ? ' gewaehlt' : ''}`}>
-                <SammelHaken s={wahl} id={a.id} titel={`${titelOder(a.mappeTitel)}: ${a.text}`} />
-                <Link to={`/ablage/${a.typId}/${a.mappeId}`} className="eintrag">
-                  <span className="titel">{titelOder(a.mappeTitel)}</span>
-                  <span className="unter">{d.typ(a.typId ?? '')?.name} · {AUFGABENARTEN[a.art]}{a.datum ? ` · ${tag(a.datum)}` : ''}</span>
-                  <span className="unter">{a.text}</span>
-                </Link>
-                <div className="aufgabenzeile">
-                  <span className="leise klein">{t('profil.abwesenheit.weitergeben-an')}</span>
-                  <BenutzerWahl label={t('profil.abwesenheit.aufgabe-weitergeben-an', { text: a.text })} wert="" setze={(an) => { if (an) void einzeln(a, an); }} ohne={ich.id} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </>}
+          <SammelLeiste s={wahl} titel={titelVon} vorschlag={vertreter} ohne={ich.id} nachher={nachher} />
+          {fehler && (
+            <div className="hinweis schlecht">
+              <p>{fehler}</p>
+            </div>
+          )}
+          {!liste.length ? (
+            <p className="leise">{t('profil.abwesenheit.keine-aufgabe-passt-zum')}</p>
+          ) : (
+            <ul className="mappenliste sammel-liste">
+              {liste.map((a) => (
+                <li key={a.id} className={`mit-haken${wahl.ist(a.id) ? ' gewaehlt' : ''}`}>
+                  <SammelHaken s={wahl} id={a.id} titel={`${titelOder(a.mappeTitel)}: ${a.text}`} />
+                  <Link to={`/ablage/${a.typId}/${a.mappeId}`} className="eintrag">
+                    <span className="titel">{titelOder(a.mappeTitel)}</span>
+                    <span className="unter">
+                      {d.typ(a.typId ?? '')?.name} · {AUFGABENARTEN[a.art]}
+                      {a.datum ? ` · ${tag(a.datum)}` : ''}
+                    </span>
+                    <span className="unter">{a.text}</span>
+                  </Link>
+                  <div className="aufgabenzeile">
+                    <span className="leise klein">{t('profil.abwesenheit.weitergeben-an')}</span>
+                    <BenutzerWahl
+                      label={t('profil.abwesenheit.aufgabe-weitergeben-an', { text: a.text })}
+                      wert=""
+                      setze={(an) => {
+                        if (an) void einzeln(a, an);
+                      }}
+                      ohne={ich.id}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </section>
   );
 }

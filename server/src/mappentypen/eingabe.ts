@@ -3,10 +3,33 @@
  * Trefferlisten, Archivmodus, Beschriftungen; was beim Ändern bleibt, wenn die Eingabe es nicht nennt.
  */
 import {
-  BELIEBIGER_TYP, einzigesZiel, ERKENNBAR_AN_MAX, FELDTYPEN, istHistoriengruppe, istSystemspalte, leseZahl, REGISTERARTEN, schluesselAus, standardRegister,
-  ZIELTYPEN_MAX, zielTypenAus, type Feld, type MappentypDaten, type Quelle, type Register, type Trefferliste,
+  BELIEBIGER_TYP,
+  einzigesZiel,
+  ERKENNBAR_AN_MAX,
+  FELDTYPEN,
+  istHistoriengruppe,
+  istSystemspalte,
+  leseZahl,
+  REGISTERARTEN,
+  schluesselAus,
+  standardRegister,
+  ZIELTYPEN_MAX,
+  zielTypenAus,
+  type Feld,
+  type MappentypDaten,
+  type Quelle,
+  type Register,
+  type Trefferliste,
 } from '../../../shared/src/model';
-import { ausgangAus, bereinigeBeschriftungen, ergaenzeBeschriftungen, type Beschriftungen, type FeldTeile, type NamensTeile, type TypTeile } from '../../../shared/src/beschriftung';
+import {
+  ausgangAus,
+  bereinigeBeschriftungen,
+  ergaenzeBeschriftungen,
+  type Beschriftungen,
+  type FeldTeile,
+  type NamensTeile,
+  type TypTeile,
+} from '../../../shared/src/beschriftung';
 import { bereinigeAbschnitte, festigeDarstellung } from '../../../shared/src/darstellung';
 import { bereinigeAnzeige } from '../../../shared/src/anzeige';
 import { bereinigeFolgtAus } from '../../../shared/src/folgtaus';
@@ -61,7 +84,8 @@ export function bereinigeFeld(e: unknown): Feld {
   // Ziele (#1036): neu `zielTypen`, sonst wie bisher `zielTyp` – Clients und Dateien älterer Versionen gelten weiter.
   const ziele = zielTypenAus(Array.isArray(f.zielTypen) ? f.zielTypen : f.zielTyp);
   const optional = Array.isArray(f.zielOptional)
-    ? [...new Set(f.zielOptional.map(text).filter((k) => k.includes(':') && TYP_KENNUNG.test(k)))].slice(0, ZIELTYPEN_MAX) : [];
+    ? [...new Set(f.zielOptional.map(text).filter((k) => k.includes(':') && TYP_KENNUNG.test(k)))].slice(0, ZIELTYPEN_MAX)
+    : [];
   return {
     key: text(f.key),
     // Deutsch ist der Ausgangstext; `beschriftungen.de.label` (z. B. aus einem Paket) gilt als Bezeichnung.
@@ -71,7 +95,12 @@ export function bereinigeFeld(e: unknown): Feld {
     pflicht: !!f.pflicht && typ !== 'tabelle' && typ !== 'zusammengesetzt',
     eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl' || typ === 'zusammengesetzt'),
     hilfe: ausgangAus(f.beschriftungen, 'hilfe', text(f.hilfe)),
-    standard: std == null || std === '' || typ === 'passwort' || typ === 'tabelle' || typ === 'zusammengesetzt' ? null : typeof std === 'boolean' ? std : standardText(typ, std),
+    standard:
+      std == null || std === '' || typ === 'passwort' || typ === 'tabelle' || typ === 'zusammengesetzt'
+        ? null
+        : typeof std === 'boolean'
+          ? std
+          : standardText(typ, std),
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
@@ -91,11 +120,17 @@ export function bereinigeFeld(e: unknown): Feld {
     // Optionale Zieltypen aus Paketen (#1036): Kennungen „paket:schluessel“, die (noch) fehlen dürfen.
     ...(typ === 'referenz' && optional.length ? { zielOptional: optional } : {}),
     // Auswahlfilter (#172): nur an Referenzfeldern mit festen Zieltypen (bei mehreren über die gemeinsamen Felder).
-    ...(typ === 'referenz' && ziele.length && !ziele.includes(BELIEBIGER_TYP) && bereinigeAuswahlfilter(f.auswahlFilter).length ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) } : {}),
+    ...(typ === 'referenz' && ziele.length && !ziele.includes(BELIEBIGER_TYP) && bereinigeAuswahlfilter(f.auswahlFilter).length
+      ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) }
+      : {}),
     // Folgt aus (#886): nur an Verweisfeldern mit genau einem Zieltyp; geprüft wird im Mappentyp.
-    ...(typ === 'referenz' && einzigesZiel({ zielTypen: ziele }) && bereinigeFolgtAus(f.folgtAus) ? { folgtAus: bereinigeFolgtAus(f.folgtAus) } : {}),
+    ...(typ === 'referenz' && einzigesZiel({ zielTypen: ziele }) && bereinigeFolgtAus(f.folgtAus)
+      ? { folgtAus: bereinigeFolgtAus(f.folgtAus) }
+      : {}),
     // Beim Auswählen übernehmen (#1037): nur an Verweisfeldern mit festen Zieltypen; ob die Felder passen, prüft der Mappentyp.
-    ...(typ === 'referenz' && !ziele.includes(BELIEBIGER_TYP) && bereinigeVorbelegen(f.vorbelegen).length ? { vorbelegen: bereinigeVorbelegen(f.vorbelegen) } : {}),
+    ...(typ === 'referenz' && !ziele.includes(BELIEBIGER_TYP) && bereinigeVorbelegen(f.vorbelegen).length
+      ? { vorbelegen: bereinigeVorbelegen(f.vorbelegen) }
+      : {}),
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
@@ -117,9 +152,17 @@ export function bereinigeFeld(e: unknown): Feld {
     // Tabelle (#1030): Quelle wie beim Verknüpfungsregister, dazu die Beschriftung von „+ Neu“; geprüft im Mappentyp.
     ...(typ === 'tabelle' ? { quelle: bereinigeTabellenquelle(f.quelle) } : {}),
     // Zusammengesetzt (#1050): die Vorlage; ob ihre Platzhalter passen, prüft der Mappentyp.
-    ...(typ === 'zusammengesetzt' ? { vorlage: text(f.vorlage).replace(/\s+/g, ' ').slice(0, VORLAGE_MAX + 1) } : {}),
+    ...(typ === 'zusammengesetzt'
+      ? {
+          vorlage: text(f.vorlage)
+            .replace(/\s+/g, ' ')
+            .slice(0, VORLAGE_MAX + 1),
+        }
+      : {}),
     // Berechnet (#1034): Id des Pakets; ob es die Angabe setzen darf, entscheidet behalteBerechnet.
-    ...(typ !== 'passwort' && typ !== 'tabelle' && typ !== 'zusammengesetzt' && PAKET_ID.test(text(f.berechnetVon)) ? { berechnetVon: text(f.berechnetVon) } : {}),
+    ...(typ !== 'passwort' && typ !== 'tabelle' && typ !== 'zusammengesetzt' && PAKET_ID.test(text(f.berechnetVon))
+      ? { berechnetVon: text(f.berechnetVon) }
+      : {}),
     // Eigene Organisation (#995): Merkmal nur am Ja/Nein-Feld, Schreibschutz nicht an Passwort und Tabelle – ob sie
     // bleiben dürfen, entscheidet behalteOrganisation (nur aus dem Paket).
     ...(typ === 'janein' && istFeldmerkmal(f.merkmal) ? { merkmal: f.merkmal } : {}),
@@ -162,9 +205,17 @@ function bereinigeTabellenquelle(e: unknown): Tabellenquelle {
  * „Feld wieder freigeben“: die Angabe ausdrücklich leer (`berechnetVon: null`) – das darf, wer Mappentypen ändern darf
  * (die Route verlangt das), und das Paket selbst bei einem Update, das das Feld nicht mehr berechnet.
  */
-export function behalteBerechnet(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'felder'> | undefined, ausPaket?: string): MappentypDaten {
+export function behalteBerechnet(
+  roh: unknown,
+  d: MappentypDaten,
+  alt: Pick<MappentypDaten, 'felder'> | undefined,
+  ausPaket?: string,
+): MappentypDaten {
   const r = (roh ?? {}) as Record<string, unknown>;
-  const quelle = (key: string) => (Array.isArray(r.felder) ? r.felder : []).find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key) as Record<string, unknown> | undefined;
+  const quelle = (key: string) =>
+    (Array.isArray(r.felder) ? r.felder : []).find(
+      (y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key,
+    ) as Record<string, unknown> | undefined;
   const felder = d.felder.map((f) => {
     const { berechnetVon: neu, ...ohne } = f;
     const vorher = alt?.felder.find((y) => y.key === f.key)?.berechnetVon;
@@ -184,8 +235,14 @@ export function behalteBerechnet(roh: unknown, d: MappentypDaten, alt: Pick<Mapp
  * Prozent als Zahl („19 %“ → „19“). Was sich nicht lesen lässt, bleibt stehen, damit die Prüfung es meldet.
  */
 function standardText(typ: Feld['typ'], std: unknown): string {
-  if (typ === 'zeitraum') { const z = leseZeitraum(std); if (z) return zeitraumIso(z); }
-  if (typ === 'prozent') { const n = leseProzent(std); if (n != null && Number.isFinite(n)) return String(n); }
+  if (typ === 'zeitraum') {
+    const z = leseZeitraum(std);
+    if (z) return zeitraumIso(z);
+  }
+  if (typ === 'prozent') {
+    const n = leseProzent(std);
+    if (n != null && Number.isFinite(n)) return String(n);
+  }
   return String(std);
 }
 
@@ -201,13 +258,22 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
   const reg = e.map((x: Record<string, unknown>): Register => {
     const art = (String(x?.art) in REGISTERARTEN ? x.art : 'felder') as Register['art'];
     const name = ausgangAus(x?.beschriftungen, 'name', text(x?.name));
-    const r: Register = { key: text(x?.key) || schluesselAus(name), name, art, ...mitBeschriftungen(bereinigeBeschriftungen<NamensTeile>(x?.beschriftungen, NAMENS_TEILE)) };
+    const r: Register = {
+      key: text(x?.key) || schluesselAus(name),
+      name,
+      art,
+      ...mitBeschriftungen(bereinigeBeschriftungen<NamensTeile>(x?.beschriftungen, NAMENS_TEILE)),
+    };
     if (art === 'felder') r.felder = (Array.isArray(x?.felder) ? x.felder.map(text) : []).filter((k) => bekannt.has(k));
     // Ausgeblendet (#655): ob es bei diesem Register geht, prüft festigeDarstellung.
     if (x?.ausgeblendet === true) r.ausgeblendet = true;
     if (art === 'verknuepfungen') {
       r.quellen = (Array.isArray(x?.quellen) ? x.quellen : [])
-        .map((q: Record<string, unknown>): Quelle => ({ typId: text(q?.typId), feldKey: text(q?.feldKey), ...(text(q?.trefferliste) ? { trefferliste: text(q?.trefferliste).slice(0, 40) } : {}) }))
+        .map((q: Record<string, unknown>): Quelle => ({
+          typId: text(q?.typId),
+          feldKey: text(q?.feldKey),
+          ...(text(q?.trefferliste) ? { trefferliste: text(q?.trefferliste).slice(0, 40) } : {}),
+        }))
         .filter((q) => q.typId && q.feldKey);
     }
     // Volltext (#45): nur das Abschalten wird gespeichert; Standard ist an.
@@ -218,7 +284,8 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
     if (art === 'dokumente' && x?.versionierung === true) {
       r.versionierung = true;
       const n = Math.trunc(Number(x.versionenBehalten));
-      if (x.versionenBehalten != null && x.versionenBehalten !== '' && Number.isFinite(n) && n >= 2) r.versionenBehalten = Math.min(n, 1000);
+      if (x.versionenBehalten != null && x.versionenBehalten !== '' && Number.isFinite(n) && n >= 2)
+        r.versionenBehalten = Math.min(n, 1000);
     }
     return r;
   });
@@ -239,26 +306,39 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
 
 /** Nur bekannte Spalten, jede einmal; Spalten entfernter Felder, Passwortfelder und Tabellen (#1030) fallen still weg. */
 function bereinigeSpalten(e: unknown, felder: Feld[]): string[] {
-  return [...new Set((Array.isArray(e) ? e : []).map(text))]
-    .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort' && f.typ !== 'tabelle'));
+  return [...new Set((Array.isArray(e) ? e : []).map(text))].filter(
+    (k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort' && f.typ !== 'tabelle'),
+  );
 }
 
 /**
  * Trefferlisten (#75): mindestens eine, Schlüssel eindeutig, genau eine ist Standard.
  * Die ältere Angabe `trefferliste` (nur Spalten) ersetzt – falls angegeben – die Spalten der Standardliste.
  */
-export function bereinigeTrefferlisten(t: Record<string, unknown>, felder: Feld[]): { trefferlisten: Trefferliste[]; trefferliste: string[] } {
+export function bereinigeTrefferlisten(
+  t: Record<string, unknown>,
+  felder: Feld[],
+): { trefferlisten: Trefferliste[]; trefferliste: string[] } {
   const roh = Array.isArray(t.trefferlisten) ? (t.trefferlisten as Array<Record<string, unknown>>) : [];
   const listen: Trefferliste[] = [];
   for (const x of roh) {
     const name = ausgangAus(x?.beschriftungen, 'name', text(x?.name)).slice(0, 80) || 'Trefferliste';
     let key = (text(x?.key) || schluesselAus(name) || 'liste').slice(0, 40);
     for (let i = 2; listen.some((l) => l.key === key); i++) key = `${(text(x?.key) || schluesselAus(name) || 'liste').slice(0, 36)}_${i}`;
-    listen.push({ key, name, spalten: bereinigeSpalten(x?.spalten, felder), ...(x?.standard === true ? { standard: true } : {}), ...mitBeschriftungen(bereinigeBeschriftungen<NamensTeile>(x?.beschriftungen, NAMENS_TEILE)) });
+    listen.push({
+      key,
+      name,
+      spalten: bereinigeSpalten(x?.spalten, felder),
+      ...(x?.standard === true ? { standard: true } : {}),
+      ...mitBeschriftungen(bereinigeBeschriftungen<NamensTeile>(x?.beschriftungen, NAMENS_TEILE)),
+    });
   }
   if (!listen.length) listen.push({ key: 'standard', name: 'Standard', spalten: [], standard: true });
   const std = listen.find((l) => l.standard) ?? listen[0];
-  for (const l of listen) { if (l === std) l.standard = true; else delete l.standard; }
+  for (const l of listen) {
+    if (l === std) l.standard = true;
+    else delete l.standard;
+  }
   if (Array.isArray(t.trefferliste) && (!roh.length || JSON.stringify(t.trefferliste) !== JSON.stringify(std.spalten))) {
     // Nur die alte Form angegeben, oder sie weicht ab (z. B. { ...typ, trefferliste: [...] } über die API).
     std.spalten = bereinigeSpalten(t.trefferliste, felder);
@@ -274,7 +354,12 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
   const archiv = archivAus(t.archiv);
   const register = bereinigeRegister(t.register, felder);
   // Im Archivmodus ist die Versionierung Pflicht, und ältere Versionen bleiben bis zum Fristende.
-  if (archiv) for (const r of register) if (r.art === 'dokumente') { r.versionierung = true; delete r.versionenBehalten; }
+  if (archiv)
+    for (const r of register)
+      if (r.art === 'dokumente') {
+        r.versionierung = true;
+        delete r.versionenBehalten;
+      }
   // Ausblenden (#655): nur, wo es geht; ausgeblendete Felder sind nie Pflicht.
   festigeDarstellung({ felder, register });
   return {
@@ -318,7 +403,8 @@ export function behalteInSuche(roh: unknown, d: MappentypDaten, alt: Pick<Mappen
 /** „Woran man ihn erkennt“ (#937) auch in anderen Sprachen höchstens ERKENNBAR_AN_MAX Zeichen. */
 function kuerzeErkennbarAn(b: Beschriftungen<TypTeile> | undefined): Beschriftungen<TypTeile> | undefined {
   if (!b) return b;
-  for (const x of Object.values(b)) if (x?.erkennbarAn) x.erkennbarAn = x.erkennbarAn.replace(/\s+/g, ' ').trim().slice(0, ERKENNBAR_AN_MAX);
+  for (const x of Object.values(b))
+    if (x?.erkennbarAn) x.erkennbarAn = x.erkennbarAn.replace(/\s+/g, ' ').trim().slice(0, ERKENNBAR_AN_MAX);
   return b;
 }
 
@@ -326,17 +412,23 @@ function kuerzeErkennbarAn(b: Beschriftungen<TypTeile> | undefined): Beschriftun
  * Angaben behalten, die eine Eingabe nicht nennt (#937, #938): Wer einen Mappentyp ohne `ausPost` bzw. `erkennbarAn`
  * speichert (z. B. ein älteres Programm über die API), behält die bisherigen; ebenso je Feld `wiederfinden`.
  */
-export function behalteErkennung(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'ausPost' | 'erkennbarAn' | 'felder'>): MappentypDaten {
+export function behalteErkennung(
+  roh: unknown,
+  d: MappentypDaten,
+  alt: Pick<MappentypDaten, 'ausPost' | 'erkennbarAn' | 'felder'>,
+): MappentypDaten {
   const r = (roh ?? {}) as Record<string, unknown>;
-  const rohFelder = Array.isArray(r.felder) ? r.felder as unknown[] : [];
+  const rohFelder = Array.isArray(r.felder) ? (r.felder as unknown[]) : [];
   const felder = d.felder.map((f) => {
-    const q = rohFelder.find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === f.key) as Record<string, unknown> | undefined;
+    const q = rohFelder.find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === f.key) as
+      Record<string, unknown> | undefined;
     if (q && 'wiederfinden' in q) return f;
     const vorher = alt.felder.find((y) => y.key === f.key && y.typ === f.typ);
     return vorher?.wiederfinden ? { ...f, wiederfinden: true } : f;
   });
   return {
-    ...d, felder,
+    ...d,
+    felder,
     ...('ausPost' in r ? {} : { ausPost: alt.ausPost ?? null }),
     ...('erkennbarAn' in r || hatErkennbarAnBeschriftung(r.beschriftungen) ? {} : { erkennbarAn: alt.erkennbarAn ?? '' }),
   };
@@ -348,7 +440,9 @@ export function behalteErkennung(roh: unknown, d: MappentypDaten, alt: Pick<Mapp
  */
 export function behalteDarstellung(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'felder' | 'register'>): MappentypDaten {
   const r = (roh ?? {}) as Record<string, unknown>;
-  const quelle = (liste: unknown, key: string) => (Array.isArray(liste) ? liste : []).find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key) as Record<string, unknown> | undefined;
+  const quelle = (liste: unknown, key: string) =>
+    (Array.isArray(liste) ? liste : []).find((y) => !!y && typeof y === 'object' && text((y as Record<string, unknown>).key) === key) as
+      Record<string, unknown> | undefined;
   const felder = d.felder.map((f) => {
     const q = quelle(r.felder, f.key);
     const vorher = alt.felder.find((y) => y.key === f.key);
@@ -373,14 +467,23 @@ export function behalteDarstellung(roh: unknown, d: MappentypDaten, alt: Pick<Ma
   festigeDarstellung(erg);
   return erg;
 }
-const hatErkennbarAnBeschriftung = (b: unknown) => !!b && typeof b === 'object' && Object.values(b as Record<string, unknown>).some((x) => !!x && typeof x === 'object' && 'erkennbarAn' in x && (x as Record<string, unknown>).erkennbarAn != null);
+const hatErkennbarAnBeschriftung = (b: unknown) =>
+  !!b &&
+  typeof b === 'object' &&
+  Object.values(b as Record<string, unknown>).some(
+    (x) => !!x && typeof x === 'object' && 'erkennbarAn' in x && (x as Record<string, unknown>).erkennbarAn != null,
+  );
 
 /**
  * Beschriftungen behalten (#728): Wer einen Mappentyp ohne die Angabe `beschriftungen` speichert (z. B. ein älteres
  * Programm über die API), löscht damit keine – je Typ, Feld, Register und Trefferliste bleiben dann die bisherigen.
  * Wer sie mitgibt (auch leer oder null), setzt sie neu.
  */
-export function behalteBeschriftungen(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'beschriftungen' | 'felder' | 'register' | 'trefferlisten'>): MappentypDaten {
+export function behalteBeschriftungen(
+  roh: unknown,
+  d: MappentypDaten,
+  alt: Pick<MappentypDaten, 'beschriftungen' | 'felder' | 'register' | 'trefferlisten'>,
+): MappentypDaten {
   const r = (roh ?? {}) as Record<string, unknown>;
   const hat = (x: unknown) => !!x && typeof x === 'object' && 'beschriftungen' in x;
   const nachKey = <T extends { key: string; beschriftungen?: unknown }>(neu: T[], rohe: unknown, vorher: T[] | undefined): T[] => {
@@ -409,7 +512,10 @@ export function behalteBeschriftungen(roh: unknown, d: MappentypDaten, alt: Pick
 }
 
 /** Stand einer Änderung (#609): „zuletzt geändert“ als ISO-Zeitpunkt; fehlt = ohne Prüfung. */
-export function liesStand(v: unknown, fehler: 'mappen.konflikt.standUngueltig' | 'meldungen.dienst.stand-ungueltig' = 'mappen.konflikt.standUngueltig'): string | undefined {
+export function liesStand(
+  v: unknown,
+  fehler: 'mappen.konflikt.standUngueltig' | 'meldungen.dienst.stand-ungueltig' = 'mappen.konflikt.standUngueltig',
+): string | undefined {
   if (v === undefined || v === null || v === '') return undefined;
   const ms = typeof v === 'string' ? Date.parse(v) : NaN;
   if (!Number.isFinite(ms)) throw new Fachfehler(422, t(fehler));

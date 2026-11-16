@@ -7,7 +7,28 @@
  *
  * Schicht 3 – bekommt den Kern, die Mappen (Übernehmen der bisherigen Angaben) und die Mail an die Verwaltenden.
  */
-import { ANGABE_MAX, anschriftZeilen, anzeigename, geltendeOrganisation, KEINE_ORGANISATION_EINSTELLUNG, liesAngaben, liesOrganisationEinstellung, merkmalFeld, neueNotizen, NOTIZEN_MAX, ORGANISATION_EINSTELLUNG, verantwortlicherText, verweisFelder, angabenFelder, type EigeneOrganisation, type OrganisationEinstellung, type OrganisationNotiz, type OrganisationStand, type Stelle, type Verwendung } from '../../../shared/src/organisation';
+import {
+  ANGABE_MAX,
+  anschriftZeilen,
+  anzeigename,
+  geltendeOrganisation,
+  KEINE_ORGANISATION_EINSTELLUNG,
+  liesAngaben,
+  liesOrganisationEinstellung,
+  merkmalFeld,
+  neueNotizen,
+  NOTIZEN_MAX,
+  ORGANISATION_EINSTELLUNG,
+  verantwortlicherText,
+  verweisFelder,
+  angabenFelder,
+  type EigeneOrganisation,
+  type OrganisationEinstellung,
+  type OrganisationNotiz,
+  type OrganisationStand,
+  type Stelle,
+  type Verwendung,
+} from '../../../shared/src/organisation';
 import { hatEigeneOrganisationBedingung } from '../../../shared/src/anzeige';
 import { liesDatenschutz } from '../../../shared/src/auskunft';
 import { istLeer, type Mappe, type Mappentyp } from '../../../shared/src/model';
@@ -31,13 +52,22 @@ export interface OrganisationAnschluss {
 }
 
 export class OrganisationDienst {
-  constructor(private readonly kern: Kern, private readonly anschluss: OrganisationAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly anschluss: OrganisationAnschluss,
+  ) {}
 
-  private get repo() { return this.kern.repo; }
-  private get einstellungen() { return this.kern.einstellungen; }
+  private get repo() {
+    return this.kern.repo;
+  }
+  private get einstellungen() {
+    return this.kern.einstellungen;
+  }
 
   async einstellung(): Promise<OrganisationEinstellung> {
-    return this.einstellungen ? liesOrganisationEinstellung(await this.einstellungen.lies(ORGANISATION_EINSTELLUNG)) : { ...KEINE_ORGANISATION_EINSTELLUNG };
+    return this.einstellungen
+      ? liesOrganisationEinstellung(await this.einstellungen.lies(ORGANISATION_EINSTELLUNG))
+      : { ...KEINE_ORGANISATION_EINSTELLUNG };
   }
 
   /**
@@ -53,7 +83,10 @@ export class OrganisationDienst {
     const verweise = new Set<string>();
     for (const m of mappen) {
       const vf = verweisFelder(typen.get(m.typId)!);
-      for (const f of Object.values(vf)) { const v = m.werte[f!.key]; if (typeof v === 'string' && UUID.test(v) && v !== m.id) verweise.add(v); }
+      for (const f of Object.values(vf)) {
+        const v = m.werte[f!.key];
+        if (typeof v === 'string' && UUID.test(v) && v !== m.id) verweise.add(v);
+      }
     }
     const ziele = new Map((await this.repo.holeMappen([...verweise])).map((m) => [m.id, m] as const));
     const stelle = (id: unknown): Stelle | null => {
@@ -61,16 +94,21 @@ export class OrganisationDienst {
       const typ = z ? typen.get(z.typId) : undefined;
       return z && typ && !typ.system ? { mappeId: z.id, typId: z.typId, angaben: liesAngaben(typ, z.werte) } : null;
     };
-    return mappen.filter((m) => typen.has(m.typId)).map((m) => {
-      const typ = typen.get(m.typId)!;
-      const vf = verweisFelder(typ);
-      const v = vf.verantwortlicher ? m.werte[vf.verantwortlicher.key] : undefined;
-      return {
-        mappeId: m.id, typId: m.typId, angaben: liesAngaben(typ, m.werte),
-        verantwortlicher: istLeer(v) || v === m.id ? { selbst: true } : stelle(v),
-        datenschutzbeauftragter: vf.datenschutzbeauftragter ? stelle(m.werte[vf.datenschutzbeauftragter.key]) : null,
-      } satisfies EigeneOrganisation;
-    }).sort((a, b) => anzeigename(a.angaben).localeCompare(anzeigename(b.angaben), 'de'));
+    return mappen
+      .filter((m) => typen.has(m.typId))
+      .map((m) => {
+        const typ = typen.get(m.typId)!;
+        const vf = verweisFelder(typ);
+        const v = vf.verantwortlicher ? m.werte[vf.verantwortlicher.key] : undefined;
+        return {
+          mappeId: m.id,
+          typId: m.typId,
+          angaben: liesAngaben(typ, m.werte),
+          verantwortlicher: istLeer(v) || v === m.id ? { selbst: true } : stelle(v),
+          datenschutzbeauftragter: vf.datenschutzbeauftragter ? stelle(m.werte[vf.datenschutzbeauftragter.key]) : null,
+        } satisfies EigeneOrganisation;
+      })
+      .sort((a, b) => anzeigename(a.angaben).localeCompare(anzeigename(b.angaben), 'de'));
   }
 
   /**
@@ -94,16 +132,28 @@ export class OrganisationDienst {
   async stand(): Promise<OrganisationStand> {
     const [organisationen, einstellung] = await Promise.all([this.liste(), this.einstellung()]);
     const alle = [...(await this.kern.typen()).values()];
-    const typen = alle.flatMap((x) => { const f = merkmalFeld(x); return f && !x.system ? [{ id: x.id, name: x.name, feld: f.label }] : []; });
-    const anzeige = alle.filter((x) => hatEigeneOrganisationBedingung(x)).map((x): Verwendung => ({ art: 'anzeige', typId: x.id, typ: x.name }));
+    const typen = alle.flatMap((x) => {
+      const f = merkmalFeld(x);
+      return f && !x.system ? [{ id: x.id, name: x.name, feld: f.label }] : [];
+    });
+    const anzeige = alle
+      .filter((x) => hatEigeneOrganisationBedingung(x))
+      .map((x): Verwendung => ({ art: 'anzeige', typId: x.id, typ: x.name }));
     const sys = await this.kern.system();
     const kontorollen = new Set(sys.kontorollen.values());
-    const rollen = (await this.repo.listeMappen(sys.rolle.id)).filter((m) => !kontorollen.has(m.id)).map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? '') }))
+    const rollen = (await this.repo.listeMappen(sys.rolle.id))
+      .filter((m) => !kontorollen.has(m.id))
+      .map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? '') }))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'));
     return {
-      organisationen, geltend: geltendeOrganisation(organisationen, einstellung)?.mappeId ?? null, einstellung, typen,
+      organisationen,
+      geltend: geltendeOrganisation(organisationen, einstellung)?.mappeId ?? null,
+      einstellung,
+      typen,
       verwendungen: [{ art: 'auskunft' }, { art: 'loeschkonzept' }, { art: 'erkennung' }, { art: 'briefkopf' }, ...anzeige],
-      bisher: liesDatenschutz(await this.einstellungen?.lies('datenschutz')).verantwortlicher, rollen, neu: neueNotizen(einstellung).length,
+      bisher: liesDatenschutz(await this.einstellungen?.lies('datenschutz')).verantwortlicher,
+      rollen,
+      neu: neueNotizen(einstellung).length,
     };
   }
 
@@ -113,15 +163,25 @@ export class OrganisationDienst {
    */
   async setze(eingabe: unknown, von: string): Promise<OrganisationStand> {
     if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    const o = eingabe && typeof eingabe === 'object' && !Array.isArray(eingabe) ? eingabe as Record<string, unknown> : {};
+    const o = eingabe && typeof eingabe === 'object' && !Array.isArray(eingabe) ? (eingabe as Record<string, unknown>) : {};
     const alt = await this.einstellung();
     const neu = { ...alt };
     if ('auskunft' in o) neu.auskunft = await this.pruefeWahl(o.auskunft);
     if ('rollen' in o) neu.rollen = await this.pruefeRollen(o.rollen);
     if (o.gesehen === true) neu.gesehen = new Date().toISOString();
     await this.einstellungen.schreibe(ORGANISATION_EINSTELLUNG, neu);
-    if (alt.auskunft !== neu.auskunft) log.warn('Eigene Organisation für Auskünfte und Unterlagen gewählt', { vorher: alt.auskunft ?? '–', nachher: neu.auskunft ?? '–', von });
-    if (alt.rollen.join(',') !== neu.rollen.join(',')) log.warn('Rollen für das Merkmal „eigene Organisation“ geändert', { vorher: alt.rollen.join(', ') || '–', nachher: neu.rollen.join(', ') || '–', von });
+    if (alt.auskunft !== neu.auskunft)
+      log.warn('Eigene Organisation für Auskünfte und Unterlagen gewählt', {
+        vorher: alt.auskunft ?? '–',
+        nachher: neu.auskunft ?? '–',
+        von,
+      });
+    if (alt.rollen.join(',') !== neu.rollen.join(','))
+      log.warn('Rollen für das Merkmal „eigene Organisation“ geändert', {
+        vorher: alt.rollen.join(', ') || '–',
+        nachher: neu.rollen.join(', ') || '–',
+        von,
+      });
     return this.stand();
   }
 
@@ -163,9 +223,14 @@ export class OrganisationDienst {
       const mail = this.anschluss.anVerwaltende();
       if (mail) {
         const was = () => e.was.map((x) => t.frei(`meldungen.organisation.notiz.${x}`)).join(', ');
-        await mail(() => t('meldungen.organisation.mail.betreff'), () => t('meldungen.organisation.mail.text', { name: name || '–', was: was(), von }));
+        await mail(
+          () => t('meldungen.organisation.mail.betreff'),
+          () => t('meldungen.organisation.mail.text', { name: name || '–', was: was(), von }),
+        );
       }
-    } catch (f) { log.warn('Notiz zur eigenen Organisation nicht geschrieben', { fehler: (f as Error).message }); }
+    } catch (f) {
+      log.warn('Notiz zur eigenen Organisation nicht geschrieben', { fehler: (f as Error).message });
+    }
   }
 
   /**
@@ -234,10 +299,20 @@ const LOGTEXT: Record<OrganisationNotiz['was'], string> = {
  */
 export function werteAusText(typ: Mappentyp, text: string): Record<string, unknown> {
   const felder = angabenFelder(typ);
-  const zeilen = text.split('\n').map((z) => z.trim()).filter(Boolean);
+  const zeilen = text
+    .split('\n')
+    .map((z) => z.trim())
+    .filter(Boolean);
   const werte: Record<string, unknown> = {};
   const rest: string[] = [];
-  const setze = (art: keyof typeof felder, v: string) => { const f = felder[art]; if (f && !werte[f.key]) { werte[f.key] = v.slice(0, f.maxLen ?? 200); return true; } return false; };
+  const setze = (art: keyof typeof felder, v: string) => {
+    const f = felder[art];
+    if (f && !werte[f.key]) {
+      werte[f.key] = v.slice(0, f.maxLen ?? 200);
+      return true;
+    }
+    return false;
+  };
   zeilen.forEach((z, i) => {
     const email = z.match(/[^\s@:]+@[^\s@]+\.[^\s@]+/);
     const plzOrt = z.match(/^(\d{4,5})\s+(.+)$/);

@@ -1,10 +1,40 @@
 import { randomUUID } from 'node:crypto';
 import { grenzeAlsTag, ibanGruppen, pruefeFormate } from '../../shared/src/feldformate';
 import { setzeZusammengesetzte } from '../../shared/src/zusammengesetzt';
-import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, zieleVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
+import {
+  formatiere,
+  istOk,
+  pruefeMappe,
+  titelAus,
+  verweiseVon,
+  zieleVon,
+  type Feld,
+  type Mappentyp,
+  type Wert,
+  type Werte,
+} from '../../shared/src/model';
 import type { Zeitraum } from '../../shared/src/feldarten';
-import { dokumentRegister, MAX_DEMO, MAX_DEMO_DOKUMENTE, mengenWarnung, nichtErzeugbar, pflichtGrund, schaetzeMenge, verteilung, type NichtErzeugbar } from '../../shared/src/demodaten';
-import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
+import {
+  dokumentRegister,
+  MAX_DEMO,
+  MAX_DEMO_DOKUMENTE,
+  mengenWarnung,
+  nichtErzeugbar,
+  pflichtGrund,
+  schaetzeMenge,
+  verteilung,
+  type NichtErzeugbar,
+} from '../../shared/src/demodaten';
+import {
+  DOKUMENTARTEN,
+  erzeugeDokument,
+  kannRastern,
+  pruefeDokumentOptionen,
+  type Abschaetzung,
+  type DokumentOptionen,
+  type Dokumentart,
+  type MappenInhalt,
+} from './demo-dokumente';
 import { NACHNAMEN, ORTE, STRASSEN, VORNAMEN } from './demo-text';
 import type { PhasenPlan } from './auftrag';
 import type { Dienst } from './dienst';
@@ -29,11 +59,61 @@ let z = new Zufall();
 const zufall = (n: number) => z.int(n);
 const eins = <T>(a: readonly T[]): T => z.eins(a);
 const zwischen = (min: number, max: number) => z.zwischen(min, max);
-const BRANCHEN = ['Heizungsbau', 'Elektrotechnik', 'Sanitär', 'Dachdeckerei', 'Autohaus', 'Versicherungsmakler', 'Steuerberatung', 'Stadtwerke', 'Gartenbau', 'Malerbetrieb', 'Zahnarztpraxis', 'Tischlerei', 'Energieversorgung', 'Telekommunikation', 'Hausverwaltung'];
+const BRANCHEN = [
+  'Heizungsbau',
+  'Elektrotechnik',
+  'Sanitär',
+  'Dachdeckerei',
+  'Autohaus',
+  'Versicherungsmakler',
+  'Steuerberatung',
+  'Stadtwerke',
+  'Gartenbau',
+  'Malerbetrieb',
+  'Zahnarztpraxis',
+  'Tischlerei',
+  'Energieversorgung',
+  'Telekommunikation',
+  'Hausverwaltung',
+];
 const FORMEN = ['GmbH', 'GmbH & Co. KG', 'AG', 'e. K.', 'OHG', ''];
-const DINGE = ['Strom', 'Gas', 'Wasser', 'Internet', 'Mobilfunk', 'Kfz-Versicherung', 'Hausrat', 'Haftpflicht', 'Wartung Heizung', 'Fitnessstudio', 'Zeitung', 'Streaming', 'Wohngebäude', 'Rechtsschutz', 'Photovoltaik'];
-const ZWECKE = ['Abschlag', 'Jahresabrechnung', 'Rechnung', 'Monatsbeitrag', 'Nachzahlung', 'Gutschrift', 'Reparatur', 'Wartung', 'Beitrag'];
-const SAETZE = ['Unterlagen vollständig.', 'Rückfrage beim Kundenservice offen.', 'Laut Telefonat verlängert.', 'Kündigung vorgemerkt.', 'Bitte bei Gelegenheit prüfen.', 'Original liegt im Ordner.', 'Wurde per Lastschrift beglichen.'];
+const DINGE = [
+  'Strom',
+  'Gas',
+  'Wasser',
+  'Internet',
+  'Mobilfunk',
+  'Kfz-Versicherung',
+  'Hausrat',
+  'Haftpflicht',
+  'Wartung Heizung',
+  'Fitnessstudio',
+  'Zeitung',
+  'Streaming',
+  'Wohngebäude',
+  'Rechtsschutz',
+  'Photovoltaik',
+];
+const ZWECKE = [
+  'Abschlag',
+  'Jahresabrechnung',
+  'Rechnung',
+  'Monatsbeitrag',
+  'Nachzahlung',
+  'Gutschrift',
+  'Reparatur',
+  'Wartung',
+  'Beitrag',
+];
+const SAETZE = [
+  'Unterlagen vollständig.',
+  'Rückfrage beim Kundenservice offen.',
+  'Laut Telefonat verlängert.',
+  'Kündigung vorgemerkt.',
+  'Bitte bei Gelegenheit prüfen.',
+  'Original liegt im Ordner.',
+  'Wurde per Lastschrift beglichen.',
+];
 
 const firma = () => [eins(NACHNAMEN), eins(BRANCHEN), eins(FORMEN)].filter(Boolean).join(' ');
 const person = () => `${eins(VORNAMEN)} ${eins(NACHNAMEN)}`;
@@ -53,17 +133,29 @@ function demoIban(): string {
 function textFuer(f: Feld, nr: number): string {
   const s = `${f.key} ${f.label}`.toLowerCase();
   // Feldformat (#535): Werte, die passen.
-  if (f.format === 'email') return `${eins(VORNAMEN).toLowerCase().replace(/[^a-z]/g, '')}.${eins(NACHNAMEN).toLowerCase().replace(/[^a-z]/g, '')}${nr}@example.org`;
+  if (f.format === 'email')
+    return `${eins(VORNAMEN)
+      .toLowerCase()
+      .replace(/[^a-z]/g, '')}.${eins(NACHNAMEN)
+      .toLowerCase()
+      .replace(/[^a-z]/g, '')}${nr}@example.org`;
   if (f.format === 'telefon') return `0351 ${100000 + zufall(899999)}`;
-  if (f.format === 'internetseite') return `https://www.${eins(NACHNAMEN).toLowerCase().replace(/[^a-z]/g, '')}${nr}.example.org`;
+  if (f.format === 'internetseite')
+    return `https://www.${eins(NACHNAMEN)
+      .toLowerCase()
+      .replace(/[^a-z]/g, '')}${nr}.example.org`;
   if (f.format === 'iban') return demoIban();
   if (f.format === 'plz') return String(10000 + zufall(89999));
-  if (/mail/.test(s)) return `${eins(VORNAMEN).toLowerCase()}.${eins(NACHNAMEN).toLowerCase().replace(/[^a-z]/g, '')}${nr}@example.org`;
+  if (/mail/.test(s))
+    return `${eins(VORNAMEN).toLowerCase()}.${eins(NACHNAMEN)
+      .toLowerCase()
+      .replace(/[^a-z]/g, '')}${nr}@example.org`;
   if (/telefon|handy|mobil|tel\b/.test(s)) return `0351 ${100000 + zufall(899999)}`;
   if (/iban/.test(s)) return `DE${String(10 + zufall(89))}${Array.from({ length: 18 }, () => zufall(10)).join('')}`;
   if (/stra(ss|ß)e|adresse|anschrift/.test(s)) return `${eins(STRASSEN)} ${1 + zufall(120)}, ${eins(ORTE)}`;
   if (/\bort\b|stadt/.test(s)) return eins(ORTE);
-  if (/nummer|\bnr\b|kennung|konto|aktenzeichen|kennzeichen/.test(s)) return `${eins(['A', 'K', 'R', 'V', 'S'])}-${2020 + zufall(7)}-${String(10000 + zufall(89999))}`;
+  if (/nummer|\bnr\b|kennung|konto|aktenzeichen|kennzeichen/.test(s))
+    return `${eins(['A', 'K', 'R', 'V', 'S'])}-${2020 + zufall(7)}-${String(10000 + zufall(89999))}`;
   if (/vorname/.test(s)) return eins(VORNAMEN);
   if (/person|inhaber|ansprech/.test(s)) return person();
   if (/name|firma|partner|aussteller|anbieter|unternehmen/.test(s)) return zufall(5) === 0 ? person() : firma();
@@ -75,7 +167,8 @@ function textFuer(f: Feld, nr: number): string {
 /** Wert für ein Feld oder undefined, wenn sich nichts Passendes erzeugen lässt. */
 function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: Set<string>): Wert | undefined {
   switch (f.typ) {
-    case 'formatiert': return `**${eins(SAETZE)}**\n\n- ${eins(SAETZE)}\n- ${eins(SAETZE)}`;
+    case 'formatiert':
+      return `**${eins(SAETZE)}**\n\n- ${eins(SAETZE)}\n- ${eins(SAETZE)}`;
     case 'text':
     case 'langtext': {
       let s = f.typ === 'langtext' ? Array.from({ length: 1 + zufall(3) }, () => eins(SAETZE)).join(' ') : textFuer(f, nr);
@@ -86,37 +179,62 @@ function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: S
       if (f.maxLen != null && s.length > f.maxLen) s = s.slice(-f.maxLen);
       if (f.minLen != null && s.length < f.minLen) s = s.padEnd(f.minLen, '·');
       if (f.muster) {
-        try { if (!new RegExp(`^(?:${f.muster})$`).test(s)) return undefined; } catch { return undefined; }
+        try {
+          if (!new RegExp(`^(?:${f.muster})$`).test(s)) return undefined;
+        } catch {
+          return undefined;
+        }
       }
       return s;
     }
     case 'zahl': {
-      const min = typeof f.min === 'number' ? f.min : 1, max = typeof f.max === 'number' ? f.max : Math.max(min + 1000, 1000);
+      const min = typeof f.min === 'number' ? f.min : 1,
+        max = typeof f.max === 'number' ? f.max : Math.max(min + 1000, 1000);
       const stellen = Math.min(f.nachkomma ?? 0, 4);
       let x = Number(zwischen(min, max).toFixed(stellen));
       // Eindeutig (#711): nach 200 Versuchen sind die Werte zwischen min und max vermutlich vergeben – nicht endlos suchen.
-      for (let n = 0; f.eindeutig && vergeben.has(String(x)); n++) { if (n >= 200) return undefined; x = Number(zwischen(min, max).toFixed(stellen)); }
+      for (let n = 0; f.eindeutig && vergeben.has(String(x)); n++) {
+        if (n >= 200) return undefined;
+        x = Number(zwischen(min, max).toFixed(stellen));
+      }
       return x;
     }
     case 'betrag': {
-      const min = typeof f.min === 'number' ? f.min : 5, max = typeof f.max === 'number' ? f.max : Math.max(min + 100, 2500);
+      const min = typeof f.min === 'number' ? f.min : 5,
+        max = typeof f.max === 'number' ? f.max : Math.max(min + 100, 2500);
       return { betrag: Number(zwischen(min, max).toFixed(2)), waehrung: f.waehrung || 'EUR' };
     }
     // Zeitraum und Prozent (#1035): übliche Fristen und Steuersätze.
-    case 'zeitraum': return { ...eins<Zeitraum>([{ anzahl: 14, einheit: 'tage' }, { anzahl: 4, einheit: 'wochen' }, { anzahl: 1, einheit: 'monate' }, { anzahl: 3, einheit: 'monate' }, { anzahl: 1, einheit: 'jahre' }, { anzahl: 2, einheit: 'jahre' }]) };
+    case 'zeitraum':
+      return {
+        ...eins<Zeitraum>([
+          { anzahl: 14, einheit: 'tage' },
+          { anzahl: 4, einheit: 'wochen' },
+          { anzahl: 1, einheit: 'monate' },
+          { anzahl: 3, einheit: 'monate' },
+          { anzahl: 1, einheit: 'jahre' },
+          { anzahl: 2, einheit: 'jahre' },
+        ]),
+      };
     case 'prozent': {
-      const auswahl = [7, 19, 0, 2.5, 5].filter((x) => (typeof f.min !== 'number' || x >= f.min) && (typeof f.max !== 'number' || x <= f.max));
+      const auswahl = [7, 19, 0, 2.5, 5].filter(
+        (x) => (typeof f.min !== 'number' || x >= f.min) && (typeof f.max !== 'number' || x <= f.max),
+      );
       return auswahl.length ? eins(auswahl) : typeof f.min === 'number' ? f.min : undefined;
     }
     case 'datum': {
       const s = `${f.key} ${f.label}`.toLowerCase();
-      const d = /kuendig|kündig|ende|frist|ablauf|gueltig|gültig|bis\b|faellig|fällig/.test(s) ? tageVonHeute(10, 700) : tageVonHeute(-1100, 0);
+      const d = /kuendig|kündig|ende|frist|ablauf|gueltig|gültig|bis\b|faellig|fällig/.test(s)
+        ? tageVonHeute(10, 700)
+        : tageVonHeute(-1100, 0);
       // Grenzen (#535), z. B. Geburtstag höchstens heute.
       const tag = iso(new Date(heute));
-      const min = grenzeAlsTag(f.min, tag), max = grenzeAlsTag(f.max, tag);
+      const min = grenzeAlsTag(f.min, tag),
+        max = grenzeAlsTag(f.max, tag);
       return min && d < min ? min : max && d > max ? max : d;
     }
-    case 'janein': return z.chance(0.5);
+    case 'janein':
+      return z.chance(0.5);
     case 'auswahl': {
       const o = f.optionen ?? [];
       if (!o.length) return undefined;
@@ -124,7 +242,8 @@ function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: S
       return [...new Set(Array.from({ length: 1 + zufall(Math.min(2, o.length)) }, () => eins(o)))];
     }
     // Passwörter nie in Demo-Daten (#46).
-    case 'passwort': return undefined;
+    case 'passwort':
+      return undefined;
     case 'referenz': {
       // Mehrere Zieltypen (#1036): ein Typ mit Mappen, bei „alle vom selben Typ“ für alle Verweise derselbe.
       const mit = zieleVon(f).filter((z) => (pools.get(z) ?? []).length);
@@ -141,7 +260,9 @@ function reihenfolge(typen: Mappentyp[]): Mappentyp[] {
   const fertig: Mappentyp[] = [];
   const rest = [...typen];
   while (rest.length) {
-    const i = rest.findIndex((t) => t.felder.every((f) => f.typ !== 'referenz' || zieleVon(f).every((z) => z === t.id || !rest.some((r) => r.id === z))));
+    const i = rest.findIndex((t) =>
+      t.felder.every((f) => f.typ !== 'referenz' || zieleVon(f).every((z) => z === t.id || !rest.some((r) => r.id === z))),
+    );
     fertig.push(...rest.splice(i < 0 ? 0 : i, 1)); // bei Kreisen: einfach weiter
   }
   return fertig;
@@ -162,7 +283,9 @@ export function takt(anteil = 0.25, maxMs = 250) {
   };
 }
 
-export interface Fortschritt { (fertig: number, gesamt: number, phase?: 'mappen' | 'dokumente', extra?: { uebersprungen?: number; gruende?: string[] }): void }
+export interface Fortschritt {
+  (fertig: number, gesamt: number, phase?: 'mappen' | 'dokumente', extra?: { uebersprungen?: number; gruende?: string[] }): void;
+}
 
 /** Phasen des Auftrags (#364): erst Mappen, dann wahlweise Dokumente – jeweils mit eigener Zahl. */
 export function demoPhasen(mitDokumenten: boolean): PhasenPlan[] {
@@ -180,7 +303,10 @@ export interface DemoOptionen {
 }
 
 /** Freier Platz im Ordner der Dateien und Mindest-Speicherplatz (Sicherung, Speicherplatz-Grenze). */
-export interface DemoPlatz { frei(): Promise<number | null>; mindest(): Promise<number> }
+export interface DemoPlatz {
+  frei(): Promise<number | null>;
+  mindest(): Promise<number>;
+}
 
 export function pruefeDemoOptionen(x: unknown): DemoOptionen {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
@@ -209,8 +335,24 @@ export async function schaetzeDemo(dienst: Dienst, o: DemoOptionen, platz?: Demo
   const frei = platz ? await platz.frei().catch(() => null) : null;
   const mindest = platz ? await platz.mindest().catch(() => 0) : 0;
   const anzahl = await dienst.datenschutzDienst.mappenJeTyp();
-  const fehlen = nichtErzeugbar(typen, verteilung(typen.filter((t) => !t.system), o.anzahl), (id) => anzahl.get(id) ?? 0);
-  return { mappen, mappenMitRegister, dokumente, frei, mindest, reicht: frei === null || frei - (dokumente?.bytes ?? 0) >= mindest, rastern: await kannRastern(), nichtErzeugbar: fehlen };
+  const fehlen = nichtErzeugbar(
+    typen,
+    verteilung(
+      typen.filter((t) => !t.system),
+      o.anzahl,
+    ),
+    (id) => anzahl.get(id) ?? 0,
+  );
+  return {
+    mappen,
+    mappenMitRegister,
+    dokumente,
+    frei,
+    mindest,
+    reicht: frei === null || frei - (dokumente?.bytes ?? 0) >= mindest,
+    rastern: await kannRastern(),
+    nichtErzeugbar: fehlen,
+  };
 }
 
 /** Was eine Mappe zum Dokument beiträgt: Titel und Werte, damit die Volltextsuche das Dokument über sie findet. */
@@ -224,14 +366,16 @@ function inhaltVon(t: Mappentyp, werte: Werte, titel: string, titelVon: (id: str
     if (!text) continue;
     angaben.push([f.label, text]);
     if (f.typ === 'referenz' && !partner) partner = text.split(', ')[0];
-    if (f.typ === 'betrag' && betrag === undefined && typeof v === 'object' && v && 'betrag' in v) betrag = Number((v as { betrag: number }).betrag);
+    if (f.typ === 'betrag' && betrag === undefined && typeof v === 'object' && v && 'betrag' in v)
+      betrag = Number((v as { betrag: number }).betrag);
     if (f.typ === 'datum' && !datum) datum = text;
   }
   return { titel, typ: t.name, angaben, partner, betrag, datum };
 }
 
 /** „Versicherung: 85 übersprungen – Für das Pflichtfeld …“ (#711). */
-export const uebersprungenText = (x: { typ: string; grund: string; anzahl: number }) => `${x.typ}: ${x.anzahl.toLocaleString('de-DE')} übersprungen – ${x.grund}`;
+export const uebersprungenText = (x: { typ: string; grund: string; anzahl: number }) =>
+  `${x.typ}: ${x.anzahl.toLocaleString('de-DE')} übersprungen – ${x.grund}`;
 
 export interface DemoErgebnis {
   erzeugt: Record<string, number>;
@@ -240,7 +384,15 @@ export interface DemoErgebnis {
   gesamt: number;
   startwert: string;
   dauerMs: number;
-  dokumente: { anzahl: number; bytes: number; seiten: number; texterkennung: number; duplikate: number; jeArt: Record<Dokumentart, number>; dauerMs: number } | null;
+  dokumente: {
+    anzahl: number;
+    bytes: number;
+    seiten: number;
+    texterkennung: number;
+    duplikate: number;
+    jeArt: Record<Dokumentart, number>;
+    dauerMs: number;
+  } | null;
   /** Warum die Dokumente vorzeitig endeten (z. B. Speicherplatz). */
   abgebrochen?: string;
   /** Scans und Bilder ohne pdftoppm als einfache PDFs erzeugt. */
@@ -252,9 +404,16 @@ export interface DemoErgebnis {
  * beim Speichern und schreibt sie paketweise in die Datenbank. So dauern auch
  * 50.000 Mappen nur Minuten statt Stunden. Danach wahlweise Dokumente (#248).
  */
-export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: string | null, fortschritt: Fortschritt = () => {}, platz?: DemoPlatz): Promise<DemoErgebnis> {
+export async function erzeugeDemo(
+  dienst: Dienst,
+  eingabe: unknown,
+  benutzerId: string | null,
+  fortschritt: Fortschritt = () => {},
+  platz?: DemoPlatz,
+): Promise<DemoErgebnis> {
   const beginn = Date.now();
-  const o: DemoOptionen = typeof eingabe === 'number' || typeof eingabe === 'string' ? { anzahl: pruefeAnzahl(eingabe) } : pruefeDemoOptionen(eingabe);
+  const o: DemoOptionen =
+    typeof eingabe === 'number' || typeof eingabe === 'string' ? { anzahl: pruefeAnzahl(eingabe) } : pruefeDemoOptionen(eingabe);
   const n = o.anzahl;
   z = new Zufall(o.startwert);
   heute = o.startwert ? Date.UTC(2026, 0, 1) : Date.now();
@@ -269,7 +428,11 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   // Platz vorab: reicht er für die geschätzten Dokumente nicht, beginnt der Lauf gar nicht erst.
   if (o.dokumente && platz) {
     const s = await schaetzeDemo(dienst, o, platz);
-    if (!s.reicht) throw new Fachfehler(507, `Zu wenig Speicherplatz: Die Dokumente brauchen etwa ${gb(s.dokumente?.bytes ?? 0)}, frei sind ${gb(s.frei ?? 0)}, mindestens frei bleiben müssen ${gb(s.mindest)} (Sicherung und Speicherplatz-Grenze).`);
+    if (!s.reicht)
+      throw new Fachfehler(
+        507,
+        `Zu wenig Speicherplatz: Die Dokumente brauchen etwa ${gb(s.dokumente?.bytes ?? 0)}, frei sind ${gb(s.frei ?? 0)}, mindestens frei bleiben müssen ${gb(s.mindest)} (Sicherung und Speicherplatz-Grenze).`,
+      );
   }
 
   const ziel = verteilung(typen, n);
@@ -294,14 +457,23 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   let paket: NeueMappe[] = [];
   const weiter = takt();
   // Kleinere Transaktionen (#367): 250 Mappen je Paket, danach nachgeben.
-  const schreibe = async () => { await dienst.mappen.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); await weiter(); };
+  const schreibe = async () => {
+    await dienst.mappen.legeMappenAn(paket);
+    fertig += paket.length;
+    paket = [];
+    fortschritt(fertig, mappenZiel, 'mappen');
+    await weiter();
+  };
   const jetzt = new Date().toISOString();
 
   for (const t of typen) {
     const vergeben = new Map<string, Set<string>>();
-    for (const f of t.felder.filter((x) => x.eindeutig)) vergeben.set(f.key, new Set((await dienst.mappen.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
+    for (const f of t.felder.filter((x) => x.eindeutig))
+      vergeben.set(f.key, new Set((await dienst.mappen.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
     const mitRegister = o.dokumente && dokumentRegister(t).length > 0;
-    let ok = 0, fehlversuche = 0, letzterFehler = '';
+    let ok = 0,
+      fehlversuche = 0,
+      letzterFehler = '';
     while (ok < ziel.get(t.id)! && fehlversuche < 25) {
       const werte: Werte = {};
       let unmoeglich = '';
@@ -309,10 +481,20 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
         // Berechnete Felder (#1034) füllt ihr Paket, nicht der Demo-Generator; zusammengesetzte (#1050) setzt Ablago unten.
         if (f.berechnetVon || f.typ === 'zusammengesetzt' || (!f.pflicht && z.chance(0.2))) continue;
         const w = wertFuer(f, ok + 1, pools, vergeben.get(f.key) ?? new Set());
-        if (w === undefined) { if (f.pflicht) unmoeglich = pflichtGrund(f.label, f.typ === 'referenz' ? 'verweis' : f.typ === 'passwort' ? 'passwort' : f.eindeutig ? 'eindeutig' : 'sonst'); continue; }
+        if (w === undefined) {
+          if (f.pflicht)
+            unmoeglich = pflichtGrund(
+              f.label,
+              f.typ === 'referenz' ? 'verweis' : f.typ === 'passwort' ? 'passwort' : f.eindeutig ? 'eindeutig' : 'sonst',
+            );
+          continue;
+        }
         werte[f.key] = w;
       }
-      if (unmoeglich) { letzterFehler = unmoeglich; break; }
+      if (unmoeglich) {
+        letzterFehler = unmoeglich;
+        break;
+      }
       setzeZusammengesetzte(t, werte);
       const p = pruefeMappe(t, werte, {
         typVon: (id) => typVon.get(id),
@@ -323,16 +505,18 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
       if (!istOk(p)) {
         fehlversuche++;
         const [k, msg] = Object.entries(p.felder)[0] ?? [];
-        letzterFehler = k ? `${t.felder.find((f) => f.key === k)?.label ?? k}: ${msg?.[0]}` : p.allgemein[0] ?? 'ungültig';
+        letzterFehler = k ? `${t.felder.find((f) => f.key === k)?.label ?? k}: ${msg?.[0]}` : (p.allgemein[0] ?? 'ungültig');
         continue;
       }
       const id = randomUUID();
       const tt = titelAus(t, werte, (x) => titel.get(x) || 'Ohne Titel', { erstellt: jetzt, geaendert: jetzt });
       paket.push({ id, typId: t.id, werte, verweise: verweiseVon(t, werte), titel: tt, benutzerId, demo: true });
       if (mitRegister) mitDokumenten.push({ id, t, werte, titel: tt });
-      ok++; fehlversuche = 0;
+      ok++;
+      fehlversuche = 0;
       (pools.get(t.id) ?? pools.set(t.id, []).get(t.id)!).push(id);
-      typVon.set(id, t.id); titel.set(id, tt);
+      typVon.set(id, t.id);
+      titel.set(id, tt);
       for (const [k, set] of vergeben) if (werte[k] != null) set.add(String(werte[k]).trim().toLowerCase());
       if (paket.length >= 250) await schreibe();
     }
@@ -341,7 +525,8 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   }
   await schreibe();
   // Weniger als bestellt (#711): sofort zeigen, nicht erst nach den Dokumenten – kein Haken, sondern „übersprungen“.
-  if (uebersprungen.length) fortschritt(fertig, mappenZiel, 'mappen', { uebersprungen: mappenZiel - fertig, gruende: uebersprungen.map(uebersprungenText) });
+  if (uebersprungen.length)
+    fortschritt(fertig, mappenZiel, 'mappen', { uebersprungen: mappenZiel - fertig, gruende: uebersprungen.map(uebersprungenText) });
   const mappen = fertig;
   // Statistik nach dem Massen-Einfügen (#367), sonst plant PostgreSQL mit veralteten Zahlen.
   if (mappen) await dienst.sichten.aktualisiereStatistik();
@@ -375,30 +560,51 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
             statistik.duplikate++;
           } else {
             const art = DOKUMENTARTEN[z.gewichtet(gewichte)];
-            const kennung = `${z.int(2 ** 31).toString(16).padStart(8, '0')}${z.int(2 ** 31).toString(16).padStart(8, '0')}`;
+            const kennung = `${z
+              .int(2 ** 31)
+              .toString(16)
+              .padStart(8, '0')}${z
+              .int(2 ** 31)
+              .toString(16)
+              .padStart(8, '0')}`;
             const e = await erzeugeDokument(z, art, inhalt, kennung, rastern);
             datei = e;
             jeArt[e.art]++;
             statistik.seiten += e.seiten;
-            if (e.inhalt.length < DEMO_VORRAT_MAX) { vorrat.push(datei); if (vorrat.length > 50) vorrat.shift(); }
+            if (e.inhalt.length < DEMO_VORRAT_MAX) {
+              vorrat.push(datei);
+              if (vorrat.length > 50) vorrat.shift();
+            }
             statistik.bytes += e.inhalt.length;
             seitPruefung += e.inhalt.length;
           }
           const reg = z.eins(register);
           const r = await dienst.datenschutzDienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
-          if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
-          if (ocr.length >= 200) { await dienst.eingangskanaele.demoTexterkennung(ocr); ocr = []; }
+          if (r.volltext) {
+            ocr.push(r.id);
+            statistik.texterkennung++;
+          }
+          if (ocr.length >= 200) {
+            await dienst.eingangskanaele.demoTexterkennung(ocr);
+            ocr = [];
+          }
           statistik.anzahl++;
           erzeugtDok++;
           await weiter();
           // Zwischendurch die Statistik auffrischen (#367): Bei vielen Dokumenten wächst die Tabelle stark.
-          if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.sichten.aktualisiereStatistik(); }
+          if (++seitStatistik >= 5000) {
+            seitStatistik = 0;
+            await dienst.sichten.aktualisiereStatistik();
+          }
           if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
           // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
           if (platz && seitPruefung > DEMO_PLATZ_PRUEFEN) {
             seitPruefung = 0;
             const [frei, mindest] = await Promise.all([platz.frei().catch(() => null), platz.mindest().catch(() => 0)]);
-            if (frei !== null && frei < mindest) { ergebnis.abgebrochen = `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`; break aussen; }
+            if (frei !== null && frei < mindest) {
+              ergebnis.abgebrochen = `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`;
+              break aussen;
+            }
           }
         }
       }
@@ -419,6 +625,7 @@ const gb = (b: number) => `${(b / GB).toFixed(1).replace('.', ',')} GB`;
 
 export function pruefeAnzahl(anzahl: unknown): number {
   const n = Math.floor(Number(anzahl));
-  if (!Number.isFinite(n) || n < 1 || n > MAX_DEMO) throw new Fachfehler(422, `Bitte eine Anzahl zwischen 1 und ${MAX_DEMO.toLocaleString('de-DE')} angeben.`);
+  if (!Number.isFinite(n) || n < 1 || n > MAX_DEMO)
+    throw new Fachfehler(422, `Bitte eine Anzahl zwischen 1 und ${MAX_DEMO.toLocaleString('de-DE')} angeben.`);
   return n;
 }

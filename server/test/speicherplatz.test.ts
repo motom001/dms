@@ -13,13 +13,25 @@ const GB = 1024 ** 3;
 
 describe('Feste Ordner (#115)', () => {
   it('im Image /data, ohne Docker ./data, DMS_DATENWURZEL für Entwicklung', () => {
-    assert.deepEqual(pruefeOrdner({ NODE_ENV: 'production' }, '/projekt/data').ordner, { dateien: '/data/files', geheim: '/data/geheim', sicherung: '/data/sicherung' });
+    assert.deepEqual(pruefeOrdner({ NODE_ENV: 'production' }, '/projekt/data').ordner, {
+      dateien: '/data/files',
+      geheim: '/data/geheim',
+      sicherung: '/data/sicherung',
+    });
     assert.equal(pruefeOrdner({}, '/projekt/data').ordner.dateien, '/projekt/data/files');
     assert.equal(pruefeOrdner({ NODE_ENV: 'production', DMS_DATENWURZEL: '/tmp/x' }, '/p').ordner.sicherung, '/tmp/x/sicherung');
   });
 
   it('frühere Variable mit festem Wert: nur Hinweis', () => {
-    const p = pruefeOrdner({ NODE_ENV: 'production', FILES_DIR: '/data/files/', DMS_SCHLUESSEL_DATEI: '/data/geheim/dms.schluessel', DMS_SICHERUNG_DIR: '/data/sicherung' }, '/p');
+    const p = pruefeOrdner(
+      {
+        NODE_ENV: 'production',
+        FILES_DIR: '/data/files/',
+        DMS_SCHLUESSEL_DATEI: '/data/geheim/dms.schluessel',
+        DMS_SICHERUNG_DIR: '/data/sicherung',
+      },
+      '/p',
+    );
     assert.deepEqual(p.ueberfluessig, ['FILES_DIR', 'DMS_SCHLUESSEL_DATEI', 'DMS_SICHERUNG_DIR']);
     assert.deepEqual(p.fehler, []);
   });
@@ -42,10 +54,25 @@ function aufbau(freiGB: number, gesamtGB = 100) {
   let jetzt = new Date('2026-10-29T10:00:00Z');
   const wartung = new Wartung(einstellungen, konten, () => jetzt);
   const sp = new Speicherplatz(ordnerUnter('/data'), {
-    einstellungen, wartung, anAdmins: async (b) => { mails.push(mailText(b)); },
-    messer: async () => ({ gesamt: gesamtGB * GB, frei }), jetzt: () => jetzt,
+    einstellungen,
+    wartung,
+    anAdmins: async (b) => {
+      mails.push(mailText(b));
+    },
+    messer: async () => ({ gesamt: gesamtGB * GB, frei }),
+    jetzt: () => jetzt,
   });
-  return { sp, wartung, mails, setzeFrei: (gb: number) => { frei = gb * GB; }, spaeter: (min: number) => { jetzt = new Date(jetzt.getTime() + min * 60_000); } };
+  return {
+    sp,
+    wartung,
+    mails,
+    setzeFrei: (gb: number) => {
+      frei = gb * GB;
+    },
+    spaeter: (min: number) => {
+      jetzt = new Date(jetzt.getTime() + min * 60_000);
+    },
+  };
 }
 
 describe('Speicherplatz-Überwachung (#116)', () => {
@@ -67,8 +94,10 @@ describe('Speicherplatz-Überwachung (#116)', () => {
     assert.equal((await t.sp.pruefe()).zustand, 'warnung');
     await t.sp.pruefe();
     assert.deepEqual(t.mails, ['Ablago: Speicherplatz wird knapp']);
-    t.setzeFrei(20); await t.sp.pruefe();
-    t.setzeFrei(9); await t.sp.pruefe();
+    t.setzeFrei(20);
+    await t.sp.pruefe();
+    t.setzeFrei(9);
+    await t.sp.pruefe();
     assert.equal(t.mails.length, 2);
     assert.equal(t.wartung.stand.stufe, 'aus');
   });
@@ -85,8 +114,12 @@ describe('Speicherplatz-Überwachung (#116)', () => {
     assert.equal(Date.parse(w.aktivAb!) - Date.parse('2026-10-29T10:00:00Z'), 5 * 60_000);
     // Hochladen sofort gesperrt
     const dateien = mitPruefung(speicherDateien(), () => t.sp.pruefeHochladen());
-    await assert.rejects(dateien.schreibe('a'.repeat(64), Buffer.from('x')), (e: unknown) => e instanceof Fachfehler && e.status === 507 && /Speicherplatzlimit erreicht/.test(e.message));
-    t.spaeter(6); await t.wartung.pruefe();
+    await assert.rejects(
+      dateien.schreibe('a'.repeat(64), Buffer.from('x')),
+      (e: unknown) => e instanceof Fachfehler && e.status === 507 && /Speicherplatzlimit erreicht/.test(e.message),
+    );
+    t.spaeter(6);
+    await t.wartung.pruefe();
     assert.equal(t.wartung.stand.stufe, 'aktiv');
     // wieder Platz: Wartung bleibt, Werkbank bietet das Beenden an
     t.setzeFrei(40);
@@ -104,7 +137,11 @@ describe('Speicherplatz-Überwachung (#116)', () => {
     assert.equal(t.wartung.stand.text, 'Update');
     await t.wartung.ausschalten('admin@example.org');
     await t.sp.pruefe();
-    assert.equal(t.wartung.stand.stufe, 'aus', 'nach bewusstem Beenden nicht erneut auslösen, solange die Grenze nicht neu unterschritten wird');
+    assert.equal(
+      t.wartung.stand.stufe,
+      'aus',
+      'nach bewusstem Beenden nicht erneut auslösen, solange die Grenze nicht neu unterschritten wird',
+    );
   });
 
   it('Einstellung prüfen', async () => {

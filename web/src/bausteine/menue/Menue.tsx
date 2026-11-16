@@ -60,7 +60,8 @@ function gruppen(punkte: MenuePunkt[]): Array<{ name: string | null; punkte: Men
   const aus: Array<{ name: string | null; punkte: MenuePunkt[]; gefahr: boolean }> = [];
   for (const p of punkte.filter((x) => !x.gefahr)) {
     const g = aus.find((x) => x.name === (p.gruppe ?? null));
-    if (g) g.punkte.push(p); else aus.push({ name: p.gruppe ?? null, punkte: [p], gefahr: false });
+    if (g) g.punkte.push(p);
+    else aus.push({ name: p.gruppe ?? null, punkte: [p], gefahr: false });
   }
   const gefahr = punkte.filter((x) => x.gefahr);
   if (gefahr.length) aus.push({ name: null, punkte: gefahr, gefahr: true });
@@ -73,10 +74,15 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
   const knopf = useRef<HTMLButtonElement>(null);
   const menue = useRef<HTMLDivElement>(null);
   const id = useId();
-  const schliessen = (zurueck = true) => { setOffen(false); if (zurueck) knopf.current?.focus(); };
+  const schliessen = (zurueck = true) => {
+    setOffen(false);
+    if (zurueck) knopf.current?.focus();
+  };
   useEffect(() => {
     if (!offen) return;
-    const klick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOffen(false); };
+    const klick = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOffen(false);
+    };
     document.addEventListener('mousedown', klick);
     // Fokus auf den ersten Punkt, der sich wählen lässt.
     menue.current?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])')?.focus();
@@ -92,8 +98,15 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
     else if (e.key === 'ArrowUp') ziel = (jetzt - 1 + liste.length) % liste.length;
     else if (e.key === 'Home') ziel = 0;
     else if (e.key === 'End') ziel = liste.length - 1;
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); schliessen(); return; }
-    else if (e.key === 'Tab') { setOffen(false); return; }
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      schliessen();
+      return;
+    } else if (e.key === 'Tab') {
+      setOffen(false);
+      return;
+    }
     if (ziel < 0) return;
     e.preventDefault();
     liste[ziel]?.focus();
@@ -119,10 +132,20 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
   }
 
   const punkt = (p: MenuePunkt) => (
-    <button key={p.key} type="button" role="menuitem" tabIndex={-1} data-anker={p.anker} title={p.titel}
-      aria-disabled={p.gesperrt ? true : undefined} aria-haspopup={p.gefahr ? 'dialog' : undefined}
-      className={klassen(s.punkt, p.gefahr && s.gefahr, p.gesperrt && s.gesperrt)} onClick={() => void waehle(p)}>
-      <span className={s.symbol} aria-hidden="true">{p.symbol && <Symbol name={p.symbol} />}</span>
+    <button
+      key={p.key}
+      type="button"
+      role="menuitem"
+      tabIndex={-1}
+      data-anker={p.anker}
+      title={p.titel}
+      aria-disabled={p.gesperrt ? true : undefined}
+      aria-haspopup={p.gefahr ? 'dialog' : undefined}
+      className={klassen(s.punkt, p.gefahr && s.gefahr, p.gesperrt && s.gesperrt)}
+      onClick={() => void waehle(p)}>
+      <span className={s.symbol} aria-hidden="true">
+        {p.symbol && <Symbol name={p.symbol} />}
+      </span>
       <span className={s.text}>{p.inhalt}</span>
       {p.gesperrt && <small className={s.grund}>{p.gesperrt}</small>}
     </button>
@@ -130,11 +153,31 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
 
   return (
     <div className={klassen(s.menue, 'menue-baustein', className)} ref={ref}>
-      <Knopf ref={knopf} groesse={groesse} aria-haspopup="menu" aria-expanded={offen} aria-controls={offen ? id : undefined} data-anker={anker}
-        title={titel} nurSymbol={nurSymbol ? beschriftung : undefined} className={klassen(offen && s.an)}
+      <Knopf
+        ref={knopf}
+        groesse={groesse}
+        aria-haspopup="menu"
+        aria-expanded={offen}
+        aria-controls={offen ? id : undefined}
+        data-anker={anker}
+        title={titel}
+        nurSymbol={nurSymbol ? beschriftung : undefined}
+        className={klassen(offen && s.an)}
         onClick={() => setOffen(!offen)}
-        onKeyDown={(e) => { if (e.key === 'ArrowDown' && !offen) { e.preventDefault(); setOffen(true); } }}>
-        {nurSymbol ? <Symbol name="mehr" /> : <>{beschriftung}<Symbol name="pfeil-unten" className={s.pfeil} /></>}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' && !offen) {
+            e.preventDefault();
+            setOffen(true);
+          }
+        }}>
+        {nurSymbol ? (
+          <Symbol name="mehr" />
+        ) : (
+          <>
+            {beschriftung}
+            <Symbol name="pfeil-unten" className={s.pfeil} />
+          </>
+        )}
       </Knopf>
       {offen && <div className={s.schleier} aria-hidden="true" onClick={() => setOffen(false)} />}
       {offen && (
@@ -142,9 +185,16 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
           {gruppen(punkte).map((g, i) => (
             <Fragment key={`${g.name ?? ''}${i}`}>
               {i > 0 && <div role="separator" className={s.trenner} />}
-              {g.name
-                ? <div role="group" aria-label={g.name}><p className={s.gruppe} aria-hidden="true">{g.name}</p>{g.punkte.map(punkt)}</div>
-                : g.punkte.map(punkt)}
+              {g.name ? (
+                <div role="group" aria-label={g.name}>
+                  <p className={s.gruppe} aria-hidden="true">
+                    {g.name}
+                  </p>
+                  {g.punkte.map(punkt)}
+                </div>
+              ) : (
+                g.punkte.map(punkt)
+              )}
             </Fragment>
           ))}
         </div>

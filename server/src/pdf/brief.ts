@@ -25,14 +25,31 @@ const ZEILE = 1.35;
 const FARBE = rgb(0.1, 0.1, 0.12);
 const LEISE = rgb(0.35, 0.36, 0.4);
 
-interface Schriften { normal: PDFFont; fett: PDFFont; kursiv: PDFFont; fettKursiv: PDFFont; mono: PDFFont }
-interface Stueck { text: string; font: PDFFont }
+interface Schriften {
+  normal: PDFFont;
+  fett: PDFFont;
+  kursiv: PDFFont;
+  fettKursiv: PDFFont;
+  mono: PDFFont;
+}
+interface Stueck {
+  text: string;
+  font: PDFFont;
+}
 /** Ein Wort aus Stücken verschiedener Schrift („**fett**,“) – umbrochen wird nur zwischen Wörtern. */
-interface Wort { stuecke: Stueck[]; breite: number; leerDavor: boolean }
+interface Wort {
+  stuecke: Stueck[];
+  breite: number;
+  leerDavor: boolean;
+}
 type Zeile = Stueck[];
 
 /** Ein Element im Strukturbaum: Art (P, H1 …), Eltern, Kinder (Elemente oder markierte Inhalte einer Seite). */
-interface Element { s: string; eltern: number | null; kinder: Array<number | { seite: number; mcid: number }> }
+interface Element {
+  s: string;
+  eltern: number | null;
+  kinder: Array<number | { seite: number; mcid: number }>;
+}
 
 /** Seiten, markierte Inhalte und Strukturbaum. */
 class Satz {
@@ -42,9 +59,15 @@ class Satz {
   /** Je Seite: MCID → Element. */
   private eltern: number[][] = [];
   private offen: { el: number; seite: number } | null = null;
-  constructor(private doc: PDFDocument, readonly f: Schriften, private max: number) {}
+  constructor(
+    private doc: PDFDocument,
+    readonly f: Schriften,
+    private max: number,
+  ) {}
 
-  get seite() { return this.seiten[this.seiten.length - 1]; }
+  get seite() {
+    return this.seiten[this.seiten.length - 1];
+  }
   neueSeite() {
     this.schliesse();
     if (this.seiten.length >= this.max) throw new BriefZuLang(this.max);
@@ -74,7 +97,12 @@ class Satz {
     const mcid = this.eltern[seite].length;
     this.eltern[seite].push(el);
     this.elemente[el].kinder.push({ seite, mcid });
-    this.seite.pushOperators(PDFOperator.of(PDFOperatorNames.BeginMarkedContentSequence, [PDFName.of(this.elemente[el].s), this.doc.context.obj({ MCID: mcid }) as unknown as PDFName]));
+    this.seite.pushOperators(
+      PDFOperator.of(PDFOperatorNames.BeginMarkedContentSequence, [
+        PDFName.of(this.elemente[el].s),
+        this.doc.context.obj({ MCID: mcid }) as unknown as PDFName,
+      ]),
+    );
     this.offen = { el, seite };
   }
   schliesse() {
@@ -98,7 +126,9 @@ class Satz {
     const refs = this.elemente.map(() => ctx.nextRef());
     const seitenRefs = this.seiten.map((s) => s.ref);
     this.elemente.forEach((e, i) => {
-      const kinder = e.kinder.map((k) => (typeof k === 'number' ? refs[k] : ctx.obj({ Type: 'MCR', Pg: seitenRefs[k.seite], MCID: k.mcid })));
+      const kinder = e.kinder.map((k) =>
+        typeof k === 'number' ? refs[k] : ctx.obj({ Type: 'MCR', Pg: seitenRefs[k.seite], MCID: k.mcid }),
+      );
       ctx.assign(refs[i], ctx.obj({ Type: 'StructElem', S: e.s, P: e.eltern === null ? wurzel : refs[e.eltern], K: kinder }));
     });
     const nums: PDFObject[] = [];
@@ -107,7 +137,10 @@ class Satz {
       this.seiten[i].node.set(PDFName.of('StructParents'), PDFNumber.of(i));
       this.seiten[i].node.set(PDFName.of('Tabs'), PDFName.of('S'));
     });
-    ctx.assign(wurzel, ctx.obj({ Type: 'StructTreeRoot', K: [refs[0]], ParentTree: ctx.obj({ Nums: nums }), ParentTreeNextKey: this.seiten.length }));
+    ctx.assign(
+      wurzel,
+      ctx.obj({ Type: 'StructTreeRoot', K: [refs[0]], ParentTree: ctx.obj({ Nums: nums }), ParentTreeNextKey: this.seiten.length }),
+    );
     this.doc.catalog.set(PDFName.of('StructTreeRoot'), wurzel);
     this.doc.catalog.set(PDFName.of('MarkInfo'), ctx.obj({ Marked: true }));
   }
@@ -115,10 +148,13 @@ class Satz {
 
 /** Mehr Seiten als erlaubt (grenzen.ts). */
 export class BriefZuLang extends Error {
-  constructor(readonly seiten: number) { super(`Brief länger als ${seiten} Seiten`); }
+  constructor(readonly seiten: number) {
+    super(`Brief länger als ${seiten} Seiten`);
+  }
 }
 
-const schrift = (f: Schriften, l: Pick<Lauf, 'fett' | 'kursiv' | 'mono'>) => (l.mono ? f.mono : l.fett && l.kursiv ? f.fettKursiv : l.fett ? f.fett : l.kursiv ? f.kursiv : f.normal);
+const schrift = (f: Schriften, l: Pick<Lauf, 'fett' | 'kursiv' | 'mono'>) =>
+  l.mono ? f.mono : l.fett && l.kursiv ? f.fettKursiv : l.fett ? f.fett : l.kursiv ? f.kursiv : f.normal;
 const breiteVon = (s: Stueck[], g: number) => s.reduce((a, x) => a + x.font.widthOfTextAtSize(x.text, g), 0);
 
 /** Läufe in Wörter; `null` steht für einen Zeilenumbruch. */
@@ -126,14 +162,32 @@ function woerter(laeufe: Lauf[], f: Schriften, g: number): Array<Wort | null> {
   const aus: Array<Wort | null> = [];
   let akt: Wort | null = null;
   let leer = false;
-  const fertig = () => { if (akt) { akt.breite = breiteVon(akt.stuecke, g); aus.push(akt); akt = null; } };
+  const fertig = () => {
+    if (akt) {
+      akt.breite = breiteVon(akt.stuecke, g);
+      aus.push(akt);
+      akt = null;
+    }
+  };
   for (const l of laeufe) {
     const font = schrift(f, l);
     for (const teil of pdfText(l.text, font).split(/(\n| +)/)) {
       if (!teil) continue;
-      if (teil === '\n') { fertig(); aus.push(null); leer = false; continue; }
-      if (teil.startsWith(' ')) { fertig(); leer = true; continue; }
-      if (!akt) { akt = { stuecke: [], breite: 0, leerDavor: leer }; leer = false; }
+      if (teil === '\n') {
+        fertig();
+        aus.push(null);
+        leer = false;
+        continue;
+      }
+      if (teil.startsWith(' ')) {
+        fertig();
+        leer = true;
+        continue;
+      }
+      if (!akt) {
+        akt = { stuecke: [], breite: 0, leerDavor: leer };
+        leer = false;
+      }
       (akt as Wort).stuecke.push({ text: teil, font });
     }
   }
@@ -148,9 +202,13 @@ function trenne(w: Wort, breite: number, g: number): Wort[] {
   for (const s of w.stuecke) {
     for (const ch of s.text) {
       const probe = [...akt, { text: ch, font: s.font }];
-      if (akt.length && breiteVon(probe, g) > breite) { teile.push({ stuecke: akt, breite: breiteVon(akt, g), leerDavor: false }); akt = []; }
+      if (akt.length && breiteVon(probe, g) > breite) {
+        teile.push({ stuecke: akt, breite: breiteVon(akt, g), leerDavor: false });
+        akt = [];
+      }
       const letzt = akt[akt.length - 1];
-      if (letzt && letzt.font === s.font) letzt.text += ch; else akt.push({ text: ch, font: s.font });
+      if (letzt && letzt.font === s.font) letzt.text += ch;
+      else akt.push({ text: ch, font: s.font });
     }
   }
   if (akt.length) teile.push({ stuecke: akt, breite: breiteVon(akt, g), leerDavor: false });
@@ -163,9 +221,16 @@ export function umbrechen(laeufe: Lauf[], f: Schriften, g: number, breite: numbe
   const zeilen: Zeile[] = [];
   let z: Zeile = [];
   let b = 0;
-  const neu = () => { zeilen.push(z); z = []; b = 0; };
+  const neu = () => {
+    zeilen.push(z);
+    z = [];
+    b = 0;
+  };
   for (const w0 of woerter(laeufe, f, g)) {
-    if (w0 === null) { neu(); continue; }
+    if (w0 === null) {
+      neu();
+      continue;
+    }
     for (const w of w0.breite > breite ? trenne(w0, breite, g) : [w0]) {
       const leer = z.length && w.leerDavor ? w.stuecke[0].font.widthOfTextAtSize(' ', g) : 0;
       if (z.length && b + leer + w.breite > breite) neu();
@@ -179,7 +244,12 @@ export function umbrechen(laeufe: Lauf[], f: Schriften, g: number, breite: numbe
 }
 
 /** Zeilen eines Elements zeichnen (markiert), ab `x`; `rechtsbuendig`: an den rechten Rand. */
-function zeichneZeilen(s: Satz, el: number, zeilen: Zeile[], o: { g: number; x?: number; breite?: number; rechtsbuendig?: boolean; farbe?: ReturnType<typeof rgb> }) {
+function zeichneZeilen(
+  s: Satz,
+  el: number,
+  zeilen: Zeile[],
+  o: { g: number; x?: number; breite?: number; rechtsbuendig?: boolean; farbe?: ReturnType<typeof rgb> },
+) {
   const x0 = o.x ?? LINKS;
   for (const z of zeilen) {
     s.platz(o.g * ZEILE);
@@ -204,7 +274,17 @@ function zeichneBloecke(s: Satz, bloecke: BriefBlock[], o: { eltern: number; x: 
         const g = UEBERSCHRIFT[b.stufe];
         s.y -= g * 0.6;
         s.platz(g * ZEILE * 2);
-        zeichneZeilen(s, s.element(`H${b.stufe}`, o.eltern), umbrechen(b.laeufe.map((l) => ({ ...l, fett: true })), s.f, g, o.breite), { g, x: o.x });
+        zeichneZeilen(
+          s,
+          s.element(`H${b.stufe}`, o.eltern),
+          umbrechen(
+            b.laeufe.map((l) => ({ ...l, fett: true })),
+            s.f,
+            g,
+            o.breite,
+          ),
+          { g, x: o.x },
+        );
         s.y -= g * 0.2;
         break;
       }
@@ -231,7 +311,11 @@ function zeichneBloecke(s: Satz, bloecke: BriefBlock[], o: { eltern: number; x: 
         s.y -= b.zeilen * GROESSE * ZEILE;
         break;
       case 'zitat':
-        zeichneBloecke(s, b.bloecke.map((x) => kursiv(x)), { eltern: s.element('BlockQuote', o.eltern), x: o.x + 8 * MM, breite: o.breite - 8 * MM });
+        zeichneBloecke(
+          s,
+          b.bloecke.map((x) => kursiv(x)),
+          { eltern: s.element('BlockQuote', o.eltern), x: o.x + 8 * MM, breite: o.breite - 8 * MM },
+        );
         break;
     }
   }
@@ -241,10 +325,15 @@ function zeichneBloecke(s: Satz, bloecke: BriefBlock[], o: { eltern: number; x: 
 function kursiv(b: BriefBlock): BriefBlock {
   const k = (l: Lauf[]) => l.map((x) => ({ ...x, kursiv: true }));
   switch (b.art) {
-    case 'ueberschrift': case 'absatz': return { ...b, laeufe: k(b.laeufe) };
-    case 'liste': return { ...b, punkte: b.punkte.map(k) };
-    case 'zitat': return { ...b, bloecke: b.bloecke.map(kursiv) };
-    case 'abstand': return b;
+    case 'ueberschrift':
+    case 'absatz':
+      return { ...b, laeufe: k(b.laeufe) };
+    case 'liste':
+      return { ...b, punkte: b.punkte.map(k) };
+    case 'zitat':
+      return { ...b, bloecke: b.bloecke.map(kursiv) };
+    case 'abstand':
+      return b;
   }
 }
 
@@ -252,7 +341,12 @@ const text = (s: string): Lauf[] => [{ text: s }];
 
 /** Zeichnet den Brief; mehr Seiten als `b.seitenMax`: `{ zuLang }` (über die Grenze des Arbeiters hinweg ohne Fehlerklasse). */
 export async function briefPdf(b: Brief): Promise<{ pdf: Uint8Array; seiten: number } | { zuLang: number }> {
-  try { return await zeichneBrief(b); } catch (e) { if (e instanceof BriefZuLang) return { zuLang: e.seiten }; throw e; }
+  try {
+    return await zeichneBrief(b);
+  } catch (e) {
+    if (e instanceof BriefZuLang) return { zuLang: e.seiten };
+    throw e;
+  }
 }
 
 async function zeichneBrief(b: Brief): Promise<{ pdf: Uint8Array; seiten: number }> {
@@ -260,10 +354,12 @@ async function zeichneBrief(b: Brief): Promise<{ pdf: Uint8Array; seiten: number
   const titel = angabe(b.titel).slice(0, 300);
   doc.setTitle(titel, { showInWindowTitleBar: true });
   doc.setSubject(angabe(b.herkunft).slice(0, 500));
-  doc.setCreator('Ablago'); doc.setProducer('Ablago');
+  doc.setCreator('Ablago');
+  doc.setProducer('Ablago');
   doc.setLanguage(b.sprache);
   const jetzt = new Date();
-  doc.setCreationDate(jetzt); doc.setModificationDate(jetzt);
+  doc.setCreationDate(jetzt);
+  doc.setModificationDate(jetzt);
   const f: Schriften = await schriften(doc, ['normal', 'fett', 'kursiv', 'fettKursiv', 'mono']);
   const s = new Satz(doc, f, Math.max(1, b.seitenMax));
   s.neueSeite();
@@ -282,8 +378,16 @@ async function zeichneBrief(b: Brief): Promise<{ pdf: Uint8Array; seiten: number
   if (b.ruecksende) {
     const zeilen = umbrechen(text(b.ruecksende), f, 7, 85 * MM).slice(0, 1);
     zeichneZeilen(s, s.element('P'), zeilen, { g: 7, farbe: LEISE });
-    const seite = s.seite; const y = s.y - 1.5;
-    s.artefakt(seite, () => seite.drawLine({ start: { x: LINKS, y }, end: { x: LINKS + Math.min(85 * MM, breiteVon(zeilen[0] ?? [], 7)), y }, thickness: 0.3, color: LEISE }));
+    const seite = s.seite;
+    const y = s.y - 1.5;
+    s.artefakt(seite, () =>
+      seite.drawLine({
+        start: { x: LINKS, y },
+        end: { x: LINKS + Math.min(85 * MM, breiteVon(zeilen[0] ?? [], 7)), y },
+        thickness: 0.3,
+        color: LEISE,
+      }),
+    );
   }
   s.y = A4.h - 57 * MM;
   const anschrift = s.element('P');
@@ -293,7 +397,17 @@ async function zeichneBrief(b: Brief): Promise<{ pdf: Uint8Array; seiten: number
   if (b.datum) zeichneZeilen(s, s.element('P'), umbrechen(text(b.datum), f, GROESSE, BREITE), { g: GROESSE, rechtsbuendig: true });
   s.y = Math.min(s.y, A4.h - 103.4 * MM) - GROESSE;
   if (b.betreff?.length) {
-    zeichneZeilen(s, s.element('H1'), umbrechen(b.betreff.map((l) => ({ ...l, fett: true })), f, GROESSE, BREITE), { g: GROESSE });
+    zeichneZeilen(
+      s,
+      s.element('H1'),
+      umbrechen(
+        b.betreff.map((l) => ({ ...l, fett: true })),
+        f,
+        GROESSE,
+        BREITE,
+      ),
+      { g: GROESSE },
+    );
     s.y -= GROESSE * 1.5;
   }
   zeichneBloecke(s, b.bloecke, { eltern: 0, x: LINKS, breite: BREITE });

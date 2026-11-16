@@ -27,30 +27,66 @@ import { eigeneDatenbank } from './hilfe-db';
 import type { Repo } from '../src/repo';
 import '../src/sprache';
 
-const status = (s: number, muster?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!muster || muster.test(`${e.message} ${JSON.stringify(e.details ?? {})}`));
+const status = (s: number, muster?: RegExp) => (e: unknown) =>
+  e instanceof Fachfehler && e.status === s && (!muster || muster.test(`${e.message} ${JSON.stringify(e.details ?? {})}`));
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
-type Seite = { gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, { dokument: string; text: string; teil?: { id: string; typId: string; titel: string } }> };
+type Seite = {
+  gesamt: number;
+  mappen: Mappe[];
+  ausschnitte?: Record<string, { dokument: string; text: string; teil?: { id: string; typId: string; titel: string } }>;
+};
 
 /** Privat markierte Mappen sieht nur, wer sie angelegt hat. */
 const privatNurErsteller: Regelwerk = {
   grund: ALLES,
-  regeln: [{ id: 'privat', name: 'Privat nur für den Ersteller', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }, { art: 'feld', nicht: true, bedingung: { art: 'feld', feld: '_erstelltVon', op: 'zeigtAuf', wert: { art: 'ich' } } }], dann: { R: 'entziehen', U: 'entziehen', D: 'entziehen' }, stopp: true }],
+  regeln: [
+    {
+      id: 'privat',
+      name: 'Privat nur für den Ersteller',
+      wenn: [
+        { art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } },
+        { art: 'feld', nicht: true, bedingung: { art: 'feld', feld: '_erstelltVon', op: 'zeigtAuf', wert: { art: 'ich' } } },
+      ],
+      dann: { R: 'entziehen', U: 'entziehen', D: 'entziehen' },
+      stopp: true,
+    },
+  ],
 };
 
 /** Rechnung mit Tabelle „Positionen“; Rechnungsposition gehört über „rechnung“ dazu (Teil). */
 async function rechnungen(d: Dienst) {
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', schluessel: 'rechnung', titelVorlage: '{nr}', felder: [
-    { key: 'nr', label: 'Rechnungsnummer', typ: 'text', pflicht: true },
-    { key: 'privat', label: 'Privat', typ: 'janein' },
-  ] });
-  const position = await d.mappentypen.legeTypAn({ name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', teilVon: 'rechnung', felder: [
-    { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true, verweisart: 'zugehoerigkeit' },
-    { key: 'nr', label: 'Nr.', typ: 'zahl' },
-    { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true },
-    { key: 'privat', label: 'Privat', typ: 'janein' },
-  ], register: [{ key: 'angaben', name: 'Angaben', art: 'felder', felder: ['rechnung', 'nr', 'beschreibung', 'privat'] }, { key: 'belege', name: 'Belege', art: 'dokumente' }] });
-  const mitTabelle = await d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder,
-    { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: position.id, feldKey: 'rechnung', neu: '+ Position' } }] });
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    schluessel: 'rechnung',
+    titelVorlage: '{nr}',
+    felder: [
+      { key: 'nr', label: 'Rechnungsnummer', typ: 'text', pflicht: true },
+      { key: 'privat', label: 'Privat', typ: 'janein' },
+    ],
+  });
+  const position = await d.mappentypen.legeTypAn({
+    name: 'Rechnungsposition',
+    schluessel: 'rechnungsposition',
+    titelVorlage: '{nr}. {beschreibung}',
+    teilVon: 'rechnung',
+    felder: [
+      { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true, verweisart: 'zugehoerigkeit' },
+      { key: 'nr', label: 'Nr.', typ: 'zahl' },
+      { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true },
+      { key: 'privat', label: 'Privat', typ: 'janein' },
+    ],
+    register: [
+      { key: 'angaben', name: 'Angaben', art: 'felder', felder: ['rechnung', 'nr', 'beschreibung', 'privat'] },
+      { key: 'belege', name: 'Belege', art: 'dokumente' },
+    ],
+  });
+  const mitTabelle = await d.mappentypen.aendereTyp(rechnung.id, {
+    ...rechnung,
+    felder: [
+      ...rechnung.felder,
+      { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: position.id, feldKey: 'rechnung', neu: '+ Position' } },
+    ],
+  });
   return { rechnung: mitTabelle, position };
 }
 
@@ -64,7 +100,15 @@ async function aufbau(repo: Repo = speicherRepo(), kontoRepo = speicherKontoRepo
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const route = (m: string, p: string) => tabelle.find((r) => r.methode === m && r.pfad === p)!;
-  const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id) });
+  const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
+    route(m, p).handler({
+      body: {},
+      params: {},
+      query: {},
+      ip: '1',
+      ...x,
+      benutzer: b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id),
+    });
   const { rechnung, position } = await rechnungen(d);
   const suche = async (b: { id: string }, query: Record<string, string>) => (await rufe(b, 'GET', '/api/mappen', { query })).body as Seite;
   const zg = async (b: { id: string }) => d.rechtepruefung.zugriff(b.id === admin.id ? imModus(await ich(b.id)) : await ich(b.id));
@@ -73,10 +117,30 @@ async function aufbau(repo: Repo = speicherRepo(), kontoRepo = speicherKontoRepo
 
 describe('Einstellung am Mappentyp (#1031)', () => {
   const rechnung = { id: 'r', name: 'Rechnung', teilVon: null, system: null };
-  const daten = (f: Record<string, unknown>, extra: Partial<MappentypDaten> = {}): MappentypDaten => ({ name: 'Position', beschreibung: '', titelVorlage: '', teilVon: 'rechnung',
-    felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: ['r'], pflicht: true, ...f }, { key: 'text', label: 'Text', typ: 'text' }],
-    register: [{ key: 'angaben', name: 'Angaben', art: 'felder', felder: ['rechnung', 'text'] }], ...extra });
-  const ctx = { eigeneId: 'p', typVon: (id: string) => (id === 'r' ? rechnung : id === 'k' ? { name: 'Kette', teilVon: 'x', system: null } : id === 'b' ? { name: 'Benutzer', teilVon: null, system: 'benutzer' as const } : undefined), teiltypenAuf: () => [] };
+  const daten = (f: Record<string, unknown>, extra: Partial<MappentypDaten> = {}): MappentypDaten => ({
+    name: 'Position',
+    beschreibung: '',
+    titelVorlage: '',
+    teilVon: 'rechnung',
+    felder: [
+      { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: ['r'], pflicht: true, ...f },
+      { key: 'text', label: 'Text', typ: 'text' },
+    ],
+    register: [{ key: 'angaben', name: 'Angaben', art: 'felder', felder: ['rechnung', 'text'] }],
+    ...extra,
+  });
+  const ctx = {
+    eigeneId: 'p',
+    typVon: (id: string) =>
+      id === 'r'
+        ? rechnung
+        : id === 'k'
+          ? { name: 'Kette', teilVon: 'x', system: null }
+          : id === 'b'
+            ? { name: 'Benutzer', teilVon: null, system: 'benutzer' as const }
+            : undefined,
+    teiltypenAuf: () => [],
+  };
 
   it('ein Pflicht-Verweis auf genau einen anderen Typ, eine Mappe, immer sichtbar – sonst eine Meldung', () => {
     assert.deepEqual(teilProbleme(daten({}), ctx), []);
@@ -92,12 +156,23 @@ describe('Einstellung am Mappentyp (#1031)', () => {
     assert.match(teilProbleme(daten({}), { ...ctx, teiltypenAuf: () => ['Unterposition'] }).join(' '), /Unterposition/);
     assert.match(teilProbleme(daten({}), { ...ctx, system: 'post' }).join(' '), /Systemmappentypen/);
     // Über die gemeinsame Prüfung im Bereich Grunddaten.
-    const p = pruefeMappentyp(daten({ pflicht: false }), { eigeneId: 'p', namenAndererTypen: [], existiertTyp: (id) => id === 'r', teile: ctx });
+    const p = pruefeMappentyp(daten({ pflicht: false }), {
+      eigeneId: 'p',
+      namenAndererTypen: [],
+      existiertTyp: (id) => id === 'r',
+      teile: ctx,
+    });
     assert.ok(p.orte?.includes('grunddaten'));
   });
 
   it('Teile nie bei „Wohin gehört das?“; die übergeordnete Mappe steht im Feld', () => {
-    const t = { ...daten({}), id: 'p', erstellt: '', geaendert: '', register: [{ key: 'd', name: 'Dokumente', art: 'dokumente' as const }] } as Mappentyp;
+    const t = {
+      ...daten({}),
+      id: 'p',
+      erstellt: '',
+      geaendert: '',
+      register: [{ key: 'd', name: 'Dokumente', art: 'dokumente' as const }],
+    } as Mappentyp;
     assert.equal(kannAusPost(t), false);
     assert.equal(kannAusPost({ ...t, teilVon: null }), true);
     assert.equal(uebergeordneteId(t, { rechnung: 'r1' }), 'r1');
@@ -112,25 +187,57 @@ describe('Einstellung am Mappentyp (#1031)', () => {
     delete ohne.teilVon;
     assert.equal((await d.mappentypen.aendereTyp(position.id, ohne)).teilVon, 'rechnung');
     // Pflicht weg: abgelehnt.
-    await assert.rejects(d.mappentypen.aendereTyp(position.id, { ...position, felder: position.felder.map((f) => (f.key === 'rechnung' ? { ...f, pflicht: false } : f)) }), status(422, /muss Pflicht sein/));
+    await assert.rejects(
+      d.mappentypen.aendereTyp(position.id, {
+        ...position,
+        felder: position.felder.map((f) => (f.key === 'rechnung' ? { ...f, pflicht: false } : f)),
+      }),
+      status(422, /muss Pflicht sein/),
+    );
     // Die Rechnung hat Teile – sie selbst kann keiner werden.
     const kunde = await d.mappentypen.legeTypAn({ name: 'Kunde', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-    await assert.rejects(d.mappentypen.aendereTyp(rechnung.id, { ...rechnung, felder: [...rechnung.felder, { key: 'kunde', label: 'Kunde', typ: 'referenz', zielTypen: [kunde.id], pflicht: true }], teilVon: 'kunde' }), status(422, /Rechnungsposition/));
+    await assert.rejects(
+      d.mappentypen.aendereTyp(rechnung.id, {
+        ...rechnung,
+        felder: [...rechnung.felder, { key: 'kunde', label: 'Kunde', typ: 'referenz', zielTypen: [kunde.id], pflicht: true }],
+        teilVon: 'kunde',
+      }),
+      status(422, /Rechnungsposition/),
+    );
     // Ein Typ, der zu Positionen gehören soll: Kette.
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Unterposition', teilVon: 'position', felder: [{ key: 'position', label: 'Position', typ: 'referenz', zielTypen: [position.id], pflicht: true }] }), status(422, /Ketten/));
+    await assert.rejects(
+      d.mappentypen.legeTypAn({
+        name: 'Unterposition',
+        teilVon: 'position',
+        felder: [{ key: 'position', label: 'Position', typ: 'referenz', zielTypen: [position.id], pflicht: true }],
+      }),
+      status(422, /Ketten/),
+    );
   });
 
   it('keine eigene Ansicht; einschalten nimmt den Typ aus den Ansichten, ausschalten gibt ihm seine zurück', async () => {
     const { d, rechnung, position } = await aufbau();
     const sichten = async () => d.sichtenVerwaltung.listeSichten();
     assert.ok((await sichten()).some((s) => s.id === rechnung.id));
-    assert.equal((await sichten()).some((s) => s.id === position.id), false);
+    assert.equal(
+      (await sichten()).some((s) => s.id === position.id),
+      false,
+    );
     // Ein eigenständiger Typ mit Ansicht und einer gemeinsamen Ansicht mit der Rechnung.
-    const notiz = await d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'text', label: 'Text', typ: 'text' }] });
+    const notiz = await d.mappentypen.legeTypAn({
+      name: 'Notizzettel',
+      felder: [
+        { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true },
+        { key: 'text', label: 'Text', typ: 'text' },
+      ],
+    });
     const gemeinsam = await d.sichtenVerwaltung.legeSichtAn({ name: 'Belege', typen: [rechnung.id, notiz.id], bedingungen: [] });
     assert.ok((await sichten()).some((s) => s.id === notiz.id));
     const an = await d.mappentypen.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
-    assert.equal((await sichten()).some((s) => s.id === notiz.id), false);
+    assert.equal(
+      (await sichten()).some((s) => s.id === notiz.id),
+      false,
+    );
     assert.deepEqual((await sichten()).find((s) => s.id === gemeinsam.id)?.typen, [rechnung.id]);
     await d.mappentypen.aendereTyp(notiz.id, { ...an, teilVon: null });
     assert.ok((await sichten()).some((s) => s.id === notiz.id));
@@ -147,8 +254,14 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
     const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, admin.id);
     const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
     const r3 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-3', privat: true } }, admin.id);
-    const p1 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, admin.id);
-    const p2 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } }, admin.id);
+    const p1 = await d.mappen.legeMappeAn(
+      { typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } },
+      admin.id,
+    );
+    const p2 = await d.mappen.legeMappeAn(
+      { typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } },
+      admin.id,
+    );
     const p3 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r3.id, nr: 1, beschreibung: 'Stichsäge' } }, admin.id);
     return { ...a, r1, r2, r3, p1, p2, p3 };
   }
@@ -158,7 +271,11 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
     const { d, admin, suche, rechnung, position, r1, r2, r3, p1 } = await mitMappen();
     const alle = await d.sichtenVerwaltung.legeSichtAn({ name: 'Alles', typen: [ALLE_TYPEN], bedingungen: [] });
     // Neben Benutzern und Rollen die drei Rechnungen – keine Position.
-    const ohneSystem = async (q: Record<string, string>) => (await suche(admin, q)).mappen.filter((m) => m.typId === rechnung.id || m.typId === position.id).map((m) => m.id).sort();
+    const ohneSystem = async (q: Record<string, string>) =>
+      (await suche(admin, q)).mappen
+        .filter((m) => m.typId === rechnung.id || m.typId === position.id)
+        .map((m) => m.id)
+        .sort();
     assert.deepEqual(await ohneSystem({ sicht: alle.id }), [r1.id, r2.id, r3.id].sort());
     assert.deepEqual(await ohneSystem({ sicht: 'suche', link: '' }), [r1.id, r2.id, r3.id].sort());
     assert.deepEqual(ids(await suche(admin, { sicht: 'suche', link: `typ=${position.schluessel}` })), []);
@@ -198,43 +315,81 @@ describe('Ansichten, Suche und direkter Zugriff (#1031)', () => {
     assert.equal(m.bezuege[r1.id]?.titel, 'R-1');
     await assert.rejects(d.mappen.holeMappe(p2.id, await zg(lena)), status(404));
     // Öffnen merkt die Mappe nach der Antwort (#741).
-    for (const id of [p1.id, r1.id]) for (const f of (await rufe(lena, 'GET', '/api/mappen/:id', { params: { id } })).danach ?? []) await f();
+    for (const id of [p1.id, r1.id])
+      for (const f of (await rufe(lena, 'GET', '/api/mappen/:id', { params: { id } })).danach ?? []) await f();
     const start = (await rufe(lena, 'GET', '/api/startseite/zuletzt')).body as Array<{ id: string }>;
-    assert.deepEqual(start.map((x) => x.id), [r1.id]);
+    assert.deepEqual(
+      start.map((x) => x.id),
+      [r1.id],
+    );
   });
 });
 
 describe('Leserechte als Vorgabe (#1031)', () => {
   it('beim Einschalten übernommen, nur Lesen; Regeln mit fehlendem Feld nicht; danach nicht verbunden', async () => {
     const { d, rechnung } = await aufbau();
-    const nurBuero: Regelwerk = { grund: { ...ALLES, R: false }, regeln: [
-      ...privatNurErsteller.regeln,
-      { id: 'kunde', name: 'Kundenrechnungen', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'enthaelt', wert: { art: 'fest', wert: 'K' } } }], dann: { R: 'erteilen' }, stopp: false },
-      { id: 'u', name: 'Nur bearbeiten', wenn: [{ art: 'rolle', rollen: ['x'] }], dann: { U: 'entziehen' }, stopp: false },
-    ] };
+    const nurBuero: Regelwerk = {
+      grund: { ...ALLES, R: false },
+      regeln: [
+        ...privatNurErsteller.regeln,
+        {
+          id: 'kunde',
+          name: 'Kundenrechnungen',
+          wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'enthaelt', wert: { art: 'fest', wert: 'K' } } }],
+          dann: { R: 'erteilen' },
+          stopp: false,
+        },
+        { id: 'u', name: 'Nur bearbeiten', wenn: [{ art: 'rolle', rollen: ['x'] }], dann: { U: 'entziehen' }, stopp: false },
+      ],
+    };
     await d.berechtigungen.setzeBerechtigungen(rechnung.id, nurBuero, true);
-    const notiz = await d.mappentypen.legeTypAn({ name: 'Notizzettel', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }, { key: 'privat', label: 'Privat', typ: 'janein' }] });
+    const notiz = await d.mappentypen.legeTypAn({
+      name: 'Notizzettel',
+      felder: [
+        { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true },
+        { key: 'privat', label: 'Privat', typ: 'janein' },
+      ],
+    });
     assert.equal(notiz.berechtigungen ?? null, null);
     const an = await d.mappentypen.aendereTyp(notiz.id, { ...notiz, teilVon: 'rechnung' });
     assert.equal(an.berechtigungen?.grund.R, false);
     assert.equal(an.berechtigungen?.grund.U, true);
     // „privat“ gibt es am Teil – übernommen, nur mit der Wirkung auf Lesen; „nr“ nicht (ausgelassen), „U“ gar nicht.
-    assert.deepEqual(an.berechtigungen?.regeln.map((r) => [r.name, r.dann]), [['Privat nur für den Ersteller', { R: 'entziehen' }]]);
+    assert.deepEqual(
+      an.berechtigungen?.regeln.map((r) => [r.name, r.dann]),
+      [['Privat nur für den Ersteller', { R: 'entziehen' }]],
+    );
     // Spätere Änderungen an der Rechnung gelten nicht mit.
     await d.berechtigungen.setzeBerechtigungen(rechnung.id, null, true);
     assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === notiz.id)?.berechtigungen?.grund.R, false);
     // Eigene Berechtigungen bleiben unangetastet.
-    const eigen = await d.mappentypen.legeTypAn({ name: 'Anhang', felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }] });
+    const eigen = await d.mappentypen.legeTypAn({
+      name: 'Anhang',
+      felder: [{ key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true }],
+    });
     await d.berechtigungen.setzeBerechtigungen(rechnung.id, nurBuero, true);
     await d.berechtigungen.setzeBerechtigungen(eigen.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
-    const e2 = await d.mappentypen.aendereTyp(eigen.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === eigen.id)!, teilVon: 'rechnung' });
+    const e2 = await d.mappentypen.aendereTyp(eigen.id, {
+      ...(await d.mappentypen.listeTypen()).find((t) => t.id === eigen.id)!,
+      teilVon: 'rechnung',
+    });
     assert.deepEqual(e2.berechtigungen?.grund, { ...ALLES, D: false });
   });
 
   it('leserechteAus: Grundeinstellung Lesen und Regeln zum Lesen, übrige Rechte bleiben', () => {
-    const r = leserechteAus({ grund: { ...ALLES, R: false, D: false }, regeln: [{ id: 'a', name: 'A', wenn: [{ art: 'aufgabe' }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: true }] }, { grund: ALLES, regeln: [] }, (x) => x);
+    const r = leserechteAus(
+      {
+        grund: { ...ALLES, R: false, D: false },
+        regeln: [{ id: 'a', name: 'A', wenn: [{ art: 'aufgabe' }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: true }],
+      },
+      { grund: ALLES, regeln: [] },
+      (x) => x,
+    );
     assert.deepEqual(r.regelwerk.grund, { ...ALLES, R: false });
-    assert.deepEqual(r.regelwerk.regeln.map((x) => x.dann), [{ R: 'erteilen' }]);
+    assert.deepEqual(
+      r.regelwerk.regeln.map((x) => x.dann),
+      [{ R: 'erteilen' }],
+    );
     assert.equal(r.ausgelassen, 0);
   });
 });
@@ -243,7 +398,10 @@ describe('Löschen und Papierkorb (#1031)', () => {
   async function mitRechnung(repo?: Repo) {
     const a = await aufbau(repo);
     const r = await a.d.mappen.legeMappeAn({ typId: a.rechnung.id, werte: { nr: 'R-7' } }, a.lena.id);
-    const p1 = await a.d.mappen.legeMappeAn({ typId: a.position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Schrauben' } }, a.lena.id);
+    const p1 = await a.d.mappen.legeMappeAn(
+      { typId: a.position.id, werte: { rechnung: r.id, nr: 1, beschreibung: 'Schrauben' } },
+      a.lena.id,
+    );
     const p2 = await a.d.mappen.legeMappeAn({ typId: a.position.id, werte: { rechnung: r.id, nr: 2, beschreibung: 'Dübel' } }, a.lena.id);
     return { ...a, r, p1, p2 };
   }
@@ -255,9 +413,23 @@ describe('Löschen und Papierkorb (#1031)', () => {
     await d.loeschen.loescheMappe(r.id, lena.id, await zg(lena));
     for (const id of [r.id, p1.id, p2.id]) assert.equal(await d.kern.repo.holeMappe(id), undefined);
     const korb = await d.papierkorbVerwaltung.papierkorb({ id: lena.id, rolle: 'mitglied' });
-    assert.deepEqual(korb.map((e) => [e.id, e.vorgang]).sort(), [[r.id, r.id], [p1.id, r.id], [p2.id, r.id]].sort());
+    assert.deepEqual(
+      korb.map((e) => [e.id, e.vorgang]).sort(),
+      [
+        [r.id, r.id],
+        [p1.id, r.id],
+        [p2.id, r.id],
+      ].sort(),
+    );
     const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((e) => e.art === 'mappe');
-    assert.deepEqual(lp.map((e) => [e.mappeId, e.weg, e.vorgang]).sort(), [[r.id, 'teile', r.id], [p1.id, 'teile', r.id], [p2.id, 'teile', r.id]].sort());
+    assert.deepEqual(
+      lp.map((e) => [e.mappeId, e.weg, e.vorgang]).sort(),
+      [
+        [r.id, 'teile', r.id],
+        [p1.id, 'teile', r.id],
+        [p2.id, 'teile', r.id],
+      ].sort(),
+    );
   });
 
   it('ohne Recht an einem Teil: abgelehnt mit der Anzahl, nichts gelöscht (Ergänzung Sicherheit)', async () => {
@@ -271,7 +443,12 @@ describe('Löschen und Papierkorb (#1031)', () => {
     // Mit verknüpften Mappen löschen: Der nicht lesbare Teil fehlt im Baum und hält die Rechnung – sie bleibt samt ihm.
     const v = await d.mitVerknuepften.loeschVorschau(r.id, {}, await zg(lena));
     assert.equal(v.baum.knoten.length, 3);
-    const x = await d.mitVerknuepften.loescheMitVerknuepften(r.id, { auswahl: Object.fromEntries(v.baum.knoten.map((k) => [k.id, 'loeschen'])) }, lena.id, await zg(lena));
+    const x = await d.mitVerknuepften.loescheMitVerknuepften(
+      r.id,
+      { auswahl: Object.fromEntries(v.baum.knoten.map((k) => [k.id, 'loeschen'])) },
+      lena.id,
+      await zg(lena),
+    );
     assert.equal(x.loeschen.includes(r.id), false);
     assert.ok(await d.kern.repo.holeMappe(r.id));
   });
@@ -279,7 +456,15 @@ describe('Löschen und Papierkorb (#1031)', () => {
   it('mit verknüpften Mappen: Teile lassen sich nicht abwählen oder nur entkoppeln, solange ihre Mappe geht', async () => {
     const { d, lena, zg, r, p1, p2 } = await mitRechnung();
     const v = await d.mitVerknuepften.loeschVorschau(r.id, {}, await zg(lena));
-    await assert.rejects(d.mitVerknuepften.loescheMitVerknuepften(r.id, { auswahl: { [r.id]: 'loeschen', [p1.id]: 'loeschen', [p2.id]: 'entkoppeln' } }, lena.id, await zg(lena)), status(409, /gehört 1 Teil/));
+    await assert.rejects(
+      d.mitVerknuepften.loescheMitVerknuepften(
+        r.id,
+        { auswahl: { [r.id]: 'loeschen', [p1.id]: 'loeschen', [p2.id]: 'entkoppeln' } },
+        lena.id,
+        await zg(lena),
+      ),
+      status(409, /gehört 1 Teil/),
+    );
     assert.ok(await d.kern.repo.holeMappe(p2.id));
     const x = await d.mitVerknuepften.loescheMitVerknuepften(r.id, { auswahl: v.vorschlag }, lena.id, await zg(lena));
     assert.deepEqual([...x.loeschen].sort(), [r.id, p1.id, p2.id].sort());
@@ -294,7 +479,9 @@ describe('Löschen und Papierkorb (#1031)', () => {
     assert.equal(w.mappe.id, r.id);
     for (const id of [r.id, p1.id, p2.id]) assert.ok(await d.kern.repo.holeMappe(id));
     assert.deepEqual((await d.papierkorbVerwaltung.papierkorb(L)).length, 0);
-    const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({ schritt: 'wiederhergestellt' })).eintraege.filter((e) => e.art === 'mappe');
+    const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({ schritt: 'wiederhergestellt' })).eintraege.filter(
+      (e) => e.art === 'mappe',
+    );
     assert.equal(lp.length, 3);
     // Ein einzelner Teil lässt sich allein löschen und allein wiederherstellen.
     await d.loeschen.loescheMappe(p2.id, lena.id, await zg(lena));
@@ -319,9 +506,13 @@ describe('Löschen und Papierkorb (#1031)', () => {
 });
 
 describe('Paketformat (#1031)', () => {
-  const manifest = 'schema: 1\nid: rechnungen_test\nname: Rechnungen (Test)\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.235.0"\ninhalt: { mappentypen: mappentypen.yaml }\n';
+  const manifest =
+    'schema: 1\nid: rechnungen_test\nname: Rechnungen (Test)\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.235.0"\ninhalt: { mappentypen: mappentypen.yaml }\n';
   // Schreibweise wie im Entwurf des Pakets Rechnungen (dms-registry #172): gehoertZu nennt das Verweisfeld.
-  const typen = (gehoert: string, feld = '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnung, pflicht: true, verweisart: zugehoerigkeit }') => `- schluessel: rechnung
+  const typen = (
+    gehoert: string,
+    feld = '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnung, pflicht: true, verweisart: zugehoerigkeit }',
+  ) => `- schluessel: rechnung
   name: Rechnung
   felder:
     - { key: nr, label: Nr., typ: text }
@@ -344,42 +535,106 @@ ${gehoert}
     - { key: position, name: Position, art: felder, felder: [rechnung, nr, beschreibung] }
   trefferliste: [nr, beschreibung]
 `;
-  const lies = (g: string, f?: string) => liesPaket(new Map([['manifest.yaml', Buffer.from(manifest)], ['mappentypen.yaml', Buffer.from(typen(g, f))]]));
-  const gruende = (e: unknown) => (e instanceof Fachfehler ? ((e.details as { gruende?: string[] })?.gruende ?? [e.message]) : []).join(' | ');
+  const lies = (g: string, f?: string) =>
+    liesPaket(
+      new Map([
+        ['manifest.yaml', Buffer.from(manifest)],
+        ['mappentypen.yaml', Buffer.from(typen(g, f))],
+      ]),
+    );
+  const gruende = (e: unknown) =>
+    (e instanceof Fachfehler ? ((e.details as { gruende?: string[] })?.gruende ?? [e.message]) : []).join(' | ');
 
   it('Lesen und Prüfen: gehoertZu nennt ein Pflicht-Verweisfeld mit einem Ziel; keine Ketten', () => {
     assert.equal(lies('  gehoertZu: rechnung').typen[1].gehoertZu, 'rechnung');
     assert.equal(lies('').typen[1].gehoertZu, undefined);
-    assert.throws(() => lies('  gehoertZu: nr'), (e) => /Verweis auf genau einen Mappentyp/.test(gruende(e)));
-    assert.throws(() => lies('  gehoertZu: fehlt'), (e) => /nennt kein Feld/.test(gruende(e)));
-    assert.throws(() => lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnung }'), (e) => /pflicht: true/.test(gruende(e)));
-    assert.throws(() => lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnung, pflicht: true, mehrfach: true }'), (e) => /nur auf eine Mappe/.test(gruende(e)));
-    assert.throws(() => lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: [rechnung, rechnungsposition], pflicht: true }'), (e) => /genau einen Mappentyp/.test(gruende(e)));
-    assert.throws(() => lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnungsposition, pflicht: true }'), (e) => /eigenen Typs/.test(gruende(e)));
+    assert.throws(
+      () => lies('  gehoertZu: nr'),
+      (e) => /Verweis auf genau einen Mappentyp/.test(gruende(e)),
+    );
+    assert.throws(
+      () => lies('  gehoertZu: fehlt'),
+      (e) => /nennt kein Feld/.test(gruende(e)),
+    );
+    assert.throws(
+      () => lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnung }'),
+      (e) => /pflicht: true/.test(gruende(e)),
+    );
+    assert.throws(
+      () =>
+        lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnung, pflicht: true, mehrfach: true }'),
+      (e) => /nur auf eine Mappe/.test(gruende(e)),
+    );
+    assert.throws(
+      () =>
+        lies(
+          '  gehoertZu: rechnung',
+          '{ key: rechnung, label: Rechnung, typ: referenz, ziel: [rechnung, rechnungsposition], pflicht: true }',
+        ),
+      (e) => /genau einen Mappentyp/.test(gruende(e)),
+    );
+    assert.throws(
+      () => lies('  gehoertZu: rechnung', '{ key: rechnung, label: Rechnung, typ: referenz, ziel: rechnungsposition, pflicht: true }'),
+      (e) => /eigenen Typs/.test(gruende(e)),
+    );
   });
 
   it('Installieren aus der Schreibweise der Registry, Erstellen mit Mindestversion, Update schaltet ein', async () => {
     const dms = () => {
       const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-      return { d, p: new Paketverwaltung(d, { version: () => DMS_TEILE_AB, katalogUrl: 'https://katalog.test/katalog.json', abruf: async () => { throw new Error('ohne Netz'); } }), e: new Paketerstellung(d, { version: () => DMS_TEILE_AB }) };
+      return {
+        d,
+        p: new Paketverwaltung(d, {
+          version: () => DMS_TEILE_AB,
+          katalogUrl: 'https://katalog.test/katalog.json',
+          abruf: async () => {
+            throw new Error('ohne Netz');
+          },
+        }),
+        e: new Paketerstellung(d, { version: () => DMS_TEILE_AB }),
+      };
     };
     const { zipPuffer } = await import('../src/zip');
-    const zip = (g: string, version = '1.0.0') => zipPuffer([{ name: 'rechnungen_test/manifest.yaml', daten: Buffer.from(manifest.replace('mappentypen.yaml', 'inhalt/mappentypen.yaml').replace('1.0.0', version)) }, { name: 'rechnungen_test/inhalt/mappentypen.yaml', daten: Buffer.from(typen(g)) }]);
+    const zip = (g: string, version = '1.0.0') =>
+      zipPuffer([
+        {
+          name: 'rechnungen_test/manifest.yaml',
+          daten: Buffer.from(manifest.replace('mappentypen.yaml', 'inhalt/mappentypen.yaml').replace('1.0.0', version)),
+        },
+        { name: 'rechnungen_test/inhalt/mappentypen.yaml', daten: Buffer.from(typen(g)) },
+      ]);
     const a = dms();
     const h = await a.p.hochladen(zip('  gehoertZu: rechnung'), ICH);
     assert.deepEqual(h.vorschau.probleme, []);
     const paket = await a.p.installiere({ upload: h.upload, bestaetigt: true }, ICH);
     const pos = (await a.d.mappentypen.listeTypen()).find((t) => t.id === paket.typen.rechnungsposition)!;
     assert.equal(pos.teilVon, 'rechnung');
-    assert.equal((await a.d.sichtenVerwaltung.listeSichten()).some((s) => s.id === pos.id), false);
+    assert.equal(
+      (await a.d.sichtenVerwaltung.listeSichten()).some((s) => s.id === pos.id),
+      false,
+    );
     // Paket erstellen schreibt gehoertZu und hebt die Mindestversion.
     assert.equal(mindestversion(['teile']).version, DMS_TEILE_AB);
     const b = dms();
     const { rechnung, position } = await rechnungen(b.d);
-    const angaben = { typen: [rechnung.id, position.id], sichten: [], beispiele: [], id: 'rechnungen_eigen', name: 'Rechnungen (eigen)', version: '1.0.0', beschreibung: 'Rechnungen mit Positionen.',
-      autor: { name: 'Lena Beispiel', github: 'lena' }, lizenz: 'MIT', dms: `>=${DMS_TEILE_AB}`, aenderungen: '' };
+    const angaben = {
+      typen: [rechnung.id, position.id],
+      sichten: [],
+      beispiele: [],
+      id: 'rechnungen_eigen',
+      name: 'Rechnungen (eigen)',
+      version: '1.0.0',
+      beschreibung: 'Rechnungen mit Positionen.',
+      autor: { name: 'Lena Beispiel', github: 'lena' },
+      lizenz: 'MIT',
+      dms: `>=${DMS_TEILE_AB}`,
+      aenderungen: '',
+    };
     const z = await b.e.exportiere(angaben, ICH);
-    const inhalt = parse(liesZip(z.daten).get('rechnungen_eigen/inhalt/mappentypen.yaml')!.toString()) as Array<{ schluessel: string; gehoertZu?: string }>;
+    const inhalt = parse(liesZip(z.daten).get('rechnungen_eigen/inhalt/mappentypen.yaml')!.toString()) as Array<{
+      schluessel: string;
+      gehoertZu?: string;
+    }>;
     assert.equal(inhalt.find((t) => t.schluessel === 'rechnungsposition')?.gehoertZu, 'rechnung');
     assert.equal(inhalt.find((t) => t.schluessel === 'rechnung')?.gehoertZu, undefined);
     // Update: Version 1.0.0 ohne, 1.1.0 mit gehoertZu – schaltet ein.
@@ -400,15 +655,27 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
     const { pgKontoRepo } = await import('../src/konto-repo');
     const haushalt = '00000000-0000-4000-8000-000000000001';
     try {
-      const { d, admin, lena, suche, zg, rechnung, position } = await aufbau(pgRepo(db.sql, haushalt) as never as Repo, pgKontoRepo(db.sql, haushalt));
+      const { d, admin, lena, suche, zg, rechnung, position } = await aufbau(
+        pgRepo(db.sql, haushalt) as never as Repo,
+        pgKontoRepo(db.sql, haushalt),
+      );
       assert.equal((await d.mappentypen.listeTypen()).find((t) => t.id === position.id)?.teilVon, 'rechnung');
       await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
       const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, lena.id);
       const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } }, admin.id);
-      const p1 = await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } }, lena.id);
-      await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } }, admin.id);
+      const p1 = await d.mappen.legeMappeAn(
+        { typId: position.id, werte: { rechnung: r1.id, nr: 1, beschreibung: 'Bohrmaschine' } },
+        lena.id,
+      );
+      await d.mappen.legeMappeAn(
+        { typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Akkuschrauber', privat: true } },
+        admin.id,
+      );
       const s = await suche(lena, { sicht: 'suche', link: '', suche: 'bohrmaschine' });
-      assert.deepEqual(s.mappen.map((m) => m.id), [r1.id]);
+      assert.deepEqual(
+        s.mappen.map((m) => m.id),
+        [r1.id],
+      );
       assert.equal(s.ausschnitte?.[r1.id]?.teil?.id, p1.id);
       assert.equal((await suche(lena, { sicht: 'suche', link: '', suche: 'Akkuschrauber' })).gesamt, 0);
       assert.equal((await suche(admin, { sicht: rechnung.id, suche: 'Akkuschrauber' })).gesamt, 1);
@@ -420,6 +687,8 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
       assert.ok(await d.kern.repo.holeMappe(p1.id));
       const lp = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((e) => e.art === 'mappe' && e.weg === 'teile');
       assert.equal(lp.length, 2);
-    } finally { await db.ende(); }
+    } finally {
+      await db.ende();
+    }
   });
 });

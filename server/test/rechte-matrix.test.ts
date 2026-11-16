@@ -31,7 +31,8 @@ type Methode = Route['methode'];
  * Ausnahme macht den Test rot und gehört mit einem Satz Begründung in den PR (wie OFFEN in routen-liste.test.ts).
  */
 const OBJEKT_AUSNAHMEN: Record<string, string> = {
-  'DELETE /api/mappen/:id/favorit': 'entfernt nur den eigenen Favoriten-Merker; muss auch gehen, wenn das Leserecht inzwischen fehlt; verrät nichts über die Mappe',
+  'DELETE /api/mappen/:id/favorit':
+    'entfernt nur den eigenen Favoriten-Merker; muss auch gehen, wenn das Leserecht inzwischen fehlt; verrät nichts über die Mappe',
   'DELETE /api/v1/mappen/:id/favorit': 'wie intern: nur der eigene Favoriten-Merker',
 };
 
@@ -80,20 +81,46 @@ async function aufbau() {
   const modus = await app.inject({ method: 'POST', url: '/api/konto/verwaltung', payload: {}, headers: { 'x-dms': '1', cookie: cJonas } });
   assert.equal(modus.statusCode, 200, modus.body);
   // Objektebene: Markus' private Mappen – nur er darf lesen; Katrin hat keine Rechte daran.
-  const nurMarkus: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Nur Markus', wenn: [{ art: 'benutzer', benutzer: [markus.id] }], dann: { R: 'erteilen', U: 'erteilen', D: 'erteilen' }, stopp: false }] };
-  const privat = await d.mappentypen.legeTypAn({ name: 'Privat', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
+  const nurMarkus: Regelwerk = {
+    grund: { ...NICHTS, C: true },
+    regeln: [
+      {
+        id: 'r',
+        name: 'Nur Markus',
+        wenn: [{ art: 'benutzer', benutzer: [markus.id] }],
+        dann: { R: 'erteilen', U: 'erteilen', D: 'erteilen' },
+        stopp: false,
+      },
+    ],
+  };
+  const privat = await d.mappentypen.legeTypAn({
+    name: 'Privat',
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    titelVorlage: '{name}',
+  });
   await d.berechtigungen.setzeBerechtigungen(privat.id, nurMarkus, true);
   const mappe = await d.mappen.legeMappeAn({ typId: privat.id, werte: { name: 'Gehalt' } }, markus.id);
   const pdf = Buffer.from('%PDF-1.4 a');
-  const dok = (await d.dokumente.ladeHoch(mappe.id, { register: 'dokumente', name: 'A.pdf', typ: 'application/pdf' }, pdf, markus.id)).dokument;
-  const dokWeg = (await d.dokumente.ladeHoch(mappe.id, { register: 'dokumente', name: 'B.pdf', typ: 'application/pdf' }, pdf, markus.id)).dokument;
+  const dok = (await d.dokumente.ladeHoch(mappe.id, { register: 'dokumente', name: 'A.pdf', typ: 'application/pdf' }, pdf, markus.id))
+    .dokument;
+  const dokWeg = (await d.dokumente.ladeHoch(mappe.id, { register: 'dokumente', name: 'B.pdf', typ: 'application/pdf' }, pdf, markus.id))
+    .dokument;
   await d.dokumente.loescheDokument(dokWeg.id, markus.id, { weg: 'dokument' });
   const mappeWeg = await d.mappen.legeMappeAn({ typId: privat.id, werte: { name: 'Alt' } }, markus.id);
   await d.loeschen.loescheMappe(mappeWeg.id, markus.id);
   const notiz = await d.mappenNotizen.legeNotizAn(mappe.id, 'Notiz', markus.id);
   const aufgabe = await d.vertretung.legeAufgabeAn(mappe.id, { empfaengerId: markus.id, text: 'Prüfen' }, markus.id);
   const ablauf = (await d.ablaeufe.anwenden(mappe.id, 'erinnern', { datum: '2099-01-01', text: 'Später' }, markus.id)).ablauf!;
-  const fremd = { mappe: mappe.id, dok: dok.id, dokWeg: dokWeg.id, mappeWeg: mappeWeg.id, notiz: notiz.id, aufgabe: aufgabe.id, ablauf: ablauf.id, markus: markus.id };
+  const fremd = {
+    mappe: mappe.id,
+    dok: dok.id,
+    dokWeg: dokWeg.id,
+    mappeWeg: mappeWeg.id,
+    notiz: notiz.id,
+    aufgabe: aufgabe.id,
+    ablauf: ablauf.id,
+    markus: markus.id,
+  };
   return { d, konten, app, cLena, cMarkus, cJonas, cKatrin, lesen, schreiben, schluesselKatrin, fremd };
 }
 
@@ -106,7 +133,9 @@ describe('Rechte-Matrix (#1262)', () => {
     x = await aufbau();
     alle = routen(x.d, x.konten, {});
   });
-  after(async () => { await x.app.close(); });
+  after(async () => {
+    await x.app.close();
+  });
 
   const rufe = (r: Route, kopf: Record<string, string>) =>
     x.app.inject({ method: r.methode as Methode, url: fuelle(r.pfad), ...(r.methode === 'GET' ? {} : { payload: {} }), headers: kopf });
@@ -163,7 +192,11 @@ describe('Rechte-Matrix (#1262)', () => {
   it('API-Schlüssel nur lesen: ändernde Routen der API → 403', async () => {
     // Übergang #636 (bis 1.0.0): zwei PUT-Routen der Sicherung prüfen selbst, ob ein Paket fragt.
     const uebergang = new Set(['PUT /api/v1/sicherungen/:name/extern', 'PUT /api/v1/sicherungen/:name/holen']);
-    const ab = await pruefe((r) => !!r.api && r.methode !== 'GET' && r.zugang !== 'offen' && !uebergang.has(name(r)), { authorization: `Bearer ${x.lesen}` }, [403]);
+    const ab = await pruefe(
+      (r) => !!r.api && r.methode !== 'GET' && r.zugang !== 'offen' && !uebergang.has(name(r)),
+      { authorization: `Bearer ${x.lesen}` },
+      [403],
+    );
     assert.deepEqual(ab, [], ab.join('\n'));
   });
 
@@ -189,25 +222,45 @@ describe('Rechte-Matrix (#1262)', () => {
   const ziel = (pfad: string, f: Aufbau['fremd']): string | null => {
     const rest = pfad.replace(/^\/api(\/v1)?/, '');
     const art: Array<[RegExp, string]> = [
-      [/^\/papierkorb\/dokumente\/:id/, f.dokWeg], [/^\/papierkorb\/(vorgang\/)?:id/, f.mappeWeg],
-      [/^\/mappen\/:id/, f.mappe], [/^\/dokumente\/:id/, f.dok], [/^\/notizen\/:id/, f.notiz], [/^\/aufgaben\/:id/, f.aufgabe],
+      [/^\/papierkorb\/dokumente\/:id/, f.dokWeg],
+      [/^\/papierkorb\/(vorgang\/)?:id/, f.mappeWeg],
+      [/^\/mappen\/:id/, f.mappe],
+      [/^\/dokumente\/:id/, f.dok],
+      [/^\/notizen\/:id/, f.notiz],
+      [/^\/aufgaben\/:id/, f.aufgabe],
       [/^\/(erinnerungen|ablaeufe)\/:id/, f.ablauf],
     ];
     const id = art.find(([m]) => m.test(rest))?.[1];
     if (!id) return null;
-    return pfad.replace(':id', id).replace(':dokument', f.dok).replace(':anlage', f.dok).replace(':benutzer', f.markus)
-      .replace(':nummer', '1').replace(':nr', '1').replace(':feld', 'name').replace(/:[A-Za-z]+/g, 'x');
+    return pfad
+      .replace(':id', id)
+      .replace(':dokument', f.dok)
+      .replace(':anlage', f.dok)
+      .replace(':benutzer', f.markus)
+      .replace(':nummer', '1')
+      .replace(':nr', '1')
+      .replace(':feld', 'name')
+      .replace(/:[A-Za-z]+/g, 'x');
   };
 
   it('Gegenprobe Objektebene: der Besitzer liest dieselben Kennungen', async () => {
     // Sonst wäre die Objektebene schon grün, weil es die Kennungen gar nicht gibt (404 für alle).
-    const lesend = alle.filter((q) => q.zugang === 'angemeldet' && !q.api && q.methode === 'GET' && ziel(q.pfad, x.fremd) && !/:(?!id\b)[A-Za-z]+/.test(q.pfad));
+    const lesend = alle.filter(
+      (q) => q.zugang === 'angemeldet' && !q.api && q.methode === 'GET' && ziel(q.pfad, x.fremd) && !/:(?!id\b)[A-Za-z]+/.test(q.pfad),
+    );
     const ok: string[] = [];
     for (const r of lesend) {
       const a = await x.app.inject({ method: 'GET', url: ziel(r.pfad, x.fremd)!, headers: { cookie: x.cMarkus } });
       if (a.statusCode === 200) ok.push(r.pfad);
     }
-    for (const p of ['/api/mappen/:id', '/api/dokumente/:id/inhalt', '/api/dokumente/:id/versionen', '/api/mappen/:id/notizen', '/api/mappen/:id/aufgaben', '/api/papierkorb/:id']) {
+    for (const p of [
+      '/api/mappen/:id',
+      '/api/dokumente/:id/inhalt',
+      '/api/dokumente/:id/versionen',
+      '/api/mappen/:id/notizen',
+      '/api/mappen/:id/aufgaben',
+      '/api/papierkorb/:id',
+    ]) {
       assert.ok(ok.includes(p), `Markus bekommt ${p} nicht – Aufbau der Objektebene prüfen`);
     }
     assert.ok(ok.length >= 15, `nur ${ok.length} Lese-Routen mit 200`);
@@ -224,12 +277,23 @@ describe('Rechte-Matrix (#1262)', () => {
       const kopf: Record<string, string> = r.api ? { authorization: `Bearer ${x.schluesselKatrin}` } : { 'x-dms': '1', cookie: x.cKatrin };
       const payload = (KOERPER[name(r)] ?? {}) as object;
       const a = await x.app.inject({ method: r.methode as Methode, url, ...(r.methode === 'GET' ? {} : { payload }), headers: kopf });
-      if (name(r) in OBJEKT_AUSNAHMEN) { ausnahmenGesehen.add(name(r)); continue; }
+      if (name(r) in OBJEKT_AUSNAHMEN) {
+        ausnahmenGesehen.add(name(r));
+        continue;
+      }
       if (![403, 404].includes(a.statusCode)) abweichend.push(`${name(r)} → ${a.statusCode} ${a.body.slice(0, 160)}`);
     }
     assert.ok(geprueft >= 150, `nur ${geprueft} Routen geprüft`);
-    assert.deepEqual(abweichend, [], `Fremde Kennung ohne 403/404 – Recht prüfen oder bewusst in OBJEKT_AUSNAHMEN:\n${abweichend.join('\n')}`);
-    assert.deepEqual(Object.keys(OBJEKT_AUSNAHMEN).filter((k) => !ausnahmenGesehen.has(k)), [], 'Ausnahme ohne passende Route: aus OBJEKT_AUSNAHMEN streichen');
+    assert.deepEqual(
+      abweichend,
+      [],
+      `Fremde Kennung ohne 403/404 – Recht prüfen oder bewusst in OBJEKT_AUSNAHMEN:\n${abweichend.join('\n')}`,
+    );
+    assert.deepEqual(
+      Object.keys(OBJEKT_AUSNAHMEN).filter((k) => !ausnahmenGesehen.has(k)),
+      [],
+      'Ausnahme ohne passende Route: aus OBJEKT_AUSNAHMEN streichen',
+    );
     for (const [k, grund] of Object.entries(OBJEKT_AUSNAHMEN)) assert.ok(grund.trim().length >= 10, `${k}: Grund fehlt`);
   });
 });

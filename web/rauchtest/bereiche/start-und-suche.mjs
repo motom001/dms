@@ -25,13 +25,19 @@ rauchtest('Anmelden und Startseite', {}, async (s) => {
   assert.equal(await s.getByRole('dialog', { name: 'Assistent' }).count(), 0, 'der Assistent öffnet sich nie von selbst');
   // Kacheln der Startseite: zwei Briefe in „Neue Post“.
   await s.getByRole('link', { name: /^Neue Post 2 Noch nicht zugeordnet/ }).waitFor();
-  await s.getByRole('link', { name: /^Zu erledigen/ }).first().waitFor();
+  await s
+    .getByRole('link', { name: /^Zu erledigen/ })
+    .first()
+    .waitFor();
 });
 
 // #934: Neue Post öffnet die Seite „Dokument übernehmen“. Nur ansehen und ausfüllen – gespeichert wird am Ende der Datei.
 rauchtest('Dokument übernehmen: Neue Post öffnen, Mappentyp wählen, Text vom Dokument übernehmen', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  await s.getByRole('link', { name: /^Neue Post 2/ }).first().click();
+  await s
+    .getByRole('link', { name: /^Neue Post 2/ })
+    .first()
+    .click();
   const liste = s.getByRole('region', { name: 'Mappen' });
   await liste.getByRole('heading', { name: /^Neue Post/, level: 1 }).waitFor();
   await liste.locator(`a[href$="/${daten.brief.id}"]`).click();
@@ -93,8 +99,15 @@ rauchtest('„+ Neu“: Mappe anlegen und speichern', { als: LENA }, async (s) =
 
 rauchtest('Mappe öffnen, ändern und speichern', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
-  await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /Wartungsvertrag Heizung/ }).first().click();
+  await s
+    .getByRole('complementary', { name: 'Ansichten' })
+    .getByRole('link', { name: /^Vertrag \d/ })
+    .click();
+  await s
+    .getByRole('region', { name: 'Mappen' })
+    .getByRole('link', { name: /Wartungsvertrag Heizung/ })
+    .first()
+    .click();
   const mappe = s.getByRole('region', { name: 'Mappe' });
   await mappe.getByRole('heading', { name: 'Wartungsvertrag Heizung', level: 1 }).waitFor();
   // „Änderungen verwerfen“ geht nur mit ungespeicherten Änderungen – daran sieht man, dass gespeichert ist.
@@ -120,7 +133,10 @@ rauchtest('Startseite: Liste „Zuletzt geöffnet“', { als: LENA }, async (s) 
   await s.waitForURL(/\/ablage\/zuletzt$/);
   const liste = s.getByRole('region', { name: 'Mappen' });
   await liste.getByRole('heading', { name: /^Zuletzt geöffnet/, level: 1 }).waitFor();
-  await liste.getByRole('link', { name: /Wartungsvertrag Heizung.*Vertrag · geöffnet/ }).first().click();
+  await liste
+    .getByRole('link', { name: /Wartungsvertrag Heizung.*Vertrag · geöffnet/ })
+    .first()
+    .click();
   await s.getByRole('region', { name: 'Mappe' }).getByRole('heading', { name: 'Wartungsvertrag Heizung', level: 1 }).waitFor();
   await liste.getByRole('link', { name: '← Start' }).click();
   await s.waitForURL(/\/ablage\/start$/);
@@ -143,7 +159,10 @@ rauchtest('Suchfeld oben: Enter führt in die erweiterte Suche (#1218)', { als: 
   await s.keyboard.press('Enter');
   await s.waitForURL(/\/ablage\/suche\?volltext=Stadtwerke$/);
   const liste = s.getByRole('region', { name: 'Mappen' });
-  await liste.getByRole('link', { name: /Stadtwerke Musterstadt/ }).first().click();
+  await liste
+    .getByRole('link', { name: /Stadtwerke Musterstadt/ })
+    .first()
+    .click();
   await s.getByRole('region', { name: 'Mappe' }).getByRole('heading', { name: 'Stadtwerke Musterstadt', level: 1 }).waitFor();
   // Esc leert das Feld; ohne Treffer ein ruhiger Satz statt einer leeren Seite.
   await feld.fill('Xylofonunterricht');
@@ -174,7 +193,10 @@ rauchtest('Suchfeld oben in einer Ansicht: Chip, Filtern, „Suchen in“ (#1218
   assert.ok(await in_.getByRole('checkbox', { name: 'Titel und Felder' }).isDisabled());
   await in_.getByRole('checkbox', { name: 'Text der Dokumente' }).waitFor();
   await in_.getByRole('checkbox', { name: 'Notizen' }).waitFor();
-  assert.match(await in_.getByRole('link', { name: 'Mehr Filter …' }).getAttribute('href'), /\/ablage\/suche\?typ=.+&volltext=Wartungsvertrag$/);
+  assert.match(
+    await in_.getByRole('link', { name: 'Mehr Filter …' }).getAttribute('href'),
+    /\/ablage\/suche\?typ=.+&volltext=Wartungsvertrag$/,
+  );
   await s.keyboard.press('Escape');
   // Rücktaste im leeren Feld nimmt den Bereich weg: Die Liste zeigt wieder alles, Enter führt in die erweiterte Suche.
   await feld.fill('');
@@ -202,7 +224,10 @@ rauchtest('Assistent: Fragen · Tipps · Handbuch, Tastatur (#1219)', { als: LEN
   await fenster.waitFor();
   assert.ok(await fenster.evaluate((e) => e.contains(document.activeElement)), 'der Fokus geht ins Fenster');
   const reiter = fenster.getByRole('radiogroup', { name: 'Assistent' });
-  assert.deepEqual((await reiter.getByRole('radio').allTextContents()).map((x) => x.replace(/\s*\(neu\)$/, '')), ['Fragen', 'Tipps', 'Handbuch']);
+  assert.deepEqual(
+    (await reiter.getByRole('radio').allTextContents()).map((x) => x.replace(/\s*\(neu\)$/, '')),
+    ['Fragen', 'Tipps', 'Handbuch'],
+  );
   await fenster.getByRole('textbox', { name: 'Frag deine Ablage' }).waitFor();
   await fenster.getByText(/KI-Dienst des Pakets „KI-Assistent“/).waitFor();
   await reiter.getByRole('radio', { name: /^Tipps/ }).click();
@@ -218,11 +243,15 @@ rauchtest('Assistent: Fragen · Tipps · Handbuch, Tastatur (#1219)', { als: LEN
   await s.keyboard.press('Escape');
   await fenster.waitFor({ state: 'detached' });
   // Der Fokus kommt nach dem Abbau des Fensters zurück – darauf warten statt sofort zu prüfen.
-  await s.waitForFunction(() => document.activeElement?.closest('[data-anker="assistent"]'), null, { timeout: 5000 })
+  await s
+    .waitForFunction(() => document.activeElement?.closest('[data-anker="assistent"]'), null, { timeout: 5000 })
     .catch(() => assert.fail('der Fokus kehrt zum Knopf zurück'));
   assert.ok(await knopf.evaluate((e) => e === document.activeElement), 'der Fokus kehrt zum Knopf zurück');
   // Das Gespräch und die Wahl bleiben beim Seitenwechsel; in der Werkbank sucht das Handbuch im Admin-Handbuch.
-  await s.getByRole('link', { name: /^Zu erledigen/ }).first().click();
+  await s
+    .getByRole('link', { name: /^Zu erledigen/ })
+    .first()
+    .click();
   await knopf.click();
   await fenster.getByText('Benutzerhandbuch – weil du in der Ablage bist').waitFor();
   await fenster.getByRole('button', { name: 'Assistent schließen' }).click();
@@ -234,10 +263,12 @@ rauchtest('Assistent ohne Antwort-Paket: nur Tipps · Handbuch (#1219)', { als: 
   await s.getByRole('button', { name: /^Assistent öffnen/ }).click();
   const reiter = s.getByRole('dialog', { name: 'Assistent' }).getByRole('radiogroup', { name: 'Assistent' });
   await reiter.waitFor();
-  assert.deepEqual((await reiter.getByRole('radio').allTextContents()).map((x) => x.replace(/\s*\(neu\)$/, '')), ['Tipps', 'Handbuch']);
+  assert.deepEqual(
+    (await reiter.getByRole('radio').allTextContents()).map((x) => x.replace(/\s*\(neu\)$/, '')),
+    ['Tipps', 'Handbuch'],
+  );
   assert.equal(await s.getByRole('textbox', { name: 'Frag deine Ablage' }).count(), 0);
 });
-
 
 rauchtest('Verwaltungsmodus betreten, Werkbank und Pakete', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
@@ -246,7 +277,10 @@ rauchtest('Verwaltungsmodus betreten, Werkbank und Pakete', { als: LENA }, async
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
   await bereiche.getByRole('link', { name: 'Pakete', exact: true }).click();
   const elemente = s.getByRole('region', { name: 'Elemente' });
-  await elemente.getByRole('heading', { name: /^Pakete/, level: 1 }).first().waitFor();
+  await elemente
+    .getByRole('heading', { name: /^Pakete/, level: 1 })
+    .first()
+    .waitFor();
   await elemente.getByRole('button', { name: 'Katalog abrufen' }).waitFor();
   // Menü „Mappe“ (#1039) lädt seine Einstellung selbst: erst abwarten – sonst trifft die Anfrage nach dem Ende des Modus
   // ein und bekommt 403.

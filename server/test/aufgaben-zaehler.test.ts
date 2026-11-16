@@ -22,11 +22,21 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const PW = 'ein-langes-passwort';
 
 describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  type App = { inject: (o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }) => Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>; close(): Promise<void> };
+  type App = {
+    inject: (o: {
+      method: string;
+      url: string;
+      payload?: unknown;
+      headers?: Record<string, string>;
+    }) => Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>;
+    close(): Promise<void>;
+  };
   let app!: App;
   let sql!: postgres.Sql;
   /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
-  let dienst!: any; let konten!: any; let repo!: any;
+  let dienst!: any;
+  let konten!: any;
+  let repo!: any;
   /* eslint-enable @typescript-eslint/no-explicit-any */
   let nachlauf!: { alle(): Promise<void> };
   const ids = { lena: '', jonas: '', petra: '', markus: '', vertrag: '' };
@@ -39,7 +49,12 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     return String(([] as string[]).concat(r.headers['set-cookie'] as string)[0]).split(';')[0];
   };
   const rufe = async (wer: string, method: string, pfad: string, payload?: unknown) => {
-    const r = await app.inject({ method, url: pfad, ...(payload === undefined ? {} : { payload }), headers: { 'x-dms': '1', cookie: cookies[wer] } });
+    const r = await app.inject({
+      method,
+      url: pfad,
+      ...(payload === undefined ? {} : { payload }),
+      headers: { 'x-dms': '1', cookie: cookies[wer] },
+    });
     return { status: r.statusCode, body: r.body ? JSON.parse(r.body) : null };
   };
   /** Zahlen der Ablage (eingang = „Zu erledigen“, favoriten, Ansichten). */
@@ -50,8 +65,10 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
   };
   /** Die Zählung bis #928, wörtlich: Mappen mit offenen Aufgaben (für ihn, als Admin auch ohne Empfänger). */
   const eingangBisher = async (id: string, ohne: boolean) =>
-    (await sql`SELECT count(DISTINCT a.mappe_id)::int AS n FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
-      WHERE m.haushalt_id = ${HAUSHALT} AND a.erledigt IS NULL AND (a.empfaenger_id = ${id}::uuid OR (${ohne} AND a.empfaenger_id IS NULL))`)[0].n as number;
+    (
+      await sql`SELECT count(DISTINCT a.mappe_id)::int AS n FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
+      WHERE m.haushalt_id = ${HAUSHALT} AND a.erledigt IS NULL AND (a.empfaenger_id = ${id}::uuid OR (${ohne} AND a.empfaenger_id IS NULL))`
+    )[0].n as number;
   const aufgabe = async (wer: string, mappe: string, an: string, text = 'Bitte prüfen') => {
     const r = await rufe(wer, 'POST', `/api/mappen/${mappe}/aufgaben`, { text, empfaengerId: an });
     assert.equal(r.status, 201, JSON.stringify(r.body));
@@ -69,11 +86,13 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     const { ordnerSpeicher } = await import('../src/dateispeicher');
     const { pgEinstellungen } = await import('../src/einstellungen');
     repo = pgRepo(sql, HAUSHALT);
-    dienst = new Dienst(repo, ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a928-')), HAUSHALT), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
+    dienst = new Dienst(repo, ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a928-')), HAUSHALT), {
+      einstellungen: pgEinstellungen(sql, HAUSHALT),
+    });
     konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
     nachlauf = new Nachlauf();
-    app = await baueApp(dienst, konten, { nachlauf: nachlauf as InstanceType<typeof Nachlauf> }) as unknown as App;
+    app = (await baueApp(dienst, konten, { nachlauf: nachlauf as InstanceType<typeof Nachlauf> })) as unknown as App;
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
     ids.lena = lena.id;
     const mitPasswort = async (email: string, name: string) => {
@@ -86,23 +105,64 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     ids.markus = await mitPasswort('markus@example.org', 'Markus');
     await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     // Verträge lesen Lena, Jonas und Markus – Petra nicht.
-    ids.vertrag = (await dienst.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' })).id;
-    const rw: Regelwerk = { grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: [ids.lena, ids.jonas, ids.markus] }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] } as unknown as Regelwerk;
+    ids.vertrag = (
+      await dienst.mappentypen.legeTypAn({
+        name: 'Vertrag',
+        felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+        titelVorlage: '{name}',
+      })
+    ).id;
+    const rw: Regelwerk = {
+      grund: { ...NICHTS, C: true },
+      regeln: [
+        {
+          id: 'r',
+          name: 'Lesen',
+          wenn: [{ art: 'benutzer', benutzer: [ids.lena, ids.jonas, ids.markus] }],
+          dann: { R: 'erteilen', U: 'erteilen' },
+          stopp: false,
+        },
+      ],
+    } as unknown as Regelwerk;
     await dienst.berechtigungen.setzeBerechtigungen(ids.vertrag, rw, true);
-    for (let i = 1; i <= 12; i++) mappen.push((await dienst.mappen.legeMappeAn({ typId: ids.vertrag, werte: { name: `Vertrag ${i}` } }, lena.id)).id);
-    for (const [k, email] of [['lena', 'lena@example.org'], ['jonas', 'jonas@example.org'], ['petra', 'petra@example.org'], ['markus', 'markus@example.org']]) cookies[k] = await anmelden(email);
+    for (let i = 1; i <= 12; i++)
+      mappen.push((await dienst.mappen.legeMappeAn({ typId: ids.vertrag, werte: { name: `Vertrag ${i}` } }, lena.id)).id);
+    for (const [k, email] of [
+      ['lena', 'lena@example.org'],
+      ['jonas', 'jonas@example.org'],
+      ['petra', 'petra@example.org'],
+      ['markus', 'markus@example.org'],
+    ])
+      cookies[k] = await anmelden(email);
   });
-  after(async () => { richteZwischenspeicherEin({}); await app?.close(); });
+  after(async () => {
+    richteZwischenspeicherEin({});
+    await app?.close();
+  });
 
   it('„Zu erledigen“ und Favoriten-Ansicht: gleiche Zahlen wie bisher, mit und ohne Zwischenspeicher', async () => {
     // Zwei Aufgaben an derselben Mappe zählen einmal; Aufgaben ohne Empfänger zählen für die Administratorin.
     await aufgabe('lena', mappen[0], ids.jonas);
     await aufgabe('lena', mappen[1], ids.jonas);
     await aufgabe('lena', mappen[1], ids.jonas, 'Noch einmal');
-    await repo.legeAufgabeAn({ id: crypto.randomUUID(), mappeId: mappen[2], empfaengerId: null, art: 'manuell', text: 'Ohne Empfänger', erstellt: '', erstelltVon: null, erledigt: null, erledigtVon: null });
+    await repo.legeAufgabeAn({
+      id: crypto.randomUUID(),
+      mappeId: mappen[2],
+      empfaengerId: null,
+      art: 'manuell',
+      text: 'Ohne Empfänger',
+      erstellt: '',
+      erstelltVon: null,
+      erledigt: null,
+      erledigtVon: null,
+    });
     await aufgabe('lena', mappen[3], ids.lena);
     // Vertretung: Markus ist abwesend, Jonas vertritt ihn – die Aufgabe für Markus zählt bei Jonas.
-    await konten.setzeAbwesenheit((await konten.listeBenutzer()).find((b: { id: string }) => b.id === ids.markus), ids.markus, { an: true, vertreterId: ids.jonas });
+    await konten.setzeAbwesenheit(
+      (await konten.listeBenutzer()).find((b: { id: string }) => b.id === ids.markus),
+      ids.markus,
+      { an: true, vertreterId: ids.jonas },
+    );
     const v = await aufgabe('lena', mappen[4], ids.markus);
     assert.equal(v.empfaengerId, ids.jonas, 'an den Vertreter weitergegeben');
     // Leserecht auf Zeit (#798): Petra darf Verträge nicht lesen; Lena gibt ihr das Recht für die Aufgabe.
@@ -113,7 +173,15 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     assert.ok(fall, 'Fall nach dem Nachlauf angelegt');
     await dienst.ohneLeserecht.leserechtAufZeitGeben(fall.id, ids.lena);
     // Aufgabe aus einer Automatisierung (#676, #724).
-    await dienst.aufgaben.aufgabeAusAutomatisierung({ mappeId: mappen[6], empfaengerId: ids.jonas, text: 'Aus der Automatisierung', datum: null, von: ids.lena, buendeln: null, anlass: {} });
+    await dienst.aufgaben.aufgabeAusAutomatisierung({
+      mappeId: mappen[6],
+      empfaengerId: ids.jonas,
+      text: 'Aus der Automatisierung',
+      datum: null,
+      von: ids.lena,
+      buendeln: null,
+      anlass: {},
+    });
     // Erledigte zählen nicht.
     const erl = await aufgabe('lena', mappen[7], ids.jonas);
     assert.equal((await rufe('jonas', 'POST', `/api/aufgaben/${erl.id}/erledigt`)).status, 200);
@@ -121,7 +189,12 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     for (const m of [mappen[0], mappen[8]]) assert.equal((await rufe('jonas', 'PUT', `/api/mappen/${m}/favorit`)).status, 200);
     await dienst.stand.hochgezaehlt();
 
-    const erwartet = { lena: await eingangBisher(ids.lena, true), jonas: await eingangBisher(ids.jonas, false), petra: await eingangBisher(ids.petra, false), markus: await eingangBisher(ids.markus, false) };
+    const erwartet = {
+      lena: await eingangBisher(ids.lena, true),
+      jonas: await eingangBisher(ids.jonas, false),
+      petra: await eingangBisher(ids.petra, false),
+      markus: await eingangBisher(ids.markus, false),
+    };
     assert.deepEqual(erwartet, { lena: 2, jonas: 4, petra: 1, markus: 0 }, 'Ausgangslage wie gedacht');
     const mit: Record<string, Awaited<ReturnType<typeof zahlen>>> = {};
     for (const wer of Object.keys(erwartet)) {
@@ -137,7 +210,9 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     richteZwischenspeicherEin({ DMS_ZWISCHENSPEICHER: 'aus' });
     try {
       for (const wer of Object.keys(erwartet)) assert.deepEqual(await zahlen(wer), mit[wer], `${wer}: ohne Zwischenspeicher gleich`);
-    } finally { richteZwischenspeicherEin({}); }
+    } finally {
+      richteZwischenspeicherEin({});
+    }
   });
 
   it('eigene Änderung sofort: Aufgabe und Notiz in der nächsten Anfrage, Fälle und Verteiler nach der Antwort', async () => {
@@ -148,7 +223,10 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     const n = await rufe('jonas', 'POST', `/api/mappen/${mappen[9]}/notizen`, { text: 'Gleich zu sehen' });
     assert.equal(n.status, 201, JSON.stringify(n.body));
     const liste = await rufe('jonas', 'GET', `/api/mappen/${mappen[9]}/notizen`);
-    assert.ok(liste.body.some((x: { id: string }) => x.id === n.body.id), 'Notiz sofort in der Liste');
+    assert.ok(
+      liste.body.some((x: { id: string }) => x.id === n.body.id),
+      'Notiz sofort in der Liste',
+    );
     const h = await rufe('jonas', 'GET', `/api/mappen/${mappen[9]}/historie`);
     assert.equal(h.status, 200);
     // Petra ohne Leserecht: der Fall entsteht im Nachlauf.

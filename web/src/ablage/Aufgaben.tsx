@@ -24,13 +24,37 @@ const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(),
  * Person wählen (Aufgabe weitergeben, Erinnerung für …): im Feldrahmen (#1211). `label` steht als Beschriftung da, wenn
  * `sichtbar`; sonst nur für Screenreader (in einer Zeile, deren Text sie schon nennt).
  */
-export function BenutzerWahl({ wert, setze, ohne, label, fokus, id, sichtbar, className }: { wert: string; setze: (id: string) => void; ohne?: string | null; label: string; fokus?: boolean; id?: string; sichtbar?: boolean; className?: string }) {
+export function BenutzerWahl({
+  wert,
+  setze,
+  ohne,
+  label,
+  fokus,
+  id,
+  sichtbar,
+  className,
+}: {
+  wert: string;
+  setze: (id: string) => void;
+  ohne?: string | null;
+  label: string;
+  fokus?: boolean;
+  id?: string;
+  sichtbar?: boolean;
+  className?: string;
+}) {
   const d = useDaten();
   return (
     <Feld beschriftung={label} beschriftungVerbergen={!sichtbar} id={id} className={className}>
       <select value={wert} autoFocus={fokus} onChange={(e) => setze(e.target.value)}>
         <option value="">{t('ablage.aufgaben.benutzer-waehlen')}</option>
-        {d.personen.filter((p) => p.aktiv !== false && p.id !== ohne).map((p) => <option key={p.id} value={p.id}>{nameMitAbwesenheit(p)}</option>)}
+        {d.personen
+          .filter((p) => p.aktiv !== false && p.id !== ohne)
+          .map((p) => (
+            <option key={p.id} value={p.id}>
+              {nameMitAbwesenheit(p)}
+            </option>
+          ))}
       </select>
     </Feld>
   );
@@ -42,21 +66,41 @@ type Folge = { aufgabe: Aufgabe; datum: string };
  * Ausprobieren in der Werkbank (#1176): derselbe Dialog wie an der Mappe, gekennzeichnet als Probe. Statt anzulegen,
  * gibt er die Antworten an `anwenden` (dort: Ausprobieren auf dem Server, dann die Vorschau des Ergebnisses).
  */
-export interface Probe { anwenden(x: { empfaengerId?: string; datum?: string; text?: string }): Promise<void> }
+export interface Probe {
+  anwenden(x: { empfaengerId?: string; datum?: string; text?: string }): Promise<void>;
+}
 
 /** „Probe – es wird nichts angelegt“ oben im Dialog (#1176). */
 function ProbeHinweis() {
-  return <div className="hinweis info probe-hinweis"><p><Symbol name="info" /> {t('ablage.aufgaben.probe')}</p></div>;
+  return (
+    <div className="hinweis info probe-hinweis">
+      <p>
+        <Symbol name="info" /> {t('ablage.aufgaben.probe')}
+      </p>
+    </div>
+  );
 }
 
 /**
  * Der kleine Dialog einer Automatisierungsvorlage, wie an der Mappe (#1176): „Aufgabe vergeben“, „Erinnern“ oder eine
  * weitere Vorlage – für das Ausprobieren in der Werkbank.
  */
-export function VorlagenDialog({ mappeId, vorlage, schliessen, probe }: { mappeId: string; vorlage: VorlageZumAnwenden; schliessen: () => void; probe: Probe }) {
+export function VorlagenDialog({
+  mappeId,
+  vorlage,
+  schliessen,
+  probe,
+}: {
+  mappeId: string;
+  vorlage: VorlageZumAnwenden;
+  schliessen: () => void;
+  probe: Probe;
+}) {
   const nichts = async () => undefined;
-  if (vorlage.kennung === 'aufgabe_vergeben') return <NeueAufgabe mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
-  if (vorlage.kennung === 'erinnern') return <ErinnerungFormular mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
+  if (vorlage.kennung === 'aufgabe_vergeben')
+    return <NeueAufgabe mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
+  if (vorlage.kennung === 'erinnern')
+    return <ErinnerungFormular mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
   return <AblaufFormular mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
 }
 
@@ -66,11 +110,32 @@ export function VorlagenDialog({ mappeId, vorlage, schliessen, probe }: { mappeI
  * weiter wie bisher (der Server antwortet dann mit einem Hinweis).
  */
 export async function trotzdemZuweisen(mappeId: string, an: string, name: string): Promise<boolean> {
-  try { if ((await mappenApi.darfLesen(mappeId, an)).lesen) return true; } catch { return true; }
-  return rueckfrage({ titel: t('mappen.aufgabe.zuweisen.titel', { name }), text: t('mappen.aufgabe.zuweisen.text', { name }), ja: t('mappen.aufgabe.zuweisen.trotzdem'), nein: t('mappen.aufgabe.zuweisen.abbrechen') });
+  try {
+    if ((await mappenApi.darfLesen(mappeId, an)).lesen) return true;
+  } catch {
+    return true;
+  }
+  return rueckfrage({
+    titel: t('mappen.aufgabe.zuweisen.titel', { name }),
+    text: t('mappen.aufgabe.zuweisen.text', { name }),
+    ja: t('mappen.aufgabe.zuweisen.trotzdem'),
+    nein: t('mappen.aufgabe.zuweisen.abbrechen'),
+  });
 }
 
-function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe; neuLaden: () => Promise<void>; setBestaetigt: (text: string) => void; setFolge: (f: Folge) => void; zuNotizen?: () => void }) {
+function Zeile({
+  a,
+  neuLaden,
+  setBestaetigt,
+  setFolge,
+  zuNotizen,
+}: {
+  a: Aufgabe;
+  neuLaden: () => Promise<void>;
+  setBestaetigt: (text: string) => void;
+  setFolge: (f: Folge) => void;
+  zuNotizen?: () => void;
+}) {
   const d = useDaten();
   const { ich, ohneEmpfaenger } = useKonto();
   const [weiter, setWeiter] = useState(false);
@@ -82,43 +147,121 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe
   async function tu(f: () => Promise<unknown>, meldung?: string) {
     setFehler(undefined);
     try {
-      const r = await f() as { hinweis?: string; folgetermin?: string } | null;
-      setWeiter(false); setAn('');
+      const r = (await f()) as { hinweis?: string; folgetermin?: string } | null;
+      setWeiter(false);
+      setAn('');
       // Wiederkehrende Frist (#130): nächsten Termin vorschlagen.
       if (r?.folgetermin) setFolge({ aufgabe: a, datum: r.folgetermin });
       // Empfänger darf die Mappe nicht lesen (#127): trotzdem vergeben, aber Bescheid sagen.
       if (meldung || r?.hinweis) setBestaetigt([meldung, r?.hinweis].filter(Boolean).join(' '));
-      await neuLaden(); await d.neuLaden();
-    } catch (e) { setFehler((e as Error).message); }
+      await neuLaden();
+      await d.neuLaden();
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }
   return (
     <li className={meine ? 'meine' : ''}>
       <div className="aufgabentext">
         {/* „Deine Aufgabe:“ (#427) – damit klar ist, dass Erledigt/Weitergeben rechts zur Aufgabe gehören. */}
-        <strong>{meine ? aufgabenBeschriftung(a.art, true, a.anlass) : <>{aufgabenBeschriftung(a.art, false, a.anlass)} {a.empfaengerId ? <Person id={a.empfaengerId} /> : t('konten.verwaltende.ohneEmpfaenger')}</>}:</strong> {a.text}
-        {a.art === 'frist' && a.datum && <span className={`chip ${a.datum <= heuteIn() ? 'schlecht' : 'warn'}`} title={t('ablage.aufgaben.frist')}>{noch(a.datum)}</span>}
-        <span className="leise klein"> {' '}{t('ablage.aufgaben.seit', { AUFGABENARTEN: AUFGABENARTEN[a.art], datum: datum(a.erstellt) })}{a.erstelltVon && <> {' '}{t('ablage.aufgaben.von')}{' '}<Person id={a.erstelltVon} /></>}</span>
+        <strong>
+          {meine ? (
+            aufgabenBeschriftung(a.art, true, a.anlass)
+          ) : (
+            <>
+              {aufgabenBeschriftung(a.art, false, a.anlass)}{' '}
+              {a.empfaengerId ? <Person id={a.empfaengerId} /> : t('konten.verwaltende.ohneEmpfaenger')}
+            </>
+          )}
+          :
+        </strong>{' '}
+        {a.text}
+        {a.art === 'frist' && a.datum && (
+          <span className={`chip ${a.datum <= heuteIn() ? 'schlecht' : 'warn'}`} title={t('ablage.aufgaben.frist')}>
+            {noch(a.datum)}
+          </span>
+        )}
+        <span className="leise klein">
+          {' '}
+          {t('ablage.aufgaben.seit', { AUFGABENARTEN: AUFGABENARTEN[a.art], datum: datum(a.erstellt) })}
+          {a.erstelltVon && (
+            <>
+              {' '}
+              {t('ablage.aufgaben.von')} <Person id={a.erstelltVon} />
+            </>
+          )}
+        </span>
       </div>
       {darf && !weiter && (
         <div className="aufgabenaktionen">
-          {zuNotizen && ausNotiz(a) && <Knopf art="link" groesse="klein" onClick={zuNotizen}>{t('ablage.aufgaben.zur-notiz')}</Knopf>}
+          {zuNotizen && ausNotiz(a) && (
+            <Knopf art="link" groesse="klein" onClick={zuNotizen}>
+              {t('ablage.aufgaben.zur-notiz')}
+            </Knopf>
+          )}
           {/* Automatisch zugeordnet (#337): „Passt“ bestätigt, „Rückgängig“ nimmt die Zuordnung zurück. */}
-          {a.art === 'zugeordnet' && <Knopf groesse="klein" onClick={async () => {
-            if (await rueckfrage({ titel: t('ablage.aufgaben.zuordnung-rueckgaengig-machen'), text: t('ablage.aufgaben.die-dokumente-kommen-zurueck'), ja: t('ablage.aufgaben.rueckgaengig-machen') })) {
-              await tu(() => aufgabenApi.zuordnungRueckgaengig(a.id), t('ablage.aufgaben.zuordnung-rueckgaengig-gemacht-die'));
-            }
-          }}>{t('ablage.aufgaben.rueckgaengig')}</Knopf>}
-          {a.art !== 'passung' && <Knopf groesse="klein" art={a.art === 'zugeordnet' ? 'haupt' : 'neben'} symbol="haken" onClick={() => tu(() => aufgabenApi.aufgabeErledigt(a.id))}>{a.art === 'zugeordnet' ? t('ablage.aufgaben.passt') : t('ablage.aufgaben.erledigt')}</Knopf>}
-          <Knopf groesse="klein" onClick={() => setWeiter(true)}>{t('ablage.aufgaben.weitergeben')}</Knopf>
+          {a.art === 'zugeordnet' && (
+            <Knopf
+              groesse="klein"
+              onClick={async () => {
+                if (
+                  await rueckfrage({
+                    titel: t('ablage.aufgaben.zuordnung-rueckgaengig-machen'),
+                    text: t('ablage.aufgaben.die-dokumente-kommen-zurueck'),
+                    ja: t('ablage.aufgaben.rueckgaengig-machen'),
+                  })
+                ) {
+                  await tu(() => aufgabenApi.zuordnungRueckgaengig(a.id), t('ablage.aufgaben.zuordnung-rueckgaengig-gemacht-die'));
+                }
+              }}>
+              {t('ablage.aufgaben.rueckgaengig')}
+            </Knopf>
+          )}
+          {a.art !== 'passung' && (
+            <Knopf
+              groesse="klein"
+              art={a.art === 'zugeordnet' ? 'haupt' : 'neben'}
+              symbol="haken"
+              onClick={() => tu(() => aufgabenApi.aufgabeErledigt(a.id))}>
+              {a.art === 'zugeordnet' ? t('ablage.aufgaben.passt') : t('ablage.aufgaben.erledigt')}
+            </Knopf>
+          )}
+          <Knopf groesse="klein" onClick={() => setWeiter(true)}>
+            {t('ablage.aufgaben.weitergeben')}
+          </Knopf>
         </div>
       )}
       {darf && weiter && (
-        <form className="weitergeben" onSubmit={(e) => { e.preventDefault(); if (an) void (async () => { if (await trotzdemZuweisen(a.mappeId, an, d.person(an))) await tu(() => aufgabenApi.aufgabeDelegieren(a.id, an), t('ablage.aufgaben.an-weitergegeben', { person: d.person(an) })); })(); }}
-          onKeyDown={(e) => { if (e.key === 'Escape') { setWeiter(false); setAn(''); } }}>
+        <form
+          className="weitergeben"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (an)
+              void (async () => {
+                if (await trotzdemZuweisen(a.mappeId, an, d.person(an)))
+                  await tu(() => aufgabenApi.aufgabeDelegieren(a.id, an), t('ablage.aufgaben.an-weitergegeben', { person: d.person(an) }));
+              })();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setWeiter(false);
+              setAn('');
+            }
+          }}>
           <span className="leise klein">{t('ablage.aufgaben.weitergeben-an')}</span>
           <BenutzerWahl label={t('ablage.aufgaben.weitergeben-an')} wert={an} setze={setAn} ohne={a.empfaengerId} fokus />
-          <Knopf art="haupt" groesse="klein" type="submit" gesperrt={!an}>{t('ablage.aufgaben.weitergeben')}</Knopf>
-          <Knopf art="link" groesse="klein" onClick={() => { setWeiter(false); setAn(''); }}>{t('ablage.aufgaben.abbrechen')}</Knopf>
+          <Knopf art="haupt" groesse="klein" type="submit" gesperrt={!an}>
+            {t('ablage.aufgaben.weitergeben')}
+          </Knopf>
+          <Knopf
+            art="link"
+            groesse="klein"
+            onClick={() => {
+              setWeiter(false);
+              setAn('');
+            }}>
+            {t('ablage.aufgaben.abbrechen')}
+          </Knopf>
         </form>
       )}
       {fehler && <p className="fehlertext">{fehler}</p>}
@@ -127,18 +270,53 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe
 }
 
 /** Hinweis über der Mappe mit allen offenen Aufgaben. */
-export function AufgabenHinweis({ aufgaben, neuLaden, zuNotizen }: { aufgaben: Aufgabe[]; neuLaden: () => Promise<void>; zuNotizen?: () => void }) {
+export function AufgabenHinweis({
+  aufgaben,
+  neuLaden,
+  zuNotizen,
+}: {
+  aufgaben: Aufgabe[];
+  neuLaden: () => Promise<void>;
+  zuNotizen?: () => void;
+}) {
   const offen = aufgaben.filter((a) => !a.erledigt);
   const [bestaetigt, setBestaetigt] = useState<string>();
   const [folge, setFolge] = useState<Folge>();
-  useEffect(() => { if (!bestaetigt) return; const timer = window.setTimeout(() => setBestaetigt(undefined), 6000); return () => window.clearTimeout(timer); }, [bestaetigt]);
-  const vorschlag = folge && <Folgetermin f={folge} neuLaden={neuLaden} fertig={(eintrag) => { setFolge(undefined); if (eintrag) setBestaetigt(eintrag); }} />;
-  if (!offen.length) return bestaetigt || vorschlag ? <>{vorschlag}{bestaetigt && <div className="hinweis gut" role="status"><p>{bestaetigt}</p></div>}</> : null;
+  useEffect(() => {
+    if (!bestaetigt) return;
+    const timer = window.setTimeout(() => setBestaetigt(undefined), 6000);
+    return () => window.clearTimeout(timer);
+  }, [bestaetigt]);
+  const vorschlag = folge && (
+    <Folgetermin
+      f={folge}
+      neuLaden={neuLaden}
+      fertig={(eintrag) => {
+        setFolge(undefined);
+        if (eintrag) setBestaetigt(eintrag);
+      }}
+    />
+  );
+  if (!offen.length)
+    return bestaetigt || vorschlag ? (
+      <>
+        {vorschlag}
+        {bestaetigt && (
+          <div className="hinweis gut" role="status">
+            <p>{bestaetigt}</p>
+          </div>
+        )}
+      </>
+    ) : null;
   return (
     <>
       {vorschlag}
       <div className="hinweis warn stapel aufgabenhinweis" role="status">
-        <ul>{offen.map((a) => <Zeile key={a.id} a={a} neuLaden={neuLaden} setBestaetigt={setBestaetigt} setFolge={setFolge} zuNotizen={zuNotizen} />)}</ul>
+        <ul>
+          {offen.map((a) => (
+            <Zeile key={a.id} a={a} neuLaden={neuLaden} setBestaetigt={setBestaetigt} setFolge={setFolge} zuNotizen={zuNotizen} />
+          ))}
+        </ul>
         {bestaetigt && <p className="gutertext klein">{bestaetigt}</p>}
       </div>
     </>
@@ -148,7 +326,15 @@ export function AufgabenHinweis({ aufgaben, neuLaden, zuNotizen }: { aufgaben: A
 /** „noch 12 Tage“, „heute“, „seit 3 Tagen“ bis zur Frist. */
 function noch(iso: string): string {
   const tage = Math.round((Date.parse(iso) - Date.parse(heuteIn())) / 86_400_000);
-  return tage === 0 ? t('ablage.aufgaben.heute') : tage === 1 ? t('ablage.aufgaben.morgen') : tage > 0 ? t('ablage.aufgaben.noch-tage', { tage }) : tage === -1 ? t('ablage.aufgaben.seit-gestern') : t('ablage.aufgaben.seit-tagen', { wert: -tage });
+  return tage === 0
+    ? t('ablage.aufgaben.heute')
+    : tage === 1
+      ? t('ablage.aufgaben.morgen')
+      : tage > 0
+        ? t('ablage.aufgaben.noch-tage', { tage })
+        : tage === -1
+          ? t('ablage.aufgaben.seit-gestern')
+          : t('ablage.aufgaben.seit-tagen', { wert: -tage });
 }
 
 /** Wiederkehrende Frist erledigt (#130): „Datum auf … setzen“ – nie automatisch. */
@@ -156,15 +342,29 @@ function Folgetermin({ f, neuLaden, fertig }: { f: Folge; neuLaden: () => Promis
   const d = useDaten();
   const [fehler, setFehler] = useState<string>();
   async function setzen() {
-    try { const r = await aufgabenApi.folgetermin(f.aufgabe.id); await neuLaden(); await d.neuLaden(); fertig(r.hinweis ?? t('ablage.aufgaben.naechster-termin-eingetragen', { datumDe: datumDe(f.datum) })); }
-    catch (e) { setFehler((e as Error).message); }
+    try {
+      const r = await aufgabenApi.folgetermin(f.aufgabe.id);
+      await neuLaden();
+      await d.neuLaden();
+      fertig(r.hinweis ?? t('ablage.aufgaben.naechster-termin-eingetragen', { datumDe: datumDe(f.datum) }));
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }
   return (
     <div className="hinweis info folgetermin" role="status">
-      <p>{tn('ablage.aufgaben.erledigt-der-termin-wiederholt', { b: <strong>{t('ablage.aufgaben.naechsten-termin-auf-setzen', { datumDe: datumDe(f.datum) })}</strong> })}</p>
+      <p>
+        {tn('ablage.aufgaben.erledigt-der-termin-wiederholt', {
+          b: <strong>{t('ablage.aufgaben.naechsten-termin-auf-setzen', { datumDe: datumDe(f.datum) })}</strong>,
+        })}
+      </p>
       <div className="knoepfe">
-        <Knopf art="haupt" groesse="klein" onClick={() => setzen()}>{t('ablage.aufgaben.datum-auf-setzen', { datumDe: datumDe(f.datum) })}</Knopf>
-        <Knopf art="link" groesse="klein" onClick={() => fertig()}>{t('ablage.aufgaben.nein-danke')}</Knopf>
+        <Knopf art="haupt" groesse="klein" onClick={() => setzen()}>
+          {t('ablage.aufgaben.datum-auf-setzen', { datumDe: datumDe(f.datum) })}
+        </Knopf>
+        <Knopf art="link" groesse="klein" onClick={() => fertig()}>
+          {t('ablage.aufgaben.nein-danke')}
+        </Knopf>
       </div>
       {fehler && <p className="fehlertext">{fehler}</p>}
     </div>
@@ -176,37 +376,94 @@ function Folgetermin({ f, neuLaden, fertig }: { f: Folge; neuLaden: () => Promis
  * Automatisierungsvorlagen – „Erinnern“, Wiedervorlage und eigene. Ändern und löschen: wer ihn angelegt hat, der
  * Empfänger oder ein Administrator. Angehaltene (Rechte der Person fehlen) stehen mit Grund da.
  */
-export function Geplant({ liste, vorlagen = [], neuLaden }: { liste: MappenAblauf[]; vorlagen?: VorlageZumAnwenden[]; neuLaden: () => Promise<void> }) {
+export function Geplant({
+  liste,
+  vorlagen = [],
+  neuLaden,
+}: {
+  liste: MappenAblauf[];
+  vorlagen?: VorlageZumAnwenden[];
+  neuLaden: () => Promise<void>;
+}) {
   const { ich } = useKonto();
   const [bearbeiten, setBearbeiten] = useState<string>();
   const [fehler, setFehler] = useState<string>();
   if (!liste.length) return null;
   async function loeschen(e: MappenAblauf) {
-    try { await automatisierungApi.ablaufLoeschen(e.id); await neuLaden(); } catch (x) { setFehler((x as Error).message); }
+    try {
+      await automatisierungApi.ablaufLoeschen(e.id);
+      await neuLaden();
+    } catch (x) {
+      setFehler((x as Error).message);
+    }
   }
   return (
     <div className="hinweis info stapel erinnerungen" role="status" data-anker="mappe.geplant">
-      <p className="klein"><strong>{t('ablage.aufgaben.geplant')}</strong></p>
-      <ul>{liste.map((e) => {
-        const darf = e.erstelltVon === ich.id || e.empfaengerId === ich.id || ich.rolle === 'admin';
-        const an = e.empfaengerId ?? e.erstelltVon;
-        const vorlage = vorlagen.find((v) => v.kennung === e.vorlage);
-        return bearbeiten === e.id
-          ? <li key={e.id}><ErinnerungFormular mappeId={e.mappeId} e={e} vorlage={vorlage} neuLaden={neuLaden} schliessen={() => setBearbeiten(undefined)} eingebettet /></li>
-          : (
+      <p className="klein">
+        <strong>{t('ablage.aufgaben.geplant')}</strong>
+      </p>
+      <ul>
+        {liste.map((e) => {
+          const darf = e.erstelltVon === ich.id || e.empfaengerId === ich.id || ich.rolle === 'admin';
+          const an = e.empfaengerId ?? e.erstelltVon;
+          const vorlage = vorlagen.find((v) => v.kennung === e.vorlage);
+          return bearbeiten === e.id ? (
             <li key={e.id}>
-              <div className="aufgabentext">{tn('ablage.aufgaben.fuer', { symbol: <Symbol name="erinnern" />, b: <strong>{datumDe(e.datum)}</strong> })}{' '}{an === ich.id ? t('ablage.aufgaben.dich') : <Person id={an} />}: {e.text || e.vorlageName}
-                {e.vorlage !== 'erinnern' && <> <span className="chip klein">{e.vorlageName ?? e.vorlage}</span></>}
-                {e.angehalten && <> <span className="chip schlecht klein" title={e.angehalten.text}>{t('ablage.aufgaben.angehalten')}</span></>}
+              <ErinnerungFormular
+                mappeId={e.mappeId}
+                e={e}
+                vorlage={vorlage}
+                neuLaden={neuLaden}
+                schliessen={() => setBearbeiten(undefined)}
+                eingebettet
+              />
+            </li>
+          ) : (
+            <li key={e.id}>
+              <div className="aufgabentext">
+                {tn('ablage.aufgaben.fuer', { symbol: <Symbol name="erinnern" />, b: <strong>{datumDe(e.datum)}</strong> })}{' '}
+                {an === ich.id ? t('ablage.aufgaben.dich') : <Person id={an} />}: {e.text || e.vorlageName}
+                {e.vorlage !== 'erinnern' && (
+                  <>
+                    {' '}
+                    <span className="chip klein">{e.vorlageName ?? e.vorlage}</span>
+                  </>
+                )}
+                {e.angehalten && (
+                  <>
+                    {' '}
+                    <span className="chip schlecht klein" title={e.angehalten.text}>
+                      {t('ablage.aufgaben.angehalten')}
+                    </span>
+                  </>
+                )}
               </div>
-              {darf && <div className="aufgabenaktionen">
-                <Knopf groesse="klein" onClick={() => setBearbeiten(e.id)}>{t('ablage.aufgaben.aendern')}</Knopf>
-                <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => loeschen(e)}
-                  rueckfrage={{ titel: e.vorlage === 'erinnern' ? t('ablage.aufgaben.erinnerung-loeschen') : t('ablage.aufgaben.ablauf-loeschen', { name: e.vorlageName ?? e.vorlage }), text: e.text ? `„${e.text}“` : '', ja: t('ablage.aufgaben.loeschen') }}>{t('ablage.aufgaben.loeschen')}</Knopf>
-              </div>}
+              {darf && (
+                <div className="aufgabenaktionen">
+                  <Knopf groesse="klein" onClick={() => setBearbeiten(e.id)}>
+                    {t('ablage.aufgaben.aendern')}
+                  </Knopf>
+                  <Knopf
+                    art="gefahr"
+                    groesse="klein"
+                    symbol="geloescht"
+                    onClick={() => loeschen(e)}
+                    rueckfrage={{
+                      titel:
+                        e.vorlage === 'erinnern'
+                          ? t('ablage.aufgaben.erinnerung-loeschen')
+                          : t('ablage.aufgaben.ablauf-loeschen', { name: e.vorlageName ?? e.vorlage }),
+                      text: e.text ? `„${e.text}“` : '',
+                      ja: t('ablage.aufgaben.loeschen'),
+                    }}>
+                    {t('ablage.aufgaben.loeschen')}
+                  </Knopf>
+                </div>
+              )}
             </li>
           );
-      })}</ul>
+        })}
+      </ul>
       {fehler && <p className="fehlertext">{fehler}</p>}
     </div>
   );
@@ -216,7 +473,23 @@ export function Geplant({ liste, vorlagen = [], neuLaden }: { liste: MappenAblau
  * Erinnern (#131) – seit #1044 die Automatisierungsvorlage „Erinnern“ (bzw. die eines Pakets, das sie ersetzt): Datum,
  * Text, für mich oder jemand anderen. Fragt die Vorlage etwas nicht, fehlt das Feld. Auch zum Ändern geplanter Abläufe.
  */
-export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, eingebettet, probe }: { mappeId: string; e?: MappenAblauf; vorlage?: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; eingebettet?: boolean; probe?: Probe }) {
+export function ErinnerungFormular({
+  mappeId,
+  e,
+  vorlage,
+  neuLaden,
+  schliessen,
+  eingebettet,
+  probe,
+}: {
+  mappeId: string;
+  e?: MappenAblauf;
+  vorlage?: VorlageZumAnwenden;
+  neuLaden: () => Promise<void>;
+  schliessen: () => void;
+  eingebettet?: boolean;
+  probe?: Probe;
+}) {
   const d = useDaten();
   const { ich } = useKonto();
   const fragen = vorlage?.fragen ?? ['datum', 'empfaenger', 'text'];
@@ -231,33 +504,71 @@ export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, 
     setFehler(undefined);
     try {
       const x = { datum, ...(mitText ? { text } : {}), ...(mitEmpfaenger ? { empfaengerId: an || undefined } : {}) };
-      if (probe) { await probe.anwenden(x); return; }
-      const r = e ? await automatisierungApi.ablaufAendern(e.id, x) : await mappenApi.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'erinnern', x);
-      await neuLaden(); await d.neuLaden();
-      if (r.hinweis) setHinweis(r.hinweis); else schliessen();
-    } catch (x) { setFehler((x as Error).message); }
+      if (probe) {
+        await probe.anwenden(x);
+        return;
+      }
+      const r = e
+        ? await automatisierungApi.ablaufAendern(e.id, x)
+        : await mappenApi.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'erinnern', x);
+      await neuLaden();
+      await d.neuLaden();
+      if (r.hinweis) setHinweis(r.hinweis);
+      else schliessen();
+    } catch (x) {
+      setFehler((x as Error).message);
+    }
   }
   const t_ = erinnernTexte(vorlage, !!e);
   const inhalt = (
     <>
       <div className="raster">
-        <Feld beschriftung={t('ablage.aufgaben.am')}><input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} /></Feld>
+        <Feld beschriftung={t('ablage.aufgaben.am')}>
+          <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
+        </Feld>
         {mitEmpfaenger && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}
-        {mitText && <Feld beschriftung={t('ablage.aufgaben.woran')} className="breit"><input value={text} maxLength={500} onChange={(x) => setText(x.target.value)} placeholder={t('ablage.aufgaben.z-b-angebote-vergleichen')} autoFocus /></Feld>}
+        {mitText && (
+          <Feld beschriftung={t('ablage.aufgaben.woran')} className="breit">
+            <input
+              value={text}
+              maxLength={500}
+              onChange={(x) => setText(x.target.value)}
+              placeholder={t('ablage.aufgaben.z-b-angebote-vergleichen')}
+              autoFocus
+            />
+          </Feld>
+        )}
       </div>
-      <p className="leise klein">{t('ablage.aufgaben.am-gewaehlten-tag-steht', { wert: an === ich.id ? '' : t('ablage.aufgaben.des-empfaengers') })}</p>
+      <p className="leise klein">
+        {t('ablage.aufgaben.am-gewaehlten-tag-steht', { wert: an === ich.id ? '' : t('ablage.aufgaben.des-empfaengers') })}
+      </p>
       {fehler && <p className="fehlertext">{fehler}</p>}
-      {hinweis && <div className="hinweis warn"><p>{hinweis}</p></div>}
+      {hinweis && (
+        <div className="hinweis warn">
+          <p>{hinweis}</p>
+        </div>
+      )}
       <div className="knoepfe">
-        {eingebettet && <Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.abbrechen')}</Knopf>}
-        <Knopf art="haupt" gesperrt={!datum || (mitText && !text.trim()) || (mitEmpfaenger && !an)} onClick={senden}>{t_.knopf}</Knopf>
+        {eingebettet && (
+          <Knopf art="link" onClick={schliessen}>
+            {t('ablage.aufgaben.abbrechen')}
+          </Knopf>
+        )}
+        <Knopf art="haupt" gesperrt={!datum || (mitText && !text.trim()) || (mitEmpfaenger && !an)} onClick={senden}>
+          {t_.knopf}
+        </Knopf>
       </div>
     </>
   );
   if (eingebettet) return <div className="erinnerungformular">{inhalt}</div>;
   return (
     <section className="blatt" aria-label={t_.name}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{t_.titel}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
+      <div className="blattkopf zeile-zwischen">
+        <h2 className="h3">{t_.titel}</h2>
+        <Knopf art="link" onClick={schliessen}>
+          {t('ablage.aufgaben.schliessen')}
+        </Knopf>
+      </div>
       {probe && <ProbeHinweis />}
       {inhalt}
     </section>
@@ -279,7 +590,19 @@ function erinnernTexte(vorlage: VorlageZumAnwenden | undefined, aendern: boolean
 }
 
 /** Aufgabe von Hand vergeben – seit #1044 die Automatisierungsvorlage „Aufgabe vergeben“ (sofort, genauso schnell). */
-export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen, probe }: { mappeId: string; vorlage?: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; probe?: Probe }) {
+export function NeueAufgabe({
+  mappeId,
+  vorlage,
+  neuLaden,
+  schliessen,
+  probe,
+}: {
+  mappeId: string;
+  vorlage?: VorlageZumAnwenden;
+  neuLaden: () => Promise<void>;
+  schliessen: () => void;
+  probe?: Probe;
+}) {
   const d = useDaten();
   const fragen = vorlage?.fragen ?? ['empfaenger', 'text'];
   const [an, setAn] = useState('');
@@ -292,26 +615,58 @@ export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen, probe }: {
     if (an && !(await trotzdemZuweisen(mappeId, an, d.person(an)))) return;
     try {
       const x = { ...(fragen.includes('empfaenger') ? { empfaengerId: an } : {}), ...(fragen.includes('text') ? { text } : {}) };
-      if (probe) { await probe.anwenden(x); return; }
+      if (probe) {
+        await probe.anwenden(x);
+        return;
+      }
       const r = await mappenApi.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'aufgabe_vergeben', x);
-      await neuLaden(); await d.neuLaden();
+      await neuLaden();
+      await d.neuLaden();
       // Empfänger darf die Mappe nicht lesen (#127): Maske offen lassen, Hinweis zeigen.
-      if (r.hinweis) { setHinweis(r.hinweis); setText(''); setAn(''); } else schliessen();
-    } catch (e) { setFehler((e as Error).message); }
+      if (r.hinweis) {
+        setHinweis(r.hinweis);
+        setText('');
+        setAn('');
+      } else schliessen();
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }
   const titel = vorlage?.name ?? t('ablage.aufgaben.aufgabe-vergeben');
   return (
     <section className="blatt" aria-label={titel}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{titel}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
+      <div className="blattkopf zeile-zwischen">
+        <h2 className="h3">{titel}</h2>
+        <Knopf art="link" onClick={schliessen}>
+          {t('ablage.aufgaben.schliessen')}
+        </Knopf>
+      </div>
       {probe && <ProbeHinweis />}
       <div className="raster">
         {fragen.includes('empfaenger') && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}
-        {fragen.includes('text') && <Feld beschriftung={t('ablage.aufgaben.was-ist-zu-tun')} className="breit"><input value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} placeholder={t('ablage.aufgaben.z-b-bitte-rechnung')} /></Feld>}
+        {fragen.includes('text') && (
+          <Feld beschriftung={t('ablage.aufgaben.was-ist-zu-tun')} className="breit">
+            <input
+              value={text}
+              maxLength={2000}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={t('ablage.aufgaben.z-b-bitte-rechnung')}
+            />
+          </Feld>
+        )}
       </div>
       <p className="leise klein">{t('ablage.aufgaben.die-mappe-erscheint-beim')}</p>
       {fehler && <p className="fehlertext">{fehler}</p>}
-      {hinweis && <div className="hinweis warn" role="status"><p>{hinweis}</p></div>}
-      <div className="knoepfe"><Knopf art="haupt" gesperrt={fehlt} onClick={senden}>{titel}</Knopf></div>
+      {hinweis && (
+        <div className="hinweis warn" role="status">
+          <p>{hinweis}</p>
+        </div>
+      )}
+      <div className="knoepfe">
+        <Knopf art="haupt" gesperrt={fehlt} onClick={senden}>
+          {titel}
+        </Knopf>
+      </div>
     </section>
   );
 }
@@ -320,7 +675,19 @@ export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen, probe }: {
  * Weitere Automatisierungsvorlagen im Menü „Mappe“ (#1044), z. B. „Wiedervorlage“ aus dem Paket Benachrichtigungen: ein
  * kleiner Dialog mit genau den Fragen der Vorlage; was sie nicht fragt, steht als Satz da („Läuft am …“).
  */
-export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen, probe }: { mappeId: string; vorlage: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; probe?: Probe }) {
+export function AblaufFormular({
+  mappeId,
+  vorlage,
+  neuLaden,
+  schliessen,
+  probe,
+}: {
+  mappeId: string;
+  vorlage: VorlageZumAnwenden;
+  neuLaden: () => Promise<void>;
+  schliessen: () => void;
+  probe?: Probe;
+}) {
   const d = useDaten();
   const { ich } = useKonto();
   const [an, setAn] = useState(vorlage.wann.art === 'sofort' ? '' : ich.id);
@@ -337,29 +704,71 @@ export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen, probe }
     setFehler(undefined);
     if (f.includes('empfaenger') && an && an !== ich.id && !(await trotzdemZuweisen(mappeId, an, d.person(an)))) return;
     try {
-      const x = { ...(f.includes('empfaenger') ? { empfaengerId: an } : {}), ...(mitDatum ? { datum } : {}), ...(f.includes('text') ? { text } : {}) };
-      if (probe) { await probe.anwenden(x); return; }
+      const x = {
+        ...(f.includes('empfaenger') ? { empfaengerId: an } : {}),
+        ...(mitDatum ? { datum } : {}),
+        ...(f.includes('text') ? { text } : {}),
+      };
+      if (probe) {
+        await probe.anwenden(x);
+        return;
+      }
       const r = await mappenApi.ablaufAnwenden(mappeId, vorlage.kennung, x);
-      await neuLaden(); await d.neuLaden();
-      if (r.hinweis) setHinweis(r.hinweis); else schliessen();
-    } catch (e) { setFehler((e as Error).message); }
+      await neuLaden();
+      await d.neuLaden();
+      if (r.hinweis) setHinweis(r.hinweis);
+      else schliessen();
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }
   return (
     <section className="blatt" aria-label={vorlage.name}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{vorlage.name}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
+      <div className="blattkopf zeile-zwischen">
+        <h2 className="h3">{vorlage.name}</h2>
+        <Knopf art="link" onClick={schliessen}>
+          {t('ablage.aufgaben.schliessen')}
+        </Knopf>
+      </div>
       {probe && <ProbeHinweis />}
       {vorlage.beschreibung && <p className="leise">{vorlage.beschreibung}</p>}
       <div className="raster">
-        {mitDatum && <Feld beschriftung={t('ablage.aufgaben.am')} hinweis={vorlage.wann.art === 'in' ? t('ablage.aufgaben.vorschlag', { datum: datumDe(vorschlagDatum(vorlage.wann, heuteIn())) }) : undefined}>
-          <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
-        </Feld>}
+        {mitDatum && (
+          <Feld
+            beschriftung={t('ablage.aufgaben.am')}
+            hinweis={
+              vorlage.wann.art === 'in'
+                ? t('ablage.aufgaben.vorschlag', { datum: datumDe(vorschlagDatum(vorlage.wann, heuteIn())) })
+                : undefined
+            }>
+            <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
+          </Feld>
+        )}
         {f.includes('empfaenger') && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}
-        {f.includes('text') && <Feld beschriftung={t('ablage.aufgaben.text')} className="breit"><input value={text} maxLength={2000} onChange={(x) => setText(x.target.value)} /></Feld>}
+        {f.includes('text') && (
+          <Feld beschriftung={t('ablage.aufgaben.text')} className="breit">
+            <input value={text} maxLength={2000} onChange={(x) => setText(x.target.value)} />
+          </Feld>
+        )}
       </div>
-      <p className="leise klein">{am ? t('ablage.aufgaben.laeuft-am', { datum: datumDe(am) }) : vorlage.wann.art === 'sofort' ? t('ablage.aufgaben.laeuft-sofort') : t('ablage.aufgaben.laeuft-am-gewaehlten')}</p>
+      <p className="leise klein">
+        {am
+          ? t('ablage.aufgaben.laeuft-am', { datum: datumDe(am) })
+          : vorlage.wann.art === 'sofort'
+            ? t('ablage.aufgaben.laeuft-sofort')
+            : t('ablage.aufgaben.laeuft-am-gewaehlten')}
+      </p>
       {fehler && <p className="fehlertext">{fehler}</p>}
-      {hinweis && <div className="hinweis warn" role="status"><p>{hinweis}</p></div>}
-      <div className="knoepfe"><Knopf art="haupt" gesperrt={fehlt} onClick={senden}>{vorlage.name}</Knopf></div>
+      {hinweis && (
+        <div className="hinweis warn" role="status">
+          <p>{hinweis}</p>
+        </div>
+      )}
+      <div className="knoepfe">
+        <Knopf art="haupt" gesperrt={fehlt} onClick={senden}>
+          {vorlage.name}
+        </Knopf>
+      </div>
     </section>
   );
 }

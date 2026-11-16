@@ -19,18 +19,26 @@ export const EXTREM_MAPPEN: readonly number[] = [500_000, 1_000_000];
  * 4 Minuten, dazu einmal das Füllen des Nachweis-Journals). extrem: 500.000 Mappen; mit 1 Mio. etwa doppelt so lange
  * (`dauerVon`).
  */
-export const LASTTEST_DAUER: Record<LasttestStufe, [number, number]> = { klein: [10, 15], mittel: [23, 42], gross: [40, 77], extrem: [65, 157] };
+export const LASTTEST_DAUER: Record<LasttestStufe, [number, number]> = {
+  klein: [10, 15],
+  mittel: [23, 42],
+  gross: [40, 77],
+  extrem: [65, 157],
+};
 
 /** Dauer einer Stufe; extrem mit 1 Mio. Mappen etwa doppelt so lang wie mit 500.000. */
 export const dauerVon = (stufe: LasttestStufe, mappen: number | null = null): [number, number] => {
   const [a, b] = LASTTEST_DAUER[stufe];
-  return stufe === 'extrem' && mappen && mappen > EXTREM_MAPPEN[0] ? [Math.round(a * mappen / EXTREM_MAPPEN[0]), Math.round(b * mappen / EXTREM_MAPPEN[0])] : [a, b];
+  return stufe === 'extrem' && mappen && mappen > EXTREM_MAPPEN[0]
+    ? [Math.round((a * mappen) / EXTREM_MAPPEN[0]), Math.round((b * mappen) / EXTREM_MAPPEN[0])]
+    : [a, b];
 };
 
 export const stufenVon = (w: LasttestWahl): LasttestStufe[] => (w === 'alle' ? ['klein', 'mittel', 'gross'] : [w]);
 
 /** Was das Skript gerade tut (Meldungen von server/test/lasttest.mjs). */
-export type LasttestSchritt = 'start' | 'pruefen' | 'einrichten' | 'demo' | 'hintergrund' | 'vorbereiten' | 'messen' | 'aufraeumen' | 'auswerten';
+export type LasttestSchritt =
+  'start' | 'pruefen' | 'einrichten' | 'demo' | 'hintergrund' | 'vorbereiten' | 'messen' | 'aufraeumen' | 'auswerten';
 
 export interface LasttestStand {
   /** Version des laufenden Containers (#1117), z. B. „0.244.0“ – im Kopf der Seite, von Anfang an. */
@@ -99,13 +107,27 @@ export interface LasttestLive {
   belegt: number | null;
   verbindungen: number | null;
   /** CPU in % eines Kerns und Speicher (RSS, MB) je Gruppe; null: nicht messbar (nicht Linux). */
-  gruppen: Array<{ art: LiveGruppenArt; nr?: number; rolle?: 'haupt' | 'leiter' | 'anfragen'; anzahl: number; cpu: number | null; mb: number }> | null;
+  gruppen: Array<{
+    art: LiveGruppenArt;
+    nr?: number;
+    rolle?: 'haupt' | 'leiter' | 'anfragen';
+    anzahl: number;
+    cpu: number | null;
+    mb: number;
+  }> | null;
   /** PostgreSQL in einem eigenen Container: von hier aus nicht messbar. */
   postgresExtern: boolean;
   /** Neueste Warnungen und Fehler aus dem Protokoll (ohne Einzelheiten). */
-  meldungen: Array<{ stufe: 'warn' | 'error' | 'fatal'; modul: string; text: string; ausnahme: string | null; anzahl: number; letzte: string;
+  meldungen: Array<{
+    stufe: 'warn' | 'error' | 'fatal';
+    modul: string;
+    text: string;
+    ausnahme: string | null;
+    anzahl: number;
+    letzte: string;
     /** Höchste und mittlere Dauer in ms (#909), wenn der Text `<Dauer>` enthält. */
-    dauer?: { max: number; mittel: number } }>;
+    dauer?: { max: number; mittel: number };
+  }>;
 }
 
 export interface LasttestLiveStand {
@@ -122,7 +144,12 @@ export const GERAET_MAX = 120;
 
 /** Gerät für den Block: eine Zeile, ohne Backticks (der Block steht in ```text), höchstens GERAET_MAX Zeichen. */
 export function bereinigeGeraet(s: unknown): string {
-  return String(s ?? '').replace(/[\r\n\t]+/g, ' ').replace(/`/g, "'").replace(/\s{2,}/g, ' ').trim().slice(0, GERAET_MAX);
+  return String(s ?? '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/`/g, "'")
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, GERAET_MAX);
 }
 
 /**
@@ -131,17 +158,31 @@ export function bereinigeGeraet(s: unknown): string {
  */
 export function fuelleErgebnis(vorlage: string, a: LasttestStand['angaben'], erkannt: LasttestStand['speicherErkannt']): string {
   const geraet = bereinigeGeraet(a.geraet) || t('gemeinsam.lasttest.bitte-ergaenzen');
-  const speicher = !a.speicher ? t('gemeinsam.lasttest.bitte-ergaenzen-hdd-ssd')
-    : a.speicher === 'unbekannt' ? t('gemeinsam.lasttest.weiss-nicht')
-      : a.speicher === erkannt ? `${a.speicher} (erkannt)` : a.speicher;
+  const speicher = !a.speicher
+    ? t('gemeinsam.lasttest.bitte-ergaenzen-hdd-ssd')
+    : a.speicher === 'unbekannt'
+      ? t('gemeinsam.lasttest.weiss-nicht')
+      : a.speicher === erkannt
+        ? `${a.speicher} (erkannt)`
+        : a.speicher;
   return vorlage.split(PLATZHALTER.geraet).join(geraet).split(PLATZHALTER.speicher).join(speicher);
 }
 
 /** Restdauer in Minuten (von–bis); null: gleich fertig. */
-export function restMinuten(s: Pick<LasttestStand, 'wahl' | 'stufe' | 'fertigeStufen' | 'stufeBegonnen' | 'jetzt' | 'durchgang' | 'zustand'> & { mappen?: number | null }): [number, number] | null {
+export function restMinuten(
+  s: Pick<LasttestStand, 'wahl' | 'stufe' | 'fertigeStufen' | 'stufeBegonnen' | 'jetzt' | 'durchgang' | 'zustand'> & {
+    mappen?: number | null;
+  },
+): [number, number] | null {
   if (s.zustand !== 'laeuft') return null;
   const offen = stufenVon(s.wahl).filter((x) => !s.fertigeStufen.includes(x) && x !== s.stufe);
-  const spaeter = offen.reduce(([a, b], x) => { const [c, d] = dauerVon(x, s.mappen); return [a + c, b + d]; }, [0, 0]);
+  const spaeter = offen.reduce(
+    ([a, b], x) => {
+      const [c, d] = dauerVon(x, s.mappen);
+      return [a + c, b + d];
+    },
+    [0, 0],
+  );
   const vergangen = (s.jetzt - s.stufeBegonnen) / 60_000;
   const [lo, hi] = s.stufe ? dauerVon(s.stufe, s.mappen) : [0, 0];
   const von = Math.max(0, lo - vergangen) + spaeter[0];

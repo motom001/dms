@@ -1,5 +1,18 @@
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
-import { beruflichBei, istNutzung, istVerweis, liesPlanOrganisation, PAKET_ORGANISATION, type Nutzung, PLAN_VERBINDUNGEN, type DateiFehler, type Einrichtungsplan, type PlanDatenbank, type Planprobleme, type PlanVerbindung } from '../../shared/src/einrichtungsplan';
+import {
+  beruflichBei,
+  istNutzung,
+  istVerweis,
+  liesPlanOrganisation,
+  PAKET_ORGANISATION,
+  type Nutzung,
+  PLAN_VERBINDUNGEN,
+  type DateiFehler,
+  type Einrichtungsplan,
+  type PlanDatenbank,
+  type Planprobleme,
+  type PlanVerbindung,
+} from '../../shared/src/einrichtungsplan';
 import { pruefeAdresse } from './betrieb';
 import { liesEinrichtungsdatei, schreibeEinrichtungsdatei } from './einrichtungsdatei';
 import type { Einstellungen } from './einstellungen';
@@ -25,7 +38,12 @@ import { vorlageFuer } from '../../shared/src/werkbankansicht';
 const log = protokoll.modul('system');
 export const SCHRITTE = ['schluessel', 'pakete', 'optional', 'fertig'] as const;
 export type Schritt = (typeof SCHRITTE)[number];
-export interface EinrichtungStand { offen: boolean; erledigt: Schritt[]; uebersprungen: Schritt[]; mandant: string | null }
+export interface EinrichtungStand {
+  offen: boolean;
+  erledigt: Schritt[];
+  uebersprungen: Schritt[];
+  mandant: string | null;
+}
 
 export interface EinrichtungDeps {
   konten: Pick<Konten, 'einrichten' | 'einrichtungNoetig'>;
@@ -61,30 +79,60 @@ export function planAusEingabe(x: unknown): Einrichtungsplan {
   const op = (o.optional ?? {}) as Record<string, unknown>;
   const m = op.mail as Record<string, unknown> | null | undefined;
   const verweis = (v: unknown) => (istVerweis(v) ? { passwort: v } : {});
-  const zahl = (v: unknown, standard: number) => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n >= 1 && n <= 65535 ? n : standard; };
-  const verbindung: PlanVerbindung = PLAN_VERBINDUNGEN.includes(m?.verbindung as PlanVerbindung) ? m!.verbindung as PlanVerbindung : 'starttls';
+  const zahl = (v: unknown, standard: number) => {
+    const n = Math.floor(Number(v));
+    return Number.isFinite(n) && n >= 1 && n <= 65535 ? n : standard;
+  };
+  const verbindung: PlanVerbindung = PLAN_VERBINDUNGEN.includes(m?.verbindung as PlanVerbindung)
+    ? (m!.verbindung as PlanVerbindung)
+    : 'starttls';
   const { nutzung, beruflich } = nutzungAus(o.nutzung, op.beruflich);
   const organisation = liesPlanOrganisation(o.organisation);
   return {
-    datenbank: db && typeof db === 'object' ? { host: text(db.host, 255), port: zahl(db.port, 5432), datenbank: text(db.datenbank, 63), benutzer: text(db.benutzer, 63), ...verweis(db.passwort) } : null,
+    datenbank:
+      db && typeof db === 'object'
+        ? {
+            host: text(db.host, 255),
+            port: zahl(db.port, 5432),
+            datenbank: text(db.datenbank, 63),
+            benutzer: text(db.benutzer, 63),
+            ...verweis(db.passwort),
+          }
+        : null,
     ablage: text(o.ablage, 100).replace(/\s+/g, ' '),
     konto: { name: text(ko.name, 100), email: text(ko.email, 254), ...verweis(ko.passwort) },
-    pakete: Array.isArray(o.pakete) ? o.pakete.slice(0, 100).flatMap((p) => {
-      const q = (p ?? {}) as Record<string, unknown>;
-      const id = text(q.id, 64);
-      if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return [];
-      const auto = q.automatisierungen && typeof q.automatisierungen === 'object' ? Object.entries(q.automatisierungen as Record<string, unknown>).filter(([k, v]) => /^[a-z0-9][a-z0-9_-]{0,63}$/.test(k) && typeof v === 'boolean') : [];
-      return [{ id, beispiele: ja(q.beispiele), automatisierungen: Object.fromEntries(auto) as Record<string, boolean> }];
-    }) : null,
+    pakete: Array.isArray(o.pakete)
+      ? o.pakete.slice(0, 100).flatMap((p) => {
+          const q = (p ?? {}) as Record<string, unknown>;
+          const id = text(q.id, 64);
+          if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return [];
+          const auto =
+            q.automatisierungen && typeof q.automatisierungen === 'object'
+              ? Object.entries(q.automatisierungen as Record<string, unknown>).filter(
+                  ([k, v]) => /^[a-z0-9][a-z0-9_-]{0,63}$/.test(k) && typeof v === 'boolean',
+                )
+              : [];
+          return [{ id, beispiele: ja(q.beispiele), automatisierungen: Object.fromEntries(auto) as Record<string, boolean> }];
+        })
+      : null,
     optional: {
       adresse: text(op.adresse) || null,
       bundesland: typeof op.bundesland === 'string' && op.bundesland in BUNDESLAENDER ? op.bundesland : null,
       beispiele: ja(op.beispiele),
       ...(beruflich ? { beruflich: true } : {}),
-      mail: m && typeof m === 'object' ? {
-        aktiv: m.aktiv !== false, host: text(m.host, 200), port: zahl(m.port, verbindung === 'ssl' ? 465 : 587), verbindung,
-        benutzer: text(m.benutzer, 200), absender: text(m.absender, 200), selbstsigniert: ja(m.selbstsigniert), ...verweis(m.passwort),
-      } : null,
+      mail:
+        m && typeof m === 'object'
+          ? {
+              aktiv: m.aktiv !== false,
+              host: text(m.host, 200),
+              port: zahl(m.port, verbindung === 'ssl' ? 465 : 587),
+              verbindung,
+              benutzer: text(m.benutzer, 200),
+              absender: text(m.absender, 200),
+              selbstsigniert: ja(m.selbstsigniert),
+              ...verweis(m.passwort),
+            }
+          : null,
     },
     ...(nutzung ? { nutzung } : {}),
     ...(organisation ? { organisation } : {}),
@@ -92,7 +140,14 @@ export function planAusEingabe(x: unknown): Einrichtungsplan {
 }
 
 /** Fehlermeldung einer Prüfung oder null. */
-const meldung = (f: () => unknown): string | null => { try { f(); return null; } catch (e) { return (e as Error).message; } };
+const meldung = (f: () => unknown): string | null => {
+  try {
+    f();
+    return null;
+  } catch (e) {
+    return (e as Error).message;
+  }
+};
 
 export class Einrichtung {
   constructor(private d: EinrichtungDeps) {}
@@ -102,7 +157,9 @@ export class Einrichtung {
     if (!(await this.d.konten.einrichtungNoetig())) throw new Fachfehler(409, t('meldungen.einrichtung.die-einrichtung-ist-bereits'));
     await this.d.code?.pruefeGeteilt(code);
   }
-  get codeNoetig() { return !!this.d.code?.aktiv; }
+  get codeNoetig() {
+    return !!this.d.code?.aktiv;
+  }
 
   /**
    * Zugang zu den Hilfen des Assistenten (Datei, Prüfung, Paketkatalog): vor der Einrichtung mit Code; danach nur mit
@@ -121,12 +178,20 @@ export class Einrichtung {
     if (mandant.length > MANDANT_MAX) throw new Fachfehler(422, t('meldungen.einrichtung.der-name-darf-hoechstens', { MANDANT_MAX }));
     const r = await this.d.konten.einrichten(e, info);
     await this.d.mandant.umbenennen(mandant);
-    try { await this.d.schriftzug?.(mandant); } catch (x) { log.warn('Schriftzug nicht gesetzt', { fehler: (x as Error).message }); }
+    try {
+      await this.d.schriftzug?.(mandant);
+    } catch (x) {
+      log.warn('Schriftzug nicht gesetzt', { fehler: (x as Error).message });
+    }
     await this.d.einstellungen.schreibe('einrichtung', { offen: true, erledigt: [], uebersprungen: [] });
     // Neue Installationen bekommen die schlanke Werkbank (#281); bestehende behalten alles. Die Vorlage folgt dem
     // Merkmal „beruflich genutzt“ (#1032, #987): beruflich → Selbständig, sonst Einsteiger. „Jetzt einrichten“ setzt
     // danach die im Assistenten gewählte Stufe.
-    await this.d.einstellungen.schreibe('werkbank_ansicht', { vorlage: vorlageFuer(liesMerkmale(await this.d.einstellungen.lies(MERKMALE_EINSTELLUNG))), ein: [], aus: [] });
+    await this.d.einstellungen.schreibe('werkbank_ansicht', {
+      vorlage: vorlageFuer(liesMerkmale(await this.d.einstellungen.lies(MERKMALE_EINSTELLUNG))),
+      ein: [],
+      aus: [],
+    });
     await this.d.code?.entfernen();
     log.info('Einrichtung: Ablage und eigenes Konto mit „Gesamte Verwaltung“ angelegt', { mandant, email: r.benutzer.email });
     return r;
@@ -141,13 +206,16 @@ export class Einrichtung {
   async merke(schritt: unknown, uebersprungen: boolean, von: string): Promise<EinrichtungStand> {
     if (!SCHRITTE.includes(schritt as Schritt)) throw new Fachfehler(422, t('meldungen.einrichtung.unbekannter-schritt'));
     const x = schritt as Schritt;
-    if (x === 'fertig' && this.d.notfallblattAktuell && !(await this.d.notfallblattAktuell())) throw new Fachfehler(409, t('einrichtung.abschluss.fehlt'));
+    if (x === 'fertig' && this.d.notfallblattAktuell && !(await this.d.notfallblattAktuell()))
+      throw new Fachfehler(409, t('einrichtung.abschluss.fehlt'));
     const s = await this.stand();
     const erledigt = uebersprungen ? s.erledigt.filter((y) => y !== x) : [...new Set([...s.erledigt, x])];
     const ueber = uebersprungen ? [...new Set([...s.uebersprungen, x])] : s.uebersprungen.filter((y) => y !== x);
     const offen = x !== 'fertig';
     await this.d.einstellungen.schreibe('einrichtung', { offen, erledigt, uebersprungen: ueber });
-    log.info(offen ? `Einrichtung: Schritt „${x}“ ${uebersprungen ? 'übersprungen' : 'erledigt'}` : 'Einrichtungsassistent abgeschlossen', { von });
+    log.info(offen ? `Einrichtung: Schritt „${x}“ ${uebersprungen ? 'übersprungen' : 'erledigt'}` : 'Einrichtungsassistent abgeschlossen', {
+      von,
+    });
     return { ...s, offen, erledigt, uebersprungen: ueber };
   }
 
@@ -158,10 +226,27 @@ export class Einrichtung {
   pruefePlan(eingabe: unknown, geheim: { passwort?: unknown } = {}): Planprobleme {
     const p = planAusEingabe(eingabe);
     const probleme: Planprobleme = {};
-    const dazu = (s: keyof Planprobleme, m: string | null) => { if (m) (probleme[s] ??= []).push(m); };
-    dazu('ablage', !p.ablage ? t('einrichtung.plan.ablage.fehlt') : p.ablage.length > MANDANT_MAX ? t('einrichtung.plan.ablage.lang', { max: MANDANT_MAX }) : null);
-    dazu('konto', meldung(() => pruefeEmail(p.konto.email)));
-    dazu('konto', typeof geheim.passwort === 'string' && geheim.passwort ? meldung(() => pruefePasswortRegeln(geheim.passwort)) : t('einrichtung.plan.passwort.fehlt'));
+    const dazu = (s: keyof Planprobleme, m: string | null) => {
+      if (m) (probleme[s] ??= []).push(m);
+    };
+    dazu(
+      'ablage',
+      !p.ablage
+        ? t('einrichtung.plan.ablage.fehlt')
+        : p.ablage.length > MANDANT_MAX
+          ? t('einrichtung.plan.ablage.lang', { max: MANDANT_MAX })
+          : null,
+    );
+    dazu(
+      'konto',
+      meldung(() => pruefeEmail(p.konto.email)),
+    );
+    dazu(
+      'konto',
+      typeof geheim.passwort === 'string' && geheim.passwort
+        ? meldung(() => pruefePasswortRegeln(geheim.passwort))
+        : t('einrichtung.plan.passwort.fehlt'),
+    );
     dazu('optional', p.optional.adresse ? meldung(() => pruefeAdresse(p.optional.adresse)) : null);
     if (p.optional.mail?.aktiv && !p.optional.mail.host) dazu('optional', t('einrichtung.plan.mail.server'));
     // „Deine Organisation“ (#1045): nur bei beruflicher Nutzung, Name Pflicht, E-Mail gültig – und Paket Basis dabei.
@@ -181,10 +266,21 @@ export class Einrichtung {
     const hinweise: string[] = [...r.hinweise];
     const jetzt = this.d.datenbank?.();
     const db = r.plan?.datenbank;
-    if (db && jetzt && (db.host !== jetzt.host || db.port !== jetzt.port || db.datenbank !== jetzt.datenbank || db.benutzer !== jetzt.benutzer)) {
-      hinweise.push(t('einrichtung.datei.hinweis.datenbank', { datei: `${db.benutzer}@${db.host}:${db.port}/${db.datenbank}`, jetzt: `${jetzt.benutzer}@${jetzt.host}:${jetzt.port}/${jetzt.datenbank}` }));
+    if (
+      db &&
+      jetzt &&
+      (db.host !== jetzt.host || db.port !== jetzt.port || db.datenbank !== jetzt.datenbank || db.benutzer !== jetzt.benutzer)
+    ) {
+      hinweise.push(
+        t('einrichtung.datei.hinweis.datenbank', {
+          datei: `${db.benutzer}@${db.host}:${db.port}/${db.datenbank}`,
+          jetzt: `${jetzt.benutzer}@${jetzt.host}:${jetzt.port}/${jetzt.datenbank}`,
+        }),
+      );
     }
-    log.info(r.plan ? 'Einrichtung: Konfigurationsdatei geladen' : 'Einrichtung: Konfigurationsdatei abgelehnt', { fehler: r.fehler.length });
+    log.info(r.plan ? 'Einrichtung: Konfigurationsdatei geladen' : 'Einrichtung: Konfigurationsdatei abgelehnt', {
+      fehler: r.fehler.length,
+    });
     return { ...r, hinweise };
   }
 

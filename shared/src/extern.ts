@@ -7,7 +7,7 @@ import { t } from './texte';
 
 /** KI-Dienst (Pakete mit Inhalten und Netz, #796), Postfach-Abruf, Versand, Anmeldung über einen Anbieter, Netz der übrigen Pakete. */
 export const EXTERNE_DIENSTE = ['ki', 'imap', 'smtp', 'oidc', 'netz'] as const;
-export type ExternerDienst = typeof EXTERNE_DIENSTE[number];
+export type ExternerDienst = (typeof EXTERNE_DIENSTE)[number];
 /** ok; fehler (Antwort mit Fehler oder keine Verbindung); zeit (Zeitüberschreitung). */
 export type ExternErgebnis = 'ok' | 'fehler' | 'zeit';
 
@@ -40,7 +40,10 @@ export const WARNUNG_AB = 0.8;
 export const TIMING_MAX = 5;
 
 /** Preis je 1 Mio. Token (Eingabe, Ausgabe) eines KI-Pakets. */
-export interface Preis { ein: number; aus: number }
+export interface Preis {
+  ein: number;
+  aus: number;
+}
 /** Einstellung `extern_kosten` (Werkbank → Systemzustand → KI-Kosten). */
 export interface KostenEinstellung {
   /** Paket-Id → Preis je 1 Mio. Token; ohne Eintrag kostenlos (z. B. ein lokaler Dienst). */
@@ -58,7 +61,7 @@ export const BUDGET_MAX = 10_000_000;
 
 const paketId = /^[a-z0-9][a-z0-9._-]{0,99}$/;
 
-const objekt = (x: unknown) => (x && typeof x === 'object' && !Array.isArray(x) ? x as Record<string, unknown> : {});
+const objekt = (x: unknown) => (x && typeof x === 'object' && !Array.isArray(x) ? (x as Record<string, unknown>) : {});
 const leer = (x: unknown) => x === '' || x === null || x === undefined;
 
 /** Preise je Paket prüfen: ungültige Kennungen fallen weg, 0 und leer heißen kostenlos. */
@@ -113,7 +116,8 @@ export const monatSchluessel = (d: Date) => `${d.getFullYear()}-${String(d.getMo
 export function monatAus(s: unknown): Date | null {
   const m = typeof s === 'string' ? /^(\d{4})-(\d{2})$/.exec(s) : null;
   if (!m) return null;
-  const j = Number(m[1]), mo = Number(m[2]);
+  const j = Number(m[1]),
+    mo = Number(m[2]);
   return mo >= 1 && mo <= 12 && j >= 2000 && j <= 2999 ? new Date(j, mo - 1, 1) : null;
 }
 
@@ -133,16 +137,30 @@ export function budgetStand(summe: number, e: KostenEinstellung, jetzt: Date): B
   if (e.budget === null || e.budget <= 0) return { budget: null, summe, anteil: null, warnung: false, erreicht: false, pausiertBis: null };
   const anteil = summe / e.budget;
   const erreicht = anteil >= 1;
-  return { budget: e.budget, summe, anteil, warnung: anteil >= WARNUNG_AB, erreicht, pausiertBis: erreicht && e.hart ? naechsterMonat(jetzt).toISOString() : null };
+  return {
+    budget: e.budget,
+    summe,
+    anteil,
+    warnung: anteil >= WARNUNG_AB,
+    erreicht,
+    pausiertBis: erreicht && e.hart ? naechsterMonat(jetzt).toISOString() : null,
+  };
 }
 
 /** Kennzahlen einer Reihe von Aufrufen (Systemzustand, Paketansicht). */
 export interface ExternKennzahlen {
-  anzahl: number; fehler: number; zeit: number;
-  mittelMs: number | null; p50Ms: number | null; p95Ms: number | null;
+  anzahl: number;
+  fehler: number;
+  zeit: number;
+  mittelMs: number | null;
+  p50Ms: number | null;
+  p95Ms: number | null;
   /** Mittel bis zur ersten Antwort. */
   ersteMs: number | null;
-  hin: number; zurueck: number; tokenEin: number; tokenAus: number;
+  hin: number;
+  zurueck: number;
+  tokenEin: number;
+  tokenAus: number;
   letzter: string | null;
 }
 
@@ -153,16 +171,25 @@ export function perzentil(sortiert: number[], p: number): number | null {
   return sortiert[i];
 }
 
-export function kennzahlen(liste: Array<Pick<ExternAufruf, 'ms' | 'ersteMs' | 'ergebnis' | 'hin' | 'zurueck' | 'tokenEin' | 'tokenAus'> & { zeit?: string }>): ExternKennzahlen {
+export function kennzahlen(
+  liste: Array<Pick<ExternAufruf, 'ms' | 'ersteMs' | 'ergebnis' | 'hin' | 'zurueck' | 'tokenEin' | 'tokenAus'> & { zeit?: string }>,
+): ExternKennzahlen {
   const ms = liste.map((a) => a.ms).sort((a, b) => a - b);
   const erste = liste.map((a) => a.ersteMs).filter((x): x is number => x !== null);
-  const summe = (f: (a: typeof liste[number]) => number) => liste.reduce((n, a) => n + f(a), 0);
+  const summe = (f: (a: (typeof liste)[number]) => number) => liste.reduce((n, a) => n + f(a), 0);
   const r = (x: number | null) => (x === null ? null : Math.round(x));
   return {
-    anzahl: liste.length, fehler: liste.filter((a) => a.ergebnis === 'fehler').length, zeit: liste.filter((a) => a.ergebnis === 'zeit').length,
-    mittelMs: ms.length ? Math.round(summe((a) => a.ms) / ms.length) : null, p50Ms: r(perzentil(ms, 50)), p95Ms: r(perzentil(ms, 95)),
+    anzahl: liste.length,
+    fehler: liste.filter((a) => a.ergebnis === 'fehler').length,
+    zeit: liste.filter((a) => a.ergebnis === 'zeit').length,
+    mittelMs: ms.length ? Math.round(summe((a) => a.ms) / ms.length) : null,
+    p50Ms: r(perzentil(ms, 50)),
+    p95Ms: r(perzentil(ms, 95)),
     ersteMs: erste.length ? Math.round(erste.reduce((n, x) => n + x, 0) / erste.length) : null,
-    hin: summe((a) => a.hin), zurueck: summe((a) => a.zurueck), tokenEin: summe((a) => a.tokenEin), tokenAus: summe((a) => a.tokenAus),
+    hin: summe((a) => a.hin),
+    zurueck: summe((a) => a.zurueck),
+    tokenEin: summe((a) => a.tokenEin),
+    tokenAus: summe((a) => a.tokenAus),
     letzter: liste.reduce<string | null>((m, a) => (a.zeit && (!m || a.zeit > m) ? a.zeit : m), null),
   };
 }
@@ -173,12 +200,15 @@ export function kennzahlen(liste: Array<Pick<ExternAufruf, 'ms' | 'ersteMs' | 'e
  * (promptTokenCount, candidatesTokenCount). Gilt für ganze Antworten und Stücke eines Stroms (JSON, NDJSON, SSE); der
  * letzte Wert zählt (Ströme melden laufende Summen). Der Text wird nur gelesen, nie gespeichert.
  */
-const TOKEN = /"(prompt_tokens|input_tokens|prompt_eval_count|promptTokenCount|completion_tokens|output_tokens|eval_count|candidatesTokenCount)"\s*:\s*(\d{1,9})/g;
+const TOKEN =
+  /"(prompt_tokens|input_tokens|prompt_eval_count|promptTokenCount|completion_tokens|output_tokens|eval_count|candidatesTokenCount)"\s*:\s*(\d{1,9})/g;
 const EIN = new Set(['prompt_tokens', 'input_tokens', 'prompt_eval_count', 'promptTokenCount']);
 export function liesToken(text: string): { ein: number | null; aus: number | null } {
-  let ein: number | null = null, aus: number | null = null;
+  let ein: number | null = null,
+    aus: number | null = null;
   for (const m of text.matchAll(TOKEN)) {
-    if (EIN.has(m[1])) ein = Number(m[2]); else aus = Number(m[2]);
+    if (EIN.has(m[1])) ein = Number(m[2]);
+    else aus = Number(m[2]);
   }
   return { ein, aus };
 }
@@ -196,12 +226,25 @@ export function externTiming(liste: ExternAufruf[]): string {
   if (!liste.length) return '';
   const summe = liste.reduce((n, a) => n + a.ms, 0);
   const teile = [`extern;dur=${summe.toFixed(1)};desc="${liste.length}"`];
-  liste.slice(0, TIMING_MAX).forEach((a, i) => teile.push(`extern-${i + 1};dur=${a.ms.toFixed(1)};desc="${[a.dienst, sauber(a.paket), a.ersteMs === null ? '' : Math.round(a.ersteMs), a.hin + a.zurueck, a.ergebnis].join('~')}"`));
+  liste
+    .slice(0, TIMING_MAX)
+    .forEach((a, i) =>
+      teile.push(
+        `extern-${i + 1};dur=${a.ms.toFixed(1)};desc="${[a.dienst, sauber(a.paket), a.ersteMs === null ? '' : Math.round(a.ersteMs), a.hin + a.zurueck, a.ergebnis].join('~')}"`,
+      ),
+    );
   return teile.join(', ');
 }
 
 /** Ein Aufruf im Messpanel (aus Server-Timing). */
-export interface ExternMessung { dienst: string; paket: string | null; ersteMs: number | null; ms: number; bytes: number; ergebnis: string }
+export interface ExternMessung {
+  dienst: string;
+  paket: string | null;
+  ersteMs: number | null;
+  ms: number;
+  bytes: number;
+  ergebnis: string;
+}
 
 /** Einträge `extern-<n>` aus dem Header lesen. */
 export function liesExternTiming(kopf: string): { summe?: number; anzahl?: number; aufrufe: ExternMessung[] } {
@@ -212,10 +255,21 @@ export function liesExternTiming(kopf: string): { summe?: number; anzahl?: numbe
     if (!name) continue;
     const dur = Number(/;\s*dur=([\d.]+)/.exec(teil)?.[1] ?? NaN);
     const desc = /;\s*desc="?([^";]*)"?/.exec(teil)?.[1] ?? '';
-    if (name === 'extern') { summe = Number.isFinite(dur) ? dur : undefined; anzahl = Number(desc) || 0; continue; }
+    if (name === 'extern') {
+      summe = Number.isFinite(dur) ? dur : undefined;
+      anzahl = Number(desc) || 0;
+      continue;
+    }
     const [dienst, paket, erste, bytes, ergebnis] = desc.split('~');
     if (!dienst || !Number.isFinite(dur)) continue;
-    aufrufe.push({ dienst, paket: paket || null, ersteMs: erste === '' || erste === undefined ? null : Number(erste), ms: dur, bytes: Number(bytes) || 0, ergebnis: ergebnis || 'ok' });
+    aufrufe.push({
+      dienst,
+      paket: paket || null,
+      ersteMs: erste === '' || erste === undefined ? null : Number(erste),
+      ms: dur,
+      bytes: Number(bytes) || 0,
+      ergebnis: ergebnis || 'ok',
+    });
   }
   return { summe, anzahl, aufrufe };
 }

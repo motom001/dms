@@ -36,8 +36,12 @@ function useFragen() {
   useEffect(() => {
     let aktuell = true;
     fragenStand ??= sucheApi.fragenVerfuegbar().catch(() => ({ verfuegbar: false, paket: null }));
-    void fragenStand.then((y) => { if (aktuell) setX(y); });
-    return () => { aktuell = false; };
+    void fragenStand.then((y) => {
+      if (aktuell) setX(y);
+    });
+    return () => {
+      aktuell = false;
+    };
   }, []);
   return x;
 }
@@ -53,13 +57,25 @@ function useNeuerTipp() {
 
 /** Welcher Reiter im Fenster: gewählt, sonst „Fragen“ (wenn es sie gibt), sonst „Tipps“. */
 const reiterVon = (gewaehlt: Reiter | null, fragenDa: boolean): Reiter =>
-  gewaehlt === 'fragen' && !fragenDa ? 'tipps' : gewaehlt ?? (fragenDa ? 'fragen' : 'tipps');
+  gewaehlt === 'fragen' && !fragenDa ? 'tipps' : (gewaehlt ?? (fragenDa ? 'fragen' : 'tipps'));
 
 /** Tipp oder Rundgang sucht eine Stelle im Fenster (#1002-Muster): welcher Reiter – null = irgendeiner. */
 const reiterFuerAnker = (anker: readonly string[]): Reiter | null | undefined =>
-  anker.includes('startseite.fragen') ? 'fragen' : anker.includes('startseite.tipp') ? 'tipps' : anker.includes('startseite.feld-art') ? null : undefined;
+  anker.includes('startseite.fragen')
+    ? 'fragen'
+    : anker.includes('startseite.tipp')
+      ? 'tipps'
+      : anker.includes('startseite.feld-art')
+        ? null
+        : undefined;
 
-export function Begleiter({ werkbank, imKopf = false }: { werkbank: boolean; /** In der Kopfzeile (Werkbank): am Handy ein Knopf darin. */ imKopf?: boolean }) {
+export function Begleiter({
+  werkbank,
+  imKopf = false,
+}: {
+  werkbank: boolean;
+  /** In der Kopfzeile (Werkbank): am Handy ein Knopf darin. */ imKopf?: boolean;
+}) {
   const fragen = useFragen();
   const neuerTipp = useNeuerTipp();
   const [offen, setOffen] = useState(false);
@@ -73,41 +89,89 @@ export function Begleiter({ werkbank, imKopf = false }: { werkbank: boolean; /**
 
   // Am Handy ist der Knopf unter dem Blatt ausgeblendet – erst nach dem Schließen bekommt er den Fokus zurück.
   const zurueck = useRef(false);
-  const schliesse = () => { zurueck.current = true; setOffen(false); };
+  const schliesse = () => {
+    zurueck.current = true;
+    setOffen(false);
+  };
   // Fokus zurück zum Knopf erst nach dem Abbau des Fensters (am Handy ist der Knopf bis dahin ausgeblendet) – und
   // noch einmal im nächsten Bild, falls der Browser den Fokus beim Entfernen auf <body> gesetzt hat.
   useEffect(() => {
     if (offen || !zurueck.current) return;
     zurueck.current = false;
     knopf.current?.focus();
-    const bild = requestAnimationFrame(() => { if (document.activeElement !== knopf.current) knopf.current?.focus(); });
+    const bild = requestAnimationFrame(() => {
+      if (document.activeElement !== knopf.current) knopf.current?.focus();
+    });
     return () => cancelAnimationFrame(bild);
   }, [offen]);
   // Fokus ins Fenster, sobald es offen ist.
-  useEffect(() => { if (offen) fenster.current?.focus(); }, [offen]);
-  useEffect(() => beiAnkerGesucht((anker) => {
-    const r = reiterFuerAnker(anker);
-    if (r === undefined) return;
-    if (r) setGewaehlt(r);
-    setOffen(true);
-  }), []);
+  useEffect(() => {
+    if (offen) fenster.current?.focus();
+  }, [offen]);
+  useEffect(
+    () =>
+      beiAnkerGesucht((anker) => {
+        const r = reiterFuerAnker(anker);
+        if (r === undefined) return;
+        if (r) setGewaehlt(r);
+        setOffen(true);
+      }),
+    [],
+  );
 
   const wahlen = [
     ...(fragenDa ? [{ wert: 'fragen' as const, text: t('oberflaeche.begleiter.fragen') }] : []),
-    { wert: 'tipps' as const, text: <>{t('oberflaeche.begleiter.tipps')}{neuerTipp && <><span className={s.punktKlein} aria-hidden="true" /><span className="sr"> {t('oberflaeche.begleiter.neu')}</span></>}</> },
+    {
+      wert: 'tipps' as const,
+      text: (
+        <>
+          {t('oberflaeche.begleiter.tipps')}
+          {neuerTipp && (
+            <>
+              <span className={s.punktKlein} aria-hidden="true" />
+              <span className="sr"> {t('oberflaeche.begleiter.neu')}</span>
+            </>
+          )}
+        </>
+      ),
+    },
     { wert: 'handbuch' as const, text: t('oberflaeche.begleiter.handbuch') },
   ];
-  const knopfText = neuerTipp ? t('oberflaeche.begleiter.oeffnen-neu') : offen ? t('oberflaeche.begleiter.schliessen') : t('oberflaeche.begleiter.oeffnen');
+  const knopfText = neuerTipp
+    ? t('oberflaeche.begleiter.oeffnen-neu')
+    : offen
+      ? t('oberflaeche.begleiter.schliessen')
+      : t('oberflaeche.begleiter.oeffnen');
 
   return (
     <div className={[s.begleiter, offen && s.offen, imKopf && s.imKopf].filter(Boolean).join(' ')} data-begleiter="">
       {offen && (
-        <div ref={fenster} className={s.fenster} role="dialog" aria-labelledby={titelId} tabIndex={-1}
-          onKeyDown={(e) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); schliesse(); } }}>
-          <h2 id={titelId} className="sr">{t('oberflaeche.begleiter.titel')}</h2>
+        <div
+          ref={fenster}
+          className={s.fenster}
+          role="dialog"
+          aria-labelledby={titelId}
+          tabIndex={-1}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && !e.defaultPrevented) {
+              e.preventDefault();
+              schliesse();
+            }
+          }}>
+          <h2 id={titelId} className="sr">
+            {t('oberflaeche.begleiter.titel')}
+          </h2>
           <div className={s.kopf}>
-            <Umschalter wert={reiter} setze={setGewaehlt} wahlen={wahlen} beschriftung={t('oberflaeche.begleiter.titel')} anker="startseite.feld-art" />
-            <Knopf art="link" nurSymbol={t('oberflaeche.begleiter.schliessen')} className={s.zu} onClick={schliesse}><Symbol name="schliessen" /></Knopf>
+            <Umschalter
+              wert={reiter}
+              setze={setGewaehlt}
+              wahlen={wahlen}
+              beschriftung={t('oberflaeche.begleiter.titel')}
+              anker="startseite.feld-art"
+            />
+            <Knopf art="link" nurSymbol={t('oberflaeche.begleiter.schliessen')} className={s.zu} onClick={schliesse}>
+              <Symbol name="schliessen" />
+            </Knopf>
           </div>
           <div className={s.inhalt}>
             {reiter === 'fragen' && <FragAblage eingabe={eingabe} setEingabe={setEingabe} paket={fragen?.paket ?? null} />}
@@ -117,7 +181,13 @@ export function Begleiter({ werkbank, imKopf = false }: { werkbank: boolean; /**
         </div>
       )}
       <div className={s.ort} data-anker="assistent">
-        <Knopf ref={knopf} art="link" className={s.knopf} aria-expanded={offen} aria-haspopup="dialog" nurSymbol={knopfText}
+        <Knopf
+          ref={knopf}
+          art="link"
+          className={s.knopf}
+          aria-expanded={offen}
+          aria-haspopup="dialog"
+          nurSymbol={knopfText}
           onClick={() => (offen ? schliesse() : setOffen(true))}>
           <Figur />
         </Knopf>

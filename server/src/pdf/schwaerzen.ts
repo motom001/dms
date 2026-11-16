@@ -24,8 +24,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
-  beginText, degrees, endText, PDFDocument, PDFName, PDFRawStream, popGraphicsState, pushGraphicsState, setCharacterSqueeze,
-  setFontAndSize, setTextMatrix, setTextRenderingMode, showText, TextRenderingMode, type PDFFont,
+  beginText,
+  degrees,
+  endText,
+  PDFDocument,
+  PDFName,
+  PDFRawStream,
+  popGraphicsState,
+  pushGraphicsState,
+  setCharacterSqueeze,
+  setFontAndSize,
+  setTextMatrix,
+  setTextRenderingMode,
+  showText,
+  TextRenderingMode,
+  type PDFFont,
 } from 'pdf-lib';
 import { Fachfehler } from '../fehler';
 import { SCHWAERZEN_MAX_SEITEN, wortIn, type Bereich, type SchwaerzSeite, type Wort } from '../../../shared/src/schwaerzen';
@@ -67,7 +80,11 @@ function starte(befehl: string, args: string[], zeit = ZEIT_MS): Promise<string>
  */
 export async function popplerDrehungen(ein: string, vorgabe: number[]): Promise<number[]> {
   let aus: string;
-  try { aus = await starte('pdfinfo', ['-f', '1', '-l', String(vorgabe.length), ein]); } catch { return vorgabe; }
+  try {
+    aus = await starte('pdfinfo', ['-f', '1', '-l', String(vorgabe.length), ein]);
+  } catch {
+    return vorgabe;
+  }
   const d = [...vorgabe];
   for (const m of aus.matchAll(/^Page\s+(\d+)\s+rot:\s+(-?\d+)/gm)) {
     const i = Number(m[1]) - 1;
@@ -79,7 +96,8 @@ export async function popplerDrehungen(ein: string, vorgabe: number[]): Promise<
 /** Stimmt das gerenderte Bild in der Lage (hoch/quer) mit der Analyse überein? Sonst lägen Kästen daneben. */
 export function lagePasst(bildBreite: number, bildHoehe: number, seiteBreite: number, seiteHoehe: number): boolean {
   if (!(bildBreite > 0 && bildHoehe > 0 && seiteBreite > 0 && seiteHoehe > 0)) return false;
-  const a = bildBreite / bildHoehe, b = seiteBreite / seiteHoehe;
+  const a = bildBreite / bildHoehe,
+    b = seiteBreite / seiteHoehe;
   return Math.abs(a - b) / b < 0.03;
 }
 
@@ -97,7 +115,11 @@ export async function arbeitsPdf(inhalt: Buffer, mime: string): Promise<Buffer> 
   if (mime === 'application/pdf') return inhalt;
   const doc = await PDFDocument.create({ updateMetadata: false });
   let bild;
-  try { bild = mime === 'image/png' ? await doc.embedPng(eigenerPuffer(inhalt)) : await doc.embedJpg(eigenerPuffer(inhalt)); } catch { throw new Fachfehler(422, t('meldungen.schwaerzen.das-bild-laesst-sich')); }
+  try {
+    bild = mime === 'image/png' ? await doc.embedPng(eigenerPuffer(inhalt)) : await doc.embedJpg(eigenerPuffer(inhalt));
+  } catch {
+    throw new Fachfehler(422, t('meldungen.schwaerzen.das-bild-laesst-sich'));
+  }
   const seite = doc.addPage([bild.width, bild.height]);
   seite.drawImage(bild, { x: 0, y: 0, width: bild.width, height: bild.height });
   const d = mime === 'image/jpeg' ? DREHUNG_AUS_EXIF[exifAusrichtung(inhalt)] : undefined;
@@ -125,10 +147,14 @@ async function seitenlage(pdf: Buffer): Promise<number[]> {
 /* ---------- Wörter mit Lage ---------- */
 
 const ENTITAETEN: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
-const entschluessele = (s: string) => s.replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (g, e: string) => {
-  if (e[0] === '#') { const c = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : Number(e.slice(1)); return Number.isFinite(c) ? String.fromCodePoint(c) : g; }
-  return ENTITAETEN[e] ?? g;
-});
+const entschluessele = (s: string) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (g, e: string) => {
+    if (e[0] === '#') {
+      const c = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : Number(e.slice(1));
+      return Number.isFinite(c) ? String.fromCodePoint(c) : g;
+    }
+    return ENTITAETEN[e] ?? g;
+  });
 const r5 = (v: number) => Math.round(v * 1e5) / 1e5;
 
 /**
@@ -141,7 +167,8 @@ export function liesBbox(html: string, drehungen: number[]): SchwaerzSeite[] {
   const wortRe = /<word xMin="([-\d.]+)" yMin="([-\d.]+)" xMax="([-\d.]+)" yMax="([-\d.]+)">([\s\S]*?)<\/word>/g;
   for (let m = seiteRe.exec(html); m; m = seiteRe.exec(html)) {
     const quer = drehungen[seiten.length] === 90 || drehungen[seiten.length] === 270;
-    const breite = Number(quer ? m[2] : m[1]), hoehe = Number(quer ? m[1] : m[2]);
+    const breite = Number(quer ? m[2] : m[1]),
+      hoehe = Number(quer ? m[1] : m[2]);
     const woerter: Wort[] = [];
     for (let w = wortRe.exec(m[3]); w; w = wortRe.exec(m[3])) {
       const [x1, y1, x2, y2] = [w[1], w[2], w[3], w[4]].map(Number);
@@ -159,7 +186,10 @@ export function pnmKopf(b: Buffer): { breite: number; hoehe: number; kanaele: nu
   let i = 0;
   while (felder.length < 4 && i < b.length) {
     while (i < b.length && /\s/.test(String.fromCharCode(b[i]))) i++;
-    if (b[i] === 0x23) { while (i < b.length && b[i] !== 0x0a) i++; continue; }
+    if (b[i] === 0x23) {
+      while (i < b.length && b[i] !== 0x0a) i++;
+      continue;
+    }
     let j = i;
     while (j < b.length && !/\s/.test(String.fromCharCode(b[j]))) j++;
     felder.push(b.toString('latin1', i, j));
@@ -196,7 +226,11 @@ export async function analysiere(inhalt: Buffer, mime: string): Promise<Analyse>
     await writeFile(ein, pdf);
     const drehungen = await popplerDrehungen(ein, lage);
     let html: string;
-    try { html = await starte('pdftotext', ['-bbox', '-cropbox', '-enc', 'UTF-8', ein, '-']); } catch (e) { popplerFehler(e, t('meldungen.schwaerzen.der-text-liess-sich')); }
+    try {
+      html = await starte('pdftotext', ['-bbox', '-cropbox', '-enc', 'UTF-8', ein, '-']);
+    } catch (e) {
+      popplerFehler(e, t('meldungen.schwaerzen.der-text-liess-sich'));
+    }
     const seiten = liesBbox(html, drehungen);
     if (seiten.length !== drehungen.length) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-des-pdfs'));
     const mitText = seiten.filter((s) => !ohneText(s)).length;
@@ -215,8 +249,23 @@ export async function seitenbild(inhalt: Buffer, mime: string, nr: number, px = 
     const ein = join(dir, 'ein.pdf');
     await writeFile(ein, pdf);
     try {
-      await starte('pdftoppm', ['-cropbox', '-f', String(nr), '-l', String(nr), '-scale-to', String(px), '-jpeg', '-jpegopt', 'quality=80', ein, join(dir, 's')]);
-    } catch (e) { popplerFehler(e, t('meldungen.schwaerzen.die-seite-liess-sich')); }
+      await starte('pdftoppm', [
+        '-cropbox',
+        '-f',
+        String(nr),
+        '-l',
+        String(nr),
+        '-scale-to',
+        String(px),
+        '-jpeg',
+        '-jpegopt',
+        'quality=80',
+        ein,
+        join(dir, 's'),
+      ]);
+    } catch (e) {
+      popplerFehler(e, t('meldungen.schwaerzen.die-seite-liess-sich'));
+    }
     const datei = (await readdir(dir)).find((n) => n.startsWith('s-') && n.endsWith('.jpg'));
     return datei ? await readFile(join(dir, datei)) : null;
   } finally {
@@ -229,8 +278,10 @@ export async function seitenbild(inhalt: Buffer, mime: string, nr: number, px = 
 /** Bereiche in die Bildpunkte malen (schwarz, auf ganze Bildpunkte nach außen gerundet). */
 export function maleSchwarz(px: Buffer, k: { breite: number; hoehe: number; kanaele: number; start: number }, bereiche: Bereich[]): void {
   for (const a of bereiche) {
-    const x1 = Math.max(0, Math.floor(a.x * k.breite)), x2 = Math.min(k.breite, Math.ceil((a.x + a.b) * k.breite));
-    const y1 = Math.max(0, Math.floor(a.y * k.hoehe)), y2 = Math.min(k.hoehe, Math.ceil((a.y + a.h) * k.hoehe));
+    const x1 = Math.max(0, Math.floor(a.x * k.breite)),
+      x2 = Math.min(k.breite, Math.ceil((a.x + a.b) * k.breite));
+    const y1 = Math.max(0, Math.floor(a.y * k.hoehe)),
+      y2 = Math.min(k.hoehe, Math.ceil((a.y + a.h) * k.hoehe));
     if (x2 <= x1) continue;
     for (let y = y1; y < y2; y++) {
       const s = k.start + (y * k.breite + x1) * k.kanaele;
@@ -251,7 +302,12 @@ function istGrau(px: Buffer, k: { breite: number; hoehe: number; kanaele: number
   return true;
 }
 
-interface Roh { nr: number; px: Buffer; k: ReturnType<typeof pnmKopf>; grau: boolean }
+interface Roh {
+  nr: number;
+  px: Buffer;
+  k: ReturnType<typeof pnmKopf>;
+  grau: boolean;
+}
 
 /** Rohbilder über pdftoppm als JPEG bzw. PNG kodieren (je Bild eine Seite, 1 pt = 1 px). */
 async function kodiere(bilder: Roh[], format: 'jpeg' | 'png', grau: boolean, dir: string, tag: string): Promise<Buffer[]> {
@@ -259,22 +315,45 @@ async function kodiere(bilder: Roh[], format: 'jpeg' | 'png', grau: boolean, dir
   const mini = await PDFDocument.create({ updateMetadata: false });
   for (const b of bilder) {
     const daten = grau && b.k.kanaele === 3 ? zuGrau(b.px, b.k) : b.px.subarray(b.k.start);
-    const st = PDFRawStream.of(mini.context.obj({
-      Type: 'XObject', Subtype: 'Image', Width: b.k.breite, Height: b.k.hoehe, BitsPerComponent: 8,
-      ColorSpace: grau || b.k.kanaele === 1 ? 'DeviceGray' : 'DeviceRGB', Filter: 'FlateDecode',
-    }), deflateSync(daten, { level: 1 }));
+    const st = PDFRawStream.of(
+      mini.context.obj({
+        Type: 'XObject',
+        Subtype: 'Image',
+        Width: b.k.breite,
+        Height: b.k.hoehe,
+        BitsPerComponent: 8,
+        ColorSpace: grau || b.k.kanaele === 1 ? 'DeviceGray' : 'DeviceRGB',
+        Filter: 'FlateDecode',
+      }),
+      deflateSync(daten, { level: 1 }),
+    );
     const ref = mini.context.register(st);
     const seite = mini.addPage([b.k.breite, b.k.hoehe]);
     const name = seite.node.newXObject('Bild', ref);
-    seite.node.set(PDFName.of('Contents'), mini.context.register(mini.context.flateStream(`q ${b.k.breite} 0 0 ${b.k.hoehe} 0 0 cm ${name.toString()} Do Q`)));
+    seite.node.set(
+      PDFName.of('Contents'),
+      mini.context.register(mini.context.flateStream(`q ${b.k.breite} 0 0 ${b.k.hoehe} 0 0 cm ${name.toString()} Do Q`)),
+    );
   }
   const ein = join(dir, `${tag}.pdf`);
   await writeFile(ein, await mini.save());
   const endung = format === 'jpeg' ? '.jpg' : '.png';
   try {
-    await starte('pdftoppm', ['-r', '72', ...(format === 'jpeg' ? ['-jpeg', '-jpegopt', `quality=${QUALITAET},optimize=y`] : ['-png']), '-aaVector', 'no', ...(grau ? ['-gray'] : []), ein, join(dir, tag)]);
-  } catch (e) { popplerFehler(e, t('meldungen.schwaerzen.die-seiten-liessen-sich')); }
-  const namen = (await readdir(dir)).filter((n) => n.startsWith(`${tag}-`) && n.endsWith(endung))
+    await starte('pdftoppm', [
+      '-r',
+      '72',
+      ...(format === 'jpeg' ? ['-jpeg', '-jpegopt', `quality=${QUALITAET},optimize=y`] : ['-png']),
+      '-aaVector',
+      'no',
+      ...(grau ? ['-gray'] : []),
+      ein,
+      join(dir, tag),
+    ]);
+  } catch (e) {
+    popplerFehler(e, t('meldungen.schwaerzen.die-seiten-liessen-sich'));
+  }
+  const namen = (await readdir(dir))
+    .filter((n) => n.startsWith(`${tag}-`) && n.endsWith(endung))
     .sort((a, b) => Number(a.slice(tag.length + 1, -endung.length)) - Number(b.slice(tag.length + 1, -endung.length)));
   if (namen.length !== bilder.length) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-liessen-sich-2'));
   const r = await Promise.all(namen.map((n) => readFile(join(dir, n))));
@@ -300,15 +379,19 @@ export function verbleibende(seiten: SchwaerzSeite[], bereiche: Bereich[]): Wort
 
 /** Volltext aus den Wörtern: neue Zeile, wenn ein Wort unter dem vorigen beginnt; Seiten mit Leerzeile getrennt. */
 export function textAus(seiten: Wort[][]): string {
-  return seiten.map((ws) => {
-    let t = '', vor: Wort | null = null;
-    for (const w of ws) {
-      if (vor) t += w[2] >= vor[2] + vor[4] * 0.6 || w[1] + w[3] < vor[1] ? '\n' : ' ';
-      t += w[0];
-      vor = w;
-    }
-    return t;
-  }).join('\n\n').trim();
+  return seiten
+    .map((ws) => {
+      let t = '',
+        vor: Wort | null = null;
+      for (const w of ws) {
+        if (vor) t += w[2] >= vor[2] + vor[4] * 0.6 || w[1] + w[3] < vor[1] ? '\n' : ' ';
+        t += w[0];
+        vor = w;
+      }
+      return t;
+    })
+    .join('\n\n')
+    .trim();
 }
 
 /** Unsichtbarer Text (Darstellungsart 3) genau über den Wörtern – zum Suchen und Kopieren. */
@@ -352,7 +435,13 @@ export interface Ergebnis {
  * Schwärzt: alle Seiten neu rendern, Bereiche schwarz füllen, neu zusammensetzen, Textebene ohne die
  * Wörter in den Bereichen. `analyse` sind die Wörter des Originals (siehe `analysiere`).
  */
-export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, bereiche: Bereich[], dpi = SCHWAERZEN_DPI): Promise<Ergebnis> {
+export async function schwaerze(
+  inhalt: Buffer,
+  mime: string,
+  analyse: Analyse,
+  bereiche: Bereich[],
+  dpi = SCHWAERZEN_DPI,
+): Promise<Ergebnis> {
   const pdf = await arbeitsPdf(inhalt, mime);
   const drehungen = await seitenlage(pdf);
   const n = drehungen.length;
@@ -365,15 +454,21 @@ export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, 
     await writeFile(ein, pdf);
     // Bilder in Originalgröße (72 dpi auf der 1-pt-=-1-px-Seite), PDFs in der Ergebnis-Auflösung.
     const groessenArgs = bild
-      ? (analyse.seiten[0].breite > BILD_MAX_PX || analyse.seiten[0].hoehe > BILD_MAX_PX ? ['-scale-to', String(BILD_MAX_PX)] : ['-r', '72'])
+      ? analyse.seiten[0].breite > BILD_MAX_PX || analyse.seiten[0].hoehe > BILD_MAX_PX
+        ? ['-scale-to', String(BILD_MAX_PX)]
+        : ['-r', '72']
       : ['-r', String(dpi)];
     const fertig: Array<{ daten: Buffer; grau: boolean }> = [];
     for (let a = 1; a <= n; a += STAPEL) {
       const e = Math.min(n, a + STAPEL - 1);
       try {
         await starte('pdftoppm', ['-cropbox', '-f', String(a), '-l', String(e), ...groessenArgs, ein, join(dir, 'r')]);
-      } catch (x) { popplerFehler(x, t('meldungen.schwaerzen.die-seiten-liessen-sich-3')); }
-      const namen = (await readdir(dir)).filter((x) => /^r-\d+\.ppm$/.test(x)).sort((p, q) => Number(p.slice(2, -4)) - Number(q.slice(2, -4)));
+      } catch (x) {
+        popplerFehler(x, t('meldungen.schwaerzen.die-seiten-liessen-sich-3'));
+      }
+      const namen = (await readdir(dir))
+        .filter((x) => /^r-\d+\.ppm$/.test(x))
+        .sort((p, q) => Number(p.slice(2, -4)) - Number(q.slice(2, -4)));
       if (namen.length !== e - a + 1) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-liessen-sich-4'));
       const roh: Roh[] = [];
       for (const [j, name] of namen.entries()) {
@@ -384,14 +479,32 @@ export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, 
         // Liegt das Bild anders als die Seite der Analyse (hoch statt quer), lägen die Kästen daneben:
         // lieber abbrechen als eine Schwärzung ausgeben, unter der der Text sichtbar bleibt.
         const s = analyse.seiten[nr - 1];
-        if (!bild && !lagePasst(k.breite, k.hoehe, s.breite, s.hoehe)) throw new Fachfehler(422, t('meldungen.schwaerzen.seite-die-lage-der', { nr }));
-        maleSchwarz(px, k, bereiche.filter((x) => x.seite === nr));
+        if (!bild && !lagePasst(k.breite, k.hoehe, s.breite, s.hoehe))
+          throw new Fachfehler(422, t('meldungen.schwaerzen.seite-die-lage-der', { nr }));
+        maleSchwarz(
+          px,
+          k,
+          bereiche.filter((x) => x.seite === nr),
+        );
         roh.push({ nr, px, k, grau: istGrau(px, k) });
       }
       const format = bild && mime === 'image/png' ? 'png' : 'jpeg';
-      const grau = await kodiere(roh.filter((r) => r.grau), format, true, dir, 'g');
-      const farbe = await kodiere(roh.filter((r) => !r.grau), format, false, dir, 'f');
-      let gi = 0, fi = 0;
+      const grau = await kodiere(
+        roh.filter((r) => r.grau),
+        format,
+        true,
+        dir,
+        'g',
+      );
+      const farbe = await kodiere(
+        roh.filter((r) => !r.grau),
+        format,
+        false,
+        dir,
+        'f',
+      );
+      let gi = 0,
+        fi = 0;
       for (const r of roh) fertig.push(r.grau ? { daten: grau[gi++], grau: true } : { daten: farbe[fi++], grau: false });
     }
     const text = analyse.seiten.some((s) => s.woerter.length) ? textAus(bleiben) : null;
@@ -404,7 +517,8 @@ export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, 
     for (const [i, f] of fertig.entries()) {
       const m = jpegMasse(f.daten);
       if (!m) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-liessen-sich-2'));
-      const b = (m.breite * 72) / dpi, h = (m.hoehe * 72) / dpi;
+      const b = (m.breite * 72) / dpi,
+        h = (m.hoehe * 72) / dpi;
       const seite = doc.addPage([b, h]);
       const jpg = await doc.embedJpg(eigenerPuffer(f.daten));
       seite.drawImage(jpg, { x: 0, y: 0, width: b, height: h });

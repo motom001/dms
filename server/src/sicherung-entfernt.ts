@@ -44,10 +44,15 @@ const AUFRUFE_MAX = 500;
 export type EntferntGrund = 'kann-nicht' | 'nicht-erreichbar' | 'nicht-am-ziel' | 'ohne-pruefsumme' | 'abweichend';
 
 export interface EntfernteSicherung {
-  name: string; datei: string; paket: string; paketName: string;
+  name: string;
+  datei: string;
+  paket: string;
+  paketName: string;
   /** Ziel in Worten, ohne Zugangsdaten (vom Paket). */
   ziel: string | null;
-  groesse: number | null; sha256: string | null; beginn: string | null;
+  groesse: number | null;
+  sha256: string | null;
+  beginn: string | null;
   holbar: boolean;
   grund?: EntferntGrund;
 }
@@ -61,12 +66,23 @@ export interface EntferntStand {
 }
 
 /** Ein Paket mit dms:sicherung-lesen; `holen`: auch dms:sicherung-holen. */
-export interface ZielPaket { id: string; name: string; adresse?: string | null; holen?: boolean }
+export interface ZielPaket {
+  id: string;
+  name: string;
+  adresse?: string | null;
+  holen?: boolean;
+}
 /** Aufruf eines Pakets mit dms:sicherung-holen (Läufer); Ergebnis als Text. */
 export type HolAufruf = (paket: string, eingang: Record<string, unknown>, ms?: number) => Promise<string>;
 
 /** `status`/`pruefung` seit #1327 (ältere Einträge ohne: hochgeladen). */
-type Merkeintrag = { ziel?: string; meta: SchlankeMetadaten; am: string; status?: ExternStand['status']; pruefung?: ExternStand['pruefung'] };
+type Merkeintrag = {
+  ziel?: string;
+  meta: SchlankeMetadaten;
+  am: string;
+  status?: ExternStand['status'];
+  pruefung?: ExternStand['pruefung'];
+};
 type Merkliste = Record<string, Record<string, Merkeintrag>>;
 type ZielEintrag = { name: string; groesse: number; meta: SchlankeMetadaten | null };
 type Holstand = { paket: string; name: string; groesse: number; sha256: string; meta: SchlankeMetadaten; seit: string };
@@ -83,17 +99,35 @@ export function schlankGueltig(x: unknown, name: string, groesse?: number): Schl
   if (!x || typeof x !== 'object' || Array.isArray(x)) return null;
   const m = x as Record<string, unknown>;
   const v = (m.verschluesselung ?? {}) as Record<string, unknown>;
-  const kopf = m.schlank === true && zahl(m.format) !== null && m.datei === `${name}${ENDUNG}` && zahl(m.groesse) !== null && (groesse === undefined || m.groesse === groesse);
-  const pruefsumme = typeof m.sha256 === 'string' && /^[0-9a-f]{64}$/.test(m.sha256) && typeof m.beginn === 'string' && !Number.isNaN(Date.parse(m.beginn));
+  const kopf =
+    m.schlank === true &&
+    zahl(m.format) !== null &&
+    m.datei === `${name}${ENDUNG}` &&
+    zahl(m.groesse) !== null &&
+    (groesse === undefined || m.groesse === groesse);
+  const pruefsumme =
+    typeof m.sha256 === 'string' && /^[0-9a-f]{64}$/.test(m.sha256) && typeof m.beginn === 'string' && !Number.isNaN(Date.parse(m.beginn));
   const kurz = (w: unknown): w is string => typeof w === 'string' && w.length <= 200;
   if (!kopf || !pruefsumme || !kurz(v.verfahren) || !kurz(v.fingerabdruck)) return null;
-  return { format: m.format as number, schlank: true, datei: m.datei as string, groesse: m.groesse as number, sha256: m.sha256 as string, beginn: m.beginn as string, verschluesselung: { verfahren: v.verfahren, fingerabdruck: v.fingerabdruck } };
+  return {
+    format: m.format as number,
+    schlank: true,
+    datei: m.datei as string,
+    groesse: m.groesse as number,
+    sha256: m.sha256 as string,
+    beginn: m.beginn as string,
+    verschluesselung: { verfahren: v.verfahren, fingerabdruck: v.fingerabdruck },
+  };
 }
 
 /** Antwort auf „auflisten“: `{ "ziel": "…", "sicherungen": [ { "name", "groesse", "meta": {…} } ] }`. */
 export function liesZielListe(roh: string): { ziel: string | null; eintraege: ZielEintrag[] } {
   let j: unknown;
-  try { j = JSON.parse(roh); } catch { throw new Error(t('meldungen.sicherung.entfernt.liste-ungueltig')); }
+  try {
+    j = JSON.parse(roh);
+  } catch {
+    throw new Error(t('meldungen.sicherung.entfernt.liste-ungueltig'));
+  }
   const o = (j && typeof j === 'object' ? j : {}) as Record<string, unknown>;
   if (!Array.isArray(o.sicherungen)) throw new Error(t('meldungen.sicherung.entfernt.liste-ungueltig'));
   const eintraege: ZielEintrag[] = [];
@@ -110,7 +144,12 @@ export function liesZielListe(roh: string): { ziel: string | null; eintraege: Zi
 type ZielListe = { ziel: string | null; eintraege: ZielEintrag[] };
 
 /** Warum nicht holbar? Der eigene Stand zählt vor dem des Pakets: Weicht die Liste des Ziels davon ab, holt Ablago nichts. */
-function grundFuer(p: ZielPaket, liste: ZielListe | null, amZiel: ZielEintrag | undefined, meta: SchlankeMetadaten | null): EntferntGrund | undefined {
+function grundFuer(
+  p: ZielPaket,
+  liste: ZielListe | null,
+  amZiel: ZielEintrag | undefined,
+  meta: SchlankeMetadaten | null,
+): EntferntGrund | undefined {
   if (!p.holen) return 'kann-nicht';
   if (!liste) return 'nicht-erreichbar';
   if (!amZiel) return 'nicht-am-ziel';
@@ -123,18 +162,34 @@ function eintragen(erg: EntferntStand, p: ZielPaket, liste: ZielListe | null, me
   const namen = new Set([...Object.keys(merk).filter((n) => merk[n][p.id]), ...(liste?.eintraege.map((e) => e.name) ?? [])]);
   for (const name of namen) {
     const amZiel = liste?.eintraege.find((e) => e.name === name);
-    if (hier.has(name)) { if (amZiel) (erg.auchAmZiel[name] ??= []).push(p.id); continue; }
+    if (hier.has(name)) {
+      if (amZiel) (erg.auchAmZiel[name] ??= []).push(p.id);
+      continue;
+    }
     erg.nur.push(entfernteZeile(name, p, liste, amZiel, merk[name]?.[p.id]));
   }
 }
 
-function entfernteZeile(name: string, p: ZielPaket, liste: ZielListe | null, amZiel: ZielEintrag | undefined, gemerkt: Merkeintrag | undefined): EntfernteSicherung {
+function entfernteZeile(
+  name: string,
+  p: ZielPaket,
+  liste: ZielListe | null,
+  amZiel: ZielEintrag | undefined,
+  gemerkt: Merkeintrag | undefined,
+): EntfernteSicherung {
   const meta = gemerkt?.meta ?? amZiel?.meta ?? null;
   const grund = grundFuer(p, liste, amZiel, meta);
   return {
-    name, datei: `${name}${ENDUNG}`, paket: p.id, paketName: p.name, ziel: liste?.ziel ?? gemerkt?.ziel ?? p.adresse ?? null,
-    groesse: meta?.groesse ?? amZiel?.groesse ?? null, sha256: meta?.sha256 ?? null, beginn: meta?.beginn ?? null,
-    holbar: !grund, ...(grund ? { grund } : {}),
+    name,
+    datei: `${name}${ENDUNG}`,
+    paket: p.id,
+    paketName: p.name,
+    ziel: liste?.ziel ?? gemerkt?.ziel ?? p.adresse ?? null,
+    groesse: meta?.groesse ?? amZiel?.groesse ?? null,
+    sha256: meta?.sha256 ?? null,
+    beginn: meta?.beginn ?? null,
+    holbar: !grund,
+    ...(grund ? { grund } : {}),
   };
 }
 
@@ -145,7 +200,7 @@ export class EntfernteSicherungen {
 
   private async merkliste(): Promise<Merkliste> {
     const v = await this.s.einstellungen.lies('sicherung_entfernt');
-    return v && typeof v === 'object' && !Array.isArray(v) ? v as Merkliste : {};
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Merkliste) : {};
   }
 
   /**
@@ -157,18 +212,39 @@ export class EntfernteSicherungen {
     for (const name of namen) {
       const ok = Object.entries(extern[name] ?? {}).filter(([, st]) => st.status === 'hochgeladen' || st.status === 'geprueft');
       if (!ok.length) continue;
-      const j = JSON.parse(await readFile(join(this.s.ordner, `${name}.json`), 'utf8').catch(() => 'null')) as Record<string, unknown> | null;
+      const j = JSON.parse(await readFile(join(this.s.ordner, `${name}.json`), 'utf8').catch(() => 'null')) as Record<
+        string,
+        unknown
+      > | null;
       if (!j) continue;
-      const meta = j.schlank === true ? schlankGueltig(j, name) : schlankGueltig({
-        format: j.format, schlank: true, datei: j.datei, groesse: (j.groessen as { sicherungBytes?: unknown } | undefined)?.sicherungBytes,
-        sha256: j.sha256, beginn: j.beginn, verschluesselung: j.verschluesselung,
-      }, name);
+      const meta =
+        j.schlank === true
+          ? schlankGueltig(j, name)
+          : schlankGueltig(
+              {
+                format: j.format,
+                schlank: true,
+                datei: j.datei,
+                groesse: (j.groessen as { sicherungBytes?: unknown } | undefined)?.sicherungBytes,
+                sha256: j.sha256,
+                beginn: j.beginn,
+                verschluesselung: j.verschluesselung,
+              },
+              name,
+            );
       if (!meta) continue;
-      neu[name] = Object.fromEntries(ok.map(([paket, st]) => [paket, { ...(st.ziel ? { ziel: st.ziel } : {}), meta, am: st.am, status: st.status, ...(st.pruefung ? { pruefung: st.pruefung } : {}) }]));
+      neu[name] = Object.fromEntries(
+        ok.map(([paket, st]) => [
+          paket,
+          { ...(st.ziel ? { ziel: st.ziel } : {}), meta, am: st.am, status: st.status, ...(st.pruefung ? { pruefung: st.pruefung } : {}) },
+        ]),
+      );
     }
     if (!Object.keys(neu).length) return;
-    const alle = { ...await this.merkliste(), ...neu };
-    const behalten = Object.entries(alle).sort(([, a], [, b]) => (Object.values(b)[0]?.meta.beginn ?? '').localeCompare(Object.values(a)[0]?.meta.beginn ?? '')).slice(0, ENTFERNT_MAX);
+    const alle = { ...(await this.merkliste()), ...neu };
+    const behalten = Object.entries(alle)
+      .sort(([, a], [, b]) => (Object.values(b)[0]?.meta.beginn ?? '').localeCompare(Object.values(a)[0]?.meta.beginn ?? ''))
+      .slice(0, ENTFERNT_MAX);
     await this.s.einstellungen.schreibe('sicherung_entfernt', Object.fromEntries(behalten));
   }
 
@@ -176,12 +252,20 @@ export class EntfernteSicherungen {
    * Die neueste schon lokal entfernte Sicherung, die bei einem dieser Pakete außer Haus angekommen ist (#1194, #1327) –
    * im Aufbau wie die letzte Kopie aus der lokalen Liste; null, wenn keine.
    */
-  async letzteKopie(pakete: Set<string>): Promise<{ name: string; paket: string; beginn: string; stand: ExternStand; entfernt: true } | null> {
+  async letzteKopie(
+    pakete: Set<string>,
+  ): Promise<{ name: string; paket: string; beginn: string; stand: ExternStand; entfernt: true } | null> {
     let erg: { name: string; paket: string; beginn: string; stand: ExternStand; entfernt: true } | null = null;
     for (const [name, je] of Object.entries(await this.merkliste())) {
       for (const [paket, m] of Object.entries(je)) {
         if (!pakete.has(paket) || (erg && erg.beginn >= m.meta.beginn)) continue;
-        const stand: ExternStand = { status: m.status ?? 'hochgeladen', ...(m.pruefung ? { pruefung: m.pruefung } : {}), ...(m.ziel ? { ziel: m.ziel } : {}), seit: m.am, am: m.am };
+        const stand: ExternStand = {
+          status: m.status ?? 'hochgeladen',
+          ...(m.pruefung ? { pruefung: m.pruefung } : {}),
+          ...(m.ziel ? { ziel: m.ziel } : {}),
+          seit: m.am,
+          am: m.am,
+        };
         erg = { name, paket, beginn: m.meta.beginn, stand, entfernt: true };
       }
     }
@@ -210,14 +294,18 @@ export class EntfernteSicherungen {
 
   /** Entfernte Sicherungen und wo die lokalen außerdem liegen; `lokal`: Namen der lokalen Sicherungen. */
   async stand(lokal: string[], frisch = false): Promise<EntferntStand | null> {
-    const pakete = await this.s.extern?.pakete().catch(() => []) ?? [];
+    const pakete = (await this.s.extern?.pakete().catch(() => [])) ?? [];
     if (!pakete.length) return null;
     const merk = await this.merkliste();
     const erg: EntferntStand = { nur: [], auchAmZiel: {}, fehler: [] };
     for (const p of pakete) {
       let liste: ZielListe | null = null;
       if (p.holen) {
-        try { liste = await this.zielListe(p, frisch); } catch (e) { erg.fehler.push({ paket: p.id, paketName: p.name, grund: ohneZugangsdaten((e as Error).message).slice(0, 300) }); }
+        try {
+          liste = await this.zielListe(p, frisch);
+        } catch (e) {
+          erg.fehler.push({ paket: p.id, paketName: p.name, grund: ohneZugangsdaten((e as Error).message).slice(0, 300) });
+        }
       }
       eintragen(erg, p, liste, merk, new Set(lokal));
     }
@@ -266,16 +354,28 @@ export class EntfernteSicherungen {
         const vorher = await groesse();
         if (vorher >= h.groesse) break;
         let fehler: string | null = null;
-        await rufe(h.paket, { auftrag: 'holen', name: h.name, datei: `${h.name}${ENDUNG}`, versatz: vorher, groesse: h.groesse }, HOLEN_MS).catch((x) => { fehler = (x as Error).message; });
+        await rufe(
+          h.paket,
+          { auftrag: 'holen', name: h.name, datei: `${h.name}${ENDUNG}`, versatz: vorher, groesse: h.groesse },
+          HOLEN_MS,
+        ).catch((x) => {
+          fehler = (x as Error).message;
+        });
         const nachher = await groesse();
         lauf.bytes = nachher;
-        if (nachher > vorher) { stillstand = 0; continue; }
-        if (++stillstand >= STILLSTAND_MAX) throw new Error(fehler ? ohneZugangsdaten(fehler).slice(0, 300) : t('meldungen.sicherung.entfernt.stillstand'));
+        if (nachher > vorher) {
+          stillstand = 0;
+          continue;
+        }
+        if (++stillstand >= STILLSTAND_MAX)
+          throw new Error(fehler ? ohneZugangsdaten(fehler).slice(0, 300) : t('meldungen.sicherung.entfernt.stillstand'));
       }
-      if (await groesse() !== h.groesse) throw new Error(t('meldungen.sicherung.entfernt.stillstand'));
+      if ((await groesse()) !== h.groesse) throw new Error(t('meldungen.sicherung.entfernt.stillstand'));
       lauf.schritt = t('meldungen.sicherung.pruefsumme-berechnen');
       lauf.bytes = 0;
-      const sha = await sha256Von(pfade.teil, (n) => { lauf.bytes = n; });
+      const sha = await sha256Von(pfade.teil, (n) => {
+        lauf.bytes = n;
+      });
       if (sha !== h.sha256) throw new Error(t('meldungen.sicherung.entfernt.pruefsumme'));
       // Erst die Metadaten, dann die Datei: Ohne .json gäbe es eine Sicherung, die sich nicht einspielen lässt.
       await writeFile(join(this.s.ordner, `${h.name}.json`), JSON.stringify(h.meta, null, 2));
@@ -288,11 +388,13 @@ export class EntfernteSicherungen {
       lauf.status = 'fertig';
     } catch (e) {
       await rm(pfade.teil, { force: true });
-      lauf.status = 'fehler'; lauf.fehler = (e as Error).message;
+      lauf.status = 'fehler';
+      lauf.fehler = (e as Error).message;
       log.warn('Sicherung nicht zurückgeholt', { name: h.name, paket: h.paket, von, fehler: lauf.fehler });
     } finally {
       await rm(pfade.stand, { force: true });
-      lauf.beendet = new Date().toISOString(); lauf.schritt = 'Fertig';
+      lauf.beendet = new Date().toISOString();
+      lauf.schritt = 'Fertig';
     }
   }
 
@@ -305,14 +407,19 @@ export class EntfernteSicherungen {
     const pfade = this.holPfade(name);
     const h = JSON.parse(await readFile(pfade.stand, 'utf8').catch(() => 'null')) as Holstand | null;
     if (!h || h.paket !== paket || h.name !== name) throw new Fachfehler(403, t('meldungen.sicherung.entfernt.nicht-angefordert'));
-    if (!Buffer.isBuffer(inhalt) || !inhalt.length || inhalt.length > STUECK_MAX) throw new Fachfehler(422, t('meldungen.sicherung.laenge-1-bis-bytes', { STUECK_MAX }));
+    if (!Buffer.isBuffer(inhalt) || !inhalt.length || inhalt.length > STUECK_MAX)
+      throw new Fachfehler(422, t('meldungen.sicherung.laenge-1-bis-bytes', { STUECK_MAX }));
     const bisher = (await stat(pfade.teil).catch(() => null))?.size;
     if (bisher === undefined) throw new Fachfehler(403, t('meldungen.sicherung.entfernt.nicht-angefordert'));
     const ab = versatz === undefined || versatz === '' ? NaN : Number(versatz);
     if (ab !== bisher) throw new Fachfehler(409, t('meldungen.sicherung.entfernt.versatz', { versatz: bisher }), { versatz: bisher });
     if (bisher + inhalt.length > h.groesse) throw new Fachfehler(422, t('meldungen.sicherung.entfernt.zu-gross', { groesse: h.groesse }));
     const f = await open(pfade.teil, 'a');
-    try { await f.write(inhalt); } finally { await f.close(); }
+    try {
+      await f.write(inhalt);
+    } finally {
+      await f.close();
+    }
     return { versatz: bisher + inhalt.length, groesse: h.groesse };
   }
 }

@@ -17,7 +17,10 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { pgRepo } from '../src/repo-pg';
 import { baueLeistungsdaten, BENUTZER, HAUSHALT } from './leistung-daten';
 
-const arg = (n: string) => { const i = process.argv.indexOf(n); return i < 0 ? undefined : process.argv[i + 1]; };
+const arg = (n: string) => {
+  const i = process.argv.indexOf(n);
+  return i < 0 ? undefined : process.argv[i + 1];
+};
 const url = process.env.MESS_DATABASE_URL ?? 'postgres://postgres:dms@127.0.0.1:5432/dmssuche';
 const a = ausUrl(url)!;
 const laeufe = Number(arg('--laeufe') ?? 5);
@@ -35,7 +38,11 @@ try {
     await migriere(sql, migrationen, () => {});
     const t0 = Date.now();
     const r = await baueLeistungsdaten(sql, speicherDateien(), {
-      mappen: Number(arg('--mappen') ?? 50_000), startwert: 'suche-356', dokumente: { von: 1, bis: 2 }, text: { von: 2_000, bis: 8_000 }, log: (m) => console.error(m),
+      mappen: Number(arg('--mappen') ?? 50_000),
+      startwert: 'suche-356',
+      dokumente: { von: 1, bis: 2 },
+      text: { von: 2_000, bis: 8_000 },
+      log: (m) => console.error(m),
     });
     console.error(`Daten erzeugt in ${Math.round((Date.now() - t0) / 1000)} s: ${JSON.stringify(r)}`);
   }
@@ -46,7 +53,9 @@ try {
   }
   const [stand] = await sql`SELECT (SELECT count(*) FROM mappen)::int AS mappen, (SELECT count(*) FROM dokumente)::int AS dokumente,
     pg_size_pretty(pg_total_relation_size('dokumente')) AS groesse, (SELECT max(name) FROM schema_migrationen) AS migration`;
-  console.log(`Datenbestand: ${stand.mappen} Mappen, ${stand.dokumente} Dokumente, Tabelle dokumente ${stand.groesse}, Migration ${stand.migration}\n`);
+  console.log(
+    `Datenbestand: ${stand.mappen} Mappen, ${stand.dokumente} Dokumente, Tabelle dokumente ${stand.groesse}, Migration ${stand.migration}\n`,
+  );
 
   const d = new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const ich = { id: BENUTZER, rolle: 'admin' };
@@ -64,10 +73,17 @@ try {
   console.log('| Suche | Treffer | Median ms | Max ms |\n|---|---:|---:|---:|');
   for (const [name, q] of faelle) {
     let n = 0;
-    const f = async () => { const r = await d.sichten.seite(ich, { ...q, von: 0, anzahl: 100 }); n = r.gesamt; };
+    const f = async () => {
+      const r = await d.sichten.seite(ich, { ...q, von: 0, anzahl: 100 });
+      n = r.gesamt;
+    };
     if (laeufe > 1) await f();
     const t: number[] = [];
-    for (let i = 0; i < laeufe; i++) { const s = performance.now(); await f(); t.push(performance.now() - s); }
+    for (let i = 0; i < laeufe; i++) {
+      const s = performance.now();
+      await f();
+      t.push(performance.now() - s);
+    }
     t.sort((x, y) => x - y);
     console.log(`| ${name} | ${n} | ${t[Math.floor(laeufe / 2)].toFixed(0)} | ${t[laeufe - 1].toFixed(0)} |`);
   }

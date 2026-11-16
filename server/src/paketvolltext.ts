@@ -24,7 +24,12 @@ const log = protokoll.modul('texterkennung');
 export const VOLLTEXT_ANGEFORDERT_MS = 30 * 60_000;
 
 /** Ein Paket, das Volltext liefert: Id, Name, Version und seine Dateitypen. */
-export interface VolltextPaket { id: string; name: string; version: string; typen: string[] }
+export interface VolltextPaket {
+  id: string;
+  name: string;
+  version: string;
+  typen: string[];
+}
 
 export interface PaketVolltextAnbindung {
   /** Installierte Pakete. */
@@ -55,7 +60,7 @@ export class PaketVolltext {
   async paketFuer(mime: string, liste?: VolltextPaket[]): Promise<VolltextPaket | null> {
     const m = mime.toLowerCase();
     if (kernTyp(m)) return null;
-    return (liste ?? await this.pakete()).find((p) => p.typen.includes(m)) ?? null;
+    return (liste ?? (await this.pakete())).find((p) => p.typen.includes(m)) ?? null;
   }
 
   /** Darf dieses Paket den Volltext dieses Dokuments schreiben (dms:volltext und zuständig für den Dateityp)? */
@@ -75,13 +80,27 @@ export class PaketVolltext {
    * erzeugen“), auch wenn das Dokument schon unterwegs ist. Liefert, ob die Meldung hinausging – „gesperrt“, wenn der
    * Mappentyp nicht an dieses (KI-)Paket darf (#796).
    */
-  async anfordern(d: Pick<Dokument, 'id' | 'mappeId' | 'name' | 'mime' | 'groesse' | 'sha256'>, p: VolltextPaket, o: { neu?: boolean } = {}): Promise<boolean | 'gesperrt'> {
+  async anfordern(
+    d: Pick<Dokument, 'id' | 'mappeId' | 'name' | 'mime' | 'groesse' | 'sha256'>,
+    p: VolltextPaket,
+    o: { neu?: boolean } = {},
+  ): Promise<boolean | 'gesperrt'> {
     const jetzt = Date.now();
     for (const [id, zeit] of this.angefordert) if (jetzt - zeit > VOLLTEXT_ANGEFORDERT_MS) this.angefordert.delete(id);
     if (d.groesse > VOLLTEXT_PAKET_MAX_BYTES) return false;
     if (!o.neu && this.angefordert.has(d.id)) return false;
     this.angefordert.set(d.id, jetzt);
-    if ((await this.o.melde(p.id, { dokument: d.id, mappe: d.mappeId, name: d.name, mime: d.mime, groesse: d.groesse, sha256: d.sha256, ...(o.neu ? { neu: true } : {}) })) === 'gesperrt') {
+    if (
+      (await this.o.melde(p.id, {
+        dokument: d.id,
+        mappe: d.mappeId,
+        name: d.name,
+        mime: d.mime,
+        groesse: d.groesse,
+        sha256: d.sha256,
+        ...(o.neu ? { neu: true } : {}),
+      })) === 'gesperrt'
+    ) {
       this.angefordert.delete(d.id);
       return 'gesperrt';
     }
@@ -90,5 +109,7 @@ export class PaketVolltext {
   }
 
   /** Das Paket ist mit der Meldung fertig (oder hat aufgegeben): Das Dokument darf wieder gemeldet werden. */
-  erledigt(id: string) { this.angefordert.delete(id); }
+  erledigt(id: string) {
+    this.angefordert.delete(id);
+  }
 }

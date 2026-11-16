@@ -1,5 +1,16 @@
 import { useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
-import { ALLE_HERKUENFTE, durchsuche, EIGENE, herkunftPasst, suchwoerter, type Fund, type Fundquelle, type Suchoptionen, type Suchtreffer, type Textteil } from '../../../../shared/src/listensuche';
+import {
+  ALLE_HERKUENFTE,
+  durchsuche,
+  EIGENE,
+  herkunftPasst,
+  suchwoerter,
+  type Fund,
+  type Fundquelle,
+  type Suchoptionen,
+  type Suchtreffer,
+  type Textteil,
+} from '../../../../shared/src/listensuche';
 import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
 import { gebietsschema } from '../../../../shared/src/sprache';
@@ -47,18 +58,38 @@ export function Suchfeld({ wert, setze, beschriftung, platzhalter, onEnter, clas
   const eigen = useRef<HTMLInputElement>(null);
   const ref = feldRef ?? eigen;
   const taste = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape' && wert) { e.preventDefault(); e.stopPropagation(); setze(''); }
-    else if (e.key === 'Enter' && onEnter) onEnter(wert);
+    if (e.key === 'Escape' && wert) {
+      e.preventDefault();
+      e.stopPropagation();
+      setze('');
+    } else if (e.key === 'Enter' && onEnter) onEnter(wert);
   };
   return (
     <div className={klassen('suche', s.suchfeld, className)} data-anker={anker}>
       <label className={s.feld}>
         <span className="sr">{beschriftung}</span>
         <Symbol name="suche" className={s.lupe} />
-        <input ref={ref} type="search" enterKeyHint="search" autoComplete="off" spellCheck={false} value={wert} placeholder={platzhalter} onChange={(e) => setze(e.target.value)} onKeyDown={taste} />
+        <input
+          ref={ref}
+          type="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          spellCheck={false}
+          value={wert}
+          placeholder={platzhalter}
+          onChange={(e) => setze(e.target.value)}
+          onKeyDown={taste}
+        />
       </label>
       {wert && (
-        <Knopf art="link" nurSymbol={t('oberflaeche.suche.leeren')} className={s.leeren} onClick={() => { setze(''); ref.current?.focus(); }}>
+        <Knopf
+          art="link"
+          nurSymbol={t('oberflaeche.suche.leeren')}
+          className={s.leeren}
+          onClick={() => {
+            setze('');
+            ref.current?.focus();
+          }}>
           <Symbol name="schliessen" />
         </Knopf>
       )}
@@ -82,21 +113,39 @@ export interface ListenSucheProps extends Omit<SuchfeldProps, 'className'> {
  * und der Trefferzahl. Am Handy bleibt die Suchregion oben stehen, wenn die Liste rollt.
  */
 export function ListenSuche({ filter, treffer, aktiv, anzahl, ...feld }: ListenSucheProps) {
-  const zahlText = treffer === null ? '' : aktiv ? t('oberflaeche.suche.treffer', { anzahl: treffer, zahl: zahl(treffer) }) : anzahl ?? '';
+  const zahlText =
+    treffer === null ? '' : aktiv ? t('oberflaeche.suche.treffer', { anzahl: treffer, zahl: zahl(treffer) }) : (anzahl ?? '');
   return (
     <div className={s.listensuche} role="search" aria-label={feld.beschriftung}>
       <Suchfeld {...feld} />
-      {filter && <div className={s.filter} role="group" aria-label={t('oberflaeche.suche.filter')}>{filter}</div>}
-      <p className={klassen('listenzahl leise klein', s.zahl)} aria-live="polite">{zahlText}</p>
+      {filter && (
+        <div className={s.filter} role="group" aria-label={t('oberflaeche.suche.filter')}>
+          {filter}
+        </div>
+      )}
+      <p className={klassen('listenzahl leise klein', s.zahl)} aria-live="polite">
+        {zahlText}
+      </p>
     </div>
   );
 }
 
 /** Ein Haken unter dem Suchfeld, z. B. „Nur offene zeigen“ oder „Erledigte zeigen“. */
-export function FilterHaken({ an, setze, children, anker }: { an: boolean; setze(an: boolean): void; children: ReactNode; anker?: string }) {
+export function FilterHaken({
+  an,
+  setze,
+  children,
+  anker,
+}: {
+  an: boolean;
+  setze(an: boolean): void;
+  children: ReactNode;
+  anker?: string;
+}) {
   return (
     <label className="haken klein" data-anker={anker}>
-      <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} /><span>{children}</span>
+      <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} />
+      <span>{children}</span>
     </label>
   );
 }
@@ -122,7 +171,11 @@ export function PaketFilter({ wert, setze, pakete, eigene, beschriftung }: Paket
       <select value={wert} onChange={(e) => setze(e.target.value)}>
         <option value={ALLE_HERKUENFTE}>{t('oberflaeche.suche.paket.alle')}</option>
         {(eigene || wert === EIGENE) && <option value={EIGENE}>{t('oberflaeche.suche.paket.eigene')}</option>}
-        {pakete.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        {pakete.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
       </select>
     </label>
   );
@@ -133,7 +186,9 @@ export function KeineTreffer({ zuruecksetzen, text, knopf }: { zuruecksetzen(): 
   return (
     <p className={klassen('leise leerliste', s.keine)}>
       <span>{text ?? t('oberflaeche.suche.keine')}</span>{' '}
-      <Knopf art="link" onClick={zuruecksetzen}>{knopf ?? t('oberflaeche.suche.zuruecksetzen')}</Knopf>
+      <Knopf art="link" onClick={zuruecksetzen}>
+        {knopf ?? t('oberflaeche.suche.zuruecksetzen')}
+      </Knopf>
     </p>
   );
 }
@@ -141,7 +196,19 @@ export function KeineTreffer({ zuruecksetzen, text, knopf }: { zuruecksetzen(): 
 /** Text mit hervorgehobenen Treffern (`<mark>`); ohne Teile der Text selbst. */
 export function Hervorgehoben({ teile, text }: { teile?: Textteil[]; text: ReactNode }) {
   if (!teile) return <>{text}</>;
-  return <>{teile.map((x, i) => (x.treffer ? <mark key={i} className={s.mark}>{x.text}</mark> : <span key={i}>{x.text}</span>))}</>;
+  return (
+    <>
+      {teile.map((x, i) =>
+        x.treffer ? (
+          <mark key={i} className={s.mark}>
+            {x.text}
+          </mark>
+        ) : (
+          <span key={i}>{x.text}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 /** Wo gefunden: die ersten `max` Fundstellen, darunter „+ 3 weitere“. */
@@ -152,7 +219,12 @@ export function Fundstellen({ funde, max = 2 }: { funde: Fund[]; max?: number })
     <span className={s.funde}>
       {funde.slice(0, max).map((f, i) => (
         <span key={i} className={s.fund}>
-          <span className={s.wo}>{f.wo}</span>{f.teile.length > 0 && <>: <Hervorgehoben teile={f.teile} text="" /></>}
+          <span className={s.wo}>{f.wo}</span>
+          {f.teile.length > 0 && (
+            <>
+              : <Hervorgehoben teile={f.teile} text="" />
+            </>
+          )}
         </span>
       ))}
       {rest > 0 && <span className={s.weitere}>{t('oberflaeche.suche.weitere', { anzahl: rest, zahl: zahl(rest) })}</span>}
@@ -179,13 +251,21 @@ export function useListenSuche<T>(eintraege: readonly T[], o: ListenSucheOptione
   const herkuenfte = o.herkunft ? eintraege.map((e) => o.herkunft!(e) ?? null) : [];
   const gesucht = suchwoerter(eingabe).length > 0;
   return {
-    eingabe, setEingabe, paket, setPaket, treffer, gesucht,
+    eingabe,
+    setEingabe,
+    paket,
+    setPaket,
+    treffer,
+    gesucht,
     /** Suche oder Paketfilter aktiv. Weitere Filter der Liste rechnet die Seite selbst dazu. */
     aktiv: gesucht || paket !== ALLE_HERKUENFTE,
     /** Paket-Ids, die in der Liste vorkommen, und ob es eigene Einträge gibt. */
     paketeDa: [...new Set(herkuenfte.filter((x): x is string => !!x))],
     eigeneDa: herkuenfte.some((x) => !x),
-    zuruecksetzen: () => { setEingabe(''); setPaket(ALLE_HERKUENFTE); },
+    zuruecksetzen: () => {
+      setEingabe('');
+      setPaket(ALLE_HERKUENFTE);
+    },
   };
 }
 export type ListenSucheZustand<T> = ReturnType<typeof useListenSuche<T>>;

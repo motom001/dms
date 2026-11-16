@@ -5,7 +5,26 @@
  */
 import { type Benutzer, type Mappe, type Mappentyp, verweiseVon } from '../../../shared/src/model';
 import type { Aufloesung } from '../../../shared/src/sichten';
-import { type Ausdruck, bereinigeRegelwerk, istOffen, kontoRegelwerk, kopiereRegel, kurz, kurzStandard, leseAusdruck, mitSichtbarenTypen, nicht, NICHTS, oder, type Recht, rechteAn as rechteAnMappe, regelProblem, type Regelwerk, regelwerkVon, type Wer } from '../../../shared/src/rechte';
+import {
+  type Ausdruck,
+  bereinigeRegelwerk,
+  istOffen,
+  kontoRegelwerk,
+  kopiereRegel,
+  kurz,
+  kurzStandard,
+  leseAusdruck,
+  mitSichtbarenTypen,
+  nicht,
+  NICHTS,
+  oder,
+  type Recht,
+  rechteAn as rechteAnMappe,
+  regelProblem,
+  type Regelwerk,
+  regelwerkVon,
+  type Wer,
+} from '../../../shared/src/rechte';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
@@ -21,22 +40,42 @@ export interface BerechtigungenAnschluss {
 }
 
 export class BerechtigungenDienst {
-  constructor(private readonly kern: Kern, private readonly rechte: ZugriffDienst, private readonly anschluss: BerechtigungenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechte: ZugriffDienst,
+    private readonly anschluss: BerechtigungenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private aufloesung(benutzerId: string) { return this.rechte.aufloesung(benutzerId); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private aufloesung(benutzerId: string) {
+    return this.rechte.aufloesung(benutzerId);
+  }
   /** Mit den Typen der verwiesenen Mappen (#1036), wenn `typ` Regeln „zeigt auf Mappe vom Typ …“ hat. */
-  private async mappenquelle(benutzerId: string, typ: Mappentyp, m: Mappe) { return this.rechte.mappenquelle(benutzerId, [m.id], await this.rechte.zieltypen([typ], [m])); }
+  private async mappenquelle(benutzerId: string, typ: Mappentyp, m: Mappe) {
+    return this.rechte.mappenquelle(benutzerId, [m.id], await this.rechte.zieltypen([typ], [m]));
+  }
   /** Wie im Zugriff (#1036): die Typen, die die Person sieht – mit dem Entwurf der Regeln statt der gespeicherten. */
   private async sichtbar(typ: Mappentyp, wer: Wer, a: Aufloesung, konto?: string) {
     const alle = (await this.repo.listeTypen()).map((x) => (x.id === typ.id ? typ : x));
     return mitSichtbarenTypen(konto ? alle.map((x) => kontoRegelwerk(x, konto)) : alle, wer, a);
   }
-  private zugriff(ich: Zugreifender) { return this.rechte.zugriff(ich); }
-  private pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht) { return this.rechte.pruefeRecht(z, id, recht); }
-  private lesbare(z: Zugriff | undefined, ids: string[]) { return this.rechte.lesbare(z, ids); }
-  private name(benutzerId: string | null) { return this.kern.name(benutzerId); }
+  private zugriff(ich: Zugreifender) {
+    return this.rechte.zugriff(ich);
+  }
+  private pruefeRecht(z: Zugriff | undefined, id: string, recht: Recht) {
+    return this.rechte.pruefeRecht(z, id, recht);
+  }
+  private lesbare(z: Zugriff | undefined, ids: string[]) {
+    return this.rechte.lesbare(z, ids);
+  }
+  private name(benutzerId: string | null) {
+    return this.kern.name(benutzerId);
+  }
 
   /* ---------- Berechtigungen in der Werkbank (#123, #125) ---------- */
 
@@ -74,7 +113,12 @@ export class BerechtigungenDienst {
     const neu = await this.repo.setzeBerechtigungen(typId, istOffen(rw) ? null : rw);
     BerechtigungenDienst.protokolliereBerechtigungen(neu, niemand);
     // Nachweise (#1053): Rechteänderung am Mappentyp – Standard und Zahl der Regeln, keine Personen aus den Bedingungen.
-    void nachweis('zugang.rechte', { was: 'regeln', typ: neu.name, standard: kurzStandard(regelwerkVon(neu).grund), regeln: regelwerkVon(neu).regeln.map((r) => r.name) });
+    void nachweis('zugang.rechte', {
+      was: 'regeln',
+      typ: neu.name,
+      standard: kurzStandard(regelwerkVon(neu).grund),
+      regeln: regelwerkVon(neu).regeln.map((r) => r.name),
+    });
     return { typ: neu, niemand };
   }
 
@@ -82,7 +126,11 @@ export class BerechtigungenDienst {
   private async pruefeBerechtigungen(typ: Mappentyp, eingabe: unknown, bestaetigt: boolean): Promise<{ rw: Regelwerk; niemand: number }> {
     const rw = bereinigeRegelwerk(eingabe);
     const probleme = rw.regeln.map((r) => regelProblem(r, typ)).filter((x): x is string => !!x);
-    if (probleme.length) throw new Fachfehler(422, t('meldungen.dienst.berechtigungen', { probleme: probleme.join(' ') }), { gruende: probleme, berechtigungen: true });
+    if (probleme.length)
+      throw new Fachfehler(422, t('meldungen.dienst.berechtigungen', { probleme: probleme.join(' ') }), {
+        gruende: probleme,
+        berechtigungen: true,
+      });
     const niemand = await this.niemandLesbar(typ, rw);
     if (niemand && !bestaetigt) {
       throw new Fachfehler(409, t('meldungen.dienst.mappen-vom-typ-koennte', { anzahl: niemand, name: typ.name }), { niemand });
@@ -93,7 +141,9 @@ export class BerechtigungenDienst {
   static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) {
     const rw = typ.berechtigungen;
     protokoll.modul('werkbank').warn('Berechtigungen geändert', {
-      typ: typ.name, grund: rw?.grund ?? 'erteilt', regeln: rw?.regeln.length ?? 0,
+      typ: typ.name,
+      grund: rw?.grund ?? 'erteilt',
+      regeln: rw?.regeln.length ?? 0,
       liste: rw?.regeln.map((x, i) => `${i + 1}. ${x.name} ${kurz(x.dann)}${x.stopp ? ' ■' : ''}`).join(' · ') || undefined,
       ...(niemand ? { niemandLesbar: niemand } : {}),
     });
@@ -115,16 +165,26 @@ export class BerechtigungenDienst {
     const typ = await this.repo.holeTyp(typId);
     const regel = typ ? regelwerkVon(typ).regeln.find((r) => r.id === regelId) : undefined;
     if (!typ || !regel) throw new Fachfehler(404, t('meldungen.dienst.diese-regel-gibt-es'));
-    let kopiert = 0; let ausgelassen = 0;
+    let kopiert = 0;
+    let ausgelassen = 0;
     for (const id of (Array.isArray(ziele) ? ziele : []).map(String)) {
       const ziel = id === typId ? undefined : await this.repo.holeTyp(id);
       if (!ziel) continue;
       const k = kopiereRegel(regel, ziel);
-      if (!k.regel.wenn.length) { ausgelassen += k.ausgelassen; continue; }
+      if (!k.regel.wenn.length) {
+        ausgelassen += k.ausgelassen;
+        continue;
+      }
       const rw = regelwerkVon(ziel);
       await this.repo.setzeBerechtigungen(ziel.id, { grund: rw.grund, regeln: [...rw.regeln, k.regel] });
-      void nachweis('zugang.rechte', { was: 'regeln', typ: ziel.name, standard: kurzStandard(rw.grund), regeln: [...rw.regeln, k.regel].map((r) => r.name) });
-      kopiert++; ausgelassen += k.ausgelassen;
+      void nachweis('zugang.rechte', {
+        was: 'regeln',
+        typ: ziel.name,
+        standard: kurzStandard(rw.grund),
+        regeln: [...rw.regeln, k.regel].map((r) => r.name),
+      });
+      kopiert++;
+      ausgelassen += k.ausgelassen;
     }
     return { kopiert, ausgelassen };
   }
@@ -135,7 +195,8 @@ export class BerechtigungenDienst {
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
     const person = this.konten?.benutzer ? (await this.konten.benutzer()).find((x) => x.id === e.benutzerId) : undefined;
     // Systemkonten und Paket-Benutzer (#710): auswählbar nur hier, damit man ihre Rechte nachprüfen kann.
-    const b = person ?? (this.konten?.ohneMensch ? (await this.konten.ohneMensch()).find((x) => x.id === e.benutzerId && x.art) : undefined);
+    const b =
+      person ?? (this.konten?.ohneMensch ? (await this.konten.ohneMensch()).find((x) => x.id === e.benutzerId && x.art) : undefined);
     if (!b) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
     const gespeichert = await this.repo.holeTyp(m.typId);
     if (!gespeichert) throw new Fachfehler(500, t('meldungen.dienst.der-mappentyp-dieser-mappe'));
@@ -143,13 +204,20 @@ export class BerechtigungenDienst {
     const mappe = { id: m.id, titel: m.titel ?? '', typId: m.typId };
     if (b.art) {
       // Wie im Zugriff solcher Konten: Rolle „Systemkonto“ bzw. „Paket“, nur Regeln, die diese Rolle nennen (#673).
-      const konto = b.art === 'system' ? 'systemkonto' as const : 'paket' as const;
+      const konto = b.art === 'system' ? ('systemkonto' as const) : ('paket' as const);
       const rolleId = (await this.kern.system()).kontorollen.get(konto)!;
       const a = await this.sichtbar(typ, { id: b.id, rollen: [rolleId] }, await this.aufloesung(b.id), rolleId);
-      const name = b.art === 'dienst' ? `Paket: ${(await this.repo.listePakete()).find((p) => p.id === b.paketId)?.name ?? b.name}` : b.name;
+      const name =
+        b.art === 'dienst' ? `Paket: ${(await this.repo.listePakete()).find((p) => p.id === b.paketId)?.name ?? b.name}` : b.name;
       const z = await this.zugriff(b);
       const bestaetigt = !!z.typen.get(m.typId);
-      const erg = rechteAnMappe(kontoRegelwerk(typ, rolleId), m, { id: b.id, rollen: [rolleId] }, a, await this.mappenquelle(b.id, kontoRegelwerk(typ, rolleId), m));
+      const erg = rechteAnMappe(
+        kontoRegelwerk(typ, rolleId),
+        m,
+        { id: b.id, rollen: [rolleId] },
+        a,
+        await this.mappenquelle(b.id, kontoRegelwerk(typ, rolleId), m),
+      );
       // Wie rechteAn: Systemkonten sehen nie Passwörter; Pakete nie über die bei der Installation bestätigten Rechte hinaus.
       const w = erg.wirksam;
       const s = !!z.paket?.schreiben.has(m.typId);
@@ -164,7 +232,10 @@ export class BerechtigungenDienst {
     const regulaer = erg.wirksam.R;
     if (z && !regulaer) erg.wirksam = { ...erg.wirksam, R: true };
     return {
-      ...erg, admin: b.rolle === 'admin', mappe, benutzer: { id: b.id, name: b.name || b.email },
+      ...erg,
+      admin: b.rolle === 'admin',
+      mappe,
+      benutzer: { id: b.id, name: b.name || b.email },
       ...(z ? { aufZeit: { aufgabe: z.aufgabentext, seit: z.seit, von: z.von ? await this.name(z.von) : null, wirkt: !regulaer } } : {}),
     };
   }
@@ -175,7 +246,7 @@ export class BerechtigungenDienst {
    */
   async laufwerkMappe(id: string, z: Zugriff) {
     const mappe = await this.pruefeRecht(z, id, 'R');
-    const typ = z.typen.get(mappe.typId) ?? await this.repo.holeTyp(mappe.typId);
+    const typ = z.typen.get(mappe.typId) ?? (await this.repo.holeTyp(mappe.typId));
     const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
     const rueck = await this.repo.rueckverweise(id);
     const bezuege = await this.repo.bezuege([...new Set([...ziele, ...rueck.map((r) => r.quelleId)])].filter((x) => x !== id));

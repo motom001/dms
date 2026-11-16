@@ -21,10 +21,21 @@ export function usePapierkorb(werkbank: boolean, aktiv = true) {
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
     try {
-      if (werkbank) { const r = await mappenApi.papierkorbWerkbank(); setEintraege(r.eintraege); setDokumente(r.dokumente ?? []); setTage(r.tage); setHistorieTage(r.historieTage); }
-      else { const [m, dok] = await Promise.all([mappenApi.papierkorb(), mappenApi.papierkorbDokumente()]); setEintraege(m); setDokumente(dok); }
+      if (werkbank) {
+        const r = await mappenApi.papierkorbWerkbank();
+        setEintraege(r.eintraege);
+        setDokumente(r.dokumente ?? []);
+        setTage(r.tage);
+        setHistorieTage(r.historieTage);
+      } else {
+        const [m, dok] = await Promise.all([mappenApi.papierkorb(), mappenApi.papierkorbDokumente()]);
+        setEintraege(m);
+        setDokumente(dok);
+      }
       setFehler(undefined);
-    } catch (e) { setFehler((e as Error).message); }
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }, [werkbank]);
   useEffect(() => {
     if (!aktiv) return;
@@ -43,4 +54,3 @@ export function aufbewahrung(tage: number | undefined | null) {
   if (!tage) return t('ablage.papierkorb.geloeschte-mappen-und-dokumente');
   return t('ablage.papierkorb.geloeschte-mappen-und-dokumente-2', { anzahl: tage });
 }
-

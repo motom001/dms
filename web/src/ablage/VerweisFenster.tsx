@@ -1,4 +1,16 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SyntheticEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type RefObject,
+  type SyntheticEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { Mappentyp } from '../../../shared/src/model';
 import { typName } from '../../../shared/src/beschriftung';
@@ -22,7 +34,12 @@ import { BrueckeKontext, useBruecke, type Bruecke, type FormularAnschluss, type 
  *   den Komponentenbaum nach oben – Absenden, Tasten, Ziehen und Fokus enden deshalb am Fenster, sonst speicherte etwa
  *   „Mappe speichern“ im Fenster auch die Mappe dahinter.
  */
-export function VerweisFenster({ ziel, zurueck, schliessen, children }: {
+export function VerweisFenster({
+  ziel,
+  zurueck,
+  schliessen,
+  children,
+}: {
   ziel: Mappentyp;
   /** Wohin der Fokus nach dem Schließen geht (der Eintrag „+ … anlegen“ am Verweisfeld). */
   zurueck: RefObject<HTMLElement | null>;
@@ -38,17 +55,25 @@ export function VerweisFenster({ ziel, zurueck, schliessen, children }: {
 
   // Fokus ins Fenster, beim Schließen zurück ans Verweisfeld.
   useEffect(() => {
-    const el = ref.current?.querySelector<HTMLElement>('.registerinhalt input:not([type="hidden"]):not([disabled]), .registerinhalt select, .registerinhalt textarea');
+    const el = ref.current?.querySelector<HTMLElement>(
+      '.registerinhalt input:not([type="hidden"]):not([disabled]), .registerinhalt select, .registerinhalt textarea',
+    );
     (el ?? ref.current)?.focus();
     const z = zurueck.current;
-    return () => { window.setTimeout(() => z?.focus(), 0); };
+    return () => {
+      window.setTimeout(() => z?.focus(), 0);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Fokus nur beim Öffnen setzen und beim Schließen zurückgeben
 
   /** Im sichtbaren Bereich halten (auch nach dem Drehen des Handys). */
   const begrenze = useCallback((x: number, y: number) => {
     const el = ref.current;
-    const b = el?.offsetWidth ?? 0, h = el?.offsetHeight ?? 0;
-    return { x: Math.min(Math.max(8, x), Math.max(8, window.innerWidth - b - 8)), y: Math.min(Math.max(8, y), Math.max(8, window.innerHeight - Math.min(h, 120) - 8)) };
+    const b = el?.offsetWidth ?? 0,
+      h = el?.offsetHeight ?? 0;
+    return {
+      x: Math.min(Math.max(8, x), Math.max(8, window.innerWidth - b - 8)),
+      y: Math.min(Math.max(8, y), Math.max(8, window.innerHeight - Math.min(h, 120) - 8)),
+    };
   }, []);
   useEffect(() => {
     const neu = () => setPos((p) => (p ? begrenze(p.x, p.y) : p));
@@ -86,13 +111,39 @@ export function VerweisFenster({ ziel, zurueck, schliessen, children }: {
 
   return createPortal(
     <BrueckeKontext.Provider value={innen}>
-      <div ref={ref} className={`verweisfenster${pos ? ' verschoben' : ''}`} role="dialog" aria-modal="false" aria-labelledby={titelId} tabIndex={-1}
-        style={pos ? { left: pos.x, top: pos.y } : undefined} data-anker="verweisfenster"
-        onSubmit={halt} onKeyDown={taste} onClick={halt} onPointerDown={halt} onFocus={halt} onBlur={halt}
-        onDragEnter={halt} onDragOver={halt} onDragLeave={halt} onDrop={halt} onMouseOver={halt}>
-        <div className="vf-griff" onPointerDown={greife} onPointerMove={ziehe} onPointerUp={lasse} onPointerCancel={lasse} title={t('ablage.fenster.verschieben')}>
-          <span className="vf-titel" id={titelId}>{t('ablage.fenster.titel', { typ: typName(ziel) })}</span>
-          <Knopf art="link" className="vf-zu" nurSymbol={t('ablage.mappeformular.schliessen')} onClick={schliessen}><Symbol name="schliessen" /></Knopf>
+      <div
+        ref={ref}
+        className={`verweisfenster${pos ? ' verschoben' : ''}`}
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby={titelId}
+        tabIndex={-1}
+        style={pos ? { left: pos.x, top: pos.y } : undefined}
+        data-anker="verweisfenster"
+        onSubmit={halt}
+        onKeyDown={taste}
+        onClick={halt}
+        onPointerDown={halt}
+        onFocus={halt}
+        onBlur={halt}
+        onDragEnter={halt}
+        onDragOver={halt}
+        onDragLeave={halt}
+        onDrop={halt}
+        onMouseOver={halt}>
+        <div
+          className="vf-griff"
+          onPointerDown={greife}
+          onPointerMove={ziehe}
+          onPointerUp={lasse}
+          onPointerCancel={lasse}
+          title={t('ablage.fenster.verschieben')}>
+          <span className="vf-titel" id={titelId}>
+            {t('ablage.fenster.titel', { typ: typName(ziel) })}
+          </span>
+          <Knopf art="link" className="vf-zu" nurSymbol={t('ablage.mappeformular.schliessen')} onClick={schliessen}>
+            <Symbol name="schliessen" />
+          </Knopf>
         </div>
         <div className="vf-inhalt spalte mappe">{children}</div>
       </div>
@@ -111,10 +162,18 @@ function useFensterBruecke(aussen: Bruecke | null, ziel: Mappentyp): Bruecke | n
   const anschluss = useRef<FormularAnschluss | null>(null);
   const aktivRef = useRef<string | null>(null);
   aktivRef.current = aktiv;
-  const anschliessen = useCallback((a: FormularAnschluss) => { anschluss.current = a; return () => { if (anschluss.current === a) anschluss.current = null; }; }, []);
-  const nimm = useCallback((f: Parameters<Bruecke['nimm']>[0], n: Nutzlast) => {
-    if (aussen && anschluss.current) aussen.nimm(f, n, anschluss.current);
-  }, [aussen]);
+  const anschliessen = useCallback((a: FormularAnschluss) => {
+    anschluss.current = a;
+    return () => {
+      if (anschluss.current === a) anschluss.current = null;
+    };
+  }, []);
+  const nimm = useCallback(
+    (f: Parameters<Bruecke['nimm']>[0], n: Nutzlast) => {
+      if (aussen && anschluss.current) aussen.nimm(f, n, anschluss.current);
+    },
+    [aussen],
+  );
   const fenster = aussen?.fenster;
   useEffect(() => {
     if (!fenster) return;
@@ -126,7 +185,21 @@ function useFensterBruecke(aussen: Bruecke | null, ziel: Mappentyp): Bruecke | n
     });
     return () => fenster(null);
   }, [fenster, ziel, nimm]);
-  return useMemo<Bruecke | null>(() => (aussen ? {
-    marken: [], hervor: null, setHervor: () => {}, aktiv, setAktiv, nimm, anschliessen, unterFeld: () => null, fenster: () => {},
-  } : null), [aussen, aktiv, nimm, anschliessen]);
+  return useMemo<Bruecke | null>(
+    () =>
+      aussen
+        ? {
+            marken: [],
+            hervor: null,
+            setHervor: () => {},
+            aktiv,
+            setAktiv,
+            nimm,
+            anschliessen,
+            unterFeld: () => null,
+            fenster: () => {},
+          }
+        : null,
+    [aussen, aktiv, nimm, anschliessen],
+  );
 }

@@ -70,7 +70,7 @@ export function handbuchVerzeichnis(roh: unknown): HandbuchAbschnitt[] {
   return eintraege.map((e) => {
     const istSeite = !e.adresse.includes('#');
     const pfad = e.adresse.split('#')[0];
-    return { ...e, istSeite, seite: istSeite ? e.titel : seiten.get(pfad) ?? '' };
+    return { ...e, istSeite, seite: istSeite ? e.titel : (seiten.get(pfad) ?? '') };
   });
 }
 
@@ -80,7 +80,15 @@ export function handbuchVerzeichnis(roh: unknown): HandbuchAbschnitt[] {
  */
 export function sucheImHandbuch(abschnitte: readonly HandbuchAbschnitt[], suche: string, max = 8): HandbuchTreffer[] {
   if (!suche.trim()) return [];
-  const treffer = durchsuche(abschnitte, (a) => [{ wo: '', text: a.titel, titel: true }, { wo: a.seite, text: a.text }], suche, { umfeld: 48 });
+  const treffer = durchsuche(
+    abschnitte,
+    (a) => [
+      { wo: '', text: a.titel, titel: true },
+      { wo: a.seite, text: a.text },
+    ],
+    suche,
+    { umfeld: 48 },
+  );
   const geordnet = [...treffer.filter((x) => x.titel), ...treffer.filter((x) => !x.titel)];
   return geordnet.slice(0, max).map((x) => ({
     abschnitt: x.eintrag,

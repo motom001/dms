@@ -18,7 +18,9 @@ export function teilwoerter(suche: string): string[] | null {
   const roh = suche.toLowerCase().split(/\s+/).filter(Boolean);
   // Ein Minus schließt ein Wort aus – dann bleibt es bei der Wortsuche.
   if (roh.some((x) => x.startsWith('-'))) return null;
-  const w = roh.map((x) => x.replace(/^\++/, '')).filter(Boolean)
+  const w = roh
+    .map((x) => x.replace(/^\++/, ''))
+    .filter(Boolean)
     // „or“ verknüpft in der Wortsuche zwei Begriffe; für Teilwörter zählt es nicht als Begriff.
     .filter((x) => x !== 'or');
   if (!w.length || w.some((x) => x.length < TEILWORT_MIN)) return null;
@@ -26,7 +28,13 @@ export function teilwoerter(suche: string): string[] | null {
 }
 
 /** Ganze Wörter eines Textes, klein geschrieben (für die Suche im Arbeitsspeicher). */
-export const woerterIn = (text: string) => new Set(text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean));
+export const woerterIn = (text: string) =>
+  new Set(
+    text
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean),
+  );
 
 /* ---------- Unscharfe Suche (#356) ---------- */
 
@@ -34,7 +42,8 @@ export const woerterIn = (text: string) => new Set(text.toLowerCase().split(/[^\
  * Umlaute, Akzente und ß falten, klein schreiben – wie `dms_falte` in PostgreSQL (unaccent): „Müller“ → „muller“,
  * „Straße“ → „strasse“. Für den Vergleich mit Synonymen und im Arbeitsspeicher.
  */
-export const falte = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss').replace(/[Œœ]/g, 'oe').replace(/[Łł]/g, 'l').toLowerCase();
+export const falte = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss').replace(/[Œœ]/g, 'oe').replace(/[Łł]/g, 'l').toLowerCase();
 /** Wie `falte`, dazu ohne Bindestriche: „Kfz-Versicherung“ und „Kfzversicherung“ werden gleich. */
 export const normal = (s: string) => falte(s).replace(/[-‐‑­]/g, '');
 
@@ -61,10 +70,15 @@ export const SYNONYM_LAENGE = 60;
  * Wörter getrennt durch Komma, Semikolon oder Zeilenumbruch, ohne Doppelte (gefaltet verglichen).
  */
 export function liesWortgruppe(roh: unknown): { woerter: string[]; fehler: string | null } {
-  const liste = Array.isArray(roh) ? roh.map((x) => (typeof x === 'string' ? x : String(x ?? ''))) : typeof roh === 'string' ? roh.split(/[,;\n]/) : [];
+  const liste = Array.isArray(roh)
+    ? roh.map((x) => (typeof x === 'string' ? x : String(x ?? '')))
+    : typeof roh === 'string'
+      ? roh.split(/[,;\n]/)
+      : [];
   const woerter: string[] = [];
   for (const w of liste.map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean)) {
-    if (w.length > SYNONYM_LAENGE) return { woerter: [], fehler: t('gemeinsam.suche.ist-zu-lang-hoechstens', { w: w.slice(0, 20), SYNONYM_LAENGE }) };
+    if (w.length > SYNONYM_LAENGE)
+      return { woerter: [], fehler: t('gemeinsam.suche.ist-zu-lang-hoechstens', { w: w.slice(0, 20), SYNONYM_LAENGE }) };
     if (w.length < 2) return { woerter: [], fehler: t('gemeinsam.suche.ist-zu-kurz-mindestens', { w }) };
     if (!woerter.some((x) => falte(x) === falte(w))) woerter.push(w);
   }
@@ -82,7 +96,13 @@ export function liesWortgruppe(roh: unknown): { woerter: string[]; fehler: strin
  * `sprachen: { [wort]: 'en' }`), `woerter` bleibt eine Liste von Texten. So bleiben Schnittstelle, Vollexport
  * (`struktur/synonyme.json`), Wortlisten der Pakete und bestehende Gruppen unverändert gültig.
  */
-export interface Wortgruppe { id: string; woerter: string[]; quelle: string; geaendert: string; paketName?: string }
+export interface Wortgruppe {
+  id: string;
+  woerter: string[];
+  quelle: string;
+  geaendert: string;
+  paketName?: string;
+}
 /** Quelle eigener Gruppen (Werkbank → Gleichbedeutende Wörter). */
 export const EIGENE_WOERTER = 'werkbank';
 
@@ -97,14 +117,19 @@ export function pruefeWortgruppe(woerter: readonly string[]): { fehler: string |
   woerter.forEach((w, i) => {
     const k = falte(w.replace(/\s+/g, ' ').trim());
     if (!k) return;
-    if (gesehen.has(k)) doppelt.push(i); else gesehen.add(k);
+    if (gesehen.has(k)) doppelt.push(i);
+    else gesehen.add(k);
   });
   if (doppelt.length) return { fehler: t('gemeinsam.suche.doppelt', { w: woerter[doppelt[0]].trim() }), doppelt };
   return { fehler: liesWortgruppe([...woerter]).fehler, doppelt };
 }
 
 /** Andere Gruppen, in denen dieses Wort (gefaltet verglichen) schon steht – für den Hinweis beim Bearbeiten (#992). */
-export function gruppenMitWort<G extends { id: string; woerter: readonly string[] }>(gruppen: readonly G[], wort: string, ausser?: string): G[] {
+export function gruppenMitWort<G extends { id: string; woerter: readonly string[] }>(
+  gruppen: readonly G[],
+  wort: string,
+  ausser?: string,
+): G[] {
   const k = falte(wort.replace(/\s+/g, ' ').trim());
   return k ? gruppen.filter((g) => g.id !== ausser && g.woerter.some((w) => falte(w) === k)) : [];
 }
@@ -128,7 +153,9 @@ export function variantenVon(begriffe: string[], gruppen: string[][]): Varianten
 /** Trigramme wie pg_trgm: Wörter mit zwei Leerzeichen davor und einem dahinter. */
 function trigramme(s: string): Set<string> {
   const t = new Set<string>();
-  for (const w of falte(s).split(/[^\p{L}\p{N}]+/u).filter(Boolean)) {
+  for (const w of falte(s)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)) {
     const x = `  ${w} `;
     for (let i = 0; i + 3 <= x.length; i++) t.add(x.slice(i, i + 3));
   }
@@ -136,7 +163,8 @@ function trigramme(s: string): Set<string> {
 }
 /** Ähnlichkeit zweier Wörter wie `similarity()` in pg_trgm (0 bis 1). */
 export function aehnlichkeit(a: string, b: string): number {
-  const x = trigramme(a), y = trigramme(b);
+  const x = trigramme(a),
+    y = trigramme(b);
   if (!x.size || !y.size) return 0;
   let gemeinsam = 0;
   for (const t of x) if (y.has(t)) gemeinsam++;
@@ -153,13 +181,20 @@ export const TIPPFEHLER_MIN = 4;
  * eine Abfrage mehr.
  */
 export const MEINTEST = ['ohne-treffer', 'mehr-treffer'] as const;
-export type Meintest = typeof MEINTEST[number];
+export type Meintest = (typeof MEINTEST)[number];
 export const MEINTEST_STANDARD: Meintest = 'ohne-treffer';
 export const istMeintest = (x: unknown): x is Meintest => (MEINTEST as readonly unknown[]).includes(x);
 
 /** „Meintest du …?“: die Suche mit dem jeweils besten ähnlichen Wort statt des Begriffs. */
 export function vorschlagAus(begriffe: string[], aehnlich: Record<string, string[]>): string | null {
   let geaendert = false;
-  const neu = begriffe.map((b) => { const a = aehnlich[falte(b)]?.[0]; if (a) { geaendert = true; return a; } return b; });
+  const neu = begriffe.map((b) => {
+    const a = aehnlich[falte(b)]?.[0];
+    if (a) {
+      geaendert = true;
+      return a;
+    }
+    return b;
+  });
   return geaendert ? neu.join(' ') : null;
 }

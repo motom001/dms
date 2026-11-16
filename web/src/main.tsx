@@ -18,9 +18,15 @@ beobachteVeraltet();
 async function sprachwahl(): Promise<string | null> {
   const vorschlag = gemerkteSprache() ?? browserSprache();
   try {
-    const r = await holeMitGrenze('/api/sprache', { credentials: 'same-origin', cache: 'no-store', headers: { 'x-dms': '1', ...(vorschlag ? { 'x-sprache': vorschlag } : {}) } });
+    const r = await holeMitGrenze('/api/sprache', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'x-dms': '1', ...(vorschlag ? { 'x-sprache': vorschlag } : {}) },
+    });
     if (r.ok) return ((await r.json()) as { sprache: string }).sprache;
-  } catch { /* Server nicht erreichbar oder zu langsam: weiter mit dem Gemerkten */ }
+  } catch {
+    /* Server nicht erreichbar oder zu langsam: weiter mit dem Gemerkten */
+  }
   return null;
 }
 
@@ -39,7 +45,10 @@ async function starte() {
   // Fehlt der Teil „start“, gehört diese Seite zu einem älteren Stand (#933): einmal selbst neu laden, sonst ein Satz
   // statt einer leeren Seite.
   const start = await import('./start').catch(() => undefined);
-  if (start?.zeige) { start.zeige(); return; }
+  if (start?.zeige) {
+    start.zeige();
+    return;
+  }
   if (selbstNeuLaden()) return;
   const wurzel = document.getElementById('root');
   if (wurzel) wurzel.textContent = t('oberflaeche.veraltet.nicht-geladen');

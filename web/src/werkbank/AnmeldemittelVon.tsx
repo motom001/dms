@@ -11,8 +11,16 @@ import { gebietsschema } from '../../../shared/src/sprache';
 export function PasskeysVon({ b }: { b: Benutzer }) {
   const [anzahl, setAnzahl] = useState<number | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setAnzahl((await kontoApi.benutzerPasskeys(b.id)).anzahl); } catch (e) { setFehler((e as Error).message); } }, [b.id]);
-  useEffect(() => { void laden(); }, [laden]);
+  const laden = useCallback(async () => {
+    try {
+      setAnzahl((await kontoApi.benutzerPasskeys(b.id)).anzahl);
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  }, [b.id]);
+  useEffect(() => {
+    void laden();
+  }, [laden]);
   const name = b.name || b.email;
   const zuruecksetzen = async () => {
     await kontoApi.benutzerPasskeysZuruecksetzen(b.id);
@@ -22,12 +30,32 @@ export function PasskeysVon({ b }: { b: Benutzer }) {
   return (
     <div id="passkeys-von">
       <h3 className="h4">{t('werkbank.benutzer.passkeys')}</h3>
-      {anzahl === null ? (fehler ? <p className="fehlertext">{fehler}</p> : <p className="leise">{t('werkbank.benutzer.lade')}</p>)
-        : anzahl > 0 ? <>
+      {anzahl === null ? (
+        fehler ? (
+          <p className="fehlertext">{fehler}</p>
+        ) : (
+          <p className="leise">{t('werkbank.benutzer.lade')}</p>
+        )
+      ) : anzahl > 0 ? (
+        <>
           <p>{t('werkbank.benutzer.passkeys.anzahl', { anzahl })}</p>
-          <div className="knoepfe"><Knopf art="gefahr" symbol="zuruecksetzen" onClick={zuruecksetzen}
-            rueckfrage={{ titel: t('werkbank.benutzer.passkeys.frage', { name }), text: t('werkbank.benutzer.passkeys.frage.text', { name }), ja: t('werkbank.benutzer.zuruecksetzen') }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
-        </> : <p className="leise">{t('werkbank.benutzer.passkeys.keine')}</p>}
+          <div className="knoepfe">
+            <Knopf
+              art="gefahr"
+              symbol="zuruecksetzen"
+              onClick={zuruecksetzen}
+              rueckfrage={{
+                titel: t('werkbank.benutzer.passkeys.frage', { name }),
+                text: t('werkbank.benutzer.passkeys.frage.text', { name }),
+                ja: t('werkbank.benutzer.zuruecksetzen'),
+              }}>
+              {t('werkbank.benutzer.zuruecksetzen')}
+            </Knopf>
+          </div>
+        </>
+      ) : (
+        <p className="leise">{t('werkbank.benutzer.passkeys.keine')}</p>
+      )}
     </div>
   );
 }
@@ -36,19 +64,59 @@ export function PasskeysVon({ b }: { b: Benutzer }) {
 export function ZweifaktorVon({ b }: { b: Benutzer }) {
   const [stand, setStand] = useState<{ aktiv: boolean; seit: string | null; codesUebrig: number } | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const laden = useCallback(async () => { try { setStand(await kontoApi.benutzerZweifaktor(b.id)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, [b.id]);
-  useEffect(() => { void laden(); }, [laden]);
+  const laden = useCallback(async () => {
+    try {
+      setStand(await kontoApi.benutzerZweifaktor(b.id));
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
+  }, [b.id]);
+  useEffect(() => {
+    void laden();
+  }, [laden]);
   const name = b.name || b.email;
   return (
     <div>
       <h3 className="h4">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h3>
-      {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
-        <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
-        <div className="knoepfe"><Knopf art="gefahr" symbol="zuruecksetzen" rueckfrage={{ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen') }} onClick={() => {
-          void kontoApi.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
-        }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
-      </> : <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>}
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {!stand ? (
+        !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p>
+      ) : stand.aktiv ? (
+        <>
+          <p>
+            <span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>
+            {stand.seit && <> {t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>}{' '}
+            {t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}
+          </p>
+          <div className="knoepfe">
+            <Knopf
+              art="gefahr"
+              symbol="zuruecksetzen"
+              rueckfrage={{
+                titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }),
+                text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }),
+                ja: t('werkbank.benutzer.zuruecksetzen'),
+              }}
+              onClick={() => {
+                void kontoApi
+                  .benutzerZweifaktorZuruecksetzen(b.id)
+                  .then(() => {
+                    setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') });
+                    return laden();
+                  })
+                  .catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
+              }}>
+              {t('werkbank.benutzer.zuruecksetzen')}
+            </Knopf>
+          </div>
+        </>
+      ) : (
+        <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>
+      )}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
     </div>
   );
 }

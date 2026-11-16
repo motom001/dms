@@ -25,15 +25,18 @@ export const SCHWELLE_STANDARD = 0.5;
 /** Prüft eine Modellkennung; wirft mit verständlicher Meldung. */
 export function liesModell(x: unknown): string {
   const m = typeof x === 'string' ? x.trim() : '';
-  if (!MODELL.test(m)) throw new Error('Die Modellkennung fehlt oder ist ungültig (Buchstaben, Ziffern und . _ : / + -, höchstens 100 Zeichen).');
+  if (!MODELL.test(m))
+    throw new Error('Die Modellkennung fehlt oder ist ungültig (Buchstaben, Ziffern und . _ : / + -, höchstens 100 Zeichen).');
   return m;
 }
 
 /** Liest einen Vektor (Liste von Zahlen) und normiert ihn auf Länge 1; wirft mit verständlicher Meldung. */
 export function liesVektor(x: unknown, dimension?: number): Float32Array {
   if (!Array.isArray(x)) throw new Error('Der Vektor fehlt (Liste von Zahlen).');
-  if (x.length < DIMENSION_MIN || x.length > DIMENSION_MAX) throw new Error(`Ein Vektor hat ${DIMENSION_MIN} bis ${DIMENSION_MAX} Werte, dieser hat ${x.length}.`);
-  if (dimension !== undefined && x.length !== dimension) throw new Error(`Die Vektoren dieses Modells haben ${dimension} Werte, dieser hat ${x.length}.`);
+  if (x.length < DIMENSION_MIN || x.length > DIMENSION_MAX)
+    throw new Error(`Ein Vektor hat ${DIMENSION_MIN} bis ${DIMENSION_MAX} Werte, dieser hat ${x.length}.`);
+  if (dimension !== undefined && x.length !== dimension)
+    throw new Error(`Die Vektoren dieses Modells haben ${dimension} Werte, dieser hat ${x.length}.`);
   const v = new Float32Array(x.length);
   for (let i = 0; i < x.length; i++) {
     const z = x[i];
@@ -54,12 +57,22 @@ export function norm(v: ArrayLike<number>): number {
 
 /** Kosinus zweier Vektoren gleicher Länge. */
 export function kosinus(a: ArrayLike<number>, b: ArrayLike<number>): number {
-  let s = 0, na = 0, nb = 0;
-  for (let i = 0; i < a.length; i++) { s += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  let s = 0,
+    na = 0,
+    nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    s += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
   return na && nb ? s / Math.sqrt(na * nb) : 0;
 }
 
-export interface Treffer { dokumentId: string; mappeId: string; aehnlichkeit: number }
+export interface Treffer {
+  dokumentId: string;
+  mappeId: string;
+  aehnlichkeit: number;
+}
 
 /**
  * Zwischenspeicher der Vektoren eines Modells: je Vektor 8 Bit je Wert und ein Maßstab.
@@ -73,16 +86,23 @@ export class Vektorindex {
   private platz = new Map<string, number>();
   private frei: number[] = [];
 
-  constructor(readonly dimension: number, eintraege: Array<{ dokumentId: string; mappeId: string; vektor: Float32Array }> = []) {
+  constructor(
+    readonly dimension: number,
+    eintraege: Array<{ dokumentId: string; mappeId: string; vektor: Float32Array }> = [],
+  ) {
     const n = Math.max(16, eintraege.length);
     this.werte = new Int8Array(n * dimension);
     this.massstab = new Float32Array(n);
     for (const e of eintraege) if (e.vektor.length === dimension) this.setze(e.dokumentId, e.mappeId, e.vektor);
   }
 
-  get anzahl(): number { return this.platz.size; }
+  get anzahl(): number {
+    return this.platz.size;
+  }
   /** Belegter Arbeitsspeicher in Bytes (ohne Kennungen). */
-  get bytes(): number { return this.werte.byteLength + this.massstab.byteLength; }
+  get bytes(): number {
+    return this.werte.byteLength + this.massstab.byteLength;
+  }
 
   setze(dokumentId: string, mappeId: string, v: Float32Array) {
     if (v.length !== this.dimension) throw new Error(`Die Vektoren dieses Modells haben ${this.dimension} Werte.`);
@@ -92,7 +112,8 @@ export class Vektorindex {
       if (i >= this.massstab.length) this.wachse(i + 1);
       this.platz.set(dokumentId, i);
     }
-    this.dok[i] = dokumentId; this.mappe[i] = mappeId;
+    this.dok[i] = dokumentId;
+    this.mappe[i] = mappeId;
     let max = 0;
     for (let k = 0; k < v.length; k++) max = Math.max(max, Math.abs(v[k]));
     const f = max > 0 ? 127 / max : 0;
@@ -105,7 +126,9 @@ export class Vektorindex {
     const i = this.platz.get(dokumentId);
     if (i === undefined) return;
     this.platz.delete(dokumentId);
-    this.dok[i] = null; this.mappe[i] = null; this.massstab[i] = 0;
+    this.dok[i] = null;
+    this.mappe[i] = null;
+    this.massstab[i] = 0;
     this.frei.push(i);
   }
 
@@ -126,7 +149,9 @@ export class Vektorindex {
   suche(q: Float32Array, max: number, opt: { schwelle?: number; ohne?: Set<string> } = {}): Treffer[] {
     if (q.length !== this.dimension || max <= 0) return [];
     const schwelle = opt.schwelle ?? -1;
-    const D = this.dimension, w = this.werte, s = this.massstab;
+    const D = this.dimension,
+      w = this.werte,
+      s = this.massstab;
     const top: Array<{ i: number; a: number }> = [];
     let grenze = schwelle;
     for (let i = 0; i < this.dok.length; i++) {
@@ -149,8 +174,12 @@ export class Vektorindex {
 
   private wachse(min: number) {
     const n = Math.max(min, this.massstab.length * 2);
-    const w = new Int8Array(n * this.dimension); w.set(this.werte); this.werte = w;
-    const s = new Float32Array(n); s.set(this.massstab); this.massstab = s;
+    const w = new Int8Array(n * this.dimension);
+    w.set(this.werte);
+    this.werte = w;
+    const s = new Float32Array(n);
+    s.set(this.massstab);
+    this.massstab = s;
   }
 }
 

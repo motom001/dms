@@ -19,7 +19,8 @@
  * Fehler, Grenzen, Sperre für Geheimnisse (#1055), Nachweis-Journal (#1053, wie das Protokoll: viele Fachordner schreiben
  * hinein). Diese Module binden selbst keinen Dienst und keinen Fachbereich ein.
  */
-const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen|geheimnis-sperre|nachweisjournal';
+const BASIS =
+  'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen|geheimnis-sperre|nachweisjournal';
 /**
  * Was Fachordner außer Kern und BASIS einbinden dürfen (#1072): Messung der Rechteprüfung, Vektoren lesen (auch der
  * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool. Seit #1075
@@ -72,32 +73,40 @@ function fachordner() {
   const name = 'fachordner';
   const genannt = SCHICHTEN.flat();
   const nichtFach = [...TECHNIK, ...genannt].join('|');
-  const regeln = [{
-    name,
-    severity: 'error',
-    comment: 'Einen Fachordner nur über seine index.ts einbinden (#1072). Ausnahme: Routen (*.routen.ts), die routen.ts sammelt.',
-    // $1: Ordner der importierenden Datei (für Dateien außerhalb von Ordnern ihr Name, für Tests „server“ usw.).
-    from: { path: '^(?:server/src/)?([^/]+)' },
-    to: {
-      path: `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/(?!index\\.ts$)`,
-      pathNot: ['^server/src/$1/', '\\.routen\\.ts$'],
+  const regeln = [
+    {
+      name,
+      severity: 'error',
+      comment: 'Einen Fachordner nur über seine index.ts einbinden (#1072). Ausnahme: Routen (*.routen.ts), die routen.ts sammelt.',
+      // $1: Ordner der importierenden Datei (für Dateien außerhalb von Ordnern ihr Name, für Tests „server“ usw.).
+      from: { path: '^(?:server/src/)?([^/]+)' },
+      to: {
+        path: `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/(?!index\\.ts$)`,
+        pathNot: ['^server/src/$1/', '\\.routen\\.ts$'],
+      },
     },
-  }];
+  ];
   for (let i = 0; i <= SCHICHTEN.length; i++) {
     const hier = i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN[i].join('|')})/` : `^server/src/(?!(?:${nichtFach})/)[^/]+/`;
-    const erlaubt = i === 0
-      ? ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`]
-      : [
-        i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN.slice(0, i + 1).flat().join('|')})/` : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
-        `^server/src/(${WERKZEUGE.ordner})/`,
-        `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang}|${WERKZEUGE.datenschutz})\\.ts$`,
-      ];
+    const erlaubt =
+      i === 0
+        ? ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`]
+        : [
+            i < SCHICHTEN.length
+              ? `^server/src/(${SCHICHTEN.slice(0, i + 1)
+                  .flat()
+                  .join('|')})/`
+              : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
+            `^server/src/(${WERKZEUGE.ordner})/`,
+            `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang}|${WERKZEUGE.datenschutz})\\.ts$`,
+          ];
     regeln.push({
       name,
       severity: 'error',
-      comment: i === 0
-        ? 'Der Kern ruft keinen Fachbereich auf (#961): nur sich selbst, shared/ und die Basis – nie dienst.ts, Routen oder Fachordner.'
-        : `Schicht ${i} ruft nur nach unten (#1072): Fachordner bis Schicht ${i}, Kern, shared/, Basis und Werkzeuge – nie dienst.ts oder Dateien darüber. Routen (*.routen.ts) sind ausgenommen.`,
+      comment:
+        i === 0
+          ? 'Der Kern ruft keinen Fachbereich auf (#961): nur sich selbst, shared/ und die Basis – nie dienst.ts, Routen oder Fachordner.'
+          : `Schicht ${i} ruft nur nach unten (#1072): Fachordner bis Schicht ${i}, Kern, shared/, Basis und Werkzeuge – nie dienst.ts oder Dateien darüber. Routen (*.routen.ts) sind ausgenommen.`,
       from: { path: hier, pathNot: '\\.routen\\.ts$' },
       to: { path: '^server/src/', pathNot: erlaubt },
     });
@@ -132,14 +141,16 @@ module.exports = {
     {
       name: 'server-ohne-web',
       severity: 'error',
-      comment: 'Der Server bindet keinen Code der Oberfläche ein – auch seine Tests nicht: Tests der Oberfläche stehen unter web/test/ (#1282).',
+      comment:
+        'Der Server bindet keinen Code der Oberfläche ein – auch seine Tests nicht: Tests der Oberfläche stehen unter web/test/ (#1282).',
       from: { path: '^server/' },
       to: { path: '^web/' },
     },
     {
       name: 'pdf-nur-ueber-index',
       severity: 'error',
-      comment: 'Die PDF-Stelle (#541) nur über pdf/index.ts. Ausnahme: arbeit/vorgaenge.ts führt die Vorgänge im Arbeiter-Faden aus (#542).',
+      comment:
+        'Die PDF-Stelle (#541) nur über pdf/index.ts. Ausnahme: arbeit/vorgaenge.ts führt die Vorgänge im Arbeiter-Faden aus (#542).',
       from: { path: '^server/src/', pathNot: ['^server/src/pdf/', '^server/src/arbeit/vorgaenge\\.ts$'] },
       to: { path: '^server/src/pdf/(?!index\\.ts$)' },
     },
@@ -153,8 +164,12 @@ module.exports = {
     {
       name: 'routen-hilfen-nur-in-routen',
       severity: 'error',
-      comment: 'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
-      from: { path: '^(server|shared|web)/', pathNot: ['\\.routen\\.ts$', '^server/src/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'] },
+      comment:
+        'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
+      from: {
+        path: '^(server|shared|web)/',
+        pathNot: ['\\.routen\\.ts$', '^server/src/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'],
+      },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
     },
     ...fachordner(),

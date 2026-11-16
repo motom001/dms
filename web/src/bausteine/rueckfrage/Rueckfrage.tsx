@@ -22,28 +22,60 @@ export function Rueckfragen() {
   useEffect(() => rueckfragenAnzeigen((neu) => setListe((l) => [...l, ...neu])), []);
   const aktuell = liste[0];
   if (!aktuell) return null;
-  const schliesse = (ok: boolean) => { setListe((l) => l.slice(1)); aktuell.fertig(ok); };
+  const schliesse = (ok: boolean) => {
+    setListe((l) => l.slice(1));
+    aktuell.fertig(ok);
+  };
   return <Dialog key={aktuell.nr} r={aktuell} schliesse={schliesse} />;
 }
 
 /** Titel, Text, Eingabe zum Bestätigen und die beiden Knöpfe – im Fenster und auf der Musterseite gleich. */
-function Inhalt({ r, id, schliesse, sicher, ja }: { r: Rueckfrage & { nurHinweis?: boolean }; id: string; schliesse(ok: boolean): void; sicher?: Ref<HTMLButtonElement>; ja?: Ref<HTMLButtonElement> }) {
+function Inhalt({
+  r,
+  id,
+  schliesse,
+  sicher,
+  ja,
+}: {
+  r: Rueckfrage & { nurHinweis?: boolean };
+  id: string;
+  schliesse(ok: boolean): void;
+  sicher?: Ref<HTMLButtonElement>;
+  ja?: Ref<HTMLButtonElement>;
+}) {
   const [eingabe, setEingabe] = useState('');
   const feld = useRef<HTMLInputElement>(null);
   const passt = !r.bestaetigeMit || eingabe.trim().toLowerCase() === r.bestaetigeMit.toLowerCase();
-  useEffect(() => { if (r.bestaetigeMit) feld.current?.focus(); }, [r.bestaetigeMit]);
+  useEffect(() => {
+    if (r.bestaetigeMit) feld.current?.focus();
+  }, [r.bestaetigeMit]);
   return (
-    <form method="dialog" onSubmit={(e) => { e.preventDefault(); if (passt) schliesse(true); }}>
+    <form
+      method="dialog"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (passt) schliesse(true);
+      }}>
       <h2 id={`${id}-t`}>{r.titel}</h2>
-      {r.text && <div id={`${id}-x`} className="rueckfrage-text">{typeof r.text === 'string' ? r.text.split('\n\n').map((text, i) => <p key={i}>{text}</p>) : r.text}</div>}
+      {r.text && (
+        <div id={`${id}-x`} className="rueckfrage-text">
+          {typeof r.text === 'string' ? r.text.split('\n\n').map((text, i) => <p key={i}>{text}</p>) : r.text}
+        </div>
+      )}
       {r.bestaetigeMit && (
         <Feld beschriftung={t('oberflaeche.rueckfrage.zum-bestaetigen-eintippen', { bestaetigeMit: r.bestaetigeMit })}>
           <input ref={feld} value={eingabe} onChange={(e) => setEingabe(e.target.value)} autoComplete="off" spellCheck={false} />
         </Feld>
       )}
       <div className="rueckfrage-knoepfe">
-        {!r.nurHinweis && <Knopf ref={sicher} onClick={() => schliesse(false)}>{r.nein ?? t('oberflaeche.rueckfrage.abbrechen')}</Knopf>}
-        <BestaetigenKnopf ref={ja} gefahr={r.gefahr && !r.nurHinweis} gesperrt={!passt}>{r.ja}</BestaetigenKnopf>
+        {!r.nurHinweis && (
+          <Knopf ref={sicher} onClick={() => schliesse(false)}>
+            {r.nein ?? t('oberflaeche.rueckfrage.abbrechen')}
+          </Knopf>
+        )}
+        <BestaetigenKnopf ref={ja} gefahr={r.gefahr && !r.nurHinweis} gesperrt={!passt}>
+          {r.ja}
+        </BestaetigenKnopf>
       </div>
     </form>
   );
@@ -62,9 +94,17 @@ function Dialog({ r, schliesse }: { r: OffeneRueckfrage; schliesse(ok: boolean):
     if (!r.bestaetigeMit) (r.gefahr && !r.nurHinweis ? sicher.current : ja.current)?.focus();
   }, [r]);
   return (
-    <dialog ref={ref} className={klassen('rueckfrage', r.gefahr && 'gefahr')} role="alertdialog" aria-modal="true"
-      aria-labelledby={`${id}-t`} aria-describedby={r.text ? `${id}-x` : undefined}
-      onCancel={(e) => { e.preventDefault(); schliesse(false); }}>
+    <dialog
+      ref={ref}
+      className={klassen('rueckfrage', r.gefahr && 'gefahr')}
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby={`${id}-t`}
+      aria-describedby={r.text ? `${id}-x` : undefined}
+      onCancel={(e) => {
+        e.preventDefault();
+        schliesse(false);
+      }}>
       <Inhalt r={r} id={id} schliesse={schliesse} sicher={sicher} ja={ja} />
     </dialog>
   );

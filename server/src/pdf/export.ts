@@ -43,10 +43,27 @@ export async function mappenPdfZeichnen(daten: MappenPdfDaten): Promise<Buffer> 
     const reihe = (werte: string[], fett: boolean) => {
       const z = werte.map((t) => s.zeilen(t, 8.5, w - 6, fett).slice(0, 4));
       const h = Math.max(...z.map((x) => x.length)) * 11 + 4;
-      if (s.y - h < RAND) { s.neueSeite(); }
-      z.forEach((zeilen, i) => zeilen.forEach((t, j) => s.seite.drawText(t, { x: RAND + i * w, y: s.y - 10 - j * 11, size: 8.5, font: fett ? f.fett : f.normal, color: rgb(0.1, 0.12, 0.16) })));
+      if (s.y - h < RAND) {
+        s.neueSeite();
+      }
+      z.forEach((zeilen, i) =>
+        zeilen.forEach((t, j) =>
+          s.seite.drawText(t, {
+            x: RAND + i * w,
+            y: s.y - 10 - j * 11,
+            size: 8.5,
+            font: fett ? f.fett : f.normal,
+            color: rgb(0.1, 0.12, 0.16),
+          }),
+        ),
+      );
       s.y -= h;
-      s.seite.drawLine({ start: { x: RAND, y: s.y + 1 }, end: { x: RAND + nutzbar, y: s.y + 1 }, thickness: 0.3, color: rgb(0.8, 0.82, 0.85) });
+      s.seite.drawLine({
+        start: { x: RAND, y: s.y + 1 },
+        end: { x: RAND + nutzbar, y: s.y + 1 },
+        thickness: 0.3,
+        color: rgb(0.8, 0.82, 0.85),
+      });
     };
     reihe(u.kopf, true);
     for (const z of u.zeilen) reihe(z, false);
@@ -54,14 +71,30 @@ export async function mappenPdfZeichnen(daten: MappenPdfDaten): Promise<Buffer> 
 
   for (const m of daten.mappen) {
     // Erst die Anhänge vorbereiten, damit die Seite der Mappe sagen kann, was eingebunden ist.
-    const pdfs: PDFDocument[] = []; const bilder: Array<{ name: string; b: Uint8Array; png: boolean }> = [];
+    const pdfs: PDFDocument[] = [];
+    const bilder: Array<{ name: string; b: Uint8Array; png: boolean }> = [];
     const hinweis: string[] = [];
     for (const d of m.dokumente) {
       const istBild = d.mime === 'image/jpeg' || d.mime === 'image/png';
-      if (d.mime !== 'application/pdf' && !istBild) { hinweis.push(t('meldungen.export.nicht-eingebunden')); continue; }
-      if (!d.inhalt) { hinweis.push(t('meldungen.export.konnte-nicht-eingebunden-werden')); continue; }
-      if (istBild) { bilder.push({ name: d.name, b: d.inhalt, png: d.mime === 'image/png' }); hinweis.push(t('meldungen.export.als-bild-eingebunden')); continue; }
-      try { pdfs.push(await ladePdf(d.inhalt, { ignoreEncryption: true, updateMetadata: false })); hinweis.push('eingebunden'); } catch { hinweis.push(t('meldungen.export.konnte-nicht-eingebunden-werden')); }
+      if (d.mime !== 'application/pdf' && !istBild) {
+        hinweis.push(t('meldungen.export.nicht-eingebunden'));
+        continue;
+      }
+      if (!d.inhalt) {
+        hinweis.push(t('meldungen.export.konnte-nicht-eingebunden-werden'));
+        continue;
+      }
+      if (istBild) {
+        bilder.push({ name: d.name, b: d.inhalt, png: d.mime === 'image/png' });
+        hinweis.push(t('meldungen.export.als-bild-eingebunden'));
+        continue;
+      }
+      try {
+        pdfs.push(await ladePdf(d.inhalt, { ignoreEncryption: true, updateMetadata: false }));
+        hinweis.push('eingebunden');
+      } catch {
+        hinweis.push(t('meldungen.export.konnte-nicht-eingebunden-werden'));
+      }
     }
     const s = new PdfSchreiber(doc, f);
     s.neueSeite();
@@ -73,7 +106,8 @@ export async function mappenPdfZeichnen(daten: MappenPdfDaten): Promise<Buffer> 
       for (const [bezeichnung, wert] of r.felder) {
         const vor = s.y;
         s.text(bezeichnung, { groesse: 9, fett: true, breite: 150, abstand: 3 });
-        const nach = s.y; s.y = vor;
+        const nach = s.y;
+        s.y = vor;
         // Wert neben der Bezeichnung; ist er länger, rückt die nächste Zeile darunter.
         s.text(wert, { groesse: 9.5, x: RAND + 160, abstand: 3 });
         s.y = Math.min(s.y, nach);
@@ -89,15 +123,25 @@ export async function mappenPdfZeichnen(daten: MappenPdfDaten): Promise<Buffer> 
         const seite = doc.addPage([A4.b, A4.h]);
         const max = { b: A4.b - 2 * RAND, h: A4.h - 2 * RAND - 24 };
         const k = Math.min(1, max.b / bild.width, max.h / bild.height);
-        seite.drawText([...pdfText(`${m.titel} – ${b.name}`, f.normal).replace(/\n/g, ' ')].slice(0, 120).join(''), { x: RAND, y: A4.h - RAND, size: 9, font: f.normal, color: rgb(0.4, 0.42, 0.46) });
+        seite.drawText([...pdfText(`${m.titel} – ${b.name}`, f.normal).replace(/\n/g, ' ')].slice(0, 120).join(''), {
+          x: RAND,
+          y: A4.h - RAND,
+          size: 9,
+          font: f.normal,
+          color: rgb(0.4, 0.42, 0.46),
+        });
         seite.drawImage(bild, { x: RAND, y: A4.h - RAND - 18 - bild.height * k, width: bild.width * k, height: bild.height * k });
-      } catch { /* defektes Bild: genannt ist es schon */ }
+      } catch {
+        /* defektes Bild: genannt ist es schon */
+      }
     }
     for (const p of pdfs) {
       try {
         const seiten = await doc.copyPages(p, p.getPageIndices());
         for (const sp of seiten) doc.addPage(sp);
-      } catch { /* z. B. verschlüsselt: genannt ist es schon */ }
+      } catch {
+        /* z. B. verschlüsselt: genannt ist es schon */
+      }
     }
   }
   if (!doc.getPageCount()) doc.addPage([A4.b, A4.h]);

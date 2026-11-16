@@ -20,7 +20,9 @@ describe('Namen der Feldarten (#1094)', () => {
 
   it('keine Namen für Feldarten, die es nicht gibt', () => {
     for (const datei of [de, en]) {
-      const ueberzaehlig = Object.keys(datei).filter((k) => k.startsWith('model.feldart.') && !ARTEN.includes(k.slice('model.feldart.'.length) as Feldtyp));
+      const ueberzaehlig = Object.keys(datei).filter(
+        (k) => k.startsWith('model.feldart.') && !ARTEN.includes(k.slice('model.feldart.'.length) as Feldtyp),
+      );
       assert.deepEqual(ueberzaehlig, []);
     }
   });
@@ -30,9 +32,18 @@ describe('Namen der Feldarten (#1094)', () => {
   });
 
   it('feldtypName folgt der Sprache', () => {
-    assert.equal(inSprache('de', () => feldtypName('zeitraum')), 'Zeitraum');
-    assert.equal(inSprache('en', () => feldtypName('zeitraum')), 'Period');
-    assert.equal(inSprache('en', () => feldtypName('betrag')), 'Amount');
+    assert.equal(
+      inSprache('de', () => feldtypName('zeitraum')),
+      'Zeitraum',
+    );
+    assert.equal(
+      inSprache('en', () => feldtypName('zeitraum')),
+      'Period',
+    );
+    assert.equal(
+      inSprache('en', () => feldtypName('betrag')),
+      'Amount',
+    );
   });
 
   it('OpenAPI nennt Kennung und Namen, die Kennungen bleiben', () => {

@@ -14,7 +14,18 @@ import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
 import { anlagenVon, mitAnlagen, zumVerschieben } from '../../../shared/src/anlagen';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
-import { auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, POST_STAND, type Register, type Werte } from '../../../shared/src/model';
+import {
+  auswahlText,
+  darfPostAnlegen,
+  type Dokument,
+  type Historieneintrag,
+  istVersendet,
+  type Mappe,
+  type Mappentyp,
+  POST_STAND,
+  type Register,
+  type Werte,
+} from '../../../shared/src/model';
 import { entfernteSeiten, type LeerseitenPlan, type PostLeerseiten } from './leerseiten';
 import type { PostSystemmappen } from './systemmappen';
 
@@ -24,11 +35,27 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
 const AUFLOESEN_FRIST_MS = 60 * 60 * 1000;
 
 /** Die Teile, die das Auflösen ruft: Rechteprüfung, Historie, Titel, Dokumente, Versionen, Systemmappen. */
-export interface AufloesenTeile { rechte: ZugriffDienst; historie: MappenHistorie; titel: MappenTitel; dokumente: DokumenteDienst; versionen: DokumentVersionen; systemmappen: PostSystemmappen; leerseiten: PostLeerseiten }
+export interface AufloesenTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  titel: MappenTitel;
+  dokumente: DokumenteDienst;
+  versionen: DokumentVersionen;
+  systemmappen: PostSystemmappen;
+  leerseiten: PostLeerseiten;
+}
 
 /** Was das Auflösen außer dem Kern braucht – über den Dienst (neue Post und Post-Aufgaben liefen sonst im Kreis). */
 export interface AufloesenAnschluss {
-  legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal?: string, herkunft?: Historieneintrag['daten'], id?: string, alt?: Werte): Promise<Mappe>;
+  legePostAn(
+    eingabe: unknown,
+    ich: { id: string | null; name: string },
+    z?: Zugriff,
+    kanal?: string,
+    herkunft?: Historieneintrag['daten'],
+    id?: string,
+    alt?: Werte,
+  ): Promise<Mappe>;
   postAufgaben(mappeId: string, von: string | null): Promise<void>;
   /** Prüfung vor dem Löschen und Löschen einer Mappe (noch im Dienst). */
   loeschPruefung(m: Mappe, typ: Mappentyp | undefined, rueck: Rueckverweis[]): Promise<{ ok: boolean; grund?: string }>;
@@ -36,22 +63,54 @@ export interface AufloesenAnschluss {
 }
 
 export class PostAufloesen {
-  constructor(private readonly kern: Kern, private readonly teile: AufloesenTeile, private readonly anschluss: AufloesenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: AufloesenTeile,
+    private readonly anschluss: AufloesenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get ocr() { return this.teile.dokumente.ocr; }
-  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
-  private papierkorbTage() { return this.kern.papierkorbTage(); }
-  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) { return this.teile.rechte.pruefeRecht(...a); }
-  private rechteAn(...a: Parameters<ZugriffDienst['rechteAn']>) { return this.teile.rechte.rechteAn(...a); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private titel(m: Mappe) { return this.teile.titel.titel(m); }
-  private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) { return this.teile.versionen.beruehre(mappeId, typ, benutzerId); }
-  private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) { return this.teile.systemmappen.schreibeSystemMappe(...a); }
-  private legePostAn(...a: Parameters<AufloesenAnschluss['legePostAn']>) { return this.anschluss.legePostAn(...a); }
-  private postAufgaben(mappeId: string, von: string | null) { return this.anschluss.postAufgaben(mappeId, von); }
-  private loeschPruefung(...a: Parameters<AufloesenAnschluss['loeschPruefung']>) { return this.anschluss.loeschPruefung(...a); }
-  private loescheMappe(...a: Parameters<AufloesenAnschluss['loescheMappe']>) { return this.anschluss.loescheMappe(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get ocr() {
+    return this.teile.dokumente.ocr;
+  }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inTransaktion(f);
+  }
+  private papierkorbTage() {
+    return this.kern.papierkorbTage();
+  }
+  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) {
+    return this.teile.rechte.pruefeRecht(...a);
+  }
+  private rechteAn(...a: Parameters<ZugriffDienst['rechteAn']>) {
+    return this.teile.rechte.rechteAn(...a);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private titel(m: Mappe) {
+    return this.teile.titel.titel(m);
+  }
+  private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) {
+    return this.teile.versionen.beruehre(mappeId, typ, benutzerId);
+  }
+  private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) {
+    return this.teile.systemmappen.schreibeSystemMappe(...a);
+  }
+  private legePostAn(...a: Parameters<AufloesenAnschluss['legePostAn']>) {
+    return this.anschluss.legePostAn(...a);
+  }
+  private postAufgaben(mappeId: string, von: string | null) {
+    return this.anschluss.postAufgaben(mappeId, von);
+  }
+  private loeschPruefung(...a: Parameters<AufloesenAnschluss['loeschPruefung']>) {
+    return this.anschluss.loeschPruefung(...a);
+  }
+  private loescheMappe(...a: Parameters<AufloesenAnschluss['loescheMappe']>) {
+    return this.anschluss.loescheMappe(...a);
+  }
 
   /**
    * Dokument in ein anderes Register (einer anderen Mappe); dort ist die Texterkennung vielleicht aus oder an. Seine
@@ -60,8 +119,13 @@ export class PostAufloesen {
   async verschiebeInRegister(d: Dokument, mappeId: string, typ: Mappentyp, registerKey: string) {
     await this.repo.verschiebeDokument(d.id, mappeId, registerKey);
     if (!VolltextDienst.volltextAn(typ, registerKey)) return;
-    const ohne = [d, ...(d.anlageZu ? [] : await this.repo.anlagenVon(d.id))].filter((x) => x.ocr?.stand === 'keiner' || x.ocr?.stand === 'ausgelassen');
-    if (ohne.length) { await this.repo.ocrEinreihen(ohne.map((x) => x.id)); this.ocr?.anstossen(); }
+    const ohne = [d, ...(d.anlageZu ? [] : await this.repo.anlagenVon(d.id))].filter(
+      (x) => x.ocr?.stand === 'keiner' || x.ocr?.stand === 'ausgelassen',
+    );
+    if (ohne.length) {
+      await this.repo.ocrEinreihen(ohne.map((x) => x.id));
+      this.ocr?.anstossen();
+    }
   }
 
   /**
@@ -88,7 +152,15 @@ export class PostAufloesen {
       if (!darfPostAnlegen(typ)) return t('meldungen.dienst.post-laesst-sich-nicht');
       if (z && !z.admin) {
         const jetzt = new Date().toISOString();
-        const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte: { ...post.werte, stand: POST_STAND.neu, bezug: null }, erstellt: jetzt, erstelltVon: z.ich.id, geaendert: jetzt, geaendertVon: z.ich.id };
+        const entwurf: Mappe = {
+          id: '00000000-0000-4000-8000-000000000000',
+          typId: typ.id,
+          werte: { ...post.werte, stand: POST_STAND.neu, bezug: null },
+          erstellt: jetzt,
+          erstelltVon: z.ich.id,
+          geaendert: jetzt,
+          geaendertVon: z.ich.id,
+        };
         if (!(await this.rechteAn(z, entwurf, true)).C) return t('meldungen.dienst.post-anlegen-darfst-du');
       }
     }
@@ -102,7 +174,19 @@ export class PostAufloesen {
    * „Aufgelöst in …“ in den Papierkorb (bei ausgeschaltetem Papierkorb endgültig weg); wiederherstellen lässt sie sich
    * nicht – der Weg zurück ist, die neue Mappe zu löschen (Thomas, 07.11.2026). Alles in einer Transaktion.
    */
-  async loesePostAuf(x: { post: Mappe; typ: Mappentyp; ziel: Mappe; zielTyp: Mappentyp; reg: Register | undefined; dokumente: Dokument[]; rest: Dokument[]; von: string | null; quelle?: Ausloeser; neu: boolean; leer?: Map<string, LeerseitenPlan> }) {
+  async loesePostAuf(x: {
+    post: Mappe;
+    typ: Mappentyp;
+    ziel: Mappe;
+    zielTyp: Mappentyp;
+    reg: Register | undefined;
+    dokumente: Dokument[];
+    rest: Dokument[];
+    von: string | null;
+    quelle?: Ausloeser;
+    neu: boolean;
+    leer?: Map<string, LeerseitenPlan>;
+  }) {
     const { post, typ, ziel, zielTyp, reg, dokumente, rest, von } = x;
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const zielTitel = await this.titel(ziel);
@@ -118,10 +202,18 @@ export class PostAufloesen {
         }
       }
       // Abgetrennt: die übrigen Dokumente als neue Post in „Neue Post“, Betreff, Datum, Absender, Kanal und „Für“ wie bisher.
-      const abgetrennt = rest.length ? await this.legeAbgetrenntAn(post, typ, rest, von, {
-        text: t(x.neu ? 'meldungen.dienst.abgetrennt-aus' : 'meldungen.dienst.abgetrennt-aus-uebernommen', { anzahl: rest.length, betreff, typ: zielTyp.name, zielTitel }),
-        ziel: ziel.id, zielTyp: zielTyp.id,
-      }) : undefined;
+      const abgetrennt = rest.length
+        ? await this.legeAbgetrenntAn(post, typ, rest, von, {
+            text: t(x.neu ? 'meldungen.dienst.abgetrennt-aus' : 'meldungen.dienst.abgetrennt-aus-uebernommen', {
+              anzahl: rest.length,
+              betreff,
+              typ: zielTyp.name,
+              zielTitel,
+            }),
+            ziel: ziel.id,
+            zielTyp: zielTyp.id,
+          })
+        : undefined;
       // Stand „Zugeordnet“: erledigt die Aufgabe „Post für dich“ und Aufgaben mit Anlass „Post“; die Post verweist auf die Mappe.
       const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id, ...(abgetrennt ? [abgetrennt.id] : [])])];
       await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.zugeordnet }, von);
@@ -132,20 +224,43 @@ export class PostAufloesen {
       const doks = n ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: '', name: reg!.name }) : '';
       const abg = abgetrennt ? t('meldungen.dienst.abgetrennt-als-neue-post', { anzahl: rest.length }) : '';
       await this.notiere(ziel.id, von, 'zugeordnet', {
-        text: t(x.neu ? 'meldungen.dienst.aus-post-angelegt' : 'meldungen.dienst.aus-post-uebernommen', { betreff, doks, abg }), post: post.id, postTyp: typ.id, dokumente: n, aufgeloest: true,
+        text: t(x.neu ? 'meldungen.dienst.aus-post-angelegt' : 'meldungen.dienst.aus-post-uebernommen', { betreff, doks, abg }),
+        post: post.id,
+        postTyp: typ.id,
+        dokumente: n,
+        aufgeloest: true,
         ...(abgetrennt ? { abgetrennt: abgetrennt.id } : {}),
       });
-      await this.notiere(post.id, von, 'zugeordnet', { text: t('meldungen.dienst.aufgeloest-in', { typ: zielTyp.name, zielTitel }), ziel: ziel.id, zielTyp: zielTyp.id, aufgeloest: true });
+      await this.notiere(post.id, von, 'zugeordnet', {
+        text: t('meldungen.dienst.aufgeloest-in', { typ: zielTyp.name, zielTitel }),
+        ziel: ziel.id,
+        zielTyp: zielTyp.id,
+        aufgeloest: true,
+      });
       await this.beruehre(ziel.id, zielTyp, von);
       const vorher = (await this.repo.holeMappe(post.id))!;
       // Löschprotokoll (#470): Weg „aufgelöst“, als Grund nur Mappentyp und Id der Mappe – keine Titel.
-      await this.loescheMappe(post.id, von, undefined, { weg: 'aufgeloest', ausloeser: x.quelle, text: t('meldungen.dienst.aufgeloest-grund', { typ: zielTyp.name, id: ziel.id }) });
+      await this.loescheMappe(post.id, von, undefined, {
+        weg: 'aufgeloest',
+        ausloeser: x.quelle,
+        text: t('meldungen.dienst.aufgeloest-grund', { typ: zielTyp.name, id: ziel.id }),
+      });
       return { vorher, abgetrennt, mit };
     });
     const papierkorb = (await this.papierkorbTage()) > 0;
-    protokoll.modul('ablage').info('Post aufgelöst', { post: post.id, ziel: ziel.id, dokumente: dokumente.length, abgetrennt: erg.abgetrennt?.id, papierkorb, ...erg.mit });
+    protokoll.modul('ablage').info('Post aufgelöst', {
+      post: post.id,
+      ziel: ziel.id,
+      dokumente: dokumente.length,
+      abgetrennt: erg.abgetrennt?.id,
+      papierkorb,
+      ...erg.mit,
+    });
     return {
-      post: erg.vorher, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: true as const, papierkorb,
+      post: erg.vorher,
+      ziel: (await this.repo.holeMappe(ziel.id))!,
+      aufgeloest: true as const,
+      papierkorb,
       ...(x.leer?.size ? { leerseiten: entfernteSeiten(x.leer) } : {}),
       ...(erg.abgetrennt ? { abgetrennt: (await this.repo.holeMappe(erg.abgetrennt.id))! } : {}),
     };
@@ -155,12 +270,29 @@ export class PostAufloesen {
    * Abgetrennter Teil einer Post (#936, #934): neue Post in „Neue Post“ mit Betreff „… (abgetrennt)“, Datum, „Von“,
    * Kanal und „An“ wie bisher; die Dokumente wandern dorthin, ihre Historie nennt die Herkunft.
    */
-  private async legeAbgetrenntAn(post: Mappe, typ: Mappentyp, dokumente: Dokument[], von: string | null, herkunft: { text: string } & Record<string, unknown>): Promise<Mappe> {
+  private async legeAbgetrenntAn(
+    post: Mappe,
+    typ: Mappentyp,
+    dokumente: Dokument[],
+    von: string | null,
+    herkunft: { text: string } & Record<string, unknown>,
+  ): Promise<Mappe> {
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
-    const neu = await this.legePostAn({
-      betreff: t('meldungen.dienst.abgetrennt-betreff', { betreff }), datum: post.werte.datum, von: post.werte.von ?? '', kanal: auswahlText(post.werte.kanal),
-      an: alsListe(post.werte.an)[0] ?? null,
-    }, { id: von, name: '' }, undefined, undefined, undefined, undefined, post.werte);
+    const neu = await this.legePostAn(
+      {
+        betreff: t('meldungen.dienst.abgetrennt-betreff', { betreff }),
+        datum: post.werte.datum,
+        von: post.werte.von ?? '',
+        kanal: auswahlText(post.werte.kanal),
+        an: alsListe(post.werte.an)[0] ?? null,
+      },
+      { id: von, name: '' },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      post.werte,
+    );
     // Anlagen (#998) wandern mit ihrem Hauptdokument.
     for (const d of zumVerschieben(dokumente).bewegen) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
     for (const d of zumVerschieben(dokumente).allein) await this.repo.verschiebeDokument(d.id, neu.id, d.registerKey);
@@ -193,13 +325,28 @@ export class PostAufloesen {
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
     if (z && !z.admin) {
       const jetzt = new Date().toISOString();
-      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte: { ...post.werte, stand: POST_STAND.neu, bezug: null }, erstellt: jetzt, erstelltVon: z.ich.id, geaendert: jetzt, geaendertVon: z.ich.id };
+      const entwurf: Mappe = {
+        id: '00000000-0000-4000-8000-000000000000',
+        typId: typ.id,
+        werte: { ...post.werte, stand: POST_STAND.neu, bezug: null },
+        erstellt: jetzt,
+        erstelltVon: z.ich.id,
+        geaendert: jetzt,
+        geaendertVon: z.ich.id,
+      };
       if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, t('meldungen.dienst.post-anlegen-darfst-du'));
     }
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const neu = await this.inTransaktion(async () => {
-      const n = await this.legeAbgetrenntAn(post, typ, weg as Dokument[], von, { text: t('meldungen.dienst.abgetrennt-von', { anzahl: weg.length, betreff }) });
-      await this.notiere(post.id, von, 'post_geteilt', { text: t('meldungen.dienst.abgetrennt-nach', { anzahl: weg.length, betreff: auswahlText(n.werte.betreff) }), abgetrennt: n.id, postTyp: typ.id, dokumente: weg.length });
+      const n = await this.legeAbgetrenntAn(post, typ, weg as Dokument[], von, {
+        text: t('meldungen.dienst.abgetrennt-von', { anzahl: weg.length, betreff }),
+      });
+      await this.notiere(post.id, von, 'post_geteilt', {
+        text: t('meldungen.dienst.abgetrennt-nach', { anzahl: weg.length, betreff: auswahlText(n.werte.betreff) }),
+        abgetrennt: n.id,
+        postTyp: typ.id,
+        dokumente: weg.length,
+      });
       await this.beruehre(post.id, typ, von);
       return n;
     });

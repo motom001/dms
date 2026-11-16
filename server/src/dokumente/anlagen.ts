@@ -27,14 +27,26 @@ const log = protokoll.modul('dokumente');
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 
 /** Antwort von GET …/anlagen: das Dokument und seine Anlagen (Anlage 1 zuerst). */
-export interface AnlagenStand { dokument: Dokument; anlagen: Dokument[] }
+export interface AnlagenStand {
+  dokument: Dokument;
+  anlagen: Dokument[];
+}
 
 export class DokumentAnlagen {
-  constructor(private readonly kern: Kern, private readonly teile: { versionen: DokumentVersionen }) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: { versionen: DokumentVersionen },
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private notiere(...a: Parameters<Kern['historie']['schreibe']>) { return this.kern.historie.schreibe(...a); }
-  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private notiere(...a: Parameters<Kern['historie']['schreibe']>) {
+    return this.kern.historie.schreibe(...a);
+  }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inTransaktion(f);
+  }
 
   private async hole(id: string): Promise<Dokument> {
     const d = istUuid(id) ? await this.repo.holeDokument(id) : undefined;
@@ -63,7 +75,8 @@ export class DokumentAnlagen {
   private async nummeriere(hauptId: string, reihenfolge?: string[]) {
     const liste = await this.repo.anlagenVon(hauptId);
     const ids = reihenfolge ?? liste.map((a) => a.id);
-    for (const [i, id] of ids.entries()) if (liste.find((a) => a.id === id)?.anlageNr !== i + 1) await this.repo.setzeAnlage(id, hauptId, i + 1);
+    for (const [i, id] of ids.entries())
+      if (liste.find((a) => a.id === id)?.anlageNr !== i + 1) await this.repo.setzeAnlage(id, hauptId, i + 1);
   }
 
   /** Anlagen lesen (GET …/anlagen): bei einer Anlage ihr Hauptdokument mit allen Anlagen. */
@@ -96,8 +109,11 @@ export class DokumentAnlagen {
       for (const a of mit) await this.repo.setzeAnlage(a.id, haupt.id, ++nr);
       if (vorher) await this.nummeriere(vorher);
       await this.notiere(haupt.mappeId, von, 'anlage', {
-        text: t('meldungen.anlagen.angehaengt', { name: name ?? d.name, haupt: haupt.name, anlage: anlageText(vorhanden.length + 1) }), dokument: name ?? d.name, haupt: haupt.name,
-        nr: vorhanden.length + 1, ...(mit.length ? { mit: mit.length } : {}),
+        text: t('meldungen.anlagen.angehaengt', { name: name ?? d.name, haupt: haupt.name, anlage: anlageText(vorhanden.length + 1) }),
+        dokument: name ?? d.name,
+        haupt: haupt.name,
+        nr: vorhanden.length + 1,
+        ...(mit.length ? { mit: mit.length } : {}),
       });
       await this.beruehre(haupt.mappeId, von);
     });
@@ -113,7 +129,12 @@ export class DokumentAnlagen {
     await this.inTransaktion(async () => {
       await this.repo.setzeAnlage(a.id, null, null);
       await this.nummeriere(haupt.id);
-      await this.notiere(haupt.mappeId, von, 'anlage', { text: t('meldungen.anlagen.geloest', { name: a.name, haupt: haupt.name }), dokument: a.name, haupt: haupt.name, geloest: true });
+      await this.notiere(haupt.mappeId, von, 'anlage', {
+        text: t('meldungen.anlagen.geloest', { name: a.name, haupt: haupt.name }),
+        dokument: a.name,
+        haupt: haupt.name,
+        geloest: true,
+      });
       await this.beruehre(haupt.mappeId, von);
     });
     log.info('Anlage zum eigenen Dokument gemacht', { dokument: a.id, haupt: haupt.id });
@@ -132,7 +153,11 @@ export class DokumentAnlagen {
     if (ids.every((id, i) => liste[i].id === id)) return this.stand(haupt);
     await this.inTransaktion(async () => {
       await this.nummeriere(haupt.id, ids);
-      await this.notiere(haupt.mappeId, von, 'anlage', { text: t('meldungen.anlagen.sortiert', { haupt: haupt.name }), haupt: haupt.name, sortiert: true });
+      await this.notiere(haupt.mappeId, von, 'anlage', {
+        text: t('meldungen.anlagen.sortiert', { haupt: haupt.name }),
+        haupt: haupt.name,
+        sortiert: true,
+      });
       await this.beruehre(haupt.mappeId, von);
     });
     return this.stand(haupt);
@@ -149,7 +174,12 @@ export class DokumentAnlagen {
     if (name === a.name) return this.stand(haupt);
     await this.inTransaktion(async () => {
       await this.repo.setzeAnlage(a.id, haupt.id, a.anlageNr ?? 1, name);
-      await this.notiere(haupt.mappeId, von, 'anlage', { text: t('meldungen.anlagen.umbenannt', { vorher: a.name, name }), dokument: name, vorher: a.name, haupt: haupt.name });
+      await this.notiere(haupt.mappeId, von, 'anlage', {
+        text: t('meldungen.anlagen.umbenannt', { vorher: a.name, name }),
+        dokument: name,
+        vorher: a.name,
+        haupt: haupt.name,
+      });
       await this.beruehre(haupt.mappeId, von);
     });
     return this.stand(haupt);

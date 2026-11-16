@@ -70,7 +70,10 @@ export interface ProzessEinstellung {
  */
 export { HALDE_MIN_MB };
 export const HALDE_MAX_MB = 1536;
-export function haldeJeProzess(e: Pick<ProzessEinstellung, 'anzahl' | 'speicher'>, gesetzt: string[] = [...process.execArgv, process.env.NODE_OPTIONS ?? '']): number | null {
+export function haldeJeProzess(
+  e: Pick<ProzessEinstellung, 'anzahl' | 'speicher'>,
+  gesetzt: string[] = [...process.execArgv, process.env.NODE_OPTIONS ?? ''],
+): number | null {
   if (e.anzahl <= 1 || gesetzt.some((a) => a.includes('--max-old-space-size'))) return null;
   if (e.speicher === null) return HALDE_MAX_MB;
   const anteil = (e.speicher - SPEICHER_RESERVE) / e.anzahl / MB;
@@ -96,11 +99,17 @@ export const prozesseFuerVerbindungen = (gesamt: number) => Math.max(1, 1 + Math
  * (Raspberry Pi, kleine NAS) – mit oder ohne PostgreSQL im selben Container. Dazu müssen die Verbindungen reichen (wenn
  * `DMS_DB_VERBINDUNGEN` gesetzt ist). Bis #1259: Kerne − 1 und je Prozess rund 1 GB, höchstens 2.
  */
-export function empfohleneProzesse(kerne: number, speicher: number | null, o: { verbindungen?: number | null } = {}): { anzahl: number; begrenzt: NonNullable<ProzessEinstellung['begrenzt']> } {
+export function empfohleneProzesse(
+  kerne: number,
+  speicher: number | null,
+  o: { verbindungen?: number | null } = {},
+): { anzahl: number; begrenzt: NonNullable<ProzessEinstellung['begrenzt']> } {
   const grenzen: Array<[number, NonNullable<ProzessEinstellung['begrenzt']>]> = [
     [PROZESSE_EMPFOHLEN_MAX, 'hoechstens'],
     [kerne >= ZWEI_PROZESSE_KERNE_AB ? PROZESSE_EMPFOHLEN_MAX : 1, 'kerne'],
-    ...(speicher !== null ? [[speicher >= ZWEI_PROZESSE_SPEICHER_AB ? PROZESSE_EMPFOHLEN_MAX : 1, 'speicher'] as [number, 'speicher']] : []),
+    ...(speicher !== null
+      ? [[speicher >= ZWEI_PROZESSE_SPEICHER_AB ? PROZESSE_EMPFOHLEN_MAX : 1, 'speicher'] as [number, 'speicher']]
+      : []),
     ...(o.verbindungen ? [[prozesseFuerVerbindungen(o.verbindungen), 'verbindungen'] as [number, 'verbindungen']] : []),
   ];
   const [n, begrenzt] = grenzen.reduce((a, b) => (b[0] < a[0] ? b : a));
@@ -108,14 +117,20 @@ export function empfohleneProzesse(kerne: number, speicher: number | null, o: { 
 }
 
 /** Kerne und Arbeitsspeicher des Rechners (Tests geben sie vor). */
-export interface Rechner { kerne: number; speicher: number }
+export interface Rechner {
+  kerne: number;
+  speicher: number;
+}
 const DIESER_RECHNER = (): Rechner => ({ kerne: availableParallelism(), speicher: totalmem() });
 
 /**
  * Was der Container darf (#1259): cgroup v2 (`cpu.max`, `memory.max`), sonst v1 – höchstens so viel, wie der Rechner
  * hat. `availableParallelism` kennt schon die zugeteilten Kerne (`--cpuset-cpus`), nicht aber eine Quote (`--cpus`).
  */
-export function nutzbar(lies: Leser = dateiLeser, r: Rechner = DIESER_RECHNER()): Pick<ProzessEinstellung, 'kerne' | 'speicher'> & { herkunft: NonNullable<ProzessEinstellung['herkunft']> } {
+export function nutzbar(
+  lies: Leser = dateiLeser,
+  r: Rechner = DIESER_RECHNER(),
+): Pick<ProzessEinstellung, 'kerne' | 'speicher'> & { herkunft: NonNullable<ProzessEinstellung['herkunft']> } {
   const c = liesCgroup(lies);
   const kerneC = c.kerne !== null && c.kerne < r.kerne;
   const speicherC = c.grenze !== null && c.grenze < r.speicher;
@@ -133,7 +148,15 @@ export function prozesseAus(env: Record<string, string | undefined>, lies: Leser
   const auto = (autoVorgabe: boolean): ProzessEinstellung => {
     const v = Number(env.DMS_DB_VERBINDUNGEN?.trim());
     const verbindungen = Number.isInteger(v) && v >= 2 && v <= 100 ? v : null;
-    return { ...empfohleneProzesse(kerne, speicher, { verbindungen }), quelle: 'auto', ...(autoVorgabe ? { autoVorgabe } : {}), kerne, speicher, herkunft, datenbankImContainer };
+    return {
+      ...empfohleneProzesse(kerne, speicher, { verbindungen }),
+      quelle: 'auto',
+      ...(autoVorgabe ? { autoVorgabe } : {}),
+      kerne,
+      speicher,
+      herkunft,
+      datenbankImContainer,
+    };
   };
   // Ohne DMS_PROZESSE (#1259): dms-komplett automatisch, das Image `dms` (eigene Datenbank) wie bisher mit einem.
   if (!roh) return datenbankImContainer ? auto(true) : { anzahl: 1, quelle: 'vorgabe', kerne, speicher, herkunft, datenbankImContainer };
@@ -146,13 +169,20 @@ export function prozesseAus(env: Record<string, string | undefined>, lies: Leser
 }
 
 /** Ein Prozess von Ablago, wie der Hauptprozess ihn kennt. */
-export interface ProzessInfo { nr: number; pid: number; leiter: boolean }
+export interface ProzessInfo {
+  nr: number;
+  pid: number;
+  leiter: boolean;
+}
 
 /**
  * Abgestürzte und neu gestartete Prozesse seit dem Start (#874), für Lasttest und Systemzustand: Anzahl und die letzten
  * zehn mit Nummer, Code bzw. Signal (z. B. SIGKILL vom Kernel bei zu wenig Arbeitsspeicher, SIGABRT bei voller Halde).
  */
-export interface Neustarts { anzahl: number; letzte: Array<{ nr: number; code: number | null; signal: string | null; zeit: string; ausnahme?: string | null }> }
+export interface Neustarts {
+  anzahl: number;
+  letzte: Array<{ nr: number; code: number | null; signal: string | null; zeit: string; ausnahme?: string | null }>;
+}
 const KEINE_NEUSTARTS: Neustarts = { anzahl: 0, letzte: [] };
 
 /** Bearbeitet einen Aufruf; `teil` schickt Zwischenstände (z. B. Teile einer Antwort) an den Aufrufer. */
@@ -202,9 +232,17 @@ export const RUF_MS = 10 * 60_000;
  * Fehler über Prozessgrenzen. `schluessel`: Text aus den Sprachdateien (`meldungen.prozesse.*`) – der Hauptprozess lädt
  * keine Sprachdateien, er schickt nur den Schlüssel; übersetzt wird beim Empfänger.
  */
-interface Fehlerbild { status?: number; message: string; details?: unknown; schluessel?: string }
+interface Fehlerbild {
+  status?: number;
+  message: string;
+  details?: unknown;
+  schluessel?: string;
+}
 type Uebersetzer = (schluessel: string) => string;
-const alsFehlerbild = (e: unknown): Fehlerbild => (e instanceof Fachfehler ? { status: e.status, message: e.message, details: e.details } : { message: e instanceof Error ? e.message : String(e) });
+const alsFehlerbild = (e: unknown): Fehlerbild =>
+  e instanceof Fachfehler
+    ? { status: e.status, message: e.message, details: e.details }
+    : { message: e instanceof Error ? e.message : String(e) };
 const ausFehlerbild = (f: Fehlerbild, t: Uebersetzer) => {
   const text = f.schluessel ? t(f.schluessel) : f.message;
   return f.status ? new Fachfehler(f.status, text, f.details) : new Error(text);
@@ -214,11 +252,19 @@ const ausFehlerbild = (f: Fehlerbild, t: Uebersetzer) => {
 abstract class Grund {
   protected bediener = new Map<string, Bediener>();
   protected hoerer = new Map<string, Array<(d: unknown) => void>>();
-  bediene(name: string, f: Bediener) { this.bediener.set(name, f); }
-  hoere(name: string, f: (d: unknown) => void) { this.hoerer.set(name, [...(this.hoerer.get(name) ?? []), f]); }
+  bediene(name: string, f: Bediener) {
+    this.bediener.set(name, f);
+  }
+  hoere(name: string, f: (d: unknown) => void) {
+    this.hoerer.set(name, [...(this.hoerer.get(name) ?? []), f]);
+  }
   protected verteile(name: string, daten: unknown) {
     for (const f of this.hoerer.get(name) ?? []) {
-      try { f(daten); } catch (e) { protokoll.modul('system').warn('Meldung zwischen Prozessen nicht verarbeitet', { meldung: name, fehler: (e as Error).message }); }
+      try {
+        f(daten);
+      } catch (e) {
+        protokoll.modul('system').warn('Meldung zwischen Prozessen nicht verarbeitet', { meldung: name, fehler: (e as Error).message });
+      }
     }
   }
   protected async lokal(name: string, args: unknown[], teil: (w: unknown) => void): Promise<unknown> {
@@ -234,7 +280,10 @@ function sammlungHier(nr: number): Protokollsammlung {
   if (!eigeneSammlung) {
     const s = new Protokollsammlung();
     eigeneSammlung = s;
-    protokoll.beobachte((e) => { const m = rohAus(e); if (m) s.nimm(m, nr); });
+    protokoll.beobachte((e) => {
+      const m = rohAus(e);
+      if (m) s.nimm(m, nr);
+    });
   }
   return eigeneSammlung;
 }
@@ -248,25 +297,47 @@ class Einzeln extends Grund implements Verbund {
   readonly erster = true;
   readonly konsole = null;
   readonly primaer = null;
-  async rufe<T>(name: string, args: unknown[] = [], o: { teil?: (w: unknown) => void } = {}): Promise<T> { return await this.lokal(name, args, o.teil ?? (() => {})) as T; }
-  melde(name: string, daten?: unknown, an: 'leiter' | 'alle' | 'andere' = 'leiter') { if (an !== 'andere') queueMicrotask(() => this.verteile(name, daten)); }
+  async rufe<T>(name: string, args: unknown[] = [], o: { teil?: (w: unknown) => void } = {}): Promise<T> {
+    return (await this.lokal(name, args, o.teil ?? (() => {}))) as T;
+  }
+  melde(name: string, daten?: unknown, an: 'leiter' | 'alle' | 'andere' = 'leiter') {
+    if (an !== 'andere') queueMicrotask(() => this.verteile(name, daten));
+  }
   async frageAlle<T>(name: string): Promise<Array<ProzessInfo & { wert: T | null }>> {
-    const wert = this.bediener.has(name) ? await this.lokal(name, [], () => {}).catch(() => null) as T : null;
+    const wert = this.bediener.has(name) ? ((await this.lokal(name, [], () => {}).catch(() => null)) as T) : null;
     return [{ nr: 1, pid: process.pid, leiter: true, wert }];
   }
-  prozesse(): ProzessInfo[] { return [{ nr: 1, pid: process.pid, leiter: true }]; }
-  neustarts(): Neustarts { return KEINE_NEUSTARTS; }
-  constructor() { super(); sammlungHier(1); }
-  async meldungen() { return sammlungHier(1).stand(); }
+  prozesse(): ProzessInfo[] {
+    return [{ nr: 1, pid: process.pid, leiter: true }];
+  }
+  neustarts(): Neustarts {
+    return KEINE_NEUSTARTS;
+  }
+  constructor() {
+    super();
+    sammlungHier(1);
+  }
+  async meldungen() {
+    return sammlungHier(1).stand();
+  }
   absturz() {}
   bereit() {}
-  beendeAlle() { return false; }
+  beendeAlle() {
+    return false;
+  }
 }
 
 /** Ein Prozess für alle Fälle ohne Hauptprozess (Tests, `DMS_PROZESSE=1`). */
 export const einzeln = (): Verbund => new Einzeln();
 
-interface Rolle { nr: number; leiter: boolean; erster: boolean; konsole: string; anzahl: number; primaer: number }
+interface Rolle {
+  nr: number;
+  leiter: boolean;
+  erster: boolean;
+  konsole: string;
+  anzahl: number;
+  primaer: number;
+}
 type Nachricht = { dms: typeof KANAL; art: string; [k: string]: unknown };
 
 /** Ein Prozess unter dem Hauptprozess (`cluster.isWorker`). */
@@ -280,22 +351,40 @@ class Teil extends Grund implements Verbund {
   readonly primaer: number;
   private liste: ProzessInfo[] = [];
   private abstuerze: Neustarts = KEINE_NEUSTARTS;
-  private offen = new Map<number, { ok: (w: unknown) => void; nein: (e: Error) => void; teil?: (w: unknown) => void; uhr: NodeJS.Timeout }>();
+  private offen = new Map<
+    number,
+    { ok: (w: unknown) => void; nein: (e: Error) => void; teil?: (w: unknown) => void; uhr: NodeJS.Timeout }
+  >();
   private naechste = 1;
 
-  constructor(r: Rolle, private t: Uebersetzer) {
+  constructor(
+    r: Rolle,
+    private t: Uebersetzer,
+  ) {
     super();
-    this.nr = r.nr; this.leiter = r.leiter; this.erster = r.erster; this.konsole = r.konsole; this.anzahl = r.anzahl; this.primaer = r.primaer;
+    this.nr = r.nr;
+    this.leiter = r.leiter;
+    this.erster = r.erster;
+    this.konsole = r.konsole;
+    this.anzahl = r.anzahl;
+    this.primaer = r.primaer;
     this.liste = [{ nr: r.nr, pid: process.pid, leiter: r.leiter }];
-    process.on('message', (m: Nachricht) => { if (m?.dms === KANAL) void this.empfange(m); });
+    process.on('message', (m: Nachricht) => {
+      if (m?.dms === KANAL) void this.empfange(m);
+    });
     // Warnungen und Fehler (#895) gebündelt an den Hauptprozess – er sammelt für alle, auch über einen Absturz hinaus.
     const b = new Buendel((eintraege: Rohmeldung[]) => this.sende({ art: 'protokoll', eintraege }));
-    protokoll.beobachte((e) => { const m = rohAus(e); if (m) b.nimm(m); });
+    protokoll.beobachte((e) => {
+      const m = rohAus(e);
+      if (m) b.nimm(m);
+    });
     // Ohne Hauptprozess (abgestürzt, beendet) gibt es keine Anfragen mehr: geordnet beenden.
     process.on('disconnect', () => process.kill(process.pid, 'SIGTERM'));
   }
 
-  private sende(m: Record<string, unknown>) { if (process.connected) process.send!({ dms: KANAL, ...m }); }
+  private sende(m: Record<string, unknown>) {
+    if (process.connected) process.send!({ dms: KANAL, ...m });
+  }
 
   private async empfange(m: Nachricht) {
     switch (m.art) {
@@ -304,7 +393,9 @@ class Teil extends Grund implements Verbund {
         try {
           const wert = await this.lokal(String(m.name), (m.args as unknown[]) ?? [], (w) => this.sende({ art: 'teil', id, wert: w }));
           this.sende({ art: 'antwort', id, ok: true, wert });
-        } catch (e) { this.sende({ art: 'antwort', id, ok: false, fehler: alsFehlerbild(e) }); }
+        } catch (e) {
+          this.sende({ art: 'antwort', id, ok: false, fehler: alsFehlerbild(e) });
+        }
         return;
       }
       case 'antwort': {
@@ -312,19 +403,29 @@ class Teil extends Grund implements Verbund {
         if (!p) return;
         this.offen.delete(Number(m.id));
         clearTimeout(p.uhr);
-        if (m.ok) p.ok(m.wert); else p.nein(ausFehlerbild(m.fehler as Fehlerbild, this.t));
+        if (m.ok) p.ok(m.wert);
+        else p.nein(ausFehlerbild(m.fehler as Fehlerbild, this.t));
         return;
       }
-      case 'teil': this.offen.get(Number(m.id))?.teil?.(m.wert); return;
-      case 'meldung': this.verteile(String(m.name), m.daten); return;
-      case 'prozesse': this.liste = m.liste as ProzessInfo[]; if (m.neustarts) this.abstuerze = m.neustarts as Neustarts; return;
+      case 'teil':
+        this.offen.get(Number(m.id))?.teil?.(m.wert);
+        return;
+      case 'meldung':
+        this.verteile(String(m.name), m.daten);
+        return;
+      case 'prozesse':
+        this.liste = m.liste as ProzessInfo[];
+        if (m.neustarts) this.abstuerze = m.neustarts as Neustarts;
+        return;
     }
   }
 
   private warte<T>(m: Record<string, unknown>, ms: number, teil?: (w: unknown) => void): Promise<T> {
     const id = this.naechste++;
     return new Promise<T>((ok, nein) => {
-      const uhr = setTimeout(() => { if (this.offen.delete(id)) nein(new Fachfehler(504, this.t('meldungen.prozesse.keine-antwort'))); }, ms);
+      const uhr = setTimeout(() => {
+        if (this.offen.delete(id)) nein(new Fachfehler(504, this.t('meldungen.prozesse.keine-antwort')));
+      }, ms);
       uhr.unref?.();
       this.offen.set(id, { ok: ok as (w: unknown) => void, nein, teil, uhr });
       this.sende({ ...m, id });
@@ -332,12 +433,15 @@ class Teil extends Grund implements Verbund {
   }
 
   async rufe<T>(name: string, args: unknown[] = [], o: { teil?: (w: unknown) => void; ms?: number } = {}): Promise<T> {
-    if (this.leiter) return await this.lokal(name, args, o.teil ?? (() => {})) as T;
+    if (this.leiter) return (await this.lokal(name, args, o.teil ?? (() => {}))) as T;
     return this.warte<T>({ art: 'rufe', name, args }, o.ms ?? RUF_MS, o.teil);
   }
 
   melde(name: string, daten?: unknown, an: 'leiter' | 'alle' | 'andere' = 'leiter') {
-    if (an === 'leiter' && this.leiter) { queueMicrotask(() => this.verteile(name, daten)); return; }
+    if (an === 'leiter' && this.leiter) {
+      queueMicrotask(() => this.verteile(name, daten));
+      return;
+    }
     this.sende({ art: 'melde', an, name, daten });
   }
 
@@ -345,12 +449,25 @@ class Teil extends Grund implements Verbund {
     return this.warte({ art: 'frageAlle', name, ms }, ms + 1000);
   }
 
-  prozesse() { return this.liste; }
-  neustarts() { return this.abstuerze; }
-  meldungen(): Promise<Sammelstand | null> { return this.warte<Sammelstand>({ art: 'meldungen' }, 3000).catch(() => null); }
-  absturz(e: unknown) { this.sende({ art: 'absturz', ausnahme: ausnahmeArt(e) }); }
-  bereit() { this.sende({ art: 'bereit' }); }
-  beendeAlle(grund: string) { this.sende({ art: 'beenden', grund }); return true; }
+  prozesse() {
+    return this.liste;
+  }
+  neustarts() {
+    return this.abstuerze;
+  }
+  meldungen(): Promise<Sammelstand | null> {
+    return this.warte<Sammelstand>({ art: 'meldungen' }, 3000).catch(() => null);
+  }
+  absturz(e: unknown) {
+    this.sende({ art: 'absturz', ausnahme: ausnahmeArt(e) });
+  }
+  bereit() {
+    this.sende({ art: 'bereit' });
+  }
+  beendeAlle(grund: string) {
+    this.sende({ art: 'beenden', grund });
+    return true;
+  }
 }
 
 /** Verbund für diesen Prozess: unter einem Hauptprozess erst die Rolle erfragen, sonst {@link einzeln}. */
@@ -399,7 +516,13 @@ export function leite(e: ProzessEinstellung): Promise<never> {
   const weiter = new Map<number, { w: Worker; id: unknown }>();
   /** Sammelfragen an alle: Nummer beim Ziel → Sammlung und Prozess. */
   const fragen = new Map<number, { s: Sammlung; info: ProzessInfo }>();
-  interface Sammlung { w: Worker; id: unknown; offen: Set<number>; werte: Array<ProzessInfo & { wert: unknown }>; uhr: NodeJS.Timeout }
+  interface Sammlung {
+    w: Worker;
+    id: unknown;
+    offen: Set<number>;
+    werte: Array<ProzessInfo & { wert: unknown }>;
+    uhr: NodeJS.Timeout;
+  }
   let naechste = 1;
   const neustarts: Neustarts = { anzahl: 0, letzte: [] };
   let leiterWarBereit = false;
@@ -409,9 +532,15 @@ export function leite(e: ProzessEinstellung): Promise<never> {
   /** Art der Ausnahme, die ein Prozess vor seinem Absturz meldete (#895) – für den Eintrag unter den Neustarts. */
   const ausnahmen = new Map<number, string | null>();
 
-  const sende = (w: Worker, m: Record<string, unknown>) => { if (w.isConnected()) w.send({ dms: KANAL, ...m }); };
-  const liste = (): ProzessInfo[] => [...plaetze].filter(([, p]) => p.w.process.pid).map(([nr, p]) => ({ nr, pid: p.w.process.pid!, leiter: nr === 1 }));
-  const verteileListe = () => { const l = liste(); for (const p of plaetze.values()) sende(p.w, { art: 'prozesse', liste: l, neustarts }); };
+  const sende = (w: Worker, m: Record<string, unknown>) => {
+    if (w.isConnected()) w.send({ dms: KANAL, ...m });
+  };
+  const liste = (): ProzessInfo[] =>
+    [...plaetze].filter(([, p]) => p.w.process.pid).map(([nr, p]) => ({ nr, pid: p.w.process.pid!, leiter: nr === 1 }));
+  const verteileListe = () => {
+    const l = liste();
+    for (const p of plaetze.values()) sende(p.w, { art: 'prozesse', liste: l, neustarts });
+  };
   const sammlungFertig = (s: Sammlung, k?: number) => {
     if (k !== undefined) s.offen.delete(k);
     if (s.offen.size) return;
@@ -425,7 +554,15 @@ export function leite(e: ProzessEinstellung): Promise<never> {
     const p = plaetze.get(nr);
     switch (m.art) {
       case 'hallo':
-        sende(w, { art: 'rolle', nr, leiter: nr === 1, erster: nr === 1 && !leiterWarBereit, konsole, anzahl: e.anzahl, primaer: process.pid });
+        sende(w, {
+          art: 'rolle',
+          nr,
+          leiter: nr === 1,
+          erster: nr === 1 && !leiterWarBereit,
+          konsole,
+          anzahl: e.anzahl,
+          primaer: process.pid,
+        });
         verteileListe();
         return;
       case 'bereit':
@@ -439,13 +576,22 @@ export function leite(e: ProzessEinstellung): Promise<never> {
         return;
       case 'rufe': {
         const l = plaetze.get(1);
-        if (!l?.bereit) { sende(w, { art: 'antwort', id: m.id, ok: false, fehler: { status: 503, message: '', schluessel: 'meldungen.prozesse.leiter-startet' } }); return; }
+        if (!l?.bereit) {
+          sende(w, {
+            art: 'antwort',
+            id: m.id,
+            ok: false,
+            fehler: { status: 503, message: '', schluessel: 'meldungen.prozesse.leiter-startet' },
+          });
+          return;
+        }
         const k = naechste++;
         weiter.set(k, { w, id: m.id });
         sende(l.w, { art: 'rufe', id: k, name: m.name, args: m.args });
         return;
       }
-      case 'antwort': case 'teil': {
+      case 'antwort':
+      case 'teil': {
         const k = Number(m.id);
         const f = fragen.get(k);
         if (f) {
@@ -470,14 +616,32 @@ export function leite(e: ProzessEinstellung): Promise<never> {
         return;
       }
       case 'frageAlle': {
-        const s: Sammlung = { w, id: m.id, offen: new Set(), werte: [], uhr: setTimeout(() => {
-          for (const k of s.offen) { const f = fragen.get(k); if (f) { fragen.delete(k); s.werte.push({ ...f.info, wert: null }); } }
-          s.offen.clear();
-          sammlungFertig(s);
-        }, Number(m.ms) || 2000) };
+        const s: Sammlung = {
+          w,
+          id: m.id,
+          offen: new Set(),
+          werte: [],
+          uhr: setTimeout(
+            () => {
+              for (const k of s.offen) {
+                const f = fragen.get(k);
+                if (f) {
+                  fragen.delete(k);
+                  s.werte.push({ ...f.info, wert: null });
+                }
+              }
+              s.offen.clear();
+              sammlungFertig(s);
+            },
+            Number(m.ms) || 2000,
+          ),
+        };
         for (const i of liste()) {
           const x = plaetze.get(i.nr)!;
-          if (!x.bereit && x.w !== w) { s.werte.push({ ...i, wert: null }); continue; }
+          if (!x.bereit && x.w !== w) {
+            s.werte.push({ ...i, wert: null });
+            continue;
+          }
           const k = naechste++;
           fragen.set(k, { s, info: i });
           s.offen.add(k);
@@ -487,7 +651,7 @@ export function leite(e: ProzessEinstellung): Promise<never> {
         return;
       }
       case 'protokoll':
-        for (const x of Array.isArray(m.eintraege) ? m.eintraege as Rohmeldung[] : []) sammlung.nimm(x, nr);
+        for (const x of Array.isArray(m.eintraege) ? (m.eintraege as Rohmeldung[]) : []) sammlung.nimm(x, nr);
         return;
       case 'meldungen':
         sende(w, { art: 'antwort', id: m.id, ok: true, wert: sammlung.stand() });
@@ -509,13 +673,32 @@ export function leite(e: ProzessEinstellung): Promise<never> {
     // Was noch auf den beendeten Prozess wartet, bekommt eine Antwort; Fragen von ihm verfallen.
     for (const [k, z] of weiter) {
       if (z.w === w) weiter.delete(k);
-      else if (nr === 1) { weiter.delete(k); sende(z.w, { art: 'antwort', id: z.id, ok: false, fehler: { status: 503, message: '', schluessel: 'meldungen.prozesse.leiter-neu' } }); }
+      else if (nr === 1) {
+        weiter.delete(k);
+        sende(z.w, {
+          art: 'antwort',
+          id: z.id,
+          ok: false,
+          fehler: { status: 503, message: '', schluessel: 'meldungen.prozesse.leiter-neu' },
+        });
+      }
     }
-    for (const [k, f] of fragen) if (f.info.nr === nr) { fragen.delete(k); f.s.werte.push({ ...f.info, wert: null }); sammlungFertig(f.s, k); }
-    if (ende !== null) { if (!plaetze.size) process.exit(ende); return; }
+    for (const [k, f] of fragen)
+      if (f.info.nr === nr) {
+        fragen.delete(k);
+        f.s.werte.push({ ...f.info, wert: null });
+        sammlungFertig(f.s, k);
+      }
+    if (ende !== null) {
+      if (!plaetze.size) process.exit(ende);
+      return;
+    }
     // Für Lasttest und Systemzustand (#874): Wer stürzt ab, mit welchem Code bzw. Signal?
     neustarts.anzahl++;
-    neustarts.letzte = [...neustarts.letzte, { nr, code, signal, zeit: new Date().toISOString(), ausnahme: ausnahmen.get(nr) ?? null }].slice(-10);
+    neustarts.letzte = [
+      ...neustarts.letzte,
+      { nr, code, signal, zeit: new Date().toISOString(), ausnahme: ausnahmen.get(nr) ?? null },
+    ].slice(-10);
     ausnahmen.delete(nr);
     verteileListe();
     if (nr === 1 && !leiterWarBereit) {
@@ -528,7 +711,9 @@ export function leite(e: ProzessEinstellung): Promise<never> {
     const ms = neustartWarten(folge);
     // Nur Nummer, Code und Signal – der Grund steht im Protokoll des Prozesses selbst (ohne Geheimnisse).
     log.warn(`Prozess ${nr}${nr === 1 ? ' (Leiter)' : ''} beendet (${signal ?? `Code ${code}`}) – startet in ${ms / 1000} s neu`);
-    setTimeout(() => { if (ende === null) starte(nr); }, ms);
+    setTimeout(() => {
+      if (ende === null) starte(nr);
+    }, ms);
   };
 
   const starte = (nr: number) => {
@@ -547,12 +732,26 @@ export function leite(e: ProzessEinstellung): Promise<never> {
     if (!plaetze.size) process.exit(code);
     for (const p of plaetze.values()) p.w.process.kill('SIGTERM');
     // Säumige (#1328): ins Protokoll, dann hart beenden.
-    setTimeout(() => { if (plaetze.size) log.warn(`Beenden: Prozess ${[...plaetze.keys()].join(', ')} nach ${BEENDEN_MS / 1000} s noch nicht beendet – hart beendet`); for (const p of plaetze.values()) p.w.process.kill('SIGKILL'); process.exit(code); }, BEENDEN_MS).unref();
+    setTimeout(() => {
+      if (plaetze.size)
+        log.warn(`Beenden: Prozess ${[...plaetze.keys()].join(', ')} nach ${BEENDEN_MS / 1000} s noch nicht beendet – hart beendet`);
+      for (const p of plaetze.values()) p.w.process.kill('SIGKILL');
+      process.exit(code);
+    }, BEENDEN_MS).unref();
   };
   process.on('SIGTERM', () => beendeAlle(0));
   process.on('SIGINT', () => beendeAlle(0));
 
-  log.info(`Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe von dms-komplett' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`, { kerne: e.kerne, speicherMb: e.speicher === null ? null : Math.round(e.speicher / MB), herkunft: e.herkunft, ...(e.quelle === 'auto' ? { begrenzt: e.begrenzt } : {}), ...(halde ? { haldeLeiterMb: leiterHalde, haldeMb: halde } : {}) });
+  log.info(
+    `Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe von dms-komplett' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`,
+    {
+      kerne: e.kerne,
+      speicherMb: e.speicher === null ? null : Math.round(e.speicher / MB),
+      herkunft: e.herkunft,
+      ...(e.quelle === 'auto' ? { begrenzt: e.begrenzt } : {}),
+      ...(halde ? { haldeLeiterMb: leiterHalde, haldeMb: halde } : {}),
+    },
+  );
   starte(1);
   return new Promise<never>(() => {});
 }

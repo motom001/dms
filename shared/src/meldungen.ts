@@ -20,13 +20,22 @@ export const akzeptierbar = (s: Schwere) => s !== 'schlecht';
 export const MELDUNG_SCHLUESSEL = /^[a-z0-9][a-z0-9._-]{0,60}(?::[A-Za-z0-9._-]{1,80})?$/;
 
 /** Gespeichert je akzeptierter Meldung (Einstellung `uebersicht_akzeptiert`). */
-export interface Akzeptanz { art: Schwere; von: string; am: string; grund?: string }
+export interface Akzeptanz {
+  art: Schwere;
+  von: string;
+  am: string;
+  grund?: string;
+}
 export type Akzeptiert = Record<string, Akzeptanz>;
 
 /** Höchstlänge der Begründung. */
 export const GRUND_MAX = 300;
 
-export interface Meldung { schluessel: string; art: Schwere; datum?: string | null }
+export interface Meldung {
+  schluessel: string;
+  art: Schwere;
+  datum?: string | null;
+}
 
 export interface Geordnet<M extends Meldung> {
   /** Was oben steht, nach Schwere sortiert. */
@@ -39,14 +48,18 @@ export interface Geordnet<M extends Meldung> {
 
 /** Nach Schwere, innerhalb einer Stufe neuere zuerst; ohne Datum bleibt die Reihenfolge, wie sie kam. */
 export function nachSchwere<M extends Meldung>(liste: M[]): M[] {
-  return liste.map((m, i) => ({ m, i })).sort((a, b) => {
-    const s = rang(a.m.art) - rang(b.m.art);
-    if (s) return s;
-    const da = a.m.datum ? Date.parse(a.m.datum) : NaN, db = b.m.datum ? Date.parse(b.m.datum) : NaN;
-    if (!Number.isNaN(da) && !Number.isNaN(db) && da !== db) return db - da;
-    if (!Number.isNaN(da) !== !Number.isNaN(db)) return Number.isNaN(da) ? 1 : -1;
-    return a.i - b.i;
-  }).map((x) => x.m);
+  return liste
+    .map((m, i) => ({ m, i }))
+    .sort((a, b) => {
+      const s = rang(a.m.art) - rang(b.m.art);
+      if (s) return s;
+      const da = a.m.datum ? Date.parse(a.m.datum) : NaN,
+        db = b.m.datum ? Date.parse(b.m.datum) : NaN;
+      if (!Number.isNaN(da) && !Number.isNaN(db) && da !== db) return db - da;
+      if (!Number.isNaN(da) !== !Number.isNaN(db)) return Number.isNaN(da) ? 1 : -1;
+      return a.i - b.i;
+    })
+    .map((x) => x.m);
 }
 
 /** Teilt die aktuellen Meldungen in „offen“ und „bewusst akzeptiert“ und nennt Akzeptanzen, die nicht mehr gelten. */
@@ -58,8 +71,15 @@ export function ordneMeldungen<M extends Meldung>(liste: M[], akzeptiert: Akzept
   for (const m of liste) {
     da.add(m.schluessel);
     const a = akzeptiert[m.schluessel];
-    if (!a) { offen.push(m); continue; }
-    if (!akzeptierbar(m.art) || rang(m.art) < rang(a.art)) { offen.push(m); aufheben.push({ schluessel: m.schluessel, anlass: 'schwerer' }); continue; }
+    if (!a) {
+      offen.push(m);
+      continue;
+    }
+    if (!akzeptierbar(m.art) || rang(m.art) < rang(a.art)) {
+      offen.push(m);
+      aufheben.push({ schluessel: m.schluessel, anlass: 'schwerer' });
+      continue;
+    }
     angenommen.push({ ...m, akzeptanz: a });
   }
   for (const k of Object.keys(akzeptiert)) if (!da.has(k)) aufheben.push({ schluessel: k, anlass: 'erledigt' });

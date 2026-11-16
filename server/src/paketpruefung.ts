@@ -35,13 +35,18 @@ const ZIP_ZEIT = new Date('2026-01-01T12:00:00Z');
 
 /** Ein gelesener Paketordner. */
 export interface PruefPaket {
-  ordner: string; manifest: Manifest; archiv: Buffer; sha256: string;
+  ordner: string;
+  manifest: Manifest;
+  archiv: Buffer;
+  sha256: string;
   /** Hinweise schon beim Lesen (z. B. übergangene Verknüpfungen). */
   hinweise: string[];
 }
 /** Ergebnis je Paket und Schritt. */
 export interface PruefErgebnis {
-  ordner: string; id: string | null; version: string | null;
+  ordner: string;
+  id: string | null;
+  version: string | null;
   /** Bei einem Update die Version davor. */
   vorher: string | null;
   ok: boolean;
@@ -79,10 +84,17 @@ export function liesOrdner(pfad: string): { dateien: Map<string, Buffer>; hinwei
   let summe = 0;
   const lauf = (abs: string, rel: string) => {
     for (const n of readdirSync(abs).sort()) {
-      const p = join(abs, n), r = rel ? `${rel}/${n}` : n;
+      const p = join(abs, n),
+        r = rel ? `${rel}/${n}` : n;
       const s = lstatSync(p);
-      if (s.isSymbolicLink()) { hinweise.push(t('meldungen.pakete-pruefen.link', { datei: r })); continue; }
-      if (s.isDirectory()) { lauf(p, r); continue; }
+      if (s.isSymbolicLink()) {
+        hinweise.push(t('meldungen.pakete-pruefen.link', { datei: r }));
+        continue;
+      }
+      if (s.isDirectory()) {
+        lauf(p, r);
+        continue;
+      }
       if (!s.isFile()) continue;
       summe += s.size;
       if (summe > ARCHIV_MAX) throw new Fachfehler(422, t('meldungen.pakete-pruefen.zu-gross', { mb: Math.round(ARCHIV_MAX / MB) }));
@@ -101,15 +113,23 @@ export function liesOrdner(pfad: string): { dateien: Map<string, Buffer>; hinwei
 export function paketordner(pfad: string): string[] {
   try {
     if (!lstatSync(pfad).isDirectory() || existsSync(join(pfad, 'manifest.yaml'))) return [pfad];
-    const innen = readdirSync(pfad).sort().map((n) => join(pfad, n)).filter((p) => lstatSync(p).isDirectory() && existsSync(join(p, 'manifest.yaml')));
+    const innen = readdirSync(pfad)
+      .sort()
+      .map((n) => join(pfad, n))
+      .filter((p) => lstatSync(p).isDirectory() && existsSync(join(p, 'manifest.yaml')));
     return innen.length ? innen : [pfad];
-  } catch { return [pfad]; }
+  } catch {
+    return [pfad];
+  }
 }
 
 /** Liest einen Paketordner: Archiv wie in der Registry und das Manifest über liesPaket (wirft mit allen Gründen). */
 export function liesPaketordner(pfad: string): PruefPaket {
   const { dateien, hinweise } = liesOrdner(pfad);
-  const archiv = zipPuffer([...dateien].map(([name, daten]) => ({ name, daten })), ZIP_ZEIT);
+  const archiv = zipPuffer(
+    [...dateien].map(([name, daten]) => ({ name, daten })),
+    ZIP_ZEIT,
+  );
   const paket = liesPaket(liesZip(archiv));
   return { ordner: pfad, manifest: paket.manifest, archiv, sha256: createHash('sha256').update(archiv).digest('hex'), hinweise };
 }
@@ -123,12 +143,14 @@ export function liesPaketordner(pfad: string): PruefPaket {
  */
 export function reihenfolge<T extends ReihenPaket>(pakete: T[]): { reihe: T[]; kreis: T[] } {
   const { vor, stufe } = vorgaenger(pakete);
-  const reihe: T[] = [], fertig = new Set<T>();
+  const reihe: T[] = [],
+    fertig = new Set<T>();
   for (;;) {
     const frei = pakete.filter((p) => !fertig.has(p) && [...vor.get(p)!].every((x) => fertig.has(x)));
     if (!frei.length) break;
     frei.sort((a, b) => stufe.get(a)! - stufe.get(b)! || pakete.indexOf(a) - pakete.indexOf(b));
-    reihe.push(frei[0]); fertig.add(frei[0]);
+    reihe.push(frei[0]);
+    fertig.add(frei[0]);
   }
   return { reihe, kreis: pakete.filter((p) => !fertig.has(p)) };
 }
@@ -142,7 +164,8 @@ function vorgaenger<T extends ReihenPaket>(pakete: T[]): { vor: Map<T, Set<T>>; 
   const stufe = new Map(pakete.map((p) => [p, jeId.get(p.manifest.id)!.indexOf(p)]));
   const vor = new Map<T, Set<T>>(pakete.map((p) => [p, new Set<T>()]));
   for (const p of pakete) {
-    const v = vor.get(p)!, i = stufe.get(p)!;
+    const v = vor.get(p)!,
+      i = stufe.get(p)!;
     if (i > 0) v.add(jeId.get(p.manifest.id)![i - 1]);
     for (const [id, bereich] of Object.entries(p.manifest.abhaengigkeiten)) {
       const d = (jeId.get(id) ?? []).find((x) => passt(x.manifest.version, bereich));
@@ -158,19 +181,35 @@ function pruefkatalog(pakete: PruefPaket[], versteckt: Set<string>): Katalog {
   const jeId = new Map<string, PruefPaket[]>();
   for (const p of pakete) if (!versteckt.has(p.manifest.id)) jeId.set(p.manifest.id, [...(jeId.get(p.manifest.id) ?? []), p]);
   return {
-    format: 1, erstellt: '', quelle: 'pakete-pruefen',
+    format: 1,
+    erstellt: '',
+    quelle: 'pakete-pruefen',
     pakete: [...jeId].map(([id, l]) => {
       const neu = [...l].sort((a, b) => vergleicheVersion(b.manifest.version, a.manifest.version));
       const m = neu[0].manifest;
       return {
-        id, name: m.name, beschreibung: m.beschreibung, autor: m.autor, lizenz: m.lizenz, aktuell: m.version,
-        ...(m.herausgeber ? { herausgeber: m.herausgeber } : {}), ...(m.ersetzt?.length ? { ersetzt: m.ersetzt } : {}),
+        id,
+        name: m.name,
+        beschreibung: m.beschreibung,
+        autor: m.autor,
+        lizenz: m.lizenz,
+        aktuell: m.version,
+        ...(m.herausgeber ? { herausgeber: m.herausgeber } : {}),
+        ...(m.ersetzt?.length ? { ersetzt: m.ersetzt } : {}),
         versionen: neu.map((p) => ({
-          version: p.manifest.version, dms: p.manifest.dms, abhaengigkeiten: p.manifest.abhaengigkeiten,
-          inhalt: { mappentypen: [], sichten: [], beispiele: 0 }, code: p.manifest.code !== undefined,
+          version: p.manifest.version,
+          dms: p.manifest.dms,
+          abhaengigkeiten: p.manifest.abhaengigkeiten,
+          inhalt: { mappentypen: [], sichten: [], beispiele: 0 },
+          code: p.manifest.code !== undefined,
           ...(p.manifest.ergaenzt ? { ergaenzt: p.manifest.ergaenzt } : {}),
-          archiv: `archive/${id}-${p.manifest.version}.zip`, sha256: p.sha256, groesse: p.archiv.length,
-          veroeffentlicht: '2026-01-01T00:00:00Z', quelle: '', readme: '', changelog: '',
+          archiv: `archive/${id}-${p.manifest.version}.zip`,
+          sha256: p.sha256,
+          groesse: p.archiv.length,
+          veroeffentlicht: '2026-01-01T00:00:00Z',
+          quelle: '',
+          readme: '',
+          changelog: '',
         })),
       };
     }),
@@ -182,20 +221,43 @@ function pruefkatalog(pakete: PruefPaket[], versteckt: Set<string>): Katalog {
  * unveränderten Pakets) zählt einmal – bei anderem Inhalt ist das ein Fehler, wie in der Registry (Version erhöhen).
  */
 function liesAlle(ordner: string[]): { gelesen: PruefPaket[]; ergebnisse: PruefErgebnis[] } {
-  const ergebnisse: PruefErgebnis[] = [], gelesen: PruefPaket[] = [];
-  const fehler = (o: string, gruende: string[], m?: Manifest): PruefErgebnis => ({ ordner: o, id: m?.id ?? null, version: m?.version ?? null, vorher: null, ok: false, gruende, hinweise: [] });
+  const ergebnisse: PruefErgebnis[] = [],
+    gelesen: PruefPaket[] = [];
+  const fehler = (o: string, gruende: string[], m?: Manifest): PruefErgebnis => ({
+    ordner: o,
+    id: m?.id ?? null,
+    version: m?.version ?? null,
+    vorher: null,
+    ok: false,
+    gruende,
+    hinweise: [],
+  });
   for (const o of ordner.flatMap(paketordner)) {
     let p: PruefPaket;
-    try { p = { ...liesPaketordner(resolve(o)), ordner: o }; } catch (e) { ergebnisse.push(fehler(o, gruendeVon(e))); continue; }
+    try {
+      p = { ...liesPaketordner(resolve(o)), ordner: o };
+    } catch (e) {
+      ergebnisse.push(fehler(o, gruendeVon(e)));
+      continue;
+    }
     const da = gelesen.find((x) => x.manifest.id === p.manifest.id && x.manifest.version === p.manifest.version);
     if (!da) gelesen.push(p);
-    else if (da.sha256 !== p.sha256) ergebnisse.push(fehler(o, [t('meldungen.pakete-pruefen.gleiche-version', { ordner: da.ordner, version: p.manifest.version })], p.manifest));
+    else if (da.sha256 !== p.sha256)
+      ergebnisse.push(
+        fehler(o, [t('meldungen.pakete-pruefen.gleiche-version', { ordner: da.ordner, version: p.manifest.version })], p.manifest),
+      );
   }
   return { gelesen, ergebnisse };
 }
 
 /** Alles bestätigen, was in der Oberfläche eine Person bestätigt – geprüft wird, ob das Paket sich installieren lässt. */
-const JA = { bestaetigt: true, rechteBestaetigt: true, herausgeberBestaetigt: true, umbauBestaetigt: true, gesamteVerwaltung: true } as const;
+const JA = {
+  bestaetigt: true,
+  rechteBestaetigt: true,
+  herausgeberBestaetigt: true,
+  umbauBestaetigt: true,
+  gesamteVerwaltung: true,
+} as const;
 
 /** Ein Schritt: installieren bzw. – ist die Id (oder eine unter `ersetzt`) schon da – aktualisieren. */
 async function schritt(p: PruefPaket, d: Dienst, pv: Paketverwaltung, versteckt: Set<string>, beispiele: boolean): Promise<PruefErgebnis> {
@@ -208,7 +270,11 @@ async function schritt(p: PruefPaket, d: Dienst, pv: Paketverwaltung, versteckt:
     // Umzug (#1084): Die alte Id verschwindet aus dem Katalog, damit das Update sie unter `ersetzt` findet.
     if (alt && alt.id !== id) versteckt.add(alt.id);
     await pv.katalog();
-    try { erg.hinweise.push(...(await pv.vorschau({ id: alt?.id ?? id, version })).hinweise); } catch { /* Gründe liefert gleich die Installation */ }
+    try {
+      erg.hinweise.push(...(await pv.vorschau({ id: alt?.id ?? id, version })).hinweise);
+    } catch {
+      /* Gründe liefert gleich die Installation */
+    }
     if (alt) await pv.aktualisiere(alt.id, { version, ...JA }, PRUEFER);
     else await pv.installiere({ id, version, beispiele, ...JA }, PRUEFER);
     erg.ok = true;
@@ -226,10 +292,21 @@ export async function pruefePakete(ordner: string[], opt: PruefOptionen): Promis
   return mitSprache(opt.sprache ?? 'de', async () => {
     const { gelesen, ergebnisse } = liesAlle(ordner);
     const { reihe, kreis } = reihenfolge(gelesen);
-    for (const p of kreis) ergebnisse.push({ ordner: p.ordner, id: p.manifest.id, version: p.manifest.version, vorher: null, ok: false, gruende: [t('meldungen.pakete-pruefen.kreis')], hinweise: [] });
+    for (const p of kreis)
+      ergebnisse.push({
+        ordner: p.ordner,
+        id: p.manifest.id,
+        version: p.manifest.version,
+        vorher: null,
+        ok: false,
+        gruende: [t('meldungen.pakete-pruefen.kreis')],
+        hinweise: [],
+      });
     if (!reihe.length) return ergebnisse;
     const versteckt = new Set<string>();
-    const archive = new Map(gelesen.map((p) => [new URL(`archive/${p.manifest.id}-${p.manifest.version}.zip`, PRUEFKATALOG).toString(), p.archiv]));
+    const archive = new Map(
+      gelesen.map((p) => [new URL(`archive/${p.manifest.id}-${p.manifest.version}.zip`, PRUEFKATALOG).toString(), p.archiv]),
+    );
     const abruf = async (url: string): Promise<Buffer> => {
       if (url === PRUEFKATALOG) return Buffer.from(JSON.stringify(pruefkatalog(gelesen, versteckt)));
       const b = archive.get(url);
@@ -248,7 +325,11 @@ export async function pruefePakete(ordner: string[], opt: PruefOptionen): Promis
 export function alsText(ergebnisse: PruefErgebnis[]): string {
   const zeilen: string[] = [];
   for (const e of ergebnisse) {
-    const was = e.id ? e.vorher ? t('meldungen.pakete-pruefen.update', { id: e.id, version: e.version ?? '', vorher: e.vorher }) : `${e.id} ${e.version}` : basename(e.ordner);
+    const was = e.id
+      ? e.vorher
+        ? t('meldungen.pakete-pruefen.update', { id: e.id, version: e.version ?? '', vorher: e.vorher })
+        : `${e.id} ${e.version}`
+      : basename(e.ordner);
     zeilen.push(`${(e.ok ? 'OK' : t('meldungen.pakete-pruefen.fehler')).padEnd(6)}  ${was}  [${e.ordner}]`);
     for (const g of e.gruende) zeilen.push(`          - ${g}`);
     for (const h of e.hinweise) zeilen.push(`          ${t('meldungen.pakete-pruefen.hinweis', { text: h })}`);

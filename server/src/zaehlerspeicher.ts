@@ -70,57 +70,226 @@ const log = protokoll.modul('datenbank');
  */
 export const OHNE_FOLGEN = new Set<string>([
   // lesen
-  'listeTypen', 'holeTyp', 'zaehleMappen', 'listeMappen', 'mappenMitDatum', 'mappenKurz', 'feldwerte', 'holeMappe',
-  'listePakete', 'paketCode', 'faelligeEreignisse', 'ereignisStand', 'listeNummernkreise', 'findeArchivnummer', 'holeSystemMappe', 'mappenMitVorgabe',
-  'holeMappen', 'titelVon', 'quellenVon', 'bezuege', 'seite', 'gibtTreffer', 'zaehler', 'alleFavoriten', 'auskunftLinkPerSchluessel', 'auskunftLinks',
-  'favoritenVon', 'favoritenDerMappe', 'gibtMappen', 'stummeFavoriten', 'geaendertVonAnderen', 'zaehleKlauseln', 'lesbare', 'inKlauseln',
-  'zaehleAusdruck', 'listeSichten', 'unpassende', 'typenOhnePassung', 'belegung', 'ohneTitel', 'typenVon', 'findeDoppelt', 'findeDoppelte',
-  'rueckverweise', 'kantenVon', 'listeDokumente', 'dokumenteVon', 'zaehleDokumente', 'holeDokument', 'versionenVon',
-  'versionenVonDokumenten', 'holeVersion', 'alleDateien', 'dokumenteMitSha', 'dokumenteMitTyp', 'dokumentTypen', 'grossePdfs', 'dokumenteJeRegister', 'zaehleDemo',
-  'echteVerweiseAufDemo', 'papierkorb', 'zaehlePapierkorb', 'dateiBenutzt', 'papierkorbDokumente', 'holeAusPapierkorb', 'holeDokumentAusPapierkorb',
-  'ocrNaechster', 'ocrVonSha', 'ocrZaehler', 'ocrAuftraege', 'ocrOhneVolltext', 'volltextKandidaten', 'volltextHerkunft', 'ocrSprachen', 'volltext', 'volltexte',
-  'aufgabenZurPassung', 'holeAufgabe', 'aufgabenVon', 'aufgabenVonMappen', 'offeneAufgaben', 'erledigteAufgaben', 'fristAufgaben',
+  'listeTypen',
+  'holeTyp',
+  'zaehleMappen',
+  'listeMappen',
+  'mappenMitDatum',
+  'mappenKurz',
+  'feldwerte',
+  'holeMappe',
+  'listePakete',
+  'paketCode',
+  'faelligeEreignisse',
+  'ereignisStand',
+  'listeNummernkreise',
+  'findeArchivnummer',
+  'holeSystemMappe',
+  'mappenMitVorgabe',
+  'holeMappen',
+  'titelVon',
+  'quellenVon',
+  'bezuege',
+  'seite',
+  'gibtTreffer',
+  'zaehler',
+  'alleFavoriten',
+  'auskunftLinkPerSchluessel',
+  'auskunftLinks',
+  'favoritenVon',
+  'favoritenDerMappe',
+  'gibtMappen',
+  'stummeFavoriten',
+  'geaendertVonAnderen',
+  'zaehleKlauseln',
+  'lesbare',
+  'inKlauseln',
+  'zaehleAusdruck',
+  'listeSichten',
+  'unpassende',
+  'typenOhnePassung',
+  'belegung',
+  'ohneTitel',
+  'typenVon',
+  'findeDoppelt',
+  'findeDoppelte',
+  'rueckverweise',
+  'kantenVon',
+  'listeDokumente',
+  'dokumenteVon',
+  'zaehleDokumente',
+  'holeDokument',
+  'versionenVon',
+  'versionenVonDokumenten',
+  'holeVersion',
+  'alleDateien',
+  'dokumenteMitSha',
+  'dokumenteMitTyp',
+  'dokumentTypen',
+  'grossePdfs',
+  'dokumenteJeRegister',
+  'zaehleDemo',
+  'echteVerweiseAufDemo',
+  'papierkorb',
+  'zaehlePapierkorb',
+  'dateiBenutzt',
+  'papierkorbDokumente',
+  'holeAusPapierkorb',
+  'holeDokumentAusPapierkorb',
+  'ocrNaechster',
+  'ocrVonSha',
+  'ocrZaehler',
+  'ocrAuftraege',
+  'ocrOhneVolltext',
+  'volltextKandidaten',
+  'volltextHerkunft',
+  'ocrSprachen',
+  'volltext',
+  'volltexte',
+  'aufgabenZurPassung',
+  'holeAufgabe',
+  'aufgabenVon',
+  'aufgabenVonMappen',
+  'offeneAufgaben',
+  'erledigteAufgaben',
+  'fristAufgaben',
   // Aufgaben bei Personen ohne Leserecht (#798): Lesen und neue Fälle ändern keine Zahl; Leserecht auf Zeit und Ende schon.
-  'faelleOhneLeserecht', 'leserechteAufZeit', 'legeFallAn',
-  'verschluesselteFundstellen', 'ablaeufe', 'holeAblauf', 'notizen', 'notizenVon', 'erwaehntIn', 'holeNotiz', 'historie', 'historieVon', 'letzterAbruf',
+  'faelleOhneLeserecht',
+  'leserechteAufZeit',
+  'legeFallAn',
+  'verschluesselteFundstellen',
+  'ablaeufe',
+  'holeAblauf',
+  'notizen',
+  'notizenVon',
+  'erwaehntIn',
+  'holeNotiz',
+  'historie',
+  'historieVon',
+  'letzterAbruf',
   // schreiben, ohne Folgen für die Zahlen
-  'legeEreignisseAn', 'ereignisZugestellt', 'ereignisDaten', 'ereignisFehlgeschlagen', 'loescheEreignisse', 'loescheOffeneEreignisse', 'notiereVerlauf', 'paketVerlauf', 'paketAuslastung', 'loescheVerlauf', 'speicherePaketCode', 'loeschePaketCode',
+  'legeEreignisseAn',
+  'ereignisZugestellt',
+  'ereignisDaten',
+  'ereignisFehlgeschlagen',
+  'loescheEreignisse',
+  'loescheOffeneEreignisse',
+  'notiereVerlauf',
+  'paketVerlauf',
+  'paketAuslastung',
+  'loescheVerlauf',
+  'speicherePaketCode',
+  'loeschePaketCode',
   // Sprachpakete (#731): nur Texte.
-  'sprachpakete', 'speichereSprachpaket', 'loescheSprachpaket',
-  'speichereNummernkreis', 'loescheNummernkreis', 'setzeZaehler', 'zieheNummern', 'aktualisiereStatistik',
-  'legeAuskunftLinkAn', 'auskunftLinkFehlversuch', 'auskunftLinkAbruf', 'widerrufeAuskunftLink', 'setzeFavoritBenachrichtigen',
-  'merkeGesehen', 'ocrEinreihen', 'ocrSetze', 'ocrZurueckstellen', 'legeAblaufAn', 'aendereAblauf', 'loescheAblauf', 'setzeAblaufAngehalten',
+  'sprachpakete',
+  'speichereSprachpaket',
+  'loescheSprachpaket',
+  'speichereNummernkreis',
+  'loescheNummernkreis',
+  'setzeZaehler',
+  'zieheNummern',
+  'aktualisiereStatistik',
+  'legeAuskunftLinkAn',
+  'auskunftLinkFehlversuch',
+  'auskunftLinkAbruf',
+  'widerrufeAuskunftLink',
+  'setzeFavoritBenachrichtigen',
+  'merkeGesehen',
+  'ocrEinreihen',
+  'ocrSetze',
+  'ocrZurueckstellen',
+  'legeAblaufAn',
+  'aendereAblauf',
+  'loescheAblauf',
+  'setzeAblaufAngehalten',
   // Automatisierungsvorlagen (#1044): Vorlagen, Änderungs- und Ablaufverlauf ändern keine Zahl.
-  'ablaufvorlagen', 'speichereAblaufvorlage', 'loescheAblaufvorlage', 'vermerkeAblauf', 'ablaufVerlauf', 'zaehleAblaufVerlauf', 'raeumeAblaufVerlaufAuf',
-  'legeNotizAn', 'aendereNotiz', 'loescheNotiz', 'historieSchreibe', 'historieAufraeumen', 'kuerzeVersionen',
+  'ablaufvorlagen',
+  'speichereAblaufvorlage',
+  'loescheAblaufvorlage',
+  'vermerkeAblauf',
+  'ablaufVerlauf',
+  'zaehleAblaufVerlauf',
+  'raeumeAblaufVerlaufAuf',
+  'legeNotizAn',
+  'aendereNotiz',
+  'loescheNotiz',
+  'historieSchreibe',
+  'historieAufraeumen',
+  'kuerzeVersionen',
   // Unscharfe Suche (#356): Wörterverzeichnis und gleichbedeutende Wörter ändern keine Zahlen.
-  'aehnlicheWoerter', 'woerterAnzahl', 'woerterNeu', 'woerterEinarbeiten', 'synonyme', 'legeSynonymAn', 'aendereSynonym', 'loescheSynonym', 'setzeSynonyme',
+  'aehnlicheWoerter',
+  'woerterAnzahl',
+  'woerterNeu',
+  'woerterEinarbeiten',
+  'synonyme',
+  'legeSynonymAn',
+  'aendereSynonym',
+  'loescheSynonym',
+  'setzeSynonyme',
   // Notfallkontakte (#812): stehen nur in der Werkbank und auf dem Notfallblatt.
-  'notfallkontakte', 'holeNotfallkontakt', 'legeNotfallkontaktAn', 'aendereNotfallkontakt', 'setzeNotfallkontaktMail', 'loescheNotfallkontakt',
+  'notfallkontakte',
+  'holeNotfallkontakt',
+  'legeNotfallkontaktAn',
+  'aendereNotfallkontakt',
+  'setzeNotfallkontaktMail',
+  'loescheNotfallkontakt',
   // Sprache eines Dokuments (#400): nur für die Volltextsuche.
   'setzeDokumentSprache',
   // Zähler-Endpunkt (#625): merkt sich nur den Stand der Zahlen.
-  'zaehlerstand', 'setzeZaehlerstand',
+  'zaehlerstand',
+  'setzeZaehlerstand',
   // Zahlen in einem Lauf und der Haushaltsstand selbst (#742).
-  'zaehleBestand', 'zaehlePersoenlich', 'haushaltsstand', 'erhoeheHaushaltsstand',
+  'zaehleBestand',
+  'zaehlePersoenlich',
+  'haushaltsstand',
+  'erhoeheHaushaltsstand',
   // Mappenstand und Vorfilter der Termine (#918).
-  'mappenstand', 'erhoeheMappenstand', 'fristKandidaten',
+  'mappenstand',
+  'erhoeheMappenstand',
+  'fristKandidaten',
   // Ausgangskorb des Ereigniskatalogs (#670) und „Frist erreicht“ schon gemeldet: nur Buchführung des Verteilers.
   // Der Verteiler fragt alle 2 Sekunden nach (`holeKatalogEreignisse`) – zählte das, wären Zahlen und Termine
   // nie länger als 2 Sekunden gültig (Lasttest: Speicher und Ereignisschleife, seit #725 die Termine eines ganzen
   // Jahres für die Startseite rechnen).
-  'legeKatalogEreignisAn', 'holeKatalogEreignisse', 'katalogEreignisseVerteilt', 'katalogEreignisFehlgeschlagen',
-  'raeumeKatalogEreignisseAuf', 'katalogEreignisStand', 'merkeFristMeldung',
+  'legeKatalogEreignisAn',
+  'holeKatalogEreignisse',
+  'katalogEreignisseVerteilt',
+  'katalogEreignisFehlgeschlagen',
+  'raeumeKatalogEreignisseAuf',
+  'katalogEreignisStand',
+  'merkeFristMeldung',
   // #918: nur lesend bzw. ohne Folgen für Zahlen, Listen und Termine (Löschprotokoll, Erkennung, Vektoren, Sprachen
   // der Seiten, Hinweis „Post teilen?“, Fragen an die Ablage, Verzeichnis der Auskünfte).
-  'papierkorbInhalt', 'papierkorbDokumentInhalt', 'loeschprotokoll', 'loeschprotokollSchreibe', 'loeschprotokollAufraeumen',
-  'erkennungLies', 'erkennungSchreibe', 'erkennungenMitAbsender', 'vektorSetze', 'vektorLoesche', 'vektorenLoeschePaket',
-  'vektorenLaden', 'vektorVon', 'vektorStand', 'ohneVektor', 'mitVolltext', 'seitensprachen', 'teilenHinweisAus', 'setzeLeerseiten',
-  'fragenFundstellen', 'historieArt',
+  'papierkorbInhalt',
+  'papierkorbDokumentInhalt',
+  'loeschprotokoll',
+  'loeschprotokollSchreibe',
+  'loeschprotokollAufraeumen',
+  'erkennungLies',
+  'erkennungSchreibe',
+  'erkennungenMitAbsender',
+  'vektorSetze',
+  'vektorLoesche',
+  'vektorenLoeschePaket',
+  'vektorenLaden',
+  'vektorVon',
+  'vektorStand',
+  'ohneVektor',
+  'mitVolltext',
+  'seitensprachen',
+  'teilenHinweisAus',
+  'setzeLeerseiten',
+  'fragenFundstellen',
+  'historieArt',
   // #936: Wohin eine Post aufgelöst wurde (nur lesend).
   'aufgeloesteIn',
   // Hinweise von Paketen (#1034) stehen nur an der Mappe, gebündelte berechnete Werte nur in ihrer Historie.
-  'hinweise', 'setzeHinweis', 'loescheHinweis', 'loescheHinweiseVon', 'letzteBerechnung', 'historieDatenErsetzen',
+  'hinweise',
+  'setzeHinweis',
+  'loescheHinweis',
+  'loescheHinweiseVon',
+  'letzteBerechnung',
+  'historieDatenErsetzen',
 ]);
 
 /**
@@ -153,7 +322,10 @@ export const zwischenspeicherAus = (): boolean => aus ?? !richteZwischenspeicher
 export const ZAEHLT_FUER_TERMINE: ReadonlySet<string> = new Set(['legeAblaufAn', 'aendereAblauf', 'loescheAblauf']);
 
 /** Stand in der Datenbank (#742): lesen (in einer Anfrage aus der Sitzungsabfrage) und hochzählen. */
-export interface Standquelle { lies(): Promise<number>; erhoehe(): Promise<number> }
+export interface Standquelle {
+  lies(): Promise<number>;
+  erhoehe(): Promise<number>;
+}
 
 /** Stand des Haushalts: zählt nach jeder Änderung hoch, die Zahlen der Ansichten ändern kann. */
 export class Haushaltsstand {
@@ -161,14 +333,20 @@ export class Haushaltsstand {
    * `auch`: Methoden aus `OHNE_FOLGEN`, die für diesen Stand trotzdem zählen. `o.ohne` (#918): weitere, die für
    * diesen Stand nicht zählen; `o.art`: Art im Kurzzustand für die eigenen Änderungen (je Stand eine).
    */
-  constructor(private readonly auch: ReadonlySet<string> = new Set(), private quelle?: Standquelle, o: { ohne?: ReadonlySet<string>; art?: string } = {}) {
+  constructor(
+    private readonly auch: ReadonlySet<string> = new Set(),
+    private quelle?: Standquelle,
+    o: { ohne?: ReadonlySet<string>; art?: string } = {},
+  ) {
     this.ohne = o.ohne ?? new Set();
     this.art = o.art ?? EIGENE;
   }
   private readonly ohne: ReadonlySet<string>;
   private readonly art: string;
   /** Zählt diese Methode des Repos für diesen Stand? */
-  zaehlt(methode: string): boolean { return !(OHNE_FOLGEN.has(methode) && !this.auch.has(methode)) && !this.ohne.has(methode); }
+  zaehlt(methode: string): boolean {
+    return !(OHNE_FOLGEN.has(methode) && !this.auch.has(methode)) && !this.ohne.has(methode);
+  }
   private n = 0;
   /** Letzte eigene Änderung je Person (Zahl der Änderungen in diesem Prozess danach). */
   private eigene = new Map<string, number>();
@@ -179,18 +357,26 @@ export class Haushaltsstand {
   private geteilt: Kurzzustand | null = null;
   private wer = new Set<string>();
   /** Änderungen in diesem Prozess (ohne Datenbank zugleich der Stand). */
-  get stand() { return this.n; }
+  get stand() {
+    return this.n;
+  }
   /** Stand in der Datenbank verwenden (#742). */
-  verbinde(q: Standquelle | undefined) { this.quelle = q; }
+  verbinde(q: Standquelle | undefined) {
+    this.quelle = q;
+  }
 
   /** Gültiger Stand: aus der Datenbank (in einer Anfrage einmal mit der Sitzung gelesen), sonst der dieses Prozesses. */
-  async aktuell(): Promise<number> { return this.quelle ? this.quelle.lies() : this.n; }
+  async aktuell(): Promise<number> {
+    return this.quelle ? this.quelle.lies() : this.n;
+  }
 
   /**
    * Mehrere Prozesse (#745): Nach einer eigenen Änderung steht der neue Stand (aus der Datenbank) je Person kurz im
    * Kurzzustand – landet die nächste Anfrage bei einem anderen Prozess, zeigt auch er die Zahlen sofort neu.
    */
-  teileEigene(z: Kurzzustand) { this.geteilt = z; }
+  teileEigene(z: Kurzzustand) {
+    this.geteilt = z;
+  }
 
   /** Hat diese Person nach Stand `stand` selbst etwas geändert – in irgendeinem Prozess (#745)? */
   async eigeneNach(benutzerId: string | undefined, stand: number): Promise<boolean> {
@@ -200,7 +386,9 @@ export class Haushaltsstand {
   }
 
   /** `stand` nach der letzten eigenen Änderung dieser Person in diesem Prozess (0 = keine). */
-  eigeneAenderung(benutzerId: string | undefined): number { return (benutzerId && this.eigene.get(benutzerId)) || 0; }
+  eigeneAenderung(benutzerId: string | undefined): number {
+    return (benutzerId && this.eigene.get(benutzerId)) || 0;
+  }
 
   /**
    * Nach einer Änderung. Die Datenbank zählt kurz danach hoch (nach dem Abschluss der Änderung, gleichzeitige
@@ -219,23 +407,32 @@ export class Haushaltsstand {
     if (this.quelle && !this.geplant) {
       this.geplant = true;
       const q = this.quelle;
-      this.offen = new Promise<void>((fertig) => kontext.exit(() => setImmediate(() => {
-        this.geplant = false;
-        const wer = [...this.wer];
-        this.wer.clear();
-        // Fehlt das Hochzählen, merken andere Prozesse die Änderung spätestens nach HOECHSTENS_MS.
-        q.erhoehe().then(async (n) => {
-          const z = this.geteilt;
-          if (z) for (const w of wer) await z.setze(this.art, w, n, Date.now() + EIGENE_MS);
-        }).catch((e) => log.warn('Haushaltsstand nicht hochgezählt', { fehler: (e as Error).message })).finally(fertig);
-      })));
+      this.offen = new Promise<void>((fertig) =>
+        kontext.exit(() =>
+          setImmediate(() => {
+            this.geplant = false;
+            const wer = [...this.wer];
+            this.wer.clear();
+            // Fehlt das Hochzählen, merken andere Prozesse die Änderung spätestens nach HOECHSTENS_MS.
+            q.erhoehe()
+              .then(async (n) => {
+                const z = this.geteilt;
+                if (z) for (const w of wer) await z.setze(this.art, w, n, Date.now() + EIGENE_MS);
+              })
+              .catch((e) => log.warn('Haushaltsstand nicht hochgezählt', { fehler: (e as Error).message }))
+              .finally(fertig);
+          }),
+        ),
+      );
     }
   }
   /**
    * Wartet, bis das zuletzt geplante Hochzählen in der Datenbank durch ist (#900). Für Tests, die nach einer Änderung
    * denselben Stand in zwei Anfragen brauchen – statt einer festen Wartezeit.
    */
-  async hochgezaehlt(): Promise<void> { await this.offen; }
+  async hochgezaehlt(): Promise<void> {
+    await this.offen;
+  }
 
   /**
    * Umhüllt ein Repo: Ist eine ändernde Methode fertig (auch mit Fehler – sie kann halb gewirkt
@@ -251,12 +448,31 @@ export class Haushaltsstand {
         if (typeof wert !== 'function' || typeof prop !== 'string') return wert;
         const zaehlen = alle.filter((s) => s.zaehlt(prop));
         if (!zaehlen.length) return wert;
-        const fertig = () => { for (const s of zaehlen) void s.erhoehe(); };
+        const fertig = () => {
+          for (const s of zaehlen) void s.erhoehe();
+        };
         return function (this: unknown, ...args: unknown[]) {
           let ergebnis: unknown;
-          try { ergebnis = wert.apply(ziel, args); } catch (e) { fertig(); throw e; }
-          if (!(ergebnis instanceof Promise)) { fertig(); return ergebnis; }
-          return ergebnis.then((r) => { fertig(); return r; }, (e) => { fertig(); throw e; });
+          try {
+            ergebnis = wert.apply(ziel, args);
+          } catch (e) {
+            fertig();
+            throw e;
+          }
+          if (!(ergebnis instanceof Promise)) {
+            fertig();
+            return ergebnis;
+          }
+          return ergebnis.then(
+            (r) => {
+              fertig();
+              return r;
+            },
+            (e) => {
+              fertig();
+              throw e;
+            },
+          );
         };
       },
     });
@@ -270,10 +486,20 @@ export function zeitabhaengig(bedingungen: unknown): boolean {
 
 /** Fingerabdruck der Rechte, die das Zählen beeinflussen (Lesefilter, verborgene Ansichten, eigene Rollen). */
 export function fingerabdruck(x: unknown): string {
-  return createHash('sha256').update(JSON.stringify(x ?? null)).digest('base64url').slice(0, 22);
+  return createHash('sha256')
+    .update(JSON.stringify(x ?? null))
+    .digest('base64url')
+    .slice(0, 22);
 }
 
-interface Eintrag<T> { stand: number; lokal: number; heute: string; seit: number; bis: number; wert: Promise<T> }
+interface Eintrag<T> {
+  stand: number;
+  lokal: number;
+  heute: string;
+  seit: number;
+  bis: number;
+  wert: Promise<T>;
+}
 
 export type Treffer = 'treffer' | 'neu';
 
@@ -288,15 +514,25 @@ export interface Gueltigkeit {
 /** Zwischenspeicher der Zahlen je Benutzer und Rechte. */
 export class Zaehlerspeicher<T> {
   private eintraege = new Map<string, Eintrag<T>>();
-  constructor(private readonly stand: Haushaltsstand, private readonly jetzt: () => number = Date.now) {}
+  constructor(
+    private readonly stand: Haushaltsstand,
+    private readonly jetzt: () => number = Date.now,
+  ) {}
 
   /**
    * Gültiger Eintrag zum Schlüssel, sonst `zaehle()` und merken. Gleichzeitige Aufrufe mit gleichem
    * Schlüssel warten auf dieselbe Zählung. Der Stand gilt ab Beginn der Zählung.
    */
-  async hole(schluessel: string, zaehle: () => Promise<{ wert: T; zeitabhaengig: boolean }>, g: Gueltigkeit = {}): Promise<{ wert: T; art: Treffer }> {
+  async hole(
+    schluessel: string,
+    zaehle: () => Promise<{ wert: T; zeitabhaengig: boolean }>,
+    g: Gueltigkeit = {},
+  ): Promise<{ wert: T; art: Treffer }> {
     // Abgeschaltet (#918): immer frisch, nichts merken.
-    if (zwischenspeicherAus()) { this.eintraege.clear(); return { wert: (await zaehle()).wert, art: 'neu' }; }
+    if (zwischenspeicherAus()) {
+      this.eintraege.clear();
+      return { wert: (await zaehle()).wert, art: 'neu' };
+    }
     const stand = await this.stand.aktuell();
     const t = this.jetzt();
     const heute = heuteIn(new Date(t));
@@ -307,10 +543,14 @@ export class Zaehlerspeicher<T> {
       // Mindestgültigkeit (#742): Änderungen anderer erst nach kurzer Zeit; eigene sofort.
       const kurz = (g.mindestensMs ?? 0) > 0 && t - da.seit < g.mindestensMs! && this.stand.eigeneAenderung(g.wer) <= da.lokal;
       // Eigene Änderung in einem anderen Prozess (#745)? Nur in diesem seltenen Fall eine kleine Abfrage mehr.
-      if (kurz && (da.stand === stand || (da.stand < stand && !(await this.stand.eigeneNach(g.wer, da.stand))))) return { wert: await da.wert, art: 'treffer' };
+      if (kurz && (da.stand === stand || (da.stand < stand && !(await this.stand.eigeneNach(g.wer, da.stand)))))
+        return { wert: await da.wert, art: 'treffer' };
     }
     const e: Eintrag<T> = { stand, lokal: this.stand.stand, heute, seit: t, bis: t + HOECHSTENS_MS, wert: Promise.resolve(null as T) };
-    e.wert = zaehle().then((z) => { if (z.zeitabhaengig) e.bis = Math.min(e.bis, t + ZEITABHAENGIG_MS); return z.wert; });
+    e.wert = zaehle().then((z) => {
+      if (z.zeitabhaengig) e.bis = Math.min(e.bis, t + ZEITABHAENGIG_MS);
+      return z.wert;
+    });
     this.eintraege.delete(schluessel);
     this.eintraege.set(schluessel, e);
     if (this.eintraege.size > MAX_EINTRAEGE) this.eintraege.delete(this.eintraege.keys().next().value!);
@@ -323,8 +563,12 @@ export class Zaehlerspeicher<T> {
   }
 
   /** Für Tests und den Lasttest: Zahl der Einträge (höchstens MAX_EINTRAEGE). */
-  get groesse() { return this.eintraege.size; }
+  get groesse() {
+    return this.eintraege.size;
+  }
 
   /** Alles vergessen (z. B. nach einer Wiederherstellung). */
-  leere() { this.eintraege.clear(); }
+  leere() {
+    this.eintraege.clear();
+  }
 }

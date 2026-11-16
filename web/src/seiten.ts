@@ -14,7 +14,15 @@ export const titelOder = (eintrag: string | undefined) => eintrag || t('oberflae
  * Nach einem Neuladen der Daten (stand) wird der bereits geladene Bereich erneuert,
  * damit die Liste nicht an den Anfang springt.
  */
-export function useSeiten(sicht: string | undefined, suche: string, stand: number, sortierung?: Sortierung | null, volltext = false, notizen = false, link?: string) {
+export function useSeiten(
+  sicht: string | undefined,
+  suche: string,
+  stand: number,
+  sortierung?: Sortierung | null,
+  volltext = false,
+  notizen = false,
+  link?: string,
+) {
   const [mappen, setMappen] = useState<Mappe[]>([]);
   /** Fundstellen im Volltext je Mappe (#45). */
   const [ausschnitte, setAusschnitte] = useState<Record<string, Ausschnitt>>({});
@@ -37,34 +45,45 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   const geladen = useRef(0);
 
   /* eslint-disable react-hooks/exhaustive-deps -- lade hängt an den Suchparametern, die übrigen Werte liest es über Refs */
-  const lade = useCallback(async (von: number, anzahl: number, ersetzen: boolean, bekannt?: number) => {
-    if (!sicht) return;
-    const nr = ++lauf.current;
-    setLaedt(true);
-    try {
-      const s = await mappenApi.seite(sicht, von, anzahl, suche, { sortierung, volltext, notizen, link, gesamt: bekannt });
-      if (nr !== lauf.current) return; // überholt
-      setGesamt(s.gesamt);
-      if (ersetzen) { setUnscharf(s.unscharf ?? null); setAehnlich(s.aehnlich ?? []); }
-      setMappen((alt) => (ersetzen ? s.mappen : [...alt, ...s.mappen]));
-      setBezuege((alt) => (ersetzen ? s.bezuege : { ...alt, ...s.bezuege }));
-      setAusschnitte((alt) => (ersetzen ? s.ausschnitte ?? {} : { ...alt, ...s.ausschnitte }));
-      setAufgaben((alt) => (ersetzen ? s.aufgaben ?? {} : { ...alt, ...s.aufgaben }));
-      setFavoriten((alt) => new Set([...(ersetzen ? [] : alt), ...(s.favoriten ?? [])]));
-      setGeaendert((alt) => new Set([...(ersetzen ? [] : alt), ...(s.geaendert ?? [])]));
-      setStumm((alt) => new Set([...(ersetzen ? [] : alt), ...(s.stumm ?? [])]));
-      geladen.current = (ersetzen ? 0 : geladen.current) + s.mappen.length;
-      setFehler(undefined);
-    } catch (e) {
-      if (nr === lauf.current) setFehler((e as Error).message);
-    } finally {
-      if (nr === lauf.current) setLaedt(false);
-    }
-  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen, link]);
+  const lade = useCallback(
+    async (von: number, anzahl: number, ersetzen: boolean, bekannt?: number) => {
+      if (!sicht) return;
+      const nr = ++lauf.current;
+      setLaedt(true);
+      try {
+        const s = await mappenApi.seite(sicht, von, anzahl, suche, { sortierung, volltext, notizen, link, gesamt: bekannt });
+        if (nr !== lauf.current) return; // überholt
+        setGesamt(s.gesamt);
+        if (ersetzen) {
+          setUnscharf(s.unscharf ?? null);
+          setAehnlich(s.aehnlich ?? []);
+        }
+        setMappen((alt) => (ersetzen ? s.mappen : [...alt, ...s.mappen]));
+        setBezuege((alt) => (ersetzen ? s.bezuege : { ...alt, ...s.bezuege }));
+        setAusschnitte((alt) => (ersetzen ? (s.ausschnitte ?? {}) : { ...alt, ...s.ausschnitte }));
+        setAufgaben((alt) => (ersetzen ? (s.aufgaben ?? {}) : { ...alt, ...s.aufgaben }));
+        setFavoriten((alt) => new Set([...(ersetzen ? [] : alt), ...(s.favoriten ?? [])]));
+        setGeaendert((alt) => new Set([...(ersetzen ? [] : alt), ...(s.geaendert ?? [])]));
+        setStumm((alt) => new Set([...(ersetzen ? [] : alt), ...(s.stumm ?? [])]));
+        geladen.current = (ersetzen ? 0 : geladen.current) + s.mappen.length;
+        setFehler(undefined);
+      } catch (e) {
+        if (nr === lauf.current) setFehler((e as Error).message);
+      } finally {
+        if (nr === lauf.current) setLaedt(false);
+      }
+    },
+    [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen, link],
+  );
   /* eslint-enable react-hooks/exhaustive-deps */
 
   // Neue Sicht oder Suche: von vorn.
-  useEffect(() => { setMappen([]); setGesamt(null); geladen.current = 0; void lade(0, SEITE, true); }, [lade]);
+  useEffect(() => {
+    setMappen([]);
+    setGesamt(null);
+    geladen.current = 0;
+    void lade(0, SEITE, true);
+  }, [lade]);
   // Daten geändert: geladenen Bereich auffrischen (höchstens 500).
   const ersterStand = useRef(stand);
   useEffect(() => {
@@ -78,7 +97,42 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   }, [laedt, gesamt, mappen.length, lade]);
 
   /** Gesehen (geöffnet oder „Alle als gesehen markieren“): Hervorhebung sofort weg. */
-  const gesehen = useCallback((ids: string[]) => setGeaendert((alt) => { if (!ids.some((id) => alt.has(id))) return alt; const n = new Set(alt); for (const id of ids) n.delete(id); return n; }), []);
-  const setzeStumm = useCallback((id: string, an: boolean) => setStumm((alt) => { const n = new Set(alt); if (an) n.add(id); else n.delete(id); return n; }), []);
-  return { mappen, bezuege, ausschnitte, aufgaben, favoriten, geaendert, gesehen, stumm, setzeStumm, gesamt, unscharf, aehnlich, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
+  const gesehen = useCallback(
+    (ids: string[]) =>
+      setGeaendert((alt) => {
+        if (!ids.some((id) => alt.has(id))) return alt;
+        const n = new Set(alt);
+        for (const id of ids) n.delete(id);
+        return n;
+      }),
+    [],
+  );
+  const setzeStumm = useCallback(
+    (id: string, an: boolean) =>
+      setStumm((alt) => {
+        const n = new Set(alt);
+        if (an) n.add(id);
+        else n.delete(id);
+        return n;
+      }),
+    [],
+  );
+  return {
+    mappen,
+    bezuege,
+    ausschnitte,
+    aufgaben,
+    favoriten,
+    geaendert,
+    gesehen,
+    stumm,
+    setzeStumm,
+    gesamt,
+    unscharf,
+    aehnlich,
+    laedt,
+    fehler,
+    mehr,
+    alle: gesamt !== null && mappen.length >= gesamt,
+  };
 }

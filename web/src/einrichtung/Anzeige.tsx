@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react';
-import { anzeigeBedingungProblem, beschreibeAnzeige, beschreibeAnzeigeBedingung, typNameAus, ANZEIGE_BEDINGUNGEN_MAX, type Anzeigebedingung, type Anzeigeregel } from '../../../shared/src/anzeige';
+import {
+  anzeigeBedingungProblem,
+  beschreibeAnzeige,
+  beschreibeAnzeigeBedingung,
+  typNameAus,
+  ANZEIGE_BEDINGUNGEN_MAX,
+  type Anzeigebedingung,
+  type Anzeigeregel,
+} from '../../../shared/src/anzeige';
 import { feldLabel } from '../../../shared/src/beschriftung';
 import { merkmalName } from '../../../shared/src/merkmale';
 import { jedeMappe, zielErlaubt, zieleVon, type Feld, type Mappentyp } from '../../../shared/src/model';
@@ -26,7 +34,11 @@ function EigeneOrganisationZiele({ b, verweise, fehlt, wert }: { b: Anzeigebedin
   return (
     <optgroup label={t('mappentypen.anzeige.eigene-organisation')}>
       {hier && fehlt && <option value={wert}>{t('mappentypen.anzeige.fehlt', { feld: b.feld })}</option>}
-      {verweise.map((f) => <option key={f.key} value={`eigeneOrganisation:${f.key}`}>{t('mappentypen.anzeige.eigene-organisation-feld', { feld: feldLabel(f) })}</option>)}
+      {verweise.map((f) => (
+        <option key={f.key} value={`eigeneOrganisation:${f.key}`}>
+          {t('mappentypen.anzeige.eigene-organisation-feld', { feld: feldLabel(f) })}
+        </option>
+      ))}
     </optgroup>
   );
 }
@@ -35,11 +47,22 @@ export function AnzeigeChip({ regel, typ }: { regel?: Anzeigeregel; typ: TypTeil
   const d = useDaten();
   if (!regel?.bedingungen.length) return null;
   const text = beschreibeAnzeige(regel, typ, { typ: typNameAus(d.typen), mappe: (id) => d.person(id) });
-  return <span className="chip anzeigechip" title={text}><Symbol name="auge" /> {text}</span>;
+  return (
+    <span className="chip anzeigechip" title={text}>
+      <Symbol name="auge" /> {text}
+    </span>
+  );
 }
 
-export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
-  regel?: Anzeigeregel; setze: (r: Anzeigeregel | undefined) => void;
+export function AnzeigeEditor({
+  regel,
+  setze,
+  typ,
+  eigene,
+  typen,
+}: {
+  regel?: Anzeigeregel;
+  setze: (r: Anzeigeregel | undefined) => void;
   /** Alle Felder des Mappentyps (auch auf anderen Registern). */
   typ: TypTeil;
   /** Felder, auf die die Bedingung nicht schauen darf: das Feld selbst bzw. die des eigenen Abschnitts. */
@@ -57,7 +80,14 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
   const setzeB = (i: number, b: Anzeigebedingung) => setzeListe(bedingungen.map((x, j) => (j === i ? b : x)));
 
   /** Ziel einer Bedingung als Wert der Auswahl. */
-  const zielVon = (b: Anzeigebedingung) => (b.art === 'merkmal' ? `merkmal:${b.merkmal}` : b.art === 'feld' ? `feld:${b.bedingung.feld}` : b.art === 'eigeneOrganisation' ? `eigeneOrganisation:${b.feld}` : `verweistyp:${b.feld}`);
+  const zielVon = (b: Anzeigebedingung) =>
+    b.art === 'merkmal'
+      ? `merkmal:${b.merkmal}`
+      : b.art === 'feld'
+        ? `feld:${b.bedingung.feld}`
+        : b.art === 'eigeneOrganisation'
+          ? `eigeneOrganisation:${b.feld}`
+          : `verweistyp:${b.feld}`;
   const neu = (ziel: string, nicht?: boolean): Anzeigebedingung | null => {
     const n = nicht ? { nicht: true } : {};
     const [art, key] = ziel.split(':');
@@ -74,18 +104,37 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
     if (!f) return null;
     // Vorgabe wie in Ansichten; bei Auswahlfeldern gleich „ist einer von“ – das häufigste „nur bei …“.
     const op = OPERATOREN_JE_ART[f.art][0];
-    return { ...n, art: 'feld', bedingung: { art: 'feld', feld: f.key, op, ...(op === 'einerVon' || op === 'zeigtAuf' ? { wert: { art: 'fest', wert: [] } } : op === 'gleich' ? { wert: { art: 'fest', wert: '' } } : {}) } };
+    return {
+      ...n,
+      art: 'feld',
+      bedingung: {
+        art: 'feld',
+        feld: f.key,
+        op,
+        ...(op === 'einerVon' || op === 'zeigtAuf'
+          ? { wert: { art: 'fest', wert: [] } }
+          : op === 'gleich'
+            ? { wert: { art: 'fest', wert: '' } }
+            : {}),
+      },
+    };
   };
   const erstes = felder[0] ? `feld:${felder[0].key}` : 'merkmal:beruflich';
 
   return (
-    <FeldGruppe beschriftung={t('mappentypen.anzeige.titel')} hilfe="mappentyp.anzeigen" className="anzeigeeditor"
+    <FeldGruppe
+      beschriftung={t('mappentypen.anzeige.titel')}
+      hilfe="mappentyp.anzeigen"
+      className="anzeigeeditor"
       hinweis={bedingungen.length ? beschreibeAnzeige(regel, typ, namen) : t('mappentypen.anzeige.immer')}>
       {bedingungen.length > 1 && (
-        <label className="anzeigemodus"><span className="leise klein">{t('mappentypen.anzeige.modus')}</span>
+        <label className="anzeigemodus">
+          <span className="leise klein">{t('mappentypen.anzeige.modus')}</span>
           <select value={regel!.modus} onChange={(x) => setze({ ...regel!, modus: x.target.value === 'eine' ? 'eine' : 'alle' })}>
-            <option value="alle">{t('mappentypen.anzeige.alle')}</option><option value="eine">{t('mappentypen.anzeige.eine')}</option>
-          </select></label>
+            <option value="alle">{t('mappentypen.anzeige.alle')}</option>
+            <option value="eine">{t('mappentypen.anzeige.eine')}</option>
+          </select>
+        </label>
       )}
       {bedingungen.length > 0 && (
         <ol className="bedingungen">
@@ -96,29 +145,74 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
             return (
               <li key={i} className={problem ? 'fehlerhaft' : ''}>
                 <div className="bedingungszeile">
-                  <select aria-label={t('mappentypen.anzeige.ziel')} value={zielVon(b)} onChange={(x) => { const n = neu(x.target.value, b.nicht); if (n) setzeB(i, n); }}>
-                    <optgroup label={t('mappentypen.anzeige.ablage')}><option value="merkmal:beruflich">{merkmalName('beruflich')}</option></optgroup>
-                    <optgroup label={t('mappentypen.anzeige.feldwert')}>
-                      {b.art === 'feld' && !feld && <option value={zielVon(b)}>{t('mappentypen.anzeige.fehlt', { feld: b.bedingung.feld })}</option>}
-                      {felder.map((f) => <option key={f.key} value={`feld:${f.key}`}>{f.label}</option>)}
+                  <select
+                    aria-label={t('mappentypen.anzeige.ziel')}
+                    value={zielVon(b)}
+                    onChange={(x) => {
+                      const n = neu(x.target.value, b.nicht);
+                      if (n) setzeB(i, n);
+                    }}>
+                    <optgroup label={t('mappentypen.anzeige.ablage')}>
+                      <option value="merkmal:beruflich">{merkmalName('beruflich')}</option>
                     </optgroup>
-                    {(verweise.length > 0 || b.art === 'verweistyp') && <optgroup label={t('mappentypen.anzeige.verweistyp')}>
-                      {b.art === 'verweistyp' && !vf && <option value={zielVon(b)}>{t('mappentypen.anzeige.fehlt', { feld: b.feld })}</option>}
-                      {verweise.map((f) => <option key={f.key} value={`verweistyp:${f.key}`}>{t('mappentypen.anzeige.verweistyp-feld', { feld: feldLabel(f) })}</option>)}
-                    </optgroup>}
+                    <optgroup label={t('mappentypen.anzeige.feldwert')}>
+                      {b.art === 'feld' && !feld && (
+                        <option value={zielVon(b)}>{t('mappentypen.anzeige.fehlt', { feld: b.bedingung.feld })}</option>
+                      )}
+                      {felder.map((f) => (
+                        <option key={f.key} value={`feld:${f.key}`}>
+                          {f.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {(verweise.length > 0 || b.art === 'verweistyp') && (
+                      <optgroup label={t('mappentypen.anzeige.verweistyp')}>
+                        {b.art === 'verweistyp' && !vf && (
+                          <option value={zielVon(b)}>{t('mappentypen.anzeige.fehlt', { feld: b.feld })}</option>
+                        )}
+                        {verweise.map((f) => (
+                          <option key={f.key} value={`verweistyp:${f.key}`}>
+                            {t('mappentypen.anzeige.verweistyp-feld', { feld: feldLabel(f) })}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                     <EigeneOrganisationZiele b={b} verweise={verweise} fehlt={!vf} wert={zielVon(b)} />
                   </select>
-                  <select aria-label={t('mappentypen.anzeige.umkehren')} value={b.nicht ? 'nicht' : 'ja'} onChange={(x) => setzeB(i, { ...b, nicht: x.target.value === 'nicht' || undefined })}>
-                    <option value="ja">{t('mappentypen.anzeige.trifft-zu')}</option><option value="nicht">{t('mappentypen.anzeige.trifft-nicht-zu')}</option>
+                  <select
+                    aria-label={t('mappentypen.anzeige.umkehren')}
+                    value={b.nicht ? 'nicht' : 'ja'}
+                    onChange={(x) => setzeB(i, { ...b, nicht: x.target.value === 'nicht' || undefined })}>
+                    <option value="ja">{t('mappentypen.anzeige.trifft-zu')}</option>
+                    <option value="nicht">{t('mappentypen.anzeige.trifft-nicht-zu')}</option>
                   </select>
-                  {b.art === 'feld' && feld && <FeldBedingung b={b.bedingung} feld={feld} setze={(n) => n.art === 'feld' && setzeB(i, { ...b, bedingung: n })} titel={titel} merke={merke} />}
+                  {b.art === 'feld' && feld && (
+                    <FeldBedingung
+                      b={b.bedingung}
+                      feld={feld}
+                      setze={(n) => n.art === 'feld' && setzeB(i, { ...b, bedingung: n })}
+                      titel={titel}
+                      merke={merke}
+                    />
+                  )}
                   {b.art === 'verweistyp' && (
-                    <select aria-label={t('mappentypen.anzeige.typ')} value={b.typ} onChange={(x) => setzeB(i, { ...b, typ: x.target.value })}>
+                    <select
+                      aria-label={t('mappentypen.anzeige.typ')}
+                      value={b.typ}
+                      onChange={(x) => setzeB(i, { ...b, typ: x.target.value })}>
                       {!typen.some((x) => x.id === b.typ) && <option value={b.typ}>–</option>}
-                      {typen.filter((x) => !vf || jedeMappe(vf) || !zieleVon(vf).length || zielErlaubt(vf, x.id)).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                      {typen
+                        .filter((x) => !vf || jedeMappe(vf) || !zieleVon(vf).length || zielErlaubt(vf, x.id))
+                        .map((x) => (
+                          <option key={x.id} value={x.id}>
+                            {x.name}
+                          </option>
+                        ))}
                     </select>
                   )}
-                  <Knopf art="link" groesse="klein" onClick={() => setzeListe(bedingungen.filter((_, j) => j !== i))}>{t('mappentypen.anzeige.entfernen')}</Knopf>
+                  <Knopf art="link" groesse="klein" onClick={() => setzeListe(bedingungen.filter((_, j) => j !== i))}>
+                    {t('mappentypen.anzeige.entfernen')}
+                  </Knopf>
                 </div>
                 <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeAnzeigeBedingung(b, typ, namen)}</p>
               </li>
@@ -127,9 +221,22 @@ export function AnzeigeEditor({ regel, setze, typ, eigene, typen }: {
         </ol>
       )}
       <div className="knoepfe">
-        <Knopf groesse="klein" gesperrt={bedingungen.length >= ANZEIGE_BEDINGUNGEN_MAX ? t('mappentypen.anzeige.hoechstens', { anzahl: ANZEIGE_BEDINGUNGEN_MAX }) : false}
-          onClick={() => { const n = neu(erstes); if (n) setzeListe([...bedingungen, n]); }}>{t('mappentypen.anzeige.hinzu')}</Knopf>
-        {bedingungen.length > 0 && <Knopf art="link" groesse="klein" onClick={() => setze(undefined)}>{t('mappentypen.anzeige.immer-zeigen')}</Knopf>}
+        <Knopf
+          groesse="klein"
+          gesperrt={
+            bedingungen.length >= ANZEIGE_BEDINGUNGEN_MAX ? t('mappentypen.anzeige.hoechstens', { anzahl: ANZEIGE_BEDINGUNGEN_MAX }) : false
+          }
+          onClick={() => {
+            const n = neu(erstes);
+            if (n) setzeListe([...bedingungen, n]);
+          }}>
+          {t('mappentypen.anzeige.hinzu')}
+        </Knopf>
+        {bedingungen.length > 0 && (
+          <Knopf art="link" groesse="klein" onClick={() => setze(undefined)}>
+            {t('mappentypen.anzeige.immer-zeigen')}
+          </Knopf>
+        )}
       </div>
     </FeldGruppe>
   );

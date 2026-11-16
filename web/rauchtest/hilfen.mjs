@@ -26,7 +26,9 @@ export let browser;
 /** Ist Ablago eingerichtet und sind die Daten angelegt? Sonst sind die übrigen Tests sinnlos. */
 let bereit = false;
 /** Die Einrichtung meldet, dass Ablago eingerichtet und die Daten angelegt sind. */
-export function bereitMelden() { bereit = true; }
+export function bereitMelden() {
+  bereit = true;
+}
 /** Ids der Daten, die die Tests brauchen (vorbereiten). */
 export const daten = {};
 
@@ -34,14 +36,20 @@ before(async () => {
   await mkdir(FEHLERORDNER, { recursive: true });
   browser = await chromium.launch();
 });
-after(async () => { await browser?.close(); });
+after(async () => {
+  await browser?.close();
+});
 
 /* ---------- Schnittstelle ---------- */
 
 export async function api(methode, pfad, { cookie, body, roh } = {}) {
   const r = await fetch(BASIS + pfad, {
     method: methode,
-    headers: { 'x-dms': '1', ...(cookie ? { cookie } : {}), ...(body !== undefined ? { 'content-type': roh ? 'application/octet-stream' : 'application/json' } : {}) },
+    headers: {
+      'x-dms': '1',
+      ...(cookie ? { cookie } : {}),
+      ...(body !== undefined ? { 'content-type': roh ? 'application/octet-stream' : 'application/json' } : {}),
+    },
     body: body === undefined ? undefined : roh ? body : JSON.stringify(body),
   });
   const text = await r.text();
@@ -59,7 +67,11 @@ export async function sitzung(person) {
 export async function warteAufAblago() {
   for (let i = 0; i < 120; i++) {
     // Auch im Einrichtungsmodus erreichbar.
-    try { if ((await fetch(`${BASIS}/api/konto/status`)).ok) return; } catch { /* startet noch */ }
+    try {
+      if ((await fetch(`${BASIS}/api/konto/status`)).ok) return;
+    } catch {
+      /* startet noch */
+    }
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`Ablago unter ${BASIS} antwortet nicht.`);
@@ -69,7 +81,11 @@ export async function einrichtungscode() {
   if (process.env.DMS_EINRICHTUNGSCODE) return process.env.DMS_EINRICHTUNGSCODE;
   const datei = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../../data'), 'geheim', 'EINRICHTUNGSCODE');
   for (let i = 0; i < 60; i++) {
-    try { return (await readFile(datei, 'utf8')).trim(); } catch { await new Promise((r) => setTimeout(r, 500)); }
+    try {
+      return (await readFile(datei, 'utf8')).trim();
+    } catch {
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
   throw new Error(`Einrichtungscode nicht gefunden (${datei}).`);
 }
@@ -94,12 +110,14 @@ function knopfWaechter() {
   const text = (el) => (el.textContent || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
   const pruefe = () => {
     const funde = [];
-    for (const el of document.querySelectorAll('[data-knopf="anlegen"]')) if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
+    for (const el of document.querySelectorAll('[data-knopf="anlegen"]'))
+      if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
     for (const el of document.querySelectorAll('[data-knopf="gefahr"]')) {
       const gesperrt = el.disabled || el.getAttribute('aria-disabled') === 'true';
       if (sichtbar(el) && !gesperrt && el.getAttribute('aria-haspopup') !== 'dialog') funde.push(['gefahr-ohne-rueckfrage', el]);
     }
-    for (const el of document.querySelectorAll('.knopf.gefahr, [data-knopf="entscheidung"]')) if (sichtbar(el) && !el.closest('dialog.rueckfrage')) funde.push(['rot-ausserhalb-rueckfrage', el]);
+    for (const el of document.querySelectorAll('.knopf.gefahr, [data-knopf="entscheidung"]'))
+      if (sichtbar(el) && !el.closest('dialog.rueckfrage')) funde.push(['rot-ausserhalb-rueckfrage', el]);
     for (const [art, el] of funde) {
       const f = { art, text: text(el), pfad: location.pathname };
       const schluessel = `${f.art}|${f.text}|${f.pfad}`;
@@ -109,8 +127,20 @@ function knopfWaechter() {
     }
   };
   let geplant = 0;
-  const plane = () => { if (!geplant) geplant = setTimeout(() => { geplant = 0; pruefe(); }, 120); };
-  new MutationObserver(plane).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['data-knopf', 'class', 'aria-haspopup', 'aria-disabled', 'disabled', 'hidden', 'open'] });
+  const plane = () => {
+    if (!geplant)
+      geplant = setTimeout(() => {
+        geplant = 0;
+        pruefe();
+      }, 120);
+  };
+  new MutationObserver(plane).observe(document, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['data-knopf', 'class', 'aria-haspopup', 'aria-disabled', 'disabled', 'hidden', 'open'],
+  });
 }
 
 /**
@@ -123,7 +153,10 @@ const knopfAusnahme = (f) => KNOPF_AUSNAHMEN.find((a) => a.art === f.art && a.te
 const genutzteAusnahmen = new Set();
 after(() => {
   const ungenutzt = KNOPF_AUSNAHMEN.filter((a) => !genutzteAusnahmen.has(a));
-  if (ungenutzt.length) console.log(`# Knopf-Ausnahmen ohne Fund (#1210) – wenn umgestellt, bitte herausnehmen: ${ungenutzt.map((a) => `${a.art} ${a.text} (${a.issue})`).join('; ')}`);
+  if (ungenutzt.length)
+    console.log(
+      `# Knopf-Ausnahmen ohne Fund (#1210) – wenn umgestellt, bitte herausnehmen: ${ungenutzt.map((a) => `${a.art} ${a.text} (${a.issue})`).join('; ')}`,
+    );
 });
 
 /* ---------- Rahmen für einen Rauchtest ---------- */
@@ -136,7 +169,13 @@ async function archivOrdner(sha) {
   const dateien = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../data'), 'files');
   for (const haushalt of await readdir(dateien)) {
     const ablage = join(dateien, haushalt);
-    if (!(await stat(join(ablage, sha.slice(0, 2), sha)).then(() => true, () => false))) continue;
+    if (
+      !(await stat(join(ablage, sha.slice(0, 2), sha)).then(
+        () => true,
+        () => false,
+      ))
+    )
+      continue;
     const ordner = join(ablage, 'archivfassungen', sha.slice(0, 2));
     await mkdir(ordner, { recursive: true });
     return ordner;
@@ -145,13 +184,26 @@ async function archivOrdner(sha) {
 }
 const PDFA_PAKET = { id: 'pdfa', name: 'PDF/A', version: '1.0.0' };
 export async function archivfassungWartet(sha) {
-  await writeFile(join(await archivOrdner(sha), `${sha}.stand`), JSON.stringify({ stand: 'wartet', info: null, paket: PDFA_PAKET, zeit: new Date().toISOString() }));
+  await writeFile(
+    join(await archivOrdner(sha), `${sha}.stand`),
+    JSON.stringify({ stand: 'wartet', info: null, paket: PDFA_PAKET, zeit: new Date().toISOString() }),
+  );
 }
 export async function archivfassungAblegen(sha, pdf) {
   const ordner = await archivOrdner(sha);
   await writeFile(join(ordner, `${sha}.fassung`), pdf);
-  await writeFile(join(ordner, `${sha}.json`), JSON.stringify({ mime: 'application/pdf', groesse: pdf.length, sha256: createHash('sha256').update(pdf).digest('hex'), seiten: 1,
-    pdfa: { teil: 2, stufe: 'B' }, paket: PDFA_PAKET, erstellt: new Date().toISOString() }));
+  await writeFile(
+    join(ordner, `${sha}.json`),
+    JSON.stringify({
+      mime: 'application/pdf',
+      groesse: pdf.length,
+      sha256: createHash('sha256').update(pdf).digest('hex'),
+      seiten: 1,
+      pdfa: { teil: 2, stufe: 'B' },
+      paket: PDFA_PAKET,
+      erstellt: new Date().toISOString(),
+    }),
+  );
   await rm(join(ordner, `${sha}.stand`), { force: true });
 }
 
@@ -170,7 +222,10 @@ export async function archivfassungAblegen(sha, pdf) {
  */
 export function rauchtest(name, optionen, ablauf) {
   test(name, { timeout: Math.min(optionen.timeout ?? 120_000, 120_000) }, async (t) => {
-    if (!optionen.einrichtung && !bereit) { t.skip('Einrichtung gescheitert'); return; }
+    if (!optionen.einrichtung && !bereit) {
+      t.skip('Einrichtung gescheitert');
+      return;
+    }
     const k = await browser.newContext({ locale: 'de-DE', timezoneId: 'Europe/Berlin', ...(optionen.handy ? HANDY : DESKTOP) });
     // Kürzer als die Vorgabe von Playwright (30 s): Ein kaputter Weg soll schnell auffallen.
     k.setDefaultTimeout(15_000);
@@ -179,7 +234,9 @@ export function rauchtest(name, optionen, ablauf) {
     anfragenZaehlen(k);
     const erwartet = optionen.erwartet ?? [];
     const fehler = [];
-    k.on('console', (m) => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) fehler.push(`Konsole: ${m.text()}`); });
+    k.on('console', (m) => {
+      if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) fehler.push(`Konsole: ${m.text()}`);
+    });
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
     k.on('requestfailed', (r) => {
       const text = r.failure()?.errorText;
@@ -197,7 +254,8 @@ export function rauchtest(name, optionen, ablauf) {
     // Leitsätze der Knöpfe (#1210) auf jeder Seite dieses Wegs.
     await k.exposeBinding('__knopfFund', (_quelle, f) => {
       const a = knopfAusnahme(f);
-      if (a) genutzteAusnahmen.add(a); else fehler.push(`Knopf (#1210): ${f.art} „${f.text}“ auf ${f.pfad}`);
+      if (a) genutzteAusnahmen.add(a);
+      else fehler.push(`Knopf (#1210): ${f.art} „${f.text}“ auf ${f.pfad}`);
     });
     await k.addInitScript(knopfWaechter);
     if (optionen.als) {
@@ -239,7 +297,6 @@ export async function benutzermenue(s, person) {
   return s.locator('.benutzermenue .menue');
 }
 
-
 /** Heute (Europe/Berlin, wie der Browser der Rauchtests) plus `tage` als JJJJ-MM-TT. */
 export function inTagen(tage) {
   const heute = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
@@ -249,10 +306,17 @@ export function inTagen(tage) {
 }
 
 export const mitFragen = (s) => s.route('**/api/fragen', (r) => r.fulfill({ json: { verfuegbar: true, paket: 'KI-Assistent' } }));
-const HANDBUCH_VERZEICHNIS = { config: { lang: ['de'] }, docs: [
-  { location: 'post/', title: 'Post', text: '<p>Neue Post kommt per Scan, Mail oder + Neu.</p>' },
-  { location: 'post/#dokument-ubernehmen', title: 'Dokument übernehmen', text: '<p>Klickst du in Neue Post eine Post an, öffnet sich die Seite Dokument übernehmen.</p>' },
-] };
+const HANDBUCH_VERZEICHNIS = {
+  config: { lang: ['de'] },
+  docs: [
+    { location: 'post/', title: 'Post', text: '<p>Neue Post kommt per Scan, Mail oder + Neu.</p>' },
+    {
+      location: 'post/#dokument-ubernehmen',
+      title: 'Dokument übernehmen',
+      text: '<p>Klickst du in Neue Post eine Post an, öffnet sich die Seite Dokument übernehmen.</p>',
+    },
+  ],
+};
 export const mitHandbuch = (s) => s.route('**/hilfe/*/search/search_index.json', (r) => r.fulfill({ json: HANDBUCH_VERZEICHNIS }));
 
 /** Verwaltungsmodus über das Benutzermenü; fragt Ablago nach dem Passwort, wird es eingegeben. */
@@ -271,7 +335,10 @@ export async function verwalten(s) {
 
 /** Am Handy darf die Seite nicht waagerecht rollen (die genaue Prüfung je Element macht mobil-pruefen.mjs). */
 export async function keineWaagerechteRolle(s) {
-  const { breit, sicht } = await s.evaluate(() => ({ breit: document.documentElement.scrollWidth, sicht: document.documentElement.clientWidth }));
+  const { breit, sicht } = await s.evaluate(() => ({
+    breit: document.documentElement.scrollWidth,
+    sicht: document.documentElement.clientWidth,
+  }));
   assert.ok(breit <= sicht, `Die Seite ist am Handy breiter als der Bildschirm (${breit} > ${sicht} px)`);
 }
 

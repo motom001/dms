@@ -29,11 +29,21 @@ export interface MappeGeaendert {
   demo: boolean;
 }
 /** Mappentyp geändert und gespeichert. */
-export interface TypGeaendert { alt: Mappentyp; typ: Mappentyp }
+export interface TypGeaendert {
+  alt: Mappentyp;
+  typ: Mappentyp;
+}
 /** Mappentyp angelegt; `sicht` = eigene Ansicht anlegen (#38, abwählbar). */
-export interface TypAngelegt { typ: Mappentyp; sicht: boolean }
+export interface TypAngelegt {
+  typ: Mappentyp;
+  sicht: boolean;
+}
 /** Benutzer-Mappe gespiegelt (Konto angelegt oder geändert); `abwesenheit`, wenn sich die Abwesenheit geändert hat. */
-export interface BenutzerGespiegelt { benutzer: Benutzer; von: string | null; abwesenheit?: { vorher: Abwesenheit; wegen?: string } }
+export interface BenutzerGespiegelt {
+  benutzer: Benutzer;
+  von: string | null;
+  abwesenheit?: { vorher: Abwesenheit; wegen?: string };
+}
 
 export type AnlassName = 'mappeGeaendert' | 'typGeaendert' | 'typAngelegt' | 'benutzerGespiegelt';
 export type Empfaenger<E> = (e: E) => Promise<unknown>;
@@ -50,7 +60,9 @@ const laufend = new AsyncLocalStorage<ReadonlyArray<{ anlass: AnlassName; empfae
  * Empfänger, ohne auf sie zu warten – ein Fehler rollte nichts zurück, und die Reihenfolge der Arbeit wäre offen.
  */
 class Empfaengerliste extends EventEmitter {
-  override emit(): boolean { throw new Error('emit() ist an Anschlusspunkten verboten – melde() wartet die Empfänger der Reihe nach ab'); }
+  override emit(): boolean {
+    throw new Error('emit() ist an Anschlusspunkten verboten – melde() wartet die Empfänger der Reihe nach ab');
+  }
 }
 
 /** Ein Anschlusspunkt: Empfänger anmelden (beim Zusammenbau) und den Anlass melden (in einer Transaktion). */
@@ -59,7 +71,10 @@ export class Anschlusspunkt<E> {
   private readonly namen = new WeakMap<object, string>();
   private zu = false;
 
-  constructor(readonly name: AnlassName, private readonly inTransaktion: () => boolean) {}
+  constructor(
+    readonly name: AnlassName,
+    private readonly inTransaktion: () => boolean,
+  ) {}
 
   /** Einen Empfänger hinten anhängen; nur beim Zusammenbau. `empfaenger` = Fachbereich.Aufgabe, z. B. `aufgaben.fristen`. */
   anmelden(empfaenger: string, f: Empfaenger<E>): void {
@@ -71,10 +86,14 @@ export class Anschlusspunkt<E> {
   }
 
   /** Liste schließen: Danach meldet sich niemand mehr an. */
-  schliessen(): void { this.zu = true; }
+  schliessen(): void {
+    this.zu = true;
+  }
 
   /** Die Empfänger in ihrer Reihenfolge. */
-  empfaenger(): string[] { return this.liste.listeners(EMPFAENGER).map((f) => this.namen.get(f) ?? '?'); }
+  empfaenger(): string[] {
+    return this.liste.listeners(EMPFAENGER).map((f) => this.namen.get(f) ?? '?');
+  }
 
   /**
    * Den Anlass melden: alle Empfänger der Reihe nach, jeder abgewartet. Nur in einer Transaktion des Kerns – ein Fehler
@@ -85,7 +104,10 @@ export class Anschlusspunkt<E> {
     const kette = laufend.getStore() ?? [];
     const selbst = kette.find((x) => x.anlass === this.name);
     if (selbst) throw new Error(`Anschlusspunkt „${this.name}“ erneut gemeldet, während sein Empfänger „${selbst.empfaenger}“ läuft`);
-    if (kette.length >= ANLASS_TIEFE) throw new Error(`Anschlusspunkt „${this.name}“: höchstens ${ANLASS_TIEFE} Anlässe ineinander (${kette.map((x) => x.anlass).join(' → ')})`);
+    if (kette.length >= ANLASS_TIEFE)
+      throw new Error(
+        `Anschlusspunkt „${this.name}“: höchstens ${ANLASS_TIEFE} Anlässe ineinander (${kette.map((x) => x.anlass).join(' → ')})`,
+      );
     for (const f of this.liste.listeners(EMPFAENGER) as Array<Empfaenger<E>>) {
       await laufend.run([...kette, { anlass: this.name, empfaenger: this.namen.get(f) ?? '?' }], () => f(e));
     }
@@ -111,8 +133,12 @@ export class Anlaesse {
   }
 
   /** Nach dem Anmelden beim Zusammenbau: alle Listen zu. */
-  schliessen(): void { for (const a of this.alle()) a.schliessen(); }
+  schliessen(): void {
+    for (const a of this.alle()) a.schliessen();
+  }
 
   /** Anlass → Empfänger in ihrer Reihenfolge (Test und Liste im Entwicklerhandbuch). */
-  liste(): Array<{ anlass: AnlassName; empfaenger: string[] }> { return this.alle().map((a) => ({ anlass: a.name, empfaenger: a.empfaenger() })); }
+  liste(): Array<{ anlass: AnlassName; empfaenger: string[] }> {
+    return this.alle().map((a) => ({ anlass: a.name, empfaenger: a.empfaenger() }));
+  }
 }

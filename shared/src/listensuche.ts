@@ -21,10 +21,17 @@ export interface Fundquelle {
 }
 
 /** Ein Stück Text, hervorgehoben oder nicht. */
-export interface Textteil { text: string; treffer: boolean }
+export interface Textteil {
+  text: string;
+  treffer: boolean;
+}
 
 /** Eine Fundstelle: Quelle und Ausschnitt mit hervorgehobenen Treffern. */
-export interface Fund { wo: string; teile: Textteil[]; titel: boolean }
+export interface Fund {
+  wo: string;
+  teile: Textteil[];
+  titel: boolean;
+}
 
 export interface Suchtreffer<T> {
   eintrag: T;
@@ -66,7 +73,11 @@ export function gefaltet(text: string): { s: string; von: number[]; bis: number[
   for (let k = 0; k < zeichen.length; k++) {
     const z = zeichen[k];
     const nach = zeichen[k + 1];
-    if ((z.c === 'a' || z.c === 'o' || z.c === 'u') && nach?.c === 'e') { aus.push({ c: z.c, von: z.von, bis: nach.bis }); k++; continue; }
+    if ((z.c === 'a' || z.c === 'o' || z.c === 'u') && nach?.c === 'e') {
+      aus.push({ c: z.c, von: z.von, bis: nach.bis });
+      k++;
+      continue;
+    }
     aus.push(z);
   }
   return { s: aus.map((z) => z.c).join(''), von: aus.map((z) => z.von), bis: aus.map((z) => z.bis) };
@@ -118,8 +129,14 @@ export function ausschnitt(text: string, bereiche: Array<[number, number]>, umfe
   let von = Math.max(0, a - umfeld);
   let bis = Math.min(quelle.length, b + umfeld);
   // An Wortgrenzen schneiden: links nach dem nächsten Leerzeichen, rechts vor dem letzten – nie in den Treffer hinein.
-  if (von > 0) { const l = quelle.indexOf(' ', von); if (l >= 0 && l < a) von = l + 1; }
-  if (bis < quelle.length) { const r = quelle.lastIndexOf(' ', bis); if (r >= b) bis = r; }
+  if (von > 0) {
+    const l = quelle.indexOf(' ', von);
+    if (l >= 0 && l < a) von = l + 1;
+  }
+  if (bis < quelle.length) {
+    const r = quelle.lastIndexOf(' ', bis);
+    if (r >= b) bis = r;
+  }
   const innen = bereiche.filter(([x, y]) => x >= von && y <= bis).map(([x, y]) => [x - von, y - von] as [number, number]);
   const teile = zerlege(quelle.slice(von, bis), innen);
   if (von > 0) teile.unshift({ text: '… ', treffer: false });
@@ -131,7 +148,12 @@ export function ausschnitt(text: string, bereiche: Array<[number, number]>, umfe
  * Einträge durchsuchen: Jedes Suchwort (oder eine seiner Varianten) muss in mindestens einer Quelle des Eintrags
  * vorkommen. Ohne Suchwort kommen alle Einträge unverändert zurück (ohne Fundstellen). Die Reihenfolge bleibt.
  */
-export function durchsuche<T>(eintraege: readonly T[], quellen: (e: T) => Fundquelle[], suche: string, o: Suchoptionen = {}): Array<Suchtreffer<T>> {
+export function durchsuche<T>(
+  eintraege: readonly T[],
+  quellen: (e: T) => Fundquelle[],
+  suche: string,
+  o: Suchoptionen = {},
+): Array<Suchtreffer<T>> {
   const woerter = suchwoerter(suche);
   if (!woerter.length) return eintraege.map((eintrag) => ({ eintrag, funde: [] }));
   // Je Suchwort die gefalteten Formen (das Wort und seine Varianten).
@@ -147,7 +169,10 @@ export function durchsuche<T>(eintraege: readonly T[], quellen: (e: T) => Fundqu
     qs.forEach((q, i) => {
       if (!alle.some((w) => gefaltete[i].includes(w))) return;
       const b = stellen(q.text, alle);
-      if (q.titel) { titel ??= zerlege(q.text, b); return; }
+      if (q.titel) {
+        titel ??= zerlege(q.text, b);
+        return;
+      }
       funde.push({ wo: q.wo, teile: ausschnitt(q.text, b, o.umfeld), titel: false });
     });
     aus.push({ eintrag, funde, ...(titel ? { titel } : {}) });

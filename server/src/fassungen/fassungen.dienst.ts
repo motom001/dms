@@ -19,8 +19,20 @@ import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache';
 import {
-  FASSUNG_ARTEN, FASSUNGEN_JE_SEITE, fassungsStand, gleicheStaende, personenIn, urheberText, zusammenfassen,
-  type FassungArt, type FassungEintrag, type FassungsListe, type FassungsVorschau, type GeloeschterEintrag, type GespeicherteFassung, type Urheber,
+  FASSUNG_ARTEN,
+  FASSUNGEN_JE_SEITE,
+  fassungsStand,
+  gleicheStaende,
+  personenIn,
+  urheberText,
+  zusammenfassen,
+  type FassungArt,
+  type FassungEintrag,
+  type FassungsListe,
+  type FassungsVorschau,
+  type GeloeschterEintrag,
+  type GespeicherteFassung,
+  type Urheber,
 } from '../../../shared/src/fassungen';
 import { beschreibeAenderungen, type Vergleichskontext } from '../../../shared/src/fassungsvergleich';
 
@@ -68,18 +80,32 @@ const gleich = gleicheStaende;
 
 export class Fassungen {
   private readonly gegenstaende = new Map<FassungArt, Gegenstand>();
-  constructor(private readonly kern: Kern, private readonly anschluss: FassungenAnschluss = {}) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly anschluss: FassungenAnschluss = {},
+  ) {}
 
-  private jetzt(): string { return new Date(this.anschluss.uhr?.() ?? Date.now()).toISOString(); }
+  private jetzt(): string {
+    return new Date(this.anschluss.uhr?.() ?? Date.now()).toISOString();
+  }
   /** Uhr setzen (Tests). */
-  stelleUhr(uhr: () => number) { this.anschluss.uhr = uhr; }
+  stelleUhr(uhr: () => number) {
+    this.anschluss.uhr = uhr;
+  }
 
   /** Ein Gegenstand meldet sich an (ein zweites Mal ersetzt den ersten – Tests bauen Teile neu). */
-  registriere(g: Gegenstand) { this.gegenstaende.set(g.art, g); }
-  hat(art: FassungArt): boolean { return this.gegenstaende.has(art); }
+  registriere(g: Gegenstand) {
+    this.gegenstaende.set(g.art, g);
+  }
+  hat(art: FassungArt): boolean {
+    return this.gegenstaende.has(art);
+  }
   /** Für den Kern: festhalten bzw. Löschvermerk von Fachbereichen ohne Repo-Hülle. */
   fuerKern(): FassungsAnschluss {
-    return { halte: (art, eintrag) => this.halte(art, eintrag), geloescht: (art, eintrag, loesche) => this.geloescht(art, eintrag, this.kern.repo, loesche) };
+    return {
+      halte: (art, eintrag) => this.halte(art, eintrag),
+      geloescht: (art, eintrag, loesche) => this.geloescht(art, eintrag, this.kern.repo, loesche),
+    };
   }
 
   private gegenstand(art: FassungArt): Gegenstand {
@@ -105,32 +131,55 @@ export class Fassungen {
     const [letzte, davor] = await repo.fassungen(art, eintrag, 2);
     if (letzte && !letzte.geloescht && gleich(letzte.daten, daten)) return;
     const jetzt = this.jetzt();
-    const neu = { urheber: await this.ergaenzt(this.kern.urheber(), repo), zeit: jetzt, vorgang: this.kern.vorgang(), wiederhergestellt: this.kern.wiederhergestellt() };
+    const neu = {
+      urheber: await this.ergaenzt(this.kern.urheber(), repo),
+      zeit: jetzt,
+      vorgang: this.kern.vorgang(),
+      wiederhergestellt: this.kern.wiederhergestellt(),
+    };
     if (letzte && zusammenfassen(letzte, neu)) {
       // Wieder beim Stand davor: Diese Fassung hat nichts geändert.
-      if (davor && !davor.geloescht && !letzte.wiederhergestellt && gleich(davor.daten, daten)) await repo.loescheFassung(art, eintrag, letzte.nr);
+      if (davor && !davor.geloescht && !letzte.wiederhergestellt && gleich(davor.daten, daten))
+        await repo.loescheFassung(art, eintrag, letzte.nr);
       else await repo.schreibeFassungFort(art, eintrag, letzte.nr, { name: s.name, daten, bis: jetzt });
       return;
     }
     await repo.legeFassungAn({
-      art, eintrag, nr: (letzte?.nr ?? 0) + 1, name: s.name, daten, urheber: neu.urheber, vorgang: neu.vorgang, wiederhergestellt: neu.wiederhergestellt,
-      zeit: jetzt, bis: jetzt, geloescht: null,
+      art,
+      eintrag,
+      nr: (letzte?.nr ?? 0) + 1,
+      name: s.name,
+      daten,
+      urheber: neu.urheber,
+      vorgang: neu.vorgang,
+      wiederhergestellt: neu.wiederhergestellt,
+      zeit: jetzt,
+      bis: jetzt,
+      geloescht: null,
     });
   }
 
   /** Löschen mit Vermerk: vorher den letzten Stand festhalten, nach dem Löschen nur ihn mit Löschvermerk behalten. */
   async geloescht(art: FassungArt, eintrag: string, repo: Repo, loesche: () => Promise<void>): Promise<void> {
-    if (!this.gegenstaende.has(art)) { await loesche(); return; }
+    if (!this.gegenstaende.has(art)) {
+      await loesche();
+      return;
+    }
     await this.halte(art, eintrag, repo);
     await loesche();
     // Gibt es den Eintrag noch (ein Systemeintrag, der nicht weg darf, oder eine Kern-Vorgabe einer Automatisierungsvorlage,
     // die nach dem Zurücksetzen wieder gilt), kein Löschvermerk – der Stand danach wird eine Fassung, falls er sich geändert hat.
-    if (await this.gegenstand(art).stand(eintrag, repo)) { await this.halte(art, eintrag, repo); return; }
+    if (await this.gegenstand(art).stand(eintrag, repo)) {
+      await this.halte(art, eintrag, repo);
+      return;
+    }
     await repo.vermerkeLoeschung(art, eintrag, { zeit: this.jetzt(), urheber: await this.ergaenzt(this.kern.urheber(), repo) });
   }
 
   /** Namen für Urheber: Personen und Automatisierungen (auch gelöschte, aus ihrer letzten Fassung). */
-  private async namen(fassungen: Array<Pick<GespeicherteFassung, 'urheber' | 'geloescht'>>): Promise<{ person(id: string): string; auto(id: string): string }> {
+  private async namen(
+    fassungen: Array<Pick<GespeicherteFassung, 'urheber' | 'geloescht'>>,
+  ): Promise<{ person(id: string): string; auto(id: string): string }> {
     const urheber = fassungen.flatMap((f) => [f.urheber, f.geloescht?.urheber]);
     const ids = personenIn(urheber);
     const titel = ids.length ? await this.kern.repo.titelVon(ids) : new Map<string, string>();
@@ -152,12 +201,25 @@ export class Fassungen {
     const n = await this.namen(geladen);
     const fassungen: FassungEintrag[] = geladen.slice(0, FASSUNGEN_JE_SEITE).map((f, i) => {
       const davor = geladen[i + 1];
-      const aenderungen = davor ? beschreibeAenderungen(art, davor.daten, f.daten, k)
-        : f.geloescht ? [] : f.urheber.art === 'update' ? [t('meldungen.fassungen.erste')] : beschreibeAenderungen(art, null, f.daten, k);
+      const aenderungen = davor
+        ? beschreibeAenderungen(art, davor.daten, f.daten, k)
+        : f.geloescht
+          ? []
+          : f.urheber.art === 'update'
+            ? [t('meldungen.fassungen.erste')]
+            : beschreibeAenderungen(art, null, f.daten, k);
       return {
-        nr: f.nr, zeit: f.zeit, bis: f.bis, name: f.name, urheber: f.urheber, wer: urheberText(f.urheber, n.person, n.auto),
-        wiederhergestellt: f.wiederhergestellt, geloescht: f.geloescht ? { ...f.geloescht, wer: urheberText(f.geloescht.urheber, n.person, n.auto) } : null,
-        aenderungen: f.wiederhergestellt ? [t('meldungen.fassungen.wiederhergestellt', { nr: f.wiederhergestellt }), ...aenderungen] : aenderungen,
+        nr: f.nr,
+        zeit: f.zeit,
+        bis: f.bis,
+        name: f.name,
+        urheber: f.urheber,
+        wer: urheberText(f.urheber, n.person, n.auto),
+        wiederhergestellt: f.wiederhergestellt,
+        geloescht: f.geloescht ? { ...f.geloescht, wer: urheberText(f.geloescht.urheber, n.person, n.auto) } : null,
+        aenderungen: f.wiederhergestellt
+          ? [t('meldungen.fassungen.wiederhergestellt', { nr: f.wiederhergestellt }), ...aenderungen]
+          : aenderungen,
         aktuell: i === 0 && !f.geloescht,
       };
     });
@@ -171,7 +233,12 @@ export class Fassungen {
   }
 
   /** Zwei Fassungen vergleichen: was sich von `von` zu `bis` geändert hat. */
-  async vergleich(art: FassungArt, eintrag: string, von: number, bis: number): Promise<{ von: number; bis: number; aenderungen: string[] }> {
+  async vergleich(
+    art: FassungArt,
+    eintrag: string,
+    von: number,
+    bis: number,
+  ): Promise<{ von: number; bis: number; aenderungen: string[] }> {
     const g = this.gegenstand(art);
     const [a, b] = [await this.fassung(art, eintrag, von), await this.fassung(art, eintrag, bis)];
     const k = (await g.kontext?.(eintrag)) ?? {};
@@ -186,7 +253,7 @@ export class Fassungen {
     if (!jetzt) throw new Fachfehler(409, t('meldungen.fassungen.geloescht'));
     const k = (await g.kontext?.(eintrag)) ?? {};
     const aenderungen = gleich(jetzt.daten, f.daten) ? [] : beschreibeAenderungen(art, jetzt.daten, f.daten, k);
-    const hinweise = aenderungen.length ? (await g.hinweise?.(eintrag, sauber(jetzt.daten), f.daten)) ?? [] : [];
+    const hinweise = aenderungen.length ? ((await g.hinweise?.(eintrag, sauber(jetzt.daten), f.daten)) ?? []) : [];
     return { nr, aenderungen, hinweise, stand: fassungsStand((await this.kern.repo.fassungen(art, eintrag, 1))[0]) };
   }
 
@@ -194,18 +261,31 @@ export class Fassungen {
    * Fassung `nr` wiederherstellen: nur auf dem Stand, den die Person gesehen hat (`stand`, #917), über das normale
    * Speichern des Gegenstands; das Ergebnis ist eine neue Fassung mit Verweis auf `nr`.
    */
-  async stelleWiederHer(art: FassungArt, eintrag: string, nr: number, eingabe: unknown, wer: Wiederherstellen['von'] & Pick<Wiederherstellen, 'darf'>): Promise<FassungsListe> {
+  async stelleWiederHer(
+    art: FassungArt,
+    eintrag: string,
+    nr: number,
+    eingabe: unknown,
+    wer: Wiederherstellen['von'] & Pick<Wiederherstellen, 'darf'>,
+  ): Promise<FassungsListe> {
     const { darf, ...von } = wer;
     const g = this.gegenstand(art);
     const f = await this.fassung(art, eintrag, nr);
     const e = (eingabe ?? {}) as Record<string, unknown>;
     const aktuell = fassungsStand((await this.kern.repo.fassungen(art, eintrag, 1))[0]);
-    if (typeof e.stand === 'string' && e.stand !== aktuell) throw new Fachfehler(409, t('meldungen.fassungen.konflikt'), { konflikt: true, stand: aktuell });
+    if (typeof e.stand === 'string' && e.stand !== aktuell)
+      throw new Fachfehler(409, t('meldungen.fassungen.konflikt'), { konflikt: true, stand: aktuell });
     const jetzt = await g.stand(eintrag, this.kern.repo);
     if (!jetzt) throw new Fachfehler(409, t('meldungen.fassungen.geloescht'));
     if (gleich(jetzt.daten, f.daten)) throw new Fachfehler(409, t('meldungen.fassungen.schon-aktuell'));
     await this.kern.mitFassungsKontext({ wiederhergestellt: nr }, async () => {
-      await g.stelleHer(eintrag, structuredClone(f.daten), { von, bestaetigt: e.bestaetigt === true, doppelteBestaetigt: e.doppelteBestaetigt === true, adresseBestaetigt: e.adresseBestaetigt === true, darf });
+      await g.stelleHer(eintrag, structuredClone(f.daten), {
+        von,
+        bestaetigt: e.bestaetigt === true,
+        doppelteBestaetigt: e.doppelteBestaetigt === true,
+        adresseBestaetigt: e.adresseBestaetigt === true,
+        darf,
+      });
       // Gegenstände ohne eigenen Haken: sicher festhalten (gleicher Vorgang → dieselbe Fassung).
       await this.halte(art, eintrag);
     });
@@ -217,11 +297,19 @@ export class Fassungen {
   async geloeschte(arten: readonly FassungArt[] = FASSUNG_ARTEN): Promise<GeloeschterEintrag[]> {
     const liste = await this.kern.repo.geloeschteFassungen(arten);
     const n = await this.namen(liste);
-    return liste.map((f) => ({ art: f.art, eintrag: f.eintrag, name: f.name, nr: f.nr, geloescht: { ...f.geloescht!, wer: urheberText(f.geloescht!.urheber, n.person, n.auto) } }));
+    return liste.map((f) => ({
+      art: f.art,
+      eintrag: f.eintrag,
+      name: f.name,
+      nr: f.nr,
+      geloescht: { ...f.geloescht!, wer: urheberText(f.geloescht!.urheber, n.person, n.auto) },
+    }));
   }
 
   /** Alle Fassungen für den Vollexport. */
-  alle(): Promise<GespeicherteFassung[]> { return this.kern.repo.alleFassungen(); }
+  alle(): Promise<GespeicherteFassung[]> {
+    return this.kern.repo.alleFassungen();
+  }
 
   /**
    * Abgleich beim Start (einmal je Version): Was sich seit der letzten Fassung geändert hat – durch Migrationen und

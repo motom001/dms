@@ -31,10 +31,14 @@ export interface SichtRegel {
   dann: Partial<Record<SichtRecht, Wirkung>>;
   stopp: boolean;
 }
-export interface SichtRegelwerk { grund: SichtRechte; regeln: SichtRegel[] }
+export interface SichtRegelwerk {
+  grund: SichtRechte;
+  regeln: SichtRegel[];
+}
 
 export const offeneSicht = (): SichtRegelwerk => ({ grund: SICHT_ALLES(), regeln: [] });
-export const sichtRegelwerkVon = (s: { berechtigungen?: SichtRegelwerk | null } | undefined): SichtRegelwerk => s?.berechtigungen ?? offeneSicht();
+export const sichtRegelwerkVon = (s: { berechtigungen?: SichtRegelwerk | null } | undefined): SichtRegelwerk =>
+  s?.berechtigungen ?? offeneSicht();
 export const istOffeneSicht = (r: SichtRegelwerk) => SICHT_RECHTE_LISTE.every((k) => r.grund[k]) && !r.regeln.length;
 export const kurzSicht = (g: SichtRechte) => SICHT_RECHTE_LISTE.filter((k) => g[k]).join('') || '–';
 export function kurzSichtRegel(dann: SichtRegel['dann']): string {
@@ -50,7 +54,14 @@ const trifft = (b: SichtBedingung, wer: Wer) => {
   return b.nicht ? !x : x;
 };
 
-export interface SichtSchritt { regel: string; name: string; traf: boolean | null; gesetzt: SichtRegel['dann']; stand: SichtRechte; stopp: boolean }
+export interface SichtSchritt {
+  regel: string;
+  name: string;
+  traf: boolean | null;
+  gesetzt: SichtRegel['dann'];
+  stand: SichtRechte;
+  stopp: boolean;
+}
 
 /**
  * Die eigenen Regeln einer Sicht für einen Benutzer. `untersicht`: Standard gilt nicht (alles erteilt)
@@ -61,7 +72,10 @@ export function eigeneSichtRechte(rw: SichtRegelwerk, wer: Wer, untersicht: bool
   const spur: SichtSchritt[] = [];
   let gestoppt = false;
   for (const r of rw.regeln) {
-    if (gestoppt) { spur.push({ regel: r.id, name: r.name, traf: null, gesetzt: {}, stand: { ...rechte }, stopp: r.stopp }); continue; }
+    if (gestoppt) {
+      spur.push({ regel: r.id, name: r.name, traf: null, gesetzt: {}, stand: { ...rechte }, stopp: r.stopp });
+      continue;
+    }
     const traf = r.wenn.length > 0 && r.wenn.every((b) => trifft(b, wer));
     const gesetzt: SichtRegel['dann'] = {};
     if (traf) {
@@ -112,7 +126,19 @@ export function alleSichtRechte(alle: Sicht[], wer: Wer, admin: boolean): Map<st
 }
 
 /** Für den Testlauf: je Sicht der Kette ihre Schritte und der Stand danach. */
-export function sichtTestlauf(alle: Sicht[], id: string, wer: Wer): Array<{ sicht: string; name: string; untersicht: boolean; grund: SichtRechte | null; spur: SichtSchritt[]; eigene: SichtRechte; stand: SichtRechte }> {
+export function sichtTestlauf(
+  alle: Sicht[],
+  id: string,
+  wer: Wer,
+): Array<{
+  sicht: string;
+  name: string;
+  untersicht: boolean;
+  grund: SichtRechte | null;
+  spur: SichtSchritt[];
+  eigene: SichtRechte;
+  stand: SichtRechte;
+}> {
   const s = alle.find((x) => x.id === id);
   if (!s) return [];
   const stand = SICHT_ALLES();
@@ -120,7 +146,15 @@ export function sichtTestlauf(alle: Sicht[], id: string, wer: Wer): Array<{ sich
     const rw = sichtRegelwerkVon(x);
     const { rechte, spur } = eigeneSichtRechte(rw, wer, i > 0);
     for (const k of SICHT_RECHTE_LISTE) stand[k] = stand[k] && rechte[k];
-    return { sicht: x.id, name: x.name, untersicht: i > 0, grund: i > 0 ? null : { ...SICHT_ALLES(), ...rw.grund }, spur, eigene: rechte, stand: { ...stand } };
+    return {
+      sicht: x.id,
+      name: x.name,
+      untersicht: i > 0,
+      grund: i > 0 ? null : { ...SICHT_ALLES(), ...rw.grund },
+      spur,
+      eigene: rechte,
+      stand: { ...stand },
+    };
   });
 }
 
@@ -150,7 +184,9 @@ export function bereinigeSichtRegelwerk(e: unknown): SichtRegelwerk | null {
     return {
       id: typeof o.id === 'string' && /^[\w-]{1,40}$/.test(o.id) ? o.id : neueId(),
       name: (typeof o.name === 'string' ? o.name : '').replace(/\s+/g, ' ').trim().slice(0, 80),
-      wenn, dann, stopp: o.stopp === true,
+      wenn,
+      dann,
+      stopp: o.stopp === true,
     };
   });
   const rw = { grund, regeln };
@@ -165,7 +201,12 @@ export function sichtRegelProblem(r: SichtRegel, untersicht: boolean): string | 
     if (b.art === 'benutzer' && !b.benutzer.length) return t('gemeinsam.sichtrechte.benutzer-auswaehlen', { name: r.name });
     if (b.art === 'rolle' && !b.rollen.length) return t('gemeinsam.sichtrechte.rolle-auswaehlen', { name: r.name });
   }
-  if (untersicht && SICHT_RECHTE_LISTE.some((k) => r.dann[k] === 'erteilen')) return t('gemeinsam.sichtrechte.in-einer-unteransicht-koennen', { name: r.name });
-  if (!SICHT_RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp) return t('gemeinsam.sichtrechte.aendert-nichts-mindestens-ein', { name: r.name, wert: untersicht ? '' : t('gemeinsam.sichtrechte.oder-erteilen') });
+  if (untersicht && SICHT_RECHTE_LISTE.some((k) => r.dann[k] === 'erteilen'))
+    return t('gemeinsam.sichtrechte.in-einer-unteransicht-koennen', { name: r.name });
+  if (!SICHT_RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp)
+    return t('gemeinsam.sichtrechte.aendert-nichts-mindestens-ein', {
+      name: r.name,
+      wert: untersicht ? '' : t('gemeinsam.sichtrechte.oder-erteilen'),
+    });
   return null;
 }

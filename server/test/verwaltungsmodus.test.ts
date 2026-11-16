@@ -9,7 +9,15 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, describe, it } from 'node:test';
 import { BEREICHE } from '../../shared/src/werkbankansicht';
-import { darfBereich, darfVerwalten, GESAMT, hatGesamt, liesVerwaltung, NUR_GESAMT_BEREICHE, verwaltungsbaum } from '../../shared/src/verwaltungsrecht';
+import {
+  darfBereich,
+  darfVerwalten,
+  GESAMT,
+  hatGesamt,
+  liesVerwaltung,
+  NUR_GESAMT_BEREICHE,
+  verwaltungsbaum,
+} from '../../shared/src/verwaltungsrecht';
 import { NICHTS } from '../../shared/src/rechte';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -28,7 +36,8 @@ import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
 const PW = 'ein-langes-passwort';
-const stundeBerlin = (t: number) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', hourCycle: 'h23' }).format(t));
+const stundeBerlin = (t: number) =>
+  Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', hourCycle: 'h23' }).format(t));
 // Die Tests zum Tagesmerker rücken die Uhr bis zu 40 Minuten vor; „heute“ zählt in Europe/Berlin, die Anmeldung selbst
 // läuft mit der echten Uhr. Kurz vor Mitternacht würde mitten im Test das Datum wechseln – dann werden sie übersprungen.
 const minuteBerlin = (t: number) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', minute: '2-digit' }).format(t));
@@ -42,7 +51,11 @@ async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
-  const zf = new Zweifaktor(speicherEinstellungen(), (k) => `v:${k}`, (w) => (w.startsWith('v:') ? w.slice(2) : null));
+  const zf = new Zweifaktor(
+    speicherEinstellungen(),
+    (k) => `v:${k}`,
+    (w) => (w.startsWith('v:') ? w.slice(2) : null),
+  );
   konten.verbindeZweifaktor(zf);
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const mitPasswort = async (email: string, name: string) => {
@@ -63,8 +76,19 @@ async function aufbau() {
     const c = ([] as string[]).concat(r.headers['set-cookie'] as string | string[])[0];
     return c.split(';')[0];
   };
-  const rufe = (cookie: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: unknown, kopf: Record<string, string> = {}) =>
-    app.inject({ method, url, ...(payload === undefined ? {} : { payload: payload as object }), headers: { 'x-dms': '1', cookie, ...kopf } });
+  const rufe = (
+    cookie: string,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    url: string,
+    payload?: unknown,
+    kopf: Record<string, string> = {},
+  ) =>
+    app.inject({
+      method,
+      url,
+      ...(payload === undefined ? {} : { payload: payload as object }),
+      headers: { 'x-dms': '1', cookie, ...kopf },
+    });
   const verwalten = async (cookie: string, angaben: Record<string, unknown> = {}) => rufe(cookie, 'POST', '/api/konto/verwaltung', angaben);
   const jetzt = { t: Date.now() };
   konten.uhr = () => jetzt.t;
@@ -73,7 +97,9 @@ async function aufbau() {
 
 describe('Verwaltungsrecht an der Person (#818)', () => {
   const offen: Array<() => Promise<unknown>> = [];
-  after(async () => { for (const f of offen) await f(); });
+  after(async () => {
+    for (const f of offen) await f();
+  });
 
   it('Recht, Baum und Bereiche: „Gesamte Verwaltung“ steht allein, Dienstkonten nie', () => {
     assert.deepEqual(liesVerwaltung(['benutzer', '*', 'typen']), [GESAMT]);
@@ -90,11 +116,30 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     // Der Baum entsteht aus BEREICHE: jede Route der ersten Ebene genau einmal, Gruppen gliedern nur. Bereiche nur für
     // „Gesamte Verwaltung“ (Nutzung, #1032) lassen sich nicht einzeln vergeben.
     const baum = verwaltungsbaum();
-    assert.deepEqual(baum.flatMap((a) => a.bereiche.map((b) => b.pfad)).sort(), BEREICHE.map((b) => b.pfad).filter((p) => !NUR_GESAMT_BEREICHE.has(p)).sort());
+    assert.deepEqual(
+      baum.flatMap((a) => a.bereiche.map((b) => b.pfad)).sort(),
+      BEREICHE.map((b) => b.pfad)
+        .filter((p) => !NUR_GESAMT_BEREICHE.has(p))
+        .sort(),
+    );
     assert.equal(darfBereich({ verwaltung: ['nutzung'] }, 'nutzung'), false);
     assert.equal(darfBereich({ verwaltung: ['*'] }, 'nutzung'), true);
-    const heikel = baum.flatMap((a) => a.bereiche).filter((b) => b.heikel).map((b) => b.pfad).sort();
-    assert.deepEqual(heikel, ['anbindung', 'anmeldeschutz', 'automatisierungen', 'betrieb', 'pakete', 'sicherung', 'typen', 'verschluesselung', 'vollexport']);
+    const heikel = baum
+      .flatMap((a) => a.bereiche)
+      .filter((b) => b.heikel)
+      .map((b) => b.pfad)
+      .sort();
+    assert.deepEqual(heikel, [
+      'anbindung',
+      'anmeldeschutz',
+      'automatisierungen',
+      'betrieb',
+      'pakete',
+      'sicherung',
+      'typen',
+      'verschluesselung',
+      'vollexport',
+    ]);
   });
 
   it('jede Route der Werkbank ist einem Bereich zugeordnet (Vorgabe „nein“)', async () => {
@@ -109,7 +154,15 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     }
     assert.deepEqual(ohne, [], `Ohne Bereich:\n${ohne.join('\n')}`);
     // Ohne Zuordnung: nur „Gesamte Verwaltung“.
-    const a = (v: string[]) => ({ benutzer: { id: 'x', verwaltung: v, rolle: 'admin' }, verwaltungsmodus: true, body: {}, params: {}, query: {}, ip: '1' }) as unknown as Anfrage;
+    const a = (v: string[]) =>
+      ({
+        benutzer: { id: 'x', verwaltung: v, rolle: 'admin' },
+        verwaltungsmodus: true,
+        body: {},
+        params: {},
+        query: {},
+        ip: '1',
+      }) as unknown as Anfrage;
     assert.throws(() => pruefeVerwaltung({ methode: 'GET', pfad: '/api/werkbank/neu-erfunden' }, a(['benutzer']), konten), status(403));
     pruefeVerwaltung({ methode: 'GET', pfad: '/api/werkbank/neu-erfunden' }, a(['*']), konten);
   });
@@ -140,14 +193,25 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     assert.equal((await x.rufe(c, 'DELETE', `/api/benutzer/${x.lena.id}/sitzungen/egal`)).statusCode, 403);
     assert.equal((await x.rufe(c, 'PUT', `/api/benutzer/${x.lena.id}/abwesenheit`, { an: true, vertreterId: x.jonas.id })).statusCode, 403);
     assert.equal((await x.rufe(c, 'POST', `/api/benutzer/${x.lena.id}/aufgaben-uebergeben`)).statusCode, 403);
-    assert.equal(((await x.konten.listeBenutzer()).find((b) => b.id === x.lena.id) as { abwesenheit?: { an?: boolean } }).abwesenheit?.an ?? false, false);
+    assert.equal(
+      ((await x.konten.listeBenutzer()).find((b) => b.id === x.lena.id) as { abwesenheit?: { an?: boolean } }).abwesenheit?.an ?? false,
+      false,
+    );
     // Bei Personen ohne Verwaltungsrecht geht es weiter.
     assert.equal((await x.rufe(c, 'GET', `/api/benutzer/${x.petra.id}/sitzungen`)).statusCode, 200);
     assert.equal((await x.rufe(c, 'DELETE', `/api/benutzer/${x.petra.id}/sitzungen`)).statusCode, 200);
-    assert.equal((await x.rufe(c, 'PUT', `/api/benutzer/${x.petra.id}/abwesenheit`, { an: true, vertreterId: x.jonas.id })).statusCode, 200);
+    assert.equal(
+      (await x.rufe(c, 'PUT', `/api/benutzer/${x.petra.id}/abwesenheit`, { an: true, vertreterId: x.jonas.id })).statusCode,
+      200,
+    );
     // Mit „Benutzer“: Personen anlegen und Passwörter anderer zurücksetzen geht.
     assert.equal((await x.rufe(c, 'POST', `/api/benutzer/${x.petra.id}/link`)).statusCode, 200);
-    assert.equal((await x.rufe(c, 'POST', '/api/benutzer', { email: 'katrin@example.org', name: 'Katrin', verwaltung: ['*'] })).json().benutzer.verwaltung.length, 0, 'beim Anlegen kein Verwaltungsrecht');
+    assert.equal(
+      (await x.rufe(c, 'POST', '/api/benutzer', { email: 'katrin@example.org', name: 'Katrin', verwaltung: ['*'] })).json().benutzer
+        .verwaltung.length,
+      0,
+      'beim Anlegen kein Verwaltungsrecht',
+    );
   });
 
   it('vergeben nur mit frischer Anmeldung; Protokoll mit Vorher/Nachher; Schutzregel für die letzte Person', async () => {
@@ -156,7 +220,8 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     const c = await x.anmelden('lena@example.org');
     assert.equal((await x.verwalten(c)).statusCode, 200);
     // 11 Minuten später, aber aktiv geblieben: Modus läuft, die Anmeldung ist nicht mehr frisch.
-    x.jetzt.t += 6 * MIN; await x.rufe(c, 'GET', '/api/werkbank/uebersicht', undefined, { 'x-dms-aktiv': '1' });
+    x.jetzt.t += 6 * MIN;
+    await x.rufe(c, 'GET', '/api/werkbank/uebersicht', undefined, { 'x-dms-aktiv': '1' });
     x.jetzt.t += 5 * MIN;
     const ohne = await x.rufe(c, 'PUT', `/api/benutzer/${x.petra.id}/verwaltung`, { verwaltung: ['benutzer', 'typen'] });
     assert.equal(ohne.statusCode, 403, ohne.body);
@@ -168,7 +233,10 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     assert.equal(mit.statusCode, 200, mit.body);
     assert.deepEqual(mit.json().verwaltung, ['typen', 'benutzer']);
     const e = protokoll.eintraege({ seit }).find((y) => y.text === 'Verwaltungsrecht vergeben')!;
-    assert.deepEqual([e.daten?.person, e.daten?.vorher, e.daten?.nachher, e.daten?.von], ['petra@example.org', '–', 'typen, benutzer', 'lena@example.org']);
+    assert.deepEqual(
+      [e.daten?.person, e.daten?.vorher, e.daten?.nachher, e.daten?.von],
+      ['petra@example.org', '–', 'typen, benutzer', 'lena@example.org'],
+    );
     // Schutzregel: Lena ist die letzte mit „Gesamte Verwaltung“.
     assert.equal((await x.rufe(c, 'PUT', `/api/benutzer/${x.lena.id}/verwaltung`, { verwaltung: ['benutzer'] })).statusCode, 409);
     assert.equal((await x.rufe(c, 'DELETE', `/api/benutzer/${x.lena.id}`)).statusCode, 409);
@@ -180,8 +248,22 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
   });
 
   it('Schutzregel zählt nur Personen, die sich anmelden können; Deaktivieren der letzten geht nicht', async () => {
-    const p = (id: string, v: string[], o: { aktiv?: boolean; pw?: boolean } = {}) => ({ id, email: `${id}@example.org`, name: id, rolle: 'mitglied' as const, verwaltung: v, aktiv: o.aktiv ?? true, hatPasswort: o.pw ?? true, erstellt: '', letzteAnmeldung: null });
-    assert.equal(schutzGesamt([p('a', []), p('b', ['*'], { pw: false })], [p('a', ['*']), p('b', ['*'], { pw: false })]) !== null, true, 'eine bloße Einladung zählt nicht');
+    const p = (id: string, v: string[], o: { aktiv?: boolean; pw?: boolean } = {}) => ({
+      id,
+      email: `${id}@example.org`,
+      name: id,
+      rolle: 'mitglied' as const,
+      verwaltung: v,
+      aktiv: o.aktiv ?? true,
+      hatPasswort: o.pw ?? true,
+      erstellt: '',
+      letzteAnmeldung: null,
+    });
+    assert.equal(
+      schutzGesamt([p('a', []), p('b', ['*'], { pw: false })], [p('a', ['*']), p('b', ['*'], { pw: false })]) !== null,
+      true,
+      'eine bloße Einladung zählt nicht',
+    );
     assert.equal(schutzGesamt([p('a', ['*'], { aktiv: false })], [p('a', ['*'])]) !== null, true);
     assert.equal(schutzGesamt([p('a', []), p('b', ['*'])], [p('a', ['*']), p('b', ['*'])]), null);
     // Gab es vorher niemanden, blockiert die Regel nichts.
@@ -211,14 +293,19 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
 
 describe('Verwaltungsmodus (#819)', () => {
   const offen: Array<() => Promise<unknown>> = [];
-  after(async () => { for (const f of offen) await f(); });
+  after(async () => {
+    for (const f of offen) await f();
+  });
 
   it('Einstieg über „Ablago verwalten“: frisch ohne Abfrage, sonst erneut anmelden; Werkbank nur im Modus', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
     const c = await x.anmelden('lena@example.org');
     const st = (await x.rufe(c, 'GET', '/api/konto/status')).json();
-    assert.deepEqual([st.verwaltungsmodus.darf, st.verwaltungsmodus.aktiv, st.verwaltungsmodus.frisch, st.benutzer.rolle], [true, false, true, 'mitglied']);
+    assert.deepEqual(
+      [st.verwaltungsmodus.darf, st.verwaltungsmodus.aktiv, st.verwaltungsmodus.frisch, st.benutzer.rolle],
+      [true, false, true, 'mitglied'],
+    );
     const ohne = await x.rufe(c, 'GET', '/api/werkbank/uebersicht');
     assert.equal(ohne.statusCode, 403, 'ohne Modus keine Werkbank');
     assert.equal(ohne.json().details.verwaltungsmodus, true);
@@ -239,8 +326,19 @@ describe('Verwaltungsmodus (#819)', () => {
     assert.deepEqual([st2.verwaltungsmodus.aktiv, st2.benutzer.rolle], [true, 'admin']);
     assert.equal((await x.rufe(c, 'GET', '/api/werkbank/uebersicht')).statusCode, 200);
     // Protokoll: jede Verwaltungshandlung mit Person und „im Verwaltungsmodus“ (ändernde Anfragen stehen auf „info“).
-    assert.equal((await x.rufe(c, 'POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: 'test', grund: 'Probe' })).statusCode < 500, true);
-    assert.ok(protokoll.eintraege({ seit }).some((e) => /POST \/api\/werkbank\/uebersicht\/akzeptieren/.test(e.text) && /lena@example\.org \(im Verwaltungsmodus\)/.test(e.benutzer ?? '')));
+    assert.equal(
+      (await x.rufe(c, 'POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: 'test', grund: 'Probe' })).statusCode < 500,
+      true,
+    );
+    assert.ok(
+      protokoll
+        .eintraege({ seit })
+        .some(
+          (e) =>
+            /POST \/api\/werkbank\/uebersicht\/akzeptieren/.test(e.text) &&
+            /lena@example\.org \(im Verwaltungsmodus\)/.test(e.benutzer ?? ''),
+        ),
+    );
     await x.rufe(c, 'POST', '/api/konto/verwaltung/beenden');
     assert.ok(protokoll.eintraege({ seit }).some((e) => e.text === 'Verwaltungsmodus beendet' && e.daten?.imVerwaltungsmodus === true));
   });
@@ -252,7 +350,11 @@ describe('Verwaltungsmodus (#819)', () => {
     const c = await x.anmelden('lena@example.org');
     assert.equal((await x.verwalten(c)).statusCode, 200);
     x.jetzt.t += 10 * MIN;
-    assert.equal((await x.rufe(c, 'GET', '/api/werkbank/uebersicht', undefined, { 'x-dms-aktiv': '1' })).statusCode, 200, 'Eingabe: verlängert');
+    assert.equal(
+      (await x.rufe(c, 'GET', '/api/werkbank/uebersicht', undefined, { 'x-dms-aktiv': '1' })).statusCode,
+      200,
+      'Eingabe: verlängert',
+    );
     x.jetzt.t += 10 * MIN;
     assert.equal((await x.rufe(c, 'GET', '/api/werkbank/uebersicht')).statusCode, 200, 'Abfrage ohne Eingabe: läuft noch');
     x.jetzt.t += 6 * MIN;
@@ -301,9 +403,19 @@ describe('Verwaltungsmodus (#819)', () => {
     const { geheimnis } = await x.zf.beginne({ id: x.lena.id, email: x.lena.email });
     const codes = await x.zf.bestaetige(x.lena.id, totp(ausBase32(geheimnis), Math.floor(Date.now() / 30_000) - 1), x.lena.email);
     // Anmelden mit einem Wiederherstellungscode (der Zeitschritt bleibt für die erneute Anmeldung frei).
-    const a = await x.app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email: 'lena@example.org', passwort: PW }, headers: { 'x-dms': '1' } });
+    const a = await x.app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      payload: { email: 'lena@example.org', passwort: PW },
+      headers: { 'x-dms': '1' },
+    });
     const kennung = a.json().zweiterSchritt as string;
-    const code = await x.app.inject({ method: 'POST', url: '/api/konto/anmelden/code', payload: { kennung, code: codes[0] }, headers: { 'x-dms': '1' } });
+    const code = await x.app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden/code',
+      payload: { kennung, code: codes[0] },
+      headers: { 'x-dms': '1' },
+    });
     assert.equal(code.statusCode, 200, code.body);
     const c = ([] as string[]).concat(code.headers['set-cookie'] as string | string[])[0].split(';')[0];
     x.jetzt.t += 11 * MIN;
@@ -313,7 +425,10 @@ describe('Verwaltungsmodus (#819)', () => {
     const seit = marke();
     assert.equal((await x.verwalten(c, { passwort: PW, code: '000000' })).statusCode, 401);
     assert.ok(protokoll.eintraege({ seit }).some((e) => e.text === 'Erneute Anmeldung fehlgeschlagen' && e.daten?.grund === 'Code'));
-    assert.equal((await x.verwalten(c, { passwort: PW, code: totp(ausBase32(geheimnis), Math.floor(Date.now() / 30_000)) })).statusCode, 200);
+    assert.equal(
+      (await x.verwalten(c, { passwort: PW, code: totp(ausBase32(geheimnis), Math.floor(Date.now() / 30_000)) })).statusCode,
+      200,
+    );
   });
 
   it('nicht in einer Vertretung: wer in jemandes Namen arbeitet, ist nie im Verwaltungsmodus', async () => {
@@ -332,12 +447,21 @@ describe('Verwaltungsmodus (#819)', () => {
 
 describe('Neues seit 0.188 im Modell von #818', () => {
   const offen: Array<() => Promise<unknown>> = [];
-  after(async () => { for (const f of offen) await f(); });
+  after(async () => {
+    for (const f of offen) await f();
+  });
 
   it('Passwörter für Dokumente (#827) bleiben auch im Verwaltungsmodus bei ihrer Person', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
-    const e = new PdfEntsperren(x.d.geschuetztePdfs.entsperrenAnbindung({ ablage: speicherFassungen(), speicher: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null) }));
+    const e = new PdfEntsperren(
+      x.d.geschuetztePdfs.entsperrenAnbindung({
+        ablage: speicherFassungen(),
+        speicher: speicherEinstellungen(),
+        verschluessele: (k) => `v:${k}`,
+        entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null),
+      }),
+    );
     x.d.geschuetztePdfs.verbindeEntsperren(e);
     const fremd = await e.merke(x.petra.id, 'Gehaltsabrechnung', 'petras-geheimnis');
     const c = await x.anmelden('lena@example.org');
@@ -365,7 +489,11 @@ describe('Neues seit 0.188 im Modell von #818', () => {
   });
 
   it('E-Mail-Versand über OAuth (#813) an- und abmelden braucht eine frische Anmeldung', () => {
-    for (const p of ['/api/werkbank/betrieb/mail/oauth/start', '/api/werkbank/betrieb/mail/oauth/geraet', '/api/werkbank/betrieb/mail/oauth/abmelden']) {
+    for (const p of [
+      '/api/werkbank/betrieb/mail/oauth/start',
+      '/api/werkbank/betrieb/mail/oauth/geraet',
+      '/api/werkbank/betrieb/mail/oauth/abmelden',
+    ]) {
       assert.equal(heikleHandlung('POST', p, {}), 'mailversand', p);
       assert.deepEqual(bereicheDerRoute('POST', p), ['betrieb'], p);
     }
@@ -375,12 +503,18 @@ describe('Neues seit 0.188 im Modell von #818', () => {
 
 describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
   const offen: Array<() => Promise<unknown>> = [];
-  after(async () => { for (const f of offen) await f(); });
+  after(async () => {
+    for (const f of offen) await f();
+  });
 
   it('vermerkt Öffnen, Herunterladen und Ändern dauerhaft – einmal kurz hintereinander, nur bei fremden Mappen', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
-    const gesperrt = await x.d.mappentypen.legeTypAn({ name: 'Personalakte', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
+    const gesperrt = await x.d.mappentypen.legeTypAn({
+      name: 'Personalakte',
+      felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+      titelVorlage: '{name}',
+    });
     await x.d.berechtigungen.setzeBerechtigungen(gesperrt.id, { grund: NICHTS, regeln: [] }, true);
     const offenTyp = await x.d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
     const m = await x.d.mappen.legeMappeAn({ typId: gesperrt.id, werte: { name: 'Akte Herr Özdemir' } });
@@ -396,26 +530,52 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
     assert.equal(eigeneSicht.json().nurImVerwaltungsmodus, undefined);
     assert.equal((await x.rufe(c, 'PUT', `/api/mappen/${m.id}`, { werte: { name: 'Akte Herr Özdemir (2)' } })).statusCode, 200);
     const h = (await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus');
-    assert.deepEqual(h.map((e) => [e.daten.was, e.benutzerId]).sort(), [['angesehen', x.lena.id], ['geaendert', x.lena.id]], 'kurz hintereinander nur einmal');
-    assert.equal((await x.d.mappenHistorie.historie(eigen.id)).some((e) => e.art === 'verwaltungsmodus'), false);
+    assert.deepEqual(
+      h.map((e) => [e.daten.was, e.benutzerId]).sort(),
+      [
+        ['angesehen', x.lena.id],
+        ['geaendert', x.lena.id],
+      ],
+      'kurz hintereinander nur einmal',
+    );
+    assert.equal(
+      (await x.d.mappenHistorie.historie(eigen.id)).some((e) => e.art === 'verwaltungsmodus'),
+      false,
+    );
     // Werkbank: Liste nur für „Gesamte Verwaltung“.
-    const liste = (await x.rufe(c, 'GET', '/api/werkbank/verwaltungsmodus')).json() as Array<{ person: string; titel: string; was: string }>;
-    assert.deepEqual(liste.map((e) => [e.person, e.was]).sort(), [['Lena', 'angesehen'], ['Lena', 'geaendert']]);
+    const liste = (await x.rufe(c, 'GET', '/api/werkbank/verwaltungsmodus')).json() as Array<{
+      person: string;
+      titel: string;
+      was: string;
+    }>;
+    assert.deepEqual(liste.map((e) => [e.person, e.was]).sort(), [
+      ['Lena', 'angesehen'],
+      ['Lena', 'geaendert'],
+    ]);
     const j = await x.anmelden('jonas@example.org');
     await x.verwalten(j);
     assert.equal((await x.rufe(j, 'GET', '/api/werkbank/verwaltungsmodus')).statusCode, 403);
     // Nach der Sperrfrist wieder ein Eintrag.
     await x.d.kurzzustand.loesche('modusspur');
     await x.rufe(c, 'GET', `/api/mappen/${m.id}`);
-    assert.equal((await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus' && e.daten.was === 'angesehen').length, 2);
+    assert.equal(
+      (await x.d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'verwaltungsmodus' && e.daten.was === 'angesehen').length,
+      2,
+    );
   });
 
   it('nicht löschbar: auch das Aufräumen der Historie gelöschter Mappen lässt sie stehen', async () => {
     const repo = speicherRepo();
     const id = '00000000-0000-4000-8000-0000000000e1';
-    await repo.historieSchreibe([{ mappeId: id, benutzerId: null, art: 'verwaltungsmodus', daten: { was: 'angesehen' } }, { mappeId: id, benutzerId: null, art: 'endgueltig' }]);
+    await repo.historieSchreibe([
+      { mappeId: id, benutzerId: null, art: 'verwaltungsmodus', daten: { was: 'angesehen' } },
+      { mappeId: id, benutzerId: null, art: 'endgueltig' },
+    ]);
     await repo.historieAufraeumen(new Date(Date.now() + 60_000).toISOString());
-    assert.deepEqual((await repo.historie(id)).map((e) => e.art), ['verwaltungsmodus']);
+    assert.deepEqual(
+      (await repo.historie(id)).map((e) => e.art),
+      ['verwaltungsmodus'],
+    );
   });
 });
 
@@ -432,14 +592,25 @@ describe('PostgreSQL: Umstellung und Sperre (#818)', { skip: url ? false : 'TEST
       for (const f of (await readdir(alle)).filter((n) => n.endsWith('.sql') && n < '073')) await cp(join(alle, f), join(vorher, f));
       await migriere(sql, vorher, () => {});
       const H = '00000000-0000-4000-8000-000000000001';
-      const A = '00000000-0000-4000-8000-0000000000a1', B = '00000000-0000-4000-8000-0000000000a2', M = '00000000-0000-4000-8000-0000000000a3';
+      const A = '00000000-0000-4000-8000-0000000000a1',
+        B = '00000000-0000-4000-8000-0000000000a2',
+        M = '00000000-0000-4000-8000-0000000000a3';
       await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash) VALUES (${A}, ${H}, 'lena@example.org', 'Lena', 'admin', 'x'), (${B}, ${H}, 'markus@example.org', 'Markus', 'admin', 'x'), (${M}, ${H}, 'jonas@example.org', 'Jonas', 'mitglied', 'x')`;
       await migriere(sql, alle, () => {});
       const repo = pgKontoRepo(sql, H);
       const liste = await repo.listeBenutzer();
-      assert.deepEqual(liste.map((b) => [b.name, b.rolle, b.verwaltung]), [['Jonas', 'mitglied', []], ['Lena', 'mitglied', ['*']], ['Markus', 'mitglied', ['*']]]);
+      assert.deepEqual(
+        liste.map((b) => [b.name, b.rolle, b.verwaltung]),
+        [
+          ['Jonas', 'mitglied', []],
+          ['Lena', 'mitglied', ['*']],
+          ['Markus', 'mitglied', ['*']],
+        ],
+      );
       // Dienstkonten: die Datenbank lehnt ein Verwaltungsrecht ab.
-      await assert.rejects(sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle, art, paket_id, verwaltung) VALUES (gen_random_uuid(), ${H}, 'p@dienst.invalid', 'Paket', 'mitglied', 'dienst', 'p', '{*}')`);
+      await assert.rejects(
+        sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle, art, paket_id, verwaltung) VALUES (gen_random_uuid(), ${H}, 'p@dienst.invalid', 'Paket', 'mitglied', 'dienst', 'p', '{*}')`,
+      );
       // Lena und Markus nehmen sich gleichzeitig gegenseitig das Recht: genau eine Änderung gelingt.
       const [r1, r2] = await Promise.all([
         repo.aendereGeschuetzt(B, { verwaltung: [] }, schutzGesamt),
@@ -447,6 +618,8 @@ describe('PostgreSQL: Umstellung und Sperre (#818)', { skip: url ? false : 'TEST
       ]);
       assert.equal(['benutzer' in r1, 'benutzer' in r2].filter(Boolean).length, 1, JSON.stringify([r1, r2]));
       assert.equal((await repo.listeBenutzer()).filter((b) => hatGesamt(b)).length, 1);
-    } finally { await db.ende(); }
+    } finally {
+      await db.ende();
+    }
   });
 });

@@ -1,7 +1,23 @@
 import { automatisierungHinweis, AutomatisierungenSchalter } from './PaketAutomatisierungen';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
-import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, vorausgewaehlt, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
+import {
+  auswahlMitAbhaengigkeiten,
+  dmsPasst,
+  inMB,
+  passt,
+  vergleicheVersion,
+  vorausgewaehlt,
+  type AblaufEingabe,
+  type AblaufErgebnis,
+  type AblaufInstallation,
+  type AblaufPlan,
+  type Ergaenzung,
+  type InstalliertesPaket,
+  type Katalog,
+  type KatalogPaket,
+  type KatalogVersion,
+} from '../../../shared/src/pakete';
 import type { EinstellungFeld } from '../../../shared/src/paketeinstellungen';
 import { ApiFehler } from '../api/anfrage';
 import { paketeApi, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api/pakete';
@@ -33,7 +49,11 @@ export interface PaketApi {
   katalog(): Promise<{ kataloge: Array<{ offiziell: boolean; katalog: Katalog | null; fehler: string | null }> }>;
   plan(e: AblaufEingabe): Promise<AblaufPlan<PaketVorschau>>;
 }
-export const PaketApiKontext = createContext<PaketApi>({ stand: () => paketeApi.pakete(), katalog: () => paketeApi.paketKatalog(false), plan: (e) => paketeApi.paketAblaufPlan(e) });
+export const PaketApiKontext = createContext<PaketApi>({
+  stand: () => paketeApi.pakete(),
+  katalog: () => paketeApi.paketKatalog(false),
+  plan: (e) => paketeApi.paketAblaufPlan(e),
+});
 
 /**
  * Gesammelte Antworten des Ablaufs (#804): Was „Jetzt einrichten“ später installiert, dazu eine Kurzfassung für die
@@ -41,7 +61,14 @@ export const PaketApiKontext = createContext<PaketApi>({ stand: () => paketeApi.
  */
 export interface PaketWahl {
   eingabe: AblaufInstallation;
-  pakete: Array<{ id: string; name: string; version: string; gewaehlt: boolean; beispiele: boolean; automatisierungen: Record<string, boolean> }>;
+  pakete: Array<{
+    id: string;
+    name: string;
+    version: string;
+    gewaehlt: boolean;
+    beispiele: boolean;
+    automatisierungen: Record<string, boolean>;
+  }>;
   /** Neue Mappentypen aus den Paketen – dann keine Beispiel-Mappentypen dazu. */
   neueTypen: number;
   /** Mit Pflicht-Einstellungen: die Werte bleiben nur im Speicher (es kann Geheimes darunter sein). */
@@ -49,69 +76,120 @@ export interface PaketWahl {
 }
 /** Vorbelegte Antworten, z. B. aus einer Konfigurationsdatei (#806) oder beim „Ändern“ (#804). */
 /** Vorgabe aus dem Assistenten bzw. der Einrichtungsdatei: „paket|schlüssel“ ausdrücklich aus bzw. an (#1082: der Rest wie im Paket). */
-export interface PaketVorgabe { beispiele: string[]; automatisierungenAus: string[]; automatisierungenAn?: string[] }
+export interface PaketVorgabe {
+  beispiele: string[];
+  automatisierungenAus: string[];
+  automatisierungenAn?: string[];
+}
 
 /** Woher die Pakete kommen. */
 export type AblaufQuelle =
-  | { art: 'katalog'; katalog: Katalog; /** Adresse eines weiteren Katalogs; ohne: der offizielle. */ quelle?: string; dms: string; installiert: InstalliertesPaket[] }
+  | {
+      art: 'katalog';
+      katalog: Katalog;
+      /** Adresse eines weiteren Katalogs; ohne: der offizielle. */ quelle?: string;
+      dms: string;
+      installiert: InstalliertesPaket[];
+    }
   | { art: 'sammel'; sammeldatei: Sammeldatei; dms: string; installiert: InstalliertesPaket[] };
 
 interface Kandidat {
   /** Paket-Id (Katalog) bzw. Upload-Kennung (Sammeldatei). */
   schluessel: string;
-  id: string; name: string; version: string; beschreibung: string; code: boolean;
-  ergaenzt: Ergaenzung | null; abhaengigkeiten: Record<string, string>;
+  id: string;
+  name: string;
+  version: string;
+  beschreibung: string;
+  code: boolean;
+  ergaenzt: Ergaenzung | null;
+  abhaengigkeiten: Record<string, string>;
   /** Nicht wählbar – mit Grund. */
   gesperrt?: string;
   /** Zusatz, z. B. „Update von 1.0.0“ in der Sammeldatei. */
   zusatz?: string;
   inhalt?: string;
   /** Wie im Katalog (#645): Symbol, Sprachkürzel, Kategorien, Größe des Archivs in Bytes. */
-  symbol?: string; kuerzel?: string; kategorien?: string[]; groesse?: number;
+  symbol?: string;
+  kuerzel?: string;
+  kategorien?: string[];
+  groesse?: number;
   /** Sprachpaket (#1048): nicht in der ersten Liste, sondern unter „Sprachen“. */
   sprache?: boolean;
 }
 
 /** Was mit einem Paket der Sammeldatei passiert (#461). */
 export function sammelStand(p: SammelPaket): { text: string; chip: 'gut' | 'warn' | ''; installierbar: boolean } {
-  if (p.stand === 'gleich') return { text: t('pakete.ablauf.sammel.gleich', { version: p.installiert ?? '' }), chip: '', installierbar: false };
-  if (p.stand === 'aelter') return { text: t('pakete.ablauf.sammel.aelter', { version: p.installiert ?? '' }), chip: '', installierbar: false };
+  if (p.stand === 'gleich')
+    return { text: t('pakete.ablauf.sammel.gleich', { version: p.installiert ?? '' }), chip: '', installierbar: false };
+  if (p.stand === 'aelter')
+    return { text: t('pakete.ablauf.sammel.aelter', { version: p.installiert ?? '' }), chip: '', installierbar: false };
   if (!p.vorschau.dmsOk) return { text: t('pakete.ablauf.sammel.dms', { dms: p.vorschau.paket.dms }), chip: 'warn', installierbar: false };
-  if (p.stand === 'neuer' && p.vorschau.herkunft?.art === 'katalog') return { text: t('pakete.ablauf.sammel.katalog', { version: p.installiert ?? '' }), chip: 'warn', installierbar: false };
-  if (p.stand === 'neuer') return { text: t('pakete.ablauf.sammel.update', { version: p.installiert ?? '' }), chip: 'gut', installierbar: true };
+  if (p.stand === 'neuer' && p.vorschau.herkunft?.art === 'katalog')
+    return { text: t('pakete.ablauf.sammel.katalog', { version: p.installiert ?? '' }), chip: 'warn', installierbar: false };
+  if (p.stand === 'neuer')
+    return { text: t('pakete.ablauf.sammel.update', { version: p.installiert ?? '' }), chip: 'gut', installierbar: true };
   return { text: t('pakete.ablauf.sammel.neu'), chip: 'gut', installierbar: true };
 }
 
 const passende = (p: KatalogPaket, dms: string): KatalogVersion | undefined =>
   [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((v) => dmsPasst(dms, v.dms));
-const inhaltText = (v: KatalogVersion) => [
-  v.inhalt.mappentypen.length ? t('pakete.ablauf.inhalt.typen', { namen: v.inhalt.mappentypen.map((x) => x.name).join(', ') }) : '',
-  v.inhalt.sichten.length ? t('pakete.ablauf.inhalt.sichten', { namen: v.inhalt.sichten.map((x) => x.name).join(', ') }) : '',
-].filter(Boolean).join(' · ');
+const inhaltText = (v: KatalogVersion) =>
+  [
+    v.inhalt.mappentypen.length ? t('pakete.ablauf.inhalt.typen', { namen: v.inhalt.mappentypen.map((x) => x.name).join(', ') }) : '',
+    v.inhalt.sichten.length ? t('pakete.ablauf.inhalt.sichten', { namen: v.inhalt.sichten.map((x) => x.name).join(', ') }) : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
 function kandidaten(q: AblaufQuelle, versionen: Record<string, string>): Kandidat[] {
   if (q.art === 'katalog') {
-    return q.katalog.pakete.filter((p) => !q.installiert.some((x) => x.id === p.id)).map((p): Kandidat => {
-      const v = (versionen[p.id] ? p.versionen.find((x) => x.version === versionen[p.id]) : undefined) ?? passende(p, q.dms);
-      const z = v ?? p.versionen[0];
-      return {
-        schluessel: p.id, id: p.id, name: p.name, version: z.version, beschreibung: p.beschreibung, code: z.code, ergaenzt: z.ergaenzt ?? null, abhaengigkeiten: z.abhaengigkeiten,
-        ...(v ? {} : { gesperrt: t('pakete.ablauf.dms', { dms: z.dms, version: q.dms }) }), inhalt: inhaltText(z),
-        symbol: p.symbol, kuerzel: p.kuerzel, kategorien: p.kategorien, groesse: z.groesse, ...(z.sprache ? { sprache: true } : {}),
-      };
-    });
+    return q.katalog.pakete
+      .filter((p) => !q.installiert.some((x) => x.id === p.id))
+      .map((p): Kandidat => {
+        const v = (versionen[p.id] ? p.versionen.find((x) => x.version === versionen[p.id]) : undefined) ?? passende(p, q.dms);
+        const z = v ?? p.versionen[0];
+        return {
+          schluessel: p.id,
+          id: p.id,
+          name: p.name,
+          version: z.version,
+          beschreibung: p.beschreibung,
+          code: z.code,
+          ergaenzt: z.ergaenzt ?? null,
+          abhaengigkeiten: z.abhaengigkeiten,
+          ...(v ? {} : { gesperrt: t('pakete.ablauf.dms', { dms: z.dms, version: q.dms }) }),
+          inhalt: inhaltText(z),
+          symbol: p.symbol,
+          kuerzel: p.kuerzel,
+          kategorien: p.kategorien,
+          groesse: z.groesse,
+          ...(z.sprache ? { sprache: true } : {}),
+        };
+      });
   }
   return q.sammeldatei.pakete.map((p): Kandidat => {
     const st = sammelStand(p);
     return {
-      schluessel: p.upload, id: p.id, name: p.name, version: p.version, beschreibung: p.vorschau.paket.beschreibung, code: !!p.vorschau.laeufer, ergaenzt: p.ergaenzt ?? null, abhaengigkeiten: p.abhaengigkeiten,
+      schluessel: p.upload,
+      id: p.id,
+      name: p.name,
+      version: p.version,
+      beschreibung: p.vorschau.paket.beschreibung,
+      code: !!p.vorschau.laeufer,
+      ergaenzt: p.ergaenzt ?? null,
+      abhaengigkeiten: p.abhaengigkeiten,
       ...(st.installierbar ? { zusatz: st.text } : { gesperrt: st.text }),
     };
   });
 }
 
 /** Die Auswahl samt Abhängigkeiten: in der Sammeldatei nur aus der Datei, im Katalog wie bisher (#460). */
-function aufloesen(q: AblaufQuelle, liste: Kandidat[], wahl: string[], versionen: Record<string, string>): { pakete: Array<{ schluessel: string; id: string; gewaehlt: boolean; fuer: string[] }>; probleme: string[] } {
+function aufloesen(
+  q: AblaufQuelle,
+  liste: Kandidat[],
+  wahl: string[],
+  versionen: Record<string, string>,
+): { pakete: Array<{ schluessel: string; id: string; gewaehlt: boolean; fuer: string[] }>; probleme: string[] } {
   if (q.art === 'katalog') {
     const r = auswahlMitAbhaengigkeiten(q.katalog, wahl, q.dms, q.installiert, versionen);
     return { pakete: r.pakete.map((p) => ({ schluessel: p.id, id: p.id, gewaehlt: p.gewaehlt, fuer: p.fuer })), probleme: r.probleme };
@@ -120,22 +198,37 @@ function aufloesen(q: AblaufQuelle, liste: Kandidat[], wahl: string[], versionen
   const probleme: string[] = [];
   const nimm = (k: Kandidat, von: string | null) => {
     const da = plan.get(k.id);
-    if (da) { if (von && !da.fuer.includes(von)) da.fuer.push(von); if (!von) da.gewaehlt = true; return; }
+    if (da) {
+      if (von && !da.fuer.includes(von)) da.fuer.push(von);
+      if (!von) da.gewaehlt = true;
+      return;
+    }
     plan.set(k.id, { schluessel: k.schluessel, id: k.id, gewaehlt: !von, fuer: von ? [von] : [] });
     for (const [a, b] of Object.entries(k.abhaengigkeiten)) {
       const inst = q.installiert.find((x) => x.id === a);
       if (inst && passt(inst.version, b)) continue;
       const mit = liste.find((x) => x.id === a && !x.gesperrt);
-      if (mit) nimm(mit, k.id); else probleme.push(t('pakete.ablauf.sammel.fehlt', { name: k.name, abh: a, bereich: b }));
+      if (mit) nimm(mit, k.id);
+      else probleme.push(t('pakete.ablauf.sammel.fehlt', { name: k.name, abh: a, bereich: b }));
     }
   };
-  for (const s of wahl) { const k = liste.find((x) => x.schluessel === s); if (k && !k.gesperrt) nimm(k, null); }
+  for (const s of wahl) {
+    const k = liste.find((x) => x.schluessel === s);
+    if (k && !k.gesperrt) nimm(k, null);
+  }
   return { pakete: [...plan.values()], probleme };
 }
 
 /** Name einer Kategorie aus dem Katalog (#645); unbekannte Kennungen zeigt Ablago, wie sie sind. */
-const kategorieName = (k: string) => { const s = `pakete.kategorie.${k}`; const x = t(s as never); return x === s ? k : x; };
-const groesseText = (b: number) => (b >= 1048576 ? `${(b / 1048576).toLocaleString(gebietsschema(), { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+const kategorieName = (k: string) => {
+  const s = `pakete.kategorie.${k}`;
+  const x = t(s as never);
+  return x === s ? k : x;
+};
+const groesseText = (b: number) =>
+  b >= 1048576
+    ? `${(b / 1048576).toLocaleString(gebietsschema(), { maximumFractionDigits: 1 })} MB`
+    : `${Math.max(1, Math.round(b / 1024))} KB`;
 
 /** Filter „Sprachen“ (#1048) neben den Kategorien des Katalogs. */
 const SPRACHEN = '~sprachen';
@@ -143,7 +236,20 @@ const SPRACHEN = '~sprachen';
 /** Kurzer Name einer Ergänzung unter ihrem Paket: „Texterkennung – Zusatzsprache Französisch“ → „Zusatzsprache Französisch“. */
 const kurz = (name: string) => (name.includes(' – ') ? name.slice(name.lastIndexOf(' – ') + 3) : name);
 
-export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}, aktionen, weiterText, fertig, geaendert, direkt, sammeln, vorgabe }: {
+export function PaketAblauf({
+  quelle,
+  start,
+  nur,
+  empfohlen = [],
+  versionen = {},
+  aktionen,
+  weiterText,
+  fertig,
+  geaendert,
+  direkt,
+  sammeln,
+  vorgabe,
+}: {
   quelle: AblaufQuelle;
   /** Nur sammeln statt installieren (Einrichtungsassistent, #804). */
   sammeln?(w: PaketWahl): void;
@@ -175,33 +281,58 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
   const [laeuft, setLaeuft] = useState(false);
   const pa = useContext(PaketApiKontext);
   const aufgeloest = aufloesen(quelle, liste, wahl, versionen);
-  const eingabe = () => (quelle.art === 'katalog'
-    ? { quelle: quelle.quelle, pakete: wahl.map((id) => (versionen[id] ? `${id}@${versionen[id]}` : id)) }
-    : { uploads: aufgeloest.pakete.map((p) => p.schluessel) });
+  const eingabe = () =>
+    quelle.art === 'katalog'
+      ? { quelle: quelle.quelle, pakete: wahl.map((id) => (versionen[id] ? `${id}@${versionen[id]}` : id)) }
+      : { uploads: aufgeloest.pakete.map((p) => p.schluessel) };
 
   async function pruefen() {
-    setLaeuft(true); setMeldung(undefined);
-    try { setPlan(await pa.plan(eingabe())); }
-    catch (e) { setMeldung({ text: (e as Error).message, gruende: e instanceof ApiFehler ? e.gruende : [] }); }
-    finally { setLaeuft(false); }
+    setLaeuft(true);
+    setMeldung(undefined);
+    try {
+      setPlan(await pa.plan(eingabe()));
+    } catch (e) {
+      setMeldung({ text: (e as Error).message, gruende: e instanceof ApiFehler ? e.gruende : [] });
+    } finally {
+      setLaeuft(false);
+    }
   }
 
   if (ergebnis) return <AblaufErgebnisAnsicht e={ergebnis} weiter={() => fertig(ergebnis)} />;
-  if (plan) return (
-    <Fragen key={plan.rechte.stand + plan.pakete.map((p) => p.schluessel).join()} plan={plan} eingabe={eingabe} zurueck={() => setPlan(null)} neuerPlan={setPlan} sammeln={sammeln} vorgabe={vorgabe}
-      fertig={(e) => { geaendert?.(); if (direkt && !e.fehler) fertig(e); else setErgebnis(e); }} />
-  );
+  if (plan)
+    return (
+      <Fragen
+        key={plan.rechte.stand + plan.pakete.map((p) => p.schluessel).join()}
+        plan={plan}
+        eingabe={eingabe}
+        zurueck={() => setPlan(null)}
+        neuerPlan={setPlan}
+        sammeln={sammeln}
+        vorgabe={vorgabe}
+        fertig={(e) => {
+          geaendert?.();
+          if (direkt && !e.fehler) fertig(e);
+          else setErgebnis(e);
+        }}
+      />
+    );
 
   // Baum: oben die Pakete, darunter ihre Ergänzungen (auch unter einem schon installierten Paket).
-  const basis = (k: Kandidat) => (k.ergaenzt && (liste.some((x) => x.id === k.ergaenzt!.paket) || quelle.installiert.some((x) => x.id === k.ergaenzt!.paket)) ? k.ergaenzt.paket : null);
+  const basis = (k: Kandidat) =>
+    k.ergaenzt && (liste.some((x) => x.id === k.ergaenzt!.paket) || quelle.installiert.some((x) => x.id === k.ergaenzt!.paket))
+      ? k.ergaenzt.paket
+      : null;
   const alleOben = liste.filter((k) => !basis(k) && (!nur || nur.includes(k.id)));
   // Kategorien wie im Katalog (#645): nur die, die hier vorkommen; Gewähltes bleibt beim Filtern sichtbar. Sprachen
   // (#1048) stehen nicht in der ersten Liste, sondern unter „Sprachen“ – außer, man sieht nur bestimmte Pakete (nur).
   const sprachen = !nur && alleOben.some((k) => k.sprache);
   const kategorien = [...new Set(alleOben.filter((k) => !sprachen || !k.sprache).flatMap((k) => k.kategorien ?? []))];
-  const passt = (k: Kandidat) => (kategorie === SPRACHEN ? !!k.sprache : (!sprachen || !k.sprache) && (!kategorie || !!k.kategorien?.includes(kategorie)));
+  const passt = (k: Kandidat) =>
+    kategorie === SPRACHEN ? !!k.sprache : (!sprachen || !k.sprache) && (!kategorie || !!k.kategorien?.includes(kategorie));
   const oben = alleOben.filter((k) => passt(k) || wahl.includes(k.schluessel));
-  const installierteBasen = [...new Set(liste.map(basis).filter((b): b is string => !!b && quelle.installiert.some((x) => x.id === b)))].filter((b) => !nur || nur.includes(b));
+  const installierteBasen = [
+    ...new Set(liste.map(basis).filter((b): b is string => !!b && quelle.installiert.some((x) => x.id === b))),
+  ].filter((b) => !nur || nur.includes(b));
   const imPlan = (id: string) => aufgeloest.pakete.find((p) => p.id === id);
   const name = (id: string) => liste.find((k) => k.id === id)?.name ?? quelle.installiert.find((x) => x.id === id)?.name ?? id;
   const schalten = (s: string, an: boolean) => setWahl(an ? [...wahl, s] : wahl.filter((x) => x !== s));
@@ -216,23 +347,62 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
       <li key={k.schluessel} className={an ? 'an' : undefined}>
         {/* Kachel als Gruppe mit dem Paketnamen (#1214): Haken, Symbol und Beschreibung bleiben eine Fläche zum Antippen. */}
         <FeldGruppe beschriftung={k.name} beschriftungVerbergen>
-        <label className="haken pd-kachel">
-          <input type="checkbox" checked={an} disabled={!!k.gesperrt || mit} onChange={(e) => schalten(k.schluessel, e.target.checked)} aria-describedby={`pa-${k.id}`} />
-          <PaketSymbol symbol={k.symbol} kuerzel={k.kuerzel} name={k.name} />
-          <span>
-            <span><strong>{k.name}</strong> <span className="leise klein">{k.version}</span>
-              {empfohlen.includes(k.id) && !k.gesperrt && <> <span className="chip gut">{t('pakete.ablauf.empfohlen')}</span></>}
-              {k.code && <> <span className="chip">{t('pakete.ablauf.code')}</span></>}
-              {k.zusatz && <> <span className="chip gut">{k.zusatz}</span></>}
-              {mit && <> <span className="chip">{t('pakete.ablauf.kommtmit', { namen: p!.fuer.map(name).join(', ') })}</span></>}</span>
-            <span className="klein">{k.beschreibung}</span>
-            {k.groesse !== undefined && k.groesse > 0 && <span className="klein leise">{t('pakete.ablauf.groesse', { groesse: groesseText(k.groesse) })}</span>}
-          </span>
-        </label>
+          <label className="haken pd-kachel">
+            <input
+              type="checkbox"
+              checked={an}
+              disabled={!!k.gesperrt || mit}
+              onChange={(e) => schalten(k.schluessel, e.target.checked)}
+              aria-describedby={`pa-${k.id}`}
+            />
+            <PaketSymbol symbol={k.symbol} kuerzel={k.kuerzel} name={k.name} />
+            <span>
+              <span>
+                <strong>{k.name}</strong> <span className="leise klein">{k.version}</span>
+                {empfohlen.includes(k.id) && !k.gesperrt && (
+                  <>
+                    {' '}
+                    <span className="chip gut">{t('pakete.ablauf.empfohlen')}</span>
+                  </>
+                )}
+                {k.code && (
+                  <>
+                    {' '}
+                    <span className="chip">{t('pakete.ablauf.code')}</span>
+                  </>
+                )}
+                {k.zusatz && (
+                  <>
+                    {' '}
+                    <span className="chip gut">{k.zusatz}</span>
+                  </>
+                )}
+                {mit && (
+                  <>
+                    {' '}
+                    <span className="chip">{t('pakete.ablauf.kommtmit', { namen: p!.fuer.map(name).join(', ') })}</span>
+                  </>
+                )}
+              </span>
+              <span className="klein">{k.beschreibung}</span>
+              {k.groesse !== undefined && k.groesse > 0 && (
+                <span className="klein leise">{t('pakete.ablauf.groesse', { groesse: groesseText(k.groesse) })}</span>
+              )}
+            </span>
+          </label>
         </FeldGruppe>
         <div className="pd-darf klein leise" id={`pa-${k.id}`}>
           {k.gesperrt ? <span className="fehlertext">{k.gesperrt}</span> : k.inhalt ? k.inhalt : null}
-          {!k.gesperrt && Object.keys(k.abhaengigkeiten).length > 0 && <>{k.inhalt ? ' · ' : ''}{t('pakete.ablauf.braucht', { namen: Object.keys(k.abhaengigkeiten).map((a) => (quelle.installiert.some((x) => x.id === a) ? t('pakete.ablauf.braucht.da', { name: name(a) }) : name(a))).join(', ') })}</>}
+          {!k.gesperrt && Object.keys(k.abhaengigkeiten).length > 0 && (
+            <>
+              {k.inhalt ? ' · ' : ''}
+              {t('pakete.ablauf.braucht', {
+                namen: Object.keys(k.abhaengigkeiten)
+                  .map((a) => (quelle.installiert.some((x) => x.id === a) ? t('pakete.ablauf.braucht.da', { name: name(a) }) : name(a)))
+                  .join(', '),
+              })}
+            </>
+          )}
         </div>
         {erg.length > 0 && <ErgaenzungenWahl erg={erg} offen={an} wahl={wahl} imPlan={imPlan} schalten={schalten} />}
       </li>
@@ -243,28 +413,62 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
     <div className="stapel">
       {(kategorien.length > 1 || sprachen) && (
         <div className="pd-kategorien" role="group" aria-label={t('pakete.ablauf.kategorien')}>
-          <Knopf aria-pressed={kategorie === null} onClick={() => setKategorie(null)}>{t('pakete.ablauf.kategorien.alle')}</Knopf>
+          <Knopf aria-pressed={kategorie === null} onClick={() => setKategorie(null)}>
+            {t('pakete.ablauf.kategorien.alle')}
+          </Knopf>
           {kategorien.map((k) => (
-            <Knopf key={k} aria-pressed={kategorie === k} onClick={() => setKategorie(kategorie === k ? null : k)}>{kategorieName(k)}</Knopf>
+            <Knopf key={k} aria-pressed={kategorie === k} onClick={() => setKategorie(kategorie === k ? null : k)}>
+              {kategorieName(k)}
+            </Knopf>
           ))}
-          {sprachen && <Knopf aria-pressed={kategorie === SPRACHEN} onClick={() => setKategorie(kategorie === SPRACHEN ? null : SPRACHEN)}>{t('pakete.ablauf.kategorien.sprachen')}</Knopf>}
+          {sprachen && (
+            <Knopf aria-pressed={kategorie === SPRACHEN} onClick={() => setKategorie(kategorie === SPRACHEN ? null : SPRACHEN)}>
+              {t('pakete.ablauf.kategorien.sprachen')}
+            </Knopf>
+          )}
         </div>
       )}
       <ul className="pd-liste" aria-label={t('pakete.ablauf.auswahl')}>
         {installierteBasen.map((b) => (
           <li key={`da-${b}`}>
-            <span><strong>{name(b)}</strong> <span className="chip">{t('pakete.ablauf.installiert')}</span></span>
+            <span>
+              <strong>{name(b)}</strong> <span className="chip">{t('pakete.ablauf.installiert')}</span>
+            </span>
             <ErgaenzungenWahl erg={ergaenzungen(b)} offen wahl={wahl} imPlan={imPlan} schalten={schalten} />
           </li>
         ))}
         {oben.map(knoten)}
       </ul>
       {!oben.length && !installierteBasen.length && <p className="leise">{t('pakete.ablauf.nichts')}</p>}
-      {aufgeloest.probleme.length > 0 && <div className="hinweis warn"><ul>{aufgeloest.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
-      {meldung && <div className="hinweis schlecht" role="status"><p>{meldung.text}</p>{!!meldung.gruende?.length && <ul>{meldung.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div>}
+      {aufgeloest.probleme.length > 0 && (
+        <div className="hinweis warn">
+          <ul>
+            {aufgeloest.probleme.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {meldung && (
+        <div className="hinweis schlecht" role="status">
+          <p>{meldung.text}</p>
+          {!!meldung.gruende?.length && (
+            <ul>
+              {meldung.gruende.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       <p className="leise klein">{t('pakete.ablauf.auswahl.hinweis')}</p>
       <div className="knoepfe">
-        <Knopf art="haupt" gesperrt={!aufgeloest.pakete.length || aufgeloest.probleme.length > 0} laeuft={laeuft} laeuftText={t('pakete.ablauf.pruefe')} onClick={() => void pruefen()}>
+        <Knopf
+          art="haupt"
+          gesperrt={!aufgeloest.pakete.length || aufgeloest.probleme.length > 0}
+          laeuft={laeuft}
+          laeuftText={t('pakete.ablauf.pruefe')}
+          onClick={() => void pruefen()}>
           {weiterText ?? t('pakete.ablauf.weiter', { anzahl: aufgeloest.pakete.length })}
         </Knopf>
         {aktionen}
@@ -274,7 +478,19 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
 }
 
 /** „Weitere Sprachen?“: Ergänzungen eines Pakets als Häkchen, gruppiert; zu, solange das Paket nicht gewählt ist. */
-function ErgaenzungenWahl({ erg, offen, wahl, imPlan, schalten }: { erg: Kandidat[]; offen: boolean; wahl: string[]; imPlan: (id: string) => { gewaehlt: boolean } | undefined; schalten(s: string, an: boolean): void }) {
+function ErgaenzungenWahl({
+  erg,
+  offen,
+  wahl,
+  imPlan,
+  schalten,
+}: {
+  erg: Kandidat[];
+  offen: boolean;
+  wahl: string[];
+  imPlan: (id: string) => { gewaehlt: boolean } | undefined;
+  schalten(s: string, an: boolean): void;
+}) {
   const gruppen = [...new Set(erg.map((k) => k.ergaenzt?.gruppe ?? ''))];
   if (!offen) return <p className="pd-darf klein leise">{t('pakete.ablauf.ergaenzungen.zu', { anzahl: erg.length })}</p>;
   return (
@@ -282,16 +498,26 @@ function ErgaenzungenWahl({ erg, offen, wahl, imPlan, schalten }: { erg: Kandida
       {gruppen.map((g) => (
         <FeldGruppe key={g} beschriftung={g ? `${g}?` : t('pakete.ablauf.ergaenzungen')} className="pd-ergaenzungen">
           <div className="pd-ergaenzungsliste">
-            {erg.filter((k) => (k.ergaenzt?.gruppe ?? '') === g).map((k) => {
-              const p = imPlan(k.id);
-              const an = wahl.includes(k.schluessel) || (!!p && !p.gewaehlt);
-              return (
-                <label key={k.schluessel} className="haken klein" title={k.gesperrt ?? k.beschreibung}>
-                  <input type="checkbox" checked={an} disabled={!!k.gesperrt} onChange={(e) => schalten(k.schluessel, e.target.checked)} />
-                  <span>{kurz(k.name)}{k.gesperrt && <span className="fehlertext"> {k.gesperrt}</span>}</span>
-                </label>
-              );
-            })}
+            {erg
+              .filter((k) => (k.ergaenzt?.gruppe ?? '') === g)
+              .map((k) => {
+                const p = imPlan(k.id);
+                const an = wahl.includes(k.schluessel) || (!!p && !p.gewaehlt);
+                return (
+                  <label key={k.schluessel} className="haken klein" title={k.gesperrt ?? k.beschreibung}>
+                    <input
+                      type="checkbox"
+                      checked={an}
+                      disabled={!!k.gesperrt}
+                      onChange={(e) => schalten(k.schluessel, e.target.checked)}
+                    />
+                    <span>
+                      {kurz(k.name)}
+                      {k.gesperrt && <span className="fehlertext"> {k.gesperrt}</span>}
+                    </span>
+                  </label>
+                );
+              })}
           </div>
         </FeldGruppe>
       ))}
@@ -302,28 +528,61 @@ function ErgaenzungenWahl({ erg, offen, wahl, imPlan, schalten }: { erg: Kandida
 const leer = (v: unknown) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
 
 /** Jede Frage einmal (#405) – mit Ausnahmen je Paket –, Zusammenfassung und ein Knopf. Exportiert für den Test ohne Konto (#881). */
-export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vorgabe }: {
-  plan: AblaufPlan<PaketVorschau>; eingabe(): AblaufEingabe; zurueck(): void; neuerPlan(p: AblaufPlan<PaketVorschau>): void; fertig(e: AblaufErgebnis): void;
-  sammeln?(w: PaketWahl): void; vorgabe?: PaketVorgabe;
+export function Fragen({
+  plan,
+  eingabe,
+  zurueck,
+  neuerPlan,
+  fertig,
+  sammeln,
+  vorgabe,
+}: {
+  plan: AblaufPlan<PaketVorschau>;
+  eingabe(): AblaufEingabe;
+  zurueck(): void;
+  neuerPlan(p: AblaufPlan<PaketVorschau>): void;
+  fertig(e: AblaufErgebnis): void;
+  sammeln?(w: PaketWahl): void;
+  vorgabe?: PaketVorgabe;
 }) {
   const pk = plan.pakete;
   const pa = useContext(PaketApiKontext);
-  const konfliktTypen = (p: typeof pk[number]) => p.vorschau.typen.filter((x) => !x.vorhanden && !x.geloescht && x.konflikt);
-  const konfliktSichten = (p: typeof pk[number]) => p.vorschau.sichten.filter((x) => !x.vorhanden && x.konflikt);
-  const [namen, setNamen] = useState<Record<string, Record<string, string>>>(() => Object.fromEntries(pk.map((p) => [p.id, Object.fromEntries(konfliktTypen(p).map((x) => [x.schluessel, x.vorschlag ?? x.name]))])));
-  const [sichtNamen, setSichtNamen] = useState<Record<string, Record<string, string>>>(() => Object.fromEntries(pk.map((p) => [p.id, Object.fromEntries(konfliktSichten(p).map((x) => [x.schluessel, x.vorschlag ?? x.name]))])));
+  const konfliktTypen = (p: (typeof pk)[number]) => p.vorschau.typen.filter((x) => !x.vorhanden && !x.geloescht && x.konflikt);
+  const konfliktSichten = (p: (typeof pk)[number]) => p.vorschau.sichten.filter((x) => !x.vorhanden && x.konflikt);
+  const [namen, setNamen] = useState<Record<string, Record<string, string>>>(() =>
+    Object.fromEntries(pk.map((p) => [p.id, Object.fromEntries(konfliktTypen(p).map((x) => [x.schluessel, x.vorschlag ?? x.name]))])),
+  );
+  const [sichtNamen, setSichtNamen] = useState<Record<string, Record<string, string>>>(() =>
+    Object.fromEntries(pk.map((p) => [p.id, Object.fromEntries(konfliktSichten(p).map((x) => [x.schluessel, x.vorschlag ?? x.name]))])),
+  );
   const mitBeispielen = pk.filter((p) => p.vorschau.beispiele > 0 && !p.vorschau.update);
   const [beispiele, setBeispiele] = useState(() => !!vorgabe && mitBeispielen.some((p) => vorgabe.beispiele.includes(p.id)));
-  const [ohneBeispiele, setOhneBeispiele] = useState<string[]>(() => (vorgabe ? mitBeispielen.filter((p) => !vorgabe.beispiele.includes(p.id)).map((p) => p.id) : []));
+  const [ohneBeispiele, setOhneBeispiele] = useState<string[]>(() =>
+    vorgabe ? mitBeispielen.filter((p) => !vorgabe.beispiele.includes(p.id)).map((p) => p.id) : [],
+  );
   // Mitgelieferte Automatisierungen (#712): abgewählte bleiben aus („paket|schlüssel“). Vorausgewählt (#1082): die mit
   // eingeschaltet: true – nennt ein Paket das nirgends, wie bisher alle.
   const mitAutomatisierungen = pk.filter((p) => (p.vorschau.automatisierungen ?? []).some((a) => a.neu));
-  const [ohneAutomatisierung, setOhneAutomatisierung] = useState<string[]>(() => [...new Set([...(vorgabe?.automatisierungenAus ?? []), ...mitAutomatisierungen.flatMap((p) => {
-    const an = vorausgewaehlt(p.vorschau.automatisierungen ?? []);
-    return (p.vorschau.automatisierungen ?? []).filter((a) => a.neu && !an.includes(a.schluessel)).map((a) => `${p.id}|${a.schluessel}`)
-      .filter((k) => !vorgabe?.automatisierungenAn?.includes(k) && !vorgabe?.automatisierungenAus.includes(k));
-  })])]);
-  const angehakt = Object.fromEntries(mitAutomatisierungen.map((p) => [p.id, (p.vorschau.automatisierungen ?? []).filter((a) => a.neu && !ohneAutomatisierung.includes(`${p.id}|${a.schluessel}`)).map((a) => a.schluessel)]));
+  const [ohneAutomatisierung, setOhneAutomatisierung] = useState<string[]>(() => [
+    ...new Set([
+      ...(vorgabe?.automatisierungenAus ?? []),
+      ...mitAutomatisierungen.flatMap((p) => {
+        const an = vorausgewaehlt(p.vorschau.automatisierungen ?? []);
+        return (p.vorschau.automatisierungen ?? [])
+          .filter((a) => a.neu && !an.includes(a.schluessel))
+          .map((a) => `${p.id}|${a.schluessel}`)
+          .filter((k) => !vorgabe?.automatisierungenAn?.includes(k) && !vorgabe?.automatisierungenAus.includes(k));
+      }),
+    ]),
+  ]);
+  const angehakt = Object.fromEntries(
+    mitAutomatisierungen.map((p) => [
+      p.id,
+      (p.vorschau.automatisierungen ?? [])
+        .filter((a) => a.neu && !ohneAutomatisierung.includes(`${p.id}|${a.schluessel}`))
+        .map((a) => a.schluessel),
+    ]),
+  );
   const anzahlAn = Object.values(angehakt).reduce((n, l) => n + l.length, 0);
   const [herkunftOk, setHerkunftOk] = useState(false);
   const [rechteOk, setRechteOk] = useState(false);
@@ -332,17 +591,33 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
   const erstmals = pk.filter((p) => p.vorschau.herausgeberBestaetigen);
   const [adresseOk, setAdresseOk] = useState(false);
   const mitEinstellungen = pk.filter((p) => p.einstellungen.length > 0);
-  const [werte, setWerte] = useState<Record<string, Record<string, unknown>>>(() => Object.fromEntries(mitEinstellungen.map((p) => [p.id, Object.fromEntries(p.einstellungen.map((f) => [f.schluessel, null]))])));
+  const [werte, setWerte] = useState<Record<string, Record<string, unknown>>>(() =>
+    Object.fromEntries(mitEinstellungen.map((p) => [p.id, Object.fromEntries(p.einstellungen.map((f) => [f.schluessel, null]))])),
+  );
   const [spaeter, setSpaeter] = useState<string[]>([]);
   const [fehler, setFehler] = useState<Record<string, string>>({});
   const [meldung, setMeldung] = useState<{ text: string; gruende?: string[] }>();
   const [laeuft, setLaeuft] = useState(false);
 
   const mitCode = pk.filter((p) => p.vorschau.laeufer);
-  const adressen = mitEinstellungen.filter((p) => !spaeter.includes(p.id)).flatMap((p) => p.einstellungen.filter((f) => f.typ === 'adresse' && !leer(werte[p.id]?.[f.schluessel])).map((f) => ({ paket: p.name, wert: String(werte[p.id][f.schluessel]) })));
-  const offenePflicht = mitEinstellungen.filter((p) => !spaeter.includes(p.id) && p.einstellungen.some((f) => leer(werte[p.id]?.[f.schluessel])));
-  const leereNamen = pk.some((p) => Object.values(namen[p.id] ?? {}).some((n) => !n.trim()) || Object.values(sichtNamen[p.id] ?? {}).some((n) => !n.trim()));
-  const nochKonflikt = pk.some((p) => konfliktTypen(p).some((x) => (namen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase()) || konfliktSichten(p).some((x) => (sichtNamen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase()));
+  const adressen = mitEinstellungen
+    .filter((p) => !spaeter.includes(p.id))
+    .flatMap((p) =>
+      p.einstellungen
+        .filter((f) => f.typ === 'adresse' && !leer(werte[p.id]?.[f.schluessel]))
+        .map((f) => ({ paket: p.name, wert: String(werte[p.id][f.schluessel]) })),
+    );
+  const offenePflicht = mitEinstellungen.filter(
+    (p) => !spaeter.includes(p.id) && p.einstellungen.some((f) => leer(werte[p.id]?.[f.schluessel])),
+  );
+  const leereNamen = pk.some(
+    (p) => Object.values(namen[p.id] ?? {}).some((n) => !n.trim()) || Object.values(sichtNamen[p.id] ?? {}).some((n) => !n.trim()),
+  );
+  const nochKonflikt = pk.some(
+    (p) =>
+      konfliktTypen(p).some((x) => (namen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase()) ||
+      konfliktSichten(p).some((x) => (sichtNamen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase()),
+  );
   const beispielPakete = beispiele ? mitBeispielen.filter((p) => !ohneBeispiele.includes(p.id)) : [];
   const fehlt = [
     plan.herkunftBestaetigen && !herkunftOk ? t('pakete.ablauf.fehlt.herkunft') : '',
@@ -353,59 +628,114 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
     adressen.length && !adresseOk ? t('pakete.ablauf.fehlt.adresse') : '',
   ].filter(Boolean);
   // Namenskonflikte (#1123) stehen auch in den Problemen; umbenannt wird oben, dann verhindern sie nichts.
-  const probleme = [...plan.probleme, ...pk.flatMap((p) => p.vorschau.probleme.filter((x) => !p.vorschau.namenskonflikte?.includes(x)).map((x) => `${p.name}: ${x}`))];
+  const probleme = [
+    ...plan.probleme,
+    ...pk.flatMap((p) => p.vorschau.probleme.filter((x) => !p.vorschau.namenskonflikte?.includes(x)).map((x) => `${p.name}: ${x}`)),
+  ];
   const namenskonflikte = pk.flatMap((p) => (p.vorschau.namenskonflikte ?? []).map((x) => `${p.name}: ${x}`));
   const neueTypen = pk.reduce((n, p) => n + p.vorschau.typen.filter((x) => !x.vorhanden && !x.geloescht).length, 0);
   const neueSichten = pk.reduce((n, p) => n + p.vorschau.sichten.filter((x) => !x.vorhanden).length, 0);
   const updates = pk.filter((p) => p.vorschau.update);
 
   const antworten = (): AblaufInstallation => ({
-    ...eingabe(), namen, sichtNamen, beispiele: beispielPakete.map((p) => p.id), automatisierungen: angehakt,
-    ...(herkunftOk ? { bestaetigt: true } : {}), ...(rechteOk ? { rechteStand: plan.rechte.stand } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}),
-    einstellungen: Object.fromEntries(Object.entries(werte).filter(([id]) => !spaeter.includes(id))), spaeter, ...(adresseOk ? { adresseBestaetigt: true } : {}),
+    ...eingabe(),
+    namen,
+    sichtNamen,
+    beispiele: beispielPakete.map((p) => p.id),
+    automatisierungen: angehakt,
+    ...(herkunftOk ? { bestaetigt: true } : {}),
+    ...(rechteOk ? { rechteStand: plan.rechte.stand } : {}),
+    ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}),
+    einstellungen: Object.fromEntries(Object.entries(werte).filter(([id]) => !spaeter.includes(id))),
+    spaeter,
+    ...(adresseOk ? { adresseBestaetigt: true } : {}),
   });
 
   async function installieren() {
     // Im Einrichtungsassistenten (#804): nur merken – installiert wird erst mit „Jetzt einrichten“.
     if (sammeln) {
       sammeln({
-        eingabe: antworten(), neueTypen, mitEinstellungen: mitEinstellungen.some((p) => !spaeter.includes(p.id)),
+        eingabe: antworten(),
+        neueTypen,
+        mitEinstellungen: mitEinstellungen.some((p) => !spaeter.includes(p.id)),
         pakete: pk.map((p) => ({
-          id: p.id, name: p.name, version: p.version, gewaehlt: p.gewaehlt, beispiele: beispielPakete.includes(p),
-          automatisierungen: Object.fromEntries((p.vorschau.automatisierungen ?? []).filter((a) => a.neu).map((a) => [a.schluessel, !ohneAutomatisierung.includes(`${p.id}|${a.schluessel}`)])),
+          id: p.id,
+          name: p.name,
+          version: p.version,
+          gewaehlt: p.gewaehlt,
+          beispiele: beispielPakete.includes(p),
+          automatisierungen: Object.fromEntries(
+            (p.vorschau.automatisierungen ?? [])
+              .filter((a) => a.neu)
+              .map((a) => [a.schluessel, !ohneAutomatisierung.includes(`${p.id}|${a.schluessel}`)]),
+          ),
         })),
       });
       return;
     }
-    setLaeuft(true); setMeldung(undefined); setFehler({});
+    setLaeuft(true);
+    setMeldung(undefined);
+    setFehler({});
     try {
       const e = await paketeApi.paketAblaufInstallieren(antworten());
       fertig(e);
     } catch (x) {
-      const d = x instanceof ApiFehler ? x.details as { rechteStand?: string; felderFehler?: Record<string, string> } | undefined : undefined;
+      const d =
+        x instanceof ApiFehler ? (x.details as { rechteStand?: string; felderFehler?: Record<string, string> } | undefined) : undefined;
       setMeldung({ text: (x as Error).message, gruende: x instanceof ApiFehler ? x.gruende : [] });
       if (d?.felderFehler) setFehler(d.felderFehler);
       // Die Rechte haben sich geändert (z. B. neuer Katalog): neu zeigen, neu bestätigen.
-      if (d?.rechteStand && d.rechteStand !== plan.rechte.stand) { try { neuerPlan(await pa.plan(eingabe())); } catch { /* Meldung steht schon da */ } }
-    } finally { setLaeuft(false); }
+      if (d?.rechteStand && d.rechteStand !== plan.rechte.stand) {
+        try {
+          neuerPlan(await pa.plan(eingabe()));
+        } catch {
+          /* Meldung steht schon da */
+        }
+      }
+    } finally {
+      setLaeuft(false);
+    }
   }
 
   async function nochmal() {
-    setLaeuft(true); setMeldung(undefined);
-    try { neuerPlan(await pa.plan(eingabe())); }
-    catch (x) { setMeldung({ text: (x as Error).message, gruende: x instanceof ApiFehler ? x.gruende : [] }); }
-    finally { setLaeuft(false); }
+    setLaeuft(true);
+    setMeldung(undefined);
+    try {
+      neuerPlan(await pa.plan(eingabe()));
+    } catch (x) {
+      setMeldung({ text: (x as Error).message, gruende: x instanceof ApiFehler ? x.gruende : [] });
+    } finally {
+      setLaeuft(false);
+    }
   }
 
   return (
     <div className="stapel pa-fragen">
-      {probleme.length > 0 && <div className="hinweis schlecht"><ul>{probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
+      {probleme.length > 0 && (
+        <div className="hinweis schlecht">
+          <ul>
+            {probleme.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {/* Ein Paket, das sich nicht laden lässt, hält nur sich selbst und was es braucht auf (#646). */}
       {!!plan.ausgelassen?.length && (
         <div className="hinweis warn stapel" role="status">
           <p>{t('pakete.ablauf.ausgelassen')}</p>
-          <ul>{plan.ausgelassen.map((a) => <li key={a.id}><strong>{a.name}</strong> {a.version}: {a.grund}</li>)}</ul>
-          <div className="knoepfe"><Knopf gesperrt={laeuft} onClick={() => void nochmal()}>{t('pakete.ablauf.ausgelassen.nochmal')}</Knopf></div>
+          <ul>
+            {plan.ausgelassen.map((a) => (
+              <li key={a.id}>
+                <strong>{a.name}</strong> {a.version}: {a.grund}
+              </li>
+            ))}
+          </ul>
+          <div className="knoepfe">
+            <Knopf gesperrt={laeuft} onClick={() => void nochmal()}>
+              {t('pakete.ablauf.ausgelassen.nochmal')}
+            </Knopf>
+          </div>
         </div>
       )}
 
@@ -424,27 +754,68 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
 
       {mitCode.length > 0 && (
         <section className="blatt stapel" aria-label={t('pakete.ablauf.rechte')}>
-          <h2 className="h3">{t('pakete.ablauf.rechte')} <Hilfe ort="werkbank.pakete.ablauf" /></h2>
+          <h2 className="h3">
+            {t('pakete.ablauf.rechte')} <Hilfe ort="werkbank.pakete.ablauf" />
+          </h2>
           <p className="leise">{t('pakete.ablauf.rechte.text', { anzahl: mitCode.length })}</p>
           {mitCode.map((p) => (
             <div key={p.schluessel} className="pa-rechte">
-              <h3 className="klein">{p.name} {p.version}{p.vorschau.paket.herausgeber && <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {p.vorschau.paket.herausgeberGeprueft ? p.vorschau.paket.herausgeber : t('werkbank.pakete.herausgeber-ungeprueft', { wer: p.vorschau.paket.herausgeber })}</span>}{!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}</h3>
+              <h3 className="klein">
+                {p.name} {p.version}
+                {p.vorschau.paket.herausgeber && (
+                  <span className="leise" title={t('werkbank.pakete.herausgeber')}>
+                    {' '}
+                    ·{' '}
+                    {p.vorschau.paket.herausgeberGeprueft
+                      ? p.vorschau.paket.herausgeber
+                      : t('werkbank.pakete.herausgeber-ungeprueft', { wer: p.vorschau.paket.herausgeber })}
+                  </span>
+                )}
+                {!p.gewaehlt && p.fuer.length > 0 && (
+                  <span className="leise">
+                    {' '}
+                    – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}
+                  </span>
+                )}
+              </h3>
               <ul className="klein">
                 {p.vorschau.laeufer!.rechte.map((r) => (
-                  <li key={r.text}>{r.text} <Hilfe ort={r.hilfe} />{r.unter && <ul>{r.unter.map((u) => <li key={u.text}>{u.text} <Hilfe ort={u.hilfe} /></li>)}</ul>}</li>
+                  <li key={r.text}>
+                    {r.text} <Hilfe ort={r.hilfe} />
+                    {r.unter && (
+                      <ul>
+                        {r.unter.map((u) => (
+                          <li key={u.text}>
+                            {u.text} <Hilfe ort={u.hilfe} />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
                 ))}
               </ul>
               {!p.vorschau.laeufer!.bestaetigen && <p className="leise klein">{t('pakete.ablauf.rechte.gleich')}</p>}
             </div>
           ))}
-          {mitCode.some((p) => p.vorschau.laeufer!.rechte.some((r) => r.hilfe === 'pakete.recht.adresse')) && <p className="klein">{t('pakete.ablauf.adresse.hinweis')}</p>}
+          {mitCode.some((p) => p.vorschau.laeufer!.rechte.some((r) => r.hilfe === 'pakete.recht.adresse')) && (
+            <p className="klein">{t('pakete.ablauf.adresse.hinweis')}</p>
+          )}
           {erstmals.length > 0 && (
-            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.herausgeber.ja', { liste: erstmals.map((p) => `${p.name}: ${p.vorschau.herausgeberBestaetigen}`).join(', ') })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld></div>
+            <div className="hinweis warn">
+              <HakenFeld
+                beschriftung={t('pakete.ablauf.herausgeber.ja', {
+                  liste: erstmals.map((p) => `${p.name}: ${p.vorschau.herausgeberBestaetigen}`).join(', '),
+                })}>
+                <input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} />
+              </HakenFeld>
+            </div>
           )}
           {plan.rechte.bestaetigen && (
-            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.rechte.ja')}>
-              <input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} />
-            </HakenFeld></div>
+            <div className="hinweis warn">
+              <HakenFeld beschriftung={t('pakete.ablauf.rechte.ja')}>
+                <input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} />
+              </HakenFeld>
+            </div>
           )}
         </section>
       )}
@@ -453,38 +824,75 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
         <section className="blatt stapel" aria-label={t('pakete.ablauf.namen')}>
           <h2 className="h3">{t('pakete.ablauf.namen')}</h2>
           <p className="leise">{t('pakete.ablauf.namen.text')}</p>
-          {pk.filter((p) => konfliktTypen(p).length || konfliktSichten(p).length).map((p) => (
-            <div key={p.schluessel} className="stapel">
-              <h3 className="klein">{p.name}</h3>
-              {konfliktTypen(p).map((x) => (
-                <Feld key={x.schluessel} beschriftung={t('pakete.ablauf.namen.typ', { name: x.name })} fehler={(namen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() ? x.konflikt : undefined}>
-                  <input value={namen[p.id]?.[x.schluessel] ?? ''} onChange={(e) => setNamen({ ...namen, [p.id]: { ...namen[p.id], [x.schluessel]: e.target.value } })} />
-                </Feld>
-              ))}
-              {konfliktSichten(p).map((x) => (
-                <Feld key={x.schluessel} beschriftung={t('pakete.ablauf.namen.sicht', { name: x.name })} fehler={(sichtNamen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() ? x.konflikt : undefined}>
-                  <input value={sichtNamen[p.id]?.[x.schluessel] ?? ''} onChange={(e) => setSichtNamen({ ...sichtNamen, [p.id]: { ...sichtNamen[p.id], [x.schluessel]: e.target.value } })} />
-                </Feld>
-              ))}
-            </div>
-          ))}
+          {pk
+            .filter((p) => konfliktTypen(p).length || konfliktSichten(p).length)
+            .map((p) => (
+              <div key={p.schluessel} className="stapel">
+                <h3 className="klein">{p.name}</h3>
+                {konfliktTypen(p).map((x) => (
+                  <Feld
+                    key={x.schluessel}
+                    beschriftung={t('pakete.ablauf.namen.typ', { name: x.name })}
+                    fehler={(namen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() ? x.konflikt : undefined}>
+                    <input
+                      value={namen[p.id]?.[x.schluessel] ?? ''}
+                      onChange={(e) => setNamen({ ...namen, [p.id]: { ...namen[p.id], [x.schluessel]: e.target.value } })}
+                    />
+                  </Feld>
+                ))}
+                {konfliktSichten(p).map((x) => (
+                  <Feld
+                    key={x.schluessel}
+                    beschriftung={t('pakete.ablauf.namen.sicht', { name: x.name })}
+                    fehler={
+                      (sichtNamen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() ? x.konflikt : undefined
+                    }>
+                    <input
+                      value={sichtNamen[p.id]?.[x.schluessel] ?? ''}
+                      onChange={(e) => setSichtNamen({ ...sichtNamen, [p.id]: { ...sichtNamen[p.id], [x.schluessel]: e.target.value } })}
+                    />
+                  </Feld>
+                ))}
+              </div>
+            ))}
         </section>
       )}
 
       {mitBeispielen.length > 0 && (
         <section className="blatt stapel" aria-label={t('pakete.ablauf.beispiele')}>
           <h2 className="h3">{t('pakete.ablauf.beispiele')}</h2>
-          <HakenFeld beschriftung={mitBeispielen.length === 1 ? t('pakete.ablauf.beispiele.eins', { anzahl: mitBeispielen[0].vorschau.beispiele, name: mitBeispielen[0].name }) : t('pakete.ablauf.beispiele.alle', { anzahl: mitBeispielen.length })}>
+          <HakenFeld
+            beschriftung={
+              mitBeispielen.length === 1
+                ? t('pakete.ablauf.beispiele.eins', { anzahl: mitBeispielen[0].vorschau.beispiele, name: mitBeispielen[0].name })
+                : t('pakete.ablauf.beispiele.alle', { anzahl: mitBeispielen.length })
+            }>
             <input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} />
           </HakenFeld>
           {/* Beispiel-Dokumente (#878): wie viele und wie groß, damit niemand von 100 MB überrascht wird. */}
-          {mitBeispielen.some((p) => p.vorschau.beispielDokumente?.anzahl) && <p className="leise klein">{t('pakete.ablauf.beispiele.dokumente', { anzahl: mitBeispielen.reduce((n, p) => n + (p.vorschau.beispielDokumente?.anzahl ?? 0), 0), mb: inMB(mitBeispielen.reduce((n, p) => n + (p.vorschau.beispielDokumente?.bytes ?? 0), 0)) })}</p>}
+          {mitBeispielen.some((p) => p.vorschau.beispielDokumente?.anzahl) && (
+            <p className="leise klein">
+              {t('pakete.ablauf.beispiele.dokumente', {
+                anzahl: mitBeispielen.reduce((n, p) => n + (p.vorschau.beispielDokumente?.anzahl ?? 0), 0),
+                mb: inMB(mitBeispielen.reduce((n, p) => n + (p.vorschau.beispielDokumente?.bytes ?? 0), 0)),
+              })}
+            </p>
+          )}
           {beispiele && mitBeispielen.length > 1 && (
             <details className="pa-je-paket">
               <summary className="klein">{t('pakete.ablauf.beispiele.je')}</summary>
               {mitBeispielen.map((p) => (
-                <HakenFeld key={p.schluessel} className="klein" beschriftung={t('pakete.ablauf.beispiele.paket', { name: p.name, anzahl: p.vorschau.beispiele })}>
-                  <input type="checkbox" checked={!ohneBeispiele.includes(p.id)} onChange={(e) => setOhneBeispiele(e.target.checked ? ohneBeispiele.filter((x) => x !== p.id) : [...ohneBeispiele, p.id])} />
+                <HakenFeld
+                  key={p.schluessel}
+                  className="klein"
+                  beschriftung={t('pakete.ablauf.beispiele.paket', { name: p.name, anzahl: p.vorschau.beispiele })}>
+                  <input
+                    type="checkbox"
+                    checked={!ohneBeispiele.includes(p.id)}
+                    onChange={(e) =>
+                      setOhneBeispiele(e.target.checked ? ohneBeispiele.filter((x) => x !== p.id) : [...ohneBeispiele, p.id])
+                    }
+                  />
                 </HakenFeld>
               ))}
             </details>
@@ -496,11 +904,19 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
       {mitAutomatisierungen.length > 0 && (
         <section className="blatt stapel" aria-label={t('pakete.ablauf.automatisierungen')}>
           <h2 className="h3">{t('pakete.ablauf.automatisierungen')}</h2>
-          <AutomatisierungenSchalter aus={ohneAutomatisierung} setAus={setOhneAutomatisierung}
-            liste={mitAutomatisierungen.flatMap((p) => (p.vorschau.automatisierungen ?? []).filter((a) => a.neu).map((a) => ({
-              schluessel: `${p.id}|${a.schluessel}`, name: a.name,
-              hinweis: automatisierungHinweis(a, p.vorschau.mitkommt, [t('pakete.ablauf.automatisierungen.paket', { name: p.name })]),
-            })))} />
+          <AutomatisierungenSchalter
+            aus={ohneAutomatisierung}
+            setAus={setOhneAutomatisierung}
+            liste={mitAutomatisierungen.flatMap((p) =>
+              (p.vorschau.automatisierungen ?? [])
+                .filter((a) => a.neu)
+                .map((a) => ({
+                  schluessel: `${p.id}|${a.schluessel}`,
+                  name: a.name,
+                  hinweis: automatisierungHinweis(a, p.vorschau.mitkommt, [t('pakete.ablauf.automatisierungen.paket', { name: p.name })]),
+                })),
+            )}
+          />
         </section>
       )}
 
@@ -510,62 +926,130 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           <p className="leise">{t('pakete.ablauf.einstellungen.text')}</p>
           {mitEinstellungen.map((p) => (
             <fieldset key={p.schluessel} className="pa-einstellungen stapel">
-              <legend><strong>{p.name}</strong></legend>
+              <legend>
+                <strong>{p.name}</strong>
+              </legend>
               <HakenFeld beschriftung={t('pakete.ablauf.einstellungen.spaeter')} className="klein">
-                <input type="checkbox" checked={spaeter.includes(p.id)} onChange={(e) => setSpaeter(e.target.checked ? [...spaeter, p.id] : spaeter.filter((x) => x !== p.id))} />
+                <input
+                  type="checkbox"
+                  checked={spaeter.includes(p.id)}
+                  onChange={(e) => setSpaeter(e.target.checked ? [...spaeter, p.id] : spaeter.filter((x) => x !== p.id))}
+                />
               </HakenFeld>
-              {!spaeter.includes(p.id) && p.einstellungen.map((f: EinstellungFeld) => (
-                <div key={f.schluessel}>
-                  <Eingabe f={f} wert={werte[p.id]?.[f.schluessel]} fehler={fehler[`${p.id}.${f.schluessel}`]?.replace(`${p.name}: `, '')} auswahl={plan.auswahl} id={`pa-${p.id}-${f.schluessel}`}
-                    setze={(v) => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: v } }))} />
-                  {f.typ === 'adresse' && f.beispiel && leer(werte[p.id]?.[f.schluessel]) && (
-                    <Knopf art="link" groesse="klein" onClick={() => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: f.beispiel } }))}>{t('pakete.ablauf.einstellungen.beispiel', { beispiel: f.beispiel })}</Knopf>
-                  )}
-                </div>
-              ))}
+              {!spaeter.includes(p.id) &&
+                p.einstellungen.map((f: EinstellungFeld) => (
+                  <div key={f.schluessel}>
+                    <Eingabe
+                      f={f}
+                      wert={werte[p.id]?.[f.schluessel]}
+                      fehler={fehler[`${p.id}.${f.schluessel}`]?.replace(`${p.name}: `, '')}
+                      auswahl={plan.auswahl}
+                      id={`pa-${p.id}-${f.schluessel}`}
+                      setze={(v) => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: v } }))}
+                    />
+                    {f.typ === 'adresse' && f.beispiel && leer(werte[p.id]?.[f.schluessel]) && (
+                      <Knopf
+                        art="link"
+                        groesse="klein"
+                        onClick={() => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: f.beispiel } }))}>
+                        {t('pakete.ablauf.einstellungen.beispiel', { beispiel: f.beispiel })}
+                      </Knopf>
+                    )}
+                  </div>
+                ))}
               {spaeter.includes(p.id) && <p className="leise klein">{t('pakete.ablauf.einstellungen.spaeter.text')}</p>}
             </fieldset>
           ))}
           {adressen.length > 0 && (
-            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.adresse.ja', { adressen: adressen.map((a) => `${a.paket} → ${a.wert}`).join(', ') })}>
-              <input type="checkbox" checked={adresseOk} onChange={(e) => setAdresseOk(e.target.checked)} />
-            </HakenFeld></div>
+            <div className="hinweis warn">
+              <HakenFeld
+                beschriftung={t('pakete.ablauf.adresse.ja', { adressen: adressen.map((a) => `${a.paket} → ${a.wert}`).join(', ') })}>
+                <input type="checkbox" checked={adresseOk} onChange={(e) => setAdresseOk(e.target.checked)} />
+              </HakenFeld>
+            </div>
           )}
         </section>
       )}
 
       <section className="blatt stapel" aria-label={t('pakete.ablauf.zusammenfassung')}>
         <h2 className="h3">{t('pakete.ablauf.zusammenfassung')}</h2>
-        <p>{[
-          t('pakete.ablauf.summe.pakete', { anzahl: pk.length }),
-          pk.some((p) => !p.gewaehlt) ? t('pakete.ablauf.summe.abh', { anzahl: pk.filter((p) => !p.gewaehlt).length }) : '',
-          updates.length ? t('pakete.ablauf.summe.updates', { anzahl: updates.length }) : '',
-          neueTypen ? t('pakete.ablauf.summe.typen', { anzahl: neueTypen }) : '',
-          neueSichten ? t('pakete.ablauf.summe.sichten', { anzahl: neueSichten }) : '',
-          beispielPakete.length ? t('pakete.ablauf.summe.beispiele', { anzahl: beispielPakete.length }) : '',
-          anzahlAn ? t('pakete.ablauf.summe.automatisierungen', { anzahl: anzahlAn }) : '',
-          mitCode.length ? t('pakete.ablauf.summe.code', { anzahl: mitCode.length }) : '',
-          spaeter.length ? t('pakete.ablauf.summe.spaeter', { anzahl: spaeter.length }) : '',
-        ].filter(Boolean).join(' · ')}</p>
+        <p>
+          {[
+            t('pakete.ablauf.summe.pakete', { anzahl: pk.length }),
+            pk.some((p) => !p.gewaehlt) ? t('pakete.ablauf.summe.abh', { anzahl: pk.filter((p) => !p.gewaehlt).length }) : '',
+            updates.length ? t('pakete.ablauf.summe.updates', { anzahl: updates.length }) : '',
+            neueTypen ? t('pakete.ablauf.summe.typen', { anzahl: neueTypen }) : '',
+            neueSichten ? t('pakete.ablauf.summe.sichten', { anzahl: neueSichten }) : '',
+            beispielPakete.length ? t('pakete.ablauf.summe.beispiele', { anzahl: beispielPakete.length }) : '',
+            anzahlAn ? t('pakete.ablauf.summe.automatisierungen', { anzahl: anzahlAn }) : '',
+            mitCode.length ? t('pakete.ablauf.summe.code', { anzahl: mitCode.length }) : '',
+            spaeter.length ? t('pakete.ablauf.summe.spaeter', { anzahl: spaeter.length }) : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
         <ol className="pa-reihe klein">
           {pk.map((p) => (
-            <li key={p.schluessel}><strong>{p.name}</strong> {p.version}{p.vorschau.paket.herausgeber ? ` · ${p.vorschau.paket.herausgeber}` : ''}{p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
-              {!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}
-              {p.ergaenzt && <span className="leise"> – {t('pakete.ablauf.ergaenzt', { name: pk.find((x) => x.id === p.ergaenzt!.paket)?.name ?? p.ergaenzt.paket })}</span>}
+            <li key={p.schluessel}>
+              <strong>{p.name}</strong> {p.version}
+              {p.vorschau.paket.herausgeber ? ` · ${p.vorschau.paket.herausgeber}` : ''}
+              {p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
+              {!p.gewaehlt && p.fuer.length > 0 && (
+                <span className="leise">
+                  {' '}
+                  – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}
+                </span>
+              )}
+              {p.ergaenzt && (
+                <span className="leise">
+                  {' '}
+                  – {t('pakete.ablauf.ergaenzt', { name: pk.find((x) => x.id === p.ergaenzt!.paket)?.name ?? p.ergaenzt.paket })}
+                </span>
+              )}
               {/* Was mitkommt (#1047) je Paket zum Aufklappen. */}
               <MitkommtAufklappen m={p.vorschau.mitkommt} />
-              {p.vorschau.hinweise.length > 0 && <ul className="leise">{p.vorschau.hinweise.map((h) => <li key={h}>{h}</li>)}</ul>}
+              {p.vorschau.hinweise.length > 0 && (
+                <ul className="leise">
+                  {p.vorschau.hinweise.map((h) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>
-        {meldung && <div className="hinweis schlecht" role="status"><p>{meldung.text}</p>{!!meldung.gruende?.length && <ul>{meldung.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div>}
+        {meldung && (
+          <div className="hinweis schlecht" role="status">
+            <p>{meldung.text}</p>
+            {!!meldung.gruende?.length && (
+              <ul>
+                {meldung.gruende.map((g) => (
+                  <li key={g}>{g}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         {nochKonflikt && namenskonflikte.length > 0 && <NamenskonfliktHinweis liste={namenskonflikte} />}
-        {fehlt.length > 0 && !probleme.length && <ul className="leise klein">{fehlt.map((f) => <li key={f}>{f}</li>)}</ul>}
+        {fehlt.length > 0 && !probleme.length && (
+          <ul className="leise klein">
+            {fehlt.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+        )}
         <div className="knoepfe">
-          <Knopf art="haupt" gesperrt={probleme.length > 0 || fehlt.length > 0} laeuft={laeuft} laeuftText={t('pakete.ablauf.installiere')} onClick={() => void installieren()}>
+          <Knopf
+            art="haupt"
+            gesperrt={probleme.length > 0 || fehlt.length > 0}
+            laeuft={laeuft}
+            laeuftText={t('pakete.ablauf.installiere')}
+            onClick={() => void installieren()}>
             {sammeln ? t('einrichtung.pakete.uebernehmen', { anzahl: pk.length }) : t('pakete.ablauf.installieren', { anzahl: pk.length })}
           </Knopf>
-          <Knopf gesperrt={laeuft} onClick={zurueck}>{t('pakete.ablauf.zurueck')}</Knopf>
+          <Knopf gesperrt={laeuft} onClick={zurueck}>
+            {t('pakete.ablauf.zurueck')}
+          </Knopf>
         </div>
       </section>
     </div>
@@ -579,27 +1063,70 @@ export function AblaufErgebnisAnsicht({ e, weiter }: { e: AblaufErgebnis; weiter
     <div className="stapel">
       {e.installiert.length > 0 && (
         <div className="hinweis gut" role="status">
-          <p><strong>{t('pakete.ablauf.ergebnis.installiert')}</strong> {e.installiert.map((x) => `${x.name} ${x.version}`).join(', ')}.</p>
-          {spaeter.length > 0 && <p>{t('pakete.ablauf.ergebnis.spaeter')} {spaeter.map((x, i) => <span key={x.id}>{i > 0 && ', '}<Link to={`/werkbank/pakete/${x.id}?reiter=einstellungen`} className="verweis">{x.name}</Link></span>)}.</p>}
+          <p>
+            <strong>{t('pakete.ablauf.ergebnis.installiert')}</strong> {e.installiert.map((x) => `${x.name} ${x.version}`).join(', ')}.
+          </p>
+          {spaeter.length > 0 && (
+            <p>
+              {t('pakete.ablauf.ergebnis.spaeter')}{' '}
+              {spaeter.map((x, i) => (
+                <span key={x.id}>
+                  {i > 0 && ', '}
+                  <Link to={`/werkbank/pakete/${x.id}?reiter=einstellungen`} className="verweis">
+                    {x.name}
+                  </Link>
+                </span>
+              ))}
+              .
+            </p>
+          )}
         </div>
       )}
       {/* Zusammenfassung (#646): jedes gescheiterte Paket mit Grund, übersprungene mit Grund, Weg zum Nachholen. */}
       {(e.fehlgeschlagen ?? (e.fehler ? [e.fehler] : [])).map((f) => (
         <div key={f.id} className="hinweis schlecht stapel" role="alert">
-          <p><strong>{t('pakete.ablauf.ergebnis.fehler', { name: f.name })}</strong> {f.meldung}</p>
-          {f.gruende.length > 0 && <ul>{f.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}
+          <p>
+            <strong>{t('pakete.ablauf.ergebnis.fehler', { name: f.name })}</strong> {f.meldung}
+          </p>
+          {f.gruende.length > 0 && (
+            <ul>
+              {f.gruende.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+            </ul>
+          )}
           <p>{t('pakete.ablauf.ergebnis.zurueck')}</p>
         </div>
       ))}
       {e.nichtInstalliert.length > 0 && (
         <div className="hinweis warn stapel" role="status">
-          <p><strong>{t('pakete.ablauf.ergebnis.nicht')}</strong></p>
-          <ul>{e.nichtInstalliert.map((x) => <li key={x.id}><strong>{x.name}</strong> {x.version}{x.grund ? `: ${x.grund}` : ''}</li>)}</ul>
+          <p>
+            <strong>{t('pakete.ablauf.ergebnis.nicht')}</strong>
+          </p>
+          <ul>
+            {e.nichtInstalliert.map((x) => (
+              <li key={x.id}>
+                <strong>{x.name}</strong> {x.version}
+                {x.grund ? `: ${x.grund}` : ''}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-      {(e.nichtInstalliert.length > 0 || !!e.fehler) && <p className="leise">{t('pakete.ablauf.ergebnis.nachholen')} <Link to="/werkbank/pakete" className="verweis">{t('werkbank.paketablauf.werkbank-pakete')}</Link></p>}
+      {(e.nichtInstalliert.length > 0 || !!e.fehler) && (
+        <p className="leise">
+          {t('pakete.ablauf.ergebnis.nachholen')}{' '}
+          <Link to="/werkbank/pakete" className="verweis">
+            {t('werkbank.paketablauf.werkbank-pakete')}
+          </Link>
+        </p>
+      )}
       {!e.installiert.length && !e.fehler && !e.nichtInstalliert.length && <p className="leise">{t('pakete.ablauf.ergebnis.nichts')}</p>}
-      <div className="knoepfe"><Knopf art="haupt" onClick={weiter}>{t('pakete.ablauf.ergebnis.weiter')}</Knopf></div>
+      <div className="knoepfe">
+        <Knopf art="haupt" onClick={weiter}>
+          {t('pakete.ablauf.ergebnis.weiter')}
+        </Knopf>
+      </div>
     </div>
   );
 }

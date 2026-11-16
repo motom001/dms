@@ -45,12 +45,16 @@ let vorrang: string | null = null;
 /** Woher die Sprache kommt: in der Oberfläche fest gesetzt, auf dem Server je Anfrage (siehe `setzeSprachquelle`). */
 let quelle: () => string = () => aktuell;
 /** Sprache der Oberfläche bzw. die Vorgabe des Servers (Sprache der Installation, #729). */
-export const setzeSprache = (sprache: string) => { aktuell = sprache; };
+export const setzeSprache = (sprache: string) => {
+  aktuell = sprache;
+};
 /**
  * Der Server liest die Sprache je Anfrage (#729): die der angemeldeten Person, sonst die der Installation. Die Quelle
  * liefert die Sprache der laufenden Anfrage oder `undefined`, dann gilt `setzeSprache`.
  */
-export const setzeSprachquelle = (f: () => string | undefined) => { quelle = () => f() ?? aktuell; };
+export const setzeSprachquelle = (f: () => string | undefined) => {
+  quelle = () => f() ?? aktuell;
+};
 export const sprache = () => vorrang ?? quelle();
 /** Die gesetzte Sprache ohne Anfrage: in der Oberfläche die gewählte, auf dem Server die der Installation. */
 export const grundsprache = () => aktuell;
@@ -58,7 +62,11 @@ export const grundsprache = () => aktuell;
 export function inSprache<T>(spr: string, f: () => T): T {
   const alt = vorrang;
   vorrang = spr;
-  try { return f(); } finally { vorrang = alt; }
+  try {
+    return f();
+  } finally {
+    vorrang = alt;
+  }
 }
 
 /** Gebietsschema der Sprache für Datum, Zahlen und Beträge (#727, #729) – statt `'de-DE'` fest im Code. */
@@ -76,7 +84,10 @@ const SPRACHEN: Record<string, Record<string, Sprachdatei>> = {};
  * Angaben zu einer Sprache: maschinell übersetzt (dann der Hinweis in Mein Konto, #729/#731) und das Gebietsschema für
  * Datum, Zahlen und Beträge (Sprachpakete, #731).
  */
-export interface Sprachangaben { maschinell?: boolean; gebietsschema?: string }
+export interface Sprachangaben {
+  maschinell?: boolean;
+  gebietsschema?: string;
+}
 const ANGABEN: Record<string, Sprachangaben> = {};
 export function registriereSprache(spr: string, bereiche: Readonly<Record<string, Sprachdatei>>, angaben: Sprachangaben = {}) {
   SPRACHEN[spr] = { ...SPRACHEN[spr], ...bereiche };
@@ -112,7 +123,10 @@ export function fuelle(text: string, werte: Werte = {}): string {
 const regeln = new Map<string, Intl.PluralRules>();
 function form(spr: string, anzahl: number): Mehrzahlform {
   let r = regeln.get(spr);
-  if (!r) { r = new Intl.PluralRules(spr); regeln.set(spr, r); }
+  if (!r) {
+    r = new Intl.PluralRules(spr);
+    regeln.set(spr, r);
+  }
   return r.select(anzahl) as Mehrzahlform;
 }
 
@@ -150,12 +164,17 @@ export interface Uebersetzer<B extends Bereiche> {
  * aus der Ausgangssprache (#729). Fehlt ein Schlüssel ganz, erscheint der Schlüssel selbst – die Typprüfung und die
  * Prüfung in der CI verhindern das.
  */
-export function uebersetzer<B extends Bereiche>(ausgang: B, weitere: Readonly<Record<string, Partial<Record<keyof B, Sprachdatei>>>> = {}): Uebersetzer<B> {
+export function uebersetzer<B extends Bereiche>(
+  ausgang: B,
+  weitere: Readonly<Record<string, Partial<Record<keyof B, Sprachdatei>>>> = {},
+): Uebersetzer<B> {
   const finde = (voll: string, werte: Werte) => {
     const punkt = voll.indexOf('.');
-    const bereich = voll.slice(0, punkt), schluessel = voll.slice(punkt + 1);
+    const bereich = voll.slice(0, punkt),
+      schluessel = voll.slice(punkt + 1);
     for (const spr of sprachfolge(sprache())) {
-      const datei = spr === AUSGANGSSPRACHE ? (ausgang as Bereiche)[bereich] : weitere[spr]?.[bereich as keyof B] ?? SPRACHEN[spr]?.[bereich];
+      const datei =
+        spr === AUSGANGSSPRACHE ? (ausgang as Bereiche)[bereich] : (weitere[spr]?.[bereich as keyof B] ?? SPRACHEN[spr]?.[bereich]);
       const text = sucheText(datei, schluessel, spr, werte.anzahl);
       if (text !== undefined) return text;
     }

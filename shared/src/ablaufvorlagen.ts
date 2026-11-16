@@ -39,7 +39,16 @@ export type Frage = (typeof FRAGEN)[number];
 export const VORLAGEN_KARTEN = ['aufgabe'] as const;
 
 /** Grenzen der Vorlagen (Länge der Texte, Karten); die Bremse je Person und Mappe steht in server/src/grenzen.ts. */
-export const VORLAGEN_GRENZEN = { vorlagen: 100, name: 120, beschreibung: 1000, text: 2000, eingabe: 2000, karten: 5, empfaenger: 5, anzahl: 120 } as const;
+export const VORLAGEN_GRENZEN = {
+  vorlagen: 100,
+  name: 120,
+  beschreibung: 1000,
+  text: 2000,
+  eingabe: 2000,
+  karten: 5,
+  empfaenger: 5,
+  anzahl: 120,
+} as const;
 /** Reihenfolge im Menü „Mappe“ (1–99; kleiner = weiter oben). */
 export const VORLAGEN_REIHENFOLGE = { min: 1, max: 99, eigen: 50, paket: 30 } as const;
 
@@ -55,7 +64,9 @@ export type VorlagenEmpfaenger = { art: 'frage' } | { art: 'selbst' } | { art: '
 
 /** Karte „Aufgabe / Benachrichtigung“ – dieselbe wie in Automatisierungen, mit den Empfängern einer Vorlage. */
 export interface VorlagenKarte {
-  id: string; art: 'aufgabe'; als: 'aufgabe' | 'benachrichtigung';
+  id: string;
+  art: 'aufgabe';
+  als: 'aufgabe' | 'benachrichtigung';
   empfaenger: VorlagenEmpfaenger[];
   /** Text mit Platzhaltern wie beim Mappentitel, dazu {eingabe} (der Text beim Anwenden), {person} und {empfaenger}. */
   text: string;
@@ -82,17 +93,35 @@ export interface Ablaufvorlage extends AblaufvorlageDaten {
   paketId: string | null;
   /** Fortlaufende Fassung (0 = unveränderte Kern-Vorgabe ohne gespeicherten Stand). */
   version: number;
-  geaendert: string | null; geaendertVon: string | null;
+  geaendert: string | null;
+  geaendertVon: string | null;
 }
 
 /** Ansicht in der Werkbank: dazu Kurzform, Zahl der offenen Abläufe und was nicht passt. */
-export interface AblaufvorlageAnsicht extends Ablaufvorlage { kurz: string; offen: number; angehalten: number; probleme: string[]; ueberlagert?: string | null }
+export interface AblaufvorlageAnsicht extends Ablaufvorlage {
+  kurz: string;
+  offen: number;
+  angehalten: number;
+  probleme: string[];
+  ueberlagert?: string | null;
+}
 
 /** Für das Menü „Mappe“ und den kleinen Dialog. */
-export interface VorlageZumAnwenden { kennung: string; name: string; beschreibung: string; wann: AblaufWann; fragen: Frage[]; reihenfolge: number }
+export interface VorlageZumAnwenden {
+  kennung: string;
+  name: string;
+  beschreibung: string;
+  wann: AblaufWann;
+  fragen: Frage[];
+  reihenfolge: number;
+}
 
 /** Warum ein Ablauf angehalten ist (Sicherheit: Rechte zur Laufzeit). */
-export interface AblaufAngehalten { grund: 'person' | 'deaktiviert' | 'leserecht' | 'vorlage'; text: string; zeit: string }
+export interface AblaufAngehalten {
+  grund: 'person' | 'deaktiviert' | 'leserecht' | 'vorlage';
+  text: string;
+  zeit: string;
+}
 
 /** Ein offener Mappen-Ablauf (früher: freie Erinnerung, #131) – bis er läuft. */
 export interface MappenAblauf {
@@ -111,24 +140,41 @@ export interface MappenAblauf {
   erstelltVon: string | null;
   angehalten: AblaufAngehalten | null;
   /** Für Listen. */
-  mappeTitel?: string; typId?: string; vorlageName?: string;
+  mappeTitel?: string;
+  typId?: string;
+  vorlageName?: string;
 }
 
 /** Eintrag im Verlauf einer Vorlage. */
 export interface AblaufVerlauf {
-  id: string; vorlage: string; mappeId: string | null; ablaufId: string | null; personId: string | null; zeit: string;
+  id: string;
+  vorlage: string;
+  mappeId: string | null;
+  ablaufId: string | null;
+  personId: string | null;
+  zeit: string;
   art: 'angewendet' | 'geplant' | 'gelaufen' | 'angehalten' | 'geloescht' | 'fortgesetzt';
   text: string;
 }
 
 /** Antworten beim Anwenden. */
-export interface AblaufAntworten { empfaengerId?: unknown; datum?: unknown; text?: unknown }
+export interface AblaufAntworten {
+  empfaengerId?: unknown;
+  datum?: unknown;
+  text?: unknown;
+}
 
 /**
  * Ausprobieren (#1176): was ein Empfänger sähe – Aufgabe oder Benachrichtigung, an wen, mit welchem Text und (bei einer
  * Aufgabe, die später läuft) an welchem Tag sie fällig wird; `hinweis`, wenn er die Mappe nicht oder nicht ganz sieht.
  */
-export interface AblaufProbe { als: 'aufgabe' | 'benachrichtigung'; an: string; text: string; datum: string | null; hinweis?: string }
+export interface AblaufProbe {
+  als: 'aufgabe' | 'benachrichtigung';
+  an: string;
+  text: string;
+  datum: string | null;
+  hinweis?: string;
+}
 
 /* ---------- Kern-Vorgaben ---------- */
 
@@ -139,8 +185,24 @@ export interface AblaufProbe { als: 'aufgabe' | 'benachrichtigung'; an: string; 
 export function kernVorlage(k: KernVorlage): AblaufvorlageDaten {
   const karte: VorlagenKarte = { id: 'a1', art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'frage' }], text: '{eingabe}' };
   return k === 'aufgabe_vergeben'
-    ? { name: t('gemeinsam.ablaufvorlagen.kern.aufgabe-vergeben'), beschreibung: t('gemeinsam.ablaufvorlagen.kern.aufgabe-vergeben.text'), reihenfolge: 10, typen: [], wann: { art: 'sofort' }, fragen: ['empfaenger', 'text'], karten: [karte] }
-    : { name: t('gemeinsam.ablaufvorlagen.kern.erinnern'), beschreibung: t('gemeinsam.ablaufvorlagen.kern.erinnern.text'), reihenfolge: 20, typen: [], wann: { art: 'datum' }, fragen: ['datum', 'empfaenger', 'text'], karten: [karte] };
+    ? {
+        name: t('gemeinsam.ablaufvorlagen.kern.aufgabe-vergeben'),
+        beschreibung: t('gemeinsam.ablaufvorlagen.kern.aufgabe-vergeben.text'),
+        reihenfolge: 10,
+        typen: [],
+        wann: { art: 'sofort' },
+        fragen: ['empfaenger', 'text'],
+        karten: [karte],
+      }
+    : {
+        name: t('gemeinsam.ablaufvorlagen.kern.erinnern'),
+        beschreibung: t('gemeinsam.ablaufvorlagen.kern.erinnern.text'),
+        reihenfolge: 20,
+        typen: [],
+        wann: { art: 'datum' },
+        fragen: ['datum', 'empfaenger', 'text'],
+        karten: [karte],
+      };
 }
 
 /* ---------- Bereinigen und prüfen ---------- */
@@ -169,9 +231,18 @@ function bereinigeEmpfaenger(e: unknown): VorlagenEmpfaenger | null {
 function bereinigeKarte(k: unknown, i: number): VorlagenKarte | null {
   const x = (k ?? {}) as Record<string, unknown>;
   if (x.art !== 'aufgabe') return null;
-  const empfaenger = (Array.isArray(x.empfaenger) ? x.empfaenger : []).slice(0, VORLAGEN_GRENZEN.empfaenger).map(bereinigeEmpfaenger).filter((e): e is VorlagenEmpfaenger => !!e);
+  const empfaenger = (Array.isArray(x.empfaenger) ? x.empfaenger : [])
+    .slice(0, VORLAGEN_GRENZEN.empfaenger)
+    .map(bereinigeEmpfaenger)
+    .filter((e): e is VorlagenEmpfaenger => !!e);
   const id = typeof x.id === 'string' && /^[a-z0-9_-]{1,40}$/i.test(x.id) ? x.id : `k${i + 1}`;
-  return { id, art: 'aufgabe', als: x.als === 'benachrichtigung' ? 'benachrichtigung' : 'aufgabe', empfaenger, text: text(x.text, VORLAGEN_GRENZEN.text) };
+  return {
+    id,
+    art: 'aufgabe',
+    als: x.als === 'benachrichtigung' ? 'benachrichtigung' : 'aufgabe',
+    empfaenger,
+    text: text(x.text, VORLAGEN_GRENZEN.text),
+  };
 }
 
 /** Nur, was hier steht; unbekannte Karten fallen weg (`vorlagenEingabeFehler` meldet sie vorher). */
@@ -182,11 +253,16 @@ export function bereinigeVorlage(e: unknown): AblaufvorlageDaten {
   return {
     name: text(x.name, VORLAGEN_GRENZEN.name),
     beschreibung: text(x.beschreibung, VORLAGEN_GRENZEN.beschreibung),
-    reihenfolge: Number.isFinite(r) ? Math.max(VORLAGEN_REIHENFOLGE.min, Math.min(VORLAGEN_REIHENFOLGE.max, r)) : VORLAGEN_REIHENFOLGE.eigen,
+    reihenfolge: Number.isFinite(r)
+      ? Math.max(VORLAGEN_REIHENFOLGE.min, Math.min(VORLAGEN_REIHENFOLGE.max, r))
+      : VORLAGEN_REIHENFOLGE.eigen,
     typen: [...new Set((Array.isArray(x.typen) ? x.typen : []).filter((y): y is string => typeof y === 'string' && !!y))].slice(0, 50),
     wann: bereinigeWann(x.wann),
     fragen,
-    karten: (Array.isArray(x.karten) ? x.karten : []).slice(0, VORLAGEN_GRENZEN.karten).map(bereinigeKarte).filter((k): k is VorlagenKarte => !!k),
+    karten: (Array.isArray(x.karten) ? x.karten : [])
+      .slice(0, VORLAGEN_GRENZEN.karten)
+      .map(bereinigeKarte)
+      .filter((k): k is VorlagenKarte => !!k),
   };
 }
 
@@ -199,12 +275,17 @@ export function vorlagenEingabeFehler(e: unknown): string[] {
   const fehler: string[] = [];
   for (const [i, k] of (Array.isArray(x.karten) ? x.karten : []).entries()) {
     const art = (k ?? {}) as Record<string, unknown>;
-    if (!(VORLAGEN_KARTEN as readonly string[]).includes(String(art.art))) fehler.push(t('gemeinsam.ablaufvorlagen.karte-nicht-erlaubt', { nr: i + 1, art: String(art.art ?? '?') }));
-    for (const em of Array.isArray(art.empfaenger) ? art.empfaenger : []) if (!bereinigeEmpfaenger(em)) fehler.push(t('gemeinsam.ablaufvorlagen.empfaenger-unbekannt', { nr: i + 1 }));
+    if (!(VORLAGEN_KARTEN as readonly string[]).includes(String(art.art)))
+      fehler.push(t('gemeinsam.ablaufvorlagen.karte-nicht-erlaubt', { nr: i + 1, art: String(art.art ?? '?') }));
+    for (const em of Array.isArray(art.empfaenger) ? art.empfaenger : [])
+      if (!bereinigeEmpfaenger(em)) fehler.push(t('gemeinsam.ablaufvorlagen.empfaenger-unbekannt', { nr: i + 1 }));
   }
   const w = (x.wann ?? {}) as Record<string, unknown>;
-  if (x.wann !== undefined && !['sofort', 'datum', 'in'].includes(String(w.art))) fehler.push(t('gemeinsam.ablaufvorlagen.wann-unbekannt', { art: String(w.art ?? '?') }));
-  for (const f of Array.isArray(x.fragen) ? x.fragen : []) if (!(FRAGEN as readonly string[]).includes(String(f))) fehler.push(t('gemeinsam.ablaufvorlagen.frage-unbekannt', { frage: String(f) }));
+  if (x.wann !== undefined && !['sofort', 'datum', 'in'].includes(String(w.art)))
+    fehler.push(t('gemeinsam.ablaufvorlagen.wann-unbekannt', { art: String(w.art ?? '?') }));
+  for (const f of Array.isArray(x.fragen) ? x.fragen : [])
+    if (!(FRAGEN as readonly string[]).includes(String(f)))
+      fehler.push(t('gemeinsam.ablaufvorlagen.frage-unbekannt', { frage: String(f) }));
   return fehler;
 }
 
@@ -224,7 +305,8 @@ function fragenProbleme(d: AblaufvorlageDaten): string[] {
   const fragtEmpfaenger = d.karten.some((k) => k.empfaenger.some((e) => e.art === 'frage'));
   if (fragtEmpfaenger && !d.fragen.includes('empfaenger')) p.push(t('gemeinsam.ablaufvorlagen.empfaenger-fragen'));
   if (!fragtEmpfaenger && d.fragen.includes('empfaenger')) p.push(t('gemeinsam.ablaufvorlagen.empfaenger-ungenutzt'));
-  if (d.fragen.includes('text') && !d.karten.some((k) => k.text.includes('{eingabe}'))) p.push(t('gemeinsam.ablaufvorlagen.text-ungenutzt'));
+  if (d.fragen.includes('text') && !d.karten.some((k) => k.text.includes('{eingabe}')))
+    p.push(t('gemeinsam.ablaufvorlagen.text-ungenutzt'));
   return p;
 }
 
@@ -302,7 +384,9 @@ export function empfaengerText(e: VorlagenEmpfaenger, typen: Mappentyp[] = []): 
 
 /** Eine Karte in Klartext – für die Werkbank und die Rechte-Vorschau beim Installieren eines Pakets. */
 export function karteText(k: VorlagenKarte, typen: Mappentyp[] = []): string {
-  return t(k.als === 'aufgabe' ? 'gemeinsam.ablaufvorlagen.karte.aufgabe' : 'gemeinsam.ablaufvorlagen.karte.benachrichtigung', { an: k.empfaenger.map((e) => empfaengerText(e, typen)).join(', ') || '?' });
+  return t(k.als === 'aufgabe' ? 'gemeinsam.ablaufvorlagen.karte.aufgabe' : 'gemeinsam.ablaufvorlagen.karte.benachrichtigung', {
+    an: k.empfaenger.map((e) => empfaengerText(e, typen)).join(', ') || '?',
+  });
 }
 
 /** „Sofort → Aufgabe an die gewählte Person“. */

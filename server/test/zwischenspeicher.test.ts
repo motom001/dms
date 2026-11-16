@@ -24,11 +24,16 @@ const PW = 'ein-langes-passwort';
 
 describe('Lesespeicher und Zähler im Arbeitsspeicher (#741, #742)', () => {
   it('jeder Abruf bekommt eine eigene Kopie; ein neuer Stand lädt neu; die Zahl der Einträge bleibt klein', async () => {
-    let stand = 1; let geladen = 0;
+    let stand = 1;
+    let geladen = 0;
     const l = new Lesespeicher(async () => stand);
-    const lade = async () => { geladen++; return [{ name: 'Rechnung', felder: [{ key: 'nr' }] }]; };
+    const lade = async () => {
+      geladen++;
+      return [{ name: 'Rechnung', felder: [{ key: 'nr' }] }];
+    };
     const a = await l.hole('typen', lade);
-    a[0].name = 'verändert'; a[0].felder.push({ key: 'x' });
+    a[0].name = 'verändert';
+    a[0].felder.push({ key: 'x' });
     const b = await l.hole('typen', lade);
     assert.equal(b[0].name, 'Rechnung', 'Veränderungen eines Aufrufers erreichen andere nicht');
     assert.equal(b[0].felder.length, 1);
@@ -64,7 +69,11 @@ describe('Lesespeicher und Zähler im Arbeitsspeicher (#741, #742)', () => {
     assert.equal((await zs.hole('k', zaehle, g('lena'))).wert, 1);
     wert = 2;
     await kontext.run({ anfrage: 'a', db: { anzahl: 0, ms: 0 }, benutzerId: 'jonas' }, () => stand.erhoehe());
-    assert.deepEqual(await zs.hole('k', zaehle, g('lena')), { wert: 1, art: 'treffer' }, 'Änderung von Jonas: kurz noch der bisherige Wert');
+    assert.deepEqual(
+      await zs.hole('k', zaehle, g('lena')),
+      { wert: 1, art: 'treffer' },
+      'Änderung von Jonas: kurz noch der bisherige Wert',
+    );
     assert.deepEqual(await zs.hole('k', zaehle, {}), { wert: 2, art: 'neu' }, 'ohne Mindestgültigkeit (Hintergrund) frisch');
     wert = 3;
     await kontext.run({ anfrage: 'b', db: { anzahl: 0, ms: 0 }, benutzerId: 'lena' }, () => stand.erhoehe());
@@ -79,12 +88,29 @@ describe('Lesespeicher und Zähler im Arbeitsspeicher (#741, #742)', () => {
 });
 
 describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  type App = { inject: (o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }) => Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>; close(): Promise<void> };
+  type App = {
+    inject: (o: {
+      method: string;
+      url: string;
+      payload?: unknown;
+      headers?: Record<string, string>;
+    }) => Promise<{ statusCode: number; body: string; headers: Record<string, unknown> }>;
+    close(): Promise<void>;
+  };
   /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
-  type Prozess = { sql: postgres.Sql; app: App; dienst: any; konten: any; zweifaktor: any; nachlauf: { alle(): Promise<void> }; abfragen: () => number };
+  type Prozess = {
+    sql: postgres.Sql;
+    app: App;
+    dienst: any;
+    konten: any;
+    zweifaktor: any;
+    nachlauf: { alle(): Promise<void> };
+    abfragen: () => number;
+  };
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const prozesse: Prozess[] = [];
-  let A!: Prozess; let B!: Prozess;
+  let A!: Prozess;
+  let B!: Prozess;
   const ids = { lena: '', jonas: '', markus: '', petra: '', rechnung: '', fibu: '', andere: '', mappe: '' };
   let rw!: (rollen: string[]) => Regelwerk;
   /** Eigene Datenbank (#900); beide „Prozesse“ verbinden sich mit ihr. */
@@ -101,22 +127,40 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     const { Zweifaktor } = await import('../src/zweifaktor');
     let n = 0;
     // Wie verbinde() in db.ts, zusätzlich zählt jede SQL-Anweisung (Abfragen je Anfrage).
-    const sql = postgres(dbUrl, { max: 4, onnotice: () => {}, infer: true, debug: () => { n++; } });
-    const dienst = new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a741-')), HAUSHALT), { einstellungen: pgEinstellungen(sql, HAUSHALT) });
+    const sql = postgres(dbUrl, {
+      max: 4,
+      onnotice: () => {},
+      infer: true,
+      debug: () => {
+        n++;
+      },
+    });
+    const dienst = new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a741-')), HAUSHALT), {
+      einstellungen: pgEinstellungen(sql, HAUSHALT),
+    });
     const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
-    const zweifaktor = new Zweifaktor(pgEinstellungen(sql, HAUSHALT), (k: string) => `v:${k}`, (w: string) => (w.startsWith('v:') ? w.slice(2) : null));
+    const zweifaktor = new Zweifaktor(
+      pgEinstellungen(sql, HAUSHALT),
+      (k: string) => `v:${k}`,
+      (w: string) => (w.startsWith('v:') ? w.slice(2) : null),
+    );
     konten.verbindeZweifaktor(zweifaktor);
     const { Nachlauf } = await import('../src/http');
     const nachlauf = new Nachlauf();
-    const app = await baueApp(dienst, konten, { nachlauf }) as unknown as App;
+    const app = (await baueApp(dienst, konten, { nachlauf })) as unknown as App;
     const p = { sql, app, dienst, konten, zweifaktor, nachlauf, abfragen: () => n };
     prozesse.push(p);
     return p;
   }
 
   const anmelden = async (p: Prozess, email: string) => {
-    const r = await p.app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email, passwort: PW }, headers: { 'x-dms': '1' } });
+    const r = await p.app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      payload: { email, passwort: PW },
+      headers: { 'x-dms': '1' },
+    });
     assert.equal(r.statusCode, 200, r.body);
     return String(([] as string[]).concat(r.headers['set-cookie'] as string)[0]).split(';')[0];
   };
@@ -134,7 +178,8 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
 
   before(async () => {
     dbUrl = (await eigeneDatenbank('zwischenspeicher')).url;
-    A = await prozess(); B = await prozess();
+    A = await prozess();
+    B = await prozess();
     const { benutzer: lena } = await A.konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
     const mitPasswort = async (email: string, name: string) => {
       const r = await A.konten.legeBenutzerAn({ email, name }, lena.id);
@@ -152,13 +197,32 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     ids.andere = (await A.dienst.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'Praktikum' } }, lena.id)).id;
     await A.dienst.postSystemmappen.setzeRollen(ids.jonas, [ids.fibu]);
     await A.dienst.postSystemmappen.setzeRollen(ids.markus, [ids.fibu]);
-    ids.rechnung = (await A.dienst.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })).id;
-    rw = (rollen) => ({ grund: NICHTS, regeln: [{ id: 'fibu', name: 'FiBu liest', wenn: [{ art: 'rolle', rollen }], dann: { R: 'erteilen', U: 'erteilen', C: 'erteilen' }, stopp: false }] }) as unknown as Regelwerk;
+    ids.rechnung = (
+      await A.dienst.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] })
+    ).id;
+    rw = (rollen) =>
+      ({
+        grund: NICHTS,
+        regeln: [
+          {
+            id: 'fibu',
+            name: 'FiBu liest',
+            wenn: [{ art: 'rolle', rollen }],
+            dann: { R: 'erteilen', U: 'erteilen', C: 'erteilen' },
+            stopp: false,
+          },
+        ],
+      }) as unknown as Regelwerk;
     await A.dienst.berechtigungen.setzeBerechtigungen(ids.rechnung, rw([ids.fibu]), true);
     for (const nr of ['R1', 'R2']) ids.mappe = (await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr } }, lena.id)).id;
     for (const p of [A, B]) p.dienst.mindestensMs = 3000;
   });
-  after(async () => { for (const p of prozesse) { await p.app.close(); await p.sql.end(); } });
+  after(async () => {
+    for (const p of prozesse) {
+      await p.app.close();
+      await p.sql.end();
+    }
+  });
 
   it('Sitzung und Person in einer Abfrage; der Haushaltsstand kommt mit', async () => {
     const c = await anmelden(B, 'jonas@example.org');
@@ -199,7 +263,10 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     await pgKontoRepo(A.sql, HAUSHALT).aendereBenutzer(ids.petra, { aktiv: true });
     const d = await anmelden(B, 'petra@example.org');
     assert.equal((await rufe(B, d, 'GET', '/api/typen')).status, 200);
-    assert.equal((await A.app.inject({ method: 'POST', url: '/api/konto/abmelden', headers: { 'x-dms': '1', cookie: d } })).statusCode < 300, true);
+    assert.equal(
+      (await A.app.inject({ method: 'POST', url: '/api/konto/abmelden', headers: { 'x-dms': '1', cookie: d } })).statusCode < 300,
+      true,
+    );
     assert.equal((await rufe(B, d, 'GET', '/api/typen')).status, 401, 'abgemeldet');
   });
 
@@ -211,7 +278,9 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
       const c = await anmelden(B, 'markus@example.org');
       const r = await rufe(B, c, 'GET', '/api/typen');
       assert.equal(r.status, 403, 'neue Sitzung nach dem Einschalten: erst einrichten');
-    } finally { await A.zweifaktor.setzePflicht({ mitglied: false }, 'test'); }
+    } finally {
+      await A.zweifaktor.setzePflicht({ mitglied: false }, 'test');
+    }
     const c = await anmelden(B, 'markus@example.org');
     assert.equal((await rufe(B, c, 'GET', '/api/typen')).status, 200);
   });
@@ -226,13 +295,18 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
       await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr: 'R3' } }, ids.lena);
       // Der Stand in der Datenbank zählt kurz nach der Änderung hoch (auch nach den Anmeldungen in B). Darauf warten
       // (#900) statt auf eine feste Zeit – danach sehen Jonas und Markus denselben Stand.
-      await A.dienst.stand.hochgezaehlt(); await B.dienst.stand.hochgezaehlt();
-      const a = await rechnungen(B, j), b = await rechnungen(B, m);
+      await A.dienst.stand.hochgezaehlt();
+      await B.dienst.stand.hochgezaehlt();
+      const a = await rechnungen(B, j),
+        b = await rechnungen(B, m);
       const c = await rechnungen(B, p);
-      assert.equal(a.n, 3); assert.equal(b.n, 3);
+      assert.equal(a.n, 3);
+      assert.equal(b.n, 3);
       assert.equal(b.zs, 'treffer', 'Markus hat dieselben Rechte wie Jonas: dieselbe Zählung');
       assert.equal(c.n, 0, 'Petra darf keine Rechnung lesen');
-    } finally { B.dienst.mindestensMs = 3000; }
+    } finally {
+      B.dienst.mindestensMs = 3000;
+    }
   });
 
   it('Mindestgültigkeit: Änderungen anderer kurz später, eigene sofort – auch über zwei Prozesse', async () => {
@@ -246,7 +320,11 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     assert.equal(kurz.n, start, 'Jonas (anderer Prozess) sieht kurz noch den bisherigen Wert');
     B.dienst.mindestensMs = 1;
     await new Promise((r) => setTimeout(r, 10));
-    try { assert.equal((await rechnungen(B, j)).n, start + 1, 'danach frisch'); } finally { B.dienst.mindestensMs = 3000; }
+    try {
+      assert.equal((await rechnungen(B, j)).n, start + 1, 'danach frisch');
+    } finally {
+      B.dienst.mindestensMs = 3000;
+    }
   });
 
   it('Verwaltungsmodus: im Modus alle Mappen gezählt; nach dem Ende sofort nur noch die eigenen – keine Zahl aus dem Modus', async () => {
@@ -264,7 +342,9 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
 
   it('Mappe öffnen: „zuletzt geöffnet“ kommt nach der Antwort', async () => {
     const m = await anmelden(B, 'markus@example.org');
-    const neu = (await rufe(A, await anmelden(A, 'markus@example.org'), 'POST', '/api/mappen', { typId: ids.rechnung, werte: { nr: 'R9' } })).body;
+    const neu = (
+      await rufe(A, await anmelden(A, 'markus@example.org'), 'POST', '/api/mappen', { typId: ids.rechnung, werte: { nr: 'R9' } })
+    ).body;
     assert.equal((await rufe(B, m, 'GET', `/api/mappen/${neu.id}`)).status, 200);
     await B.nachlauf.alle();
     const s = (await rufe(B, m, 'GET', '/api/startseite')).body as { zuletzt: Array<{ id: string }> };

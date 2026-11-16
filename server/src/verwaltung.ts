@@ -35,7 +35,13 @@ export interface Verwaltungspunkt {
 }
 
 /** Person, die eine Sammel-Mail bekommen kann. */
-export interface Verwaltende { email: string; aktiv: boolean; verwaltung?: string[]; art?: string; sprache?: string | null }
+export interface Verwaltende {
+  email: string;
+  aktiv: boolean;
+  verwaltung?: string[];
+  art?: string;
+  sprache?: string | null;
+}
 /** Gehört der Punkt zu den Bereichen dieser Person? */
 export const fuerPerson = (b: Verwaltende, p: Verwaltungspunkt) => (p.bereich ? darfBereich(b, p.bereich) : hatGesamt(b));
 
@@ -62,7 +68,9 @@ export interface VerwaltungDeps {
 export class Verwaltung {
   private gemerkt: { am: number; punkte: Verwaltungspunkt[] } | null = null;
   private readonly jetzt: () => Date;
-  constructor(private d: VerwaltungDeps) { this.jetzt = d.jetzt ?? (() => new Date()); }
+  constructor(private d: VerwaltungDeps) {
+    this.jetzt = d.jetzt ?? (() => new Date());
+  }
 
   /** Alle offenen technischen Punkte (sortiert nach Schlüssel). */
   async punkte(frisch = false): Promise<Verwaltungspunkt[]> {
@@ -70,7 +78,11 @@ export class Verwaltung {
     if (!frisch && this.gemerkt && t - this.gemerkt.am < MERKEN_MS) return this.gemerkt.punkte;
     const alle: Verwaltungspunkt[] = [];
     for (const q of this.d.quellen) {
-      try { alle.push(...await q()); } catch (e) { log.warn('Technische Aufgaben: eine Quelle ist nicht lesbar', { fehler: (e as Error).message }); }
+      try {
+        alle.push(...(await q()));
+      } catch (e) {
+        log.warn('Technische Aufgaben: eine Quelle ist nicht lesbar', { fehler: (e as Error).message });
+      }
     }
     const punkte = [...new Map(alle.map((p) => [p.schluessel, p])).values()].sort((a, b) => a.schluessel.localeCompare(b.schluessel));
     this.gemerkt = { am: t, punkte };
@@ -78,7 +90,9 @@ export class Verwaltung {
   }
 
   /** Für den Hinweis außerhalb des Verwaltungsmodus: Liegt in den Bereichen dieser Person etwas an? Nur ja/nein. */
-  async offen(b?: Verwaltende): Promise<boolean> { return (await this.punkte()).some((p) => !b || fuerPerson(b, p)); }
+  async offen(b?: Verwaltende): Promise<boolean> {
+    return (await this.punkte()).some((p) => !b || fuerPerson(b, p));
+  }
 
   /**
    * Regelmäßig aufrufen (etwa jede Minute): Vergessenes (erledigte Punkte) aufräumen, Punkte mit eigener Mail als
@@ -96,21 +110,31 @@ export class Verwaltung {
     let gemailt = 0;
     const offen = punkte.filter((p) => !neu.includes(p.schluessel));
     if (!offen.length) return 0;
-    await laufeFaellige(einstellungsMerker(this.d.einstellungen, 'verwaltung_mail_tag'), ortszeit(this.jetzt()), { uhrzeit: UHRZEIT }, async () => {
-      const neuSchluessel = new Set(offen.map((p) => p.schluessel));
-      let personen = 0;
-      for (const b of await this.d.personen()) {
-        if (!b.aktiv || !darfVerwalten(b) || !b.email || b.email.endsWith('.invalid')) continue;
-        const seine = punkte.filter((p) => fuerPerson(b, p));
-        const n = seine.filter((p) => neuSchluessel.has(p.schluessel)).length;
-        if (!n) continue;
-        try { const [bt, tx] = mitSpracheVon(b, () => [betreff(n), mailtext(seine, neuSchluessel, this.d.adresse?.())]); await this.d.sende(b.email, bt, tx); personen++; }
-        catch (e) { log.warn('Technische Aufgaben: Mail nicht verschickt', { an: b.email, fehler: (e as Error).message }); }
-      }
-      await this.d.einstellungen.schreibe('verwaltung_gemeldet', [...new Set([...neu, ...offen.map((p) => p.schluessel)])].sort());
-      gemailt = offen.length;
-      log.info('Technische Aufgaben an die Verwaltenden gemailt', { neu: offen.length, offen: punkte.length, personen });
-    });
+    await laufeFaellige(
+      einstellungsMerker(this.d.einstellungen, 'verwaltung_mail_tag'),
+      ortszeit(this.jetzt()),
+      { uhrzeit: UHRZEIT },
+      async () => {
+        const neuSchluessel = new Set(offen.map((p) => p.schluessel));
+        let personen = 0;
+        for (const b of await this.d.personen()) {
+          if (!b.aktiv || !darfVerwalten(b) || !b.email || b.email.endsWith('.invalid')) continue;
+          const seine = punkte.filter((p) => fuerPerson(b, p));
+          const n = seine.filter((p) => neuSchluessel.has(p.schluessel)).length;
+          if (!n) continue;
+          try {
+            const [bt, tx] = mitSpracheVon(b, () => [betreff(n), mailtext(seine, neuSchluessel, this.d.adresse?.())]);
+            await this.d.sende(b.email, bt, tx);
+            personen++;
+          } catch (e) {
+            log.warn('Technische Aufgaben: Mail nicht verschickt', { an: b.email, fehler: (e as Error).message });
+          }
+        }
+        await this.d.einstellungen.schreibe('verwaltung_gemeldet', [...new Set([...neu, ...offen.map((p) => p.schluessel)])].sort());
+        gemailt = offen.length;
+        log.info('Technische Aufgaben an die Verwaltenden gemailt', { neu: offen.length, offen: punkte.length, personen });
+      },
+    );
     return gemailt;
   }
 
@@ -118,18 +142,19 @@ export class Verwaltung {
     const v = await this.d.einstellungen.lies('verwaltung_gemeldet');
     return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').sort() : [];
   }
-
 }
 
 const betreff = (n: number) => t('mail.verwaltung.betreff', { anzahl: n });
 
 function mailtext(punkte: Verwaltungspunkt[], neu: Set<string>, adresse?: string): string {
   const zeile = (p: Verwaltungspunkt) => `- ${p.text}${neu.has(p.schluessel) ? ` ${t('mail.verwaltung.neu')}` : ''}`;
-  return [
-    t('mail.verwaltung.anrede'),
-    t('mail.verwaltung.einleitung'),
-    punkte.map(zeile).join('\n'),
-    adresse ? t('mail.verwaltung.anmelden', { link: `${adresse.replace(/\/$/, '')}/werkbank` }) : t('mail.verwaltung.anmelden.ohne-link'),
-    t('mail.verwaltung.fuss'),
-  ].join('\n\n') + '\n';
+  return (
+    [
+      t('mail.verwaltung.anrede'),
+      t('mail.verwaltung.einleitung'),
+      punkte.map(zeile).join('\n'),
+      adresse ? t('mail.verwaltung.anmelden', { link: `${adresse.replace(/\/$/, '')}/werkbank` }) : t('mail.verwaltung.anmelden.ohne-link'),
+      t('mail.verwaltung.fuss'),
+    ].join('\n\n') + '\n'
+  );
 }

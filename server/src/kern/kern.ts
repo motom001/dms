@@ -1,12 +1,26 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
-import { KONTOROLLEN, kontorolleKennung, ROLLEN, systemrolleKennung, type Kontorolle, type Mappentyp, type Rolle } from '../../../shared/src/model';
+import {
+  KONTOROLLEN,
+  kontorolleKennung,
+  ROLLEN,
+  systemrolleKennung,
+  type Kontorolle,
+  type Mappentyp,
+  type Rolle,
+} from '../../../shared/src/model';
 import type { Aufloesung } from '../../../shared/src/sichten';
 import { liesMerkmale, MERKMALE_EINSTELLUNG, type Merkmale } from '../../../shared/src/merkmale';
 import { merkmalFeld } from '../../../shared/src/organisation';
 import type { Lesefilter, Wer } from '../../../shared/src/rechte';
 import type { PaketCode, Schnittstelle } from '../../../shared/src/pakete';
-import { EREIGNISKATALOG, mischeFelder, type Ausloeser as EreignisAusloeser, type KatalogArt, type Katalogeintrag } from '../../../shared/src/ereignisse';
+import {
+  EREIGNISKATALOG,
+  mischeFelder,
+  type Ausloeser as EreignisAusloeser,
+  type KatalogArt,
+  type Katalogeintrag,
+} from '../../../shared/src/ereignisse';
 import type { Dateispeicher } from '../dateispeicher';
 import type { Einstellungen } from '../einstellungen';
 import type { Repo } from '../repo';
@@ -33,7 +47,11 @@ const ereignisKontext = new AsyncLocalStorage<{ ausloeser?: EreignisAusloeser; s
  */
 const fassungsKontext = new AsyncLocalStorage<FassungsKontext>();
 /** Was der Kern über die Fassungen wissen muss – der Dienst setzt die Fassungen ein (`fassungen/`). */
-export interface FassungsKontext { urheber?: Urheber; vorgang?: string; wiederhergestellt?: number }
+export interface FassungsKontext {
+  urheber?: Urheber;
+  vorgang?: string;
+  wiederhergestellt?: number;
+}
 /** Fassungen festhalten (#1006): Stand eines Eintrags nach dem Speichern bzw. Löschvermerk – von Fachbereichen ohne Repo-Hülle. */
 export interface FassungsAnschluss {
   halte(art: FassungArt, eintrag: string): Promise<void>;
@@ -58,9 +76,14 @@ export interface Zugriff {
    * Dienstkonto eines Pakets (#338): Rechte fest aus dem bestätigten Manifest statt aus Regeln.
    * typen enthält dann nur die lesbaren Typen; schreiben = Ids der Typen mit Anlegen/Bearbeiten.
    */
-  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente']; schnittstellen?: Schnittstelle[];
+  paket?: {
+    id: string;
+    schreiben: Set<string>;
+    dokumente: PaketCode['rechte']['dokumente'];
+    schnittstellen?: Schnittstelle[];
     /** Typen mit Regeln für die Rolle „Paket“ (#673), schon auf diese Regeln zugeschnitten – sie schränken die bestätigten Rechte weiter ein. */
-    regeln?: Map<string, Mappentyp> };
+    regeln?: Map<string, Mappentyp>;
+  };
   /** Systemkonto (#673), z. B. „Automatisierung“: Rechte aus den Regeln für die Rolle „Systemkonto“ (typen sind darauf zugeschnitten). */
   systemkonto?: string;
   /**
@@ -70,13 +93,32 @@ export interface Zugriff {
   aufZeit?: Map<string, LeserechtAufZeit>;
 }
 /** Ein wirksames Leserecht auf Zeit (#798): Grund ist die Aufgabe; von = der Admin, der es gegeben hat. */
-export interface LeserechtAufZeit { fallId: string; aufgabeId: string; aufgabentext: string; seit: string; von: string | null }
+export interface LeserechtAufZeit {
+  fallId: string;
+  aufgabeId: string;
+  aufgabentext: string;
+  seit: string;
+  von: string | null;
+}
 
 /** Wer zugreift (#124, #338, #673): Mensch, Dienstkonto eines Pakets oder Systemkonto. */
-export interface Zugreifender { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string; verwaltung?: string[] | null }
+export interface Zugreifender {
+  id: string;
+  rolle: string;
+  art?: 'dienst' | 'system';
+  paketId?: string;
+  systemkonto?: string;
+  verwaltung?: string[] | null;
+}
 
 /** Systemtypen und -rollen (#26, #27, #435, #673): Benutzer, Rolle, Post und die Ids der festen Rollen. */
-export interface SystemIds { benutzer: Mappentyp; rolle: Mappentyp; post: Mappentyp; systemrollen: Map<Rolle, string>; kontorollen: Map<Kontorolle, string> }
+export interface SystemIds {
+  benutzer: Mappentyp;
+  rolle: Mappentyp;
+  post: Mappentyp;
+  systemrollen: Map<Rolle, string>;
+  kontorollen: Map<Kontorolle, string>;
+}
 
 /** Was der Kern beim Zusammenbau bekommt (vom Dienst). */
 export interface KernOptionen {
@@ -117,7 +159,9 @@ export class Kern {
    * Fassungen (#1006): Einstellungen außerhalb des Repos (Stempel, Postfächer, Paket-Einstellungen) melden hier ihren
    * neuen Stand. Ohne Dienst (Tests einzelner Teile) geschieht nichts.
    */
-  get fassungen(): FassungsAnschluss { return this.fassungsQuelle?.() ?? OHNE_FASSUNGEN; }
+  get fassungen(): FassungsAnschluss {
+    return this.fassungsQuelle?.() ?? OHNE_FASSUNGEN;
+  }
   private readonly fassungsQuelle?: () => FassungsAnschluss;
   /** Historie der Mappen schreiben (#57). */
   readonly historie = new Historie(this);
@@ -156,7 +200,9 @@ export class Kern {
   }
 
   /** Läuft gerade eine Transaktion dieses Kerns? */
-  inEigenerTransaktion(): boolean { return transaktionen.getStore()?.kern === this; }
+  inEigenerTransaktion(): boolean {
+    return transaktionen.getStore()?.kern === this;
+  }
 
   /**
    * Änderungen samt Ereignissen ganz oder gar nicht (#404). Verschachtelt läuft alles in der äußeren
@@ -181,7 +227,9 @@ export class Kern {
   }
 
   /** Läuft das in einer HTTP-Anfrage, die Arbeit nach der Antwort annimmt (#928)? */
-  inAnfrage(): boolean { return !!kontext.getStore()?.nachAntwort; }
+  inAnfrage(): boolean {
+    return !!kontext.getStore()?.nachAntwort;
+  }
 
   /**
    * Nach der Antwort (#928, über den Nachlauf von #741): Arbeit, die nicht zur Antwort gehört und auch nicht zu dem, was
@@ -192,23 +240,28 @@ export class Kern {
     const k = kontext.getStore();
     if (!k?.nachAntwort) return f().then(() => undefined);
     const liste = k.nachAntwort;
-    this.danach(() => { if (!liste.includes(f)) liste.push(f); });
+    this.danach(() => {
+      if (!liste.includes(f)) liste.push(f);
+    });
   }
 
   /** Verteiler des Ereigniskatalogs wecken – in einer Anfrage erst nach der Antwort (#928), einmal je Anfrage. */
-  private readonly weckeVerteiler = async () => { this.wecke(); };
+  private readonly weckeVerteiler = async () => {
+    this.wecke();
+  };
 
   /** Nach dem Speichern (bzw. sofort ohne Transaktion); bei Zurückrollen nie. */
   danach(f: () => void) {
     const t = transaktionen.getStore();
-    if (t?.kern === this) t.nachher.push(f); else f();
+    if (t?.kern === this) t.nachher.push(f);
+    else f();
   }
 
   /* ---------- Dateien ---------- */
 
   async liesGanz(sha256: string): Promise<Buffer> {
     const x = await this.dateien.lies(sha256);
-    return Buffer.isBuffer(x) ? x : Buffer.concat(await x.toArray() as Buffer[]);
+    return Buffer.isBuffer(x) ? x : Buffer.concat((await x.toArray()) as Buffer[]);
   }
 
   /* ---------- Nachschlagen ---------- */
@@ -220,13 +273,19 @@ export class Kern {
   }
 
   /** Wer was lesen darf – einmal je Anfrage gebildet (#741); die Fachbereiche reichen ihn weiter. */
-  zugriff(ich: Zugreifender): Promise<Zugriff> { return this.zugriffBilden(ich); }
+  zugriff(ich: Zugreifender): Promise<Zugriff> {
+    return this.zugriffBilden(ich);
+  }
 
   /** Alle Mappentypen nach Id (aus dem Repo, in einer Transaktion deren Stand). */
-  async typen(): Promise<Map<string, Mappentyp>> { return new Map((await this.repo.listeTypen()).map((x) => [x.id, x] as const)); }
+  async typen(): Promise<Map<string, Mappentyp>> {
+    return new Map((await this.repo.listeTypen()).map((x) => [x.id, x] as const));
+  }
 
   /** Typ einer Mappe für ein Ereignis (null, wenn es sie nicht mehr gibt). */
-  async typVon(mappeId: string): Promise<string | null> { return (await this.repo.holeMappe(mappeId))?.typId ?? null; }
+  async typVon(mappeId: string): Promise<string | null> {
+    return (await this.repo.holeMappe(mappeId))?.typId ?? null;
+  }
 
   /** Aufbewahrung in Tagen; 0 = kein Papierkorb (Löschen ist sofort endgültig). */
   async papierkorbTage(): Promise<number> {
@@ -239,7 +298,9 @@ export class Kern {
    * Merkmale der Ablage (#1032), z. B. „beruflich genutzt“ – für Anzeige-Bedingungen (Pflicht beim Speichern) und die
    * Bedingungen von Rechten, Ansichten und Automatisierungen. Ohne Einstellung: privat.
    */
-  async merkmale(): Promise<Merkmale> { return liesMerkmale(await this.einstellungen?.lies(MERKMALE_EINSTELLUNG)); }
+  async merkmale(): Promise<Merkmale> {
+    return liesMerkmale(await this.einstellungen?.lies(MERKMALE_EINSTELLUNG));
+  }
 
   /**
    * Ids der eigenen Organisationen (#995): Mappen, deren Ja/Nein-Feld mit dem Merkmal „eigene Organisation“ „ja“ ist –
@@ -251,7 +312,11 @@ export class Kern {
     for (const typ of await this.repo.listeTypen()) {
       const f = merkmalFeld(typ);
       if (!f) continue;
-      const r = await this.repo.seite({ klauseln: [{ typen: [typ.id], filter: [{ art: 'feld', key: f.key, feldart: 'janein', op: 'ja' }] }], von: 0, anzahl: EIGENE_ORGANISATIONEN_MAX });
+      const r = await this.repo.seite({
+        klauseln: [{ typen: [typ.id], filter: [{ art: 'feld', key: f.key, feldart: 'janein', op: 'ja' }] }],
+        von: 0,
+        anzahl: EIGENE_ORGANISATIONEN_MAX,
+      });
       aus.push(...r.mappen.map((m) => ({ id: m.id, typId: m.typId })));
     }
     return aus.slice(0, EIGENE_ORGANISATIONEN_MAX);
@@ -261,7 +326,11 @@ export class Kern {
   async paketVerwehrt(): Promise<Record<string, string[]>> {
     const v = await this.einstellungen?.lies('paket_verwehrt');
     if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
-    return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([, x]) => Array.isArray(x)).map(([k, x]) => [k, (x as unknown[]).map(String)]));
+    return Object.fromEntries(
+      Object.entries(v as Record<string, unknown>)
+        .filter(([, x]) => Array.isArray(x))
+        .map(([k, x]) => [k, (x as unknown[]).map(String)]),
+    );
   }
 
   /** Id des Ablageorts (#168, #883): von Basis mitgebracht, sonst der frühere des Kerns – nur nachschlagen. */
@@ -277,7 +346,9 @@ export class Kern {
    */
   async frueherAblageortTyp(): Promise<Mappentyp | undefined> {
     const merk = (await this.einstellungen?.lies('ablageort')) as { id?: string } | null | undefined;
-    const id = merk?.id ?? (this.einstellungen ? undefined : (await this.repo.listeTypen()).find((t) => !t.system && t.schluessel === 'ablageort')?.id);
+    const id =
+      merk?.id ??
+      (this.einstellungen ? undefined : (await this.repo.listeTypen()).find((t) => !t.system && t.schluessel === 'ablageort')?.id);
     if (!id || (await this.repo.listePakete()).some((p) => Object.values(p.typen).includes(id))) return undefined;
     return this.repo.holeTyp(id);
   }
@@ -293,7 +364,11 @@ export class Kern {
    */
   system(): Promise<SystemIds> {
     const ids = this.systemIds ?? this.schlageSystemNach();
-    if (!this.systemIds && !this.inEigenerTransaktion()) this.systemIds = ids.catch((e: unknown) => { this.systemIds = undefined; throw e; });
+    if (!this.systemIds && !this.inEigenerTransaktion())
+      this.systemIds = ids.catch((e: unknown) => {
+        this.systemIds = undefined;
+        throw e;
+      });
     return ids.then(async (s) => ({
       // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
       benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
@@ -305,7 +380,9 @@ export class Kern {
   }
 
   /** Gemerkte Ids vergessen – nach dem Anlegen der Systemausstattung (#963). */
-  vergissSystem(): void { this.systemIds = undefined; }
+  vergissSystem(): void {
+    this.systemIds = undefined;
+  }
 
   private async schlageSystemNach(): Promise<SystemIds> {
     const da = await this.findeSystem();
@@ -354,21 +431,32 @@ export class Kern {
     if (a?.art === 'automatisierung' && a.id) return { art: 'automatisierung', id: a.id };
     if (a?.art === 'paket' && a.id) return { art: 'paket', id: a.id };
     const b = kontext.getStore()?.benutzerId;
-    if (b) { const p = this.paketKonten.get(b); return p ? { art: 'paket', id: p } : { art: 'person', id: b }; }
+    if (b) {
+      const p = this.paketKonten.get(b);
+      return p ? { art: 'paket', id: p } : { art: 'person', id: b };
+    }
     if (a?.art === 'benutzer' && a.id) return { art: 'person', id: a.id };
     return { art: 'system' };
   }
   /** Vorgang für die Fassungen: ausdrücklich gesetzt, sonst die laufende Anfrage. */
-  vorgang(): string | null { return fassungsKontext.getStore()?.vorgang ?? kontext.getStore()?.anfrage ?? null; }
+  vorgang(): string | null {
+    return fassungsKontext.getStore()?.vorgang ?? kontext.getStore()?.anfrage ?? null;
+  }
   /** Aus welcher Fassung gerade wiederhergestellt wird; sonst null. */
-  wiederhergestellt(): number | null { return fassungsKontext.getStore()?.wiederhergestellt ?? null; }
+  wiederhergestellt(): number | null {
+    return fassungsKontext.getStore()?.wiederhergestellt ?? null;
+  }
 
   /* ---------- Ereigniskatalog (#670) ---------- */
 
   /** `f` im Namen eines bestimmten Auslösers ausführen (#674: eine Automatisierung handelt; Ketten zählen mit). */
-  mitAusloeser<T>(a: EreignisAusloeser, f: () => Promise<T>): Promise<T> { return ereignisKontext.run({ ...ereignisKontext.getStore(), ausloeser: a }, f); }
+  mitAusloeser<T>(a: EreignisAusloeser, f: () => Promise<T>): Promise<T> {
+    return ereignisKontext.run({ ...ereignisKontext.getStore(), ausloeser: a }, f);
+  }
   /** `f` ohne Ereignisse ausführen (Import, Beispiel-Mappen, Wiederherstellung – „lösen nichts aus“). */
-  ohneEreignisse<T>(f: () => Promise<T>): Promise<T> { return ereignisKontext.run({ ...ereignisKontext.getStore(), still: true }, f); }
+  ohneEreignisse<T>(f: () => Promise<T>): Promise<T> {
+    return ereignisKontext.run({ ...ereignisKontext.getStore(), still: true }, f);
+  }
   /** Wer gerade handelt – aus dem Kontext oder aus dem Konto `von`. */
   ausloeser(von: string | null | undefined): EreignisAusloeser {
     const k = ereignisKontext.getStore()?.ausloeser;
@@ -395,13 +483,23 @@ export class Kern {
     const merken = this.beiEigenerAenderung;
     if (merken && mappe && !still && ausloeser.art === 'benutzer' && ausloeser.id && ZULETZT_ARTEN.has(art)) {
       const benutzerId = ausloeser.id;
-      await this.nachDerAntwort(() => merken(benutzerId, mappe).catch((e) => protokoll.modul('ereignisse').warn('„Zuletzt geöffnet“ nicht gemerkt', { fehler: (e as Error).message })));
+      await this.nachDerAntwort(() =>
+        merken(benutzerId, mappe).catch((e) =>
+          protokoll.modul('ereignisse').warn('„Zuletzt geöffnet“ nicht gemerkt', { fehler: (e as Error).message }),
+        ),
+      );
     }
     try {
-      await this.repo.legeKatalogEreignisAn({
-        id: randomUUID(), art, daten, ausloeser: { ...ausloeser, ...(still ? { still: true } : {}) },
-        ...(k.buendelS && mappe ? { buendel: `${art}|${mappe}`, buendelS: k.buendelS } : {}),
-      }, k.buendelS ? (alt) => mischeFelder(alt, daten) : undefined);
+      await this.repo.legeKatalogEreignisAn(
+        {
+          id: randomUUID(),
+          art,
+          daten,
+          ausloeser: { ...ausloeser, ...(still ? { still: true } : {}) },
+          ...(k.buendelS && mappe ? { buendel: `${art}|${mappe}`, buendelS: k.buendelS } : {}),
+        },
+        k.buendelS ? (alt) => mischeFelder(alt, daten) : undefined,
+      );
       // #928: Der Verteiler (Automatisierungen, Pakete) teilte sich sonst Datenbank und Rechenzeit mit der
       // Anfrage, die das Ereignis auslöst; das Ereignis steht schon im Ausgangskorb.
       if (this.inAnfrage()) void this.nachDerAntwort(this.weckeVerteiler);

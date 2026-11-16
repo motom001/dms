@@ -20,16 +20,24 @@ describe('Werkbank-Zahlen (#375)', () => {
   });
 
   it('fehlende oder fehlschlagende Quellen ergeben null statt eines Fehlers', async () => {
-    const z = await werkbankZahlen({ nummernkreise: async () => { throw new Error('kaputt'); } });
+    const z = await werkbankZahlen({
+      nummernkreise: async () => {
+        throw new Error('kaputt');
+      },
+    });
     assert.deepEqual(z, { nummernkreise: null, pakete: null, benutzer: null, postfaecher: null, darfWeg: null });
   });
 
   it('folgt Anlegen und Löschen eines Nummernkreises ohne eigenen Abruf des Bereichs', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const zahlen = () => werkbankZahlen({ nummernkreise: () => d.nummernkreise.listeNummernkreise(), darfWeg: () => d.mappenArchiv.darfWeg() });
+    const zahlen = () =>
+      werkbankZahlen({ nummernkreise: () => d.nummernkreise.listeNummernkreise(), darfWeg: () => d.mappenArchiv.darfWeg() });
     const vorher = (await zahlen()).nummernkreise!;
     assert.equal(vorher, (await d.nummernkreise.listeNummernkreise()).length, 'gleiche Zahl wie im Bereich');
-    await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: 'R{zaehler:4}', start: 1 }, 'test');
+    await d.nummernkreise.speichereNummernkreis(
+      { neu: true, schluessel: 'rechnung', name: 'Rechnungsnummern', muster: 'R{zaehler:4}', start: 1 },
+      'test',
+    );
     assert.equal((await zahlen()).nummernkreise, vorher + 1);
     await d.nummernkreise.loescheNummernkreis('rechnung', 'test');
     assert.equal((await zahlen()).nummernkreise, vorher);

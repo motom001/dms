@@ -23,17 +23,31 @@ async function aufbau(repo = speicherRepo(), einstellungen = speicherEinstellung
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'belege', name: 'Belege', art: 'dokumente' },
-    { key: 'sonstiges', name: 'Sonstiges', art: 'dokumente', volltext: false },
-  ] });
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'belege', name: 'Belege', art: 'dokumente' },
+      { key: 'sonstiges', name: 'Sonstiges', art: 'dokumente', volltext: false },
+    ],
+  });
   const r1 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, anna.id);
   const post = (await d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
-    tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!) });
-  const A = { id: anna.id, rolle: 'admin' }; const B = { id: ben.id, rolle: 'mitglied' };
+    tabelle
+      .find((r) => r.methode === m && r.pfad === p)!
+      .handler({
+        body: {},
+        params: {},
+        query: {},
+        ip: '1',
+        ...x,
+        benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!),
+      });
+  const A = { id: anna.id, rolle: 'admin' };
+  const B = { id: ben.id, rolle: 'mitglied' };
   return { d, konten, anna, ben, A, B, rechnung, r1, post, rufe, einstellungen };
 }
 
@@ -42,15 +56,28 @@ describe('Systemtyp Post (#192)', () => {
     const { d, post } = await aufbau();
     assert.equal(post.name, 'Post');
     assert.equal(post.schluessel, 'post');
-    for (const k of ['betreff', 'stand', 'kanal', 'richtung', 'datum', 'von', 'an', 'an_adresse', 'bezug', 'nachricht']) assert.ok(post.felder.some((f) => f.key === k && f.system), k);
+    for (const k of ['betreff', 'stand', 'kanal', 'richtung', 'datum', 'von', 'an', 'an_adresse', 'bezug', 'nachricht'])
+      assert.ok(
+        post.felder.some((f) => f.key === k && f.system),
+        k,
+      );
     assert.equal(post.felder.find((f) => f.key === 'bezug')!.mehrfach, true);
-    assert.deepEqual(post.register.map((r) => r.art), ['felder', 'dokumente', 'protokoll']);
+    assert.deepEqual(
+      post.register.map((r) => r.art),
+      ['felder', 'dokumente', 'protokoll'],
+    );
     const sichten = await d.sichtenVerwaltung.listeSichten();
     const neu = sichten.find((s) => s.name === 'Neue Post')!;
     assert.ok(neu && neu.elternId === null);
-    assert.ok(sichten.every((s) => s.elternId !== null || s.position >= neu.position), 'Neue Post steht oben');
+    assert.ok(
+      sichten.every((s) => s.elternId !== null || s.position >= neu.position),
+      'Neue Post steht oben',
+    );
     assert.equal(await d.systemsichten.neuePostSicht(), neu.id);
-    assert.deepEqual(sichten.filter((s) => s.elternId === post.id).map((s) => s.name), ['Eingegangen', 'Versendet']);
+    assert.deepEqual(
+      sichten.filter((s) => s.elternId === post.id).map((s) => s.name),
+      ['Eingegangen', 'Versendet'],
+    );
     // Ein zweiter Start legt nichts doppelt an; gelöschte Sichten kommen nicht wieder.
     await d.sichtenVerwaltung.loescheSicht(neu.id);
     assert.equal((await d.sichtenVerwaltung.listeSichten()).filter((s) => s.name === 'Neue Post').length, 0);
@@ -65,7 +92,12 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(m.werte.richtung, 'Eingehend');
     assert.equal(m.werte.von ?? null, null, '„Von“ bleibt leer, nicht der Name des Anlegenden (#494)');
     assert.match(String(m.werte.datum), /^\d{4}-\d{2}-\d{2}$/);
-    await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
+    await d.dokumente.ladeHoch(
+      m.id,
+      { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' },
+      Buffer.from('%PDF-1.4 a'),
+      anna.id,
+    );
     const z = await d.sichten.zaehler(A, await d.rechtepruefung.zugriff(A));
     assert.equal(z.sichten[(await d.systemsichten.neuePostSicht())!], 1);
     assert.equal(z.neuePost, await d.systemsichten.neuePostSicht());
@@ -107,16 +139,29 @@ describe('Systemtyp Post (#192)', () => {
   it('Zuordnen: Dokumente wandern ins gewählte Register, Post verweist, Stand „Zugeordnet“, Protokoll an beiden', async () => {
     const { d, anna, ben, r1, rechnung } = await aufbau();
     const m = await d.post.legePostAn({ betreff: 'Rechnung Backofen', an: ben.id }, { id: anna.id, name: 'Anna' });
-    const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id)).dokument;
-    const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 b'), anna.id)).dokument;
+    const a = (
+      await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id)
+    ).dokument;
+    const b = (
+      await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 b'), anna.id)
+    ).dokument;
     const r = await d.post.ordneZu(m.id, { ziel: r1.id, register: 'belege', dokumente: [a.id] }, anna.id);
     assert.deepEqual(r.post.werte.bezug, [r1.id]);
     assert.equal(r.post.werte.stand, POST_STAND.zugeordnet);
     const ziel = await d.mappen.holeMappe(r1.id);
-    assert.deepEqual(ziel.dokumente.map((x) => [x.name, x.registerKey]), [['a.pdf', 'belege']]);
-    assert.deepEqual((await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name), ['b.pdf']);
+    assert.deepEqual(
+      ziel.dokumente.map((x) => [x.name, x.registerKey]),
+      [['a.pdf', 'belege']],
+    );
+    assert.deepEqual(
+      (await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name),
+      ['b.pdf'],
+    );
     assert.ok(ziel.rueckverweise.some((v) => v.quelleId === m.id && v.feldKey === 'bezug'));
-    assert.match(String((await d.mappenHistorie.historie(r1.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /Post „Rechnung Backofen“ zugeordnet mit 1 Dokument ins Register „Belege“/);
+    assert.match(
+      String((await d.mappenHistorie.historie(r1.id)).find((h) => h.art === 'zugeordnet')!.daten.text),
+      /Post „Rechnung Backofen“ zugeordnet mit 1 Dokument ins Register „Belege“/,
+    );
     assert.match(String((await d.mappenHistorie.historie(m.id)).find((h) => h.art === 'zugeordnet')!.daten.text), /zugeordnet zu „R-1“/);
     // Aufgabe „Neue Post“ ist erledigt.
     assert.equal((await d.vertretung.meineAufgaben({ id: ben.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
@@ -147,7 +192,11 @@ describe('Systemtyp Post (#192)', () => {
     const andere = await d.post.legePostAn({}, { id: anna.id, name: 'Anna' });
     await assert.rejects(d.post.ordneZu(m.id, { ziel: andere.id }, anna.id), status(422), 'nicht Post zu Post');
     // Ohne Dokumentenregister am Ziel geht es nur ohne Dokumente.
-    const ohne = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['titel'] }] });
+    const ohne = await d.mappentypen.legeTypAn({
+      name: 'Notiz',
+      felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }],
+      register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['titel'] }],
+    });
     const n = await d.mappen.legeMappeAn({ typId: ohne.id, werte: { titel: 'Ohne' } }, anna.id);
     await assert.rejects(d.post.ordneZu(m.id, { ziel: n.id }, anna.id), status(422));
     const ok = await d.post.ordneZu(m.id, { ziel: n.id, dokumente: [] }, anna.id);
@@ -161,18 +210,33 @@ describe('Systemtyp Post (#192)', () => {
     const nurLesen: Regelwerk = { grund: { ...NICHTS, R: true }, regeln: [] };
     await d.berechtigungen.setzeBerechtigungen(post.id, nurLesen, true);
     await assert.rejects(rufe(ben, 'POST', '/api/post', { body: { betreff: 'x' } }), status(403));
-    const m = (await rufe(anna, 'POST', '/api/post', { body: { betreff: 'Admin darf' } })).body as { id: string; werte: Record<string, unknown> };
+    const m = (await rufe(anna, 'POST', '/api/post', { body: { betreff: 'Admin darf' } })).body as {
+      id: string;
+      werte: Record<string, unknown>;
+    };
     assert.equal(m.werte.kanal, POST_KANAL.hochgeladen);
     await assert.rejects(rufe(ben, 'POST', '/api/mappen/:id/zuordnen', { params: { id: m.id }, body: { ziel: r1.id } }), status(403));
-    const z = (await rufe(anna, 'POST', '/api/mappen/:id/zuordnen', { params: { id: m.id }, body: { ziel: r1.id } })).body as { post: { werte: Record<string, unknown> } };
+    const z = (await rufe(anna, 'POST', '/api/mappen/:id/zuordnen', { params: { id: m.id }, body: { ziel: r1.id } })).body as {
+      post: { werte: Record<string, unknown> };
+    };
     assert.equal(z.post.werte.stand, POST_STAND.zugeordnet);
-    void A; void B;
+    void A;
+    void B;
   });
 
   it('versendete E-Mails bleiben Post wie verschickt: Felder geschützt', async () => {
     const { d, anna, r1 } = await aufbau();
-    const mailer = { async sende() { /* ok */ } };
-    const r = await d.ausgangEmail.versendeMappe(r1.id, { an: 'a@example.org', betreff: 'Hallo' }, { id: anna.id, name: 'Anna', email: 'anna@example.org' }, mailer);
+    const mailer = {
+      async sende() {
+        /* ok */
+      },
+    };
+    const r = await d.ausgangEmail.versendeMappe(
+      r1.id,
+      { an: 'a@example.org', betreff: 'Hallo' },
+      { id: anna.id, name: 'Anna', email: 'anna@example.org' },
+      mailer,
+    );
     await assert.rejects(d.mappen.aendereMappe(r.id, { werte: { betreff: 'anders' } }, anna.id), status(403));
     // Stand und „Für“ bleiben änderbar.
     await d.mappen.aendereMappe(r.id, { werte: { stand: POST_STAND.neu } }, anna.id);
@@ -184,7 +248,10 @@ describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
     const { d, anna, A, rufe } = await aufbau();
     const hoch = await d.post.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.rechtepruefung.zugriff(A));
     assert.equal(hoch.werte.von ?? null, null);
-    const api = await rufe(A, 'POST', '/api/post', { body: { betreff: 'per API' }, apiSchluessel: { id: 'k', name: 'Skript' } as never }) as { body: { id: string; werte: Record<string, unknown> } };
+    const api = (await rufe(A, 'POST', '/api/post', {
+      body: { betreff: 'per API' },
+      apiSchluessel: { id: 'k', name: 'Skript' } as never,
+    })) as { body: { id: string; werte: Record<string, unknown> } };
     assert.equal((await d.mappen.holeMappe(api.body.id)).mappe.werte.kanal, POST_KANAL.api);
     assert.equal((await d.mappen.holeMappe(api.body.id)).mappe.werte.von ?? null, null);
     const dav = await d.post.legePostAn({ betreff: 'x.pdf' }, { id: anna.id, name: 'Anna' }, undefined, POST_KANAL.webdav);
@@ -206,7 +273,12 @@ describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
     // Altbestand wie bis 0.99: Absender = Name des Anlegenden.
     const alt1 = await d.post.legePostAn({ betreff: 'Alt Anna', absender: 'Anna' }, { id: anna.id, name: 'Anna' });
     const alt2 = await d.post.legePostAn({ betreff: 'Alt Ben', absender: 'Ben' }, { id: ben.id, name: 'Ben' });
-    const ordner = await d.post.legePostAn({ betreff: 'Scan', absender: 'Eingangsordner' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
+    const ordner = await d.post.legePostAn(
+      { betreff: 'Scan', absender: 'Eingangsordner' },
+      { id: null, name: 'Eingangsordner' },
+      undefined,
+      POST_KANAL.ordner,
+    );
     // Nicht betroffen: echter Absender, fremder Name, Postfach-Abruf, ohne Absender.
     await d.post.legePostAn({ betreff: 'Echt', absender: 'Finanzamt' }, { id: anna.id, name: 'Anna' });
     await d.post.legePostAn({ betreff: 'Von Ben an Anna', absender: 'Ben' }, { id: anna.id, name: 'Anna' });
@@ -216,16 +288,24 @@ describe('„Von“ eingehender Post (#494, bis #1042 „Absender“)', () => {
     assert.deepEqual(new Set(v.body.posten.map((p) => p.id)), new Set([alt1.id, alt2.id, ordner.id]));
     await assert.rejects(d.mappenTitel.absenderBereinigen([], { id: anna.id, email: 'anna@example.org' }), status(422));
     // Nur die gewählten; eine fremde Id wird übergangen.
-    const r = await rufe(A, 'POST', '/api/werkbank/wartung/absender', { body: { ids: [alt1.id, ordner.id, '00000000-0000-4000-8000-000000000001'] } }) as { body: { bereinigt: number } };
+    const r = (await rufe(A, 'POST', '/api/werkbank/wartung/absender', {
+      body: { ids: [alt1.id, ordner.id, '00000000-0000-4000-8000-000000000001'] },
+    })) as { body: { bereinigt: number } };
     assert.equal(r.body.bereinigt, 2);
     assert.equal((await d.mappen.holeMappe(alt1.id)).mappe.werte.von ?? null, null);
     assert.equal((await d.mappen.holeMappe(ordner.id)).mappe.werte.von ?? null, null);
     assert.equal((await d.mappen.holeMappe(alt2.id)).mappe.werte.von, 'Ben');
     const h = (await d.mappenHistorie.historie(alt1.id)).find((x) => x.art === 'geaendert')!;
     assert.equal(h.benutzerId, anna.id);
-    assert.deepEqual(h.daten.aenderungen!.map((a) => [a.feld, a.alt]), [['von', 'Anna']]);
+    assert.deepEqual(
+      h.daten.aenderungen!.map((a) => [a.feld, a.alt]),
+      [['von', 'Anna']],
+    );
     assert.match(String(h.daten.text), /Absender bereinigt/);
-    assert.deepEqual((await d.mappenTitel.absenderVorschau()).posten.map((p) => p.id), [alt2.id]);
+    assert.deepEqual(
+      (await d.mappenTitel.absenderVorschau()).posten.map((p) => p.id),
+      [alt2.id],
+    );
   });
 });
 
@@ -243,18 +323,48 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     const alt = [
       { key: 'betreff', label: 'Betreff', typ: 'text' as const, pflicht: true, maxLen: 250, system: true },
       { key: 'an_adresse', label: 'An', typ: 'text' as const, pflicht: true, system: true },
-      { key: 'von', label: 'Absender', typ: 'text' as const, system: true, hilfe: 'Wer die E-Mail verschickt hat; Antworten gehen an diese Adresse' },
+      {
+        key: 'von',
+        label: 'Absender',
+        typ: 'text' as const,
+        system: true,
+        hilfe: 'Wer die E-Mail verschickt hat; Antworten gehen an diese Adresse',
+      },
       { key: 'datum', label: 'Datum', typ: 'datum' as const, system: true },
-      { key: 'bezug', label: 'Bezug', typ: 'referenz' as const, zielTyp: '*', verweisart: 'bezug' as const, system: true, hilfe: 'Die Mappe, aus der die E-Mail verschickt wurde' },
+      {
+        key: 'bezug',
+        label: 'Bezug',
+        typ: 'referenz' as const,
+        zielTyp: '*',
+        verweisart: 'bezug' as const,
+        system: true,
+        hilfe: 'Die Mappe, aus der die E-Mail verschickt wurde',
+      },
       { key: 'nachricht', label: 'Nachricht', typ: 'langtext' as const, system: true },
     ];
-    await repo.aendereTyp(post0.id, { ...post0, name: 'E-Mail', beschreibung: 'Aus Ablago verschickte E-Mails mit Anhängen', felder: alt,
-      register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: alt.map((f) => f.key) }, { key: 'anhaenge', name: 'Anhänge', art: 'dokumente' }, { key: 'protokoll', name: 'Protokoll', art: 'protokoll' }],
-      trefferlisten: [{ key: 'standard', name: 'Standard', spalten: ['datum', 'an_adresse', 'bezug'], standard: true }], trefferliste: undefined });
+    await repo.aendereTyp(post0.id, {
+      ...post0,
+      name: 'E-Mail',
+      beschreibung: 'Aus Ablago verschickte E-Mails mit Anhängen',
+      felder: alt,
+      register: [
+        { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: alt.map((f) => f.key) },
+        { key: 'anhaenge', name: 'Anhänge', art: 'dokumente' },
+        { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
+      ],
+      trefferlisten: [{ key: 'standard', name: 'Standard', spalten: ['datum', 'an_adresse', 'bezug'], standard: true }],
+      trefferliste: undefined,
+    });
     for (const s of await repo.listeSichten()) if (s.id !== post0.id && s.typen.includes(post0.id)) await repo.loescheSicht(s.id);
     const sicht = (await repo.listeSichten()).find((s) => s.id === post0.id)!;
     await repo.aendereSicht(sicht.id, { ...sicht, name: 'E-Mail' });
-    const m = await repo.legeMappeAn('11111111-1111-4111-8111-111111111111', post0.id, { betreff: 'Alt', an_adresse: 'x@example.org', kanal: 'E-Mail', richtung: 'Ausgehend', stand: 'Erledigt', bezug: [] }, [], null);
+    const m = await repo.legeMappeAn(
+      '11111111-1111-4111-8111-111111111111',
+      post0.id,
+      { betreff: 'Alt', an_adresse: 'x@example.org', kanal: 'E-Mail', richtung: 'Ausgehend', stand: 'Erledigt', bezug: [] },
+      [],
+      null,
+    );
 
     // Neuer Start (frischer Dienst, ohne Merker „Sichten angelegt“).
     const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
@@ -268,11 +378,19 @@ describe('Umstellung vom Systemtyp E-Mail (#58 → #192)', () => {
     assert.equal(post.felder.find((f) => f.key === 'von')!.label, 'Von');
     assert.equal(post.felder.find((f) => f.key === 'von')!.hilfe, undefined);
     assert.equal(post.felder.find((f) => f.key === 'von')!.beschriftungen?.en?.label, 'From');
-    for (const k of ['stand', 'kanal', 'richtung', 'an']) assert.ok(post.felder.some((f) => f.key === k && f.system), k);
+    for (const k of ['stand', 'kanal', 'richtung', 'an'])
+      assert.ok(
+        post.felder.some((f) => f.key === k && f.system),
+        k,
+      );
     assert.ok(post.register.find((r) => r.key === 'allgemein')!.felder!.includes('stand'));
     assert.equal(post.register.find((r) => r.key === 'anhaenge')!.name, 'Dokumente');
-    assert.equal(post.felder.find((f) => f.key === 'an')!.zielTypen?.[0], (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!.id);
-    void rolle; void systemfelder;
+    assert.equal(
+      post.felder.find((f) => f.key === 'an')!.zielTypen?.[0],
+      (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!.id,
+    );
+    void rolle;
+    void systemfelder;
     const sichten = await d.sichtenVerwaltung.listeSichten();
     assert.equal(sichten.find((s) => s.id === post.id)!.name, 'Post');
     assert.ok(sichten.some((s) => s.name === 'Neue Post'));

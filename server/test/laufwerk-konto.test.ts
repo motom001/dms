@@ -17,13 +17,28 @@ describe('Laufwerk unter Mein Konto (#720)', () => {
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
     const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
     let aktiv = false;
-    const webdav = { einstellung: async () => ({ aktiv }), stand: async () => ({ einstellung: { aktiv }, adresse: 'https://ablage.example.org/webdav/', https: true, grenze: 0, anfragen: 0, zugriffe: [] }) };
+    const webdav = {
+      einstellung: async () => ({ aktiv }),
+      stand: async () => ({
+        einstellung: { aktiv },
+        adresse: 'https://ablage.example.org/webdav/',
+        https: true,
+        grenze: 0,
+        anfragen: 0,
+        zugriffe: [],
+      }),
+    };
     const r = routen(d, konten, { webdav: webdav as never });
-    const rufe = (pfad: string) => r.find((x) => x.methode === 'GET' && x.pfad === pfad)!.handler({ body: {}, params: {}, query: {}, ip: '1', benutzer: lena });
+    const rufe = (pfad: string) =>
+      r.find((x) => x.methode === 'GET' && x.pfad === pfad)!.handler({ body: {}, params: {}, query: {}, ip: '1', benutzer: lena });
     assert.equal(((await rufe('/api/konto/status')).body as { laufwerk: boolean }).laufwerk, false);
     await assert.rejects(rufe('/api/konto/laufwerk'), (e) => e instanceof Fachfehler && e.status === 404);
     aktiv = true;
     assert.equal(((await rufe('/api/konto/status')).body as { laufwerk: boolean }).laufwerk, true);
-    assert.deepEqual((await rufe('/api/konto/laufwerk')).body, { adresse: 'https://ablage.example.org/webdav/', https: true, benutzername: 'lena@example.org' });
+    assert.deepEqual((await rufe('/api/konto/laufwerk')).body, {
+      adresse: 'https://ablage.example.org/webdav/',
+      https: true,
+      benutzername: 'lena@example.org',
+    });
   });
 });

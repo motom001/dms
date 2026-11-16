@@ -79,8 +79,16 @@ const LISTEN: Record<string, Set<string>> = Object.fromEntries(Object.entries(WO
 
 /* Typische Buchstaben (je Vorkommen ein kleiner Zuschlag). */
 const ZEICHEN: Record<string, string> = {
-  deu: 'äöüß', fra: 'éèêàçœùî', spa: 'ñ¿¡áíóú', ita: 'àèìòù', tur: 'ığşİ', pol: 'ąęłńśźżć', por: 'ãõçâêô', nld: '',
-  rus: 'ыэъё', ukr: 'іїєґ',
+  deu: 'äöüß',
+  fra: 'éèêàçœùî',
+  spa: 'ñ¿¡áíóú',
+  ita: 'àèìòù',
+  tur: 'ığşİ',
+  pol: 'ąęłńśźżć',
+  por: 'ãõçâêô',
+  nld: '',
+  rus: 'ыэъё',
+  ukr: 'іїєґ',
 };
 
 const LATEIN = /[a-zà-ɏ]/;
@@ -111,7 +119,10 @@ const woerter = (text: string) => text.toLowerCase().match(/\p{L}+/gu) ?? [];
  */
 export function erkenneSprache(text: string): ErkannteSprache | null {
   // Lange Texte reichen in Auszügen: Anfang und Mitte, zusammen höchstens ~20 000 Zeichen.
-  const probe = text.length > 20_000 ? text.slice(0, 12_000) + ' ' + text.slice(Math.floor(text.length / 2), Math.floor(text.length / 2) + 8_000) : text;
+  const probe =
+    text.length > 20_000
+      ? text.slice(0, 12_000) + ' ' + text.slice(Math.floor(text.length / 2), Math.floor(text.length / 2) + 8_000)
+      : text;
   const schrift = schriftVon(probe);
   if (!schrift) return null;
   if (schrift === 'arabisch') return { sprache: 'ara', konfidenz: 0.6, schrift };
@@ -120,14 +131,16 @@ export function erkenneSprache(text: string): ErkannteSprache | null {
   const liste = woerter(probe).filter((w) => schrift !== 'kyrillisch' || KYRILLISCH.test(w));
   if (liste.length < 8) return null;
   const klein = probe.toLowerCase();
-  const punkte = kandidaten.map((s) => {
-    let p = 0;
-    for (const w of liste) if (LISTEN[s].has(w)) p++;
-    let z = 0;
-    for (const c of ZEICHEN[s] ?? '') z += klein.split(c.toLowerCase()).length - 1;
-    // Buchstaben zählen halb und höchstens so viel wie die Wörter – sie entscheiden nur knappe Fälle.
-    return { s, p: p + Math.min(z * 0.5, Math.max(p, 2)), woerter: p };
-  }).sort((a, b) => b.p - a.p);
+  const punkte = kandidaten
+    .map((s) => {
+      let p = 0;
+      for (const w of liste) if (LISTEN[s].has(w)) p++;
+      let z = 0;
+      for (const c of ZEICHEN[s] ?? '') z += klein.split(c.toLowerCase()).length - 1;
+      // Buchstaben zählen halb und höchstens so viel wie die Wörter – sie entscheiden nur knappe Fälle.
+      return { s, p: p + Math.min(z * 0.5, Math.max(p, 2)), woerter: p };
+    })
+    .sort((a, b) => b.p - a.p);
   const [erste, zweite] = punkte;
   if (erste.woerter < 3) return null;
   // Eindeutigkeit: Abstand zur zweitbesten Sprache, gewichtet mit dem Anteil erkannter Funktionswörter
@@ -146,7 +159,8 @@ export function erkenneSprache(text: string): ErkannteSprache | null {
  * Migration kann sie von dort übernehmen.
  */
 export const SPRACHE_MARKE = ' · Sprache: ';
-export const spracheZuInfo = (s: { sprache: string; konfidenz: number }) => `${SPRACHE_MARKE}${s.sprache} (${Math.round(s.konfidenz * 100)} %)`;
+export const spracheZuInfo = (s: { sprache: string; konfidenz: number }) =>
+  `${SPRACHE_MARKE}${s.sprache} (${Math.round(s.konfidenz * 100)} %)`;
 const MUSTER = /· Sprache: ([a-z_]{3,10})(?: \((\d{1,3}) %\))?/;
 /** Erkannte Sprache aus dem Hinweis der Texterkennung lesen (oder null). */
 export function spracheAusInfo(info: string | null | undefined): { sprache: string; konfidenz: number | null } | null {
@@ -161,7 +175,10 @@ export const SPRACHE_SQL_MUSTER = '· Sprache: ([a-z_]{3,10})';
  * (Zusatzpaket nicht installiert) – häufigste zuerst. Die Erkennung arbeitet auf dem Text, also auch dann, wenn die
  * Sprachdaten (noch) fehlen.
  */
-export function sprachvorschlaege(erkannt: Record<string, number>, installiert: string[]): Array<{ sprache: string; anzahl: number; paket: string }> {
+export function sprachvorschlaege(
+  erkannt: Record<string, number>,
+  installiert: string[],
+): Array<{ sprache: string; anzahl: number; paket: string }> {
   return Object.entries(erkannt)
     .filter(([s, n]) => n > 0 && TEXTSPRACHEN[s] && !installiert.includes(s))
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))

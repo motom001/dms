@@ -7,7 +7,10 @@ import type { ExternMessung } from './extern';
  */
 
 /** Höchstmenge je Frage (Werkbank): Anzahl Ausschnitte und Zeichen zusammen. */
-export interface FragenGrenzen { ausschnitte: number; zeichen: number }
+export interface FragenGrenzen {
+  ausschnitte: number;
+  zeichen: number;
+}
 export const FRAGEN_STANDARD: FragenGrenzen = { ausschnitte: 8, zeichen: 6000 };
 export const FRAGEN_BEREICH = { ausschnitte: { min: 1, max: 20 }, zeichen: { min: 500, max: 30000 } } as const;
 /** Ein Ausschnitt ist höchstens so lang (Zeichen), auch wenn die Höchstmenge mehr erlaubt. */
@@ -26,19 +29,25 @@ export function pruefeGrenzen(e: unknown): { grenzen: FragenGrenzen; fehler: Rec
   const zahl = (k: keyof FragenGrenzen) => {
     const n = Number(x[k]);
     const b = FRAGEN_BEREICH[k];
-    if (!Number.isInteger(n) || n < b.min || n > b.max) { fehler[k] = t('gemeinsam.fragen.eine-ganze-zahl-von', { min: b.min, max: b.max }); return FRAGEN_STANDARD[k]; }
+    if (!Number.isInteger(n) || n < b.min || n > b.max) {
+      fehler[k] = t('gemeinsam.fragen.eine-ganze-zahl-von', { min: b.min, max: b.max });
+      return FRAGEN_STANDARD[k];
+    }
     return n;
   };
   return { grenzen: { ausschnitte: zahl('ausschnitte'), zeichen: zahl('zeichen') }, fehler };
 }
 
 /** Wörter ohne Bedeutung für die Suche (Fragewörter, Artikel, Hilfsverben) – die Volltextsuche kennt ihre eigenen. */
-const LEER = new Set((t('gemeinsam.fragen.aber-alle-als-also')).split(/\s+/));
+const LEER = new Set(t('gemeinsam.fragen.aber-alle-als-also').split(/\s+/));
 
 /** Suchwörter aus einer Frage: Buchstaben und Ziffern, ab 3 Zeichen, ohne Füllwörter, höchstens max. */
 export function frageWoerter(text: string, max = 12): string[] {
   const erg: string[] = [];
-  for (const w of text.toLowerCase().normalize('NFC').split(/[^\p{L}\p{N}]+/u)) {
+  for (const w of text
+    .toLowerCase()
+    .normalize('NFC')
+    .split(/[^\p{L}\p{N}]+/u)) {
     if (w.length < 3 || w.length > 40 || LEER.has(w) || erg.includes(w)) continue;
     erg.push(w);
     if (erg.length >= max) break;
@@ -47,7 +56,12 @@ export function frageWoerter(text: string, max = 12): string[] {
 }
 
 /** Steuerzeichen raus, Leerraum zusammenfassen – Ausschnitte sind reiner Text. */
-export const saeubere = (t: string) => t.replace(/[\u0000-\u0008\u000b-\u001f\u007f​-‏‪-‮⁦-⁩]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+export const saeubere = (t: string) =>
+  t
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f​-‏‪-‮⁦-⁩]/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
 /**
  * Ausschnitt aus einem langen Text: das Fenster der Länge `laenge` mit den meisten Suchwörtern (an Wortgrenzen),
@@ -58,17 +72,28 @@ export function ausschnittUm(text: string, woerter: string[], laenge: number): s
   if (t.length <= laenge) return t;
   const klein = t.toLowerCase();
   const stellen: number[] = [];
-  for (const w of woerter) for (let i = klein.indexOf(w); i >= 0 && stellen.length < 500; i = klein.indexOf(w, i + w.length)) stellen.push(i);
+  for (const w of woerter)
+    for (let i = klein.indexOf(w); i >= 0 && stellen.length < 500; i = klein.indexOf(w, i + w.length)) stellen.push(i);
   stellen.sort((a, b) => a - b);
-  let start = 0, best = 0;
+  let start = 0,
+    best = 0;
   for (let i = 0, j = 0; i < stellen.length; i++) {
     while (stellen[i] - stellen[j] > laenge * 0.8) j++;
-    if (i - j + 1 > best) { best = i - j + 1; start = Math.max(0, stellen[j] - Math.floor(laenge * 0.15)); }
+    if (i - j + 1 > best) {
+      best = i - j + 1;
+      start = Math.max(0, stellen[j] - Math.floor(laenge * 0.15));
+    }
   }
   start = Math.min(start, t.length - laenge);
-  if (start > 0) { const l = t.lastIndexOf(' ', start); if (l > start - 40) start = l + 1; }
+  if (start > 0) {
+    const l = t.lastIndexOf(' ', start);
+    if (l > start - 40) start = l + 1;
+  }
   let ende = start + laenge;
-  if (ende < t.length) { const l = t.lastIndexOf(' ', ende); if (l > ende - 40) ende = l; }
+  if (ende < t.length) {
+    const l = t.lastIndexOf(' ', ende);
+    if (l > ende - 40) ende = l;
+  }
   return `${start > 0 ? '… ' : ''}${t.slice(start, ende).trim()}${ende < t.length ? ' …' : ''}`;
 }
 
@@ -85,12 +110,16 @@ export interface FrageAusschnitt {
 }
 
 /** Ein Eintrag im bisherigen Chat (kommt vom Browser, wird nirgends gespeichert). */
-export interface VerlaufEintrag { rolle: 'frage' | 'antwort'; text: string }
+export interface VerlaufEintrag {
+  rolle: 'frage' | 'antwort';
+  text: string;
+}
 
 /** Verlauf aus der Anfrage: höchstens VERLAUF_MAX letzte Einträge, gekürzt. */
 export function liesVerlauf(v: unknown): VerlaufEintrag[] {
   if (!Array.isArray(v)) return [];
-  return v.filter((x): x is { rolle: unknown; text: unknown } => !!x && typeof x === 'object')
+  return v
+    .filter((x): x is { rolle: unknown; text: unknown } => !!x && typeof x === 'object')
     .filter((x) => (x.rolle === 'frage' || x.rolle === 'antwort') && typeof x.text === 'string' && x.text.trim())
     .slice(-VERLAUF_MAX)
     .map((x) => ({ rolle: x.rolle as VerlaufEintrag['rolle'], text: saeubere(String(x.text)).slice(0, VERLAUF_TEXT_MAX) }));
@@ -109,7 +138,12 @@ export const KI_HINWEIS = [
 
 /** Ausschnitte als Text für das Paket – klar abgegrenzt und als Daten gekennzeichnet. */
 export function ausschnitteAlsText(a: FrageAusschnitt[]): string {
-  return a.map((x) => `<ausschnitt nr="${x.nr}" mappe="${x.mappe.titel.replace(/["<>]/g, '')}" typ="${x.typ.replace(/["<>]/g, '')}" quelle="${x.quelle.art === 'dokument' ? x.quelle.name.replace(/["<>]/g, '') : t('gemeinsam.fragen.angaben-der-mappe')}">\n${x.text.replace(/<\/?ausschnitt\b[^>]*>/gi, '')}\n</ausschnitt>`).join('\n');
+  return a
+    .map(
+      (x) =>
+        `<ausschnitt nr="${x.nr}" mappe="${x.mappe.titel.replace(/["<>]/g, '')}" typ="${x.typ.replace(/["<>]/g, '')}" quelle="${x.quelle.art === 'dokument' ? x.quelle.name.replace(/["<>]/g, '') : t('gemeinsam.fragen.angaben-der-mappe')}">\n${x.text.replace(/<\/?ausschnitt\b[^>]*>/gi, '')}\n</ausschnitt>`,
+    )
+    .join('\n');
 }
 
 /**
@@ -119,7 +153,10 @@ export function ausschnitteAlsText(a: FrageAusschnitt[]): string {
  * `gekuerzt` (ab 0.138.0): Das Paket hat die Anfrage für den Dienst gekürzt – nur die Ausschnitte in `geschickt`
  * gingen hin (fehlt die Liste: alle), `verlauf` frühere Einträge des Chats fielen weg. Quellen dann nur aus `geschickt`.
  */
-export function liesAntwort(ergebnis: string, nummern: number[]): { text: string; quellen: number[]; fehler?: string; gekuerzt?: FrageGekuerzt } {
+export function liesAntwort(
+  ergebnis: string,
+  nummern: number[],
+): { text: string; quellen: number[]; fehler?: string; gekuerzt?: FrageGekuerzt } {
   let text = ergebnis;
   let quellen: number[] = [];
   let gekuerzt: FrageGekuerzt | undefined;
@@ -127,26 +164,35 @@ export function liesAntwort(ergebnis: string, nummern: number[]): { text: string
   if (roh.startsWith('{')) {
     try {
       const j = JSON.parse(roh) as { text?: unknown; quellen?: unknown; fehler?: unknown; gekuerzt?: unknown };
-      if (typeof j.fehler === 'string' && j.fehler.trim() && typeof j.text !== 'string') return { text: '', quellen: [], fehler: saeubere(j.fehler).slice(0, 500) };
+      if (typeof j.fehler === 'string' && j.fehler.trim() && typeof j.text !== 'string')
+        return { text: '', quellen: [], fehler: saeubere(j.fehler).slice(0, 500) };
       if (typeof j.text === 'string') text = j.text;
       if (Array.isArray(j.quellen)) quellen = j.quellen.map(Number).filter((n) => Number.isInteger(n));
       gekuerzt = liesGekuerzt(j.gekuerzt, nummern);
-    } catch { /* reiner Text */ }
+    } catch {
+      /* reiner Text */
+    }
   }
   text = saeubere(text).slice(0, ANTWORT_MAX);
-  if (!quellen.length) for (const m of text.matchAll(/\[(\d{1,3})(?:\s*,\s*(\d{1,3}))*\]/g)) for (const n of m[0].match(/\d+/g) ?? []) quellen.push(Number(n));
+  if (!quellen.length)
+    for (const m of text.matchAll(/\[(\d{1,3})(?:\s*,\s*(\d{1,3}))*\]/g)) for (const n of m[0].match(/\d+/g) ?? []) quellen.push(Number(n));
   const gueltig = new Set(gekuerzt?.geschickt ?? nummern);
   return { text, quellen: [...new Set(quellen)].filter((n) => gueltig.has(n)), ...(gekuerzt ? { gekuerzt } : {}) };
 }
 
 /** Was das Paket gekürzt hat (#564): Nummern der geschickten Ausschnitte und wie viele Einträge des Chats wegfielen. */
-export interface FrageGekuerzt { geschickt: number[]; verlauf: number }
+export interface FrageGekuerzt {
+  geschickt: number[];
+  verlauf: number;
+}
 
 function liesGekuerzt(g: unknown, nummern: number[]): FrageGekuerzt | undefined {
   if (!g || typeof g !== 'object' || Array.isArray(g)) return undefined;
   const x = g as { geschickt?: unknown; verlauf?: unknown };
   const gueltig = new Set(nummern);
-  const geschickt = Array.isArray(x.geschickt) ? [...new Set(x.geschickt.map(Number))].filter((n) => gueltig.has(n)).sort((a, b) => a - b) : [...nummern];
+  const geschickt = Array.isArray(x.geschickt)
+    ? [...new Set(x.geschickt.map(Number))].filter((n) => gueltig.has(n)).sort((a, b) => a - b)
+    : [...nummern];
   const verlauf = Number.isInteger(x.verlauf) && (x.verlauf as number) > 0 ? Math.min(x.verlauf as number, VERLAUF_MAX) : 0;
   return { geschickt, verlauf };
 }
@@ -155,5 +201,12 @@ function liesGekuerzt(g: unknown, nummern: number[]): FrageGekuerzt | undefined 
 export type FrageZeile =
   | { art: 'ausschnitte'; ausschnitte: FrageAusschnitt[]; mappen: number }
   | { art: 'teil'; text: string }
-  | { art: 'fertig'; text: string; quellen: Array<{ id: string; typId: string; titel: string; nr: number[] }>; ms: number; gekuerzt?: FrageGekuerzt; extern?: ExternMessung[] }
+  | {
+      art: 'fertig';
+      text: string;
+      quellen: Array<{ id: string; typId: string; titel: string; nr: number[] }>;
+      ms: number;
+      gekuerzt?: FrageGekuerzt;
+      extern?: ExternMessung[];
+    }
   | { art: 'fehler'; text: string; extern?: ExternMessung[] };

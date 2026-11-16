@@ -5,10 +5,20 @@
  * Text; die Einzelheiten stehen im Protokoll für die Verwaltung.
  */
 export const ANMELDEFEHLER = [
-  'nicht-eingerichtet', 'anbieter-nicht-erreichbar', 'abgelaufen', 'anderer-browser', 'abgelehnt', 'token-ungueltig',
-  'email-fehlt', 'kein-konto', 'deaktiviert', 'wartung', 'unbekannt',
+  'nicht-eingerichtet',
+  'anbieter-nicht-erreichbar',
+  'abgelaufen',
+  'anderer-browser',
+  'abgelehnt',
+  'token-ungueltig',
+  'email-fehlt',
+  'kein-konto',
+  'deaktiviert',
+  'wartung',
+  'unbekannt',
 ] as const;
-export type Anmeldefehler = typeof ANMELDEFEHLER[number];
+export type Anmeldefehler = (typeof ANMELDEFEHLER)[number];
 
 /** Ein bekannter Code – alles andere (auch ein beliebiger Text in der Adresse) wird „unbekannt“. */
-export const anmeldefehlerCode = (roh: unknown): Anmeldefehler => ((ANMELDEFEHLER as readonly unknown[]).includes(roh) ? roh as Anmeldefehler : 'unbekannt');
+export const anmeldefehlerCode = (roh: unknown): Anmeldefehler =>
+  (ANMELDEFEHLER as readonly unknown[]).includes(roh) ? (roh as Anmeldefehler) : 'unbekannt';

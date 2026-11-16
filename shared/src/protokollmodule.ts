@@ -5,7 +5,21 @@
  * Dieselbe Liste nutzt später die Wenn-Karte „Neue Protokollmeldung“ (#677).
  */
 export const MODULE = [
-  'system', 'http', 'konto', 'ablage', 'dokumente', 'werkbank', 'datenschutz', 'texterkennung', 'umwandlung', 'archivfassung',
-  'vorschau', 'datenbank', 'mail', 'sicherung', 'ereignisse', 'automatisierung',
+  'system',
+  'http',
+  'konto',
+  'ablage',
+  'dokumente',
+  'werkbank',
+  'datenschutz',
+  'texterkennung',
+  'umwandlung',
+  'archivfassung',
+  'vorschau',
+  'datenbank',
+  'mail',
+  'sicherung',
+  'ereignisse',
+  'automatisierung',
 ] as const;
 export type Modul = (typeof MODULE)[number];

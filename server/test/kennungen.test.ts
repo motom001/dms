@@ -6,7 +6,19 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, kennungAlsDateiname, kennungAusDateiname, PAKET_ID, SCHLUESSEL, teileKennung, TYP_KENNUNG, typKennung, TYPVERWEIS } from '../../shared/src/kennungen';
+import {
+  hauptpaket,
+  istHerausgeber,
+  istOffiziellerHerausgeber,
+  kennungAlsDateiname,
+  kennungAusDateiname,
+  PAKET_ID,
+  SCHLUESSEL,
+  teileKennung,
+  TYP_KENNUNG,
+  typKennung,
+  TYPVERWEIS,
+} from '../../shared/src/kennungen';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -27,7 +39,8 @@ describe('Kennungen (#1084)', () => {
     assert.ok(PAKET_ID.test('texterkennung.fra'));
     assert.ok(PAKET_ID.test(`texterkennung.f${'r'.repeat(19)}`), 'Zusatz 20 Zeichen');
     assert.ok(!PAKET_ID.test(`texterkennung.f${'r'.repeat(20)}`), 'Zusatz 21 Zeichen');
-    for (const x of ['a', 'a.b.c', 'texterkennung.', '.fra', 'texterkennung.1fra', 'Haus', 'haus-garten', 'haus:garten']) assert.ok(!PAKET_ID.test(x), x);
+    for (const x of ['a', 'a.b.c', 'texterkennung.', '.fra', 'texterkennung.1fra', 'Haus', 'haus-garten', 'haus:garten'])
+      assert.ok(!PAKET_ID.test(x), x);
     assert.ok(SCHLUESSEL.test(`r${'x'.repeat(59)}`));
     assert.ok(!SCHLUESSEL.test(`r${'x'.repeat(60)}`));
     assert.ok(TYPVERWEIS.test('texterkennung.fra:sprache') && TYPVERWEIS.test('basis:person') && TYPVERWEIS.test('person'));
@@ -39,13 +52,32 @@ describe('Kennungen (#1084)', () => {
     assert.deepEqual(teileKennung('haus_garten:pflanze'), { paket: 'haus_garten', schluessel: 'pflanze' });
     assert.deepEqual(teileKennung('rechnung'), { paket: null, schluessel: 'rechnung' });
     for (const h of ['app.ablago', 'org.example', 'org.example.pakete', 'de.familie-meier']) assert.ok(istHerausgeber(h), h);
-    for (const h of ['ablago', 'App.ablago', 'org.-example', 'org.example-', 'org..example', `org.${'x'.repeat(100)}`]) assert.ok(!istHerausgeber(h), h);
+    for (const h of ['ablago', 'App.ablago', 'org.-example', 'org.example-', 'org..example', `org.${'x'.repeat(100)}`])
+      assert.ok(!istHerausgeber(h), h);
   });
 
   it('Punkt-Id genau nach dem Muster der Sicherheit: ein Punkt, nicht am Rand, nur ASCII-Kleinbuchstaben', () => {
     assert.equal(PAKET_ID.source, '^[a-z][a-z0-9_]{1,39}(?:\\.[a-z][a-z0-9_]{0,19})?$');
     for (const x of ['texterkennung.f', 'texterkennung.fra', 'ab', 'a_1.b_2']) assert.ok(PAKET_ID.test(x), x);
-    for (const x of ['.x', 'x.', 'ab.', 'a..b', 'ab..cd', 'a.b.c', 'ab.cd.ef', 'Ab', 'ab.Cd', 'äb', 'ab.ü', 'ab\u0131', 'ab.c d', 'ab/cd', 'ab\\cd', '..']) assert.ok(!PAKET_ID.test(x), JSON.stringify(x));
+    for (const x of [
+      '.x',
+      'x.',
+      'ab.',
+      'a..b',
+      'ab..cd',
+      'a.b.c',
+      'ab.cd.ef',
+      'Ab',
+      'ab.Cd',
+      'äb',
+      'ab.ü',
+      'ab\u0131',
+      'ab.c d',
+      'ab/cd',
+      'ab\\cd',
+      '..',
+    ])
+      assert.ok(!PAKET_ID.test(x), JSON.stringify(x));
     // Herausgeber: ASCII, mindestens zwei Teile, höchstens 64 Zeichen, kein Punycode; app.ablago auch als Präfix reserviert.
     assert.ok(!istHerausgeber('app.xn--blago-9ra') && !istHerausgeber(`org.${'x'.repeat(61)}`) && istHerausgeber(`org.${'x'.repeat(60)}`));
     assert.ok(istOffiziellerHerausgeber('app.ablago') && istOffiziellerHerausgeber('app.ablago.foo'));
@@ -69,26 +101,53 @@ describe('Kennungen (#1084)', () => {
   it('kein Kollisionsfall mehr: haus + garten_pflanze und haus_garten + pflanze sind zwei Kennungen', () => {
     assert.notEqual(typKennung('haus', 'garten_pflanze'), typKennung('haus_garten', 'pflanze'));
     // Ältere Dateien (fremde_typen in alter Form): Zuordnung über die Pakete, nicht am Unterstrich.
-    const installiert: Array<{ id: string; typen: Record<string, string> }> = [{ id: 'haus', typen: { garten_pflanze: 'a' } }, { id: 'haus_garten', typen: { beet: 'b' } }];
+    const installiert: Array<{ id: string; typen: Record<string, string> }> = [
+      { id: 'haus', typen: { garten_pflanze: 'a' } },
+      { id: 'haus_garten', typen: { beet: 'b' } },
+    ];
     assert.equal(neueKennung('haus_garten_pflanze', installiert), 'haus:garten_pflanze');
     assert.equal(neueKennung('haus_garten_beet', installiert), 'haus_garten:beet');
     assert.equal(neueKennung('unbekannt_typ', installiert), 'unbekannt_typ', 'nichts Passendes: bleibt');
     assert.equal(neueKennung('basis:person', installiert), 'basis:person');
     // Doppeldeutig (beide Pakete hätten den Typ): keine Zuordnung.
-    assert.equal(neueKennung('haus_garten_pflanze', [...installiert, { id: 'haus_garten', typen: { pflanze: 'c' } }]), 'haus_garten_pflanze');
+    assert.equal(
+      neueKennung('haus_garten_pflanze', [...installiert, { id: 'haus_garten', typen: { pflanze: 'c' } }]),
+      'haus_garten_pflanze',
+    );
   });
 
   it('eigene Mappentypen: Kennung ohne Paket; „paket:schluessel“ vergibt nur die Paketverwaltung', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const eigen = await d.mappentypen.legeTypAn({ name: 'Person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] });
+    const eigen = await d.mappentypen.legeTypAn({
+      name: 'Person',
+      felder: [],
+      register: [{ key: 'felder', name: 'Felder', art: 'felder' }],
+    });
     assert.equal(eigen.schluessel, 'person');
     assert.equal(eigen.paket, undefined);
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Fremd', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }), status(422));
-    const ausPaket = await d.mappentypen.legeTypAn({ name: 'Person (Basis)', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }, 'basis');
+    await assert.rejects(
+      d.mappentypen.legeTypAn({
+        name: 'Fremd',
+        schluessel: 'basis:person',
+        felder: [],
+        register: [{ key: 'felder', name: 'Felder', art: 'felder' }],
+      }),
+      status(422),
+    );
+    const ausPaket = await d.mappentypen.legeTypAn(
+      { name: 'Person (Basis)', schluessel: 'basis:person', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] },
+      'basis',
+    );
     assert.equal(ausPaket.schluessel, 'basis:person');
     assert.equal(ausPaket.paket, 'basis');
     // Ein anderes Paket darf nicht unter fremdem Präfix anlegen.
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'X', schluessel: 'basis:x', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] }, 'haus'), status(422));
+    await assert.rejects(
+      d.mappentypen.legeTypAn(
+        { name: 'X', schluessel: 'basis:x', felder: [], register: [{ key: 'felder', name: 'Felder', art: 'felder' }] },
+        'haus',
+      ),
+      status(422),
+    );
     // Fest nach dem Anlegen, auch beim Ändern mit ganzem Typ.
     const um = await d.mappentypen.aendereTyp(ausPaket.id, { ...ausPaket, name: 'Kontakt' });
     assert.equal(um.schluessel, 'basis:person');
@@ -105,18 +164,52 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     const d = new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const reg = [{ key: 'felder', name: 'Felder', art: 'felder' as const }];
     // Heutiger Stand: Paket haus mit Typ garten_pflanze, Paket haus_garten mit Typ beet, eigener Typ garten_pflanze.
-    const pflanze = await d.mappentypen.legeTypAn({ name: 'Pflanze', schluessel: 'haus:garten_pflanze', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ ...reg[0], felder: ['name'] }] }, 'haus');
+    const pflanze = await d.mappentypen.legeTypAn(
+      {
+        name: 'Pflanze',
+        schluessel: 'haus:garten_pflanze',
+        felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+        register: [{ ...reg[0], felder: ['name'] }],
+      },
+      'haus',
+    );
     const beet = await d.mappentypen.legeTypAn({ name: 'Beet', schluessel: 'haus_garten:beet', felder: [], register: reg }, 'haus_garten');
     const eigen = await d.mappentypen.legeTypAn({ name: 'Garten', schluessel: 'garten_pflanze', felder: [], register: reg });
     const ablageort = await d.mappentypen.legeTypAn({ name: 'Ablageort', schluessel: 'ablageort', felder: [], register: reg });
     const repo = pgRepo(sql, HAUSHALT);
-    for (const [id, typen] of [['haus', { garten_pflanze: pflanze.id }], ['haus_garten', { beet: beet.id }], ['basis', { ablageort: ablageort.id }]] as const) {
-      await repo.speicherePaket({ id, name: id, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: '', github: '' }, herkunft: { art: 'katalog', url: 'https://catalog.ablago.app/katalog.json' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen, sichten: {}, abhaengigkeiten: {} });
+    for (const [id, typen] of [
+      ['haus', { garten_pflanze: pflanze.id }],
+      ['haus_garten', { beet: beet.id }],
+      ['basis', { ablageort: ablageort.id }],
+    ] as const) {
+      await repo.speicherePaket({
+        id,
+        name: id,
+        version: '1.0.0',
+        beschreibung: '',
+        lizenz: 'MIT',
+        autor: { name: '', github: '' },
+        herkunft: { art: 'katalog', url: 'https://catalog.ablago.app/katalog.json' },
+        installiert: new Date().toISOString(),
+        installiertVon: null,
+        aktualisiert: null,
+        aktualisiertVon: null,
+        typen,
+        sichten: {},
+        abhaengigkeiten: {},
+      });
     }
     // Rechte-Regel, Ansicht und Automatisierung am Typ (alle per uuid).
     const regel = { grund: { C: 'immer', R: 'nie', U: 'nie', D: 'nie', P: 'nie' }, regeln: [] };
     await sql`UPDATE mappentypen SET berechtigungen = ${sql.json(regel)} WHERE id = ${pflanze.id}`;
-    const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Garten', beschreibung: '', elternId: null, position: 10, typen: [pflanze.id, beet.id], bedingungen: [] });
+    const sicht = await d.sichtenVerwaltung.legeSichtAn({
+      name: 'Garten',
+      beschreibung: '',
+      elternId: null,
+      position: 10,
+      typen: [pflanze.id, beet.id],
+      bedingungen: [],
+    });
     await sql`INSERT INTO automatisierungen (id, haushalt_id, name, daten, herkunft, paket_id) VALUES
       ('00000000-0000-4000-8000-00000000a108', ${HAUSHALT}, 'Gießen', ${sql.json({ wenn: { art: 'mappe.angelegt', typ: pflanze.id }, dann: [] })}, 'paket', 'haus')`;
     const bild = async () => ({
@@ -132,7 +225,12 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     const alt = await sql`SELECT id, paket, schluessel FROM mappentypen WHERE id = ${pflanze.id}`;
     assert.deepEqual([alt[0].paket, alt[0].schluessel], [null, 'haus_garten_pflanze'], 'alte, doppeldeutige Form');
     await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '094_typ_kennungen.sql'), 'utf8')));
-    const k = new Map((await sql`SELECT id, paket, schluessel FROM mappentypen`).map((r) => [r.id as string, typKennung(r.paket as string | null, r.schluessel as string)]));
+    const k = new Map(
+      (await sql`SELECT id, paket, schluessel FROM mappentypen`).map((r) => [
+        r.id as string,
+        typKennung(r.paket as string | null, r.schluessel as string),
+      ]),
+    );
     assert.equal(k.get(pflanze.id), 'haus:garten_pflanze', 'laut Paket haus – nicht haus_garten:pflanze');
     assert.equal(k.get(beet.id), 'haus_garten:beet');
     assert.equal(k.get(eigen.id), 'garten_pflanze', 'eigener Typ bleibt ohne Paket');
@@ -140,22 +238,39 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     assert.deepEqual(await bild(), vorher, 'Rechte-Regeln, Felder, Ansichten und Automatisierungen unverändert');
     // Protokoll alt → neu (Sicherheit A), beim Start ins Systemprotokoll.
     const [umzug] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${HAUSHALT} AND schluessel = 'kennungen_umzug'`;
-    assert.deepEqual((umzug.wert as Array<{ alt: string; neu: string }>).map((x) => [x.alt, x.neu]).sort(), [['ablageort', 'basis:ablageort'], ['haus_garten_beet', 'haus_garten:beet'], ['haus_garten_pflanze', 'haus:garten_pflanze']]);
+    assert.deepEqual((umzug.wert as Array<{ alt: string; neu: string }>).map((x) => [x.alt, x.neu]).sort(), [
+      ['ablageort', 'basis:ablageort'],
+      ['haus_garten_beet', 'haus_garten:beet'],
+      ['haus_garten_pflanze', 'haus:garten_pflanze'],
+    ]);
     const { protokolliereKennungsUmzug } = await import('../src/mappentypen/index');
     const { pgEinstellungen } = await import('../src/einstellungen');
     assert.equal(await protokolliereKennungsUmzug(pgEinstellungen(sql, HAUSHALT)), 3);
     assert.equal(await protokolliereKennungsUmzug(pgEinstellungen(sql, HAUSHALT)), 0, 'nur einmal');
     // Herausgeber im Bestand (Sicherheit C): offizieller Katalog → app.ablago.
-    assert.deepEqual((await sql`SELECT id, daten->>'herausgeber' AS h FROM pakete ORDER BY id`).map((r) => [r.id, r.h]), [['basis', 'app.ablago'], ['haus', 'app.ablago'], ['haus_garten', 'app.ablago']]);
+    assert.deepEqual(
+      (await sql`SELECT id, daten->>'herausgeber' AS h FROM pakete ORDER BY id`).map((r) => [r.id, r.h]),
+      [
+        ['basis', 'app.ablago'],
+        ['haus', 'app.ablago'],
+        ['haus_garten', 'app.ablago'],
+      ],
+    );
     // Nach außen: paket:schluessel, Paket getrennt.
     const typ = (await d.mappentypen.listeTypen()).find((x) => x.id === pflanze.id)!;
     assert.equal(typ.schluessel, 'haus:garten_pflanze');
     assert.equal(typ.paket, 'haus');
     // Ein zweites Mal ändert nichts (wiederholbar), und haus_garten:pflanze ist jetzt frei.
     await sql.begin((tx) => tx.unsafe(readFileSync(join(MIGRATIONEN, '094_typ_kennungen.sql'), 'utf8')));
-    const neu = await d.mappentypen.legeTypAn({ name: 'Pflanze (Garten)', schluessel: 'haus_garten:pflanze', felder: [], register: reg }, 'haus_garten');
+    const neu = await d.mappentypen.legeTypAn(
+      { name: 'Pflanze (Garten)', schluessel: 'haus_garten:pflanze', felder: [], register: reg },
+      'haus_garten',
+    );
     assert.equal(neu.schluessel, 'haus_garten:pflanze');
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Doppelt', schluessel: 'haus:garten_pflanze', felder: [], register: reg }, 'haus'), status(422));
+    await assert.rejects(
+      d.mappentypen.legeTypAn({ name: 'Doppelt', schluessel: 'haus:garten_pflanze', felder: [], register: reg }, 'haus'),
+      status(422),
+    );
     assert.ok(sicht.id);
     await db.ende();
   });

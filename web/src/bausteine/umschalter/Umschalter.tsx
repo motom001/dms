@@ -52,9 +52,20 @@ export function zielDerTaste(taste: string, jetzt: number, anzahl: number): numb
 }
 
 /** Segmentknopf: eine Reihe gleich breiter Wahlen, die gewählte gefüllt. */
-export function Umschalter<T extends string>({ wert, setze, wahlen, beschriftung, className, anker, schmalUntereinander }: UmschalterProps<T>) {
+export function Umschalter<T extends string>({
+  wert,
+  setze,
+  wahlen,
+  beschriftung,
+  className,
+  anker,
+  schmalUntereinander,
+}: UmschalterProps<T>) {
   const knoepfe = useRef<Array<HTMLButtonElement | null>>([]);
-  const jetzt = Math.max(0, wahlen.findIndex((w) => w.wert === wert));
+  const jetzt = Math.max(
+    0,
+    wahlen.findIndex((w) => w.wert === wert),
+  );
 
   const taste = (e: KeyboardEvent<HTMLDivElement>) => {
     const ziel = zielDerTaste(e.key, jetzt, wahlen.length);
@@ -65,14 +76,32 @@ export function Umschalter<T extends string>({ wert, setze, wahlen, beschriftung
   };
 
   return (
-    <div role="radiogroup" aria-label={beschriftung} className={klassen(s.umschalter, schmalUntereinander && s.untereinander, className)} data-anker={anker} onKeyDown={taste}>
+    <div
+      role="radiogroup"
+      aria-label={beschriftung}
+      className={klassen(s.umschalter, schmalUntereinander && s.untereinander, className)}
+      data-anker={anker}
+      onKeyDown={taste}>
       {wahlen.map((w, i) => {
         const an = w.wert === wert;
         return (
-          <button key={w.wert} ref={(el) => { knoepfe.current[i] = el; }} type="button" role="radio" aria-checked={an} tabIndex={an ? 0 : -1}
-            className={klassen(s.wahl, an && s.an)} onClick={() => { if (!an) setze(w.wert); }}>
+          <button
+            key={w.wert}
+            ref={(el) => {
+              knoepfe.current[i] = el;
+            }}
+            type="button"
+            role="radio"
+            aria-checked={an}
+            tabIndex={an ? 0 : -1}
+            className={klassen(s.wahl, an && s.an)}
+            onClick={() => {
+              if (!an) setze(w.wert);
+            }}>
             {/* Platz für die fette Schrift der gewählten Wahl (#1175): Breite und Schrift bleiben beim Wechsel gleich. */}
-            <span className={s.text} data-text={typeof w.text === 'string' ? w.text : undefined}>{w.text}</span>
+            <span className={s.text} data-text={typeof w.text === 'string' ? w.text : undefined}>
+              {w.text}
+            </span>
           </button>
         );
       })}

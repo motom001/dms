@@ -18,7 +18,11 @@ const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v 
 /** Steuerzeichen außer Zeilenende weg (keine unsichtbaren Richtungswechsel und Ähnliches), auf die Länge gekürzt. */
 const STEUER = /(?!\n)[\p{Cc}\p{Cf}]/gu;
 export function reinerText(v: unknown, max: number): string {
-  return (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '').replace(/\r\n?/g, '\n').replace(STEUER, '').trim().slice(0, max);
+  return (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '')
+    .replace(/\r\n?/g, '\n')
+    .replace(STEUER, '')
+    .trim()
+    .slice(0, max);
 }
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -38,11 +42,16 @@ export class AntwortFehler extends Error {}
 /** Liest die Antwort (JSON) eines Schritts. */
 export function liesAntwort(text: string): PaketAntwort {
   let j: unknown;
-  try { j = JSON.parse(text); } catch { throw new AntwortFehler('Antwort ist kein JSON.'); }
+  try {
+    j = JSON.parse(text);
+  } catch {
+    throw new AntwortFehler('Antwort ist kein JSON.');
+  }
   if (!istObjekt(j)) throw new AntwortFehler('Antwort ist kein Objekt.');
   if (istObjekt(j.dialog) && j.ergebnis === undefined) {
     const stand = j.stand ?? null;
-    if (Buffer.byteLength(JSON.stringify(stand)) > AKTION_STAND_MAX) throw new AntwortFehler(`stand ist größer als ${AKTION_STAND_MAX} Bytes.`);
+    if (Buffer.byteLength(JSON.stringify(stand)) > AKTION_STAND_MAX)
+      throw new AntwortFehler(`stand ist größer als ${AKTION_STAND_MAX} Bytes.`);
     return { art: 'dialog', dialog: liesDialog(j.dialog), stand };
   }
   if (istObjekt(j.ergebnis) && j.dialog === undefined) return { art: 'ergebnis', ergebnis: liesErgebnis(j.ergebnis) };
@@ -56,9 +65,12 @@ export function liesDialog(d: Record<string, unknown>): AktionsDialog {
   if (roh.length > AKTION_FELDER_MAX) throw new AntwortFehler(`dialog.felder: höchstens ${AKTION_FELDER_MAX}.`);
   const schluessel = new Set<string>();
   const felder = roh.map((f, i) => liesFeld(f, `dialog.felder[${i + 1}]`, schluessel));
-  if (!felder.some((f) => f.art !== 'text') && !reinerText(d.knopf, AKTION_KURZ_MAX)) throw new AntwortFehler('dialog: ohne Eingabe braucht es einen knopf.');
+  if (!felder.some((f) => f.art !== 'text') && !reinerText(d.knopf, AKTION_KURZ_MAX))
+    throw new AntwortFehler('dialog: ohne Eingabe braucht es einen knopf.');
   return {
-    titel: reinerText(d.titel, AKTION_KURZ_MAX), felder, knopf: reinerText(d.knopf, AKTION_KURZ_MAX),
+    titel: reinerText(d.titel, AKTION_KURZ_MAX),
+    felder,
+    knopf: reinerText(d.knopf, AKTION_KURZ_MAX),
     ...(d.gefahr === true ? { gefahr: true } : {}),
   };
 }
@@ -68,7 +80,8 @@ function liesFeld(f: unknown, wo: string, schluessel: Set<string>): DialogFeld {
   if (!istObjekt(f)) throw new AntwortFehler(`${wo}: kein Objekt.`);
   const art = String(f.art ?? '') as DialogArt;
   // Ausdrücklich: Passwort und Datei gibt es nicht (Ergänzung Sicherheit, Entscheidung Thomas 10.11.2026).
-  if (!(DIALOG_ARTEN as readonly string[]).includes(art)) throw new AntwortFehler(`${wo}: Feldart „${String(f.art)}“ gibt es nicht (möglich: ${DIALOG_ARTEN.join(', ')}).`);
+  if (!(DIALOG_ARTEN as readonly string[]).includes(art))
+    throw new AntwortFehler(`${wo}: Feldart „${String(f.art)}“ gibt es nicht (möglich: ${DIALOG_ARTEN.join(', ')}).`);
   if (art === 'text') {
     const text = reinerText(f.text, AKTION_TEXT_MAX);
     if (!text) throw new AntwortFehler(`${wo}: text ist leer.`);
@@ -91,15 +104,24 @@ function liesFeld(f: unknown, wo: string, schluessel: Set<string>): DialogFeld {
 
 /** Optionen, mehrfach und Vorgabe einer Auswahl. */
 function liesAuswahl(f: Record<string, unknown>, wo: string): Pick<DialogFeld, 'optionen' | 'mehrfach' | 'standard'> {
-  const optionen = (Array.isArray(f.optionen) ? f.optionen : []).map((o) => (istObjekt(o) ? { wert: reinerText(o.wert, AKTION_KURZ_MAX), name: reinerText(o.name ?? o.wert, AKTION_KURZ_MAX) } : { wert: reinerText(o, AKTION_KURZ_MAX), name: reinerText(o, AKTION_KURZ_MAX) }))
+  const optionen = (Array.isArray(f.optionen) ? f.optionen : [])
+    .map((o) =>
+      istObjekt(o)
+        ? { wert: reinerText(o.wert, AKTION_KURZ_MAX), name: reinerText(o.name ?? o.wert, AKTION_KURZ_MAX) }
+        : { wert: reinerText(o, AKTION_KURZ_MAX), name: reinerText(o, AKTION_KURZ_MAX) },
+    )
     .filter((o) => o.wert && o.name);
   if (!optionen.length) throw new AntwortFehler(`${wo}: auswahl braucht optionen.`);
   if (optionen.length > AKTION_OPTIONEN_MAX) throw new AntwortFehler(`${wo}: höchstens ${AKTION_OPTIONEN_MAX} optionen.`);
   const werte = new Set(optionen.map((o) => o.wert));
   if (werte.size !== optionen.length) throw new AntwortFehler(`${wo}: optionen mit gleichem wert.`);
   const mehrfach = f.mehrfach === true;
-  const standard = mehrfach && Array.isArray(f.standard) ? f.standard.map(String).filter((x) => werte.has(x))
-    : !mehrfach && typeof f.standard === 'string' && werte.has(f.standard) ? f.standard : undefined;
+  const standard =
+    mehrfach && Array.isArray(f.standard)
+      ? f.standard.map(String).filter((x) => werte.has(x))
+      : !mehrfach && typeof f.standard === 'string' && werte.has(f.standard)
+        ? f.standard
+        : undefined;
   return { optionen, ...(mehrfach ? { mehrfach: true } : {}), ...(standard !== undefined ? { standard } : {}) };
 }
 
@@ -113,19 +135,23 @@ export function liesErgebnis(e: Record<string, unknown>): PaketErgebnis {
     r.felder = e.felder;
   }
   const datei = (x: unknown, wo: string) => {
-    if (!istObjekt(x) || typeof x.datei !== 'string' || !/^d[0-9]{1,2}$/.test(x.datei)) throw new AntwortFehler(`${wo}: datei nennt eine Datei, die das Paket in diesem Schritt abgelegt hat (POST /dateien).`);
+    if (!istObjekt(x) || typeof x.datei !== 'string' || !/^d[0-9]{1,2}$/.test(x.datei))
+      throw new AntwortFehler(`${wo}: datei nennt eine Datei, die das Paket in diesem Schritt abgelegt hat (POST /dateien).`);
     return x;
   };
   if (e.dokument !== undefined) {
     const d = datei(e.dokument, 'ergebnis.dokument');
-    if (d.register !== undefined && !SCHLUESSEL.test(String(d.register))) throw new AntwortFehler('ergebnis.dokument.register ist ungültig.');
+    if (d.register !== undefined && !SCHLUESSEL.test(String(d.register)))
+      throw new AntwortFehler('ergebnis.dokument.register ist ungültig.');
     r.dokument = { datei: String(d.datei), ...(d.register !== undefined ? { register: String(d.register) } : {}) };
   }
   if (e.herausgeben !== undefined) r.herausgeben = { datei: String(datei(e.herausgeben, 'ergebnis.herausgeben').datei) };
   if (e.mappen !== undefined) {
-    if (!Array.isArray(e.mappen) || e.mappen.length > AKTION_OPTIONEN_MAX) throw new AntwortFehler(`ergebnis.mappen: Liste mit höchstens ${AKTION_OPTIONEN_MAX} Mappen.`);
+    if (!Array.isArray(e.mappen) || e.mappen.length > AKTION_OPTIONEN_MAX)
+      throw new AntwortFehler(`ergebnis.mappen: Liste mit höchstens ${AKTION_OPTIONEN_MAX} Mappen.`);
     r.mappen = e.mappen.map((m, i) => {
-      if (!istObjekt(m) || !TYPVERWEIS.test(String(m.typ ?? '')) || !istObjekt(m.werte)) throw new AntwortFehler(`ergebnis.mappen[${i + 1}]: braucht typ und werte.`);
+      if (!istObjekt(m) || !TYPVERWEIS.test(String(m.typ ?? '')) || !istObjekt(m.werte))
+        throw new AntwortFehler(`ergebnis.mappen[${i + 1}]: braucht typ und werte.`);
       return { typ: String(m.typ), werte: m.werte };
     });
   }

@@ -19,7 +19,10 @@ function sammelstelle<T>(frageServer: (ids: string[]) => Promise<Record<string, 
   let geplant = false;
   /** Zählt bei jeder Antwort hoch (für `useViele`). */
   let stand = 0;
-  const melde = () => { stand++; for (const f of hoerer) f(); };
+  const melde = () => {
+    stand++;
+    for (const f of hoerer) f();
+  };
   async function frage() {
     geplant = false;
     const ids = [...offen].slice(0, SICHTBARKEIT_MAX);
@@ -33,22 +36,37 @@ function sammelstelle<T>(frageServer: (ids: string[]) => Promise<Record<string, 
       if (fuer !== runde) return;
       for (const id of ids) if (r[id]) bekannt.set(id, r[id]);
       melde();
-    } catch { /* ohne Antwort bleibt es bei der neutralen Anzeige; beim nächsten Verwerfen wird neu gefragt */ }
+    } catch {
+      /* ohne Antwort bleibt es bei der neutralen Anzeige; beim nächsten Verwerfen wird neu gefragt */
+    }
   }
   function plane() {
     if (geplant) return;
     geplant = true;
     queueMicrotask(() => void frage());
   }
-  const abonniere = (f: () => void) => { hoerer.add(f); return () => { hoerer.delete(f); }; };
+  const abonniere = (f: () => void) => {
+    hoerer.add(f);
+    return () => {
+      hoerer.delete(f);
+    };
+  };
   return {
-    vergiss() { runde++; bekannt.clear(); gefragt.clear(); offen.clear(); melde(); },
+    vergiss() {
+      runde++;
+      bekannt.clear();
+      gefragt.clear();
+      offen.clear();
+      melde();
+    },
     use(id: string | null | undefined, fragen: boolean): T | undefined {
       const wert = useSyncExternalStore(abonniere, () => (id ? bekannt.get(id) : undefined));
       const aktuell = useSyncExternalStore(abonniere, () => runde);
       useEffect(() => {
         if (!id || !fragen || bekannt.has(id) || gefragt.has(id)) return;
-        gefragt.add(id); offen.add(id); plane();
+        gefragt.add(id);
+        offen.add(id);
+        plane();
       }, [id, fragen, aktuell]);
       return fragen ? wert : undefined;
     },
@@ -59,7 +77,12 @@ function sammelstelle<T>(frageServer: (ids: string[]) => Promise<Record<string, 
       const schluessel = ids.join(',');
       useEffect(() => {
         let neu = false;
-        for (const id of schluessel ? schluessel.split(',') : []) if (!bekannt.has(id) && !gefragt.has(id)) { gefragt.add(id); offen.add(id); neu = true; }
+        for (const id of schluessel ? schluessel.split(',') : [])
+          if (!bekannt.has(id) && !gefragt.has(id)) {
+            gefragt.add(id);
+            offen.add(id);
+            neu = true;
+          }
         if (neu) plane();
       }, [schluessel, aktuell]);
       return (id) => bekannt.get(id);

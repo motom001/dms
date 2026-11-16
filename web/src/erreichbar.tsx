@@ -3,7 +3,14 @@ import { Erreichbarkeit, type Gesundheit } from '../../shared/src/erreichbarkeit
 import { t, tn } from './sprache';
 import { sprache } from '../../shared/src/sprache';
 import { automatischNeuLaden } from '../../shared/src/veraltet';
-import { beiVeraltet, beobachteVeraltet, neuGeladenHinweis, neuGeladenHinweisSchliessen, selbstNeuLaden, zuletztNeuGeladen } from './veraltet';
+import {
+  beiVeraltet,
+  beobachteVeraltet,
+  neuGeladenHinweis,
+  neuGeladenHinweisSchliessen,
+  selbstNeuLaden,
+  zuletztNeuGeladen,
+} from './veraltet';
 import { Knopf } from './bausteine/knopf/Knopf';
 import { antwortGekommen, neuLadenOhneAntwort, schonOhneAntwortNeuGeladen } from './startbild';
 import { laedtNichtUrl } from '../../shared/src/startbild';
@@ -17,17 +24,27 @@ import { laedtNichtUrl } from '../../shared/src/startbild';
 export const WIEDER_ERREICHBAR = 'dms:wieder-erreichbar';
 export const NICHT_ERREICHBAR = t('oberflaeche.erreichbar.ablago-ist-gerade-nicht');
 
-export const erreichbarkeit = new Erreichbarkeit({
-  gesundheit: async () => {
-    const r = await fetch('/api/gesundheit', { cache: 'no-store', credentials: 'same-origin', headers: { 'x-dms': '1', 'x-sprache': sprache() } });
-    const g = await r.json().catch(() => null) as Gesundheit | null;
-    // 503 mit „datenbank“ (#1198): Ablago antwortet, die Datenbank nicht – die Leiste sagt „beschäftigt“.
-    return r.ok || g?.zustand === 'datenbank' ? g : null;
+export const erreichbarkeit = new Erreichbarkeit(
+  {
+    gesundheit: async () => {
+      const r = await fetch('/api/gesundheit', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'x-dms': '1', 'x-sprache': sprache() },
+      });
+      const g = (await r.json().catch(() => null)) as Gesundheit | null;
+      // 503 mit „datenbank“ (#1198): Ablago antwortet, die Datenbank nicht – die Leiste sagt „beschäftigt“.
+      return r.ok || g?.zustand === 'datenbank' ? g : null;
+    },
+    jetzt: () => Date.now(),
+    spaeter: (f, ms) => setTimeout(f, ms),
+    abbrechen: (eintrag) => clearTimeout(eintrag as ReturnType<typeof setTimeout>),
   },
-  jetzt: () => Date.now(),
-  spaeter: (f, ms) => setTimeout(f, ms),
-  abbrechen: (eintrag) => clearTimeout(eintrag as ReturnType<typeof setTimeout>),
-}, () => { antwortGekommen(); dispatchEvent(new Event(WIEDER_ERREICHBAR)); });
+  () => {
+    antwortGekommen();
+    dispatchEvent(new Event(WIEDER_ERREICHBAR));
+  },
+);
 
 /** Beim Start: Stand merken, beim Zurückkehren ins Fenster nachsehen. */
 export function starteErreichbarkeit() {
@@ -35,7 +52,9 @@ export function starteErreichbarkeit() {
   const bedarf = () => erreichbarkeit.bedarf();
   addEventListener('focus', bedarf);
   addEventListener('online', bedarf);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') bedarf(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') bedarf();
+  });
   // Ein nachgeladener Teil oder ein Stylesheet fehlt (#933) – die Seite gehört zu einem älteren Stand.
   beobachteVeraltet();
   beiVeraltet(() => erreichbarkeit.veraltet());
@@ -54,7 +73,10 @@ export function useNeuLadenBeiNeuerVersion(laeuft = false, schritt?: string) {
   // Am Schrittwechsel nachsehen (eine kleine Abfrage), nicht erst beim Zurückkehren ins Fenster.
   const erster = useRef(true);
   useEffect(() => {
-    if (erster.current) { erster.current = false; return; }
+    if (erster.current) {
+      erster.current = false;
+      return;
+    }
     if (!laeuft) void erreichbarkeit.pruefe();
   }, [schritt]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei einem neuen Schritt prüfen, nicht bei jeder Änderung des Prüfstands
 }
@@ -63,7 +85,11 @@ export function useNeuLadenBeiNeuerVersion(laeuft = false, schritt?: string) {
 export const istWeg = () => erreichbarkeit.zustand.stufe === 'weg';
 
 export function useErreichbarkeit() {
-  return useSyncExternalStore(erreichbarkeit.abonniere, () => erreichbarkeit.zustand, () => erreichbarkeit.zustand);
+  return useSyncExternalStore(
+    erreichbarkeit.abonniere,
+    () => erreichbarkeit.zustand,
+    () => erreichbarkeit.zustand,
+  );
 }
 
 /** Ruft f auf, sobald das DMS nach einem Ausfall wieder antwortet. */
@@ -81,8 +107,13 @@ export function useBeiWiederErreichbar(f: () => void) {
  * Leiste oben. „Ansicht neu laden“ baut den Inhalt neu auf (Eingaben gehen dabei verloren,
  * deshalb nur auf Knopfdruck); „Seite neu laden“ holt die neue Oberfläche.
  */
-export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
-  version?: string | null; ansichtNeuLaden: () => void;
+export function ErreichbarkeitsBanner({
+  version,
+  ansichtNeuLaden,
+  aussen,
+}: {
+  version?: string | null;
+  ansichtNeuLaden: () => void;
   /** Außerhalb der angemeldeten Ablage (#933): Anmelden, Einrichtung, Wiederherstellung – die Leiste bleibt oben stehen. */
   aussen?: boolean;
 }) {
@@ -101,26 +132,56 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     const s = z.naechsterVersuch === null ? null : Math.max(0, Math.ceil((z.naechsterVersuch - Date.now()) / 1000));
     return (
       <div className={`vertretungsbanner erreichbarkeit weg${art}`} role="alert">
-        <p>{tn('oberflaeche.erreichbar.vermutlich-laeuft-ein-update', { b: <strong>{NICHT_ERREICHBAR}</strong>, wert: s ? t('oberflaeche.erreichbar.naechster-versuch-in-s', { s }) : ' …' })}</p>
-        <Knopf groesse="klein" onClick={() => erreichbarkeit.pruefe()}>{t('oberflaeche.erreichbar.jetzt-pruefen')}</Knopf>
+        <p>
+          {tn('oberflaeche.erreichbar.vermutlich-laeuft-ein-update', {
+            b: <strong>{NICHT_ERREICHBAR}</strong>,
+            wert: s ? t('oberflaeche.erreichbar.naechster-versuch-in-s', { s }) : ' …',
+          })}
+        </p>
+        <Knopf groesse="klein" onClick={() => erreichbarkeit.pruefe()}>
+          {t('oberflaeche.erreichbar.jetzt-pruefen')}
+        </Knopf>
       </div>
     );
   }
   if (z.neueVersion) {
     return (
       <div className={`vertretungsbanner erreichbarkeit neu${art}`} role="alert">
-        <p>{tn('oberflaeche.erreichbar.lade-die-seite-neu', { b: <strong>{version ? t('oberflaeche.erreichbar.neue-version-ist-da', { version }) : t('oberflaeche.erreichbar.eine-neue-version-ist')}</strong> })}</p>
-        <Knopf groesse="klein" onClick={() => location.reload()}>{t('oberflaeche.erreichbar.seite-neu-laden')}</Knopf>
+        <p>
+          {tn('oberflaeche.erreichbar.lade-die-seite-neu', {
+            b: (
+              <strong>
+                {version ? t('oberflaeche.erreichbar.neue-version-ist-da', { version }) : t('oberflaeche.erreichbar.eine-neue-version-ist')}
+              </strong>
+            ),
+          })}
+        </p>
+        <Knopf groesse="klein" onClick={() => location.reload()}>
+          {t('oberflaeche.erreichbar.seite-neu-laden')}
+        </Knopf>
       </div>
     );
   }
   if (z.stufe === 'zurueck') {
     return (
       <div className={`vertretungsbanner erreichbarkeit zurueck${art}`} role="status">
-        <p>{tn('oberflaeche.erreichbar.zeigt-die-seite-noch', { b: <strong>{t('oberflaeche.erreichbar.ablago-ist-wieder-erreichbar')}</strong> })}</p>
+        <p>
+          {tn('oberflaeche.erreichbar.zeigt-die-seite-noch', {
+            b: <strong>{t('oberflaeche.erreichbar.ablago-ist-wieder-erreichbar')}</strong>,
+          })}
+        </p>
         <span className="knoepfe">
-          <Knopf groesse="klein" onClick={() => { erreichbarkeit.schliessen(); ansichtNeuLaden(); }}>{t('oberflaeche.erreichbar.seite-neu-laden')}</Knopf>
-          <Knopf groesse="klein" onClick={() => erreichbarkeit.schliessen()} title={t('oberflaeche.erreichbar.hinweis-schliessen')}>{t('oberflaeche.erreichbar.ok')}</Knopf>
+          <Knopf
+            groesse="klein"
+            onClick={() => {
+              erreichbarkeit.schliessen();
+              ansichtNeuLaden();
+            }}>
+            {t('oberflaeche.erreichbar.seite-neu-laden')}
+          </Knopf>
+          <Knopf groesse="klein" onClick={() => erreichbarkeit.schliessen()} title={t('oberflaeche.erreichbar.hinweis-schliessen')}>
+            {t('oberflaeche.erreichbar.ok')}
+          </Knopf>
         </span>
       </div>
     );
@@ -130,7 +191,15 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     return (
       <div className={`vertretungsbanner erreichbarkeit zurueck${art}`} role="status" id="neu-geladen-hinweis">
         <p>{tn('oberflaeche.veraltet.neu-geladen', { b: <strong>{t('oberflaeche.veraltet.neu-geladen-titel')}</strong> })}</p>
-        <Knopf groesse="klein" onClick={() => { neuGeladenHinweisSchliessen(); setNeuGeladen(false); }} title={t('oberflaeche.erreichbar.hinweis-schliessen')}>{t('oberflaeche.erreichbar.ok')}</Knopf>
+        <Knopf
+          groesse="klein"
+          onClick={() => {
+            neuGeladenHinweisSchliessen();
+            setNeuGeladen(false);
+          }}
+          title={t('oberflaeche.erreichbar.hinweis-schliessen')}>
+          {t('oberflaeche.erreichbar.ok')}
+        </Knopf>
       </div>
     );
   }
@@ -145,12 +214,23 @@ function Beschaeftigt({ naechsterVersuch, art }: { naechsterVersuch: number | nu
   const s = naechsterVersuch === null ? null : Math.max(0, Math.ceil((naechsterVersuch - Date.now()) / 1000));
   return (
     <div className={`vertretungsbanner erreichbarkeit weg${art}`} role="alert" id="erreichbarkeit-beschaeftigt">
-      <p>{tn('oberflaeche.erreichbar.beschaeftigt-text', { b: <strong>{t('oberflaeche.erreichbar.beschaeftigt')}</strong>, wert: s ? t('oberflaeche.erreichbar.naechster-versuch-in-s', { s }) : ' …' })}
-        {schonOhneAntwortNeuGeladen() ? <>{' '}{t('oberflaeche.erreichbar.schon-neu-geladen')}</> : null}
-        {' '}<a href={laedtNichtUrl(sprache())} target="_blank" rel="noreferrer">{t('oberflaeche.startbild.was-tun')}</a></p>
+      <p>
+        {tn('oberflaeche.erreichbar.beschaeftigt-text', {
+          b: <strong>{t('oberflaeche.erreichbar.beschaeftigt')}</strong>,
+          wert: s ? t('oberflaeche.erreichbar.naechster-versuch-in-s', { s }) : ' …',
+        })}
+        {schonOhneAntwortNeuGeladen() ? <> {t('oberflaeche.erreichbar.schon-neu-geladen')}</> : null}{' '}
+        <a href={laedtNichtUrl(sprache())} target="_blank" rel="noreferrer">
+          {t('oberflaeche.startbild.was-tun')}
+        </a>
+      </p>
       <span className="knoepfe">
-        <Knopf groesse="klein" onClick={() => void erreichbarkeit.pruefe()}>{t('oberflaeche.erreichbar.jetzt-pruefen')}</Knopf>
-        <Knopf groesse="klein" onClick={() => neuLadenOhneAntwort()}>{t('oberflaeche.erreichbar.seite-neu-laden')}</Knopf>
+        <Knopf groesse="klein" onClick={() => void erreichbarkeit.pruefe()}>
+          {t('oberflaeche.erreichbar.jetzt-pruefen')}
+        </Knopf>
+        <Knopf groesse="klein" onClick={() => neuLadenOhneAntwort()}>
+          {t('oberflaeche.erreichbar.seite-neu-laden')}
+        </Knopf>
       </span>
     </div>
   );

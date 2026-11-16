@@ -25,11 +25,19 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 // 1×1-PNG
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const python = (code: string, ...args: string[]) => execFileSync('python3', ['-c', code, ...args], { encoding: 'utf8' }).trim();
-const hatPython = (() => { try { python('import openpyxl'); return true; } catch { return false; } })();
+const hatPython = (() => {
+  try {
+    python('import openpyxl');
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 async function aufbau() {
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-export-')), 'dms.schluessel'), () => null);
-  await tresor.laden(); await tresor.erzeuge();
+  await tresor.laden();
+  await tresor.erzeuge();
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
@@ -37,16 +45,33 @@ async function aufbau() {
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
-    { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
-    { key: 'beginn', label: 'Beginn', typ: 'datum' },
-    { key: 'betrag', label: 'Betrag', typ: 'betrag', waehrung: 'EUR' },
-    { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
-    { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
-    { key: 'notiz', label: 'Notiz', typ: 'text' },
-  ] });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{nr}',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
+      { key: 'beginn', label: 'Beginn', typ: 'datum' },
+      { key: 'betrag', label: 'Betrag', typ: 'betrag', waehrung: 'EUR' },
+      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+      { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
+      { key: 'notiz', label: 'Notiz', typ: 'text' },
+    ],
+  });
   const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
-  const v1 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-1', beginn: '2026-03-01', betrag: { betrag: 1234.5, waehrung: 'EUR' }, partner: p.id, kennwort: { neu: 'streng-geheim-123' }, notiz: '=SUMME(A1)' } }, anna.id);
+  const v1 = await d.mappen.legeMappeAn(
+    {
+      typId: vertrag.id,
+      werte: {
+        nr: 'V-1',
+        beginn: '2026-03-01',
+        betrag: { betrag: 1234.5, waehrung: 'EUR' },
+        partner: p.id,
+        kennwort: { neu: 'streng-geheim-123' },
+        notiz: '=SUMME(A1)',
+      },
+    },
+    anna.id,
+  );
   const v2 = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'V-2', notiz: 'Zeile;mit "Zeichen"' } }, anna.id);
   await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Vertrag.pdf' }, pdfAus([{ text: 'Seite aus dem Dokument' }]), anna.id);
   await d.dokumente.ladeHoch(v1.id, { register: 'dokumente', name: 'Foto.png' }, PNG, anna.id);
@@ -54,11 +79,14 @@ async function aufbau() {
   const sicht = (await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === vertrag.id)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, { tresor });
-  const rufe = async (b: { id: string }, m: string, pf: string, x: Partial<Anfrage> = {}) => tabelle.find((t) => t.methode === m && t.pfad === pf)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
+  const rufe = async (b: { id: string }, m: string, pf: string, x: Partial<Anfrage> = {}) =>
+    tabelle
+      .find((t) => t.methode === m && t.pfad === pf)!
+      .handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
   const exportiere = async (b: { id: string }, body: Record<string, unknown>) => {
     const r = await rufe(b, 'POST', '/api/export', { body: { sicht: vertrag.id, ...body } });
     const f = (r as { datei: Datei }).datei;
-    const inhalt = Buffer.isBuffer(f.inhalt) ? f.inhalt : Buffer.concat(await (f.inhalt as Readable).toArray() as Buffer[]);
+    const inhalt = Buffer.isBuffer(f.inhalt) ? f.inhalt : Buffer.concat((await (f.inhalt as Readable).toArray()) as Buffer[]);
     assert.equal(inhalt.length, f.groesse, 'Content-Length stimmt');
     return { ...f, inhalt };
   };
@@ -70,13 +98,25 @@ describe('Bausteine (#153)', () => {
     assert.equal(crc32(Buffer.from('123456789')) ^ 0xffffffff, 0xcbf43926 | 0);
     assert.deepEqual([0, 25, 26, 701, 702].map(spalte), ['A', 'Z', 'AA', 'ZZ', 'AAA']);
     assert.equal(seriell('2026-03-01'), 46082);
-    const csv = csvAus(['a', 'b'], [['-12,50', '=1+1'], ['x;y', 'z']]).toString('utf8');
+    const csv = csvAus(
+      ['a', 'b'],
+      [
+        ['-12,50', '=1+1'],
+        ['x;y', 'z'],
+      ],
+    ).toString('utf8');
     assert.equal(csv, '﻿a;b\r\n-12,50;"\'=1+1"\r\nx;y";z\r\n'.replace('x;y";z', '"x;y";z'));
   });
   it('ZIP lässt sich lesen', { skip: !hatPython && 'ohne python3' }, async () => {
     const dir = await mkdtemp(join(tmpdir(), 'dms-zip-'));
     await writeFile(join(dir, 'a.zip'), zipPuffer([{ name: 'ä/b.txt', daten: Buffer.from('hallo '.repeat(100)) }]));
-    assert.equal(python('import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); print(z.testzip(), z.namelist(), z.read(z.namelist()[0])[:5])', join(dir, 'a.zip')), "None ['ä/b.txt'] b'hallo'");
+    assert.equal(
+      python(
+        'import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); print(z.testzip(), z.namelist(), z.read(z.namelist()[0])[:5])',
+        join(dir, 'a.zip'),
+      ),
+      "None ['ä/b.txt'] b'hallo'",
+    );
   });
 });
 
@@ -105,7 +145,10 @@ describe('Export (#152, #153)', () => {
     assert.equal(x.name.endsWith('.xlsx'), true);
     const dir = await mkdtemp(join(tmpdir(), 'dms-xlsx-'));
     await writeFile(join(dir, 'e.xlsx'), x.inhalt);
-    const r = python('import openpyxl,sys; ws=openpyxl.load_workbook(sys.argv[1]).active; print(ws["A1"].value, type(ws["C2"].value).__name__, ws["C2"].value.date(), ws["D2"].value, ws["D2"].number_format, ws["F2"].value, ws.max_column)', join(dir, 'e.xlsx'));
+    const r = python(
+      'import openpyxl,sys; ws=openpyxl.load_workbook(sys.argv[1]).active; print(ws["A1"].value, type(ws["C2"].value).__name__, ws["C2"].value.date(), ws["D2"].value, ws["D2"].number_format, ws["F2"].value, ws.max_column)',
+      join(dir, 'e.xlsx'),
+    );
     assert.equal(r, 'Titel datetime 2026-03-01 1234.5 #,##0.00 "€";-#,##0.00 "€" =SUMME(A1) 10');
   });
 
@@ -114,8 +157,10 @@ describe('Export (#152, #153)', () => {
     const x = await exportiere(anna, { format: 'zip' });
     const dir = await mkdtemp(join(tmpdir(), 'dms-zipx-'));
     await writeFile(join(dir, 'e.zip'), x.inhalt);
-    assert.equal(python('import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); print(z.testzip(), sorted(z.namelist()))', join(dir, 'e.zip')),
-      "None ['Mappen.csv', 'Mappen.xlsx', 'V-1/Foto.png', 'V-1/Vertrag.pdf', 'V-1/notiz.txt']");
+    assert.equal(
+      python('import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); print(z.testzip(), sorted(z.namelist()))', join(dir, 'e.zip')),
+      "None ['Mappen.csv', 'Mappen.xlsx', 'V-1/Foto.png', 'V-1/Vertrag.pdf', 'V-1/notiz.txt']",
+    );
   });
 
   it('PDF: Seite je Mappe, PDF-Dokumente und Bilder eingebunden, Übersicht, keine Passwörter', async () => {
@@ -132,7 +177,21 @@ describe('Export (#152, #153)', () => {
     const { d, admin, anna, sicht, exportiere } = await aufbau();
     const haus = await d.sichtenVerwaltung.legeSichtAn({ name: 'Haus', typen: [] });
     await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, elternId: haus.id });
-    await d.sichtenVerwaltung.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'a', name: 'Anna exportiert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    await d.sichtenVerwaltung.aendereSicht(haus.id, {
+      ...haus,
+      berechtigungen: {
+        grund: { R: true, C: true, E: true },
+        regeln: [
+          {
+            id: 'a',
+            name: 'Anna exportiert nicht',
+            wenn: [{ art: 'benutzer', benutzer: [anna.id] }],
+            dann: { E: 'entziehen' },
+            stopp: false,
+          },
+        ],
+      },
+    });
     await assert.rejects(exportiere(anna, { format: 'csv' }), status(403));
     assert.equal((await exportiere(admin, { format: 'csv' })).inhalt.length > 0, true);
     await assert.rejects(exportiere(anna, { format: 'doc' }), status(422));
@@ -142,7 +201,13 @@ describe('Export (#152, #153)', () => {
 describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
   const entziehe = async (d: Dienst, sichtId: string, wer: string) => {
     const s = (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === sichtId)!;
-    await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [wer] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    await d.sichtenVerwaltung.aendereSicht(s.id, {
+      ...s,
+      berechtigungen: {
+        grund: { R: true, C: true, E: true },
+        regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [wer] }], dann: { E: 'entziehen' }, stopp: false }],
+      },
+    });
   };
   it('erweiterte Suche: nur Mappen aus Sichten mit Recht E, Rest gezählt; Admins alles', async () => {
     const { d, admin, anna, vertrag, sicht, exportiere } = await aufbau();
@@ -168,7 +233,14 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
   });
   it('Liste des Mappentyps bei verborgener Ansicht mit gleicher Id: Regel A statt Ansicht (#888)', async () => {
     const { d, admin, anna, vertrag, sicht, exportiere } = await aufbau();
-    await d.sichtenVerwaltung.aendereSicht(sicht.id, { ...sicht, name: 'Gesperrte Verträge', berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'r', name: 'verbergen', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } });
+    await d.sichtenVerwaltung.aendereSicht(sicht.id, {
+      ...sicht,
+      name: 'Gesperrte Verträge',
+      berechtigungen: {
+        grund: { R: true, C: true, E: true },
+        regeln: [{ id: 'r', name: 'verbergen', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }],
+      },
+    });
     // Ohne andere Ansicht mit E: wie jede Liste ohne Ansicht abgelehnt (403) – nicht „Ansicht gibt es nicht“.
     await assert.rejects(exportiere(anna, { format: 'csv' }), status(403));
     // Mit einer anderen sichtbaren Ansicht samt E: Export der Typ-Liste, ohne Namen der gesperrten Ansicht.
@@ -182,7 +254,8 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
   });
   it('„Als PDF exportieren“ an der Mappe nur mit Exportrecht', async () => {
     const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
-    const darf = async (b: { id: string }, id: string) => ((await rufe(b, 'GET', '/api/mappen/:id', { params: { id } })) as { body: { exportierbar: boolean } }).body.exportierbar;
+    const darf = async (b: { id: string }, id: string) =>
+      ((await rufe(b, 'GET', '/api/mappen/:id', { params: { id } })) as { body: { exportierbar: boolean } }).body.exportierbar;
     assert.equal(await darf(anna, v1.id), true);
     await entziehe(d, sicht.id, anna.id);
     assert.equal(await darf(anna, v1.id), false);
@@ -191,7 +264,8 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
   });
   it('„Per E-Mail versenden“ nur mit Exportrecht (#330)', async () => {
     const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
-    const sende = (b: { id: string }, id: string) => rufe(b, 'POST', '/api/mappen/:id/email', { params: { id }, body: { an: 'a@example.org', betreff: 'x' } });
+    const sende = (b: { id: string }, id: string) =>
+      rufe(b, 'POST', '/api/mappen/:id/email', { params: { id }, body: { an: 'a@example.org', betreff: 'x' } });
     await entziehe(d, sicht.id, anna.id);
     await assert.rejects(sende(anna, v1.id), status(403));
     // Mit Exportrecht (oder als Administrator) geht es bis zum Versand – hier ohne Mailserver: 409.
@@ -200,9 +274,13 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
   });
   it('Mehrere Mappen per E-Mail (#151): nur, wenn jede versendet werden darf', async () => {
     const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
-    const sende = (b: { id: string }, ids: string[]) => rufe(b, 'POST', '/api/mappen/email', { body: { ids, an: 'a@example.org', betreff: 'x' } });
+    const sende = (b: { id: string }, ids: string[]) =>
+      rufe(b, 'POST', '/api/mappen/email', { body: { ids, an: 'a@example.org', betreff: 'x' } });
     await entziehe(d, sicht.id, anna.id);
-    await assert.rejects(sende(anna, [p.id, v1.id]), (e) => e instanceof Fachfehler && e.status === 403 && /Eine Mappe darfst du nicht versenden/.test(e.message));
+    await assert.rejects(
+      sende(anna, [p.id, v1.id]),
+      (e) => e instanceof Fachfehler && e.status === 403 && /Eine Mappe darfst du nicht versenden/.test(e.message),
+    );
     await assert.rejects(sende(anna, [p.id]), status(409));
     await assert.rejects(sende(admin, [p.id, v1.id]), status(409));
   });

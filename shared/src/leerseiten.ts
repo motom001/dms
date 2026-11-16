@@ -84,9 +84,17 @@ export function pruefeSeitenliste(roh: unknown, seiten: number): { seiten: numbe
  */
 export function waehle(l: Leerseiten, nr: number, weglassen: boolean, jetzt: string): Leerseiten {
   const erkannt = l.erkannt.includes(nr);
-  const behalten = new Set(l.behalten), weg = new Set(l.weglassen);
-  if (erkannt) { weg.delete(nr); if (weglassen) behalten.delete(nr); else behalten.add(nr); }
-  else { behalten.delete(nr); if (weglassen) weg.add(nr); else weg.delete(nr); }
+  const behalten = new Set(l.behalten),
+    weg = new Set(l.weglassen);
+  if (erkannt) {
+    weg.delete(nr);
+    if (weglassen) behalten.delete(nr);
+    else behalten.add(nr);
+  } else {
+    behalten.delete(nr);
+    if (weglassen) weg.add(nr);
+    else weg.delete(nr);
+  }
   return { ...l, behalten: sortiert(behalten), weglassen: sortiert(weg), geaendert: jetzt };
 }
 
@@ -94,11 +102,19 @@ export function waehle(l: Leerseiten, nr: number, weglassen: boolean, jetzt: str
  * Neue Erkennung eines Pakets: erkannte Seiten ersetzen. Die Wahl der Person bleibt, wenn die Markierung für dieselbe
  * Datei gilt (sonst beginnt sie leer); „Doch behalten“ nur für Seiten, die weiter erkannt sind.
  */
-export function neueErkennung(alt: Leerseiten | null | undefined, e: { paket: string; paketName: string; sha256: string; seiten: number; erkannt: number[] }, jetzt: string): Leerseiten {
+export function neueErkennung(
+  alt: Leerseiten | null | undefined,
+  e: { paket: string; paketName: string; sha256: string; seiten: number; erkannt: number[] },
+  jetzt: string,
+): Leerseiten {
   const gleich = !!alt && alt.sha256 === e.sha256;
   const erkannt = sortiert(e.erkannt);
   return {
-    paket: e.paket, paketName: e.paketName, sha256: e.sha256, seiten: e.seiten, erkannt,
+    paket: e.paket,
+    paketName: e.paketName,
+    sha256: e.sha256,
+    seiten: e.seiten,
+    erkannt,
     behalten: gleich ? alt.behalten.filter((n) => erkannt.includes(n)) : [],
     weglassen: gleich ? alt.weglassen.filter((n) => !erkannt.includes(n) && n <= e.seiten) : [],
     geaendert: jetzt,
@@ -109,11 +125,17 @@ export function neueErkennung(alt: Leerseiten | null | undefined, e: { paket: st
 export function alsLeerseiten(roh: unknown): Leerseiten | null {
   if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return null;
   const r = roh as Record<string, unknown>;
-  const zahlen = (v: unknown) => (Array.isArray(v) ? v.filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1) : []);
+  const zahlen = (v: unknown) =>
+    Array.isArray(v) ? v.filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1) : [];
   if (typeof r.sha256 !== 'string' || typeof r.seiten !== 'number') return null;
   return {
-    paket: typeof r.paket === 'string' ? r.paket : null, paketName: typeof r.paketName === 'string' ? r.paketName : null,
-    sha256: r.sha256, seiten: r.seiten, erkannt: zahlen(r.erkannt), behalten: zahlen(r.behalten), weglassen: zahlen(r.weglassen),
+    paket: typeof r.paket === 'string' ? r.paket : null,
+    paketName: typeof r.paketName === 'string' ? r.paketName : null,
+    sha256: r.sha256,
+    seiten: r.seiten,
+    erkannt: zahlen(r.erkannt),
+    behalten: zahlen(r.behalten),
+    weglassen: zahlen(r.weglassen),
     geaendert: typeof r.geaendert === 'string' ? r.geaendert : '',
   };
 }

@@ -21,12 +21,17 @@ import { routen, type Anfrage } from '../src/routen';
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin', email: 'lena@example.org' };
 const offen: Array<() => Promise<void>> = [];
-after(async () => { for (const f of offen) await f(); });
+after(async () => {
+  for (const f of offen) await f();
+});
 
 async function datenbank(): Promise<postgres.Sql> {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const a = { ...ausUrl(process.env.TEST_DATABASE_URL)!, datenbank: `dms_schneller_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
+  const a = {
+    ...ausUrl(process.env.TEST_DATABASE_URL)!,
+    datenbank: `dms_schneller_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  };
   await legeDatenbankAn(a);
   const sql = verbinde(alsUrl(a));
   offen.push(async () => {
@@ -45,11 +50,24 @@ async function pgAufbau() {
   const r = pgRepo(sql, HAUSHALT);
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'nr', label: 'Vertragsnummer', typ: 'text', eindeutig: true },
-    { key: 'betrag', label: 'Betrag', typ: 'zahl', eindeutig: true }, { key: 'bemerkung', label: 'Bemerkung', typ: 'text' },
-  ] });
-  const zettel = await d.mappentypen.legeTypAn({ name: 'Zettel', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'nr', label: 'Nr', typ: 'text' }] });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{name}',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'nr', label: 'Vertragsnummer', typ: 'text', eindeutig: true },
+      { key: 'betrag', label: 'Betrag', typ: 'zahl', eindeutig: true },
+      { key: 'bemerkung', label: 'Bemerkung', typ: 'text' },
+    ],
+  });
+  const zettel = await d.mappentypen.legeTypAn({
+    name: 'Zettel',
+    titelVorlage: '{name}',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text' },
+      { key: 'nr', label: 'Nr', typ: 'text' },
+    ],
+  });
   return { sql, r, d, vertrag, zettel };
 }
 
@@ -59,7 +77,16 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
   it('Indizes der Migration 075: Trigramm auf suchtext, Sortierung, Feldwerte; der alte Typ-Index entfällt', async () => {
     const { sql } = await pgAufbau();
     const namen = new Set((await sql`SELECT indexname FROM pg_indexes WHERE tablename = 'mappen'`).map((z) => z.indexname as string));
-    for (const n of ['mappen_suchtext_trgm', 'mappen_titel_alle_idx', 'mappen_typ_erstellt_idx', 'mappen_typ_geaendert_idx', 'mappen_erstellt_idx', 'mappen_geaendert_idx', 'mappen_gleichwerte_idx', 'mappen_titel_idx']) {
+    for (const n of [
+      'mappen_suchtext_trgm',
+      'mappen_titel_alle_idx',
+      'mappen_typ_erstellt_idx',
+      'mappen_typ_geaendert_idx',
+      'mappen_erstellt_idx',
+      'mappen_geaendert_idx',
+      'mappen_gleichwerte_idx',
+      'mappen_titel_idx',
+    ]) {
       assert.ok(namen.has(n), n);
     }
     assert.ok(!namen.has('mappen_typ_idx'));
@@ -69,14 +96,19 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     const { sql, d, vertrag, zettel } = await pgAufbau();
     const namen = ['Anton', 'berta', 'Cäsar', 'Dora', 'Emil', 'Friedrich', 'Gustav', 'heinrich', 'Ida', 'Julius'];
     const ids: string[] = [];
-    for (const [i, n] of namen.entries()) ids.push((await d.mappen.legeMappeAn({ typId: i % 2 ? zettel.id : vertrag.id, werte: { name: n } })).id);
+    for (const [i, n] of namen.entries())
+      ids.push((await d.mappen.legeMappeAn({ typId: i % 2 ? zettel.id : vertrag.id, werte: { name: n } })).id);
     // Feste, verschiedene Zeiten: erstellt in Namensfolge, geändert in einer anderen.
     for (const [i, id] of ids.entries()) {
       await sql`UPDATE mappen SET erstellt = '2026-01-01T00:00:00Z'::timestamptz + make_interval(hours => ${i}),
         geaendert = '2026-02-01T00:00:00Z'::timestamptz + make_interval(hours => ${(i * 7) % 10}) WHERE id = ${id}`;
     }
     const alle = { sicht: 'suche', link: '' };
-    const nach = (f: (i: number) => number) => namen.map((n, i) => ({ n, k: f(i) })).sort((a, b) => a.k - b.k).map((x) => x.n);
+    const nach = (f: (i: number) => number) =>
+      namen
+        .map((n, i) => ({ n, k: f(i) }))
+        .sort((a, b) => a.k - b.k)
+        .map((x) => x.n);
     const titelAuf = [...namen].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     const faelle: Array<[string, Record<string, unknown>, string[]]> = [
       ['Titel ↑', {}, titelAuf],
@@ -98,7 +130,11 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
       assert.deepEqual([titel(s3), s3.gesamt], [erwartet.slice(8), 10], `${name}, Blatt 3`);
       // Je Typ dieselbe Reihenfolge.
       const nurVertrag = erwartet.filter((n) => namen.indexOf(n) % 2 === 0);
-      assert.deepEqual(titel(await d.sichten.seite(ICH, { sicht: `typ:${vertrag.id}`, ...q, von: 0, anzahl: 10 })), nurVertrag, `${name}, ein Typ`);
+      assert.deepEqual(
+        titel(await d.sichten.seite(ICH, { sicht: `typ:${vertrag.id}`, ...q, von: 0, anzahl: 10 })),
+        nurVertrag,
+        `${name}, ein Typ`,
+      );
     }
     // Ohne bekannte Zahl beim Blättern wird gezählt (API ohne „gesamt“).
     assert.equal((await d.sichten.seite(ICH, { ...alle, von: 4, anzahl: 4 })).gesamt, 10);
@@ -107,7 +143,11 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     const s = await d.sichten.seite(ICH, { ...alle, suche: 'e', von: 0, anzahl: 2, sortierung: '_titel', absteigend: 'true' });
     assert.equal(s.gesamt, mitE.length);
     assert.deepEqual(titel(s), [...mitE].sort((a, b) => b.toLowerCase().localeCompare(a.toLowerCase())).slice(0, 2));
-    assert.equal((await d.sichten.seite(ICH, { ...alle, suche: 'e', von: 50, anzahl: 2, gesamt: 1 })).gesamt, mitE.length, 'mit Suche gilt „gesamt“ nicht');
+    assert.equal(
+      (await d.sichten.seite(ICH, { ...alle, suche: 'e', von: 50, anzahl: 2, gesamt: 1 })).gesamt,
+      mitE.length,
+      'mit Suche gilt „gesamt“ nicht',
+    );
   });
 
   it('Treffer aus Mappe, Notizen und Textfilter als eine Menge – wie vorher; „Meintest du“ fragt nur, ob es etwas gibt', async () => {
@@ -125,7 +165,10 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     assert.equal(s2.gesamt, 3);
     assert.match(s2.ausschnitte?.[b.id]?.text ?? '', /Strom/);
     // Ein Typ: Typ und Treffer zusammen.
-    assert.deepEqual(titel(await d.sichten.seite(ICH, { sicht: `typ:${zettel.id}`, suche: 'strom', notizen: 'true' })).sort(), ['Einkauf', 'Garten']);
+    assert.deepEqual(titel(await d.sichten.seite(ICH, { sicht: `typ:${zettel.id}`, suche: 'strom', notizen: 'true' })).sort(), [
+      'Einkauf',
+      'Garten',
+    ]);
     // Erweiterte Suche: Begriff in einer Notiz (Textfilter) als Treffermenge, ohne und mit Suche.
     const notizfilter = { sicht: 'suche', link: 'volltext=Freitag&in=notizen' };
     assert.deepEqual(titel(await d.sichten.seite(ICH, notizfilter)), ['Einkauf']);
@@ -137,7 +180,8 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     assert.equal(await r.gibtTreffer({ suche: 'freitag', notizen: true, von: 0, anzahl: 1 }), true);
     assert.equal(await r.gibtTreffer({ suche: 'freitag', von: 0, anzahl: 1 }), false);
     assert.equal(await r.gibtTreffer({ typId: zettel.id, von: 0, anzahl: 1 }), true);
-    void a; void c;
+    void a;
+    void c;
   });
 
   it('Dublettenprüfung über den Index der Feldwerte: gleiche Treffer wie der genaue Vergleich, auch viele auf einmal', async () => {
@@ -151,19 +195,33 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     assert.equal((await r.findeDoppelt(vertrag.id, 'betrag', '42'))?.id, a.id, 'Zahlen');
     assert.equal(await r.findeDoppelt(vertrag.id, 'name', 'SV-4711'), undefined, 'anderes Feld zählt nicht');
     const viele = await r.findeDoppelte(vertrag.id, [
-      { mappeId: b.id, feldKey: 'nr', wert: 'SV-4711' }, { mappeId: a.id, feldKey: 'nr', wert: 'SV-4711' },
-      { mappeId: null, feldKey: 'nr', wert: 'gv-1' }, { mappeId: null, feldKey: 'betrag', wert: '43' },
+      { mappeId: b.id, feldKey: 'nr', wert: 'SV-4711' },
+      { mappeId: a.id, feldKey: 'nr', wert: 'SV-4711' },
+      { mappeId: null, feldKey: 'nr', wert: 'gv-1' },
+      { mappeId: null, feldKey: 'betrag', wert: '43' },
     ]);
-    assert.deepEqual([...viele.entries()].map(([k, v]) => [k, v.titel]).sort(), [[`${b.id}|nr`, 'Strom'], ['|nr', 'Gas']].sort());
+    assert.deepEqual(
+      [...viele.entries()].map(([k, v]) => [k, v.titel]).sort(),
+      [
+        [`${b.id}|nr`, 'Strom'],
+        ['|nr', 'Gas'],
+      ].sort(),
+    );
     // Speichern: „Bereits vergeben in …“ wie bisher.
-    await assert.rejects(d.mappen.aendereMappe(b.id, { werte: { nr: 'sv-4711' } }), (e: Fachfehler) => /Bereits vergeben in „Strom“/.test(JSON.stringify(e.details)));
+    await assert.rejects(d.mappen.aendereMappe(b.id, { werte: { nr: 'sv-4711' } }), (e: Fachfehler) =>
+      /Bereits vergeben in „Strom“/.test(JSON.stringify(e.details)),
+    );
     // Der Index wird genutzt – mit ein paar tausend Mappen und frischer Statistik, wie in einer echten Ablage.
     await sql`INSERT INTO mappen (id, haushalt_id, typ_id, werte, titel)
       SELECT gen_random_uuid(), ${HAUSHALT}, ${vertrag.id}, jsonb_build_object('name', 'M' || i, 'nr', 'N-' || i), 'M' || i FROM generate_series(1, 3000) i`;
     await sql`ANALYZE mappen`;
     const plan = await sql.begin(async (tx) => {
-      return (await tx`EXPLAIN SELECT id FROM mappen WHERE dms_gleichwerte(werte) @> dms_gleichwerte(jsonb_build_object('nr'::text, 'x'::text))
-        AND haushalt_id = ${HAUSHALT} AND typ_id = ${vertrag.id} AND lower(trim(werte ->> 'nr')) = 'x' LIMIT 1`).map((z) => Object.values(z)[0]).join('\n');
+      return (
+        await tx`EXPLAIN SELECT id FROM mappen WHERE dms_gleichwerte(werte) @> dms_gleichwerte(jsonb_build_object('nr'::text, 'x'::text))
+        AND haushalt_id = ${HAUSHALT} AND typ_id = ${vertrag.id} AND lower(trim(werte ->> 'nr')) = 'x' LIMIT 1`
+      )
+        .map((z) => Object.values(z)[0])
+        .join('\n');
     });
     assert.match(plan, /mappen_gleichwerte_idx/);
     // Passung mehrerer Mappen in einem Zug: beide Seiten einer Dublette passen nicht, nach dem Ändern wieder.
@@ -181,7 +239,11 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
   it('Speichern in einer Transaktion: Titel im selben UPDATE; bei einem Fehler bleibt nichts halb geschrieben', async () => {
     const { sql, d, vertrag, zettel } = await pgAufbau();
     const ziel = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom' } });
-    const zettelTyp = await d.mappentypen.aendereTyp(zettel.id, { ...zettel, titelVorlage: '{name}', felder: [...zettel.felder, { key: 'zu', label: 'Zu', typ: 'referenz', zielTyp: vertrag.id }] });
+    const zettelTyp = await d.mappentypen.aendereTyp(zettel.id, {
+      ...zettel,
+      titelVorlage: '{name}',
+      felder: [...zettel.felder, { key: 'zu', label: 'Zu', typ: 'referenz', zielTyp: vertrag.id }],
+    });
     const quelle = await d.mappen.legeMappeAn({ typId: zettelTyp.id, werte: { name: 'Notiz zu', zu: ziel.id } });
     assert.equal(quelle.titel, 'Notiz zu');
     // Zeilenversionen der Mappe zählen: ein Trigger nur für diesen Test.
@@ -206,11 +268,21 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     const ereignisse = (await sql`SELECT count(*)::int AS n FROM ereignisse`)[0].n as number;
     const x = d.fristen as unknown as { fristenAbgleichen: () => Promise<unknown> };
     const echt = x.fristenAbgleichen;
-    x.fristenAbgleichen = async () => { throw new Error('Platte voll'); };
-    try { await assert.rejects(d.mappen.aendereMappe(ziel.id, { werte: { name: 'Wasser' } }), /Platte voll/); } finally { x.fristenAbgleichen = echt; }
+    x.fristenAbgleichen = async () => {
+      throw new Error('Platte voll');
+    };
+    try {
+      await assert.rejects(d.mappen.aendereMappe(ziel.id, { werte: { name: 'Wasser' } }), /Platte voll/);
+    } finally {
+      x.fristenAbgleichen = echt;
+    }
     const nachher = (await sql`SELECT werte, titel, geaendert FROM mappen WHERE id = ${ziel.id}`)[0];
     assert.deepEqual(nachher, vorher, 'Werte, Titel und Stand unverändert');
-    assert.equal((await sql`SELECT count(*)::int AS n FROM historie WHERE mappe_id = ${ziel.id}`)[0].n, historie, 'kein Eintrag in der Historie');
+    assert.equal(
+      (await sql`SELECT count(*)::int AS n FROM historie WHERE mappe_id = ${ziel.id}`)[0].n,
+      historie,
+      'kein Eintrag in der Historie',
+    );
     assert.equal((await sql`SELECT count(*)::int AS n FROM ereignisse`)[0].n, ereignisse, 'kein Ereignis');
     assert.equal((await d.mappen.holeMappe(quelle.id)).mappe.titel, 'Notiz zu Gas', 'verweisende Mappe unverändert');
     // Anlegen ebenso.
@@ -218,14 +290,26 @@ describe('Schneller (#740, #743) – PostgreSQL', { skip: !process.env.TEST_DATA
     // Zettel hat keine Fristen – das Anlegen ruft den Abgleich nicht auf; ein Fehler beim Titel (nach dem INSERT).
     const y = d.mappenTitel as unknown as { aktualisiereTitel: () => Promise<unknown> };
     const echtTitel = y.aktualisiereTitel;
-    y.aktualisiereTitel = async () => { throw new Error('Platte voll'); };
-    try { await assert.rejects(d.mappen.legeMappeAn({ typId: zettelTyp.id, werte: { name: 'Halb' } }), /Platte voll/); } finally { y.aktualisiereTitel = echtTitel; }
+    y.aktualisiereTitel = async () => {
+      throw new Error('Platte voll');
+    };
+    try {
+      await assert.rejects(d.mappen.legeMappeAn({ typId: zettelTyp.id, werte: { name: 'Halb' } }), /Platte voll/);
+    } finally {
+      y.aktualisiereTitel = echtTitel;
+    }
     assert.equal((await sql`SELECT count(*)::int AS n FROM mappen`)[0].n, mappen, 'keine halbe Mappe');
   });
 
   it('„verteilt“ gesammelt: eine Anweisung für viele Ereignisse', async () => {
     const { sql, r } = await pgAufbau();
-    for (let i = 0; i < 3; i++) await r.legeKatalogEreignisAn({ id: `00000000-0000-4000-8000-00000000740${i}`, art: 'mappe.angelegt', daten: {}, ausloeser: {} as never });
+    for (let i = 0; i < 3; i++)
+      await r.legeKatalogEreignisAn({
+        id: `00000000-0000-4000-8000-00000000740${i}`,
+        art: 'mappe.angelegt',
+        daten: {},
+        ausloeser: {} as never,
+      });
     const geholt = await r.holeKatalogEreignisse(10, 60);
     assert.equal(geholt.length, 3);
     await r.katalogEreignisseVerteilt(geholt.map((e) => e.id));
@@ -245,18 +329,45 @@ describe('Schneller (#743) – ohne Datenbank', () => {
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const ALLES = { C: true, R: true, U: true, D: true, P: true };
     // Vertrauliche Verträge darf nur der Administrator lesen.
-    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
-      { key: 'name', label: 'Name', typ: 'text' }, { key: 'nr', label: 'Vertragsnummer', typ: 'text', eindeutig: true }, { key: 'vertraulich', label: 'Vertraulich', typ: 'janein' },
-    ], berechtigungen: { grund: ALLES, regeln: [{ id: 'v', name: 'Vertraulich', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'vertraulich', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Vertrag',
+      titelVorlage: '{name}',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text' },
+        { key: 'nr', label: 'Vertragsnummer', typ: 'text', eindeutig: true },
+        { key: 'vertraulich', label: 'Vertraulich', typ: 'janein' },
+      ],
+      berechtigungen: {
+        grund: ALLES,
+        regeln: [
+          {
+            id: 'v',
+            name: 'Vertraulich',
+            wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'vertraulich', op: 'ja' } }],
+            dann: { R: 'entziehen' },
+            stopp: false,
+          },
+        ],
+      },
+    } as never);
     await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Geheimer Vertrag', nr: 'A-1', vertraulich: true } }, admin.id);
     await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Offener Vertrag', nr: 'B-1', vertraulich: false } }, admin.id);
     // Lena darf verwalten; die vertrauliche Mappe sieht sie wie jeder andere erst im Verwaltungsmodus (#819).
-    const ich = async (id: string) => { const b = (await konten.listeBenutzer()).find((x) => x.id === id)!; return id === admin.id ? imModus(b) : b; };
+    const ich = async (id: string) => {
+      const b = (await konten.listeBenutzer()).find((x) => x.id === id)!;
+      return id === admin.id ? imModus(b) : b;
+    };
     const tabelle = routen(d, konten, {});
-    const anlegen = async (b: { id: string }, werte: Record<string, unknown>) => tabelle.find((t) => t.methode === 'POST' && t.pfad === '/api/mappen')!
-      .handler({ body: { typId: typ.id, werte }, params: {}, query: {}, ip: '1', benutzer: await ich(b.id) } as Anfrage);
+    const anlegen = async (b: { id: string }, werte: Record<string, unknown>) =>
+      tabelle
+        .find((t) => t.methode === 'POST' && t.pfad === '/api/mappen')!
+        .handler({ body: { typId: typ.id, werte }, params: {}, query: {}, ip: '1', benutzer: await ich(b.id) } as Anfrage);
     const meldung = async (b: { id: string }, nr: string) => {
-      try { await anlegen(b, { name: 'Neu', nr }); } catch (e) { return ((e as Fachfehler).details as { felder: Record<string, string[]> }).felder.nr?.[0]; }
+      try {
+        await anlegen(b, { name: 'Neu', nr });
+      } catch (e) {
+        return ((e as Fachfehler).details as { felder: Record<string, string[]> }).felder.nr?.[0];
+      }
       return 'angelegt';
     };
     assert.equal(await meldung(jonas, 'b-1'), 'Bereits vergeben in „Offener Vertrag“.');
@@ -266,14 +377,28 @@ describe('Schneller (#743) – ohne Datenbank', () => {
 
   it('Verteiler setzt „verteilt“ je Abholung in einer Anweisung, Fehlgeschlagenes nicht', async () => {
     const repo = speicherRepo();
-    for (let i = 0; i < 5; i++) await repo.legeKatalogEreignisAn({ id: `00000000-0000-4000-8000-00000000741${i}`, art: 'mappe.angelegt', daten: { i }, ausloeser: {} as never });
+    for (let i = 0; i < 5; i++)
+      await repo.legeKatalogEreignisAn({
+        id: `00000000-0000-4000-8000-00000000741${i}`,
+        art: 'mappe.angelegt',
+        daten: { i },
+        ausloeser: {} as never,
+      });
     const aufrufe: string[][] = [];
-    const beobachtet = new Proxy(repo, { get(z, p, e) {
-      if (p === 'katalogEreignisseVerteilt') return async (ids: string[]) => { aufrufe.push(ids); return z.katalogEreignisseVerteilt(ids); };
-      return Reflect.get(z, p, e);
-    } }) as Repo;
+    const beobachtet = new Proxy(repo, {
+      get(z, p, e) {
+        if (p === 'katalogEreignisseVerteilt')
+          return async (ids: string[]) => {
+            aufrufe.push(ids);
+            return z.katalogEreignisseVerteilt(ids);
+          };
+        return Reflect.get(z, p, e);
+      },
+    }) as Repo;
     const v = new Ereignisverteiler({ repo: () => beobachtet });
-    v.abonniere('test', async (e) => { if (e.daten.i === 2) throw new Error('kurz weg'); });
+    v.abonniere('test', async (e) => {
+      if (e.daten.i === 2) throw new Error('kurz weg');
+    });
     assert.equal(await v.verteile(), 4);
     assert.equal(aufrufe.length, 1);
     assert.equal(aufrufe[0].length, 4);

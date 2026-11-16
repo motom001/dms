@@ -21,7 +21,10 @@ import { protokoll } from './protokoll';
  */
 
 /** Schlüssel einer Advisory-Sperre: eine Zahl (bigint) oder Klasse plus `hashtext(name)` (zwei int4). */
-export interface Sperrschluessel { klasse: number; name?: string }
+export interface Sperrschluessel {
+  klasse: number;
+  name?: string;
+}
 
 /** Wie lange eine Abfrage auf der Sperrverbindung höchstens dauert; danach gilt die Verbindung als abgebrochen. */
 export const SPERRABFRAGE_MS = 10_000;
@@ -29,7 +32,10 @@ export const SPERRABFRAGE_MS = 10_000;
 export const WIEDER_MS = 5_000;
 
 /** Die Verbindung selbst: Abfragen und Schließen. `beiAbbruch` meldet, dass sie unerwartet zu ist. */
-export interface Sperrquelle { sql: postgres.Sql | postgres.ReservedSql; ende(): Promise<void> }
+export interface Sperrquelle {
+  sql: postgres.Sql | postgres.ReservedSql;
+  ende(): Promise<void>;
+}
 export type SperrquelleOeffnen = (beiAbbruch: () => void) => Promise<Sperrquelle>;
 
 /** Eigene Verbindung (ein Client mit `max: 1`), unabhängig vom Pool der Anfragen – so im Betrieb. */
@@ -37,13 +43,25 @@ export function eigeneSperrquelle(url: string): SperrquelleOeffnen {
   return async (beiAbbruch) => {
     let geschlossen = false;
     const sql = postgres(url, {
-      max: 1, onnotice: () => {}, infer: true,
+      max: 1,
+      onnotice: () => {},
+      infer: true,
       // Nie von selbst schließen: sonst wären die Sperren still weg (Vorgabe von postgres.js: nach 30–60 Minuten).
-      max_lifetime: null, idle_timeout: null, connect_timeout: 10,
+      max_lifetime: null,
+      idle_timeout: null,
+      connect_timeout: 10,
       connection: { application_name: 'Ablago Sperren' },
-      onclose: () => { if (!geschlossen) beiAbbruch(); },
+      onclose: () => {
+        if (!geschlossen) beiAbbruch();
+      },
     });
-    return { sql, ende: async () => { geschlossen = true; await sql.end({ timeout: 2 }).catch(() => {}); } };
+    return {
+      sql,
+      ende: async () => {
+        geschlossen = true;
+        await sql.end({ timeout: 2 }).catch(() => {});
+      },
+    };
   };
 }
 
@@ -51,7 +69,12 @@ export function eigeneSperrquelle(url: string): SperrquelleOeffnen {
 export function poolSperrquelle(sql: postgres.Sql): SperrquelleOeffnen {
   return async () => {
     const v = await sql.reserve();
-    return { sql: v, ende: async () => { v.release(); } };
+    return {
+      sql: v,
+      ende: async () => {
+        v.release();
+      },
+    };
   };
 }
 
@@ -60,13 +83,26 @@ export function poolSperrquelle(sql: postgres.Sql): SperrquelleOeffnen {
  * Verbindung selbst holt sie neu). Sperren eines Laufs (`exklusiv`) bleiben dagegen bis zu dessen Ende vermerkt: So
  * startet derselbe Lauf in diesem Prozess nicht ein zweites Mal, solange der erste noch arbeitet.
  */
-interface Eintrag { bezeichnung: string; seit: number; geteilt: boolean; generation: number; dauer: boolean }
+interface Eintrag {
+  bezeichnung: string;
+  seit: number;
+  geteilt: boolean;
+  generation: number;
+  dauer: boolean;
+}
 
 /** Eine gehaltene Sperre. `gueltig` wird falsch, wenn sie freigegeben oder mit der Verbindung verloren ist. */
-export interface Sperre { readonly gueltig: boolean; gib(): Promise<void> }
+export interface Sperre {
+  readonly gueltig: boolean;
+  gib(): Promise<void>;
+}
 
 /** Dauersperre (Eingangsordner, Postfächer): `halte()` liefert, ob dieser Prozess sie hat – und holt sie sonst neu. */
-export interface Dauersperre { halte(): Promise<boolean>; gib(): Promise<void>; readonly gueltig: boolean }
+export interface Dauersperre {
+  halte(): Promise<boolean>;
+  gib(): Promise<void>;
+  readonly gueltig: boolean;
+}
 
 export interface SperrStand {
   offen: boolean;
@@ -88,7 +124,10 @@ export class Sperrverbindung {
   private wiederUhr: NodeJS.Timeout | null = null;
   private log = protokoll.modul('datenbank');
 
-  constructor(private oeffne: SperrquelleOeffnen, private o: { abfrageMs?: number; wiederMs?: number } = {}) {}
+  constructor(
+    private oeffne: SperrquelleOeffnen,
+    private o: { abfrageMs?: number; wiederMs?: number } = {},
+  ) {}
 
   stand(): SperrStand {
     return {
@@ -99,7 +138,9 @@ export class Sperrverbindung {
   }
 
   /** Namen der laufenden Sperren (für Warnungen im Protokoll). */
-  namen(): string[] { return [...this.gehalten.values()].map((e) => e.bezeichnung); }
+  namen(): string[] {
+    return [...this.gehalten.values()].map((e) => e.bezeichnung);
+  }
 
   /** Exklusive Sperre versuchen; null, wenn ein anderer Prozess oder dieser selbst sie hält. */
   async versuche(s: Sperrschluessel, bezeichnung: string, o: { dauer?: boolean } = {}): Promise<Sperre | null> {
@@ -110,14 +151,22 @@ export class Sperrverbindung {
     this.gehalten.set(k, e);
     try {
       const ok = await this.reihe(async (sql, gen) => {
-        const [r] = s.name === undefined
-          ? await sql`SELECT pg_try_advisory_lock(${s.klasse}) AS ok`
-          : await sql`SELECT pg_try_advisory_lock(${s.klasse}, hashtext(${s.name})) AS ok`;
+        const [r] =
+          s.name === undefined
+            ? await sql`SELECT pg_try_advisory_lock(${s.klasse}) AS ok`
+            : await sql`SELECT pg_try_advisory_lock(${s.klasse}, hashtext(${s.name})) AS ok`;
         if (r.ok) e.generation = gen;
         return !!r.ok;
       });
-      if (!ok) { this.weg(k, e); await this.schliesseWennLeer(); return null; }
-    } catch (x) { this.weg(k, e); throw x; }
+      if (!ok) {
+        this.weg(k, e);
+        await this.schliesseWennLeer();
+        return null;
+      }
+    } catch (x) {
+      this.weg(k, e);
+      throw x;
+    }
     return this.griff(k, e);
   }
 
@@ -127,13 +176,25 @@ export class Sperrverbindung {
     let laeuft: Promise<boolean> | null = null;
     const halte = async () => {
       if (sperre?.gueltig) return true;
-      sperre = await this.versuche(s, bezeichnung, { dauer: true }).catch((e: Error) => { this.log.warn('Sperre nicht geholt', { sperre: bezeichnung, fehler: e.message }); return null; });
+      sperre = await this.versuche(s, bezeichnung, { dauer: true }).catch((e: Error) => {
+        this.log.warn('Sperre nicht geholt', { sperre: bezeichnung, fehler: e.message });
+        return null;
+      });
       return !!sperre;
     };
     return {
-      halte: () => (laeuft ??= halte().finally(() => { laeuft = null; })),
-      gib: async () => { const x = sperre; sperre = null; await x?.gib(); },
-      get gueltig() { return !!sperre?.gueltig; },
+      halte: () =>
+        (laeuft ??= halte().finally(() => {
+          laeuft = null;
+        })),
+      gib: async () => {
+        const x = sperre;
+        sperre = null;
+        await x?.gib();
+      },
+      get gueltig() {
+        return !!sperre?.gueltig;
+      },
     };
   }
 
@@ -157,7 +218,10 @@ export class Sperrverbindung {
       });
       if (e.generation < 0) this.planeWieder();
       return { allein, sperre: this.griff(k, e) };
-    } catch (x) { this.weg(k, e); throw x; }
+    } catch (x) {
+      this.weg(k, e);
+      throw x;
+    }
   }
 
   /** Geteilte Sperre ohne zu blockieren: Hält ein anderer gerade kurz die exklusive (beim Start), kurz warten. */
@@ -174,7 +238,9 @@ export class Sperrverbindung {
     let frei = false;
     const gilt = () => !frei && this.gehalten.get(k) === e && e.generation === this.generation;
     return {
-      get gueltig() { return gilt(); },
+      get gueltig() {
+        return gilt();
+      },
       gib: async () => {
         if (frei) return;
         const galt = gilt();
@@ -195,7 +261,9 @@ export class Sperrverbindung {
     };
   }
 
-  private weg(k: string, e: Eintrag) { if (this.gehalten.get(k) === e) this.gehalten.delete(k); }
+  private weg(k: string, e: Eintrag) {
+    if (this.gehalten.get(k) === e) this.gehalten.delete(k);
+  }
 
   /** Abfragen auf der Sperrverbindung: nacheinander, mit Zeitgrenze; ein Fehler gilt als Abbruch der Verbindung. */
   private reihe<T>(f: (sql: Sperrquelle['sql'], generation: number) => Promise<T>): Promise<T> {
@@ -203,11 +271,17 @@ export class Sperrverbindung {
       const q = await this.verbindung();
       const gen = this.generation;
       let uhr: NodeJS.Timeout | undefined;
-      const grenze = new Promise<never>((_, nein) => { uhr = setTimeout(() => nein(new Error('Sperrverbindung antwortet nicht')), this.o.abfrageMs ?? SPERRABFRAGE_MS); });
-      try { return await Promise.race([f(q.sql, gen), grenze]); } catch (x) {
+      const grenze = new Promise<never>((_, nein) => {
+        uhr = setTimeout(() => nein(new Error('Sperrverbindung antwortet nicht')), this.o.abfrageMs ?? SPERRABFRAGE_MS);
+      });
+      try {
+        return await Promise.race([f(q.sql, gen), grenze]);
+      } catch (x) {
         if (gen === this.generation) await this.abbruch((x as Error).message);
         throw x;
-      } finally { clearTimeout(uhr); }
+      } finally {
+        clearTimeout(uhr);
+      }
     });
     this.kette = lauf.catch(() => {});
     return lauf;
@@ -216,9 +290,13 @@ export class Sperrverbindung {
   private verbindung(): Promise<Sperrquelle> {
     if (!this.quelle) {
       const gen = ++this.generation;
-      const q = this.oeffne(() => { if (gen === this.generation) void this.abbruch('Verbindung geschlossen'); });
+      const q = this.oeffne(() => {
+        if (gen === this.generation) void this.abbruch('Verbindung geschlossen');
+      });
       this.quelle = q;
-      q.catch(() => { if (this.quelle === q) this.quelle = null; });
+      q.catch(() => {
+        if (this.quelle === q) this.quelle = null;
+      });
     }
     return this.quelle;
   }
@@ -231,8 +309,15 @@ export class Sperrverbindung {
     this.generation++;
     this.abbrueche++;
     const verloren = [...this.gehalten.values()].filter((e) => e.generation >= 0);
-    if (verloren.length) this.log.warn('Verbindung für Sperren abgebrochen – die Sperren dieses Prozesses sind frei geworden; laufende Arbeit läuft weiter', { grund, sperren: verloren.map((e) => e.bezeichnung).join(', ') });
-    await q.then((x) => x.ende(), () => {});
+    if (verloren.length)
+      this.log.warn('Verbindung für Sperren abgebrochen – die Sperren dieses Prozesses sind frei geworden; laufende Arbeit läuft weiter', {
+        grund,
+        sperren: verloren.map((e) => e.bezeichnung).join(', '),
+      });
+    await q.then(
+      (x) => x.ende(),
+      () => {},
+    );
     // Dauersperren sind nicht mehr gehalten (halte() holt sie neu); das Lebenszeichen holt die Verbindung selbst wieder.
     for (const [k, e] of this.gehalten) if (e.dauer && !e.geteilt) this.gehalten.delete(k);
     if (verloren.some((e) => e.dauer && e.geteilt)) this.planeWieder();
@@ -246,8 +331,16 @@ export class Sperrverbindung {
       const offen = [...this.gehalten.values()].filter((e) => e.geteilt && e.dauer && e.generation !== this.generation);
       if (!offen.length) return;
       void this.reihe(async (sql, gen) => {
-        for (const e of offen) if (await this.teile(sql, e.schluessel)) { e.generation = gen; this.log.info('Lebenszeichen nach Abbruch wieder gesetzt', { sperre: e.bezeichnung }); }
-      }).catch(() => {}).finally(() => { if (offen.some((e) => e.generation !== this.generation)) this.planeWieder(); });
+        for (const e of offen)
+          if (await this.teile(sql, e.schluessel)) {
+            e.generation = gen;
+            this.log.info('Lebenszeichen nach Abbruch wieder gesetzt', { sperre: e.bezeichnung });
+          }
+      })
+        .catch(() => {})
+        .finally(() => {
+          if (offen.some((e) => e.generation !== this.generation)) this.planeWieder();
+        });
     }, this.o.wiederMs ?? WIEDER_MS);
     this.wiederUhr.unref?.();
   }
@@ -259,7 +352,10 @@ export class Sperrverbindung {
     const q = this.quelle;
     this.quelle = null;
     this.generation++;
-    await q.then((x) => x.ende(), () => {});
+    await q.then(
+      (x) => x.ende(),
+      () => {},
+    );
   }
 
   /** Beim Beenden: alles freigeben und schließen. */
@@ -271,6 +367,10 @@ export class Sperrverbindung {
     const q = this.quelle;
     this.quelle = null;
     this.generation++;
-    if (q) await q.then((x) => x.ende(), () => {});
+    if (q)
+      await q.then(
+        (x) => x.ende(),
+        () => {},
+      );
   }
 }

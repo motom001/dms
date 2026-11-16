@@ -46,7 +46,10 @@ test('geänderte Grenze (#1280): der Bestand der Regel gilt neu, nur wenn sich i
   const jetzt = { 'a.ts': { complexity: { count: 2 }, 'max-params': { count: 4 } }, 'b.ts': { complexity: { count: 1 } } };
   assert.deepEqual(geaenderteRegeln(vorher, jetzt, alt, neu), ['max-params']);
   // Nur Kommentar oder Leerraum geändert: keine geänderte Grenze.
-  assert.deepEqual(geaenderteRegeln(vorher, jetzt, alt, "  'max-params':  ['error', 5], // nur ein Kommentar\n  complexity: ['error', 20],"), []);
+  assert.deepEqual(
+    geaenderteRegeln(vorher, jetzt, alt, "  'max-params':  ['error', 5], // nur ein Kommentar\n  complexity: ['error', 20],"),
+    [],
+  );
   assert.deepEqual(geaenderteRegeln(vorher, jetzt, alt, alt), []);
   // Ohne Bestand in der Basis oder ohne Nennung ist es keine geänderte Grenze.
   assert.deepEqual(geaenderteRegeln({}, jetzt, alt, neu), []);

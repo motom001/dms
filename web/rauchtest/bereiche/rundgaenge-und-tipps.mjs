@@ -46,7 +46,11 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await schemaWechseln(s, 'light');
   // Ankerhilfe: ein Klick setzt den Anker an der Schreibmarke ein.
   await datei.fill(EIGENER.replace('    ziel: startseite.suche\n', '    ziel: \n'));
-  await datei.evaluate((el) => { const i = el.value.indexOf('ziel: ') + 6; el.focus(); el.setSelectionRange(i, i); });
+  await datei.evaluate((el) => {
+    const i = el.value.indexOf('ziel: ') + 6;
+    el.focus();
+    el.setSelectionRange(i, i);
+  });
   await bearbeitung.getByRole('button', { name: /^startseite\.suche / }).click();
   assert.match(await datei.inputValue(), /ziel: startseite\.suche\n/);
   await bearbeitung.getByRole('button', { name: 'Rundgang anlegen' }).click();
@@ -69,50 +73,61 @@ rauchtest('Handy: Werkbank → Rundgänge, Tippflächen (#941)', { handy: true, 
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   await s.goto(BASIS + '/werkbank/rundgaenge');
-  await s.getByRole('region', { name: 'Elemente' }).getByRole('link', { name: /bei der ersten Anmeldung/ }).first().waitFor();
+  await s
+    .getByRole('region', { name: 'Elemente' })
+    .getByRole('link', { name: /bei der ersten Anmeldung/ })
+    .first()
+    .waitFor();
   await keineWaagerechteRolle(s);
   const zuKlein = await tippflaechenPruefen(s, ['.spalte.liste']);
   assert.deepEqual(zuKlein, [], `Zu kleine Tippflächen:\n${zuKlein.join('\n')}`);
 });
 
-rauchtest('Werkbank → Tipps: eigener Tipp mit Vorschau, Tipp von Ablago anpassen und zurücksetzen (#942)', { als: LENA, timeout: 110_000 }, async (s) => {
-  const funde = [];
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.goto(BASIS + '/werkbank/tipps/neu');
-  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  const text = bearbeitung.getByRole('textbox', { name: 'Text' });
-  await text.waitFor();
-  await text.fill('Rauchtest: Oben suchst du in allen Mappen.');
-  await bearbeitung.locator('.tipp-vorschau').getByText('Rauchtest: Oben suchst du in allen Mappen.').waitFor();
-  await bearbeitung.getByRole('combobox', { name: 'Stelle' }).selectOption('startseite.suche');
-  await bearbeitung.getByRole('button', { name: 'Tipp anlegen' }).click();
-  await s.waitForURL(/\/werkbank\/tipps\/eigen%3Atipp_1$/);
-  const liste = s.getByRole('region', { name: 'Elemente' });
-  await liste.getByRole('link', { name: /Rauchtest: Oben suchst du/ }).waitFor();
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Eigener Tipp (${schema}): ${v}`);
-  }
-  await schemaWechseln(s, 'light');
-  // Tipp von Ablago anpassen: Original bleibt, „angepasst“ in der Liste, zurücksetzen.
-  await s.goto(BASIS + '/werkbank/tipps/favoriten');
-  await text.waitFor();
-  const original = await text.inputValue();
-  await text.fill('Rauchtest: Bei uns heißen Favoriten Merkliste.');
-  await bearbeitung.getByRole('button', { name: 'Tipp speichern' }).click();
-  await liste.getByRole('link', { name: /Merkliste.*angepasst/ }).waitFor();
-  await bearbeitung.getByText(`Original: ${original}`).waitFor();
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Angepasster Tipp (${schema}): ${v}`);
-  }
-  await schemaWechseln(s, 'light');
-  await bearbeitung.getByRole('button', { name: 'Auf Original zurücksetzen' }).click();
-  await liste.getByRole('link', { name: original.slice(0, 30) }).first().waitFor();
-  assert.equal(await liste.getByRole('link', { name: /Merkliste/ }).count(), 0);
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-});
+rauchtest(
+  'Werkbank → Tipps: eigener Tipp mit Vorschau, Tipp von Ablago anpassen und zurücksetzen (#942)',
+  { als: LENA, timeout: 110_000 },
+  async (s) => {
+    const funde = [];
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/tipps/neu');
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    const text = bearbeitung.getByRole('textbox', { name: 'Text' });
+    await text.waitFor();
+    await text.fill('Rauchtest: Oben suchst du in allen Mappen.');
+    await bearbeitung.locator('.tipp-vorschau').getByText('Rauchtest: Oben suchst du in allen Mappen.').waitFor();
+    await bearbeitung.getByRole('combobox', { name: 'Stelle' }).selectOption('startseite.suche');
+    await bearbeitung.getByRole('button', { name: 'Tipp anlegen' }).click();
+    await s.waitForURL(/\/werkbank\/tipps\/eigen%3Atipp_1$/);
+    const liste = s.getByRole('region', { name: 'Elemente' });
+    await liste.getByRole('link', { name: /Rauchtest: Oben suchst du/ }).waitFor();
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Eigener Tipp (${schema}): ${v}`);
+    }
+    await schemaWechseln(s, 'light');
+    // Tipp von Ablago anpassen: Original bleibt, „angepasst“ in der Liste, zurücksetzen.
+    await s.goto(BASIS + '/werkbank/tipps/favoriten');
+    await text.waitFor();
+    const original = await text.inputValue();
+    await text.fill('Rauchtest: Bei uns heißen Favoriten Merkliste.');
+    await bearbeitung.getByRole('button', { name: 'Tipp speichern' }).click();
+    await liste.getByRole('link', { name: /Merkliste.*angepasst/ }).waitFor();
+    await bearbeitung.getByText(`Original: ${original}`).waitFor();
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Angepasster Tipp (${schema}): ${v}`);
+    }
+    await schemaWechseln(s, 'light');
+    await bearbeitung.getByRole('button', { name: 'Auf Original zurücksetzen' }).click();
+    await liste
+      .getByRole('link', { name: original.slice(0, 30) })
+      .first()
+      .waitFor();
+    assert.equal(await liste.getByRole('link', { name: /Merkliste/ }).count(), 0);
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  },
+);
 
 rauchtest('Handy: Werkbank → Tipps, Tippflächen (#942)', { handy: true, als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');

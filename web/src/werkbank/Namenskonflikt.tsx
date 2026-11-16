@@ -8,8 +8,14 @@ import { t } from '../sprache';
 export function NamenskonfliktHinweis({ liste }: { liste: string[] }) {
   return (
     <div className="hinweis warn" role="status">
-      <p><Symbol name="warnung" /> <strong>{t('werkbank.pakete.namenskonflikte')}</strong> {t('werkbank.pakete.namenskonflikte-text')}</p>
-      <ul>{liste.map((x) => <li key={x}>{x}</li>)}</ul>
+      <p>
+        <Symbol name="warnung" /> <strong>{t('werkbank.pakete.namenskonflikte')}</strong> {t('werkbank.pakete.namenskonflikte-text')}
+      </p>
+      <ul>
+        {liste.map((x) => (
+          <li key={x}>{x}</li>
+        ))}
+      </ul>
     </div>
   );
 }

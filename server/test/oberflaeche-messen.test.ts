@@ -7,14 +7,44 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 type Wert = { median: number | null; p95: number | null };
-interface Zusammenfassung { runden: number; bedienbar: Wert; inp: Wert; laengste: Wert; blockiert: Wert; anfragen: number | null; serverMs: number | null; zeitueberschritten: number }
-interface Ergebnis { ablago?: string; zeit?: string; geraet: string; runden: number; daten?: string; ergebnisse: Record<string, { name: string; drosseln: Record<string, Zusammenfassung> }> }
-interface Fund { ablauf: string; drossel: number; kennzahl: string; art: string; vorher?: number; jetzt?: number; wert?: number; grenze?: number | null }
+interface Zusammenfassung {
+  runden: number;
+  bedienbar: Wert;
+  inp: Wert;
+  laengste: Wert;
+  blockiert: Wert;
+  anfragen: number | null;
+  serverMs: number | null;
+  zeitueberschritten: number;
+}
+interface Ergebnis {
+  ablago?: string;
+  zeit?: string;
+  geraet: string;
+  runden: number;
+  daten?: string;
+  ergebnisse: Record<string, { name: string; drosseln: Record<string, Zusammenfassung> }>;
+}
+interface Fund {
+  ablauf: string;
+  drossel: number;
+  kennzahl: string;
+  art: string;
+  vorher?: number;
+  jetzt?: number;
+  wert?: number;
+  grenze?: number | null;
+}
 interface Auswertung {
   SCHWELLE: { anteil: number; ms: number };
   ZIEL: { bedienbar: number; inp: number };
   quantil(werte: Array<number | null>, q: number): number | null;
-  rundeAuswerten(r: { dauer: number; lange?: Array<[number, number]>; ereignisse?: Array<[number, number]> }): { bedienbar: number; inp: number | null; laengste: number; blockiert: number };
+  rundeAuswerten(r: { dauer: number; lange?: Array<[number, number]>; ereignisse?: Array<[number, number]> }): {
+    bedienbar: number;
+    inp: number | null;
+    laengste: number;
+    blockiert: number;
+  };
   zusammenfassen(runden: Array<Record<string, unknown>>): Zusammenfassung;
   vergleichen(jetzt: Ergebnis, vorher: Ergebnis | null): Fund[];
   grenzenPruefen(e: Ergebnis, grenzen?: Record<string, Record<string, Record<string, number>>>): Fund[];
@@ -26,8 +56,14 @@ const a = (await import(new URL('../../web/rauchtest/messen/auswertung.mjs', imp
 
 const runde = (bedienbar: number, inp: number | null = null) => ({ bedienbar, inp, laengste: 0, blockiert: 0, anfragen: 2, serverMs: 5 });
 const lauf = (bedienbar: number, inp: number | null, drossel = '1'): Ergebnis => ({
-  geraet: 'Container', runden: 5,
-  ergebnisse: { 'post-zuordnen': { name: 'Neue Post zuordnen', drosseln: { [drossel]: a.zusammenfassen([runde(bedienbar, inp), runde(bedienbar, inp), runde(bedienbar, inp)]) } } },
+  geraet: 'Container',
+  runden: 5,
+  ergebnisse: {
+    'post-zuordnen': {
+      name: 'Neue Post zuordnen',
+      drosseln: { [drossel]: a.zusammenfassen([runde(bedienbar, inp), runde(bedienbar, inp), runde(bedienbar, inp)]) },
+    },
+  },
 });
 
 describe('Oberfläche messen: Auswertung (#1276)', () => {
@@ -38,7 +74,19 @@ describe('Oberfläche messen: Auswertung (#1276)', () => {
   });
 
   it('Runde: INP ist die längste Interaktion, Blockierzeit die Anteile über 50 ms', () => {
-    const r = a.rundeAuswerten({ dauer: 812.4, lange: [[10, 120], [300, 49], [400, 70]], ereignisse: [[24, 1], [64, 1], [40, 2]] });
+    const r = a.rundeAuswerten({
+      dauer: 812.4,
+      lange: [
+        [10, 120],
+        [300, 49],
+        [400, 70],
+      ],
+      ereignisse: [
+        [24, 1],
+        [64, 1],
+        [40, 2],
+      ],
+    });
     assert.deepEqual(r, { bedienbar: 812, inp: 64, laengste: 120, blockiert: 90 });
     assert.equal(a.rundeAuswerten({ dauer: 100 }).inp, null, 'ohne Eingabe kein INP');
   });
@@ -59,7 +107,10 @@ describe('Oberfläche messen: Auswertung (#1276)', () => {
     const vergleich = a.vergleichen(lauf(20_000, 19_000), lauf(600, 80));
     const pruefung = a.grenzenPruefen(lauf(20_000, 19_000));
     assert.ok(vergleich.some((v) => v.art === 'schlechter' && v.kennzahl === 'inp'));
-    assert.ok(pruefung.some((p) => p.art === 'ziel' && p.kennzahl === 'inp'), 'INP über dem Ziel 200 ms');
+    assert.ok(
+      pruefung.some((p) => p.art === 'ziel' && p.kennzahl === 'inp'),
+      'INP über dem Ziel 200 ms',
+    );
     assert.equal(a.istRot(vergleich, pruefung), true);
     assert.equal(a.istRot([], a.grenzenPruefen(lauf(1500, 300))), false, 'ein verfehltes Ziel allein macht nicht rot');
   });

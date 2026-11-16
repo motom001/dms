@@ -47,7 +47,11 @@ export interface Bereich {
 }
 
 // Stufen (#987): ab Einsteiger, Haushalt, Selbständig, Betrieb bzw. nur in Alles.
-const E = 'einsteiger', H = 'haushalt', S = 'selbstaendig', B = 'organisation', A = 'alles';
+const E = 'einsteiger',
+  H = 'haushalt',
+  S = 'selbstaendig',
+  B = 'organisation',
+  A = 'alles';
 type Eintrag = { pfad: string; gruppe: Gruppe; ab: Vorlage };
 
 /**
@@ -122,8 +126,10 @@ const EINTRAEGE: Eintrag[] = [
 export const stufeNr = (v: Vorlage) => STUFEN.indexOf(v);
 
 export const BEREICHE: Bereich[] = EINTRAEGE.map((e) => ({
-  ...e, in: STUFEN.filter((v): v is Exclude<Vorlage, 'alles'> => v !== 'alles' && stufeNr(v) >= stufeNr(e.ab)),
-  name: t.frei(`werkbank.bereich.${e.pfad}.name`), wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
+  ...e,
+  in: STUFEN.filter((v): v is Exclude<Vorlage, 'alles'> => v !== 'alles' && stufeNr(v) >= stufeNr(e.ab)),
+  name: t.frei(`werkbank.bereich.${e.pfad}.name`),
+  wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
 }));
 
 /** Name eines Bereichs (auch der Übersicht) für Leiste, Überschriften und Verweise. */
@@ -132,10 +138,21 @@ export const bereichName = (pfad: string) => t.frei(`werkbank.bereich.${pfad}.na
 /** Weitere Namen, unter denen die Werkbank-Suche einen Bereich findet (#725: auch alte Namen wie „Darf weg“). */
 export const bereichAuch = (pfad: string): string[] => {
   const k = `werkbank.bereich.${pfad}.auch`;
-  return t.hat(k) ? t.frei(k).split('|').map((x) => x.trim()).filter(Boolean) : [];
+  return t.hat(k)
+    ? t
+        .frei(k)
+        .split('|')
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
 };
 
-const falte = (x: string) => x.toLocaleLowerCase('de-DE').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/ß/g, 'ss');
+const falte = (x: string) =>
+  x
+    .toLocaleLowerCase('de-DE')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ß/g, 'ss');
 
 /** Findet die Werkbank-Suche diesen Bereich? Name, „wann“ und frühere Namen, Groß/klein und Umlaute egal. */
 export function bereichPasst(pfad: string, suche: string): boolean {
@@ -152,9 +169,14 @@ const BEKANNT = new Set(BEREICHE.map((b) => b.pfad));
  * → Systemzustand unter Wartung und Fehlersuche).
  */
 export const UMGEZOGEN: Readonly<Record<string, string>> = {
-  datenbank: 'anbindung', speicherplatz: 'systemzustand',
+  datenbank: 'anbindung',
+  speicherplatz: 'systemzustand',
   // #717/#725: zusammengelegt oder umbenannt.
-  darfweg: 'aufbewahrung', suche: 'texterkennung', wiederherstellung: 'sicherung', technik: 'systemzustand', wartungsmodus: 'wartung',
+  darfweg: 'aufbewahrung',
+  suche: 'texterkennung',
+  wiederherstellung: 'sicherung',
+  technik: 'systemzustand',
+  wartungsmodus: 'wartung',
   // #668: Datenschutz in Auskünfte und Löschkonzept getrennt; die alte Adresse führt zu den Auskünften.
   datenschutz: 'auskuenfte',
   // #1170: Nutzung und Eigene Organisation auf einer Seite unter Einstellungen.
@@ -163,7 +185,11 @@ export const UMGEZOGEN: Readonly<Record<string, string>> = {
 
 /** Wohin ein umgezogener Bereich innerhalb seiner neuen Seite springt (Abschnitt, `#…`). */
 export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
-  suche: 'suche', wiederherstellung: 'wiederherstellen', technik: 'version', wartungsmodus: 'wartungsmodus', nutzung: 'nutzung',
+  suche: 'suche',
+  wiederherstellung: 'wiederherstellen',
+  technik: 'version',
+  wartungsmodus: 'wartungsmodus',
+  nutzung: 'nutzung',
 };
 
 /**
@@ -172,7 +198,8 @@ export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
  * ihre Adresse erreichbar – ausgeblendet ist nicht abgeschaltet.
  */
 export const NUR_BERUFLICH: ReadonlySet<Gruppe> = new Set<Gruppe>(['datenschutz']);
-export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null | undefined) => !gruppe || !NUR_BERUFLICH.has(gruppe) || !!m?.beruflich;
+export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null | undefined) =>
+  !gruppe || !NUR_BERUFLICH.has(gruppe) || !!m?.beruflich;
 
 /**
  * Umgezogene Abschnitte (#1184): alte Adresse samt Sprungmarke → neue Seite. Das Löschprotokoll war ein Abschnitt des
@@ -186,12 +213,19 @@ const ABSCHNITT_UMGEZOGEN: Readonly<Record<string, string>> = {
 export const abschnittUmleitung = (bereich: string, marke: string): string | null => ABSCHNITT_UMGEZOGEN[`${bereich}#${marke}`] ?? null;
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */
-export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[] }
+export interface WerkbankAnsicht {
+  vorlage: Vorlage;
+  ein: string[];
+  aus: string[];
+}
 /**
  * Je Person mit Verwaltungsrecht (#987): eine eigene Stufe („Meine Leiste“, ohne = die der Installation) und zusätzlich
  * eingeblendete Bereiche. Kein Recht, nur die Leiste (#810).
  */
-export interface EigeneAnsicht { ein: string[]; vorlage?: Vorlage }
+export interface EigeneAnsicht {
+  ein: string[];
+  vorlage?: Vorlage;
+}
 
 /**
  * Bereiche, die der frühere Expertenmodus (#356, entfallen mit #987) im Haushalt zusätzlich zeigte. Wer ihn an hatte,
@@ -208,9 +242,17 @@ export const vorlageFuer = (m: { beruflich: boolean }): Vorlage => (m.beruflich 
 /** Ohne Einstellung bleibt alles sichtbar – so ändert sich für bestehende Installationen nichts. */
 export const OHNE_EINSTELLUNG: WerkbankAnsicht = { vorlage: 'alles', ein: [], aus: [] };
 
-const liste = (v: unknown) => (Array.isArray(v)
-  ? [...new Set(v.filter((x): x is string => typeof x === 'string').map((x) => UMGEZOGEN[x] ?? x).filter((x) => BEKANNT.has(x)))]
-  : []);
+const liste = (v: unknown) =>
+  Array.isArray(v)
+    ? [
+        ...new Set(
+          v
+            .filter((x): x is string => typeof x === 'string')
+            .map((x) => UMGEZOGEN[x] ?? x)
+            .filter((x) => BEKANNT.has(x)),
+        ),
+      ]
+    : [];
 
 /** Liest einen gespeicherten Wert; Unbekanntes fällt weg. `null` = noch nicht eingestellt. */
 export function liesAnsicht(v: unknown): WerkbankAnsicht | null {
@@ -221,7 +263,7 @@ export function liesAnsicht(v: unknown): WerkbankAnsicht | null {
 }
 /** Eigene Ansicht; ein gespeicherter Expertenmodus (vor #987) wird zur Einblendung seiner Bereiche. */
 export function liesEigene(v: unknown): EigeneAnsicht {
-  const o = v && typeof v === 'object' ? v as Record<string, unknown> : {};
+  const o = v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
   const ein = liste([...(Array.isArray(o.ein) ? o.ein : []), ...(o.experte === true ? FRUEHER_EXPERTE : [])]);
   return { ein, ...(istVorlage(o.vorlage) ? { vorlage: o.vorlage } : {}) };
 }
@@ -269,8 +311,20 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
  * passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
 export const MIT_MITTE: ReadonlySet<string> = new Set([
-  'uebersicht', 'typen', 'sichten', 'nummernkreise', 'pakete', 'benutzer', 'aufgaben',
-  'designs', 'papierkorb', 'automatisierungen', 'ablaufvorlagen', 'postfaecher', 'protokoll', 'fehlermeldungen',
+  'uebersicht',
+  'typen',
+  'sichten',
+  'nummernkreise',
+  'pakete',
+  'benutzer',
+  'aufgaben',
+  'designs',
+  'papierkorb',
+  'automatisierungen',
+  'ablaufvorlagen',
+  'postfaecher',
+  'protokoll',
+  'fehlermeldungen',
   // Datenschutz-Auskünfte (#668): die Sammlung wächst mit jeder Anfrage.
   'auskuenfte',
   // Stempel-Vorlagen (#990): klein, aber man legt sie an und bearbeitet sie – wie Nummernkreise und Designs.
@@ -311,7 +365,10 @@ const OFFEN_ALS_PFAD: ReadonlySet<string> = new Set(['stempel']);
  */
 export function werkbankUmleitung(bereich: string, id?: string, suche = ''): string | null {
   const neu = UMGEZOGEN[bereich];
-  if (neu) return id ? werkbankUmleitung(neu, id) ?? `/werkbank/${neu}` : `/werkbank/${neu}${suche}${UMGEZOGEN_ABSCHNITT[bereich] ? `#${UMGEZOGEN_ABSCHNITT[bereich]}` : ''}`;
+  if (neu)
+    return id
+      ? (werkbankUmleitung(neu, id) ?? `/werkbank/${neu}`)
+      : `/werkbank/${neu}${suche}${UMGEZOGEN_ABSCHNITT[bereich] ? `#${UMGEZOGEN_ABSCHNITT[bereich]}` : ''}`;
   if (!id && OFFEN_ALS_PFAD.has(bereich)) {
     const offen = new URLSearchParams(suche).get('offen');
     return offen ? `/werkbank/${bereich}/${encodeURIComponent(offen)}` : null;
@@ -334,5 +391,7 @@ export function wartungsPlakette(stufe: 'aus' | 'angekuendigt' | 'aktiv', aktivA
 /** Systemzustand, Speicherplatz (#366, #408): Liegen alle messbaren Ordner auf demselben Datenträger, genügt ein Balken. */
 export function einDatentraeger(ordner: Array<{ geraet: string | null; gesamt: number | null }>): boolean {
   const gemessen = ordner.filter((o) => o.gesamt !== null);
-  return ordner.length > 1 && gemessen.length === ordner.length && !!gemessen[0].geraet && gemessen.every((o) => o.geraet === gemessen[0].geraet);
+  return (
+    ordner.length > 1 && gemessen.length === ordner.length && !!gemessen[0].geraet && gemessen.every((o) => o.geraet === gemessen[0].geraet)
+  );
 }

@@ -40,32 +40,36 @@ rauchtest('Werkbank: Nutzung oben auf „Eigene Organisation“, alte Adresse le
 });
 
 // #1182: Rollen per Verweisfeld mit Mehrfachauswahl, Hinweis und Link zu den Rollen, übliche Speicherleiste, Verwendungen verlinkt.
-rauchtest('Eigene Organisation: Rollen als Mehrfachauswahl, eine Speicherleiste, Verwendungen verlinkt (#1182)', { als: LENA }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.goto(BASIS + '/werkbank/organisation');
-  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  const feld = bearbeitung.getByRole('combobox', { name: 'Welche Rollen „eigene Organisation“ setzen dürfen' });
-  await feld.waitFor();
-  await bearbeitung.getByText('Wer Ablago verwaltet, darf das immer.').waitFor();
-  await bearbeitung.getByRole('link', { name: 'Rollen verwalten' }).waitFor();
-  assert.equal(await bearbeitung.getByRole('checkbox', { name: 'Mitglied' }).count(), 0, 'keine Haken-Liste mehr');
-  // Ohne Änderung ist „Speichern“ blass; nach einer Wahl aktiv, „Verwerfen“ nimmt sie zurück.
-  const speichern = bearbeitung.getByRole('button', { name: 'Eigene Organisation speichern' });
-  assert.equal(await speichern.isDisabled(), true);
-  await feld.click();
-  await feld.press('Enter');
-  const entfernen = s.locator('#organisation-einstellungen').getByRole('button', { name: 'Entfernen' });
-  await entfernen.first().waitFor();
-  assert.equal(await speichern.isDisabled(), false);
-  await bearbeitung.getByRole('button', { name: 'Änderungen verwerfen' }).click();
-  await speichern.and(s.locator(':disabled')).waitFor();
-  assert.equal(await entfernen.count(), 0);
-  // Verwendungen führen in die Bereiche.
-  await bearbeitung.getByRole('link', { name: /^Datenschutz-Auskünfte:/ }).waitFor();
-  await bearbeitung.getByRole('link', { name: /^Löschkonzept:/ }).click();
-  await s.waitForURL(/\/werkbank\/loeschkonzept$/);
-});
+rauchtest(
+  'Eigene Organisation: Rollen als Mehrfachauswahl, eine Speicherleiste, Verwendungen verlinkt (#1182)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/organisation');
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    const feld = bearbeitung.getByRole('combobox', { name: 'Welche Rollen „eigene Organisation“ setzen dürfen' });
+    await feld.waitFor();
+    await bearbeitung.getByText('Wer Ablago verwaltet, darf das immer.').waitFor();
+    await bearbeitung.getByRole('link', { name: 'Rollen verwalten' }).waitFor();
+    assert.equal(await bearbeitung.getByRole('checkbox', { name: 'Mitglied' }).count(), 0, 'keine Haken-Liste mehr');
+    // Ohne Änderung ist „Speichern“ blass; nach einer Wahl aktiv, „Verwerfen“ nimmt sie zurück.
+    const speichern = bearbeitung.getByRole('button', { name: 'Eigene Organisation speichern' });
+    assert.equal(await speichern.isDisabled(), true);
+    await feld.click();
+    await feld.press('Enter');
+    const entfernen = s.locator('#organisation-einstellungen').getByRole('button', { name: 'Entfernen' });
+    await entfernen.first().waitFor();
+    assert.equal(await speichern.isDisabled(), false);
+    await bearbeitung.getByRole('button', { name: 'Änderungen verwerfen' }).click();
+    await speichern.and(s.locator(':disabled')).waitFor();
+    assert.equal(await entfernen.count(), 0);
+    // Verwendungen führen in die Bereiche.
+    await bearbeitung.getByRole('link', { name: /^Datenschutz-Auskünfte:/ }).waitFor();
+    await bearbeitung.getByRole('link', { name: /^Löschkonzept:/ }).click();
+    await s.waitForURL(/\/werkbank\/loeschkonzept$/);
+  },
+);
 
 // #1183: Vorgaben der Auskünfte auf „Eigene Organisation“ – Anrede vor dem Text, Text folgt der Anrede, Zurücksetzen, Empfänger erklärt.
 rauchtest('Eigene Organisation: Vorgaben der Auskünfte, Anrede zuerst, Text folgt der Anrede (#1183)', { als: LENA }, async (s) => {
@@ -77,7 +81,10 @@ rauchtest('Eigene Organisation: Vorgaben der Auskünfte, Anrede zuerst, Text fol
   await vorgaben.getByRole('heading', { name: 'Datenschutz-Auskünfte' }).waitFor();
   // Anrede steht vor „Rechte der Person“.
   await vorgaben.getByText('Anrede in Unterlagen für Dritte').waitFor();
-  const anredeZuerst = await vorgaben.evaluate((v) => !!(v.querySelector('input[type="radio"]').compareDocumentPosition(v.querySelector('textarea')) & Node.DOCUMENT_POSITION_FOLLOWING));
+  const anredeZuerst = await vorgaben.evaluate(
+    (v) =>
+      !!(v.querySelector('input[type="radio"]').compareDocumentPosition(v.querySelector('textarea')) & Node.DOCUMENT_POSITION_FOLLOWING),
+  );
   assert.ok(anredeZuerst, 'Anrede steht vor „Rechte der Person“');
   await vorgaben.getByText(/^An wen die Daten der Person weitergegeben werden/).waitFor();
   // Der Text folgt der Anrede, solange er nicht von Hand geändert ist.
@@ -107,7 +114,8 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   // über ihre Adresse erreichbar. (Welche Bereiche sonst zu sehen sind, bestimmt die Vorlage; die Suche zeigt alle.)
   await s.goto(BASIS + '/werkbank/organisation');
   await bereiche.getByRole('link', { name: /^Eigene Organisation/ }).waitFor();
-  for (const name of [/^Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/]) assert.equal(await bereiche.getByRole('link', { name }).count(), 0, String(name));
+  for (const name of [/^Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/])
+    assert.equal(await bereiche.getByRole('link', { name }).count(), 0, String(name));
   const suche = bereiche.getByRole('searchbox', { name: 'Bereiche der Werkbank durchsuchen' });
   await suche.fill('Löschprotokoll');
   assert.equal(await bereiche.getByRole('link', { name: /^Löschprotokoll/ }).count(), 0);
@@ -134,7 +142,11 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   // Beruflich: die Werkbank-Suche findet die drei Einträge der Gruppe; danach wieder privat.
   await s.goto(BASIS + '/werkbank/organisation');
   await beruflich(s, true);
-  for (const [wort, name] of [['Auskünfte', /^Auskünfte/], ['Löschkonzept', /^Löschkonzept/], ['Löschprotokoll', /^Löschprotokoll/]]) {
+  for (const [wort, name] of [
+    ['Auskünfte', /^Auskünfte/],
+    ['Löschkonzept', /^Löschkonzept/],
+    ['Löschprotokoll', /^Löschprotokoll/],
+  ]) {
     await suche.fill(wort);
     await bereiche.getByRole('link', { name }).waitFor();
   }

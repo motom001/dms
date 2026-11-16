@@ -27,13 +27,15 @@ export function hilfeAntwort(url: string, webDir: string | undefined): HilfeAntw
     const [handbuch, ...seite] = teile;
     if (!handbuch) return { umleiten: `${HANDBUCH_BASIS}/`, status: 302 };
     // Startseite einer weiteren Sprache (#730): /hilfe/en/ → help.ablago.app/en/
-    if (handbuch !== 'de' && (HANDBUCH_SPRACHEN as readonly string[]).includes(handbuch) && !seite.length) return { umleiten: `${HANDBUCH_BASIS}/${handbuch}/`, status: 302 };
+    if (handbuch !== 'de' && (HANDBUCH_SPRACHEN as readonly string[]).includes(handbuch) && !seite.length)
+      return { umleiten: `${HANDBUCH_BASIS}/${handbuch}/`, status: 302 };
     const rest = seite.join('/');
     const schluss = rest && !rest.includes('.') ? '/' : '';
     return { umleiten: `${HANDBUCH_BASIS}/${handbuch}/${HANDBUCH_ONLINE_ORDNER}/${rest}${schluss}`, status: 302 };
   }
   const letztes = teile[teile.length - 1] ?? '';
-  if (!pfad.endsWith('/') && !letztes.includes('.')) return { umleiten: `/hilfe/${teile.map((t) => `${t}/`).join('')}${abfrage ? `?${abfrage}` : ''}`, status: 301 };
+  if (!pfad.endsWith('/') && !letztes.includes('.'))
+    return { umleiten: `/hilfe/${teile.map((t) => `${t}/`).join('')}${abfrage ? `?${abfrage}` : ''}`, status: 301 };
   const index = join('hilfe', ...teile, 'index.html');
   if (pfad.endsWith('/') && existsSync(join(webDir!, index))) return { datei: index };
   return nichtGefunden(webDir!, letztes);
@@ -46,7 +48,14 @@ function nichtGefunden(webDir: string, letztes: string): HilfeAntwort {
 }
 
 /** Antwort für Fastify (reply mit @fastify/static). */
-export function hilfeSenden(reply: { redirect(url: string, code: number): unknown; sendFile(p: string): unknown; code(c: number): { type(t: string): { send(b: string): unknown } } }, a: HilfeAntwort) {
+export function hilfeSenden(
+  reply: {
+    redirect(url: string, code: number): unknown;
+    sendFile(p: string): unknown;
+    code(c: number): { type(t: string): { send(b: string): unknown } };
+  },
+  a: HilfeAntwort,
+) {
   if ('umleiten' in a) return reply.redirect(a.umleiten, a.status);
   if ('datei' in a) return reply.sendFile(a.datei);
   if (a.seite) return reply.code(404).type('text/html; charset=utf-8').send(readFileSync(a.seite, 'utf8'));

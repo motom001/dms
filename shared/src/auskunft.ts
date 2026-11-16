@@ -9,7 +9,10 @@ import { imHeimnetz, rechnername } from './heimnetz';
 import { t } from './texte';
 
 /** Je Mappentyp: betrifft eine Person? Zweck der Verarbeitung (für das Deckblatt). */
-export interface DatenschutzTyp { person: boolean; zweck: string }
+export interface DatenschutzTyp {
+  person: boolean;
+  zweck: string;
+}
 
 export interface Datenschutz {
   /** Absender des Deckblatts: Name und Anschrift des Verantwortlichen, mehrzeilig. */
@@ -52,7 +55,8 @@ export function liesDatenschutz(v: unknown): Datenschutz {
   if (o.typen && typeof o.typen === 'object') {
     for (const [id, t] of Object.entries(o.typen as Record<string, unknown>)) {
       const x = (t && typeof t === 'object' ? t : {}) as Record<string, unknown>;
-      const person = x.person === true; const zweck = text(x.zweck, ZWECK_MAX);
+      const person = x.person === true;
+      const zweck = text(x.zweck, ZWECK_MAX);
       if (person || zweck) typen[id] = { person, zweck };
     }
   }
@@ -69,7 +73,10 @@ export function liesDatenschutz(v: unknown): Datenschutz {
 }
 
 /** Mappentypen, die „eine Person betreffen“ (Betroffene einer Auskunft). */
-export const personenTypen = (d: Datenschutz) => Object.entries(d.typen).filter(([, t]) => t.person).map(([id]) => id);
+export const personenTypen = (d: Datenschutz) =>
+  Object.entries(d.typen)
+    .filter(([, t]) => t.person)
+    .map(([id]) => id);
 
 /** Ende der Antwortfrist: Eingang + 1 Monat (31.01. → 28./29.02.), JJJJ-MM-TT. */
 export function fristBis(eingang: string): string {
@@ -83,7 +90,11 @@ export function fristBis(eingang: string): string {
 /* ---------- Vorschau (Prüfliste) ---------- */
 
 export interface AuskunftDokument {
-  id: string; name: string; register: string; mime: string; groesse: number;
+  id: string;
+  name: string;
+  register: string;
+  mime: string;
+  groesse: number;
   /** Selbst eine geschwärzte Fassung (#392). */
   geschwaerzt: boolean;
   /** Es gibt eine geschwärzte Fassung davon in derselben Mappe (Id) – dann diese statt des Originals vorschlagen. */
@@ -93,7 +104,11 @@ export interface AuskunftDokument {
   /** Lässt sich schwärzen (PDF, JPEG, PNG). */
   schwaerzbar: boolean;
 }
-export interface AuskunftNotiz { id: string; erstellt: string; text: string }
+export interface AuskunftNotiz {
+  id: string;
+  erstellt: string;
+  text: string;
+}
 export interface AuskunftMappe {
   dokumente: AuskunftDokument[];
   notizen: AuskunftNotiz[];
@@ -120,12 +135,20 @@ export interface AuskunftVorschau {
 }
 
 /** Eine Bezug-Mappe, die nur als Erwähnung hinausgeht: „als Ansprechpartner eingetragen in Vertrag „W-1““. */
-export interface AuskunftErwaehnung { mappeId: string; typ: string; titel: string; feld: string; richtung: BaumRichtung }
+export interface AuskunftErwaehnung {
+  mappeId: string;
+  typ: string;
+  titel: string;
+  feld: string;
+  richtung: BaumRichtung;
+}
 
 /** Text einer Erwähnung – ohne Dokumente, Notizen und übrige Feldwerte der Mappe. */
 export function erwaehnungText(e: Pick<AuskunftErwaehnung, 'typ' | 'titel' | 'feld' | 'richtung'>): string {
   const mappe = `${e.typ ? `${e.typ} ` : ''}„${e.titel || t('gemeinsam.auskunft.ohne-titel')}“`;
-  return e.richtung === 'verwiesenVon' ? t('gemeinsam.auskunft.als-eingetragen-in', { feld: e.feld, mappe }) : t('gemeinsam.auskunft.verweist-ueber-auf', { feld: e.feld, mappe });
+  return e.richtung === 'verwiesenVon'
+    ? t('gemeinsam.auskunft.als-eingetragen-in', { feld: e.feld, mappe })
+    : t('gemeinsam.auskunft.verweist-ueber-auf', { feld: e.feld, mappe });
 }
 
 /** Was hinausgeht: nur ausdrücklich Ausgewähltes. */
@@ -148,8 +171,14 @@ export function liesAuswahl(v: unknown): AuskunftAuswahl {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const ohne = Array.isArray(o.ohneNotizen) ? o.ohneNotizen : [];
   return {
-    mappen: ids(o.mappen), dokumente: ids(o.dokumente), notizen: ids(o.notizen), historie: ids(o.historie), erwaehnungen: ids(o.erwaehnungen),
-    ohneNotizen: ohne.map((x) => (x && typeof x === 'object' ? x as Record<string, unknown> : {})).filter((x) => typeof x.id === 'string')
+    mappen: ids(o.mappen),
+    dokumente: ids(o.dokumente),
+    notizen: ids(o.notizen),
+    historie: ids(o.historie),
+    erwaehnungen: ids(o.erwaehnungen),
+    ohneNotizen: ohne
+      .map((x) => (x && typeof x === 'object' ? (x as Record<string, unknown>) : {}))
+      .filter((x) => typeof x.id === 'string')
       .map((x) => ({ id: x.id as string, grund: text(x.grund, GRUND_MAX) })),
   };
 }
@@ -159,15 +188,23 @@ export function liesAuswahl(v: unknown): AuskunftAuswahl {
  * nur bekannte Mappen; Dokumente und Notizen nur aus ausgewählten Mappen; jede Notiz einer
  * ausgewählten Mappe ist entweder dabei oder hat eine Begründung; Erwähnungen nur von Bezug-Mappen.
  */
-export function auswahlProbleme(a: AuskunftAuswahl, bekannt: Record<string, AuskunftMappe>, bezug: ReadonlySet<string> = new Set()): string[] {
+export function auswahlProbleme(
+  a: AuskunftAuswahl,
+  bekannt: Record<string, AuskunftMappe>,
+  bezug: ReadonlySet<string> = new Set(),
+): string[] {
   const p: string[] = [];
   if (a.erwaehnungen.some((id) => !bezug.has(id))) p.push(t('gemeinsam.auskunft.erwaehnungen-nur-von-mappen'));
   if (!a.mappen.length) p.push(t('gemeinsam.auskunft.bitte-mindestens-eine-mappe'));
   const fremd = a.mappen.filter((id) => !bekannt[id]);
   if (fremd.length) p.push(t('gemeinsam.auskunft.ausgewaehlte-mappen-gehoeren-nicht', { fremd: fremd.length }));
   const gewaehlt = new Set(a.mappen.filter((id) => bekannt[id]));
-  const dok = new Set<string>(); const not = new Set<string>();
-  for (const id of gewaehlt) { for (const d of bekannt[id].dokumente) dok.add(d.id); for (const n of bekannt[id].notizen) not.add(n.id); }
+  const dok = new Set<string>();
+  const not = new Set<string>();
+  for (const id of gewaehlt) {
+    for (const d of bekannt[id].dokumente) dok.add(d.id);
+    for (const n of bekannt[id].notizen) not.add(n.id);
+  }
   if (a.dokumente.some((id) => !dok.has(id))) p.push(t('gemeinsam.auskunft.dokumente-nur-aus-ausgewaehlten'));
   if (a.notizen.some((id) => !not.has(id))) p.push(t('gemeinsam.auskunft.notizen-nur-aus-ausgewaehlten'));
   if (a.historie.some((id) => !gewaehlt.has(id))) p.push(t('gemeinsam.auskunft.historie-nur-von-ausgewaehlten'));
@@ -199,7 +236,14 @@ export interface AuskunftStand {
 
 /** Ein Dateiname ohne Sonderzeichen für die ZIP-Datei: Auskunft-<Titel>-<Datum>.zip */
 export function auskunftDateiname(titel: string, datum: string): string {
-  const text2 = titel.normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'Person';
+  const text2 =
+    titel
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/ß/g, 'ss')
+      .replace(/[^A-Za-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'Person';
   return t('gemeinsam.auskunft.auskunft', { t: text2, datum: datum.slice(0, 10) });
 }
 
@@ -221,13 +265,24 @@ export const CODE_EIGEN_MIN = 6;
 export const EMAIL_WARNUNG_BYTES = 10 * 1024 * 1024;
 
 /** Abrufcode vergleichbar machen: Groß-/Kleinschreibung, Leerzeichen und Bindestriche egal. */
-export const normiereCode = (c: unknown) => (typeof c === 'string' ? c.normalize('NFKC').toUpperCase().replace(/[\s\-_.]/g, '').slice(0, 64) : '');
+export const normiereCode = (c: unknown) =>
+  typeof c === 'string'
+    ? c
+        .normalize('NFKC')
+        .toUpperCase()
+        .replace(/[\s\-_.]/g, '')
+        .slice(0, 64)
+    : '';
 /** Zur Anzeige in Vierergruppen: ABCD-EFGH. */
 export const zeigeCode = (c: string) => c.replace(/(.{4})(?=.)/g, '$1-');
 
 export type LinkStatus = 'aktiv' | 'abgelaufen' | 'verbraucht' | 'gesperrt' | 'widerrufen';
 export const LINK_STATUS: Record<LinkStatus, string> = {
-  aktiv: 'aktiv', abgelaufen: 'abgelaufen', verbraucht: t('gemeinsam.auskunft.alle-abrufe-verbraucht'), gesperrt: t('gemeinsam.auskunft.gesperrt-nach-fehlversuchen'), widerrufen: 'zurückgezogen',
+  aktiv: 'aktiv',
+  abgelaufen: 'abgelaufen',
+  verbraucht: t('gemeinsam.auskunft.alle-abrufe-verbraucht'),
+  gesperrt: t('gemeinsam.auskunft.gesperrt-nach-fehlversuchen'),
+  widerrufen: 'zurückgezogen',
 };
 
 /** Ein Abruf-Link, wie ihn die Werkbank sieht – ohne Schlüssel und Code (beide liegen nur als Hash vor). */
@@ -253,7 +308,10 @@ export interface AuskunftLink {
   abgerufen: string | null;
 }
 
-export function linkStatus(l: Pick<AuskunftLink, 'ablauf' | 'maxAbrufe' | 'abrufe' | 'gesperrt' | 'widerrufen'>, jetzt = new Date()): LinkStatus {
+export function linkStatus(
+  l: Pick<AuskunftLink, 'ablauf' | 'maxAbrufe' | 'abrufe' | 'gesperrt' | 'widerrufen'>,
+  jetzt = new Date(),
+): LinkStatus {
   if (l.widerrufen) return 'widerrufen';
   if (l.gesperrt) return 'gesperrt';
   if (l.abrufe >= l.maxAbrufe) return 'verbraucht';
@@ -262,16 +320,27 @@ export function linkStatus(l: Pick<AuskunftLink, 'ablauf' | 'maxAbrufe' | 'abruf
 }
 
 /** Eingaben für einen neuen Abruf-Link prüfen. */
-export function liesLinkEingabe(v: unknown): { tage: number; abrufe: number; code: string | null; codeWieEingegeben: string | null; an: string; senden: boolean; fehler: string[] } {
+export function liesLinkEingabe(v: unknown): {
+  tage: number;
+  abrufe: number;
+  code: string | null;
+  codeWieEingegeben: string | null;
+  an: string;
+  senden: boolean;
+  fehler: string[];
+} {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const fehler: string[] = [];
   const zahl = (x: unknown, std: number) => (x === undefined || x === null || x === '' ? std : Math.round(Number(x)));
   const tage = zahl(o.tage, LINK_TAGE_STANDARD);
   const abrufe = zahl(o.abrufe, LINK_ABRUFE_STANDARD);
-  if (!Number.isInteger(tage) || tage < 1 || tage > LINK_TAGE_MAX) fehler.push(t('gemeinsam.auskunft.gueltigkeit-1-bis-tage', { LINK_TAGE_MAX }));
-  if (!Number.isInteger(abrufe) || abrufe < 1 || abrufe > LINK_ABRUFE_MAX) fehler.push(t('gemeinsam.auskunft.abrufe-1-bis', { LINK_ABRUFE_MAX }));
+  if (!Number.isInteger(tage) || tage < 1 || tage > LINK_TAGE_MAX)
+    fehler.push(t('gemeinsam.auskunft.gueltigkeit-1-bis-tage', { LINK_TAGE_MAX }));
+  if (!Number.isInteger(abrufe) || abrufe < 1 || abrufe > LINK_ABRUFE_MAX)
+    fehler.push(t('gemeinsam.auskunft.abrufe-1-bis', { LINK_ABRUFE_MAX }));
   const eigen = o.code === undefined || o.code === null || o.code === '' ? null : normiereCode(o.code);
-  if (eigen !== null && eigen.length < CODE_EIGEN_MIN) fehler.push(t('gemeinsam.auskunft.ein-eigener-abrufcode-braucht', { CODE_EIGEN_MIN }));
+  if (eigen !== null && eigen.length < CODE_EIGEN_MIN)
+    fehler.push(t('gemeinsam.auskunft.ein-eigener-abrufcode-braucht', { CODE_EIGEN_MIN }));
   const an = typeof o.an === 'string' ? o.an.trim().slice(0, 320) : '';
   // Ein eigener Code (z. B. eine Kundennummer) wird so angezeigt, wie er eingegeben wurde (#666); geprüft wird normiert.
   const codeWieEingegeben = eigen === null ? null : String(o.code).trim().slice(0, 64);
@@ -307,7 +376,12 @@ export type AuskunftZustand = 'angefragt' | 'inArbeit' | 'bereit' | 'zugestellt'
 export const istOffen = (z: AuskunftZustand) => z === 'angefragt' || z === 'inArbeit' || z === 'bereit';
 
 /** Ein Schritt im Verlauf einer Auskunft – aus der Historie der Person (nur Zahlen, keine Inhalte). */
-export interface AuskunftSchritt { zeit: string; text: string; von: string | null; erfolg?: boolean }
+export interface AuskunftSchritt {
+  zeit: string;
+  text: string;
+  von: string | null;
+  erfolg?: boolean;
+}
 
 /** Ein Eintrag der Liste: eine erzeugte Auskunft (auch gelöscht, als Nachweis), eine Anfrage mit Frist oder ein laufender Auftrag. */
 export interface AuskunftEintrag {
@@ -359,34 +433,99 @@ export function auskunftVerzeichnis(q: VerzeichnisQuelle): AuskunftEintrag[] {
     if (!id) continue;
     let e = je.get(id);
     if (!e) {
-      e = { id, art: 'auskunft', mappeId: h.mappeId, titel: q.titel.get(h.mappeId) ?? '', zustand: 'geloescht', zeit: h.zeit, frist: null, fristAufgabe: null, verlauf: [] };
+      e = {
+        id,
+        art: 'auskunft',
+        mappeId: h.mappeId,
+        titel: q.titel.get(h.mappeId) ?? '',
+        zustand: 'geloescht',
+        zeit: h.zeit,
+        frist: null,
+        fristAufgabe: null,
+        verlauf: [],
+      };
       je.set(id, e);
     }
     const z = h.daten.zustellung;
     if (!z && typeof h.daten.mappen === 'number') {
-      e.zeit = h.zeit; e.mappen = h.daten.mappen; e.dokumente = typeof h.daten.dokumente === 'number' ? h.daten.dokumente : undefined;
+      e.zeit = h.zeit;
+      e.mappen = h.daten.mappen;
+      e.dokumente = typeof h.daten.dokumente === 'number' ? h.daten.dokumente : undefined;
       e.verschluesselt = h.daten.verschluesselt === true;
     }
-    e.verlauf.push({ zeit: h.zeit, text: String(h.daten.text ?? ''), von: h.benutzerId ? q.namen.get(h.benutzerId) ?? null : null, ...(typeof h.daten.erfolg === 'boolean' ? { erfolg: h.daten.erfolg } : {}) });
+    e.verlauf.push({
+      zeit: h.zeit,
+      text: String(h.daten.text ?? ''),
+      von: h.benutzerId ? (q.namen.get(h.benutzerId) ?? null) : null,
+      ...(typeof h.daten.erfolg === 'boolean' ? { erfolg: h.daten.erfolg } : {}),
+    });
   }
   // Bereitliegende ohne Historie (z. B. Eintrag schon aufgeräumt): trotzdem zeigen.
-  for (const b of q.bereit) if (!je.has(b.id)) je.set(b.id, { id: b.id, art: 'auskunft', mappeId: b.mappeId, titel: b.titel, zustand: 'bereit', zeit: b.erstellt, frist: null, fristAufgabe: null, mappen: b.mappen, dokumente: b.dokumente, verschluesselt: b.verschluesselt, verlauf: [] });
+  for (const b of q.bereit)
+    if (!je.has(b.id))
+      je.set(b.id, {
+        id: b.id,
+        art: 'auskunft',
+        mappeId: b.mappeId,
+        titel: b.titel,
+        zustand: 'bereit',
+        zeit: b.erstellt,
+        frist: null,
+        fristAufgabe: null,
+        mappen: b.mappen,
+        dokumente: b.dokumente,
+        verschluesselt: b.verschluesselt,
+        verlauf: [],
+      });
   for (const e of je.values()) {
     const b = bereit.get(e.id);
     // Ein zurückgezogener Link (ohne Ablauf) zählt nicht als Zustellung.
-    const zust = (art: string) => q.historie.some((h) => h.daten.auskunft === e.id && h.daten.zustellung === art && h.daten.erfolg !== false && (art !== 'link' || !!h.daten.ablauf));
-    if (b) { e.bereit = b; e.titel = e.titel || b.titel; }
+    const zust = (art: string) =>
+      q.historie.some(
+        (h) => h.daten.auskunft === e.id && h.daten.zustellung === art && h.daten.erfolg !== false && (art !== 'link' || !!h.daten.ablauf),
+      );
+    if (b) {
+      e.bereit = b;
+      e.titel = e.titel || b.titel;
+    }
     e.zustand = zust('abruf') ? 'abgerufen' : zust('email') || zust('link') || zust('download') ? 'zugestellt' : b ? 'bereit' : 'geloescht';
     e.verlauf.reverse();
   }
   const liste = [...je.values()];
   // Offene Frist: zur jüngsten offenen Auskunft der Person, die nach der Frist entstand – sonst als Anfrage.
   for (const f of q.fristen) {
-    const ziel = liste.filter((e) => e.art === 'auskunft' && e.mappeId === f.mappeId && istOffen(e.zustand) && e.zeit >= f.erstellt).sort((a, b) => b.zeit.localeCompare(a.zeit))[0];
-    if (ziel) { ziel.frist = f.datum; ziel.fristAufgabe = f.id; continue; }
-    liste.push({ id: `frist-${f.id}`, art: 'anfrage', mappeId: f.mappeId, titel: q.titel.get(f.mappeId) ?? f.mappeTitel ?? '', zustand: 'angefragt', zeit: f.erstellt, frist: f.datum, fristAufgabe: f.id, verlauf: [] });
+    const ziel = liste
+      .filter((e) => e.art === 'auskunft' && e.mappeId === f.mappeId && istOffen(e.zustand) && e.zeit >= f.erstellt)
+      .sort((a, b) => b.zeit.localeCompare(a.zeit))[0];
+    if (ziel) {
+      ziel.frist = f.datum;
+      ziel.fristAufgabe = f.id;
+      continue;
+    }
+    liste.push({
+      id: `frist-${f.id}`,
+      art: 'anfrage',
+      mappeId: f.mappeId,
+      titel: q.titel.get(f.mappeId) ?? f.mappeTitel ?? '',
+      zustand: 'angefragt',
+      zeit: f.erstellt,
+      frist: f.datum,
+      fristAufgabe: f.id,
+      verlauf: [],
+    });
   }
-  if (q.laufend) liste.push({ id: `auftrag-${q.laufend.id}`, art: 'auftrag', mappeId: null, titel: q.laufend.titel, zustand: 'inArbeit', zeit: q.laufend.gestartet, frist: null, fristAufgabe: null, verlauf: [] });
+  if (q.laufend)
+    liste.push({
+      id: `auftrag-${q.laufend.id}`,
+      art: 'auftrag',
+      mappeId: null,
+      titel: q.laufend.titel,
+      zustand: 'inArbeit',
+      zeit: q.laufend.gestartet,
+      frist: null,
+      fristAufgabe: null,
+      verlauf: [],
+    });
   return liste.sort((a, b) => b.zeit.localeCompare(a.zeit));
 }
 

@@ -53,11 +53,25 @@ function passtIfRange(kopf: string | undefined, etag: string | null | undefined)
 }
 
 /** Antwort für `d`: ganz (200) oder ein Teil (206), als Strom; `bereich` sagt, was ausgeliefert wird (für das Protokoll). */
-export async function abruf(d: Abrufbar, kopf: (name: string) => string | undefined): Promise<{ antwort: Antwort; bereich: Bereich | null }> {
-  const koepfe: Record<string, string> = { 'accept-ranges': 'bytes', 'cache-control': 'no-store', ...(d.etag ? { etag: `"${d.etag}"` } : {}) };
+export async function abruf(
+  d: Abrufbar,
+  kopf: (name: string) => string | undefined,
+): Promise<{ antwort: Antwort; bereich: Bereich | null }> {
+  const koepfe: Record<string, string> = {
+    'accept-ranges': 'bytes',
+    'cache-control': 'no-store',
+    ...(d.etag ? { etag: `"${d.etag}"` } : {}),
+  };
   const b = passtIfRange(kopf('if-range'), d.etag) ? liesBereich(kopf('range'), d.groesse) : null;
   if (b === 'unerfuellbar') {
-    return { antwort: { status: 416, body: { fehler: t('meldungen.http.bereich-unerfuellbar', { groesse: d.groesse }) }, koepfe: { ...koepfe, 'content-range': `bytes */${d.groesse}` } }, bereich: null };
+    return {
+      antwort: {
+        status: 416,
+        body: { fehler: t('meldungen.http.bereich-unerfuellbar', { groesse: d.groesse }) },
+        koepfe: { ...koepfe, 'content-range': `bytes */${d.groesse}` },
+      },
+      bereich: null,
+    };
   }
   const teil = b ?? { start: 0, ende: d.groesse - 1 };
   const inhalt = d.groesse === 0 ? Readable.from([]) : await d.oeffne(teil);
@@ -65,7 +79,11 @@ export async function abruf(d: Abrufbar, kopf: (name: string) => string | undefi
     antwort: {
       ...(b ? { status: 206 } : {}),
       datei: {
-        inhalt, name: d.dateiname, mime: d.mime ?? 'application/octet-stream', anzeigen: false, groesse: b ? b.ende - b.start + 1 : d.groesse,
+        inhalt,
+        name: d.dateiname,
+        mime: d.mime ?? 'application/octet-stream',
+        anzeigen: false,
+        groesse: b ? b.ende - b.start + 1 : d.groesse,
         koepfe: { ...koepfe, ...(b ? { 'content-range': `bytes ${b.start}-${b.ende}/${d.groesse}` } : {}) },
       },
     },

@@ -17,7 +17,11 @@ export type StartbildSprache = 'de' | 'en';
 export const STARTBILD_SPRACHEN: readonly StartbildSprache[] = ['de', 'en'];
 
 /** Schlüssel der Texte im Startbild (oberflaeche.json). */
-export const STARTBILD_TEXTE = { verbinden: 'oberflaeche.startbild.verbinden', wartet: 'oberflaeche.startbild.wartet', wasTun: 'oberflaeche.startbild.was-tun' } as const;
+export const STARTBILD_TEXTE = {
+  verbinden: 'oberflaeche.startbild.verbinden',
+  wartet: 'oberflaeche.startbild.wartet',
+  wasTun: 'oberflaeche.startbild.was-tun',
+} as const;
 
 /** Was tun, wenn Ablago nicht lädt (Notfallseite im Handbuch, immer online – Ablago selbst antwortet ja gerade nicht). */
 export const laedtNichtUrl = (sprache?: string | null) => hilfeOnlineUrl(HILFE['notfall.laedt-nicht'], sprache);
@@ -39,15 +43,18 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC[c]);
 
 /** HTML des Startbilds; `text(sprache, schluessel)` liefert den Text aus der Sprachdatei. */
 export function startbildHtml(text: (sprache: StartbildSprache, schluessel: string) => string): string {
-  const zeilen = (schluessel: string, klasse: string) => STARTBILD_SPRACHEN
-    .map((s) => `<p class="${klasse}" data-sprache="${s}" lang="${s}">${esc(text(s, schluessel))}</p>`).join('');
+  const zeilen = (schluessel: string, klasse: string) =>
+    STARTBILD_SPRACHEN.map((s) => `<p class="${klasse}" data-sprache="${s}" lang="${s}">${esc(text(s, schluessel))}</p>`).join('');
   return [
     '<div class="startbild" id="startbild" role="status">',
     '<img class="startbild-logo hell" src="/ablago-logo-mit-schriftzug.svg" alt="Ablago" width="220" height="64">',
     '<img class="startbild-logo dunkel" src="/ablago-logo-mit-schriftzug-dunkel.svg" alt="Ablago" width="220" height="64">',
     zeilen(STARTBILD_TEXTE.verbinden, 'startbild-text'),
     zeilen(STARTBILD_TEXTE.wartet, 'startbild-text startbild-spaeter'),
-    STARTBILD_SPRACHEN.map((s) => `<p class="startbild-text startbild-spaeter" data-sprache="${s}" lang="${s}"><a href="${esc(laedtNichtUrl(s))}" target="_blank" rel="noreferrer">${esc(text(s, STARTBILD_TEXTE.wasTun))}</a></p>`).join(''),
+    STARTBILD_SPRACHEN.map(
+      (s) =>
+        `<p class="startbild-text startbild-spaeter" data-sprache="${s}" lang="${s}"><a href="${esc(laedtNichtUrl(s))}" target="_blank" rel="noreferrer">${esc(text(s, STARTBILD_TEXTE.wasTun))}</a></p>`,
+    ).join(''),
     '</div>',
   ].join('');
 }

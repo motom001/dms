@@ -1,5 +1,13 @@
 import { feldLabel, typName } from '../../../shared/src/beschriftung';
-import { altesTextfeldVon, formatiere, istLeer, istSystemspalte, SYSTEMSPALTEN, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import {
+  altesTextfeldVon,
+  formatiere,
+  istLeer,
+  istSystemspalte,
+  SYSTEMSPALTEN,
+  type Mappe,
+  type Mappentyp,
+} from '../../../shared/src/model';
 import type { Bezuege } from '../api/mappen';
 import { titelOder } from '../seiten';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -15,12 +23,18 @@ const datumZeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(),
 /** Inhalt einer Zelle, formatiert wie in der Mappe. */
 export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: Bezuege, person: (id: string | null) => string): string {
   switch (k) {
-    case '_titel': return titelOder(m.titel);
-    case '_typ': return typ ? typName(typ) : '';
-    case '_erstellt': return datumZeit(m.erstellt);
-    case '_geaendert': return datumZeit(m.geaendert);
-    case '_erstelltVon': return person(m.erstelltVon);
-    case '_geaendertVon': return person(m.geaendertVon);
+    case '_titel':
+      return titelOder(m.titel);
+    case '_typ':
+      return typ ? typName(typ) : '';
+    case '_erstellt':
+      return datumZeit(m.erstellt);
+    case '_geaendert':
+      return datumZeit(m.geaendert);
+    case '_erstelltVon':
+      return person(m.erstelltVon);
+    case '_geaendertVon':
+      return person(m.geaendertVon);
   }
   const f = typ?.felder.find((x) => x.key === k);
   // Verweis noch leer, alter Text da (#534): bis zur Umwandlung zeigt die Spalte den Text.
@@ -33,4 +47,3 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
   // Formatierter Text (#53) in Listen: ohne Formatierung, gekürzt.
   return f?.typ === 'formatiert' && text.length > 140 ? `${text.slice(0, 137).trimEnd()} …` : text;
 }
-

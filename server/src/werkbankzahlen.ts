@@ -25,7 +25,11 @@ export interface WerkbankZahlenQuellen {
 
 async function anzahl<T>(f: (() => Promise<readonly T[]>) | undefined, zaehlt: (x: T) => boolean = () => true): Promise<number | null> {
   if (!f) return null;
-  try { return (await f()).filter(zaehlt).length; } catch { return null; }
+  try {
+    return (await f()).filter(zaehlt).length;
+  } catch {
+    return null;
+  }
 }
 
 export async function werkbankZahlen(q: WerkbankZahlenQuellen): Promise<WerkbankZahlen> {

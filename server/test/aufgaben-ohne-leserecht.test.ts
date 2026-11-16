@@ -31,7 +31,9 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
 let sql: any;
-after(async () => { await sql?.end(); });
+after(async () => {
+  await sql?.end();
+});
 
 async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo-pg');
@@ -50,31 +52,54 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-  const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
-  const lena = await neu('Lena'); const jonas = await neu('Jonas'); const petra = await neu('Petra');
+  const neu = async (name: string) =>
+    (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
+  const lena = await neu('Lena');
+  const jonas = await neu('Jonas');
+  const petra = await neu('Petra');
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const kontakt = await d.mappentypen.legeTypAn({ name: 'Kontakt', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], titelVorlage: '{name}' });
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true },
-    { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: kontakt.id },
-    { key: 'kuendbar_bis', label: 'Kündbar bis', typ: 'datum' },
-    { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
-  ] });
-  const lesen = (ids: string[]): Regelwerk => ({ grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: ids }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] });
+  const kontakt = await d.mappentypen.legeTypAn({
+    name: 'Kontakt',
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    titelVorlage: '{name}',
+  });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{name}',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: kontakt.id },
+      { key: 'kuendbar_bis', label: 'Kündbar bis', typ: 'datum' },
+      { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
+    ],
+  });
+  const lesen = (ids: string[]): Regelwerk => ({
+    grund: { ...NICHTS, C: true },
+    regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: ids }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }],
+  });
   await d.berechtigungen.setzeBerechtigungen(kontakt.id, lesen([lena.id]), true);
   await d.berechtigungen.setzeBerechtigungen(vertrag.id, lesen([lena.id, jonas.id]), true);
   const stadtwerke = await d.mappen.legeMappeAn({ typId: kontakt.id, werte: { name: 'Stadtwerke' } }, lena.id);
-  const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', partner: stadtwerke.id, kuendbar_bis: verschiebe(heuteIn(), 30) } }, lena.id);
+  const m = await d.mappen.legeMappeAn(
+    { typId: vertrag.id, werte: { name: 'Strom', partner: stadtwerke.id, kuendbar_bis: verschiebe(heuteIn(), 30) } },
+    lena.id,
+  );
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
-  const ereignis = (art: string, daten: Record<string, unknown>): KatalogEreignis =>
-    ({ id: crypto.randomUUID(), art: art as KatalogEreignis['art'], daten, ausloeser: { art: 'benutzer', id: lena.id, konto: lena.id }, erstellt: new Date().toISOString() });
+  const ereignis = (art: string, daten: Record<string, unknown>): KatalogEreignis => ({
+    id: crypto.randomUUID(),
+    art: art as KatalogEreignis['art'],
+    daten,
+    ausloeser: { art: 'benutzer', id: lena.id, konto: lena.id },
+    erstellt: new Date().toISOString(),
+  });
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
   const route = (mt: string, p: string) => tabelle.find((r) => r.methode === mt && r.pfad === p)!;
-  const rufe = async (b: { id: string }, mt: string, p: string, x: Partial<Anfrage> = {}) => route(mt, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
+  const rufe = async (b: { id: string }, mt: string, p: string, x: Partial<Anfrage> = {}) =>
+    route(mt, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
   const mitglied = (await d.postSystemmappen.listeRollen()).find((r) => r.system && r.name === 'Mitglied')!.id;
   return { d, konten, markus, lena, jonas, petra, kontakt, vertrag, stadtwerke, m, motor, ereignis, ich, rufe, lesen, mitglied };
 }
@@ -82,8 +107,23 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
 describe('Platzhalter mit den Rechten des Empfängers (#795)', () => {
   it('je Empfänger einer Rolle: was er nicht sehen darf, steht als „(nicht sichtbar)“ da; die Aufgabe hängt an der Mappe', async () => {
     const { d, lena, jonas, petra, vertrag, m, motor, ereignis, mitglied } = await aufbau();
-    const a = await motor.lege({ name: 'Prüfen', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
-      dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'rolle', id: mitglied }], faellig: 3, text: 'Vertrag {name} mit {partner} ({titel}, {mappentyp})' }] }, lena.id);
+    const a = await motor.lege(
+      {
+        name: 'Prüfen',
+        aktiv: true,
+        wenn: { art: 'mappe.notiz', typ: vertrag.id },
+        dann: [
+          {
+            art: 'aufgabe',
+            als: 'aufgabe',
+            empfaenger: [{ art: 'rolle', id: mitglied }],
+            faellig: 3,
+            text: 'Vertrag {name} mit {partner} ({titel}, {mappentyp})',
+          },
+        ],
+      },
+      lena.id,
+    );
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     const [l] = await motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen', JSON.stringify(l.schritte));
@@ -100,8 +140,26 @@ describe('Platzhalter mit den Rechten des Empfängers (#795)', () => {
 
   it('Testlauf im Editor nennt, wer etwas nicht sehen darf; der Trockenlauf legt nichts an', async () => {
     const { d, lena, jonas, petra, vertrag, m, motor } = await aufbau();
-    const a = await motor.lege({ name: 'Melden', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
-      dann: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: lena.id }, { art: 'person', id: jonas.id }, { art: 'person', id: petra.id }], text: 'Notiz an {name} ({partner})' }] }, lena.id);
+    const a = await motor.lege(
+      {
+        name: 'Melden',
+        aktiv: true,
+        wenn: { art: 'mappe.notiz', typ: vertrag.id },
+        dann: [
+          {
+            art: 'aufgabe',
+            als: 'benachrichtigung',
+            empfaenger: [
+              { art: 'person', id: lena.id },
+              { art: 'person', id: jonas.id },
+              { art: 'person', id: petra.id },
+            ],
+            text: 'Notiz an {name} ({partner})',
+          },
+        ],
+      },
+      lena.id,
+    );
     const l = await motor.wiedergeben(a.id, m.id, true);
     const text = l.schritte[2].text!;
     assert.match(text, /^Würde Benachrichtigung an 3 Personen senden: Notiz an Strom \(Stadtwerke\)/);
@@ -114,8 +172,15 @@ describe('Platzhalter mit den Rechten des Empfängers (#795)', () => {
   it('Vertretung (gemeinsamer Weg aus #724): gefüllt mit den Rechten dessen, der die Aufgabe wirklich bekommt', async () => {
     const { d, konten, lena, jonas, petra, vertrag, m, motor, ereignis, ich } = await aufbau();
     await konten.setzeAbwesenheit(await ich(lena.id), lena.id, { an: true, vertreterId: jonas.id });
-    await motor.lege({ name: 'Prüfen', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
-      dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'person', id: lena.id }], text: 'Bitte {name} mit {partner} prüfen' }] }, petra.id);
+    await motor.lege(
+      {
+        name: 'Prüfen',
+        aktiv: true,
+        wenn: { art: 'mappe.notiz', typ: vertrag.id },
+        dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'person', id: lena.id }], text: 'Bitte {name} mit {partner} prüfen' }],
+      },
+      petra.id,
+    );
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     const [x] = (await d.ohneLeserecht.alleAufgaben()).filter((y) => y.mappeId === m.id && y.art === 'manuell');
     assert.equal(x.empfaengerId, jonas.id, 'an die Vertretung');
@@ -126,8 +191,17 @@ describe('Platzhalter mit den Rechten des Empfängers (#795)', () => {
 describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
   it('automatische zeigen nur Hinweis und Fälligkeit – in der Liste, in „Zu erledigen“ und an der Mappe; von Hand geschriebene ihren Text', async () => {
     const { d, lena, petra, vertrag, m, motor, ereignis, ich, rufe } = await aufbau();
-    await motor.lege({ name: 'Prüfen', aktiv: true, wenn: { art: 'mappe.notiz', typ: vertrag.id },
-      dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'person', id: petra.id }], faellig: 5, text: 'Kündigung {name} prüfen' }] }, lena.id);
+    await motor.lege(
+      {
+        name: 'Prüfen',
+        aktiv: true,
+        wenn: { art: 'mappe.notiz', typ: vertrag.id },
+        dann: [
+          { art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'person', id: petra.id }], faellig: 5, text: 'Kündigung {name} prüfen' },
+        ],
+      },
+      lena.id,
+    );
     await motor.ereignis(ereignis('mappe.notiz', { mappe: m.id, typ: vertrag.id }));
     await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: petra.id, text: 'Bitte unterschreiben' }, lena.id);
     const liste = await d.vertretung.meineAufgaben(await ich(petra.id), await d.rechtepruefung.zugriff(await ich(petra.id)));
@@ -135,13 +209,22 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
     assert.equal(auto.text, 'Aufgabe zu einer Mappe, die du nicht sehen darfst – frag Lena');
     assert.equal(auto.datum, verschiebe(heuteIn(), 5), 'Fälligkeit bleibt');
     assert.equal(auto.mappeTitel, 'nicht sichtbare Mappe');
-    assert.ok(liste.some((x) => x.text === 'Bitte unterschreiben'), 'von Hand geschrieben bleibt sichtbar');
+    assert.ok(
+      liste.some((x) => x.text === 'Bitte unterschreiben'),
+      'von Hand geschrieben bleibt sichtbar',
+    );
     // Tägliche Zusammenfassung nutzt dieselbe Liste; „Zu erledigen“ und die Mappe ohne Leserecht ebenso.
     const eingang = (await rufe(petra, 'GET', '/api/mappen', { query: { sicht: 'eingang' } })).body as { aufgaben: Record<string, string> };
     assert.doesNotMatch(eingang.aufgaben[m.id], /Kündigung|Strom/);
     assert.match(eingang.aufgaben[m.id], /frag Lena/);
-    await assert.rejects(rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } }), (e: unknown) =>
-      e instanceof Fachfehler && e.status === 404 && JSON.stringify(e.details).includes('frag Lena') && !JSON.stringify(e.details).includes('Kündigung'));
+    await assert.rejects(
+      rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } }),
+      (e: unknown) =>
+        e instanceof Fachfehler &&
+        e.status === 404 &&
+        JSON.stringify(e.details).includes('frag Lena') &&
+        !JSON.stringify(e.details).includes('Kündigung'),
+    );
   });
 
   it('#958: Fristen an Mappen ohne Leserecht ohne Datum und Feld – wer lesen darf, sieht beides', async () => {
@@ -149,14 +232,34 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
       const { d, lena, petra, m, ich, rufe } = await aufbau(repos);
       const datum = verschiebe(heuteIn(), 30);
       for (const an of [petra, lena]) {
-        await d.aufgaben.aufgabeAusAutomatisierung({ mappeId: m.id, empfaengerId: an.id, text: 'Strom kündbar bis', datum: null, von: lena.id, buendeln: null, anlass: {},
-          aufgabenAnlass: { art: 'datum', feld: 'kuendbar_bis' }, frist: { feld: 'kuendbar_bis', datum } });
+        await d.aufgaben.aufgabeAusAutomatisierung({
+          mappeId: m.id,
+          empfaengerId: an.id,
+          text: 'Strom kündbar bis',
+          datum: null,
+          von: lena.id,
+          buendeln: null,
+          anlass: {},
+          aufgabenAnlass: { art: 'datum', feld: 'kuendbar_bis' },
+          frist: { feld: 'kuendbar_bis', datum },
+        });
       }
-      const fuer = async (b: { id: string }) => (await d.vertretung.meineAufgaben(await ich(b.id), await d.rechtepruefung.zugriff(await ich(b.id)))).find((x) => x.mappeId === m.id && x.art === 'frist')!;
+      const fuer = async (b: { id: string }) =>
+        (await d.vertretung.meineAufgaben(await ich(b.id), await d.rechtepruefung.zugriff(await ich(b.id)))).find(
+          (x) => x.mappeId === m.id && x.art === 'frist',
+        )!;
       const p = await fuer(petra);
-      assert.deepEqual([p.datum, p.feldKey, p.anlass, p.mappeTitel], [null, null, null, 'nicht sichtbare Mappe'], 'Petra darf den Vertrag nicht lesen');
+      assert.deepEqual(
+        [p.datum, p.feldKey, p.anlass, p.mappeTitel],
+        [null, null, null, 'nicht sichtbare Mappe'],
+        'Petra darf den Vertrag nicht lesen',
+      );
       assert.doesNotMatch(JSON.stringify(p), /kuendbar_bis|Strom/);
-      assert.doesNotMatch(JSON.stringify((await rufe(petra, 'GET', '/api/aufgaben')).body), new RegExp(`kuendbar_bis|${datum}`), 'auch über die API');
+      assert.doesNotMatch(
+        JSON.stringify((await rufe(petra, 'GET', '/api/aufgaben')).body),
+        new RegExp(`kuendbar_bis|${datum}`),
+        'auch über die API',
+      );
       const l = await fuer(lena);
       assert.deepEqual([l.datum, l.feldKey, l.anlass?.art], [datum, 'kuendbar_bis', 'datum'], 'Lena darf lesen');
     }
@@ -164,14 +267,30 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
 
   it('beim Zuweisen von Hand: Prüfung vorab, Aufgabe kommt an, der Admin erfährt es (Fall, Hinweis über #719)', async () => {
     const { d, lena, jonas, petra, m, rufe } = await aufbau();
-    assert.deepEqual((await rufe(lena, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: petra.id } })).body, { lesen: false });
-    assert.deepEqual((await rufe(lena, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: jonas.id } })).body, { lesen: true });
-    await assert.rejects(rufe(petra, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: jonas.id } }), status(404), 'nur wer die Mappe lesen darf');
-    const r = (await rufe(lena, 'POST', '/api/mappen/:id/aufgaben', { params: { id: m.id }, body: { empfaengerId: petra.id, text: 'Bitte unterschreiben' } })).body as { id: string; hinweis?: string };
+    assert.deepEqual((await rufe(lena, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: petra.id } })).body, {
+      lesen: false,
+    });
+    assert.deepEqual((await rufe(lena, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: jonas.id } })).body, {
+      lesen: true,
+    });
+    await assert.rejects(
+      rufe(petra, 'GET', '/api/mappen/:id/leserecht/:benutzer', { params: { id: m.id, benutzer: jonas.id } }),
+      status(404),
+      'nur wer die Mappe lesen darf',
+    );
+    const r = (
+      await rufe(lena, 'POST', '/api/mappen/:id/aufgaben', {
+        params: { id: m.id },
+        body: { empfaengerId: petra.id, text: 'Bitte unterschreiben' },
+      })
+    ).body as { id: string; hinweis?: string };
     assert.match(r.hinweis ?? '', /nicht lesen/);
     const offen = await d.ohneLeserecht.offeneFaelle();
     assert.equal(offen.length, 1);
-    assert.deepEqual([offen[0].aufgabeId, offen[0].benutzerId, offen[0].mappeId, offen[0].aufgabentext, offen[0].leserechtSeit], [r.id, petra.id, m.id, 'Bitte unterschreiben', null]);
+    assert.deepEqual(
+      [offen[0].aufgabeId, offen[0].benutzerId, offen[0].mappeId, offen[0].aufgabentext, offen[0].leserechtSeit],
+      [r.id, petra.id, m.id, 'Bitte unterschreiben', null],
+    );
     // Jonas darf lesen: kein Fall.
     await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: jonas.id, text: 'Gegenlesen' }, lena.id);
     assert.equal((await d.ohneLeserecht.offeneFaelle()).length, 1);
@@ -186,23 +305,41 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
       await assert.rejects(rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404));
       await rufe(markus, 'POST', '/api/werkbank/aufgaben/ohne-leserecht/:id/leserecht', { params: { id: fall.id } });
       const z = await d.rechtepruefung.zugriff(await ich(petra.id));
-      const offen = (await rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } })).body as { rechte: { R: boolean; U: boolean; D: boolean; P: boolean } };
+      const offen = (await rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } })).body as {
+        rechte: { R: boolean; U: boolean; D: boolean; P: boolean };
+      };
       assert.deepEqual([offen.rechte.R, offen.rechte.U, offen.rechte.D, offen.rechte.P], [true, false, false, false], 'nur Lesen');
       assert.ok((await d.rechtepruefung.lesbare(z, [m.id, andere.id, stadtwerke.id])).has(m.id));
       assert.ok(!(await d.rechtepruefung.lesbare(z, [andere.id])).has(andere.id), 'nur diese Mappe');
       assert.ok(!(await d.rechtepruefung.lesbare(z, [stadtwerke.id])).has(stadtwerke.id));
       // Zweimal geben ändert nichts.
       await d.ohneLeserecht.leserechtAufZeitGeben(fall.id, markus.id);
-      const test = await d.berechtigungen.testlauf({ mappeId: m.id, benutzerId: petra.id }) as { wirksam: { R: boolean }; aufZeit?: { aufgabe: string; von: string | null; wirkt: boolean } };
+      const test = (await d.berechtigungen.testlauf({ mappeId: m.id, benutzerId: petra.id })) as {
+        wirksam: { R: boolean };
+        aufZeit?: { aufgabe: string; von: string | null; wirkt: boolean };
+      };
       assert.equal(test.wirksam.R, true);
-      assert.deepEqual(test.aufZeit && [test.aufZeit.aufgabe, test.aufZeit.von, test.aufZeit.wirkt], ['Bitte unterschreiben', 'Markus', true]);
+      assert.deepEqual(test.aufZeit && [test.aufZeit.aufgabe, test.aufZeit.von, test.aufZeit.wirkt], [
+        'Bitte unterschreiben',
+        'Markus',
+        true,
+      ]);
       await d.vertretung.erledigeAufgabe(auf.id, { id: petra.id, rolle: 'mitglied' });
       await assert.rejects(rufe(petra, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404), 'Recht endet mit dem Erledigen');
       const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'leserecht').map((x) => x.daten.text);
-      assert.deepEqual(h.sort(), ['Leserecht an Petra wegen Aufgabe „Bitte unterschreiben“ vergeben (von Markus)', 'Leserecht von Petra nach Erledigen der Aufgabe wieder entzogen'].sort());
+      assert.deepEqual(
+        h.sort(),
+        [
+          'Leserecht an Petra wegen Aufgabe „Bitte unterschreiben“ vergeben (von Markus)',
+          'Leserecht von Petra nach Erledigen der Aufgabe wieder entzogen',
+        ].sort(),
+      );
       const u = await d.ohneLeserecht.faelleUebersicht();
       assert.equal(u.offen.length, 0);
-      assert.deepEqual(u.vergangen.map((x) => [x.benutzerId, x.mappeId, x.endeGrund, !!x.leserechtSeit, x.leserechtVon, !!x.ende, x.mappeTitel]), [[petra.id, m.id, 'erledigt', true, markus.id, true, 'Strom']]);
+      assert.deepEqual(
+        u.vergangen.map((x) => [x.benutzerId, x.mappeId, x.endeGrund, !!x.leserechtSeit, x.leserechtVon, !!x.ende, x.mappeTitel]),
+        [[petra.id, m.id, 'erledigt', true, markus.id, true, 'Strom']],
+      );
       await assert.rejects(d.ohneLeserecht.leserechtAufZeitGeben(fall.id, markus.id), status(409), 'vergangener Fall');
     }
   });
@@ -215,7 +352,11 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
     assert.ok((await d.rechtepruefung.sichtbarFuer(petra.id, [m.id])).has(m.id));
     await d.vertretung.delegiereAufgabe(auf.id, jonas.id, { id: petra.id, rolle: 'mitglied' });
     assert.ok(!(await d.rechtepruefung.sichtbarFuer(petra.id, [m.id])).has(m.id));
-    assert.ok((await d.mappenHistorie.historie(m.id)).some((x) => x.art === 'leserecht' && x.daten.text === 'Leserecht von Petra nach Weitergeben der Aufgabe wieder entzogen'));
+    assert.ok(
+      (await d.mappenHistorie.historie(m.id)).some(
+        (x) => x.art === 'leserecht' && x.daten.text === 'Leserecht von Petra nach Weitergeben der Aufgabe wieder entzogen',
+      ),
+    );
     // Rechte nachträglich geändert: erst sieht Jonas den Vertrag nicht mehr (neuer Fall), dann wieder (Fall endet).
     await d.berechtigungen.setzeBerechtigungen(vertrag.id, lesen([lena.id]), true);
     assert.deepEqual(await d.ohneLeserecht.faelleAbgleichen(), { neu: 1, beendet: 0 });
@@ -223,7 +364,13 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
     await d.berechtigungen.setzeBerechtigungen(vertrag.id, lesen([lena.id, jonas.id]), true);
     assert.deepEqual(await d.ohneLeserecht.faelleAbgleichen(), { neu: 0, beendet: 1 });
     const vergangen = (await d.ohneLeserecht.faelleUebersicht()).vergangen.map((x) => [x.benutzerId, x.endeGrund, !!x.leserechtSeit]);
-    assert.deepEqual(vergangen.sort(), [[jonas.id, 'lesbar', false], [petra.id, 'weitergegeben', true]].sort());
+    assert.deepEqual(
+      vergangen.sort(),
+      [
+        [jonas.id, 'lesbar', false],
+        [petra.id, 'weitergegeben', true],
+      ].sort(),
+    );
   });
 
   it('Werkbank: Übersicht der Fälle und Markierung in der Aufgabenliste, nur für Administratoren', async () => {
@@ -231,9 +378,17 @@ describe('Aufgaben an Personen ohne Leserecht (#798)', () => {
     const auf = await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: petra.id, text: 'Bitte unterschreiben' }, lena.id);
     const w = (await rufe(markus, 'GET', '/api/werkbank/aufgaben')).body as { unlesbar: string[] };
     assert.deepEqual(w.unlesbar, [auf.id]);
-    const u = (await rufe(markus, 'GET', '/api/werkbank/aufgaben/ohne-leserecht')).body as { offen: Array<{ mappeTitel: string; typId: string }>; vergangen: unknown[] };
+    const u = (await rufe(markus, 'GET', '/api/werkbank/aufgaben/ohne-leserecht')).body as {
+      offen: Array<{ mappeTitel: string; typId: string }>;
+      vergangen: unknown[];
+    };
     assert.deepEqual([u.offen.length, u.offen[0].mappeTitel, u.vergangen.length], [1, 'Strom', 0]);
     const tabelle = routen(d, (await aufbau()).konten, {});
-    assert.ok(['/api/werkbank/aufgaben/ohne-leserecht', '/api/werkbank/aufgaben/ohne-leserecht/:id/leserecht'].every((p) => tabelle.find((r) => r.pfad === p)?.zugang === 'admin'), 'nur Administratoren');
+    assert.ok(
+      ['/api/werkbank/aufgaben/ohne-leserecht', '/api/werkbank/aufgaben/ohne-leserecht/:id/leserecht'].every(
+        (p) => tabelle.find((r) => r.pfad === p)?.zugang === 'admin',
+      ),
+      'nur Administratoren',
+    );
   });
 });

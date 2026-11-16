@@ -20,9 +20,11 @@ export function useLeerseiten(doks: Dokument[]) {
   const [eigen, setEigen] = useState<Record<string, Leerseiten | null>>({});
   const schluessel = doks.map((x) => `${x.id}:${x.sha256}:${x.leerseiten?.geaendert ?? ''}`).join(',');
   // Neue Daten vom Server (z. B. nach dem Neuladen) gehen vor.
-  useEffect(() => { setEigen({}); }, [schluessel]);
+  useEffect(() => {
+    setEigen({});
+  }, [schluessel]);
   const von = (x: Dokument): Leerseiten | null => {
-    const l = x.id in eigen ? eigen[x.id] : x.leerseiten ?? null;
+    const l = x.id in eigen ? eigen[x.id] : (x.leerseiten ?? null);
     return l && leerseitenGelten({ sha256: x.sha256, leerseiten: l }) ? l : null;
   };
   return { von, setze: (id: string, l: Leerseiten | null) => setEigen((e) => ({ ...e, [id]: l })) };
@@ -38,9 +40,17 @@ export function LeerseitenHinweis({ x, l }: { x: Dokument; l: Leerseiten }) {
       <Symbol name="info" />
       <span>
         {/* Ohne Paket (nur die Wahl einer Person, z. B. über die Schnittstelle) gibt es nichts „Erkanntes“. */}
-        {!l.paket ? t('ablage.leerseiten.gewaehlt', { anzahl: weg.length }) : erkannt ? t('ablage.leerseiten.erkannt', { anzahl: erkannt }) : t('ablage.leerseiten.keine-erkannt')}
+        {!l.paket
+          ? t('ablage.leerseiten.gewaehlt', { anzahl: weg.length })
+          : erkannt
+            ? t('ablage.leerseiten.erkannt', { anzahl: erkannt })
+            : t('ablage.leerseiten.keine-erkannt')}
         {' · '}
-        {ganz ? t('ablage.leerseiten.ganz-leer') : weg.length ? t('ablage.leerseiten.fallen-weg', { anzahl: weg.length }) : t('ablage.leerseiten.alle-bleiben')}
+        {ganz
+          ? t('ablage.leerseiten.ganz-leer')
+          : weg.length
+            ? t('ablage.leerseiten.fallen-weg', { anzahl: weg.length })
+            : t('ablage.leerseiten.alle-bleiben')}
         {l.paketName && <span className="leise"> · {t('ablage.leerseiten.von-paket', { paket: l.paketName })}</span>}
       </span>
       <Hilfe ort="post.leerseiten" />
@@ -52,8 +62,18 @@ export function LeerseitenHinweis({ x, l }: { x: Dokument; l: Leerseiten }) {
  * Die Seitenleiste: je Seite Vorschaubild, Nummer und – wer die Post bearbeiten darf – „Doch behalten“ bzw. „Auch
  * weglassen“. `senkrecht`: neben dem Dokument (Seite „Dokument übernehmen“, breit); sonst und am Handy waagerecht.
  */
-export function LeerseitenLeiste({ x, l, darf, geaendert, senkrecht = false }: {
-  x: Dokument; l: Leerseiten; darf: boolean; geaendert(l: Leerseiten | null): void; senkrecht?: boolean;
+export function LeerseitenLeiste({
+  x,
+  l,
+  darf,
+  geaendert,
+  senkrecht = false,
+}: {
+  x: Dokument;
+  l: Leerseiten;
+  darf: boolean;
+  geaendert(l: Leerseiten | null): void;
+  senkrecht?: boolean;
 }) {
   const nummern = Array.from({ length: l.seiten }, (_, i) => i + 1);
   async function waehle(nr: number, weglassen: boolean) {
@@ -69,17 +89,30 @@ export function LeerseitenLeiste({ x, l, darf, geaendert, senkrecht = false }: {
           return (
             <li key={nr} className={`${s.seite} ${weg ? s.weg : ''}`} data-leer={weg ? 'ja' : undefined}>
               <figure className={s.bild}>
-                {x.mime === 'application/pdf' && nr <= 400
-                  ? <img src={seitenbildUrl(x, nr)} alt={t('ablage.leerseiten.seite', { nr })} loading={nr <= 4 ? 'eager' : 'lazy'} />
-                  : <span className={s.ohneBild} aria-hidden="true" />}
+                {x.mime === 'application/pdf' && nr <= 400 ? (
+                  <img src={seitenbildUrl(x, nr)} alt={t('ablage.leerseiten.seite', { nr })} loading={nr <= 4 ? 'eager' : 'lazy'} />
+                ) : (
+                  <span className={s.ohneBild} aria-hidden="true" />
+                )}
                 <figcaption className="klein">
                   <span>{t('ablage.leerseiten.seite', { nr })}</span>
-                  {weg && <span className={s.marke}>{erkannt ? t('ablage.leerseiten.leerseite') : t('ablage.leerseiten.weglassen-gewaehlt')}</span>}
+                  {weg && (
+                    <span className={s.marke}>
+                      {erkannt ? t('ablage.leerseiten.leerseite') : t('ablage.leerseiten.weglassen-gewaehlt')}
+                    </span>
+                  )}
                 </figcaption>
               </figure>
-              {darf && (weg
-                ? <Knopf art="link" groesse="klein" onClick={() => waehle(nr, false)}>{t('ablage.leerseiten.doch-behalten')}</Knopf>
-                : <Knopf art="link" groesse="klein" onClick={() => waehle(nr, true)}>{t('ablage.leerseiten.auch-weglassen')}</Knopf>)}
+              {darf &&
+                (weg ? (
+                  <Knopf art="link" groesse="klein" onClick={() => waehle(nr, false)}>
+                    {t('ablage.leerseiten.doch-behalten')}
+                  </Knopf>
+                ) : (
+                  <Knopf art="link" groesse="klein" onClick={() => waehle(nr, true)}>
+                    {t('ablage.leerseiten.auch-weglassen')}
+                  </Knopf>
+                ))}
             </li>
           );
         })}
@@ -89,7 +122,17 @@ export function LeerseitenLeiste({ x, l, darf, geaendert, senkrecht = false }: {
 }
 
 /** Beides zusammen, wenn es eine Markierung gibt (für die Post: Liste der Dokumente). */
-export function LeerseitenBlock({ x, l, darf, geaendert }: { x: Dokument; l: Leerseiten | null; darf: boolean; geaendert(l: Leerseiten | null): void }) {
+export function LeerseitenBlock({
+  x,
+  l,
+  darf,
+  geaendert,
+}: {
+  x: Dokument;
+  l: Leerseiten | null;
+  darf: boolean;
+  geaendert(l: Leerseiten | null): void;
+}) {
   if (!l || x.mime !== 'application/pdf') return null;
   return (
     <div className={s.block}>
@@ -103,7 +146,19 @@ export function LeerseitenBlock({ x, l, darf, geaendert }: { x: Dokument; l: Lee
  * Seite „Dokument übernehmen“: Hinweiszeile über dem Dokument, links die Leiste (senkrecht), rechts die großen Seiten;
  * ohne Markierung nur die Seiten. Am Handy steht die Leiste waagerecht darüber.
  */
-export function MitLeerseiten({ x, l, darf, geaendert, children }: { x: Dokument; l: Leerseiten | null; darf: boolean; geaendert(l: Leerseiten | null): void; children: ReactNode }) {
+export function MitLeerseiten({
+  x,
+  l,
+  darf,
+  geaendert,
+  children,
+}: {
+  x: Dokument;
+  l: Leerseiten | null;
+  darf: boolean;
+  geaendert(l: Leerseiten | null): void;
+  children: ReactNode;
+}) {
   if (!l || x.mime !== 'application/pdf') return <>{children}</>;
   return (
     <>

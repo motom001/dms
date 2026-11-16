@@ -17,14 +17,19 @@ import type { Bereich } from '../../../shared/src/schwaerzen';
 export interface Nutzlast {
   text: string;
   /** Erkannter Wert und die Art des Felds, für das er erkannt wurde. */
-  wert?: Wert; feldTyp?: Feld['typ'];
+  wert?: Wert;
+  feldTyp?: Feld['typ'];
   /** Beleg bzw. Vorschlag für ein Verweisfeld: die Mappe. */
-  mappeId?: string; typId?: string; titel?: string;
+  mappeId?: string;
+  typId?: string;
+  titel?: string;
 }
 
 /** Ein nummerierter, farbiger Rahmen an einer Fundstelle (oder nur die Nummer am Feld, wenn die Stelle fehlt). */
 export interface Marke {
-  nr: number; feldKey: string; dokId: string;
+  nr: number;
+  feldKey: string;
+  dokId: string;
   /** Seite ab 1 und Lage relativ zur Seite; leer: Stelle nicht gefunden. */
   bereiche: Bereich[];
   nutzlast: Nutzlast;
@@ -66,7 +71,12 @@ export const useBruecke = () => useContext(BrueckeKontext);
 export const ZIEH_ART = 'application/x-ablago-wert';
 export const ziehtWert = (e: DragEvent) => [...e.dataTransfer.types].includes(ZIEH_ART);
 export function liesNutzlast(e: DragEvent): Nutzlast | null {
-  try { const n = JSON.parse(e.dataTransfer.getData(ZIEH_ART)) as Nutzlast; return n && typeof n.text === 'string' ? n : null; } catch { return null; }
+  try {
+    const n = JSON.parse(e.dataTransfer.getData(ZIEH_ART)) as Nutzlast;
+    return n && typeof n.text === 'string' ? n : null;
+  } catch {
+    return null;
+  }
 }
 export function setzeNutzlast(e: DragEvent, n: Nutzlast) {
   e.dataTransfer.setData(ZIEH_ART, JSON.stringify(n));

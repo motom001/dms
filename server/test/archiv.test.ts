@@ -16,9 +16,19 @@ async function aufbau(papierkorb = 0) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
   if (papierkorb) await d.papierkorbVerwaltung.setzePapierkorbTage(papierkorb);
-  const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{name}', archiv: { jahre: 8, stichtag: 'datum' },
-    felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' }],
-    register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionenBehalten: 2 }] });
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Beleg',
+    titelVorlage: '{name}',
+    archiv: { jahre: 8, stichtag: 'datum' },
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text' },
+      { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' },
+    ],
+    register: [
+      { key: 'daten', name: 'Daten', art: 'felder' },
+      { key: 'belege', name: 'Belege', art: 'dokumente', versionenBehalten: 2 },
+    ],
+  });
   const jung = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Jung', datum: '2026-03-01' } });
   const alt = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Alt', datum: '2015-06-30' } });
   return { d, t, jung, alt, dateien };
@@ -26,9 +36,20 @@ async function aufbau(papierkorb = 0) {
 
 describe('Archivmodus (#212)', () => {
   it('Frist: Jahresende des Stichtags + N Jahre; ohne Feld das Anlagedatum', () => {
-    assert.equal(aufbewahrenBis({ jahre: 8, stichtag: 'datum' }, { werte: { datum: '2026-01-02' }, erstellt: '2020-01-01T00:00:00Z' }), '2034-12-31');
-    assert.equal(aufbewahrenBis({ jahre: 2, stichtag: null }, { werte: {}, erstellt: '2025-12-31T23:30:00Z' }), '2028-12-31', 'Berlin: schon 2026');
-    assert.equal(aufbewahrenBis({ jahre: 6, stichtag: 'datum' }, { werte: {}, erstellt: '2024-05-05T10:00:00Z' }), '2030-12-31', 'leeres Feld → Anlagedatum');
+    assert.equal(
+      aufbewahrenBis({ jahre: 8, stichtag: 'datum' }, { werte: { datum: '2026-01-02' }, erstellt: '2020-01-01T00:00:00Z' }),
+      '2034-12-31',
+    );
+    assert.equal(
+      aufbewahrenBis({ jahre: 2, stichtag: null }, { werte: {}, erstellt: '2025-12-31T23:30:00Z' }),
+      '2028-12-31',
+      'Berlin: schon 2026',
+    );
+    assert.equal(
+      aufbewahrenBis({ jahre: 6, stichtag: 'datum' }, { werte: {}, erstellt: '2024-05-05T10:00:00Z' }),
+      '2030-12-31',
+      'leeres Feld → Anlagedatum',
+    );
     assert.equal(aufbewahrenBis(null, { werte: {}, erstellt: '2024-05-05T10:00:00Z' }), null);
     assert.equal(inFrist('2026-12-31', new Date('2026-12-31T22:00:00Z')), true);
     assert.equal(inFrist('2026-12-31', new Date('2026-12-31T23:30:00Z')), false);
@@ -39,9 +60,20 @@ describe('Archivmodus (#212)', () => {
     assert.deepEqual(t.archiv, { jahre: 8, stichtag: 'datum' });
     assert.equal(t.register.find((r) => r.key === 'belege')?.versionierung, true);
     assert.equal(t.register.find((r) => r.key === 'belege')?.versionenBehalten, undefined);
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'X', archiv: { jahre: 8, stichtag: 'name' }, felder: [{ key: 'name', label: 'N', typ: 'text' }] }), (e) => e instanceof Fachfehler && e.status === 422);
-    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, { jahre: 8, stichtag: 'datum' }), { mappen: 2, darfWeg: 1, stichtagLeer: 0 });
-    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, { jahre: 30, stichtag: 'datum' }), { mappen: 2, darfWeg: 0, stichtagLeer: 0 });
+    await assert.rejects(
+      d.mappentypen.legeTypAn({ name: 'X', archiv: { jahre: 8, stichtag: 'name' }, felder: [{ key: 'name', label: 'N', typ: 'text' }] }),
+      (e) => e instanceof Fachfehler && e.status === 422,
+    );
+    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, { jahre: 8, stichtag: 'datum' }), {
+      mappen: 2,
+      darfWeg: 1,
+      stichtagLeer: 0,
+    });
+    assert.deepEqual(await d.mappenArchiv.archivVorschau(t.id, { jahre: 30, stichtag: 'datum' }), {
+      mappen: 2,
+      darfWeg: 0,
+      stichtagLeer: 0,
+    });
   });
 
   it('keine Löschung vor Fristende: Mappe, Dokument, auch als Administrator; danach geht es', async () => {
@@ -55,10 +87,16 @@ describe('Archivmodus (#212)', () => {
     // Ändern nur als neue Version; ältere bleiben (kein „nur die letzten N“)
     for (const x of ['b', 'c', 'd']) await d.dokumentVersionen.ersetzeDokument(dokument.id, {}, Buffer.from(`%PDF-1.4 ${x}`), null);
     assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere.length, 3);
-    await assert.rejects(d.dokumente.ladeHoch(jung.id, { register: 'belege', name: 'R.pdf', gleicherName: 'ersetzen' }, Buffer.from('x'), null), (e) => e instanceof Fachfehler && e.status === 409);
+    await assert.rejects(
+      d.dokumente.ladeHoch(jung.id, { register: 'belege', name: 'R.pdf', gleicherName: 'ersetzen' }, Buffer.from('x'), null),
+      (e) => e instanceof Fachfehler && e.status === 409,
+    );
     // Abgelaufen: „Darf weg“, löschen geht
     const weg = await d.mappenArchiv.darfWeg();
-    assert.deepEqual(weg.map((x) => [x.titel, x.aufbewahrenBis]), [['Alt', '2023-12-31']]);
+    assert.deepEqual(
+      weg.map((x) => [x.titel, x.aufbewahrenBis]),
+      [['Alt', '2023-12-31']],
+    );
     await d.loeschen.loescheMappe(alt.id, ICH.id);
     assert.deepEqual(await d.mappenArchiv.darfWeg(), []);
   });

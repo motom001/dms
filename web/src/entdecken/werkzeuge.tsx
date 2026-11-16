@@ -23,9 +23,28 @@ const KANAL = 'ablago:ziel-zeigen';
 const MODUS = 'ablago:ziel-zeigen';
 
 const speicher = {
-  setze(s: Storage | undefined, k: string, v: string) { try { s?.setItem(k, v); return true; } catch { return false; } },
-  hole(s: Storage | undefined, k: string) { try { return s?.getItem(k) ?? null; } catch { return null; } },
-  weg(s: Storage | undefined, k: string) { try { s?.removeItem(k); } catch { /* nichts gemerkt */ } },
+  setze(s: Storage | undefined, k: string, v: string) {
+    try {
+      s?.setItem(k, v);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  hole(s: Storage | undefined, k: string) {
+    try {
+      return s?.getItem(k) ?? null;
+    } catch {
+      return null;
+    }
+  },
+  weg(s: Storage | undefined, k: string) {
+    try {
+      s?.removeItem(k);
+    } catch {
+      /* nichts gemerkt */
+    }
+  },
 };
 const lokal = () => (typeof localStorage === 'undefined' ? undefined : localStorage);
 const sitzung = () => (typeof sessionStorage === 'undefined' ? undefined : sessionStorage);
@@ -45,7 +64,10 @@ export function zielZeigen(start = '/ablage/start'): boolean {
 
 /** Tipp ausprobieren: Seite mit hervorgehobener Stelle bzw. Rundgang im neuen Fenster. false, wenn blockiert. */
 export function tippProbe(ziel: { pfad: string; anker: string } | { rundgang: string }): boolean {
-  const url = 'rundgang' in ziel ? `/ablage/start?rundgang-start=${encodeURIComponent(ziel.rundgang)}` : `${ziel.pfad}${ziel.pfad.includes('?') ? '&' : '?'}tipp-probe=${encodeURIComponent(ziel.anker)}`;
+  const url =
+    'rundgang' in ziel
+      ? `/ablage/start?rundgang-start=${encodeURIComponent(ziel.rundgang)}`
+      : `${ziel.pfad}${ziel.pfad.includes('?') ? '&' : '?'}tipp-probe=${encodeURIComponent(ziel.anker)}`;
   return !!window.open(url, '_blank');
 }
 
@@ -54,7 +76,10 @@ export function holeAnker(): Promise<string | null> {
   if (typeof BroadcastChannel === 'undefined') return Promise.resolve(null);
   const k = new BroadcastChannel(KANAL);
   return new Promise((fertig) => {
-    k.onmessage = (e: MessageEvent<{ anker?: string }>) => { k.close(); fertig(typeof e.data?.anker === 'string' ? e.data.anker : null); };
+    k.onmessage = (e: MessageEvent<{ anker?: string }>) => {
+      k.close();
+      fertig(typeof e.data?.anker === 'string' ? e.data.anker : null);
+    };
   });
 }
 
@@ -74,12 +99,28 @@ export function EntdeckenWerkzeuge() {
       ohneParameter('rundgang-probe');
       const roh = speicher.hole(lokal(), PROBE);
       speicher.weg(lokal(), PROBE);
-      try { if (roh) { const x = JSON.parse(roh) as { rundgang: Rundgang; pfad: string | null }; probiereRundgang(x.rundgang, x.pfad); } } catch { /* nichts auszuprobieren */ }
+      try {
+        if (roh) {
+          const x = JSON.parse(roh) as { rundgang: Rundgang; pfad: string | null };
+          probiereRundgang(x.rundgang, x.pfad);
+        }
+      } catch {
+        /* nichts auszuprobieren */
+      }
     }
     const anker = q.get('tipp-probe');
     if (anker) {
       ohneParameter('tipp-probe');
-      void zeigeZiel({ schluessel: 'probe', herkunft: 'eigen', bereich: 'mappen', text: '', neu: false, ausgeblendet: false, clients: false, ziel: { anker, seite: location.pathname } });
+      void zeigeZiel({
+        schluessel: 'probe',
+        herkunft: 'eigen',
+        bereich: 'mappen',
+        text: '',
+        neu: false,
+        ausgeblendet: false,
+        clients: false,
+        ziel: { anker, seite: location.pathname },
+      });
     }
     const rundgang = q.get('rundgang-start');
     if (rundgang) {
@@ -93,7 +134,14 @@ export function EntdeckenWerkzeuge() {
     }
   }, []);
   if (!waehlen) return null;
-  return <ZielWahl ende={() => { speicher.weg(sitzung(), MODUS); setWaehlen(false); }} />;
+  return (
+    <ZielWahl
+      ende={() => {
+        speicher.weg(sitzung(), MODUS);
+        setWaehlen(false);
+      }}
+    />
+  );
 }
 
 /** Element mit Anker unter dem Zeiger bzw. Fokus (das innerste). */
@@ -103,22 +151,41 @@ function ZielWahl({ ende }: { ende(): void }) {
   const [ziel, setZiel] = useState<{ anker: string; r: DOMRect } | null>(null);
   useEffect(() => {
     const melde = (anker: string | null) => {
-      if (typeof BroadcastChannel !== 'undefined') { const k = new BroadcastChannel(KANAL); k.postMessage(anker ? { anker } : { abbruch: true }); k.close(); }
+      if (typeof BroadcastChannel !== 'undefined') {
+        const k = new BroadcastChannel(KANAL);
+        k.postMessage(anker ? { anker } : { abbruch: true });
+        k.close();
+      }
       ende();
       window.close();
     };
-    const zeige = (e: Event) => { const el = mitAnker(e.target); setZiel(el ? { anker: el.dataset.anker!, r: el.getBoundingClientRect() } : null); };
+    const zeige = (e: Event) => {
+      const el = mitAnker(e.target);
+      setZiel(el ? { anker: el.dataset.anker!, r: el.getBoundingClientRect() } : null);
+    };
     const klick = (e: MouseEvent) => {
       if ((e.target as Element | null)?.closest?.('.ziel-wahl-leiste')) return;
       const el = mitAnker(e.target);
       if (!el) return;
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
       melde(el.dataset.anker!);
     };
     const taste = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); melde(null); return; }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        melde(null);
+        return;
+      }
       // Mit der Tastatur: Tab zu einer Stelle, Enter wählt ihren Anker.
-      if (e.key === 'Enter') { const el = mitAnker(document.activeElement); if (el && !document.activeElement?.closest('.ziel-wahl-leiste')) { e.preventDefault(); e.stopPropagation(); melde(el.dataset.anker!); } }
+      if (e.key === 'Enter') {
+        const el = mitAnker(document.activeElement);
+        if (el && !document.activeElement?.closest('.ziel-wahl-leiste')) {
+          e.preventDefault();
+          e.stopPropagation();
+          melde(el.dataset.anker!);
+        }
+      }
     };
     document.addEventListener('mouseover', zeige, true);
     document.addEventListener('focusin', zeige, true);
@@ -133,11 +200,28 @@ function ZielWahl({ ende }: { ende(): void }) {
   }, [ende]);
   return (
     <>
-      {ziel && <div className="ziel-wahl-rahmen" aria-hidden="true" style={{ left: ziel.r.left - 4, top: ziel.r.top - 4, width: ziel.r.width + 8, height: ziel.r.height + 8 }} />}
+      {ziel && (
+        <div
+          className="ziel-wahl-rahmen"
+          aria-hidden="true"
+          style={{ left: ziel.r.left - 4, top: ziel.r.top - 4, width: ziel.r.width + 8, height: ziel.r.height + 8 }}
+        />
+      )}
       <div className="ziel-wahl-leiste" role="status">
         <span>{t('entdecken.ziel-zeigen.leiste')}</span>
         {ziel && <code>{ziel.anker}</code>}
-        <Knopf onClick={() => { if (typeof BroadcastChannel !== 'undefined') { const k = new BroadcastChannel(KANAL); k.postMessage({ abbruch: true }); k.close(); } ende(); window.close(); }}>{t('entdecken.ziel-zeigen.abbrechen')}</Knopf>
+        <Knopf
+          onClick={() => {
+            if (typeof BroadcastChannel !== 'undefined') {
+              const k = new BroadcastChannel(KANAL);
+              k.postMessage({ abbruch: true });
+              k.close();
+            }
+            ende();
+            window.close();
+          }}>
+          {t('entdecken.ziel-zeigen.abbrechen')}
+        </Knopf>
       </div>
     </>
   );

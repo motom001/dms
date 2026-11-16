@@ -15,18 +15,42 @@ import { Feld, Knopf, Umschalter, type FeldProps } from '../bausteine';
  */
 
 function Teile({ teile }: { teile: Inline[] }) {
-  return <>{teile.map((inline, i) => {
-    switch (inline.art) {
-      case 'text': return <span key={i}>{inline.text}</span>;
-      case 'fett': return <strong key={i}><Teile teile={inline.kinder} /></strong>;
-      case 'kursiv': return <em key={i}><Teile teile={inline.kinder} /></em>;
-      case 'code': return <code key={i}>{inline.text}</code>;
-      case 'link': return <a key={i} href={inline.ziel} target="_blank" rel="noreferrer noopener">{<Teile teile={inline.kinder} />}</a>;
-      case 'erwaehnung': return inline.benutzer
-        ? <Person key={i} id={inline.id} ersatz={inline.name} vor="@" className="erwaehnung" />
-        : <MappenErwaehnung key={i} id={inline.id} />;
-    }
-  })}</>;
+  return (
+    <>
+      {teile.map((inline, i) => {
+        switch (inline.art) {
+          case 'text':
+            return <span key={i}>{inline.text}</span>;
+          case 'fett':
+            return (
+              <strong key={i}>
+                <Teile teile={inline.kinder} />
+              </strong>
+            );
+          case 'kursiv':
+            return (
+              <em key={i}>
+                <Teile teile={inline.kinder} />
+              </em>
+            );
+          case 'code':
+            return <code key={i}>{inline.text}</code>;
+          case 'link':
+            return (
+              <a key={i} href={inline.ziel} target="_blank" rel="noreferrer noopener">
+                {<Teile teile={inline.kinder} />}
+              </a>
+            );
+          case 'erwaehnung':
+            return inline.benutzer ? (
+              <Person key={i} id={inline.id} ersatz={inline.name} vor="@" className="erwaehnung" />
+            ) : (
+              <MappenErwaehnung key={i} id={inline.id} />
+            );
+        }
+      })}
+    </>
+  );
 }
 
 /**
@@ -40,37 +64,83 @@ function MappenErwaehnung({ id }: { id: string }) {
   const person = d.personen.some((p) => p.id === id);
   const v = useVerweis(id, d.geladen && !person);
   if (person) return <Person id={id} vor="@" className="erwaehnung" />;
-  if (v?.sichtbarkeit === 'geloescht') return <span className="erwaehnung weg" title={t('ablage.formatiert.erwaehnung.geloescht.titel')}>@{t('ablage.formatiert.erwaehnung.geloescht')}</span>;
+  if (v?.sichtbarkeit === 'geloescht')
+    return (
+      <span className="erwaehnung weg" title={t('ablage.formatiert.erwaehnung.geloescht.titel')}>
+        @{t('ablage.formatiert.erwaehnung.geloescht')}
+      </span>
+    );
   if (v?.sichtbarkeit !== 'sichtbar' || !v.typId) {
-    return <span className="erwaehnung weg verborgen-titel" title={v ? t('ablage.formatiert.erwaehnung.verborgen.titel') : undefined}>@{t('ablage.formatiert.erwaehnung.verborgen')}</span>;
+    return (
+      <span className="erwaehnung weg verborgen-titel" title={v ? t('ablage.formatiert.erwaehnung.verborgen.titel') : undefined}>
+        @{t('ablage.formatiert.erwaehnung.verborgen')}
+      </span>
+    );
   }
   const typ = d.typen.find((x) => x.id === v.typId);
   if (typ?.system === 'benutzer') return <Person id={id} ersatz={v.titel} vor="@" className="erwaehnung" />;
   const titel = v.titel || t('ablage.formatiert.erwaehnung.ohne-titel');
   if (ohneLinks) return <span className="erwaehnung">@{titel}</span>;
-  return <Link to={`/ablage/${v.typId}/${id}`} className="erwaehnung mappe-erwaehnung" title={t('ablage.formatiert.erwaehnung.titel', { typ: typ?.name ?? '', titel })}>@{titel}</Link>;
+  return (
+    <Link
+      to={`/ablage/${v.typId}/${id}`}
+      className="erwaehnung mappe-erwaehnung"
+      title={t('ablage.formatiert.erwaehnung.titel', { typ: typ?.name ?? '', titel })}>
+      @{titel}
+    </Link>
+  );
 }
 
 function Bloecke({ bloecke }: { bloecke: Block[] }) {
-  return <>{bloecke.map((b, i): ReactNode => {
-    switch (b.art) {
-      case 'ueberschrift': {
-        const H = (`h${b.stufe + 2}`) as 'h3' | 'h4' | 'h5';
-        return <H key={i}><Teile teile={b.inhalt} /></H>;
-      }
-      case 'absatz': return <p key={i}><Teile teile={b.inhalt} /></p>;
-      case 'liste': {
-        const L = b.nummeriert ? 'ol' : 'ul';
-        return <L key={i}>{b.punkte.map((p, j) => <li key={j}><Teile teile={p} /></li>)}</L>;
-      }
-      case 'zitat': return <blockquote key={i}><Bloecke bloecke={b.bloecke} /></blockquote>;
-    }
-  })}</>;
+  return (
+    <>
+      {bloecke.map((b, i): ReactNode => {
+        switch (b.art) {
+          case 'ueberschrift': {
+            const H = `h${b.stufe + 2}` as 'h3' | 'h4' | 'h5';
+            return (
+              <H key={i}>
+                <Teile teile={b.inhalt} />
+              </H>
+            );
+          }
+          case 'absatz':
+            return (
+              <p key={i}>
+                <Teile teile={b.inhalt} />
+              </p>
+            );
+          case 'liste': {
+            const L = b.nummeriert ? 'ol' : 'ul';
+            return (
+              <L key={i}>
+                {b.punkte.map((p, j) => (
+                  <li key={j}>
+                    <Teile teile={p} />
+                  </li>
+                ))}
+              </L>
+            );
+          }
+          case 'zitat':
+            return (
+              <blockquote key={i}>
+                <Bloecke bloecke={b.bloecke} />
+              </blockquote>
+            );
+        }
+      })}
+    </>
+  );
 }
 
 export function Formatiert({ text }: { text: string }) {
   const bloecke = useMemo(() => zerlege(text), [text]);
-  return <div className="formatiert"><Bloecke bloecke={bloecke} /></div>;
+  return (
+    <div className="formatiert">
+      <Bloecke bloecke={bloecke} />
+    </div>
+  );
 }
 
 /**
@@ -78,27 +148,96 @@ export function Formatiert({ text }: { text: string }) {
  * („1. Nummerierte Liste“, „F Fett“; die Buchstaben je Sprache aus den Sprachdateien, en „B Bold“), damit Sprachsteuerung
  * sie trifft; reine Zeichen (•, „“, Link) sind für Hilfsmittel verborgen, der Name steht dann allein.
  */
-type Werkzeug = { titel: string; zeichen: ReactNode; aufschrift?: string; vor: string; nach?: string; zeile?: boolean; platzhalter: string };
+type Werkzeug = {
+  titel: string;
+  zeichen: ReactNode;
+  aufschrift?: string;
+  vor: string;
+  nach?: string;
+  zeile?: boolean;
+  platzhalter: string;
+};
 const WERKZEUGE: Werkzeug[] = [
-  { titel: t('ablage.formatiert.fett'), zeichen: <strong>{t('ablage.formatiert.zeichen.fett')}</strong>, aufschrift: t('ablage.formatiert.zeichen.fett'), vor: '**', nach: '**', platzhalter: 'fett' },
-  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>{t('ablage.formatiert.zeichen.kursiv')}</em>, aufschrift: t('ablage.formatiert.zeichen.kursiv'), vor: '*', nach: '*', platzhalter: 'kursiv' },
-  { titel: t('ablage.formatiert.ueberschrift'), zeichen: t('ablage.formatiert.zeichen.ueberschrift'), aufschrift: t('ablage.formatiert.zeichen.ueberschrift'), vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
+  {
+    titel: t('ablage.formatiert.fett'),
+    zeichen: <strong>{t('ablage.formatiert.zeichen.fett')}</strong>,
+    aufschrift: t('ablage.formatiert.zeichen.fett'),
+    vor: '**',
+    nach: '**',
+    platzhalter: 'fett',
+  },
+  {
+    titel: t('ablage.formatiert.kursiv'),
+    zeichen: <em>{t('ablage.formatiert.zeichen.kursiv')}</em>,
+    aufschrift: t('ablage.formatiert.zeichen.kursiv'),
+    vor: '*',
+    nach: '*',
+    platzhalter: 'kursiv',
+  },
+  {
+    titel: t('ablage.formatiert.ueberschrift'),
+    zeichen: t('ablage.formatiert.zeichen.ueberschrift'),
+    aufschrift: t('ablage.formatiert.zeichen.ueberschrift'),
+    vor: '## ',
+    zeile: true,
+    platzhalter: t('ablage.formatiert.ueberschrift'),
+  },
   { titel: t('ablage.formatiert.liste'), zeichen: '•', vor: '- ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
-  { titel: t('ablage.formatiert.nummerierte-liste'), zeichen: '1.', aufschrift: '1.', vor: '1. ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
+  {
+    titel: t('ablage.formatiert.nummerierte-liste'),
+    zeichen: '1.',
+    aufschrift: '1.',
+    vor: '1. ',
+    zeile: true,
+    platzhalter: t('ablage.formatiert.punkt'),
+  },
   { titel: t('ablage.formatiert.zitat'), zeichen: '„“', vor: '> ', zeile: true, platzhalter: t('ablage.formatiert.zitat') },
-  { titel: t('ablage.formatiert.link'), zeichen: <Symbol name="link" />, vor: '[', nach: '](https://)', platzhalter: t('ablage.formatiert.linktext') },
+  {
+    titel: t('ablage.formatiert.link'),
+    zeichen: <Symbol name="link" />,
+    vor: '[',
+    nach: '](https://)',
+    platzhalter: t('ablage.formatiert.linktext'),
+  },
 ];
-
 
 /** Position des Zeichens `pos` in einer textarea, relativ zu ihr (Spiegel-Element, #64). */
 function cursorPosition(el: HTMLTextAreaElement, pos: number): { top: number; left: number; hoehe: number } {
   const stil = getComputedStyle(el);
   const spiegel = document.createElement('div');
-  for (const k of ['boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
-    'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform', 'wordSpacing', 'tabSize', 'textIndent'] as const) {
+  for (const k of [
+    'boxSizing',
+    'width',
+    'paddingTop',
+    'paddingRight',
+    'paddingBottom',
+    'paddingLeft',
+    'borderTopWidth',
+    'borderRightWidth',
+    'borderBottomWidth',
+    'borderLeftWidth',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'fontStyle',
+    'letterSpacing',
+    'lineHeight',
+    'textTransform',
+    'wordSpacing',
+    'tabSize',
+    'textIndent',
+  ] as const) {
     spiegel.style[k] = stil[k];
   }
-  Object.assign(spiegel.style, { position: 'absolute', visibility: 'hidden', top: '0', left: '-9999px', whiteSpace: 'pre-wrap', overflowWrap: 'break-word', borderStyle: 'solid' });
+  Object.assign(spiegel.style, {
+    position: 'absolute',
+    visibility: 'hidden',
+    top: '0',
+    left: '-9999px',
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'break-word',
+    borderStyle: 'solid',
+  });
   spiegel.textContent = el.value.slice(0, pos);
   const marke = document.createElement('span');
   marke.textContent = el.value.slice(pos) || '.';
@@ -129,10 +268,23 @@ type Vorschlag = { id: string; name: string; typ: string; hinweis?: string; zusa
  */
 function erwaehnVorschlaege(d: ReturnType<typeof useDaten>, suche: string, mappen: ErwaehnungsVorschlag[]): Vorschlag[] {
   const benutzerTyp = d.typen.find((x) => x.system === 'benutzer');
-  const benutzer = d.personen.filter((p) => p.aktiv !== false && !p.art && p.name.toLowerCase().includes(suche)).slice(0, 5)
-    .map((p): Vorschlag => ({ id: p.id, name: p.name, typ: benutzerTyp?.name ?? t('ablage.formatiert.erwaehnung.benutzer'), ...(p.abwesend ? { hinweis: abwesenheitText(p) } : {}) }));
-  const andere = mappen.filter((m) => !benutzer.some((b) => b.id === m.id))
-    .map((m): Vorschlag => ({ id: m.id, name: m.titel || t('ablage.formatiert.erwaehnung.ohne-titel'), typ: d.typen.find((x) => x.id === m.typId)?.name ?? '', ...(m.zusatz ? { zusatz: m.zusatz } : {}) }));
+  const benutzer = d.personen
+    .filter((p) => p.aktiv !== false && !p.art && p.name.toLowerCase().includes(suche))
+    .slice(0, 5)
+    .map((p): Vorschlag => ({
+      id: p.id,
+      name: p.name,
+      typ: benutzerTyp?.name ?? t('ablage.formatiert.erwaehnung.benutzer'),
+      ...(p.abwesend ? { hinweis: abwesenheitText(p) } : {}),
+    }));
+  const andere = mappen
+    .filter((m) => !benutzer.some((b) => b.id === m.id))
+    .map((m): Vorschlag => ({
+      id: m.id,
+      name: m.titel || t('ablage.formatiert.erwaehnung.ohne-titel'),
+      typ: d.typen.find((x) => x.id === m.typId)?.name ?? '',
+      ...(m.zusatz ? { zusatz: m.zusatz } : {}),
+    }));
   return [...benutzer, ...andere].slice(0, 12);
 }
 
@@ -142,7 +294,19 @@ function erwaehnVorschlaege(d: ReturnType<typeof useDaten>, suche: string, mappe
  * (#1211): `rahmen` sind Beschriftung, Hinweis, Fehler des Felds (in der Mappe); ohne Angabe eine Beschriftung nur für
  * Screenreader (Notizen).
  */
-export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter }: { id: string; wert: string; setze: (v: string) => void; rahmen?: Omit<FeldProps, 'children' | 'id'>; /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode }) {
+export function FormatiertEingabe({
+  id,
+  wert: gespeichert,
+  setze,
+  rahmen,
+  unter,
+}: {
+  id: string;
+  wert: string;
+  setze: (v: string) => void;
+  rahmen?: Omit<FeldProps, 'children' | 'id'>;
+  /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode;
+}) {
   const d = useDaten();
   // Erwähnungen (#1293): gespeichert ist nur die Kennung; zum Schreiben stehen die aktuellen Titel im Text (nach den
   // Rechten der Person). Der Server nimmt sie beim Speichern wieder heraus.
@@ -159,7 +323,8 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
    */
   const marke = useRef<{ von: number; bis: number; suchen?: boolean } | null>(null);
   useLayoutEffect(() => {
-    const m = marke.current, el = feld.current;
+    const m = marke.current,
+      el = feld.current;
     if (!m || !el) return;
     marke.current = null;
     el.setSelectionRange(m.von, m.bis);
@@ -177,7 +342,10 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
     if (w.zeile) {
       // Zeilenweise: an den Anfang der Zeile(n) setzen.
       start = wert.lastIndexOf('\n', a - 1) + 1;
-      auswahl = (wert.slice(start, e) || w.platzhalter).split('\n').map((z, i) => (w.vor === '1. ' ? `${i + 1}. ` : w.vor) + z).join('\n');
+      auswahl = (wert.slice(start, e) || w.platzhalter)
+        .split('\n')
+        .map((z, i) => (w.vor === '1. ' ? `${i + 1}. ` : w.vor) + z)
+        .join('\n');
       vor = '';
     }
     const neu = wert.slice(0, start) + vor + auswahl + (w.nach ?? '') + wert.slice(w.zeile ? Math.max(e, start) : e);
@@ -193,22 +361,44 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
     setSuche(neu);
     setAktiv(0);
     const el = feld.current;
-    if (!neu || !el) { setOrt(null); return; }
+    if (!neu || !el) {
+      setOrt(null);
+      return;
+    }
     // Liste unter dem @ öffnen; reicht der Platz im Fenster nicht, darüber (#64).
     const p = cursorPosition(el, neu.start);
     const r = el.getBoundingClientRect();
     const unten = r.top + p.top + p.hoehe;
     const oben = window.innerHeight - unten < 220 && r.top + p.top > 220;
-    setOrt({ top: el.offsetTop + p.top + (oben ? 0 : p.hoehe + 2), left: Math.max(0, Math.min(el.offsetLeft + p.left, el.offsetLeft + el.clientWidth - 200)), oben });
+    setOrt({
+      top: el.offsetTop + p.top + (oben ? 0 : p.hoehe + 2),
+      left: Math.max(0, Math.min(el.offsetLeft + p.left, el.offsetLeft + el.clientWidth - 200)),
+      oben,
+    });
   }
   // Mappen nach @ (#889): vom Server, nur lesbare, Favoriten und zuletzt verwendete zuerst; Benutzer kennt die Oberfläche.
   const [mappen, setMappen] = useState<ErwaehnungsVorschlag[]>([]);
   const sucheText = suche?.text ?? null;
   useEffect(() => {
-    if (sucheText === null) { setMappen([]); return; }
+    if (sucheText === null) {
+      setMappen([]);
+      return;
+    }
     let weg = false;
-    const uhr = setTimeout(() => { void mappenApi.erwaehnen(sucheText).then((x) => { if (!weg) setMappen(x); }, () => { if (!weg) setMappen([]); }); }, 150);
-    return () => { weg = true; clearTimeout(uhr); };
+    const uhr = setTimeout(() => {
+      void mappenApi.erwaehnen(sucheText).then(
+        (x) => {
+          if (!weg) setMappen(x);
+        },
+        () => {
+          if (!weg) setMappen([]);
+        },
+      );
+    }, 150);
+    return () => {
+      weg = true;
+      clearTimeout(uhr);
+    };
   }, [sucheText]);
   const vorschlaege = suche ? erwaehnVorschlaege(d, suche.text, mappen) : [];
   function waehle(p: { id: string; name: string }) {
@@ -238,52 +428,119 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
 
   return (
     <>
-    <Feld {...(rahmen ?? { beschriftung: t('ablage.formatiert.text'), beschriftungVerbergen: true })} id={id}>{(v) => (
-    <div className="formateingabe">
-      <div className="formatleiste">
-        <Umschalter wert={vorschau ? 'vorschau' : 'schreiben'} setze={(x) => setVorschau(x === 'vorschau')} beschriftung={t('ablage.formatiert.ansicht')}
-          wahlen={[{ wert: 'schreiben', text: t('ablage.formatiert.schreiben') }, { wert: 'vorschau', text: t('ablage.formatiert.vorschau') }]} />
-        {!vorschau && <span className="werkzeuge" role="toolbar" aria-label={t('ablage.formatiert.formatierung')}>{WERKZEUGE.map((w) => (
-          <Knopf key={w.titel} art="link" nurSymbol={w.aufschrift ? `${w.aufschrift} ${w.titel}` : w.titel} title={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>
-            {w.aufschrift ? w.zeichen : <span aria-hidden="true">{w.zeichen}</span>}
-          </Knopf>
-        ))}
-          {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. Das @ ist ein Zeichen (#1268). */}
-          <Knopf art="link" nurSymbol={t('ablage.formatiert.erwaehnen')} onMouseDown={(e) => e.preventDefault()} onClick={erwaehnen}><span aria-hidden="true">@</span></Knopf>
-        </span>}
-      </div>
-      {vorschau
-        ? <div className="formatvorschau" id={v.id} tabIndex={-1} onDoubleClick={() => setVorschau(false)}>{wert.trim() ? <Formatiert text={wert} /> : <p className="leise">{t('ablage.formatiert.noch-nichts-eingetragen')}</p>}</div>
-        : <div className="wahl">
-            <textarea id={v.id} aria-describedby={v['aria-describedby']} aria-invalid={v['aria-invalid']} ref={feld} rows={6} value={wert}
-              onChange={(e) => { setze(e.target.value); pruefeErwaehnung(e.target.value, e.target.selectionStart); }}
-              onKeyDown={(e) => {
-                if (!suche || !vorschlaege.length) return;
-                if (e.key === 'Escape') { e.preventDefault(); setSuche(null); }
-                else if (e.key === 'ArrowDown') { e.preventDefault(); setAktiv((i) => (i + 1) % vorschlaege.length); }
-                else if (e.key === 'ArrowUp') { e.preventDefault(); setAktiv((i) => (i - 1 + vorschlaege.length) % vorschlaege.length); }
-                else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); waehle(vorschlaege[Math.min(aktiv, vorschlaege.length - 1)]); }
-              }}
-              onScroll={() => { if (suche && feld.current) pruefeErwaehnung(feld.current.value, feld.current.selectionStart); }}
-              aria-autocomplete="list" aria-controls={suche ? `${id}-erw` : undefined}
-              aria-activedescendant={suche && vorschlaege.length ? `${id}-erw-${Math.min(aktiv, vorschlaege.length - 1)}` : undefined}
-              onBlur={() => setTimeout(() => setSuche(null), 150)}
-              placeholder={t('ablage.formatiert.fett-kursiv-liste-link')} />
-            {vorschlaege.length > 0 && (
-              <div className={`wahlliste am-cursor ${ort?.oben ? 'oben' : ''}`} role="listbox" id={`${id}-erw`} aria-label={t('ablage.formatiert.erwaehnen-auswahl')}
-                style={ort ? { top: ort.top, left: ort.left } : undefined}>
-                {/* Optionen einer Combobox: Die Tastatur bleibt im Textfeld (aria-activedescendant), die Maus wählt hier. */}
-                {vorschlaege.map((p, i) => <div key={p.id} id={`${id}-erw-${i}`} role="option" aria-selected={i === aktiv} className={`wahloption erwaehn-option${i === aktiv ? ' an' : ''}`}
-                  onMouseEnter={() => setAktiv(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>
-                  <span><span className="leise">{p.typ} · </span>{p.name}{p.hinweis && <span className="leise klein"> – {p.hinweis}</span>}</span>
-                  {p.zusatz && <span className="leise klein erwaehn-zusatz">{p.zusatz}</span>}
-                </div>)}
+      <Feld {...(rahmen ?? { beschriftung: t('ablage.formatiert.text'), beschriftungVerbergen: true })} id={id}>
+        {(v) => (
+          <div className="formateingabe">
+            <div className="formatleiste">
+              <Umschalter
+                wert={vorschau ? 'vorschau' : 'schreiben'}
+                setze={(x) => setVorschau(x === 'vorschau')}
+                beschriftung={t('ablage.formatiert.ansicht')}
+                wahlen={[
+                  { wert: 'schreiben', text: t('ablage.formatiert.schreiben') },
+                  { wert: 'vorschau', text: t('ablage.formatiert.vorschau') },
+                ]}
+              />
+              {!vorschau && (
+                <span className="werkzeuge" role="toolbar" aria-label={t('ablage.formatiert.formatierung')}>
+                  {WERKZEUGE.map((w) => (
+                    <Knopf
+                      key={w.titel}
+                      art="link"
+                      nurSymbol={w.aufschrift ? `${w.aufschrift} ${w.titel}` : w.titel}
+                      title={w.titel}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => einfuegen(w)}>
+                      {w.aufschrift ? w.zeichen : <span aria-hidden="true">{w.zeichen}</span>}
+                    </Knopf>
+                  ))}
+                  {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. Das @ ist ein Zeichen (#1268). */}
+                  <Knopf
+                    art="link"
+                    nurSymbol={t('ablage.formatiert.erwaehnen')}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={erwaehnen}>
+                    <span aria-hidden="true">@</span>
+                  </Knopf>
+                </span>
+              )}
+            </div>
+            {vorschau ? (
+              <div className="formatvorschau" id={v.id} tabIndex={-1} onDoubleClick={() => setVorschau(false)}>
+                {wert.trim() ? <Formatiert text={wert} /> : <p className="leise">{t('ablage.formatiert.noch-nichts-eingetragen')}</p>}
+              </div>
+            ) : (
+              <div className="wahl">
+                <textarea
+                  id={v.id}
+                  aria-describedby={v['aria-describedby']}
+                  aria-invalid={v['aria-invalid']}
+                  ref={feld}
+                  rows={6}
+                  value={wert}
+                  onChange={(e) => {
+                    setze(e.target.value);
+                    pruefeErwaehnung(e.target.value, e.target.selectionStart);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!suche || !vorschlaege.length) return;
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setSuche(null);
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setAktiv((i) => (i + 1) % vorschlaege.length);
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setAktiv((i) => (i - 1 + vorschlaege.length) % vorschlaege.length);
+                    } else if (e.key === 'Enter' || e.key === 'Tab') {
+                      e.preventDefault();
+                      waehle(vorschlaege[Math.min(aktiv, vorschlaege.length - 1)]);
+                    }
+                  }}
+                  onScroll={() => {
+                    if (suche && feld.current) pruefeErwaehnung(feld.current.value, feld.current.selectionStart);
+                  }}
+                  aria-autocomplete="list"
+                  aria-controls={suche ? `${id}-erw` : undefined}
+                  aria-activedescendant={suche && vorschlaege.length ? `${id}-erw-${Math.min(aktiv, vorschlaege.length - 1)}` : undefined}
+                  onBlur={() => setTimeout(() => setSuche(null), 150)}
+                  placeholder={t('ablage.formatiert.fett-kursiv-liste-link')}
+                />
+                {vorschlaege.length > 0 && (
+                  <div
+                    className={`wahlliste am-cursor ${ort?.oben ? 'oben' : ''}`}
+                    role="listbox"
+                    id={`${id}-erw`}
+                    aria-label={t('ablage.formatiert.erwaehnen-auswahl')}
+                    style={ort ? { top: ort.top, left: ort.left } : undefined}>
+                    {/* Optionen einer Combobox: Die Tastatur bleibt im Textfeld (aria-activedescendant), die Maus wählt hier. */}
+                    {vorschlaege.map((p, i) => (
+                      <div
+                        key={p.id}
+                        id={`${id}-erw-${i}`}
+                        role="option"
+                        aria-selected={i === aktiv}
+                        className={`wahloption erwaehn-option${i === aktiv ? ' an' : ''}`}
+                        onMouseEnter={() => setAktiv(i)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => waehle(p)}>
+                        <span>
+                          <span className="leise">{p.typ} · </span>
+                          {p.name}
+                          {p.hinweis && <span className="leise klein"> – {p.hinweis}</span>}
+                        </span>
+                        {p.zusatz && <span className="leise klein erwaehn-zusatz">{p.zusatz}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>}
-    </div>
-    )}</Feld>
-    {unter}
+          </div>
+        )}
+      </Feld>
+      {unter}
     </>
   );
 }

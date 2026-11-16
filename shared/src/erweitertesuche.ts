@@ -45,23 +45,45 @@ export interface Suchformular {
   inDokumenten: boolean;
   inNotizen: boolean;
 }
-export const leeresFormular = (): Suchformular => ({ typen: [], felder: {}, volltext: '', inFeldern: true, inDokumenten: true, inNotizen: true });
+export const leeresFormular = (): Suchformular => ({
+  typen: [],
+  felder: {},
+  volltext: '',
+  inFeldern: true,
+  inDokumenten: true,
+  inNotizen: true,
+});
 
 /** Welche Eingabe ein Feld bekommt – ohne dass man einen Operator wählt. */
 export type Eingabeart = 'datum' | 'zahl' | 'zeitraum' | 'verweis' | 'person' | 'auswahl' | 'janein' | 'text';
 export function eingabeart(f: Bedingungsfeld): Eingabeart | null {
   switch (f.art) {
-    case 'datum': case 'zeit': return 'datum';
-    case 'zahl': case 'betrag': case 'prozent': return 'zahl';
+    case 'datum':
+    case 'zeit':
+      return 'datum';
+    case 'zahl':
+    case 'betrag':
+    case 'prozent':
+      return 'zahl';
     // Zeitraum (#1035): von–bis als Text („1 Monat“ – „6 Monate“), verglichen in Tagen.
-    case 'zeitraum': return 'zeitraum';
-    case 'referenz': return 'verweis';
-    case 'person': return 'person';
-    case 'auswahl': return 'auswahl';
-    case 'janein': return 'janein';
+    case 'zeitraum':
+      return 'zeitraum';
+    case 'referenz':
+      return 'verweis';
+    case 'person':
+      return 'person';
+    case 'auswahl':
+      return 'auswahl';
+    case 'janein':
+      return 'janein';
     // Zusammengesetzt (#1050): Text, der den gespeicherten Schlüssel durchsucht.
-    case 'text': case 'langtext': case 'formatiert': case 'zusammengesetzt': return 'text';
-    default: return null;
+    case 'text':
+    case 'langtext':
+    case 'formatiert':
+    case 'zusammengesetzt':
+      return 'text';
+    default:
+      return null;
   }
 }
 /** Gibt es „leer“ bzw. „nicht leer“ für dieses Feld? */
@@ -97,11 +119,16 @@ export function zeitraumVon(z: Zeitraum, heute: string): [string, string] {
     return [a.toISOString().slice(0, 10), e.toISOString().slice(0, 10)];
   };
   switch (z) {
-    case 'diesesJahr': return [`${j}-01-01`, `${j}-12-31`];
-    case 'letztesJahr': return [`${j - 1}-01-01`, `${j - 1}-12-31`];
-    case 'zwoelfMonate': return [verschiebe(verschiebe(heute, -12, 'monate'), 1), heute];
-    case 'dieserMonat': return monat(0);
-    case 'letzterMonat': return monat(-1);
+    case 'diesesJahr':
+      return [`${j}-01-01`, `${j}-12-31`];
+    case 'letztesJahr':
+      return [`${j - 1}-01-01`, `${j - 1}-12-31`];
+    case 'zwoelfMonate':
+      return [verschiebe(verschiebe(heute, -12, 'monate'), 1), heute];
+    case 'dieserMonat':
+      return monat(0);
+    case 'letzterMonat':
+      return monat(-1);
   }
 }
 
@@ -116,11 +143,17 @@ export type Suchparameter = Iterable<[string, string]>;
 function setzeZusatz(e: Feldeingabe, zusatz: string, w: string) {
   if (zusatz === 'von') e.von = w;
   else if (zusatz === 'bis') e.bis = w;
-  else if (zusatz === 'leer') { if (w !== '0') e.leer = 'leer'; }
-  else if (zusatz === 'nichtleer') { if (w !== '0') e.leer = 'nichtLeer'; }
+  else if (zusatz === 'leer') {
+    if (w !== '0') e.leer = 'leer';
+  } else if (zusatz === 'nichtleer') {
+    if (w !== '0') e.leer = 'nichtLeer';
+  }
   // Verweis mit mehreren Zieltypen (#1036): „feld.typ=…“, jeder einmal.
-  else if (zusatz === 'typ') { if (w && !(e.typen ??= []).includes(w)) e.typen.push(w.slice(0, 200)); }
-  else if (zusatz === '' || zusatz === 'wert') { if (w) (e.werte ??= []).push(w.slice(0, 500)); }
+  else if (zusatz === 'typ') {
+    if (w && !(e.typen ??= []).includes(w)) e.typen.push(w.slice(0, 200));
+  } else if (zusatz === '' || zusatz === 'wert') {
+    if (w) (e.werte ??= []).push(w.slice(0, 500));
+  }
 }
 
 /** Liest die Adresse in ein Formular; was nicht passt, merkt erst `abfrageAus`. */
@@ -130,9 +163,23 @@ export function liesSuche(parameter: Suchparameter): Suchformular {
   let ortGesetzt = false;
   for (const [k, roh] of parameter) {
     const w = roh.trim();
-    if (k === 'typ') { for (const t of w.split(',').map((x) => x.trim()).filter(Boolean)) if (!f.typen.includes(t)) f.typen.push(t); continue; }
-    if (k === 'volltext') { f.volltext = w.slice(0, 200); continue; }
-    if (k === 'in') { ortGesetzt = true; orte.push(...w.toLowerCase().split(',')); continue; }
+    if (k === 'typ') {
+      for (const t of w
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean))
+        if (!f.typen.includes(t)) f.typen.push(t);
+      continue;
+    }
+    if (k === 'volltext') {
+      f.volltext = w.slice(0, 200);
+      continue;
+    }
+    if (k === 'in') {
+      ortGesetzt = true;
+      orte.push(...w.toLowerCase().split(','));
+      continue;
+    }
     if (k === 'sortierung') continue;
     const punkt = k.lastIndexOf('.');
     const [key, zusatz] = punkt > 0 ? [k.slice(0, punkt), k.slice(punkt + 1).toLowerCase()] : [k, ''];
@@ -140,7 +187,11 @@ export function liesSuche(parameter: Suchparameter): Suchformular {
     if (!key || VERBOTENE_NAMEN.has(key)) continue;
     setzeZusatz(Object.hasOwn(f.felder, key) ? f.felder[key] : (f.felder[key] = {}), zusatz, w);
   }
-  if (ortGesetzt) { f.inFeldern = orte.includes('felder'); f.inDokumenten = orte.includes('dokumente'); f.inNotizen = orte.includes('notizen'); }
+  if (ortGesetzt) {
+    f.inFeldern = orte.includes('felder');
+    f.inDokumenten = orte.includes('dokumente');
+    f.inNotizen = orte.includes('notizen');
+  }
   for (const [k, e] of Object.entries(f.felder)) if (!istGesetzt(e)) delete f.felder[k];
   return f;
 }
@@ -157,7 +208,10 @@ export function alsParameter(f: Suchformular): URLSearchParams {
   for (const [key, e] of Object.entries(f.felder)) {
     if (!istGesetzt(e)) continue;
     const name = (SUCHE_PARAMETER as readonly string[]).includes(key) || key === 'sortierung' ? `${key}.wert` : key;
-    if (e.leer) { p.append(`${key}.${e.leer === 'leer' ? 'leer' : 'nichtleer'}`, '1'); continue; }
+    if (e.leer) {
+      p.append(`${key}.${e.leer === 'leer' ? 'leer' : 'nichtleer'}`, '1');
+      continue;
+    }
     if (e.von?.trim()) p.append(`${key}.von`, e.von.trim());
     if (e.bis?.trim()) p.append(`${key}.bis`, e.bis.trim());
     haengeAn(p, name, e.werte);
@@ -195,11 +249,17 @@ export function zahlAus(s: string): number | null {
 }
 
 /** Offene Grenzen: „nur von“ bzw. „nur bis“ als „zwischen“ mit sehr weiter zweiter Grenze. */
-const DATUM_MIN = '0001-01-01', DATUM_MAX = '9999-12-31';
+const DATUM_MIN = '0001-01-01',
+  DATUM_MAX = '9999-12-31';
 const ZAHL_MAX = 1e15;
 
 /** Volltext der erweiterten Suche: der Begriff in Titel und Feldern (#1218), Dokumenten und/oder Notizen. */
-export interface Volltextfilter { text: string; dokumente: boolean; notizen: boolean; felder?: boolean }
+export interface Volltextfilter {
+  text: string;
+  dokumente: boolean;
+  notizen: boolean;
+  felder?: boolean;
+}
 export interface Abfrage {
   typen: Mappentyp[];
   bedingungen: Bedingung[];
@@ -225,46 +285,82 @@ export function abfrageAus(f: Suchformular, alleTypen: Mappentyp[]): Abfrage {
   for (const [key, e] of Object.entries(f.felder)) {
     if (!istGesetzt(e)) continue;
     const feld = felder.find((x) => x.key === key);
-    if (!feld) { entfallen.push(key); continue; }
+    if (!feld) {
+      entfallen.push(key);
+      continue;
+    }
     const art = eingabeart(feld)!;
     const name = `„${feld.label}“`;
     let b: Bedingung | null = null;
     if (e.leer) {
-      if (!kannLeer(feld, e.leer)) { fehler.push(t('gemeinsam.erweitertesuche.kann-nicht-sein', { name, wert: e.leer === 'leer' ? t('gemeinsam.erweitertesuche.leer') : t('gemeinsam.erweitertesuche.nicht-leer') })); continue; }
+      if (!kannLeer(feld, e.leer)) {
+        fehler.push(
+          t('gemeinsam.erweitertesuche.kann-nicht-sein', {
+            name,
+            wert: e.leer === 'leer' ? t('gemeinsam.erweitertesuche.leer') : t('gemeinsam.erweitertesuche.nicht-leer'),
+          }),
+        );
+        continue;
+      }
       b = { art: 'feld', feld: key, op: e.leer };
     } else if (art === 'zeitraum') {
-      b = zeitraumBedingung(key, feld.label, e, fehler); if (!b) continue;
+      b = zeitraumBedingung(key, feld.label, e, fehler);
+      if (!b) continue;
     } else if (art === 'datum' || art === 'zahl') {
       const lies = (s: string | undefined) => {
         if (!s?.trim()) return undefined;
         const v = art === 'datum' ? datumAus(s) : feld.art === 'prozent' ? prozentAus(s) : zahlAus(s);
-        if (v === null) fehler.push(t('gemeinsam.erweitertesuche.ist-fuer', { s: s.trim(), wert: art === 'datum' ? t('gemeinsam.erweitertesuche.kein-datum') : t('gemeinsam.erweitertesuche.keine-zahl'), name }));
+        if (v === null)
+          fehler.push(
+            t('gemeinsam.erweitertesuche.ist-fuer', {
+              s: s.trim(),
+              wert: art === 'datum' ? t('gemeinsam.erweitertesuche.kein-datum') : t('gemeinsam.erweitertesuche.keine-zahl'),
+              name,
+            }),
+          );
         return v;
       };
-      const von = lies(e.von), bis = lies(e.bis);
+      const von = lies(e.von),
+        bis = lies(e.bis);
       if (von === null || bis === null) continue;
       if (von === undefined && bis === undefined) continue;
-      const min = art === 'datum' ? DATUM_MIN : -ZAHL_MAX, max = art === 'datum' ? DATUM_MAX : ZAHL_MAX;
-      if (von !== undefined && bis !== undefined && von > bis) { fehler.push(t('gemeinsam.erweitertesuche.bei-liegt-von-nach', { name })); continue; }
+      const min = art === 'datum' ? DATUM_MIN : -ZAHL_MAX,
+        max = art === 'datum' ? DATUM_MAX : ZAHL_MAX;
+      if (von !== undefined && bis !== undefined && von > bis) {
+        fehler.push(t('gemeinsam.erweitertesuche.bei-liegt-von-nach', { name }));
+        continue;
+      }
       b = { art: 'feld', feld: key, op: 'zwischen', wert: { art: 'fest', wert: von ?? min }, bis: { art: 'fest', wert: bis ?? max } };
     } else {
       const r = werteBedingung(key, feld, art, e.werte ?? [], name);
-      if (typeof r === 'string') { fehler.push(r); continue; }
+      if (typeof r === 'string') {
+        fehler.push(r);
+        continue;
+      }
       b = r;
     }
     // Verweis mit mehreren Zieltypen (#1036): „zeigt auf eine Mappe vom Typ …“ als weitere Bedingung (UND).
     if (!e.leer && art === 'verweis' && e.typen?.length) {
       const tb = zieltypBedingung(key, e.typen, typen, alleTypen);
-      if (typeof tb === 'string') { fehler.push(tb); continue; }
+      if (typeof tb === 'string') {
+        fehler.push(tb);
+        continue;
+      }
       if (tb) bedingungen.push(tb);
     }
     if (!b) continue;
     const problem = bedingungsProblem(b, typen);
-    if (problem) { fehler.push(problem); continue; }
+    if (problem) {
+      fehler.push(problem);
+      continue;
+    }
     bedingungen.push(b);
   }
   const text = f.volltext.trim();
-  const volltext = text && (f.inFeldern || f.inDokumenten || f.inNotizen) ? { text, felder: f.inFeldern, dokumente: f.inDokumenten, notizen: f.inNotizen } : null;
+  const volltext =
+    text && (f.inFeldern || f.inDokumenten || f.inNotizen)
+      ? { text, felder: f.inFeldern, dokumente: f.inDokumenten, notizen: f.inNotizen }
+      : null;
   return { typen, bedingungen, volltext, entfallen, fehler };
 }
 
@@ -282,7 +378,9 @@ function werteBedingung(key: string, feld: Bedingungsfeld, art: Eingabeart, roh:
   }
   if (art === 'janein') {
     const w = werte[0].toLowerCase();
-    return ['ja', 'nein'].includes(w) ? { art: 'feld', feld: key, op: w as 'ja' | 'nein' } : t('gemeinsam.erweitertesuche.bei-geht-nur-ja', { name });
+    return ['ja', 'nein'].includes(w)
+      ? { art: 'feld', feld: key, op: w as 'ja' | 'nein' }
+      : t('gemeinsam.erweitertesuche.bei-geht-nur-ja', { name });
   }
   return { art: 'feld', feld: key, op: 'enthaelt', wert: { art: 'fest', wert: werte[0] } };
 }
@@ -318,10 +416,20 @@ function zeitraumBedingung(key: string, label: string, e: Feldeingabe, fehler: s
     if (!z) fehler.push(t('gemeinsam.feldarten.bedingung-zeitraum', { label }));
     return z ?? null;
   };
-  const von = lies(e.von), bis = lies(e.bis);
+  const von = lies(e.von),
+    bis = lies(e.bis);
   if (von === null || bis === null || (von === undefined && bis === undefined)) return null;
-  if (von && bis && zeitraumTage(von) > zeitraumTage(bis)) { fehler.push(t('gemeinsam.erweitertesuche.bei-liegt-von-nach', { name: `„${label}“` })); return null; }
-  return { art: 'feld', feld: key, op: 'zwischen', wert: { art: 'fest', wert: von ? zeitraumIso(von) : 'P0D' }, bis: { art: 'fest', wert: bis ? zeitraumIso(bis) : `P${ZEITRAUM_ANZAHL_MAX}Y` } };
+  if (von && bis && zeitraumTage(von) > zeitraumTage(bis)) {
+    fehler.push(t('gemeinsam.erweitertesuche.bei-liegt-von-nach', { name: `„${label}“` }));
+    return null;
+  }
+  return {
+    art: 'feld',
+    feld: key,
+    op: 'zwischen',
+    wert: { art: 'fest', wert: von ? zeitraumIso(von) : 'P0D' },
+    bis: { art: 'fest', wert: bis ? zeitraumIso(bis) : `P${ZEITRAUM_ANZAHL_MAX}Y` },
+  };
 }
 
 /* ---------- Chips über der Trefferliste ---------- */
@@ -330,12 +438,23 @@ const zahlText = (s: string, betrag: boolean) => {
   const n = zahlAus(s);
   return n === null ? s : n.toLocaleString(gebietsschema(), betrag ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {});
 };
-const datumText = (s: string) => { const d = datumAus(s); return d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : s; };
+const datumText = (s: string) => {
+  const d = datumAus(s);
+  return d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : s;
+};
 
-export interface Chip { key: string; text: string }
+export interface Chip {
+  key: string;
+  text: string;
+}
 
 /** Je wirksamer Bedingung ein Chip, z. B. „Rechnungsdatum 01.03.2025–30.11.2025“. */
-export function chipsVon(f: Suchformular, alleTypen: Mappentyp[], titelVon: (id: string) => string, person: (id: string) => string): Chip[] {
+export function chipsVon(
+  f: Suchformular,
+  alleTypen: Mappentyp[],
+  titelVon: (id: string) => string,
+  person: (id: string) => string,
+): Chip[] {
   const a = abfrageAus(f, alleTypen);
   const felder = suchfelder(a.typen);
   const chips: Chip[] = [];
@@ -345,21 +464,53 @@ export function chipsVon(f: Suchformular, alleTypen: Mappentyp[], titelVon: (id:
     if (!feld || !istGesetzt(e)) continue;
     const art = eingabeart(feld);
     let text: string;
-    if (e.leer) text = `${feld.label} ${e.leer === 'leer' ? t('gemeinsam.erweitertesuche.ist-leer') : t('gemeinsam.erweitertesuche.ist-nicht-leer')}`;
+    if (e.leer)
+      text = `${feld.label} ${e.leer === 'leer' ? t('gemeinsam.erweitertesuche.ist-leer') : t('gemeinsam.erweitertesuche.ist-nicht-leer')}`;
     else if (art === 'datum' || art === 'zahl' || art === 'zeitraum') {
-      const z = (s: string) => (art === 'datum' ? datumText(s) : art === 'zeitraum' ? (() => { const x = leseZeitraum(s); return x ? zeitraumText(x) : s; })()
-        : feld.art === 'prozent' ? (() => { const n = leseProzent(s); return n === null || Number.isNaN(n) ? s : prozentText(n); })() : zahlText(s, feld.art === 'betrag'));
-      const von = e.von?.trim(), bis = e.bis?.trim();
+      const z = (s: string) =>
+        art === 'datum'
+          ? datumText(s)
+          : art === 'zeitraum'
+            ? (() => {
+                const x = leseZeitraum(s);
+                return x ? zeitraumText(x) : s;
+              })()
+            : feld.art === 'prozent'
+              ? (() => {
+                  const n = leseProzent(s);
+                  return n === null || Number.isNaN(n) ? s : prozentText(n);
+                })()
+              : zahlText(s, feld.art === 'betrag');
+      const von = e.von?.trim(),
+        bis = e.bis?.trim();
       text = `${feld.label} ${von && bis ? `${z(von)}–${z(bis)}` : von ? `ab ${z(von)}` : `bis ${z(bis!)}`}`;
     } else {
       const werte = (e.werte ?? []).filter((w) => w.trim());
       const namen = art === 'verweis' ? werte.map(titelVon) : art === 'person' ? werte.map(person) : werte;
       // Mehrere Zieltypen (#1036): „vom Typ …“ dazu.
-      text = art === 'text' ? `${feld.label} enthält „${werte[0]}“` : [namen.length ? `${feld.label}: ${namen.join(', ')}` : feld.label, art === 'verweis' ? typText(e, alleTypen) : ''].filter(Boolean).join(' ');
+      text =
+        art === 'text'
+          ? `${feld.label} enthält „${werte[0]}“`
+          : [namen.length ? `${feld.label}: ${namen.join(', ')}` : feld.label, art === 'verweis' ? typText(e, alleTypen) : '']
+              .filter(Boolean)
+              .join(' ');
     }
     chips.push({ key, text });
   }
-  if (a.volltext) chips.push({ key: 'volltext', text: t('gemeinsam.erweitertesuche.in', { text: a.volltext.text, filter: [a.volltext.felder && t('gemeinsam.erweitertesuche.in.felder'), a.volltext.dokumente && t('gemeinsam.erweitertesuche.in.dokumente'), a.volltext.notizen && t('gemeinsam.erweitertesuche.in.notizen')].filter(Boolean).join(t('gemeinsam.erweitertesuche.in.oder')) }) });
+  if (a.volltext)
+    chips.push({
+      key: 'volltext',
+      text: t('gemeinsam.erweitertesuche.in', {
+        text: a.volltext.text,
+        filter: [
+          a.volltext.felder && t('gemeinsam.erweitertesuche.in.felder'),
+          a.volltext.dokumente && t('gemeinsam.erweitertesuche.in.dokumente'),
+          a.volltext.notizen && t('gemeinsam.erweitertesuche.in.notizen'),
+        ]
+          .filter(Boolean)
+          .join(t('gemeinsam.erweitertesuche.in.oder')),
+      }),
+    });
   return chips;
 }
 

@@ -21,8 +21,35 @@
  */
 import { feldLabel, abschnittTitel, typName } from './beschriftung';
 import { istMerkmal, merkmalText, type Merkmale } from './merkmale';
-import { einzigesZiel, istLeer, jedeMappe, zielErlaubt, pruefeMappe, standardRegister, type Abschnitt, type Anzeigebedingung, type Anzeigeregel, type Feld, type Mappe, type MappenKontext, type Mappentyp, type MappentypDaten, type Pruefergebnis, type Register, type Werte } from './model';
-import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, beschreibeBedingung, erfuellt, filterFuer, heuteIn, merkmalTrifft } from './sichten';
+import {
+  einzigesZiel,
+  istLeer,
+  jedeMappe,
+  zielErlaubt,
+  pruefeMappe,
+  standardRegister,
+  type Abschnitt,
+  type Anzeigebedingung,
+  type Anzeigeregel,
+  type Feld,
+  type Mappe,
+  type MappenKontext,
+  type Mappentyp,
+  type MappentypDaten,
+  type Pruefergebnis,
+  type Register,
+  type Werte,
+} from './model';
+import {
+  bedingungEingabeFehler,
+  bedingungsProblem,
+  bereinigeBedingungen,
+  beschreibeBedingung,
+  erfuellt,
+  filterFuer,
+  heuteIn,
+  merkmalTrifft,
+} from './sichten';
 import { t } from './texte';
 
 /** Die Typen stehen im Modell (model.ts), die Auswertung hier. */
@@ -52,7 +79,10 @@ type TypTeil = Pick<MappentypDaten, 'felder'> & { register?: Register[] };
 export function bereinigeAnzeige(roh: unknown): Anzeigeregel | undefined {
   if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return undefined;
   const o = roh as Record<string, unknown>;
-  const bedingungen = (Array.isArray(o.bedingungen) ? o.bedingungen : []).slice(0, ANZEIGE_BEDINGUNGEN_MAX).map(bereinigeEine).filter((b): b is Anzeigebedingung => !!b);
+  const bedingungen = (Array.isArray(o.bedingungen) ? o.bedingungen : [])
+    .slice(0, ANZEIGE_BEDINGUNGEN_MAX)
+    .map(bereinigeEine)
+    .filter((b): b is Anzeigebedingung => !!b);
   return bedingungen.length ? { modus: o.modus === 'eine' ? 'eine' : 'alle', bedingungen } : undefined;
 }
 
@@ -62,10 +92,13 @@ function bereinigeEine(e: unknown): Anzeigebedingung | null {
   const n = x.nicht === true ? { nicht: true } : {};
   if (x.art === 'merkmal') return istMerkmal(x.merkmal) ? { ...n, art: 'merkmal', merkmal: x.merkmal } : null;
   if (x.art === 'verweistyp') {
-    return typeof x.feld === 'string' && x.feld && typeof x.typ === 'string' && x.typ ? { ...n, art: 'verweistyp', feld: x.feld.slice(0, 60), typ: x.typ.slice(0, 80) } : null;
+    return typeof x.feld === 'string' && x.feld && typeof x.typ === 'string' && x.typ
+      ? { ...n, art: 'verweistyp', feld: x.feld.slice(0, 60), typ: x.typ.slice(0, 80) }
+      : null;
   }
   // Eigene Organisation (#995): ein Verweisfeld zeigt auf eine Mappe mit dem Merkmal.
-  if (x.art === 'eigeneOrganisation') return typeof x.feld === 'string' && x.feld ? { ...n, art: 'eigeneOrganisation', feld: x.feld.slice(0, 60) } : null;
+  if (x.art === 'eigeneOrganisation')
+    return typeof x.feld === 'string' && x.feld ? { ...n, art: 'eigeneOrganisation', feld: x.feld.slice(0, 60) } : null;
   if (x.art === 'feld') {
     const [b] = bereinigeBedingungen([mitInnererArt(x.bedingung)]);
     return b?.art === 'feld' ? { ...n, art: 'feld', bedingung: b } : null;
@@ -79,7 +112,9 @@ function bereinigeEine(e: unknown): Anzeigebedingung | null {
  * im Katalog schreiben es so (Hotfix 0.245.x, #1108).
  */
 function mitInnererArt(b: unknown): unknown {
-  return b && typeof b === 'object' && !Array.isArray(b) && (b as Record<string, unknown>).art === undefined ? { ...(b as object), art: 'feld' } : b;
+  return b && typeof b === 'object' && !Array.isArray(b) && (b as Record<string, unknown>).art === undefined
+    ? { ...(b as object), art: 'feld' }
+    : b;
 }
 
 /**
@@ -90,13 +125,16 @@ function mitInnererArt(b: unknown): unknown {
  */
 export function anzeigeEingabeFehler(roh: unknown, weitere: string[] = []): string[] {
   if (roh === undefined || roh === null) return [];
-  if (typeof roh !== 'object' || Array.isArray(roh) || !Array.isArray((roh as Record<string, unknown>).bedingungen)) return [t('gemeinsam.bedingungspruefung.anzeige-form')];
+  if (typeof roh !== 'object' || Array.isArray(roh) || !Array.isArray((roh as Record<string, unknown>).bedingungen))
+    return [t('gemeinsam.bedingungspruefung.anzeige-form')];
   const o = roh as { modus?: unknown; bedingungen: unknown[] };
   const aus: string[] = [];
-  if (o.modus !== undefined && o.modus !== 'alle' && o.modus !== 'eine') aus.push(t('gemeinsam.bedingungspruefung.modus', { wert: String(o.modus) }));
-  if (o.bedingungen.length > ANZEIGE_BEDINGUNGEN_MAX) aus.push(t('gemeinsam.bedingungspruefung.zu-viele', { max: ANZEIGE_BEDINGUNGEN_MAX }));
+  if (o.modus !== undefined && o.modus !== 'alle' && o.modus !== 'eine')
+    aus.push(t('gemeinsam.bedingungspruefung.modus', { wert: String(o.modus) }));
+  if (o.bedingungen.length > ANZEIGE_BEDINGUNGEN_MAX)
+    aus.push(t('gemeinsam.bedingungspruefung.zu-viele', { max: ANZEIGE_BEDINGUNGEN_MAX }));
   o.bedingungen.forEach((b, i) => {
-    const x = b && typeof b === 'object' && !Array.isArray(b) ? b as Record<string, unknown> : null;
+    const x = b && typeof b === 'object' && !Array.isArray(b) ? (b as Record<string, unknown>) : null;
     if (x && weitere.includes(String(x.art))) return;
     const grund = anzeigeBedingungFehler(x);
     if (grund) aus.push(t('gemeinsam.bedingungspruefung.stelle', { nr: i + 1, grund }));
@@ -110,7 +148,8 @@ function anzeigeBedingungFehler(x: Record<string, unknown> | null): string | nul
   if (!x) return t('gemeinsam.bedingungspruefung.kein-objekt');
   if (x.nicht !== undefined && typeof x.nicht !== 'boolean') return t('gemeinsam.bedingungspruefung.nicht');
   if (x.art === undefined) return t('gemeinsam.bedingungspruefung.art-fehlt', { arten: ANZEIGE_ARTEN.join(', ') });
-  if (!ANZEIGE_ARTEN.includes(String(x.art))) return t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(x.art), arten: ANZEIGE_ARTEN.join(', ') });
+  if (!ANZEIGE_ARTEN.includes(String(x.art)))
+    return t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(x.art), arten: ANZEIGE_ARTEN.join(', ') });
   if (x.art === 'feld') return innereFehler(x.bedingung);
   if (x.art === 'merkmal') return istMerkmal(x.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(x.merkmal) });
   if (typeof x.feld !== 'string' || !x.feld) return t('gemeinsam.bedingungspruefung.feld-fehlt');
@@ -135,7 +174,12 @@ const alsTyp = (typ: TypTeil) => ({ felder: typ.felder, register: typ.register ?
  * auf die sie nicht schauen darf (das Feld selbst bzw. die Felder des eigenen Abschnitts – sonst ließe es sich nicht
  * mehr einblenden).
  */
-export function anzeigeBedingungProblem(b: Anzeigebedingung, typ: TypTeil, eigene: string[] = [], existiertTyp?: (id: string) => boolean): string | null {
+export function anzeigeBedingungProblem(
+  b: Anzeigebedingung,
+  typ: TypTeil,
+  eigene: string[] = [],
+  existiertTyp?: (id: string) => boolean,
+): string | null {
   if (b.art === 'merkmal') return istMerkmal(b.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(b.merkmal) });
   const key = b.art === 'feld' ? b.bedingung.feld : b.feld;
   const f = typ.felder.find((x) => x.key === key);
@@ -147,7 +191,13 @@ export function anzeigeBedingungProblem(b: Anzeigebedingung, typ: TypTeil, eigen
   // Nur feste Werte und „heute“: Wer die Mappe ansieht, ändert nichts daran, was zu sehen ist.
   if (w.some((x) => x && x.art !== 'fest' && x.art !== 'heute')) return t('gemeinsam.anzeige.nur-feste-werte');
   const op = b.bedingung.op;
-  if ((op === 'einerVon' || op === 'zeigtAuf') && b.bedingung.wert?.art === 'fest' && Array.isArray(b.bedingung.wert.wert) && !b.bedingung.wert.wert.length) return t('gemeinsam.anzeige.wert-waehlen', { feld: feldLabel(f) });
+  if (
+    (op === 'einerVon' || op === 'zeigtAuf') &&
+    b.bedingung.wert?.art === 'fest' &&
+    Array.isArray(b.bedingung.wert.wert) &&
+    !b.bedingung.wert.wert.length
+  )
+    return t('gemeinsam.anzeige.wert-waehlen', { feld: feldLabel(f) });
   return bedingungsProblem(b.bedingung, [alsTyp(typ)]);
 }
 
@@ -171,7 +221,12 @@ export function wartetAufPaket(f: Pick<Feld, 'zielOptional'> | undefined, typ: u
 }
 
 /** Probleme einer Regel, je Bedingung ein Text (leer = in Ordnung). */
-export function anzeigeProbleme(r: Anzeigeregel | undefined, typ: TypTeil, eigene: string[] = [], existiertTyp?: (id: string) => boolean): string[] {
+export function anzeigeProbleme(
+  r: Anzeigeregel | undefined,
+  typ: TypTeil,
+  eigene: string[] = [],
+  existiertTyp?: (id: string) => boolean,
+): string[] {
   return (r?.bedingungen ?? []).map((b) => anzeigeBedingungProblem(b, typ, eigene, existiertTyp)).filter((p): p is string => !!p);
 }
 
@@ -268,7 +323,8 @@ export function anzeigestand(typ: TypTeil, werte: Werte, k: Anzeigekontext = {})
   for (const r of registerVon(typ)) {
     if (r.art !== 'felder') continue;
     for (const a of r.abschnitte ?? []) {
-      if (a.anzeigen && !zeigtAn(a.anzeigen, typ, werte, k)) abschnitte.push({ register: r.key, abschnitt: a, felder: abschnittFelder(typ, r, a) });
+      if (a.anzeigen && !zeigtAn(a.anzeigen, typ, werte, k))
+        abschnitte.push({ register: r.key, abschnitt: a, felder: abschnittFelder(typ, r, a) });
     }
   }
   return { verborgen: new Set([...felder, ...abschnitte.flatMap((a) => a.felder)]), felder, abschnitte };
@@ -298,19 +354,37 @@ export function hatEigeneOrganisationBedingung(typ: TypTeil): boolean {
  * Eine Mappe prüfen wie `pruefeMappe`, mit den Anzeige-Bedingungen: Was gerade nicht zu sehen ist, ist nicht Pflicht.
  * Server (Speichern, Passung) und Oberfläche rufen beide diese Funktion.
  */
-export function pruefeMitAnzeige(typ: Pick<Mappentyp, 'felder'> & { register?: Register[] }, werte: Werte, ctx: MappenKontext & Omit<Anzeigekontext, 'typVon'>): Pruefergebnis {
-  const verborgen = hatAnzeige(typ) ? verborgeneFelder(typ, werte, { merkmale: ctx.merkmale, heute: ctx.heute, typVon: ctx.typVon, eigeneOrganisation: ctx.eigeneOrganisation }) : undefined;
+export function pruefeMitAnzeige(
+  typ: Pick<Mappentyp, 'felder'> & { register?: Register[] },
+  werte: Werte,
+  ctx: MappenKontext & Omit<Anzeigekontext, 'typVon'>,
+): Pruefergebnis {
+  const verborgen = hatAnzeige(typ)
+    ? verborgeneFelder(typ, werte, {
+        merkmale: ctx.merkmale,
+        heute: ctx.heute,
+        typVon: ctx.typVon,
+        eigeneOrganisation: ctx.eigeneOrganisation,
+      })
+    : undefined;
   return pruefeMappe(typ, werte, { ...ctx, ...(verborgen?.size ? { verborgen } : {}) });
 }
 
 /* ---------- Beschreiben ---------- */
 
 /** Bedingung lesbar, z. B. „Vertragsart ist einer von Miete“ oder „Ablage wird beruflich genutzt“. */
-export function beschreibeAnzeigeBedingung(b: Anzeigebedingung, typ: TypTeil, namen: { typ?(id: string): string | undefined; mappe?(id: string): string } = {}): string {
+export function beschreibeAnzeigeBedingung(
+  b: Anzeigebedingung,
+  typ: TypTeil,
+  namen: { typ?(id: string): string | undefined; mappe?(id: string): string } = {},
+): string {
   if (b.art === 'merkmal') return merkmalText(b.merkmal, b.nicht);
   if (b.art === 'verweistyp') {
     const f = typ.felder.find((x) => x.key === b.feld);
-    const werte = { feld: f ? feldLabel(f) : b.feld, typ: wartetAufPaket(f, b.typ) ? t('gemeinsam.anzeige.typ-wartet', { typ: b.typ }) : namen.typ?.(b.typ) ?? b.typ };
+    const werte = {
+      feld: f ? feldLabel(f) : b.feld,
+      typ: wartetAufPaket(f, b.typ) ? t('gemeinsam.anzeige.typ-wartet', { typ: b.typ }) : (namen.typ?.(b.typ) ?? b.typ),
+    };
     return b.nicht ? t('gemeinsam.anzeige.verweistyp-nicht', werte) : t('gemeinsam.anzeige.verweistyp', werte);
   }
   if (b.art === 'eigeneOrganisation') {
@@ -328,7 +402,11 @@ export function beschreibeAnzeigeBedingung(b: Anzeigebedingung, typ: TypTeil, na
 }
 
 /** Ganze Regel als kurzer Satz für Editor und Formular: „nur bei Vertragsart ist einer von Miete“. */
-export function beschreibeAnzeige(r: Anzeigeregel | undefined, typ: TypTeil, namen: Parameters<typeof beschreibeAnzeigeBedingung>[2] = {}): string {
+export function beschreibeAnzeige(
+  r: Anzeigeregel | undefined,
+  typ: TypTeil,
+  namen: Parameters<typeof beschreibeAnzeigeBedingung>[2] = {},
+): string {
   const teile = (r?.bedingungen ?? []).map((b) => beschreibeAnzeigeBedingung(b, typ, namen));
   if (!teile.length) return '';
   const verbunden = teile.join(r!.modus === 'eine' ? t('gemeinsam.anzeige.oder') : t('gemeinsam.anzeige.und'));

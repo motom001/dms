@@ -31,14 +31,18 @@ function art(platte: string): Speicherart | null {
   try {
     const r = readFileSync(join(platte, 'queue/rotational'), 'utf8').trim();
     return r === '1' ? 'HDD' : r === '0' ? 'SSD' : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Alle echten Platten des Rechners (mit `device`, ohne loop, ram, zram, CD). */
 function allePlatten(sys: string): string[] {
   const block = join(sys, 'block');
   if (!existsSync(block)) return [];
-  return readdirSync(block).filter((n) => !/^(loop|ram|zram|sr|fd|nbd)/.test(n) && existsSync(join(block, n, 'device'))).map((n) => realpathSync(join(block, n)));
+  return readdirSync(block)
+    .filter((n) => !/^(loop|ram|zram|sr|fd|nbd)/.test(n) && existsSync(join(block, n, 'device')))
+    .map((n) => realpathSync(join(block, n)));
 }
 
 const einheitlich = (arten: Array<Speicherart | null>): Speicherart | null =>
@@ -54,5 +58,7 @@ export function erkenneSpeicherart(ordner: string, o: { sys?: string; dev?: numb
       if (a) return a;
     }
     return einheitlich(allePlatten(sys).map(art));
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }

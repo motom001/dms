@@ -14,8 +14,12 @@ import { t } from '../sprache';
 export class Systemsichten {
   constructor(private readonly kern: Kern) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get einstellungen() { return this.kern.einstellungen; }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get einstellungen() {
+    return this.kern.einstellungen;
+  }
 
   /**
    * Sichten für Post (#192), einmal angelegt: „Neue Post“ ganz oben (Stand „Neu“), unter „Post“
@@ -29,18 +33,41 @@ export class Systemsichten {
     if (typSicht && (typSicht.name === 'E-Mail' || typSicht.name === 'E-Mail (System)')) {
       await this.repo.aendereSicht(typSicht.id, { ...typSicht, name: post.name, beschreibung: post.beschreibung });
     }
-    const bed = (feld: string, wert: string) => [{ art: 'feld' as const, feld, op: 'einerVon' as const, wert: { art: 'fest' as const, wert: [wert] } }];
-    let neu = alle.find((s) => s.typen.length === 1 && s.typen[0] === post.id && s.bedingungen.some((b) => b.art === 'feld' && b.feld === 'stand'));
+    const bed = (feld: string, wert: string) => [
+      { art: 'feld' as const, feld, op: 'einerVon' as const, wert: { art: 'fest' as const, wert: [wert] } },
+    ];
+    let neu = alle.find(
+      (s) => s.typen.length === 1 && s.typen[0] === post.id && s.bedingungen.some((b) => b.art === 'feld' && b.feld === 'stand'),
+    );
     if (!neu) {
       const oben = kinderVon(alle, null).map((s) => s.position);
       neu = await this.repo.legeSichtAn(randomUUID(), {
-        name: t('meldungen.dienst.neue-post'), beschreibung: t('meldungen.dienst.post-die-noch-niemand'), elternId: null,
-        position: Math.min(10, ...oben) - 10, typen: [post.id], bedingungen: bed('stand', POST_STAND.neu), symbol: 'inbox',
+        name: t('meldungen.dienst.neue-post'),
+        beschreibung: t('meldungen.dienst.post-die-noch-niemand'),
+        elternId: null,
+        position: Math.min(10, ...oben) - 10,
+        typen: [post.id],
+        bedingungen: bed('stand', POST_STAND.neu),
+        symbol: 'inbox',
       });
     }
     if (typSicht && !kinderVon(alle, typSicht.id).length) {
-      await this.repo.legeSichtAn(randomUUID(), { name: 'Eingegangen', beschreibung: t('meldungen.dienst.post-die-in-ablago'), elternId: typSicht.id, position: 10, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.eingehend) });
-      await this.repo.legeSichtAn(randomUUID(), { name: 'Versendet', beschreibung: t('meldungen.dienst.aus-ablago-verschickte-e'), elternId: typSicht.id, position: 20, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.ausgehend) });
+      await this.repo.legeSichtAn(randomUUID(), {
+        name: 'Eingegangen',
+        beschreibung: t('meldungen.dienst.post-die-in-ablago'),
+        elternId: typSicht.id,
+        position: 10,
+        typen: [post.id],
+        bedingungen: bed('richtung', POST_RICHTUNG.eingehend),
+      });
+      await this.repo.legeSichtAn(randomUUID(), {
+        name: 'Versendet',
+        beschreibung: t('meldungen.dienst.aus-ablago-verschickte-e'),
+        elternId: typSicht.id,
+        position: 20,
+        typen: [post.id],
+        bedingungen: bed('richtung', POST_RICHTUNG.ausgehend),
+      });
     }
     await this.einstellungen?.schreibe('post', { sichten: true, neu: neu.id });
     protokoll.modul('werkbank').info('Ansichten für Post angelegt', { neu: neu.id });
@@ -63,8 +90,13 @@ export class Systemsichten {
       const post = alle.find((x) => x.id === postId);
       const oben = kinderVon(alle, null).map((x) => x.position);
       s = await this.repo.legeSichtAn(randomUUID(), {
-        name: 'Favoriten', beschreibung: t('meldungen.dienst.deine-mappen-mit-stern'), elternId: null,
-        position: post ? post.position + 1 : Math.min(10, ...oben) - 10, typen: [ALLE_TYPEN], bedingungen: [{ art: 'favorit' }], symbol: 'star',
+        name: 'Favoriten',
+        beschreibung: t('meldungen.dienst.deine-mappen-mit-stern'),
+        elternId: null,
+        position: post ? post.position + 1 : Math.min(10, ...oben) - 10,
+        typen: [ALLE_TYPEN],
+        bedingungen: [{ art: 'favorit' }],
+        symbol: 'star',
       });
       protokoll.modul('werkbank').info('Ansicht „Favoriten“ angelegt', { sicht: s.id });
     }

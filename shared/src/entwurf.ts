@@ -23,7 +23,8 @@ export function gleicherStand(a: unknown, b: unknown): boolean {
     const y = b as unknown[];
     return a.length === y.length && a.every((v, i) => gleicherStand(v, y[i]));
   }
-  const x = a as Record<string, unknown>, y = b as Record<string, unknown>;
+  const x = a as Record<string, unknown>,
+    y = b as Record<string, unknown>;
   const schluessel = new Set([...Object.keys(x), ...Object.keys(y)]);
   for (const k of schluessel) if (!gleicherStand(x[k], y[k])) return false;
   return true;
@@ -60,12 +61,22 @@ export interface Leistenknoepfe {
  */
 export function leistenknoepfe(s: Entwurfsstand, gegenstand?: string): Leistenknoepfe {
   const verb = s.neu ? 'anlegen' : 'speichern';
-  const text = s.sendet ? (s.neu ? t('gemeinsam.entwurf.lege-an') : t('gemeinsam.entwurf.speichere')) : gegenstand ? `${gegenstand} ${verb}` : verb[0].toUpperCase() + verb.slice(1);
+  const text = s.sendet
+    ? s.neu
+      ? t('gemeinsam.entwurf.lege-an')
+      : t('gemeinsam.entwurf.speichere')
+    : gegenstand
+      ? `${gegenstand} ${verb}`
+      : verb[0].toUpperCase() + verb.slice(1);
   return {
     haupt: { text, aktiv: !s.sendet && !s.ungueltig && (s.neu || s.geaendert || !!s.speicherbar) },
     verwerfen: s.neu
       ? { text: t('gemeinsam.entwurf.entwurf-verwerfen'), aktiv: !s.sendet, titel: t('gemeinsam.entwurf.nichts-anlegen-und-zurueck') }
-      : { text: t('gemeinsam.entwurf.aenderungen-verwerfen'), aktiv: !s.sendet && s.geaendert, titel: s.geaendert ? t('gemeinsam.entwurf.felder-auf-den-gespeicherten') : t('gemeinsam.entwurf.nichts-geaendert') },
+      : {
+          text: t('gemeinsam.entwurf.aenderungen-verwerfen'),
+          aktiv: !s.sendet && s.geaendert,
+          titel: s.geaendert ? t('gemeinsam.entwurf.felder-auf-den-gespeicherten') : t('gemeinsam.entwurf.nichts-geaendert'),
+        },
     status: s.geaendert && !s.neu ? t('gemeinsam.entwurf.ungespeicherte-aenderungen') : '',
   };
 }
@@ -76,7 +87,10 @@ export type Verwerfensaktion = 'nichts' | 'schliessen' | 'zuruecksetzen';
  * Was „Verwerfen“ tut. Der Knopf handelt ohne Rückfrage (er ist eindeutig beschriftet);
  * Esc fragt nach, sobald etwas verloren ginge. Ohne Änderung tut Esc beim Bearbeiten nichts.
  */
-export function verwerfenSchritt(s: Pick<Entwurfsstand, 'neu' | 'geaendert'>, ausloeser: 'knopf' | 'esc'): { aktion: Verwerfensaktion; rueckfrage: boolean } {
+export function verwerfenSchritt(
+  s: Pick<Entwurfsstand, 'neu' | 'geaendert'>,
+  ausloeser: 'knopf' | 'esc',
+): { aktion: Verwerfensaktion; rueckfrage: boolean } {
   if (s.neu) return { aktion: 'schliessen', rueckfrage: ausloeser === 'esc' && s.geaendert };
   if (!s.geaendert) return { aktion: 'nichts', rueckfrage: false };
   return { aktion: 'zuruecksetzen', rueckfrage: ausloeser === 'esc' };

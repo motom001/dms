@@ -7,8 +7,32 @@
  */
 import { randomUUID } from 'node:crypto';
 import { aufbewahrenBis, datumText, inFrist, laeuftNochNicht, stichtagName } from '../../shared/src/archiv';
-import { altesTextfeldVon, einzigesZiel, istLeer, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
-import { namensSchluessel, namenVon, neueMappeWerte, registerUmstellen, spaltenUmstellen, teileNamen, vorlageUmstellen, vorschlag, type Entscheidung, type TypAenderung, type UmwandlungsFeld, type Umwandlungsvorgang, type UmwandlungsVorschau, type VorschauZeile } from '../../shared/src/umwandlung';
+import {
+  altesTextfeldVon,
+  einzigesZiel,
+  istLeer,
+  trefferlistenVon,
+  type Feld,
+  type Mappe,
+  type Mappentyp,
+  type Register,
+} from '../../shared/src/model';
+import {
+  namensSchluessel,
+  namenVon,
+  neueMappeWerte,
+  registerUmstellen,
+  spaltenUmstellen,
+  teileNamen,
+  vorlageUmstellen,
+  vorschlag,
+  type Entscheidung,
+  type TypAenderung,
+  type UmwandlungsFeld,
+  type Umwandlungsvorgang,
+  type UmwandlungsVorschau,
+  type VorschauZeile,
+} from '../../shared/src/umwandlung';
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
 import { Fachfehler } from './fehler';
@@ -25,8 +49,10 @@ const text = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : Strin
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 const gleich = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 /** Felder in der Reihenfolge dieser Kennungen; unbekannte bleiben hinten. */
-const sortiere = (felder: Feld[], keys: string[]) => [...felder].sort((x, y) => (keys.indexOf(x.key) + 1 || 1e9) - (keys.indexOf(y.key) + 1 || 1e9));
-const feldregister = (r: Register[]): Record<string, string[]> => Object.fromEntries(r.filter((x) => x.art === 'felder').map((x) => [x.key, x.felder ?? []]));
+const sortiere = (felder: Feld[], keys: string[]) =>
+  [...felder].sort((x, y) => (keys.indexOf(x.key) + 1 || 1e9) - (keys.indexOf(y.key) + 1 || 1e9));
+const feldregister = (r: Register[]): Record<string, string[]> =>
+  Object.fromEntries(r.filter((x) => x.art === 'felder').map((x) => [x.key, x.felder ?? []]));
 
 export class Umwandlung {
   constructor(private d: Dienst) {}
@@ -63,7 +89,10 @@ export class Umwandlung {
     const wahl = new Map<string, Entscheidung>();
     for (const z of plan.vorschau.zeilen) {
       const x = roh[z.schluessel] as { art?: unknown; id?: unknown } | undefined;
-      if (!x) { wahl.set(z.schluessel, z.vorschlag); continue; }
+      if (!x) {
+        wahl.set(z.schluessel, z.vorschlag);
+        continue;
+      }
       if (x.art === 'person' && typeof x.id === 'string' && kandidaten.has(x.id)) wahl.set(z.schluessel, { art: 'person', id: x.id });
       else if (x.art === 'neu') wahl.set(z.schluessel, { art: 'neu' });
       else if (x.art === 'ueberspringen') wahl.set(z.schluessel, { art: 'ueberspringen' });
@@ -73,7 +102,11 @@ export class Umwandlung {
     const ausgelassen = [...plan.vorschau.ausgelassen];
     const umwandeln = plan.mappen.filter((m) => {
       if (m.namen.every((n) => wahl.get(namensSchluessel(n))?.art !== 'ueberspringen')) return true;
-      ausgelassen.push({ mappeId: m.mappe.id, titel: m.mappe.titel ?? '', grund: t(m.namen.length > 1 ? 'pakete.umwandeln.grund.teilweise' : 'pakete.umwandeln.grund.uebersprungen') });
+      ausgelassen.push({
+        mappeId: m.mappe.id,
+        titel: m.mappe.titel ?? '',
+        grund: t(m.namen.length > 1 ? 'pakete.umwandeln.grund.teilweise' : 'pakete.umwandeln.grund.uebersprungen'),
+      });
       return false;
     });
     if (!umwandeln.length) throw new Fachfehler(409, t('pakete.umwandeln.fehler.nichts'));
@@ -92,26 +125,54 @@ export class Umwandlung {
       await this.d.loeschen.entferneMappenEndgueltig([...neu.values()]).catch(() => {});
       throw new Fachfehler(422, t('pakete.umwandeln.fehler.neu', { meldung: (f as Error).message }));
     }
-    const idVon = (n: string): string => { const w = wahl.get(namensSchluessel(n))!; return w.art === 'person' ? w.id : neu.get(namensSchluessel(n))!; };
+    const idVon = (n: string): string => {
+      const w = wahl.get(namensSchluessel(n))!;
+      return w.art === 'person' ? w.id : neu.get(namensSchluessel(n))!;
+    };
     // 2. Mappentyp: altes Feld keine Pflicht mehr; Titel, Trefferlisten und Register zeigen den Verweis.
     const typAenderung = await this.stelleTypUm(plan.typ, plan.feld, plan.alt);
     // 3. Mappen: Verweis setzen, Text leeren – mit Eintrag in der Historie.
     const vorgang: Umwandlungsvorgang = {
-      id: randomUUID(), paket: paketId, typId: plan.typ.id, typName: plan.typ.name, feldKey: plan.feld.key, feldLabel: plan.feld.label, ausKey: plan.alt.key, ausLabel: plan.alt.label,
-      zeit: new Date().toISOString(), von: von.email, mappen: [], neuePersonen: [...neu.values()], typ: typAenderung,
+      id: randomUUID(),
+      paket: paketId,
+      typId: plan.typ.id,
+      typName: plan.typ.name,
+      feldKey: plan.feld.key,
+      feldLabel: plan.feld.label,
+      ausKey: plan.alt.key,
+      ausLabel: plan.alt.label,
+      zeit: new Date().toISOString(),
+      von: von.email,
+      mappen: [],
+      neuePersonen: [...neu.values()],
+      typ: typAenderung,
     };
     const anlass = { umwandlung: vorgang.id, text: t('pakete.umwandeln.historie') };
     for (const m of umwandeln) {
       const ids = [...new Set(m.namen.map(idVon))];
       try {
-        await this.d.mappen.aendereMappe(m.mappe.id, { werte: { [plan.feld.key]: plan.feld.mehrfach ? ids : ids[0], [plan.alt.key]: null } }, ich, z, anlass);
+        await this.d.mappen.aendereMappe(
+          m.mappe.id,
+          { werte: { [plan.feld.key]: plan.feld.mehrfach ? ids : ids[0], [plan.alt.key]: null } },
+          ich,
+          z,
+          anlass,
+        );
         vorgang.mappen.push({ id: m.mappe.id, alt: m.text, neu: ids });
       } catch (f) {
         ausgelassen.push({ mappeId: m.mappe.id, titel: m.mappe.titel ?? '', grund: (f as Error).message });
       }
     }
     await this.speichere(vorgang);
-    log.info('Paket-Update: Text in Verweis umgewandelt', { von: von.email, paket: paketId, typ: plan.typ.id, feld: plan.feld.key, mappen: vorgang.mappen.length, neuePersonen: neu.size, ausgelassen: ausgelassen.length });
+    log.info('Paket-Update: Text in Verweis umgewandelt', {
+      von: von.email,
+      paket: paketId,
+      typ: plan.typ.id,
+      feld: plan.feld.key,
+      mappen: vorgang.mappen.length,
+      neuePersonen: neu.size,
+      ausgelassen: ausgelassen.length,
+    });
     return { vorgang, umgewandelt: vorgang.mappen.length, neuePersonen: neu.size, ausgelassen };
   }
 
@@ -129,17 +190,29 @@ export class Umwandlung {
     let zurueck = 0;
     for (const e of v.mappen) {
       const m = jetzt.get(e.id);
-      const grund = !m ? t('pakete.umwandeln.grund.weg') : this.sperre(typ, m) ?? (!gleich(alsListe(m.werte[v.feldKey]), e.neu) || !istLeer(m.werte[v.ausKey]) ? t('pakete.umwandeln.grund.geaendert') : null);
-      if (grund) { ausgelassen.push({ mappeId: e.id, titel: m?.titel ?? '', grund }); continue; }
+      const grund = !m
+        ? t('pakete.umwandeln.grund.weg')
+        : (this.sperre(typ, m) ??
+          (!gleich(alsListe(m.werte[v.feldKey]), e.neu) || !istLeer(m.werte[v.ausKey]) ? t('pakete.umwandeln.grund.geaendert') : null));
+      if (grund) {
+        ausgelassen.push({ mappeId: e.id, titel: m?.titel ?? '', grund });
+        continue;
+      }
       try {
         await this.d.mappen.aendereMappe(e.id, { werte: { [v.feldKey]: null, [v.ausKey]: e.alt } }, von.id, z, anlass);
         zurueck++;
-      } catch (f) { ausgelassen.push({ mappeId: e.id, titel: m!.titel ?? '', grund: (f as Error).message }); }
+      } catch (f) {
+        ausgelassen.push({ mappeId: e.id, titel: m!.titel ?? '', grund: (f as Error).message });
+      }
     }
     // Neue Personen: in den Papierkorb, sofern nichts mehr auf sie verweist.
     const behalten: string[] = [];
     for (const id of v.neuePersonen) {
-      try { await this.d.loeschen.loescheMappe(id, von.id, z); } catch (f) { if ((f as Fachfehler).status !== 404) behalten.push(id); }
+      try {
+        await this.d.loeschen.loescheMappe(id, von.id, z);
+      } catch (f) {
+        if ((f as Fachfehler).status !== 404) behalten.push(id);
+      }
     }
     // Mappentyp: nur zurück, was seitdem niemand anders geändert hat.
     const t2 = (await this.d.mappentypen.listeTypen()).find((x) => x.id === v.typId)!;
@@ -149,17 +222,46 @@ export class Umwandlung {
     let trefferlisten = trefferlistenVon(t2);
     let register = t2.register;
     if (a.titelVorlage && t2.titelVorlage === a.titelVorlage.nachher) titelVorlage = a.titelVorlage.vorher;
-    if (a.trefferlisten && JSON.stringify(trefferlisten) === JSON.stringify(a.trefferlisten.nachher)) trefferlisten = a.trefferlisten.vorher;
-    if (a.register && JSON.stringify(feldregister(register)) === JSON.stringify(a.register.nachher)) register = register.map((r) => (r.art === 'felder' ? { ...r, felder: a.register!.vorher[r.key] ?? r.felder } : r));
-    if (a.reihenfolge && gleich(felder.map((f) => f.key), a.reihenfolge.nachher)) felder = sortiere(felder, a.reihenfolge.vorher);
+    if (a.trefferlisten && JSON.stringify(trefferlisten) === JSON.stringify(a.trefferlisten.nachher))
+      trefferlisten = a.trefferlisten.vorher;
+    if (a.register && JSON.stringify(feldregister(register)) === JSON.stringify(a.register.nachher))
+      register = register.map((r) => (r.art === 'felder' ? { ...r, felder: a.register!.vorher[r.key] ?? r.felder } : r));
+    if (
+      a.reihenfolge &&
+      gleich(
+        felder.map((f) => f.key),
+        a.reihenfolge.nachher,
+      )
+    )
+      felder = sortiere(felder, a.reihenfolge.vorher);
     // Pflicht nur zurück, wenn wieder jede Mappe einen Text hat.
-    if (a.pflicht && (await this.d.mappen.listeMappen(typ.id)).every((m) => !istLeer(m.werte[v.ausKey]))) felder = felder.map((f) => (f.key === v.ausKey ? { ...f, pflicht: true } : f));
-    if (felder !== t2.felder || titelVorlage !== t2.titelVorlage || JSON.stringify(trefferlisten) !== JSON.stringify(trefferlistenVon(t2)) || register !== t2.register) {
-      await this.d.mappentypen.aendereTyp(t2.id, { ...t2, felder, titelVorlage, trefferlisten, trefferliste: (trefferlisten.find((l) => l.standard) ?? trefferlisten[0])?.spalten ?? [], register });
+    if (a.pflicht && (await this.d.mappen.listeMappen(typ.id)).every((m) => !istLeer(m.werte[v.ausKey])))
+      felder = felder.map((f) => (f.key === v.ausKey ? { ...f, pflicht: true } : f));
+    if (
+      felder !== t2.felder ||
+      titelVorlage !== t2.titelVorlage ||
+      JSON.stringify(trefferlisten) !== JSON.stringify(trefferlistenVon(t2)) ||
+      register !== t2.register
+    ) {
+      await this.d.mappentypen.aendereTyp(t2.id, {
+        ...t2,
+        felder,
+        titelVorlage,
+        trefferlisten,
+        trefferliste: (trefferlisten.find((l) => l.standard) ?? trefferlisten[0])?.spalten ?? [],
+        register,
+      });
     }
     v.rueckgaengig = { zeit: new Date().toISOString(), von: von.email, zurueck, ausgelassen: ausgelassen.length };
     await setzePaketUmwandlungen(this.d.kern, alle);
-    log.info('Paket-Update: Umwandlung rückgängig gemacht', { von: von.email, paket: v.paket, vorgang: v.id, mappen: zurueck, ausgelassen: ausgelassen.length, personenBehalten: behalten.length });
+    log.info('Paket-Update: Umwandlung rückgängig gemacht', {
+      von: von.email,
+      paket: v.paket,
+      vorgang: v.id,
+      mappen: zurueck,
+      ausgelassen: ausgelassen.length,
+      personenBehalten: behalten.length,
+    });
     return { zurueck, ausgelassen, personenBehalten: behalten.length };
   }
 
@@ -173,7 +275,18 @@ export class Umwandlung {
 
   private feld(typ: Mappentyp, f: Feld, alt: Feld, typen: Mappentyp[], anzahl: number): UmwandlungsFeld {
     const ziel = typen.find((x) => x.id === einzigesZiel(f));
-    return { typId: typ.id, typName: typ.name, feldKey: f.key, feldLabel: f.label, ausKey: alt.key, ausLabel: alt.label, mehrfach: !!f.mehrfach, zielTypId: ziel?.id ?? '', zielTypName: ziel?.name ?? '', anzahl };
+    return {
+      typId: typ.id,
+      typName: typ.name,
+      feldKey: f.key,
+      feldLabel: f.label,
+      ausKey: alt.key,
+      ausLabel: alt.label,
+      mehrfach: !!f.mehrfach,
+      zielTypId: ziel?.id ?? '',
+      zielTypName: ziel?.name ?? '',
+      anzahl,
+    };
   }
 
   /** Archivmodus (#212): in der Aufbewahrungsfrist wird nichts umgeschrieben. */
@@ -193,7 +306,8 @@ export class Umwandlung {
     // Umwandeln (#534) nur mit genau einem Zieltyp: Neue Mappen entstehen in diesem Typ (#1036).
     const ziel = typen.find((x) => x.id === einzigesZiel(feld));
     if (!ziel) throw new Fachfehler(409, t('pakete.umwandeln.fehler.ziel'));
-    const kandidaten = (await this.d.mappen.listeMappen(ziel.id)).map((m) => ({ id: m.id, titel: m.titel || t('pakete.umwandeln.ohnetitel'), namen: namenVon(m) }))
+    const kandidaten = (await this.d.mappen.listeMappen(ziel.id))
+      .map((m) => ({ id: m.id, titel: m.titel || t('pakete.umwandeln.ohnetitel'), namen: namenVon(m) }))
       .sort((a, b) => a.titel.localeCompare(b.titel, 'de'));
     const bekannt = (n: string) => kandidaten.some((k) => k.namen.includes(namensSchluessel(n)));
     const mitText = (await this.d.mappen.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]));
@@ -202,9 +316,13 @@ export class Umwandlung {
     const mappen: Array<{ mappe: Mappe; text: string; namen: string[] }> = [];
     const zeilen = new Map<string, VorschauZeile>();
     for (const m of mitText) {
-      const grund = !istLeer(m.werte[feld.key]) ? t('pakete.umwandeln.grund.gesetzt')
-        : this.sperre(typ, m) ?? (!rechte.get(m.id)?.U ? t('pakete.umwandeln.grund.recht') : null);
-      if (grund) { ausgelassen.push({ mappeId: m.id, titel: m.titel ?? '', grund }); continue; }
+      const grund = !istLeer(m.werte[feld.key])
+        ? t('pakete.umwandeln.grund.gesetzt')
+        : (this.sperre(typ, m) ?? (!rechte.get(m.id)?.U ? t('pakete.umwandeln.grund.recht') : null));
+      if (grund) {
+        ausgelassen.push({ mappeId: m.id, titel: m.titel ?? '', grund });
+        continue;
+      }
       const roh = text(m.werte[alt.key]);
       const namen = teileNamen(roh, !!feld.mehrfach, bekannt);
       if (!namen.length) continue;
@@ -212,7 +330,10 @@ export class Umwandlung {
       for (const n of namen) {
         const k = namensSchluessel(n);
         const da = zeilen.get(k);
-        if (da) { da.mappen++; continue; }
+        if (da) {
+          da.mappen++;
+          continue;
+        }
         const v = vorschlag(n, kandidaten);
         zeilen.set(k, { name: n, schluessel: k, mappen: 1, vorschlag: v.entscheidung, passend: v.passend });
       }
@@ -221,7 +342,8 @@ export class Umwandlung {
     const vorschau: UmwandlungsVorschau = {
       feld: this.feld(typ, feld, alt, typen, mappen.length),
       zeilen: [...zeilen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')),
-      ausgelassen, kandidaten: kandidaten.map(({ id, titel }) => ({ id, titel })),
+      ausgelassen,
+      kandidaten: kandidaten.map(({ id, titel }) => ({ id, titel })),
       pflichtAus: !!alt.pflicht,
       vorlage: vorlageUmstellen(typ.titelVorlage ?? '', alt.key, feld.key) !== (typ.titelVorlage ?? ''),
       spalten: listen.some((l) => l.spalten.includes(alt.key)),
@@ -239,24 +361,38 @@ export class Umwandlung {
     if (JSON.stringify(trefferlisten) !== JSON.stringify(vorher)) a.trefferlisten = { vorher, nachher: trefferlisten };
     // Das Verweisfeld rückt auf das Register des alten Felds, direkt davor – und nur dorthin.
     const vorherReg = feldregister(typ.register);
-    const nachherReg = Object.fromEntries(Object.entries(vorherReg).map(([k, l]) => [k, l.includes(alt.key) ? registerUmstellen(l, alt.key, feld.key) : l.filter((x) => x !== feld.key)]));
-    if (Object.values(vorherReg).some((l) => l.includes(alt.key)) && JSON.stringify(nachherReg) !== JSON.stringify(vorherReg)) a.register = { vorher: vorherReg, nachher: nachherReg };
+    const nachherReg = Object.fromEntries(
+      Object.entries(vorherReg).map(([k, l]) => [
+        k,
+        l.includes(alt.key) ? registerUmstellen(l, alt.key, feld.key) : l.filter((x) => x !== feld.key),
+      ]),
+    );
+    if (Object.values(vorherReg).some((l) => l.includes(alt.key)) && JSON.stringify(nachherReg) !== JSON.stringify(vorherReg))
+      a.register = { vorher: vorherReg, nachher: nachherReg };
     // Im Formular zählt die Reihenfolge der Felder: das Verweisfeld direkt vor das alte.
     const keys = typ.felder.map((f) => f.key);
     const reihenfolge = registerUmstellen(keys, alt.key, feld.key);
     if (!gleich(reihenfolge, keys)) a.reihenfolge = { vorher: keys, nachher: reihenfolge };
     if (!a.pflicht && !a.titelVorlage && !a.trefferlisten && !a.register && !a.reihenfolge) return a;
-    const register = typ.register.map((r) => (a.register && r.art === 'felder' ? { ...r, felder: a.register.nachher[r.key] ?? r.felder } : r));
+    const register = typ.register.map((r) =>
+      a.register && r.art === 'felder' ? { ...r, felder: a.register.nachher[r.key] ?? r.felder } : r,
+    );
     const listen = a.trefferlisten?.nachher ?? vorher;
     await this.d.mappentypen.aendereTyp(typ.id, {
-      ...typ, felder: sortiere(typ.felder, reihenfolge).map((f) => (f.key === alt.key ? { ...f, pflicht: false } : f)), titelVorlage, register,
-      trefferlisten: listen, trefferliste: (listen.find((l) => l.standard) ?? listen[0])?.spalten ?? [],
+      ...typ,
+      felder: sortiere(typ.felder, reihenfolge).map((f) => (f.key === alt.key ? { ...f, pflicht: false } : f)),
+      titelVorlage,
+      register,
+      trefferlisten: listen,
+      trefferliste: (listen.find((l) => l.standard) ?? listen[0])?.spalten ?? [],
     });
     return a;
   }
 
   private async vorgaenge(): Promise<Umwandlungsvorgang[]> {
-    return (await paketUmwandlungen(this.d.kern)).filter((v): v is Umwandlungsvorgang => !!v && typeof v === 'object' && typeof (v as Umwandlungsvorgang).id === 'string');
+    return (await paketUmwandlungen(this.d.kern)).filter(
+      (v): v is Umwandlungsvorgang => !!v && typeof v === 'object' && typeof (v as Umwandlungsvorgang).id === 'string',
+    );
   }
 
   private async speichere(v: Umwandlungsvorgang) {

@@ -5,10 +5,19 @@
  */
 import { Fachfehler } from '../fehler';
 
-export interface Auftrag { id: number; vorgang: string; args: unknown[] }
+export interface Auftrag {
+  id: number;
+  vorgang: string;
+  args: unknown[];
+}
 /** `zeichen`: Zeichen, die die Schrift eines erzeugten PDFs nicht hatte (#826) – der Pool meldet sie im Protokoll. */
 export type Antwort = { id: number; ok: true; ergebnis: unknown; zeichen?: string[] } | { id: number; ok: false; fehler: FehlerDaten };
-export interface FehlerDaten { message: string; status?: number; details?: unknown; stack?: string }
+export interface FehlerDaten {
+  message: string;
+  status?: number;
+  details?: unknown;
+  stack?: string;
+}
 
 /** Uint8Array → Buffer (ohne Kopie), in Listen und einfachen Objekten auch tiefer. */
 export function alsBuffer<T>(x: T): T {
@@ -24,7 +33,11 @@ export function alsBuffer<T>(x: T): T {
 export function fehlerDaten(e: unknown): FehlerDaten {
   const x = e as Partial<Fachfehler> & Error;
   let details: unknown;
-  try { details = x?.details === undefined ? undefined : structuredClone(x.details); } catch { details = undefined; }
+  try {
+    details = x?.details === undefined ? undefined : structuredClone(x.details);
+  } catch {
+    details = undefined;
+  }
   return { message: x?.message ?? String(e), status: typeof x?.status === 'number' ? x.status : undefined, details, stack: x?.stack };
 }
 

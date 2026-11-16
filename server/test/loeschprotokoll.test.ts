@@ -33,7 +33,10 @@ async function repo(pg: boolean): Promise<Repo> {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
   const { pgRepo } = await import('../src/repo-pg');
-  const a = { ...ausUrl(process.env.TEST_DATABASE_URL)!, datenbank: `dmstest_g7_lp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
+  const a = {
+    ...ausUrl(process.env.TEST_DATABASE_URL)!,
+    datenbank: `dmstest_g7_lp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  };
   await legeDatenbankAn(a);
   datenbanken.push(a.datenbank);
   const sql = verbinde(alsUrl(a));
@@ -49,42 +52,103 @@ async function repo(pg: boolean): Promise<Repo> {
 async function aufbau(pg: boolean) {
   const einstellungen = speicherEinstellungen();
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen });
-  await d.nummernkreise.speichereNummernkreis({ neu: true, schluessel: 'mieter', name: 'Mieternummern', muster: 'M-{zaehler:4}', start: 1 }, 'test');
-  const mieter = await d.mappentypen.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [
-    { key: 'nr', label: 'Mieternummer', typ: 'text', standard: '{nummernkreis:mieter}' },
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'iban', label: 'IBAN', typ: 'text' },
-  ] });
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{titel}', felder: [
-    { key: 'titel', label: 'Titel', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieter.id, verweisart: 'zugehoerigkeit' },
-  ] });
+  await d.nummernkreise.speichereNummernkreis(
+    { neu: true, schluessel: 'mieter', name: 'Mieternummern', muster: 'M-{zaehler:4}', start: 1 },
+    'test',
+  );
+  const mieter = await d.mappentypen.legeTypAn({
+    name: 'Mieter',
+    titelVorlage: '{name}',
+    felder: [
+      { key: 'nr', label: 'Mieternummer', typ: 'text', standard: '{nummernkreis:mieter}' },
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'iban', label: 'IBAN', typ: 'text' },
+    ],
+  });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Mietvertrag',
+    titelVorlage: '{titel}',
+    felder: [
+      { key: 'titel', label: 'Titel', typ: 'text' },
+      { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieter.id, verweisart: 'zugehoerigkeit' },
+    ],
+  });
   const m = await d.mappen.legeMappeAn({ typId: mieter.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, ANNA);
   const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Kündigung Mustermann', mieter: m.id } }, ANNA);
-  const dok = (await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'mietvertrag-mustermann.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 vertrag'), ANNA)).dokument;
+  const dok = (
+    await d.dokumente.ladeHoch(
+      v.id,
+      { register: 'dokumente', name: 'mietvertrag-mustermann.pdf', typ: 'application/pdf' },
+      Buffer.from('%PDF-1.4 vertrag'),
+      ANNA,
+    )
+  ).dokument;
   await d.mappenNotizen.legeNotizAn(v.id, 'Notiz zu Erika', ANNA);
   return { d, mieter, vertrag, m, v, dok, einstellungen };
 }
 
 const alle = async (d: Dienst, f: Record<string, unknown> = {}) => (await d.loeschprotokollVerwaltung.loeschprotokoll(f)).eintraege;
-const ohneGeheimes = (l: LoeschEintrag[]) => { const t = JSON.stringify(l); for (const g of GEHEIM) assert.ok(!t.includes(g), `nicht im Löschprotokoll: ${g}`); };
+const ohneGeheimes = (l: LoeschEintrag[]) => {
+  const t = JSON.stringify(l);
+  for (const g of GEHEIM) assert.ok(!t.includes(g), `nicht im Löschprotokoll: ${g}`);
+};
 
 describe('Löschprotokoll: Hilfsfunktionen (#470)', () => {
   it('Löschkonzept, Abschnitt 8 „Nachweis“, verweist auf das Löschprotokoll', () => {
-    const q = { typen: [], datenschutz: DATENSCHUTZ_STANDARD, papierkorbTage: 30, historieTage: 365, auskunftTage: 7, sicherung: null, version: '1', stand: '2026-11-01', mandant: '' };
-    const acht = (x: typeof q & { loeschprotokoll?: { jahre: number } }) => JSON.stringify(loeschkonzept(x).abschnitte.find((a) => a.titel.startsWith('8.')));
+    const q = {
+      typen: [],
+      datenschutz: DATENSCHUTZ_STANDARD,
+      papierkorbTage: 30,
+      historieTage: 365,
+      auskunftTage: 7,
+      sicherung: null,
+      version: '1',
+      stand: '2026-11-01',
+      mandant: '',
+    };
+    const acht = (x: typeof q & { loeschprotokoll?: { jahre: number } }) =>
+      JSON.stringify(loeschkonzept(x).abschnitte.find((a) => a.titel.startsWith('8.')));
     assert.match(acht({ ...q, loeschprotokoll: { jahre: 10 } }), /Löschprotokoll.*nach 10 Jahren automatisch gekürzt/);
     assert.doesNotMatch(acht(q), /Löschprotokoll/);
   });
 
   it('liest Grund und Filter, Nummer aus dem Nummernkreis', () => {
-    assert.deepEqual(liesAnlass({ grund: 'verlangen', grundText: '  Anfrage  vom 3.11. ' }), { grund: 'verlangen', text: 'Anfrage vom 3.11.' });
+    assert.deepEqual(liesAnlass({ grund: 'verlangen', grundText: '  Anfrage  vom 3.11. ' }), {
+      grund: 'verlangen',
+      text: 'Anfrage vom 3.11.',
+    });
     assert.deepEqual(liesAnlass({ grund: 'quatsch' }), { grund: null, text: '' });
     assert.equal(liesAnlass({ text: 'x'.repeat(500) }).text?.length, 200);
     const f = liesFilter({ von: '2026-11-01', bis: 'gestern', grund: 'ohne', schritt: 'endgueltig', max: '99999' });
     assert.deepEqual([f.von, f.bis, f.grund, f.schritt, f.max], ['2026-11-01', undefined, 'ohne', 'endgueltig', 2000]);
-    assert.equal(nummerVon({ felder: [{ key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:r}' }, { key: 'x', label: 'X', typ: 'text' }] }, { nr: 'R-1', x: 'geheim' }), 'R-1');
+    assert.equal(
+      nummerVon(
+        {
+          felder: [
+            { key: 'nr', label: 'Nr', typ: 'text', standard: '{nummernkreis:r}' },
+            { key: 'x', label: 'X', typ: 'text' },
+          ],
+        },
+        { nr: 'R-1', x: 'geheim' },
+      ),
+      'R-1',
+    );
     assert.equal(nummerVon({ felder: [{ key: 'x', label: 'X', typ: 'text' }] }, { x: 'geheim' }), null);
-    const e = { zeit: '2026-11-01T10:00:00Z', sha256: 'a'.repeat(64), nummer: 'M-0001', archivnummer: null, mappeId: 'm', dokumentId: 'd', grund: null } as unknown as LoeschEintrag;
-    assert.ok(passt(e, { suche: 'A'.repeat(64) }) && passt(e, { suche: 'm-00' }) && !passt(e, { suche: 'b'.repeat(64) }) && passt(e, { grund: 'ohne' }));
+    const e = {
+      zeit: '2026-11-01T10:00:00Z',
+      sha256: 'a'.repeat(64),
+      nummer: 'M-0001',
+      archivnummer: null,
+      mappeId: 'm',
+      dokumentId: 'd',
+      grund: null,
+    } as unknown as LoeschEintrag;
+    assert.ok(
+      passt(e, { suche: 'A'.repeat(64) }) &&
+        passt(e, { suche: 'm-00' }) &&
+        !passt(e, { suche: 'b'.repeat(64) }) &&
+        passt(e, { grund: 'ohne' }),
+    );
   });
 });
 
@@ -106,17 +170,33 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.loeschen.loescheMappe(v.id, ANNA, undefined, { grund: 'verlangen', text: 'Anfrage vom 03.11.' });
       let l = await alle(d);
       const mp = l.find((e) => e.art === 'mappe')!;
-      assert.equal(mp.schritt, 'papierkorb'); assert.equal(mp.weg, 'einzeln'); assert.equal(mp.typ, 'Mietvertrag'); assert.equal(mp.typId, vertrag.id);
-      assert.equal(mp.mappeId, v.id); assert.equal(mp.grund, 'verlangen'); assert.equal(mp.grundText, 'Anfrage vom 03.11.'); assert.equal(mp.vonId, ANNA); assert.equal(mp.ausloeser, 'benutzer');
+      assert.equal(mp.schritt, 'papierkorb');
+      assert.equal(mp.weg, 'einzeln');
+      assert.equal(mp.typ, 'Mietvertrag');
+      assert.equal(mp.typId, vertrag.id);
+      assert.equal(mp.mappeId, v.id);
+      assert.equal(mp.grund, 'verlangen');
+      assert.equal(mp.grundText, 'Anfrage vom 03.11.');
+      assert.equal(mp.vonId, ANNA);
+      assert.equal(mp.ausloeser, 'benutzer');
       assert.deepEqual(mp.anzahl, { dokumente: 1, versionen: 0, notizen: mp.anzahl!.notizen, verweise: 0 });
       const dp = l.find((e) => e.art === 'dokument')!;
-      assert.deepEqual([dp.dokumentId, dp.sha256, dp.groesse, dp.mime, dp.schritt], [dok.id, sha('%PDF-1.4 vertrag'), 16, 'application/pdf', 'papierkorb']);
+      assert.deepEqual(
+        [dp.dokumentId, dp.sha256, dp.groesse, dp.mime, dp.schritt],
+        [dok.id, sha('%PDF-1.4 vertrag'), 16, 'application/pdf', 'papierkorb'],
+      );
       ohneGeheimes(l);
 
       // Endgültig von Hand: Grund kommt vom Schritt „in den Papierkorb“.
       await d.papierkorbVerwaltung.loescheEndgueltig([v.id], anna);
       l = await alle(d, { schritt: 'endgueltig' });
-      assert.deepEqual(l.map((e) => [e.art, e.weg, e.grund, e.grundText]), [['mappe', 'papierkorb', 'verlangen', 'Anfrage vom 03.11.'], ['dokument', 'papierkorb', 'verlangen', 'Anfrage vom 03.11.']]);
+      assert.deepEqual(
+        l.map((e) => [e.art, e.weg, e.grund, e.grundText]),
+        [
+          ['mappe', 'papierkorb', 'verlangen', 'Anfrage vom 03.11.'],
+          ['dokument', 'papierkorb', 'verlangen', 'Anfrage vom 03.11.'],
+        ],
+      );
       assert.equal(l[1].sha256, sha('%PDF-1.4 vertrag'));
 
       // Mieter mit Nummer aus dem Nummernkreis; Papierkorb ausgeschaltet → sofort endgültig.
@@ -153,7 +233,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const { d, v, dok } = await aufbau(pg);
       await d.dokumente.loescheDokument(dok.id, ANNA, { grund: 'sonstiges', ausloeser: 'api', weg: 'dokument' });
       let [e] = await alle(d, { art: 'dokument' });
-      assert.deepEqual([e.schritt, e.weg, e.ausloeser, e.grund, e.mappeId, e.typ], ['papierkorb', 'dokument', 'api', 'sonstiges', v.id, 'Mietvertrag']);
+      assert.deepEqual(
+        [e.schritt, e.weg, e.ausloeser, e.grund, e.mappeId, e.typ],
+        ['papierkorb', 'dokument', 'api', 'sonstiges', v.id, 'Mietvertrag'],
+      );
       await d.papierkorbVerwaltung.stelleDokumentWiederHer(dok.id, anna, undefined, true);
       assert.equal((await alle(d, { schritt: 'wiederhergestellt', art: 'dokument' }))[0].sha256, dok.sha256);
       await d.dokumente.loescheDokument(dok.id, ANNA, { weg: 'dokument' });
@@ -163,11 +246,25 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       // Versionen über die eingestellte Anzahl hinaus.
       const typ = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Mietvertrag')!;
-      await d.mappentypen.aendereTyp(typ.id, { ...typ, register: typ.register.map((r) => (r.art === 'dokumente' ? { ...r, versionierung: true, versionenBehalten: 2 } : r)) });
-      const neu = (await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF v1'), ANNA)).dokument;
-      for (const x of ['%PDF v2', '%PDF v3']) await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf', gleicherName: 'version' }, Buffer.from(x), ANNA);
+      await d.mappentypen.aendereTyp(typ.id, {
+        ...typ,
+        register: typ.register.map((r) => (r.art === 'dokumente' ? { ...r, versionierung: true, versionenBehalten: 2 } : r)),
+      });
+      const neu = (
+        await d.dokumente.ladeHoch(v.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, Buffer.from('%PDF v1'), ANNA)
+      ).dokument;
+      for (const x of ['%PDF v2', '%PDF v3'])
+        await d.dokumente.ladeHoch(
+          v.id,
+          { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf', gleicherName: 'version' },
+          Buffer.from(x),
+          ANNA,
+        );
       const ver = await alle(d, { suche: sha('%PDF v1') });
-      assert.deepEqual(ver.map((x) => [x.weg, x.version, x.dokumentId]), [['version', 1, neu.id]]);
+      assert.deepEqual(
+        ver.map((x) => [x.weg, x.version, x.dokumentId]),
+        [['version', 1, neu.id]],
+      );
     });
 
     it('nicht änderbar, eigene Aufbewahrung, im Vollexport', async () => {
@@ -177,12 +274,18 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await assert.rejects(d.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(0, 'x'));
       assert.equal(await d.loeschprotokollVerwaltung.setzeLoeschprotokollJahre(2, 'x'), 2);
       assert.equal((await alle(d)).length, 2);
-      const csv = (await d.loeschprotokollVerwaltung.loeschprotokollAusgabe({}, 'csv', { von: 'Admin', mandant: 'Test', version: '0' })).inhalt.toString('utf8');
+      const csv = (
+        await d.loeschprotokollVerwaltung.loeschprotokollAusgabe({}, 'csv', { von: 'Admin', mandant: 'Test', version: '0' })
+      ).inhalt.toString('utf8');
       assert.match(csv, /^\ufeffZeit;Schritt;Art;Mappentyp;Nummer/);
       assert.equal(csv.trim().split('\r\n').length, 3, 'Kopf und zwei Einträge');
       assert.match(csv, new RegExp(sha('%PDF-1.4 vertrag')));
       for (const g of GEHEIM) assert.ok(!csv.includes(g));
-      const pdf = await d.loeschprotokollVerwaltung.loeschprotokollAusgabe({ schritt: 'papierkorb' }, 'pdf', { von: 'Admin', mandant: 'Test', version: '0' });
+      const pdf = await d.loeschprotokollVerwaltung.loeschprotokollAusgabe({ schritt: 'papierkorb' }, 'pdf', {
+        von: 'Admin',
+        mandant: 'Test',
+        version: '0',
+      });
       assert.equal(pdf.inhalt.subarray(0, 5).toString(), '%PDF-');
       await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 3 * 366 * 24 * 3600 * 1000);
       assert.equal((await alle(d, { schritt: 'papierkorb' })).length, 0, 'nach 2 Jahren weg');

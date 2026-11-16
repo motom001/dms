@@ -28,14 +28,35 @@ function useBekannt() {
  * `mitKonten` (#710, nur im Testlauf am Mappentyp): zusätzlich die Konten ohne Person – Systemkonten und
  * Paket-Benutzer –, seit #817 als eingeklappte Gruppe über der Auswahl der Personen. Sonst bleiben sie überall ausgeblendet.
  */
-export function TestBenutzerWahl({ id, wert, setze, mitKonten }: { id: string; wert: string; setze: (id: string) => void; mitKonten?: boolean }) {
+export function TestBenutzerWahl({
+  id,
+  wert,
+  setze,
+  mitKonten,
+}: {
+  id: string;
+  wert: string;
+  setze: (id: string) => void;
+  mitKonten?: boolean;
+}) {
   const d = useDaten();
   const ziel = d.typen.find((mappentyp) => mappentyp.system === 'benutzer');
   const { bekannt, merke } = useBekannt();
   const [konten, setKonten] = useState<Benutzer[]>([]);
   const [ohne, setOhne] = useState<Systemkonto[]>([]);
-  useEffect(() => { kontoApi.benutzer().then(setKonten).catch(() => {}); }, []);
-  useEffect(() => { if (mitKonten) kontoApi.systemkonten().then(setOhne).catch(() => {}); }, [mitKonten]);
+  useEffect(() => {
+    kontoApi
+      .benutzer()
+      .then(setKonten)
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (mitKonten)
+      kontoApi
+        .systemkonten()
+        .then(setOhne)
+        .catch(() => {});
+  }, [mitKonten]);
   if (!ziel) return <p className="leise klein">{t('werkbank.testlaufwahl.der-mappentyp-benutzer-fehlt')}</p>;
   const konto = konten.find((k) => k.id === wert);
   const sonder = ohne.find((k) => k.id === wert);
@@ -47,22 +68,66 @@ export function TestBenutzerWahl({ id, wert, setze, mitKonten }: { id: string; w
       <label htmlFor={sonder ? `${id}-konto` : id}>{t('werkbank.testlaufwahl.benutzer')}</label>
       {/* Systemkonten als eingeklappte Gruppe oben (#817), wie in Werkbank → Benutzer. */}
       {mitKonten && ohne.length > 0 && !sonder && (
-        <SystemkontenGruppe liste={ohne} auf={d.einstellungen[SYSTEMKONTEN_AUF] === true} setzeAuf={(x) => d.setzeEinstellung(SYSTEMKONTEN_AUF, x || null)} id={`${id}-konten`} kinder={
-          <Feld beschriftung={t('werkbank.testlauf.konto.label')} className="klein">
-            <select id={`${id}-konto`} value="" onChange={(e) => e.target.value && setze(e.target.value)}>
-              <option value="">{t('werkbank.testlauf.konto.leer')}</option>
-              {system.length > 0 && <optgroup label={t('werkbank.testlauf.konto.systemkonten')}>{system.map((k) => <option key={k.id} value={k.id}>{name(k)}</option>)}</optgroup>}
-              {pakete.length > 0 && <optgroup label={t('werkbank.testlauf.konto.pakete')}>{pakete.map((k) => <option key={k.id} value={k.id}>{name(k)}</option>)}</optgroup>}
-            </select>
-          </Feld>
-        } />
+        <SystemkontenGruppe
+          liste={ohne}
+          auf={d.einstellungen[SYSTEMKONTEN_AUF] === true}
+          setzeAuf={(x) => d.setzeEinstellung(SYSTEMKONTEN_AUF, x || null)}
+          id={`${id}-konten`}
+          kinder={
+            <Feld beschriftung={t('werkbank.testlauf.konto.label')} className="klein">
+              <select id={`${id}-konto`} value="" onChange={(e) => e.target.value && setze(e.target.value)}>
+                <option value="">{t('werkbank.testlauf.konto.leer')}</option>
+                {system.length > 0 && (
+                  <optgroup label={t('werkbank.testlauf.konto.systemkonten')}>
+                    {system.map((k) => (
+                      <option key={k.id} value={k.id}>
+                        {name(k)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {pakete.length > 0 && (
+                  <optgroup label={t('werkbank.testlauf.konto.pakete')}>
+                    {pakete.map((k) => (
+                      <option key={k.id} value={k.id}>
+                        {name(k)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </Feld>
+          }
+        />
       )}
-      {sonder
-        ? <div className="mehrfach-gewaehlt"><span className="chip">{name(sonder)} <span className="chip klein">{t.frei(`werkbank.testlauf.konto.kennzeichen.${sonder.rolle}`)}</span><SystemkontoKennzeichen k={sonder} />
-            <Knopf art="link" groesse="klein" nurSymbol={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })} onClick={() => setze('')}><Symbol name="schliessen" /></Knopf></span></div>
+      {sonder ? (
+        <div className="mehrfach-gewaehlt">
+          <span className="chip">
+            {name(sonder)} <span className="chip klein">{t.frei(`werkbank.testlauf.konto.kennzeichen.${sonder.rolle}`)}</span>
+            <SystemkontoKennzeichen k={sonder} />
+            <Knopf
+              art="link"
+              groesse="klein"
+              nurSymbol={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })}
+              onClick={() => setze('')}>
+              <Symbol name="schliessen" />
+            </Knopf>
+          </span>
+        </div>
+      ) : (
         // Platzhalter ohne „Benutzer“ (#1213): die Beschriftung steht schon über dem Feld.
-        : <MappenWahl id={id} ziel={ziel} mehrfach={false} wert={wert || undefined} bekannt={bekannt} merke={merke} ohneAnlegen
-            platzhalter={t('werkbank.testlauf.benutzer.suchen')} setze={(v) => setze(typeof v === 'string' ? v : '')} />}
+        <MappenWahl
+          id={id}
+          ziel={ziel}
+          mehrfach={false}
+          wert={wert || undefined}
+          bekannt={bekannt}
+          merke={merke}
+          ohneAnlegen
+          platzhalter={t('werkbank.testlauf.benutzer.suchen')}
+          setze={(v) => setze(typeof v === 'string' ? v : '')}
+        />
+      )}
       {konto && !konto.aktiv && <span className="chip klein">{t('werkbank.testlaufwahl.deaktiviert')}</span>}
     </div>
   );
@@ -77,8 +142,17 @@ export function TestMappeWahl({ id, typId, wert, setze }: { id: string; typId: s
   return (
     <div className="feld">
       <label htmlFor={id}>{t('werkbank.testlaufwahl.testmappe')}</label>
-      <MappenWahl id={id} ziel={ziel} mehrfach={false} wert={wert || undefined} bekannt={bekannt} merke={merke} ohneAnlegen
-        platzhalter={t('werkbank.testlauf.mappe.suchen')} setze={(v) => setze(typeof v === 'string' ? v : '')} />
+      <MappenWahl
+        id={id}
+        ziel={ziel}
+        mehrfach={false}
+        wert={wert || undefined}
+        bekannt={bekannt}
+        merke={merke}
+        ohneAnlegen
+        platzhalter={t('werkbank.testlauf.mappe.suchen')}
+        setze={(v) => setze(typeof v === 'string' ? v : '')}
+      />
     </div>
   );
 }
@@ -101,11 +175,19 @@ export function useTestlauf<T>(schluessel: string, auto: string, holen: () => Pr
     if (!k) return;
     try {
       const wert = await holenRef.current();
-      if (aktuell.current === k) { setErg({ schluessel: k, wert }); setFehler(undefined); }
+      if (aktuell.current === k) {
+        setErg({ schluessel: k, wert });
+        setFehler(undefined);
+      }
     } catch (x) {
-      if (aktuell.current === k) { setFehler({ schluessel: k, wert: (x as Error).message }); setErg(undefined); }
+      if (aktuell.current === k) {
+        setFehler({ schluessel: k, wert: (x as Error).message });
+        setErg(undefined);
+      }
     }
   }, []);
-  useEffect(() => { if (aktuell.current) void los(); }, [auto, los]);
+  useEffect(() => {
+    if (aktuell.current) void los();
+  }, [auto, los]);
   return { erg: passendesErgebnis(erg, schluessel), fehler: passendesErgebnis(fehler, schluessel), los };
 }

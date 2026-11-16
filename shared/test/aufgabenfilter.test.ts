@@ -5,7 +5,15 @@ import { faelligkeit, filterAktiv, filterAusAdresse, filterInAdresse, filtereAuf
 import type { Aufgabe } from '../../shared/src/model';
 
 const a = (x: Partial<Aufgabe> & { id: string }): Aufgabe => ({
-  mappeId: 'm', empfaengerId: 'u1', art: 'manuell', text: '', erstellt: '2026-10-01T08:00:00Z', erstelltVon: null, erledigt: null, erledigtVon: null, ...x,
+  mappeId: 'm',
+  empfaengerId: 'u1',
+  art: 'manuell',
+  text: '',
+  erstellt: '2026-10-01T08:00:00Z',
+  erstelltVon: null,
+  erledigt: null,
+  erledigtVon: null,
+  ...x,
 });
 // Mittwoch, 4. November 2026
 const jetzt = new Date(2026, 10, 4, 10, 0);

@@ -28,8 +28,15 @@ describe('Gleichbedeutende Wörter (#992): Prüfung einer Gruppe', () => {
     assert.match(pruefeWortgruppe(['Auto', 'x'.repeat(61)]).fehler ?? '', /zu lang/);
   });
   it('findet andere Gruppen mit demselben Wort, nicht die eigene', () => {
-    const gruppen = [{ id: 'a', woerter: ['Rechnung', 'Beleg'] }, { id: 'b', woerter: ['Quittung', 'beleg'] }, { id: 'c', woerter: ['Auto', 'Kfz'] }];
-    assert.deepEqual(gruppenMitWort(gruppen, ' Beleg ', 'a').map((g) => g.id), ['b']);
+    const gruppen = [
+      { id: 'a', woerter: ['Rechnung', 'Beleg'] },
+      { id: 'b', woerter: ['Quittung', 'beleg'] },
+      { id: 'c', woerter: ['Auto', 'Kfz'] },
+    ];
+    assert.deepEqual(
+      gruppenMitWort(gruppen, ' Beleg ', 'a').map((g) => g.id),
+      ['b'],
+    );
     assert.deepEqual(gruppenMitWort(gruppen, '', 'a'), []);
   });
 });
@@ -58,7 +65,9 @@ describe('Gleichbedeutende Wörter (#992): Bereich und Rechte', () => {
 const pg = process.env.TEST_DATABASE_URL;
 describe('Gleichbedeutende Wörter (#992): Migration', { skip: !pg && 'ohne TEST_DATABASE_URL' }, () => {
   const offen: Array<() => Promise<void>> = [];
-  after(async () => { for (const f of offen.reverse()) await f(); });
+  after(async () => {
+    for (const f of offen.reverse()) await f();
+  });
 
   it('Stand je Gruppe; Recht und Leiste von „Suche und Volltext“ gelten auch für den neuen Bereich', async () => {
     const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
@@ -88,9 +97,19 @@ describe('Gleichbedeutende Wörter (#992): Migration', { skip: !pg && 'ohne TEST
     await sql`INSERT INTO synonyme (id, haushalt_id, woerter, quelle, erstellt) VALUES ('00000000-0000-4000-8000-0000000000b1', ${H}, '{Kfz,Auto}', 'werkbank', '2026-01-02T03:04:05.678912Z')`;
 
     await migriere(sql, alle, () => {});
-    const rechte = Object.fromEntries((await sql`SELECT name, verwaltung FROM benutzer WHERE haushalt_id = ${H} AND name IN ('Markus', 'Petra')`).map((r) => [r.name, r.verwaltung]));
+    const rechte = Object.fromEntries(
+      (await sql`SELECT name, verwaltung FROM benutzer WHERE haushalt_id = ${H} AND name IN ('Markus', 'Petra')`).map((r) => [
+        r.name,
+        r.verwaltung,
+      ]),
+    );
     assert.deepEqual(rechte, { Markus: ['texterkennung', 'typen', 'woerter'], Petra: ['typen'] });
-    const ansicht = Object.fromEntries((await sql`SELECT schluessel, wert FROM einstellungen WHERE haushalt_id = ${H} AND schluessel LIKE 'werkbank_ansicht%'`).map((r) => [r.schluessel, r.wert]));
+    const ansicht = Object.fromEntries(
+      (await sql`SELECT schluessel, wert FROM einstellungen WHERE haushalt_id = ${H} AND schluessel LIKE 'werkbank_ansicht%'`).map((r) => [
+        r.schluessel,
+        r.wert,
+      ]),
+    );
     assert.deepEqual(ansicht.werkbank_ansicht, { vorlage: 'haushalt', ein: ['texterkennung', 'woerter'], aus: [] });
     assert.deepEqual(ansicht['werkbank_ansicht:00000000-0000-4000-8000-0000000000a2'], { ein: ['typen'] });
     const [g] = await sql`SELECT geaendert FROM synonyme WHERE id = '00000000-0000-4000-8000-0000000000b1'`;

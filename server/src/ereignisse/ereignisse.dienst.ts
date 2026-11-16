@@ -18,7 +18,11 @@ import { type Aufgabe, type Mappentyp, verweiseVon, type Werte } from '../../../
 import { type EreignisArt, hatSchnittstelle, type InstalliertesPaket, istKiPaket, kenntVolltextOhneText } from '../../../shared/src/pakete';
 
 /** Die Teile, die die Ereignisse rufen: Rechteprüfung, Pakete am Mappentyp und die KI-Freigabe der Mappentypen. */
-export interface EreignisseTeile { rechte: ZugriffDienst; typpakete: TypPakete; ki: KiTypen }
+export interface EreignisseTeile {
+  rechte: ZugriffDienst;
+  typpakete: TypPakete;
+  ki: KiTypen;
+}
 
 /** Was die Ereignisse außer dem Kern brauchen – vom Dienst hereingereicht. */
 export interface EreignisseAnschluss {
@@ -27,22 +31,50 @@ export interface EreignisseAnschluss {
   /** Wecker des Paket-Läufers (Feld am Dienst, vom Start gesetzt). */
   ereignisWecker(): (() => void) | null;
   /** Stand der Texterkennung nachtragen (#796; volltext/, Schicht 3, über den Anschluss). */
-  nachTexterkennungsEreignis(paket: string, e: { art: string; daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }): Promise<void>;
+  nachTexterkennungsEreignis(
+    paket: string,
+    e: { art: string; daten: Record<string, unknown> },
+    r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean },
+  ): Promise<void>;
 }
 
 export class EreignisseDienst {
-  constructor(private readonly kern: Kern, private readonly teile: EreignisseTeile, private readonly anschluss: EreignisseAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: EreignisseTeile,
+    private readonly anschluss: EreignisseAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get ereignisWecker() { return this.anschluss.ereignisWecker(); }
-  private danach(f: () => void) { this.kern.danach(f); }
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
-  private typVon(mappeId: string): Promise<string | null> { return this.kern.typVon(mappeId); }
-  private typverweise(...a: Parameters<ZugriffDienst['typverweise']>) { return this.teile.rechte.typverweise(...a); }
-  private paketSiehtNicht(...a: Parameters<TypPakete['paketSiehtNicht']>) { return this.teile.typpakete.paketSiehtNicht(...a); }
-  private kiSperre(...a: Parameters<KiTypen['kiSperre']>) { return this.teile.ki.kiSperre(...a); }
-  private kiSperreFuer(paketId: string) { return this.teile.ki.kiSperreFuer(paketId); }
-  private nachTexterkennungsEreignis(...a: Parameters<EreignisseAnschluss['nachTexterkennungsEreignis']>) { return this.anschluss.nachTexterkennungsEreignis(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get ereignisWecker() {
+    return this.anschluss.ereignisWecker();
+  }
+  private danach(f: () => void) {
+    this.kern.danach(f);
+  }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.anschluss.ereignis(...a);
+  }
+  private typVon(mappeId: string): Promise<string | null> {
+    return this.kern.typVon(mappeId);
+  }
+  private typverweise(...a: Parameters<ZugriffDienst['typverweise']>) {
+    return this.teile.rechte.typverweise(...a);
+  }
+  private paketSiehtNicht(...a: Parameters<TypPakete['paketSiehtNicht']>) {
+    return this.teile.typpakete.paketSiehtNicht(...a);
+  }
+  private kiSperre(...a: Parameters<KiTypen['kiSperre']>) {
+    return this.teile.ki.kiSperre(...a);
+  }
+  private kiSperreFuer(paketId: string) {
+    return this.teile.ki.kiSperreFuer(paketId);
+  }
+  private nachTexterkennungsEreignis(...a: Parameters<EreignisseAnschluss['nachTexterkennungsEreignis']>) {
+    return this.anschluss.nachTexterkennungsEreignis(...a);
+  }
 
   /**
    * Nachberechnung des Bestands (#442): für bis zu `max` Dokumente mit Volltext ohne Vektor dieses Modells ein
@@ -54,8 +86,19 @@ export class EreignisseDienst {
     // KI-Dienste (#796): Dokumente nicht zugelassener Mappentypen bekommt ein KI-Paket auch hier nicht (Stelle rückt trotzdem weiter).
     const gesperrt = await this.kiSperreFuer(paket);
     const typen = await this.kern.repoOhneTransaktion.typenVon([...new Set(alle.map((d) => d.mappeId))]);
-    const liste = alle.filter((d) => { const typ = typen.get(d.mappeId); return !!typ && !gesperrt(typ); });
-    if (liste.length) await this.kern.repoOhneTransaktion.legeEreignisseAn(liste.map((d) => ({ id: randomUUID(), paketId: paket, art: 'volltext.fertig', daten: { dokument: d.id, mappe: d.mappeId, nachberechnung: true } })));
+    const liste = alle.filter((d) => {
+      const typ = typen.get(d.mappeId);
+      return !!typ && !gesperrt(typ);
+    });
+    if (liste.length)
+      await this.kern.repoOhneTransaktion.legeEreignisseAn(
+        liste.map((d) => ({
+          id: randomUUID(),
+          paketId: paket,
+          art: 'volltext.fertig',
+          daten: { dokument: d.id, mappe: d.mappeId, nachberechnung: true },
+        })),
+      );
     this.ereignisWecker?.();
     return alle.map((d) => d.id);
   }
@@ -63,7 +106,17 @@ export class EreignisseDienst {
   /** Aufgabe anlegen und als „etwas ist zu erledigen“ melden (#670). */
   async neueAufgabe(a: Aufgabe, typ?: string): Promise<Aufgabe> {
     const x = await this.repo.legeAufgabeAn(a);
-    await this.ereignis('aufgabe.neu', { aufgabe: x.id, mappe: x.mappeId, typ: typ ?? await this.typVon(x.mappeId), empfaenger: x.empfaengerId ?? null, aufgabenart: x.art }, a.erstelltVon ?? null);
+    await this.ereignis(
+      'aufgabe.neu',
+      {
+        aufgabe: x.id,
+        mappe: x.mappeId,
+        typ: typ ?? (await this.typVon(x.mappeId)),
+        empfaenger: x.empfaengerId ?? null,
+        aufgabenart: x.art,
+      },
+      a.erstelltVon ?? null,
+    );
     return x;
   }
 
@@ -73,7 +126,12 @@ export class EreignisseDienst {
     const ziele = verweiseVon(typ, neu).filter((v) => !vorher.has(`${v.feldKey}|${v.zielId}`) && v.zielId !== mappeId);
     if (!ziele.length) return;
     const typen = await this.repo.typenVon([...new Set(ziele.map((v) => v.zielId))]);
-    for (const v of ziele) await this.ereignis('mappe.verknuepft', { mappe: v.zielId, typ: typen.get(v.zielId) ?? null, von: mappeId, vonTyp: typ.id, feld: v.feldKey }, von);
+    for (const v of ziele)
+      await this.ereignis(
+        'mappe.verknuepft',
+        { mappe: v.zielId, typ: typen.get(v.zielId) ?? null, von: mappeId, vonTyp: typ.id, feld: v.feldKey },
+        von,
+      );
   }
 
   /**
@@ -92,7 +150,9 @@ export class EreignisseDienst {
     const k = EREIGNISKATALOG[e.art] as Katalogeintrag;
     if (!k.paket || k.gruppe === 'auftrag') return;
     if (e.ausloeser.still && k.mappentyp) return;
-    const alt = Object.entries(VERALTETE_EREIGNISSE).filter(([, neu]) => neu === e.art).map(([name]) => name as EreignisArt);
+    const alt = Object.entries(VERALTETE_EREIGNISSE)
+      .filter(([, neu]) => neu === e.art)
+      .map(([name]) => name as EreignisArt);
     const zustellungen: Array<{ paket: InstalliertesPaket; art: EreignisArt }> = [];
     const pakete = await this.kern.repoOhneTransaktion.listePakete();
     const typen = k.mappentyp ? await this.kern.repoOhneTransaktion.listeTypen() : [];
@@ -102,18 +162,38 @@ export class EreignisseDienst {
       if (e.art === 'sicherung.fertig' && !hatSchnittstelle(l, 'dms:sicherung-lesen')) continue;
       if (k.mappentyp) {
         const abonniert = l.ereignisse.includes(e.art as EreignisArt);
-        if (!abonniert || typeof e.daten.typ !== 'string' || !(await this.typverweise(p.id, pakete, typen))(l.mappentypen ?? []).has(e.daten.typ)) continue;
+        if (
+          !abonniert ||
+          typeof e.daten.typ !== 'string' ||
+          !(await this.typverweise(p.id, pakete, typen))(l.mappentypen ?? []).has(e.daten.typ)
+        )
+          continue;
         // #686: nur, was der Paket-Benutzer gerade lesen darf (bestätigte Rechte, „Pakete“ am Mappentyp, Regeln für die Rolle „Paket“).
         const grund = await this.paketSiehtNicht(p, e.daten.typ, typeof e.daten.mappe === 'string' ? e.daten.mappe : null);
-        if (grund) { protokoll.modul('werkbank').info('Ereignis nicht an Paket zugestellt', { paket: p.id, ereignis: e.art, mappe: e.daten.mappe ?? null, grund }); continue; }
+        if (grund) {
+          protokoll
+            .modul('werkbank')
+            .info('Ereignis nicht an Paket zugestellt', { paket: p.id, ereignis: e.art, mappe: e.daten.mappe ?? null, grund });
+          continue;
+        }
       }
       // KI-Dienste (#796): Ereignisse zu Dokumenten und Mappen eines nicht zugelassenen Mappentyps bekommt ein KI-Paket
       // nicht – auch nicht Dateiname oder Ids. Lässt sich der Typ nicht bestimmen, gilt er als gesperrt (nie falsch).
       if (!k.mappentyp && istKiPaket(l) && (l.ereignisse.includes(e.art as EreignisArt) || alt.some((a) => l.ereignisse.includes(a)))) {
         const mappe = typeof e.daten.mappe === 'string' ? e.daten.mappe : null;
-        const typ = typeof e.daten.typ === 'string' ? e.daten.typ : mappe ? (await this.kern.repoOhneTransaktion.holeMappe(mappe))?.typId ?? null : null;
+        const typ =
+          typeof e.daten.typ === 'string'
+            ? e.daten.typ
+            : mappe
+              ? ((await this.kern.repoOhneTransaktion.holeMappe(mappe))?.typId ?? null)
+              : null;
         if ((typ && (await this.kiSperre(p))(typ)) || (!typ && (mappe || typeof e.daten.dokument === 'string'))) {
-          protokoll.modul('werkbank').info('Ereignis nicht an Paket zugestellt', { paket: p.id, ereignis: e.art, mappe, grund: t('meldungen.dienst.ki-nicht-zugelassen') });
+          protokoll.modul('werkbank').info('Ereignis nicht an Paket zugestellt', {
+            paket: p.id,
+            ereignis: e.art,
+            mappe,
+            grund: t('meldungen.dienst.ki-nicht-zugelassen'),
+          });
           await this.kiUebersprungen(p.id, e.art, e.daten);
           continue;
         }
@@ -125,10 +205,19 @@ export class EreignisseDienst {
     if (!zustellungen.length) return;
     const daten: Record<string, unknown> = { ...e.daten, ereignis: e.id };
     // Name der Datei nur für Pakete (nicht im Ausgangskorb, der nur Ids kennt).
-    if (e.art === 'dokument.hochgeladen' && typeof e.daten.dokument === 'string') daten.name = (await this.kern.repoOhneTransaktion.holeDokument(e.daten.dokument))?.name ?? null;
-    const fuer = (art: EreignisArt): Record<string, unknown> => (art === 'texterkennung.fertig' ? { ...daten, seiten: daten.seiten ?? null } : daten);
-    const feste = (paket: string, art: string) => { const h = createHash('sha256').update(`${e.id}|${paket}${art === e.art ? '' : `|${art}`}`).digest('hex'); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`; };
-    await this.kern.repoOhneTransaktion.legeEreignisseAn(zustellungen.map((z) => ({ id: feste(z.paket.id, z.art), paketId: z.paket.id, art: z.art, daten: fuer(z.art) })));
+    if (e.art === 'dokument.hochgeladen' && typeof e.daten.dokument === 'string')
+      daten.name = (await this.kern.repoOhneTransaktion.holeDokument(e.daten.dokument))?.name ?? null;
+    const fuer = (art: EreignisArt): Record<string, unknown> =>
+      art === 'texterkennung.fertig' ? { ...daten, seiten: daten.seiten ?? null } : daten;
+    const feste = (paket: string, art: string) => {
+      const h = createHash('sha256')
+        .update(`${e.id}|${paket}${art === e.art ? '' : `|${art}`}`)
+        .digest('hex');
+      return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`;
+    };
+    await this.kern.repoOhneTransaktion.legeEreignisseAn(
+      zustellungen.map((z) => ({ id: feste(z.paket.id, z.art), paketId: z.paket.id, art: z.art, daten: fuer(z.art) })),
+    );
     this.ereignisWecker?.();
   }
 
@@ -152,7 +241,15 @@ export class EreignisseDienst {
    * Transaktion gehört er zur Änderung; sonst landen Fehler nur im Protokoll. `id`: feste Id gegen Doppeltes (#1082,
    * „Paket nach Zeitplan ausführen“).
    */
-  async auftrag(paket: string, art: Extract<EreignisArt, 'datei.umwandeln' | 'datei.volltext' | 'datei.archivfassung' | 'paket.einstellungen_geaendert' | 'zeitplan.ausgefuehrt'>, daten: Record<string, unknown>, id: string = randomUUID()): Promise<'gesperrt' | void> {
+  async auftrag(
+    paket: string,
+    art: Extract<
+      EreignisArt,
+      'datei.umwandeln' | 'datei.volltext' | 'datei.archivfassung' | 'paket.einstellungen_geaendert' | 'zeitplan.ausgefuehrt'
+    >,
+    daten: Record<string, unknown>,
+    id: string = randomUUID(),
+  ): Promise<'gesperrt' | void> {
     const inTx = this.kern.inEigenerTransaktion();
     try {
       const p = (await this.repo.listePakete()).find((x) => x.id === paket && x.laeufer?.ereignisse.includes(art));
@@ -160,9 +257,11 @@ export class EreignisseDienst {
       // KI-Dienste (#796): Dateien eines nicht zugelassenen Mappentyps gehen an kein KI-Paket. „gesperrt“: Der Aufrufer
       // setzt den Stand selbst (bzw. stellt den Auftrag über ein anderes Dokument mit derselben Datei).
       if (istKiPaket(p.laeufer) && (typeof daten.mappe === 'string' || typeof daten.dokument === 'string')) {
-        const typ = typeof daten.mappe === 'string' ? (await this.repo.holeMappe(daten.mappe))?.typId ?? null : null;
+        const typ = typeof daten.mappe === 'string' ? ((await this.repo.holeMappe(daten.mappe))?.typId ?? null) : null;
         if (!typ || (await this.kiSperre(p))(typ)) {
-          protokoll.modul('werkbank').info('Auftrag nicht an Paket gegeben', { paket: p.id, art, grund: t('meldungen.dienst.ki-nicht-zugelassen') });
+          protokoll
+            .modul('werkbank')
+            .info('Auftrag nicht an Paket gegeben', { paket: p.id, art, grund: t('meldungen.dienst.ki-nicht-zugelassen') });
           return 'gesperrt';
         }
       }

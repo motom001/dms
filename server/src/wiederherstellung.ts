@@ -40,7 +40,11 @@ const BEHALTEN_TAGE = 7;
 const ERWEITERUNGEN_SCHRITT = t('meldungen.wiederherstellung.erweiterungen-der-datenbank');
 
 export type Schrittstatus = 'offen' | 'laeuft' | 'ok' | 'fehler' | 'hinweis' | 'ausgelassen';
-export interface Schritt { name: string; status: Schrittstatus; info?: string }
+export interface Schritt {
+  name: string;
+  status: Schrittstatus;
+  info?: string;
+}
 
 export interface Wiederherstellungslauf {
   art: 'wiederherstellung' | 'probe';
@@ -56,7 +60,13 @@ export interface Wiederherstellungslauf {
 }
 
 /** Was nach dem Neustart als Abschlussmeldung erscheint. */
-export interface Abschluss { am: string; sicherung: string; von: string; schritte: Schritt[]; hinweise: string[] }
+export interface Abschluss {
+  am: string;
+  sicherung: string;
+  von: string;
+  schritte: Schritt[];
+  hinweise: string[];
+}
 
 export interface Abgleich {
   name: string;
@@ -69,7 +79,13 @@ export interface Abgleich {
   schluesselNoetig: boolean;
 }
 
-export interface Laufzeit { dms: string; postgres: string; architektur: string; haushaltId: string; migrationen: string[] }
+export interface Laufzeit {
+  dms: string;
+  postgres: string;
+  architektur: string;
+  haushaltId: string;
+  migrationen: string[];
+}
 
 export interface WiederherstellungsQuellen {
   /** Verbindungs-URL der Datenbank (für eigene Verbindungen ins neue Schema). */
@@ -103,8 +119,12 @@ const istSicherer = (pfad: string) => {
 
 /** Versionen vergleichen: „0.20.0“ < „0.21.0“. */
 function vergleicheVersion(a: string, b: string): number {
-  const x = a.split(/[.-]/).map((t) => Number.parseInt(t, 10)); const y = b.split(/[.-]/).map((t) => Number.parseInt(t, 10));
-  for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
+  const x = a.split(/[.-]/).map((t) => Number.parseInt(t, 10));
+  const y = b.split(/[.-]/).map((t) => Number.parseInt(t, 10));
+  for (let i = 0; i < 3; i++) {
+    const d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d;
+  }
   return 0;
 }
 
@@ -114,12 +134,18 @@ export class Wiederherstellung {
   private belegt = false;
   private jetzt: () => Date;
 
-  constructor(private q: WiederherstellungsQuellen) { this.jetzt = q.jetzt ?? (() => new Date()); }
+  constructor(private q: WiederherstellungsQuellen) {
+    this.jetzt = q.jetzt ?? (() => new Date());
+  }
 
-  aktuellerLauf(): Wiederherstellungslauf | null { return this.lauf ? structuredClone(this.lauf) : null; }
+  aktuellerLauf(): Wiederherstellungslauf | null {
+    return this.lauf ? structuredClone(this.lauf) : null;
+  }
   /** Stand für die Routen (#1341), in weiteren Prozessen vom Leiter – wie `Sicherung.laufStand`. */
   laufStand: () => Promise<Wiederherstellungslauf | null> = async () => this.aktuellerLauf();
-  laeuft() { return this.belegt || this.lauf?.status === 'laeuft' || this.lauf?.status === 'neustart'; }
+  laeuft() {
+    return this.belegt || this.lauf?.status === 'laeuft' || this.lauf?.status === 'neustart';
+  }
 
   /** Belegen (synchron, vor jedem await) – sonst könnten zwei Starts gleichzeitig durchrutschen. */
   private belege() {
@@ -144,22 +170,32 @@ export class Wiederherstellung {
   async abgleich(name: string, schluesselText?: string): Promise<Abgleich> {
     const eintrag = (await this.q.sicherung.liste()).find((x) => x.name === name);
     if (!eintrag) throw new Fachfehler(404, t('meldungen.wiederherstellung.diese-sicherung-gibt-es'));
-    const probleme: string[] = []; const hinweise: string[] = [];
+    const probleme: string[] = [];
+    const hinweise: string[] = [];
     // Kopie außer Haus (#585): daneben nur die schlanke Metadaten-Datei – den Rest liest das DMS mit dem Schlüssel aus der Sicherung.
-    const aussen = !eintrag.meta && eintrag.schlank ? await this.metaAusSicherung(eintrag as Eintragsliste & { schlank: SchlankeMetadaten }, schluesselText) : null;
+    const aussen =
+      !eintrag.meta && eintrag.schlank
+        ? await this.metaAusSicherung(eintrag as Eintragsliste & { schlank: SchlankeMetadaten }, schluesselText)
+        : null;
     if (!eintrag.meta && !aussen) throw new Fachfehler(422, t('meldungen.wiederherstellung.zu-dieser-sicherung-fehlt'));
     const m = eintrag.meta ?? aussen!.meta;
     if (aussen) {
       hinweise.push(t('meldungen.wiederherstellung.neben-dieser-sicherung-liegt'));
       if (aussen.problem) probleme.push(aussen.problem);
       if (!aussen.gelesen) {
-        if (!aussen.problem) hinweise.push(t('meldungen.wiederherstellung.gib-den-schluessel-vom', { fingerabdruck: m.verschluesselung.fingerabdruck }));
+        if (!aussen.problem)
+          hinweise.push(t('meldungen.wiederherstellung.gib-den-schluessel-vom', { fingerabdruck: m.verschluesselung.fingerabdruck }));
         return { name, meta: m, vergleich: [], probleme, hinweise, schluesselNoetig: true };
       }
     }
     const heute = await this.q.laufzeit();
     // Die .json liegt unverschlüsselt daneben: was in Pfade einfließt, streng prüfen.
-    if (m.datei !== `${name}.dms-sicherung` || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.haushaltId ?? '') || !Array.isArray(m.migrationen) || m.migrationen.some((x) => !/^[\w.-]+\.sql$/.test(String(x)))) {
+    if (
+      m.datei !== `${name}.dms-sicherung` ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.haushaltId ?? '') ||
+      !Array.isArray(m.migrationen) ||
+      m.migrationen.some((x) => !/^[\w.-]+\.sql$/.test(String(x)))
+    ) {
       throw new Fachfehler(422, t('meldungen.wiederherstellung.die-metadaten-datei-json'));
     }
     const vergleich: Abgleich['vergleich'] = [];
@@ -167,36 +203,98 @@ export class Wiederherstellung {
     const unbekannt = m.migrationen.filter((x) => !heute.migrationen.includes(x));
     const dms = aussen ? -1 : vergleicheVersion(m.umgebung.dms, heute.dms);
     if (unbekannt.length) {
-      probleme.push(t('meldungen.wiederherstellung.die-sicherung-stammt-von', { anzahl: unbekannt.length, dms: m.umgebung.dms, datenbankStand: String(m.umgebung.datenbankStand), dms2: heute.dms }));
+      probleme.push(
+        t('meldungen.wiederherstellung.die-sicherung-stammt-von', {
+          anzahl: unbekannt.length,
+          dms: m.umgebung.dms,
+          datenbankStand: String(m.umgebung.datenbankStand),
+          dms2: heute.dms,
+        }),
+      );
     }
-    if (aussen) vergleich.push({ was: 'Ablago', damals: 'unbekannt', heute: heute.dms, urteil: unbekannt.length ? 'fehler' : 'ok', info: unbekannt.length ? undefined : t('meldungen.wiederherstellung.steht-nicht-in-der') });
-    else vergleich.push({ was: 'Ablago', damals: m.umgebung.dms, heute: heute.dms, urteil: unbekannt.length ? 'fehler' : dms === 0 ? 'gleich' : 'ok', info: !unbekannt.length && dms < 0 ? t('meldungen.wiederherstellung.aelter-wird-nach-dem') : undefined });
+    if (aussen)
+      vergleich.push({
+        was: 'Ablago',
+        damals: 'unbekannt',
+        heute: heute.dms,
+        urteil: unbekannt.length ? 'fehler' : 'ok',
+        info: unbekannt.length ? undefined : t('meldungen.wiederherstellung.steht-nicht-in-der'),
+      });
+    else
+      vergleich.push({
+        was: 'Ablago',
+        damals: m.umgebung.dms,
+        heute: heute.dms,
+        urteil: unbekannt.length ? 'fehler' : dms === 0 ? 'gleich' : 'ok',
+        info: !unbekannt.length && dms < 0 ? t('meldungen.wiederherstellung.aelter-wird-nach-dem') : undefined,
+      });
     const fehlende = heute.migrationen.filter((x) => !m.migrationen.includes(x)).length;
-    vergleich.push({ was: t('meldungen.wiederherstellung.datenbank-stand'), damals: m.umgebung.datenbankStand ?? '–', heute: heute.migrationen.at(-1) ?? '–', urteil: unbekannt.length ? 'fehler' : fehlende ? 'ok' : 'gleich', info: fehlende && !unbekannt.length ? `${fehlende} ${t('meldungen.wiederherstellung.aenderungen-laufen', { anzahl: fehlende })} danach` : undefined });
+    vergleich.push({
+      was: t('meldungen.wiederherstellung.datenbank-stand'),
+      damals: m.umgebung.datenbankStand ?? '–',
+      heute: heute.migrationen.at(-1) ?? '–',
+      urteil: unbekannt.length ? 'fehler' : fehlende ? 'ok' : 'gleich',
+      info:
+        fehlende && !unbekannt.length
+          ? `${fehlende} ${t('meldungen.wiederherstellung.aenderungen-laufen', { anzahl: fehlende })} danach`
+          : undefined,
+    });
     if (!aussen) {
-      const pgDamals = m.umgebung.postgres.split('.')[0]; const pgHeute = heute.postgres.split('.')[0];
-      vergleich.push({ was: 'PostgreSQL', damals: m.umgebung.postgres, heute: heute.postgres, urteil: pgDamals === pgHeute ? 'gleich' : 'ok', info: pgDamals !== pgHeute ? t('meldungen.wiederherstellung.andere-hauptversion-geht-die') : undefined });
-      vergleich.push({ was: 'Architektur', damals: m.umgebung.architektur, heute: heute.architektur, urteil: m.umgebung.architektur === heute.architektur ? 'gleich' : 'ok' });
+      const pgDamals = m.umgebung.postgres.split('.')[0];
+      const pgHeute = heute.postgres.split('.')[0];
+      vergleich.push({
+        was: 'PostgreSQL',
+        damals: m.umgebung.postgres,
+        heute: heute.postgres,
+        urteil: pgDamals === pgHeute ? 'gleich' : 'ok',
+        info: pgDamals !== pgHeute ? t('meldungen.wiederherstellung.andere-hauptversion-geht-die') : undefined,
+      });
+      vergleich.push({
+        was: 'Architektur',
+        damals: m.umgebung.architektur,
+        heute: heute.architektur,
+        urteil: m.umgebung.architektur === heute.architektur ? 'gleich' : 'ok',
+      });
     }
-    vergleich.push({ was: t('meldungen.wiederherstellung.ablage-id'), damals: m.haushaltId, heute: heute.haushaltId, urteil: m.haushaltId === heute.haushaltId ? 'gleich' : 'hinweis', info: m.haushaltId !== heute.haushaltId ? t('meldungen.wiederherstellung.abweichend-siehe-hinweis') : undefined });
+    vergleich.push({
+      was: t('meldungen.wiederherstellung.ablage-id'),
+      damals: m.haushaltId,
+      heute: heute.haushaltId,
+      urteil: m.haushaltId === heute.haushaltId ? 'gleich' : 'hinweis',
+      info: m.haushaltId !== heute.haushaltId ? t('meldungen.wiederherstellung.abweichend-siehe-hinweis') : undefined,
+    });
     if (m.haushaltId !== heute.haushaltId) {
-      hinweise.push(this.q.mandantUebernehmen
-        ? t('meldungen.wiederherstellung.die-sicherung-gehoert-zur', { haushaltId: m.haushaltId, haushaltId2: heute.haushaltId })
-        : t('meldungen.wiederherstellung.die-sicherung-gehoert-zur-2', { haushaltId: m.haushaltId, haushaltId2: heute.haushaltId }));
+      hinweise.push(
+        this.q.mandantUebernehmen
+          ? t('meldungen.wiederherstellung.die-sicherung-gehoert-zur', { haushaltId: m.haushaltId, haushaltId2: heute.haushaltId })
+          : t('meldungen.wiederherstellung.die-sicherung-gehoert-zur-2', { haushaltId: m.haushaltId, haushaltId2: heute.haushaltId }),
+      );
     }
 
     let schluesselNoetig = !aussen?.mitEingabe && this.q.tresor.fingerabdruck !== m.verschluesselung.fingerabdruck;
     if (schluesselText !== undefined && schluesselText.trim()) {
       const k = schluesselAusText(schluesselText);
       if (!k) probleme.push(t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat'));
-      else if (fingerabdruck(k) !== m.verschluesselung.fingerabdruck) probleme.push(t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat-2', { fingerabdruck: fingerabdruck(k), fingerabdruck2: m.verschluesselung.fingerabdruck }));
+      else if (fingerabdruck(k) !== m.verschluesselung.fingerabdruck)
+        probleme.push(
+          t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat-2', {
+            fingerabdruck: fingerabdruck(k),
+            fingerabdruck2: m.verschluesselung.fingerabdruck,
+          }),
+        );
       else schluesselNoetig = false;
     }
-    if (schluesselNoetig) hinweise.push(t('meldungen.wiederherstellung.der-schluessel-dieser-installation', { fingerabdruck: m.verschluesselung.fingerabdruck }));
+    if (schluesselNoetig)
+      hinweise.push(
+        t('meldungen.wiederherstellung.der-schluessel-dieser-installation', { fingerabdruck: m.verschluesselung.fingerabdruck }),
+      );
     try {
       const { kopf } = await liesKopf(join(this.q.sicherung.ordner, m.datei));
-      if (kopf.fingerabdruck !== m.verschluesselung.fingerabdruck) probleme.push(t('meldungen.wiederherstellung.sicherungsdatei-und-metadaten-passen'));
-    } catch (e) { probleme.push((e as Error).message); }
+      if (kopf.fingerabdruck !== m.verschluesselung.fingerabdruck)
+        probleme.push(t('meldungen.wiederherstellung.sicherungsdatei-und-metadaten-passen'));
+    } catch (e) {
+      probleme.push((e as Error).message);
+    }
     return { name, meta: m, vergleich, probleme, hinweise, schluesselNoetig };
   }
 
@@ -205,41 +303,96 @@ export class Wiederherstellung {
    * oder der dieses DMS, wenn der Fingerabdruck passt) wird nur der erste Eintrag (Inhaltsangabe) entschlüsselt.
    * Echt ist die Datei erst, wenn beim Einspielen der GCM-Prüfwert am Ende stimmt. Ohne Schlüssel: gelesen = false.
    */
-  private async metaAusSicherung(e: Eintragsliste & { schlank: SchlankeMetadaten }, schluesselText?: string): Promise<{ meta: Metadaten; gelesen: boolean; mitEingabe: boolean; problem?: string }> {
+  private async metaAusSicherung(
+    e: Eintragsliste & { schlank: SchlankeMetadaten },
+    schluesselText?: string,
+  ): Promise<{ meta: Metadaten; gelesen: boolean; mitEingabe: boolean; problem?: string }> {
     const s = e.schlank;
-    if (s.datei !== `${e.name}.dms-sicherung` || !/^[0-9a-f]{64}$/.test(String(s.sha256)) || typeof s.verschluesselung?.fingerabdruck !== 'string') {
+    if (
+      s.datei !== `${e.name}.dms-sicherung` ||
+      !/^[0-9a-f]{64}$/.test(String(s.sha256)) ||
+      typeof s.verschluesselung?.fingerabdruck !== 'string'
+    ) {
       throw new Fachfehler(422, t('meldungen.wiederherstellung.die-metadaten-datei-json'));
     }
     const meta: Metadaten = {
-      format: 1, datei: s.datei, haushaltId: '', art: 'manuell', ausgeloestVon: '–', beginn: s.beginn, ende: s.beginn, dauerSekunden: 0,
+      format: 1,
+      datei: s.datei,
+      haushaltId: '',
+      art: 'manuell',
+      ausgeloestVon: '–',
+      beginn: s.beginn,
+      ende: s.beginn,
+      dauerSekunden: 0,
       umgebung: { dms: '–', datenbankStand: null, postgres: '–', node: '–', system: '–', architektur: '–' },
       // dateien: -1 = unbekannt (steht erst am Ende der Sicherung); geprüft wird dann gegen den Endeintrag.
       anzahl: { mappen: 0, dokumente: 0, benutzer: 0, dateien: -1, tabellen: 0 } as Metadaten['anzahl'],
       groessen: { datenbankBytes: 0, dateienBytes: e.bytes, sicherungBytes: e.bytes },
-      verschluesselung: { verfahren: String(s.verschluesselung.verfahren ?? ''), fingerabdruck: s.verschluesselung.fingerabdruck }, sha256: s.sha256, migrationen: [],
+      verschluesselung: { verfahren: String(s.verschluesselung.verfahren ?? ''), fingerabdruck: s.verschluesselung.fingerabdruck },
+      sha256: s.sha256,
+      migrationen: [],
     };
     const text = schluesselText?.trim() ? schluesselText : null;
-    const k = text ? schluesselAusText(text) : this.q.tresor.fingerabdruck === meta.verschluesselung.fingerabdruck ? schluesselAusText(this.q.tresor.alsText() ?? '') : null;
-    if (text && !k) return { meta, gelesen: false, mitEingabe: false, problem: t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat') };
+    const k = text
+      ? schluesselAusText(text)
+      : this.q.tresor.fingerabdruck === meta.verschluesselung.fingerabdruck
+        ? schluesselAusText(this.q.tresor.alsText() ?? '')
+        : null;
+    if (text && !k)
+      return { meta, gelesen: false, mitEingabe: false, problem: t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat') };
     if (!k) return { meta, gelesen: false, mitEingabe: false };
-    if (fingerabdruck(k) !== meta.verschluesselung.fingerabdruck) return { meta, gelesen: false, mitEingabe: false, problem: t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat-2', { fingerabdruck: fingerabdruck(k), fingerabdruck2: meta.verschluesselung.fingerabdruck }) };
+    if (fingerabdruck(k) !== meta.verschluesselung.fingerabdruck)
+      return {
+        meta,
+        gelesen: false,
+        mitEingabe: false,
+        problem: t('meldungen.wiederherstellung.der-eingegebene-schluessel-hat-2', {
+          fingerabdruck: fingerabdruck(k),
+          fingerabdruck2: meta.verschluesselung.fingerabdruck,
+        }),
+      };
     try {
       const it = liesSicherung(join(this.q.sicherung.ordner, s.datei), leiteAb(k, ZWECK))[Symbol.asyncIterator]();
       const erst = await it.next();
       await it.return?.(undefined);
-      const kopf = (erst.done ? null : erst.value.art === 'M' ? erst.value.kopf : null) as { haushaltId?: unknown; migrationen?: unknown; tabellen?: unknown; ohneInhalt?: unknown; zaehler?: Record<string, unknown> } | null;
+      const kopf = (erst.done ? null : erst.value.art === 'M' ? erst.value.kopf : null) as {
+        haushaltId?: unknown;
+        migrationen?: unknown;
+        tabellen?: unknown;
+        ohneInhalt?: unknown;
+        zaehler?: Record<string, unknown>;
+      } | null;
       if (!kopf) throw new Error('Die Sicherung beginnt nicht mit der Inhaltsangabe – die Datei ist beschädigt.');
       const migrationen = Array.isArray(kopf.migrationen) ? kopf.migrationen.map(String) : [];
       const ohne = new Set(Array.isArray(kopf.ohneInhalt) ? kopf.ohneInhalt.map(String) : []);
-      const tabellen = Array.isArray(kopf.tabellen) ? (kopf.tabellen as Array<{ name?: unknown }>).filter((t) => !ohne.has(String(t?.name))).length : 0;
+      const tabellen = Array.isArray(kopf.tabellen)
+        ? (kopf.tabellen as Array<{ name?: unknown }>).filter((t) => !ohne.has(String(t?.name))).length
+        : 0;
       const z = kopf.zaehler ?? {};
       return {
-        meta: { ...meta, haushaltId: String(kopf.haushaltId ?? ''), migrationen, umgebung: { ...meta.umgebung, datenbankStand: migrationen.at(-1) ?? null },
-          anzahl: { ...meta.anzahl, mappen: Number(z.mappen) || 0, dokumente: Number(z.dokumente) || 0, benutzer: Number(z.benutzer) || 0, tabellen } as Metadaten['anzahl'] },
-        gelesen: true, mitEingabe: !!text,
+        meta: {
+          ...meta,
+          haushaltId: String(kopf.haushaltId ?? ''),
+          migrationen,
+          umgebung: { ...meta.umgebung, datenbankStand: migrationen.at(-1) ?? null },
+          anzahl: {
+            ...meta.anzahl,
+            mappen: Number(z.mappen) || 0,
+            dokumente: Number(z.dokumente) || 0,
+            benutzer: Number(z.benutzer) || 0,
+            tabellen,
+          } as Metadaten['anzahl'],
+        },
+        gelesen: true,
+        mitEingabe: !!text,
       };
     } catch (x) {
-      return { meta, gelesen: false, mitEingabe: false, problem: t('meldungen.wiederherstellung.die-sicherung-laesst-sich', { message: (x as Error).message }) };
+      return {
+        meta,
+        gelesen: false,
+        mitEingabe: false,
+        problem: t('meldungen.wiederherstellung.die-sicherung-laesst-sich', { message: (x as Error).message }),
+      };
     }
   }
 
@@ -248,19 +401,36 @@ export class Wiederherstellung {
     const text = schluesselText?.trim() ? schluesselText : this.q.tresor.fingerabdruck === m.verschluesselung.fingerabdruck ? eigen : null;
     const k = text ? schluesselAusText(text) : null;
     if (!k) throw new Fachfehler(422, t('meldungen.wiederherstellung.bitte-den-schluessel-vom'));
-    if (fingerabdruck(k) !== m.verschluesselung.fingerabdruck) throw new Fachfehler(422, t('meldungen.wiederherstellung.der-schluessel-passt-nicht', { fingerabdruck: m.verschluesselung.fingerabdruck }));
+    if (fingerabdruck(k) !== m.verschluesselung.fingerabdruck)
+      throw new Fachfehler(
+        422,
+        t('meldungen.wiederherstellung.der-schluessel-passt-nicht', { fingerabdruck: m.verschluesselung.fingerabdruck }),
+      );
     return k;
   }
 
   /* ---------- Starten ---------- */
 
-  async starte(e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown }, admin: { email: string } | null, einrichtungscode?: unknown): Promise<Wiederherstellungslauf> {
+  async starte(
+    e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown },
+    admin: { email: string } | null,
+    einrichtungscode?: unknown,
+  ): Promise<Wiederherstellungslauf> {
     const art = await this.pruefeZugang(!!admin, einrichtungscode);
     this.belege();
-    try { return await this.starteBelegt(e, admin, art); } catch (x) { this.belegt = false; throw x; }
+    try {
+      return await this.starteBelegt(e, admin, art);
+    } catch (x) {
+      this.belegt = false;
+      throw x;
+    }
   }
 
-  private async starteBelegt(e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown }, admin: { email: string } | null, art: 'frisch' | 'laufend'): Promise<Wiederherstellungslauf> {
+  private async starteBelegt(
+    e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown },
+    admin: { email: string } | null,
+    art: 'frisch' | 'laufend',
+  ): Promise<Wiederherstellungslauf> {
     const name = String(e.name ?? '');
     const text = typeof e.schluessel === 'string' ? e.schluessel : undefined;
     const a = await this.abgleich(name, text);
@@ -271,53 +441,107 @@ export class Wiederherstellung {
     const von = admin?.email ?? t('meldungen.wiederherstellung.einrichtung-frisches-system');
     const lauf = this.neuerLauf('wiederherstellung', name, von, [
       ...(art === 'laufend' ? [t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands')] : []),
-      t('meldungen.wiederherstellung.pruefsumme-der-datei'), t('meldungen.wiederherstellung.entschluesseln-und-einspielen'), 'Prüfwort', t('meldungen.wiederherstellung.anzahl-mappen-dokumente-benutzer'), t('meldungen.wiederherstellung.auf-den-heutigen-stand'), ERWEITERUNGEN_SCHRITT, t('meldungen.wiederherstellung.dateien-uebernehmen'), 'Schlüsseldatei', 'Umschalten', 'Neustart',
+      t('meldungen.wiederherstellung.pruefsumme-der-datei'),
+      t('meldungen.wiederherstellung.entschluesseln-und-einspielen'),
+      'Prüfwort',
+      t('meldungen.wiederherstellung.anzahl-mappen-dokumente-benutzer'),
+      t('meldungen.wiederherstellung.auf-den-heutigen-stand'),
+      ERWEITERUNGEN_SCHRITT,
+      t('meldungen.wiederherstellung.dateien-uebernehmen'),
+      'Schlüsseldatei',
+      'Umschalten',
+      'Neustart',
     ]);
     log.warn('Wiederherstellung begonnen', { sicherung: name, von, art });
-    void this.fuehreAus(lauf, a, k, art).catch(() => {}).finally(() => { this.belegt = false; });
+    void this.fuehreAus(lauf, a, k, art)
+      .catch(() => {})
+      .finally(() => {
+        this.belegt = false;
+      });
     return this.aktuellerLauf()!;
   }
 
   /** Probe (#109): wie eine Wiederherstellung, aber ohne Umschalten; danach aufräumen. */
   async starteProbe(name: string | null, von: string): Promise<{ lauf: Wiederherstellungslauf; fertig: Promise<boolean> }> {
     this.belege();
-    try { return await this.starteProbeBelegt(name, von); } catch (x) { this.belegt = false; throw x; }
+    try {
+      return await this.starteProbeBelegt(name, von);
+    } catch (x) {
+      this.belegt = false;
+      throw x;
+    }
   }
 
   private async starteProbeBelegt(name: string | null, von: string): Promise<{ lauf: Wiederherstellungslauf; fertig: Promise<boolean> }> {
     const liste = (await this.q.sicherung.liste()).filter((x) => x.meta);
     const ziel = name ? liste.find((x) => x.name === name) : liste[0];
-    if (!ziel) throw new Fachfehler(404, name ? t('meldungen.wiederherstellung.diese-sicherung-gibt-es-2') : t('meldungen.wiederherstellung.es-gibt-noch-keine'));
+    if (!ziel)
+      throw new Fachfehler(
+        404,
+        name ? t('meldungen.wiederherstellung.diese-sicherung-gibt-es-2') : t('meldungen.wiederherstellung.es-gibt-noch-keine'),
+      );
     const m = ziel.meta!;
     const k = this.q.tresor.fingerabdruck === m.verschluesselung.fingerabdruck ? schluesselAusText(this.q.tresor.alsText() ?? '') : null;
-    const lauf = this.neuerLauf('probe', ziel.name, von, [t('meldungen.wiederherstellung.pruefsumme-der-datei'), t('meldungen.wiederherstellung.entschluesseln-und-einspielen'), 'Prüfwort', t('meldungen.wiederherstellung.anzahl-mappen-dokumente-benutzer'), t('meldungen.wiederherstellung.auf-den-heutigen-stand'), ERWEITERUNGEN_SCHRITT, 'Aufräumen']);
+    const lauf = this.neuerLauf('probe', ziel.name, von, [
+      t('meldungen.wiederherstellung.pruefsumme-der-datei'),
+      t('meldungen.wiederherstellung.entschluesseln-und-einspielen'),
+      'Prüfwort',
+      t('meldungen.wiederherstellung.anzahl-mappen-dokumente-benutzer'),
+      t('meldungen.wiederherstellung.auf-den-heutigen-stand'),
+      ERWEITERUNGEN_SCHRITT,
+      'Aufräumen',
+    ]);
     log.info('Probe-Wiederherstellung begonnen', { sicherung: ziel.name, von });
     const fertig = (async () => {
       if (!k) {
-        this.fehlschlag(lauf, t('meldungen.wiederherstellung.pruefsumme-der-datei'), t('meldungen.wiederherstellung.die-sicherung-braucht-den', { fingerabdruck: m.verschluesselung.fingerabdruck, wert: this.q.tresor.fingerabdruck ?? 'keinen' }));
+        this.fehlschlag(
+          lauf,
+          t('meldungen.wiederherstellung.pruefsumme-der-datei'),
+          t('meldungen.wiederherstellung.die-sicherung-braucht-den', {
+            fingerabdruck: m.verschluesselung.fingerabdruck,
+            wert: this.q.tresor.fingerabdruck ?? 'keinen',
+          }),
+        );
         await this.merkeProbe(ziel.name, false, lauf.fehler!);
         return false;
       }
       const a: Abgleich = { name: ziel.name, meta: m, vergleich: [], probleme: [], hinweise: [], schluesselNoetig: false };
       return this.fuehreAus(lauf, a, k, 'probe');
-    })().finally(() => { this.belegt = false; });
+    })().finally(() => {
+      this.belegt = false;
+    });
     return { lauf: this.aktuellerLauf()!, fertig };
   }
 
   private neuerLauf(art: Wiederherstellungslauf['art'], sicherung: string, von: string, schritte: string[]): Wiederherstellungslauf {
-    this.lauf = { art, sicherung, von, status: 'laeuft', schritte: schritte.map((name) => ({ name, status: 'offen' })), bytes: 0, gesamt: 0, gestartet: this.jetzt().toISOString() };
+    this.lauf = {
+      art,
+      sicherung,
+      von,
+      status: 'laeuft',
+      schritte: schritte.map((name) => ({ name, status: 'offen' })),
+      bytes: 0,
+      gesamt: 0,
+      gestartet: this.jetzt().toISOString(),
+    };
     return this.lauf;
   }
 
   private schritt(lauf: Wiederherstellungslauf, name: string, status: Schrittstatus, info?: string) {
     const s = lauf.schritte.find((x) => x.name === name);
-    if (s) { s.status = status; if (info !== undefined) s.info = info; }
+    if (s) {
+      s.status = status;
+      if (info !== undefined) s.info = info;
+    }
   }
 
   private fehlschlag(lauf: Wiederherstellungslauf, aktuell: string | null, grund: string) {
     if (aktuell) this.schritt(lauf, aktuell, 'fehler', grund);
-    for (const s of lauf.schritte) if (s.status === 'offen' || s.status === 'laeuft') s.status = s.status === 'laeuft' ? 'fehler' : 'ausgelassen';
-    lauf.status = 'fehler'; lauf.fehler = grund; lauf.beendet = this.jetzt().toISOString();
+    for (const s of lauf.schritte)
+      if (s.status === 'offen' || s.status === 'laeuft') s.status = s.status === 'laeuft' ? 'fehler' : 'ausgelassen';
+    lauf.status = 'fehler';
+    lauf.fehler = grund;
+    lauf.beendet = this.jetzt().toISOString();
   }
 
   private async pruefePlatz(m: Metadaten) {
@@ -325,9 +549,17 @@ export class Wiederherstellung {
       const f = await statfs(this.q.dateiWurzel);
       const frei = f.bavail * f.bsize;
       if (frei < m.groessen.dateienBytes * 1.05 + PLATZ_RESERVE) {
-        throw new Fachfehler(507, t('meldungen.wiederherstellung.zu-wenig-platz-fuer', { replace: (frei / GB).toFixed(1).replace('.', ','), replace2: (m.groessen.dateienBytes / GB).toFixed(1).replace('.', ',') }));
+        throw new Fachfehler(
+          507,
+          t('meldungen.wiederherstellung.zu-wenig-platz-fuer', {
+            replace: (frei / GB).toFixed(1).replace('.', ','),
+            replace2: (m.groessen.dateienBytes / GB).toFixed(1).replace('.', ','),
+          }),
+        );
       }
-    } catch (e) { if (e instanceof Fachfehler) throw e; }
+    } catch (e) {
+      if (e instanceof Fachfehler) throw e;
+    }
   }
 
   /** Der eigentliche Ablauf. Bei Probe: nie umschalten, immer aufräumen. */
@@ -342,27 +574,45 @@ export class Wiederherstellung {
     let schluesselZurueck: (() => Promise<void>) | null = null;
     let behalten = false;
     let aktuell: string | null = null;
-    const schritt = (name: string) => { aktuell = name; this.schritt(lauf, name, 'laeuft'); };
-    const ok = (info?: string) => { if (aktuell) this.schritt(lauf, aktuell, 'ok', info); };
+    const schritt = (name: string) => {
+      aktuell = name;
+      this.schritt(lauf, name, 'laeuft');
+    };
+    const ok = (info?: string) => {
+      if (aktuell) this.schritt(lauf, aktuell, 'ok', info);
+    };
     try {
       if (art === 'laufend' && !this.q.tresor.alsText()) {
         // Ohne (passenden) Schlüssel lässt sich der jetzige Stand nicht sichern – z. B. wenn er verloren ist.
         // Dann bleibt das alte Schema nach dem Umschalten noch eine Weile in der Datenbank.
         behalten = true;
-        this.schritt(lauf, t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands'), 'hinweis', t('meldungen.wiederherstellung.nicht-moeglich-diese-installation', { BEHALTEN_TAGE }));
+        this.schritt(
+          lauf,
+          t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands'),
+          'hinweis',
+          t('meldungen.wiederherstellung.nicht-moeglich-diese-installation', { BEHALTEN_TAGE }),
+        );
       } else if (art === 'laufend') {
         schritt(t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands'));
         const { fertig } = await this.q.sicherung.starte('vor-wiederherstellung', lauf.von);
         const vorher = await fertig;
-        if (!vorher) throw new Error(`Die Sicherung des jetzigen Stands ist fehlgeschlagen: ${this.q.sicherung.aktuellerLauf()?.fehler ?? 'unbekannt'}. Ohne sie wird nichts ersetzt.`);
+        if (!vorher)
+          throw new Error(
+            `Die Sicherung des jetzigen Stands ist fehlgeschlagen: ${this.q.sicherung.aktuellerLauf()?.fehler ?? 'unbekannt'}. Ohne sie wird nichts ersetzt.`,
+          );
         ok(vorher.datei);
       }
 
       schritt(t('meldungen.wiederherstellung.pruefsumme-der-datei'));
       const pfad = join(this.q.sicherung.ordner, m.datei);
       lauf.gesamt = (await stat(pfad)).size;
-      const sha = await sha256Von(pfad, (n) => { lauf.bytes = n; });
-      if (sha !== m.sha256) throw new Error('Die Prüfsumme der Sicherungsdatei stimmt nicht mit den Metadaten überein – die Datei ist verändert oder beschädigt.');
+      const sha = await sha256Von(pfad, (n) => {
+        lauf.bytes = n;
+      });
+      if (sha !== m.sha256)
+        throw new Error(
+          'Die Prüfsumme der Sicherungsdatei stimmt nicht mit den Metadaten überein – die Datei ist verändert oder beschädigt.',
+        );
       ok('unverändert');
 
       schritt(t('meldungen.wiederherstellung.entschluesseln-und-einspielen'));
@@ -378,27 +628,51 @@ export class Wiederherstellung {
         }
       });
       // Was die Migrationen selbst angelegt haben (z. B. den Mandanten), kommt aus der Sicherung.
-      const leeren = (await neu`SELECT tablename FROM pg_tables WHERE schemaname = ${schema} AND tablename <> 'schema_migrationen'`).map((r) => bezeichner(r.tablename as string));
+      const leeren = (await neu`SELECT tablename FROM pg_tables WHERE schemaname = ${schema} AND tablename <> 'schema_migrationen'`).map(
+        (r) => bezeichner(r.tablename as string),
+      );
       if (leeren.length) await neu.unsafe(`TRUNCATE ${leeren.join(', ')} CASCADE`);
       if (!probe) await mkdir(staging, { recursive: true });
-      let tabellen = 0; let dateien = 0; let stichprobe = 0; let iDatei = 0; let endeTabellen: number | null = null; let dateienEnde: number | null = null;
+      let tabellen = 0;
+      let dateien = 0;
+      let stichprobe = 0;
+      let iDatei = 0;
+      let endeTabellen: number | null = null;
+      let dateienEnde: number | null = null;
       // Ohne Anzahl (schlanke Metadaten, #585) jede Datei prüfen.
       const jede = Math.max(1, Math.ceil(m.anzahl.dateien / 20));
       let zaehlerSicherung: Record<string, number> | null = null;
       // Umgewandelte Fassungen (#577, seit 0.140.1 in der Sicherung): Prüfwert des Inhalts und der in den Angaben.
-      const fassungIst = new Map<string, string>(); const fassungSoll = new Map<string, string>();
+      const fassungIst = new Map<string, string>();
+      const fassungSoll = new Map<string, string>();
       // Archivfassungen (#631): ebenso; Angaben „imOriginal“ (das Original ist schon PDF/A) haben keinen eigenen Inhalt.
-      const archivIst = new Map<string, string>(); const archivSoll = new Map<string, string>(); const archivOriginal = new Set<string>();
+      const archivIst = new Map<string, string>();
+      const archivSoll = new Map<string, string>();
+      const archivOriginal = new Set<string>();
       lauf.bytes = 0;
-      for await (const e of liesSicherung(pfad, leiteAb(k, ZWECK), (n) => { lauf.bytes = n; })) {
+      for await (const e of liesSicherung(pfad, leiteAb(k, ZWECK), (n) => {
+        lauf.bytes = n;
+      })) {
         if (e.art === 'M') {
           if (e.kopf.haushaltId !== m.haushaltId) throw new Error('Inhalt und Metadaten der Sicherung passen nicht zusammen (Ablage-Id).');
           zaehlerSicherung = (e.kopf.zaehler as Record<string, number>) ?? null;
         } else if (e.art === 'T') {
           const tabelle2 = { name: String(e.kopf.tabelle), spalten: (e.kopf.spalten as string[]).map(String) } as Tabelle;
-          if (OHNE_INHALT.has(tabelle2.name)) { for await (const _ of e.daten) { /* übergehen */ } continue; }
-          this.schritt(lauf, t('meldungen.wiederherstellung.entschluesseln-und-einspielen'), 'laeuft', t('meldungen.wiederherstellung.tabelle', { name: tabelle2.name }));
-          w = await neu.unsafe(`COPY ${bezeichner(schema)}.${bezeichner(tabelle2.name)} (${tabelle2.spalten.map(bezeichner).join(', ')}) FROM STDIN`).writable();
+          if (OHNE_INHALT.has(tabelle2.name)) {
+            for await (const _ of e.daten) {
+              /* übergehen */
+            }
+            continue;
+          }
+          this.schritt(
+            lauf,
+            t('meldungen.wiederherstellung.entschluesseln-und-einspielen'),
+            'laeuft',
+            t('meldungen.wiederherstellung.tabelle', { name: tabelle2.name }),
+          );
+          w = await neu
+            .unsafe(`COPY ${bezeichner(schema)}.${bezeichner(tabelle2.name)} (${tabelle2.spalten.map(bezeichner).join(', ')}) FROM STDIN`)
+            .writable();
           for await (const c of e.daten) if (!w.write(c)) await once(w, 'drain');
           w.end();
           await once(w, 'finish');
@@ -424,19 +698,31 @@ export class Wiederherstellung {
             w = ausgabe;
           }
           for await (const c of e.daten) {
-            h?.update(c); hf?.update(c);
+            h?.update(c);
+            hf?.update(c);
             if (angaben && angaben.length < 64) angaben.push(c);
             if (ausgabe && !ausgabe.write(c)) await once(ausgabe, 'drain');
           }
-          if (ausgabe) { ausgabe.end(); await once(ausgabe, 'close'); w = null; }
+          if (ausgabe) {
+            ausgabe.end();
+            await once(ausgabe, 'close');
+            w = null;
+          }
           if (h) {
             if (h.digest('hex') !== name) throw new Error(`Die Datei ${rel} in der Sicherung ist beschädigt (Prüfwert stimmt nicht).`);
             stichprobe++;
           }
           if (hf) (istArchiv ? archivIst : fassungIst).set(fassung![1], hf.digest('hex'));
           if (angaben) {
-            let soll = ''; let imOriginal = false;
-            try { const j = JSON.parse(Buffer.concat(angaben).toString('utf8')) as { sha256?: unknown; imOriginal?: unknown }; soll = String(j.sha256 ?? ''); imOriginal = j.imOriginal === true; } catch { /* unlesbar */ }
+            let soll = '';
+            let imOriginal = false;
+            try {
+              const j = JSON.parse(Buffer.concat(angaben).toString('utf8')) as { sha256?: unknown; imOriginal?: unknown };
+              soll = String(j.sha256 ?? '');
+              imOriginal = j.imOriginal === true;
+            } catch {
+              /* unlesbar */
+            }
             (istArchiv ? archivSoll : fassungSoll).set(fassung![1], soll);
             if (istArchiv && imOriginal) archivOriginal.add(fassung![1]);
           }
@@ -447,30 +733,58 @@ export class Wiederherstellung {
         }
       }
       // Erst hier ist der GCM-Prüfwert geprüft: Die Datei ist echt und vollständig.
-      if (endeTabellen === null || tabellen !== endeTabellen || tabellen !== m.anzahl.tabellen) throw new Error(`Die Sicherung ist unvollständig: ${tabellen} Tabellen eingespielt, erwartet ${m.anzahl.tabellen}.`);
+      if (endeTabellen === null || tabellen !== endeTabellen || tabellen !== m.anzahl.tabellen)
+        throw new Error(`Die Sicherung ist unvollständig: ${tabellen} Tabellen eingespielt, erwartet ${m.anzahl.tabellen}.`);
       // Fassung und Angaben gehören zusammen. Passt ein Paar nicht (z. B. während der Sicherung neu umgewandelt), kommt
       // es nicht mit: Das Paket wandelt die Datei dann neu um (wie bei einer Sicherung ohne Fassungen).
-      let fassungen = 0; let fassungenOhne = 0;
+      let fassungen = 0;
+      let fassungenOhne = 0;
       for (const sha of new Set([...fassungIst.keys(), ...fassungSoll.keys()])) {
-        if (fassungIst.has(sha) && fassungIst.get(sha) === fassungSoll.get(sha)) { fassungen++; continue; }
+        if (fassungIst.has(sha) && fassungIst.get(sha) === fassungSoll.get(sha)) {
+          fassungen++;
+          continue;
+        }
         fassungenOhne++;
         log.warn('Umgewandelte Fassung in der Sicherung unvollständig – nicht übernommen', { datei: sha });
-        if (!probe) for (const endung of ['json', 'fassung']) await rm(join(staging, m.haushaltId, 'fassungen', sha.slice(0, 2), `${sha}.${endung}`), { force: true });
+        if (!probe)
+          for (const endung of ['json', 'fassung'])
+            await rm(join(staging, m.haushaltId, 'fassungen', sha.slice(0, 2), `${sha}.${endung}`), { force: true });
       }
-      let archiv = 0; let archivOhne = 0;
+      let archiv = 0;
+      let archivOhne = 0;
       for (const sha of new Set([...archivIst.keys(), ...archivSoll.keys()])) {
         // „Original ist schon PDF/A“: nur Angaben, ihr Prüfwert ist der des Originals.
-        if (archivOriginal.has(sha) && !archivIst.has(sha) && archivSoll.get(sha) === sha) { archiv++; continue; }
-        if (archivIst.has(sha) && archivIst.get(sha) === archivSoll.get(sha)) { archiv++; continue; }
+        if (archivOriginal.has(sha) && !archivIst.has(sha) && archivSoll.get(sha) === sha) {
+          archiv++;
+          continue;
+        }
+        if (archivIst.has(sha) && archivIst.get(sha) === archivSoll.get(sha)) {
+          archiv++;
+          continue;
+        }
         archivOhne++;
         log.warn('Archivfassung in der Sicherung unvollständig – nicht übernommen', { datei: sha });
-        if (!probe) for (const endung of ['json', 'fassung']) await rm(join(staging, m.haushaltId, 'archivfassungen', sha.slice(0, 2), `${sha}.${endung}`), { force: true });
+        if (!probe)
+          for (const endung of ['json', 'fassung'])
+            await rm(join(staging, m.haushaltId, 'archivfassungen', sha.slice(0, 2), `${sha}.${endung}`), { force: true });
       }
-      ok(t('meldungen.wiederherstellung.tabellen-dateien', { tabellen, dateien, wert: fassungen ? t('meldungen.wiederherstellung.umgewandelte-fassungen', { anzahl: fassungen }) : '', wert2: fassungenOhne ? t('meldungen.wiederherstellung.unvollstaendig-nicht-uebernommen', { fassungenOhne }) : '', wert3: archiv ? t('meldungen.wiederherstellung.archivfassungen-pdf-a', { anzahl: archiv }) : '', wert4: archivOhne ? t('meldungen.wiederherstellung.unvollstaendig-nicht-uebernommen-2', { archivOhne }) : '', wert5: stichprobe ? t('meldungen.wiederherstellung.pruefwerte-von-dateien-nachgerechnet', { stichprobe }) : '' }));
+      ok(
+        t('meldungen.wiederherstellung.tabellen-dateien', {
+          tabellen,
+          dateien,
+          wert: fassungen ? t('meldungen.wiederherstellung.umgewandelte-fassungen', { anzahl: fassungen }) : '',
+          wert2: fassungenOhne ? t('meldungen.wiederherstellung.unvollstaendig-nicht-uebernommen', { fassungenOhne }) : '',
+          wert3: archiv ? t('meldungen.wiederherstellung.archivfassungen-pdf-a', { anzahl: archiv }) : '',
+          wert4: archivOhne ? t('meldungen.wiederherstellung.unvollstaendig-nicht-uebernommen-2', { archivOhne }) : '',
+          wert5: stichprobe ? t('meldungen.wiederherstellung.pruefwerte-von-dateien-nachgerechnet', { stichprobe }) : '',
+        }),
+      );
       // Zähler der Sequenzen nachziehen.
       for (const r of await neu`SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = ${schema} AND column_default LIKE 'nextval(%'`) {
         const t = `${bezeichner(schema)}.${bezeichner(r.table_name as string)}`;
-        await neu.unsafe(`SELECT setval(pg_get_serial_sequence('${t.replace(/'/g, "''")}', '${String(r.column_name).replace(/'/g, "''")}'), coalesce((SELECT max(${bezeichner(r.column_name as string)}) FROM ${t}), 0) + 1, false)`);
+        await neu.unsafe(
+          `SELECT setval(pg_get_serial_sequence('${t.replace(/'/g, "''")}', '${String(r.column_name).replace(/'/g, "''")}'), coalesce((SELECT max(${bezeichner(r.column_name as string)}) FROM ${t}), 0) + 1, false)`,
+        );
       }
       // Statistik der eingespielten Tabellen (#367): COPY füllt sie, ANALYZE erst macht sie dem Planer bekannt.
       try {
@@ -478,16 +792,26 @@ export class Wiederherstellung {
           const spalten = STATISTIK_SPALTEN[r.table_name as string];
           await neu.unsafe(`ANALYZE ${bezeichner(schema)}.${bezeichner(r.table_name as string)}${spalten ? ` (${spalten})` : ''}`);
         }
-      } catch { /* nur Leistung: der Autovacuum-Dienst holt es später nach */ }
+      } catch {
+        /* nur Leistung: der Autovacuum-Dienst holt es später nach */
+      }
 
       schritt(t('meldungen.wiederherstellung.pruefwort'));
       const [pw] = await neu`SELECT wert FROM einstellungen WHERE schluessel = 'pruefwort' LIMIT 1`;
-      if (!pw) this.schritt(lauf, t('meldungen.wiederherstellung.pruefwort'), 'hinweis', t('meldungen.wiederherstellung.die-sicherung-enthaelt-noch'));
-      else if (!istPruefwort(entschluesseleMit(k, String(pw.wert)))) throw new Error('Das Prüfwort lässt sich mit diesem Schlüssel nicht lesen – der Schlüssel passt nicht zu den Daten.');
+      if (!pw)
+        this.schritt(
+          lauf,
+          t('meldungen.wiederherstellung.pruefwort'),
+          'hinweis',
+          t('meldungen.wiederherstellung.die-sicherung-enthaelt-noch'),
+        );
+      else if (!istPruefwort(entschluesseleMit(k, String(pw.wert))))
+        throw new Error('Das Prüfwort lässt sich mit diesem Schlüssel nicht lesen – der Schlüssel passt nicht zu den Daten.');
       else ok(t('meldungen.wiederherstellung.mit-dem-schluessel-lesbar'));
 
       schritt(t('meldungen.wiederherstellung.anzahl-mappen-dokumente-benutzer'));
-      const n = async (t: string) => Number((await neu!.unsafe(`SELECT count(*)::int AS n FROM ${bezeichner(schema)}.${bezeichner(t)}`))[0].n);
+      const n = async (t: string) =>
+        Number((await neu!.unsafe(`SELECT count(*)::int AS n FROM ${bezeichner(schema)}.${bezeichner(t)}`))[0].n);
       const ist = { mappen: await n('mappen'), dokumente: await n('dokumente'), benutzer: await n('benutzer') };
       const soll = zaehlerSicherung ?? m.anzahl;
       const abw = (['mappen', 'dokumente', 'benutzer'] as const).filter((x) => ist[x] !== Number(soll[x]));
@@ -495,15 +819,26 @@ export class Wiederherstellung {
       // Kopie außer Haus mit schlanken Metadaten (#585): Anzahl aus dem Endeintrag der Sicherung (dateienEnde).
       const dateienSoll = m.anzahl.dateien >= 0 ? m.anzahl.dateien : dateienEnde;
       if (dateienSoll !== dateien) throw new Error(`Die Anzahl der Dateien stimmt nicht: ${dateien} statt ${dateienSoll ?? 'unbekannt'}.`);
-      ok(t('meldungen.wiederherstellung.mappen-dokumente-benutzer', { mappen: ist.mappen, dokumente: ist.dokumente, benutzer: ist.benutzer }));
+      ok(
+        t('meldungen.wiederherstellung.mappen-dokumente-benutzer', {
+          mappen: ist.mappen,
+          dokumente: ist.dokumente,
+          benutzer: ist.benutzer,
+        }),
+      );
 
       schritt(t('meldungen.wiederherstellung.auf-den-heutigen-stand'));
       const vorher = m.migrationen.length;
       await migriere(neu, this.q.migrationen, () => {});
       const nachher = Number((await neu`SELECT count(*)::int AS n FROM schema_migrationen`)[0].n);
-      ok(nachher > vorher ? t('meldungen.wiederherstellung.aenderungen-ausgefuehrt', { wert: nachher - vorher }) : t('meldungen.wiederherstellung.schon-aktuell'));
+      ok(
+        nachher > vorher
+          ? t('meldungen.wiederherstellung.aenderungen-ausgefuehrt', { wert: nachher - vorher })
+          : t('meldungen.wiederherstellung.schon-aktuell'),
+      );
       // Automatisierungen (#674): nach einer Wiederherstellung vorhanden, aber angehalten, bis ein Admin sie einschaltet.
-      if (!probe) await neu`UPDATE automatisierungen SET angehalten = ${neu.json({ grund: 'wiederherstellung', text: 'Angehalten nach einer Wiederherstellung. Prüfe die Automatisierung und schalte sie wieder ein.', zeit: new Date().toISOString() })}
+      if (!probe)
+        await neu`UPDATE automatisierungen SET angehalten = ${neu.json({ grund: 'wiederherstellung', text: 'Angehalten nach einer Wiederherstellung. Prüfe die Automatisierung und schalte sie wieder ein.', zeit: new Date().toISOString() })}
         WHERE aktiv AND angehalten IS NULL`;
 
       // Erweiterungen (#562): Fehlt pg_trgm oder unaccent, läuft die Suche nach dem Umschalten schlechter – das soll
@@ -514,7 +849,9 @@ export class Wiederherstellung {
       const indizes = mitTrgm ? await trigrammIndizes(neu, schema) : [];
       const fehlt = [
         ...problemeAus(erweiterungen).map(beschreibe),
-        ...(mitTrgm ? TRIGRAMM_INDEXNAMEN.filter((n) => !indizes.includes(n)).map((n) => t('meldungen.wiederherstellung.trigramm-index-fehlt', { n })) : []),
+        ...(mitTrgm
+          ? TRIGRAMM_INDEXNAMEN.filter((n) => !indizes.includes(n)).map((n) => t('meldungen.wiederherstellung.trigramm-index-fehlt', { n }))
+          : []),
       ];
       if (fehlt.length) {
         const text = `${fehlt.join('; ')}. Die Daten sind vollständig; Abhilfe steht unter Werkbank → Systemzustand.`;
@@ -525,10 +862,12 @@ export class Wiederherstellung {
 
       if (probe) {
         schritt(t('meldungen.wiederherstellung.aufraeumen'));
-        await neu.end(); neu = null;
+        await neu.end();
+        neu = null;
         await this.q.sql.unsafe(`DROP SCHEMA ${bezeichner(schema)} CASCADE`);
         ok();
-        lauf.status = 'fertig'; lauf.beendet = this.jetzt().toISOString();
+        lauf.status = 'fertig';
+        lauf.beendet = this.jetzt().toISOString();
         await this.merkeProbe(lauf.sicherung, true, lauf.schritte.map((s) => `${s.name}: ${s.info ?? s.status}`).join('; '));
         log.info('Probe-Wiederherstellung erfolgreich', { sicherung: lauf.sicherung, mappen: ist.mappen, dateien });
         return true;
@@ -547,7 +886,8 @@ export class Wiederherstellung {
       if (da) await neu`UPDATE ereignisse SET verteilt = now() WHERE verteilt IS NULL`;
 
       schritt(t('meldungen.wiederherstellung.dateien-uebernehmen'));
-      let uebernommen = 0; let schonDa = 0;
+      let uebernommen = 0;
+      let schonDa = 0;
       for (const d of await readdir(staging, { recursive: true, withFileTypes: true })) {
         if (!d.isFile()) continue;
         const quelle = join(d.parentPath ?? (d as unknown as { path: string }).path, d.name);
@@ -558,7 +898,16 @@ export class Wiederherstellung {
         // Archivfassungen, ihr Stand und die Wortpositionen (#631) ebenso.
         const innen = rel.split(sep).slice(1).join('/');
         const istFassung = FASSUNG_PFAD.test(innen) || ARCHIV_PFAD.test(innen) || WOERTER_PFAD.test(innen);
-        if (!istFassung && await stat(ziel).then(() => true, () => false)) { schonDa++; continue; }
+        if (
+          !istFassung &&
+          (await stat(ziel).then(
+            () => true,
+            () => false,
+          ))
+        ) {
+          schonDa++;
+          continue;
+        }
         await mkdir(dirname(ziel), { recursive: true });
         await rename(quelle, ziel);
         uebernommen++;
@@ -570,14 +919,24 @@ export class Wiederherstellung {
       schritt(t('meldungen.wiederherstellung.schluesseldatei'));
       const datei = this.q.tresor.datei;
       const schluesselText = k.toString('base64url');
-      const vorhanden = await readFile(datei, 'utf8').then((t) => t.trim(), () => null);
+      const vorhanden = await readFile(datei, 'utf8').then(
+        (t) => t.trim(),
+        () => null,
+      );
       if (vorhanden !== schluesselText) {
         const alteDatei = vorhanden !== null ? `${datei}.alt-${stempel}` : null;
         if (alteDatei) await rename(datei, alteDatei);
-        schluesselZurueck = async () => { await rm(datei, { force: true }); if (alteDatei) await rename(alteDatei, datei); };
+        schluesselZurueck = async () => {
+          await rm(datei, { force: true });
+          if (alteDatei) await rename(alteDatei, datei);
+        };
         await mkdir(dirname(datei), { recursive: true, mode: 0o700 });
         await writeFile(datei, `${schluesselText}\n`, { mode: 0o600, flag: 'wx' });
-        ok(alteDatei ? t('meldungen.wiederherstellung.ersetzt-die-bisherige-liegt', { pop: String(alteDatei.split('/').pop()) }) : 'angelegt');
+        ok(
+          alteDatei
+            ? t('meldungen.wiederherstellung.ersetzt-die-bisherige-liegt', { pop: String(alteDatei.split('/').pop()) })
+            : 'angelegt',
+        );
       } else ok(t('meldungen.wiederherstellung.passt-schon'));
 
       schritt(t('meldungen.wiederherstellung.umschalten'));
@@ -585,7 +944,8 @@ export class Wiederherstellung {
       if (behalten) abschluss.hinweise.push(t('meldungen.wiederherstellung.der-bisherige-stand-liegt', { BEHALTEN_TAGE, altSchema }));
       abschluss.schritte = lauf.schritte.map((s) => ({ ...s, ...(s.name === 'Umschalten' ? { status: 'ok' as const } : {}) }));
       await setze('wiederherstellung_abschluss', abschluss);
-      await neu.end(); neu = null;
+      await neu.end();
+      neu = null;
       await this.q.sql.begin(async (tx) => {
         await tx.unsafe(`ALTER SCHEMA public RENAME TO ${bezeichner(altSchema)}`);
         await tx.unsafe(`ALTER SCHEMA ${bezeichner(schema)} RENAME TO public`);
@@ -599,17 +959,29 @@ export class Wiederherstellung {
       ok();
       this.schritt(lauf, t('meldungen.wiederherstellung.neustart'), 'laeuft', t('meldungen.wiederherstellung.ablago-startet-neu'));
       lauf.status = 'neustart';
-      log.warn('Wiederherstellung abgeschlossen, Ablago startet neu', { sicherung: lauf.sicherung, von: lauf.von, mappen: ist.mappen, dateien });
+      log.warn('Wiederherstellung abgeschlossen, Ablago startet neu', {
+        sicherung: lauf.sicherung,
+        von: lauf.von,
+        mappen: ist.mappen,
+        dateien,
+      });
       setTimeout(() => this.q.neustart(), 1500).unref?.();
       return true;
     } catch (e) {
       const grund = (e as Error).message;
-      log.error(probe ? 'Probe-Wiederherstellung fehlgeschlagen' : 'Wiederherstellung abgebrochen – der bisherige Stand ist unverändert', { sicherung: lauf.sicherung, schritt: aktuell, grund });
+      log.error(probe ? 'Probe-Wiederherstellung fehlgeschlagen' : 'Wiederherstellung abgebrochen – der bisherige Stand ist unverändert', {
+        sicherung: lauf.sicherung,
+        schritt: aktuell,
+        grund,
+      });
       // Erst aufräumen, dann „fehlgeschlagen“ melden: Wer auf das Ende wartet, sieht den alten Stand.
       w?.destroy(e as Error);
       await neu?.end({ timeout: 5 }).catch(() => {});
-      if (schluesselZurueck) await schluesselZurueck().catch((x) => log.error('Bisherige Schlüsseldatei nicht zurückgelegt', { fehler: (x as Error).message }));
-      await this.q.sql.unsafe(`DROP SCHEMA IF EXISTS ${bezeichner(schema)} CASCADE`).catch((x) => log.warn("Bereich der Wiederherstellung nicht entfernt", { schema, fehler: (x as Error).message }));
+      if (schluesselZurueck)
+        await schluesselZurueck().catch((x) => log.error('Bisherige Schlüsseldatei nicht zurückgelegt', { fehler: (x as Error).message }));
+      await this.q.sql
+        .unsafe(`DROP SCHEMA IF EXISTS ${bezeichner(schema)} CASCADE`)
+        .catch((x) => log.warn('Bereich der Wiederherstellung nicht entfernt', { schema, fehler: (x as Error).message }));
       await rm(staging, { recursive: true, force: true }).catch(() => {});
       if (probe) await this.merkeProbe(lauf.sicherung, false, grund);
       this.fehlschlag(lauf, aktuell, grund);
@@ -629,8 +1001,14 @@ export class Wiederherstellung {
       const vorfall = `probe:${eintrag.am}`;
       if ((await e.lies('sicherung_probe_gemeldet')) !== vorfall) {
         await e.schreibe('sicherung_probe_gemeldet', vorfall);
-        try { await this.q.anAdmins?.(() => t('meldungen.wiederherstellung.ablago-probe-wiederherstellung'), () => t('meldungen.wiederherstellung.die-probeweise-wiederherstellung-der', { name, info })); }
-        catch (x) { log.warn('Mail zur Probe nicht verschickt', { fehler: (x as Error).message }); }
+        try {
+          await this.q.anAdmins?.(
+            () => t('meldungen.wiederherstellung.ablago-probe-wiederherstellung'),
+            () => t('meldungen.wiederherstellung.die-probeweise-wiederherstellung-der', { name, info }),
+          );
+        } catch (x) {
+          log.warn('Mail zur Probe nicht verschickt', { fehler: (x as Error).message });
+        }
       }
     }
   }
@@ -640,12 +1018,25 @@ export class Wiederherstellung {
     const plan = await this.q.sicherung.probePlan();
     if (!plan.aktiv || this.q.wartungAktiv() || this.laeuft() || this.q.sicherung.laeuft()) return 'nichts';
     // Zeitplan-Baustein (#724): am gewählten Wochentag zur Uhrzeit, verpasst noch am selben Tag.
-    const tage = await laufeFaellige(einstellungsMerker(this.q.sicherung.einstellungen, 'sicherung_probe_zuletzt'), ortszeit(this.jetzt()),
-      { uhrzeit: plan.uhrzeit, an: (tag) => wochentagVon(tag) === plan.wochentag }, async () => {});
+    const tage = await laufeFaellige(
+      einstellungsMerker(this.q.sicherung.einstellungen, 'sicherung_probe_zuletzt'),
+      ortszeit(this.jetzt()),
+      { uhrzeit: plan.uhrzeit, an: (tag) => wochentagVon(tag) === plan.wochentag },
+      async () => {},
+    );
     if (!tage.length) return 'nichts';
     if (!(await this.q.sicherung.liste()).some((x) => x.meta)) return 'nichts';
-    if (!(await this.q.sicherung.genugPlatz())) { log.warn('Probe-Wiederherstellung nicht begonnen: zu wenig freier Speicherplatz'); return 'nichts'; }
-    try { await this.starteProbe(null, 'Zeitplan'); return 'gestartet'; } catch (x) { log.warn('Probe-Wiederherstellung nicht begonnen', { grund: (x as Error).message }); return 'nichts'; }
+    if (!(await this.q.sicherung.genugPlatz())) {
+      log.warn('Probe-Wiederherstellung nicht begonnen: zu wenig freier Speicherplatz');
+      return 'nichts';
+    }
+    try {
+      await this.starteProbe(null, 'Zeitplan');
+      return 'gestartet';
+    } catch (x) {
+      log.warn('Probe-Wiederherstellung nicht begonnen', { grund: (x as Error).message });
+      return 'nichts';
+    }
   }
 
   /** Nach einem Neustart: Reste abgebrochener Läufe und das alte Schema entfernen. */
@@ -658,7 +1049,9 @@ export class Wiederherstellung {
         const alter = z ? this.jetzt().getTime() - Date.UTC(Number(z[1]), Number(z[2]) - 1, Number(z[3])) : Infinity;
         if (alter < BEHALTEN_TAGE * 24 * 3600 * 1000) continue;
       }
-      await this.q.sql.unsafe(`DROP SCHEMA ${bezeichner(r.nspname as string)} CASCADE`).catch((e) => log.warn('Altes Schema nicht entfernt', { schema: r.nspname, fehler: (e as Error).message }));
+      await this.q.sql
+        .unsafe(`DROP SCHEMA ${bezeichner(r.nspname as string)} CASCADE`)
+        .catch((e) => log.warn('Altes Schema nicht entfernt', { schema: r.nspname, fehler: (e as Error).message }));
       log.info('Bereich einer früheren Wiederherstellung entfernt', { schema: r.nspname });
     }
     for (const n of await readdir(this.q.dateiWurzel).catch(() => [] as string[])) {

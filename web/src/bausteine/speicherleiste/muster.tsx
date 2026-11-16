@@ -23,7 +23,11 @@ const entwurf = (neu: boolean, geaendert: boolean): Entwurf => ({ neu, geaendert
 const gegenstand = () => t('oberflaeche.muster.leiste.gegenstand');
 const loeschen = (gesperrt?: KnopfSperre): SpeicherleisteLoeschen => ({
   text: t('oberflaeche.muster.leiste.loeschen'),
-  rueckfrage: { titel: t('oberflaeche.muster.leiste.frage.titel'), text: t('oberflaeche.muster.leiste.frage.text'), ja: t('oberflaeche.muster.leiste.frage.ja') },
+  rueckfrage: {
+    titel: t('oberflaeche.muster.leiste.frage.titel'),
+    text: t('oberflaeche.muster.leiste.frage.text'),
+    ja: t('oberflaeche.muster.leiste.frage.ja'),
+  },
   onClick: () => {},
   gesperrt,
 });
@@ -38,7 +42,12 @@ export function SpeicherleisteMuster() {
         <Speicherleiste ent={entwurf(false, true)} gegenstand={gegenstand()} speichern={() => {}} loeschen={loeschen()} />
       </Karte>
       <Karte zustand="gesperrt" titel={t('oberflaeche.muster.leiste.gesperrt')}>
-        <Speicherleiste ent={entwurf(false, true)} gegenstand={gegenstand()} speichern={() => {}} loeschen={loeschen({ grund: t('oberflaeche.muster.leiste.grund') })} />
+        <Speicherleiste
+          ent={entwurf(false, true)}
+          gegenstand={gegenstand()}
+          speichern={() => {}}
+          loeschen={loeschen({ grund: t('oberflaeche.muster.leiste.grund') })}
+        />
       </Karte>
       <Karte zustand="neu" titel={t('oberflaeche.muster.leiste.neu')}>
         <Speicherleiste ent={entwurf(true, true)} gegenstand={gegenstand()} speichern={() => {}} />

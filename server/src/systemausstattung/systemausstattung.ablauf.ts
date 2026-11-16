@@ -33,7 +33,10 @@ export interface Ausstattungsschritte {
 export class Systemausstattung {
   private lauf?: Promise<void>;
 
-  constructor(private readonly kern: Kern, private readonly schritte: Ausstattungsschritte) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly schritte: Ausstattungsschritte,
+  ) {}
 
   /** Anlegen, was fehlt, und die Systemtypen danach frisch nachschlagen. */
   async sicherstellen(): Promise<SystemIds> {
@@ -44,7 +47,9 @@ export class Systemausstattung {
 
   /** Nur anlegen (Rückfall des Kerns); ruft `kern.system()` nicht. */
   anlegen(): Promise<void> {
-    this.lauf ??= this.nacheinander().finally(() => { this.lauf = undefined; });
+    this.lauf ??= this.nacheinander().finally(() => {
+      this.lauf = undefined;
+    });
     return this.lauf;
   }
 

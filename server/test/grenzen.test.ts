@@ -32,7 +32,9 @@ const ohneKommentare = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace
 
 describe('Größengrenzen (#901)', () => {
   let schliessen: (() => Promise<unknown>) | undefined;
-  after(async () => { await schliessen?.(); });
+  after(async () => {
+    await schliessen?.();
+  });
 
   it('kein Byte-Literal außerhalb von grenzen.ts', async () => {
     const funde: string[] = [];
@@ -40,7 +42,8 @@ describe('Größengrenzen (#901)', () => {
       if (f.endsWith('/grenzen.ts')) continue;
       const zeilen = ohneKommentare(await readFile(f, 'utf8')).split('\n');
       zeilen.forEach((z, i) => {
-        if (/\b1024\b|\b1048576\b|<<\s*(10|20|30)\b|\b\d[\d_.]*\s*\*\s*(KB|MB|GB)\b/.test(z)) funde.push(`${relative(SRC, f)}:${i + 1}: ${z.trim().slice(0, 100)}`);
+        if (/\b1024\b|\b1048576\b|<<\s*(10|20|30)\b|\b\d[\d_.]*\s*\*\s*(KB|MB|GB)\b/.test(z))
+          funde.push(`${relative(SRC, f)}:${i + 1}: ${z.trim().slice(0, 100)}`);
       });
     }
     assert.deepEqual(funde, [], 'Grenzen gehören mit Namen nach server/src/grenzen.ts');
@@ -70,8 +73,20 @@ describe('Größengrenzen (#901)', () => {
     schliessen = () => app.close();
     let gelesen = 0;
     const stueck = Buffer.alloc(MB);
-    const koerper = Readable.from((function* () { for (let i = 0; i < 16; i++) { gelesen += stueck.length; yield stueck; } })());
-    const r = await app.inject({ method: 'POST', url: '/api/mappen/folgen', payload: koerper, headers: { 'content-type': 'application/octet-stream', 'x-dms': '1' } });
+    const koerper = Readable.from(
+      (function* () {
+        for (let i = 0; i < 16; i++) {
+          gelesen += stueck.length;
+          yield stueck;
+        }
+      })(),
+    );
+    const r = await app.inject({
+      method: 'POST',
+      url: '/api/mappen/folgen',
+      payload: koerper,
+      headers: { 'content-type': 'application/octet-stream', 'x-dms': '1' },
+    });
     assert.equal(r.statusCode, 415, r.body);
     assert.ok(gelesen < 4 * MB, `${gelesen / MB} MB gelesen`);
     // JSON an dieselbe Route geht wie bisher bis zur Anmeldung.
@@ -83,9 +98,23 @@ describe('Größengrenzen (#901)', () => {
     const ordner = await mkdtemp(join(tmpdir(), 'grenzen-'));
     try {
       const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const p = new Paketverwaltung(d, { version: () => '1.0.0', katalogUrl: 'https://katalog.test/katalog.json', abruf: async () => { throw new Error('ohne Netz'); }, uploadOrdner: ordner });
+      const p = new Paketverwaltung(d, {
+        version: () => '1.0.0',
+        katalogUrl: 'https://katalog.test/katalog.json',
+        abruf: async () => {
+          throw new Error('ohne Netz');
+        },
+        uploadOrdner: ordner,
+      });
       const intern = p as unknown as { behalte(k: string, u: object): void; uploads: Map<string, { zeit: number }> };
-      const u = (bytes: number, zeit = Date.now()) => ({ paket: {}, von: { email: 'a@example.org' }, am: '', zeit, pruefung: { art: 'ohne' }, bytes });
+      const u = (bytes: number, zeit = Date.now()) => ({
+        paket: {},
+        von: { email: 'a@example.org' },
+        am: '',
+        zeit,
+        pruefung: { art: 'ohne' },
+        bytes,
+      });
       intern.behalte('a', u(200 * MB));
       intern.behalte('b', u(200 * MB));
       intern.behalte('c', u(200 * MB));
@@ -100,6 +129,8 @@ describe('Größengrenzen (#901)', () => {
       await p.raeumeUploadsAuf();
       assert.equal(intern.uploads.has('alt'), false);
       assert.deepEqual(await readdir(ordner), []);
-    } finally { await rm(ordner, { recursive: true, force: true }); }
+    } finally {
+      await rm(ordner, { recursive: true, force: true });
+    }
   });
 });

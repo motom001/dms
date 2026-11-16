@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { t, tn } from '../sprache';
-import { AUFGABENARTEN, HISTORIENARTEN, HISTORIENGRUPPEN, historiengruppenVon, type Aufgabenart, type Feldaenderung, type Historieneintrag, type Mappentyp, type Register } from '../../../shared/src/model';
+import {
+  AUFGABENARTEN,
+  HISTORIENARTEN,
+  HISTORIENGRUPPEN,
+  historiengruppenVon,
+  type Aufgabenart,
+  type Feldaenderung,
+  type Historieneintrag,
+  type Mappentyp,
+  type Register,
+} from '../../../shared/src/model';
 import { feldLabel } from '../../../shared/src/beschriftung';
 import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
@@ -12,14 +22,18 @@ import { Eintragsliste, HakenFeld, Knopf, type Listeneintrag } from '../baustein
 
 /** Änderungshistorie einer Mappe (#57): je Eintrag eine Zeile, Einzelheiten zum Aufklappen (#80). */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
-const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
+const groesse = (b: number) =>
+  b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 
 /**
  * Bezeichnung eines geänderten Felds in der Sprache des Lesers (#729): aus dem Mappentyp, solange es das Feld gibt;
  * sonst die beim Ändern gespeicherte.
  */
-const beschrifte = (a: Feldaenderung, typ?: Pick<Mappentyp, 'felder'>) => { const f = typ?.felder.find((x) => x.key === a.feld); return f && f.label === a.label ? feldLabel(f) : a.label; };
+const beschrifte = (a: Feldaenderung, typ?: Pick<Mappentyp, 'felder'>) => {
+  const f = typ?.felder.find((x) => x.key === a.feld);
+  return f && f.label === a.label ? feldLabel(f) : a.label;
+};
 
 function kurz(e: Historieneintrag, typ?: Pick<Mappentyp, 'felder'>): string {
   const d = e.daten;
@@ -39,7 +53,11 @@ function kurz(e: Historieneintrag, typ?: Pick<Mappentyp, 'felder'>): string {
  * Einzelheiten eines Eintrags und ein kurzer Hinweis, wie viel dahintersteckt; null = nichts aufzuklappen.
  * Exportiert für den Test (#1010).
  */
-export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, typ?: Pick<Mappentyp, 'felder'>): { hinweis: string; inhalt: ReactNode } | null {
+export function einzelheiten(
+  e: Historieneintrag,
+  emailTyp: string | undefined,
+  typ?: Pick<Mappentyp, 'felder'>,
+): { hinweis: string; inhalt: ReactNode } | null {
   const d = e.daten;
   if (d.aenderungen?.length) {
     const n = d.aenderungen.length;
@@ -47,26 +65,68 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
       hinweis: t('ablage.historie.felder', { anzahl: n }),
       inhalt: (
         <>
-        {/* Anlass, z. B. die Umwandlung nach einem Paket-Update (#534). */}
-        {str(d.text) && <p className="leise klein">{str(d.text)}</p>}
-        <table className="aenderungen">
-          <thead><tr><th>{t('ablage.historie.feld')}</th><th>{t('ablage.historie.vorher')}</th><th>{t('ablage.historie.nachher')}</th></tr></thead>
-          <tbody>{d.aenderungen.map((a: Feldaenderung) => (
-            <tr key={a.feld}><td>{beschrifte(a, typ)}</td>{a.geheim ? <td colSpan={2} className="leise">{t('ablage.historie.geaendert-passwort-ohne-werte')}</td> : <><td className={a.alt ? '' : 'leise'}>{a.alt || '–'}</td><td className={a.neu ? '' : 'leise'}>{a.neu || '–'}</td></>}</tr>
-          ))}</tbody>
-        </table>
+          {/* Anlass, z. B. die Umwandlung nach einem Paket-Update (#534). */}
+          {str(d.text) && <p className="leise klein">{str(d.text)}</p>}
+          <table className="aenderungen">
+            <thead>
+              <tr>
+                <th>{t('ablage.historie.feld')}</th>
+                <th>{t('ablage.historie.vorher')}</th>
+                <th>{t('ablage.historie.nachher')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.aenderungen.map((a: Feldaenderung) => (
+                <tr key={a.feld}>
+                  <td>{beschrifte(a, typ)}</td>
+                  {a.geheim ? (
+                    <td colSpan={2} className="leise">
+                      {t('ablage.historie.geaendert-passwort-ohne-werte')}
+                    </td>
+                  ) : (
+                    <>
+                      <td className={a.alt ? '' : 'leise'}>{a.alt || '–'}</td>
+                      <td className={a.neu ? '' : 'leise'}>{a.neu || '–'}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
       ),
     };
   }
   switch (e.art) {
     case 'notiz': {
-      const alt = str(d.alt), neu = str(d.neu), voll = str(d.voll);
-      if (alt !== undefined && neu !== undefined) return {
-        hinweis: t('ablage.historie.vorher-nachher'),
-        inhalt: <div className="vergleich"><div><p className="leise klein">{t('ablage.historie.vorher')}</p><Formatiert text={alt} /></div><div><p className="leise klein">{t('ablage.historie.nachher')}</p><Formatiert text={neu} /></div></div>,
-      };
-      if (voll) return { hinweis: t('ablage.historie.ganze-notiz'), inhalt: <div className="einzeln"><Formatiert text={voll} /></div> };
+      const alt = str(d.alt),
+        neu = str(d.neu),
+        voll = str(d.voll);
+      if (alt !== undefined && neu !== undefined)
+        return {
+          hinweis: t('ablage.historie.vorher-nachher'),
+          inhalt: (
+            <div className="vergleich">
+              <div>
+                <p className="leise klein">{t('ablage.historie.vorher')}</p>
+                <Formatiert text={alt} />
+              </div>
+              <div>
+                <p className="leise klein">{t('ablage.historie.nachher')}</p>
+                <Formatiert text={neu} />
+              </div>
+            </div>
+          ),
+        };
+      if (voll)
+        return {
+          hinweis: t('ablage.historie.ganze-notiz'),
+          inhalt: (
+            <div className="einzeln">
+              <Formatiert text={voll} />
+            </div>
+          ),
+        };
       return null;
     }
     case 'email': {
@@ -77,11 +137,32 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
         hinweis: anhaenge.length ? t('ablage.historie.anhaenge', { anzahl: anhaenge.length }) : t('ablage.historie.einzelheiten'),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.an')}</dt><dd>{an.join(', ')}</dd>
-            <dt>{t('ablage.historie.betreff')}</dt><dd>{str(d.betreff)}</dd>
-            {str(d.nachricht) && <><dt>{t('ablage.historie.nachricht')}</dt><dd className="mehrzeilig">{str(d.nachricht)}</dd></>}
-            {anhaenge.length > 0 && <><dt>{t('ablage.historie.anhaenge-2')}</dt><dd>{anhaenge.map((x) => `${x.name} (${groesse(x.groesse)})`).join(', ')}</dd></>}
-            {emailTyp && str(d.email) && <><dt>{t('ablage.historie.e-mail')}</dt><dd><Link to={`/ablage/${emailTyp}/${str(d.email)}`} className="verweis">{t('ablage.historie.als-mappe-oeffnen')}</Link></dd></>}
+            <dt>{t('ablage.historie.an')}</dt>
+            <dd>{an.join(', ')}</dd>
+            <dt>{t('ablage.historie.betreff')}</dt>
+            <dd>{str(d.betreff)}</dd>
+            {str(d.nachricht) && (
+              <>
+                <dt>{t('ablage.historie.nachricht')}</dt>
+                <dd className="mehrzeilig">{str(d.nachricht)}</dd>
+              </>
+            )}
+            {anhaenge.length > 0 && (
+              <>
+                <dt>{t('ablage.historie.anhaenge-2')}</dt>
+                <dd>{anhaenge.map((x) => `${x.name} (${groesse(x.groesse)})`).join(', ')}</dd>
+              </>
+            )}
+            {emailTyp && str(d.email) && (
+              <>
+                <dt>{t('ablage.historie.e-mail')}</dt>
+                <dd>
+                  <Link to={`/ablage/${emailTyp}/${str(d.email)}`} className="verweis">
+                    {t('ablage.historie.als-mappe-oeffnen')}
+                  </Link>
+                </dd>
+              </>
+            )}
           </dl>
         ),
       };
@@ -89,12 +170,28 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
     case 'uebernommen': {
       // Eingangskanal (#195): gleicher Inhalt wie in anderen Mappen.
       // Seit #333 nur noch die Anzahl (Titel fremder Mappen bleiben verborgen); die Fundstellen zeigt „Zuordnen“.
-      if (typeof d.doppelt === 'number' && d.doppelt > 0) return { hinweis: t('ablage.historie.doppelt'), inhalt: <p>{t('ablage.historie.diese-datei-liegt-schon')}</p> };
+      if (typeof d.doppelt === 'number' && d.doppelt > 0)
+        return { hinweis: t('ablage.historie.doppelt'), inhalt: <p>{t('ablage.historie.diese-datei-liegt-schon')}</p> };
       const gleich = Array.isArray(d.gleicherInhalt) ? (d.gleicherInhalt as Array<{ mappeId: string; titel: string; name: string }>) : [];
       if (!gleich.length) return null;
       return {
         hinweis: t('ablage.historie.gleicher-inhalt'),
-        inhalt: <ul className="einzeln">{gleich.map((g) => <li key={g.mappeId}>{tn('ablage.historie.gleicher-inhalt-wie-in', { name: g.name, link: <Link to={`/ablage/eingang/${g.mappeId}`} className="verweis">{g.titel || t('ablage.historie.mappe')}</Link> })}</li>)}</ul>,
+        inhalt: (
+          <ul className="einzeln">
+            {gleich.map((g) => (
+              <li key={g.mappeId}>
+                {tn('ablage.historie.gleicher-inhalt-wie-in', {
+                  name: g.name,
+                  link: (
+                    <Link to={`/ablage/eingang/${g.mappeId}`} className="verweis">
+                      {g.titel || t('ablage.historie.mappe')}
+                    </Link>
+                  ),
+                })}
+              </li>
+            ))}
+          </ul>
+        ),
       };
     }
     case 'zugeordnet': {
@@ -105,10 +202,28 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
       const abgetrennt = d.aufgeloest === true ? str(d.abgetrennt) : undefined;
       const abgetrenntTyp = str(d.postTyp) ?? emailTyp;
       const links: { zu: string; text: string }[] = [];
-      if (ziel && typ) links.push({ zu: `/ablage/${typ}/${ziel}`, text: str(d.ziel) ? t('ablage.historie.mappe-oeffnen') : t('ablage.historie.post-oeffnen') });
-      if (abgetrennt && abgetrenntTyp) links.push({ zu: `/ablage/${abgetrenntTyp}/${abgetrennt}`, text: t('ablage.historie.abgetrennte-post-oeffnen') });
+      if (ziel && typ)
+        links.push({
+          zu: `/ablage/${typ}/${ziel}`,
+          text: str(d.ziel) ? t('ablage.historie.mappe-oeffnen') : t('ablage.historie.post-oeffnen'),
+        });
+      if (abgetrennt && abgetrenntTyp)
+        links.push({ zu: `/ablage/${abgetrenntTyp}/${abgetrennt}`, text: t('ablage.historie.abgetrennte-post-oeffnen') });
       if (!links.length) return null;
-      return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <ul className="einzeln">{links.map((l) => <li key={l.zu}><Link to={l.zu} className="verweis">{l.text}</Link></li>)}</ul> };
+      return {
+        hinweis: t('ablage.historie.oeffnen-2'),
+        inhalt: (
+          <ul className="einzeln">
+            {links.map((l) => (
+              <li key={l.zu}>
+                <Link to={l.zu} className="verweis">
+                  {l.text}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ),
+      };
     }
     case 'aufgabe': {
       const text = str(d.aufgabentext);
@@ -118,10 +233,28 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
         hinweis: t('ablage.historie.aufgabe'),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.aufgabe')}</dt><dd className="mehrzeilig">{text}</dd>
-            {art && AUFGABENARTEN[art] && <><dt>{t('ablage.historie.art')}</dt><dd>{AUFGABENARTEN[art]}</dd></>}
-            {d.fuer !== undefined && <><dt>{t('ablage.historie.fuer')}</dt><dd>{d.fuer ? <Person id={str(d.fuer)} /> : t('konten.verwaltende.ohneEmpfaenger')}</dd></>}
-            {d.anId !== undefined && <><dt>{t('ablage.historie.weitergegeben')}</dt><dd>{d.vonId ? <Person id={str(d.vonId)} /> : t('konten.verwaltende.ohneEmpfaenger')} → <Person id={str(d.anId)} /></dd></>}
+            <dt>{t('ablage.historie.aufgabe')}</dt>
+            <dd className="mehrzeilig">{text}</dd>
+            {art && AUFGABENARTEN[art] && (
+              <>
+                <dt>{t('ablage.historie.art')}</dt>
+                <dd>{AUFGABENARTEN[art]}</dd>
+              </>
+            )}
+            {d.fuer !== undefined && (
+              <>
+                <dt>{t('ablage.historie.fuer')}</dt>
+                <dd>{d.fuer ? <Person id={str(d.fuer)} /> : t('konten.verwaltende.ohneEmpfaenger')}</dd>
+              </>
+            )}
+            {d.anId !== undefined && (
+              <>
+                <dt>{t('ablage.historie.weitergegeben')}</dt>
+                <dd>
+                  {d.vonId ? <Person id={str(d.vonId)} /> : t('konten.verwaltende.ohneEmpfaenger')} → <Person id={str(d.anId)} />
+                </dd>
+              </>
+            )}
           </dl>
         ),
       };
@@ -130,28 +263,74 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
       // Versionierung (#194): „Version 3 von Kassenbon gespeichert (ersetzt Kassenbon.jpg)“, „Version 1 zurückgeholt“.
       const nr = typeof d.version === 'number' ? d.version : null;
       return {
-        hinweis: typeof d.zurueckgeholt === 'number' ? t('ablage.historie.version-zurueckgeholt', { zurueckgeholt: d.zurueckgeholt }) : t('ablage.historie.version', { wert: nr ?? '?' }),
+        hinweis:
+          typeof d.zurueckgeholt === 'number'
+            ? t('ablage.historie.version-zurueckgeholt', { zurueckgeholt: d.zurueckgeholt })
+            : t('ablage.historie.version', { wert: nr ?? '?' }),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.datei')}</dt><dd>{d.dokument}{str(d.vorher) && str(d.vorher) !== d.dokument && <> {' '}{tn('ablage.historie.ersetzt', { str: str(d.vorher) })}</>}</dd>
-            {nr && <><dt>{t('ablage.historie.version-2')}</dt><dd>{nr}{typeof d.zurueckgeholt === 'number' && <> {' '}{t('ablage.historie.version-zurueckgeholt-2', { zurueckgeholt: d.zurueckgeholt })}</>}</dd></>}
-            {typeof d.groesse === 'number' && <><dt>{t('ablage.historie.groesse')}</dt><dd>{groesse(d.groesse)}</dd></>}
-            {str(d.register) && <><dt>{t('ablage.historie.register')}</dt><dd>{str(d.register)}</dd></>}
+            <dt>{t('ablage.historie.datei')}</dt>
+            <dd>
+              {d.dokument}
+              {str(d.vorher) && str(d.vorher) !== d.dokument && <> {tn('ablage.historie.ersetzt', { str: str(d.vorher) })}</>}
+            </dd>
+            {nr && (
+              <>
+                <dt>{t('ablage.historie.version-2')}</dt>
+                <dd>
+                  {nr}
+                  {typeof d.zurueckgeholt === 'number' && (
+                    <> {t('ablage.historie.version-zurueckgeholt-2', { zurueckgeholt: d.zurueckgeholt })}</>
+                  )}
+                </dd>
+              </>
+            )}
+            {typeof d.groesse === 'number' && (
+              <>
+                <dt>{t('ablage.historie.groesse')}</dt>
+                <dd>{groesse(d.groesse)}</dd>
+              </>
+            )}
+            {str(d.register) && (
+              <>
+                <dt>{t('ablage.historie.register')}</dt>
+                <dd>{str(d.register)}</dd>
+              </>
+            )}
           </dl>
         ),
       };
     }
-    case 'dokument_hochgeladen': case 'dokument_geloescht': case 'dokument_papierkorb': {
+    case 'dokument_hochgeladen':
+    case 'dokument_geloescht':
+    case 'dokument_papierkorb': {
       if (typeof d.groesse !== 'number') return null;
       return {
         hinweis: groesse(d.groesse),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.datei')}</dt><dd>{d.dokument}</dd>
-            <dt>{t('ablage.historie.groesse')}</dt><dd>{groesse(d.groesse)}</dd>
-            {str(d.verkleinert) && <><dt>{t('ablage.historie.verkleinert')}</dt><dd>{str(d.verkleinert)}</dd></>}
-            {str(d.mime) && <><dt>{t('ablage.historie.typ')}</dt><dd>{str(d.mime)}</dd></>}
-            {str(d.register) && <><dt>{t('ablage.historie.register')}</dt><dd>{str(d.register)}</dd></>}
+            <dt>{t('ablage.historie.datei')}</dt>
+            <dd>{d.dokument}</dd>
+            <dt>{t('ablage.historie.groesse')}</dt>
+            <dd>{groesse(d.groesse)}</dd>
+            {str(d.verkleinert) && (
+              <>
+                <dt>{t('ablage.historie.verkleinert')}</dt>
+                <dd>{str(d.verkleinert)}</dd>
+              </>
+            )}
+            {str(d.mime) && (
+              <>
+                <dt>{t('ablage.historie.typ')}</dt>
+                <dd>{str(d.mime)}</dd>
+              </>
+            )}
+            {str(d.register) && (
+              <>
+                <dt>{t('ablage.historie.register')}</dt>
+                <dd>{str(d.register)}</dd>
+              </>
+            )}
           </dl>
         ),
       };
@@ -163,10 +342,29 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
         hinweis: quellen.length ? t('ablage.historie.zusammengefuegt', { quellen: quellen.length }) : t('ablage.historie.einzelheiten'),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.datei')}</dt><dd>{d.dokument}</dd>
-            {str(d.text) && <><dt>{t('ablage.historie.was')}</dt><dd>{str(d.text)}</dd></>}
-            {typeof d.seiten === 'number' && <><dt>{t('ablage.historie.seiten')}</dt><dd>{typeof d.vorher === 'number' && d.vorher !== d.seiten ? `${d.vorher} → ` : ''}{d.seiten}</dd></>}
-            {quellen.length > 0 && <><dt>{t('ablage.historie.aus')}</dt><dd>{quellen.join(', ')}</dd></>}
+            <dt>{t('ablage.historie.datei')}</dt>
+            <dd>{d.dokument}</dd>
+            {str(d.text) && (
+              <>
+                <dt>{t('ablage.historie.was')}</dt>
+                <dd>{str(d.text)}</dd>
+              </>
+            )}
+            {typeof d.seiten === 'number' && (
+              <>
+                <dt>{t('ablage.historie.seiten')}</dt>
+                <dd>
+                  {typeof d.vorher === 'number' && d.vorher !== d.seiten ? `${d.vorher} → ` : ''}
+                  {d.seiten}
+                </dd>
+              </>
+            )}
+            {quellen.length > 0 && (
+              <>
+                <dt>{t('ablage.historie.aus')}</dt>
+                <dd>{quellen.join(', ')}</dd>
+              </>
+            )}
           </dl>
         ),
       };
@@ -177,31 +375,73 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
         hinweis: typeof d.stellen === 'number' ? t('ablage.historie.stellen', { anzahl: d.stellen }) : t('ablage.historie.einzelheiten'),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.datei')}</dt><dd>{d.dokument}</dd>
-            {str(d.quelle) && <><dt>{t('ablage.historie.aus')}</dt><dd>{str(d.quelle)}</dd></>}
-            {typeof d.version === 'number' && <><dt>{t('ablage.historie.version-2')}</dt><dd>{d.version}</dd></>}
-            {str(d.text) && <><dt>{t('ablage.historie.was')}</dt><dd>{str(d.text)}</dd></>}
+            <dt>{t('ablage.historie.datei')}</dt>
+            <dd>{d.dokument}</dd>
+            {str(d.quelle) && (
+              <>
+                <dt>{t('ablage.historie.aus')}</dt>
+                <dd>{str(d.quelle)}</dd>
+              </>
+            )}
+            {typeof d.version === 'number' && (
+              <>
+                <dt>{t('ablage.historie.version-2')}</dt>
+                <dd>{d.version}</dd>
+              </>
+            )}
+            {str(d.text) && (
+              <>
+                <dt>{t('ablage.historie.was')}</dt>
+                <dd>{str(d.text)}</dd>
+              </>
+            )}
           </dl>
         ),
       };
     }
     case 'auskunft': {
       // Auskunft nach Art. 15 DSGVO (#396): nur Zahlen, keine Inhalte; Begründungen für zurückgehaltene Notizen.
-      const n = (k: string) => (typeof d[k] === 'number' ? d[k] as number : 0);
+      const n = (k: string) => (typeof d[k] === 'number' ? (d[k] as number) : 0);
       // Zustellen (#455): per E-Mail, Abruf-Link, Abruf – Zeitpunkt und Ergebnis, ohne IP und ohne Code.
       const zustellung = str(d.zustellung);
       if (zustellung) {
         const an = Array.isArray(d.an) ? (d.an as unknown[]).filter((x): x is string => typeof x === 'string') : [];
-        const wie = zustellung === 'email' ? t('ablage.historie.per-e-mail-verschluesselt') : zustellung === 'link' ? t('ablage.historie.abruf-link') : t('ablage.historie.abruf-ueber-den-link');
+        const wie =
+          zustellung === 'email'
+            ? t('ablage.historie.per-e-mail-verschluesselt')
+            : zustellung === 'link'
+              ? t('ablage.historie.abruf-link')
+              : t('ablage.historie.abruf-ueber-den-link');
         return {
           hinweis: str(d.text) ?? wie,
           inhalt: (
             <dl className="eigenschaften einzeln">
-              <dt>{t('ablage.historie.weg')}</dt><dd>{wie}</dd>
-              {an.length > 0 && <><dt>{t('ablage.historie.an')}</dt><dd>{an.join(', ')}</dd></>}
-              {typeof d.erfolg === 'boolean' && <><dt>{t('ablage.historie.ergebnis')}</dt><dd>{d.erfolg ? t('ablage.historie.erfolgreich') : t('ablage.historie.fehlgeschlagen')}</dd></>}
-              {str(d.ablauf) && <><dt>{t('ablage.historie.gueltig-bis')}</dt><dd>{new Date(str(d.ablauf)!).toLocaleDateString(gebietsschema())}</dd></>}
-              {n('maxAbrufe') > 0 && <><dt>{t('ablage.historie.abrufe')}</dt><dd>{t('ablage.historie.hoechstens', { n: n('maxAbrufe') })}</dd></>}
+              <dt>{t('ablage.historie.weg')}</dt>
+              <dd>{wie}</dd>
+              {an.length > 0 && (
+                <>
+                  <dt>{t('ablage.historie.an')}</dt>
+                  <dd>{an.join(', ')}</dd>
+                </>
+              )}
+              {typeof d.erfolg === 'boolean' && (
+                <>
+                  <dt>{t('ablage.historie.ergebnis')}</dt>
+                  <dd>{d.erfolg ? t('ablage.historie.erfolgreich') : t('ablage.historie.fehlgeschlagen')}</dd>
+                </>
+              )}
+              {str(d.ablauf) && (
+                <>
+                  <dt>{t('ablage.historie.gueltig-bis')}</dt>
+                  <dd>{new Date(str(d.ablauf)!).toLocaleDateString(gebietsschema())}</dd>
+                </>
+              )}
+              {n('maxAbrufe') > 0 && (
+                <>
+                  <dt>{t('ablage.historie.abrufe')}</dt>
+                  <dd>{t('ablage.historie.hoechstens', { n: n('maxAbrufe') })}</dd>
+                </>
+              )}
             </dl>
           ),
         };
@@ -211,11 +451,31 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
         hinweis: t('ablage.historie.mappen-dokumente', { n: n('mappen'), n2: n('dokumente') }),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.mappen')}</dt><dd>{n('mappen')}</dd><dt>{t('ablage.historie.dokumente')}</dt><dd>{n('dokumente')}</dd>
-            <dt>{t('ablage.historie.notizen')}</dt><dd>{n('notizen')}{n('ohneNotizen') ? t('ablage.historie.zurueckgehalten', { n: n('ohneNotizen') }) : ''}</dd>
-            <dt>{t('ablage.historie.historie')}</dt><dd>{t('ablage.historie.von-mappen', { anzahl: n('historie') })}</dd>
-            <dt>{t('ablage.historie.passwort')}</dt><dd>{d.verschluesselt ? t('ablage.historie.ja-aes-256') : t('ablage.historie.nein')}</dd>
-            {gruende.length > 0 && <><dt>{t('ablage.historie.zurueckgehalten-weil')}</dt><dd><ul className="einzeln">{gruende.map((g, i) => <li key={i}>{g}</li>)}</ul></dd></>}
+            <dt>{t('ablage.historie.mappen')}</dt>
+            <dd>{n('mappen')}</dd>
+            <dt>{t('ablage.historie.dokumente')}</dt>
+            <dd>{n('dokumente')}</dd>
+            <dt>{t('ablage.historie.notizen')}</dt>
+            <dd>
+              {n('notizen')}
+              {n('ohneNotizen') ? t('ablage.historie.zurueckgehalten', { n: n('ohneNotizen') }) : ''}
+            </dd>
+            <dt>{t('ablage.historie.historie')}</dt>
+            <dd>{t('ablage.historie.von-mappen', { anzahl: n('historie') })}</dd>
+            <dt>{t('ablage.historie.passwort')}</dt>
+            <dd>{d.verschluesselt ? t('ablage.historie.ja-aes-256') : t('ablage.historie.nein')}</dd>
+            {gruende.length > 0 && (
+              <>
+                <dt>{t('ablage.historie.zurueckgehalten-weil')}</dt>
+                <dd>
+                  <ul className="einzeln">
+                    {gruende.map((g, i) => (
+                      <li key={i}>{g}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </>
+            )}
           </dl>
         ),
       };
@@ -227,50 +487,175 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
         hinweis: t('ablage.historie.paketaktion-ergebnis'),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            {str(d.paketName) && <><dt>{t('ablage.historie.paketaktion-paket')}</dt><dd>{str(d.paketName)}</dd></>}
-            {str(d.ergebnis) && <><dt>{t('ablage.historie.paketaktion-ergebnis')}</dt><dd>{str(d.ergebnis)}</dd></>}
-            {str(d.dokument) && <><dt>{t('ablage.historie.datei')}</dt><dd>{str(d.dokument)}</dd></>}
-            {str(d.datei) && <><dt>{t('ablage.historie.paketaktion-herausgegeben')}</dt><dd>{str(d.datei)}</dd></>}
-            {felder.length > 0 && <><dt>{t('ablage.historie.feld')}</dt><dd>{felder.join(', ')}</dd></>}
+            {str(d.paketName) && (
+              <>
+                <dt>{t('ablage.historie.paketaktion-paket')}</dt>
+                <dd>{str(d.paketName)}</dd>
+              </>
+            )}
+            {str(d.ergebnis) && (
+              <>
+                <dt>{t('ablage.historie.paketaktion-ergebnis')}</dt>
+                <dd>{str(d.ergebnis)}</dd>
+              </>
+            )}
+            {str(d.dokument) && (
+              <>
+                <dt>{t('ablage.historie.datei')}</dt>
+                <dd>{str(d.dokument)}</dd>
+              </>
+            )}
+            {str(d.datei) && (
+              <>
+                <dt>{t('ablage.historie.paketaktion-herausgegeben')}</dt>
+                <dd>{str(d.datei)}</dd>
+              </>
+            )}
+            {felder.length > 0 && (
+              <>
+                <dt>{t('ablage.historie.feld')}</dt>
+                <dd>{felder.join(', ')}</dd>
+              </>
+            )}
           </dl>
         ),
       };
     }
     case 'volltext': {
       // Texterkennung als Paket (#338): welches Paket den Volltext geschrieben hat.
-      return { hinweis: str(d.dokument) ?? t('ablage.historie.volltext'), inhalt: <dl className="eigenschaften einzeln"><dt>{t('ablage.historie.datei')}</dt><dd>{str(d.dokument)}</dd>{str(d.text) && <><dt>{t('ablage.historie.von')}</dt><dd>{str(d.text)}</dd></>}</dl> };
+      return {
+        hinweis: str(d.dokument) ?? t('ablage.historie.volltext'),
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            <dt>{t('ablage.historie.datei')}</dt>
+            <dd>{str(d.dokument)}</dd>
+            {str(d.text) && (
+              <>
+                <dt>{t('ablage.historie.von')}</dt>
+                <dd>{str(d.text)}</dd>
+              </>
+            )}
+          </dl>
+        ),
+      };
     }
     case 'umgewandelt': {
       // Dateien umwandeln (#577): welches Paket aus welcher Datei welche Fassung gemacht hat; das Original bleibt.
-      return { hinweis: str(d.dokument) ?? t('ablage.historie.fassung'), inhalt: <dl className="eigenschaften einzeln"><dt>{t('ablage.historie.datei')}</dt><dd>{str(d.dokument)}</dd>{str(d.text) && <><dt>{t('ablage.historie.fassung')}</dt><dd>{str(d.text)}</dd></>}</dl> };
+      return {
+        hinweis: str(d.dokument) ?? t('ablage.historie.fassung'),
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            <dt>{t('ablage.historie.datei')}</dt>
+            <dd>{str(d.dokument)}</dd>
+            {str(d.text) && (
+              <>
+                <dt>{t('ablage.historie.fassung')}</dt>
+                <dd>{str(d.text)}</dd>
+              </>
+            )}
+          </dl>
+        ),
+      };
     }
     case 'post_geteilt': {
       const typ = str(d.postTyp);
       const posten = Array.isArray(d.posten) ? (d.posten as string[]) : [];
       // Abgetrennt beim Auflösen (#936): Die Ausgangspost liegt im Papierkorb – der Link führt zur Mappe, die aus ihr wurde.
-      if (str(d.ziel) && str(d.zielTyp)) return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <p className="einzeln"><Link to={`/ablage/${str(d.zielTyp)}/${str(d.ziel)}`} className="verweis">{t('ablage.historie.mappe-oeffnen')}</Link></p> };
+      if (str(d.ziel) && str(d.zielTyp))
+        return {
+          hinweis: t('ablage.historie.oeffnen-2'),
+          inhalt: (
+            <p className="einzeln">
+              <Link to={`/ablage/${str(d.zielTyp)}/${str(d.ziel)}`} className="verweis">
+                {t('ablage.historie.mappe-oeffnen')}
+              </Link>
+            </p>
+          ),
+        };
       if (!typ) return null;
       // „Ab hier abtrennen“ (#934): Link zur neuen Post mit den abgetrennten Dokumenten.
-      if (str(d.abgetrennt)) return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <p className="einzeln"><Link to={`/ablage/${typ}/${str(d.abgetrennt)}`} className="verweis">{t('ablage.historie.abgetrennte-post-oeffnen')}</Link></p> };
-      if (posten.length) return { hinweis: t('ablage.historie.posts', { posten: posten.length }), inhalt: <ul className="einzeln">{posten.map((id, i) => <li key={id}><Link to={`/ablage/${typ}/${id}`} className="verweis">{t('ablage.historie.teil-oeffnen', { wert: i + 1 })}</Link></li>)}</ul> };
-      if (str(d.post)) return { hinweis: t('ablage.historie.oeffnen-2'), inhalt: <p className="einzeln"><Link to={`/ablage/${typ}/${str(d.post)}`} className="verweis">{t('ablage.historie.ausgangspost-oeffnen')}</Link></p> };
+      if (str(d.abgetrennt))
+        return {
+          hinweis: t('ablage.historie.oeffnen-2'),
+          inhalt: (
+            <p className="einzeln">
+              <Link to={`/ablage/${typ}/${str(d.abgetrennt)}`} className="verweis">
+                {t('ablage.historie.abgetrennte-post-oeffnen')}
+              </Link>
+            </p>
+          ),
+        };
+      if (posten.length)
+        return {
+          hinweis: t('ablage.historie.posts', { posten: posten.length }),
+          inhalt: (
+            <ul className="einzeln">
+              {posten.map((id, i) => (
+                <li key={id}>
+                  <Link to={`/ablage/${typ}/${id}`} className="verweis">
+                    {t('ablage.historie.teil-oeffnen', { wert: i + 1 })}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ),
+        };
+      if (str(d.post))
+        return {
+          hinweis: t('ablage.historie.oeffnen-2'),
+          inhalt: (
+            <p className="einzeln">
+              <Link to={`/ablage/${typ}/${str(d.post)}`} className="verweis">
+                {t('ablage.historie.ausgangspost-oeffnen')}
+              </Link>
+            </p>
+          ),
+        };
       return null;
     }
-    case 'heruntergeladen': case 'abruf_api': case 'abruf_webdav': {
+    case 'heruntergeladen':
+    case 'abruf_api':
+    case 'abruf_webdav': {
       // Abrufe (#800): Weg, Datei bzw. Fassung; beim Export die Dateien der Mappe.
       const dateien = Array.isArray(d.dokumente) ? (d.dokumente as unknown[]).filter((x): x is string => typeof x === 'string') : [];
       const fassung = str(d.fassung);
       const weg = str(d.weg) ?? (e.art === 'abruf_webdav' ? 'webdav' : e.art === 'abruf_api' ? 'api' : 'oberflaeche');
       return {
-        hinweis: dateien.length ? t('ablage.historie.abruf-dateien', { anzahl: dateien.length }) : t.frei(`ablage.historie.abruf-fassung.${fassung ?? 'original'}`),
+        hinweis: dateien.length
+          ? t('ablage.historie.abruf-dateien', { anzahl: dateien.length })
+          : t.frei(`ablage.historie.abruf-fassung.${fassung ?? 'original'}`),
         inhalt: (
           <dl className="eigenschaften einzeln">
-            <dt>{t('ablage.historie.weg')}</dt><dd>{t.frei(`ablage.historie.abruf-weg.${weg}`)}{str(d.schluessel) && <> {t('ablage.historie.abruf-schluessel', { name: str(d.schluessel)! })}</>}</dd>
-            {dateien.length > 0
-              ? <><dt>{t('ablage.historie.dateien')}</dt><dd>{dateien.join(', ')}</dd></>
-              : <><dt>{t('ablage.historie.datei')}</dt><dd>{d.dokument}{str(d.datei) && <> {t('ablage.historie.abruf-als', { name: str(d.datei)! })}</>}</dd></>}
-            {fassung && <><dt>{t('ablage.historie.fassung')}</dt><dd>{t.frei(`ablage.historie.abruf-fassung.${fassung}`)}{typeof d.version === 'number' && <> {d.version}</>}</dd></>}
-            <dt>{t('ablage.historie.stempel')}</dt><dd>{d.gestempelt ? t('ablage.historie.mit-stempel') : t('ablage.historie.ohne-stempel')}</dd>
+            <dt>{t('ablage.historie.weg')}</dt>
+            <dd>
+              {t.frei(`ablage.historie.abruf-weg.${weg}`)}
+              {str(d.schluessel) && <> {t('ablage.historie.abruf-schluessel', { name: str(d.schluessel)! })}</>}
+            </dd>
+            {dateien.length > 0 ? (
+              <>
+                <dt>{t('ablage.historie.dateien')}</dt>
+                <dd>{dateien.join(', ')}</dd>
+              </>
+            ) : (
+              <>
+                <dt>{t('ablage.historie.datei')}</dt>
+                <dd>
+                  {d.dokument}
+                  {str(d.datei) && <> {t('ablage.historie.abruf-als', { name: str(d.datei)! })}</>}
+                </dd>
+              </>
+            )}
+            {fassung && (
+              <>
+                <dt>{t('ablage.historie.fassung')}</dt>
+                <dd>
+                  {t.frei(`ablage.historie.abruf-fassung.${fassung}`)}
+                  {typeof d.version === 'number' && <> {d.version}</>}
+                </dd>
+              </>
+            )}
+            <dt>{t('ablage.historie.stempel')}</dt>
+            <dd>{d.gestempelt ? t('ablage.historie.mit-stempel') : t('ablage.historie.ohne-stempel')}</dd>
           </dl>
         ),
       };
@@ -278,9 +663,13 @@ export function einzelheiten(e: Historieneintrag, emailTyp: string | undefined, 
     case 'wiederhergestellt': {
       const n = typeof d.verweiseEntfallen === 'number' ? d.verweiseEntfallen : 0;
       if (!n) return null;
-      return { hinweis: t('ablage.historie.verweise-entfallen', { anzahl: n }), inhalt: <p className="einzeln leise">{t('ablage.historie.verweise-zeigten-auf-mappen', { anzahl: n })}</p> };
+      return {
+        hinweis: t('ablage.historie.verweise-entfallen', { anzahl: n }),
+        inhalt: <p className="einzeln leise">{t('ablage.historie.verweise-zeigten-auf-mappen', { anzahl: n })}</p>,
+      };
     }
-    default: return null;
+    default:
+      return null;
   }
 }
 
@@ -292,7 +681,17 @@ export const HISTORIE_SEITE = 100;
  * das Register „Historie“ zeigen soll (`register`, sonst die Vorauswahl). „Alles anzeigen“ zeigt jedem, der die Mappe
  * lesen darf, alle Einträge.
  */
-export function Historie({ mappeId, stand, typ, register }: { mappeId: string; stand?: string; typ?: Pick<Mappentyp, 'felder'>; register?: Pick<Register, 'key' | 'zeigt'> }) {
+export function Historie({
+  mappeId,
+  stand,
+  typ,
+  register,
+}: {
+  mappeId: string;
+  stand?: string;
+  typ?: Pick<Mappentyp, 'felder'>;
+  register?: Pick<Register, 'key' | 'zeigt'>;
+}) {
   const d = useDaten();
   const [liste, setListe] = useState<Historieneintrag[] | null>(null);
   const [weitere, setWeitere] = useState(false);
@@ -307,37 +706,95 @@ export function Historie({ mappeId, stand, typ, register }: { mappeId: string; s
   const lade = (vor?: number) => {
     const nr = ++lauf.current;
     setLaedt(true);
-    mappenApi.historie(mappeId, { register: filter, max: HISTORIE_SEITE, vor }).then((h) => {
-      if (nr !== lauf.current) return;
-      setListe((x) => (vor !== undefined && x ? [...x, ...h] : h)); setWeitere(h.length === HISTORIE_SEITE); setFehler(undefined); setLaedt(false);
-    }, (e: Error) => { if (nr === lauf.current) { setFehler(e.message); setLaedt(false); } });
+    mappenApi.historie(mappeId, { register: filter, max: HISTORIE_SEITE, vor }).then(
+      (h) => {
+        if (nr !== lauf.current) return;
+        setListe((x) => (vor !== undefined && x ? [...x, ...h] : h));
+        setWeitere(h.length === HISTORIE_SEITE);
+        setFehler(undefined);
+        setLaedt(false);
+      },
+      (e: Error) => {
+        if (nr === lauf.current) {
+          setFehler(e.message);
+          setLaedt(false);
+        }
+      },
+    );
   };
-  useEffect(() => { lade(); }, [mappeId, stand, filter]);
-  if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;
+  useEffect(() => {
+    lade();
+  }, [mappeId, stand, filter]);
+  if (fehler)
+    return (
+      <div className="hinweis schlecht">
+        <p>{fehler}</p>
+      </div>
+    );
   if (!liste) return <p className="leise">{t('ablage.historie.lade')}</p>;
   const schalter = gefiltert && (
     <HakenFeld beschriftung={t('ablage.historie.alles-anzeigen')} className="historie-alles">
       <input type="checkbox" checked={alles} onChange={(e) => setAlles(e.target.checked)} />
     </HakenFeld>
   );
-  if (!liste.length) return <>{schalter}<p className="leise">{t('ablage.historie.noch-keine-eintraege-die')}</p></>;
+  if (!liste.length)
+    return (
+      <>
+        {schalter}
+        <p className="leise">{t('ablage.historie.noch-keine-eintraege-die')}</p>
+      </>
+    );
   const eintraege: Listeneintrag[] = liste.map((e) => {
     const x = einzelheiten(e, emailTyp, typ);
     return {
-      id: e.id, wann: zeit(e.zeit),
+      id: e.id,
+      wann: zeit(e.zeit),
       wer: <Person id={e.benutzerId} ersatz={typeof e.daten.system === 'string' ? e.daten.system : undefined} />,
       // Aus einer aufgelösten Post übernommen (#936): Eingang, Herkunft, Änderungen … der Post stehen jetzt hier.
-      ...(typeof e.daten.ausPost === 'string' ? { zustand: <span className="chip" title={t('ablage.historie.aus-der-post-titel')}>{t('ablage.historie.aus-der-post')}</span> } : {}),
-      was: <><strong>{HISTORIENARTEN[e.art] ?? e.art}</strong>{kurz(e, typ) ? `: ${kurz(e, typ)}` : ''}
-        {e.art === 'email' && typeof e.daten.email === 'string' && emailTyp && <> · <Link to={`/ablage/${emailTyp}/${e.daten.email}`} className="verweis">{t('ablage.historie.oeffnen')}</Link></>}</>,
-      ...(x ? { mehr: x.hinweis, inhalt: x.inhalt, label: t('ablage.historie.aufklappbar', { wert: HISTORIENARTEN[e.art] ?? e.art, hinweis: x.hinweis }) } : {}),
+      ...(typeof e.daten.ausPost === 'string'
+        ? {
+            zustand: (
+              <span className="chip" title={t('ablage.historie.aus-der-post-titel')}>
+                {t('ablage.historie.aus-der-post')}
+              </span>
+            ),
+          }
+        : {}),
+      was: (
+        <>
+          <strong>{HISTORIENARTEN[e.art] ?? e.art}</strong>
+          {kurz(e, typ) ? `: ${kurz(e, typ)}` : ''}
+          {e.art === 'email' && typeof e.daten.email === 'string' && emailTyp && (
+            <>
+              {' '}
+              ·{' '}
+              <Link to={`/ablage/${emailTyp}/${e.daten.email}`} className="verweis">
+                {t('ablage.historie.oeffnen')}
+              </Link>
+            </>
+          )}
+        </>
+      ),
+      ...(x
+        ? {
+            mehr: x.hinweis,
+            inhalt: x.inhalt,
+            label: t('ablage.historie.aufklappbar', { wert: HISTORIENARTEN[e.art] ?? e.art, hinweis: x.hinweis }),
+          }
+        : {}),
     };
   });
   return (
     <>
       {schalter}
       <Eintragsliste eintraege={eintraege} />
-      {weitere && <p><Knopf groesse="klein" laeuft={laedt} laeuftText={t('ablage.historie.lade')} onClick={() => lade(liste[liste.length - 1].id)}>{t('ablage.historie.weitere-laden')}</Knopf></p>}
+      {weitere && (
+        <p>
+          <Knopf groesse="klein" laeuft={laedt} laeuftText={t('ablage.historie.lade')} onClick={() => lade(liste[liste.length - 1].id)}>
+            {t('ablage.historie.weitere-laden')}
+          </Knopf>
+        </p>
+      )}
     </>
   );
 }

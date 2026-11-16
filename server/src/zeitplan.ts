@@ -24,7 +24,10 @@ export interface Takt {
 }
 
 /** Ortszeit als Datum (JJJJ-MM-TT) und Uhrzeit (HH:MM). */
-export interface Jetzt { datum: string; uhr: string }
+export interface Jetzt {
+  datum: string;
+  uhr: string;
+}
 
 /** Die Regel: fällige Tage (älteste zuerst) nach dem zuletzt gelaufenen. */
 export function faelligeTage(zuletzt: string | null, jetzt: Jetzt, t: Takt): string[] {
@@ -47,11 +50,15 @@ export interface Merker {
 /** Merker in den Einstellungen (Schlüssel wie bisher, z. B. `sicherung_zuletzt_auto`). */
 export function einstellungsMerker(e: Einstellungen, schluessel: string): Merker {
   return {
-    async lies() { const v = await e.lies(schluessel); return typeof v === 'string' ? v : null; },
+    async lies() {
+      const v = await e.lies(schluessel);
+      return typeof v === 'string' ? v : null;
+    },
     async beanspruche(alt, tag) {
       if (e.tausche) return e.tausche(schluessel, alt, tag);
       if (((await e.lies(schluessel)) ?? null) !== alt) return false;
-      await e.schreibe(schluessel, tag); return true;
+      await e.schreibe(schluessel, tag);
+      return true;
     },
   };
 }
@@ -84,11 +91,21 @@ export function zeitpunktIn(tag: string, uhrzeit: string, zone = zeitzone()): st
   const [j, m, d] = tag.split('-').map(Number);
   const [h, min] = uhrzeit.split(':').map(Number);
   const wunsch = Date.UTC(j, m - 1, d, h, min);
-  const teile = new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const teile = new Intl.DateTimeFormat('en-US', {
+    timeZone: zone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
   // Abstand der Ortszeit zu UTC an einem Zeitpunkt (in ms).
   const versatz = (ms: number) => {
     const x = Object.fromEntries(teile.formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
-    return Date.UTC(Number(x.year), Number(x.month) - 1, Number(x.day), Number(x.hour), Number(x.minute)) - Math.floor(ms / 60_000) * 60_000;
+    return (
+      Date.UTC(Number(x.year), Number(x.month) - 1, Number(x.day), Number(x.hour), Number(x.minute)) - Math.floor(ms / 60_000) * 60_000
+    );
   };
   // Kandidaten mit dem Versatz vor und nach einer möglichen Zeitumstellung; passend ist, was als Ortszeit den Wunsch ergibt.
   const kandidaten = [...new Set([wunsch - versatz(wunsch - 432e5), wunsch - versatz(wunsch + 432e5)])].sort((a, b) => a - b);

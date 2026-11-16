@@ -15,11 +15,27 @@ import { externTiming, type ExternAufruf } from '../../shared/src/extern';
  * Header Server-Timing an die Oberfläche (Entwicklermodus). Dauert ein Zugriff
  * länger als die eingestellte Schwelle, wird er als Langläufer gespeichert.
  */
-export interface MessEinstellungen { schwelleMs: number; tage: number }
+export interface MessEinstellungen {
+  schwelleMs: number;
+  tage: number;
+}
 export const STANDARD: MessEinstellungen = { schwelleMs: 500, tage: 30 };
 
-export interface Langlaeufer { id?: number; zeit: string; dauerMs: number; zugriff: string; anfrage: string; benutzer: string }
-export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
+export interface Langlaeufer {
+  id?: number;
+  zeit: string;
+  dauerMs: number;
+  zugriff: string;
+  anfrage: string;
+  benutzer: string;
+}
+export interface LaufendeAbfrage {
+  pid: number;
+  seitMs: number;
+  zustand: string;
+  abfrage: string;
+  anwendung: string;
+}
 
 export interface MessSpeicher {
   ladeEinstellungen(): Promise<MessEinstellungen>;
@@ -40,7 +56,9 @@ interface Zusammenfassung {
   art: 'anfrage' | 'zugriff';
   /** Routenmuster (lange Anfrage) bzw. Zugriff (langer Datenbankzugriff). */
   name: string;
-  n: number; max: number; summe: number;
+  n: number;
+  max: number;
+  summe: number;
   /** Erstes Auftreten in diesem Fenster. */
   seit: string;
   /** Kontext der längsten (Aufteilung, Anfrage). */
@@ -56,10 +74,17 @@ export class Messung {
   private zeitgeber: ReturnType<typeof setTimeout> | null = null;
 
   /** `fensterMs`: wie lange gleiche Meldungen zusammengefasst werden (#920; Tests kürzer). */
-  constructor(readonly speicher: MessSpeicher, private readonly fensterMs = ZUSAMMENFASSUNG_MS) {}
+  constructor(
+    readonly speicher: MessSpeicher,
+    private readonly fensterMs = ZUSAMMENFASSUNG_MS,
+  ) {}
 
   async start() {
-    try { this.einstellungen = { ...STANDARD, ...(await this.speicher.ladeEinstellungen()) }; } catch { /* Standardwerte */ }
+    try {
+      this.einstellungen = { ...STANDARD, ...(await this.speicher.ladeEinstellungen()) };
+    } catch {
+      /* Standardwerte */
+    }
   }
 
   async setze(e: Partial<MessEinstellungen>) {
@@ -85,7 +110,16 @@ export class Messung {
           const ergebnis = wert.apply(ziel, args);
           if (!(ergebnis instanceof Promise)) return ergebnis;
           const fertig = () => self.erfasse(`${name}.${String(prop)}`, performance.now() - start);
-          return ergebnis.then((r) => { fertig(); return r; }, (e) => { fertig(); throw e; });
+          return ergebnis.then(
+            (r) => {
+              fertig();
+              return r;
+            },
+            (e) => {
+              fertig();
+              throw e;
+            },
+          );
         };
       },
     });
@@ -101,16 +135,33 @@ export class Messung {
   erfasseAnfrage(k: Pick<Kontext, 'pfad' | 'benutzer' | 'muster'>, t: Zeitaufteilung) {
     if (t.gesamt < this.einstellungen.schwelleMs) return;
     const zugriff = `Anfrage: ${aufteilungText(t)}`;
-    this.sammle('anfrage', k.muster ?? k.pfad ?? '', t.gesamt, { ...(k.muster ? { muster: k.muster } : {}), vor: Math.round(t.vor), db: Math.round(t.db), rechte: Math.round(t.rechte), json: Math.round(t.json) });
-    this.speicher.merke({ zeit: new Date().toISOString(), dauerMs: Math.round(t.gesamt), zugriff, anfrage: k.pfad ?? '', benutzer: k.benutzer ?? '' })
+    this.sammle('anfrage', k.muster ?? k.pfad ?? '', t.gesamt, {
+      ...(k.muster ? { muster: k.muster } : {}),
+      vor: Math.round(t.vor),
+      db: Math.round(t.db),
+      rechte: Math.round(t.rechte),
+      json: Math.round(t.json),
+    });
+    this.speicher
+      .merke({ zeit: new Date().toISOString(), dauerMs: Math.round(t.gesamt), zugriff, anfrage: k.pfad ?? '', benutzer: k.benutzer ?? '' })
       .catch((e) => log.error('Langläufer nicht gespeichert', { fehler: (e as Error).message }));
   }
 
   private erfasse(zugriff: string, ms: number) {
     const k = kontext.getStore();
-    if (k) { k.db.anzahl++; k.db.ms += ms; if (k.rechte?.offen) k.rechte.dbMs += ms; }
+    if (k) {
+      k.db.anzahl++;
+      k.db.ms += ms;
+      if (k.rechte?.offen) k.rechte.dbMs += ms;
+    }
     if (ms >= this.einstellungen.schwelleMs) {
-      const l: Langlaeufer = { zeit: new Date().toISOString(), dauerMs: Math.round(ms), zugriff, anfrage: k?.pfad ?? '', benutzer: k?.benutzer ?? '' };
+      const l: Langlaeufer = {
+        zeit: new Date().toISOString(),
+        dauerMs: Math.round(ms),
+        zugriff,
+        anfrage: k?.pfad ?? '',
+        benutzer: k?.benutzer ?? '',
+      };
       this.sammle('zugriff', zugriff, ms, { zugriff, ...(k?.muster ? { anfrage: k.muster } : {}) });
       this.speicher.merke(l).catch((e) => log.error('Langläufer nicht gespeichert', { fehler: (e as Error).message }));
       if (Date.now() - this.zuletztAufgeraeumt > 3_600_000) {
@@ -129,8 +180,12 @@ export class Messung {
     const k = `${art}\u0000${name}`;
     const x = this.offen.get(k);
     if (x) {
-      x.n++; x.summe += ms;
-      if (ms > x.max) { x.max = ms; x.daten = daten; }
+      x.n++;
+      x.summe += ms;
+      if (ms > x.max) {
+        x.max = ms;
+        x.daten = daten;
+      }
     } else this.offen.set(k, { art, name, n: 1, max: ms, summe: ms, seit: new Date().toISOString(), daten });
     if (!this.zeitgeber) {
       // Außerhalb der Anfrage: Die Zeile gehört zu keiner einzelnen.
@@ -146,17 +201,26 @@ export class Messung {
    * Am Ende jedes Fensters, beim Herunterfahren und in Tests.
    */
   leeren() {
-    if (this.zeitgeber) { clearTimeout(this.zeitgeber); this.zeitgeber = null; }
+    if (this.zeitgeber) {
+      clearTimeout(this.zeitgeber);
+      this.zeitgeber = null;
+    }
     if (!this.offen.size) return;
     const liste = [...this.offen.values()];
     this.offen.clear();
     kontext.exit(() => {
       for (const x of liste) {
-        const max = Math.round(x.max), mittel = Math.round(x.summe / x.n);
+        const max = Math.round(x.max),
+          mittel = Math.round(x.summe / x.n);
         const titel = x.art === 'anfrage' ? 'Lange Anfrage' : 'Langer Datenbankzugriff';
         log.warn(`${titel}: ${x.name} dauerte ${max} ms${zusammenfassungZusatz(x.n, mittel)}`, {
-          ...(x.art === 'anfrage' ? { anfrage: x.name } : {}), ...x.daten,
-          dauerMs: max, ...(x.n > 1 ? { mittelMs: mittel } : {}), summeMs: Math.round(x.summe), zusammengefasst: x.n, seit: x.seit,
+          ...(x.art === 'anfrage' ? { anfrage: x.name } : {}),
+          ...x.daten,
+          dauerMs: max,
+          ...(x.n > 1 ? { mittelMs: mittel } : {}),
+          summeMs: Math.round(x.summe),
+          zusammengefasst: x.n,
+          seit: x.seit,
         });
       }
     });
@@ -175,9 +239,16 @@ export function rechteMessen<T>(f: () => T): T {
   if (!k) return f();
   const r = (k.rechte ??= { ms: 0, dbMs: 0, offen: 0, seit: 0 });
   if (r.offen++ === 0) r.seit = performance.now();
-  const ende = () => { if (--r.offen === 0) r.ms += performance.now() - r.seit; };
+  const ende = () => {
+    if (--r.offen === 0) r.ms += performance.now() - r.seit;
+  };
   let x: T;
-  try { x = f(); } catch (e) { ende(); throw e; }
+  try {
+    x = f();
+  } catch (e) {
+    ende();
+    throw e;
+  }
   if (x instanceof Promise) return x.finally(ende) as T;
   ende();
   return x;
@@ -200,11 +271,22 @@ export interface Zeitaufteilung {
 }
 
 /** Zeitpunkte (performance.now()) und Zähler einer Anfrage → Aufteilung. */
-export function zeitaufteilung(p: { eingang: number; start: number; ende: number; senden?: number; jetzt: number; db: { anzahl: number; ms: number }; rechte?: { ms: number; dbMs: number } }): Zeitaufteilung {
+export function zeitaufteilung(p: {
+  eingang: number;
+  start: number;
+  ende: number;
+  senden?: number;
+  jetzt: number;
+  db: { anzahl: number; ms: number };
+  rechte?: { ms: number; dbMs: number };
+}): Zeitaufteilung {
   const nn = (x: number) => (Number.isFinite(x) && x > 0 ? x : 0);
   const app = nn(p.ende - p.start);
   return {
-    vor: nn(p.start - p.eingang), app, db: nn(p.db.ms), dbAnzahl: p.db.anzahl,
+    vor: nn(p.start - p.eingang),
+    app,
+    db: nn(p.db.ms),
+    dbAnzahl: p.db.anzahl,
     rechte: Math.min(app, nn((p.rechte?.ms ?? 0) - (p.rechte?.dbMs ?? 0))),
     json: p.senden === undefined ? 0 : nn(p.jetzt - p.senden),
     gesamt: nn(p.jetzt - p.eingang),
@@ -219,20 +301,44 @@ export function zeitaufteilung(p: { eingang: number; start: number; ende: number
 export function serverTiming(zeitaufteilung2: Zeitaufteilung, zs?: { art: string; ms: number }, extern?: ExternAufruf[]): string {
   const d = (x: number) => x.toFixed(1);
   const x = extern?.length ? externTiming(extern) : '';
-  return t('meldungen.messung.vor-dur-app-dur', { d: d(zeitaufteilung2.vor), d2: d(zeitaufteilung2.app), d3: d(zeitaufteilung2.db), dbAnzahl: zeitaufteilung2.dbAnzahl, d4: d(zeitaufteilung2.rechte), d5: d(zeitaufteilung2.json), d6: d(zeitaufteilung2.gesamt) })
-    + (zs ? t('meldungen.messung.zs-dur-desc', { d: d(zs.ms), art: zs.art }) : '') + (x ? `, ${x}` : '');
+  return (
+    t('meldungen.messung.vor-dur-app-dur', {
+      d: d(zeitaufteilung2.vor),
+      d2: d(zeitaufteilung2.app),
+      d3: d(zeitaufteilung2.db),
+      dbAnzahl: zeitaufteilung2.dbAnzahl,
+      d4: d(zeitaufteilung2.rechte),
+      d5: d(zeitaufteilung2.json),
+      d6: d(zeitaufteilung2.gesamt),
+    }) +
+    (zs ? t('meldungen.messung.zs-dur-desc', { d: d(zs.ms), art: zs.art }) : '') +
+    (x ? `, ${x}` : '')
+  );
 }
 
 /** Kurztext für Langläufer und Protokoll: „1.234 ms gesamt · vor 3 · Datenbank 120 (5) · …“. */
 export function aufteilungText(zeitaufteilung2: Zeitaufteilung): string {
   const r = (x: number) => Math.round(x).toLocaleString(gebietsschema());
   const aufb = Math.max(0, zeitaufteilung2.app - zeitaufteilung2.db - zeitaufteilung2.rechte);
-  return t('meldungen.messung.ms-gesamt-warten-vor', { r: r(zeitaufteilung2.gesamt), r2: r(zeitaufteilung2.vor), r3: r(zeitaufteilung2.db), dbAnzahl: zeitaufteilung2.dbAnzahl, r4: r(zeitaufteilung2.rechte), r5: r(aufb), r6: r(zeitaufteilung2.json) });
+  return t('meldungen.messung.ms-gesamt-warten-vor', {
+    r: r(zeitaufteilung2.gesamt),
+    r2: r(zeitaufteilung2.vor),
+    r3: r(zeitaufteilung2.db),
+    dbAnzahl: zeitaufteilung2.dbAnzahl,
+    r4: r(zeitaufteilung2.rechte),
+    r5: r(aufb),
+    r6: r(zeitaufteilung2.json),
+  });
 }
 
 /* ---------- Auslastung: Verzögerung der Ereignisschleife (#477) ---------- */
 
-export interface Schleifenverzoegerung { median: number; p99: number; max: number; seitSekunden: number }
+export interface Schleifenverzoegerung {
+  median: number;
+  p99: number;
+  max: number;
+  seitSekunden: number;
+}
 
 /**
  * Wie lange Zeitgeber und Anfragen auf den einen Faden von Node.js warten müssen. Rechnet eine
@@ -269,7 +375,10 @@ export class Auslastung {
     const hoch = this.fenster.length >= SCHLEIFE_MINUTEN && this.fenster.every((p) => p !== null && p > SCHLEIFE_GRENZE_MS);
     if (hoch && !this.warnungSeit) {
       this.warnungSeit = new Date().toISOString();
-      log.warn(`Hohe Wartezeit des Servers: Die Ereignisschleife war seit ${SCHLEIFE_MINUTEN} Minuten bei 99 % der Messungen über ${SCHLEIFE_GRENZE_MS} ms verzögert`, { p99: this.fenster.map((p) => Math.round(p ?? 0)).join(' ') });
+      log.warn(
+        `Hohe Wartezeit des Servers: Die Ereignisschleife war seit ${SCHLEIFE_MINUTEN} Minuten bei 99 % der Messungen über ${SCHLEIFE_GRENZE_MS} ms verzögert`,
+        { p99: this.fenster.map((p) => Math.round(p ?? 0)).join(' ') },
+      );
     } else if (!hoch && this.warnungSeit) {
       log.info('Wartezeit des Servers wieder normal', { seit: this.warnungSeit });
       this.warnungSeit = null;
@@ -277,20 +386,43 @@ export class Auslastung {
   }
 
   /** Seit wann die Wartezeit dauerhaft hoch ist (#542); null = keine Warnung. */
-  warnung(): string | null { return this.warnungSeit; }
+  warnung(): string | null {
+    return this.warnungSeit;
+  }
 
-  stop() { this.h?.disable(); this.h = null; if (this.zeitgeber) clearInterval(this.zeitgeber); }
+  stop() {
+    this.h?.disable();
+    this.h = null;
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+  }
 
   private jetzt(): Schleifenverzoegerung | null {
     if (!this.h || !this.h.count) return null;
     // Werte in Nanosekunden; sie enthalten die Auflösung (20 ms), die ziehen wir ab.
     const ms = (x: number) => Math.max(0, Math.round((x / 1e6 - AUFLOESUNG_MS) * 10) / 10);
-    return { median: ms(this.h.percentile(50)), p99: ms(this.h.percentile(99)), max: ms(this.h.max), seitSekunden: Math.round((Date.now() - this.seit) / 1000) };
+    return {
+      median: ms(this.h.percentile(50)),
+      p99: ms(this.h.percentile(99)),
+      max: ms(this.h.max),
+      seitSekunden: Math.round((Date.now() - this.seit) / 1000),
+    };
   }
 
   /** Aktuelles Fenster, solange es noch kaum Werte hat das vorherige. */
-  stand(): { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null; warnungSeit: string | null; grenzeMs: number; minuten: number } {
-    return { aktuell: this.jetzt(), vorher: this.vorher, warnungSeit: this.warnungSeit, grenzeMs: SCHLEIFE_GRENZE_MS, minuten: SCHLEIFE_MINUTEN };
+  stand(): {
+    aktuell: Schleifenverzoegerung | null;
+    vorher: Schleifenverzoegerung | null;
+    warnungSeit: string | null;
+    grenzeMs: number;
+    minuten: number;
+  } {
+    return {
+      aktuell: this.jetzt(),
+      vorher: this.vorher,
+      warnungSeit: this.warnungSeit,
+      grenzeMs: SCHLEIFE_GRENZE_MS,
+      minuten: SCHLEIFE_MINUTEN,
+    };
   }
 }
 
@@ -301,12 +433,26 @@ export function speicherMessSpeicher(): MessSpeicher {
   let liste: Langlaeufer[] = [];
   let nr = 0;
   return {
-    async ladeEinstellungen() { return e; },
-    async speichereEinstellungen(x) { e = { ...x }; },
-    async merke(l) { liste.unshift({ ...l, id: ++nr }); },
-    async liste(max) { return liste.slice(0, max); },
-    async aufraeumen(tage) { const vorher = liste.length; liste = liste.filter((l) => Date.parse(l.zeit) > Date.now() - tage * 86_400_000); return vorher - liste.length; },
-    async laufende() { return []; },
+    async ladeEinstellungen() {
+      return e;
+    },
+    async speichereEinstellungen(x) {
+      e = { ...x };
+    },
+    async merke(l) {
+      liste.unshift({ ...l, id: ++nr });
+    },
+    async liste(max) {
+      return liste.slice(0, max);
+    },
+    async aufraeumen(tage) {
+      const vorher = liste.length;
+      liste = liste.filter((l) => Date.parse(l.zeit) > Date.now() - tage * 86_400_000);
+      return vorher - liste.length;
+    },
+    async laufende() {
+      return [];
+    },
   };
 }
 
@@ -323,14 +469,22 @@ export function pgMessSpeicher(sql: postgres.Sql, haushaltId: string): MessSpeic
   let zeitgeber: ReturnType<typeof setTimeout> | null = null;
   let schreiben: Promise<void> = Promise.resolve();
   const schreibeOffene = () => {
-    if (zeitgeber) { clearTimeout(zeitgeber); zeitgeber = null; }
+    if (zeitgeber) {
+      clearTimeout(zeitgeber);
+      zeitgeber = null;
+    }
     const teil = offen;
     offen = [];
-    if (verworfen) { log.warn('Langläufer nicht gespeichert (zu viele in einer Sekunde, stehen nur im Protokoll)', { anzahl: verworfen }); verworfen = 0; }
+    if (verworfen) {
+      log.warn('Langläufer nicht gespeichert (zu viele in einer Sekunde, stehen nur im Protokoll)', { anzahl: verworfen });
+      verworfen = 0;
+    }
     if (!teil.length) return schreiben;
-    schreiben = schreiben.then(async () => {
-      await sql`INSERT INTO langlaeufer ${sql(teil.map((l) => ({ zeit: l.zeit, dauer_ms: l.dauerMs, zugriff: l.zugriff, anfrage: l.anfrage.slice(0, 300), benutzer: l.benutzer })))}`;
-    }).catch((e) => log.error('Langläufer nicht gespeichert', { fehler: (e as Error).message, anzahl: teil.length }));
+    schreiben = schreiben
+      .then(async () => {
+        await sql`INSERT INTO langlaeufer ${sql(teil.map((l) => ({ zeit: l.zeit, dauer_ms: l.dauerMs, zugriff: l.zugriff, anfrage: l.anfrage.slice(0, 300), benutzer: l.benutzer })))}`;
+      })
+      .catch((e) => log.error('Langläufer nicht gespeichert', { fehler: (e as Error).message, anzahl: teil.length }));
     return schreiben;
   };
   return {
@@ -344,16 +498,28 @@ export function pgMessSpeicher(sql: postgres.Sql, haushaltId: string): MessSpeic
         ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
     },
     async merke(l) {
-      if (offen.length >= LANGLAEUFER_JE_SCHREIBEN) { verworfen++; return; }
+      if (offen.length >= LANGLAEUFER_JE_SCHREIBEN) {
+        verworfen++;
+        return;
+      }
       offen.push(l);
-      if (!zeitgeber) { zeitgeber = setTimeout(() => { void schreibeOffene(); }, 1000); zeitgeber.unref?.(); }
+      if (!zeitgeber) {
+        zeitgeber = setTimeout(() => {
+          void schreibeOffene();
+        }, 1000);
+        zeitgeber.unref?.();
+      }
     },
     async liste(max) {
       await schreibeOffene();
       const r = await sql`SELECT * FROM langlaeufer ORDER BY zeit DESC LIMIT ${max}`;
       return r.map((z) => ({
-        id: Number(z.id), zeit: (z.zeit as Date).toISOString(), dauerMs: z.dauer_ms as number,
-        zugriff: z.zugriff as string, anfrage: z.anfrage as string, benutzer: z.benutzer as string,
+        id: Number(z.id),
+        zeit: (z.zeit as Date).toISOString(),
+        dauerMs: z.dauer_ms as number,
+        zugriff: z.zugriff as string,
+        anfrage: z.anfrage as string,
+        benutzer: z.benutzer as string,
       }));
     },
     async aufraeumen(tage) {
@@ -367,7 +533,13 @@ export function pgMessSpeicher(sql: postgres.Sql, haushaltId: string): MessSpeic
         FROM pg_stat_activity
         WHERE datname = current_database() AND pid <> pg_backend_pid() AND state IS NOT NULL AND state <> 'idle'
         ORDER BY query_start NULLS LAST`;
-      return r.map((z) => ({ pid: z.pid as number, seitMs: Number(z.ms), zustand: z.state as string, abfrage: z.query as string, anwendung: z.application_name as string }));
+      return r.map((z) => ({
+        pid: z.pid as number,
+        seitMs: Number(z.ms),
+        zustand: z.state as string,
+        abfrage: z.query as string,
+        anwendung: z.application_name as string,
+      }));
     },
   };
 }

@@ -6,10 +6,19 @@ import { t } from './sprache';
 
 /** Formulare mit ungespeicherten Änderungen; mehrere auf einer Seite gehen (#370). */
 const wachen = new Set<object>();
-const wache = () => rueckfrage({ titel: t('oberflaeche.ort.aenderungen-verwerfen'), text: t('oberflaeche.ort.es-gibt-ungespeicherte-aenderungen'), ja: t('oberflaeche.ort.verwerfen-und-verlassen'), nein: t('oberflaeche.ort.hierbleiben'), gefahr: true });
+const wache = () =>
+  rueckfrage({
+    titel: t('oberflaeche.ort.aenderungen-verwerfen'),
+    text: t('oberflaeche.ort.es-gibt-ungespeicherte-aenderungen'),
+    ja: t('oberflaeche.ort.verwerfen-und-verlassen'),
+    nein: t('oberflaeche.ort.hierbleiben'),
+    gefahr: true,
+  });
 
 /** Nach erfolgreichem Speichern: ohne Nachfrage weiter. */
-export function loeseWache() { wachen.clear(); }
+export function loeseWache() {
+  wachen.clear();
+}
 
 export function geheZu(pfad: string, ersetzen = false) {
   if (pfad === location.pathname + location.search) return;
@@ -18,7 +27,10 @@ export function geheZu(pfad: string, ersetzen = false) {
     dispatchEvent(new PopStateEvent('popstate'));
   };
   // Ungespeicherte Änderungen (#355: eigene Rückfrage statt confirm): erst nach „Verwerfen“ weiter.
-  if (wachen.size) void darfVerlassen().then((ok) => { if (ok) weiter(); });
+  if (wachen.size)
+    void darfVerlassen().then((ok) => {
+      if (ok) weiter();
+    });
   else weiter();
 }
 
@@ -41,14 +53,30 @@ export function useOrt() {
 }
 
 /** `anker`: fester Ankerpunkt für Rundgänge und Tipps (#831, `data-anker`). */
-export function Link({ to, className, children, title, anker }: { to: string; className?: string; children: ReactNode; title?: string; anker?: string }) {
+export function Link({
+  to,
+  className,
+  children,
+  title,
+  anker,
+}: {
+  to: string;
+  className?: string;
+  children: ReactNode;
+  title?: string;
+  anker?: string;
+}) {
   const klick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     geheZu(to);
   };
   const aktiv = location.pathname === to;
-  return <a href={to} onClick={klick} className={className} title={title} aria-current={aktiv ? 'page' : undefined} data-anker={anker}>{children}</a>;
+  return (
+    <a href={to} onClick={klick} className={className} title={title} aria-current={aktiv ? 'page' : undefined} data-anker={anker}>
+      {children}
+    </a>
+  );
 }
 
 /** Fragt vor dem Verlassen nach, solange `ungespeichert` wahr ist. */
@@ -57,8 +85,13 @@ export function useUngespeichert(ungespeichert: boolean) {
     if (!ungespeichert) return;
     const marke = {};
     wachen.add(marke);
-    const unload = (e: BeforeUnloadEvent) => { if (wachen.has(marke)) e.preventDefault(); };
+    const unload = (e: BeforeUnloadEvent) => {
+      if (wachen.has(marke)) e.preventDefault();
+    };
     addEventListener('beforeunload', unload);
-    return () => { wachen.delete(marke); removeEventListener('beforeunload', unload); };
+    return () => {
+      wachen.delete(marke);
+      removeEventListener('beforeunload', unload);
+    };
   }, [ungespeichert]);
 }

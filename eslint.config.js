@@ -17,7 +17,14 @@ import ablago from './.github/werkzeuge/eslint-ablago.mjs';
 // Tests (#1282): server/test für den Server, web/test für die Oberfläche, shared/test für Sprachdateien und Gemeinsames.
 const TESTS = ['server/test/**/*.ts', 'web/test/**/*.ts', 'shared/test/**/*.ts'];
 const CODE = ['server/src/**/*.ts', 'web/src/**/*.{ts,tsx}', 'shared/src/**/*.ts', ...TESTS];
-const WERKZEUGE = ['.github/werkzeuge/*.mjs', 'server/test/*.mjs', 'web/test/*.mjs', 'web/rauchtest/**/*.mjs', 'eslint.config.js', '.dependency-cruiser.cjs'];
+const WERKZEUGE = [
+  '.github/werkzeuge/*.mjs',
+  'server/test/*.mjs',
+  'web/test/*.mjs',
+  'web/rauchtest/**/*.mjs',
+  'eslint.config.js',
+  '.dependency-cruiser.cjs',
+];
 // Leerzeilen und Kommentare zählen bei den Längen nicht mit: Erklärungen im Code sollen nichts kosten.
 // Längen ×1,75 wegen Formatierer (#1280): gleiche Strenge in formatierten Zeilen (vorher 400 je Datei, 60 je Funktion,
 // 150 je Komponente, 60 je Handler; Prettier bricht dichten Code auf rund das 1,8-Fache der Zeilen um).
@@ -94,9 +101,18 @@ export default defineConfig([
     rules: {
       'max-lines': 'off',
       'max-lines-per-function': 'off',
-      '@typescript-eslint/no-floating-promises': ['error', {
-        allowForKnownSafeCalls: [{ from: 'package', package: 'node:test', name: ['test', 'it', 'describe', 'suite', 'before', 'after', 'beforeEach', 'afterEach'] }],
-      }],
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        {
+          allowForKnownSafeCalls: [
+            {
+              from: 'package',
+              package: 'node:test',
+              name: ['test', 'it', 'describe', 'suite', 'before', 'after', 'beforeEach', 'afterEach'],
+            },
+          ],
+        },
+      ],
     },
   },
   // Formatierung macht Prettier (#1280, `npm run format`): Regeln, die mit ihm kollidieren, sind aus – wie in

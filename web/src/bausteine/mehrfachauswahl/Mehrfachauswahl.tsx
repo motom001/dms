@@ -5,15 +5,28 @@ import { Knopf } from '../knopf/Knopf';
 import s from './Mehrfachauswahl.module.css';
 
 /** Ein gewählter Eintrag: Inhalt (Text oder Link), optional ein Zusatz (z. B. ein Hinweis) und weitere Aktionen vor „Entfernen“. */
-export interface GewaehlterEintrag { id: string; inhalt: ReactNode; zusatz?: ReactNode; aktionen?: ReactNode; entfernenText: string }
+export interface GewaehlterEintrag {
+  id: string;
+  inhalt: ReactNode;
+  zusatz?: ReactNode;
+  aktionen?: ReactNode;
+  entfernenText: string;
+}
 /** Ein Vorschlag; mit `gruppe` (#1036) stehen Vorschläge derselben Gruppe unter einer Überschrift, in der Reihenfolge ihres ersten Auftretens. */
-export interface Vorschlag { id: string; text: ReactNode; gruppe?: string }
+export interface Vorschlag {
+  id: string;
+  text: ReactNode;
+  gruppe?: string;
+}
 
 /** Vorschläge nach Gruppe, in der Reihenfolge ihres ersten Auftretens; ohne Gruppen eine einzige ohne Namen. */
 function gruppiert(v: Vorschlag[]): Array<{ name: string | null; eintraege: Vorschlag[] }> {
   if (!v.some((x) => x.gruppe)) return [{ name: null, eintraege: v }];
   const aus = new Map<string, Vorschlag[]>();
-  for (const x of v) { const g = x.gruppe ?? ''; aus.set(g, [...(aus.get(g) ?? []), x]); }
+  for (const x of v) {
+    const g = x.gruppe ?? '';
+    aus.set(g, [...(aus.get(g) ?? []), x]);
+  }
   return [...aus].map(([name, eintraege]) => ({ name: name || null, eintraege }));
 }
 
@@ -34,7 +47,26 @@ function gruppiert(v: Vorschlag[]): Array<{ name: string | null; eintraege: Vors
  * Eingabe und „offen“ hält der Aufrufer, weil er davon abhängig Vorschläge lädt oder filtert.
  * `vorschlaege === null` heißt: lädt noch.
  */
-export function Mehrfachauswahl({ id, name, platzhalter, eingabeLabel, eingabe, setEingabe, offen, setOffen, schliessen, vorschlaege, leerText, fuss, waehle, gewaehlt, entferne, ohneSuche, darunter, className }: {
+export function Mehrfachauswahl({
+  id,
+  name,
+  platzhalter,
+  eingabeLabel,
+  eingabe,
+  setEingabe,
+  offen,
+  setOffen,
+  schliessen,
+  vorschlaege,
+  leerText,
+  fuss,
+  waehle,
+  gewaehlt,
+  entferne,
+  ohneSuche,
+  darunter,
+  className,
+}: {
   /** id des Suchfelds (für ein <label htmlFor>). */
   id?: string;
   /** Name der Liste der gewählten Einträge und der Vorschlagsliste (für Screenreader). */
@@ -42,8 +74,10 @@ export function Mehrfachauswahl({ id, name, platzhalter, eingabeLabel, eingabe, 
   platzhalter: string;
   /** Beschriftung des Suchfelds, wenn kein <label> darauf zeigt. */
   eingabeLabel?: string;
-  eingabe: string; setEingabe(v: string): void;
-  offen: boolean; setOffen(v: boolean): void;
+  eingabe: string;
+  setEingabe(v: string): void;
+  offen: boolean;
+  setOffen(v: boolean): void;
   /** Zusätzlich beim Schließen (Escape, Fokus verlässt das Feld). */
   schliessen?: () => void;
   vorschlaege: Vorschlag[] | null;
@@ -60,32 +94,79 @@ export function Mehrfachauswahl({ id, name, platzhalter, eingabeLabel, eingabe, 
   className?: string;
 }) {
   const listeId = useId();
-  const zu = () => { setOffen(false); schliessen?.(); };
+  const zu = () => {
+    setOffen(false);
+    schliessen?.();
+  };
   return (
     <div className={`refbox mehrfachauswahl${className ? ` ${className}` : ''}`}>
       {!ohneSuche && (
-        <div className="wahl" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) zu(); }}>
+        <div
+          className="wahl"
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) zu();
+          }}>
           <Symbol name="suche" className={s.lupe} />
-          <input id={id} className={s.eingabe} type="search" role="combobox" aria-expanded={offen} aria-controls={offen ? listeId : undefined} aria-autocomplete="list" autoComplete="off"
-            aria-label={eingabeLabel} placeholder={platzhalter} value={eingabe}
-            onFocus={() => setOffen(true)} onClick={() => setOffen(true)} onChange={(e) => { setEingabe(e.target.value); setOffen(true); }}
+          <input
+            id={id}
+            className={s.eingabe}
+            type="search"
+            role="combobox"
+            aria-expanded={offen}
+            aria-controls={offen ? listeId : undefined}
+            aria-autocomplete="list"
+            autoComplete="off"
+            aria-label={eingabeLabel}
+            placeholder={platzhalter}
+            value={eingabe}
+            onFocus={() => setOffen(true)}
+            onClick={() => setOffen(true)}
+            onChange={(e) => {
+              setEingabe(e.target.value);
+              setOffen(true);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') zu();
-              if (e.key === 'ArrowDown' && !offen) { e.preventDefault(); setOffen(true); }
-              if (e.key === 'Enter') { e.preventDefault(); if (vorschlaege?.[0]) waehle(vorschlaege[0].id); }
-            }} />
+              if (e.key === 'ArrowDown' && !offen) {
+                e.preventDefault();
+                setOffen(true);
+              }
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (vorschlaege?.[0]) waehle(vorschlaege[0].id);
+              }
+            }}
+          />
           {offen && (
             <div id={listeId} className="wahlliste" role="listbox" aria-label={name}>
-              {vorschlaege === null ? <p className="leise klein">{t('felder.auswahl.lade')}</p>
-                : !vorschlaege.length ? <p className="leise klein">{leerText}</p>
-                : <>
-                    {gruppiert(vorschlaege).map((g, i) => {
-                      const knoepfe = g.eintraege.map((v) => <button key={v.id} type="button" role="option" aria-selected={false} onClick={() => waehle(v.id)}>{v.text}</button>);
-                      return g.name === null ? <span key={i} className="wahlgruppe-ohne">{knoepfe}</span>
-                        : <div key={i} role="group" aria-label={g.name} className="wahlgruppe"><p className="wahlgruppe-titel" aria-hidden="true">{g.name}</p>{knoepfe}</div>;
-                    })}
-                    {fuss}
-                  </>}
+              {vorschlaege === null ? (
+                <p className="leise klein">{t('felder.auswahl.lade')}</p>
+              ) : !vorschlaege.length ? (
+                <p className="leise klein">{leerText}</p>
+              ) : (
+                <>
+                  {gruppiert(vorschlaege).map((g, i) => {
+                    const knoepfe = g.eintraege.map((v) => (
+                      <button key={v.id} type="button" role="option" aria-selected={false} onClick={() => waehle(v.id)}>
+                        {v.text}
+                      </button>
+                    ));
+                    return g.name === null ? (
+                      <span key={i} className="wahlgruppe-ohne">
+                        {knoepfe}
+                      </span>
+                    ) : (
+                      <div key={i} role="group" aria-label={g.name} className="wahlgruppe">
+                        <p className="wahlgruppe-titel" aria-hidden="true">
+                          {g.name}
+                        </p>
+                        {knoepfe}
+                      </div>
+                    );
+                  })}
+                  {fuss}
+                </>
+              )}
             </div>
           )}
         </div>
@@ -98,7 +179,9 @@ export function Mehrfachauswahl({ id, name, platzhalter, eingabeLabel, eingabe, 
               {x.zusatz}
               <span className="verweisaktionen">
                 {x.aktionen}
-                <Knopf art="link" groesse="klein" aria-label={x.entfernenText} title={x.entfernenText} onClick={() => entferne(x.id)}>{t('felder.auswahl.entfernen')}</Knopf>
+                <Knopf art="link" groesse="klein" aria-label={x.entfernenText} title={x.entfernenText} onClick={() => entferne(x.id)}>
+                  {t('felder.auswahl.entfernen')}
+                </Knopf>
               </span>
             </li>
           ))}

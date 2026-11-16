@@ -19,13 +19,18 @@ type Stand = { fehler?: string; status?: number; unerreichbar?: boolean; speiche
 interface Lasttest {
   anmelden(z: [string, string]): Promise<string>;
   serverStand(cookie: string): Promise<Stand>;
-  umgebung(cookie: string): Promise<{ version: string | null; datenbank: string | null; kerne: number | null; ramBegrenzt: boolean | null; grenzen: unknown }>;
-  durchgang(v: unknown, o: { name: string; n: number; dauer: number; mitExport: boolean }): Promise<{ serverAusfaelle: number; zustandOhneWerte: number; speicherMbStart: number | null }>;
+  umgebung(
+    cookie: string,
+  ): Promise<{ version: string | null; datenbank: string | null; kerne: number | null; ramBegrenzt: boolean | null; grenzen: unknown }>;
+  durchgang(
+    v: unknown,
+    o: { name: string; n: number; dauer: number; mitExport: boolean },
+  ): Promise<{ serverAusfaelle: number; zustandOhneWerte: number; speicherMbStart: number | null }>;
 }
 
 const jetzt = { t: Date.now() };
 const zaehler = { verwaltung: 0, abgelehnt: 0 };
-let app: Awaited<ReturnType<typeof import('../src/http')['baueApp']>>;
+let app: Awaited<ReturnType<(typeof import('../src/http'))['baueApp']>>;
 let lt: Lasttest;
 const LENA: [string, string] = ['lena@example.org', 'lasttest-passwort-1'];
 const PETRA: [string, string] = ['petra@example.org', 'lasttest-passwort-3'];
@@ -52,13 +57,22 @@ before(async () => {
   process.env.DMS_URL = `http://127.0.0.1:${(app.server.address() as AddressInfo).port}`;
   lt = (await import(new URL('./lasttest.mjs', import.meta.url).href)) as Lasttest;
 });
-after(async () => { await app?.close().catch(() => {}); });
+after(async () => {
+  await app?.close().catch(() => {});
+});
 
-const v = (admin: string, mitglied: string) => ({ sitzungen: { admin, mitRolle: mitglied, ohneRolle: mitglied }, ansichten: ['keine'], mappen: ['keine'], dokumente: [] });
+const v = (admin: string, mitglied: string) => ({
+  sitzungen: { admin, mitRolle: mitglied, ohneRolle: mitglied },
+  ansichten: ['keine'],
+  mappen: ['keine'],
+  dokumente: [],
+});
 
 describe('Lasttest: Mess-Sitzung im Verwaltungsmodus (#873)', () => {
   // Jede Anmeldung ist echt (Date.now); die Uhr des Modus beginnt deshalb in jedem Test wieder bei „jetzt“.
-  beforeEach(() => { jetzt.t = Date.now(); });
+  beforeEach(() => {
+    jetzt.t = Date.now();
+  });
 
   it('Zustandsabfragen zählen als Aktivität: 20 Minuten mit Abfragen, Modus läuft ohne Neubeginn', async () => {
     const c = await lt.anmelden(LENA);
@@ -75,8 +89,10 @@ describe('Lasttest: Mess-Sitzung im Verwaltungsmodus (#873)', () => {
   it('nach mehr als 15 Minuten ohne Abfrage: einmal neu beginnen (heute bestätigt) und wiederholen – Kopf vollständig', async (t) => {
     // „Heute bestätigt“ zählt in Europe/Berlin; die Uhr rückt hier um 16 Minuten vor, die Anmeldung läuft mit der echten.
     // Kurz vor Mitternacht würde mitten im Test das Datum wechseln.
-    const berlin = (o: Intl.DateTimeFormatOptions) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', ...o }).format(Date.now()));
-    if (berlin({ hour: '2-digit', hourCycle: 'h23' }) === 23 && berlin({ minute: '2-digit' }) >= 15) return t.skip('kurz vor Mitternacht (Europe/Berlin)');
+    const berlin = (o: Intl.DateTimeFormatOptions) =>
+      Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', ...o }).format(Date.now()));
+    if (berlin({ hour: '2-digit', hourCycle: 'h23' }) === 23 && berlin({ minute: '2-digit' }) >= 15)
+      return t.skip('kurz vor Mitternacht (Europe/Berlin)');
     const c = await lt.anmelden(LENA);
     jetzt.t += 16 * MIN;
     const vorher = { ...zaehler };
@@ -84,7 +100,8 @@ describe('Lasttest: Mess-Sitzung im Verwaltungsmodus (#873)', () => {
     assert.equal(s.fehler, undefined, s.fehler);
     assert.equal(zaehler.abgelehnt - vorher.abgelehnt, 1, 'genau eine 403 mit details.verwaltungsmodus');
     // Kurz vor Mitternacht braucht der Neubeginn die erneute Anmeldung (ein Versuch mehr).
-    if (new Date(jetzt.t - 16 * MIN).toDateString() === new Date(jetzt.t).toDateString()) assert.equal(zaehler.verwaltung - vorher.verwaltung, 1, 'einmal neu begonnen, ohne Passwort');
+    if (new Date(jetzt.t - 16 * MIN).toDateString() === new Date(jetzt.t).toDateString())
+      assert.equal(zaehler.verwaltung - vorher.verwaltung, 1, 'einmal neu begonnen, ohne Passwort');
     // Auch der Kopf des Ergebnisblocks nach einer langen Pause (wie am Ende von groß).
     jetzt.t += 16 * MIN;
     const u = await lt.umgebung(c);

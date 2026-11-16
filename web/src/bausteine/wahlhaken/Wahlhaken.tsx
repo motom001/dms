@@ -26,13 +26,23 @@ const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boo
 
 export function Wahlhaken({ an, setze, beschriftung, teilweise, gesperrt, className }: WahlhakenProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { if (ref.current) ref.current.indeterminate = !!teilweise; }, [teilweise]);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = !!teilweise;
+  }, [teilweise]);
   // onClick statt onChange: nur dort gibt es die Umschalttaste.
   const klick = (e: MouseEvent<HTMLInputElement>) => setze(e.currentTarget.checked, e.shiftKey);
   return (
     <span className={klassen(s.flaeche, 'wahlhaken-flaeche', className)}>
-      <input ref={ref} type="checkbox" className={klassen(s.haken, 'wahlhaken')} checked={an} disabled={gesperrt} aria-label={beschriftung}
-        onClick={klick} onChange={() => {}} />
+      <input
+        ref={ref}
+        type="checkbox"
+        className={klassen(s.haken, 'wahlhaken')}
+        checked={an}
+        disabled={gesperrt}
+        aria-label={beschriftung}
+        onClick={klick}
+        onChange={() => {}}
+      />
     </span>
   );
 }

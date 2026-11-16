@@ -1,5 +1,12 @@
 /** Dokumente (#1075) – die einzige Tür: Dienst und Fachordner importieren nur von hier. */
-export { dateiname, DokumenteDienst, erkenneAnzeigbar, type DokumenteAnschluss, type DokumenteTeile, type TexterkennungAnbindung } from './dokumente.dienst';
+export {
+  dateiname,
+  DokumenteDienst,
+  erkenneAnzeigbar,
+  type DokumenteAnschluss,
+  type DokumenteTeile,
+  type TexterkennungAnbindung,
+} from './dokumente.dienst';
 export { GeschuetztePdfs, type GeschuetztePdfsAnschluss, type GeschuetztePdfsTeile } from './geschuetzte-pdf';
 export { DokumentUmwandlung, type UmwandelnAnschluss } from './umwandeln';
 export { DokumentArchivfassung, SCHRIFT_NEU_JE_LAUF, type ArchivfassungAnschluss } from './archivfassung';

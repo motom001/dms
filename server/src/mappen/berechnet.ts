@@ -13,16 +13,24 @@ import type { Kern, Zugriff } from '../kern';
 import { t } from '../sprache';
 
 /** Was die 400-Antwort je Feld nennt (`details.berechnet`). */
-export interface BerechnetAbgelehnt { feld: string; label: string; paket: string; paketName: string }
+export interface BerechnetAbgelehnt {
+  feld: string;
+  label: string;
+  paket: string;
+  paketName: string;
+}
 
-const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null) || (istLeer(a as Werte[string]) && istLeer(b as Werte[string]));
+const gleich = (a: unknown, b: unknown) =>
+  JSON.stringify(a ?? null) === JSON.stringify(b ?? null) || (istLeer(a as Werte[string]) && istLeer(b as Werte[string]));
 
 /**
  * Berechnete Felder, die diese Anfrage ändern will (gesendet und anders als bisher). Beim Anlegen zählt jeder nicht
  * leere Wert (Ja/Nein: nur „ja“ – „nein“ ist die Vorgabe jeder neuen Mappe).
  */
 export function geaenderteBerechnete(typ: Mappentyp, alt: Werte, neu: Werte, gesendet: Set<string>): Feld[] {
-  return berechneteFelder(typ).filter((f) => gesendet.has(f.key) && !gleich(alt[f.key], neu[f.key]) && !(f.typ === 'janein' && !(f.key in alt) && neu[f.key] === false));
+  return berechneteFelder(typ).filter(
+    (f) => gesendet.has(f.key) && !gleich(alt[f.key], neu[f.key]) && !(f.typ === 'janein' && !(f.key in alt) && neu[f.key] === false),
+  );
 }
 
 /**
@@ -30,14 +38,32 @@ export function geaenderteBerechnete(typ: Mappentyp, alt: Werte, neu: Werte, ges
  * mit dem Namen des Pakets (Ergänzung Sicherheit). Ohne Zugriff (intern) keine Prüfung. Liefert die Felder, die das
  * Paket selbst geschrieben hat (für die Historie).
  */
-export async function pruefeBerechnete(kern: Kern, typ: Mappentyp, w: { alt: Werte; neu: Werte; gesendet: Set<string> }, z: Zugriff | undefined): Promise<Feld[]> {
+export async function pruefeBerechnete(
+  kern: Kern,
+  typ: Mappentyp,
+  w: { alt: Werte; neu: Werte; gesendet: Set<string> },
+  z: Zugriff | undefined,
+): Promise<Feld[]> {
   const felder = geaenderteBerechnete(typ, w.alt, w.neu, w.gesendet);
   if (!felder.length || !z) return felder;
   const fremd = felder.filter((f) => z.paket?.id !== f.berechnetVon);
   if (!fremd.length) return felder;
   const pakete = await kern.repo.listePakete();
   const name = (id: string) => pakete.find((p) => p.id === id)?.name ?? id;
-  const abgelehnt: BerechnetAbgelehnt[] = fremd.map((f) => ({ feld: f.key, label: f.label, paket: f.berechnetVon!, paketName: name(f.berechnetVon!) }));
+  const abgelehnt: BerechnetAbgelehnt[] = fremd.map((f) => ({
+    feld: f.key,
+    label: f.label,
+    paket: f.berechnetVon!,
+    paketName: name(f.berechnetVon!),
+  }));
   const namen = [...new Set(abgelehnt.map((a) => a.paketName))];
-  throw new Fachfehler(400, t('meldungen.berechnet.nur-paket', { felder: abgelehnt.map((a) => `„${a.label}“`).join(', '), paket: namen.join(', '), anzahl: abgelehnt.length }), { berechnet: abgelehnt });
+  throw new Fachfehler(
+    400,
+    t('meldungen.berechnet.nur-paket', {
+      felder: abgelehnt.map((a) => `„${a.label}“`).join(', '),
+      paket: namen.join(', '),
+      anzahl: abgelehnt.length,
+    }),
+    { berechnet: abgelehnt },
+  );
 }

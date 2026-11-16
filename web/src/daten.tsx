@@ -82,36 +82,73 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const [frisch, setFrisch] = useState(0);
   const [einstellungen, setEinstellungen] = useState<Record<string, unknown>>({});
   const setzeEinstellung = useCallback((k: string, w: unknown) => {
-    setEinstellungen((e) => { const n = { ...e }; if (w === null) delete n[k]; else n[k] = w; return n; });
+    setEinstellungen((e) => {
+      const n = { ...e };
+      if (w === null) delete n[k];
+      else n[k] = w;
+      return n;
+    });
     void kontoApi.einstellungSetzen(k, w).catch(() => {});
   }, []);
-  useEffect(() => { kontoApi.einstellungen().then(setEinstellungen).catch(() => {}); }, []);
+  useEffect(() => {
+    kontoApi
+      .einstellungen()
+      .then(setEinstellungen)
+      .catch(() => {});
+  }, []);
   const [designs, setDesigns] = useState<{ designs: Design[]; standard: string | null }>({ designs: [], standard: null });
-  const designsLaden = useCallback(async () => { try { setDesigns(await werkbankApi.designs()); } catch { /* altes bleibt */ } }, []);
-  useEffect(() => { void designsLaden(); }, [designsLaden]);
+  const designsLaden = useCallback(async () => {
+    try {
+      setDesigns(await werkbankApi.designs());
+    } catch {
+      /* altes bleibt */
+    }
+  }, []);
+  useEffect(() => {
+    void designsLaden();
+  }, [designsLaden]);
   // Eigenes Design, sonst Standard; gelöschte Designs fallen auf den Standard zurück.
   const rettung = rettungsweg();
   const gewaehlt = rettung ? null : (einstellungen.design as string | undefined);
   const meinDesign = designs.designs.find((x) => x.id === gewaehlt) ?? designs.designs.find((x) => x.id === designs.standard) ?? null;
-  useEffect(() => { if (meinDesign) wendeAn(meinDesign, !rettung); }, [meinDesign, rettung]);
+  useEffect(() => {
+    if (meinDesign) wendeAn(meinDesign, !rettung);
+  }, [meinDesign, rettung]);
 
   const neuLaden = useCallback(async () => {
     // Was „nicht sichtbar“ oder „gelöscht“ ist (#888), gilt nach dem Neuladen neu.
     vergissSichtbarkeit();
     // Zahlen der Ansichten nicht abwarten (#512): Sie kommen nach; nur die jüngste Antwort zählt.
     const nr = ++zahlenNr.current;
-    const zahlen = werkbankApi.sichten().then((z) => { if (nr === zahlenNr.current) { setZaehler(z); setZahlenDa(true); } });
+    const zahlen = werkbankApi.sichten().then((z) => {
+      if (nr === zahlenNr.current) {
+        setZaehler(z);
+        setZahlenDa(true);
+      }
+    });
     zahlen.catch(() => {});
     try {
-      const [eintrag, r, p, s] = await Promise.all([werkbankApi.typen(), werkbankApi.sichtenRahmen(), kontoApi.personen(), werkbankApi.sichtDefinitionen()]);
-      setTypen(eintrag); setZaehler((z) => ({ ...z, ...r })); setPersonen(p); setSichten(s); setFehler(undefined);
+      const [eintrag, r, p, s] = await Promise.all([
+        werkbankApi.typen(),
+        werkbankApi.sichtenRahmen(),
+        kontoApi.personen(),
+        werkbankApi.sichtDefinitionen(),
+      ]);
+      setTypen(eintrag);
+      setZaehler((z) => ({ ...z, ...r }));
+      setPersonen(p);
+      setSichten(s);
+      setFehler(undefined);
     } catch (e) {
       setFehler((e as Error).message);
     } finally {
-      setGeladen(true); setStand((s) => s + 1);
+      setGeladen(true);
+      setStand((s) => s + 1);
     }
   }, []);
-  useEffect(() => { void neuLaden(); }, [neuLaden]);
+  useEffect(() => {
+    void neuLaden();
+  }, [neuLaden]);
   // Verwaltungsmodus begonnen oder beendet (#888): Mit der Rolle ändern sich Baum, Mappentypen und lesbare Personen –
   // alles neu holen, ohne dass jemand die Seite neu laden muss. Nicht beim ersten Aufbau (das erledigt der Effekt oben).
   const rolle = useKontoOptional()?.ich.rolle;
@@ -122,14 +159,27 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     void neuLaden();
   }, [rolle, neuLaden]);
   // Andere lesbare Personen: Was fehlt, ist vielleicht jetzt sichtbar oder gelöscht (#888) – neu fragen.
-  useEffect(() => { vergissSichtbarkeit(); }, [personen]);
+  useEffect(() => {
+    vergissSichtbarkeit();
+  }, [personen]);
   const auffrischen = useCallback(() => {
     const nr = ++zahlenNr.current;
-    werkbankApi.sichten().then((z) => { if (nr === zahlenNr.current) setZaehler((alt) => ({ ...alt, ...z })); }, () => {});
+    werkbankApi.sichten().then(
+      (z) => {
+        if (nr === zahlenNr.current) setZaehler((alt) => ({ ...alt, ...z }));
+      },
+      () => {},
+    );
     // Ansichten geändert (auch von anderen, #888): Baum und Personen hängen an Rechten und Ansichten. Beides ist klein;
     // nur bei einer Änderung neu setzen, sonst baut nichts neu auf.
-    werkbankApi.sichtDefinitionen().then((s) => setSichten((alt) => (gleich(alt, s) ? alt : s)), () => {});
-    kontoApi.personen().then((p) => setPersonen((alt) => (gleich(alt, p) ? alt : p)), () => {});
+    werkbankApi.sichtDefinitionen().then(
+      (s) => setSichten((alt) => (gleich(alt, s) ? alt : s)),
+      () => {},
+    );
+    kontoApi.personen().then(
+      (p) => setPersonen((alt) => (gleich(alt, p) ? alt : p)),
+      () => {},
+    );
     setFrisch((n) => n + 1);
   }, []);
 
@@ -137,23 +187,60 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     const typNachId = new Map<string, Mappentyp>(typen.map((mappentyp) => [mappentyp.id, mappentyp] as const));
     const sichtNachId = new Map<string, Sicht>(sichten.map((s) => [s.id, s] as const));
     return {
-      typen, sichten, zaehler, zahlenDa,
+      typen,
+      sichten,
+      zaehler,
+      zahlenDa,
       sicht: (id) => (id ? sichtNachId.get(id) : undefined),
       typDerSicht: (id) => {
         if (!id || id === 'eingang' || id === 'favoriten') return undefined;
         if (!sichtNachId.has(id)) return typNachId.get(id);
         const w = wirksameTypen(sichten, id, typNachId.keys());
         return w.length === 1 ? typNachId.get(w[0]) : undefined;
-      }, geladen, fehler, stand, neuLaden, frisch, auffrischen, einstellungen, setzeEinstellung,
-      designs: designs.designs, standardDesign: designs.standard, meinDesign, designsLaden,
+      },
+      geladen,
+      fehler,
+      stand,
+      neuLaden,
+      frisch,
+      auffrischen,
+      einstellungen,
+      setzeEinstellung,
+      designs: designs.designs,
+      standardDesign: designs.standard,
+      meinDesign,
+      designsLaden,
       typ: (id) => (id ? typNachId.get(id) : undefined),
       anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
       personen,
-      person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? t('oberflaeche.daten.geloeschter-benutzer') : 'unbekannt'),
+      person: (id) => (id ? (personen.find((p) => p.id === id)?.name ?? t('oberflaeche.daten.geloeschter-benutzer')) : 'unbekannt'),
       // Anzeige-Bedingungen (#1033): wie der Server – was nicht zu sehen ist, ist nicht Pflicht.
-      pruefe: (mappentyp, werte, typVon) => pruefeMitAnzeige(mappentyp, werte, { typVon, doppelt: () => undefined, merkmale: zaehler.merkmale, eigeneOrganisation: (id) => !!zaehler.eigeneOrganisationen?.includes(id) }),
+      pruefe: (mappentyp, werte, typVon) =>
+        pruefeMitAnzeige(mappentyp, werte, {
+          typVon,
+          doppelt: () => undefined,
+          merkmale: zaehler.merkmale,
+          eigeneOrganisation: (id) => !!zaehler.eigeneOrganisationen?.includes(id),
+        }),
     };
-  }, [typen, sichten, zaehler, zahlenDa, personen, geladen, fehler, stand, neuLaden, frisch, auffrischen, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
+  }, [
+    typen,
+    sichten,
+    zaehler,
+    zahlenDa,
+    personen,
+    geladen,
+    fehler,
+    stand,
+    neuLaden,
+    frisch,
+    auffrischen,
+    einstellungen,
+    setzeEinstellung,
+    designs,
+    meinDesign,
+    designsLaden,
+  ]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }
@@ -173,12 +260,19 @@ export function useAblageStand() {
   useNachladen(mappenApi.ablageStand, () => d.auffrischen());
 }
 
-const tag = (text: string) => { const [, m, d] = text.split('-'); return `${d}.${m}.`; };
+const tag = (text: string) => {
+  const [, m, d] = text.split('-');
+  return `${d}.${m}.`;
+};
 /** „abwesend bis 15.11., vertreten durch Thomas“ – für Empfängerauswahl und Namen (#78). */
 export function abwesenheitText(p: Person | undefined): string {
   const a = p?.abwesend;
   if (!a) return '';
-  const wann = a.wirkt ? (a.bis ? t('oberflaeche.daten.abwesend-bis', { tag: tag(a.bis) }) : 'abwesend') : t('oberflaeche.daten.abwesend-ab', { tag: tag(a.von ?? ''), wert: a.bis ? t('oberflaeche.daten.bis', { tag: tag(a.bis) }) : '' });
+  const wann = a.wirkt
+    ? a.bis
+      ? t('oberflaeche.daten.abwesend-bis', { tag: tag(a.bis) })
+      : 'abwesend'
+    : t('oberflaeche.daten.abwesend-ab', { tag: tag(a.von ?? ''), wert: a.bis ? t('oberflaeche.daten.bis', { tag: tag(a.bis) }) : '' });
   return `${wann}${a.vertreter ? `, vertreten durch ${a.vertreter}` : ''}`;
 }
 /** Name mit Abwesenheit, z. B. „Lena – abwesend bis 15.11., vertreten durch Jonas“. */

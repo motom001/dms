@@ -26,39 +26,72 @@ async function tresorMit(schluessel: boolean, speicher = speicherBetrieb()) {
 function smtpServer(opt: { passwort?: string } = {}) {
   const mails: Array<{ von: string; an: string[]; daten: string }> = [];
   const server: Server = createServer((s) => {
-    let von = ''; let an: string[] = []; let daten = ''; let inDaten = false; let rest = '';
+    let von = '';
+    let an: string[] = [];
+    let daten = '';
+    let inDaten = false;
+    let rest = '';
     const sag = (z: string) => s.write(`${z}\r\n`);
     sag('220 test ESMTP');
     s.on('data', (buf) => {
       rest += buf.toString('utf8');
       let i;
       while ((i = rest.indexOf('\r\n')) >= 0) {
-        const zeile = rest.slice(0, i); rest = rest.slice(i + 2);
+        const zeile = rest.slice(0, i);
+        rest = rest.slice(i + 2);
         if (inDaten) {
-          if (zeile === '.') { inDaten = false; mails.push({ von, an, daten }); sag('250 OK'); } else daten += `${zeile}\n`;
+          if (zeile === '.') {
+            inDaten = false;
+            mails.push({ von, an, daten });
+            sag('250 OK');
+          } else daten += `${zeile}\n`;
           continue;
         }
         const cmd = zeile.slice(0, 4).toUpperCase();
-        if (cmd === 'EHLO') { s.write('250-test\r\n'); sag(opt.passwort ? '250 AUTH PLAIN' : '250 OK'); }
-        else if (cmd === 'HELO') sag('250 OK');
+        if (cmd === 'EHLO') {
+          s.write('250-test\r\n');
+          sag(opt.passwort ? '250 AUTH PLAIN' : '250 OK');
+        } else if (cmd === 'HELO') sag('250 OK');
         else if (cmd === 'AUTH') {
-          const teile = Buffer.from(zeile.split(' ')[2] ?? '', 'base64').toString().split('\0');
+          const teile = Buffer.from(zeile.split(' ')[2] ?? '', 'base64')
+            .toString()
+            .split('\0');
           sag(teile[2] === opt.passwort ? '235 OK' : '535 Authentication failed');
-        }
-        else if (cmd === 'MAIL') { von = zeile; an = []; daten = ''; sag('250 OK'); }
-        else if (cmd === 'RCPT') { an.push(zeile); sag('250 OK'); }
-        else if (cmd === 'DATA') { inDaten = true; sag('354 weiter'); }
-        else if (cmd === 'QUIT') { sag('221 tschüss'); s.end(); }
-        else if (cmd === 'RSET' || cmd === 'NOOP') sag('250 OK');
+        } else if (cmd === 'MAIL') {
+          von = zeile;
+          an = [];
+          daten = '';
+          sag('250 OK');
+        } else if (cmd === 'RCPT') {
+          an.push(zeile);
+          sag('250 OK');
+        } else if (cmd === 'DATA') {
+          inDaten = true;
+          sag('354 weiter');
+        } else if (cmd === 'QUIT') {
+          sag('221 tschüss');
+          s.end();
+        } else if (cmd === 'RSET' || cmd === 'NOOP') sag('250 OK');
         else sag('502 unbekannt');
       }
     });
     s.on('error', () => {});
   });
-  return { mails, server, start: () => new Promise<number>((r) => server.listen(0, '127.0.0.1', () => r((server.address() as AddressInfo).port))) };
+  return {
+    mails,
+    server,
+    start: () => new Promise<number>((r) => server.listen(0, '127.0.0.1', () => r((server.address() as AddressInfo).port))),
+  };
 }
 
-const ohneAnmeldung = (port: number) => ({ aktiv: true, host: '127.0.0.1', port, verbindung: 'keine', benutzer: '', absender: 'Ablago <dms@example.org>' });
+const ohneAnmeldung = (port: number) => ({
+  aktiv: true,
+  host: '127.0.0.1',
+  port,
+  verbindung: 'keine',
+  benutzer: '',
+  absender: 'Ablago <dms@example.org>',
+});
 
 describe('Adresse von Ablago', () => {
   it('normalisiert und prüft Adressen', () => {
@@ -75,31 +108,66 @@ describe('Adresse von Ablago', () => {
     await b.laden();
     assert.equal(b.adresseFuerLinks(), 'http://localhost:3000');
     const imKontext = <T>(f: () => T) => kontext.run({ anfrage: 'x', db: { anzahl: 0, ms: 0 }, ursprung: 'https://dms.example.org' }, f);
-    assert.equal(imKontext(() => b.adresseFuerLinks()), 'https://dms.example.org');
-    assert.equal(imKontext(() => b.cookieNurHttps()), true);
-    assert.equal(imKontext(() => b.ansicht().vorschlag), 'https://dms.example.org');
+    assert.equal(
+      imKontext(() => b.adresseFuerLinks()),
+      'https://dms.example.org',
+    );
+    assert.equal(
+      imKontext(() => b.cookieNurHttps()),
+      true,
+    );
+    assert.equal(
+      imKontext(() => b.ansicht().vorschlag),
+      'https://dms.example.org',
+    );
     // Links in Mails nie aus der Anfrage (Host-Kopf bestimmt der Absender).
-    assert.equal(imKontext(() => b.adresseFuerMails()), 'http://localhost:3000');
-    assert.equal(imKontext(() => b.gepflegteAdresse()), '');
+    assert.equal(
+      imKontext(() => b.adresseFuerMails()),
+      'http://localhost:3000',
+    );
+    assert.equal(
+      imKontext(() => b.gepflegteAdresse()),
+      '',
+    );
     await b.speichereAdresse('nas:8080');
-    assert.equal(imKontext(() => b.adresseFuerMails()), 'http://nas:8080');
-    assert.equal(imKontext(() => b.adresseFuerLinks()), 'http://nas:8080');
-    assert.equal(imKontext(() => b.cookieNurHttps()), false);
+    assert.equal(
+      imKontext(() => b.adresseFuerMails()),
+      'http://nas:8080',
+    );
+    assert.equal(
+      imKontext(() => b.adresseFuerLinks()),
+      'http://nas:8080',
+    );
+    assert.equal(
+      imKontext(() => b.cookieNurHttps()),
+      false,
+    );
   });
 });
 
 describe('E-Mail-Versand (#37)', () => {
   const smtp = smtpServer();
   const mitPw = smtpServer({ passwort: 'geheim' });
-  let port = 0; let portPw = 0;
-  before(async () => { port = await smtp.start(); portPw = await mitPw.start(); });
-  after(() => { smtp.server.close(); mitPw.server.close(); });
+  let port = 0;
+  let portPw = 0;
+  before(async () => {
+    port = await smtp.start();
+    portPw = await mitPw.start();
+  });
+  after(() => {
+    smtp.server.close();
+    mitPw.server.close();
+  });
 
   it('ist ohne Einstellungen aus, gilt nach dem Speichern sofort und lässt sich abschalten', async () => {
     const b = new Betrieb(speicherBetrieb());
     await b.laden();
     assert.equal(b.mailer(), null);
-    const k = new Konten(speicherKontoRepo(), () => b.mailer(), () => 'http://nas:8080');
+    const k = new Konten(
+      speicherKontoRepo(),
+      () => b.mailer(),
+      () => 'http://nas:8080',
+    );
     assert.equal(k.mailAktiv, false);
     await b.speichereMail(ohneAnmeldung(port));
     assert.equal(k.mailAktiv, true, 'ohne Neustart');
@@ -123,7 +191,11 @@ describe('E-Mail-Versand (#37)', () => {
     assert.equal(ohneSchluessel.ansicht().passwoerterMoeglich, false);
     await assert.rejects(ohneSchluessel.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'geheim' }), /Schlüssel/);
     assert.equal(await speicher.lies('mail'), null, 'ohne Schlüssel wird nichts gespeichert');
-    assert.equal((await ohneSchluessel.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'geheim' })).ok, true, 'Prüfen geht auch ohne Schlüssel');
+    assert.equal(
+      (await ohneSchluessel.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'geheim' })).ok,
+      true,
+      'Prüfen geht auch ohne Schlüssel',
+    );
 
     const t = await tresorMit(true);
     const b = new Betrieb(speicher, undefined, t);
@@ -137,7 +209,11 @@ describe('E-Mail-Versand (#37)', () => {
     assert.ok(!gespeichert.includes('geheim'));
     await b.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: '' });
     assert.equal(((await speicher.lies('mail')) as { passwort: string }).passwort, gespeichert, 'leeres Feld behält das Passwort');
-    assert.equal((await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok, true, 'Prüfen nimmt das gespeicherte Passwort');
+    assert.equal(
+      (await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok,
+      true,
+      'Prüfen nimmt das gespeicherte Passwort',
+    );
     const falsch = await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'falsch' });
     assert.equal(falsch.ok, false);
     // #813: verständliche Ursache, die Antwort des Servers getrennt.
@@ -161,7 +237,11 @@ describe('E-Mail-Versand (#37)', () => {
     assert.match(gespeichert, /^dms1\$/);
     assert.equal(b.ansicht().mail.passwortUnverschluesselt, false);
     assert.deepEqual((await t.status()).betroffen, []);
-    assert.equal((await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok, true, 'und weiter mit dem entschlüsselten Passwort');
+    assert.equal(
+      (await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok,
+      true,
+      'und weiter mit dem entschlüsselten Passwort',
+    );
   });
 
   it('meldet ein Passwort, das mit einem verlorenen Schlüssel verschlüsselt ist', async () => {
@@ -180,7 +260,10 @@ describe('E-Mail-Versand (#37)', () => {
     assert.equal(b2.ansicht().mail.passwortLesbar, false);
     const st = await ohne.status();
     assert.equal(st.zustand, 'vorhanden');
-    assert.deepEqual(st.betroffen.map((x) => x.was), ['Passwort des Mailservers']);
+    assert.deepEqual(
+      st.betroffen.map((x) => x.was),
+      ['Passwort des Mailservers'],
+    );
     await b2.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'neu' });
     assert.deepEqual((await ohne.status()).betroffen, []);
   });
@@ -212,9 +295,19 @@ describe('E-Mail-Versand (#37)', () => {
     const speicher = speicherBetrieb();
     const b = new Betrieb(speicher);
     await b.laden();
-    await b.uebernimmAlteVariablen({ SMTP_HOST: 'smtp.example.org', SMTP_PORT: '465', SMTP_USER: 'dms', SMTP_PASS: 'pw', SMTP_FROM: 'dms@example.org', APP_URL: 'https://dms.example.org/' });
+    await b.uebernimmAlteVariablen({
+      SMTP_HOST: 'smtp.example.org',
+      SMTP_PORT: '465',
+      SMTP_USER: 'dms',
+      SMTP_PASS: 'pw',
+      SMTP_FROM: 'dms@example.org',
+      APP_URL: 'https://dms.example.org/',
+    });
     const a = b.ansicht();
-    assert.deepEqual([a.mail.aktiv, a.mail.host, a.mail.port, a.mail.verbindung, a.mail.passwortGesetzt, a.adresse], [true, 'smtp.example.org', 465, 'ssl', true, 'https://dms.example.org']);
+    assert.deepEqual(
+      [a.mail.aktiv, a.mail.host, a.mail.port, a.mail.verbindung, a.mail.passwortGesetzt, a.adresse],
+      [true, 'smtp.example.org', 465, 'ssl', true, 'https://dms.example.org'],
+    );
     await b.speichereMail({ ...a.mail, aktiv: false });
     await b.uebernimmAlteVariablen({ SMTP_HOST: 'anderer.example.org', APP_URL: 'http://anders' });
     assert.equal(b.ansicht().mail.host, 'smtp.example.org', 'nur einmal');

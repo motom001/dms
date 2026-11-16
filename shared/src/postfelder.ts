@@ -27,7 +27,9 @@ export function postWerteNeu<T extends Record<string, unknown>>(w: T): T {
   if (!w || typeof w !== 'object' || Array.isArray(w) || !ALT.some((k) => k in w)) return w;
   const aus: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(w)) {
-    if (istAlt(k)) { if (!(POST_ALTE_KENNUNGEN[k] in w)) aus[POST_ALTE_KENNUNGEN[k]] = v; } else aus[k] = v;
+    if (istAlt(k)) {
+      if (!(POST_ALTE_KENNUNGEN[k] in w)) aus[POST_ALTE_KENNUNGEN[k]] = v;
+    } else aus[k] = v;
   }
   return aus as T;
 }
@@ -41,4 +43,5 @@ export function postWerteMitAlten(w: Werte): Werte {
 }
 
 /** Platzhalter `{absender…}` und `{fuer…}` in einem Text als `{von…}` und `{an…}` (Titel-Vorlage, Automatisierungen). */
-export const postVorlageNeu = (text: string): string => text.replace(/\{(absender|fuer)(?=[|}])/g, (_, k: AltePostKennung) => `{${POST_ALTE_KENNUNGEN[k]}`);
+export const postVorlageNeu = (text: string): string =>
+  text.replace(/\{(absender|fuer)(?=[|}])/g, (_, k: AltePostKennung) => `{${POST_ALTE_KENNUNGEN[k]}`);

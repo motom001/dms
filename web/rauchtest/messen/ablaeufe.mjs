@@ -19,7 +19,8 @@ const ZEILEN = '.mappenliste li, .trefferliste tbody tr';
 
 export const ABLAEUFE = [
   {
-    id: 'startseite', name: 'Startseite öffnen',
+    id: 'startseite',
+    name: 'Startseite öffnen',
     schritt: async (s, d) => {
       await s.goto(d.basis + '/ablage/start');
       await s.getByRole('heading', { name: /^Guten Tag/, level: 1 }).waitFor();
@@ -28,7 +29,8 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'suche', name: 'Suche mit Treffern',
+    id: 'suche',
+    name: 'Suche mit Treffern',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + '/ablage/start');
       await s.getByRole('heading', { name: /^Guten Tag/, level: 1 }).waitFor();
@@ -43,20 +45,26 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'mappe-oeffnen', name: 'Mappe öffnen (60 Dokumente)',
+    id: 'mappe-oeffnen',
+    name: 'Mappe öffnen (60 Dokumente)',
     schritt: async (s, d) => {
       await s.goto(d.basis + `/ablage/${d.vertrag}/${d.vieleDokumente}`);
       await mappe(s).getByRole('heading', { name: d.vieleDokumenteTitel, level: 1 }).waitFor();
-      await mappe(s).getByRole('tab', { name: /^Vertragsunterlagen/ }).click();
+      await mappe(s)
+        .getByRole('tab', { name: /^Vertragsunterlagen/ })
+        .click();
       await s.locator('.dokzeile').filter({ hasText: 'Hausrat Bedingungen.pdf' }).first().waitFor();
       await s.locator('.dokzeile').filter({ hasText: 'Messbrief 01.pdf' }).first().waitFor();
     },
   },
   {
-    id: 'post-ablegen', name: 'Neue Post: Datei ablegen',
+    id: 'post-ablegen',
+    name: 'Neue Post: Datei ablegen',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/${d.neuePostSicht}`);
-      await mappen(s).getByRole('heading', { name: /^Neue Post/, level: 1 }).waitFor();
+      await mappen(s)
+        .getByRole('heading', { name: /^Neue Post/, level: 1 })
+        .waitFor();
     },
     schritt: async (s, d, runde) => {
       const [wahl] = await Promise.all([s.waitForEvent('filechooser'), mappen(s).getByRole('button', { name: '+ Post' }).click()]);
@@ -72,7 +80,8 @@ export const ABLAEUFE = [
   },
   {
     // Die Bremse aus #1255: Mit dem Stand vor PR #1257 stand der Tab nach der Wahl des Typs sekundenlang.
-    id: 'post-zuordnen', name: 'Neue Post zuordnen: 100 Seiten, Vertrag wählen, sofort tippen',
+    id: 'post-zuordnen',
+    name: 'Neue Post zuordnen: 100 Seiten, Vertrag wählen, sofort tippen',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/eingang/${d.langePost}`);
       await s.waitForURL(/\/uebernehmen$/);
@@ -81,7 +90,9 @@ export const ABLAEUFE = [
     },
     schritt: async (s) => {
       await mappe(s).getByRole('combobox', { name: 'Mappentyp suchen …' }).click();
-      await mappe(s).getByRole('option', { name: /^Vertrag Laufender Vertrag/ }).click();
+      await mappe(s)
+        .getByRole('option', { name: /^Vertrag Laufender Vertrag/ })
+        .click();
       const feld = mappe(s).getByRole('textbox', { name: 'Vertragsnummer' });
       await feld.click();
       await feld.pressSequentially('HR-2027-0815');
@@ -89,7 +100,8 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'mappe-speichern', name: 'Mappe ändern und speichern (Tabelle 300 Zeilen)',
+    id: 'mappe-speichern',
+    name: 'Mappe ändern und speichern (Tabelle 300 Zeilen)',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/${d.vertrag}/${d.tabelle}`);
       await mappe(s).getByRole('heading', { name: d.tabelleTitel, level: 1 }).waitFor();
@@ -105,7 +117,8 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'zu-erledigen', name: 'Zu erledigen: Liste, dann Monat',
+    id: 'zu-erledigen',
+    name: 'Zu erledigen: Liste, dann Monat',
     schritt: async (s, d) => {
       await s.goto(d.basis + '/ablage/eingang');
       await s.getByRole('radiogroup', { name: /Ansicht/ }).waitFor();
@@ -114,7 +127,8 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'ansicht-blaettern', name: 'Ansicht mit vielen Mappen blättern (300 Zeilen)',
+    id: 'ansicht-blaettern',
+    name: 'Ansicht mit vielen Mappen blättern (300 Zeilen)',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/${d.rechnung}`);
       await mappen(s).locator(ZEILEN).first().waitFor();
@@ -129,10 +143,13 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'vorschau', name: 'Dokument-Vorschau mehrseitig (60 Seiten)',
+    id: 'vorschau',
+    name: 'Dokument-Vorschau mehrseitig (60 Seiten)',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/${d.vertrag}/${d.vieleDokumente}`);
-      await mappe(s).getByRole('tab', { name: /^Vertragsunterlagen/ }).click();
+      await mappe(s)
+        .getByRole('tab', { name: /^Vertragsunterlagen/ })
+        .click();
       await s.locator('.dokzeile').filter({ hasText: 'Hausrat Bedingungen.pdf' }).first().waitFor();
     },
     schritt: async (s) => {
@@ -147,14 +164,18 @@ export const ABLAEUFE = [
     },
   },
   {
-    id: 'werkbank-uebersicht', name: 'Werkbank-Übersicht', verwaltung: true,
+    id: 'werkbank-uebersicht',
+    name: 'Werkbank-Übersicht',
+    verwaltung: true,
     schritt: async (s, d) => {
       await s.goto(d.basis + '/werkbank');
       await s.locator('.uebersicht .kacheln').waitFor();
     },
   },
   {
-    id: 'mappentyp-editor', name: 'Mappentyp-Editor öffnen (Vertrag)', verwaltung: true,
+    id: 'mappentyp-editor',
+    name: 'Mappentyp-Editor öffnen (Vertrag)',
+    verwaltung: true,
     schritt: async (s, d) => {
       await s.goto(d.basis + `/werkbank/typen/${d.vertrag}`);
       const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });

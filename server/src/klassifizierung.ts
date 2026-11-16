@@ -17,8 +17,17 @@
  */
 import { typAusText } from '../../shared/src/erkennung';
 import {
-  KANDIDATEN_MAX, KLASSIFIZIEREN_HINWEIS, KLASSIFIZIEREN_TEXT_MAX, klassifizierSchema, kurzText, pruefeKlassifizierung, verbindeWege,
-  type Kandidat, type Klassbeleg, type Klassifizierung as Ergebnis, type Wegstand,
+  KANDIDATEN_MAX,
+  KLASSIFIZIEREN_HINWEIS,
+  KLASSIFIZIEREN_TEXT_MAX,
+  klassifizierSchema,
+  kurzText,
+  pruefeKlassifizierung,
+  verbindeWege,
+  type Kandidat,
+  type Klassbeleg,
+  type Klassifizierung as Ergebnis,
+  type Wegstand,
 } from '../../shared/src/klassifizierung';
 import { zieleVon, type MappenBezug, type Mappentyp } from '../../shared/src/model';
 import type { Dienst } from './dienst';
@@ -55,7 +64,11 @@ export const ABGLEICH_SCHWACH = 0.2;
 const DOKS_MAX = 10;
 
 export class Klassifizierung {
-  constructor(private d: Dienst, private erkennung: Erkennung, private repo: () => Repo) {}
+  constructor(
+    private d: Dienst,
+    private erkennung: Erkennung,
+    private repo: () => Repo,
+  ) {}
 
   /** Wird gesetzt, sobald der Paket-Läufer läuft (verwaltung.ts bzw. fern.ts). */
   anbieter?: KlassifizierAnbieter;
@@ -66,7 +79,10 @@ export class Klassifizierung {
    */
   async klassifiziere(eingabe: unknown, z?: Zugriff): Promise<Ergebnis & { bezuege: Record<string, MappenBezug> }> {
     const e = (eingabe ?? {}) as { dokumente?: unknown };
-    const ids = [...new Set((Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string'))].slice(0, DOKS_MAX);
+    const ids = [...new Set((Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string'))].slice(
+      0,
+      DOKS_MAX,
+    );
     if (!ids.length) throw new Fachfehler(422, t('meldungen.klassifizierung.keine-dokumente'));
     const teile: string[] = [];
     const ohneText: string[] = [];
@@ -79,7 +95,8 @@ export class Klassifizierung {
       // Original-E-Mail (#999) nie.
       if (ohneErkennung(dok)) continue;
       const text = await this.repo().volltext(id);
-      if (text?.trim()) teile.push(text); else ohneText.push(id);
+      if (text?.trim()) teile.push(text);
+      else ohneText.push(id);
     }
     const text = teile.join('\n\n');
     const ziele = await this.d.mappentypen.ausPostZiele(z);
@@ -91,13 +108,23 @@ export class Klassifizierung {
     const belege: Array<Klassbeleg & { typId: string }> = [...paketWege.belege, ...abgleich.belege];
     const kern = typAusText(text, ziele);
     if (kern) belege.push({ typId: kern.typId, weg: 'kern', sicherheit: KERN_SICHERHEIT, wort: kern.wort, fundstelle: kern.fundstelle });
-    const wege: Wegstand[] = [...paketWege.wege, { weg: 'kern', stand: kern ? 'ok' : 'leer' }, { weg: 'abgleich', stand: abgleich.belege.length ? 'ok' : 'leer' }];
+    const wege: Wegstand[] = [
+      ...paketWege.wege,
+      { weg: 'kern', stand: kern ? 'ok' : 'leer' },
+      { weg: 'abgleich', stand: abgleich.belege.length ? 'ok' : 'leer' },
+    ];
     const typen = verbindeWege(belege, name);
     const vorschlag = typen[0] && typen[0].sicherheit >= VORSCHLAG_AB ? typen[0] : null;
-    const bezuege = Object.fromEntries(Object.entries(abgleich.bezuege).filter(([id]) => typen.some((x) => x.belege.some((b) => b.mappeId === id))));
+    const bezuege = Object.fromEntries(
+      Object.entries(abgleich.bezuege).filter(([id]) => typen.some((x) => x.belege.some((b) => b.mappeId === id))),
+    );
     log.info('Klassifizieren', {
-      zeichen: text.length, kandidaten: ziele.length, wege: wege.map((w) => `${w.paket?.id ?? w.weg}:${w.stand}`).join(', '),
-      vorschlag: vorschlag ? name(vorschlag.typId) : '', sicherheit: vorschlag?.sicherheit ?? 0, ms: Date.now() - start,
+      zeichen: text.length,
+      kandidaten: ziele.length,
+      wege: wege.map((w) => `${w.paket?.id ?? w.weg}:${w.stand}`).join(', '),
+      vorschlag: vorschlag ? name(vorschlag.typId) : '',
+      sicherheit: vorschlag?.sicherheit ?? 0,
+      ms: Date.now() - start,
     });
     return { vorschlag, typen, wege, ohneText, bezuege };
   }
@@ -107,51 +134,102 @@ export class Klassifizierung {
    * der Anfang. Ein Paket mit Netz nur, wenn es als Standard für „Aus Dokument ausfüllen“ gewählt und der Datenabfluss
    * bestätigt ist. Jedes Paket (mit oder ohne Netz) nur, wenn alle Quelldokumente aus zugelassenen Typen stammen.
    */
-  private async perPaketen(text: string, ziele: Mappentyp[], quellTypen: Set<string>, z?: Zugriff): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
+  private async perPaketen(
+    text: string,
+    ziele: Mappentyp[],
+    quellTypen: Set<string>,
+    z?: Zugriff,
+  ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
     const pakete = this.anbieter?.pakete() ?? [];
     if (!pakete.length) return { belege: [], wege: [] };
     const { zugelassen } = await this.d.ki.kiTypen();
     // Kandidaten: auch für Pakete ohne Netz nur zugelassene Typen – keine Namen oder Felder gesperrter Typen gehen hinaus.
-    const kandidaten: Kandidat[] = ziele.filter((x) => zugelassen.has(x.id)).slice(0, KANDIDATEN_MAX)
+    const kandidaten: Kandidat[] = ziele
+      .filter((x) => zugelassen.has(x.id))
+      .slice(0, KANDIDATEN_MAX)
       .map((x) => ({ id: x.id, name: x.name, beschreibung: kurzText(x.beschreibung), erkennbarAn: kurzText(x.erkennbarAn) }));
     const ids = new Set(kandidaten.map((x) => x.id));
     const anfang = text.slice(0, KLASSIFIZIEREN_TEXT_MAX);
     const wahl = await this.erkennung.standard();
     const wege: Wegstand[] = [];
     const belege: Array<Klassbeleg & { typId: string }> = [];
-    await Promise.all(pakete.map(async (p) => {
-      const paket = { id: p.id, name: p.name };
-      const weg = p.netz ? 'ki' as const : 'aehnlichkeit' as const;
-      if (p.netz && !(wahl.paket === p.id && wahl.abfluss)) { wege.push({ weg, paket, stand: 'aus' }); return; }
-      if (!kandidaten.length) { wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.keine-zugelassenen', { name: p.name }) }); return; }
-      // Quelle aus einem nicht zugelassenen Mappentyp: nichts an das Paket – für alle Pakete, auch ohne Netz (wie die Kandidaten).
-      if ([...quellTypen].some((x) => !zugelassen.has(x))) {
-        log.info('Klassifizieren nicht an Paket gegeben (Quelle nicht für KI-Dienste zugelassen)', { paket: p.id });
-        wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name }) });
-        return;
-      }
-      const eingang: Record<string, unknown> = { typen: kandidaten, schema: klassifizierSchema([...ids]), text: anfang, hinweis: KLASSIFIZIEREN_HINWEIS, sprache: 'de' };
-      // Ähnlichkeit: nur ein Paket ohne Netz, das selbst die Vektoren liefert – nur Typ und Maß, mit den Rechten beider.
-      if (!p.netz && p.vektoren) eingang.aehnliche = await this.d.suche.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null) ?? [];
-      try {
-        const r = await this.anbieter!.klassifiziere(p.id, eingang, KLASSIFIZIEREN_MS);
-        const roh = r.text.trim();
-        const a = roh.indexOf('{'), b = roh.lastIndexOf('}');
-        let j: unknown = null;
-        try { j = a >= 0 && b > a ? JSON.parse(roh.slice(a, b + 1)) : null; } catch { j = null; }
-        const g = pruefeKlassifizierung(j, ids, anfang);
-        if (g.ungueltig || g.verworfen.length) log.warn('Antwort beim Klassifizieren verworfen', { paket: p.id, ungueltig: g.ungueltig ?? '', verworfen: g.verworfen.join('; ').slice(0, 500) });
-        if (g.ungueltig || (!g.typen.length && g.verworfen.length)) {
-          wege.push({ weg, paket, stand: 'leer', verworfen: g.verworfen.length || 1, hinweis: t('meldungen.klassifizierung.nichts-brauchbares', { name: p.name }) });
+    await Promise.all(
+      pakete.map(async (p) => {
+        const paket = { id: p.id, name: p.name };
+        const weg = p.netz ? ('ki' as const) : ('aehnlichkeit' as const);
+        if (p.netz && !(wahl.paket === p.id && wahl.abfluss)) {
+          wege.push({ weg, paket, stand: 'aus' });
           return;
         }
-        wege.push({ weg, paket, stand: g.typen.length ? 'ok' : 'leer', ...(g.verworfen.length ? { verworfen: g.verworfen.length } : {}) });
-        for (const x of g.typen) belege.push({ typId: x.typ, weg, sicherheit: x.sicherheit, paket, ...(x.begruendung ? { begruendung: x.begruendung } : {}), ...(x.zitat ? { zitat: x.zitat } : {}) });
-      } catch (x) {
-        log.warn('Klassifizieren per Paket fehlgeschlagen', { paket: p.id, fehler: (x as Error).message.slice(0, 300) });
-        wege.push({ weg, paket, stand: 'fehler', hinweis: t('meldungen.klassifizierung.nicht-geantwortet', { name: p.name }) });
-      }
-    }));
+        if (!kandidaten.length) {
+          wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.keine-zugelassenen', { name: p.name }) });
+          return;
+        }
+        // Quelle aus einem nicht zugelassenen Mappentyp: nichts an das Paket – für alle Pakete, auch ohne Netz (wie die Kandidaten).
+        if ([...quellTypen].some((x) => !zugelassen.has(x))) {
+          log.info('Klassifizieren nicht an Paket gegeben (Quelle nicht für KI-Dienste zugelassen)', { paket: p.id });
+          wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name }) });
+          return;
+        }
+        const eingang: Record<string, unknown> = {
+          typen: kandidaten,
+          schema: klassifizierSchema([...ids]),
+          text: anfang,
+          hinweis: KLASSIFIZIEREN_HINWEIS,
+          sprache: 'de',
+        };
+        // Ähnlichkeit: nur ein Paket ohne Netz, das selbst die Vektoren liefert – nur Typ und Maß, mit den Rechten beider.
+        if (!p.netz && p.vektoren)
+          eingang.aehnliche = (await this.d.suche.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null)) ?? [];
+        try {
+          const r = await this.anbieter!.klassifiziere(p.id, eingang, KLASSIFIZIEREN_MS);
+          const roh = r.text.trim();
+          const a = roh.indexOf('{'),
+            b = roh.lastIndexOf('}');
+          let j: unknown = null;
+          try {
+            j = a >= 0 && b > a ? JSON.parse(roh.slice(a, b + 1)) : null;
+          } catch {
+            j = null;
+          }
+          const g = pruefeKlassifizierung(j, ids, anfang);
+          if (g.ungueltig || g.verworfen.length)
+            log.warn('Antwort beim Klassifizieren verworfen', {
+              paket: p.id,
+              ungueltig: g.ungueltig ?? '',
+              verworfen: g.verworfen.join('; ').slice(0, 500),
+            });
+          if (g.ungueltig || (!g.typen.length && g.verworfen.length)) {
+            wege.push({
+              weg,
+              paket,
+              stand: 'leer',
+              verworfen: g.verworfen.length || 1,
+              hinweis: t('meldungen.klassifizierung.nichts-brauchbares', { name: p.name }),
+            });
+            return;
+          }
+          wege.push({
+            weg,
+            paket,
+            stand: g.typen.length ? 'ok' : 'leer',
+            ...(g.verworfen.length ? { verworfen: g.verworfen.length } : {}),
+          });
+          for (const x of g.typen)
+            belege.push({
+              typId: x.typ,
+              weg,
+              sicherheit: x.sicherheit,
+              paket,
+              ...(x.begruendung ? { begruendung: x.begruendung } : {}),
+              ...(x.zitat ? { zitat: x.zitat } : {}),
+            });
+        } catch (x) {
+          log.warn('Klassifizieren per Paket fehlgeschlagen', { paket: p.id, fehler: (x as Error).message.slice(0, 300) });
+          wege.push({ weg, paket, stand: 'fehler', hinweis: t('meldungen.klassifizierung.nicht-geantwortet', { name: p.name }) });
+        }
+      }),
+    );
     wege.sort((a, b) => (a.paket?.id ?? '').localeCompare(b.paket?.id ?? ''));
     return { belege, wege };
   }
@@ -161,21 +239,34 @@ export class Klassifizierung {
    * Verweisfeld auf ihren Typ – geteilt durch die Zahl solcher Kandidaten (zeigen Rechnung und Vertrag beide auf
    * Organisation, unterscheidet die Organisation sie nicht).
    */
-  private async perAbgleich(text: string, ziele: Mappentyp[], z?: Zugriff): Promise<{ belege: Array<Klassbeleg & { typId: string }>; bezuege: Record<string, MappenBezug> }> {
+  private async perAbgleich(
+    text: string,
+    ziele: Mappentyp[],
+    z?: Zugriff,
+  ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; bezuege: Record<string, MappenBezug> }> {
     const a = await this.erkennung.abgleich(text, undefined, z).catch(() => null);
     if (!a?.treffer.length) return { belege: [], bezuege: {} };
     const belege: Array<Klassbeleg & { typId: string }> = [];
     // Eigene Organisation und Haushalt (#1043) stehen auf fast jedem Dokument – kein Beleg für einen Mappentyp.
     const treffer = a.treffer.filter((x) => !x.unsicher && !a.eigene?.includes(x.mappeId));
     for (const tr of treffer) {
-      const zeigen = ziele.flatMap((zt) => zt.felder.filter((f) => f.typ === 'referenz' && zieleVon(f).includes(tr.typId) && zt.id !== tr.typId).slice(0, 1).map((f) => ({ zt, f })));
+      const zeigen = ziele.flatMap((zt) =>
+        zt.felder
+          .filter((f) => f.typ === 'referenz' && zieleVon(f).includes(tr.typId) && zt.id !== tr.typId)
+          .slice(0, 1)
+          .map((f) => ({ zt, f })),
+      );
       if (!zeigen.length) continue;
       const stark = tr.belege.some((b) => b.stark);
       const merkmal = tr.belege.find((b) => b.stark) ?? tr.belege[0];
       for (const { zt, f } of zeigen) {
         belege.push({
-          typId: zt.id, weg: 'abgleich', sicherheit: Math.round(((stark ? ABGLEICH_STARK : ABGLEICH_SCHWACH) / zeigen.length) * 100) / 100,
-          mappeId: tr.mappeId, feld: f.label || f.key, ...(merkmal ? { merkmal: `${merkmal.feld} ${merkmal.wert}` } : {}),
+          typId: zt.id,
+          weg: 'abgleich',
+          sicherheit: Math.round(((stark ? ABGLEICH_STARK : ABGLEICH_SCHWACH) / zeigen.length) * 100) / 100,
+          mappeId: tr.mappeId,
+          feld: f.label || f.key,
+          ...(merkmal ? { merkmal: `${merkmal.feld} ${merkmal.wert}` } : {}),
         });
       }
     }

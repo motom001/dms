@@ -13,7 +13,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location = new URL('http://127.0.0.1/werkbank/stempel');
 g.localStorage = speicher();
@@ -22,7 +31,14 @@ g.addEventListener = () => {};
 g.removeEventListener = () => {};
 g.dispatchEvent = () => true;
 g.window = globalThis;
-g.document = { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document = {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 g.React = React;
 const WEB = new URL('../../web/src/', import.meta.url).href;
 const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
@@ -70,7 +86,11 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
     assert.ok(html.includes('stempelvorschau'), 'Live-Vorschau (#799)');
     assert.ok(html.includes('speicherleiste'));
     // Seit #1210: „Vorlage löschen“ ist der Gefahr-Knopf am festen Platz der Speicherleiste (Symbol, Rückfrage).
-    assert.match(html, /data-knopf="gefahr"[^>]*aria-haspopup="dialog"[^>]*>(?:<[^>]+>)*Vorlage löschen/, 'Löschen als Gefahr-Knopf mit Rückfrage');
+    assert.match(
+      html,
+      /data-knopf="gefahr"[^>]*aria-haspopup="dialog"[^>]*>(?:<[^>]+>)*Vorlage löschen/,
+      'Löschen als Gefahr-Knopf mit Rückfrage',
+    );
     assert.doesNotMatch(html, /class="textknopf [^"]*gefahr"/, 'kein roter Link mehr');
   });
 
@@ -85,14 +105,40 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
 
 const NB = { am: '2026-11-01T10:00:00Z', von: 'Lena Beispiel', fingerabdruck: 'AAAA-BBBB', aktuell: true, grund: null };
 const zustand = (nb: Record<string, unknown>) => ({
-  letzte: { name: 's1', ende: '2026-11-09T02:00:00Z', art: 'automatisch' }, fehler: null, zuAlt: false, planAktiv: true,
-  notfallblatt: { ...NB, ...nb }, schluessel: true, fingerabdruck: 'AAAA-BBBB',
+  letzte: { name: 's1', ende: '2026-11-09T02:00:00Z', art: 'automatisch' },
+  fehler: null,
+  zuAlt: false,
+  planAktiv: true,
+  notfallblatt: { ...NB, ...nb },
+  schluessel: true,
+  fingerabdruck: 'AAAA-BBBB',
   ort: { ordner: '/data/sicherung', volume: true, gleichePlatte: false },
 });
 const stand = (nb: Record<string, unknown>) => ({
-  lauf: null, liste: [], zustand: zustand(nb),
-  plan: { aktiv: true, uhrzeit: '02:00', haeufigkeit: 'taeglich', wochentag: 1, aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 }, mindestFreiGB: 1, aktivSeit: null },
-  speicher: { dateienBytes: 1, dateien: 1, datenbankBytes: 1, sicherungenBytes: 1, anzahl: 0, frei: 10 ** 10, gesamt: 10 ** 11, hochrechnung: { stueck: 1, bytes: 1 }, mindestBytes: 1, knapp: false },
+  lauf: null,
+  liste: [],
+  zustand: zustand(nb),
+  plan: {
+    aktiv: true,
+    uhrzeit: '02:00',
+    haeufigkeit: 'taeglich',
+    wochentag: 1,
+    aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 },
+    mindestFreiGB: 1,
+    aktivSeit: null,
+  },
+  speicher: {
+    dateienBytes: 1,
+    dateien: 1,
+    datenbankBytes: 1,
+    sicherungenBytes: 1,
+    anzahl: 0,
+    frei: 10 ** 10,
+    gesamt: 10 ** 11,
+    hochrechnung: { stueck: 1, bytes: 1 },
+    mindestBytes: 1,
+    knapp: false,
+  },
 });
 /** Mit Konto im Verwaltungsmodus: `bereiche` null = Gesamte Verwaltung, sonst die Liste (#818). */
 const sicherung = (nb: Record<string, unknown>, bereiche: string[] | null = ['sicherung'], plan?: Record<string, unknown>) => {
@@ -101,7 +147,11 @@ const sicherung = (nb: Record<string, unknown>, bereiche: string[] | null = ['si
   const panel = h(SicherungPanel, { z: { stand: st, fehler: undefined, laden: async () => {}, setStand: () => {} } });
   return renderToStaticMarkup(h(KontoCtx.Provider, { value: { verwaltungsmodus: { bereiche } } }, panel));
 };
-const NB_FAELLE = [['fehlt', { aktuell: false, am: null, grund: 'fehlt' }], ['veraltet', { aktuell: false, grund: 'schluessel' }], ['Notfallcode benutzt', { aktuell: false, grund: 'benutzt' }]] as const;
+const NB_FAELLE = [
+  ['fehlt', { aktuell: false, am: null, grund: 'fehlt' }],
+  ['veraltet', { aktuell: false, grund: 'schluessel' }],
+  ['Notfallcode benutzt', { aktuell: false, grund: 'benutzt' }],
+] as const;
 
 describe('Notfallblatt nur unter Verschlüsselung (#993, Thomas 10.11.2026)', () => {
   it('Sicherung hat keinen Abschnitt „Notfallblatt“ und keinen Knopf zum Herunterladen', () => {
@@ -160,9 +210,13 @@ describe('Notfallblatt nur unter Verschlüsselung (#993, Thomas 10.11.2026)', ()
     assert.ok(da.includes('id="notfallblatt"'));
     assert.ok(da.includes('href="/api/werkbank/notfallblatt"'));
     assert.ok(da.includes('Lena Beispiel'));
-    const benutzt = renderToStaticMarkup(h(Notfallblatt, { stand: { ...NB, aktuell: false, grund: 'benutzt' }, schluessel: true, geladen() {} }));
+    const benutzt = renderToStaticMarkup(
+      h(Notfallblatt, { stand: { ...NB, aktuell: false, grund: 'benutzt' }, schluessel: true, geladen() {} }),
+    );
     assert.ok(benutzt.includes('Der Notfallcode auf dem Notfallblatt wurde benutzt.'));
-    const fehlt = renderToStaticMarkup(h(Notfallblatt, { stand: { ...NB, am: null, von: null, aktuell: false, grund: 'fehlt' }, schluessel: true, geladen() {} }));
+    const fehlt = renderToStaticMarkup(
+      h(Notfallblatt, { stand: { ...NB, am: null, von: null, aktuell: false, grund: 'fehlt' }, schluessel: true, geladen() {} }),
+    );
     assert.ok(fehlt.includes('Das Notfallblatt fehlt.'));
   });
 });

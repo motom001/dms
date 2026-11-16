@@ -11,7 +11,10 @@ import { t } from './sprache';
  * (Seite des Assistenten → Bausteine → Hilfe → konto.tsx → Assistent). Den Provider setzt `KontoProvider` in konto.tsx.
  */
 export interface Konto {
-  ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void>;
+  ich: Benutzer;
+  mail: boolean;
+  abmelden(): Promise<void>;
+  aktualisieren(): Promise<void>;
   /** Lassen sich Passwörter speichern (Schlüssel vorhanden)? */
   passwoerterMoeglich: boolean;
   vertretung: KontoStatus['vertretung'];
@@ -56,4 +59,3 @@ export function useKonto(): Konto {
 export function useKontoOptional(): Konto | null {
   return useContext(Ctx);
 }
-

@@ -26,14 +26,22 @@ const abgewiesene = new WeakSet<object>();
 export const vomUeberlastschutzAbgewiesen = (req: FastifyRequest) => abgewiesene.has(req);
 const log = protokoll.modul('system');
 
-export interface UeberlastEinstellung { max: number; quelle: 'vorgabe' | 'umgebung'; fehler?: string }
+export interface UeberlastEinstellung {
+  max: number;
+  quelle: 'vorgabe' | 'umgebung';
+  fehler?: string;
+}
 
 export function maxAnfragenAus(env: Record<string, string | undefined>): UeberlastEinstellung {
   const roh = env.DMS_MAX_ANFRAGEN?.trim();
   if (!roh) return { max: MAX_ANFRAGEN_VORGABE, quelle: 'vorgabe' };
   const n = Number(roh);
   if (!Number.isInteger(n) || n < MAX_ANFRAGEN_MIN || n > MAX_ANFRAGEN_MAX) {
-    return { max: MAX_ANFRAGEN_VORGABE, quelle: 'vorgabe', fehler: t('meldungen.ueberlast.dms-max-anfragen-ist', { roh, MAX_ANFRAGEN_MIN, MAX_ANFRAGEN_MAX }) };
+    return {
+      max: MAX_ANFRAGEN_VORGABE,
+      quelle: 'vorgabe',
+      fehler: t('meldungen.ueberlast.dms-max-anfragen-ist', { roh, MAX_ANFRAGEN_MIN, MAX_ANFRAGEN_MAX }),
+    };
   }
   return { max: n, quelle: 'umgebung' };
 }
@@ -53,7 +61,11 @@ export class Ueberlastschutz {
   zuletztAbgewiesen: number | null = null;
   private seitMeldung = 0;
 
-  constructor(readonly max: number, readonly quelle: UeberlastEinstellung['quelle'] = 'vorgabe', private uhr: () => number = Date.now) {}
+  constructor(
+    readonly max: number,
+    readonly quelle: UeberlastEinstellung['quelle'] = 'vorgabe',
+    private uhr: () => number = Date.now,
+  ) {}
 
   /** Darf die Anfrage hinein? Wenn ja, zählt sie bis `fertig()`. */
   herein(): boolean {
@@ -68,7 +80,9 @@ export class Ueberlastschutz {
     return true;
   }
 
-  fertig() { if (this.laufend > 0) this.laufend--; }
+  fertig() {
+    if (this.laufend > 0) this.laufend--;
+  }
 
   /**
    * Höchstens eine Zeile je Minute im Protokoll – als Hinweis, nicht als Warnung oder Fehler (#920): Abweisen ist
@@ -93,7 +107,10 @@ export class Ueberlastschutz {
 
   /** Offene Zusammenfassung jetzt schreiben (Ende der Minute, Herunterfahren, Tests). */
   leeren() {
-    if (this.zeitgeber) { clearTimeout(this.zeitgeber); this.zeitgeber = null; }
+    if (this.zeitgeber) {
+      clearTimeout(this.zeitgeber);
+      this.zeitgeber = null;
+    }
     if (!this.seitMeldung) return;
     this.schreibe(this.seitMeldung, false);
     this.seitMeldung = 0;
@@ -101,14 +118,21 @@ export class Ueberlastschutz {
   }
 
   private schreibe(n: number, erste: boolean) {
-    log.info(erste
-      ? `Überlast: ${this.max} Anfragen gleichzeitig – weitere werden mit 503 abgewiesen (gewollt, mit Retry-After)`
-      : `Überlast: in der letzten Minute weitere ${n} Anfragen mit 503 abgewiesen (Grenze ${this.max} gleichzeitig)`, { abgewiesen: this.abgewiesen, seitLetzterMeldung: n });
+    log.info(
+      erste
+        ? `Überlast: ${this.max} Anfragen gleichzeitig – weitere werden mit 503 abgewiesen (gewollt, mit Retry-After)`
+        : `Überlast: in der letzten Minute weitere ${n} Anfragen mit 503 abgewiesen (Grenze ${this.max} gleichzeitig)`,
+      { abgewiesen: this.abgewiesen, seitLetzterMeldung: n },
+    );
   }
 
   stand() {
     return {
-      max: this.max, quelle: this.quelle, laufend: this.laufend, hoechstens: this.hoechstens, abgewiesen: this.abgewiesen,
+      max: this.max,
+      quelle: this.quelle,
+      laufend: this.laufend,
+      hoechstens: this.hoechstens,
+      abgewiesen: this.abgewiesen,
       zuletztAbgewiesen: this.zuletztAbgewiesen === null ? null : new Date(this.zuletztAbgewiesen).toISOString(),
     };
   }
@@ -119,11 +143,19 @@ export class Ueberlastschutz {
       if (!zaehlt(req.url)) return;
       if (!this.herein()) {
         abgewiesene.add(req);
-        return reply.code(503).header('retry-after', String(WIEDER_IN_S)).header('cache-control', 'no-store')
+        return reply
+          .code(503)
+          .header('retry-after', String(WIEDER_IN_S))
+          .header('cache-control', 'no-store')
           .send({ fehler: t('systemzustand.ueberlast.meldung') });
       }
       let zu = false;
-      reply.raw.once('close', () => { if (!zu) { zu = true; this.fertig(); } });
+      reply.raw.once('close', () => {
+        if (!zu) {
+          zu = true;
+          this.fertig();
+        }
+      });
     });
   }
 }

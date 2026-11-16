@@ -4,11 +4,24 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { ABLAGE_BEREICHE, api, BASIS, beispielPdf, daten, LENA, mitFragen, mitHandbuch, rauchtest, schemaWechseln, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import {
+  ABLAGE_BEREICHE,
+  api,
+  BASIS,
+  beispielPdf,
+  daten,
+  LENA,
+  mitFragen,
+  mitHandbuch,
+  rauchtest,
+  schemaWechseln,
+  sitzung,
+  verwalten,
+  WERKBANK_BEREICHE,
+} from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Ablage aus Bausteinen: axe und Tippflächen (#1211, #1212) ---------- */
-
 
 /**
  * Die Seiten der Ablage, die #1211/#1212 auf Bausteine umgestellt haben: Mappe (Formular und Speicherleiste),
@@ -19,44 +32,80 @@ async function ablageSeiten(cookie) {
   const typ = daten.bausteine;
   // Eine Mappe mit einem PDF für die Dokumentliste; eine zweite für den Papierkorb.
   const mitDok = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Keller Bausteine' } } })).daten;
-  await api('POST', `/api/mappen/${mitDok.id}/dokumente?register=dokumente&name=${encodeURIComponent('Übergabeprotokoll.pdf')}&typ=application/pdf`, { cookie, body: beispielPdf('Übergabeprotokoll Keller'), roh: true });
+  await api(
+    'POST',
+    `/api/mappen/${mitDok.id}/dokumente?register=dokumente&name=${encodeURIComponent('Übergabeprotokoll.pdf')}&typ=application/pdf`,
+    { cookie, body: beispielPdf('Übergabeprotokoll Keller'), roh: true },
+  );
   const weg = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Abstellraum Bausteine' } } })).daten;
   const post = (await api('POST', '/api/post', { cookie, body: { betreff: 'Kellerschlüssel Bausteine' } })).daten;
-  await api('POST', `/api/mappen/${post.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kellerschlüssel.pdf')}&typ=application/pdf`, { cookie, body: beispielPdf('Kellerschluessel'), roh: true });
+  await api(
+    'POST',
+    `/api/mappen/${post.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kellerschlüssel.pdf')}&typ=application/pdf`,
+    { cookie, body: beispielPdf('Kellerschluessel'), roh: true },
+  );
   await api('DELETE', `/api/mappen/${weg.id}?grund=nicht_noetig`, { cookie });
   return [
-    { name: 'Mappe', weg: async (s) => {
-      await s.goto(BASIS + `/ablage/${typ.id}/${mitDok.id}`);
-      await s.getByRole('region', { name: 'Mappe' }).getByRole('button', { name: 'Mappe speichern' }).waitFor();
-    } },
-    { name: 'Dokumente', weg: async (s) => {
-      await s.goto(BASIS + `/ablage/${typ.id}/${mitDok.id}`);
-      await s.getByRole('region', { name: 'Mappe' }).getByRole('tab', { name: /^Dokumente/ }).click();
-      await s.locator('.dokzeile').filter({ hasText: 'Übergabeprotokoll.pdf' }).first().waitFor();
-    } },
-    { name: 'Post', weg: async (s) => {
-      // Die Post-Mappe selbst (Leiste mit Stand, Zuordnen, Erkannt), nicht die Seite „Dokument übernehmen“ (#1217).
-      await s.goto(BASIS + `/ablage/${post.typId}/${post.id}?als=post`);
-      await s.getByRole('region', { name: 'Mappe' }).getByRole('tab').first().waitFor();
-    } },
-    { name: 'Suche', weg: async (s) => {
-      await s.goto(BASIS + '/ablage/suche');
-      await s.getByRole('form', { name: 'Erweiterte Suche' }).waitFor();
-    } },
-    { name: 'Aufgaben', weg: async (s) => {
-      await s.goto(BASIS + '/ablage/eingang');
-      await s.getByRole('radiogroup', { name: /Ansicht/ }).waitFor();
-    } },
-    { name: 'Termine', weg: async (s) => {
-      await s.goto(BASIS + '/ablage/eingang');
-      await s.getByRole('radio', { name: 'Monat' }).click();
-      await s.locator('.ka-raster, .ka-monat').first().waitFor();
-    } },
-    { name: 'Papierkorb', weg: async (s) => {
-      await s.goto(BASIS + '/ablage/papierkorb');
-      await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /Abstellraum Bausteine/ }).first().click();
-      await s.getByRole('heading', { name: 'Abstellraum Bausteine', level: 1 }).first().waitFor();
-    } },
+    {
+      name: 'Mappe',
+      weg: async (s) => {
+        await s.goto(BASIS + `/ablage/${typ.id}/${mitDok.id}`);
+        await s.getByRole('region', { name: 'Mappe' }).getByRole('button', { name: 'Mappe speichern' }).waitFor();
+      },
+    },
+    {
+      name: 'Dokumente',
+      weg: async (s) => {
+        await s.goto(BASIS + `/ablage/${typ.id}/${mitDok.id}`);
+        await s
+          .getByRole('region', { name: 'Mappe' })
+          .getByRole('tab', { name: /^Dokumente/ })
+          .click();
+        await s.locator('.dokzeile').filter({ hasText: 'Übergabeprotokoll.pdf' }).first().waitFor();
+      },
+    },
+    {
+      name: 'Post',
+      weg: async (s) => {
+        // Die Post-Mappe selbst (Leiste mit Stand, Zuordnen, Erkannt), nicht die Seite „Dokument übernehmen“ (#1217).
+        await s.goto(BASIS + `/ablage/${post.typId}/${post.id}?als=post`);
+        await s.getByRole('region', { name: 'Mappe' }).getByRole('tab').first().waitFor();
+      },
+    },
+    {
+      name: 'Suche',
+      weg: async (s) => {
+        await s.goto(BASIS + '/ablage/suche');
+        await s.getByRole('form', { name: 'Erweiterte Suche' }).waitFor();
+      },
+    },
+    {
+      name: 'Aufgaben',
+      weg: async (s) => {
+        await s.goto(BASIS + '/ablage/eingang');
+        await s.getByRole('radiogroup', { name: /Ansicht/ }).waitFor();
+      },
+    },
+    {
+      name: 'Termine',
+      weg: async (s) => {
+        await s.goto(BASIS + '/ablage/eingang');
+        await s.getByRole('radio', { name: 'Monat' }).click();
+        await s.locator('.ka-raster, .ka-monat').first().waitFor();
+      },
+    },
+    {
+      name: 'Papierkorb',
+      weg: async (s) => {
+        await s.goto(BASIS + '/ablage/papierkorb');
+        await s
+          .getByRole('region', { name: 'Mappen' })
+          .getByRole('link', { name: /Abstellraum Bausteine/ })
+          .first()
+          .click();
+        await s.getByRole('heading', { name: 'Abstellraum Bausteine', level: 1 }).first().waitFor();
+      },
+    },
   ];
 }
 
@@ -95,14 +144,18 @@ rauchtest('Kopfzeile und Assistent: axe ohne Verstoß, hell und dunkel (#1218, #
   const funde = [];
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);
-    await kopfUndAssistent(s, async (name) => { for (const v of await axePruefen(s, KOPF_BEREICHE)) funde.push(`${name} (${schema}): ${v}`); });
+    await kopfUndAssistent(s, async (name) => {
+      for (const v of await axePruefen(s, KOPF_BEREICHE)) funde.push(`${name} (${schema}): ${v}`);
+    });
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
 rauchtest('Handy: Kopfzeile und Assistent mit 44-px-Tippflächen (#1218, #1219)', { handy: true, als: LENA }, async (s) => {
   const funde = [];
-  await kopfUndAssistent(s, async (name) => { for (const v of await tippflaechenPruefen(s, KOPF_BEREICHE)) funde.push(`${name}: ${v}`); });
+  await kopfUndAssistent(s, async (name) => {
+    for (const v of await tippflaechenPruefen(s, KOPF_BEREICHE)) funde.push(`${name}: ${v}`);
+  });
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
 
@@ -133,18 +186,22 @@ rauchtest('Handy: Ablage aus Bausteinen mit 44-px-Tippflächen (#1211, #1212)', 
 
 /* ---------- Werkbank aus Bausteinen: axe und Tippflächen (#1214) ---------- */
 
-
 /**
  * Seiten der Werkbank, die #1214 auf Bausteine umgestellt hat: Pakete, Benutzer und Sicherheit, Post und Eingänge,
  * Daten sichern, Betrieb. Je Seite ein Name, der Weg und worauf gewartet wird.
  */
 async function werkbankSeiten(s) {
   // Im Verwaltungsmodus über die Seite selbst (die Sitzung des Browsers darf die Werkbank lesen).
-  const lena = (await s.evaluate(async () => (await fetch('/api/benutzer', { headers: { 'x-dms': '1' } })).json())).find((b) => b.email === 'lena@example.org');
-  const seite = (name, weg, warte) => ({ name, weg: async (p) => {
-    await p.goto(BASIS + weg);
-    await (warte ? warte(p) : p.locator('.spalte.liste:visible, .spalte.mappe:visible').first().waitFor());
-  } });
+  const lena = (await s.evaluate(async () => (await fetch('/api/benutzer', { headers: { 'x-dms': '1' } })).json())).find(
+    (b) => b.email === 'lena@example.org',
+  );
+  const seite = (name, weg, warte) => ({
+    name,
+    weg: async (p) => {
+      await p.goto(BASIS + weg);
+      await (warte ? warte(p) : p.locator('.spalte.liste:visible, .spalte.mappe:visible').first().waitFor());
+    },
+  });
   return [
     seite('Pakete', '/werkbank/pakete'),
     seite('Paket erstellen', '/werkbank/pakete/erstellen'),
@@ -196,22 +253,26 @@ rauchtest('Werkbank aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1214)',
 
 // Am Handy in fünf Teilen: Die Messung jedes Bedienelements braucht Zeit (Grenze je Rauchtest 120 s).
 for (const teil of [0, 1, 2, 3, 4]) {
-  rauchtest(`Handy: Werkbank aus Bausteinen mit 44-px-Tippflächen, Teil ${teil + 1} (#1214)`, { handy: true, als: LENA, erwartet: WERKBANK_ERWARTET }, async (s) => {
-    await s.goto(BASIS + '/ablage/start');
-    await verwalten(s);
-    const alle = await werkbankSeiten(s);
-    const seiten = alle.filter((_, i) => i % 5 === teil);
-    const funde = [];
-    for (const seite of seiten) {
-      const beginn = Date.now();
-      await seite.weg(s);
-      await s.waitForLoadState('networkidle');
-      for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`${seite.name}: ${v}`);
-      // Dauer je Seite im Protokoll, damit eine langsame Seite in der CI sofort auffällt.
-      console.log(`# Werkbank Handy ${seite.name}: ${Math.round((Date.now() - beginn) / 1000)} s`);
-    }
-    assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
-  });
+  rauchtest(
+    `Handy: Werkbank aus Bausteinen mit 44-px-Tippflächen, Teil ${teil + 1} (#1214)`,
+    { handy: true, als: LENA, erwartet: WERKBANK_ERWARTET },
+    async (s) => {
+      await s.goto(BASIS + '/ablage/start');
+      await verwalten(s);
+      const alle = await werkbankSeiten(s);
+      const seiten = alle.filter((_, i) => i % 5 === teil);
+      const funde = [];
+      for (const seite of seiten) {
+        const beginn = Date.now();
+        await seite.weg(s);
+        await s.waitForLoadState('networkidle');
+        for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`${seite.name}: ${v}`);
+        // Dauer je Seite im Protokoll, damit eine langsame Seite in der CI sofort auffällt.
+        console.log(`# Werkbank Handy ${seite.name}: ${Math.round((Date.now() - beginn) / 1000)} s`);
+      }
+      assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+    },
+  );
 }
 
 /* ---------- Werkbank „Ablage aufbauen“ aus Bausteinen: axe (#1213) ---------- */
@@ -220,8 +281,17 @@ rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hel
   const typ = daten.bausteine;
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
-  const seiten = ['/werkbank', '/werkbank/ansicht', `/werkbank/typen/${typ.id}`, '/werkbank/sichten/neu', '/werkbank/automatisierungen/ziele',
-    '/werkbank/nummernkreise/archivnummer', '/werkbank/stempel/neu', '/werkbank/designs/neu', '/werkbank/woerter/neu'];
+  const seiten = [
+    '/werkbank',
+    '/werkbank/ansicht',
+    `/werkbank/typen/${typ.id}`,
+    '/werkbank/sichten/neu',
+    '/werkbank/automatisierungen/ziele',
+    '/werkbank/nummernkreise/archivnummer',
+    '/werkbank/stempel/neu',
+    '/werkbank/designs/neu',
+    '/werkbank/woerter/neu',
+  ];
   const funde = [];
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);
@@ -230,7 +300,7 @@ rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hel
       await s.waitForLoadState('networkidle');
       // Editoren mit Bereichen (#1000): alles aufklappen, damit axe auch die Felder darin sieht.
       const alle = s.locator('[data-sprungleiste]').getByRole('button', { name: 'Alle aufklappen' });
-      if (await alle.count() && await alle.isVisible()) await alle.click();
+      if ((await alle.count()) && (await alle.isVisible())) await alle.click();
       for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${weg} (${schema}): ${v}`);
     }
   }
@@ -244,7 +314,14 @@ const KONTO_BEREICHE = ['main.rumpf', '.benutzermenue .menue'];
 
 /** Seiten, die #1215 auf Bausteine umgestellt hat: je Name, Weg, worauf gewartet wird und welcher Bereich zählt. */
 function kontoSeiten() {
-  const seite = (name, weg, warte, bereich = KONTO_BEREICHE) => ({ name, bereich, weg: async (p) => { await p.goto(BASIS + weg); await warte(p); } });
+  const seite = (name, weg, warte, bereich = KONTO_BEREICHE) => ({
+    name,
+    bereich,
+    weg: async (p) => {
+      await p.goto(BASIS + weg);
+      await warte(p);
+    },
+  });
   return [
     seite('Konto', '/profil/konto', (p) => p.getByRole('heading', { name: /^Meine Rechte/ }).waitFor()),
     seite('Sicherheit', '/profil/sicherheit', (p) => p.locator('.sitzungsliste').first().waitFor()),
@@ -253,7 +330,15 @@ function kontoSeiten() {
     seite('Abwesenheit', '/profil/abwesenheit', (p) => p.getByRole('switch', { name: 'Abwesend' }).waitFor()),
     seite('Fehler melden', '/profil/fehler-melden', (p) => p.getByLabel('Was ist passiert?').waitFor()),
     seite('Ablago entdecken', '/entdecken', (p) => p.getByRole('region', { name: 'Tipps' }).getByRole('link').first().waitFor()),
-    seite('Benutzermenü', '/profil/konto', async (p) => { await p.locator('.benutzermenue .wer').click(); await p.locator('.benutzermenue .menue').waitFor(); }, ['.benutzermenue .menue']),
+    seite(
+      'Benutzermenü',
+      '/profil/konto',
+      async (p) => {
+        await p.locator('.benutzermenue .wer').click();
+        await p.locator('.benutzermenue .menue').waitFor();
+      },
+      ['.benutzermenue .menue'],
+    ),
     seite('Notfallzugang', '/notfall', (p) => p.getByRole('heading', { level: 1 }).waitFor(), ['main.kartenseite']),
   ];
 }

@@ -13,7 +13,10 @@ describe('Schlüssel am Mappentyp (#145)', () => {
   it('aus dem Namen, eindeutig, fest nach dem Anlegen; Links überstehen das Umbenennen', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien());
-    const r = await d.mappentypen.legeTypAn({ name: 'Rechnung Ärzte', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', eindeutig: true }] });
+    const r = await d.mappentypen.legeTypAn({
+      name: 'Rechnung Ärzte',
+      felder: [{ key: 'nr', label: 'Nummer', typ: 'text', eindeutig: true }],
+    });
     assert.equal(r.schluessel, 'rechnung_aerzte');
     const r2 = await d.mappentypen.legeTypAn({ name: 'Rechnung-Ärzte', felder: [] });
     assert.equal(r2.schluessel, 'rechnung_aerzte_2');
@@ -28,7 +31,10 @@ describe('Schlüssel am Mappentyp (#145)', () => {
     // Links: mit Schlüssel und weiter mit dem Namen.
     const m = await d.mappen.legeMappeAn({ typId: r.id, werte: { nr: 'A-1' } });
     const typen = await d.mappentypen.listeTypen();
-    const link = linkZuMappe(typen.find((t) => t.id === r.id)!, m)!;
+    const link = linkZuMappe(
+      typen.find((t) => t.id === r.id)!,
+      m,
+    )!;
     assert.match(link, /typ=rechnung_aerzte&nr=A-1/);
     const ok = liesDirektlink(new URL(`http://x${link}`).searchParams, typen);
     assert.ok(ok.ok && ok.link.typ.id === r.id);
@@ -39,8 +45,18 @@ describe('Schlüssel am Mappentyp (#145)', () => {
   it('zieht fehlende Schlüssel nach: Systemtypen zuerst, dann aus dem Namen', async () => {
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien());
-    await repo.legeTypAn('00000000-0000-4000-8000-0000000000a1', { name: 'Benutzer', beschreibung: '', titelVorlage: '', felder: [], register: [] });
-    await repo.legeTypAn('00000000-0000-4000-8000-0000000000a2', { name: 'Leute', beschreibung: '', titelVorlage: '', felder: [], register: [] }, 'benutzer');
+    await repo.legeTypAn('00000000-0000-4000-8000-0000000000a1', {
+      name: 'Benutzer',
+      beschreibung: '',
+      titelVorlage: '',
+      felder: [],
+      register: [],
+    });
+    await repo.legeTypAn(
+      '00000000-0000-4000-8000-0000000000a2',
+      { name: 'Leute', beschreibung: '', titelVorlage: '', felder: [], register: [] },
+      'benutzer',
+    );
     assert.equal(await d.mappenTitel.typSchluesselNachziehen(), 2);
     const typen = await d.mappentypen.listeTypen();
     assert.equal(typen.find((t) => t.system === 'benutzer')!.schluessel, 'benutzer');

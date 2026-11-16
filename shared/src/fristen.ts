@@ -30,7 +30,13 @@ export interface FristEinstellung {
 }
 
 export const FRIST_TEXT = '{feld} {datum}';
-export const FRIST_STANDARD: FristEinstellung = { vorlauf: 4, einheit: 'wochen', empfaengerFeld: null, text: FRIST_TEXT, wiederholung: null };
+export const FRIST_STANDARD: FristEinstellung = {
+  vorlauf: 4,
+  einheit: 'wochen',
+  empfaengerFeld: null,
+  text: FRIST_TEXT,
+  wiederholung: null,
+};
 export const FRIST_TEXT_MAX = 200;
 /** Freie Erinnerungen (#131). */
 export const ERINNERUNG_TEXT_MAX = 500;
@@ -44,7 +50,9 @@ export function bereinigeFrist(e: unknown): FristEinstellung | null {
   const text = (typeof x.text === 'string' ? x.text : '').replace(/\s+/g, ' ').trim().slice(0, FRIST_TEXT_MAX) || FRIST_TEXT;
   const w = Math.trunc(Number(x.wiederholung) || 0);
   return {
-    vorlauf, einheit, text,
+    vorlauf,
+    einheit,
+    text,
     empfaengerFeld: typeof x.empfaengerFeld === 'string' && x.empfaengerFeld ? x.empfaengerFeld : null,
     wiederholung: w >= 1 && w <= 120 ? w : null,
   };
@@ -84,7 +92,9 @@ export function folgetermine(datum: string, monate: number, von: string, bis: st
  * Monaten nicht sicher ist (Monat nicht 01–12, Tag nicht 01–31, Jahr vor 0100). Wie `dms_fristmonat` (Migration 086).
  */
 export function fristMonat(d: string): number | null {
-  const j = d.slice(0, 4); const m = d.slice(5, 7); const t = d.slice(8, 10);
+  const j = d.slice(0, 4);
+  const m = d.slice(5, 7);
+  const t = d.slice(8, 10);
   if (!(m >= '01' && m <= '12' && t >= '01' && t <= '31' && j >= '0100')) return null;
   return Number(j) * 12 + Number(m) - 1;
 }
@@ -100,23 +110,31 @@ export function kannTerminHaben(datum: string, monate: number | null, ab: string
   if (datum >= ab && datum <= bis) return true;
   if (!monate || datum > bis) return false;
   const mi = fristMonat(datum);
-  const von = fristMonat(ab); const ende = fristMonat(bis);
+  const von = fristMonat(ab);
+  const ende = fristMonat(bis);
   if (mi === null || von === null || ende === null) return true;
   const s = Math.max(von, mi + monate);
   return s + ((((mi - s) % monate) + monate) % monate) <= ende;
 }
 
-export const datumDe = (iso: string) => { const [j, m, t] = iso.slice(0, 10).split('-'); return `${t}.${m}.${j}`; };
+export const datumDe = (iso: string) => {
+  const [j, m, t] = iso.slice(0, 10).split('-');
+  return `${t}.${m}.${j}`;
+};
 
 /** Text der Aufgabe, z. B. „Kündigung bis 30.09.2027“. */
 export function fristText(f: FristEinstellung, feld: Pick<Feld, 'label'>, datum: string, titel: string): string {
-  return (f.text || FRIST_TEXT).replaceAll('{feld}', feld.label).replaceAll('{datum}', datumDe(datum)).replaceAll('{titel}', titel || 'Ohne Titel').slice(0, 2000);
+  return (f.text || FRIST_TEXT)
+    .replaceAll('{feld}', feld.label)
+    .replaceAll('{datum}', datumDe(datum))
+    .replaceAll('{titel}', titel || 'Ohne Titel')
+    .slice(0, 2000);
 }
 
 /** Wer die Erinnerung bekommt: der Benutzer im gewählten Feld, sonst der Ersteller (null = Administratoren). */
 export function fristEmpfaenger(f: FristEinstellung, m: Pick<Mappe, 'werte' | 'erstelltVon'>): string | null {
   const v = f.empfaengerFeld ? m.werte[f.empfaengerFeld] : null;
-  return typeof v === 'string' && v ? v : m.erstelltVon ?? null;
+  return typeof v === 'string' && v ? v : (m.erstelltVon ?? null);
 }
 
 /** Gültiges Datum JJJJ-MM-TT? */
@@ -131,7 +149,9 @@ export interface Termin {
   /** Seit wann die Aufgabe offen ist; sonst das Datum selbst. */
   ab: string;
   text: string;
-  mappeId: string; mappeTitel: string; typId: string;
+  mappeId: string;
+  mappeTitel: string;
+  typId: string;
   /** Steht schon als Aufgabe im Eingang. */
   faellig: boolean;
   feldKey?: string | null;
@@ -152,10 +172,16 @@ export interface TermineAntwort {
 
 /** Freie Erinnerung an einer Mappe (#131), solange sie noch nicht fällig ist. */
 export interface Erinnerung {
-  id: string; mappeId: string; empfaengerId: string | null; datum: string; text: string;
-  erstellt: string; erstelltVon: string | null;
+  id: string;
+  mappeId: string;
+  empfaengerId: string | null;
+  datum: string;
+  text: string;
+  erstellt: string;
+  erstelltVon: string | null;
   /** Für Listen. */
-  mappeTitel?: string; typId?: string;
+  mappeTitel?: string;
+  typId?: string;
 }
 
 /**
@@ -166,7 +192,8 @@ export function erreichteDaten(tag: string, vorlauf: number, einheit: VorlaufEin
   if (einheit !== 'monate') return [verschiebe(tag, vorlauf * (einheit === 'wochen' ? 7 : 1))];
   const ziel = verschiebe(tag, vorlauf, 'monate');
   const erg: string[] = [];
-  for (let d = `${ziel.slice(0, 8)}01`; d.slice(0, 7) === ziel.slice(0, 7); d = verschiebe(d, 1)) if (verschiebe(d, -vorlauf, 'monate') === tag) erg.push(d);
+  for (let d = `${ziel.slice(0, 8)}01`; d.slice(0, 7) === ziel.slice(0, 7); d = verschiebe(d, 1))
+    if (verschiebe(d, -vorlauf, 'monate') === tag) erg.push(d);
   return erg;
 }
 
@@ -174,6 +201,11 @@ export function erreichteDaten(tag: string, vorlauf: number, einheit: VorlaufEin
 export function vorlaufText(vorlauf: number, einheit: VorlaufEinheit): string {
   if (!vorlauf) return 'heute';
   const n = Math.abs(vorlauf);
-  const wort = einheit === 'tage' ? (t('gemeinsam.automatisierung.tagen', { anzahl: n })) : einheit === 'wochen' ? (t('gemeinsam.automatisierung.wochen', { anzahl: n })) : (t('gemeinsam.automatisierung.monaten', { anzahl: n }));
+  const wort =
+    einheit === 'tage'
+      ? t('gemeinsam.automatisierung.tagen', { anzahl: n })
+      : einheit === 'wochen'
+        ? t('gemeinsam.automatisierung.wochen', { anzahl: n })
+        : t('gemeinsam.automatisierung.monaten', { anzahl: n });
   return `${vorlauf > 0 ? 'in' : 'vor'} ${n} ${wort}`;
 }

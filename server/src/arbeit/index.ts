@@ -25,17 +25,33 @@ export const WARTESCHLANGE_MAX = 50;
 /** Vorgabe: die Hälfte der nutzbaren Kerne, mindestens 1, höchstens 4 – der Hauptfaden und PostgreSQL brauchen auch Rechenzeit. */
 export const vorgabeArbeiter = (kerne: number) => Math.max(1, Math.min(4, Math.floor(kerne / 2)));
 
-export interface ArbeiterEinstellung { groesse: number; quelle: 'vorgabe' | 'umgebung'; kerne: number; fehler?: string }
+export interface ArbeiterEinstellung {
+  groesse: number;
+  quelle: 'vorgabe' | 'umgebung';
+  kerne: number;
+  fehler?: string;
+}
 
 /** Vorgabe je Prozess bei mehreren Prozessen (#745). */
-export const vorgabeJeProzess = (kerne: number, prozesse: number) => Math.max(1, Math.floor(vorgabeArbeiter(kerne) / Math.max(1, prozesse)));
+export const vorgabeJeProzess = (kerne: number, prozesse: number) =>
+  Math.max(1, Math.floor(vorgabeArbeiter(kerne) / Math.max(1, prozesse)));
 
-export function arbeiterAus(env: Record<string, string | undefined>, kerne = liesCgroup(dateiLeser).kerne ?? availableParallelism(), prozesse = 1): ArbeiterEinstellung {
+export function arbeiterAus(
+  env: Record<string, string | undefined>,
+  kerne = liesCgroup(dateiLeser).kerne ?? availableParallelism(),
+  prozesse = 1,
+): ArbeiterEinstellung {
   const k = Math.max(1, Math.round(kerne * 100) / 100);
   const roh = env.DMS_ARBEITER?.trim();
   if (!roh) return { groesse: vorgabeJeProzess(k, prozesse), quelle: 'vorgabe', kerne: k };
   const n = Number(roh);
-  if (!Number.isInteger(n) || n < 0 || n > ARBEITER_MAX) return { groesse: vorgabeJeProzess(k, prozesse), quelle: 'vorgabe', kerne: k, fehler: t('meldungen.index.dms-arbeiter-ist-keine', { roh, ARBEITER_MAX }) };
+  if (!Number.isInteger(n) || n < 0 || n > ARBEITER_MAX)
+    return {
+      groesse: vorgabeJeProzess(k, prozesse),
+      quelle: 'vorgabe',
+      kerne: k,
+      fehler: t('meldungen.index.dms-arbeiter-ist-keine', { roh, ARBEITER_MAX }),
+    };
   return { groesse: n, quelle: 'umgebung', kerne: k };
 }
 
@@ -46,7 +62,8 @@ export function arbeiterAus(env: Record<string, string | undefined>, kerne = lie
 export function meldeFehlendeZeichen(vorgang: string, zeichen: string[]) {
   const liste = zeichen.slice(0, 20);
   protokoll.modul('dokumente').warn(tDe('meldungen.schrift.zeichen-fehlen', { anzahl: zeichen.length, zeichen: liste.join(' ') }), {
-    vorgang, zeichen: liste.map((z) => `U+${z.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`),
+    vorgang,
+    zeichen: liste.map((z) => `U+${z.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`),
   });
 }
 
@@ -56,21 +73,40 @@ let pool: Arbeiterpool | null = null;
 const datei = () => new URL(import.meta.url.endsWith('.ts') ? './arbeitsfaden.ts' : './arbeitsfaden.mjs', import.meta.url);
 
 /** Einstellung lesen und den Pool anlegen (beim Start des Servers; sonst beim ersten Auftrag). */
-export function richteArbeiterEin(env: Record<string, string | undefined> = process.env, o: { vorwaermen?: boolean; prozesse?: number } = {}): ArbeiterEinstellung {
+export function richteArbeiterEin(
+  env: Record<string, string | undefined> = process.env,
+  o: { vorwaermen?: boolean; prozesse?: number } = {},
+): ArbeiterEinstellung {
   einstellung = arbeiterAus(env, undefined, o.prozesse);
-  pool = einstellung.groesse > 0 ? new Arbeiterpool({ datei: datei(), groesse: einstellung.groesse, zeitMs: ARBEIT_ZEIT_MS, warteschlangeMax: WARTESCHLANGE_MAX, execArgv: ladeArgumente(process.execArgv), zeichenFehlen: meldeFehlendeZeichen }) : null;
+  pool =
+    einstellung.groesse > 0
+      ? new Arbeiterpool({
+          datei: datei(),
+          groesse: einstellung.groesse,
+          zeitMs: ARBEIT_ZEIT_MS,
+          warteschlangeMax: WARTESCHLANGE_MAX,
+          execArgv: ladeArgumente(process.execArgv),
+          zeichenFehlen: meldeFehlendeZeichen,
+        })
+      : null;
   if (o.vorwaermen) pool?.vorwaermen();
   return einstellung;
 }
 
 /** Stand für Werkbank → Systemzustand. */
-export function arbeiterStand(): (PoolStand & { aus: false; quelle: ArbeiterEinstellung['quelle']; kerne: number }) | { aus: true; quelle: ArbeiterEinstellung['quelle']; kerne: number } {
+export function arbeiterStand():
+  | (PoolStand & { aus: false; quelle: ArbeiterEinstellung['quelle']; kerne: number })
+  | { aus: true; quelle: ArbeiterEinstellung['quelle']; kerne: number } {
   if (!einstellung) richteArbeiterEin();
   const e = einstellung!;
   return pool ? { ...pool.stand(), aus: false, quelle: e.quelle, kerne: e.kerne } : { aus: true, quelle: e.quelle, kerne: e.kerne };
 }
 
-export async function beendeArbeiter() { await pool?.beenden(); pool = null; einstellung = null; }
+export async function beendeArbeiter() {
+  await pool?.beenden();
+  pool = null;
+  einstellung = null;
+}
 
 type Fn<K extends Vorgang> = Vorgaenge[K] extends (...a: infer A) => infer R ? { args: A; erg: Awaited<R> } : never;
 
@@ -96,8 +132,17 @@ export async function arbeiteBis<K extends Vorgang>(zeitMs: number, vorgang: K, 
     });
     if (zeitMs >= ARBEIT_ZEIT_MS) return lauf;
     let uhr: NodeJS.Timeout | undefined;
-    const grenze = new Promise<never>((_, nein) => { uhr = setTimeout(() => nein(new Error(t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: Math.round(zeitMs / 1000) }))), zeitMs); });
-    try { return await Promise.race([lauf, grenze]); } finally { clearTimeout(uhr); }
+    const grenze = new Promise<never>((_, nein) => {
+      uhr = setTimeout(
+        () => nein(new Error(t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: Math.round(zeitMs / 1000) }))),
+        zeitMs,
+      );
+    });
+    try {
+      return await Promise.race([lauf, grenze]);
+    } finally {
+      clearTimeout(uhr);
+    }
   }
   return pool.ausfuehren<Fn<K>['erg']>(vorgang, args, zeitMs < ARBEIT_ZEIT_MS ? { zeitMs } : {});
 }

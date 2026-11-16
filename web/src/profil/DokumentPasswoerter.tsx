@@ -25,13 +25,26 @@ export function DokumentPasswoerter() {
   const [bestaetigen, setBestaetigen] = useState<null | (() => Promise<void>)>(null);
   const [geheim, setGeheim] = useState('');
   const laden = useCallback(async () => {
-    try { setStand(await kontoApi.dokumentPasswoerter()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    try {
+      setStand(await kontoApi.dokumentPasswoerter());
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
   }, []);
-  useEffect(() => { if (!vertretung) void laden(); }, [laden, vertretung]);
+  useEffect(() => {
+    if (!vertretung) void laden();
+  }, [laden, vertretung]);
 
   const bestaetigt = () => !!stand?.bestaetigtBis && new Date(stand.bestaetigtBis).getTime() > Date.now();
   /** Erst bestätigen lassen, dann ausführen. */
-  const mitBestaetigung = (f: () => Promise<void>) => { setMeldung(undefined); if (bestaetigt()) void f().catch((e: Error) => setMeldung({ art: 'schlecht', text: e.message })); else { setGeheim(''); setBestaetigen(() => f); } };
+  const mitBestaetigung = (f: () => Promise<void>) => {
+    setMeldung(undefined);
+    if (bestaetigt()) void f().catch((e: Error) => setMeldung({ art: 'schlecht', text: e.message }));
+    else {
+      setGeheim('');
+      setBestaetigen(() => f);
+    }
+  };
 
   /** Bestätigen (Passwort, Code oder Passkey), dann die gemerkte Handlung ausführen. */
   async function bestaetigtMit(angaben: Parameters<typeof kontoApi.dokumentPasswoerterBestaetigen>[0]) {
@@ -45,7 +58,11 @@ export function DokumentPasswoerter() {
   async function bestaetige(e: FormEvent) {
     e.preventDefault();
     const code = geheim.replace(/\s/g, '');
-    try { await bestaetigtMit(stand?.zweifaktor && /^\d{6}$/.test(code) ? { code } : { passwort: geheim }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try {
+      await bestaetigtMit(stand?.zweifaktor && /^\d{6}$/.test(code) ? { code } : { passwort: geheim });
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    }
   }
   /** Passkey (#811): eigene Herausforderung für diesen Zweck, dann wie Passwort und Code. */
   async function mitPasskey() {
@@ -55,8 +72,14 @@ export function DokumentPasswoerter() {
   }
 
   const zeige = (p: GemerktesPasswort) => {
-    if (klartext[p.id] !== undefined) { setKlartext(({ [p.id]: _weg, ...rest }) => rest); return; }
-    mitBestaetigung(async () => { const r = await kontoApi.dokumentPasswortZeigen(p.id); setKlartext((k) => ({ ...k, [p.id]: r.passwort })); });
+    if (klartext[p.id] !== undefined) {
+      setKlartext(({ [p.id]: _weg, ...rest }) => rest);
+      return;
+    }
+    mitBestaetigung(async () => {
+      const r = await kontoApi.dokumentPasswortZeigen(p.id);
+      setKlartext((k) => ({ ...k, [p.id]: r.passwort }));
+    });
   };
 
   async function speichere(e: FormEvent) {
@@ -65,22 +88,36 @@ export function DokumentPasswoerter() {
     const a = aendern;
     const tu = async () => {
       await kontoApi.dokumentPasswortAendern(a.id, { name: a.name, ...(a.passwort ? { passwort: a.passwort } : {}) });
-      setAendern(null); setKlartext({});
+      setAendern(null);
+      setKlartext({});
       setMeldung({ art: 'gut', text: t('profil.dokpw.gespeichert') });
       await laden();
     };
-    if (a.passwort) mitBestaetigung(tu); else await tu().catch((x: Error) => setMeldung({ art: 'schlecht', text: x.message }));
+    if (a.passwort) mitBestaetigung(tu);
+    else await tu().catch((x: Error) => setMeldung({ art: 'schlecht', text: x.message }));
   }
 
   async function loesche(p: GemerktesPasswort) {
-    try { await kontoApi.dokumentPasswortLoeschen(p.id); setMeldung({ art: 'gut', text: t('profil.dokpw.geloescht') }); await laden(); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    try {
+      await kontoApi.dokumentPasswortLoeschen(p.id);
+      setMeldung({ art: 'gut', text: t('profil.dokpw.geloescht') });
+      await laden();
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
   }
 
   return (
     <div className="blatt">
-      <h2 className="h3">{t('profil.dokpw.titel')} <Hilfe ort="profil.dokumentpasswoerter" /></h2>
+      <h2 className="h3">
+        {t('profil.dokpw.titel')} <Hilfe ort="profil.dokumentpasswoerter" />
+      </h2>
       <p className="hinweis info">{t('profil.dokpw.keine-verwaltung')}</p>
-      {vertretung ? <p className="leise">{t('profil.dokpw.vertretung')}</p> : stand === null ? <p className="leise">{t('profil.dokpw.lade')}</p> : !stand.eintraege.length ? (
+      {vertretung ? (
+        <p className="leise">{t('profil.dokpw.vertretung')}</p>
+      ) : stand === null ? (
+        <p className="leise">{t('profil.dokpw.lade')}</p>
+      ) : !stand.eintraege.length ? (
         <p className="leise">{t('profil.dokpw.leer')}</p>
       ) : (
         <ul className="sitzungsliste">
@@ -88,23 +125,60 @@ export function DokumentPasswoerter() {
             <li key={p.id}>
               {aendern?.id === p.id ? (
                 <form className="raster" onSubmit={(e) => void speichere(e)}>
-                  <Feld beschriftung={t('profil.dokpw.name')}><input value={aendern.name} maxLength={80} onChange={(e) => setAendern({ ...aendern, name: e.target.value })} required /></Feld>
-                  <Feld beschriftung={t('profil.dokpw.neu')} optional hinweis={t('profil.dokpw.neu.hilfe')}><input type="password" autoComplete="off" value={aendern.passwort} onChange={(e) => setAendern({ ...aendern, passwort: e.target.value })} /></Feld>
-                  <div className="knoepfe"><Knopf onClick={() => setAendern(null)}>{t('profil.dokpw.abbrechen')}</Knopf><Knopf art="haupt" type="submit" gesperrt={!aendern.name.trim()}>{t('profil.dokpw.speichern')}</Knopf></div>
+                  <Feld beschriftung={t('profil.dokpw.name')}>
+                    <input
+                      value={aendern.name}
+                      maxLength={80}
+                      onChange={(e) => setAendern({ ...aendern, name: e.target.value })}
+                      required
+                    />
+                  </Feld>
+                  <Feld beschriftung={t('profil.dokpw.neu')} optional hinweis={t('profil.dokpw.neu.hilfe')}>
+                    <input
+                      type="password"
+                      autoComplete="off"
+                      value={aendern.passwort}
+                      onChange={(e) => setAendern({ ...aendern, passwort: e.target.value })}
+                    />
+                  </Feld>
+                  <div className="knoepfe">
+                    <Knopf onClick={() => setAendern(null)}>{t('profil.dokpw.abbrechen')}</Knopf>
+                    <Knopf art="haupt" type="submit" gesperrt={!aendern.name.trim()}>
+                      {t('profil.dokpw.speichern')}
+                    </Knopf>
+                  </div>
                 </form>
               ) : (
                 <>
                   <div>
                     <strong>{p.name}</strong>
                     <span className="passwort blockzeile">
-                      <span className="festwert mono" aria-live="polite">{klartext[p.id] ?? '••••••••'}</span>
-                      <Knopf nurSymbol={klartext[p.id] === undefined ? t('profil.dokpw.anzeigen') : t('profil.dokpw.verbergen')} onClick={() => zeige(p)}><Symbol name={klartext[p.id] === undefined ? 'auge' : 'auge-aus'} /></Knopf>
+                      <span className="festwert mono" aria-live="polite">
+                        {klartext[p.id] ?? '••••••••'}
+                      </span>
+                      <Knopf
+                        nurSymbol={klartext[p.id] === undefined ? t('profil.dokpw.anzeigen') : t('profil.dokpw.verbergen')}
+                        onClick={() => zeige(p)}>
+                        <Symbol name={klartext[p.id] === undefined ? 'auge' : 'auge-aus'} />
+                      </Knopf>
                       <Knopf onClick={() => setAendern({ id: p.id, name: p.name, passwort: '' })}>{t('profil.dokpw.aendern')}</Knopf>
                     </span>
-                    <span className="leise klein blockzeile">{p.zuletzt ? t('profil.dokpw.zuletzt', { datum: datum(p.zuletzt) }) : t('profil.dokpw.nie')}</span>
+                    <span className="leise klein blockzeile">
+                      {p.zuletzt ? t('profil.dokpw.zuletzt', { datum: datum(p.zuletzt) }) : t('profil.dokpw.nie')}
+                    </span>
                   </div>
-                  <Knopf art="gefahr" symbol="geloescht" title={t('profil.dokpw.loeschen.von', { name: p.name })} onClick={() => loesche(p)}
-                    rueckfrage={{ titel: t('profil.dokpw.loeschen.frage', { name: p.name }), text: t('profil.dokpw.loeschen.text'), ja: t('profil.dokpw.loeschen') }}>{t('profil.dokpw.loeschen')}</Knopf>
+                  <Knopf
+                    art="gefahr"
+                    symbol="geloescht"
+                    title={t('profil.dokpw.loeschen.von', { name: p.name })}
+                    onClick={() => loesche(p)}
+                    rueckfrage={{
+                      titel: t('profil.dokpw.loeschen.frage', { name: p.name }),
+                      text: t('profil.dokpw.loeschen.text'),
+                      ja: t('profil.dokpw.loeschen'),
+                    }}>
+                    {t('profil.dokpw.loeschen')}
+                  </Knopf>
                 </>
               )}
             </li>
@@ -113,17 +187,38 @@ export function DokumentPasswoerter() {
       )}
       {bestaetigen && (
         <form className="raster" onSubmit={(e) => void bestaetige(e)}>
-          {stand?.passkey && passkeysImBrowser() && <div className="anmelden-passkey">
-            <Knopf id="dokpw-passkey" symbol="passkey" laeuftText={t('anmeldung.passkey.warte')} onClick={mitPasskey}>{t('profil.dokpw.bestaetigen.passkey')}</Knopf>
-            <p className="trenner">{t('profil.dokpw.bestaetigen.oder')}</p>
-          </div>}
+          {stand?.passkey && passkeysImBrowser() && (
+            <div className="anmelden-passkey">
+              <Knopf id="dokpw-passkey" symbol="passkey" laeuftText={t('anmeldung.passkey.warte')} onClick={mitPasskey}>
+                {t('profil.dokpw.bestaetigen.passkey')}
+              </Knopf>
+              <p className="trenner">{t('profil.dokpw.bestaetigen.oder')}</p>
+            </div>
+          )}
           <p className="leise">{stand?.zweifaktor ? t('profil.dokpw.bestaetigen.mit-code') : t('profil.dokpw.bestaetigen.text')}</p>
           <Feld beschriftung={stand?.zweifaktor ? t('profil.dokpw.bestaetigen.feld-code') : t('profil.dokpw.bestaetigen.feld')}>
-            <input type="password" autoComplete="current-password" value={geheim} onChange={(e) => setGeheim(e.target.value)} autoFocus required /></Feld>
-          <div className="knoepfe"><Knopf onClick={() => setBestaetigen(null)}>{t('profil.dokpw.abbrechen')}</Knopf><Knopf art="haupt" type="submit" gesperrt={!geheim}>{t('profil.dokpw.bestaetigen')}</Knopf></div>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={geheim}
+              onChange={(e) => setGeheim(e.target.value)}
+              autoFocus
+              required
+            />
+          </Feld>
+          <div className="knoepfe">
+            <Knopf onClick={() => setBestaetigen(null)}>{t('profil.dokpw.abbrechen')}</Knopf>
+            <Knopf art="haupt" type="submit" gesperrt={!geheim}>
+              {t('profil.dokpw.bestaetigen')}
+            </Knopf>
+          </div>
         </form>
       )}
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
     </div>
   );
 }

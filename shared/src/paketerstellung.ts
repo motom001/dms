@@ -6,12 +6,29 @@ import { PAKET_ID, VERSION } from './pakete';
 import { t } from './texte';
 
 /** Freie Lizenzen der Registry (REGELN.md, Positivliste) – nur sie dürfen in den offiziellen Katalog. */
-export const LIZENZEN = ['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'MPL-2.0', 'LGPL-3.0-or-later', 'GPL-3.0-or-later', 'AGPL-3.0-or-later', 'CC0-1.0'] as const;
-export type Lizenz = typeof LIZENZEN[number];
+export const LIZENZEN = [
+  'MIT',
+  'Apache-2.0',
+  'BSD-2-Clause',
+  'BSD-3-Clause',
+  'MPL-2.0',
+  'LGPL-3.0-or-later',
+  'GPL-3.0-or-later',
+  'AGPL-3.0-or-later',
+  'CC0-1.0',
+] as const;
+export type Lizenz = (typeof LIZENZEN)[number];
 /** Schlüssel der Sprachtexte je freier Lizenz (Name und ein sachlicher Satz, `pakete.erstellen.lizenz.<schluessel>.…`). */
 export const LIZENZ_SCHLUESSEL: Record<Lizenz, string> = {
-  'MIT': 'mit', 'Apache-2.0': 'apache', 'BSD-2-Clause': 'bsd2', 'BSD-3-Clause': 'bsd3', 'MPL-2.0': 'mpl',
-  'LGPL-3.0-or-later': 'lgpl', 'GPL-3.0-or-later': 'gpl', 'AGPL-3.0-or-later': 'agpl', 'CC0-1.0': 'cc0',
+  MIT: 'mit',
+  'Apache-2.0': 'apache',
+  'BSD-2-Clause': 'bsd2',
+  'BSD-3-Clause': 'bsd3',
+  'MPL-2.0': 'mpl',
+  'LGPL-3.0-or-later': 'lgpl',
+  'GPL-3.0-or-later': 'gpl',
+  'AGPL-3.0-or-later': 'agpl',
+  'CC0-1.0': 'cc0',
 };
 /** Freie Lizenzen alphabetisch nach Kürzel (keine Wertung, #651). */
 export const LIZENZEN_ALPHABETISCH: Lizenz[] = [...LIZENZEN].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
@@ -38,8 +55,20 @@ export const istFreieLizenz = (l: string) => (LIZENZEN as readonly string[]).inc
 export const lizenzArtVon = (l: string): LizenzArt => (istFreieLizenz(l) ? 'frei' : !l || l === KEINE_LIZENZ ? 'keine' : 'eigen');
 /** „LicenseRef-…“ aus dem Namen einer eigenen Lizenz. */
 export function lizenzVerweis(name: string): string {
-  const s = name.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss')
-    .normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9.]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '');
+  const s = name
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/Ä/g, 'Ae')
+    .replace(/Ö/g, 'Oe')
+    .replace(/Ü/g, 'Ue')
+    .replace(/ß/g, 'ss')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z0-9.]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/, '');
   return t('gemeinsam.paketerstellung.licenseref', { wert: s || 'eigene' });
 }
 
@@ -51,11 +80,23 @@ export const GITHUB = /^[A-Za-z0-9-]+$/;
 /** Was ins Paket soll: Ids aus diesem DMS. Beispiele nur aus ausdrücklich gewählten Mappen. */
 /** Wortlisten (#661): Ids eigener Gruppen gleichbedeutender Wörter (Werkbank → Suche). */
 /** Beispiel-Dokumente (#878): Dokumente (PDF, PNG, JPEG) der gewählten Beispiel-Mappen kommen mit – nur auf ausdrücklichen Wunsch. */
-export interface PaketAuswahl { typen: string[]; sichten: string[]; beispiele: string[]; wortlisten?: string[]; beispielDokumente?: boolean; /** Eigene Rundgänge (#941), Schlüssel ohne „eigen:“. */ rundgaenge?: string[]; /** Eigene Tipps (#942), Schlüssel ohne „eigen:“. */ tipps?: string[]; /** Eigene Automatisierungen (#680), Ids. */ automatisierungen?: string[] }
+export interface PaketAuswahl {
+  typen: string[];
+  sichten: string[];
+  beispiele: string[];
+  wortlisten?: string[];
+  beispielDokumente?: boolean;
+  /** Eigene Rundgänge (#941), Schlüssel ohne „eigen:“. */ rundgaenge?: string[];
+  /** Eigene Tipps (#942), Schlüssel ohne „eigen:“. */ tipps?: string[];
+  /** Eigene Automatisierungen (#680), Ids. */ automatisierungen?: string[];
+}
 
 /** Angaben für das Manifest. */
 export interface PaketAngaben {
-  id: string; name: string; version: string; beschreibung: string;
+  id: string;
+  name: string;
+  version: string;
+  beschreibung: string;
   autor: { name: string; github: string };
   /** Bei „frei“ das SPDX-Kürzel; sonst setzt der Server LicenseRef-… bzw. NONE. */
   lizenz: string;
@@ -118,13 +159,21 @@ export interface VersionsLage {
 
 /** Selbst erstelltes Paket in der Paketverwaltung (#652): was zuletzt erstellt wurde, ohne Daten. */
 export interface SelbstErstellt {
-  id: string; name: string; version: string; erstellt: string; von: string | null; lizenz: string;
+  id: string;
+  name: string;
+  version: string;
+  erstellt: string;
+  von: string | null;
+  lizenz: string;
   /** Versionen, die sich noch als ZIP herunterladen lassen (neueste zuerst). */
   versionen: Array<{ version: string; erstellt: string; bytes: number }>;
 }
 /** Einzelheiten (#652): der damals erstellte Umfang und der Vergleich mit heute. */
 export interface SelbstErstelltDetail extends SelbstErstellt {
-  beschreibung: string; dms: string; autor: { name: string; github: string }; aenderungen: string;
+  beschreibung: string;
+  dms: string;
+  autor: { name: string; github: string };
+  aenderungen: string;
   typen: Array<{ id: string; name: string | null; geaendert: boolean }>;
   sichten: Array<{ id: string; name: string | null }>;
   beispiele: number;
@@ -134,7 +183,14 @@ export interface SelbstErstelltDetail extends SelbstErstellt {
 /** Was es zur Auswahl gibt. */
 export interface ErstellenStand {
   /** geaendert (#653): inhaltlich anders als der Paketstand; unterschiede: Kurzfassung und Liste (null = Paketstand unbekannt, vor 0.179.0 installiert). */
-  typen: Array<{ id: string; name: string; beschreibung: string; paket: { id: string; name: string; version: string } | null; geaendert: boolean; unterschiede?: import('./typvergleich').TypUnterschiede | null }>;
+  typen: Array<{
+    id: string;
+    name: string;
+    beschreibung: string;
+    paket: { id: string; name: string; version: string } | null;
+    geaendert: boolean;
+    unterschiede?: import('./typvergleich').TypUnterschiede | null;
+  }>;
   sichten: Array<{ id: string; name: string; elternId: string | null; paket: { id: string; name: string; version: string } | null }>;
   /** Gruppen gleichbedeutender Wörter (#661): eigene zum Ankreuzen, aus Paketen nur zur Anzeige. */
   wortlisten: Array<{ id: string; woerter: string[]; paket: { id: string; name: string } | null }>;
@@ -151,7 +207,12 @@ export interface ErstellenStand {
 }
 
 /** Ein Typ bzw. eine Ansicht dieses DMS, die nicht gewählt ist, aber gebraucht wird. */
-export interface Fehlend { art: 'typ' | 'sicht'; id: string; name: string; grund: string }
+export interface Fehlend {
+  art: 'typ' | 'sicht';
+  id: string;
+  name: string;
+  grund: string;
+}
 
 /** Ergebnis der automatischen Prüfung. */
 export interface PaketPruefung {
@@ -163,7 +224,16 @@ export interface PaketPruefung {
   hinweise: string[];
   abhaengigkeiten: Record<string, string>;
   /** Was ins Paket kommt (Kennung im Paket und Name). */
-  inhalt: { typen: Array<{ schluessel: string; name: string }>; sichten: Array<{ schluessel: string; name: string; eltern: string | null }>; beispiele: number; wortlisten?: number; /** Beispiel-Dokumente (#878). */ beispielDokumente?: number; /** Eigene Rundgänge (#941). */ rundgaenge?: number; /** Eigene Tipps (#942). */ tipps?: number; /** Eigene Automatisierungen (#680). */ automatisierungen?: number };
+  inhalt: {
+    typen: Array<{ schluessel: string; name: string }>;
+    sichten: Array<{ schluessel: string; name: string; eltern: string | null }>;
+    beispiele: number;
+    wortlisten?: number;
+    /** Beispiel-Dokumente (#878). */ beispielDokumente?: number;
+    /** Eigene Rundgänge (#941). */ rundgaenge?: number;
+    /** Eigene Tipps (#942). */ tipps?: number;
+    /** Eigene Automatisierungen (#680). */ automatisierungen?: number;
+  };
   /** Mappen der gewählten eigenen Typen, aus denen man Beispiele wählen kann (je Typ höchstens 200). */
   beispielMappen: Array<{ typId: string; typ: string; mappen: Array<{ id: string; titel: string; demo: boolean }>; mehr: boolean }>;
   /** Dieselbe Prüfung wie beim Hochladen ist gelaufen: Das Paket ließe sich so wieder einspielen. */
@@ -183,7 +253,18 @@ export function naechsteVersion(v: string): string {
 
 /** Paket-Id aus einem Namen: klein, a–z, 0–9 und _, höchstens 20 Zeichen, beginnt mit einem Buchstaben. */
 export function paketIdAus(name: string): string {
-  const s = name.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^[^a-z]+/, '').replace(/_+$/, '').slice(0, 20).replace(/_+$/, '');
+  const s = name
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^[^a-z]+/, '')
+    .replace(/_+$/, '')
+    .slice(0, 20)
+    .replace(/_+$/, '');
   return PAKET_ID.test(s) ? s : '';
 }

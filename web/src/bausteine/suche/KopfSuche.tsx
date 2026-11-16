@@ -70,14 +70,27 @@ function useAufklapper(rahmen: RefObject<HTMLElement | null>) {
   const [offen, setOffen] = useState(false);
   useEffect(() => {
     if (!offen) return;
-    const weg = (e: Event) => { if (!rahmen.current?.contains(e.target as Node)) setOffen(false); };
+    const weg = (e: Event) => {
+      if (!rahmen.current?.contains(e.target as Node)) setOffen(false);
+    };
     addEventListener('pointerdown', weg);
     return () => removeEventListener('pointerdown', weg);
   }, [offen, rahmen]);
   return [offen, setOffen] as const;
 }
 
-export function KopfSuche({ wert, setze, beschriftung, platzhalter, bereich, onEnter, suchenIn, tastenkuerzel = true, anker, className }: KopfSucheProps) {
+export function KopfSuche({
+  wert,
+  setze,
+  beschriftung,
+  platzhalter,
+  bereich,
+  onEnter,
+  suchenIn,
+  tastenkuerzel = true,
+  anker,
+  className,
+}: KopfSucheProps) {
   const feld = useRef<HTMLInputElement>(null);
   const lupe = useRef<HTMLButtonElement>(null);
   const rahmen = useRef<HTMLDivElement>(null);
@@ -88,7 +101,11 @@ export function KopfSuche({ wert, setze, beschriftung, platzhalter, bereich, onE
   const [inOffen, setInOffen] = useAufklapper(rahmen);
   // Fokus ins Feld: sofort, wenn es zu sehen ist; am Handy erst, wenn es nach dem Aufklappen gezeichnet ist.
   const springe = useRef(false);
-  const oeffnen = useCallback(() => { springe.current = true; setAuf(true); feld.current?.focus(); }, []);
+  const oeffnen = useCallback(() => {
+    springe.current = true;
+    setAuf(true);
+    feld.current?.focus();
+  }, []);
   useEffect(() => {
     if (!springe.current) return;
     springe.current = false;
@@ -97,12 +114,24 @@ export function KopfSuche({ wert, setze, beschriftung, platzhalter, bereich, onE
   useTastenkuerzel(tastenkuerzel, oeffnen);
 
   // Die Lupe ist erst nach dem Zuklappen wieder zu sehen – dann bekommt sie den Fokus zurück.
-  const schliessen = () => { setze(''); setAuf(false); setInOffen(false); requestAnimationFrame(() => lupe.current?.focus()); };
+  const schliessen = () => {
+    setze('');
+    setAuf(false);
+    setInOffen(false);
+    requestAnimationFrame(() => lupe.current?.focus());
+  };
   const taste = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
-      if (wert) { e.preventDefault(); e.stopPropagation(); setze(''); }
+      if (wert) {
+        e.preventDefault();
+        e.stopPropagation();
+        setze('');
+      }
       // Nur am Handy (die Lupe ist zu sehen) klappt Esc das leere Feld wieder zu.
-      else if (auf && !!lupe.current?.getClientRects().length) { e.preventDefault(); schliessen(); }
+      else if (auf && !!lupe.current?.getClientRects().length) {
+        e.preventDefault();
+        schliessen();
+      }
     } else if (e.key === 'Enter') {
       if (!e.nativeEvent.isComposing) onEnter?.(wert);
     } else if (e.key === 'Backspace' && !wert && bereich) {
@@ -113,8 +142,20 @@ export function KopfSuche({ wert, setze, beschriftung, platzhalter, bereich, onE
   const panelId = `${id}-in`;
 
   return (
-    <div ref={rahmen} className={klassen(s.kopfsuche, offen && s.offen, className)} role="search" aria-label={beschriftung} data-anker={anker}>
-      <Knopf ref={lupe} art="link" nurSymbol={t('oberflaeche.suche.kopf.oeffnen')} className={s.lupenknopf} aria-expanded={offen} aria-controls={id} onClick={oeffnen}>
+    <div
+      ref={rahmen}
+      className={klassen(s.kopfsuche, offen && s.offen, className)}
+      role="search"
+      aria-label={beschriftung}
+      data-anker={anker}>
+      <Knopf
+        ref={lupe}
+        art="link"
+        nurSymbol={t('oberflaeche.suche.kopf.oeffnen')}
+        className={s.lupenknopf}
+        aria-expanded={offen}
+        aria-controls={id}
+        onClick={oeffnen}>
         <Symbol name="suche" />
       </Knopf>
       <div className={s.rahmen}>
@@ -122,23 +163,59 @@ export function KopfSuche({ wert, setze, beschriftung, platzhalter, bereich, onE
         {bereich && (
           <span className={s.chip}>
             <span className={s.chiptext}>{bereich.text}</span>
-            <Knopf art="link" nurSymbol={t('oberflaeche.suche.kopf.bereich-weg')} className={s.chipweg} onClick={() => { bereich.weg(); feld.current?.focus(); }}>
+            <Knopf
+              art="link"
+              nurSymbol={t('oberflaeche.suche.kopf.bereich-weg')}
+              className={s.chipweg}
+              onClick={() => {
+                bereich.weg();
+                feld.current?.focus();
+              }}>
               <Symbol name="schliessen" />
             </Knopf>
           </span>
         )}
-        <label htmlFor={id} className="sr">{beschriftung}</label>
-        <input ref={feld} id={id} className={s.eingabe} type="search" enterKeyHint="search" autoComplete="off" spellCheck={false}
-          value={wert} placeholder={platzhalter} aria-keyshortcuts={tastenkuerzel ? '/' : undefined}
-          onChange={(e) => setze(e.target.value)} onKeyDown={taste} />
-        {tastenkuerzel && !wert && <kbd className={s.taste} aria-hidden="true">/</kbd>}
+        <label htmlFor={id} className="sr">
+          {beschriftung}
+        </label>
+        <input
+          ref={feld}
+          id={id}
+          className={s.eingabe}
+          type="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          spellCheck={false}
+          value={wert}
+          placeholder={platzhalter}
+          aria-keyshortcuts={tastenkuerzel ? '/' : undefined}
+          onChange={(e) => setze(e.target.value)}
+          onKeyDown={taste}
+        />
+        {tastenkuerzel && !wert && (
+          <kbd className={s.taste} aria-hidden="true">
+            /
+          </kbd>
+        )}
         {wert && (
-          <Knopf art="link" nurSymbol={t('oberflaeche.suche.leeren')} className={s.leeren} onClick={() => { setze(''); feld.current?.focus(); }}>
+          <Knopf
+            art="link"
+            nurSymbol={t('oberflaeche.suche.leeren')}
+            className={s.leeren}
+            onClick={() => {
+              setze('');
+              feld.current?.focus();
+            }}>
             <Symbol name="schliessen" />
           </Knopf>
         )}
         {suchenIn && (
-          <Knopf art="link" className={s.suchenIn} aria-expanded={inOffen} aria-controls={inOffen ? panelId : undefined} onClick={() => setInOffen(!inOffen)}>
+          <Knopf
+            art="link"
+            className={s.suchenIn}
+            aria-expanded={inOffen}
+            aria-controls={inOffen ? panelId : undefined}
+            onClick={() => setInOffen(!inOffen)}>
             {suchenIn.text} <Symbol name="pfeil-unten" />
           </Knopf>
         )}
@@ -146,8 +223,18 @@ export function KopfSuche({ wert, setze, beschriftung, platzhalter, bereich, onE
           <Symbol name="schliessen" />
         </Knopf>
         {suchenIn && inOffen && (
-          <div id={panelId} className={s.panel} role="group" aria-label={suchenIn.text}
-            onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setInOffen(false); feld.current?.focus(); } }}>
+          <div
+            id={panelId}
+            className={s.panel}
+            role="group"
+            aria-label={suchenIn.text}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                setInOffen(false);
+                feld.current?.focus();
+              }
+            }}>
             {suchenIn.inhalt}
           </div>
         )}

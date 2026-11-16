@@ -16,7 +16,11 @@ import { geheim, holeStand, setzeStand, STUFEN, type Lauf, type Stufe, type Stuf
  */
 
 export function neuerLauf(): Lauf {
-  return { stufen: Object.fromEntries(STUFEN.map((s) => [s, { zustand: 'wartet' }])) as Record<Stufe, StufeStand>, laeuft: false, fertig: false };
+  return {
+    stufen: Object.fromEntries(STUFEN.map((s) => [s, { zustand: 'wartet' }])) as Record<Stufe, StufeStand>,
+    laeuft: false,
+    fertig: false,
+  };
 }
 
 const setzeLauf = (f: (l: Lauf) => Lauf) => setzeStand((x) => (x.lauf ? { ...x, lauf: f(x.lauf) } : x));
@@ -31,10 +35,24 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     const s = holeStand().sammlung;
     if (!geheim.konto) throw new Error(t('einrichtung.lauf.passwort.neu'));
     try {
-      await kontoApi.einrichten({ mandant: s.ablage.trim(), name: s.konto.name.trim(), email: s.konto.email.trim(), passwort: geheim.konto, sprache: sprache() });
+      await kontoApi.einrichten({
+        mandant: s.ablage.trim(),
+        name: s.konto.name.trim(),
+        email: s.konto.email.trim(),
+        passwort: geheim.konto,
+        sprache: sprache(),
+      });
     } catch (e) {
       // Schon angelegt (etwa Antwort verloren) und angemeldet: dann gilt die Stufe als erledigt.
-      if (!(e instanceof ApiFehler && e.status === 409 && await einrichtungApi.einrichtungStand().then(() => true, () => false))) throw e;
+      if (!(
+        e instanceof ApiFehler &&
+        e.status === 409 &&
+        (await einrichtungApi.einrichtungStand().then(
+          () => true,
+          () => false,
+        ))
+      ))
+        throw e;
     }
     setzeEinrichtungscode(null);
     geheim.konto = '';
@@ -60,14 +78,26 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
   async nutzung() {
     const s = holeStand().sammlung;
     if (s.optional.beruflich) await werkbankApi.setzeMerkmale({ beruflich: true });
-    await werkbankApi.setzeWerkbankAnsicht({ installation: { vorlage: s.werkbank ?? vorlageFuer({ beruflich: !!s.optional.beruflich }), ein: [], aus: [] } });
+    await werkbankApi.setzeWerkbankAnsicht({
+      installation: { vorlage: s.werkbank ?? vorlageFuer({ beruflich: !!s.optional.beruflich }), ein: [], aus: [] },
+    });
   },
   async mail() {
     const m = holeStand().sammlung.optional.mail;
     if (!m) return 'ausgelassen';
     if (m.mitPasswort && !geheim.mail) throw new Error(t('einrichtung.lauf.mail.passwort'));
     // Im Assistenten nur mit Passwort; OAuth richtet man danach in der Werkbank ein (#813).
-    await betriebApi.mailSpeichern({ anmeldung: 'passwort', aktiv: m.aktiv, host: m.host.trim(), port: m.port, verbindung: m.verbindung, benutzer: m.benutzer.trim(), absender: m.absender.trim(), selbstsigniert: m.selbstsigniert, ...(geheim.mail ? { passwort: geheim.mail } : {}) });
+    await betriebApi.mailSpeichern({
+      anmeldung: 'passwort',
+      aktiv: m.aktiv,
+      host: m.host.trim(),
+      port: m.port,
+      verbindung: m.verbindung,
+      benutzer: m.benutzer.trim(),
+      absender: m.absender.trim(),
+      selbstsigniert: m.selbstsigniert,
+      ...(geheim.mail ? { passwort: geheim.mail } : {}),
+    });
   },
   // Notfallkontakte (#812): nach dem Versand, damit die Info-Mail gleich hinausgeht. Beim Wiederholen nichts doppelt –
   // eine Adresse, die schon eingetragen ist, wird übersprungen.
@@ -79,7 +109,9 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
   },
   async beispiele() {
     if (!holeStand().sammlung.optional.beispiele) return 'ausgelassen';
-    try { await einrichtungApi.beispiele(); } catch (e) {
+    try {
+      await einrichtungApi.beispiele();
+    } catch (e) {
       // 409: Es gibt schon Mappentypen – beim Wiederholen die eben geladenen.
       if (!(e instanceof ApiFehler && e.status === 409)) throw e;
     }
@@ -148,18 +180,34 @@ export async function ausfuehren() {
     // Unterbrochen (anderer Browser): Was schon erledigt war, bleibt erledigt.
     const schon = l.unterbrochen ? new Set((await einrichtungApi.einrichtungStand()).erledigt) : new Set<string>();
     await einrichtungApi.einrichtungSchritt('schluessel');
-    if (!schon.has('pakete')) await einrichtungApi.einrichtungSchritt('pakete', !(l.pakete?.installiert.length));
-    if (!schon.has('optional')) await einrichtungApi.einrichtungSchritt('optional', !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'));
-  } catch { /* Der Hinweis in der Übersicht ist nicht wichtig genug, um hier aufzuhalten. */ }
+    if (!schon.has('pakete')) await einrichtungApi.einrichtungSchritt('pakete', !l.pakete?.installiert.length);
+    if (!schon.has('optional'))
+      await einrichtungApi.einrichtungSchritt(
+        'optional',
+        !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'),
+      );
+  } catch {
+    /* Der Hinweis in der Übersicht ist nicht wichtig genug, um hier aufzuhalten. */
+  }
   setzeLauf((x) => ({ ...x, laeuft: false, fertig: true }));
 }
 
 /** Nach „Ändern“ während des Laufs: die betroffenen Stufen erneut versuchen lassen. */
 export function stufenZuruecksetzen(stufen: Stufe[]) {
-  setzeLauf((l) => ({ ...l, stufen: { ...l.stufen, ...Object.fromEntries(stufen.filter((s) => l.stufen[s].zustand !== 'fertig').map((s) => [s, { zustand: 'wartet' }])) } }));
+  setzeLauf((l) => ({
+    ...l,
+    stufen: {
+      ...l.stufen,
+      ...Object.fromEntries(stufen.filter((s) => l.stufen[s].zustand !== 'fertig').map((s) => [s, { zustand: 'wartet' }])),
+    },
+  }));
 }
 
 /** Welche Stufen ein Schritt des Assistenten betrifft – und umgekehrt (für „Ändern“ nach einem Fehler). */
 export const STUFEN_JE_SCHRITT = {
-  ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'],
+  ablage: ['ablage'],
+  konto: ['ablage'],
+  nutzung: ['nutzung', 'organisation'],
+  pakete: ['pakete', 'organisation'],
+  optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'],
 } as const satisfies Record<string, readonly Stufe[]>;

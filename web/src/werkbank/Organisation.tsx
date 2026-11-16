@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Merkmale } from '../../../shared/src/merkmale';
 import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
-import { anschriftZeilen, anzeigename, neueNotizen, type Angaben, type EigeneOrganisation, type OrganisationStand, type Stelle, type Verwendung } from '../../../shared/src/organisation';
+import {
+  anschriftZeilen,
+  anzeigename,
+  neueNotizen,
+  type Angaben,
+  type EigeneOrganisation,
+  type OrganisationStand,
+  type Stelle,
+  type Verwendung,
+} from '../../../shared/src/organisation';
 import { zeitText } from '../../../shared/src/region';
 import { werkbankApi } from '../api/werkbank';
 import { Feld, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl } from '../bausteine';
@@ -27,8 +36,17 @@ import { Kopf } from './Kopf';
 export function useOrganisation(offen: boolean) {
   const [stand, setStand] = useState<OrganisationStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await werkbankApi.organisation()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
-  useEffect(() => { if (offen) void laden(); }, [offen, laden]);
+  const laden = useCallback(async () => {
+    try {
+      setStand(await werkbankApi.organisation());
+      setFehler(undefined);
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  }, []);
+  useEffect(() => {
+    if (offen) void laden();
+  }, [offen, laden]);
   return { stand, fehler, setStand, laden };
 }
 export type OrganisationZustand = ReturnType<typeof useOrganisation>;
@@ -40,25 +58,52 @@ export type OrganisationZustand = ReturnType<typeof useOrganisation>;
 export function useNutzung(offen: boolean) {
   const [stand, setStand] = useState<Merkmale | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await werkbankApi.merkmale()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
-  useEffect(() => { if (offen) void laden(); }, [offen, laden]);
+  const laden = useCallback(async () => {
+    try {
+      setStand(await werkbankApi.merkmale());
+      setFehler(undefined);
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  }, []);
+  useEffect(() => {
+    if (offen) void laden();
+  }, [offen, laden]);
   return { stand, fehler, setStand };
 }
 export type NutzungZustand = ReturnType<typeof useNutzung>;
 
 /** Nutzung (#1032, seit #1170 oben auf dieser Seite): der Haken „auch beruflich genutzt“. Ändern nur mit Gesamter Verwaltung. */
-function NutzungAbschnitt({ beruflich, setze, organisationen }: { beruflich: boolean; setze(an: boolean): void; organisationen: EigeneOrganisation[] }) {
+function NutzungAbschnitt({
+  beruflich,
+  setze,
+  organisationen,
+}: {
+  beruflich: boolean;
+  setze(an: boolean): void;
+  organisationen: EigeneOrganisation[];
+}) {
   const gesamt = useKonto().verwaltungsmodus.bereiche === null;
   const namen = organisationen.map((o) => anzeigename(o.angaben) || t('werkbank.organisation.ohne-name')).join(', ');
   return (
     <section className="blatt" id="nutzung">
-      <HakenFeld beschriftung={t('werkbank.nutzung.beruflich')} hilfe="werkbank.nutzung"
-        hinweis={[t('werkbank.nutzung.beruflich.hinweis'), ...(gesamt ? [] : [t('werkbank.nutzung.nur-gesamt')]), t('werkbank.nutzung.ordnung')]}>
+      <HakenFeld
+        beschriftung={t('werkbank.nutzung.beruflich')}
+        hilfe="werkbank.nutzung"
+        hinweis={[
+          t('werkbank.nutzung.beruflich.hinweis'),
+          ...(gesamt ? [] : [t('werkbank.nutzung.nur-gesamt')]),
+          t('werkbank.nutzung.ordnung'),
+        ]}>
         <input id="nutzung-beruflich" type="checkbox" checked={beruflich} disabled={!gesamt} onChange={(x) => setze(x.target.checked)} />
       </HakenFeld>
       <p className="leise klein">{t('werkbank.nutzung.vorlage', { vorlage: VORLAGEN[vorlageFuer({ beruflich })].name })}</p>
       {/* Beim Ausschalten (#1170): nichts wird gelöscht, die eigene Organisation bleibt gespeichert. */}
-      {!beruflich && organisationen.length > 0 && <p className="hinweis warn klein" role="status">{t('werkbank.nutzung.bleibt', { name: namen })}</p>}
+      {!beruflich && organisationen.length > 0 && (
+        <p className="hinweis warn klein" role="status">
+          {t('werkbank.nutzung.bleibt', { name: namen })}
+        </p>
+      )}
     </section>
   );
 }
@@ -68,7 +113,11 @@ function AngabenBlock({ a }: { a: Angaben }) {
   const zeilen = anschriftZeilen(a);
   return (
     <>
-      {zeilen.map((z, i) => <span key={i} className="zeile">{i === 0 ? <strong>{z}</strong> : z}</span>)}
+      {zeilen.map((z, i) => (
+        <span key={i} className="zeile">
+          {i === 0 ? <strong>{z}</strong> : z}
+        </span>
+      ))}
       {a.email && <span className="zeile">{t('werkbank.organisation.email', { wert: a.email })}</span>}
       {a.telefon && <span className="zeile">{t('werkbank.organisation.telefon', { wert: a.telefon })}</span>}
     </>
@@ -81,20 +130,40 @@ function stelleText(s: Stelle | null | undefined): string {
 
 function Karte({ o, mehrere, geltend }: { o: EigeneOrganisation; mehrere: boolean; geltend: boolean }) {
   const v = o.verantwortlicher;
-  const verantwortlich = !v ? t('werkbank.organisation.verantwortlicher-unbekannt') : 'selbst' in v ? t('werkbank.organisation.selbst') : stelleText(v);
+  const verantwortlich = !v
+    ? t('werkbank.organisation.verantwortlicher-unbekannt')
+    : 'selbst' in v
+      ? t('werkbank.organisation.selbst')
+      : stelleText(v);
   return (
     <section className="blatt organisation-karte" data-anker={`organisation:${o.mappeId}`}>
       <p className="organisation-anschrift">
-        {anschriftZeilen(o.angaben).length || o.angaben.email || o.angaben.telefon ? <AngabenBlock a={o.angaben} /> : <span className="leise">{t('werkbank.organisation.ohne-angaben')}</span>}
+        {anschriftZeilen(o.angaben).length || o.angaben.email || o.angaben.telefon ? (
+          <AngabenBlock a={o.angaben} />
+        ) : (
+          <span className="leise">{t('werkbank.organisation.ohne-angaben')}</span>
+        )}
       </p>
-      {mehrere && geltend && <p><span className="chip gut">{t('werkbank.organisation.gilt')}</span></p>}
+      {mehrere && geltend && (
+        <p>
+          <span className="chip gut">{t('werkbank.organisation.gilt')}</span>
+        </p>
+      )}
       <dl className="eigenschaften">
         <dt>{t('werkbank.organisation.verantwortlicher')}</dt>
         <dd>{verantwortlich}</dd>
         <dt>{t('werkbank.organisation.datenschutzbeauftragter')}</dt>
-        <dd>{o.datenschutzbeauftragter ? stelleText(o.datenschutzbeauftragter) : <span className="leise">{t('werkbank.organisation.keiner')}</span>}</dd>
+        <dd>
+          {o.datenschutzbeauftragter ? (
+            stelleText(o.datenschutzbeauftragter)
+          ) : (
+            <span className="leise">{t('werkbank.organisation.keiner')}</span>
+          )}
+        </dd>
       </dl>
-      <KnopfLink to={`/ablage/${o.typId}/${o.mappeId}`} anker="organisation.bearbeiten">{t('werkbank.organisation.bearbeiten')}</KnopfLink>
+      <KnopfLink to={`/ablage/${o.typId}/${o.mappeId}`} anker="organisation.bearbeiten">
+        {t('werkbank.organisation.bearbeiten')}
+      </KnopfLink>
     </section>
   );
 }
@@ -111,8 +180,21 @@ function verwendungText(v: Verwendung): string {
 function Notizen({ neu, gesehen }: { neu: OrganisationStand['einstellung']['notizen']; gesehen(): Promise<void> }) {
   return (
     <div className="hinweis warn" data-anker="organisation.notizen">
-      <p><strong>{t('werkbank.organisation.notizen.titel')}</strong></p>
-      <ul>{neu.map((n, i) => <li key={i}>{t('werkbank.organisation.notizen.zeile', { wann: zeitText(new Date(n.am), { dateStyle: 'short', timeStyle: 'short' }), name: n.titel || '–', was: t.frei(`werkbank.organisation.notiz.${n.was}`), von: n.von })}</li>)}</ul>
+      <p>
+        <strong>{t('werkbank.organisation.notizen.titel')}</strong>
+      </p>
+      <ul>
+        {neu.map((n, i) => (
+          <li key={i}>
+            {t('werkbank.organisation.notizen.zeile', {
+              wann: zeitText(new Date(n.am), { dateStyle: 'short', timeStyle: 'short' }),
+              name: n.titel || '–',
+              was: t.frei(`werkbank.organisation.notiz.${n.was}`),
+              von: n.von,
+            })}
+          </li>
+        ))}
+      </ul>
       <Knopf onClick={gesehen}>{t('werkbank.organisation.notizen.gesehen')}</Knopf>
     </div>
   );
@@ -120,12 +202,13 @@ function Notizen({ neu, gesehen }: { neu: OrganisationStand['einstellung']['noti
 
 /** Ohne Paket Basis bzw. ohne eigene Organisation: was zu tun ist. */
 function OhneOrganisation({ s }: { s: OrganisationStand }) {
-  if (!s.typen.length) return (
-    <div className="hinweis info">
-      <p>{t('werkbank.organisation.ohne-basis')}</p>
-      <KnopfLink to="/werkbank/pakete">{t('werkbank.organisation.zu-paketen')}</KnopfLink>
-    </div>
-  );
+  if (!s.typen.length)
+    return (
+      <div className="hinweis info">
+        <p>{t('werkbank.organisation.ohne-basis')}</p>
+        <KnopfLink to="/werkbank/pakete">{t('werkbank.organisation.zu-paketen')}</KnopfLink>
+      </div>
+    );
   if (s.organisationen.length) return null;
   return (
     <div className="hinweis info">
@@ -140,9 +223,15 @@ function Bisher({ s, uebernehmen }: { s: OrganisationStand; uebernehmen(): Promi
   return (
     <section className="blatt" data-anker="organisation.bisher">
       <h2>{t('werkbank.organisation.bisher.titel')}</h2>
-      <p className="leise">{s.organisationen.length ? t('werkbank.organisation.bisher.ersetzt') : t('werkbank.organisation.bisher.text')}</p>
+      <p className="leise">
+        {s.organisationen.length ? t('werkbank.organisation.bisher.ersetzt') : t('werkbank.organisation.bisher.text')}
+      </p>
       <pre className="mehrzeilig">{s.bisher}</pre>
-      {!s.organisationen.length && s.typen.length > 0 && <Knopf art="haupt" onClick={uebernehmen}>{t('werkbank.organisation.bisher.uebernehmen')}</Knopf>}
+      {!s.organisationen.length && s.typen.length > 0 && (
+        <Knopf art="haupt" onClick={uebernehmen}>
+          {t('werkbank.organisation.bisher.uebernehmen')}
+        </Knopf>
+      )}
     </section>
   );
 }
@@ -151,9 +240,18 @@ function Bisher({ s, uebernehmen }: { s: OrganisationStand; uebernehmen(): Promi
  * Was diese Seite speichert (#1182: eine Speicherleiste für alles): Nutzung, „gilt für …“, freigegebene Rollen und – mit
  * Recht auf die Datenschutz-Bereiche – die Vorgaben der Auskünfte (#1183). `vorgaben: null` = nicht auf dieser Seite.
  */
-interface Entwurf { beruflich: boolean; auskunft: string; rollen: string[]; vorgaben: Vorgaben | null }
-const entwurfAus = (s: OrganisationStand, m: Merkmale, ds: Datenschutz | null): Entwurf =>
-  ({ beruflich: m.beruflich, auskunft: s.einstellung.auskunft ?? '', rollen: [...s.einstellung.rollen].sort(), vorgaben: ds ? vorgabenAus(ds) : null });
+interface Entwurf {
+  beruflich: boolean;
+  auskunft: string;
+  rollen: string[];
+  vorgaben: Vorgaben | null;
+}
+const entwurfAus = (s: OrganisationStand, m: Merkmale, ds: Datenschutz | null): Entwurf => ({
+  beruflich: m.beruflich,
+  auskunft: s.einstellung.auskunft ?? '',
+  rollen: [...s.einstellung.rollen].sort(),
+  vorgaben: ds ? vorgabenAus(ds) : null,
+});
 
 /**
  * Rollen, die das Merkmal setzen dürfen (#1182): Verweisfeld mit Mehrfachauswahl wie in den Mappen statt Haken; darunter,
@@ -167,16 +265,48 @@ function RollenWahl({ rollen, gewaehlt, setze }: { rollen: OrganisationStand['ro
   const name = (id: string) => rollen.find((r) => r.id === id)?.name ?? id;
   const rollenTyp = d.typen.find((x) => x.system === 'rolle');
   return (
-    <Feld beschriftung={t('werkbank.organisation.rollen.titel')} id="organisation-rollen" anker="organisation.rollen"
-      hinweis={[t('werkbank.organisation.rollen.text'), <>{t('werkbank.organisation.rollen.immer')}{rollenTyp && <> <Link to={`/ablage/${rollenTyp.id}`} className="verweis">{t('werkbank.organisation.rollen.verwalten')}</Link></>}</>]}>
+    <Feld
+      beschriftung={t('werkbank.organisation.rollen.titel')}
+      id="organisation-rollen"
+      anker="organisation.rollen"
+      hinweis={[
+        t('werkbank.organisation.rollen.text'),
+        <>
+          {t('werkbank.organisation.rollen.immer')}
+          {rollenTyp && (
+            <>
+              {' '}
+              <Link to={`/ablage/${rollenTyp.id}`} className="verweis">
+                {t('werkbank.organisation.rollen.verwalten')}
+              </Link>
+            </>
+          )}
+        </>,
+      ]}>
       {(v) => (
-        <Mehrfachauswahl id={v.id} name={t('werkbank.organisation.rollen.titel')} platzhalter={t('werkbank.organisation.rollen.suchen')}
-          eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen}
-          vorschlaege={rollen.filter((r) => !gewaehlt.includes(r.id) && (!q || r.name.toLocaleLowerCase('de').includes(q))).map((r) => ({ id: r.id, text: r.name }))}
+        <Mehrfachauswahl
+          id={v.id}
+          name={t('werkbank.organisation.rollen.titel')}
+          platzhalter={t('werkbank.organisation.rollen.suchen')}
+          eingabe={eingabe}
+          setEingabe={setEingabe}
+          offen={offen}
+          setOffen={setOffen}
+          vorschlaege={rollen
+            .filter((r) => !gewaehlt.includes(r.id) && (!q || r.name.toLocaleLowerCase('de').includes(q)))
+            .map((r) => ({ id: r.id, text: r.name }))}
           leerText={rollen.length ? t('werkbank.organisation.rollen.alle') : t('werkbank.organisation.rollen.keine')}
-          waehle={(id) => { setze([...gewaehlt, id].sort()); setEingabe(''); }}
-          gewaehlt={gewaehlt.map((id) => ({ id, inhalt: name(id), entfernenText: t('werkbank.organisation.rollen.entfernen', { name: name(id) }) }))}
-          entferne={(id) => setze(gewaehlt.filter((x) => x !== id))} />
+          waehle={(id) => {
+            setze([...gewaehlt, id].sort());
+            setEingabe('');
+          }}
+          gewaehlt={gewaehlt.map((id) => ({
+            id,
+            inhalt: name(id),
+            entfernenText: t('werkbank.organisation.rollen.entfernen', { name: name(id) }),
+          }))}
+          entferne={(id) => setze(gewaehlt.filter((x) => x !== id))}
+        />
       )}
     </Feld>
   );
@@ -195,10 +325,16 @@ function WahlUndRollen({ s, e, setE }: { s: OrganisationStand; e: Entwurf; setE(
   return (
     <section className="blatt stapel" id="organisation-einstellungen">
       {s.organisationen.length > 1 && (
-        <Feld beschriftung={t('werkbank.organisation.gilt-fuer')} hinweis={s.geltend ? undefined : t('werkbank.organisation.bitte-waehlen')}>
+        <Feld
+          beschriftung={t('werkbank.organisation.gilt-fuer')}
+          hinweis={s.geltend ? undefined : t('werkbank.organisation.bitte-waehlen')}>
           <select value={e.auskunft} onChange={(x) => setE({ ...e, auskunft: x.target.value })}>
             <option value="">{t('werkbank.organisation.keine-wahl')}</option>
-            {s.organisationen.map((o) => <option key={o.mappeId} value={o.mappeId}>{anzeigename(o.angaben) || t('werkbank.organisation.ohne-name')}</option>)}
+            {s.organisationen.map((o) => (
+              <option key={o.mappeId} value={o.mappeId}>
+                {anzeigename(o.angaben) || t('werkbank.organisation.ohne-name')}
+              </option>
+            ))}
           </select>
         </Feld>
       )}
@@ -211,7 +347,22 @@ function Verwendungen({ s }: { s: OrganisationStand }) {
   return (
     <section className="blatt">
       <h2 className="h3">{t('werkbank.organisation.verwendung.titel')}</h2>
-      <ul className="organisation-verwendungen">{s.verwendungen.map((v, i) => { const ziel = verwendungZiel(v); return <li key={i}>{ziel ? <Link to={ziel} className="verweis">{verwendungText(v)}</Link> : verwendungText(v)}</li>; })}</ul>
+      <ul className="organisation-verwendungen">
+        {s.verwendungen.map((v, i) => {
+          const ziel = verwendungZiel(v);
+          return (
+            <li key={i}>
+              {ziel ? (
+                <Link to={ziel} className="verweis">
+                  {verwendungText(v)}
+                </Link>
+              ) : (
+                verwendungText(v)
+              )}
+            </li>
+          );
+        })}
+      </ul>
       <p className="leise klein">{t('werkbank.organisation.nur-liste')}</p>
     </section>
   );
@@ -231,7 +382,11 @@ function seitenStand(z: OrganisationZustand, nutzung: NutzungZustand, datenschut
  * Merkmale (Nutzung) und die Vorgaben der Auskünfte (nur ihr Teil der Einstellung, der Rest wie Zwecke je Mappentyp bleibt).
  * Unverändertes kommt als dasselbe Objekt zurück.
  */
-async function speichereSeite(g: Entwurf, x: Entwurf, alt: { stand: OrganisationStand; merkmale: Merkmale; datenschutz: Datenschutz | null }) {
+async function speichereSeite(
+  g: Entwurf,
+  x: Entwurf,
+  alt: { stand: OrganisationStand; merkmale: Merkmale; datenschutz: Datenschutz | null },
+) {
   const org: Record<string, unknown> = {};
   if (x.auskunft !== g.auskunft) org.auskunft = x.auskunft || null;
   if (x.rollen.join(',') !== g.rollen.join(',')) org.rollen = x.rollen;
@@ -249,38 +404,83 @@ async function speichereSeite(g: Entwurf, x: Entwurf, alt: { stand: Organisation
  * `datenschutz`: nur mit Recht auf Auskünfte oder Löschkonzept (#818) – sonst stehen die Vorgaben der Auskünfte nicht hier,
  * nur ein Satz, wer sie ändert.
  */
-export function OrganisationPanel({ z, nutzung, datenschutz, nachNutzung }: { z: OrganisationZustand; nutzung: NutzungZustand; datenschutz: DatenschutzZustand | null; nachNutzung?: () => void }) {
+export function OrganisationPanel({
+  z,
+  nutzung,
+  datenschutz,
+  nachNutzung,
+}: {
+  z: OrganisationZustand;
+  nutzung: NutzungZustand;
+  datenschutz: DatenschutzZustand | null;
+  nachNutzung?: () => void;
+}) {
   const d = useDaten();
   const { s, m, ds, gespeichert, fehler } = seitenStand(z, nutzung, datenschutz);
   const [e, setE] = useState<Entwurf | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { if (gespeichert && !e) setE(gespeichert); }, [gespeichert, e]);
-  const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
+  useEffect(() => {
+    if (gespeichert && !e) setE(gespeichert);
+  }, [gespeichert, e]);
+  const ent = useEntwurf(gespeichert, e, {
+    aus: !e,
+    zuruecksetzen: () => {
+      setE(gespeichert);
+      setMeldung(undefined);
+    },
+  });
   if (!s || !m || !e || !gespeichert) {
-    return fehler ? <div className="hinweis schlecht"><p>{fehler}</p></div> : <p className="leise">{t('werkbank.organisation.lade')}</p>;
+    return fehler ? (
+      <div className="hinweis schlecht">
+        <p>{fehler}</p>
+      </div>
+    ) : (
+      <p className="leise">{t('werkbank.organisation.lade')}</p>
+    );
   }
   const mehrere = s.organisationen.length > 1;
   const neu = neueNotizen(s.einstellung);
   // Gespeichertes Merkmal, nicht der Entwurf: blass ist, was Ablago gerade nicht verwendet.
   const beruflich = m.beruflich;
   async function speichern() {
-    setSendet(true); setMeldung(undefined);
+    setSendet(true);
+    setMeldung(undefined);
     try {
       const n = await speichereSeite(gespeichert!, e!, { stand: s!, merkmale: m!, datenschutz: ds });
-      z.setStand(n.stand); nutzung.setStand(n.merkmale); setE(entwurfAus(n.stand, n.merkmale, n.datenschutz));
+      z.setStand(n.stand);
+      nutzung.setStand(n.merkmale);
+      setE(entwurfAus(n.stand, n.merkmale, n.datenschutz));
       if (n.datenschutz !== ds) void datenschutz?.laden();
       // Formulare der Ablage zeigen gleich, was jetzt dazugehört.
       // Die Leiste folgt (Vorlage, Gruppe Datenschutz #1184).
-      if (n.merkmale !== m) { await d.neuLaden(); nachNutzung?.(); }
+      if (n.merkmale !== m) {
+        await d.neuLaden();
+        nachNutzung?.();
+      }
       setMeldung({ art: 'gut', text: n.merkmale !== m ? t('werkbank.nutzung.gespeichert') : t('werkbank.organisation.gespeichert') });
-    } catch (f) { setMeldung({ art: 'schlecht', text: (f as Error).message }); } finally { setSendet(false); }
+    } catch (f) {
+      setMeldung({ art: 'schlecht', text: (f as Error).message });
+    } finally {
+      setSendet(false);
+    }
   }
   async function notizenGesehen() {
-    try { z.setStand(await werkbankApi.setzeOrganisation({ gesehen: true })); setMeldung({ art: 'gut', text: t('werkbank.organisation.notizen.gesehen-ok') }); } catch (f) { setMeldung({ art: 'schlecht', text: (f as Error).message }); }
+    try {
+      z.setStand(await werkbankApi.setzeOrganisation({ gesehen: true }));
+      setMeldung({ art: 'gut', text: t('werkbank.organisation.notizen.gesehen-ok') });
+    } catch (f) {
+      setMeldung({ art: 'schlecht', text: (f as Error).message });
+    }
   }
   async function uebernehmen() {
-    try { z.setStand(await werkbankApi.organisationUebernehmen()); await d.neuLaden(); setMeldung({ art: 'gut', text: t('werkbank.organisation.uebernommen') }); } catch (f) { setMeldung({ art: 'schlecht', text: (f as Error).message }); }
+    try {
+      z.setStand(await werkbankApi.organisationUebernehmen());
+      await d.neuLaden();
+      setMeldung({ art: 'gut', text: t('werkbank.organisation.uebernommen') });
+    } catch (f) {
+      setMeldung({ art: 'schlecht', text: (f as Error).message });
+    }
   }
   return (
     <div className="einspaltig">
@@ -288,18 +488,32 @@ export function OrganisationPanel({ z, nutzung, datenschutz, nachNutzung }: { z:
         <p className="leise">{t('werkbank.organisation.einleitung')}</p>
       </Kopf>
       {neu.length > 0 && <Notizen neu={neu} gesehen={notizenGesehen} />}
-      <form className="stapel" id="organisation-formular" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+      <form
+        className="stapel"
+        id="organisation-formular"
+        onSubmit={(x) => {
+          x.preventDefault();
+          void speichern();
+        }}
+        onKeyDown={ent.tasten}>
         <NutzungAbschnitt beruflich={e.beruflich} setze={(an) => setE({ ...e, beruflich: an })} organisationen={s.organisationen} />
         {/* Ohne „beruflich“ sichtbar, aber blass (#1170) – nicht aus- und eingeblendet. */}
         <div className={`stapel${beruflich ? '' : ' organisation-blass'}`} id="eigene-organisation">
           {!beruflich && <p className="leise">{t('werkbank.organisation.nur-beruflich')}</p>}
           <OhneOrganisation s={s} />
-          {s.organisationen.map((o) => <Karte key={o.mappeId} o={o} mehrere={mehrere} geltend={s.geltend === o.mappeId} />)}
+          {s.organisationen.map((o) => (
+            <Karte key={o.mappeId} o={o} mehrere={mehrere} geltend={s.geltend === o.mappeId} />
+          ))}
           {s.bisher.trim() && <Bisher s={s} uebernehmen={uebernehmen} />}
           {/* Kompakt (#1182): Wahl und Rollen als normale Felder in einem Blatt, gespeichert mit der Leiste unten. */}
           <WahlUndRollen s={s} e={e} setE={setE} />
-          {e.vorgaben ? <AuskunftVorgaben w={e.vorgaben} setze={(vorgaben) => setE({ ...e, vorgaben })} />
-            : <p className="leise klein" id="auskunft-vorgaben">{t('werkbank.auskunft.vorgaben.ohne-recht')}</p>}
+          {e.vorgaben ? (
+            <AuskunftVorgaben w={e.vorgaben} setze={(vorgaben) => setE({ ...e, vorgaben })} />
+          ) : (
+            <p className="leise klein" id="auskunft-vorgaben">
+              {t('werkbank.auskunft.vorgaben.ohne-recht')}
+            </p>
+          )}
           <Verwendungen s={s} />
           <p className="leise klein">{t('werkbank.organisation.keine-rechtsberatung')}</p>
         </div>

@@ -6,7 +6,25 @@ import { randomUUID } from 'node:crypto';
 import { verweiseVon, type Aufgabe, type Benutzer, type Mappe, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
-import { ALLES, FALSCH, hatKontoRegeln, kontoRegelwerk, lesefilter, mitSichtbarenTypen, NICHTS, nutztZieltypRegeln, oder, rechteAn as rechteAnMappe, wirksamVon, type Ausdruck, type Lesefilter, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../../shared/src/rechte';
+import {
+  ALLES,
+  FALSCH,
+  hatKontoRegeln,
+  kontoRegelwerk,
+  lesefilter,
+  mitSichtbarenTypen,
+  NICHTS,
+  nutztZieltypRegeln,
+  oder,
+  rechteAn as rechteAnMappe,
+  wirksamVon,
+  type Ausdruck,
+  type Lesefilter,
+  type Mappenquelle,
+  type Recht,
+  type Rechte,
+  type Wer,
+} from '../../../shared/src/rechte';
 import { heuteIn, type Aufloesung } from '../../../shared/src/sichten';
 import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../../shared/src/sichtbarkeit';
 import { Fachfehler } from '../fehler';
@@ -23,13 +41,15 @@ export const NICHT_SICHTBAR = t('meldungen.dienst.nicht-sichtbare-mappe');
 function mitAufZeit(f: Lesefilter | null, typen: Mappentyp[], aufZeit: Array<{ mappeId: string; typId: string }>): Lesefilter | null {
   if (!f || !aufZeit.length) return f;
   const je = new Map<string, string[]>();
-  for (const x of aufZeit) if (typen.some((t) => t.id === x.typId) && !f.offen.includes(x.typId)) je.set(x.typId, [...(je.get(x.typId) ?? []), x.mappeId]);
+  for (const x of aufZeit)
+    if (typen.some((t) => t.id === x.typId) && !f.offen.includes(x.typId)) je.set(x.typId, [...(je.get(x.typId) ?? []), x.mappeId]);
   if (!je.size) return f;
   const neu: Lesefilter = { offen: [...f.offen], je: f.je.map((e) => ({ ...e })) };
   for (const [typId, ids] of je) {
     const ausdruck: Ausdruck = { k: 'filter', f: { art: 'id', ids: [...new Set(ids)].sort() } };
     const e = neu.je.find((x) => x.typId === typId);
-    if (e) e.ausdruck = oder(e.ausdruck, ausdruck); else neu.je.push({ typId, ausdruck });
+    if (e) e.ausdruck = oder(e.ausdruck, ausdruck);
+    else neu.je.push({ typId, ausdruck });
   }
   return neu;
 }
@@ -45,7 +65,12 @@ export function maskiert(b: Map<string, MappenBezug>, ok: Set<string>): Record<s
 /** Für die Rechte im Arbeitsspeicher (Regel „mit Aufgabe“): offene Aufgaben des Benutzers aus einer Liste. */
 function quelleAus(benutzerId: string, aufgaben: Aufgabe[], typVon?: (id: string) => string | undefined): Mappenquelle {
   const mit = new Set(aufgaben.filter((x) => !x.erledigt && x.empfaengerId === benutzerId).map((x) => x.mappeId));
-  return { dokumente: () => 0, verknuepfungen: () => 0, aufgabe: (id, b) => b === benutzerId && mit.has(id), ...(typVon ? { typVon } : {}) };
+  return {
+    dokumente: () => 0,
+    verknuepfungen: () => 0,
+    aufgabe: (id, b) => b === benutzerId && mit.has(id),
+    ...(typVon ? { typVon } : {}),
+  };
 }
 const VERBOTEN: Record<Recht, string> = {
   C: t('meldungen.dienst.mappen-dieses-typs-darfst'),
@@ -64,13 +89,26 @@ export interface ZugriffAnschluss {
 }
 
 export class ZugriffDienst {
-  constructor(private readonly kern: Kern, private readonly anschluss: ZugriffAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly anschluss: ZugriffAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private kiSperre(p: Pick<InstalliertesPaket, 'laeufer'> | null | undefined) { return this.anschluss.kiSperre(p); }
-  private paketVerwehrt(): Promise<Record<string, string[]>> { return this.kern.paketVerwehrt(); }
-  private ablageortId(): Promise<string | undefined> { return this.kern.ablageortId(); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private kiSperre(p: Pick<InstalliertesPaket, 'laeufer'> | null | undefined) {
+    return this.anschluss.kiSperre(p);
+  }
+  private paketVerwehrt(): Promise<Record<string, string[]>> {
+    return this.kern.paketVerwehrt();
+  }
+  private ablageortId(): Promise<string | undefined> {
+    return this.kern.ablageortId();
+  }
   /** Unterscheidet zwei Dienste in derselben Anfrage (Tests mit zwei „Prozessen“). */
   private readonly kennung = randomUUID();
 
@@ -82,10 +120,15 @@ export class ZugriffDienst {
     // Einmal je Anfrage (#741), nie über die Anfrage hinaus; nach einer Änderung in der Anfrage und in einer
     // Transaktion (sie sieht ihre eigenen Änderungen) neu.
     if (this.kern.inEigenerTransaktion()) return rechteMessen(() => this.bildeZugriff(ich));
-    return jeAnfrage(`${this.kennung}|zugriff|${ich.id}|${ich.rolle}|${ich.art ?? ''}|${ich.paketId ?? ''}|${ich.systemkonto ?? ''}`, () => rechteMessen(() => this.bildeZugriff(ich)));
+    return jeAnfrage(`${this.kennung}|zugriff|${ich.id}|${ich.rolle}|${ich.art ?? ''}|${ich.paketId ?? ''}|${ich.systemkonto ?? ''}`, () =>
+      rechteMessen(() => this.bildeZugriff(ich)),
+    );
   }
 
-  async bildeZugriff(ich: { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string }, o: { ohneAufZeit?: boolean } = {}): Promise<Zugriff> {
+  async bildeZugriff(
+    ich: { id: string; rolle: string; art?: 'dienst' | 'system'; paketId?: string; systemkonto?: string },
+    o: { ohneAufZeit?: boolean } = {},
+  ): Promise<Zugriff> {
     const roh = await this.aufloesung(ich.id);
     const typen = await this.repo.listeTypen();
     const admin = ich.rolle === 'admin' && !ich.art;
@@ -97,7 +140,15 @@ export class ZugriffDienst {
       const eigene = typen.map((t) => kontoRegelwerk(t, rolleId));
       // „zeigt auf Mappe vom Typ …“ im Zweifel geschlossen (#1036): welche Typen dieses Konto sieht.
       const a = mitSichtbarenTypen(eigene, wer, roh);
-      return { ich: { id: ich.id, rolle: 'mitglied' }, admin: false, wer, a, typen: new Map(eigene.map((t) => [t.id, t])), lesen: lesefilter(eigene, wer, a), systemkonto: ich.systemkonto ?? 'system' };
+      return {
+        ich: { id: ich.id, rolle: 'mitglied' },
+        admin: false,
+        wer,
+        a,
+        typen: new Map(eigene.map((t) => [t.id, t])),
+        lesen: lesefilter(eigene, wer, a),
+        systemkonto: ich.systemkonto ?? 'system',
+      };
     }
     const wer: Wer = { id: ich.id, rollen: roh.meineRollen };
     // Für Administratoren gelten keine Regeln; sonst die Typen, die die Person sieht (#1036, Regeln „zeigt auf Mappe vom Typ …“).
@@ -106,13 +157,33 @@ export class ZugriffDienst {
     // Leserecht auf Zeit (#798): nur für Menschen ohne Admin-Rechte, nur wenn die Regeln nicht ohnehin alles erlauben.
     const aufZeit = admin || !lesen || o.ohneAufZeit ? [] : await this.repo.leserechteAufZeit(ich.id);
     return {
-      ich, admin, wer, a, typen: new Map(typen.map((t) => [t.id, t])), lesen: mitAufZeit(lesen, typen, aufZeit),
-      ...(aufZeit.length ? { aufZeit: new Map(aufZeit.map((x) => [x.mappeId, { fallId: x.fallId, aufgabeId: x.aufgabeId, aufgabentext: x.aufgabentext, seit: x.seit, von: x.von }])) } : {}),
+      ich,
+      admin,
+      wer,
+      a,
+      typen: new Map(typen.map((t) => [t.id, t])),
+      lesen: mitAufZeit(lesen, typen, aufZeit),
+      ...(aufZeit.length
+        ? {
+            aufZeit: new Map(
+              aufZeit.map((x) => [
+                x.mappeId,
+                { fallId: x.fallId, aufgabeId: x.aufgabeId, aufgabentext: x.aufgabentext, seit: x.seit, von: x.von },
+              ]),
+            ),
+          }
+        : {}),
     };
   }
 
   /** Zugriff eines Dienstkontos (#338): nur die Typen und Rechte, die bei der Installation bestätigt wurden. */
-  private async paketZugriff(ich: { id: string; rolle: string; paketId?: string }, roh: Aufloesung, wer: Wer, typen: Mappentyp[], rolleId: string): Promise<Zugriff> {
+  private async paketZugriff(
+    ich: { id: string; rolle: string; paketId?: string },
+    roh: Aufloesung,
+    wer: Wer,
+    typen: Mappentyp[],
+    rolleId: string,
+  ): Promise<Zugriff> {
     const pakete = await this.repo.listePakete();
     const p = pakete.find((x) => x.id === ich.paketId);
     const r = p?.laeufer?.rechte ?? { lesen: [], schreiben: [], dokumente: 'keine' as const };
@@ -126,15 +197,35 @@ export class ZugriffDienst {
     // Regeln für die Rolle „Paket“ (#673) schränken die bestätigten Rechte weiter ein; ohne solche Regeln wie bisher.
     const mitRegeln = sichtbar.filter((t) => hatKontoRegeln(t, rolleId)).map((t) => kontoRegelwerk(t, rolleId));
     // „zeigt auf Mappe vom Typ …“ (#1036): Typen außerhalb der bestätigten sieht das Paket nie.
-    const a = mitSichtbarenTypen(sichtbar.map((t) => mitRegeln.find((x) => x.id === t.id) ?? kontoRegelwerk(t, rolleId)), wer, roh);
+    const a = mitSichtbarenTypen(
+      sichtbar.map((t) => mitRegeln.find((x) => x.id === t.id) ?? kontoRegelwerk(t, rolleId)),
+      wer,
+      roh,
+    );
     // Nie null („alles lesbar“): lesefilter() liefert null, wenn alle übergebenen Typen offen sind – hier sind das nur
     // die für das Paket sichtbaren. null hieße für Repo und lesbare() aber „alle Mappen aller Typen“.
     const offen = { offen: sichtbar.map((t) => t.id), je: [] };
-    const lesen = mitRegeln.length ? lesefilter(sichtbar.map((t) => mitRegeln.find((x) => x.id === t.id) ?? kontoRegelwerk(t, rolleId)), wer, a) ?? offen : offen;
+    const lesen = mitRegeln.length
+      ? (lesefilter(
+          sichtbar.map((t) => mitRegeln.find((x) => x.id === t.id) ?? kontoRegelwerk(t, rolleId)),
+          wer,
+          a,
+        ) ?? offen)
+      : offen;
     return {
-      ich: { id: ich.id, rolle: 'mitglied' }, admin: false, wer, a, typen: new Map(sichtbar.map((t) => [t.id, t])),
+      ich: { id: ich.id, rolle: 'mitglied' },
+      admin: false,
+      wer,
+      a,
+      typen: new Map(sichtbar.map((t) => [t.id, t])),
       lesen,
-      paket: { id: p?.id ?? '', schreiben: aufloesen(r.schreiben), dokumente: r.dokumente, schnittstellen: r.schnittstellen ?? [], ...(mitRegeln.length ? { regeln: new Map(mitRegeln.map((t) => [t.id, t])) } : {}) },
+      paket: {
+        id: p?.id ?? '',
+        schreiben: aufloesen(r.schreiben),
+        dokumente: r.dokumente,
+        schnittstellen: r.schnittstellen ?? [],
+        ...(mitRegeln.length ? { regeln: new Map(mitRegeln.map((t) => [t.id, t])) } : {}),
+      },
     };
   }
 
@@ -148,14 +239,25 @@ export class ZugriffDienst {
     return (liste) => {
       const ids = new Set<string>();
       for (const vw of liste) {
-        if (vw === ALLE_TYPEN) { for (const t of typen) if (t.system !== 'benutzer') ids.add(t.id); continue; }
+        if (vw === ALLE_TYPEN) {
+          for (const t of typen) if (t.system !== 'benutzer') ids.add(t.id);
+          continue;
+        }
         const [pk, sl] = vw.includes(':') ? vw.split(':') : [paketId, vw];
         // Ohne Prüfung des Herausgebers (#1084): Eine Paket-Id gehört je Ablage genau einem Herausgeber – Installation
         // und Update derselben Id von einem anderen lehnt die Paketverwaltung ab, und Abhängigkeiten prüfen ihn. So
         // zeigt `paket:typ` immer auf das eine installierte Paket, dessen Herausgeber schon feststeht.
         // dms:benutzer lehnt liesCode ab; hier trotzdem nie auflösen (Pakete sehen keine Benutzer). dms:post seit #435.
-        const id = pk === 'dms' ? (sl === 'ablageort' ? ablageort : sl === 'rolle' ? dms.rolle.id : sl === 'post' ? dms.post.id : null)
-          : pakete.find((x) => x.id === pk)?.typen[sl];
+        const id =
+          pk === 'dms'
+            ? sl === 'ablageort'
+              ? ablageort
+              : sl === 'rolle'
+                ? dms.rolle.id
+                : sl === 'post'
+                  ? dms.post.id
+                  : null
+            : pakete.find((x) => x.id === pk)?.typen[sl];
         if (id) ids.add(id);
       }
       return ids;
@@ -177,17 +279,32 @@ export class ZugriffDienst {
     if (z.admin) return wirksamVon(ALLES, typ);
     // Dienstkonto (#338): lesen, was bestätigt ist; anlegen/bearbeiten nur die Typen unter „schreiben“; nie löschen, nie Passwörter.
     if (z.paket) {
-      const w = wirksamVon(ALLES, typ); const s = z.paket.schreiben.has(typ.id);
+      const w = wirksamVon(ALLES, typ);
+      const s = z.paket.schreiben.has(typ.id);
       const bestaetigt = { C: w.C && s, R: w.R, U: w.U && s, D: false, P: false };
       const regeln = z.paket.regeln?.get(typ.id);
       if (!regeln) return bestaetigt;
       // Regeln für die Rolle „Paket“ (#673): nur einschränken, nie über die bestätigten Rechte hinaus.
-      const quelle = aufgaben && !neu ? quelleAus(z.wer.id, aufgaben.filter((x) => x.mappeId === m.id), await this.zieltypen([regeln], [m])) : await this.mappenquelle(z.wer.id, neu ? [] : [m.id], await this.zieltypen([regeln], [m]));
+      const quelle =
+        aufgaben && !neu
+          ? quelleAus(
+              z.wer.id,
+              aufgaben.filter((x) => x.mappeId === m.id),
+              await this.zieltypen([regeln], [m]),
+            )
+          : await this.mappenquelle(z.wer.id, neu ? [] : [m.id], await this.zieltypen([regeln], [m]));
       const r = rechteAnMappe(regeln, m, z.wer, z.a, quelle, neu).wirksam;
       return { C: bestaetigt.C && r.C, R: bestaetigt.R && r.R, U: bestaetigt.U && r.U, D: false, P: false };
     }
     const typVon = await this.zieltypen([typ], [m]);
-    const quelle = aufgaben && !neu ? quelleAus(z.wer.id, aufgaben.filter((x) => x.mappeId === m.id), typVon) : await this.mappenquelle(z.wer.id, neu ? [] : [m.id], typVon);
+    const quelle =
+      aufgaben && !neu
+        ? quelleAus(
+            z.wer.id,
+            aufgaben.filter((x) => x.mappeId === m.id),
+            typVon,
+          )
+        : await this.mappenquelle(z.wer.id, neu ? [] : [m.id], typVon);
     const r = rechteAnMappe(typ, m, z.wer, z.a, quelle, neu).wirksam;
     // Leserecht auf Zeit (#798): nur Lesen – Bearbeiten, Löschen und Passwörter bleiben, wie die Regeln sagen (ohne Lesen: nein).
     if (!r.R && !neu && z.aufZeit?.has(m.id)) return { ...r, R: true };
@@ -202,10 +319,23 @@ export class ZugriffDienst {
 
   private async rechteAnMehreren(z: Zugriff, ms: Mappe[]): Promise<Map<string, Rechte>> {
     const r = new Map<string, Rechte>();
-    if (z.admin) { for (const m of ms) { const typ = z.typen.get(m.typId); r.set(m.id, typ ? wirksamVon(ALLES, typ) : { ...NICHTS }); } return r; }
+    if (z.admin) {
+      for (const m of ms) {
+        const typ = z.typen.get(m.typId);
+        r.set(m.id, typ ? wirksamVon(ALLES, typ) : { ...NICHTS });
+      }
+      return r;
+    }
     // Dienstkonto (#338): wie in rechteAn, ohne Regeln.
-    if (z.paket) { for (const m of ms) r.set(m.id, await this.rechteAnEine(z, m, false)); return r; }
-    const quelle = await this.mappenquelle(z.wer.id, ms.map((m) => m.id), await this.zieltypen([...z.typen.values()], ms));
+    if (z.paket) {
+      for (const m of ms) r.set(m.id, await this.rechteAnEine(z, m, false));
+      return r;
+    }
+    const quelle = await this.mappenquelle(
+      z.wer.id,
+      ms.map((m) => m.id),
+      await this.zieltypen([...z.typen.values()], ms),
+    );
     for (const m of ms) {
       const typ = z.typen.get(m.typId);
       const x = typ ? rechteAnMappe(typ, m, z.wer, z.a, quelle, false).wirksam : { ...NICHTS };
@@ -227,7 +357,14 @@ export class ZugriffDienst {
    */
   async zieltypen(regelTypen: Mappentyp[], ms: Mappe[]): Promise<((id: string) => string | undefined) | undefined> {
     const mit = new Map(regelTypen.filter((t) => nutztZieltypRegeln([t])).map((t) => [t.id, t]));
-    const ids = [...new Set(ms.flatMap((m) => { const t = mit.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; }))];
+    const ids = [
+      ...new Set(
+        ms.flatMap((m) => {
+          const t = mit.get(m.typId);
+          return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : [];
+        }),
+      ),
+    ];
     if (!ids.length) return undefined;
     const typVon = await this.repo.typenVon(ids.filter(istUuid));
     return (id) => typVon.get(id);
@@ -283,8 +420,13 @@ export class ZugriffDienst {
     const erg: Array<{ typId: string; name: string; gesamt: number; lesbar: number; beispiele: Array<{ id: string; titel: string }> }> = [];
     for (const t of [...z.typen.values()].sort((x, y) => x.name.localeCompare(y.name, 'de'))) {
       const gesamt = await this.repo.zaehleMappen(t.id);
-      const lesbar = !z.lesen || z.lesen.offen.includes(t.id) ? gesamt : await this.repo.zaehleAusdruck(t.id, z.lesen.je.find((x) => x.typId === t.id)?.ausdruck ?? FALSCH);
-      const seite: { mappen: Mappe[] } = lesbar ? await this.repo.seite({ typId: t.id, von: 0, anzahl: 10, lesen: z.lesen }) : { mappen: [] };
+      const lesbar =
+        !z.lesen || z.lesen.offen.includes(t.id)
+          ? gesamt
+          : await this.repo.zaehleAusdruck(t.id, z.lesen.je.find((x) => x.typId === t.id)?.ausdruck ?? FALSCH);
+      const seite: { mappen: Mappe[] } = lesbar
+        ? await this.repo.seite({ typId: t.id, von: 0, anzahl: 10, lesen: z.lesen })
+        : { mappen: [] };
       erg.push({ typId: t.id, name: t.name, gesamt, lesbar, beispiele: seite.mappen.map((m) => ({ id: m.id, titel: m.titel ?? '' })) });
     }
     return { admin: z.admin, typen: erg };
@@ -292,14 +434,29 @@ export class ZugriffDienst {
 
   /** Zu welcher Mappe gehört ein Dokument, eine Notiz, eine Aufgabe? (für die Prüfung der Rechte) */
   async mappeVon(art: 'dokument' | 'notiz' | 'aufgabe', id: string): Promise<string> {
-    const x = !istUuid(id) ? undefined : art === 'dokument' ? await this.repo.holeDokument(id) : art === 'notiz' ? await this.repo.holeNotiz(id) : await this.repo.holeAufgabe(id);
-    if (!x) throw new Fachfehler(404, art === 'dokument' ? t('meldungen.dienst.dieses-dokument-gibt-es') : art === 'notiz' ? t('meldungen.dienst.diese-notiz-gibt-es') : t('meldungen.dienst.diese-aufgabe-gibt-es'));
+    const x = !istUuid(id)
+      ? undefined
+      : art === 'dokument'
+        ? await this.repo.holeDokument(id)
+        : art === 'notiz'
+          ? await this.repo.holeNotiz(id)
+          : await this.repo.holeAufgabe(id);
+    if (!x)
+      throw new Fachfehler(
+        404,
+        art === 'dokument'
+          ? t('meldungen.dienst.dieses-dokument-gibt-es')
+          : art === 'notiz'
+            ? t('meldungen.dienst.diese-notiz-gibt-es')
+            : t('meldungen.dienst.diese-aufgabe-gibt-es'),
+      );
     return x.mappeId;
   }
 
   /** Klartext von Passwortfeldern nur dort, wo P gilt (#124). */
   async mitPasswortRecht<T extends Mappe>(z: Zugriff, mappen: T[]): Promise<{ mit: T[]; ohne: T[] }> {
-    const mit: T[] = []; const ohne: T[] = [];
+    const mit: T[] = [];
+    const ohne: T[] = [];
     // Gebündelt (#477): eine Abfrage für alle Mappen statt einer je Mappe.
     const r = await this.rechteAnVielen(z, mappen);
     for (const m of mappen) (r.get(m.id)?.P ? mit : ohne).push(m);

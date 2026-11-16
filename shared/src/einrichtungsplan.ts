@@ -19,9 +19,21 @@ export const istVerweis = (v: unknown): v is string => typeof v === 'string' && 
 export type PlanVerbindung = 'starttls' | 'ssl' | 'keine';
 export const PLAN_VERBINDUNGEN: readonly PlanVerbindung[] = ['starttls', 'ssl', 'keine'];
 
-export interface PlanDatenbank { host: string; port: number; datenbank: string; benutzer: string; /** nur ein Verweis */ passwort?: string }
+export interface PlanDatenbank {
+  host: string;
+  port: number;
+  datenbank: string;
+  benutzer: string;
+  /** nur ein Verweis */ passwort?: string;
+}
 export interface PlanMail {
-  aktiv: boolean; host: string; port: number; verbindung: PlanVerbindung; benutzer: string; absender: string; selbstsigniert: boolean;
+  aktiv: boolean;
+  host: string;
+  port: number;
+  verbindung: PlanVerbindung;
+  benutzer: string;
+  absender: string;
+  selbstsigniert: boolean;
   /** nur ein Verweis */
   passwort?: string;
 }
@@ -61,11 +73,37 @@ export const PAKET_ORGANISATION = 'basis';
  * einrichten“ legt daraus eine Mappe vom Typ Organisation (Paket Basis) mit dem Merkmal „eigene Organisation“ an (#995).
  * Leere Angaben sind '' – in der Datei fehlen sie.
  */
-export interface PlanOrganisation { name: string; strasse: string; hausnummer: string; plz: string; ort: string; email: string; telefon: string }
-export const ORGANISATION_ANGABEN = ['name', 'strasse', 'hausnummer', 'plz', 'ort', 'email', 'telefon'] as const satisfies ReadonlyArray<keyof PlanOrganisation>;
+export interface PlanOrganisation {
+  name: string;
+  strasse: string;
+  hausnummer: string;
+  plz: string;
+  ort: string;
+  email: string;
+  telefon: string;
+}
+export const ORGANISATION_ANGABEN = ['name', 'strasse', 'hausnummer', 'plz', 'ort', 'email', 'telefon'] as const satisfies ReadonlyArray<
+  keyof PlanOrganisation
+>;
 /** Höchstlängen wie an den Feldern der Basis (Organisation). */
-export const ORGANISATION_MAX: Record<keyof PlanOrganisation, number> = { name: 120, strasse: 120, hausnummer: 10, plz: 10, ort: 80, email: 200, telefon: 40 };
-export const leereOrganisation = (): PlanOrganisation => ({ name: '', strasse: '', hausnummer: '', plz: '', ort: '', email: '', telefon: '' });
+export const ORGANISATION_MAX: Record<keyof PlanOrganisation, number> = {
+  name: 120,
+  strasse: 120,
+  hausnummer: 10,
+  plz: 10,
+  ort: 80,
+  email: 200,
+  telefon: 40,
+};
+export const leereOrganisation = (): PlanOrganisation => ({
+  name: '',
+  strasse: '',
+  hausnummer: '',
+  plz: '',
+  ort: '',
+  email: '',
+  telefon: '',
+});
 /** „Deine Organisation“ in fester Form: nur Text, Leerraum zusammengezogen, gekürzt wie die Felder; kein Objekt = keine. */
 export function liesPlanOrganisation(x: unknown): PlanOrganisation | undefined {
   if (!x || typeof x !== 'object' || Array.isArray(x)) return undefined;
@@ -103,7 +141,11 @@ export interface Einrichtungsplan {
 }
 
 /** Ein Fehler in der Datei: Zeile (ab 1, wenn bekannt), Feld wie `konto.email` oder `pakete[1].id`, Text. */
-export interface DateiFehler { zeile: number | null; feld: string; text: string }
+export interface DateiFehler {
+  zeile: number | null;
+  feld: string;
+  text: string;
+}
 
 /** Die Schritte, die der Assistent sammelt – in dieser Reihenfolge. */
 export const SAMMELSCHRITTE = ['ablage', 'konto', 'nutzung', 'pakete', 'optional'] as const;

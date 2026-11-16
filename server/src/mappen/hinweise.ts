@@ -17,16 +17,24 @@ import type { ZugriffDienst } from '../zugriff';
 const log = protokoll.modul('werkbank');
 
 export class MappenHinweise {
-  constructor(private readonly kern: Kern, private readonly rechtepruefung: ZugriffDienst) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechtepruefung: ZugriffDienst,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
 
   /** Hinweise an der Mappe mit dem Namen des Pakets; Hinweise nicht (mehr) installierter Pakete fallen weg. */
   async von(mappeId: string): Promise<PaketHinweis[]> {
     const roh = await this.repo.hinweise(mappeId);
     if (!roh.length) return [];
     const pakete = await this.repo.listePakete();
-    return roh.flatMap((h) => { const p = pakete.find((x) => x.id === h.paket); return p ? [{ ...h, paketName: p.name }] : []; });
+    return roh.flatMap((h) => {
+      const p = pakete.find((x) => x.id === h.paket);
+      return p ? [{ ...h, paketName: p.name }] : [];
+    });
   }
 
   /** Nur das Dienstkonto eines Pakets mit `dms:hinweise`, nur an Mappen, die es schreiben darf. */
@@ -42,7 +50,8 @@ export class MappenHinweise {
   async setze(z: Zugriff | undefined, mappeId: string, schluessel: string, eingabe: unknown): Promise<PaketHinweis> {
     const paket = await this.pruefe(z, mappeId, schluessel);
     const p = pruefeHinweistext((eingabe as { text?: unknown } | null)?.text);
-    if ('fehler' in p) throw new Fachfehler(400, t.frei(`meldungen.berechnet.hinweis.${p.fehler}`, { max: HINWEIS_MAX }), { grund: p.fehler });
+    if ('fehler' in p)
+      throw new Fachfehler(400, t.frei(`meldungen.berechnet.hinweis.${p.fehler}`, { max: HINWEIS_MAX }), { grund: p.fehler });
     const vorhanden = (await this.repo.hinweise(mappeId)).filter((h) => h.paket === paket);
     if (!vorhanden.some((h) => h.schluessel === schluessel) && vorhanden.length >= HINWEISE_JE_PAKET) {
       throw new Fachfehler(400, t('meldungen.berechnet.hinweis-zu-viele', { max: HINWEISE_JE_PAKET }));
@@ -57,6 +66,7 @@ export class MappenHinweise {
   /** Entfernen (DELETE …); auch, wenn es ihn nicht (mehr) gibt. */
   async entferne(z: Zugriff | undefined, mappeId: string, schluessel: string): Promise<void> {
     const paket = await this.pruefe(z, mappeId, schluessel);
-    if (await this.repo.loescheHinweis(mappeId, paket, schluessel)) log.debug('Hinweis an einer Mappe entfernt', { paket, mappe: mappeId, schluessel });
+    if (await this.repo.loescheHinweis(mappeId, paket, schluessel))
+      log.debug('Hinweis an einer Mappe entfernt', { paket, mappe: mappeId, schluessel });
   }
 }

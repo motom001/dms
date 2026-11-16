@@ -33,18 +33,36 @@ export const MIME = /^[a-z0-9][a-z0-9!#$&^_.+-]{0,62}\/[a-z0-9][a-z0-9!#$&^_.+-]
 
 /** Kurze Namen bekannter Dateitypen für Hinweise („Für TIFF-Dateien …“). */
 export const DATEITYP_NAMEN: Record<string, string> = {
-  'application/pdf': 'PDF', 'image/jpeg': 'JPEG', 'image/png': 'PNG',
-  'image/tiff': 'TIFF', 'image/webp': 'WebP', 'image/gif': 'GIF', 'image/bmp': 'BMP',
-  'image/heic': 'HEIC', 'image/heif': 'HEIF', 'image/avif': 'AVIF',
-  'application/msword': 'Word', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
-  'application/vnd.ms-excel': 'Excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
-  'application/vnd.ms-powerpoint': 'PowerPoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
-  'application/vnd.oasis.opendocument.text': t('gemeinsam.dateiumwandlung.opendocument-text'), 'application/vnd.oasis.opendocument.spreadsheet': t('gemeinsam.dateiumwandlung.opendocument-tabelle'),
+  'application/pdf': 'PDF',
+  'image/jpeg': 'JPEG',
+  'image/png': 'PNG',
+  'image/tiff': 'TIFF',
+  'image/webp': 'WebP',
+  'image/gif': 'GIF',
+  'image/bmp': 'BMP',
+  'image/heic': 'HEIC',
+  'image/heif': 'HEIF',
+  'image/avif': 'AVIF',
+  'application/msword': 'Word',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
+  'application/vnd.ms-excel': 'Excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
+  'application/vnd.ms-powerpoint': 'PowerPoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
+  'application/vnd.oasis.opendocument.text': t('gemeinsam.dateiumwandlung.opendocument-text'),
+  'application/vnd.oasis.opendocument.spreadsheet': t('gemeinsam.dateiumwandlung.opendocument-tabelle'),
   'application/vnd.oasis.opendocument.presentation': t('gemeinsam.dateiumwandlung.opendocument-praesentation'),
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.template': 'Word', 'application/vnd.ms-word.document.macroenabled.12': 'Word',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.template': 'Excel', 'application/vnd.ms-excel.sheet.macroenabled.12': 'Excel',
-  'application/vnd.openxmlformats-officedocument.presentationml.slideshow': 'PowerPoint', 'application/vnd.ms-powerpoint.presentation.macroenabled.12': 'PowerPoint',
-  'message/rfc822': 'E-Mail', 'application/vnd.ms-outlook': t('gemeinsam.dateiumwandlung.outlook-e-mail'), 'application/rtf': 'RTF', 'text/rtf': 'RTF', 'text/plain': 'Text',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.template': 'Word',
+  'application/vnd.ms-word.document.macroenabled.12': 'Word',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.template': 'Excel',
+  'application/vnd.ms-excel.sheet.macroenabled.12': 'Excel',
+  'application/vnd.openxmlformats-officedocument.presentationml.slideshow': 'PowerPoint',
+  'application/vnd.ms-powerpoint.presentation.macroenabled.12': 'PowerPoint',
+  'message/rfc822': 'E-Mail',
+  'application/vnd.ms-outlook': t('gemeinsam.dateiumwandlung.outlook-e-mail'),
+  'application/rtf': 'RTF',
+  'text/rtf': 'RTF',
+  'text/plain': 'Text',
 };
 export const dateitypName = (mime: string) => DATEITYP_NAMEN[mime] ?? mime;
 
@@ -54,8 +72,10 @@ export const dateitypName = (mime: string) => DATEITYP_NAMEN[mime] ?? mime;
  */
 export function erkenneBildtyp(b: Uint8Array): string | null {
   const t = (von: number, bis: number) => String.fromCharCode(...b.subarray(von, bis));
-  if (b.length >= 4 && ((t(0, 2) === 'II' && b[2] === 42 && b[3] === 0) || (t(0, 2) === 'MM' && b[2] === 0 && b[3] === 42))) return 'image/tiff';
-  if (b.length >= 4 && ((t(0, 2) === 'II' && b[2] === 43 && b[3] === 0) || (t(0, 2) === 'MM' && b[2] === 0 && b[3] === 43))) return 'image/tiff';
+  if (b.length >= 4 && ((t(0, 2) === 'II' && b[2] === 42 && b[3] === 0) || (t(0, 2) === 'MM' && b[2] === 0 && b[3] === 42)))
+    return 'image/tiff';
+  if (b.length >= 4 && ((t(0, 2) === 'II' && b[2] === 43 && b[3] === 0) || (t(0, 2) === 'MM' && b[2] === 0 && b[3] === 43)))
+    return 'image/tiff';
   if (b.length >= 6 && (t(0, 6) === 'GIF87a' || t(0, 6) === 'GIF89a')) return 'image/gif';
   if (b.length >= 12 && t(0, 4) === 'RIFF' && t(8, 12) === 'WEBP') return 'image/webp';
   if (b.length >= 26 && t(0, 2) === 'BM') {
@@ -88,7 +108,8 @@ export const infoUmwandlung = (paket: { name: string }) => `${INFO_UMWANDLUNG} (
 export const INFO_FASSUNG = t('gemeinsam.dateiumwandlung.aus-der-umgewandelten-fassung');
 export const infoFassung = (paket: { name: string; version: string }) => `${INFO_FASSUNG} (Paket ${paket.name} ${paket.version})`;
 /** Paket der Fassung aus einem Hinweis (oder null). */
-export const fassungAusInfo = (info: string | null | undefined): string | null => new RegExp(`${INFO_FASSUNG} \\(Paket ([^)]+)\\)`).exec(info ?? '')?.[1] ?? null;
+export const fassungAusInfo = (info: string | null | undefined): string | null =>
+  new RegExp(`${INFO_FASSUNG} \\(Paket ([^)]+)\\)`).exec(info ?? '')?.[1] ?? null;
 
 /** Was der Kern über eine Fassung weiß (für API und Anzeige). */
 export interface FassungInfo {

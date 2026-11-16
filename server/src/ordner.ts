@@ -16,7 +16,11 @@ import { t } from './sprache';
  * Ohne Docker (Entwicklung, Tests) liegen sie unter ./data im Projekt; DMS_DATENWURZEL
  * verlegt sie für Entwicklung und CI (nicht im Admin-Handbuch).
  */
-export interface Ordner { dateien: string; geheim: string; sicherung: string }
+export interface Ordner {
+  dateien: string;
+  geheim: string;
+  sicherung: string;
+}
 export type OrdnerArt = keyof Ordner;
 
 export const ORDNER_NAMEN: Record<OrdnerArt, string> = { dateien: 'files', geheim: 'geheim', sicherung: 'sicherung' };
@@ -29,7 +33,11 @@ export const SCHLUESSELDATEI = 'dms.schluessel';
 export const CONTAINER_WURZEL = '/data';
 
 export function ordnerUnter(wurzel: string): Ordner {
-  return { dateien: join(wurzel, ORDNER_NAMEN.dateien), geheim: join(wurzel, ORDNER_NAMEN.geheim), sicherung: join(wurzel, ORDNER_NAMEN.sicherung) };
+  return {
+    dateien: join(wurzel, ORDNER_NAMEN.dateien),
+    geheim: join(wurzel, ORDNER_NAMEN.geheim),
+    sicherung: join(wurzel, ORDNER_NAMEN.sicherung),
+  };
 }
 
 /** Frühere Variablen und der Ordner, an dessen Stelle sie traten. */
@@ -62,13 +70,20 @@ export function pruefeOrdner(env: Record<string, string | undefined>, standardWu
     const wert = env[v.name];
     if (!wert) continue;
     const fest = v.datei ? join(ordner[v.art], v.datei) : ordner[v.art];
-    if (gleich(wert, fest)) { ueberfluessig.push(v.name); continue; }
+    if (gleich(wert, fest)) {
+      ueberfluessig.push(v.name);
+      continue;
+    }
     const imContainer = v.datei ? join(CONTAINER_WURZEL, ORDNER_NAMEN[v.art], v.datei) : join(CONTAINER_WURZEL, ORDNER_NAMEN[v.art]);
     const bisher = v.datei ? t('meldungen.ordner.den-ordner-der-datei', { wert }) : wert;
     fehler.push(
-      t('meldungen.ordner.wird-nicht-mehr-unterstuetzt', { name: v.name, wert, imContainer })
-      + t('meldungen.ordner.ordne-in-der-compose', { bisher, CONTAINER_WURZEL: join(CONTAINER_WURZEL, ORDNER_NAMEN[v.art]) })
-      + t('meldungen.ordner.z-b-volume1-docker', { ORDNER_NAMEN: ORDNER_NAMEN[v.art], CONTAINER_WURZEL: join(CONTAINER_WURZEL, ORDNER_NAMEN[v.art]), name: v.name }),
+      t('meldungen.ordner.wird-nicht-mehr-unterstuetzt', { name: v.name, wert, imContainer }) +
+        t('meldungen.ordner.ordne-in-der-compose', { bisher, CONTAINER_WURZEL: join(CONTAINER_WURZEL, ORDNER_NAMEN[v.art]) }) +
+        t('meldungen.ordner.z-b-volume1-docker', {
+          ORDNER_NAMEN: ORDNER_NAMEN[v.art],
+          CONTAINER_WURZEL: join(CONTAINER_WURZEL, ORDNER_NAMEN[v.art]),
+          name: v.name,
+        }),
     );
   }
   return { ordner, ueberfluessig, fehler };
@@ -96,10 +111,31 @@ export const statfsMesser: Messer = async (pfad) => {
   return { gesamt: f.blocks * f.bsize, frei: f.bavail * f.bsize };
 };
 
-export async function belegung(o: Ordner, messer: Messer = statfsMesser, volume: (p: string) => boolean | null = aufVolume, geraet: (p: string) => string | null = geraetVon): Promise<OrdnerBelegung[]> {
-  return Promise.all((Object.keys(ORDNER_NAMEN) as OrdnerArt[]).map(async (art) => {
-    let gesamt: number | null = null, frei: number | null = null;
-    try { ({ gesamt, frei } = await messer(o[art])); } catch { /* Ordner fehlt oder nicht lesbar */ }
-    return { art, pfad: o[art], text: ORDNER_TEXT[art], gesamt, frei, belegt: gesamt !== null && frei !== null ? Math.max(0, gesamt - frei) : null, volume: volume(o[art]), geraet: geraet(o[art]) };
-  }));
+export async function belegung(
+  o: Ordner,
+  messer: Messer = statfsMesser,
+  volume: (p: string) => boolean | null = aufVolume,
+  geraet: (p: string) => string | null = geraetVon,
+): Promise<OrdnerBelegung[]> {
+  return Promise.all(
+    (Object.keys(ORDNER_NAMEN) as OrdnerArt[]).map(async (art) => {
+      let gesamt: number | null = null,
+        frei: number | null = null;
+      try {
+        ({ gesamt, frei } = await messer(o[art]));
+      } catch {
+        /* Ordner fehlt oder nicht lesbar */
+      }
+      return {
+        art,
+        pfad: o[art],
+        text: ORDNER_TEXT[art],
+        gesamt,
+        frei,
+        belegt: gesamt !== null && frei !== null ? Math.max(0, gesamt - frei) : null,
+        volume: volume(o[art]),
+        geraet: geraet(o[art]),
+      };
+    }),
+  );
 }

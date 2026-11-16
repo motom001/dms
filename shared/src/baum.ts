@@ -22,7 +22,10 @@ import type { Rechte } from './rechte';
 import { t } from './texte';
 
 export type BaumRichtung = 'verwiesenVon' | 'verweistAuf';
-export const BAUM_RICHTUNGEN: Record<BaumRichtung, string> = { verwiesenVon: t('gemeinsam.baum.mappen-die-darauf-verweisen'), verweistAuf: t('gemeinsam.baum.mappen-auf-die-sie') };
+export const BAUM_RICHTUNGEN: Record<BaumRichtung, string> = {
+  verwiesenVon: t('gemeinsam.baum.mappen-die-darauf-verweisen'),
+  verweistAuf: t('gemeinsam.baum.mappen-auf-die-sie'),
+};
 
 export const BAUM_TIEFE_MAX = 10;
 /** Obergrenze der Knoten je Baum (Start-Mappe mitgezählt). */
@@ -47,7 +50,14 @@ export interface BaumOptionen {
   nurZugehoerigkeit: boolean;
 }
 
-export const BAUM_STANDARD: BaumOptionen = { richtungen: ['verwiesenVon', 'verweistAuf'], tiefe: 2, max: 1000, seitwaerts: false, ohneTypen: [], nurZugehoerigkeit: false };
+export const BAUM_STANDARD: BaumOptionen = {
+  richtungen: ['verwiesenVon', 'verweistAuf'],
+  tiefe: 2,
+  max: 1000,
+  seitwaerts: false,
+  ohneTypen: [],
+  nurZugehoerigkeit: false,
+};
 
 /** Über welchen Verweis ein Knoten erreicht wurde: `vonId` ist der Knoten eine Ebene darüber. */
 export interface BaumKante {
@@ -122,7 +132,11 @@ const ganz = (v: unknown, std: number, min: number, max: number) => {
   const n = typeof v === 'string' && v.trim() ? Number(v) : v;
   return typeof n === 'number' && Number.isFinite(n) ? Math.min(max, Math.max(min, Math.floor(n))) : std;
 };
-const liste = (v: unknown): string[] => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(',') : []).map(String).map((x) => x.trim()).filter(Boolean);
+const liste = (v: unknown): string[] =>
+  (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(',') : [])
+    .map(String)
+    .map((x) => x.trim())
+    .filter(Boolean);
 
 /** Eingabe (Body oder Query) → Optionen; Unbekanntes fällt weg, Zahlen werden begrenzt. */
 export function bereinigeBaumOptionen(e: unknown, standard: BaumOptionen = BAUM_STANDARD): BaumOptionen {
@@ -134,7 +148,8 @@ export function bereinigeBaumOptionen(e: unknown, standard: BaumOptionen = BAUM_
     max: ganz(o.max, standard.max, 1, BAUM_MAX),
     seitwaerts: o.seitwaerts === undefined ? standard.seitwaerts : o.seitwaerts === true || o.seitwaerts === 'true',
     ohneTypen: o.ohneTypen === undefined ? [...standard.ohneTypen] : [...new Set(liste(o.ohneTypen))],
-    nurZugehoerigkeit: o.nurZugehoerigkeit === undefined ? standard.nurZugehoerigkeit : o.nurZugehoerigkeit === true || o.nurZugehoerigkeit === 'true',
+    nurZugehoerigkeit:
+      o.nurZugehoerigkeit === undefined ? standard.nurZugehoerigkeit : o.nurZugehoerigkeit === true || o.nurZugehoerigkeit === 'true',
   };
 }
 
@@ -155,5 +170,9 @@ export const wirdAnderswoGebraucht = (k: Pick<BaumKnoten, 'aussen'>) => k.aussen
 
 /** Zusammenfassung, z. B. „12 Mappen, 34 Dokumente“. */
 export function baumZahlen(b: Pick<Baum, 'knoten'>): { mappen: number; dokumente: number; gesperrt: number } {
-  return { mappen: b.knoten.length, dokumente: b.knoten.reduce((s, k) => s + k.dokumente, 0), gesperrt: b.knoten.filter((k) => k.gesperrt).length };
+  return {
+    mappen: b.knoten.length,
+    dokumente: b.knoten.reduce((s, k) => s + k.dokumente, 0),
+    gesperrt: b.knoten.filter((k) => k.gesperrt).length,
+  };
 }

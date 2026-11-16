@@ -33,14 +33,20 @@ const offen = new Set<EigeneDatenbank>();
 let zaehler = 0;
 
 /** Nach dem letzten Test der Datei: alles löschen, was noch offen ist. */
-after(async () => { for (const d of [...offen]) await d.ende(); });
+after(async () => {
+  for (const d of [...offen]) await d.ende();
+});
 
 /** Verbindung zur gemeinsamen Datenbank – nur zum Anlegen und Löschen der eigenen. */
 async function mitVerwaltung<T>(f: (s: postgres.Sql) => Promise<T>): Promise<T> {
   const basis = ausUrl(process.env.TEST_DATABASE_URL);
   if (!basis) throw new Error('TEST_DATABASE_URL fehlt');
   const s = verbinde(alsUrl(basis), 1);
-  try { return await f(s); } finally { await s.end(); }
+  try {
+    return await f(s);
+  } finally {
+    await s.end();
+  }
 }
 
 export async function eigeneDatenbank(kurz: string, o: { migrieren?: boolean; max?: number } = {}): Promise<EigeneDatenbank> {
@@ -55,7 +61,9 @@ export async function eigeneDatenbank(kurz: string, o: { migrieren?: boolean; ma
   const sql = verbinde(url, o.max ?? 4);
   let beendet = false;
   const d: EigeneDatenbank = {
-    name, url, sql,
+    name,
+    url,
+    sql,
     ende: async () => {
       if (beendet) return;
       beendet = true;

@@ -5,7 +5,15 @@
 import { bereinigeAnzeige } from '../../../shared/src/anzeige';
 import { SCHLUESSEL, TYPVERWEIS } from '../../../shared/src/kennungen';
 import {
-  AKTION_BESCHREIBUNG_MAX, AKTION_NAME_MAX, AKTION_RECHTE, istAktionRecht, KERN_DIALOGE, MAPPENAKTIONEN_MAX, type AktionBedingung, type KernDialog, type MappenAktion,
+  AKTION_BESCHREIBUNG_MAX,
+  AKTION_NAME_MAX,
+  AKTION_RECHTE,
+  istAktionRecht,
+  KERN_DIALOGE,
+  MAPPENAKTIONEN_MAX,
+  type AktionBedingung,
+  type KernDialog,
+  type MappenAktion,
 } from '../../../shared/src/paketaktionen';
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -24,7 +32,10 @@ export function liesMappenaktionen(roh: unknown, o: { hatCode: boolean }): { akt
   const gesehen = new Set<string>();
   for (const [i, a] of roh.slice(0, MAPPENAKTIONEN_MAX).entries()) {
     const wo = `mappenaktionen[${i + 1}]`;
-    if (!istObjekt(a)) { fehler.push(`${wo}: erwartet ein Objekt.`); continue; }
+    if (!istObjekt(a)) {
+      fehler.push(`${wo}: erwartet ein Objekt.`);
+      continue;
+    }
     const f = (x: string) => fehler.push(`${wo}: ${x}`);
     const schluessel = str(a.schluessel);
     if (!SCHLUESSEL.test(schluessel)) f(`ungültiger Schlüssel „${schluessel}“.`);
@@ -39,8 +50,14 @@ export function liesMappenaktionen(roh: unknown, o: { hatCode: boolean }): { akt
     const dialog = liesDialogArt(a, rechte, o.hatCode, f);
     const bedingung = a.bedingung === undefined ? undefined : liesBedingung(a.bedingung, f);
     aktionen.push({
-      schluessel, name, ...(beschreibung ? { beschreibung } : {}), mappentypen: [...new Set(typen)], rechte: [...new Set(rechte.filter(istAktionRecht))],
-      ...(anlegen.length ? { anlegen: [...new Set(anlegen)] } : {}), ...(bedingung ? { bedingung } : {}), ...(dialog ? { dialog } : {}),
+      schluessel,
+      name,
+      ...(beschreibung ? { beschreibung } : {}),
+      mappentypen: [...new Set(typen)],
+      rechte: [...new Set(rechte.filter(istAktionRecht))],
+      ...(anlegen.length ? { anlegen: [...new Set(anlegen)] } : {}),
+      ...(bedingung ? { bedingung } : {}),
+      ...(dialog ? { dialog } : {}),
     });
   }
   return { aktionen, fehler };
@@ -70,8 +87,12 @@ function liesDialogArt(a: Record<string, unknown>, rechte: string[], hatCode: bo
     if (!hatCode) f(`Ohne Code (code:) geht nur eine Aktion mit dialog (${KERN_DIALOGE.join(', ')}).`);
     return undefined;
   }
-  if (!(KERN_DIALOGE as readonly string[]).includes(str(a.dialog))) { f(`dialog „${str(a.dialog)}“ gibt es nicht (möglich: ${KERN_DIALOGE.join(', ')}).`); return undefined; }
-  if (!rechte.includes('dokument_hinzufuegen') || rechte.some((r) => r !== 'dokument_hinzufuegen' && r !== 'herausgeben')) f('dialog dms:vorlage braucht das Recht dokument_hinzufuegen (dazu höchstens herausgeben).');
+  if (!(KERN_DIALOGE as readonly string[]).includes(str(a.dialog))) {
+    f(`dialog „${str(a.dialog)}“ gibt es nicht (möglich: ${KERN_DIALOGE.join(', ')}).`);
+    return undefined;
+  }
+  if (!rechte.includes('dokument_hinzufuegen') || rechte.some((r) => r !== 'dokument_hinzufuegen' && r !== 'herausgeben'))
+    f('dialog dms:vorlage braucht das Recht dokument_hinzufuegen (dazu höchstens herausgeben).');
   return str(a.dialog) as KernDialog;
 }
 
@@ -81,9 +102,9 @@ function liesBedingung(roh: unknown, f: (x: string) => void): AktionBedingung | 
   const regel = b ? bereinigeAnzeige(b) : undefined;
   const grund = b ? str(b.grund).trim() : '';
   if (!regel) f('bedingung braucht modus und mindestens eine gültige Bedingung (wie anzeigen an Feldern).');
-  else if (regel.bedingungen.some((x) => x.art === 'verweistyp' || (x.art === 'feld' && x.bedingung.op === 'zeigtAuf'))) f('bedingung: nur Feldwerte und Merkmale, keine Verweise auf bestimmte Mappen oder Typen.');
+  else if (regel.bedingungen.some((x) => x.art === 'verweistyp' || (x.art === 'feld' && x.bedingung.op === 'zeigtAuf')))
+    f('bedingung: nur Feldwerte und Merkmale, keine Verweise auf bestimmte Mappen oder Typen.');
   if (!grund) f('bedingung braucht einen grund (steht im Menü, solange die Aktion nicht geht).');
   else if (grund.length > AKTION_BESCHREIBUNG_MAX) f(`grund höchstens ${AKTION_BESCHREIBUNG_MAX} Zeichen.`);
   return regel && grund ? { regel, grund } : undefined;
 }
-

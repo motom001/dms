@@ -16,11 +16,21 @@ import { bildAlsA4Pdf, seitenInfo, stempelePdf } from './pdf';
 import { mb, verkleinere, type Stufe } from './verkleinern';
 import { t } from './sprache';
 
-export interface Ausgabedatei { name: string; mime: string; inhalt: Buffer }
+export interface Ausgabedatei {
+  name: string;
+  mime: string;
+  inhalt: Buffer;
+}
 /** Was mit der Kopie geschehen soll. Später: `schwaerzen` (#392). */
-export interface Ausgabewunsch { stempel?: GeltenderStempel | null; verkleinern?: Stufe | null }
+export interface Ausgabewunsch {
+  stempel?: GeltenderStempel | null;
+  verkleinern?: Stufe | null;
+}
 export interface Ausgabekontext {
-  benutzer: string; mappe: string; archivnummer?: string | null; datum?: string;
+  benutzer: string;
+  mappe: string;
+  archivnummer?: string | null;
+  datum?: string;
   /**
    * Geschützte PDFs (#827): entsperrte Fassung zu diesem Inhalt (null: keine). Stempeln und Verkleinern arbeiten dann
    * mit ihr; ohne Bearbeitung geht das Original hinaus.
@@ -44,11 +54,14 @@ export function weitergabeWas(a: Ausgabe[] | null | undefined): string {
   const gestempelt = a.filter((x) => x.gestempelt);
   const text = gestempelt.find((x) => x.stempeltext)?.stempeltext;
   const klein = a.filter((x) => x.verkleinert);
-  const vorher = klein.reduce((s, x) => s + x.verkleinert!.vorher, 0), nachher = klein.reduce((s, x) => s + x.verkleinert!.nachher, 0);
+  const vorher = klein.reduce((s, x) => s + x.verkleinert!.vorher, 0),
+    nachher = klein.reduce((s, x) => s + x.verkleinert!.nachher, 0);
   return [
     gestempelt.length ? t('meldungen.ausgabe.mit-stempel', { wert: text ?? '' }) : '',
     klein.length ? `verkleinert (${mb(vorher)} → ${mb(nachher)})` : '',
-  ].filter(Boolean).join(', ');
+  ]
+    .filter(Boolean)
+    .join(', ');
 }
 
 export { kannStempeln };
@@ -64,7 +77,12 @@ export function pdfName(name: string): string {
  * `streng`: eine Datei, die sich nicht stempeln lässt, ist ein Fehler (einzelnes Herunterladen);
  * sonst bleibt sie unverändert – außer der Mappentyp verlangt den Stempel (Pflicht).
  */
-export async function fuerAusgabe(d: Ausgabedatei, w: Ausgabewunsch | null | undefined, k: Ausgabekontext, streng = false): Promise<Ausgabe> {
+export async function fuerAusgabe(
+  d: Ausgabedatei,
+  w: Ausgabewunsch | null | undefined,
+  k: Ausgabekontext,
+  streng = false,
+): Promise<Ausgabe> {
   const g = w?.stempel;
   // 0. Geschütztes PDF (#827): Bearbeitet wird die entsperrte Fassung, falls es eine gibt.
   if ((g || w?.verkleinern) && d.mime === 'application/pdf' && k.entsperrt) {
@@ -76,15 +94,37 @@ export async function fuerAusgabe(d: Ausgabedatei, w: Ausgabewunsch | null | und
   if (w?.verkleinern && d.mime === 'application/pdf') {
     try {
       const r = await verkleinere(d.inhalt, w.verkleinern);
-      if (r.lohnt) { d = { ...d, inhalt: r.inhalt }; verkleinert = { vorher: r.vorher, nachher: r.nachher }; }
+      if (r.lohnt) {
+        d = { ...d, inhalt: r.inhalt };
+        verkleinert = { vorher: r.vorher, nachher: r.nachher };
+      }
     } catch (x) {
       // Verkleinern ist ein Angebot: Lässt sich ein PDF nicht lesen, geht das Original hinaus (außer beim einzelnen Herunterladen).
       if (streng) throw x;
     }
   }
-  if (!g) return { ...d, stempeltext: null, verkleinert, ...(verkleinert || !w?.verkleinern ? {} : { unveraendert: d.mime === 'application/pdf' ? t('meldungen.ausgabe.laesst-sich-nicht-nennenswert', { name: d.name }) : t('meldungen.ausgabe.ist-kein-pdf-und', { name: d.name }) }) };
+  if (!g)
+    return {
+      ...d,
+      stempeltext: null,
+      verkleinert,
+      ...(verkleinert || !w?.verkleinern
+        ? {}
+        : {
+            unveraendert:
+              d.mime === 'application/pdf'
+                ? t('meldungen.ausgabe.laesst-sich-nicht-nennenswert', { name: d.name })
+                : t('meldungen.ausgabe.ist-kein-pdf-und', { name: d.name }),
+          }),
+    };
   // 2. Stempeln (#394); {seite} und {seiten} ersetzt die PDF-Stelle je Seite (#799).
-  const text = ersetzePlatzhalter(g.stempel.text, { datum: k.datum, empfaenger: g.empfaenger, benutzer: k.benutzer, mappe: k.mappe, archivnummer: k.archivnummer ?? null });
+  const text = ersetzePlatzhalter(g.stempel.text, {
+    datum: k.datum,
+    empfaenger: g.empfaenger,
+    benutzer: k.benutzer,
+    mappe: k.mappe,
+    archivnummer: k.archivnummer ?? null,
+  });
   if (!kannStempeln(d.mime)) {
     const grund = t('meldungen.ausgabe.laesst-sich-nicht-stempeln', { name: d.name });
     if (streng || g.pflicht) throw new Fachfehler(422, g.pflicht ? t('meldungen.ausgabe.der-mappentyp-verlangt-beim', { grund }) : grund);
@@ -92,12 +132,26 @@ export async function fuerAusgabe(d: Ausgabedatei, w: Ausgabewunsch | null | und
   }
   // Gezeichnet wird in der PDF-Stelle (#541). Nach dem Verkleinern mit Objektströmen speichern, sonst wäre
   // ein Teil der Ersparnis wieder weg.
-  const inhalt = await stempelePdf({ name: d.name, mime: d.mime, inhalt: d.inhalt, stempel: g.stempel, text, objektstroeme: !!verkleinert });
+  const inhalt = await stempelePdf({
+    name: d.name,
+    mime: d.mime,
+    inhalt: d.inhalt,
+    stempel: g.stempel,
+    text,
+    objektstroeme: !!verkleinert,
+  });
   // Für Historie und Mail: der Text wie auf Seite 1.
   const p = platzhalterIn(text);
   const seiten = p.includes('seiten') ? (await seitenInfo(inhalt)).anzahl : undefined;
   const erste = ersetzePlatzhalter(text, { seite: 1, seiten });
-  return { name: d.mime === 'application/pdf' ? d.name : pdfName(d.name), mime: 'application/pdf', inhalt, stempeltext: einzeilig(erste) || null, verkleinert, gestempelt: true };
+  return {
+    name: d.mime === 'application/pdf' ? d.name : pdfName(d.name),
+    mime: 'application/pdf',
+    inhalt,
+    stempeltext: einzeilig(erste) || null,
+    verkleinert,
+    gestempelt: true,
+  };
 }
 
 /** Ein Bild (JPEG/PNG) als PDF-Seite in A4, Hoch- oder Querformat nach dem Bild. */

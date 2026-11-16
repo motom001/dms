@@ -23,10 +23,22 @@ export function zeige() {
     void import('./bausteine/muster').then((m) => m.zeigeMuster(wurzel));
   } else if (location.pathname === '/abruf') {
     // Öffentliche Abrufseite einer Auskunft (#455): eigenständig – ohne Anmeldung, Kontostatus und Diagnose.
-    wurzel.render(<StrictMode><Fehlergrenze><Abrufseite /></Fehlergrenze></StrictMode>);
+    wurzel.render(
+      <StrictMode>
+        <Fehlergrenze>
+          <Abrufseite />
+        </Fehlergrenze>
+      </StrictMode>,
+    );
   } else if (location.pathname === '/notfall') {
     // Notfallzugang mit dem Notfallcode vom Notfallblatt (#815): eigenständig – ohne Anmeldung, Kontostatus und Diagnose.
-    wurzel.render(<StrictMode><Fehlergrenze><Notfallseite /></Fehlergrenze></StrictMode>);
+    wurzel.render(
+      <StrictMode>
+        <Fehlergrenze>
+          <Notfallseite />
+        </Fehlergrenze>
+      </StrictMode>,
+    );
   } else {
     starteSammler();
     starteErreichbarkeit();

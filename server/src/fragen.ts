@@ -10,7 +10,22 @@
  */
 import { auswahlText, type Feld, inAllgemeinerSuche, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { istZeitraum, prozentText, zeitraumText } from '../../shared/src/feldarten';
-import { ausschnittUm, ausschnitteAlsText, AUSSCHNITT_MAX, FRAGE_MAX, FRAGEN_STANDARD, frageWoerter, KI_HINWEIS, liesAntwort, liesVerlauf, pruefeGrenzen, saeubere, type FrageAusschnitt, type FragenGrenzen, type FrageZeile } from '../../shared/src/fragen';
+import {
+  ausschnittUm,
+  ausschnitteAlsText,
+  AUSSCHNITT_MAX,
+  FRAGE_MAX,
+  FRAGEN_STANDARD,
+  frageWoerter,
+  KI_HINWEIS,
+  liesAntwort,
+  liesVerlauf,
+  pruefeGrenzen,
+  saeubere,
+  type FrageAusschnitt,
+  type FragenGrenzen,
+  type FrageZeile,
+} from '../../shared/src/fragen';
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
 import type { Einstellungen } from './einstellungen';
@@ -39,7 +54,11 @@ export class FragenAnDieAblage {
   anbieter?: AntwortAnbieter;
   private laufend = new Set<string>();
 
-  constructor(private d: Dienst, private repo: () => Repo, private einst: () => Einstellungen | undefined) {}
+  constructor(
+    private d: Dienst,
+    private repo: () => Repo,
+    private einst: () => Einstellungen | undefined,
+  ) {}
 
   async grenzen(): Promise<FragenGrenzen> {
     const v = await this.einst()?.lies('fragen');
@@ -51,8 +70,15 @@ export class FragenAnDieAblage {
     const s = this.einst();
     if (!s) throw new Fachfehler(404, t('meldungen.fragen.einstellungen-sind-nicht'));
     const r = pruefeGrenzen(e);
-    if (Object.keys(r.fehler).length) throw new Fachfehler(422, t('meldungen.fragen.bitte-die-markierten-angaben'), { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
-    await s.schreibe('fragen', r.grenzen.ausschnitte === FRAGEN_STANDARD.ausschnitte && r.grenzen.zeichen === FRAGEN_STANDARD.zeichen ? null : r.grenzen);
+    if (Object.keys(r.fehler).length)
+      throw new Fachfehler(422, t('meldungen.fragen.bitte-die-markierten-angaben'), {
+        felderFehler: r.fehler,
+        gruende: Object.values(r.fehler),
+      });
+    await s.schreibe(
+      'fragen',
+      r.grenzen.ausschnitte === FRAGEN_STANDARD.ausschnitte && r.grenzen.zeichen === FRAGEN_STANDARD.zeichen ? null : r.grenzen,
+    );
     return this.grenzen();
   }
 
@@ -66,25 +92,48 @@ export class FragenAnDieAblage {
    * Ausschnitte zu einer Frage – nur aus Mappen, die der Fragende lesen darf. Reihenfolge: abwechselnd beste
    * Dokumente, passende Mappen (Angaben) und ähnliche Dokumente; je Dokument und je Mappe (Angaben) einmal.
    */
-  async ausschnitte(z: Zugriff | undefined, frage: string, vorher: string[], g: FragenGrenzen, kiGesperrt: (typId: string) => boolean = () => false): Promise<FrageAusschnitt[]> {
+  async ausschnitte(
+    z: Zugriff | undefined,
+    frage: string,
+    vorher: string[],
+    g: FragenGrenzen,
+    kiGesperrt: (typId: string) => boolean = () => false,
+  ): Promise<FrageAusschnitt[]> {
     const woerter = frageWoerter([frage, ...vorher].join(' '));
     const typen = new Map((await this.repo().listeTypen()).map((t) => [t.id, t]));
     // Benutzer-Mappen gehen nie an ein Paket (wie bei Paketen allgemein); an ein KI-Paket nur zugelassene Mappentypen (#796).
     // Typen mit „In der allgemeinen Suche zeigen: nein“ (#1220, z. B. reine Auswahllisten) sind keine Quelle.
-    const erlaubt = (typId: string) => { const t = typen.get(typId); return !!t && t.system !== 'benutzer' && inAllgemeinerSuche(t) && !kiGesperrt(typId); };
+    const erlaubt = (typId: string) => {
+      const t = typen.get(typId);
+      return !!t && t.system !== 'benutzer' && inAllgemeinerSuche(t) && !kiGesperrt(typId);
+    };
     const anzahl = g.ausschnitte;
     const f = await this.repo().fragenFundstellen({ woerter, lesen: z?.lesen ?? null, dokumente: anzahl * 2, mappen: anzahl });
     const aehnlich = await this.d.suche.aehnlicheZuText(z, frage, anzahl * 2, VEKTOR_MS).catch(() => []);
 
     const je = Math.max(200, Math.min(AUSSCHNITT_MAX, Math.floor((g.zeichen / Math.max(1, anzahl)) * 1.5)));
     type Kandidat = { mappeId: string; quelle: FrageAusschnitt['quelle']; text: () => Promise<string> };
-    const dok: Kandidat[] = f.dokumente.map((x) => ({ mappeId: x.mappeId, quelle: { art: 'dokument', id: x.id, name: x.name }, text: async () => ausschnittUm(x.text, woerter, je) }));
-    const angaben: Kandidat[] = f.mappen.map((m) => ({ mappeId: m.id, quelle: { art: 'angaben' }, text: () => this.angabenText(z, m, typen.get(m.typId), je, kiGesperrt) }));
+    const dok: Kandidat[] = f.dokumente.map((x) => ({
+      mappeId: x.mappeId,
+      quelle: { art: 'dokument', id: x.id, name: x.name },
+      text: async () => ausschnittUm(x.text, woerter, je),
+    }));
+    const angaben: Kandidat[] = f.mappen.map((m) => ({
+      mappeId: m.id,
+      quelle: { art: 'angaben' },
+      text: () => this.angabenText(z, m, typen.get(m.typId), je, kiGesperrt),
+    }));
     const volltexte = await this.repo().volltexte(aehnlich.map((x) => x.dokumentId).filter((id) => !f.dokumente.some((d) => d.id === id)));
     const namen = new Map<string, string>();
-    for (const x of aehnlich) if (volltexte.has(x.dokumentId)) namen.set(x.dokumentId, (await this.repo().holeDokument(x.dokumentId))?.name ?? '');
-    const aehnl: Kandidat[] = aehnlich.filter((x) => volltexte.has(x.dokumentId))
-      .map((x) => ({ mappeId: x.mappeId, quelle: { art: 'dokument', id: x.dokumentId, name: namen.get(x.dokumentId) ?? '' }, text: async () => ausschnittUm(volltexte.get(x.dokumentId)!, woerter, je) }));
+    for (const x of aehnlich)
+      if (volltexte.has(x.dokumentId)) namen.set(x.dokumentId, (await this.repo().holeDokument(x.dokumentId))?.name ?? '');
+    const aehnl: Kandidat[] = aehnlich
+      .filter((x) => volltexte.has(x.dokumentId))
+      .map((x) => ({
+        mappeId: x.mappeId,
+        quelle: { art: 'dokument', id: x.dokumentId, name: namen.get(x.dokumentId) ?? '' },
+        text: async () => ausschnittUm(volltexte.get(x.dokumentId)!, woerter, je),
+      }));
 
     // Mappen, die vorkommen, auf einmal laden (Titel, Typ) und noch einmal auf Lesbarkeit prüfen.
     const alle = [...dok, ...angaben, ...aehnl];
@@ -106,23 +155,45 @@ export class FragenAnDieAblage {
         if (!text) continue;
         if (zeichen + text.length > g.zeichen) text = `${text.slice(0, Math.max(0, g.zeichen - zeichen)).trimEnd()} …`;
         zeichen += text.length;
-        erg.push({ nr: erg.length + 1, mappe: { id: k.mappeId, typId: b.typId, titel: b.titel }, typ: typen.get(b.typId)?.name ?? '', quelle: k.quelle, text });
+        erg.push({
+          nr: erg.length + 1,
+          mappe: { id: k.mappeId, typId: b.typId, titel: b.titel },
+          typ: typen.get(b.typId)?.name ?? '',
+          quelle: k.quelle,
+          text,
+        });
       }
     }
     return erg;
   }
 
   /** Angaben einer Mappe als Text: Feld: Wert – ohne Passwortfelder; Verweise mit dem Titel, wenn lesbar. */
-  private async angabenText(z: Zugriff | undefined, m: Mappe, t: Mappentyp | undefined, max: number, kiGesperrt: (typId: string) => boolean = () => false): Promise<string> {
+  private async angabenText(
+    z: Zugriff | undefined,
+    m: Mappe,
+    t: Mappentyp | undefined,
+    max: number,
+    kiGesperrt: (typId: string) => boolean = () => false,
+  ): Promise<string> {
     if (!t) return '';
     const zeilen: string[] = [];
-    const ziele = t.felder.filter((f) => f.typ === 'referenz').flatMap((f) => (Array.isArray(m.werte[f.key]) ? m.werte[f.key] as string[] : typeof m.werte[f.key] === 'string' ? [m.werte[f.key] as string] : []));
+    const ziele = t.felder
+      .filter((f) => f.typ === 'referenz')
+      .flatMap((f) =>
+        Array.isArray(m.werte[f.key]) ? (m.werte[f.key] as string[]) : typeof m.werte[f.key] === 'string' ? [m.werte[f.key] as string] : [],
+      );
     const lesbar = ziele.length ? await this.d.rechtepruefung.lesbare(z, ziele) : new Set<string>();
     // Titel verknüpfter Mappen auch nur aus Mappentypen, die an das (KI-)Paket dürfen (#796).
-    if (lesbar.size) { const zt = await this.repo().typenVon([...lesbar]); for (const id of [...lesbar]) { const x = zt.get(id); if (!x || kiGesperrt(x)) lesbar.delete(id); } }
+    if (lesbar.size) {
+      const zt = await this.repo().typenVon([...lesbar]);
+      for (const id of [...lesbar]) {
+        const x = zt.get(id);
+        if (!x || kiGesperrt(x)) lesbar.delete(id);
+      }
+    }
     const titel = ziele.length ? await this.repo().titelVon([...lesbar]) : new Map<string, string>();
     for (const f of t.felder) {
-      const w = this.wertText(f, m.werte[f.key], (id) => (lesbar.has(id) ? titel.get(id) ?? null : null));
+      const w = this.wertText(f, m.werte[f.key], (id) => (lesbar.has(id) ? (titel.get(id) ?? null) : null));
       if (w) zeilen.push(`${f.label}: ${w}`);
     }
     return ausschnittUm(zeilen.join('\n'), [], max);
@@ -133,11 +204,23 @@ export class FragenAnDieAblage {
     if (NEUE_ARTEN.has(f.typ)) return neueArtText(f, v);
     if (typeof v === 'string' && v.startsWith('dms1$')) return '';
     switch (f.typ) {
-      case 'referenz': return (Array.isArray(v) ? v : [v]).map((id) => titel(String(id))).filter(Boolean).join(', ');
-      case 'janein': return v === true ? 'ja' : v === false ? 'nein' : '';
-      case 'betrag': { const b = v as { betrag?: unknown; waehrung?: unknown }; return typeof b?.betrag === 'number' ? `${b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${String(b.waehrung ?? 'EUR')}` : ''; }
-      case 'auswahl': return Array.isArray(v) ? v.map(String).join(', ') : auswahlText(v);
-      default: return typeof v === 'object' ? '' : String(v).slice(0, 2000);
+      case 'referenz':
+        return (Array.isArray(v) ? v : [v])
+          .map((id) => titel(String(id)))
+          .filter(Boolean)
+          .join(', ');
+      case 'janein':
+        return v === true ? 'ja' : v === false ? 'nein' : '';
+      case 'betrag': {
+        const b = v as { betrag?: unknown; waehrung?: unknown };
+        return typeof b?.betrag === 'number'
+          ? `${b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${String(b.waehrung ?? 'EUR')}`
+          : '';
+      }
+      case 'auswahl':
+        return Array.isArray(v) ? v.map(String).join(', ') : auswahlText(v);
+      default:
+        return typeof v === 'object' ? '' : String(v).slice(0, 2000);
     }
   }
 
@@ -162,34 +245,86 @@ export class FragenAnDieAblage {
     try {
       const verlauf = liesVerlauf(e.verlauf);
       const g = await this.grenzen();
-      const vorige = verlauf.filter((v) => v.rolle === 'frage').slice(-1).map((v) => v.text);
+      const vorige = verlauf
+        .filter((v) => v.rolle === 'frage')
+        .slice(-1)
+        .map((v) => v.text);
       ausschnitte = await this.ausschnitte(z, frage, vorige, g, await this.d.ki.kiSperreFuer(paket.id));
       const mappen = new Set(ausschnitte.map((a) => a.mappe.id)).size;
       schreibe({ art: 'ausschnitte', ausschnitte, mappen });
       geschrieben = true;
-      const r = await this.anbieter.antworte(paket.id, {
-        frage, verlauf, hinweis: KI_HINWEIS, sprache: 'de',
-        // Für das Paket: die Ausschnitte einzeln und – als Daten gekennzeichnet – fertig als Text.
-        ausschnitte: ausschnitte.map((a) => ({ nr: a.nr, mappe: a.mappe.titel, typ: a.typ, quelle: a.quelle.art === 'dokument' ? a.quelle.name : t('meldungen.fragen.angaben-der-mappe'), text: a.text })),
-        ausschnitte_text: ausschnitteAlsText(ausschnitte),
-      }, (t) => schreibe({ art: 'teil', text: t }));
-      const a = liesAntwort(r.text, ausschnitte.map((x) => x.nr));
+      const r = await this.anbieter.antworte(
+        paket.id,
+        {
+          frage,
+          verlauf,
+          hinweis: KI_HINWEIS,
+          sprache: 'de',
+          // Für das Paket: die Ausschnitte einzeln und – als Daten gekennzeichnet – fertig als Text.
+          ausschnitte: ausschnitte.map((a) => ({
+            nr: a.nr,
+            mappe: a.mappe.titel,
+            typ: a.typ,
+            quelle: a.quelle.art === 'dokument' ? a.quelle.name : t('meldungen.fragen.angaben-der-mappe'),
+            text: a.text,
+          })),
+          ausschnitte_text: ausschnitteAlsText(ausschnitte),
+        },
+        (t) => schreibe({ art: 'teil', text: t }),
+      );
+      const a = liesAntwort(
+        r.text,
+        ausschnitte.map((x) => x.nr),
+      );
       if (a.fehler) throw new Error(a.fehler);
       // Quellen: nur gegebene Ausschnitte, noch einmal auf Lesbarkeit geprüft (die Rechte können sich geändert haben).
       const jeMappe = new Map<string, number[]>();
-      for (const n of a.quellen) { const x = ausschnitte.find((y) => y.nr === n)!; jeMappe.set(x.mappe.id, [...(jeMappe.get(x.mappe.id) ?? []), n]); }
+      for (const n of a.quellen) {
+        const x = ausschnitte.find((y) => y.nr === n)!;
+        jeMappe.set(x.mappe.id, [...(jeMappe.get(x.mappe.id) ?? []), n]);
+      }
       const ok = await this.d.rechtepruefung.lesbare(z, [...jeMappe.keys()]);
-      const quellen = [...jeMappe].filter(([id]) => ok.has(id)).map(([id, nr]) => { const m = ausschnitte.find((y) => y.mappe.id === id)!.mappe; return { id, typId: m.typId, titel: m.titel, nr }; });
+      const quellen = [...jeMappe]
+        .filter(([id]) => ok.has(id))
+        .map(([id, nr]) => {
+          const m = ausschnitte.find((y) => y.mappe.id === id)!.mappe;
+          return { id, typId: m.typId, titel: m.titel, nr };
+        });
       // Hat das Paket für den Dienst gekürzt (#564), sieht der Fragende das: welche Ausschnitte hingingen, ob Chat wegfiel.
       // Messpanel (#565): Der Kopf mit Server-Timing ging vor der Antwort – die Zeiten des KI-Dienstes stehen hier.
       const ext = externDerAnfrage();
-      schreibe({ art: 'fertig', text: a.text || t('meldungen.fragen.das-paket-hat-keine'), quellen, ms: Date.now() - start, ...(a.gekuerzt ? { gekuerzt: a.gekuerzt } : {}), ...(ext ? { extern: ext } : {}) });
-      log.info('Frage an die Ablage gestellt', { von: z.ich.id, paket: paket.id, ausschnitte: ausschnitte.length, mappen, quellen: quellen.length, ms: Date.now() - start, ...(a.gekuerzt ? { geschickt: a.gekuerzt.geschickt.length, verlaufWeg: a.gekuerzt.verlauf } : {}) });
+      schreibe({
+        art: 'fertig',
+        text: a.text || t('meldungen.fragen.das-paket-hat-keine'),
+        quellen,
+        ms: Date.now() - start,
+        ...(a.gekuerzt ? { gekuerzt: a.gekuerzt } : {}),
+        ...(ext ? { extern: ext } : {}),
+      });
+      log.info('Frage an die Ablage gestellt', {
+        von: z.ich.id,
+        paket: paket.id,
+        ausschnitte: ausschnitte.length,
+        mappen,
+        quellen: quellen.length,
+        ms: Date.now() - start,
+        ...(a.gekuerzt ? { geschickt: a.gekuerzt.geschickt.length, verlaufWeg: a.gekuerzt.verlauf } : {}),
+      });
     } catch (x) {
       if (!geschrieben) throw x;
-      log.warn('Frage an die Ablage nicht beantwortet', { von: z.ich.id, paket: paket.id, ausschnitte: ausschnitte.length, ms: Date.now() - start, fehler: (x as Error).message.slice(0, 300) });
+      log.warn('Frage an die Ablage nicht beantwortet', {
+        von: z.ich.id,
+        paket: paket.id,
+        ausschnitte: ausschnitte.length,
+        ms: Date.now() - start,
+        fehler: (x as Error).message.slice(0, 300),
+      });
       const ext = externDerAnfrage();
-      schreibe({ art: 'fehler', text: t('meldungen.fragen.keine-antwort', { message: (x as Error).message }), ...(ext ? { extern: ext } : {}) });
+      schreibe({
+        art: 'fehler',
+        text: t('meldungen.fragen.keine-antwort', { message: (x as Error).message }),
+        ...(ext ? { extern: ext } : {}),
+      });
     } finally {
       this.laufend.delete(z.ich.id);
     }

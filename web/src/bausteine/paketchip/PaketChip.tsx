@@ -31,12 +31,30 @@ export interface PaketChipProps {
 export function PaketChip({ paket, inLink, titel }: PaketChipProps) {
   if (!paket) return null;
   if (paket === 'ablago') {
-    return <span className={s.chip} title={titel ?? t('oberflaeche.paketchip.ablago.titel')} data-paket="ablago">{t('oberflaeche.paketchip.ablago')}</span>;
+    return (
+      <span className={s.chip} title={titel ?? t('oberflaeche.paketchip.ablago.titel')} data-paket="ablago">
+        {t('oberflaeche.paketchip.ablago')}
+      </span>
+    );
   }
   const name = paket.name || paket.id;
-  const tipp = titel ?? (paket.version ? t('oberflaeche.paketchip.titel-version', { name, version: paket.version }) : t('oberflaeche.paketchip.titel', { name }));
-  const inhalt = <><Symbol name="paket" className={s.symbol} /><span>{name}</span></>;
-  if (inLink) return <span className={s.chip} title={tipp} data-paket={paket.id}>{inhalt}</span>;
+  const tipp =
+    titel ??
+    (paket.version
+      ? t('oberflaeche.paketchip.titel-version', { name, version: paket.version })
+      : t('oberflaeche.paketchip.titel', { name }));
+  const inhalt = (
+    <>
+      <Symbol name="paket" className={s.symbol} />
+      <span>{name}</span>
+    </>
+  );
+  if (inLink)
+    return (
+      <span className={s.chip} title={tipp} data-paket={paket.id}>
+        {inhalt}
+      </span>
+    );
   return (
     <Link to={`/werkbank/pakete/${encodeURIComponent(paket.id)}`} className={`${s.chip} ${s.link}`} title={tipp}>
       {inhalt}

@@ -54,10 +54,23 @@ export interface PoolStand {
 }
 
 interface Offen {
-  id: number; vorgang: string; args: unknown[]; zeitMs: number; eingang: number; beginn?: number;
-  ok: (x: unknown) => void; fehler: (e: Error) => void; timer?: NodeJS.Timeout;
+  id: number;
+  vorgang: string;
+  args: unknown[];
+  zeitMs: number;
+  eingang: number;
+  beginn?: number;
+  ok: (x: unknown) => void;
+  fehler: (e: Error) => void;
+  timer?: NodeJS.Timeout;
 }
-interface Faden { w: Worker; offen: Offen | null; leer?: NodeJS.Timeout; beendet: boolean; weg?: boolean }
+interface Faden {
+  w: Worker;
+  offen: Offen | null;
+  leer?: NodeJS.Timeout;
+  beendet: boolean;
+  weg?: boolean;
+}
 
 export class Arbeiterpool {
   private faeden: Faden[] = [];
@@ -85,21 +98,40 @@ export class Arbeiterpool {
       return Promise.reject(new Fachfehler(503, t('systemzustand.arbeiter.meldung.voll'), { retryAfter: 60 }));
     }
     return new Promise<T>((ok, fehler) => {
-      this.schlange.push({ id: ++this.nr, vorgang, args, zeitMs: x.zeitMs ?? this.zeitMs, eingang: performance.now(), ok: ok as (x: unknown) => void, fehler });
+      this.schlange.push({
+        id: ++this.nr,
+        vorgang,
+        args,
+        zeitMs: x.zeitMs ?? this.zeitMs,
+        eingang: performance.now(),
+        ok: ok as (x: unknown) => void,
+        fehler,
+      });
       this.verteile();
     });
   }
 
   /** Einen Arbeiter vorab starten (spart beim ersten Auftrag das Laden der Bibliotheken). */
-  vorwaermen() { if (!this.faeden.length && !this.zu) this.leerlauf(this.neuerFaden()); }
+  vorwaermen() {
+    if (!this.faeden.length && !this.zu) this.leerlauf(this.neuerFaden());
+  }
 
   stand(): PoolStand {
     const n = this.z.erledigt + this.z.fehler;
     return {
-      groesse: this.groesse, arbeiter: this.faeden.length, beschaeftigt: this.faeden.filter((f) => f.offen).length, wartend: this.schlange.length,
-      erledigt: this.z.erledigt, fehler: this.z.fehler, zeitueberschreitungen: this.z.zeitueberschreitungen, abgewiesen: this.z.abgewiesen,
-      mittlereDauerMs: n ? Math.round(this.z.dauer / n) : null, mittleresWartenMs: n ? Math.round(this.z.warten / n) : null,
-      laengstesWartenMs: Math.round(this.z.laengstesWarten), zeitMs: this.zeitMs, warteschlangeMax: this.warteschlangeMax,
+      groesse: this.groesse,
+      arbeiter: this.faeden.length,
+      beschaeftigt: this.faeden.filter((f) => f.offen).length,
+      wartend: this.schlange.length,
+      erledigt: this.z.erledigt,
+      fehler: this.z.fehler,
+      zeitueberschreitungen: this.z.zeitueberschreitungen,
+      abgewiesen: this.z.abgewiesen,
+      mittlereDauerMs: n ? Math.round(this.z.dauer / n) : null,
+      mittleresWartenMs: n ? Math.round(this.z.warten / n) : null,
+      laengstesWartenMs: Math.round(this.z.laengstesWarten),
+      zeitMs: this.zeitMs,
+      warteschlangeMax: this.warteschlangeMax,
       zuletztAbgewiesen: this.zuletztAbgewiesen === null ? null : new Date(this.zuletztAbgewiesen).toISOString(),
     };
   }
@@ -125,18 +157,24 @@ export class Arbeiterpool {
     const w = new Worker(this.o.datei, {
       execArgv: this.o.execArgv,
       resourceLimits: { maxOldGenerationSizeMb: this.o.speicherMb ?? 1536 },
-      stdout: false, stderr: false,
+      stdout: false,
+      stderr: false,
     });
     const f: Faden = { w, offen: null, beendet: false };
     w.on('message', (m: Antwort) => this.antwort(f, m));
     w.on('error', (e) => this.absturz(f, e));
-    w.on('exit', (code) => { if (!f.weg) this.absturz(f, new Error(`Arbeiter beendet (Code ${code})`)); });
+    w.on('exit', (code) => {
+      if (!f.weg) this.absturz(f, new Error(`Arbeiter beendet (Code ${code})`));
+    });
     this.faeden.push(f);
     return f;
   }
 
   private starte(f: Faden, a: Offen) {
-    if (f.leer) { clearTimeout(f.leer); f.leer = undefined; }
+    if (f.leer) {
+      clearTimeout(f.leer);
+      f.leer = undefined;
+    }
     f.offen = a;
     a.beginn = performance.now();
     const warten = a.beginn - a.eingang;
@@ -147,12 +185,25 @@ export class Arbeiterpool {
       this.z.zeitueberschreitungen++;
       const min = Math.round(a.zeitMs / 60_000);
       f.beendet = true; // bekommt keinen neuen Auftrag mehr
-      this.fertig(f, a, new Fachfehler(504, min > 0 ? t('systemzustand.arbeiter.meldung.zeit.minuten', { anzahl: min }) : t('systemzustand.arbeiter.meldung.zeit.sekunden', { anzahl: Math.round(a.zeitMs / 1000) })));
+      this.fertig(
+        f,
+        a,
+        new Fachfehler(
+          504,
+          min > 0
+            ? t('systemzustand.arbeiter.meldung.zeit.minuten', { anzahl: min })
+            : t('systemzustand.arbeiter.meldung.zeit.sekunden', { anzahl: Math.round(a.zeitMs / 1000) }),
+        ),
+      );
       void this.entferne(f);
     }, a.zeitMs);
     a.timer.unref();
     const nachricht: Auftrag = { id: a.id, vorgang: a.vorgang, args: a.args };
-    try { f.w.postMessage(nachricht); } catch (e) { this.fertig(f, a, new Fachfehler(500, t('systemzustand.arbeiter.meldung.uebergabe', { fehler: (e as Error).message }))); }
+    try {
+      f.w.postMessage(nachricht);
+    } catch (e) {
+      this.fertig(f, a, new Fachfehler(500, t('systemzustand.arbeiter.meldung.uebergabe', { fehler: (e as Error).message })));
+    }
   }
 
   private antwort(f: Faden, m: Antwort) {
@@ -168,7 +219,13 @@ export class Arbeiterpool {
     if (a.timer) clearTimeout(a.timer);
     f.offen = null;
     this.z.dauer += performance.now() - (a.beginn ?? a.eingang);
-    if (fehler) { this.z.fehler++; a.fehler(fehler); } else { this.z.erledigt++; a.ok(ergebnis); }
+    if (fehler) {
+      this.z.fehler++;
+      a.fehler(fehler);
+    } else {
+      this.z.erledigt++;
+      a.ok(ergebnis);
+    }
     if (!f.beendet) this.leerlauf(f);
     this.verteile();
   }
@@ -177,7 +234,9 @@ export class Arbeiterpool {
   private leerlauf(f: Faden) {
     f.w.unref();
     if (f.leer) clearTimeout(f.leer);
-    f.leer = setTimeout(() => { if (!f.offen) void this.entferne(f); }, this.o.leerlaufMs ?? 120_000);
+    f.leer = setTimeout(() => {
+      if (!f.offen) void this.entferne(f);
+    }, this.o.leerlaufMs ?? 120_000);
     f.leer.unref();
   }
 
@@ -185,7 +244,15 @@ export class Arbeiterpool {
     const a = f.offen;
     const speicher = (e as NodeJS.ErrnoException).code === 'ERR_WORKER_OUT_OF_MEMORY';
     f.beendet = true;
-    if (a) this.fertig(f, a, new Fachfehler(speicher ? 507 : 500, speicher ? t('systemzustand.arbeiter.meldung.speicher') : t('systemzustand.arbeiter.meldung.absturz', { fehler: e.message })));
+    if (a)
+      this.fertig(
+        f,
+        a,
+        new Fachfehler(
+          speicher ? 507 : 500,
+          speicher ? t('systemzustand.arbeiter.meldung.speicher') : t('systemzustand.arbeiter.meldung.absturz', { fehler: e.message }),
+        ),
+      );
     void this.entferne(f);
   }
 

@@ -12,7 +12,10 @@ import s from './Einheit.module.css';
  */
 
 /** Wert eines Zeitraums, wie getippt: Anzahl als Text, Einheit aus der Auswahl. */
-export interface ZeitraumRoh { anzahl: string; einheit: Zeitraumeinheit }
+export interface ZeitraumRoh {
+  anzahl: string;
+  einheit: Zeitraumeinheit;
+}
 
 interface Gemeinsam extends Partial<FeldVerknuepfung> {
   /** Name der Eingabe, wenn keine sichtbare Beschriftung auf `id` zeigt (z. B. in einer Bedingung). */
@@ -36,11 +39,26 @@ export function ZeitraumEingabe({ wert, setze, id, disabled, className, ...aria 
   const name = aria['aria-label'];
   return (
     <span className={[s.einheit, s.zeitraum, className].filter(Boolean).join(' ')}>
-      <input id={id} inputMode="numeric" autoComplete="off" value={wert.anzahl} disabled={disabled} {...aria}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setze({ ...wert, anzahl: e.target.value })} />
-      <select aria-label={name ? t('oberflaeche.einheit.einheit-von', { name }) : t('oberflaeche.einheit.einheit')} value={wert.einheit} disabled={disabled}
-        aria-invalid={aria['aria-invalid']} onChange={(e) => setze({ ...wert, einheit: e.target.value as Zeitraumeinheit })}>
-        {ZEITRAUM_EINHEITEN.map((x) => <option key={x} value={x}>{einheitText(x, zahl)}</option>)}
+      <input
+        id={id}
+        inputMode="numeric"
+        autoComplete="off"
+        value={wert.anzahl}
+        disabled={disabled}
+        {...aria}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setze({ ...wert, anzahl: e.target.value })}
+      />
+      <select
+        aria-label={name ? t('oberflaeche.einheit.einheit-von', { name }) : t('oberflaeche.einheit.einheit')}
+        value={wert.einheit}
+        disabled={disabled}
+        aria-invalid={aria['aria-invalid']}
+        onChange={(e) => setze({ ...wert, einheit: e.target.value as Zeitraumeinheit })}>
+        {ZEITRAUM_EINHEITEN.map((x) => (
+          <option key={x} value={x}>
+            {einheitText(x, zahl)}
+          </option>
+        ))}
       </select>
     </span>
   );
@@ -55,8 +73,18 @@ export interface ProzentEingabeProps extends Gemeinsam {
 export function ProzentEingabe({ wert, setze, id, disabled, className, ...aria }: ProzentEingabeProps) {
   return (
     <span className={[s.einheit, s.prozent, className].filter(Boolean).join(' ')}>
-      <input id={id} inputMode="decimal" autoComplete="off" value={wert} disabled={disabled} {...aria} onChange={(e) => setze(e.target.value)} />
-      <span className={s.zeichen} aria-hidden="true">%</span>
+      <input
+        id={id}
+        inputMode="decimal"
+        autoComplete="off"
+        value={wert}
+        disabled={disabled}
+        {...aria}
+        onChange={(e) => setze(e.target.value)}
+      />
+      <span className={s.zeichen} aria-hidden="true">
+        %
+      </span>
     </span>
   );
 }

@@ -15,12 +15,17 @@ import { speicherRepo } from '../src/repo-speicher';
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin', email: 'lena@example.org' };
 const offen: Array<() => Promise<void>> = [];
-after(async () => { for (const f of offen) await f(); });
+after(async () => {
+  for (const f of offen) await f();
+});
 
 async function datenbank(): Promise<postgres.Sql> {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const a = { ...ausUrl(process.env.TEST_DATABASE_URL)!, datenbank: `dms_suchtext_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
+  const a = {
+    ...ausUrl(process.env.TEST_DATABASE_URL)!,
+    datenbank: `dms_suchtext_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  };
   await legeDatenbankAn(a);
   const sql = verbinde(alsUrl(a));
   offen.push(async () => {
@@ -40,9 +45,15 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     const r = pgRepo(sql, HAUSHALT);
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
     const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [
-      { key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }, { key: 'notiz', label: 'Notiz', typ: 'text' },
-    ] });
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Unterlage',
+      titelVorlage: '{titel}',
+      felder: [
+        { key: 'titel', label: 'Titel', typ: 'text', pflicht: true },
+        { key: 'von', label: 'Von', typ: 'text' },
+        { key: 'notiz', label: 'Notiz', typ: 'text' },
+      ],
+    });
     const suche = async (s: string) => (await d.sichten.seite(ICH, { sicht: `typ:${typ.id}`, suche: s })).mappen.map((m) => m.titel).sort();
     return { sql, r, d, typ, suche };
   }
@@ -58,8 +69,14 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     assert.match(x.suchtext as string, /herr ozdemir/);
 
     const faelle: Array<[string, string[]]> = [
-      ['Ozdemir', ['Kfz-Versicherung 2026']], ['Özdemir', ['Kfz-Versicherung 2026']], ['kfzversicherung', ['Kfz-Versicherung 2026']],
-      ['Strasse', ['Stromvertrag']], ['gebuhr', ['Stromvertrag']], ['strom', ['Stromvertrag']], ['Fahrrad', []], ['100%', []],
+      ['Ozdemir', ['Kfz-Versicherung 2026']],
+      ['Özdemir', ['Kfz-Versicherung 2026']],
+      ['kfzversicherung', ['Kfz-Versicherung 2026']],
+      ['Strasse', ['Stromvertrag']],
+      ['gebuhr', ['Stromvertrag']],
+      ['strom', ['Stromvertrag']],
+      ['Fahrrad', []],
+      ['100%', []],
     ];
     for (const [s, erwartet] of faelle) assert.deepEqual(await suche(s), erwartet, s);
 
@@ -78,7 +95,8 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     await assert.rejects(sql`UPDATE mappen SET suchtext = NULL`, /null value|NOT NULL|not-null/i);
     await sql`ALTER TABLE mappen ENABLE TRIGGER mappen_suchtext`;
     // Ohne Trigger angelegt: leer statt NULL – der Trigger füllt ihn beim nächsten Schreiben.
-    const [z] = await sql`SELECT column_default, is_nullable FROM information_schema.columns WHERE table_name = 'mappen' AND column_name = 'suchtext'`;
+    const [z] =
+      await sql`SELECT column_default, is_nullable FROM information_schema.columns WHERE table_name = 'mappen' AND column_name = 'suchtext'`;
     assert.equal(z.is_nullable, 'NO');
     assert.match(String(z.column_default), /''/);
   });
@@ -87,7 +105,9 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
     const { sql, d, typ, suche } = await aufbau();
     const { MAPPEN_SPALTEN } = await import('../src/repo-pg');
     const { OHNE_SPALTEN } = await import('../src/datenbankabzug');
-    const spalten = (await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'mappen' AND column_name <> 'suchtext'`).map((z) => z.column_name as string);
+    const spalten = (
+      await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'mappen' AND column_name <> 'suchtext'`
+    ).map((z) => z.column_name as string);
     assert.deepEqual([...spalten].sort(), [...MAPPEN_SPALTEN].sort(), 'neue Spalten fallen hier auf');
     assert.ok(OHNE_SPALTEN.mappen?.includes('suchtext'));
 
@@ -137,7 +157,7 @@ async function pruefeMerkeVorn(k: KontoRepo, id: string) {
   await k.setzeEinstellung(id, 'zuletzt_geoeffnet', [m(1), 7, null, m(2)]);
   await k.merkeVorn(id, 'zuletzt_geoeffnet', m(2), 10);
   assert.deepEqual(await liste(), [m(2), m(1)], 'nur Texte');
-  assert.equal((await roh() as unknown[])[1], m(1), 'frühere Einträge bleiben, wie sie waren');
+  assert.equal(((await roh()) as unknown[])[1], m(1), 'frühere Einträge bleiben, wie sie waren');
   await k.setzeEinstellung(id, 'zuletzt_geoeffnet', 'kaputt');
   await k.merkeVorn(id, 'zuletzt_geoeffnet', m(3), 10);
   assert.deepEqual(await liste(), [m(3)]);
@@ -145,7 +165,10 @@ async function pruefeMerkeVorn(k: KontoRepo, id: string) {
   await k.setzeEinstellung(id, 'zuletzt_geoeffnet', [{ id: m(3), am: '2026-01-01T10:00:00.000Z' }, m(4)]);
   await k.merkeVorn(id, 'zuletzt_geoeffnet', m(3), 10);
   const neu = zuletztListe(await roh());
-  assert.deepEqual(neu.map((x) => x.id), [m(3), m(4)]);
+  assert.deepEqual(
+    neu.map((x) => x.id),
+    [m(3), m(4)],
+  );
   assert.notEqual(neu[0].am, '2026-01-01T10:00:00.000Z');
 }
 

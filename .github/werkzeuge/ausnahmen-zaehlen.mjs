@@ -74,7 +74,9 @@ export function geaenderteRegeln(vorherJ, jetztJ, konfigVorher, konfigJetzt) {
 
 /** Bestand ohne die genannten Regeln. */
 export function ohneRegeln(j, regeln) {
-  return Object.fromEntries(Object.entries(j).map(([datei, r]) => [datei, Object.fromEntries(Object.entries(r).filter(([regel]) => !regeln.includes(regel)))]));
+  return Object.fromEntries(
+    Object.entries(j).map(([datei, r]) => [datei, Object.fromEntries(Object.entries(r).filter(([regel]) => !regeln.includes(regel)))]),
+  );
 }
 
 /** Vergleich zweier Stände; `vorher` null = Datei gab es in der Basis nicht. */
@@ -87,7 +89,12 @@ export function vergleiche(vorher, jetzt) {
 const git = (...a) => execFileSync('git', a, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 function ausBasis(basis, datei, roh = false) {
-  try { const t = git('show', `${basis}:${datei}`); return roh ? t : JSON.parse(t); } catch { return roh ? '' : null; }
+  try {
+    const t = git('show', `${basis}:${datei}`);
+    return roh ? t : JSON.parse(t);
+  } catch {
+    return roh ? '' : null;
+  }
 }
 
 function main() {
@@ -95,14 +102,19 @@ function main() {
   let fehler = false;
   for (const l of LISTEN) {
     let jetzt = existsSync(l.datei) ? JSON.parse(readFileSync(l.datei, 'utf8')) : null;
-    if (!jetzt) { console.log(`::error title=${l.name}::${l.datei} fehlt`); fehler = true; continue; }
+    if (!jetzt) {
+      console.log(`::error title=${l.name}::${l.datei} fehlt`);
+      fehler = true;
+      continue;
+    }
     let vorherJ = ausBasis(basis, l.datei);
     if (l.datei === 'eslint-suppressions.json' && vorherJ) {
       const konfigVorher = ausBasis(basis, 'eslint.config.js', true);
       const konfigJetzt = readFileSync('eslint.config.js', 'utf8');
       const neu = neueRegeln(vorherJ, jetzt, konfigVorher, konfigJetzt);
       const geaendert = geaenderteRegeln(vorherJ, jetzt, konfigVorher, konfigJetzt);
-      const z = jeRegel(jetzt), a = jeRegel(vorherJ);
+      const z = jeRegel(jetzt),
+        a = jeRegel(vorherJ);
       for (const r of neu) console.log(`${l.name}, neue Regel ${r}: ${z[r]} Einträge (Ausgangspunkt)`);
       for (const r of geaendert) console.log(`${l.name}, Grenze von ${r} geändert: ${a[r]} → ${z[r]} Einträge (neuer Ausgangspunkt)`);
       jetzt = ohneRegeln(jetzt, [...neu, ...geaendert]);
@@ -114,10 +126,19 @@ function main() {
       fehler = true;
       let mehr = '';
       if (l.datei === 'eslint-suppressions.json') {
-        const a = jeRegel(vorherJ), b = jeRegel(jetzt);
-        mehr = ' Mehr bei: ' + Object.keys(b).filter((r) => b[r] > (a[r] ?? 0)).map((r) => `${r} +${b[r] - (a[r] ?? 0)}`).join(', ') + '.';
+        const a = jeRegel(vorherJ),
+          b = jeRegel(jetzt);
+        mehr =
+          ' Mehr bei: ' +
+          Object.keys(b)
+            .filter((r) => b[r] > (a[r] ?? 0))
+            .map((r) => `${r} +${b[r] - (a[r] ?? 0)}`)
+            .join(', ') +
+          '.';
       }
-      console.log(`::error title=${l.name} gewachsen (#899)::${l.datei}: ${v.text}.${mehr} Neuer Code muss die Regeln einhalten; Einträge umtragen ja, hinzufügen nein (Entwicklerhandbuch → Stil und Abhängigkeiten).`);
+      console.log(
+        `::error title=${l.name} gewachsen (#899)::${l.datei}: ${v.text}.${mehr} Neuer Code muss die Regeln einhalten; Einträge umtragen ja, hinzufügen nein (Entwicklerhandbuch → Stil und Abhängigkeiten).`,
+      );
     }
   }
   if (fehler) process.exitCode = 1;

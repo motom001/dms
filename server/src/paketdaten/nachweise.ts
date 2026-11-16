@@ -13,9 +13,20 @@ export interface NachweisQuellen {
   /** Journal des Monats. */
   journal(monat: string): Promise<JournalMonat>;
   /** Aufstellung der Personen zum Stichtag (ohne Dienst- und Systemkonten). */
-  benutzer?(): Promise<Array<{ konto: string; aktiv: boolean; rollen: string[]; zweifaktor: boolean; passkey: boolean; verwaltung: string[] }>>;
+  benutzer?(): Promise<
+    Array<{ konto: string; aktiv: boolean; rollen: string[]; zweifaktor: boolean; passkey: boolean; verwaltung: string[] }>
+  >;
   /** Sicherungen (vorhandene) mit Beginn, Ende, Art, Prüfung und Probe. */
-  sicherungen?(): Promise<Array<{ name: string; beginn: string; ende: string | null; art: string; pruefung: { am: string; ok: boolean } | null; probe: { am: string; ok: boolean } | null }>>;
+  sicherungen?(): Promise<
+    Array<{
+      name: string;
+      beginn: string;
+      ende: string | null;
+      art: string;
+      pruefung: { am: string; ok: boolean } | null;
+      probe: { am: string; ok: boolean } | null;
+    }>
+  >;
   /** Löschprotokoll des Monats: je Eintrag Schritt, Grund und Mappentyp (ohne Titel). */
   loeschungen?(von: string, bis: string): Promise<Array<{ zeit: string; schritt: string; grund: string | null; typ: string; art: string }>>;
   /** Eingegangene Post des Monats je Weg (Kanal). */
@@ -44,15 +55,22 @@ type Teil = (q: NachweisQuellen, g: Grenzen, j: JournalMonat, aus: NachweisEintr
 /** Zugang: Fehlanmeldungen mit unbekanntem Konto nur als Anzahl, Benutzer zum Stichtag. */
 const zugang: Teil = async (q, _g, j, aus) => {
   aus.push({ kennung: 'zugang.fehlanmeldung_unbekannt', daten: { anzahl: j.zaehler['zugang.fehlanmeldung_unbekannt'] ?? 0 } });
-  for (const b of (await q.benutzer?.()) ?? []) aus.push({ kennung: 'zugang.benutzer', daten: { konto: b.konto, aktiv: b.aktiv, rollen: b.rollen, zweifaktor: b.zweifaktor, passkey: b.passkey, verwaltung: b.verwaltung } });
+  for (const b of (await q.benutzer?.()) ?? [])
+    aus.push({
+      kennung: 'zugang.benutzer',
+      daten: { konto: b.konto, aktiv: b.aktiv, rollen: b.rollen, zweifaktor: b.zweifaktor, passkey: b.passkey, verwaltung: b.verwaltung },
+    });
 };
 
 /** Sicherung: Läufe, Prüfungen und Probe-Wiederherstellungen, die in den Monat fallen. */
 const sicherung: Teil = async (q, g, _j, aus) => {
   for (const s of (await q.sicherungen?.()) ?? []) {
-    if (imMonat(s.beginn, g)) aus.push({ kennung: 'sicherung.lauf', zeit: s.beginn, daten: { name: s.name, art: s.art, ende: s.ende, ok: !!s.ende } });
-    if (s.pruefung && imMonat(s.pruefung.am, g)) aus.push({ kennung: 'sicherung.pruefung', zeit: s.pruefung.am, daten: { name: s.name, ok: s.pruefung.ok } });
-    if (s.probe && imMonat(s.probe.am, g)) aus.push({ kennung: 'sicherung.probe', zeit: s.probe.am, daten: { name: s.name, ok: s.probe.ok } });
+    if (imMonat(s.beginn, g))
+      aus.push({ kennung: 'sicherung.lauf', zeit: s.beginn, daten: { name: s.name, art: s.art, ende: s.ende, ok: !!s.ende } });
+    if (s.pruefung && imMonat(s.pruefung.am, g))
+      aus.push({ kennung: 'sicherung.pruefung', zeit: s.pruefung.am, daten: { name: s.name, ok: s.pruefung.ok } });
+    if (s.probe && imMonat(s.probe.am, g))
+      aus.push({ kennung: 'sicherung.probe', zeit: s.probe.am, daten: { name: s.name, ok: s.probe.ok } });
   }
 };
 
@@ -72,7 +90,8 @@ const datenschutz: Teil = async (q, g, _j, aus) => {
 /** Belegeingang: eingegangene Post je Weg. */
 const belegeingang: Teil = async (q, g, _j, aus) => {
   if (!q.post) return;
-  for (const [weg, anzahl] of Object.entries(await q.post(g.von, g.bis)).sort((a, b) => a[0].localeCompare(b[0]))) aus.push({ kennung: 'belegeingang.post', daten: { weg, anzahl } });
+  for (const [weg, anzahl] of Object.entries(await q.post(g.von, g.bis)).sort((a, b) => a[0].localeCompare(b[0])))
+    aus.push({ kennung: 'belegeingang.post', daten: { weg, anzahl } });
 };
 
 const TEILE: Partial<Record<PaketdatenBereich, Teil>> = { zugang, sicherung, datenschutz, belegeingang };
@@ -88,6 +107,14 @@ export async function nachweise(bereich: PaketdatenBereich, monat: string, q: Na
   const weitere = arten.length ? j.weitere : 0;
   await TEILE[bereich]?.(q, g, j, aus);
   aus.sort((a, b) => (a.zeit ?? '').localeCompare(b.zeit ?? '') || a.kennung.localeCompare(b.kennung));
-  const stand: NachweiseStand = { format: 1, art: 'nachweise', bereich, monat, stichtag, eintraege: aus.map((x) => ({ ...x, daten: x.daten as Record<string, PaketdatenWert> })), ...(weitere ? { weitere } : {}) };
+  const stand: NachweiseStand = {
+    format: 1,
+    art: 'nachweise',
+    bereich,
+    monat,
+    stichtag,
+    eintraege: aus.map((x) => ({ ...x, daten: x.daten as Record<string, PaketdatenWert> })),
+    ...(weitere ? { weitere } : {}),
+  };
   return ohneGeheimnisse(stand);
 }

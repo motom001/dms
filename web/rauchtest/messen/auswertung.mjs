@@ -43,9 +43,25 @@ export function rundeAuswerten({ dauer, lange = [], ereignisse = [] }) {
 /** Runden eines Ablaufs (eine Drossel) zusammenfassen: je Kennzahl Median und p95, dazu Anfragen und Server-Zeit. */
 export function zusammenfassen(runden) {
   const z = { runden: runden.length };
-  for (const [k] of KENNZAHLEN) z[k] = { median: quantil(runden.map((r) => r[k]), 0.5), p95: quantil(runden.map((r) => r[k]), 0.95) };
-  z.anfragen = quantil(runden.map((r) => r.anfragen ?? null), 0.5);
-  z.serverMs = quantil(runden.map((r) => r.serverMs ?? null), 0.5);
+  for (const [k] of KENNZAHLEN)
+    z[k] = {
+      median: quantil(
+        runden.map((r) => r[k]),
+        0.5,
+      ),
+      p95: quantil(
+        runden.map((r) => r[k]),
+        0.95,
+      ),
+    };
+  z.anfragen = quantil(
+    runden.map((r) => r.anfragen ?? null),
+    0.5,
+  );
+  z.serverMs = quantil(
+    runden.map((r) => r.serverMs ?? null),
+    0.5,
+  );
   z.zeitueberschritten = runden.filter((r) => r.zeitueberschritten).length;
   return z;
 }
@@ -57,7 +73,8 @@ export function zusammenfassen(runden) {
 export function besseresVon(a, b) {
   const z = { ...a, nachgemessen: true, zeitueberschritten: Math.min(a.zeitueberschritten, b.zeitueberschritten) };
   for (const [k] of KENNZAHLEN) {
-    const wa = a[k]?.median, wb = b[k]?.median;
+    const wa = a[k]?.median,
+      wb = b[k]?.median;
     if (typeof wb === 'number' && (typeof wa !== 'number' || wb < wa)) z[k] = b[k];
   }
   return z;
@@ -74,14 +91,20 @@ export function vergleichen(jetzt, vorher, schwelle = SCHWELLE) {
     const alt = vorher.ergebnisse[id];
     if (!alt) continue;
     for (const drossel of Object.keys(a.drosseln)) {
-      const n = a.drosseln[drossel], v = alt.drosseln?.[drossel];
+      const n = a.drosseln[drossel],
+        v = alt.drosseln?.[drossel];
       if (!v) continue;
       for (const k of VERGLICHEN) {
-        const wn = n[k]?.median, wv = v[k]?.median;
+        const wn = n[k]?.median,
+          wv = v[k]?.median;
         if (typeof wn !== 'number' || typeof wv !== 'number') continue;
         const diff = wn - wv;
-        const art = diff > wv * schwelle.anteil && diff >= schwelle.ms ? 'schlechter'
-          : -diff > wv * schwelle.anteil && -diff >= schwelle.ms ? 'besser' : null;
+        const art =
+          diff > wv * schwelle.anteil && diff >= schwelle.ms
+            ? 'schlechter'
+            : -diff > wv * schwelle.anteil && -diff >= schwelle.ms
+              ? 'besser'
+              : null;
         if (art) funde.push({ ablauf: id, name: a.name, drossel: Number(drossel), kennzahl: k, vorher: wv, jetzt: wn, art });
       }
     }
@@ -98,9 +121,22 @@ export function grenzenPruefen(ergebnis, grenzen = {}) {
   for (const [id, a] of Object.entries(ergebnis.ergebnisse)) {
     for (const [drossel, z] of Object.entries(a.drosseln)) {
       const ziel = Number(drossel) === 1 ? ZIEL : {};
-      for (const [k, wert] of Object.entries(ziel)) if ((z[k]?.median ?? 0) > wert) funde.push({ ablauf: id, name: a.name, drossel: Number(drossel), kennzahl: k, wert: z[k].median, grenze: wert, art: 'ziel' });
-      for (const [k, wert] of Object.entries(grenzen[id]?.[drossel] ?? {})) if ((z[k]?.median ?? 0) > wert) funde.push({ ablauf: id, name: a.name, drossel: Number(drossel), kennzahl: k, wert: z[k].median, grenze: wert, art: 'grenze' });
-      if (z.zeitueberschritten) funde.push({ ablauf: id, name: a.name, drossel: Number(drossel), kennzahl: 'bedienbar', wert: z.bedienbar.median, grenze: null, art: 'zeit' });
+      for (const [k, wert] of Object.entries(ziel))
+        if ((z[k]?.median ?? 0) > wert)
+          funde.push({ ablauf: id, name: a.name, drossel: Number(drossel), kennzahl: k, wert: z[k].median, grenze: wert, art: 'ziel' });
+      for (const [k, wert] of Object.entries(grenzen[id]?.[drossel] ?? {}))
+        if ((z[k]?.median ?? 0) > wert)
+          funde.push({ ablauf: id, name: a.name, drossel: Number(drossel), kennzahl: k, wert: z[k].median, grenze: wert, art: 'grenze' });
+      if (z.zeitueberschritten)
+        funde.push({
+          ablauf: id,
+          name: a.name,
+          drossel: Number(drossel),
+          kennzahl: 'bedienbar',
+          wert: z.bedienbar.median,
+          grenze: null,
+          art: 'zeit',
+        });
     }
   }
   return funde;
@@ -122,27 +158,45 @@ export function bericht(ergebnis, { vergleich = [], pruefung = [], vorher = null
   ];
   const drosseln = [...new Set(Object.values(ergebnis.ergebnisse).flatMap((a) => Object.keys(a.drosseln)))].sort((a, b) => a - b);
   for (const d of drosseln) {
-    z.push('', `### ${drosselText(d)}`, '', `| Ablauf | ${KENNZAHLEN.map(([, n]) => `${n} Median | p95`).join(' | ')} | Anfragen | Server ms |`,
-      `|---|${KENNZAHLEN.map(() => '---:|---:').join('|')}|---:|---:|`);
+    z.push(
+      '',
+      `### ${drosselText(d)}`,
+      '',
+      `| Ablauf | ${KENNZAHLEN.map(([, n]) => `${n} Median | p95`).join(' | ')} | Anfragen | Server ms |`,
+      `|---|${KENNZAHLEN.map(() => '---:|---:').join('|')}|---:|---:|`,
+    );
     for (const a of Object.values(ergebnis.ergebnisse)) {
       const w = a.drosseln[d];
       if (!w) continue;
       const zeit = `${w.nachgemessen ? ' (nachgemessen)' : ''}${w.zeitueberschritten ? ` (${w.zeitueberschritten}× Zeit überschritten)` : ''}`;
-      z.push(`| ${a.name}${zeit} | ${KENNZAHLEN.map(([k]) => `${ms(w[k]?.median)} | ${ms(w[k]?.p95)}`).join(' | ')} | ${ms(w.anfragen)} | ${ms(w.serverMs)} |`);
+      z.push(
+        `| ${a.name}${zeit} | ${KENNZAHLEN.map(([k]) => `${ms(w[k]?.median)} | ${ms(w[k]?.p95)}`).join(' | ')} | ${ms(w.anfragen)} | ${ms(w.serverMs)} |`,
+      );
     }
   }
   z.push('', '### Vergleich mit dem Vorlauf', '');
   if (!vorher) z.push('Kein Vorlauf zum Vergleichen.');
   else {
-    z.push(`Vorlauf: Ablago ${vorher.ablago ?? '?'} vom ${vorher.zeit?.slice(0, 10)} auf ${vorher.geraet}${vorher.geraet !== ergebnis.geraet ? ' – **anderes Gerät, nur bedingt vergleichbar**' : ''}. Schwelle: mehr als ${SCHWELLE.anteil * 100} % und mindestens ${SCHWELLE.ms} ms (Median); was darüber lag, wurde einmal nachgemessen, es zählt je Kennzahl der bessere Lauf.`, '');
+    z.push(
+      `Vorlauf: Ablago ${vorher.ablago ?? '?'} vom ${vorher.zeit?.slice(0, 10)} auf ${vorher.geraet}${vorher.geraet !== ergebnis.geraet ? ' – **anderes Gerät, nur bedingt vergleichbar**' : ''}. Schwelle: mehr als ${SCHWELLE.anteil * 100} % und mindestens ${SCHWELLE.ms} ms (Median); was darüber lag, wurde einmal nachgemessen, es zählt je Kennzahl der bessere Lauf.`,
+      '',
+    );
     if (!vergleich.length) z.push('Keine Änderung über der Schwelle.');
-    for (const v of vergleich) z.push(`- ${v.art === 'schlechter' ? '**schlechter**' : 'besser'}: ${v.name}, ${drosselText(v.drossel)}, ${kennzahlName(v.kennzahl)} ${ms(v.vorher)} → ${ms(v.jetzt)} ms`);
+    for (const v of vergleich)
+      z.push(
+        `- ${v.art === 'schlechter' ? '**schlechter**' : 'besser'}: ${v.name}, ${drosselText(v.drossel)}, ${kennzahlName(v.kennzahl)} ${ms(v.vorher)} → ${ms(v.jetzt)} ms`,
+      );
   }
   z.push('', '### Ziele und Grenzen', '');
-  if (!pruefung.length) z.push(`Alle Ziele erreicht (ohne Drossel: bis bedienbar unter ${ms(ZIEL.bedienbar)} ms, INP unter ${ZIEL.inp} ms).`);
+  if (!pruefung.length)
+    z.push(`Alle Ziele erreicht (ohne Drossel: bis bedienbar unter ${ms(ZIEL.bedienbar)} ms, INP unter ${ZIEL.inp} ms).`);
   for (const p of pruefung) {
-    if (p.art === 'zeit') z.push(`- **Zeit überschritten**: ${p.name}, ${drosselText(p.drossel)} – mindestens eine Runde kam nicht ans Ziel.`);
-    else z.push(`- ${p.art === 'grenze' ? '**über der CI-Grenze**' : 'Ziel verfehlt'}: ${p.name}, ${drosselText(p.drossel)}, ${kennzahlName(p.kennzahl)} ${ms(p.wert)} ms (${p.art === 'grenze' ? 'Grenze' : 'Ziel'} ${ms(p.grenze)} ms)`);
+    if (p.art === 'zeit')
+      z.push(`- **Zeit überschritten**: ${p.name}, ${drosselText(p.drossel)} – mindestens eine Runde kam nicht ans Ziel.`);
+    else
+      z.push(
+        `- ${p.art === 'grenze' ? '**über der CI-Grenze**' : 'Ziel verfehlt'}: ${p.name}, ${drosselText(p.drossel)}, ${kennzahlName(p.kennzahl)} ${ms(p.wert)} ms (${p.art === 'grenze' ? 'Grenze' : 'Ziel'} ${ms(p.grenze)} ms)`,
+      );
   }
   return z.join('\n') + '\n';
 }

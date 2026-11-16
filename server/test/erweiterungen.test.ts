@@ -23,7 +23,10 @@ describe('Erweiterungen der Suche (#562): Bewertung', () => {
     assert.equal(bewerteErweiterung('unaccent', 'dms_alt_behalten_20261102').zustand, 'gefaehrdet');
     assert.equal(bewerteErweiterung('unaccent', null).zustand, 'fehlt');
     const p = problemeAus([bewerteErweiterung('pg_trgm', null), bewerteErweiterung('unaccent', 'erweiterungen_dms')]);
-    assert.deepEqual(p.map((e) => e.name), ['pg_trgm']);
+    assert.deepEqual(
+      p.map((e) => e.name),
+      ['pg_trgm'],
+    );
     assert.match(beschreibe(p[0]), /Tippfehler/);
     assert.match(beschreibe(bewerteErweiterung('pg_trgm', 'public')), /Schema public.*Wiederherstellung/);
   });
@@ -34,11 +37,22 @@ describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 
   type Sql = any;
   const db = `dms_erw_${process.pid}`;
   const offen: Array<() => Promise<void>> = [];
-  const urlVon = (name: string) => { const u = new URL(url!); u.pathname = `/${name}`; return u.toString(); };
-  after(async () => { for (const f of offen.reverse()) await f().catch(() => {}); });
+  const urlVon = (name: string) => {
+    const u = new URL(url!);
+    u.pathname = `/${name}`;
+    return u.toString();
+  };
+  after(async () => {
+    for (const f of offen.reverse()) await f().catch(() => {});
+  });
 
-  const schemaVon = async (sql: Sql, ext: string) => (await sql`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = ${ext}`)[0]?.nspname ?? null;
-  const indizes = async (sql: Sql) => (await sql`SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('dokumente_volltext_trgm_idx', 'suchwoerter_trgm') ORDER BY 1`).map((r: { indexname: string }) => r.indexname);
+  const schemaVon = async (sql: Sql, ext: string) =>
+    (await sql`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = ${ext}`)[0]?.nspname ??
+    null;
+  const indizes = async (sql: Sql) =>
+    (
+      await sql`SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND indexname IN ('dokumente_volltext_trgm_idx', 'suchwoerter_trgm') ORDER BY 1`
+    ).map((r: { indexname: string }) => r.indexname);
   const stumm = { info: () => {}, warn: () => {} };
 
   it('Datenbank im alten Stand: Migration 050 zieht pg_trgm und unaccent aus public um, die Suche läuft weiter', async () => {
@@ -46,14 +60,18 @@ describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 
     const haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
-    offen.push(async () => { await haupt.unsafe(`DROP DATABASE IF EXISTS ${db} WITH (FORCE)`); await haupt.end(); });
+    offen.push(async () => {
+      await haupt.unsafe(`DROP DATABASE IF EXISTS ${db} WITH (FORCE)`);
+      await haupt.end();
+    });
     const sql = verbinde(urlVon(db));
     offen.push(() => sql.end());
     // Stand bis 0.131.0: pg_trgm aus Migration 030 in public; unaccent hat der Betreiber vorab in public angelegt.
     await sql`CREATE EXTENSION unaccent`;
     const bis049 = await mkdtemp(join(tmpdir(), 'dms-erw-'));
     offen.push(() => rm(bis049, { recursive: true, force: true }));
-    for (const f of (await readdir(MIGRATIONEN)).filter((x) => x.endsWith('.sql') && x < '050')) await symlink(join(MIGRATIONEN, f), join(bis049, f));
+    for (const f of (await readdir(MIGRATIONEN)).filter((x) => x.endsWith('.sql') && x < '050'))
+      await symlink(join(MIGRATIONEN, f), join(bis049, f));
     await migriere(sql, bis049, () => {});
     assert.equal(await schemaVon(sql, 'pg_trgm'), 'public');
     assert.equal(await schemaVon(sql, 'unaccent'), 'public');
@@ -67,7 +85,8 @@ describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 
     assert.equal((await sql`SELECT dms_falte('Özdemir Straße') AS f`)[0].f, 'Ozdemir Strasse');
     assert.equal((await sql`SELECT to_tsvector('dms_german', 'Müller')::text AS v`)[0].v, "'mull':1");
     // Das alte Schema public ließe sich jetzt löschen, ohne die Erweiterungen mitzunehmen.
-    const [abh] = await sql`SELECT count(*)::int AS n FROM pg_depend d JOIN pg_extension e ON e.oid = d.objid WHERE d.classid = 'pg_extension'::regclass AND d.refclassid = 'pg_namespace'::regclass AND d.refobjid = 'public'::regnamespace`;
+    const [abh] =
+      await sql`SELECT count(*)::int AS n FROM pg_depend d JOIN pg_extension e ON e.oid = d.objid WHERE d.classid = 'pg_extension'::regclass AND d.refclassid = 'pg_namespace'::regclass AND d.refobjid = 'public'::regnamespace`;
     assert.equal(abh.n, 0);
     const { liesErweiterungen } = await import('../src/erweiterungen');
     assert.deepEqual(problemeAus(await liesErweiterungen(sql)), []);

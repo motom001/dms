@@ -12,8 +12,28 @@
  * Mehrere Bedingungen gelten zusammen (UND). Server und Oberfläche teilen diese Datei.
  */
 import { optionText, wertZuOption } from './beschriftung';
-import { istIndexplatzhalter, sortierbar, istSystemspalte, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from './model';
-import { bedingungsfelder, bedingungsProblem, beschreibeBedingung, OPERATOREN, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld, type Einheit, type Operator, type WertAngabe } from './sichten';
+import {
+  istIndexplatzhalter,
+  sortierbar,
+  istSystemspalte,
+  vorlageFelder,
+  wirksameVorlage,
+  type Mappe,
+  type Mappentyp,
+  type Sortierung,
+} from './model';
+import {
+  bedingungsfelder,
+  bedingungsProblem,
+  beschreibeBedingung,
+  OPERATOREN,
+  OPERATOREN_JE_ART,
+  type Bedingung,
+  type Bedingungsfeld,
+  type Einheit,
+  type Operator,
+  type WertAngabe,
+} from './sichten';
 import { postKennung } from './postfelder';
 import { t } from './texte';
 import { istZeitraum, leseProzent, leseZeitraum, zeitraumIso } from './feldarten';
@@ -25,7 +45,11 @@ export const LINK_PARAMETER = ['typ', 'sortierung'] as const;
 /** Die Parameter eines Links, z. B. ein URLSearchParams. */
 export type Linkparameter = Iterable<[string, string]> & { get(name: string): string | null };
 
-export interface Direktlink { typ: Mappentyp; bedingungen: Bedingung[]; sortierung: Sortierung | null }
+export interface Direktlink {
+  typ: Mappentyp;
+  bedingungen: Bedingung[];
+  sortierung: Sortierung | null;
+}
 export type Linkergebnis = { ok: true; link: Direktlink } | { ok: false; fehler: string[] };
 
 const OHNE_WERT: Operator[] = ['leer', 'nichtLeer', 'ja', 'nein'];
@@ -35,7 +59,14 @@ const OPERATOR_NAMEN = new Map((Object.keys(OPERATOREN) as Operator[]).map((o) =
 const NUR_ICH: Bedingungsfeld['art'][] = ['referenz', 'person'];
 
 const EINHEITEN_IM_LINK: Record<string, Einheit> = {
-  tag: 'tage', tage: 'tage', woche: 'wochen', wochen: 'wochen', monat: 'monate', monate: 'monate', jahr: 'jahre', jahre: 'jahre',
+  tag: 'tage',
+  tage: 'tage',
+  woche: 'wochen',
+  wochen: 'wochen',
+  monat: 'monate',
+  monate: 'monate',
+  jahr: 'jahre',
+  jahre: 'jahre',
 };
 
 /**
@@ -83,13 +114,15 @@ function wertAus(f: Bedingungsfeld, op: Operator, roh: string): WertAngabe | str
     return t('gemeinsam.direktlink.ist-ein-verweis-im', { name });
   }
   switch (f.art) {
-    case 'datum': case 'zeit': {
+    case 'datum':
+    case 'zeit': {
       const h = HEUTE.exec(s);
       if (h) return { art: 'heute', versatz: versatz(h[1], h[2]), einheit: h[3] ? EINHEITEN_IM_LINK[h[3].toLowerCase()] : 'tage' };
       const d = datum(s);
       return d ? { art: 'fest', wert: d } : t('gemeinsam.direktlink.ist-kein-datum-fuer', { s, name });
     }
-    case 'zahl': case 'betrag': {
+    case 'zahl':
+    case 'betrag': {
       const n = zahl(s);
       return n === null ? t('gemeinsam.direktlink.ist-keine-zahl-fuer', { s, name }) : { art: 'fest', wert: n };
     }
@@ -105,15 +138,26 @@ function wertAus(f: Bedingungsfeld, op: Operator, roh: string): WertAngabe | str
     case 'auswahl': {
       const optionen = f.feld?.optionen ?? [];
       const gewaehlt: string[] = [];
-      for (const teil of s.split(',').map((x) => x.trim()).filter(Boolean)) {
+      for (const teil of s
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)) {
         // Fester Wert oder seine Beschriftung (#728); die Ansicht vergleicht den festen Wert.
         const o = wertZuOption(f.feld ?? {}, teil);
-        if (!o) return t('gemeinsam.direktlink.gibt-es-in-der', { teil, name, wert: optionen.length ? t('gemeinsam.direktlink.moeglich', { optionen: optionen.map((x) => (f.feld ? optionText(f.feld, x) : x)).join(', ') }) : '' });
+        if (!o)
+          return t('gemeinsam.direktlink.gibt-es-in-der', {
+            teil,
+            name,
+            wert: optionen.length
+              ? t('gemeinsam.direktlink.moeglich', { optionen: optionen.map((x) => (f.feld ? optionText(f.feld, x) : x)).join(', ') })
+              : '',
+          });
         gewaehlt.push(o);
       }
       return { art: 'fest', wert: gewaehlt };
     }
-    default: return { art: 'fest', wert: s };
+    default:
+      return { art: 'fest', wert: s };
   }
 }
 
@@ -126,19 +170,29 @@ function standardOperator(f: Bedingungsfeld, wert: string): { op: Operator; ohne
       if (['nein', 'false', '0'].includes(w)) return { op: 'nein', ohneWert: true };
       return t('gemeinsam.direktlink.bei-geht-nur-ja', { label: f.label });
     }
-    case 'auswahl': return { op: 'einerVon' };
-    case 'langtext': case 'formatiert': return { op: 'enthaelt' };
-    case 'referenz': case 'person': return { op: 'zeigtAuf' };
-    default: return { op: 'gleich' };
+    case 'auswahl':
+      return { op: 'einerVon' };
+    case 'langtext':
+    case 'formatiert':
+      return { op: 'enthaelt' };
+    case 'referenz':
+    case 'person':
+      return { op: 'zeigtAuf' };
+    default:
+      return { op: 'gleich' };
   }
 }
 
 /** Mappentyp über seinen Schlüssel (#145), sonst über den Namen (ohne Groß-/Kleinschreibung); notfalls über die Id. */
 export function typImLink(name: string, typen: Mappentyp[]): Mappentyp | undefined {
   const n = name.trim().toLowerCase();
-  return typen.find((t) => t.schluessel === n) ?? typen.find((t) => t.name.trim().toLowerCase() === n) ?? typen.find((t) => t.id === name.trim())
+  return (
+    typen.find((t) => t.schluessel === n) ??
+    typen.find((t) => t.name.trim().toLowerCase() === n) ??
+    typen.find((t) => t.id === name.trim()) ??
     // Bis 0.40 hieß Post „E-Mail“ mit dem Schlüssel email (#192); ältere Links gelten weiter.
-    ?? (n === 'email' || n === 'e-mail' ? typen.find((t) => t.system === 'post') : undefined);
+    (n === 'email' || n === 'e-mail' ? typen.find((t) => t.system === 'post') : undefined)
+  );
 }
 
 /** Liest einen Link; Fehler werden gesammelt und nie stillschweigend übergangen. */
@@ -160,49 +214,96 @@ export function liesDirektlink(parameter: Linkparameter, typen: Mappentyp[]): Li
       // Post (#1042): absender und fuer gelten bis 1.0.0 als von und an.
       const spalte = typ.system === 'post' ? postKennung(roh) : roh;
       if ((!istSystemspalte(spalte) && !typ.felder.some((f) => f.key === spalte)) || !sortierbar(spalte, typ) || spalte === '_typ') {
-        fehler.push(t('gemeinsam.direktlink.nach-laesst-sich', { spalte, wert: typ.felder.some((f) => f.key === spalte) ? t('gemeinsam.direktlink.nicht-sortieren') : t('gemeinsam.direktlink.nicht-sortieren-das-feld', { name: typ.name }) }));
+        fehler.push(
+          t('gemeinsam.direktlink.nach-laesst-sich', {
+            spalte,
+            wert: typ.felder.some((f) => f.key === spalte)
+              ? t('gemeinsam.direktlink.nicht-sortieren')
+              : t('gemeinsam.direktlink.nicht-sortieren-das-feld', { name: typ.name }),
+          }),
+        );
       } else sortierung = spalte === '_titel' && !absteigend ? null : { spalte, absteigend };
       continue;
     }
     const teile = schluessel.split('.');
-    if (teile.length > 2 || !teile[0]) { fehler.push(t('gemeinsam.direktlink.versteht-ablago-nicht-erwartet', { schluessel })); continue; }
+    if (teile.length > 2 || !teile[0]) {
+      fehler.push(t('gemeinsam.direktlink.versteht-ablago-nicht-erwartet', { schluessel }));
+      continue;
+    }
     const [rohKey, opName] = teile;
     const feldKey = typ.system === 'post' ? postKennung(rohKey) : rohKey;
     const f = felder.find((x) => x.key === feldKey);
-    if (!f) { fehler.push(t('gemeinsam.direktlink.feld-gibt-es-bei', { feldKey, name: typ.name })); continue; }
-    if (f.art === 'passwort') { fehler.push(t('gemeinsam.direktlink.nach-dem-passwortfeld-laesst', { label: f.label })); continue; }
+    if (!f) {
+      fehler.push(t('gemeinsam.direktlink.feld-gibt-es-bei', { feldKey, name: typ.name }));
+      continue;
+    }
+    if (f.art === 'passwort') {
+      fehler.push(t('gemeinsam.direktlink.nach-dem-passwortfeld-laesst', { label: f.label }));
+      continue;
+    }
     let op: Operator;
     let ohneWert = false;
     if (opName !== undefined) {
       const o = OPERATOR_NAMEN.get(opName.toLowerCase());
-      if (!o) { fehler.push(t('gemeinsam.direktlink.den-operator-gibt-es', { opName, keys: Object.keys(OPERATOREN).join(', ') })); continue; }
-      op = o; ohneWert = OHNE_WERT.includes(o);
+      if (!o) {
+        fehler.push(t('gemeinsam.direktlink.den-operator-gibt-es', { opName, keys: Object.keys(OPERATOREN).join(', ') }));
+        continue;
+      }
+      op = o;
+      ohneWert = OHNE_WERT.includes(o);
     } else {
       const s = standardOperator(f, wert);
-      if (typeof s === 'string') { fehler.push(s); continue; }
-      op = s.op; ohneWert = !!s.ohneWert;
+      if (typeof s === 'string') {
+        fehler.push(s);
+        continue;
+      }
+      op = s.op;
+      ohneWert = !!s.ohneWert;
     }
     if (!OPERATOREN_JE_ART[f.art].includes(op)) {
-      fehler.push(t('gemeinsam.direktlink.passt-nicht-zum-feld', { OPERATOREN: OPERATOREN[op], label: f.label, OPERATOREN_JE_ART: OPERATOREN_JE_ART[f.art].join(', ') }));
+      fehler.push(
+        t('gemeinsam.direktlink.passt-nicht-zum-feld', {
+          OPERATOREN: OPERATOREN[op],
+          label: f.label,
+          OPERATOREN_JE_ART: OPERATOREN_JE_ART[f.art].join(', '),
+        }),
+      );
       continue;
     }
-    if (NUR_ICH.includes(f.art) && !ohneWert && op !== 'zeigtAuf') { fehler.push(`${f.label}: nicht möglich.`); continue; }
+    if (NUR_ICH.includes(f.art) && !ohneWert && op !== 'zeigtAuf') {
+      fehler.push(`${f.label}: nicht möglich.`);
+      continue;
+    }
     const b: Bedingung = { art: 'feld', feld: f.key, op };
     if (!ohneWert) {
       if (op === 'zwischen' || op === 'ausserhalb') {
         const [von, bis, ...mehr] = wert.split('..');
-        if (bis === undefined || mehr.length) { fehler.push(t('gemeinsam.direktlink.bei-gehoeren-zwei-werte', { label: f.label, OPERATOREN: OPERATOREN[op] })); continue; }
-        const a = wertAus(f, op, von); const z = wertAus(f, op, bis);
-        if (typeof a === 'string' || typeof z === 'string') { fehler.push([a, z].filter((x) => typeof x === 'string').join(' ')); continue; }
-        b.wert = a; b.bis = z;
+        if (bis === undefined || mehr.length) {
+          fehler.push(t('gemeinsam.direktlink.bei-gehoeren-zwei-werte', { label: f.label, OPERATOREN: OPERATOREN[op] }));
+          continue;
+        }
+        const a = wertAus(f, op, von);
+        const z = wertAus(f, op, bis);
+        if (typeof a === 'string' || typeof z === 'string') {
+          fehler.push([a, z].filter((x) => typeof x === 'string').join(' '));
+          continue;
+        }
+        b.wert = a;
+        b.bis = z;
       } else {
         const a = wertAus(f, op, wert);
-        if (typeof a === 'string') { fehler.push(a); continue; }
+        if (typeof a === 'string') {
+          fehler.push(a);
+          continue;
+        }
         b.wert = a;
       }
     }
     const problem = bedingungsProblem(b, [typ]);
-    if (problem) { fehler.push(problem); continue; }
+    if (problem) {
+      fehler.push(problem);
+      continue;
+    }
     bedingungen.push(b);
   }
   return fehler.length ? { ok: false, fehler } : { ok: true, link: { typ, bedingungen, sortierung } };
@@ -210,7 +311,9 @@ export function liesDirektlink(parameter: Linkparameter, typen: Mappentyp[]): Li
 
 /** Lesbar, z. B. „Rechnung: Rechnungsnummer ist gleich „A-2020-11380““. */
 export function beschreibeDirektlink(l: Direktlink): string {
-  return l.bedingungen.length ? `${l.typ.name}: ${l.bedingungen.map((b) => beschreibeBedingung(b, [l.typ])).join(', ')}` : `${l.typ.name}: alle Mappen`;
+  return l.bedingungen.length
+    ? `${l.typ.name}: ${l.bedingungen.map((b) => beschreibeBedingung(b, [l.typ])).join(', ')}`
+    : `${l.typ.name}: alle Mappen`;
 }
 
 /* ---------- Link zu einer Mappe bauen („Link kopieren“) ---------- */
@@ -225,21 +328,29 @@ function linkwert(typ: Mappentyp, key: string, m: Mappe): { name: string; wert: 
   if (!f || v === null || v === undefined || v === '') return null;
   const reserviert = (LINK_PARAMETER as readonly string[]).includes(key);
   switch (f.typ) {
-    case 'text': case 'zusammengesetzt': return { name: reserviert ? `${key}.gleich` : key, wert: String(v) };
-    case 'zahl': case 'prozent': return typeof v === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(v) } : null;
-    case 'zeitraum': return istZeitraum(v) ? { name: reserviert ? `${key}.gleich` : key, wert: zeitraumIso(v) } : null;
+    case 'text':
+    case 'zusammengesetzt':
+      return { name: reserviert ? `${key}.gleich` : key, wert: String(v) };
+    case 'zahl':
+    case 'prozent':
+      return typeof v === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(v) } : null;
+    case 'zeitraum':
+      return istZeitraum(v) ? { name: reserviert ? `${key}.gleich` : key, wert: zeitraumIso(v) } : null;
     case 'betrag': {
       const b = v as { betrag?: unknown };
       return typeof b?.betrag === 'number' ? { name: reserviert ? `${key}.gleich` : key, wert: String(b.betrag) } : null;
     }
-    case 'datum': return typeof v === 'string' && datum(v) ? { name: reserviert ? `${key}.gleich` : key, wert: v } : null;
-    case 'janein': return { name: reserviert ? `${key}.${v === true ? 'ja' : 'nein'}` : key, wert: v === true ? 'ja' : 'nein' };
+    case 'datum':
+      return typeof v === 'string' && datum(v) ? { name: reserviert ? `${key}.gleich` : key, wert: v } : null;
+    case 'janein':
+      return { name: reserviert ? `${key}.${v === true ? 'ja' : 'nein'}` : key, wert: v === true ? 'ja' : 'nein' };
     case 'auswahl': {
       const liste = (Array.isArray(v) ? v : [v]).map(String).filter(Boolean);
       if (!liste.length || liste.some((x) => x.includes(','))) return null;
       return { name: reserviert ? `${key}.einerVon` : key, wert: liste.join(',') };
     }
-    default: return null;
+    default:
+      return null;
   }
 }
 
@@ -248,9 +359,16 @@ function linkwert(typ: Mappentyp, key: string, m: Mappe): { name: string; wert: 
  * (dann können es mehrere Treffer sein). null = nichts Verwendbares.
  */
 export function linkZuMappe(typ: Mappentyp, m: Mappe): string | null {
-  const eindeutig = typ.felder.filter((f) => f.eindeutig).map((f) => linkwert(typ, f.key, m)).find((x) => !!x);
-  const teile = eindeutig ? [eindeutig] : [...new Set(vorlageFelder(wirksameVorlage(typ)))]
-    .filter((k) => !istIndexplatzhalter(k)).map((k) => linkwert(typ, k, m)).filter((x): x is { name: string; wert: string } => !!x);
+  const eindeutig = typ.felder
+    .filter((f) => f.eindeutig)
+    .map((f) => linkwert(typ, f.key, m))
+    .find((x) => !!x);
+  const teile = eindeutig
+    ? [eindeutig]
+    : [...new Set(vorlageFelder(wirksameVorlage(typ)))]
+        .filter((k) => !istIndexplatzhalter(k))
+        .map((k) => linkwert(typ, k, m))
+        .filter((x): x is { name: string; wert: string } => !!x);
   if (!teile.length) return null;
   return `${LINK_PFAD}?${[{ name: 'typ', wert: typ.schluessel ?? typ.name }, ...teile].map((t) => `${kodiere(t.name)}=${kodiere(t.wert)}`).join('&')}`;
 }

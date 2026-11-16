@@ -52,7 +52,11 @@ export const VERBINDUNGEN_LEITER_MIN = VERBINDUNGEN_LEITER_RESERVIERT + 2;
 
 export const verbindungenVorgabe = (prozesse = 1) => VERBINDUNGEN_VORGABE + VERBINDUNGEN_JE_WEITEREM * Math.max(0, prozesse - 1);
 
-export interface VerbindungsEinstellung { max: number; quelle: 'vorgabe' | 'umgebung'; fehler?: string }
+export interface VerbindungsEinstellung {
+  max: number;
+  quelle: 'vorgabe' | 'umgebung';
+  fehler?: string;
+}
 
 /** `DMS_DB_VERBINDUNGEN`: seit #874 die Zahl für **alle** Prozesse zusammen (mit einem Prozess wie bisher). */
 export function verbindungenAus(env: Record<string, string | undefined>, prozesse = 1): VerbindungsEinstellung {
@@ -61,7 +65,11 @@ export function verbindungenAus(env: Record<string, string | undefined>, prozess
   if (!roh) return { max: vorgabe, quelle: 'vorgabe' };
   const n = Number(roh);
   if (!Number.isInteger(n) || n < VERBINDUNGEN_MIN || n > VERBINDUNGEN_MAX) {
-    return { max: vorgabe, quelle: 'vorgabe', fehler: t('meldungen.db.dms-db-verbindungen-ist', { roh, VERBINDUNGEN_MIN, VERBINDUNGEN_MAX }) };
+    return {
+      max: vorgabe,
+      quelle: 'vorgabe',
+      fehler: t('meldungen.db.dms-db-verbindungen-ist', { roh, VERBINDUNGEN_MIN, VERBINDUNGEN_MAX }),
+    };
   }
   return { max: n, quelle: 'umgebung' };
 }
@@ -90,13 +98,22 @@ export interface Verbindungsaufteilung {
  * alles – wie bisher.
  */
 export function verbindungsaufteilung(gewuenscht: number, prozesse: number, erlaubt: number | null): Verbindungsaufteilung {
-  let gesamt = gewuenscht, gekuerzt = false, angehoben = false;
-  if (erlaubt && gesamt > erlaubt - VERBINDUNGEN_RESERVE) { gesamt = Math.max(VERBINDUNGEN_MIN, erlaubt - VERBINDUNGEN_RESERVE); gekuerzt = true; }
+  let gesamt = gewuenscht,
+    gekuerzt = false,
+    angehoben = false;
+  if (erlaubt && gesamt > erlaubt - VERBINDUNGEN_RESERVE) {
+    gesamt = Math.max(VERBINDUNGEN_MIN, erlaubt - VERBINDUNGEN_RESERVE);
+    gekuerzt = true;
+  }
   if (prozesse <= 1) return { gesamt, leiter: gesamt, andere: 0, angehoben, gekuerzt };
   const mindestens = VERBINDUNGEN_LEITER_MIN + VERBINDUNGEN_MIN * (prozesse - 1);
-  if (gesamt < mindestens) { gesamt = mindestens; angehoben = true; }
+  if (gesamt < mindestens) {
+    gesamt = mindestens;
+    angehoben = true;
+  }
   let andere = Math.max(VERBINDUNGEN_MIN, Math.floor((gesamt - VERBINDUNGEN_LEITER_RESERVIERT) / prozesse));
-  if (gesamt - andere * (prozesse - 1) < VERBINDUNGEN_LEITER_MIN) andere = Math.max(VERBINDUNGEN_MIN, Math.floor((gesamt - VERBINDUNGEN_LEITER_MIN) / (prozesse - 1)));
+  if (gesamt - andere * (prozesse - 1) < VERBINDUNGEN_LEITER_MIN)
+    andere = Math.max(VERBINDUNGEN_MIN, Math.floor((gesamt - VERBINDUNGEN_LEITER_MIN) / (prozesse - 1)));
   return { gesamt, leiter: gesamt - andere * (prozesse - 1), andere, angehoben, gekuerzt };
 }
 
@@ -117,7 +134,9 @@ export function verbinde(url: string, max = VERBINDUNGEN_VORGABE, o: { wartenS?:
  */
 export function hoechstens<T>(p: Promise<T>, ms: number, ersatz: () => T): Promise<T> {
   let uhr: NodeJS.Timeout | undefined;
-  const grenze = new Promise<T>((ok) => { uhr = setTimeout(() => ok(ersatz()), ms); });
+  const grenze = new Promise<T>((ok) => {
+    uhr = setTimeout(() => ok(ersatz()), ms);
+  });
   p.catch(() => {});
   return Promise.race([p, grenze]).finally(() => clearTimeout(uhr));
 }
@@ -126,12 +145,22 @@ export function hoechstens<T>(p: Promise<T>, ms: number, ersatz: () => T): Promi
 export const istVerbindungWarten = (e: unknown) => (e as { code?: unknown } | null)?.code === 'QUEUE_TIMEOUT';
 
 /** Stand des Pools (postgres.js 4: `sql.stats`), null ohne. */
-export interface Poolbelegung { verbindungen: number; frei: number; belegt: number; reserviert: number; wartend: number }
+export interface Poolbelegung {
+  verbindungen: number;
+  frei: number;
+  belegt: number;
+  reserviert: number;
+  wartend: number;
+}
 export function poolbelegung(sql: postgres.Sql): Poolbelegung | null {
   try {
     const s = (sql as unknown as { stats?: { connections: number; idle: number; leased: number; waiting: number } }).stats;
-    return s ? { verbindungen: s.connections, frei: s.idle, belegt: s.connections - s.idle, reserviert: s.leased, wartend: s.waiting } : null;
-  } catch { return null; }
+    return s
+      ? { verbindungen: s.connections, frei: s.idle, belegt: s.connections - s.idle, reserviert: s.leased, wartend: s.waiting }
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Zwischenspeicher der Gesundheitsprüfung (#1198): so lange gilt ein Ergebnis. */
@@ -153,9 +182,14 @@ export class Datenbankpruefung {
   /** Seit wann der Zustand nicht „ok“ ist (#1199) – Zeitpunkt der ersten fehlgeschlagenen Prüfung in Folge. */
   private seit: number | null = null;
 
-  constructor(private sql: postgres.Sql, private o: { gueltigMs?: number; grenzeMs?: number; jetzt?: () => number } = {}) {}
+  constructor(
+    private sql: postgres.Sql,
+    private o: { gueltigMs?: number; grenzeMs?: number; jetzt?: () => number } = {},
+  ) {}
 
-  private uhr() { return (this.o.jetzt ?? Date.now)(); }
+  private uhr() {
+    return (this.o.jetzt ?? Date.now)();
+  }
 
   /** Antwortet die Datenbank? */
   async pruefe(): Promise<boolean> {
@@ -169,29 +203,50 @@ export class Datenbankpruefung {
   async befund(): Promise<DatenbankBefund> {
     const zustand = await this.zustand();
     if (zustand === 'ok' || this.seit === null) return { datenbank: zustand, seit: null, dauerS: null };
-    return { datenbank: zustand, seit: new Date(this.seit).toISOString(), dauerS: Math.max(0, Math.round((this.uhr() - this.seit) / 1000)) };
+    return {
+      datenbank: zustand,
+      seit: new Date(this.seit).toISOString(),
+      dauerS: Math.max(0, Math.round((this.uhr() - this.seit) / 1000)),
+    };
   }
 
   private zustand(): Promise<DatenbankZustand> {
-    if (this.ergebnis && this.uhr() - this.ergebnis.t < (this.o.gueltigMs ?? DB_PRUEFUNG_GUELTIG_MS)) return Promise.resolve(this.ergebnis.zustand);
-    this.laeuft ??= this.jetzt().then((zustand) => {
-      const t = this.uhr();
-      this.ergebnis = { zustand, t };
-      if (zustand === 'ok') this.seit = null; else this.seit ??= t;
-      return zustand;
-    }).finally(() => { this.laeuft = null; });
+    if (this.ergebnis && this.uhr() - this.ergebnis.t < (this.o.gueltigMs ?? DB_PRUEFUNG_GUELTIG_MS))
+      return Promise.resolve(this.ergebnis.zustand);
+    this.laeuft ??= this.jetzt()
+      .then((zustand) => {
+        const t = this.uhr();
+        this.ergebnis = { zustand, t };
+        if (zustand === 'ok') this.seit = null;
+        else this.seit ??= t;
+        return zustand;
+      })
+      .finally(() => {
+        this.laeuft = null;
+      });
     return this.laeuft;
   }
 
   private async jetzt(): Promise<DatenbankZustand> {
     // Die vorige Abfrage wartet noch (Pool voll): keine zweite in die Schlange stellen.
     if (this.haengt) return 'antwortet-nicht';
-    const q = this.sql`SELECT 1`.then((): DatenbankZustand => 'ok', (e: unknown) => abgewiesenOderHaengt(e));
+    const q = this.sql`SELECT 1`.then(
+      (): DatenbankZustand => 'ok',
+      (e: unknown) => abgewiesenOderHaengt(e),
+    );
     this.haengt = q;
-    void q.finally(() => { if (this.haengt === q) this.haengt = null; });
+    void q.finally(() => {
+      if (this.haengt === q) this.haengt = null;
+    });
     let uhr: NodeJS.Timeout | undefined;
-    const grenze = new Promise<DatenbankZustand>((ok) => { uhr = setTimeout(() => ok('antwortet-nicht'), this.o.grenzeMs ?? DB_PRUEFUNG_MS); });
-    try { return await Promise.race([q, grenze]); } finally { clearTimeout(uhr); }
+    const grenze = new Promise<DatenbankZustand>((ok) => {
+      uhr = setTimeout(() => ok('antwortet-nicht'), this.o.grenzeMs ?? DB_PRUEFUNG_MS);
+    });
+    try {
+      return await Promise.race([q, grenze]);
+    } finally {
+      clearTimeout(uhr);
+    }
   }
 }
 
@@ -203,7 +258,11 @@ export class Datenbankpruefung {
  * - `abgewiesen`: Die Verbindung wird abgelehnt (Datenbank aus, nicht erreichbar, nimmt keine Verbindungen an).
  */
 export type DatenbankZustand = 'ok' | 'antwortet-nicht' | 'abgewiesen';
-export interface DatenbankBefund { datenbank: DatenbankZustand; seit: string | null; dauerS: number | null }
+export interface DatenbankBefund {
+  datenbank: DatenbankZustand;
+  seit: string | null;
+  dauerS: number | null;
+}
 
 /** Fehler von `SELECT 1`: Warten auf eine Verbindung zählt als „antwortet nicht“, alles andere als „abgewiesen“. */
 export function abgewiesenOderHaengt(e: unknown): DatenbankZustand {
@@ -228,16 +287,27 @@ export class Verbindungswarten {
    * `max`: Anteil dieses Prozesses. `o.sperren` (#1198): Wer Sperren hält, steht in der Warnung beim langen Warten;
    * `o.pool`: Größe des Pools ohne die Sperrverbindung (Leiter), für die Belegung.
    */
-  constructor(private sql: postgres.Sql, readonly max: number, readonly quelle: VerbindungsEinstellung['quelle'] = 'vorgabe', readonly aufteilung: Verbindungsaufteilung | null = null, private o: { sperren?: { namen(): string[] }; warnungMs?: number; pool?: number } = {}) {}
+  constructor(
+    private sql: postgres.Sql,
+    readonly max: number,
+    readonly quelle: VerbindungsEinstellung['quelle'] = 'vorgabe',
+    readonly aufteilung: Verbindungsaufteilung | null = null,
+    private o: { sperren?: { namen(): string[] }; warnungMs?: number; pool?: number } = {},
+  ) {}
 
-  private get warnungMs() { return this.o.warnungMs ?? VERBINDUNG_WARNUNG_MS; }
+  private get warnungMs() {
+    return this.o.warnungMs ?? VERBINDUNG_WARNUNG_MS;
+  }
 
   start(intervallMs = 5000) {
     if (this.zeitgeber) return;
     this.zeitgeber = setInterval(() => void this.probe().catch(() => {}), intervallMs);
     this.zeitgeber.unref();
   }
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); this.zeitgeber = undefined; }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+    this.zeitgeber = undefined;
+  }
 
   /** Belegung des Pools und gehaltene Sperren (#1198) – für Systemzustand und Warnung. */
   belegung(): (Poolbelegung & { max: number; sperren: string[] }) | null {
@@ -250,7 +320,9 @@ export class Verbindungswarten {
    * das Protokoll einmal mit der Belegung des Pools und den gehaltenen Sperren – und sagt, wenn es wieder geht.
    */
   probe(): Promise<number> {
-    this.offen ??= this.miss().finally(() => { this.offen = null; });
+    this.offen ??= this.miss().finally(() => {
+      this.offen = null;
+    });
     return this.offen;
   }
 
@@ -261,11 +333,16 @@ export class Verbindungswarten {
       gewarnt = true;
       const b = this.belegung();
       log().warn('Anfragen warten lange auf eine freie Verbindung zur Datenbank', {
-        sekunden: Math.round(this.warnungMs / 1000), ...(b ? { pool: b.max, belegt: b.belegt, reserviert: b.reserviert, wartend: b.wartend, sperren: b.sperren.join(', ') || '–' } : {}),
+        sekunden: Math.round(this.warnungMs / 1000),
+        ...(b ? { pool: b.max, belegt: b.belegt, reserviert: b.reserviert, wartend: b.wartend, sperren: b.sperren.join(', ') || '–' } : {}),
       });
     }, this.warnungMs);
     uhr.unref();
-    try { await this.sql`SELECT 1`; } finally { clearTimeout(uhr); }
+    try {
+      await this.sql`SELECT 1`;
+    } finally {
+      clearTimeout(uhr);
+    }
     const ms = performance.now() - t0;
     if (gewarnt) log().info('Verbindungen zur Datenbank wieder frei', { sekunden: Math.round(ms / 1000) });
     const jetzt = Date.now();
@@ -274,10 +351,24 @@ export class Verbindungswarten {
     return ms;
   }
 
-  stand(): { max: number; quelle: VerbindungsEinstellung['quelle']; messungen: number; median: number | null; p95: number | null; hoechstens: number | null } {
+  stand(): {
+    max: number;
+    quelle: VerbindungsEinstellung['quelle'];
+    messungen: number;
+    median: number | null;
+    p95: number | null;
+    hoechstens: number | null;
+  } {
     const s = this.werte.map((w) => w.ms).sort((a, b) => a - b);
     const q = (x: number) => (s.length ? Math.round(s[Math.min(s.length - 1, Math.floor(x * s.length))] * 10) / 10 : null);
-    return { max: this.max, quelle: this.quelle, messungen: s.length, median: q(0.5), p95: q(0.95), hoechstens: s.length ? Math.round(s[s.length - 1] * 10) / 10 : null };
+    return {
+      max: this.max,
+      quelle: this.quelle,
+      messungen: s.length,
+      median: q(0.5),
+      p95: q(0.95),
+      hoechstens: s.length ? Math.round(s[s.length - 1] * 10) / 10 : null,
+    };
   }
 }
 
@@ -299,10 +390,15 @@ const VERKLEMMUNG_WARTEN_MS = 50;
  * zufällig gestreuter Wartezeit noch einmal – höchstens `versuche`-mal. Andere Fehler und der letzte Abbruch gehen
  * an den Aufrufer. `f` muss eine abgeschlossene Einheit sein (eigene Transaktion bzw. Sicherungspunkt).
  */
-export async function beiVerklemmungWiederholen<T>(f: () => Promise<T>, o: { versuche?: number; wartenMs?: number; nochmal?: (versuch: number, e: unknown) => void } = {}): Promise<T> {
+export async function beiVerklemmungWiederholen<T>(
+  f: () => Promise<T>,
+  o: { versuche?: number; wartenMs?: number; nochmal?: (versuch: number, e: unknown) => void } = {},
+): Promise<T> {
   const versuche = o.versuche ?? VERKLEMMUNG_VERSUCHE;
   for (let versuch = 1; ; versuch++) {
-    try { return await f(); } catch (e) {
+    try {
+      return await f();
+    } catch (e) {
       if (!istVerklemmung(e) || versuch >= versuche) throw e;
       o.nochmal?.(versuch, e);
       const ms = (o.wartenMs ?? VERKLEMMUNG_WARTEN_MS) * 2 ** (versuch - 1) * (0.5 + Math.random());
@@ -315,7 +411,9 @@ export async function beiVerklemmungWiederholen<T>(f: () => Promise<T>, o: { ver
 export class NeuereDatenbankFehler extends Error {
   constructor(readonly unbekannt: string[]) {
     super(
-      t('meldungen.db.bitte-diese-oder-eine', { wert: t('meldungen.db.diese-datenbank-stammt-von', { unbekannt: unbekannt[unbekannt.length - 1] }) }),
+      t('meldungen.db.bitte-diese-oder-eine', {
+        wert: t('meldungen.db.diese-datenbank-stammt-von', { unbekannt: unbekannt[unbekannt.length - 1] }),
+      }),
     );
     this.name = 'NeuereDatenbankFehler';
   }
@@ -328,7 +426,12 @@ export class NeuereDatenbankFehler extends Error {
  * verhindert, dass zwei Instanzen gleichzeitig migrieren. `fortschritt` (#802) bekommt vor jeder offenen
  * Migration Schritt, Anzahl und Datei – für die Startseite „Ablago startet …“.
  */
-export async function migriere(sql: postgres.Sql, verzeichnis: string, log: (m: string) => void = console.log, fortschritt: (nr: number, von: number, datei: string) => void = () => {}) {
+export async function migriere(
+  sql: postgres.Sql,
+  verzeichnis: string,
+  log: (m: string) => void = console.log,
+  fortschritt: (nr: number, von: number, datei: string) => void = () => {},
+) {
   const dateien = (await readdir(verzeichnis)).filter((f) => f.endsWith('.sql')).sort();
   await sql.begin(async (tx) => {
     await tx`SELECT pg_advisory_xact_lock(4711001)`;

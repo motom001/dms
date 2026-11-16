@@ -12,17 +12,25 @@ senkePrioritaet();
 
 const port = parentPort!;
 // Fehler fängt der Vorgang selbst ab und schickt sie als Antwort zurück; `void`, weil `on` kein Promise erwartet (#1011).
-port.on('message', (a: Auftrag) => void (async () => {
-  let antwort: Antwort;
-  try {
-    const f = (VORGAENGE as Record<string, (...x: unknown[]) => unknown>)[a.vorgang];
-    if (!f) throw new Error(`Unbekannter Vorgang: ${a.vorgang}`);
-    const ergebnis = await f(...alsBuffer(a.args));
-    const zeichen = fehlendeZeichen();
-    antwort = zeichen.length ? { id: a.id, ok: true, ergebnis, zeichen } : { id: a.id, ok: true, ergebnis };
-  } catch (e) {
-    fehlendeZeichen();
-    antwort = { id: a.id, ok: false, fehler: fehlerDaten(e) };
-  }
-  try { port.postMessage(antwort); } catch (e) { port.postMessage({ id: a.id, ok: false, fehler: fehlerDaten(e) } satisfies Antwort); }
-})());
+port.on(
+  'message',
+  (a: Auftrag) =>
+    void (async () => {
+      let antwort: Antwort;
+      try {
+        const f = (VORGAENGE as Record<string, (...x: unknown[]) => unknown>)[a.vorgang];
+        if (!f) throw new Error(`Unbekannter Vorgang: ${a.vorgang}`);
+        const ergebnis = await f(...alsBuffer(a.args));
+        const zeichen = fehlendeZeichen();
+        antwort = zeichen.length ? { id: a.id, ok: true, ergebnis, zeichen } : { id: a.id, ok: true, ergebnis };
+      } catch (e) {
+        fehlendeZeichen();
+        antwort = { id: a.id, ok: false, fehler: fehlerDaten(e) };
+      }
+      try {
+        port.postMessage(antwort);
+      } catch (e) {
+        port.postMessage({ id: a.id, ok: false, fehler: fehlerDaten(e) } satisfies Antwort);
+      }
+    })(),
+);

@@ -9,8 +9,16 @@ const ROH = {
   docs: [
     { location: '', title: 'Willkommen bei Ablago', text: '<p>Ablago ordnet deine Unterlagen.</p>' },
     { location: 'post/', title: 'Post', text: '<p>Neue Post kommt per Scan, Mail oder &bdquo;+ Neu&ldquo;.</p>' },
-    { location: 'post/#dokument-ubernehmen', title: 'Dokument übernehmen', text: '<p>Klickst du in <strong>Neue Post</strong> eine Post an, öffnet sich die Seite &amp; mehr.</p>' },
-    { location: 'post/#post-ab-hier-teilen', title: 'Post ab hier teilen', text: '<p>Hat eine Post mehrere Dokumente &#8211; etwa zwei Briefe &#x2013; teilst du sie.</p>' },
+    {
+      location: 'post/#dokument-ubernehmen',
+      title: 'Dokument übernehmen',
+      text: '<p>Klickst du in <strong>Neue Post</strong> eine Post an, öffnet sich die Seite &amp; mehr.</p>',
+    },
+    {
+      location: 'post/#post-ab-hier-teilen',
+      title: 'Post ab hier teilen',
+      text: '<p>Hat eine Post mehrere Dokumente &#8211; etwa zwei Briefe &#x2013; teilst du sie.</p>',
+    },
     { location: 'suchen/', title: 'Suchen', text: '<p>Das Suchfeld steht oben. Kuendigen findet kündigen.</p>' },
     { location: 42, title: 'kaputt' },
     { location: 'leer/', title: '   ' },
@@ -26,7 +34,10 @@ describe('Suche im Handbuch (#1219)', () => {
     assert.equal(a.istSeite, false);
     assert.equal(a.text, 'Klickst du in Neue Post eine Post an, öffnet sich die Seite & mehr.');
     assert.equal(v.find((x) => x.adresse === 'post/')!.seite, 'Post');
-    assert.equal(v.find((x) => x.adresse === 'post/#post-ab-hier-teilen')!.text, 'Hat eine Post mehrere Dokumente – etwa zwei Briefe – teilst du sie.');
+    assert.equal(
+      v.find((x) => x.adresse === 'post/#post-ab-hier-teilen')!.text,
+      'Hat eine Post mehrere Dokumente – etwa zwei Briefe – teilst du sie.',
+    );
     assert.deepEqual(handbuchVerzeichnis(null), []);
     assert.deepEqual(handbuchVerzeichnis({ docs: 'nein' }), []);
   });
@@ -34,10 +45,16 @@ describe('Suche im Handbuch (#1219)', () => {
   it('sucht wie die Listen: Titel zuerst, alle Wörter, Umlaute; höchstens max Treffer', () => {
     const v = handbuchVerzeichnis(ROH);
     const r = sucheImHandbuch(v, 'post');
-    assert.deepEqual(r.map((x) => x.abschnitt.adresse), ['post/', 'post/#post-ab-hier-teilen', 'post/#dokument-ubernehmen']);
+    assert.deepEqual(
+      r.map((x) => x.abschnitt.adresse),
+      ['post/', 'post/#post-ab-hier-teilen', 'post/#dokument-ubernehmen'],
+    );
     assert.ok(r[0].titel?.some((x) => x.treffer));
     assert.equal(sucheImHandbuch(v, 'post teilen').length, 1);
-    assert.deepEqual(sucheImHandbuch(v, 'kündigen').map((x) => x.abschnitt.adresse), ['suchen/']);
+    assert.deepEqual(
+      sucheImHandbuch(v, 'kündigen').map((x) => x.abschnitt.adresse),
+      ['suchen/'],
+    );
     assert.deepEqual(sucheImHandbuch(v, '  '), []);
     assert.equal(sucheImHandbuch(v, 'post', 2).length, 2);
     // Ohne Fund im Text: die ersten Worte.

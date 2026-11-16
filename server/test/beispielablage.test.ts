@@ -16,29 +16,55 @@ const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'markus@example
 
 // Ein kleines Paket mit zwei Beispielen, eines verweist auf das andere (erfundene Namen, reservierte Domains).
 const DATEIEN: Record<string, string> = {
-  'manifest.yaml': 'schema: 1\nid: haushalt\nname: Haushalt\nversion: 1.0.0\nbeschreibung: Beispiele der Familie.\nautor: { name: Lena Beispiel, github: lena-beispiel }\nlizenz: MIT\ndms: ">=0.223.0"\nabhaengigkeiten: {}\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  beispiele: inhalt/beispiele.yaml\n',
+  'manifest.yaml':
+    'schema: 1\nid: haushalt\nname: Haushalt\nversion: 1.0.0\nbeschreibung: Beispiele der Familie.\nautor: { name: Lena Beispiel, github: lena-beispiel }\nlizenz: MIT\ndms: ">=0.223.0"\nabhaengigkeiten: {}\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  beispiele: inhalt/beispiele.yaml\n',
   'inhalt/mappentypen.yaml': [
-    '- schluessel: firma', '  name: Firma', '  titelVorlage: "{name}"', '  felder:', '    - { key: name, label: Name, typ: text, pflicht: true }',
-    '  register:', '    - { key: daten, name: Daten, art: felder, felder: [name] }',
-    '- schluessel: vertrag', '  name: Vertrag', '  titelVorlage: "{nr}"', '  felder:',
-    '    - { key: nr, label: Nummer, typ: text, pflicht: true }', '    - { key: firma, label: Firma, typ: referenz, ziel: firma }',
-    '  register:', '    - { key: daten, name: Daten, art: felder, felder: [nr, firma] }', '',
+    '- schluessel: firma',
+    '  name: Firma',
+    '  titelVorlage: "{name}"',
+    '  felder:',
+    '    - { key: name, label: Name, typ: text, pflicht: true }',
+    '  register:',
+    '    - { key: daten, name: Daten, art: felder, felder: [name] }',
+    '- schluessel: vertrag',
+    '  name: Vertrag',
+    '  titelVorlage: "{nr}"',
+    '  felder:',
+    '    - { key: nr, label: Nummer, typ: text, pflicht: true }',
+    '    - { key: firma, label: Firma, typ: referenz, ziel: firma }',
+    '  register:',
+    '    - { key: daten, name: Daten, art: felder, felder: [nr, firma] }',
+    '',
   ].join('\n'),
   'inhalt/sichten.yaml': '- { schluessel: vertraege, name: Verträge, typen: [vertrag] }\n',
-  'inhalt/beispiele.yaml': '- typ: firma\n  schluessel: strom\n  werte: { name: Stadtwerke Beispiel }\n- typ: vertrag\n  werte: { nr: SV-4711, firma: { beispiel: strom } }\n',
+  'inhalt/beispiele.yaml':
+    '- typ: firma\n  schluessel: strom\n  werte: { name: Stadtwerke Beispiel }\n- typ: vertrag\n  werte: { nr: SV-4711, firma: { beispiel: strom } }\n',
 };
-const zip = () => zipPuffer(Object.entries(DATEIEN).map(([name, inhalt]) => ({ name, daten: Buffer.from(inhalt) })), new Date('2026-01-01T12:00:00Z'));
+const zip = () =>
+  zipPuffer(
+    Object.entries(DATEIEN).map(([name, inhalt]) => ({ name, daten: Buffer.from(inhalt) })),
+    new Date('2026-01-01T12:00:00Z'),
+  );
 
 /** Paket ohne Beispiele installiert, dann als Katalogpaket vermerkt; `lade` liefert dasselbe Archiv (ohne Netz). */
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const p = new Paketverwaltung(d, { version: () => '0.223.0', katalogUrl: 'https://katalog.test/katalog.json', abruf: async () => { throw new Error('ohne Netz'); } });
+  const p = new Paketverwaltung(d, {
+    version: () => '0.223.0',
+    katalogUrl: 'https://katalog.test/katalog.json',
+    abruf: async () => {
+      throw new Error('ohne Netz');
+    },
+  });
   const h = await p.hochladen(zip(), ICH);
   await p.installiere({ upload: h.upload, bestaetigt: true, beispiele: false }, ICH);
   const inst = (await d.kern.repo.listePakete()).find((x) => x.id === 'haushalt')!;
   await d.kern.repo.speicherePaket({ ...inst, herkunft: { art: 'katalog', url: 'https://katalog.test/katalog.json' } });
   const geladen: string[] = [];
-  (p as unknown as { lade: (id: string, v?: string) => Promise<unknown> }).lade = async (id, v) => { geladen.push(`${id}@${v}`); return { paket: liesPaket(liesZip(zip())) }; };
+  (p as unknown as { lade: (id: string, v?: string) => Promise<unknown> }).lade = async (id, v) => {
+    geladen.push(`${id}@${v}`);
+    return { paket: liesPaket(liesZip(zip())) };
+  };
   const typ = async (s: string) => (await d.mappentypen.listeTypen()).find((t) => t.schluessel === `haushalt:${s}`)!;
   return { d, p, geladen, typ };
 }
@@ -81,23 +107,41 @@ describe('Beispiel-Ablage (#988): Beispiele installierter Pakete nachträglich',
 });
 
 describe('Beispiel-Ablage (#988): Stand und Vorabprüfung', () => {
-  const paket = (id: string, beispielMappen = 0) => ({ id, name: id.toUpperCase(), beispielMappen: Array.from({ length: beispielMappen }, (_, i) => ({ id: `${id}-${i}`, werte: '', dokumente: [] })) }) as unknown as InstalliertesPaket;
-  const falsch = () => { throw new Error('nicht erwartet'); };
+  const paket = (id: string, beispielMappen = 0) =>
+    ({
+      id,
+      name: id.toUpperCase(),
+      beispielMappen: Array.from({ length: beispielMappen }, (_, i) => ({ id: `${id}-${i}`, werte: '', dokumente: [] })),
+    }) as unknown as InstalliertesPaket;
+  const falsch = () => {
+    throw new Error('nicht erwartet');
+  };
 
   it('nennt fehlende nötige Pakete und legt dann nichts an', async () => {
     const ablage = new BeispielAblage({ beispieleAnlegen: falsch, beispieleEntfernen: falsch }, async () => [paket('basis')]);
     const st = await ablage.stand();
-    assert.deepEqual(st.noetig, [{ id: 'basis', name: 'BASIS', installiert: true }, { id: 'haushalt', name: null, installiert: false }, { id: 'vertraege', name: null, installiert: false }]);
+    assert.deepEqual(st.noetig, [
+      { id: 'basis', name: 'BASIS', installiert: true },
+      { id: 'haushalt', name: null, installiert: false },
+      { id: 'vertraege', name: null, installiert: false },
+    ]);
     await assert.rejects(ablage.anlegen(ICH), (e) => e instanceof Fachfehler && e.status === 409 && /haushalt, vertraege/.test(e.message));
   });
 
   it('legt in fester Reihenfolge an; scheitert ein Paket, bleiben die übrigen', async () => {
     const reihe: string[] = [];
     const da = [paket('fahrzeuge'), paket('vertraege'), paket('haushalt'), paket('basis'), paket('texterkennung')];
-    const ablage = new BeispielAblage({
-      beispieleAnlegen: async (id) => { reihe.push(id); if (id === 'fahrzeuge') throw new Error('Katalog nicht erreichbar'); return { angelegt: 3 }; },
-      beispieleEntfernen: falsch,
-    }, async () => da);
+    const ablage = new BeispielAblage(
+      {
+        beispieleAnlegen: async (id) => {
+          reihe.push(id);
+          if (id === 'fahrzeuge') throw new Error('Katalog nicht erreichbar');
+          return { angelegt: 3 };
+        },
+        beispieleEntfernen: falsch,
+      },
+      async () => da,
+    );
     const r = await ablage.anlegen(ICH);
     assert.deepEqual(reihe, ['basis', 'haushalt', 'vertraege', 'fahrzeuge'], 'nur Pakete der Beispiel-Ablage, Abhängigkeiten zuerst');
     assert.deepEqual(r, { angelegt: 9, fehler: [{ id: 'fahrzeuge', name: 'FAHRZEUGE', meldung: 'Katalog nicht erreichbar' }] });

@@ -7,7 +7,11 @@ import { STARTBILD_PLATZHALTER, startbildAusTexten } from '../shared/src/startbi
 
 /** Startbild (#1198) in index.html: HTML und CSS ohne Skript, Texte aus den Sprachdateien (Deutsch und Englisch). */
 function startbild(): Plugin {
-  const texte = (sprache: string) => JSON.parse(readFileSync(new URL(`../shared/src/sprachen/${sprache}/oberflaeche.json`, import.meta.url), 'utf8')) as Record<string, string>;
+  const texte = (sprache: string) =>
+    JSON.parse(readFileSync(new URL(`../shared/src/sprachen/${sprache}/oberflaeche.json`, import.meta.url), 'utf8')) as Record<
+      string,
+      string
+    >;
   return {
     name: 'ablago-startbild',
     transformIndexHtml: (html) => html.replace(STARTBILD_PLATZHALTER, startbildAusTexten({ de: texte('de'), en: texte('en') })),
@@ -26,19 +30,23 @@ const MINDESTGROESSE = 1024;
  */
 function vorkomprimieren(): Plugin {
   let ziel = '';
-  const dateien = (ordner: string): string[] => readdirSync(ordner, { withFileTypes: true })
-    .flatMap((e) => e.isDirectory() ? dateien(join(ordner, e.name)) : [join(ordner, e.name)]);
+  const dateien = (ordner: string): string[] =>
+    readdirSync(ordner, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? dateien(join(ordner, e.name)) : [join(ordner, e.name)]));
   return {
     name: 'ablago-vorkomprimieren',
     apply: 'build',
-    configResolved: (c) => { ziel = resolve(c.root, c.build.outDir); },
+    configResolved: (c) => {
+      ziel = resolve(c.root, c.build.outDir);
+    },
     closeBundle() {
       let vorher = 0;
       let nachher = 0;
       for (const datei of dateien(ziel)) {
         if (!KOMPRIMIERBAR.test(datei) || statSync(datei).size < MINDESTGROESSE) continue;
         const inhalt = readFileSync(datei);
-        const br = brotliCompressSync(inhalt, { params: { [zlib.BROTLI_PARAM_QUALITY]: zlib.BROTLI_MAX_QUALITY, [zlib.BROTLI_PARAM_SIZE_HINT]: inhalt.length } });
+        const br = brotliCompressSync(inhalt, {
+          params: { [zlib.BROTLI_PARAM_QUALITY]: zlib.BROTLI_MAX_QUALITY, [zlib.BROTLI_PARAM_SIZE_HINT]: inhalt.length },
+        });
         const gz = gzipSync(inhalt, { level: 9 });
         if (br.length < inhalt.length) writeFileSync(`${datei}.br`, br);
         if (gz.length < inhalt.length) writeFileSync(`${datei}.gz`, gz);

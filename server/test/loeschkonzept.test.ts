@@ -18,8 +18,10 @@ function entpacke(zip: Buffer): Map<string, string> {
   const r = new Map<string, string>();
   let i = 0;
   while (zip.readUInt32LE(i) === 0x04034b50) {
-    const methode = zip.readUInt16LE(i + 8); const groesse = zip.readUInt32LE(i + 18);
-    const nl = zip.readUInt16LE(i + 26); const el = zip.readUInt16LE(i + 28);
+    const methode = zip.readUInt16LE(i + 8);
+    const groesse = zip.readUInt32LE(i + 18);
+    const nl = zip.readUInt16LE(i + 26);
+    const el = zip.readUInt16LE(i + 28);
     const name = zip.subarray(i + 30, i + 30 + nl).toString('utf8');
     const roh = zip.subarray(i + 30 + nl + el, i + 30 + nl + el + groesse);
     r.set(name, (methode === 8 ? inflateRawSync(roh) : roh).toString('utf8'));
@@ -29,23 +31,42 @@ function entpacke(zip: Buffer): Map<string, string> {
 }
 
 const basis = (typen: LoeschkonzeptQuelle['typen'], ds = DATENSCHUTZ_STANDARD): LoeschkonzeptQuelle => ({
-  typen, datenschutz: ds, papierkorbTage: 30, historieTage: 365, auskunftTage: 7,
+  typen,
+  datenschutz: ds,
+  papierkorbTage: 30,
+  historieTage: 365,
+  auskunftTage: 7,
   sicherung: { aktiv: true, haeufigkeit: 'taeglich', aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 } },
-  version: '0.103.0', stand: '2026-11-01', mandant: 'Hausverwaltung Muster',
+  version: '0.103.0',
+  stand: '2026-11-01',
+  mandant: 'Hausverwaltung Muster',
 });
 
 describe('Löschkonzept (#469)', () => {
   const kunde = { id: 'k', name: 'Kunde', felder: [{ key: 'name', label: 'Name', typ: 'text' as const }] };
-  const rechnung = { id: 'r', name: 'Rechnung', archiv: { jahre: 8, stichtag: 'datum' }, felder: [
-    { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' as const }, { key: 'kunde', label: 'Kunde', typ: 'referenz' as const, zielTypen: ['k'] },
-  ] };
+  const rechnung = {
+    id: 'r',
+    name: 'Rechnung',
+    archiv: { jahre: 8, stichtag: 'datum' },
+    felder: [
+      { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' as const },
+      { key: 'kunde', label: 'Kunde', typ: 'referenz' as const, zielTypen: ['k'] },
+    ],
+  };
   const haus = { id: 'h', name: 'Haus', felder: [{ key: 'adresse', label: 'Adresse', typ: 'text' as const }] };
   const benutzer = { id: 'b', name: 'Benutzer', system: 'benutzer' as const, felder: [] };
   const ds = { ...DATENSCHUTZ_STANDARD, typen: { k: { person: true, zweck: 'Kundenbeziehung' } } };
 
   it('füllt Abschnitt 2 aus Mappentypen mit Personenbezug, Zweck und Archivmodus', () => {
     const arten = datenarten(basis([kunde, rechnung, haus, benutzer], ds));
-    assert.deepEqual(arten.map((a) => [a.typ, a.bezug]), [['Kunde', 'person'], ['Rechnung', 'verweis']], 'Haus ohne Personenbezug, Benutzer in Abschnitt 7');
+    assert.deepEqual(
+      arten.map((a) => [a.typ, a.bezug]),
+      [
+        ['Kunde', 'person'],
+        ['Rechnung', 'verweis'],
+      ],
+      'Haus ohne Personenbezug, Benutzer in Abschnitt 7',
+    );
     const [k, r] = arten;
     assert.equal(k.zweck, 'Kundenbeziehung');
     assert.equal(k.frist, FEHLT('Frist'));
@@ -57,21 +78,48 @@ describe('Löschkonzept (#469)', () => {
     assert.equal(r.sperre, 'Archivmodus');
     assert.equal(r.loeschweg, '„Aufbewahrung abgelaufen“ → Papierkorb → endgültig nach 30 Tagen');
     assert.match(r.grund, /^\[Grund, z\. B\. Buchungsbelege/);
-    assert.equal(datenarten({ ...basis([kunde, rechnung], ds), papierkorbTage: 0 })[1].loeschweg, '„Aufbewahrung abgelaufen“ → sofort endgültig (kein Papierkorb)');
+    assert.equal(
+      datenarten({ ...basis([kunde, rechnung], ds), papierkorbTage: 0 })[1].loeschweg,
+      '„Aufbewahrung abgelaufen“ → sofort endgültig (kein Papierkorb)',
+    );
   });
 
   it('meldet Lücken: ohne Zweck, ohne Frist, ohne Verantwortlichen, gar keine Datenart', () => {
     const l = luecken(basis([kunde, rechnung, haus], ds));
-    assert.deepEqual(l.map((x) => [x.art, x.typ ?? '', x.art === 'typ' ? x.fehlt.join('+') : '']), [['verantwortlicher', '', ''], ['typ', 'Kunde', 'frist'], ['typ', 'Rechnung', 'zweck']]);
-    assert.deepEqual(luecken(basis([haus])).map((x) => x.art), ['verantwortlicher', 'keine']);
-    const voll = luecken(basis([kunde, rechnung], { ...ds, verantwortlicher: 'Muster GmbH', typen: { k: { person: true, zweck: 'x' }, r: { person: false, zweck: 'Buchführung' } } }));
-    assert.deepEqual(voll.map((x) => x.typ), ['Kunde'], 'nur noch die Frist beim Kunden');
+    assert.deepEqual(
+      l.map((x) => [x.art, x.typ ?? '', x.art === 'typ' ? x.fehlt.join('+') : '']),
+      [
+        ['verantwortlicher', '', ''],
+        ['typ', 'Kunde', 'frist'],
+        ['typ', 'Rechnung', 'zweck'],
+      ],
+    );
+    assert.deepEqual(
+      luecken(basis([haus])).map((x) => x.art),
+      ['verantwortlicher', 'keine'],
+    );
+    const voll = luecken(
+      basis([kunde, rechnung], {
+        ...ds,
+        verantwortlicher: 'Muster GmbH',
+        typen: { k: { person: true, zweck: 'x' }, r: { person: false, zweck: 'Buchführung' } },
+      }),
+    );
+    assert.deepEqual(
+      voll.map((x) => x.typ),
+      ['Kunde'],
+      'nur noch die Frist beim Kunden',
+    );
   });
 
   it('nennt je Mappentyp eine Lücke mit Grund: angekreuzt oder über ein Verweisfeld (#664)', () => {
     const person = { id: 'p', name: 'Person', felder: [{ key: 'name', label: 'Name', typ: 'text' as const }] };
     const konto = { id: 'ko', name: 'Konto', felder: [{ key: 'inhaber', label: 'Inhaber', typ: 'referenz' as const, zielTypen: ['p'] }] };
-    const q = basis([person, konto, haus], { ...DATENSCHUTZ_STANDARD, verantwortlicher: 'Muster GmbH', typen: { p: { person: true, zweck: '' } } });
+    const q = basis([person, konto, haus], {
+      ...DATENSCHUTZ_STANDARD,
+      verantwortlicher: 'Muster GmbH',
+      typen: { p: { person: true, zweck: '' } },
+    });
     const l = luecken(q);
     assert.equal(l.length, 2, 'je Mappentyp genau eine Zeile, Haus fehlt');
     const k = l.find((x) => x.typ === 'Konto');
@@ -79,7 +127,10 @@ describe('Löschkonzept (#469)', () => {
     assert.equal(k.bezug, 'verweis');
     assert.deepEqual(k.verweise, [{ feld: 'Inhaber', ziel: 'Person' }]);
     assert.deepEqual(k.fehlt, ['zweck', 'frist']);
-    assert.equal(k.text, 'Konto – enthält Personendaten, weil er über „Inhaber“ auf Person verweist. Es fehlen: Zweck · Aufbewahrungsfrist.');
+    assert.equal(
+      k.text,
+      'Konto – enthält Personendaten, weil er über „Inhaber“ auf Person verweist. Es fehlen: Zweck · Aufbewahrungsfrist.',
+    );
     const p = l.find((x) => x.typ === 'Person');
     assert.ok(p && p.art === 'typ');
     assert.match(p.text, /weil du ihn als „betrifft eine Person“ markiert hast/);
@@ -90,7 +141,10 @@ describe('Löschkonzept (#469)', () => {
 
   it('Gliederung wie die Vorlage, Stand und Version im Kopf, Einstellungen vorbelegt', () => {
     const k = loeschkonzept(basis([kunde, rechnung, haus], { ...ds, verantwortlicher: 'Muster GmbH\nHauptstraße 1' }));
-    assert.deepEqual(k.abschnitte.map((a) => a.titel.split(' ')[0]), ['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.']);
+    assert.deepEqual(
+      k.abschnitte.map((a) => a.titel.split(' ')[0]),
+      ['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.'],
+    );
     assert.match(k.stand, /01\.11\.2026.*0\.103\.0/);
     assert.match(k.vorbemerkung, /keine Rechtsberatung/);
     const text = JSON.stringify(k.abschnitte);
@@ -103,10 +157,19 @@ describe('Löschkonzept (#469)', () => {
 
   it('enthält nichts aus Mappen und lässt sich als PDF und Word-Datei erzeugen', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const k = await d.mappentypen.legeTypAn({ name: 'Mieter', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'iban', label: 'IBAN', typ: 'text' }] });
+    const k = await d.mappentypen.legeTypAn({
+      name: 'Mieter',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+        { key: 'iban', label: 'IBAN', typ: 'text' },
+      ],
+    });
     await d.mappen.legeMappeAn({ typId: k.id, werte: { name: 'Erika Mustermann', iban: 'DE02120300000000202051' } }, null);
     await d.datenschutzDienst.setzeDatenschutz({ typen: { [k.id]: { person: true, zweck: 'Mietverhältnis' } } }, 'admin@example.org');
-    const q = { ...basis(await d.mappentypen.listeTypen(), await d.datenschutzDienst.datenschutz()), papierkorbTage: await d.kern.papierkorbTage() };
+    const q = {
+      ...basis(await d.mappentypen.listeTypen(), await d.datenschutzDienst.datenschutz()),
+      papierkorbTage: await d.kern.papierkorbTage(),
+    };
     const lk = loeschkonzept(q);
     const s = { titel: lk.titel, untertitel: lk.untertitel, stand: lk.stand, vorbemerkung: lk.vorbemerkung, abschnitte: lk.abschnitte };
     const docx = entpacke(schriftstueckDocx(s));

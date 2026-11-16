@@ -21,7 +21,16 @@ export const BESTAND_DATEI = 'knip-bestand.json';
 /** Arten, die im Bestand stehen dürfen (Name je Datei). */
 export const BESTANDSARTEN = ['exports', 'types', 'enumMembers', 'namespaceMembers', 'duplicates'];
 /** Arten ohne Bestand: Jeder Fund ist ein Fehler (oder eine begründete Ausnahme in knip.jsonc). */
-export const STRENGE_ARTEN = ['files', 'dependencies', 'devDependencies', 'optionalPeerDependencies', 'unlisted', 'binaries', 'unresolved', 'catalog'];
+export const STRENGE_ARTEN = [
+  'files',
+  'dependencies',
+  'devDependencies',
+  'optionalPeerDependencies',
+  'unlisted',
+  'binaries',
+  'unresolved',
+  'catalog',
+];
 
 const TEXTE = {
   files: 'Datei wird nirgends eingebunden',
@@ -93,7 +102,8 @@ export function vergleiche(liste, bestand) {
   const da = new Set(liste.map((f) => `${f.datei}\0${f.art}\0${f.name}`));
   const weg = [];
   for (const [datei, arten] of Object.entries(bestand)) {
-    for (const [art, namen] of Object.entries(arten)) for (const name of namen) if (!da.has(`${datei}\0${art}\0${name}`)) weg.push({ art, datei, name });
+    for (const [art, namen] of Object.entries(arten))
+      for (const name of namen) if (!da.has(`${datei}\0${art}\0${name}`)) weg.push({ art, datei, name });
   }
   return { neu, weg };
 }
@@ -101,7 +111,10 @@ export function vergleiche(liste, bestand) {
 function knipStarten() {
   let ausgabe;
   try {
-    ausgabe = execFileSync('node_modules/.bin/knip', ['--no-progress', '--reporter', 'json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    ausgabe = execFileSync('node_modules/.bin/knip', ['--no-progress', '--reporter', 'json'], {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    });
   } catch (e) {
     // knip endet mit 1, sobald es etwas findet; die JSON-Ausgabe steht trotzdem in stdout.
     if (!e.stdout) throw e;
@@ -137,7 +150,9 @@ function main() {
     console.log(imCi ? `::notice title=knip::${hinweis}` : hinweis);
   }
   if (neu.length) {
-    console.error(`knip: ${neu.length} neue Funde. Toten Code entfernen; ist er gewollt, Begründung in knip.jsonc (Entwicklerhandbuch „Stil und Abhängigkeiten“).`);
+    console.error(
+      `knip: ${neu.length} neue Funde. Toten Code entfernen; ist er gewollt, Begründung in knip.jsonc (Entwicklerhandbuch „Stil und Abhängigkeiten“).`,
+    );
     process.exitCode = 1;
   } else {
     console.log(`knip: keine neuen Funde (Bestand ${zaehleKnip(bestand)} Einträge).`);

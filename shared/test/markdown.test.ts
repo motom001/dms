@@ -7,10 +7,16 @@ import { formatiere, pruefeMappe } from '../../shared/src/model';
 describe('Markdown (#53)', () => {
   it('zerlegt Überschriften, Listen, Zitate und Absätze', () => {
     const b = zerlege('# Titel\n\nEin **fetter** und *kursiver* Satz.\n\n- eins\n- zwei\n\n1. erstens\n2. zweitens\n\n> zitiert');
-    assert.deepEqual(b.map((x) => x.art), ['ueberschrift', 'absatz', 'liste', 'liste', 'zitat']);
+    assert.deepEqual(
+      b.map((x) => x.art),
+      ['ueberschrift', 'absatz', 'liste', 'liste', 'zitat'],
+    );
     assert.equal((b[2] as { punkte: unknown[] }).punkte.length, 2);
     assert.equal((b[3] as { nummeriert: boolean }).nummeriert, true);
-    assert.deepEqual(inline('a **b** c').map((t) => t.art), ['text', 'fett', 'text']);
+    assert.deepEqual(
+      inline('a **b** c').map((t) => t.art),
+      ['text', 'fett', 'text'],
+    );
   });
 
   it('erlaubt nur sichere Links und kennt kein HTML', () => {
@@ -29,7 +35,11 @@ describe('Markdown (#53)', () => {
     assert.deepEqual(erwaehnungen(md), [id]);
     assert.equal(formatiere({ key: 'n', label: 'N', typ: 'formatiert' }, '**fett**'), 'fett');
     assert.equal(inline('snake_case_wort').length, 1, 'Unterstriche im Wort sind kein Kursiv');
-    const p = pruefeMappe({ felder: [{ key: 'n', label: 'N', typ: 'formatiert', maxLen: 5 }] }, { n: 'zu lang' }, { typVon: () => undefined, doppelt: () => undefined });
+    const p = pruefeMappe(
+      { felder: [{ key: 'n', label: 'N', typ: 'formatiert', maxLen: 5 }] },
+      { n: 'zu lang' },
+      { typVon: () => undefined, doppelt: () => undefined },
+    );
     assert.ok(p.felder.n);
   });
 });

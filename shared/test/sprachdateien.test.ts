@@ -29,11 +29,12 @@ function sprachstand(): Sprachstand {
 }
 
 function quelltexte(): Quelltext[] {
-  const aus = (ordner: string): Quelltext[] => readdirSync(ordner).flatMap((n) => {
-    const p = join(ordner, n);
-    if (statSync(p).isDirectory()) return n === 'sprachen' || n === 'node_modules' ? [] : aus(p);
-    return /\.(ts|tsx)$/.test(n) ? [{ datei: relative(WURZEL, p), text: readFileSync(p, 'utf8') }] : [];
-  });
+  const aus = (ordner: string): Quelltext[] =>
+    readdirSync(ordner).flatMap((n) => {
+      const p = join(ordner, n);
+      if (statSync(p).isDirectory()) return n === 'sprachen' || n === 'node_modules' ? [] : aus(p);
+      return /\.(ts|tsx)$/.test(n) ? [{ datei: relative(WURZEL, p), text: readFileSync(p, 'utf8') }] : [];
+    });
   return ['web/src', 'server/src', 'shared/src'].flatMap((o) => aus(join(WURZEL, o)));
 }
 
@@ -45,10 +46,15 @@ describe('Sprachdateien (#473)', () => {
 
   it('die Prüfung findet fehlende, übrige und abweichende Schlüssel', () => {
     const stand: Sprachstand = {
-      de: { probe: { 'da': 'Da', 'gruss': 'Hallo {name}', 'rest': 'übrig', 'mappen_one': '{anzahl} Mappe', 'zahl_one': 'eins', 'Gross': 'x' } },
-      en: { probe: { 'da': 'There', 'gruss': 'Hello {nam}', 'mehr': 'more' } },
+      de: { probe: { da: 'Da', gruss: 'Hallo {name}', rest: 'übrig', mappen_one: '{anzahl} Mappe', zahl_one: 'eins', Gross: 'x' } },
+      en: { probe: { da: 'There', gruss: 'Hello {nam}', mehr: 'more' } },
     };
-    const code = [{ datei: 'a.ts', text: "t('probe.da'); t('probe.fehlt'); t('probe.gruss', { name }); t('probe.mappen', { anzahl }); t('probe.zahl'); 'probe.Gross'" }];
+    const code = [
+      {
+        datei: 'a.ts',
+        text: "t('probe.da'); t('probe.fehlt'); t('probe.gruss', { name }); t('probe.mappen', { anzahl }); t('probe.zahl'); 'probe.Gross'",
+      },
+    ];
     const m = pruefeSprachdateien(stand, code).join('\n');
     assert.match(m, /a\.ts:1: Schlüssel „probe\.fehlt“ fehlt in de\/probe\.json/);
     assert.match(m, /Schlüssel „rest“ wird nirgends benutzt/);
@@ -59,8 +65,12 @@ describe('Sprachdateien (#473)', () => {
     assert.match(m, /mappen“ hat Mehrzahlformen, aber kein „mappen_other“/);
     assert.match(m, /ungültiger Schlüssel „Gross“/);
     // Platzhalter (#727): Der Aufruf muss liefern, was der Text braucht – auch verschachtelt und in der Mehrzahl.
-    const werte = pruefeSprachdateien({ de: { p: { 'gruss': 'Hallo {name}', 'n_one': 'eine {art}', 'n_other': '{anzahl} {art}n' } } }, [{ datei: 'c.ts', text:
-      "t('p.gruss', { nam: f({ name: 1 }) });\nt('p.n', { anzahl: 2 });\nt('p.gruss', { name: x ? t('p.n', { anzahl, art }) : '' });\nt('p.gruss', { ...rest })" }]);
+    const werte = pruefeSprachdateien({ de: { p: { gruss: 'Hallo {name}', n_one: 'eine {art}', n_other: '{anzahl} {art}n' } } }, [
+      {
+        datei: 'c.ts',
+        text: "t('p.gruss', { nam: f({ name: 1 }) });\nt('p.n', { anzahl: 2 });\nt('p.gruss', { name: x ? t('p.n', { anzahl, art }) : '' });\nt('p.gruss', { ...rest })",
+      },
+    ]);
     assert.deepEqual(werte, [
       'c.ts:1: „p.gruss“ braucht {name}, der Aufruf liefert nur {nam}.',
       'c.ts:2: „p.n“ braucht {art}, der Aufruf liefert nur {anzahl}.',
@@ -70,8 +80,10 @@ describe('Sprachdateien (#473)', () => {
   });
 
   it('Platzhalter, Mehrzahl und Rückfall auf Deutsch', () => {
-    const t = uebersetzer({ probe: { 'mappen_one': '{anzahl} Mappe', 'mappen_other': '{anzahl} Mappen', 'gruss': 'Hallo {name}', 'nur-de': 'nur deutsch' } },
-      { en: { probe: { 'mappen_one': '{anzahl} folder', 'mappen_other': '{anzahl} folders', 'gruss': 'Hello {name}' } } });
+    const t = uebersetzer(
+      { probe: { mappen_one: '{anzahl} Mappe', mappen_other: '{anzahl} Mappen', gruss: 'Hallo {name}', 'nur-de': 'nur deutsch' } },
+      { en: { probe: { mappen_one: '{anzahl} folder', mappen_other: '{anzahl} folders', gruss: 'Hello {name}' } } },
+    );
     assert.equal(t('probe.mappen', { anzahl: 1 }), '1 Mappe');
     assert.equal(t('probe.mappen', { anzahl: 3 }), '3 Mappen');
     assert.equal(t('probe.mappen', { anzahl: 0 }), '0 Mappen');
@@ -84,7 +96,9 @@ describe('Sprachdateien (#473)', () => {
       assert.equal(t('probe.mappen', { anzahl: 1 }), '1 folder');
       assert.equal(t('probe.gruss', { name: 'Lena' }), 'Hello Lena');
       assert.equal(t('probe.nur-de'), 'nur deutsch');
-    } finally { setzeSprache('de'); }
+    } finally {
+      setzeSprache('de');
+    }
     assert.deepEqual(platzhalter('{b} und {a} und {b}'), ['a', 'b']);
     assert.equal(fuelle('{a}{b}', { a: 1 }), '1{b}');
   });
@@ -92,9 +106,15 @@ describe('Sprachdateien (#473)', () => {
   it('Pilot Anmeldung: Mails des Servers wie bisher, Mehrzahl in der Dauer', () => {
     const z1 = mailtexte.zuruecksetzen('', 'lena@example.org', 'https://dms/passwort/x', 1);
     assert.equal(z1.betreff, 'Passwort für Ablago zurücksetzen');
-    assert.equal(z1.text, 'Hallo lena@example.org,\n\nfür deinen Zugang zu Ablago wurde ein neues Passwort angefordert.\n\nLege hier ein neues Passwort fest (der Link ist 1 Stunde gültig und funktioniert nur einmal):\nhttps://dms/passwort/x\n\nFalls du das nicht warst, kannst du diese Nachricht ignorieren. Dein bisheriges Passwort bleibt dann gültig.\n');
+    assert.equal(
+      z1.text,
+      'Hallo lena@example.org,\n\nfür deinen Zugang zu Ablago wurde ein neues Passwort angefordert.\n\nLege hier ein neues Passwort fest (der Link ist 1 Stunde gültig und funktioniert nur einmal):\nhttps://dms/passwort/x\n\nFalls du das nicht warst, kannst du diese Nachricht ignorieren. Dein bisheriges Passwort bleibt dann gültig.\n',
+    );
     assert.match(mailtexte.zuruecksetzen('', 'x@y', 'l', 2).text, /der Link ist 2 Stunden gültig/);
-    assert.match(mailtexte.einladung('Lena', 'x@y', 'l', 7).text, /^Hallo Lena,\n\nfür dich wurde ein Zugang zu Ablago angelegt\.\n\nAnmeldung mit: x@y\n\nLege hier dein Passwort fest \(der Link ist 7 Tage gültig/);
+    assert.match(
+      mailtexte.einladung('Lena', 'x@y', 'l', 7).text,
+      /^Hallo Lena,\n\nfür dich wurde ein Zugang zu Ablago angelegt\.\n\nAnmeldung mit: x@y\n\nLege hier dein Passwort fest \(der Link ist 7 Tage gültig/,
+    );
   });
 
   it('Texte für Dritte (#474) passen ins neue Format: Mehrzahl beim Abruf-Link', () => {

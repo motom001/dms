@@ -21,7 +21,14 @@
  * Automatisierung selbst auslöst (Modul „automatisierung“, „ereignisse“ oder im Lauf einer Automatisierung), und je
  * Automatisierung höchstens einmal in {@link PROTOKOLL_ABSTAND_MIN} Minuten.
  */
-import { PROTOKOLL_ABSTAND_MIN, PROTOKOLL_TEXT_MAX, protokollPasst, SYSTEMKONTO_WERKBANK, type Automatisierung, type SystemkontoHandlung } from '../../shared/src/automatisierung';
+import {
+  PROTOKOLL_ABSTAND_MIN,
+  PROTOKOLL_TEXT_MAX,
+  protokollPasst,
+  SYSTEMKONTO_WERKBANK,
+  type Automatisierung,
+  type SystemkontoHandlung,
+} from '../../shared/src/automatisierung';
 import { Fachfehler } from './fehler';
 import { textOhneGeheimnisse } from './geheimnis-sperre';
 import { protokoll as dasProtokoll, type Eintrag, type Protokoll } from './protokoll';
@@ -80,7 +87,12 @@ export function systemWerkbank(q: SystemWerkbankQuellen): SystemWerkbank {
 }
 
 /** Eine Protokollmeldung, wie sie ins Ereignis geht. */
-export interface Betriebsmeldung { stufe: 'warn' | 'error'; modul: string; text: string; zeitpunkt: string }
+export interface Betriebsmeldung {
+  stufe: 'warn' | 'error';
+  modul: string;
+  text: string;
+  zeitpunkt: string;
+}
 
 /** Module, deren Meldungen nie eine Automatisierung auslösen (Schleifenschutz). */
 const NIE = new Set(['automatisierung', 'ereignisse']);
@@ -95,25 +107,36 @@ export class Betriebsmelder {
   private laeuft = false;
   private liste: { zeit: number; autos: Automatisierung[] } | null = null;
 
-  constructor(private o: {
-    werkbank: SystemWerkbank;
-    /** Alle Automatisierungen (gemerkt für eine Minute). */
-    automatisierungen: () => Promise<Automatisierung[]>;
-    /** Ereignis in den Ausgangskorb (außerhalb jeder Anfrage und Transaktion). */
-    ereignis: (daten: Betriebsmeldung) => Promise<void>;
-    /** Läuft das gerade im Namen einer Automatisierung? */
-    inAutomatisierung: () => boolean;
-    uhr?: () => number;
-  }) {}
+  constructor(
+    private o: {
+      werkbank: SystemWerkbank;
+      /** Alle Automatisierungen (gemerkt für eine Minute). */
+      automatisierungen: () => Promise<Automatisierung[]>;
+      /** Ereignis in den Ausgangskorb (außerhalb jeder Anfrage und Transaktion). */
+      ereignis: (daten: Betriebsmeldung) => Promise<void>;
+      /** Läuft das gerade im Namen einer Automatisierung? */
+      inAutomatisierung: () => boolean;
+      uhr?: () => number;
+    },
+  ) {}
 
-  private jetzt() { return this.o.uhr?.() ?? Date.now(); }
+  private jetzt() {
+    return this.o.uhr?.() ?? Date.now();
+  }
 
   start(ms = 2_000) {
     this.abo ??= this.o.werkbank.protokoll((e) => this.merke(e));
-    this.uhr ??= setInterval(() => { void this.sende(); }, ms);
+    this.uhr ??= setInterval(() => {
+      void this.sende();
+    }, ms);
     this.uhr.unref?.();
   }
-  stop() { this.abo?.(); this.abo = null; if (this.uhr) clearInterval(this.uhr); this.uhr = null; }
+  stop() {
+    this.abo?.();
+    this.abo = null;
+    if (this.uhr) clearInterval(this.uhr);
+    this.uhr = null;
+  }
 
   /**
    * Aus dem Protokoll (synchron, darf nie werfen): nur merken – gesendet wird außerhalb der Anfrage. Der Text ohne
@@ -122,12 +145,22 @@ export class Betriebsmelder {
   merke(e: Eintrag) {
     if (NIE.has(e.modul) || this.schlange.length >= SCHLANGE_MAX) return;
     if (e.stufe !== 'warn' && e.stufe !== 'error' && e.stufe !== 'fatal') return;
-    try { if (this.o.inAutomatisierung()) return; } catch { return; }
-    this.schlange.push({ stufe: e.stufe === 'warn' ? 'warn' : 'error', modul: e.modul, text: textOhneGeheimnisse(e.text).slice(0, PROTOKOLL_TEXT_MAX), zeitpunkt: e.zeit });
+    try {
+      if (this.o.inAutomatisierung()) return;
+    } catch {
+      return;
+    }
+    this.schlange.push({
+      stufe: e.stufe === 'warn' ? 'warn' : 'error',
+      modul: e.modul,
+      text: textOhneGeheimnisse(e.text).slice(0, PROTOKOLL_TEXT_MAX),
+      zeitpunkt: e.zeit,
+    });
   }
 
   private async aktive(): Promise<Automatisierung[]> {
-    if (!this.liste || this.jetzt() - this.liste.zeit > 60_000) this.liste = { zeit: this.jetzt(), autos: await this.o.automatisierungen() };
+    if (!this.liste || this.jetzt() - this.liste.zeit > 60_000)
+      this.liste = { zeit: this.jetzt(), autos: await this.o.automatisierungen() };
     return this.liste.autos.filter((a) => a.aktiv && !a.angehalten && a.wenn.art === 'protokoll.meldung');
   }
 
@@ -140,13 +173,22 @@ export class Betriebsmelder {
       const liste = this.schlange.splice(0);
       const autos = await this.aktive();
       for (const m of liste) {
-        const bereit = autos.filter((a) => a.wenn.art === 'protokoll.meldung' && protokollPasst(a.wenn, m) && this.jetzt() - (this.zuletzt.get(a.id) ?? 0) >= PROTOKOLL_ABSTAND_MIN * 60_000);
+        const bereit = autos.filter(
+          (a) =>
+            a.wenn.art === 'protokoll.meldung' &&
+            protokollPasst(a.wenn, m) &&
+            this.jetzt() - (this.zuletzt.get(a.id) ?? 0) >= PROTOKOLL_ABSTAND_MIN * 60_000,
+        );
         if (!bereit.length) continue;
         for (const a of bereit) this.zuletzt.set(a.id, this.jetzt());
         await this.o.ereignis(m);
         n++;
       }
-    } catch { /* Ausgangskorb nicht erreichbar: verworfen (nie ins Protokoll – das wäre eine Schleife) */ } finally { this.laeuft = false; }
+    } catch {
+      /* Ausgangskorb nicht erreichbar: verworfen (nie ins Protokoll – das wäre eine Schleife) */
+    } finally {
+      this.laeuft = false;
+    }
     return n;
   }
 }

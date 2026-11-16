@@ -19,11 +19,17 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 async function aufbau() {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true }] });
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
-    { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
-    { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
-  ] });
+  const partner = await d.mappentypen.legeTypAn({
+    name: 'Partner',
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true }],
+  });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    felder: [
+      { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
+      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+    ],
+  });
   return { d, dateien, partner, vertrag };
 }
 
@@ -41,7 +47,10 @@ describe('Papierkorb (#43)', () => {
     assert.equal((await d.sichten.seite(anna, { sicht: `typ:${vertrag.id}` })).gesamt, 0);
     assert.equal((await d.sichten.zaehler(anna)).papierkorb, 1);
     assert.equal((await d.sichten.zaehler(admin)).papierkorb, 0, 'je Benutzer');
-    assert.deepEqual((await d.papierkorbVerwaltung.papierkorb(anna)).map((e) => [e.titel, e.dokumente]), [['V-1', 1]]);
+    assert.deepEqual(
+      (await d.papierkorbVerwaltung.papierkorb(anna)).map((e) => [e.titel, e.dokumente]),
+      [['V-1', 1]],
+    );
     assert.equal((await d.papierkorbVerwaltung.papierkorb(admin)).length, 0, 'in der Ablage nur Eigenes');
     assert.equal((await d.papierkorbVerwaltung.papierkorb(admin, true)).length, 1, 'in der Werkbank alles');
     await assert.rejects(d.papierkorbVerwaltung.stelleWiederHer(v.id, admin), status(404), 'Fremdes nur über die Werkbank');
@@ -56,7 +65,11 @@ describe('Papierkorb (#43)', () => {
     assert.equal((await d.mappen.holeMappe(neu.id)).mappe.passt, true, 'die andere Mappe bleibt in Ordnung');
     const details = await d.mappen.holeMappe(v.id);
     assert.equal(details.dokumente.length, 1, 'Dokumente kommen mit');
-    assert.deepEqual((await d.mappen.holeMappe(p.id)).rueckverweise.map((x) => x.quelleId), [v.id], 'Verweise kommen mit');
+    assert.deepEqual(
+      (await d.mappen.holeMappe(p.id)).rueckverweise.map((x) => x.quelleId),
+      [v.id],
+      'Verweise kommen mit',
+    );
     assert.equal((await d.sichten.zaehler(anna)).eingang, 1);
   });
 
@@ -65,14 +78,36 @@ describe('Papierkorb (#43)', () => {
     const a = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'A' } }, anna.id);
     const b = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'B' } }, anna.id);
     const c = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'C' } }, admin.id);
-    const { dokument } = await d.dokumente.ladeHoch(a.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
-    for (const [m, wer] of [[a, anna], [b, anna], [c, admin]] as const) await d.loeschen.loescheMappe(m.id, wer.id);
-    assert.ok(await dateien.lies(dokument.sha256).then(() => true, () => false), 'Datei bleibt im Papierkorb');
+    const { dokument } = await d.dokumente.ladeHoch(
+      a.id,
+      { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' },
+      Buffer.from('%PDF-1.4 a'),
+      anna.id,
+    );
+    for (const [m, wer] of [
+      [a, anna],
+      [b, anna],
+      [c, admin],
+    ] as const)
+      await d.loeschen.loescheMappe(m.id, wer.id);
+    assert.ok(
+      await dateien.lies(dokument.sha256).then(
+        () => true,
+        () => false,
+      ),
+      'Datei bleibt im Papierkorb',
+    );
 
     await assert.rejects(d.papierkorbVerwaltung.loescheEndgueltig([c.id], anna), status(404));
     assert.equal(await d.papierkorbVerwaltung.loescheEndgueltig([b.id], anna), 1);
     assert.equal(await d.papierkorbVerwaltung.leerePapierkorb(anna), 1, 'eigener Papierkorb: nur noch A');
-    assert.ok(!(await dateien.lies(dokument.sha256).then(() => true, () => false)), 'Datei mit dem Leeren weg');
+    assert.ok(
+      !(await dateien.lies(dokument.sha256).then(
+        () => true,
+        () => false,
+      )),
+      'Datei mit dem Leeren weg',
+    );
     assert.equal((await d.papierkorbVerwaltung.papierkorb(admin, true)).map((e) => e.titel).join(), 'C');
 
     assert.equal(await d.papierkorbVerwaltung.raeumePapierkorbAuf(Date.now() + 29 * 86_400_000), 0, 'nach 29 Tagen noch da');

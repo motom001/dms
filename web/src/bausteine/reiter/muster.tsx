@@ -28,7 +28,9 @@ export function ReiterMuster() {
     <div className={s.raster}>
       <Karte zustand="reiter-register" titel={t('oberflaeche.muster.reiter.register')}>
         <Reiter id="muster-reiter" wert={wert} setze={setWert} wahlen={wahlen} beschriftung={t('oberflaeche.muster.reiter.beschriftung')} />
-        <ReiterFlaeche id="muster-reiter" wert={wert}><p className="leise">{t('oberflaeche.muster.reiter.inhalt', { reiter: wahlen.find((w) => w.wert === wert)?.text ?? '' })}</p></ReiterFlaeche>
+        <ReiterFlaeche id="muster-reiter" wert={wert}>
+          <p className="leise">{t('oberflaeche.muster.reiter.inhalt', { reiter: wahlen.find((w) => w.wert === wert)?.text ?? '' })}</p>
+        </ReiterFlaeche>
       </Karte>
     </div>
   );

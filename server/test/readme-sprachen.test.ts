@@ -14,7 +14,11 @@ const lies = (datei: string) => readFileSync(new URL(datei, WURZEL), 'utf8');
 /** Bildschirmfotos der Oberfläche aus dem Handbuch-Workflow, die es noch nicht auf Englisch gibt. */
 const NUR_DEUTSCH = ['bilder/readme.png', 'bilder/readme-dunkel.png'];
 /** Abzeichen: Dienste, die das Bild selbst erzeugen (die Beschriftung steht in der Adresse). */
-const ABZEICHEN = [/^https:\/\/img\.shields\.io\//, /^https:\/\/api\.scorecard\.dev\//, /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/workflows\/.+\/badge\.svg$/];
+const ABZEICHEN = [
+  /^https:\/\/img\.shields\.io\//,
+  /^https:\/\/api\.scorecard\.dev\//,
+  /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/workflows\/.+\/badge\.svg$/,
+];
 
 /** Alle Bilder einer Markdown-Datei: ![…](…), <img src>, <source srcset>. */
 function bilder(md: string): string[] {
@@ -42,20 +46,33 @@ describe('README je Sprache (#574)', () => {
 
   it('README.en.md bindet nur englische Grafiken ein, Bildschirmfotos mit Hinweis „German only“', () => {
     // Logo aus marke/ (#687): der Name Ablago ist in jeder Sprache gleich.
-    const falsch = bilder(en).filter((u) => !istAbzeichen(u) && !nurDeutsch(u) && !u.startsWith('docs/marke/') && !/\.en\.(svg|png|jpe?g|webp|gif)$/i.test(u));
-    assert.deepEqual(falsch, [], 'Grafiken ohne .en in README.en.md – englische Fassung anlegen (CONTRIBUTING: Grafiken und Bilder je Sprache)');
+    const falsch = bilder(en).filter(
+      (u) => !istAbzeichen(u) && !nurDeutsch(u) && !u.startsWith('docs/marke/') && !/\.en\.(svg|png|jpe?g|webp|gif)$/i.test(u),
+    );
+    assert.deepEqual(
+      falsch,
+      [],
+      'Grafiken ohne .en in README.en.md – englische Fassung anlegen (CONTRIBUTING: Grafiken und Bilder je Sprache)',
+    );
     // Jedes deutsche Bildschirmfoto: im <picture> bzw. Absatz direkt darunter der Hinweis.
     for (const u of bilder(en).filter(nurDeutsch)) {
       const ende = Math.max(en.indexOf('</picture>', en.indexOf(u)), en.indexOf(u));
       // Der nächste Absatz nach dem Bild.
-      const danach = en.slice(ende).split(/\n\s*\n/).slice(0, 2).join('\n');
+      const danach = en
+        .slice(ende)
+        .split(/\n\s*\n/)
+        .slice(0, 2)
+        .join('\n');
       assert.match(danach, /German only/, `${u}: Hinweis „German only“ fehlt direkt unter dem Bild`);
     }
     assert.ok(bilder(en).some(nurDeutsch), 'Bildschirmfoto der Ablage in README.en.md');
   });
 
   it('README.md bindet keine englischen Grafiken ein; jede lokale Grafik gibt es in beiden Sprachen', () => {
-    assert.deepEqual(bilder(de).filter((u) => /\.en\.[a-z]+$/i.test(u)), []);
+    assert.deepEqual(
+      bilder(de).filter((u) => /\.en\.[a-z]+$/i.test(u)),
+      [],
+    );
     for (const u of bilder(en).filter((x) => istLokal(x) && /\.en\./.test(x))) {
       assert.ok(existsSync(new URL(u, WURZEL)), `${u} fehlt`);
       const deutsch = u.replace(/\.en\.([a-z]+)$/i, '.$1');
@@ -68,14 +85,20 @@ describe('README je Sprache (#574)', () => {
   it('englische Grafiken sind englisch beschriftet', () => {
     for (const u of bilder(en).filter((x) => istLokal(x) && x.endsWith('.en.svg'))) {
       const svg = lies(u);
-      const texte = [...svg.matchAll(/<text\b[^>]*>([^<]*)<\/text>/g), ...svg.matchAll(/<title>([^<]*)<\/title>/g)].map((m) => m[1]).join(' ');
+      const texte = [...svg.matchAll(/<text\b[^>]*>([^<]*)<\/text>/g), ...svg.matchAll(/<title>([^<]*)<\/title>/g)]
+        .map((m) => m[1])
+        .join(' ');
       assert.doesNotMatch(texte, /[äöüÄÖÜß]|\b(für|und|nicht|Stand|Stufe|Unternehmen)\b/, `${u}: deutscher Text`);
       assert.match(svg, /aria-label="[^"]+"/, `${u}: aria-label`);
     }
   });
 
   it('Abzeichen tragen in README.en.md keine deutschen Beschriftungen', () => {
-    const labels = (md: string) => bilder(md).filter(istAbzeichen).map(beschriftung).filter((x): x is string => !!x);
+    const labels = (md: string) =>
+      bilder(md)
+        .filter(istAbzeichen)
+        .map(beschriftung)
+        .filter((x): x is string => !!x);
     const deutsch = new Set(labels(de));
     // Eigennamen sind in beiden Sprachen gleich.
     const gleich = labels(en).filter((l) => deutsch.has(l) && !['Release'].includes(l));

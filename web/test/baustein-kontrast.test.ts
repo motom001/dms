@@ -9,7 +9,7 @@ import { test } from 'node:test';
 const g = globalThis as Record<string, unknown>;
 g.location ??= new URL('http://127.0.0.1/');
 // Über die Adresse geladen (nicht als Import): Die Typprüfung des Servers kennt die Typen des Browsers nicht.
-const { palette, kontrast } = await import(new URL('../../web/src/design.ts', import.meta.url).href) as {
+const { palette, kontrast } = (await import(new URL('../../web/src/design.ts', import.meta.url).href)) as {
   palette(grundlage: 'hell' | 'dunkel' | 'kontrast', primaer: string, sekundaer: string): Record<string, string>;
   kontrast(a: string, b: string): number;
 };

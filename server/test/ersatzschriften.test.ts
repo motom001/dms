@@ -13,13 +13,27 @@ import { fehlendeProgramme, fehlendeWerkzeuge } from '../../shared/src/werkzeuge
 import { speicherDateien } from '../src/dateispeicher';
 import { graubild } from '../src/graubild';
 import { popplerSeiten } from '../src/pdfseiten';
-import { leseFontliste, merkeSchriftfehler, nichtEingebettet, probePdf, pruefeSchriften, schriftfehlerGesehen } from '../src/ersatzschriften';
+import {
+  leseFontliste,
+  merkeSchriftfehler,
+  nichtEingebettet,
+  probePdf,
+  pruefeSchriften,
+  schriftfehlerGesehen,
+} from '../src/ersatzschriften';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { speicherRepo } from '../src/repo-speicher';
 import { Texterkennung } from '../src/texterkennung';
 import { speicherAblage, Vorschaubilder } from '../src/vorschau';
 
-const da = (cmd: string) => { try { execFileSync(cmd, ['-v'], { stdio: 'ignore' }); return true; } catch (e) { return (e as NodeJS.ErrnoException).code !== 'ENOENT'; } };
+const da = (cmd: string) => {
+  try {
+    execFileSync(cmd, ['-v'], { stdio: 'ignore' });
+    return true;
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code !== 'ENOENT';
+  }
+};
 const hatPoppler = da('pdftoppm') && da('pdffonts');
 
 /** Während `f` findet fontconfig keine einzige Schrift (wie im Image vor #1329). */
@@ -27,11 +41,15 @@ async function ohneSchriften<T>(f: () => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'dms-fc-'));
   const vorher = process.env.FONTCONFIG_FILE;
   try {
-    await writeFile(join(dir, 'fonts.conf'), `<?xml version="1.0"?>\n<fontconfig><dir>${join(dir, 'leer')}</dir><cachedir>${join(dir, 'cache')}</cachedir></fontconfig>\n`);
+    await writeFile(
+      join(dir, 'fonts.conf'),
+      `<?xml version="1.0"?>\n<fontconfig><dir>${join(dir, 'leer')}</dir><cachedir>${join(dir, 'cache')}</cachedir></fontconfig>\n`,
+    );
     process.env.FONTCONFIG_FILE = join(dir, 'fonts.conf');
     return await f();
   } finally {
-    if (vorher === undefined) delete process.env.FONTCONFIG_FILE; else process.env.FONTCONFIG_FILE = vorher;
+    if (vorher === undefined) delete process.env.FONTCONFIG_FILE;
+    else process.env.FONTCONFIG_FILE = vorher;
     await rm(dir, { recursive: true, force: true });
   }
 }
@@ -52,13 +70,19 @@ describe('Schriften zum Rendern (#1329)', () => {
     ].join('\n');
     assert.deepEqual(leseFontliste(aus), ['Helvetica', 'Arial,Bold']);
     assert.deepEqual(leseFontliste('name type\n'), []);
-    if (!hatPoppler) { t.diagnostic('poppler fehlt – pdffonts nicht geprüft'); return; }
+    if (!hatPoppler) {
+      t.diagnostic('poppler fehlt – pdffonts nicht geprüft');
+      return;
+    }
     assert.deepEqual(await nichtEingebettet(pdf), ['Helvetica', 'Arial']);
     assert.equal(await nichtEingebettet(Buffer.from('kein PDF')), null);
   });
 
-  it('mit Ersatzschriften: Prüfung bestanden; ohne: „Couldn\'t find a font“ – Hinweis unter den Werkzeugen', async (t) => {
-    if (!hatPoppler) { t.skip('poppler fehlt'); return; }
+  it("mit Ersatzschriften: Prüfung bestanden; ohne: „Couldn't find a font“ – Hinweis unter den Werkzeugen", async (t) => {
+    if (!hatPoppler) {
+      t.skip('poppler fehlt');
+      return;
+    }
     assert.equal(await pruefeSchriften(), true);
     assert.equal(await ohneSchriften(() => pruefeSchriften()), false);
     const w = { pdftotext: true, pdftoppm: true, qpdf: true, schriften: false };
@@ -69,7 +93,10 @@ describe('Schriften zum Rendern (#1329)', () => {
   });
 
   it('beim Rendern bemerkt: Werkzeuge melden die Schriften als fehlend, bis „Erneut prüfen“', async (t) => {
-    if (!hatPoppler) { t.skip('poppler fehlt'); return; }
+    if (!hatPoppler) {
+      t.skip('poppler fehlt');
+      return;
+    }
     assert.equal(merkeSchriftfehler('Syntax Warning: irgendwas', 'test'), false);
     const ocr = new Texterkennung(speicherRepo(), speicherDateien(), speicherEinstellungen());
     assert.equal((await ocr.werkzeugeLaden(true)).schriften, true);
@@ -84,7 +111,10 @@ describe('Schriften zum Rendern (#1329)', () => {
   });
 
   it('Seitenbild für die Archivfassung (Farbe) ohne Schriften: Fehler mit Grund statt Bild ohne Text; Graustufen weiter', async (t) => {
-    if (!hatPoppler) { t.skip('poppler fehlt'); return; }
+    if (!hatPoppler) {
+      t.skip('poppler fehlt');
+      return;
+    }
     await ohneSchriften(async () => {
       await assert.rejects(graubild(probePdf(), 1, 72, true), /fehlt der Ersatz/);
       assert.ok((await graubild(probePdf(), 1, 72, false)).length > 0);
@@ -97,7 +127,10 @@ describe('Schriften zum Rendern (#1329)', () => {
     const dateien = speicherDateien();
     const ablage = speicherAblage();
     let gut = false;
-    const v = new Vorschaubilder(ablage, dateien, async () => { if (!gut) throw new Error('kaputt'); return Buffer.from('neu'); });
+    const v = new Vorschaubilder(ablage, dateien, async () => {
+      if (!gut) throw new Error('kaputt');
+      return Buffer.from('neu');
+    });
     v.nachrangPauseMs = 0;
     const sha256 = 'a'.repeat(64);
     await dateien.schreibe(sha256, Buffer.from('%PDF-1.3 probe'));

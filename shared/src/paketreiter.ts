@@ -13,9 +13,22 @@ import { SCHLUESSEL } from './kennungen';
 
 export type AnzeigeArt = 'zahl' | 'anteil' | 'text' | 'zustand';
 export const ANZEIGE_ARTEN: readonly AnzeigeArt[] = ['zahl', 'anteil', 'text', 'zustand'];
-export interface PaketAnzeige { schluessel: string; name: string; art: AnzeigeArt; hilfe?: string }
-export interface PaketAusprobieren { ereignis: string; dateiarten: string[]; hilfe?: string }
-export interface PaketReiterAngaben { anzeigen?: PaketAnzeige[]; ausprobieren?: PaketAusprobieren; einstellungenPruefen?: true }
+export interface PaketAnzeige {
+  schluessel: string;
+  name: string;
+  art: AnzeigeArt;
+  hilfe?: string;
+}
+export interface PaketAusprobieren {
+  ereignis: string;
+  dateiarten: string[];
+  hilfe?: string;
+}
+export interface PaketReiterAngaben {
+  anzeigen?: PaketAnzeige[];
+  ausprobieren?: PaketAusprobieren;
+  einstellungenPruefen?: true;
+}
 
 /** Höchstens so viele Anzeigen je Paket; Schlüssel im Speicher des Pakets. */
 export const ANZEIGEN_MAX = 12;
@@ -30,32 +43,57 @@ const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String
 
 /** code.anzeigen: höchstens ANZEIGEN_MAX, Schlüssel eindeutig, bekannte Art. */
 function liesAnzeigen(roh: unknown, fehler: string[]): PaketAnzeige[] {
-  if (!Array.isArray(roh)) { fehler.push('code.anzeigen: Liste erwartet.'); return []; }
+  if (!Array.isArray(roh)) {
+    fehler.push('code.anzeigen: Liste erwartet.');
+    return [];
+  }
   if (roh.length > ANZEIGEN_MAX) fehler.push(`code.anzeigen: höchstens ${ANZEIGEN_MAX} Einträge.`);
   const l: PaketAnzeige[] = [];
   for (const [i, a] of roh.slice(0, ANZEIGEN_MAX).entries()) {
     const wo = `code.anzeigen[${i + 1}]`;
-    if (!istObjekt(a) || !SCHLUESSEL.test(str(a.schluessel))) { fehler.push(`${wo}: ungültiger Schlüssel.`); continue; }
-    if (!ANZEIGE_ARTEN.includes(str(a.art) as AnzeigeArt)) { fehler.push(`${wo}/${str(a.schluessel)}: art ist eine von ${ANZEIGE_ARTEN.join(', ')}.`); continue; }
-    if (l.some((x) => x.schluessel === a.schluessel)) { fehler.push(`${wo}: Schlüssel „${str(a.schluessel)}“ doppelt.`); continue; }
-    l.push({ schluessel: str(a.schluessel), name: str(a.name).trim().slice(0, 100) || str(a.schluessel), art: str(a.art) as AnzeigeArt, ...(a.hilfe ? { hilfe: str(a.hilfe).slice(0, 300) } : {}) });
+    if (!istObjekt(a) || !SCHLUESSEL.test(str(a.schluessel))) {
+      fehler.push(`${wo}: ungültiger Schlüssel.`);
+      continue;
+    }
+    if (!ANZEIGE_ARTEN.includes(str(a.art) as AnzeigeArt)) {
+      fehler.push(`${wo}/${str(a.schluessel)}: art ist eine von ${ANZEIGE_ARTEN.join(', ')}.`);
+      continue;
+    }
+    if (l.some((x) => x.schluessel === a.schluessel)) {
+      fehler.push(`${wo}: Schlüssel „${str(a.schluessel)}“ doppelt.`);
+      continue;
+    }
+    l.push({
+      schluessel: str(a.schluessel),
+      name: str(a.name).trim().slice(0, 100) || str(a.schluessel),
+      art: str(a.art) as AnzeigeArt,
+      ...(a.hilfe ? { hilfe: str(a.hilfe).slice(0, 300) } : {}),
+    });
   }
   return l;
 }
 
 /** code.ausprobieren: ein abonniertes Ereignis und 1 bis 20 Dateiarten. */
 function liesAusprobieren(a: unknown, ereignisse: readonly string[], fehler: string[]): PaketAusprobieren | null {
-  if (!istObjekt(a)) { fehler.push('code.ausprobieren: Objekt mit ereignis und dateiarten erwartet.'); return null; }
+  if (!istObjekt(a)) {
+    fehler.push('code.ausprobieren: Objekt mit ereignis und dateiarten erwartet.');
+    return null;
+  }
   const arten = Array.isArray(a.dateiarten) ? a.dateiarten.map(str) : [];
   const ereignisOk = ereignisse.includes(str(a.ereignis));
   const artenOk = arten.length > 0 && arten.length <= 20 && arten.every((x) => DATEIART.test(x));
   if (!ereignisOk) fehler.push(`code.ausprobieren: ereignis „${str(a.ereignis)}“ muss in code.ereignisse stehen.`);
   if (!artenOk) fehler.push('code.ausprobieren: dateiarten ist eine Liste mit 1 bis 20 Dateiarten wie „application/pdf“ oder „image/*“.');
-  return ereignisOk && artenOk ? { ereignis: str(a.ereignis), dateiarten: [...new Set(arten)], ...(a.hilfe ? { hilfe: str(a.hilfe).slice(0, 300) } : {}) } : null;
+  return ereignisOk && artenOk
+    ? { ereignis: str(a.ereignis), dateiarten: [...new Set(arten)], ...(a.hilfe ? { hilfe: str(a.hilfe).slice(0, 300) } : {}) }
+    : null;
 }
 
 /** Liest code.anzeigen, code.einstellungen_pruefen und code.ausprobieren; ereignisse: die das Paket abonniert. */
-export function liesReiterAngaben(code: unknown, ereignisse: readonly string[] = []): { angaben: PaketReiterAngaben | null; fehler: string[] } {
+export function liesReiterAngaben(
+  code: unknown,
+  ereignisse: readonly string[] = [],
+): { angaben: PaketReiterAngaben | null; fehler: string[] } {
   const fehler: string[] = [];
   if (!istObjekt(code)) return { angaben: null, fehler };
   const angaben: PaketReiterAngaben = {};
@@ -69,7 +107,8 @@ export function liesReiterAngaben(code: unknown, ereignisse: readonly string[] =
 }
 
 /** Passt die Datei zu den Dateiarten des Ausprobierens (`image/*` = alle Bilder)? */
-export const dateiartPasst = (arten: readonly string[], typ: string) => arten.some((a) => a === typ || (a.endsWith('/*') && typ.startsWith(a.slice(0, -1))));
+export const dateiartPasst = (arten: readonly string[], typ: string) =>
+  arten.some((a) => a === typ || (a.endsWith('/*') && typ.startsWith(a.slice(0, -1))));
 
 /**
  * Wert einer Anzeige, wie das Paket ihn in seinen Speicher schreibt: zahl „1234“, anteil „1234/1300“, text beliebig
@@ -77,13 +116,18 @@ export const dateiartPasst = (arten: readonly string[], typ: string) => arten.so
  * null: kein oder kein passender Wert.
  */
 export type AnzeigeWert =
-  | { art: 'zahl'; zahl: number } | { art: 'anteil'; zahl: number; von: number } | { art: 'text'; text: string }
+  | { art: 'zahl'; zahl: number }
+  | { art: 'anteil'; zahl: number; von: number }
+  | { art: 'text'; text: string }
   | { art: 'zustand'; zustand: 'ok' | 'warnung' | 'fehler'; text: string };
 export function anzeigeWert(art: AnzeigeArt, roh: string | undefined | null): AnzeigeWert | null {
   const s = (roh ?? '').trim();
   if (!s) return null;
   if (art === 'zahl') return /^-?\d+([.,]\d+)?$/.test(s) ? { art, zahl: Number(s.replace(',', '.')) } : null;
-  if (art === 'anteil') { const m = /^(\d+)\s*\/\s*(\d+)$/.exec(s); return m ? { art, zahl: Number(m[1]), von: Number(m[2]) } : null; }
+  if (art === 'anteil') {
+    const m = /^(\d+)\s*\/\s*(\d+)$/.exec(s);
+    return m ? { art, zahl: Number(m[1]), von: Number(m[2]) } : null;
+  }
   if (art === 'text') return { art, text: s.slice(0, 200) };
   const m = /^(ok|warnung|fehler)\s*(?::\s*(.*))?$/s.exec(s);
   return m ? { art, zustand: m[1] as 'ok' | 'warnung' | 'fehler', text: (m[2] ?? '').slice(0, 200) } : null;
@@ -100,32 +144,75 @@ export type VerlaufArt = 'ereignis' | 'aufruf' | 'protokoll' | 'installiert' | '
 export type VerlaufErgebnis = 'ok' | 'fehler' | 'zeit' | 'speicher' | 'warnung';
 export const VERLAUF_FEHLER: readonly VerlaufErgebnis[] = ['fehler', 'zeit', 'speicher', 'warnung'];
 /** Bezug eines Eintrags: die Mappe (auch Post) des Ereignisses – nur die Id; der Titel nur, wenn die Person sie lesen darf. */
-export interface VerlaufBezug { mappe: string; titel?: string }
+export interface VerlaufBezug {
+  mappe: string;
+  titel?: string;
+}
 export interface VerlaufEintrag {
-  nr: number; zeit: string; art: VerlaufArt; was: string; ergebnis: VerlaufErgebnis | null;
-  ms: number | null; speicherMB: number | null; text: string; wer: string | null; bezug: VerlaufBezug | null;
+  nr: number;
+  zeit: string;
+  art: VerlaufArt;
+  was: string;
+  ergebnis: VerlaufErgebnis | null;
+  ms: number | null;
+  speicherMB: number | null;
+  text: string;
+  wer: string | null;
+  bezug: VerlaufBezug | null;
   /** Netzaufrufe des Aufrufs (#807) als Text: Anzahl, Methode, Host, Status, Bytes – nie Inhalte. */
   netz: string[];
 }
 /** Neuer Eintrag (ohne Nummer und Zeit). */
-export type VerlaufNeu = { paket: string; art: VerlaufArt; was?: string; ergebnis?: VerlaufErgebnis | null; ms?: number | null; speicherMB?: number | null; text?: string; wer?: string | null; bezug?: VerlaufBezug | null; netz?: string[] };
+export type VerlaufNeu = {
+  paket: string;
+  art: VerlaufArt;
+  was?: string;
+  ergebnis?: VerlaufErgebnis | null;
+  ms?: number | null;
+  speicherMB?: number | null;
+  text?: string;
+  wer?: string | null;
+  bezug?: VerlaufBezug | null;
+  netz?: string[];
+};
 /** Auslastung je Tag (UTC). */
-export interface VerlaufTag { tag: string; aufrufe: number; fehler: number; zeit: number; speicher: number; msSumme: number; msMax: number; speicherMax: number }
-export interface Auslastung { tage: VerlaufTag[]; zuletzt: string | null }
+export interface VerlaufTag {
+  tag: string;
+  aufrufe: number;
+  fehler: number;
+  zeit: number;
+  speicher: number;
+  msSumme: number;
+  msMax: number;
+  speicherMax: number;
+}
+export interface Auslastung {
+  tage: VerlaufTag[];
+  zuletzt: string | null;
+}
 /** So lange bleibt der Verlauf, so viele Einträge je Paket höchstens. */
 export const VERLAUF_TAGE = 30;
 export const VERLAUF_MAX = 5000;
 
 /** Grenzen des Läufers (Speicher je Aufruf, Zeit je Aufruf, gleichzeitige Aufrufe). */
-export interface LaeuferGrenzen { speicherMB: number; sekunden: number; parallel: number }
+export interface LaeuferGrenzen {
+  speicherMB: number;
+  sekunden: number;
+  parallel: number;
+}
 export type Ampel = 'ruhig' | 'unauffaellig' | 'grenzen' | 'scheitert';
 
 /** Summe über Tage: Aufrufe, Fehlschläge, Grenzen erreicht, Dauer (Mittel, längster), höchster Speicher. */
 export function summeVon(tage: readonly VerlaufTag[]) {
   const s = { aufrufe: 0, fehler: 0, zeit: 0, speicher: 0, msSumme: 0, msMax: 0, speicherMax: 0 };
   for (const d of tage) {
-    s.aufrufe += d.aufrufe; s.fehler += d.fehler; s.zeit += d.zeit; s.speicher += d.speicher; s.msSumme += d.msSumme;
-    s.msMax = Math.max(s.msMax, d.msMax); s.speicherMax = Math.max(s.speicherMax, d.speicherMax);
+    s.aufrufe += d.aufrufe;
+    s.fehler += d.fehler;
+    s.zeit += d.zeit;
+    s.speicher += d.speicher;
+    s.msSumme += d.msSumme;
+    s.msMax = Math.max(s.msMax, d.msMax);
+    s.speicherMax = Math.max(s.speicherMax, d.speicherMax);
   }
   return { ...s, msMittel: s.aufrufe ? Math.round(s.msSumme / s.aufrufe) : 0 };
 }
@@ -151,24 +238,49 @@ export function ampelVon(tage: readonly VerlaufTag[], g: LaeuferGrenzen | null):
  * `{"zeilen": ["2 leere Seiten entfernt"], "seiten": [{"seite": 1, "text": "Barcode ABLAGO-TRENNEN"}]}`
  * (auch unter `ergebnis`); jede andere Antwort gilt als Textzeilen. Erzeugte Dateien legt es mit `POST /dateien` ab.
  */
-export interface ProbeErgebnis { zeilen: string[]; seiten: Array<{ seite: number; text: string }> }
+export interface ProbeErgebnis {
+  zeilen: string[];
+  seiten: Array<{ seite: number; text: string }>;
+}
 export const PROBE_ZEILEN_MAX = 200;
 export function liesProbeErgebnis(text: string): ProbeErgebnis {
   const zeile = (x: unknown) => str(x).slice(0, 500);
   const roh = text.trim();
   let j: unknown = null;
-  if (roh.startsWith('{')) { try { j = JSON.parse(roh); } catch { j = null; } }
+  if (roh.startsWith('{')) {
+    try {
+      j = JSON.parse(roh);
+    } catch {
+      j = null;
+    }
+  }
   const e = istObjekt(j) ? (istObjekt(j.ergebnis) ? j.ergebnis : j) : null;
-  if (!e || (!Array.isArray(e.zeilen) && !Array.isArray(e.seiten))) return { zeilen: roh ? roh.split(/\r?\n/).filter((x) => x.trim()).slice(0, PROBE_ZEILEN_MAX).map(zeile) : [], seiten: [] };
+  if (!e || (!Array.isArray(e.zeilen) && !Array.isArray(e.seiten)))
+    return {
+      zeilen: roh
+        ? roh
+            .split(/\r?\n/)
+            .filter((x) => x.trim())
+            .slice(0, PROBE_ZEILEN_MAX)
+            .map(zeile)
+        : [],
+      seiten: [],
+    };
   return {
     zeilen: (Array.isArray(e.zeilen) ? e.zeilen : []).slice(0, PROBE_ZEILEN_MAX).map(zeile),
-    seiten: (Array.isArray(e.seiten) ? e.seiten : []).filter(istObjekt).filter((x) => Number.isInteger(x.seite) && (x.seite as number) > 0)
-      .slice(0, PROBE_ZEILEN_MAX).map((x) => ({ seite: x.seite as number, text: zeile(x.text) })),
+    seiten: (Array.isArray(e.seiten) ? e.seiten : [])
+      .filter(istObjekt)
+      .filter((x) => Number.isInteger(x.seite) && (x.seite as number) > 0)
+      .slice(0, PROBE_ZEILEN_MAX)
+      .map((x) => ({ seite: x.seite as number, text: zeile(x.text) })),
   };
 }
 /** Antwort des Servers auf „Ausprobieren“. */
 export interface ProbeAntwort extends ProbeErgebnis {
-  ok: boolean; fehler: string | null; ms: number; speicherMB: number;
+  ok: boolean;
+  fehler: string | null;
+  ms: number;
+  speicherMB: number;
   /** Erzeugte Dateien zum Ansehen oder Herunterladen (Base64) – nie in der Ablage. */
   dateien: Array<{ name: string; typ: string; daten: string }>;
 }

@@ -37,8 +37,10 @@ const OFFEN: Record<string, string> = {
   'POST /api/konto/einrichten': 'Erstes Konto anlegen, nur solange nicht eingerichtet',
   'POST /api/konto/anmelden': 'Anmeldung mit Passwort',
   'POST /api/konto/anmelden/code': 'Anmeldung, zweiter Faktor',
-  'POST /api/konto/passkey/optionen': 'Anmeldung mit Passkey (#811): nur Optionen mit einer Herausforderung (5 Minuten, einmal); gesperrte Adressen bekommen keine, Zahl offener begrenzt',
-  'POST /api/konto/passkey/anmelden': 'Anmeldung mit Passkey (#811), auch als zweiter Faktor: Signatur über die Herausforderung; zählt in den Anmeldeschutz',
+  'POST /api/konto/passkey/optionen':
+    'Anmeldung mit Passkey (#811): nur Optionen mit einer Herausforderung (5 Minuten, einmal); gesperrte Adressen bekommen keine, Zahl offener begrenzt',
+  'POST /api/konto/passkey/anmelden':
+    'Anmeldung mit Passkey (#811), auch als zweiter Faktor: Signatur über die Herausforderung; zählt in den Anmeldeschutz',
   'GET /api/konto/anbieter/start': 'Anmeldung über einen Anbieter (OIDC)',
   'GET /api/konto/anbieter/rueckkehr': 'Anmeldung über einen Anbieter, Rückkehr mit state',
   'POST /api/konsole/passwort': 'Konsole: nur mit Konsolen-Schlüssel und von localhost',
@@ -55,7 +57,8 @@ const OFFEN: Record<string, string> = {
   'GET /api/abruf/anrede': 'Abrufseite für Dritte (#474): nur „du“ oder „Sie“',
   'POST /api/abruf': 'Abrufseite für Dritte, mit Abrufcode',
   'GET /api/abruf/datei': 'Abrufseite für Dritte, mit Abrufcode',
-  'POST /api/aufruf/:kennung': 'Aufruf von außen (#679): nur wenn die Verwaltung die Adresse ausdrücklich angelegt hat; Kennung 32 Byte Zufall, HMAC-SHA256 über Zeitstempel und Rumpf (5 Minuten, jede Signatur einmal), Bremse je Adresse, IP-Bereich und gesamt über alle Prozesse, 16 KB, einheitliche Ablehnung, Antwort nur „angenommen“',
+  'POST /api/aufruf/:kennung':
+    'Aufruf von außen (#679): nur wenn die Verwaltung die Adresse ausdrücklich angelegt hat; Kennung 32 Byte Zufall, HMAC-SHA256 über Zeitstempel und Rumpf (5 Minuten, jede Signatur einmal), Bremse je Adresse, IP-Bereich und gesamt über alle Prozesse, 16 KB, einheitliche Ablehnung, Antwort nur „angenommen“',
   'GET /api/wiederherstellung/status': 'Wiederherstellungsbildschirm für alle Besucher; ohne Adresse dessen, der sie gestartet hat',
   'POST /api/wiederherstellung/abschluss-gesehen': 'Wiederherstellungsbildschirm schließen; nur wenn keine läuft',
   'GET /api/wiederherstellung/sicherungen': 'Frisches System: mit Einrichtungscode, sonst Admin mit „Sicherung“',
@@ -89,7 +92,10 @@ describe('Routenliste (#960)', () => {
   });
 
   it('Routen ohne Anmeldung genau wie in der festen Liste (#1029)', () => {
-    const offen = alle.filter((r) => r.zugang === 'offen').map((r) => `${r.methode} ${r.pfad}`).sort();
+    const offen = alle
+      .filter((r) => r.zugang === 'offen')
+      .map((r) => `${r.methode} ${r.pfad}`)
+      .sort();
     const neu = offen.filter((k) => !(k in OFFEN));
     const weg = Object.keys(OFFEN).filter((k) => !offen.includes(k));
     assert.deepEqual(neu, [], 'Neue Route ohne Anmeldung: bewusst in OFFEN eintragen, mit Grund, und im PR begründen');

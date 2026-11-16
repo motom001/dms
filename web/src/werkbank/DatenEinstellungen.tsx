@@ -17,8 +17,17 @@ import { Kopf } from './Kopf';
 export function useDatenEinstellungen(offen: boolean) {
   const [stand, setStand] = useState<DatenStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await betriebApi.daten()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
-  useEffect(() => { if (offen) void laden(); }, [offen, laden]);
+  const laden = useCallback(async () => {
+    try {
+      setStand(await betriebApi.daten());
+      setFehler(undefined);
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  }, []);
+  useEffect(() => {
+    if (offen) void laden();
+  }, [offen, laden]);
   return { stand, fehler, laden };
 }
 export type DatenEinstellungenZustand = ReturnType<typeof useDatenEinstellungen>;
@@ -31,28 +40,92 @@ function Papierkorb({ s, laden }: { s: DatenStand; laden(): Promise<void> }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const n = Number(tage);
   const h = Number(hTage);
-  const ent = useEntwurf({ tage: String(s.tage), hTage: String(s.historieTage) }, { tage, hTage }, {
-    zuruecksetzen: () => { setTage(String(s.tage)); setHTage(String(s.historieTage)); setMeldung(undefined); },
-  });
+  const ent = useEntwurf(
+    { tage: String(s.tage), hTage: String(s.historieTage) },
+    { tage, hTage },
+    {
+      zuruecksetzen: () => {
+        setTage(String(s.tage));
+        setHTage(String(s.historieTage));
+        setMeldung(undefined);
+      },
+    },
+  );
   async function speichern() {
-    if (n === 0 && s.imPapierkorb && !(await rueckfrage({ titel: t('ablage.papierkorb.papierkorb-ausschalten'), text: t('ablage.papierkorb.alle-eintraege-darin-werden', { anzahl: s.imPapierkorb }), ja: t('ablage.papierkorb.ausschalten-und-leeren'), gefahr: true }))) return;
+    if (
+      n === 0 &&
+      s.imPapierkorb &&
+      !(await rueckfrage({
+        titel: t('ablage.papierkorb.papierkorb-ausschalten'),
+        text: t('ablage.papierkorb.alle-eintraege-darin-werden', { anzahl: s.imPapierkorb }),
+        ja: t('ablage.papierkorb.ausschalten-und-leeren'),
+        gefahr: true,
+      }))
+    )
+      return;
     try {
       const r = await mappenApi.papierkorbTage({ tage: n, historieTage: h });
-      setTage(String(r.tage)); setHTage(String(r.historieTage)); melde(); await d.neuLaden(); await laden();
-      setMeldung({ art: 'gut', text: t('ablage.papierkorb.gespeichert', { wert: r.geleert ? t('ablage.papierkorb.mappen-endgueltig-geloescht', { anzahl: r.geleert }) : '' }) });
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+      setTage(String(r.tage));
+      setHTage(String(r.historieTage));
+      melde();
+      await d.neuLaden();
+      await laden();
+      setMeldung({
+        art: 'gut',
+        text: t('ablage.papierkorb.gespeichert', {
+          wert: r.geleert ? t('ablage.papierkorb.mappen-endgueltig-geloescht', { anzahl: r.geleert }) : '',
+        }),
+      });
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    }
   }
   return (
-    <form className="blatt" id="papierkorb" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+    <form
+      className="blatt"
+      id="papierkorb"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        void speichern();
+      }}
+      onKeyDown={ent.tasten}>
       <h2 className="h3">{t('werkbank.daten.papierkorb.titel')}</h2>
-      <Feld beschriftung={t('ablage.papierkorb.tage-feld')} hinweis={[t('ablage.papierkorb.0-kein-papierkorb-loeschen'), t('ablage.papierkorb.geloeschte-mappen-und-einzeln')]}>
-        <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} />
+      <Feld
+        beschriftung={t('ablage.papierkorb.tage-feld')}
+        hinweis={[t('ablage.papierkorb.0-kein-papierkorb-loeschen'), t('ablage.papierkorb.geloeschte-mappen-und-einzeln')]}>
+        <input
+          type="number"
+          min={0}
+          max={3650}
+          value={tage}
+          onChange={(ev) => {
+            setTage(ev.target.value);
+            setMeldung(undefined);
+          }}
+        />
       </Feld>
       <Feld beschriftung={t('ablage.papierkorb.historie-feld')} hinweis={t('ablage.papierkorb.tage-danach-wird-ihre')}>
-        <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} />
+        <input
+          type="number"
+          min={0}
+          max={36500}
+          value={hTage}
+          onChange={(ev) => {
+            setHTage(ev.target.value);
+            setMeldung(undefined);
+          }}
+        />
       </Feld>
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <Speicherleiste ent={ent} gegenstand={t('ablage.papierkorb.aufbewahrung')} ungueltig={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0} />
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
+      <Speicherleiste
+        ent={ent}
+        gegenstand={t('ablage.papierkorb.aufbewahrung')}
+        ungueltig={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0}
+      />
     </form>
   );
 }
@@ -63,22 +136,41 @@ function BenutzerDuerfen({ an, laden }: { an: boolean; laden(): Promise<void> })
   async function setze(neu: boolean) {
     setMeldung(undefined);
     try {
-      await betriebApi.persoenlicherExport(neu); await laden();
+      await betriebApi.persoenlicherExport(neu);
+      await laden();
       setMeldung({ art: 'gut', text: neu ? t('werkbank.daten.export.an') : t('werkbank.daten.export.aus') });
-    } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
   }
   return (
     <section className="blatt" id="benutzer-duerfen">
       <h2 className="h3">{t('werkbank.daten.benutzer.titel')}</h2>
-      <Schalter an={an} beschriftung={t('werkbank.daten.export.schalter')} hinweis={t('werkbank.daten.export.hinweis')} setze={(neu) => setze(neu)} />
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      <Schalter
+        an={an}
+        beschriftung={t('werkbank.daten.export.schalter')}
+        hinweis={t('werkbank.daten.export.hinweis')}
+        setze={(neu) => setze(neu)}
+      />
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
     </section>
   );
 }
 
 export function DatenEinstellungenPanel({ z }: { z: DatenEinstellungenZustand }) {
   const s = z.stand;
-  if (!s) return z.fehler ? <div className="hinweis schlecht"><p>{z.fehler}</p></div> : <p className="leise">{t('werkbank.daten.lade')}</p>;
+  if (!s)
+    return z.fehler ? (
+      <div className="hinweis schlecht">
+        <p>{z.fehler}</p>
+      </div>
+    ) : (
+      <p className="leise">{t('werkbank.daten.lade')}</p>
+    );
   return (
     <div className="einspaltig">
       <Kopf titel={t('werkbank.bereich.daten.name')} ueber={t('werkbank.daten.ueber')} hilfe="werkbank.daten">

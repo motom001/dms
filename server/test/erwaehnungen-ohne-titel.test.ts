@@ -24,15 +24,24 @@ async function aufbau() {
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' });
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const typ = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
-  ], trefferliste: ['_titel', 'text'] });
+  const typ = await d.mappentypen.legeTypAn({
+    name: 'Vorgang',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
+    ],
+    trefferliste: ['_titel', 'text'],
+  });
   const geheim = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: GEHEIM } }, markus.id);
-  const vertrag = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Gemeinsamer Vertrag', text: `Siehe ${erwaehnung(GEHEIM, geheim.id)}` } }, markus.id);
+  const vertrag = await d.mappen.legeMappeAn(
+    { typId: typ.id, werte: { name: 'Gemeinsamer Vertrag', text: `Siehe ${erwaehnung(GEHEIM, geheim.id)}` } },
+    markus.id,
+  );
   const notiz = await d.mappenNotizen.legeNotizAn(vertrag.id, `Hängt an ${erwaehnung(GEHEIM, geheim.id)}`, markus.id);
   // Jonas darf die private Mappe von Markus nicht lesen.
   const echt = d.rechtepruefung.lesbare.bind(d.rechtepruefung);
-  d.rechtepruefung.lesbare = async (z, ids) => new Set([...await echt(z, ids)].filter((id) => !(z?.ich.id === jonas.id && id === geheim.id)));
+  d.rechtepruefung.lesbare = async (z, ids) =>
+    new Set([...(await echt(z, ids))].filter((id) => !(z?.ich.id === jonas.id && id === geheim.id)));
   const b = async (id: string) => (await konten.listeBenutzer()).find((x) => x.id === id)!;
   return { d, konten, markus, jonas, typ, geheim, vertrag, notiz, b };
 }
@@ -42,7 +51,10 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     const id = '00000000-0000-4000-8000-0000000000aa';
     assert.equal(ohneTitel(`a @[Alt](mappe:${id}) b @[X](Benutzer:${id.toUpperCase()})`), `a @[](mappe:${id}) b @[](benutzer:${id})`);
     assert.deepEqual(inline(`@[](mappe:${id})`), [{ art: 'erwaehnung', name: '', id, benutzer: false }]);
-    assert.equal(mitTiteln(`@[](mappe:${id})`, () => 'Neu [x]'), `@[Neu x](mappe:${id})`);
+    assert.equal(
+      mitTiteln(`@[](mappe:${id})`, () => 'Neu [x]'),
+      `@[Neu x](mappe:${id})`,
+    );
     assert.equal(alsText(`Siehe @[](mappe:${id})`), 'Siehe @Erwähnung', 'nie ein gespeicherter Titel');
   });
 
@@ -53,9 +65,15 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     const alle = routen(d, konten, {});
     const route = (methode: string, pfad: string) => alle.find((r) => r.methode === methode && r.pfad === pfad)!;
     const anfrage = (x: Partial<Anfrage>): Anfrage => ({ body: {}, params: {}, query: {}, ip: '127.0.0.1', benutzer: markus, ...x });
-    await route('PUT', '/api/v1/notizen/:id').handler(anfrage({ params: { id: notiz.id }, body: { text: `Neu: @[${GEHEIM}](mappe:${geheim.id})` } }));
+    await route('PUT', '/api/v1/notizen/:id').handler(
+      anfrage({ params: { id: notiz.id }, body: { text: `Neu: @[${GEHEIM}](mappe:${geheim.id})` } }),
+    );
     assert.equal((await d.kern.repo.holeNotiz(notiz.id))!.text, `Neu: @[](mappe:${geheim.id})`);
-    await d.mappen.aendereMappe(vertrag.id, { werte: { name: 'Gemeinsamer Vertrag', text: `Jetzt ${erwaehnung(GEHEIM, geheim.id)}` } }, markus.id);
+    await d.mappen.aendereMappe(
+      vertrag.id,
+      { werte: { name: 'Gemeinsamer Vertrag', text: `Jetzt ${erwaehnung(GEHEIM, geheim.id)}` } },
+      markus.id,
+    );
     assert.equal((await d.kern.repo.holeMappe(vertrag.id))!.werte.text, `Jetzt @[](mappe:${geheim.id})`);
     const hist = JSON.stringify(await d.mappenHistorie.historie(vertrag.id));
     assert.ok(!hist.includes(GEHEIM), `Historie ohne Titel: ${hist}`);
@@ -66,7 +84,12 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     const alle = routen(d, konten, {});
     const route = (methode: string, pfad: string) => alle.find((r) => r.methode === methode && r.pfad === pfad)!;
     const anfrage = (x: Partial<Anfrage>): Anfrage => ({ body: {}, params: {}, query: {}, ip: '127.0.0.1', benutzer: jonas, ...x });
-    for (const [m, p] of [['GET', '/api/mappen/:id/notizen'], ['GET', '/api/v1/mappen/:id/notizen'], ['GET', '/api/mappen/:id'], ['GET', '/api/v1/mappen/:id']]) {
+    for (const [m, p] of [
+      ['GET', '/api/mappen/:id/notizen'],
+      ['GET', '/api/v1/mappen/:id/notizen'],
+      ['GET', '/api/mappen/:id'],
+      ['GET', '/api/v1/mappen/:id'],
+    ]) {
       const r = await route(m, p).handler(anfrage({ params: { id: vertrag.id } }));
       assert.ok(!JSON.stringify(r.body).includes(GEHEIM), `${p}: ${JSON.stringify(r.body)}`);
     }
@@ -83,7 +106,11 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     // Lena darf die private Mappe lesen; ihr Aufgabentext nennt den Titel, die Historie nicht.
     const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-    await d.mappenNotizen.legeNotizAn(vertrag.id, `${erwaehnung('Lena', lena.id)} bitte ${erwaehnung(GEHEIM, geheim.id)} ansehen`, markus.id);
+    await d.mappenNotizen.legeNotizAn(
+      vertrag.id,
+      `${erwaehnung('Lena', lena.id)} bitte ${erwaehnung(GEHEIM, geheim.id)} ansehen`,
+      markus.id,
+    );
     const [a] = (await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((x) => x.art === 'erwaehnung');
     assert.match(a.text, new RegExp(GEHEIM), 'der Empfänger sieht den Titel');
     await d.vertretung.erledigeAufgabe(a.id, { id: lena.id, rolle: 'mitglied' });
@@ -98,7 +125,15 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
   it('Auch direkt über das Repo (Wege am Dienst vorbei) wird kein Titel gespeichert', async () => {
     const { d, vertrag, geheim, markus } = await aufbau();
     const repo = d.kern.repo;
-    const n = await repo.legeNotizAn({ id: crypto.randomUUID(), mappeId: vertrag.id, text: `Umbau: ${erwaehnung(GEHEIM, geheim.id)}`, erstellt: '', erstelltVon: markus.id, geaendert: '', geaendertVon: markus.id });
+    const n = await repo.legeNotizAn({
+      id: crypto.randomUUID(),
+      mappeId: vertrag.id,
+      text: `Umbau: ${erwaehnung(GEHEIM, geheim.id)}`,
+      erstellt: '',
+      erstelltVon: markus.id,
+      geaendert: '',
+      geaendertVon: markus.id,
+    });
     assert.ok(!n.text.includes(GEHEIM));
     const g = await repo.aendereNotiz(n.id, `neu ${erwaehnung(GEHEIM, geheim.id)}`, markus.id);
     assert.ok(!g.text.includes(GEHEIM));

@@ -22,16 +22,40 @@ export function UmschalterMuster() {
   return (
     <div className={s.raster}>
       <Karte zustand="umschalter-zwei" titel={t('oberflaeche.muster.umschalter.zwei')}>
-        <Umschalter wert={zwei} setze={setZwei} beschriftung={t('oberflaeche.muster.umschalter.zwei.beschriftung')}
-          wahlen={[{ wert: 'fragen', text: t('oberflaeche.muster.umschalter.fragen') }, { wert: 'suchen', text: t('oberflaeche.muster.umschalter.suchen') }]} />
+        <Umschalter
+          wert={zwei}
+          setze={setZwei}
+          beschriftung={t('oberflaeche.muster.umschalter.zwei.beschriftung')}
+          wahlen={[
+            { wert: 'fragen', text: t('oberflaeche.muster.umschalter.fragen') },
+            { wert: 'suchen', text: t('oberflaeche.muster.umschalter.suchen') },
+          ]}
+        />
       </Karte>
       <Karte zustand="umschalter-drei" titel={t('oberflaeche.muster.umschalter.drei')}>
-        <Umschalter wert={drei} setze={setDrei} beschriftung={t('oberflaeche.muster.umschalter.drei.beschriftung')}
-          wahlen={[{ wert: 'liste', text: t('oberflaeche.muster.umschalter.liste') }, { wert: 'monat', text: t('oberflaeche.muster.umschalter.monat') }, { wert: 'jahr', text: t('oberflaeche.muster.umschalter.jahr') }]} />
+        <Umschalter
+          wert={drei}
+          setze={setDrei}
+          beschriftung={t('oberflaeche.muster.umschalter.drei.beschriftung')}
+          wahlen={[
+            { wert: 'liste', text: t('oberflaeche.muster.umschalter.liste') },
+            { wert: 'monat', text: t('oberflaeche.muster.umschalter.monat') },
+            { wert: 'jahr', text: t('oberflaeche.muster.umschalter.jahr') },
+          ]}
+        />
       </Karte>
       <Karte zustand="umschalter-lang" titel={t('oberflaeche.muster.umschalter.lang')}>
-        <Umschalter wert={lang} setze={setLang} beschriftung={t('oberflaeche.muster.umschalter.lang.beschriftung')} schmalUntereinander
-          wahlen={[{ wert: 'neu', text: t('oberflaeche.muster.umschalter.neu') }, { wert: 'vorhanden', text: t('oberflaeche.muster.umschalter.vorhanden') }, { wert: 'erledigen', text: t('oberflaeche.muster.umschalter.erledigen') }]} />
+        <Umschalter
+          wert={lang}
+          setze={setLang}
+          beschriftung={t('oberflaeche.muster.umschalter.lang.beschriftung')}
+          schmalUntereinander
+          wahlen={[
+            { wert: 'neu', text: t('oberflaeche.muster.umschalter.neu') },
+            { wert: 'vorhanden', text: t('oberflaeche.muster.umschalter.vorhanden') },
+            { wert: 'erledigen', text: t('oberflaeche.muster.umschalter.erledigen') },
+          ]}
+        />
       </Karte>
     </div>
   );

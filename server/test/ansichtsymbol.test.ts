@@ -22,10 +22,20 @@ describe('Symbol je Ansicht (#428)', () => {
   });
 
   it('Paketformat: symbol an der Ansicht – gültig, unbekannt (ohne Fehler), fehlt', () => {
-    const manifest = 'schema: 1\nid: symbole\nname: Symbole\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.86.0"\ninhalt: { sichten: sichten.yaml }\n';
-    const sichten = '- { schluessel: auto, name: Auto, symbol: car }\n- { schluessel: neu, name: Neu, symbol: rakete-2099 }\n- { schluessel: ohne, name: Ohne }\n';
-    const p = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest)], ['sichten.yaml', Buffer.from(sichten)]]));
-    assert.deepEqual(p.sichten.map((s) => s.symbol), ['car', undefined, undefined]);
+    const manifest =
+      'schema: 1\nid: symbole\nname: Symbole\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: Apache-2.0\ndms: ">=0.86.0"\ninhalt: { sichten: sichten.yaml }\n';
+    const sichten =
+      '- { schluessel: auto, name: Auto, symbol: car }\n- { schluessel: neu, name: Neu, symbol: rakete-2099 }\n- { schluessel: ohne, name: Ohne }\n';
+    const p = liesPaket(
+      new Map([
+        ['manifest.yaml', Buffer.from(manifest)],
+        ['sichten.yaml', Buffer.from(sichten)],
+      ]),
+    );
+    assert.deepEqual(
+      p.sichten.map((s) => s.symbol),
+      ['car', undefined, undefined],
+    );
   });
 
   it('Migration ergänzt die Spalte und das Symbol der Ansicht „Neue Post“', () => {

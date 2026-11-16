@@ -18,7 +18,24 @@ import type { ZugriffDienst } from '../zugriff';
 import { anlagenVon, mitAnlagen, zumVerschieben } from '../../../shared/src/anlagen';
 import { istDatum } from '../../../shared/src/fristen';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
-import { type Aufgabe, type AufgabenAnlass, auswahlText, darfPostAnlegen, type Dokument, type Historieneintrag, istVersendet, type Mappe, type Mappentyp, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, type Register, verweiseVon, type Werte } from '../../../shared/src/model';
+import {
+  type Aufgabe,
+  type AufgabenAnlass,
+  auswahlText,
+  darfPostAnlegen,
+  type Dokument,
+  type Historieneintrag,
+  istVersendet,
+  type Mappe,
+  type Mappentyp,
+  NOTIZ_MAX,
+  POST_KANAL,
+  POST_RICHTUNG,
+  POST_STAND,
+  type Register,
+  verweiseVon,
+  type Werte,
+} from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { postWerteNeu } from '../../../shared/src/postfelder';
 import type { PostAufloesen } from './aufloesen';
@@ -34,13 +51,28 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
  */
 interface PostErkennung {
   eindeutig: string | null;
-  auto?: { ziel: string; zeit: string; grund: string; dokumente: Array<{ id: string; register: string }>; aufgabe: string | null; rueckgaengig?: { zeit: string; von: string | null } };
+  auto?: {
+    ziel: string;
+    zeit: string;
+    grund: string;
+    dokumente: Array<{ id: string; register: string }>;
+    aufgabe: string | null;
+    rueckgaengig?: { zeit: string; von: string | null };
+  };
 }
 
 /** Die Teile, die die Post ruft: Rechteprüfung, Mappentypen, Mappen, Dokumente und die Teile dieses Ordners. */
 export interface PostTeile {
-  rechte: ZugriffDienst; mappentypen: MappentypenDienst; historie: MappenHistorie; titel: MappenTitel; eingaben: MappenEingaben;
-  dokumente: DokumenteDienst; versionen: DokumentVersionen; aufloesen: PostAufloesen; systemmappen: PostSystemmappen; leerseiten: PostLeerseiten;
+  rechte: ZugriffDienst;
+  mappentypen: MappentypenDienst;
+  historie: MappenHistorie;
+  titel: MappenTitel;
+  eingaben: MappenEingaben;
+  dokumente: DokumenteDienst;
+  versionen: DokumentVersionen;
+  aufloesen: PostAufloesen;
+  systemmappen: PostSystemmappen;
+  leerseiten: PostLeerseiten;
 }
 
 /** Was die Post außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
@@ -63,36 +95,94 @@ export interface PostAnschluss {
 }
 
 export class PostDienst {
-  constructor(private readonly kern: Kern, private readonly teile: PostTeile, private readonly anschluss: PostAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: PostTeile,
+    private readonly anschluss: PostAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get ocr() { return this.teile.dokumente.ocr; }
-  private get konten() { return this.anschluss.konten(); }
-  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get ocr() {
+    return this.teile.dokumente.ocr;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inTransaktion(f);
+  }
   private verschluessele = (klartext: string) => this.anschluss.verschluessele(klartext);
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
-  private meldeVerknuepft(...a: Parameters<PostAnschluss['meldeVerknuepft']>) { return this.anschluss.meldeVerknuepft(...a); }
-  private neueAufgabe(a: Aufgabe, typ?: string) { return this.anschluss.neueAufgabe(a, typ); }
-  private leiteUm(a: Aufgabe) { return this.anschluss.leiteUm(a); }
-  private eigeneAufgabe(id: string, ich: { id: string; rolle: string }) { return this.anschluss.eigeneAufgabe(id, ich); }
-  private sichereZuordnung(e: PostErkennung, autoTypen: Set<string>) { return this.anschluss.sichereZuordnung(e, autoTypen); }
-  private erledigeNachAnlass(...a: Parameters<PostAnschluss['erledigeNachAnlass']>) { return this.anschluss.erledigeNachAnlass(...a); }
-  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) { return this.teile.rechte.pruefeRecht(...a); }
-  private rechteAn(...a: Parameters<ZugriffDienst['rechteAn']>) { return this.teile.rechte.rechteAn(...a); }
-  private sichtbarFuer(benutzerId: string, ids: string[]) { return this.teile.rechte.sichtbarFuer(benutzerId, ids); }
-  private typErkennungen() { return this.teile.mappentypen.typErkennungen(); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private aenderungen(typ: Mappentyp, alt: Werte, neu: Werte) { return this.teile.historie.aenderungen(typ, alt, neu); }
-  private titel(m: Mappe) { return this.teile.titel.titel(m); }
-  private aktualisiereTitel(ids: string[]) { return this.teile.titel.aktualisiereTitel(ids); }
-  private pruefeVerweisziele(...a: Parameters<MappenEingaben['pruefeVerweisziele']>) { return this.teile.eingaben.pruefeVerweisziele(...a); }
-  private pruefeWerte(...a: Parameters<MappenEingaben['pruefeWerte']>) { return this.teile.eingaben.pruefeWerte(...a); }
-  private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) { return this.teile.versionen.beruehre(mappeId, typ, benutzerId); }
-  private verschiebeInRegister(...a: Parameters<PostAufloesen['verschiebeInRegister']>) { return this.teile.aufloesen.verschiebeInRegister(...a); }
-  private ebenAngelegt(ziel: Mappe, von: string | null) { return this.teile.aufloesen.ebenAngelegt(ziel, von); }
-  private aufloesenSperre(...a: Parameters<PostAufloesen['aufloesenSperre']>) { return this.teile.aufloesen.aufloesenSperre(...a); }
-  private loesePostAuf(...a: Parameters<PostAufloesen['loesePostAuf']>) { return this.teile.aufloesen.loesePostAuf(...a); }
-  private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) { return this.teile.systemmappen.schreibeSystemMappe(...a); }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.anschluss.ereignis(...a);
+  }
+  private meldeVerknuepft(...a: Parameters<PostAnschluss['meldeVerknuepft']>) {
+    return this.anschluss.meldeVerknuepft(...a);
+  }
+  private neueAufgabe(a: Aufgabe, typ?: string) {
+    return this.anschluss.neueAufgabe(a, typ);
+  }
+  private leiteUm(a: Aufgabe) {
+    return this.anschluss.leiteUm(a);
+  }
+  private eigeneAufgabe(id: string, ich: { id: string; rolle: string }) {
+    return this.anschluss.eigeneAufgabe(id, ich);
+  }
+  private sichereZuordnung(e: PostErkennung, autoTypen: Set<string>) {
+    return this.anschluss.sichereZuordnung(e, autoTypen);
+  }
+  private erledigeNachAnlass(...a: Parameters<PostAnschluss['erledigeNachAnlass']>) {
+    return this.anschluss.erledigeNachAnlass(...a);
+  }
+  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) {
+    return this.teile.rechte.pruefeRecht(...a);
+  }
+  private rechteAn(...a: Parameters<ZugriffDienst['rechteAn']>) {
+    return this.teile.rechte.rechteAn(...a);
+  }
+  private sichtbarFuer(benutzerId: string, ids: string[]) {
+    return this.teile.rechte.sichtbarFuer(benutzerId, ids);
+  }
+  private typErkennungen() {
+    return this.teile.mappentypen.typErkennungen();
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private aenderungen(typ: Mappentyp, alt: Werte, neu: Werte) {
+    return this.teile.historie.aenderungen(typ, alt, neu);
+  }
+  private titel(m: Mappe) {
+    return this.teile.titel.titel(m);
+  }
+  private aktualisiereTitel(ids: string[]) {
+    return this.teile.titel.aktualisiereTitel(ids);
+  }
+  private pruefeVerweisziele(...a: Parameters<MappenEingaben['pruefeVerweisziele']>) {
+    return this.teile.eingaben.pruefeVerweisziele(...a);
+  }
+  private pruefeWerte(...a: Parameters<MappenEingaben['pruefeWerte']>) {
+    return this.teile.eingaben.pruefeWerte(...a);
+  }
+  private beruehre(mappeId: string, typ: Mappentyp | undefined, benutzerId: string | null) {
+    return this.teile.versionen.beruehre(mappeId, typ, benutzerId);
+  }
+  private verschiebeInRegister(...a: Parameters<PostAufloesen['verschiebeInRegister']>) {
+    return this.teile.aufloesen.verschiebeInRegister(...a);
+  }
+  private ebenAngelegt(ziel: Mappe, von: string | null) {
+    return this.teile.aufloesen.ebenAngelegt(ziel, von);
+  }
+  private aufloesenSperre(...a: Parameters<PostAufloesen['aufloesenSperre']>) {
+    return this.teile.aufloesen.aufloesenSperre(...a);
+  }
+  private loesePostAuf(...a: Parameters<PostAufloesen['loesePostAuf']>) {
+    return this.teile.aufloesen.loesePostAuf(...a);
+  }
+  private schreibeSystemMappe(...a: Parameters<PostSystemmappen['schreibeSystemMappe']>) {
+    return this.teile.systemmappen.schreibeSystemMappe(...a);
+  }
 
   /**
    * Neue Post anlegen (Oberfläche „+ Post“, API): Stand Neu, eingehend, heute. Die Dokumente kommen
@@ -104,22 +194,52 @@ export class PostDienst {
    * `alt` (Teilen, #445): Werte der Ausgangspost – Verweise, die dort schon stehen (z. B. „An“), gelten nicht als neu.
    * „von“ und „an“ (#1042): bis 1.0.0 auch unter den alten Namen `absender` und `fuer` (Schnittstelle v1, uebergaenge.ts).
    */
-  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID(), alt: Werte = {}): Promise<Mappe> {
+  async legePostAn(
+    eingabe: unknown,
+    ich: { id: string | null; name: string },
+    z?: Zugriff,
+    kanal: string = POST_KANAL.hochgeladen,
+    herkunft?: Historieneintrag['daten'],
+    id: string = randomUUID(),
+    alt: Werte = {},
+  ): Promise<Mappe> {
     const { post: typ } = await this.kern.system();
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, t('meldungen.dienst.post-laesst-sich-nicht'));
     const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);
-    const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || t('meldungen.dienst.neue-post');
+    const betreff =
+      text(e.betreff)
+        .replace(/[\r\n]+/g, ' ')
+        .trim()
+        .slice(0, 250) || t('meldungen.dienst.neue-post');
     const datum = istDatum(text(e.datum)) ? text(e.datum) : heuteIn();
-    const werte = bereinigeWerte(typ, {
-      ...(e.werte && typeof e.werte === 'object' ? e.werte as Record<string, unknown> : {}),
-      betreff, datum, kanal: Object.values(POST_KANAL).includes(text(e.kanal) as never) ? text(e.kanal) : kanal,
-      richtung: POST_RICHTUNG.eingehend, stand: POST_STAND.neu,
-      // Kein Rückgriff auf den Namen des Anlegenden (#494): „von“ ist, wer den Brief geschickt hat.
-      von: text(e.von).trim().slice(0, 250) || null, bezug: null,
-      ...(e.an !== undefined ? { an: e.an || null } : {}), ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
-    }, {}, this.verschluessele);
+    const werte = bereinigeWerte(
+      typ,
+      {
+        ...(e.werte && typeof e.werte === 'object' ? (e.werte as Record<string, unknown>) : {}),
+        betreff,
+        datum,
+        kanal: Object.values(POST_KANAL).includes(text(e.kanal) as never) ? text(e.kanal) : kanal,
+        richtung: POST_RICHTUNG.eingehend,
+        stand: POST_STAND.neu,
+        // Kein Rückgriff auf den Namen des Anlegenden (#494): „von“ ist, wer den Brief geschickt hat.
+        von: text(e.von).trim().slice(0, 250) || null,
+        bezug: null,
+        ...(e.an !== undefined ? { an: e.an || null } : {}),
+        ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
+      },
+      {},
+      this.verschluessele,
+    );
     if (z && !z.admin) {
-      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: ich.id, geaendert: new Date().toISOString(), geaendertVon: ich.id };
+      const entwurf: Mappe = {
+        id: '00000000-0000-4000-8000-000000000000',
+        typId: typ.id,
+        werte,
+        erstellt: new Date().toISOString(),
+        erstelltVon: ich.id,
+        geaendert: new Date().toISOString(),
+        geaendertVon: ich.id,
+      };
       if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, t('meldungen.dienst.post-anlegen-darfst-du'));
     }
     await this.pruefeVerweisziele(z, typ, werte, alt);
@@ -128,7 +248,10 @@ export class PostDienst {
     // Post samt Historie, Aufgabe und Ereignis in einer Transaktion (#404).
     const { m, titel } = await this.inTransaktion(async () => {
       const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), ich.id);
-      await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte), ...(ich.id ? {} : { system: ich.name }) });
+      await this.notiere(m.id, ich.id, 'angelegt', {
+        aenderungen: await this.aenderungen(typ, {}, werte),
+        ...(ich.id ? {} : { system: ich.name }),
+      });
       if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
       const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
       await this.postAufgaben(m.id, ich.id);
@@ -167,7 +290,9 @@ export class PostDienst {
     // Original-E-Mail (#999): geht mit, außer `originalEmail: false` („Original-E-Mail mitnehmen“ abgewählt) – dann
     // bleibt sie als eigenes Dokument in der Post. Sie enthält alle Anhänge der Mail, nicht nur die übernommenen.
     const ohneEml = e.originalEmail === false;
-    const ids = (Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id)).filter((id) => !ohneEml || !alle.find((d) => d.id === id)?.originalEmail);
+    const ids = (Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id)).filter(
+      (id) => !ohneEml || !alle.find((d) => d.id === id)?.originalEmail,
+    );
     const auswahl = ids.map((id) => alle.find((d) => d.id === id));
     if (auswahl.some((d) => !d)) throw new Fachfehler(422, t('meldungen.dienst.ein-ausgewaehltes-dokument-gehoert-3'));
     // Anlagen (#998) wandern mit ihrem Hauptdokument; eine Anlage allein lässt sich nicht übernehmen.
@@ -177,38 +302,88 @@ export class PostDienst {
     const mit = mitAnlagen(dokumente, alle);
     const regs = zielTyp.register.filter((r) => r.art === 'dokumente');
     const reg = regs.find((r) => r.key === text(e.register)) ?? (e.register ? undefined : regs[0]);
-    if (dokumente.length && !reg) throw new Fachfehler(422, regs.length ? t('meldungen.dienst.dieses-dokumentenregister-gibt-es') : t('meldungen.dienst.hat-kein-dokumentenregister-ordne', { name: zielTyp.name }));
+    if (dokumente.length && !reg)
+      throw new Fachfehler(
+        422,
+        regs.length
+          ? t('meldungen.dienst.dieses-dokumentenregister-gibt-es')
+          : t('meldungen.dienst.hat-kein-dokumentenregister-ordne', { name: zielTyp.name }),
+      );
     const kopieren = e.kopieren === true;
     // Auflösen (#936, #934): auf Wunsch – in eine neue wie in eine bestehende Mappe. Nie automatisch (wegen „Automatik
     // rückgängig“), nie mit „Kopie in der Post behalten“ und nie bei versendeten E-Mails (Nachweis des Versands).
     const rest = alle.filter((d) => !mit.some((x) => x.id === d.id));
     // Leerseiten (#997): beim Übernehmen weglassen (Vorgabe), nie beim automatischen Zuordnen – da hat niemand hingesehen.
-    const leer: Map<string, LeerseitenPlan> = auto ? new Map() : await this.teile.leerseiten.plane(mit, e.leerseiten === 'behalten' ? 'behalten' : 'weglassen');
+    const leer: Map<string, LeerseitenPlan> = auto
+      ? new Map()
+      : await this.teile.leerseiten.plane(mit, e.leerseiten === 'behalten' ? 'behalten' : 'weglassen');
     let hinweis: string | undefined;
     if (e.aufloesen === true && !auto && !kopieren && !istVersendet(post.werte)) {
       const grund = await this.aufloesenSperre(post, typ, rest.length > 0, z);
-      if (!grund) return this.loesePostAuf({ post, typ, ziel, zielTyp, reg, dokumente, rest, von, quelle, neu: await this.ebenAngelegt(ziel, von), leer });
+      if (!grund)
+        return this.loesePostAuf({
+          post,
+          typ,
+          ziel,
+          zielTyp,
+          reg,
+          dokumente,
+          rest,
+          von,
+          quelle,
+          neu: await this.ebenAngelegt(ziel, von),
+          leer,
+        });
       hinweis = t('meldungen.dienst.post-bleibt-zugeordnet', { grund });
     }
-    for (const d of dokumente) await this.uebertrage(d, { ziel, zielTyp, reg: reg!, kopieren, auto: !!auto, von }, leer, anlagenVon(alle, d.id));
+    for (const d of dokumente)
+      await this.uebertrage(d, { ziel, zielTyp, reg: reg!, kopieren, auto: !!auto, von }, leer, anlagenVon(alle, d.id));
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const zielTitel = await this.titel(ziel);
     const n = mit.length;
-    const doks = n ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: kopieren ? ' (kopiert)' : '', name: reg!.name }) : '';
+    const doks = n
+      ? t('meldungen.dienst.mit-dokumenten-ins-register', { anzahl: n, wert: kopieren ? ' (kopiert)' : '', name: reg!.name })
+      : '';
     const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id])];
     await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.zugeordnet }, von);
     // Automatisch (#337): Begründung in der Historie beider Mappen.
     const wie = auto ? { automatisch: true, grund: auto.grund, system: 'Erkennung' } : {};
     const warum = auto ? ` – automatisch: ${auto.grund}` : '';
-    await this.notiere(post.id, von, 'zugeordnet', { text: t('meldungen.dienst.zugeordnet-zu', { wert: auto ? t('meldungen.dienst.automatisch') : '', zielTitel, doks, warum }), ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren, ...wie });
-    await this.notiere(ziel.id, von, 'zugeordnet', { text: t('meldungen.dienst.post-zugeordnet', { betreff, wert: auto ? t('meldungen.dienst.automatisch') : '', doks, warum }), post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren, ...wie });
+    await this.notiere(post.id, von, 'zugeordnet', {
+      text: t('meldungen.dienst.zugeordnet-zu', { wert: auto ? t('meldungen.dienst.automatisch') : '', zielTitel, doks, warum }),
+      ziel: ziel.id,
+      zielTyp: ziel.typId,
+      dokumente: n,
+      kopiert: kopieren,
+      ...wie,
+    });
+    await this.notiere(ziel.id, von, 'zugeordnet', {
+      text: t('meldungen.dienst.post-zugeordnet', { betreff, wert: auto ? t('meldungen.dienst.automatisch') : '', doks, warum }),
+      post: post.id,
+      postTyp: typ.id,
+      dokumente: n,
+      kopiert: kopieren,
+      ...wie,
+    });
     if (n) {
       await this.beruehre(ziel.id, zielTyp, von);
       await this.beruehre(post.id, typ, von);
     }
     await this.postAufgaben(post.id, von);
-    protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren, aufloesenGesperrt: hinweis ? true : undefined });
-    return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))!, aufgeloest: false as const, ...(hinweis ? { hinweis } : {}), ...(leer.size ? { leerseiten: entfernteSeiten(leer) } : {}) };
+    protokoll.modul('ablage').info('Post zugeordnet', {
+      post: post.id,
+      ziel: ziel.id,
+      dokumente: n,
+      kopiert: kopieren,
+      aufloesenGesperrt: hinweis ? true : undefined,
+    });
+    return {
+      post: (await this.repo.holeMappe(post.id))!,
+      ziel: (await this.repo.holeMappe(ziel.id))!,
+      aufgeloest: false as const,
+      ...(hinweis ? { hinweis } : {}),
+      ...(leer.size ? { leerseiten: entfernteSeiten(leer) } : {}),
+    };
   }
 
   /**
@@ -224,9 +399,15 @@ export class PostDienst {
       if (!emls.length) continue;
       for (const eml of emls) {
         await this.repo.setzeAnlage(eml.id, null, null);
-        await this.notiere(post.id, von, 'anlage', { text: t('meldungen.anlagen.geloest', { name: eml.name, haupt: haupt.name }), dokument: eml.name, haupt: haupt.name, geloest: true });
+        await this.notiere(post.id, von, 'anlage', {
+          text: t('meldungen.anlagen.geloest', { name: eml.name, haupt: haupt.name }),
+          dokument: eml.name,
+          haupt: haupt.name,
+          geloest: true,
+        });
       }
-      for (const [i, a] of anlagen.filter((x) => !x.originalEmail).entries()) if (a.anlageNr !== i + 1) await this.repo.setzeAnlage(a.id, haupt.id, i + 1);
+      for (const [i, a] of anlagen.filter((x) => !x.originalEmail).entries())
+        if (a.anlageNr !== i + 1) await this.repo.setzeAnlage(a.id, haupt.id, i + 1);
       geaendert = true;
     }
     if (geaendert) protokoll.modul('ablage').info('Original-E-Mail bleibt in der Post', { post: post.id });
@@ -238,11 +419,17 @@ export class PostDienst {
    * (#997): mit Plan entsteht dort die neue Fassung ohne sie – bei der Kopie nur an der Kopie, die Post behält ihr
    * Dokument samt Markierung; ohne Plan geht die Markierung beim Verschieben weg (außer beim automatischen Zuordnen).
    */
-  private async uebertrage(d: Dokument, x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; kopieren: boolean; auto: boolean; von: string | null }, leer: Map<string, LeerseitenPlan>, anlagen: Dokument[]) {
+  private async uebertrage(
+    d: Dokument,
+    x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; kopieren: boolean; auto: boolean; von: string | null },
+    leer: Map<string, LeerseitenPlan>,
+    anlagen: Dokument[],
+  ) {
     if (x.kopieren) {
       // Anlagen (#998): Die Kopien hängen an der Kopie des Hauptdokuments.
       const neu = await this.kopiere(d, x, leer.get(d.id));
-      for (const [i, a] of anlagen.entries()) await this.repo.setzeAnlage((await this.kopiere(a, x, leer.get(a.id))).id, neu.id, a.anlageNr ?? i + 1);
+      for (const [i, a] of anlagen.entries())
+        await this.repo.setzeAnlage((await this.kopiere(a, x, leer.get(a.id))).id, neu.id, a.anlageNr ?? i + 1);
       return;
     }
     // Die Anlagen wandern mit (Repo); Leerseiten gelten für jede einzeln.
@@ -255,11 +442,32 @@ export class PostDienst {
   }
 
   /** Kopie beim Zuordnen mit „Kopie in der Post behalten“: dieselbe Datei, Volltext mitnehmen, Leerseiten an der Kopie. */
-  private async kopiere(d: Dokument, x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; von: string | null }, plan: LeerseitenPlan | undefined): Promise<Dokument> {
-    const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: x.ziel.id, registerKey: x.reg.key, erstellt: new Date().toISOString(), erstelltVon: x.von });
+  private async kopiere(
+    d: Dokument,
+    x: { ziel: Mappe; zielTyp: Mappentyp; reg: Register; von: string | null },
+    plan: LeerseitenPlan | undefined,
+  ): Promise<Dokument> {
+    const neu = await this.repo.legeDokumentAn({
+      ...d,
+      id: randomUUID(),
+      mappeId: x.ziel.id,
+      registerKey: x.reg.key,
+      erstellt: new Date().toISOString(),
+      erstelltVon: x.von,
+    });
     const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
-    if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info, sprache: fertig.sprache ?? null });
-    else if (VolltextDienst.volltextAn(x.zielTyp, x.reg.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
+    if (fertig)
+      await this.repo.ocrSetze(neu.id, {
+        stand: 'fertig',
+        text: fertig.text,
+        seiten: fertig.seiten,
+        info: fertig.info,
+        sprache: fertig.sprache ?? null,
+      });
+    else if (VolltextDienst.volltextAn(x.zielTyp, x.reg.key)) {
+      await this.repo.ocrEinreihen([neu.id]);
+      this.ocr?.anstossen();
+    }
     if (plan) await this.teile.leerseiten.lasseWeg(neu.id, plan, x.von);
     return neu;
   }
@@ -282,17 +490,22 @@ export class PostDienst {
     const autoTypen = await this.autoTypen();
     if (!autoTypen.size) return { nicht: t('meldungen.dienst.bei-keinem-mappentyp-eingeschaltet') };
     const post = await this.repo.holeMappe(postId);
-    const typ = post && await this.repo.holeTyp(post.typId);
+    const typ = post && (await this.repo.holeTyp(post.typId));
     if (!post || typ?.system !== 'post') return { nicht: t('meldungen.dienst.keine-post') };
-    if (auswahlText(post.werte.stand) !== POST_STAND.neu || auswahlText(post.werte.richtung) === POST_RICHTUNG.ausgehend) return { nicht: t('meldungen.dienst.nicht-neu-oder-ausgehend') };
+    if (auswahlText(post.werte.stand) !== POST_STAND.neu || auswahlText(post.werte.richtung) === POST_RICHTUNG.ausgehend)
+      return { nicht: t('meldungen.dienst.nicht-neu-oder-ausgehend') };
     const s = this.sichereZuordnung(e, autoTypen);
-    const nicht = (grund: string) => { log.info('Post nicht automatisch zugeordnet', { post: postId, grund }); return { nicht: grund }; };
+    const nicht = (grund: string) => {
+      log.info('Post nicht automatisch zugeordnet', { post: postId, grund });
+      return { nicht: grund };
+    };
     if (!s.ziel) return nicht(s.grund);
     const empfaenger = alsListe(post.werte.an)[0] ?? post.erstelltVon;
     if (!empfaenger) return nicht(t('meldungen.dienst.niemand-der-es-pruefen'));
-    if (!(await this.sichtbarFuer(empfaenger, [s.ziel.mappeId])).has(s.ziel.mappeId)) return nicht(t('meldungen.dienst.der-empfaenger-darf-die'));
+    if (!(await this.sichtbarFuer(empfaenger, [s.ziel.mappeId])).has(s.ziel.mappeId))
+      return nicht(t('meldungen.dienst.der-empfaenger-darf-die'));
     const ziel = await this.repo.holeMappe(s.ziel.mappeId);
-    const zielTyp = ziel && await this.repo.holeTyp(ziel.typId);
+    const zielTyp = ziel && (await this.repo.holeTyp(ziel.typId));
     if (!ziel || !zielTyp || zielTyp.archiv) return nicht(t('meldungen.dienst.zielmappe-fehlt-oder-ist'));
     const dokumente = await this.repo.listeDokumente(post.id);
     if (dokumente.length && !zielTyp.register.some((r) => r.art === 'dokumente')) return nicht(t('meldungen.dienst.zielmappe-hat-kein'));
@@ -303,11 +516,32 @@ export class PostDienst {
     await this.inTransaktion(async () => {
       await this.ordneZu(post.id, { ziel: ziel.id }, null, undefined, { grund });
       aufgabe = await this.neueAufgabe({
-        id: randomUUID(), mappeId: post.id, empfaengerId: empfaenger, art: 'zugeordnet', text: t('meldungen.dienst.automatisch-zugeordnet-zu-bitte', { zielTitel }), feldKey: `auto:${ziel.id}`,
-        erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null,
+        id: randomUUID(),
+        mappeId: post.id,
+        empfaengerId: empfaenger,
+        art: 'zugeordnet',
+        text: t('meldungen.dienst.automatisch-zugeordnet-zu-bitte', { zielTitel }),
+        feldKey: `auto:${ziel.id}`,
+        erstellt: new Date().toISOString(),
+        erstelltVon: null,
+        erledigt: null,
+        erledigtVon: null,
       });
       aufgabe = await this.leiteUm(aufgabe);
-      await this.repo.erkennungSchreibe(post.id, { ...e, auto: { ziel: ziel.id, zeit: new Date().toISOString(), grund, dokumente: dokumente.map((d) => ({ id: d.id, register: d.registerKey })), aufgabe: aufgabe.id } }, e.eindeutig);
+      await this.repo.erkennungSchreibe(
+        post.id,
+        {
+          ...e,
+          auto: {
+            ziel: ziel.id,
+            zeit: new Date().toISOString(),
+            grund,
+            dokumente: dokumente.map((d) => ({ id: d.id, register: d.registerKey })),
+            aufgabe: aufgabe.id,
+          },
+        },
+        e.eindeutig,
+      );
     });
     log.info('Post automatisch zugeordnet', { post: post.id, ziel: ziel.id, empfaenger, dokumente: dokumente.length });
     return { ziel: ziel.id };
@@ -332,9 +566,13 @@ export class PostDienst {
       for (const x of auto.dokumente) {
         const d = await this.repo.holeDokument(x.id);
         // Anlagen (#998) kommen mit ihrem Hauptdokument zurück.
-        if (d?.anlageZu && auto.dokumente.some((y) => y.id === d.anlageZu)) { if (d.mappeId === auto.ziel || d.mappeId === post.id) zurueck++; continue; }
+        if (d?.anlageZu && auto.dokumente.some((y) => y.id === d.anlageZu)) {
+          if (d.mappeId === auto.ziel || d.mappeId === post.id) zurueck++;
+          continue;
+        }
         if (!d || d.mappeId !== auto.ziel) continue;
-        const reg = typ.register.find((r) => r.key === x.register && r.art === 'dokumente') ?? typ.register.find((r) => r.art === 'dokumente');
+        const reg =
+          typ.register.find((r) => r.key === x.register && r.art === 'dokumente') ?? typ.register.find((r) => r.art === 'dokumente');
         if (!reg) continue;
         await this.repo.verschiebeDokument(d.id, post.id, reg.key);
         zurueck++;
@@ -343,10 +581,28 @@ export class PostDienst {
       await this.schreibeSystemMappe(typ, post.id, { bezug, stand: bezug.length ? post.werte.stand : POST_STAND.neu }, ich.id);
       const zielTitel = ziel ? await this.titel(ziel) : t('meldungen.dienst.eine-geloeschte-mappe');
       const doks = zurueck ? t('meldungen.dienst.dokumente-zurueck-in-der', { anzahl: zurueck }) : '';
-      await this.notiere(post.id, ich.id, 'zugeordnet', { text: t('meldungen.dienst.automatische-zuordnung-zu', { zielTitel, doks }), ziel: auto.ziel, rueckgaengig: true, dokumente: zurueck });
-      if (ziel) await this.notiere(ziel.id, ich.id, 'zugeordnet', { text: t('meldungen.dienst.automatische-zuordnung-der-post', { wert: auswahlText(post.werte.betreff) || t('meldungen.dienst.post'), doks }), post: post.id, rueckgaengig: true, dokumente: zurueck });
+      await this.notiere(post.id, ich.id, 'zugeordnet', {
+        text: t('meldungen.dienst.automatische-zuordnung-zu', { zielTitel, doks }),
+        ziel: auto.ziel,
+        rueckgaengig: true,
+        dokumente: zurueck,
+      });
+      if (ziel)
+        await this.notiere(ziel.id, ich.id, 'zugeordnet', {
+          text: t('meldungen.dienst.automatische-zuordnung-der-post', {
+            wert: auswahlText(post.werte.betreff) || t('meldungen.dienst.post'),
+            doks,
+          }),
+          post: post.id,
+          rueckgaengig: true,
+          dokumente: zurueck,
+        });
       await this.repo.erledigeAufgabe(a.id, ich.id);
-      await this.repo.erkennungSchreibe(post.id, { ...gespeichert, auto: { ...auto, rueckgaengig: { zeit: new Date().toISOString(), von: ich.id } } }, gespeichert.eindeutig);
+      await this.repo.erkennungSchreibe(
+        post.id,
+        { ...gespeichert, auto: { ...auto, rueckgaengig: { zeit: new Date().toISOString(), von: ich.id } } },
+        gespeichert.eindeutig,
+      );
       await this.postAufgaben(post.id, ich.id);
     });
     protokoll.modul('ablage').info('Automatische Zuordnung rückgängig gemacht', { post: post.id, ziel: auto.ziel, dokumente: zurueck });
@@ -364,7 +620,7 @@ export class PostDienst {
     const m = await this.repo.holeMappe(mappeId);
     const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'post');
     const neu = !!m && auswahlText(m.werte.stand) === POST_STAND.neu;
-    const an = neu ? alsListe(m!.werte.an)[0] ?? null : null;
+    const an = neu ? (alsListe(m!.werte.an)[0] ?? null) : null;
     const schluessel = an ? `an:${an}` : null;
     for (const a of offen) if (a.feldKey !== schluessel) await this.repo.erledigeAufgabe(a.id, von);
     if (m && !neu) await this.erledigeNachAnlass(mappeId, (x) => x.art === 'post', t('meldungen.dienst.post-zugeordnet-2'));

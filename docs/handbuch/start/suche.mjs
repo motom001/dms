@@ -26,7 +26,11 @@ export function gefaltet(text) {
   for (let k = 0; k < zeichen.length; k++) {
     const z = zeichen[k];
     const nach = zeichen[k + 1];
-    if ((z.c === 'a' || z.c === 'o' || z.c === 'u') && nach?.c === 'e') { aus.push({ c: z.c, von: z.von, bis: nach.bis }); k++; continue; }
+    if ((z.c === 'a' || z.c === 'o' || z.c === 'u') && nach?.c === 'e') {
+      aus.push({ c: z.c, von: z.von, bis: nach.bis });
+      k++;
+      continue;
+    }
     aus.push(z);
   }
   return { s: aus.map((z) => z.c).join(''), von: aus.map((z) => z.von), bis: aus.map((z) => z.bis) };
@@ -70,8 +74,14 @@ function ausschnitt(text, bereiche, umfeld) {
   const [a, b] = bereiche[0];
   let von = Math.max(0, a - umfeld);
   let bis = Math.min(quelle.length, b + umfeld);
-  if (von > 0) { const l = quelle.indexOf(' ', von); if (l >= 0 && l < a) von = l + 1; }
-  if (bis < quelle.length) { const r = quelle.lastIndexOf(' ', bis); if (r >= b) bis = r; }
+  if (von > 0) {
+    const l = quelle.indexOf(' ', von);
+    if (l >= 0 && l < a) von = l + 1;
+  }
+  if (bis < quelle.length) {
+    const r = quelle.lastIndexOf(' ', bis);
+    if (r >= b) bis = r;
+  }
   const innen = bereiche.filter(([x, y]) => x >= von && y <= bis).map(([x, y]) => [x - von, y - von]);
   const teile = zerlege(quelle.slice(von, bis), innen);
   if (von > 0) teile.unshift({ text: '… ', treffer: false });
@@ -115,7 +125,7 @@ export function handbuchVerzeichnis(roh) {
   const seiten = new Map(eintraege.filter((e) => !e.adresse.includes('#')).map((e) => [e.adresse, e.titel]));
   return eintraege.map((e) => {
     const istSeite = !e.adresse.includes('#');
-    return { ...e, istSeite, seite: istSeite ? e.titel : seiten.get(e.adresse.split('#')[0]) ?? '' };
+    return { ...e, istSeite, seite: istSeite ? e.titel : (seiten.get(e.adresse.split('#')[0]) ?? '') };
   });
 }
 
@@ -136,7 +146,8 @@ export function sucheInHandbuechern(verzeichnisse, suche, max = 10) {
       const titelTreffer = formen.some((w) => t.includes(w));
       const imText = formen.some((w) => x.includes(w));
       const treffer = {
-        handbuch, abschnitt: a,
+        handbuch,
+        abschnitt: a,
         ...(titelTreffer ? { titel: zerlege(a.titel, stellen(a.titel, formen)) } : {}),
         ausschnitt: imText ? ausschnitt(a.text, stellen(a.text, formen), 48) : [{ text: ersteWorte(a.text), treffer: false }],
       };
@@ -152,13 +163,23 @@ const HANDBUECHER = ['benutzer', 'installieren', 'admin', 'entwickler'];
 
 const TEXTE = {
   de: {
-    feld: 'In allen Handbüchern suchen', platzhalter: 'z. B. Sicherung, Post ablegen, Synology', laedt: 'Suche wird geladen …',
-    keine: 'Nichts gefunden. Versuch es mit einem anderen Wort.', eins: '1 Treffer', mehr: '{n} Treffer', nichtDa: 'Die Suche ist gerade nicht erreichbar.',
+    feld: 'In allen Handbüchern suchen',
+    platzhalter: 'z. B. Sicherung, Post ablegen, Synology',
+    laedt: 'Suche wird geladen …',
+    keine: 'Nichts gefunden. Versuch es mit einem anderen Wort.',
+    eins: '1 Treffer',
+    mehr: '{n} Treffer',
+    nichtDa: 'Die Suche ist gerade nicht erreichbar.',
     namen: { benutzer: 'Benutzerhandbuch', installieren: 'Installieren', admin: 'Administratorhandbuch', entwickler: 'Entwicklerhandbuch' },
   },
   en: {
-    feld: 'Search all manuals', platzhalter: 'e.g. backup, filing post, Synology', laedt: 'Loading search …',
-    keine: 'Nothing found. Try another word.', eins: '1 result', mehr: '{n} results', nichtDa: 'Search is not available right now.',
+    feld: 'Search all manuals',
+    platzhalter: 'e.g. backup, filing post, Synology',
+    laedt: 'Loading search …',
+    keine: 'Nothing found. Try another word.',
+    eins: '1 result',
+    mehr: '{n} results',
+    nichtDa: 'Search is not available right now.',
     namen: { benutzer: 'User manual', installieren: 'Installing', admin: 'Administrator manual', entwickler: 'Developer manual' },
   },
 };
@@ -178,7 +199,10 @@ export function starteSuche(ort, { ordner = 'aktuell/', sprache = 'de', fokus = 
   ort.innerHTML = '';
   const form = document.createElement('form');
   form.setAttribute('role', 'search');
-  form.addEventListener('submit', (e) => { e.preventDefault(); ergebnisse.querySelector('a')?.focus(); });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    ergebnisse.querySelector('a')?.focus();
+  });
   const label = document.createElement('label');
   label.htmlFor = `${id}-feld`;
   label.textContent = tx.feld;
@@ -199,28 +223,46 @@ export function starteSuche(ort, { ordner = 'aktuell/', sprache = 'de', fokus = 
 
   let verzeichnisse = null;
   let laden = null;
-  const lade = () => laden ??= Promise.all(HANDBUECHER.map(async (handbuch) => {
-    const basis = new URL(`${handbuch}/${ordner}${unter}`, WURZEL);
-    try {
-      const r = await fetch(new URL('search/search_index.json', basis));
-      if (!r.ok) return null;
-      return { handbuch, basis, abschnitte: handbuchVerzeichnis(await r.json()) };
-    } catch { return null; }
-  })).then((alle) => { verzeichnisse = alle.filter(Boolean); });
+  const lade = () =>
+    (laden ??= Promise.all(
+      HANDBUECHER.map(async (handbuch) => {
+        const basis = new URL(`${handbuch}/${ordner}${unter}`, WURZEL);
+        try {
+          const r = await fetch(new URL('search/search_index.json', basis));
+          if (!r.ok) return null;
+          return { handbuch, basis, abschnitte: handbuchVerzeichnis(await r.json()) };
+        } catch {
+          return null;
+        }
+      }),
+    ).then((alle) => {
+      verzeichnisse = alle.filter(Boolean);
+    }));
 
-  const teile = (liste) => liste.map((t) => {
-    if (!t.treffer) return document.createTextNode(t.text);
-    const m = document.createElement('mark');
-    m.textContent = t.text;
-    return m;
-  });
+  const teile = (liste) =>
+    liste.map((t) => {
+      if (!t.treffer) return document.createTextNode(t.text);
+      const m = document.createElement('mark');
+      m.textContent = t.text;
+      return m;
+    });
 
   function zeige() {
     const suche = feld.value;
     ergebnisse.replaceChildren();
-    if (!suche.trim()) { stand.textContent = ''; return; }
-    if (!verzeichnisse) { stand.textContent = tx.laedt; lade().then(zeige); return; }
-    if (!verzeichnisse.length) { stand.textContent = tx.nichtDa; return; }
+    if (!suche.trim()) {
+      stand.textContent = '';
+      return;
+    }
+    if (!verzeichnisse) {
+      stand.textContent = tx.laedt;
+      lade().then(zeige);
+      return;
+    }
+    if (!verzeichnisse.length) {
+      stand.textContent = tx.nichtDa;
+      return;
+    }
     const treffer = sucheInHandbuechern(verzeichnisse, suche, 10);
     stand.textContent = !treffer.length ? tx.keine : treffer.length === 1 ? tx.eins : tx.mehr.replace('{n}', String(treffer.length));
     for (const t of treffer) {
@@ -245,14 +287,24 @@ export function starteSuche(ort, { ordner = 'aktuell/', sprache = 'de', fokus = 
   }
 
   let uhr = 0;
-  feld.addEventListener('input', () => { clearTimeout(uhr); uhr = setTimeout(zeige, 120); });
+  feld.addEventListener('input', () => {
+    clearTimeout(uhr);
+    uhr = setTimeout(zeige, 120);
+  });
   // Pfeiltasten: vom Feld in die Treffer und zwischen ihnen; Escape zurück ins Feld.
   ort.addEventListener('keydown', (e) => {
     const links = [...ergebnisse.querySelectorAll('a')];
     const i = links.indexOf(document.activeElement);
-    if (e.key === 'ArrowDown' && links.length) { e.preventDefault(); links[Math.min(i + 1, links.length - 1)].focus(); }
-    else if (e.key === 'ArrowUp' && i >= 0) { e.preventDefault(); (i === 0 ? feld : links[i - 1]).focus(); }
-    else if (e.key === 'Escape' && i >= 0) { e.preventDefault(); feld.focus(); }
+    if (e.key === 'ArrowDown' && links.length) {
+      e.preventDefault();
+      links[Math.min(i + 1, links.length - 1)].focus();
+    } else if (e.key === 'ArrowUp' && i >= 0) {
+      e.preventDefault();
+      (i === 0 ? feld : links[i - 1]).focus();
+    } else if (e.key === 'Escape' && i >= 0) {
+      e.preventDefault();
+      feld.focus();
+    }
   });
   if (fokus) feld.focus();
   return { feld };

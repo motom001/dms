@@ -18,22 +18,42 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { analysiere, exifAusrichtung, liesBbox, maleSchwarz, pnmKopf, schwaerze, textAus, verbleibende } from '../src/schwaerzen';
 import {
-  bereicheVon, findeBegriff, findeMuster, geschwaerztName, ibanGueltig, pruefeBegriffe, pruefeBereiche, steuerIdGueltig, stellenText, type SchwaerzSeite, type Wort,
+  bereicheVon,
+  findeBegriff,
+  findeMuster,
+  geschwaerztName,
+  ibanGueltig,
+  pruefeBegriffe,
+  pruefeBereiche,
+  steuerIdGueltig,
+  stellenText,
+  type SchwaerzSeite,
+  type Wort,
 } from '../../shared/src/schwaerzen';
 import { pdfMitText } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
 const ich = '00000000-0000-4000-8000-000000000001';
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));
-const lauf = (cmd: string, args: string[]) => new Promise<string>((ok, f) => execFile(cmd, args, { maxBuffer: 64 << 20, encoding: 'latin1' }, (e, out) => (e ? f(e) : ok(out))));
+const lauf = (cmd: string, args: string[]) =>
+  new Promise<string>((ok, f) => execFile(cmd, args, { maxBuffer: 64 << 20, encoding: 'latin1' }, (e, out) => (e ? f(e) : ok(out))));
 
 async function mitDatei<T>(inhalt: Buffer, f: (pfad: string, dir: string) => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'dms-test-schwarz-'));
-  try { await writeFile(join(dir, 'a.pdf'), inhalt); return await f(join(dir, 'a.pdf'), dir); } finally { await rm(dir, { recursive: true, force: true }); }
+  try {
+    await writeFile(join(dir, 'a.pdf'), inhalt);
+    return await f(join(dir, 'a.pdf'), dir);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 const pdftext = (pdf: Buffer) => mitDatei(pdf, (p) => lauf('pdftotext', ['-enc', 'UTF-8', p, '-']));
 /** Alle Objekte entpackt und ohne Objektströme (qpdf --qdf) – so steht jeder Text lesbar in der Datei. */
-const qdf = (pdf: Buffer) => mitDatei(pdf, async (p, dir) => { await lauf('qpdf', ['--qdf', '--object-streams=disable', p, join(dir, 'q.pdf')]); return readFile(join(dir, 'q.pdf'), 'latin1'); });
+const qdf = (pdf: Buffer) =>
+  mitDatei(pdf, async (p, dir) => {
+    await lauf('qpdf', ['--qdf', '--object-streams=disable', p, join(dir, 'q.pdf')]);
+    return readFile(join(dir, 'q.pdf'), 'latin1');
+  });
 
 const ZEILEN = ['Max Mustermann geb. 01.02.1980', 'IBAN DE89 3704 0044 0532 0130 00', 'Gehalt 4711 Euro brutto', 'Kontakt max@example.org'];
 const GEHEIM = ['Mustermann', 'DE89', '3704 0044', '0532', '1980'];
@@ -41,8 +61,13 @@ const GEHEIM = ['Mustermann', 'DE89', '3704 0044', '0532', '1980'];
 /** Ein PDF wie aus dem Leben: Textebene, Titel/Autor/Schlagworte, XMP, eine Anmerkung und eine eingebettete Datei. */
 async function pdfMitAllem(): Promise<Buffer> {
   const doc = await PDFDocument.load(pdfMitText(ZEILEN, 14));
-  doc.setTitle('Gehaltsnachweis Mustermann'); doc.setAuthor('Mustermann'); doc.setKeywords(['DE89370400440532013000']);
-  const xmp = doc.context.stream('<x:xmpmeta xmlns:x="adobe:ns:meta/"><dc:creator>Mustermann</dc:creator></x:xmpmeta>', { Type: 'Metadata', Subtype: 'XML' });
+  doc.setTitle('Gehaltsnachweis Mustermann');
+  doc.setAuthor('Mustermann');
+  doc.setKeywords(['DE89370400440532013000']);
+  const xmp = doc.context.stream('<x:xmpmeta xmlns:x="adobe:ns:meta/"><dc:creator>Mustermann</dc:creator></x:xmpmeta>', {
+    Type: 'Metadata',
+    Subtype: 'XML',
+  });
   doc.catalog.set(PDFName.of('Metadata'), doc.context.register(xmp));
   const anm = doc.context.obj({ Type: 'Annot', Subtype: 'Text', Rect: [10, 10, 30, 30], Contents: PDFString.of('Notiz zu Mustermann') });
   doc.getPage(0).node.set(PDFName.of('Annots'), doc.context.obj([doc.context.register(anm)]));
@@ -61,15 +86,32 @@ describe('Bausteine (#392)', () => {
   });
 
   const seite = (text: string): SchwaerzSeite => ({
-    breite: 600, hoehe: 800,
+    breite: 600,
+    hoehe: 800,
     woerter: text.split('\n').flatMap((z, zeile) => z.split(' ').map((w, i): Wort => [w, 0.05 + i * 0.1, 0.1 + zeile * 0.05, 0.08, 0.02])),
   });
 
   it('Suchbegriff: ohne Groß-/Kleinschreibung, über Wörter, auch ohne Leerzeichen', () => {
     const s = [seite('Herr Max MUSTERMANN, Musterstraße 1\nIBAN DE89370400440532013000 Max Mustermann'), seite('nichts hier')];
-    assert.deepEqual(findeBegriff(s, 'mustermann').map((f) => [f.seite, f.woerter]), [[1, [2]], [1, [8]]]);
-    assert.deepEqual(findeBegriff(s, 'Max  Mustermann').map((f) => f.woerter), [[1, 2], [7, 8]]);
-    assert.deepEqual(findeBegriff(s, 'DE89 3704 0044').map((f) => f.woerter), [[6]], 'ohne Leerzeichen, ganzes Wort');
+    assert.deepEqual(
+      findeBegriff(s, 'mustermann').map((f) => [f.seite, f.woerter]),
+      [
+        [1, [2]],
+        [1, [8]],
+      ],
+    );
+    assert.deepEqual(
+      findeBegriff(s, 'Max  Mustermann').map((f) => f.woerter),
+      [
+        [1, 2],
+        [7, 8],
+      ],
+    );
+    assert.deepEqual(
+      findeBegriff(s, 'DE89 3704 0044').map((f) => f.woerter),
+      [[6]],
+      'ohne Leerzeichen, ganzes Wort',
+    );
     assert.deepEqual(findeBegriff(s, '  '), []);
     const b = bereicheVon(s, findeBegriff(s, 'max mustermann'));
     assert.equal(b.length, 2, 'Wörter einer Zeile werden ein Kasten');
@@ -78,7 +120,11 @@ describe('Bausteine (#392)', () => {
   });
 
   it('Vorschläge per Muster', () => {
-    const s = [seite('Anna Beispiel geb. 03.04.1975 in Bonn\nIBAN DE89 3704 0044 0532 0130 00 Danke\nTelefon 0351 1234567 oder +49 (0) 30 123456\nE-Mail anna.b@example.org Steuer-Id 86 095 742 719\nRechnung vom 01.02.2024 Betrag 4711,00')];
+    const s = [
+      seite(
+        'Anna Beispiel geb. 03.04.1975 in Bonn\nIBAN DE89 3704 0044 0532 0130 00 Danke\nTelefon 0351 1234567 oder +49 (0) 30 123456\nE-Mail anna.b@example.org Steuer-Id 86 095 742 719\nRechnung vom 01.02.2024 Betrag 4711,00',
+      ),
+    ];
     const f = findeMuster(s);
     const nach = (art: string) => f.filter((x) => x.art === art).map((x) => x.text);
     assert.deepEqual(nach('iban'), ['DE89 3704 0044 0532 0130 00'], 'die IBAN endet vor „Danke“');
@@ -86,7 +132,10 @@ describe('Bausteine (#392)', () => {
     assert.deepEqual(nach('email'), ['anna.b@example.org']);
     assert.deepEqual(nach('steuerid'), ['86 095 742 719']);
     assert.deepEqual(nach('telefon'), ['0351 1234567', '+49 (0) 30 123456']);
-    assert.deepEqual(findeMuster(s, ['email']).map((x) => x.art), ['email']);
+    assert.deepEqual(
+      findeMuster(s, ['email']).map((x) => x.art),
+      ['email'],
+    );
   });
 
   it('Eingaben prüfen', () => {
@@ -102,8 +151,9 @@ describe('Bausteine (#392)', () => {
   });
 
   it('pdftotext -bbox lesen; gedrehte Seiten', () => {
-    const html = '<doc><page width="595.000000" height="842.000000"><word xMin="59.5" yMin="84.2" xMax="119" yMax="168.4">A&amp;B</word></page>'
-      + '<page width="595.000000" height="842.000000"><word xMin="84.2" yMin="59.5" xMax="168.4" yMax="119">quer</word></page></doc>';
+    const html =
+      '<doc><page width="595.000000" height="842.000000"><word xMin="59.5" yMin="84.2" xMax="119" yMax="168.4">A&amp;B</word></page>' +
+      '<page width="595.000000" height="842.000000"><word xMin="84.2" yMin="59.5" xMax="168.4" yMax="119">quer</word></page></doc>';
     const s = liesBbox(html, [0, 90]);
     assert.deepEqual(s[0], { breite: 595, hoehe: 842, woerter: [['A&B', 0.1, 0.1, 0.1, 0.1]] });
     assert.deepEqual(s[1], { breite: 842, hoehe: 595, woerter: [['quer', 0.1, 0.1, 0.1, 0.1]] });
@@ -116,7 +166,17 @@ describe('Bausteine (#392)', () => {
     maleSchwarz(px, k, [{ seite: 1, x: 0.25, y: 0.5, b: 0.3, h: 0.5 }]);
     const p = (x: number, y: number) => px[k.start + (y * 4 + x) * 3];
     assert.deepEqual([p(0, 1), p(1, 1), p(2, 1), p(3, 1), p(1, 0)], [200, 0, 0, 200, 200], 'nach außen gerundet');
-    const s: SchwaerzSeite[] = [{ breite: 100, hoehe: 100, woerter: [['eins', 0.1, 0.1, 0.1, 0.05], ['zwei', 0.3, 0.1, 0.1, 0.05], ['drei', 0.1, 0.2, 0.1, 0.05]] }];
+    const s: SchwaerzSeite[] = [
+      {
+        breite: 100,
+        hoehe: 100,
+        woerter: [
+          ['eins', 0.1, 0.1, 0.1, 0.05],
+          ['zwei', 0.3, 0.1, 0.1, 0.05],
+          ['drei', 0.1, 0.2, 0.1, 0.05],
+        ],
+      },
+    ];
     const bleibt = verbleibende(s, [{ seite: 1, x: 0.35, y: 0.12, b: 0.01, h: 0.01 }]);
     assert.equal(textAus(bleibt), 'eins\ndrei');
   });
@@ -154,12 +214,26 @@ describe('Schwärzen: Restdaten im PDF (#392, Sicherheits-Review S1)', () => {
 
     const text = await pdftext(r.inhalt);
     for (const g of [...GEHEIM, '4711']) assert.ok(!text.includes(g), `pdftotext: ${g}`);
-    for (const bleibt of ['Max', 'IBAN', 'Gehalt', 'Euro', 'brutto', 'Kontakt', 'max@example.org']) assert.ok(text.includes(bleibt), `bleibt kopierbar: ${bleibt}`);
+    for (const bleibt of ['Max', 'IBAN', 'Gehalt', 'Euro', 'brutto', 'Kontakt', 'max@example.org'])
+      assert.ok(text.includes(bleibt), `bleibt kopierbar: ${bleibt}`);
     assert.ok(r.text && !GEHEIM.some((g) => r.text!.includes(g)) && r.text.includes('Gehalt'));
 
     const roh = r.inhalt.toString('latin1');
     const entpackt = await qdf(r.inhalt);
-    for (const g of ['Mustermann', 'DE89', '370400440532013000', '4711', 'geheim.txt', 'JavaScript', 'Annot', 'Metadata', 'EmbeddedFile', 'Gehaltsnachweis', 'Author', 'Keywords']) {
+    for (const g of [
+      'Mustermann',
+      'DE89',
+      '370400440532013000',
+      '4711',
+      'geheim.txt',
+      'JavaScript',
+      'Annot',
+      'Metadata',
+      'EmbeddedFile',
+      'Gehaltsnachweis',
+      'Author',
+      'Keywords',
+    ]) {
       assert.ok(!roh.includes(g) && !entpackt.includes(g), `Rohinhalt: ${g}`);
     }
     const neu = await PDFDocument.load(r.inhalt, { updateMetadata: false });
@@ -170,7 +244,10 @@ describe('Schwärzen: Restdaten im PDF (#392, Sicherheits-Review S1)', () => {
     assert.doesNotMatch(info, /Mustermann|Title:|Author:/);
 
     // Und die Seite ist an den Stellen wirklich schwarz (Bildpunkte gerendert).
-    const px = await mitDatei(r.inhalt, async (p, dir) => { await lauf('pdftoppm', ['-r', '72', '-gray', p, join(dir, 's')]); return readFile(join(dir, 's-1.pgm')); });
+    const px = await mitDatei(r.inhalt, async (p, dir) => {
+      await lauf('pdftoppm', ['-r', '72', '-gray', p, join(dir, 's')]);
+      return readFile(join(dir, 's-1.pgm'));
+    });
     const k = pnmKopf(px);
     const mitte = (x: number, y: number) => px[k.start + Math.round(y * k.hoehe) * k.breite + Math.round(x * k.breite)];
     assert.ok(mitte(w[1] + w[3] / 2, w[2] + w[4] / 2) < 40, '„4711“ ist schwarz');
@@ -183,13 +260,26 @@ describe('Schwärzen: Restdaten im PDF (#392, Sicherheits-Review S1)', () => {
     for (const q of [a1, a2]) for (const p of await doc.copyPages(q, [0])) doc.addPage(p);
     const pdf = Buffer.from(await doc.save());
     const a = await analysiere(pdf, 'application/pdf');
-    assert.deepEqual(a.seiten.map((s) => [s.breite, s.hoehe]), [[595, 842], [842, 595]]);
+    assert.deepEqual(
+      a.seiten.map((s) => [s.breite, s.hoehe]),
+      [
+        [595, 842],
+        [842, 595],
+      ],
+    );
     const r = await schwaerze(pdf, 'application/pdf', a, bereicheVon(a.seiten, findeBegriff(a.seiten, 'geheimwort')));
     const text = await pdftext(r.inhalt);
     assert.ok(!/Geheimwort/i.test(text));
     for (const bleibt of ['eins', 'bleibt', 'stehen', 'Quer', 'hier']) assert.ok(text.includes(bleibt), bleibt);
     const neu = await PDFDocument.load(r.inhalt);
-    assert.deepEqual(neu.getPages().map((p) => [Math.round(p.getWidth()), Math.round(p.getHeight()), p.getRotation().angle]), [[595, 842, 0], [842, 595, 0]], 'wie angezeigt, ohne /Rotate');
+    assert.deepEqual(
+      neu.getPages().map((p) => [Math.round(p.getWidth()), Math.round(p.getHeight()), p.getRotation().angle]),
+      [
+        [595, 842, 0],
+        [842, 595, 0],
+      ],
+      'wie angezeigt, ohne /Rotate',
+    );
   });
 
   it('verschlüsselte oder kaputte PDFs: verständliche Meldung', async () => {
@@ -231,23 +321,34 @@ describe('Bilder schwärzen (#392)', () => {
     assert.equal(exifAusrichtung(r.inhalt), 1);
     assert.ok(!r.inhalt.includes(Buffer.from('Exif\0\0', 'latin1')));
   });
-
 });
 
 async function aufbau(repo: Repo, versionierung = true) {
   const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
-    { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
-  ] });
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
+      { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung },
+    ],
+  });
   const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Gehalt' } }, null);
   const pdf = await pdfMitAllem();
   const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'nachweis.pdf', typ: 'application/pdf' }, pdf, null);
   // Der Volltext des Originals (wie nach der Texterkennung).
-  await (d as unknown as { repo: Repo }).repo.ocrSetze(dokument.id, { stand: 'fertig', text: ZEILEN.join('\n'), seiten: 1, info: 'Textebene des PDFs' });
+  await (d as unknown as { repo: Repo }).repo.ocrSetze(dokument.id, {
+    stand: 'fertig',
+    text: ZEILEN.join('\n'),
+    seiten: 1,
+    info: 'Textebene des PDFs',
+  });
   const ereignisse: string[] = [];
   const melde = d.kern.ereignis.bind(d.kern);
-  d.kern.ereignis = async (art, ...rest) => { ereignisse.push(art); return melde(art, ...rest); };
+  d.kern.ereignis = async (art, ...rest) => {
+    ereignisse.push(art);
+    return melde(art, ...rest);
+  };
   return { d, t, m, dokument, pdf, ereignisse };
 }
 
@@ -276,7 +377,10 @@ describe('Schwärzen am Dokument (#392)', () => {
     assert.ok(ereignisse.includes('dokument.hochgeladen'));
     const h = await d.mappenHistorie.historie(m.id);
     const e = h.find((x) => x.art === 'geschwaerzt')!;
-    assert.match(String(e.daten.text), /^geschwärzte Fassung „nachweis \(geschwärzt\)\.pdf“ von „nachweis\.pdf“ erstellt \(2 Stellen auf 1 Seite\)$/);
+    assert.match(
+      String(e.daten.text),
+      /^geschwärzte Fassung „nachweis \(geschwärzt\)\.pdf“ von „nachweis\.pdf“ erstellt \(2 Stellen auf 1 Seite\)$/,
+    );
     assert.equal(e.benutzerId, ich);
     assert.ok(!/mustermann|gibt es nicht|DE89/i.test(JSON.stringify(h)), 'keine Suchbegriffe und kein Inhalt in der Historie');
     // Ein zweites Mal: Zähler im Namen.
@@ -291,19 +395,34 @@ describe('Schwärzen am Dokument (#392)', () => {
     assert.equal(r.dokument.version, 2);
     assert.equal(r.dokument.herkunft, 'geschwaerzt');
     assert.ok(!(await d.volltexte.volltext(dokument.id)).text!.includes('Mustermann'));
-    assert.equal((await d.dokumentVersionen.versionen(dokument.id)).aeltere[0].sha256, dokument.sha256, 'die ungeschwärzte bleibt als Version 1');
-    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mondlandung'] }, ich), status(422, /Suchbegriff kommt im Text des Dokuments nicht vor/));
+    assert.equal(
+      (await d.dokumentVersionen.versionen(dokument.id)).aeltere[0].sha256,
+      dokument.sha256,
+      'die ungeschwärzte bleibt als Version 1',
+    );
+    await assert.rejects(
+      d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mondlandung'] }, ich),
+      status(422, /Suchbegriff kommt im Text des Dokuments nicht vor/),
+    );
     await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, {}, ich), status(422, /Bitte Bereiche/));
     await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { muster: ['postleitzahl'] }, ich), status(422, /muster/));
-    await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { bereiche: [{ seite: 2, x: 0, y: 0, b: 1, h: 1 }] }, ich), status(422, /Seite 2 gibt es nicht/));
+    await assert.rejects(
+      d.schwaerzen.schwaerzeDokument(dokument.id, { bereiche: [{ seite: 2, x: 0, y: 0, b: 1, h: 1 }] }, ich),
+      status(422, /Seite 2 gibt es nicht/),
+    );
     await assert.rejects(d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['x'], ziel: 'irgendwo' }, ich), status(422));
 
     const o = await aufbau(speicherRepo(), false);
-    await assert.rejects(o.d.schwaerzen.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich), status(409, /nur ein eigenes Dokument/));
+    await assert.rejects(
+      o.d.schwaerzen.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'], ziel: 'version' }, ich),
+      status(409, /nur ein eigenes Dokument/),
+    );
     const k = await o.d.schwaerzen.schwaerzeDokument(o.dokument.id, { begriffe: ['Mustermann'] }, ich);
     assert.equal((await o.d.mappen.holeMappe(o.m.id)).dokumente.length, 2);
     assert.equal(k.dokument.name, 'nachweis (geschwärzt).pdf');
-    const txt = (await o.d.dokumente.ladeHoch(o.m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('Mustermann'), null)).dokument;
+    const txt = (
+      await o.d.dokumente.ladeHoch(o.m.id, { register: 'dokumente', name: 'a.txt', typ: 'text/plain' }, Buffer.from('Mustermann'), null)
+    ).dokument;
     await assert.rejects(o.d.schwaerzen.schwaerzenVorschau(txt.id), status(422, /PDFs und Bildern/));
     await assert.rejects(o.d.schwaerzen.schwaerzeDokument(txt.id, { begriffe: ['Mustermann'] }, ich), status(422, /PDFs und Bildern/));
   });
@@ -313,7 +432,11 @@ describe('Schwärzen am Dokument (#392)', () => {
     const png = await bildMitText('png');
     const scan = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'scan.png', typ: 'image/png' }, png, null)).dokument;
     // Der Volltext des Originals (wie vom Paket Texterkennung erkannt).
-    await d.volltexte.schreibeVolltext(scan.id, { text: 'SECRET 4711 CODE PUBLIC WORDS HERE' }, { id: 'p', herkunft: 'Texterkennung 2.0.0', paket: true });
+    await d.volltexte.schreibeVolltext(
+      scan.id,
+      { text: 'SECRET 4711 CODE PUBLIC WORDS HERE' },
+      { id: 'p', herkunft: 'Texterkennung 2.0.0', paket: true },
+    );
     const v = await d.schwaerzen.schwaerzenVorschau(scan.id);
     assert.equal(v.quelle, 'keine');
     assert.deepEqual(v.seiten[0].woerter, []);
@@ -344,30 +467,36 @@ async function pgRepo(): Promise<Repo> {
   return repo(sql, HAUSHALT) as never;
 }
 
-describe('Suche nach dem Schwärzen in PostgreSQL (#392)', { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  after(async () => { for (const s of offen.splice(0)) await s.end(); });
-  const admin = { id: ich, rolle: 'admin' };
+describe(
+  'Suche nach dem Schwärzen in PostgreSQL (#392)',
+  { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' },
+  () => {
+    after(async () => {
+      for (const s of offen.splice(0)) await s.end();
+    });
+    const admin = { id: ich, rolle: 'admin' };
 
-  it('neue Version: die Suche findet den Begriff nicht mehr, den Rest schon', async () => {
-    const { d, t, dokument } = await aufbau(await pgRepo());
-    const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
-    assert.equal((await suche('Mustermann')).gesamt, 1, 'vorher gefunden');
-    await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], muster: ['iban'], ziel: 'version' }, null);
-    assert.equal((await suche('Mustermann')).gesamt, 0);
-    assert.equal((await suche('DE89')).gesamt, 0);
-    assert.equal((await suche('brutto')).gesamt, 1, 'der übrige Text bleibt durchsuchbar');
-  });
+    it('neue Version: die Suche findet den Begriff nicht mehr, den Rest schon', async () => {
+      const { d, t, dokument } = await aufbau(await pgRepo());
+      const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
+      assert.equal((await suche('Mustermann')).gesamt, 1, 'vorher gefunden');
+      await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'], muster: ['iban'], ziel: 'version' }, null);
+      assert.equal((await suche('Mustermann')).gesamt, 0);
+      assert.equal((await suche('DE89')).gesamt, 0);
+      assert.equal((await suche('brutto')).gesamt, 1, 'der übrige Text bleibt durchsuchbar');
+    });
 
-  it('Kopie in einer Transaktion; ohne das Original findet die Suche nichts mehr', async () => {
-    const { d, t, m, dokument } = await aufbau(await pgRepo(), false);
-    const r = await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'] }, null);
-    const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
-    assert.ok(!(await d.volltexte.volltext(r.dokument.id)).text!.includes('Mustermann'));
-    await d.dokumente.loescheDokument(dokument.id, null);
-    assert.equal((await suche('Mustermann')).gesamt, 0);
-    const s = await suche('brutto') as { gesamt: number; ausschnitte?: Record<string, { dokument: string }> };
-    assert.equal(s.gesamt, 1);
-    assert.equal(s.ausschnitte?.[m.id]?.dokument, 'nachweis (geschwärzt).pdf');
-    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'geschwaerzt'));
-  });
-});
+    it('Kopie in einer Transaktion; ohne das Original findet die Suche nichts mehr', async () => {
+      const { d, t, m, dokument } = await aufbau(await pgRepo(), false);
+      const r = await d.schwaerzen.schwaerzeDokument(dokument.id, { begriffe: ['Mustermann'] }, null);
+      const suche = (q: string) => d.sichten.seite(admin, { sicht: `typ:${t.id}`, suche: q, volltext: 'true' });
+      assert.ok(!(await d.volltexte.volltext(r.dokument.id)).text!.includes('Mustermann'));
+      await d.dokumente.loescheDokument(dokument.id, null);
+      assert.equal((await suche('Mustermann')).gesamt, 0);
+      const s = (await suche('brutto')) as { gesamt: number; ausschnitte?: Record<string, { dokument: string }> };
+      assert.equal(s.gesamt, 1);
+      assert.equal(s.ausschnitte?.[m.id]?.dokument, 'nachweis (geschwärzt).pdf');
+      assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'geschwaerzt'));
+    });
+  },
+);

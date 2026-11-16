@@ -13,12 +13,15 @@ import { t } from '../sprache';
  */
 
 /** Rechte einer Aktion als lesbarer Text. */
-export const rechteText = (r: readonly AktionRecht[]) => r.map((x) => t.frei(`werkbank.paketaktionen.recht.${x.replace('_', '-')}`)).join(', ');
+export const rechteText = (r: readonly AktionRecht[]) =>
+  r.map((x) => t.frei(`werkbank.paketaktionen.recht.${x.replace('_', '-')}`)).join(', ');
 
 function useEinstellung() {
   const [e, setE] = useState<AktionenEinstellung | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { paketeApi.mappenaktionenEinstellung().then(setE, (x: unknown) => setFehler(fehlerText(x))); }, []);
+  useEffect(() => {
+    paketeApi.mappenaktionenEinstellung().then(setE, (x: unknown) => setFehler(fehlerText(x)));
+  }, []);
   return { e, setE, fehler, setFehler };
 }
 
@@ -26,14 +29,33 @@ function useEinstellung() {
  * Werkbank → Pakete → Paket → Einstellungen (#996, Feldart `mappenaktionen`): Aktionen dieses Pakets, je mit Haken
  * „im Menü zeigen“. `wert`: die ausgeschalteten Aktionen; gespeichert wird mit dem Knopf des Reiters.
  */
-export function PaketAktionenFeld({ paket, wert, setze }: { paket: Pick<InstalliertesPaket, 'mappenaktionen'>; wert: string[]; setze: (aus: string[]) => void }) {
+export function PaketAktionenFeld({
+  paket,
+  wert,
+  setze,
+}: {
+  paket: Pick<InstalliertesPaket, 'mappenaktionen'>;
+  wert: string[];
+  setze: (aus: string[]) => void;
+}) {
   const aus = new Set(wert);
   return (
     <div className="stapel" data-anker="paket.aktionen">
       <p className="leise klein">{t('werkbank.paketaktionen.erklaerung')}</p>
       {(paket.mappenaktionen ?? []).map((a) => (
-        <HakenFeld key={a.schluessel} beschriftung={a.name} hinweis={[t('werkbank.paketaktionen.braucht', { rechte: rechteText(a.rechte) }), a.dialog ? t('werkbank.paketaktionen.kern') : null, a.bedingung ? t('werkbank.paketaktionen.bedingung', { grund: a.bedingung.grund }) : null]}>
-          <input type="checkbox" checked={!aus.has(a.schluessel)} onChange={(x) => setze(x.target.checked ? wert.filter((k) => k !== a.schluessel) : [...wert, a.schluessel])} />
+        <HakenFeld
+          key={a.schluessel}
+          beschriftung={a.name}
+          hinweis={[
+            t('werkbank.paketaktionen.braucht', { rechte: rechteText(a.rechte) }),
+            a.dialog ? t('werkbank.paketaktionen.kern') : null,
+            a.bedingung ? t('werkbank.paketaktionen.bedingung', { grund: a.bedingung.grund }) : null,
+          ]}>
+          <input
+            type="checkbox"
+            checked={!aus.has(a.schluessel)}
+            onChange={(x) => setze(x.target.checked ? wert.filter((k) => k !== a.schluessel) : [...wert, a.schluessel])}
+          />
         </HakenFeld>
       ))}
     </div>
@@ -46,14 +68,24 @@ export function MappenMenueBlock({ pakete }: { pakete: InstalliertesPaket[] }) {
   const aus = new Set<EingebauteAktion>(e?.eingebautAus ?? []);
   const schalte = (k: EingebauteAktion, an: boolean) => {
     const neu = an ? [...aus].filter((x) => x !== k) : [...aus, k];
-    paketeApi.eingebauteAktionenSetzen(neu).then((x) => { setE(x); setFehler(undefined); }, (x: unknown) => setFehler(fehlerText(x)));
+    paketeApi.eingebauteAktionenSetzen(neu).then(
+      (x) => {
+        setE(x);
+        setFehler(undefined);
+      },
+      (x: unknown) => setFehler(fehlerText(x)),
+    );
   };
   const mitAktionen = pakete.filter((p) => p.mappenaktionen?.length);
   return (
     <section className="blatt" aria-label={t('werkbank.paketaktionen.menue')} data-anker="werkbank.mappenmenue">
       <h2 className="h3">{t('werkbank.paketaktionen.menue')}</h2>
       <p className="leise klein">{t('werkbank.paketaktionen.menue-erklaerung')}</p>
-      {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
+      {fehler && (
+        <p className="fehlertext" role="alert">
+          {fehler}
+        </p>
+      )}
       <h3 className="h4">{t('werkbank.paketaktionen.eingebaut')}</h3>
       {EINGEBAUTE_AKTIONEN.map((k) => (
         <HakenFeld key={k} beschriftung={t.frei(`werkbank.paketaktionen.eingebaut.${k}`)}>
@@ -61,11 +93,22 @@ export function MappenMenueBlock({ pakete }: { pakete: InstalliertesPaket[] }) {
         </HakenFeld>
       ))}
       <h3 className="h4">{t('werkbank.paketaktionen.von-paketen')}</h3>
-      {!mitAktionen.length ? <p className="leise klein">{t('werkbank.paketaktionen.keine')}</p> : (
+      {!mitAktionen.length ? (
+        <p className="leise klein">{t('werkbank.paketaktionen.keine')}</p>
+      ) : (
         <ul className="klein">
           {mitAktionen.map((p) => (
-            <li key={p.id}><Link to={`/werkbank/pakete/${encodeURIComponent(p.id)}`} className="verweis">{p.name}</Link>:{' '}
-              {p.mappenaktionen!.map((a) => (e?.paketAus[p.id]?.includes(a.schluessel) ? t('werkbank.paketaktionen.ausgeschaltet', { name: a.name }) : a.name)).join(', ')}</li>
+            <li key={p.id}>
+              <Link to={`/werkbank/pakete/${encodeURIComponent(p.id)}`} className="verweis">
+                {p.name}
+              </Link>
+              :{' '}
+              {p
+                .mappenaktionen!.map((a) =>
+                  e?.paketAus[p.id]?.includes(a.schluessel) ? t('werkbank.paketaktionen.ausgeschaltet', { name: a.name }) : a.name,
+                )
+                .join(', ')}
+            </li>
           ))}
         </ul>
       )}
@@ -78,8 +121,23 @@ export function AktionenVorschau({ aktionen, update }: { aktionen?: PaketVorscha
   if (!aktionen?.length) return null;
   return (
     <div className="hinweis stapel info" data-anker="vorschau.aktionen">
-      <p><strong>{t('werkbank.paketaktionen.vorschau')}</strong> {t('werkbank.paketaktionen.vorschau-erklaerung')}</p>
-      <ul>{aktionen.map((a) => <li key={a.schluessel}>{t('werkbank.paketaktionen.vorschau-zeile', { name: a.name, typen: a.typen.join(', '), rechte: rechteText(a.rechte) })}{a.dialog && <> {t('werkbank.paketaktionen.kern')}</>}{update && a.neu && <> <span className="chip warn">{t('werkbank.paketaktionen.neu')}</span></>}</li>)}</ul>
+      <p>
+        <strong>{t('werkbank.paketaktionen.vorschau')}</strong> {t('werkbank.paketaktionen.vorschau-erklaerung')}
+      </p>
+      <ul>
+        {aktionen.map((a) => (
+          <li key={a.schluessel}>
+            {t('werkbank.paketaktionen.vorschau-zeile', { name: a.name, typen: a.typen.join(', '), rechte: rechteText(a.rechte) })}
+            {a.dialog && <> {t('werkbank.paketaktionen.kern')}</>}
+            {update && a.neu && (
+              <>
+                {' '}
+                <span className="chip warn">{t('werkbank.paketaktionen.neu')}</span>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

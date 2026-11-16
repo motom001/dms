@@ -19,7 +19,11 @@ export const KONSOLE_KOPF = 'x-dms-konsole';
 export const ALS_KOPF = 'x-dms-als';
 export const konsolenDatei = (env: NodeJS.ProcessEnv = process.env) => env.DMS_KONSOLE_DATEI || join(tmpdir(), 'dms-konsole.json');
 
-export interface KonsolenDatei { schluessel: string; url: string; pid: number }
+export interface KonsolenDatei {
+  schluessel: string;
+  url: string;
+  pid: number;
+}
 
 /** Adresse, unter der der Befehl im selben Container den Server erreicht. */
 export function lokaleUrl(port: number, host = '0.0.0.0') {
@@ -36,7 +40,12 @@ export function istLoopback(ip: string | undefined): boolean {
 export class Konsolenzugang {
   private readonly schluessel: string;
   /** `schluessel` (#745): bei mehreren Prozessen der gemeinsame vom Hauptprozess – der Befehl landet bei irgendeinem. */
-  constructor(readonly datei: string = konsolenDatei(), schluessel?: string) { this.schluessel = schluessel ?? randomBytes(32).toString('base64url'); }
+  constructor(
+    readonly datei: string = konsolenDatei(),
+    schluessel?: string,
+  ) {
+    this.schluessel = schluessel ?? randomBytes(32).toString('base64url');
+  }
 
   async schreibe(url: string) {
     const inhalt: KonsolenDatei = { schluessel: this.schluessel, url, pid: process.pid };
@@ -45,11 +54,14 @@ export class Konsolenzugang {
     await chmod(this.datei, 0o600).catch(() => {});
   }
 
-  async entferne() { await rm(this.datei, { force: true }).catch(() => {}); }
+  async entferne() {
+    await rm(this.datei, { force: true }).catch(() => {});
+  }
 
   passt(wert: string | undefined): boolean {
     if (!wert) return false;
-    const a = Buffer.from(wert), b = Buffer.from(this.schluessel);
+    const a = Buffer.from(wert),
+      b = Buffer.from(this.schluessel);
     return a.length === b.length && timingSafeEqual(a, b);
   }
 }

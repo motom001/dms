@@ -18,7 +18,9 @@ export function ErkennungFeld({ paket, s, wert, setze }: { paket: string; s: Erk
   const ich = s.pakete.find((p) => p.id === paket);
   return (
     <>
-      <p className="leise klein">{t('erkennung.werkbank.text')} <Hilfe ort="pakete.erkennung" /></p>
+      <p className="leise klein">
+        {t('erkennung.werkbank.text')} <Hilfe ort="pakete.erkennung" />
+      </p>
       <HakenFeld beschriftung={t('erkennung.werkbank.standard')} hinweis={t('erkennung.werkbank.standard.hilfe')}>
         <input type="checkbox" checked={wert} onChange={(e) => setze(e.target.checked)} />
       </HakenFeld>
@@ -34,7 +36,9 @@ export function ErkennungFeld({ paket, s, wert, setze }: { paket: string; s: Erk
 export function KlassifizierenBlock({ netz }: { netz: boolean }) {
   return (
     <>
-      <h2 className="h3">{t('erkennung.klassifizieren.titel')} <Hilfe ort="pakete.klassifizieren" /></h2>
+      <h2 className="h3">
+        {t('erkennung.klassifizieren.titel')} <Hilfe ort="pakete.klassifizieren" />
+      </h2>
       <p className="leise klein">{netz ? t('erkennung.klassifizieren.netz') : t('erkennung.klassifizieren.lokal')}</p>
     </>
   );

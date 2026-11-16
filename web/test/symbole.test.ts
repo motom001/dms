@@ -45,7 +45,8 @@ const ERSATZ_ERLAUBT_SCHLUESSEL: Record<string, string[]> = {
   '../../shared/src/sprachen/de/gemeinsam.json': ['sichtrechte.'],
 };
 // Die Ausnahmen gelten in jeder Sprache (#729): en/werkbank.json wie de/werkbank.json.
-const erlaubterSchluessel = (rel: string, zeile: string) => (ERSATZ_ERLAUBT_SCHLUESSEL[rel.replace(/\/sprachen\/[^/]+\//, '/sprachen/de/')] ?? []).some((a) => zeile.trimStart().startsWith(`"${a}`));
+const erlaubterSchluessel = (rel: string, zeile: string) =>
+  (ERSATZ_ERLAUBT_SCHLUESSEL[rel.replace(/\/sprachen\/[^/]+\//, '/sprachen/de/')] ?? []).some((a) => zeile.trimStart().startsWith(`"${a}`));
 
 export function ersatzZeichen(text: string): string[] {
   const t = text.trim();
@@ -65,10 +66,12 @@ describe('Einheitliche Symbole (#425)', () => {
   it('keine bunten Emoji in web/src', () => {
     const funde: string[] = [];
     for (const p of [...dateien(WEB), ...dateien(SPRACHEN)]) {
-      readFileSync(p, 'utf8').split('\n').forEach((z, i) => {
-        const b = bunteZeichen(z);
-        if (b.length) funde.push(`${relative(WEB, p)}:${i + 1}: ${b.join(' ')}`);
-      });
+      readFileSync(p, 'utf8')
+        .split('\n')
+        .forEach((z, i) => {
+          const b = bunteZeichen(z);
+          if (b.length) funde.push(`${relative(WEB, p)}:${i + 1}: ${b.join(' ')}`);
+        });
     }
     assert.deepEqual(funde, [], 'Bitte <Symbol name="…" /> aus web/src/Symbol.tsx verwenden (einfarbig, aria-hidden).');
   });
@@ -78,13 +81,19 @@ describe('Einheitliche Symbole (#425)', () => {
     for (const p of [...dateien(WEB), ...dateien(SPRACHEN)]) {
       const rel = relative(WEB, p);
       if (ERSATZ_ERLAUBT[rel]) continue;
-      readFileSync(p, 'utf8').split('\n').forEach((z, i) => {
-        if (erlaubterSchluessel(rel, z)) return;
-        const b = ersatzZeichen(z);
-        if (b.length) funde.push(`${rel}:${i + 1}: ${b.join(' ')}`);
-      });
+      readFileSync(p, 'utf8')
+        .split('\n')
+        .forEach((z, i) => {
+          if (erlaubterSchluessel(rel, z)) return;
+          const b = ersatzZeichen(z);
+          if (b.length) funde.push(`${rel}:${i + 1}: ${b.join(' ')}`);
+        });
     }
-    assert.deepEqual(funde, [], 'Statt ⌕ ★ ☆ ✓ ✕ … bitte <Symbol name="…" /> aus web/src/Symbol.tsx (oder Datei mit Grund in ERSATZ_ERLAUBT).');
+    assert.deepEqual(
+      funde,
+      [],
+      'Statt ⌕ ★ ☆ ✓ ✕ … bitte <Symbol name="…" /> aus web/src/Symbol.tsx (oder Datei mit Grund in ERSATZ_ERLAUBT).',
+    );
   });
 
   it('erkennt Ersatzzeichen, nicht in Kommentaren', () => {
@@ -98,7 +107,7 @@ describe('Einheitliche Symbole (#425)', () => {
   it('die Prüfung erkennt bunte Zeichen und lässt Text-Pfeile durch', () => {
     assert.deepEqual(bunteZeichen('⏰ Erinnern'), ['⏰']);
     assert.deepEqual(bunteZeichen('🔗 Link'), ['🔗']);
-    assert.deepEqual(bunteZeichen("Einstellungen ⚠"), ['⚠']);
+    assert.deepEqual(bunteZeichen('Einstellungen ⚠'), ['⚠']);
     assert.deepEqual(bunteZeichen('⏱ Messung · ✉ Mail · ♥'), ['⏱', '✉', '♥']);
     assert.deepEqual(bunteZeichen('⚠︎ nur Text'), []);
     assert.deepEqual(bunteZeichen('Handbuch ↗ · a ↔ b · ✓ ✗ → ← ↑ ↓ ★ ☆ ▾'), []);

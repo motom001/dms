@@ -25,9 +25,12 @@ describe('Rückfragen (#355)', () => {
   it('kein confirm(), alert() oder prompt() des Browsers in web/src', () => {
     const funde: string[] = [];
     for (const p of dateien(WEB)) {
-      ohneKommentare(readFileSync(p, 'utf8')).split('\n').forEach((z, i) => {
-        if (/(^|[^\w.$])(window\.|globalThis\.)?(confirm|alert|prompt)\s*\(/.test(z)) funde.push(`${relative(WEB, p)}:${i + 1}: ${z.trim()}`);
-      });
+      ohneKommentare(readFileSync(p, 'utf8'))
+        .split('\n')
+        .forEach((z, i) => {
+          if (/(^|[^\w.$])(window\.|globalThis\.)?(confirm|alert|prompt)\s*\(/.test(z))
+            funde.push(`${relative(WEB, p)}:${i + 1}: ${z.trim()}`);
+        });
     }
     assert.deepEqual(funde, [], 'Bitte rueckfrage() bzw. hinweis() aus web/src/rueckfrage.tsx verwenden.');
   });

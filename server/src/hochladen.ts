@@ -25,7 +25,9 @@ const KOPF = 4096;
 let einstellung: { ordner: string; vorher?: () => Promise<void> } = { ordner: join(tmpdir(), 'ablago-hochladen') };
 
 /** Ordner für temporäre Uploads und Prüfung vor dem Schreiben (Speicherplatz, #116). */
-export function richteHochladenEin(o: { ordner: string; vorher?: () => Promise<void> }) { einstellung = o; }
+export function richteHochladenEin(o: { ordner: string; vorher?: () => Promise<void> }) {
+  einstellung = o;
+}
 
 /**
  * Übrig gebliebene temporäre Uploads (Absturz) löschen; liefert die Anzahl. `aelterAlsMs` (#745): Laufen noch andere
@@ -47,7 +49,12 @@ export async function raeumeHochladenAuf(ordner = einstellung.ordner, aelterAlsM
 
 /** Ein hochgeladener Körper als temporäre Datei. */
 export class Hochgeladen {
-  constructor(readonly pfad: string, readonly groesse: number, readonly sha256: string, readonly kopf: Buffer) {}
+  constructor(
+    readonly pfad: string,
+    readonly groesse: number,
+    readonly sha256: string,
+    readonly kopf: Buffer,
+  ) {}
   /** Nur Dateien, die `nimmAuf` im Upload-Ordner angelegt hat (Name aus randomUUID) – nie ein anderer Pfad. */
   private sicher(): string {
     const ordner = resolve(einstellung.ordner);
@@ -55,11 +62,17 @@ export class Hochgeladen {
     if (!p.startsWith(ordner + sep) || !/^[0-9a-f-]{36}\.tmp$/.test(basename(p))) throw new Error('Unerwarteter Pfad für einen Upload');
     return p;
   }
-  lies(): Promise<Buffer> { return readFile(this.sicher()); }
+  lies(): Promise<Buffer> {
+    return readFile(this.sicher());
+  }
   /** Erst geöffnet, dann als Strom (#877): Fehlt die Datei, lehnt das Promise ab. */
-  strom(): Promise<Readable> { return oeffneStrom(this.sicher()); }
+  strom(): Promise<Readable> {
+    return oeffneStrom(this.sicher());
+  }
   /** Löschen (auch, wenn sie schon in den Dateispeicher umbenannt wurde: dann gibt es nichts mehr zu tun). */
-  async entferne() { await rm(this.sicher(), { force: true }); }
+  async entferne() {
+    await rm(this.sicher(), { force: true });
+  }
 }
 
 /**
@@ -71,18 +84,23 @@ export async function nimmAuf(quelle: Readable, max: number, laenge?: number): P
   if (laenge !== undefined && Number.isFinite(laenge) && laenge > max) throw zuGross(max);
   // Bis die Datei offen ist, nichts lesen – aber einen Abbruch in der Zwischenzeit nicht verpassen.
   let frueh: unknown = null;
-  const merke = (e?: unknown) => { frueh ??= e ?? new Error('abgebrochen'); };
+  const merke = (e?: unknown) => {
+    frueh ??= e ?? new Error('abgebrochen');
+  };
   quelle.pause();
   quelle.on('error', merke);
   try {
     if (einstellung.vorher) await einstellung.vorher();
     await mkdir(einstellung.ordner, { recursive: true, mode: 0o700 });
-  } finally { quelle.off('error', merke); }
+  } finally {
+    quelle.off('error', merke);
+  }
   if (frueh || (quelle.destroyed && !quelle.readableEnded)) throw new Fachfehler(400, t('meldungen.hochladen.die-datei-kam-nicht'));
   const pfad = join(einstellung.ordner, `${randomUUID()}.tmp`);
   const h = createHash('sha256');
   const kopf: Buffer[] = [];
-  let n = 0, kopfLaenge = 0;
+  let n = 0,
+    kopfLaenge = 0;
   const datei = createWriteStream(pfad, { flags: 'wx', mode: 0o600 });
   try {
     await new Promise<void>((fertig, fehler) => {
@@ -90,24 +108,43 @@ export async function nimmAuf(quelle: Readable, max: number, laenge?: number): P
       const ende = (e?: unknown) => {
         if (aus) return;
         aus = true;
-        quelle.off('data', beiDaten); quelle.off('end', beiEnde); quelle.off('error', beiFehler); quelle.off('close', beiAbbruch);
-        if (e) { datei.destroy(); fehler(e); } else datei.end((x?: Error | null) => (x ? fehler(x) : fertig()));
+        quelle.off('data', beiDaten);
+        quelle.off('end', beiEnde);
+        quelle.off('error', beiFehler);
+        quelle.off('close', beiAbbruch);
+        if (e) {
+          datei.destroy();
+          fehler(e);
+        } else datei.end((x?: Error | null) => (x ? fehler(x) : fertig()));
       };
       const beiDaten = (stueck: Buffer) => {
         n += stueck.length;
         // Zu groß: nicht weiter speichern; der Rest des Körpers läuft ins Leere (wie bei Fastify), die 413 kommt an.
-        if (n > max) { quelle.resume(); return ende(zuGross(max)); }
+        if (n > max) {
+          quelle.resume();
+          return ende(zuGross(max));
+        }
         h.update(stueck);
-        if (kopfLaenge < KOPF) { const t = stueck.subarray(0, KOPF - kopfLaenge); kopf.push(Buffer.from(t)); kopfLaenge += t.length; }
+        if (kopfLaenge < KOPF) {
+          const t = stueck.subarray(0, KOPF - kopfLaenge);
+          kopf.push(Buffer.from(t));
+          kopfLaenge += t.length;
+        }
         // Gegendruck: Das Netz liefert nicht schneller, als die Platte schreibt.
-        if (!datei.write(stueck)) { quelle.pause(); datei.once('drain', () => quelle.resume()); }
+        if (!datei.write(stueck)) {
+          quelle.pause();
+          datei.once('drain', () => quelle.resume());
+        }
       };
       const beiEnde = () => ende();
       const beiFehler = (e: unknown) => ende(e ?? new Error('abgebrochen'));
       // Verbindung zu, bevor der Körper vollständig war.
       const beiAbbruch = () => ende(new Error('abgebrochen'));
       datei.on('error', beiFehler);
-      quelle.on('data', beiDaten); quelle.on('end', beiEnde); quelle.on('error', beiFehler); quelle.on('close', beiAbbruch);
+      quelle.on('data', beiDaten);
+      quelle.on('end', beiEnde);
+      quelle.on('error', beiFehler);
+      quelle.on('close', beiAbbruch);
       quelle.resume();
     });
   } catch (e) {
@@ -125,20 +162,32 @@ const zuGross = (max: number) => new Fachfehler(413, t('meldungen.hochladen.die-
  * Beides mit Größe, Kopf und Prüfsumme; abgelegt wird eine Datei durch Umbenennen, ein Puffer durch Schreiben.
  */
 export class Eingang {
-  private constructor(readonly groesse: number, readonly kopf: Buffer, private readonly sha: () => Promise<string>,
-    private readonly datei: Hochgeladen | null, private readonly inhalt: Buffer | null) {}
+  private constructor(
+    readonly groesse: number,
+    readonly kopf: Buffer,
+    private readonly sha: () => Promise<string>,
+    private readonly datei: Hochgeladen | null,
+    private readonly inhalt: Buffer | null,
+  ) {}
 
   /** Aus einem Upload oder Puffer; null für alles andere (leerer Körper, JSON …). */
   static aus(x: unknown): Eingang | null {
     if (x instanceof Eingang) return x;
     if (x instanceof Hochgeladen) return new Eingang(x.groesse, x.kopf, async () => x.sha256, x, null);
-    if (Buffer.isBuffer(x)) { let s: Promise<string> | null = null; return new Eingang(x.length, x.subarray(0, KOPF), () => (s ??= shaVon(x)), null, x); }
+    if (Buffer.isBuffer(x)) {
+      let s: Promise<string> | null = null;
+      return new Eingang(x.length, x.subarray(0, KOPF), () => (s ??= shaVon(x)), null, x);
+    }
     return null;
   }
 
-  sha256(): Promise<string> { return this.sha(); }
+  sha256(): Promise<string> {
+    return this.sha();
+  }
   /** Ganzer Inhalt – nur, wo er wirklich gebraucht wird (z. B. PDF verkleinern). */
-  puffer(): Promise<Buffer> { return this.inhalt ? Promise.resolve(this.inhalt) : this.datei!.lies(); }
+  puffer(): Promise<Buffer> {
+    return this.inhalt ? Promise.resolve(this.inhalt) : this.datei!.lies();
+  }
   /** In den Dateispeicher: eine Datei wird umbenannt (wenn der Speicher das kann), ein Puffer geschrieben. */
   async lege(speicher: Dateispeicher, sha256: string) {
     if (this.inhalt) return speicher.schreibe(sha256, this.inhalt);

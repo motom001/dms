@@ -14,7 +14,12 @@ import { fragenEingabe, FragenGrenzenFeld, type FragenEingabe } from './FragenGr
 import { KiTypenFeld } from './KiTypen';
 import { PaketAktionenFeld } from './PaketAktionen';
 
-export interface KernDaten { ki?: KiUebersicht; fragen?: FragenStand; erkennung?: ErkennungStand; aktionen?: AktionenEinstellung }
+export interface KernDaten {
+  ki?: KiUebersicht;
+  fragen?: FragenStand;
+  erkennung?: ErkennungStand;
+  aktionen?: AktionenEinstellung;
+}
 export type KernWerte = Partial<Record<KernTyp, unknown>>;
 type Paket = Pick<InstalliertesPaket, 'id' | 'name' | 'mappenaktionen'>;
 
@@ -52,7 +57,8 @@ export async function kernBestaetigen(paket: Paket, d: KernDaten, alt: KernWerte
 
 /** KI-Zulassung (#796): je geändertem Mappentyp zulassen oder sperren; gibt den neuen Stand zurück. */
 async function kiSpeichern(k: KiUebersicht, alt: string[], neu: string[]): Promise<KiUebersicht> {
-  const vorher = new Set(alt), nachher = new Set(neu);
+  const vorher = new Set(alt),
+    nachher = new Set(neu);
   let stand = k;
   for (const x of k.typen.filter((y) => vorher.has(y.id) !== nachher.has(y.id))) stand = await sucheApi.setzeKiTyp(x.id, nachher.has(x.id));
   return stand;
@@ -62,7 +68,13 @@ async function kiSpeichern(k: KiUebersicht, alt: string[], neu: string[]): Promi
  * Speichert die geänderten Feldarten (nach den Feldern des Manifests). Fehler je Feld: Schlüssel des Felds bzw.
  * `<schlüssel>.<teil>` bei den Grenzen. Gibt die neuen Daten zurück.
  */
-export async function speichereKern(paket: Paket, arten: Array<{ art: KernTyp; schluessel: string }>, d: KernDaten, alt: KernWerte, neu: KernWerte): Promise<{ daten: KernDaten; fehler: Record<string, string> }> {
+export async function speichereKern(
+  paket: Paket,
+  arten: Array<{ art: KernTyp; schluessel: string }>,
+  d: KernDaten,
+  alt: KernWerte,
+  neu: KernWerte,
+): Promise<{ daten: KernDaten; fehler: Record<string, string> }> {
   const fehler: Record<string, string> = {};
   const daten = { ...d };
   for (const { art, schluessel } of arten) {
@@ -89,9 +101,25 @@ export async function speichereKern(paket: Paket, arten: Array<{ art: KernTyp; s
 }
 
 /** Eine Feldart des Kerns im Formular. */
-export function KernEingabe({ art, paket, d, wert, setze, fehler }: { art: KernTyp; paket: Paket; d: KernDaten; wert: unknown; setze: (v: unknown) => void; fehler: Record<string, string> }) {
-  if (art === 'ki_mappentypen') return d.ki ? <KiTypenFeld paket={paket.id} k={d.ki} wert={(wert as string[]) ?? []} setze={setze} /> : null;
+export function KernEingabe({
+  art,
+  paket,
+  d,
+  wert,
+  setze,
+  fehler,
+}: {
+  art: KernTyp;
+  paket: Paket;
+  d: KernDaten;
+  wert: unknown;
+  setze: (v: unknown) => void;
+  fehler: Record<string, string>;
+}) {
+  if (art === 'ki_mappentypen')
+    return d.ki ? <KiTypenFeld paket={paket.id} k={d.ki} wert={(wert as string[]) ?? []} setze={setze} /> : null;
   if (art === 'fragen_grenzen') return wert ? <FragenGrenzenFeld wert={wert as FragenEingabe} setze={setze} fehler={fehler} /> : null;
-  if (art === 'erkennung_standard') return d.erkennung ? <ErkennungFeld paket={paket.id} s={d.erkennung} wert={wert === true} setze={setze} /> : null;
+  if (art === 'erkennung_standard')
+    return d.erkennung ? <ErkennungFeld paket={paket.id} s={d.erkennung} wert={wert === true} setze={setze} /> : null;
   return <PaketAktionenFeld paket={paket} wert={(wert as string[]) ?? []} setze={setze} />;
 }

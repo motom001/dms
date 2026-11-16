@@ -19,12 +19,22 @@ export const LIMIT_TEXT = t('meldungen.speicherplatz.speicherplatzlimit-erreicht
 export const VORLAUF_MIN = 5;
 
 export type Einheit = 'prozent' | 'gb';
-export interface Schwelle { wert: number; einheit: Einheit }
-export interface SpeicherplatzEinstellung { warnung: Schwelle; grenze: Schwelle }
+export interface Schwelle {
+  wert: number;
+  einheit: Einheit;
+}
+export interface SpeicherplatzEinstellung {
+  warnung: Schwelle;
+  grenze: Schwelle;
+}
 export const SP_STANDARD: SpeicherplatzEinstellung = { warnung: { wert: 10, einheit: 'prozent' }, grenze: { wert: 2, einheit: 'gb' } };
 
 export type SpZustand = 'ok' | 'warnung' | 'grenze';
-export interface OrdnerStand extends OrdnerBelegung { zustand: SpZustand | null; warnBytes: number | null; grenzBytes: number | null }
+export interface OrdnerStand extends OrdnerBelegung {
+  zustand: SpZustand | null;
+  warnBytes: number | null;
+  grenzBytes: number | null;
+}
 export interface SpeicherplatzStand {
   zustand: SpZustand;
   gemessen: string;
@@ -36,7 +46,12 @@ export interface SpeicherplatzStand {
   wartungBeenden: boolean;
 }
 
-interface Gemerkt { zustand: SpZustand; seit: string; gewarnt: boolean; ausgeloest: boolean }
+interface Gemerkt {
+  zustand: SpZustand;
+  seit: string;
+  gewarnt: boolean;
+  ausgeloest: boolean;
+}
 
 export interface SpeicherplatzDeps {
   einstellungen: Einstellungen;
@@ -52,7 +67,8 @@ export interface SpeicherplatzDeps {
 }
 
 export const gbText = (b: number) => `${(b / GB).toFixed(1).replace('.', ',')} GB`;
-const schwelleText = (s: Schwelle) => (s.einheit === 'prozent' ? `${String(s.wert).replace('.', ',')} %` : `${String(s.wert).replace('.', ',')} GB`);
+const schwelleText = (s: Schwelle) =>
+  s.einheit === 'prozent' ? `${String(s.wert).replace('.', ',')} %` : `${String(s.wert).replace('.', ',')} GB`;
 
 /** Schwelle in Bytes für einen Datenträger dieser Größe. */
 export function inBytes(s: Schwelle, gesamt: number): number {
@@ -76,7 +92,10 @@ export class Speicherplatz {
   private messer: Messer;
   private jetzt: () => Date;
 
-  constructor(readonly ordner: Ordner, private d: SpeicherplatzDeps) {
+  constructor(
+    readonly ordner: Ordner,
+    private d: SpeicherplatzDeps,
+  ) {
     this.messer = d.messer ?? statfsMesser;
     this.jetzt = d.jetzt ?? (() => new Date());
   }
@@ -104,23 +123,35 @@ export class Speicherplatz {
     const roh = await belegung(this.ordner, this.messer);
     const ordner: OrdnerStand[] = roh.map((o) => {
       if (o.gesamt === null || o.frei === null) return { ...o, zustand: null, warnBytes: null, grenzBytes: null };
-      const warnBytes = inBytes(e.warnung, o.gesamt), grenzBytes = inBytes(e.grenze, o.gesamt);
+      const warnBytes = inBytes(e.warnung, o.gesamt),
+        grenzBytes = inBytes(e.grenze, o.gesamt);
       return { ...o, warnBytes, grenzBytes, zustand: o.frei < grenzBytes ? 'grenze' : o.frei < warnBytes ? 'warnung' : 'ok' };
     });
-    const zustand: SpZustand = ordner.some((o) => o.zustand === 'grenze') ? 'grenze' : ordner.some((o) => o.zustand === 'warnung') ? 'warnung' : 'ok';
+    const zustand: SpZustand = ordner.some((o) => o.zustand === 'grenze')
+      ? 'grenze'
+      : ordner.some((o) => o.zustand === 'warnung')
+        ? 'warnung'
+        : 'ok';
     const g = await this.gemerkt();
     const w = this.d.wartung?.stand;
     return {
-      zustand, gemessen: this.jetzt().toISOString(), ordner, einstellung: e,
+      zustand,
+      gemessen: this.jetzt().toISOString(),
+      ordner,
+      einstellung: e,
       seit: g?.zustand === zustand ? g.seit : null,
       wartungBeenden: zustand !== 'grenze' && !!w && w.stufe !== 'aus' && w.ausloeser === 'speicherplatz',
     };
   }
 
-  private async gemerkt(): Promise<Gemerkt | null> { return (await this.d.einstellungen.lies('speicherplatz_stand')) as Gemerkt | null; }
+  private async gemerkt(): Promise<Gemerkt | null> {
+    return (await this.d.einstellungen.lies('speicherplatz_stand')) as Gemerkt | null;
+  }
 
   /** Letzte Messung (für die Übersicht), sonst neu messen. */
-  async stand(): Promise<SpeicherplatzStand> { return this.letzte && Date.now() - Date.parse(this.letzte.gemessen) < 60_000 ? this.letzte : this.pruefe(); }
+  async stand(): Promise<SpeicherplatzStand> {
+    return this.letzte && Date.now() - Date.parse(this.letzte.gemessen) < 60_000 ? this.letzte : this.pruefe();
+  }
 
   /** Messen und auf Übergänge reagieren: Warnung, Grenze, wieder genug Platz. */
   async pruefe(): Promise<SpeicherplatzStand> {
@@ -135,33 +166,64 @@ export class Speicherplatz {
 
   private async uebergaenge(): Promise<SpeicherplatzStand> {
     const s = await this.messe();
-    const alt = await this.gemerkt() ?? { zustand: 'ok' as SpZustand, seit: s.gemessen, gewarnt: false, ausgeloest: false };
+    const alt = (await this.gemerkt()) ?? { zustand: 'ok' as SpZustand, seit: s.gemessen, gewarnt: false, ausgeloest: false };
     const neu: Gemerkt = { ...alt };
-    if (s.zustand !== alt.zustand) { neu.zustand = s.zustand; neu.seit = s.gemessen; }
-    const knapp = s.ordner.filter((o) => o.zustand && o.zustand !== 'ok').map((o) => `${o.pfad}: ${o.frei !== null ? gbText(o.frei) : '?'} frei von ${o.gesamt !== null ? gbText(o.gesamt) : '?'}`);
+    if (s.zustand !== alt.zustand) {
+      neu.zustand = s.zustand;
+      neu.seit = s.gemessen;
+    }
+    const knapp = s.ordner
+      .filter((o) => o.zustand && o.zustand !== 'ok')
+      .map((o) => `${o.pfad}: ${o.frei !== null ? gbText(o.frei) : '?'} frei von ${o.gesamt !== null ? gbText(o.gesamt) : '?'}`);
 
     if (s.zustand === 'ok') {
-      if (alt.zustand !== 'ok') log.info('Speicherplatz wieder ausreichend', { ordner: s.ordner.map((o) => `${o.pfad}: ${o.frei !== null ? gbText(o.frei) : '?'} frei`).join('; ') });
-      neu.gewarnt = false; neu.ausgeloest = false;
+      if (alt.zustand !== 'ok')
+        log.info('Speicherplatz wieder ausreichend', {
+          ordner: s.ordner.map((o) => `${o.pfad}: ${o.frei !== null ? gbText(o.frei) : '?'} frei`).join('; '),
+        });
+      neu.gewarnt = false;
+      neu.ausgeloest = false;
     } else if (s.zustand === 'warnung') {
-      if (alt.zustand === 'grenze') log.info('Speicherplatz wieder über der Grenze, aber unter der Warnschwelle', { ordner: knapp.join('; ') });
+      if (alt.zustand === 'grenze')
+        log.info('Speicherplatz wieder über der Grenze, aber unter der Warnschwelle', { ordner: knapp.join('; ') });
       neu.ausgeloest = false;
       if (!alt.gewarnt) {
         neu.gewarnt = true;
-        log.warn('Speicherplatz knapp: Warnschwelle unterschritten', { warnschwelle: schwelleText(s.einstellung.warnung), ordner: knapp.join('; ') });
-        await this.mail(t('meldungen.speicherplatz.speicherplatz-wird-knapp'),
-          t('meldungen.speicherplatz.der-freie-speicherplatz-von', { schwelleText: schwelleText(s.einstellung.warnung), knapp: knapp.join('\n') })
-          + t('meldungen.speicherplatz.unter-der-grenze-sperrt', { schwelleText: schwelleText(s.einstellung.grenze) })
-          + t('meldungen.speicherplatz.schaffe-rechtzeitig-platz-alte'));
+        log.warn('Speicherplatz knapp: Warnschwelle unterschritten', {
+          warnschwelle: schwelleText(s.einstellung.warnung),
+          ordner: knapp.join('; '),
+        });
+        await this.mail(
+          t('meldungen.speicherplatz.speicherplatz-wird-knapp'),
+          t('meldungen.speicherplatz.der-freie-speicherplatz-von', {
+            schwelleText: schwelleText(s.einstellung.warnung),
+            knapp: knapp.join('\n'),
+          }) +
+            t('meldungen.speicherplatz.unter-der-grenze-sperrt', { schwelleText: schwelleText(s.einstellung.grenze) }) +
+            t('meldungen.speicherplatz.schaffe-rechtzeitig-platz-alte'),
+        );
       }
     } else {
       neu.gewarnt = true;
       if (!alt.ausgeloest) {
         neu.ausgeloest = true;
-        log.error('Speicherplatzlimit erreicht: Hochladen gesperrt, Wartungsmodus startet', { grenze: schwelleText(s.einstellung.grenze), ordner: knapp.join('; ') });
+        log.error('Speicherplatzlimit erreicht: Hochladen gesperrt, Wartungsmodus startet', {
+          grenze: schwelleText(s.einstellung.grenze),
+          ordner: knapp.join('; '),
+        });
         const an = await this.d.wartung?.automatisch('speicherplatz', LIMIT_TEXT, VORLAUF_MIN);
-        await this.mail(LIMIT_TEXT,
-          t('meldungen.speicherplatz.das-hochladen-ist-ab', { wert: t('meldungen.speicherplatz.der-freie-speicherplatz-von-2', { schwelleText: schwelleText(s.einstellung.grenze), knapp: knapp.join('\n') }), wert2: (an ? t('meldungen.speicherplatz.in-minuten-startet-der', { VORLAUF_MIN }) : t('meldungen.speicherplatz.der-wartungsmodus-ist-bereits')) }));
+        await this.mail(
+          LIMIT_TEXT,
+          t('meldungen.speicherplatz.das-hochladen-ist-ab', {
+            wert: t('meldungen.speicherplatz.der-freie-speicherplatz-von-2', {
+              schwelleText: schwelleText(s.einstellung.grenze),
+              knapp: knapp.join('\n'),
+            }),
+            wert2: an
+              ? t('meldungen.speicherplatz.in-minuten-startet-der', { VORLAUF_MIN })
+              : t('meldungen.speicherplatz.der-wartungsmodus-ist-bereits'),
+          }),
+        );
       }
     }
     if (JSON.stringify(neu) !== JSON.stringify(alt)) await this.d.einstellungen.schreibe('speicherplatz_stand', neu);
@@ -172,13 +234,20 @@ export class Speicherplatz {
   /** Vor jedem Hochladen: an der Grenze ist das Hochladen gesperrt (507 Insufficient Storage). */
   async pruefeHochladen() {
     let s: SpeicherplatzStand;
-    try { s = await this.messe(); } catch { return; } // Messung gestört: nicht blockieren
+    try {
+      s = await this.messe();
+    } catch {
+      return;
+    } // Messung gestört: nicht blockieren
     const vorher = this.letzte?.zustand;
     this.letzte = s;
     if (s.zustand === 'grenze') {
       if (vorher !== 'grenze') void this.pruefe().catch(() => {});
       const o = s.ordner.find((x) => x.zustand === 'grenze');
-      throw new Fachfehler(507, `${LIMIT_TEXT}: Hochladen ist gesperrt${o?.frei != null ? t('meldungen.speicherplatz.frei', { gbText: gbText(o.frei) }) : ''}. Bitte wende dich an die Person, die Ablago verwaltet.`);
+      throw new Fachfehler(
+        507,
+        `${LIMIT_TEXT}: Hochladen ist gesperrt${o?.frei != null ? t('meldungen.speicherplatz.frei', { gbText: gbText(o.frei) }) : ''}. Bitte wende dich an die Person, die Ablago verwaltet.`,
+      );
     }
   }
 
@@ -188,9 +257,15 @@ export class Speicherplatz {
     this.zeitgeber = setInterval(lauf, ms);
     this.zeitgeber.unref?.();
   }
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+  }
 
   private async mail(betreff: string, text: string) {
-    try { await this.d.anAdmins?.(`Ablago: ${betreff}`, text); } catch (e) { log.warn('Mail zum Speicherplatz nicht verschickt', { fehler: (e as Error).message }); }
+    try {
+      await this.d.anAdmins?.(`Ablago: ${betreff}`, text);
+    } catch (e) {
+      log.warn('Mail zum Speicherplatz nicht verschickt', { fehler: (e as Error).message });
+    }
   }
 }

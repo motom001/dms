@@ -13,7 +13,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location ??= new URL('http://127.0.0.1/');
 g.localStorage ??= speicher();
@@ -21,12 +30,20 @@ g.sessionStorage ??= speicher();
 g.addEventListener ??= () => {};
 g.removeEventListener ??= () => {};
 g.window ??= globalThis;
-g.document ??= { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document ??= {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
 const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
-const { Knopf, KnopfLink, knopfAussehen, istKnopfErgebnis, fehlerText, ErgebnisBlock, abfangen, sperreAus } = await lade('bausteine/index.ts');
+const { Knopf, KnopfLink, knopfAussehen, istKnopfErgebnis, fehlerText, ErgebnisBlock, abfangen, sperreAus } =
+  await lade('bausteine/index.ts');
 const { BestaetigenKnopf } = await lade('bausteine/knopf/Knopf.tsx');
 const { RueckfrageVorschau } = await lade('bausteine/rueckfrage/Rueckfrage.tsx');
 const FRAGE = { titel: 'Notiz löschen?', text: 'Das lässt sich nicht rückgängig machen.', ja: 'Löschen' };
@@ -95,22 +112,44 @@ describe('Baustein Knopf (#968)', () => {
   });
 
   it('Erklärung am Knopf: Grund, betroffene Einträge, „und n weitere“, „Stattdessen“ mit Knöpfen; Gefahr gesperrt ohne Rückfrage', () => {
-    const sperre = { grund: 'Zwei Verträge verweisen auf diese Mappe.', titel: 'Löschen geht nicht:', eintraege: ['Stromvertrag', 'Wasser'], weitere: 3, stattdessen: h(Knopf, { groesse: 'klein' }, 'Mit verknüpften Mappen löschen …') };
-    const html = zeichne(h(Knopf, { art: 'gefahr', symbol: 'geloescht', rueckfrage: FRAGE, gesperrt: sperre, erklaerungOffen: true }, 'Mappe löschen'));
+    const sperre = {
+      grund: 'Zwei Verträge verweisen auf diese Mappe.',
+      titel: 'Löschen geht nicht:',
+      eintraege: ['Stromvertrag', 'Wasser'],
+      weitere: 3,
+      stattdessen: h(Knopf, { groesse: 'klein' }, 'Mit verknüpften Mappen löschen …'),
+    };
+    const html = zeichne(
+      h(Knopf, { art: 'gefahr', symbol: 'geloescht', rueckfrage: FRAGE, gesperrt: sperre, erklaerungOffen: true }, 'Mappe löschen'),
+    );
     assert.equal(attr(html, KNOPF, 'aria-expanded'), 'true');
     assert.equal(attr(html, KNOPF, 'aria-haspopup'), undefined, 'gesperrt öffnet keine Rückfrage');
     const region = attr(html, KNOPF, 'aria-controls');
-    assert.match(html, new RegExp(`<div id="${region}" role="region"[^>]*><p><strong>Löschen geht nicht:</strong> Zwei Verträge verweisen auf diese Mappe\\.</p><ul><li>Stromvertrag</li><li>Wasser</li><li class="leise">und 3 weitere</li></ul>`));
-    assert.match(html, /<p class="leise">Stattdessen:<\/p><div class="wegknoepfe"><button[^>]*data-knopf="neben"[^>]*>.*Mit verknüpften Mappen löschen …/);
+    assert.match(
+      html,
+      new RegExp(
+        `<div id="${region}" role="region"[^>]*><p><strong>Löschen geht nicht:</strong> Zwei Verträge verweisen auf diese Mappe\\.</p><ul><li>Stromvertrag</li><li>Wasser</li><li class="leise">und 3 weitere</li></ul>`,
+      ),
+    );
+    assert.match(
+      html,
+      /<p class="leise">Stattdessen:<\/p><div class="wegknoepfe"><button[^>]*data-knopf="neben"[^>]*>.*Mit verknüpften Mappen löschen …/,
+    );
     assert.doesNotMatch(html, /M3 6h18/, 'Schloss statt Papierkorb');
   });
 
   it('rot gefüllt nur in der Rückfrage (Leitsatz 5): Bestätigungsknopf „entscheidung“, „Abbrechen“ als Neben', () => {
-    assert.match(zeichne(h(BestaetigenKnopf, { gefahr: true }, 'Löschen')), /^<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/);
+    assert.match(
+      zeichne(h(BestaetigenKnopf, { gefahr: true }, 'Löschen')),
+      /^<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/,
+    );
     assert.match(zeichne(h(BestaetigenKnopf, {}, 'Weiter')), /^<button type="submit" class="knopf primaer baustein" data-knopf="haupt">/);
     const vorschau = zeichne(h(RueckfrageVorschau, { r: { ...FRAGE, gefahr: true } }));
     assert.match(vorschau, /class="rueckfrage gefahr vorschau"/);
-    assert.match(vorschau, /<button[^>]*data-knopf="neben"[^>]*>.*Abbrechen.*<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/);
+    assert.match(
+      vorschau,
+      /<button[^>]*data-knopf="neben"[^>]*>.*Abbrechen.*<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/,
+    );
   });
 
   it('läuft: aria-busy und aria-disabled, nicht disabled (Fokus bleibt); Beschriftung bleibt, „Läuft …“ nur zu sehen', () => {
@@ -119,7 +158,10 @@ describe('Baustein Knopf (#968)', () => {
     assert.equal(attr(html, KNOPF, 'aria-disabled'), 'true');
     assert.doesNotMatch(html, /<button[^>]*disabled=""/);
     assert.match(html, /<span class="text">Jetzt prüfen<\/span>/);
-    assert.match(html, /<span class="laeuft" aria-hidden="true"><span class="kreisel"><\/span><span class="laeufttext">Läuft …<\/span><\/span>/);
+    assert.match(
+      html,
+      /<span class="laeuft" aria-hidden="true"><span class="kreisel"><\/span><span class="laeufttext">Läuft …<\/span><\/span>/,
+    );
     assert.match(zeichne(h(Knopf, { laeuft: true, laeuftText: 'Prüft …' }, 'Jetzt prüfen')), />Prüft …</);
   });
 
@@ -133,12 +175,20 @@ describe('Baustein Knopf (#968)', () => {
     const html = zeichne(h(Knopf, { ergebnis: { art: 'schlecht', text: 'Der Server antwortet nicht.' } }, 'Verbindung testen'));
     const id = attr(html, KNOPF, 'aria-describedby');
     assert.ok(id);
-    assert.match(html, new RegExp(`<span id="${id}" role="status" aria-live="polite" data-ergebnis="schlecht" class="ergebnis schlecht">.*Der Server antwortet nicht\\.`));
+    assert.match(
+      html,
+      new RegExp(
+        `<span id="${id}" role="status" aria-live="polite" data-ergebnis="schlecht" class="ergebnis schlecht">.*Der Server antwortet nicht\\.`,
+      ),
+    );
   });
 
   it('KnopfLink und knopfAussehen: Anlege-Knopf mit data-knopf="anlegen" (#989)', () => {
     const html = zeichne(h(KnopfLink, { to: '/werkbank/benutzer/neu', art: 'anlegen', groesse: 'klein' }, '+ Neu'));
-    assert.match(html, /^<a href="\/werkbank\/benutzer\/neu"[^>]*class="knopf gruen klein baustein"[^>]*data-knopf="anlegen"[^>]*>\+ Neu<\/a>$/);
+    assert.match(
+      html,
+      /^<a href="\/werkbank\/benutzer\/neu"[^>]*class="knopf gruen klein baustein"[^>]*data-knopf="anlegen"[^>]*>\+ Neu<\/a>$/,
+    );
     assert.deepEqual(knopfAussehen({ art: 'anlegen' }), { className: 'knopf gruen baustein', 'data-knopf': 'anlegen' });
     assert.match(html, />\+ /, 'Anlegen beginnt mit „+“ (Leitsatz 2)');
   });
@@ -160,8 +210,22 @@ describe('abfangen: asynchrone Handler ohne Knopf (#1011)', () => {
   it('gibt kein Promise zurück, ruft sofort auf und leitet einen Fehler an die Meldung der Stelle', async () => {
     const meldungen: string[] = [];
     let verhindert = false;
-    const handler = abfangen(async (e: { preventDefault(): void }) => { e.preventDefault(); await Promise.resolve(); throw new Error('Kein Netz.'); }, (text: string) => meldungen.push(text));
-    assert.equal(handler({ preventDefault: () => { verhindert = true; } }), undefined);
+    const handler = abfangen(
+      async (e: { preventDefault(): void }) => {
+        e.preventDefault();
+        await Promise.resolve();
+        throw new Error('Kein Netz.');
+      },
+      (text: string) => meldungen.push(text),
+    );
+    assert.equal(
+      handler({
+        preventDefault: () => {
+          verhindert = true;
+        },
+      }),
+      undefined,
+    );
     assert.ok(verhindert, 'preventDefault läuft sofort, noch bevor das Promise fertig ist');
     await new Promise((r) => setTimeout(r, 0));
     assert.deepEqual(meldungen, ['Kein Netz.']);
@@ -169,9 +233,20 @@ describe('abfangen: asynchrone Handler ohne Knopf (#1011)', () => {
 
   it('auch ein Fehler vor dem ersten await und einer ohne Text landen in der Meldung; ohne Fehler keine', async () => {
     const meldungen: string[] = [];
-    abfangen(() => { throw new Error('Sofort.'); }, (text: string) => meldungen.push(text))();
-    abfangen(() => Promise.reject(new Error('')), (text: string) => meldungen.push(text))();
-    abfangen(async () => 'gut', (text: string) => meldungen.push(text))();
+    abfangen(
+      () => {
+        throw new Error('Sofort.');
+      },
+      (text: string) => meldungen.push(text),
+    )();
+    abfangen(
+      () => Promise.reject(new Error('')),
+      (text: string) => meldungen.push(text),
+    )();
+    abfangen(
+      async () => 'gut',
+      (text: string) => meldungen.push(text),
+    )();
     await new Promise((r) => setTimeout(r, 0));
     assert.deepEqual(meldungen, ['Sofort.', 'Das hat nicht geklappt. Bitte noch einmal versuchen.']);
   });
@@ -179,8 +254,17 @@ describe('abfangen: asynchrone Handler ohne Knopf (#1011)', () => {
 
 describe('Kopf einer Werkbank-Seite: Hilfe hinter der Überschrift (#985)', () => {
   it('h1 und Abschnitts-h2 tragen das „?“ direkt hinter dem Titel, die Beschreibung bleibt ohne', () => {
-    const seite = zeichne(h(Kopf, { titel: 'Eingangsordner', hilfe: 'werkbank.eingangsordner' }, h('p', { className: 'leise' }, 'Jede fertige Datei wird eine Post.')));
-    assert.match(seite, /<h1>Eingangsordner <a class="hilfesymbol"[^>]*><span aria-hidden="true">\?<\/span><\/a><\/h1><p class="leise">Jede fertige Datei wird eine Post\.<\/p>/);
+    const seite = zeichne(
+      h(
+        Kopf,
+        { titel: 'Eingangsordner', hilfe: 'werkbank.eingangsordner' },
+        h('p', { className: 'leise' }, 'Jede fertige Datei wird eine Post.'),
+      ),
+    );
+    assert.match(
+      seite,
+      /<h1>Eingangsordner <a class="hilfesymbol"[^>]*><span aria-hidden="true">\?<\/span><\/a><\/h1><p class="leise">Jede fertige Datei wird eine Post\.<\/p>/,
+    );
     const abschnitt = zeichne(h(Kopf, { titel: 'Wartungsmodus', abschnitt: true, id: 'wartungsmodus', hilfe: 'werkbank.wartungsmodus' }));
     assert.match(abschnitt, /<div class="teilkopf" id="wartungsmodus"><h2>Wartungsmodus <a class="hilfesymbol"/);
     assert.match(zeichne(h(Kopf, { titel: 'Region' })), /<h1>Region<\/h1>/, 'ohne hilfe kein „?“');

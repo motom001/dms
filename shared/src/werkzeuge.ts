@@ -22,7 +22,11 @@ export interface Werkzeuge {
 /** Ein Werkzeug, wie die Werkbank es nennt: Kennung für die Texte und die Programme, die dazu gehören. */
 export type WerkzeugArt = 'poppler' | 'qpdf' | 'schriften';
 /** Programme bzw. bei den Schriften die Alpine-Pakete, die dazugehören. */
-export const WERKZEUG_PROGRAMME: Readonly<Record<WerkzeugArt, readonly string[]>> = { poppler: ['pdftotext', 'pdftoppm'], qpdf: ['qpdf'], schriften: ['font-liberation', 'font-dejavu'] };
+export const WERKZEUG_PROGRAMME: Readonly<Record<WerkzeugArt, readonly string[]>> = {
+  poppler: ['pdftotext', 'pdftoppm'],
+  qpdf: ['qpdf'],
+  schriften: ['font-liberation', 'font-dejavu'],
+};
 
 /** Welche Werkzeuge fehlen – in fester Reihenfolge; leer, wenn alles da ist oder noch nichts geprüft wurde. */
 export function fehlendeWerkzeuge(w: Werkzeuge | null | undefined): WerkzeugArt[] {

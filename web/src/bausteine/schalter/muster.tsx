@@ -27,7 +27,12 @@ export function SchalterMuster() {
   return (
     <div className={s.raster}>
       <Karte zustand="an" titel={t('oberflaeche.muster.schalter.an')}>
-        <Schalter an={an} setze={setAn} beschriftung={t('oberflaeche.muster.schalter.webdav')} hinweis={t('oberflaeche.muster.schalter.webdav.hinweis')} />
+        <Schalter
+          an={an}
+          setze={setAn}
+          beschriftung={t('oberflaeche.muster.schalter.webdav')}
+          hinweis={t('oberflaeche.muster.schalter.webdav.hinweis')}
+        />
       </Karte>
       <Karte zustand="aus" titel={t('oberflaeche.muster.schalter.aus')}>
         <Schalter an={aus} setze={setAus} beschriftung={t('oberflaeche.muster.schalter.eingang')} />
@@ -45,8 +50,14 @@ export function SchalterMuster() {
         <p className="leise klein">{t('oberflaeche.muster.schalter.regel.text')}</p>
       </Karte>
       <Karte zustand="ausprobieren" titel={t('oberflaeche.muster.knopf.zustand.ausprobieren')}>
-        <Schalter an={false} beschriftung={t('oberflaeche.muster.schalter.fehler')}
-          setze={async () => { await warte(800); throw new Error(t('oberflaeche.muster.knopf.ergebnis.fehler')); }} />
+        <Schalter
+          an={false}
+          beschriftung={t('oberflaeche.muster.schalter.fehler')}
+          setze={async () => {
+            await warte(800);
+            throw new Error(t('oberflaeche.muster.knopf.ergebnis.fehler'));
+          }}
+        />
       </Karte>
     </div>
   );

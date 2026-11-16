@@ -14,7 +14,9 @@ let anteil = 1;
 export const zwischenspeicherAnteil = () => anteil;
 
 /** Beim Start von Ablago: so viele Prozesse teilen sich die Grenzen. */
-export function teileZwischenspeicher(prozesse: number) { anteil = 1 / Math.max(1, Math.floor(prozesse)); }
+export function teileZwischenspeicher(prozesse: number) {
+  anteil = 1 / Math.max(1, Math.floor(prozesse));
+}
 
 /** Grenze in Bytes bzw. Einträgen für diesen Prozess, mindestens `mindestens`. */
 export const anteilVon = (voll: number, mindestens = 1) => Math.max(mindestens, Math.floor(voll * anteil));

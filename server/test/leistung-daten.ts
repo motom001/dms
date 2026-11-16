@@ -28,18 +28,21 @@ export interface LeistungsOptionen {
   log?: (m: string) => void;
 }
 
-const WOERTER = ('Rechnung Vertrag Versicherung Kündigung Beitrag Zahlung Betrag Euro Kunde Nummer Datum Frist Laufzeit '
-  + 'Stadtwerke Strom Gas Wasser Heizung Wartung Termin Auftrag Angebot Bestellung Lieferung Garantie Gewährleistung '
-  + 'Steuer Finanzamt Bescheid Erklärung Konto Bank Überweisung Lastschrift Mandat Miete Nebenkosten Abrechnung '
-  + 'Arzt Praxis Befund Krankenkasse Rezept Schule Zeugnis Anmeldung Auto Kennzeichen Werkstatt Inspektion '
-  + 'und der die das mit für von im auf ist wird werden bitte freundlichen Grüßen Sehr geehrte Damen Herren').split(' ');
+const WOERTER = (
+  'Rechnung Vertrag Versicherung Kündigung Beitrag Zahlung Betrag Euro Kunde Nummer Datum Frist Laufzeit ' +
+  'Stadtwerke Strom Gas Wasser Heizung Wartung Termin Auftrag Angebot Bestellung Lieferung Garantie Gewährleistung ' +
+  'Steuer Finanzamt Bescheid Erklärung Konto Bank Überweisung Lastschrift Mandat Miete Nebenkosten Abrechnung ' +
+  'Arzt Praxis Befund Krankenkasse Rezept Schule Zeugnis Anmeldung Auto Kennzeichen Werkstatt Inspektion ' +
+  'und der die das mit für von im auf ist wird werden bitte freundlichen Grüßen Sehr geehrte Damen Herren'
+).split(' ');
 
 function text(z: Zufall, bytes: number): string {
   const teile: string[] = [];
   let n = 0;
   while (n < bytes) {
     const w = z.eins(WOERTER) + (z.chance(0.1) ? ` ${z.int(100000)}` : '') + (z.chance(0.08) ? '.\n' : ' ');
-    teile.push(w); n += Buffer.byteLength(w);
+    teile.push(w);
+    n += Buffer.byteLength(w);
   }
   return teile.join('');
 }
@@ -84,7 +87,8 @@ export async function baueLeistungsdaten(sql: postgres.Sql, dateien: Dateispeich
   const z = new Zufall(`${o.startwert}:dokumente`);
   t0 = Date.now();
   let paket: Array<[string, string, string, string, number, string, string]> = [];
-  let anzahl = 0, bytes = 0;
+  let anzahl = 0,
+    bytes = 0;
   const schreibe = async () => {
     if (!paket.length) return;
     await sql`
@@ -104,7 +108,8 @@ export async function baueLeistungsdaten(sql: postgres.Sql, dateien: Dateispeich
       const h = createHash('md5').update(`${o.startwert}:${m.id}:${i}`).digest('hex');
       const id = `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`;
       paket.push([id, m.id as string, reg, `Dokument ${anzahl + 1}.pdf`, datei.groesse, datei.sha, t]);
-      anzahl++; bytes += t.length;
+      anzahl++;
+      bytes += t.length;
       if (paket.length >= 300) await schreibe();
     }
   }

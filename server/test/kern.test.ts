@@ -14,10 +14,23 @@ import { paketSpeicher, setzePaketSpeicher } from '../src/pakete/index';
 import { eigeneDatenbank } from './hilfe-db';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
-const paket = (id: string): InstalliertesPaket => ({
-  id, name: id, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'Lena', github: 'lena' }, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() },
-  installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {},
-}) as InstalliertesPaket;
+const paket = (id: string): InstalliertesPaket =>
+  ({
+    id,
+    name: id,
+    version: '1.0.0',
+    beschreibung: '',
+    lizenz: 'MIT',
+    autor: { name: 'Lena', github: 'lena' },
+    herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() },
+    installiert: new Date().toISOString(),
+    installiertVon: null,
+    aktualisiert: null,
+    aktualisiertVon: null,
+    typen: {},
+    sichten: {},
+    abhaengigkeiten: {},
+  }) as InstalliertesPaket;
 
 describe('Kern (#961)', () => {
   it('kennt seine Transaktion; „danach“ läuft erst nach dem Speichern, beim Zurückrollen nie', async () => {
@@ -32,7 +45,13 @@ describe('Kern (#961)', () => {
       k.danach(() => spur.push('danach'));
       spur.push('drin');
     });
-    await assert.rejects(k.inTransaktion(async () => { k.danach(() => spur.push('nie')); throw new Error('weg'); }), /weg/);
+    await assert.rejects(
+      k.inTransaktion(async () => {
+        k.danach(() => spur.push('nie'));
+        throw new Error('weg');
+      }),
+      /weg/,
+    );
     assert.deepEqual(spur, ['drin', 'danach']);
   });
 
@@ -49,14 +68,18 @@ describe('Kern (#961)', () => {
     const d = new Dienst(repo, speicherDateien(), {});
     const vorher = await d.systemausstattung.sicherstellen();
     const spur: string[] = [];
-    const neu = new Dienst(new Proxy(repo, {
-      get(ziel, prop, e) {
-        const w = Reflect.get(ziel, prop, e);
-        if (typeof w !== 'function' || typeof prop !== 'string') return w;
-        if (/^(lege|aendere|setze|schreibe|loesche)/.test(prop)) spur.push(prop);
-        return w.bind(ziel);
-      },
-    }), speicherDateien(), {});
+    const neu = new Dienst(
+      new Proxy(repo, {
+        get(ziel, prop, e) {
+          const w = Reflect.get(ziel, prop, e);
+          if (typeof w !== 'function' || typeof prop !== 'string') return w;
+          if (/^(lege|aendere|setze|schreibe|loesche)/.test(prop)) spur.push(prop);
+          return w.bind(ziel);
+        },
+      }),
+      speicherDateien(),
+      {},
+    );
     const anlegen = mock.method(neu.systemausstattung, 'anlegen');
     const s = await neu.kern.system();
     assert.equal(s.benutzer.id, vorher.benutzer.id);
@@ -72,13 +95,21 @@ describe('Kern (#961)', () => {
     const spur: string[] = [];
     const a = d.systemausstattung as unknown as { schritte: Record<string, Record<string, (...x: unknown[]) => Promise<unknown>>> };
     for (const [bereich, schritte] of Object.entries(a.schritte)) {
-      for (const [name, f] of Object.entries(schritte)) schritte[name] = async (...x: unknown[]) => { spur.push(`${bereich}.${name}`); return f(...x); };
+      for (const [name, f] of Object.entries(schritte))
+        schritte[name] = async (...x: unknown[]) => {
+          spur.push(`${bereich}.${name}`);
+          return f(...x);
+        };
     }
     const [x, y] = await Promise.all([d.kern.system(), d.kern.system()]);
     assert.equal(x.rolle.id, y.rolle.id);
     assert.deepEqual(spur, [
-      'mappentypen.sichereSystemtypen', 'sichten.sichtFuerTyp', 'sichten.sichtFuerTyp', 'sichten.sichtFuerTyp',
-      'post.sicherePostSichten', 'sichten.sichereFavoritenSicht',
+      'mappentypen.sichereSystemtypen',
+      'sichten.sichtFuerTyp',
+      'sichten.sichtFuerTyp',
+      'sichten.sichtFuerTyp',
+      'post.sicherePostSichten',
+      'sichten.sichereFavoritenSicht',
     ]);
     // Die eigenen Ansichten der Systemtypen gibt es; ein zweites Sicherstellen legt keine neuen an.
     const sichten = (await d.sichtenVerwaltung.listeSichten()).length;
@@ -93,7 +124,10 @@ describe('Kern (#961)', () => {
     const s = await d.systemausstattung.sicherstellen();
     await d.kern.repo.loescheSicht(s.benutzer.id);
     await d.systemausstattung.sicherstellen();
-    assert.equal((await d.sichtenVerwaltung.listeSichten()).some((x) => x.id === s.benutzer.id), false);
+    assert.equal(
+      (await d.sichtenVerwaltung.listeSichten()).some((x) => x.id === s.benutzer.id),
+      false,
+    );
     // In einer Transaktion nachgeschlagen: nicht gemerkt (sie könnte zurückgerollt werden).
     const frisch = new Dienst(d.kern.repo, speicherDateien(), {});
     await frisch.kern.inTransaktion(() => frisch.kern.system());
@@ -102,22 +136,36 @@ describe('Kern (#961)', () => {
     assert.ok((frisch.kern as unknown as { systemIds?: unknown }).systemIds);
   });
 
-  it('Pakete schreiben in einer Transaktion des Kerns in deren Repo und rollen mit zurück (PostgreSQL)', { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' }, async () => {
-    const db = await eigeneDatenbank('kern');
-    const { pgRepo } = await import('../src/repo-pg');
-    const d = new Dienst(pgRepo(db.sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const k = d.kern;
-    await assert.rejects(k.inTransaktion(async () => {
-      await k.repo.speicherePaket(paket('weg'));
-      assert.ok((await k.repo.listePakete()).some((p) => p.id === 'weg'), 'in der Transaktion sichtbar');
-      throw new Error('zurück');
-    }), /zurück/);
-    assert.equal((await k.repo.listePakete()).some((p) => p.id === 'weg'), false, 'zurückgerollt');
-    await k.inTransaktion(() => k.repo.speicherePaket(paket('bleibt')));
-    assert.ok((await k.repo.listePakete()).some((p) => p.id === 'bleibt'));
-    // Paket-Einstellungen laufen über die Einstellungen des Kerns.
-    await setzePaketSpeicher(k, 'bleibt', { a: '1' });
-    assert.deepEqual(await paketSpeicher(k, 'bleibt'), { a: '1' });
-    await db.ende();
-  });
+  it(
+    'Pakete schreiben in einer Transaktion des Kerns in deren Repo und rollen mit zurück (PostgreSQL)',
+    { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' },
+    async () => {
+      const db = await eigeneDatenbank('kern');
+      const { pgRepo } = await import('../src/repo-pg');
+      const d = new Dienst(pgRepo(db.sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
+      const k = d.kern;
+      await assert.rejects(
+        k.inTransaktion(async () => {
+          await k.repo.speicherePaket(paket('weg'));
+          assert.ok(
+            (await k.repo.listePakete()).some((p) => p.id === 'weg'),
+            'in der Transaktion sichtbar',
+          );
+          throw new Error('zurück');
+        }),
+        /zurück/,
+      );
+      assert.equal(
+        (await k.repo.listePakete()).some((p) => p.id === 'weg'),
+        false,
+        'zurückgerollt',
+      );
+      await k.inTransaktion(() => k.repo.speicherePaket(paket('bleibt')));
+      assert.ok((await k.repo.listePakete()).some((p) => p.id === 'bleibt'));
+      // Paket-Einstellungen laufen über die Einstellungen des Kerns.
+      await setzePaketSpeicher(k, 'bleibt', { a: '1' });
+      assert.deepEqual(await paketSpeicher(k, 'bleibt'), { a: '1' });
+      await db.ende();
+    },
+  );
 });

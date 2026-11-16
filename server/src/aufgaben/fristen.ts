@@ -12,7 +12,18 @@ import { t } from '../sprache';
 import { fingerabdruck, type Haushaltsstand, mitFavoriten, Zaehlerspeicher } from '../zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
 import { type Bundesland, feiertageZwischen } from '../../../shared/src/feiertage';
-import { datumDe, folgetermine, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Termin, type TermineAntwort } from '../../../shared/src/fristen';
+import {
+  datumDe,
+  folgetermine,
+  fristAb,
+  fristEmpfaenger,
+  fristFelder,
+  fristText,
+  istDatum,
+  naechsterTermin,
+  type Termin,
+  type TermineAntwort,
+} from '../../../shared/src/fristen';
 import { zeitraumProblem } from '../../../shared/src/kalender';
 import type { Aufgabe, Feld, Mappe } from '../../../shared/src/model';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
@@ -22,7 +33,10 @@ import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';
 export const NAECHSTER_TERMIN_ERST_TAGE = 31;
 
 /** Stände des Haushalts für den Zwischenspeicher der Termine (#742, #918) – die des Dienstes. */
-export interface FristenStaende { stand: Haushaltsstand; mappenstand: Haushaltsstand }
+export interface FristenStaende {
+  stand: Haushaltsstand;
+  mappenstand: Haushaltsstand;
+}
 
 export class Fristen {
   /** Termine (#528, #725): Zwischenspeicher je Benutzer, Rechte und Zeitraum. */
@@ -30,27 +44,53 @@ export class Fristen {
   /** Termine „nur Favoriten“ (bzw. ein Lesefilter mit Favoriten): am Haushaltsstand (#918). */
   private readonly termineFavSpeicher: Zaehlerspeicher<Termin[]>;
 
-  constructor(private readonly kern: Kern, private readonly teile: AufgabenTeile, private readonly anschluss: AufgabenAnschluss, staende: FristenStaende) {
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: AufgabenTeile,
+    private readonly anschluss: AufgabenAnschluss,
+    staende: FristenStaende,
+  ) {
     this.termineSpeicher = new Zaehlerspeicher<Termin[]>(staende.mappenstand);
     this.termineFavSpeicher = new Zaehlerspeicher<Termin[]>(staende.stand);
   }
 
-  private get repo(): Repo { return this.kern.repo; }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
-  private gueltigkeit() { return this.anschluss.gueltigkeit(); }
-  private siehtOhneEmpfaenger(ich: { id: string; rolle: string }) { return this.teile.ohneEmpfaenger.siehtOhneEmpfaenger(ich); }
-  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.teile.rechte.lesbare(...a); }
-  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) { return this.teile.rechte.pruefeRecht(...a); }
-  private aendereMappe(...a: Parameters<MappenDienst['aendereMappe']>) { return this.teile.mappen.aendereMappe(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inTransaktion(f);
+  }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.anschluss.ereignis(...a);
+  }
+  private gueltigkeit() {
+    return this.anschluss.gueltigkeit();
+  }
+  private siehtOhneEmpfaenger(ich: { id: string; rolle: string }) {
+    return this.teile.ohneEmpfaenger.siehtOhneEmpfaenger(ich);
+  }
+  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) {
+    return this.teile.rechte.lesbare(...a);
+  }
+  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) {
+    return this.teile.rechte.pruefeRecht(...a);
+  }
+  private aendereMappe(...a: Parameters<MappenDienst['aendereMappe']>) {
+    return this.teile.mappen.aendereMappe(...a);
+  }
 
   /**
    * Frist-Aufgaben abgleichen: offene Fristen erledigen sich, sobald das Datum nicht mehr stimmt; „Frist erreicht“
    * melden. Neue Frist-Aufgaben legt seit #712 nur noch die Automatisierung „Datum erreicht“ an.
    * Nach dem Speichern einer Mappe, nach Änderungen am Mappentyp und regelmäßig (täglicher Lauf).
    */
-  async fristenAbgleichen(f: { typId?: string; mappeIds?: string[] } = {}, heute = heuteIn()): Promise<{ angelegt: number; erledigt: number }> {
+  async fristenAbgleichen(
+    f: { typId?: string; mappeIds?: string[] } = {},
+    heute = heuteIn(),
+  ): Promise<{ angelegt: number; erledigt: number }> {
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     let mappen: Mappe[];
     if (f.mappeIds) mappen = await this.repo.holeMappen(f.mappeIds);
@@ -62,7 +102,8 @@ export class Fristen {
     }
     if (!mappen.length) return { angelegt: 0, erledigt: 0 };
     const vorhanden = await this.repo.fristAufgaben(f.mappeIds ?? (f.typId ? mappen.map((m) => m.id) : undefined));
-    const angelegt = 0; let erledigt = 0;
+    const angelegt = 0;
+    let erledigt = 0;
     for (const m of mappen) {
       const typ = typen.get(m.typId);
       if (!typ) continue;
@@ -73,9 +114,23 @@ export class Fristen {
         // Aus einer Automatisierung (Anlass Datum): erledigt sich nur, wenn das Datum nicht mehr stimmt.
         const giltNoch = a.anlass?.art === 'datum' ? !!feld : !!feld?.frist;
         if (giltNoch && wert === a.datum) continue;
-        const grund = !feld ? t('meldungen.dienst.feld-entfernt') : !giltNoch ? t('meldungen.dienst.keine-erinnerung-mehr') : !istDatum(wert) ? t('meldungen.dienst.datum-leer') : wert > (a.datum ?? '') ? t('meldungen.dienst.verschoben-auf', { datumDe: datumDe(wert) }) : t('meldungen.dienst.geaendert-auf', { datumDe: datumDe(wert) });
+        const grund = !feld
+          ? t('meldungen.dienst.feld-entfernt')
+          : !giltNoch
+            ? t('meldungen.dienst.keine-erinnerung-mehr')
+            : !istDatum(wert)
+              ? t('meldungen.dienst.datum-leer')
+              : wert > (a.datum ?? '')
+                ? t('meldungen.dienst.verschoben-auf', { datumDe: datumDe(wert) })
+                : t('meldungen.dienst.geaendert-auf', { datumDe: datumDe(wert) });
         await this.repo.erledigeAufgabe(a.id, null);
-        await this.notiere(m.id, null, 'aufgabe', { text: t('meldungen.dienst.erledigt-3', { grund, text: a.text }), aufgabe: a.id, aufgabenart: 'frist', fuer: a.empfaengerId, aufgabentext: a.text });
+        await this.notiere(m.id, null, 'aufgabe', {
+          text: t('meldungen.dienst.erledigt-3', { grund, text: a.text }),
+          aufgabe: a.id,
+          aufgabenart: 'frist',
+          fuer: a.empfaengerId,
+          aufgabentext: a.text,
+        });
         erledigt++;
       }
       for (const feld of fristFelder(typ)) {
@@ -105,7 +160,9 @@ export class Fristen {
         if (!(await this.repo.merkeFristMeldung({ mappeId: m.id, feld, datum, zeitpunkt }))) return;
         await this.ereignis('frist.erreicht', { mappe: m.id, typ: m.typId, feld, datum, zeitpunkt, empfaenger });
       });
-    } catch (e) { protokoll.modul('ablage').warn('„Frist erreicht“ nicht gemeldet', { mappe: m.id, feld, fehler: (e as Error).message }); }
+    } catch (e) {
+      protokoll.modul('ablage').warn('„Frist erreicht“ nicht gemeldet', { mappe: m.id, feld, fehler: (e as Error).message });
+    }
   }
 
   /**
@@ -135,11 +192,16 @@ export class Fristen {
    * Zwischengespeichert wie die Zahlen der Ansichten (#512): je Benutzer, Rechte und Zeitraum, solange sich
    * am Haushalt nichts ändert (auch Erinnerungen zählen hier), höchstens 5 Minuten, nie über Mitternacht.
    */
-  async termine(z: Zugriff, q: { von?: unknown; bis?: unknown; favoriten?: unknown } = {}, land?: Bundesland | null): Promise<TermineAntwort> {
+  async termine(
+    z: Zugriff,
+    q: { von?: unknown; bis?: unknown; favoriten?: unknown } = {},
+    land?: Bundesland | null,
+  ): Promise<TermineAntwort> {
     const heute = heuteIn();
     const problem = zeitraumProblem(q.von, q.bis);
     if (problem) throw new Fachfehler(422, problem);
-    const von = q.von as string; const bis = q.bis as string;
+    const von = q.von as string;
+    const bis = q.bis as string;
     const nurFavoriten = q.favoriten === true || q.favoriten === '1' || q.favoriten === 'true';
     // #719: Sieht er die Aufgaben ohne Empfänger? Das ändert sich mit der Werkbank, nicht mit dem Haushaltsstand.
     const ohne = await this.siehtOhneEmpfaenger(z.ich);
@@ -147,7 +209,11 @@ export class Fristen {
     const beginn = performance.now();
     // #918: ohne Favoriten am Mappenstand – ein Stern rechnet die Termine nicht neu.
     const speicher = nurFavoriten || mitFavoriten(z.lesen) ? this.termineFavSpeicher : this.termineSpeicher;
-    const r = await speicher.hole(schluessel, async () => ({ wert: await this.sammleTermine(z, heute, von, bis, nurFavoriten), zeitabhaengig: true }), this.gueltigkeit());
+    const r = await speicher.hole(
+      schluessel,
+      async () => ({ wert: await this.sammleTermine(z, heute, von, bis, nurFavoriten), zeitabhaengig: true }),
+      this.gueltigkeit(),
+    );
     const k = kontext.getStore();
     if (k) k.zwischenspeicher = { art: r.art, ms: performance.now() - beginn };
     return { heute, von, bis, eintraege: r.wert, feiertage: feiertageZwischen(von, bis, land) };
@@ -163,7 +229,10 @@ export class Fristen {
    */
   async naechsterTermin(z: Zugriff): Promise<{ termin: Termin | null; ueberfaellig: number }> {
     const heute = heuteIn();
-    const aus = (t: TermineAntwort) => ({ termin: t.eintraege.find((x) => x.datum >= heute) ?? null, ueberfaellig: t.eintraege.filter((x) => x.faellig && x.datum < heute).length });
+    const aus = (t: TermineAntwort) => ({
+      termin: t.eintraege.find((x) => x.datum >= heute) ?? null,
+      ueberfaellig: t.eintraege.filter((x) => x.faellig && x.datum < heute).length,
+    });
     const nah = aus(await this.termine(z, { von: heute, bis: verschiebe(heute, NAECHSTER_TERMIN_ERST_TAGE) }));
     return nah.termin ? nah : aus(await this.termine(z, { von: heute, bis: verschiebe(heute, 365) }));
   }
@@ -174,12 +243,27 @@ export class Fristen {
     const ab = von > heute ? von : heute;
     const erg: Termin[] = [];
     // Schon fällig: eigene offene Aufgaben mit Datum. Überfälliges immer, sonst nur im Zeitraum.
-    const offen = (await this.repo.offeneAufgaben({ benutzerId: ich, admin: ohne })).filter((a) => istDatum(a.datum) && a.datum <= bis && (a.datum < heute || a.datum >= von));
-    const lesbar = await this.lesbare(z, offen.map((a) => a.mappeId));
+    const offen = (await this.repo.offeneAufgaben({ benutzerId: ich, admin: ohne })).filter(
+      (a) => istDatum(a.datum) && a.datum <= bis && (a.datum < heute || a.datum >= von),
+    );
+    const lesbar = await this.lesbare(
+      z,
+      offen.map((a) => a.mappeId),
+    );
     for (const a of offen) {
       if (!lesbar.has(a.mappeId)) continue;
       const art = a.art === 'frist' || a.art === 'erinnerung' ? a.art : 'aufgabe';
-      erg.push({ art, datum: a.datum!, ab: a.erstellt.slice(0, 10), text: a.text, mappeId: a.mappeId, mappeTitel: a.mappeTitel ?? '', typId: a.typId ?? '', faellig: true, feldKey: a.feldKey ?? null });
+      erg.push({
+        art,
+        datum: a.datum!,
+        ab: a.erstellt.slice(0, 10),
+        text: a.text,
+        mappeId: a.mappeId,
+        mappeTitel: a.mappeTitel ?? '',
+        typId: a.typId ?? '',
+        faellig: true,
+        feldKey: a.feldKey ?? null,
+      });
     }
     // Frist-Felder an lesbaren Mappen (#725: „lesen darf“ statt „für mich“), mit künftigen Terminen
     // wiederkehrender Fristen (#528), gerechnet vom eingetragenen Datum.
@@ -190,41 +274,93 @@ export class Fristen {
         const w = m.werte[f.key];
         if (!istDatum(w)) return [];
         const x = w >= ab && w <= bis ? [{ datum: w, folge: false }] : [];
-        return wiederkehrend.includes(f) ? [...x, ...folgetermine(w, f.frist!.wiederholung!, ab, bis).map((d) => ({ datum: d, folge: true }))] : x;
+        return wiederkehrend.includes(f)
+          ? [...x, ...folgetermine(w, f.frist!.wiederholung!, ab, bis).map((d) => ({ datum: d, folge: true }))]
+          : x;
       };
       // Nur Mappen, die im Zeitraum einen Termin haben können (#477, #918: Vorfilter fristtermine, auch für
       // wiederkehrende Fristen), und von ihnen nur Titel und Datumswerte. Entschieden wird hier, mit `termine`.
-      const kandidaten = await this.repo.fristKandidaten(typ.id, felder.map((f) => ({ key: f.key, monate: f.frist!.wiederholung ?? null })), ab, bis);
+      const kandidaten = await this.repo.fristKandidaten(
+        typ.id,
+        felder.map((f) => ({ key: f.key, monate: f.frist!.wiederholung ?? null })),
+        ab,
+        bis,
+      );
       let passend = kandidaten.filter((m) => felder.some((f) => termine(m, f).length));
-      if (nurFavoriten && passend.length) { const fav = await this.repo.favoritenVon(ich, passend.map((m) => m.id)); passend = passend.filter((m) => fav.has(m.id)); }
+      if (nurFavoriten && passend.length) {
+        const fav = await this.repo.favoritenVon(
+          ich,
+          passend.map((m) => m.id),
+        );
+        passend = passend.filter((m) => fav.has(m.id));
+      }
       if (!passend.length) continue;
-      const ok = await this.lesbare(z, passend.map((m) => m.id));
+      const ok = await this.lesbare(
+        z,
+        passend.map((m) => m.id),
+      );
       const schon = new Set(erg.filter((x) => x.faellig && x.feldKey).map((x) => `${x.mappeId}|${x.feldKey}|${x.datum}`));
       for (const m of passend) {
         if (!ok.has(m.id)) continue;
         for (const f of felder) {
           for (const t of termine(m, f)) {
             if (schon.has(`${m.id}|${f.key}|${t.datum}`)) continue;
-            erg.push({ art: 'frist', datum: t.datum, ab: t.datum, text: fristText(f.frist!, f, t.datum, m.titel ?? ''), mappeId: m.id, mappeTitel: m.titel ?? '', typId: m.typId, faellig: false, feldKey: f.key, ...(t.folge ? { folgetermin: true } : {}) });
+            erg.push({
+              art: 'frist',
+              datum: t.datum,
+              ab: t.datum,
+              text: fristText(f.frist!, f, t.datum, m.titel ?? ''),
+              mappeId: m.id,
+              mappeTitel: m.titel ?? '',
+              typId: m.typId,
+              faellig: false,
+              feldKey: f.key,
+              ...(t.folge ? { folgetermin: true } : {}),
+            });
           }
         }
       }
     }
     // Eigene geplante Abläufe (#1044, früher freie Erinnerungen): an mich bzw. ohne gefragten Empfänger von mir angelegt.
     const erinnerungen = (await this.repo.ablaeufe({ bis })).filter((e) => e.datum >= von && (e.empfaengerId ?? e.erstelltVon) === ich);
-    const ok = await this.lesbare(z, erinnerungen.map((e) => e.mappeId));
+    const ok = await this.lesbare(
+      z,
+      erinnerungen.map((e) => e.mappeId),
+    );
     for (const e of erinnerungen) {
       if (!ok.has(e.mappeId)) continue;
-      erg.push({ art: 'erinnerung', datum: e.datum, ab: e.datum, text: e.text, mappeId: e.mappeId, mappeTitel: e.mappeTitel ?? '', typId: e.typId ?? '', faellig: false, erinnerungId: e.id });
+      erg.push({
+        art: 'erinnerung',
+        datum: e.datum,
+        ab: e.datum,
+        text: e.text,
+        mappeId: e.mappeId,
+        mappeTitel: e.mappeTitel ?? '',
+        typId: e.typId ?? '',
+        faellig: false,
+        erinnerungId: e.id,
+      });
     }
     let liste = erg;
-    if (nurFavoriten) { const fav = await this.repo.favoritenVon(ich, [...new Set(erg.map((x) => x.mappeId))]); liste = erg.filter((x) => fav.has(x.mappeId)); }
+    if (nurFavoriten) {
+      const fav = await this.repo.favoritenVon(ich, [...new Set(erg.map((x) => x.mappeId))]);
+      liste = erg.filter((x) => fav.has(x.mappeId));
+    }
     // Eindeutige Reihenfolge (#918): bei gleichem Datum und Titel fällige Aufgaben, Fristen, Erinnerungen, dann nach
     // Mappe, Feld und Erinnerung – unabhängig davon, in welcher Reihenfolge die Datenbank liefert.
     const rang = (x: Termin) => (x.faellig ? 0 : x.art === 'frist' ? 1 : 2);
     const vgl = (a?: string | null, b?: string | null) => ((a ?? '') < (b ?? '') ? -1 : (a ?? '') > (b ?? '') ? 1 : 0);
-    liste.sort((a, b) => a.datum.localeCompare(b.datum) || a.mappeTitel.localeCompare(b.mappeTitel, 'de') || rang(a) - rang(b)
-      || vgl(a.mappeId, b.mappeId) || vgl(a.feldKey, b.feldKey) || vgl(a.erinnerungId, b.erinnerungId) || vgl(a.text, b.text) || vgl(a.ab, b.ab));
+    liste.sort(
+      (a, b) =>
+        a.datum.localeCompare(b.datum) ||
+        a.mappeTitel.localeCompare(b.mappeTitel, 'de') ||
+        rang(a) - rang(b) ||
+        vgl(a.mappeId, b.mappeId) ||
+        vgl(a.feldKey, b.feldKey) ||
+        vgl(a.erinnerungId, b.erinnerungId) ||
+        vgl(a.text, b.text) ||
+        vgl(a.ab, b.ab),
+    );
     return liste;
   }
 

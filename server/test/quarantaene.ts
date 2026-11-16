@@ -25,7 +25,11 @@ export interface QuarantaeneEintrag {
   grund: string;
 }
 
-export interface TapErgebnis { name: string; ok: boolean; kinder: TapErgebnis[] }
+export interface TapErgebnis {
+  name: string;
+  ok: boolean;
+  kinder: TapErgebnis[];
+}
 
 const ZEILE = /^( *)(not ok|ok) \d+(?: - (.*))?$/;
 
@@ -36,7 +40,11 @@ export function liesTap(text: string): TapErgebnis[] {
     const m = ZEILE.exec(zeile.replace(/\r$/, ''));
     if (!m) continue;
     const ebene = Math.floor(m[1].length / 4);
-    const name = (m[3] ?? '').replace(/ (?<!\\)# (SKIP|TODO)\b.*$/i, '').replace(/\\#/g, '#').replace(/\\\\/g, '\\').trim();
+    const name = (m[3] ?? '')
+      .replace(/ (?<!\\)# (SKIP|TODO)\b.*$/i, '')
+      .replace(/\\#/g, '#')
+      .replace(/\\\\/g, '\\')
+      .trim();
     const knoten: TapErgebnis = { name, ok: m[2] === 'ok', kinder: offen.get(ebene + 1) ?? [] };
     offen.delete(ebene + 1);
     offen.set(ebene, [...(offen.get(ebene) ?? []), knoten]);
@@ -62,18 +70,24 @@ export function werteAus(baum: TapErgebnis[], liste: QuarantaeneEintrag[], heute
     const q = inQuarantaene ?? eigen;
     const weg = [...pfad, k.name];
     if (!k.ok && !k.kinder.some((x) => !x.ok)) {
-      if (q) gefunden.set(q, false); else echt.push(weg.join(' › '));
+      if (q) gefunden.set(q, false);
+      else echt.push(weg.join(' › '));
     }
     for (const x of k.kinder) gehe(x, weg, q);
   };
   for (const k of baum) gehe(k, [], null);
   const quarantaene = liste.map((e) => ({
     ...e,
-    ergebnis: !gefunden.has(e.name) ? 'nicht gefunden' as const : gefunden.get(e.name) ? 'bestanden' as const : 'fehlgeschlagen' as const,
+    ergebnis: !gefunden.has(e.name)
+      ? ('nicht gefunden' as const)
+      : gefunden.get(e.name)
+        ? ('bestanden' as const)
+        : ('fehlgeschlagen' as const),
     ueberfaellig: heute > e.faellig,
   }));
   // Scheiterte der Lauf, ohne dass ein Fehlschlag im Protokoll steht (Absturz, Abbruch), zählt das als echter Fehler.
-  if (exitCode !== 0 && !echt.length && !quarantaene.some((q) => q.ergebnis === 'fehlgeschlagen')) echt.push(`Testlauf mit Exit-Code ${exitCode} beendet, ohne Fehlschlag im Protokoll`);
+  if (exitCode !== 0 && !echt.length && !quarantaene.some((q) => q.ergebnis === 'fehlgeschlagen'))
+    echt.push(`Testlauf mit Exit-Code ${exitCode} beendet, ohne Fehlschlag im Protokoll`);
   return { echt, quarantaene, scheitert: echt.length > 0 || quarantaene.some((q) => q.ueberfaellig) };
 }
 
@@ -83,9 +97,13 @@ export function zusammenfassung(a: Auswertung): string {
   if (!a.quarantaene.length) z.push('Keine Tests in Quarantäne.');
   else {
     z.push('| Test | Datei | Issue | fällig | Ergebnis |', '|---|---|---|---|---|');
-    for (const q of a.quarantaene) z.push(`| ${q.name.replace(/[\\|]/g, (x) => `\\${x}`)} | ${q.datei} | #${q.issue} | ${q.faellig}${q.ueberfaellig ? ' **überfällig**' : ''} | ${q.ergebnis} |`);
+    for (const q of a.quarantaene)
+      z.push(
+        `| ${q.name.replace(/[\\|]/g, (x) => `\\${x}`)} | ${q.datei} | #${q.issue} | ${q.faellig}${q.ueberfaellig ? ' **überfällig**' : ''} | ${q.ergebnis} |`,
+      );
   }
-  if (a.echt.length) z.push('', `**${a.echt.length} Fehlschlag/Fehlschläge außerhalb der Quarantäne:**`, '', ...a.echt.map((e) => `- ${e}`));
+  if (a.echt.length)
+    z.push('', `**${a.echt.length} Fehlschlag/Fehlschläge außerhalb der Quarantäne:**`, '', ...a.echt.map((e) => `- ${e}`));
   return `${z.join('\n')}\n`;
 }
 
@@ -100,9 +118,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   console.log(text);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, text);
   for (const q of a.quarantaene) {
-    if (q.ueberfaellig) console.log(`::error title=Quarantäne überfällig::„${q.name}“ (${q.datei}, #${q.issue}) steht seit ${q.faellig} zu lange in der Quarantäne – beheben oder die Fälligkeit bewusst verlängern (server/test/quarantaene.json).`);
-    else if (q.ergebnis === 'fehlgeschlagen') console.log(`::warning title=Quarantäne::„${q.name}“ (${q.datei}, #${q.issue}) ist fehlgeschlagen – zählt bis ${q.faellig} nicht.`);
-    else if (q.ergebnis === 'nicht gefunden') console.log(`::warning title=Quarantäne::„${q.name}“ (${q.datei}) kam im Lauf nicht vor – Name geändert oder Eintrag überflüssig?`);
+    if (q.ueberfaellig)
+      console.log(
+        `::error title=Quarantäne überfällig::„${q.name}“ (${q.datei}, #${q.issue}) steht seit ${q.faellig} zu lange in der Quarantäne – beheben oder die Fälligkeit bewusst verlängern (server/test/quarantaene.json).`,
+      );
+    else if (q.ergebnis === 'fehlgeschlagen')
+      console.log(`::warning title=Quarantäne::„${q.name}“ (${q.datei}, #${q.issue}) ist fehlgeschlagen – zählt bis ${q.faellig} nicht.`);
+    else if (q.ergebnis === 'nicht gefunden')
+      console.log(`::warning title=Quarantäne::„${q.name}“ (${q.datei}) kam im Lauf nicht vor – Name geändert oder Eintrag überflüssig?`);
   }
   process.exit(a.scheitert ? 1 : 0);
 }

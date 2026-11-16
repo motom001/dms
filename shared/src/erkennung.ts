@@ -62,7 +62,17 @@ export interface FeldErkennung {
 export const ERKENNUNG_HINWEIS_MAX = 300;
 
 /** Feldarten, die sich für die Erkennung eignen (Passwörter nie, Ja/Nein und formatierter Text nicht). */
-export const ERKENNUNG_FELDTYPEN: readonly Feldtyp[] = ['text', 'langtext', 'zahl', 'betrag', 'datum', 'auswahl', 'referenz', 'zeitraum', 'prozent'];
+export const ERKENNUNG_FELDTYPEN: readonly Feldtyp[] = [
+  'text',
+  'langtext',
+  'zahl',
+  'betrag',
+  'datum',
+  'auswahl',
+  'referenz',
+  'zeitraum',
+  'prozent',
+];
 
 /** Welche Arten zu welcher Feldart passen. */
 export function artenFuer(typ: Feldtyp): Erkennungsart[] {
@@ -73,7 +83,10 @@ export function artenFuer(typ: Feldtyp): Erkennungsart[] {
   if (typ === 'zahl') return ['nummer', 'plz', 'hausnummer', 'betrag'];
   if (typ === 'referenz') return ['verweis'];
   if (typ === 'auswahl') return ['auswahl'];
-  if (typ === 'text' || typ === 'langtext') return (Object.keys(ERKENNUNGSARTEN) as Erkennungsart[]).filter((a) => !['datum', 'betrag', 'verweis', 'auswahl', 'zeitraum', 'prozent'].includes(a));
+  if (typ === 'text' || typ === 'langtext')
+    return (Object.keys(ERKENNUNGSARTEN) as Erkennungsart[]).filter(
+      (a) => !['datum', 'betrag', 'verweis', 'auswahl', 'zeitraum', 'prozent'].includes(a),
+    );
   return [];
 }
 
@@ -93,9 +106,17 @@ const klein = (s: string) => s.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g,
 
 /** Art eines Felds: die eingestellte, sonst geschätzt aus Feldart, Kennung und Bezeichnung; null = keine. */
 /** Art, die ein Feldformat vorgibt (#535). */
-const FORMAT_ART: Partial<Record<Feldformat, Erkennungsart>> = { email: 'email', telefon: 'telefon', internetseite: 'internet', iban: 'iban', plz: 'plz' };
+const FORMAT_ART: Partial<Record<Feldformat, Erkennungsart>> = {
+  email: 'email',
+  telefon: 'telefon',
+  internetseite: 'internet',
+  iban: 'iban',
+  plz: 'plz',
+};
 
-export function artVon(f: Pick<Feld, 'key' | 'label' | 'typ'> & { erkennung?: FeldErkennung | null; format?: Feld['format'] }): Erkennungsart | null {
+export function artVon(
+  f: Pick<Feld, 'key' | 'label' | 'typ'> & { erkennung?: FeldErkennung | null; format?: Feld['format'] },
+): Erkennungsart | null {
   if (f.erkennung?.art && artenFuer(f.typ).includes(f.erkennung.art)) return f.erkennung.art;
   if (f.typ === 'datum') return 'datum';
   if (f.typ === 'betrag') return 'betrag';
@@ -130,7 +151,15 @@ export function artVon(f: Pick<Feld, 'key' | 'label' | 'typ'> & { erkennung?: Fe
 
 /** Arten, an denen sich eine Mappe im Text wiedererkennen lässt, mit ihrem Gewicht. */
 const MERKMAL: Partial<Record<Erkennungsart, 'stark' | 'schwach'>> = {
-  iban: 'stark', ustid: 'stark', nummer: 'stark', email: 'stark', internet: 'stark', telefon: 'stark', mobil: 'stark', fax: 'stark', name: 'schwach',
+  iban: 'stark',
+  ustid: 'stark',
+  nummer: 'stark',
+  email: 'stark',
+  internet: 'stark',
+  telefon: 'stark',
+  mobil: 'stark',
+  fax: 'stark',
+  name: 'schwach',
 };
 /** Arten, die eine Mappe als möglichen Absender ausweisen (Organisation, Niederlassung, Person). */
 const ABSENDER_ARTEN: Erkennungsart[] = ['name', 'iban', 'ustid', 'email', 'internet', 'telefon', 'mobil', 'fax'];
@@ -155,14 +184,20 @@ export function wiederfindenVorgabe(f: Pick<Feld, 'key' | 'label' | 'typ' | 'for
   return !!a && !!MERKMAL[a];
 }
 /** Art, mit der ein Wiederfinden-Feld im Text gesucht wird: die erkannte Merkmalsart, sonst als Nummer. */
-const wiederfindenArt = (f: Feld): Erkennungsart => { const a = artVon(f); return a && MERKMAL[a] ? a : 'nummer'; };
+const wiederfindenArt = (f: Feld): Erkennungsart => {
+  const a = artVon(f);
+  return a && MERKMAL[a] ? a : 'nummer';
+};
 
 /** Felder eines Typs, über die sich seine Mappen im Text wiederfinden lassen (Haken „Zum Wiederfinden nutzen“, ohne Verweise). */
 export function merkmalsfelder(t: Pick<Mappentyp, 'felder'>): Array<{ feld: Feld; art: Erkennungsart }> {
-  return t.felder.filter((f) => f.wiederfinden && (f.typ === 'text' || f.typ === 'zahl')).map((f) => ({ feld: f, art: wiederfindenArt(f) }));
+  return t.felder
+    .filter((f) => f.wiederfinden && (f.typ === 'text' || f.typ === 'zahl'))
+    .map((f) => ({ feld: f, art: wiederfindenArt(f) }));
 }
 /** Ist ein Typ ein möglicher Absender? Er hat markierte Felder mit Name oder Kontaktangaben. */
-export const istAbsenderTyp = (t: Pick<Mappentyp, 'felder' | 'system'>) => !t.system && merkmalsfelder(t).some((x) => ABSENDER_ARTEN.includes(x.art));
+export const istAbsenderTyp = (t: Pick<Mappentyp, 'felder' | 'system'>) =>
+  !t.system && merkmalsfelder(t).some((x) => ABSENDER_ARTEN.includes(x.art));
 
 /* ---------- Einstellung am Mappentyp (#391) ---------- */
 
@@ -172,7 +207,12 @@ export const istAbsenderTyp = (t: Pick<Mappentyp, 'felder' | 'system'>) => !t.sy
  * ein Paket mit dms:erkennen; ohne Angabe gilt die Wahl aus der Werkbank. abfluss: Für ein Paket mit Netzzugriff
  * hat der Administrator den Hinweis auf den Datenabfluss ausdrücklich bestätigt.
  */
-export interface AusDokument { aus?: boolean; beschriftung?: string; engine?: string; abfluss?: boolean }
+export interface AusDokument {
+  aus?: boolean;
+  beschriftung?: string;
+  engine?: string;
+  abfluss?: boolean;
+}
 export const AUS_DOKUMENT_STANDARD = t('gemeinsam.erkennung.aus-dokument-ausfuellen');
 export const BESCHRIFTUNG_MAX = 40;
 /** Die eingebaute Erkennung (Muster, #336/#391) – Standard. */
@@ -183,7 +223,12 @@ export function liesAusDokument(v: unknown): AusDokument | null {
   const o = v as Record<string, unknown>;
   const b = typeof o.beschriftung === 'string' ? o.beschriftung.trim().slice(0, BESCHRIFTUNG_MAX) : '';
   const engine = typeof o.engine === 'string' && ENGINE.test(o.engine) ? o.engine : '';
-  const e: AusDokument = { ...(o.aus === true ? { aus: true } : {}), ...(b ? { beschriftung: b } : {}), ...(engine ? { engine } : {}), ...(engine && engine !== ENGINE_EINGEBAUT && o.abfluss === true ? { abfluss: true } : {}) };
+  const e: AusDokument = {
+    ...(o.aus === true ? { aus: true } : {}),
+    ...(b ? { beschriftung: b } : {}),
+    ...(engine ? { engine } : {}),
+    ...(engine && engine !== ENGINE_EINGEBAUT && o.abfluss === true ? { abfluss: true } : {}),
+  };
   return Object.keys(e).length ? e : null;
 }
 
@@ -208,14 +253,31 @@ export function ausDokumentKnopf(t: Pick<Mappentyp, 'system'> & { ausDokument?: 
 /* ---------- Angaben aus dem Text ---------- */
 
 export type Sicherheit = 'hoch' | 'mittel' | 'niedrig';
-export interface Fund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
-export interface Nummernfund extends Fund { label: string }
+export interface Fund<T = string> {
+  wert: T;
+  sicherheit: Sicherheit;
+  fundstelle: string;
+}
+export interface Nummernfund extends Fund {
+  label: string;
+}
 export interface Briefkopf {
-  name?: string; strasse?: string; hausnummer?: string; plz?: string; ort?: string; fundstelle: string;
+  name?: string;
+  strasse?: string;
+  hausnummer?: string;
+  plz?: string;
+  ort?: string;
+  fundstelle: string;
   /** Aus der Absenderzeile über dem Anschriftfeld (#1043): Hier steht sicher der Aussteller, nicht der Empfänger. */
   zeile?: true;
 }
-export interface Personfund { vorname?: string; nachname?: string; funktion?: string; organisation?: string; fundstelle: string }
+export interface Personfund {
+  vorname?: string;
+  nachname?: string;
+  funktion?: string;
+  organisation?: string;
+  fundstelle: string;
+}
 
 /** Was die Muster im Text finden. */
 export interface Angaben {
@@ -236,21 +298,132 @@ export interface Angaben {
 }
 
 const MONATE = ['januar', 'februar', 'maerz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
-const FREIE_MAILDIENSTE = new Set(['gmail.com', 'googlemail.com', 'gmx.de', 'gmx.net', 'web.de', 't-online.de', 'outlook.com', 'outlook.de', 'hotmail.com', 'hotmail.de', 'yahoo.com', 'yahoo.de', 'icloud.com', 'me.com', 'posteo.de', 'mailbox.org', 'freenet.de', 'aol.com', 'live.de', 'live.com', 'protonmail.com', 'proton.me', 'example.org', 'example.com', 'example.net']);
-const FIRMA = /\b(GmbH|AG|KG|OHG|e\.\s?V\.|eV|UG|GbR|mbH|SE|eG|KGaA|PartG|Ltd\.?|Inc\.?|Stadtwerke|Sparkasse|Volksbank|Raiffeisenbank|Bank|Versicherung\w*|Finanzamt|Amt|Landratsamt|Rathaus|Stadtverwaltung|Gemeinde|Praxis|Kanzlei|Krankenkasse|AOK|Klinik\w*|Verwaltung|Hausverwaltung|Genossenschaft|Verein|Werke)\b/;
-const FUNKTION = /(?:^|[\s(])[\wäöüÄÖÜß-]*(gesch[äa]ftsf[üu]hrer|inhaber|leiter|berater|manager|meister|sachbearbeiter|assisten[tz]|direktor|ingenieur|referent|vorstand|rechtsanw[äa]lt|steuerberater|architekt|techniker|elektriker|installateur|prokurist|verwalter|[äa]rzt|vertrieb|partner|ceo|cto|cfo|head of|sales|account)[\wäöüß]*/i;
-const STRASSE = /^(.{2,50}?(?:stra(?:ß|ss)e|str\.|weg|allee|platz|gasse|ring|damm|ufer|chaussee|steig|pfad|markt|berg|hof|park|wall|graben|zeile|anger|garten|tor|kamp|feld))\s+(\d{1,4}\s?[a-zA-Z]?(?:\s?[-–/]\s?\d{1,4}\s?[a-zA-Z]?)?)$/i;
+const FREIE_MAILDIENSTE = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'gmx.de',
+  'gmx.net',
+  'web.de',
+  't-online.de',
+  'outlook.com',
+  'outlook.de',
+  'hotmail.com',
+  'hotmail.de',
+  'yahoo.com',
+  'yahoo.de',
+  'icloud.com',
+  'me.com',
+  'posteo.de',
+  'mailbox.org',
+  'freenet.de',
+  'aol.com',
+  'live.de',
+  'live.com',
+  'protonmail.com',
+  'proton.me',
+  'example.org',
+  'example.com',
+  'example.net',
+]);
+const FIRMA =
+  /\b(GmbH|AG|KG|OHG|e\.\s?V\.|eV|UG|GbR|mbH|SE|eG|KGaA|PartG|Ltd\.?|Inc\.?|Stadtwerke|Sparkasse|Volksbank|Raiffeisenbank|Bank|Versicherung\w*|Finanzamt|Amt|Landratsamt|Rathaus|Stadtverwaltung|Gemeinde|Praxis|Kanzlei|Krankenkasse|AOK|Klinik\w*|Verwaltung|Hausverwaltung|Genossenschaft|Verein|Werke)\b/;
+const FUNKTION =
+  /(?:^|[\s(])[\wäöüÄÖÜß-]*(gesch[äa]ftsf[üu]hrer|inhaber|leiter|berater|manager|meister|sachbearbeiter|assisten[tz]|direktor|ingenieur|referent|vorstand|rechtsanw[äa]lt|steuerberater|architekt|techniker|elektriker|installateur|prokurist|verwalter|[äa]rzt|vertrieb|partner|ceo|cto|cfo|head of|sales|account)[\wäöüß]*/i;
+const STRASSE =
+  /^(.{2,50}?(?:stra(?:ß|ss)e|str\.|weg|allee|platz|gasse|ring|damm|ufer|chaussee|steig|pfad|markt|berg|hof|park|wall|graben|zeile|anger|garten|tor|kamp|feld))\s+(\d{1,4}\s?[a-zA-Z]?(?:\s?[-–/]\s?\d{1,4}\s?[a-zA-Z]?)?)$/i;
 const STRASSE_LOCKER = /^([A-Za-zÄÖÜäöüß][\wÄÖÜäöüß.\- ]{2,50}?)\s+(\d{1,4}\s?[a-zA-Z]?(?:\s?[-–/]\s?\d{1,4}\s?[a-zA-Z]?)?)$/;
 const PLZ_ORT = /^(?:D-)?(\d{5})\s+([A-ZÄÖÜ][\wäöüßÄÖÜ.\-]*(?:[ /][A-ZÄÖÜa-zäöüß(][\wäöüßÄÖÜ.\-()]*){0,3})$/;
 
 /** Länge einer IBAN je Land (SWIFT IBAN Registry); auch für das Feldformat IBAN (#535). */
 export const IBAN_LAENGEN: Readonly<Record<string, number>> = {
-  AD: 24, AE: 23, AL: 28, AT: 20, AZ: 28, BA: 20, BE: 16, BG: 22, BH: 22, BI: 27, BR: 29, BY: 28, CH: 21, CR: 22, CY: 28, CZ: 24,
-  DE: 22, DJ: 27, DK: 18, DO: 28, EE: 20, EG: 29, ES: 24, FI: 18, FK: 18, FO: 18, FR: 27, GB: 22, GE: 22, GI: 23, GL: 18, GR: 27,
-  GT: 28, HR: 21, HU: 28, IE: 22, IL: 23, IQ: 23, IS: 26, IT: 27, JO: 30, KW: 30, KZ: 20, LB: 28, LC: 32, LI: 21, LT: 20, LU: 20,
-  LV: 21, LY: 25, MC: 27, MD: 24, ME: 22, MK: 19, MN: 20, MR: 27, MT: 31, MU: 30, NI: 28, NL: 18, NO: 15, OM: 23, PK: 24, PL: 28,
-  PS: 29, PT: 25, QA: 29, RO: 24, RS: 22, RU: 33, SA: 24, SC: 31, SD: 18, SE: 24, SI: 19, SK: 24, SM: 27, SO: 23, ST: 25, SV: 28,
-  TL: 23, TN: 24, TR: 26, UA: 29, VA: 22, VG: 24, XK: 20, YE: 30,
+  AD: 24,
+  AE: 23,
+  AL: 28,
+  AT: 20,
+  AZ: 28,
+  BA: 20,
+  BE: 16,
+  BG: 22,
+  BH: 22,
+  BI: 27,
+  BR: 29,
+  BY: 28,
+  CH: 21,
+  CR: 22,
+  CY: 28,
+  CZ: 24,
+  DE: 22,
+  DJ: 27,
+  DK: 18,
+  DO: 28,
+  EE: 20,
+  EG: 29,
+  ES: 24,
+  FI: 18,
+  FK: 18,
+  FO: 18,
+  FR: 27,
+  GB: 22,
+  GE: 22,
+  GI: 23,
+  GL: 18,
+  GR: 27,
+  GT: 28,
+  HR: 21,
+  HU: 28,
+  IE: 22,
+  IL: 23,
+  IQ: 23,
+  IS: 26,
+  IT: 27,
+  JO: 30,
+  KW: 30,
+  KZ: 20,
+  LB: 28,
+  LC: 32,
+  LI: 21,
+  LT: 20,
+  LU: 20,
+  LV: 21,
+  LY: 25,
+  MC: 27,
+  MD: 24,
+  ME: 22,
+  MK: 19,
+  MN: 20,
+  MR: 27,
+  MT: 31,
+  MU: 30,
+  NI: 28,
+  NL: 18,
+  NO: 15,
+  OM: 23,
+  PK: 24,
+  PL: 28,
+  PS: 29,
+  PT: 25,
+  QA: 29,
+  RO: 24,
+  RS: 22,
+  RU: 33,
+  SA: 24,
+  SC: 31,
+  SD: 18,
+  SE: 24,
+  SI: 19,
+  SK: 24,
+  SM: 27,
+  SO: 23,
+  ST: 25,
+  SV: 28,
+  TL: 23,
+  TN: 24,
+  TR: 26,
+  UA: 29,
+  VA: 22,
+  VG: 24,
+  XK: 20,
+  YE: 30,
 };
 
 /** IBAN prüfen (Länge je Land und Prüfziffer nach ISO 13616). */
@@ -268,11 +441,20 @@ export function istIban(s: string): boolean {
 /** Textstelle um einen Fund: seine Zeile, höchstens 40 Zeichen davor und danach, an Wortgrenzen mit „…“ gekürzt. */
 const ausschnitt = (text: string, i: number, laenge: number) => {
   const zeile = text.lastIndexOf('\n', i) + 1;
-  const ende = (() => { const n = text.indexOf('\n', i + laenge); return n < 0 ? text.length : n; })();
+  const ende = (() => {
+    const n = text.indexOf('\n', i + laenge);
+    return n < 0 ? text.length : n;
+  })();
   let a = Math.max(zeile, i - 40);
   let e = Math.min(ende, i + laenge + 40);
-  if (a > zeile) { const l = text.indexOf(' ', a); a = l >= 0 && l < i ? l + 1 : a; }
-  if (e < ende) { const l = text.lastIndexOf(' ', e); e = l > i + laenge ? l : e; }
+  if (a > zeile) {
+    const l = text.indexOf(' ', a);
+    a = l >= 0 && l < i ? l + 1 : a;
+  }
+  if (e < ende) {
+    const l = text.lastIndexOf(' ', e);
+    e = l > i + laenge ? l : e;
+  }
   return `${a > zeile ? '… ' : ''}${text.slice(a, e).replace(/\s+/g, ' ').trim()}${e < ende ? ' …' : ''}`;
 };
 const datumIso = (t: number, m: number, j: number) => {
@@ -284,7 +466,11 @@ const datumIso = (t: number, m: number, j: number) => {
 /** Deutsche Zahl mit Komma (1.234,56) oder Punkt (1234.56) lesen. */
 const zahlAus = (s: string): number | null => {
   const t = s.replace(/\s/g, '');
-  const n = /,\d{1,2}$/.test(t) ? Number(t.replace(/\./g, '').replace(',', '.')) : /\.\d{2}$/.test(t) ? Number(t.replace(/,/g, '')) : Number(t.replace(/\./g, ''));
+  const n = /,\d{1,2}$/.test(t)
+    ? Number(t.replace(/\./g, '').replace(',', '.'))
+    : /\.\d{2}$/.test(t)
+      ? Number(t.replace(/,/g, ''))
+      : Number(t.replace(/\./g, ''));
   return Number.isFinite(n) ? n : null;
 };
 
@@ -297,8 +483,11 @@ function ausVcard(text: string, a: Angaben): boolean {
   for (const z of zeilen) {
     const k = z.slice(0, z.indexOf(':')).toUpperCase();
     const fund = (w: string): Fund => ({ wert: w, sicherheit: 'hoch', fundstelle: `vCard: ${w}` });
-    if (k === 'N' || k.startsWith('N;')) { const [nach, vor] = wert(z).split(';'); if (nach) p.nachname = nach; if (vor) p.vorname = vor; }
-    else if (k === 'ORG' || k.startsWith('ORG;')) p.organisation = wert(z).split(';')[0];
+    if (k === 'N' || k.startsWith('N;')) {
+      const [nach, vor] = wert(z).split(';');
+      if (nach) p.nachname = nach;
+      if (vor) p.vorname = vor;
+    } else if (k === 'ORG' || k.startsWith('ORG;')) p.organisation = wert(z).split(';')[0];
     else if (k === 'TITLE' || k.startsWith('TITLE;')) p.funktion = wert(z);
     else if (k.startsWith('EMAIL')) a.emails.push(fund(wert(z)));
     else if (k.startsWith('URL')) a.internet.push(fund(wert(z)));
@@ -306,7 +495,13 @@ function ausVcard(text: string, a: Angaben): boolean {
     else if (k.startsWith('ADR')) {
       const [, , strasse, ort, , plz] = wert(z).split(';');
       const s = STRASSE.exec((strasse ?? '').trim());
-      a.briefkopf = { ...(a.briefkopf ?? {}), ...(s ? { strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, '') } : strasse ? { strasse } : {}), ...(plz ? { plz } : {}), ...(ort ? { ort } : {}), fundstelle: 'vCard' };
+      a.briefkopf = {
+        ...(a.briefkopf ?? {}),
+        ...(s ? { strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, '') } : strasse ? { strasse } : {}),
+        ...(plz ? { plz } : {}),
+        ...(ort ? { ort } : {}),
+        fundstelle: 'vCard',
+      };
     }
   }
   if (p.organisation) a.briefkopf = { ...(a.briefkopf ?? { fundstelle: 'vCard' }), name: p.organisation };
@@ -317,7 +512,20 @@ function ausVcard(text: string, a: Angaben): boolean {
 /** Alle Angaben, die die Muster in einem Text finden. Reine Funktion, keine Rechenzeit der Rede wert. */
 export function findeAngaben(roh: string): Angaben {
   const text = (roh ?? '').replace(/\r/g, '').replace(/ /g, ' ').slice(0, 200_000);
-  const a: Angaben = { emails: [], internet: [], ibans: [], ustids: [], telefon: [], mobil: [], fax: [], datum: null, betrag: null, nummern: [], briefkopf: null, person: null };
+  const a: Angaben = {
+    emails: [],
+    internet: [],
+    ibans: [],
+    ustids: [],
+    telefon: [],
+    mobil: [],
+    fax: [],
+    datum: null,
+    betrag: null,
+    nummern: [],
+    briefkopf: null,
+    person: null,
+  };
   if (ausVcard(text, a)) return a;
   const doppelt = (l: Fund[], w: string) => l.some((x) => x.wert.toLowerCase() === w.toLowerCase());
 
@@ -334,12 +542,17 @@ export function findeAngaben(roh: string): Angaben {
     const w = m[0].replace(/\s/g, '').replace(/(.{4})(?!$)/g, '$1 ');
     if (!doppelt(a.ibans, w)) a.ibans.push({ wert: w, sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index!, m[0].length) });
   }
-  for (const m of text.matchAll(/\b(?:USt\.?[- ]?(?:Id\.?|IdNr\.?|Ident\w*)[- ]?(?:Nr\.?)?|Umsatzsteuer[- ]?(?:Id\w*|Identifikationsnummer)|VAT(?: ID| No\.?)?)\s*[:.]?\s*([A-Z]{2}\s?[0-9A-Z]{8,12})\b|\b(DE\s?\d{9})\b/gi)) {
+  for (const m of text.matchAll(
+    /\b(?:USt\.?[- ]?(?:Id\.?|IdNr\.?|Ident\w*)[- ]?(?:Nr\.?)?|Umsatzsteuer[- ]?(?:Id\w*|Identifikationsnummer)|VAT(?: ID| No\.?)?)\s*[:.]?\s*([A-Z]{2}\s?[0-9A-Z]{8,12})\b|\b(DE\s?\d{9})\b/gi,
+  )) {
     const w = (m[1] ?? m[2]).replace(/\s/g, '').toUpperCase();
-    if (!doppelt(a.ustids, w)) a.ustids.push({ wert: w, sicherheit: m[1] ? 'hoch' : 'mittel', fundstelle: ausschnitt(text, m.index!, m[0].length) });
+    if (!doppelt(a.ustids, w))
+      a.ustids.push({ wert: w, sicherheit: m[1] ? 'hoch' : 'mittel', fundstelle: ausschnitt(text, m.index!, m[0].length) });
   }
   // Telefon, Mobil, Fax: an der Beschriftung erkannt.
-  for (const m of text.matchAll(/(?:^|[\s|·,;])(Tel(?:efon)?\.?|Fon|Phone|T|Mobil(?:telefon)?|Handy|Mobile|M|Fax|Telefax|F)\s*[.:]?\s*(\+?\(?\d[\d ()/\-–.]{5,22}\d)/gim)) {
+  for (const m of text.matchAll(
+    /(?:^|[\s|·,;])(Tel(?:efon)?\.?|Fon|Phone|T|Mobil(?:telefon)?|Handy|Mobile|M|Fax|Telefax|F)\s*[.:]?\s*(\+?\(?\d[\d ()/\-–.]{5,22}\d)/gim,
+  )) {
     if (m[1].length === 1 && !/^[TMF]$/.test(m[1])) continue;
     const art = /^(Mobil|Handy|Mobile|M$)/i.test(m[1]) ? 'mobil' : /^(Fax|Telefax|F)$/i.test(m[1]) ? 'fax' : 'telefon';
     const w = m[2].replace(/\s+/g, ' ').trim();
@@ -348,16 +561,21 @@ export function findeAngaben(roh: string): Angaben {
     if (!doppelt(ziel, w)) ziel.push({ wert: w, sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index!, m[0].length) });
   }
   // Nummern mit Beschriftung: „Kundennummer: 100-4711“, „Rechnungs-Nr. R-2026-0042“, „Vertragsnr 55 12 34“.
-  const NUMMERN = /\b((?:Kunden|Vertrags|Rechnungs|Versicherungs|Mitglieds|Policen|Konto|Bestell|Auftrags|Z[äa]hler|Steuer|Akten|Versicherten|Patienten|Beitrags|Mandats|Referenz|Buchungs|Belegs?|Objekt|Mieter|Darlehens|Vorgangs|Schadens?|Lieferschein)[- ]?(?:nummer|nr\.?)|Kd\.?[- ]?Nr\.?|Rg\.?[- ]?Nr\.?|Re\.?[- ]?Nr\.?|Kassenzeichen|Aktenzeichen|Az\.|Unser Zeichen|Ihr Zeichen)\s*[:.]?\s*([A-Z0-9][A-Z0-9\-/.]*(?: [0-9][0-9\-/.]*){0,3})/gi;
+  const NUMMERN =
+    /\b((?:Kunden|Vertrags|Rechnungs|Versicherungs|Mitglieds|Policen|Konto|Bestell|Auftrags|Z[äa]hler|Steuer|Akten|Versicherten|Patienten|Beitrags|Mandats|Referenz|Buchungs|Belegs?|Objekt|Mieter|Darlehens|Vorgangs|Schadens?|Lieferschein)[- ]?(?:nummer|nr\.?)|Kd\.?[- ]?Nr\.?|Rg\.?[- ]?Nr\.?|Re\.?[- ]?Nr\.?|Kassenzeichen|Aktenzeichen|Az\.|Unser Zeichen|Ihr Zeichen)\s*[:.]?\s*([A-Z0-9][A-Z0-9\-/.]*(?: [0-9][0-9\-/.]*){0,3})/gi;
   for (const m of text.matchAll(NUMMERN)) {
     const w = m[2].replace(/[.\-/]+$/, '').trim();
     if (!/\d/.test(w) || w.length < 3 || w.length > 40) continue;
     const label = beschriftung(m[1]);
-    if (!a.nummern.some((x) => x.label === label && x.wert === w)) a.nummern.push({ label, wert: w, sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index!, m[0].length) });
+    if (!a.nummern.some((x) => x.label === label && x.wert === w))
+      a.nummern.push({ label, wert: w, sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index!, m[0].length) });
   }
   a.datum = findeDatum(text);
   a.betrag = findeBetrag(text);
-  const zeilen = text.split('\n').map((z) => z.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const zeilen = text
+    .split('\n')
+    .map((z) => z.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
   a.briefkopf = findeBriefkopf(zeilen);
   a.person = findePerson(zeilen, a);
   a.gutschrift = findeGutschrift(text, a.betrag);
@@ -380,12 +598,15 @@ function beschriftung(roh: string): string {
 /** Datum des Schreibens: beschriftet („Datum:“), in der Ortszeile („Dresden, 12.03.2026“) oder das erste im Kopf. */
 function findeDatum(text: string): Fund | null {
   const kandidaten: Array<{ wert: string; punkte: number; i: number; laenge: number }> = [];
-  const RE = /(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})\b|(\d{1,2})\.\s?(Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jan|Feb|Mär|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez)\.?\s+(\d{4})\b|\b(\d{4})-(\d{2})-(\d{2})\b/gi;
+  const RE =
+    /(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})\b|(\d{1,2})\.\s?(Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jan|Feb|Mär|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez)\.?\s+(\d{4})\b|\b(\d{4})-(\d{2})-(\d{2})\b/gi;
   for (const m of text.matchAll(RE)) {
     let iso: string | null = null;
     if (m[1]) iso = datumIso(Number(m[1]), Number(m[2]), Number(m[3]));
-    else if (m[4]) { const mon = MONATE.findIndex((x) => x.startsWith(klein(m[5]).slice(0, 3))); iso = mon >= 0 ? datumIso(Number(m[4]), mon + 1, Number(m[6])) : null; }
-    else iso = datumIso(Number(m[9]), Number(m[8]), Number(m[7]));
+    else if (m[4]) {
+      const mon = MONATE.findIndex((x) => x.startsWith(klein(m[5]).slice(0, 3)));
+      iso = mon >= 0 ? datumIso(Number(m[4]), mon + 1, Number(m[6])) : null;
+    } else iso = datumIso(Number(m[9]), Number(m[8]), Number(m[7]));
     if (!iso) continue;
     const vorher = text.slice(Math.max(0, m.index! - 40), m.index!);
     const zeile = text.slice(text.lastIndexOf('\n', m.index!) + 1, m.index!);
@@ -393,20 +614,33 @@ function findeDatum(text: string): Fund | null {
     if (/(Datum|Date|Rechnungsdatum|Briefdatum)\s*[:.]?\s*$/i.test(vorher)) punkte += 3;
     else if (/^[A-ZÄÖÜ][\wäöüß. \-()]{1,40},\s*(den)?$/.test(zeile.trim())) punkte += 3;
     else if (/\bden\s*$/i.test(vorher)) punkte += 1.5;
-    if (/(geb(oren|\.)|f[äa]llig|zahlbar|bis( zum)?|ab( dem)?|vom|zum|per|seit|Zeitraum|Leistungszeitraum|Lieferdatum|g[üu]ltig)\s*[:.]?\s*$/i.test(vorher)) punkte -= 2;
+    if (
+      /(geb(oren|\.)|f[äa]llig|zahlbar|bis( zum)?|ab( dem)?|vom|zum|per|seit|Zeitraum|Leistungszeitraum|Lieferdatum|g[üu]ltig)\s*[:.]?\s*$/i.test(
+        vorher,
+      )
+    )
+      punkte -= 2;
     kandidaten.push({ wert: iso, punkte, i: m.index!, laenge: m[0].length });
   }
   // Nur Daten, die nicht offensichtlich etwas anderes meinen („zum 1. Januar“, „fällig am“, „gültig bis“).
   const best = kandidaten.filter((k) => k.punkte >= 0).sort((x, y) => y.punkte - x.punkte)[0];
   if (!best) return null;
-  return { wert: best.wert, sicherheit: best.punkte >= 3 ? 'hoch' : best.punkte >= 0.5 ? 'mittel' : 'niedrig', fundstelle: ausschnitt(text, best.i, best.laenge) };
+  return {
+    wert: best.wert,
+    sicherheit: best.punkte >= 3 ? 'hoch' : best.punkte >= 0.5 ? 'mittel' : 'niedrig',
+    fundstelle: ausschnitt(text, best.i, best.laenge),
+  };
 }
 
 /** Gesamtbetrag: beschriftet („Gesamtbetrag“, „zu zahlen“ …), sonst der größte Betrag mit Währung. */
 function findeBetrag(text: string): Fund<Betrag> | null {
-  const RE = /(?:(EUR|€|CHF|USD|\$)\s*)?(?<![\d.,])(-?\d{1,3}(?:[.\s]\d{3})*,\d{2}|-?\d+,\d{2}|-?\d{1,3}(?:,\d{3})*\.\d{2})(?![\d.,]?\d)(?:\s*(EUR|€|CHF|USD|\$|Euro))?/g;
+  const RE =
+    /(?:(EUR|€|CHF|USD|\$)\s*)?(?<![\d.,])(-?\d{1,3}(?:[.\s]\d{3})*,\d{2}|-?\d+,\d{2}|-?\d{1,3}(?:,\d{3})*\.\d{2})(?![\d.,]?\d)(?:\s*(EUR|€|CHF|USD|\$|Euro))?/g;
   const STUFEN: Array<[RegExp, number]> = [
-    [/(Gesamtbetrag|Rechnungsbetrag|Endbetrag|Zahlbetrag|zu zahlen|Gesamtsumme|Summe brutto|Bruttobetrag|Brutto gesamt|Gesamt brutto|Total|Rechnungssumme|Zahlungsbetrag|offener Betrag|Forderung)/i, 4],
+    [
+      /(Gesamtbetrag|Rechnungsbetrag|Endbetrag|Zahlbetrag|zu zahlen|Gesamtsumme|Summe brutto|Bruttobetrag|Brutto gesamt|Gesamt brutto|Total|Rechnungssumme|Zahlungsbetrag|offener Betrag|Forderung)/i,
+      4,
+    ],
     [/(Gesamt|Summe|Betrag|Brutto|Saldo|Abbuchung|abgebucht|Lastschrift)/i, 2],
   ];
   let best: { betrag: number; waehrung: string; punkte: number; i: number; laenge: number } | null = null;
@@ -417,17 +651,27 @@ function findeBetrag(text: string): Fund<Betrag> | null {
     const waehrung = !zeichen || /€|EUR|Euro/i.test(zeichen) ? 'EUR' : zeichen === '$' ? 'USD' : zeichen.toUpperCase();
     const zeile = text.slice(text.lastIndexOf('\n', m.index!) + 1, m.index!);
     let punkte = zeichen ? 1 : 0;
-    for (const [re, p] of STUFEN) if (re.test(zeile)) { punkte += p; break; }
+    for (const [re, p] of STUFEN)
+      if (re.test(zeile)) {
+        punkte += p;
+        break;
+      }
     if (/(MwSt|USt|Mehrwertsteuer|Umsatzsteuer|netto|Rabatt|Skonto|davon)/i.test(zeile)) punkte -= 2;
     // Gleich gut: der größere Betrag (Summen sind größer als Positionen).
-    if (!best || punkte > best.punkte || (punkte === best.punkte && Math.abs(zahl) > Math.abs(best.betrag))) best = { betrag: zahl, waehrung, punkte, i: m.index!, laenge: m[0].length };
+    if (!best || punkte > best.punkte || (punkte === best.punkte && Math.abs(zahl) > Math.abs(best.betrag)))
+      best = { betrag: zahl, waehrung, punkte, i: m.index!, laenge: m[0].length };
   }
   if (!best || best.punkte < 1) return null;
-  return { wert: { betrag: best.betrag, waehrung: best.waehrung }, sicherheit: best.punkte >= 4 ? 'hoch' : best.punkte >= 2 ? 'mittel' : 'niedrig', fundstelle: ausschnitt(text, best.i, best.laenge) };
+  return {
+    wert: { betrag: best.betrag, waehrung: best.waehrung },
+    sicherheit: best.punkte >= 4 ? 'hoch' : best.punkte >= 2 ? 'mittel' : 'niedrig',
+    fundstelle: ausschnitt(text, best.i, best.laenge),
+  };
 }
 
 /** Wörter, an denen eine Gutschrift zu erkennen ist (#1043). */
-const GUTSCHRIFT = /(?<![\p{L}])(Gutschrift|Erstattung|Rückerstattung|Rückzahlung|Rueckzahlung|Rueckerstattung|Credit note|Refund)(?:en|s)?(?![\p{L}])/iu;
+const GUTSCHRIFT =
+  /(?<![\p{L}])(Gutschrift|Erstattung|Rückerstattung|Rückzahlung|Rueckzahlung|Rueckerstattung|Credit note|Refund)(?:en|s)?(?![\p{L}])/iu;
 /** So weit vorn steht eine Überschrift wie „Gutschrift“ (wie bei „Wohin gehört das?“). */
 const GUTSCHRIFT_KOPF = 1500;
 
@@ -449,7 +693,10 @@ function findeGutschrift(text: string, betrag: Fund<Betrag> | null): Fund | null
  */
 function findeBriefkopf(zeilen: string[]): Briefkopf | null {
   for (const z of zeilen.slice(0, 40)) {
-    const teile = z.split(/\s+[·•|–]\s+|\s+-\s+|\s*·\s*|\s*\|\s*/).map((s) => s.trim()).filter(Boolean);
+    const teile = z
+      .split(/\s+[·•|–]\s+|\s+-\s+|\s*·\s*|\s*\|\s*/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (teile.length < 3) continue;
     const plz = teile.findIndex((s) => PLZ_ORT.test(s));
     // In der Absenderzeile ist der Teil vor PLZ/Ort mit Hausnummer die Straße – auch ohne typische Endung („Am Wasserturm 3“).
@@ -459,14 +706,29 @@ function findeBriefkopf(zeilen: string[]): Briefkopf | null {
     if (!/[A-Za-zÄÖÜäöü]{3}/.test(name) || /\d{5}/.test(name)) continue;
     const s = /postfach/i.test(teile[str]) ? null : STRASSE_LOCKER.exec(teile[str]);
     const p = PLZ_ORT.exec(teile[plz])!;
-    return { name, ...(s ? { strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, '') } : { strasse: teile[str] }), plz: p[1], ort: p[2], fundstelle: z, zeile: true };
+    return {
+      name,
+      ...(s ? { strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, '') } : { strasse: teile[str] }),
+      plz: p[1],
+      ort: p[2],
+      fundstelle: z,
+      zeile: true,
+    };
   }
   for (let i = 0; i < Math.min(zeilen.length, 25); i++) {
     if (!FIRMA.test(zeilen[i]) || zeilen[i].length > 70 || /\d{5}/.test(zeilen[i])) continue;
     for (let j = i + 1; j <= i + 3 && j + 1 < zeilen.length; j++) {
       const s = STRASSE.exec(zeilen[j]);
       const p = PLZ_ORT.exec(zeilen[j + 1]);
-      if (s && p) return { name: zeilen[i], strasse: s[1].trim(), hausnummer: s[2].replace(/\s/g, ''), plz: p[1], ort: p[2], fundstelle: [zeilen[i], zeilen[j], zeilen[j + 1]].join(' · ') };
+      if (s && p)
+        return {
+          name: zeilen[i],
+          strasse: s[1].trim(),
+          hausnummer: s[2].replace(/\s/g, ''),
+          plz: p[1],
+          ort: p[2],
+          fundstelle: [zeilen[i], zeilen[j], zeilen[j + 1]].join(' · '),
+        };
     }
   }
   return null;
@@ -481,14 +743,21 @@ function findePerson(zeilen: string[], a: Angaben): Personfund | null {
     const titel = /^((?:Prof\.|Dr\.|Dipl\.-\w+\.?|Ing\.)\s*)+/.exec(z)?.[0] ?? '';
     const rest = z.slice(titel.length).trim();
     const woerter = rest.split(' ');
-    if (woerter.length < 2 || woerter.length > 3 || FIRMA.test(rest) || FUNKTION.test(rest) || anschrift(rest) || /[\d@]/.test(rest)) continue;
+    if (woerter.length < 2 || woerter.length > 3 || FIRMA.test(rest) || FUNKTION.test(rest) || anschrift(rest) || /[\d@]/.test(rest))
+      continue;
     if (!woerter.every((w) => /^[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?$/.test(w))) continue;
     const umgebung = [kopf[i - 1], kopf[i + 1], kopf[i + 2]].filter(Boolean) as string[];
     const funktion = umgebung.find((x) => FUNKTION.test(x) && x.length <= 60 && !/@/.test(x));
     const organisation = kopf.find((x) => FIRMA.test(x) && x.length <= 70 && !anschrift(x) && !/[@·|]/.test(x));
     // Nur mit einem weiteren Anzeichen (Funktion, Firma oder Kontaktangaben) – sonst ist es vielleicht nur ein Satzanfang.
     if (!funktion && !organisation && !a.emails.length && !a.telefon.length && !a.mobil.length) continue;
-    return { vorname: woerter.slice(0, -1).join(' '), nachname: woerter[woerter.length - 1], ...(funktion ? { funktion } : {}), ...(organisation ? { organisation } : {}), fundstelle: [kopf[i], funktion].filter(Boolean).join(' · ') };
+    return {
+      vorname: woerter.slice(0, -1).join(' '),
+      nachname: woerter[woerter.length - 1],
+      ...(funktion ? { funktion } : {}),
+      ...(organisation ? { organisation } : {}),
+      fundstelle: [kopf[i], funktion].filter(Boolean).join(' · '),
+    };
   }
   return null;
 }
@@ -511,7 +780,10 @@ function wertMuster(wert: string, art: Erkennungsart): RegExp | null {
     const kern = ziffern.replace(/^0/, '');
     return new RegExp(`(?:\\+49[\\s()/-]*(?:\\(0\\))?[\\s()/-]*|0[\\s()/-]*)${kern.split('').map(esc).join('[\\s()/.\\-]*')}(?!\\d)`);
   }
-  const zeichen = w.replace(/\s+/g, '').split('').filter((c) => !/[.\-/]/.test(c));
+  const zeichen = w
+    .replace(/\s+/g, '')
+    .split('')
+    .filter((c) => !/[.\-/]/.test(c));
   if (art === 'name') {
     if (w.replace(/\s/g, '').length < 4) return null;
     return new RegExp(`(?<![\\wÄÖÜäöüß])${w.split(/\s+/).map(esc).join('\\s+')}(?![\\wÄÖÜäöüß])`, 'i');
@@ -522,16 +794,25 @@ function wertMuster(wert: string, art: Erkennungsart): RegExp | null {
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Domain aus E-Mail-Adresse oder Internetseite, ohne www.; freie Maildienste zählen nicht. */
 export function domainVon(s: string): string | null {
-  const t = s.trim().toLowerCase().replace(/^mailto:/, '');
+  const t = s
+    .trim()
+    .toLowerCase()
+    .replace(/^mailto:/, '');
   const d = (t.includes('@') ? t.split('@')[1] : t.replace(/^[a-z]+:\/\//, '').split(/[/?#]/)[0]).replace(/^www\./, '').replace(/\.$/, '');
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) || FREIE_MAILDIENSTE.has(d)) return null;
   return d;
 }
 
 /** Eine Mappe, die sich vielleicht im Text wiederfindet. */
-export interface Vergleichsmappe { id: string; typId: string; werte: Record<string, unknown>; geaendert?: string }
+export interface Vergleichsmappe {
+  id: string;
+  typId: string;
+  werte: Record<string, unknown>;
+  geaendert?: string;
+}
 export interface Treffer {
-  mappeId: string; typId: string;
+  mappeId: string;
+  typId: string;
   /** stark = an einem eindeutigen Merkmal (Kundennummer, IBAN, E-Mail …) erkannt. */
   stark: boolean;
   punkte: number;
@@ -548,14 +829,18 @@ export function findeMappen(text: string, typen: Array<Pick<Mappentyp, 'id' | 'f
     const felder = felderJe.get(m.typId);
     if (!felder?.length) continue;
     const gruende: string[] = [];
-    let punkte = 0; let stark = false;
+    let punkte = 0;
+    let stark = false;
     for (const { feld, art } of felder) {
       const roh = m.werte[feld.key];
-      for (const w of (Array.isArray(roh) ? roh : [roh]).filter((x): x is string | number => typeof x === 'string' || typeof x === 'number')) {
+      for (const w of (Array.isArray(roh) ? roh : [roh]).filter(
+        (x): x is string | number => typeof x === 'string' || typeof x === 'number',
+      )) {
         const re = wertMuster(String(w), art);
         if (!re || !re.test(t)) continue;
         const gewicht = MERKMAL[art] === 'stark' ? 3 : 1;
-        punkte += gewicht; if (gewicht === 3) stark = true;
+        punkte += gewicht;
+        if (gewicht === 3) stark = true;
         gruende.push(`${feld.label} ${String(w).trim()}`);
         break;
       }
@@ -576,9 +861,11 @@ export function eindeutigerTreffer(treffer: Treffer[]): Treffer | null {
 /** Ein Beleg „Woran Ablago das erkennt“: ein Wert eines Wiederfinden-Felds, der im Dokument steht. */
 export interface Beleg {
   /** Mappe, an der der Wert steht, und ihr Typ. */
-  mappeId: string; typId: string;
+  mappeId: string;
+  typId: string;
   /** Feld mit dem Haken „Zum Wiederfinden nutzen“ und seine Bezeichnung (Ausgangstext). */
-  feldKey: string; feld: string;
+  feldKey: string;
+  feld: string;
   /** Der Wert, wie er in der Mappe steht. */
   wert: string;
   /** Fundstelle im Dokument. */
@@ -590,7 +877,8 @@ export interface Beleg {
 }
 /** Eine vorhandene Mappe, die das Dokument betrifft, mit ihren Belegen. */
 export interface Abgleichtreffer {
-  mappeId: string; typId: string;
+  mappeId: string;
+  typId: string;
   belege: Beleg[];
   /** hoch: ein starker Beleg und weitere; mittel: ein starker; niedrig: nur schwache. */
   sicherheit: Sicherheit;
@@ -631,20 +919,36 @@ const sicherheitAus = (belege: Beleg[]): Sicherheit => {
  * Mit `ziel` (dem gewählten Mappentyp) kommen Vorschläge für seine Verweisfelder und die Warnung vor Doppelten dazu.
  * `mappen` sind nur die, die die Person lesen darf – das prüft der Aufrufer. Reine Funktion.
  */
-export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'felder'>>, mappen: Vergleichsmappe[], ziel?: Pick<Mappentyp, 'id' | 'felder'>): Abgleich {
+export function gleicheAb(
+  text: string,
+  typen: Array<Pick<Mappentyp, 'id' | 'felder'>>,
+  mappen: Vergleichsmappe[],
+  ziel?: Pick<Mappentyp, 'id' | 'felder'>,
+): Abgleich {
   const t = (text ?? '').replace(/\u00a0/g, ' ');
-  const typVon = new Map(typen.map((x) => [x.id, x])); const merkmale = new Map(typen.map((x) => [x.id, merkmalsfelder(x)]));
+  const typVon = new Map(typen.map((x) => [x.id, x]));
+  const merkmale = new Map(typen.map((x) => [x.id, merkmalsfelder(x)]));
   // 1. Direkte Belege: Werte der Wiederfinden-Felder, die im Text stehen.
   const direkt = new Map<string, Beleg[]>();
   for (const m of mappen) {
     for (const { feld, art } of merkmale.get(m.typId) ?? []) {
       const roh = m.werte[feld.key];
-      for (const w of (Array.isArray(roh) ? roh : [roh]).filter((x): x is string | number => typeof x === 'string' || typeof x === 'number')) {
+      for (const w of (Array.isArray(roh) ? roh : [roh]).filter(
+        (x): x is string | number => typeof x === 'string' || typeof x === 'number',
+      )) {
         const re = wertMuster(String(w), art);
         const fund = re?.exec(t);
         if (!fund) continue;
-        const b: Beleg = { mappeId: m.id, typId: m.typId, feldKey: feld.key, feld: feld.label || feld.key, wert: String(w).trim(), fundstelle: ausschnitt(t, fund.index, fund[0].length), stark: MERKMAL[art] === 'stark' };
-        direkt.set(m.id, [...direkt.get(m.id) ?? [], b]);
+        const b: Beleg = {
+          mappeId: m.id,
+          typId: m.typId,
+          feldKey: feld.key,
+          feld: feld.label || feld.key,
+          wert: String(w).trim(),
+          fundstelle: ausschnitt(t, fund.index, fund[0].length),
+          stark: MERKMAL[art] === 'stark',
+        };
+        direkt.set(m.id, [...(direkt.get(m.id) ?? []), b]);
         break;
       }
     }
@@ -654,7 +958,7 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
     const typ = typVon.get(m.typId);
     for (const f of typ?.felder.filter((x) => x.wiederfinden && x.typ === 'zusammengesetzt') ?? []) {
       const b = kombinationsbeleg(t, typ!, f, m, direkt);
-      if (b) direkt.set(m.id, [...direkt.get(m.id) ?? [], b]);
+      if (b) direkt.set(m.id, [...(direkt.get(m.id) ?? []), b]);
     }
   }
   // 2. Über Verweise: Verweisfelder mit dem Haken, die auf eine wiedergefundene Mappe zeigen.
@@ -662,19 +966,30 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
   for (const m of mappen) {
     const typ = typVon.get(m.typId);
     for (const f of typ?.felder.filter((x) => x.wiederfinden && x.typ === 'referenz') ?? []) {
-      const ziele = (Array.isArray(m.werte[f.key]) ? m.werte[f.key] as unknown[] : [m.werte[f.key]]).filter((x): x is string => typeof x === 'string');
+      const ziele = (Array.isArray(m.werte[f.key]) ? (m.werte[f.key] as unknown[]) : [m.werte[f.key]]).filter(
+        (x): x is string => typeof x === 'string',
+      );
       for (const z of ziele) {
         if (z === m.id) continue;
         const geerbt = (direkt.get(z) ?? []).map((b) => ({ ...b, ueber: { feldKey: f.key, feld: f.label || f.key } }));
-        if (geerbt.length) belegeJe.set(m.id, [...belegeJe.get(m.id) ?? [], ...geerbt]);
+        if (geerbt.length) belegeJe.set(m.id, [...(belegeJe.get(m.id) ?? []), ...geerbt]);
       }
     }
   }
   const punkteVon = (belege: Beleg[]) => belege.reduce((n, b) => n + (b.ueber ? (b.stark ? 2 : 1) : b.stark ? 3 : 1), 0);
-  const treffer: Abgleichtreffer[] = [...belegeJe.entries()].map(([mappeId, belege]) => {
-    const sicherheit = sicherheitAus(belege);
-    return { mappeId, typId: mappen.find((m) => m.id === mappeId)!.typId, belege, sicherheit, unsicher: sicherheit === 'niedrig', punkte: punkteVon(belege) };
-  }).sort((a, b) => b.punkte - a.punkte || b.belege.length - a.belege.length);
+  const treffer: Abgleichtreffer[] = [...belegeJe.entries()]
+    .map(([mappeId, belege]) => {
+      const sicherheit = sicherheitAus(belege);
+      return {
+        mappeId,
+        typId: mappen.find((m) => m.id === mappeId)!.typId,
+        belege,
+        sicherheit,
+        unsicher: sicherheit === 'niedrig',
+        punkte: punkteVon(belege),
+      };
+    })
+    .sort((a, b) => b.punkte - a.punkte || b.belege.length - a.belege.length);
   const verweise: Record<string, Abgleichtreffer[]> = {};
   const doppelt: Abgleichtreffer[] = [];
   if (ziel) {
@@ -685,11 +1000,17 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
     }
     // Doppelt: jede gefüllte Angabe zum Wiederfinden der vorhandenen Mappe steht im Dokument, mindestens eine stark –
     // ein zusammengesetztes Feld (#1050) als Ganzes.
-    const felder = [...merkmalsfelder(ziel), ...ziel.felder.filter((x) => x.wiederfinden && x.typ === 'zusammengesetzt').map((feld) => ({ feld }))];
+    const felder = [
+      ...merkmalsfelder(ziel),
+      ...ziel.felder.filter((x) => x.wiederfinden && x.typ === 'zusammengesetzt').map((feld) => ({ feld })),
+    ];
     for (const x of treffer.filter((y) => y.typId === ziel.id)) {
       const m = mappen.find((y) => y.id === x.mappeId)!;
       const eigene = x.belege.filter((b) => !b.ueber);
-      const gefuellt = felder.filter(({ feld }) => { const w = m.werte[feld.key]; return w != null && w !== '' && !(Array.isArray(w) && !w.length); });
+      const gefuellt = felder.filter(({ feld }) => {
+        const w = m.werte[feld.key];
+        return w != null && w !== '' && !(Array.isArray(w) && !w.length);
+      });
       if (eigene.some((b) => b.stark) && gefuellt.every(({ feld }) => eigene.some((b) => b.feldKey === feld.key))) doppelt.push(x);
     }
     const dazu = gehoertDazu(treffer, typVon, mappen, ziel.id);
@@ -699,7 +1020,12 @@ export function gleicheAb(text: string, typen: Array<Pick<Mappentyp, 'id' | 'fel
 }
 
 /** Gehört dazu (#1043): Treffer anderer Typen mit eigenem starkem Beleg und einem leeren Verweisfeld auf den Zieltyp. */
-function gehoertDazu(treffer: Abgleichtreffer[], typVon: Map<string, Pick<Mappentyp, 'id' | 'felder'>>, mappen: Vergleichsmappe[], zielId: string): NonNullable<Abgleich['dazu']> {
+function gehoertDazu(
+  treffer: Abgleichtreffer[],
+  typVon: Map<string, Pick<Mappentyp, 'id' | 'felder'>>,
+  mappen: Vergleichsmappe[],
+  zielId: string,
+): NonNullable<Abgleich['dazu']> {
   const dazu: NonNullable<Abgleich['dazu']> = [];
   for (const x of treffer) {
     if (x.typId === zielId || !x.belege.some((b) => b.stark && !b.ueber)) continue;
@@ -718,7 +1044,13 @@ function gehoertDazu(treffer: Abgleichtreffer[], typVon: Map<string, Pick<Mappen
  * im Text (als Nummer bzw. in seiner Merkmalsart), jeder gefüllte Verweis zeigt auf eine Mappe, die sich schon
  * wiedergefunden hat (`direkt`). Andere Teile (Datum, Auswahl …) zählen nicht mit. Mindestens ein Teil aus Text oder Zahl.
  */
-function kombinationsbeleg(text: string, typ: Pick<Mappentyp, 'felder'>, f: Feld, m: Vergleichsmappe, direkt: Map<string, Beleg[]>): Beleg | null {
+function kombinationsbeleg(
+  text: string,
+  typ: Pick<Mappentyp, 'felder'>,
+  f: Feld,
+  m: Vergleichsmappe,
+  direkt: Map<string, Beleg[]>,
+): Beleg | null {
   const werte: string[] = [];
   let fundstelle = '';
   for (const q of teileVon(typ.felder, f)) {
@@ -742,7 +1074,11 @@ function kombinationsbeleg(text: string, typ: Pick<Mappentyp, 'felder'>, f: Feld
 /* ---------- Wohin gehört das? Einfacher Typ-Vorschlag ohne KI (#934) ---------- */
 
 /** Ein Mappentyp, dessen Name im Dokument steht (z. B. „Rechnung“ oben im Brief). */
-export interface TypFund { typId: string; wort: string; fundstelle: string }
+export interface TypFund {
+  typId: string;
+  wort: string;
+  fundstelle: string;
+}
 
 /**
  * „Wohin gehört das?“ (#934) ohne KI: Der Mappentyp, dessen Name (oder eine Übersetzung) als Überschrift im Text steht –
@@ -756,9 +1092,17 @@ export function typAusText(text: string, typen: Array<Pick<Mappentyp, 'id' | 'na
   const kopf = (text ?? '').slice(0, TYP_FUND_ZEICHEN).replace(/\u00a0/g, ' ');
   let best: (TypFund & { i: number }) | null = null;
   for (const x of typen) {
-    const namen = [...new Set([x.name, ...Object.values(x.beschriftungen ?? {}).map((b) => (b as { name?: string } | undefined)?.name ?? '')].map((n) => n.trim()).filter((n) => n.length >= 4))];
+    const namen = [
+      ...new Set(
+        [x.name, ...Object.values(x.beschriftungen ?? {}).map((b) => (b as { name?: string } | undefined)?.name ?? '')]
+          .map((n) => n.trim())
+          .filter((n) => n.length >= 4),
+      ),
+    ];
     for (const n of namen) {
-      const m = new RegExp(`(^[ \\t]*|(?:betreff|betr\\.|subject|re)\\s*:\\s*)(${esc(n)}(?:en|e|n|s)?)(?![\\p{L}\\p{N}])`, 'imu').exec(kopf);
+      const m = new RegExp(`(^[ \\t]*|(?:betreff|betr\\.|subject|re)\\s*:\\s*)(${esc(n)}(?:en|e|n|s)?)(?![\\p{L}\\p{N}])`, 'imu').exec(
+        kopf,
+      );
       const i = m ? m.index + m[1].length : -1;
       if (m && (!best || i < best.i)) best = { typId: x.id, wort: m[2], fundstelle: ausschnitt(kopf, i, m[2].length), i };
     }
@@ -795,7 +1139,12 @@ export type Vorschlaege = Record<string, Vorschlag>;
  * eingebaute Erkennung und für Antworten aus Paketen (dms:erkennen). Felder ohne `negativ` bleiben positiv (dort wäre
  * ein negativer Wert ungültig). `ausser`: Felder, deren Vorzeichen schon feststeht (E-Rechnung).
  */
-export function wendeGutschriftAn(t2: Pick<Mappentyp, 'felder'>, v: Vorschlaege, gutschrift: Fund | null | undefined, ausser: ReadonlySet<string> = new Set()): Vorschlaege {
+export function wendeGutschriftAn(
+  t2: Pick<Mappentyp, 'felder'>,
+  v: Vorschlaege,
+  gutschrift: Fund | null | undefined,
+  ausser: ReadonlySet<string> = new Set(),
+): Vorschlaege {
   if (!gutschrift) return v;
   for (const [k, x] of Object.entries(v)) {
     const f = t2.felder.find((y) => y.key === k);
@@ -812,25 +1161,39 @@ export function wendeGutschriftAn(t2: Pick<Mappentyp, 'felder'>, v: Vorschlaege,
  * Felder, die „Aus Dokument ausfüllen“ füllen darf: markiert – oder, hat der Typ gar keine markierten, alle mit
  * erkennbarer Art. Ausgeblendete Felder (#655) nie – in der Mappe sähe niemand den Vorschlag.
  */
-export function fuellfelder(t: Pick<Mappentyp, 'felder'> & { register?: Mappentyp['register'] }): Array<{ feld: Feld; art: Erkennungsart }> {
+export function fuellfelder(
+  t: Pick<Mappentyp, 'felder'> & { register?: Mappentyp['register'] },
+): Array<{ feld: Feld; art: Erkennungsart }> {
   // Wie ausgeblendeteFelder (darstellung.ts) – hier ohne den Import, der einen Kreis über model.ts schlösse.
-  const aus = new Set([...t.felder.filter((f) => f.ausgeblendet).map((f) => f.key), ...(t.register ?? []).filter((r) => r.ausgeblendet && r.art === 'felder').flatMap((r) => r.felder ?? [])]);
+  const aus = new Set([
+    ...t.felder.filter((f) => f.ausgeblendet).map((f) => f.key),
+    ...(t.register ?? []).filter((r) => r.ausgeblendet && r.art === 'felder').flatMap((r) => r.felder ?? []),
+  ]);
   // Berechnete Felder (#1034, „nie überschreiben“): schreibt nur ihr Paket – nie ein Vorschlag aus dem Dokument.
-  const geeignet = t.felder.filter((f) => f.typ !== 'passwort' && ERKENNUNG_FELDTYPEN.includes(f.typ) && !aus.has(f.key) && vonAussenFuellbar(f));
+  const geeignet = t.felder.filter(
+    (f) => f.typ !== 'passwort' && ERKENNUNG_FELDTYPEN.includes(f.typ) && !aus.has(f.key) && vonAussenFuellbar(f),
+  );
   const markiert = geeignet.filter((f) => f.erkennung);
-  return (markiert.length ? markiert : geeignet).map((f) => ({ feld: f, art: artVon(f) })).filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art);
+  return (markiert.length ? markiert : geeignet)
+    .map((f) => ({ feld: f, art: artVon(f) }))
+    .filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art);
 }
 
 /** Muster aus dem Erkennungshinweis („Muster 100-####“, # = Ziffer, A = Buchstabe) als regulärer Ausdruck. */
 export function musterAusHinweis(hinweis: string | undefined): RegExp | null {
   const m = /muster\s*[:„"]?\s*([^\s„“"]+)/i.exec(hinweis ?? '');
   if (!m || !/[#]/.test(m[1])) return null;
-  const re = m[1].replace(/[“"”.,;)]+$/, '').split('').map((c) => (c === '#' ? '\\d' : c === 'A' ? '[A-Z]' : esc(c))).join('');
+  const re = m[1]
+    .replace(/[“"”.,;)]+$/, '')
+    .split('')
+    .map((c) => (c === '#' ? '\\d' : c === 'A' ? '[A-Z]' : esc(c)))
+    .join('');
   return new RegExp(`(?<![A-Za-z0-9])${re}(?![A-Za-z0-9])`);
 }
 
 /** Zeitraum im Text: „3 Monate“, „14 Tagen“, „1 Jahr“, „6 months“ – nicht „Monatsende“. */
-const ZEITRAUM_IM_TEXT = /(?<![\d,.])(\d{1,4})\s?(Tag(?:e|en)?|Wochen?|Monat(?:e|en)?|Jahr(?:e|en)?|days?|weeks?|months?|years?)(?![\wÄÖÜäöüß])/gi;
+const ZEITRAUM_IM_TEXT =
+  /(?<![\d,.])(\d{1,4})\s?(Tag(?:e|en)?|Wochen?|Monat(?:e|en)?|Jahr(?:e|en)?|days?|weeks?|months?|years?)(?![\wÄÖÜäöüß])/gi;
 /** Prozentangabe im Text: „19 %“, „7,5%“. */
 const PROZENT_IM_TEXT = /(?<![\d,.])(\d{1,3}(?:[.,]\d{1,3})?)\s?%/g;
 
@@ -839,16 +1202,31 @@ const PROZENT_IM_TEXT = /(?<![\d,.])(\d{1,3}(?:[.,]\d{1,3})?)\s?%/g;
  * erste Treffer in dieser oder der nächsten Zeile (Sicherheit mittel); sonst der erste im ganzen Text (niedrig) – auf
  * einer Rechnung steht meist nur ein Steuersatz.
  */
-function naheBeschriftung<T>(text: string, f: Pick<Feld, 'key' | 'label'>, muster: RegExp, lies: (m: RegExpExecArray) => T | null): Fund<T> | null {
+function naheBeschriftung<T>(
+  text: string,
+  f: Pick<Feld, 'key' | 'label'>,
+  muster: RegExp,
+  lies: (m: RegExpExecArray) => T | null,
+): Fund<T> | null {
   const funde: Array<{ wert: T; i: number; laenge: number }> = [];
   for (const m of text.matchAll(new RegExp(muster.source, muster.flags))) {
     const wert = lies(m as RegExpExecArray);
     if (wert !== null) funde.push({ wert, i: m.index ?? 0, laenge: m[0].length });
   }
   if (!funde.length) return null;
-  const woerter = [...new Set(klein(`${f.label} ${f.key.replace(/_/g, ' ')}`).split(/[^a-z0-9]+/).filter((w) => w.length >= 4))];
+  const woerter = [
+    ...new Set(
+      klein(`${f.label} ${f.key.replace(/_/g, ' ')}`)
+        .split(/[^a-z0-9]+/)
+        .filter((w) => w.length >= 4),
+    ),
+  ];
   let anfang = 0;
-  const zeilen = text.split('\n').map((z) => { const a = anfang; anfang += z.length + 1; return { a, e: anfang, z }; });
+  const zeilen = text.split('\n').map((z) => {
+    const a = anfang;
+    anfang += z.length + 1;
+    return { a, e: anfang, z };
+  });
   for (let n = 0; n < zeilen.length; n++) {
     if (!woerter.some((w) => klein(zeilen[n].z).includes(w))) continue;
     const bis = (zeilen[n + 1] ?? zeilen[n]).e;
@@ -869,41 +1247,137 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
   const personTyp = hatArt('vorname') || hatArt('nachname');
   // Nur Werte, die zum Format bzw. zu den Grenzen des Felds passen (#535) – so landet z. B. keine Faxnummer mit Buchstaben im Feld.
   const passt = (f: Feld, wert: Wert) => !formatFehler(f, wert, { felder: t.felder, werte: {} });
-  const setze = (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => { if (wert !== '' && wert != null && !v[f.key] && passt(f, wert)) v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle }; };
+  const setze = (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => {
+    if (wert !== '' && wert != null && !v[f.key] && passt(f, wert))
+      v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle };
+  };
   const benutzt = new Set<string>();
   const erste = (l: Fund[]) => l.find((x) => !benutzt.has(x.wert)) ?? null;
   for (const { feld: f, art } of felder) {
     // Erkennungshinweis mit Muster (#391): gewinnt vor allem anderen.
     const muster = musterAusHinweis(f.erkennung?.hinweis);
-    if (muster) { const m = muster.exec(text); if (m) { setze(f, m[0], { sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index, m[0].length) }); continue; } }
-    const bk = a.briefkopf; const p = a.person;
-    const fund = (w: string | undefined, quelle: { fundstelle: string } | null, s: Sicherheit = 'mittel') => (w && quelle ? setze(f, w, { sicherheit: s, fundstelle: quelle.fundstelle }) : undefined);
+    if (muster) {
+      const m = muster.exec(text);
+      if (m) {
+        setze(f, m[0], { sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index, m[0].length) });
+        continue;
+      }
+    }
+    const bk = a.briefkopf;
+    const p = a.person;
+    const fund = (w: string | undefined, quelle: { fundstelle: string } | null, s: Sicherheit = 'mittel') =>
+      w && quelle ? setze(f, w, { sicherheit: s, fundstelle: quelle.fundstelle }) : undefined;
     switch (art) {
-      case 'email': { const e = erste(a.emails); if (e) { benutzt.add(e.wert); setze(f, e.wert, e); } break; }
-      case 'internet': { const i = erste(a.internet) ?? (() => { const d = a.emails.map((e) => domainVon(e.wert)).find(Boolean); return d ? { wert: `www.${d}`, sicherheit: 'mittel' as const, fundstelle: a.emails[0].fundstelle } : null; })(); if (i) setze(f, i.wert, i); break; }
-      case 'iban': { const i = a.ibans[0]; if (i) setze(f, i.wert, i); break; }
-      case 'ustid': { const u = a.ustids[0]; if (u) setze(f, u.wert, u); break; }
-      case 'telefon': { const x = erste(a.telefon); if (x) { benutzt.add(x.wert); setze(f, x.wert, x); } break; }
-      case 'mobil': { const x = erste(a.mobil); if (x) { benutzt.add(x.wert); setze(f, x.wert, x); } break; }
-      case 'fax': { const x = erste(a.fax); if (x) { benutzt.add(x.wert); setze(f, x.wert, x); } break; }
-      case 'datum': if (a.datum) setze(f, a.datum.wert, a.datum); break;
-      case 'betrag': if (a.betrag) setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag); break;
+      case 'email': {
+        const e = erste(a.emails);
+        if (e) {
+          benutzt.add(e.wert);
+          setze(f, e.wert, e);
+        }
+        break;
+      }
+      case 'internet': {
+        const i =
+          erste(a.internet) ??
+          (() => {
+            const d = a.emails.map((e) => domainVon(e.wert)).find(Boolean);
+            return d ? { wert: `www.${d}`, sicherheit: 'mittel' as const, fundstelle: a.emails[0].fundstelle } : null;
+          })();
+        if (i) setze(f, i.wert, i);
+        break;
+      }
+      case 'iban': {
+        const i = a.ibans[0];
+        if (i) setze(f, i.wert, i);
+        break;
+      }
+      case 'ustid': {
+        const u = a.ustids[0];
+        if (u) setze(f, u.wert, u);
+        break;
+      }
+      case 'telefon': {
+        const x = erste(a.telefon);
+        if (x) {
+          benutzt.add(x.wert);
+          setze(f, x.wert, x);
+        }
+        break;
+      }
+      case 'mobil': {
+        const x = erste(a.mobil);
+        if (x) {
+          benutzt.add(x.wert);
+          setze(f, x.wert, x);
+        }
+        break;
+      }
+      case 'fax': {
+        const x = erste(a.fax);
+        if (x) {
+          benutzt.add(x.wert);
+          setze(f, x.wert, x);
+        }
+        break;
+      }
+      case 'datum':
+        if (a.datum) setze(f, a.datum.wert, a.datum);
+        break;
+      case 'betrag':
+        if (a.betrag) setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag);
+        break;
       // Zeitraum und Prozent (#1035): am liebsten neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“).
-      case 'zeitraum': { const z = naheBeschriftung(text, f, ZEITRAUM_IM_TEXT, (m) => leseZeitraum(`${m[1]} ${m[2]}`) ?? null); if (z) setze(f, z.wert, z); break; }
-      case 'prozent': { const x = naheBeschriftung(text, f, PROZENT_IM_TEXT, (m) => { const n = leseProzent(m[1]); return n != null && Number.isFinite(n) && n <= 100 ? n : null; }); if (x) setze(f, x.wert, x); break; }
-      case 'vorname': fund(p?.vorname, p, 'mittel'); break;
-      case 'nachname': fund(p?.nachname, p, 'mittel'); break;
-      case 'funktion': fund(p?.funktion, p, 'mittel'); break;
-      case 'name': if (personTyp) break; fund(bk?.name ?? p?.organisation, bk ?? p, bk?.fundstelle.includes('·') ? 'hoch' : 'mittel'); break;
-      case 'strasse': { const mitNr = !hatArt('hausnummer') && bk?.hausnummer ? `${bk.strasse} ${bk.hausnummer}` : bk?.strasse; fund(mitNr, bk); break; }
-      case 'hausnummer': fund(bk?.hausnummer, bk); break;
-      case 'plz': if (bk?.plz) setze(f, f.typ === 'zahl' ? Number(bk.plz) : bk.plz, { sicherheit: 'mittel', fundstelle: bk.fundstelle }); break;
-      case 'ort': fund(bk?.ort, bk); break;
+      case 'zeitraum': {
+        const z = naheBeschriftung(text, f, ZEITRAUM_IM_TEXT, (m) => leseZeitraum(`${m[1]} ${m[2]}`) ?? null);
+        if (z) setze(f, z.wert, z);
+        break;
+      }
+      case 'prozent': {
+        const x = naheBeschriftung(text, f, PROZENT_IM_TEXT, (m) => {
+          const n = leseProzent(m[1]);
+          return n != null && Number.isFinite(n) && n <= 100 ? n : null;
+        });
+        if (x) setze(f, x.wert, x);
+        break;
+      }
+      case 'vorname':
+        fund(p?.vorname, p, 'mittel');
+        break;
+      case 'nachname':
+        fund(p?.nachname, p, 'mittel');
+        break;
+      case 'funktion':
+        fund(p?.funktion, p, 'mittel');
+        break;
+      case 'name':
+        if (personTyp) break;
+        fund(bk?.name ?? p?.organisation, bk ?? p, bk?.fundstelle.includes('·') ? 'hoch' : 'mittel');
+        break;
+      case 'strasse': {
+        const mitNr = !hatArt('hausnummer') && bk?.hausnummer ? `${bk.strasse} ${bk.hausnummer}` : bk?.strasse;
+        fund(mitNr, bk);
+        break;
+      }
+      case 'hausnummer':
+        fund(bk?.hausnummer, bk);
+        break;
+      case 'plz':
+        if (bk?.plz) setze(f, f.typ === 'zahl' ? Number(bk.plz) : bk.plz, { sicherheit: 'mittel', fundstelle: bk.fundstelle });
+        break;
+      case 'ort':
+        fund(bk?.ort, bk);
+        break;
       case 'nummer': {
         // Passende Beschriftung: Feld „Kundennummer“ ↔ gefunden „Kundennummer“; „Rechnungs-Nr.“ ↔ „Rechnungsnummer“.
-        const stamm = (s: string) => klein(s).replace(/[^a-z]/g, '').replace(/(nummer|nr)$/, '');
-        const n = a.nummern.find((x) => { const s = stamm(x.label); return !!s && (s === stamm(f.label) || s === stamm(f.key)); });
-        if (n) setze(f, f.typ === 'zahl' ? (Number(n.wert.replace(/\D/g, '')) || '') : n.wert, n);
+        const stamm = (s: string) =>
+          klein(s)
+            .replace(/[^a-z]/g, '')
+            .replace(/(nummer|nr)$/, '');
+        const n = a.nummern.find((x) => {
+          const s = stamm(x.label);
+          return !!s && (s === stamm(f.label) || s === stamm(f.key));
+        });
+        if (n) setze(f, f.typ === 'zahl' ? Number(n.wert.replace(/\D/g, '')) || '' : n.wert, n);
         break;
       }
       case 'auswahl': {
@@ -912,12 +1386,22 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
         let treffer: { wert: string; text: string } | undefined;
         for (const o of f.optionen ?? []) {
           const x = [o, ...optionTexte(f, o)].find((y) => y.length >= 3 && wort(y).test(text));
-          if (x) { treffer = { wert: o, text: x }; break; }
+          if (x) {
+            treffer = { wert: o, text: x };
+            break;
+          }
         }
-        if (treffer) { const m = wort(treffer.text).exec(text)!; setze(f, f.mehrfach ? [treffer.wert] : treffer.wert, { sicherheit: 'niedrig', fundstelle: ausschnitt(text, m.index, treffer.text.length) }); }
+        if (treffer) {
+          const m = wort(treffer.text).exec(text)!;
+          setze(f, f.mehrfach ? [treffer.wert] : treffer.wert, {
+            sicherheit: 'niedrig',
+            fundstelle: ausschnitt(text, m.index, treffer.text.length),
+          });
+        }
         break;
       }
-      default: break;
+      default:
+        break;
     }
   }
   return wendeGutschriftAn(t, v, a.gutschrift);
@@ -926,16 +1410,36 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
 /* ---------- Eigene Organisation und Haushalt (#995, #1043) ---------- */
 
 /** Was eine eigene Mappe (eigene Organisation, Person des Haushalts) als Aussteller verrät. */
-export interface EigeneAngaben { mappeId: string; typId: string; namen: string[]; ustids: string[]; ibans: string[] }
+export interface EigeneAngaben {
+  mappeId: string;
+  typId: string;
+  namen: string[];
+  ustids: string[];
+  ibans: string[];
+}
 /** Aussteller eines Belegs, wie die Erkennung ihn sieht: Absenderzeile oder Verkäufer der E-Rechnung. */
-export interface Aussteller { name?: string; ustid?: string; iban?: string; fundstelle: string }
+export interface Aussteller {
+  name?: string;
+  ustid?: string;
+  iban?: string;
+  fundstelle: string;
+}
 
 /** Namen, USt-Id und IBAN einer Mappe aus ihren Feldern (Name, Vorname + Nachname) – zum Vergleich mit dem Aussteller. */
-export function eigeneAngaben(typ: Pick<Mappentyp, 'id' | 'felder'>, m: { id: string; werte: Record<string, unknown>; titel?: string | null }): EigeneAngaben {
-  const werte = (art: Erkennungsart) => typ.felder.filter((f) => (f.typ === 'text' || f.typ === 'langtext') && artVon(f) === art)
-    .flatMap((f) => (Array.isArray(m.werte[f.key]) ? m.werte[f.key] as unknown[] : [m.werte[f.key]])).filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim());
+export function eigeneAngaben(
+  typ: Pick<Mappentyp, 'id' | 'felder'>,
+  m: { id: string; werte: Record<string, unknown>; titel?: string | null },
+): EigeneAngaben {
+  const werte = (art: Erkennungsart) =>
+    typ.felder
+      .filter((f) => (f.typ === 'text' || f.typ === 'langtext') && artVon(f) === art)
+      .flatMap((f) => (Array.isArray(m.werte[f.key]) ? (m.werte[f.key] as unknown[]) : [m.werte[f.key]]))
+      .filter((x): x is string => typeof x === 'string' && !!x.trim())
+      .map((x) => x.trim());
   const person = [...werte('vorname'), ...werte('nachname')].join(' ').trim();
-  const namen = [...new Set([...werte('name'), ...(person.includes(' ') ? [person] : []), ...(m.titel?.trim() ? [m.titel.trim()] : [])])].filter((n) => n.replace(/\s/g, '').length >= 4);
+  const namen = [
+    ...new Set([...werte('name'), ...(person.includes(' ') ? [person] : []), ...(m.titel?.trim() ? [m.titel.trim()] : [])]),
+  ].filter((n) => n.replace(/\s/g, '').length >= 4);
   const norm = (x: string) => x.replace(/\s/g, '').toUpperCase();
   return { mappeId: m.id, typId: typ.id, namen, ustids: werte('ustid').map(norm), ibans: werte('iban').map(norm) };
 }
@@ -962,14 +1466,36 @@ export function eigenerAussteller(a: Aussteller | null | undefined, eigene: Eige
 /** JSON Schema eines Feldwerts nach Feldart. */
 function wertSchema(f: Feld): Record<string, unknown> {
   switch (f.typ) {
-    case 'datum': return { type: 'string', format: 'date' };
-    case 'betrag': return { type: 'object', properties: { betrag: { type: 'number' }, waehrung: { type: 'string', pattern: '^[A-Z]{3}$' } }, required: ['betrag'] };
-    case 'zahl': case 'prozent': return { type: 'number', ...(typeof f.min === 'number' ? { minimum: f.min } : {}), ...(typeof f.max === 'number' ? { maximum: f.max } : {}) };
-    case 'zeitraum': return { type: 'object', properties: { anzahl: { type: 'integer', minimum: 0, maximum: ZEITRAUM_ANZAHL_MAX }, einheit: { enum: [...ZEITRAUM_EINHEITEN] } }, required: ['anzahl', 'einheit'], additionalProperties: false };
-    case 'janein': return { type: 'boolean' };
-    case 'auswahl': return f.mehrfach ? { type: 'array', items: { enum: f.optionen ?? [] } } : { enum: f.optionen ?? [] };
-    case 'referenz': return f.mehrfach ? { type: 'array', items: { type: 'string', format: 'uuid' } } : { type: 'string', format: 'uuid' };
-    default: return { type: 'string', ...(f.maxLen ? { maxLength: f.maxLen } : {}), ...(f.muster ? { pattern: `^(?:${f.muster})$` } : {}) };
+    case 'datum':
+      return { type: 'string', format: 'date' };
+    case 'betrag':
+      return {
+        type: 'object',
+        properties: { betrag: { type: 'number' }, waehrung: { type: 'string', pattern: '^[A-Z]{3}$' } },
+        required: ['betrag'],
+      };
+    case 'zahl':
+    case 'prozent':
+      return {
+        type: 'number',
+        ...(typeof f.min === 'number' ? { minimum: f.min } : {}),
+        ...(typeof f.max === 'number' ? { maximum: f.max } : {}),
+      };
+    case 'zeitraum':
+      return {
+        type: 'object',
+        properties: { anzahl: { type: 'integer', minimum: 0, maximum: ZEITRAUM_ANZAHL_MAX }, einheit: { enum: [...ZEITRAUM_EINHEITEN] } },
+        required: ['anzahl', 'einheit'],
+        additionalProperties: false,
+      };
+    case 'janein':
+      return { type: 'boolean' };
+    case 'auswahl':
+      return f.mehrfach ? { type: 'array', items: { enum: f.optionen ?? [] } } : { enum: f.optionen ?? [] };
+    case 'referenz':
+      return f.mehrfach ? { type: 'array', items: { type: 'string', format: 'uuid' } } : { type: 'string', format: 'uuid' };
+    default:
+      return { type: 'string', ...(f.maxLen ? { maxLength: f.maxLen } : {}), ...(f.muster ? { pattern: `^(?:${f.muster})$` } : {}) };
   }
 }
 
@@ -988,7 +1514,11 @@ export function schemaFuer(t: Pick<Mappentyp, 'name' | 'felder'>, nur?: (f: Feld
       title: f.label,
       ...(f.hilfe || f.erkennung?.hinweis ? { description: [f.hilfe, f.erkennung?.hinweis].filter(Boolean).join(' – ') } : {}),
       type: 'object',
-      properties: { wert: wertSchema(f), sicherheit: { enum: ['hoch', 'mittel', 'niedrig'] }, fundstelle: { type: 'string', maxLength: 500 } },
+      properties: {
+        wert: wertSchema(f),
+        sicherheit: { enum: ['hoch', 'mittel', 'niedrig'] },
+        fundstelle: { type: 'string', maxLength: 500 },
+      },
       required: ['wert'],
       additionalProperties: false,
       'x-dms-feldtyp': f.typ,
@@ -998,7 +1528,13 @@ export function schemaFuer(t: Pick<Mappentyp, 'name' | 'felder'>, nur?: (f: Feld
       ...(f.typ === 'text' && f.format ? { 'x-dms-format': f.format } : {}),
     };
   }
-  return { $schema: 'https://json-schema.org/draft/2020-12/schema', title: t.name, type: 'object', properties, additionalProperties: false };
+  return {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    title: t.name,
+    type: 'object',
+    properties,
+    additionalProperties: false,
+  };
 }
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -1008,60 +1544,118 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Antwort einer Engine gegen die Feldtypen prüfen: unbekannte Felder, Passwortfelder, falsche Typen und Werte
  * außerhalb der Auswahl fallen weg (mit Grund – der Server protokolliert sie). `erlaubt` begrenzt auf Felder.
  */
-export function pruefeVorschlaege(pick: Pick<Mappentyp, 'felder'>, antwort: unknown, erlaubt?: (f: Feld) => boolean): { vorschlaege: Vorschlaege; verworfen: Array<{ feld: string; grund: string }> } {
+export function pruefeVorschlaege(
+  pick: Pick<Mappentyp, 'felder'>,
+  antwort: unknown,
+  erlaubt?: (f: Feld) => boolean,
+): { vorschlaege: Vorschlaege; verworfen: Array<{ feld: string; grund: string }> } {
   const vorschlaege: Vorschlaege = {};
   const verworfen: Array<{ feld: string; grund: string }> = [];
-  if (!antwort || typeof antwort !== 'object' || Array.isArray(antwort)) return { vorschlaege, verworfen: [{ feld: '', grund: t('gemeinsam.erkennung.die-antwort-ist-kein') }] };
+  if (!antwort || typeof antwort !== 'object' || Array.isArray(antwort))
+    return { vorschlaege, verworfen: [{ feld: '', grund: t('gemeinsam.erkennung.die-antwort-ist-kein') }] };
   for (const [key, roh] of Object.entries(antwort as Record<string, unknown>)) {
     const weg = (grund: string) => verworfen.push({ feld: key.slice(0, 60), grund });
     const f = pick.felder.find((x) => x.key === key);
-    if (!f) { weg(t('gemeinsam.erkennung.dieses-feld-gibt-es')); continue; }
-    if (f.typ === 'passwort' || f.typ === 'formatiert') { weg(t('gemeinsam.erkennung.dieses-feld-fuellt-die')); continue; }
+    if (!f) {
+      weg(t('gemeinsam.erkennung.dieses-feld-gibt-es'));
+      continue;
+    }
+    if (f.typ === 'passwort' || f.typ === 'formatiert') {
+      weg(t('gemeinsam.erkennung.dieses-feld-fuellt-die'));
+      continue;
+    }
     // Berechnete Felder (#1034) schreibt nur ihr Paket – auch ohne `erlaubt` nie ein Vorschlag.
-    if (!vonAussenFuellbar(f) || (erlaubt && !erlaubt(f))) { weg(t('gemeinsam.erkennung.dieses-feld-darf-nicht')); continue; }
-    const o = roh && typeof roh === 'object' && !Array.isArray(roh) && 'wert' in roh ? roh as Record<string, unknown> : { wert: roh };
+    if (!vonAussenFuellbar(f) || (erlaubt && !erlaubt(f))) {
+      weg(t('gemeinsam.erkennung.dieses-feld-darf-nicht'));
+      continue;
+    }
+    const o = roh && typeof roh === 'object' && !Array.isArray(roh) && 'wert' in roh ? (roh as Record<string, unknown>) : { wert: roh };
     const s = o.sicherheit === 'hoch' || o.sicherheit === 'mittel' || o.sicherheit === 'niedrig' ? o.sicherheit : 'mittel';
     const fundstelle = typeof o.fundstelle === 'string' ? o.fundstelle.slice(0, 500) : '';
     const w = o.wert;
     let gut: Wert | undefined;
     switch (f.typ) {
-      case 'datum': gut = typeof w === 'string' && ISO.test(w) && datumIso(Number(w.slice(8, 10)), Number(w.slice(5, 7)), Number(w.slice(0, 4))) === w ? w : undefined; break;
+      case 'datum':
+        gut =
+          typeof w === 'string' && ISO.test(w) && datumIso(Number(w.slice(8, 10)), Number(w.slice(5, 7)), Number(w.slice(0, 4))) === w
+            ? w
+            : undefined;
+        break;
       case 'betrag': {
         const b = w as Record<string, unknown> | null;
-        gut = b && typeof b === 'object' && typeof b.betrag === 'number' && Number.isFinite(b.betrag) ? { betrag: Math.round(b.betrag * 100) / 100, waehrung: typeof b.waehrung === 'string' && /^[A-Z]{3}$/.test(b.waehrung) ? b.waehrung : (f.waehrung || 'EUR') } : undefined;
-        if (gut && ((typeof f.min === 'number' && (gut as Betrag).betrag < f.min) || (typeof f.max === 'number' && (gut as Betrag).betrag > f.max))) gut = undefined;
+        gut =
+          b && typeof b === 'object' && typeof b.betrag === 'number' && Number.isFinite(b.betrag)
+            ? {
+                betrag: Math.round(b.betrag * 100) / 100,
+                waehrung: typeof b.waehrung === 'string' && /^[A-Z]{3}$/.test(b.waehrung) ? b.waehrung : f.waehrung || 'EUR',
+              }
+            : undefined;
+        if (
+          gut &&
+          ((typeof f.min === 'number' && (gut as Betrag).betrag < f.min) || (typeof f.max === 'number' && (gut as Betrag).betrag > f.max))
+        )
+          gut = undefined;
         // Negativ nur, wenn das Feld es erlaubt (#1035).
         if (gut && !f.negativ && (gut as Betrag).betrag < 0) gut = undefined;
         break;
       }
-      case 'zeitraum': gut = leseZeitraum(w) ?? undefined; break;
+      case 'zeitraum':
+        gut = leseZeitraum(w) ?? undefined;
+        break;
       case 'prozent': {
         const n = leseProzent(w);
-        gut = n != null && Number.isFinite(n) && (typeof f.min !== 'number' || n >= f.min) && (typeof f.max !== 'number' || n <= f.max) ? n : undefined;
+        gut =
+          n != null && Number.isFinite(n) && (typeof f.min !== 'number' || n >= f.min) && (typeof f.max !== 'number' || n <= f.max)
+            ? n
+            : undefined;
         break;
       }
-      case 'zahl': gut = typeof w === 'number' && Number.isFinite(w) && (typeof f.min !== 'number' || w >= f.min) && (typeof f.max !== 'number' || w <= f.max) ? w : undefined; break;
-      case 'janein': gut = typeof w === 'boolean' ? w : undefined; break;
+      case 'zahl':
+        gut =
+          typeof w === 'number' &&
+          Number.isFinite(w) &&
+          (typeof f.min !== 'number' || w >= f.min) &&
+          (typeof f.max !== 'number' || w <= f.max)
+            ? w
+            : undefined;
+        break;
+      case 'janein':
+        gut = typeof w === 'boolean' ? w : undefined;
+        break;
       case 'auswahl': {
         // Eine Engine darf auch die Beschriftung nennen (#728); übernommen wird der feste Wert.
         const liste = (Array.isArray(w) ? w : [w]).map((x) => (typeof x === 'string' ? wertZuOption(f, x) : undefined));
         const ok = liste.length > 0 && liste.every((x) => x !== undefined) && (f.mehrfach || liste.length === 1);
-        gut = ok ? (f.mehrfach ? liste as string[] : liste[0] as string) : undefined;
+        gut = ok ? (f.mehrfach ? (liste as string[]) : (liste[0] as string)) : undefined;
         break;
       }
       case 'referenz': {
         const liste = Array.isArray(w) ? w : [w];
-        gut = liste.length && liste.every((x) => typeof x === 'string' && UUID.test(x)) && (f.mehrfach || liste.length === 1) ? (f.mehrfach ? liste as string[] : liste[0] as string) : undefined;
+        gut =
+          liste.length && liste.every((x) => typeof x === 'string' && UUID.test(x)) && (f.mehrfach || liste.length === 1)
+            ? f.mehrfach
+              ? (liste as string[])
+              : (liste[0] as string)
+            : undefined;
         break;
       }
       default: {
         const txt = typeof w === 'string' ? w.trim() : typeof w === 'number' ? String(w) : null;
         let ok = !!txt && (f.maxLen == null || txt.length <= f.maxLen) && txt.length <= 5000;
-        if (ok && f.muster) { try { ok = new RegExp(`^(?:${f.muster})$`).test(txt!); } catch { ok = false; } }
+        if (ok && f.muster) {
+          try {
+            ok = new RegExp(`^(?:${f.muster})$`).test(txt!);
+          } catch {
+            ok = false;
+          }
+        }
         gut = ok ? txt! : undefined;
       }
     }
-    if (gut === undefined || formatFehler(f, gut, { felder: pick.felder, werte: {} })) { weg(t('gemeinsam.erkennung.der-wert-passt-nicht', { typ: f.typ })); continue; }
+    if (gut === undefined || formatFehler(f, gut, { felder: pick.felder, werte: {} })) {
+      weg(t('gemeinsam.erkennung.der-wert-passt-nicht', { typ: f.typ }));
+      continue;
+    }
     vorschlaege[key] = { wert: gut, sicherheit: s, fundstelle };
   }
   return { vorschlaege, verworfen };

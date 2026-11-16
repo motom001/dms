@@ -39,10 +39,14 @@ export function inline(text: string): Inline[] {
   const textTeil = (t: string) => {
     if (!t) return;
     const letzter = out[out.length - 1];
-    if (letzter?.art === 'text') letzter.text += t; else out.push({ art: 'text', text: t });
+    if (letzter?.art === 'text') letzter.text += t;
+    else out.push({ art: 'text', text: t });
   };
   const muster: Array<[RegExp, (m: RegExpExecArray) => Inline | null]> = [
-    [/^@\[([^\]\n]{0,80})\]\((benutzer|mappe):([0-9a-f-]{36})\)/i, (m) => ({ art: 'erwaehnung', name: m[1], id: m[3].toLowerCase(), benutzer: m[2].toLowerCase() === 'benutzer' })],
+    [
+      /^@\[([^\]\n]{0,80})\]\((benutzer|mappe):([0-9a-f-]{36})\)/i,
+      (m) => ({ art: 'erwaehnung', name: m[1], id: m[3].toLowerCase(), benutzer: m[2].toLowerCase() === 'benutzer' }),
+    ],
     [/^`([^`\n]+)`/, (m) => ({ art: 'code', text: m[1] })],
     [/^\*\*(?=\S)([\s\S]*?\S)\*\*/, (m) => ({ art: 'fett', kinder: inline(m[1]) })],
     [/^__(?=\S)([\s\S]*?\S)__/, (m) => ({ art: 'fett', kinder: inline(m[1]) })],
@@ -58,7 +62,8 @@ export function inline(text: string): Inline[] {
       if (!m) continue;
       const teil = bau(m);
       if (!teil) continue;
-      if (re.source.startsWith('^_') && out.length && /[A-Za-z0-9äöüÄÖÜß]$/.test((out[out.length - 1] as { text?: string }).text ?? '')) continue;
+      if (re.source.startsWith('^_') && out.length && /[A-Za-z0-9äöüÄÖÜß]$/.test((out[out.length - 1] as { text?: string }).text ?? ''))
+        continue;
       out.push(teil);
       rest = rest.slice(m[0].length);
       treffer = true;
@@ -76,14 +81,23 @@ export function inline(text: string): Inline[] {
 
 /** Markdown in Blöcke zerlegen. */
 export function zerlege(md: string): Block[] {
-  const zeilen = String(md ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const zeilen = String(md ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n');
   const bloecke: Block[] = [];
   let i = 0;
   while (i < zeilen.length) {
     const z = zeilen[i];
-    if (!z.trim()) { i++; continue; }
+    if (!z.trim()) {
+      i++;
+      continue;
+    }
     const u = /^(#{1,3})\s+(.*)$/.exec(z);
-    if (u) { bloecke.push({ art: 'ueberschrift', stufe: u[1].length as 1 | 2 | 3, inhalt: inline(u[2].trim()) }); i++; continue; }
+    if (u) {
+      bloecke.push({ art: 'ueberschrift', stufe: u[1].length as 1 | 2 | 3, inhalt: inline(u[2].trim()) });
+      i++;
+      continue;
+    }
     if (/^>\s?/.test(z)) {
       const innen: string[] = [];
       while (i < zeilen.length && /^>\s?/.test(zeilen[i])) innen.push(zeilen[i++].replace(/^>\s?/, ''));
@@ -97,11 +111,16 @@ export function zerlege(md: string): Block[] {
       const punkte: Inline[][] = [];
       while (i < zeilen.length) {
         const q = punkt.exec(zeilen[i]);
-        if (q && /\d/.test(q[1]) === nummeriert) { punkte.push(inline(q[2])); i++; continue; }
+        if (q && /\d/.test(q[1]) === nummeriert) {
+          punkte.push(inline(q[2]));
+          i++;
+          continue;
+        }
         // Fortsetzungszeile (eingerückt) gehört zum letzten Punkt.
         if (zeilen[i].trim() && /^\s{2,}/.test(zeilen[i]) && punkte.length) {
           punkte[punkte.length - 1].push({ art: 'text', text: ' ' }, ...inline(zeilen[i].trim()));
-          i++; continue;
+          i++;
+          continue;
         }
         break;
       }
@@ -121,26 +140,38 @@ export type ErwaehnungsName = (id: string, gespeichert: string) => string;
 /** Ersatz, wenn kein Titel eingesetzt ist (#1293): neutral – nennt nichts, was die lesende Person nicht sehen darf. */
 export const erwaehnungsErsatz = (name: string) => name || t('gemeinsam.markdown.erwaehnung');
 
-const textVon = (teile: Inline[], name: ErwaehnungsName): string => teile.map((t) => {
-  switch (t.art) {
-    case 'text': case 'code': return t.text;
-    case 'erwaehnung': return `@${name(t.id, t.name)}`;
-    default: return textVon(t.kinder, name);
-  }
-}).join('');
+const textVon = (teile: Inline[], name: ErwaehnungsName): string =>
+  teile
+    .map((t) => {
+      switch (t.art) {
+        case 'text':
+        case 'code':
+          return t.text;
+        case 'erwaehnung':
+          return `@${name(t.id, t.name)}`;
+        default:
+          return textVon(t.kinder, name);
+      }
+    })
+    .join('');
 
 /**
  * Reiner Text ohne Formatierung (Titel, Listen, Suche). `name` (#889): Text für Erwähnungen, z. B. der aktuelle Titel
  * oder „Mappe (nicht sichtbar)“ für jemanden, der die erwähnte Mappe nicht lesen darf.
  */
 export function alsText(md: string, name: ErwaehnungsName = (_id, n) => erwaehnungsErsatz(n)): string {
-  const gehe = (b: Block[]): string[] => b.flatMap((x) => {
-    switch (x.art) {
-      case 'ueberschrift': case 'absatz': return [textVon(x.inhalt, name)];
-      case 'liste': return x.punkte.map((p) => textVon(p, name));
-      case 'zitat': return gehe(x.bloecke);
-    }
-  });
+  const gehe = (b: Block[]): string[] =>
+    b.flatMap((x) => {
+      switch (x.art) {
+        case 'ueberschrift':
+        case 'absatz':
+          return [textVon(x.inhalt, name)];
+        case 'liste':
+          return x.punkte.map((p) => textVon(p, name));
+        case 'zitat':
+          return gehe(x.bloecke);
+      }
+    });
   return gehe(zerlege(md)).join(' ').replace(/\s+/g, ' ').trim();
 }
 
@@ -159,7 +190,10 @@ export const erwaehnung = (name: string, id: string) => `@[${titelTeil(name)}](m
 
 /** Titel aus allen Erwähnungen nehmen (#1293): gespeichert wird nur `@[](mappe:<id>)` bzw. `@[](benutzer:<id>)`. */
 export function ohneTitel(md: string): string {
-  return String(md ?? '').replace(ERWAEHNUNG_SCHREIBWEISE, (_m, _n, art: string, id: string) => `@[](${art.toLowerCase()}:${id.toLowerCase()})`);
+  return String(md ?? '').replace(
+    ERWAEHNUNG_SCHREIBWEISE,
+    (_m, _n, art: string, id: string) => `@[](${art.toLowerCase()}:${id.toLowerCase()})`,
+  );
 }
 
 /**
@@ -168,5 +202,8 @@ export function ohneTitel(md: string): string {
  * `gespeichert` ist, was in den Klammern steht (nur für die Eingabe der Oberfläche, solange der Titel noch aussteht).
  */
 export function mitTiteln(md: string, name: (id: string, gespeichert: string) => string): string {
-  return String(md ?? '').replace(ERWAEHNUNG_SCHREIBWEISE, (_m, n: string, art: string, id: string) => `@[${titelTeil(name(id.toLowerCase(), n))}](${art.toLowerCase()}:${id.toLowerCase()})`);
+  return String(md ?? '').replace(
+    ERWAEHNUNG_SCHREIBWEISE,
+    (_m, n: string, art: string, id: string) => `@[${titelTeil(name(id.toLowerCase(), n))}](${art.toLowerCase()}:${id.toLowerCase()})`,
+  );
 }

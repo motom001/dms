@@ -35,4 +35,35 @@ import termine from './sprachen/de/termine.json';
 import volltext from './sprachen/de/volltext.json';
 import werkbank from './sprachen/de/werkbank.json';
 
-export const DEUTSCH: Readonly<Record<string, Sprachdatei>> = { ablage, aehnlich, anmeldung, api, automatisierung, dritte, einrichtung, entdecken, ereignisse, erkennung, felder, fragen, gemeinsam, konten, lasttest, mail, mappen, mappentypen, meldungen, notfall, oberflaeche, pakete, profil, spalten, start, suche, systemzustand, termine, volltext, werkbank };
+export const DEUTSCH: Readonly<Record<string, Sprachdatei>> = {
+  ablage,
+  aehnlich,
+  anmeldung,
+  api,
+  automatisierung,
+  dritte,
+  einrichtung,
+  entdecken,
+  ereignisse,
+  erkennung,
+  felder,
+  fragen,
+  gemeinsam,
+  konten,
+  lasttest,
+  mail,
+  mappen,
+  mappentypen,
+  meldungen,
+  notfall,
+  oberflaeche,
+  pakete,
+  profil,
+  spalten,
+  start,
+  suche,
+  systemzustand,
+  termine,
+  volltext,
+  werkbank,
+};

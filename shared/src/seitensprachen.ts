@@ -14,7 +14,10 @@
 import { erkenneSprache, istTextsprache } from './textsprache';
 
 /** Eine Seite im Volltext: ab welchem Zeichen sie beginnt und in welcher Sprache sie steht (leer: unbekannt). */
-export interface Seitensprache { ab: number; sprachen: string[] }
+export interface Seitensprache {
+  ab: number;
+  sprachen: string[];
+}
 
 /** Höchstens so viele Sprachen je Seite (Mischseite). */
 export const SPRACHEN_JE_SEITE = 2;
@@ -28,7 +31,10 @@ export function zeichenzahl(s: string): number {
   let n = s.length;
   for (let i = 0; i < s.length; i++) {
     const c = s.charCodeAt(i);
-    if (c >= 0xdc00 && c <= 0xdfff && i > 0) { const v = s.charCodeAt(i - 1); if (v >= 0xd800 && v <= 0xdbff) n--; }
+    if (c >= 0xdc00 && c <= 0xdfff && i > 0) {
+      const v = s.charCodeAt(i - 1);
+      if (v >= 0xd800 && v <= 0xdbff) n--;
+    }
   }
   return n;
 }
@@ -48,7 +54,11 @@ export function sprachenEinerSeite(text: string): string[] {
     anteile.set(e.sprache, (anteile.get(e.sprache) ?? 0) + n);
     gesamt += n;
   }
-  const liste = [...anteile].filter(([, n]) => n >= 150 && n / gesamt >= 0.2).sort((a, b) => b[1] - a[1]).map(([s]) => s).slice(0, SPRACHEN_JE_SEITE);
+  const liste = [...anteile]
+    .filter(([, n]) => n >= 150 && n / gesamt >= 0.2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([s]) => s)
+    .slice(0, SPRACHEN_JE_SEITE);
   if (liste.length) return liste;
   const ganz = erkenneSprache(text);
   return ganz && istTextsprache(ganz.sprache) ? [ganz.sprache] : [];
@@ -59,14 +69,23 @@ export function sprachenEinerSeite(text: string): string[] {
  * Anfang jeder Seite. Leere Seiten beginnen dort, wo die nächste beginnen würde. Ohne `sprachen` erkennt die
  * Funktion sie aus dem Text der Seite (außer `erkennen` ist aus).
  */
-export function seitenZusammensetzen(seiten: Array<{ text: string; sprachen?: string[] | null }>, erkennen = true): { text: string; seiten: Seitensprache[] } {
+export function seitenZusammensetzen(
+  seiten: Array<{ text: string; sprachen?: string[] | null }>,
+  erkennen = true,
+): { text: string; seiten: Seitensprache[] } {
   let text = '';
   let laenge = 0;
   const out: Seitensprache[] = [];
   for (const s of seiten) {
     const t = s.text.replace(/\u0000/g, '').trim();
-    if (t && text) { text += '\n\n'; laenge += 2; }
-    out.push({ ab: laenge, sprachen: !t ? [] : s.sprachen?.length ? [...new Set(s.sprachen)].slice(0, SPRACHEN_JE_SEITE) : erkennen ? sprachenEinerSeite(t) : [] });
+    if (t && text) {
+      text += '\n\n';
+      laenge += 2;
+    }
+    out.push({
+      ab: laenge,
+      sprachen: !t ? [] : s.sprachen?.length ? [...new Set(s.sprachen)].slice(0, SPRACHEN_JE_SEITE) : erkennen ? sprachenEinerSeite(t) : [],
+    });
     text += t;
     laenge += zeichenzahl(t);
   }
@@ -116,7 +135,12 @@ export function teilenAb(seiten: Seitensprache[] | null | undefined): number | n
 /** Text einer Seite aus dem Volltext (Zeichen in Codepunkten). */
 export function seitentexte(text: string, seiten: Seitensprache[]): string[] {
   const zeichen = Array.from(text);
-  return seiten.map((s, i) => zeichen.slice(s.ab, i + 1 < seiten.length ? seiten[i + 1].ab : zeichen.length).join('').trim());
+  return seiten.map((s, i) =>
+    zeichen
+      .slice(s.ab, i + 1 < seiten.length ? seiten[i + 1].ab : zeichen.length)
+      .join('')
+      .trim(),
+  );
 }
 
 /** Gespeicherte Seitensprachen prüfen (aus der Datenbank oder vom Paket); null, wenn sie nicht passen. */

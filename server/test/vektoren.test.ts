@@ -5,7 +5,15 @@ import { jeMappe, kosinus, liesModell, liesVektor, Vektorindex } from '../src/ve
 import { speicherRepo } from '../src/repo-speicher';
 import type { Repo } from '../src/repo';
 
-const zufall = (d: number, saat: number) => { let x = saat; const v = new Float32Array(d); for (let i = 0; i < d; i++) { x = (x * 1103515245 + 12345) % 2147483648; v[i] = x / 2147483648 - 0.5; } return liesVektor(Array.from(v)); };
+const zufall = (d: number, saat: number) => {
+  let x = saat;
+  const v = new Float32Array(d);
+  for (let i = 0; i < d; i++) {
+    x = (x * 1103515245 + 12345) % 2147483648;
+    v[i] = x / 2147483648 - 0.5;
+  }
+  return liesVektor(Array.from(v));
+};
 
 describe('Vektoren (#442): Eingaben', () => {
   it('normiert Vektoren und weist Unbrauchbares mit klarer Meldung ab', () => {
@@ -26,20 +34,32 @@ describe('Vektoren (#442): Zwischenspeicher', () => {
   it('findet die ähnlichsten, rundet kaum (8 Bit), wächst, entfernt, Schwelle und Ausnahmen', () => {
     const D = 64;
     const vs = Array.from({ length: 300 }, (_, i) => zufall(D, i + 1));
-    const idx = new Vektorindex(D, vs.slice(0, 10).map((v, i) => ({ dokumentId: `d${i}`, mappeId: `m${i % 4}`, vektor: v })));
+    const idx = new Vektorindex(
+      D,
+      vs.slice(0, 10).map((v, i) => ({ dokumentId: `d${i}`, mappeId: `m${i % 4}`, vektor: v })),
+    );
     for (let i = 10; i < 300; i++) idx.setze(`d${i}`, `m${i % 4}`, vs[i]);
     assert.equal(idx.anzahl, 300);
     // Gleiche Reihenfolge wie exakt gerechnet; Rundungsfehler < 0,01.
     const q = vs[42];
-    const exakt = vs.map((v, i) => ({ i, a: kosinus(v, q) })).sort((a, b) => b.a - a.a).slice(0, 5);
+    const exakt = vs
+      .map((v, i) => ({ i, a: kosinus(v, q) }))
+      .sort((a, b) => b.a - a.a)
+      .slice(0, 5);
     const t = idx.suche(q, 5);
-    assert.deepEqual(t.map((x) => x.dokumentId), exakt.map((x) => `d${x.i}`));
+    assert.deepEqual(
+      t.map((x) => x.dokumentId),
+      exakt.map((x) => `d${x.i}`),
+    );
     for (let k = 0; k < 5; k++) assert.ok(Math.abs(t[k].aehnlichkeit - exakt[k].a) < 0.01, `${t[k].aehnlichkeit} ≈ ${exakt[k].a}`);
     assert.equal(t[0].dokumentId, 'd42');
     assert.ok(Math.abs(t[0].aehnlichkeit - 1) < 0.01);
     // Ausnahmen und Schwelle.
     assert.notEqual(idx.suche(q, 1, { ohne: new Set(['d42']) })[0].dokumentId, 'd42');
-    assert.deepEqual(idx.suche(q, 10, { schwelle: 0.99 }).map((x) => x.dokumentId), ['d42']);
+    assert.deepEqual(
+      idx.suche(q, 10, { schwelle: 0.99 }).map((x) => x.dokumentId),
+      ['d42'],
+    );
     // Entfernen, Platz wiederverwenden, Ersetzen.
     idx.entferne('d42');
     assert.equal(idx.anzahl, 299);
@@ -55,11 +75,23 @@ describe('Vektoren (#442): Zwischenspeicher', () => {
   });
 
   it('fasst Treffer je Mappe zusammen (bester Treffer), lässt Mappen aus', () => {
-    const t = jeMappe([
-      { dokumentId: 'a', mappeId: 'm1', aehnlichkeit: 0.5 }, { dokumentId: 'b', mappeId: 'm1', aehnlichkeit: 0.9 },
-      { dokumentId: 'c', mappeId: 'm2', aehnlichkeit: 0.7 }, { dokumentId: 'd', mappeId: 'm3', aehnlichkeit: 0.8 },
-    ], 2, new Set(['m3']));
-    assert.deepEqual(t.map((x) => [x.mappeId, x.dokumentId]), [['m1', 'b'], ['m2', 'c']]);
+    const t = jeMappe(
+      [
+        { dokumentId: 'a', mappeId: 'm1', aehnlichkeit: 0.5 },
+        { dokumentId: 'b', mappeId: 'm1', aehnlichkeit: 0.9 },
+        { dokumentId: 'c', mappeId: 'm2', aehnlichkeit: 0.7 },
+        { dokumentId: 'd', mappeId: 'm3', aehnlichkeit: 0.8 },
+      ],
+      2,
+      new Set(['m3']),
+    );
+    assert.deepEqual(
+      t.map((x) => [x.mappeId, x.dokumentId]),
+      [
+        ['m1', 'b'],
+        ['m2', 'c'],
+      ],
+    );
   });
 });
 
@@ -75,47 +107,85 @@ async function pgRepoNeu(): Promise<{ repo: Repo; ende: () => Promise<void> }> {
   const sql = verbinde(alsUrl(a));
   await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
   await sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Test') ON CONFLICT DO NOTHING`;
-  return { repo: pgRepo(sql, H) as never as Repo, ende: async () => { await sql.end(); const admin = verbinde(alsUrl(basis)); await admin.unsafe(`DROP DATABASE IF EXISTS "${a.datenbank}" WITH (FORCE)`); await admin.end(); } };
+  return {
+    repo: pgRepo(sql, H) as never as Repo,
+    ende: async () => {
+      await sql.end();
+      const admin = verbinde(alsUrl(basis));
+      await admin.unsafe(`DROP DATABASE IF EXISTS "${a.datenbank}" WITH (FORCE)`);
+      await admin.end();
+    },
+  };
 }
 
 for (const pg of [false, true]) {
-  describe(`Vektoren (#442): Repo${pg ? ' – PostgreSQL' : ' im Speicher'}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
-    it('setzen, ersetzen, Stand, ohne Vektor (nach Id), mit dem Dokument gelöscht, je Paket löschen', async () => {
-      const { Dienst } = await import('../src/dienst');
-      const { speicherDateien } = await import('../src/dateispeicher');
-      const db = pg ? await pgRepoNeu() : { repo: speicherRepo(), ende: async () => {} };
-      try {
-        const d = new Dienst(db.repo, speicherDateien());
-        const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
-        const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
-        const ids: string[] = [];
-        for (let i = 0; i < 3; i++) ids.push((await d.dokumente.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id);
-        for (const id of ids.slice(0, 2)) await d.volltexte.schreibeVolltext(id, { text: `Text ${id}` }, { id: null as never, herkunft: 'Test', paket: false });
-        assert.equal(await db.repo.mitVolltext(), 2);
-        const v = liesVektor([1, 2, 3, 4, 5, 6, 7, 8]);
-        assert.equal(await db.repo.vektorSetze({ dokumentId: ids[0], paket: 'ki', modell: 'm/8', vektor: v }), true);
-        assert.equal(await db.repo.vektorSetze({ dokumentId: ids[0], paket: 'ki', modell: 'm/8', vektor: v }), true, 'ersetzt');
-        assert.equal(await db.repo.vektorSetze({ dokumentId: '00000000-0000-4000-8000-0000000000ff', paket: 'ki', modell: 'm/8', vektor: v }), false);
-        await db.repo.vektorSetze({ dokumentId: ids[1], paket: 'ki', modell: 'alt', vektor: v });
-        assert.deepEqual(await db.repo.vektorStand(), [{ paket: 'ki', modell: 'alt', anzahl: 1 }, { paket: 'ki', modell: 'm/8', anzahl: 1 }]);
-        const geholt = await db.repo.vektorVon(ids[0], 'm/8');
-        assert.ok(geholt && kosinus(geholt, v) > 0.9999);
-        const alle: Array<[string, string]> = [];
-        await db.repo.vektorenLaden('m/8', (t) => { for (const x of t) alle.push([x.dokumentId, x.mappeId]); });
-        assert.deepEqual(alle, [[ids[0], post.id]]);
-        // Nur Dokumente mit Volltext, ohne Vektor dieses Modells; ab einer Id weiter.
-        assert.deepEqual((await db.repo.ohneVektor('m/8', 10)).map((x) => x.id), [ids[1]]);
-        const sortiert = ids.slice(0, 2).sort();
-        assert.deepEqual((await db.repo.ohneVektor('neu', 10)).map((x) => x.id), sortiert);
-        assert.deepEqual((await db.repo.ohneVektor('neu', 10, sortiert[0])).map((x) => x.id), [sortiert[1]]);
-        // Modellwechsel: alles außer dem neuen Modell weg.
-        assert.equal(await db.repo.vektorenLoeschePaket('ki', 'm/8'), 1);
-        assert.deepEqual((await db.repo.vektorStand()).map((x) => x.modell), ['m/8']);
-        // Mit dem Dokument weg (endgültig gelöscht; ohne Papierkorb).
-        await db.repo.loescheDokument(ids[0]);
-        assert.deepEqual(await db.repo.vektorStand(), []);
-        assert.equal(await db.repo.vektorVon(ids[0], 'm/8'), null);
-      } finally { await db.ende(); }
-    });
-  });
+  describe(
+    `Vektoren (#442): Repo${pg ? ' – PostgreSQL' : ' im Speicher'}`,
+    { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
+    () => {
+      it('setzen, ersetzen, Stand, ohne Vektor (nach Id), mit dem Dokument gelöscht, je Paket löschen', async () => {
+        const { Dienst } = await import('../src/dienst');
+        const { speicherDateien } = await import('../src/dateispeicher');
+        const db = pg ? await pgRepoNeu() : { repo: speicherRepo(), ende: async () => {} };
+        try {
+          const d = new Dienst(db.repo, speicherDateien());
+          const post = await d.post.legePostAn({ betreff: 'Brief' }, { id: null, name: 'Test' });
+          const reg = (await d.systemausstattung.sicherstellen()).post.register.find((x) => x.art === 'dokumente')!.key;
+          const ids: string[] = [];
+          for (let i = 0; i < 3; i++)
+            ids.push(
+              (await d.dokumente.ladeHoch(post.id, { register: reg, name: `${i}.pdf` }, Buffer.from(`%PDF-1.4 ${i}`), null)).dokument.id,
+            );
+          for (const id of ids.slice(0, 2))
+            await d.volltexte.schreibeVolltext(id, { text: `Text ${id}` }, { id: null as never, herkunft: 'Test', paket: false });
+          assert.equal(await db.repo.mitVolltext(), 2);
+          const v = liesVektor([1, 2, 3, 4, 5, 6, 7, 8]);
+          assert.equal(await db.repo.vektorSetze({ dokumentId: ids[0], paket: 'ki', modell: 'm/8', vektor: v }), true);
+          assert.equal(await db.repo.vektorSetze({ dokumentId: ids[0], paket: 'ki', modell: 'm/8', vektor: v }), true, 'ersetzt');
+          assert.equal(
+            await db.repo.vektorSetze({ dokumentId: '00000000-0000-4000-8000-0000000000ff', paket: 'ki', modell: 'm/8', vektor: v }),
+            false,
+          );
+          await db.repo.vektorSetze({ dokumentId: ids[1], paket: 'ki', modell: 'alt', vektor: v });
+          assert.deepEqual(await db.repo.vektorStand(), [
+            { paket: 'ki', modell: 'alt', anzahl: 1 },
+            { paket: 'ki', modell: 'm/8', anzahl: 1 },
+          ]);
+          const geholt = await db.repo.vektorVon(ids[0], 'm/8');
+          assert.ok(geholt && kosinus(geholt, v) > 0.9999);
+          const alle: Array<[string, string]> = [];
+          await db.repo.vektorenLaden('m/8', (t) => {
+            for (const x of t) alle.push([x.dokumentId, x.mappeId]);
+          });
+          assert.deepEqual(alle, [[ids[0], post.id]]);
+          // Nur Dokumente mit Volltext, ohne Vektor dieses Modells; ab einer Id weiter.
+          assert.deepEqual(
+            (await db.repo.ohneVektor('m/8', 10)).map((x) => x.id),
+            [ids[1]],
+          );
+          const sortiert = ids.slice(0, 2).sort();
+          assert.deepEqual(
+            (await db.repo.ohneVektor('neu', 10)).map((x) => x.id),
+            sortiert,
+          );
+          assert.deepEqual(
+            (await db.repo.ohneVektor('neu', 10, sortiert[0])).map((x) => x.id),
+            [sortiert[1]],
+          );
+          // Modellwechsel: alles außer dem neuen Modell weg.
+          assert.equal(await db.repo.vektorenLoeschePaket('ki', 'm/8'), 1);
+          assert.deepEqual(
+            (await db.repo.vektorStand()).map((x) => x.modell),
+            ['m/8'],
+          );
+          // Mit dem Dokument weg (endgültig gelöscht; ohne Papierkorb).
+          await db.repo.loescheDokument(ids[0]);
+          assert.deepEqual(await db.repo.vektorStand(), []);
+          assert.equal(await db.repo.vektorVon(ids[0], 'm/8'), null);
+        } finally {
+          await db.ende();
+        }
+      });
+    },
+  );
 }

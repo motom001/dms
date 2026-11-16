@@ -2,8 +2,19 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  deutschePlz, eingabemodus, formatFehler, gleicheFormateAn, ibanFehler, ibanGruppen, istEmail, istInternetseite, istTelefon,
-  pruefeFormatDefinition, pruefeFormate, telefonLink, unpassendeAngaben,
+  deutschePlz,
+  eingabemodus,
+  formatFehler,
+  gleicheFormateAn,
+  ibanFehler,
+  ibanGruppen,
+  istEmail,
+  istInternetseite,
+  istTelefon,
+  pruefeFormatDefinition,
+  pruefeFormate,
+  telefonLink,
+  unpassendeAngaben,
 } from '../../shared/src/feldformate';
 import { artVon, istIban, pruefeVorschlaege, vorschlaegeAus } from '../../shared/src/erkennung';
 import { formatiere, type Feld } from '../../shared/src/model';
@@ -39,7 +50,10 @@ describe('Feldformate (#535): einzelne Formate', () => {
   it('Telefon: Ziffern, + am Anfang, Leerzeichen, /, -, Klammern – keine Buchstaben', () => {
     for (const x of ['+49 30 123456', '0351/123 45-6', '(0351) 12345', '110']) assert.ok(istTelefon(x), x);
     for (const x of ['0351 1234abc', '49+30', '12', 'ruf an']) assert.ok(!istTelefon(x), x);
-    assert.equal(fehler('telefon', '030 12345 Durchwahl'), 'Eine Telefonnummer enthält nur Ziffern, + am Anfang, Leerzeichen, /, - und Klammern.');
+    assert.equal(
+      fehler('telefon', '030 12345 Durchwahl'),
+      'Eine Telefonnummer enthält nur Ziffern, + am Anfang, Leerzeichen, /, - und Klammern.',
+    );
     assert.equal(telefonLink('+49 (30) 123-456'), 'tel:+4930123456');
   });
 
@@ -97,11 +111,17 @@ describe('Feldformate (#535): Speichern und Bestand', () => {
     assert.deepEqual(Object.keys(pruefeFormate({ felder }, { ...alt, telefon: '0351 12x' }, alt, '2026-11-02')), ['telefon']);
     const ausland = { ...alt, land: 'Österreich' };
     assert.deepEqual(pruefeFormate({ felder }, ausland, alt, '2026-11-02'), {});
-    assert.deepEqual(Object.keys(pruefeFormate({ felder }, { plz: '1010', land: 'Deutschland' }, { plz: '1010', land: 'Österreich' }, '2026-11-02')), ['plz']);
+    assert.deepEqual(
+      Object.keys(pruefeFormate({ felder }, { plz: '1010', land: 'Deutschland' }, { plz: '1010', land: 'Österreich' }, '2026-11-02')),
+      ['plz'],
+    );
   });
 
   it('gleicheFormateAn: https:// ergänzen, IBAN in Gruppen – nur geänderte Werte', () => {
-    const w = gleicheFormateAn({ felder }, { internetseite: 'www.example.org', iban: 'de89370400440532013000', email: ' lena@example.org ' });
+    const w = gleicheFormateAn(
+      { felder },
+      { internetseite: 'www.example.org', iban: 'de89370400440532013000', email: ' lena@example.org ' },
+    );
     assert.equal(w.internetseite, 'https://www.example.org');
     assert.equal(w.iban, 'DE89 3704 0044 0532 0130 00');
     assert.equal(w.email, 'lena@example.org');
@@ -110,16 +130,32 @@ describe('Feldformate (#535): Speichern und Bestand', () => {
   });
 
   it('unpassendeAngaben: je Mappe und Feld mit Grund', () => {
-    const l = unpassendeAngaben({ felder }, [{ id: 'm1', werte: { plz: '01357asda', geburtstag: '2030-01-01' } }, { id: 'm2', werte: { plz: '01357' } }], '2026-11-02');
-    assert.deepEqual(l.map((x) => `${x.mappeId}:${x.feldKey}`), ['m1:plz', 'm1:geburtstag']);
+    const l = unpassendeAngaben(
+      { felder },
+      [
+        { id: 'm1', werte: { plz: '01357asda', geburtstag: '2030-01-01' } },
+        { id: 'm2', werte: { plz: '01357' } },
+      ],
+      '2026-11-02',
+    );
+    assert.deepEqual(
+      l.map((x) => `${x.mappeId}:${x.feldKey}`),
+      ['m1:plz', 'm1:geburtstag'],
+    );
   });
 
   it('Definition: Format nur an Text, Land-Feld nur bei PLZ und vorhanden, Datumsgrenzen gültig', () => {
     assert.match(pruefeFormatDefinition({ key: 'x', label: 'X', typ: 'zahl', format: 'telefon' }, []).join(), /nur für Textfelder/);
     assert.match(pruefeFormatDefinition({ key: 'x', label: 'X', typ: 'text', format: 'plz', landFeld: 'fehlt' }, []).join(), /„fehlt“/);
-    assert.match(pruefeFormatDefinition({ key: 'x', label: 'X', typ: 'text', format: 'email', landFeld: 'land' }, felder).join(), /nur beim Format PLZ/);
+    assert.match(
+      pruefeFormatDefinition({ key: 'x', label: 'X', typ: 'text', format: 'email', landFeld: 'land' }, felder).join(),
+      /nur beim Format PLZ/,
+    );
     assert.match(pruefeFormatDefinition({ key: 'd', label: 'D', typ: 'datum', max: 'morgen' }, []).join(), /heute/);
-    assert.match(pruefeFormatDefinition({ key: 'd', label: 'D', typ: 'datum', min: '2030-01-01', max: '2020-01-01' }, []).join(), /nach „Spätestens“/);
+    assert.match(
+      pruefeFormatDefinition({ key: 'd', label: 'D', typ: 'datum', min: '2030-01-01', max: '2020-01-01' }, []).join(),
+      /nach „Spätestens“/,
+    );
     assert.deepEqual(pruefeFormatDefinition(f('plz'), felder), []);
   });
 });
@@ -130,7 +166,10 @@ describe('Feldformate (#535): Erkennung nutzt die Formate', () => {
     assert.equal(artVon({ key: 'feld1', label: 'Feld 1', typ: 'text', format: 'iban' }), 'iban');
     const typ = { felder: [{ key: 'geburtstag', label: 'Geburtstag', typ: 'datum', max: 'heute', erkennung: {} } as Feld] };
     assert.equal(vorschlaegeAus(typ, 'Termin am 01.01.2999').geburtstag, undefined);
-    const p = pruefeVorschlaege({ felder: [{ key: 'tel', label: 'Telefon', typ: 'text', format: 'telefon' }] }, { tel: { wert: 'ruf mich an' } });
+    const p = pruefeVorschlaege(
+      { felder: [{ key: 'tel', label: 'Telefon', typ: 'text', format: 'telefon' }] },
+      { tel: { wert: 'ruf mich an' } },
+    );
     assert.equal(p.verworfen.length, 1);
   });
 });
@@ -149,15 +188,30 @@ describe('Feldformate (#535): im Dienst', () => {
     assert.equal(plz.landFeld, 'land');
     assert.equal(typ.felder.find((x) => x.key === 'geburtstag')!.max, 'heute');
     assert.equal(typ.felder.find((x) => x.key === 'name')!.format, undefined);
-    await assert.rejects(d.mappentypen.legeTypAn({ name: 'Falsch', felder: [{ key: 'd', label: 'D', typ: 'datum', max: 'übermorgen' }] }), (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('heute'));
+    await assert.rejects(
+      d.mappentypen.legeTypAn({ name: 'Falsch', felder: [{ key: 'd', label: 'D', typ: 'datum', max: 'übermorgen' }] }),
+      (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('heute'),
+    );
   });
 
   it('neue Mappe: unpassende Angaben abgelehnt mit Feldname, passende angeglichen', async () => {
     const { d, typ } = await aufbau();
-    await assert.rejects(d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357asda', telefon: '0351 abc' } }),
-      (e) => e instanceof Fachfehler && e.status === 422 && /Telefon, PLZ/.test(e.message) && !!(e.details as { felder: Record<string, string[]> }).felder.plz);
-    await assert.rejects(d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', geburtstag: '2999-01-01' } }), (e) => e instanceof Fachfehler && /Geburtstag/.test(e.message));
-    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357', internetseite: 'www.example.org', iban: 'DE89370400440532013000' } });
+    await assert.rejects(
+      d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', plz: '01357asda', telefon: '0351 abc' } }),
+      (e) =>
+        e instanceof Fachfehler &&
+        e.status === 422 &&
+        /Telefon, PLZ/.test(e.message) &&
+        !!(e.details as { felder: Record<string, string[]> }).felder.plz,
+    );
+    await assert.rejects(
+      d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Lena', geburtstag: '2999-01-01' } }),
+      (e) => e instanceof Fachfehler && /Geburtstag/.test(e.message),
+    );
+    const m = await d.mappen.legeMappeAn({
+      typId: typ.id,
+      werte: { name: 'Lena', plz: '01357', internetseite: 'www.example.org', iban: 'DE89370400440532013000' },
+    });
     assert.equal(m.werte.internetseite, 'https://www.example.org');
     assert.equal(m.werte.iban, 'DE89 3704 0044 0532 0130 00');
     const wien = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Jonas', plz: '1010', land: 'Österreich' } });
@@ -166,21 +220,36 @@ describe('Feldformate (#535): im Dienst', () => {
 
   it('Bestand: neues Format macht nichts ungültig; erst das geänderte Feld muss passen; Werkbank listet', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const typ = await d.mappentypen.legeTypAn({ name: 'Person', titelVorlage: '{name}', felder: [
-      { key: 'name', label: 'Name', typ: 'text' }, { key: 'plz', label: 'PLZ', typ: 'text' }, { key: 'telefon', label: 'Telefon', typ: 'text' },
-    ] });
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Person',
+      titelVorlage: '{name}',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text' },
+        { key: 'plz', label: 'PLZ', typ: 'text' },
+        { key: 'telefon', label: 'Telefon', typ: 'text' },
+      ],
+    });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Markus', plz: '01357asda', telefon: '0351 abc' } });
-    await d.mappentypen.aendereTyp(typ.id, { ...typ, felder: typ.felder.map((x) => (x.key === 'plz' ? { ...x, format: 'plz' } : x.key === 'telefon' ? { ...x, format: 'telefon' } : x)) });
+    await d.mappentypen.aendereTyp(typ.id, {
+      ...typ,
+      felder: typ.felder.map((x) => (x.key === 'plz' ? { ...x, format: 'plz' } : x.key === 'telefon' ? { ...x, format: 'telefon' } : x)),
+    });
     // Passung bleibt: nichts unter „Zu erledigen“.
     assert.notEqual((await d.mappen.holeMappe(m.id))?.mappe.passt, false);
     // Anderes Feld ändern geht, die alten Angaben bleiben unverändert.
     const n = await d.mappen.aendereMappe(m.id, { werte: { ...m.werte, name: 'Markus B.' } });
     assert.equal(n.werte.plz, '01357asda');
     // Das Feld selbst ändern: muss passen.
-    await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { ...n.werte, telefon: '0351 abd' } }), (e) => e instanceof Fachfehler && /Telefon/.test(e.message));
+    await assert.rejects(
+      d.mappen.aendereMappe(m.id, { werte: { ...n.werte, telefon: '0351 abd' } }),
+      (e) => e instanceof Fachfehler && /Telefon/.test(e.message),
+    );
     const liste = await d.mappenEingaben.unpassendeFormate();
     assert.equal(liste.length, 1);
-    assert.deepEqual(liste[0].felder.map((x) => `${x.label}:${x.anzahl}`), ['PLZ:1', 'Telefon:1']);
+    assert.deepEqual(
+      liste[0].felder.map((x) => `${x.label}:${x.anzahl}`),
+      ['PLZ:1', 'Telefon:1'],
+    );
     assert.equal(liste[0].felder[0].mappen[0].titel, 'Markus B.');
     await d.mappen.aendereMappe(m.id, { werte: { ...n.werte, plz: '01357', telefon: '0351 12345' } });
     assert.deepEqual(await d.mappenEingaben.unpassendeFormate(), []);

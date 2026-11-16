@@ -24,7 +24,13 @@ import { setzeZeitzone } from '../../../shared/src/region';
 import type { Dokumentart } from '../../../shared/src/demodaten';
 
 /** Demo-Dokument mit dem Stand des Zufalls: Der Hauptfaden übernimmt den neuen Stand danach. */
-async function demoDokument(zustand: { startwert: string; s: number }, art: Dokumentart, m: MappenInhalt, kennung: string, rastern: boolean) {
+async function demoDokument(
+  zustand: { startwert: string; s: number },
+  art: Dokumentart,
+  m: MappenInhalt,
+  kennung: string,
+  rastern: boolean,
+) {
   const z = Zufall.aus(zustand);
   const dokument = await erzeugeDokument(z, art, m, kennung, rastern);
   return { dokument, zustand: z.zustand() };
@@ -47,18 +53,42 @@ function exportTabellen(t: { titel: string; kopf: string[]; text?: string[][]; w
 async function exportTabelleAusDatei(t: { titel: string; kopf: string[]; datei: string; zeitzone?: string }) {
   if (t.zeitzone) setzeZeitzone(t.zeitzone);
   const text = await readFile(t.datei, 'utf8');
-  const werte = text ? text.split('\n').filter(Boolean).map((z) => JSON.parse(z) as Zelle[]) : [];
+  const werte = text
+    ? text
+        .split('\n')
+        .filter(Boolean)
+        .map((z) => JSON.parse(z) as Zelle[])
+    : [];
   return xlsxAus(t.titel, t.kopf, werte);
 }
 
 export const VORGAENGE = {
-  seitenInfo, baueSeiten, teileSeiten, fuegeZusammen, bilderZuPdf, bildSeitePdf,
-  stempelePdf, bildAlsA4Pdf,
-  analysiereVerkleinern, verkleinerePdf,
-  analysiereSchwaerzen, schwaerze, schwaerzSeitenbild, arbeitsPdf,
-  textdokumentPdf, mappenPdfZeichnen, aufkleberbogenPdf, notfallblattPdf, briefPdf,
-  liesPdfA, textebeneWoerter, bereinigePdf, eingebetteteERechnung,
-  demoDokument, exportTabellen, exportTabelleAusDatei,
+  seitenInfo,
+  baueSeiten,
+  teileSeiten,
+  fuegeZusammen,
+  bilderZuPdf,
+  bildSeitePdf,
+  stempelePdf,
+  bildAlsA4Pdf,
+  analysiereVerkleinern,
+  verkleinerePdf,
+  analysiereSchwaerzen,
+  schwaerze,
+  schwaerzSeitenbild,
+  arbeitsPdf,
+  textdokumentPdf,
+  mappenPdfZeichnen,
+  aufkleberbogenPdf,
+  notfallblattPdf,
+  briefPdf,
+  liesPdfA,
+  textebeneWoerter,
+  bereinigePdf,
+  eingebetteteERechnung,
+  demoDokument,
+  exportTabellen,
+  exportTabelleAusDatei,
 };
 
 /** Zeichen, die seit dem letzten Aufruf in einem PDF fehlten (#826) – der Arbeiter fragt nach jedem Auftrag. */

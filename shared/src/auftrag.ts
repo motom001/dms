@@ -53,7 +53,9 @@ export type Fortschritt = (fertig: number, gesamt: number, phase?: string, extra
 /** Neuer Auftragsstand ohne Fortschritt. */
 export function neuerStand(plan: PhasenPlan[]): Pick<Auftrag, 'fertig' | 'gesamt' | 'phase' | 'phasen'> {
   return {
-    fertig: 0, gesamt: 0, phase: plan[0]?.key,
+    fertig: 0,
+    gesamt: 0,
+    phase: plan[0]?.key,
     phasen: plan.map((p, i) => ({ ...p, status: i === 0 ? 'laeuft' : 'wartet', fertig: 0, gesamt: 0 })),
   };
 }
@@ -62,11 +64,24 @@ export function neuerStand(plan: PhasenPlan[]): Pick<Auftrag, 'fertig' | 'gesamt
  * Trägt einen Fortschritt ein (verändert `a`). Mit Phasen: die genannte Phase läuft,
  * alle davor sind fertig; `fertig`/`gesamt` sind die Summen. Ohne Phasen wie früher.
  */
-export function meldeFortschritt(a: Pick<Auftrag, 'fertig' | 'gesamt' | 'phase' | 'phasen'>, fertig: number, gesamt: number, phase?: string, extra?: Pick<AuftragPhase, 'uebersprungen' | 'gruende'>): void {
-  if (!a.phasen.length) { a.fertig = fertig; a.gesamt = gesamt; return; }
+export function meldeFortschritt(
+  a: Pick<Auftrag, 'fertig' | 'gesamt' | 'phase' | 'phasen'>,
+  fertig: number,
+  gesamt: number,
+  phase?: string,
+  extra?: Pick<AuftragPhase, 'uebersprungen' | 'gruende'>,
+): void {
+  if (!a.phasen.length) {
+    a.fertig = fertig;
+    a.gesamt = gesamt;
+    return;
+  }
   let i = a.phasen.findIndex((p) => p.key === (phase ?? a.phase));
   if (i < 0) i = 0;
-  a.phasen.forEach((p, j) => { if (j < i) p.status = 'fertig'; else if (j === i) p.status = 'laeuft'; });
+  a.phasen.forEach((p, j) => {
+    if (j < i) p.status = 'fertig';
+    else if (j === i) p.status = 'laeuft';
+  });
   a.phasen[i].fertig = fertig;
   a.phasen[i].gesamt = gesamt;
   if (extra?.uebersprungen) Object.assign(a.phasen[i], { uebersprungen: extra.uebersprungen, gruende: extra.gruende ?? [] });
@@ -88,7 +103,8 @@ export function phasenText(p: AuftragPhase): string {
   if (p.status === 'wartet') return `${p.name}: folgt`;
   if (!p.gesamt && p.status === 'laeuft') return `${p.name}: wird ermittelt …`;
   // Weniger als geplant (#711): kein Haken, sondern „… übersprungen“ – die Gründe stehen in p.gruende.
-  if (p.uebersprungen) return `${p.name}: ${zahl(p.fertig)} von ${zahl(Math.max(p.gesamt, p.fertig))} – ${zahl(p.uebersprungen)} übersprungen`;
+  if (p.uebersprungen)
+    return `${p.name}: ${zahl(p.fertig)} von ${zahl(Math.max(p.gesamt, p.fertig))} – ${zahl(p.uebersprungen)} übersprungen`;
   return `${p.name}: ${zahl(p.fertig)} von ${zahl(Math.max(p.gesamt, p.fertig))}${p.status === 'fertig' ? ' ✓' : ''}`;
 }
 

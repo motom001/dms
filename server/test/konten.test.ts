@@ -11,7 +11,11 @@ const linkSchluessel = (link: string) => link.split('/passwort/')[1];
 
 function postfach() {
   const mails: Array<{ an: string; betreff: string; text: string }> = [];
-  const mailer: Mailer = { async sende(an, betreff, text) { mails.push({ an, betreff, text }); } };
+  const mailer: Mailer = {
+    async sende(an, betreff, text) {
+      mails.push({ an, betreff, text });
+    },
+  };
   return { mails, mailer };
 }
 
@@ -21,7 +25,11 @@ describe('Konten', () => {
     assert.equal(await k.einrichtungNoetig(), true);
     await wirft(k.einrichten({ email: 'admin@example.org', passwort: 'kurz' }), 422);
     const { benutzer, schluessel } = await k.einrichten({ email: 'admin@example.org', name: 'Thomas', passwort: 'ein-langes-passwort' });
-    assert.deepEqual([benutzer.rolle, benutzer.verwaltung], ['mitglied', ['*']], 'kein Konto „Administrator“: eine Person mit „Gesamte Verwaltung“ (#818)');
+    assert.deepEqual(
+      [benutzer.rolle, benutzer.verwaltung],
+      ['mitglied', ['*']],
+      'kein Konto „Administrator“: eine Person mit „Gesamte Verwaltung“ (#818)',
+    );
     assert.ok((await k.anmeldungZu(schluessel))?.sitzung.verwaltungSeit, 'gleich im Verwaltungsmodus für den Einrichtungsassistenten');
     assert.equal((await k.benutzerZu(schluessel))?.id, benutzer.id);
     await wirft(k.einrichten({ email: 'zweiter@example.org', passwort: 'ein-langes-passwort' }), 409);
@@ -42,7 +50,9 @@ describe('Konten', () => {
   it('gleichzeitige Fehlversuche kommen nicht an der Grenze vorbei (#956)', async () => {
     const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
     await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
-    const r = await Promise.allSettled(Array.from({ length: 20 }, () => k.anmelden({ email: 'admin@example.org', passwort: 'falsch-falsch' }, '7.7.7.7')));
+    const r = await Promise.allSettled(
+      Array.from({ length: 20 }, () => k.anmelden({ email: 'admin@example.org', passwort: 'falsch-falsch' }, '7.7.7.7')),
+    );
     const status = r.map((x) => (x.status === 'rejected' ? (x.reason as Fachfehler).status : 200));
     assert.equal(status.filter((s) => s === 401).length, 5, 'nur so viele Passwörter geprüft, wie die Grenze erlaubt');
     assert.equal(status.filter((s) => s === 429).length, 15);
@@ -159,15 +169,25 @@ describe('Profil', () => {
 describe('Sitzungen und Vertretung', () => {
   async function zwei() {
     const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
-    const admin = await k.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' }, { ip: '10.0.0.1', geraet: 'Mozilla/5.0 (Windows NT 10.0) Firefox/130.0' });
+    const admin = await k.einrichten(
+      { email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' },
+      { ip: '10.0.0.1', geraet: 'Mozilla/5.0 (Windows NT 10.0) Firefox/130.0' },
+    );
     const neu = await k.legeBenutzerAn({ email: 'sabine@example.org', name: 'Sabine' });
-    const s = await k.passwortSetzen({ schluessel: linkSchluessel(neu.link!), passwort: 'sabines-passwort' }, { ip: '10.0.0.2', geraet: 'Mozilla/5.0 (iPhone) Safari/604.1' });
+    const s = await k.passwortSetzen(
+      { schluessel: linkSchluessel(neu.link!), passwort: 'sabines-passwort' },
+      { ip: '10.0.0.2', geraet: 'Mozilla/5.0 (iPhone) Safari/604.1' },
+    );
     return { k, admin, sabine: s };
   }
 
   it('zeigt Sitzungen mit Gerät und letzter Aktivität und beendet sie gezielt', async () => {
     const { k, sabine } = await zwei();
-    const zweite = await k.anmelden({ email: 'sabine@example.org', passwort: 'sabines-passwort' }, '10.0.0.3', 'Mozilla/5.0 (Macintosh; Mac OS X) Chrome/129.0');
+    const zweite = await k.anmelden(
+      { email: 'sabine@example.org', passwort: 'sabines-passwort' },
+      '10.0.0.3',
+      'Mozilla/5.0 (Macintosh; Mac OS X) Chrome/129.0',
+    );
     const liste = await k.sitzungenVon(sabine.benutzer.id);
     assert.equal(liste.length, 2);
     assert.ok(liste.every((s) => s.zuletztAktiv && s.geraet && s.ip));

@@ -53,7 +53,8 @@ export const berechnetVon = (f: Pick<Feld, 'berechnetVon'> | undefined): string 
  * „nie überschreiben“), nie bei Tabellen (#1030, ohne eigenen Wert) und nie bei zusammengesetzten Feldern (#1050 – die
  * berechnet Ablago beim Speichern). Neue Wege fragen hier, der Server prüft beim Speichern ohnehin (mappen/berechnet.ts).
  */
-export const vonAussenFuellbar = (f: Pick<Feld, 'berechnetVon'> & { typ?: Feld['typ'] }): boolean => !f.berechnetVon && f.typ !== 'tabelle' && f.typ !== 'zusammengesetzt';
+export const vonAussenFuellbar = (f: Pick<Feld, 'berechnetVon'> & { typ?: Feld['typ'] }): boolean =>
+  !f.berechnetVon && f.typ !== 'tabelle' && f.typ !== 'zusammengesetzt';
 
 /** Felder des Typs, die ein Paket berechnet. */
 export const berechneteFelder = (typ: Pick<Mappentyp, 'felder'>): Feld[] => typ.felder.filter((f) => !!f.berechnetVon);
@@ -76,11 +77,17 @@ export function berechnungAktiv(p: Pick<InstalliertesPaket, 'id' | 'laeufer'> | 
 export const UMBAU_SCHREIBER = 'dms';
 
 /** Je Paket-Id, die an Feldern des Typs steht: Name und ob es noch rechnet. Leer, wenn der Typ keine berechneten Felder hat. */
-export function berechnungVon(typ: Pick<Mappentyp, 'felder' | 'schluessel'>, pakete: Array<Pick<InstalliertesPaket, 'id' | 'name' | 'laeufer'>>): Record<string, Berechnung> {
+export function berechnungVon(
+  typ: Pick<Mappentyp, 'felder' | 'schluessel'>,
+  pakete: Array<Pick<InstalliertesPaket, 'id' | 'name' | 'laeufer'>>,
+): Record<string, Berechnung> {
   const r: Record<string, Berechnung> = {};
   for (const id of new Set(berechneteFelder(typ).map((f) => f.berechnetVon!))) {
     // „Übernommen aus“ (#1041) setzt Ablago selbst beim Paket-Umbau – kein Paket, und es bleibt so.
-    if (id === UMBAU_SCHREIBER) { r[id] = { name: t('gemeinsam.umbau.schreiber'), aktiv: true }; continue; }
+    if (id === UMBAU_SCHREIBER) {
+      r[id] = { name: t('gemeinsam.umbau.schreiber'), aktiv: true };
+      continue;
+    }
     const p = pakete.find((x) => x.id === id);
     r[id] = { name: p?.name ?? id, aktiv: berechnungAktiv(p, typ) };
   }
@@ -96,12 +103,19 @@ export type HinweisFehler = 'leer' | 'lang' | 'html' | 'markdown' | 'link';
  */
 export function pruefeHinweistext(roh: unknown): { text: string } | { fehler: HinweisFehler } {
   /* eslint-disable no-control-regex -- Steuerzeichen gehören nicht in einen Hinweis */
-  const text = typeof roh === 'string' ? roh.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  const text =
+    typeof roh === 'string'
+      ? roh
+          .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      : '';
   /* eslint-enable no-control-regex */
   if (!text) return { fehler: 'leer' };
   if ([...text].length > HINWEIS_MAX) return { fehler: 'lang' };
   if (/[<>]|&(?:[a-z]+|#\d+|#x[0-9a-f]+);/i.test(text)) return { fehler: 'html' };
   if (/\]\(|`|\*\*|__|^\s*(?:#{1,6}\s|[-*+]\s|>\s|\d+\.\s)/.test(text)) return { fehler: 'markdown' };
-  if (/\b(?:https?|ftp|mailto|file|javascript|data|tel):|\bwww\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\/\S/i.test(text)) return { fehler: 'link' };
+  if (/\b(?:https?|ftp|mailto|file|javascript|data|tel):|\bwww\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\/\S/i.test(text))
+    return { fehler: 'link' };
   return { text };
 }

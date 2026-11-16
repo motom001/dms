@@ -5,7 +5,14 @@
 import type { ExternMessung } from './extern';
 
 /** Zeitpunkte aus Resource Timing (ms seit Seitenstart); 0 = unbekannt. */
-export interface RessourcenZeiten { startTime: number; requestStart: number; responseStart: number; responseEnd: number; connectStart: number; connectEnd: number }
+export interface RessourcenZeiten {
+  startTime: number;
+  requestStart: number;
+  responseStart: number;
+  responseEnd: number;
+  connectStart: number;
+  connectEnd: number;
+}
 
 export interface Anfragemessung {
   nr: number;
@@ -38,7 +45,10 @@ export function liesServerTiming(kopf: string): { werte: Record<string, number>;
     const dur = /;\s*dur=([\d.]+)/.exec(teil)?.[1];
     if (!name || dur === undefined) continue;
     werte[name] = Number(dur);
-    if (name === 'db') { const d = /;\s*desc="?(\d+)"?/.exec(teil)?.[1]; if (d !== undefined) dbAnzahl = Number(d); }
+    if (name === 'db') {
+      const d = /;\s*desc="?(\d+)"?/.exec(teil)?.[1];
+      if (d !== undefined) dbAnzahl = Number(d);
+    }
   }
   return { werte, dbAnzahl };
 }
@@ -66,7 +76,8 @@ export function teileAuf(
     wartenServer: w.vor,
     rechte,
     aufbereitung: app !== undefined ? nn(app - (db ?? 0) - (rechte ?? 0)) : undefined,
-    db, dbAnzahl: st.dbAnzahl,
+    db,
+    dbAnzahl: st.dbAnzahl,
     json: w.json,
     uebertragung: rt && rt.responseEnd > 0 && rt.responseStart > 0 ? nn(rt.responseEnd - rt.responseStart) : undefined,
   };

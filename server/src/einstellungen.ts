@@ -21,11 +21,19 @@ export interface Einstellungen {
 export function speicherEinstellungen(): Einstellungen {
   const m = new Map<string, unknown>();
   return {
-    async lies(k) { return m.has(k) ? structuredClone(m.get(k)) : null; },
-    async schreibe(k, w) { if (w === null || w === undefined) m.delete(k); else m.set(k, structuredClone(w)); merkeAenderung(); },
+    async lies(k) {
+      return m.has(k) ? structuredClone(m.get(k)) : null;
+    },
+    async schreibe(k, w) {
+      if (w === null || w === undefined) m.delete(k);
+      else m.set(k, structuredClone(w));
+      merkeAenderung();
+    },
     async tausche(k, alt, neu) {
       if (JSON.stringify(m.has(k) ? m.get(k) : null) !== JSON.stringify(alt ?? null)) return false;
-      m.set(k, structuredClone(neu)); merkeAenderung(); return true;
+      m.set(k, structuredClone(neu));
+      merkeAenderung();
+      return true;
     },
   };
 }
@@ -53,16 +61,21 @@ export function pgEinstellungen(sql: postgres.Sql, haushaltId: string): Einstell
         await sql`
           INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${sql.json(w as postgres.JSONValue)})
           ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
-      } finally { merkeAenderung(); }
+      } finally {
+        merkeAenderung();
+      }
     },
     async tausche(k, alt, neu) {
       const w = sql.json(neu as postgres.JSONValue);
       try {
-        const r = alt === null || alt === undefined
-          ? await sql`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${w}) ON CONFLICT DO NOTHING RETURNING 1`
-          : await sql`UPDATE einstellungen SET wert = ${w} WHERE haushalt_id = ${haushaltId} AND schluessel = ${k} AND wert = ${sql.json(alt as postgres.JSONValue)} RETURNING 1`;
+        const r =
+          alt === null || alt === undefined
+            ? await sql`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${w}) ON CONFLICT DO NOTHING RETURNING 1`
+            : await sql`UPDATE einstellungen SET wert = ${w} WHERE haushalt_id = ${haushaltId} AND schluessel = ${k} AND wert = ${sql.json(alt as postgres.JSONValue)} RETURNING 1`;
         return r.length > 0;
-      } finally { merkeAenderung(); }
+      } finally {
+        merkeAenderung();
+      }
     },
   };
 }

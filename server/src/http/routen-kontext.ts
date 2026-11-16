@@ -46,52 +46,85 @@ import type { Anfrage, Datei, Antwort, RoutenExtras } from '../routen';
 export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = {}) {
   const fotostapel = x.fotostapel ?? new Fotostapel();
   const { messung, system } = x;
-  const designs = () => { if (!x.designs) throw new Fachfehler(404, t('meldungen.routen.designs-sind-nicht-eingerichtet')); return x.designs; };
+  const designs = () => {
+    if (!x.designs) throw new Fachfehler(404, t('meldungen.routen.designs-sind-nicht-eingerichtet'));
+    return x.designs;
+  };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
-  const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion, benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })) });
-  const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion, ...(x.automatisierungen ? { automatisierungen: async () => (await x.automatisierungen!.uebersicht()).automatisierungen } : {}) });
-  // Ablago entdecken (#831, #832): Rundgänge und Tipps je Person; Funktionen, nach denen Tipps gefiltert werden.
-  const entdecken = x.entdecken ?? new Entdecken({
-    einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
-    version: eigeneVersion, heute: () => heuteIn(),
-    funktionen: async () => {
-      const f = new Set<'fragen' | 'laufwerk' | 'mail'>();
-      if ((await dienst.fragen.stand()).verfuegbar) f.add('fragen');
-      if (x.webdav && (await x.webdav.einstellung()).aktiv) f.add('laufwerk');
-      if (konten.mailAktiv) f.add('mail');
-      return f;
-    },
-    // Rundgänge aus Paketen (#831): Pakete, Mappentypen und die Rechte der Person daran.
-    pakete: () => dienst.kern.repo.listePakete(),
-    typen: async () => (await dienst.kern.repo.listeTypen()).map((x) => ({ kennung: x.schluessel ?? x.id, felder: x.felder.map((f) => f.key), register: x.register.map((r) => r.key) })),
-    lesbareTypen: async (b) => {
-      const z = await dienst.rechtepruefung.zugriff(b);
-      const lesbar = new Set((await dienst.mappentypen.rechteUebersicht(z)).filter((x) => x.rechte.R !== 'nie').map((x) => x.typId));
-      return new Set([...z.typen.values()].filter((x) => lesbar.has(x.id)).map((x) => x.schluessel ?? x.id));
-    },
-    oeffnen: async (b, kennung, art) => {
-      const z = await dienst.rechtepruefung.zugriff(b);
-      const typ = (await dienst.mappentypen.typenFuer(z)).find((x) => (x.schluessel ?? x.id) === kennung);
-      if (!typ) return null;
-      if (art === 'neu') return darfErstellen(typ) ? `/ablage/${typ.id}/neu` : null;
-      // Die erste Mappe des Typs, die die Person lesen darf – zuletzt geänderte zuerst.
-      const mappen = (await dienst.kern.repo.listeMappen(typ.id)).sort((a, b2) => b2.geaendert.localeCompare(a.geaendert));
-      const lesbar = await dienst.rechtepruefung.lesbare(z, mappen.slice(0, 500).map((m) => m.id));
-      const m = mappen.find((x) => lesbar.has(x.id));
-      return m ? `/ablage/${typ.id}/${m.id}` : null;
-    },
-    werkbank: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
-    log: L.konto,
+  const pakete =
+    x.pakete ??
+    new Paketverwaltung(dienst, {
+      version: eigeneVersion,
+      benutzer: async () =>
+        (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })),
+    });
+  const paketerstellung = new Paketerstellung(dienst, {
+    version: eigeneVersion,
+    ...(x.automatisierungen ? { automatisierungen: async () => (await x.automatisierungen!.uebersicht()).automatisierungen } : {}),
   });
+  // Ablago entdecken (#831, #832): Rundgänge und Tipps je Person; Funktionen, nach denen Tipps gefiltert werden.
+  const entdecken =
+    x.entdecken ??
+    new Entdecken({
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
+      version: eigeneVersion,
+      heute: () => heuteIn(),
+      funktionen: async () => {
+        const f = new Set<'fragen' | 'laufwerk' | 'mail'>();
+        if ((await dienst.fragen.stand()).verfuegbar) f.add('fragen');
+        if (x.webdav && (await x.webdav.einstellung()).aktiv) f.add('laufwerk');
+        if (konten.mailAktiv) f.add('mail');
+        return f;
+      },
+      // Rundgänge aus Paketen (#831): Pakete, Mappentypen und die Rechte der Person daran.
+      pakete: () => dienst.kern.repo.listePakete(),
+      typen: async () =>
+        (await dienst.kern.repo.listeTypen()).map((x) => ({
+          kennung: x.schluessel ?? x.id,
+          felder: x.felder.map((f) => f.key),
+          register: x.register.map((r) => r.key),
+        })),
+      lesbareTypen: async (b) => {
+        const z = await dienst.rechtepruefung.zugriff(b);
+        const lesbar = new Set((await dienst.mappentypen.rechteUebersicht(z)).filter((x) => x.rechte.R !== 'nie').map((x) => x.typId));
+        return new Set([...z.typen.values()].filter((x) => lesbar.has(x.id)).map((x) => x.schluessel ?? x.id));
+      },
+      oeffnen: async (b, kennung, art) => {
+        const z = await dienst.rechtepruefung.zugriff(b);
+        const typ = (await dienst.mappentypen.typenFuer(z)).find((x) => (x.schluessel ?? x.id) === kennung);
+        if (!typ) return null;
+        if (art === 'neu') return darfErstellen(typ) ? `/ablage/${typ.id}/neu` : null;
+        // Die erste Mappe des Typs, die die Person lesen darf – zuletzt geänderte zuerst.
+        const mappen = (await dienst.kern.repo.listeMappen(typ.id)).sort((a, b2) => b2.geaendert.localeCompare(a.geaendert));
+        const lesbar = await dienst.rechtepruefung.lesbare(
+          z,
+          mappen.slice(0, 500).map((m) => m.id),
+        );
+        const m = mappen.find((x) => lesbar.has(x.id));
+        return m ? `/ablage/${typ.id}/${m.id}` : null;
+      },
+      werkbank: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
+      log: L.konto,
+    });
   // Werkbank → Rundgänge (#941): eigene Rundgänge und An/aus in der Einstellung der Ablage.
   const rundgaengeWerkbank = new RundgaengeWerkbank({
     speicher: {
       lies: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
-      schreibe: async (w) => { await dienst.kern.einstellungen?.schreibe(WERKBANK_EINSTELLUNG, w); },
-      ...(dienst.kern.einstellungen?.tausche ? { tausche: (alt: unknown, neu: unknown) => dienst.kern.einstellungen!.tausche!(WERKBANK_EINSTELLUNG, alt, neu) } : {}),
+      schreibe: async (w) => {
+        await dienst.kern.einstellungen?.schreibe(WERKBANK_EINSTELLUNG, w);
+      },
+      ...(dienst.kern.einstellungen?.tausche
+        ? { tausche: (alt: unknown, neu: unknown) => dienst.kern.einstellungen!.tausche!(WERKBANK_EINSTELLUNG, alt, neu) }
+        : {}),
     },
     pruefung: async () => {
-      const typen = new Map((await dienst.kern.repo.listeTypen()).map((x) => [x.schluessel ?? x.id, { kennung: x.schluessel ?? x.id, felder: x.felder.map((f) => f.key), register: x.register.map((r) => r.key) }]));
+      const typen = new Map(
+        (await dienst.kern.repo.listeTypen()).map((x) => [
+          x.schluessel ?? x.id,
+          { kennung: x.schluessel ?? x.id, felder: x.felder.map((f) => f.key), register: x.register.map((r) => r.key) },
+        ]),
+      );
       return { anker: entdecken.ablago().anker, typ: (k: string) => typen.get(k) ?? null };
     },
   });
@@ -103,13 +136,20 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    */
   const einrichtungZugang = async (a: Anfrage) => {
     if (!x.einrichtung) throw new Fachfehler(404, t('meldungen.routen.kein-einrichtungsassistent'));
-    await x.einrichtung.pruefeZugang(a.einrichtungscode, !!a.benutzer && !a.apiSchluessel && hatGesamt(a.benutzer) && !a.sitzungsDaten?.vertretungId);
+    await x.einrichtung.pruefeZugang(
+      a.einrichtungscode,
+      !!a.benutzer && !a.apiSchluessel && hatGesamt(a.benutzer) && !a.sitzungsDaten?.vertretungId,
+    );
   };
   /**
    * Ist ein Abruf ein Weitergeben (#394)? Herunterladen (?herunterladen), Stempel-Parameter oder ein API-Schlüssel
    * eines Benutzers. Anzeigen in der Oberfläche und Pakete (Dienstkonten, z. B. Texterkennung) bekommen das Original.
    */
-  const weitergabe = (a: Anfrage) => a.query.herunterladen !== undefined || a.query.verkleinern !== undefined || !!wunschAus(a.query) || (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
+  const weitergabe = (a: Anfrage) =>
+    a.query.herunterladen !== undefined ||
+    a.query.verkleinern !== undefined ||
+    !!wunschAus(a.query) ||
+    (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
   /**
    * Herunterladen ist Mitnehmen (#723): verlangt außer Lesen das Exportrecht E – über die gemeinsame Prüfstelle wie
    * E-Mail, Export und Laufwerk. Anzeigen im Browser (inline) bleibt mit R. Dienstkonten der Pakete (Texterkennung,
@@ -128,10 +168,19 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    * Dokumente, die in derselben Datei mit hinausgehen (ZIP „mit Anlagen“) – je eines ein eigener Abruf mit demselben
    * Weg und API-Schlüssel, damit der Nachweis auch für die Anlagen zeigt, worüber sie hinausgingen.
    */
-  const abgerufen = async <T extends Antwort>(a: Anfrage, dokumentId: string, o: { fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; datei?: string }, antwort: T,
-    anlagen: ReadonlyArray<{ dokumentId: string; gestempelt?: boolean; datei?: string }> = []): Promise<T> => {
+  const abgerufen = async <T extends Antwort>(
+    a: Anfrage,
+    dokumentId: string,
+    o: { fassung?: Abruffassung; version?: number | null; gestempelt?: boolean; datei?: string },
+    antwort: T,
+    anlagen: ReadonlyArray<{ dokumentId: string; gestempelt?: boolean; datei?: string }> = [],
+  ): Promise<T> => {
     if (a.benutzer?.art === 'dienst') return antwort;
-    const wie = { benutzerId: ich(a).id, weg: a.apiSchluessel ? 'api' as const : 'oberflaeche' as const, schluessel: a.apiSchluessel?.name ?? null };
+    const wie = {
+      benutzerId: ich(a).id,
+      weg: a.apiSchluessel ? ('api' as const) : ('oberflaeche' as const),
+      schluessel: a.apiSchluessel?.name ?? null,
+    };
     try {
       await dienst.mappenHistorie.notiereAbruf({ dokumentId, ...wie, ...o });
       for (const x of anlagen) await dienst.mappenHistorie.notiereAbruf({ ...wie, ...o, ...x });
@@ -164,16 +213,47 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     if (!d.anzeigen || d.mime !== 'application/pdf' || a.apiSchluessel) return { datei: d };
     const pdf = await pdfFuerAnzeige(Buffer.isBuffer(d.inhalt) ? d.inhalt : await alsPuffer(d.inhalt));
     if (!pdf) {
-      const hinweis = Buffer.from('Dieses PDF lässt sich nicht sicher anzeigen (verschlüsselt oder beschädigt). Bitte lade es herunter und öffne es in einem PDF-Programm.\n\nThis PDF cannot be displayed safely (encrypted or damaged). Please download it and open it in a PDF reader.\n');
-      return { datei: { inhalt: hinweis, name: 'hinweis.txt', mime: 'text/plain; charset=utf-8', anzeigen: true, groesse: hinweis.length, koepfe: { 'x-dms-anzeige': 'nur-herunterladen', 'cache-control': 'no-store' } } };
+      const hinweis = Buffer.from(
+        'Dieses PDF lässt sich nicht sicher anzeigen (verschlüsselt oder beschädigt). Bitte lade es herunter und öffne es in einem PDF-Programm.\n\nThis PDF cannot be displayed safely (encrypted or damaged). Please download it and open it in a PDF reader.\n',
+      );
+      return {
+        datei: {
+          inhalt: hinweis,
+          name: 'hinweis.txt',
+          mime: 'text/plain; charset=utf-8',
+          anzeigen: true,
+          groesse: hinweis.length,
+          koepfe: { 'x-dms-anzeige': 'nur-herunterladen', 'cache-control': 'no-store' },
+        },
+      };
     }
     return { datei: { ...d, inhalt: pdf, groesse: pdf.length, koepfe: { ...d.koepfe, 'x-dms-anzeige': 'bereinigt' } } };
   };
   /** Antwort für eine ausgegebene Datei (#394): immer als Herunterladen. Verkleinert (#393): Kopf X-DMS-Verkleinert „vorher/nachher“. */
-  const ausgabeDatei = (r: { name: string; mime: string; anzeigbar: boolean; groesse: number; inhalt: Buffer | Readable; gestempelt: boolean; verkleinert?: { vorher: number; nachher: number } | null }): Antwort => {
+  const ausgabeDatei = (r: {
+    name: string;
+    mime: string;
+    anzeigbar: boolean;
+    groesse: number;
+    inhalt: Buffer | Readable;
+    gestempelt: boolean;
+    verkleinert?: { vorher: number; nachher: number } | null;
+  }): Antwort => {
     L.dokumente.debug(r.gestempelt ? 'Dokument mit Stempel heruntergeladen' : 'Dokument heruntergeladen', { name: r.name });
-    const koepfe: Record<string, string> = { ...(r.gestempelt ? { 'x-dms-stempel': '1' } : {}), ...(r.verkleinert ? { 'x-dms-verkleinert': `${r.verkleinert.vorher}/${r.verkleinert.nachher}` } : {}) };
-    return { datei: { inhalt: r.inhalt, name: r.name, mime: r.anzeigbar ? r.mime : 'application/octet-stream', anzeigen: false, groesse: r.groesse, ...(Object.keys(koepfe).length ? { koepfe } : {}) } };
+    const koepfe: Record<string, string> = {
+      ...(r.gestempelt ? { 'x-dms-stempel': '1' } : {}),
+      ...(r.verkleinert ? { 'x-dms-verkleinert': `${r.verkleinert.vorher}/${r.verkleinert.nachher}` } : {}),
+    };
+    return {
+      datei: {
+        inhalt: r.inhalt,
+        name: r.name,
+        mime: r.anzeigbar ? r.mime : 'application/octet-stream',
+        anzeigen: false,
+        groesse: r.groesse,
+        ...(Object.keys(koepfe).length ? { koepfe } : {}),
+      },
+    };
   };
   const typName = async (id: string) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? id;
   /** Passwörter für Dokumente (#827): nur die Person selbst im Browser – kein API-Schlüssel, keine Vertretung. */
@@ -184,30 +264,48 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     if (!e) throw new Fachfehler(404, t('mappen.entsperren.gemerkt.aus'));
     return e;
   };
-  const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, t('meldungen.routen.betriebseinstellungen-sind-nicht')); return x.betrieb; };
-  const region = () => { if (!x.region) throw new Fachfehler(404, t('meldungen.routen.die-region-ist-nicht')); return x.region; };
-  const sprachen = () => { if (!x.sprachen) throw new Fachfehler(404, t('meldungen.sprachen.nicht-eingerichtet')); return x.sprachen; };
+  const betrieb = () => {
+    if (!x.betrieb) throw new Fachfehler(404, t('meldungen.routen.betriebseinstellungen-sind-nicht'));
+    return x.betrieb;
+  };
+  const region = () => {
+    if (!x.region) throw new Fachfehler(404, t('meldungen.routen.die-region-ist-nicht'));
+    return x.region;
+  };
+  const sprachen = () => {
+    if (!x.sprachen) throw new Fachfehler(404, t('meldungen.sprachen.nicht-eingerichtet'));
+    return x.sprachen;
+  };
   /** Sprache für die Oberfläche (#729): die der Person, sonst die mitgeschickte, sonst die der Installation. */
   const spracheFuer = async (a: Anfrage) => {
     // #1198: höchstens kurz auf die Datenbank warten, sonst die zuletzt gelesene Einstellung.
     const e = x.sprachen ? await x.sprachen.liesHoechstens() : liesSpracheinstellung(null);
     const kopf = spracheAusKopf(a.kopf?.('x-sprache'), e.erlaubt);
     return {
-      sprache: a.benutzer ? wirksameSprache(a.benutzer.sprache ?? kopf, e) : kopf ?? e.standard,
-      standard: e.standard, erlaubt: e.erlaubt,
+      sprache: a.benutzer ? wirksameSprache(a.benutzer.sprache ?? kopf, e) : (kopf ?? e.standard),
+      standard: e.standard,
+      erlaubt: e.erlaubt,
       maschinell: e.erlaubt.filter(istMaschinell),
     };
   };
   const regionStand = async (r: import('../../../shared/src/region').Region) => ({
-    region: r, laender: LAENDER, bundeslaender: BUNDESLAENDER, zeitzonen: ZEITZONEN, feiertage: RegionDienst.feiertageIm(r),
+    region: r,
+    laender: LAENDER,
+    bundeslaender: BUNDESLAENDER,
+    zeitzonen: ZEITZONEN,
+    feiertage: RegionDienst.feiertageIm(r),
   });
   /** Eigene Einstellung der täglichen Zusammenfassung mit den Standards der Werkbank (#92, #94). */
   const zusammenfassung = async (i: Benutzer) => {
     // Standard seit #1001 aus der eingeschalteten Automatisierung (Uhrzeit ihrer Wenn-Karte), Feiertage aus der Region.
     const vorgabe = (await dienst.zusammenfassungVorgabe?.()) ?? null;
-    const std = { aktiv: !!vorgabe, uhrzeit: vorgabe?.uhrzeit ?? MAIL_STANDARD.uhrzeit, bundesland: x.region ? (await x.region.lies()).bundesland : null };
+    const std = {
+      aktiv: !!vorgabe,
+      uhrzeit: vorgabe?.uhrzeit ?? MAIL_STANDARD.uhrzeit,
+      bundesland: x.region ? (await x.region.lies()).bundesland : null,
+    };
     const e = await konten.einstellungen(i);
-    const eigen = e.aufgaben_mail_zeit && typeof e.aufgaben_mail_zeit === 'object' ? e.aufgaben_mail_zeit as Partial<MailZeit> : null;
+    const eigen = e.aufgaben_mail_zeit && typeof e.aufgaben_mail_zeit === 'object' ? (e.aufgaben_mail_zeit as Partial<MailZeit>) : null;
     return {
       aktiv: e.aufgaben_mail !== false,
       uhrzeit: typeof eigen?.uhrzeit === 'string' ? eigen.uhrzeit : null,
@@ -216,11 +314,26 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
       versand: !!x.betrieb?.mailer() && std.aktiv,
     };
   };
-  const ocr = () => { if (!x.texterkennung) throw new Fachfehler(404, t('meldungen.routen.die-texterkennung-ist-nicht')); return x.texterkennung; };
-  const meldungen = () => { if (!x.fehlermeldungen) throw new Fachfehler(404, t('meldungen.routen.gemeldete-fehler-sind-nicht')); return x.fehlermeldungen; };
-  const tresor = () => { if (!x.tresor) throw new Fachfehler(404, t('meldungen.routen.die-verschluesselung-ist-nicht')); return x.tresor; };
-  const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, t('meldungen.routen.api-schluessel-sind-nicht')); return x.apiSchluessel; };
-  const autos = () => { if (!x.automatisierungen) throw new Fachfehler(404, t('meldungen.routen.automatisierungen-sind-nicht')); return x.automatisierungen; };
+  const ocr = () => {
+    if (!x.texterkennung) throw new Fachfehler(404, t('meldungen.routen.die-texterkennung-ist-nicht'));
+    return x.texterkennung;
+  };
+  const meldungen = () => {
+    if (!x.fehlermeldungen) throw new Fachfehler(404, t('meldungen.routen.gemeldete-fehler-sind-nicht'));
+    return x.fehlermeldungen;
+  };
+  const tresor = () => {
+    if (!x.tresor) throw new Fachfehler(404, t('meldungen.routen.die-verschluesselung-ist-nicht'));
+    return x.tresor;
+  };
+  const schluessel = () => {
+    if (!x.apiSchluessel) throw new Fachfehler(404, t('meldungen.routen.api-schluessel-sind-nicht'));
+    return x.apiSchluessel;
+  };
+  const autos = () => {
+    if (!x.automatisierungen) throw new Fachfehler(404, t('meldungen.routen.automatisierungen-sind-nicht'));
+    return x.automatisierungen;
+  };
   /**
    * ?passwoerter=anzeigen (#46): nur mit einem API-Schlüssel, der das Recht „Passwörter lesen“ hat.
    * Liefert den Namen des Schlüssels fürs Protokoll, sonst null.
@@ -236,15 +349,24 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
    * Verwaltungsmodus, wenn in einem ihrer Bereiche etwas anliegt – nicht in einer Vertretung, und nur ja/nein.
    */
   const verwaltungHinweis = async (a: Anfrage): Promise<boolean> => {
-    if (!a.benutzer || a.benutzer.rolle === 'admin' || !darfVerwalten(a.benutzer) || a.sitzungsDaten?.vertretungId || !x.verwaltung) return false;
-    try { return await x.verwaltung.offen(a.benutzer); } catch { return false; }
+    if (!a.benutzer || a.benutzer.rolle === 'admin' || !darfVerwalten(a.benutzer) || a.sitzungsDaten?.vertretungId || !x.verwaltung)
+      return false;
+    try {
+      return await x.verwaltung.offen(a.benutzer);
+    } catch {
+      return false;
+    }
   };
   /**
    * Spur im Verwaltungsmodus (#820): Öffnet, lädt herunter, ändert, exportiert oder versendet jemand im Modus eine
    * Mappe, die er mit seinen Alltagsrechten nicht lesen dürfte, steht das dauerhaft in ihrer Historie. Liefert die
    * Mappen, für die das gilt.
    */
-  const modusSpur = async (a: Anfrage, ids: string[], was: 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet'): Promise<Set<string>> => {
+  const modusSpur = async (
+    a: Anfrage,
+    ids: string[],
+    was: 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet',
+  ): Promise<Set<string>> => {
     if (a.benutzer?.rolle !== 'admin' || a.konsole || !ids.length) return new Set();
     return dienst.systemtypen.vermerkeVerwaltungsmodus({ ...a.benutzer, rolle: 'mitglied' }, ids, was);
   };
@@ -253,11 +375,14 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** #137: Empfänger von Aufgaben nur unter den Benutzern, die man sieht. */
   const empfaengerSichtbar = async (a: Anfrage, id: unknown) => {
     if (typeof id !== 'string' || !id) return;
-    if (!(await dienst.rechtepruefung.lesbare(await zg(a), [id])).has(id)) throw new Fachfehler(422, t('meldungen.routen.diesen-benutzer-gibt-es'));
+    if (!(await dienst.rechtepruefung.lesbare(await zg(a), [id])).has(id))
+      throw new Fachfehler(422, t('meldungen.routen.diesen-benutzer-gibt-es'));
   };
   /** #127: Darf der Empfänger die Mappe lesen? Sonst ein Hinweis in der Antwort. */
   const leseHinweis = async (empfaengerId: string | null, mappeId: string) =>
-    (empfaengerId && !(await dienst.rechtepruefung.kannLesen(empfaengerId, mappeId)) ? { hinweis: t('meldungen.routen.gespeichert-der-empfaenger-darf') } : {});
+    empfaengerId && !(await dienst.rechtepruefung.kannLesen(empfaengerId, mappeId))
+      ? { hinweis: t('meldungen.routen.gespeichert-der-empfaenger-darf') }
+      : {};
   const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.rechtepruefung.pruefeRecht(await zg(a), mappeId, recht);
   /** „Zuletzt geöffnet“ (#334, #940): nur lesbare Mappen außerhalb des Papierkorbs, neueste oben, je mit Zeitpunkt. */
   const zuletztGeoeffnet = async (a: Anfrage, anzahl: number) => {
@@ -267,7 +392,10 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     const bezuege = await dienst.dokumente.bezuegeVon(ids.filter((id) => lesbar.has(id)));
     // Teile (#1031) nicht: Sie erscheinen nur an ihrer übergeordneten Mappe.
     const teile = teiltypen((await zg(a)).typen.values());
-    return liste.filter((x) => bezuege.has(x.id) && !teile.has(bezuege.get(x.id)!.typId)).slice(0, anzahl).map((x) => ({ id: x.id, typId: bezuege.get(x.id)!.typId, titel: bezuege.get(x.id)!.titel, am: x.am }));
+    return liste
+      .filter((x) => bezuege.has(x.id) && !teile.has(bezuege.get(x.id)!.typId))
+      .slice(0, anzahl)
+      .map((x) => ({ id: x.id, typId: bezuege.get(x.id)!.typId, titel: bezuege.get(x.id)!.titel, am: x.am }));
   };
   /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
   const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {
@@ -277,19 +405,27 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   };
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.systemtypen.weitereRollen()).get(b.id) ?? [] });
-  const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, t('meldungen.routen.sicherungen-sind-nicht-eingerichtet')); return x.sicherung; };
+  const sicherung = () => {
+    if (!x.sicherung) throw new Fachfehler(404, t('meldungen.routen.sicherungen-sind-nicht-eingerichtet'));
+    return x.sicherung;
+  };
   /** Paket mit dms:sicherung-lesen (#585) bzw. dms:sicherung-holen (#976) – Menschen und andere Pakete bekommen 403. */
-  const sicherungsPaket = async (a: Anfrage, recht: 'dms:sicherung-lesen' | 'dms:sicherung-holen' = 'dms:sicherung-lesen'): Promise<string> => {
+  const sicherungsPaket = async (
+    a: Anfrage,
+    recht: 'dms:sicherung-lesen' | 'dms:sicherung-holen' = 'dms:sicherung-lesen',
+  ): Promise<string> => {
     const p = (await zg(a)).paket;
     if (!p) throw new Fachfehler(403, t('pakete.sicherung.nur-pakete'));
-    if (!p.schnittstellen?.includes('dms:sicherung-lesen') || !p.schnittstellen.includes(recht)) throw new Fachfehler(403, t('pakete.sicherung.recht'));
+    if (!p.schnittstellen?.includes('dms:sicherung-lesen') || !p.schnittstellen.includes(recht))
+      throw new Fachfehler(403, t('pakete.sicherung.recht'));
     return p.id;
   };
   /**
    * Persönlicher Export (#255): je Benutzer, ob er gerade läuft und woran er zuletzt scheiterte – seit #744 im
    * Kurzzustand, damit jeder Prozess es weiß. „Läuft“ ist eine Belegung mit Frist (endet ein Prozess mittendrin).
    */
-  const EXPORT_LAEUFT = 'eigener-export-laeuft', EXPORT_FEHLER = 'eigener-export-fehler';
+  const EXPORT_LAEUFT = 'eigener-export-laeuft',
+    EXPORT_FEHLER = 'eigener-export-fehler';
   const eigenerExport = async (id: string) => ({
     laeuft: !!(await dienst.kurzzustand.lies(EXPORT_LAEUFT, id)),
     fehler: ((await dienst.kurzzustand.lies(EXPORT_FEHLER, id))?.wert as string | undefined) ?? null,
@@ -300,11 +436,16 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
   const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
     // Verantwortlicher aus der eigenen Organisation (#995), sonst die bisherige Angabe.
-    typen: await dienst.mappentypen.listeTypen(), datenschutz: await dienst.datenschutzDienst.datenschutzFuerUnterlagen(),
-    papierkorbTage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(),
+    typen: await dienst.mappentypen.listeTypen(),
+    datenschutz: await dienst.datenschutzDienst.datenschutzFuerUnterlagen(),
+    papierkorbTage: await dienst.kern.papierkorbTage(),
+    historieTage: await dienst.mappenHistorie.historieTage(),
     // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
-    sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
-    version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',
+    sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null,
+    auskunftTage: AUSKUNFT_TAGE,
+    version: eigeneVersion(),
+    stand: new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date()),
+    mandant: (await x.mandantName?.()) ?? '',
     loeschprotokoll: { jahre: await dienst.loeschprotokollVerwaltung.loeschprotokollJahre() },
   });
   /** Auskunft zustellen (#455): Einmal-Tickets der öffentlichen Abrufseite. */
@@ -326,7 +467,10 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
       name: (x.designs ? (await x.designs.marke()).schriftzug : null) || 'Ablago',
       haushaltId: x.sicherung?.haushaltId ?? '–',
       adresse: x.betrieb ? x.betrieb.ansicht().adresse || x.betrieb.adresseFuerLinks() : '',
-      version: eigeneVersion(), erstellt: new Date(), schluessel: text, fingerabdruck: tresor2.fingerabdruck,
+      version: eigeneVersion(),
+      erstellt: new Date(),
+      schluessel: text,
+      fingerabdruck: tresor2.fingerabdruck,
       aussenziele: x.sicherung ? await x.sicherung.externZiele().catch(() => []) : [],
       kontakte: kontakte.map((k) => ({ name: k.name, erreichbar: erreichbar(k), notiz: k.notiz })),
       notfallcode: await konten.neuerNotfallcode(),
@@ -343,20 +487,51 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const notfallblattDatei = async (von: string): Promise<Antwort> => {
     const inhalt = await notfallblattErzeugen(von);
     // Der Schlüssel steht darauf: nicht im Cache des Browsers ablegen.
-    return { datei: { inhalt, name: `Ablago-Notfallblatt-${new Date().toISOString().slice(0, 10)}.pdf`, mime: 'application/pdf', anzeigen: false, groesse: inhalt.length, koepfe: { 'cache-control': 'no-store' } } };
+    return {
+      datei: {
+        inhalt,
+        name: `Ablago-Notfallblatt-${new Date().toISOString().slice(0, 10)}.pdf`,
+        mime: 'application/pdf',
+        anzeigen: false,
+        groesse: inhalt.length,
+        koepfe: { 'cache-control': 'no-store' },
+      },
+    };
   };
-  const nf = () => { if (!x.notfallcode) throw new Fachfehler(404, t('konten.notfall.fehler.aus')); return x.notfallcode; };
+  const nf = () => {
+    if (!x.notfallcode) throw new Fachfehler(404, t('konten.notfall.fehler.aus'));
+    return x.notfallcode;
+  };
   /** Meldungen der Abrufseite in der Anrede für Dritte (#474). */
   const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutzDienst.datenschutz()).anrede, k);
-  const exportZiel = () => { if (!x.exporte) throw new Fachfehler(404, t('werkbank.export.ohne-ordner')); return x.exporte.pfad; };
+  const exportZiel = () => {
+    if (!x.exporte) throw new Fachfehler(404, t('werkbank.export.ohne-ordner'));
+    return x.exporte.pfad;
+  };
   /** Nach dem Herunterladen gelöscht (#797), wie die Auskunft: erst, wenn die ZIP ganz gelesen ist. */
-  const danachLoeschen = (strom: Readable, ordner: string, melde: () => void) => strom.on('end', () => void loescheExport(ordner).then(melde, () => {}));
-  const oidc = () => { if (!x.oidc) throw new Fachfehler(404, t('meldungen.routen.die-anmeldung-ueber-einen')); return x.oidc; };
+  const danachLoeschen = (strom: Readable, ordner: string, melde: () => void) =>
+    strom.on('end', () => void loescheExport(ordner).then(melde, () => {}));
+  const oidc = () => {
+    if (!x.oidc) throw new Fachfehler(404, t('meldungen.routen.die-anmeldung-ueber-einen'));
+    return x.oidc;
+  };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
-  const zf = () => { if (!konten.zweifaktor) throw new Fachfehler(404, t('meldungen.routen.die-zwei-faktor-anmeldung')); return konten.zweifaktor; };
-  const pk = () => { if (!konten.passkeys) throw new Fachfehler(404, t('anmeldung.passkey.fehler.aus')); return konten.passkeys; };
-  const postfaecher = () => { if (!x.postfaecher) throw new Fachfehler(404, t('meldungen.routen.postfaecher-sind-nicht-eingerichtet')); return x.postfaecher; };
-  const pfOAuth = () => { if (!x.postfachOAuth) throw new Fachfehler(404, t('meldungen.routen.die-anmeldung-per-oauth')); return x.postfachOAuth; };
+  const zf = () => {
+    if (!konten.zweifaktor) throw new Fachfehler(404, t('meldungen.routen.die-zwei-faktor-anmeldung'));
+    return konten.zweifaktor;
+  };
+  const pk = () => {
+    if (!konten.passkeys) throw new Fachfehler(404, t('anmeldung.passkey.fehler.aus'));
+    return konten.passkeys;
+  };
+  const postfaecher = () => {
+    if (!x.postfaecher) throw new Fachfehler(404, t('meldungen.routen.postfaecher-sind-nicht-eingerichtet'));
+    return x.postfaecher;
+  };
+  const pfOAuth = () => {
+    if (!x.postfachOAuth) throw new Fachfehler(404, t('meldungen.routen.die-anmeldung-per-oauth'));
+    return x.postfachOAuth;
+  };
   /** #358: Rückruf-Adresse fest aus der eingestellten Adresse des DMS – nie aus der Anfrage. */
   const pfRueckruf = () => (adresse() ? `${adresse()}/api/oauth/postfach/rueckruf` : '');
   const oauthPostfach = async (id: string) => {
@@ -365,31 +540,47 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     return { id: p.id, anbieter: p.anbieter, benutzer: p.benutzer };
   };
   /** Demo-Dokumente (#248): freier Platz bei den Dateien; frei bleiben müssen Mindest-Speicherplatz der Sicherung bzw. die Speicherplatz-Grenze. */
-  const demoPlatz: DemoPlatz | undefined = x.speicherplatz ? {
-    frei: async () => (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.frei ?? null,
-    mindest: async () => {
-      const grenze = (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.grenzBytes ?? 0;
-      const sich = x.sicherung ? (await x.sicherung.plan()).mindestFreiGB * GB : 0;
-      return Math.max(grenze, sich);
-    },
-  } : undefined;
-  const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, t('meldungen.routen.die-wiederherstellung-ist-nicht')); return x.wiederherstellung; };
-  const anbindung = () => { if (!x.anbindung) throw new Fachfehler(404, t('meldungen.routen.die-datenbank-anbindung-ist')); return x.anbindung; };
-  const speicherplatz = () => { if (!x.speicherplatz) throw new Fachfehler(404, t('meldungen.routen.die-speicherplatz-ueberwachung-ist')); return x.speicherplatz; };
+  const demoPlatz: DemoPlatz | undefined = x.speicherplatz
+    ? {
+        frei: async () => (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.frei ?? null,
+        mindest: async () => {
+          const grenze = (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.grenzBytes ?? 0;
+          const sich = x.sicherung ? (await x.sicherung.plan()).mindestFreiGB * GB : 0;
+          return Math.max(grenze, sich);
+        },
+      }
+    : undefined;
+  const wh = () => {
+    if (!x.wiederherstellung) throw new Fachfehler(404, t('meldungen.routen.die-wiederherstellung-ist-nicht'));
+    return x.wiederherstellung;
+  };
+  const anbindung = () => {
+    if (!x.anbindung) throw new Fachfehler(404, t('meldungen.routen.die-datenbank-anbindung-ist'));
+    return x.anbindung;
+  };
+  const speicherplatz = () => {
+    if (!x.speicherplatz) throw new Fachfehler(404, t('meldungen.routen.die-speicherplatz-ueberwachung-ist'));
+    return x.speicherplatz;
+  };
   /**
    * Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? `frisch` (#1341): bei
    * mehreren Prozessen vom Leiter; ohne genügt der Spiegel (bis 1 s alt) – `/api/konto/status` fragt jede Seite oft.
    */
   const whStand = async (o: { frisch?: boolean } = {}) => {
     const lauf = o.frisch ? await x.wiederherstellung?.laufStand() : x.wiederherstellung?.aktuellerLauf();
-    const abschluss = x.sicherung ? (await x.sicherung.einstellungen.lies('wiederherstellung_abschluss')) as Record<string, unknown> | null : null;
+    const abschluss = x.sicherung
+      ? ((await x.sicherung.einstellungen.lies('wiederherstellung_abschluss')) as Record<string, unknown> | null)
+      : null;
     // Ohne Anmeldung lesbar: ohne die Adresse dessen, der sie gestartet hat.
     return {
       lauf: lauf?.art === 'wiederherstellung' ? { ...lauf, von: '' } : null,
       abschluss: abschluss ? { ...abschluss, von: '' } : null,
     };
   };
-  const wartung = () => { if (!x.wartung) throw new Fachfehler(404, t('meldungen.routen.der-wartungsmodus-ist-nicht')); return x.wartung; };
+  const wartung = () => {
+    if (!x.wartung) throw new Fachfehler(404, t('meldungen.routen.der-wartungsmodus-ist-nicht'));
+    return x.wartung;
+  };
   /** Wiederherstellen im laufenden System (#107, #818): im Verwaltungsmodus mit Recht auf „Sicherung“. */
   const darfWiederherstellen = (a: Anfrage) => a.benutzer?.rolle === 'admin' && darfBereich(a.benutzer, 'sicherung');
   /** Ab der Ankündigung kommen nur Administratoren hinein (#102): eine neue Sitzung gleich wieder beenden. */
@@ -400,16 +591,83 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
     throw new WartungFehler(x.wartung.meldung(), x.wartung.retryAfter());
   };
   return {
-    dienst, konten, x, fotostapel, messung, system, designs, log,
-    pakete, paketerstellung, entdecken, rundgaengeWerkbank, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
-    abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, typName, nurSelbst,
-    betrieb, region, sprachen, spracheFuer, regionStand, zusammenfassung, ocr,
-    meldungen, tresor, schluessel, autos, passwoerterAnzeigen, verwaltungHinweis, modusSpur,
-    zg, empfaengerSichtbar, leseHinweis, darf, zuletztGeoeffnet, entschluessele, mitRollen, sicherung,
-    sicherungsPaket, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, auskunftZiel, loeschkonzeptQuelle, abrufTickets, abrufBremse,
-    notfallblattErzeugen, notfallblattDatei, nf, abrufText, exportZiel, danachLoeschen, oidc, adresse,
-    zf, pk, postfaecher, pfOAuth, pfRueckruf, oauthPostfach, demoPlatz, wh, anbindung,
-    speicherplatz, whStand, wartung, darfWiederherstellen, nurAdminsInWartung,
+    dienst,
+    konten,
+    x,
+    fotostapel,
+    messung,
+    system,
+    designs,
+    log,
+    pakete,
+    paketerstellung,
+    entdecken,
+    rundgaengeWerkbank,
+    umwandlung,
+    wer,
+    einrichtungZugang,
+    weitergabe,
+    mitnehmen,
+    abgerufen,
+    herausgeben,
+    seitenquelle,
+    zumAbspeichern,
+    fuerAnzeige,
+    ausgabeDatei,
+    typName,
+    nurSelbst,
+    betrieb,
+    region,
+    sprachen,
+    spracheFuer,
+    regionStand,
+    zusammenfassung,
+    ocr,
+    meldungen,
+    tresor,
+    schluessel,
+    autos,
+    passwoerterAnzeigen,
+    verwaltungHinweis,
+    modusSpur,
+    zg,
+    empfaengerSichtbar,
+    leseHinweis,
+    darf,
+    zuletztGeoeffnet,
+    entschluessele,
+    mitRollen,
+    sicherung,
+    sicherungsPaket,
+    EXPORT_LAEUFT,
+    EXPORT_FEHLER,
+    eigenerExport,
+    auskunftZiel,
+    loeschkonzeptQuelle,
+    abrufTickets,
+    abrufBremse,
+    notfallblattErzeugen,
+    notfallblattDatei,
+    nf,
+    abrufText,
+    exportZiel,
+    danachLoeschen,
+    oidc,
+    adresse,
+    zf,
+    pk,
+    postfaecher,
+    pfOAuth,
+    pfRueckruf,
+    oauthPostfach,
+    demoPlatz,
+    wh,
+    anbindung,
+    speicherplatz,
+    whStand,
+    wartung,
+    darfWiederherstellen,
+    nurAdminsInWartung,
   };
 }
 

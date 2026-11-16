@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { deflateSync } from 'node:zlib';
 import { PDFDocument } from 'pdf-lib';
-import { ersetzePlatzhalter, geltenderStempel, platzhalterIn, STANDARD_VORLAGEN, StempelFehler, wunschAus, type Stempel } from '../../shared/src/stempel';
+import {
+  ersetzePlatzhalter,
+  geltenderStempel,
+  platzhalterIn,
+  STANDARD_VORLAGEN,
+  StempelFehler,
+  wunschAus,
+  type Stempel,
+} from '../../shared/src/stempel';
 import { bildAlsPdf, fuerAusgabe } from '../src/ausgabe';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -35,17 +43,42 @@ async function pdfMitSeiten(n: number): Promise<Buffer> {
 /** Kleines PNG (RGB) ohne Bibliothek. */
 function png(b: number, h: number): Buffer {
   const chunk = (typ: string, daten: Buffer) => {
-    const l = Buffer.alloc(4); l.writeUInt32BE(daten.length);
+    const l = Buffer.alloc(4);
+    l.writeUInt32BE(daten.length);
     const td = Buffer.concat([Buffer.from(typ, 'latin1'), daten]);
-    const c = Buffer.alloc(4); c.writeUInt32BE(crc32(td));
+    const c = Buffer.alloc(4);
+    c.writeUInt32BE(crc32(td));
     return Buffer.concat([l, td, c]);
   };
-  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(b, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
-  const zeilen = Buffer.concat(Array.from({ length: h }, (_, y) => Buffer.concat([Buffer.from([0]), Buffer.alloc(b * 3, y % 2 ? 200 : 60)])));
-  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(zeilen)), chunk('IEND', Buffer.alloc(0))]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(b, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  const zeilen = Buffer.concat(
+    Array.from({ length: h }, (_, y) => Buffer.concat([Buffer.from([0]), Buffer.alloc(b * 3, y % 2 ? 200 : 60)])),
+  );
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(zeilen)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }
 
-const S = (x: Partial<Stempel> = {}): Stempel => ({ text: 'ENTWURF', lage: 'diagonal', deckkraft: 0.3, seiten: 'alle', tinte: false, drehung: 0, x: 0.72, y: 0.16, farbe: 'rot', groesse: 100, ...x });
+const S = (x: Partial<Stempel> = {}): Stempel => ({
+  text: 'ENTWURF',
+  lage: 'diagonal',
+  deckkraft: 0.3,
+  seiten: 'alle',
+  tinte: false,
+  drehung: 0,
+  x: 0.72,
+  y: 0.16,
+  farbe: 'rot',
+  groesse: 100,
+  ...x,
+});
 
 describe('Platzhalter (#394)', () => {
   it('ersetzt {datum}, {empfänger}/{empfaenger}, {benutzer}, {mappe}; Unbekanntes bleibt', () => {
@@ -72,18 +105,25 @@ describe('Platzhalter (#394)', () => {
     assert.equal(geltenderStempel({ vorlage: 'entwurf', deckkraft: 2 }, null, v)!.stempel.deckkraft, 1);
     // Pflicht: ohne Wunsch die Vorlage des Typs; mit Ersatz-Empfänger (E-Mail-Adressen).
     const p = geltenderStempel(null, { modus: 'pflicht', vorlage: 'entwurf' }, v)!;
-    assert.equal(p.pflicht, true); assert.equal(p.stempel.text, 'ENTWURF');
+    assert.equal(p.pflicht, true);
+    assert.equal(p.stempel.text, 'ENTWURF');
     assert.throws(() => geltenderStempel(null, { modus: 'pflicht', vorlage: 'kopie' }, v), /verlangt/);
     assert.equal(geltenderStempel(null, { modus: 'pflicht', vorlage: 'kopie' }, v, 'a@example.org')!.empfaenger, 'a@example.org');
     assert.equal(geltenderStempel(null, { modus: 'pflicht', vorlage: null }, v)!.stempel.text, 'Kopie – {datum}');
     // Nur Seitenzahlen, ohne Text (entfallener Haken, #799): eine Zeile mit Platzhaltern in der Fußzeile.
     const z = geltenderStempel({ seitenzahlen: true }, null, v)!;
-    assert.equal(z.stempel.text, 'Seite {seite} von {seiten}'); assert.equal(z.stempel.lage, 'fuss');
+    assert.equal(z.stempel.text, 'Seite {seite} von {seiten}');
+    assert.equal(z.stempel.lage, 'fuss');
   });
 
   it('liest Wünsche aus Abfrageparametern (API v1)', () => {
     assert.equal(wunschAus({ herunterladen: '1' }), null);
-    assert.deepEqual(wunschAus({ stempel: 'ENTWURF', lage: 'kopf', deckkraft: '0,5', seitenzahlen: '1' }), { text: 'ENTWURF', lage: 'kopf', deckkraft: '0,5', seitenzahlen: '1' });
+    assert.deepEqual(wunschAus({ stempel: 'ENTWURF', lage: 'kopf', deckkraft: '0,5', seitenzahlen: '1' }), {
+      text: 'ENTWURF',
+      lage: 'kopf',
+      deckkraft: '0,5',
+      seitenzahlen: '1',
+    });
     assert.deepEqual(wunschAus({ vorlage: 'kopie', empfaenger: ' Bank ' }), { vorlage: 'kopie', empfaenger: 'Bank' });
   });
 });
@@ -92,10 +132,21 @@ describe('PDF mit Stempel (#394)', () => {
   it('Seitenzahl bleibt, Text steht im (einzigen) Inhaltsstrom, keine Anmerkung, Original unverändert', async () => {
     const original = await pdfMitSeiten(3);
     const kopie = Buffer.from(original);
-    const plan = { stempel: S({ text: 'ENTWURF\n{archivnummer} · Seite {seite} von {seiten}' }), empfaenger: '', pflicht: false, vorlage: null };
-    const a = await fuerAusgabe({ name: 'a.pdf', mime: 'application/pdf', inhalt: original }, { stempel: plan }, { benutzer: 'Anna', mappe: 'M', archivnummer: 'A-000007' });
+    const plan = {
+      stempel: S({ text: 'ENTWURF\n{archivnummer} · Seite {seite} von {seiten}' }),
+      empfaenger: '',
+      pflicht: false,
+      vorlage: null,
+    };
+    const a = await fuerAusgabe(
+      { name: 'a.pdf', mime: 'application/pdf', inhalt: original },
+      { stempel: plan },
+      { benutzer: 'Anna', mappe: 'M', archivnummer: 'A-000007' },
+    );
     assert.ok(original.equals(kopie), 'Original unverändert');
-    assert.equal(a.mime, 'application/pdf'); assert.equal(a.name, 'a.pdf'); assert.equal(a.stempeltext, 'ENTWURF / A-000007 · Seite 1 von 3');
+    assert.equal(a.mime, 'application/pdf');
+    assert.equal(a.name, 'a.pdf');
+    assert.equal(a.stempeltext, 'ENTWURF / A-000007 · Seite 1 von 3');
     const doc = await PDFDocument.load(a.inhalt);
     assert.equal(doc.getPageCount(), 3);
     for (let i = 0; i < 3; i++) {
@@ -111,9 +162,15 @@ describe('PDF mit Stempel (#394)', () => {
   it('nur die erste Seite; ein vorhandenes Text-PDF behält seinen Text', async () => {
     const original = pdfMitText(['Mietvertrag', 'Zeile zwei']);
     const plan = { stempel: S({ seiten: 'erste', lage: 'kopf' }), empfaenger: '', pflicht: false, vorlage: null };
-    const zwei = await PDFDocument.load(original); zwei.addPage();
-    const a = await fuerAusgabe({ name: 'v.pdf', mime: 'application/pdf', inhalt: Buffer.from(await zwei.save()) }, { stempel: plan }, { benutzer: 'A', mappe: 'M' });
-    const s1 = await seiteninhalt(a.inhalt, 0), s2 = await seiteninhalt(a.inhalt, 1);
+    const zwei = await PDFDocument.load(original);
+    zwei.addPage();
+    const a = await fuerAusgabe(
+      { name: 'v.pdf', mime: 'application/pdf', inhalt: Buffer.from(await zwei.save()) },
+      { stempel: plan },
+      { benutzer: 'A', mappe: 'M' },
+    );
+    const s1 = await seiteninhalt(a.inhalt, 0),
+      s2 = await seiteninhalt(a.inhalt, 1);
     assert.ok(s1.text.includes('(Mietvertrag) Tj'));
     assert.ok(s1.text.includes('ENTWURF'));
     assert.ok(!s2.text.includes('ENTWURF'));
@@ -123,14 +180,16 @@ describe('PDF mit Stempel (#394)', () => {
     const b = png(40, 20);
     const plan = { stempel: S({ text: 'Kopie für {empfänger}' }), empfaenger: 'Bank', pflicht: false, vorlage: null };
     const a = await fuerAusgabe({ name: 'ausweis.png', mime: 'image/png', inhalt: b }, { stempel: plan }, { benutzer: 'A', mappe: 'M' });
-    assert.equal(a.name, 'ausweis.pdf'); assert.equal(a.mime, 'application/pdf');
+    assert.equal(a.name, 'ausweis.pdf');
+    assert.equal(a.mime, 'application/pdf');
     assert.equal((await PDFDocument.load(a.inhalt)).getPageCount(), 1);
     assert.ok((await seiteninhalt(a.inhalt)).text.includes('Kopie für Bank'));
     const quer = await PDFDocument.load(await bildAlsPdf(b, true));
     assert.ok(quer.getPage(0).getWidth() > quer.getPage(0).getHeight());
     const txt = { name: 'x.txt', mime: 'text/plain', inhalt: Buffer.from('hallo') };
     const frei = await fuerAusgabe(txt, { stempel: plan }, { benutzer: 'A', mappe: 'M' });
-    assert.ok(frei.unveraendert); assert.equal(frei.inhalt.toString(), 'hallo');
+    assert.ok(frei.unveraendert);
+    assert.equal(frei.inhalt.toString(), 'hallo');
     await assert.rejects(fuerAusgabe(txt, { stempel: plan }, { benutzer: 'A', mappe: 'M' }, true), status(422));
     await assert.rejects(fuerAusgabe(txt, { stempel: { ...plan, pflicht: true } }, { benutzer: 'A', mappe: 'M' }), status(422, /verlangt/));
   });
@@ -139,18 +198,28 @@ describe('PDF mit Stempel (#394)', () => {
 async function aufbau(stempel?: unknown) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const t = await d.mappentypen.legeTypAn({ name: 'Ausweis', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
-    { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
-  ], ...(stempel !== undefined ? { stempel } : {}) });
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Ausweis',
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
+      { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+    ],
+    ...(stempel !== undefined ? { stempel } : {}),
+  });
   const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { name: 'Personalausweis' } }, null);
   const pdf = await pdfMitSeiten(2);
   const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'ausweis.pdf', typ: 'application/pdf' }, pdf, null);
   const mails: Array<{ an: string; o?: MailOptionen }> = [];
-  const mailer: Mailer = { async sende(an, _b, _t, o) { mails.push({ an, o }); } };
+  const mailer: Mailer = {
+    async sende(an, _b, _t, o) {
+      mails.push({ an, o });
+    },
+  };
   return { d, t, m, dokument, pdf, dateien, mails, mailer };
 }
-const alsPuffer = async (x: Buffer | NodeJS.ReadableStream) => (Buffer.isBuffer(x) ? x : Buffer.concat(await (x as unknown as { toArray(): Promise<Buffer[]> }).toArray()));
+const alsPuffer = async (x: Buffer | NodeJS.ReadableStream) =>
+  Buffer.isBuffer(x) ? x : Buffer.concat(await (x as unknown as { toArray(): Promise<Buffer[]> }).toArray());
 
 describe('Weitergeben mit Stempel im Dienst (#394)', () => {
   it('Herunterladen mit Stempel: Kopie gestempelt, Original unverändert, Historie vermerkt', async () => {
@@ -162,7 +231,10 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.ok((await seiteninhalt(kopie)).text.includes('Kopie für Hausverwaltung Müller'));
     assert.ok((await alsPuffer((await d.dokumente.dokumentInhalt(dokument.id)).inhalt)).equals(pdf), 'gespeichertes Original unverändert');
     const h = (await d.mappenHistorie.historie(m.id)).find((x) => x.art === 'weitergegeben')!;
-    assert.match(String(h.daten.text), /^mit Stempel „Kopie für Hausverwaltung Müller – \d{2}\.\d{2}\.\d{4}“ an Hausverwaltung Müller \(heruntergeladen: ausweis\.pdf\)$/);
+    assert.match(
+      String(h.daten.text),
+      /^mit Stempel „Kopie für Hausverwaltung Müller – \d{2}\.\d{2}\.\d{4}“ an Hausverwaltung Müller \(heruntergeladen: ausweis\.pdf\)$/,
+    );
     assert.equal(h.daten.an, 'Hausverwaltung Müller');
     // Ohne Stempel: unverändert, keine Historie.
     const ohne = await d.ausgang.dokumentFuerAusgabe(dokument.id, { stempel: {}, ich });
@@ -172,7 +244,10 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
 
   it('Pflicht je Mappentyp erzwingt den Stempel – beim Herunterladen, beim Export und per E-Mail', async () => {
     const { d, t, m, dokument, mails, mailer } = await aufbau({ modus: 'pflicht', vorlage: 'entwurf' });
-    assert.deepEqual((await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel, { modus: 'pflicht', vorlage: 'entwurf' });
+    assert.deepEqual(
+      (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' }))).find((x) => x.id === t.id)!.stempel,
+      { modus: 'pflicht', vorlage: 'entwurf' },
+    );
     const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { ich });
     assert.equal(r.gestempelt, true);
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes('ENTWURF'));
@@ -189,8 +264,15 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     assert.notEqual(post.dokumente[0].sha256, dokument.sha256);
     // Export als ZIP: Pflicht greift auch hier.
     const z = await d.rechtepruefung.zugriff({ id: ich.id, rolle: 'admin' });
-    await assert.rejects(d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id] }, z), status(422, /Empfänger/));
-    await d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], stempel: { vorlage: 'kopie', empfaenger: 'Steuerbüro' } }, z);
+    await assert.rejects(
+      d.ausgangExport.exportiere({ id: ich.id, rolle: 'admin', name: ich.name }, { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id] }, z),
+      status(422, /Empfänger/),
+    );
+    await d.ausgangExport.exportiere(
+      { id: ich.id, rolle: 'admin', name: ich.name },
+      { format: 'zip', sicht: `typ:${t.id}`, ids: [m.id], stempel: { vorlage: 'kopie', empfaenger: 'Steuerbüro' } },
+      z,
+    );
     const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'weitergegeben');
     assert.match(String(h[0].daten.text), /an Steuerbüro \(als ZIP exportiert: ausweis\.pdf\)/);
     // Vorlage in Gebrauch lässt sich nicht löschen; unbekannte Vorlage am Typ wird abgelehnt.
@@ -200,12 +282,22 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
 
   it('Vorlagen anlegen, ändern, prüfen und löschen', async () => {
     const { d } = await aufbau();
-    assert.deepEqual((await d.stempelvorlagen.stempelVorlagen()).map((v) => v.name), ['Kopie für …', 'Nur zur Vorlage bei …', 'Entwurf', 'Vertraulich', 'Aus Ablago (Laufwerk)']);
-    const l = await d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Steuerberater', text: 'Für {empfänger} – {datum}', lage: 'fuss', deckkraft: 0.9 }, 'admin');
+    assert.deepEqual(
+      (await d.stempelvorlagen.stempelVorlagen()).map((v) => v.name),
+      ['Kopie für …', 'Nur zur Vorlage bei …', 'Entwurf', 'Vertraulich', 'Aus Ablago (Laufwerk)'],
+    );
+    const l = await d.stempelvorlagen.speichereStempelVorlage(
+      null,
+      { name: 'Steuerberater', text: 'Für {empfänger} – {datum}', lage: 'fuss', deckkraft: 0.9 },
+      'admin',
+    );
     const neu = l.find((v) => v.name === 'Steuerberater')!;
     assert.equal(neu.lage, 'fuss');
     await assert.rejects(d.stempelvorlagen.speichereStempelVorlage(null, { name: 'entwurf', text: 'x' }, 'admin'), status(422, /Namen/));
-    await assert.rejects(d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Y', text: '{unbekannt}' }, 'admin'), status(422, /Platzhalter/));
+    await assert.rejects(
+      d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Y', text: '{unbekannt}' }, 'admin'),
+      status(422, /Platzhalter/),
+    );
     await d.stempelvorlagen.speichereStempelVorlage(neu.id, { text: 'Geändert' }, 'admin');
     assert.equal((await d.stempelvorlagen.stempelVorlagen()).find((v) => v.id === neu.id)!.text, 'Geändert');
     assert.equal((await d.stempelvorlagen.loescheStempelVorlage(neu.id, 'admin')).length, 5);
@@ -217,7 +309,8 @@ describe('Weitergeben mit Stempel im Dienst (#394)', () => {
     const { d, m } = await aufbau();
     const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'foto.png', typ: 'image/png' }, png(30, 50), null);
     const r = await d.ausgang.dokumentFuerAusgabe(dokument.id, { stempel: { stempel: 'VERTRAULICH', lage: 'ecke' }, ich });
-    assert.equal(r.name, 'foto.pdf'); assert.equal(r.mime, 'application/pdf');
+    assert.equal(r.name, 'foto.pdf');
+    assert.equal(r.mime, 'application/pdf');
     assert.ok((await seiteninhalt(await alsPuffer(r.inhalt))).text.includes('VERTRAULICH'));
   });
 });

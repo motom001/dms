@@ -12,8 +12,32 @@ import { t } from '../sprache';
  * gleichem Abstand und gleicher Größe, nie am Ende der Beschreibung (children). Hilfe zu einem einzelnen Feld bleibt
  * an dessen Beschriftung (Feld, #801).
  */
-export function Kopf({ titel, abschnitt, id, ueber = t('werkbank.kopf.werkbank'), hilfe, children }: { titel: ReactNode; abschnitt?: boolean; id?: string; ueber?: ReactNode; hilfe?: Hilfeort; children?: ReactNode }) {
-  const mitHilfe = <>{titel}{hilfe && <> <Hilfe ort={hilfe} /></>}</>;
+export function Kopf({
+  titel,
+  abschnitt,
+  id,
+  ueber = t('werkbank.kopf.werkbank'),
+  hilfe,
+  children,
+}: {
+  titel: ReactNode;
+  abschnitt?: boolean;
+  id?: string;
+  ueber?: ReactNode;
+  hilfe?: Hilfeort;
+  children?: ReactNode;
+}) {
+  const mitHilfe = (
+    <>
+      {titel}
+      {hilfe && (
+        <>
+          {' '}
+          <Hilfe ort={hilfe} />
+        </>
+      )}
+    </>
+  );
   if (abschnitt) {
     return (
       <div className="teilkopf" id={id}>

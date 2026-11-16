@@ -32,9 +32,11 @@ export function holeMitGrenze(url: string, init: RequestInit = {}, ms = START_WA
 export async function gesundheitBeimStart(): Promise<{ ok: boolean; befund: Gesundheit | null }> {
   try {
     const r = await holeMitGrenze('/api/gesundheit', { cache: 'no-store', headers: { 'x-dms': '1' } });
-    const befund = await r.json().catch(() => null) as Gesundheit | null;
+    const befund = (await r.json().catch(() => null)) as Gesundheit | null;
     return { ok: r.ok, befund };
-  } catch { return { ok: false, befund: null }; }
+  } catch {
+    return { ok: false, befund: null };
+  }
 }
 
 const VERSION = 'ablago:version';
@@ -42,27 +44,48 @@ const VERSION = 'ablago:version';
 /** Zuletzt gesehene Version merken (#1199): Ohne Anmeldung nennt der Server sie nicht, die Meldung soll sie zeigen. */
 export function merkeVersion(version: string | null | undefined) {
   if (!version) return;
-  try { localStorage.setItem(VERSION, version); } catch { /* privates Fenster: ohne Version */ }
+  try {
+    localStorage.setItem(VERSION, version);
+  } catch {
+    /* privates Fenster: ohne Version */
+  }
 }
 
 function gemerkteVersion(): string | null {
-  try { return localStorage.getItem(VERSION); } catch { return null; }
+  try {
+    return localStorage.getItem(VERSION);
+  } catch {
+    return null;
+  }
 }
 
 /** Neu laden, weil Ablago nicht antwortete – gemerkt, damit die nächste Seite „schon neu geladen“ sagen kann. */
 export function neuLadenOhneAntwort() {
-  try { sessionStorage.setItem(NEU_GELADEN, String(Date.now())); } catch { /* privates Fenster: ohne Hinweis */ }
+  try {
+    sessionStorage.setItem(NEU_GELADEN, String(Date.now()));
+  } catch {
+    /* privates Fenster: ohne Hinweis */
+  }
   location.reload();
 }
 
 /** Ist die Seite schon einmal neu geladen worden, ohne dass Ablago antwortete? */
 export function schonOhneAntwortNeuGeladen(): boolean {
-  try { const v = sessionStorage.getItem(NEU_GELADEN); return schonNeuGeladen(v ? Number(v) : null, Date.now()); } catch { return false; }
+  try {
+    const v = sessionStorage.getItem(NEU_GELADEN);
+    return schonNeuGeladen(v ? Number(v) : null, Date.now());
+  } catch {
+    return false;
+  }
 }
 
 /** Ablago antwortet wieder: Merker weg. */
 export function antwortGekommen() {
-  try { sessionStorage.removeItem(NEU_GELADEN); } catch { /* s. o. */ }
+  try {
+    sessionStorage.removeItem(NEU_GELADEN);
+  } catch {
+    /* s. o. */
+  }
 }
 
 const absatz = (klasse: string, text: string) => {
@@ -77,9 +100,15 @@ function lageText(befund: Gesundheit | null): string {
   const lage = startbildLage(befund);
   if (lage === 'unbekannt') return t('oberflaeche.startbild.lage.unbekannt');
   const d = startbildDauer(befund?.dauerS);
-  const dauer = d.art === 'kurz' ? t('oberflaeche.startbild.dauer.kurz')
-    : d.art === 'minuten' ? t('oberflaeche.startbild.dauer.minuten', { anzahl: d.anzahl }) : t('oberflaeche.startbild.dauer.stunden', { anzahl: d.anzahl });
-  return lage === 'abgewiesen' ? t('oberflaeche.startbild.lage.abgewiesen', { dauer }) : t('oberflaeche.startbild.lage.antwortet-nicht', { dauer });
+  const dauer =
+    d.art === 'kurz'
+      ? t('oberflaeche.startbild.dauer.kurz')
+      : d.art === 'minuten'
+        ? t('oberflaeche.startbild.dauer.minuten', { anzahl: d.anzahl })
+        : t('oberflaeche.startbild.dauer.stunden', { anzahl: d.anzahl });
+  return lage === 'abgewiesen'
+    ? t('oberflaeche.startbild.lage.abgewiesen', { dauer })
+    : t('oberflaeche.startbild.lage.antwortet-nicht', { dauer });
 }
 
 function standText(): string {
@@ -117,10 +146,16 @@ export function zeigeKeineAntwort(wurzel: HTMLElement, befund: Gesundheit | null
   // Was du tun kannst: Schritt 2 hängt davon ab, ob Ablago hängt oder die Datenbank ablehnt.
   const schritte = document.createElement('ol');
   schritte.className = 'startbild-schritte';
-  const schritt = (text: string) => { const li = document.createElement('li'); li.textContent = text; return li; };
+  const schritt = (text: string) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    return li;
+  };
   const neustart = schritt('');
   const zeigeNeustart = (b: Gesundheit | null) => {
-    neustart.textContent = t(startbildLage(b) === 'abgewiesen' ? 'oberflaeche.startbild.schritt.datenbank' : 'oberflaeche.startbild.schritt.neustart');
+    neustart.textContent = t(
+      startbildLage(b) === 'abgewiesen' ? 'oberflaeche.startbild.schritt.datenbank' : 'oberflaeche.startbild.schritt.neustart',
+    );
   };
   zeigeNeustart(befund);
   schritte.append(schritt(t('oberflaeche.startbild.keine-antwort-text')), neustart, schritt(t('oberflaeche.startbild.schritt.verwaltung')));
@@ -143,15 +178,19 @@ export function zeigeKeineAntwort(wurzel: HTMLElement, befund: Gesundheit | null
   bild.append(wasTun, stand);
   wurzel.replaceChildren(bild);
   let versuch = 0;
-  const nochmal = () => setTimeout(() => {
-    void gesundheitBeimStart().then((g) => {
-      if (g.ok) { location.reload(); return; }
-      lage.textContent = lageText(g.befund);
-      zeigeNeustart(g.befund);
-      stand.textContent = standText();
-      versuch++;
-      nochmal();
-    });
-  }, wartezeit(versuch));
+  const nochmal = () =>
+    setTimeout(() => {
+      void gesundheitBeimStart().then((g) => {
+        if (g.ok) {
+          location.reload();
+          return;
+        }
+        lage.textContent = lageText(g.befund);
+        zeigeNeustart(g.befund);
+        stand.textContent = standText();
+        versuch++;
+        nochmal();
+      });
+    }, wartezeit(versuch));
   nochmal();
 }

@@ -8,7 +8,18 @@
 import { istTeiltyp } from './teile';
 import type { SichtRechte, SichtRegelwerk } from './sichtrechte';
 import { gleicheZiele, jedeMappe, zielErlaubt, zieleVon } from './verweisziele';
-import { GEMISCHTE_SPALTEN, istLeer, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, type Feld, type Feldtyp, type Mappe, type Mappentyp, type Quelle } from './model';
+import {
+  GEMISCHTE_SPALTEN,
+  istLeer,
+  istSystemspalte,
+  SYSTEMSPALTEN,
+  trefferlistenVon,
+  type Feld,
+  type Feldtyp,
+  type Mappe,
+  type Mappentyp,
+  type Quelle,
+} from './model';
 import { datumsformat } from './region';
 import { ALLE_TYPEN } from './pakete';
 import { t } from './texte';
@@ -103,7 +114,11 @@ export const DYNAMISCH = {
   meineRollen: t('gemeinsam.sichten.rollen-des-aktuellen-benutzers'),
 } as const;
 
-export const ZAEHLVERGLEICHE = { mehr: t('gemeinsam.sichten.mehr-als'), weniger: t('gemeinsam.sichten.weniger-als'), gleich: 'genau' } as const;
+export const ZAEHLVERGLEICHE = {
+  mehr: t('gemeinsam.sichten.mehr-als'),
+  weniger: t('gemeinsam.sichten.weniger-als'),
+  gleich: 'genau',
+} as const;
 export type Zaehlvergleich = keyof typeof ZAEHLVERGLEICHE;
 
 export type Bedingung =
@@ -154,7 +169,9 @@ export interface SichtDaten {
   beschriftungen?: import('./beschriftung').Beschriftungen<import('./beschriftung').TypTeile> | null;
 }
 export interface Sicht extends SichtDaten {
-  id: string; erstellt: string; geaendert: string;
+  id: string;
+  erstellt: string;
+  geaendert: string;
   /** Nur für Benutzer (#148): wirksame Rechte an der Sicht; die Regeln selbst sehen nur Administratoren. */
   rechte?: SichtRechte;
 }
@@ -209,7 +226,12 @@ export function wirksameTypen(alle: Sicht[], id: string, vorhanden: Iterable<str
 
 /* ---------- Felder, die eine Sicht für Bedingungen anbietet ---------- */
 
-export interface Bedingungsfeld { key: string; label: string; art: Feldart; feld?: Feld }
+export interface Bedingungsfeld {
+  key: string;
+  label: string;
+  art: Feldart;
+  feld?: Feld;
+}
 
 const SYSTEMFELDER: Bedingungsfeld[] = [
   { key: '_erstellt', label: SYSTEMSPALTEN._erstellt, art: 'zeit' },
@@ -227,7 +249,13 @@ export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedin
   if (!typen.length) return SYSTEMFELDER;
   const [erster, ...rest] = typen;
   // Passwörter und Tabellen (#1030, ohne Wert) taugen nicht für Bedingungen.
-  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && f.typ !== 'tabelle' && !jedeMappe(f) && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(g, f)))));
+  const gemeinsam = erster.felder.filter(
+    (f) =>
+      f.typ !== 'passwort' &&
+      f.typ !== 'tabelle' &&
+      !jedeMappe(f) &&
+      rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(g, f)))),
+  );
   return [...gemeinsam.map((f) => ({ key: f.key, label: feldLabel(f), art: f.typ as Feldart, feld: f })), ...SYSTEMFELDER];
 }
 
@@ -235,35 +263,50 @@ export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedin
 export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | null {
   if (b.art === 'feld') {
     const f = bedingungsfelder(typen).find((x) => x.key === b.feld);
-    if (!f) return t('gemeinsam.sichten.das-feld-gibt-es', { feld: b.feld, wert: typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr') });
+    if (!f)
+      return t('gemeinsam.sichten.das-feld-gibt-es', {
+        feld: b.feld,
+        wert: typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr'),
+      });
     // Optionale Ziele (#1122): Mit `zielOptional` geht „zeigt auf Mappe vom Typ …“ auch, solange erst ein Zieltyp da ist.
-    if (!operatorenFuer(f).includes(b.op) && !(b.op === 'zeigtAufTyp' && !!f.feld?.zielOptional?.length)) return t('gemeinsam.sichten.passt-nicht-zum-feld', { wert: OPERATOREN[b.op] ?? b.op, label: f.label });
+    if (!operatorenFuer(f).includes(b.op) && !(b.op === 'zeigtAufTyp' && !!f.feld?.zielOptional?.length))
+      return t('gemeinsam.sichten.passt-nicht-zum-feld', { wert: OPERATOREN[b.op] ?? b.op, label: f.label });
     const brauchtWert = !['leer', 'nichtLeer', 'ja', 'nein'].includes(b.op);
     if (brauchtWert && !b.wert) return t('gemeinsam.sichten.bei-fehlt-der-vergleichswert', { label: f.label });
     if ((b.op === 'zwischen' || b.op === 'ausserhalb') && !b.bis) return t('gemeinsam.sichten.bei-fehlt-der-zweite', { label: f.label });
     if (b.op === 'imZeitraum' && b.wert?.art !== 'jahr' && b.wert?.art !== 'monat') return t('gemeinsam.sichten.im-zeitraum-braucht-jahr');
-    if (b.wert && (b.wert.art === 'jahr' || b.wert.art === 'monat') && b.op !== 'imZeitraum') return t('gemeinsam.sichten.jahr-und-monat-gehen');
-    if (b.wert && (b.wert.art === 'ich' || b.wert.art === 'meineRollen') && b.op !== 'zeigtAuf') return t('gemeinsam.sichten.geht-nur-mit-zeigt', { DYNAMISCH: DYNAMISCH[b.wert.art] });
+    if (b.wert && (b.wert.art === 'jahr' || b.wert.art === 'monat') && b.op !== 'imZeitraum')
+      return t('gemeinsam.sichten.jahr-und-monat-gehen');
+    if (b.wert && (b.wert.art === 'ich' || b.wert.art === 'meineRollen') && b.op !== 'zeigtAuf')
+      return t('gemeinsam.sichten.geht-nur-mit-zeigt', { DYNAMISCH: DYNAMISCH[b.wert.art] });
     if (b.wert?.art === 'heute' && f.art !== 'datum' && f.art !== 'zeit') return t('gemeinsam.sichten.heute-geht-nur-bei');
-    if (f.art === 'zeitraum' && [b.wert, b.bis].some((w) => w?.art === 'fest' && Number.isNaN(zeitraumWert(w.wert)))) return t('gemeinsam.feldarten.bedingung-zeitraum', { label: f.label });
+    if (f.art === 'zeitraum' && [b.wert, b.bis].some((w) => w?.art === 'fest' && Number.isNaN(zeitraumWert(w.wert))))
+      return t('gemeinsam.feldarten.bedingung-zeitraum', { label: f.label });
     if (b.wert?.art === 'eigenesFeld' || b.bis?.art === 'eigenesFeld') return t('gemeinsam.sichten.werte-aus-der-eigenen');
-    if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return t('gemeinsam.sichten.rollen-des-aktuellen-benutzers-2', { label: f.label });
+    if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person')
+      return t('gemeinsam.sichten.rollen-des-aktuellen-benutzers-2', { label: f.label });
     // „zeigt auf Mappe vom Typ …“ (#1036): fest gewählte Zieltypen des Felds.
     if (b.op === 'zeigtAufTyp') {
       const w = b.wert?.art === 'fest' && Array.isArray(b.wert.wert) ? b.wert.wert : null;
       if (!w?.length) return t('gemeinsam.sichten.typ-waehlen', { label: f.label });
       // Optionales Ziel, dessen Paket fehlt (#1122): Die Kennung passt zu keiner Mappe – erlaubt, trifft nie zu.
-      if (w.some((x) => !zielErlaubt(f.feld!, x) && !(typeof x === 'string' && x.includes(':') && f.feld!.zielOptional?.includes(x)))) return t('gemeinsam.sichten.typ-kein-ziel', { label: f.label });
+      if (w.some((x) => !zielErlaubt(f.feld!, x) && !(typeof x === 'string' && x.includes(':') && f.feld!.zielOptional?.includes(x))))
+        return t('gemeinsam.sichten.typ-kein-ziel', { label: f.label });
     }
     return null;
   }
   if (b.art === 'favorit') return null;
   if (b.art === 'merkmal') return istMerkmal(b.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(b.merkmal) });
   if (b.art === 'frist') {
-    if (!Number.isInteger(b.tage) || b.tage < 0 || b.tage > FRIST_TAGE_MAX) return t('gemeinsam.sichten.die-anzahl-tage-muss', { FRIST_TAGE_MAX });
+    if (!Number.isInteger(b.tage) || b.tage < 0 || b.tage > FRIST_TAGE_MAX)
+      return t('gemeinsam.sichten.die-anzahl-tage-muss', { FRIST_TAGE_MAX });
     if (!typen.length) return t('gemeinsam.sichten.fristen-brauchen-mindestens-einen');
     if (b.feld) {
-      if (typen.some((t) => t.felder.find((f) => f.key === b.feld)?.typ !== 'datum')) return t('gemeinsam.sichten.das-datumsfeld-gibt-es', { feld: b.feld, wert: typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr') });
+      if (typen.some((t) => t.felder.find((f) => f.key === b.feld)?.typ !== 'datum'))
+        return t('gemeinsam.sichten.das-datumsfeld-gibt-es', {
+          feld: b.feld,
+          wert: typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr'),
+        });
       return null;
     }
     if (!typen.some((t) => mitFrist(t).length)) return t('gemeinsam.sichten.keiner-der-mappentypen-hat');
@@ -276,7 +319,9 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
   const art = b.art === 'dokumente' ? 'dokumente' : 'verknuepfungen';
   if (typen.some((t) => t.register.find((x) => x.key === b.register)?.art !== art)) {
     const wert = typen.length > 1 ? t('gemeinsam.sichten.nicht-in-allen-mappentypen') : t('gemeinsam.sichten.nicht-mehr');
-    return art === 'dokumente' ? t('gemeinsam.sichten.dokumentenregister-gibt-es', { register: b.register, wert }) : t('gemeinsam.sichten.verknuepfungsregister-gibt-es', { register: b.register, wert });
+    return art === 'dokumente'
+      ? t('gemeinsam.sichten.dokumentenregister-gibt-es', { register: b.register, wert })
+      : t('gemeinsam.sichten.verknuepfungsregister-gibt-es', { register: b.register, wert });
   }
   return null;
 }
@@ -321,7 +366,10 @@ export type Filter =
   | { art: 'frist'; felder: Array<{ key: string; empfaengerFeld: string | null }>; von: string; bis: string; ich?: string };
 
 /** Eine Klausel: Mappen dieser Typen, die alle Filter erfüllen. Eine Sicht = ODER ihrer Klauseln. */
-export interface Klausel { typen: string[]; filter: Filter[] }
+export interface Klausel {
+  typen: string[];
+  filter: Filter[];
+}
 
 // Einmal angelegt (#615): Ein neues Intl.DateTimeFormat kostet spürbar Rechenzeit, und „heute“ braucht jede Anfrage
 // mit Rechten oder Ansichten mehrmals.
@@ -353,12 +401,19 @@ function zeitraum(w: WertAngabe, heute: string): [string, string] {
 function wertVon(w: WertAngabe | undefined, feldart: Feldart, a: Aufloesung): unknown {
   if (!w) return undefined;
   switch (w.art) {
-    case 'heute': return verschiebe(a.heute, Math.trunc(Number(w.versatz) || 0), w.einheit ?? 'tage');
-    case 'ich': return [a.ich];
-    case 'meineRollen': return a.meineRollen;
-    case 'jahr': case 'monat': return zeitraum(w, a.heute);
-    case 'eigenesFeld': return undefined;
-    case 'fest': return festerWert(w.wert, feldart);
+    case 'heute':
+      return verschiebe(a.heute, Math.trunc(Number(w.versatz) || 0), w.einheit ?? 'tage');
+    case 'ich':
+      return [a.ich];
+    case 'meineRollen':
+      return a.meineRollen;
+    case 'jahr':
+    case 'monat':
+      return zeitraum(w, a.heute);
+    case 'eigenesFeld':
+      return undefined;
+    case 'fest':
+      return festerWert(w.wert, feldart);
   }
 }
 
@@ -406,10 +461,17 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
       const felder = new Map<string, string | null>();
       for (const t of typen) {
         for (const f of b.feld ? t.felder.filter((x) => x.key === b.feld) : mitFrist(t)) {
-          if (!felder.has(f.key) || (felder.get(f.key) === null && f.frist?.empfaengerFeld)) felder.set(f.key, f.frist?.empfaengerFeld ?? null);
+          if (!felder.has(f.key) || (felder.get(f.key) === null && f.frist?.empfaengerFeld))
+            felder.set(f.key, f.frist?.empfaengerFeld ?? null);
         }
       }
-      erg.push({ art: 'frist', felder: [...felder].map(([key, empfaengerFeld]) => ({ key, empfaengerFeld })), von: a.heute, bis: verschiebe(a.heute, b.tage), ...(b.nurMeine ? { ich: a.ich } : {}) });
+      erg.push({
+        art: 'frist',
+        felder: [...felder].map(([key, empfaengerFeld]) => ({ key, empfaengerFeld })),
+        von: a.heute,
+        bis: verschiebe(a.heute, b.tage),
+        ...(b.nurMeine ? { ich: a.ich } : {}),
+      });
     } else if (typen.length === 1) {
       const r = typen[0].register.find((x) => x.key === b.register)!;
       erg.push({ art: 'verknuepfungen', quellen: r.quellen ?? [], vergleich: b.vergleich, anzahl: b.anzahl });
@@ -426,7 +488,10 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
 export function klauselnFuer(alle: Sicht[], id: string, typen: Map<string, Mappentyp>, a: Aufloesung, verborgen?: Set<string>): Klausel[] {
   // Verborgene Untersichten (#148): ihre Mappen fehlen auch in der Elternsicht.
   // Teile (#1031) erscheinen in keiner Ansicht – nur an ihrer übergeordneten Mappe.
-  const sichtbar = (s: Sicht) => typenDerSicht(s, typen.keys()).map((t) => typen.get(t)).filter((t): t is Mappentyp => !!t && !istTeiltyp(t));
+  const sichtbar = (s: Sicht) =>
+    typenDerSicht(s, typen.keys())
+      .map((t) => typen.get(t))
+      .filter((t): t is Mappentyp => !!t && !istTeiltyp(t));
   return mitNachkommen(alle, id)
     .filter((s) => !verborgen?.has(s.id))
     .filter((s) => sichtbar(s).length > 0)
@@ -450,10 +515,14 @@ export interface Zaehlquelle {
 
 function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown {
   switch (f.key) {
-    case '_erstellt': return m.erstellt ? heuteIn(new Date(m.erstellt)) : null;
-    case '_geaendert': return m.geaendert ? heuteIn(new Date(m.geaendert)) : null;
-    case '_erstelltVon': return m.erstelltVon ?? null;
-    case '_geaendertVon': return m.geaendertVon ?? null;
+    case '_erstellt':
+      return m.erstellt ? heuteIn(new Date(m.erstellt)) : null;
+    case '_geaendert':
+      return m.geaendert ? heuteIn(new Date(m.geaendert)) : null;
+    case '_erstelltVon':
+      return m.erstelltVon ?? null;
+    case '_geaendertVon':
+      return m.geaendertVon ?? null;
   }
   const v = m.werte[f.key];
   if (f.feldart === 'betrag') return v && typeof v === 'object' && !Array.isArray(v) ? (v as { betrag: number }).betrag : null;
@@ -470,13 +539,17 @@ function zaehltWie(n: number, v: Zaehlvergleich, soll: number) {
 export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
   return filter.every((f) => {
     if (f.art === 'dokumente') return zaehltWie(z.dokumente(m.id, f.register), f.vergleich, f.anzahl);
-    if (f.art === 'verknuepfungen') return zaehltWie(z.verknuepfungen(m.id, f.quellenJeTyp ? f.quellenJeTyp[m.typId] ?? [] : f.quellen), f.vergleich, f.anzahl);
+    if (f.art === 'verknuepfungen')
+      return zaehltWie(z.verknuepfungen(m.id, f.quellenJeTyp ? (f.quellenJeTyp[m.typId] ?? []) : f.quellen), f.vergleich, f.anzahl);
     if (f.art === 'favorit') return !!z.favorit?.(m.id, f.benutzer);
     if (f.art === 'aufgabe') return !!z.aufgabe?.(m.id, f.benutzer);
     if (f.art === 'id') return f.ids.includes(m.id);
     if (f.art === 'zieltyp') {
       const soll = new Set(f.typen);
-      return alsIds(m.werte[f.key]).some((id) => { const typ = z.typVon?.(id); return typ !== undefined && soll.has(typ) !== !!f.ausser; });
+      return alsIds(m.werte[f.key]).some((id) => {
+        const typ = z.typVon?.(id);
+        return typ !== undefined && soll.has(typ) !== !!f.ausser;
+      });
     }
     if (f.art === 'frist') {
       return f.felder.some((x) => {
@@ -490,28 +563,45 @@ export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
     const v = vergleichswert(m, f);
     const leer = istLeer(v);
     switch (f.op) {
-      case 'leer': return leer;
-      case 'nichtLeer': return !leer;
-      case 'ja': return v === true;
-      case 'nein': return v !== true;
-      case 'zeigtAuf': case 'einerVon': {
+      case 'leer':
+        return leer;
+      case 'nichtLeer':
+        return !leer;
+      case 'ja':
+        return v === true;
+      case 'nein':
+        return v !== true;
+      case 'zeigtAuf':
+      case 'einerVon': {
         const soll = new Set(f.a as string[]);
         return (Array.isArray(v) ? v : leer ? [] : [String(v)]).some((x) => soll.has(String(x)));
       }
-      case 'enthaelt': return !leer && String(v).toLowerCase().includes(String(f.a ?? '').toLowerCase());
+      case 'enthaelt':
+        return (
+          !leer &&
+          String(v)
+            .toLowerCase()
+            .includes(String(f.a ?? '').toLowerCase())
+        );
     }
     if (leer) return false;
     const num = istZahlvergleich(f.feldart);
     const x = num ? Number(v) : String(v);
     const a = num ? Number(f.a) : String(f.a ?? '');
     const b = num ? Number(f.b) : String(f.b ?? '');
-    if (f.feldart === 'text' || f.feldart === 'zusammengesetzt') return f.op === 'gleich' && String(v).toLowerCase() === String(f.a ?? '').toLowerCase();
+    if (f.feldart === 'text' || f.feldart === 'zusammengesetzt')
+      return f.op === 'gleich' && String(v).toLowerCase() === String(f.a ?? '').toLowerCase();
     switch (f.op) {
-      case 'gleich': return x === a;
-      case 'kleiner': return x < a;
-      case 'groesser': return x > a;
-      case 'zwischen': return x >= a && x <= b;
-      case 'ausserhalb': return x < a || x > b;
+      case 'gleich':
+        return x === a;
+      case 'kleiner':
+        return x < a;
+      case 'groesser':
+        return x > a;
+      case 'zwischen':
+        return x >= a && x <= b;
+      case 'ausserhalb':
+        return x < a || x > b;
     }
     return false;
   });
@@ -539,11 +629,20 @@ function bereinigeWert(w: unknown): WertAngabe | undefined {
       if (typeof v === 'number' || typeof v === 'boolean') return { art: 'fest', wert: v };
       return undefined;
     }
-    case 'heute': return { art: 'heute', versatz, einheit: (Object.keys(EINHEITEN) as Einheit[]).includes(x.einheit as Einheit) ? (x.einheit as Einheit) : 'tage' };
-    case 'jahr': return { art: 'jahr', versatz };
-    case 'monat': return { art: 'monat', versatz };
-    case 'eigenesFeld': return typeof x.feld === 'string' && x.feld ? { art: 'eigenesFeld', feld: x.feld.slice(0, 60) } : undefined;
-    default: return { art: x.art as 'ich' | 'meineRollen' };
+    case 'heute':
+      return {
+        art: 'heute',
+        versatz,
+        einheit: (Object.keys(EINHEITEN) as Einheit[]).includes(x.einheit as Einheit) ? (x.einheit as Einheit) : 'tage',
+      };
+    case 'jahr':
+      return { art: 'jahr', versatz };
+    case 'monat':
+      return { art: 'monat', versatz };
+    case 'eigenesFeld':
+      return typeof x.feld === 'string' && x.feld ? { art: 'eigenesFeld', feld: x.feld.slice(0, 60) } : undefined;
+    default:
+      return { art: x.art as 'ich' | 'meineRollen' };
   }
 }
 
@@ -554,22 +653,32 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
     const b = (roh ?? {}) as Record<string, unknown>;
     if (b.art === 'feld' && typeof b.feld === 'string' && Object.prototype.hasOwnProperty.call(OPERATOREN, String(b.op))) {
       const x: Bedingung = { art: 'feld', feld: b.feld.slice(0, 60), op: b.op as Operator };
-      const wert = bereinigeWert(b.wert); const bis = bereinigeWert(b.bis);
+      const wert = bereinigeWert(b.wert);
+      const bis = bereinigeWert(b.bis);
       if (wert) x.wert = wert;
       if (bis && (x.op === 'zwischen' || x.op === 'ausserhalb')) x.bis = bis;
       erg.push(x);
     } else if ((b.art === 'dokumente' || b.art === 'verknuepfungen') && typeof b.register === 'string') {
-      const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich)) ? (b.vergleich as Zaehlvergleich) : 'gleich';
+      const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich))
+        ? (b.vergleich as Zaehlvergleich)
+        : 'gleich';
       erg.push({ art: b.art, register: b.register.slice(0, 60), vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
     } else if (b.art === 'dokumenteGesamt' || b.art === 'verknuepfungenGesamt') {
-      const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich)) ? (b.vergleich as Zaehlvergleich) : 'gleich';
+      const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich))
+        ? (b.vergleich as Zaehlvergleich)
+        : 'gleich';
       erg.push({ art: b.art, vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
     } else if (b.art === 'favorit') {
       erg.push({ art: 'favorit' });
     } else if (b.art === 'merkmal' && istMerkmal(b.merkmal)) {
       erg.push({ art: 'merkmal', merkmal: b.merkmal, ...(b.nicht === true ? { nicht: true } : {}) });
     } else if (b.art === 'frist') {
-      erg.push({ art: 'frist', feld: typeof b.feld === 'string' && b.feld ? b.feld.slice(0, 60) : null, tage: Math.max(0, Math.min(FRIST_TAGE_MAX, Math.trunc(Number(b.tage) || 0))), ...(b.nurMeine === true ? { nurMeine: true } : {}) });
+      erg.push({
+        art: 'frist',
+        feld: typeof b.feld === 'string' && b.feld ? b.feld.slice(0, 60) : null,
+        tage: Math.max(0, Math.min(FRIST_TAGE_MAX, Math.trunc(Number(b.tage) || 0))),
+        ...(b.nurMeine === true ? { nurMeine: true } : {}),
+      });
     }
   }
   return erg;
@@ -586,60 +695,104 @@ export function bedingungEingabeFehler(roh: unknown): string | null {
   if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return t('gemeinsam.bedingungspruefung.kein-objekt');
   const b = roh as Record<string, unknown>;
   if (b.art === undefined) return t('gemeinsam.bedingungspruefung.art-fehlt', { arten: ARTEN_BEDINGUNG.join(', ') });
-  if (!ARTEN_BEDINGUNG.includes(String(b.art))) return t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(b.art), arten: ARTEN_BEDINGUNG.join(', ') });
+  if (!ARTEN_BEDINGUNG.includes(String(b.art)))
+    return t('gemeinsam.bedingungspruefung.art-unbekannt', { art: String(b.art), arten: ARTEN_BEDINGUNG.join(', ') });
   if (b.art === 'feld') return feldbedingungFehler(b);
   if (b.art === 'merkmal') return istMerkmal(b.merkmal) ? null : t('gemeinsam.merkmale.unbekannt', { merkmal: String(b.merkmal) });
   return b.art === 'favorit' || b.art === 'frist' ? null : zaehlbedingungFehler(b);
 }
 
 function zaehlbedingungFehler(b: Record<string, unknown>): string | null {
-  if ((b.art === 'dokumente' || b.art === 'verknuepfungen') && (typeof b.register !== 'string' || !b.register)) return t('gemeinsam.bedingungspruefung.register-fehlt');
-  return b.vergleich !== undefined && !Object.hasOwn(ZAEHLVERGLEICHE, String(b.vergleich)) ? t('gemeinsam.bedingungspruefung.vergleich', { wert: String(b.vergleich), moeglich: Object.keys(ZAEHLVERGLEICHE).join(', ') }) : null;
+  if ((b.art === 'dokumente' || b.art === 'verknuepfungen') && (typeof b.register !== 'string' || !b.register))
+    return t('gemeinsam.bedingungspruefung.register-fehlt');
+  return b.vergleich !== undefined && !Object.hasOwn(ZAEHLVERGLEICHE, String(b.vergleich))
+    ? t('gemeinsam.bedingungspruefung.vergleich', { wert: String(b.vergleich), moeglich: Object.keys(ZAEHLVERGLEICHE).join(', ') })
+    : null;
 }
 
 function feldbedingungFehler(b: Record<string, unknown>): string | null {
   if (typeof b.feld !== 'string' || !b.feld) return t('gemeinsam.bedingungspruefung.feld-fehlt');
-  if (!Object.hasOwn(OPERATOREN, String(b.op))) return t('gemeinsam.bedingungspruefung.op', { op: String(b.op ?? ''), moeglich: Object.keys(OPERATOREN).join(', ') });
+  if (!Object.hasOwn(OPERATOREN, String(b.op)))
+    return t('gemeinsam.bedingungspruefung.op', { op: String(b.op ?? ''), moeglich: Object.keys(OPERATOREN).join(', ') });
   const falsch = (['wert', 'bis'] as const).find((k) => b[k] !== undefined && !bereinigeWert(b[k]));
   if (falsch) return t('gemeinsam.bedingungspruefung.wert', { teil: falsch, arten: ARTEN_WERT.join(', ') });
   return b.bis !== undefined && b.op !== 'zwischen' && b.op !== 'ausserhalb' ? t('gemeinsam.bedingungspruefung.bis') : null;
 }
 
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
-export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id, eigeneNamen?: Record<string, string>, typNameVon?: (id: string) => string | undefined): string {
+export function beschreibeBedingung(
+  b: Bedingung,
+  typen: Mappentyp[],
+  titelVon: (id: string) => string = (id) => id,
+  eigeneNamen?: Record<string, string>,
+  typNameVon?: (id: string) => string | undefined,
+): string {
   if (b.art === 'favorit') return t('gemeinsam.sichten.ist-mein-favorit');
   if (b.art === 'merkmal') return merkmalText(b.merkmal, b.nicht);
   if (b.art === 'frist') {
-    const feld = b.feld ? typen.flatMap((t) => t.felder).find((f) => f.key === b.feld)?.label ?? b.feld : null;
-    return t('gemeinsam.sichten.hat-frist-in-den', { anzahl: b.tage, wert: feld ? ` („${feld}“)` : '', wert2: b.nurMeine ? t('gemeinsam.sichten.nur-meine') : '' });
+    const feld = b.feld ? (typen.flatMap((t) => t.felder).find((f) => f.key === b.feld)?.label ?? b.feld) : null;
+    return t('gemeinsam.sichten.hat-frist-in-den', {
+      anzahl: b.tage,
+      wert: feld ? ` („${feld}“)` : '',
+      wert2: b.nurMeine ? t('gemeinsam.sichten.nur-meine') : '',
+    });
   }
-  if (b.art === 'dokumenteGesamt') return t('gemeinsam.sichten.dokumente-insgesamt-dokumente', { anzahl: b.anzahl, ZAEHLVERGLEICHE: ZAEHLVERGLEICHE[b.vergleich] });
-  if (b.art === 'verknuepfungenGesamt') return t('gemeinsam.sichten.verknuepfungen-insgesamt', { anzahl: b.anzahl, ZAEHLVERGLEICHE: ZAEHLVERGLEICHE[b.vergleich] });
+  if (b.art === 'dokumenteGesamt')
+    return t('gemeinsam.sichten.dokumente-insgesamt-dokumente', { anzahl: b.anzahl, ZAEHLVERGLEICHE: ZAEHLVERGLEICHE[b.vergleich] });
+  if (b.art === 'verknuepfungenGesamt')
+    return t('gemeinsam.sichten.verknuepfungen-insgesamt', { anzahl: b.anzahl, ZAEHLVERGLEICHE: ZAEHLVERGLEICHE[b.vergleich] });
   if (b.art !== 'feld') {
     const namen = [...new Set(typen.map((t) => t.register.find((x) => x.key === b.register)?.name).filter(Boolean))];
     const r = { name: namen.length ? namen.join(' / ') : undefined };
-    return `${r?.name ?? b.register}: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.art === 'dokumente' ? (t('gemeinsam.sichten.dokumente', { anzahl: b.anzahl })) : (t('gemeinsam.sichten.verknuepfungen', { anzahl: b.anzahl }))}`;
+    return `${r?.name ?? b.register}: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.art === 'dokumente' ? t('gemeinsam.sichten.dokumente', { anzahl: b.anzahl }) : t('gemeinsam.sichten.verknuepfungen', { anzahl: b.anzahl })}`;
   }
   const f = bedingungsfelder(typen).find((x) => x.key === b.feld);
   const wert = (w?: WertAngabe): string => {
     if (!w) return '…';
     switch (w.art) {
-      case 'heute': { const n = Number(w.versatz) || 0; return n ? `heute ${n > 0 ? '+' : '−'} ${Math.abs(n)} ${EINHEITEN[w.einheit ?? 'tage']}` : 'heute'; }
-      case 'jahr': { const n = Number(w.versatz) || 0; return n === 0 ? t('gemeinsam.sichten.aktuelles-jahr') : n === -1 ? t('gemeinsam.sichten.letztes-jahr') : t('gemeinsam.sichten.jahr', { anzahl: n, wert: n > 0 ? '+' : '−', abs: Math.abs(n) }); }
-      case 'monat': { const n = Number(w.versatz) || 0; return n === 0 ? t('gemeinsam.sichten.aktueller-monat') : n === -1 ? t('gemeinsam.sichten.letzter-monat') : t('gemeinsam.sichten.monat', { anzahl: n, wert: n > 0 ? '+' : '−', abs: Math.abs(n) }); }
-      case 'ich': return t('gemeinsam.sichten.aktueller-benutzer');
-      case 'meineRollen': return t('gemeinsam.sichten.rollen-des-aktuellen-benutzers');
-      case 'eigenesFeld': return t('gemeinsam.sichten.dieser-mappe', { wert: eigeneNamen?.[w.feld] ?? w.feld });
+      case 'heute': {
+        const n = Number(w.versatz) || 0;
+        return n ? `heute ${n > 0 ? '+' : '−'} ${Math.abs(n)} ${EINHEITEN[w.einheit ?? 'tage']}` : 'heute';
+      }
+      case 'jahr': {
+        const n = Number(w.versatz) || 0;
+        return n === 0
+          ? t('gemeinsam.sichten.aktuelles-jahr')
+          : n === -1
+            ? t('gemeinsam.sichten.letztes-jahr')
+            : t('gemeinsam.sichten.jahr', { anzahl: n, wert: n > 0 ? '+' : '−', abs: Math.abs(n) });
+      }
+      case 'monat': {
+        const n = Number(w.versatz) || 0;
+        return n === 0
+          ? t('gemeinsam.sichten.aktueller-monat')
+          : n === -1
+            ? t('gemeinsam.sichten.letzter-monat')
+            : t('gemeinsam.sichten.monat', { anzahl: n, wert: n > 0 ? '+' : '−', abs: Math.abs(n) });
+      }
+      case 'ich':
+        return t('gemeinsam.sichten.aktueller-benutzer');
+      case 'meineRollen':
+        return t('gemeinsam.sichten.rollen-des-aktuellen-benutzers');
+      case 'eigenesFeld':
+        return t('gemeinsam.sichten.dieser-mappe', { wert: eigeneNamen?.[w.feld] ?? w.feld });
       case 'fest': {
         const v = w.wert;
         // „zeigt auf Mappe vom Typ …“ (#1036): Namen der Mappentypen.
-        if (b.op === 'zeigtAufTyp') return (Array.isArray(v) ? v : [String(v)]).map((x) => `„${typNameVon?.(String(x)) ?? typen.find((y) => y.id === x)?.name ?? x}“`).join(' oder ');
-        if (f?.art === 'referenz' || f?.art === 'person') return (Array.isArray(v) ? v : [String(v)]).map((x) => `„${titelVon(String(x))}“`).join(' oder ');
+        if (b.op === 'zeigtAufTyp')
+          return (Array.isArray(v) ? v : [String(v)])
+            .map((x) => `„${typNameVon?.(String(x)) ?? typen.find((y) => y.id === x)?.name ?? x}“`)
+            .join(' oder ');
+        if (f?.art === 'referenz' || f?.art === 'person')
+          return (Array.isArray(v) ? v : [String(v)]).map((x) => `„${titelVon(String(x))}“`).join(' oder ');
         // Auswahl (#728): gespeichert ist der feste Wert, gezeigt die Beschriftung.
         if (Array.isArray(v)) return v.map((x) => `„${f?.art === 'auswahl' && f.feld ? optionText(f.feld, String(x)) : x}“`).join(', ');
         if (f?.art === 'datum' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v.split('-').reverse().join('.');
         // Zeitraum (#1035): gespeichert „P3M“, gezeigt „3 Monate“.
-        if (f?.art === 'zeitraum') { const z = leseZeitraum(v); if (z) return zeitraumText(z); }
+        if (f?.art === 'zeitraum') {
+          const z = leseZeitraum(v);
+          if (z) return zeitraumText(z);
+        }
         return typeof v === 'string' ? `„${v}“` : String(v).replace('.', ',');
       }
     }
@@ -653,7 +806,12 @@ export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: 
 /* ---------- Trefferlisten einer Sicht (#75) ---------- */
 
 /** Eine Trefferliste, wie sie eine Sicht verwenden kann. */
-export interface Sichtliste { key: string; name: string; spalten: string[]; standard: boolean }
+export interface Sichtliste {
+  key: string;
+  name: string;
+  spalten: string[];
+  standard: boolean;
+}
 
 /**
  * Trefferlisten, die alle Typen haben (gleicher Schlüssel), mit nur den Spalten, die alle
@@ -667,14 +825,24 @@ export function gemeinsameTrefferlisten(typen: Mappentyp[]): Sichtliste[] {
     const andere = je.map((ls) => ls.find((x) => x.key === l.key));
     if (andere.some((x) => !x)) return [];
     const feld = (t: Mappentyp, k: string) => t.felder.find((f) => f.key === k);
-    const spalten = l.spalten.filter((k) => andere.every((x) => x!.spalten.includes(k))
-      && (istSystemspalte(k) || typen.every((t) => feld(t, k) && feld(t, k)!.typ === feld(typen[0], k)!.typ)));
-    return [{ key: l.key, name: [...new Set(andere.map((x) => x!.name))].join(' / '), spalten, standard: andere.every((x) => x!.standard) }];
+    const spalten = l.spalten.filter(
+      (k) =>
+        andere.every((x) => x!.spalten.includes(k)) &&
+        (istSystemspalte(k) || typen.every((t) => feld(t, k) && feld(t, k)!.typ === feld(typen[0], k)!.typ)),
+    );
+    return [
+      { key: l.key, name: [...new Set(andere.map((x) => x!.name))].join(' / '), spalten, standard: andere.every((x) => x!.standard) },
+    ];
   });
 }
 
 /** Spalten, die eine Sicht zeigt; ungueltig = die gewählte Liste gibt es nicht (mehr), es gilt der Standard. */
-export interface Spaltenwahl { key: string | null; name: string; spalten: string[]; ungueltig: boolean }
+export interface Spaltenwahl {
+  key: string | null;
+  name: string;
+  spalten: string[];
+  ungueltig: boolean;
+}
 
 /**
  * Welche Spalten eine Sicht mit diesen (wirksamen) Typen zeigt: die gewählte Trefferliste,
@@ -698,9 +866,7 @@ export function spaltenDerSicht(typen: Mappentyp[], wahl?: string | null): Spalt
 export function trefferlistenProblem(wahl: string | null | undefined, typen: Mappentyp[]): string | null {
   if (!wahl) return null;
   if (!typen.length) return t('gemeinsam.sichten.die-ansicht-hat-keine');
-  return spaltenDerSicht(typen, wahl).ungueltig
-    ? t('gemeinsam.sichten.die-trefferliste-gibt-es', { anzahl: typen.length, wahl })
-    : null;
+  return spaltenDerSicht(typen, wahl).ungueltig ? t('gemeinsam.sichten.die-trefferliste-gibt-es', { anzahl: typen.length, wahl }) : null;
 }
 
 /* ---------- Auswahlfilter am Referenzfeld (#172) ---------- */
@@ -709,28 +875,51 @@ export function trefferlistenProblem(wahl: string | null | undefined, typen: Map
 export type Feldbedingung = Extract<Bedingung, { art: 'feld' }>;
 
 export function bereinigeAuswahlfilter(e: unknown): Feldbedingung[] {
-  return bereinigeBedingungen(e).filter((b): b is Feldbedingung => b.art === 'feld').slice(0, 20);
+  return bereinigeBedingungen(e)
+    .filter((b): b is Feldbedingung => b.art === 'feld')
+    .slice(0, 20);
 }
 
-const alsZiel = (ziel: Pick<Mappentyp, 'felder'>) => ({ id: '', register: [], ...ziel } as unknown as Mappentyp);
+const alsZiel = (ziel: Pick<Mappentyp, 'felder'>) => ({ id: '', register: [], ...ziel }) as unknown as Mappentyp;
 
 /** Operatoren, die einen Wert aus der eigenen Mappe nehmen können (#173). */
 export const OPS_EIGENES_FELD: Operator[] = ['gleich', 'enthaelt', 'kleiner', 'groesser', 'einerVon', 'zeigtAuf'];
 const TEXTARTEN = ['text', 'langtext', 'formatiert'];
 
 /** Felder der eigenen Mappe, deren Wert zu dieser Bedingung passt (#173). */
-export function passendeEigeneFelder(b: Pick<Feldbedingung, 'feld' | 'op'>, zielFelder: Feld[], eigene: Array<Pick<Feld, 'key' | 'label' | 'typ' | 'optionen' | 'zielTypen' | 'mehrfach'>>, feldKey: string) {
+export function passendeEigeneFelder(
+  b: Pick<Feldbedingung, 'feld' | 'op'>,
+  zielFelder: Feld[],
+  eigene: Array<Pick<Feld, 'key' | 'label' | 'typ' | 'optionen' | 'zielTypen' | 'mehrfach'>>,
+  feldKey: string,
+) {
   const ziel = bedingungsfelder([{ felder: zielFelder }]).find((x) => x.key === b.feld);
   if (!ziel || !OPS_EIGENES_FELD.includes(b.op)) return [];
   return eigene.filter((e) => {
     if (e.key === feldKey) return false; // kein Kreis über das eigene Referenzfeld
     switch (b.op) {
-      case 'gleich': return !e.mehrfach && (TEXTARTEN.includes(ziel.art) ? e.typ === 'text' : ziel.art === 'zeit' ? e.typ === 'datum' : e.typ === ziel.art && ['zahl', 'datum', 'text'].includes(e.typ));
-      case 'enthaelt': return TEXTARTEN.includes(ziel.art) && e.typ === 'text';
-      case 'kleiner': case 'groesser': return (ziel.art === 'zahl' || ziel.art === 'betrag') ? e.typ === 'zahl' : (ziel.art === 'datum' || ziel.art === 'zeit') && e.typ === 'datum';
-      case 'einerVon': return ziel.art === 'auswahl' && e.typ === 'auswahl' && (e.optionen ?? []).every((o) => (ziel.feld?.optionen ?? []).includes(o));
-      case 'zeigtAuf': return ziel.art === 'referenz' && e.typ === 'referenz' && !!e.zielTypen?.length && !!ziel.feld && gleicheZiele(e, ziel.feld);
-      default: return false;
+      case 'gleich':
+        return (
+          !e.mehrfach &&
+          (TEXTARTEN.includes(ziel.art)
+            ? e.typ === 'text'
+            : ziel.art === 'zeit'
+              ? e.typ === 'datum'
+              : e.typ === ziel.art && ['zahl', 'datum', 'text'].includes(e.typ))
+        );
+      case 'enthaelt':
+        return TEXTARTEN.includes(ziel.art) && e.typ === 'text';
+      case 'kleiner':
+      case 'groesser':
+        return ziel.art === 'zahl' || ziel.art === 'betrag'
+          ? e.typ === 'zahl'
+          : (ziel.art === 'datum' || ziel.art === 'zeit') && e.typ === 'datum';
+      case 'einerVon':
+        return ziel.art === 'auswahl' && e.typ === 'auswahl' && (e.optionen ?? []).every((o) => (ziel.feld?.optionen ?? []).includes(o));
+      case 'zeigtAuf':
+        return ziel.art === 'referenz' && e.typ === 'referenz' && !!e.zielTypen?.length && !!ziel.feld && gleicheZiele(e, ziel.feld);
+      default:
+        return false;
     }
   });
 }
@@ -739,20 +928,44 @@ export function passendeEigeneFelder(b: Pick<Feldbedingung, 'feld' | 'op'>, ziel
  * Probleme des Filters gegen den (aktuellen) Zieltyp, z. B. entfernte Felder. Mit `eigene` werden
  * Werte aus der eigenen Mappe (#173) geprüft: das Feld muss es geben und es muss zum Vergleich passen.
  */
-export function auswahlProbleme(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'felder'>, eigene?: { felder: Feld[]; feldKey: string }): string[] {
+export function auswahlProbleme(
+  bed: Feldbedingung[],
+  ziel: Pick<Mappentyp, 'felder'>,
+  eigene?: { felder: Feld[]; feldKey: string },
+): string[] {
   const erg: string[] = [];
   for (const b of bed) {
     if (b.wert?.art === 'eigenesFeld') {
       const name = b.wert.feld;
       // Für die allgemeine Prüfung wie ein fester Wert behandeln.
-      const p = bedingungsProblem({ ...b, wert: { art: 'fest', wert: b.op === 'einerVon' || b.op === 'zeigtAuf' ? [] : '' } }, [alsZiel(ziel)]);
-      if (p) { erg.push(p); continue; }
-      if (!OPS_EIGENES_FELD.includes(b.op)) { erg.push(t('gemeinsam.sichten.geht-nicht-mit-einem', { OPERATOREN: OPERATOREN[b.op] })); continue; }
+      const p = bedingungsProblem({ ...b, wert: { art: 'fest', wert: b.op === 'einerVon' || b.op === 'zeigtAuf' ? [] : '' } }, [
+        alsZiel(ziel),
+      ]);
+      if (p) {
+        erg.push(p);
+        continue;
+      }
+      if (!OPS_EIGENES_FELD.includes(b.op)) {
+        erg.push(t('gemeinsam.sichten.geht-nicht-mit-einem', { OPERATOREN: OPERATOREN[b.op] }));
+        continue;
+      }
       if (!eigene) continue;
-      if (name === eigene.feldKey) { erg.push(t('gemeinsam.sichten.der-filter-darf-nicht')); continue; }
+      if (name === eigene.feldKey) {
+        erg.push(t('gemeinsam.sichten.der-filter-darf-nicht'));
+        continue;
+      }
       const f = eigene.felder.find((x) => x.key === name);
-      if (!f) { erg.push(t('gemeinsam.sichten.das-feld-dieser-mappe', { name })); continue; }
-      if (!passendeEigeneFelder(b, ziel.felder, eigene.felder, eigene.feldKey).some((x) => x.key === name)) erg.push(t('gemeinsam.sichten.passt-nicht-zum-vergleich', { label: f.label, wert: ziel.felder.find((x) => x.key === b.feld)?.label ?? b.feld }));
+      if (!f) {
+        erg.push(t('gemeinsam.sichten.das-feld-dieser-mappe', { name }));
+        continue;
+      }
+      if (!passendeEigeneFelder(b, ziel.felder, eigene.felder, eigene.feldKey).some((x) => x.key === name))
+        erg.push(
+          t('gemeinsam.sichten.passt-nicht-zum-vergleich', {
+            label: f.label,
+            wert: ziel.felder.find((x) => x.key === b.feld)?.label ?? b.feld,
+          }),
+        );
       continue;
     }
     const p = bedingungsProblem(b, [alsZiel(ziel)]);
@@ -776,7 +989,9 @@ export function setzeEigeneWerte(bed: Feldbedingung[], werte: Record<string, unk
 }
 
 /** Hängt der Filter von Feldern der eigenen Mappe ab? Welche? */
-export const eigeneFelderIm = (bed: Feldbedingung[] | undefined) => [...new Set((bed ?? []).flatMap((b) => (b.wert?.art === 'eigenesFeld' ? [b.wert.feld] : [])))];
+export const eigeneFelderIm = (bed: Feldbedingung[] | undefined) => [
+  ...new Set((bed ?? []).flatMap((b) => (b.wert?.art === 'eigenesFeld' ? [b.wert.feld] : []))),
+];
 
 /**
  * Klausel für „passende Mappen der Zieltypen“; Bedingungen mit Problem zählen nicht. Bei mehreren Zieltypen (#1036)
@@ -795,7 +1010,8 @@ export function vorbelegungAus(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'feld
     const w = b.wert?.art === 'fest' ? b.wert.wert : undefined;
     if (b.op === 'ja' || b.op === 'nein') v[f.key] = b.op === 'ja';
     else if (b.op === 'gleich' && (typeof w === 'string' || typeof w === 'number') && String(w) !== '') v[f.key] = String(w);
-    else if ((b.op === 'einerVon' || b.op === 'zeigtAuf') && Array.isArray(w) && w.length === 1) v[f.key] = f.mehrfach ? [String(w[0])] : String(w[0]);
+    else if ((b.op === 'einerVon' || b.op === 'zeigtAuf') && Array.isArray(w) && w.length === 1)
+      v[f.key] = f.mehrfach ? [String(w[0])] : String(w[0]);
   }
   return v;
 }

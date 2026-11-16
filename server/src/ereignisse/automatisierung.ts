@@ -19,36 +19,67 @@ export interface AutomatisierungAnschluss {
 }
 
 export class Automatisierungshilfen {
-  constructor(private readonly kern: Kern, private readonly rechte: ZugriffDienst, private readonly anschluss: AutomatisierungAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechte: ZugriffDienst,
+    private readonly anschluss: AutomatisierungAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get paketKonten() { return this.kern.paketKonten; }
-  private listeRollen() { return this.anschluss.listeRollen(); }
-  private aufloesung(benutzerId: string) { return this.rechte.aufloesung(benutzerId); }
-  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.rechte.lesbare(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get paketKonten() {
+    return this.kern.paketKonten;
+  }
+  private listeRollen() {
+    return this.anschluss.listeRollen();
+  }
+  private aufloesung(benutzerId: string) {
+    return this.rechte.aufloesung(benutzerId);
+  }
+  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) {
+    return this.rechte.lesbare(...a);
+  }
 
   /** Was eine Automatisierung prüfen muss: Mappentypen, Ansichten, Benutzer (ohne Systemkonten), Rollen. */
   async automatisierungKontext() {
     const { benutzer, kontorollen } = await this.kern.system();
     const konto = new Set(kontorollen.values());
-    const [typen, sichten, rollen, leute] = await Promise.all([this.repo.listeTypen(), this.repo.listeSichten(), this.listeRollen(), this.repo.listeMappen(benutzer.id)]);
+    const [typen, sichten, rollen, leute] = await Promise.all([
+      this.repo.listeTypen(),
+      this.repo.listeSichten(),
+      this.listeRollen(),
+      this.repo.listeMappen(benutzer.id),
+    ]);
     return {
-      typen, sichten: sichten.map((x) => ({ id: x.id, name: x.name, typen: x.typen })), rollen: rollen.map((r) => ({ id: r.id, name: r.name })),
-      benutzer: leute.filter((m) => !alsListe(m.werte.rollen).some((r) => konto.has(r)) && !this.paketKonten.has(m.id)).map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? ''), aktiv: m.werte.aktiv !== false })),
+      typen,
+      sichten: sichten.map((x) => ({ id: x.id, name: x.name, typen: x.typen })),
+      rollen: rollen.map((r) => ({ id: r.id, name: r.name })),
+      benutzer: leute
+        .filter((m) => !alsListe(m.werte.rollen).some((r) => konto.has(r)) && !this.paketKonten.has(m.id))
+        .map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? ''), aktiv: m.werte.aktiv !== false })),
     };
   }
 
   /** Aktive Benutzer, die eine Rolle haben (Empfänger „Rolle“ einer Automatisierung). */
   async mitgliederDerRolle(rolleId: string): Promise<string[]> {
     const { benutzer } = await this.kern.system();
-    return (await this.repo.listeMappen(benutzer.id)).filter((m) => m.werte.aktiv !== false && alsListe(m.werte.rollen).includes(rolleId)).map((m) => m.id);
+    return (await this.repo.listeMappen(benutzer.id))
+      .filter((m) => m.werte.aktiv !== false && alsListe(m.werte.rollen).includes(rolleId))
+      .map((m) => m.id);
   }
 
   /**
    * Teile einer Und-Bedingung für eine Mappe auswerten (#674): Bedingungen aus dem Baukasten der Ansichten,
    * „in Ansicht“ und „in den Favoriten von“. `ich` ist der Benutzer, für den „ich“ gilt (das Systemkonto).
    */
-  async trifftTeile(mappeId: string, teile: Array<{ art: 'bedingungen'; bedingungen: Bedingung[] } | { art: 'sicht'; sicht: string } | { art: 'favorit'; benutzer: string[] }>, ich: string): Promise<boolean[]> {
+  async trifftTeile(
+    mappeId: string,
+    teile: Array<
+      { art: 'bedingungen'; bedingungen: Bedingung[] } | { art: 'sicht'; sicht: string } | { art: 'favorit'; benutzer: string[] }
+    >,
+    ich: string,
+  ): Promise<boolean[]> {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) return teile.map(() => false);
     const typ = await this.repo.holeTyp(m.typId);
@@ -59,8 +90,10 @@ export class Automatisierungshilfen {
     for (const t of teile) {
       let klauseln: Klausel[];
       if (t.art === 'bedingungen') klauseln = [{ typen: [typ.id], filter: filterFuer({ bedingungen: t.bedingungen }, [typ], a) }];
-      else if (t.art === 'sicht') { sichten ??= await this.repo.listeSichten(); klauseln = sichten.some((x) => x.id === t.sicht) ? klauselnFuer(sichten, t.sicht, new Map([[typ.id, typ]]), a) : []; }
-      else klauseln = t.benutzer.map((b) => ({ typen: [typ.id], filter: [{ art: 'favorit' as const, benutzer: b }] }));
+      else if (t.art === 'sicht') {
+        sichten ??= await this.repo.listeSichten();
+        klauseln = sichten.some((x) => x.id === t.sicht) ? klauselnFuer(sichten, t.sicht, new Map([[typ.id, typ]]), a) : [];
+      } else klauseln = t.benutzer.map((b) => ({ typen: [typ.id], filter: [{ art: 'favorit' as const, benutzer: b }] }));
       erg.push(klauseln.length > 0 && (await this.repo.inKlauseln([m.id], klauseln)).has(m.id));
     }
     return erg;

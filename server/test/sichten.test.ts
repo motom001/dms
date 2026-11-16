@@ -5,7 +5,20 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { ALLE_TYPEN, beschreibeBedingung, bedingungsfelder, bedingungsProblem, heuteIn, klauselnFuer, typenDerSicht, verschiebe, wirksameTypen, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
+import {
+  ALLE_TYPEN,
+  beschreibeBedingung,
+  bedingungsfelder,
+  bedingungsProblem,
+  heuteIn,
+  klauselnFuer,
+  typenDerSicht,
+  verschiebe,
+  wirksameTypen,
+  type Bedingung,
+  type Operator,
+  type Sicht,
+} from '../../shared/src/sichten';
 import type { Mappentyp } from '../../shared/src/model';
 import { ladeBeispiele } from '../src/beispiele';
 import { speicherDateien } from '../src/dateispeicher';
@@ -47,16 +60,39 @@ function faelle() {
 
     it('bietet bei mehreren Typen nur gemeinsame Felder an und erkennt Probleme', async () => {
       const { typ } = await mitBeispielen();
-      const r = typ('Rechnung'); const z = typ('Zahlung');
+      const r = typ('Rechnung');
+      const z = typ('Zahlung');
       assert.ok(bedingungsfelder([r]).some((f) => f.key === 'rechnungsdatum'));
-      assert.deepEqual(bedingungsfelder([r, z]).filter((f) => !f.key.startsWith('_')).map((f) => f.key), ['betrag']);
+      assert.deepEqual(
+        bedingungsfelder([r, z])
+          .filter((f) => !f.key.startsWith('_'))
+          .map((f) => f.key),
+        ['betrag'],
+      );
       assert.match(bedingungsProblem({ art: 'feld', feld: 'gibtsnicht', op: 'leer' }, [r])!, /gibt es nicht/);
-      assert.match(bedingungsProblem({ art: 'feld', feld: 'betrag', op: 'enthaelt', wert: { art: 'fest', wert: 'x' } }, [r])!, /passt nicht/);
+      assert.match(
+        bedingungsProblem({ art: 'feld', feld: 'betrag', op: 'enthaelt', wert: { art: 'fest', wert: 'x' } }, [r])!,
+        /passt nicht/,
+      );
       assert.match(bedingungsProblem({ art: 'feld', feld: 'rechnungsdatum', op: 'gleich', wert: { art: 'jahr' } }, [r])!, /im Zeitraum/);
-      assert.match(bedingungsProblem({ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }, [r, z])!, /nicht in allen Mappentypen/);
+      assert.match(
+        bedingungsProblem({ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }, [r, z])!,
+        /nicht in allen Mappentypen/,
+      );
       assert.equal(bedingungsProblem({ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }, [r]), null);
-      assert.equal(beschreibeBedingung({ art: 'feld', feld: 'rechnungsdatum', op: 'zwischen', wert: { art: 'heute' }, bis: { art: 'heute', versatz: 90, einheit: 'tage' } }, [r]),
-        'Rechnungsdatum zwischen heute und heute + 90 Tage');
+      assert.equal(
+        beschreibeBedingung(
+          {
+            art: 'feld',
+            feld: 'rechnungsdatum',
+            op: 'zwischen',
+            wert: { art: 'heute' },
+            bis: { art: 'heute', versatz: 90, einheit: 'tage' },
+          },
+          [r],
+        ),
+        'Rechnungsdatum zwischen heute und heute + 90 Tage',
+      );
     });
   });
 
@@ -66,12 +102,20 @@ function faelle() {
       // Nur die Ansichten der Beispiel-Mappentypen; System und Post bringen eigene mit.
       const beispiel = new Set(['Vertragspartner', 'Vertrag', 'Rechnung', 'Zahlung'].map((n) => typ(n).id));
       const sichten = (await d.sichtenVerwaltung.listeSichten()).filter((s) => s.typen.length === 1 && beispiel.has(s.typen[0]));
-      assert.deepEqual(sichten.map((s) => s.name), ['Vertragspartner', 'Vertrag', 'Rechnung', 'Zahlung'], 'in der Reihenfolge des Anlegens');
+      assert.deepEqual(
+        sichten.map((s) => s.name),
+        ['Vertragspartner', 'Vertrag', 'Rechnung', 'Zahlung'],
+        'in der Reihenfolge des Anlegens',
+      );
       assert.ok(sichten.every((s) => s.typen.length === 1 && s.id === s.typen[0]));
       const z = typ('Zahlung');
       await d.mappentypen.aendereTyp(z.id, { ...z, name: 'Überweisung' });
       assert.equal((await d.sichtenVerwaltung.listeSichten()).find((s) => s.id === z.id)!.name, 'Überweisung');
-      const ohne = await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }], sichtAnlegen: false });
+      const ohne = await d.mappentypen.legeTypAn({
+        name: 'Notiz',
+        felder: [{ key: 'text', label: 'Text', typ: 'text' }],
+        sichtAnlegen: false,
+      });
       assert.ok(!(await d.sichtenVerwaltung.listeSichten()).some((s) => s.typen.includes(ohne.id)));
       const mit = await d.mappentypen.legeTypAn({ name: 'Gerät', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
       assert.ok((await d.sichtenVerwaltung.listeSichten()).some((s) => s.id === mit.id));
@@ -91,13 +135,22 @@ function faelle() {
       assert.equal(z.sichten[finanzen.id], 3);
       assert.equal(z.sichten[auchRechnungen.id], 2);
       // Kreise werden verhindert
-      await assert.rejects(d.sichtenVerwaltung.aendereSicht(finanzen.id, { ...finanzen, elternId: auchRechnungen.id }), /unter sich selbst/);
+      await assert.rejects(
+        d.sichtenVerwaltung.aendereSicht(finanzen.id, { ...finanzen, elternId: auchRechnungen.id }),
+        /unter sich selbst/,
+      );
       await assert.rejects(d.sichtenVerwaltung.aendereSicht(finanzen.id, { ...finanzen, elternId: finanzen.id }), /unter sich selbst/);
       // Löschen: Kinder rücken eine Ebene hoch, an die Stelle der Elternsicht
       await d.sichtenVerwaltung.loescheSicht(rechnungen.id);
       const nachher = await d.sichtenVerwaltung.listeSichten();
       assert.equal(nachher.find((s) => s.id === auchRechnungen.id)!.elternId, finanzen.id);
-      assert.deepEqual(nachher.filter((s) => s.elternId === finanzen.id).sort((a, b) => a.position - b.position).map((s) => s.name), ['Alle Rechnungen', 'Zahlungen']);
+      assert.deepEqual(
+        nachher
+          .filter((s) => s.elternId === finanzen.id)
+          .sort((a, b) => a.position - b.position)
+          .map((s) => s.name),
+        ['Alle Rechnungen', 'Zahlungen'],
+      );
     });
 
     it('verschiebt Sichten per Drag & Drop: umsortieren, umhängen, keine Kreise (#73)', async () => {
@@ -106,7 +159,11 @@ function faelle() {
       const a = await sicht(d, 'A', [typ('Rechnung').id]);
       const b = await sicht(d, 'B', []);
       const c = await sicht(d, 'C', [], [], b.id);
-      const namen = async (eltern: string | null) => (await d.sichtenVerwaltung.listeSichten()).filter((s) => s.elternId === eltern).sort((x, y) => x.position - y.position).map((s) => s.name);
+      const namen = async (eltern: string | null) =>
+        (await d.sichtenVerwaltung.listeSichten())
+          .filter((s) => s.elternId === eltern)
+          .sort((x, y) => x.position - y.position)
+          .map((s) => s.name);
       await d.sichtenVerwaltung.verschiebeSicht(b.id, null, 0);
       assert.deepEqual(await namen(null), ['B', 'A']);
       await d.sichtenVerwaltung.verschiebeSicht(a.id, b.id, 0);
@@ -123,31 +180,47 @@ function faelle() {
       const oben = (await d.sichtenVerwaltung.listeSichten()).filter((s) => !s.elternId);
       const umgekehrt = oben.map((s) => s.id).reverse();
       const neu = await d.sichtenVerwaltung.ordneSichten(null, umgekehrt);
-      assert.deepEqual(neu.filter((s) => !s.elternId).map((s) => s.id), umgekehrt);
+      assert.deepEqual(
+        neu.filter((s) => !s.elternId).map((s) => s.id),
+        umgekehrt,
+      );
       await assert.rejects(d.sichtenVerwaltung.ordneSichten(null, umgekehrt.slice(1)), Fachfehler);
     });
 
     it('kennt Sichten mit einem Typ (Sortierung nach Feldern) und Links auf Typen ohne Sicht', async () => {
       const { d, typ } = await mitBeispielen();
       const r = typ('Rechnung');
-      const s = await sicht(d, 'Teure Rechnungen', [r.id], [{ art: 'feld', feld: 'betrag', op: 'groesser', wert: { art: 'fest', wert: 200 } }]);
+      const s = await sicht(
+        d,
+        'Teure Rechnungen',
+        [r.id],
+        [{ art: 'feld', feld: 'betrag', op: 'groesser', wert: { art: 'fest', wert: 200 } }],
+      );
       const sortiert = await d.sichten.seite(ICH, { sicht: s.id, sortierung: 'betrag', absteigend: 'true' });
       assert.equal(sortiert.mappen.length, 1);
       await d.sichtenVerwaltung.loescheSicht(r.id);
       assert.equal((await d.sichten.seite(ICH, { sicht: r.id })).gesamt, 2, 'Typ-Id ohne Sicht: alle Mappen des Typs');
-    assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${r.id}` })).gesamt, 2, 'typ:<id>: alle Mappen, ohne Bedingungen');
-    await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, id: undefined });
-    assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${r.id}` })).gesamt, 2);
+      assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${r.id}` })).gesamt, 2, 'typ:<id>: alle Mappen, ohne Bedingungen');
+      await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, id: undefined });
+      assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${r.id}` })).gesamt, 2);
     });
   });
 
   describe('Bedingungen auf Feldwerte (#40)', () => {
     it('filtert nach Text, Zahl, Betrag, Datum, Ja/Nein, Auswahl und Verweis', async () => {
       const { d, typ, mappe } = await mitBeispielen();
-      const r = typ('Rechnung').id; const v = typ('Vertrag').id; const p = typ('Vertragspartner').id;
+      const r = typ('Rechnung').id;
+      const v = typ('Vertrag').id;
+      const p = typ('Vertragspartner').id;
       const sw = mappe('name', 'Stadtwerke Musterstadt');
       const f = (feld: string, op: Operator, wert?: unknown, bis?: unknown): Bedingung =>
-        ({ art: 'feld', feld, op, ...(wert !== undefined ? { wert: { art: 'fest', wert } } : {}), ...(bis !== undefined ? { bis: { art: 'fest', wert: bis } } : {}) } as Bedingung);
+        ({
+          art: 'feld',
+          feld,
+          op,
+          ...(wert !== undefined ? { wert: { art: 'fest', wert } } : {}),
+          ...(bis !== undefined ? { bis: { art: 'fest', wert: bis } } : {}),
+        }) as Bedingung;
       const pruefe = async (typId: string, b: Bedingung[], erwartet: number, was: string) => {
         const s = await sicht(d, was, [typId], b);
         assert.equal((await d.sichten.seite(ICH, { sicht: s.id })).gesamt, erwartet, was);
@@ -171,13 +244,25 @@ function faelle() {
       const { d, typ } = await mitBeispielen();
       const r = typ('Rechnung');
       const heute = heuteIn();
-      const neu = await d.mappen.legeMappeAn({ typId: r.id, werte: { rechnungsnummer: 'H-1', rechnungsdatum: heute, betrag: { betrag: 1, waehrung: 'EUR' } } }, ICH.id);
+      const neu = await d.mappen.legeMappeAn(
+        { typId: r.id, werte: { rechnungsnummer: 'H-1', rechnungsdatum: heute, betrag: { betrag: 1, waehrung: 'EUR' } } },
+        ICH.id,
+      );
       const zaehle = async (b: Bedingung[]) => (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', [r.id], b)).id })).gesamt;
       assert.equal(await zaehle([{ art: 'feld', feld: 'rechnungsdatum', op: 'gleich', wert: { art: 'heute' } }]), 1);
-      assert.equal(await zaehle([{ art: 'feld', feld: 'rechnungsdatum', op: 'zwischen', wert: { art: 'heute', versatz: -7 }, bis: { art: 'heute', versatz: 7 } }]), 1);
+      assert.equal(
+        await zaehle([
+          { art: 'feld', feld: 'rechnungsdatum', op: 'zwischen', wert: { art: 'heute', versatz: -7 }, bis: { art: 'heute', versatz: 7 } },
+        ]),
+        1,
+      );
       assert.equal(await zaehle([{ art: 'feld', feld: 'rechnungsdatum', op: 'imZeitraum', wert: { art: 'monat' } }]), 1);
       assert.equal(await zaehle([{ art: 'feld', feld: 'rechnungsdatum', op: 'imZeitraum', wert: { art: 'jahr', versatz: -50 } }]), 0);
-      assert.equal(await zaehle([{ art: 'feld', feld: '_erstellt', op: 'imZeitraum', wert: { art: 'jahr' } }]), 3, 'Systemwert: angelegt im aktuellen Jahr');
+      assert.equal(
+        await zaehle([{ art: 'feld', feld: '_erstellt', op: 'imZeitraum', wert: { art: 'jahr' } }]),
+        3,
+        'Systemwert: angelegt im aktuellen Jahr',
+      );
       assert.equal(await zaehle([{ art: 'feld', feld: '_erstelltVon', op: 'zeigtAuf', wert: { art: 'ich' } }]), 1, 'von mir angelegt');
       assert.equal(await zaehle([{ art: 'feld', feld: '_erstelltVon', op: 'leer' }]), 2);
       assert.ok(neu.id);
@@ -195,7 +280,16 @@ function faelle() {
     it('zeigt in der Vorschau die Anzahl einer noch nicht gespeicherten Sicht', async () => {
       const { d, typ } = await mitBeispielen();
       const r = typ('Rechnung');
-      assert.equal((await d.sichtenVerwaltung.sichtVorschau(ICH, null, { name: 'x', typen: [r.id], bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'ja' }] })).anzahl, 1);
+      assert.equal(
+        (
+          await d.sichtenVerwaltung.sichtVorschau(ICH, null, {
+            name: 'x',
+            typen: [r.id],
+            bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'ja' }],
+          })
+        ).anzahl,
+        1,
+      );
       assert.equal((await d.sichtenVerwaltung.sichtVorschau(ICH, r.id, { name: 'Rechnung', typen: [r.id], bedingungen: [] })).anzahl, 2);
     });
   });
@@ -204,9 +298,20 @@ function faelle() {
     it('speichert mehrere Trefferlisten am Typ und die Wahl an der Sicht', async () => {
       const { d, typ } = await mitBeispielen();
       const r = typ('Rechnung');
-      const neu = await d.mappentypen.aendereTyp(r.id, { ...r, trefferliste: undefined, trefferlisten: [...(r.trefferlisten ?? []), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] }] });
-      assert.deepEqual(neu.trefferlisten!.map((l) => l.key), ['standard', 'kurz']);
-      assert.deepEqual((await d.mappentypen.listeTypen()).find((t) => t.id === r.id)!.trefferlisten![1], { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] });
+      const neu = await d.mappentypen.aendereTyp(r.id, {
+        ...r,
+        trefferliste: undefined,
+        trefferlisten: [...(r.trefferlisten ?? []), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] }],
+      });
+      assert.deepEqual(
+        neu.trefferlisten!.map((l) => l.key),
+        ['standard', 'kurz'],
+      );
+      assert.deepEqual((await d.mappentypen.listeTypen()).find((t) => t.id === r.id)!.trefferlisten![1], {
+        key: 'kurz',
+        name: 'Kurz',
+        spalten: ['_titel', 'betrag'],
+      });
       const s = await sicht(d, 'Kurz', [r.id]);
       await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, trefferliste: 'kurz' });
       assert.equal((await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === s.id)!.trefferliste, 'kurz');
@@ -216,46 +321,67 @@ function faelle() {
   describe('Bedingungen auf Anzahl Dokumente und Verknüpfungen (#41)', () => {
     it('zählt Dokumente je Register und Verknüpfungen wie im Register', async () => {
       const { d, typ, mappe } = await mitBeispielen();
-      const r = typ('Rechnung'); const p = typ('Vertragspartner'); const v = typ('Vertrag');
+      const r = typ('Rechnung');
+      const p = typ('Vertragspartner');
+      const v = typ('Vertrag');
       const rechnung = mappe('rechnungsnummer', 'R-2026-117');
       await d.dokumente.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
       await d.dokumente.ladeHoch(rechnung.id, { register: 'dokumente', name: 's.pdf' }, Buffer.from('%PDF-1.4 b'), null);
-      const n = async (typId: string, b: Bedingung) => (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', [typId], [b])).id })).gesamt;
-      assert.equal(await n(r.id, { art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }), 1, 'Rechnungen ohne Dokument');
+      const n = async (typId: string, b: Bedingung) =>
+        (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', [typId], [b])).id })).gesamt;
+      assert.equal(
+        await n(r.id, { art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }),
+        1,
+        'Rechnungen ohne Dokument',
+      );
       assert.equal(await n(r.id, { art: 'dokumente', register: 'dokumente', vergleich: 'mehr', anzahl: 1 }), 1);
       assert.equal(await n(r.id, { art: 'dokumente', register: 'dokumente', vergleich: 'weniger', anzahl: 2 }), 1);
       // Vertragspartner: Register „Rechnungen“ zählt nur Rechnungen über „Aussteller“
       assert.equal(await n(p.id, { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'gleich', anzahl: 1 }), 2);
       assert.equal(await n(p.id, { art: 'verknuepfungen', register: 'vertraege', vergleich: 'mehr', anzahl: 0 }), 2);
-      assert.equal(await n(v.id, { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'gleich', anzahl: 0 }), 0, 'jeder Vertrag hat eine Rechnung');
+      assert.equal(
+        await n(v.id, { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'gleich', anzahl: 0 }),
+        0,
+        'jeder Vertrag hat eine Rechnung',
+      );
     });
 
     it('zählt gemeinsame Register mehrerer Typen je Typ über die eigenen Quellen (#66)', async () => {
       const { d, typ } = await mitBeispielen();
-      const p = typ('Vertragspartner'); const v = typ('Vertrag'); const r = typ('Rechnung');
-      const n = async (typen: string[], b: Bedingung) => (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
+      const p = typ('Vertragspartner');
+      const v = typ('Vertrag');
+      const r = typ('Rechnung');
+      const n = async (typen: string[], b: Bedingung) =>
+        (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
       const b: Bedingung = { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'mehr', anzahl: 0 };
       assert.equal(bedingungsProblem(b, [p, v]), null);
-      assert.equal(await n([p.id, v.id], b), await n([p.id], b) + await n([v.id], b));
+      assert.equal(await n([p.id, v.id], b), (await n([p.id], b)) + (await n([v.id], b)));
       const dok: Bedingung = { art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 };
-      assert.equal(await n([p.id, v.id, r.id], dok), await n([p.id], dok) + await n([v.id], dok) + await n([r.id], dok));
-      assert.match(bedingungsProblem({ art: 'verknuepfungen', register: 'rechnungen', vergleich: 'mehr', anzahl: 0 }, [p, r])!, /nicht in allen/);
+      assert.equal(await n([p.id, v.id, r.id], dok), (await n([p.id], dok)) + (await n([v.id], dok)) + (await n([r.id], dok)));
+      assert.match(
+        bedingungsProblem({ art: 'verknuepfungen', register: 'rechnungen', vergleich: 'mehr', anzahl: 0 }, [p, r])!,
+        /nicht in allen/,
+      );
       assert.match(beschreibeBedingung(b, [p, v]), /Rechnungen/);
     });
 
     it('zählt Dokumente und Verknüpfungen insgesamt, auch über mehrere Typen (#67)', async () => {
       const { d, typ, mappe } = await mitBeispielen();
-      const r = typ('Rechnung'); const z = typ('Zahlung'); const p = typ('Vertragspartner');
+      const r = typ('Rechnung');
+      const z = typ('Zahlung');
+      const p = typ('Vertragspartner');
       const rechnung = mappe('rechnungsnummer', 'R-2026-117');
       await d.dokumente.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
-      const n = async (typen: string[], b: Bedingung) => (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
+      const n = async (typen: string[], b: Bedingung) =>
+        (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
       const alle = (await d.sichten.seite(ICH, { sicht: (await sicht(d, 'alle', [r.id, z.id])).id })).gesamt;
       const mit = await n([r.id, z.id], { art: 'dokumenteGesamt', vergleich: 'mehr', anzahl: 0 });
       const ohne = await n([r.id, z.id], { art: 'dokumenteGesamt', vergleich: 'gleich', anzahl: 0 });
-      assert.equal(mit, 1); assert.equal(mit + ohne, alle);
+      assert.equal(mit, 1);
+      assert.equal(mit + ohne, alle);
       // Jeder Vertragspartner wird von mindestens einem Vertrag oder einer Rechnung verwiesen.
       assert.equal(await n([p.id], { art: 'verknuepfungenGesamt', vergleich: 'gleich', anzahl: 0 }), 0);
-      assert.ok(await n([p.id], { art: 'verknuepfungenGesamt', vergleich: 'mehr', anzahl: 1 }) > 0);
+      assert.ok((await n([p.id], { art: 'verknuepfungenGesamt', vergleich: 'mehr', anzahl: 1 })) > 0);
       assert.equal(bedingungsProblem({ art: 'dokumenteGesamt', vergleich: 'mehr', anzahl: -1 }, [r]) !== null, true);
     });
 
@@ -269,7 +395,10 @@ function faelle() {
       assert.equal(await d.mappen.istFavorit(ICH, rechnung.id), true);
       assert.equal((await d.mappen.holeMappe(rechnung.id)).mappe.geaendert, vorher, 'persönlich: ändert „zuletzt geändert“ nicht');
       const fav = await d.sichten.seite(ICH, { sicht: 'favoriten' });
-      assert.deepEqual(fav.mappen.map((m) => m.id), [rechnung.id]);
+      assert.deepEqual(
+        fav.mappen.map((m) => m.id),
+        [rechnung.id],
+      );
       assert.deepEqual(fav.favoriten, [rechnung.id]);
       assert.equal((await d.sichten.zaehler(ICH)).favoriten, 1);
       assert.equal((await d.sichten.seite(ICH, { sicht: (await sicht(d, 'f', [r.id], [{ art: 'favorit' }])).id })).gesamt, 1);
@@ -287,13 +416,17 @@ function faelle() {
     });
 
     it('„*“ löst gegen die vorhandenen Mappentypen auf (#725)', () => {
-      const s = (id: string, typen: string[], elternId: string | null = null) => ({ id, name: id, beschreibung: '', elternId, position: 0, typen, bedingungen: [], erstellt: '', geaendert: '' }) as Sicht;
+      const s = (id: string, typen: string[], elternId: string | null = null) =>
+        ({ id, name: id, beschreibung: '', elternId, position: 0, typen, bedingungen: [], erstellt: '', geaendert: '' }) as Sicht;
       const alle = [s('a', [ALLE_TYPEN]), s('b', ['t1'], 'a')];
       assert.deepEqual(typenDerSicht(alle[0], ['t1', 't2']), ['t1', 't2']);
       assert.deepEqual(wirksameTypen(alle, 'a', ['t1', 't2']).sort(), ['t1', 't2']);
       assert.deepEqual(wirksameTypen(alle, 'a'), ['t1'], 'ohne Liste fällt „*“ weg');
       const typen = new Map(['t1', 't2'].map((id) => [id, { id, felder: [], register: [] } as unknown as Mappentyp] as const));
-      assert.deepEqual(klauselnFuer(alle, 'a', typen, { ich: 'x', meineRollen: [], heute: '2026-11-04' } as never).map((k) => k.typen), [['t1', 't2'], ['t1']]);
+      assert.deepEqual(
+        klauselnFuer(alle, 'a', typen, { ich: 'x', meineRollen: [], heute: '2026-11-04' } as never).map((k) => k.typen),
+        [['t1', 't2'], ['t1']],
+      );
     });
 
     it('„Favoriten“ als normale Ansicht über alle Mappentypen, einmal mitgeliefert (#725)', async () => {
@@ -328,14 +461,17 @@ function faelle() {
   });
 }
 
-describe('Sichten im Arbeitsspeicher', () => { faelle(); });
+describe('Sichten im Arbeitsspeicher', () => {
+  faelle();
+});
 
 // Dieselben Fälle gegen PostgreSQL – prüft die Übersetzung der Bedingungen in SQL.
 // Jede Beispielladung bekommt einen eigenen Haushalt in einer eigenen Datenbank.
 const url = process.env.TEST_DATABASE_URL;
 describe('Sichten in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
-  let haupt: any; let sql: any;
+  let haupt: any;
+  let sql: any;
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_sichten_${process.pid}`;
   before(async () => {
@@ -343,7 +479,8 @@ describe('Sichten in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
-    const u = new URL(url!); u.pathname = `/${db}`;
+    const u = new URL(url!);
+    u.pathname = `/${db}`;
     sql = verbinde(u.toString());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
     const { pgRepo } = await import('../src/repo-pg');

@@ -26,8 +26,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FassungInfo } from '../../shared/src/dateiumwandlung';
 import {
-  BESTAETIGUNG_MS, GEMERKT_MAX, NAME_MAX, PASSWORT_MAX, VERSUCHE_MAX, VERSUCHE_MS,
-  type Entsperrt, type GemerktesPasswort, type PdfSchutz, type PdfSchutzArt,
+  BESTAETIGUNG_MS,
+  GEMERKT_MAX,
+  NAME_MAX,
+  PASSWORT_MAX,
+  VERSUCHE_MAX,
+  VERSUCHE_MS,
+  type Entsperrt,
+  type GemerktesPasswort,
+  type PdfSchutz,
+  type PdfSchutzArt,
 } from '../../shared/src/entsperren';
 import type { Dokument } from '../../shared/src/model';
 import type { FassungsAblage } from './dateiumwandlung';
@@ -55,10 +63,15 @@ const ENCRYPT = Buffer.from('/Encrypt');
 
 /** Falsches Passwort (qpdf: „invalid password“). */
 export class FalschesPasswort extends Error {
-  constructor() { super(t('meldungen.entsperren.falsches-passwort')); }
+  constructor() {
+    super(t('meldungen.entsperren.falsches-passwort'));
+  }
 }
 
-interface Lauf { code: number | null; stderr: string }
+interface Lauf {
+  code: number | null;
+  stderr: string;
+}
 
 /**
  * qpdf als eigener Prozess mit Zeitgrenze. `eingabe` geht über die Standardeingabe (für `--password-file=-`), nie
@@ -69,14 +82,19 @@ function qpdf(args: string[], eingabe: string | null, ms = QPDF_MS): Promise<Lau
     const p = spawn('qpdf', args, { stdio: ['pipe', 'ignore', 'pipe'] });
     let stderr = '';
     const uhr = setTimeout(() => p.kill('SIGKILL'), ms);
-    p.stderr.on('data', (c: Buffer) => { if (stderr.length < 8192) stderr += c.toString('utf8'); });
+    p.stderr.on('data', (c: Buffer) => {
+      if (stderr.length < 8192) stderr += c.toString('utf8');
+    });
     p.on('error', (e: NodeJS.ErrnoException) => {
       clearTimeout(uhr);
       fehler(e.code === 'ENOENT' ? new Fachfehler(503, t('mappen.entsperren.ohne-qpdf')) : e);
     });
     p.on('close', (code, signal) => {
       clearTimeout(uhr);
-      if (signal === 'SIGKILL') { fehler(new Fachfehler(422, t('mappen.entsperren.zu-lange', { s: Math.round(ms / 1000) }))); return; }
+      if (signal === 'SIGKILL') {
+        fehler(new Fachfehler(422, t('mappen.entsperren.zu-lange', { s: Math.round(ms / 1000) })));
+        return;
+      }
       ok({ code, stderr });
     });
     // Ein Fehler beim Schreiben (qpdf schon beendet) zeigt sich am Ergebnis.
@@ -92,7 +110,9 @@ async function mitDatei<T>(pdf: Buffer, f: (ein: string, dir: string) => Promise
     const ein = join(dir, 'ein.pdf');
     await writeFile(ein, pdf);
     return await f(ein, dir);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 /**
@@ -133,8 +153,16 @@ export async function entsperrePdf(pdf: Buffer, passwort: string | null, ms = QP
 
 /* ---------- Gemerkte Passwörter ---------- */
 
-interface Gespeichert { id: string; name: string; passwort: string; erstellt: string; zuletzt: string | null }
-interface Ablage { eintraege: Gespeichert[] }
+interface Gespeichert {
+  id: string;
+  name: string;
+  passwort: string;
+  erstellt: string;
+  zuletzt: string | null;
+}
+interface Ablage {
+  eintraege: Gespeichert[];
+}
 /** Schlüssel der Einstellung je Konto. */
 export const gemerktSchluessel = (konto: string) => `dokpasswoerter_${konto}`;
 
@@ -178,9 +206,13 @@ export class PdfEntsperren {
   /** Laufendes Entsperren je Prüfwert (gleiche Datei nicht doppelt) – nur gegen doppelte Arbeit in diesem Prozess. */
   private laufend = new Map<string, Promise<unknown>>();
 
-  constructor(private o: EntsperrenAnbindung) { this.zustand = o.zustand ?? speicherKurzzustand(() => this.jetzt()); }
+  constructor(private o: EntsperrenAnbindung) {
+    this.zustand = o.zustand ?? speicherKurzzustand(() => this.jetzt());
+  }
 
-  private jetzt() { return this.o.jetzt?.() ?? Date.now(); }
+  private jetzt() {
+    return this.o.jetzt?.() ?? Date.now();
+  }
 
   /** Schutz eines Dokuments (nur PDFs), je Prüfwert gemerkt. */
   async schutz(d: Pick<Dokument, 'sha256' | 'mime'>): Promise<PdfSchutzArt | null> {
@@ -209,10 +241,19 @@ export class PdfEntsperren {
 
   /** Fassung ablegen und die Folgen anstoßen (einmal je Prüfwert). */
   private async lege(sha: string, inhalt: Buffer, e: Entsperrt): Promise<FassungInfo> {
-    const info: FassungInfo = { mime: PDF, groesse: inhalt.length, sha256: createHash('sha256').update(inhalt).digest('hex'), paket: { ...ABLAGO }, erstellt: new Date(this.jetzt()).toISOString(), entsperrt: e };
+    const info: FassungInfo = {
+      mime: PDF,
+      groesse: inhalt.length,
+      sha256: createHash('sha256').update(inhalt).digest('hex'),
+      paket: { ...ABLAGO },
+      erstellt: new Date(this.jetzt()).toISOString(),
+      entsperrt: e,
+    };
     await this.o.ablage.schreibe(sha, info, inhalt);
     const docs = await this.o.dokumenteMitSha(sha).catch(() => [] as Dokument[]);
-    await this.o.nachEntsperren?.(docs, info).catch((f: Error) => log.warn('Folgen des Entsperrens nicht angestoßen', { sha256: sha.slice(0, 12), fehler: f.message }));
+    await this.o
+      .nachEntsperren?.(docs, info)
+      .catch((f: Error) => log.warn('Folgen des Entsperrens nicht angestoßen', { sha256: sha.slice(0, 12), fehler: f.message }));
     return info;
   }
 
@@ -220,19 +261,30 @@ export class PdfEntsperren {
     const vorher = this.laufend.get(sha) ?? Promise.resolve();
     const p = vorher.catch(() => {}).then(f);
     this.laufend.set(sha, p);
-    void p.finally(() => { if (this.laufend.get(sha) === p) this.laufend.delete(sha); }).catch(() => {});
+    void p
+      .finally(() => {
+        if (this.laufend.get(sha) === p) this.laufend.delete(sha);
+      })
+      .catch(() => {});
     return p;
   }
 
   /** Falsche Versuche im laufenden Fenster. */
   /** Einen falschen Versuch zählen (atomar, für alle Prozesse); liefert die Zahl im Fenster. */
-  private async falsch(art: string, schluessel: string): Promise<number> { return (await this.zustand.zaehle(art, schluessel, VERSUCHE_MS)).anzahl; }
+  private async falsch(art: string, schluessel: string): Promise<number> {
+    return (await this.zustand.zaehle(art, schluessel, VERSUCHE_MS)).anzahl;
+  }
 
   /**
    * Mit eingegebenem Passwort entsperren (POST /dokumente/{id}/entsperren). `merken`: zusätzlich im Konto merken.
    * Bei Rechte-Sperre genügt der Aufruf ohne Passwort.
    */
-  async mitPasswort(d: Dokument, konto: string, passwort: unknown, merken?: { name: unknown } | null): Promise<{ pdfSchutz: PdfSchutz | null; gemerkt: boolean; hinweis?: string }> {
+  async mitPasswort(
+    d: Dokument,
+    konto: string,
+    passwort: unknown,
+    merken?: { name: unknown } | null,
+  ): Promise<{ pdfSchutz: PdfSchutz | null; gemerkt: boolean; hinweis?: string }> {
     if (d.mime !== PDF) throw new Fachfehler(422, t('mappen.entsperren.kein-pdf'));
     return this.einmal(d.sha256, async () => {
       if (await this.fassung(d.sha256)) return { pdfSchutz: await this.stand(d), gemerkt: false };
@@ -245,14 +297,27 @@ export class PdfEntsperren {
       const schluessel = `${konto}|${d.sha256}`;
       // Versuch vorab zählen (#956): atomar für alle Prozesse, bevor das Passwort geprüft wird.
       const n = await this.falsch(VERSUCHE, schluessel);
-      if (n > VERSUCHE_MAX) { await this.zustand.erhoehe(VERSUCHE, schluessel, -1); throw new Fachfehler(429, t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 })); }
+      if (n > VERSUCHE_MAX) {
+        await this.zustand.erhoehe(VERSUCHE, schluessel, -1);
+        throw new Fachfehler(429, t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }));
+      }
       const pw = passwortAus(passwort);
       let klar: Buffer;
-      try { klar = await entsperrePdf(await this.o.datei(d.sha256), pw); } catch (e) {
-        if (!(e instanceof FalschesPasswort)) { await this.zustand.erhoehe(VERSUCHE, schluessel, -1); throw e; }
+      try {
+        klar = await entsperrePdf(await this.o.datei(d.sha256), pw);
+      } catch (e) {
+        if (!(e instanceof FalschesPasswort)) {
+          await this.zustand.erhoehe(VERSUCHE, schluessel, -1);
+          throw e;
+        }
         log.info('Falsches Passwort für ein geschütztes PDF', { dokument: d.id, versuch: n });
         const uebrig = VERSUCHE_MAX - n;
-        throw new Fachfehler(422, uebrig > 0 ? t('mappen.entsperren.falsch', { anzahl: uebrig }) : t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }));
+        throw new Fachfehler(
+          422,
+          uebrig > 0
+            ? t('mappen.entsperren.falsch', { anzahl: uebrig })
+            : t('mappen.entsperren.zu-viele', { minuten: VERSUCHE_MS / 60_000 }),
+        );
       }
       await this.zustand.loesche(VERSUCHE, schluessel);
       await this.lege(d.sha256, klar, { art: 'passwort', von: konto });
@@ -260,7 +325,12 @@ export class PdfEntsperren {
       let gemerkt = false;
       let hinweis: string | undefined;
       if (merken) {
-        try { await this.merke(konto, merken.name, pw); gemerkt = true; } catch (e) { hinweis = (e as Error).message; }
+        try {
+          await this.merke(konto, merken.name, pw);
+          gemerkt = true;
+        } catch (e) {
+          hinweis = (e as Error).message;
+        }
       }
       return { pdfSchutz: await this.stand(d), gemerkt, ...(hinweis ? { hinweis } : {}) };
     });
@@ -310,7 +380,12 @@ export class PdfEntsperren {
       const pw = this.o.entschluessele(e.passwort);
       if (pw === null) continue;
       let klar: Buffer;
-      try { klar = await entsperrePdf(inhalt, pw, GEMERKT_VERSUCH_MS); } catch (f) { if (f instanceof FalschesPasswort) continue; throw f; }
+      try {
+        klar = await entsperrePdf(inhalt, pw, GEMERKT_VERSUCH_MS);
+      } catch (f) {
+        if (f instanceof FalschesPasswort) continue;
+        throw f;
+      }
       return this.einmal(d.sha256, async () => {
         if (await this.fassung(d.sha256)) return false;
         await this.lege(d.sha256, klar, { art: 'gemerkt', von: konto, name: e.name });
@@ -341,7 +416,11 @@ export class PdfEntsperren {
 
   private verschluessele(pw: string): string {
     if (!this.o.verschluessele) throw new Fachfehler(409, t('mappen.entsperren.gemerkt.ohne-schluessel'));
-    try { return this.o.verschluessele(pw); } catch { throw new Fachfehler(409, t('mappen.entsperren.gemerkt.ohne-schluessel')); }
+    try {
+      return this.o.verschluessele(pw);
+    } catch {
+      throw new Fachfehler(409, t('mappen.entsperren.gemerkt.ohne-schluessel'));
+    }
   }
 
   /** Liste ohne Passwörter. */
@@ -355,9 +434,19 @@ export class PdfEntsperren {
     const pw = passwortAus(passwort);
     const a = await this.lies(konto);
     const gleich = a.eintraege.find((e) => this.o.entschluessele?.(e.passwort) === pw);
-    if (gleich) { gleich.name = n; await this.schreibe(konto, a); return { id: gleich.id, name: n, erstellt: gleich.erstellt, zuletzt: gleich.zuletzt }; }
+    if (gleich) {
+      gleich.name = n;
+      await this.schreibe(konto, a);
+      return { id: gleich.id, name: n, erstellt: gleich.erstellt, zuletzt: gleich.zuletzt };
+    }
     if (a.eintraege.length >= GEMERKT_MAX) throw new Fachfehler(409, t('mappen.entsperren.gemerkt.voll', { max: GEMERKT_MAX }));
-    const e: Gespeichert = { id: randomUUID(), name: n, passwort: this.verschluessele(pw), erstellt: new Date(this.jetzt()).toISOString(), zuletzt: null };
+    const e: Gespeichert = {
+      id: randomUUID(),
+      name: n,
+      passwort: this.verschluessele(pw),
+      erstellt: new Date(this.jetzt()).toISOString(),
+      zuletzt: null,
+    };
     a.eintraege.push(e);
     await this.schreibe(konto, a);
     log.info('Passwort für Dokumente gemerkt', { benutzer: konto });
@@ -405,7 +494,9 @@ export class PdfEntsperren {
   }
 
   /** Alle gemerkten Passwörter einer Person entfernen (z. B. beim Löschen des Kontos). */
-  async vergiss(konto: string) { if (this.o.speicher) await this.o.speicher.schreibe(gemerktSchluessel(konto), null); }
+  async vergiss(konto: string) {
+    if (this.o.speicher) await this.o.speicher.schreibe(gemerktSchluessel(konto), null);
+  }
 
   /**
    * Erneute Bestätigung für diese Sitzung: `pruefe` prüft Passwort bzw. Code (wirft bei Fehler). Höchstens

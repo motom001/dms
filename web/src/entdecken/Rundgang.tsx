@@ -26,10 +26,20 @@ import { beendeRundgang, findeAnker, istSchmal, useAktiverRundgang, warteAufAnke
 export function RundgangAnzeige() {
   const aktiv = useAktiverRundgang();
   if (!aktiv) return null;
-  return <Fuehrung key={`${aktiv.rundgang.herkunft}:${aktiv.rundgang.schluessel}:${aktiv.probe ? 'probe' : ''}`} rundgang={aktiv.rundgang} vonSelbst={aktiv.vonSelbst} probe={aktiv.probe} />;
+  return (
+    <Fuehrung
+      key={`${aktiv.rundgang.herkunft}:${aktiv.rundgang.schluessel}:${aktiv.probe ? 'probe' : ''}`}
+      rundgang={aktiv.rundgang}
+      vonSelbst={aktiv.vonSelbst}
+      probe={aktiv.probe}
+    />
+  );
 }
 
-interface Ziel { schritt: RundgangSchritt; anker: string | null }
+interface Ziel {
+  schritt: RundgangSchritt;
+  anker: string | null;
+}
 
 function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbst: boolean; probe?: { pfad: string | null } }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -50,20 +60,45 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
       const vorher = await oeffneVorher(rundgang, probe);
       if (aus) return;
       // Nichts zu öffnen: statt der Schritte ein Satz (`ersatz`).
-      if (vorher === 'ersatz') { setSchritte([{ schritt: { schluessel: 'ersatz', ziel: [], fuer: 'lesen', titel: rundgang.titel, text: rundgang.ersatz ?? t('entdecken.fuehrung.ersatz') }, anker: null }]); return; }
+      if (vorher === 'ersatz') {
+        setSchritte([
+          {
+            schritt: {
+              schluessel: 'ersatz',
+              ziel: [],
+              fuer: 'lesen',
+              titel: rundgang.titel,
+              text: rundgang.ersatz ?? t('entdecken.fuehrung.ersatz'),
+            },
+            anker: null,
+          },
+        ]);
+        return;
+      }
       zurueckNach.current = vorher;
       const liste: Ziel[] = [];
       for (const s of rundgang.schritte) {
-        if (!s.ziel.length) { liste.push({ schritt: s, anker: null }); continue; }
+        if (!s.ziel.length) {
+          liste.push({ schritt: s, anker: null });
+          continue;
+        }
         const z = await warteAufAnker(s.ziel, liste.length ? 600 : 2500);
         if (z) liste.push({ schritt: s, anker: z.anker });
-        else console.debug(`Rundgang „${rundgang.schluessel}“: Schritt „${s.schluessel}“ übersprungen – kein Ziel sichtbar (${s.ziel.join(', ')}).`);
+        else
+          console.debug(
+            `Rundgang „${rundgang.schluessel}“: Schritt „${s.schluessel}“ übersprungen – kein Ziel sichtbar (${s.ziel.join(', ')}).`,
+          );
       }
       if (aus) return;
-      if (!liste.length) { beendeRundgang(null); return; }
+      if (!liste.length) {
+        beendeRundgang(null);
+        return;
+      }
       setSchritte(liste);
     })();
-    return () => { aus = true; };
+    return () => {
+      aus = true;
+    };
   }, [rundgang, probe]);
 
   // Dialog öffnen; beim Schließen den Fokus zurückgeben.
@@ -78,7 +113,10 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
     return () => {
       d?.close();
       setTimeout(() => {
-        if (zurueck instanceof HTMLElement && zurueck.isConnected && zurueck !== document.body) { zurueck.focus(); return; }
+        if (zurueck instanceof HTMLElement && zurueck.isConnected && zurueck !== document.body) {
+          zurueck.focus();
+          return;
+        }
         const inhalt = document.querySelector<HTMLElement>('main.rumpf');
         if (!inhalt) return;
         if (!inhalt.hasAttribute('tabindex')) inhalt.setAttribute('tabindex', '-1');
@@ -99,10 +137,19 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
     el?.scrollIntoView({ block: 'center', behavior: wenigBewegung() ? 'auto' : 'smooth' });
     messen();
     let rahmen = 0;
-    const neu = () => { cancelAnimationFrame(rahmen); rahmen = requestAnimationFrame(messen); };
-    addEventListener('resize', neu); addEventListener('scroll', neu, true);
+    const neu = () => {
+      cancelAnimationFrame(rahmen);
+      rahmen = requestAnimationFrame(messen);
+    };
+    addEventListener('resize', neu);
+    addEventListener('scroll', neu, true);
     const spaet = setTimeout(messen, 450);
-    return () => { removeEventListener('resize', neu); removeEventListener('scroll', neu, true); cancelAnimationFrame(rahmen); clearTimeout(spaet); };
+    return () => {
+      removeEventListener('resize', neu);
+      removeEventListener('scroll', neu, true);
+      cancelAnimationFrame(rahmen);
+      clearTimeout(spaet);
+    };
   }, [aktuell, messen]);
 
   if (!schritte || !aktuell) return null;
@@ -121,23 +168,44 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
     if (e.key !== 'Tab') return;
     const knoepfe = [...(ref.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [])];
     if (!knoepfe.length) return;
-    const erster = knoepfe[0], letzterK = knoepfe[knoepfe.length - 1];
-    if (e.shiftKey && document.activeElement === erster) { e.preventDefault(); letzterK.focus(); }
-    else if (!e.shiftKey && document.activeElement === letzterK) { e.preventDefault(); erster.focus(); }
+    const erster = knoepfe[0],
+      letzterK = knoepfe[knoepfe.length - 1];
+    if (e.shiftKey && document.activeElement === erster) {
+      e.preventDefault();
+      letzterK.focus();
+    } else if (!e.shiftKey && document.activeElement === letzterK) {
+      e.preventDefault();
+      erster.focus();
+    }
   };
 
   const rand = 6;
-  const licht: CSSProperties | undefined = rechteck ? { left: rechteck.left - rand, top: rechteck.top - rand, width: rechteck.width + rand * 2, height: rechteck.height + rand * 2 } : undefined;
+  const licht: CSSProperties | undefined = rechteck
+    ? { left: rechteck.left - rand, top: rechteck.top - rand, width: rechteck.width + rand * 2, height: rechteck.height + rand * 2 }
+    : undefined;
   const karte = lageDerKarte(rechteck, schmal);
 
   return (
-    <dialog ref={ref} className={`rundgang${rechteck ? ' mit-ziel' : ''}${schmal ? ' schmal' : ''}`} aria-labelledby={`${id}-t`} aria-describedby={`${id}-x`}
-      onCancel={(e) => { e.preventDefault(); ende(vonSelbst ? 'spaeter' : 'gesehen'); }} onKeyDown={taste}>
+    <dialog
+      ref={ref}
+      className={`rundgang${rechteck ? ' mit-ziel' : ''}${schmal ? ' schmal' : ''}`}
+      aria-labelledby={`${id}-t`}
+      aria-describedby={`${id}-x`}
+      onCancel={(e) => {
+        e.preventDefault();
+        ende(vonSelbst ? 'spaeter' : 'gesehen');
+      }}
+      onKeyDown={taste}>
       {licht && <div className="rg-licht" style={licht} aria-hidden="true" />}
       <div className="rg-karte" style={karte}>
-        <p className="ueber rg-kopf"><span>{t('entdecken.fuehrung.titel', { titel: rundgang.titel })}</span><span>{t('entdecken.fuehrung.schritt', { nr: nr + 1, anzahl: schritte.length })}</span></p>
+        <p className="ueber rg-kopf">
+          <span>{t('entdecken.fuehrung.titel', { titel: rundgang.titel })}</span>
+          <span>{t('entdecken.fuehrung.schritt', { nr: nr + 1, anzahl: schritte.length })}</span>
+        </p>
         <div className="rg-inhalt" aria-live="polite">
-          <h2 id={`${id}-t`} className="h3">{s.titel}</h2>
+          <h2 id={`${id}-t`} className="h3">
+            {s.titel}
+          </h2>
           {s.bild === 'dreiteilung' && <DreiteilungBild schmal={schmal} />}
           <div id={`${id}-x`}>
             <p>{text}</p>
@@ -147,12 +215,26 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
         </div>
         <div className="rg-knoepfe">
           <div className="rg-neben">
-            {vonSelbst && <Knopf art="link" onClick={() => ende('spaeter')} title={t('entdecken.fuehrung.spaeter.titel')}>{t('entdecken.fuehrung.spaeter')}</Knopf>}
-            {!letzter && <Knopf art="link" onClick={() => ende('gesehen')} title={t('entdecken.fuehrung.ueberspringen.titel')}>{t('entdecken.fuehrung.ueberspringen')}</Knopf>}
+            {vonSelbst && (
+              <Knopf art="link" onClick={() => ende('spaeter')} title={t('entdecken.fuehrung.spaeter.titel')}>
+                {t('entdecken.fuehrung.spaeter')}
+              </Knopf>
+            )}
+            {!letzter && (
+              <Knopf art="link" onClick={() => ende('gesehen')} title={t('entdecken.fuehrung.ueberspringen.titel')}>
+                {t('entdecken.fuehrung.ueberspringen')}
+              </Knopf>
+            )}
           </div>
           <div className="rg-haupt">
-            {nr > 0 && <Knopf symbol="pfeil-links" onClick={zurueck}>{t('entdecken.fuehrung.zurueck')}</Knopf>}
-            <Knopf ref={weiterKnopf} art="haupt" onClick={weiter}>{letzter ? t('entdecken.fuehrung.fertig') : t('entdecken.fuehrung.weiter')}</Knopf>
+            {nr > 0 && (
+              <Knopf symbol="pfeil-links" onClick={zurueck}>
+                {t('entdecken.fuehrung.zurueck')}
+              </Knopf>
+            )}
+            <Knopf ref={weiterKnopf} art="haupt" onClick={weiter}>
+              {letzter ? t('entdecken.fuehrung.fertig') : t('entdecken.fuehrung.weiter')}
+            </Knopf>
           </div>
         </div>
       </div>
@@ -166,10 +248,18 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
  */
 async function oeffneVorher(rundgang: Rundgang, probe?: { pfad: string | null }): Promise<string | null | 'ersatz'> {
   const o = rundgang.oeffne;
-  if (o && 'seite' in o) { if (location.pathname !== OEFFNE_SEITEN[o.seite]) geheZu(OEFFNE_SEITEN[o.seite]); return null; }
+  if (o && 'seite' in o) {
+    if (location.pathname !== OEFFNE_SEITEN[o.seite]) geheZu(OEFFNE_SEITEN[o.seite]);
+    return null;
+  }
   if (!oeffneTyp(o)) return null;
   // Beim Ausprobieren (#941) hat die Prüfung den Pfad schon geliefert – der Rundgang ist ja noch nicht gespeichert.
-  const pfad = probe ? probe.pfad : await kontoApi.rundgangOeffnen(rundgang.schluessel).then((x) => x.pfad, () => null);
+  const pfad = probe
+    ? probe.pfad
+    : await kontoApi.rundgangOeffnen(rundgang.schluessel).then(
+        (x) => x.pfad,
+        () => null,
+      );
   if (!pfad) return 'ersatz';
   const zurueck = o && 'neu' in o ? location.pathname + location.search : null;
   if (location.pathname !== pfad) geheZu(pfad);
@@ -187,16 +277,20 @@ function lageDerKarte(r: DOMRect | null, schmal: boolean): CSSProperties | undef
   if (hoehe - r.bottom > 260) return { top: r.bottom + abstand, left: links };
   if (r.top > 260) return { bottom: hoehe - r.top + abstand, left: links };
   // Hohes Ziel (z. B. eine ganze Spalte): daneben.
-  return r.right + abstand + breite < innerWidth ? { top: Math.max(16, r.top), left: r.right + abstand } : { top: Math.max(16, r.top), left: Math.max(16, r.left - abstand - breite) };
+  return r.right + abstand + breite < innerWidth
+    ? { top: Math.max(16, r.top), left: r.right + abstand }
+    : { top: Math.max(16, r.top), left: Math.max(16, r.left - abstand - breite) };
 }
 
 /** Unter dem Text eines Schritts: Satz für Personen ohne Verwaltungsrecht, Ort für Screenreader, Verweis ins Handbuch. */
 function SchrittZusatz({ s }: { s: RundgangSchritt }) {
-  return <>
-    {s.sonstVerwalten && <p>{s.sonstVerwalten}</p>}
-    {s.ort && <p className="sr">{s.ort}</p>}
-    {s.handbuch && <HandbuchVerweis verweis={s.handbuch} />}
-  </>;
+  return (
+    <>
+      {s.sonstVerwalten && <p>{s.sonstVerwalten}</p>}
+      {s.ort && <p className="sr">{s.ort}</p>}
+      {s.handbuch && <HandbuchVerweis verweis={s.handbuch} />}
+    </>
+  );
 }
 
 /** Verweis ins mitgelieferte Handbuch an einem Schritt (`handbuch: admin/pakete/#…`), in neuem Fenster. */
@@ -204,5 +298,11 @@ function HandbuchVerweis({ verweis }: { verweis: string }) {
   const handbuch = useHandbuch();
   if (!HANDBUCH_VERWEIS.test(verweis)) return null;
   const [h, ...rest] = verweis.split('/');
-  return <p><a className="verweis" href={handbuch(h as Handbuch, rest.join('/'))} target="_blank" rel="noreferrer">{t('entdecken.fuehrung.handbuch')} <Symbol name="extern" /></a></p>;
+  return (
+    <p>
+      <a className="verweis" href={handbuch(h as Handbuch, rest.join('/'))} target="_blank" rel="noreferrer">
+        {t('entdecken.fuehrung.handbuch')} <Symbol name="extern" />
+      </a>
+    </p>
+  );
 }

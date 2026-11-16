@@ -11,30 +11,83 @@ import type { KontaktZuordnung } from './betrieb';
 
 /** Anmeldung über einen Anbieter, OpenID Connect (#241). */
 export interface AnbieterEingabe {
-  aktiv: boolean; aussteller: string; clientId: string; clientSecret: string; clientSecretLoeschen: boolean; knopf: string;
-  anlegen: boolean; standardrolle: Rolle; adminGruppe: string; gruppenClaim: string; lokalNurAdmins: boolean; abmeldenBeimAnbieter: boolean;
+  aktiv: boolean;
+  aussteller: string;
+  clientId: string;
+  clientSecret: string;
+  clientSecretLoeschen: boolean;
+  knopf: string;
+  anlegen: boolean;
+  standardrolle: Rolle;
+  adminGruppe: string;
+  gruppenClaim: string;
+  lokalNurAdmins: boolean;
+  abmeldenBeimAnbieter: boolean;
 }
-export type AnbieterStand = Omit<AnbieterEingabe, 'clientSecret' | 'clientSecretLoeschen'> & { secretGesetzt: boolean; rueckkehr: string; abmeldenZurueck: string };
+export type AnbieterStand = Omit<AnbieterEingabe, 'clientSecret' | 'clientSecretLoeschen'> & {
+  secretGesetzt: boolean;
+  rueckkehr: string;
+  abmeldenZurueck: string;
+};
 /** Zwei-Faktor-Anmeldung (#242). */
 /** `pflicht`: vorgeschrieben und von keinem Passkey erfüllt; `passkeyErfuellt`: vorgeschrieben, ein Passkey erfüllt sie (#811). */
-export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUebrig: number; pflicht: boolean; passkeyErfuellt?: boolean }
-export interface ZweifaktorPflicht { admin: boolean; mitglied: boolean }
+export interface ZweifaktorStand {
+  aktiv: boolean;
+  seit: string | null;
+  codesUebrig: number;
+  pflicht: boolean;
+  passkeyErfuellt?: boolean;
+}
+export interface ZweifaktorPflicht {
+  admin: boolean;
+  mitglied: boolean;
+}
 /** Passkeys (#811): ein eigener Passkey in Mein Konto → Sicherheit. `passt` = gilt für die Adresse von Ablago. */
-export interface Passkey { nr: string; name: string; erstellt: string; zuletzt: string | null; mehrgeraete: boolean; passt: boolean; rpId: string }
+export interface Passkey {
+  nr: string;
+  name: string;
+  erstellt: string;
+  zuletzt: string | null;
+  mehrgeraete: boolean;
+  passt: boolean;
+  rpId: string;
+}
 /** `pflicht`: Der letzte Passkey ist nötig – wegen der Passkey- oder der Zwei-Faktor-Pflicht (ohne Code-App). */
-export interface PasskeyStand { liste: Passkey[]; moeglich: boolean; adresse: string | null; pflicht: 'passkey' | 'zweifaktor' | null; hoechstens: number }
+export interface PasskeyStand {
+  liste: Passkey[];
+  moeglich: boolean;
+  adresse: string | null;
+  pflicht: 'passkey' | 'zweifaktor' | null;
+  hoechstens: number;
+}
 /** `moeglich`: gepflegte HTTPS-Adresse vorhanden – nur dann lässt sich die Pflicht einschalten; `adresse`: deren Origin. */
 export type PasskeyPflicht = ZweifaktorPflicht & { moeglich: boolean; adresse: string | null };
 /** Optionen und Kennung einer Herausforderung zum Anmelden mit Passkey (Optionen im JSON-Format von WebAuthn). */
-export interface PasskeyAnfrage { kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }
+export interface PasskeyAnfrage {
+  kennung: string;
+  optionen: PublicKeyCredentialRequestOptionsJSON;
+}
 /** Antwort des Geräts mit der Kennung der Herausforderung – so geht sie an den Server. */
-export interface PasskeyAntwort { kennung: string; antwort: unknown }
+export interface PasskeyAntwort {
+  kennung: string;
+  antwort: unknown;
+}
 /** Zweiter Schritt der Anmeldung (#242, #811): welche Wege gehen? */
-export interface ZweiteWege { code: boolean; passkey: boolean }
+export interface ZweiteWege {
+  code: boolean;
+  passkey: boolean;
+}
 /** Sprache für die Oberfläche (#729). */
-export interface SprachStatus { sprache: string; standard: string; erlaubt: string[]; maschinell: string[] }
+export interface SprachStatus {
+  sprache: string;
+  standard: string;
+  erlaubt: string[];
+  maschinell: string[];
+}
 export interface KontoStatus {
-  einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
+  einrichtungNoetig: boolean;
+  mail: boolean;
+  benutzer: Benutzer | null;
   /**
    * Zwei-Faktor (#242): eingerichtet; für die Rolle vorgeschrieben, aber noch nicht eingerichtet (fehlt: erst einrichten;
    * ausstehend: die Sitzung lief schon vor dem Einschalten der Pflicht – weiterarbeiten mit Hinweis, #416).
@@ -80,8 +133,23 @@ export interface KontoStatus {
   verwaltungsmodus?: Verwaltungsstand | null;
 }
 /** Im Verwaltungsmodus angesehen (#820): Werkbank-Liste für „Gesamte Verwaltung“. */
-export interface ModusEintrag { id: number; zeit: string; mappeId: string; typId: string | null; benutzerId: string | null; person: string; was: string; titel: string }
-export interface AnbindungAnsicht { host: string; port: number; datenbank: string; benutzer: string; passwortGesetzt: boolean }
+export interface ModusEintrag {
+  id: number;
+  zeit: string;
+  mappeId: string;
+  typId: string | null;
+  benutzerId: string | null;
+  person: string;
+  was: string;
+  titel: string;
+}
+export interface AnbindungAnsicht {
+  host: string;
+  port: number;
+  datenbank: string;
+  benutzer: string;
+  passwortGesetzt: boolean;
+}
 export interface EinrichtungStatus {
   /** datenbank: noch keine Verbindung (Einrichtungsmodus); startet: gleich da; konto: Mandant und Administrator. */
   phase: 'datenbank' | 'startet' | 'konto';
@@ -93,30 +161,86 @@ export interface EinrichtungStatus {
   fehler?: string | null;
 }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
-export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null; ausloeser?: 'speicherplatz' | null }
+export interface WartungOeffentlich {
+  stufe: 'aus' | 'angekuendigt' | 'aktiv';
+  text: string;
+  ende: string | null;
+  aktivAb: string | null;
+  sekunden: number | null;
+  ausloeser?: 'speicherplatz' | null;
+}
 /** Werkbank → Anmeldeschutz → Notfallzugang (#815). */
-export interface NotfallzugangStand { internet: boolean; von: string | null; am: string | null; code: { vorhanden: boolean; erstellt: string | null }; heimnetz: boolean; /** #885: nur bei heimnetz: false */ grund?: 'oeffentlich' | 'proxy' }
+export interface NotfallzugangStand {
+  internet: boolean;
+  von: string | null;
+  am: string | null;
+  code: { vorhanden: boolean; erstellt: string | null };
+  heimnetz: boolean;
+  /** #885: nur bei heimnetz: false */ grund?: 'oeffentlich' | 'proxy';
+}
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
-export interface Person { id: string; name: string; aktiv?: boolean; /** Datum der Deaktivierung (#663) */ deaktiviert?: string | null; /** Dienstkonto eines Pakets (#338) bzw. Systemkonto (#673) */ art?: 'dienst' | 'system'; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
+export interface Person {
+  id: string;
+  name: string;
+  aktiv?: boolean;
+  /** Datum der Deaktivierung (#663) */ deaktiviert?: string | null;
+  /** Dienstkonto eines Pakets (#338) bzw. Systemkonto (#673) */ art?: 'dienst' | 'system';
+  abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string };
+}
 /** Werkbank: tägliche Zusammenfassung (#54, #92, #94). */
 export interface Zusammenfassung {
-  aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean;
-  standard: { uhrzeit: string; tage: number[]; bundesland: string | null }; versand: boolean;
+  aktiv: boolean;
+  uhrzeit: string | null;
+  tage: number[];
+  feiertage: boolean;
+  standard: { uhrzeit: string; tage: number[]; bundesland: string | null };
+  versand: boolean;
 }
 /** Ein Konto, das kein Mensch ist (#673): Systemkonto „Automatisierung“ oder Dienstkonto eines Pakets. */
-export interface Systemkonto { id: string; name: string; rolle: 'systemkonto' | 'paket'; aktiv: boolean; systemkonto?: string; paketId?: string; paket?: string | null; automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>; /** Auffälligkeiten (#817) */ fehler?: SystemkontoFehler; weitreichend?: boolean; /** Paket ohne Code (#1181): Konto bewusst aus */ ohneCode?: boolean }
-export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
+export interface Systemkonto {
+  id: string;
+  name: string;
+  rolle: 'systemkonto' | 'paket';
+  aktiv: boolean;
+  systemkonto?: string;
+  paketId?: string;
+  paket?: string | null;
+  automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>;
+  /** Auffälligkeiten (#817) */ fehler?: SystemkontoFehler;
+  weitreichend?: boolean;
+  /** Paket ohne Code (#1181): Konto bewusst aus */ ohneCode?: boolean;
+}
+export interface LinkErgebnis {
+  benutzer: Benutzer;
+  mailVerschickt: boolean;
+  link?: string;
+  mailFehler?: string;
+}
 export type RechtStufe = 'immer' | 'nie' | 'teils';
 /** Exporte aus dem Sicherungsordner verschoben (#797), bis ein Administrator den Hinweis gelesen hat. */
-export interface ExportUmzug { am: string; anzahl: number; uebrig: boolean }
+export interface ExportUmzug {
+  am: string;
+  anzahl: number;
+  uebrig: boolean;
+}
 export interface VollexportStand {
-  ordner: string; frei: number | null;
+  ordner: string;
+  frei: number | null;
   /** Export-Ordner (#797): Frist in Tagen, liegt im Sicherungsordner, eigenes Volume, Umzug beim Update. */
-  tage: number; imSicherungsordner: boolean; volume: boolean | null; umzug: ExportUmzug | null;
+  tage: number;
+  imSicherungsordner: boolean;
+  volume: boolean | null;
+  umzug: ExportUmzug | null;
   abschaetzung: { mappen: number; dokumente: number; bytes: number };
   /** `bis`: danach (und nach dem Herunterladen) gelöscht (#797). */
   exporte: Array<{
-    name: string; erstellt: string | null; bis: string; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean;
+    name: string;
+    erstellt: string | null;
+    bis: string;
+    bytes: number;
+    dateien: number;
+    mappen: number | null;
+    passwoerter: boolean;
     /** #1195: heruntergeladen und auf dem Server gelöscht; SHA-256 und Größe der ZIP, SHA256SUMS bleibt bis `bis`. */
     heruntergeladen?: { am: string; sha256: string; bytes: number };
   }>;
@@ -125,42 +249,87 @@ export interface VollexportStand {
   persoenlich: boolean;
 }
 export interface Diagnose {
-  dms: { version: string; commit: string | null; gebaut: string | null }; serverzeit: string; zeitzone: string; node: string; postgres: string | null;
-  texterkennung: boolean | null; mail: boolean; benutzer: { name: string; rolle: string }; sitzung: string | null; vertretung: boolean;
+  dms: { version: string; commit: string | null; gebaut: string | null };
+  serverzeit: string;
+  zeitzone: string;
+  node: string;
+  postgres: string | null;
+  texterkennung: boolean | null;
+  mail: boolean;
+  benutzer: { name: string; rolle: string };
+  sitzung: string | null;
+  vertretung: boolean;
 }
 /** Stufe eines API-Schlüssels; „zaehler“ = nur Zähler (#625). */
 export type ApiSchluesselRecht = 'lesen' | 'schreiben' | 'zaehler';
-export interface ApiSchluessel { id: string; name: string; praefix: string; recht: ApiSchluesselRecht; passwoerter: boolean; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
-export interface ApiSchluesselEingabe { name: string; recht: ApiSchluesselRecht; passwoerter: boolean; ablauf: string | null }
+export interface ApiSchluessel {
+  id: string;
+  name: string;
+  praefix: string;
+  recht: ApiSchluesselRecht;
+  passwoerter: boolean;
+  ablauf: string | null;
+  erstellt: string;
+  zuletztBenutzt: string | null;
+}
+export interface ApiSchluesselEingabe {
+  name: string;
+  recht: ApiSchluesselRecht;
+  passwoerter: boolean;
+  ablauf: string | null;
+}
 /** Anmeldeschutz (#240). */
-export interface SperrEinstellung { konto: { versuche: number; minuten: number }; ip: { versuche: number; minuten: number }; ausnahmen: string[]; mail: boolean; mailKonto: boolean }
-export interface IpSperre { ip: string; seit: string; bis: string | null; grund: string }
-export interface AnmeldeschutzStand { einstellung: SperrEinstellung; gesperrt: IpSperre[]; deineIp: string }
+export interface SperrEinstellung {
+  konto: { versuche: number; minuten: number };
+  ip: { versuche: number; minuten: number };
+  ausnahmen: string[];
+  mail: boolean;
+  mailKonto: boolean;
+}
+export interface IpSperre {
+  ip: string;
+  seit: string;
+  bis: string | null;
+  grund: string;
+}
+export interface AnmeldeschutzStand {
+  einstellung: SperrEinstellung;
+  gesperrt: IpSperre[];
+  deineIp: string;
+}
 
 export const kontoApi = {
   status: () => anfrage<KontoStatus>('GET', '/api/konto/status'),
   /** Verwaltungsmodus (#819): beginnen (ohne Angaben: Wiedereinstieg oder frische Anmeldung), beenden, frisch bestätigen. */
-  verwaltungBeginnen: (angaben: { passwort?: string; code?: string; passkey?: PasskeyAntwort } = {}) => anfrage<Verwaltungsstand>('POST', '/api/konto/verwaltung', angaben),
+  verwaltungBeginnen: (angaben: { passwort?: string; code?: string; passkey?: PasskeyAntwort } = {}) =>
+    anfrage<Verwaltungsstand>('POST', '/api/konto/verwaltung', angaben),
   verwaltungBeenden: () => anfrage<Verwaltungsstand>('POST', '/api/konto/verwaltung/beenden'),
-  verwaltungBestaetigen: (angaben: { passwort?: string; code?: string; passkey?: PasskeyAntwort }) => anfrage<{ frisch: true }>('POST', '/api/konto/verwaltung/bestaetigen', angaben),
+  verwaltungBestaetigen: (angaben: { passwort?: string; code?: string; passkey?: PasskeyAntwort }) =>
+    anfrage<{ frisch: true }>('POST', '/api/konto/verwaltung/bestaetigen', angaben),
   /** Verwaltungsrecht einer Person (#818): nur mit „Gesamte Verwaltung“ und frischer Anmeldung. */
   verwaltungSetzen: (id: string, verwaltung: string[]) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}/verwaltung`, { verwaltung }),
   imVerwaltungsmodus: () => anfrage<ModusEintrag[]>('GET', '/api/werkbank/verwaltungsmodus'),
   laufwerk: () => anfrage<{ adresse: string; https: boolean; benutzername: string }>('GET', '/api/konto/laufwerk'),
-  einrichten: (d: { mandant?: string; email: string; name: string; passwort: string; sprache?: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
+  einrichten: (d: { mandant?: string; email: string; name: string; passwort: string; sprache?: string }) =>
+    anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
   /** Mit Zwei-Faktor (#242) kommt statt des Benutzers eine Kennung für den zweiten Schritt. */
-  anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/anmelden', d),
-  anmeldenCode: (kennung: string, code: string) => anfrage<{ benutzer: Benutzer; wiederherstellung: boolean }>('POST', '/api/konto/anmelden/code', { kennung, code }),
+  anmelden: (d: { email: string; passwort: string }) =>
+    anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/anmelden', d),
+  anmeldenCode: (kennung: string, code: string) =>
+    anfrage<{ benutzer: Benutzer; wiederherstellung: boolean }>('POST', '/api/konto/anmelden/code', { kennung, code }),
   zweifaktor: () => anfrage<ZweifaktorStand>('GET', '/api/konto/zweifaktor'),
   /** Passkeys (#811): anmelden (ohne E-Mail-Adresse oder als zweiter Schritt), eigene verwalten, Pflicht, Zurücksetzen. */
-  passkeyOptionen: (zweiterSchritt?: string) => anfrage<PasskeyAnfrage>('POST', '/api/konto/passkey/optionen', zweiterSchritt ? { zweiterSchritt } : {}),
-  passkeyAnmelden: (a: PasskeyAntwort & { zweiterSchritt?: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passkey/anmelden', a),
+  passkeyOptionen: (zweiterSchritt?: string) =>
+    anfrage<PasskeyAnfrage>('POST', '/api/konto/passkey/optionen', zweiterSchritt ? { zweiterSchritt } : {}),
+  passkeyAnmelden: (a: PasskeyAntwort & { zweiterSchritt?: string }) =>
+    anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passkey/anmelden', a),
   passkeys: () => anfrage<PasskeyStand>('GET', '/api/konto/passkeys'),
   passkeyBeginnen: () => anfrage<PublicKeyCredentialCreationOptionsJSON>('POST', '/api/konto/passkeys/beginnen'),
   passkeyHinzufuegen: (antwort: unknown, name: string) => anfrage<Passkey>('POST', '/api/konto/passkeys', { antwort, name }),
   passkeyBenennen: (nr: string, name: string) => anfrage<Passkey[]>('PUT', `/api/konto/passkeys/${encodeURIComponent(nr)}`, { name }),
   passkeyEntfernen: (nr: string) => anfrage<Passkey[]>('DELETE', `/api/konto/passkeys/${encodeURIComponent(nr)}`),
-  passkeyBestaetigenOptionen: (fuer?: 'dokumentpasswoerter') => anfrage<PasskeyAnfrage>('POST', '/api/konto/passkeys/bestaetigen/optionen', fuer ? { fuer } : {}),
+  passkeyBestaetigenOptionen: (fuer?: 'dokumentpasswoerter') =>
+    anfrage<PasskeyAnfrage>('POST', '/api/konto/passkeys/bestaetigen/optionen', fuer ? { fuer } : {}),
   passkeyPflicht: () => anfrage<PasskeyPflicht>('GET', '/api/werkbank/passkeys'),
   passkeyPflichtSetzen: (p: Partial<ZweifaktorPflicht>) => anfrage<PasskeyPflicht>('PUT', '/api/werkbank/passkeys', p),
   benutzerPasskeys: (id: string) => anfrage<{ anzahl: number }>('GET', `/api/benutzer/${id}/passkeys`),
@@ -179,8 +348,13 @@ export const kontoApi = {
   anbieterSetzen: (e: Partial<AnbieterEingabe>) => anfrage<AnbieterStand>('PUT', '/api/werkbank/anbieter', e),
   anbieterPruefen: () => anfrage<{ aussteller: string; abmelden: boolean; schluessel: number }>('POST', '/api/werkbank/anbieter/pruefen'),
   passwortVergessen: (email: string) => anfrage<null>('POST', '/api/konto/passwort-vergessen', { email }),
-  linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
-  passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
+  linkPruefen: (s: string) =>
+    anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
+  passwortSetzen: (schluessel: string, passwort: string) =>
+    anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string; wege?: ZweiteWege }>('POST', '/api/konto/passwort-setzen', {
+      schluessel,
+      passwort,
+    }),
   personen: () => anfrage<Person[]>('GET', '/api/personen'),
   /* Abwesenheit mit Vertreter (#78) */
   abwesenheit: () => anfrage<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number }>('GET', '/api/konto/abwesenheit'),
@@ -190,7 +364,8 @@ export const kontoApi = {
   benutzerAufgabenAnVertreter: (id: string) => anfrage<{ uebergeben: number }>('POST', `/api/benutzer/${id}/aufgaben-uebergeben`),
   benutzer: () => anfrage<Benutzer[]>('GET', '/api/benutzer'),
   benutzerAnlegen: (d: { email: string; name: string; rollen?: string[] }) => anfrage<LinkErgebnis>('POST', '/api/benutzer', d),
-  benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'aktiv' | 'rollen'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
+  benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'aktiv' | 'rollen'>>) =>
+    anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
   /** Alle Rollen (Systemrollen zuerst) für die Benutzerverwaltung. */
   rollen: () => anfrage<Array<{ id: string; name: string; system: boolean }>>('GET', '/api/rollen'),
   /** Systemkonten und Dienstkonten der Pakete (#673). */
@@ -200,10 +375,16 @@ export const kontoApi = {
   sitzungen: (id: string) => anfrage<Sitzung[]>('GET', `/api/benutzer/${id}/sitzungen`),
   meineSitzungen: () => anfrage<Sitzung[]>('GET', '/api/konto/sitzungen'),
   /** Passwörter für Dokumente (#827, Mein Konto → Sicherheit). */
-  dokumentPasswoerter: () => anfrage<{ eintraege: GemerktesPasswort[]; bestaetigtBis: string | null; max: number; zweifaktor: boolean; passkey?: boolean }>('GET', '/api/konto/dokument-passwoerter'),
-  dokumentPasswoerterBestaetigen: (e: { passwort?: string; code?: string; passkey?: PasskeyAntwort }) => anfrage<{ bestaetigtBis: string }>('POST', '/api/konto/dokument-passwoerter/bestaetigen', e),
+  dokumentPasswoerter: () =>
+    anfrage<{ eintraege: GemerktesPasswort[]; bestaetigtBis: string | null; max: number; zweifaktor: boolean; passkey?: boolean }>(
+      'GET',
+      '/api/konto/dokument-passwoerter',
+    ),
+  dokumentPasswoerterBestaetigen: (e: { passwort?: string; code?: string; passkey?: PasskeyAntwort }) =>
+    anfrage<{ bestaetigtBis: string }>('POST', '/api/konto/dokument-passwoerter/bestaetigen', e),
   dokumentPasswortZeigen: (id: string) => anfrage<{ passwort: string }>('GET', `/api/konto/dokument-passwoerter/${id}`),
-  dokumentPasswortAendern: (id: string, e: { name?: string; passwort?: string }) => anfrage<GemerktesPasswort>('PUT', `/api/konto/dokument-passwoerter/${id}`, e),
+  dokumentPasswortAendern: (id: string, e: { name?: string; passwort?: string }) =>
+    anfrage<GemerktesPasswort>('PUT', `/api/konto/dokument-passwoerter/${id}`, e),
   dokumentPasswortLoeschen: (id: string) => anfrage<null>('DELETE', `/api/konto/dokument-passwoerter/${id}`),
   meineSitzungBeenden: (sitzung: string) => anfrage<null>('DELETE', `/api/konto/sitzungen/${sitzung}`),
   andereSitzungenBeenden: () => anfrage<{ beendet: number }>('POST', '/api/konto/sitzungen/andere-beenden'),
@@ -215,27 +396,38 @@ export const kontoApi = {
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
   // Ablago entdecken (#831, #832): Rundgänge, Tipps, Tipp des Tages; gesehen/ausgeblendet je Person.
   entdecken: () => anfrage<EntdeckenStand>('GET', '/api/entdecken'),
-  tippHandlung: (schluessel: string, aktion: 'gezeigt' | 'erledigt' | 'ausblenden' | 'einblenden') => anfrage<null>('POST', `/api/entdecken/tipps/${encodeURIComponent(schluessel)}`, { aktion }),
-  rundgangMerken: (schluessel: string, stand: 'gesehen' | 'spaeter') => anfrage<null>('POST', `/api/entdecken/rundgaenge/${encodeURIComponent(schluessel)}`, { stand }),
+  tippHandlung: (schluessel: string, aktion: 'gezeigt' | 'erledigt' | 'ausblenden' | 'einblenden') =>
+    anfrage<null>('POST', `/api/entdecken/tipps/${encodeURIComponent(schluessel)}`, { aktion }),
+  rundgangMerken: (schluessel: string, stand: 'gesehen' | 'spaeter') =>
+    anfrage<null>('POST', `/api/entdecken/rundgaenge/${encodeURIComponent(schluessel)}`, { stand }),
   /** Was ein Rundgang öffnet (#831): erste lesbare Mappe bzw. leeres Formular eines Mappentyps; null = Ersatztext. */
   /** Tipp mit Ziel in einer Mappe (#832): erste lesbare Mappe des Typs; null = keine. */
-  tippOeffnen: (schluessel: string) => anfrage<{ pfad: string | null }>('GET', `/api/entdecken/tipps/${encodeURIComponent(schluessel)}/oeffnen`),
-  rundgangOeffnen: (schluessel: string) => anfrage<{ pfad: string | null }>('GET', `/api/entdecken/rundgaenge/${encodeURIComponent(schluessel)}/oeffnen`),
+  tippOeffnen: (schluessel: string) =>
+    anfrage<{ pfad: string | null }>('GET', `/api/entdecken/tipps/${encodeURIComponent(schluessel)}/oeffnen`),
+  rundgangOeffnen: (schluessel: string) =>
+    anfrage<{ pfad: string | null }>('GET', `/api/entdecken/rundgaenge/${encodeURIComponent(schluessel)}/oeffnen`),
   apiSchluessel: () => anfrage<ApiSchluessel[]>('GET', '/api/konto/api-schluessel'),
-  apiSchluesselAnlegen: (d: ApiSchluesselEingabe) => anfrage<ApiSchluessel & { schluessel: string }>('POST', '/api/konto/api-schluessel', d),
+  apiSchluesselAnlegen: (d: ApiSchluesselEingabe) =>
+    anfrage<ApiSchluessel & { schluessel: string }>('POST', '/api/konto/api-schluessel', d),
   apiSchluesselAendern: (id: string, d: ApiSchluesselEingabe) => anfrage<ApiSchluessel>('PUT', `/api/konto/api-schluessel/${id}`, d),
   apiSchluesselLoeschen: (id: string) => anfrage<null>('DELETE', `/api/konto/api-schluessel/${id}`),
-  einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
+  einstellungSetzen: (schluessel: string, wert: unknown) =>
+    anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   /** Werkbank (#921): wer außer mir gerade im Verwaltungsmodus ist (Name und Beginn), nur im Verwaltungsmodus. */
   geradeImModus: () => stilleAnfrage<Array<{ name: string; seit: string }>>('/api/werkbank/gerade-im-modus'),
   meineRechte: () => anfrage<Array<{ typId: string; name: string; rechte: Record<Recht, RechtStufe> }>>('GET', '/api/konto/rechte'),
   gesehen: (ids: string[]) => anfrage<null>('POST', '/api/gesehen', { ids }),
   /** Eigene tägliche Zusammenfassung (#92, #94). */
   zusammenfassung: () => anfrage<Zusammenfassung>('GET', '/api/konto/zusammenfassung'),
-  zusammenfassungSetzen: (z: { aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean }) => anfrage<Zusammenfassung>('PUT', '/api/konto/zusammenfassung', z),
+  zusammenfassungSetzen: (z: { aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean }) =>
+    anfrage<Zusammenfassung>('PUT', '/api/konto/zusammenfassung', z),
   eigenesUebersetzen: (uebersetzen: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { uebersetzen }),
   /** Texte eines Sprachpakets (#731), auch vor der Anmeldung. */
-  sprachTexte: (kennung: string) => anfrage<{ kennung: string; gebietsschema: string; maschinell: boolean; texte: Record<string, Record<string, string>> }>('GET', `/api/sprache/texte/${encodeURIComponent(kennung)}`),
+  sprachTexte: (kennung: string) =>
+    anfrage<{ kennung: string; gebietsschema: string; maschinell: boolean; texte: Record<string, Record<string, string>> }>(
+      'GET',
+      `/api/sprache/texte/${encodeURIComponent(kennung)}`,
+    ),
   anmeldeschutz: () => anfrage<AnmeldeschutzStand>('GET', '/api/werkbank/anmeldeschutz'),
   anmeldeschutzSetzen: (e: Partial<SperrEinstellung>) => anfrage<AnmeldeschutzStand>('PUT', '/api/werkbank/anmeldeschutz', e),
   notfallzugang: () => anfrage<NotfallzugangStand>('GET', '/api/werkbank/anmeldeschutz/notfallzugang'),
@@ -243,14 +435,21 @@ export const kontoApi = {
   entsperren: (ip: string) => anfrage<AnmeldeschutzStand>('POST', '/api/werkbank/anmeldeschutz/entsperren', { ip }),
   // Fehler melden (#70)
   diagnose: () => anfrage<Diagnose>('GET', '/api/konto/diagnose'),
-  fehlerMelden: (e: { text: string; angaben: Record<string, unknown>; bilder: Array<{ name: string; daten: string }> }) => anfrage<{ id: string }>('POST', '/api/konto/fehlermeldung', e),
+  fehlerMelden: (e: { text: string; angaben: Record<string, unknown>; bilder: Array<{ name: string; daten: string }> }) =>
+    anfrage<{ id: string }>('POST', '/api/konto/fehlermeldung', e),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
   entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
   /** Eigene Sprache (#729); null = wie die Installation. */
   eigeneSprache: (sprache: string | null) => anfrage<Benutzer>('PUT', '/api/konto/profil', { sprache }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
-  passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
+  passwortAendern: (passwortAlt: string, passwortNeu: string) =>
+    anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
   /* Persönlicher Export (#255) */
-  meinExport: () => anfrage<{ erlaubt: boolean; laeuft: boolean; fehler: string | null; fertig: VollexportStand['exporte'][number] | null }>('GET', '/api/konto/export'),
-  meinExportStarten: (passwoerter: boolean, passwoerterBestaetigt: boolean) => anfrage<{ laeuft: boolean }>('POST', '/api/konto/export', { passwoerter, passwoerterBestaetigt }),
+  meinExport: () =>
+    anfrage<{ erlaubt: boolean; laeuft: boolean; fehler: string | null; fertig: VollexportStand['exporte'][number] | null }>(
+      'GET',
+      '/api/konto/export',
+    ),
+  meinExportStarten: (passwoerter: boolean, passwoerterBestaetigt: boolean) =>
+    anfrage<{ laeuft: boolean }>('POST', '/api/konto/export', { passwoerter, passwoerterBestaetigt }),
 };

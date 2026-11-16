@@ -76,7 +76,8 @@ describe('Eingangsordner (#195)', () => {
       await mkdir(join(ordner, o));
       await writeFile(join(ordner, o, `${o}.pdf`), `%PDF ${o}`);
     }
-    await e.pruefe(); assert.equal(await e.pruefe(), 4);
+    await e.pruefe();
+    assert.equal(await e.pruefe(), 4);
     for (const p of await posten()) assert.equal(p.m.werte.an ?? null, null, `${p.m.werte.betreff}: kein Raten`);
     // Wie der Hauptordner: gemeinsames erledigt/.
     assert.ok(existsSync(join(ordner, 'erledigt', 'thomas', 'thomas.pdf')));
@@ -103,7 +104,8 @@ describe('Eingangsordner (#195)', () => {
     const tief = join(ordner, 'anna@example.org', 'a', 'b', 'c', 'd', 'e');
     await mkdir(tief, { recursive: true });
     await writeFile(join(tief, 'tief.pdf'), '%PDF tief');
-    await e.pruefe(); assert.equal(await e.pruefe(), 2);
+    await e.pruefe();
+    assert.equal(await e.pruefe(), 2);
     for (const p of await posten()) assert.equal(p.m.werte.an, anna.id);
     assert.ok(existsSync(join(ordner, 'anna@example.org', 'erledigt', '2026', '11', 'scan.pdf')), 'erledigt/ der Person');
     assert.ok(existsSync(join(ordner, 'nas', 'anna@example.org', 'erledigt', 'b.pdf')));
@@ -179,7 +181,8 @@ describe('Eingangsordner (#195)', () => {
     assert.equal(u.fehler, 1, 'ohne die Textdatei mit dem Grund');
     assert.ok(Math.abs(Date.parse(u.aeltester!) - vor200.getTime()) < 1000, 'älteste Datei');
     assert.deepEqual(s.warnungen, ['alt', 'fehler']);
-    const finde = (k: EingangKnoten, pfad: string): EingangKnoten | undefined => k.pfad === pfad ? k : k.kinder.map((c) => finde(c, pfad)).find(Boolean);
+    const finde = (k: EingangKnoten, pfad: string): EingangKnoten | undefined =>
+      k.pfad === pfad ? k : k.kinder.map((c) => finde(c, pfad)).find(Boolean);
     assert.equal(finde(u.baum, 'erledigt/alt')?.dateien, 1);
     assert.equal(finde(u.baum, 'erledigt')?.bytes, 2000);
     assert.equal(finde(u.baum, 'fehler')?.dateien, 2);
@@ -195,19 +198,27 @@ describe('Eingangsordner (#195)', () => {
     assert.equal((await e.stand()).ueberblick!.dateien, 4);
     // 0 schaltet ab; ungültige Grenzen werden abgelehnt.
     assert.deepEqual(eingangWarnungen(u, { ...EINGANG_STANDARD, warnTage: 0, warnGb: 0, warnDateien: 0 }), ['fehler']);
-    assert.throws(() => pruefeEingangEinstellung({ warnTage: -1 }, EINGANG_STANDARD), (x) => x instanceof Fachfehler && x.status === 422);
-    assert.throws(() => pruefeEingangEinstellung({ warnDateien: 1.5 }, EINGANG_STANDARD), (x) => x instanceof Fachfehler);
+    assert.throws(
+      () => pruefeEingangEinstellung({ warnTage: -1 }, EINGANG_STANDARD),
+      (x) => x instanceof Fachfehler && x.status === 422,
+    );
+    assert.throws(
+      () => pruefeEingangEinstellung({ warnDateien: 1.5 }, EINGANG_STANDARD),
+      (x) => x instanceof Fachfehler,
+    );
     const m = await e.meldungen();
     assert.equal(m?.grenzen.dateien, 2);
   });
 
   it('überspringt Temporäres und NAS-Ordner; lehnt leere Dateien mit Grund ab', async () => {
     const { e, ordner, posten } = await aufbau();
-    for (const n of ['.versteckt', '~$entwurf.docx', 'scan.tmp', 'teil.part', 'Thumbs.db', 'desktop.ini']) await writeFile(join(ordner, n), 'x');
+    for (const n of ['.versteckt', '~$entwurf.docx', 'scan.tmp', 'teil.part', 'Thumbs.db', 'desktop.ini'])
+      await writeFile(join(ordner, n), 'x');
     await mkdir(join(ordner, '@eaDir'));
     await writeFile(join(ordner, '@eaDir', 'vorschau.jpg'), 'x');
     await writeFile(join(ordner, 'leer.pdf'), '');
-    await e.pruefe(); await e.pruefe();
+    await e.pruefe();
+    await e.pruefe();
     assert.equal((await posten()).length, 0);
     assert.ok(existsSync(join(ordner, 'fehler', 'leer.pdf')));
     assert.match(await readFile(join(ordner, 'fehler', 'leer.pdf.grund.txt'), 'utf8'), /leer/);
@@ -224,7 +235,13 @@ describe('Eingangsordner (#195)', () => {
     const post = await d.post.legePostAn({ betreff: 'Rechnung' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
     const { createHash } = await import('node:crypto');
     const sha = createHash('sha256').update('%PDF-1.4 Rechnung').digest('hex');
-    await einstellungen.schreibe('eingangsordner_journal', { pfad: join(ordner, 'Rechnung.pdf'), sha256: sha, groesse: 17, seit: new Date(0).toISOString(), mappeId: post.id });
+    await einstellungen.schreibe('eingangsordner_journal', {
+      pfad: join(ordner, 'Rechnung.pdf'),
+      sha256: sha,
+      groesse: 17,
+      seit: new Date(0).toISOString(),
+      mappeId: post.id,
+    });
     const neu = new Eingangsordner(ordner, { dienst: d, einstellungen, benutzer: async () => [] });
     assert.equal(await neu.pruefe(), 0);
     const p = await posten();
@@ -238,10 +255,17 @@ describe('Eingangsordner (#195)', () => {
   it('ruht im Wartungsmodus und prüft die Einstellungen', async () => {
     const { e, ordner, posten } = await aufbau(() => 'Wartungsmodus');
     await writeFile(join(ordner, 'a.pdf'), 'x');
-    await e.pruefe(); await e.pruefe();
+    await e.pruefe();
+    await e.pruefe();
     assert.equal((await posten()).length, 0);
     assert.equal((await e.stand()).pausiert, 'Wartungsmodus');
-    assert.throws(() => pruefeEingangEinstellung({ abstand: 1 }, EINGANG_STANDARD), (x) => x instanceof Fachfehler && x.status === 422);
-    assert.throws(() => pruefeEingangEinstellung({ nachher: 'weg' }, EINGANG_STANDARD), (x) => x instanceof Fachfehler);
+    assert.throws(
+      () => pruefeEingangEinstellung({ abstand: 1 }, EINGANG_STANDARD),
+      (x) => x instanceof Fachfehler && x.status === 422,
+    );
+    assert.throws(
+      () => pruefeEingangEinstellung({ nachher: 'weg' }, EINGANG_STANDARD),
+      (x) => x instanceof Fachfehler,
+    );
   });
 });

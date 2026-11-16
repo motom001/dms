@@ -22,13 +22,19 @@ import { speicherRepo } from '../src/repo-speicher';
 import { pdfMitText } from './hilfen';
 import { mitSprache } from '../src/sprache';
 
-const echtesFastify = await import('fastify').then((m) => typeof m.default === 'function', () => false);
+const echtesFastify = await import('fastify').then(
+  (m) => typeof m.default === 'function',
+  () => false,
+);
 const HAUSHALT = '00000000-0000-4000-8000-000000000877';
 const PW = 'ein-langes-passwort';
 const PDF = (s: string) => pdfMitText([s]);
 const MELDUNG = 'Die Datei zu diesem Dokument fehlt.';
 const tmp = mkdtempSync(join(tmpdir(), 'dms-877-'));
-after(() => { beiFehlenderDatei(null); rmSync(tmp, { recursive: true, force: true }); });
+after(() => {
+  beiFehlenderDatei(null);
+  rmSync(tmp, { recursive: true, force: true });
+});
 
 /** Keine Antwort verrät Prüfwert, Pfad oder Ablage. */
 const ohneInnenleben = (text: string, sha: string) => {
@@ -46,7 +52,10 @@ describe('Dateispeicher: fehlende Datei (#877)', () => {
     beiFehlenderDatei((f) => gemeldet.push(f));
     vergissFehlendeDateien();
     try {
-      const e = await s.lies(sha).then(() => null, (x: unknown) => x);
+      const e = await s.lies(sha).then(
+        () => null,
+        (x: unknown) => x,
+      );
       assert.ok(e instanceof DateiFehlt && e instanceof Fachfehler, String(e));
       assert.equal(e.status, 404);
       assert.equal(e.message, MELDUNG);
@@ -63,7 +72,9 @@ describe('Dateispeicher: fehlende Datei (#877)', () => {
       const strom = await s.lies(sha);
       assert.ok(!Buffer.isBuffer(strom));
       assert.equal(Buffer.concat(await strom.toArray()).toString(), 'x');
-    } finally { beiFehlenderDatei(null); }
+    } finally {
+      beiFehlenderDatei(null);
+    }
   });
 
   it('oeffneStrom: fehlende Datei lehnt ab (ENOENT), ohne Absturz', async () => {
@@ -77,7 +88,15 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
   const speicher = ordnerSpeicher(wurzel, HAUSHALT);
   const pfad = (sha: string) => join(wurzel, HAUSHALT, sha.slice(0, 2), sha);
   /* eslint-disable @typescript-eslint/no-explicit-any -- json() liefert je Anfrage etwas anderes */
-  let app: { inject(o: { method: string; url: string; headers?: Record<string, string>; payload?: unknown }): Promise<{ statusCode: number; body: string; json(): any }>; close(): Promise<unknown> };
+  let app: {
+    inject(o: {
+      method: string;
+      url: string;
+      headers?: Record<string, string>;
+      payload?: unknown;
+    }): Promise<{ statusCode: number; body: string; json(): any }>;
+    close(): Promise<unknown>;
+  };
   /* eslint-enable @typescript-eslint/no-explicit-any */
   let d: Dienst;
   let cookie = '';
@@ -96,34 +115,71 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
     const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
     const { Webdav } = await import('../src/webdav');
     d = new Dienst(speicherRepo(), speicher, { einstellungen: speicherEinstellungen() });
-    beiFehlenderDatei((f) => { void d.dateienFehlen.merkeFehlendeDatei(f); });
+    beiFehlenderDatei((f) => {
+      void d.dateienFehlen.merkeFehlendeDatei(f);
+    });
     vergissFehlendeDateien();
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
-      { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
-    ] } as never);
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Vertrag',
+      titelVorlage: '{nr}',
+      felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+      register: [
+        { key: 'daten', name: 'Daten', art: 'felder' },
+        { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
+      ],
+    } as never);
     await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [typ.id] });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, lena.id);
-    weg = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' }, PDF('Rechnung von Jonas'), lena.id)).dokument;
-    da = (await d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'Vertrag.pdf', typ: 'application/pdf' }, PDF('Vertrag mit Petra'), lena.id)).dokument;
+    weg = (
+      await d.dokumente.ladeHoch(
+        m.id,
+        { register: 'belege', name: 'Rechnung.pdf', typ: 'application/pdf' },
+        PDF('Rechnung von Jonas'),
+        lena.id,
+      )
+    ).dokument;
+    da = (
+      await d.dokumente.ladeHoch(
+        m.id,
+        { register: 'belege', name: 'Vertrag.pdf', typ: 'application/pdf' },
+        PDF('Vertrag mit Petra'),
+        lena.id,
+      )
+    ).dokument;
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const k = (await schluessel.lege(lena, { name: 'Laufwerk', recht: 'lesen' })).schluessel;
     basic = `Basic ${Buffer.from(`lena@example.org:${k}`).toString('base64')}`;
-    const wd = new Webdav({ dienst: d, konten, schluessel, einstellungen: speicherEinstellungen(), adresse: () => 'https://dms.example.org' });
+    const wd = new Webdav({
+      dienst: d,
+      konten,
+      schluessel,
+      einstellungen: speicherEinstellungen(),
+      adresse: () => 'https://dms.example.org',
+    });
     await wd.speichere({ aktiv: true }, 'lena@example.org');
-    app = await baueApp(d, konten, { apiSchluessel: schluessel, webdav: wd }) as unknown as typeof app;
-    const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email: 'lena@example.org', passwort: PW }, headers: { 'x-dms': '1' } });
+    app = (await baueApp(d, konten, { apiSchluessel: schluessel, webdav: wd })) as unknown as typeof app;
+    const r = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      payload: { email: 'lena@example.org', passwort: PW },
+      headers: { 'x-dms': '1' },
+    });
     assert.equal(r.statusCode, 200, r.body);
-    cookie = ([] as string[]).concat((r as unknown as { headers: Record<string, string | string[]> }).headers['set-cookie'])[0].split(';')[0];
+    cookie = ([] as string[])
+      .concat((r as unknown as { headers: Record<string, string | string[]> }).headers['set-cookie'])[0]
+      .split(';')[0];
     // Werkbank nur im Verwaltungsmodus (#819).
     assert.equal((await rufe('POST', '/api/konto/verwaltung', {})).statusCode, 200);
     // Datei weg wie ohne Volume – die Datenbank weiß noch von ihr.
     await rename(pfad(weg.sha256), join(tmp, 'beiseite'));
   });
-  after(async () => { await app?.close(); });
+  after(async () => {
+    await app?.close();
+  });
 
   it('Inhalt: 404 mit verständlicher Meldung ohne Prüfwert und Pfad; der Server antwortet danach weiter', async () => {
     const marke = Math.max(0, ...protokoll.eintraege({}).map((e) => e.nr));
@@ -148,12 +204,18 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
     const e = mitSprache('en', () => new DateiFehlt(weg.sha256));
     assert.equal(e.message, 'The file for this document is missing.');
     ohneInnenleben(e.message, weg.sha256);
-    assert.equal(mitSprache('en', () => new DateiFehlt(weg.sha256, 'Rechnung.pdf')).message, 'The file for the document “Rechnung.pdf” is missing.');
+    assert.equal(
+      mitSprache('en', () => new DateiFehlt(weg.sha256, 'Rechnung.pdf')).message,
+      'The file for the document “Rechnung.pdf” is missing.',
+    );
   });
 
   it('Version, Herunterladen mit Stempel, Seitenbild, Vorschau: kein Absturz, saubere Antwort', async () => {
     fehlt(await rufe('GET', `/api/dokumente/${weg.id}/versionen/1/inhalt`), 'Version');
-    fehlt(await rufe('POST', `/api/dokumente/${weg.id}/herunterladen`, { stempel: { vorlage: 'kopie', empfaenger: 'Herr Özdemir' } }), 'Stempel');
+    fehlt(
+      await rufe('POST', `/api/dokumente/${weg.id}/herunterladen`, { stempel: { vorlage: 'kopie', empfaenger: 'Herr Özdemir' } }),
+      'Stempel',
+    );
     fehlt(await rufe('POST', `/api/dokumente/${weg.id}/herunterladen`, {}), 'Herunterladen');
     const seite = await rufe('GET', `/api/dokumente/${weg.id}/seiten/1/bild`);
     assert.ok(seite.statusCode === 404 || seite.statusCode === 422, `Seitenbild: ${seite.statusCode} ${seite.body}`);

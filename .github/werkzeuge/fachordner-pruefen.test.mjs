@@ -22,8 +22,13 @@ test('Fachordner mit Dienst, index.ts und README.md ist in Ordnung', () => {
 
 test('meldet fehlende index.ts und README.md je Ordner', () => {
   const w = wurzel({ suche: ['suche.dienst.ts', 'suche.routen.ts'], mappen: ['mappen.dienst.ts', 'index.ts'] });
-  const funde = pruefe(w).map((f) => ({ ...f, ordner: relative(w, f.ordner) })).sort((a, b) => a.ordner.localeCompare(b.ordner));
-  assert.deepEqual(funde, [{ ordner: 'mappen', fehlt: ['README.md'] }, { ordner: 'suche', fehlt: ['index.ts', 'README.md'] }]);
+  const funde = pruefe(w)
+    .map((f) => ({ ...f, ordner: relative(w, f.ordner) }))
+    .sort((a, b) => a.ordner.localeCompare(b.ordner));
+  assert.deepEqual(funde, [
+    { ordner: 'mappen', fehlt: ['README.md'] },
+    { ordner: 'suche', fehlt: ['index.ts', 'README.md'] },
+  ]);
 });
 
 test('Ordner ohne Dienst (nur Routen, Abläufe, Technik) brauchen nichts', () => {
