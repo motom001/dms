@@ -29,30 +29,59 @@ const ZEIT_MS = 60_000;
 
 export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = false): Promise<Buffer> {
   if (!Number.isInteger(nr) || nr < 1) throw new Fachfehler(422, t('meldungen.graubild.seite-eine-ganze-zahl'));
-  if (!Number.isInteger(dpi) || dpi < DPI_MIN || dpi > DPI_MAX) throw new Fachfehler(422, t('meldungen.graubild.dpi-zwischen-und', { DPI_MIN, DPI_MAX }));
+  if (!Number.isInteger(dpi) || dpi < DPI_MIN || dpi > DPI_MAX)
+    throw new Fachfehler(422, t('meldungen.graubild.dpi-zwischen-und', { DPI_MIN, DPI_MAX }));
   const dir = await mkdtemp(join(tmpdir(), 'dms-scan-'));
   try {
     await writeFile(join(dir, 'q.pdf'), pdf);
     await new Promise<void>((ok, fehler) => {
-      execFile('pdftoppm', [...(farbe ? [] : ['-gray']), '-r', String(dpi), '-f', String(nr), '-l', String(nr), '-singlefile', join(dir, 'q.pdf'), join(dir, 's')],
-        { timeout: ZEIT_MS, maxBuffer: AUSGABE_KLEIN }, (e, _o, err) => {
+      execFile(
+        'pdftoppm',
+        [
+          ...(farbe ? [] : ['-gray']),
+          '-r',
+          String(dpi),
+          '-f',
+          String(nr),
+          '-l',
+          String(nr),
+          '-singlefile',
+          join(dir, 'q.pdf'),
+          join(dir, 's'),
+        ],
+        { timeout: ZEIT_MS, maxBuffer: AUSGABE_KLEIN },
+        (e, _o, err) => {
           // Ersatzschrift fehlt (#1329): Für die Archivfassung (Farbe) kein Bild ohne Text – lieber ein Fehler mit Grund
           // am Dokument; die bisherige Archivfassung bleibt. Graustufen (Texterkennung) wie bisher, nur gemeldet.
           if (!e) {
             const ohneSchrift = merkeSchriftfehler(err, farbe ? 'archivfassung' : 'graubild');
             return ohneSchrift && farbe ? fehler(new Fachfehler(503, t('meldungen.graubild.schrift-fehlt'))) : ok();
           }
-          if ((e as NodeJS.ErrnoException).code === 'ENOENT') return fehler(new Fachfehler(503, t('meldungen.graubild.pdftoppm-fehlt-seiten-lassen')));
-          fehler(/Wrong page range|first page/i.test(String(err)) ? new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr })) : new Fachfehler(422, t('meldungen.graubild.die-seite-laesst-sich', { wert: String(err).trim().slice(0, 200) || e.message })));
-        });
+          if ((e as NodeJS.ErrnoException).code === 'ENOENT')
+            return fehler(new Fachfehler(503, t('meldungen.graubild.pdftoppm-fehlt-seiten-lassen')));
+          fehler(
+            /Wrong page range|first page/i.test(String(err))
+              ? new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr }))
+              : new Fachfehler(422, t('meldungen.graubild.die-seite-laesst-sich', { wert: String(err).trim().slice(0, 200) || e.message })),
+          );
+        },
+      );
     });
-    const bild = await readFile(join(dir, farbe ? 's.ppm' : 's.pgm')).catch(() => { throw new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr })); });
+    const bild = await readFile(join(dir, farbe ? 's.ppm' : 's.pgm')).catch(() => {
+      throw new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr }));
+    });
     if (bild.length > PUNKTE_MAX * (farbe ? 3 : 1) + 64) throw new Fachfehler(422, t('meldungen.graubild.die-seite-ist-bei', { dpi }));
     return bild;
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
-export interface Graubild { breite: number; hoehe: number; pixel: Buffer }
+export interface Graubild {
+  breite: number;
+  hoehe: number;
+  pixel: Buffer;
+}
 
 /** PGM (P5, höchstens 255) lesen; null bei einem anderen Format. */
 export function lesePgm(b: Buffer): Graubild | null {
@@ -69,7 +98,9 @@ export function lesePgm(b: Buffer): Graubild | null {
     return i > start ? b.toString('latin1', start, i) : null;
   };
   if (feld() !== 'P5') return null;
-  const breite = Number(feld()), hoehe = Number(feld()), hoechst = Number(feld());
+  const breite = Number(feld()),
+    hoehe = Number(feld()),
+    hoechst = Number(feld());
   if (!(breite > 0) || !(hoehe > 0) || !(hoechst > 0 && hoechst < 256)) return null;
   i++;
   if (b.length - i < breite * hoehe) return null;

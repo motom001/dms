@@ -8,7 +8,17 @@
  * hat (`sha256`). Die Wahl je Seite trifft nur ein Mensch mit Bearbeiten an der Post; weggelassen wird nur beim
  * Übernehmen, das jemand auslöst – nie beim automatischen Zuordnen. Das Original bleibt immer als frühere Version.
  */
-import { faelltWeg, leerseitenGelten, type Leerseiten, type LeerseitenWahl, neueErkennung, pruefeSeitenliste, waehle, wegfallendeSeiten, wirdGekuerzt } from '../../../shared/src/leerseiten';
+import {
+  faelltWeg,
+  leerseitenGelten,
+  type Leerseiten,
+  type LeerseitenWahl,
+  neueErkennung,
+  pruefeSeitenliste,
+  waehle,
+  wegfallendeSeiten,
+  wirdGekuerzt,
+} from '../../../shared/src/leerseiten';
 import { type Dokument, istVersendet, type Mappe } from '../../../shared/src/model';
 import type { DokumentVersionen } from '../dokumente';
 import { Fachfehler } from '../fehler';
@@ -23,21 +33,40 @@ import type { ZugriffDienst } from '../zugriff';
 const log = protokoll.modul('ablage');
 
 /** Die Teile, die die Leerseiten rufen: Rechteprüfung, Historie, Versionen. */
-export interface LeerseitenTeile { rechte: ZugriffDienst; historie: MappenHistorie; versionen: DokumentVersionen }
+export interface LeerseitenTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  versionen: DokumentVersionen;
+}
 
 /** Was ein Dokument beim Übernehmen verliert (vor dem Verschieben gerechnet, danach angewendet). */
-export interface LeerseitenPlan { inhalt: Buffer; weg: number[]; vorher: number }
+export interface LeerseitenPlan {
+  inhalt: Buffer;
+  weg: number[];
+  vorher: number;
+}
 
 /** Antwort von GET/PUT …/leerseiten: die Markierung und die Seiten, die beim Übernehmen wegfallen. */
-export interface LeerseitenStand { dokument: string; sha256: string; seiten: number; leerseiten: Leerseiten | null; wegfallend: number[] }
+export interface LeerseitenStand {
+  dokument: string;
+  sha256: string;
+  seiten: number;
+  leerseiten: Leerseiten | null;
+  wegfallend: number[];
+}
 
 /** Dateitypen, deren Seiten ein Paket markieren darf (PDF; Bilder haben genau eine Seite). */
 const MIT_SEITEN = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 
 export class PostLeerseiten {
-  constructor(private readonly kern: Kern, private readonly teile: LeerseitenTeile) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: LeerseitenTeile,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
 
   /** Dokument und Post holen; nur Dokumente in Post (Systemtyp „post“). */
   private async inPost(z: Zugriff | undefined, id: string, recht: 'R' | 'U'): Promise<{ d: Dokument; post: Mappe }> {
@@ -82,7 +111,11 @@ export class PostLeerseiten {
     const p = pruefeSeitenliste(e.seiten, seiten);
     if ('fehler' in p) throw new Fachfehler(400, t.frei(`meldungen.leerseiten.liste.${p.fehler}`, { seiten }), { grund: p.fehler });
     const paket = (await this.repo.listePakete()).find((x) => x.id === z.paket!.id);
-    const neu = neueErkennung(leerseitenGelten(d) ? d.leerseiten : null, { paket: z.paket.id, paketName: paket?.name ?? z.paket.id, sha256: d.sha256, seiten, erkannt: p.seiten }, new Date().toISOString());
+    const neu = neueErkennung(
+      leerseitenGelten(d) ? d.leerseiten : null,
+      { paket: z.paket.id, paketName: paket?.name ?? z.paket.id, sha256: d.sha256, seiten, erkannt: p.seiten },
+      new Date().toISOString(),
+    );
     if (!(await this.repo.setzeLeerseiten(d.id, neu))) throw new Fachfehler(409, t('meldungen.leerseiten.andere-datei', { name: d.name }));
     log.debug('Leerseiten markiert', { paket: z.paket.id, dokument: d.id, seiten, leer: p.seiten.length });
     return this.stand({ ...d, leerseiten: neu }, seiten);
@@ -103,7 +136,8 @@ export class PostLeerseiten {
     if (!Number.isInteger(nr) || nr < 1 || nr > alt.seiten) throw new Fachfehler(404, t('meldungen.dienst.seite-gibt-es-nicht', { nr }));
     const neu = waehle(alt, nr, weglassen, jetzt);
     if (faelltWeg(alt, nr) !== faelltWeg(neu, nr) || !leerseitenGelten(d)) {
-      if (!(await this.repo.setzeLeerseiten(d.id, neu))) throw new Fachfehler(409, t('meldungen.leerseiten.andere-datei', { name: d.name }));
+      if (!(await this.repo.setzeLeerseiten(d.id, neu)))
+        throw new Fachfehler(409, t('meldungen.leerseiten.andere-datei', { name: d.name }));
     }
     return this.stand({ ...d, leerseiten: neu }, neu.seiten);
   }
@@ -111,7 +145,16 @@ export class PostLeerseiten {
   /** Die geltende Markierung – oder eine leere für die Wahl ohne Paket (z. B. über die Schnittstelle). */
   private async markierungOderLeer(d: Dokument, jetzt: string): Promise<Leerseiten> {
     if (leerseitenGelten(d)) return d.leerseiten;
-    return { paket: null, paketName: null, sha256: d.sha256, seiten: await this.seitenVon(d), erkannt: [], behalten: [], weglassen: [], geaendert: jetzt };
+    return {
+      paket: null,
+      paketName: null,
+      sha256: d.sha256,
+      seiten: await this.seitenVon(d),
+      erkannt: [],
+      behalten: [],
+      weglassen: [],
+      geaendert: jetzt,
+    };
   }
 
   /**
@@ -126,9 +169,14 @@ export class PostLeerseiten {
       const inhalt = await this.kern.liesGanz(d.sha256);
       const { anzahl } = await seitenInfo(inhalt);
       const l = d.leerseiten!;
-      if (anzahl !== l.seiten) { log.warn('Leerseiten nicht weggelassen: Seitenzahl passt nicht', { dokument: d.id, seiten: anzahl, markiert: l.seiten }); continue; }
+      if (anzahl !== l.seiten) {
+        log.warn('Leerseiten nicht weggelassen: Seitenzahl passt nicht', { dokument: d.id, seiten: anzahl, markiert: l.seiten });
+        continue;
+      }
       const weg = wegfallendeSeiten(l);
-      const bleiben = Array.from({ length: anzahl }, (_, i) => i + 1).filter((n) => !weg.includes(n)).map((nr) => ({ nr }));
+      const bleiben = Array.from({ length: anzahl }, (_, i) => i + 1)
+        .filter((n) => !weg.includes(n))
+        .map((nr) => ({ nr }));
       const [neu] = await teile(inhalt, bleiben, [0]);
       plaene.set(d.id, { inhalt: neu, weg, vorher: anzahl });
     }
@@ -144,7 +192,11 @@ export class PostLeerseiten {
     const neu = await this.teile.versionen.neueFassung(dokumentId, { typ: 'application/pdf', herkunft: 'bearbeitet' }, plan.inhalt, von);
     const n = plan.weg.length;
     await this.teile.historie.notiere(neu.mappeId, von, 'pdf_bearbeitet', {
-      dokument: neu.name, seiten: plan.vorher - n, vorher: plan.vorher, leerseiten: plan.weg, text: t('meldungen.leerseiten.entfernt', { anzahl: n }),
+      dokument: neu.name,
+      seiten: plan.vorher - n,
+      vorher: plan.vorher,
+      leerseiten: plan.weg,
+      text: t('meldungen.leerseiten.entfernt', { anzahl: n }),
     });
     log.info('Leerseiten weggelassen', { dokument: dokumentId, seiten: plan.vorher, weg: n });
     return neu;

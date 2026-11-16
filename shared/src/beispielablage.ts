@@ -13,7 +13,11 @@ export const BEISPIEL_DAZU = ['rechnungen', 'haus', 'fahrzeuge'] as const;
 export const BEISPIEL_PAKETE: readonly string[] = [...BEISPIEL_NOETIG, ...BEISPIEL_DAZU];
 
 /** Beispiel-Mappe, die beim Entfernen bleibt: geändert oder von einer eigenen Mappe verwiesen. */
-export interface BeispielBleibt { id: string; titel: string; grund: 'geaendert' | 'verwiesen' }
+export interface BeispielBleibt {
+  id: string;
+  titel: string;
+  grund: 'geaendert' | 'verwiesen';
+}
 
 export interface BeispielAblageStand {
   /** Nötige Pakete: Kennung, Name (bei installierten) und ob installiert. */
@@ -30,4 +34,7 @@ export interface BeispielAblageAnlegen {
   fehler: Array<{ id: string; name: string; meldung: string }>;
 }
 
-export interface BeispielAblageEntfernen { entfernt: number; behalten: BeispielBleibt[] }
+export interface BeispielAblageEntfernen {
+  entfernt: number;
+  behalten: BeispielBleibt[];
+}

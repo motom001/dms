@@ -41,16 +41,26 @@ const H = '00000000-0000-4000-8000-000000000001';
 
 /* ---------- ZIP lesen (unkomprimiert bzw. AES) ---------- */
 
-interface Eintrag { name: string; methode: number; daten: Buffer }
+interface Eintrag {
+  name: string;
+  methode: number;
+  daten: Buffer;
+}
 function liesZip(b: Buffer): Eintrag[] {
   const ende = b.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
-  const anzahl = b.readUInt16LE(ende + 10); let p = b.readUInt32LE(ende + 16);
+  const anzahl = b.readUInt16LE(ende + 10);
+  let p = b.readUInt32LE(ende + 16);
   const r: Eintrag[] = [];
   for (let i = 0; i < anzahl; i++) {
-    const methode = b.readUInt16LE(p + 10); const komprimiert = b.readUInt32LE(p + 20);
-    const nl = b.readUInt16LE(p + 28); const el = b.readUInt16LE(p + 30); const kl = b.readUInt16LE(p + 32); const versatz = b.readUInt32LE(p + 42);
+    const methode = b.readUInt16LE(p + 10);
+    const komprimiert = b.readUInt32LE(p + 20);
+    const nl = b.readUInt16LE(p + 28);
+    const el = b.readUInt16LE(p + 30);
+    const kl = b.readUInt16LE(p + 32);
+    const versatz = b.readUInt32LE(p + 42);
     const name = b.subarray(p + 46, p + 46 + nl).toString('utf8');
-    const lnl = b.readUInt16LE(versatz + 26); const lel = b.readUInt16LE(versatz + 28);
+    const lnl = b.readUInt16LE(versatz + 26);
+    const lel = b.readUInt16LE(versatz + 28);
     const start = versatz + 30 + lnl + lel;
     r.push({ name, methode, daten: b.subarray(start, start + komprimiert) });
     p += 46 + nl + el + kl;
@@ -59,15 +69,20 @@ function liesZip(b: Buffer): Eintrag[] {
 }
 /** WinZip-AES (AE-2) entschlüsseln – unabhängig von zip.ts nach der Beschreibung des Formats. */
 function aesAuf(d: Buffer, passwort: string): Buffer {
-  const salz = d.subarray(0, 16); const pv = d.subarray(16, 18); const daten = d.subarray(18, d.length - 10); const mac = d.subarray(d.length - 10);
+  const salz = d.subarray(0, 16);
+  const pv = d.subarray(16, 18);
+  const daten = d.subarray(18, d.length - 10);
+  const mac = d.subarray(d.length - 10);
   const k = pbkdf2Sync(passwort, salz, 1000, 66, 'sha1');
   assert.deepEqual(k.subarray(64), pv, 'Prüfwert des Passworts');
   assert.deepEqual(createHmac('sha1', k.subarray(32, 64)).update(daten).digest().subarray(0, 10), mac, 'Authentifizierung');
   // Zählermodus: Schlüsselstrom = AES(Zähler), Zähler little-endian ab 1.
-  const ecb = createCipheriv('aes-256-ecb', k.subarray(0, 32), null); ecb.setAutoPadding(false);
+  const ecb = createCipheriv('aes-256-ecb', k.subarray(0, 32), null);
+  ecb.setAutoPadding(false);
   const out = Buffer.alloc(daten.length);
   for (let i = 0; i < daten.length; i += 16) {
-    const z = Buffer.alloc(16); z.writeUInt32LE(i / 16 + 1, 0);
+    const z = Buffer.alloc(16);
+    z.writeUInt32LE(i / 16 + 1, 0);
     const ks = ecb.update(z);
     for (let j = 0; j < 16 && i + j < daten.length; j++) out[i + j] = daten[i + j] ^ ks[j];
   }
@@ -92,54 +107,153 @@ async function repos(pg: boolean): Promise<{ repo: Repo; konto: ReturnType<typeo
 async function aufbau(pg: boolean) {
   const r = await repos(pg);
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-ausk-')), 'dms.schluessel'), () => null);
-  await tresor.laden(); await tresor.erzeuge();
+  await tresor.laden();
+  await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
   const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
-  const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
+  const { benutzer: admin } = await konten.einrichten({
+    email: 'verwalter@example.org',
+    name: 'Vera Verwalter',
+    passwort: 'ein-langes-passwort',
+  });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const, versionierung: true }];
-  const wohnungTyp = await d.mappentypen.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
-  const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
-    { key: 'name', label: 'Name', typ: 'text' }, { key: 'email', label: 'E-Mail', typ: 'text' }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text' },
-    { key: 'portal', label: 'Portal-Passwort', typ: 'passwort' }, { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id, verweisart: 'zugehoerigkeit' },
-  ], register: reg });
-  const vertragTyp = await d.mappentypen.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{nr}', archiv: { jahre: 10, stichtag: null }, felder: [
-    { key: 'nr', label: 'Vertragsnummer', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieterTyp.id, verweisart: 'zugehoerigkeit' },
-    { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id },
-  ], register: reg });
-  await d.mappentypen.aendereTyp(vertragTyp.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }] });
-  const nkTyp = await d.mappentypen.legeTypAn({ name: 'Nebenkostenabrechnung', titelVorlage: 'NK {jahr}', felder: [
-    { key: 'jahr', label: 'Jahr', typ: 'text' }, { key: 'vertrag', label: 'Mietvertrag', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }, { key: 'privat', label: 'Privat', typ: 'janein' },
-  ], register: reg });
-  const hinweisTyp = await d.mappentypen.legeTypAn({ name: 'Hinweis', titelVorlage: '{text}', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
+  const reg = [
+    { key: 'daten', name: 'Daten', art: 'felder' as const },
+    { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const, versionierung: true },
+  ];
+  const wohnungTyp = await d.mappentypen.legeTypAn({
+    name: 'Wohnung',
+    titelVorlage: '{lage}',
+    felder: [{ key: 'lage', label: 'Lage', typ: 'text' }],
+  });
+  const mieterTyp = await d.mappentypen.legeTypAn({
+    name: 'Mieter',
+    schluessel: 'mieter',
+    titelVorlage: '{name}',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text' },
+      { key: 'email', label: 'E-Mail', typ: 'text' },
+      { key: 'kundennummer', label: 'Kundennummer', typ: 'text' },
+      { key: 'portal', label: 'Portal-Passwort', typ: 'passwort' },
+      { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id, verweisart: 'zugehoerigkeit' },
+    ],
+    register: reg,
+  });
+  const vertragTyp = await d.mappentypen.legeTypAn({
+    name: 'Mietvertrag',
+    titelVorlage: '{nr}',
+    archiv: { jahre: 10, stichtag: null },
+    felder: [
+      { key: 'nr', label: 'Vertragsnummer', typ: 'text' },
+      { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieterTyp.id, verweisart: 'zugehoerigkeit' },
+      { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id },
+    ],
+    register: reg,
+  });
+  await d.mappentypen.aendereTyp(vertragTyp.id, {
+    ...(await d.mappentypen.listeTypen()).find((t) => t.id === vertragTyp.id)!,
+    felder: [
+      ...vertragTyp.felder,
+      { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' },
+    ],
+  });
+  const nkTyp = await d.mappentypen.legeTypAn({
+    name: 'Nebenkostenabrechnung',
+    titelVorlage: 'NK {jahr}',
+    felder: [
+      { key: 'jahr', label: 'Jahr', typ: 'text' },
+      { key: 'vertrag', label: 'Mietvertrag', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' },
+      { key: 'privat', label: 'Privat', typ: 'janein' },
+    ],
+    register: reg,
+  });
+  const hinweisTyp = await d.mappentypen.legeTypAn({
+    name: 'Hinweis',
+    titelVorlage: '{text}',
+    felder: [{ key: 'text', label: 'Text', typ: 'text' }],
+  });
 
   const wohnung = await d.mappen.legeMappeAn({ typId: wohnungTyp.id, werte: { lage: 'Musterweg 1, EG links' } }, admin.id);
-  const max = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter', email: 'max@example.net', kundennummer: 'K-4711', portal: 'geheim-portal-123', wohnung: wohnung.id } }, admin.id);
-  const bea = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Bea Beispiel', email: 'bea@example.net', wohnung: wohnung.id } }, admin.id);
+  const max = await d.mappen.legeMappeAn(
+    {
+      typId: mieterTyp.id,
+      werte: {
+        name: 'Max Mustermieter',
+        email: 'max@example.net',
+        kundennummer: 'K-4711',
+        portal: 'geheim-portal-123',
+        wohnung: wohnung.id,
+      },
+    },
+    admin.id,
+  );
+  const bea = await d.mappen.legeMappeAn(
+    { typId: mieterTyp.id, werte: { name: 'Bea Beispiel', email: 'bea@example.net', wohnung: wohnung.id } },
+    admin.id,
+  );
   const v1 = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2020', mieter: max.id, wohnung: wohnung.id } }, admin.id);
   // Kreis: der neue Vertrag nennt den alten als Vorgänger, der alte (fälschlich) den neuen.
-  const v2 = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2024', mieter: max.id, wohnung: wohnung.id, vorgaenger: v1.id } }, admin.id);
+  const v2 = await d.mappen.legeMappeAn(
+    { typId: vertragTyp.id, werte: { nr: 'MV-2024', mieter: max.id, wohnung: wohnung.id, vorgaenger: v1.id } },
+    admin.id,
+  );
   await d.mappen.aendereMappe(v1.id, { werte: { nr: 'MV-2020', mieter: max.id, wohnung: wohnung.id, vorgaenger: v2.id } }, admin.id);
-  const vBea = await d.mappen.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'MV-2022-B', mieter: bea.id, wohnung: wohnung.id } }, admin.id);
+  const vBea = await d.mappen.legeMappeAn(
+    { typId: vertragTyp.id, werte: { nr: 'MV-2022-B', mieter: bea.id, wohnung: wohnung.id } },
+    admin.id,
+  );
   const nk1 = await d.mappen.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2024', vertrag: v2.id } }, admin.id);
   const nk2 = await d.mappen.legeMappeAn({ typId: nkTyp.id, werte: { jahr: '2025', vertrag: v2.id, privat: true } }, admin.id);
-  const hinweis = await d.mappen.legeMappeAn({ typId: hinweisTyp.id, werte: { text: 'Rückruf an max@example.net wegen Schlüssel' } }, admin.id);
+  const hinweis = await d.mappen.legeMappeAn(
+    { typId: hinweisTyp.id, werte: { text: 'Rückruf an max@example.net wegen Schlüssel' } },
+    admin.id,
+  );
   // Schriftverkehr als Post, zugeordnet zum Mieter
-  const post = await d.post.legePostAn({ betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id }, { id: admin.id, name: 'Vera' });
+  const post = await d.post.legePostAn(
+    { betreff: 'Mieterhöhung', kanal: 'E-Mail', richtung: 'Eingehend', fuer: admin.id },
+    { id: admin.id, name: 'Vera' },
+  );
   await d.post.ordneZu(post.id, { ziel: max.id, dokumente: [] }, admin.id);
   // Dokumente: Nebenkostenabrechnung mit Daten der Nachbarin und eine geschwärzte Fassung davon
-  const nkPdf = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024.pdf' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']), admin.id)).dokument;
-  const nkGeschwaerzt = (await d.dokumente.ladeHoch(nk1.id, { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' }, pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']), admin.id)).dokument;
-  const vertragPdf = (await d.dokumente.ladeHoch(v2.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag MV-2024']), admin.id)).dokument;
+  const nkPdf = (
+    await d.dokumente.ladeHoch(
+      nk1.id,
+      { register: 'dok', name: 'NK 2024.pdf' },
+      pdfMitText(['Abrechnung 2024', 'Max Mustermieter', 'Bea Beispiel 312,00 EUR']),
+      admin.id,
+    )
+  ).dokument;
+  const nkGeschwaerzt = (
+    await d.dokumente.ladeHoch(
+      nk1.id,
+      { register: 'dok', name: 'NK 2024 (geschwärzt).pdf', herkunft: 'geschwaerzt' },
+      pdfMitText(['Abrechnung 2024', 'Max Mustermieter', '████ 312,00 EUR']),
+      admin.id,
+    )
+  ).dokument;
+  const vertragPdf = (
+    await d.dokumente.ladeHoch(v2.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag MV-2024']), admin.id)
+  ).dokument;
   const notizOk = await d.mappenNotizen.legeNotizAn(max.id, 'Zahlt immer pünktlich.', admin.id);
   const notizIntern = await d.mappenNotizen.legeNotizAn(max.id, 'Interne Einschätzung: Klage prüfen.', admin.id);
   const tabelle = routen(d, konten, {});
   const route = (m: string, p: string) => tabelle.find((x) => x.methode === m && x.pfad === p)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-  const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) } as Anfrage);
-  return { d, konten, admin, anna, typen: { mieterTyp, wohnungTyp, vertragTyp, nkTyp, hinweisTyp }, m: { wohnung, max, bea, v1, v2, vBea, nk1, nk2, hinweis, post }, doks: { nkPdf, nkGeschwaerzt, vertragPdf }, notizen: { notizOk, notizIntern }, rufe };
+  const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
+    route(m, p).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) } as Anfrage);
+  return {
+    d,
+    konten,
+    admin,
+    anna,
+    typen: { mieterTyp, wohnungTyp, vertragTyp, nkTyp, hinweisTyp },
+    m: { wohnung, max, bea, v1, v2, vBea, nk1, nk2, hinweis, post },
+    doks: { nkPdf, nkGeschwaerzt, vertragPdf },
+    notizen: { notizOk, notizIntern },
+    rufe,
+  };
 }
 
 const ids = (b: Baum) => new Set(b.knoten.map((k) => k.id));
@@ -158,17 +272,33 @@ describe('Baum und Auskunft: reine Funktionen (#396)', () => {
     assert.equal(bereinigeBaumOptionen({ nurZugehoerigkeit: 'true' }).nurZugehoerigkeit, true);
   });
   it('Auswahl: nichts Fremdes, jede abgewählte Notiz mit Begründung', () => {
-    const bekannt = { a: { dokumente: [{ id: 'd1' }], notizen: [{ id: 'n1' }, { id: 'n2' }], historie: 1, dritte: [], ohneFelder: [] } } as never;
+    const bekannt = {
+      a: { dokumente: [{ id: 'd1' }], notizen: [{ id: 'n1' }, { id: 'n2' }], historie: 1, dritte: [], ohneFelder: [] },
+    } as never;
     assert.deepEqual(auswahlProbleme(liesAuswahl({ mappen: ['a'], dokumente: ['d1'], notizen: ['n1', 'n2'] }), bekannt), []);
     assert.match(auswahlProbleme(liesAuswahl({ mappen: ['a'], notizen: ['n1'] }), bekannt).join(), /keine Begründung/);
-    assert.deepEqual(auswahlProbleme(liesAuswahl({ mappen: ['a'], notizen: ['n1'], ohneNotizen: [{ id: 'n2', grund: 'Interne Bewertung, Art. 15 Abs. 4' }] }), bekannt), []);
-    assert.match(auswahlProbleme(liesAuswahl({ mappen: ['a', 'x'], dokumente: ['d9'], notizen: ['n1', 'n2'] }), bekannt).join(), /nicht zur Sammlung.*Dokumente nur/);
+    assert.deepEqual(
+      auswahlProbleme(
+        liesAuswahl({ mappen: ['a'], notizen: ['n1'], ohneNotizen: [{ id: 'n2', grund: 'Interne Bewertung, Art. 15 Abs. 4' }] }),
+        bekannt,
+      ),
+      [],
+    );
+    assert.match(
+      auswahlProbleme(liesAuswahl({ mappen: ['a', 'x'], dokumente: ['d9'], notizen: ['n1', 'n2'] }), bekannt).join(),
+      /nicht zur Sammlung.*Dokumente nur/,
+    );
     assert.match(auswahlProbleme(liesAuswahl({}), bekannt).join(), /mindestens eine Mappe/);
   });
   it('ZIP mit AES-256 (AE-2): verschlüsselt, mit Passwort lesbar', async () => {
     const inhalt = Buffer.from('Max Mustermieter, IBAN DE02 1203 0000 0000 2020 51 '.repeat(40));
     const teile: Buffer[] = [];
-    for await (const c of zipStrom([{ name: 'a/Auskunft.txt', groesse: inhalt.length, inhalt: async () => inhalt }], new Date(), 'ein-sicheres-passwort')) teile.push(c as Buffer);
+    for await (const c of zipStrom(
+      [{ name: 'a/Auskunft.txt', groesse: inhalt.length, inhalt: async () => inhalt }],
+      new Date(),
+      'ein-sicheres-passwort',
+    ))
+      teile.push(c as Buffer);
     const zip = Buffer.concat(teile);
     assert.ok(!zip.includes(Buffer.from('Mustermieter')), 'kein Klartext');
     const [e] = liesZip(zip);
@@ -180,7 +310,9 @@ describe('Baum und Auskunft: reine Funktionen (#396)', () => {
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   describe(`Baum über Verweise (#396, #424, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => { for (const s of offen.splice(0)) await s.end(); });
+    after(async () => {
+      for (const s of offen.splice(0)) await s.end();
+    });
 
     it('sammelt in beiden Richtungen, ohne quer weiterzugehen; Kreise, Verweise nach außen, Fristen, Dokumente', async () => {
       const { d, admin, m, typen } = await aufbau(pg);
@@ -213,7 +345,12 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(k.get(m.max.id)!.gesperrt, false);
       assert.equal(k.get(m.nk1.id)!.dokumente, 2);
       assert.equal(k.get(m.v2.id)!.rechte.D, true);
-      assert.deepEqual(kinderVon(b, m.v2.id).map((x) => x.id).sort(), [m.nk1.id, m.nk2.id].sort());
+      assert.deepEqual(
+        kinderVon(b, m.v2.id)
+          .map((x) => x.id)
+          .sort(),
+        [m.nk1.id, m.nk2.id].sort(),
+      );
       assert.equal(b.abgeschnitten, false);
       void typen;
     });
@@ -239,9 +376,22 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('nur innerhalb der Rechte: Nicht Lesbares fehlt und wird nicht weiterverfolgt', async () => {
       const { d, anna, m, typen, rufe } = await aufbau(pg);
-      await d.berechtigungen.setzeBerechtigungen(typen.nkTyp.id, { grund: ALLES, regeln: [
-        { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }], dann: { R: 'entziehen' }, stopp: true },
-      ] }, true);
+      await d.berechtigungen.setzeBerechtigungen(
+        typen.nkTyp.id,
+        {
+          grund: ALLES,
+          regeln: [
+            {
+              id: 'p',
+              name: 'Privat',
+              wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }],
+              dann: { R: 'entziehen' },
+              stopp: true,
+            },
+          ],
+        },
+        true,
+      );
       await d.berechtigungen.setzeBerechtigungen(typen.vertragTyp.id, { grund: { ...ALLES, D: false }, regeln: [] }, true);
       const b = (await rufe(anna, 'GET', '/api/mappen/:id/baum', { params: { id: m.max.id } })).body as Baum;
       assert.ok(ids(b).has(m.nk1.id));
@@ -259,14 +409,37 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   });
 
   describe(`Auskunft nach Art. 15 DSGVO (#396, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => { for (const s of offen.splice(0)) await s.end(); });
+    after(async () => {
+      for (const s of offen.splice(0)) await s.end();
+    });
 
     it('Vorschau, Prüfung, ZIP mit Deckblatt, Übersicht, Dokumenten und JSON – ohne Passwörter; Nachweis ohne Inhalte', async () => {
       const { d, admin, anna, m, typen, doks, notizen, rufe } = await aufbau(pg);
-      await rufe(admin, 'PUT', '/api/werkbank/datenschutz', { body: { verantwortlicher: 'Hausverwaltung Beispiel GmbH\nMusterweg 9, 01067 Dresden', empfaenger: 'Steuerberatung (Nebenkosten)', typen: { [typen.mieterTyp.id]: { person: true, zweck: 'Durchführung des Mietverhältnisses' }, [typen.vertragTyp.id]: { person: false, zweck: 'Mietvertrag (Art. 6 Abs. 1 lit. b DSGVO)' } } } });
+      await rufe(admin, 'PUT', '/api/werkbank/datenschutz', {
+        body: {
+          verantwortlicher: 'Hausverwaltung Beispiel GmbH\nMusterweg 9, 01067 Dresden',
+          empfaenger: 'Steuerberatung (Nebenkosten)',
+          typen: {
+            [typen.mieterTyp.id]: { person: true, zweck: 'Durchführung des Mietverhältnisses' },
+            [typen.vertragTyp.id]: { person: false, zweck: 'Mietvertrag (Art. 6 Abs. 1 lit. b DSGVO)' },
+          },
+        },
+      });
       // Nur für Administratoren (die Zugangsprüfung macht der HTTP-Teil anhand von `zugang`)
-      for (const p of ['/api/werkbank/datenschutz', '/api/werkbank/auskunft/vorschau', '/api/werkbank/auskunft', '/api/werkbank/auskunft/frist', '/api/werkbank/auskunft/:id/zip', '/api/werkbank/auskunft/:id']) {
-        assert.ok(routen(d, null as never).filter((x) => x.pfad === p).every((x) => x.zugang === 'admin'), p);
+      for (const p of [
+        '/api/werkbank/datenschutz',
+        '/api/werkbank/auskunft/vorschau',
+        '/api/werkbank/auskunft',
+        '/api/werkbank/auskunft/frist',
+        '/api/werkbank/auskunft/:id/zip',
+        '/api/werkbank/auskunft/:id',
+      ]) {
+        assert.ok(
+          routen(d, null as never)
+            .filter((x) => x.pfad === p)
+            .every((x) => x.zugang === 'admin'),
+          p,
+        );
       }
       void anna;
       const v = (await rufe(admin, 'POST', '/api/werkbank/auskunft/vorschau', { body: { mappeId: m.max.id } })).body as AuskunftVorschau;
@@ -282,19 +455,37 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(!v.mappen[m.hinweis.id] && !JSON.stringify(v).includes('Rückruf'));
       // Post „Zugeordnet zu“ ist ein Bezug: nur als Erwähnung vorgesehen, ganz aufnehmen geht bewusst
       assert.equal(v.baum.knoten.find((x) => x.id === m.post.id)?.nurBezug, true);
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { mappeId: m.max.id, geprueft: true, auswahl: { mappen: [m.max.id, m.hinweis.id], notizen: [notizen.notizOk.id, notizen.notizIntern.id] } } }), /nicht zur Sammlung/);
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft', {
+          body: {
+            mappeId: m.max.id,
+            geprueft: true,
+            auswahl: { mappen: [m.max.id, m.hinweis.id], notizen: [notizen.notizOk.id, notizen.notizIntern.id] },
+          },
+        }),
+        /nicht zur Sammlung/,
+      );
 
       const auswahl = {
         mappen: [m.max.id, m.v2.id, m.nk1.id, m.post.id],
         dokumente: [doks.nkGeschwaerzt.id, doks.vertragPdf.id],
-        notizen: [notizen.notizOk.id], historie: [m.max.id],
+        notizen: [notizen.notizOk.id],
+        historie: [m.max.id],
         ohneNotizen: [{ id: notizen.notizIntern.id, grund: 'Interne Bewertung (Art. 15 Abs. 4 DSGVO)' }],
       };
       const body = { mappeId: m.max.id, auswahl, geprueft: true, empfaenger: 'Steuerberatung', passwort: '' };
       // Nichts geht ungeprüft raus
       await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, geprueft: false } }), status(422));
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, auswahl: { ...auswahl, ohneNotizen: [] } } }), /Begründung/);
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, auswahl: { ...auswahl, mappen: [...auswahl.mappen, m.bea.id] } } }), /nicht zur Sammlung/);
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, auswahl: { ...auswahl, ohneNotizen: [] } } }),
+        /Begründung/,
+      );
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft', {
+          body: { ...body, auswahl: { ...auswahl, mappen: [...auswahl.mappen, m.bea.id] } },
+        }),
+        /nicht zur Sammlung/,
+      );
       await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { ...body, passwort: 'kurz' } }), /mindestens 10/);
 
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-zip-'));
@@ -305,12 +496,27 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.notfallkontakte.anlegen({ name: 'Bea', email: 'bea@example.net', telefon: '', notiz: '' }, ich);
       const daten = await d.datenschutzDienst.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
       assert.deepEqual(daten.gruende, ['Interne Bewertung (Art. 15 Abs. 4 DSGVO)']);
-      const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' }, mandant: 'Hausverwaltung' });
-      assert.equal(r.mappen, 4); assert.equal(r.dokumente, 2);
+      const r = await erzeugeAuskunft(daten, ordner, {
+        von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' },
+        mandant: 'Hausverwaltung',
+      });
+      assert.equal(r.mappen, 4);
+      assert.equal(r.dokumente, 2);
       assert.match(r.name, /^Auskunft-Max-Mustermieter-\d{4}-\d{2}-\d{2}$/);
       const zip = readFileSync(join(ordner, `${r.id}.zip`));
       const e = new Map(liesZip(zip).map((x) => [x.name.slice(r.name.length + 1), x]));
-      for (const n of ['Deckblatt.pdf', 'Uebersicht.html', 'Uebersicht.csv', 'manifest.json', 'LIESMICH.md', 'daten/mieter.csv', 'daten/notizen.jsonl', 'daten/historie.jsonl', 'struktur/mappentypen.json']) assert.ok(e.has(n), `${n} fehlt`);
+      for (const n of [
+        'Deckblatt.pdf',
+        'Uebersicht.html',
+        'Uebersicht.csv',
+        'manifest.json',
+        'LIESMICH.md',
+        'daten/mieter.csv',
+        'daten/notizen.jsonl',
+        'daten/historie.jsonl',
+        'struktur/mappentypen.json',
+      ])
+        assert.ok(e.has(n), `${n} fehlt`);
       const text = (n: string) => e.get(n)!.daten.toString('utf8');
       assert.ok(zip.subarray(0, 4).equals(Buffer.from('PK\x03\x04', 'latin1')));
       // Passwortfelder und verschlüsselte Werte nie – weder Klartext noch verschlüsselt, auch nicht als Feld
@@ -318,7 +524,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(!text('struktur/mappentypen.json').includes('Portal-Passwort'));
       assert.ok(!text('struktur/mappentypen.json').includes('berechtigungen'));
       const notfall = JSON.parse(text('struktur/notfallkontakte.json')) as Array<{ email: string; notiz: string }>;
-      assert.deepEqual(notfall.map((k) => [k.email, k.notiz]), [['max@example.net', 'Nachbar']]);
+      assert.deepEqual(
+        notfall.map((k) => [k.email, k.notiz]),
+        [['max@example.net', 'Nachbar']],
+      );
       assert.ok(!text('daten/mieter.csv').includes('portal'));
       // Nur Ausgewähltes: geschwärzte Fassung statt Original, abgewählte Notiz fehlt, Bea fehlt
       const namen = [...e.keys()];
@@ -336,7 +545,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(JSON.parse(text('manifest.json')).zweck, 'auskunft-art-15');
       assert.deepEqual(JSON.parse(text('struktur/benutzer.json')), []);
       // Nichts vom ganzen Haushalt (#683): kein Löschprotokoll, keine Synonyme, keine Automatisierungen.
-      for (const n of ['daten/loeschprotokoll.csv', 'struktur/synonyme.json', 'struktur/automatisierungen.json']) assert.ok(!e.has(n), `${n} gehört nicht in die Auskunft`);
+      for (const n of ['daten/loeschprotokoll.csv', 'struktur/synonyme.json', 'struktur/automatisierungen.json'])
+        assert.ok(!e.has(n), `${n} gehört nicht in die Auskunft`);
       const pdf = e.get('Deckblatt.pdf')!.daten;
       assert.ok(pdf.subarray(0, 5).toString() === '%PDF-');
       // Nachweis: Historie des Betroffenen ohne Inhalte
@@ -353,31 +563,67 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
     it('Nacharbeit (#472): Bezug-Mappen nur mit Art, Titel und Feld, ohne Dokumente und Notizen, keine Weitersammlung; nach oben nie wieder nach unten', async () => {
       const { d, admin, m, typen, rufe } = await aufbau(pg);
-      const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
+      const reg = [
+        { key: 'daten', name: 'Daten', art: 'felder' as const },
+        { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const },
+      ];
       // Firma der Person mit Muttergesellschaft und einem Firmenvertrag (gehört zur Firma, nicht zur Person)
-      const orgTyp = await d.mappentypen.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
-      await d.mappentypen.aendereTyp(orgTyp.id, { ...(await d.mappentypen.listeTypen()).find((t) => t.id === orgTyp.id)!, felder: [...orgTyp.felder, { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const orgTyp = await d.mappentypen.legeTypAn({
+        name: 'Organisation',
+        titelVorlage: '{name}',
+        felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+      });
+      await d.mappentypen.aendereTyp(orgTyp.id, {
+        ...(await d.mappentypen.listeTypen()).find((t) => t.id === orgTyp.id)!,
+        felder: [
+          ...orgTyp.felder,
+          { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
+        ],
+      });
       const mt = (await d.mappentypen.listeTypen()).find((t) => t.id === typen.mieterTyp.id)!;
-      await d.mappentypen.aendereTyp(mt.id, { ...mt, felder: [...mt.felder, { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      await d.mappentypen.aendereTyp(mt.id, {
+        ...mt,
+        felder: [
+          ...mt.felder,
+          { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
+        ],
+      });
       const konzern = await d.mappen.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Holding AG' } }, admin.id);
       const firma = await d.mappen.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Bau GmbH', mutter: konzern.id } }, admin.id);
       const mx = (await d.mappen.holeMappe(m.max.id)).mappe;
       await d.mappen.aendereMappe(m.max.id, { werte: { ...mx.werte, arbeitgeber: firma.id } }, admin.id);
       // Wartungsvertrag eines Dienstleisters mit Max nur als Ansprechpartner (Bezug), mit Dokument, Notiz und Betrag
-      const wartungTyp = await d.mappentypen.legeTypAn({ name: 'Wartungsvertrag', titelVorlage: '{nr}', felder: [
-        { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'betrag', label: 'Betrag', typ: 'text' },
-        { key: 'ansprechpartner', label: 'Ansprechpartner', typ: 'referenz', zielTyp: typen.mieterTyp.id, verweisart: 'bezug' },
-        { key: 'firma', label: 'Firma', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
-      ], register: reg });
-      const rechnungTyp = await d.mappentypen.legeTypAn({ name: 'Wartungsrechnung', titelVorlage: '{nr}', felder: [
-        { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: wartungTyp.id, verweisart: 'zugehoerigkeit' },
-      ] });
-      const wartung = await d.mappen.legeMappeAn({ typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } }, admin.id);
-      const wDok = (await d.dokumente.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)).dokument;
+      const wartungTyp = await d.mappentypen.legeTypAn({
+        name: 'Wartungsvertrag',
+        titelVorlage: '{nr}',
+        felder: [
+          { key: 'nr', label: 'Nummer', typ: 'text' },
+          { key: 'betrag', label: 'Betrag', typ: 'text' },
+          { key: 'ansprechpartner', label: 'Ansprechpartner', typ: 'referenz', zielTyp: typen.mieterTyp.id, verweisart: 'bezug' },
+          { key: 'firma', label: 'Firma', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
+        ],
+        register: reg,
+      });
+      const rechnungTyp = await d.mappentypen.legeTypAn({
+        name: 'Wartungsrechnung',
+        titelVorlage: '{nr}',
+        felder: [
+          { key: 'nr', label: 'Nummer', typ: 'text' },
+          { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: wartungTyp.id, verweisart: 'zugehoerigkeit' },
+        ],
+      });
+      const wartung = await d.mappen.legeMappeAn(
+        { typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } },
+        admin.id,
+      );
+      const wDok = (
+        await d.dokumente.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)
+      ).dokument;
       await d.mappenNotizen.legeNotizAn(wartung.id, 'Internes Besprechungsprotokoll zur Wartung', admin.id);
       const wr = await d.mappen.legeMappeAn({ typId: rechnungTyp.id, werte: { nr: 'WR-1', vertrag: wartung.id } }, admin.id);
 
-      const v = (await rufe(admin, 'POST', '/api/werkbank/auskunft/vorschau', { body: { mappeId: m.max.id, vorschlaege: true } })).body as AuskunftVorschau;
+      const v = (await rufe(admin, 'POST', '/api/werkbank/auskunft/vorschau', { body: { mappeId: m.max.id, vorschlaege: true } }))
+        .body as AuskunftVorschau;
       const k = new Map(v.baum.knoten.map((x) => [x.id, x]));
       const kw = k.get(wartung.id)!;
       assert.equal(kw.nurBezug, true);
@@ -387,7 +633,11 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(k.get(firma.id)?.ueber?.richtung, 'verweistAuf');
       assert.equal(k.get(konzern.id)?.ueber?.vonId, firma.id);
       assert.ok(!k.get(firma.id)?.nurBezug);
-      assert.equal(kinderVon(v.baum, firma.id).filter((x) => x.ueber?.richtung === 'verwiesenVon').length, 0, 'nach oben nie wieder nach unten');
+      assert.equal(
+        kinderVon(v.baum, firma.id).filter((x) => x.ueber?.richtung === 'verwiesenVon').length,
+        0,
+        'nach oben nie wieder nach unten',
+      );
       // Zugehörige Mappen ganz (Mietvertrag mit Abrechnungen)
       assert.ok(k.has(m.nk1.id) && !k.get(m.v2.id)?.nurBezug);
       assert.ok(!('vorschlaege' in v), 'auch mit vorschlaege: true keine Vorschläge');
@@ -396,26 +646,54 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-bezug-'));
       const basis = { mappeId: m.max.id, geprueft: true, passwort: '' };
       // Erwähnung nur von Bezug-Mappen
-      await assert.rejects(d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] } }, z, { mandant: 'H', version: '0' }), /Bezug/);
-      const ohneNotiz = (await d.mappen.holeMappe(m.max.id)).notizen.map((n) => ({ id: n.id, grund: 'interne Bewertung – Art. 15 Abs. 4' }));
-      const daten = await d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } }, z, { mandant: 'H', version: '0' });
+      await assert.rejects(
+        d.datenschutzDienst.auskunftDaten(
+          {
+            ...basis,
+            auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] },
+          },
+          z,
+          { mandant: 'H', version: '0' },
+        ),
+        /Bezug/,
+      );
+      const ohneNotiz = (await d.mappen.holeMappe(m.max.id)).notizen.map((n) => ({
+        id: n.id,
+        grund: 'interne Bewertung – Art. 15 Abs. 4',
+      }));
+      const daten = await d.datenschutzDienst.auskunftDaten(
+        { ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } },
+        z,
+        { mandant: 'H', version: '0' },
+      );
       assert.equal(daten.anzahl.erwaehnungen, 2);
-      assert.deepEqual(daten.erwaehnungen.find((e) => e.mappeId === wartung.id), { mappeId: wartung.id, typ: 'Wartungsvertrag', titel: 'W-1', feld: 'Ansprechpartner', richtung: 'verwiesenVon' });
+      assert.deepEqual(
+        daten.erwaehnungen.find((e) => e.mappeId === wartung.id),
+        { mappeId: wartung.id, typ: 'Wartungsvertrag', titel: 'W-1', feld: 'Ansprechpartner', richtung: 'verwiesenVon' },
+      );
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera', email: 'v@example.org' }, mandant: 'H' });
       const zip = readFileSync(join(ordner, `${r.id}.zip`));
       const e = new Map(liesZip(zip).map((x) => [x.name.slice(r.name.length + 1), x]));
       const html = e.get('Uebersicht.html')!.daten.toString('utf8');
       assert.match(html, /als „Ansprechpartner“ eingetragen in Wartungsvertrag „W-1“/);
       assert.match(e.get('Uebersicht.csv')!.daten.toString('utf8'), /als „Ansprechpartner“ eingetragen in Wartungsvertrag „W-1“/);
-      for (const geheim of ['Geheimpreis', 'Besprechungsprotokoll', 'Wartung-intern.pdf', 'WR-1']) assert.ok(!zip.includes(Buffer.from(geheim)), `${geheim} darf nicht hinaus`);
+      for (const geheim of ['Geheimpreis', 'Besprechungsprotokoll', 'Wartung-intern.pdf', 'WR-1'])
+        assert.ok(!zip.includes(Buffer.from(geheim)), `${geheim} darf nicht hinaus`);
       assert.ok(![...e.keys()].some((n) => n.includes('Wartungsvertrag/')), 'kein Ordner für die Bezug-Mappe');
 
       // Anrede für Dritte (#474): Vorgabe du – mit „Sie“ ändern sich Deckblatt, Übersicht und LIESMICH.
       assert.match(html, /Hier bist du genannt/);
       assert.match(e.get('LIESMICH.md')!.daten.toString('utf8'), /deine Rechte/);
       const deckDu = pdfText(e.get('Deckblatt.pdf')!.daten);
-      if (deckDu !== null) { assert.match(deckDu, /zu deiner Person/); assert.match(deckDu, /6\. Deine Rechte/); assert.match(deckDu, /Außerdem bist du in 2 weiteren Einträgen genannt/); }
-      const rSie = await erzeugeAuskunft({ ...daten, datenschutz: liesDatenschutz({ ...daten.datenschutz, anrede: 'sie' }) }, ordner, { von: { id: admin.id, name: 'Vera', email: 'v@example.org' }, mandant: 'H' });
+      if (deckDu !== null) {
+        assert.match(deckDu, /zu deiner Person/);
+        assert.match(deckDu, /6\. Deine Rechte/);
+        assert.match(deckDu, /Außerdem bist du in 2 weiteren Einträgen genannt/);
+      }
+      const rSie = await erzeugeAuskunft({ ...daten, datenschutz: liesDatenschutz({ ...daten.datenschutz, anrede: 'sie' }) }, ordner, {
+        von: { id: admin.id, name: 'Vera', email: 'v@example.org' },
+        mandant: 'H',
+      });
       const eSie = new Map(liesZip(readFileSync(join(ordner, `${rSie.id}.zip`))).map((x) => [x.name.slice(rSie.name.length + 1), x]));
       const duWort = /\b([Dd]u|[Dd]ich|[Dd]ir|[Dd]ein(e[mnrs]?)?)\b/;
       const htmlSie = eSie.get('Uebersicht.html')!.daten.toString('utf8');
@@ -423,16 +701,39 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.match(htmlSie, /Verweis auf Sie – weitere Angaben daraus betreffen Sie nicht/);
       assert.doesNotMatch(htmlSie, duWort);
       const liesSie = eSie.get('LIESMICH.md')!.daten.toString('utf8');
-      assert.match(liesSie, /Ihre Rechte/); assert.match(liesSie, /in denen Sie nur genannt sind/);
+      assert.match(liesSie, /Ihre Rechte/);
+      assert.match(liesSie, /in denen Sie nur genannt sind/);
       assert.doesNotMatch(liesSie, duWort);
       const deckSie = pdfText(eSie.get('Deckblatt.pdf')!.daten);
       if (deckSie !== null) {
-        for (const x of [/zu Ihrer Person/, /6\. Ihre Rechte/, /Außerdem sind Sie in 2 weiteren Einträgen genannt \(gespeichert ist dort nur der Verweis auf Sie\)/, /Geschäftsbeziehung mit Ihnen/, /Sie haben das Recht auf Berichtigung/]) assert.match(deckSie, x);
+        for (const x of [
+          /zu Ihrer Person/,
+          /6\. Ihre Rechte/,
+          /Außerdem sind Sie in 2 weiteren Einträgen genannt \(gespeichert ist dort nur der Verweis auf Sie\)/,
+          /Geschäftsbeziehung mit Ihnen/,
+          /Sie haben das Recht auf Berichtigung/,
+        ])
+          assert.match(deckSie, x);
         assert.doesNotMatch(deckSie, duWort);
       }
 
       // Bewusst ganz aufnehmen: dann mit Dokument und Angaben
-      const ganz = await d.datenschutzDienst.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.mappen.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
+      const ganz = await d.datenschutzDienst.auskunftDaten(
+        {
+          ...basis,
+          auswahl: {
+            mappen: [m.max.id, wartung.id],
+            dokumente: [wDok.id],
+            ohneNotizen: [
+              ...ohneNotiz,
+              ...(await d.mappen.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' })),
+            ],
+            erwaehnungen: [wartung.id],
+          },
+        },
+        z,
+        { mandant: 'H', version: '0' },
+      );
       assert.equal(ganz.erwaehnungen.length, 0, 'ganz aufgenommen – keine zusätzliche Erwähnung');
       assert.ok(ganz.mappen.some((x) => x.id === wartung.id && x.werte.betrag === 'Geheimpreis 9.999 EUR'));
     });
@@ -440,7 +741,12 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('über den Hintergrundauftrag: verschlüsselt, Herunterladen löscht die Datei; Frist als Aufgabe', async () => {
       const { d, admin, m, doks, notizen, rufe } = await aufbau(pg);
       const passwort = 'Sommer-im-Garten-2026';
-      const auswahl = { mappen: [m.max.id, m.v2.id], dokumente: [doks.vertragPdf.id], notizen: [notizen.notizOk.id, notizen.notizIntern.id], historie: [] };
+      const auswahl = {
+        mappen: [m.max.id, m.v2.id],
+        dokumente: [doks.vertragPdf.id],
+        notizen: [notizen.notizOk.id, notizen.notizIntern.id],
+        historie: [],
+      };
       const a = await rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { mappeId: m.max.id, auswahl, geprueft: true, passwort } });
       assert.equal(a.status, 202);
       const fertig = await d.auftraege.warte();
@@ -457,7 +763,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(zip.length, dl.datei!.groesse);
       // Verschlüsselt: eine einzige Datei „Auskunft.zip“ darin – so verraten auch die Dateinamen nichts.
       const eintraege = liesZip(zip);
-      assert.deepEqual(eintraege.map((x) => [x.name, x.methode]), [['Auskunft.zip', 99]]);
+      assert.deepEqual(
+        eintraege.map((x) => [x.name, x.methode]),
+        [['Auskunft.zip', 99]],
+      );
       assert.ok(!zip.includes(Buffer.from('Mustermieter')) && !zip.includes(Buffer.from('Mietvertrag')));
       assert.match(dl.datei!.name, /^Auskunft-\d{4}-\d{2}-\d{2}\.zip$/);
       const innen = liesZip(aesAuf(eintraege[0].daten, passwort));
@@ -465,9 +774,14 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(deck.daten.subarray(0, 5).toString(), '%PDF-');
       assert.ok(innen.some((x) => x.name.endsWith('/Mietvertrag.pdf')));
       await new Promise((r) => setTimeout(r, 50));
-      await assert.rejects(rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: stand.id } }), status(404), 'nach dem Herunterladen gelöscht');
+      await assert.rejects(
+        rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: stand.id } }),
+        status(404),
+        'nach dem Herunterladen gelöscht',
+      );
       // Frist: Aufgabe „Auskunft an … bis Eingang + 1 Monat“
-      const auf = (await rufe(admin, 'POST', '/api/werkbank/auskunft/frist', { body: { mappeId: m.max.id, eingang: '2026-01-31' } })).body as { datum: string; text: string; empfaengerId: string };
+      const auf = (await rufe(admin, 'POST', '/api/werkbank/auskunft/frist', { body: { mappeId: m.max.id, eingang: '2026-01-31' } }))
+        .body as { datum: string; text: string; empfaengerId: string };
       assert.equal(auf.datum, '2026-02-28');
       assert.match(auf.text, /Auskunft nach Art\. 15 DSGVO an Max Mustermieter bis 28\.02\.2026/);
       assert.equal(auf.empfaengerId, admin.id);

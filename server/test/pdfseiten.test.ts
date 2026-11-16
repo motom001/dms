@@ -32,15 +32,21 @@ const drehungen = async (b: Buffer) => (await seitenInfo(b)).drehungen;
 async function aufbau(versionierung = true) {
   const dateien = speicherDateien();
   const d = new Dienst(speicherRepo(), dateien, { einstellungen: speicherEinstellungen() });
-  const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung },
-  ] });
+  const typ = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'dokumente', name: 'Unterlagen', art: 'dokumente', versionierung },
+    ],
+  });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Strom' } }, ANNA);
-  const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf', typ: 'application/pdf' }, await pdf(5), ANNA)).dokument;
+  const doc = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'Scan.pdf', typ: 'application/pdf' }, await pdf(5), ANNA))
+    .dokument;
   const inhalt = async (id: string) => {
     const s = (await d.dokumente.dokumentInhalt(id)).inhalt;
-    return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]);
+    return Buffer.isBuffer(s) ? s : Buffer.concat((await s.toArray()) as Buffer[]);
   };
   return { d, typ, m, doc, inhalt };
 }
@@ -62,7 +68,10 @@ describe('PDF bearbeiten (#335)', () => {
     const { d, m, doc, inhalt } = await aufbau();
     const info = await d.pdfBearbeiten.pdfSeiten(doc.id);
     assert.equal(info.anzahl, 5);
-    await assert.rejects(d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4, 5].map((nr) => ({ nr })) }, ANNA), status(422, /nichts geändert/));
+    await assert.rejects(
+      d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4, 5].map((nr) => ({ nr })) }, ANNA),
+      status(422, /nichts geändert/),
+    );
     const r = await d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [{ nr: 3 }, { nr: 1, drehung: 90 }, { nr: 5 }] }, ANNA);
     assert.equal(r.dokumente.length, 1);
     assert.equal(r.dokumente[0].id, doc.id, 'gleiches Dokument');
@@ -81,19 +90,28 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('ohne Versionierung nur nach Rückfrage; das bisherige kommt in den Papierkorb', async () => {
     const { d, m, doc, inhalt } = await aufbau(false);
-    await assert.rejects(d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [{ nr: 2 }] }, ANNA), (e) => e instanceof Fachfehler && e.status === 409 && (e.details as { rueckfrage?: boolean }).rueckfrage === true);
+    await assert.rejects(
+      d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [{ nr: 2 }] }, ANNA),
+      (e) => e instanceof Fachfehler && e.status === 409 && (e.details as { rueckfrage?: boolean }).rueckfrage === true,
+    );
     const r = await d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [{ nr: 2 }], bestaetigt: true }, ANNA);
     assert.notEqual(r.dokumente[0].id, doc.id);
     assert.equal(r.dokumente[0].name, 'Scan.pdf');
     assert.deepEqual(await breiten(await inhalt(r.dokumente[0].id)), [2]);
-    assert.deepEqual((await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name), ['Scan.pdf']);
+    assert.deepEqual(
+      (await d.mappen.holeMappe(m.id)).dokumente.map((x) => x.name),
+      ['Scan.pdf'],
+    );
     assert.equal((await d.papierkorbVerwaltung.papierkorbDokumente({ id: ANNA, rolle: 'mitglied' })).length, 1, 'Original im Papierkorb');
   });
 
   it('teilen in einer Mappe: Teil 1 als neue Version, weitere Teile als eigene Dokumente', async () => {
     const { d, m, doc, inhalt } = await aufbau();
     const r = await d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4, 5].map((nr) => ({ nr })), teile: [2, 4] }, ANNA);
-    assert.deepEqual(r.dokumente.map((x) => x.name), ['Scan (Teil 1).pdf', 'Scan (Teil 2).pdf', 'Scan (Teil 3).pdf']);
+    assert.deepEqual(
+      r.dokumente.map((x) => x.name),
+      ['Scan (Teil 1).pdf', 'Scan (Teil 2).pdf', 'Scan (Teil 3).pdf'],
+    );
     assert.equal(r.dokumente[0].id, doc.id);
     assert.deepEqual(await breiten(await inhalt(r.dokumente[1].id)), [3, 4]);
     assert.deepEqual(await breiten(await inhalt(r.dokumente[2].id)), [5]);
@@ -105,15 +123,22 @@ describe('PDF bearbeiten (#335)', () => {
     const { d, inhalt } = await aufbau();
     const post = await d.post.legePostAn({ betreff: 'Sammelscan', absender: 'Scanner' }, { id: ANNA, name: 'Anna' });
     const reg = { key: await postRegister(d, post.typId) };
-    const doc = (await d.dokumente.ladeHoch(post.id, { register: reg.key, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(4), ANNA)).dokument;
+    const doc = (await d.dokumente.ladeHoch(post.id, { register: reg.key, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(4), ANNA))
+      .dokument;
     const r = await d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4].map((nr) => ({ nr })), teile: [1, 3] }, ANNA);
     assert.equal(r.posten.length, 3);
-    assert.deepEqual(r.posten.map((p) => p.werte.betreff), ['Sammelscan (Teil 1)', 'Sammelscan (Teil 2)', 'Sammelscan (Teil 3)']);
+    assert.deepEqual(
+      r.posten.map((p) => p.werte.betreff),
+      ['Sammelscan (Teil 1)', 'Sammelscan (Teil 2)', 'Sammelscan (Teil 3)'],
+    );
     assert.ok(r.posten.every((p) => auswahlText(p.werte.stand) === POST_STAND.neu && p.werte.von === 'Scanner'));
     assert.deepEqual(await breiten(await inhalt(r.dokumente[1].id)), [2, 3]);
     const alt = await d.mappen.holeMappe(post.id);
     assert.equal(auswahlText(alt.mappe.werte.stand), POST_STAND.erledigt);
-    assert.deepEqual(alt.mappe.werte.bezug, r.posten.map((p) => p.id));
+    assert.deepEqual(
+      alt.mappe.werte.bezug,
+      r.posten.map((p) => p.id),
+    );
     assert.equal(alt.dokumente.length, 1, 'die Ausgangspost behält ihr Dokument');
     assert.deepEqual(await breiten(await inhalt(doc.id)), [1, 2, 3, 4], 'unverändert');
     assert.ok((await d.mappenHistorie.historie(r.posten[0].id)).some((h) => h.art === 'post_geteilt' && h.daten.post === post.id));
@@ -124,8 +149,10 @@ describe('PDF bearbeiten (#335)', () => {
     const p1 = await d.post.legePostAn({ betreff: 'Brief Seite 1' }, { id: ANNA, name: 'Anna' });
     const p2 = await d.post.legePostAn({ betreff: 'Brief Seite 2' }, { id: ANNA, name: 'Anna' });
     const reg = await postRegister(d, p1.typId);
-    const a = (await d.dokumente.ladeHoch(p1.id, { register: reg, name: 'Brief.pdf', typ: 'application/pdf' }, await pdf(2, 1), ANNA)).dokument;
-    const b = (await d.dokumente.ladeHoch(p2.id, { register: reg, name: 'Brief2.pdf', typ: 'application/pdf' }, await pdf(1, 3), ANNA)).dokument;
+    const a = (await d.dokumente.ladeHoch(p1.id, { register: reg, name: 'Brief.pdf', typ: 'application/pdf' }, await pdf(2, 1), ANNA))
+      .dokument;
+    const b = (await d.dokumente.ladeHoch(p2.id, { register: reg, name: 'Brief2.pdf', typ: 'application/pdf' }, await pdf(1, 3), ANNA))
+      .dokument;
     await assert.rejects(d.pdfBearbeiten.fuegePdfZusammen({ dokumente: [a.id] }, ANNA), status(422, /mindestens zwei/));
     const r = await d.pdfBearbeiten.fuegePdfZusammen({ dokumente: [a.id, b.id], originaleEntfernen: true }, ANNA);
     assert.equal(r.dokument.name, 'Brief.pdf', 'Name des ersten ohne „(2)“');
@@ -140,23 +167,29 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('zusammenfügen ohne Entfernen lässt die Originale; Nicht-PDFs werden abgelehnt', async () => {
     const { d, m, doc } = await aufbau();
-    const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, await pdf(1, 9), ANNA)).dokument;
+    const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, await pdf(1, 9), ANNA))
+      .dokument;
     const r = await d.pdfBearbeiten.fuegePdfZusammen({ dokumente: [doc.id, b.id], name: 'Alles' }, ANNA);
     assert.equal(r.dokument.name, 'Alles.pdf');
     assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 3);
-    const txt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'n.txt', typ: 'text/plain' }, Buffer.from('hallo'), ANNA)).dokument;
+    const txt = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'n.txt', typ: 'text/plain' }, Buffer.from('hallo'), ANNA))
+      .dokument;
     await assert.rejects(d.pdfBearbeiten.fuegePdfZusammen({ dokumente: [doc.id, txt.id] }, ANNA), status(422, /kein PDF/));
     await assert.rejects(d.pdfBearbeiten.pdfSeiten(txt.id), status(422, /kein PDF/));
   });
 
   it('Seitenbilder: einmal erzeugt, für die letzten Dokumente gemerkt', async () => {
     let laeufe = 0;
-    const sb = new Seitenbilder(2, async () => { laeufe++; return [Buffer.from('s1'), Buffer.from('s2')]; });
+    const sb = new Seitenbilder(2, async () => {
+      laeufe++;
+      return [Buffer.from('s1'), Buffer.from('s2')];
+    });
     const quelle = async () => Buffer.alloc(0);
     assert.equal(String(await sb.bild('a', 2, quelle)), 's2');
     assert.equal(await sb.bild('a', 3, quelle), null);
     assert.equal(laeufe, 1);
-    await sb.bild('b', 1, quelle); await sb.bild('c', 1, quelle);
+    await sb.bild('b', 1, quelle);
+    await sb.bild('c', 1, quelle);
     await sb.bild('a', 1, quelle);
     assert.equal(laeufe, 4, '„a“ war verdrängt');
     const zwei = await fuegeZusammen([await pdf(1), await pdf(1, 2)]);
@@ -165,7 +198,29 @@ describe('PDF bearbeiten (#335)', () => {
 
   it('Ereignisse (#404): teilen, zusammenfügen und Post teilen melden jedes neue Dokument – nicht die eigenen eines Pakets', async () => {
     const { d, m, doc } = await aufbau(false);
-    await d.kern.repo.speicherePaket({ id: 'ocr', name: 'OCR', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: '', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
+    await d.kern.repo.speicherePaket({
+      id: 'ocr',
+      name: 'OCR',
+      version: '1.0.0',
+      beschreibung: '',
+      lizenz: 'MIT',
+      autor: { name: 'T', github: 't' },
+      herkunft: { art: 'hochgeladen', von: null, am: '' },
+      installiert: '',
+      installiertVon: null,
+      aktualisiert: null,
+      aktualisiertVon: null,
+      typen: {},
+      sichten: {},
+      abhaengigkeiten: {},
+      code: true,
+      laeufer: {
+        sprache: 'c',
+        ereignisse: ['dokument.hochgeladen', 'post.angelegt'],
+        rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' },
+        netz: [],
+      },
+    });
     const neue = async () => {
       await d.ereignisse.verteile();
       const liste = await d.kern.repo.faelligeEreignisse(100);
@@ -173,21 +228,42 @@ describe('PDF bearbeiten (#335)', () => {
       return liste.map((e) => `${e.art}:${e.art === 'post.angelegt' ? e.daten.mappe : e.daten.dokument}`);
     };
     // Teilen in einer Mappe ohne Versionierung: alle drei Teile sind neue Dokumente.
-    const r1 = await d.pdfBearbeiten.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4, 5].map((nr) => ({ nr })), teile: [2, 4], bestaetigt: true }, ANNA);
-    assert.deepEqual(await neue(), r1.dokumente.map((x) => `dokument.hochgeladen:${x.id}`));
+    const r1 = await d.pdfBearbeiten.bearbeitePdf(
+      doc.id,
+      { seiten: [1, 2, 3, 4, 5].map((nr) => ({ nr })), teile: [2, 4], bestaetigt: true },
+      ANNA,
+    );
+    assert.deepEqual(
+      await neue(),
+      r1.dokumente.map((x) => `dokument.hochgeladen:${x.id}`),
+    );
     // Zusammenfügen: das Ergebnis.
     const r2 = await d.pdfBearbeiten.fuegePdfZusammen({ dokumente: [r1.dokumente[1].id, r1.dokumente[2].id], name: 'Zusammen' }, ANNA);
     assert.deepEqual(await neue(), [`dokument.hochgeladen:${r2.dokument.id}`]);
     // Post teilen: je Teil die neue Post und ihr Dokument.
     const post = await d.post.legePostAn({ betreff: 'Stapel' }, { id: ANNA, name: 'Anna' });
-    const pdoc = (await d.dokumente.ladeHoch(post.id, { register: await postRegister(d, post.typId), name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), ANNA)).dokument;
+    const pdoc = (
+      await d.dokumente.ladeHoch(
+        post.id,
+        { register: await postRegister(d, post.typId), name: 'Stapel.pdf', typ: 'application/pdf' },
+        await pdf(2),
+        ANNA,
+      )
+    ).dokument;
     await neue();
     const r3 = await d.pdfBearbeiten.bearbeitePdf(pdoc.id, { seiten: [1, 2].map((nr) => ({ nr })), teile: [0, 1] }, ANNA);
-    assert.deepEqual(await neue(), r3.posten.flatMap((p, i) => [`post.angelegt:${p.id}`, `dokument.hochgeladen:${r3.dokumente[i].id}`]));
+    assert.deepEqual(
+      await neue(),
+      r3.posten.flatMap((p, i) => [`post.angelegt:${p.id}`, `dokument.hochgeladen:${r3.dokumente[i].id}`]),
+    );
     // Was das Dienstkonto des Pakets selbst teilt oder zusammenfügt, meldet das DMS ihm nicht.
     const konto = '00000000-0000-4000-8000-0000000000cc';
     d.kern.paketKonten.set(konto, 'ocr');
-    const r4 = await d.pdfBearbeiten.bearbeitePdf(r2.dokument.id, { seiten: [1, 2, 3].map((nr) => ({ nr })), teile: [0, 1], bestaetigt: true }, konto);
+    const r4 = await d.pdfBearbeiten.bearbeitePdf(
+      r2.dokument.id,
+      { seiten: [1, 2, 3].map((nr) => ({ nr })), teile: [0, 1], bestaetigt: true },
+      konto,
+    );
     await d.pdfBearbeiten.fuegePdfZusammen({ dokumente: r4.dokumente.map((x) => x.id) }, konto);
     assert.deepEqual(await neue(), []);
     assert.equal((await d.mappen.holeMappe(m.id)).dokumente.length, 6, 'die Änderungen des Pakets sind trotzdem da');

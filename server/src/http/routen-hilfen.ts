@@ -29,8 +29,12 @@ import { MB } from '../grenzen';
 import type { Anfrage, Antwort, RoutenExtras } from '../routen';
 
 const L = {
-  konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
-  dokumente: protokoll.modul('dokumente'), system: protokoll.modul('system'), mail: protokoll.modul('mail'),
+  konto: protokoll.modul('konto'),
+  ablage: protokoll.modul('ablage'),
+  werkbank: protokoll.modul('werkbank'),
+  dokumente: protokoll.modul('dokumente'),
+  system: protokoll.modul('system'),
+  mail: protokoll.modul('mail'),
   datenschutz: protokoll.modul('datenschutz'),
 };
 
@@ -48,9 +52,15 @@ function archivProtokoll(t: { name: string; archiv?: Mappentyp['archiv'] }, vorh
   const nachher = t.archiv ?? null;
   if (JSON.stringify(vorher) === JSON.stringify(nachher)) return;
   const leer = [vorher, nachher].some((x) => x?.leererStichtag === 'laeuftNicht');
-  const zustand = (x: Mappentyp['archiv'] | null) => (x
-    ? { an: true, jahre: x.jahre, stichtag: x.stichtag ?? 'Anlagedatum', ...(leer && x.stichtag ? { leererStichtag: x.leererStichtag === 'laeuftNicht' ? 'läuft noch nicht ab' : 'ab Anlagedatum' } : {}) }
-    : { an: false });
+  const zustand = (x: Mappentyp['archiv'] | null) =>
+    x
+      ? {
+          an: true,
+          jahre: x.jahre,
+          stichtag: x.stichtag ?? 'Anlagedatum',
+          ...(leer && x.stichtag ? { leererStichtag: x.leererStichtag === 'laeuftNicht' ? 'läuft noch nicht ab' : 'ab Anlagedatum' } : {}),
+        }
+      : { an: false };
   const daten = { typ: t.name, vorher: zustand(vorher), nachher: zustand(nachher) };
   if (!nachher) L.werkbank.warn('Archivmodus ausgeschaltet', daten);
   else L.werkbank.info(vorher ? 'Archivmodus geändert' : 'Archivmodus eingeschaltet', daten);
@@ -70,13 +80,30 @@ const ich = (a: Anfrage) => {
 function belegungVon(x: RoutenExtras) {
   const b = x.verbindungen?.belegung();
   if (!b) return {};
-  return { belegung: { pool: b.max, belegt: b.belegt, reserviert: b.reserviert, wartend: b.wartend, sperren: b.sperren, ...(x.verbund?.mehrere ? { prozess: x.verbund.nr } : {}) } };
+  return {
+    belegung: {
+      pool: b.max,
+      belegt: b.belegt,
+      reserviert: b.reserviert,
+      wartend: b.wartend,
+      sperren: b.sperren,
+      ...(x.verbund?.mehrere ? { prozess: x.verbund.nr } : {}),
+    },
+  };
 }
 
 /** Grundlage von `auto` (#1259) für den Systemzustand: „automatisch: 6 Kerne, 16 GB → 2 Prozesse“. */
 function automatisch(pe: NonNullable<RoutenExtras['prozessEinstellung']>): Pick<Grenzwert, 'automatisch'> {
   if (pe.quelle !== 'auto') return {};
-  return { automatisch: { kerne: pe.kerne, speicher: pe.speicher, herkunft: pe.herkunft ?? { kerne: 'rechner', speicher: 'rechner' }, begrenzt: pe.begrenzt ?? null, vorgabe: !!pe.autoVorgabe } };
+  return {
+    automatisch: {
+      kerne: pe.kerne,
+      speicher: pe.speicher,
+      herkunft: pe.herkunft ?? { kerne: 'rechner', speicher: 'rechner' },
+      begrenzt: pe.begrenzt ?? null,
+      vorgabe: !!pe.autoVorgabe,
+    },
+  };
 }
 
 /**
@@ -91,11 +118,44 @@ function grenzenUndEngpaesse(x: RoutenExtras) {
   const p = x.verbund?.mehrere ? { prozesse: x.verbund.anzahl } : {};
   const pe = x.prozessEinstellung;
   const grenzen: Grenzwerte = {
-    ...(pe ? { prozesse: { wert: x.verbund?.anzahl ?? pe.anzahl, quelle: pe.quelle, variable: VARIABLE.prozesse, min: 1, max: PROZESSE_MAX, ...automatisch(pe) } } : {}),
+    ...(pe
+      ? {
+          prozesse: {
+            wert: x.verbund?.anzahl ?? pe.anzahl,
+            quelle: pe.quelle,
+            variable: VARIABLE.prozesse,
+            min: 1,
+            max: PROZESSE_MAX,
+            ...automatisch(pe),
+          },
+        }
+      : {}),
     arbeiter: { wert: a.aus ? 0 : a.groesse, quelle: a.quelle, variable: VARIABLE.arbeiter, min: 0, max: ARBEITER_MAX, ...p },
     // #874: Verbindungen gelten für alle Prozesse zusammen – Wert ist die Summe, dazu die Anteile.
-    ...(v ? { verbindungen: { wert: x.verbindungen?.aufteilung?.gesamt ?? v.max, quelle: v.quelle, variable: VARIABLE.verbindungen, min: VERBINDUNGEN_MIN, max: VERBINDUNGEN_MAX, ...(x.verbund?.mehrere && x.verbindungen?.aufteilung ? { aufteilung: { leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere, prozesse: x.verbund.anzahl } } : {}), ...belegungVon(x) } } : {}),
-    ...(u ? { anfragen: { wert: u.max, quelle: u.quelle, variable: VARIABLE.anfragen, min: MAX_ANFRAGEN_MIN, max: MAX_ANFRAGEN_MAX, ...p } } : {}),
+    ...(v
+      ? {
+          verbindungen: {
+            wert: x.verbindungen?.aufteilung?.gesamt ?? v.max,
+            quelle: v.quelle,
+            variable: VARIABLE.verbindungen,
+            min: VERBINDUNGEN_MIN,
+            max: VERBINDUNGEN_MAX,
+            ...(x.verbund?.mehrere && x.verbindungen?.aufteilung
+              ? {
+                  aufteilung: {
+                    leiter: x.verbindungen.aufteilung.leiter,
+                    andere: x.verbindungen.aufteilung.andere,
+                    prozesse: x.verbund.anzahl,
+                  },
+                }
+              : {}),
+            ...belegungVon(x),
+          },
+        }
+      : {}),
+    ...(u
+      ? { anfragen: { wert: u.max, quelle: u.quelle, variable: VARIABLE.anfragen, min: MAX_ANFRAGEN_MIN, max: MAX_ANFRAGEN_MAX, ...p } }
+      : {}),
   };
   const engpaesse = engpaesseAus({
     schleife: !!x.messung?.auslastung.warnung(),
@@ -110,7 +170,16 @@ function grenzenUndEngpaesse(x: RoutenExtras) {
  * Mehrere Prozesse (#745): Stand jedes Prozesses – Arbeitsspeicher (Pss aus /proc, sonst RSS), Rechenzeit, Wartezeit der
  * Ereignisschleife und laufende Anfragen; dazu der Hauptprozess. null mit einem Prozess.
  */
-async function prozessZeilen(x: RoutenExtras, frage: 'prozess.stand' | 'prozess.last' = 'prozess.stand'): Promise<{ zeilen: ProzessZeile[]; staende: Array<Prozessstand | null>; halde: Record<number, number | null>; rssMb: number; speicherMb: number } | null> {
+async function prozessZeilen(
+  x: RoutenExtras,
+  frage: 'prozess.stand' | 'prozess.last' = 'prozess.stand',
+): Promise<{
+  zeilen: ProzessZeile[];
+  staende: Array<Prozessstand | null>;
+  halde: Record<number, number | null>;
+  rssMb: number;
+  speicherMb: number;
+} | null> {
   const v = x.verbund;
   if (!v?.mehrere) return null;
   const alle = await v.frageAlle<Prozessstand>(frage);
@@ -119,18 +188,37 @@ async function prozessZeilen(x: RoutenExtras, frage: 'prozess.stand' | 'prozess.
   if (v.primaer) {
     const r = liesRss(dateiLeser, v.primaer);
     rss += r ?? 0;
-    zeilen.push({ nr: 0, pid: v.primaer, rolle: 'haupt', speicher: liesPss(dateiLeser, v.primaer) ?? r, cpu: null, schleifeP99: null, anfragen: null });
+    zeilen.push({
+      nr: 0,
+      pid: v.primaer,
+      rolle: 'haupt',
+      speicher: liesPss(dateiLeser, v.primaer) ?? r,
+      cpu: null,
+      schleifeP99: null,
+      anfragen: null,
+    });
   }
   for (const p of alle) {
-    rss += p.wert ? p.wert.rssMb * MB : liesRss(dateiLeser, p.pid) ?? 0;
+    rss += p.wert ? p.wert.rssMb * MB : (liesRss(dateiLeser, p.pid) ?? 0);
     zeilen.push({
-      nr: p.nr, pid: p.pid, rolle: p.leiter ? 'leiter' : 'anfragen', speicher: liesPss(dateiLeser, p.pid) ?? (p.wert ? p.wert.rssMb * MB : null),
-      cpu: p.wert?.cpu ?? null, schleifeP99: p.wert?.schleife?.p99 ?? null, anfragen: p.wert?.anfragen.laufend ?? null,
+      nr: p.nr,
+      pid: p.pid,
+      rolle: p.leiter ? 'leiter' : 'anfragen',
+      speicher: liesPss(dateiLeser, p.pid) ?? (p.wert ? p.wert.rssMb * MB : null),
+      cpu: p.wert?.cpu ?? null,
+      schleifeP99: p.wert?.schleife?.p99 ?? null,
+      anfragen: p.wert?.anfragen.laufend ?? null,
     });
   }
   // Summe für den Lasttest: Pss (geteilte Seiten anteilig – die Summe der RSS zählte den Code jedes Prozesses voll).
   const pss = zeilen.every((z) => z.speicher !== null) ? zeilen.reduce((n, z) => n + z.speicher!, 0) : rss;
-  return { zeilen, staende: alle.map((p) => p.wert), halde: Object.fromEntries(alle.map((p) => [p.nr, p.wert?.heapMb ?? null])), rssMb: Math.round(rss / MB), speicherMb: Math.round(pss / MB) };
+  return {
+    zeilen,
+    staende: alle.map((p) => p.wert),
+    halde: Object.fromEntries(alle.map((p) => [p.nr, p.wert?.heapMb ?? null])),
+    rssMb: Math.round(rss / MB),
+    speicherMb: Math.round(pss / MB),
+  };
 }
 
 /**
@@ -141,14 +229,33 @@ async function prozessZeilen(x: RoutenExtras, frage: 'prozess.stand' | 'prozess.
 async function engpassStand(x: RoutenExtras, p: Awaited<ReturnType<typeof prozessZeilen>>) {
   let pool: PoolStand | null;
   if (p) pool = poolZusammen(p.staende.map((z) => z?.pool));
-  else { x.poolmessung?.an(); pool = x.poolmessung?.stand() ?? null; }
+  else {
+    x.poolmessung?.an();
+    pool = x.poolmessung?.stand() ?? null;
+  }
   const pids = p ? p.zeilen.map((z) => z.pid) : [process.pid];
   // Je Prozess: Pss (sonst RSS) und davon die Halde von V8 (heapUsed) – zeigt, ob Daten oder Puffer wachsen.
-  const speicher = p ? p.zeilen.map((z) => ({ nr: z.nr, rolle: z.rolle, mb: z.speicher === null ? null : Math.round(z.speicher / MB), haldeMb: p.halde[z.nr] ?? null }))
-    : [{ nr: 1, rolle: 'leiter' as const, mb: Math.round((liesPss(dateiLeser, process.pid) ?? process.memoryUsage().rss) / MB), haldeMb: Math.round(process.memoryUsage().heapUsed / MB) }];
+  const speicher = p
+    ? p.zeilen.map((z) => ({
+        nr: z.nr,
+        rolle: z.rolle,
+        mb: z.speicher === null ? null : Math.round(z.speicher / MB),
+        haldeMb: p.halde[z.nr] ?? null,
+      }))
+    : [
+        {
+          nr: 1,
+          rolle: 'leiter' as const,
+          mb: Math.round((liesPss(dateiLeser, process.pid) ?? process.memoryUsage().rss) / MB),
+          haldeMb: Math.round(process.memoryUsage().heapUsed / MB),
+        },
+      ];
   return {
-    pool, klassenMs: KLASSEN_MS,
-    verbindungen: x.verbindungen?.aufteilung ? { gesamt: x.verbindungen.aufteilung.gesamt, leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere } : null,
+    pool,
+    klassenMs: KLASSEN_MS,
+    verbindungen: x.verbindungen?.aufteilung
+      ? { gesamt: x.verbindungen.aufteilung.gesamt, leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere }
+      : null,
     sitzungen: (await x.sitzungen?.().catch(() => null)) ?? null,
     cpu: x.systemlast?.cpuJeArt(pids) ?? null,
     speicher,
@@ -203,7 +310,10 @@ async function passkeyStatus(pk: Passkeys, b: Benutzer | undefined, s?: SitzungI
 /** If-None-Match (RFC 9110): Liste von ETags, auch schwach (W/…) oder „*“. */
 export function passtEtag(kopf: string | undefined, etag: string): boolean {
   if (!kopf) return false;
-  return kopf.split(',').map((x) => x.trim().replace(/^W\//, '')).some((x) => x === '*' || x === etag);
+  return kopf
+    .split(',')
+    .map((x) => x.trim().replace(/^W\//, ''))
+    .some((x) => x === '*' || x === etag);
 }
 
 /**
@@ -211,19 +321,40 @@ export function passtEtag(kopf: string | undefined, etag: string): boolean {
  * Bereich gehört, kommt neutral zurück (keine Warnung), damit die Oberfläche dieselben Felder hat.
  */
 const UEBERSICHT_BEREICHE: Record<string, { bereich: string; leer: unknown }> = {
-  tresor: { bereich: 'verschluesselung', leer: null }, mail: { bereich: 'betrieb', leer: true }, adresse: { bereich: 'betrieb', leer: true },
-  texterkennung: { bereich: 'texterkennung', leer: null }, texterkennungPaket: { bereich: 'texterkennung', leer: true },
+  tresor: { bereich: 'verschluesselung', leer: null },
+  mail: { bereich: 'betrieb', leer: true },
+  adresse: { bereich: 'betrieb', leer: true },
+  texterkennung: { bereich: 'texterkennung', leer: null },
+  texterkennungPaket: { bereich: 'texterkennung', leer: true },
   // Fehlende Dateien (#877): Der Knopf führt zu „Alle Dateien prüfen“ unter Texterkennung.
   dateienFehlen: { bereich: 'texterkennung', leer: 0 },
-  aufgaben: { bereich: 'aufgaben', leer: { offen: 0, ohneEmpfaenger: 0 } }, ohneLeserecht: { bereich: 'aufgaben', leer: 0 },
-  aufgabenEmpfaenger: { bereich: 'benutzer', leer: null }, unpassend: { bereich: 'typen', leer: 0 },
-  papierkorb: { bereich: 'papierkorb', leer: { anzahl: 0, aeltester: null, tage: 0 } }, fehlermeldungen: { bereich: 'fehlermeldungen', leer: null },
-  notfallzugaenge: { bereich: NUR_GESAMT, leer: [] }, notfallcodeBenutzt: { bereich: NUR_GESAMT, leer: [] }, zweitePerson: { bereich: NUR_GESAMT, leer: false }, wartung: { bereich: 'wartung', leer: null }, sicherung: { bereich: 'sicherung', leer: null },
-  exporte: { bereich: 'vollexport', leer: null }, speicherplatz: { bereich: 'systemzustand', leer: null }, auslastung: { bereich: 'systemzustand', leer: [] },
-  engpaesse: { bereich: 'systemzustand', leer: [] }, erweiterungen: { bereich: 'systemzustand', leer: [] }, variablen: { bereich: 'systemzustand', leer: [] },
-  bestand: { bereich: 'systemzustand', leer: null }, lasttestAbbruch: { bereich: 'systemzustand', leer: null }, beispielablage: { bereich: 'beispielablage', leer: 0 }, anbindung: { bereich: 'anbindung', leer: null },
-  einrichtung: { bereich: NUR_GESAMT, leer: null }, automatisierungen: { bereich: 'automatisierungen', leer: null }, ablaeufe: { bereich: 'ablaufvorlagen', leer: null },
-  paketeEinstellungen: { bereich: 'pakete', leer: [] }, kiTypen: { bereich: 'pakete', leer: null }, postfachAnmeldung: { bereich: 'postfaecher', leer: [] },
+  aufgaben: { bereich: 'aufgaben', leer: { offen: 0, ohneEmpfaenger: 0 } },
+  ohneLeserecht: { bereich: 'aufgaben', leer: 0 },
+  aufgabenEmpfaenger: { bereich: 'benutzer', leer: null },
+  unpassend: { bereich: 'typen', leer: 0 },
+  papierkorb: { bereich: 'papierkorb', leer: { anzahl: 0, aeltester: null, tage: 0 } },
+  fehlermeldungen: { bereich: 'fehlermeldungen', leer: null },
+  notfallzugaenge: { bereich: NUR_GESAMT, leer: [] },
+  notfallcodeBenutzt: { bereich: NUR_GESAMT, leer: [] },
+  zweitePerson: { bereich: NUR_GESAMT, leer: false },
+  wartung: { bereich: 'wartung', leer: null },
+  sicherung: { bereich: 'sicherung', leer: null },
+  exporte: { bereich: 'vollexport', leer: null },
+  speicherplatz: { bereich: 'systemzustand', leer: null },
+  auslastung: { bereich: 'systemzustand', leer: [] },
+  engpaesse: { bereich: 'systemzustand', leer: [] },
+  erweiterungen: { bereich: 'systemzustand', leer: [] },
+  variablen: { bereich: 'systemzustand', leer: [] },
+  bestand: { bereich: 'systemzustand', leer: null },
+  lasttestAbbruch: { bereich: 'systemzustand', leer: null },
+  beispielablage: { bereich: 'beispielablage', leer: 0 },
+  anbindung: { bereich: 'anbindung', leer: null },
+  einrichtung: { bereich: NUR_GESAMT, leer: null },
+  automatisierungen: { bereich: 'automatisierungen', leer: null },
+  ablaeufe: { bereich: 'ablaufvorlagen', leer: null },
+  paketeEinstellungen: { bereich: 'pakete', leer: [] },
+  kiTypen: { bereich: 'pakete', leer: null },
+  postfachAnmeldung: { bereich: 'postfaecher', leer: [] },
   eingangsordner: { bereich: 'eingangsordner', leer: null },
 };
 export function nurEigeneBereiche<T extends Record<string, unknown>>(b: Benutzer, daten: T): T {
@@ -242,14 +373,41 @@ export function kontaktVorschlaege(typen: Mappentyp[]): Array<{ typId: string; t
   for (const t of typen) {
     const text = t.felder.filter((f) => f.typ === 'text' || f.typ === 'langtext');
     const finde = (re: RegExp) => text.find((f) => re.test(`${f.key} ${f.label}`.toLowerCase()))?.key;
-    const email = finde(/e-?mail/), telefon = finde(/telefon|tel\b|handy|mobil|phone/);
+    const email = finde(/e-?mail/),
+      telefon = finde(/telefon|tel\b|handy|mobil|phone/);
     const adresse = text.find((f) => /adresse|anschrift|stra(ss|ß)e/.test(`${f.key} ${f.label}`.toLowerCase()) && f.key !== email)?.key;
     if (!email && !telefon && !adresse) continue;
     const name = finde(/^name|\bname\b|bezeichnung|firma|kontakt/) ?? text[0]?.key;
     if (!name) continue;
-    erg.push({ typId: t.id, typ: t.name, zuordnung: { name, ...(email ? { email } : {}), ...(telefon ? { telefon } : {}), ...(adresse ? { adresse } : {}), ...(finde(/firma|unternehmen|organisation/) && finde(/firma|unternehmen|organisation/) !== name ? { firma: finde(/firma|unternehmen|organisation/) } : {}) } });
+    erg.push({
+      typId: t.id,
+      typ: t.name,
+      zuordnung: {
+        name,
+        ...(email ? { email } : {}),
+        ...(telefon ? { telefon } : {}),
+        ...(adresse ? { adresse } : {}),
+        ...(finde(/firma|unternehmen|organisation/) && finde(/firma|unternehmen|organisation/) !== name
+          ? { firma: finde(/firma|unternehmen|organisation/) }
+          : {}),
+      },
+    });
   }
   return erg;
 }
 
-export { L, ok, archivProtokoll, leer, b, info, quelle, ich, grenzenUndEngpaesse, prozessZeilen, engpassStand, zweifaktorStatus, passkeyStatus };
+export {
+  L,
+  ok,
+  archivProtokoll,
+  leer,
+  b,
+  info,
+  quelle,
+  ich,
+  grenzenUndEngpaesse,
+  prozessZeilen,
+  engpassStand,
+  zweifaktorStatus,
+  passkeyStatus,
+};

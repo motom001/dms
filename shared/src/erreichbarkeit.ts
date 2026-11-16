@@ -28,9 +28,13 @@ export interface ErreichbarkeitsZustand {
  * „einrichtung“ (Einrichtungsmodus) und „lasttest“ (Lasttest-Modus).
  */
 export interface Gesundheit {
-  ok?: boolean; stand?: string; zustand?: 'startet' | 'fehler' | 'laeuft' | 'einrichtung' | 'lasttest' | 'datenbank';
+  ok?: boolean;
+  stand?: string;
+  zustand?: 'startet' | 'fehler' | 'laeuft' | 'einrichtung' | 'lasttest' | 'datenbank';
   /** Bei „datenbank“ (#1199): Ablago hängt (`antwortet-nicht`) oder die Datenbank lehnt ab (`abgewiesen`), seit wann. */
-  datenbank?: 'ok' | 'antwortet-nicht' | 'abgewiesen'; seit?: string | null; dauerS?: number | null;
+  datenbank?: 'ok' | 'antwortet-nicht' | 'abgewiesen';
+  seit?: string | null;
+  dauerS?: number | null;
 }
 export interface Umgebung {
   /** GET /api/gesundheit; null, wenn das DMS nicht geantwortet hat. */
@@ -75,11 +79,21 @@ export class Erreichbarkeit {
   private zuletzt = Number.NEGATIVE_INFINITY;
   private hoerer = new Set<() => void>();
 
-  constructor(private u: Umgebung, private wiederDa: () => void = () => {}) {}
+  constructor(
+    private u: Umgebung,
+    private wiederDa: () => void = () => {},
+  ) {}
 
-  get zustand(): ErreichbarkeitsZustand { return this.z; }
+  get zustand(): ErreichbarkeitsZustand {
+    return this.z;
+  }
   /** Für useSyncExternalStore. */
-  abonniere = (h: () => void) => { this.hoerer.add(h); return () => { this.hoerer.delete(h); }; };
+  abonniere = (h: () => void) => {
+    this.hoerer.add(h);
+    return () => {
+      this.hoerer.delete(h);
+    };
+  };
 
   private setze(n: Partial<ErreichbarkeitsZustand>) {
     this.z = { ...this.z, ...n };
@@ -93,12 +107,18 @@ export class Erreichbarkeit {
     this.stoppe();
     const ms = wartezeit(this.versuch);
     this.setze({ naechsterVersuch: this.u.jetzt() + ms });
-    this.timer = this.u.spaeter(() => { this.timer = null; void this.pruefe(); }, ms);
+    this.timer = this.u.spaeter(() => {
+      this.timer = null;
+      void this.pruefe();
+    }, ms);
   }
 
   /** Eine Anfrage hat das DMS nicht erreicht (`datenbank`: Ablago antwortet, die Datenbank nicht, #1198). */
   ausfall(datenbank = false) {
-    if (this.z.stufe === 'weg') { if (datenbank && !this.z.datenbank) this.setze({ datenbank }); return; }
+    if (this.z.stufe === 'weg') {
+      if (datenbank && !this.z.datenbank) this.setze({ datenbank });
+      return;
+    }
     this.versuch = 0;
     this.setze({ stufe: 'weg', datenbank });
     this.plane();
@@ -128,7 +148,9 @@ export class Erreichbarkeit {
 
   /** Jetzt nachsehen (auch „Jetzt prüfen“); gleichzeitige Aufrufe teilen sich eine Abfrage. */
   pruefe(): Promise<void> {
-    this.laeuft ??= this.pruefeJetzt().finally(() => { this.laeuft = null; });
+    this.laeuft ??= this.pruefeJetzt().finally(() => {
+      this.laeuft = null;
+    });
     return this.laeuft;
   }
 
@@ -138,7 +160,11 @@ export class Erreichbarkeit {
     if (!g?.ok) {
       // Antwortet Ablago mit „datenbank“ (#1198), ist es beschäftigt, nicht weg – „wieder erreichbar“ erst mit Datenbank.
       const datenbank = g?.zustand === 'datenbank';
-      if (this.z.stufe === 'weg') { this.versuch++; if (this.z.datenbank !== datenbank) this.setze({ datenbank }); this.plane(); } else this.ausfall(datenbank);
+      if (this.z.stufe === 'weg') {
+        this.versuch++;
+        if (this.z.datenbank !== datenbank) this.setze({ datenbank });
+        this.plane();
+      } else this.ausfall(datenbank);
       return;
     }
     if (g.stand) {
@@ -150,6 +176,9 @@ export class Erreichbarkeit {
     this.versuch = 0;
     this.setze({ stufe: 'zurueck', naechsterVersuch: null, datenbank: false });
     this.wiederDa();
-    this.timer = this.u.spaeter(() => { this.timer = null; if (this.z.stufe === 'zurueck') this.setze({ stufe: 'ok' }); }, ZURUECK_MS);
+    this.timer = this.u.spaeter(() => {
+      this.timer = null;
+      if (this.z.stufe === 'zurueck') this.setze({ stufe: 'ok' });
+    }, ZURUECK_MS);
   }
 }

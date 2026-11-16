@@ -10,17 +10,35 @@ import { alsText, pruefePakete } from './paketpruefung';
 import { mitSprache, t } from './sprache';
 import { eigeneVersion } from './system';
 
-interface Aufruf { ordner: string[]; version: string; beispiele: boolean; json: boolean; ergebnis: string | null; sprache: string; hilfe: boolean }
+interface Aufruf {
+  ordner: string[];
+  version: string;
+  beispiele: boolean;
+  json: boolean;
+  ergebnis: string | null;
+  sprache: string;
+  hilfe: boolean;
+}
 
 /** Argumente zerlegen; wirft bei unbekannten Schaltern (Exit-Code 2). */
 function zerlegeAufruf(args: string[], version = eigeneVersion()): Aufruf {
   const a: Aufruf = { ordner: [], version, beispiele: true, json: false, ergebnis: null, sprache: 'de', hilfe: false };
   for (let i = 0; i < args.length; i++) {
     const x = args[i];
-    if (x === '--') { a.ordner.push(...args.slice(i + 1)); break; }
-    if (!x.startsWith('-')) { a.ordner.push(x); continue; }
+    if (x === '--') {
+      a.ordner.push(...args.slice(i + 1));
+      break;
+    }
+    if (!x.startsWith('-')) {
+      a.ordner.push(x);
+      continue;
+    }
     const [k, v] = x.split(/=(.*)/s, 2);
-    const wert = () => { const w = v ?? args[++i]; if (w === undefined) throw new Error(t('meldungen.dms.braucht-einen-wert', { k: k.replace(/^-+/, '') })); return w; };
+    const wert = () => {
+      const w = v ?? args[++i];
+      if (w === undefined) throw new Error(t('meldungen.dms.braucht-einen-wert', { k: k.replace(/^-+/, '') }));
+      return w;
+    };
     if (k === '-h' || k === '--hilfe' || k === '--help') a.hilfe = true;
     else if (k === '--json') a.json = true;
     else if (k === '--ohne-beispiele') a.beispiele = false;
@@ -36,7 +54,12 @@ async function main(args: string[]): Promise<number> {
   // Protokoll des Installers nur auf Wunsch (LOG_LEVEL): Die Ausgabe gehört dem Ergebnis, auch mit --json.
   if (!(STUFEN as readonly string[]).includes(process.env.LOG_LEVEL ?? '')) protokoll.setzeGrundstufe('fatal');
   let a: Aufruf;
-  try { a = zerlegeAufruf(args); } catch (e) { process.stderr.write(`${(e as Error).message}\n\n${t('meldungen.pakete-pruefen.hilfe')}\n`); return 2; }
+  try {
+    a = zerlegeAufruf(args);
+  } catch (e) {
+    process.stderr.write(`${(e as Error).message}\n\n${t('meldungen.pakete-pruefen.hilfe')}\n`);
+    return 2;
+  }
   if (a.hilfe || !a.ordner.length) {
     mitSprache(a.sprache, () => process[a.hilfe ? 'stdout' : 'stderr'].write(`${t('meldungen.pakete-pruefen.hilfe')}\n`));
     return a.hilfe ? 0 : 2;
@@ -47,11 +70,19 @@ async function main(args: string[]): Promise<number> {
   // Zusätzlich als Datei (z. B. für Anmerkungen in der CI), die Ausgabe bleibt Text.
   if (a.ergebnis) writeFileSync(a.ergebnis, json);
   if (a.json) process.stdout.write(json);
-  else process.stdout.write(`${mitSprache(a.sprache, () => `${t('meldungen.pakete-pruefen.kopf', { version: a.version })}\n\n${alsText(ergebnisse)}`)}\n`);
+  else
+    process.stdout.write(
+      `${mitSprache(a.sprache, () => `${t('meldungen.pakete-pruefen.kopf', { version: a.version })}\n\n${alsText(ergebnisse)}`)}\n`,
+    );
   return ok ? 0 : 1;
 }
 
 main(process.argv.slice(2)).then(
-  (code) => { process.stdout.write('', () => process.exit(code)); },
-  (e: unknown) => { process.stderr.write(`${e instanceof Error ? e.stack ?? e.message : String(e)}\n`); process.exit(1); },
+  (code) => {
+    process.stdout.write('', () => process.exit(code));
+  },
+  (e: unknown) => {
+    process.stderr.write(`${e instanceof Error ? (e.stack ?? e.message) : String(e)}\n`);
+    process.exit(1);
+  },
 );

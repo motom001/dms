@@ -29,9 +29,18 @@ async function aufbau() {
   const beruehrt = { n: 0 };
   const repo: KontoRepo = {
     ...grund,
-    holeSitzung: async (h) => { const s = await grund.holeSitzung(h); return s && { ...s, zuletztAktiv: new Date(0) }; },
-    holeAnmeldung: async (h) => { const x = await grund.holeAnmeldung!(h); return x && { ...x, sitzung: { ...x.sitzung, zuletztAktiv: new Date(0) } }; },
-    beruehreSitzung: async (h) => { beruehrt.n++; await grund.beruehreSitzung(h); },
+    holeSitzung: async (h) => {
+      const s = await grund.holeSitzung(h);
+      return s && { ...s, zuletztAktiv: new Date(0) };
+    },
+    holeAnmeldung: async (h) => {
+      const x = await grund.holeAnmeldung!(h);
+      return x && { ...x, sitzung: { ...x.sitzung, zuletztAktiv: new Date(0) } };
+    },
+    beruehreSitzung: async (h) => {
+      beruehrt.n++;
+      await grund.beruehreSitzung(h);
+    },
   };
   const konten = new Konten(repo, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
@@ -54,7 +63,12 @@ async function aufbau() {
     return ([] as string[]).concat(r.headers['set-cookie'] as string | string[])[0].split(';')[0];
   };
   const rufe = (cookie: string, method: 'GET' | 'POST', url: string, payload?: unknown, kopf: Record<string, string> = {}) =>
-    app.inject({ method, url, ...(payload === undefined ? {} : { payload: payload as object }), headers: { 'x-dms': '1', cookie, ...kopf } });
+    app.inject({
+      method,
+      url,
+      ...(payload === undefined ? {} : { payload: payload as object }),
+      headers: { 'x-dms': '1', cookie, ...kopf },
+    });
   const verwalten = (cookie: string) => rufe(cookie, 'POST', '/api/konto/verwaltung', {});
   const jetzt = { t: Date.now() };
   konten.uhr = () => jetzt.t;
@@ -63,18 +77,30 @@ async function aufbau() {
 
 describe('Stand der Ablage (#919, GET /api/ablage/stand)', () => {
   const offen: Array<() => Promise<unknown>> = [];
-  after(async () => { for (const f of offen) await f(); });
+  after(async () => {
+    for (const f of offen) await f();
+  });
 
   it('gleich, solange sich nichts ändert; anders nach einer Änderung; nur ein kurzer Wert ohne Inhalt', async () => {
     const x = await aufbau();
     offen.push(() => x.app.close());
     const c = await x.anmelden('petra@example.org');
-    const stand = async () => { const r = await x.rufe(c, 'GET', '/api/ablage/stand'); assert.equal(r.statusCode, 200, r.body); return r.json() as { stand: string } };
+    const stand = async () => {
+      const r = await x.rufe(c, 'GET', '/api/ablage/stand');
+      assert.equal(r.statusCode, 200, r.body);
+      return r.json() as { stand: string };
+    };
     const s1 = await stand();
     assert.deepEqual(Object.keys(s1), ['stand']);
     assert.match(s1.stand, /^[\w-]{10,40}$/);
     assert.equal((await stand()).stand, s1.stand, 'nichts geändert → gleicher Stand');
-    await x.d.mappentypen.legeTypAn({ id: crypto.randomUUID(), name: 'Notiz', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [{ key: 'a', name: 'A', art: 'felder', felder: ['name'] }], trefferliste: ['_titel'] });
+    await x.d.mappentypen.legeTypAn({
+      id: crypto.randomUUID(),
+      name: 'Notiz',
+      felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+      register: [{ key: 'a', name: 'A', art: 'felder', felder: ['name'] }],
+      trefferliste: ['_titel'],
+    });
     const s2 = await stand();
     assert.notEqual(s2.stand, s1.stand, 'nach einer Änderung ein anderer Stand');
     assert.equal((await stand()).stand, s2.stand);
@@ -106,7 +132,9 @@ describe('Stand der Ablage (#919, GET /api/ablage/stand)', () => {
 
 describe('Gerade auch im Verwaltungsmodus (#921, GET /api/werkbank/gerade-im-modus)', () => {
   const offen: Array<() => Promise<unknown>> = [];
-  after(async () => { for (const f of offen) await f(); });
+  after(async () => {
+    for (const f of offen) await f();
+  });
   const pfad = '/api/werkbank/gerade-im-modus';
 
   it('Person A im Modus sieht B (mit Beginn), nicht sich selbst; ohne Modus nichts; Ende und Ablauf sind sofort weg', async () => {
@@ -122,12 +150,15 @@ describe('Gerade auch im Verwaltungsmodus (#921, GET /api/werkbank/gerade-im-mod
     assert.equal((await x.rufe(petra, 'GET', pfad)).statusCode, 403, 'ohne Verwaltungsrecht nie');
     assert.equal((await x.verwalten(lena)).statusCode, 200);
     assert.deepEqual((await x.rufe(lena, 'GET', pfad)).json(), [], 'allein im Modus: niemand (die eigene Person nicht)');
-    const seitMarkus = x.jetzt.t += MIN;
+    const seitMarkus = (x.jetzt.t += MIN);
     assert.equal((await x.verwalten(markus)).statusCode, 200);
     assert.deepEqual((await x.rufe(lena, 'GET', pfad)).json(), [{ name: 'Markus', seit: new Date(seitMarkus).toISOString() }]);
     // Markus hat nur den Bereich „Benutzer“ – der Hinweis gilt für alle, die verwalten.
     const l = (await x.rufe(markus, 'GET', pfad)).json() as Array<{ name: string }>;
-    assert.deepEqual(l.map((e) => e.name), ['Lena']);
+    assert.deepEqual(
+      l.map((e) => e.name),
+      ['Lena'],
+    );
     // Zweite Sitzung derselben Person zählt einmal, mit dem frühesten Beginn.
     const lena2 = await x.anmelden('lena@example.org');
     x.jetzt.t += MIN;
@@ -140,7 +171,11 @@ describe('Gerade auch im Verwaltungsmodus (#921, GET /api/werkbank/gerade-im-mod
     assert.equal((await x.verwalten(markus)).statusCode, 200);
     assert.equal((await x.rufe(lena, 'GET', pfad)).json().length, 1);
     x.jetzt.t += 10 * MIN;
-    assert.equal((await x.rufe(lena, 'GET', '/api/werkbank/uebersicht', undefined, { 'x-dms-aktiv': '1' })).statusCode, 200, 'Lena arbeitet weiter');
+    assert.equal(
+      (await x.rufe(lena, 'GET', '/api/werkbank/uebersicht', undefined, { 'x-dms-aktiv': '1' })).statusCode,
+      200,
+      'Lena arbeitet weiter',
+    );
     x.jetzt.t += 6 * MIN;
     assert.deepEqual((await x.rufe(lena, 'GET', pfad)).json(), [], 'Markus abgelaufen');
     // Petra (ohne Recht) und Lena außerhalb des Modus sehen nichts.
@@ -157,7 +192,14 @@ describe('Gerade auch im Verwaltungsmodus (#921, GET /api/werkbank/gerade-im-mod
     await x.verwalten(markus);
     const seit = marke();
     for (let i = 0; i < 3; i++) assert.equal((await x.rufe(lena, 'GET', pfad, undefined, { 'x-dms-aktiv': '1' })).statusCode, 200);
-    assert.deepEqual(protokoll.eintraege({ seit }).filter((e) => e.stufe !== 'debug').map((e) => e.text), [], 'nichts im Protokoll außer Stufe debug');
+    assert.deepEqual(
+      protokoll
+        .eintraege({ seit })
+        .filter((e) => e.stufe !== 'debug')
+        .map((e) => e.text),
+      [],
+      'nichts im Protokoll außer Stufe debug',
+    );
     x.jetzt.t += 16 * MIN;
     const r = await x.rufe(lena, 'GET', pfad, undefined, { 'x-dms-aktiv': '1' });
     assert.equal(r.statusCode, 403, 'nach 16 Minuten nur mit Nachfragen: abgelaufen');
@@ -186,10 +228,24 @@ describe('Gerade auch im Verwaltungsmodus (#921, GET /api/werkbank/gerade-im-mod
     assert.equal((await mit('/api/ablage/stand')).statusCode, 401);
     // Bereich: alle, die verwalten – im Modus; ohne Recht 403.
     assert.deepEqual(bereicheDerRoute('GET', pfad), [JEDER]);
-    const a = (v: string[], modus = true) => ({ benutzer: { id: 'x', verwaltung: v, rolle: 'admin' }, verwaltungsmodus: modus, body: {}, params: {}, query: {}, ip: '1' }) as unknown as Anfrage;
+    const a = (v: string[], modus = true) =>
+      ({
+        benutzer: { id: 'x', verwaltung: v, rolle: 'admin' },
+        verwaltungsmodus: modus,
+        body: {},
+        params: {},
+        query: {},
+        ip: '1',
+      }) as unknown as Anfrage;
     pruefeVerwaltung({ methode: 'GET', pfad }, a(['benutzer']), x.konten);
-    assert.throws(() => pruefeVerwaltung({ methode: 'GET', pfad }, a([]), x.konten), (e) => e instanceof Fachfehler && e.status === 403);
-    assert.throws(() => pruefeVerwaltung({ methode: 'GET', pfad }, a(['*'], false), x.konten), (e) => e instanceof Fachfehler && e.status === 403);
+    assert.throws(
+      () => pruefeVerwaltung({ methode: 'GET', pfad }, a([]), x.konten),
+      (e) => e instanceof Fachfehler && e.status === 403,
+    );
+    assert.throws(
+      () => pruefeVerwaltung({ methode: 'GET', pfad }, a(['*'], false), x.konten),
+      (e) => e instanceof Fachfehler && e.status === 403,
+    );
   });
 });
 
@@ -201,11 +257,13 @@ describe('PostgreSQL: Sitzungen im Verwaltungsmodus (#921)', { skip: url ? false
     const db = await eigeneDatenbank('nachladen');
     const sql = db.sql;
     try {
-      const H = '00000000-0000-4000-8000-000000000001', ANDERER = '00000000-0000-4000-8000-000000000002';
+      const H = '00000000-0000-4000-8000-000000000001',
+        ANDERER = '00000000-0000-4000-8000-000000000002';
       await sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Test'), (${ANDERER}, 'Anderer') ON CONFLICT DO NOTHING`;
       const repo = pgKontoRepo(sql, H);
       const fremd = pgKontoRepo(sql, ANDERER);
-      const neu = async (r: KontoRepo, email: string, name: string) => r.legeBenutzerAn({ id: crypto.randomUUID(), email, name, passwortHash: 'x', verwaltung: ['*'] });
+      const neu = async (r: KontoRepo, email: string, name: string) =>
+        r.legeBenutzerAn({ id: crypto.randomUUID(), email, name, passwortHash: 'x', verwaltung: ['*'] });
       const lena = await neu(repo, 'lena@example.org', 'Lena');
       const markus = await neu(repo, 'markus@example.org', 'Markus');
       const jonas = await neu(repo, 'jonas@example.org', 'Jonas');
@@ -213,7 +271,11 @@ describe('PostgreSQL: Sitzungen im Verwaltungsmodus (#921)', { skip: url ? false
       const paket = await repo.legeDienstkontoAn({ id: crypto.randomUUID(), paketId: 'p', name: 'Paket Beispiel' });
       const jetzt = new Date();
       const sitzung = async (r: KontoRepo, id: string, n: string, o: { modus?: boolean; ablauf?: number; vertretung?: string } = {}) => {
-        await r.legeSitzungAn(n, id, new Date(Date.now() + (o.ablauf ?? 60 * MIN)), { geraet: 'Probe', ip: '127.0.0.1', vertretungId: o.vertretung ?? null });
+        await r.legeSitzungAn(n, id, new Date(Date.now() + (o.ablauf ?? 60 * MIN)), {
+          geraet: 'Probe',
+          ip: '127.0.0.1',
+          vertretungId: o.vertretung ?? null,
+        });
         if (o.modus !== false) await r.setzeSitzungsVerwaltung(n, { verwaltungSeit: jetzt, verwaltungAktiv: jetzt });
       };
       await sitzung(repo, lena.id, 'h-lena');
@@ -228,11 +290,20 @@ describe('PostgreSQL: Sitzungen im Verwaltungsmodus (#921)', { skip: url ? false
       await sitzung(repo, markus.id, 'h-markus-vertretung', { vertretung: v });
       await sitzung(repo, markus.id, 'h-markus-alt', { ablauf: -MIN });
       const liste = await repo.sitzungenImVerwaltungsmodus();
-      assert.deepEqual(liste.map((x) => x.benutzer.name), ['Lena']);
+      assert.deepEqual(
+        liste.map((x) => x.benutzer.name),
+        ['Lena'],
+      );
       assert.equal(liste[0].sitzung.verwaltungSeit?.getTime(), jetzt.getTime());
-      assert.deepEqual((await fremd.sitzungenImVerwaltungsmodus()).map((x) => x.benutzer.name), ['Katrin'], 'nur der eigene Haushalt');
+      assert.deepEqual(
+        (await fremd.sitzungenImVerwaltungsmodus()).map((x) => x.benutzer.name),
+        ['Katrin'],
+        'nur der eigene Haushalt',
+      );
       await repo.setzeSitzungsVerwaltung('h-lena', { verwaltungSeit: null, verwaltungAktiv: null });
       assert.deepEqual(await repo.sitzungenImVerwaltungsmodus(), [], 'beendet: weg');
-    } finally { await db.ende(); }
+    } finally {
+      await db.ende();
+    }
   });
 });

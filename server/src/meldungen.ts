@@ -17,10 +17,25 @@ export async function akzeptierteMeldungen(e?: Einstellungen): Promise<Akzeptier
   return w && typeof w === 'object' && !Array.isArray(w) ? (w as Akzeptiert) : {};
 }
 
-export async function meldungAkzeptieren(e: Einstellungen | undefined, eingabe: Record<string, unknown>, von: string, jetzt = new Date()): Promise<Akzeptiert> {
+export async function meldungAkzeptieren(
+  e: Einstellungen | undefined,
+  eingabe: Record<string, unknown>,
+  von: string,
+  jetzt = new Date(),
+): Promise<Akzeptiert> {
   if (!e) throw new Fachfehler(500, t('werkbank.uebersicht.akzeptiert.ohne-speicher'));
   const fehler = pruefeAkzeptanz(eingabe);
-  if (fehler) throw new Fachfehler(400, t(fehler === 'rot' ? 'werkbank.uebersicht.akzeptiert.rot' : fehler === 'grund' ? 'werkbank.uebersicht.akzeptiert.grund-lang' : 'werkbank.uebersicht.akzeptiert.ungueltig'));
+  if (fehler)
+    throw new Fachfehler(
+      400,
+      t(
+        fehler === 'rot'
+          ? 'werkbank.uebersicht.akzeptiert.rot'
+          : fehler === 'grund'
+            ? 'werkbank.uebersicht.akzeptiert.grund-lang'
+            : 'werkbank.uebersicht.akzeptiert.ungueltig',
+      ),
+    );
   const schluessel = eingabe.schluessel as string;
   const art = eingabe.art as Schwere;
   const grund = typeof eingabe.grund === 'string' && eingabe.grund.trim() ? eingabe.grund.trim() : undefined;
@@ -39,13 +54,20 @@ export async function akzeptanzAufheben(e: Einstellungen | undefined, eingabe: R
   if (!e) throw new Fachfehler(500, t('werkbank.uebersicht.akzeptiert.ohne-speicher'));
   const liste = Array.isArray(eingabe.schluessel) ? eingabe.schluessel : [eingabe.schluessel];
   const anlass = eingabe.anlass === 'erledigt' || eingabe.anlass === 'schwerer' ? eingabe.anlass : 'eingeblendet';
-  if (!liste.length || liste.length > 200 || liste.some((k) => typeof k !== 'string' || !MELDUNG_SCHLUESSEL.test(k))) throw new Fachfehler(400, t('werkbank.uebersicht.akzeptiert.ungueltig'));
+  if (!liste.length || liste.length > 200 || liste.some((k) => typeof k !== 'string' || !MELDUNG_SCHLUESSEL.test(k)))
+    throw new Fachfehler(400, t('werkbank.uebersicht.akzeptiert.ungueltig'));
   const alle = await akzeptierteMeldungen(e);
   const weg = (liste as string[]).filter((k) => k in alle);
   if (!weg.length) return alle;
   for (const k of weg) {
-    log.info(anlass === 'eingeblendet' ? 'Akzeptierte Meldung wieder eingeblendet' : anlass === 'erledigt' ? 'Akzeptierte Meldung ist behoben, Akzeptanz aufgehoben' : 'Akzeptierte Meldung ist schwerer geworden, Akzeptanz aufgehoben',
-      { meldung: k, von, akzeptiertVon: alle[k].von, akzeptiertAm: alle[k].am });
+    log.info(
+      anlass === 'eingeblendet'
+        ? 'Akzeptierte Meldung wieder eingeblendet'
+        : anlass === 'erledigt'
+          ? 'Akzeptierte Meldung ist behoben, Akzeptanz aufgehoben'
+          : 'Akzeptierte Meldung ist schwerer geworden, Akzeptanz aufgehoben',
+      { meldung: k, von, akzeptiertVon: alle[k].von, akzeptiertAm: alle[k].am },
+    );
     delete alle[k];
   }
   await e.schreibe(SCHLUESSEL, Object.keys(alle).length ? alle : null);

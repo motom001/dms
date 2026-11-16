@@ -244,7 +244,7 @@ jobs:
           echo "tests: $TESTS · rauchtests: $RAUCHTESTS"
           [ "$TESTS" = success ] && [ "$RAUCHTESTS" = success ]
 
-  # Stil und Abhängigkeiten (#899), parallel zu „pruefen“: ESLint (mit Typinformation) und dependency-cruiser.
+  # Stil und Abhängigkeiten (#899), parallel zu „pruefen“: Prettier (#1280), ESLint (mit Typinformation) und dependency-cruiser.
   # Bestand steht in eslint-suppressions.json bzw. .dependency-cruiser-known-violations.json und meldet sich nicht;
   # neuer Code ist voll streng. Die beiden Listen dürfen nie wachsen – umtragen ja, hinzufügen nein.
   # Einträge, die nicht mehr vorkommen, räumt der Workflow „Bestandslisten aufräumen“ auf main ab.
@@ -276,6 +276,18 @@ jobs:
           node --test .github/werkzeuge/fachordner-pruefen.test.mjs
           node .github/werkzeuge/fachordner-pruefen.mjs
       - run: npm ci --no-audit --no-fund
+      # Formatierung (#1280): Prettier in fester Version aus npm ci; Einstellungen in .prettierrc.json, Ausnahmen in
+      # .prettierignore. Rot, wenn eine Datei nicht so aussieht, wie Prettier sie schreibt (`npm run format` behebt das).
+      - name: Formatierung (Prettier)
+        run: npm run -s format:pruefen
+      # Neue Einträge im Abschnitt „Formatierer“ von .git-blame-ignore-revs (Bedingung Sicherheit, #1280): Prettier
+      # auf dem Stand davor muss genau diesen Commit ergeben – sonst steckt darin mehr als Formatierung.
+      - name: Formatier-Commits nachprüfen
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch -q --depth=2 origin "$GITHUB_SHA"
+          BASIS=$(git rev-parse HEAD^1)
+          bash .github/werkzeuge/formatierung-nachpruefen.sh --neu "$BASIS"
       - name: Abhängigkeiten (dependency-cruiser)
         run: npm run lint:abh
       # Nur Fehler; jeder erscheint als Anmerkung an der Zeile im Pull Request.

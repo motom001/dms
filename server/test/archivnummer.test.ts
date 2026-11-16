@@ -35,10 +35,15 @@ async function repo(pg: boolean): Promise<Repo> {
 
 async function aufbau(pg: boolean) {
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const typ = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
-  ] });
+  const typ = await d.mappentypen.legeTypAn({
+    name: 'Beleg',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+    ],
+  });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'Rechnung' } }, ANNA);
   const a = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), ANNA)).dokument;
   const b = (await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'b.pdf' }, Buffer.from('%PDF-1.4 b'), ANNA)).dokument;
@@ -48,8 +53,17 @@ async function aufbau(pg: boolean) {
 describe('Code 128 (#345)', () => {
   it('Tabelle: 106 Zeichen mit je 11 Modulen, Stopp mit 13, alle verschieden', () => {
     assert.equal(CODE128_MUSTER.length, 107);
-    CODE128_MUSTER.slice(0, 106).forEach((m, i) => assert.equal([...m].reduce((s, x) => s + Number(x), 0), 11, `Wert ${i}`));
-    assert.equal([...CODE128_MUSTER[106]].reduce((s, x) => s + Number(x), 0), 13);
+    CODE128_MUSTER.slice(0, 106).forEach((m, i) =>
+      assert.equal(
+        [...m].reduce((s, x) => s + Number(x), 0),
+        11,
+        `Wert ${i}`,
+      ),
+    );
+    assert.equal(
+      [...CODE128_MUSTER[106]].reduce((s, x) => s + Number(x), 0),
+      13,
+    );
     assert.equal(new Set(CODE128_MUSTER).size, 107);
   });
   it('Zeichensatz B mit Prüfzeichen', () => {
@@ -64,7 +78,9 @@ describe('Code 128 (#345)', () => {
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   describe(`Archivnummer (#345, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => { for (const s of offen.splice(0)) await s.end(); });
+    after(async () => {
+      for (const s of offen.splice(0)) await s.end();
+    });
 
     it('setzen, eindeutig ohne Groß-/Kleinschreibung, entfernen; Historie', async () => {
       const { d, m, a, b } = await aufbau(pg);
@@ -92,7 +108,11 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(r.erste, 'A-000001');
       assert.equal(r.letzte, 'A-000042');
       assert.equal((await PDFDocument.load(r.pdf)).getPageCount(), 2, '38 auf Bogen 1 (ab Feld 3), 4 auf Bogen 2');
-      assert.equal((await d.mappenArchiv.archivAufkleber({ anzahl: 1 }, 'admin')).erste, 'A-000043', 'gedruckte Nummern gelten als vergeben');
+      assert.equal(
+        (await d.mappenArchiv.archivAufkleber({ anzahl: 1 }, 'admin')).erste,
+        'A-000043',
+        'gedruckte Nummern gelten als vergeben',
+      );
       await assert.rejects(d.mappenArchiv.archivAufkleber({ anzahl: 1, etikett: '48x25', start: 41 }, 'admin'), status(422));
       await assert.rejects(d.mappenArchiv.archivAufkleber({ anzahl: 0 }, 'admin'), status(422));
       await assert.rejects(d.nummernkreise.loescheNummernkreis('archivnummer', 'admin'), status(409));

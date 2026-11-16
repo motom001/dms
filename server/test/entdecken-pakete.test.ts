@@ -12,10 +12,12 @@ import { liesPaket } from '../src/pakete';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 
-const MANIFEST = 'schema: 1\nid: vertraege\nname: Verträge\nversion: 2.1.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.256.0"\n'
-  + 'inhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  rundgaenge: inhalt/rundgaenge.yaml\n';
-const TYPEN = '- schluessel: vertrag\n  name: Vertrag\n  felder:\n    - { key: anbieter, label: Anbieter, typ: text }\n    - { key: kuendigen_bis, label: Kündigen bis, typ: datum }\n'
-  + '  register:\n    - { key: dokumente, name: Dokumente, art: dokumente }\n';
+const MANIFEST =
+  'schema: 1\nid: vertraege\nname: Verträge\nversion: 2.1.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.256.0"\n' +
+  'inhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  rundgaenge: inhalt/rundgaenge.yaml\n';
+const TYPEN =
+  '- schluessel: vertrag\n  name: Vertrag\n  felder:\n    - { key: anbieter, label: Anbieter, typ: text }\n    - { key: kuendigen_bis, label: Kündigen bis, typ: datum }\n' +
+  '  register:\n    - { key: dokumente, name: Dokumente, art: dokumente }\n';
 const RUNDGANG = `- schluessel: kennenlernen
   titel: Verträge im Überblick
   beschreibung: Wo Fristen und Unterlagen eines Vertrags stehen.
@@ -37,8 +39,23 @@ const RUNDGANG = `- schluessel: kennenlernen
       titel: Dokumente
       text: Hier liegen der Vertrag und alle Briefe dazu.
 `;
-const lies = (rundgaenge: string) => liesPaket(new Map([['manifest.yaml', Buffer.from(MANIFEST)], ['inhalt/mappentypen.yaml', Buffer.from(TYPEN)], ['inhalt/rundgaenge.yaml', Buffer.from(rundgaenge)]]));
-const gruende = (f: () => unknown) => { try { f(); } catch (e) { if (e instanceof Fachfehler) return JSON.stringify(e.details); throw e; } return ''; };
+const lies = (rundgaenge: string) =>
+  liesPaket(
+    new Map([
+      ['manifest.yaml', Buffer.from(MANIFEST)],
+      ['inhalt/mappentypen.yaml', Buffer.from(TYPEN)],
+      ['inhalt/rundgaenge.yaml', Buffer.from(rundgaenge)],
+    ]),
+  );
+const gruende = (f: () => unknown) => {
+  try {
+    f();
+  } catch (e) {
+    if (e instanceof Fachfehler) return JSON.stringify(e.details);
+    throw e;
+  }
+  return '';
+};
 
 describe('Rundgänge aus Paketen: Prüfung beim Installieren (#831)', () => {
   it('ein gültiger Rundgang kommt roh ans Paket; Felder und Register gibt es im eigenen Mappentyp', () => {
@@ -47,21 +64,67 @@ describe('Rundgänge aus Paketen: Prüfung beim Installieren (#831)', () => {
   });
 
   it('lehnt unbekannte Anker, fehlende Felder und Register, doppeltes nach_installation und falsche Verweise ab', () => {
-    assert.match(gruende(() => lies(RUNDGANG.replace('mappe.feld:kuendigen_bis', 'mappe.feld:gibt_es_nicht'))), /Das Feld „gibt_es_nicht“ gibt es im Mappentyp „vertraege:vertrag“ nicht/);
-    assert.match(gruende(() => lies(RUNDGANG.replace('mappe.register:dokumente', 'mappe.register:briefe'))), /Das Register „briefe“/);
-    assert.match(gruende(() => lies(RUNDGANG.replace('mappe.register:dokumente', 'gibt.es.nicht'))), /unbekannter Anker/);
-    assert.match(gruende(() => lies(RUNDGANG.replace('typ: vertrag', 'typ: fremd:vertrag'))), /Den Mappentyp „fremd:vertrag“ gibt es nicht/);
-    assert.match(gruende(() => lies(RUNDGANG + RUNDGANG.replace('kennenlernen', 'zweiter'))), /„nach_installation“ darf es nur einmal je Paket geben/);
-    assert.match(gruende(() => lies(RUNDGANG.replace('admin/pakete/#so-nutzt-du-es', 'https://example.org'))), /„handbuch“ muss eine Seite im Handbuch sein/);
-    assert.match(gruende(() => lies(RUNDGANG.replace('start: nach_installation', 'start: erste_anmeldung'))), /nur für Ablagos eigenen Rundgang/);
+    assert.match(
+      gruende(() => lies(RUNDGANG.replace('mappe.feld:kuendigen_bis', 'mappe.feld:gibt_es_nicht'))),
+      /Das Feld „gibt_es_nicht“ gibt es im Mappentyp „vertraege:vertrag“ nicht/,
+    );
+    assert.match(
+      gruende(() => lies(RUNDGANG.replace('mappe.register:dokumente', 'mappe.register:briefe'))),
+      /Das Register „briefe“/,
+    );
+    assert.match(
+      gruende(() => lies(RUNDGANG.replace('mappe.register:dokumente', 'gibt.es.nicht'))),
+      /unbekannter Anker/,
+    );
+    assert.match(
+      gruende(() => lies(RUNDGANG.replace('typ: vertrag', 'typ: fremd:vertrag'))),
+      /Den Mappentyp „fremd:vertrag“ gibt es nicht/,
+    );
+    assert.match(
+      gruende(() => lies(RUNDGANG + RUNDGANG.replace('kennenlernen', 'zweiter'))),
+      /„nach_installation“ darf es nur einmal je Paket geben/,
+    );
+    assert.match(
+      gruende(() => lies(RUNDGANG.replace('admin/pakete/#so-nutzt-du-es', 'https://example.org'))),
+      /„handbuch“ muss eine Seite im Handbuch sein/,
+    );
+    assert.match(
+      gruende(() => lies(RUNDGANG.replace('start: nach_installation', 'start: erste_anmeldung'))),
+      /nur für Ablagos eigenen Rundgang/,
+    );
   });
 
   it('Fehler tragen ihren Ort in der Datei; Ablagos eigene Rundgänge öffnen keinen Mappentyp', () => {
-    const r = pruefeRundgaenge([{ schluessel: 'a', titel: 'A', beschreibung: 'B', schritte: [{ schluessel: 's', titel: 'T', text: 'X', ziel: 'gibt.es.nicht', ort: 'O' }] }], { herkunft: 'paket:p', anker: ankerListe() });
+    const r = pruefeRundgaenge(
+      [
+        {
+          schluessel: 'a',
+          titel: 'A',
+          beschreibung: 'B',
+          schritte: [{ schluessel: 's', titel: 'T', text: 'X', ziel: 'gibt.es.nicht', ort: 'O' }],
+        },
+      ],
+      { herkunft: 'paket:p', anker: ankerListe() },
+    );
     assert.deepEqual(r.orte, [[0, 'schritte', 0, 'ziel']]);
-    const a = pruefeRundgaenge([{ schluessel: 'a', titel: 'A', beschreibung: 'B', oeffne: { mappe: { typ: 'x' } }, schritte: [{ schluessel: 's', titel: 'T', text: 'X' }] }], { herkunft: 'ablago', anker: ankerListe() });
+    const a = pruefeRundgaenge(
+      [
+        {
+          schluessel: 'a',
+          titel: 'A',
+          beschreibung: 'B',
+          oeffne: { mappe: { typ: 'x' } },
+          schritte: [{ schluessel: 's', titel: 'T', text: 'X' }],
+        },
+      ],
+      { herkunft: 'ablago', anker: ankerListe() },
+    );
     assert.match(a.fehler.join('\n'), /„oeffne: mappe“ gibt es nur für Rundgänge aus Paketen und eigene Rundgänge/);
-    assert.ok(HANDBUCH_VERWEIS.test('benutzer/') && HANDBUCH_VERWEIS.test('admin/pakete/#so-nutzt-du-es') && !HANDBUCH_VERWEIS.test('entwickler/x/'));
+    assert.ok(
+      HANDBUCH_VERWEIS.test('benutzer/') &&
+        HANDBUCH_VERWEIS.test('admin/pakete/#so-nutzt-du-es') &&
+        !HANDBUCH_VERWEIS.test('entwickler/x/'),
+    );
   });
 });
 
@@ -72,15 +135,28 @@ describe('Rundgänge aus Paketen: Anzeige je Person (#831)', () => {
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
     const jetzt = Date.parse('2026-11-15T10:00:00Z');
-    const paket = { id: 'vertraege', version: '2.1.0', installiert: new Date(jetzt - o.installiert * tag).toISOString(), aktualisiert: null, entdecken: { rundgaenge: lies(RUNDGANG).entdecken!.rundgaenge } } as unknown as InstalliertesPaket;
+    const paket = {
+      id: 'vertraege',
+      version: '2.1.0',
+      installiert: new Date(jetzt - o.installiert * tag).toISOString(),
+      aktualisiert: null,
+      entdecken: { rundgaenge: lies(RUNDGANG).entdecken!.rundgaenge },
+    } as unknown as InstalliertesPaket;
     const gefragt: string[] = [];
     const e = new Entdecken({
-      einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
-      version: () => '0.260.0', heute: () => '2026-11-15', funktionen: async () => new Set(), jetzt: () => jetzt,
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
+      version: () => '0.260.0',
+      heute: () => '2026-11-15',
+      funktionen: async () => new Set(),
+      jetzt: () => jetzt,
       pakete: async () => [paket],
       typen: async () => [{ kennung: 'vertraege:vertrag', felder: ['anbieter', 'kuendigen_bis'], register: ['dokumente'] }],
       lesbareTypen: async (b) => new Set(b.id === jonas.id ? o.lesbar : ['vertraege:vertrag']),
-      oeffnen: async (_b, typ, art) => { gefragt.push(`${art}:${typ}`); return o.oeffnen === undefined ? '/ablage/t1/m1' : o.oeffnen; },
+      oeffnen: async (_b, typ, art) => {
+        gefragt.push(`${art}:${typ}`);
+        return o.oeffnen === undefined ? '/ablage/t1/m1' : o.oeffnen;
+      },
     });
     return { e, lena: { ...lena, letzteAnmeldung: null }, jonas: { ...jonas, letzteAnmeldung: null }, gefragt };
   }
@@ -125,8 +201,18 @@ describe('Rundgänge aus Paketen: Anzeige je Person (#831)', () => {
   });
 
   it('rundgangFuer: Mappentyp nur für Personen, die ihn lesen dürfen', () => {
-    const r = pruefeRundgaenge([{ schluessel: 'a', titel: 'A', beschreibung: 'B', oeffne: { neu: { typ: 'rechnung' } }, schritte: [{ schluessel: 's', titel: 'T', text: 'X' }] }],
-      { herkunft: 'paket:p', anker: ankerListe(), typ: (k) => ({ kennung: `p:${k}` }) }).rundgaenge[0];
+    const r = pruefeRundgaenge(
+      [
+        {
+          schluessel: 'a',
+          titel: 'A',
+          beschreibung: 'B',
+          oeffne: { neu: { typ: 'rechnung' } },
+          schritte: [{ schluessel: 's', titel: 'T', text: 'X' }],
+        },
+      ],
+      { herkunft: 'paket:p', anker: ankerListe(), typ: (k) => ({ kennung: `p:${k}` }) },
+    ).rundgaenge[0];
     assert.deepEqual(r.oeffne, { neu: 'p:rechnung' });
     assert.equal(rundgangFuer(r, { verwalten: false, funktionen: new Set(), lesbar: new Set() }), null);
     assert.ok(rundgangFuer(r, { verwalten: false, funktionen: new Set(), lesbar: new Set(['p:rechnung']) }));
@@ -134,7 +220,10 @@ describe('Rundgänge aus Paketen: Anzeige je Person (#831)', () => {
 });
 
 describe('Tipps aus Paketen (#832)', () => {
-  const MAN = MANIFEST.replace('  rundgaenge: inhalt/rundgaenge.yaml\n', '  rundgaenge: inhalt/rundgaenge.yaml\n  tipps: inhalt/tipps.yaml\n');
+  const MAN = MANIFEST.replace(
+    '  rundgaenge: inhalt/rundgaenge.yaml\n',
+    '  rundgaenge: inhalt/rundgaenge.yaml\n  tipps: inhalt/tipps.yaml\n',
+  );
   const TIPPS = `- schluessel: ausfuellen_neu
   text: Neu in Verträge 2.1 – Ablago liest Anbieter und Laufzeit direkt aus dem Vertrag.
   ab_version: 2.1.0
@@ -145,14 +234,34 @@ describe('Tipps aus Paketen (#832)', () => {
   typ: vertrag
   ziel: mappe.feld:kuendigen_bis
 `;
-  const liesT = (tipps: string) => liesPaket(new Map([['manifest.yaml', Buffer.from(MAN)], ['inhalt/mappentypen.yaml', Buffer.from(TYPEN)], ['inhalt/rundgaenge.yaml', Buffer.from(RUNDGANG)], ['inhalt/tipps.yaml', Buffer.from(tipps)]]));
+  const liesT = (tipps: string) =>
+    liesPaket(
+      new Map([
+        ['manifest.yaml', Buffer.from(MAN)],
+        ['inhalt/mappentypen.yaml', Buffer.from(TYPEN)],
+        ['inhalt/rundgaenge.yaml', Buffer.from(RUNDGANG)],
+        ['inhalt/tipps.yaml', Buffer.from(tipps)],
+      ]),
+    );
 
   it('Prüfung beim Installieren: Rundgang des Pakets, Feld im Mappentyp, Mappen-Anker nur mit typ', () => {
     assert.equal(liesT(TIPPS).entdecken?.tipps?.length, 2);
-    assert.match(gruende(() => liesT(TIPPS.replace('rundgang: kennenlernen', 'rundgang: fehlt'))), /unbekannter Rundgang „fehlt“/);
-    assert.match(gruende(() => liesT(TIPPS.replace('mappe.feld:kuendigen_bis', 'mappe.feld:nichts'))), /Das Feld „nichts“/);
-    assert.match(gruende(() => liesT(TIPPS.replace('  typ: vertrag\n  ziel:', '  ziel:'))), /geht er nur mit „typ“/);
-    assert.match(gruende(() => liesT(TIPPS.replace('Kündigungsfrist.', `${'x'.repeat(160)}.`))), /höchstens 160/);
+    assert.match(
+      gruende(() => liesT(TIPPS.replace('rundgang: kennenlernen', 'rundgang: fehlt'))),
+      /unbekannter Rundgang „fehlt“/,
+    );
+    assert.match(
+      gruende(() => liesT(TIPPS.replace('mappe.feld:kuendigen_bis', 'mappe.feld:nichts'))),
+      /Das Feld „nichts“/,
+    );
+    assert.match(
+      gruende(() => liesT(TIPPS.replace('  typ: vertrag\n  ziel:', '  ziel:'))),
+      /geht er nur mit „typ“/,
+    );
+    assert.match(
+      gruende(() => liesT(TIPPS.replace('Kündigungsfrist.', `${'x'.repeat(160)}.`))),
+      /höchstens 160/,
+    );
   });
 
   it('je Person: Präfix, Rundgang des Pakets, nur mit Leserecht, „Neu“ nach dem Update auf ab_version', async () => {
@@ -161,13 +270,28 @@ describe('Tipps aus Paketen (#832)', () => {
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
     const jetzt = Date.parse('2026-11-15T10:00:00Z');
     const p = liesT(TIPPS).entdecken!;
-    const paket = { id: 'vertraege', version: '2.1.0', installiert: '2026-01-01T00:00:00Z', aktualisiert: '2026-11-14T00:00:00Z', entdecken: { ...p, vorher: '2.0.0' } } as unknown as InstalliertesPaket;
-    const lesbar = new Map<string, string[]>([[jonas.id, []], [lena.id, ['vertraege:vertrag']]]);
+    const paket = {
+      id: 'vertraege',
+      version: '2.1.0',
+      installiert: '2026-01-01T00:00:00Z',
+      aktualisiert: '2026-11-14T00:00:00Z',
+      entdecken: { ...p, vorher: '2.0.0' },
+    } as unknown as InstalliertesPaket;
+    const lesbar = new Map<string, string[]>([
+      [jonas.id, []],
+      [lena.id, ['vertraege:vertrag']],
+    ]);
     const e = new Entdecken({
-      einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
-      version: () => '0.260.0', heute: () => '2026-11-15', funktionen: async () => new Set(), jetzt: () => jetzt,
-      pakete: async () => [paket], typen: async () => [{ kennung: 'vertraege:vertrag', felder: ['anbieter', 'kuendigen_bis'], register: ['dokumente'] }],
-      lesbareTypen: async (b) => new Set(lesbar.get(b.id)), oeffnen: async () => '/ablage/t1/m1',
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
+      version: () => '0.260.0',
+      heute: () => '2026-11-15',
+      funktionen: async () => new Set(),
+      jetzt: () => jetzt,
+      pakete: async () => [paket],
+      typen: async () => [{ kennung: 'vertraege:vertrag', felder: ['anbieter', 'kuendigen_bis'], register: ['dokumente'] }],
+      lesbareTypen: async (b) => new Set(lesbar.get(b.id)),
+      oeffnen: async () => '/ablage/t1/m1',
     });
     const sl = await e.stand({ ...lena, letzteAnmeldung: null });
     const neu = sl.tipps.find((x) => x.schluessel === 'vertraege:ausfuellen_neu');

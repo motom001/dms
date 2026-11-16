@@ -13,7 +13,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location = new URL('http://127.0.0.1/');
 g.localStorage = speicher();
@@ -22,7 +31,14 @@ g.addEventListener = () => {};
 g.removeEventListener = () => {};
 g.dispatchEvent = () => true;
 g.window = globalThis;
-g.document = { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document = {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 
 // Die Module der Oberfläche über einen berechneten Pfad laden: Der Server-Typcheck kennt weder JSX noch das DOM, die
 // Oberfläche prüft ihr eigener Typcheck. tsx übersetzt JSX hier klassisch (React.createElement) – darum React global.
@@ -52,18 +68,66 @@ const ohneNetz = { stand: leerePromise, katalog: leerePromise, plan: leerePromis
 
 const herkunft: Pruefung = { art: 'unsigniert', offiziell: false, bestaetigen: true };
 const vorschau = (o: Partial<Vorschau> = {}): Vorschau => ({
-  paket: { id: 'haushalt', name: 'Haushalt', version: '1.0.0', beschreibung: 'Beispielpaket', lizenz: 'MIT', autor: { name: 'Lena', github: 'lena' }, dms: '>=0.1.0', abhaengigkeiten: {}, readme: null, changelog: null, quelle: null },
-  dmsVersion: '0.209.0', dmsOk: true, installiert: null, update: false, herkunft: null, pruefung: herkunft, abhaengigkeiten: [], typen: [], sichten: [],
-  beispiele: 2, probleme: [], hinweise: [], einstellungen: null, automatisierungen: [{ schluessel: 'erinnern', name: 'Erinnern', beschreibung: '', neu: true }],
-  laeufer: { rechte: [{ text: 'Darf Dienst-Adressen aufrufen', hilfe: 'pakete.recht.adresse', unter: [{ text: 'example.org', hilfe: 'pakete.recht.adresse' }] }], bestaetigen: true },
+  paket: {
+    id: 'haushalt',
+    name: 'Haushalt',
+    version: '1.0.0',
+    beschreibung: 'Beispielpaket',
+    lizenz: 'MIT',
+    autor: { name: 'Lena', github: 'lena' },
+    dms: '>=0.1.0',
+    abhaengigkeiten: {},
+    readme: null,
+    changelog: null,
+    quelle: null,
+  },
+  dmsVersion: '0.209.0',
+  dmsOk: true,
+  installiert: null,
+  update: false,
+  herkunft: null,
+  pruefung: herkunft,
+  abhaengigkeiten: [],
+  typen: [],
+  sichten: [],
+  beispiele: 2,
+  probleme: [],
+  hinweise: [],
+  einstellungen: null,
+  automatisierungen: [{ schluessel: 'erinnern', name: 'Erinnern', beschreibung: '', neu: true }],
+  laeufer: {
+    rechte: [
+      {
+        text: 'Darf Dienst-Adressen aufrufen',
+        hilfe: 'pakete.recht.adresse',
+        unter: [{ text: 'example.org', hilfe: 'pakete.recht.adresse' }],
+      },
+    ],
+    bestaetigen: true,
+  },
   ...o,
 });
 const plan = {
-  pakete: [{
-    schluessel: 'haushalt', id: 'haushalt', name: 'Haushalt', version: '1.0.0', gewaehlt: true, fuer: [], ergaenzt: null, vorschau: vorschau(),
-    einstellungen: [{ schluessel: 'dienst', name: 'Dienst-Adresse', typ: 'adresse', pflicht: true, beispiel: 'http://dienst.example.org' }, { schluessel: 'name', name: 'Name', typ: 'text', pflicht: true }],
-  }],
-  probleme: [], herkunft, herkunftBestaetigen: true, rechte: { bestaetigen: true, stand: 'x' },
+  pakete: [
+    {
+      schluessel: 'haushalt',
+      id: 'haushalt',
+      name: 'Haushalt',
+      version: '1.0.0',
+      gewaehlt: true,
+      fuer: [],
+      ergaenzt: null,
+      vorschau: vorschau(),
+      einstellungen: [
+        { schluessel: 'dienst', name: 'Dienst-Adresse', typ: 'adresse', pflicht: true, beispiel: 'http://dienst.example.org' },
+        { schluessel: 'name', name: 'Name', typ: 'text', pflicht: true },
+      ],
+    },
+  ],
+  probleme: [],
+  herkunft,
+  herkunftBestaetigen: true,
+  rechte: { bestaetigen: true, stand: 'x' },
   auswahl: { typen: [], benutzer: [], rollen: [], sichten: [] },
 };
 
@@ -72,14 +136,41 @@ describe('Einrichtungsassistent ohne KontoProvider (#881)', () => {
     const html = zeichne(h(Hilfe, { ort: 'werkbank.pakete.ablauf' }));
     assert.match(html, /class="hilfesymbol"/);
     assert.match(html, /href="\/hilfe\/admin\/[^"]*pakete\/#mehrere-pakete-in-einem-schritt-installieren"/);
-    function Link() { return h('a', { href: (useHandbuch() as (x: string) => string)('benutzer') }, 'Handbuch'); }
+    function Link() {
+      return h('a', { href: (useHandbuch() as (x: string) => string)('benutzer') }, 'Handbuch');
+    }
     assert.match(zeichne(h(Link)), /href="\/hilfe\/benutzer\//);
   });
 
   for (const ansicht of ['ablage', 'konto', 'pakete', 'optional', 'zusammenfassung'] as const) {
     it(`Schritt „${ansicht}“ zeichnet ohne Konto`, () => {
-      setzeStand((x: Record<string, unknown>) => ({ ...x, neu: true, spracheGewaehlt: true, lauf: null, aendern: null, sammlung: { ...leereSammlung(), ansicht, optional: { ...leereSammlung().optional, mail: { aktiv: true, host: 'mail.example.org', port: 587, verbindung: 'starttls', benutzer: 'lena', absender: 'ablago@example.org', selbstsigniert: false, mitPasswort: false } } } }));
-      const html = zeichne(h(PaketApiKontext.Provider, { value: ohneNetz }, h(Sammelassistent, { zurWahl: nichts, abschliessen: async () => {} })));
+      setzeStand((x: Record<string, unknown>) => ({
+        ...x,
+        neu: true,
+        spracheGewaehlt: true,
+        lauf: null,
+        aendern: null,
+        sammlung: {
+          ...leereSammlung(),
+          ansicht,
+          optional: {
+            ...leereSammlung().optional,
+            mail: {
+              aktiv: true,
+              host: 'mail.example.org',
+              port: 587,
+              verbindung: 'starttls',
+              benutzer: 'lena',
+              absender: 'ablago@example.org',
+              selbstsigniert: false,
+              mitPasswort: false,
+            },
+          },
+        },
+      }));
+      const html = zeichne(
+        h(PaketApiKontext.Provider, { value: ohneNetz }, h(Sammelassistent, { zurWahl: nichts, abschliessen: async () => {} })),
+      );
       assert.ok(html.length > 200, html);
       if (ansicht === 'pakete') assert.match(html, /Pakete dazuholen/, 'Pakete: Schritt mit der Auswahl (Daten kommen erst aus dem Netz)');
     });
@@ -87,7 +178,15 @@ describe('Einrichtungsassistent ohne KontoProvider (#881)', () => {
 
   it('Einstieg, Fortschritt und Abschluss zeichnen ohne Konto', () => {
     setzeStand((x: Record<string, unknown>) => ({ ...x, neu: false, spracheGewaehlt: true, lauf: null, aendern: null }));
-    assert.match(zeichne(h(Einrichtungsassistent, { status: { einrichtungNoetig: true, einrichtung: { phase: 'konto', code: false } }, fertig: async () => {} })), /wahlkarte/);
+    assert.match(
+      zeichne(
+        h(Einrichtungsassistent, {
+          status: { einrichtungNoetig: true, einrichtung: { phase: 'konto', code: false } },
+          fertig: async () => {},
+        }),
+      ),
+      /wahlkarte/,
+    );
     for (const fertig of [false, true]) {
       setzeStand((x: Record<string, unknown>) => ({ ...x, neu: true, lauf: { ...neuerLauf(), fertig } }));
       const html = zeichne(h(Sammelassistent, { zurWahl: nichts, abschliessen: async () => {} }));
@@ -97,7 +196,13 @@ describe('Einrichtungsassistent ohne KontoProvider (#881)', () => {
   });
 
   it('Pakete: Herkunft, Rechte (mit Hilfe) und Pflicht-Einstellungen zeichnen ohne Konto', () => {
-    const html = zeichne(h(PaketApiKontext.Provider, { value: ohneNetz }, h(Fragen, { plan, eingabe: () => ({ pakete: ['haushalt'] }), zurueck: nichts, neuerPlan: nichts, fertig: nichts, sammeln: nichts })));
+    const html = zeichne(
+      h(
+        PaketApiKontext.Provider,
+        { value: ohneNetz },
+        h(Fragen, { plan, eingabe: () => ({ pakete: ['haushalt'] }), zurueck: nichts, neuerPlan: nichts, fertig: nichts, sammeln: nichts }),
+      ),
+    );
     assert.match(html, /class="herkunft klein warn"/, 'Herkunft');
     assert.ok((html.match(/class="hilfesymbol"/g) ?? []).length >= 3, 'Hilfe bei Herkunft und Rechten');
     assert.match(html, /Dienst-Adresse/, 'Einstellungen');
@@ -106,17 +211,43 @@ describe('Einrichtungsassistent ohne KontoProvider (#881)', () => {
 
   it('Pakete aus einer Sammeldatei: Herkunft und Auswahl zeichnen ohne Konto', () => {
     const sammeldatei = {
-      datei: { sha256: 'ab'.repeat(32), groesse: 1000, erstellt: '2026-11-01T10:00:00Z', quelle: 'https://katalog.example.org', katalog: 'offiziell', dms: '0.209.0', pruefung: { art: 'projekt', offiziell: true, bestaetigen: false } as Pruefung, nichtImKatalog: [] },
-      pakete: [{ upload: 'u1', id: 'haushalt', name: 'Haushalt', version: '1.0.0', gewaehlt: true, abhaengigkeiten: {}, katalog: 'gleich' as const, stand: 'neu' as const, installiert: null, vorschau: vorschau() }],
+      datei: {
+        sha256: 'ab'.repeat(32),
+        groesse: 1000,
+        erstellt: '2026-11-01T10:00:00Z',
+        quelle: 'https://katalog.example.org',
+        katalog: 'offiziell',
+        dms: '0.209.0',
+        pruefung: { art: 'projekt', offiziell: true, bestaetigen: false } as Pruefung,
+        nichtImKatalog: [],
+      },
+      pakete: [
+        {
+          upload: 'u1',
+          id: 'haushalt',
+          name: 'Haushalt',
+          version: '1.0.0',
+          gewaehlt: true,
+          abhaengigkeiten: {},
+          katalog: 'gleich' as const,
+          stand: 'neu' as const,
+          installiert: null,
+          vorschau: vorschau(),
+        },
+      ],
     };
-    const html = zeichne(h(SammeldateiAnsicht, { s: sammeldatei, datei: 'pakete.zip', dms: '0.209.0', installiert: [], fertig: nichts, abbrechen: nichts }));
+    const html = zeichne(
+      h(SammeldateiAnsicht, { s: sammeldatei, datei: 'pakete.zip', dms: '0.209.0', installiert: [], fertig: nichts, abbrechen: nichts }),
+    );
     assert.match(html, /class="herkunft klein gut"/);
     assert.match(html, /hilfesymbol/);
     assert.match(zeichne(h(HerkunftZeile, { p: herkunft })), /hilfesymbol/);
   });
 
   it('E-Mail und Zwei-Faktor zeichnen ohne Konto', () => {
-    const mail = zeichne(h(MailSammeln, { wert: null, passwort: '', email: 'lena@example.org', ablage: 'Familie', griff: createRef() as never }));
+    const mail = zeichne(
+      h(MailSammeln, { wert: null, passwort: '', email: 'lena@example.org', ablage: 'Familie', griff: createRef() as never }),
+    );
     assert.match(mail, /<input/);
     const zf = zeichne(h(ZweifaktorEinrichten, { fertig: nichts, abbrechen: nichts }));
     assert.ok(zf.length > 50, zf);

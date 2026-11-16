@@ -17,7 +17,7 @@ import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 
 export const AUSGAENGE = ['herunterladen', 'email', 'export', 'webdav'] as const;
-export type Ausgang = typeof AUSGAENGE[number];
+export type Ausgang = (typeof AUSGAENGE)[number];
 
 /** Was die Prüfstelle vom Dienst braucht: Lesen und Exportrecht je Mappe. */
 export interface Ausgangsrechte {
@@ -35,7 +35,10 @@ export async function mitnehmbar(r: Ausgangsrechte, ids: string[]): Promise<Set<
 
 /** Die Meldung (403), wenn Mappen über diesen Weg nicht hinausdürfen; `anzahl` > 1 bei mehreren. */
 export function verboten(ausgang: Ausgang, nicht: string[] = [], anzahl = 1): Fachfehler {
-  const text = anzahl > 1 || nicht.length > 1 ? t.frei(`api.ausgang.${ausgang}.mehrere`, { anzahl: nicht.length || anzahl }) : t.frei(`api.ausgang.${ausgang}.eine`);
+  const text =
+    anzahl > 1 || nicht.length > 1
+      ? t.frei(`api.ausgang.${ausgang}.mehrere`, { anzahl: nicht.length || anzahl })
+      : t.frei(`api.ausgang.${ausgang}.eine`);
   return new Fachfehler(403, text, { ausgang, ...(nicht.length ? { nicht } : {}) });
 }
 
@@ -50,6 +53,7 @@ export async function pruefeAlle(r: Ausgangsrechte, ausgang: Ausgang, ids: strin
   const ok = await mitnehmbar(r, ids);
   const nicht = ids.filter((id) => !ok.has(id));
   if (!nicht.length) return;
-  if (ids.length === 1 && !(await r.lesbar(ids)).has(ids[0])) throw new Fachfehler(404, t('meldungen.ausgang.diese-mappe-gibt-es'), { verborgen: true });
+  if (ids.length === 1 && !(await r.lesbar(ids)).has(ids[0]))
+    throw new Fachfehler(404, t('meldungen.ausgang.diese-mappe-gibt-es'), { verborgen: true });
   throw verboten(ausgang, ids.length > 1 ? nicht : [], ids.length);
 }

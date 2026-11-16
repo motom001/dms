@@ -1,7 +1,16 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { isIP } from 'node:net';
 import type postgres from 'postgres';
-import { AUFRUF_GEHEIMNIS_PRAEFIX, AUFRUF_GRENZEN, AUFRUF_KENNUNG, AUFRUF_PFAD, aufrufParameter, istAufruf, type Automatisierung, type WennAufruf } from '../../../shared/src/automatisierung';
+import {
+  AUFRUF_GEHEIMNIS_PRAEFIX,
+  AUFRUF_GRENZEN,
+  AUFRUF_KENNUNG,
+  AUFRUF_PFAD,
+  aufrufParameter,
+  istAufruf,
+  type Automatisierung,
+  type WennAufruf,
+} from '../../../shared/src/automatisierung';
 import { ipBereich, kuerzeIp } from '../abruf';
 import { Fachfehler } from '../fehler';
 import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../grenzen';
@@ -67,18 +76,35 @@ export interface AufrufRepo {
 export function speicherAufrufRepo(): AufrufRepo {
   const m = new Map<string, AufrufEintrag>();
   return {
-    async hole(id) { const e = m.get(id); return e && { ...e }; },
-    async finde(k) { const e = [...m.values()].find((x) => x.kennung === k); return e && { ...e }; },
-    async liste() { return [...m.values()].map((e) => ({ ...e })).sort((a, b) => a.erstellt.localeCompare(b.erstellt)); },
-    async setze(e) { m.set(e.automatisierungId, { ...e }); },
-    async loesche(id) { m.delete(id); },
+    async hole(id) {
+      const e = m.get(id);
+      return e && { ...e };
+    },
+    async finde(k) {
+      const e = [...m.values()].find((x) => x.kennung === k);
+      return e && { ...e };
+    },
+    async liste() {
+      return [...m.values()].map((e) => ({ ...e })).sort((a, b) => a.erstellt.localeCompare(b.erstellt));
+    },
+    async setze(e) {
+      m.set(e.automatisierungId, { ...e });
+    },
+    async loesche(id) {
+      m.delete(id);
+    },
   };
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Zeilen aus der Datenbank, Spalten werden einzeln übernommen */
 const iso = (d: any) => (d instanceof Date ? d.toISOString() : String(d));
 const alsEintrag = (r: any): AufrufEintrag => ({
-  automatisierungId: r.automatisierung_id, kennung: r.kennung, geheimnis: r.geheimnis, erstellt: iso(r.erstellt), erstelltVon: r.erstellt_von ?? null, geheimnisSeit: iso(r.geheimnis_seit),
+  automatisierungId: r.automatisierung_id,
+  kennung: r.kennung,
+  geheimnis: r.geheimnis,
+  erstellt: iso(r.erstellt),
+  erstelltVon: r.erstellt_von ?? null,
+  geheimnisSeit: iso(r.geheimnis_seit),
 });
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -95,14 +121,20 @@ export function pgAufrufRepo(sql: postgres.Sql, haushaltId: string): AufrufRepo 
       const [r] = await sql`SELECT * FROM automatisierung_aufrufe WHERE haushalt_id = ${haushaltId} AND kennung = ${k}`;
       return r ? alsEintrag(r) : undefined;
     },
-    async liste() { return (await sql`SELECT * FROM automatisierung_aufrufe WHERE haushalt_id = ${haushaltId} ORDER BY erstellt, automatisierung_id`).map(alsEintrag); },
+    async liste() {
+      return (await sql`SELECT * FROM automatisierung_aufrufe WHERE haushalt_id = ${haushaltId} ORDER BY erstellt, automatisierung_id`).map(
+        alsEintrag,
+      );
+    },
     async setze(e) {
       await sql`INSERT INTO automatisierung_aufrufe (automatisierung_id, haushalt_id, kennung, geheimnis, erstellt, erstellt_von, geheimnis_seit)
         VALUES (${e.automatisierungId}, ${haushaltId}, ${e.kennung}, ${e.geheimnis}, ${e.erstellt}, ${e.erstelltVon}, ${e.geheimnisSeit})
         ON CONFLICT (automatisierung_id) DO UPDATE SET kennung = EXCLUDED.kennung, geheimnis = EXCLUDED.geheimnis, erstellt = EXCLUDED.erstellt,
           erstellt_von = EXCLUDED.erstellt_von, geheimnis_seit = EXCLUDED.geheimnis_seit`;
     },
-    async loesche(id) { if (istUuid(id)) await sql`DELETE FROM automatisierung_aufrufe WHERE haushalt_id = ${haushaltId} AND automatisierung_id = ${id}`; },
+    async loesche(id) {
+      if (istUuid(id)) await sql`DELETE FROM automatisierung_aufrufe WHERE haushalt_id = ${haushaltId} AND automatisierung_id = ${id}`;
+    },
   };
 }
 
@@ -164,9 +196,15 @@ export class Aufrufe {
   private eigenerZustand?: Kurzzustand;
   constructor(private d: AufrufDeps) {}
 
-  private jetzt() { return this.d.uhr?.() ?? Date.now(); }
-  private zustand(): Kurzzustand { return this.d.zustand?.() ?? (this.eigenerZustand ??= speicherKurzzustand(() => this.jetzt())); }
-  adresseVon(kennung: string): string { return `${(this.d.basis?.() ?? '').replace(/\/+$/, '')}${AUFRUF_PFAD}${kennung}`; }
+  private jetzt() {
+    return this.d.uhr?.() ?? Date.now();
+  }
+  private zustand(): Kurzzustand {
+    return this.d.zustand?.() ?? (this.eigenerZustand ??= speicherKurzzustand(() => this.jetzt()));
+  }
+  adresseVon(kennung: string): string {
+    return `${(this.d.basis?.() ?? '').replace(/\/+$/, '')}${AUFRUF_PFAD}${kennung}`;
+  }
 
   /** Stand für die Karte (ohne Geheimnis). */
   async stand(automatisierungId: string): Promise<AufrufStand | null> {
@@ -190,11 +228,26 @@ export class Aufrufe {
     if (was === 'geheimnis' && !alt) throw new Fachfehler(409, t('meldungen.aufruf.erst-adresse'));
     const geheimnis = `${AUFRUF_GEHEIMNIS_PRAEFIX}${randomBytes(32).toString('base64url')}`;
     const jetzt = new Date(this.jetzt()).toISOString();
-    const e: AufrufEintrag = was === 'adresse' || !alt
-      ? { automatisierungId: a.id, kennung: randomBytes(32).toString('base64url'), geheimnis: this.d.verschluessele(geheimnis), erstellt: jetzt, erstelltVon: von, geheimnisSeit: jetzt }
-      : { ...alt, geheimnis: this.d.verschluessele(geheimnis), geheimnisSeit: jetzt };
+    const e: AufrufEintrag =
+      was === 'adresse' || !alt
+        ? {
+            automatisierungId: a.id,
+            kennung: randomBytes(32).toString('base64url'),
+            geheimnis: this.d.verschluessele(geheimnis),
+            erstellt: jetzt,
+            erstelltVon: von,
+            geheimnisSeit: jetzt,
+          }
+        : { ...alt, geheimnis: this.d.verschluessele(geheimnis), geheimnisSeit: jetzt };
     await this.d.repo.setze(e);
-    log.info(was === 'adresse' ? (alt ? 'Adresse für Aufrufe von außen erneuert' : 'Adresse für Aufrufe von außen angelegt') : 'Geheimnis für Aufrufe von außen erneuert', { automatisierung: a.id, name: a.name });
+    log.info(
+      was === 'adresse'
+        ? alt
+          ? 'Adresse für Aufrufe von außen erneuert'
+          : 'Adresse für Aufrufe von außen angelegt'
+        : 'Geheimnis für Aufrufe von außen erneuert',
+      { automatisierung: a.id, name: a.name },
+    );
     return { adresse: this.adresseVon(e.kennung), erstellt: e.erstellt, geheimnisSeit: e.geheimnisSeit, geheimnis };
   }
 
@@ -229,8 +282,14 @@ export class Aufrufe {
     const roh = jsonObjekt(o.rumpf);
     if (roh === null) return { art: 'inhalt' };
     const parameter = aufrufParameter(a.wenn as WennAufruf, roh);
-    log.info('Aufruf von außen angenommen', { automatisierung: a.id, name: a.name, parameter: Object.keys(parameter).length, ip: kuerzeIp(o.ip) });
-    void this.d.ausloesen(a, uuidAusHash(merker), { zeitpunkt: new Date(zeit * 1000).toISOString(), parameter })
+    log.info('Aufruf von außen angenommen', {
+      automatisierung: a.id,
+      name: a.name,
+      parameter: Object.keys(parameter).length,
+      ip: kuerzeIp(o.ip),
+    });
+    void this.d
+      .ausloesen(a, uuidAusHash(merker), { zeitpunkt: new Date(zeit * 1000).toISOString(), parameter })
       .catch((x: Error) => log.warn('Aufruf von außen: Automatisierung nicht ausgelöst', { automatisierung: a.id, fehler: x.message }));
     return { art: 'angenommen' };
   }
@@ -250,7 +309,12 @@ export class Aufrufe {
     if (AUFRUF_KENNUNG.test(o.kennung)) {
       const n = (await z.zaehle(FEHL_ADRESSE, hashe(o.kennung), MINUTE)).anzahl;
       if (n > AUFRUF_FEHLVERSUCHE_JE_ADRESSE) {
-        if (n === AUFRUF_FEHLVERSUCHE_JE_ADRESSE + 1) log.info('Aufruf von außen gebremst', { grund: 'fehlversuche-je-adresse', ip: kuerzeIp(o.ip), ...(automatisierung ? { automatisierung } : {}) });
+        if (n === AUFRUF_FEHLVERSUCHE_JE_ADRESSE + 1)
+          log.info('Aufruf von außen gebremst', {
+            grund: 'fehlversuche-je-adresse',
+            ip: kuerzeIp(o.ip),
+            ...(automatisierung ? { automatisierung } : {}),
+          });
         return { art: 'bremse' };
       }
     }
@@ -262,7 +326,9 @@ export class Aufrufe {
    * Adresse, Automatisierung, Zeitstempel und Signatur. Ohne Adresse oder Geheimnis rechnet der Server trotzdem eine
    * Signatur (gleiche Arbeit, Wegwerf-Geheimnis) – kein Zeitunterschied zwischen „gibt es nicht“ und „falsch“.
    */
-  private async pruefe(o: AufrufAnfrage): Promise<{ a: Automatisierung; zeit: number; merker: string } | { grund: string; automatisierung?: string }> {
+  private async pruefe(
+    o: AufrufAnfrage,
+  ): Promise<{ a: Automatisierung; zeit: number; merker: string } | { grund: string; automatisierung?: string }> {
     const e = AUFRUF_KENNUNG.test(o.kennung) ? await this.d.repo.finde(o.kennung) : undefined;
     const a = e ? await this.d.automatisierung(e.automatisierungId) : undefined;
     const klar = e ? this.d.entschluessele(e.geheimnis) : null;
@@ -277,10 +343,17 @@ export class Aufrufe {
 }
 
 /** Grund fürs Protokoll (nie nach außen). */
-const ablehnGrund = (adresse: boolean, bereit: boolean, zeitOk: boolean) => (!adresse ? 'adresse' : !bereit ? 'aus' : !zeitOk ? 'zeit' : 'signatur');
+const ablehnGrund = (adresse: boolean, bereit: boolean, zeitOk: boolean) =>
+  !adresse ? 'adresse' : !bereit ? 'aus' : !zeitOk ? 'zeit' : 'signatur';
 
 /** Was die Route übergibt: Kennung aus der Adresse, Köpfe, Rumpf als Bytes, IP. */
-export interface AufrufAnfrage { kennung: string; zeit?: string; signatur?: string; rumpf: Buffer; ip?: string }
+export interface AufrufAnfrage {
+  kennung: string;
+  zeit?: string;
+  signatur?: string;
+  rumpf: Buffer;
+  ip?: string;
+}
 
 /** Rumpf als JSON-Objekt: leer = {}, sonst nur ein Objekt – alles andere null. */
 function jsonObjekt(rumpf: Buffer): Record<string, unknown> | null {
@@ -288,8 +361,10 @@ function jsonObjekt(rumpf: Buffer): Record<string, unknown> | null {
   if (!text) return {};
   try {
     const x: unknown = JSON.parse(text);
-    return x && typeof x === 'object' && !Array.isArray(x) ? x as Record<string, unknown> : null;
-  } catch { return null; }
+    return x && typeof x === 'object' && !Array.isArray(x) ? (x as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Feste UUID aus dem Merker (gleicher Aufruf = gleiche Ereignis-Id; der Motor legt je Ereignis genau einen Lauf an). */

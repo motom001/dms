@@ -1,6 +1,12 @@
 import { setzeErlaubteSprachen } from '../../shared/src/beschriftung';
 import { setzeSprache } from '../../shared/src/sprache';
-import { istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD, verfuegbareSprachen, type Spracheinstellung } from '../../shared/src/sprachwahl';
+import {
+  istVerfuegbar,
+  liesSpracheinstellung,
+  SPRACHEN_STANDARD,
+  verfuegbareSprachen,
+  type Spracheinstellung,
+} from '../../shared/src/sprachwahl';
 import { hoechstens } from './db';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
@@ -27,7 +33,11 @@ export class SprachDienst {
   /** Zuletzt gelesene Einstellung (#1198): Rückfall, wenn die Datenbank gerade nicht antwortet. */
   private zuletzt: Spracheinstellung | null = null;
 
-  async lies(): Promise<Spracheinstellung> { const e = liesSpracheinstellung(await this.einstellungen.lies('sprachen')); this.zuletzt = e; return e; }
+  async lies(): Promise<Spracheinstellung> {
+    const e = liesSpracheinstellung(await this.einstellungen.lies('sprachen'));
+    this.zuletzt = e;
+    return e;
+  }
 
   /** Wie `lies`, aber höchstens `ms` warten – sonst die zuletzt gelesene Einstellung bzw. die Vorgabe (#1198). */
   liesHoechstens(ms = SPRACHE_HOECHSTENS_MS): Promise<Spracheinstellung> {
@@ -37,17 +47,23 @@ export class SprachDienst {
   /** Liest die Sprachpakete und die Einstellung und setzt Sprache und erlaubte Sprachen dieses Prozesses. */
   async lade(): Promise<Spracheinstellung> {
     // Erst die Sprachpakete: Nur eingetragene Sprachen gelten als verfügbar.
-    if (this.pakete) await this.pakete.lade().catch((e: Error) => protokoll.modul('werkbank').warn('Sprachpakete nicht lesbar', { fehler: e.message }));
+    if (this.pakete)
+      await this.pakete.lade().catch((e: Error) => protokoll.modul('werkbank').warn('Sprachpakete nicht lesbar', { fehler: e.message }));
     const e = await this.lies();
     uebernimm(e);
     return e;
   }
 
   starte() {
-    this.uhr ??= setInterval(() => { void this.lade().catch(() => {}); }, SPRACHEN_NEU_LESEN_MS);
+    this.uhr ??= setInterval(() => {
+      void this.lade().catch(() => {});
+    }, SPRACHEN_NEU_LESEN_MS);
     this.uhr.unref?.();
   }
-  stoppe() { if (this.uhr) clearInterval(this.uhr); this.uhr = null; }
+  stoppe() {
+    if (this.uhr) clearInterval(this.uhr);
+    this.uhr = null;
+  }
 
   /** Stand für die Werkbank: Einstellung, alle Sprachen, die es gibt, und die installierten Sprachpakete (#731). */
   async stand(): Promise<{ einstellung: Spracheinstellung; verfuegbar: string[]; pakete: SprachpaketStand[] }> {
@@ -63,7 +79,10 @@ export class SprachDienst {
     const gespeichert = await this.einstellungen.lies('sprachen');
     const roh = (gespeichert && typeof gespeichert === 'object' ? gespeichert : SPRACHEN_STANDARD) as Partial<Spracheinstellung>;
     const erlaubt = Array.isArray(roh.erlaubt) ? roh.erlaubt : SPRACHEN_STANDARD.erlaubt;
-    const neu = liesSpracheinstellung({ standard: roh.standard === kennung ? SPRACHEN_STANDARD.standard : roh.standard, erlaubt: erlaubt.filter((x) => x !== kennung) });
+    const neu = liesSpracheinstellung({
+      standard: roh.standard === kennung ? SPRACHEN_STANDARD.standard : roh.standard,
+      erlaubt: erlaubt.filter((x) => x !== kennung),
+    });
     await this.einstellungen.schreibe('sprachen', neu);
     uebernimm(neu);
     protokoll.modul('werkbank').info('Sprache entfernt', { sprache: kennung, standard: neu.standard, erlaubt: neu.erlaubt.join(', ') });
@@ -74,7 +93,8 @@ export class SprachDienst {
     const x = (e ?? {}) as Record<string, unknown>;
     const alt = await this.lies();
     if (x.standard !== undefined && !istVerfuegbar(x.standard)) throw new Fachfehler(422, t('meldungen.sprachen.unbekannt'));
-    if (x.erlaubt !== undefined && (!Array.isArray(x.erlaubt) || !x.erlaubt.every(istVerfuegbar))) throw new Fachfehler(422, t('meldungen.sprachen.unbekannt'));
+    if (x.erlaubt !== undefined && (!Array.isArray(x.erlaubt) || !x.erlaubt.every(istVerfuegbar)))
+      throw new Fachfehler(422, t('meldungen.sprachen.unbekannt'));
     const standard = (x.standard as string | undefined) ?? alt.standard;
     const erlaubt = (x.erlaubt as string[] | undefined) ?? alt.erlaubt;
     if (!erlaubt.includes(standard)) throw new Fachfehler(422, t('meldungen.sprachen.standard-erlaubt'));

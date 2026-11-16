@@ -19,18 +19,40 @@ export const SYSTEMKONTEN_AUF = 'benutzer_systemkonten_auf';
  * Weitreichend: Das Paket darf alle Mappentypen ändern, oder es darf alle lesen und dazu ins Netz – dann können
  * Daten die Ablage verlassen.
  */
-export function systemkontoAuffaellig(k: { aktiv: boolean; rolle: 'systemkonto' | 'paket'; paket?: string | null; ohneCode?: boolean; automatisierungen: Array<{ angehalten?: boolean }>; rechte?: PaketCode }): { fehler: SystemkontoFehler | null; weitreichend: boolean } {
+export function systemkontoAuffaellig(k: {
+  aktiv: boolean;
+  rolle: 'systemkonto' | 'paket';
+  paket?: string | null;
+  ohneCode?: boolean;
+  automatisierungen: Array<{ angehalten?: boolean }>;
+  rechte?: PaketCode;
+}): { fehler: SystemkontoFehler | null; weitreichend: boolean } {
   const entfernt = k.rolle === 'paket' && k.paket === null;
-  const fehler: SystemkontoFehler | null = entfernt ? null : !k.aktiv && !k.ohneCode ? 'deaktiviert' : k.automatisierungen.some((a) => a.angehalten) ? 'angehalten' : null;
+  const fehler: SystemkontoFehler | null = entfernt
+    ? null
+    : !k.aktiv && !k.ohneCode
+      ? 'deaktiviert'
+      : k.automatisierungen.some((a) => a.angehalten)
+        ? 'angehalten'
+        : null;
   const r = k.rechte?.rechte;
-  const weitreichend = k.rolle === 'paket' && !entfernt && !!r && (r.schreiben.includes(ALLE_TYPEN) || (r.lesen.includes(ALLE_TYPEN) && hatNetz(k.rechte)));
+  const weitreichend =
+    k.rolle === 'paket' && !entfernt && !!r && (r.schreiben.includes(ALLE_TYPEN) || (r.lesen.includes(ALLE_TYPEN) && hatNetz(k.rechte)));
   return { fehler, weitreichend };
 }
 
-export interface SystemkontenKopf { anzahl: number; pakete: number; automatisierung: number; fehler: number; weitreichend: number }
+export interface SystemkontenKopf {
+  anzahl: number;
+  pakete: number;
+  automatisierung: number;
+  fehler: number;
+  weitreichend: number;
+}
 
 /** Zahlen für die Kopfzeile der Gruppe. */
-export function systemkontenKopf(liste: Array<{ rolle: 'systemkonto' | 'paket'; fehler?: SystemkontoFehler | null; weitreichend?: boolean }>): SystemkontenKopf {
+export function systemkontenKopf(
+  liste: Array<{ rolle: 'systemkonto' | 'paket'; fehler?: SystemkontoFehler | null; weitreichend?: boolean }>,
+): SystemkontenKopf {
   return {
     anzahl: liste.length,
     pakete: liste.filter((k) => k.rolle === 'paket').length,

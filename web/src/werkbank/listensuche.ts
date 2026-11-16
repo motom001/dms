@@ -51,7 +51,10 @@ export function paketHerkunft(id: string | null | undefined, pakete: PaketeMitVe
 /** Pakete für den Filter: die Ids, die in der Liste vorkommen, mit Namen, nach Namen sortiert; „Ablago (eingebaut)“ vorn (#1171). */
 export const paketWahl = (ids: readonly string[], pakete: Pakete) => [
   ...(ids.includes(EINGEBAUT) ? [{ id: EINGEBAUT, name: t('oberflaeche.suche.paket.eingebaut') }] : []),
-  ...ids.filter((id) => id !== EINGEBAUT).map((id) => ({ id, name: paketName(id, pakete) })).sort((a, b) => a.name.localeCompare(b.name)),
+  ...ids
+    .filter((id) => id !== EINGEBAUT)
+    .map((id) => ({ id, name: paketName(id, pakete) }))
+    .sort((a, b) => a.name.localeCompare(b.name)),
 ];
 
 const q = (wo: string, text: string | null | undefined): Fundquelle[] => (text ? [{ wo, text }] : []);
@@ -70,12 +73,17 @@ export function quellenTyp(typ: Mappentyp, o: { pakete: Pakete; typen: readonly 
     ...(typname !== typ.name ? q(t('werkbank.listensuche.name'), typname) : []),
     ...(typ.system ? q(t('werkbank.listensuche.system'), t('werkbank.werkbank.system')) : []),
     ...q(t('werkbank.listensuche.beschreibung'), typBeschreibung(typ)),
-    ...typ.felder.flatMap((f) => [...q(t('werkbank.listensuche.feld'), feldLabel(f)), ...q(t('werkbank.listensuche.feld.hilfe', { name: feldLabel(f) }), feldHilfe(f))]),
+    ...typ.felder.flatMap((f) => [
+      ...q(t('werkbank.listensuche.feld'), feldLabel(f)),
+      ...q(t('werkbank.listensuche.feld.hilfe', { name: feldLabel(f) }), feldHilfe(f)),
+    ]),
     ...(typ.trefferlisten ?? []).flatMap((l) => q(t('werkbank.listensuche.trefferliste'), listenName(l))),
     ...typ.register.flatMap((r) => q(t('werkbank.listensuche.register'), registerName(r))),
     ...regelwerkVon(typ).regeln.flatMap((r) => [
       ...q(t('werkbank.listensuche.regel'), r.name),
-      ...r.wenn.flatMap((b) => (b.art === 'benutzer' ? b.benutzer.flatMap((id) => q(t('werkbank.listensuche.regel.benutzer', { name: r.name }), o.person(id))) : [])),
+      ...r.wenn.flatMap((b) =>
+        b.art === 'benutzer' ? b.benutzer.flatMap((id) => q(t('werkbank.listensuche.regel.benutzer', { name: r.name }), o.person(id))) : [],
+      ),
     ]),
     ...(p ? q(t('werkbank.listensuche.paket'), paketName(p, o.pakete)) : []),
     ...(elternTyp ? q(t('werkbank.listensuche.gehoert-zu'), typName(elternTyp)) : []),
@@ -84,18 +92,45 @@ export function quellenTyp(typ: Mappentyp, o: { pakete: Pakete; typen: readonly 
 
 /** Ansicht (#978): Name, Beschreibung, Mappentypen, Spalten der Trefferliste und Filterbedingungen (Feld- und Registernamen), Paket. */
 export function quellenSicht(s: Sicht, o: { pakete: Pakete; typen: readonly Mappentyp[] }): Fundquelle[] {
-  const typen = typenDerSicht(s, o.typen.map((x) => x.id)).map((id) => o.typen.find((x) => x.id === id)).filter((x): x is Mappentyp => !!x);
-  const feld = (key: string) => { for (const ty of typen) { const f = ty.felder.find((x) => x.key === key); if (f) return feldLabel(f); } return ''; };
-  const register = (key: string) => { for (const ty of typen) { const r = ty.register.find((x) => x.key === key); if (r) return registerName(r); } return ''; };
+  const typen = typenDerSicht(
+    s,
+    o.typen.map((x) => x.id),
+  )
+    .map((id) => o.typen.find((x) => x.id === id))
+    .filter((x): x is Mappentyp => !!x);
+  const feld = (key: string) => {
+    for (const ty of typen) {
+      const f = ty.felder.find((x) => x.key === key);
+      if (f) return feldLabel(f);
+    }
+    return '';
+  };
+  const register = (key: string) => {
+    for (const ty of typen) {
+      const r = ty.register.find((x) => x.key === key);
+      if (r) return registerName(r);
+    }
+    return '';
+  };
   const liste = s.trefferliste ? typen.map((ty) => trefferlistenVon(ty).find((l) => l.key === s.trefferliste)).find(Boolean) : undefined;
   const p = paketVonSicht(s, o.pakete);
   return [
     { wo: '', text: s.name, titel: true },
     ...q(t('werkbank.listensuche.beschreibung'), s.beschreibung),
     ...(zeigtAlleTypen(s) ? [] : typen.flatMap((ty) => q(t('werkbank.listensuche.mappentyp'), typName(ty)))),
-    ...(liste ? [...q(t('werkbank.listensuche.trefferliste'), listenName(liste)), ...liste.spalten.flatMap((k) => q(t('werkbank.listensuche.spalte'), feld(k)))] : []),
-    ...s.bedingungen.flatMap((b) => (b.art === 'feld' || (b.art === 'frist' && b.feld) ? q(t('werkbank.listensuche.bedingung'), feld(b.feld!))
-      : b.art === 'dokumente' || b.art === 'verknuepfungen' ? q(t('werkbank.listensuche.bedingung'), register(b.register)) : [])),
+    ...(liste
+      ? [
+          ...q(t('werkbank.listensuche.trefferliste'), listenName(liste)),
+          ...liste.spalten.flatMap((k) => q(t('werkbank.listensuche.spalte'), feld(k))),
+        ]
+      : []),
+    ...s.bedingungen.flatMap((b) =>
+      b.art === 'feld' || (b.art === 'frist' && b.feld)
+        ? q(t('werkbank.listensuche.bedingung'), feld(b.feld!))
+        : b.art === 'dokumente' || b.art === 'verknuepfungen'
+          ? q(t('werkbank.listensuche.bedingung'), register(b.register))
+          : [],
+    ),
     ...(p ? q(t('werkbank.listensuche.paket'), paketName(p, o.pakete)) : []),
   ];
 }
@@ -107,7 +142,10 @@ export function quellenKreis(k: NummernkreisAnsicht, o: { pakete: Pakete; typen:
     { wo: '', text: k.name, titel: true },
     ...q(t('werkbank.listensuche.kennung'), k.schluessel),
     ...q(t('werkbank.listensuche.muster'), k.muster),
-    ...k.verwendet.flatMap((v) => [...q(t('werkbank.listensuche.mappentyp'), v.typ), ...q(t('werkbank.listensuche.feld.in', { name: v.typ }), v.feld)]),
+    ...k.verwendet.flatMap((v) => [
+      ...q(t('werkbank.listensuche.mappentyp'), v.typ),
+      ...q(t('werkbank.listensuche.feld.in', { name: v.typ }), v.feld),
+    ]),
     ...(p ? q(t('werkbank.listensuche.paket'), paketName(p, o.pakete)) : []),
   ];
 }

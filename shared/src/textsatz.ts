@@ -18,7 +18,13 @@ import { erwaehnungsErsatz, zerlege, type Block, type Inline } from './markdown'
 export const DMS_TEXTSATZ_AB = '0.242.0';
 
 /** Ein Stück Text gleicher Schrift. `luecke`: fehlender Wert („[Vertragsnummer]“). */
-export interface Lauf { text: string; fett?: boolean; kursiv?: boolean; mono?: boolean; luecke?: boolean }
+export interface Lauf {
+  text: string;
+  fett?: boolean;
+  kursiv?: boolean;
+  mono?: boolean;
+  luecke?: boolean;
+}
 
 export type BriefBlock =
   | { art: 'ueberschrift'; stufe: 1 | 2 | 3; laeufe: Lauf[] }
@@ -68,7 +74,8 @@ export const lueckenText = (beschriftung: string) => `[${beschriftung}]`;
 
 /** Maskiert einen Wert für Markdown: Steuerzeichen mit `\`, Zeilenanfänge, die eine Liste oder Überschrift wären. */
 export function mdMaskiert(wert: string): string {
-  return wert.replace(/[\\`*_{}[\]()<>!#|~]/g, '\\$&')
+  return wert
+    .replace(/[\\`*_{}[\]()<>!#|~]/g, '\\$&')
     .replace(/(^|\n)(\s*)([-+])(?=\s|$)/g, '$1$2\\$3')
     .replace(/(^|\n)(\s*)(\d{1,9})([.)])(?=\s|$)/g, '$1$2$3\\$4');
 }
@@ -88,14 +95,23 @@ export interface Gesetzt {
 export function setzeVorlage(vorlage: string, wert: (name: string) => Platzhalterwert): Gesetzt {
   const namen: string[] = [];
   const werte: Platzhalterwert[] = [];
-  const mitMarken = vorlage.replace(/\r\n?/g, '\n').replace(PRIVAT, '').replace(PLATZHALTER, (_, name: string) => {
-    namen.push(name);
-    werte.push(wert(name));
-    return `\uE000${namen.length - 1}\uE001`;
+  const mitMarken = vorlage
+    .replace(/\r\n?/g, '\n')
+    .replace(PRIVAT, '')
+    .replace(PLATZHALTER, (_, name: string) => {
+      namen.push(name);
+      werte.push(wert(name));
+      return `\uE000${namen.length - 1}\uE001`;
+    });
+  const text = mitMarken.replace(MARKE, (_, i: string) => {
+    const w = werte[Number(i)];
+    return 'text' in w ? mdMaskiert(w.text) : mdMaskiert(lueckenText(w.luecke));
   });
-  const text = mitMarken.replace(MARKE, (_, i: string) => { const w = werte[Number(i)]; return 'text' in w ? mdMaskiert(w.text) : mdMaskiert(lueckenText(w.luecke)); });
   // Zwei und mehr Leerzeilen hintereinander bleiben als Abstand (Platz für die Unterschrift).
-  const mitAbstand = mitMarken.replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, (m) => `\n\n${ABSTAND}${'\u00a0'.repeat(Math.min(10, m.split('\n').length - 3))}\n\n`);
+  const mitAbstand = mitMarken.replace(
+    /\n[ \t]*\n(?:[ \t]*\n)+/g,
+    (m) => `\n\n${ABSTAND}${'\u00a0'.repeat(Math.min(10, m.split('\n').length - 3))}\n\n`,
+  );
   const bloecke = zerlege(mitAbstand).map((b) => block(b, werte));
   const erster = bloecke[0];
   const betreff = erster?.art === 'ueberschrift' && erster.stufe === 1 ? erster.laeufe : null;
@@ -106,14 +122,17 @@ type Stil = Pick<Lauf, 'fett' | 'kursiv' | 'mono'>;
 
 function block(b: Block, werte: Platzhalterwert[]): BriefBlock {
   switch (b.art) {
-    case 'ueberschrift': return { art: 'ueberschrift', stufe: b.stufe, laeufe: laeufe(b.inhalt, werte) };
+    case 'ueberschrift':
+      return { art: 'ueberschrift', stufe: b.stufe, laeufe: laeufe(b.inhalt, werte) };
     case 'absatz': {
       const roh = b.inhalt.length === 1 && b.inhalt[0].art === 'text' ? b.inhalt[0].text : '';
       if (roh.startsWith(ABSTAND)) return { art: 'abstand', zeilen: roh.length };
       return { art: 'absatz', laeufe: laeufe(b.inhalt, werte) };
     }
-    case 'liste': return { art: 'liste', nummeriert: b.nummeriert, punkte: b.punkte.map((p) => laeufe(p, werte)) };
-    case 'zitat': return { art: 'zitat', bloecke: b.bloecke.map((x) => block(x, werte)) };
+    case 'liste':
+      return { art: 'liste', nummeriert: b.nummeriert, punkte: b.punkte.map((p) => laeufe(p, werte)) };
+    case 'zitat':
+      return { art: 'zitat', bloecke: b.bloecke.map((x) => block(x, werte)) };
   }
 }
 
@@ -132,12 +151,25 @@ function laeufe(teile: Inline[], werte: Platzhalterwert[], stil: Stil = {}): Lau
   };
   for (const t of teile) {
     switch (t.art) {
-      case 'text': text(t.text, stil); break;
-      case 'code': text(t.text, { ...stil, mono: true }); break;
-      case 'erwaehnung': text(`@${erwaehnungsErsatz(t.name)}`, stil); break;
-      case 'fett': aus.push(...laeufe(t.kinder, werte, { ...stil, fett: true })); break;
-      case 'kursiv': aus.push(...laeufe(t.kinder, werte, { ...stil, kursiv: true })); break;
-      case 'link': aus.push(...laeufe(t.kinder, werte, stil)); text(` (${t.ziel})`, stil); break;
+      case 'text':
+        text(t.text, stil);
+        break;
+      case 'code':
+        text(t.text, { ...stil, mono: true });
+        break;
+      case 'erwaehnung':
+        text(`@${erwaehnungsErsatz(t.name)}`, stil);
+        break;
+      case 'fett':
+        aus.push(...laeufe(t.kinder, werte, { ...stil, fett: true }));
+        break;
+      case 'kursiv':
+        aus.push(...laeufe(t.kinder, werte, { ...stil, kursiv: true }));
+        break;
+      case 'link':
+        aus.push(...laeufe(t.kinder, werte, stil));
+        text(` (${t.ziel})`, stil);
+        break;
     }
   }
   return aus;
@@ -149,7 +181,12 @@ export const laufText = (l: Lauf[]) => l.map((x) => x.text).join('');
 /* ---------- Schnittstelle ---------- */
 
 /** Ein Platzhalter einer Vorlage, wie die Person ihn sieht: Name, Beschriftung, fehlt der Wert? `feld`: zum Hinspringen. */
-export interface PlatzhalterStand { name: string; beschriftung: string; fehlt: boolean; feld?: string }
+export interface PlatzhalterStand {
+  name: string;
+  beschriftung: string;
+  fehlt: boolean;
+  feld?: string;
+}
 
 /** Eine Vorlage, die zu einer Mappe passt (GET /api/mappen/{id}/vorlagen). */
 export interface VorlageEintrag {
@@ -186,6 +223,12 @@ export interface TextGesetzt {
 
 /** Dateiname des Ergebnisses: „Kündigung Mietvertrag 2026-11-11“ (ohne Endung, ohne Schrägstriche). */
 export function ergebnisName(vorlage: string, heute: string): string {
-  const stamm = vorlage.replace(/\.md$/i, '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150) || 'Brief';
+  const stamm =
+    vorlage
+      .replace(/\.md$/i, '')
+      .replace(/[\\/:*?"<>|]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 150) || 'Brief';
   return `${stamm} ${heute}`;
 }

@@ -44,7 +44,14 @@ export interface WartungStand {
 }
 
 /** Was jeder sehen darf (auch ohne Anmeldung). */
-export interface WartungOeffentlich { stufe: Stufe; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null; ausloeser: 'speicherplatz' | null }
+export interface WartungOeffentlich {
+  stufe: Stufe;
+  text: string;
+  ende: string | null;
+  aktivAb: string | null;
+  sekunden: number | null;
+  ausloeser: 'speicherplatz' | null;
+}
 
 export interface WartungKonten {
   /** Beendet alle Sitzungen außer dieser; liefert die Anzahl. */
@@ -53,7 +60,12 @@ export interface WartungKonten {
 
 /** Wird während der aktiven Wartung geworfen; der HTTP-Adapter setzt Retry-After. */
 export class WartungFehler extends Fachfehler {
-  constructor(message: string, public retryAfter: number) { super(503, message); }
+  constructor(
+    message: string,
+    public retryAfter: number,
+  ) {
+    super(503, message);
+  }
 }
 
 const AUS: WartungStand = { stufe: 'aus', text: '', ende: null, aktivAb: null, beginn: null, von: null, sitzungId: null, ausloeser: null };
@@ -63,35 +75,57 @@ export class Wartung {
   private zeitgeber?: NodeJS.Timeout;
   private nachAus: Array<() => void> = [];
 
-  constructor(private einstellungen: Einstellungen, private konten: WartungKonten, private jetzt: () => Date = () => new Date()) {}
+  constructor(
+    private einstellungen: Einstellungen,
+    private konten: WartungKonten,
+    private jetzt: () => Date = () => new Date(),
+  ) {}
 
   async laden() {
     const g = (await this.einstellungen.lies('wartung')) as Partial<WartungStand> | null;
     this.s = g?.stufe && g.stufe !== 'aus' ? { ...AUS, ...g } : { ...AUS };
-    if (this.s.stufe !== 'aus') log.warn(`Wartungsmodus ist ${this.s.stufe === 'aktiv' ? 'aktiv' : 'angekündigt'}`, { text: this.s.text, aktivAb: this.s.aktivAb });
+    if (this.s.stufe !== 'aus')
+      log.warn(`Wartungsmodus ist ${this.s.stufe === 'aktiv' ? 'aktiv' : 'angekündigt'}`, { text: this.s.text, aktivAb: this.s.aktivAb });
     await this.pruefe();
   }
 
   /** Regelmäßig: aus „angekündigt“ wird nach Ablauf der Vorlaufzeit „aktiv“. */
   start(ms = 5000) {
-    this.zeitgeber = setInterval(() => void this.pruefe().catch((e) => log.error('Wartungsmodus prüfen fehlgeschlagen', { fehler: (e as Error).message })), ms);
+    this.zeitgeber = setInterval(
+      () => void this.pruefe().catch((e) => log.error('Wartungsmodus prüfen fehlgeschlagen', { fehler: (e as Error).message })),
+      ms,
+    );
     this.zeitgeber.unref?.();
   }
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+  }
 
-  get stand(): WartungStand { return { ...this.s }; }
+  get stand(): WartungStand {
+    return { ...this.s };
+  }
   /** Nach dem Ausschalten, z. B. pausierte Texterkennung wieder anstoßen. */
-  beimAusschalten(f: () => void) { this.nachAus.push(f); }
+  beimAusschalten(f: () => void) {
+    this.nachAus.push(f);
+  }
   /** Aktiv: nur Administratoren, API 503, Hintergrundarbeiten pausieren. */
-  get aktiv() { return this.s.stufe === 'aktiv'; }
+  get aktiv() {
+    return this.s.stufe === 'aktiv';
+  }
   /** Angekündigt oder aktiv: Anmeldung nur noch für Administratoren. */
-  get an() { return this.s.stufe !== 'aus'; }
+  get an() {
+    return this.s.stufe !== 'aus';
+  }
 
   oeffentlich(): WartungOeffentlich {
     const s = this.s;
     const ab = s.aktivAb ? Date.parse(s.aktivAb) : NaN;
     return {
-      stufe: s.stufe, text: s.text, ende: s.ende, aktivAb: s.aktivAb, ausloeser: s.ausloeser ?? null,
+      stufe: s.stufe,
+      text: s.text,
+      ende: s.ende,
+      aktivAb: s.aktivAb,
+      ausloeser: s.ausloeser ?? null,
       sekunden: s.stufe === 'angekuendigt' && Number.isFinite(ab) ? Math.max(0, Math.round((ab - this.jetzt().getTime()) / 1000)) : null,
     };
   }
@@ -105,7 +139,11 @@ export class Wartung {
 
   /** Meldung für Abgewiesene. */
   meldung(): string {
-    const ende = this.s.ende ? t('meldungen.wartung.voraussichtlich-bis-uhr', { wert: new Date(this.s.ende).toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'short', timeStyle: 'short' }) }) : '';
+    const ende = this.s.ende
+      ? t('meldungen.wartung.voraussichtlich-bis-uhr', {
+          wert: new Date(this.s.ende).toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'short', timeStyle: 'short' }),
+        })
+      : '';
     return t('meldungen.wartung.ablago-wird-gerade-gewartet', { wert: this.s.text ? ` (${this.s.text})` : '', ende });
   }
 
@@ -115,7 +153,14 @@ export class Wartung {
     const vorher = this.s;
     const g = (await this.einstellungen.lies('wartung')) as Partial<WartungStand> | null;
     this.s = g?.stufe && g.stufe !== 'aus' ? { ...AUS, ...g } : { ...AUS };
-    if (vorher.stufe !== 'aus' && this.s.stufe === 'aus') for (const f of this.nachAus) { try { f(); } catch { /* weiter */ } }
+    if (vorher.stufe !== 'aus' && this.s.stufe === 'aus')
+      for (const f of this.nachAus) {
+        try {
+          f();
+        } catch {
+          /* weiter */
+        }
+      }
     if (this.s.stufe === 'angekuendigt' && this.s.aktivAb && Date.parse(this.s.aktivAb) <= this.jetzt().getTime()) {
       // Nur ein Prozess schaltet um (vergleichen und tauschen); die anderen lesen es beim nächsten Mal.
       const alt = this.s;
@@ -128,7 +173,9 @@ export class Wartung {
     }
   }
 
-  private async speichere() { await this.einstellungen.schreibe('wartung', this.s.stufe === 'aus' ? null : this.s); }
+  private async speichere() {
+    await this.einstellungen.schreibe('wartung', this.s.stufe === 'aus' ? null : this.s);
+  }
 
   private async aktiviere(grund: string) {
     this.s = { ...this.s, stufe: 'aktiv', aktivAb: this.jetzt().toISOString() };
@@ -143,7 +190,11 @@ export class Wartung {
    * nur im Protokoll als „sofort gesperrt“ vermerkt. Ist die Wartung schon an, werden Text und
    * Ende übernommen; die Vorlaufzeit gilt dann nur, solange sie noch angekündigt ist.
    */
-  async einschalten(e: { text?: unknown; ende?: unknown; vorlauf?: unknown; beginn?: unknown; sofort?: unknown }, admin: { email: string }, sitzungId: string | null): Promise<WartungStand> {
+  async einschalten(
+    e: { text?: unknown; ende?: unknown; vorlauf?: unknown; beginn?: unknown; sofort?: unknown },
+    admin: { email: string },
+    sitzungId: string | null,
+  ): Promise<WartungStand> {
     const text = typeof e.text === 'string' ? e.text.trim().slice(0, 200) : '';
     let ende: string | null = null;
     if (e.ende !== undefined && e.ende !== null && e.ende !== '') {
@@ -161,9 +212,15 @@ export class Wartung {
       if (beginn > jetzt.getTime() + 24 * 3600_000) throw new Fachfehler(422, t('meldungen.wartung.der-beginn-darf-hoechstens'));
       if (ende && Date.parse(ende) <= beginn) throw new Fachfehler(422, t('meldungen.wartung.das-erwartete-ende-muss'));
     }
-    const vorlauf = sofort ? 0 : beginn !== null ? Math.max(1, Math.round((beginn - jetzt.getTime()) / 60_000))
-      : e.vorlauf === undefined || e.vorlauf === null || e.vorlauf === '' ? VORLAUF_STANDARD_MIN : Number(e.vorlauf);
-    if (!Number.isInteger(vorlauf) || vorlauf < 0 || vorlauf > 24 * 60) throw new Fachfehler(422, t('meldungen.wartung.die-vorlaufzeit-muss-zwischen'));
+    const vorlauf = sofort
+      ? 0
+      : beginn !== null
+        ? Math.max(1, Math.round((beginn - jetzt.getTime()) / 60_000))
+        : e.vorlauf === undefined || e.vorlauf === null || e.vorlauf === ''
+          ? VORLAUF_STANDARD_MIN
+          : Number(e.vorlauf);
+    if (!Number.isInteger(vorlauf) || vorlauf < 0 || vorlauf > 24 * 60)
+      throw new Fachfehler(422, t('meldungen.wartung.die-vorlaufzeit-muss-zwischen'));
     if (this.s.stufe === 'aktiv') {
       this.s = { ...this.s, text, ende };
       await this.speichere();
@@ -171,9 +228,24 @@ export class Wartung {
       return this.stand;
     }
     const aktivAb = new Date(beginn ?? jetzt.getTime() + vorlauf * 60_000).toISOString();
-    this.s = { stufe: 'angekuendigt', text, ende, aktivAb, beginn: this.s.beginn ?? jetzt.toISOString(), von: admin.email, sitzungId, ...(sofort ? { sofort: true } : {}) };
+    this.s = {
+      stufe: 'angekuendigt',
+      text,
+      ende,
+      aktivAb,
+      beginn: this.s.beginn ?? jetzt.toISOString(),
+      von: admin.email,
+      sitzungId,
+      ...(sofort ? { sofort: true } : {}),
+    };
     await this.speichere();
-    log.warn(sofort ? 'Wartungsmodus sofort gesperrt' : vorlauf ? 'Wartungsmodus angekündigt' : 'Wartungsmodus eingeschaltet', { von: admin.email, text, ende, aktivAb, vorlaufMinuten: vorlauf });
+    log.warn(sofort ? 'Wartungsmodus sofort gesperrt' : vorlauf ? 'Wartungsmodus angekündigt' : 'Wartungsmodus eingeschaltet', {
+      von: admin.email,
+      text,
+      ende,
+      aktivAb,
+      vorlaufMinuten: vorlauf,
+    });
     void nachweis('betrieb.wartung', { stufe: this.s.stufe, ab: aktivAb, ende, von: admin.email });
     if (!vorlauf) await this.aktiviere(sofort ? 'sofort gesperrt' : 'sofort');
     return this.stand;
@@ -186,7 +258,15 @@ export class Wartung {
   async automatisch(ausloeser: 'speicherplatz', text: string, vorlaufMin: number): Promise<boolean> {
     if (this.s.stufe !== 'aus') return false;
     const jetzt = this.jetzt();
-    this.s = { ...AUS, stufe: 'angekuendigt', text, aktivAb: new Date(jetzt.getTime() + vorlaufMin * 60_000).toISOString(), beginn: jetzt.toISOString(), von: t('meldungen.wartung.ablago-automatisch'), ausloeser };
+    this.s = {
+      ...AUS,
+      stufe: 'angekuendigt',
+      text,
+      aktivAb: new Date(jetzt.getTime() + vorlaufMin * 60_000).toISOString(),
+      beginn: jetzt.toISOString(),
+      von: t('meldungen.wartung.ablago-automatisch'),
+      ausloeser,
+    };
     await this.speichere();
     log.warn('Wartungsmodus automatisch angekündigt', { ausloeser, text, aktivAb: this.s.aktivAb, vorlaufMinuten: vorlaufMin });
     void nachweis('betrieb.wartung', { stufe: this.s.stufe, ab: this.s.aktivAb, ende: this.s.ende, von: ausloeser });
@@ -215,7 +295,13 @@ export class Wartung {
     await this.speichere();
     log.warn('Wartungsmodus ausgeschaltet', { von, seit: vorher.beginn });
     void nachweis('betrieb.wartung', { stufe: 'aus', seit: vorher.beginn, von });
-    for (const f of this.nachAus) { try { f(); } catch { /* weiter */ } }
+    for (const f of this.nachAus) {
+      try {
+        f();
+      } catch {
+        /* weiter */
+      }
+    }
     return this.stand;
   }
 
@@ -231,5 +317,7 @@ export class Wartung {
   }
 
   /** Nach einer Anmeldung: Wer nicht verwalten darf, kommt ab der Ankündigung nicht mehr hinein. */
-  sperrtAnmeldung(benutzer: { verwaltung?: string[]; art?: string }) { return this.an && !darfVerwalten(benutzer); }
+  sperrtAnmeldung(benutzer: { verwaltung?: string[]; art?: string }) {
+    return this.an && !darfVerwalten(benutzer);
+  }
 }

@@ -50,20 +50,33 @@ export function useGespeichertNachziehen<T>(gespeichert: T, aktuell: T, setze: (
   }, [text]); // eslint-disable-line react-hooks/exhaustive-deps -- nur, wenn sich der gespeicherte Stand ändert
 }
 
-export function useEntwurf<T>(gespeichert: T, aktuell: T, o: { neu?: boolean; zuruecksetzen(): void; liste?: string; aus?: boolean }): Entwurf {
+export function useEntwurf<T>(
+  gespeichert: T,
+  aktuell: T,
+  o: { neu?: boolean; zuruecksetzen(): void; liste?: string; aus?: boolean },
+): Entwurf {
   const neu = !!o.neu;
   const geaendert = !o.aus && istGeaendert(gespeichert, aktuell);
   useUngespeichert(geaendert);
   async function verwerfen(ausloeser: 'knopf' | 'esc' = 'knopf') {
     const s = verwerfenSchritt({ neu, geaendert }, ausloeser);
     if (s.aktion === 'nichts') return;
-    if (s.rueckfrage && !(await rueckfrage({
-      titel: neu ? t('oberflaeche.speicherleiste.entwurf-verwerfen') : t('oberflaeche.speicherleiste.aenderungen-verwerfen'),
-      text: neu ? t('oberflaeche.speicherleiste.was-du-eingegeben-hast') : t('oberflaeche.speicherleiste.die-felder-gehen-auf'),
-      ja: t('oberflaeche.speicherleiste.verwerfen'), nein: t('oberflaeche.speicherleiste.weiter-bearbeiten'), gefahr: true,
-    }))) return;
+    if (
+      s.rueckfrage &&
+      !(await rueckfrage({
+        titel: neu ? t('oberflaeche.speicherleiste.entwurf-verwerfen') : t('oberflaeche.speicherleiste.aenderungen-verwerfen'),
+        text: neu ? t('oberflaeche.speicherleiste.was-du-eingegeben-hast') : t('oberflaeche.speicherleiste.die-felder-gehen-auf'),
+        ja: t('oberflaeche.speicherleiste.verwerfen'),
+        nein: t('oberflaeche.speicherleiste.weiter-bearbeiten'),
+        gefahr: true,
+      }))
+    )
+      return;
     if (s.aktion === 'schliessen') {
-      if (o.liste) { loeseWache(); geheZu(o.liste); } else o.zuruecksetzen();
+      if (o.liste) {
+        loeseWache();
+        geheZu(o.liste);
+      } else o.zuruecksetzen();
     } else o.zuruecksetzen();
   }
   function tasten(e: KeyboardEvent) {
@@ -119,25 +132,60 @@ export interface SpeicherleisteProps {
  * Mappentyp-Editor). Links „… löschen“, in der Mitte der Status, rechts „Verwerfen“ und der Hauptknopf mit dem
  * Gegenstand im Namen. Ohne `speichern` ist der Hauptknopf ein Submit-Knopf des umgebenden Formulars.
  */
-export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, loeschen, weitere, meldung, haupttext, formular, nurLesen }: SpeicherleisteProps) {
+export function Speicherleiste({
+  ent,
+  gegenstand,
+  sendet,
+  ungueltig,
+  speicherbar,
+  speichern,
+  loeschen,
+  weitere,
+  meldung,
+  haupttext,
+  formular,
+  nurLesen,
+}: SpeicherleisteProps) {
   const k = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, sendet, ungueltig, speicherbar }, gegenstand);
   // Beschriftung ohne „Speichere …“: Während des Sendens zeigt der Knopf „läuft“ mit diesem Text darüber.
   const ruhig = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, ungueltig, speicherbar }, gegenstand);
   return (
     <div className={`speicherleiste ${s.leiste}`}>
       {loeschen && (
-        <Knopf art="gefahr" symbol={loeschen.symbol ?? 'geloescht'} rueckfrage={loeschen.rueckfrage} gesperrt={loeschen.gesperrt} onClick={(_e, anlass) => loeschen.onClick(anlass)} className={s.loeschen}>
+        <Knopf
+          art="gefahr"
+          symbol={loeschen.symbol ?? 'geloescht'}
+          rueckfrage={loeschen.rueckfrage}
+          gesperrt={loeschen.gesperrt}
+          onClick={(_e, anlass) => loeschen.onClick(anlass)}
+          className={s.loeschen}>
           <span className={s.loeschtext}>{loeschen.text}</span>
         </Knopf>
       )}
-      <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? k.status}</span>
-      {!nurLesen && <div className={`knoepfe ${s.knoepfe}`}>
-        {weitere}
-        <Knopf gesperrt={!k.verwerfen.aktiv} title={k.verwerfen.aktiv ? k.verwerfen.titel : undefined} onClick={() => void ent.verwerfen()}>{k.verwerfen.text}</Knopf>
-        <Knopf art="haupt" type={speichern ? 'button' : 'submit'} form={speichern ? undefined : formular} gesperrt={!k.haupt.aktiv && !sendet} laeuft={sendet} laeuftText={k.haupt.text} onClick={speichern}>
-          {haupttext ?? ruhig.haupt.text}
-        </Knopf>
-      </div>}
+      <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">
+        {meldung?.text ?? k.status}
+      </span>
+      {!nurLesen && (
+        <div className={`knoepfe ${s.knoepfe}`}>
+          {weitere}
+          <Knopf
+            gesperrt={!k.verwerfen.aktiv}
+            title={k.verwerfen.aktiv ? k.verwerfen.titel : undefined}
+            onClick={() => void ent.verwerfen()}>
+            {k.verwerfen.text}
+          </Knopf>
+          <Knopf
+            art="haupt"
+            type={speichern ? 'button' : 'submit'}
+            form={speichern ? undefined : formular}
+            gesperrt={!k.haupt.aktiv && !sendet}
+            laeuft={sendet}
+            laeuftText={k.haupt.text}
+            onClick={speichern}>
+            {haupttext ?? ruhig.haupt.text}
+          </Knopf>
+        </div>
+      )}
     </div>
   );
 }

@@ -91,7 +91,8 @@ export type UmbauEntscheidungen = Record<string, Record<string, UmbauWahl>>;
 
 /** Eine Rückfrage: ein Feld, das der Administrator am alten Typ angelegt oder geändert hat. */
 export interface UmbauRueckfrage {
-  feld: string; label: string;
+  feld: string;
+  label: string;
   /** eigen = vom Administrator angelegt; geaendert = Feld des Pakets, dessen Art der Administrator geändert hat. */
   grund: 'eigen' | 'geaendert';
   /** Mappen mit einem Wert darin. */
@@ -136,13 +137,20 @@ export interface UmbauPlan {
 }
 
 /** Eine Ansicht über den alten Typ in der Vorschau des Umbaus (#1125). */
-export interface UmbauAnsicht { name: string; paket: string | null; felder: string[]; breiter: number }
+export interface UmbauAnsicht {
+  name: string;
+  paket: string | null;
+  felder: string[];
+  breiter: number;
+}
 
 /* ---------- Werte umwandeln ---------- */
 
 const EINHEITEN: Array<[RegExp, 'tage' | 'wochen' | 'monate' | 'jahre']> = [
-  [/^(tag|tage|tagen|day|days)$/i, 'tage'], [/^(woche|wochen|week|weeks)$/i, 'wochen'],
-  [/^(monat|monate|monaten|month|months)$/i, 'monate'], [/^(jahr|jahre|jahren|year|years)$/i, 'jahre'],
+  [/^(tag|tage|tagen|day|days)$/i, 'tage'],
+  [/^(woche|wochen|week|weeks)$/i, 'wochen'],
+  [/^(monat|monate|monaten|month|months)$/i, 'monate'],
+  [/^(jahr|jahre|jahren|year|years)$/i, 'jahre'],
 ];
 /**
  * Zeitraum aus Freitext (#1041, „Kündigungsfrist“): „3 Monate“, „1 Jahr“, „14 Tage zum Monatsende“. `genau` = der Text
@@ -162,7 +170,9 @@ export function zeitraumAusText(text: string): { anzahl: number; einheit: 'tage'
 export function zahlAusText(text: string): number | null {
   const s = text.replace(/[€\s]|EUR/gi, '');
   if (!/^-?[\d.,]+$/.test(s)) return null;
-  const n = Number(/,\d{1,2}$/.test(s) || (s.includes(',') && !s.includes('.')) ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, ''));
+  const n = Number(
+    /,\d{1,2}$/.test(s) || (s.includes(',') && !s.includes('.')) ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, ''),
+  );
   return Number.isFinite(n) ? n : null;
 }
 
@@ -177,7 +187,10 @@ export function datumAusText(text: string): string | null {
 /* ---------- Rechte mitnehmen ---------- */
 
 /** Bedingung „kam aus diesem Typ“ – über das Feld `umbau_aus` des Zieltyps. */
-export const umbauBedingung = (kennung: string): RegelBedingung => ({ art: 'feld', bedingung: { art: 'feld', feld: UMBAU_FELD, op: 'gleich', wert: { art: 'fest', wert: kennung } } });
+export const umbauBedingung = (kennung: string): RegelBedingung => ({
+  art: 'feld',
+  bedingung: { art: 'feld', feld: UMBAU_FELD, op: 'gleich', wert: { art: 'fest', wert: kennung } },
+});
 
 /**
  * Regelwerk des Zieltyps, wenn Mappen eines anderen Typs hinzukommen (Entscheidung Thomas: „Die Recht-Regeln des alten
@@ -190,8 +203,19 @@ export function regelnMitnehmen(alt: Regelwerk, ziel: Regelwerk, kennung: string
   const offen = RECHTE_LISTE.every((k) => alt.grund[k]) && !alt.regeln.length;
   if (offen || JSON.stringify(ohneIds(alt)) === JSON.stringify(ohneIds(ziel))) return null;
   const b = umbauBedingung(kennung);
-  const grund: Regel = { id: ids(), name: t('gemeinsam.umbau.regel-grund', { name }), wenn: [b], dann: Object.fromEntries(RECHTE_LISTE.map((k: Recht) => [k, alt.grund[k] ? 'erteilen' : 'entziehen'])), stopp: false };
-  const regeln: Regel[] = alt.regeln.map((r) => ({ ...r, id: ids(), name: t('gemeinsam.umbau.regel', { name, regel: r.name }), wenn: [b, ...r.wenn] }));
+  const grund: Regel = {
+    id: ids(),
+    name: t('gemeinsam.umbau.regel-grund', { name }),
+    wenn: [b],
+    dann: Object.fromEntries(RECHTE_LISTE.map((k: Recht) => [k, alt.grund[k] ? 'erteilen' : 'entziehen'])),
+    stopp: false,
+  };
+  const regeln: Regel[] = alt.regeln.map((r) => ({
+    ...r,
+    id: ids(),
+    name: t('gemeinsam.umbau.regel', { name, regel: r.name }),
+    wenn: [b, ...r.wenn],
+  }));
   const ende: Regel = { id: ids(), name: t('gemeinsam.umbau.regel-ende', { name }), wenn: [b], dann: {}, stopp: true };
   // Schon mitgenommene Regeln (zweiter Schritt in denselben Zieltyp) bleiben vorn.
   return { grund: ziel.grund, regeln: [grund, ...regeln, ende, ...ziel.regeln] };
@@ -202,11 +226,15 @@ const ohneIds = (r: Regelwerk) => ({ grund: r.grund, regeln: r.regeln.map((x) =>
  * Wird der Archivmodus lockerer, wenn Mappen von `alt` nach `neu` ziehen (#1051, Sicherheit: „Archivmodus und
  * Fristsperre an den Mappen bleiben bestehen“)? Der Stichtag zählt über die Zuordnung der Felder. null = nein.
  */
-export function archivLockerer(alt: Archiv | null | undefined, neu: Archiv | null | undefined, felder: Record<string, string>): 'aus' | 'jahre' | 'stichtag' | 'leer' | null {
+export function archivLockerer(
+  alt: Archiv | null | undefined,
+  neu: Archiv | null | undefined,
+  felder: Record<string, string>,
+): 'aus' | 'jahre' | 'stichtag' | 'leer' | null {
   if (!alt) return null;
   if (!neu) return 'aus';
   if (neu.jahre < alt.jahre) return 'jahre';
-  const stichtag = alt.stichtag ? felder[alt.stichtag] ?? alt.stichtag : null;
+  const stichtag = alt.stichtag ? (felder[alt.stichtag] ?? alt.stichtag) : null;
   if ((neu.stichtag ?? null) !== stichtag) return 'stichtag';
   if (alt.leererStichtag === 'laeuftNicht' && neu.leererStichtag !== 'laeuftNicht') return 'leer';
   return null;

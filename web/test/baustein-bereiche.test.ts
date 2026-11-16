@@ -12,7 +12,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location ??= new URL('http://127.0.0.1/');
 g.localStorage ??= speicher();
@@ -20,7 +29,14 @@ g.sessionStorage ??= speicher();
 g.addEventListener ??= () => {};
 g.removeEventListener ??= () => {};
 g.window ??= globalThis;
-g.document ??= { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document ??= {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
@@ -28,14 +44,38 @@ const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disab
 const { Bereich, useBereiche, fehlerBereiche, liesOffen, merkeOffen } = await lade('bausteine/index.ts');
 
 const zeichne = (e: ReactElement) => renderToStaticMarkup(e);
-const VIER = [['grunddaten', 'Grunddaten'], ['verbindung', 'Verbindung'], ['abholen', 'Abholen'], ['stand', 'Stand']] as const;
-const ZWEI = [['grunddaten', 'Grunddaten'], ['rechte', 'Rollen und Rechte']] as const;
+const VIER = [
+  ['grunddaten', 'Grunddaten'],
+  ['verbindung', 'Verbindung'],
+  ['abholen', 'Abholen'],
+  ['stand', 'Stand'],
+] as const;
+const ZWEI = [
+  ['grunddaten', 'Grunddaten'],
+  ['rechte', 'Rollen und Rechte'],
+] as const;
 
 /** Ein kleiner Editor: Leiste und Bereiche; `fehler` markiert einen Bereich. */
-function Editor({ liste, id, fehler, offenStart }: { liste: ReadonlyArray<readonly [string, string]>; id: string | null; fehler?: string; offenStart?: boolean }) {
+function Editor({
+  liste,
+  id,
+  fehler,
+  offenStart,
+}: {
+  liste: ReadonlyArray<readonly [string, string]>;
+  id: string | null;
+  fehler?: string;
+  offenStart?: boolean;
+}) {
   const b = useBereiche(liste, 'test', id, { offen: offenStart });
-  return h('div', null, b.leiste((k: string) => k === fehler, 'Bereiche des Tests'),
-    ...liste.map(([k, name]) => h(Bereich, { key: k, id: k, titel: name, kurz: `kurz ${k}`, klappe: b.klappe(k, k === fehler) }, h('p', null, `inhalt ${k}`))));
+  return h(
+    'div',
+    null,
+    b.leiste((k: string) => k === fehler, 'Bereiche des Tests'),
+    ...liste.map(([k, name]) =>
+      h(Bereich, { key: k, id: k, titel: name, kurz: `kurz ${k}`, klappe: b.klappe(k, k === fehler) }, h('p', null, `inhalt ${k}`)),
+    ),
+  );
 }
 const offen = (html: string, k: string) => new RegExp(`id="${k}-inhalt"[^>]*>`).exec(html)?.[0].includes('hidden') === false;
 
@@ -93,7 +133,10 @@ describe('Baustein Bereiche (#1000)', () => {
   });
 
   it('fehlerBereiche: nur bekannte Orte aus details.orte, sonst der Ersatz', () => {
-    assert.deepEqual(fehlerBereiche({ details: { orte: ['abholen', 'gibtsnicht', 'grunddaten'] } }, VIER, ['verbindung']), ['grunddaten', 'abholen']);
+    assert.deepEqual(fehlerBereiche({ details: { orte: ['abholen', 'gibtsnicht', 'grunddaten'] } }, VIER, ['verbindung']), [
+      'grunddaten',
+      'abholen',
+    ]);
     assert.deepEqual(fehlerBereiche(new Error('x'), VIER, ['verbindung']), ['verbindung']);
     assert.deepEqual(fehlerBereiche(null, VIER, []), []);
   });

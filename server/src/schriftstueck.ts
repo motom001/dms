@@ -57,32 +57,59 @@ function pdfBlock(b: Block): Anweisung[] {
 
 /* ---------- Word (.docx) ---------- */
 
-const xml = (s: string) => s.replace(/[^\x09\x0a\x0d\x20-퟿-�\u{10000}-\u{10ffff}]/gu, '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const xml = (s: string) =>
+  s
+    .replace(/[^\x09\x0a\x0d\x20-퟿-�\u{10000}-\u{10ffff}]/gu, '')
+    .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /** Text als Läufe; [eckige Klammern] gelb markiert (zum Ergänzen). */
 function laeufe(text: string, o: { fett?: boolean; groesse?: number; farbe?: string } = {}): string {
   const teile = text.split(/(\[[^\]]*\])/);
-  return teile.filter((t) => t).map((t) => {
-    const rpr = [o.fett ? '<w:b/>' : '', o.farbe ? `<w:color w:val="${o.farbe}"/>` : '', o.groesse ? `<w:sz w:val="${o.groesse * 2}"/><w:szCs w:val="${o.groesse * 2}"/>` : '', /^\[.*\]$/.test(t) ? '<w:highlight w:val="yellow"/>' : ''].join('');
-    return t.split('\n').map((z, i) => `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}${i ? '<w:br/>' : ''}<w:t xml:space="preserve">${xml(z)}</w:t></w:r>`).join('');
-  }).join('');
+  return teile
+    .filter((t) => t)
+    .map((t) => {
+      const rpr = [
+        o.fett ? '<w:b/>' : '',
+        o.farbe ? `<w:color w:val="${o.farbe}"/>` : '',
+        o.groesse ? `<w:sz w:val="${o.groesse * 2}"/><w:szCs w:val="${o.groesse * 2}"/>` : '',
+        /^\[.*\]$/.test(t) ? '<w:highlight w:val="yellow"/>' : '',
+      ].join('');
+      return t
+        .split('\n')
+        .map((z, i) => `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}${i ? '<w:br/>' : ''}<w:t xml:space="preserve">${xml(z)}</w:t></w:r>`)
+        .join('');
+    })
+    .join('');
 }
-const absatz = (text: string, o: { stil?: string; fett?: boolean; groesse?: number; farbe?: string; einzug?: number; nach?: number } = {}) =>
+const absatz = (
+  text: string,
+  o: { stil?: string; fett?: boolean; groesse?: number; farbe?: string; einzug?: number; nach?: number } = {},
+) =>
   `<w:p><w:pPr>${o.stil ? `<w:pStyle w:val="${o.stil}"/>` : ''}${o.nach !== undefined ? `<w:spacing w:after="${o.nach}"/>` : ''}${o.einzug ? `<w:ind w:left="${o.einzug}" w:hanging="200"/>` : ''}</w:pPr>${laeufe(text, o)}</w:p>`;
 
 function docxBlock(b: Block, breiteTwips: number): string {
   if (b.art === 'absatz') return absatz(b.text);
   if (b.art === 'punkte') return b.punkte.map((p) => absatz(`• ${p}`, { einzug: 360, nach: 60 })).join('');
-  if (b.art === 'hinweis') return absatz(b.titel, { fett: true, farbe: '8A5300' }) + b.punkte.map((p) => absatz(`– ${p}`, { einzug: 360, nach: 40, farbe: '5A3A00' })).join('');
+  if (b.art === 'hinweis')
+    return (
+      absatz(b.titel, { fett: true, farbe: '8A5300' }) +
+      b.punkte.map((p) => absatz(`– ${p}`, { einzug: 360, nach: 40, farbe: '5A3A00' })).join('')
+    );
   const summe = b.breiten.reduce((x, y) => x + y, 0);
   const spalten = b.breiten.map((x) => Math.round((x / summe) * breiteTwips));
   const mitKopf = b.kopf.some((k) => k);
   const klein = b.kopf.length > 5 ? 8 : 9;
-  const zelle = (t: string, i: number, kopf: boolean) => `<w:tc><w:tcPr><w:tcW w:w="${spalten[i]}" w:type="dxa"/>${kopf ? '<w:shd w:val="clear" w:color="auto" w:fill="E9ECF1"/>' : ''}</w:tcPr>${absatz(t, { fett: kopf || (!mitKopf && i === 0), groesse: klein, nach: 0 })}</w:tc>`;
-  const zeile = (werte: string[], kopf: boolean) => `<w:tr>${kopf ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}${werte.map((t, i) => zelle(t, i, kopf)).join('')}</w:tr>`;
-  const rand = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((r) => `<w:${r} w:val="single" w:sz="4" w:space="0" w:color="C8CDD5"/>`).join('');
-  return `<w:tbl><w:tblPr><w:tblW w:w="${breiteTwips}" w:type="dxa"/><w:tblBorders>${rand}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar></w:tblPr>`
-    + `<w:tblGrid>${spalten.map((x) => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>${mitKopf ? zeile(b.kopf, true) : ''}${b.zeilen.map((z) => zeile(z, false)).join('')}</w:tbl>${absatz('', { nach: 0 })}`;
+  const zelle = (t: string, i: number, kopf: boolean) =>
+    `<w:tc><w:tcPr><w:tcW w:w="${spalten[i]}" w:type="dxa"/>${kopf ? '<w:shd w:val="clear" w:color="auto" w:fill="E9ECF1"/>' : ''}</w:tcPr>${absatz(t, { fett: kopf || (!mitKopf && i === 0), groesse: klein, nach: 0 })}</w:tc>`;
+  const zeile = (werte: string[], kopf: boolean) =>
+    `<w:tr>${kopf ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}${werte.map((t, i) => zelle(t, i, kopf)).join('')}</w:tr>`;
+  const rand = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']
+    .map((r) => `<w:${r} w:val="single" w:sz="4" w:space="0" w:color="C8CDD5"/>`)
+    .join('');
+  return (
+    `<w:tbl><w:tblPr><w:tblW w:w="${breiteTwips}" w:type="dxa"/><w:tblBorders>${rand}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar></w:tblPr>` +
+    `<w:tblGrid>${spalten.map((x) => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>${mitKopf ? zeile(b.kopf, true) : ''}${b.zeilen.map((z) => zeile(z, false)).join('')}</w:tbl>${absatz('', { nach: 0 })}`
+  );
 }
 
 const STILE = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

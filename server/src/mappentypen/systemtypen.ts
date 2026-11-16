@@ -5,8 +5,28 @@
  */
 import { randomUUID } from 'node:crypto';
 import {
-  REGISTERNAMEN, SYSTEMTYPEN, ROLLEN, FRUEHERE_ADMINROLLE, type Modusspur, KONTOROLLEN, kontorolleKennung, type Kontorolle, freierSchluessel, systemfelder, systemBeschriftung, systemrolleKennung, verweiseVon,
-  type Benutzer, type Feld, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, trefferlistenVon, standardliste, type Werte,
+  REGISTERNAMEN,
+  SYSTEMTYPEN,
+  ROLLEN,
+  FRUEHERE_ADMINROLLE,
+  type Modusspur,
+  KONTOROLLEN,
+  kontorolleKennung,
+  type Kontorolle,
+  freierSchluessel,
+  systemfelder,
+  systemBeschriftung,
+  systemrolleKennung,
+  verweiseVon,
+  type Benutzer,
+  type Feld,
+  type Historienart,
+  type Historieneintrag,
+  type Mappe,
+  type Mappentyp,
+  trefferlistenVon,
+  standardliste,
+  type Werte,
 } from '../../../shared/src/model';
 import { ergaenzeBeschriftungen, type NamensTeile, type TypTeile } from '../../../shared/src/beschriftung';
 import { inSprache } from '../../../shared/src/sprache';
@@ -60,18 +80,42 @@ export interface SystemtypenAnschluss {
 }
 
 export class Systemtypen {
-  constructor(private readonly kern: Kern, private readonly rechtepruefung: ZugriffDienst, private readonly anschluss: SystemtypenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechtepruefung: ZugriffDienst,
+    private readonly anschluss: SystemtypenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get kurzzustand() { return this.anschluss.kurzzustand(); }
-  private ablageortId(): Promise<string | undefined> { return this.kern.ablageortId(); }
-  private zugriff(ich: Zugreifender): Promise<Zugriff> { return this.rechtepruefung.zugriff(ich); }
-  private lesbare(z: Zugriff | undefined, ids: string[]) { return this.rechtepruefung.lesbare(z, ids); }
-  private schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null) { return this.anschluss.schreibeSystemMappe(typ, id, eingabe, von, kennung); }
-  private loescheMappeIntern(id: string, typ: Mappentyp | undefined) { return this.anschluss.loescheMappeIntern(id, typ); }
-  private spiegleBenutzer(b: Benutzer, von: string | null, abwesenheit?: BenutzerGespiegelt['abwesenheit']) { return this.anschluss.spiegleBenutzer(b, von, abwesenheit); }
-  private aufgabenUebergeben(id: string, an: string, von: string | null) { return this.anschluss.aufgabenUebergeben(id, an, von); }
-  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) { return this.kern.historie.schreibe(mappeId, benutzerId, art, daten); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get kurzzustand() {
+    return this.anschluss.kurzzustand();
+  }
+  private ablageortId(): Promise<string | undefined> {
+    return this.kern.ablageortId();
+  }
+  private zugriff(ich: Zugreifender): Promise<Zugriff> {
+    return this.rechtepruefung.zugriff(ich);
+  }
+  private lesbare(z: Zugriff | undefined, ids: string[]) {
+    return this.rechtepruefung.lesbare(z, ids);
+  }
+  private schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null) {
+    return this.anschluss.schreibeSystemMappe(typ, id, eingabe, von, kennung);
+  }
+  private loescheMappeIntern(id: string, typ: Mappentyp | undefined) {
+    return this.anschluss.loescheMappeIntern(id, typ);
+  }
+  private spiegleBenutzer(b: Benutzer, von: string | null, abwesenheit?: BenutzerGespiegelt['abwesenheit']) {
+    return this.anschluss.spiegleBenutzer(b, von, abwesenheit);
+  }
+  private aufgabenUebergeben(id: string, an: string, von: string | null) {
+    return this.anschluss.aufgabenUebergeben(id, an, von);
+  }
+  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {
+    return this.kern.historie.schreibe(mappeId, benutzerId, art, daten);
+  }
 
   /**
    * Ablageort (#168, #883): Seit #883 bringt ihn das Paket Basis mit (`basis:ablageort`); der Kern legt keinen mehr an.
@@ -97,47 +141,88 @@ export class Systemtypen {
     let post = typen.find((t) => t.system === 'post');
     const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
     // Feste Schlüssel der Systemtypen (#145): benutzer, rolle, post.
-    const sk = (k: string) => freierSchluessel(k, typen.map((t) => t.schluessel ?? ''));
+    const sk = (k: string) =>
+      freierSchluessel(
+        k,
+        typen.map((t) => t.schluessel ?? ''),
+      );
     const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
     if (!rolle) {
-      rolle = await this.repo.legeTypAn(ids.rolle, {
-        name: frei(SYSTEMTYPEN.rolle), schluessel: sk('rolle'), beschreibung: t('meldungen.dienst.rollen-die-benutzer-haben'), titelVorlage: '{name}',
-        felder: systemfelder('rolle', ids.rolle),
-        register: [
-          { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: ['name'] },
-          { key: 'benutzer', name: REGISTERNAMEN.benutzer, art: 'verknuepfungen', quellen: [{ typId: ids.benutzer, feldKey: 'rollen' }] },
-        ],
-        trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true,
-      }, 'rolle');
+      rolle = await this.repo.legeTypAn(
+        ids.rolle,
+        {
+          name: frei(SYSTEMTYPEN.rolle),
+          schluessel: sk('rolle'),
+          beschreibung: t('meldungen.dienst.rollen-die-benutzer-haben'),
+          titelVorlage: '{name}',
+          felder: systemfelder('rolle', ids.rolle),
+          register: [
+            { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: ['name'] },
+            { key: 'benutzer', name: REGISTERNAMEN.benutzer, art: 'verknuepfungen', quellen: [{ typId: ids.benutzer, feldKey: 'rollen' }] },
+          ],
+          trefferliste: [],
+          erstellenErlaubt: true,
+          loeschenErlaubt: true,
+        },
+        'rolle',
+      );
       neu.push(rolle);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: rolle.name });
     }
     if (!benutzer) {
-      benutzer = await this.repo.legeTypAn(ids.benutzer, {
-        name: frei(SYSTEMTYPEN.benutzer), schluessel: sk('benutzer'), beschreibung: t('meldungen.dienst.die-benutzer-dieser-installation'), titelVorlage: '{name}',
-        felder: systemfelder('benutzer', rolle.id, ids.benutzer),
-        register: [
-          { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: ['name', 'email', 'rollen', 'aktiv', 'abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'] },
-          { key: 'dokumente', name: REGISTERNAMEN.dokumente, art: 'dokumente' },
-          { key: 'verknuepfungen', name: REGISTERNAMEN.verknuepfungen, art: 'verknuepfungen', quellen: [] },
-        ],
-        trefferliste: ['name', 'email', 'rollen', 'aktiv'], erstellenErlaubt: false, loeschenErlaubt: false,
-      }, 'benutzer');
+      benutzer = await this.repo.legeTypAn(
+        ids.benutzer,
+        {
+          name: frei(SYSTEMTYPEN.benutzer),
+          schluessel: sk('benutzer'),
+          beschreibung: t('meldungen.dienst.die-benutzer-dieser-installation'),
+          titelVorlage: '{name}',
+          felder: systemfelder('benutzer', rolle.id, ids.benutzer),
+          register: [
+            {
+              key: 'allgemein',
+              name: REGISTERNAMEN.allgemein,
+              art: 'felder',
+              felder: ['name', 'email', 'rollen', 'aktiv', 'abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'],
+            },
+            { key: 'dokumente', name: REGISTERNAMEN.dokumente, art: 'dokumente' },
+            { key: 'verknuepfungen', name: REGISTERNAMEN.verknuepfungen, art: 'verknuepfungen', quellen: [] },
+          ],
+          trefferliste: ['name', 'email', 'rollen', 'aktiv'],
+          erstellenErlaubt: false,
+          loeschenErlaubt: false,
+        },
+        'benutzer',
+      );
       neu.push(benutzer);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
     }
     if (!post) {
       // Post (#192): alles, was hinein- oder hinausgeht; ersetzt den früheren Typ E-Mail (#58).
-      post = await this.repo.legeTypAn(randomUUID(), {
-        name: frei(SYSTEMTYPEN.post), schluessel: sk('post'), beschreibung: POST_BESCHREIBUNG, titelVorlage: '{betreff}',
-        felder: systemfelder('post', rolle.id, benutzer.id),
-        register: [
-          { key: 'allgemein', name: REGISTERNAMEN.allgemein, art: 'felder', felder: systemfelder('post', rolle.id, benutzer.id).map((f) => f.key) },
-          { key: 'dokumente', name: REGISTERNAMEN.dokumente, art: 'dokumente' },
-          { key: 'protokoll', name: REGISTERNAMEN.historie, art: 'protokoll' },
-        ],
-        trefferliste: POST_SPALTEN, erstellenErlaubt: false, loeschenErlaubt: true,
-      }, 'post');
+      post = await this.repo.legeTypAn(
+        randomUUID(),
+        {
+          name: frei(SYSTEMTYPEN.post),
+          schluessel: sk('post'),
+          beschreibung: POST_BESCHREIBUNG,
+          titelVorlage: '{betreff}',
+          felder: systemfelder('post', rolle.id, benutzer.id),
+          register: [
+            {
+              key: 'allgemein',
+              name: REGISTERNAMEN.allgemein,
+              art: 'felder',
+              felder: systemfelder('post', rolle.id, benutzer.id).map((f) => f.key),
+            },
+            { key: 'dokumente', name: REGISTERNAMEN.dokumente, art: 'dokumente' },
+            { key: 'protokoll', name: REGISTERNAMEN.historie, art: 'protokoll' },
+          ],
+          trefferliste: POST_SPALTEN,
+          erstellenErlaubt: false,
+          loeschenErlaubt: true,
+        },
+        'post',
+      );
       neu.push(post);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: post.name });
     }
@@ -172,13 +257,26 @@ export class Systemtypen {
     const system = typ.system;
     if (!system) return typ;
     const soll = systemfelder(system, rolleId, benutzerId);
-    const felder = typ.felder.map((f) => { const x = f.system ? soll.find((y) => y.key === f.key) : undefined; return x ? { ...f, ...mitSystemBeschriftung(f, x) } : f; });
-    const BESCHREIBUNG: Record<string, string> = { rolle: 'meldungen.dienst.rollen-die-benutzer-haben', benutzer: 'meldungen.dienst.die-benutzer-dieser-installation', post: 'meldungen.dienst.alles-was-in-ablago' };
+    const felder = typ.felder.map((f) => {
+      const x = f.system ? soll.find((y) => y.key === f.key) : undefined;
+      return x ? { ...f, ...mitSystemBeschriftung(f, x) } : f;
+    });
+    const BESCHREIBUNG: Record<string, string> = {
+      rolle: 'meldungen.dienst.rollen-die-benutzer-haben',
+      benutzer: 'meldungen.dienst.die-benutzer-dieser-installation',
+      post: 'meldungen.dienst.alles-was-in-ablago',
+    };
     const tb = systemBeschriftung<TypTeile>({
       ...(typ.name === SYSTEMTYPEN[system] ? { name: `gemeinsam.model.systemtyp.${system}` } : {}),
       ...(typ.beschreibung === inSprache('de', () => t.frei(BESCHREIBUNG[system])) ? { beschreibung: BESCHREIBUNG[system] } : {}),
     });
-    const REG: Record<string, keyof typeof REGISTERNAMEN> = { allgemein: 'allgemein', dokumente: 'dokumente', verknuepfungen: 'verknuepfungen', benutzer: 'benutzer', protokoll: 'historie' };
+    const REG: Record<string, keyof typeof REGISTERNAMEN> = {
+      allgemein: 'allgemein',
+      dokumente: 'dokumente',
+      verknuepfungen: 'verknuepfungen',
+      benutzer: 'benutzer',
+      protokoll: 'historie',
+    };
     const register = typ.register.map((r) => {
       const k = REG[r.key];
       const b = k && r.name === REGISTERNAMEN[k] ? systemBeschriftung<NamensTeile>({ name: `gemeinsam.model.register.${k}` }) : undefined;
@@ -200,10 +298,13 @@ export class Systemtypen {
     if (!alt) return;
     for (const m of await this.repo.listeMappen(benutzerTyp.id)) {
       const rollen = alsListe(m.werte.rollen);
-      if (rollen.includes(alt.id)) await this.schreibeSystemMappe(benutzerTyp, m.id, { ...m.werte, rollen: rollen.filter((r) => r !== alt.id) }, null);
+      if (rollen.includes(alt.id))
+        await this.schreibeSystemMappe(benutzerTyp, m.id, { ...m.werte, rollen: rollen.filter((r) => r !== alt.id) }, null);
     }
     await this.repo.setzeSystemKennung(alt.id, null);
-    protokoll.modul('werkbank').warn('Systemrolle „Administrator“ aufgelöst: jetzt eine gewöhnliche Rolle ohne Mitglieder', { rolle: alt.titel || String(alt.werte.name ?? '') });
+    protokoll.modul('werkbank').warn('Systemrolle „Administrator“ aufgelöst: jetzt eine gewöhnliche Rolle ohne Mitglieder', {
+      rolle: alt.titel || String(alt.werte.name ?? ''),
+    });
   }
 
   /**
@@ -211,19 +312,36 @@ export class Systemtypen {
    * nicht lesen dürfte, steht in der Historie „im Verwaltungsmodus“ mit `was` – nicht löschbar. Dieselbe Mappe kurz
    * hintereinander (`MODUSSPUR_MINUTEN`) nur einmal je Person und Art. Liefert die betroffenen Mappen.
    */
-  async vermerkeVerwaltungsmodus(alltag: { id: string; rolle: string; name?: string; email?: string }, ids: string[], was: Modusspur): Promise<Set<string>> {
+  async vermerkeVerwaltungsmodus(
+    alltag: { id: string; rolle: string; name?: string; email?: string },
+    ids: string[],
+    was: Modusspur,
+  ): Promise<Set<string>> {
     const z = await this.zugriff({ id: alltag.id, rolle: 'mitglied' });
     const lesbar = await this.lesbare(z, ids);
     const fremd = [...new Set(ids)].filter((id) => !lesbar.has(id));
     if (!fremd.length) return new Set();
     // „Kurz hintereinander nur einmal“ (#744): Merker in der Datenbank – wer ihn anlegt, schreibt den Eintrag, auch wenn
     // dieselbe Person gleichzeitig über zwei Prozesse kommt.
-    const belegt = await this.kurzzustand.belegeAlle(MODUSSPUR, fremd.map((id) => `${alltag.id}|${id}|${was}`), MODUSSPUR_MINUTEN * 60_000);
+    const belegt = await this.kurzzustand.belegeAlle(
+      MODUSSPUR,
+      fremd.map((id) => `${alltag.id}|${id}|${was}`),
+      MODUSSPUR_MINUTEN * 60_000,
+    );
     const neu = fremd.filter((id) => belegt.has(`${alltag.id}|${id}|${was}`));
     if (neu.length) {
       const titel = new Map((await this.repo.holeMappen(neu)).map((m) => [m.id, m.titel ?? '']));
-      await this.repo.historieSchreibe(neu.map((id) => ({ mappeId: id, benutzerId: alltag.id, art: 'verwaltungsmodus' as const, daten: { was, titel: titel.get(id) ?? '' } })));
-      protokoll.modul('ablage').warn('Im Verwaltungsmodus: fremde Mappe', { was, anzahl: neu.length, von: alltag.email ?? alltag.id, imVerwaltungsmodus: true });
+      await this.repo.historieSchreibe(
+        neu.map((id) => ({
+          mappeId: id,
+          benutzerId: alltag.id,
+          art: 'verwaltungsmodus' as const,
+          daten: { was, titel: titel.get(id) ?? '' },
+        })),
+      );
+      protokoll
+        .modul('ablage')
+        .warn('Im Verwaltungsmodus: fremde Mappe', { was, anzahl: neu.length, von: alltag.email ?? alltag.id, imVerwaltungsmodus: true });
     }
     return new Set(fremd);
   }
@@ -234,7 +352,13 @@ export class Systemtypen {
     // Typ für den Link in die Ablage; endgültig gelöschte Mappen bleiben in der Liste, nur ohne Link.
     const typ = new Map((await this.repo.holeMappen([...new Set(liste.map((h) => h.mappeId))])).map((m) => [m.id, m.typId]));
     return liste.map((h) => ({
-      id: h.id, zeit: h.zeit, mappeId: h.mappeId, typId: typ.get(h.mappeId) ?? null, benutzerId: h.benutzerId, was: String(h.daten.was ?? 'angesehen'), titel: String(h.daten.titel ?? ''),
+      id: h.id,
+      zeit: h.zeit,
+      mappeId: h.mappeId,
+      typId: typ.get(h.mappeId) ?? null,
+      benutzerId: h.benutzerId,
+      was: String(h.daten.was ?? 'angesehen'),
+      titel: String(h.daten.titel ?? ''),
     }));
   }
 
@@ -250,9 +374,16 @@ export class Systemtypen {
     // 099): bis 0.240 „Absender“ (absender), „Für“ (fuer) und „Empfänger“ (an, jetzt an_adresse) – dann auch die
     // Beschriftungen in weiteren Sprachen neu (sonst bliebe englisch „Sender“).
     const alteNamen: Record<string, string[]> = {
-      bezug: ['Bezug'], von: ['Absender', 'Sender'], an: ['Für', 'For'], an_adresse: ['An', 'Empfänger', 'Recipient'],
+      bezug: ['Bezug'],
+      von: ['Absender', 'Sender'],
+      an: ['Für', 'For'],
+      an_adresse: ['An', 'Empfänger', 'Recipient'],
     };
-    const alteHilfen = [t('meldungen.dienst.wer-die-e-mail'), t('meldungen.dienst.die-mappe-aus-der'), t('meldungen.dienst.post-hilfe-fuer-bis-0-237')];
+    const alteHilfen = [
+      t('meldungen.dienst.wer-die-e-mail'),
+      t('meldungen.dienst.die-mappe-aus-der'),
+      t('meldungen.dienst.post-hilfe-fuer-bis-0-237'),
+    ];
     let geaendert = false;
     const felder = mappentyp.felder.map((f) => {
       const s = soll.find((x) => x.key === f.key);
@@ -269,12 +400,33 @@ export class Systemtypen {
     const altName = mappentyp.name === 'E-Mail' || mappentyp.name === 'E-Mail (System)';
     const register = mappentyp.register.map((r) => (r.art === 'dokumente' && r.name === 'Anhänge' ? { ...r, name: 'Dokumente' } : r));
     const altListe = JSON.stringify(standardliste(mappentyp).spalten) === JSON.stringify(['datum', 'an', 'bezug']);
-    if (geaendert || altName || JSON.stringify(register) !== JSON.stringify(mappentyp.register) || altListe || mappentyp.beschreibung === 'Aus Ablago verschickte E-Mails mit Anhängen') {
+    if (
+      geaendert ||
+      altName ||
+      JSON.stringify(register) !== JSON.stringify(mappentyp.register) ||
+      altListe ||
+      mappentyp.beschreibung === 'Aus Ablago verschickte E-Mails mit Anhängen'
+    ) {
       const typen = await this.repo.listeTypen();
-      const name = altName ? (typen.some((x) => x.id !== mappentyp.id && x.name.trim().toLowerCase() === 'post') ? t('meldungen.dienst.post-system') : 'Post') : mappentyp.name;
-      const beschreibung = mappentyp.beschreibung === 'Aus Ablago verschickte E-Mails mit Anhängen' ? POST_BESCHREIBUNG : mappentyp.beschreibung;
-      const trefferlisten = altListe ? trefferlistenVon(mappentyp).map((l) => (l.standard ? { ...l, spalten: POST_SPALTEN } : l)) : trefferlistenVon(mappentyp);
-      mappentyp = await this.repo.aendereTyp(mappentyp.id, { ...mappentyp, name, beschreibung, felder, register, trefferlisten, trefferliste: undefined });
+      const name = altName
+        ? typen.some((x) => x.id !== mappentyp.id && x.name.trim().toLowerCase() === 'post')
+          ? t('meldungen.dienst.post-system')
+          : 'Post'
+        : mappentyp.name;
+      const beschreibung =
+        mappentyp.beschreibung === 'Aus Ablago verschickte E-Mails mit Anhängen' ? POST_BESCHREIBUNG : mappentyp.beschreibung;
+      const trefferlisten = altListe
+        ? trefferlistenVon(mappentyp).map((l) => (l.standard ? { ...l, spalten: POST_SPALTEN } : l))
+        : trefferlistenVon(mappentyp);
+      mappentyp = await this.repo.aendereTyp(mappentyp.id, {
+        ...mappentyp,
+        name,
+        beschreibung,
+        felder,
+        register,
+        trefferlisten,
+        trefferliste: undefined,
+      });
       protokoll.modul('werkbank').info('Systemmappentyp Post nachgezogen', { typ: mappentyp.name });
     }
     // Neue Systemfelder (Stand, Kanal, Richtung, An) ergänzen – wie bei jedem Systemtyp.
@@ -306,7 +458,8 @@ export class Systemtypen {
         trefferlisten = trefferlisten.map((l) => ({ ...l, spalten: l.spalten.map((k) => (k === x.key ? neu : k)) }));
         titelVorlage = titelVorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`);
         // Zusammengesetzt (#1050): Vorlagen, die das Feld nennen, ebenso.
-        for (const [j, g] of felder.entries()) if (g.vorlage) felder[j] = { ...g, vorlage: g.vorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`) };
+        for (const [j, g] of felder.entries())
+          if (g.vorlage) felder[j] = { ...g, vorlage: g.vorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`) };
         umbenannt.push([x.key, neu]);
       }
       felder.push(x);
@@ -317,10 +470,17 @@ export class Systemtypen {
     if (umbenannt.length) {
       for (const m of await this.repo.listeMappen(t.id)) {
         const werte = { ...m.werte };
-        for (const [alt, neu] of umbenannt) if (alt in werte) { werte[neu] = werte[alt]; delete werte[alt]; }
+        for (const [alt, neu] of umbenannt)
+          if (alt in werte) {
+            werte[neu] = werte[alt];
+            delete werte[alt];
+          }
         await this.repo.aendereMappe(m.id, werte, [], null, { basis: m.werte, verweise: (w) => verweiseVon(neuTyp, w) });
       }
-      protokoll.modul('werkbank').warn('Eigene Felder wegen neuer Systemfelder umbenannt', { typ: t.name, felder: umbenannt.map(([a, b]) => `${a} → ${b}`).join(', ') });
+      protokoll.modul('werkbank').warn('Eigene Felder wegen neuer Systemfelder umbenannt', {
+        typ: t.name,
+        felder: umbenannt.map(([a, b]) => `${a} → ${b}`).join(', '),
+      });
     }
     protokoll.modul('werkbank').info('Systemfelder ergänzt', { typ: t.name, felder: fehlen.map((f) => f.label).join(', ') });
     return neuTyp;
@@ -355,7 +515,10 @@ export class Systemtypen {
         const m = await this.repo.holeMappe(id);
         if (!m) return;
         const fremd = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
-        if (fremd.length) throw new Fachfehler(409, t('meldungen.dienst.auf-diesen-benutzer-verweisen', { anzahl: fremd.length }), { rueckverweise: fremd });
+        if (fremd.length)
+          throw new Fachfehler(409, t('meldungen.dienst.auf-diesen-benutzer-verweisen', { anzahl: fremd.length }), {
+            rueckverweise: fremd,
+          });
         await this.repo.legeInPapierkorb(id, von);
         await this.notiere(id, von, 'papierkorb');
       },

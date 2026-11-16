@@ -17,8 +17,12 @@ const dbUrl = async () => (await (eigene ??= eigeneDatenbank('pg', { migrieren: 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
 describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
-  let sql: any; let app: any; let betrieb: any; let texterkennung: any;
+  /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
+  let sql: any;
+  let app: any;
+  let betrieb: any;
+  let texterkennung: any;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
@@ -44,11 +48,19 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     // Papierkorb (#43) zunächst aus, damit Löschen wie bisher sofort endgültig ist; der Test dazu schaltet ihn ein.
     await pgBetriebSpeicher(sql, HAUSHALT).schreibe('papierkorb', { tage: 0 });
     // Wie im Betrieb (index.ts): Konten spiegeln Benutzer in Mappen (#26).
-    const dienst = new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT), { tresor, einstellungen: pgBetriebSpeicher(sql, HAUSHALT) });
+    const dienst = new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT), {
+      tresor,
+      einstellungen: pgBetriebSpeicher(sql, HAUSHALT),
+    });
     betrieb = new Betrieb(pgBetriebSpeicher(sql, HAUSHALT), undefined, tresor);
     await betrieb.laden();
     await betrieb.speichereAdresse('http://nas:3000');
-    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
+    const konten = new Konten(
+      messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'),
+      () => betrieb.mailer(),
+      () => betrieb.adresseFuerLinks(),
+      dienst.systemtypen.benutzerspiegel(),
+    );
     dienst.verbindeKonten(konten.papierkorbHaken());
     // Texterkennung wie im Betrieb (#45); in GitHub Actions sind tesseract und poppler installiert.
     const { Texterkennung } = await import('../src/texterkennung');
@@ -57,15 +69,28 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     await texterkennung.start();
     await dienst.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
-        betrieb, tresor, texterkennung, sicher: () => betrieb.cookieNurHttps(),
-        messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
-        designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
-        apiSchluessel: schluesselDienst = new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
-        // Kein Internet im Test: Abgleich mit festen Antworten.
-        abruf: async (url: string) => { if (url.includes('npmjs')) return { version: '99.0.0' }; throw new Error('offline'); },
-      });
+      betrieb,
+      tresor,
+      texterkennung,
+      sicher: () => betrieb.cookieNurHttps(),
+      messung,
+      system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
+      designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
+      apiSchluessel: (schluesselDienst = new (await import('../src/apischluessel')).ApiSchluesselDienst(
+        (await import('../src/apischluessel')).pgApiSchluesselRepo(sql),
+      )),
+      // Kein Internet im Test: Abgleich mit festen Antworten.
+      abruf: async (url: string) => {
+        if (url.includes('npmjs')) return { version: '99.0.0' };
+        throw new Error('offline');
+      },
+    });
   });
-  after(async () => { texterkennung?.stop(); await app?.close(); await sql?.end(); });
+  after(async () => {
+    texterkennung?.stop();
+    await app?.close();
+    await sql?.end();
+  });
 
   let schluesselDienst!: import('../src/apischluessel').ApiSchluesselDienst;
   let cookie = '';
@@ -82,11 +107,18 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('GET', '/api/typen')).status, 401);
     const st = await anfrage('GET', '/api/konto/status');
     assert.equal(st.body.einrichtungNoetig, true);
-    const r = await anfrage('POST', '/api/konto/einrichten', { email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
+    const r = await anfrage('POST', '/api/konto/einrichten', {
+      email: 'admin@example.org',
+      name: 'Admin',
+      passwort: 'ein-langes-passwort',
+    });
     assert.equal(r.status, 201);
     assert.match(cookie, /^dms_sitzung=/);
     assert.equal((await anfrage('GET', '/api/konto/status')).body.benutzer.email, 'admin@example.org');
-    assert.equal((await anfrage('POST', '/api/konto/einrichten', { email: 'x@example.org', passwort: 'ein-langes-passwort' }, false)).status, 409);
+    assert.equal(
+      (await anfrage('POST', '/api/konto/einrichten', { email: 'x@example.org', passwort: 'ein-langes-passwort' }, false)).status,
+      409,
+    );
     // Ohne Kennung der Oberfläche werden ändernde Anfragen abgelehnt (CSRF-Schutz).
     const ohne = await app.inject({ method: 'POST', url: '/api/beispiele', headers: { cookie } });
     assert.equal(ohne.statusCode, 403);
@@ -98,10 +130,24 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/beispiele')).status, 409);
     const typen = (await anfrage('GET', '/api/typen')).body;
     const eigene = typen.filter((t: { system?: string | null }) => !t.system);
-    assert.deepEqual(eigene.map((t: { name: string }) => t.name), ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung'], 'kein Ablageort aus dem Kern (#883)');
-    assert.deepEqual(typen.filter((t: { system?: string | null }) => t.system).map((t: { system: string }) => t.system).sort(), ['benutzer', 'post', 'rolle']);
+    assert.deepEqual(
+      eigene.map((t: { name: string }) => t.name),
+      ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung'],
+      'kein Ablageort aus dem Kern (#883)',
+    );
+    assert.deepEqual(
+      typen
+        .filter((t: { system?: string | null }) => t.system)
+        .map((t: { system: string }) => t.system)
+        .sort(),
+      ['benutzer', 'post', 'rolle'],
+    );
     const ids = new Set(eigene.map((t: { id: string }) => t.id));
-    assert.equal((await anfrage('GET', '/api/mappen')).body.filter((m: { typId: string }) => ids.has(m.typId)).length, 7, '7 Beispiel-Mappen, ohne Ablageorte (#883)');
+    assert.equal(
+      (await anfrage('GET', '/api/mappen')).body.filter((m: { typId: string }) => ids.has(m.typId)).length,
+      7,
+      '7 Beispiel-Mappen, ohne Ablageorte (#883)',
+    );
   });
 
   it('liefert Rückverweise und schützt referenzierte Mappen vor dem Löschen', async () => {
@@ -131,7 +177,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const mappen = (await anfrage('GET', '/api/mappen')).body;
     const hb = mappen.find((m: { werte: { name?: string } }) => m.werte.name === 'Heizungsbau Beispiel GmbH');
     assert.equal((await anfrage('GET', `/api/mappen/${hb.id}`)).body.rueckverweise.length, 2);
-    const geaendert = await anfrage('PUT', `/api/typen/${rechnung.id}`, { ...rechnung, felder: rechnung.felder.filter((f: { key: string }) => f.key !== 'aussteller') });
+    const geaendert = await anfrage('PUT', `/api/typen/${rechnung.id}`, {
+      ...rechnung,
+      felder: rechnung.felder.filter((f: { key: string }) => f.key !== 'aussteller'),
+    });
     assert.equal(geaendert.status, 200);
     assert.equal((await anfrage('GET', `/api/mappen/${hb.id}`)).body.rueckverweise.length, 1);
   });
@@ -172,8 +221,12 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const mappen = (await anfrage('GET', '/api/mappen')).body;
     const rechnung = mappen.find((m: { werte: { rechnungsnummer?: string } }) => m.werte.rechnungsnummer === 'R-2026-117');
     const hoch = async (name: string, inhalt: Buffer, typ: string) => {
-      const r = await app.inject({ method: 'POST', url: `/api/mappen/${rechnung.id}/dokumente?register=dokumente&name=${encodeURIComponent(name)}&typ=${encodeURIComponent(typ)}`,
-        payload: inhalt, headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+      const r = await app.inject({
+        method: 'POST',
+        url: `/api/mappen/${rechnung.id}/dokumente?register=dokumente&name=${encodeURIComponent(name)}&typ=${encodeURIComponent(typ)}`,
+        payload: inhalt,
+        headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' },
+      });
       return { status: r.statusCode, body: JSON.parse(r.body) };
     };
     const pdf = await hoch('Rechnung März.pdf', Buffer.from('%PDF-1.7\n%%EOF'), 'application/pdf');
@@ -182,7 +235,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const html = await hoch('x.html', Buffer.from('<script>alert(1)</script>'), 'text/html');
     assert.equal(html.body.dokument.anzeigbar, false);
 
-    const a = await app.inject({ method: 'GET', url: `/api/dokumente/${pdf.body.dokument.id}/inhalt?herunterladen=1`, headers: { cookie } });
+    const a = await app.inject({
+      method: 'GET',
+      url: `/api/dokumente/${pdf.body.dokument.id}/inhalt?herunterladen=1`,
+      headers: { cookie },
+    });
     assert.equal(a.statusCode, 200);
     assert.equal(a.headers['content-type'], 'application/pdf');
     assert.match(String(a.headers['content-disposition']), /^attachment;.*filename\*=UTF-8''Rechnung%20M%C3%A4rz\.pdf/);
@@ -209,8 +266,22 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const vertragTyp = typen.find((t: { name: string }) => t.name === 'Vertrag');
     const p = (await anfrage('POST', '/api/mappen', { typId: partnerTyp.id, werte: { name: 'Titeltest GmbH' } })).body;
     assert.equal(p.titel, 'Titeltest GmbH');
-    const pflicht = Object.fromEntries(vertragTyp.felder.filter((f: { pflicht?: boolean }) => f.pflicht).map((f: { key: string; typ: string }) =>
-      [f.key, f.typ === 'referenz' ? p.id : f.typ === 'datum' ? '2026-01-01' : f.typ === 'betrag' ? { betrag: 1, waehrung: 'EUR' } : f.typ === 'zahl' ? 1 : 'X']));
+    const pflicht = Object.fromEntries(
+      vertragTyp.felder
+        .filter((f: { pflicht?: boolean }) => f.pflicht)
+        .map((f: { key: string; typ: string }) => [
+          f.key,
+          f.typ === 'referenz'
+            ? p.id
+            : f.typ === 'datum'
+              ? '2026-01-01'
+              : f.typ === 'betrag'
+                ? { betrag: 1, waehrung: 'EUR' }
+                : f.typ === 'zahl'
+                  ? 1
+                  : 'X',
+        ]),
+    );
     const ref = vertragTyp.felder.find((f: { typ: string; zielTyp?: string }) => f.typ === 'referenz' && f.zielTyp === partnerTyp.id);
     const r = await anfrage('PUT', `/api/typen/${vertragTyp.id}`, { ...vertragTyp, titelVorlage: `{${ref.key}} seit {angelegt}` });
     assert.equal(r.status, 200);
@@ -244,9 +315,15 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual(r.uebersprungen, []);
     assert.equal(fertig.fertig, r.gesamt);
     const u = (await anfrage('GET', '/api/werkbank/demo')).body;
-    assert.equal(u.reduce((a: number, t: { demo: number }) => a + t.demo, 0), r.gesamt);
+    assert.equal(
+      u.reduce((a: number, t: { demo: number }) => a + t.demo, 0),
+      r.gesamt,
+    );
     const mappen = (await anfrage('GET', '/api/mappen')).body;
-    assert.ok(mappen.filter((m: { demo?: boolean }) => m.demo).every((m: { titel?: string }) => m.titel), 'Demo-Mappen haben Titel');
+    assert.ok(
+      mappen.filter((m: { demo?: boolean }) => m.demo).every((m: { titel?: string }) => m.titel),
+      'Demo-Mappen haben Titel',
+    );
     // Seitenweise laden, zählen, suchen
     const typen = (await anfrage('GET', '/api/typen')).body;
     const rechnungTyp = typen.find((t: { name: string }) => t.name === 'Rechnung');
@@ -265,18 +342,31 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.ok(treffer.mappen.some((m: { id: string }) => m.id === s1.mappen[5].id));
     assert.equal((await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&suche=${encodeURIComponent('%_\\')}`)).body.gesamt, 0);
     // Sortierung auf dem Server
-    const nachBetrag = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=50&sortierung=betrag&absteigend=true`)).body.mappen;
+    const nachBetrag = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=50&sortierung=betrag&absteigend=true`)).body
+      .mappen;
     const betraege = nachBetrag.map((m: { werte: { betrag?: { betrag: number } } }) => m.werte.betrag?.betrag ?? -1);
-    assert.deepEqual(betraege, [...betraege].sort((a: number, b: number) => b - a), 'absteigend nach Betrag');
-    const nachDatum = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=50&sortierung=rechnungsdatum`)).body.mappen.map((m: { werte: { rechnungsdatum: string } }) => m.werte.rechnungsdatum);
+    assert.deepEqual(
+      betraege,
+      [...betraege].sort((a: number, b: number) => b - a),
+      'absteigend nach Betrag',
+    );
+    const nachDatum = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=50&sortierung=rechnungsdatum`)).body.mappen.map(
+      (m: { werte: { rechnungsdatum: string } }) => m.werte.rechnungsdatum,
+    );
     assert.deepEqual(nachDatum, [...nachDatum].sort());
     for (const sp of ['_erstellt', '_geaendertVon', '_typ', 'bezahlt', 'gibts_nicht']) {
       assert.equal((await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=5&sortierung=${sp}`)).status, 200, sp);
     }
     assert.equal((await anfrage('GET', '/api/mappen?sicht=eingang&sortierung=_typ&absteigend=true')).status, 200);
-    assert.equal((await anfrage('PUT', '/api/konto/einstellungen/sortierung:test', { wert: { spalte: 'betrag', absteigend: true } })).status, 204);
+    assert.equal(
+      (await anfrage('PUT', '/api/konto/einstellungen/sortierung:test', { wert: { spalte: 'betrag', absteigend: true } })).status,
+      204,
+    );
     assert.deepEqual((await anfrage('GET', '/api/konto/einstellungen')).body['sortierung:test'], { spalte: 'betrag', absteigend: true });
-    const typNeu = await anfrage('PUT', `/api/typen/${rechnungTyp.id}`, { ...rechnungTyp, trefferliste: ['betrag', '_titel', 'rechnungsdatum'] });
+    const typNeu = await anfrage('PUT', `/api/typen/${rechnungTyp.id}`, {
+      ...rechnungTyp,
+      trefferliste: ['betrag', '_titel', 'rechnungsdatum'],
+    });
     assert.deepEqual(typNeu.body.trefferliste, ['betrag', '_titel', 'rechnungsdatum']);
 
     const eingang = (await anfrage('GET', '/api/mappen?sicht=eingang')).body;
@@ -290,7 +380,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await auftrag()).ergebnis.entfernt, r.gesamt);
 
     // Wachstumstests (#248): Abschätzung, Dokumente zu den Mappen, Entfernen in Paketen.
-    const opt = { anzahl: 120, startwert: 'pg', dokumente: { anteil: 100, von: 1, bis: 2, mischung: { brief: 70, mehrseitig: 30 }, duplikate: 10 } };
+    const opt = {
+      anzahl: 120,
+      startwert: 'pg',
+      dokumente: { anteil: 100, von: 1, bis: 2, mischung: { brief: 70, mehrseitig: 30 }, duplikate: 10 },
+    };
     const schaetzung = (await anfrage('POST', '/api/werkbank/demo/abschaetzung', opt)).body;
     assert.ok(schaetzung.dokumente.dokumente > 0 && schaetzung.mappen >= 120, JSON.stringify(schaetzung));
     assert.equal((await anfrage('POST', '/api/werkbank/demo', opt)).status, 202);
@@ -298,16 +392,27 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(mitDok.status, 'fertig', mitDok.fehler);
     assert.ok(mitDok.ergebnis.dokumente.anzahl > 0);
     assert.equal(mitDok.fertig, mitDok.gesamt);
-    const rechnung = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=200`)).body.mappen.find((m: { demo?: boolean }) => m.demo);
+    const rechnung = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=200`)).body.mappen.find(
+      (m: { demo?: boolean }) => m.demo,
+    );
     const mitDetails = (await anfrage('GET', `/api/mappen/${rechnung.id}`)).body;
     assert.ok(mitDetails.dokumente.length >= 1, 'Rechnung hat Dokumente');
     assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).status, 202);
     assert.equal((await auftrag()).ergebnis.entfernt, mitDok.ergebnis.gesamt);
-    assert.equal((await anfrage('GET', '/api/werkbank/demo')).body.reduce((a: number, t: { demo: number }) => a + t.demo, 0), 0);
+    assert.equal(
+      (await anfrage('GET', '/api/werkbank/demo')).body.reduce((a: number, t: { demo: number }) => a + t.demo, 0),
+      0,
+    );
 
-    assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'falsch-falsch', passwortNeu: 'neues-admin-passwort' })).status, 403);
+    assert.equal(
+      (await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'falsch-falsch', passwortNeu: 'neues-admin-passwort' })).status,
+      403,
+    );
     const alt = cookie;
-    assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'ein-langes-passwort', passwortNeu: 'neues-admin-passwort' })).status, 200);
+    assert.equal(
+      (await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'ein-langes-passwort', passwortNeu: 'neues-admin-passwort' })).status,
+      200,
+    );
     assert.notEqual(cookie, alt);
     assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { cookie: alt } })).statusCode, 401);
     assert.equal((await anfrage('GET', '/api/typen')).status, 200);
@@ -318,8 +423,12 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 
   it('zeigt Sitzungen, beendet sie und lässt den Admin als Mitglied agieren', async () => {
     const mitglied = (await anfrage('GET', '/api/benutzer')).body.find((x: { email: string }) => x.email === 'mitglied@example.org');
-    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1', 'user-agent': 'Mozilla/5.0 (iPhone) Safari/604.1' },
-      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      headers: { 'x-dms': '1', 'user-agent': 'Mozilla/5.0 (iPhone) Safari/604.1' },
+      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' },
+    });
     assert.equal(login.statusCode, 200);
     const mitgliedCookie = String(login.headers['set-cookie']).split(';')[0];
     const sitzungen = (await anfrage('GET', `/api/benutzer/${mitglied.id}/sitzungen`)).body;
@@ -346,19 +455,35 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/konto/verwaltung', { passwort: 'neues-admin-passwort' })).status, 200);
     assert.equal((await anfrage('GET', '/api/benutzer')).status, 200);
 
-    const wieder = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const wieder = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      headers: { 'x-dms': '1' },
+      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' },
+    });
     const mc = String(wieder.headers['set-cookie']).split(';')[0];
     const hinweise = JSON.parse((await app.inject({ method: 'GET', url: '/api/konto/status', headers: { cookie: mc } })).body).hinweise;
     assert.equal(hinweise.length, 1);
     assert.equal(hinweise[0].adminName, 'Admin');
-    assert.equal((await app.inject({ method: 'POST', url: '/api/konto/hinweise/gesehen', headers: { cookie: mc, 'x-dms': '1' } })).statusCode, 204);
-    assert.deepEqual(JSON.parse((await app.inject({ method: 'GET', url: '/api/konto/status', headers: { cookie: mc } })).body).hinweise, []);
+    assert.equal(
+      (await app.inject({ method: 'POST', url: '/api/konto/hinweise/gesehen', headers: { cookie: mc, 'x-dms': '1' } })).statusCode,
+      204,
+    );
+    assert.deepEqual(
+      JSON.parse((await app.inject({ method: 'GET', url: '/api/konto/status', headers: { cookie: mc } })).body).hinweise,
+      [],
+    );
     assert.deepEqual((await anfrage('DELETE', `/api/benutzer/${mitglied.id}/sitzungen`)).body, { beendet: 1 });
   });
 
   it('protokolliert Anfragen und Aktionen und schaltet den Debug-Modus', async () => {
     const r = (await anfrage('GET', '/api/werkbank/protokoll?modul=ablage&suche=Titeltest')).body;
-    assert.ok(r.eintraege.some((e: { text: string; benutzer?: string }) => e.text === 'Mappe angelegt' && e.benutzer === 'admin@example.org (im Verwaltungsmodus)'), 'im Verwaltungsmodus mit Vermerk (#819)');
+    assert.ok(
+      r.eintraege.some(
+        (e: { text: string; benutzer?: string }) => e.text === 'Mappe angelegt' && e.benutzer === 'admin@example.org (im Verwaltungsmodus)',
+      ),
+      'im Verwaltungsmodus mit Vermerk (#819)',
+    );
     assert.ok(r.module.includes('konto'));
     const fehl = (await anfrage('GET', '/api/werkbank/protokoll?modul=konto&stufe=warn')).body.eintraege;
     assert.ok(fehl.some((e: { text: string }) => e.text === 'Im Namen eines anderen Benutzers angemeldet'));
@@ -366,14 +491,20 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(d.an, true);
     await anfrage('GET', '/api/sichten');
     const dbg = (await anfrage('GET', `/api/werkbank/protokoll?seit=${r.letzte}&stufe=debug`)).body.eintraege;
-    assert.ok(dbg.some((e: { text: string }) => e.text === 'GET /api/sichten 200'), 'Anfragen im Debug-Modus sichtbar');
+    assert.ok(
+      dbg.some((e: { text: string }) => e.text === 'GET /api/sichten 200'),
+      'Anfragen im Debug-Modus sichtbar',
+    );
     assert.equal((await anfrage('PUT', '/api/werkbank/debug', { an: false })).body.an, false);
   });
 
   it('misst Datenbankzugriffe und merkt sich lange', async () => {
     const r = await app.inject({ method: 'GET', url: '/api/sichten', headers: { cookie } });
     // #477: dazu vor, rechte, json, gesamt; #512: zs – Zahlen der Ansichten aus dem Zwischenspeicher oder neu gezählt
-    assert.match(String(r.headers['server-timing']), /^vor;dur=[\d.]+, app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+", rechte;dur=[\d.]+, json;dur=[\d.]+, gesamt;dur=[\d.]+, zs;dur=[\d.]+;desc="(treffer|neu)"$/);
+    assert.match(
+      String(r.headers['server-timing']),
+      /^vor;dur=[\d.]+, app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+", rechte;dur=[\d.]+, json;dur=[\d.]+, gesamt;dur=[\d.]+, zs;dur=[\d.]+;desc="(treffer|neu)"$/,
+    );
     assert.ok(Number(/desc="(\d+)"/.exec(String(r.headers['server-timing']))![1]) >= 2, 'Sitzung und Zähler');
     // Schwelle auf 1 ms: dann gilt praktisch jeder Zugriff als lang.
     assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 0, tage: 7 })).status, 422);
@@ -385,9 +516,15 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual(d.einstellungen, { schwelleMs: 1, tage: 7 });
     assert.ok(Array.isArray(d.laufend));
     assert.ok(d.langlaeufer.length >= 1, 'mindestens ein Zugriff über 1 ms');
-    assert.ok(d.langlaeufer.some((l: { zugriff: string }) => /^(mappen|konto)\./.test(l.zugriff)), 'Datenbankzugriff');
+    assert.ok(
+      d.langlaeufer.some((l: { zugriff: string }) => /^(mappen|konto)\./.test(l.zugriff)),
+      'Datenbankzugriff',
+    );
     // #477: auch ganze Anfragen, mit Aufteilung
-    assert.ok(d.langlaeufer.some((l: { zugriff: string }) => /^Anfrage: \d+ ms gesamt · /.test(l.zugriff)), 'Anfrage');
+    assert.ok(
+      d.langlaeufer.some((l: { zugriff: string }) => /^Anfrage: \d+ ms gesamt · /.test(l.zugriff)),
+      'Anfrage',
+    );
     assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 500, tage: 30 })).status, 200);
     // Entwicklermodus im Profil
     assert.equal((await anfrage('PUT', '/api/konto/profil', { entwicklermodus: true })).body.entwicklermodus, true);
@@ -411,12 +548,40 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 
   it('verwaltet Designs mit Standard und Rückfall', async () => {
     const r = (await anfrage('GET', '/api/designs')).body;
-    assert.deepEqual(r.designs.map((d: { name: string }) => d.name), ['Automatisch', 'Hell', 'Dunkel', 'Kontrast']);
+    assert.deepEqual(
+      r.designs.map((d: { name: string }) => d.name),
+      ['Automatisch', 'Hell', 'Dunkel', 'Kontrast'],
+    );
     assert.equal(r.designs.find((d: { id: string }) => d.id === r.standard).name, 'Automatisch');
-    assert.equal((await anfrage('POST', '/api/designs', { name: 'Hell', grundlage: 'hell', primaer: '#112233', sekundaer: '#445566' })).status, 409);
-    assert.equal((await anfrage('POST', '/api/designs', { name: 'X', grundlage: 'bunt', primaer: 'rot', sekundaer: '#445566' })).status, 422);
-    assert.equal((await anfrage('POST', '/api/designs', { name: 'X', grundlage: 'hell', primaer: '#112233', sekundaer: '#445566', css: '</style><script>' })).status, 422);
-    const neu = (await anfrage('POST', '/api/designs', { name: 'Waldgrün', grundlage: 'dunkel', primaer: '#1e5e3b', sekundaer: '#b26b00', css: '.kopf { border-bottom-width: 3px; }' })).body;
+    assert.equal(
+      (await anfrage('POST', '/api/designs', { name: 'Hell', grundlage: 'hell', primaer: '#112233', sekundaer: '#445566' })).status,
+      409,
+    );
+    assert.equal(
+      (await anfrage('POST', '/api/designs', { name: 'X', grundlage: 'bunt', primaer: 'rot', sekundaer: '#445566' })).status,
+      422,
+    );
+    assert.equal(
+      (
+        await anfrage('POST', '/api/designs', {
+          name: 'X',
+          grundlage: 'hell',
+          primaer: '#112233',
+          sekundaer: '#445566',
+          css: '</style><script>',
+        })
+      ).status,
+      422,
+    );
+    const neu = (
+      await anfrage('POST', '/api/designs', {
+        name: 'Waldgrün',
+        grundlage: 'dunkel',
+        primaer: '#1e5e3b',
+        sekundaer: '#b26b00',
+        css: '.kopf { border-bottom-width: 3px; }',
+      })
+    ).body;
     assert.equal(neu.primaer, '#1E5E3B');
     assert.equal((await anfrage('PUT', '/api/designs-standard', { id: neu.id })).body.standard, neu.id);
     assert.equal((await anfrage('DELETE', `/api/designs/${neu.id}`)).status, 409, 'Standard nicht löschbar');
@@ -427,13 +592,17 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   it('bedient /api/v1 mit API-Schlüsseln und liefert die OpenAPI-Beschreibung', async () => {
     const v1 = async (methode: string, pfad: string, schluessel: string, payload?: unknown) => {
       const r = await app.inject({ method: methode, url: `/api/v1${pfad}`, payload, headers: { authorization: `Bearer ${schluessel}` } });
-      return { status: r.statusCode as number, body: r.body && r.headers['content-type']?.toString().includes('json') ? JSON.parse(r.body) : r.body };
+      return {
+        status: r.statusCode as number,
+        body: r.body && r.headers['content-type']?.toString().includes('json') ? JSON.parse(r.body) : r.body,
+      };
     };
     // #818: Auch wer verwaltet, hat eigene Schlüssel – sie bekommen aber nie Verwaltungsrechte.
     const eigener = await anfrage('POST', '/api/konto/api-schluessel', { name: 'Admin' });
     assert.equal(eigener.status, 201);
     assert.equal((await v1('GET', '/benutzer', eigener.body.schluessel)).status, 403);
-    const programm = (await anfrage('POST', '/api/benutzer', { email: 'api-programm@example.org', name: 'Scanner', rolle: 'mitglied' })).body.benutzer;
+    const programm = (await anfrage('POST', '/api/benutzer', { email: 'api-programm@example.org', name: 'Scanner', rolle: 'mitglied' }))
+      .body.benutzer;
     const lesen = await schluesselDienst.lege(programm, { name: 'Nur lesen' });
     const schreiben = await schluesselDienst.lege(programm, { name: 'Scanner', recht: 'schreiben' });
     assert.equal(lesen.recht, 'lesen');
@@ -449,8 +618,12 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const neu = await v1('POST', '/mappen', schreiben.schluessel, { typId: partner.id, werte: { name: 'API GmbH' } });
     assert.equal(neu.status, 201);
     assert.equal(neu.body.titel, 'API GmbH');
-    const hoch = await app.inject({ method: 'POST', url: `/api/v1/mappen/${neu.body.id}/dokumente?register=dokumente&name=a.pdf`,
-      payload: Buffer.from('%PDF-1.7\n%%EOF'), headers: { authorization: `Bearer ${schreiben.schluessel}`, 'content-type': 'application/octet-stream' } });
+    const hoch = await app.inject({
+      method: 'POST',
+      url: `/api/v1/mappen/${neu.body.id}/dokumente?register=dokumente&name=a.pdf`,
+      payload: Buffer.from('%PDF-1.7\n%%EOF'),
+      headers: { authorization: `Bearer ${schreiben.schluessel}`, 'content-type': 'application/octet-stream' },
+    });
     assert.equal(hoch.statusCode, 201);
     const dok = JSON.parse(hoch.body).dokument;
     assert.equal((await v1('GET', `/dokumente/${dok.id}/inhalt`, lesen.schluessel)).body, '%PDF-1.7\n%%EOF');
@@ -459,10 +632,17 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await v1('DELETE', `/mappen/${neu.body.id}`, schreiben.schluessel)).status, 204);
     assert.equal((await v1('GET', '/benutzer', schreiben.schluessel)).status, 403, 'Schlüssel eines Mitglieds darf keine Werkbank');
     // Interne Adressen nehmen keine Schlüssel an.
-    assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { authorization: `Bearer ${lesen.schluessel}` } })).statusCode, 401);
+    assert.equal(
+      (await app.inject({ method: 'GET', url: '/api/typen', headers: { authorization: `Bearer ${lesen.schluessel}` } })).statusCode,
+      401,
+    );
     assert.equal((await v1('GET', '/ich', 'dms_falsch')).status, 401);
     // Abgelaufen
-    await schluesselDienst.aendere(programm, lesen.id, { name: 'Nur lesen', recht: 'lesen', ablauf: new Date(Date.now() + 1000).toISOString() });
+    await schluesselDienst.aendere(programm, lesen.id, {
+      name: 'Nur lesen',
+      recht: 'lesen',
+      ablauf: new Date(Date.now() + 1000).toISOString(),
+    });
     await sql`UPDATE api_schluessel SET ablauf = now() - interval '1 minute' WHERE id = ${lesen.id}`;
     assert.equal((await v1('GET', '/ich', lesen.schluessel)).status, 401);
     await schluesselDienst.loesche(programm, lesen.id);
@@ -494,10 +674,17 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/typen/${rolleTyp.id}`)).status, 409);
     const ohneEmail = { ...benutzerTyp, felder: benutzerTyp.felder.filter((f: { key: string }) => f.key !== 'email') };
     assert.equal((await anfrage('PUT', `/api/typen/${benutzerTyp.id}`, ohneEmail)).status, 422);
-    const erweitert = await anfrage('PUT', `/api/typen/${benutzerTyp.id}`, { ...benutzerTyp, erstellenErlaubt: true, felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text' }] });
+    const erweitert = await anfrage('PUT', `/api/typen/${benutzerTyp.id}`, {
+      ...benutzerTyp,
+      erstellenErlaubt: true,
+      felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text' }],
+    });
     assert.equal(erweitert.status, 200);
     assert.equal(erweitert.body.erstellenErlaubt, false, 'Benutzer-Mappen entstehen nur in der Benutzerverwaltung');
-    assert.equal((await anfrage('POST', '/api/mappen', { typId: benutzerTyp.id, werte: { name: 'X', email: 'x@example.org' } })).status, 403);
+    assert.equal(
+      (await anfrage('POST', '/api/mappen', { typId: benutzerTyp.id, werte: { name: 'X', email: 'x@example.org' } })).status,
+      403,
+    );
     assert.equal((await anfrage('DELETE', `/api/mappen/${mitglied.id}`)).status, 403);
     assert.equal((await anfrage('DELETE', `/api/mappen/${sys.mitglied.id}`)).status, 409, 'Systemrolle');
 
@@ -505,7 +692,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const steuern = await anfrage('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Steuern' } });
     assert.equal(steuern.status, 201);
     assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { name: 'Geändert', rollen: ['gibt-es-nicht'] })).status, 422);
-    assert.equal((await anfrage('GET', '/api/benutzer')).body.find((x: { id: string }) => x.id === mitglied.id).name, 'Mitglied', 'ungültige Rollen ändern nichts');
+    assert.equal(
+      (await anfrage('GET', '/api/benutzer')).body.find((x: { id: string }) => x.id === mitglied.id).name,
+      'Mitglied',
+      'ungültige Rollen ändern nichts',
+    );
     assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { rollen: [sys.mitglied.id] })).status, 422);
     const zugeordnet = await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { rollen: [steuern.body.id] });
     assert.deepEqual(zugeordnet.body.rollen, [steuern.body.id]);
@@ -514,13 +705,23 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('GET', `/api/mappen/${steuern.body.id}`)).body.rueckverweise.length, 1, 'die Rolle zeigt ihre Benutzer');
 
     // Sicherheit: ein Mitglied ändert weder fremde E-Mail-Adressen noch die eigenen Rollen über die Ablage.
-    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      headers: { 'x-dms': '1' },
+      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' },
+    });
     const mc = String(login.headers['set-cookie']).split(';')[0];
-    const alsMitglied = async (method: string, url: string, payload?: unknown) => (await app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } })).statusCode;
+    const alsMitglied = async (method: string, url: string, payload?: unknown) =>
+      (await app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } })).statusCode;
     assert.equal(await alsMitglied('PUT', `/api/mappen/${admin.id}`, { werte: { ...am.werte, email: 'boese@example.org' } }), 403);
     assert.equal(await alsMitglied('PUT', `/api/mappen/${mitglied.id}`, { werte: { ...mm.werte, rollen: [] } }), 403);
     assert.equal(await alsMitglied('PUT', `/api/mappen/${sys.mitglied.id}`, { werte: { name: 'Chef' } }), 403);
-    assert.equal(await alsMitglied('PUT', `/api/mappen/${mitglied.id}`, { werte: { ...mm.werte, telefon: '0351 123' } }), 200, 'eigene Felder bleiben bearbeitbar');
+    assert.equal(
+      await alsMitglied('PUT', `/api/mappen/${mitglied.id}`, { werte: { ...mm.werte, telefon: '0351 123' } }),
+      200,
+      'eigene Felder bleiben bearbeitbar',
+    );
     assert.equal(await alsMitglied('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Garten' } }), 201);
     assert.equal(await alsMitglied('GET', '/api/rollen'), 403);
     assert.equal((await anfrage('GET', '/api/konto/status')).body.benutzer.email, 'admin@example.org');
@@ -539,7 +740,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.ok(aus.body.deaktiviert, 'Datum der Deaktivierung (Migration 025)');
     assert.equal((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.werte.vertreter, admin.id);
     assert.doesNotMatch((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.titel, /ehemalig/, 'Titel bleibt der Name (#663)');
-    assert.ok((await anfrage('GET', '/api/personen')).body.find((p: { id: string; deaktiviert?: string }) => p.id === mitglied.id)?.deaktiviert, 'Datum für den Tooltip (#663)');
+    assert.ok(
+      (await anfrage('GET', '/api/personen')).body.find((p: { id: string; deaktiviert?: string }) => p.id === mitglied.id)?.deaktiviert,
+      'Datum für den Tooltip (#663)',
+    );
     assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: true })).status, 200);
     const doc = JSON.parse((await app.inject({ method: 'GET', url: '/api/openapi.json' })).body);
     assert.ok(doc.paths['/rollen'].get);
@@ -550,12 +754,19 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual([st.mail.aktiv, st.adresse, st.mail.passwortGesetzt], [false, 'http://nas:3000', false]);
     assert.match(st.vorschlag, /^http:\/\//);
     assert.equal((await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'ftp://x' })).status, 422);
-    assert.equal((await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'dms.example.org' })).body.adresse, 'http://dms.example.org');
+    assert.equal(
+      (await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'dms.example.org' })).body.adresse,
+      'http://dms.example.org',
+    );
     const neu = await anfrage('POST', '/api/benutzer', { email: 'link@example.org', rolle: 'mitglied' });
     assert.match(neu.body.link, /^http:\/\/dms\.example\.org\/passwort\//);
     // Ohne gepflegte Adresse: die der Anfrage
     await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: '' });
-    const r = await app.inject({ method: 'POST', url: `/api/benutzer/${neu.body.benutzer.id}/link`, headers: { 'x-dms': '1', cookie, host: 'nas.local:8080' } });
+    const r = await app.inject({
+      method: 'POST',
+      url: `/api/benutzer/${neu.body.benutzer.id}/link`,
+      headers: { 'x-dms': '1', cookie, host: 'nas.local:8080' },
+    });
     assert.match(JSON.parse(r.body).link, /^http:\/\/nas\.local:8080\/passwort\//);
     const mail = { aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'geheim' };
     // Ohne Schlüssel kein Passwort (#39); erzeugt wird er in der Werkbank.
@@ -567,7 +778,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/werkbank/tresor/erzeugen')).status, 409, 'nie überschreiben');
     assert.equal((await anfrage('GET', '/api/konto/status')).body.passwoerterMoeglich, true);
     const tresorStand = JSON.stringify((await sql`SELECT wert FROM einstellungen WHERE schluessel = 'tresor'`)[0].wert);
-    assert.ok(tresorStand.includes(t.body.fingerabdruck) && !/[A-Za-z0-9_-]{43}/.test(tresorStand), 'in der Datenbank nur der Fingerabdruck');
+    assert.ok(
+      tresorStand.includes(t.body.fingerabdruck) && !/[A-Za-z0-9_-]{43}/.test(tresorStand),
+      'in der Datenbank nur der Fingerabdruck',
+    );
     const m = await anfrage('PUT', '/api/werkbank/betrieb/mail', mail);
     assert.equal(m.status, 200);
     assert.ok(!JSON.stringify(m.body).includes('geheim'));
@@ -587,33 +801,66 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const typen = (await anfrage('GET', '/api/typen')).body;
     const rechnung = typen.find((t: { name: string }) => t.name === 'Rechnung');
     const alt = (await anfrage('GET', '/api/sichten/definitionen')).body;
-    assert.ok(alt.some((x: { id: string }) => x.id === rechnung.id), 'Sicht je Typ mit dessen Id');
+    assert.ok(
+      alt.some((x: { id: string }) => x.id === rechnung.id),
+      'Sicht je Typ mit dessen Id',
+    );
     const gruppe = await anfrage('POST', '/api/sichten/definitionen', { name: 'Gruppe', typen: [] });
     assert.equal(gruppe.status, 201);
-    const offen = await anfrage('POST', '/api/sichten/definitionen', { name: 'Offen', elternId: gruppe.body.id, typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'nein' }] });
+    const offen = await anfrage('POST', '/api/sichten/definitionen', {
+      name: 'Offen',
+      elternId: gruppe.body.id,
+      typen: [rechnung.id],
+      bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'nein' }],
+    });
     const z = (await anfrage('GET', '/api/sichten')).body;
     assert.equal(z.sichten[gruppe.body.id], z.sichten[offen.body.id]);
     const seite = (await anfrage('GET', `/api/mappen?sicht=${gruppe.body.id}`)).body;
     assert.equal(seite.gesamt, z.sichten[gruppe.body.id]);
-    assert.equal((await anfrage('POST', '/api/sichten/vorschau', { sicht: { name: 'x', typen: [rechnung.id] } })).body.anzahl, (await anfrage('GET', `/api/mappen?sicht=typ:${rechnung.id}`)).body.gesamt);
-    assert.equal((await anfrage('PUT', `/api/sichten/definitionen/${gruppe.body.id}`, { ...gruppe.body, elternId: offen.body.id })).status, 422, 'kein Kreis');
-    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    assert.equal(
+      (await anfrage('POST', '/api/sichten/vorschau', { sicht: { name: 'x', typen: [rechnung.id] } })).body.anzahl,
+      (await anfrage('GET', `/api/mappen?sicht=typ:${rechnung.id}`)).body.gesamt,
+    );
+    assert.equal(
+      (await anfrage('PUT', `/api/sichten/definitionen/${gruppe.body.id}`, { ...gruppe.body, elternId: offen.body.id })).status,
+      422,
+      'kein Kreis',
+    );
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      headers: { 'x-dms': '1' },
+      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' },
+    });
     const mc = String(login.headers['set-cookie']).split(';')[0];
-    const alsMitglied = async (method: string, url: string, payload?: unknown) => (await app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } })).statusCode;
+    const alsMitglied = async (method: string, url: string, payload?: unknown) =>
+      (await app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } })).statusCode;
     assert.equal(await alsMitglied('GET', '/api/sichten/definitionen'), 200);
     assert.equal(await alsMitglied('POST', '/api/sichten/definitionen', { name: 'Verboten', typen: [] }), 403);
     assert.equal(await alsMitglied('DELETE', `/api/sichten/definitionen/${gruppe.body.id}`), 403);
     assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${gruppe.body.id}`)).status, 204);
-    assert.equal((await anfrage('GET', '/api/sichten/definitionen')).body.find((x: { id: string }) => x.id === offen.body.id).elternId, null, 'Untersicht rückt hoch');
+    assert.equal(
+      (await anfrage('GET', '/api/sichten/definitionen')).body.find((x: { id: string }) => x.id === offen.body.id).elternId,
+      null,
+      'Untersicht rückt hoch',
+    );
     assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${offen.body.id}`)).status, 204);
   });
   it('exportiert ohne Sicht nur Mappen aus Sichten mit Recht E (#294)', async () => {
-    const typ = (await anfrage('POST', '/api/typen', { name: 'Exportprobe', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })).body;
+    const typ = (
+      await anfrage('POST', '/api/typen', { name: 'Exportprobe', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })
+    ).body;
     const m = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { name: 'Probe-294' } })).body;
     const mitglied = (await anfrage('GET', '/api/benutzer')).body.find((x: { email: string }) => x.email === 'mitglied@example.org');
-    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const login = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      headers: { 'x-dms': '1' },
+      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' },
+    });
     const mc = String(login.headers['set-cookie']).split(';')[0];
-    const alsMitglied = async (method: string, url: string, payload?: unknown) => app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } });
+    const alsMitglied = async (method: string, url: string, payload?: unknown) =>
+      app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } });
     const suche = { format: 'csv', sicht: 'suche', link: `typ=${typ.id}` };
     const vorher = await alsMitglied('POST', '/api/export', suche);
     assert.equal(vorher.statusCode, 200);
@@ -621,28 +868,50 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.match(vorher.body, /Probe-294/);
     assert.equal(JSON.parse((await alsMitglied('GET', `/api/mappen/${m.id}`)).body).exportierbar, true);
     // Recht E an allen Sichten mit diesem Typ entziehen.
-    for (const s of (await anfrage('GET', '/api/sichten/definitionen')).body.filter((x: { typen?: string[] }) => !x.typen?.length || x.typen.includes(typ.id))) {
-      await anfrage('PUT', `/api/sichten/definitionen/${s.id}`, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [mitglied.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    for (const s of (await anfrage('GET', '/api/sichten/definitionen')).body.filter(
+      (x: { typen?: string[] }) => !x.typen?.length || x.typen.includes(typ.id),
+    )) {
+      await anfrage('PUT', `/api/sichten/definitionen/${s.id}`, {
+        ...s,
+        berechtigungen: {
+          grund: { R: true, C: true, E: true },
+          regeln: [
+            { id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [mitglied.id] }], dann: { E: 'entziehen' }, stopp: false },
+          ],
+        },
+      });
     }
     assert.equal((await alsMitglied('POST', '/api/export', suche)).statusCode, 403);
     assert.equal(JSON.parse((await alsMitglied('GET', `/api/mappen/${m.id}`)).body).exportierbar, false);
     const admin = await app.inject({ method: 'POST', url: '/api/export', payload: suche, headers: { 'x-dms': '1', cookie } });
     assert.equal(admin.statusCode, 200);
     assert.equal(admin.headers['x-dms-ausgelassen'], '0');
-    for (const s of (await anfrage('GET', '/api/sichten/definitionen')).body.filter((x: { berechtigungen?: { regeln?: { name: string }[] } }) => x.berechtigungen?.regeln?.some((r) => r.name === 'kein Export'))) {
+    for (const s of (await anfrage('GET', '/api/sichten/definitionen')).body.filter(
+      (x: { berechtigungen?: { regeln?: { name: string }[] } }) => x.berechtigungen?.regeln?.some((r) => r.name === 'kein Export'),
+    )) {
       await anfrage('PUT', `/api/sichten/definitionen/${s.id}`, { ...s, berechtigungen: undefined });
     }
   });
   it('speichert Passwortfelder verschlüsselt und gibt sie nur gezielt heraus (#46)', async () => {
-    const typ = (await anfrage('POST', '/api/typen', { name: 'Zugang', felder: [
-      { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
-    ] })).body;
+    const typ = (
+      await anfrage('POST', '/api/typen', {
+        name: 'Zugang',
+        felder: [
+          { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+          { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
+        ],
+      })
+    ).body;
     const m = await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { name: 'Onlinebank', kennwort: { neu: 'sehr-geheim' } } });
     assert.equal(m.status, 201);
     assert.deepEqual(m.body.werte.kennwort, { gesetzt: true, lesbar: true });
     const [roh] = await sql`SELECT werte ->> 'kennwort' AS k FROM mappen WHERE id = ${m.body.id}`;
     assert.match(roh.k, /^dms1\$/);
-    assert.equal((await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent(roh.k.slice(5, 12))}`)).body.gesamt, 0, 'nicht durchsuchbar');
+    assert.equal(
+      (await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent(roh.k.slice(5, 12))}`)).body.gesamt,
+      0,
+      'nicht durchsuchbar',
+    );
     assert.ok(!JSON.stringify((await anfrage('GET', `/api/mappen/${m.body.id}`)).body).includes('dms1$'));
     assert.deepEqual((await anfrage('POST', `/api/mappen/${m.body.id}/passwoerter/kennwort`)).body, { wert: 'sehr-geheim' });
     // Unverändert zurückgeschickt bleibt es, wie es ist.
@@ -668,22 +937,42 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('legt Gelöschtes in den Papierkorb und stellt es samt Verweisen und Dokumenten wieder her (#43)', async () => {
-    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 30 })).body, { tage: 30, geleert: 0, historieTage: 365 });
-    const partner = (await anfrage('POST', '/api/typen', { name: 'Korbpartner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })).body;
-    const vertrag = (await anfrage('POST', '/api/typen', { name: 'Korbvertrag', felder: [
-      { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
-    ] })).body;
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 30 })).body, {
+      tage: 30,
+      geleert: 0,
+      historieTage: 365,
+    });
+    const partner = (
+      await anfrage('POST', '/api/typen', { name: 'Korbpartner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })
+    ).body;
+    const vertrag = (
+      await anfrage('POST', '/api/typen', {
+        name: 'Korbvertrag',
+        felder: [
+          { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
+          { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+        ],
+      })
+    ).body;
     const p = (await anfrage('POST', '/api/mappen', { typId: partner.id, werte: { name: 'Papierkorb GmbH' } })).body;
     const v = await anfrage('POST', '/api/mappen', { typId: vertrag.id, werte: { nummer: 'K-1', partner: p.id } });
     assert.equal(v.status, 201, JSON.stringify(v.body));
-    const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${v.body.id}/dokumente?register=dokumente&name=k.pdf`, payload: Buffer.from('%PDF-1.7 korb'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    const hoch = await app.inject({
+      method: 'POST',
+      url: `/api/mappen/${v.body.id}/dokumente?register=dokumente&name=k.pdf`,
+      payload: Buffer.from('%PDF-1.7 korb'),
+      headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' },
+    });
     assert.equal(hoch.statusCode, 201);
     const sha = JSON.parse(hoch.body).dokument.sha256;
 
     assert.equal((await anfrage('DELETE', `/api/mappen/${v.body.id}`)).status, 204);
     assert.equal((await anfrage('GET', `/api/mappen/${v.body.id}`)).status, 404);
     const korb = (await anfrage('GET', '/api/papierkorb')).body;
-    assert.deepEqual(korb.map((e: { id: string; dokumente: number }) => [e.id, e.dokumente]), [[v.body.id, 1]]);
+    assert.deepEqual(
+      korb.map((e: { id: string; dokumente: number }) => [e.id, e.dokumente]),
+      [[v.body.id, 1]],
+    );
     assert.equal((await anfrage('GET', '/api/sichten')).body.papierkorb, 1);
     assert.equal((await anfrage('GET', `/api/mappen/${p.id}`)).body.rueckverweise.length, 0, 'Verweis ist mit umgezogen');
     assert.equal((await sql`SELECT count(*)::int AS n FROM dokumente WHERE sha256 = ${sha}`)[0].n, 0);
@@ -695,7 +984,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(zurueck.dokumente.length, 1);
     assert.equal(zurueck.mappe.titel, v.body.titel);
     assert.equal((await anfrage('GET', `/api/mappen/${p.id}`)).body.rueckverweise.length, 1);
-    assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${zurueck.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode, 200, 'Datei ist noch da');
+    assert.equal(
+      (await app.inject({ method: 'GET', url: `/api/dokumente/${zurueck.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode,
+      200,
+      'Datei ist noch da',
+    );
 
     // Endgültig: Datei verschwindet erst jetzt; der Partner lässt sich danach löschen.
     await anfrage('DELETE', `/api/mappen/${v.body.id}`);
@@ -706,18 +999,30 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('GET', '/api/papierkorb')).body.length, 0);
     const v1 = await app.inject({ method: 'GET', url: '/api/v1/papierkorb', headers: { cookie } });
     assert.deepEqual(JSON.parse(v1.body), []);
-    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 0 })).body, { tage: 0, geleert: 0, historieTage: 365 });
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 0 })).body, {
+      tage: 0,
+      geleert: 0,
+      historieTage: 365,
+    });
     assert.equal((await anfrage('DELETE', `/api/typen/${vertrag.id}`)).status, 204);
     assert.equal((await anfrage('DELETE', `/api/typen/${partner.id}`)).status, 204);
   });
   it('Notizen, Aufgaben, Protokoll und E-Mail aus der Mappe (#54–#58)', async () => {
     const ich = (await anfrage('GET', '/api/konto/status')).body.benutzer;
-    const typ = (await anfrage('POST', '/api/typen', { name: 'Vorgang', felder: [
-      { key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
-    ], register: [
-      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr', 'text'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
-      { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
-    ] })).body;
+    const typ = (
+      await anfrage('POST', '/api/typen', {
+        name: 'Vorgang',
+        felder: [
+          { key: 'nr', label: 'Nr', typ: 'text', pflicht: true },
+          { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
+        ],
+        register: [
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr', 'text'] },
+          { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+          { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
+        ],
+      })
+    ).body;
     const m = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'V-1' } })).body;
     // Formatierter Text mit Erwähnung → Aufgabe, nur einmal (#53, #56)
     const mit = { nr: 'V-1', text: `**Bitte** prüfen, @[Ich](benutzer:${ich.id})` };
@@ -727,7 +1032,8 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(auf.filter((a: { art: string }) => a.art === 'erwaehnung').length, 0, 'sich selbst erwähnen ergibt keine Aufgabe');
     const manuell = await anfrage('POST', `/api/mappen/${m.id}/aufgaben`, { empfaengerId: ich.id, text: 'Ablegen' });
     assert.equal(manuell.status, 201, JSON.stringify(manuell.body));
-    const eingang = async () => (await anfrage('GET', '/api/mappen?sicht=eingang&suche=V-1a&anzahl=500')).body.mappen.some((x: { id: string }) => x.id === m.id);
+    const eingang = async () =>
+      (await anfrage('GET', '/api/mappen?sicht=eingang&suche=V-1a&anzahl=500')).body.mappen.some((x: { id: string }) => x.id === m.id);
     assert.equal(await eingang(), true);
     assert.equal((await anfrage('POST', `/api/aufgaben/${manuell.body.id}/erledigt`)).status, 200);
     assert.equal(await eingang(), false);
@@ -741,21 +1047,35 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     // Erwähnen mit @ (#889): wo eine Mappe erwähnt ist – Notiz und formatiertes Feld, in PostgreSQL gesucht.
     const m2 = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'V-2', text: `Siehe @[V-1](mappe:${m.id})` } })).body;
     assert.equal((await anfrage('POST', `/api/mappen/${m2.id}/notizen`, { text: `Auch @[V-1](mappe:${m.id})` })).status, 201);
-    const erw = (await anfrage('GET', `/api/mappen/${m.id}/erwaehnungen`)).body as { erwaehntIn: Array<{ mappeId: string; stelle: string; feld?: string }> };
+    const erw = (await anfrage('GET', `/api/mappen/${m.id}/erwaehnungen`)).body as {
+      erwaehntIn: Array<{ mappeId: string; stelle: string; feld?: string }>;
+    };
     assert.deepEqual(erw.erwaehntIn.map((x) => `${x.stelle}:${x.feld ?? ''}`).sort(), ['feld:Beschreibung', 'notiz:']);
-    assert.deepEqual((await anfrage('GET', `/api/mappen/${m2.id}/erwaehnungen`)).body.erwaehnt.map((x: { id: string }) => x.id), [m.id]);
+    assert.deepEqual(
+      (await anfrage('GET', `/api/mappen/${m2.id}/erwaehnungen`)).body.erwaehnt.map((x: { id: string }) => x.id),
+      [m.id],
+    );
     assert.equal((await anfrage('DELETE', `/api/mappen/${m2.id}`)).status, 204);
     // Protokoll (#57)
     const h = (await anfrage('GET', `/api/mappen/${m.id}/historie`)).body;
     assert.deepEqual([...new Set(h.map((e: { art: string }) => e.art))].sort(), ['angelegt', 'aufgabe', 'geaendert', 'notiz']);
     // E-Mail (#58): ohne Versand 409; mit Versand eine Post-Mappe (#192) mit Anhang
-    const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=v.pdf`, payload: Buffer.from('%PDF-1.7 mail'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    const hoch = await app.inject({
+      method: 'POST',
+      url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=v.pdf`,
+      payload: Buffer.from('%PDF-1.7 mail'),
+      headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' },
+    });
     const dok = JSON.parse(hoch.body).dokument;
     const email = { an: 'amt@example.org', betreff: 'Vorgang V-1a', nachricht: 'Anbei', dokumente: [dok.id] };
     assert.equal((await anfrage('POST', `/api/mappen/${m.id}/email`, email)).status, 409);
     const gesendet: unknown[] = [];
     const vorher = betrieb.mailer;
-    betrieb.mailer = () => ({ async sende(...a: unknown[]) { gesendet.push(a); } });
+    betrieb.mailer = () => ({
+      async sende(...a: unknown[]) {
+        gesendet.push(a);
+      },
+    });
     try {
       assert.equal((await anfrage('GET', '/api/email/bereit')).body.bereit, true);
       const e = await anfrage('POST', `/api/mappen/${m.id}/email`, email);
@@ -769,14 +1089,24 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
       assert.equal((await anfrage('GET', `/api/mappen/${m.id}/historie`)).body[0].art, 'email');
       // Die Mappe lässt sich trotz E-Mail löschen; die Datei bleibt für die E-Mail.
       assert.equal((await anfrage('DELETE', `/api/mappen/${m.id}`)).status, 204);
-      assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${em.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode, 200);
+      assert.equal(
+        (await app.inject({ method: 'GET', url: `/api/dokumente/${em.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode,
+        200,
+      );
       assert.equal((await anfrage('DELETE', `/api/mappen/${e.body.id}`)).status, 204);
-    } finally { betrieb.mailer = vorher; }
+    } finally {
+      betrieb.mailer = vorher;
+    }
     // Post (#192): anlegen, Dokument hochladen, einer Mappe zuordnen – das Dokument wandert mit Volltext.
     const p = await anfrage('POST', '/api/post', { betreff: 'Brief' });
     assert.equal(p.status, 201, JSON.stringify(p.body));
     assert.equal(p.body.werte.stand, 'Neu');
-    const ph = await app.inject({ method: 'POST', url: `/api/mappen/${p.body.id}/dokumente?register=dokumente&name=brief.pdf`, payload: Buffer.from('%PDF-1.7 brief'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    const ph = await app.inject({
+      method: 'POST',
+      url: `/api/mappen/${p.body.id}/dokumente?register=dokumente&name=brief.pdf`,
+      payload: Buffer.from('%PDF-1.7 brief'),
+      headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' },
+    });
     assert.equal(ph.statusCode, 201, ph.body);
     const ziel = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'V-2' } })).body;
     const zu = await anfrage('POST', `/api/mappen/${p.body.id}/zuordnen`, { ziel: ziel.id });
@@ -784,7 +1114,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual(zu.body.post.werte.bezug, [ziel.id]);
     assert.equal(zu.body.post.werte.stand, 'Zugeordnet');
     const zd = (await anfrage('GET', `/api/mappen/${ziel.id}`)).body;
-    assert.deepEqual(zd.dokumente.map((x: { name: string }) => x.name), ['brief.pdf']);
+    assert.deepEqual(
+      zd.dokumente.map((x: { name: string }) => x.name),
+      ['brief.pdf'],
+    );
     assert.equal((await anfrage('GET', `/api/mappen/${p.body.id}`)).body.dokumente.length, 0);
     assert.equal((await anfrage('DELETE', `/api/mappen/${ziel.id}`)).status, 204);
     assert.deepEqual((await anfrage('GET', `/api/mappen/${p.body.id}`)).body.mappe.werte.bezug, null);
@@ -815,10 +1148,21 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('Favoriten, Trefferlisten und Sichten verschieben über HTTP (#62, #73, #75)', async () => {
-    const typen = (await anfrage('GET', '/api/typen')).body as Array<{ id: string; name: string; trefferlisten: Array<{ key: string; spalten: string[]; standard?: boolean }> }>;
+    const typen = (await anfrage('GET', '/api/typen')).body as Array<{
+      id: string;
+      name: string;
+      trefferlisten: Array<{ key: string; spalten: string[]; standard?: boolean }>;
+    }>;
     const t = typen.find((x) => x.name === 'Rechnung') ?? typen[0];
-    assert.ok(t.trefferlisten.some((l) => l.standard), 'Migration 024: Standardliste');
-    const neu = await anfrage('PUT', `/api/typen/${t.id}`, { ...t, trefferliste: undefined, trefferlisten: [...t.trefferlisten, { key: 'kurz', name: 'Kurz', spalten: ['_titel'] }] });
+    assert.ok(
+      t.trefferlisten.some((l) => l.standard),
+      'Migration 024: Standardliste',
+    );
+    const neu = await anfrage('PUT', `/api/typen/${t.id}`, {
+      ...t,
+      trefferliste: undefined,
+      trefferlisten: [...t.trefferlisten, { key: 'kurz', name: 'Kurz', spalten: ['_titel'] }],
+    });
     assert.equal(neu.status, 200, JSON.stringify(neu.body));
     assert.deepEqual(neu.body.trefferlisten.map((l: { key: string }) => l.key).slice(-1), ['kurz']);
     const seite = (await anfrage('GET', `/api/mappen?sicht=typ:${t.id}&anzahl=1`)).body;
@@ -835,8 +1179,17 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     if (oben.length >= 2) {
       const r = await anfrage('POST', `/api/sichten/definitionen/${oben[1].id}/verschieben`, { elternId: null, stelle: 0 });
       assert.equal(r.status, 200);
-      assert.equal(r.body.filter((x: { elternId: string | null }) => !x.elternId).sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0].id, oben[1].id);
-      assert.equal((await anfrage('POST', `/api/sichten/definitionen/${oben[0].id}/verschieben`, { elternId: oben[0].id, stelle: 0 })).status, 422, 'kein Kreis');
+      assert.equal(
+        r.body
+          .filter((x: { elternId: string | null }) => !x.elternId)
+          .sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0].id,
+        oben[1].id,
+      );
+      assert.equal(
+        (await anfrage('POST', `/api/sichten/definitionen/${oben[0].id}/verschieben`, { elternId: oben[0].id, stelle: 0 })).status,
+        422,
+        'kein Kreis',
+      );
     }
   });
 
@@ -845,10 +1198,15 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const st = (await anfrage('GET', '/api/werkbank/texterkennung')).body;
     assert.equal(st.einstellungen.auftraege, 1);
     assert.equal(st.einstellungen.maxSeiten, undefined, 'Seitengrenze steht seit #459 beim Paket');
-    const typ = (await anfrage('POST', '/api/typen', { name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }] })).body;
+    const typ = (await anfrage('POST', '/api/typen', { name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }] }))
+      .body;
     const m = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'B-1' } })).body;
-    const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=beleg.pdf&typ=application/pdf`,
-      payload: pdfMitText(['Jahresabrechnung der Stadtwerke Musterstadt', 'Abschlagszahlungen und Nachzahlung']), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    const hoch = await app.inject({
+      method: 'POST',
+      url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=beleg.pdf&typ=application/pdf`,
+      payload: pdfMitText(['Jahresabrechnung der Stadtwerke Musterstadt', 'Abschlagszahlungen und Nachzahlung']),
+      headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' },
+    });
     assert.equal(hoch.statusCode, 201);
     const dok = JSON.parse(hoch.body).dokument;
     assert.ok(['wartet', 'laeuft', 'fertig'].includes(dok.ocr.stand));
@@ -866,7 +1224,9 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.match(volltext.text, /Jahresabrechnung der Stadtwerke/);
     const ohne = (await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent('Abrechnungen Stadtwerk')}`)).body;
     assert.equal(ohne.gesamt, 0);
-    const mit = (await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent('stadtwerke nachzahlung')}&volltext=true`)).body;
+    const mit = (
+      await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent('stadtwerke nachzahlung')}&volltext=true`)
+    ).body;
     assert.equal(mit.gesamt, 1);
     assert.match(mit.ausschnitte[m.id].text, /\u0002Stadtwerke\u0003/);
     // Wartungsoperation: nichts nachzuholen, alles hat schon einen Volltext.
@@ -878,14 +1238,34 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('Nummernkreise: gleichzeitig angelegte Mappen bekommen verschiedene Nummern (#171)', async () => {
-    assert.equal((await anfrage('POST', '/api/werkbank/nummernkreise', { schluessel: 'beleg', name: 'Belege', muster: 'B{jjjj}-{zaehler:5}', start: 1 })).status, 201);
-    const t = (await anfrage('POST', '/api/typen', { name: 'Ausgangsbeleg', felder: [
-      { key: 'nr', label: 'Belegnummer', typ: 'text', standard: '{nummernkreis:beleg}', eindeutig: true },
-      { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
-    ] })).body;
+    assert.equal(
+      (
+        await anfrage('POST', '/api/werkbank/nummernkreise', {
+          schluessel: 'beleg',
+          name: 'Belege',
+          muster: 'B{jjjj}-{zaehler:5}',
+          start: 1,
+        })
+      ).status,
+      201,
+    );
+    const t = (
+      await anfrage('POST', '/api/typen', {
+        name: 'Ausgangsbeleg',
+        felder: [
+          { key: 'nr', label: 'Belegnummer', typ: 'text', standard: '{nummernkreis:beleg}', eindeutig: true },
+          { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
+        ],
+      })
+    ).body;
     assert.ok(t.id, JSON.stringify(t));
-    const r = await Promise.all(Array.from({ length: 20 }, (_, i) => anfrage('POST', '/api/mappen', { typId: t.id, werte: { betreff: `B${i}`, nr: 'egal' } })));
-    assert.ok(r.every((x) => x.status === 201), JSON.stringify(r.find((x) => x.status !== 201)));
+    const r = await Promise.all(
+      Array.from({ length: 20 }, (_, i) => anfrage('POST', '/api/mappen', { typId: t.id, werte: { betreff: `B${i}`, nr: 'egal' } })),
+    );
+    assert.ok(
+      r.every((x) => x.status === 201),
+      JSON.stringify(r.find((x) => x.status !== 201)),
+    );
     const nummern = r.map((x) => x.body.werte.nr as string).sort();
     assert.equal(new Set(nummern).size, 20);
     assert.match(nummern[0], /^B\d{4}-00001$/);
@@ -904,13 +1284,25 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('Versionierung: ersetzen, Versionen, zurückholen, gleicher Name, Speicherplatz (#194)', async () => {
-    const t = (await anfrage('POST', '/api/typen', { name: 'Versionsbeleg', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
-      { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true, versionenBehalten: 3 },
-    ] })).body;
+    const t = (
+      await anfrage('POST', '/api/typen', {
+        name: 'Versionsbeleg',
+        felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+        register: [
+          { key: 'daten', name: 'Daten', art: 'felder' },
+          { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true, versionenBehalten: 3 },
+        ],
+      })
+    ).body;
     assert.ok(t.id, JSON.stringify(t));
     const m = (await anfrage('POST', '/api/mappen', { typId: t.id, werte: { name: 'Kasse' } })).body;
     const lade = async (url: string, inhalt: Buffer) => {
-      const r = await app.inject({ method: 'POST', url, payload: inhalt, headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+      const r = await app.inject({
+        method: 'POST',
+        url,
+        payload: inhalt,
+        headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' },
+      });
       return { status: r.statusCode as number, body: JSON.parse(r.body) };
     };
     const a = (await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.jpg`, Buffer.from('erstes'))).body.dokument;
@@ -918,20 +1310,35 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(b.status, 201, JSON.stringify(b.body));
     assert.equal(b.body.version, 2);
     // Gleicher Name als neue Version
-    const c = await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.pdf&gleicherName=version`, Buffer.from('%PDF-1.4\ndrittes'));
+    const c = await lade(
+      `/api/mappen/${m.id}/dokumente?register=belege&name=Bon.pdf&gleicherName=version`,
+      Buffer.from('%PDF-1.4\ndrittes'),
+    );
     assert.equal(c.body.dokument.version, 3);
     // Gleicher Name mit Zähler
-    assert.equal((await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.pdf`, Buffer.from('anderes'))).body.dokument.name, 'Bon (2).pdf');
+    assert.equal(
+      (await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.pdf`, Buffer.from('anderes'))).body.dokument.name,
+      'Bon (2).pdf',
+    );
     const v = (await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).body;
-    assert.deepEqual(v.aeltere.map((x: { nummer: number }) => x.nummer), [2, 1]);
+    assert.deepEqual(
+      v.aeltere.map((x: { nummer: number }) => x.nummer),
+      [2, 1],
+    );
     const alt = await app.inject({ method: 'GET', url: `/api/dokumente/${a.id}/versionen/1/inhalt?herunterladen=1`, headers: { cookie } });
     assert.equal(alt.body, 'erstes');
     const z = await anfrage('POST', `/api/dokumente/${a.id}/versionen/1/zurueckholen`);
     assert.equal(z.status, 201);
     assert.equal(z.body.version, 4);
     // Nur die letzten 3: Version 1 ist weg
-    assert.deepEqual((await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).body.aeltere.map((x: { nummer: number }) => x.nummer), [3, 2]);
-    assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${a.id}/inhalt?herunterladen=1`, headers: { cookie } })).body, 'erstes');
+    assert.deepEqual(
+      (await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).body.aeltere.map((x: { nummer: number }) => x.nummer),
+      [3, 2],
+    );
+    assert.equal(
+      (await app.inject({ method: 'GET', url: `/api/dokumente/${a.id}/inhalt?herunterladen=1`, headers: { cookie } })).body,
+      'erstes',
+    );
     const det = (await anfrage('GET', `/api/mappen/${m.id}`)).body;
     assert.equal(det.dokumente.find((x: { id: string }) => x.id === a.id).aeltere, 2);
     assert.equal((await anfrage('DELETE', `/api/dokumente/${a.id}`)).status, 204);
@@ -939,9 +1346,20 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('Archivmodus: Löschsperre, Darf weg, Dateien prüfen (#212)', async () => {
-    const t = (await anfrage('POST', '/api/typen', { name: 'Archivbeleg', archiv: { jahre: 8, stichtag: 'datum' },
-      felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }],
-      register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente' }] })).body;
+    const t = (
+      await anfrage('POST', '/api/typen', {
+        name: 'Archivbeleg',
+        archiv: { jahre: 8, stichtag: 'datum' },
+        felder: [
+          { key: 'name', label: 'Name', typ: 'text' },
+          { key: 'datum', label: 'Datum', typ: 'datum' },
+        ],
+        register: [
+          { key: 'daten', name: 'Daten', art: 'felder' },
+          { key: 'belege', name: 'Belege', art: 'dokumente' },
+        ],
+      })
+    ).body;
     assert.deepEqual(t.archiv, { jahre: 8, stichtag: 'datum' });
     assert.equal(t.register.find((r: { key: string }) => r.key === 'belege').versionierung, true);
     const jung = (await anfrage('POST', '/api/mappen', { typId: t.id, werte: { name: 'Jung', datum: '2026-02-01' } })).body;
@@ -951,7 +1369,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.match(r.body.fehler, /31\.12\.2034/);
     assert.equal((await anfrage('GET', `/api/mappen/${jung.id}`)).body.aufbewahrenBis, '2034-12-31');
     const weg = (await anfrage('GET', '/api/werkbank/darf-weg')).body;
-    assert.deepEqual(weg.map((x: { id: string }) => x.id), [alt.id]);
+    assert.deepEqual(
+      weg.map((x: { id: string }) => x.id),
+      [alt.id],
+    );
     assert.equal((await anfrage('DELETE', `/api/mappen/${alt.id}`)).status, 204);
     assert.equal((await anfrage('POST', '/api/werkbank/wartung/dateien')).status, 202);
   });
@@ -968,30 +1389,55 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(await kr.anzahlBenutzer(), vorher, 'zählt nicht als Benutzer');
     assert.ok(!(await kr.listeBenutzer()).some((b) => b.id === konto.id), 'nicht in der Benutzerliste');
     assert.equal(await kr.holeHash(dienstEmail('probe', HAUSHALT)), undefined, 'keine Anmeldung');
-    await assert.rejects(kr.legeDienstkontoAn({ id: '00000000-0000-4000-8000-0000000003a9', paketId: 'probe', name: 'doppelt' }), 'ein Dienstkonto je Paket');
+    await assert.rejects(
+      kr.legeDienstkontoAn({ id: '00000000-0000-4000-8000-0000000003a9', paketId: 'probe', name: 'doppelt' }),
+      'ein Dienstkonto je Paket',
+    );
     await assert.rejects(sql`UPDATE benutzer SET art = 'roboter' WHERE id = ${konto.id}`, 'nur person, dienst oder system');
     // Systemkonto „Automatisierung“ (#673): einmal je Haushalt, nie anmeldbar, nicht in Listen.
-    const s1 = await kr.legeSystemkontoAn({ id: '00000000-0000-4000-8000-0000000003b1', kennung: 'automatisierung', name: 'Automatisierung' });
-    const s2 = await kr.legeSystemkontoAn({ id: '00000000-0000-4000-8000-0000000003b2', kennung: 'automatisierung', name: 'Automatisierung' });
+    const s1 = await kr.legeSystemkontoAn({
+      id: '00000000-0000-4000-8000-0000000003b1',
+      kennung: 'automatisierung',
+      name: 'Automatisierung',
+    });
+    const s2 = await kr.legeSystemkontoAn({
+      id: '00000000-0000-4000-8000-0000000003b2',
+      kennung: 'automatisierung',
+      name: 'Automatisierung',
+    });
     assert.equal(s2.id, s1.id, 'gleichzeitiger Start: dasselbe Konto');
     assert.equal(s1.art, 'system');
     assert.equal(s1.systemkonto, 'automatisierung');
     assert.equal((await kr.systemkonto('automatisierung'))?.id, s1.id);
-    assert.deepEqual((await kr.listeSystemkonten()).map((b) => b.id), [s1.id]);
+    assert.deepEqual(
+      (await kr.listeSystemkonten()).map((b) => b.id),
+      [s1.id],
+    );
     assert.equal(await kr.anzahlBenutzer(), vorher, 'zählt nicht als Benutzer');
     assert.ok(!(await kr.listeBenutzer()).some((b) => b.id === s1.id));
     assert.equal(await kr.holeHash(s1.email), undefined, 'keine Anmeldung');
 
     const repo = pgRepo(sql, HAUSHALT);
-    await repo.speicherePaketCode('probe', [{ name: 'modul.wasm', inhalt: Buffer.from([0, 97, 115, 109]) }, { name: 'daten/x', inhalt: Buffer.from('x') }]);
+    await repo.speicherePaketCode('probe', [
+      { name: 'modul.wasm', inhalt: Buffer.from([0, 97, 115, 109]) },
+      { name: 'daten/x', inhalt: Buffer.from('x') },
+    ]);
     assert.deepEqual((await repo.paketCode('probe')).map((d) => d.name).sort(), ['daten/x', 'modul.wasm']);
     await repo.speicherePaketCode('probe', [{ name: 'modul.wasm', inhalt: Buffer.from([0, 97, 115, 109, 1]) }]);
-    assert.deepEqual((await repo.paketCode('probe')).map((d) => d.inhalt.length), [5], 'ersetzt den alten Stand ganz');
+    assert.deepEqual(
+      (await repo.paketCode('probe')).map((d) => d.inhalt.length),
+      [5],
+      'ersetzt den alten Stand ganz',
+    );
 
     const id = (n: number) => `00000000-0000-4000-8000-00000000e${String(n).padStart(3, '0')}`;
     await repo.legeEreignisseAn([1, 2, 3].map((n) => ({ id: id(n), paketId: 'probe', art: 'post.angelegt', daten: { n } })));
     const faellig = await repo.faelligeEreignisse(10);
-    assert.deepEqual(faellig.map((e) => e.daten.n), [1, 2, 3], 'älteste zuerst');
+    assert.deepEqual(
+      faellig.map((e) => e.daten.n),
+      [1, 2, 3],
+      'älteste zuerst',
+    );
     await repo.ereignisZugestellt(id(1));
     await repo.ereignisFehlgeschlagen(id(2), 'kaputt', new Date(Date.now() + 60_000));
     await repo.ereignisFehlgeschlagen(id(3), 'aufgegeben', null);
@@ -1016,7 +1462,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let sql: any;
-  after(async () => { await sql?.unsafe(`DELETE FROM paket_ereignisse WHERE paket_id = 'tx404'`); await sql?.end(); });
+  after(async () => {
+    await sql?.unsafe(`DELETE FROM paket_ereignisse WHERE paket_id = 'tx404'`);
+    await sql?.end();
+  });
 
   it('scheitert das Ereignis, bleibt auch die Änderung aus; sonst stehen beide in der Datenbank', async () => {
     const { verbinde, migriere } = await import('../src/db');
@@ -1032,14 +1481,48 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
     const repo: typeof basis = {
       ...basis,
       // Seit #724 gehen die Ereignisse für Pakete über den einen Ausgangskorb – gestört wird also dessen Schreiben.
-      transaktion: (f) => basis.transaktion((r) => f({ ...r, legeKatalogEreignisAn: async (...x: Parameters<typeof r.legeKatalogEreignisAn>) => {
-        if (stoeren) throw new Error('Ablago fällt aus');
-        return r.legeKatalogEreignisAn(...x);
-      } })),
+      transaktion: (f) =>
+        basis.transaktion((r) =>
+          f({
+            ...r,
+            legeKatalogEreignisAn: async (...x: Parameters<typeof r.legeKatalogEreignisAn>) => {
+              if (stoeren) throw new Error('Ablago fällt aus');
+              return r.legeKatalogEreignisAn(...x);
+            },
+          }),
+        ),
     };
     const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-    await repo.speicherePaket({ id: 'tx404', name: 'Tx', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
-    const ereignisse = async () => { await d.ereignisse.verteile(); return (await sql`SELECT art, daten FROM paket_ereignisse WHERE paket_id = 'tx404' ORDER BY erstellt`) as Array<{ art: string; daten: Record<string, string> }>; };
+    await repo.speicherePaket({
+      id: 'tx404',
+      name: 'Tx',
+      version: '1.0.0',
+      beschreibung: '',
+      lizenz: 'MIT',
+      autor: { name: 'T', github: 't' },
+      herkunft: { art: 'hochgeladen', von: null, am: new Date().toISOString() },
+      installiert: new Date().toISOString(),
+      installiertVon: null,
+      aktualisiert: null,
+      aktualisiertVon: null,
+      typen: {},
+      sichten: {},
+      abhaengigkeiten: {},
+      code: true,
+      laeufer: {
+        sprache: 'c',
+        ereignisse: ['dokument.hochgeladen', 'post.angelegt'],
+        rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' },
+        netz: [],
+      },
+    });
+    const ereignisse = async () => {
+      await d.ereignisse.verteile();
+      return (await sql`SELECT art, daten FROM paket_ereignisse WHERE paket_id = 'tx404' ORDER BY erstellt`) as Array<{
+        art: string;
+        daten: Record<string, string>;
+      }>;
+    };
     try {
       const { post } = await d.systemausstattung.sicherstellen();
       const reg = post.register.find((x) => x.art === 'dokumente')!.key;
@@ -1050,13 +1533,19 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
       stoeren = false;
       const p = await d.post.legePostAn({ betreff: 'Tx-Brief' }, { id: null, name: 'Test' });
       stoeren = true;
-      await assert.rejects(d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null), /Ablago fällt aus/);
+      await assert.rejects(
+        d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null),
+        /Ablago fällt aus/,
+      );
       const m = await d.mappen.holeMappe(p.id);
       assert.equal(m.dokumente.length, 0, 'kein Dokument ohne Ereignis');
       assert.ok(!(await d.mappenHistorie.historie(p.id)).some((h) => h.art === 'dokument_hochgeladen'), 'auch keine Historie');
       stoeren = false;
       const doc = (await d.dokumente.ladeHoch(p.id, { register: reg, name: 'a.pdf' }, Buffer.from('%PDF-1.4 a'), null)).dokument;
-      assert.deepEqual((await ereignisse()).map((e) => `${e.art}:${e.daten.mappe}:${e.daten.dokument ?? ''}`), [`post.angelegt:${p.id}:`, `dokument.hochgeladen:${p.id}:${doc.id}`]);
+      assert.deepEqual(
+        (await ereignisse()).map((e) => `${e.art}:${e.daten.mappe}:${e.daten.dokument ?? ''}`),
+        [`post.angelegt:${p.id}:`, `dokument.hochgeladen:${p.id}:${doc.id}`],
+      );
     } finally {
       await repo.loeschePaket('tx404');
     }
@@ -1066,7 +1555,10 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
 describe('PostgreSQL: Ereigniskatalog (#670)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
   let sql: any;
-  after(async () => { await sql?.unsafe(`DELETE FROM ereignisse WHERE art LIKE 'mappe.%' AND daten->>'probe' = '670'`); await sql?.end(); });
+  after(async () => {
+    await sql?.unsafe(`DELETE FROM ereignisse WHERE art LIKE 'mappe.%' AND daten->>'probe' = '670'`);
+    await sql?.end();
+  });
 
   it('Bündeln, Sperre für zwei Server, Wiederholung, Aufräumen und Frist genau einmal', async () => {
     const { verbinde, migriere } = await import('../src/db');
@@ -1077,7 +1569,18 @@ describe('PostgreSQL: Ereigniskatalog (#670)', { skip: url ? false : 'TEST_DATAB
     const r = pgRepo(sql, HAUSHALT);
     await sql`DELETE FROM ereignisse WHERE haushalt_id = ${HAUSHALT}`;
     const mappe = '00000000-0000-4000-8000-000000000670';
-    const neu = (id: string, felder: string[]) => r.legeKatalogEreignisAn({ id, art: 'mappe.geaendert', daten: { mappe, felder, probe: '670' }, ausloeser: { art: 'system' }, buendel: `mappe.geaendert|${mappe}`, buendelS: 5 }, (alt) => mischeFelder(alt, { felder }));
+    const neu = (id: string, felder: string[]) =>
+      r.legeKatalogEreignisAn(
+        {
+          id,
+          art: 'mappe.geaendert',
+          daten: { mappe, felder, probe: '670' },
+          ausloeser: { art: 'system' },
+          buendel: `mappe.geaendert|${mappe}`,
+          buendelS: 5,
+        },
+        (alt) => mischeFelder(alt, { felder }),
+      );
     await neu('00000000-0000-4000-8000-000000006701', ['name']);
     await neu('00000000-0000-4000-8000-000000006702', ['betrag']);
     const [{ n }] = await sql`SELECT count(*)::int AS n FROM ereignisse WHERE haushalt_id = ${HAUSHALT}`;

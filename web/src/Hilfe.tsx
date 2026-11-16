@@ -14,7 +14,13 @@ export function Hilfe({ ort }: { ort: Hilfeort }) {
   const z = HILFE[ort];
   const text = t('oberflaeche.hilfe.hilfe-zu-im', { titel: z.titel, HANDBUCH_NAME: HANDBUCH_NAME[z.handbuch] });
   return (
-    <a className="hilfesymbol" href={hilfeUrl(z, version)} target="_blank" rel="noreferrer" title={text} aria-label={t('oberflaeche.hilfe.oeffnet-in-neuem-tab', { text })}>
+    <a
+      className="hilfesymbol"
+      href={hilfeUrl(z, version)}
+      target="_blank"
+      rel="noreferrer"
+      title={text}
+      aria-label={t('oberflaeche.hilfe.oeffnet-in-neuem-tab', { text })}>
       <span aria-hidden="true">?</span>
     </a>
   );
@@ -28,8 +34,14 @@ export function HilfeVerweis({ ort, children }: { ort: Hilfeort; children: React
   const version = useKontoOptional()?.version ?? null;
   const z = HILFE[ort];
   return (
-    <a className="verweis" href={hilfeUrl(z, version)} target="_blank" rel="noreferrer"
-      title={t('oberflaeche.hilfe.hilfe-zu-im', { titel: z.titel, HANDBUCH_NAME: HANDBUCH_NAME[z.handbuch] })}>{children}</a>
+    <a
+      className="verweis"
+      href={hilfeUrl(z, version)}
+      target="_blank"
+      rel="noreferrer"
+      title={t('oberflaeche.hilfe.hilfe-zu-im', { titel: z.titel, HANDBUCH_NAME: HANDBUCH_NAME[z.handbuch] })}>
+      {children}
+    </a>
   );
 }
 

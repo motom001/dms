@@ -12,14 +12,24 @@ import { HANDBUCH_SPRACHEN, HILFE, sprachordner, type Handbuch } from '../../../
 
 const site = process.argv[2] ?? 'site';
 /** Seiten, auf die die Oberfläche ohne Anker verlinkt (Hilfe-Menü, Technik, Sicherung). */
-const SEITEN: Array<[Handbuch, string]> = [['benutzer', ''], ['admin', ''], ['admin', 'technik/'], ['admin', 'sicherung/'], ['admin', 'neu/'], ['benutzer', 'neu/']];
+const SEITEN: Array<[Handbuch, string]> = [
+  ['benutzer', ''],
+  ['admin', ''],
+  ['admin', 'technik/'],
+  ['admin', 'sicherung/'],
+  ['admin', 'neu/'],
+  ['benutzer', 'neu/'],
+];
 
 const fehler: string[] = [];
 for (const sprache of HANDBUCH_SPRACHEN) {
   const ordner = sprachordner(sprache);
   const seite = (h: Handbuch, s: string) => {
     const p = join(site, h, ordner, s, 'index.html');
-    if (!existsSync(p)) { fehler.push(`${h}/${ordner}${s}: Seite fehlt (${p})`); return null; }
+    if (!existsSync(p)) {
+      fehler.push(`${h}/${ordner}${s}: Seite fehlt (${p})`);
+      return null;
+    }
     return readFileSync(p, 'utf8');
   };
   for (const [h, s] of SEITEN) seite(h, s);
@@ -34,4 +44,6 @@ if (fehler.length) {
   for (const f of fehler) console.error(`::error title=Hilfe-Link::${f}`);
   process.exit(1);
 }
-console.log(`Hilfe-Links in Ordnung: ${Object.keys(HILFE).length} Stellen, ${SEITEN.length} Seiten, Sprachen ${HANDBUCH_SPRACHEN.join(', ')}.`);
+console.log(
+  `Hilfe-Links in Ordnung: ${Object.keys(HILFE).length} Stellen, ${SEITEN.length} Seiten, Sprachen ${HANDBUCH_SPRACHEN.join(', ')}.`,
+);

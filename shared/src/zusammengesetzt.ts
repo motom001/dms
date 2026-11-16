@@ -44,7 +44,9 @@ export function teilKennungen(vorlage: string | undefined): string[] {
 
 /** Die Felder, aus denen sich `f` zusammensetzt („setzt sich zusammen aus …“) – nur die, die es gibt. */
 export function teileVon(felder: readonly Feld[], f: Pick<Feld, 'vorlage'>): Feld[] {
-  return teilKennungen(f.vorlage).map((k) => felder.find((x) => x.key === k)).filter((x): x is Feld => !!x);
+  return teilKennungen(f.vorlage)
+    .map((k) => felder.find((x) => x.key === k))
+    .filter((x): x is Feld => !!x);
 }
 
 /** Das Feld, an dem die Meldung „Diese Kombination gibt es schon“ steht: das erste beteiligte, das man sieht (Hinweis Qualität). */
@@ -64,8 +66,14 @@ export function zusammengesetztProbleme(felder: readonly Feld[], f: Feld): strin
   const ungeeignet: string[] = [];
   for (const x of treffer) {
     const q = felder.find((g) => g.key === x[1]);
-    if (!q) { unbekannt.push(`{${x[1]}}`); continue; }
-    if (!taugtAlsTeil(q)) { ungeeignet.push(`„${q.label || q.key}“`); continue; }
+    if (!q) {
+      unbekannt.push(`{${x[1]}}`);
+      continue;
+    }
+    if (!taugtAlsTeil(q)) {
+      ungeeignet.push(`„${q.label || q.key}“`);
+      continue;
+    }
     m.push(...pruefeFilter(x[1], x[2] ?? '', q.typ));
   }
   if (unbekannt.length) m.push(t('gemeinsam.zusammengesetzt.unbekannt', { map: [...new Set(unbekannt)].join(', ') }));
@@ -74,20 +82,27 @@ export function zusammengesetztProbleme(felder: readonly Feld[], f: Feld): strin
 }
 
 const zahlTeil = (v: Wert) => (typeof v === 'number' && Number.isFinite(v) ? String(v) : '');
-const listenTeil = (v: Wert) => (Array.isArray(v) ? v : [v]).filter((x) => x != null && x !== '').map(String).join(', ');
+const listenTeil = (v: Wert) =>
+  (Array.isArray(v) ? v : [v])
+    .filter((x) => x != null && x !== '')
+    .map(String)
+    .join(', ');
 /** Je Feldart ein Teil des Schlüssels: ohne Sprache und Region, Verweise als Kennung. */
 const SCHLUESSELTEIL: Partial<Record<Feldtyp, (v: Wert) => string>> = {
   text: (v) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() : ''),
   zahl: zahlTeil,
   prozent: zahlTeil,
-  betrag: (v) => { const b = v as Betrag; return typeof b?.betrag === 'number' ? `${b.betrag.toFixed(2)} ${b.waehrung || 'EUR'}` : ''; },
+  betrag: (v) => {
+    const b = v as Betrag;
+    return typeof b?.betrag === 'number' ? `${b.betrag.toFixed(2)} ${b.waehrung || 'EUR'}` : '';
+  },
   datum: (v) => (typeof v === 'string' ? v : ''),
   zeitraum: (v) => (istZeitraum(v) ? zeitraumIso(v) : ''),
   janein: (v) => (v === true ? 'ja' : v === false ? 'nein' : ''),
   auswahl: listenTeil,
   referenz: listenTeil,
 };
-const schluesselteil = (f: Feld, v: Wert | undefined): string => (v == null || v === '' ? '' : SCHLUESSELTEIL[f.typ]?.(v) ?? '');
+const schluesselteil = (f: Feld, v: Wert | undefined): string => (v == null || v === '' ? '' : (SCHLUESSELTEIL[f.typ]?.(v) ?? ''));
 
 /**
  * Der Schlüssel, den Ablago speichert und für „eindeutig“ vergleicht: die Vorlage mit den Werten ohne Sprache und Region,
@@ -104,7 +119,10 @@ export function zusammengesetztSchluessel(felder: readonly Feld[], f: Pick<Feld,
     if (s) gefuellt = true;
     for (const x of liesFilter(kette)) {
       if (q.typ === 'referenz' && x.name !== 'sonst') continue;
-      if (x.name === 'ohne_waehrung') { if (s && q.typ === 'betrag') s = (v as Betrag).betrag.toFixed(2); continue; }
+      if (x.name === 'ohne_waehrung') {
+        if (s && q.typ === 'betrag') s = (v as Betrag).betrag.toFixed(2);
+        continue;
+      }
       s = wendeFilterAn(s, v, q.typ, [x]);
     }
     return s.trim() ? s : LEER;

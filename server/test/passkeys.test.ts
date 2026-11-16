@@ -41,14 +41,28 @@ async function aufbau(o: { adresse?: () => string; gepflegt?: () => string } = {
   const adresse = o.adresse ?? (() => ADRESSE);
   const pk = new Passkeys(einstellungen, adresse, { zustand, gepflegt: o.gepflegt ?? adresse });
   konten.verbindePasskeys(pk);
-  const zf = new Zweifaktor(speicherEinstellungen(), (k) => `v:${k}`, (w) => (w.startsWith('v:') ? w.slice(2) : null), Date.now, zustand);
+  const zf = new Zweifaktor(
+    speicherEinstellungen(),
+    (k) => `v:${k}`,
+    (w) => (w.startsWith('v:') ? w.slice(2) : null),
+    Date.now,
+    zustand,
+  );
   konten.verbindeZweifaktor(zf);
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const alle = routen(d, konten);
-  const route = (m: Route['methode'], p: string) => { const r = alle.find((x) => x.methode === m && x.pfad === p); assert.ok(r, `${m} ${p}`); return r; };
+  const route = (m: Route['methode'], p: string) => {
+    const r = alle.find((x) => x.methode === m && x.pfad === p);
+    assert.ok(r, `${m} ${p}`);
+    return r;
+  };
   const koepfe = (n: string) => (n === 'x-dms' ? '1' : undefined);
   /** Anfrage wie über HTTP: erst der Zugang, dann der Handler. */
-  const rufe = async (m: Route['methode'], p: string, o2: { sitzung?: string; body?: unknown; params?: Record<string, string>; ip?: string } = {}) => {
+  const rufe = async (
+    m: Route['methode'],
+    p: string,
+    o2: { sitzung?: string; body?: unknown; params?: Record<string, string>; ip?: string } = {},
+  ) => {
     const r = route(m, p);
     const a: Anfrage = { body: o2.body ?? {}, params: o2.params ?? {}, query: {}, ip: o2.ip ?? '1.1.1.1', sitzung: o2.sitzung };
     await pruefeZugang(r, a, koepfe, konten);
@@ -64,7 +78,9 @@ async function aufbau(o: { adresse?: () => string; gepflegt?: () => string } = {
 
 /** Passkey über die Routen anlegen, wie die Oberfläche es tut. */
 async function anlegen(x: Awaited<ReturnType<typeof aufbau>>, sitzung: string, a = new Authenticator(), name = 'Handy von Lena') {
-  const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung })).body as Parameters<Authenticator['anlegen']>[0] & { authenticatorSelection: { userVerification: string } };
+  const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung })).body as Parameters<Authenticator['anlegen']>[0] & {
+    authenticatorSelection: { userVerification: string };
+  };
   assert.equal(o.authenticatorSelection.userVerification, 'required', 'Nutzer-Verifizierung verlangt');
   const r = await x.rufe('POST', '/api/konto/passkeys', { sitzung, body: { antwort: a.anlegen(o), name } });
   assert.equal(r.status, 201);
@@ -72,15 +88,30 @@ async function anlegen(x: Awaited<ReturnType<typeof aufbau>>, sitzung: string, a
 }
 
 /** Anmelden ohne E-Mail-Adresse: Optionen holen, Gerät antworten lassen. */
-async function mitPasskey(x: Awaited<ReturnType<typeof aufbau>>, a: Authenticator, o: { origin?: string; ip?: string; zaehlen?: boolean } = {}) {
-  const opt = (await x.rufe('POST', '/api/konto/passkey/optionen', { ip: o.ip })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
+async function mitPasskey(
+  x: Awaited<ReturnType<typeof aufbau>>,
+  a: Authenticator,
+  o: { origin?: string; ip?: string; zaehlen?: boolean } = {},
+) {
+  const opt = (await x.rufe('POST', '/api/konto/passkey/optionen', { ip: o.ip })).body as {
+    kennung: string;
+    optionen: { challenge: string; rpId: string };
+  };
   return { opt, antwort: a.anmelden(opt.optionen, o.origin, undefined, o.zaehlen) };
 }
 
 describe('Passkeys (#811)', () => {
   it('RP-ID und Origin aus der Adresse – nur über HTTPS mit einem Namen oder auf localhost', () => {
-    assert.deepEqual(relyingParty('https://ablago.example.org'), { rpId: 'ablago.example.org', origin: 'https://ablago.example.org', name: 'Ablago' });
-    assert.deepEqual(relyingParty('https://Ablago.Example.org:8443/unter'), { rpId: 'ablago.example.org', origin: 'https://ablago.example.org:8443', name: 'Ablago' });
+    assert.deepEqual(relyingParty('https://ablago.example.org'), {
+      rpId: 'ablago.example.org',
+      origin: 'https://ablago.example.org',
+      name: 'Ablago',
+    });
+    assert.deepEqual(relyingParty('https://Ablago.Example.org:8443/unter'), {
+      rpId: 'ablago.example.org',
+      origin: 'https://ablago.example.org:8443',
+      name: 'Ablago',
+    });
     assert.equal(relyingParty('http://localhost:8080')?.rpId, 'localhost');
     assert.equal(relyingParty('http://nas.home.arpa:8080'), null, 'ohne HTTPS nicht');
     assert.equal(relyingParty('https://192.168.1.20'), null, 'IP-Adresse ist keine RP-ID');
@@ -93,8 +124,15 @@ describe('Passkeys (#811)', () => {
     const s = await x.anmelden();
     const handy = await anlegen(x, s);
     const schluessel = await anlegen(x, s, new Authenticator(), '  Sicherheits\nschlüssel  ');
-    const liste = ((await x.rufe('GET', '/api/konto/passkeys', { sitzung: s })).body as { liste: Array<{ name: string; passt: boolean; nr: string }>; moeglich: boolean; adresse: string });
-    assert.deepEqual(liste.liste.map((p) => p.name), ['Handy von Lena', 'Sicherheits schlüssel']);
+    const liste = (await x.rufe('GET', '/api/konto/passkeys', { sitzung: s })).body as {
+      liste: Array<{ name: string; passt: boolean; nr: string }>;
+      moeglich: boolean;
+      adresse: string;
+    };
+    assert.deepEqual(
+      liste.liste.map((p) => p.name),
+      ['Handy von Lena', 'Sicherheits schlüssel'],
+    );
     assert.ok(liste.moeglich);
     assert.equal(liste.adresse, 'ablago.example.org');
     assert.ok(liste.liste.every((p) => p.passt));
@@ -113,14 +151,19 @@ describe('Passkeys (#811)', () => {
     assert.ok(x.konten.istFrisch(an.sitzung), 'Passkey zählt als Anmeldung mit allen Faktoren');
     // Der zweite funktioniert genauso.
     const z = await mitPasskey(x, schluessel);
-    assert.ok((await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: z.opt.kennung, antwort: z.antwort } })).sitzungSetzen);
+    assert.ok(
+      (await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: z.opt.kennung, antwort: z.antwort } })).sitzungSetzen,
+    );
     // Derselbe Passkey zweimal: abgelehnt.
-    const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: s })).body as Parameters<Authenticator['anlegen']>[0] & { excludeCredentials: Array<{ id: string }> };
+    const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: s })).body as Parameters<Authenticator['anlegen']>[0] & {
+      excludeCredentials: Array<{ id: string }>;
+    };
     assert.equal(o.excludeCredentials.length, 2, 'vorhandene stehen in der Ausschlussliste');
     await assert.rejects(x.rufe('POST', '/api/konto/passkeys', { sitzung: s, body: { antwort: handy.anlegen(o) } }), status(409));
     // Umbenennen.
     const nr = liste.liste[1].nr;
-    const neu = (await x.rufe('PUT', '/api/konto/passkeys/:nr', { sitzung: s, params: { nr }, body: { name: 'Schlüsselbund' } })).body as Array<{ name: string }>;
+    const neu = (await x.rufe('PUT', '/api/konto/passkeys/:nr', { sitzung: s, params: { nr }, body: { name: 'Schlüsselbund' } }))
+      .body as Array<{ name: string }>;
     assert.equal(neu[1].name, 'Schlüsselbund');
   });
 
@@ -129,14 +172,27 @@ describe('Passkeys (#811)', () => {
     const s = await x.anmelden();
     const a = new Authenticator();
     const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: s })).body as Parameters<Authenticator['anlegen']>[0];
-    await assert.rejects(x.rufe('POST', '/api/konto/passkeys', { sitzung: s, body: { antwort: a.anlegen(o, 'https://ablago.example.org.evil.example') } }), status(422));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkeys', { sitzung: s, body: { antwort: a.anlegen(o, 'https://ablago.example.org.evil.example') } }),
+      status(422),
+    );
     // Die Herausforderung ist verbraucht: Ein zweiter Versuch mit derselben geht nicht.
     await assert.rejects(x.rufe('POST', '/api/konto/passkeys', { sitzung: s, body: { antwort: a.anlegen(o) } }), status(409));
     await anlegen(x, s, a);
     const { opt } = await mitPasskey(x, a);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen, 'https://phishing.example') } }), status(401));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', {
+        body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen, 'https://phishing.example') },
+      }),
+      status(401),
+    );
     const z = await mitPasskey(x, a);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: z.opt.kennung, antwort: a.anmelden(z.opt.optionen, ADRESSE, 'phishing.example') } }), status(401));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', {
+        body: { kennung: z.opt.kennung, antwort: a.anmelden(z.opt.optionen, ADRESSE, 'phishing.example') },
+      }),
+      status(401),
+    );
   });
 
   it('Herausforderung gilt einmal und 5 Minuten', async () => {
@@ -145,8 +201,15 @@ describe('Passkeys (#811)', () => {
     const a = await anlegen(x, s);
     const { opt, antwort } = await mitPasskey(x, a);
     assert.ok((await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort } })).sitzungSetzen);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen) } }), status(401), 'zweites Mal');
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: 'erfunden', antwort: a.anmelden(opt.optionen) } }), status(401));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen) } }),
+      status(401),
+      'zweites Mal',
+    );
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: 'erfunden', antwort: a.anmelden(opt.optionen) } }),
+      status(401),
+    );
     // Abgelaufen: im Kurzzustand nach 5 Minuten nicht mehr da.
     let t = Date.now();
     const zustand = speicherKurzzustand(() => t);
@@ -161,20 +224,36 @@ describe('Passkeys (#811)', () => {
     const s = await x.anmelden();
     const a = await anlegen(x, s);
     const e = await mitPasskey(x, a);
-    assert.ok((await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: e.opt.kennung, antwort: e.antwort } })).sitzungSetzen);
+    assert.ok(
+      (await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: e.opt.kennung, antwort: e.antwort } })).sitzungSetzen,
+    );
     // Gleicher Zähler wie eben (Kopie meldet denselben Stand): abgelehnt.
     const z = await mitPasskey(x, a, { zaehlen: false });
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: z.opt.kennung, antwort: z.antwort } }), status(401));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: z.opt.kennung, antwort: z.antwort } }),
+      status(401),
+    );
     a.zaehler = 0;
     const r = await mitPasskey(x, a);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: r.opt.kennung, antwort: r.antwort } }), status(401), 'Zähler kleiner');
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: r.opt.kennung, antwort: r.antwort } }),
+      status(401),
+      'Zähler kleiner',
+    );
     a.zaehler = 10;
     a.uv = false;
     const u = await mitPasskey(x, a);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: u.opt.kennung, antwort: u.antwort } }), status(401), 'ohne PIN/Biometrie');
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: u.opt.kennung, antwort: u.antwort } }),
+      status(401),
+      'ohne PIN/Biometrie',
+    );
     a.uv = true;
     const ok = await mitPasskey(x, a);
-    assert.ok((await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: ok.opt.kennung, antwort: ok.antwort } })).sitzungSetzen, 'höherer Zähler geht wieder');
+    assert.ok(
+      (await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: ok.opt.kennung, antwort: ok.antwort } })).sitzungSetzen,
+      'höherer Zähler geht wieder',
+    );
   });
 
   it('Anmeldeschutz gilt auch für Passkey-Versuche', async () => {
@@ -183,14 +262,23 @@ describe('Passkeys (#811)', () => {
     const a = await anlegen(x, s);
     for (let i = 0; i < 5; i++) {
       const f = await mitPasskey(x, a, { ip: '9.9.9.9', origin: 'https://phishing.example' });
-      await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { ip: '9.9.9.9', body: { kennung: f.opt.kennung, antwort: f.antwort } }), status(401));
+      await assert.rejects(
+        x.rufe('POST', '/api/konto/passkey/anmelden', { ip: '9.9.9.9', body: { kennung: f.opt.kennung, antwort: f.antwort } }),
+        status(401),
+      );
     }
     // Sechster Versuch: gesperrt (429) – auch mit richtigem Passkey, und schon beim Holen der Optionen gilt die Sperre für das Konto.
     const g = await mitPasskey(x, a, { ip: '9.9.9.9' });
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { ip: '9.9.9.9', body: { kennung: g.opt.kennung, antwort: g.antwort } }), status(429));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', { ip: '9.9.9.9', body: { kennung: g.opt.kennung, antwort: g.antwort } }),
+      status(429),
+    );
     // Andere Adresse: nicht betroffen.
     const h = await mitPasskey(x, a, { ip: '2.2.2.2' });
-    assert.ok((await x.rufe('POST', '/api/konto/passkey/anmelden', { ip: '2.2.2.2', body: { kennung: h.opt.kennung, antwort: h.antwort } })).sitzungSetzen);
+    assert.ok(
+      (await x.rufe('POST', '/api/konto/passkey/anmelden', { ip: '2.2.2.2', body: { kennung: h.opt.kennung, antwort: h.antwort } }))
+        .sitzungSetzen,
+    );
   });
 
   it('Entfernen nur nach frischer Anmeldung (403)', async () => {
@@ -199,8 +287,10 @@ describe('Passkeys (#811)', () => {
     await anlegen(x, s);
     const [p] = ((await x.rufe('GET', '/api/konto/passkeys', { sitzung: s })).body as { liste: Array<{ nr: string }> }).liste;
     x.konten.uhr = () => Date.now() + 11 * 60_000;
-    await assert.rejects(x.rufe('DELETE', '/api/konto/passkeys/:nr', { sitzung: s, params: { nr: p.nr } }),
-      (e: unknown) => e instanceof Fachfehler && e.status === 403 && (e.details as { frisch?: boolean }).frisch === true);
+    await assert.rejects(
+      x.rufe('DELETE', '/api/konto/passkeys/:nr', { sitzung: s, params: { nr: p.nr } }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 403 && (e.details as { frisch?: boolean }).frisch === true,
+    );
     // Erneut angemeldet (mit Passwort): geht.
     await x.konten.bestaetigeFrisch(x.lena, s, (await x.konten.anmeldungZu(s))!.sitzung, { passwort: PW }, '1.1.1.1');
     x.konten.uhr = () => Date.now();
@@ -220,14 +310,27 @@ describe('Passkeys (#811)', () => {
     assert.ok('zweiterSchritt' in r && r.zweiterSchritt);
     assert.deepEqual(r.wege, { code: false, passkey: true });
     await assert.rejects(x.konten.anmeldenMitCode({ kennung: r.zweiterSchritt, code: '123456' }, '1.1.1.1'), status(401));
-    const opt = (await x.rufe('POST', '/api/konto/passkey/optionen', { body: { zweiterSchritt: r.zweiterSchritt } })).body as { kennung: string; optionen: { challenge: string; rpId: string; allowCredentials: Array<{ id: string }> } };
+    const opt = (await x.rufe('POST', '/api/konto/passkey/optionen', { body: { zweiterSchritt: r.zweiterSchritt } })).body as {
+      kennung: string;
+      optionen: { challenge: string; rpId: string; allowCredentials: Array<{ id: string }> };
+    };
     assert.equal(opt.optionen.allowCredentials.length, 1, 'nur die Passkeys dieser Person');
     // Andere Adresse als beim Passwort: abgelehnt.
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/optionen', { ip: '2.2.2.2', body: { zweiterSchritt: r.zweiterSchritt } }), status(401));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/optionen', { ip: '2.2.2.2', body: { zweiterSchritt: r.zweiterSchritt } }),
+      status(401),
+    );
     // Eine Herausforderung ohne zweiten Schritt taugt nicht für den zweiten Schritt.
     const fremd = await mitPasskey(x, a);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: fremd.opt.kennung, antwort: fremd.antwort, zweiterSchritt: r.zweiterSchritt } }), status(401));
-    const ok = await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen), zweiterSchritt: r.zweiterSchritt } });
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', {
+        body: { kennung: fremd.opt.kennung, antwort: fremd.antwort, zweiterSchritt: r.zweiterSchritt },
+      }),
+      status(401),
+    );
+    const ok = await x.rufe('POST', '/api/konto/passkey/anmelden', {
+      body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen), zweiterSchritt: r.zweiterSchritt },
+    });
     assert.ok(ok.sitzungSetzen);
 
     // Mit Code-App: beide Wege, der Code bleibt Rückfall.
@@ -237,7 +340,10 @@ describe('Passkeys (#811)', () => {
     const r2 = await x.konten.anmelden({ email: 'lena@example.org', passwort: PW }, '1.1.1.1', '');
     assert.ok('zweiterSchritt' in r2);
     assert.deepEqual(r2.wege, { code: true, passkey: true });
-    assert.ok((await x.konten.anmeldenMitCode({ kennung: r2.zweiterSchritt, code: codes[0] }, '1.1.1.1')).schluessel, 'Wiederherstellungscode gilt weiter');
+    assert.ok(
+      (await x.konten.anmeldenMitCode({ kennung: r2.zweiterSchritt, code: codes[0] }, '1.1.1.1')).schluessel,
+      'Wiederherstellungscode gilt weiter',
+    );
   });
 
   it('Pflicht je Rolle: neue Sitzungen ohne Passkey nur ins eigene Konto; ohne gepflegte HTTPS-Adresse geschlossen', async () => {
@@ -248,7 +354,10 @@ describe('Passkeys (#811)', () => {
     await x.pk.setzePflicht({ mitglied: true, admin: true }, 'test');
     await new Promise((r) => setTimeout(r, 5));
     const neu = await x.anmelden();
-    await assert.rejects(x.rufe('GET', '/api/typen', { sitzung: neu }), (e: unknown) => e instanceof Fachfehler && e.status === 403 && /Passkey/.test(e.message));
+    await assert.rejects(
+      x.rufe('GET', '/api/typen', { sitzung: neu }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 403 && /Passkey/.test(e.message),
+    );
     await x.rufe('GET', '/api/konto/passkeys', { sitzung: neu });
     const st = (await x.rufe('GET', '/api/konto/status', { sitzung: neu })).body as { passkey: { fehlt: boolean; moeglich: boolean } };
     assert.equal(st.passkey.fehlt, true);
@@ -262,12 +371,21 @@ describe('Passkeys (#811)', () => {
     // Gepflegte Adresse weg (ohne HTTPS), Pflicht noch an: geschlossen – nichts wird durchgewunken (Durchsicht Sicherheit).
     adresse = 'http://nas.home.arpa:8080';
     assert.equal(await x.pk.lage(x.lena), 'fehlt');
-    await assert.rejects(x.konten.anmelden({ email: 'lena@example.org', passwort: PW }, '1.1.1.1', ''), (e: unknown) => e instanceof Fachfehler && e.status === 409 && /keine gepflegte/.test(e.message));
+    await assert.rejects(
+      x.konten.anmelden({ email: 'lena@example.org', passwort: PW }, '1.1.1.1', ''),
+      (e: unknown) => e instanceof Fachfehler && e.status === 409 && /keine gepflegte/.test(e.message),
+    );
     // Einschalten geht ohne gepflegte HTTPS-Adresse nicht, ausschalten immer.
     await x.pk.setzePflicht({ admin: false, mitglied: false }, 'test');
-    await assert.rejects(x.pk.setzePflicht({ admin: true }, 'test'), (e: unknown) => e instanceof Fachfehler && e.status === 409 && /https/.test(e.message));
+    await assert.rejects(
+      x.pk.setzePflicht({ admin: true }, 'test'),
+      (e: unknown) => e instanceof Fachfehler && e.status === 409 && /https/.test(e.message),
+    );
     assert.ok('schluessel' in (await x.konten.anmelden({ email: 'lena@example.org', passwort: PW }, '1.1.1.1', '')));
-    await assert.rejects(x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: neu }), (e: unknown) => e instanceof Fachfehler && e.status === 409 && /HTTPS/.test(e.message));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: neu }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 409 && /HTTPS/.test(e.message),
+    );
     const st2 = (await x.rufe('GET', '/api/konto/status', {})).body as { passkey: { moeglich: boolean } };
     assert.deepEqual(st2.passkey, { moeglich: false });
   });
@@ -278,11 +396,20 @@ describe('Passkeys (#811)', () => {
     const s = await x.anmelden();
     const a = await anlegen(x, s);
     adresse = 'https://neu.example.org';
-    const liste = ((await x.rufe('GET', '/api/konto/passkeys', { sitzung: s })).body as { liste: Array<{ passt: boolean; rpId: string }> }).liste;
-    assert.deepEqual(liste.map((p) => [p.passt, p.rpId]), [[false, 'ablago.example.org']]);
+    const liste = ((await x.rufe('GET', '/api/konto/passkeys', { sitzung: s })).body as { liste: Array<{ passt: boolean; rpId: string }> })
+      .liste;
+    assert.deepEqual(
+      liste.map((p) => [p.passt, p.rpId]),
+      [[false, 'ablago.example.org']],
+    );
     assert.equal(await x.pk.nutzbar(x.lena.id), false);
     const { opt } = await mitPasskey(x, a);
-    await assert.rejects(x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen, ADRESSE, 'ablago.example.org') } }), status(401));
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkey/anmelden', {
+        body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen, ADRESSE, 'ablago.example.org') },
+      }),
+      status(401),
+    );
   });
 
   it('Verwaltungsmodus: erneute Anmeldung mit Passkey, falscher Passkey zählt in den Anmeldeschutz', async () => {
@@ -293,17 +420,46 @@ describe('Passkeys (#811)', () => {
     const sitzung = () => x.konten.anmeldungZu(s).then((r) => r!.sitzung);
     const st = await x.konten.verwaltungsstand(x.lena, await sitzung());
     assert.equal(st.passkey, true);
-    await assert.rejects(x.konten.beginneVerwaltung(x.lena, s, await sitzung(), {}, '1.1.1.1'),
-      (e: unknown) => e instanceof Fachfehler && e.status === 401 && (e.details as { passkey?: boolean }).passkey === true);
-    const o = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
+    await assert.rejects(
+      x.konten.beginneVerwaltung(x.lena, s, await sitzung(), {}, '1.1.1.1'),
+      (e: unknown) => e instanceof Fachfehler && e.status === 401 && (e.details as { passkey?: boolean }).passkey === true,
+    );
+    const o = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s })).body as {
+      kennung: string;
+      optionen: { challenge: string; rpId: string };
+    };
     // Eine Herausforderung für die Anmeldung taugt nicht für die Bestätigung.
     const fremd = await mitPasskey(x, a);
-    await assert.rejects(x.konten.beginneVerwaltung(x.lena, s, await sitzung(), { passkey: { kennung: fremd.opt.kennung, antwort: fremd.antwort } }, '1.1.1.1'), status(401));
-    const stand = await x.konten.beginneVerwaltung(x.lena, s, await sitzung(), { passkey: { kennung: o.kennung, antwort: a.anmelden(o.optionen) } }, '1.1.1.1');
+    await assert.rejects(
+      x.konten.beginneVerwaltung(
+        x.lena,
+        s,
+        await sitzung(),
+        { passkey: { kennung: fremd.opt.kennung, antwort: fremd.antwort } },
+        '1.1.1.1',
+      ),
+      status(401),
+    );
+    const stand = await x.konten.beginneVerwaltung(
+      x.lena,
+      s,
+      await sitzung(),
+      { passkey: { kennung: o.kennung, antwort: a.anmelden(o.optionen) } },
+      '1.1.1.1',
+    );
     assert.equal(stand.aktiv, true);
     // Heikle Handlung: ebenso mit Passkey.
-    const o2 = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
-    await x.konten.bestaetigeFrisch(x.lena, s, await sitzung(), { passkey: { kennung: o2.kennung, antwort: a.anmelden(o2.optionen) } }, '1.1.1.1');
+    const o2 = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s })).body as {
+      kennung: string;
+      optionen: { challenge: string; rpId: string };
+    };
+    await x.konten.bestaetigeFrisch(
+      x.lena,
+      s,
+      await sitzung(),
+      { passkey: { kennung: o2.kennung, antwort: a.anmelden(o2.optionen) } },
+      '1.1.1.1',
+    );
   });
 
   it('Verwaltung setzt Passkeys einer Person zurück; der Notfallzugang ebenso', async () => {
@@ -339,7 +495,10 @@ describe('Passkeys (#811)', () => {
     await x.zf.setzePflicht({ admin: true }, 'test');
     await new Promise((r) => setTimeout(r, 5));
     const neu = await x.anmelden();
-    await assert.rejects(x.rufe('GET', '/api/typen', { sitzung: neu }), (e: unknown) => e instanceof Fachfehler && e.status === 403 && /Passkey/.test(e.message));
+    await assert.rejects(
+      x.rufe('GET', '/api/typen', { sitzung: neu }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 403 && /Passkey/.test(e.message),
+    );
     // Passkey statt Code-App: Die Pflicht ist erfüllt, alles geht.
     const a = await anlegen(x, neu);
     await x.rufe('GET', '/api/typen', { sitzung: neu });
@@ -350,12 +509,27 @@ describe('Passkeys (#811)', () => {
     const r = await x.konten.anmelden({ email: 'lena@example.org', passwort: PW }, '1.1.1.1', '');
     assert.ok('zweiterSchritt' in r);
     assert.deepEqual(r.wege, { code: false, passkey: true });
-    const opt = (await x.rufe('POST', '/api/konto/passkey/optionen', { body: { zweiterSchritt: r.zweiterSchritt } })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
-    assert.ok((await x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen), zweiterSchritt: r.zweiterSchritt } })).sitzungSetzen);
+    const opt = (await x.rufe('POST', '/api/konto/passkey/optionen', { body: { zweiterSchritt: r.zweiterSchritt } })).body as {
+      kennung: string;
+      optionen: { challenge: string; rpId: string };
+    };
+    assert.ok(
+      (
+        await x.rufe('POST', '/api/konto/passkey/anmelden', {
+          body: { kennung: opt.kennung, antwort: a.anmelden(opt.optionen), zweiterSchritt: r.zweiterSchritt },
+        })
+      ).sitzungSetzen,
+    );
     // Den letzten Passkey nicht entfernen, solange er die Pflicht erfüllt …
-    const st = (await x.rufe('GET', '/api/konto/passkeys', { sitzung: neu })).body as { liste: Array<{ nr: string }>; pflicht: string | null };
+    const st = (await x.rufe('GET', '/api/konto/passkeys', { sitzung: neu })).body as {
+      liste: Array<{ nr: string }>;
+      pflicht: string | null;
+    };
     assert.equal(st.pflicht, 'zweifaktor');
-    await assert.rejects(x.rufe('DELETE', '/api/konto/passkeys/:nr', { sitzung: neu, params: { nr: st.liste[0].nr } }), (e: unknown) => e instanceof Fachfehler && e.status === 409 && /Zwei-Faktor/.test(e.message));
+    await assert.rejects(
+      x.rufe('DELETE', '/api/konto/passkeys/:nr', { sitzung: neu, params: { nr: st.liste[0].nr } }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 409 && /Zwei-Faktor/.test(e.message),
+    );
     // … mit Code-App schon; und die Code-App lässt sich abschalten, solange ein Passkey die Pflicht erfüllt.
     const { geheimnis } = await x.zf.beginne(x.lena);
     await x.zf.bestaetige(x.lena.id, totp(ausBase32(geheimnis), Math.floor(Date.now() / 30_000)), 'lena');
@@ -368,25 +542,65 @@ describe('Passkeys (#811)', () => {
 
   it('„Passwörter für Dokumente“ bestätigen mit Passkey – nur mit einer Herausforderung für diesen Zweck', async () => {
     const x = await aufbau();
-    const e = new PdfEntsperren(x.d.geschuetztePdfs.entsperrenAnbindung({ ablage: speicherFassungen(), speicher: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null) }));
+    const e = new PdfEntsperren(
+      x.d.geschuetztePdfs.entsperrenAnbindung({
+        ablage: speicherFassungen(),
+        speicher: speicherEinstellungen(),
+        verschluessele: (k) => `v:${k}`,
+        entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null),
+      }),
+    );
     x.d.geschuetztePdfs.verbindeEntsperren(e);
     const s = await x.anmelden();
     const a = await anlegen(x, s);
     assert.equal(((await x.rufe('GET', '/api/konto/dokument-passwoerter', { sitzung: s })).body as { passkey: boolean }).passkey, true);
     // Eine Herausforderung für den Verwaltungsmodus taugt hier nicht.
-    const fremd = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
-    await assert.rejects(x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', { sitzung: s, body: { passkey: { kennung: fremd.kennung, antwort: a.anmelden(fremd.optionen) } } }), status(403));
-    const o = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s, body: { fuer: 'dokumentpasswoerter' } })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
-    const r = (await x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', { sitzung: s, body: { passkey: { kennung: o.kennung, antwort: a.anmelden(o.optionen) } } })).body as { bestaetigtBis: string };
+    const fremd = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s })).body as {
+      kennung: string;
+      optionen: { challenge: string; rpId: string };
+    };
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', {
+        sitzung: s,
+        body: { passkey: { kennung: fremd.kennung, antwort: a.anmelden(fremd.optionen) } },
+      }),
+      status(403),
+    );
+    const o = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s, body: { fuer: 'dokumentpasswoerter' } }))
+      .body as { kennung: string; optionen: { challenge: string; rpId: string } };
+    const r = (
+      await x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', {
+        sitzung: s,
+        body: { passkey: { kennung: o.kennung, antwort: a.anmelden(o.optionen) } },
+      })
+    ).body as { bestaetigtBis: string };
     assert.ok(Date.parse(r.bestaetigtBis) > Date.now());
     // … und auch nicht umgekehrt: eine für Dokument-Passwörter nicht für den Verwaltungsmodus.
-    const o2 = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s, body: { fuer: 'dokumentpasswoerter' } })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
+    const o2 = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s, body: { fuer: 'dokumentpasswoerter' } }))
+      .body as { kennung: string; optionen: { challenge: string; rpId: string } };
     const an = (await x.konten.anmeldungZu(s))!;
-    await assert.rejects(x.konten.bestaetigeFrisch(x.lena, s, an.sitzung, { passkey: { kennung: o2.kennung, antwort: a.anmelden(o2.optionen) } }, '1.1.1.1'), status(401));
+    await assert.rejects(
+      x.konten.bestaetigeFrisch(x.lena, s, an.sitzung, { passkey: { kennung: o2.kennung, antwort: a.anmelden(o2.optionen) } }, '1.1.1.1'),
+      status(401),
+    );
     // Dieselben Zähler wie die Bestätigung mit Passwort (#956): nach fünf Fehlversuchen 429 – auch mit Passkey.
-    for (let i = 0; i < 5; i++) await assert.rejects(x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', { sitzung: s, body: { passkey: { kennung: 'falsch', antwort: {} } } }), status(403));
-    const o3 = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s, body: { fuer: 'dokumentpasswoerter' } })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
-    await assert.rejects(x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', { sitzung: s, body: { passkey: { kennung: o3.kennung, antwort: a.anmelden(o3.optionen) } } }), status(429));
+    for (let i = 0; i < 5; i++)
+      await assert.rejects(
+        x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', {
+          sitzung: s,
+          body: { passkey: { kennung: 'falsch', antwort: {} } },
+        }),
+        status(403),
+      );
+    const o3 = (await x.rufe('POST', '/api/konto/passkeys/bestaetigen/optionen', { sitzung: s, body: { fuer: 'dokumentpasswoerter' } }))
+      .body as { kennung: string; optionen: { challenge: string; rpId: string } };
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/dokument-passwoerter/bestaetigen', {
+        sitzung: s,
+        body: { passkey: { kennung: o3.kennung, antwort: a.anmelden(o3.optionen) } },
+      }),
+      status(429),
+    );
   });
 
   it('Pflicht gegen die gepflegte Adresse: über eine IP-Adresse oder einen zweiten Namen keine Sitzung ohne Passkey (Durchsicht Sicherheit)', async () => {
@@ -402,9 +616,14 @@ describe('Passkeys (#811)', () => {
     const zweiter = async (origin: string, rpId?: string, geraet = lena) => {
       const r = await mitPasswort();
       assert.ok('zweiterSchritt' in r, 'ohne Passkey keine Sitzung');
-      const o = (await x.rufe('POST', '/api/konto/passkey/optionen', { body: { zweiterSchritt: r.zweiterSchritt } })).body as { kennung: string; optionen: { challenge: string; rpId: string } };
+      const o = (await x.rufe('POST', '/api/konto/passkey/optionen', { body: { zweiterSchritt: r.zweiterSchritt } })).body as {
+        kennung: string;
+        optionen: { challenge: string; rpId: string };
+      };
       assert.equal(o.optionen.rpId, 'ablago.example.org', 'die RP kommt immer aus der gepflegten Adresse');
-      return x.rufe('POST', '/api/konto/passkey/anmelden', { body: { kennung: o.kennung, antwort: geraet.anmelden(o.optionen, origin, rpId), zweiterSchritt: r.zweiterSchritt } });
+      return x.rufe('POST', '/api/konto/passkey/anmelden', {
+        body: { kennung: o.kennung, antwort: geraet.anmelden(o.optionen, origin, rpId), zweiterSchritt: r.zweiterSchritt },
+      });
     };
     // 1. Über die gepflegte Adresse: Sitzung – nur nach dem Passkey.
     assert.ok((await zweiter(GEPFLEGT)).sitzungSetzen);
@@ -422,13 +641,24 @@ describe('Passkeys (#811)', () => {
     const r = await mitPasswort();
     assert.ok('schluessel' in r && r.schluessel);
     await assert.rejects(x.rufe('GET', '/api/typen', { sitzung: r.schluessel }), status(403));
-    const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: r.schluessel })).body as Parameters<Authenticator['anlegen']>[0];
-    await assert.rejects(x.rufe('POST', '/api/konto/passkeys', { sitzung: r.schluessel, body: { antwort: fremd.anlegen(o, 'https://nas.example.net:5001', 'nas.example.net') } }), status(422));
+    const o = (await x.rufe('POST', '/api/konto/passkeys/beginnen', { sitzung: r.schluessel })).body as Parameters<
+      Authenticator['anlegen']
+    >[0];
+    await assert.rejects(
+      x.rufe('POST', '/api/konto/passkeys', {
+        sitzung: r.schluessel,
+        body: { antwort: fremd.anlegen(o, 'https://nas.example.net:5001', 'nas.example.net') },
+      }),
+      status(422),
+    );
     await assert.rejects(x.rufe('GET', '/api/typen', { sitzung: r.schluessel }), status(403));
     // Ohne gepflegte Adresse lässt sich die Pflicht gar nicht erst einschalten.
     await x.pk.setzePflicht({ admin: false }, 'test');
     gepflegt = '';
-    await assert.rejects(x.rufe('PUT', '/api/werkbank/passkeys', { sitzung: r.schluessel, body: { admin: true } }), (e: unknown) => e instanceof Fachfehler && e.status >= 401);
+    await assert.rejects(
+      x.rufe('PUT', '/api/werkbank/passkeys', { sitzung: r.schluessel, body: { admin: true } }),
+      (e: unknown) => e instanceof Fachfehler && e.status >= 401,
+    );
     await assert.rejects(x.pk.setzePflicht({ admin: true }, 'test'), status(409));
   });
 
@@ -481,8 +711,12 @@ describe('Passkeys (#811)', () => {
     x.konten.uhr = () => spaeter;
     await x.konten.modusPruefen(x.lena, s, (await x.konten.anmeldungZu(s))!.sitzung, true);
     for (const pfad of ['/api/benutzer/:id/passkeys/zuruecksetzen', '/api/benutzer/:id/zweifaktor/zuruecksetzen']) {
-      await assert.rejects(x.rufe('POST', pfad, { sitzung: s, params: { id: jonas.id } }),
-        (e: unknown) => e instanceof Fachfehler && e.status === 403 && (e.details as { frisch?: boolean; handlung?: string }).handlung === 'anmeldung', pfad);
+      await assert.rejects(
+        x.rufe('POST', pfad, { sitzung: s, params: { id: jonas.id } }),
+        (e: unknown) =>
+          e instanceof Fachfehler && e.status === 403 && (e.details as { frisch?: boolean; handlung?: string }).handlung === 'anmeldung',
+        pfad,
+      );
     }
   });
 });

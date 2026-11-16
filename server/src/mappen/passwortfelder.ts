@@ -27,7 +27,7 @@ export function passwortWert(eingabe: unknown, hatEingabe: boolean, bisher: unkn
   if (istPasswortWert(eingabe)) {
     if (eingabe.entfernen) return null;
     if (typeof eingabe.neu === 'string' && eingabe.neu !== '') return verschluessele(eingabe.neu.slice(0, 1000));
-    return (eingabe.gesetzt ? bisher ?? null : null) as Werte[string];
+    return (eingabe.gesetzt ? (bisher ?? null) : null) as Werte[string];
   }
   throw new Fachfehler(422, t('meldungen.dienst.ungueltiger-wert-fuer-ein'));
 }
@@ -48,17 +48,31 @@ export interface PasswortfelderAnschluss {
 }
 
 export class Passwortfelder {
-  constructor(private readonly kern: Kern, private readonly historie: MappenHistorie, private readonly anschluss: PasswortfelderAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly historie: MappenHistorie,
+    private readonly anschluss: PasswortfelderAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get tresor() { return this.anschluss.tresor(); }
-  private istVerschluesselt(v: unknown): v is string { return this.anschluss.istVerschluesselt(v); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.historie.notiere(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get tresor() {
+    return this.anschluss.tresor();
+  }
+  private istVerschluesselt(v: unknown): v is string {
+    return this.anschluss.istVerschluesselt(v);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.historie.notiere(...a);
+  }
 
   /* ---------- Passwortfelder (#46) ---------- */
 
   /** Lassen sich gerade Passwörter speichern? */
-  get passwoerterMoeglich() { return !!this.tresor?.bereit; }
+  get passwoerterMoeglich() {
+    return !!this.tresor?.bereit;
+  }
 
   /** Passwortfelder, die mit dem vorhandenen Schlüssel nicht lesbar sind (für die Werkbank). */
   async unlesbarePasswoerter(): Promise<Betroffen[]> {
@@ -69,7 +83,12 @@ export class Passwortfelder {
       for (const m of await this.repo.listeMappen(mappentyp.id)) {
         for (const f of felder) {
           const v = m.werte[f.key];
-          if (this.istVerschluesselt(v) && !this.tresor?.lesbar(v)) out.push({ bereich: mappentyp.name, was: `${m.titel || t('meldungen.dienst.mappe-ohne-titel')}: ${f.label}`, wo: t('meldungen.dienst.in-der-ablage-neu') });
+          if (this.istVerschluesselt(v) && !this.tresor?.lesbar(v))
+            out.push({
+              bereich: mappentyp.name,
+              was: `${m.titel || t('meldungen.dienst.mappe-ohne-titel')}: ${f.label}`,
+              wo: t('meldungen.dienst.in-der-ablage-neu'),
+            });
         }
       }
     }
@@ -104,8 +123,18 @@ export class Passwortfelder {
       if (!felder.length) return m;
       const werte = { ...m.werte };
       for (const f of felder) werte[f.key] = this.tresor?.entschluessele(werte[f.key] as string) ?? null;
-      protokoll.modul('ablage').info('Passwörter über die API abgerufen', { mappe: m.titel || m.id, mappeId: m.id, felder: felder.map((f) => f.label).join(', '), schluessel: wer });
-      historie.push({ mappeId: m.id, benutzerId, art: 'passwort_angezeigt', daten: { feld: felder.map((f) => f.label).join(', '), api: wer } });
+      protokoll.modul('ablage').info('Passwörter über die API abgerufen', {
+        mappe: m.titel || m.id,
+        mappeId: m.id,
+        felder: felder.map((f) => f.label).join(', '),
+        schluessel: wer,
+      });
+      historie.push({
+        mappeId: m.id,
+        benutzerId,
+        art: 'passwort_angezeigt',
+        daten: { feld: felder.map((f) => f.label).join(', '), api: wer },
+      });
       return { ...m, werte };
     });
     await this.repo.historieSchreibe(historie);

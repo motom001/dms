@@ -20,43 +20,69 @@ async function dreiteilungSteht(s, wo) {
     rechts.scrollTop = rechts.scrollHeight;
     return { seite: document.scrollingElement.scrollHeight, fenster: innerHeight, spalte: rechts.scrollHeight, platz: rechts.clientHeight };
   });
-  assert.ok(r.spalte > r.platz + 50, `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`);
+  assert.ok(
+    r.spalte > r.platz + 50,
+    `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`,
+  );
   assert.equal(r.seite, r.fenster, `${wo}: Die Seite rollt unter der Dreiteilung weiter (Seite ${r.seite} px, Fenster ${r.fenster} px)`);
 }
 
-rauchtest('Ablage und Werkbank: Die Seite rollt nicht unter der Dreiteilung, versteckte Beschriftungen bleiben lesbar (#1063)', { als: LENA }, async (s) => {
-  await s.setViewportSize({ width: 1366, height: 640 });
-  const mappeOeffnen = async () => {
-    await s.goto(BASIS + '/ablage/start');
-    await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
-    await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /Stromvertrag Haus/ }).first().click();
-    await s.getByRole('region', { name: 'Mappe' }).getByRole('button', { name: 'Mappe speichern' }).waitFor();
+rauchtest(
+  'Ablage und Werkbank: Die Seite rollt nicht unter der Dreiteilung, versteckte Beschriftungen bleiben lesbar (#1063)',
+  { als: LENA },
+  async (s) => {
+    await s.setViewportSize({ width: 1366, height: 640 });
+    const mappeOeffnen = async () => {
+      await s.goto(BASIS + '/ablage/start');
+      await s
+        .getByRole('complementary', { name: 'Ansichten' })
+        .getByRole('link', { name: /^Vertrag \d/ })
+        .click();
+      await s
+        .getByRole('region', { name: 'Mappen' })
+        .getByRole('link', { name: /Stromvertrag Haus/ })
+        .first()
+        .click();
+      await s.getByRole('region', { name: 'Mappe' }).getByRole('button', { name: 'Mappe speichern' }).waitFor();
+      await s.waitForLoadState('networkidle');
+    };
+    // Ablage: eine Mappe rechts, ohne und mit Verwaltungsmodus (roter Balken oben).
+    await mappeOeffnen();
+    await dreiteilungSteht(s, 'Ablage → Mappe');
+    await verwalten(s);
+    await mappeOeffnen();
+    await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor();
+    await dreiteilungSteht(s, 'Ablage → Mappe im Verwaltungsmodus');
+    // Werkbank → Automatisierungen: In „Ausprobieren“ steht die versteckte Beschriftung „Mappe suchen …“.
+    await s.goto(BASIS + '/werkbank/automatisierungen');
+    await s
+      .getByRole('region', { name: 'Elemente' })
+      .getByRole('link', { name: /Rauchtest Vertrag angelegt/ })
+      .click();
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    // „Ausprobieren“ ist ein Bereich (#1000): über die Sprungleiste aufklappen.
+    await bearbeitung
+      .getByRole('navigation', { name: 'Bereiche der Automatisierung' })
+      .getByRole('button', { name: 'Ausprobieren' })
+      .click();
+    const suche = bearbeitung.getByLabel('Mappe suchen …');
+    await suche.waitFor();
     await s.waitForLoadState('networkidle');
-  };
-  // Ablage: eine Mappe rechts, ohne und mit Verwaltungsmodus (roter Balken oben).
-  await mappeOeffnen();
-  await dreiteilungSteht(s, 'Ablage → Mappe');
-  await verwalten(s);
-  await mappeOeffnen();
-  await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor();
-  await dreiteilungSteht(s, 'Ablage → Mappe im Verwaltungsmodus');
-  // Werkbank → Automatisierungen: In „Ausprobieren“ steht die versteckte Beschriftung „Mappe suchen …“.
-  await s.goto(BASIS + '/werkbank/automatisierungen');
-  await s.getByRole('region', { name: 'Elemente' }).getByRole('link', { name: /Rauchtest Vertrag angelegt/ }).click();
-  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  // „Ausprobieren“ ist ein Bereich (#1000): über die Sprungleiste aufklappen.
-  await bearbeitung.getByRole('navigation', { name: 'Bereiche der Automatisierung' }).getByRole('button', { name: 'Ausprobieren' }).click();
-  const suche = bearbeitung.getByLabel('Mappe suchen …');
-  await suche.waitFor();
-  await s.waitForLoadState('networkidle');
-  await dreiteilungSteht(s, 'Werkbank → Automatisierung');
-  // Gegenprobe: Die Beschriftungen bleiben unsichtbar, aber im Barrierefreiheitsbaum – auch die der Marke oben.
-  const beschriftung = bearbeitung.locator('label[for="ausprobieren-mappe"]');
-  const kasten = await beschriftung.boundingBox();
-  assert.ok(kasten && kasten.width <= 1 && kasten.height <= 1, `Die Beschriftung „Mappe suchen …“ ist zu sehen (${JSON.stringify(kasten)})`);
-  assert.equal(await suche.count(), 1, 'Das Suchfeld ist über seine versteckte Beschriftung zu finden');
-  await s.getByRole('banner').getByRole('link', { name: /– Startseite$/ }).waitFor();
-});
+    await dreiteilungSteht(s, 'Werkbank → Automatisierung');
+    // Gegenprobe: Die Beschriftungen bleiben unsichtbar, aber im Barrierefreiheitsbaum – auch die der Marke oben.
+    const beschriftung = bearbeitung.locator('label[for="ausprobieren-mappe"]');
+    const kasten = await beschriftung.boundingBox();
+    assert.ok(
+      kasten && kasten.width <= 1 && kasten.height <= 1,
+      `Die Beschriftung „Mappe suchen …“ ist zu sehen (${JSON.stringify(kasten)})`,
+    );
+    assert.equal(await suche.count(), 1, 'Das Suchfeld ist über seine versteckte Beschriftung zu finden');
+    await s
+      .getByRole('banner')
+      .getByRole('link', { name: /– Startseite$/ })
+      .waitFor();
+  },
+);
 
 // #1037: Beim Auswählen übernehmen – Vorschläge nur in leere Felder, markiert; eine andere Wahl ersetzt nur Unberührtes.
 rauchtest('Werte aus der gewählten Mappe vorschlagen (#1037)', { als: LENA }, async (s) => {
@@ -90,45 +116,69 @@ rauchtest('Werte aus der gewählten Mappe vorschlagen (#1037)', { als: LENA }, a
 
 // Externe Dienste und KI-Kosten (#565): Systemzustand zeigt beide Abschnitte; Zeitraum umschalten, Monatsbudget mit harter
 // Grenze speichern und wieder leeren (ohne KI-Paket ohne Wirkung).
-rauchtest('Systemzustand: Externe Dienste und KI-Kosten, Monatsbudget speichern (#565)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.goto(BASIS + '/werkbank/systemzustand');
-  const extern = s.locator('#externe-dienste');
-  await extern.getByRole('heading', { name: 'Externe Dienste' }).waitFor();
-  await extern.getByRole('button', { name: 'Letzte Stunde' }).click();
-  await extern.getByText(/In der letzten Stunde hat Ablago keinen externen Dienst aufgerufen|Aufrufe/).first().waitFor();
-  const kosten = s.locator('#ki-kosten');
-  await kosten.getByRole('heading', { name: 'KI-Kosten und Budget' }).waitFor();
-  await kosten.getByLabel(/^Monatsbudget/).fill('20');
-  await kosten.getByLabel(/^Harte Grenze/).check();
-  await kosten.getByRole('button', { name: /speichern$/ }).click();
-  await kosten.getByText('Gespeichert.', { exact: true }).first().waitFor();
-  assert.equal(await kosten.getByLabel(/^Monatsbudget/).inputValue(), '20');
-  assert.ok(await kosten.getByLabel(/^Harte Grenze/).isChecked());
-  await kosten.getByLabel(/^Monatsbudget/).fill('');
-  await kosten.getByRole('button', { name: /speichern$/ }).click();
-  await s.waitForFunction(() => document.querySelector('#ki-kosten-budget')?.value === '' && !document.querySelector('#ki-kosten-hart')?.checked);
-});
+rauchtest(
+  'Systemzustand: Externe Dienste und KI-Kosten, Monatsbudget speichern (#565)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    const extern = s.locator('#externe-dienste');
+    await extern.getByRole('heading', { name: 'Externe Dienste' }).waitFor();
+    await extern.getByRole('button', { name: 'Letzte Stunde' }).click();
+    await extern
+      .getByText(/In der letzten Stunde hat Ablago keinen externen Dienst aufgerufen|Aufrufe/)
+      .first()
+      .waitFor();
+    const kosten = s.locator('#ki-kosten');
+    await kosten.getByRole('heading', { name: 'KI-Kosten und Budget' }).waitFor();
+    await kosten.getByLabel(/^Monatsbudget/).fill('20');
+    await kosten.getByLabel(/^Harte Grenze/).check();
+    await kosten.getByRole('button', { name: /speichern$/ }).click();
+    await kosten.getByText('Gespeichert.', { exact: true }).first().waitFor();
+    assert.equal(await kosten.getByLabel(/^Monatsbudget/).inputValue(), '20');
+    assert.ok(await kosten.getByLabel(/^Harte Grenze/).isChecked());
+    await kosten.getByLabel(/^Monatsbudget/).fill('');
+    await kosten.getByRole('button', { name: /speichern$/ }).click();
+    await s.waitForFunction(
+      () => document.querySelector('#ki-kosten-budget')?.value === '' && !document.querySelector('#ki-kosten-hart')?.checked,
+    );
+  },
+);
 
 // #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand; der alte Link führt dorthin.
-rauchtest('Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter Link leitet um (#1190)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.goto(BASIS + '/werkbank/texterkennung');
-  await s.getByRole('heading', { name: 'Warteschlange', exact: true }).waitFor();
-  assert.equal(await s.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).count(), 0, 'nicht mehr unter Suche und Volltext');
-  await s.goto(BASIS + '/werkbank/texterkennung#automatisch-verkleinern');
-  await s.waitForURL(/\/werkbank\/systemzustand#automatisch-verkleinern$/);
-  const form = s.locator('#automatisch-verkleinern');
-  await form.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).waitFor();
-  await form.getByRole('switch', { name: /verkleinern/i }).first().waitFor();
-  // Unter „Große PDFs verkleinern“, auf derselben Seite.
-  assert.ok(await s.evaluate(() => {
-    const gross = document.getElementById('verkleinern'); const auto = document.getElementById('automatisch-verkleinern');
-    return !!gross && !!auto && !!(gross.compareDocumentPosition(auto) & Node.DOCUMENT_POSITION_FOLLOWING);
-  }), 'unter „Große PDFs verkleinern“');
-});
+rauchtest(
+  'Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter Link leitet um (#1190)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/texterkennung');
+    await s.getByRole('heading', { name: 'Warteschlange', exact: true }).waitFor();
+    assert.equal(
+      await s.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).count(),
+      0,
+      'nicht mehr unter Suche und Volltext',
+    );
+    await s.goto(BASIS + '/werkbank/texterkennung#automatisch-verkleinern');
+    await s.waitForURL(/\/werkbank\/systemzustand#automatisch-verkleinern$/);
+    const form = s.locator('#automatisch-verkleinern');
+    await form.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).waitFor();
+    await form
+      .getByRole('switch', { name: /verkleinern/i })
+      .first()
+      .waitFor();
+    // Unter „Große PDFs verkleinern“, auf derselben Seite.
+    assert.ok(
+      await s.evaluate(() => {
+        const gross = document.getElementById('verkleinern');
+        const auto = document.getElementById('automatisch-verkleinern');
+        return !!gross && !!auto && !!(gross.compareDocumentPosition(auto) & Node.DOCUMENT_POSITION_FOLLOWING);
+      }),
+      'unter „Große PDFs verkleinern“',
+    );
+  },
+);
 
 // Passkeys (#811): Chromium mit einem virtuellen Authenticator (DevTools-Protokoll, Fingerabdruck „ja“). Lena fügt in Mein
 // Konto → Sicherheit einen Passkey hinzu, meldet sich ab und mit dem Passkey wieder an (ohne E-Mail-Adresse) und entfernt
@@ -136,7 +186,16 @@ rauchtest('Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter L
 rauchtest('Passkey: hinzufügen, damit anmelden, entfernen (#811)', { als: LENA }, async (s, k) => {
   const cdp = await k.newCDPSession(s);
   await cdp.send('WebAuthn.enable');
-  await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+  await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: {
+      protocol: 'ctap2',
+      transport: 'internal',
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+    },
+  });
   await s.goto(BASIS + '/profil/sicherheit');
   const blatt = s.locator('#passkeys');
   await blatt.getByRole('heading', { name: 'Passkeys' }).waitFor();
@@ -166,7 +225,12 @@ rauchtest('Ansichten: Baum ohne Neuladen nach Verwaltungsmodus und Änderungen (
   await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
   const vertrag = (await api('GET', '/api/typen', { cookie: verwaltung })).daten.find((x) => x.name === 'Vertrag');
   const gesperrt = { grund: { R: false, C: false, E: false }, regeln: [] };
-  const sicht = (await api('POST', '/api/sichten/definitionen', { cookie: verwaltung, body: { name: 'Rauchtest gesperrt', typen: [vertrag.id], berechtigungen: gesperrt } })).daten;
+  const sicht = (
+    await api('POST', '/api/sichten/definitionen', {
+      cookie: verwaltung,
+      body: { name: 'Rauchtest gesperrt', typen: [vertrag.id], berechtigungen: gesperrt },
+    })
+  ).daten;
   try {
     const baum = s.getByRole('complementary', { name: 'Ansichten' });
     const eintrag = (name) => baum.getByRole('link', { name: new RegExp(`^${name}`) });
@@ -181,17 +245,26 @@ rauchtest('Ansichten: Baum ohne Neuladen nach Verwaltungsmodus und Änderungen (
     await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor({ state: 'detached' });
     await eintrag('Rauchtest gesperrt').waitFor({ state: 'detached' });
     // Eine andere Sitzung gibt die Ansicht frei und benennt sie um: Der Baum holt den neuen Stand selbst.
-    await api('PUT', `/api/sichten/definitionen/${sicht.id}`, { cookie: verwaltung, body: { name: 'Rauchtest offen', typen: [vertrag.id], berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [] } } });
+    await api('PUT', `/api/sichten/definitionen/${sicht.id}`, {
+      cookie: verwaltung,
+      body: { name: 'Rauchtest offen', typen: [vertrag.id], berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [] } },
+    });
     await eintrag('Rauchtest offen').waitFor({ timeout: 40_000 });
     // Ist die Ansicht des Mappentyps (gleiche Id) gesperrt, zeigt ein Link auf den Mappentyp – wie nach einem Klick auf
     // eine Erwähnung – klar die Liste des Mappentyps, nicht die gesperrte Ansicht.
     const typSicht = (await api('GET', '/api/sichten/definitionen', { cookie: verwaltung })).daten.find((x) => x.id === vertrag.id);
-    await api('PUT', `/api/sichten/definitionen/${vertrag.id}`, { cookie: verwaltung, body: { ...typSicht, name: 'Rauchtest Verträge gesperrt', berechtigungen: gesperrt } });
+    await api('PUT', `/api/sichten/definitionen/${vertrag.id}`, {
+      cookie: verwaltung,
+      body: { ...typSicht, name: 'Rauchtest Verträge gesperrt', berechtigungen: gesperrt },
+    });
     try {
       await s.goto(BASIS + `/ablage/${vertrag.id}`);
       const liste = s.getByRole('region', { name: 'Mappen' });
       await liste.getByRole('heading', { name: /^Alle Mappen: Vertrag/, level: 1 }).waitFor();
-      await liste.getByRole('link', { name: /Stromvertrag Haus/ }).first().waitFor();
+      await liste
+        .getByRole('link', { name: /Stromvertrag Haus/ })
+        .first()
+        .waitFor();
       assert.equal(await s.getByText('Rauchtest Verträge gesperrt').count(), 0, 'kein Name der gesperrten Ansicht');
     } finally {
       await api('PUT', `/api/sichten/definitionen/${vertrag.id}`, { cookie: verwaltung, body: typSicht });

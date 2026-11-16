@@ -11,4 +11,5 @@ export const istFeldmerkmal = (v: unknown): v is Feldmerkmal => typeof v === 'st
 /** Schreibschutz am Feld (Paketformat `schreibschutz`): nur mit Verwaltungsrecht bzw. freigegebener Rolle änderbar. */
 export const SCHREIBSCHUTZ = ['verwaltung'] as const;
 export type Schreibschutz = (typeof SCHREIBSCHUTZ)[number];
-export const istSchreibschutz = (v: unknown): v is Schreibschutz => typeof v === 'string' && (SCHREIBSCHUTZ as readonly string[]).includes(v);
+export const istSchreibschutz = (v: unknown): v is Schreibschutz =>
+  typeof v === 'string' && (SCHREIBSCHUTZ as readonly string[]).includes(v);

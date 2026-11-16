@@ -41,7 +41,11 @@ export const hatWertfeld = (f: Pick<Feld, 'typ'>): boolean => f.typ !== 'tabelle
 export const wertfelder = <F extends Pick<Feld, 'typ'>>(felder: readonly F[]): F[] => felder.filter(hatWertfeld);
 
 /** Die Trefferliste, deren Spalten die Tabelle zeigt: die gewählte, sonst (fehlt sie oder gibt es sie nicht mehr) die Standardliste. */
-export function tabellenListe(quelltyp: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>, key: string | undefined, listen: (t: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>) => Trefferliste[]): Trefferliste {
+export function tabellenListe(
+  quelltyp: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>,
+  key: string | undefined,
+  listen: (t: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>) => Trefferliste[],
+): Trefferliste {
   const l = listen(quelltyp);
   return l.find((x) => x.key === key) ?? l.find((x) => x.standard) ?? l[0];
 }
@@ -50,7 +54,11 @@ export function tabellenListe(quelltyp: Pick<Mappentyp, 'trefferlisten' | 'treff
  * Spalten der Tabelle: die der Trefferliste ohne Passwortfelder (Ergänzung Sicherheit), Tabellen und ausgeblendete
  * Felder (#655) – Systemspalten (_titel, _erstellt …) bleiben. Ohne Spalten der Titel.
  */
-export function tabellenSpalten(quelltyp: Pick<Mappentyp, 'felder' | 'trefferlisten' | 'trefferliste'>, key: string | undefined, listen: (t: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>) => Trefferliste[]): string[] {
+export function tabellenSpalten(
+  quelltyp: Pick<Mappentyp, 'felder' | 'trefferlisten' | 'trefferliste'>,
+  key: string | undefined,
+  listen: (t: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>) => Trefferliste[],
+): string[] {
   const spalten = tabellenListe(quelltyp, key, listen).spalten.filter((k) => {
     if (k.startsWith('_')) return true;
     const f = quelltyp.felder.find((x) => x.key === k);
@@ -63,20 +71,24 @@ export function tabellenSpalten(quelltyp: Pick<Mappentyp, 'felder' | 'trefferlis
  * Probleme der Einstellung einer Tabelle: Typ und Feld gewählt, das Feld verweist hierher (wie die Quelle eines
  * Verknüpfungsregisters), die Trefferliste gibt es, „+ Neu“ nicht zu lang. Leer = in Ordnung.
  */
-export function tabellenProbleme(f: Pick<Feld, 'quelle'>, ctx: {
-  eigeneId?: string;
-  /** Felder und Trefferlisten eines Typs (der eigene über `eigene`), undefined = gibt es nicht. */
-  typ: (id: string) => Pick<Mappentyp, 'felder' | 'trefferlisten' | 'trefferliste'> | undefined;
-  zielErlaubt: (f: Feld, typId: string | undefined) => boolean;
-  listen: (t: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>) => Trefferliste[];
-}): string[] {
+export function tabellenProbleme(
+  f: Pick<Feld, 'quelle'>,
+  ctx: {
+    eigeneId?: string;
+    /** Felder und Trefferlisten eines Typs (der eigene über `eigene`), undefined = gibt es nicht. */
+    typ: (id: string) => Pick<Mappentyp, 'felder' | 'trefferlisten' | 'trefferliste'> | undefined;
+    zielErlaubt: (f: Feld, typId: string | undefined) => boolean;
+    listen: (t: Pick<Mappentyp, 'trefferlisten' | 'trefferliste'>) => Trefferliste[];
+  },
+): string[] {
   const q = f.quelle;
   if (!q?.typId) return [t('gemeinsam.tabelle.typ-waehlen')];
   const quelltyp = ctx.typ(q.typId);
   if (!quelltyp) return [t('gemeinsam.tabelle.typ-fehlt')];
   if (!q.feldKey) return [t('gemeinsam.tabelle.feld-waehlen')];
   const v = quelltyp.felder.find((x) => x.key === q.feldKey);
-  if (!v || v.typ !== 'referenz' || !ctx.zielErlaubt(v, ctx.eigeneId)) return [t('gemeinsam.tabelle.feld-verweist-nicht', { feld: v?.label || q.feldKey })];
+  if (!v || v.typ !== 'referenz' || !ctx.zielErlaubt(v, ctx.eigeneId))
+    return [t('gemeinsam.tabelle.feld-verweist-nicht', { feld: v?.label || q.feldKey })];
   const m: string[] = [];
   if (q.trefferliste && !ctx.listen(quelltyp).some((l) => l.key === q.trefferliste)) m.push(t('gemeinsam.tabelle.liste-fehlt'));
   if (q.neu && q.neu.length > TABELLE_NEU_MAX) m.push(t('gemeinsam.tabelle.neu-zu-lang', { max: TABELLE_NEU_MAX }));
@@ -87,7 +99,11 @@ export function tabellenProbleme(f: Pick<Feld, 'quelle'>, ctx: {
  * Beschriftung von „+ Neu“ unter der Tabelle (Muster #989): in der Ausgangssprache die eingestellte („+ Position“), in
  * anderen Sprachen ihre Beschriftung (`beschriftungen.<sprache>.neu`) – fehlt eine davon, „+ <Name des anderen Typs>“.
  */
-export function tabelleNeuText(f: Pick<Feld, 'quelle' | 'beschriftungen'>, quelltyp: Pick<Mappentyp, 'name' | 'beschriftungen'>, spr = sprache()): string {
+export function tabelleNeuText(
+  f: Pick<Feld, 'quelle' | 'beschriftungen'>,
+  quelltyp: Pick<Mappentyp, 'name' | 'beschriftungen'>,
+  spr = sprache(),
+): string {
   const eigen = spr === AUSGANGSSPRACHE ? f.quelle?.neu : f.beschriftungen?.[spr]?.neu;
   return eigen?.trim() || t('gemeinsam.tabelle.neu', { typ: typName(quelltyp, spr) });
 }

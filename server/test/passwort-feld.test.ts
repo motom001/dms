@@ -21,7 +21,14 @@ import { maskiere, Tresor } from '../src/tresor';
 
 function einstellungen() {
   const m = new Map<string, unknown>();
-  return { async lies(k: string) { return m.get(k) ?? null; }, async schreibe(k: string, w: unknown) { m.set(k, structuredClone(w)); } };
+  return {
+    async lies(k: string) {
+      return m.get(k) ?? null;
+    },
+    async schreibe(k: string, w: unknown) {
+      m.set(k, structuredClone(w));
+    },
+  };
 }
 async function tresor(mitSchluessel = true) {
   const t = new Tresor(einstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-pw-')), 'dms.schluessel'), () => null);
@@ -42,7 +49,10 @@ async function mitZugang(t?: Tresor) {
 describe('Passwortfeld (#46)', () => {
   it('speichert nur mit Schlüssel, verschlüsselt, und behält den Wert, wenn er unverändert zurückkommt', async () => {
     const ohne = await mitZugang(await tresor(false));
-    await assert.rejects(ohne.d.mappen.legeMappeAn({ typId: ohne.typ.id, werte: { name: 'Bank', kennwort: { neu: 'geheim' } } }), (e: unknown) => e instanceof Fachfehler && e.status === 409);
+    await assert.rejects(
+      ohne.d.mappen.legeMappeAn({ typId: ohne.typ.id, werte: { name: 'Bank', kennwort: { neu: 'geheim' } } }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 409,
+    );
     assert.ok(await ohne.d.mappen.legeMappeAn({ typId: ohne.typ.id, werte: { name: 'Ohne Passwort' } }), 'ohne Passwort geht es');
 
     const t = await tresor();
@@ -68,7 +78,10 @@ describe('Passwortfeld (#46)', () => {
     const { d, typ } = await mitZugang(t);
     const p = pruefeMappentyp({ ...typ, titelVorlage: '{name} {kennwort}' }, { namenAndererTypen: [], existiertTyp: () => true });
     assert.ok(p.allgemein.some((x) => /Titel/.test(x)));
-    await assert.rejects(d.mappentypen.aendereTyp(typ.id, { ...typ, titelVorlage: '{kennwort}' }), (e: unknown) => e instanceof Fachfehler && e.status === 422);
+    await assert.rejects(
+      d.mappentypen.aendereTyp(typ.id, { ...typ, titelVorlage: '{kennwort}' }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 422,
+    );
     const geaendert = await d.mappentypen.aendereTyp(typ.id, { ...typ, trefferliste: ['_titel', 'name', 'kennwort'] });
     assert.deepEqual(geaendert.trefferliste, ['_titel', 'name'], 'Passwortfeld fällt aus der Trefferliste');
     assert.equal(titelAus({ ...typ, titelVorlage: '{name} {kennwort}' } as Mappentyp, { name: 'Bank', kennwort: 'dms1$x' }), 'Bank');
@@ -77,7 +90,11 @@ describe('Passwortfeld (#46)', () => {
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', kennwort: { neu: 'geheim' } } });
     const roh = (await d.mappen.holeMappe(m.id)).mappe.werte.kennwort as string;
     const ich = { id: 'x', rolle: 'admin' };
-    assert.equal((await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: roh.slice(5, 15) })).gesamt, 0, 'Geheimtext ist nicht durchsuchbar');
+    assert.equal(
+      (await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: roh.slice(5, 15) })).gesamt,
+      0,
+      'Geheimtext ist nicht durchsuchbar',
+    );
     assert.equal((await d.sichten.seite(ich, { sicht: `typ:${typ.id}`, suche: 'geheim' })).gesamt, 0, 'Klartext erst recht nicht');
   });
 
@@ -106,13 +123,35 @@ describe('Passwortfeld (#46)', () => {
     assert.ok(!JSON.stringify(eintrag).includes('geheim'), 'ohne den Wert');
 
     const v1 = route('GET', '/api/v1/mappen/:id');
-    await assert.rejects(v1.handler(anfrage({ params: { id: m.id }, query: { passwoerter: 'anzeigen' } })), (e: unknown) => e instanceof Fachfehler && e.status === 403);
-    const schluessel = { id: 's', benutzerId: benutzer.id, name: 'Skript', praefix: 'dms_x', recht: 'lesen' as const, ablauf: null, erstellt: '', zuletztBenutzt: null };
-    await assert.rejects(v1.handler(anfrage({ params: { id: m.id }, query: { passwoerter: 'anzeigen' }, apiSchluessel: { ...schluessel, passwoerter: false } })), /Recht/);
-    const mitRecht = await v1.handler(anfrage({ params: { id: m.id }, query: { passwoerter: 'anzeigen' }, apiSchluessel: { ...schluessel, passwoerter: true } }));
+    await assert.rejects(
+      v1.handler(anfrage({ params: { id: m.id }, query: { passwoerter: 'anzeigen' } })),
+      (e: unknown) => e instanceof Fachfehler && e.status === 403,
+    );
+    const schluessel = {
+      id: 's',
+      benutzerId: benutzer.id,
+      name: 'Skript',
+      praefix: 'dms_x',
+      recht: 'lesen' as const,
+      ablauf: null,
+      erstellt: '',
+      zuletztBenutzt: null,
+    };
+    await assert.rejects(
+      v1.handler(
+        anfrage({ params: { id: m.id }, query: { passwoerter: 'anzeigen' }, apiSchluessel: { ...schluessel, passwoerter: false } }),
+      ),
+      /Recht/,
+    );
+    const mitRecht = await v1.handler(
+      anfrage({ params: { id: m.id }, query: { passwoerter: 'anzeigen' }, apiSchluessel: { ...schluessel, passwoerter: true } }),
+    );
     assert.equal((mitRecht.body as { mappe: { werte: Record<string, unknown> } }).mappe.werte.kennwort, 'geheim');
     const ohneParameter = await v1.handler(anfrage({ params: { id: m.id }, apiSchluessel: { ...schluessel, passwoerter: true } }));
-    assert.deepEqual((ohneParameter.body as { mappe: { werte: Record<string, unknown> } }).mappe.werte.kennwort, { gesetzt: true, lesbar: true });
+    assert.deepEqual((ohneParameter.body as { mappe: { werte: Record<string, unknown> } }).mappe.werte.kennwort, {
+      gesetzt: true,
+      lesbar: true,
+    });
   });
 
   it('meldet Passwörter, deren Schlüssel fehlt, und maskiert sie als nicht lesbar', async () => {
@@ -122,9 +161,15 @@ describe('Passwortfeld (#46)', () => {
     const fremd = await tresor();
     const d2 = new Dienst((d as unknown as { repo: never }).repo, speicherDateien(), { tresor: fremd });
     const betroffen = await d2.passwortfelder.unlesbarePasswoerter();
-    assert.deepEqual(betroffen.map((b) => b.was), ['Bank: Kennwort']);
+    assert.deepEqual(
+      betroffen.map((b) => b.was),
+      ['Bank: Kennwort'],
+    );
     const roh = (await d.mappen.holeMappe(m.id)).mappe.werte.kennwort;
-    assert.deepEqual(maskiere({ werte: { kennwort: roh } }, (v) => fremd.lesbar(v)), { werte: { kennwort: { gesetzt: true, lesbar: false } } });
+    assert.deepEqual(
+      maskiere({ werte: { kennwort: roh } }, (v) => fremd.lesbar(v)),
+      { werte: { kennwort: { gesetzt: true, lesbar: false } } },
+    );
     await assert.rejects(d2.passwortfelder.zeigePasswort(m.id, 'kennwort'), /nicht lesbar/);
   });
 });

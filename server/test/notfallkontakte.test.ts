@@ -21,7 +21,14 @@ import { speicherRepo } from '../src/repo-speicher';
 import type { Anfrage } from '../src/routen';
 import { bereicheDerRoute } from '../src/verwaltungsbereiche';
 import { ladePdf } from '../src/pdf/laden';
-import { blattFingerabdruck, gekuerzteAdresse, linkartig, mailName, NOTFALLKONTAKT_MAILS_JE_TAG, pruefeNotfallkontakt } from '../../shared/src/notfallkontakte';
+import {
+  blattFingerabdruck,
+  gekuerzteAdresse,
+  linkartig,
+  mailName,
+  NOTFALLKONTAKT_MAILS_JE_TAG,
+  pruefeNotfallkontakt,
+} from '../../shared/src/notfallkontakte';
 import { darfBereich } from '../../shared/src/verwaltungsrecht';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -31,26 +38,62 @@ const LENA = { id: '00000000-0000-4000-8000-0000000000a1', name: 'Lena', email: 
 const MARKUS = { id: '00000000-0000-4000-8000-0000000000a2', name: 'Markus', email: 'markus@example.org', sprache: 'de' };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Verbindungen nur zum Schließen
 const offen: any[] = [];
-after(async () => { for (const s of offen) await s.end(); });
+after(async () => {
+  for (const s of offen) await s.end();
+});
 
-interface Gesendet { an: string; betreff: string; text: string; o?: MailOptionen }
+interface Gesendet {
+  an: string;
+  betreff: string;
+  text: string;
+  o?: MailOptionen;
+}
 function postausgang(): Mailer & { mails: Gesendet[] } {
   const mails: Gesendet[] = [];
-  return { mails, async sende(an, betreff, text, o) { mails.push({ an, betreff, text, o }); } };
+  return {
+    mails,
+    async sende(an, betreff, text, o) {
+      mails.push({ an, betreff, text, o });
+    },
+  };
 }
 
 const fehler = (s: number, re?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!re || re.test(e.message));
 
 async function umgebung(o: { repo?: Repo; zustand?: Kurzzustand; mailer?: Mailer | null; ablage?: string } = {}) {
-  const d = new Dienst(o.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), zustand: o.zustand ?? speicherKurzzustand() });
+  const d = new Dienst(o.repo ?? speicherRepo(), speicherDateien(), {
+    einstellungen: speicherEinstellungen(),
+    zustand: o.zustand ?? speicherKurzzustand(),
+  });
   const post = postausgang();
   let mailer: Mailer | null = o.mailer === undefined ? post : o.mailer;
-  const personen = new Map([[LENA.id, LENA], [MARKUS.id, MARKUS]]);
-  d.notfallkontakte.verbinde({ mailer: () => mailer, ablageName: async () => o.ablage ?? 'Familie Beispiel', person: async (id) => personen.get(id) });
-  return { d, n: d.notfallkontakte, post, setzeMailer: (m: Mailer | null) => { mailer = m; }, personen };
+  const personen = new Map([
+    [LENA.id, LENA],
+    [MARKUS.id, MARKUS],
+  ]);
+  d.notfallkontakte.verbinde({
+    mailer: () => mailer,
+    ablageName: async () => o.ablage ?? 'Familie Beispiel',
+    person: async (id) => personen.get(id),
+  });
+  return {
+    d,
+    n: d.notfallkontakte,
+    post,
+    setzeMailer: (m: Mailer | null) => {
+      mailer = m;
+    },
+    personen,
+  };
 }
 
-const jonas = (x: Record<string, unknown> = {}) => ({ name: 'Jonas', email: 'jonas@example.org', telefon: '0151 0000000', notiz: 'mein Bruder, hat beim Einrichten geholfen', ...x });
+const jonas = (x: Record<string, unknown> = {}) => ({
+  name: 'Jonas',
+  email: 'jonas@example.org',
+  telefon: '0151 0000000',
+  notiz: 'mein Bruder, hat beim Einrichten geholfen',
+  ...x,
+});
 
 describe('Notfallkontakte (#812): Eingaben', () => {
   it('Namen mit ://, www. oder @ werden abgelehnt; Steuerzeichen und Zeilenumbrüche fallen weg, höchstens 60 Zeichen', () => {
@@ -167,7 +210,13 @@ describe('Notfallkontakte (#812): Inhalt der Mail', () => {
 
 describe('Notfallkontakte (#812): Zugang', () => {
   it('nur mit Bereich „verschluesselung“ (oder Gesamter Verwaltung)', () => {
-    for (const [m, p] of [['GET', '/api/werkbank/notfallkontakte'], ['POST', '/api/werkbank/notfallkontakte'], ['PUT', '/api/werkbank/notfallkontakte/:id'], ['DELETE', '/api/werkbank/notfallkontakte/:id'], ['POST', '/api/werkbank/notfallkontakte/:id/erneut']]) {
+    for (const [m, p] of [
+      ['GET', '/api/werkbank/notfallkontakte'],
+      ['POST', '/api/werkbank/notfallkontakte'],
+      ['PUT', '/api/werkbank/notfallkontakte/:id'],
+      ['DELETE', '/api/werkbank/notfallkontakte/:id'],
+      ['POST', '/api/werkbank/notfallkontakte/:id/erneut'],
+    ]) {
       assert.deepEqual(bereicheDerRoute(m, p), ['verschluesselung'], `${m} ${p}`);
     }
     assert.equal(darfBereich({ verwaltung: ['verschluesselung'] }, 'verschluesselung'), true);
@@ -180,12 +229,29 @@ describe('Notfallkontakte (#812): Zugang', () => {
     const { routen } = await import('../src/routen');
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');
-    const tabelle = routen(d, new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel()), {});
+    const tabelle = routen(
+      d,
+      new Konten(
+        speicherKontoRepo(),
+        () => null,
+        () => 'http://localhost',
+        d.systemtypen.benutzerspiegel(),
+      ),
+      {},
+    );
     const route = tabelle.find((r) => r.methode === 'POST' && r.pfad === '/api/werkbank/notfallkontakte')!;
-    const a = { body: jonas(), params: {}, query: {}, ip: '1', verwaltungsmodus: true, benutzer: { ...LENA, rolle: 'admin', verwaltung: ['*'], aktiv: true }, sitzungsDaten: { vertretungId: 'v1' } } as unknown as Anfrage;
+    const a = {
+      body: jonas(),
+      params: {},
+      query: {},
+      ip: '1',
+      verwaltungsmodus: true,
+      benutzer: { ...LENA, rolle: 'admin', verwaltung: ['*'], aktiv: true },
+      sitzungsDaten: { vertretungId: 'v1' },
+    } as unknown as Anfrage;
     await assert.rejects(route.handler(a), fehler(403, /Vertretung/));
     const ohne = { ...a, sitzungsDaten: {} } as Anfrage;
-    const r = await route.handler(ohne) as { status: number };
+    const r = (await route.handler(ohne)) as { status: number };
     assert.equal(r.status, 201);
   });
 });
@@ -198,7 +264,8 @@ describe('Notfallkontakte (#812): Protokoll und Notfallblatt', () => {
     await n.loeschen(kontakt!.id, LENA);
     const zeilen = protokoll.eintraege({ seit, max: 100 });
     const texte = zeilen.map((e) => e.text);
-    for (const x of ['Notfallkontakt angelegt', 'Info-Mail an Notfallkontakt verschickt', 'Notfallkontakt gelöscht']) assert.ok(texte.includes(x), x);
+    for (const x of ['Notfallkontakt angelegt', 'Info-Mail an Notfallkontakt verschickt', 'Notfallkontakt gelöscht'])
+      assert.ok(texte.includes(x), x);
     const alles = JSON.stringify(zeilen);
     assert.ok(!alles.includes('katrin.lang@example.org'), 'volle Adresse nicht im Protokoll');
     assert.ok(alles.includes('k***@example.org'));
@@ -208,9 +275,22 @@ describe('Notfallkontakte (#812): Protokoll und Notfallblatt', () => {
   it('auf dem Notfallblatt unter „Wen fragen?“ mit Telefon, E-Mail und Notiz; Änderung: neu ausdrucken', async () => {
     const { n } = await umgebung();
     const { kontakt } = await n.anlegen(jonas(), LENA);
-    const blatt = { name: 'Familie Beispiel', haushaltId: HAUSHALT, adresse: 'https://ablage.example.org', version: '0.257.0', erstellt: new Date('2026-11-12T10:00:00Z'), schluessel: 'O0o1lI-_AbCdEfGhJkMnPqRsTuVwXyZ23456789aBcD', fingerabdruck: 'a1b2c3d4e5f60718' };
-    const p = notfallblattPlan({ ...blatt, kontakte: (await n.fuerBlatt()).map((k) => ({ name: k.name, erreichbar: `${k.telefon} · ${k.email}`, notiz: k.notiz })) });
-    assert.deepEqual(p.fragen.kontakte, [{ name: 'Jonas', erreichbar: '0151 0000000 · jonas@example.org', notiz: 'mein Bruder, hat beim Einrichten geholfen' }]);
+    const blatt = {
+      name: 'Familie Beispiel',
+      haushaltId: HAUSHALT,
+      adresse: 'https://ablage.example.org',
+      version: '0.257.0',
+      erstellt: new Date('2026-11-12T10:00:00Z'),
+      schluessel: 'O0o1lI-_AbCdEfGhJkMnPqRsTuVwXyZ23456789aBcD',
+      fingerabdruck: 'a1b2c3d4e5f60718',
+    };
+    const p = notfallblattPlan({
+      ...blatt,
+      kontakte: (await n.fuerBlatt()).map((k) => ({ name: k.name, erreichbar: `${k.telefon} · ${k.email}`, notiz: k.notiz })),
+    });
+    assert.deepEqual(p.fragen.kontakte, [
+      { name: 'Jonas', erreichbar: '0151 0000000 · jonas@example.org', notiz: 'mein Bruder, hat beim Einrichten geholfen' },
+    ]);
     assert.equal(p.fragen.leer, null);
     assert.equal(await n.blattVeraltet(null), false, 'ohne Blatt kein Hinweis');
     await n.blattErstellt();
@@ -222,8 +302,21 @@ describe('Notfallkontakte (#812): Protokoll und Notfallblatt', () => {
   });
 
   it('zehn lange Kontakte: weichen auf Seite 2 aus, die erste Seite verweist dorthin', async () => {
-    const lang = Array.from({ length: 10 }, (_, i) => ({ name: `Katrin Beispiel-Mustermann ${i}`.padEnd(60, 'x'), erreichbar: `+49 151 0000000${i} · katrin.beispiel-mustermann.${i}@example.org`, notiz: 'Schwester, kennt das NAS im Keller und weiß, wo der Ordner mit den Unterlagen steht. '.repeat(2).slice(0, 120) }));
-    const d = { name: 'Familie Beispiel', haushaltId: HAUSHALT, adresse: 'https://ablage.example.org', version: '0.257.0', erstellt: new Date(), schluessel: 'O0o1lI-_AbCdEfGhJkMnPqRsTuVwXyZ23456789aBcD', fingerabdruck: 'a1b2c3d4e5f60718', notfallcode: 'WXYZ2345ABCDEFGHJKLMNPQRSTUV' };
+    const lang = Array.from({ length: 10 }, (_, i) => ({
+      name: `Katrin Beispiel-Mustermann ${i}`.padEnd(60, 'x'),
+      erreichbar: `+49 151 0000000${i} · katrin.beispiel-mustermann.${i}@example.org`,
+      notiz: 'Schwester, kennt das NAS im Keller und weiß, wo der Ordner mit den Unterlagen steht. '.repeat(2).slice(0, 120),
+    }));
+    const d = {
+      name: 'Familie Beispiel',
+      haushaltId: HAUSHALT,
+      adresse: 'https://ablage.example.org',
+      version: '0.257.0',
+      erstellt: new Date(),
+      schluessel: 'O0o1lI-_AbCdEfGhJkMnPqRsTuVwXyZ23456789aBcD',
+      fingerabdruck: 'a1b2c3d4e5f60718',
+      notfallcode: 'WXYZ2345ABCDEFGHJKLMNPQRSTUV',
+    };
     const doc = await ladePdf(await notfallblatt({ ...d, kontakte: lang }));
     assert.equal(doc.getPageCount(), 2);
     const zwei = await ladePdf(await notfallblatt({ ...d, kontakte: lang.slice(0, 2).map((k) => ({ ...k, notiz: '' })) }));
@@ -236,11 +329,24 @@ describe('Notfallkontakte (#812): Exporte', () => {
     const { d, n } = await umgebung();
     await n.anlegen(jonas(), LENA);
     await n.anlegen(jonas({ name: 'Petra', email: 'petra@example.org' }), MARKUS);
-    const voll = d.vollexport.vollexportQuelle({ mandant: 'Familie Beispiel', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const voll = d.vollexport.vollexportQuelle({
+      mandant: 'Familie Beispiel',
+      version: '0',
+      benutzer: async () => ({ benutzer: [], vertretungen: [] }),
+      designs: async () => [],
+      protokoll: () => [],
+    });
     assert.equal((await voll.notfallkontakte!()).length, 2);
     const z = await d.rechtepruefung.zugriff({ id: LENA.id, rolle: 'mitglied' });
-    const eigen = await d.vollexport.persoenlicheQuelle(z, { mandant: 'Familie Beispiel', version: '0', ich: { benutzer: [], vertretungen: [] } });
-    assert.deepEqual((await eigen.notfallkontakte!() as Array<{ name: string }>).map((k) => k.name), ['Jonas']);
+    const eigen = await d.vollexport.persoenlicheQuelle(z, {
+      mandant: 'Familie Beispiel',
+      version: '0',
+      ich: { benutzer: [], vertretungen: [] },
+    });
+    assert.deepEqual(
+      ((await eigen.notfallkontakte!()) as Array<{ name: string }>).map((k) => k.name),
+      ['Jonas'],
+    );
   });
 });
 
@@ -248,7 +354,9 @@ describe('Notfallkontakte (#812): Grenzen', () => {
   async function pruefeGrenzen(repo: () => Promise<Repo>, zustand: () => Promise<Kurzzustand>) {
     // Höchstens 10 Kontakte – auch bei 14 gleichzeitigen Anfragen.
     const a = await umgebung({ repo: await repo(), zustand: await zustand(), mailer: null });
-    const r = await Promise.allSettled(Array.from({ length: 14 }, (_, i) => a.n.anlegen(jonas({ name: `Jonas ${i}`, email: `jonas${i}@example.org` }), LENA)));
+    const r = await Promise.allSettled(
+      Array.from({ length: 14 }, (_, i) => a.n.anlegen(jonas({ name: `Jonas ${i}`, email: `jonas${i}@example.org` }), LENA)),
+    );
     assert.equal(r.filter((x) => x.status === 'fulfilled').length, 10);
     assert.ok(r.filter((x) => x.status === 'rejected').every((x) => fehler(409)((x as PromiseRejectedResult).reason)));
     assert.equal((await a.n.liste()).length, 10);
@@ -257,10 +365,18 @@ describe('Notfallkontakte (#812): Grenzen', () => {
     const gemeinsam = await repo();
     const p1 = await umgebung({ repo: gemeinsam, zustand: geteilt });
     const p2 = await umgebung({ repo: gemeinsam, zustand: geteilt });
-    const erste = await Promise.allSettled(Array.from({ length: 10 }, (_, i) => (i % 2 ? p1 : p2).n.anlegen(jonas({ name: `Petra ${i}`, email: `petra${i}@example.org` }), LENA)));
+    const erste = await Promise.allSettled(
+      Array.from({ length: 10 }, (_, i) =>
+        (i % 2 ? p1 : p2).n.anlegen(jonas({ name: `Petra ${i}`, email: `petra${i}@example.org` }), LENA),
+      ),
+    );
     assert.equal(erste.filter((x) => x.status === 'fulfilled').length, 10);
     const ids = (await p1.n.liste()).map((k) => k.id);
-    const zweite = await Promise.allSettled(ids.flatMap((id, i) => [p1, p2].map((p) => p.n.aendern(id, jonas({ name: `Petra ${i}`, email: `petra${i}.${p === p1 ? 'a' : 'b'}@example.org` }), LENA))));
+    const zweite = await Promise.allSettled(
+      ids.flatMap((id, i) =>
+        [p1, p2].map((p) => p.n.aendern(id, jonas({ name: `Petra ${i}`, email: `petra${i}.${p === p1 ? 'a' : 'b'}@example.org` }), LENA)),
+      ),
+    );
     const ok = zweite.filter((x) => x.status === 'fulfilled').length;
     assert.equal(ok, NOTFALLKONTAKT_MAILS_JE_TAG - 10, 'genau bis zur Grenze');
     assert.ok(zweite.filter((x) => x.status === 'rejected').every((x) => fehler(429)((x as PromiseRejectedResult).reason)));
@@ -273,7 +389,10 @@ describe('Notfallkontakte (#812): Grenzen', () => {
   it('im Arbeitsspeicher', async () => {
     const z = speicherKurzzustand();
     let repo: Repo | null = null;
-    await pruefeGrenzen(async () => (repo = speicherRepo()), async () => z);
+    await pruefeGrenzen(
+      async () => (repo = speicherRepo()),
+      async () => z,
+    );
     assert.ok(repo);
   });
 
@@ -285,11 +404,17 @@ describe('Notfallkontakte (#812): Grenzen', () => {
     const { pgRepo } = await import('../src/repo-pg');
     const { pgKurzzustand } = await import('../src/kurzzustand');
     let n = 0;
-    await pruefeGrenzen(async () => {
-      // Jeder Durchgang eine leere Tabelle.
-      if (n++ < 2) await sql`DELETE FROM notfallkontakte`;
-      return pgRepo(sql, HAUSHALT);
-    }, async () => { await sql`DELETE FROM kurzzustand`; return pgKurzzustand(sql, HAUSHALT); });
+    await pruefeGrenzen(
+      async () => {
+        // Jeder Durchgang eine leere Tabelle.
+        if (n++ < 2) await sql`DELETE FROM notfallkontakte`;
+        return pgRepo(sql, HAUSHALT);
+      },
+      async () => {
+        await sql`DELETE FROM kurzzustand`;
+        return pgKurzzustand(sql, HAUSHALT);
+      },
+    );
     // Eingetragen von: Verweis auf das Konto.
     const k = (await pgRepo(sql, HAUSHALT).notfallkontakte())[0];
     assert.ok(k);

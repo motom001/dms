@@ -32,7 +32,14 @@ export const ZU_ALT_TAGE = 2;
 
 export type Sicherungsart = 'manuell' | 'automatisch' | 'vor-wiederherstellung';
 
-export interface Umgebung { dms: string; datenbankStand: string | null; postgres: string; node: string; system: string; architektur: string }
+export interface Umgebung {
+  dms: string;
+  datenbankStand: string | null;
+  postgres: string;
+  node: string;
+  system: string;
+  architektur: string;
+}
 
 /** Inhalt der Datei <name>.json – für Menschen lesbar, ohne den Schlüssel. */
 export interface Metadaten {
@@ -42,9 +49,16 @@ export interface Metadaten {
   umgebung: Umgebung;
   art: Sicherungsart;
   ausgeloestVon: string;
-  beginn: string; ende: string; dauerSekunden: number;
+  beginn: string;
+  ende: string;
+  dauerSekunden: number;
   /** fassungen (seit 0.140.1, #577): umgewandelte Fassungen von Paketen; zählen auch in `dateien` (je zwei Dateien). */
-  anzahl: Zaehler & { dateien: number; tabellen: number; fassungen?: number; /** Archivfassungen (PDF/A, #631, seit 0.149.0). */ archivfassungen?: number };
+  anzahl: Zaehler & {
+    dateien: number;
+    tabellen: number;
+    fassungen?: number;
+    /** Archivfassungen (PDF/A, #631, seit 0.149.0). */ archivfassungen?: number;
+  };
   groessen: { datenbankBytes: number; dateienBytes: number; sicherungBytes: number };
   verschluesselung: { verfahren: string; fingerabdruck: string };
   sha256: string;
@@ -69,7 +83,16 @@ export interface Plan {
    */
   nurNeueste: boolean;
 }
-export const PLAN_STANDARD: Plan = { aktiv: false, uhrzeit: '02:00', haeufigkeit: 'taeglich', wochentag: 7, aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 }, mindestFreiGB: 1, aktivSeit: null, nurNeueste: false };
+export const PLAN_STANDARD: Plan = {
+  aktiv: false,
+  uhrzeit: '02:00',
+  haeufigkeit: 'taeglich',
+  wochentag: 7,
+  aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 },
+  mindestFreiGB: 1,
+  aktivSeit: null,
+  nurNeueste: false,
+};
 
 /* ---------- Sicherung außer Haus (#585) ---------- */
 
@@ -79,14 +102,25 @@ export const PLAN_STANDARD: Plan = { aktiv: false, uhrzeit: '02:00', haeufigkeit
  * Die Wiederherstellung kommt damit aus: Was fehlt, steht verschlüsselt im Kopf der Sicherung (#585).
  */
 export interface SchlankeMetadaten {
-  format: number; schlank: true; datei: string; groesse: number; sha256: string; beginn: string;
+  format: number;
+  schlank: true;
+  datei: string;
+  groesse: number;
+  sha256: string;
+  beginn: string;
   verschluesselung: { verfahren: string; fingerabdruck: string };
 }
 export const schlankeMetadaten = (m: Metadaten): SchlankeMetadaten => ({
-  format: m.format, schlank: true, datei: m.datei, groesse: m.groessen.sicherungBytes, sha256: m.sha256, beginn: m.beginn,
+  format: m.format,
+  schlank: true,
+  datei: m.datei,
+  groesse: m.groessen.sicherungBytes,
+  sha256: m.sha256,
+  beginn: m.beginn,
   verschluesselung: { verfahren: m.verschluesselung.verfahren, fingerabdruck: m.verschluesselung.fingerabdruck },
 });
-export const istSchlank = (x: unknown): x is SchlankeMetadaten => !!x && typeof x === 'object' && (x as { schlank?: unknown }).schlank === true;
+export const istSchlank = (x: unknown): x is SchlankeMetadaten =>
+  !!x && typeof x === 'object' && (x as { schlank?: unknown }).schlank === true;
 
 /** Stand der Kopie außer Haus je Sicherung und Paket: Rückmeldung des Pakets (#585). */
 export type ExternStatus = 'offen' | 'laeuft' | 'hochgeladen' | 'geprueft' | 'fehlgeschlagen';
@@ -96,17 +130,26 @@ export type ExternStatus = 'offen' | 'laeuft' | 'hochgeladen' | 'geprueft' | 'fe
  */
 export type ExternPruefung = 'pruefsumme' | 'stichprobe' | 'groesse' | 'keine';
 export interface ExternStand {
-  status: ExternStatus; pruefung?: ExternPruefung; grund?: string;
+  status: ExternStatus;
+  pruefung?: ExternPruefung;
+  grund?: string;
   /** Hilft eine Wiederholung nicht (Prüfsumme falsch, Anmeldung abgelehnt, aufgegeben)? Dann E-Mail. */
   endgueltig?: boolean;
   /** Ziel in Worten, vom Paket (ohne Zugangsdaten), z. B. „WebDAV https://cloud.example.org/…/DMS“. */
   ziel?: string;
-  bytes?: number; gesamt?: number;
+  bytes?: number;
+  gesamt?: number;
   /** Ereignis angelegt; letzte Rückmeldung. */
-  seit: string; am: string;
+  seit: string;
+  am: string;
 }
 /** Ein Paket, das Sicherungen außer Haus kopiert, mit der bestätigten Adresse aus seinen Einstellungen. */
-export interface Sicherungsziel { id: string; name: string; adresse: string | null; ziel?: string | null }
+export interface Sicherungsziel {
+  id: string;
+  name: string;
+  adresse: string | null;
+  ziel?: string | null;
+}
 /** Verbindung zu den Paketen (index.ts): Pakete mit dms:sicherung-lesen und das Ereignis sicherung.fertig. */
 export interface ExternAnbindung {
   /** holen: Das Paket hat auch dms:sicherung-holen (#976). */
@@ -135,21 +178,41 @@ export interface Lauf {
   ergebnis?: unknown;
 }
 
-export interface Probeergebnis { am: string; ok: boolean; info: string }
+export interface Probeergebnis {
+  am: string;
+  ok: boolean;
+  info: string;
+}
 /**
  * schlank (#585): Statt der vollständigen Metadaten liegt nur die schlanke Fassung daneben (z. B. vom externen Ziel
  * zurückgeholt); die Wiederherstellung liest den Rest mit dem Schlüssel aus der Sicherung selbst.
  * extern: Stand der Kopie außer Haus je Paket.
  */
-export interface Eintragsliste { name: string; meta: Metadaten | null; schlank?: SchlankeMetadaten; bytes: number; pruefung?: { am: string; ok: boolean }; probe?: Probeergebnis; extern?: Record<string, ExternStand> }
+export interface Eintragsliste {
+  name: string;
+  meta: Metadaten | null;
+  schlank?: SchlankeMetadaten;
+  bytes: number;
+  pruefung?: { am: string; ok: boolean };
+  probe?: Probeergebnis;
+  extern?: Record<string, ExternStand>;
+}
 
 /** Zeitplan der Probe-Wiederherstellung (#109), Standard sonntags 04:00. */
-export interface ProbePlan { aktiv: boolean; wochentag: number; uhrzeit: string }
+export interface ProbePlan {
+  aktiv: boolean;
+  wochentag: number;
+  uhrzeit: string;
+}
 export const PROBE_STANDARD: ProbePlan = { aktiv: true, wochentag: 7, uhrzeit: '04:00' };
 /** Ab hier ist die letzte erfolgreiche Probe zu alt (gelb). */
 export const PROBE_TAGE = 8;
 
-export interface Fehlerstand { am: string; art: Sicherungsart; grund: string }
+export interface Fehlerstand {
+  am: string;
+  art: Sicherungsart;
+  grund: string;
+}
 
 export interface SicherungsQuellen {
   tresor: { bereit: boolean; fingerabdruck: string | null; abgeleitet(zweck: string): Buffer | null };
@@ -165,13 +228,30 @@ export interface SicherungsQuellen {
   jetzt?: () => Date;
 }
 
-const teileIn = (d: Date) => Object.fromEntries(new Intl.DateTimeFormat('de-DE', { timeZone: zeitzone(), year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', weekday: 'short', hour12: false })
-  .formatToParts(d).map((x) => [x.type, x.value])) as Record<string, string>;
+const teileIn = (d: Date) =>
+  Object.fromEntries(
+    new Intl.DateTimeFormat('de-DE', {
+      timeZone: zeitzone(),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      weekday: 'short',
+      hour12: false,
+    })
+      .formatToParts(d)
+      .map((x) => [x.type, x.value]),
+  ) as Record<string, string>;
 const WOCHENTAGE: Record<string, number> = { Mo: 1, Di: 2, Mi: 3, Do: 4, Fr: 5, Sa: 6, So: 7 };
 /** Datum (JJJJ-MM-TT), Uhrzeit (HH:MM) und Wochentag (1–7) in deutscher Zeit. */
 export function ortszeit(d: Date) {
   const t = teileIn(d);
-  return { datum: `${t.year}-${t.month}-${t.day}`, uhr: `${t.hour === '24' ? '00' : t.hour}:${t.minute}`, wochentag: WOCHENTAGE[t.weekday.replace('.', '')] ?? 0 };
+  return {
+    datum: `${t.year}-${t.month}-${t.day}`,
+    uhr: `${t.hour === '24' ? '00' : t.hour}:${t.minute}`,
+    wochentag: WOCHENTAGE[t.weekday.replace('.', '')] ?? 0,
+  };
 }
 /** ISO-Woche (JJJJ-Www) eines Datums JJJJ-MM-TT. */
 export function isoWoche(datum: string): string {
@@ -197,7 +277,8 @@ export function behalten(liste: Array<{ name: string; beginn: string }>, a: Plan
       const k = schluessel(ortszeit(new Date(s.beginn)).datum);
       if (gesehen.has(k)) continue;
       if (gesehen.size >= anzahl) break;
-      gesehen.add(k); bleibt.add(s.name);
+      gesehen.add(k);
+      bleibt.add(s.name);
     }
   };
   stufe((d) => d, a.taeglich);
@@ -211,17 +292,26 @@ export function bereinigePlan(e: unknown, alt: Plan = PLAN_STANDARD): Plan {
   const zahl = (v: unknown, std: number, min: number, max: number) => {
     if (v === undefined || v === null || v === '') return std;
     const n = Number(v);
-    if (!Number.isFinite(n) || n < min || n > max) throw new Fachfehler(422, t('meldungen.sicherung.bitte-eine-zahl-zwischen', { min, max }));
+    if (!Number.isFinite(n) || n < min || n > max)
+      throw new Fachfehler(422, t('meldungen.sicherung.bitte-eine-zahl-zwischen', { min, max }));
     return Math.trunc(n);
   };
   const uhrzeit = x.uhrzeit === undefined ? alt.uhrzeit : String(x.uhrzeit);
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(uhrzeit)) throw new Fachfehler(422, t('meldungen.sicherung.die-uhrzeit-bitte-als'));
-  const haeufigkeit = x.haeufigkeit === undefined ? alt.haeufigkeit : x.haeufigkeit === 'woechentlich' ? 'woechentlich' : x.haeufigkeit === 'taeglich' ? 'taeglich' : null;
+  const haeufigkeit =
+    x.haeufigkeit === undefined
+      ? alt.haeufigkeit
+      : x.haeufigkeit === 'woechentlich'
+        ? 'woechentlich'
+        : x.haeufigkeit === 'taeglich'
+          ? 'taeglich'
+          : null;
   if (!haeufigkeit) throw new Fachfehler(422, t('meldungen.sicherung.haeufigkeit-taeglich-oder'));
   const a = (x.aufbewahrung ?? {}) as Record<string, unknown>;
   return {
     aktiv: x.aktiv === undefined ? alt.aktiv : x.aktiv === true,
-    uhrzeit, haeufigkeit,
+    uhrzeit,
+    haeufigkeit,
     wochentag: zahl(x.wochentag, alt.wochentag, 1, 7),
     aufbewahrung: {
       taeglich: zahl(a.taeglich, alt.aufbewahrung.taeglich, 0, 366),
@@ -229,20 +319,24 @@ export function bereinigePlan(e: unknown, alt: Plan = PLAN_STANDARD): Plan {
       monatlich: zahl(a.monatlich, alt.aufbewahrung.monatlich, 0, 240),
     },
     mindestFreiGB: zahl(x.mindestFreiGB, alt.mindestFreiGB, 0, 100_000),
-    aktivSeit: typeof x.aktivSeit === 'string' ? x.aktivSeit : alt.aktivSeit ?? null,
-    nurNeueste: x.nurNeueste === undefined ? alt.nurNeueste ?? false : x.nurNeueste === true,
+    aktivSeit: typeof x.aktivSeit === 'string' ? x.aktivSeit : (alt.aktivSeit ?? null),
+    nurNeueste: x.nurNeueste === undefined ? (alt.nurNeueste ?? false) : x.nurNeueste === true,
   };
 }
 
 /** Alle Dateien unter einem Ordner, mit Pfad relativ zum Ordner (Trennzeichen „/“). */
 export async function* dateienUnter(wurzel: string): AsyncGenerator<{ pfad: string; voll: string; groesse: number }> {
   let eintraege;
-  try { eintraege = await readdir(wurzel, { withFileTypes: true, recursive: true }); } catch (e) {
+  try {
+    eintraege = await readdir(wurzel, { withFileTypes: true, recursive: true });
+  } catch (e) {
     if ((e as NodeJS.ErrnoException).code === 'ENOENT') return;
     throw e;
   }
-  const liste = eintraege.filter((d) => d.isFile() && !d.name.endsWith('.tmp'))
-    .map((d) => join(d.parentPath ?? (d as unknown as { path: string }).path, d.name)).sort();
+  const liste = eintraege
+    .filter((d) => d.isFile() && !d.name.endsWith('.tmp'))
+    .map((d) => join(d.parentPath ?? (d as unknown as { path: string }).path, d.name))
+    .sort();
   for (const voll of liste) {
     const s = await stat(voll).catch(() => null);
     if (!s?.isFile()) continue; // inzwischen gelöscht
@@ -272,20 +366,29 @@ export class Sicherung {
     this.jetzt = q.jetzt ?? (() => new Date());
   }
 
-  get dateiOrdner() { return join(this.dateiWurzel, this.haushaltId); }
-  get einstellungen() { return this.q.einstellungen; }
-  aktuellerLauf(): Lauf | null { return this.lauf ? { ...this.lauf } : null; }
+  get dateiOrdner() {
+    return join(this.dateiWurzel, this.haushaltId);
+  }
+  get einstellungen() {
+    return this.q.einstellungen;
+  }
+  aktuellerLauf(): Lauf | null {
+    return this.lauf ? { ...this.lauf } : null;
+  }
   /**
    * Stand für die Routen (#1341): hier der eigene Lauf; in weiteren Prozessen fragt `teileArbeit` den Leiter, der den Lauf
    * hält – der Spiegel (`aktuellerLauf()`) kann dort bis zu einer Sekunde alt sein oder nach dem Start noch fehlen.
    */
   laufStand: () => Promise<Lauf | null> = async () => this.aktuellerLauf();
-  laeuft() { return this.lauf?.status === 'laeuft'; }
+  laeuft() {
+    return this.lauf?.status === 'laeuft';
+  }
 
   /** Ein einziger Lauf zur Zeit (Sicherung, Prüfung, später Wiederherstellung). */
   belege(art: Lauf['art'], titel: string): Lauf {
     if (this.laeuft()) throw new Fachfehler(409, t('meldungen.sicherung.es-laeuft-bereits-bitte', { titel: this.lauf!.titel }));
-    if (titel !== 'Sicherung vor der Wiederherstellung' && this.sperre()) throw new Fachfehler(409, t('meldungen.sicherung.gerade-laeuft-eine-wiederherstellung'));
+    if (titel !== 'Sicherung vor der Wiederherstellung' && this.sperre())
+      throw new Fachfehler(409, t('meldungen.sicherung.gerade-laeuft-eine-wiederherstellung'));
     this.lauf = { art, titel, status: 'laeuft', schritt: 'Vorbereiten', bytes: 0, gesamt: 0, gestartet: this.jetzt().toISOString() };
     return this.lauf;
   }
@@ -294,7 +397,11 @@ export class Sicherung {
 
   async plan(): Promise<Plan> {
     const g = await this.q.einstellungen.lies('sicherung_plan');
-    try { return g ? bereinigePlan(g) : { ...PLAN_STANDARD }; } catch { return { ...PLAN_STANDARD }; }
+    try {
+      return g ? bereinigePlan(g) : { ...PLAN_STANDARD };
+    } catch {
+      return { ...PLAN_STANDARD };
+    }
   }
 
   async speicherePlan(e: unknown, von: string): Promise<Plan> {
@@ -324,7 +431,8 @@ export class Sicherung {
     const uhrzeit = x.uhrzeit === undefined ? alt.uhrzeit : String(x.uhrzeit);
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(uhrzeit)) throw new Fachfehler(422, t('meldungen.sicherung.die-uhrzeit-bitte-als-2'));
     const wochentag = x.wochentag === undefined ? alt.wochentag : Number(x.wochentag);
-    if (!Number.isInteger(wochentag) || wochentag < 1 || wochentag > 7) throw new Fachfehler(422, t('meldungen.sicherung.wochentag-1-montag-bis'));
+    if (!Number.isInteger(wochentag) || wochentag < 1 || wochentag > 7)
+      throw new Fachfehler(422, t('meldungen.sicherung.wochentag-1-montag-bis'));
     const neu: ProbePlan = { aktiv: x.aktiv === undefined ? alt.aktiv : x.aktiv === true, wochentag, uhrzeit };
     await this.q.einstellungen.schreibe('sicherung_probe_plan', neu);
     log.info('Zeitplan der Probe-Wiederherstellung geändert', { von, ...neu });
@@ -333,7 +441,12 @@ export class Sicherung {
 
   /** Ist mindestens der eingestellte Mindest-Speicherplatz frei? */
   async genugPlatz(): Promise<boolean> {
-    try { const f = await statfs(this.ordner); return f.bavail * f.bsize >= (await this.plan()).mindestFreiGB * GB; } catch { return true; }
+    try {
+      const f = await statfs(this.ordner);
+      return f.bavail * f.bsize >= (await this.plan()).mindestFreiGB * GB;
+    } catch {
+      return true;
+    }
   }
 
   /**
@@ -341,8 +454,22 @@ export class Sicherung {
    * Ein Blatt aus der Zeit davor (`ohneCode`) und eines, dessen Code benutzt wurde (`codeBenutzt`), gelten nicht mehr
    * als aktuell – dann ist ein neues Blatt fällig.
    */
-  async notfallblatt(): Promise<{ am: string | null; von: string | null; fingerabdruck: string | null; aktuell: boolean; ohneCode: boolean; codeBenutzt: string | null; grund: 'fehlt' | 'schluessel' | 'ohne-code' | 'benutzt' | null }> {
-    const n = (await this.q.einstellungen.lies('notfallblatt')) as { am: string; von: string; fingerabdruck: string; notfallcode?: boolean; codeBenutzt?: string } | null;
+  async notfallblatt(): Promise<{
+    am: string | null;
+    von: string | null;
+    fingerabdruck: string | null;
+    aktuell: boolean;
+    ohneCode: boolean;
+    codeBenutzt: string | null;
+    grund: 'fehlt' | 'schluessel' | 'ohne-code' | 'benutzt' | null;
+  }> {
+    const n = (await this.q.einstellungen.lies('notfallblatt')) as {
+      am: string;
+      von: string;
+      fingerabdruck: string;
+      notfallcode?: boolean;
+      codeBenutzt?: string;
+    } | null;
     const schluessel = !!n && !!this.q.tresor.fingerabdruck && n.fingerabdruck === this.q.tresor.fingerabdruck;
     const ohneCode = !!n && n.notfallcode !== true;
     const codeBenutzt = n?.codeBenutzt ?? null;
@@ -354,7 +481,12 @@ export class Sicherung {
 
   /** Notfallblatt heruntergeladen – mit neuem Notfallcode (#815). */
   async notfallblattErstellt(von: string) {
-    await this.q.einstellungen.schreibe('notfallblatt', { am: this.jetzt().toISOString(), von, fingerabdruck: this.q.tresor.fingerabdruck, notfallcode: true });
+    await this.q.einstellungen.schreibe('notfallblatt', {
+      am: this.jetzt().toISOString(),
+      von,
+      fingerabdruck: this.q.tresor.fingerabdruck,
+      notfallcode: true,
+    });
     log.warn('Notfallblatt heruntergeladen', { von, fingerabdruck: this.q.tresor.fingerabdruck });
   }
 
@@ -368,11 +500,14 @@ export class Sicherung {
 
   async liste(): Promise<Eintragsliste[]> {
     let namen: string[];
-    try { namen = await readdir(this.ordner); } catch (e) {
+    try {
+      namen = await readdir(this.ordner);
+    } catch (e) {
       if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
       throw e;
     }
-    const pruefungen = ((await this.q.einstellungen.lies('sicherung_pruefungen')) as Record<string, { am: string; ok: boolean }> | null) ?? {};
+    const pruefungen =
+      ((await this.q.einstellungen.lies('sicherung_pruefungen')) as Record<string, { am: string; ok: boolean }> | null) ?? {};
     const proben = ((await this.q.einstellungen.lies('sicherung_proben')) as Record<string, Probeergebnis> | null) ?? {};
     const extern = await this.externStaende();
     const erg: Eintragsliste[] = [];
@@ -384,9 +519,20 @@ export class Sicherung {
       let schlank: SchlankeMetadaten | undefined;
       try {
         const j = JSON.parse(await readFile(join(this.ordner, `${name}.json`), 'utf8')) as unknown;
-        if (istSchlank(j)) schlank = j; else meta = j as Metadaten;
-      } catch { /* fehlt oder unlesbar */ }
-      erg.push({ name, meta, ...(schlank ? { schlank } : {}), bytes: s.size, ...(pruefungen[name] ? { pruefung: pruefungen[name] } : {}), ...(proben[name] ? { probe: proben[name] } : {}), ...(extern[name] ? { extern: extern[name] } : {}) });
+        if (istSchlank(j)) schlank = j;
+        else meta = j as Metadaten;
+      } catch {
+        /* fehlt oder unlesbar */
+      }
+      erg.push({
+        name,
+        meta,
+        ...(schlank ? { schlank } : {}),
+        bytes: s.size,
+        ...(pruefungen[name] ? { pruefung: pruefungen[name] } : {}),
+        ...(proben[name] ? { probe: proben[name] } : {}),
+        ...(extern[name] ? { extern: extern[name] } : {}),
+      });
     }
     const beginn = (x: Eintragsliste) => x.meta?.beginn ?? x.schlank?.beginn ?? x.name;
     return erg.sort((a, b) => beginn(b).localeCompare(beginn(a)));
@@ -394,7 +540,8 @@ export class Sicherung {
 
   /** Pfad der Sicherungsdatei; wirft bei ungültigem Namen (auch für entfernte Sicherungen, #976). */
   pfad(name: string) {
-    if (!/^[\w.-]+$/.test(name) || name.startsWith('.')) throw new Fachfehler(422, t('meldungen.sicherung.ungueltiger-name-einer-sicherung'));
+    if (!/^[\w.-]+$/.test(name) || name.startsWith('.'))
+      throw new Fachfehler(422, t('meldungen.sicherung.ungueltiger-name-einer-sicherung'));
     return join(this.ordner, `${name}${ENDUNG}`);
   }
 
@@ -421,7 +568,14 @@ export class Sicherung {
     if (!s?.isFile()) throw new Fachfehler(404, t('meldungen.sicherung.diese-sicherung-gibt-es'));
     const j = JSON.parse(await readFile(join(this.ordner, `${name}.json`), 'utf8').catch(() => 'null')) as { sha256?: unknown } | null;
     const sha256 = typeof j?.sha256 === 'string' && /^[0-9a-f]{64}$/.test(j.sha256) ? j.sha256 : null;
-    return { name, dateiname: `${name}${ENDUNG}`, groesse: s.size, sha256, etag: sha256, oeffne: ({ start, ende }) => oeffneStrom(p, { start, end: ende }) };
+    return {
+      name,
+      dateiname: `${name}${ENDUNG}`,
+      groesse: s.size,
+      sha256,
+      etag: sha256,
+      oeffne: ({ start, ende }) => oeffneStrom(p, { start, end: ende }),
+    };
   }
 
   /** Die Metadaten (`<name>.json`) unverändert zum Herunterladen (#975): ohne sie lässt sich die Sicherung nicht einspielen. */
@@ -455,15 +609,22 @@ export class Sicherung {
         const meta = JSON.parse(metaText) as { sha256: string };
         lauf.schritt = t('meldungen.sicherung.pruefsumme-berechnen');
         lauf.gesamt = (await stat(p)).size;
-        const sha = await sha256Von(p, (n) => { lauf.bytes = n; });
+        const sha = await sha256Von(p, (n) => {
+          lauf.bytes = n;
+        });
         const ok = sha === meta.sha256;
         await this.merkePruefung(name, ok);
         lauf.ergebnis = { ok };
-        if (ok) log.info('Prüfsumme in Ordnung', { name, von }); else log.error('Prüfsumme weicht ab – die Sicherungsdatei wurde verändert oder ist beschädigt', { name, von });
+        if (ok) log.info('Prüfsumme in Ordnung', { name, von });
+        else log.error('Prüfsumme weicht ab – die Sicherungsdatei wurde verändert oder ist beschädigt', { name, von });
         lauf.status = 'fertig';
       } catch (e) {
-        lauf.status = 'fehler'; lauf.fehler = (e as Error).message;
-      } finally { lauf.beendet = this.jetzt().toISOString(); lauf.schritt = 'Fertig'; }
+        lauf.status = 'fehler';
+        lauf.fehler = (e as Error).message;
+      } finally {
+        lauf.beendet = this.jetzt().toISOString();
+        lauf.schritt = 'Fertig';
+      }
     })();
     return lauf;
   }
@@ -471,25 +632,42 @@ export class Sicherung {
   /* ---------- Speicherplatz (#104) und Speicherort (#105) ---------- */
 
   async speicher() {
-    let dateienBytes = 0; let dateien = 0;
-    for await (const f of dateienUnter(this.dateiOrdner)) { dateienBytes += f.groesse; dateien++; }
+    let dateienBytes = 0;
+    let dateien = 0;
+    for await (const f of dateienUnter(this.dateiOrdner)) {
+      dateienBytes += f.groesse;
+      dateien++;
+    }
     const datenbankBytes = await this.q.daten.groesse().catch(() => 0);
     const liste = await this.liste();
     const sicherungenBytes = liste.reduce((s, x) => s + x.bytes, 0);
-    let frei: number | null = null; let gesamt: number | null = null;
+    let frei: number | null = null;
+    let gesamt: number | null = null;
     try {
       await mkdir(this.ordner, { recursive: true });
       const f = await statfs(this.ordner);
-      frei = f.bavail * f.bsize; gesamt = f.blocks * f.bsize;
-    } catch { /* nicht feststellbar */ }
+      frei = f.bavail * f.bsize;
+      gesamt = f.blocks * f.bsize;
+    } catch {
+      /* nicht feststellbar */
+    }
     const plan = await this.plan();
     const a = plan.aufbewahrung;
     // Jede Sicherung ist vollständig; Zahl der höchstens aufbewahrten Sicherungen.
-    const stueck = plan.nurNeueste && await this.nurNeuesteMoeglich(liste) ? 1 : (plan.haeufigkeit === 'taeglich' ? a.taeglich : 0) + a.woechentlich + a.monatlich;
+    const stueck =
+      plan.nurNeueste && (await this.nurNeuesteMoeglich(liste))
+        ? 1
+        : (plan.haeufigkeit === 'taeglich' ? a.taeglich : 0) + a.woechentlich + a.monatlich;
     const letzte = liste.find((x) => x.meta)?.bytes ?? dateienBytes + datenbankBytes;
     const mindest = plan.mindestFreiGB * GB;
     return {
-      dateienBytes, dateien, datenbankBytes, sicherungenBytes, anzahl: liste.length, frei, gesamt,
+      dateienBytes,
+      dateien,
+      datenbankBytes,
+      sicherungenBytes,
+      anzahl: liste.length,
+      frei,
+      gesamt,
       hochrechnung: { stueck, bytes: stueck * (dateienBytes + datenbankBytes) },
       mindestBytes: mindest,
       knapp: frei !== null && (frei < mindest || frei < 2 * letzte),
@@ -519,12 +697,24 @@ export class Sicherung {
       const f = await statfs(this.ordner);
       const frei = f.bavail * f.bsize;
       if (frei < plan.mindestFreiGB * GB) {
-        const grund = t('meldungen.sicherung.zu-wenig-freier-speicherplatz', { replace: (frei / GB).toFixed(1).replace('.', ','), mindestFreiGB: plan.mindestFreiGB });
+        const grund = t('meldungen.sicherung.zu-wenig-freier-speicherplatz', {
+          replace: (frei / GB).toFixed(1).replace('.', ','),
+          mindestFreiGB: plan.mindestFreiGB,
+        });
         await this.merkeFehler(art, grund);
         throw new Fachfehler(507, grund);
       }
-    } catch (e) { if (e instanceof Fachfehler) throw e; }
-    const lauf = this.belege('sicherung', art === 'automatisch' ? t('meldungen.sicherung.automatische-sicherung') : art === 'vor-wiederherstellung' ? t('meldungen.sicherung.sicherung-vor-der-wiederherstellung') : 'Sicherung');
+    } catch (e) {
+      if (e instanceof Fachfehler) throw e;
+    }
+    const lauf = this.belege(
+      'sicherung',
+      art === 'automatisch'
+        ? t('meldungen.sicherung.automatische-sicherung')
+        : art === 'vor-wiederherstellung'
+          ? t('meldungen.sicherung.sicherung-vor-der-wiederherstellung')
+          : 'Sicherung',
+    );
     const fertig = this.fuehreAus(lauf, art, von, schluessel);
     return { lauf, fertig };
   }
@@ -552,7 +742,11 @@ export class Sicherung {
     log.info('Sicherung begonnen', { name, art, von });
     try {
       const umgebung = await this.q.umgebung();
-      let dateienBytes = 0; let dateien = 0; let fassungen = 0; let archivfassungen = 0; let datenbankBytes = 0;
+      let dateienBytes = 0;
+      let dateien = 0;
+      let fassungen = 0;
+      let archivfassungen = 0;
+      let datenbankBytes = 0;
       for await (const f of dateienUnter(this.dateiOrdner)) dateienBytes += f.groesse;
       lauf.gesamt = dateienBytes + (await this.q.daten.groesse().catch(() => 0));
       const ergebnis = await this.q.daten.imSchnappschuss(async (s) => {
@@ -560,11 +754,31 @@ export class Sicherung {
         const ordner = this.dateiOrdner;
         const haushaltId = this.haushaltId;
         async function* eintraege(): AsyncGenerator<Eintrag> {
-          yield { art: 'M', kopf: { format: 1, haushaltId, erstellt: beginn.toISOString(), migrationen: s.migrationen, tabellen: s.tabellen, ohneInhalt: [...OHNE_INHALT], zaehler: s.zaehler } };
+          yield {
+            art: 'M',
+            kopf: {
+              format: 1,
+              haushaltId,
+              erstellt: beginn.toISOString(),
+              migrationen: s.migrationen,
+              tabellen: s.tabellen,
+              ohneInhalt: [...OHNE_INHALT],
+              zaehler: s.zaehler,
+            },
+          };
           for (const t of tabellen) {
             lauf.schritt = `Datenbank: ${t.name}`;
             const quelle = await s.inhalt(t);
-            yield { art: 'T', kopf: { tabelle: t.name, spalten: t.spalten }, daten: (async function* () { for await (const c of quelle) { datenbankBytes += c.length; yield c; } })() };
+            yield {
+              art: 'T',
+              kopf: { tabelle: t.name, spalten: t.spalten },
+              daten: (async function* () {
+                for await (const c of quelle) {
+                  datenbankBytes += c.length;
+                  yield c;
+                }
+              })(),
+            };
           }
           lauf.schritt = 'Dateien';
           // Mit den Dateien: Designs und die umgewandelten Fassungen von Paketen (#577) mit ihren Angaben.
@@ -576,15 +790,23 @@ export class Sicherung {
           }
           yield { art: 'E', kopf: { tabellen: tabellen.length, dateien } };
         }
-        const g = await schreibeSicherung(teil, schluessel, fingerabdruck, eintraege(), (n) => { lauf.bytes = n; });
+        const g = await schreibeSicherung(teil, schluessel, fingerabdruck, eintraege(), (n) => {
+          lauf.bytes = n;
+        });
         return { g, s: { postgres: s.postgres, migrationen: s.migrationen, zaehler: s.zaehler, tabellen: tabellen.length } };
       });
       lauf.schritt = 'Abschließen';
       const ende = this.jetzt();
       const meta: Metadaten = {
-        format: 1, datei: `${name}${ENDUNG}`, haushaltId: this.haushaltId,
+        format: 1,
+        datei: `${name}${ENDUNG}`,
+        haushaltId: this.haushaltId,
         umgebung: { ...umgebung, datenbankStand: ergebnis.s.migrationen.at(-1) ?? null, postgres: ergebnis.s.postgres },
-        art, ausgeloestVon: von, beginn: beginn.toISOString(), ende: ende.toISOString(), dauerSekunden: Math.round((ende.getTime() - beginn.getTime()) / 1000),
+        art,
+        ausgeloestVon: von,
+        beginn: beginn.toISOString(),
+        ende: ende.toISOString(),
+        dauerSekunden: Math.round((ende.getTime() - beginn.getTime()) / 1000),
         anzahl: { ...ergebnis.s.zaehler, dateien, tabellen: ergebnis.s.tabellen, fassungen, archivfassungen },
         groessen: { datenbankBytes, dateienBytes, sicherungBytes: ergebnis.g.bytes },
         verschluesselung: { verfahren: t('meldungen.sicherung.aes-256-gcm-schluessel'), fingerabdruck },
@@ -594,8 +816,18 @@ export class Sicherung {
       await writeFile(join(this.ordner, `.${name}.json.teil`), `${JSON.stringify(meta, null, 2)}\n`, { mode: 0o600 });
       await rename(teil, join(this.ordner, `${name}${ENDUNG}`));
       await rename(join(this.ordner, `.${name}.json.teil`), join(this.ordner, `${name}.json`));
-      lauf.status = 'fertig'; lauf.ergebnis = meta; lauf.schritt = 'Fertig';
-      log.info('Sicherung fertig', { name, art, mappen: meta.anzahl.mappen, dokumente: meta.anzahl.dokumente, dateien, mb: Math.round(ergebnis.g.bytes / MB), sekunden: meta.dauerSekunden });
+      lauf.status = 'fertig';
+      lauf.ergebnis = meta;
+      lauf.schritt = 'Fertig';
+      log.info('Sicherung fertig', {
+        name,
+        art,
+        mappen: meta.anzahl.mappen,
+        dokumente: meta.anzahl.dokumente,
+        dateien,
+        mb: Math.round(ergebnis.g.bytes / MB),
+        sekunden: meta.dauerSekunden,
+      });
       // Danach im Hintergrund außer Haus (#585): Die lokale Sicherung ist fertig, egal was dort geschieht.
       await this.kuendigeAn(name, meta);
       if (art === 'automatisch') await this.raeumeAuf();
@@ -603,7 +835,9 @@ export class Sicherung {
     } catch (e) {
       await rm(teil, { force: true }).catch(() => {});
       await rm(join(this.ordner, `.${name}.json.teil`), { force: true }).catch(() => {});
-      lauf.status = 'fehler'; lauf.fehler = (e as Error).message; lauf.schritt = 'Abgebrochen';
+      lauf.status = 'fehler';
+      lauf.fehler = (e as Error).message;
+      lauf.schritt = 'Abgebrochen';
       await this.merkeFehler(art, (e as Error).message).catch(() => {});
       return null;
     } finally {
@@ -620,14 +854,27 @@ export class Sicherung {
     const liste = await this.liste();
     const auto = liste.filter((x) => x.meta?.art === 'automatisch').map((x) => ({ name: x.name, beginn: x.meta!.beginn }));
     // #1194: ohne Kopie außer Haus, die zuletzt erfolgreich lief, gilt die normale Aufbewahrung.
-    const nurNeueste = plan.nurNeueste && await this.nurNeuesteMoeglich(liste);
-    if (plan.nurNeueste && !nurNeueste) log.warn('„Lokal nur die neueste“ wirkt nicht: keine erfolgreiche Kopie außer Haus – es gilt die normale Aufbewahrung');
-    const bleibt = nurNeueste ? new Set([...auto].sort((x, y) => y.beginn.localeCompare(x.beginn)).slice(0, 1).map((x) => x.name)) : behalten(auto, plan.aufbewahrung);
+    const nurNeueste = plan.nurNeueste && (await this.nurNeuesteMoeglich(liste));
+    if (plan.nurNeueste && !nurNeueste)
+      log.warn('„Lokal nur die neueste“ wirkt nicht: keine erfolgreiche Kopie außer Haus – es gilt die normale Aufbewahrung');
+    const bleibt = nurNeueste
+      ? new Set(
+          [...auto]
+            .sort((x, y) => y.beginn.localeCompare(x.beginn))
+            .slice(0, 1)
+            .map((x) => x.name),
+        )
+      : behalten(auto, plan.aufbewahrung);
     const jetzt = this.jetzt().getTime();
-    const unterwegs = (n: string) => Object.values(liste.find((x) => x.name === n)?.extern ?? {})
-      .some((s) => (s.status === 'offen' || s.status === 'laeuft') && jetzt - Date.parse(s.seit) < ZU_ALT_TAGE * TAG_MS);
+    const unterwegs = (n: string) =>
+      Object.values(liste.find((x) => x.name === n)?.extern ?? {}).some(
+        (s) => (s.status === 'offen' || s.status === 'laeuft') && jetzt - Date.parse(s.seit) < ZU_ALT_TAGE * TAG_MS,
+      );
     const weg = auto.filter((x) => !bleibt.has(x.name) && !unterwegs(x.name)).map((x) => x.name);
-    if (weg.length) await this.entfernt.merke(weg, await this.externStaende()).catch((e) => log.warn('Entfernte Sicherungen nicht gemerkt', { fehler: (e as Error).message }));
+    if (weg.length)
+      await this.entfernt
+        .merke(weg, await this.externStaende())
+        .catch((e) => log.warn('Entfernte Sicherungen nicht gemerkt', { fehler: (e as Error).message }));
     for (const n of weg) {
       await rm(join(this.ordner, `${n}${ENDUNG}`), { force: true });
       await rm(join(this.ordner, `${n}.json`), { force: true });
@@ -641,7 +888,7 @@ export class Sicherung {
 
   private async externStaende(): Promise<Record<string, Record<string, ExternStand>>> {
     const v = await this.q.einstellungen.lies('sicherung_extern');
-    return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, Record<string, ExternStand>> : {};
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, Record<string, ExternStand>>) : {};
   }
 
   /** Änderungen am Stand außer Haus nacheinander – Rückmeldung, neue Sicherung und Aufbewahrung können sich überschneiden. */
@@ -656,31 +903,47 @@ export class Sicherung {
   }
 
   private setzeExtern(name: string, paket: string, stand: ExternStand) {
-    return this.aendereExtern((alle) => { alle[name] = { ...(alle[name] ?? {}), [paket]: stand }; return true; });
+    return this.aendereExtern((alle) => {
+      alle[name] = { ...(alle[name] ?? {}), [paket]: stand };
+      return true;
+    });
   }
 
   private vergissExtern(namen: string[]) {
-    return this.aendereExtern((alle) => { const da = namen.filter((n) => n in alle); for (const n of da) delete alle[n]; return da.length > 0; });
+    return this.aendereExtern((alle) => {
+      const da = namen.filter((n) => n in alle);
+      for (const n of da) delete alle[n];
+      return da.length > 0;
+    });
   }
 
   /** Ziele außer Haus: Pakete mit dms:sicherung-lesen, mit Adresse und dem zuletzt gemeldeten Ziel. */
   async externZiele(): Promise<Sicherungsziel[]> {
-    const pakete = await this.extern?.pakete().catch(() => []) ?? [];
+    const pakete = (await this.extern?.pakete().catch(() => [])) ?? [];
     if (!pakete.length) return [];
     const alle = await this.externStaende();
-    const zuletzt = (id: string) => Object.values(alle).map((x) => x[id]).filter((s): s is ExternStand => !!s?.ziel).sort((a, b) => b.am.localeCompare(a.am))[0]?.ziel ?? null;
+    const zuletzt = (id: string) =>
+      Object.values(alle)
+        .map((x) => x[id])
+        .filter((s): s is ExternStand => !!s?.ziel)
+        .sort((a, b) => b.am.localeCompare(a.am))[0]?.ziel ?? null;
     return pakete.map((p) => ({ ...p, ziel: zuletzt(p.id) }));
   }
 
   /** Nach einer Sicherung: Ereignis an die Pakete, Stand „offen“ je Paket. Fehler hier stören die Sicherung nicht. */
   private async kuendigeAn(name: string, meta: Metadaten) {
     try {
-      const pakete = await this.extern?.pakete() ?? [];
+      const pakete = (await this.extern?.pakete()) ?? [];
       if (!pakete.length) return;
       const am = this.jetzt().toISOString();
-      await this.aendereExtern((alle) => { alle[name] = Object.fromEntries(pakete.map((p) => [p.id, { status: 'offen', seit: am, am } satisfies ExternStand])); return true; });
+      await this.aendereExtern((alle) => {
+        alle[name] = Object.fromEntries(pakete.map((p) => [p.id, { status: 'offen', seit: am, am } satisfies ExternStand]));
+        return true;
+      });
       await this.extern!.melde({ name, ...schlankeMetadaten(meta) });
-    } catch (e) { log.error('Kopie außer Haus nicht angestoßen', { name, fehler: (e as Error).message }); }
+    } catch (e) {
+      log.error('Kopie außer Haus nicht angestoßen', { name, fehler: (e as Error).message });
+    }
   }
 
   /** Darf das Paket diese Sicherung lesen? Nur die, die ihm mit sicherung.fertig gemeldet wurde – sonst 403/404. */
@@ -705,13 +968,20 @@ export class Sicherung {
   async externStueck(paket: string, name: string, versatz: unknown, laenge: unknown): Promise<{ inhalt: Buffer; groesse: number }> {
     const { pfad, groesse } = await this.externZugang(paket, name);
     const zahl = (v: unknown, std: number) => (v === undefined || v === '' ? std : Number(v));
-    const ab = zahl(versatz, 0), n = zahl(laenge, STUECK_MAX);
-    if (!Number.isSafeInteger(ab) || ab < 0 || ab > groesse) throw new Fachfehler(422, t('meldungen.sicherung.versatz-0-bis-groesse', { groesse }));
-    if (!Number.isSafeInteger(n) || n < 1 || n > STUECK_MAX) throw new Fachfehler(422, t('meldungen.sicherung.laenge-1-bis-bytes', { STUECK_MAX }));
+    const ab = zahl(versatz, 0),
+      n = zahl(laenge, STUECK_MAX);
+    if (!Number.isSafeInteger(ab) || ab < 0 || ab > groesse)
+      throw new Fachfehler(422, t('meldungen.sicherung.versatz-0-bis-groesse', { groesse }));
+    if (!Number.isSafeInteger(n) || n < 1 || n > STUECK_MAX)
+      throw new Fachfehler(422, t('meldungen.sicherung.laenge-1-bis-bytes', { STUECK_MAX }));
     const inhalt = Buffer.alloc(Math.min(n, groesse - ab));
     const f = await open(pfad, 'r');
-    try { const { bytesRead } = await f.read(inhalt, 0, inhalt.length, ab); return { inhalt: inhalt.subarray(0, bytesRead), groesse }; }
-    finally { await f.close(); }
+    try {
+      const { bytesRead } = await f.read(inhalt, 0, inhalt.length, ab);
+      return { inhalt: inhalt.subarray(0, bytesRead), groesse };
+    } finally {
+      await f.close();
+    }
   }
 
   /** Rückmeldung des Pakets je Sicherung (PUT /sicherungen/{name}/extern). */
@@ -720,23 +990,38 @@ export class Sicherung {
     const x = (e ?? {}) as Record<string, unknown>;
     const status = x.status as ExternStatus;
     if (!EXTERN_STATUS.includes(status)) throw new Fachfehler(422, `status: ${EXTERN_STATUS.join(', ')}.`);
-    const pruefung = x.pruefung === undefined || x.pruefung === null ? undefined : x.pruefung as ExternPruefung;
-    if (pruefung !== undefined && !EXTERN_PRUEFUNG.includes(pruefung)) throw new Fachfehler(422, `pruefung: ${EXTERN_PRUEFUNG.join(', ')}.`);
-    if (status === 'geprueft' && pruefung !== 'pruefsumme' && pruefung !== 'stichprobe') throw new Fachfehler(422, t('meldungen.sicherung.geprueft-braucht-pruefung-pruefsumme'));
-    if (status === 'hochgeladen' && (pruefung === 'pruefsumme' || pruefung === 'stichprobe')) throw new Fachfehler(422, t('meldungen.sicherung.mit-pruefsumme-oder-stichprobe'));
-    const text = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? ohneZugangsdaten(v.trim().replace(/\s+/g, ' ')).slice(0, max) : undefined);
+    const pruefung = x.pruefung === undefined || x.pruefung === null ? undefined : (x.pruefung as ExternPruefung);
+    if (pruefung !== undefined && !EXTERN_PRUEFUNG.includes(pruefung))
+      throw new Fachfehler(422, `pruefung: ${EXTERN_PRUEFUNG.join(', ')}.`);
+    if (status === 'geprueft' && pruefung !== 'pruefsumme' && pruefung !== 'stichprobe')
+      throw new Fachfehler(422, t('meldungen.sicherung.geprueft-braucht-pruefung-pruefsumme'));
+    if (status === 'hochgeladen' && (pruefung === 'pruefsumme' || pruefung === 'stichprobe'))
+      throw new Fachfehler(422, t('meldungen.sicherung.mit-pruefsumme-oder-stichprobe'));
+    const text = (v: unknown, max: number) =>
+      typeof v === 'string' && v.trim() ? ohneZugangsdaten(v.trim().replace(/\s+/g, ' ')).slice(0, max) : undefined;
     const grund = text(x.grund, 500);
     if (status === 'fehlgeschlagen' && !grund) throw new Fachfehler(422, t('meldungen.sicherung.bei-fehlgeschlagen-bitte-einen'));
     const zahl = (v: unknown) => (typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : undefined);
     const neu: ExternStand = {
-      status, ...(pruefung ? { pruefung } : {}), ...(grund ? { grund } : {}), ...(status === 'fehlgeschlagen' && x.endgueltig === true ? { endgueltig: true } : {}),
-      ...(text(x.ziel, 200) ?? stand.ziel ? { ziel: text(x.ziel, 200) ?? stand.ziel } : {}),
-      ...(zahl(x.bytes) !== undefined ? { bytes: zahl(x.bytes) } : {}), ...(zahl(x.gesamt) !== undefined ? { gesamt: zahl(x.gesamt) } : {}),
-      seit: stand.seit, am: this.jetzt().toISOString(),
+      status,
+      ...(pruefung ? { pruefung } : {}),
+      ...(grund ? { grund } : {}),
+      ...(status === 'fehlgeschlagen' && x.endgueltig === true ? { endgueltig: true } : {}),
+      ...((text(x.ziel, 200) ?? stand.ziel) ? { ziel: text(x.ziel, 200) ?? stand.ziel } : {}),
+      ...(zahl(x.bytes) !== undefined ? { bytes: zahl(x.bytes) } : {}),
+      ...(zahl(x.gesamt) !== undefined ? { gesamt: zahl(x.gesamt) } : {}),
+      seit: stand.seit,
+      am: this.jetzt().toISOString(),
     };
     await this.setzeExtern(name, paket, neu);
     if (status === 'fehlgeschlagen') log.warn('Kopie außer Haus fehlgeschlagen', { name, paket, grund, endgueltig: !!neu.endgueltig });
-    else if (status !== 'laeuft') log.info(status === 'geprueft' ? 'Kopie außer Haus geprüft' : 'Kopie außer Haus hochgeladen', { name, paket, pruefung: pruefung ?? null, ziel: neu.ziel ?? null });
+    else if (status !== 'laeuft')
+      log.info(status === 'geprueft' ? 'Kopie außer Haus geprüft' : 'Kopie außer Haus hochgeladen', {
+        name,
+        paket,
+        pruefung: pruefung ?? null,
+        ziel: neu.ziel ?? null,
+      });
     if (status === 'fehlgeschlagen' && neu.endgueltig) void this.melde().catch(() => {});
     return neu;
   }
@@ -751,21 +1036,40 @@ export class Sicherung {
     const stand = (await this.externStaende())[name]?.[paket];
     if (!stand) return;
     let extern: unknown;
-    if (r.text.trimStart().startsWith('{')) { try { extern = (JSON.parse(r.text) as Record<string, unknown> | null)?.extern; } catch { /* kein JSON: Text */ } }
+    if (r.text.trimStart().startsWith('{')) {
+      try {
+        extern = (JSON.parse(r.text) as Record<string, unknown> | null)?.extern;
+      } catch {
+        /* kein JSON: Text */
+      }
+    }
     if (extern !== undefined) {
-      await this.externRueckmeldung(paket, name, extern).catch((f) => log.warn('Kopie außer Haus: Rückmeldung des Pakets nicht übernommen', { name, paket, fehler: (f as Error).message }));
+      await this.externRueckmeldung(paket, name, extern).catch((f) =>
+        log.warn('Kopie außer Haus: Rückmeldung des Pakets nicht übernommen', { name, paket, fehler: (f as Error).message }),
+      );
       return;
     }
     // Erfolg ohne Stand; schon erfolgreich; oder während des Aufrufs schon gemeldet (Pakete vor #636, PUT): nichts ändern.
     if (r.ok || erfolgreich(stand) || Date.parse(stand.am) >= r.beginn) return;
     const endgueltig = r.rc === 2;
-    const grund = ohneZugangsdaten((r.fehler ?? '').trim().replace(/\s+/g, ' ')).slice(0, 500) || t('meldungen.sicherung.das-paket-meldet-einen');
+    const grund =
+      ohneZugangsdaten((r.fehler ?? '').trim().replace(/\s+/g, ' ')).slice(0, 500) || t('meldungen.sicherung.das-paket-meldet-einen');
     await this.setzeExtern(name, paket, {
-      status: endgueltig ? 'fehlgeschlagen' : 'laeuft', grund, ...(endgueltig ? { endgueltig: true } : {}),
-      ...(stand.ziel ? { ziel: stand.ziel } : {}), ...(stand.bytes !== undefined ? { bytes: stand.bytes } : {}), ...(stand.gesamt !== undefined ? { gesamt: stand.gesamt } : {}),
-      seit: stand.seit, am: this.jetzt().toISOString(),
+      status: endgueltig ? 'fehlgeschlagen' : 'laeuft',
+      grund,
+      ...(endgueltig ? { endgueltig: true } : {}),
+      ...(stand.ziel ? { ziel: stand.ziel } : {}),
+      ...(stand.bytes !== undefined ? { bytes: stand.bytes } : {}),
+      ...(stand.gesamt !== undefined ? { gesamt: stand.gesamt } : {}),
+      seit: stand.seit,
+      am: this.jetzt().toISOString(),
     });
-    log.warn(endgueltig ? 'Kopie außer Haus fehlgeschlagen' : 'Kopie außer Haus: Versuch fehlgeschlagen', { name, paket, grund, endgueltig });
+    log.warn(endgueltig ? 'Kopie außer Haus fehlgeschlagen' : 'Kopie außer Haus: Versuch fehlgeschlagen', {
+      name,
+      paket,
+      grund,
+      endgueltig,
+    });
     if (endgueltig) void this.melde().catch(() => {});
   }
 
@@ -773,7 +1077,17 @@ export class Sicherung {
   async externAufgegeben(paket: string, name: string, fehler: string | null | undefined) {
     const stand = (await this.externStaende())[name]?.[paket];
     if (!stand || erfolgreich(stand)) return;
-    await this.setzeExtern(name, paket, { ...stand, status: 'fehlgeschlagen', endgueltig: true, grund: t('meldungen.sicherung.nach-mehreren-versuchen-aufgegeben', { ohneZugangsdaten: ohneZugangsdaten(stand.status === 'fehlgeschlagen' && stand.grund ? stand.grund : fehler ?? t('meldungen.sicherung.unbekannter-fehler')).slice(0, 450) }), am: this.jetzt().toISOString() });
+    await this.setzeExtern(name, paket, {
+      ...stand,
+      status: 'fehlgeschlagen',
+      endgueltig: true,
+      grund: t('meldungen.sicherung.nach-mehreren-versuchen-aufgegeben', {
+        ohneZugangsdaten: ohneZugangsdaten(
+          stand.status === 'fehlgeschlagen' && stand.grund ? stand.grund : (fehler ?? t('meldungen.sicherung.unbekannter-fehler')),
+        ).slice(0, 450),
+      }),
+      am: this.jetzt().toISOString(),
+    });
     log.error('Kopie außer Haus aufgegeben', { name, paket, fehler });
     void this.melde().catch(() => {});
   }
@@ -791,12 +1105,15 @@ export class Sicherung {
     let letzte: { name: string; paket: string; beginn: string; stand: ExternStand } | null = null;
     let fehler: { name: string; paket: string; beginn: string; stand: ExternStand } | null = null;
     let aeltesteOffen: string | null = null;
-    for (const e of liste ?? await this.liste()) {
+    for (const e of liste ?? (await this.liste())) {
       const st = Object.entries(e.extern ?? {}).filter(([p]) => ids.has(p));
       if (!st.length) continue;
       const beginn = e.meta?.beginn ?? e.schlank?.beginn ?? st[0][1].seit;
       const ok = st.find(([, s]) => erfolgreich(s));
-      if (ok) { letzte = { name: e.name, paket: ok[0], beginn, stand: ok[1] }; break; }
+      if (ok) {
+        letzte = { name: e.name, paket: ok[0], beginn, stand: ok[1] };
+        break;
+      }
       const f = st.find(([, s]) => s.status === 'fehlgeschlagen');
       if (f && !fehler) fehler = { name: e.name, paket: f[0], beginn, stand: f[1] };
       aeltesteOffen = e.meta?.ende ?? st[0][1].seit;
@@ -833,7 +1150,9 @@ export class Sicherung {
       letzte: letzte ? { name: letzte.datei, ende: letzte.ende, art: letzte.art } : null,
       fehler: fehler && (!letzte || fehler.am > letzte.ende) ? fehler : null,
       /** Letzte erfolgreiche älter als 2 Tage – oder noch keine, obwohl der Zeitplan seit 2 Tagen an ist. */
-      zuAlt: letzte ? jetzt - Date.parse(letzte.ende) > grenze : !!(plan.aktiv && plan.aktivSeit && jetzt - Date.parse(plan.aktivSeit) > grenze),
+      zuAlt: letzte
+        ? jetzt - Date.parse(letzte.ende) > grenze
+        : !!(plan.aktiv && plan.aktivSeit && jetzt - Date.parse(plan.aktivSeit) > grenze),
       planAktiv: plan.aktiv,
       notfallblatt: await this.notfallblatt(),
       schluessel: this.q.tresor.bereit,
@@ -848,26 +1167,45 @@ export class Sicherung {
   }
 
   /** Ampel der Probe-Wiederherstellung (#109): grün ≤ 8 Tage erfolgreich, gelb älter oder nie, rot fehlgeschlagen. */
-  async probeAmpel(gibtSicherungen: boolean): Promise<{ ampel: 'gruen' | 'gelb' | 'rot' | null; letzte: (Probeergebnis & { name: string }) | null; plan: ProbePlan }> {
+  async probeAmpel(
+    gibtSicherungen: boolean,
+  ): Promise<{ ampel: 'gruen' | 'gelb' | 'rot' | null; letzte: (Probeergebnis & { name: string }) | null; plan: ProbePlan }> {
     const letzte = (await this.q.einstellungen.lies('sicherung_probe_letzte')) as (Probeergebnis & { name: string }) | null;
     const plan = await this.probePlan();
     if (!gibtSicherungen && !letzte) return { ampel: null, letzte: null, plan };
-    const ampel = !letzte ? 'gelb' : !letzte.ok ? 'rot' : this.jetzt().getTime() - Date.parse(letzte.am) > PROBE_TAGE * TAG_MS ? 'gelb' : 'gruen';
+    const ampel = !letzte
+      ? 'gelb'
+      : !letzte.ok
+        ? 'rot'
+        : this.jetzt().getTime() - Date.parse(letzte.am) > PROBE_TAGE * TAG_MS
+          ? 'gelb'
+          : 'gruen';
     return { ampel, letzte, plan };
   }
 
   /** Einmal je Vorfall eine Mail an alle Administratoren (#105). */
   async melde(): Promise<string | null> {
     const z = await this.zustand();
-    let vorfall: string | null = null; let betreff = ''; let text = '';
+    let vorfall: string | null = null;
+    let betreff = '';
+    let text = '';
     if (z.fehler) {
       vorfall = `fehler:${z.fehler.am}`;
       betreff = t('meldungen.sicherung.ablago-sicherung-fehlgeschlagen');
-      text = t('meldungen.sicherung.die-sicherung-am-ist', { wert: z.fehler.art === 'automatisch' ? 'automatische ' : '', wert2: new Date(z.fehler.am).toLocaleString(gebietsschema(), { timeZone: zeitzone() }), grund: z.fehler.grund });
+      text = t('meldungen.sicherung.die-sicherung-am-ist', {
+        wert: z.fehler.art === 'automatisch' ? 'automatische ' : '',
+        wert2: new Date(z.fehler.am).toLocaleString(gebietsschema(), { timeZone: zeitzone() }),
+        grund: z.fehler.grund,
+      });
     } else if (z.planAktiv && z.zuAlt) {
       vorfall = `alt:${z.letzte?.ende ?? 'nie'}`;
       betreff = t('meldungen.sicherung.ablago-die-letzte-sicherung');
-      text = z.letzte ? t('meldungen.sicherung.die-letzte-erfolgreiche-sicherung', { wert: new Date(z.letzte.ende).toLocaleString(gebietsschema(), { timeZone: zeitzone() }), ZU_ALT_TAGE }) : t('meldungen.sicherung.es-gibt-noch-keine');
+      text = z.letzte
+        ? t('meldungen.sicherung.die-letzte-erfolgreiche-sicherung', {
+            wert: new Date(z.letzte.ende).toLocaleString(gebietsschema(), { timeZone: zeitzone() }),
+            ZU_ALT_TAGE,
+          })
+        : t('meldungen.sicherung.es-gibt-noch-keine');
     }
     if (vorfall) return this.meldeVorfall('sicherung_gemeldet', vorfall, betreff, text);
     return this.meldeExtern(z.extern);
@@ -876,15 +1214,37 @@ export class Sicherung {
   /** Kopie außer Haus (#585): endgültig fehlgeschlagen oder mehr als 2 Tage im Rückstand – einmal je Vorfall. Nennt nur das Ziel. */
   private async meldeExtern(x: Awaited<ReturnType<Sicherung['externZustand']>>): Promise<string | null> {
     if (!x) return null;
-    const zielText = (id: string) => { const z = x.ziele.find((y) => y.id === id); return z ? `${z.name}${z.adresse ? ` (${ohneZugangsdaten(z.adresse)})` : z.ziel ? ` (${z.ziel})` : ''}` : id; };
+    const zielText = (id: string) => {
+      const z = x.ziele.find((y) => y.id === id);
+      return z ? `${z.name}${z.adresse ? ` (${ohneZugangsdaten(z.adresse)})` : z.ziel ? ` (${z.ziel})` : ''}` : id;
+    };
     const wann = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { timeZone: zeitzone() });
     if (x.fehler?.stand.endgueltig) {
-      return this.meldeVorfall('sicherung_extern_gemeldet', `extern-fehler:${x.fehler.name}:${x.fehler.paket}`, t('meldungen.sicherung.ablago-kopie-ausser-haus'),
-        t('meldungen.sicherung.die-sicherung-vom-liess', { wann: wann(x.fehler.beginn), zielText: zielText(x.fehler.paket), wert: x.fehler.stand.grund ?? 'unbekannt' }));
+      return this.meldeVorfall(
+        'sicherung_extern_gemeldet',
+        `extern-fehler:${x.fehler.name}:${x.fehler.paket}`,
+        t('meldungen.sicherung.ablago-kopie-ausser-haus'),
+        t('meldungen.sicherung.die-sicherung-vom-liess', {
+          wann: wann(x.fehler.beginn),
+          zielText: zielText(x.fehler.paket),
+          wert: x.fehler.stand.grund ?? 'unbekannt',
+        }),
+      );
     }
     if (x.zuAlt) {
-      return this.meldeVorfall('sicherung_extern_gemeldet', `extern-alt:${x.letzte?.name ?? 'nie'}`, t('meldungen.sicherung.ablago-die-letzte-kopie'),
-        t('meldungen.sicherung.neuere-sicherungen-sind-seit', { wert: x.letzte ? t('meldungen.sicherung.die-letzte-kopie-ausser', { wann: wann(x.letzte.beginn) }) : t('meldungen.sicherung.es-gibt-noch-keine-2'), ZU_ALT_TAGE, map: x.ziele.map((z) => zielText(z.id)).join(', '), wert2: x.fehler?.stand.grund ? t('meldungen.sicherung.letzter-fehler', { grund: x.fehler.stand.grund }) : '' }));
+      return this.meldeVorfall(
+        'sicherung_extern_gemeldet',
+        `extern-alt:${x.letzte?.name ?? 'nie'}`,
+        t('meldungen.sicherung.ablago-die-letzte-kopie'),
+        t('meldungen.sicherung.neuere-sicherungen-sind-seit', {
+          wert: x.letzte
+            ? t('meldungen.sicherung.die-letzte-kopie-ausser', { wann: wann(x.letzte.beginn) })
+            : t('meldungen.sicherung.es-gibt-noch-keine-2'),
+          ZU_ALT_TAGE,
+          map: x.ziele.map((z) => zielText(z.id)).join(', '),
+          wert2: x.fehler?.stand.grund ? t('meldungen.sicherung.letzter-fehler', { grund: x.fehler.stand.grund }) : '',
+        }),
+      );
     }
     return null;
   }
@@ -893,8 +1253,11 @@ export class Sicherung {
     if ((await this.q.einstellungen.lies(schluessel)) === vorfall) return null;
     await this.q.einstellungen.schreibe(schluessel, vorfall);
     log.warn(betreff.replace('Ablago: ', ''), { vorfall });
-    try { await this.q.anAdmins?.(betreff, () => t('meldungen.sicherung.details-stehen-in-der', { text })); }
-    catch (e) { log.warn('Mail zur Sicherung nicht verschickt', { fehler: (e as Error).message }); }
+    try {
+      await this.q.anAdmins?.(betreff, () => t('meldungen.sicherung.details-stehen-in-der', { text }));
+    } catch (e) {
+      log.warn('Mail zur Sicherung nicht verschickt', { fehler: (e as Error).message });
+    }
     return vorfall;
   }
 
@@ -913,7 +1276,9 @@ export class Sicherung {
           const { fertig } = await this.starte('automatisch', 'Zeitplan');
           gestartet = 'gestartet';
           void fertig.then(() => this.melde()).catch(() => {});
-        } catch (e) { log.warn('Automatische Sicherung nicht begonnen', { grund: (e as Error).message }); }
+        } catch (e) {
+          log.warn('Automatische Sicherung nicht begonnen', { grund: (e as Error).message });
+        }
       });
     }
     if (gestartet === 'nichts') await this.melde();
@@ -923,9 +1288,14 @@ export class Sicherung {
   /** Nach einem Neustart: halb geschriebene Sicherungen entfernen. */
   async raeumeTeileAuf() {
     let namen: string[] = [];
-    try { namen = await readdir(this.ordner); } catch { return; }
+    try {
+      namen = await readdir(this.ordner);
+    } catch {
+      return;
+    }
     // Auch angefangenes Zurückholen (#976): Teildatei und Stand.
-    for (const n of namen.filter((x) => (x.startsWith('.') && x.endsWith('.teil')) || x.startsWith('.holen-'))) await rm(join(this.ordner, n), { force: true });
+    for (const n of namen.filter((x) => (x.startsWith('.') && x.endsWith('.teil')) || x.startsWith('.holen-')))
+      await rm(join(this.ordner, n), { force: true });
   }
 
   start(ms = 60_000) {
@@ -934,5 +1304,7 @@ export class Sicherung {
     this.zeitgeber = setInterval(lauf, ms);
     this.zeitgeber.unref?.();
   }
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+  }
 }

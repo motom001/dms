@@ -7,7 +7,6 @@ import type { Feld } from './model';
 import { zeitzone } from './region';
 import { t } from './texte';
 
-
 export interface Nummernkreis {
   schluessel: string;
   name: string;
@@ -32,10 +31,14 @@ export function kreisVon(f: Pick<Feld, 'typ' | 'standard'>): string | null {
 }
 /** Steht ein Nummernkreis im Standardwert – unabhängig vom Feldtyp (für die Prüfung des Mappentyps)? */
 export function kreisImStandard(standard: unknown): string | null {
-  return typeof standard === 'string' ? PLATZHALTER.exec(standard.trim())?.[1] ?? null : null;
+  return typeof standard === 'string' ? (PLATZHALTER.exec(standard.trim())?.[1] ?? null) : null;
 }
 
-export interface Datum { jahr: number; monat: number; tag: number }
+export interface Datum {
+  jahr: number;
+  monat: number;
+  tag: number;
+}
 /** Kalendertag in der Zeitzone der Region (#726). */
 export function datumIn(jetzt: Date): Datum {
   const [jahr, monat, tag] = new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(jetzt).split('-').map(Number);
@@ -69,10 +72,14 @@ export const NEUBEGINN_TEXT = { taeglich: 'täglich', monatlich: 'monatlich', ja
 /** Schlüssel des Zeitraums, für den ein eigener Zählerstand gilt. */
 export function zeitraumVon(muster: string, d: Datum): string {
   switch (neubeginn(muster)) {
-    case 'taeglich': return `${d.jahr}-${zwei(d.monat)}-${zwei(d.tag)}`;
-    case 'monatlich': return `${d.jahr}-${zwei(d.monat)}`;
-    case 'jaehrlich': return String(d.jahr);
-    default: return 'immer';
+    case 'taeglich':
+      return `${d.jahr}-${zwei(d.monat)}-${zwei(d.tag)}`;
+    case 'monatlich':
+      return `${d.jahr}-${zwei(d.monat)}`;
+    case 'jaehrlich':
+      return String(d.jahr);
+    default:
+      return 'immer';
   }
 }
 
@@ -100,6 +107,10 @@ export function ziehe(k: Nummernkreis, d: Datum, mappeId: string | null, am: str
   const n = naechste(k, d);
   return {
     nummer: n.nummer,
-    kreis: { ...k, staende: { ...k.staende, [n.zeitraum]: n.zaehler }, zuletzt: [{ nummer: n.nummer, am, mappeId }, ...k.zuletzt].slice(0, 10) },
+    kreis: {
+      ...k,
+      staende: { ...k.staende, [n.zeitraum]: n.zaehler },
+      zuletzt: [{ nummer: n.nummer, am, mappeId }, ...k.zuletzt].slice(0, 10),
+    },
   };
 }

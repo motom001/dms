@@ -6,6 +6,8 @@ Two tools check the code before it reaches `main` (#899): **ESLint** for typical
 
 | Command | What |
 | --- | --- |
+| `npm run format` | [format](#formatierung) all files (Prettier; two passes, because Prettier sometimes only finishes breaking long method chains in the second; a little over two minutes in total) |
+| `npm run format:pruefen` | only check whether everything is formatted – exactly the CI check |
 | `npm run lint` | ESLint across server, tests, interface and `shared` (with type information, a little over a minute); `npm run lint -- --quiet` shows errors only |
 | `npx eslint server/src/dienst.ts` | single files only – quicker while working |
 | `npm run lint:abh` | check dependencies (dependency-cruiser, a few seconds) |
@@ -18,6 +20,17 @@ Two tools check the code before it reaches `main` (#899): **ESLint** for typical
 
 The tools are fixed versions (without `^`) under `devDependencies` in the root folder and do not go into the image: there, `npm ci --omit=dev --workspace server` installs only the server's runtime packages.
 
+## Formatting { #formatierung }
+
+What the code looks like – indentation, line breaks, quotes, commas – is decided by **Prettier** (#1280), not by the author. That keeps reviews about content. Prettier is a fixed version under `devDependencies`; in the job **stil**, CI checks with `npm run format:pruefen` that every file looks the way Prettier writes it.
+
+- **Settings** in `.prettierrc.json`: line length 140, indentation 2 spaces, single quotes (double in JSX), semicolons, a comma after the last entry of multi-line lists. Template literals (`` `…` ``) are left untouched, including embedded CSS or HTML.
+- **Exceptions** in `.prettierignore`: Markdown, YAML, HTML and CSS (CSS stays at “one rule per line” because the [colour check](#farben) works line by line), `package-lock.json`, generated files such as the lists of existing violations, and test fixtures whose bytes matter (signatures, checksums, raw PDF bodies). Add new fixtures of this kind there.
+- **Language files** are formatted by Prettier too; `shared/test/sprachdateien-format.test.ts` makes sure every value stays the same.
+- **Editor**: in VS Code, the extension *Prettier – Code formatter* (`esbenp.prettier-vscode`) with `"editor.formatOnSave": true` and `"prettier.requireConfig": true`; it uses the Prettier from `node_modules`. In JetBrains IDEs, under *Languages & Frameworks → Prettier*, “Automatic Prettier configuration” and “Run on save”. Without an editor integration, run `npm run format` before committing.
+- **`git blame`**: the one commit that formatted everything is listed in `.git-blame-ignore-revs` (section “Formatierer”). GitHub skips it by itself; locally, run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once.
+- **Verifiable**: a formatting commit contains nothing but Prettier's output. `bash .github/werkzeuge/formatierung-nachpruefen.sh <commit>` runs Prettier on the state before it and compares – the difference must be empty. CI does this for every new entry in the section “Formatierer” (a condition from security). A later formatting commit (for example after a Prettier update) goes into the same section.
+
 ## Rules and values { #regeln }
 
 The settings are in `eslint.config.js` (flat config, ESLint 10). The basis is the recommended rules of ESLint and `typescript-eslint`; on top of that:
@@ -27,8 +40,8 @@ The settings are in `eslint.config.js` (flat config, ESLint 10). The basis is th
 | `max-params` | 5 | 4 |
 | `complexity` | 20 (error) | 10 |
 | `ablago/komplexitaet-hinweis` | 15 (warning only) | – |
-| `max-lines-per-function` | 60; in `*.tsx` 150; in `*.routen.ts` 60 per handler | – |
-| `max-lines` | 400 per file | – |
+| `max-lines-per-function` | 105; in `*.tsx` 260; in `*.routen.ts` 105 per handler | – |
+| `max-lines` | 700 per file | – |
 | `max-depth` | 4 | – |
 | `@typescript-eslint/no-floating-promises` | on | – |
 | `@typescript-eslint/no-misused-promises` | on | – |
@@ -43,7 +56,7 @@ Lengths are counted without blank lines and comments – explanations in the cod
 - **Two thresholds for complexity:** in ESLint, a rule has only one level. `ablago/komplexitaet-hinweis` is the same `complexity` rule again, with 15 as a warning; CI shows the warnings only for the files a pull request changes, as an annotation on the line. The custom rules are in `.github/werkzeuge/eslint-ablago.mjs`.
 - **Route files (`*.routen.ts`, #960):** each handler is measured on its own. Only the outer registration function is exempt – an exported top-level function that registers the handlers. If the routes are a list at module level, each handler counts on its own anyway.
 - **Tests (`server/test/`, `web/test/`, `shared/test/`):** without `max-lines` and `max-lines-per-function`, otherwise the same rules. `test()`, `describe()` and `it()` from `node:test` do not count as "not awaited".
-- **Tool scripts** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/test/*.mjs`, `web/rauchtest/**/*.mjs`): only ESLint's basic rules, without type information; the smoke tests additionally with `max-lines` 400 per file (#1234). For the styles, `npm run lint:farben` limits every CSS file under `web/src/` to 400 lines, also without blank lines and comments.
+- **Tool scripts** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/test/*.mjs`, `web/rauchtest/**/*.mjs`): only ESLint's basic rules, without type information; the smoke tests additionally with `max-lines` 700 per file (#1234). For the styles, `npm run lint:farben` limits every CSS file under `web/src/` to 400 lines, also without blank lines and comments.
 - **Building blocks (`ablago/bausteine`, #968):** in the interface a raw `<button>` is an error – use `Knopf`. `<input>`, `<select>` and `<textarea>` are errors when they are not inside `Feld`, `HakenFeld` or `FeldGruppe`. Exempt are invisible inputs (`type="hidden"`, `type="file"`) and the building blocks themselves under `web/src/bausteine/`. For cases the building blocks deliberately do not cover (search field without a visible label, input in a table cell, see [Field](bausteine-feld.md#wann)), an exception with a reason in the code applies. The existing code when the rule was switched on is in `eslint-suppressions.json`.
 - **Colour on the button (`ablago/knopf-farben`, #1210):** colour classes via `className` on `Knopf`, `KnopfLink` and `knopfAussehen()` – `gefahr`, `gefahr-rand`, `gruen`, `primaer` – are an error; the colour comes from the kind ([principles](bausteine.md#leitsaetze)). All fixed texts in the value are checked, including in conditions and template strings. The existing code when the rule was switched on (11 places) is in `eslint-suppressions.json` and is reduced in #1211–#1215. Test: `.github/werkzeuge/eslint-ablago.test.mjs`.
 - **Promises in the interface:** `onClick={async () => …}` reports `no-misused-promises`, because React does not wait for the promise and an error would go unnoticed. Better: `onClick={() => void speichern()}` with its own `try`/`catch` in `speichern`.
@@ -56,7 +69,7 @@ If a rule really has to give way in one place, do it with a reason after `--`:
 }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste ändert
 ```
 
-An exception without a reason, without a rule name (`/* eslint-disable */`) or without effect is itself an error.
+An exception without a reason, without a rule name (`/* eslint-disable */`) or without effect is itself an error. If [Prettier](#formatierung) may break the spot across several lines, prefer a pair `/* eslint-disable rule -- reason */` … `/* eslint-enable rule */` around the statement – a `-line` exception only applies to its one line.
 
 ## Existing code: move yes, add no { #bestand }
 
@@ -67,6 +80,7 @@ For both lists – and for `knip-bestand.json` ([dead code](#toter-code)) – **
 - **Moving is allowed.** If a function moves to another file (for example when splitting `routen.ts`), its entry moves with it: `npm run lint:umtragen` rewrites the lists and drops what no longer occurs. The total stays the same – the check is green.
 - **Adding is not.** New or changed code that breaks a rule is fixed, not listed. `lint:umtragen` would include it, but then the number grows and CI reports for which rule.
 - **Switching on a new rule.** Whoever introduces a rule freezes only its existing violations: `npx eslint --suppress-rule <rule> --pass-on-unpruned-suppressions .` – the other entries stay as they are. The total rises without the code getting worse; `ausnahmen-zaehlen.mjs` therefore leaves the new rule out and shows its entries as “neue Regel … (Ausgangspunkt)”. A rule is new if it has no entry in the base **and** its name (`'rule'`) is newly added to `eslint.config.js` – so it shows up in the pull request, and a rule that has long been on without entries cannot be frozen silently. From the next state on, its entries count like any others.
+- **Changing a limit.** If the value of a rule changes in `eslint.config.js` (as with the [formatter](#formatierung): the lengths ×1.75, #1280), its entries also start afresh: `ausnahmen-zaehlen.mjs` leaves the rule out and shows “Grenze von … geändert (neuer Ausgangspunkt)”. Changed means: the lines naming the rule differ from the base, ignoring comments and whitespace.
 - **Fewer is welcome.** Whoever simplifies a function can shrink the list right away with `npx eslint --prune-suppressions .` – otherwise the workflow below does it.
 
 ### Cleaning up on main { #aufraeumen }

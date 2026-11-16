@@ -25,10 +25,15 @@ import { zipPuffer } from '../src/zip';
 setzeZeitzone('Europe/Berlin');
 
 const fehler = (s: number, re?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!re || re.test(e.message));
-const gruende = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && [e.message, ...((e.details as { gruende?: string[] })?.gruende ?? [])].some((g) => re.test(g));
+const gruende = (re: RegExp) => (e: unknown) =>
+  e instanceof Fachfehler && [e.message, ...((e.details as { gruende?: string[] })?.gruende ?? [])].some((g) => re.test(g));
 
 const WASM = Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
-const archiv = (d: Record<string, string | Buffer>) => zipPuffer(Object.entries(d).map(([name, inhalt]) => ({ name, daten: Buffer.isBuffer(inhalt) ? inhalt : Buffer.from(inhalt) })), new Date('2026-01-01T12:00:00Z'));
+const archiv = (d: Record<string, string | Buffer>) =>
+  zipPuffer(
+    Object.entries(d).map(([name, inhalt]) => ({ name, daten: Buffer.isBuffer(inhalt) ? inhalt : Buffer.from(inhalt) })),
+    new Date('2026-01-01T12:00:00Z'),
+  );
 const MAPPENTYP = `- schluessel: vertrag
   name: Vertrag
   felder:
@@ -51,7 +56,8 @@ const AUTOS = (extra = '') => `- schluessel: kuendigen_bis
   dann:
     - { art: paket, aufgabe: taeglich }
 ${extra}`;
-const CODE = (ereignisse = '[mappe.geaendert, zeitplan.ausgefuehrt]') => `code:\n  sprache: c\n  quelle: code/\n  ereignisse: ${ereignisse}\n  mappentypen: [vertrag]\n  rechte:\n    lesen: [vertrag]\n    schreiben: [vertrag]\n`;
+const CODE = (ereignisse = '[mappe.geaendert, zeitplan.ausgefuehrt]') =>
+  `code:\n  sprache: c\n  quelle: code/\n  ereignisse: ${ereignisse}\n  mappentypen: [vertrag]\n  rechte:\n    lesen: [vertrag]\n    schreiben: [vertrag]\n`;
 const vertraege = (o: { autos?: string; code?: string; version?: string } = {}) => ({
   'manifest.yaml': `schema: 1\nid: vertraege\nname: Verträge\nversion: ${o.version ?? '1.0.0'}\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.231.0"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  automatisierungen: inhalt/automatisierungen.yaml\n${o.code ?? CODE()}`,
   'inhalt/mappentypen.yaml': MAPPENTYP,
@@ -60,12 +66,14 @@ const vertraege = (o: { autos?: string; code?: string; version?: string } = {}) 
 });
 /** Ein Paket mit Code, das keine Zeitpläne annimmt. */
 const OHNE_ZEITPLAN = {
-  'manifest.yaml': 'schema: 1\nid: rechnungen\nname: Rechnungen\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.231.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  ereignisse: [paket.einstellungen_geaendert]\n',
+  'manifest.yaml':
+    'schema: 1\nid: rechnungen\nname: Rechnungen\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.231.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  ereignisse: [paket.einstellungen_geaendert]\n',
   'code/modul.wasm': WASM,
 };
 /** Ein zweites Paket, das Zeitpläne annimmt (für selbst angelegte Automatisierungen). */
 const COMPLIANCE = {
-  'manifest.yaml': 'schema: 1\nid: compliance\nname: Compliance\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.231.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  ereignisse: [zeitplan.ausgefuehrt]\n',
+  'manifest.yaml':
+    'schema: 1\nid: compliance\nname: Compliance\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.231.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  ereignisse: [zeitplan.ausgefuehrt]\n',
   'code/modul.wasm': WASM,
 };
 
@@ -75,7 +83,12 @@ const am = (uhr: string, tag = '2026-11-10') => Date.parse(`${tag}T${uhr}:00+01:
 
 async function aufbau(uhr = am('04:00')) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
+  const konten = new Konten(
+    speicherKontoRepo(),
+    () => null,
+    () => 'http://localhost',
+    d.systemtypen.benutzerspiegel(),
+  );
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
@@ -83,9 +96,18 @@ async function aufbau(uhr = am('04:00')) {
   d.systemkonten = (k) => konten.systemkonto(k);
   const zeit = { jetzt: uhr };
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(() => zeit.jetzt), uhr: () => zeit.jetzt });
-  const p = new Paketverwaltung(d, { version: () => '0.231.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
+  const p = new Paketverwaltung(d, {
+    version: () => '0.231.0',
+    abruf: async (u) => {
+      throw new Error(`404 ${u}`);
+    },
+    katalogUrl: 'https://katalog.test/katalog.json',
+  });
   const hoch = async (dateien: Record<string, string | Buffer>) => p.hochladen(archiv(dateien), ICH);
-  const installiere = async (dateien: Record<string, string | Buffer>, mehr: { automatisierungen?: string[] } = {}) => { const h = await hoch(dateien); return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true, ...mehr }, ICH); };
+  const installiere = async (dateien: Record<string, string | Buffer>, mehr: { automatisierungen?: string[] } = {}) => {
+    const h = await hoch(dateien);
+    return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true, ...mehr }, ICH);
+  };
   const auto = async (name: string) => (await motor.uebersicht()).automatisierungen.find((a) => a.name === name)!;
   /** Ereignisse in der Zustellung des Paket-Läufers. */
   const zustellung = async () => d.kern.repo.faelligeEreignisse(100);
@@ -94,10 +116,19 @@ async function aufbau(uhr = am('04:00')) {
 
 describe('„Paket nach Zeitplan ausführen“ (#1082): Karte und Prüfung', () => {
   it('bereinigt, Kurzform, nur mit Zeitplan (nicht für jeden Benutzer), Paket entfernt ist kein Problem', () => {
-    const a = bereinigeAutomatisierung({ name: 'Täglich', wenn: { art: 'zeitplan', uhrzeit: '05:00', tage: [1, 2, 3, 4, 5, 6, 7] }, dann: [{ id: 'p1', art: 'paket', paket: 'vertraege', aufgabe: 'taeglich', fremd: 1 }] });
+    const a = bereinigeAutomatisierung({
+      name: 'Täglich',
+      wenn: { art: 'zeitplan', uhrzeit: '05:00', tage: [1, 2, 3, 4, 5, 6, 7] },
+      dann: [{ id: 'p1', art: 'paket', paket: 'vertraege', aufgabe: 'taeglich', fremd: 1 }],
+    });
     assert.deepEqual(a.dann, [{ id: 'p1', art: 'paket', paket: 'vertraege', aufgabe: 'taeglich' }]);
     assert.equal(bereinigeAutomatisierung({ dann: [{ art: 'paket', paket: '../x', aufgabe: 'Böse Aufgabe' }] }).dann[0].art, 'paket');
-    assert.deepEqual(bereinigeAutomatisierung({ dann: [{ id: 'p', art: 'paket', paket: '../x', aufgabe: 'Böse Aufgabe' }] }).dann[0], { id: 'p', art: 'paket', paket: '', aufgabe: null });
+    assert.deepEqual(bereinigeAutomatisierung({ dann: [{ id: 'p', art: 'paket', paket: '../x', aufgabe: 'Böse Aufgabe' }] }).dann[0], {
+      id: 'p',
+      art: 'paket',
+      paket: '',
+      aufgabe: null,
+    });
     const pakete = [{ id: 'vertraege', name: 'Verträge', zeitplan: true, aufgaben: ['taeglich'] }];
     const k = { typen: [], sichten: [], benutzer: [], rollen: [], pakete };
     assert.equal(kurzform(a, k), 'Wenn täglich um 05:00 → Paket „Verträge“ ausführen (taeglich)');
@@ -131,17 +162,40 @@ describe('„Paket nach Zeitplan ausführen“ (#1082): Karte und Prüfung', () 
 describe('Paketformat (#1082): Karte paket, Ereignis zeitplan.ausgefuehrt, eingeschaltet', () => {
   it('liest eingeschaltet und die Karte wie im Entwurf der Registry', () => {
     const p = liesPaket(liesZip(archiv(vertraege())));
-    assert.deepEqual(p.automatisierungen.map((a) => [a.schluessel, a.eingeschaltet]), [['kuendigen_bis', undefined], ['taeglich_pruefen', true]]);
-    assert.deepEqual(p.manifest.code && (p.manifest.code as { ereignisse: string[] }).ereignisse, ['mappe.geaendert', 'zeitplan.ausgefuehrt']);
+    assert.deepEqual(
+      p.automatisierungen.map((a) => [a.schluessel, a.eingeschaltet]),
+      [
+        ['kuendigen_bis', undefined],
+        ['taeglich_pruefen', true],
+      ],
+    );
+    assert.deepEqual(p.manifest.code && (p.manifest.code as { ereignisse: string[] }).ereignisse, [
+      'mappe.geaendert',
+      'zeitplan.ausgefuehrt',
+    ]);
   });
 
   it('nur das Paket selbst, nur mit Zeitplan, nur mit dem Ereignis, gültige Aufgabe, eingeschaltet als true/false', () => {
     const mit = (autos: string, code?: string) => () => liesPaket(liesZip(archiv(vertraege({ autos, code }))));
-    assert.throws(mit(AUTOS().replace('{ art: paket, aufgabe: taeglich }', '{ art: paket, paket: rechnungen, aufgabe: taeglich }')), gruende(/ruft nur das Paket selbst auf – „rechnungen“/));
+    assert.throws(
+      mit(AUTOS().replace('{ art: paket, aufgabe: taeglich }', '{ art: paket, paket: rechnungen, aufgabe: taeglich }')),
+      gruende(/ruft nur das Paket selbst auf – „rechnungen“/),
+    );
     assert.doesNotThrow(mit(AUTOS().replace('{ art: paket, aufgabe: taeglich }', '{ art: paket, paket: vertraege, aufgabe: taeglich }')));
     assert.throws(mit(AUTOS(), CODE('[mappe.geaendert]')), gruende(/braucht zeitplan.ausgefuehrt in code.ereignisse/));
-    assert.throws(mit(AUTOS().replace('{ art: zeitplan, uhrzeit: "05:00", tage: [1, 2, 3, 4, 5, 6, 7] }', '{ art: zeitplan, uhrzeit: "05:00", jeBenutzer: true }')), gruende(/braucht die Wenn-Karte „zeitplan“/));
-    assert.throws(mit(AUTOS().replace('{ art: zeitplan, uhrzeit: "05:00", tage: [1, 2, 3, 4, 5, 6, 7] }', '{ art: mappe.angelegt, typ: vertrag }')), gruende(/braucht die Wenn-Karte „zeitplan“/));
+    assert.throws(
+      mit(
+        AUTOS().replace(
+          '{ art: zeitplan, uhrzeit: "05:00", tage: [1, 2, 3, 4, 5, 6, 7] }',
+          '{ art: zeitplan, uhrzeit: "05:00", jeBenutzer: true }',
+        ),
+      ),
+      gruende(/braucht die Wenn-Karte „zeitplan“/),
+    );
+    assert.throws(
+      mit(AUTOS().replace('{ art: zeitplan, uhrzeit: "05:00", tage: [1, 2, 3, 4, 5, 6, 7] }', '{ art: mappe.angelegt, typ: vertrag }')),
+      gruende(/braucht die Wenn-Karte „zeitplan“/),
+    );
     assert.throws(mit(AUTOS().replace('aufgabe: taeglich', 'aufgabe: "Täglich!"')), gruende(/keine gültige Kennung/));
     assert.throws(mit(AUTOS().replace('eingeschaltet: true', 'eingeschaltet: ja bitte')), gruende(/eingeschaltet ist true oder false/));
   });
@@ -151,7 +205,13 @@ describe('Installieren (#1082): eingeschaltet, Abwählen, Update, Rechte-Vorscha
   it('Vorschau: Haken gesetzt, Zeitplan sichtbar, Rechte-Vorschau „Läuft nach Zeitplan …“', async () => {
     const x = await aufbau();
     const { vorschau: v } = await x.hoch(vertraege());
-    assert.deepEqual(v.automatisierungen.map((a) => [a.schluessel, a.eingeschaltet, a.zeitplan, a.neu]), [['kuendigen_bis', undefined, undefined, true], ['taeglich_pruefen', true, 'täglich um 05:00', true]]);
+    assert.deepEqual(
+      v.automatisierungen.map((a) => [a.schluessel, a.eingeschaltet, a.zeitplan, a.neu]),
+      [
+        ['kuendigen_bis', undefined, undefined, true],
+        ['taeglich_pruefen', true, 'täglich um 05:00', true],
+      ],
+    );
     // Nennt das Paket eingeschaltet, sind genau diese vorausgewählt; Pakete ohne die Angabe wie bisher alle.
     assert.deepEqual(vorausgewaehlt(v.automatisierungen), ['taeglich_pruefen']);
     assert.deepEqual(vorausgewaehlt([{ schluessel: 'a' }, { schluessel: 'b' }]), ['a', 'b']);
@@ -170,7 +230,10 @@ describe('Installieren (#1082): eingeschaltet, Abwählen, Update, Rechte-Vorscha
     const taeglich = await x.auto('Verträge täglich prüfen');
     assert.equal(taeglich.aktiv, true);
     assert.equal(taeglich.herkunft, 'paket');
-    assert.deepEqual(taeglich.dann.map((k) => k.art === 'paket' && [k.paket, k.aufgabe]), [['vertraege', 'taeglich']]);
+    assert.deepEqual(
+      taeglich.dann.map((k) => k.art === 'paket' && [k.paket, k.aufgabe]),
+      [['vertraege', 'taeglich']],
+    );
     assert.equal((await x.auto('Vertrag rechtzeitig kündigen')).aktiv, false);
   });
 
@@ -204,14 +267,23 @@ describe('Zustellung (#1082): zeitplan.ausgefuehrt an das Paket', () => {
     await x.installiere(COMPLIANCE);
     const a = await x.auto('Verträge täglich prüfen');
     await x.motor.zeitplan();
-    assert.deepEqual((await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt'), [], 'vor 05:00 nichts');
+    assert.deepEqual(
+      (await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt'),
+      [],
+      'vor 05:00 nichts',
+    );
     x.zeit.jetzt = am('05:01');
     await x.motor.zeitplan();
     await x.motor.zeitplan();
     const es = (await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt');
     assert.equal(es.length, 1, 'genau einmal');
     assert.equal(es[0].paketId, 'vertraege', 'nur an das Paket der Karte – nicht an Compliance');
-    assert.deepEqual(es[0].daten, { automatisierung: a.id, aufgabe: 'taeglich', zeitpunkt: '2026-11-10T04:00:00.000Z', datum: '2026-11-10' });
+    assert.deepEqual(es[0].daten, {
+      automatisierung: a.id,
+      aufgabe: 'taeglich',
+      zeitpunkt: '2026-11-10T04:00:00.000Z',
+      datum: '2026-11-10',
+    });
     const [l] = await x.motor.laeufe(a.id);
     assert.equal(l.zustand, 'abgeschlossen');
     assert.match(l.schritte.at(-1)!.text ?? '', /Paket „Verträge“ ausgeführt .*Aufgabe: taeglich/);
@@ -224,7 +296,10 @@ describe('Zustellung (#1082): zeitplan.ausgefuehrt an das Paket', () => {
     // Am nächsten Tag ein neues Ereignis.
     x.zeit.jetzt = am('05:01', '2026-11-11');
     await x.motor.zeitplan();
-    assert.deepEqual((await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt').map((e) => e.daten.datum), ['2026-11-10', '2026-11-11']);
+    assert.deepEqual(
+      (await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt').map((e) => e.daten.datum),
+      ['2026-11-10', '2026-11-11'],
+    );
   });
 
   it('Paket entfernt: läuft ins Leere – übersprungen, Hinweis „… ist nicht installiert“, kein Fehlschlag', async () => {
@@ -243,7 +318,10 @@ describe('Zustellung (#1082): zeitplan.ausgefuehrt an das Paket', () => {
     const u = await x.motor.uebersicht();
     assert.equal(u.fehlgeschlagen, 0, 'keine Fehlerflut');
     assert.equal((await x.auto('Verträge täglich prüfen')).angehalten, null, 'bleibt an, nicht angehalten');
-    assert.deepEqual((await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt'), []);
+    assert.deepEqual(
+      (await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt'),
+      [],
+    );
   });
 });
 
@@ -253,22 +331,36 @@ describe('Nur das eigene Paket (#1082, Sicherheit)', () => {
     await x.installiere(vertraege());
     await x.installiere(COMPLIANCE);
     const a = await x.auto('Verträge täglich prüfen');
-    const neu = await x.motor.aendere(a.id, { dann: [{ id: a.dann[0].id, art: 'paket', paket: 'compliance', aufgabe: 'taeglich' }], version: a.version }, x.markus.id);
-    assert.deepEqual(neu.dann.map((k) => k.art === 'paket' && k.paket), ['vertraege']);
+    const neu = await x.motor.aendere(
+      a.id,
+      { dann: [{ id: a.dann[0].id, art: 'paket', paket: 'compliance', aufgabe: 'taeglich' }], version: a.version },
+      x.markus.id,
+    );
+    assert.deepEqual(
+      neu.dann.map((k) => k.art === 'paket' && k.paket),
+      ['vertraege'],
+    );
   });
 
   it('selbst angelegt: nur Pakete, die zeitplan.ausgefuehrt abonnieren; nicht installiert abgelehnt', async () => {
     const x = await aufbau();
     await x.installiere(OHNE_ZEITPLAN);
     await x.installiere(COMPLIANCE);
-    const daten = (paket: string) => ({ name: `Lauf ${paket}`, wenn: { art: 'zeitplan', uhrzeit: '04:30' }, dann: [{ id: 'p1', art: 'paket', paket, aufgabe: 'monatlich' }] });
+    const daten = (paket: string) => ({
+      name: `Lauf ${paket}`,
+      wenn: { art: 'zeitplan', uhrzeit: '04:30' },
+      dann: [{ id: 'p1', art: 'paket', paket, aufgabe: 'monatlich' }],
+    });
     await assert.rejects(x.motor.lege(daten('rechnungen'), x.markus.id), fehler(422, /„Rechnungen“ nimmt keine Zeitpläne an/));
     await assert.rejects(x.motor.lege(daten('gibtsnicht'), x.markus.id), fehler(422, /„gibtsnicht“ ist nicht installiert/));
     const ok = await x.motor.lege(daten('compliance'), x.markus.id);
     assert.equal(ok.herkunft, 'eigen');
     // Kontext für den Editor: nur Compliance nimmt Zeitpläne an.
     const k = await x.motor.kontext();
-    assert.deepEqual(k.pakete?.map((p) => [p.id, p.zeitplan]).sort(), [['compliance', true], ['rechnungen', false]]);
+    assert.deepEqual(k.pakete?.map((p) => [p.id, p.zeitplan]).sort(), [
+      ['compliance', true],
+      ['rechnungen', false],
+    ]);
     // Später entfernt: Speichern geht weiter (die Karte nannte das Paket schon), sie läuft dann ins Leere.
     await x.p.entferne('compliance', ICH);
     const a = (await x.motor.uebersicht()).automatisierungen.find((y) => y.id === ok.id)!;
@@ -277,6 +369,9 @@ describe('Nur das eigene Paket (#1082, Sicherheit)', () => {
     x.zeit.jetzt = am('04:31');
     await x.motor.schalte(a.id, true, x.markus.id);
     await x.motor.zeitplan();
-    assert.deepEqual((await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt'), []);
+    assert.deepEqual(
+      (await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt'),
+      [],
+    );
   });
 });

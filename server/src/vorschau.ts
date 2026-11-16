@@ -73,21 +73,33 @@ export function ordnerAblage(wurzel: string): VorschauAblage {
   return {
     lies: (sha) => readFile(pfad(sha, 'jpg')).catch(() => null),
     schreibe: (sha, bild) => lege(pfad(sha, 'jpg'), bild),
-    istFehlgeschlagen: (sha) => stat(pfad(sha, 'fehler')).then(() => true, () => false),
-    fehlerSeit: (sha) => stat(pfad(sha, 'fehler')).then((x) => x.mtimeMs, () => null),
+    istFehlgeschlagen: (sha) =>
+      stat(pfad(sha, 'fehler')).then(
+        () => true,
+        () => false,
+      ),
+    fehlerSeit: (sha) =>
+      stat(pfad(sha, 'fehler')).then(
+        (x) => x.mtimeMs,
+        () => null,
+      ),
     merkeFehler: (sha) => lege(pfad(sha, 'fehler'), Buffer.alloc(0)),
     async loesche(sha) {
       await rm(pfad(sha, 'jpg'), { force: true });
       await rm(pfad(sha, 'fehler'), { force: true });
     },
     async belegung() {
-      let anzahl = 0; let bytes = 0;
+      let anzahl = 0;
+      let bytes = 0;
       const ordner = await readdir(wurzel).catch(() => [] as string[]);
       for (const o of ordner) {
         for (const n of await readdir(join(wurzel, o)).catch(() => [] as string[])) {
           if (!n.endsWith('.jpg')) continue;
           const s = await stat(join(wurzel, o, n)).catch(() => null);
-          if (s?.isFile()) { anzahl++; bytes += s.size; }
+          if (s?.isFile()) {
+            anzahl++;
+            bytes += s.size;
+          }
         }
       }
       return { anzahl, bytes };
@@ -102,11 +114,18 @@ export function speicherAblage(): VorschauAblage & { bilder: Map<string, Buffer>
   return {
     bilder,
     lies: async (sha) => bilder.get(sha) ?? null,
-    schreibe: async (sha, bild) => { bilder.set(pruefeSha(sha), bild); },
+    schreibe: async (sha, bild) => {
+      bilder.set(pruefeSha(sha), bild);
+    },
     istFehlgeschlagen: async (sha) => fehler.has(sha),
     fehlerSeit: async (sha) => fehler.get(sha) ?? null,
-    merkeFehler: async (sha) => { fehler.set(sha, Date.now()); },
-    loesche: async (sha) => { bilder.delete(sha); fehler.delete(sha); },
+    merkeFehler: async (sha) => {
+      fehler.set(sha, Date.now());
+    },
+    loesche: async (sha) => {
+      bilder.delete(sha);
+      fehler.delete(sha);
+    },
     belegung: async () => ({ anzahl: bilder.size, bytes: [...bilder.values()].reduce((s, b) => s + b.length, 0) }),
   };
 }
@@ -118,9 +137,25 @@ function starte(cmd: string, args: string[], ms: number): Promise<void> {
   return new Promise((ok, fehler) => {
     execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_MITTEL }, (e, _out, err) => {
       // Ersatzschrift fehlt (#1329): Das Bild entsteht, aber ohne den Text – in der Werkbank melden.
-      if (!e) { merkeSchriftfehler(err, 'vorschaubild'); ok(); return; }
+      if (!e) {
+        merkeSchriftfehler(err, 'vorschaubild');
+        ok();
+        return;
+      }
       const f = e as NodeJS.ErrnoException & { killed?: boolean };
-      fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange.` : String(err || f.message).trim().split('\n').slice(-2).join(' ')));
+      fehler(
+        new Error(
+          f.code === 'ENOENT'
+            ? `${cmd} ist nicht installiert.`
+            : f.killed
+              ? `${cmd} brauchte zu lange.`
+              : String(err || f.message)
+                  .trim()
+                  .split('\n')
+                  .slice(-2)
+                  .join(' '),
+        ),
+      );
     });
   });
 }
@@ -132,9 +167,15 @@ export const popplerErzeuger: Erzeuger = async (inhalt, mime) => {
   try {
     const pdf = join(dir, 'datei.pdf');
     await writeFile(pdf, mime === 'application/pdf' ? inhalt : await bildSeitePdf(inhalt, mime));
-    await starte('pdftoppm', ['-f', '1', '-l', '1', '-singlefile', '-scale-to', String(VORSCHAU_PX), '-jpeg', '-jpegopt', 'quality=80', pdf, join(dir, 'bild')], 60_000);
+    await starte(
+      'pdftoppm',
+      ['-f', '1', '-l', '1', '-singlefile', '-scale-to', String(VORSCHAU_PX), '-jpeg', '-jpegopt', 'quality=80', pdf, join(dir, 'bild')],
+      60_000,
+    );
     return await readFile(join(dir, 'bild.jpg'));
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 };
 
 const alsBuffer = async (x: Readable | Buffer): Promise<Buffer> => {
@@ -156,9 +197,18 @@ export interface ArchivQuelle {
   lies(sha: string): Promise<{ inhalt: Buffer } | null>;
 }
 /** Stand des Nachlaufs für den Bestand (#1216): offen, erstellt, ohne Bild (Fehler), seit wann, zuletzt geschrieben. */
-export interface NachlaufStand { offen: number; erledigt: number; ohne: number; seit: string; zeit: string }
+export interface NachlaufStand {
+  offen: number;
+  erledigt: number;
+  ohne: number;
+  seit: string;
+  zeit: string;
+}
 /** Wo der Stand liegt, damit jeder Prozess ihn zeigen kann (Kurzzustand in der Datenbank). */
-export interface NachlaufSpeicher { lies(): Promise<NachlaufStand | null>; schreibe(s: NachlaufStand): Promise<void> }
+export interface NachlaufSpeicher {
+  lies(): Promise<NachlaufStand | null>;
+  schreibe(s: NachlaufStand): Promise<void>;
+}
 
 /** Höchstens so viele Dokumente je Lauf des Nachlaufs in der Warteschlange (der nächste Lauf holt den Rest). */
 export const NACHLAUF_STAPEL = 400;
@@ -166,7 +216,10 @@ export const NACHLAUF_STAPEL = 400;
 export const NACHRANG_PAUSE_MS = 1000;
 /** Den Stand höchstens so oft in den Kurzzustand schreiben. */
 const STAND_ALLE_MS = 10_000;
-const schlafe = (ms: number) => new Promise<void>((ok) => { setTimeout(ok, ms); });
+const schlafe = (ms: number) =>
+  new Promise<void>((ok) => {
+    setTimeout(ok, ms);
+  });
 
 export class Vorschaubilder {
   private warteschlange = new Map<string, Auftrag>();
@@ -192,7 +245,11 @@ export class Vorschaubilder {
   private nl: NachlaufStand | null = null;
   private nlGeschrieben = 0;
 
-  constructor(private ablage: VorschauAblage, private dateien: Dateispeicher, private erzeuger: Erzeuger = popplerErzeuger) {}
+  constructor(
+    private ablage: VorschauAblage,
+    private dateien: Dateispeicher,
+    private erzeuger: Erzeuger = popplerErzeuger,
+  ) {}
 
   /** Vorschaubild eines Dokuments; null = (noch) keins. Fehlt es, wird es eingereiht. */
   async bild(d: Auftrag): Promise<Buffer | null> {
@@ -282,7 +339,9 @@ export class Vorschaubilder {
   }
 
   /** Wie viele warten gerade (ohne den Nachlauf). */
-  get wartend() { return this.warteschlange.size; }
+  get wartend() {
+    return this.warteschlange.size;
+  }
 
   /** Nachholen für vorhandene Dokumente (Werkbank → Wartungsoperationen): nur, was noch fehlt. */
   async nachholen(docs: Auftrag[]) {
@@ -294,7 +353,11 @@ export class Vorschaubilder {
       gesehen.add(d.sha256);
       // Andere Dateitypen (#577): nur mit Fassung eines Pakets oder mit Archivfassung (#1216).
       if (!hatVorschau(d.mime)) {
-        if (!(await this.ablage.lies(d.sha256)) && ((await this.fassung(d.sha256).catch(() => null)) || (await this.archivJuenger(d.sha256, null)))) ausQuelle.push(d);
+        if (
+          !(await this.ablage.lies(d.sha256)) &&
+          ((await this.fassung(d.sha256).catch(() => null)) || (await this.archivJuenger(d.sha256, null)))
+        )
+          ausQuelle.push(d);
         continue;
       }
       if (d.groesse > VORSCHAU_MAX_BYTES) continue;
@@ -315,14 +378,23 @@ export class Vorschaubilder {
    */
   async nachlaufArchiv(shas: Iterable<string>, dokumente: (sha: string) => Promise<Auftrag[]>): Promise<number> {
     if (!this.archiv) return 0;
-    if (this.nachrang.size) { await this.merkeNachlauf(true); return this.nl?.offen ?? this.nachrang.size; }
+    if (this.nachrang.size) {
+      await this.merkeNachlauf(true);
+      return this.nl?.offen ?? this.nachrang.size;
+    }
     const offen = await this.ohneBild(shas);
-    if (!offen.length) { await this.nachlaufFertig(); return 0; }
+    if (!offen.length) {
+      await this.nachlaufFertig();
+      return 0;
+    }
     const nl = this.neuerStand(offen.length);
     for (const sha of offen.slice(0, NACHLAUF_STAPEL)) {
       const d = (await dokumente(sha).catch(() => [] as Auftrag[]))[0];
       // Keine Datei mehr dazu (gerade gelöscht): nicht mitzählen.
-      if (!d) { nl.offen--; continue; }
+      if (!d) {
+        nl.offen--;
+        continue;
+      }
       this.nachrang.set(sha, { sha256: sha, mime: d.mime, groesse: d.groesse, name: d.name });
     }
     await this.merkeNachlauf(true);
@@ -368,7 +440,9 @@ export class Vorschaubilder {
     if (!this.nl || !this.nachlaufSpeicher) return;
     if (!sofort && Date.now() - this.nlGeschrieben < STAND_ALLE_MS) return;
     this.nlGeschrieben = Date.now();
-    await this.nachlaufSpeicher.schreibe({ ...this.nl, zeit: new Date().toISOString() }).catch((e: Error) => log.debug('Stand der Vorschaubilder nicht gemerkt', { fehler: e.message }));
+    await this.nachlaufSpeicher
+      .schreibe({ ...this.nl, zeit: new Date().toISOString() })
+      .catch((e: Error) => log.debug('Stand der Vorschaubilder nicht gemerkt', { fehler: e.message }));
   }
 
   /** Datei gelöscht (kein Dokument zeigt mehr darauf): Vorschaubild mit weg. */
@@ -379,19 +453,25 @@ export class Vorschaubilder {
     await this.ablage.loesche(sha).catch(() => {});
   }
 
-  belegung() { return this.ablage.belegung(); }
+  belegung() {
+    return this.ablage.belegung();
+  }
 
-  stop() { this.aus = true; }
+  stop() {
+    this.aus = true;
+  }
 
   anstossen() {
     if (this.laeuft || this.aus || this.pause()) return;
     this.laeuft = true;
-    void this.pumpe().catch((e) => log.error('Vorschaubilder gestört', { fehler: (e as Error).message })).finally(() => {
-      this.laeuft = false;
-      if (!this.warteschlange.size && !this.nachrang.size) for (const f of this.leer.splice(0)) f();
-      // Während der Pause kam etwas dazu (anstossen lief ins Leere): weiter.
-      else if (!this.aus && !this.pause()) this.anstossen();
-    });
+    void this.pumpe()
+      .catch((e) => log.error('Vorschaubilder gestört', { fehler: (e as Error).message }))
+      .finally(() => {
+        this.laeuft = false;
+        if (!this.warteschlange.size && !this.nachrang.size) for (const f of this.leer.splice(0)) f();
+        // Während der Pause kam etwas dazu (anstossen lief ins Leere): weiter.
+        else if (!this.aus && !this.pause()) this.anstossen();
+      });
   }
 
   /** Für Tests: bis alles erzeugt ist. */
@@ -427,7 +507,8 @@ export class Vorschaubilder {
         this.warteschlange.delete(sha);
         if (this.nachrang.delete(sha) && this.nl && !ersetzt) {
           this.nl.offen = Math.max(0, this.nl.offen - 1);
-          if (ergebnis === 'bild') this.nl.erledigt++; else this.nl.ohne++;
+          if (ergebnis === 'bild') this.nl.erledigt++;
+          else this.nl.ohne++;
           await this.merkeNachlauf(!this.nachrang.size);
         }
       }
@@ -441,14 +522,19 @@ export class Vorschaubilder {
    */
   private async erzeuge(sha: string, d: Auftrag): Promise<'bild' | 'ohne' | 'nichts'> {
     type Quelle = () => Promise<{ inhalt: Buffer; mime: string } | null>;
-    const fassung: Quelle = async () => { const f = await this.fassung(sha).catch(() => null); return f ? { inhalt: f.inhalt, mime: f.info.mime } : null; };
-    const datei: Quelle = async () => (d.groesse > VORSCHAU_MAX_BYTES ? null : { inhalt: await alsBuffer(await this.dateien.lies(sha)), mime: d.mime });
+    const fassung: Quelle = async () => {
+      const f = await this.fassung(sha).catch(() => null);
+      return f ? { inhalt: f.inhalt, mime: f.info.mime } : null;
+    };
+    const datei: Quelle = async () =>
+      d.groesse > VORSCHAU_MAX_BYTES ? null : { inhalt: await alsBuffer(await this.dateien.lies(sha)), mime: d.mime };
     const archiv: Quelle = async () => {
       if (!(await this.archivJuenger(sha, null))) return null;
       const a = await this.archiv!.lies(sha).catch(() => null);
       return a ? { inhalt: a.inhalt, mime: 'application/pdf' } : null;
     };
-    const quellen: Quelle[] = d.mime === 'application/pdf' ? [fassung, datei, archiv] : hatVorschau(d.mime) ? [datei, archiv] : [fassung, archiv];
+    const quellen: Quelle[] =
+      d.mime === 'application/pdf' ? [fassung, datei, archiv] : hatVorschau(d.mime) ? [datei, archiv] : [fassung, archiv];
     let versucht = false;
     let fehler: Error | null = null;
     for (const q of quellen) {
@@ -461,7 +547,9 @@ export class Vorschaubilder {
         await this.ablage.loesche(sha);
         await this.ablage.schreibe(sha, bild);
         return 'bild';
-      } catch (e) { fehler = e as Error; }
+      } catch (e) {
+        fehler = e as Error;
+      }
     }
     if (!versucht) return 'nichts';
     if (fehler) throw fehler;

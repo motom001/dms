@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
 import { useKonto } from './konto';
 import { t } from './sprache';
 import { Symbol } from './Symbol';
@@ -18,10 +28,18 @@ import { Knopf } from './bausteine';
  */
 /** `uebernehmen` (#934): Seite „Dokument übernehmen“ – eigene Breiten, die Mitte (das Dokument) ist breiter. */
 export type Ort = 'ablage' | 'werkbank' | 'uebernehmen';
-interface Stand { l: number; m: number; linksZu: boolean; rechtsZu: boolean }
+interface Stand {
+  l: number;
+  m: number;
+  linksZu: boolean;
+  rechtsZu: boolean;
+}
 
 const SCHMAL = 820;
-const MIN_L = 140, MAX_L = 420, MIN_M = 240, MIN_RECHTS = 320;
+const MIN_L = 140,
+  MAX_L = 420,
+  MIN_M = 240,
+  MIN_RECHTS = 320;
 /** Breite der Lasche einer eingeklappten Spalte (#536). */
 const LASCHE = 32;
 /** Längster Titel auf der Lasche; länger wird mit „…“ gekürzt. */
@@ -33,22 +51,42 @@ function standard(ort?: Ort): Stand {
   const mittel = typeof innerWidth === 'number' && innerWidth <= 1100;
   const l = mittel ? 180 : 220;
   // Dokument übernehmen (#934): Dokument und Mappe teilen sich den Rest etwa zur Hälfte.
-  if (ort === 'uebernehmen' && typeof innerWidth === 'number') return { l, m: Math.max(MIN_M, Math.round((innerWidth - l) * 0.5)), linksZu: false, rechtsZu: false };
+  if (ort === 'uebernehmen' && typeof innerWidth === 'number')
+    return { l, m: Math.max(MIN_M, Math.round((innerWidth - l) * 0.5)), linksZu: false, rechtsZu: false };
   return { l, m: mittel ? 280 : 340, linksZu: false, rechtsZu: false };
 }
 function lies(k: string, ort?: Ort): Stand {
-  try { const s = JSON.parse(localStorage.getItem(k) ?? 'null') as Partial<Stand> | null; if (s) return { ...standard(ort), ...s }; } catch { /* Speicher nicht verfügbar */ }
+  try {
+    const s = JSON.parse(localStorage.getItem(k) ?? 'null') as Partial<Stand> | null;
+    if (s) return { ...standard(ort), ...s };
+  } catch {
+    /* Speicher nicht verfügbar */
+  }
   return standard(ort);
 }
 
 /** Für das Profil: gemerkte Breiten dieses Benutzers auf diesem Gerät löschen. */
 export function bereicheZuruecksetzen(benutzer: string) {
-  for (const ort of ['ablage', 'werkbank', 'uebernehmen'] as Ort[]) { try { localStorage.removeItem(schluessel(ort, benutzer)); } catch { /* egal */ } }
+  for (const ort of ['ablage', 'werkbank', 'uebernehmen'] as Ort[]) {
+    try {
+      localStorage.removeItem(schluessel(ort, benutzer));
+    } catch {
+      /* egal */
+    }
+  }
   dispatchEvent(new Event(RESET));
 }
 
-export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, children }: {
-  ort: Ort; ebene: string;
+export function Dreiteilung({
+  ort,
+  ebene,
+  offen,
+  mitte = true,
+  rechts = true,
+  children,
+}: {
+  ort: Ort;
+  ebene: string;
   /** Was rechts geöffnet ist; wechselt es, wird ein eingeklappter rechter Bereich wieder gezeigt. */
   offen?: string;
   /** Ohne Mitte (#366): links die Bereiche, rechts die ganze Seite – ohne rechten Griff. */
@@ -66,7 +104,9 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
   const [breit, setBreit] = useState(() => innerWidth > SCHMAL);
   const rahmen = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setS(lies(k, ort)); }, [k]); // eslint-disable-line react-hooks/exhaustive-deps -- k enthält ort schon (schluessel(ort, …))
+  useEffect(() => {
+    setS(lies(k, ort));
+  }, [k]); // eslint-disable-line react-hooks/exhaustive-deps -- k enthält ort schon (schluessel(ort, …))
   useEffect(() => {
     const f = () => setS(lies(k, ort));
     addEventListener(RESET, f);
@@ -78,10 +118,17 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
     return () => removeEventListener('resize', f);
   }, []);
 
-  const merke = useCallback((n: Stand) => {
-    setS(n);
-    try { localStorage.setItem(k, JSON.stringify(n)); } catch { /* nur für diese Sitzung */ }
-  }, [k]);
+  const merke = useCallback(
+    (n: Stand) => {
+      setS(n);
+      try {
+        localStorage.setItem(k, JSON.stringify(n));
+      } catch {
+        /* nur für diese Sitzung */
+      }
+    },
+    [k],
+  );
 
   // Eine Mappe (oder ein Eintrag) wird geöffnet, während rechts eingeklappt ist: wieder einblenden.
   const vorher = useRef(offen);
@@ -103,7 +150,10 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
   const [titel, setTitel] = useState('');
   useEffect(() => {
     const spalte = rahmen.current?.querySelector('.spalte.mappe');
-    if (!rechtsZu || !offen || !spalte) { setTitel(''); return; }
+    if (!rechtsZu || !offen || !spalte) {
+      setTitel('');
+      return;
+    }
     const lies = () => setTitel((spalte.querySelector('h1')?.textContent ?? '').trim());
     lies();
     const beobachter = new MutationObserver(lies);
@@ -115,31 +165,59 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
   const gesamt = rahmen.current?.clientWidth ?? innerWidth;
   const l = s.linksZu ? LASCHE : Math.min(MAX_L, Math.max(MIN_L, s.l));
   const m = Math.max(MIN_M, Math.min(s.m, gesamt - l - MIN_RECHTS));
-  const spalten = !mitte || !rechts ? t('oberflaeche.bereiche.px-minmax-0-1fr', { l }) : rechtsZu ? t('oberflaeche.bereiche.px-minmax-0-1fr-2', { l, LASCHE }) : t('oberflaeche.bereiche.px-px-minmax-0', { l, m });
+  const spalten =
+    !mitte || !rechts
+      ? t('oberflaeche.bereiche.px-minmax-0-1fr', { l })
+      : rechtsZu
+        ? t('oberflaeche.bereiche.px-minmax-0-1fr-2', { l, LASCHE })
+        : t('oberflaeche.bereiche.px-px-minmax-0', { l, m });
   const style = breit ? ({ gridTemplateColumns: spalten } as CSSProperties) : undefined;
   const name = (seite: 'links' | 'rechts') => t.frei(`spalten.name.${ort}.${seite}`);
 
   return (
-    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`} data-ebene={ebene} style={style} onClickCapture={linkInMitte}>
+    <div
+      ref={rahmen}
+      className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`}
+      data-ebene={ebene}
+      style={style}
+      onClickCapture={linkInMitte}>
       {children[0]}
       {mitte && children[1]}
       {(rechts || !mitte) && children[2]}
-      {breit && <>
-        {s.linksZu
-          ? <Lasche seite="links" name={name('links')} oeffnen={() => merke({ ...s, linksZu: false })} />
-          : <Griff seite="links" x={l} wert={l} name={name('links')}
-            ziehe={(dx, start) => merke({ ...s, l: Math.min(MAX_L, Math.max(MIN_L, start + dx)) })}
-            start={() => l}
-            einklappen={() => merke({ ...s, linksZu: true })}
-            zuruecksetzen={() => merke({ ...s, linksZu: false, l: standard(ort).l })} />}
-        {mitte && rechts && (rechtsZu
-          ? <Lasche seite="rechts" name={name('rechts')} titel={titel} oeffnen={() => merke({ ...s, rechtsZu: false })} />
-          : <Griff seite="rechts" x={l + m} wert={m} name={name('rechts')}
-            ziehe={(dx, start) => merke({ ...s, m: Math.max(MIN_M, Math.min(start + dx, gesamt - l - MIN_RECHTS)) })}
-            start={() => m}
-            einklappen={() => merke({ ...s, rechtsZu: true })}
-            zuruecksetzen={() => merke({ ...s, rechtsZu: false, m: standard(ort).m })} />)}
-      </>}
+      {breit && (
+        <>
+          {s.linksZu ? (
+            <Lasche seite="links" name={name('links')} oeffnen={() => merke({ ...s, linksZu: false })} />
+          ) : (
+            <Griff
+              seite="links"
+              x={l}
+              wert={l}
+              name={name('links')}
+              ziehe={(dx, start) => merke({ ...s, l: Math.min(MAX_L, Math.max(MIN_L, start + dx)) })}
+              start={() => l}
+              einklappen={() => merke({ ...s, linksZu: true })}
+              zuruecksetzen={() => merke({ ...s, linksZu: false, l: standard(ort).l })}
+            />
+          )}
+          {mitte &&
+            rechts &&
+            (rechtsZu ? (
+              <Lasche seite="rechts" name={name('rechts')} titel={titel} oeffnen={() => merke({ ...s, rechtsZu: false })} />
+            ) : (
+              <Griff
+                seite="rechts"
+                x={l + m}
+                wert={m}
+                name={name('rechts')}
+                ziehe={(dx, start) => merke({ ...s, m: Math.max(MIN_M, Math.min(start + dx, gesamt - l - MIN_RECHTS)) })}
+                start={() => m}
+                einklappen={() => merke({ ...s, rechtsZu: true })}
+                zuruecksetzen={() => merke({ ...s, rechtsZu: false, m: standard(ort).m })}
+              />
+            ))}
+        </>
+      )}
     </div>
   );
 }
@@ -161,8 +239,14 @@ function Lasche({ seite, name, titel, oeffnen }: { seite: 'links' | 'rechts'; na
 }
 
 function Griff(p: {
-  seite: 'links' | 'rechts'; x: number; wert: number; name: string;
-  ziehe(dx: number, start: number): void; start(): number; einklappen(): void; zuruecksetzen(): void;
+  seite: 'links' | 'rechts';
+  x: number;
+  wert: number;
+  name: string;
+  ziehe(dx: number, start: number): void;
+  start(): number;
+  einklappen(): void;
+  zuruecksetzen(): void;
 }) {
   const zug = useRef<{ x: number; start: number; bewegt: boolean } | null>(null);
   const runter = (e: PointerEvent<HTMLButtonElement>) => {
@@ -186,16 +270,36 @@ function Griff(p: {
     if (z && !z.bewegt) p.einklappen();
   };
   const taste = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); p.ziehe(e.key === 'ArrowLeft' ? -20 : 20, p.start()); }
-    if (e.key === 'Home') { e.preventDefault(); p.zuruecksetzen(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      p.ziehe(e.key === 'ArrowLeft' ? -20 : 20, p.start());
+    }
+    if (e.key === 'Home') {
+      e.preventDefault();
+      p.zuruecksetzen();
+    }
   };
   // Der Pfeil zeigt, wohin die Spalte beim Einklappen verschwindet (#536): links nach links, rechts nach rechts.
   return (
     // Baustein Knopf (#1215) im Aussehen des Griffs (.textknopf.griff).
-    <Knopf art="link" className={`griff griff-${p.seite}`} style={{ left: p.x }}
-      role="separator" aria-orientation="vertical" aria-valuenow={Math.round(p.wert)} nurSymbol={t('spalten.griff.einklappen', { name: p.name })} title={t('spalten.griff.ziehen', { name: p.name })}
-      onPointerDown={runter} onPointerMove={bewegen} onPointerUp={hoch} onPointerCancel={hoch}
-      onDoubleClick={p.zuruecksetzen} onKeyDown={taste} onClick={(e) => { if (e.detail === 0) p.einklappen(); }}>
+    <Knopf
+      art="link"
+      className={`griff griff-${p.seite}`}
+      style={{ left: p.x }}
+      role="separator"
+      aria-orientation="vertical"
+      aria-valuenow={Math.round(p.wert)}
+      nurSymbol={t('spalten.griff.einklappen', { name: p.name })}
+      title={t('spalten.griff.ziehen', { name: p.name })}
+      onPointerDown={runter}
+      onPointerMove={bewegen}
+      onPointerUp={hoch}
+      onPointerCancel={hoch}
+      onDoubleClick={p.zuruecksetzen}
+      onKeyDown={taste}
+      onClick={(e) => {
+        if (e.detail === 0) p.einklappen();
+      }}>
       <Symbol name={p.seite === 'links' ? 'pfeil-links' : 'pfeil-rechts'} />
     </Knopf>
   );

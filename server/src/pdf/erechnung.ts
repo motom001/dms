@@ -13,7 +13,8 @@ import { ERECHNUNG_DATEINAME } from '../../../shared/src/erechnung';
 import { ERECHNUNG_XML_MAX } from '../grenzen';
 import { ladePdf } from './laden';
 
-const name = (o: PDFObject | undefined): string | null => (o instanceof PDFString || o instanceof PDFHexString ? o.decodeText() : o instanceof PDFName ? o.decodeText() : null);
+const name = (o: PDFObject | undefined): string | null =>
+  o instanceof PDFString || o instanceof PDFHexString ? o.decodeText() : o instanceof PDFName ? o.decodeText() : null;
 /** Höchstens so tief und so viele Einträge im Namensbaum. */
 const BAUM_TIEFE = 8;
 const BAUM_EINTRAEGE = 1000;
@@ -21,8 +22,16 @@ const BAUM_EINTRAEGE = 1000;
 /** XML der eingebetteten E-Rechnung als Text; null, wenn es keine gibt oder sie sich nicht sicher entpacken lässt. */
 export async function eingebetteteERechnung(inhalt: Uint8Array): Promise<string | null> {
   let doc;
-  try { doc = await ladePdf(inhalt, { updateMetadata: false, ignoreEncryption: true, throwOnInvalidObject: false }); } catch { return null; }
-  try { return suche(doc); } catch { return null; }
+  try {
+    doc = await ladePdf(inhalt, { updateMetadata: false, ignoreEncryption: true, throwOnInvalidObject: false });
+  } catch {
+    return null;
+  }
+  try {
+    return suche(doc);
+  } catch {
+    return null;
+  }
 }
 
 function suche(doc: Awaited<ReturnType<typeof ladePdf>>): string | null {
@@ -31,7 +40,11 @@ function suche(doc: Awaited<ReturnType<typeof ladePdf>>): string | null {
   const dateien: PDFDict[] = [];
   // Liste /AF (PDF/A-3) …
   const af = kat.lookup(PDFName.of('AF'));
-  if (af instanceof PDFArray) for (let i = 0; i < Math.min(af.size(), BAUM_EINTRAEGE); i++) { const x = af.lookup(i); if (x instanceof PDFDict) dateien.push(x); }
+  if (af instanceof PDFArray)
+    for (let i = 0; i < Math.min(af.size(), BAUM_EINTRAEGE); i++) {
+      const x = af.lookup(i);
+      if (x instanceof PDFDict) dateien.push(x);
+    }
   // … und der Namensbaum /Names /EmbeddedFiles.
   const namen = kat.lookup(PDFName.of('Names'));
   const baum = namen instanceof PDFDict ? namen.lookup(PDFName.of('EmbeddedFiles')) : undefined;
@@ -39,16 +52,21 @@ function suche(doc: Awaited<ReturnType<typeof ladePdf>>): string | null {
   const durch = (k: unknown, tiefe: number) => {
     if (!(k instanceof PDFDict) || tiefe > BAUM_TIEFE || gezaehlt > BAUM_EINTRAEGE) return;
     const n = k.lookup(PDFName.of('Names'));
-    if (n instanceof PDFArray) for (let i = 1; i < n.size() && gezaehlt <= BAUM_EINTRAEGE; i += 2, gezaehlt++) { const x = n.lookup(i); if (x instanceof PDFDict) dateien.push(x); }
+    if (n instanceof PDFArray)
+      for (let i = 1; i < n.size() && gezaehlt <= BAUM_EINTRAEGE; i += 2, gezaehlt++) {
+        const x = n.lookup(i);
+        if (x instanceof PDFDict) dateien.push(x);
+      }
     const kids = k.lookup(PDFName.of('Kids'));
-    if (kids instanceof PDFArray) for (let i = 0; i < kids.size() && gezaehlt <= BAUM_EINTRAEGE; i++, gezaehlt++) durch(kids.lookup(i), tiefe + 1);
+    if (kids instanceof PDFArray)
+      for (let i = 0; i < kids.size() && gezaehlt <= BAUM_EINTRAEGE; i++, gezaehlt++) durch(kids.lookup(i), tiefe + 1);
   };
   durch(baum, 0);
   for (const fs of dateien) {
     const n = name(fs.get(PDFName.of('UF'))) ?? name(fs.get(PDFName.of('F')));
     if (!n || !ERECHNUNG_DATEINAME.test(n.trim())) continue;
     const ef = fs.lookup(PDFName.of('EF'));
-    const strom = ef instanceof PDFDict ? ef.lookup(PDFName.of('UF')) ?? ef.lookup(PDFName.of('F')) : undefined;
+    const strom = ef instanceof PDFDict ? (ef.lookup(PDFName.of('UF')) ?? ef.lookup(PDFName.of('F'))) : undefined;
     if (!(strom instanceof PDFRawStream)) continue;
     const xml = entpackt(strom);
     if (xml != null) return xml;

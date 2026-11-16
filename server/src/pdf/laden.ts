@@ -50,13 +50,20 @@ export function pruefeObjektstroeme(daten: Uint8Array): void {
     const ende = buf.indexOf(ENDSTREAM, start);
     if (ende < 0) continue; // pdf-lib scheitert selbst
     const filter = /\/Filter\s*(\[[^\]]*\]|\/[A-Za-z0-9]+)/.exec(dict)?.[1]?.replace(/\s+/g, ' ').trim();
-    if (!filter) { pruefeAngaben(dict, ende - start, objektstrom); summe += ende - start; continue; }
+    if (!filter) {
+      pruefeAngaben(dict, ende - start, objektstrom);
+      summe += ende - start;
+      continue;
+    }
     if (filter !== '/FlateDecode' && filter !== '[/FlateDecode]' && filter !== '[ /FlateDecode ]') {
       throw new Fachfehler(422, t('meldungen.laden.das-pdf-ist-ungewoehnlich'));
     }
     let n: number;
     try {
-      n = inflateSync(buf.subarray(start, ende), { maxOutputLength: OBJEKTSTROM_MAX, finishFlush: 2 /* Z_SYNC_FLUSH: Rest am Ende erlauben */ }).length;
+      n = inflateSync(buf.subarray(start, ende), {
+        maxOutputLength: OBJEKTSTROM_MAX,
+        finishFlush: 2 /* Z_SYNC_FLUSH: Rest am Ende erlauben */,
+      }).length;
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code === 'ERR_BUFFER_TOO_LARGE' || e instanceof RangeError) {
         throw new Fachfehler(422, t('meldungen.laden.das-pdf-entpackt-sich'));

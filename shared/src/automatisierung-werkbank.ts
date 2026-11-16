@@ -48,7 +48,10 @@ export type WennBetrieb =
 export const istBetrieb = (w: { art: string }): w is WennBetrieb => istBetriebWenn(w.art);
 
 /** Passt eine Protokollmeldung zur Wenn-Karte „Protokollmeldung“ (#677)? Stufe ab, Modul gleich, Text enthalten (ohne Groß/klein). */
-export function protokollPasst(w: Extract<WennBetrieb, { art: 'protokoll.meldung' }>, m: { stufe?: unknown; modul?: unknown; text?: unknown }): boolean {
+export function protokollPasst(
+  w: Extract<WennBetrieb, { art: 'protokoll.meldung' }>,
+  m: { stufe?: unknown; modul?: unknown; text?: unknown },
+): boolean {
   if (w.stufe === 'error' && m.stufe !== 'error') return false;
   if (m.stufe !== 'warn' && m.stufe !== 'error') return false;
   if (w.modul && m.modul !== w.modul) return false;
@@ -61,7 +64,12 @@ export function bereinigeBetrieb(x: Record<string, unknown>): WennBetrieb | null
   if (x.art !== 'protokoll.meldung') return null;
   const modul = typeof x.modul === 'string' ? x.modul.trim() : '';
   const enthaelt = typeof x.enthaelt === 'string' ? x.enthaelt.trim().slice(0, PROTOKOLL_FILTER_MAX) : '';
-  return { art: 'protokoll.meldung', stufe: x.stufe === 'warn' ? 'warn' : 'error', modul: (MODULE as readonly string[]).includes(modul) ? modul : null, enthaelt: enthaelt || null };
+  return {
+    art: 'protokoll.meldung',
+    stufe: x.stufe === 'warn' ? 'warn' : 'error',
+    modul: (MODULE as readonly string[]).includes(modul) ? modul : null,
+    enthaelt: enthaelt || null,
+  };
 }
 
 /** Welche Werkbank-Bereiche eine Automatisierung berührt (#677): Wer sie einrichtet, muss sie selbst verwalten dürfen. */
@@ -75,7 +83,11 @@ export function werkbankBereiche(d: Pick<AutomatisierungDaten, 'wenn' | 'dann' |
 
 /** Der Werkbank-Bereich einer Wenn-Karte (#677) – null, wenn sie keine Werkbank-Karte ist. */
 export function wennBereich(w: Pick<AutomatisierungDaten['wenn'], 'art'>): string | null {
-  const wenn: Partial<Record<string, string>> = { 'fehler.gemeldet': SYSTEMKONTO_WERKBANK.fehlermeldung, 'protokoll.meldung': SYSTEMKONTO_WERKBANK.protokoll, 'version.neu': SYSTEMKONTO_WERKBANK.neueVersion };
+  const wenn: Partial<Record<string, string>> = {
+    'fehler.gemeldet': SYSTEMKONTO_WERKBANK.fehlermeldung,
+    'protokoll.meldung': SYSTEMKONTO_WERKBANK.protokoll,
+    'version.neu': SYSTEMKONTO_WERKBANK.neueVersion,
+  };
   return wenn[w.art] ?? null;
 }
 
@@ -85,9 +97,11 @@ export function wennBereich(w: Pick<AutomatisierungDaten['wenn'], 'art'>): strin
  */
 export function betriebProbleme(a: Pick<AutomatisierungDaten, 'und' | 'dann' | 'sonst'>): string[] {
   const p: string[] = [];
-  const ohneMerkmal = (u: AutomatisierungDaten['und']['karten'][number]): boolean => (u.art === 'gruppe' ? u.karten.some(ohneMerkmal) : !(u.art === 'bedingung' && u.bedingung.art === 'merkmal'));
+  const ohneMerkmal = (u: AutomatisierungDaten['und']['karten'][number]): boolean =>
+    u.art === 'gruppe' ? u.karten.some(ohneMerkmal) : !(u.art === 'bedingung' && u.bedingung.art === 'merkmal');
   if (a.und.karten.some(ohneMerkmal)) p.push(t('gemeinsam.automatisierung.betrieb-nur-merkmal'));
-  if ([...a.dann, ...a.sonst].some((d) => d.art === 'aufgabe' && d.empfaenger.some((e) => e.art !== 'person' && e.art !== 'rolle'))) p.push(t('gemeinsam.automatisierung.betrieb-empfaenger'));
+  if ([...a.dann, ...a.sonst].some((d) => d.art === 'aufgabe' && d.empfaenger.some((e) => e.art !== 'person' && e.art !== 'rolle')))
+    p.push(t('gemeinsam.automatisierung.betrieb-empfaenger'));
   return p;
 }
 
@@ -102,7 +116,8 @@ export const BETRIEB_PLATZHALTER: Record<BetriebWenn, readonly string[]> = {
 };
 export function betriebPlatzhalter(w: WennBetrieb): Array<{ key: string; label: string }> {
   return [
-    { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') }, { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') },
+    { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') },
+    { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') },
     ...BETRIEB_PLATZHALTER[w.art].map((key) => ({ key, label: t.frei(`gemeinsam.automatisierung.platzhalter.${key.replace(/_/g, '-')}`) })),
   ];
 }
@@ -123,8 +138,12 @@ export function betriebKurz(w: WennBetrieb, ereignisName: (art: string) => strin
 export function laufFuer(roh: Lauf, darf?: (bereich: string) => boolean): Lauf {
   if (!darf) return roh;
   const l = aufrufLaufFuer(roh, darf);
-  const weg = l.art === 'protokoll.meldung' && !darf(SYSTEMKONTO_WERKBANK.protokoll) ? ['text']
-    : l.art === 'fehler.gemeldet' && !darf(SYSTEMKONTO_WERKBANK.fehlermeldung) ? ['benutzer', 'text'] : [];
+  const weg =
+    l.art === 'protokoll.meldung' && !darf(SYSTEMKONTO_WERKBANK.protokoll)
+      ? ['text']
+      : l.art === 'fehler.gemeldet' && !darf(SYSTEMKONTO_WERKBANK.fehlermeldung)
+        ? ['benutzer', 'text']
+        : [];
   if (!weg.some((k) => k in l.daten)) return l;
   return { ...l, daten: Object.fromEntries(Object.entries(l.daten).filter(([k]) => !weg.includes(k))) };
 }

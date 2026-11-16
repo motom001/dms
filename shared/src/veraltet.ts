@@ -18,7 +18,12 @@ export function darfNeuLaden(zuletzt: number | null, jetzt: number): boolean {
 }
 
 /** Was vom Element eines Ladefehlers gebraucht wird (`<link>`, `<script>`). */
-export interface Ladeziel { tagName?: string; rel?: string; href?: string; src?: string }
+export interface Ladeziel {
+  tagName?: string;
+  rel?: string;
+  href?: string;
+  src?: string;
+}
 
 /**
  * Ein Ladefehler (Ereignis `error` am Element): Gehört er zu einer Datei der Oberfläche? Nur Stylesheets, Skripte und
@@ -38,7 +43,9 @@ export function istOberflaechenDatei(el: Ladeziel | null | undefined, ursprung: 
   try {
     const u = new URL(adresse, ursprung);
     return u.origin === new URL(ursprung).origin && u.pathname.startsWith('/assets/');
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /**

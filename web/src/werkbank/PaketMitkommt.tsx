@@ -1,7 +1,14 @@
 import type { ReactNode } from 'react';
 import { Knopf } from '../bausteine';
 import { ereignisSchluessel, istKatalogArt } from '../../../shared/src/ereignisse';
-import { automatisierungKlartext, kurzanleitungIn, legtNichtsAn, mitkommtKurz, type Mitkommt, type MitkommtEintrag } from '../../../shared/src/mitkommt';
+import {
+  automatisierungKlartext,
+  kurzanleitungIn,
+  legtNichtsAn,
+  mitkommtKurz,
+  type Mitkommt,
+  type MitkommtEintrag,
+} from '../../../shared/src/mitkommt';
 import { sprache } from '../../../shared/src/sprache';
 import type { AktionRecht } from '../../../shared/src/paketaktionen';
 import { Hilfe } from '../Hilfe';
@@ -17,19 +24,29 @@ import { rechteText } from './PaketAktionen';
 /** Name eines Ereignisses aus dem Katalog (#670); Pakete-eigene Arten bleiben, wie sie sind. */
 const ereignisName = (art: string) => (istKatalogArt(art) ? t.frei(`ereignisse.name.${ereignisSchluessel(art)}`) : art);
 
-const Neu = ({ e }: { e: { neu?: boolean } }) => (e.neu ? <> <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span></> : null);
+const Neu = ({ e }: { e: { neu?: boolean } }) =>
+  e.neu ? (
+    <>
+      {' '}
+      <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span>
+    </>
+  ) : null;
 
 /** Ein Abschnitt mit Überschrift, nur wenn er etwas enthält. */
 /** Rundgänge und Tipps (#831, #832), die das Paket mitbringt. */
 function EntdeckenTeile({ m }: { m: Mitkommt }) {
-  return <>
-    {!!m.rundgaenge?.length && (
-      <Teil titel={t('werkbank.pakete.mitkommt.rundgaenge')} text={t('werkbank.pakete.mitkommt.rundgaenge.text')}>
-        <Namen liste={m.rundgaenge} />
-      </Teil>
-    )}
-    {!!m.tipps && <Teil titel={t('werkbank.pakete.mitkommt.tipps')} text={t('werkbank.pakete.mitkommt.tipps.text', { anzahl: m.tipps })} />}
-  </>;
+  return (
+    <>
+      {!!m.rundgaenge?.length && (
+        <Teil titel={t('werkbank.pakete.mitkommt.rundgaenge')} text={t('werkbank.pakete.mitkommt.rundgaenge.text')}>
+          <Namen liste={m.rundgaenge} />
+        </Teil>
+      )}
+      {!!m.tipps && (
+        <Teil titel={t('werkbank.pakete.mitkommt.tipps')} text={t('werkbank.pakete.mitkommt.tipps.text', { anzahl: m.tipps })} />
+      )}
+    </>
+  );
 }
 
 function Teil({ titel, text, children }: { titel: string; text?: string; children?: ReactNode }) {
@@ -46,7 +63,14 @@ function Teil({ titel, text, children }: { titel: string; text?: string; childre
 function Namen({ liste, zusatz }: { liste: MitkommtEintrag[]; zusatz?(e: MitkommtEintrag): ReactNode }) {
   return (
     <ul className="klein">
-      {liste.map((e) => <li key={e.schluessel}><strong>{e.name}</strong>{zusatz?.(e)}<Neu e={e} />{e.beschreibung && <span className="leise mitkommt-zeile">{e.beschreibung}</span>}</li>)}
+      {liste.map((e) => (
+        <li key={e.schluessel}>
+          <strong>{e.name}</strong>
+          {zusatz?.(e)}
+          <Neu e={e} />
+          {e.beschreibung && <span className="leise mitkommt-zeile">{e.beschreibung}</span>}
+        </li>
+      ))}
     </ul>
   );
 }
@@ -66,21 +90,64 @@ export function MitkommtInhalt({ m, rechte }: { m: Mitkommt; rechte?: string[] }
   const vorgaben = m.vorgaben.reduce((n, v) => n + v.namen.length, 0);
   return (
     <div className="stapel mitkommt">
-      {legtNichtsAn(m) && !m.sprache && <p className="klein">{m.code ? t('werkbank.pakete.mitkommt.nichts-code') : t('werkbank.pakete.mitkommt.nichts')}</p>}
-      {m.mappentypen.length > 0 && <Teil titel={t('werkbank.pakete.mitkommt.mappentypen')}><Namen liste={m.mappentypen} zusatz={(e) => { const n = (e as Mitkommt['mappentypen'][number]).felder; return n > 0 ? <span className="leise"> · {t('werkbank.pakete.mitkommt.felder', { anzahl: n })}</span> : null; }} /></Teil>}
-      {m.sichten.length > 0 && <Teil titel={t('werkbank.pakete.mitkommt.sichten')}><Namen liste={m.sichten} /></Teil>}
+      {legtNichtsAn(m) && !m.sprache && (
+        <p className="klein">{m.code ? t('werkbank.pakete.mitkommt.nichts-code') : t('werkbank.pakete.mitkommt.nichts')}</p>
+      )}
+      {m.mappentypen.length > 0 && (
+        <Teil titel={t('werkbank.pakete.mitkommt.mappentypen')}>
+          <Namen
+            liste={m.mappentypen}
+            zusatz={(e) => {
+              const n = (e as Mitkommt['mappentypen'][number]).felder;
+              return n > 0 ? <span className="leise"> · {t('werkbank.pakete.mitkommt.felder', { anzahl: n })}</span> : null;
+            }}
+          />
+        </Teil>
+      )}
+      {m.sichten.length > 0 && (
+        <Teil titel={t('werkbank.pakete.mitkommt.sichten')}>
+          <Namen liste={m.sichten} />
+        </Teil>
+      )}
       {(vorgaben > 0 || m.vorlagen > 0) && (
         <Teil titel={t('werkbank.pakete.mitkommt.vorgaben')} text={t('werkbank.pakete.mitkommt.vorgaben.text')}>
           <ul className="klein">
-            {m.vorgaben.map((v) => <li key={v.typ}><strong>{v.typ}:</strong> {v.namen.map((n, i) => <span key={n}>{i > 0 && ' · '}{n}{v.neu?.includes(n) && <> <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span></>}</span>)}</li>)}
+            {m.vorgaben.map((v) => (
+              <li key={v.typ}>
+                <strong>{v.typ}:</strong>{' '}
+                {v.namen.map((n, i) => (
+                  <span key={n}>
+                    {i > 0 && ' · '}
+                    {n}
+                    {v.neu?.includes(n) && (
+                      <>
+                        {' '}
+                        <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span>
+                      </>
+                    )}
+                  </span>
+                ))}
+              </li>
+            ))}
             {m.vorlagen > 0 && <li>{t('werkbank.pakete.mitkommt.vorlagen', { anzahl: m.vorlagen })}</li>}
           </ul>
         </Teil>
       )}
-      {m.beispiele > 0 && <Teil titel={t('werkbank.pakete.mitkommt.beispiele')}><p className="klein">{t('werkbank.pakete.mitkommt.beispiele.text', { anzahl: m.beispiele })}{m.beispielDokumente > 0 && ` ${t('werkbank.pakete.mitkommt.beispiele.dokumente', { anzahl: m.beispielDokumente })}`}</p></Teil>}
+      {m.beispiele > 0 && (
+        <Teil titel={t('werkbank.pakete.mitkommt.beispiele')}>
+          <p className="klein">
+            {t('werkbank.pakete.mitkommt.beispiele.text', { anzahl: m.beispiele })}
+            {m.beispielDokumente > 0 && ` ${t('werkbank.pakete.mitkommt.beispiele.dokumente', { anzahl: m.beispielDokumente })}`}
+          </p>
+        </Teil>
+      )}
       {m.wortlisten.length > 0 && (
         <Teil titel={t('werkbank.pakete.mitkommt.wortlisten')} text={t('werkbank.pakete.mitkommt.wortlisten.text')}>
-          <ul className="klein">{m.wortlisten.map((g) => <li key={g.join('|')}>{g.join(' · ')}</li>)}</ul>
+          <ul className="klein">
+            {m.wortlisten.map((g) => (
+              <li key={g.join('|')}>{g.join(' · ')}</li>
+            ))}
+          </ul>
         </Teil>
       )}
       {m.automatisierungen.length > 0 && (
@@ -90,9 +157,16 @@ export function MitkommtInhalt({ m, rechte }: { m: Mitkommt; rechte?: string[] }
               const k = automatisierungKlartext(a, ereignisName);
               return (
                 <li key={a.schluessel}>
-                  <strong>{a.name}</strong><Neu e={a} />{a.beschreibung && <span className="leise mitkommt-zeile">{a.beschreibung}</span>}
-                  <span className="mitkommt-zeile"><span className="leise">{t('werkbank.pakete.mitkommt.wenn')}</span> {k.wenn} <span aria-hidden="true">→</span><span className="sr">{t('werkbank.pakete.mitkommt.dann-sr')}</span> {k.dann}</span>
-                  <span className="leise mitkommt-zeile">{k.ablauf} · {a.an ? t('werkbank.pakete.mitkommt.an') : t('werkbank.pakete.mitkommt.aus')}</span>
+                  <strong>{a.name}</strong>
+                  <Neu e={a} />
+                  {a.beschreibung && <span className="leise mitkommt-zeile">{a.beschreibung}</span>}
+                  <span className="mitkommt-zeile">
+                    <span className="leise">{t('werkbank.pakete.mitkommt.wenn')}</span> {k.wenn} <span aria-hidden="true">→</span>
+                    <span className="sr">{t('werkbank.pakete.mitkommt.dann-sr')}</span> {k.dann}
+                  </span>
+                  <span className="leise mitkommt-zeile">
+                    {k.ablauf} · {a.an ? t('werkbank.pakete.mitkommt.an') : t('werkbank.pakete.mitkommt.aus')}
+                  </span>
                 </li>
               );
             })}
@@ -101,23 +175,50 @@ export function MitkommtInhalt({ m, rechte }: { m: Mitkommt; rechte?: string[] }
       )}
       {m.ablaufvorlagen.length > 0 && (
         <Teil titel={t('werkbank.pakete.mitkommt.ablaufvorlagen')} text={t('werkbank.pakete.mitkommt.ablaufvorlagen.text')}>
-          <Namen liste={m.ablaufvorlagen} zusatz={(e) => <span className="leise">: {(e as Mitkommt['ablaufvorlagen'][number]).karten.join(', ')}</span>} />
+          <Namen
+            liste={m.ablaufvorlagen}
+            zusatz={(e) => <span className="leise">: {(e as Mitkommt['ablaufvorlagen'][number]).karten.join(', ')}</span>}
+          />
         </Teil>
       )}
       {m.aktionen.length > 0 && (
         <Teil titel={t('werkbank.pakete.mitkommt.aktionen')} text={t('werkbank.pakete.mitkommt.aktionen.text')}>
-          <Namen liste={m.aktionen} zusatz={(e) => <span className="leise"> · {t('werkbank.pakete.mitkommt.braucht', { rechte: rechteText((e as Mitkommt['aktionen'][number]).rechte as AktionRecht[]) })}</span>} />
+          <Namen
+            liste={m.aktionen}
+            zusatz={(e) => (
+              <span className="leise">
+                {' '}
+                ·{' '}
+                {t('werkbank.pakete.mitkommt.braucht', { rechte: rechteText((e as Mitkommt['aktionen'][number]).rechte as AktionRecht[]) })}
+              </span>
+            )}
+          />
         </Teil>
       )}
       <EntdeckenTeile m={m} />
       {m.einstellungen.length > 0 && (
         <Teil titel={t('werkbank.pakete.mitkommt.einstellungen')} text={t('werkbank.pakete.mitkommt.einstellungen.text')}>
-          <ul className="klein">{m.einstellungen.map((e) => <li key={e.titel}><strong>{e.titel}</strong>{e.liste && <span className="leise"> {t('werkbank.pakete.mitkommt.liste')}</span>}<Neu e={e} /><span className="leise mitkommt-zeile">{e.felder.map((f) => f.name).join(' · ')}</span></li>)}</ul>
+          <ul className="klein">
+            {m.einstellungen.map((e) => (
+              <li key={e.titel}>
+                <strong>{e.titel}</strong>
+                {e.liste && <span className="leise"> {t('werkbank.pakete.mitkommt.liste')}</span>}
+                <Neu e={e} />
+                <span className="leise mitkommt-zeile">{e.felder.map((f) => f.name).join(' · ')}</span>
+              </li>
+            ))}
+          </ul>
         </Teil>
       )}
       <Teil titel={t('werkbank.pakete.mitkommt.rechte')}>
         <p className="klein">{rechteKurz(m)}</p>
-        {!!rechte?.length && <ul className="klein">{rechte.map((r) => <li key={r}>{r}</li>)}</ul>}
+        {!!rechte?.length && (
+          <ul className="klein">
+            {rechte.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+        )}
       </Teil>
     </div>
   );
@@ -128,7 +229,9 @@ export function MitkommtAufklappen({ m, offen = false }: { m: Mitkommt | undefin
   if (!m) return null;
   return (
     <details className="mitkommt-auf" open={offen} data-anker="pakete.mitkommt">
-      <summary><strong>{t('werkbank.pakete.mitkommt.titel')}</strong> <span className="leise klein">{mitkommtKurz(m)}</span></summary>
+      <summary>
+        <strong>{t('werkbank.pakete.mitkommt.titel')}</strong> <span className="leise klein">{mitkommtKurz(m)}</span>
+      </summary>
       <MitkommtInhalt m={m} />
     </details>
   );
@@ -141,17 +244,32 @@ export function MitkommtAufklappen({ m, offen = false }: { m: Mitkommt | undefin
 export function Kurzanleitung({ k, neu, schliessen }: { k: Record<string, string[]> | undefined; neu?: boolean; schliessen?(): void }) {
   const schritte = kurzanleitungIn(k, sprache());
   if (!schritte.length) return null;
-  const liste = <ol className="stapel klein">{schritte.map((s) => <li key={s}>{s}</li>)}</ol>;
-  if (neu) return (
-    <section className="hinweis info stapel" aria-label={t('werkbank.pakete.anleitung.titel')} data-anker="pakete.kurzanleitung">
-      <p><strong>{t('werkbank.pakete.anleitung.titel')}</strong> <Hilfe ort="werkbank.pakete.kurzanleitung" /></p>
-      {liste}
-      {schliessen && <div className="knoepfe"><Knopf onClick={schliessen}>{t('werkbank.pakete.anleitung.schliessen')}</Knopf></div>}
-    </section>
+  const liste = (
+    <ol className="stapel klein">
+      {schritte.map((s) => (
+        <li key={s}>{s}</li>
+      ))}
+    </ol>
   );
+  if (neu)
+    return (
+      <section className="hinweis info stapel" aria-label={t('werkbank.pakete.anleitung.titel')} data-anker="pakete.kurzanleitung">
+        <p>
+          <strong>{t('werkbank.pakete.anleitung.titel')}</strong> <Hilfe ort="werkbank.pakete.kurzanleitung" />
+        </p>
+        {liste}
+        {schliessen && (
+          <div className="knoepfe">
+            <Knopf onClick={schliessen}>{t('werkbank.pakete.anleitung.schliessen')}</Knopf>
+          </div>
+        )}
+      </section>
+    );
   return (
     <details className="blatt mitkommt-auf" data-anker="pakete.kurzanleitung">
-      <summary><strong>{t('werkbank.pakete.anleitung.titel')}</strong></summary>
+      <summary>
+        <strong>{t('werkbank.pakete.anleitung.titel')}</strong>
+      </summary>
       {liste}
     </details>
   );

@@ -12,12 +12,23 @@ import type { ZugriffDienst } from '../zugriff';
 import { INHALT_EREIGNISSE, type InstalliertesPaket, istKiPaket, type KiUebersicht, MAPPEN_EREIGNISSE } from '../../../shared/src/pakete';
 
 export class KiTypen {
-  constructor(private readonly kern: Kern, private readonly rechte: ZugriffDienst) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechte: ZugriffDienst,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get einstellungen() { return this.kern.einstellungen; }
-  private paketVerwehrt(): Promise<Record<string, string[]>> { return this.kern.paketVerwehrt(); }
-  private typverweise(...a: Parameters<ZugriffDienst['typverweise']>) { return this.rechte.typverweise(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get einstellungen() {
+    return this.kern.einstellungen;
+  }
+  private paketVerwehrt(): Promise<Record<string, string[]>> {
+    return this.kern.paketVerwehrt();
+  }
+  private typverweise(...a: Parameters<ZugriffDienst['typverweise']>) {
+    return this.rechte.typverweise(...a);
+  }
 
   /**
    * Mappentypen, die für KI-Dienste zugelassen sind (Einstellung `ki_typen`, Teil der Sicherung). Was nicht darin steht –
@@ -25,7 +36,7 @@ export class KiTypen {
    * zugelassen. `hinweis`: nach dem Update einmal in der Werkbank sagen, dass man jetzt ausschließen kann.
    */
   async kiTypen(): Promise<{ zugelassen: Set<string>; hinweis: boolean }> {
-    const v = await this.einstellungen?.lies('ki_typen') as { zugelassen?: unknown; hinweis?: unknown } | null | undefined;
+    const v = (await this.einstellungen?.lies('ki_typen')) as { zugelassen?: unknown; hinweis?: unknown } | null | undefined;
     const liste = v && typeof v === 'object' && Array.isArray(v.zugelassen) ? v.zugelassen.map(String) : [];
     return { zugelassen: new Set(liste), hinweis: !!v && v.hinweis === true };
   }
@@ -56,7 +67,12 @@ export class KiTypen {
    * Paketen, die Ausschnitte vom Kern bekommen (Antworten, Erkennen, Übersetzen), alle zugelassenen.
    */
   async kiUebersicht(): Promise<KiUebersicht> {
-    const [typen, pakete, verwehrt, k] = [await this.repo.listeTypen(), await this.repo.listePakete(), await this.paketVerwehrt(), await this.kiTypen()];
+    const [typen, pakete, verwehrt, k] = [
+      await this.repo.listeTypen(),
+      await this.repo.listePakete(),
+      await this.paketVerwehrt(),
+      await this.kiTypen(),
+    ];
     const liste = typen.filter((x) => x.system !== 'benutzer').sort((a, b) => a.name.localeCompare(b.name, 'de'));
     const ki: KiUebersicht['pakete'] = [];
     for (const p of pakete) {
@@ -64,10 +80,14 @@ export class KiTypen {
       if (!l || !istKiPaket(l)) continue;
       const lesbar = await this.typverweise(p.id, pakete, typen);
       // Ausschnitte bzw. Text vom Kern (auch „Wohin gehört das?“, #939) oder Ereignisse zu Dokumenten und Post (#796): kommen aus allen zugelassenen Typen, auch ohne Leserecht.
-      const ueberKern = (l.rechte.schnittstellen ?? []).some((s) => s === 'dms:antworten' || s === 'dms:erkennen' || s === 'dms:klassifizieren' || s === 'dms:uebersetzen')
-        || l.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e) && !MAPPEN_EREIGNISSE.includes(e));
+      const ueberKern =
+        (l.rechte.schnittstellen ?? []).some(
+          (s) => s === 'dms:antworten' || s === 'dms:erkennen' || s === 'dms:klassifizieren' || s === 'dms:uebersetzen',
+        ) || l.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e) && !MAPPEN_EREIGNISSE.includes(e));
       const darf = lesbar(l.rechte.lesen);
-      const bekommt = liste.filter((x) => k.zugelassen.has(x.id) && (ueberKern || (darf.has(x.id) && !verwehrt[x.id]?.includes(p.id)))).map((x) => x.id);
+      const bekommt = liste
+        .filter((x) => k.zugelassen.has(x.id) && (ueberKern || (darf.has(x.id) && !verwehrt[x.id]?.includes(p.id))))
+        .map((x) => x.id);
       ki.push({ id: p.id, name: p.name, bekommt });
     }
     return {
@@ -83,9 +103,12 @@ export class KiTypen {
     if (!typ) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
     if (typ.system === 'benutzer') throw new Fachfehler(422, t('meldungen.dienst.ki-benutzer'));
     const k = await this.kiTypen();
-    if (zugelassen) k.zugelassen.add(typId); else k.zugelassen.delete(typId);
+    if (zugelassen) k.zugelassen.add(typId);
+    else k.zugelassen.delete(typId);
     await this.schreibeKiTypen(k);
-    protokoll.modul('werkbank').info(zugelassen ? 'Mappentyp für KI-Dienste zugelassen' : 'Mappentyp für KI-Dienste gesperrt', { typ: typ.name, von });
+    protokoll
+      .modul('werkbank')
+      .info(zugelassen ? 'Mappentyp für KI-Dienste zugelassen' : 'Mappentyp für KI-Dienste gesperrt', { typ: typ.name, von });
     return this.kiUebersicht();
   }
 

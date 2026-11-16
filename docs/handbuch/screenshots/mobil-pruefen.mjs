@@ -59,11 +59,19 @@ const GROESSEN = [
   { name: 'iPhone 17 Pro', breite: 402, hoehe: 874 },
 ];
 
-const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify(ADMIN) });
+const anm = await fetch(`${BASIS}/api/konto/anmelden`, {
+  method: 'POST',
+  headers: { 'x-dms': '1', 'content-type': 'application/json' },
+  body: JSON.stringify(ADMIN),
+});
 if (!anm.ok) throw new Error(`Anmelden: ${anm.status} ${await anm.text()}`);
 const [name, wert] = (anm.headers.get('set-cookie') ?? '').split(';')[0].split('=');
 // Werkbank und Mappentypen gehen seit #819 nur im Verwaltungsmodus; direkt nach der Anmeldung ohne erneute Abfrage.
-await fetch(`${BASIS}/api/konto/verwaltung`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json', cookie: `${name}=${wert}` }, body: '{}' });
+await fetch(`${BASIS}/api/konto/verwaltung`, {
+  method: 'POST',
+  headers: { 'x-dms': '1', 'content-type': 'application/json', cookie: `${name}=${wert}` },
+  body: '{}',
+});
 const holen = async (pfad) => (await fetch(BASIS + pfad, { headers: { 'x-dms': '1', cookie: `${name}=${wert}` } })).json();
 
 const browser = await BROWSER.launch();
@@ -87,7 +95,10 @@ const fehler = [];
         if (!r.width || !r.height) continue;
         const kasten = el.closest('.blatt, .karte, .eigenschaft, .feld')?.getBoundingClientRect();
         const grenze = Math.min(breite, kasten ? kasten.right : breite);
-        if (r.right > grenze + 1) raus.push(`${el.tagName.toLowerCase()}[type=${el.type || '-'}] ${el.getAttribute('aria-label') ?? el.closest('label')?.textContent?.trim().slice(0, 40) ?? ''}: rechts ${Math.round(r.right)} > ${Math.round(grenze)}`);
+        if (r.right > grenze + 1)
+          raus.push(
+            `${el.tagName.toLowerCase()}[type=${el.type || '-'}] ${el.getAttribute('aria-label') ?? el.closest('label')?.textContent?.trim().slice(0, 40) ?? ''}: rechts ${Math.round(r.right)} > ${Math.round(grenze)}`,
+          );
       }
       return raus;
     });
@@ -106,7 +117,8 @@ const mappen = await holen('/api/mappen');
 const typen = await holen('/api/typen');
 const zaehler = await holen('/api/sichten');
 const postTyp = typen.find((t) => t.system === 'post');
-const eineMappe = mappen.find((m) => m.titel === 'Stromvertrag Haus') ?? mappen.find((m) => typen.find((t) => t.id === m.typId && !t.system));
+const eineMappe =
+  mappen.find((m) => m.titel === 'Stromvertrag Haus') ?? mappen.find((m) => typen.find((t) => t.id === m.typId && !t.system));
 const einePost = mappen.find((m) => m.typId === postTyp?.id);
 const rechnung = typen.find((t) => t.name === 'Rechnung');
 const HANDY = [
@@ -143,7 +155,10 @@ function zuBreiteElemente() {
     if (st.visibility === 'hidden' || st.display === 'contents') continue;
     const r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) continue;
-    if ((r.right > bw + 1 || r.left < -1) && !eingefasst(el)) raus.push(`${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? `.${el.className.trim().split(/\s+/).join('.')}` : ''} [${Math.round(r.left)} … ${Math.round(r.right)}]`);
+    if ((r.right > bw + 1 || r.left < -1) && !eingefasst(el))
+      raus.push(
+        `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? `.${el.className.trim().split(/\s+/).join('.')}` : ''} [${Math.round(r.left)} … ${Math.round(r.right)}]`,
+      );
   }
   // Hauptbereiche: scrollWidth <= clientWidth
   for (const sel of ['html', '.kopf', '.rumpf', '.spalte.sichten', '.spalte.liste', '.spalte.mappe']) {
@@ -161,7 +176,10 @@ function zuBreiteElemente() {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     const px = parseFloat(getComputedStyle(el).fontSize);
-    if (px < 16) raus.push(`${el.tagName.toLowerCase()}[type=${el.type || '-'}] ${el.getAttribute('aria-label') ?? el.getAttribute('placeholder') ?? ''}: Schrift ${px} px < 16 px (iOS vergrößert beim Tippen)`);
+    if (px < 16)
+      raus.push(
+        `${el.tagName.toLowerCase()}[type=${el.type || '-'}] ${el.getAttribute('aria-label') ?? el.getAttribute('placeholder') ?? ''}: Schrift ${px} px < 16 px (iOS vergrößert beim Tippen)`,
+      );
   }
   return raus;
 }
@@ -169,24 +187,41 @@ function zuBreiteElemente() {
 /** Ein geöffnetes Menü muss vollständig im Bildschirm liegen. */
 async function pruefeMenue(s, ort, knopf, menue, bild) {
   const k = s.locator(knopf).first();
-  if (!(await k.count())) { fehler.push(`${ort}: Knopf ${knopf} fehlt`); return; }
+  if (!(await k.count())) {
+    fehler.push(`${ort}: Knopf ${knopf} fehlt`);
+    return;
+  }
   await k.click();
   await s.waitForTimeout(250);
   const m = s.locator(menue).first();
-  if (!(await m.isVisible())) { fehler.push(`${ort}: Menü ${menue} geht nicht auf`); return; }
+  if (!(await m.isVisible())) {
+    fehler.push(`${ort}: Menü ${menue} geht nicht auf`);
+    return;
+  }
   const r = await m.boundingBox();
   const vp = s.viewportSize();
-  if (r.x < -1 || r.y < -1 || r.x + r.width > vp.width + 1 || r.y + r.height > vp.height + 1) fehler.push(`${ort}: Menü ${menue} ragt aus dem Bildschirm [${Math.round(r.x)}, ${Math.round(r.y)}, ${Math.round(r.x + r.width)} × ${Math.round(r.y + r.height)}]`);
+  if (r.x < -1 || r.y < -1 || r.x + r.width > vp.width + 1 || r.y + r.height > vp.height + 1)
+    fehler.push(
+      `${ort}: Menü ${menue} ragt aus dem Bildschirm [${Math.round(r.x)}, ${Math.round(r.y)}, ${Math.round(r.x + r.width)} × ${Math.round(r.y + r.height)}]`,
+    );
   await s.screenshot({ path: bild });
   const schleier = s.locator('.hy-schleier');
-  if (await schleier.count() && await schleier.first().isVisible()) await schleier.first().click({ position: { x: 5, y: 5 } });
+  if ((await schleier.count()) && (await schleier.first().isVisible())) await schleier.first().click({ position: { x: 5, y: 5 } });
   else await s.keyboard.press('Escape');
   await s.waitForTimeout(150);
   if (await m.isVisible()) fehler.push(`${ort}: Menü ${menue} schließt nicht`);
 }
 
 for (const g of GROESSEN) {
-  const k = await browser.newContext({ viewport: { width: g.breite, height: g.hoehe }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'de-DE', timezoneId: 'Europe/Berlin', userAgent: devices['iPhone 13'].userAgent });
+  const k = await browser.newContext({
+    viewport: { width: g.breite, height: g.hoehe },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    locale: 'de-DE',
+    timezoneId: 'Europe/Berlin',
+    userAgent: devices['iPhone 13'].userAgent,
+  });
   await k.addCookies([{ name, value: wert, url: BASIS }]);
   const s = await k.newPage();
   const ordner = join(ZIEL, String(g.breite));
@@ -202,11 +237,16 @@ for (const g of GROESSEN) {
     if (seite.pfad.startsWith('/werkbank') && neuDa) raus.push('„+ Neu“ in der Werkbank');
     if (seite.pfad.startsWith('/ablage') && !neuDa) raus.push('„+ Neu“ fehlt in der Ablage');
     if (seite.kacheln) {
-      const spalten = await s.evaluate(() => new Set([...document.querySelectorAll('.start-raster .kachel')].map((k) => Math.round(k.getBoundingClientRect().left))).size);
+      const spalten = await s.evaluate(
+        () => new Set([...document.querySelectorAll('.start-raster .kachel')].map((k) => Math.round(k.getBoundingClientRect().left))).size,
+      );
       if (spalten > 1) raus.push(`Kacheln ${spalten}-spaltig statt einspaltig`);
     }
     await s.screenshot({ path: join(ordner, `${seite.name}.png`) });
-    if (raus.length) fehler.push(`${ort}:\n  ${raus.slice(0, 15).join('\n  ')}${raus.length > 15 ? `\n  … und ${raus.length - 15} weitere` : ''}\n  Bild: ${join(ordner, `${seite.name}.png`)}`);
+    if (raus.length)
+      fehler.push(
+        `${ort}:\n  ${raus.slice(0, 15).join('\n  ')}${raus.length > 15 ? `\n  … und ${raus.length - 15} weitere` : ''}\n  Bild: ${join(ordner, `${seite.name}.png`)}`,
+      );
     else console.log(`ok  ${ort}`);
     if (seite.name === 'start') {
       await s.evaluate(() => scrollTo(0, 0));
@@ -215,8 +255,17 @@ for (const g of GROESSEN) {
       // Ansicht wählen (#498): Blatt im Bildschirm, Tippziele mindestens 44 px hoch.
       await pruefeMenue(s, `${ort} „Ansicht ▾“`, '.aw-knopf', '.aw-blatt', join(ordner, 'menue-ansicht.png'));
       await s.locator('.aw-knopf').click();
-      const klein = await s.evaluate(() => [...document.querySelectorAll('.aw-blatt a, .aw-blatt button, .aw-blatt input')]
-        .filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 43.5; }).map((e) => `${(e.textContent || e.getAttribute('aria-label') || e.getAttribute('placeholder') || '').trim().slice(0, 30)} (${Math.round(e.getBoundingClientRect().height)} px)`));
+      const klein = await s.evaluate(() =>
+        [...document.querySelectorAll('.aw-blatt a, .aw-blatt button, .aw-blatt input')]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            return r.height > 0 && r.height < 43.5;
+          })
+          .map(
+            (e) =>
+              `${(e.textContent || e.getAttribute('aria-label') || e.getAttribute('placeholder') || '').trim().slice(0, 30)} (${Math.round(e.getBoundingClientRect().height)} px)`,
+          ),
+      );
       if (klein.length) fehler.push(`${ort} „Ansicht ▾“: Tippziele unter 44 px: ${klein.join(', ')}`);
       await s.keyboard.press('Escape');
       // Suchfeld oben (#1218): Lupe in der Kopfzeile (44 px), aufgeklappt über die ganze Breite; Enter führt in die
@@ -231,7 +280,11 @@ for (const g of GROESSEN) {
         const t0 = Date.now();
         await feld.fill('Strom');
         await feld.press('Enter');
-        await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().waitFor({ timeout: 5000 }).catch(() => fehler.push(`${ort}: keine Treffer für „Strom“`));
+        await s
+          .locator('.spalte.liste .eintrag, .spalte.liste tbody tr')
+          .first()
+          .waitFor({ timeout: 5000 })
+          .catch(() => fehler.push(`${ort}: keine Treffer für „Strom“`));
         if (Date.now() - t0 > 1500) fehler.push(`${ort}: Suche brauchte ${Date.now() - t0} ms`);
         const raus = await s.evaluate(zuBreiteElemente);
         await s.screenshot({ path: join(ordner, 'start-suche.png') });
@@ -254,9 +307,18 @@ for (const g of GROESSEN) {
       await s.waitForTimeout(300);
       const karten = await s.locator('.dokumentliste li').count();
       const probleme = await s.evaluate(() => [
-        ...[...document.querySelectorAll('.dokumentliste a, .dokumentliste button')].filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && (r.height < 43.5 || r.width < 43.5); })
-          .map((e) => `Tippziel ${(e.textContent || e.getAttribute('aria-label') || '').trim().slice(0, 25)} ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)} px`),
-        ...[...document.querySelectorAll('.dokansicht iframe')].filter((e) => e.getBoundingClientRect().height > 0).map(() => 'eingebetteter PDF-Rahmen sichtbar'),
+        ...[...document.querySelectorAll('.dokumentliste a, .dokumentliste button')]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            return r.height > 0 && (r.height < 43.5 || r.width < 43.5);
+          })
+          .map(
+            (e) =>
+              `Tippziel ${(e.textContent || e.getAttribute('aria-label') || '').trim().slice(0, 25)} ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)} px`,
+          ),
+        ...[...document.querySelectorAll('.dokansicht iframe')]
+          .filter((e) => e.getBoundingClientRect().height > 0)
+          .map(() => 'eingebetteter PDF-Rahmen sichtbar'),
       ]);
       await s.screenshot({ path: join(ordner, 'post-dokumente.png') });
       if (karten && probleme.length) fehler.push(`${ort} Dokumente:\n  ${probleme.slice(0, 10).join('\n  ')}`);
@@ -265,7 +327,10 @@ for (const g of GROESSEN) {
     if (seite.suchformular) {
       const form = s.getByRole('form', { name: 'Erweiterte Suche' });
       await form.getByLabel('Mappentyp suchen …').fill('Rechnung');
-      await form.getByRole('option', { name: 'Rechnung', exact: true }).click().catch(() => {});
+      await form
+        .getByRole('option', { name: 'Rechnung', exact: true })
+        .click()
+        .catch(() => {});
       const wahl = form.getByLabel('Feld für eine neue Bedingung');
       for (const feld of ['Rechnungsdatum', 'Bezahlt', 'Angelegt']) await wahl.selectOption({ label: feld }).catch(() => {});
       await s.waitForTimeout(300);
@@ -274,27 +339,56 @@ for (const g of GROESSEN) {
       if (raus.length) fehler.push(`${ort} Bedingungen:\n  ${raus.slice(0, 10).join('\n  ')}`);
     }
     if (seite.kalender) {
-      if ((await s.getByRole('radio', { name: 'Liste' }).getAttribute('aria-checked').catch(() => null)) !== 'true') fehler.push(`${ort}: Vorgabe ist nicht die Liste`);
+      if (
+        (await s
+          .getByRole('radio', { name: 'Liste' })
+          .getAttribute('aria-checked')
+          .catch(() => null)) !== 'true'
+      )
+        fehler.push(`${ort}: Vorgabe ist nicht die Liste`);
       if (await s.getByRole('radio', { name: 'Jahr' }).count()) fehler.push(`${ort}: Jahresansicht am Handy angeboten`);
       await s.getByRole('radio', { name: 'Monat' }).click();
-      await s.locator('.ka-kompakt .ka-raster[aria-busy="false"]').waitFor({ timeout: 5000 }).catch(() => fehler.push(`${ort}: Monat nicht kompakt`));
+      await s
+        .locator('.ka-kompakt .ka-raster[aria-busy="false"]')
+        .waitFor({ timeout: 5000 })
+        .catch(() => fehler.push(`${ort}: Monat nicht kompakt`));
       const titel = await s.locator('.ka-zeitraum').textContent();
-      const probleme = await s.evaluate(() => [...document.querySelectorAll('.ka a, .ka button')]
-        .filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 43.5; })
-        .map((e) => `Tippziel ${(e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 30)} ${Math.round(e.getBoundingClientRect().height)} px`));
+      const probleme = await s.evaluate(() =>
+        [...document.querySelectorAll('.ka a, .ka button')]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            return r.height > 0 && r.height < 43.5;
+          })
+          .map(
+            (e) =>
+              `Tippziel ${(e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 30)} ${Math.round(e.getBoundingClientRect().height)} px`,
+          ),
+      );
       const raus = await s.evaluate(zuBreiteElemente);
       await s.screenshot({ path: join(ordner, 'anstehend-monat.png') });
       // Wischen nach links: nächster Monat.
       const r = await s.locator('.ka-raster').boundingBox();
       const y = r.y + r.height / 2;
-      await s.locator('.ka-raster').dispatchEvent('touchstart', { touches: [{ identifier: 1, clientX: r.x + r.width - 20, clientY: y }], changedTouches: [{ identifier: 1, clientX: r.x + r.width - 20, clientY: y }] });
-      await s.locator('.ka-raster').dispatchEvent('touchend', { touches: [], changedTouches: [{ identifier: 1, clientX: r.x + 20, clientY: y + 5 }] });
+      await s.locator('.ka-raster').dispatchEvent('touchstart', {
+        touches: [{ identifier: 1, clientX: r.x + r.width - 20, clientY: y }],
+        changedTouches: [{ identifier: 1, clientX: r.x + r.width - 20, clientY: y }],
+      });
+      await s
+        .locator('.ka-raster')
+        .dispatchEvent('touchend', { touches: [], changedTouches: [{ identifier: 1, clientX: r.x + 20, clientY: y + 5 }] });
       await s.waitForTimeout(200);
       if ((await s.locator('.ka-zeitraum').textContent()) === titel) fehler.push(`${ort}: Wischen blättert nicht`);
       if (probleme.length || raus.length) fehler.push(`${ort} Monat:\n  ${[...probleme, ...raus].slice(0, 10).join('\n  ')}`);
       await s.getByRole('radio', { name: 'Liste' }).click();
     }
-    if (seite.mappenmenue) await pruefeMenue(s, `${ort} „Mappe ▾“`, '[data-anker="mappe.aktionen"]', '.menue-baustein [role="menu"]', join(ordner, 'menue-mappe.png'));
+    if (seite.mappenmenue)
+      await pruefeMenue(
+        s,
+        `${ort} „Mappe ▾“`,
+        '[data-anker="mappe.aktionen"]',
+        '.menue-baustein [role="menu"]',
+        join(ordner, 'menue-mappe.png'),
+      );
   }
   await k.close();
 }

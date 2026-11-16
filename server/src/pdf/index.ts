@@ -49,8 +49,15 @@ export type { SeitenWahl } from './seiten';
 export type { StempelAuftrag } from './stempel';
 export { hatQpdf, operatoren, type Analyse as VerkleinerAnalyse, type Ergebnis as VerkleinerErgebnis } from './verkleinern';
 export {
-  ANSICHT_PX, SCHWAERZEN_DPI, liesBbox, maleSchwarz, pnmKopf, textAus, verbleibende,
-  type Analyse as SchwaerzAnalyse, type Ergebnis as SchwaerzErgebnis,
+  ANSICHT_PX,
+  SCHWAERZEN_DPI,
+  liesBbox,
+  maleSchwarz,
+  pnmKopf,
+  textAus,
+  verbleibende,
+  type Analyse as SchwaerzAnalyse,
+  type Ergebnis as SchwaerzErgebnis,
 } from './schwaerzen';
 export { planer, type Anweisung, type Textdokument } from './schreiber';
 export type { MappenPdfDaten, PdfMappenSeite } from './export';

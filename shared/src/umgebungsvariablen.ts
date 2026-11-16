@@ -56,7 +56,9 @@ export function variablenHinweis(v: UeberfluessigeVariable[]): VariablenHinweis 
   return {
     titel: t('gemeinsam.umgebungsvariablen.nicht-mehr-noetig'),
     zeilen: v.map((x) => ({ name: x.name, grund: KURZ[x.art] })),
-    schluss: eine ? t('gemeinsam.umgebungsvariablen.entferne-die-variable-beim') : t('gemeinsam.umgebungsvariablen.entferne-diese-variablen-beim'),
+    schluss: eine
+      ? t('gemeinsam.umgebungsvariablen.entferne-die-variable-beim')
+      : t('gemeinsam.umgebungsvariablen.entferne-diese-variablen-beim'),
     ziel: nurDatenbank ? '/werkbank/anbindung' : '/werkbank/systemzustand#version',
     knopf: nurDatenbank ? t('gemeinsam.umgebungsvariablen.zur-anbindung') : t('gemeinsam.umgebungsvariablen.zur-technik'),
   };

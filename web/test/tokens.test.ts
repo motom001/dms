@@ -25,14 +25,23 @@ function farbe(w: string): number[] {
 /** Halbtransparente Farbe auf einen deckenden Grund legen. */
 const auf = (oben: number[], unten: number[]) => oben.slice(0, 3).map((v, i) => v * oben[3] + unten[i] * (1 - oben[3]));
 const lum = (c: number[]) => {
-  const [r, g, b] = c.map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; });
+  const [r, g, b] = c.map((v) => {
+    const x = v / 255;
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
-const kontrast = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const kontrast = (a: number[], b: number[]) => {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
 
 test('tokens.css: hell vollständig, dunkel nur mit bekannten Namen', () => {
   const nurDunkel = variablen(roh.replace(/\/\*[\s\S]*?\*\//g, '').split('@media (prefers-color-scheme: dark)')[1]);
-  assert.deepEqual(Object.keys(nurDunkel).filter((k) => !(k in hell)), []);
+  assert.deepEqual(
+    Object.keys(nurDunkel).filter((k) => !(k in hell)),
+    [],
+  );
   assert.ok(Object.keys(nurDunkel).length >= 20, 'Dunkelblock gefunden');
 });
 
@@ -42,25 +51,47 @@ test('jede benutzte Farb-Variable ist ein Token, kommt aus dem Design oder ist l
   // Lokal gesetzt: Skala und Tiefe, Feldfarbe beim Übernehmen, Messpanel; Rückfall auf etwas anderes.
   const lokal = /^(skala|tiefe|ue-f|m-[\w-]+|text|auswahl)$/;
   // Gestaltung seit #1234 in web/src/stile/ (Teile in fester Reihenfolge).
-  const stile = readdirSync(join(WEB, 'stile')).filter((d) => d.endsWith('.css')).map((d) => join('stile', d));
+  const stile = readdirSync(join(WEB, 'stile'))
+    .filter((d) => d.endsWith('.css'))
+    .map((d) => join('stile', d));
   const css = ['basis.css', ...stile].map((d) => readFileSync(join(WEB, d), 'utf8')).join('\n');
-  const fehlend = [...new Set([...css.matchAll(/var\(--([\w-]+)/g)].map((m) => m[1]))]
-    .filter((n) => !(n in hell) && !ausDesign.has(n) && !lokal.test(n));
+  const fehlend = [...new Set([...css.matchAll(/var\(--([\w-]+)/g)].map((m) => m[1]))].filter(
+    (n) => !(n in hell) && !ausDesign.has(n) && !lokal.test(n),
+  );
   assert.deepEqual(fehlend, []);
 });
 
 test('Schrift auf Flächen: mindestens 4,5:1, hell und dunkel', () => {
   const paare: [string, string][] = [
-    ['tinte', 'flaeche'], ['tinte', 'grund'], ['leise', 'flaeche'], ['leise', 'grund'], ['akzent', 'flaeche'],
-    ['akzent-tinte', 'akzent'], ['schlecht', 'flaeche'], ['schlecht-tinte', 'schlecht'], ['warn', 'flaeche'],
-    ['warn-tinte', 'warn'], ['warn', 'warn-tinte'], ['verwaltung-tinte', 'verwaltung'], ['verwaltung', 'verwaltung-tinte'],
-    ['gruen', 'flaeche'], ['bildmarke-tinte', 'bildmarke'],
+    ['tinte', 'flaeche'],
+    ['tinte', 'grund'],
+    ['leise', 'flaeche'],
+    ['leise', 'grund'],
+    ['akzent', 'flaeche'],
+    ['akzent-tinte', 'akzent'],
+    ['schlecht', 'flaeche'],
+    ['schlecht-tinte', 'schlecht'],
+    ['warn', 'flaeche'],
+    ['warn-tinte', 'warn'],
+    ['warn', 'warn-tinte'],
+    ['verwaltung-tinte', 'verwaltung'],
+    ['verwaltung', 'verwaltung-tinte'],
+    ['gruen', 'flaeche'],
+    ['bildmarke-tinte', 'bildmarke'],
     // Status-Flächen mit ihrer Schrift (#1210): Chip „gut“, Ergebnis am Knopf, Hinweise; leise Schrift darauf.
-    ['gruen', 'gruen-zart'], ['warn', 'warn-zart'], ['schlecht', 'schlecht-zart'], ['leise', 'warn-zart'], ['leise', 'senke'], ['schlecht', 'senke'],
+    ['gruen', 'gruen-zart'],
+    ['warn', 'warn-zart'],
+    ['schlecht', 'schlecht-zart'],
+    ['leise', 'warn-zart'],
+    ['leise', 'senke'],
+    ['schlecht', 'senke'],
     // Nummern auf den Markierungen beim Übernehmen (#1017).
     ...[1, 2, 3, 4, 5, 6].map((i): [string, string] => ['markierung-tinte', `markierung-${i}`]),
   ];
-  for (const [name, p] of [['hell', hell], ['dunkel', dunkel]] as const) {
+  for (const [name, p] of [
+    ['hell', hell],
+    ['dunkel', dunkel],
+  ] as const) {
     for (const [schrift, flaeche] of paare) {
       // Halbtransparente Flächen (Bildmarke) liegen im ungünstigsten Fall auf weißem Papier.
       const grund = auf(farbe(p[flaeche]), farbe(p.papier));
@@ -86,7 +117,10 @@ test('Rand der Eingaben: mindestens 3:1 gegen Fläche und Senke, hell, dunkel un
       assert.ok(k >= 3, `${name}: --rand-eingabe auf --${flaeche} nur ${k.toFixed(2)}:1`);
     }
     // Hover (--leise, Feld.module.css) bleibt sichtbar stärker als der Ruhezustand.
-    assert.ok(kontrast(farbe(p.leise), farbe(p.flaeche)) > kontrast(farbe(p['rand-eingabe']), farbe(p.flaeche)) * 1.5, `${name}: Hover nicht deutlich stärker als der Rand`);
+    assert.ok(
+      kontrast(farbe(p.leise), farbe(p.flaeche)) > kontrast(farbe(p['rand-eingabe']), farbe(p.flaeche)) * 1.5,
+      `${name}: Hover nicht deutlich stärker als der Rand`,
+    );
   }
   // Trennlinien und Kartenränder bleiben, wie sie sind – es geht nur um Eingaben.
   assert.equal(hell['linie-stark'], '#C3CAD4');

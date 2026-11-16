@@ -45,7 +45,9 @@ export const JE_MAPPE_STUFEN = [1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100, 1
 /** Nächstgelegene Stufe (Index) zu einer Zahl. */
 export function stufeVon(n: number): number {
   let best = 0;
-  JE_MAPPE_STUFEN.forEach((s, i) => { if (Math.abs(s - n) < Math.abs(JE_MAPPE_STUFEN[best] - n)) best = i; });
+  JE_MAPPE_STUFEN.forEach((s, i) => {
+    if (Math.abs(s - n) < Math.abs(JE_MAPPE_STUFEN[best] - n)) best = i;
+  });
   return best;
 }
 
@@ -56,7 +58,10 @@ function aufteilen(gewichte: number[], summe: number): number[] {
   const roh = gewichte.map((g) => (summe * g) / ges);
   const teil = roh.map(Math.floor);
   let rest = summe - teil.reduce((a, b) => a + b, 0);
-  for (const i of roh.map((_, i) => i).sort((i, j) => (roh[j] - teil[j]) - (roh[i] - teil[i]) || i - j)) { if (rest-- <= 0) break; teil[i]++; }
+  for (const i of roh.map((_, i) => i).sort((i, j) => roh[j] - teil[j] - (roh[i] - teil[i]) || i - j)) {
+    if (rest-- <= 0) break;
+    teil[i]++;
+  }
   return teil;
 }
 
@@ -98,7 +103,13 @@ export interface DokumentOptionen {
   duplikate: number;
 }
 
-export interface Abschaetzung { dokumente: number; bytes: number; ocrSeiten: number; seiten: number; jeArt: Mischung }
+export interface Abschaetzung {
+  dokumente: number;
+  bytes: number;
+  ocrSeiten: number;
+  seiten: number;
+  jeArt: Mischung;
+}
 
 /** Erwartungswerte für eine Anzahl Mappen mit Dokumentenregister. */
 export function schaetze(mappenMitRegister: number, o: DokumentOptionen): Abschaetzung {
@@ -106,7 +117,9 @@ export function schaetze(mappenMitRegister: number, o: DokumentOptionen): Abscha
   const summe = DOKUMENTARTEN.reduce((a, k) => a + o.mischung[k], 0) || 1;
   const jeArt = Object.fromEntries(DOKUMENTARTEN.map((k) => [k, Math.round((dokumente * o.mischung[k]) / summe)])) as Mischung;
   const neu = 1 - o.duplikate / 100;
-  let bytes = 0, ocrSeiten = 0, seiten = 0;
+  let bytes = 0,
+    ocrSeiten = 0,
+    seiten = 0;
   for (const k of DOKUMENTARTEN) {
     bytes += jeArt[k] * ERWARTUNG[k].bytes * neu;
     ocrSeiten += jeArt[k] * ERWARTUNG[k].ocrSeiten;
@@ -126,12 +139,24 @@ export function verteilung(typen: Mappentyp[], n: number): Map<string, number> {
 }
 
 /** Ein Mappentyp, von dem sich (noch) keine Demo-Mappen erzeugen lassen (#711): wie viele bestellt, warum. */
-export interface NichtErzeugbar { typ: string; anzahl: number; grund: string }
+export interface NichtErzeugbar {
+  typ: string;
+  anzahl: number;
+  grund: string;
+}
 
 /** Grund, wenn sich für ein Pflichtfeld kein Wert erzeugen lässt – dieselben Worte vor dem Start und im Ergebnis. */
 export function pflichtGrund(label: string, art: 'verweis' | 'passwort' | 'eindeutig' | 'sonst', ziel?: string): string {
-  const zusatz = art === 'verweis' ? (ziel ? ` (es gibt noch keine Mappen „${ziel}“, und sie entstehen auch nicht im selben Lauf)` : ' (es gibt noch keine Mappen des Zieltyps)')
-    : art === 'passwort' ? ' (Passwörter gibt es in Demo-Daten nie)' : art === 'eindeutig' ? ' (der Wert muss eindeutig sein, und die möglichen Werte sind vergeben)' : '';
+  const zusatz =
+    art === 'verweis'
+      ? ziel
+        ? ` (es gibt noch keine Mappen „${ziel}“, und sie entstehen auch nicht im selben Lauf)`
+        : ' (es gibt noch keine Mappen des Zieltyps)'
+      : art === 'passwort'
+        ? ' (Passwörter gibt es in Demo-Daten nie)'
+        : art === 'eindeutig'
+          ? ' (der Wert muss eindeutig sein, und die möglichen Werte sind vergeben)'
+          : '';
   return `Für das Pflichtfeld „${label}“ lässt sich kein passender Wert erzeugen${zusatz}.`;
 }
 
@@ -156,16 +181,25 @@ export function nichtErzeugbar(typen: Mappentyp[], ziel: Map<string, number>, vo
           // Mehrere Zieltypen (#1036): Es reicht einer, der Mappen hat oder im selben Lauf bekommt.
           const ziele = zieleVon(f);
           const kommt = (z: string) => z !== t.id && eigene.some((x) => x.id === z) && !gesperrt.has(z);
-          if (!ziele.some((z) => vorhanden(z) || kommt(z))) grund = pflichtGrund(f.label, 'verweis', ziele.length === 1 ? name(ziele[0]) : undefined);
+          if (!ziele.some((z) => vorhanden(z) || kommt(z)))
+            grund = pflichtGrund(f.label, 'verweis', ziele.length === 1 ? name(ziele[0]) : undefined);
         }
-        if (grund) { gesperrt.set(t.id, grund); neu = true; break; }
+        if (grund) {
+          gesperrt.set(t.id, grund);
+          neu = true;
+          break;
+        }
       }
     }
   }
   return eigene.filter((t) => gesperrt.has(t.id)).map((t) => ({ typ: t.name, anzahl: ziel.get(t.id) ?? 0, grund: gesperrt.get(t.id)! }));
 }
 
-export interface Menge { mappen: number; mappenMitRegister: number; dokumente: Abschaetzung | null }
+export interface Menge {
+  mappen: number;
+  mappenMitRegister: number;
+  dokumente: Abschaetzung | null;
+}
 
 /** Abschätzung ohne Speicherplatz: aus den Mappentypen (ohne Systemtypen) und den Optionen. */
 export function schaetzeMenge(typen: Mappentyp[], o: { anzahl: number; dokumente?: DokumentOptionen | null }): Menge {
@@ -180,7 +214,9 @@ export function schaetzeMenge(typen: Mappentyp[], o: { anzahl: number; dokumente
 export function mengenWarnung(m: Menge): string | null {
   const d = m.dokumente;
   if (!d) return null;
-  if (d.dokumente > MAX_DEMO_DOKUMENTE) return `Mehr als ${MAX_DEMO_DOKUMENTE.toLocaleString('de-DE')} Dokumente je Lauf sind nicht möglich – weniger Mappen, einen kleineren Anteil oder weniger Dokumente je Mappe wählen.`;
-  if (d.dokumente >= VIELE_DOKUMENTE || d.bytes >= VIELE_BYTES) return 'Das sind sehr viele Daten – das Erzeugen dauert auf einem NAS Stunden, die Texterkennung danach eher Tage. Sicherungen werden entsprechend größer.';
+  if (d.dokumente > MAX_DEMO_DOKUMENTE)
+    return `Mehr als ${MAX_DEMO_DOKUMENTE.toLocaleString('de-DE')} Dokumente je Lauf sind nicht möglich – weniger Mappen, einen kleineren Anteil oder weniger Dokumente je Mappe wählen.`;
+  if (d.dokumente >= VIELE_DOKUMENTE || d.bytes >= VIELE_BYTES)
+    return 'Das sind sehr viele Daten – das Erzeugen dauert auf einem NAS Stunden, die Texterkennung danach eher Tage. Sicherungen werden entsprechend größer.';
   return null;
 }

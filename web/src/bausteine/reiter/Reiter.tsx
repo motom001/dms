@@ -47,7 +47,10 @@ export const flaecheId = (id: string) => `${id}-flaeche`;
 
 export function Reiter<T extends string>({ id, wert, setze, wahlen, beschriftung, className }: ReiterProps<T>) {
   const knoepfe = useRef<Array<HTMLButtonElement | null>>([]);
-  const jetzt = Math.max(0, wahlen.findIndex((w) => w.wert === wert));
+  const jetzt = Math.max(
+    0,
+    wahlen.findIndex((w) => w.wert === wert),
+  );
 
   const taste = (e: KeyboardEvent<HTMLDivElement>) => {
     const ziel = zielDerTaste(e.key, jetzt, wahlen.length);
@@ -62,11 +65,29 @@ export function Reiter<T extends string>({ id, wert, setze, wahlen, beschriftung
       {wahlen.map((w, i) => {
         const an = w.wert === wert;
         return (
-          <button key={w.wert} ref={(el) => { knoepfe.current[i] = el; }} id={reiterId(id, w.wert)} type="button" role="tab"
-            aria-selected={an} aria-controls={flaecheId(id)} tabIndex={an ? 0 : -1} data-anker={w.anker}
-            className={klassen(s.reiter, an && s.an)} onClick={() => { if (!an) setze(w.wert); }}>
+          <button
+            key={w.wert}
+            ref={(el) => {
+              knoepfe.current[i] = el;
+            }}
+            id={reiterId(id, w.wert)}
+            type="button"
+            role="tab"
+            aria-selected={an}
+            aria-controls={flaecheId(id)}
+            tabIndex={an ? 0 : -1}
+            data-anker={w.anker}
+            className={klassen(s.reiter, an && s.an)}
+            onClick={() => {
+              if (!an) setze(w.wert);
+            }}>
             <span className={s.text}>{w.text}</span>
-            {!!w.fehler && <span className={s.fehler} title={t('oberflaeche.reiter.fehler', { anzahl: w.fehler })}><span aria-hidden="true">{w.fehler}</span><span className={s.sr}>{t('oberflaeche.reiter.fehler', { anzahl: w.fehler })}</span></span>}
+            {!!w.fehler && (
+              <span className={s.fehler} title={t('oberflaeche.reiter.fehler', { anzahl: w.fehler })}>
+                <span aria-hidden="true">{w.fehler}</span>
+                <span className={s.sr}>{t('oberflaeche.reiter.fehler', { anzahl: w.fehler })}</span>
+              </span>
+            )}
             {w.anzahl !== undefined && <span className={s.anzahl}>{w.anzahl}</span>}
           </button>
         );
@@ -80,5 +101,9 @@ export function Reiter<T extends string>({ id, wert, setze, wahlen, beschriftung
  * immer Bedienelemente, und eine fokussierbare Fläche wäre am Handy ein Tippziel ohne Zweck.
  */
 export function ReiterFlaeche({ id, wert, children, className }: { id: string; wert: string; children: ReactNode; className?: string }) {
-  return <div role="tabpanel" id={flaecheId(id)} aria-labelledby={reiterId(id, wert)} className={klassen(s.flaeche, className)}>{children}</div>;
+  return (
+    <div role="tabpanel" id={flaecheId(id)} aria-labelledby={reiterId(id, wert)} className={klassen(s.flaeche, className)}>
+      {children}
+    </div>
+  );
 }

@@ -24,39 +24,69 @@ async function aufbau() {
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const partner = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
   // Max darf Rechnungen nicht löschen.
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [
-    { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
-    { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
-  ], berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [{ id: 'max', name: 'Max löscht nicht', wenn: [{ art: 'benutzer', benutzer: [max.id] }], dann: { D: 'entziehen' }, stopp: false }] } });
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    titelVorlage: '{nr}',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
+      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+    ],
+    berechtigungen: {
+      grund: { C: true, R: true, U: true, D: true, P: true },
+      regeln: [
+        { id: 'max', name: 'Max löscht nicht', wenn: [{ art: 'benutzer', benutzer: [max.id] }], dann: { D: 'entziehen' }, stopp: false },
+      ],
+    },
+  });
   const p1 = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } }, anna.id);
   const r: Array<{ id: string }> = [];
-  for (const nr of ['R-1', 'R-2', 'R-3']) r.push(await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr, partner: nr === 'R-1' ? p1.id : null } }, anna.id));
+  for (const nr of ['R-1', 'R-2', 'R-3'])
+    r.push(await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr, partner: nr === 'R-1' ? p1.id : null } }, anna.id));
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const tabelle = routen(d, konten, {});
-  const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) => tabelle.find((t) => t.methode === m && t.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
-  const loesche = async (b: { id: string }, ids: string[], probe = false) => (await rufe(b, 'POST', '/api/mappen/loeschen', { body: { ids, probe } })).body as Ergebnis;
+  const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
+    tabelle
+      .find((t) => t.methode === m && t.pfad === p)!
+      .handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
+  const loesche = async (b: { id: string }, ids: string[], probe = false) =>
+    (await rufe(b, 'POST', '/api/mappen/loeschen', { body: { ids, probe } })).body as Ergebnis;
   return { d, anna, max, partner, rechnung, p1, r, rufe, loesche };
 }
 
 describe('Auswahl und Mehrfach-Löschen (#149, #150)', () => {
   it('alle Treffer einer Sicht als Ids, mit Suche', async () => {
     const { anna, rechnung, rufe } = await aufbau();
-    const alle = (await rufe(anna, 'GET', '/api/mappen/auswahl', { query: { sicht: rechnung.id } })).body as { ids: string[]; gesamt: number };
+    const alle = (await rufe(anna, 'GET', '/api/mappen/auswahl', { query: { sicht: rechnung.id } })).body as {
+      ids: string[];
+      gesamt: number;
+    };
     assert.equal(alle.ids.length, 3);
     assert.equal(alle.gesamt, 3);
-    const zwei = (await rufe(anna, 'GET', '/api/mappen/auswahl', { query: { sicht: rechnung.id, suche: 'R-2' } })).body as { ids: string[] };
+    const zwei = (await rufe(anna, 'GET', '/api/mappen/auswahl', { query: { sicht: rechnung.id, suche: 'R-2' } })).body as {
+      ids: string[];
+    };
     assert.equal(zwei.ids.length, 1);
   });
 
   it('Probe zählt, löscht nichts; Recht D je Mappe', async () => {
     const { d, anna, max, r, loesche } = await aufbau();
-    const probe = await loesche(anna, r.map((x) => x.id), true);
+    const probe = await loesche(
+      anna,
+      r.map((x) => x.id),
+      true,
+    );
     assert.equal(probe.mappen, 3);
     assert.equal(probe.geloescht, 0);
     assert.equal((await d.mappen.listeMappen()).filter((m) => r.some((x) => x.id === m.id)).length, 3);
-    const ohne = await loesche(max, r.map((x) => x.id));
+    const ohne = await loesche(
+      max,
+      r.map((x) => x.id),
+    );
     assert.equal(ohne.geloescht, 0);
-    assert.deepEqual(ohne.ausgelassen.map((x) => x.grund), ['kein Recht zum Löschen', 'kein Recht zum Löschen', 'kein Recht zum Löschen']);
+    assert.deepEqual(
+      ohne.ausgelassen.map((x) => x.grund),
+      ['kein Recht zum Löschen', 'kein Recht zum Löschen', 'kein Recht zum Löschen'],
+    );
     const ja = await loesche(anna, [r[1].id, r[2].id]);
     assert.equal(ja.geloescht, 2);
     // In den Papierkorb, je Mappe ein Eintrag.
@@ -77,6 +107,11 @@ describe('Auswahl und Mehrfach-Löschen (#149, #150)', () => {
   it('prüft die Eingabe', async () => {
     const { anna, rufe } = await aufbau();
     await assert.rejects(rufe(anna, 'POST', '/api/mappen/loeschen', { body: { ids: [] } }), status(422));
-    await assert.rejects(rufe(anna, 'POST', '/api/mappen/loeschen', { body: { ids: Array.from({ length: 5001 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`) } }), status(422));
+    await assert.rejects(
+      rufe(anna, 'POST', '/api/mappen/loeschen', {
+        body: { ids: Array.from({ length: 5001 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`) },
+      }),
+      status(422),
+    );
   });
 });

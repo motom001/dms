@@ -20,10 +20,15 @@ export async function resolve(spezifizierer, kontext, weiter) {
 
 export async function load(url, kontext, weiter) {
   if (MODUL.test(url)) {
-    return { format: 'module', source: 'export default new Proxy({}, { get: (_, k) => (typeof k === "string" ? k : undefined) });', shortCircuit: true };
+    return {
+      format: 'module',
+      source: 'export default new Proxy({}, { get: (_, k) => (typeof k === "string" ? k : undefined) });',
+      shortCircuit: true,
+    };
   }
   if (/\.css\?raw$/.test(url)) {
-    const pfad = new URL(url); pfad.search = '';
+    const pfad = new URL(url);
+    pfad.search = '';
     const text = await readFile(pfad, 'utf8');
     return { format: 'module', source: `export default ${JSON.stringify(text)};`, shortCircuit: true };
   }

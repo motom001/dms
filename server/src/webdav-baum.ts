@@ -25,7 +25,11 @@ export const schluessel = (name: string) => name.normalize('NFC').toLowerCase();
 
 /** Ein Name, den alle Systeme als Datei- oder Ordnernamen annehmen. */
 export function bereinige(name: string, ersatz = t('meldungen.webdavbaum.ohne-titel')): string {
-  let s = String(name ?? '').normalize('NFC').replace(VERBOTEN, '_').replace(/\s+/g, ' ').trim();
+  let s = String(name ?? '')
+    .normalize('NFC')
+    .replace(VERBOTEN, '_')
+    .replace(/\s+/g, ' ')
+    .trim();
   // Endpunkte und Leerzeichen am Ende verträgt Windows nicht.
   s = s.replace(/[. ]+$/, '');
   // Mit Punkt beginnende Namen wären auf macOS/Linux unsichtbar – und könnten wie Hilfsdateien aussehen.
@@ -43,10 +47,26 @@ export function bereinige(name: string, ersatz = t('meldungen.webdavbaum.ohne-ti
 /** Hilfsdateien der Betriebssysteme: beim Ablegen still verwerfen, beim Abrufen „gibt es nicht“. */
 export function istHilfsdatei(name: string): boolean {
   const n = schluessel(name);
-  return n === 'desktop.ini' || n === 'thumbs.db' || n === '.ds_store' || n.startsWith('._') || n.startsWith('~$')
-    || n === '.localized' || n === 'folder.jpg' || n === 'albumart.jpg' || n.startsWith('.~lock.') || n === '.hidden'
-    || n === 'autorun.inf' || n === '.metadata_never_index' || n === '.metadata_never_index_unless_rootfs'
-    || n === '.ql_disablethumbnails' || n === '.ql_disablecache' || n === '.trashes' || n === '.spotlight-v100' || n === '.fseventsd';
+  return (
+    n === 'desktop.ini' ||
+    n === 'thumbs.db' ||
+    n === '.ds_store' ||
+    n.startsWith('._') ||
+    n.startsWith('~$') ||
+    n === '.localized' ||
+    n === 'folder.jpg' ||
+    n === 'albumart.jpg' ||
+    n.startsWith('.~lock.') ||
+    n === '.hidden' ||
+    n === 'autorun.inf' ||
+    n === '.metadata_never_index' ||
+    n === '.metadata_never_index_unless_rootfs' ||
+    n === '.ql_disablethumbnails' ||
+    n === '.ql_disablecache' ||
+    n === '.trashes' ||
+    n === '.spotlight-v100' ||
+    n === '.fseventsd'
+  );
 }
 
 export interface Benennbar {
@@ -98,7 +118,11 @@ export function zerlege(url: string): { teile: string[]; ordner: boolean } | nul
   for (const roh of rest.split('/')) {
     if (!roh) continue;
     let t: string;
-    try { t = decodeURIComponent(roh); } catch { return null; }
+    try {
+      t = decodeURIComponent(roh);
+    } catch {
+      return null;
+    }
     if (t === '.' || t === '..' || t.includes('/') || t.includes('\\') || t.includes('\0')) return null;
     teile.push(t.normalize('NFC'));
   }
@@ -114,9 +138,15 @@ export function href(teile: string[], ordner: boolean): string {
 
 /** Text für XML (Inhalt und Attribute). Zeichen, die XML 1.0 nicht erlaubt, fallen weg. */
 export function xml(s: string): string {
-  // eslint-disable-next-line no-control-regex -- Steuerzeichen entfernen ist der Zweck
-  return String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g, '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  /* eslint-disable no-control-regex -- Steuerzeichen entfernen ist der Zweck */
+  return String(s)
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+  /* eslint-enable no-control-regex */
 }
 
 /** Datum im HTTP-Format (RFC 1123), z. B. für getlastmodified und Last-Modified. */
@@ -139,7 +169,8 @@ export interface Eintrag {
   nurLesend?: boolean;
 }
 
-const SPERRBAR = '<D:supportedlock><D:lockentry><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockentry></D:supportedlock>';
+const SPERRBAR =
+  '<D:supportedlock><D:lockentry><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockentry></D:supportedlock>';
 
 /** Eine Antwort auf PROPFIND (immer alle Eigenschaften, wie „allprop“). */
 export function multistatus(eintraege: Eintrag[]): string {
@@ -174,7 +205,10 @@ export function davFehler(bedingung: string): string {
 export function proppatchNamen(text: string): Array<{ ns: string; name: string }> {
   const ns = new Map<string, string>();
   let standard = '';
-  for (const m of text.matchAll(/xmlns(?::([\w.-]+))?\s*=\s*"([^"]*)"/g)) { if (m[1]) ns.set(m[1], m[2]); else standard = m[2]; }
+  for (const m of text.matchAll(/xmlns(?::([\w.-]+))?\s*=\s*"([^"]*)"/g)) {
+    if (m[1]) ns.set(m[1], m[2]);
+    else standard = m[2];
+  }
   const erg: Array<{ ns: string; name: string }> = [];
   // Linear: jedes Tag einzeln lesen (kein verschachtelter regulärer Ausdruck); nur Kinder von <prop> zählen.
   let tiefeProp = 0;
@@ -191,12 +225,13 @@ export function proppatchNamen(text: string): Array<{ ns: string; name: string }
     const name = doppel < 0 ? qname : qname.slice(doppel + 1);
     if (!/^[\w.-]+$/.test(name) || (praefix && !/^[\w.-]+$/.test(praefix))) continue;
     if (name === 'prop') {
-      if (schliessend) tiefeProp = Math.max(0, tiefeProp - 1); else if (!leer) tiefeProp++;
+      if (schliessend) tiefeProp = Math.max(0, tiefeProp - 1);
+      else if (!leer) tiefeProp++;
       continue;
     }
     if (schliessend || tiefeProp === 0) continue;
     if (erg.length >= 50) break;
-    const n = praefix ? ns.get(praefix) ?? '' : standard;
+    const n = praefix ? (ns.get(praefix) ?? '') : standard;
     if (!erg.some((x) => x.ns === n && x.name === name)) erg.push({ ns: n, name });
   }
   return erg;
@@ -212,10 +247,12 @@ export function proppatchAntwort(teile: string[], ordner: boolean, namen: Array<
 
 /** Antwort auf LOCK: Schein-Sperre (Stufe 1 setzt sie nicht durch, s. webdav.ts). */
 export function sperrAntwort(token: string, teile: string[], ordner: boolean, sekunden: number): string {
-  return `<?xml version="1.0" encoding="utf-8"?>\n<D:prop xmlns:D="DAV:"><D:lockdiscovery><D:activelock>`
-    + '<D:locktype><D:write/></D:locktype><D:lockscope><D:exclusive/></D:lockscope><D:depth>0</D:depth>'
-    + `<D:timeout>Second-${sekunden}</D:timeout><D:locktoken><D:href>${xml(token)}</D:href></D:locktoken>`
-    + `<D:lockroot><D:href>${xml(href(teile, ordner))}</D:href></D:lockroot></D:activelock></D:lockdiscovery></D:prop>`;
+  return (
+    `<?xml version="1.0" encoding="utf-8"?>\n<D:prop xmlns:D="DAV:"><D:lockdiscovery><D:activelock>` +
+    '<D:locktype><D:write/></D:locktype><D:lockscope><D:exclusive/></D:lockscope><D:depth>0</D:depth>' +
+    `<D:timeout>Second-${sekunden}</D:timeout><D:locktoken><D:href>${xml(token)}</D:href></D:locktoken>` +
+    `<D:lockroot><D:href>${xml(href(teile, ordner))}</D:href></D:lockroot></D:activelock></D:lockdiscovery></D:prop>`
+  );
 }
 
 /** Benutzername und Passwort aus „Authorization: Basic …“; sonst undefined. */
@@ -234,7 +271,12 @@ export function basic(kopf: string | undefined): { name: string; passwort: strin
  */
 export class Ratenbegrenzung {
   private zustand: Kurzzustand;
-  constructor(public grenze: number, private jetzt: () => number = Date.now, private dauer = 60_000, zustand?: Kurzzustand) {
+  constructor(
+    public grenze: number,
+    private jetzt: () => number = Date.now,
+    private dauer = 60_000,
+    zustand?: Kurzzustand,
+  ) {
     this.zustand = zustand ?? speicherKurzzustand(jetzt);
   }
   /** true: Anfrage erlaubt. Liefert sonst die Sekunden bis zum nächsten Fenster. */

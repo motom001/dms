@@ -2,7 +2,17 @@
  * Titel der Mappen (#1074 aus dienst.ts): gespeicherte Titel berechnen und nachziehen, Titel vorab beim Ändern (#743),
  * Wartung beim Start (Haken #146, Kennungen #145, „ehemalig“ #663) und „Absender bereinigen“ (#494). Schicht 2.
  */
-import { auswahlText, freierSchluessel, type Mappe, type Mappentyp, POST_KANAL, POST_RICHTUNG, titelAus, verweiseVon, type Werte } from '../../../shared/src/model';
+import {
+  auswahlText,
+  freierSchluessel,
+  type Mappe,
+  type Mappentyp,
+  POST_KANAL,
+  POST_RICHTUNG,
+  titelAus,
+  verweiseVon,
+  type Werte,
+} from '../../../shared/src/model';
 import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import { istOffen, kurzStandard, RECHTE_LISTE, regelwerkVon } from '../../../shared/src/rechte';
 import { Fachfehler } from '../fehler';
@@ -13,12 +23,23 @@ import { t } from '../sprache';
 import type { MappenHistorie } from './historie';
 
 export class MappenTitel {
-  constructor(private readonly kern: Kern, private readonly historie: MappenHistorie) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly historie: MappenHistorie,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.historie.notiere(...a); }
-  private aenderungen(...a: Parameters<MappenHistorie['aenderungen']>) { return this.historie.aenderungen(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inTransaktion(f);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.historie.notiere(...a);
+  }
+  private aenderungen(...a: Parameters<MappenHistorie['aenderungen']>) {
+    return this.historie.aenderungen(...a);
+  }
 
   async titel(m: Mappe): Promise<string> {
     return m.titel || titelAus(await this.repo.holeTyp(m.typId), m.werte, undefined, m) || t('meldungen.dienst.ohne-titel');
@@ -40,7 +61,10 @@ export class MappenTitel {
       const geaendert: Array<{ id: string; titel: string }> = [];
       for (let i = 0; i < offen.length; i += 2000) {
         const mappen = await this.repo.holeMappen(offen.slice(i, i + 2000));
-        const ziele = mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
+        const ziele = mappen.flatMap((m) => {
+          const t = typen.get(m.typId);
+          return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : [];
+        });
         const gespeichert = await this.repo.titelVon(ziele.filter((z) => !neu.has(z)));
         const titelVon = (z: string) => neu.get(z) || gespeichert.get(z) || t('meldungen.dienst.ohne-titel');
         for (const m of mappen) {
@@ -65,13 +89,20 @@ export class MappenTitel {
     for (const t of await this.repo.listeTypen()) {
       if (t.system || (t.erstellenErlaubt !== false && t.loeschenErlaubt !== false)) continue;
       const rw = structuredClone(regelwerkVon(t));
-      const ohneC = t.erstellenErlaubt === false; const ohneD = t.loeschenErlaubt === false;
+      const ohneC = t.erstellenErlaubt === false;
+      const ohneD = t.loeschenErlaubt === false;
       if (ohneC) rw.grund.C = false;
       if (ohneD) rw.grund.D = false;
       const geaendert: string[] = [];
       for (const r of rw.regeln) {
-        if (ohneC && r.dann.C === 'erteilen') { delete r.dann.C; geaendert.push(`${r.name}: ohne +C`); }
-        if (ohneD && r.dann.D === 'erteilen') { delete r.dann.D; geaendert.push(`${r.name}: ohne +D`); }
+        if (ohneC && r.dann.C === 'erteilen') {
+          delete r.dann.C;
+          geaendert.push(`${r.name}: ohne +C`);
+        }
+        if (ohneD && r.dann.D === 'erteilen') {
+          delete r.dann.D;
+          geaendert.push(`${r.name}: ohne +D`);
+        }
       }
       // Regeln, die danach nichts mehr tun, fallen weg.
       const weg = rw.regeln.filter((r) => !RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp).map((r) => r.name);
@@ -79,7 +110,10 @@ export class MappenTitel {
       await this.repo.aendereTyp(t.id, { ...t, erstellenErlaubt: true, loeschenErlaubt: true });
       await this.repo.setzeBerechtigungen(t.id, istOffen(rw) ? null : rw);
       protokoll.modul('werkbank').warn('Haken „Neue Mappen/Löschen erlauben“ in die Berechtigungen übernommen', {
-        typ: t.name, standard: kurzStandard(rw.grund), ...(geaendert.length ? { regeln: geaendert.join(' · ') } : {}), ...(weg.length ? { entfallen: weg.join(', ') } : {}),
+        typ: t.name,
+        standard: kurzStandard(rw.grund),
+        ...(geaendert.length ? { regeln: geaendert.join(' · ') } : {}),
+        ...(weg.length ? { entfallen: weg.join(', ') } : {}),
       });
       n++;
     }
@@ -110,8 +144,13 @@ export class MappenTitel {
   async absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> {
     const typ = (await this.kern.system()).post;
     const kanaele = new Set<string>([POST_KANAL.hochgeladen, POST_KANAL.api, POST_KANAL.webdav, POST_KANAL.ordner]);
-    const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend
-      && kanaele.has(auswahlText(m.werte.kanal)) && typeof m.werte.von === 'string' && m.werte.von.trim() !== '');
+    const kandidaten = (await this.repo.listeMappen(typ.id)).filter(
+      (m) =>
+        auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend &&
+        kanaele.has(auswahlText(m.werte.kanal)) &&
+        typeof m.werte.von === 'string' &&
+        m.werte.von.trim() !== '',
+    );
     const namen = new Map<string, string>();
     const posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> = [];
     for (const m of kandidaten) {
@@ -165,7 +204,9 @@ export class MappenTitel {
   async ehemaligZuruecksetzen(): Promise<number> {
     const typ = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
     if (!typ) return 0;
-    const ids = (await this.repo.listeMappen(typ.id)).filter((m) => m.werte.aktiv === false && / \(ehemalig\)$/.test(m.titel ?? '')).map((m) => m.id);
+    const ids = (await this.repo.listeMappen(typ.id))
+      .filter((m) => m.werte.aktiv === false && / \(ehemalig\)$/.test(m.titel ?? ''))
+      .map((m) => m.id);
     if (ids.length) await this.aktualisiereTitel(ids);
     return ids.length;
   }
@@ -180,7 +221,9 @@ export class MappenTitel {
     const titel = await this.repo.titelVon(ziele.filter(istUuid));
     // „Zuletzt geändert“ im Titel ({geaendert}) zeigt den Tag des Speicherns.
     const index = { ...m, geaendert: new Date().toISOString() };
-    return (w) => (verweiseVon(typ, w).every((v) => titel.has(v.zielId) || !istUuid(v.zielId))
-      ? titelAus(typ, w, (x) => titel.get(x) || t('meldungen.dienst.ohne-titel'), index) : undefined);
+    return (w) =>
+      verweiseVon(typ, w).every((v) => titel.has(v.zielId) || !istUuid(v.zielId))
+        ? titelAus(typ, w, (x) => titel.get(x) || t('meldungen.dienst.ohne-titel'), index)
+        : undefined;
   }
 }

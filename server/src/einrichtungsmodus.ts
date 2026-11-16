@@ -50,7 +50,9 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
   let fehler = o.fehler;
   let vorbelegt = o.vorbelegt;
   let fertig!: (a: Anbindung) => void;
-  const ergebnis = new Promise<Anbindung>((r) => { fertig = r; });
+  const ergebnis = new Promise<Anbindung>((r) => {
+    fertig = r;
+  });
   let beendet = false;
 
   const app = Fastify({ trustProxy: o.proxy ?? false, bodyLimit: EINRICHTUNG_KOERPER_MAX });
@@ -61,7 +63,9 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     log.error('Fehler im Einrichtungsmodus', { fehler: err.stack ?? String(e) });
     return reply.code(500).send({ fehler: t('meldungen.einrichtungsmodus.interner-fehler-details-stehen') });
   });
-  app.addHook('onRequest', async (_req, reply) => { reply.header('cache-control', 'no-store'); });
+  app.addHook('onRequest', async (_req, reply) => {
+    reply.header('cache-control', 'no-store');
+  });
   // Sprache (#729): Ohne Datenbank gibt es keine Einstellung – es gilt, was der Assistent mitschickt. Im
   // Einrichtungsmodus richtet nur eine Person ein, deshalb genügt die Sprache des Prozesses.
   app.addHook('onRequest', async (req) => {
@@ -69,19 +73,31 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     if (s) setzeSprache(s);
   });
   app.get('/api/sprache', async (req) => {
-    const s = spracheAusKopf(typeof req.headers['x-sprache'] === 'string' ? req.headers['x-sprache'] : undefined, [...EINGEBAUTE_SPRACHEN]) ?? 'de';
+    const s =
+      spracheAusKopf(typeof req.headers['x-sprache'] === 'string' ? req.headers['x-sprache'] : undefined, [...EINGEBAUTE_SPRACHEN]) ?? 'de';
     return { sprache: s, standard: 'de', erlaubt: [...EINGEBAUTE_SPRACHEN], maschinell: [] };
   });
   // Sicherheits-Header wie im Betrieb (#239).
   app.addHook('onSend', async (req, reply, nutzlast) => {
     const typ = String(reply.getHeader('content-type') ?? '');
-    for (const [k, v] of Object.entries(sicherheitsKoepfe({ pfad: req.url.split('?')[0], https: req.protocol === 'https', html: typ.startsWith('text/html'), csp: reply.hasHeader('content-security-policy') }, o.einbetten ?? einbettenAus(undefined)))) {
+    for (const [k, v] of Object.entries(
+      sicherheitsKoepfe(
+        {
+          pfad: req.url.split('?')[0],
+          https: req.protocol === 'https',
+          html: typ.startsWith('text/html'),
+          csp: reply.hasHeader('content-security-policy'),
+        },
+        o.einbetten ?? einbettenAus(undefined),
+      ),
+    )) {
       if (!reply.hasHeader(k)) reply.header(k, v);
     }
     return nutzlast;
   });
 
-  const kopf = (req: { headers: Record<string, unknown> }, n: string) => (typeof req.headers[n] === 'string' ? req.headers[n] as string : undefined);
+  const kopf = (req: { headers: Record<string, unknown> }, n: string) =>
+    typeof req.headers[n] === 'string' ? (req.headers[n] as string) : undefined;
   /** Jede Änderung: Kennung der Oberfläche und Einrichtungscode. */
   const schutz = (req: { headers: Record<string, unknown> }) => {
     if (kopf(req, 'x-dms') !== '1') throw new Fachfehler(403, t('meldungen.einrichtungsmodus.anfrage-ohne-kennung-der'));
@@ -91,30 +107,55 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
 
   const uebernehmen = async (a: Anbindung, wer: string) => {
     await schreibeAnbindung(o.geheim, a);
-    log.info(`Datenbank-Anbindung gespeichert (${wer}) – Ablago startet`, { host: a.host, port: a.port, datenbank: a.datenbank, benutzer: a.benutzer });
+    log.info(`Datenbank-Anbindung gespeichert (${wer}) – Ablago startet`, {
+      host: a.host,
+      port: a.port,
+      datenbank: a.datenbank,
+      benutzer: a.benutzer,
+    });
     beendet = true;
     // Erst antworten, dann den Port für das eigentliche DMS freigeben.
-    setTimeout(() => { void app.close().then(() => fertig(a)); }, 300).unref?.();
+    setTimeout(() => {
+      void app.close().then(() => fertig(a));
+    }, 300).unref?.();
   };
 
   // Angaben zur bisherigen Anbindung (Server, Benutzer, Fehler) nur mit Code.
   app.get('/api/konto/status', async (req) => {
     const mitCode = o.code.stimmt(kopf(req, 'x-einrichtungscode'));
     return {
-      einrichtungNoetig: true, mail: false, benutzer: null, marke: null, wartung: null,
-      einrichtung: { phase: beendet ? 'startet' : 'datenbank', code: o.code.noetig, ...(mitCode ? { anbindung: ansicht(vorbelegt), quelle: o.quelle, fehler } : {}) },
+      einrichtungNoetig: true,
+      mail: false,
+      benutzer: null,
+      marke: null,
+      wartung: null,
+      einrichtung: {
+        phase: beendet ? 'startet' : 'datenbank',
+        code: o.code.noetig,
+        ...(mitCode ? { anbindung: ansicht(vorbelegt), quelle: o.quelle, fehler } : {}),
+      },
     };
   });
   // Der Container läuft (Healthcheck im Image), wartet aber auf die Einrichtung.
   // Kennung einmal beim Start (#250): die Antwort selbst rechnet und liest nichts.
   const stand = standKennung();
   app.get('/api/gesundheit', async () => ({ ok: true, zustand: 'einrichtung', einrichtung: true, stand }));
-  app.post('/api/einrichtung/code', async (req) => { schutz(req); return { ok: true }; });
-  app.post('/api/einrichtung/datenbank/pruefen', async (req) => { schutz(req); return pruefe(eingabe(req.body)); });
+  app.post('/api/einrichtung/code', async (req) => {
+    schutz(req);
+    return { ok: true };
+  });
+  app.post('/api/einrichtung/datenbank/pruefen', async (req) => {
+    schutz(req);
+    return pruefe(eingabe(req.body));
+  });
   app.post('/api/einrichtung/datenbank/anlegen', async (req) => {
     schutz(req);
     const a = eingabe(req.body);
-    try { await anlegen(a); } catch (e) { throw new Fachfehler(422, (e as Error).message); }
+    try {
+      await anlegen(a);
+    } catch (e) {
+      throw new Fachfehler(422, (e as Error).message);
+    }
     log.info('Datenbank angelegt', { host: a.host, datenbank: a.datenbank });
     return pruefe(a);
   });
@@ -122,14 +163,26 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     schutz(req);
     const a = eingabe(req.body);
     const p = await pruefe(a);
-    if (!p.ok) { fehler = p.text; vorbelegt = { ...a, passwort: a.passwort }; throw new Fachfehler(422, p.text, { pruefung: p }); }
+    if (!p.ok) {
+      fehler = p.text;
+      vorbelegt = { ...a, passwort: a.passwort };
+      throw new Fachfehler(422, p.text, { pruefung: p });
+    }
     await uebernehmen({ ...a, ...(vorbelegt?.mandant ? { mandant: vorbelegt.mandant } : {}) }, 'Assistent');
     return { ok: true, pruefung: p };
   });
   // Konfigurationsdatei (#806) schon vor der Datenbank: füllt die Anbindung vor, angelegt wird nichts.
-  app.post('/api/einrichtung/datei/lesen', async (req) => { schutz(req); return { ...liesEinrichtungsdatei((req.body as { text?: unknown } | null)?.text), hinweise: [] }; });
+  app.post('/api/einrichtung/datei/lesen', async (req) => {
+    schutz(req);
+    return { ...liesEinrichtungsdatei((req.body as { text?: unknown } | null)?.text), hinweise: [] };
+  });
   // Alles andere: Verweis auf den Assistenten.
-  app.all('/api/*', async (_req, reply) => reply.code(503).header('retry-after', '30').send({ fehler: t('meldungen.einrichtungsmodus.ablago-ist-noch-nicht') }));
+  app.all('/api/*', async (_req, reply) =>
+    reply
+      .code(503)
+      .header('retry-after', '30')
+      .send({ fehler: t('meldungen.einrichtungsmodus.ablago-ist-noch-nicht') }),
+  );
 
   if (o.webDir && existsSync(o.webDir)) {
     await app.register(fastifyStatic, { root: o.webDir, wildcard: false, ...statischeDateien(o.webDir) });
@@ -142,12 +195,14 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     const kandidat = o.vorbelegt;
     zeitgeber = setInterval(() => {
       if (beendet) return;
-      void pruefe(kandidat).then(async (p) => {
-        if (!p.ok || beendet) return;
-        clearInterval(zeitgeber);
-        log.info('Datenbank jetzt erreichbar');
-        await uebernehmen(kandidat, o.quelle === 'umgebung' ? 'aus DATABASE_URL' : 'wieder erreichbar');
-      }).catch(() => {});
+      void pruefe(kandidat)
+        .then(async (p) => {
+          if (!p.ok || beendet) return;
+          clearInterval(zeitgeber);
+          log.info('Datenbank jetzt erreichbar');
+          await uebernehmen(kandidat, o.quelle === 'umgebung' ? 'aus DATABASE_URL' : 'wieder erreichbar');
+        })
+        .catch(() => {});
     }, o.wiederholenMs);
     zeitgeber.unref?.();
   }

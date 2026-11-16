@@ -12,9 +12,15 @@ const B = '00000000-0000-4000-8000-00000000000b';
 describe('Zuletzt geändert (#76)', () => {
   it('Hochladen und Entfernen von Dokumenten zählen als Änderung, Notizen nicht', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const t = await d.mappentypen.legeTypAn({ name: 'Beleg', titelVorlage: '{nr} ({geaendert})', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }], register: [
-      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
-    ] });
+    const t = await d.mappentypen.legeTypAn({
+      name: 'Beleg',
+      titelVorlage: '{nr} ({geaendert})',
+      felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }],
+      register: [
+        { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+        { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+      ],
+    });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'B-1' } }, A);
     await d.mappenNotizen.legeNotizAn(m.id, 'nur eine Notiz', B);
     assert.equal((await d.mappen.holeMappe(m.id)).mappe.geaendertVon, A, 'Notiz ändert nichts');
@@ -33,14 +39,23 @@ describe('Löschen vorab prüfen (#79)', () => {
   it('liefert loeschbar wie das Löschen selbst', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const p = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-    const v = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }] });
+    const v = await d.mappentypen.legeTypAn({
+      name: 'Vertrag',
+      felder: [
+        { key: 'nr', label: 'Nr', typ: 'text', pflicht: true },
+        { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id },
+      ],
+    });
     const pm = await d.mappen.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, A);
     assert.deepEqual((await d.mappen.holeMappe(pm.id)).loeschbar, { ok: true });
     const vm = await d.mappen.legeMappeAn({ typId: v.id, werte: { nr: 'V-1', partner: pm.id } }, A);
     const l = (await d.mappen.holeMappe(pm.id)).loeschbar;
     assert.equal(l.ok, false);
     assert.match(l.grund ?? '', /verweist noch eine andere Mappe/);
-    assert.deepEqual(l.rueckverweise?.map((r) => r.quelleId), [vm.id]);
+    assert.deepEqual(
+      l.rueckverweise?.map((r) => r.quelleId),
+      [vm.id],
+    );
     await assert.rejects(d.loeschen.loescheMappe(pm.id, A));
     await d.loeschen.loescheMappe(vm.id, A);
     assert.deepEqual((await d.mappen.holeMappe(pm.id)).loeschbar, { ok: true });

@@ -10,12 +10,24 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 
 describe('Logo und Schriftzug (#72)', () => {
   it('prüft SVGs streng', () => {
-    assert.equal(pruefeLogo(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#123"/><use href="#a"/></svg>')), 'image/svg+xml');
+    assert.equal(
+      pruefeLogo(
+        Buffer.from(
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#123"/><use href="#a"/></svg>',
+        ),
+      ),
+      'image/svg+xml',
+    );
     for (const boese of [
-      '<svg><script>alert(1)</script></svg>', '<svg onload="alert(1)"></svg>', '<svg><image href="https://x/y.png"/></svg>',
-      '<svg><foreignObject><div/></foreignObject></svg>', '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x "y">]><svg/>', '<svg><a xlink:href="javascript:alert(1)"/></svg>',
+      '<svg><script>alert(1)</script></svg>',
+      '<svg onload="alert(1)"></svg>',
+      '<svg><image href="https://x/y.png"/></svg>',
+      '<svg><foreignObject><div/></foreignObject></svg>',
+      '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x "y">]><svg/>',
+      '<svg><a xlink:href="javascript:alert(1)"/></svg>',
       '<svg><style>@import url(https://x)</style></svg>',
-    ]) assert.throws(() => pruefeLogo(Buffer.from(boese)), status(422), boese);
+    ])
+      assert.throws(() => pruefeLogo(Buffer.from(boese)), status(422), boese);
     assert.throws(() => pruefeLogo(Buffer.from('kein Bild')), status(422));
     assert.equal(pruefeLogo(PNG), 'image/png');
   });

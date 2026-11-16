@@ -13,7 +13,32 @@ import { t } from './sprache';
  * Bewusst eine feste Liste statt „irgendein Punkt“: Seiten der Oberfläche enthalten Punkte (`/ablage/email/lena@example.org`,
  * Kennungen von Paketen), die keine Dateien sind.
  */
-const ENDUNGEN = new Set(['js', 'mjs', 'cjs', 'css', 'map', 'json', 'webmanifest', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'otf', 'wasm', 'txt', 'xml', 'bcmap', 'pfb']);
+const ENDUNGEN = new Set([
+  'js',
+  'mjs',
+  'cjs',
+  'css',
+  'map',
+  'json',
+  'webmanifest',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'avif',
+  'svg',
+  'ico',
+  'woff',
+  'woff2',
+  'ttf',
+  'otf',
+  'wasm',
+  'txt',
+  'xml',
+  'bcmap',
+  'pfb',
+]);
 
 export function istDateipfad(url: string): boolean {
   const pfad = url.split('?', 1)[0].split('#', 1)[0];
@@ -56,7 +81,8 @@ export function statischeDateien(root: string) {
     setHeaders: (res: { setHeader(n: string, v: string): unknown } | { header(n: string, v: string): unknown }, pfad: string) => {
       const rel = relative(root, pfad);
       const wert = rel === 'assets' || rel.startsWith(`assets${sep}`) ? ASSETS_CACHE : SEITE_CACHE;
-      if ('header' in res) res.header('cache-control', wert); else res.setHeader('cache-control', wert);
+      if ('header' in res) res.header('cache-control', wert);
+      else res.setHeader('cache-control', wert);
     },
   };
 }

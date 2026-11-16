@@ -13,17 +13,37 @@ function probeUmgebung() {
   const wartend: Array<{ ms: number; f: () => void; weg: boolean }> = [];
   const u: Umgebung = {
     sichtbar: () => sichtbar,
-    beiSichtbarkeit: (f) => { hoerer.add(f); return () => hoerer.delete(f); },
-    spaeter: (ms, f) => { const w = { ms, f, weg: false }; wartend.push(w); return () => { w.weg = true; }; },
+    beiSichtbarkeit: (f) => {
+      hoerer.add(f);
+      return () => hoerer.delete(f);
+    },
+    spaeter: (ms, f) => {
+      const w = { ms, f, weg: false };
+      wartend.push(w);
+      return () => {
+        w.weg = true;
+      };
+    },
     zufall: () => 0.5,
   };
   const ruhe = () => new Promise((r) => setImmediate(r));
   return {
     u,
     /** Nächsten Takt auslösen (wenn einer geplant ist). */
-    async takt() { const w = wartend.filter((x) => !x.weg).shift(); if (!w) return false; w.weg = true; w.f(); await ruhe(); return true; },
+    async takt() {
+      const w = wartend.filter((x) => !x.weg).shift();
+      if (!w) return false;
+      w.weg = true;
+      w.f();
+      await ruhe();
+      return true;
+    },
     geplant: () => wartend.filter((x) => !x.weg),
-    async setzeSichtbar(an: boolean) { sichtbar = an; for (const f of hoerer) f(); await ruhe(); },
+    async setzeSichtbar(an: boolean) {
+      sichtbar = an;
+      for (const f of hoerer) f();
+      await ruhe();
+    },
     ruhe,
     hoerer: () => hoerer.size,
   };
@@ -32,7 +52,11 @@ function probeUmgebung() {
 describe('Baustein „von selbst nachladen“ (#919, web/src/nachladen.ts)', () => {
   it('Schritt: erster Wert nur merken, Nachlauf einmal, gleicher Stand → nichts, Änderung → laden', () => {
     let z = ANFANG;
-    const lauf = (s: string, o = {}) => { const r = schritt(z, s, o); z = r.zustand; return r.melden; };
+    const lauf = (s: string, o = {}) => {
+      const r = schritt(z, s, o);
+      z = r.zustand;
+      return r.melden;
+    };
     assert.equal(lauf('a'), false, 'erster Wert: die Seite hat schon geladen');
     assert.equal(lauf('a'), true, 'Nachlauf: Zahlen anderer dürfen kurz nachhinken');
     assert.equal(lauf('a'), false);
@@ -53,7 +77,16 @@ describe('Baustein „von selbst nachladen“ (#919, web/src/nachladen.ts)', () 
     let stand = 's1';
     let gefragt = 0;
     let geladen = 0;
-    const stopp = starteNachladen({ hole: async () => { gefragt++; return stand; }, melde: () => { geladen++; }, umgebung: p.u });
+    const stopp = starteNachladen({
+      hole: async () => {
+        gefragt++;
+        return stand;
+      },
+      melde: () => {
+        geladen++;
+      },
+      umgebung: p.u,
+    });
     await p.ruhe();
     assert.equal(gefragt, 1, 'gleich beim Start einmal');
     assert.equal(p.geplant()[0].ms, TAKT_MS[0] + Math.floor(0.5 * (TAKT_MS[1] - TAKT_MS[0] + 1)));
@@ -88,7 +121,16 @@ describe('Baustein „von selbst nachladen“ (#919, web/src/nachladen.ts)', () 
     assert.equal(p.hoerer(), 0, 'beendet: kein Hörer mehr');
     let fehler = 0;
     const p2 = probeUmgebung();
-    const stopp2 = starteNachladen({ hole: async () => { fehler++; throw new Error('weg'); }, melde: () => { geladen++; }, umgebung: p2.u });
+    const stopp2 = starteNachladen({
+      hole: async () => {
+        fehler++;
+        throw new Error('weg');
+      },
+      melde: () => {
+        geladen++;
+      },
+      umgebung: p2.u,
+    });
     await p2.ruhe();
     await p2.takt();
     assert.equal(fehler, 2);
@@ -101,7 +143,14 @@ describe('Baustein „von selbst nachladen“ (#919, web/src/nachladen.ts)', () 
     const p = probeUmgebung();
     await p.setzeSichtbar(false);
     let gefragt = 0;
-    const stopp = starteNachladen({ hole: async () => { gefragt++; return 1; }, melde: () => {}, umgebung: p.u });
+    const stopp = starteNachladen({
+      hole: async () => {
+        gefragt++;
+        return 1;
+      },
+      melde: () => {},
+      umgebung: p.u,
+    });
     await p.ruhe();
     assert.equal(gefragt, 0);
     await p.setzeSichtbar(true);

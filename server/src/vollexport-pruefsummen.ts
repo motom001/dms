@@ -17,7 +17,14 @@ export const PRUEFSUMMEN = 'SHA256SUMS';
 export const HERUNTERGELADEN = 'heruntergeladen.json';
 
 /** Angaben nach dem Herunterladen; `erstellt`, `dateien`, `mappen` aus dem Manifest, das danach gelöscht ist. */
-export interface Heruntergeladen { am: string; sha256: string; bytes: number; erstellt: string | null; dateien: number; mappen: number | null }
+export interface Heruntergeladen {
+  am: string;
+  sha256: string;
+  bytes: number;
+  erstellt: string | null;
+  dateien: number;
+  mappen: number | null;
+}
 
 /**
  * Eine Zeile wie `sha256sum`: Enthält der Pfad einen Rückstrich oder Zeilenumbruch, beginnt die Zeile mit `\` und
@@ -30,7 +37,9 @@ export function pruefsummenZeile(sha256: string, pfad: string): string {
 
 /** Inhalt von SHA256SUMS, nach Pfad sortiert. */
 export function pruefsummen(dateien: Array<{ pfad: string; sha256: string }>): Buffer {
-  const zeilen = [...dateien].sort((a, b) => (a.pfad < b.pfad ? -1 : a.pfad > b.pfad ? 1 : 0)).map((d) => pruefsummenZeile(d.sha256, d.pfad));
+  const zeilen = [...dateien]
+    .sort((a, b) => (a.pfad < b.pfad ? -1 : a.pfad > b.pfad ? 1 : 0))
+    .map((d) => pruefsummenZeile(d.sha256, d.pfad));
   return Buffer.from(`${zeilen.join('\n')}\n`, 'utf8');
 }
 
@@ -41,7 +50,13 @@ export function pruefsummen(dateien: Array<{ pfad: string; sha256: string }>): B
 export function mitPruefsumme(quelle: Readable, fertig: (e: { sha256: string; bytes: number }) => void): Readable {
   const h = createHash('sha256');
   let bytes = 0;
-  const durch = new Transform({ transform(stueck: Buffer, _k, weiter) { h.update(stueck); bytes += stueck.length; weiter(null, stueck); } });
+  const durch = new Transform({
+    transform(stueck: Buffer, _k, weiter) {
+      h.update(stueck);
+      bytes += stueck.length;
+      weiter(null, stueck);
+    },
+  });
   durch.on('end', () => fertig({ sha256: h.digest('hex'), bytes }));
   return pipeline(quelle, durch, () => {});
 }
@@ -49,13 +64,27 @@ export function mitPruefsumme(quelle: Readable, fertig: (e: { sha256: string; by
 /** Nach dem Herunterladen: alles außer SHA256SUMS löschen und die Angaben zur ZIP festhalten. */
 export async function alsHeruntergeladen(ordner: string, zip: { sha256: string; bytes: number }, jetzt = new Date()): Promise<void> {
   let m: { erstellt?: string; dateien?: unknown[]; anzahlen?: { mappen?: number } } = {};
-  try { m = JSON.parse(await readFile(join(ordner, 'manifest.json'), 'utf8')) as typeof m; } catch { /* ohne Manifest: nur die ZIP-Angaben */ }
-  const stand: Heruntergeladen = { am: jetzt.toISOString(), ...zip, erstellt: m.erstellt ?? null, dateien: (m.dateien?.length ?? 0) + 1, mappen: m.anzahlen?.mappen ?? null };
+  try {
+    m = JSON.parse(await readFile(join(ordner, 'manifest.json'), 'utf8')) as typeof m;
+  } catch {
+    /* ohne Manifest: nur die ZIP-Angaben */
+  }
+  const stand: Heruntergeladen = {
+    am: jetzt.toISOString(),
+    ...zip,
+    erstellt: m.erstellt ?? null,
+    dateien: (m.dateien?.length ?? 0) + 1,
+    mappen: m.anzahlen?.mappen ?? null,
+  };
   for (const e of await readdir(ordner)) if (e !== PRUEFSUMMEN) await rm(join(ordner, e), { recursive: true, force: true });
   await writeFile(join(ordner, HERUNTERGELADEN), JSON.stringify(stand, null, 2));
 }
 
 /** Angaben eines heruntergeladenen Exports oder null. */
 export async function heruntergeladen(ordner: string): Promise<Heruntergeladen | null> {
-  try { return JSON.parse(await readFile(join(ordner, HERUNTERGELADEN), 'utf8')) as Heruntergeladen; } catch { return null; }
+  try {
+    return JSON.parse(await readFile(join(ordner, HERUNTERGELADEN), 'utf8')) as Heruntergeladen;
+  } catch {
+    return null;
+  }
 }

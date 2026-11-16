@@ -14,10 +14,22 @@ import type { PaketeZustand } from './Pakete';
  * unter dem Filter „Sprachen“, Ergänzungen beim Hauptpaket („Dazu passend“); die Suche findet alles.
  */
 
-interface Verfuegbar { p: KatalogPaket; url: string; offiziell: boolean; art: PaketArt; haupt: string | null }
+interface Verfuegbar {
+  p: KatalogPaket;
+  url: string;
+  offiziell: boolean;
+  art: PaketArt;
+  haupt: string | null;
+}
 type Wahl = 'pakete' | 'sprachen';
 
-const host = (url: string) => { try { return new URL(url).host; } catch { return url; } };
+const host = (url: string) => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+};
 /** Hauptpaket einer Ergänzung (neueste Version), sonst null. */
 const hauptpaketVon = (p: KatalogPaket) => p.versionen[0]?.ergaenzt?.paket ?? null;
 
@@ -34,36 +46,86 @@ export function PaketeVerfuegbar({ z, offen }: { z: PaketeZustand; offen?: strin
   const installiert = z.stand?.installiert ?? [];
   const dms = z.stand?.dms ?? '';
   const quelleOffen = new URLSearchParams(location.search).get('quelle');
-  const alle: Verfuegbar[] = (z.kataloge?.liste ?? []).flatMap((k) => (k.katalog?.pakete ?? [])
-    .filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id)))
-    .map((p) => ({ p, url: k.url, offiziell: k.offiziell, art: paketArt(p, dms), haupt: hauptpaketVon(p) })));
+  const alle: Verfuegbar[] = (z.kataloge?.liste ?? []).flatMap((k) =>
+    (k.katalog?.pakete ?? [])
+      .filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id)))
+      .map((p) => ({ p, url: k.url, offiziell: k.offiziell, art: paketArt(p, dms), haupt: hauptpaketVon(p) })),
+  );
   const such = useListenSuche(alle, { quellen });
-  if (!z.kataloge) return <p className="leise klein">{t('werkbank.pakete.klicke-katalog-abrufen-um', { knopf: installiert.length ? t('werkbank.pakete.nach-neuen-versionen-suchen') : t('werkbank.pakete.katalog-abrufen') })}</p>;
+  if (!z.kataloge)
+    return (
+      <p className="leise klein">
+        {t('werkbank.pakete.klicke-katalog-abrufen-um', {
+          knopf: installiert.length ? t('werkbank.pakete.nach-neuen-versionen-suchen') : t('werkbank.pakete.katalog-abrufen'),
+        })}
+      </p>
+    );
   if (!alle.length) return <p className="leise leerliste">{t('werkbank.pakete.alle-pakete-des-katalogs')}</p>;
 
   // Ergänzung mit bekanntem Hauptpaket: nur beim Hauptpaket und in der Suche (#1048).
-  const beimHaupt = (e: Verfuegbar) => e.art === 'ergaenzung' && !!e.haupt && (installiert.some((i) => i.id === e.haupt) || alle.some((x) => x.p.id === e.haupt));
+  const beimHaupt = (e: Verfuegbar) =>
+    e.art === 'ergaenzung' && !!e.haupt && (installiert.some((i) => i.id === e.haupt) || alle.some((x) => x.p.id === e.haupt));
   const sprachen = alle.filter((e) => e.art === 'sprache');
   const offiziell = z.kataloge.liste.find((k) => k.offiziell)?.katalog;
-  const empfohlen = offiziell ? empfehlungen(offiziell, { beruflich: !!d.zaehler.merkmale?.beruflich, dms, installiert }).flatMap((p) => alle.filter((e) => e.offiziell && e.p.id === p.id)) : [];
+  const empfohlen = offiziell
+    ? empfehlungen(offiziell, { beruflich: !!d.zaehler.merkmale?.beruflich, dms, installiert }).flatMap((p) =>
+        alle.filter((e) => e.offiziell && e.p.id === p.id),
+      )
+    : [];
   const weitere = alle.filter((e) => e.art !== 'sprache' && !beimHaupt(e) && !empfohlen.includes(e));
-  const zeile = { offen, quelleOffen, hauptName: (id: string) => installiert.find((i) => i.id === id)?.name ?? alle.find((x) => x.p.id === id)?.p.name ?? id };
-  const eintrag = (e: Verfuegbar, titel?: Parameters<typeof Hervorgehoben>[0]['teile'], funde?: Parameters<typeof Fundstellen>[0]['funde']) => <Zeile key={`${e.url}|${e.p.id}`} e={e} titel={titel} funde={funde} {...zeile} />;
+  const zeile = {
+    offen,
+    quelleOffen,
+    hauptName: (id: string) => installiert.find((i) => i.id === id)?.name ?? alle.find((x) => x.p.id === id)?.p.name ?? id,
+  };
+  const eintrag = (
+    e: Verfuegbar,
+    titel?: Parameters<typeof Hervorgehoben>[0]['teile'],
+    funde?: Parameters<typeof Fundstellen>[0]['funde'],
+  ) => <Zeile key={`${e.url}|${e.p.id}`} e={e} titel={titel} funde={funde} {...zeile} />;
   return (
     <>
       {/* Eigener Rahmen: Mitten in der Seite (unter „Installiert“) bleibt die Suchregion am Handy nicht oben stehen – sie
           verdeckte sonst die wenigen Pakete darunter. Am Handy mit Abstand nach oben, damit das Suchfeld die
           44-px-Tippfläche des Hilfe-Zeichens darüber nicht anschneidet. */}
       <div className="verfuegbar-suche">
-      <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.pakete.dazu.suche')} platzhalter={t('werkbank.pakete.dazu.suche.platzhalter')} anker="werkbank.pakete.suche"
-        treffer={such.treffer.length} aktiv={such.aktiv} anzahl={t('werkbank.pakete.dazu.anzahl', { anzahl: alle.length })}
-        filter={sprachen.length > 0 && !such.aktiv ? <Umschalter wert={wahl} setze={setWahl} beschriftung={t('werkbank.pakete.dazu.art')} anker="werkbank.pakete.art"
-          wahlen={[{ wert: 'pakete', text: t('werkbank.pakete.dazu.pakete') }, { wert: 'sprachen', text: t('werkbank.pakete.dazu.sprachen', { anzahl: sprachen.length }) }]} /> : undefined} />
+        <ListenSuche
+          wert={such.eingabe}
+          setze={such.setEingabe}
+          beschriftung={t('werkbank.pakete.dazu.suche')}
+          platzhalter={t('werkbank.pakete.dazu.suche.platzhalter')}
+          anker="werkbank.pakete.suche"
+          treffer={such.treffer.length}
+          aktiv={such.aktiv}
+          anzahl={t('werkbank.pakete.dazu.anzahl', { anzahl: alle.length })}
+          filter={
+            sprachen.length > 0 && !such.aktiv ? (
+              <Umschalter
+                wert={wahl}
+                setze={setWahl}
+                beschriftung={t('werkbank.pakete.dazu.art')}
+                anker="werkbank.pakete.art"
+                wahlen={[
+                  { wert: 'pakete', text: t('werkbank.pakete.dazu.pakete') },
+                  { wert: 'sprachen', text: t('werkbank.pakete.dazu.sprachen', { anzahl: sprachen.length }) },
+                ]}
+              />
+            ) : undefined
+          }
+        />
       </div>
-      {such.aktiv ? (!such.treffer.length ? <KeineTreffer zuruecksetzen={such.zuruecksetzen} /> : (
-        <ul className="mappenliste" aria-label={t('werkbank.pakete.dazu.treffer')}>{such.treffer.map((x) => eintrag(x.eintrag, x.titel, x.funde))}</ul>
-      )) : wahl === 'sprachen' ? (
-        <ul className="mappenliste" aria-label={t('werkbank.pakete.dazu.sprachen-liste')}>{sprachen.map((e) => eintrag(e))}</ul>
+      {such.aktiv ? (
+        !such.treffer.length ? (
+          <KeineTreffer zuruecksetzen={such.zuruecksetzen} />
+        ) : (
+          <ul className="mappenliste" aria-label={t('werkbank.pakete.dazu.treffer')}>
+            {such.treffer.map((x) => eintrag(x.eintrag, x.titel, x.funde))}
+          </ul>
+        )
+      ) : wahl === 'sprachen' ? (
+        <ul className="mappenliste" aria-label={t('werkbank.pakete.dazu.sprachen-liste')}>
+          {sprachen.map((e) => eintrag(e))}
+        </ul>
       ) : (
         <Erste empfohlen={empfohlen.map((e) => eintrag(e))} weitere={weitere.map((e) => eintrag(e))} hinweis={alle.some(beimHaupt)} />
       )}
@@ -72,20 +134,57 @@ export function PaketeVerfuegbar({ z, offen }: { z: PaketeZustand; offen?: strin
 }
 
 /** Ein verfügbares Paket: Name (Suchwort hervorgehoben), Herausgeber, Quelle, Art; darunter Version und Beschreibung. */
-function Zeile({ e, titel, funde, offen, quelleOffen, hauptName }: {
-  e: Verfuegbar; titel?: Parameters<typeof Hervorgehoben>[0]['teile']; funde?: Parameters<typeof Fundstellen>[0]['funde'];
-  offen?: string; quelleOffen: string | null; hauptName(id: string): string;
+function Zeile({
+  e,
+  titel,
+  funde,
+  offen,
+  quelleOffen,
+  hauptName,
+}: {
+  e: Verfuegbar;
+  titel?: Parameters<typeof Hervorgehoben>[0]['teile'];
+  funde?: Parameters<typeof Fundstellen>[0]['funde'];
+  offen?: string;
+  quelleOffen: string | null;
+  hauptName(id: string): string;
 }) {
   const an = offen === e.p.id && (e.offiziell ? !quelleOffen : quelleOffen === e.url);
   return (
-    <li><Link to={`/werkbank/pakete/${e.p.id}${e.offiziell ? '' : `?quelle=${encodeURIComponent(e.url)}`}`} className={`eintrag werk ${an ? 'an' : ''}`}>
-      <span className="titel"><Hervorgehoben teile={titel} text={e.p.name} /><Herausgeber wer={e.p.herausgeber} geprueft={e.offiziell} />
-        {!e.offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url: e.url })}>{host(e.url)}</span></>}
-        {e.art === 'sprache' && <> <span className="chip">{t('werkbank.pakete.dazu.sprache')}</span></>}
-        {e.art === 'ergaenzung' && e.haupt && <> <span className="chip">{t('werkbank.pakete.dazu.ergaenzt', { name: hauptName(e.haupt) })}</span></>}</span>
-      <span className="unter">{e.p.aktuell} · {e.p.beschreibung}</span>
-      {funde && <Fundstellen funde={funde} />}
-    </Link></li>
+    <li>
+      <Link
+        to={`/werkbank/pakete/${e.p.id}${e.offiziell ? '' : `?quelle=${encodeURIComponent(e.url)}`}`}
+        className={`eintrag werk ${an ? 'an' : ''}`}>
+        <span className="titel">
+          <Hervorgehoben teile={titel} text={e.p.name} />
+          <Herausgeber wer={e.p.herausgeber} geprueft={e.offiziell} />
+          {!e.offiziell && (
+            <>
+              {' '}
+              <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url: e.url })}>
+                {host(e.url)}
+              </span>
+            </>
+          )}
+          {e.art === 'sprache' && (
+            <>
+              {' '}
+              <span className="chip">{t('werkbank.pakete.dazu.sprache')}</span>
+            </>
+          )}
+          {e.art === 'ergaenzung' && e.haupt && (
+            <>
+              {' '}
+              <span className="chip">{t('werkbank.pakete.dazu.ergaenzt', { name: hauptName(e.haupt) })}</span>
+            </>
+          )}
+        </span>
+        <span className="unter">
+          {e.p.aktuell} · {e.p.beschreibung}
+        </span>
+        {funde && <Fundstellen funde={funde} />}
+      </Link>
+    </li>
   );
 }
 

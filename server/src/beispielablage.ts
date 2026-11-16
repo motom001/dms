@@ -3,7 +3,13 @@
  * Anlegen wie beim Installieren (ohne Mappen-Ereignisse, also ohne Automatisierungen und Benachrichtigungen); Entfernen
  * nur unveränderter Beispiele – eigene Daten und geänderte Beispiele bleiben. Schicht 4 – nutzt die Paketverwaltung.
  */
-import { BEISPIEL_NOETIG, BEISPIEL_PAKETE, type BeispielAblageAnlegen, type BeispielAblageEntfernen, type BeispielAblageStand } from '../../shared/src/beispielablage';
+import {
+  BEISPIEL_NOETIG,
+  BEISPIEL_PAKETE,
+  type BeispielAblageAnlegen,
+  type BeispielAblageEntfernen,
+  type BeispielAblageStand,
+} from '../../shared/src/beispielablage';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -15,7 +21,10 @@ const log = protokoll.modul('werkbank');
 type Pakete = Pick<Paketverwaltung, 'beispieleAnlegen' | 'beispieleEntfernen'>;
 
 export class BeispielAblage {
-  constructor(private readonly pakete: Pakete, private readonly installierte: () => Promise<InstalliertesPaket[]>) {}
+  constructor(
+    private readonly pakete: Pakete,
+    private readonly installierte: () => Promise<InstalliertesPaket[]>,
+  ) {}
 
   async stand(): Promise<BeispielAblageStand> {
     const da = await this.installierte();
@@ -38,7 +47,9 @@ export class BeispielAblage {
     for (const id of BEISPIEL_PAKETE) {
       const p = da.find((x) => x.id === id);
       if (!p) continue;
-      try { erg.angelegt += (await this.pakete.beispieleAnlegen(id, von)).angelegt; } catch (e) {
+      try {
+        erg.angelegt += (await this.pakete.beispieleAnlegen(id, von)).angelegt;
+      } catch (e) {
         erg.fehler.push({ id, name: p.name, meldung: (e as Error).message });
       }
     }

@@ -9,9 +9,19 @@ import { t } from './texte';
 /** Ein Wort mit Lage: [Text, x, y, Breite, Höhe] (relativ). Als Tupel, weil es viele sind. */
 export type Wort = [string, number, number, number, number];
 /** Eine Seite: Größe in pt (wie angezeigt, also gedreht) und ihre Wörter in Lesereihenfolge. */
-export interface SchwaerzSeite { breite: number; hoehe: number; woerter: Wort[] }
+export interface SchwaerzSeite {
+  breite: number;
+  hoehe: number;
+  woerter: Wort[];
+}
 /** Ein schwarzer Bereich: Seite ab 1, Lage relativ. */
-export interface Bereich { seite: number; x: number; y: number; b: number; h: number }
+export interface Bereich {
+  seite: number;
+  x: number;
+  y: number;
+  b: number;
+  h: number;
+}
 
 /** Muster für Vorschläge (offline, nur reguläre Ausdrücke und Prüfziffern). */
 export const MUSTER = {
@@ -42,7 +52,12 @@ export function geschwaerztName(name: string): string {
 }
 
 /** Ein Treffer: Seite, gefundener Text (nur für die Anzeige in der Oberfläche) und die Wörter. */
-export interface Fund { seite: number; text: string; woerter: number[]; art: Musterart | 'begriff' }
+export interface Fund {
+  seite: number;
+  text: string;
+  woerter: number[];
+  art: Musterart | 'begriff';
+}
 
 /* ---------- Text einer Seite mit Zuordnung Zeichen → Wort ---------- */
 
@@ -50,11 +65,24 @@ export interface Fund { seite: number; text: string; woerter: number[]; art: Mus
  * Vergleichsform: unsichtbare Zeichen (weiches Trennzeichen, Null-Breite) weg, freistehendes Trema als
  * kombinierendes, NFKC, klein, ß wie ss (Versalien „GROSSMANN“), geschützte Bindestriche wie „-“.
  */
-const norm = (s: string) => s.replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '').replace(/\u00A8/g, '\u0308')
-  .normalize('NFKC').toLocaleLowerCase('de-DE').replace(/ß/g, 'ss').replace(/[\u2010\u2011]/g, '-');
+const norm = (s: string) =>
+  s
+    .replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '')
+    .replace(/\u00A8/g, '\u0308')
+    .normalize('NFKC')
+    .toLocaleLowerCase('de-DE')
+    .replace(/ß/g, 'ss')
+    .replace(/[\u2010\u2011]/g, '-');
 
-interface Seitentext { text: string; wortVon: Int32Array }
-interface Seitentexte { normal: Seitentext; kompakt?: Seitentext; woerter: string[] }
+interface Seitentext {
+  text: string;
+  wortVon: Int32Array;
+}
+interface Seitentexte {
+  normal: Seitentext;
+  kompakt?: Seitentext;
+  woerter: string[];
+}
 
 /**
  * Zwischenspeicher am Wörter-Array der Seite (#1255): Der Seitentext wird je Seite einmal gebaut, `norm()` läuft je
@@ -71,7 +99,10 @@ function verbinde(woerter: string[], kompakt: boolean): Seitentext {
     // Ohne Leerraum und Bindestriche, also auch über Silbentrennung hinweg: „Mül-“ + „ler“ ergibt „müller“.
     const t = kompakt ? w.replace(/[\s-]+/g, '') : w;
     if (!t) return;
-    if (!kompakt && text) { text += ' '; idx.push(-1); }
+    if (!kompakt && text) {
+      text += ' ';
+      idx.push(-1);
+    }
     text += t;
     for (let k = 0; k < t.length; k++) idx.push(i);
   });
@@ -156,7 +187,9 @@ export function steuerIdGueltig(roh: string): boolean {
 }
 
 interface Regel {
-  art: Musterart; re: RegExp; gruppe?: number;
+  art: Musterart;
+  re: RegExp;
+  gruppe?: number;
   gueltig?: (treffer: string) => boolean;
   /** Der längste gültige Anfang des Treffers (z. B. IBAN, auf die noch ein Wort folgt); null = keiner. */
   kuerze?: (treffer: string) => string | null;
@@ -178,14 +211,18 @@ const REGELN: Regel[] = [
   { art: 'steuerid', re: /(?<![\d])[1-9]\d(?:[ /]?\d){9}(?![\d])/g, gueltig: (t) => steuerIdGueltig(t) },
   // Ein Datum mit „geb.“, „geboren“, „Geburtsdatum“ o. Ä. kurz davor.
   {
-    art: 'geburtsdatum', re: /(geb(?:\.|oren|urtsdatum|urtstag|\b)[^\d\n]{0,25}?)(\d{1,2}\. ?\d{1,2}\. ?(?:19|20)?\d{2}|\d{4}-\d{2}-\d{2}|\d{1,2}\. ?(?:januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember) ?\d{4})/g,
+    art: 'geburtsdatum',
+    re: /(geb(?:\.|oren|urtsdatum|urtstag|\b)[^\d\n]{0,25}?)(\d{1,2}\. ?\d{1,2}\. ?(?:19|20)?\d{2}|\d{4}-\d{2}-\d{2}|\d{1,2}\. ?(?:januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember) ?\d{4})/g,
     gruppe: 2,
   },
   { art: 'email', re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/g },
   {
     art: 'telefon',
     re: /(?<![\w+])(?:\+|00)\d{1,3}[ /-]?(?:\(0\)[ ]?)?\d{2,5}(?:[ /-]?\d{2,}){1,4}|(?<![\w.,])0\d{2,5}(?: ?[/-] ?| )?\d{3,}(?:[ -]\d{2,})*(?![\w.,]\d)/g,
-    gueltig: (t) => { const n = t.replace(/\D/g, '').length; return n >= 7 && n <= 15 && !/^\d{1,2}\.\d{1,2}\./.test(t); },
+    gueltig: (t) => {
+      const n = t.replace(/\D/g, '').length;
+      return n >= 7 && n <= 15 && !/^\d{1,2}\.\d{1,2}\./.test(t);
+    },
   },
 ];
 
@@ -234,8 +271,10 @@ export function bereicheVon(seiten: SchwaerzSeite[], funde: Fund[]): Bereich[] {
       const [, x, y, b, h] = seite.woerter[k];
       const neu = mitRand({ seite: f.seite, x, y, b, h }, seite);
       if (aktuell && gleicheZeile(aktuell, neu)) {
-        const x1 = Math.min(aktuell.x, neu.x), y1 = Math.min(aktuell.y, neu.y);
-        const x2 = Math.max(aktuell.x + aktuell.b, neu.x + neu.b), y2 = Math.max(aktuell.y + aktuell.h, neu.y + neu.h);
+        const x1 = Math.min(aktuell.x, neu.x),
+          y1 = Math.min(aktuell.y, neu.y);
+        const x2 = Math.max(aktuell.x + aktuell.b, neu.x + neu.b),
+          y2 = Math.max(aktuell.y + aktuell.h, neu.y + neu.h);
         aktuell = { seite: f.seite, x: x1, y: y1, b: x2 - x1, h: y2 - y1 };
       } else {
         if (aktuell) r.push(aktuell);
@@ -248,7 +287,8 @@ export function bereicheVon(seiten: SchwaerzSeite[], funde: Fund[]): Bereich[] {
 }
 
 const gleicheZeile = (a: Bereich, b: Bereich) => {
-  const oben = Math.max(a.y, b.y), unten = Math.min(a.y + a.h, b.y + b.h);
+  const oben = Math.max(a.y, b.y),
+    unten = Math.min(a.y + a.h, b.y + b.h);
   return unten - oben > 0.5 * Math.min(a.h, b.h) && b.x - (a.x + a.b) < 3 * Math.max(a.h, b.h);
 };
 
@@ -257,13 +297,15 @@ export function mitRand(w: Bereich, seite: { breite: number; hoehe: number }): B
   // Zeilenhöhe: bei senkrechten Wörtern (gedrehte Seiten) die Breite.
   const hPt = Math.min(w.h * seite.hoehe, w.b * seite.breite);
   const rand = 1 + 0.15 * hPt;
-  const rx = rand / seite.breite, ry = rand / seite.hoehe;
+  const rx = rand / seite.breite,
+    ry = rand / seite.hoehe;
   return begrenzt({ seite: w.seite, x: w.x - rx, y: w.y - ry, b: w.b + 2 * rx, h: w.h + 2 * ry });
 }
 
 const rund = (v: number) => Math.round(v * 1e5) / 1e5;
 function begrenzt(a: Bereich): Bereich {
-  const x = Math.max(0, a.x), y = Math.max(0, a.y);
+  const x = Math.max(0, a.x),
+    y = Math.max(0, a.y);
   return { seite: a.seite, x: rund(x), y: rund(y), b: rund(Math.min(1, a.x + a.b) - x), h: rund(Math.min(1, a.y + a.h) - y) };
 }
 
@@ -282,11 +324,15 @@ export function pruefeBereiche(roh: unknown, anzahlSeiten: number): Bereich[] {
   roh.forEach((x, i) => {
     const o = (x ?? {}) as Record<string, unknown>;
     const seite = Number(o.seite);
-    if (!Number.isInteger(seite) || seite < 1 || seite > anzahlSeiten) throw new Error(`Bereich ${i + 1}: Die Seite ${String(o.seite)} gibt es nicht (das Dokument hat ${anzahlSeiten} ${anzahlSeiten === 1 ? 'Seite' : 'Seiten'}).`);
+    if (!Number.isInteger(seite) || seite < 1 || seite > anzahlSeiten)
+      throw new Error(
+        `Bereich ${i + 1}: Die Seite ${String(o.seite)} gibt es nicht (das Dokument hat ${anzahlSeiten} ${anzahlSeiten === 1 ? 'Seite' : 'Seiten'}).`,
+      );
     const z = ['x', 'y', 'b', 'h'].map((k) => Number(o[k]));
     if (z.some((v) => !Number.isFinite(v))) throw new Error(`Bereich ${i + 1}: x, y, b und h müssen Zahlen sein (relativ, 0 bis 1).`);
     const [bx, by, bb, bh] = z;
-    if (bx < -0.01 || by < -0.01 || bx > 1 || by > 1 || bb <= 0 || bh <= 0 || bb > 1.01 || bh > 1.01) throw new Error(`Bereich ${i + 1}: x, y, b und h sind relativ zur Seite (0 bis 1, Breite und Höhe größer 0).`);
+    if (bx < -0.01 || by < -0.01 || bx > 1 || by > 1 || bb <= 0 || bh <= 0 || bb > 1.01 || bh > 1.01)
+      throw new Error(`Bereich ${i + 1}: x, y, b und h sind relativ zur Seite (0 bis 1, Breite und Höhe größer 0).`);
     const a = begrenzt({ seite, x: bx, y: by, b: bb, h: bh });
     if (a.b * a.h >= 1e-6) r.push(a);
   });
@@ -307,6 +353,7 @@ export function pruefeBegriffe(roh: unknown): string[] {
 
 /** „3 Stellen auf 2 Seiten“ */
 export function stellenText(bereiche: Bereich[]): string {
-  const n = bereiche.length, s = new Set(bereiche.map((b) => b.seite)).size;
+  const n = bereiche.length,
+    s = new Set(bereiche.map((b) => b.seite)).size;
   return `${n} ${t('gemeinsam.schwaerzen.stellen', { anzahl: n })} auf ${s} ${t('gemeinsam.schwaerzen.seiten', { anzahl: s })}`;
 }

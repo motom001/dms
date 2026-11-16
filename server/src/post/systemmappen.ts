@@ -11,7 +11,16 @@ import type { Passung } from '../mappentypen';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
-import { abwesenheitWirkt, type Benutzer, type Kontorolle, type Mappe, type Mappentyp, type Systemkonto, verweiseVon, type Werte } from '../../../shared/src/model';
+import {
+  abwesenheitWirkt,
+  type Benutzer,
+  type Kontorolle,
+  type Mappe,
+  type Mappentyp,
+  type Systemkonto,
+  verweiseVon,
+  type Werte,
+} from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../../shared/src/systemkonten';
 import { nachweis } from '../nachweisjournal';
@@ -26,20 +35,32 @@ export interface KontenAnschluss {
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 /** Ein Konto, das kein Mensch ist (#673), für Werkbank → Benutzer. */
 export interface SystemkontoEintrag {
-  id: string; name: string; rolle: Kontorolle; aktiv: boolean; systemkonto?: string;
-  paketId?: string; paket?: string | null; automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>;
+  id: string;
+  name: string;
+  rolle: Kontorolle;
+  aktiv: boolean;
+  systemkonto?: string;
+  paketId?: string;
+  paket?: string | null;
+  automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>;
   /**
    * Auffälligkeiten (#817), auch eingeklappt in der Kopfzeile sichtbar: `fehler` – Konto deaktiviert (obwohl sein
    * Paket noch da ist) oder eine seiner Automatisierungen angehalten; `weitreichend` – das Paket darf alle Mappentypen ändern oder alle
    * lesen und dazu ins Netz (`systemkontoAuffaellig` in shared/src/systemkonten.ts).
    */
-  fehler?: SystemkontoFehler; weitreichend?: boolean;
+  fehler?: SystemkontoFehler;
+  weitreichend?: boolean;
   /** Paket ohne Code (#1181): Das Konto ist bewusst aus und steht nur für die Herkunft – kein Fehler. */
   ohneCode?: boolean;
 }
 
 /** Die Teile, die die Systemmappen rufen: Rechteprüfung, Passung, Historie und Titel. */
-export interface SystemmappenTeile { rechte: ZugriffDienst; passung: Passung; historie: MappenHistorie; titel: MappenTitel }
+export interface SystemmappenTeile {
+  rechte: ZugriffDienst;
+  passung: Passung;
+  historie: MappenHistorie;
+  titel: MappenTitel;
+}
 
 /** Was die Systemmappen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface SystemmappenAnschluss {
@@ -58,24 +79,60 @@ export interface SystemmappenAnschluss {
 }
 
 export class PostSystemmappen {
-  constructor(private readonly kern: Kern, private readonly teile: SystemmappenTeile, private readonly anschluss: SystemmappenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: SystemmappenTeile,
+    private readonly anschluss: SystemmappenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private get systemkonten() { return this.anschluss.systemkonten(); }
-  private get automatisierungenVon() { return this.anschluss.automatisierungenVon(); }
-  private inEinemZug<T>(f: () => Promise<T>): Promise<T> { return this.kern.inEinemZug(f); }
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
-  private meldeVerknuepft(...a: Parameters<SystemmappenAnschluss['meldeVerknuepft']>) { return this.anschluss.meldeVerknuepft(...a); }
-  private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) { return this.anschluss.passungsAufgaben(liste); }
-  private favoritenVorgabe() { return this.anschluss.favoritenVorgabe(); }
-  private vorgabeAufgabenEmpfaenger(b: Benutzer) { return this.anschluss.vorgabeAufgabenEmpfaenger(b); }
-  private sichereSystem() { return this.anschluss.sichereSystem(); }
-  private zugriff(ich: Zugreifender) { return this.teile.rechte.zugriff(ich); }
-  private passungFuer(typ: Mappentyp, ids: string[]) { return this.teile.passung.passungFuer(typ, ids); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private aenderungen(typ: Mappentyp, alt: Werte, neu: Werte) { return this.teile.historie.aenderungen(typ, alt, neu); }
-  private aktualisiereTitel(ids: string[]) { return this.teile.titel.aktualisiereTitel(ids); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private get systemkonten() {
+    return this.anschluss.systemkonten();
+  }
+  private get automatisierungenVon() {
+    return this.anschluss.automatisierungenVon();
+  }
+  private inEinemZug<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inEinemZug(f);
+  }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.anschluss.ereignis(...a);
+  }
+  private meldeVerknuepft(...a: Parameters<SystemmappenAnschluss['meldeVerknuepft']>) {
+    return this.anschluss.meldeVerknuepft(...a);
+  }
+  private passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) {
+    return this.anschluss.passungsAufgaben(liste);
+  }
+  private favoritenVorgabe() {
+    return this.anschluss.favoritenVorgabe();
+  }
+  private vorgabeAufgabenEmpfaenger(b: Benutzer) {
+    return this.anschluss.vorgabeAufgabenEmpfaenger(b);
+  }
+  private sichereSystem() {
+    return this.anschluss.sichereSystem();
+  }
+  private zugriff(ich: Zugreifender) {
+    return this.teile.rechte.zugriff(ich);
+  }
+  private passungFuer(typ: Mappentyp, ids: string[]) {
+    return this.teile.passung.passungFuer(typ, ids);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private aenderungen(typ: Mappentyp, alt: Werte, neu: Werte) {
+    return this.teile.historie.aenderungen(typ, alt, neu);
+  }
+  private aktualisiereTitel(ids: string[]) {
+    return this.teile.titel.aktualisiereTitel(ids);
+  }
 
   /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */
   async schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null): Promise<Mappe> {
@@ -84,9 +141,12 @@ export class PostSystemmappen {
     if (alt && JSON.stringify(alt.werte) === JSON.stringify(werte)) return alt;
     const aenderungen = await this.aenderungen(typ, alt?.werte ?? {}, werte);
     // Feldweise (#609): Felder, die inzwischen ein Mensch geändert hat, bleiben.
-    const neu = alt ? await this.repo.aendereMappe(id, werte, [], von, { basis: alt.werte, verweise: (w) => verweiseVon(typ, w) }) : undefined;
+    const neu = alt
+      ? await this.repo.aendereMappe(id, werte, [], von, { basis: alt.werte, verweise: (w) => verweiseVon(typ, w) })
+      : undefined;
     if (!alt) await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
-    if (aenderungen.length) await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen, ...(neu ? { stand: neu.geaendert } : {}) });
+    if (aenderungen.length)
+      await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen, ...(neu ? { stand: neu.geaendert } : {}) });
     await this.meldeVerknuepft(typ, id, alt?.werte ?? {}, werte, von);
     if (alt) await this.passungsAufgaben([{ id, problem: null }]);
     await this.aktualisiereTitel([id]);
@@ -102,7 +162,8 @@ export class PostSystemmappen {
     const { benutzer: typ, systemrollen } = await this.kern.system();
     const alt = await this.repo.holeMappe(b.id);
     // Neuer Benutzer (#506): Vorgabe „Favoriten benachrichtigen“ aus der Werkbank – nur, wenn sie aus ist.
-    if (!alt && b.art !== 'dienst' && !(await this.favoritenVorgabe())) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
+    if (!alt && b.art !== 'dienst' && !(await this.favoritenVorgabe()))
+      await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
     // #719: Der erste Mensch ohne Admin-Rechte bekommt die Aufgaben ohne Empfänger, bis die Werkbank anders wählt.
     if (!alt) await this.vorgabeAufgabenEmpfaenger(b);
     const system = new Set(systemrollen.values());
@@ -111,16 +172,26 @@ export class PostSystemmappen {
     // In einer Transaktion (#962): Benutzer-Mappe, Ereignis und die sofortigen Empfänger (Abwesenheit) ganz oder gar nicht.
     await this.inEinemZug(async () => {
       // Ereigniskatalog (#670): Benutzer deaktiviert bzw. wieder aktiviert (die Mappe folgt dem Konto).
-      if (alt && alt.werte.aktiv !== b.aktiv) await this.ereignis(b.aktiv ? 'benutzer.aktiviert' : 'benutzer.deaktiviert', { benutzer: b.id }, von);
+      if (alt && alt.werte.aktiv !== b.aktiv)
+        await this.ereignis(b.aktiv ? 'benutzer.aktiviert' : 'benutzer.deaktiviert', { benutzer: b.id }, von);
       // Abwesenheit (#78): „abwesend“ = wirkt heute; Zeitraum nur, solange sie an ist; der Vertreter auch nach dem Deaktivieren.
-      await this.schreibeSystemMappe(typ, b.id, {
-        ...(alt?.werte ?? {}),
-        // Systemrolle ist für jeden Menschen „Mitglied“ (#818: die Systemrolle „Administrator“ ist entfallen).
-        name: b.name || b.email, email: b.email, rollen: [systemrollen.get('mitglied')!, ...weitere], aktiv: b.aktiv,
-        abwesend: abwesenheitWirkt(ab, heuteIn()),
-        abwesend_von: ab?.an ? ab.von : null, abwesend_bis: ab?.an ? ab.bis : null,
-        vertreter: ab?.vertreterId && (ab.an || !b.aktiv) ? ab.vertreterId : null,
-      }, von);
+      await this.schreibeSystemMappe(
+        typ,
+        b.id,
+        {
+          ...(alt?.werte ?? {}),
+          // Systemrolle ist für jeden Menschen „Mitglied“ (#818: die Systemrolle „Administrator“ ist entfallen).
+          name: b.name || b.email,
+          email: b.email,
+          rollen: [systemrollen.get('mitglied')!, ...weitere],
+          aktiv: b.aktiv,
+          abwesend: abwesenheitWirkt(ab, heuteIn()),
+          abwesend_von: ab?.an ? ab.von : null,
+          abwesend_bis: ab?.an ? ab.bis : null,
+          vertreter: ab?.vertreterId && (ab.an || !b.aktiv) ? ab.vertreterId : null,
+        },
+        von,
+      );
       await this.kern.anlaesse.benutzerGespiegelt.melde({ benutzer: b, von, ...(abwesenheit ? { abwesenheit } : {}) });
     });
   }
@@ -129,7 +200,10 @@ export class PostSystemmappen {
   async gleicheBenutzerAb(liste: Benutzer[], fortschritt: (fertig: number, gesamt: number) => void = () => {}) {
     await this.sichereSystem();
     // Fortschritt für die Startseite (#802).
-    for (const [i, b] of liste.entries()) { fortschritt(i, liste.length); await this.spiegleBenutzer(b); }
+    for (const [i, b] of liste.entries()) {
+      fortschritt(i, liste.length);
+      await this.spiegleBenutzer(b);
+    }
   }
 
   /** Prüft eine Auswahl weiterer Rollen, bevor etwas geändert wird; liefert die bereinigten Ids. */
@@ -159,7 +233,13 @@ export class PostSystemmappen {
     const nachher = [...behalten, ...ids];
     if (JSON.stringify([...vorher].sort()) !== JSON.stringify([...nachher].sort())) {
       const namen = new Map((await this.listeRollen(true)).map((r) => [r.id, r.name] as const));
-      void nachweis('zugang.rechte', { was: 'rollen', konto: typeof m.werte.email === 'string' ? m.werte.email : benutzerId, vorher: vorher.map((r) => namen.get(r) ?? r), nachher: nachher.map((r) => namen.get(r) ?? r), von });
+      void nachweis('zugang.rechte', {
+        was: 'rollen',
+        konto: typeof m.werte.email === 'string' ? m.werte.email : benutzerId,
+        vorher: vorher.map((r) => namen.get(r) ?? r),
+        nachher: nachher.map((r) => namen.get(r) ?? r),
+        von,
+      });
     }
   }
 
@@ -167,11 +247,18 @@ export class PostSystemmappen {
   async listeRollen(mitKonten = false) {
     const { rolle, kontorollen } = await this.kern.system();
     const konto = new Set(kontorollen.values());
-    return (await this.repo.listeMappen(rolle.id))
-      // Systemkonto und Paket (#673) vergibt niemand an Menschen – in Benutzerverwaltung und Freigaben nicht zur Wahl.
-      .filter((m) => mitKonten || !konto.has(m.id))
-      .map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? ''), system: !!m.systemKennung, ...(konto.has(m.id) ? { konto: true } : {}) }))
-      .sort((a, b) => Number(b.system) - Number(a.system) || a.name.localeCompare(b.name, 'de'));
+    return (
+      (await this.repo.listeMappen(rolle.id))
+        // Systemkonto und Paket (#673) vergibt niemand an Menschen – in Benutzerverwaltung und Freigaben nicht zur Wahl.
+        .filter((m) => mitKonten || !konto.has(m.id))
+        .map((m) => ({
+          id: m.id,
+          name: m.titel || String(m.werte.name ?? ''),
+          system: !!m.systemKennung,
+          ...(konto.has(m.id) ? { konto: true } : {}),
+        }))
+        .sort((a, b) => Number(b.system) - Number(a.system) || a.name.localeCompare(b.name, 'de'))
+    );
   }
 
   /**
@@ -181,19 +268,34 @@ export class PostSystemmappen {
   async systemkontenUebersicht(system: Benutzer[], dienst: Benutzer[]): Promise<SystemkontoEintrag[]> {
     const pakete = new Map((await this.repo.listePakete()).map((p) => [p.id, p]));
     const eintrag = async (b: Benutzer, rolle: Kontorolle): Promise<SystemkontoEintrag> => {
-      const paket = b.paketId ? pakete.get(b.paketId) ?? null : undefined;
+      const paket = b.paketId ? (pakete.get(b.paketId) ?? null) : undefined;
       const automatisierungen = (await this.automatisierungenVon?.(b.id)) ?? [];
       const ohneCode = !!paket && !paket.code && !paket.laeufer;
-      const a = systemkontoAuffaellig({ aktiv: b.aktiv, rolle, paket: paket === undefined ? undefined : paket ? paket.name : null, ohneCode, automatisierungen, rechte: paket?.laeufer });
+      const a = systemkontoAuffaellig({
+        aktiv: b.aktiv,
+        rolle,
+        paket: paket === undefined ? undefined : paket ? paket.name : null,
+        ohneCode,
+        automatisierungen,
+        rechte: paket?.laeufer,
+      });
       return {
-        id: b.id, name: b.name, rolle, aktiv: b.aktiv,
+        id: b.id,
+        name: b.name,
+        rolle,
+        aktiv: b.aktiv,
         ...(b.systemkonto ? { systemkonto: b.systemkonto } : {}),
         ...(b.paketId ? { paketId: b.paketId, paket: paket?.name ?? null } : {}),
         automatisierungen,
-        ...(a.fehler ? { fehler: a.fehler } : {}), ...(a.weitreichend ? { weitreichend: true } : {}), ...(ohneCode ? { ohneCode: true } : {}),
+        ...(a.fehler ? { fehler: a.fehler } : {}),
+        ...(a.weitreichend ? { weitreichend: true } : {}),
+        ...(ohneCode ? { ohneCode: true } : {}),
       };
     };
-    return [...await Promise.all(system.map((b) => eintrag(b, 'systemkonto'))), ...await Promise.all(dienst.map((b) => eintrag(b, 'paket')))];
+    return [
+      ...(await Promise.all(system.map((b) => eintrag(b, 'systemkonto')))),
+      ...(await Promise.all(dienst.map((b) => eintrag(b, 'paket')))),
+    ];
   }
 
   /** Zugriff eines Systemkontos (#673), z. B. für Automatisierungen: Rechte aus den Regeln für die Rolle „Systemkonto“. */

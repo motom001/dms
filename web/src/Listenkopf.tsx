@@ -8,13 +8,31 @@ import { Hilfe } from './Hilfe';
  * Alle Listenköpfe nutzen diese Komponente, damit das „?“ überall an derselben Stelle steht –
  * auch ohne Beschreibung und am Handy, wo die Beschreibung ausgeblendet ist.
  */
-export function Listenkopf({ titel, hilfe, beschreibung, className, children }: {
-  titel: ReactNode; hilfe?: Hilfeort; beschreibung?: ReactNode; className?: string; children?: ReactNode;
+export function Listenkopf({
+  titel,
+  hilfe,
+  beschreibung,
+  className,
+  children,
+}: {
+  titel: ReactNode;
+  hilfe?: Hilfeort;
+  beschreibung?: ReactNode;
+  className?: string;
+  children?: ReactNode;
 }) {
   return (
     <div className={className ? `listenkopf ${className}` : 'listenkopf'}>
       <div>
-        <h1>{titel}{hilfe && <> <Hilfe ort={hilfe} /></>}</h1>
+        <h1>
+          {titel}
+          {hilfe && (
+            <>
+              {' '}
+              <Hilfe ort={hilfe} />
+            </>
+          )}
+        </h1>
         {beschreibung && <p className="leise klein">{beschreibung}</p>}
       </div>
       {children}

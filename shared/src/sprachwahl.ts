@@ -24,7 +24,8 @@ export const SPRACHEN_STANDARD: Spracheinstellung = { standard: AUSGANGSSPRACHE,
 
 /** Sprachen, die es in dieser Installation gibt: eingebaut und aus Sprachpaketen. */
 export const verfuegbareSprachen = (): string[] => [...new Set<string>([...EINGEBAUTE_SPRACHEN, ...registrierteSprachen()])];
-export const istVerfuegbar = (v: unknown): v is string => typeof v === 'string' && SPRACHKENNUNG.test(v) && verfuegbareSprachen().includes(v);
+export const istVerfuegbar = (v: unknown): v is string =>
+  typeof v === 'string' && SPRACHKENNUNG.test(v) && verfuegbareSprachen().includes(v);
 
 /** Gespeicherten Wert lesen; Unbekanntes fällt weg, ohne gültige Sprache gilt die Vorgabe. */
 export function liesSpracheinstellung(v: unknown): Spracheinstellung {

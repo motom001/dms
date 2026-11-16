@@ -5,7 +5,7 @@
  * LICENSE des DMS bis 0.92.0 (AGPL).
  */
 export const LIZENZTEXTE: Record<string, string> = {
-  'MIT': `MIT License
+  MIT: `MIT License
 
 Copyright (c) {jahr} {name}
 

@@ -13,7 +13,9 @@ const kurz = () => new Promise((r) => setTimeout(r, 5));
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   // #678: Das Melden macht die Automatisierung „Favoriten-Änderungen melden“ – hier direkt als Abnehmer.
-  d.ereignisse.abonniere('favoriten', async (e) => { if (e.art === 'favorit.geaendert') await d.ohneEmpfaenger.favoritenMelden(String(e.daten.mappe), String(e.daten.von)); });
+  d.ereignisse.abonniere('favoriten', async (e) => {
+    if (e.art === 'favorit.geaendert') await d.ohneEmpfaenger.favoritenMelden(String(e.daten.mappe), String(e.daten.von));
+  });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
@@ -22,9 +24,24 @@ async function aufbau() {
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }] });
   const B = { id: ben.id, rolle: 'mitglied' };
-  const geaendert = async () => { await d.ereignisse.verteile(); return (await d.vertretung.meineAufgaben(B)).filter((a) => a.art === 'aenderung'); };
+  const geaendert = async () => {
+    await d.ereignisse.verteile();
+    return (await d.vertretung.meineAufgaben(B)).filter((a) => a.art === 'aenderung');
+  };
   const hervorgehoben = async () => ((await d.sichten.seite(B, { sicht: t.id })) as { geaendert: string[] }).geaendert;
-  return { d, konten, anna, ben, carl, t, A: { id: anna.id, rolle: 'admin' }, B, C: { id: carl.id, rolle: 'mitglied' }, geaendert, hervorgehoben };
+  return {
+    d,
+    konten,
+    anna,
+    ben,
+    carl,
+    t,
+    A: { id: anna.id, rolle: 'admin' },
+    B,
+    C: { id: carl.id, rolle: 'mitglied' },
+    geaendert,
+    hervorgehoben,
+  };
 }
 
 describe('Favorit = Abo (#422)', () => {
@@ -117,11 +134,17 @@ describe('Favorit = Abo (#422)', () => {
     let regeln: Array<{ rollen: string[]; vorgabe: boolean }> = [{ rollen: [], vorgabe: true }];
     d.favoritenRegeln = async () => regeln;
     d.ereignisse.abbestellen('favoriten');
-    d.ereignisse.abonniere('favoriten', async (e) => { if (e.art === 'favorit.geaendert') for (const r of regeln) await d.ohneEmpfaenger.favoritenMelden(String(e.daten.mappe), String(e.daten.von), r.rollen); });
+    d.ereignisse.abonniere('favoriten', async (e) => {
+      if (e.art === 'favorit.geaendert')
+        for (const r of regeln) await d.ohneEmpfaenger.favoritenMelden(String(e.daten.mappe), String(e.daten.von), r.rollen);
+    });
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, anna.id);
     await d.mappen.setzeFavorit(B, m.id, true);
     await d.mappen.setzeFavorit(C, m.id, true);
-    const geaendertC = async () => { await d.ereignisse.verteile(); return (await d.vertretung.meineAufgaben(C)).filter((a) => a.art === 'aenderung'); };
+    const geaendertC = async () => {
+      await d.ereignisse.verteile();
+      return (await d.vertretung.meineAufgaben(C)).filter((a) => a.art === 'aenderung');
+    };
     const rollen = await d.postSystemmappen.listeRollen();
     const mitglied = rollen.find((r) => r.system && r.name === 'Mitglied')!;
     assert.ok(mitglied, 'die Systemrolle steht in der Auswahl');
@@ -134,7 +157,10 @@ describe('Favorit = Abo (#422)', () => {
     assert.equal((await geaendert()).length, 0);
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(ben.id), false);
     // Nur Rolle „Buchhaltung“ – Carl.
-    const rolle = await d.mappen.legeMappeAn({ typId: (await d.mappentypen.listeTypen()).find((x) => x.system === 'rolle')!.id, werte: { name: 'Buchhaltung' } }, anna.id);
+    const rolle = await d.mappen.legeMappeAn(
+      { typId: (await d.mappentypen.listeTypen()).find((x) => x.system === 'rolle')!.id, werte: { name: 'Buchhaltung' } },
+      anna.id,
+    );
     await d.postSystemmappen.setzeRollen(carl.id, [rolle.id], anna.id);
     regeln = [{ rollen: [rolle.id], vorgabe: true }];
     assert.equal(await d.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(carl.id), true);
@@ -159,7 +185,10 @@ describe('Favorit = Abo (#422)', () => {
     const { benutzer: dora } = await konten.legeBenutzerAn({ email: 'dora@example.org', name: 'Dora' });
     assert.equal((await konten.einstellungen(dora)).favoriten_benachrichtigen, false, 'neuer Benutzer bekommt die Vorgabe');
     // Eine von zwei Automatisierungen mit Vorgabe an: an.
-    d.favoritenRegeln = async () => [{ rollen: [], vorgabe: false }, { rollen: [], vorgabe: true }];
+    d.favoritenRegeln = async () => [
+      { rollen: [], vorgabe: false },
+      { rollen: [], vorgabe: true },
+    ];
     const { benutzer: emil } = await konten.legeBenutzerAn({ email: 'emil@example.org', name: 'Emil' });
     assert.equal((await konten.einstellungen(emil)).favoriten_benachrichtigen, undefined);
   });

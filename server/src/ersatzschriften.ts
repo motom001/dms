@@ -36,7 +36,8 @@ export function probePdf(schriften: readonly string[] = ['Helvetica', 'Arial']):
     const text = `BT /F1 28 Tf 40 120 Td (Probe ${s} 0123 Ablago) Tj 0 -50 Td (Lena Jonas Markus Petra) Tj ET`;
     objekte[f] = `<< /Type /Font /Subtype /${s === 'Arial' ? 'TrueType' : 'Type1'} /BaseFont /${s} /Encoding /WinAnsiEncoding >>`;
     objekte[f + 1] = `<< /Length ${text.length} >>\nstream\n${text}\nendstream`;
-    objekte[f + 2] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 200] /Resources << /Font << /F1 ${f} 0 R >> >> /Contents ${f + 1} 0 R >>`;
+    objekte[f + 2] =
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 200] /Resources << /Font << /F1 ${f} 0 R >> >> /Contents ${f + 1} 0 R >>`;
     seiten.push(f + 2);
   });
   objekte[1] = '<< /Type /Catalog /Pages 2 0 R >>';
@@ -48,7 +49,10 @@ export function probePdf(schriften: readonly string[] = ['Helvetica', 'Arial']):
     pdf += `${n} 0 obj\n${objekte[n]}\nendobj\n`;
   }
   const xref = pdf.length;
-  pdf += `xref\n0 ${objekte.length}\n0000000000 65535 f \n${lage.slice(1).map((l) => `${String(l).padStart(10, '0')} 00000 n \n`).join('')}`;
+  pdf += `xref\n0 ${objekte.length}\n0000000000 65535 f \n${lage
+    .slice(1)
+    .map((l) => `${String(l).padStart(10, '0')} 00000 n \n`)
+    .join('')}`;
   pdf += `trailer\n<< /Size ${objekte.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
   return Buffer.from(pdf, 'latin1');
 }
@@ -60,7 +64,18 @@ let gesehen: string | null = null;
 export function merkeSchriftfehler(stderr: unknown, wo: string): boolean {
   const text = String(stderr ?? '');
   if (!SCHRIFT_FEHLT.test(text)) return false;
-  if (!gesehen) log.warn('Für eine Schrift im PDF fehlt der Ersatz: Der Text fehlt in Seiten- und Vorschaubildern. Das offizielle Image bringt die Schriften mit.', { wo, meldung: text.split('\n').find((z) => SCHRIFT_FEHLT.test(z))?.trim().slice(0, 200) });
+  if (!gesehen)
+    log.warn(
+      'Für eine Schrift im PDF fehlt der Ersatz: Der Text fehlt in Seiten- und Vorschaubildern. Das offizielle Image bringt die Schriften mit.',
+      {
+        wo,
+        meldung: text
+          .split('\n')
+          .find((z) => SCHRIFT_FEHLT.test(z))
+          ?.trim()
+          .slice(0, 200),
+      },
+    );
   gesehen = wo;
   return true;
 }
@@ -78,14 +93,21 @@ export async function pruefeSchriften(): Promise<boolean | undefined> {
   try {
     await writeFile(join(dir, 'probe.pdf'), probePdf());
     const stderr = await new Promise<string | null>((ok) => {
-      execFile('pdftoppm', ['-r', '20', '-gray', join(dir, 'probe.pdf'), join(dir, 's')], { timeout: 20_000, maxBuffer: AUSGABE_KLEIN }, (e, _o, err) => {
-        ok(e && (e as NodeJS.ErrnoException).code === 'ENOENT' ? null : String(err ?? ''));
-      });
+      execFile(
+        'pdftoppm',
+        ['-r', '20', '-gray', join(dir, 'probe.pdf'), join(dir, 's')],
+        { timeout: 20_000, maxBuffer: AUSGABE_KLEIN },
+        (e, _o, err) => {
+          ok(e && (e as NodeJS.ErrnoException).code === 'ENOENT' ? null : String(err ?? ''));
+        },
+      );
     });
     if (stderr === null) return undefined;
     gesehen = null;
     return !SCHRIFT_FEHLT.test(stderr);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 /**
@@ -100,7 +122,9 @@ export async function nichtEingebettet(pdf: Buffer): Promise<string[] | null> {
       execFile('pdffonts', [join(dir, 'datei.pdf')], { timeout: 30_000, maxBuffer: AUSGABE_KLEIN }, (e, out) => ok(e ? null : String(out)));
     });
     return aus === null ? null : leseFontliste(aus);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 /** Ausgabe von pdffonts: Spaltenbreiten aus der Strichzeile, „emb“ ist die vierte Spalte. Namen ohne Teilmengen-Präfix. */
@@ -116,7 +140,12 @@ export function leseFontliste(aus: string): string[] {
     if (!z.trim()) continue;
     const emb = z.slice(spalten[3][0], spalten[3][1]).trim();
     if (emb !== 'no') continue;
-    namen.add(z.slice(spalten[0][0], spalten[0][1]).trim().replace(/^[A-Z]{6}\+/, '') || '?');
+    namen.add(
+      z
+        .slice(spalten[0][0], spalten[0][1])
+        .trim()
+        .replace(/^[A-Z]{6}\+/, '') || '?',
+    );
   }
   return [...namen];
 }

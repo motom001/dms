@@ -133,7 +133,13 @@ export interface Ausloeser {
 }
 
 /** Ein Ereignis, wie es Abnehmer im DMS bekommen. */
-export interface KatalogEreignis { id: string; art: KatalogArt; daten: Record<string, unknown>; ausloeser: Ausloeser; erstellt: string }
+export interface KatalogEreignis {
+  id: string;
+  art: KatalogArt;
+  daten: Record<string, unknown>;
+  ausloeser: Ausloeser;
+  erstellt: string;
+}
 
 /** Geänderte Feldschlüssel zweier Ereignisse zusammenführen (Bündeln). */
 export function mischeFelder(alt: Record<string, unknown>, neu: Record<string, unknown>): Record<string, unknown> {

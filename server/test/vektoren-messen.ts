@@ -57,24 +57,33 @@ async function miss(n: number) {
     const index = (await d.suche.vektorStand()).zwischenspeicherMB;
     const ids = (await sql`SELECT dokument_id AS id FROM vektoren ORDER BY random() LIMIT 21`).map((r) => r.id as string);
     const zeiten: number[] = [];
-    for (const id of ids) { t = performance.now(); await d.suche.aehnlicheDokumente(undefined, { dokument: id, anzahl: 10 }); zeiten.push(performance.now() - t); }
+    for (const id of ids) {
+      t = performance.now();
+      await d.suche.aehnlicheDokumente(undefined, { dokument: id, anzahl: 10 });
+      zeiten.push(performance.now() - t);
+    }
     // Vergleich: Kosinus in SQL (unnest) und alle holen + JS.
     const q = Array.from({ length: D }, () => Math.random() - 0.5);
-    const sqlZeiten: number[] = [], holenZeiten: number[] = [];
+    const sqlZeiten: number[] = [],
+      holenZeiten: number[] = [];
     for (let i = 0; i < 5; i++) {
       t = performance.now();
       await sql`SELECT dokument_id, (SELECT sum(x * y) FROM unnest(vektor, ${q}::real[]) AS u(x, y)) AS s FROM vektoren WHERE haushalt_id = ${H} AND modell = 'messung/256' ORDER BY s DESC LIMIT 10`;
       sqlZeiten.push(performance.now() - t);
       t = performance.now();
       const alle: Float32Array[] = [];
-      await pgRepo(sql, H).vektorenLaden('messung/256', (teil) => { for (const x of teil) alle.push(x.vektor); });
+      await pgRepo(sql, H).vektorenLaden('messung/256', (teil) => {
+        for (const x of teil) alle.push(x.vektor);
+      });
       holenZeiten.push(performance.now() - t);
     }
     console.log(`${n.toLocaleString('de-DE')} Dokumente (${D} Dimensionen), gefüllt in ${(fuellen / 1000).toFixed(1)} s`);
     console.log(`  PostgreSQL, Tabelle vektoren:     ${mb(Number(groesse))} (${(Number(groesse) / n).toFixed(0)} Bytes je Dokument)`);
     console.log(`  Zwischenspeicher laden (1. Mal):  ${laden.toFixed(0)} ms; Vektoren darin ${index} MB, Prozess insgesamt +${mb(rss)}`);
     console.log(`  Ähnliche Dokumente (Median 21):   ${median(zeiten).toFixed(1)} ms (höchstens ${Math.max(...zeiten).toFixed(1)} ms)`);
-    console.log(`  Vergleich – Kosinus in SQL:       ${median(sqlZeiten).toFixed(0)} ms; nur alle Vektoren holen: ${median(holenZeiten).toFixed(0)} ms`);
+    console.log(
+      `  Vergleich – Kosinus in SQL:       ${median(sqlZeiten).toFixed(0)} ms; nur alle Vektoren holen: ${median(holenZeiten).toFixed(0)} ms`,
+    );
   } finally {
     await sql.end();
     const admin = verbinde(alsUrl(basis));
@@ -83,4 +92,8 @@ async function miss(n: number) {
   }
 }
 
-for (const n of process.argv.slice(2).map(Number).filter((x) => x > 0)) await miss(n);
+for (const n of process.argv
+  .slice(2)
+  .map(Number)
+  .filter((x) => x > 0))
+  await miss(n);

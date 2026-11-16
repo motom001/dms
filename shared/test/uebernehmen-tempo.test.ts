@@ -11,8 +11,14 @@ import { stelleVon, textformen } from '../../shared/src/uebernehmen';
 import type { Feld, Wert } from '../../shared/src/model';
 
 /* ---------- alte Umsetzung (vor #1255) als Vergleich ---------- */
-const norm = (s: string) => s.replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '').replace(/\u00A8/g, '\u0308')
-  .normalize('NFKC').toLocaleLowerCase('de-DE').replace(/ß/g, 'ss').replace(/[\u2010\u2011]/g, '-');
+const norm = (s: string) =>
+  s
+    .replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '')
+    .replace(/\u00A8/g, '\u0308')
+    .normalize('NFKC')
+    .toLocaleLowerCase('de-DE')
+    .replace(/ß/g, 'ss')
+    .replace(/[\u2010\u2011]/g, '-');
 function alterSeitentext(woerter: Wort[], kompakt: boolean) {
   let text = '';
   const idx: number[] = [];
@@ -20,7 +26,10 @@ function alterSeitentext(woerter: Wort[], kompakt: boolean) {
     let t = norm(w[0]);
     if (kompakt) t = t.replace(/[\s-]+/g, '');
     if (!t) return;
-    if (!kompakt && text) { text += ' '; idx.push(-1); }
+    if (!kompakt && text) {
+      text += ' ';
+      idx.push(-1);
+    }
     text += t;
     for (let k = 0; k < t.length; k++) idx.push(i);
   });
@@ -49,23 +58,108 @@ function alteFindeBegriff(seiten: SchwaerzSeite[], begriff: string): Fund[] {
 }
 
 /* ---------- Testdokument ---------- */
-const VORRAT = ['Versicherung', 'Vertrag', 'Beitrag', 'Straße', 'STRASSE', 'Mül-', 'ler', 'Müller', 'Groß\u00ADmann', 'Null\u200Bbreite',
-  'Lena', 'Jonas', 'Petra', 'Ver\u2011sicherungsnehmer', 'DE89', '3704', '0044', '0532', '0130', '00', 'IBAN:', '01.03.2026', '1.3.2026',
-  '84,20', '1.234,56', 'EUR', '€', '3', 'Monate', '19', '%', 'ﬁnal', 'Café', 'Cafe\u0301', 'Kündigungsfrist', 'Policen-Nr.', 'A-12345',
-  'und', 'der', 'die', 'das', 'mit', 'zum', 'am', 'Seite', '-', '–', 'Beispielweg', '12', '01219', 'Dresden', 'lena@example.org'];
+const VORRAT = [
+  'Versicherung',
+  'Vertrag',
+  'Beitrag',
+  'Straße',
+  'STRASSE',
+  'Mül-',
+  'ler',
+  'Müller',
+  'Groß\u00ADmann',
+  'Null\u200Bbreite',
+  'Lena',
+  'Jonas',
+  'Petra',
+  'Ver\u2011sicherungsnehmer',
+  'DE89',
+  '3704',
+  '0044',
+  '0532',
+  '0130',
+  '00',
+  'IBAN:',
+  '01.03.2026',
+  '1.3.2026',
+  '84,20',
+  '1.234,56',
+  'EUR',
+  '€',
+  '3',
+  'Monate',
+  '19',
+  '%',
+  'ﬁnal',
+  'Café',
+  'Cafe\u0301',
+  'Kündigungsfrist',
+  'Policen-Nr.',
+  'A-12345',
+  'und',
+  'der',
+  'die',
+  'das',
+  'mit',
+  'zum',
+  'am',
+  'Seite',
+  '-',
+  '–',
+  'Beispielweg',
+  '12',
+  '01219',
+  'Dresden',
+  'lena@example.org',
+];
 
 function seiten(anzahl: number, jeSeite: number, saat = 1): SchwaerzSeite[] {
   let s = saat;
-  const zufall = () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const zufall = () => {
+    s = (s * 1103515245 + 12345) % 2147483648;
+    return s / 2147483648;
+  };
   return Array.from({ length: anzahl }, () => ({
-    breite: 595, hoehe: 842,
-    woerter: Array.from({ length: jeSeite }, (_, i): Wort => [VORRAT[Math.floor(zufall() * VORRAT.length)], (i % 10) * 50, Math.floor(i / 10) * 20, 40, 12]),
+    breite: 595,
+    hoehe: 842,
+    woerter: Array.from({ length: jeSeite }, (_, i): Wort => [
+      VORRAT[Math.floor(zufall() * VORRAT.length)],
+      (i % 10) * 50,
+      Math.floor(i / 10) * 20,
+      40,
+      12,
+    ]),
   }));
 }
 
-const BEGRIFFE = ['Müller', 'Grossmann', 'GROSSMANN', 'Straße', 'strasse', 'Nullbreite', 'Versicherungsnehmer', 'Ver-sicherungsnehmer',
-  'DE89 3704', 'DE893704', 'IBAN: DE89', '01.03.2026', '84,20 EUR', 'final', 'Café', 'Lena Jonas', 'der die das', 'A-12345', 'A12345',
-  'Policen-Nr. A-12345', '3 Monate', '19 %', 'ab', 'xyz nicht da', '  ', 'lena@example.org'];
+const BEGRIFFE = [
+  'Müller',
+  'Grossmann',
+  'GROSSMANN',
+  'Straße',
+  'strasse',
+  'Nullbreite',
+  'Versicherungsnehmer',
+  'Ver-sicherungsnehmer',
+  'DE89 3704',
+  'DE893704',
+  'IBAN: DE89',
+  '01.03.2026',
+  '84,20 EUR',
+  'final',
+  'Café',
+  'Lena Jonas',
+  'der die das',
+  'A-12345',
+  'A12345',
+  'Policen-Nr. A-12345',
+  '3 Monate',
+  '19 %',
+  'ab',
+  'xyz nicht da',
+  '  ',
+  'lena@example.org',
+];
 
 describe('Übernehmen: Seitentext je Seite einmal (#1255)', () => {
   it('findeBegriff liefert dieselben Treffer wie vorher', () => {
@@ -77,7 +171,13 @@ describe('Übernehmen: Seitentext je Seite einmal (#1255)', () => {
 
   it('Silbentrennung, ß/ss, Bindestriche, Null-Breite, mehrere Wörter', () => {
     const w = (t: string, i: number): Wort => [t, i * 10, 0, 9, 10];
-    const doc: SchwaerzSeite[] = [{ breite: 1, hoehe: 1, woerter: ['Herr', 'Mül-', 'ler', 'GROSSMANN', 'Ver\u2011trag', 'Null\u200Bbreite', 'DE89', '3704', '\u00AD'].map(w) }];
+    const doc: SchwaerzSeite[] = [
+      {
+        breite: 1,
+        hoehe: 1,
+        woerter: ['Herr', 'Mül-', 'ler', 'GROSSMANN', 'Ver\u2011trag', 'Null\u200Bbreite', 'DE89', '3704', '\u00AD'].map(w),
+      },
+    ];
     const woerter = (b: string) => findeBegriff(doc, b).map((f) => f.woerter);
     assert.deepEqual(woerter('Müller'), [[1, 2]]);
     assert.deepEqual(woerter('Großmann'), [[3]]);
@@ -106,12 +206,21 @@ describe('Übernehmen: Seitentext je Seite einmal (#1255)', () => {
   it('Messung: 200 Seiten × 400 Wörter, 15 Felder unter 500 ms', () => {
     const doc = seiten(200, 400, 11);
     const felder: Array<[Pick<Feld, 'typ' | 'beschriftungen'>, Wert, string]> = [
-      [{ typ: 'datum' }, '2026-03-01', '… Beginn 01.03.2026 …'], [{ typ: 'datum' }, '2027-12-31', ''], [{ typ: 'datum' }, '2025-07-04', '… am 4.7.2025'],
-      [{ typ: 'betrag' }, { betrag: 84.2, waehrung: 'EUR' } as Wert, '84,20 EUR'], [{ typ: 'betrag' }, { betrag: 1234.56, waehrung: 'EUR' } as Wert, ''],
-      [{ typ: 'betrag' }, { betrag: 99.99, waehrung: 'EUR' } as Wert, ''], [{ typ: 'text' }, 'A-12345', 'Policen-Nr. A-12345'],
-      [{ typ: 'text' }, 'Lena Müller', 'Versicherungsnehmer Lena Müller'], [{ typ: 'text' }, 'Beispielweg 12', ''], [{ typ: 'text' }, 'Nirgendwo', ''],
-      [{ typ: 'zahl' }, 3, ''], [{ typ: 'prozent' }, 19, '19 %'], [{ typ: 'zeitraum' }, { anzahl: 3, einheit: 'monate' } as Wert, '3 Monate'],
-      [{ typ: 'text' }, 'DE89 3704 0044 0532 0130 00', 'IBAN: DE89 3704 0044 0532 0130 00'], [{ typ: 'text' }, 'lena@example.org', ''],
+      [{ typ: 'datum' }, '2026-03-01', '… Beginn 01.03.2026 …'],
+      [{ typ: 'datum' }, '2027-12-31', ''],
+      [{ typ: 'datum' }, '2025-07-04', '… am 4.7.2025'],
+      [{ typ: 'betrag' }, { betrag: 84.2, waehrung: 'EUR' } as Wert, '84,20 EUR'],
+      [{ typ: 'betrag' }, { betrag: 1234.56, waehrung: 'EUR' } as Wert, ''],
+      [{ typ: 'betrag' }, { betrag: 99.99, waehrung: 'EUR' } as Wert, ''],
+      [{ typ: 'text' }, 'A-12345', 'Policen-Nr. A-12345'],
+      [{ typ: 'text' }, 'Lena Müller', 'Versicherungsnehmer Lena Müller'],
+      [{ typ: 'text' }, 'Beispielweg 12', ''],
+      [{ typ: 'text' }, 'Nirgendwo', ''],
+      [{ typ: 'zahl' }, 3, ''],
+      [{ typ: 'prozent' }, 19, '19 %'],
+      [{ typ: 'zeitraum' }, { anzahl: 3, einheit: 'monate' } as Wert, '3 Monate'],
+      [{ typ: 'text' }, 'DE89 3704 0044 0532 0130 00', 'IBAN: DE89 3704 0044 0532 0130 00'],
+      [{ typ: 'text' }, 'lena@example.org', ''],
     ];
     const start = performance.now();
     const stellen = felder.map(([f, w, fs]) => stelleVon(doc, textformen(f, w), fs));

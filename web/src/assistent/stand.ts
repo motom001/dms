@@ -1,5 +1,16 @@
 import { useSyncExternalStore } from 'react';
-import { beruflichBei, type DateiFehler, type Einrichtungsplan, type Nutzung, type PlanDatenbank, type PlanOrganisation, type Planprobleme, type PlanPaket, type PlanVerbindung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
+import {
+  beruflichBei,
+  type DateiFehler,
+  type Einrichtungsplan,
+  type Nutzung,
+  type PlanDatenbank,
+  type PlanOrganisation,
+  type Planprobleme,
+  type PlanPaket,
+  type PlanVerbindung,
+  type Sammelschritt,
+} from '../../../shared/src/einrichtungsplan';
 import type { AblaufErgebnis } from '../../../shared/src/pakete';
 import type { NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
@@ -16,16 +27,40 @@ import { t } from '../sprache';
  */
 
 export type Ansicht = Sammelschritt | 'zusammenfassung';
-export interface MailSammlung { aktiv: boolean; host: string; port: number; verbindung: PlanVerbindung; benutzer: string; absender: string; selbstsigniert: boolean; /** Im Formular ein Passwort eingegeben (der Wert selbst nur im Speicher). */ mitPasswort: boolean }
+export interface MailSammlung {
+  aktiv: boolean;
+  host: string;
+  port: number;
+  verbindung: PlanVerbindung;
+  benutzer: string;
+  absender: string;
+  selbstsigniert: boolean;
+  /** Im Formular ein Passwort eingegeben (der Wert selbst nur im Speicher). */ mitPasswort: boolean;
+}
 
 /** Ausführen bei „Jetzt einrichten“: in dieser Reihenfolge, jede Stufe einzeln wiederholbar. */
 // „nutzung“ vor „pakete“: Pakete schlagen bei beruflicher Nutzung eine längere Aufbewahrung vor (#1051). „organisation“
 // nach „pakete“: Den Mappentyp mit dem Merkmal „eigene Organisation“ bringt das Paket Basis mit (#1045).
 // „notfallkontakte“ (#812) nach „mail“: Mit eingerichtetem Versand geht die Info-Mail gleich hinaus.
 // „beispielablage“ (#988) zuletzt: Sie legt die Beispiele der eben installierten Pakete an.
-export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'notfallkontakte', 'beispiele', 'pakete', 'organisation', 'beispielablage'] as const;
+export const STUFEN = [
+  'ablage',
+  'schluessel',
+  'adresse',
+  'region',
+  'nutzung',
+  'mail',
+  'notfallkontakte',
+  'beispiele',
+  'pakete',
+  'organisation',
+  'beispielablage',
+] as const;
 export type Stufe = (typeof STUFEN)[number];
-export interface StufeStand { zustand: 'wartet' | 'laeuft' | 'fertig' | 'ausgelassen' | 'fehler'; meldung?: string }
+export interface StufeStand {
+  zustand: 'wartet' | 'laeuft' | 'fertig' | 'ausgelassen' | 'fehler';
+  meldung?: string;
+}
 export interface Lauf {
   stufen: Record<Stufe, StufeStand>;
   laeuft: boolean;
@@ -51,7 +86,15 @@ export interface Sammlung {
   /** beruflich: Merkmal „beruflich genutzt“ (#1032) – seit #1045 aus dem Schritt „Nutzung“, bei älteren Dateien direkt. */
   /** notfallkontakte (#812): gesammelt, angelegt bei „Jetzt einrichten“ – nicht in der Konfigurationsdatei (Daten Dritter). */
   /** beispielablage (#988): „Erst mal umsehen“ – Beispiel-Ablage aus den Paketen; nicht in der Konfigurationsdatei. */
-  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean; notfallkontakte?: NotfallkontaktEingabe[]; beispielablage?: boolean };
+  optional: {
+    adresse: string;
+    bundesland: string;
+    beispiele: boolean;
+    mail: MailSammlung | null;
+    beruflich?: boolean;
+    notfallkontakte?: NotfallkontaktEingabe[];
+    beispielablage?: boolean;
+  };
   /** „Wofür nutzt du Ablago?“ (#1045); null = noch nicht beantwortet. */
   nutzung: Nutzung | null;
   /** „Deine Organisation“ (#1045) – nur bei beruflich und beides; null = keine. */
@@ -86,14 +129,29 @@ export interface Assistentenstand {
 }
 
 /** Nur im Speicher – nie in sessionStorage. */
-export const geheim: { konto: string; mail: string; paketEinstellungen: PaketWahl['eingabe']['einstellungen'] | undefined } = { konto: '', mail: '', paketEinstellungen: undefined };
+export const geheim: { konto: string; mail: string; paketEinstellungen: PaketWahl['eingabe']['einstellungen'] | undefined } = {
+  konto: '',
+  mail: '',
+  paketEinstellungen: undefined,
+};
 
 export const leereSammlung = (): Sammlung => ({
-  ablage: '', konto: { name: '', email: '' },
-  pakete: null, paketeVorgabe: null, nutzung: null, organisation: null,
+  ablage: '',
+  konto: { name: '', email: '' },
+  pakete: null,
+  paketeVorgabe: null,
+  nutzung: null,
+  organisation: null,
   // Vorschlag, sichtbar im Feld: die Adresse, unter der Ablago gerade aufgerufen wird (#803).
   optional: { adresse: typeof location === 'undefined' ? '' : location.origin, bundesland: '', beispiele: false, mail: null },
-  besucht: [], ansicht: 'ablage', zurZusammenfassung: false, probleme: {}, verweise: {}, datenbank: null, hinweise: [], pruefungOffen: false,
+  besucht: [],
+  ansicht: 'ablage',
+  zurZusammenfassung: false,
+  probleme: {},
+  verweise: {},
+  datenbank: null,
+  hinweise: [],
+  pruefungOffen: false,
 });
 const leer = (): Assistentenstand => ({ neu: false, sammlung: leereSammlung(), lauf: null, aendern: null, dateiFehler: [] });
 
@@ -104,13 +162,26 @@ function lies(): Assistentenstand {
     if (x && x.sammlung) {
       // Neu geladen, während eine Stufe lief: Sie gilt als unterbrochen und lässt sich erneut versuchen.
       // Stufen, die eine neuere Version dazubrachte (#1045: „organisation“), warten noch.
-      const lauf = x.lauf ? { ...x.lauf, laeuft: false, stufen: Object.fromEntries(STUFEN.map((k) => [k, x.lauf!.stufen[k] ?? { zustand: 'wartet' }]).map(([k, v]) => [k, (v as StufeStand).zustand === 'laeuft' ? { zustand: 'fehler', meldung: t('einrichtung.lauf.neugeladen') } : v])) as Lauf['stufen'] } : null;
+      const lauf = x.lauf
+        ? {
+            ...x.lauf,
+            laeuft: false,
+            stufen: Object.fromEntries(
+              STUFEN.map((k) => [k, x.lauf!.stufen[k] ?? { zustand: 'wartet' }]).map(([k, v]) => [
+                k,
+                (v as StufeStand).zustand === 'laeuft' ? { zustand: 'fehler', meldung: t('einrichtung.lauf.neugeladen') } : v,
+              ]),
+            ) as Lauf['stufen'],
+          }
+        : null;
       // Ein Stand aus 0.191/0.192 (#821): Schritt „Administrator“ heißt jetzt „Dein Konto“, den ersten Benutzer gibt es nicht mehr.
       const alt = x.sammlung as Sammlung & { administrator?: Sammlung['konto'] };
       const sammlung = { ...leereSammlung(), ...x.sammlung, konto: x.sammlung.konto ?? alt.administrator ?? { name: '', email: '' } };
       return { ...leer(), ...x, sammlung, lauf };
     }
-  } catch { /* privates Fenster o. Ä. */ }
+  } catch {
+    /* privates Fenster o. Ä. */
+  }
   return leer();
 }
 let zustand: Assistentenstand = lies();
@@ -120,9 +191,13 @@ function speichere() {
   try {
     // Einstellungen der Pakete können Geheimnisse enthalten (Art „geheim“) – sie bleiben nur im Speicher.
     const s = zustand.sammlung;
-    const ohne: Assistentenstand = s.pakete ? { ...zustand, sammlung: { ...s, pakete: { ...s.pakete, eingabe: { ...s.pakete.eingabe, einstellungen: undefined } } } } : zustand;
+    const ohne: Assistentenstand = s.pakete
+      ? { ...zustand, sammlung: { ...s, pakete: { ...s.pakete, eingabe: { ...s.pakete.eingabe, einstellungen: undefined } } } }
+      : zustand;
     sessionStorage.setItem(SPEICHER, JSON.stringify(ohne));
-  } catch { /* egal */ }
+  } catch {
+    /* egal */
+  }
 }
 
 export function setzeStand(f: (s: Assistentenstand) => Assistentenstand) {
@@ -135,8 +210,14 @@ export const holeStand = () => zustand;
 
 /** Alles vergessen (nach „Einrichtung abschließen“ oder „Neu einrichten“ abgewählt). */
 export function vergiss() {
-  geheim.konto = ''; geheim.mail = ''; geheim.paketEinstellungen = undefined;
-  try { sessionStorage.removeItem(SPEICHER); } catch { /* egal */ }
+  geheim.konto = '';
+  geheim.mail = '';
+  geheim.paketEinstellungen = undefined;
+  try {
+    sessionStorage.removeItem(SPEICHER);
+  } catch {
+    /* egal */
+  }
   zustand = leer();
   for (const h of hoerer) h();
 }
@@ -144,7 +225,14 @@ export function vergiss() {
 export function useAssistent(): Assistentenstand {
   // Dritter Wert: derselbe Stand auch beim Zeichnen ohne Browser (Test ohne Konto, #881).
   const lies = () => zustand;
-  return useSyncExternalStore((h) => { hoerer.add(h); return () => hoerer.delete(h); }, lies, lies);
+  return useSyncExternalStore(
+    (h) => {
+      hoerer.add(h);
+      return () => hoerer.delete(h);
+    },
+    lies,
+    lies,
+  );
 }
 
 /* ---------- Sammlung ⇄ Plan (#806) ---------- */
@@ -155,12 +243,26 @@ export function planAus(s: Sammlung, db: PlanDatenbank | null = s.datenbank): Ei
     datenbank: db ? { ...db, ...(s.verweise.datenbank ? { passwort: s.verweise.datenbank } : {}) } : null,
     ablage: s.ablage.replace(/\s+/g, ' ').trim(),
     konto: { name: s.konto.name.trim(), email: s.konto.email.trim(), ...(s.verweise.konto ? { passwort: s.verweise.konto } : {}) },
-    pakete: s.pakete ? s.pakete.pakete.map((p) => ({ id: p.id, beispiele: p.beispiele, automatisierungen: p.automatisierungen }))
-      : s.paketeVorgabe ?? (s.besucht.includes('pakete') ? [] : null),
+    pakete: s.pakete
+      ? s.pakete.pakete.map((p) => ({ id: p.id, beispiele: p.beispiele, automatisierungen: p.automatisierungen }))
+      : (s.paketeVorgabe ?? (s.besucht.includes('pakete') ? [] : null)),
     optional: {
-      adresse: s.optional.adresse.trim() || null, bundesland: s.optional.bundesland || null, beispiele: s.optional.beispiele,
+      adresse: s.optional.adresse.trim() || null,
+      bundesland: s.optional.bundesland || null,
+      beispiele: s.optional.beispiele,
       ...(s.optional.beruflich ? { beruflich: true } : {}),
-      mail: m ? { aktiv: m.aktiv, host: m.host.trim(), port: m.port, verbindung: m.verbindung, benutzer: m.benutzer.trim(), absender: m.absender.trim(), selbstsigniert: m.selbstsigniert, ...(s.verweise.mail ? { passwort: s.verweise.mail } : {}) } : null,
+      mail: m
+        ? {
+            aktiv: m.aktiv,
+            host: m.host.trim(),
+            port: m.port,
+            verbindung: m.verbindung,
+            benutzer: m.benutzer.trim(),
+            absender: m.absender.trim(),
+            selbstsigniert: m.selbstsigniert,
+            ...(s.verweise.mail ? { passwort: s.verweise.mail } : {}),
+          }
+        : null,
     },
     ...(s.nutzung ? { nutzung: s.nutzung } : {}),
     ...(s.organisation && s.nutzung && beruflichBei(s.nutzung) ? { organisation: s.organisation } : {}),
@@ -178,9 +280,22 @@ export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
     nutzung: p.nutzung ?? null,
     organisation: p.organisation ?? null,
     optional: {
-      adresse: p.optional.adresse ?? '', bundesland: p.optional.bundesland ?? '', beispiele: p.optional.beispiele,
+      adresse: p.optional.adresse ?? '',
+      bundesland: p.optional.bundesland ?? '',
+      beispiele: p.optional.beispiele,
       ...(p.optional.beruflich ? { beruflich: true } : {}),
-      mail: m ? { aktiv: m.aktiv, host: m.host, port: m.port, verbindung: m.verbindung, benutzer: m.benutzer, absender: m.absender, selbstsigniert: m.selbstsigniert, mitPasswort: false } : null,
+      mail: m
+        ? {
+            aktiv: m.aktiv,
+            host: m.host,
+            port: m.port,
+            verbindung: m.verbindung,
+            benutzer: m.benutzer,
+            absender: m.absender,
+            selbstsigniert: m.selbstsigniert,
+            mitPasswort: false,
+          }
+        : null,
     },
     // Ohne `nutzung` (Datei vor #1045) fragt der Assistent den Schritt „Nutzung“ noch ab.
     besucht: ['ablage', 'konto', ...(p.nutzung ? ['nutzung' as const] : []), ...(p.pakete ? ['pakete' as const] : []), 'optional'],

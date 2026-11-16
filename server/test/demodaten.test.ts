@@ -2,8 +2,20 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  DOKUMENTARTEN, JE_MAPPE_STUFEN, MAX_DEMO_DOKUMENTE, MAX_JE_MAPPE, mengenWarnung, MISCHUNGEN, normiereMischung, schaetze, schaetzeMenge,
-  stelleMischung, stelleVonBis, stufeVon, verteilung, type Mischung,
+  DOKUMENTARTEN,
+  JE_MAPPE_STUFEN,
+  MAX_DEMO_DOKUMENTE,
+  MAX_JE_MAPPE,
+  mengenWarnung,
+  MISCHUNGEN,
+  normiereMischung,
+  schaetze,
+  schaetzeMenge,
+  stelleMischung,
+  stelleVonBis,
+  stufeVon,
+  verteilung,
+  type Mischung,
 } from '../../shared/src/demodaten';
 import { ladeBeispiele } from '../src/beispiele';
 import { speicherDateien } from '../src/dateispeicher';
@@ -35,14 +47,24 @@ describe('Demo-Daten: Regler und Abschätzung (#365)', () => {
     assert.equal(stelleMischung(r, 'scan', -5).scan, 0);
     // Viele kleine Schritte hintereinander: nie ≠ 100.
     let m = r;
-    for (const [i, art] of DOKUMENTARTEN.entries()) for (const w of [3, 97, 33, 50, 7]) { m = stelleMischung(m, art, (w + i * 11) % 101); assert.equal(summe(m), 100); }
+    for (const [i, art] of DOKUMENTARTEN.entries())
+      for (const w of [3, 97, 33, 50, 7]) {
+        m = stelleMischung(m, art, (w + i * 11) % 101);
+        assert.equal(summe(m), 100);
+      }
   });
 
   it('Gewichte (z. B. 55/20/20/14/1 = 110) werden zu Prozent mit Summe 100', () => {
     const n = normiereMischung({ brief: 55, mehrseitig: 20, scan: 20, bild: 14, gross: 1 });
     assert.equal(summe(n), 100);
     assert.equal(n.brief, 50);
-    assert.deepEqual(normiereMischung({ brief: 50, mehrseitig: 50, scan: 50, bild: 50, gross: 50 }), { brief: 20, mehrseitig: 20, scan: 20, bild: 20, gross: 20 });
+    assert.deepEqual(normiereMischung({ brief: 50, mehrseitig: 50, scan: 50, bild: 50, gross: 50 }), {
+      brief: 20,
+      mehrseitig: 20,
+      scan: 20,
+      bild: 20,
+      gross: 20,
+    });
     assert.equal(summe(normiereMischung({})), 100);
   });
 
@@ -52,7 +74,10 @@ describe('Demo-Daten: Regler und Abschätzung (#365)', () => {
     assert.deepEqual(stelleVonBis({ von: 1, bis: 3 }, 'bis', 999), { von: 1, bis: MAX_JE_MAPPE });
     assert.equal(JE_MAPPE_STUFEN[0], 1);
     assert.equal(JE_MAPPE_STUFEN.at(-1), 250);
-    assert.ok(JE_MAPPE_STUFEN.slice(0, 5).every((s, i) => s === i + 1), 'kleine Werte einzeln');
+    assert.ok(
+      JE_MAPPE_STUFEN.slice(0, 5).every((s, i) => s === i + 1),
+      'kleine Werte einzeln',
+    );
     assert.equal(JE_MAPPE_STUFEN[stufeVon(3)], 3);
     assert.equal(JE_MAPPE_STUFEN[stufeVon(48)], 50);
     // Server: bis 250 erlaubt, darüber nicht; bis < von weiterhin abgelehnt.
@@ -67,7 +92,11 @@ describe('Demo-Daten: Regler und Abschätzung (#365)', () => {
     await ladeBeispiele(d);
     const typen = await d.mappentypen.listeTypen();
     const eigene = typen.filter((t) => !t.system);
-    for (const n of [40, 1000, 4711]) assert.equal([...verteilung(eigene, n).values()].reduce((a, b) => a + b, 0), n);
+    for (const n of [40, 1000, 4711])
+      assert.equal(
+        [...verteilung(eigene, n).values()].reduce((a, b) => a + b, 0),
+        n,
+      );
     const o = { anzahl: 1000, dokumente: { anteil: 30, von: 1, bis: 3, mischung: MISCHUNGEN.realistisch, duplikate: 0 } };
     const lokal = schaetzeMenge(typen, o);
     const server = await schaetzeDemo(d, o);
@@ -85,9 +114,15 @@ describe('Demo-Daten: Regler und Abschätzung (#365)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
     const typen = await d.mappentypen.listeTypen();
-    const klein = schaetzeMenge(typen, { anzahl: 100, dokumente: { anteil: 30, von: 1, bis: 3, mischung: MISCHUNGEN.leicht, duplikate: 0 } });
+    const klein = schaetzeMenge(typen, {
+      anzahl: 100,
+      dokumente: { anteil: 30, von: 1, bis: 3, mischung: MISCHUNGEN.leicht, duplikate: 0 },
+    });
     assert.equal(mengenWarnung(klein), null);
-    const gross = schaetzeMenge(typen, { anzahl: 5000, dokumente: { anteil: 100, von: 10, bis: 20, mischung: MISCHUNGEN.leicht, duplikate: 0 } });
+    const gross = schaetzeMenge(typen, {
+      anzahl: 5000,
+      dokumente: { anteil: 100, von: 10, bis: 20, mischung: MISCHUNGEN.leicht, duplikate: 0 },
+    });
     assert.match(mengenWarnung(gross)!, /Stunden/);
     const zuviel = { anzahl: 50_000, dokumente: { anteil: 100, von: 100, bis: 250, mischung: MISCHUNGEN.leicht, duplikate: 0 } };
     assert.ok(schaetzeMenge(typen, zuviel).dokumente!.dokumente > MAX_DEMO_DOKUMENTE);

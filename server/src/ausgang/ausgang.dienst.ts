@@ -26,16 +26,39 @@ import { type FassungInfo, kernTyp } from '../../../shared/src/dateiumwandlung';
 import type { Dokument, Mappe, Mappentyp } from '../../../shared/src/model';
 import { klauselnFuer, type Sicht } from '../../../shared/src/sichten';
 import { alleSichtRechte } from '../../../shared/src/sichtrechte';
-import { type GeltenderStempel, geltenderStempel, stempelDatum, StempelFehler, type StempelWunsch, wunschAus } from '../../../shared/src/stempel';
+import {
+  type GeltenderStempel,
+  geltenderStempel,
+  stempelDatum,
+  StempelFehler,
+  type StempelWunsch,
+  wunschAus,
+} from '../../../shared/src/stempel';
 import { type Ausgang, type Ausgangsrechte, mitnehmbar, pruefeAlle } from './pruefstelle';
 
 /** Empfänger aus Abfrageparametern (API v1) – gilt auch für den Pflicht-Stempel ohne eigenen Wunsch (#799). */
-const empfaengerAus = (q: unknown) => { const o = (q && typeof q === 'object' ? q : {}) as Record<string, unknown>; const e = o.empfaenger ?? o['empfänger']; const s = Array.isArray(e) ? e[0] : e; return typeof s === 'string' ? s.replace(/[\r\n\t]+/g, ' ').trim().slice(0, 120) : ''; };
+const empfaengerAus = (q: unknown) => {
+  const o = (q && typeof q === 'object' ? q : {}) as Record<string, unknown>;
+  const e = o.empfaenger ?? o['empfänger'];
+  const s = Array.isArray(e) ? e[0] : e;
+  return typeof s === 'string'
+    ? s
+        .replace(/[\r\n\t]+/g, ' ')
+        .trim()
+        .slice(0, 120)
+    : '';
+};
 
 /** Die Teile, die der Ausgang ruft: Rechteprüfung, Mappentypen, Historie, Dokumente, Sichten, Stempel-Vorlagen. */
 export interface AusgangTeile {
-  rechte: ZugriffDienst; mappentypen: MappentypenDienst; historie: MappenHistorie; versionen: DokumentVersionen;
-  umwandlung: DokumentUmwandlung; archiv: DokumentArchivfassung; verwalten: SichtenVerwaltung; stempel: Stempelvorlagen;
+  rechte: ZugriffDienst;
+  mappentypen: MappentypenDienst;
+  historie: MappenHistorie;
+  versionen: DokumentVersionen;
+  umwandlung: DokumentUmwandlung;
+  archiv: DokumentArchivfassung;
+  verwalten: SichtenVerwaltung;
+  stempel: Stempelvorlagen;
 }
 
 /** Was der Ausgang außer dem Kern braucht – vom Dienst hereingereicht. */
@@ -45,28 +68,62 @@ export interface AusgangAnschluss {
 }
 
 export class AusgangDienst {
-  constructor(private readonly kern: Kern, private readonly teile: AusgangTeile, private readonly anschluss: AusgangAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: AusgangTeile,
+    private readonly anschluss: AusgangAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get dateien() { return this.kern.dateien; }
-  private get umwandlung() { return this.teile.umwandlung.umwandlung; }
-  private get archiv() { return this.teile.archiv.archiv; }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get dateien() {
+    return this.kern.dateien;
+  }
+  private get umwandlung() {
+    return this.teile.umwandlung.umwandlung;
+  }
+  private get archiv() {
+    return this.teile.archiv.archiv;
+  }
   private entsperrtZu = (inhalt: Buffer) => this.anschluss.entsperrtZu(inhalt);
-  private lesbare(z: Zugriff | undefined, ids: string[]) { return this.teile.rechte.lesbare(z, ids); }
-  private aufloesung(benutzerId: string) { return this.teile.rechte.aufloesung(benutzerId); }
-  private verborgeneSichten(alle: Sicht[], z?: Zugriff) { return this.teile.verwalten.verborgeneSichten(alle, z); }
-  private typErkennungen() { return this.teile.mappentypen.typErkennungen(); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private versionInhalt(id: string, nummer: number) { return this.teile.versionen.versionInhalt(id, nummer); }
-  private fassungVon(id: string) { return this.teile.umwandlung.fassungVon(id); }
-  private archivfassungVon(id: string) { return this.teile.archiv.archivfassungVon(id); }
-  private stempelDaten() { return this.teile.stempel.stempelDaten(); }
+  private lesbare(z: Zugriff | undefined, ids: string[]) {
+    return this.teile.rechte.lesbare(z, ids);
+  }
+  private aufloesung(benutzerId: string) {
+    return this.teile.rechte.aufloesung(benutzerId);
+  }
+  private verborgeneSichten(alle: Sicht[], z?: Zugriff) {
+    return this.teile.verwalten.verborgeneSichten(alle, z);
+  }
+  private typErkennungen() {
+    return this.teile.mappentypen.typErkennungen();
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private versionInhalt(id: string, nummer: number) {
+    return this.teile.versionen.versionInhalt(id, nummer);
+  }
+  private fassungVon(id: string) {
+    return this.teile.umwandlung.fassungVon(id);
+  }
+  private archivfassungVon(id: string) {
+    return this.teile.archiv.archivfassungVon(id);
+  }
+  private stempelDaten() {
+    return this.teile.stempel.stempelDaten();
+  }
 
   /** Dokumente mehrerer Mappen mit einem Zugriff je 500 Mappen (#367), je Mappe neueste zuerst. */
   async dokumenteJeMappe(ids: string[]): Promise<Map<string, Dokument[]>> {
     const r = new Map<string, Dokument[]>();
     for (let i = 0; i < ids.length; i += 500) {
-      for (const d of await this.repo.dokumenteVon(ids.slice(i, i + 500))) { const l = r.get(d.mappeId); if (l) l.push(d); else r.set(d.mappeId, [d]); }
+      for (const d of await this.repo.dokumenteVon(ids.slice(i, i + 500))) {
+        const l = r.get(d.mappeId);
+        if (l) l.push(d);
+        else r.set(d.mappeId, [d]);
+      }
     }
     return r;
   }
@@ -82,7 +139,8 @@ export class AusgangDienst {
     const verborgen = this.verborgeneSichten(alle, z);
     // Die Auflösung (Rollen, heute) hat der Zugriff desselben Benutzers schon (#615).
     const a = z.a && z.ich?.id === ich.id ? z.a : await this.aufloesung(ich.id);
-    const klauseln = alle.filter((s) => rechte.get(s.id)?.R && rechte.get(s.id)?.E)
+    const klauseln = alle
+      .filter((s) => rechte.get(s.id)?.R && rechte.get(s.id)?.E)
       .flatMap((s) => klauselnFuer(alle, s.id, z.typen, a, verborgen));
     return klauseln.length ? this.repo.inKlauseln(ids, klauseln) : new Set();
   }
@@ -110,9 +168,16 @@ export class AusgangDienst {
   }
 
   /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */
-  async stempelPlan(typId: string, wunsch: StempelWunsch | null, empfaengerErsatz = '', daten?: Awaited<ReturnType<Stempelvorlagen['stempelDaten']>>): Promise<GeltenderStempel | null> {
-    const d = daten ?? await this.stempelDaten();
-    try { return geltenderStempel(wunsch, d.typen[typId], d.vorlagen, empfaengerErsatz); } catch (x) {
+  async stempelPlan(
+    typId: string,
+    wunsch: StempelWunsch | null,
+    empfaengerErsatz = '',
+    daten?: Awaited<ReturnType<Stempelvorlagen['stempelDaten']>>,
+  ): Promise<GeltenderStempel | null> {
+    const d = daten ?? (await this.stempelDaten());
+    try {
+      return geltenderStempel(wunsch, d.typen[typId], d.vorlagen, empfaengerErsatz);
+    } catch (x) {
       if (x instanceof StempelFehler) throw new Fachfehler(422, x.message, { stempel: true, pflicht: d.typen[typId]?.modus === 'pflicht' });
       throw x;
     }
@@ -124,12 +189,18 @@ export class AusgangDienst {
    * gelöschte Vorlage wirkt wie „aus“). {empfänger} und {benutzer} sind der lesende Benutzer (`leser`).
    * `fehler`: Der Stempel lässt sich nicht bilden – bei Pflicht geht die Datei dann nicht hinaus.
    */
-  async laufwerkStempel(typId: string, vorlage: string | null, leser: string): Promise<{ pflicht: boolean; plan: GeltenderStempel | null; fehler?: string }> {
+  async laufwerkStempel(
+    typId: string,
+    vorlage: string | null,
+    leser: string,
+  ): Promise<{ pflicht: boolean; plan: GeltenderStempel | null; fehler?: string }> {
     const d = await this.stempelDaten();
     const pflicht = d.typen[typId]?.modus === 'pflicht';
     const wunsch = !pflicht && vorlage && d.vorlagen.some((v) => v.id === vorlage) ? { vorlage } : null;
     if (!pflicht && !wunsch) return { pflicht, plan: null };
-    try { return { pflicht, plan: await this.stempelPlan(typId, wunsch, leser, d) }; } catch (x) {
+    try {
+      return { pflicht, plan: await this.stempelPlan(typId, wunsch, leser, d) };
+    } catch (x) {
       if (x instanceof Fachfehler) return { pflicht, plan: null, fehler: x.message };
       throw x;
     }
@@ -137,11 +208,21 @@ export class AusgangDienst {
 
   /** Gestempelte Kopie eines Dokuments fürs Laufwerk (#722); das gespeicherte Original bleibt unverändert. */
   async laufwerkAusgabe(d: Dokument, m: Pick<Mappe, 'titel'>, plan: GeltenderStempel, leser: string): Promise<Ausgabe> {
-    return fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) }, { stempel: plan },
-      { benutzer: leser, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d.archivnummer ?? null, entsperrt: this.entsperrtZu });
+    return fuerAusgabe(
+      { name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) },
+      { stempel: plan },
+      {
+        benutzer: leser,
+        mappe: m.titel || t('meldungen.dienst.ohne-titel'),
+        archivnummer: d.archivnummer ?? null,
+        entsperrt: this.entsperrtZu,
+      },
+    );
   }
 
-  liesGanz(sha256: string): Promise<Buffer> { return this.kern.liesGanz(sha256); }
+  liesGanz(sha256: string): Promise<Buffer> {
+    return this.kern.liesGanz(sha256);
+  }
 
   /** Historie (#394, #393): „weitergegeben mit Stempel ‚…‘, verkleinert (… → …) an …“. */
   async notiereWeitergabe(mappeId: string, von: string | null, wie: string, plan: GeltenderStempel | null, ausgaben: Ausgabe[]) {
@@ -151,8 +232,20 @@ export class AusgangDienst {
     const klein = bearbeitet.filter((a) => a.verkleinert);
     await this.notiere(mappeId, von, 'weitergegeben', {
       text: `${weitergabeWas(ausgaben)}${plan?.empfaenger ? t('meldungen.dienst.an-2', { empfaenger: plan.empfaenger }) : ''} (${wie}: ${bearbeitet.map((a) => a.name).join(', ')})`,
-      stempel: text, an: plan?.empfaenger || null, wie, vorlage: plan?.vorlage ?? null, pflicht: plan?.pflicht ?? false, dokumente: bearbeitet.map((a) => a.name),
-      ...(klein.length ? { verkleinert: { vorher: klein.reduce((s, a) => s + a.verkleinert!.vorher, 0), nachher: klein.reduce((s, a) => s + a.verkleinert!.nachher, 0) } } : {}),
+      stempel: text,
+      an: plan?.empfaenger || null,
+      wie,
+      vorlage: plan?.vorlage ?? null,
+      pflicht: plan?.pflicht ?? false,
+      dokumente: bearbeitet.map((a) => a.name),
+      ...(klein.length
+        ? {
+            verkleinert: {
+              vorher: klein.reduce((s, a) => s + a.verkleinert!.vorher, 0),
+              nachher: klein.reduce((s, a) => s + a.verkleinert!.nachher, 0),
+            },
+          }
+        : {}),
     });
   }
 
@@ -166,7 +259,8 @@ export class AusgangDienst {
    * die übrigen bleiben Original – ohne Rückfrage. `lies`/`strom` lesen dann die richtige Datei.
    */
   async archivWahl(fassung: unknown) {
-    if (fassung !== undefined && fassung !== null && fassung !== 'original' && fassung !== 'archiv') throw new Fachfehler(422, t('meldungen.dienst.fassung-kennt-nur-original'));
+    if (fassung !== undefined && fassung !== null && fassung !== 'original' && fassung !== 'archiv')
+      throw new Fachfehler(422, t('meldungen.dienst.fassung-kennt-nur-original'));
     const original = new Map<string, Dokument>();
     const waehle = async (d: Dokument): Promise<Dokument> => {
       if (fassung !== 'archiv') return d;
@@ -175,8 +269,10 @@ export class AusgangDienst {
       original.set(d.id, d);
       return { ...d, name: q.name, mime: q.mime, groesse: q.groesse };
     };
-    const lies = async (d: Dokument): Promise<Buffer> => (original.has(d.id) ? (await this.ausgabeQuelle(original.get(d.id)!, 'archiv', true)).inhalt() : this.liesGanz(d.sha256));
-    const strom = async (d: Dokument): Promise<Buffer | Readable> => (original.has(d.id) ? lies(d) : this.dateien.lies(d.sha256) as Promise<Buffer | Readable>);
+    const lies = async (d: Dokument): Promise<Buffer> =>
+      original.has(d.id) ? (await this.ausgabeQuelle(original.get(d.id)!, 'archiv', true)).inhalt() : this.liesGanz(d.sha256);
+    const strom = async (d: Dokument): Promise<Buffer | Readable> =>
+      original.has(d.id) ? lies(d) : (this.dateien.lies(d.sha256) as Promise<Buffer | Readable>);
     return { waehle, lies, strom, anzahl: () => original.size, archiv: (d: Dokument) => original.has(d.id) };
   }
 
@@ -185,16 +281,50 @@ export class AusgangDienst {
    * Dokuments (gibt es keine, 404), sonst das Original. `nurWo` (mehrere Dokumente): ohne Archivfassung und bei
    * E-Rechnungen das Original, ohne Fehler.
    */
-  async ausgabeQuelle(d: Pick<Dokument, 'name' | 'mime' | 'sha256' | 'groesse' | 'anzeigbar'>, fassung: unknown, nurWo = false): Promise<{ name: string; mime: string; sha256: string; groesse: number; anzeigbar: boolean; inhalt: () => Promise<Buffer>; archiv: boolean }> {
-    const original = { name: d.name, mime: d.mime, sha256: d.sha256, groesse: d.groesse, anzeigbar: d.anzeigbar, inhalt: () => this.liesGanz(d.sha256), archiv: false };
+  async ausgabeQuelle(
+    d: Pick<Dokument, 'name' | 'mime' | 'sha256' | 'groesse' | 'anzeigbar'>,
+    fassung: unknown,
+    nurWo = false,
+  ): Promise<{
+    name: string;
+    mime: string;
+    sha256: string;
+    groesse: number;
+    anzeigbar: boolean;
+    inhalt: () => Promise<Buffer>;
+    archiv: boolean;
+  }> {
+    const original = {
+      name: d.name,
+      mime: d.mime,
+      sha256: d.sha256,
+      groesse: d.groesse,
+      anzeigbar: d.anzeigbar,
+      inhalt: () => this.liesGanz(d.sha256),
+      archiv: false,
+    };
     if (fassung === undefined || fassung === null || fassung === 'original') return original;
     if (fassung !== 'archiv') throw new Fachfehler(422, t('meldungen.dienst.fassung-kennt-nur-original'));
     const f = await this.archiv?.lies(d.sha256);
-    if (!f || (nurWo && f.info.erechnung)) { if (nurWo) return original; throw new Fachfehler(404, t('pakete.archiv.keine')); }
-    return { name: archivfassungName(d.name), mime: 'application/pdf', sha256: f.info.sha256, groesse: f.inhalt.length, anzeigbar: true, inhalt: async () => f.inhalt, archiv: true };
+    if (!f || (nurWo && f.info.erechnung)) {
+      if (nurWo) return original;
+      throw new Fachfehler(404, t('pakete.archiv.keine'));
+    }
+    return {
+      name: archivfassungName(d.name),
+      mime: 'application/pdf',
+      sha256: f.info.sha256,
+      groesse: f.inhalt.length,
+      anzeigbar: true,
+      inhalt: async () => f.inhalt,
+      archiv: true,
+    };
   }
 
-  async dokumentFuerAusgabe(id: string, o: { version?: number; stempel?: unknown; verkleinern?: unknown; fassung?: unknown; ich: { id: string | null; name: string } }) {
+  async dokumentFuerAusgabe(
+    id: string,
+    o: { version?: number; stempel?: unknown; verkleinern?: unknown; fassung?: unknown; ich: { id: string | null; name: string } },
+  ) {
     const dokument = await this.repo.holeDokument(id);
     if (!dokument) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     const datei = o.version != null ? (await this.versionInhalt(id, o.version)).version : await this.ausgabeQuelle(dokument, o.fassung);
@@ -202,15 +332,54 @@ export class AusgangDienst {
     const plan = m ? await this.stempelPlan(m.typId, wunschAus(o.stempel), empfaengerAus(o.stempel)) : null;
     // Verkleinert herunterladen (#393): nur PDFs; das gespeicherte Dokument bleibt, wie es ist.
     const klein = stufeAus(o.verkleinern);
-    if (klein && datei.mime !== 'application/pdf' && !plan) throw new Fachfehler(422, t('meldungen.dienst.ist-kein-pdf-verkleinern', { name: datei.name }));
+    if (klein && datei.mime !== 'application/pdf' && !plan)
+      throw new Fachfehler(422, t('meldungen.dienst.ist-kein-pdf-verkleinern', { name: datei.name }));
     const lies = async () => ('archiv' in datei && datei.archiv ? datei.inhalt() : this.liesGanz(datei.sha256));
-    if (!plan && !klein) return { name: datei.name, mime: datei.mime, anzeigbar: datei.anzeigbar, groesse: datei.groesse, inhalt: ('archiv' in datei && datei.archiv ? await datei.inhalt() : await this.dateien.lies(datei.sha256)) as Buffer | Readable, gestempelt: false };
-    const a = await fuerAusgabe({ name: datei.name, mime: datei.mime, inhalt: await lies() }, { stempel: plan, verkleinern: klein },
-      { benutzer: o.ich.name, mappe: m!.titel || t('meldungen.dienst.ohne-titel'), archivnummer: dokument.archivnummer, entsperrt: this.entsperrtZu }, true);
-    await this.notiereWeitergabe(m!.id, o.ich.id, o.version != null ? t('meldungen.dienst.heruntergeladen-version', { version: o.version }) : 'archiv' in datei && datei.archiv ? t('meldungen.dienst.heruntergeladen-archivfassung') : 'heruntergeladen', plan, [a]);
+    if (!plan && !klein)
+      return {
+        name: datei.name,
+        mime: datei.mime,
+        anzeigbar: datei.anzeigbar,
+        groesse: datei.groesse,
+        inhalt: ('archiv' in datei && datei.archiv ? await datei.inhalt() : await this.dateien.lies(datei.sha256)) as Buffer | Readable,
+        gestempelt: false,
+      };
+    const a = await fuerAusgabe(
+      { name: datei.name, mime: datei.mime, inhalt: await lies() },
+      { stempel: plan, verkleinern: klein },
+      {
+        benutzer: o.ich.name,
+        mappe: m!.titel || t('meldungen.dienst.ohne-titel'),
+        archivnummer: dokument.archivnummer,
+        entsperrt: this.entsperrtZu,
+      },
+      true,
+    );
+    await this.notiereWeitergabe(
+      m!.id,
+      o.ich.id,
+      o.version != null
+        ? t('meldungen.dienst.heruntergeladen-version', { version: o.version })
+        : 'archiv' in datei && datei.archiv
+          ? t('meldungen.dienst.heruntergeladen-archivfassung')
+          : 'heruntergeladen',
+      plan,
+      [a],
+    );
     if (plan) protokoll.modul('dokumente').info('Dokument mit Stempel heruntergeladen', { id, mappe: m!.id, pflicht: plan.pflicht });
-    if (a.verkleinert) protokoll.modul('dokumente').info('Dokument verkleinert heruntergeladen', { id, mappe: m!.id, vorher: a.verkleinert.vorher, nachher: a.verkleinert.nachher });
-    return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: !!a.gestempelt, verkleinert: a.verkleinert ?? null };
+    if (a.verkleinert)
+      protokoll
+        .modul('dokumente')
+        .info('Dokument verkleinert heruntergeladen', { id, mappe: m!.id, vorher: a.verkleinert.vorher, nachher: a.verkleinert.nachher });
+    return {
+      name: a.name,
+      mime: a.mime,
+      anzeigbar: true,
+      groesse: a.inhalt.length,
+      inhalt: a.inhalt as Buffer | Readable,
+      gestempelt: !!a.gestempelt,
+      verkleinert: a.verkleinert ?? null,
+    };
   }
 
   /**
@@ -230,11 +399,16 @@ export class AusgangDienst {
    * beim einzelnen Herunterladen (Original oder Archivfassung, Stempel, Verkleinern). Ohne Anlagen das Dokument allein.
    * Die Route hat Lesen und Exportrecht an der Mappe geprüft (Prüfstelle); die Anlagen liegen in derselben Mappe.
    */
-  async dokumentMitAnlagenFuerAusgabe(id: string, o: { stempel?: unknown; verkleinern?: unknown; fassung?: unknown; originalEmail?: unknown; ich: { id: string | null; name: string } }) {
+  async dokumentMitAnlagenFuerAusgabe(
+    id: string,
+    o: { stempel?: unknown; verkleinern?: unknown; fassung?: unknown; originalEmail?: unknown; ich: { id: string | null; name: string } },
+  ) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     // Original-E-Mail (#999): geht mit, außer `originalEmail: false` („Original-E-Mail mitnehmen“ abgewählt).
-    const anlagen = (await this.repo.anlagenVon(id)).filter((a) => a.mappeId === d.mappeId && (o.originalEmail !== false || !a.originalEmail));
+    const anlagen = (await this.repo.anlagenVon(id)).filter(
+      (a) => a.mappeId === d.mappeId && (o.originalEmail !== false || !a.originalEmail),
+    );
     if (!anlagen.length) return { ...(await this.dokumentFuerAusgabe(id, o)), anlagen: 0, teile: [] };
     const eintraege: ZipEintrag[] = [];
     const namen = new Set<string>();
@@ -252,7 +426,17 @@ export class AusgangDienst {
       if (x.id !== d.id) teile.push({ dokumentId: x.id, gestempelt: r.gestempelt, datei: name });
     }
     const name = t('meldungen.anlagen.zip-name', { name: stammUndEndung(d.name)[0] });
-    return { name, mime: 'application/zip', anzeigbar: true, groesse: zipGroesse(eintraege), inhalt: zipStrom(eintraege) as Buffer | Readable, gestempelt, verkleinert: null, anlagen: anlagen.length, teile };
+    return {
+      name,
+      mime: 'application/zip',
+      anzeigbar: true,
+      groesse: zipGroesse(eintraege),
+      inhalt: zipStrom(eintraege) as Buffer | Readable,
+      gestempelt,
+      verkleinert: null,
+      anlagen: anlagen.length,
+      teile,
+    };
   }
 
   /**
@@ -260,12 +444,21 @@ export class AusgangDienst {
    * E (Prüfstelle); hier der Pflicht-Stempel des Mappentyps (lässt sich die Datei nicht stempeln, geht sie nicht hinaus)
    * und die Weitergabe in der Historie, wenn gestempelt.
    */
-  async dateiFuerAusgabe(mappeId: string, d: { name: string; mime: string; inhalt: Buffer }, ich: { id: string; name: string }): Promise<{ name: string; mime: string; inhalt: Buffer }> {
+  async dateiFuerAusgabe(
+    mappeId: string,
+    d: { name: string; mime: string; inhalt: Buffer },
+    ich: { id: string; name: string },
+  ): Promise<{ name: string; mime: string; inhalt: Buffer }> {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
     const plan = await this.stempelPlan(m.typId, null);
     if (!plan) return d;
-    const a = await fuerAusgabe(d, { stempel: plan }, { benutzer: ich.name, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: null }, true);
+    const a = await fuerAusgabe(
+      d,
+      { stempel: plan },
+      { benutzer: ich.name, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: null },
+      true,
+    );
     await this.notiereWeitergabe(m.id, ich.id, 'heruntergeladen', plan, [a]);
     return { name: a.name, mime: a.mime, inhalt: a.inhalt };
   }
@@ -283,10 +476,26 @@ export class AusgangDienst {
     const plan = m ? await this.stempelPlan(m.typId, wunsch, empfaengerAus(o.stempel)) : null;
     if (!plan) return null;
     const punkt = f.d.name.lastIndexOf('.');
-    const name = art === 'archiv' ? ((f.info as { imOriginal?: boolean }).imOriginal ? f.d.name : archivfassungName(f.d.name)) : `${punkt > 0 ? f.d.name.slice(0, punkt) : f.d.name} (umgewandelt).pdf`;
+    const name =
+      art === 'archiv'
+        ? (f.info as { imOriginal?: boolean }).imOriginal
+          ? f.d.name
+          : archivfassungName(f.d.name)
+        : `${punkt > 0 ? f.d.name.slice(0, punkt) : f.d.name} (umgewandelt).pdf`;
     const mime = art === 'archiv' ? 'application/pdf' : (f.info as FassungInfo).mime;
-    const a = await fuerAusgabe({ name, mime, inhalt: f.inhalt }, { stempel: plan }, { benutzer: o.ich.name, mappe: m!.titel || t('meldungen.dienst.ohne-titel'), archivnummer: f.d.archivnummer ?? null }, true);
-    await this.notiereWeitergabe(m!.id, o.ich.id, art === 'archiv' ? t('meldungen.dienst.ueber-die-api-archivfassung') : t('meldungen.dienst.ueber-die-api-umgewandelte'), plan, [a]);
+    const a = await fuerAusgabe(
+      { name, mime, inhalt: f.inhalt },
+      { stempel: plan },
+      { benutzer: o.ich.name, mappe: m!.titel || t('meldungen.dienst.ohne-titel'), archivnummer: f.d.archivnummer ?? null },
+      true,
+    );
+    await this.notiereWeitergabe(
+      m!.id,
+      o.ich.id,
+      art === 'archiv' ? t('meldungen.dienst.ueber-die-api-archivfassung') : t('meldungen.dienst.ueber-die-api-umgewandelte'),
+      plan,
+      [a],
+    );
     protokoll.modul('dokumente').info('Fassung mit Stempel über die API ausgegeben', { id, mappe: m!.id, art, pflicht: plan.pflicht });
     return a;
   }
@@ -299,7 +508,10 @@ export class AusgangDienst {
    * entstehen die Bilder aus der gestempelten Kopie – als PDF, auch bei Bildern und umgewandelten Dateien. Ohne
    * Stempel `null` (dann die üblichen Seitenbilder). Die Weitergabe steht einmal je Kopie in der Historie.
    */
-  async gestempelteSeiten(id: string, o: { stempel?: unknown; ich: { id: string | null; name: string } }): Promise<{ schluessel: string; pdf: Buffer } | null> {
+  async gestempelteSeiten(
+    id: string,
+    o: { stempel?: unknown; ich: { id: string | null; name: string } },
+  ): Promise<{ schluessel: string; pdf: Buffer } | null> {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     const m = await this.repo.holeMappe(d.mappeId);
@@ -307,8 +519,15 @@ export class AusgangDienst {
     const wunsch = wunschAus(o.stempel);
     const plan = await this.stempelPlan(m.typId, wunsch, empfaengerAus(o.stempel));
     if (!plan) return null;
-    const kontext = { benutzer: o.ich.name, mappe: m.titel || t('meldungen.dienst.ohne-titel'), archivnummer: d.archivnummer ?? null, datum: stempelDatum() };
-    const schluessel = `stempel:${d.sha256}:${createHash('sha256').update(JSON.stringify([plan, kontext])).digest('hex')}`;
+    const kontext = {
+      benutzer: o.ich.name,
+      mappe: m.titel || t('meldungen.dienst.ohne-titel'),
+      archivnummer: d.archivnummer ?? null,
+      datum: stempelDatum(),
+    };
+    const schluessel = `stempel:${d.sha256}:${createHash('sha256')
+      .update(JSON.stringify([plan, kontext]))
+      .digest('hex')}`;
     let p = this.apiKopien.get(schluessel);
     if (!p) {
       p = (async () => {

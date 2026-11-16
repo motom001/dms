@@ -35,17 +35,40 @@ async function aufbau() {
   await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, anna.id);
   await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: anna.id, text: 'Ablegen' }, anna.id);
   const an: string[] = [];
-  const mail = new Aufgabenmail({
-    benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
-    aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Vorgang',
-  }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas');
+  const mail = new Aufgabenmail(
+    {
+      benutzer: () => konten.listeBenutzer(),
+      einstellungenVon: (b) => konten.einstellungen(b),
+      aufgabenVon: (b) => d.vertretung.meineAufgaben(b),
+      typName: async () => 'Vorgang',
+    },
+    () => ({
+      async sende(x) {
+        an.push(x);
+      },
+    }),
+    () => 'http://nas',
+  );
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   d.zusammenfassungAn = (id, trocken) => mail.fuerAutomatisierung(id, trocken);
   const uhr = { jetzt: Date.now() };
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(() => uhr.jetzt), uhr: () => uhr.jetzt });
-  await motor.lege({ name: 'Tägliche Zusammenfassung', aktiv: true, wenn: { art: 'zeitplan', uhrzeit: '07:00', tage: [1, 2, 3, 4, 5], feiertage: true, jeBenutzer: true, profilzeit: true }, dann: [{ art: 'zusammenfassung' }] }, null);
-  const pruefe = async (zeit: Date) => { const vorher = an.length; uhr.jetzt = zeit.getTime(); await motor.zeitplan(); return an.length - vorher; };
+  await motor.lege(
+    {
+      name: 'Tägliche Zusammenfassung',
+      aktiv: true,
+      wenn: { art: 'zeitplan', uhrzeit: '07:00', tage: [1, 2, 3, 4, 5], feiertage: true, jeBenutzer: true, profilzeit: true },
+      dann: [{ art: 'zusammenfassung' }],
+    },
+    null,
+  );
+  const pruefe = async (zeit: Date) => {
+    const vorher = an.length;
+    uhr.jetzt = zeit.getTime();
+    await motor.zeitplan();
+    return an.length - vorher;
+  };
   const region = new RegionDienst(einst);
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   return { konten, anna, ben, pruefe, an, ich, region };
@@ -54,10 +77,18 @@ async function aufbau() {
 describe('Tägliche Zusammenfassung je Benutzer (#92, #94)', () => {
   it('prüft Uhrzeit (15-Minuten-Raster) und Wochentage', async () => {
     assert.deepEqual(pruefeZeit({}), { uhrzeit: null, tage: [1, 2, 3, 4, 5], feiertage: true });
-    assert.deepEqual(pruefeZeit({ uhrzeit: '18:45', tage: [7, 1, 1], feiertage: false }), { uhrzeit: '18:45', tage: [1, 7], feiertage: false });
+    assert.deepEqual(pruefeZeit({ uhrzeit: '18:45', tage: [7, 1, 1], feiertage: false }), {
+      uhrzeit: '18:45',
+      tage: [1, 7],
+      feiertage: false,
+    });
     assert.throws(() => pruefeZeit({ uhrzeit: '18:40' }), status(422));
     assert.throws(() => pruefeZeit({ tage: [0] }), status(422));
-    assert.deepEqual(wirksameZeit(undefined, { ...MAIL_STANDARD, uhrzeit: '06:30' }), { uhrzeit: '06:30', tage: [1, 2, 3, 4, 5], feiertage: true });
+    assert.deepEqual(wirksameZeit(undefined, { ...MAIL_STANDARD, uhrzeit: '06:30' }), {
+      uhrzeit: '06:30',
+      tage: [1, 2, 3, 4, 5],
+      feiertage: true,
+    });
   });
 
   it('schickt jedem zu seiner Uhrzeit an seinen Tagen, einmal am Tag, und holt am selben Tag nach', async () => {

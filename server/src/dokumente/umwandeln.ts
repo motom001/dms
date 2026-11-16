@@ -3,7 +3,15 @@
  * Volltext, Ereignis und Historie, Bestand an ein neues Paket melden, Fassung und Vorschaubild eines Pakets
  * übernehmen, Stand für die Werkbank. Schicht 2.
  */
-import { dateitypName, type FassungInfo, INFO_UMWANDLUNG, infoUmwandlung, katalogUmwandlung, kernTyp, UMWANDELN_MAX_BYTES } from '../../../shared/src/dateiumwandlung';
+import {
+  dateitypName,
+  type FassungInfo,
+  INFO_UMWANDLUNG,
+  infoUmwandlung,
+  katalogUmwandlung,
+  kernTyp,
+  UMWANDELN_MAX_BYTES,
+} from '../../../shared/src/dateiumwandlung';
 import type { Dokument } from '../../../shared/src/model';
 import { katalogVolltext } from '../../../shared/src/paketvolltext';
 import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from '../dateiumwandlung';
@@ -31,31 +39,60 @@ export interface UmwandelnAnschluss {
 }
 
 export class DokumentUmwandlung {
-  constructor(private readonly kern: Kern, private readonly anschluss: UmwandelnAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly anschluss: UmwandelnAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get ocr() { return this.anschluss.ocr(); }
-  private get entsperren() { return this.anschluss.entsperren(); }
-  private get paketVolltext() { return this.anschluss.paketVolltext(); }
-  private get paketKonten() { return this.kern.paketKonten; }
-  private auftrag(...a: Parameters<UmwandelnAnschluss['auftrag']>) { return this.anschluss.auftrag(...a); }
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.anschluss.ereignis(...a); }
-  private typVon(mappeId: string) { return this.kern.typVon(mappeId); }
-  private notiere(...a: Parameters<Kern['historie']['schreibe']>) { return this.kern.historie.schreibe(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get ocr() {
+    return this.anschluss.ocr();
+  }
+  private get entsperren() {
+    return this.anschluss.entsperren();
+  }
+  private get paketVolltext() {
+    return this.anschluss.paketVolltext();
+  }
+  private get paketKonten() {
+    return this.kern.paketKonten;
+  }
+  private auftrag(...a: Parameters<UmwandelnAnschluss['auftrag']>) {
+    return this.anschluss.auftrag(...a);
+  }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.anschluss.ereignis(...a);
+  }
+  private typVon(mappeId: string) {
+    return this.kern.typVon(mappeId);
+  }
+  private notiere(...a: Parameters<Kern['historie']['schreibe']>) {
+    return this.kern.historie.schreibe(...a);
+  }
 
   /* ---------- Dateien umwandeln (#577) ---------- */
 
   /** Dateien umwandeln anbinden (#577, dateiumwandlung.ts). */
   umwandlung?: Dateiumwandlung;
   vorschauFassung?: { ausFassung(d: Dokument[]): unknown; setze(sha: string, bild: Buffer, mime: string): Promise<void> };
-  verbindeUmwandlung(u: Dateiumwandlung, vorschau?: { ausFassung(d: Dokument[]): unknown; setze(sha: string, bild: Buffer, mime: string): Promise<void> }) {
+  verbindeUmwandlung(
+    u: Dateiumwandlung,
+    vorschau?: { ausFassung(d: Dokument[]): unknown; setze(sha: string, bild: Buffer, mime: string): Promise<void> },
+  ) {
     this.umwandlung = u;
     this.vorschauFassung = vorschau;
   }
-  get dateiumwandlung() { return this.umwandlung; }
+  get dateiumwandlung() {
+    return this.umwandlung;
+  }
 
   /** Was Dateiumwandlung vom Dienst braucht (#577) – für index.ts und Tests. */
-  umwandlungAnbindung(ablage: FassungsAblage, vorschau?: { setze(sha: string, bild: Buffer, mime: string): Promise<void> }): UmwandlungsAnbindung {
+  umwandlungAnbindung(
+    ablage: FassungsAblage,
+    vorschau?: { setze(sha: string, bild: Buffer, mime: string): Promise<void> },
+  ): UmwandlungsAnbindung {
     return {
       ablage,
       pakete: () => this.repo.listePakete(),
@@ -74,13 +111,36 @@ export class DokumentUmwandlung {
     this.vorschauFassung?.ausFassung(docs);
     // Liefert ein Paket mit dms:volltext den Text (#614), bleibt es dabei: Die Fassung gibt nur das Vorschaubild.
     const vp = await this.paketVolltext.pakete().catch(() => []);
-    const neu = docs.filter((d) => !vp.some((p) => p.typen.includes(d.mime.toLowerCase())) && d.ocr && (d.ocr.stand === 'ausgelassen' || d.ocr.stand === 'fehler' || (d.ocr.stand === 'paket' && (d.ocr.info ?? '').startsWith(INFO_UMWANDLUNG)))).map((d) => d.id);
-    if (neu.length) { await this.repo.ocrEinreihen(neu); this.ocr?.anstossen(); }
+    const neu = docs
+      .filter(
+        (d) =>
+          !vp.some((p) => p.typen.includes(d.mime.toLowerCase())) &&
+          d.ocr &&
+          (d.ocr.stand === 'ausgelassen' ||
+            d.ocr.stand === 'fehler' ||
+            (d.ocr.stand === 'paket' && (d.ocr.info ?? '').startsWith(INFO_UMWANDLUNG))),
+      )
+      .map((d) => d.id);
+    if (neu.length) {
+      await this.repo.ocrEinreihen(neu);
+      this.ocr?.anstossen();
+    }
     const konto = [...this.paketKonten.entries()].find(([, p]) => p === info.paket.id)?.[0] ?? null;
     for (const d of docs) {
-      await this.ereignis('datei.umgewandelt', { dokument: d.id, mappe: d.mappeId, typ: await this.typVon(d.mappeId), paket: info.paket.id }, konto);
-      await this.notiere(d.mappeId, konto, 'umgewandelt', { dokument: d.name, text: `${dateitypName(d.mime)} → ${dateitypName(info.mime)} (${info.paket.name} ${info.paket.version})`, fassung: info.mime, groesse: info.groesse, paket: `${info.paket.name} ${info.paket.version}` })
-        .catch((e: Error) => protokoll.modul('umwandlung').warn('Historie zur Fassung nicht geschrieben', { dokument: d.id, fehler: e.message }));
+      await this.ereignis(
+        'datei.umgewandelt',
+        { dokument: d.id, mappe: d.mappeId, typ: await this.typVon(d.mappeId), paket: info.paket.id },
+        konto,
+      );
+      await this.notiere(d.mappeId, konto, 'umgewandelt', {
+        dokument: d.name,
+        text: `${dateitypName(d.mime)} → ${dateitypName(info.mime)} (${info.paket.name} ${info.paket.version})`,
+        fassung: info.mime,
+        groesse: info.groesse,
+        paket: `${info.paket.name} ${info.paket.version}`,
+      }).catch((e: Error) =>
+        protokoll.modul('umwandlung').warn('Historie zur Fassung nicht geschrieben', { dokument: d.id, fehler: e.message }),
+      );
     }
   }
 
@@ -96,7 +156,8 @@ export class DokumentUmwandlung {
     for (const d of docs) {
       if (d.ocr?.stand !== 'ausgelassen' || (await this.umwandlung.info(d.sha256))) continue;
       const p = await this.umwandlung.paketFuer(d.mime);
-      if (p && d.groesse <= UMWANDELN_MAX_BYTES) await this.repo.ocrSetze(d.id, { stand: 'paket', info: infoUmwandlung(p), seiten: d.ocr.seiten ?? null });
+      if (p && d.groesse <= UMWANDELN_MAX_BYTES)
+        await this.repo.ocrSetze(d.id, { stand: 'paket', info: infoUmwandlung(p), seiten: d.ocr.seiten ?? null });
     }
     protokoll.modul('umwandlung').info('Paket zum Umwandeln installiert – vorhandene Dateien gemeldet', { typen, dateien: n });
     return n;
@@ -124,7 +185,11 @@ export class DokumentUmwandlung {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     // Geschützte PDFs (#827): die entsperrte Fassung.
-    const f = kernTyp(d.mime) ? (d.mime === 'application/pdf' ? await this.entsperren?.fassung(d.sha256) : null) : await this.umwandlung?.lies(d.sha256);
+    const f = kernTyp(d.mime)
+      ? d.mime === 'application/pdf'
+        ? await this.entsperren?.fassung(d.sha256)
+        : null
+      : await this.umwandlung?.lies(d.sha256);
     if (!f) throw new Fachfehler(404, t('pakete.fassung.keine'));
     return { d, ...f };
   }
@@ -137,30 +202,50 @@ export class DokumentUmwandlung {
     const pakete = this.umwandlung ? await this.umwandlung.pakete() : [];
     const volltextPakete = await this.paketVolltext.pakete();
     const typen = await this.repo.dokumentTypen();
-    const liste = await Promise.all(Object.entries(typen).filter(([m]) => !kernTyp(m) && (m !== 'application/octet-stream' || volltextPakete.some((p) => p.typen.includes(m)))).map(async ([mime, anzahl]) => {
-      const p = this.umwandlung ? await this.umwandlung.paketFuer(mime, pakete) : null;
-      const k = katalogUmwandlung(mime);
-      // Volltext aus Paketen (#614): zuständiges Paket bzw. das aus dem Katalog.
-      const v = await this.paketVolltext.paketFuer(mime, volltextPakete);
-      const kv = katalogVolltext(mime);
-      return { mime, name: dateitypName(mime), anzahl, paket: p ? { id: p.id, name: p.name } : null, katalog: k ? { id: k.id, name: k.name } : null,
-        volltext: v ? { id: v.id, name: v.name } : null, volltextKatalog: kv ? { id: kv.id, name: kv.name } : null };
-    }));
+    const liste = await Promise.all(
+      Object.entries(typen)
+        .filter(([m]) => !kernTyp(m) && (m !== 'application/octet-stream' || volltextPakete.some((p) => p.typen.includes(m))))
+        .map(async ([mime, anzahl]) => {
+          const p = this.umwandlung ? await this.umwandlung.paketFuer(mime, pakete) : null;
+          const k = katalogUmwandlung(mime);
+          // Volltext aus Paketen (#614): zuständiges Paket bzw. das aus dem Katalog.
+          const v = await this.paketVolltext.paketFuer(mime, volltextPakete);
+          const kv = katalogVolltext(mime);
+          return {
+            mime,
+            name: dateitypName(mime),
+            anzahl,
+            paket: p ? { id: p.id, name: p.name } : null,
+            katalog: k ? { id: k.id, name: k.name } : null,
+            volltext: v ? { id: v.id, name: v.name } : null,
+            volltextKatalog: kv ? { id: kv.id, name: kv.name } : null,
+          };
+        }),
+    );
     return { pakete, volltextPakete, typen: liste.sort((a, b) => b.anzahl - a.anzahl || a.name.localeCompare(b.name)) };
   }
 
   /** Nach dem Ereignis „Datei umwandeln“ (#577): Wartet ein Dokument noch, aber es gibt keine Fassung, steht der Grund daran. */
-  async nachUmwandlungsEreignis(paket: string, e: { daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) {
+  async nachUmwandlungsEreignis(
+    paket: string,
+    e: { daten: Record<string, unknown> },
+    r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean },
+  ) {
     const sha = typeof e.daten.sha256 === 'string' ? e.daten.sha256 : '';
     if (!this.umwandlung || !sha) return;
     if (!r.ok && !r.aufgegeben) return;
     this.umwandlung.erledigt(sha);
     if (await this.umwandlung.info(sha)) return;
     const p = (await this.repo.listePakete()).find((x) => x.id === paket);
-    const grund = (r.ok ? r.text : r.fehler ?? '').trim().replace(/\s+/g, ' ').slice(0, 300);
+    const grund = (r.ok ? r.text : (r.fehler ?? '')).trim().replace(/\s+/g, ' ').slice(0, 300);
     for (const d of await this.repo.dokumenteMitSha(sha)) {
       if (d.ocr?.stand !== 'paket' || !(d.ocr.info ?? '').startsWith(INFO_UMWANDLUNG)) continue;
-      const info = r.ok ? t('meldungen.dienst.umwandlung-durch-paket', { wert: p?.name ?? paket, wert2: grund || t('meldungen.dienst.keine-fassung-geliefert') }) : t('meldungen.dienst.umwandlung-durch-paket-2', { wert: p?.name ?? paket, wert2: grund ? `: ${grund}` : '' });
+      const info = r.ok
+        ? t('meldungen.dienst.umwandlung-durch-paket', {
+            wert: p?.name ?? paket,
+            wert2: grund || t('meldungen.dienst.keine-fassung-geliefert'),
+          })
+        : t('meldungen.dienst.umwandlung-durch-paket-2', { wert: p?.name ?? paket, wert2: grund ? `: ${grund}` : '' });
       await this.repo.ocrSetze(d.id, { stand: r.ok ? 'ausgelassen' : 'fehler', info: info.slice(0, 500), text: null });
     }
   }

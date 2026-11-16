@@ -26,8 +26,10 @@ it('Arbeitsspeicher: null löscht den Eintrag', async () => {
 const url = process.env.TEST_DATABASE_URL;
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 describe('Einstellungen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
-  let haupt: any; let sql: any;
+  /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
+  let haupt: any;
+  let sql: any;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_einstellungen_${process.pid}`;
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
@@ -35,7 +37,8 @@ describe('Einstellungen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_UR
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
-    const u = new URL(url!); u.pathname = `/${db}`;
+    const u = new URL(url!);
+    u.pathname = `/${db}`;
     sql = verbinde(u.toString());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

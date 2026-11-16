@@ -48,9 +48,13 @@ const AUFRUFE_AUF_DEM_BLATT = 5;
  * die Zeile bleibt kurz); ohne Geheimnis ist die Adresse ohnehin wertlos.
  */
 export function aufrufZeile(liste: Array<{ name: string; adresse: string }>): string {
-  const kurz = (a: string) => { const i = a.indexOf('/api/aufruf/'); return i < 0 ? a : `…${a.slice(i, i + '/api/aufruf/'.length + 8)}…`; };
+  const kurz = (a: string) => {
+    const i = a.indexOf('/api/aufruf/');
+    return i < 0 ? a : `…${a.slice(i, i + '/api/aufruf/'.length + 8)}…`;
+  };
   const teile = liste.slice(0, AUFRUFE_AUF_DEM_BLATT).map((x) => `${x.name} (${kurz(x.adresse)})`);
-  if (liste.length > AUFRUFE_AUF_DEM_BLATT) teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
+  if (liste.length > AUFRUFE_AUF_DEM_BLATT)
+    teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
   return t('werkbank.notfallblatt.ablage.aufrufe.text', { liste: teile.join(', ') });
 }
 
@@ -58,14 +62,21 @@ export function aufrufZeile(liste: Array<{ name: string; adresse: string }>): st
 export function zieleZeile(rechner: string[]): string {
   const liste = [...new Set(rechner)];
   const teile = liste.slice(0, AUFRUFE_AUF_DEM_BLATT);
-  if (liste.length > AUFRUFE_AUF_DEM_BLATT) teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
+  if (liste.length > AUFRUFE_AUF_DEM_BLATT)
+    teile.push(t('werkbank.notfallblatt.ablage.aufrufe.weitere', { anzahl: liste.length - AUFRUFE_AUF_DEM_BLATT }));
   return t('werkbank.notfallblatt.ablage.ziele.text', { liste: teile.join(', ') });
 }
 
 /** Aufrufe und Ziele nur gezählt (#671) – wenn das Blatt mit den Listen nicht auf eine Seite passt. */
 function aussenKurz(d: Pick<Notfalldaten, 'aufrufe' | 'ziele'>): string {
-  const aufrufe = d.aufrufe?.length ?? 0, ziele = new Set(d.ziele ?? []).size;
-  return [aufrufe ? t('werkbank.notfallblatt.ablage.aussen.kurz.aufrufe', { anzahl: aufrufe }) : '', ziele ? t('werkbank.notfallblatt.ablage.aussen.kurz.ziele', { anzahl: ziele }) : ''].filter(Boolean).join(' ');
+  const aufrufe = d.aufrufe?.length ?? 0,
+    ziele = new Set(d.ziele ?? []).size;
+  return [
+    aufrufe ? t('werkbank.notfallblatt.ablage.aussen.kurz.aufrufe', { anzahl: aufrufe }) : '',
+    ziele ? t('werkbank.notfallblatt.ablage.aussen.kurz.ziele', { anzahl: ziele }) : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 /** In Vierergruppen, gut abschreibbar; Leerzeichen zählen bei der Eingabe nicht. */
@@ -73,9 +84,17 @@ export const inGruppen = (s: string) => s.match(/.{1,4}/g)!.join(' ');
 
 /** Zeichen, die man vom Papier leicht verwechselt, und was darunter steht (Schlüssel: A–Z, a–z, 0–9, - und _). */
 export const VERWECHSELBAR: Readonly<Record<string, string>> = {
-  '0': 'null', O: 'gross-o', o: 'klein-o', l: 'klein-l', I: 'gross-i', '1': 'eins', '-': 'minus', _: 'unterstrich',
+  '0': 'null',
+  O: 'gross-o',
+  o: 'klein-o',
+  l: 'klein-l',
+  I: 'gross-i',
+  '1': 'eins',
+  '-': 'minus',
+  _: 'unterstrich',
 };
-export const lesehilfe = (z: string): string | null => (VERWECHSELBAR[z] ? t.frei(`werkbank.notfallblatt.zeichen.${VERWECHSELBAR[z]}`) : null);
+export const lesehilfe = (z: string): string | null =>
+  VERWECHSELBAR[z] ? t.frei(`werkbank.notfallblatt.zeichen.${VERWECHSELBAR[z]}`) : null;
 
 /**
  * Eine Adresse für das Blatt: https als Link; alles andere ohne „http://“ davor und nicht klickbar – auf dem
@@ -91,12 +110,30 @@ export interface NotfallblattPlan {
   dokumenttitel: string;
   kopf: { titel: string; name: string; unter: string };
   einleitung: string;
-  schluessel: { titel: string; gruppen: Array<Array<{ zeichen: string; hilfe: string | null }>>; hinweis: string; fingerabdruckTitel: string; fingerabdruck: string; fingerabdruckHinweis: string };
+  schluessel: {
+    titel: string;
+    gruppen: Array<Array<{ zeichen: string; hilfe: string | null }>>;
+    hinweis: string;
+    fingerabdruckTitel: string;
+    fingerabdruck: string;
+    fingerabdruckHinweis: string;
+  };
   /** `kurz` (#671): knappere Fassung der Zeile, wenn das Blatt sonst nicht auf eine Seite passt (Aufrufe und Ziele nur gezählt). */
-  ablage: { titel: string; zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean; kurz?: string }>; warnung: string | null };
+  ablage: {
+    titel: string;
+    zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean; kurz?: string }>;
+    warnung: string | null;
+  };
   /** `seite2`: Verweis, wenn die Kontakte auf eine zweite Seite ausweichen (#812). */
   fragen: { titel: string; kontakte: Array<{ name: string; erreichbar: string; notiz?: string }>; leer: string | null; seite2: string };
-  hilfe: { titel: string; text: string; links: Array<{ marke: string; url: string }>; qr: readonly string[]; qrText: string; handbuch: string };
+  hilfe: {
+    titel: string;
+    text: string;
+    links: Array<{ marke: string; url: string }>;
+    qr: readonly string[];
+    qrText: string;
+    handbuch: string;
+  };
   /** Ausgesperrt? Notfallcode und wo man ihn eingibt (#815); null ohne Code. */
   notfall: { titel: string; code: string; text: string; adresse: { text: string; link?: string } | null; hinweis: string } | null;
   fuss: string;
@@ -112,11 +149,17 @@ export function notfallblattPlan(d: Notfalldaten): NotfallblattPlan {
   const adresse = d.adresse ? blattAdresse(d.adresse) : null;
   return {
     dokumenttitel: `${t('werkbank.notfallblatt.titel')} ${d.name}`,
-    kopf: { titel: t('werkbank.notfallblatt.titel'), name: d.name, unter: t('werkbank.notfallblatt.erstellt', { datum, version: d.version }) },
+    kopf: {
+      titel: t('werkbank.notfallblatt.titel'),
+      name: d.name,
+      unter: t('werkbank.notfallblatt.erstellt', { datum, version: d.version }),
+    },
     einleitung: t('werkbank.notfallblatt.einleitung'),
     schluessel: {
       titel: t('werkbank.notfallblatt.schluessel'),
-      gruppen: inGruppen(d.schluessel).split(' ').map((g) => [...g].map((zeichen) => ({ zeichen, hilfe: lesehilfe(zeichen) }))),
+      gruppen: inGruppen(d.schluessel)
+        .split(' ')
+        .map((g) => [...g].map((zeichen) => ({ zeichen, hilfe: lesehilfe(zeichen) }))),
       hinweis: t('werkbank.notfallblatt.schluessel.hinweis'),
       fingerabdruckTitel: t('werkbank.notfallblatt.fingerabdruck'),
       fingerabdruck: d.fingerabdruck,
@@ -127,31 +170,60 @@ export function notfallblattPlan(d: Notfalldaten): NotfallblattPlan {
       zeilen: [
         { marke: t('werkbank.notfallblatt.ablage.adresse'), ...(adresse ?? { text: t('werkbank.notfallblatt.ablage.adresse.keine') }) },
         { marke: t('werkbank.notfallblatt.ablage.id'), text: d.haushaltId, mono: true },
-        { marke: t('werkbank.notfallblatt.ablage.sicherungen'), text: ziele.length ? t('werkbank.notfallblatt.ablage.sicherungen.aussen', { ziele: ziele.join(', ') }) : t('werkbank.notfallblatt.ablage.sicherungen.text') },
+        {
+          marke: t('werkbank.notfallblatt.ablage.sicherungen'),
+          text: ziele.length
+            ? t('werkbank.notfallblatt.ablage.sicherungen.aussen', { ziele: ziele.join(', ') })
+            : t('werkbank.notfallblatt.ablage.sicherungen.text'),
+        },
         // Aufruf von außen (#679): „diese Adressen nehmen Aufrufe an“ – nur, wenn es welche gibt.
         // Ziele nach außen (#671): „an diese Rechner melden Automatisierungen“ – mit Aufrufen von außen in einer Zeile
         // (das Blatt bleibt eine Seite), sonst als eigene Zeile; nur, wenn es welche gibt.
-        ...(d.aufrufe?.length ? [{ marke: t('werkbank.notfallblatt.ablage.aufrufe'), text: [aufrufZeile(d.aufrufe), ...(d.ziele?.length ? [zieleZeile(d.ziele)] : [])].join(' '), kurz: aussenKurz(d) }]
-          : d.ziele?.length ? [{ marke: t('werkbank.notfallblatt.ablage.ziele'), text: zieleZeile(d.ziele), kurz: aussenKurz(d) }] : []),
+        ...(d.aufrufe?.length
+          ? [
+              {
+                marke: t('werkbank.notfallblatt.ablage.aufrufe'),
+                text: [aufrufZeile(d.aufrufe), ...(d.ziele?.length ? [zieleZeile(d.ziele)] : [])].join(' '),
+                kurz: aussenKurz(d),
+              },
+            ]
+          : d.ziele?.length
+            ? [{ marke: t('werkbank.notfallblatt.ablage.ziele'), text: zieleZeile(d.ziele), kurz: aussenKurz(d) }]
+            : []),
       ],
       warnung: ziele.length ? t('werkbank.notfallblatt.ablage.aussen.warnung') : null,
     },
-    fragen: { titel: t('werkbank.notfallblatt.fragen'), kontakte: d.kontakte ?? [], leer: d.kontakte?.length ? null : t('werkbank.notfallblatt.fragen.leer'), seite2: t('werkbank.notfallblatt.fragen.seite2') },
+    fragen: {
+      titel: t('werkbank.notfallblatt.fragen'),
+      kontakte: d.kontakte ?? [],
+      leer: d.kontakte?.length ? null : t('werkbank.notfallblatt.fragen.leer'),
+      seite2: t('werkbank.notfallblatt.fragen.seite2'),
+    },
     hilfe: {
       titel: t('werkbank.notfallblatt.passiert'),
       text: t('werkbank.notfallblatt.passiert.text'),
-      links: [{ marke: t('werkbank.notfallblatt.passiert.deutsch'), url: NOTFALL_HILFE }, { marke: t('werkbank.notfallblatt.passiert.englisch'), url: NOTFALL_HILFE_EN }],
+      links: [
+        { marke: t('werkbank.notfallblatt.passiert.deutsch'), url: NOTFALL_HILFE },
+        { marke: t('werkbank.notfallblatt.passiert.englisch'), url: NOTFALL_HILFE_EN },
+      ],
       qr: NOTFALL_QR,
       qrText: t('werkbank.notfallblatt.passiert.qr'),
       handbuch: t('werkbank.notfallblatt.passiert.handbuch'),
     },
-    notfall: d.notfallcode ? {
-      titel: t('werkbank.notfallblatt.notfallcode'),
-      code: notfallcodeInGruppen(d.notfallcode),
-      text: adresse ? t('werkbank.notfallblatt.notfallcode.text') : t('werkbank.notfallblatt.notfallcode.ohne-adresse'),
-      adresse: adresse ? { text: `${adresse.text.replace(/\/+$/, '')}/notfall`, ...(adresse.link ? { link: `${adresse.link.replace(/\/+$/, '')}/notfall` } : {}) } : null,
-      hinweis: t('werkbank.notfallblatt.notfallcode.hinweis'),
-    } : null,
+    notfall: d.notfallcode
+      ? {
+          titel: t('werkbank.notfallblatt.notfallcode'),
+          code: notfallcodeInGruppen(d.notfallcode),
+          text: adresse ? t('werkbank.notfallblatt.notfallcode.text') : t('werkbank.notfallblatt.notfallcode.ohne-adresse'),
+          adresse: adresse
+            ? {
+                text: `${adresse.text.replace(/\/+$/, '')}/notfall`,
+                ...(adresse.link ? { link: `${adresse.link.replace(/\/+$/, '')}/notfall` } : {}),
+              }
+            : null,
+          hinweis: t('werkbank.notfallblatt.notfallcode.hinweis'),
+        }
+      : null,
     fuss: t('werkbank.notfallblatt.fuss', { name: d.name, datum: kurz }),
   };
 }

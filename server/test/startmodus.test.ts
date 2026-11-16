@@ -67,7 +67,9 @@ describe('Startseite (#802)', () => {
       const text = await (await fetch(basis)).text();
       assert.match(text, /Benutzer werden abgeglichen – 120\.000 von 200\.000/);
       assert.match(text, /value="60"/);
-    } finally { await s.schliesse(); }
+    } finally {
+      await s.schliesse();
+    }
   });
 
   it('Gesundheit 503 „startet“; API, Anmeldung und WebDAV 503 mit Retry-After; Dateien der Oberfläche 503', async () => {
@@ -75,26 +77,40 @@ describe('Startseite (#802)', () => {
     try {
       const g = await fetch(`${basis}/api/gesundheit`);
       assert.equal(g.status, 503);
-      const gj = await g.json() as { ok: boolean; zustand: string; startet: boolean; stand: string };
+      const gj = (await g.json()) as { ok: boolean; zustand: string; startet: boolean; stand: string };
       assert.deepEqual([gj.ok, gj.zustand, gj.startet], [false, 'startet', true]);
       assert.match(gj.stand, /^[0-9a-f]{12}$/);
       const anfragen: Array<[string, string, RequestInit?]> = [
-        ['GET', '/api/konto/status'], ['GET', '/api/mappen?sicht=x'], ['GET', '/api/v1/mappen'],
-        ['POST', '/api/konto/anmelden', { headers: { 'content-type': 'application/json', 'x-dms': '1' }, body: JSON.stringify({ email: 'lena@example.org', passwort: 'x' }) }],
-        ['PROPFIND', '/webdav/', { headers: { depth: '1' } }], ['GET', '/webdav/Ablage/'],
-        ['GET', '/assets/index-abc123.js'], ['GET', '/favicon.svg'], ['POST', '/'],
+        ['GET', '/api/konto/status'],
+        ['GET', '/api/mappen?sicht=x'],
+        ['GET', '/api/v1/mappen'],
+        [
+          'POST',
+          '/api/konto/anmelden',
+          {
+            headers: { 'content-type': 'application/json', 'x-dms': '1' },
+            body: JSON.stringify({ email: 'lena@example.org', passwort: 'x' }),
+          },
+        ],
+        ['PROPFIND', '/webdav/', { headers: { depth: '1' } }],
+        ['GET', '/webdav/Ablage/'],
+        ['GET', '/assets/index-abc123.js'],
+        ['GET', '/favicon.svg'],
+        ['POST', '/'],
       ];
       for (const [methode, pfad, init] of anfragen) {
         const r = await fetch(basis + pfad, { method: methode, ...init });
         assert.equal(r.status, 503, `${methode} ${pfad}`);
         assert.equal(r.headers.get('retry-after'), '5', `${methode} ${pfad}`);
-        const j = await r.json() as { fehler: string; startet: boolean };
+        const j = (await r.json()) as { fehler: string; startet: boolean };
         assert.equal(j.startet, true);
         assert.match(j.fehler, /Ablago startet gerade/);
         // Die Oberfläche zeigt dafür die Leiste „nicht erreichbar“ und wartet, statt einer Fehlermeldung.
         assert.equal(istAusfall(r.status, j), true);
       }
-    } finally { await s.schliesse(); }
+    } finally {
+      await s.schliesse();
+    }
   });
 
   it('liest keinen Körper ein: ein großer Upload bekommt sofort 503', async () => {
@@ -102,13 +118,27 @@ describe('Startseite (#802)', () => {
     try {
       let gelesen = 0;
       const MB = Buffer.alloc(1024 * 1024);
-      const koerper = Readable.toWeb(Readable.from((function* () { for (let i = 0; i < 64; i++) { gelesen += MB.length; yield MB; } })()));
+      const koerper = Readable.toWeb(
+        Readable.from(
+          (function* () {
+            for (let i = 0; i < 64; i++) {
+              gelesen += MB.length;
+              yield MB;
+            }
+          })(),
+        ),
+      );
       const r = await fetch(`${basis}/api/mappen/00000000-0000-4000-8000-000000000009/dokumente?register=d&name=x.pdf`, {
-        method: 'POST', headers: { 'content-type': 'application/octet-stream' }, body: koerper as never, duplex: 'half',
+        method: 'POST',
+        headers: { 'content-type': 'application/octet-stream' },
+        body: koerper as never,
+        duplex: 'half',
       } as RequestInit);
       assert.equal(r.status, 503);
       assert.ok(gelesen <= 64 * MB.length);
-    } finally { await s.schliesse(); }
+    } finally {
+      await s.schliesse();
+    }
   });
 
   it('Fehler: Klartext ohne die technische Meldung (keine Daten), Gesundheit „fehler“', async () => {
@@ -129,12 +159,14 @@ describe('Startseite (#802)', () => {
       assert.ok(!text.includes('Özdemir') && !text.includes('Rechnung Herr'), 'keine Werte aus der Meldung');
       const g = await fetch(`${basis}/api/gesundheit`);
       assert.equal(g.status, 503);
-      assert.equal((await g.json() as { zustand: string }).zustand, 'fehler');
+      assert.equal(((await g.json()) as { zustand: string }).zustand, 'fehler');
       const a = await fetch(`${basis}/api/konto/status`);
       assert.equal(a.status, 503);
       assert.equal(a.headers.get('retry-after'), '30');
-      assert.match((await a.json() as { fehler: string }).fehler, /konnte nicht starten/);
-    } finally { await s.schliesse(); }
+      assert.match(((await a.json()) as { fehler: string }).fehler, /konnte nicht starten/);
+    } finally {
+      await s.schliesse();
+    }
   });
 
   it('Sperre gegen ein Downgrade (#714): Grund mit Migration, ohne Hinweis auf einen Neustart', async () => {
@@ -146,13 +178,27 @@ describe('Startseite (#802)', () => {
       assert.match(text, /neueren Version von Ablago \(2 unbekannte Migrationen, zuletzt 070_neuer\.sql\)/);
       assert.match(text, /Stelle das Image wieder auf die neuere Version/);
       assert.ok(!text.includes('beendet sich in einigen Minuten'));
-    } finally { await s.schliesse(); }
+    } finally {
+      await s.schliesse();
+    }
   });
 
   it('allgemeiner Fehler nennt nur den Schritt; unsichere Kennungen gehen nicht nach außen', () => {
-    assert.deepEqual(startfehlerAus(new Error('geheim'), { schritt: 'titel', nr: null, von: null }, null), { art: 'allgemein', schritt: 'titel' });
-    assert.deepEqual(startfehlerAus(Object.assign(new Error('x'), { code: '<b>' }), { schritt: 'migration', nr: 1, von: 1 }, '001.sql'), { art: 'migration', nr: 1, von: 1, datei: '001.sql', code: '–' });
-    assert.deepEqual(startfehlerAus(new Error('x'), { schritt: 'migration', nr: 1, von: 1 }, '<script>.sql'), { art: 'allgemein', schritt: 'migration' });
+    assert.deepEqual(startfehlerAus(new Error('geheim'), { schritt: 'titel', nr: null, von: null }, null), {
+      art: 'allgemein',
+      schritt: 'titel',
+    });
+    assert.deepEqual(startfehlerAus(Object.assign(new Error('x'), { code: '<b>' }), { schritt: 'migration', nr: 1, von: 1 }, '001.sql'), {
+      art: 'migration',
+      nr: 1,
+      von: 1,
+      datei: '001.sql',
+      code: '–',
+    });
+    assert.deepEqual(startfehlerAus(new Error('x'), { schritt: 'migration', nr: 1, von: 1 }, '<script>.sql'), {
+      art: 'allgemein',
+      schritt: 'migration',
+    });
   });
 
   it('gibt den Port frei und öffnet ihn wieder (Einrichtungsmodus dazwischen)', async () => {
@@ -162,7 +208,11 @@ describe('Startseite (#802)', () => {
     await s.schliesse();
     assert.equal(s.offen, false);
     // Jetzt ist der Port frei: ein anderer Server kann ihn nehmen.
-    await new Promise<void>((r, f) => { const x = createServer(); x.once('error', f); x.listen(port, '127.0.0.1', () => x.close(() => r())); });
+    await new Promise<void>((r, f) => {
+      const x = createServer();
+      x.once('error', f);
+      x.listen(port, '127.0.0.1', () => x.close(() => r()));
+    });
     await s.oeffne();
     assert.equal((await fetch(`http://127.0.0.1:${s.port}/api/gesundheit`)).status, 503);
     await s.schliesse();
@@ -170,7 +220,13 @@ describe('Startseite (#802)', () => {
 });
 
 async function freierPort(): Promise<number> {
-  return new Promise((r) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const a = s.address(); s.close(() => r(typeof a === 'object' && a ? a.port : 0)); }); });
+  return new Promise((r) => {
+    const s = createServer();
+    s.listen(0, '127.0.0.1', () => {
+      const a = s.address();
+      s.close(() => r(typeof a === 'object' && a ? a.port : 0));
+    });
+  });
 }
 
 describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL fehlt', timeout: 300_000 }, () => {
@@ -185,13 +241,25 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
     const sql = verbinde(alsUrl(a), 2);
     try {
       const schritte: string[] = [];
-      await migriere(sql, ordner, () => {}, (nr, von, datei) => schritte.push(`${nr}/${von} ${datei}`));
+      await migriere(
+        sql,
+        ordner,
+        () => {},
+        (nr, von, datei) => schritte.push(`${nr}/${von} ${datei}`),
+      );
       assert.deepEqual(schritte, ['1/3 001_a.sql', '2/3 002_b.sql', '3/3 003_c.sql']);
       writeFileSync(join(ordner, '004_d.sql'), 'CREATE TABLE t_d (x int);');
       schritte.length = 0;
-      await migriere(sql, ordner, () => {}, (nr, von, datei) => schritte.push(`${nr}/${von} ${datei}`));
+      await migriere(
+        sql,
+        ordner,
+        () => {},
+        (nr, von, datei) => schritte.push(`${nr}/${von} ${datei}`),
+      );
       assert.deepEqual(schritte, ['1/1 004_d.sql']);
-    } finally { await sql.end({ timeout: 1 }); }
+    } finally {
+      await sql.end({ timeout: 1 });
+    }
   });
 
   it('ganzes Ablago: Port offen während der Migrationen, Gesundheit erst danach 200; Downgrade zeigt den Grund', async () => {
@@ -207,13 +275,28 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
       const port = await freierPort();
       const { NODE_TEST_CONTEXT: _t, NODE_ENV: _n, ...grund } = process.env;
       const p = spawn(process.execPath, ['--import', 'tsx', 'src/index.ts'], {
-        cwd: SERVER, stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...grund, DATABASE_URL: alsUrl(a), DMS_DATENWURZEL: join(tmp, 'daten'), MIGRATIONS_DIR: migrationen, PORT: String(port), HOST: '127.0.0.1', LOG_LEVEL: 'warn', DMS_LASTTEST: '', DMS_EINRICHTUNGSCODE: 'aus' },
+        cwd: SERVER,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: {
+          ...grund,
+          DATABASE_URL: alsUrl(a),
+          DMS_DATENWURZEL: join(tmp, 'daten'),
+          MIGRATIONS_DIR: migrationen,
+          PORT: String(port),
+          HOST: '127.0.0.1',
+          LOG_LEVEL: 'warn',
+          DMS_LASTTEST: '',
+          DMS_EINRICHTUNGSCODE: 'aus',
+        },
       });
       prozesse.push(p);
       let log = '';
-      p.stdout!.on('data', (d: Buffer) => { log += d.toString(); });
-      p.stderr!.on('data', (d: Buffer) => { log += d.toString(); });
+      p.stdout!.on('data', (d: Buffer) => {
+        log += d.toString();
+      });
+      p.stderr!.on('data', (d: Buffer) => {
+        log += d.toString();
+      });
       return { p, basis: `http://127.0.0.1:${port}`, log: () => log };
     };
     const warte = async (f: () => Promise<boolean>, was: string, log: () => string, ms = 120_000) => {
@@ -229,14 +312,18 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
     await warte(async () => !!(await fetch(`${x.basis}/api/gesundheit`)), 'erreichbar', x.log);
     // Während der Migrationen (pg_sleep 4 s): Seite mit Schritt, Gesundheit 503, Anmeldung 503.
     let gesehen = false;
-    await warte(async () => {
-      const text = await (await fetch(x.basis)).text();
-      gesehen ||= /Datenbank wird auf den neuen Stand gebracht – Schritt \d+ von \d+/.test(text);
-      const g = await fetch(`${x.basis}/api/gesundheit`);
-      return g.status === 200;
-    }, 'bereit', x.log);
+    await warte(
+      async () => {
+        const text = await (await fetch(x.basis)).text();
+        gesehen ||= /Datenbank wird auf den neuen Stand gebracht – Schritt \d+ von \d+/.test(text);
+        const g = await fetch(`${x.basis}/api/gesundheit`);
+        return g.status === 200;
+      },
+      'bereit',
+      x.log,
+    );
     assert.ok(gesehen, 'Schritt der Migration auf der Seite');
-    const g = await (await fetch(`${x.basis}/api/gesundheit`)).json() as { ok: boolean; zustand: string };
+    const g = (await (await fetch(`${x.basis}/api/gesundheit`)).json()) as { ok: boolean; zustand: string };
     assert.deepEqual([g.ok, g.zustand], [true, 'laeuft']);
     assert.equal((await fetch(`${x.basis}/api/konto/status`)).status, 200);
     x.p.kill('SIGTERM');
@@ -244,7 +331,11 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
 
     // Dieselbe Datenbank mit den Migrationen dieser (älteren) Version: Sperre gegen ein Downgrade, der Prozess bleibt.
     const y = await starte(join(SERVER, 'migrations'));
-    await warte(async () => (await (await fetch(`${y.basis}/api/gesundheit`)).json() as { zustand: string }).zustand === 'fehler', 'Fehler', y.log);
+    await warte(
+      async () => ((await (await fetch(`${y.basis}/api/gesundheit`)).json()) as { zustand: string }).zustand === 'fehler',
+      'Fehler',
+      y.log,
+    );
     const text = await (await fetch(y.basis)).text();
     assert.match(text, /neueren Version von Ablago \(1 unbekannte Migrationen, zuletzt 999_a746_langsam\.sql\)/);
     assert.equal((await fetch(`${y.basis}/api/konto/status`)).status, 503);

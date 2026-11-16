@@ -4,10 +4,20 @@
  */
 
 /** Ein Messpunkt (jede Minute). Anteile in Prozent (0–100), Netz in Byte je Sekunde; `null` = nicht verfügbar. */
-export interface Messpunkt { zeit: string; cpu: number | null; speicher: number | null; rx: number | null; tx: number | null }
+export interface Messpunkt {
+  zeit: string;
+  cpu: number | null;
+  speicher: number | null;
+  rx: number | null;
+  tx: number | null;
+}
 
 /** Anteile am Arbeitsspeicher in Byte: DMS-Prozess, Paket-Läufer, PostgreSQL (nur bei dms-komplett im selben Container). */
-export interface Anteile { dms: number | null; pakete: number | null; datenbank: number | null }
+export interface Anteile {
+  dms: number | null;
+  pakete: number | null;
+  datenbank: number | null;
+}
 
 export interface SystemlastStand {
   /** Jetzt: seit der letzten Messung (mindestens eine Sekunde). */
@@ -36,8 +46,13 @@ export interface SystemlastStand {
  * Ereignisschleife (p99) in ms, `anfragen` gerade in Arbeit; null = nicht verfügbar (z. B. keine Antwort).
  */
 export interface ProzessZeile {
-  nr: number; pid: number; rolle: 'haupt' | 'leiter' | 'anfragen';
-  speicher: number | null; cpu: number | null; schleifeP99: number | null; anfragen: number | null;
+  nr: number;
+  pid: number;
+  rolle: 'haupt' | 'leiter' | 'anfragen';
+  speicher: number | null;
+  cpu: number | null;
+  schleifeP99: number | null;
+  anfragen: number | null;
 }
 
 /** Woran der Systemzustand warnt: CPU, Arbeitsspeicher (#409) und Wartezeit der Ereignisschleife (#542). */
@@ -54,18 +69,35 @@ export const SCHLEIFE_MINUTEN = 5;
 export type ArbeiterStand =
   | { aus: true; quelle: 'vorgabe' | 'umgebung'; kerne: number }
   | {
-    aus: false; quelle: 'vorgabe' | 'umgebung'; kerne: number;
-    groesse: number; arbeiter: number; beschaeftigt: number; wartend: number;
-    erledigt: number; fehler: number; zeitueberschreitungen: number; abgewiesen: number;
-    mittlereDauerMs: number | null; mittleresWartenMs: number | null; laengstesWartenMs: number; zeitMs: number; warteschlangeMax: number;
-    zuletztAbgewiesen?: string | null;
-  };
+      aus: false;
+      quelle: 'vorgabe' | 'umgebung';
+      kerne: number;
+      groesse: number;
+      arbeiter: number;
+      beschaeftigt: number;
+      wartend: number;
+      erledigt: number;
+      fehler: number;
+      zeitueberschreitungen: number;
+      abgewiesen: number;
+      mittlereDauerMs: number | null;
+      mittleresWartenMs: number | null;
+      laengstesWartenMs: number;
+      zeitMs: number;
+      warteschlangeMax: number;
+      zuletztAbgewiesen?: string | null;
+    };
 
 /**
  * Einstellungen für viele gleichzeitige Anfragen (#544): nur per Umgebungsvariable, im Systemzustand zum Ansehen –
  * mit ihrem Wert und ob er aus der Umgebung oder der Vorgabe stammt.
  */
-export const VARIABLE = { prozesse: 'DMS_PROZESSE', arbeiter: 'DMS_ARBEITER', verbindungen: 'DMS_DB_VERBINDUNGEN', anfragen: 'DMS_MAX_ANFRAGEN' } as const;
+export const VARIABLE = {
+  prozesse: 'DMS_PROZESSE',
+  arbeiter: 'DMS_ARBEITER',
+  verbindungen: 'DMS_DB_VERBINDUNGEN',
+  anfragen: 'DMS_MAX_ANFRAGEN',
+} as const;
 export type Einstellbar = keyof typeof VARIABLE;
 /**
  * `quelle` 'auto': DMS_PROZESSE=auto (#745). `prozesse` (#745): Mit mehreren Prozessen gelten Arbeiter und gleichzeitige
@@ -73,7 +105,12 @@ export type Einstellbar = keyof typeof VARIABLE;
  * für alle Prozesse zusammen: `wert` ist die Summe, `aufteilung` der Anteil des Leiters und jedes weiteren Prozesses.
  */
 export interface Grenzwert {
-  wert: number; quelle: 'vorgabe' | 'umgebung' | 'auto'; variable: (typeof VARIABLE)[Einstellbar]; min: number; max: number; prozesse?: number;
+  wert: number;
+  quelle: 'vorgabe' | 'umgebung' | 'auto';
+  variable: (typeof VARIABLE)[Einstellbar];
+  min: number;
+  max: number;
+  prozesse?: number;
   aufteilung?: { leiter: number; andere: number; prozesse: number };
   /**
    * Nur bei `verbindungen` (#1198): Belegung des Pools gerade jetzt – in dem Prozess, der antwortet (mit mehreren
@@ -87,8 +124,11 @@ export interface Grenzwert {
    * (DMS_PROZESSE nicht gesetzt).
    */
   automatisch?: {
-    kerne: number; speicher: number | null; herkunft: { kerne: 'container' | 'rechner'; speicher: 'container' | 'rechner' };
-    begrenzt: 'kerne' | 'speicher' | 'verbindungen' | 'hoechstens' | null; vorgabe: boolean;
+    kerne: number;
+    speicher: number | null;
+    herkunft: { kerne: 'container' | 'rechner'; speicher: 'container' | 'rechner' };
+    begrenzt: 'kerne' | 'speicher' | 'verbindungen' | 'hoechstens' | null;
+    vorgabe: boolean;
   };
 }
 export type Grenzwerte = Partial<Record<Einstellbar, Grenzwert>>;
@@ -103,7 +143,10 @@ export type Grenzwerte = Partial<Record<Einstellbar, Grenzwert>>;
  */
 export type Engpass = 'schleife' | 'verbindungen' | 'arbeiter' | 'ueberlast';
 export const ENGPASS_VARIABLE: Record<Engpass, (typeof VARIABLE)[Einstellbar]> = {
-  schleife: VARIABLE.arbeiter, verbindungen: VARIABLE.verbindungen, arbeiter: VARIABLE.arbeiter, ueberlast: VARIABLE.anfragen,
+  schleife: VARIABLE.arbeiter,
+  verbindungen: VARIABLE.verbindungen,
+  arbeiter: VARIABLE.arbeiter,
+  ueberlast: VARIABLE.anfragen,
 };
 export const VERBINDUNG_WARTEN_MS = 50;
 export const ENGPASS_MINUTEN = 15;
@@ -119,7 +162,8 @@ export function engpaesseAus(o: {
   const kuerzlich = (iso?: string | null) => !!iso && jetzt - Date.parse(iso) <= ENGPASS_MINUTEN * 60_000;
   const e: Engpass[] = [];
   if (o.schleife) e.push('schleife');
-  if (o.verbindungen && o.verbindungen.messungen >= 6 && o.verbindungen.median !== null && o.verbindungen.median > VERBINDUNG_WARTEN_MS) e.push('verbindungen');
+  if (o.verbindungen && o.verbindungen.messungen >= 6 && o.verbindungen.median !== null && o.verbindungen.median > VERBINDUNG_WARTEN_MS)
+    e.push('verbindungen');
   if (kuerzlich(o.arbeiterAbgewiesen)) e.push('arbeiter');
   if (kuerzlich(o.ueberlastAbgewiesen)) e.push('ueberlast');
   return e;

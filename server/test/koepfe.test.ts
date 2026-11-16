@@ -15,9 +15,18 @@ describe('Sicherheits-Header (#239)', () => {
     assert.equal(k['strict-transport-security'], undefined, 'ohne HTTPS kein HSTS');
   });
   it('HSTS bei HTTPS, Hilfe ohne strenge CSP, vorhandene CSP bleibt', () => {
-    assert.equal(sicherheitsKoepfe({ pfad: '/', https: true, html: true, csp: false }, ohne)['strict-transport-security'], 'max-age=31536000');
-    assert.equal(sicherheitsKoepfe({ pfad: '/hilfe/admin/', https: false, html: true, csp: false }, ohne)['content-security-policy'], "frame-ancestors 'self'");
-    assert.equal(sicherheitsKoepfe({ pfad: '/api/dokumente/x', https: false, html: false, csp: true }, ohne)['content-security-policy'], undefined);
+    assert.equal(
+      sicherheitsKoepfe({ pfad: '/', https: true, html: true, csp: false }, ohne)['strict-transport-security'],
+      'max-age=31536000',
+    );
+    assert.equal(
+      sicherheitsKoepfe({ pfad: '/hilfe/admin/', https: false, html: true, csp: false }, ohne)['content-security-policy'],
+      "frame-ancestors 'self'",
+    );
+    assert.equal(
+      sicherheitsKoepfe({ pfad: '/api/dokumente/x', https: false, html: false, csp: true }, ohne)['content-security-policy'],
+      undefined,
+    );
   });
   it('erlaubt Einbetten nur für genannte Ursprünge', () => {
     const e = einbettenAus('https://ha.example.org, http://nas:8123/ quatsch');

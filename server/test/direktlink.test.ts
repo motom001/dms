@@ -28,109 +28,152 @@ const titel = async (d: Dienst, link: string, extra: Record<string, unknown> = {
   (await d.sichten.seite(ICH, { sicht: 'link', link, anzahl: 500, ...extra })).mappen.map((m) => m.titel);
 
 function faelle() {
-describe('Sprechende Links (#98)', () => {
-  it('liest Typ, Felder, Operatoren, dynamische Werte und Sortierung', async () => {
-    const { typen } = await mitBeispielen();
-    const r = lies('typ=rechnung&rechnungsnummer=A-2020-11380&bezahlt=nein&betrag.groesser=1.234,50&rechnungsdatum.zwischen=heute-30tage..heute+1monat&sortierung=-rechnungsdatum', typen);
-    assert.ok(r.ok, JSON.stringify(r));
-    assert.equal(r.link.typ.name, 'Rechnung', 'Typ ohne Groß-/Kleinschreibung');
-    assert.deepEqual(r.link.bedingungen, [
-      { art: 'feld', feld: 'rechnungsnummer', op: 'gleich', wert: { art: 'fest', wert: 'A-2020-11380' } },
-      { art: 'feld', feld: 'bezahlt', op: 'nein' },
-      { art: 'feld', feld: 'betrag', op: 'groesser', wert: { art: 'fest', wert: 1234.5 } },
-      { art: 'feld', feld: 'rechnungsdatum', op: 'zwischen', wert: { art: 'heute', versatz: -30, einheit: 'tage' }, bis: { art: 'heute', versatz: 1, einheit: 'monate' } },
-    ]);
-    assert.deepEqual(r.link.sortierung, { spalte: 'rechnungsdatum', absteigend: true });
-    // „+“ kommt in Adressen oft als Leerzeichen an.
-    const plus = lies('typ=Vertrag&kuendigung_bis.zwischen=heute..heute+12monate', typen);
-    assert.ok(plus.ok);
-    assert.deepEqual(plus.link.bedingungen[0], { art: 'feld', feld: 'kuendigung_bis', op: 'zwischen', wert: { art: 'heute', versatz: 0, einheit: 'tage' }, bis: { art: 'heute', versatz: 12, einheit: 'monate' } });
-    const v = lies('typ=Vertrag&zahlungszyklus=Monatlich,jährlich&beginn.imZeitraum=jahr-4&vertragsnummer.nichtleer&_erstelltVon=ich&beginn=01.04.2023', typen);
-    assert.ok(v.ok, JSON.stringify(v));
-    assert.deepEqual(v.link.bedingungen.map((b) => b.art === 'feld' && [b.feld, b.op, b.wert]), [
-      ['zahlungszyklus', 'einerVon', { art: 'fest', wert: ['monatlich', 'jährlich'] }],
-      ['beginn', 'imZeitraum', { art: 'jahr', versatz: -4 }],
-      ['vertragsnummer', 'nichtLeer', undefined],
-      ['_erstelltVon', 'zeigtAuf', { art: 'ich' }],
-      ['beginn', 'gleich', { art: 'fest', wert: '2023-04-01' }],
-    ]);
-    assert.match(beschreibeDirektlink(r.link), /^Rechnung: Rechnungsnummer ist gleich „A-2020-11380“, Bezahlt nein/);
-  });
+  describe('Sprechende Links (#98)', () => {
+    it('liest Typ, Felder, Operatoren, dynamische Werte und Sortierung', async () => {
+      const { typen } = await mitBeispielen();
+      const r = lies(
+        'typ=rechnung&rechnungsnummer=A-2020-11380&bezahlt=nein&betrag.groesser=1.234,50&rechnungsdatum.zwischen=heute-30tage..heute+1monat&sortierung=-rechnungsdatum',
+        typen,
+      );
+      assert.ok(r.ok, JSON.stringify(r));
+      assert.equal(r.link.typ.name, 'Rechnung', 'Typ ohne Groß-/Kleinschreibung');
+      assert.deepEqual(r.link.bedingungen, [
+        { art: 'feld', feld: 'rechnungsnummer', op: 'gleich', wert: { art: 'fest', wert: 'A-2020-11380' } },
+        { art: 'feld', feld: 'bezahlt', op: 'nein' },
+        { art: 'feld', feld: 'betrag', op: 'groesser', wert: { art: 'fest', wert: 1234.5 } },
+        {
+          art: 'feld',
+          feld: 'rechnungsdatum',
+          op: 'zwischen',
+          wert: { art: 'heute', versatz: -30, einheit: 'tage' },
+          bis: { art: 'heute', versatz: 1, einheit: 'monate' },
+        },
+      ]);
+      assert.deepEqual(r.link.sortierung, { spalte: 'rechnungsdatum', absteigend: true });
+      // „+“ kommt in Adressen oft als Leerzeichen an.
+      const plus = lies('typ=Vertrag&kuendigung_bis.zwischen=heute..heute+12monate', typen);
+      assert.ok(plus.ok);
+      assert.deepEqual(plus.link.bedingungen[0], {
+        art: 'feld',
+        feld: 'kuendigung_bis',
+        op: 'zwischen',
+        wert: { art: 'heute', versatz: 0, einheit: 'tage' },
+        bis: { art: 'heute', versatz: 12, einheit: 'monate' },
+      });
+      const v = lies(
+        'typ=Vertrag&zahlungszyklus=Monatlich,jährlich&beginn.imZeitraum=jahr-4&vertragsnummer.nichtleer&_erstelltVon=ich&beginn=01.04.2023',
+        typen,
+      );
+      assert.ok(v.ok, JSON.stringify(v));
+      assert.deepEqual(
+        v.link.bedingungen.map((b) => b.art === 'feld' && [b.feld, b.op, b.wert]),
+        [
+          ['zahlungszyklus', 'einerVon', { art: 'fest', wert: ['monatlich', 'jährlich'] }],
+          ['beginn', 'imZeitraum', { art: 'jahr', versatz: -4 }],
+          ['vertragsnummer', 'nichtLeer', undefined],
+          ['_erstelltVon', 'zeigtAuf', { art: 'ich' }],
+          ['beginn', 'gleich', { art: 'fest', wert: '2023-04-01' }],
+        ],
+      );
+      assert.match(beschreibeDirektlink(r.link), /^Rechnung: Rechnungsnummer ist gleich „A-2020-11380“, Bezahlt nein/);
+    });
 
-  it('meldet jeden Fehler, statt ihn zu übergehen', async () => {
-    const { typen } = await mitBeispielen();
-    const fehler = (q: string) => { const r = lies(q, typen); assert.ok(!r.ok, q); return r.fehler.join(' | '); };
-    assert.match(fehler('rechnungsnummer=1'), /fehlt der Mappentyp/);
-    assert.match(fehler('typ=Rechnungen'), /Mappentyp „Rechnungen“ gibt es nicht/);
-    assert.match(fehler('typ=Rechnung&rechnungsnumer=1'), /Feld „rechnungsnumer“ gibt es bei Rechnung nicht/);
-    assert.match(fehler('typ=Rechnung&betrag.ungefaehr=1'), /Operator „ungefaehr“ gibt es nicht/);
-    assert.match(fehler('typ=Rechnung&betrag.enthaelt=1'), /passt nicht zum Feld „Rechnungsbetrag“/);
-    assert.match(fehler('typ=Rechnung&betrag=viel'), /keine Zahl/);
-    assert.match(fehler('typ=Rechnung&rechnungsdatum=31.02.2026'), /kein Datum/);
-    assert.match(fehler('typ=Rechnung&rechnungsdatum.zwischen=2026-01-01'), /zwei Werte/);
-    assert.match(fehler('typ=Rechnung&bezahlt=vielleicht'), /nur ja oder nein/);
-    assert.match(fehler('typ=Rechnung&aussteller=Stadtwerke'), /nur „ich“/);
-    assert.match(fehler('typ=Vertrag&zahlungszyklus=wöchentlich'), /gibt es in der Auswahlliste/);
-    assert.match(fehler('typ=Rechnung&sortierung=aussteller'), /nicht sortieren/);
-    assert.ok(lies('typ=Rechnung&rechnungsnummer=heute', typen).ok, 'bei Text ist „heute“ ein gewöhnlicher Wert');
-    const beide = lies('typ=Rechnung&a.b.c=1&betrag=x', typen);
-    assert.ok(!beide.ok && beide.fehler.length === 2, 'alle Fehler auf einmal');
-  });
+    it('meldet jeden Fehler, statt ihn zu übergehen', async () => {
+      const { typen } = await mitBeispielen();
+      const fehler = (q: string) => {
+        const r = lies(q, typen);
+        assert.ok(!r.ok, q);
+        return r.fehler.join(' | ');
+      };
+      assert.match(fehler('rechnungsnummer=1'), /fehlt der Mappentyp/);
+      assert.match(fehler('typ=Rechnungen'), /Mappentyp „Rechnungen“ gibt es nicht/);
+      assert.match(fehler('typ=Rechnung&rechnungsnumer=1'), /Feld „rechnungsnumer“ gibt es bei Rechnung nicht/);
+      assert.match(fehler('typ=Rechnung&betrag.ungefaehr=1'), /Operator „ungefaehr“ gibt es nicht/);
+      assert.match(fehler('typ=Rechnung&betrag.enthaelt=1'), /passt nicht zum Feld „Rechnungsbetrag“/);
+      assert.match(fehler('typ=Rechnung&betrag=viel'), /keine Zahl/);
+      assert.match(fehler('typ=Rechnung&rechnungsdatum=31.02.2026'), /kein Datum/);
+      assert.match(fehler('typ=Rechnung&rechnungsdatum.zwischen=2026-01-01'), /zwei Werte/);
+      assert.match(fehler('typ=Rechnung&bezahlt=vielleicht'), /nur ja oder nein/);
+      assert.match(fehler('typ=Rechnung&aussteller=Stadtwerke'), /nur „ich“/);
+      assert.match(fehler('typ=Vertrag&zahlungszyklus=wöchentlich'), /gibt es in der Auswahlliste/);
+      assert.match(fehler('typ=Rechnung&sortierung=aussteller'), /nicht sortieren/);
+      assert.ok(lies('typ=Rechnung&rechnungsnummer=heute', typen).ok, 'bei Text ist „heute“ ein gewöhnlicher Wert');
+      const beide = lies('typ=Rechnung&a.b.c=1&betrag=x', typen);
+      assert.ok(!beide.ok && beide.fehler.length === 2, 'alle Fehler auf einmal');
+    });
 
-  it('findet die Mappen eines Links, sortiert und mit klarer Meldung bei Fehlern', async () => {
-    const { d } = await mitBeispielen();
-    assert.deepEqual(await titel(d, 'typ=Rechnung&rechnungsnummer=r-2026-117'), ['R-2026-117 vom 02.03.2026'], 'Text ohne Groß-/Kleinschreibung');
-    assert.deepEqual(await titel(d, 'typ=Rechnung&bezahlt=ja'), ['JA-2025-0815 vom 15.01.2026']);
-    assert.deepEqual(await titel(d, 'typ=Rechnung&sortierung=-rechnungsdatum'), ['R-2026-117 vom 02.03.2026', 'JA-2025-0815 vom 15.01.2026']);
-    assert.deepEqual(await titel(d, 'typ=Rechnung&sortierung=-rechnungsdatum', { sortierung: 'rechnungsdatum', absteigend: 'false' }),
-      ['JA-2025-0815 vom 15.01.2026', 'R-2026-117 vom 02.03.2026'], 'Sortierung der Liste geht vor');
-    assert.deepEqual(await titel(d, 'typ=Rechnung&betrag.zwischen=100..200'), ['R-2026-117 vom 02.03.2026']);
-    assert.deepEqual(await titel(d, 'typ=Rechnung&rechnungsnummer=gibtsnicht'), []);
-    const morgen = verschiebe(heuteIn(), 1);
-    assert.deepEqual(await titel(d, `typ=Rechnung&rechnungsdatum.groesser=${morgen}`), []);
-    await assert.rejects(d.sichten.seite(ICH, { sicht: 'link', link: 'typ=Rechnung&rechnungsnumer=1' }),
-      (e: unknown) => e instanceof Fachfehler && e.status === 422 && /rechnungsnumer/.test(e.message));
-  });
+    it('findet die Mappen eines Links, sortiert und mit klarer Meldung bei Fehlern', async () => {
+      const { d } = await mitBeispielen();
+      assert.deepEqual(
+        await titel(d, 'typ=Rechnung&rechnungsnummer=r-2026-117'),
+        ['R-2026-117 vom 02.03.2026'],
+        'Text ohne Groß-/Kleinschreibung',
+      );
+      assert.deepEqual(await titel(d, 'typ=Rechnung&bezahlt=ja'), ['JA-2025-0815 vom 15.01.2026']);
+      assert.deepEqual(await titel(d, 'typ=Rechnung&sortierung=-rechnungsdatum'), [
+        'R-2026-117 vom 02.03.2026',
+        'JA-2025-0815 vom 15.01.2026',
+      ]);
+      assert.deepEqual(
+        await titel(d, 'typ=Rechnung&sortierung=-rechnungsdatum', { sortierung: 'rechnungsdatum', absteigend: 'false' }),
+        ['JA-2025-0815 vom 15.01.2026', 'R-2026-117 vom 02.03.2026'],
+        'Sortierung der Liste geht vor',
+      );
+      assert.deepEqual(await titel(d, 'typ=Rechnung&betrag.zwischen=100..200'), ['R-2026-117 vom 02.03.2026']);
+      assert.deepEqual(await titel(d, 'typ=Rechnung&rechnungsnummer=gibtsnicht'), []);
+      const morgen = verschiebe(heuteIn(), 1);
+      assert.deepEqual(await titel(d, `typ=Rechnung&rechnungsdatum.groesser=${morgen}`), []);
+      await assert.rejects(
+        d.sichten.seite(ICH, { sicht: 'link', link: 'typ=Rechnung&rechnungsnumer=1' }),
+        (e: unknown) => e instanceof Fachfehler && e.status === 422 && /rechnungsnumer/.test(e.message),
+      );
+    });
 
-  it('baut Links aus einem eindeutigen Feld oder aus den Titelfeldern, die wieder zur Mappe führen', async () => {
-    const { d, typ } = await mitBeispielen();
-    const mappen = await d.mappen.listeMappen();
-    const vertrag = mappen.find((m) => m.werte.vertragsnummer === 'SV-4711')!;
-    const l = linkZuMappe(typ('Vertrag'), vertrag)!;
-    assert.equal(l, `${LINK_PFAD}?typ=vertrag&vertragsnummer=SV-4711`, 'eindeutiges Feld');
-    const rechnung = mappen.find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
-    const lr = linkZuMappe(typ('Rechnung'), rechnung)!;
-    assert.equal(lr, `${LINK_PFAD}?typ=rechnung&rechnungsnummer=R-2026-117&rechnungsdatum=2026-03-02`, 'Titelfelder');
-    for (const m of mappen) {
-      const t = (await d.mappentypen.listeTypen()).find((x) => x.id === m.typId)!;
-      const link = linkZuMappe(t, m);
-      if (!link) continue;
-      const ids = (await d.sichten.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
-      assert.ok(ids.includes(m.id), `${link} findet ${m.titel}`);
-    }
-    // Felder mit festem Parameternamen gehen über „feld.operator“.
-    const t = await d.mappentypen.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
-    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
-    const ld = linkZuMappe(t, m)!;
-    assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);
-    assert.deepEqual((await d.sichten.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);
+    it('baut Links aus einem eindeutigen Feld oder aus den Titelfeldern, die wieder zur Mappe führen', async () => {
+      const { d, typ } = await mitBeispielen();
+      const mappen = await d.mappen.listeMappen();
+      const vertrag = mappen.find((m) => m.werte.vertragsnummer === 'SV-4711')!;
+      const l = linkZuMappe(typ('Vertrag'), vertrag)!;
+      assert.equal(l, `${LINK_PFAD}?typ=vertrag&vertragsnummer=SV-4711`, 'eindeutiges Feld');
+      const rechnung = mappen.find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
+      const lr = linkZuMappe(typ('Rechnung'), rechnung)!;
+      assert.equal(lr, `${LINK_PFAD}?typ=rechnung&rechnungsnummer=R-2026-117&rechnungsdatum=2026-03-02`, 'Titelfelder');
+      for (const m of mappen) {
+        const t = (await d.mappentypen.listeTypen()).find((x) => x.id === m.typId)!;
+        const link = linkZuMappe(t, m);
+        if (!link) continue;
+        const ids = (await d.sichten.seite(ICH, { sicht: 'link', link: link.split('?')[1], anzahl: 500 })).mappen.map((x) => x.id);
+        assert.ok(ids.includes(m.id), `${link} findet ${m.titel}`);
+      }
+      // Felder mit festem Parameternamen gehen über „feld.operator“.
+      const t = await d.mappentypen.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
+      const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
+      const ld = linkZuMappe(t, m)!;
+      assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);
+      assert.deepEqual(
+        (await d.sichten.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id),
+        [m.id],
+      );
+    });
   });
-});
 }
 
 faelle();
 
 const url = process.env.TEST_DATABASE_URL;
 describe('Sprechende Links in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
-  let haupt: any; let sql: any;
+  /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
+  let haupt: any;
+  let sql: any;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_direktlink_${process.pid}`;
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
-    const u = new URL(url!); u.pathname = `/${db}`;
+    const u = new URL(url!);
+    u.pathname = `/${db}`;
     sql = verbinde(u.toString());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
     const { pgRepo } = await import('../src/repo-pg');

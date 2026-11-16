@@ -31,7 +31,7 @@ export const istTeiltyp = (typ: Pick<MappentypDaten, 'teilVon'> | undefined | nu
 
 /** Das Verweisfeld, über das die Mappen dieses Typs zu ihrer übergeordneten Mappe gehören; undefined = eigenständig. */
 export const teilFeld = (typ: MitTeil | undefined | null): Feld | undefined =>
-  (typ?.teilVon ? typ.felder.find((f) => f.key === typ.teilVon && f.typ === 'referenz') : undefined);
+  typ?.teilVon ? typ.felder.find((f) => f.key === typ.teilVon && f.typ === 'referenz') : undefined;
 
 /** Id des Typs der übergeordneten Mappen (der eine Zieltyp des Felds). */
 export const uebergeordneterTyp = (typ: MitTeil | undefined | null): string | undefined => {
@@ -89,7 +89,8 @@ export function teilProbleme(d: MitTeil & Pick<MappentypDaten, 'register'>, ctx:
   const p = zielProbleme(f, name, ctx);
   if (f.mehrfach) p.push(t('gemeinsam.teile.eine-mappe', { feld: name }));
   if (!f.pflicht) p.push(t('gemeinsam.teile.pflicht', { feld: name }));
-  if (f.ausgeblendet || f.anzeigen || d.register.some((r) => r.ausgeblendet && r.felder?.includes(f.key))) p.push(t('gemeinsam.teile.sichtbar', { feld: name }));
+  if (f.ausgeblendet || f.anzeigen || d.register.some((r) => r.ausgeblendet && r.felder?.includes(f.key)))
+    p.push(t('gemeinsam.teile.sichtbar', { feld: name }));
   const eigene = ctx.eigeneId ? ctx.teiltypenAuf(ctx.eigeneId) : [];
   if (eigene.length) p.push(t('gemeinsam.teile.hat-teile', { typen: eigene.join(', ') }));
   return p;
@@ -107,11 +108,16 @@ export function leserechteAus(
   passt: (r: Regel) => Regel | null,
 ): { regelwerk: Regelwerk; ausgelassen: number } {
   let ausgelassen = 0;
-  const regeln = eltern.regeln.filter((r) => r.dann.R).flatMap((r) => {
-    const k = passt({ ...r, dann: { R: r.dann.R } });
-    if (!k) { ausgelassen++; return []; }
-    return [k];
-  });
+  const regeln = eltern.regeln
+    .filter((r) => r.dann.R)
+    .flatMap((r) => {
+      const k = passt({ ...r, dann: { R: r.dann.R } });
+      if (!k) {
+        ausgelassen++;
+        return [];
+      }
+      return [k];
+    });
   return { regelwerk: { grund: { ...eigen.grund, R: eltern.grund.R }, regeln: [...regeln, ...eigen.regeln] }, ausgelassen };
 }
 

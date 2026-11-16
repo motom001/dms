@@ -2,13 +2,23 @@ import type { Readable } from 'node:stream';
 import { mitSpracheVon, t } from './sprache';
 import { darfBereich, hatGesamt } from '../../shared/src/verwaltungsrecht';
 /** Anhang einer E-Mail (#58). */
-export interface MailAnhang { name: string; mime: string; inhalt: Buffer | Readable }
+export interface MailAnhang {
+  name: string;
+  mime: string;
+  inhalt: Buffer | Readable;
+}
 /**
  * Weitere Angaben einer E-Mail: „Antworten an“ und Anhänge (#58). `anImProtokoll` (#812): So steht der Empfänger im
  * Protokoll – etwa gekürzt (`l***@example.org`) bei Mails an Dritte, deren volle Adresse nicht ins Protokoll gehört.
  */
-export interface MailOptionen { antwortAn?: string; anhaenge?: MailAnhang[]; anImProtokoll?: string }
-export interface Mailer { sende(an: string, betreff: string, text: string, optionen?: MailOptionen): Promise<void> }
+export interface MailOptionen {
+  antwortAn?: string;
+  anhaenge?: MailAnhang[];
+  anImProtokoll?: string;
+}
+export interface Mailer {
+  sende(an: string, betreff: string, text: string, optionen?: MailOptionen): Promise<void>;
+}
 
 /**
  * Mail an Personen mit Verwaltungsrecht und echter Adresse (Notfallzugang #108, Sicherung #105; #818 statt „an die
@@ -19,7 +29,13 @@ export interface Mailer { sende(an: string, betreff: string, text: string, optio
 export type MailText = string | (() => string);
 export const mailText = (x: MailText) => (typeof x === 'function' ? x() : x);
 
-export async function anVerwaltende(benutzer: Array<{ email: string; aktiv: boolean; verwaltung?: string[]; art?: string; sprache?: string | null }>, mailer: Mailer | null, betreff: MailText, text: MailText, bereich?: string): Promise<number> {
+export async function anVerwaltende(
+  benutzer: Array<{ email: string; aktiv: boolean; verwaltung?: string[]; art?: string; sprache?: string | null }>,
+  mailer: Mailer | null,
+  betreff: MailText,
+  text: MailText,
+  bereich?: string,
+): Promise<number> {
   if (!mailer) return 0;
   let n = 0;
   for (const b of benutzer) {
@@ -46,8 +62,12 @@ export const mailtexte = {
   }),
   einladung: (name: string, email: string, link: string, tage: number) => ({
     betreff: t('mail.einladung.betreff'),
-    text: brief(name || email, t('mail.einladung.text'), t('mail.einladung.mit', { email }),
-      `${t('mail.einladung.link', { dauer: t('mail.dauer.tage', { anzahl: tage }) })}\n${link}`),
+    text: brief(
+      name || email,
+      t('mail.einladung.text'),
+      t('mail.einladung.mit', { email }),
+      `${t('mail.einladung.link', { dauer: t('mail.dauer.tage', { anzahl: tage }) })}\n${link}`,
+    ),
   }),
   /** #818: an alle mit „Gesamte Verwaltung“, wenn sich Verwaltungsrechte ändern. */
   verwaltungsrecht: (person: string, vorher: string, nachher: string, von: string) => ({
@@ -60,8 +80,12 @@ export const mailtexte = {
    */
   notfallBenutzt: (konto: string, email: string, datum: string, ip: string, apiSchluessel: number) => ({
     betreff: t('mail.notfall.benutzt.betreff'),
-    text: `${[t('mail.verwaltung.anrede'), t('mail.notfall.benutzt.text', { datum, konto, email, ip }),
-      ...(apiSchluessel ? [t('mail.notfall.benutzt.api', { anzahl: apiSchluessel })] : []), t('mail.notfall.benutzt.nicht-du')].join('\n\n')}\n`,
+    text: `${[
+      t('mail.verwaltung.anrede'),
+      t('mail.notfall.benutzt.text', { datum, konto, email, ip }),
+      ...(apiSchluessel ? [t('mail.notfall.benutzt.api', { anzahl: apiSchluessel })] : []),
+      t('mail.notfall.benutzt.nicht-du'),
+    ].join('\n\n')}\n`,
   }),
   /** #815: gebündelt, höchstens einmal je Stunde, an alle mit Verwaltungsrecht. */
   notfallFehlversuche: (anzahl: number, ip: string) => ({
@@ -70,7 +94,11 @@ export const mailtexte = {
   }),
   zuruecksetzen: (name: string, email: string, link: string, stunden: number) => ({
     betreff: t('mail.zuruecksetzen.betreff'),
-    text: brief(name || email, t('mail.zuruecksetzen.text'),
-      `${t('mail.zuruecksetzen.link', { dauer: t('mail.dauer.stunden', { anzahl: stunden }) })}\n${link}`, t('mail.zuruecksetzen.ignorieren')),
+    text: brief(
+      name || email,
+      t('mail.zuruecksetzen.text'),
+      `${t('mail.zuruecksetzen.link', { dauer: t('mail.dauer.stunden', { anzahl: stunden }) })}\n${link}`,
+      t('mail.zuruecksetzen.ignorieren'),
+    ),
   }),
 };

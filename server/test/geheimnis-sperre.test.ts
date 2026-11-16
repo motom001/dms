@@ -47,7 +47,15 @@ import { paketdatenQuellen } from '../src/paketdaten/paketdaten.routen';
 import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/nachweisjournal';
 import { NACHWEIS_BEREICHE, PAKETDATEN_BEREICHE } from '../../shared/src/paketdaten';
 
-type App = { inject(o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string | string[]> }>; close(): Promise<void> };
+type App = {
+  inject(o: {
+    method: string;
+    url: string;
+    payload?: unknown;
+    headers?: Record<string, string>;
+  }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string | string[]> }>;
+  close(): Promise<void>;
+};
 
 /** Bekannte Testgeheimnisse: feste Werte und solche, die Ablago beim Anlegen erzeugt (unten ergänzt). */
 const G: Record<string, string> = {
@@ -64,7 +72,10 @@ const G: Record<string, string> = {
  * Exporte, Einrichtung, Nachweise und Vergleiche: Name → erzeugt den Inhalt (Text oder Dateien). Routen, die einen
  * dieser Wege ausliefern, stehen in `routen`. Neue Wege (#1053) bitte hier eintragen.
  */
-interface Export { routen: string[]; erzeuge(): Promise<string> }
+interface Export {
+  routen: string[];
+  erzeuge(): Promise<string>;
+}
 let EXPORTE: Record<string, Export> = {};
 
 /** Routen, die nach Export aussehen, aber keiner sind oder anders geschützt (mit Grund). */
@@ -78,16 +89,19 @@ const AUSGENOMMEN: Record<string, string> = {
   'GET /api/werkbank/pakete/selbst/:id/zip': 'selbst erstelltes Paket: Inhalt kommt von der Person, keine Daten der Ablage',
   'GET /api/sicherungen/:name/datei': 'Sicherungsdatei (verschlüsselt) für Pakete mit dms:sicherung-lesen – trägt bewusst alles',
   'GET /api/v1/sicherungen/:name/datei': 'Sicherungsdatei (verschlüsselt) für Pakete mit dms:sicherung-lesen – trägt bewusst alles',
-  'GET /api/werkbank/sicherung/:name/datei': 'Sicherung herunterladen (#975): die verschlüsselte Datei unverändert, mit Bereich „Sicherung“ und frischer Anmeldung – trägt bewusst alles',
+  'GET /api/werkbank/sicherung/:name/datei':
+    'Sicherung herunterladen (#975): die verschlüsselte Datei unverändert, mit Bereich „Sicherung“ und frischer Anmeldung – trägt bewusst alles',
   'GET /api/werkbank/loeschprotokoll/datei': 'Löschprotokoll (Titel, Zeit, Person) – geprüft mit allen GET-Routen',
   'GET /api/v1/werkbank/loeschprotokoll/datei': 'Löschprotokoll – geprüft mit allen GET-Routen',
 };
 
 /** Pfade, die nach Export, Einrichtung, Nachweis, Vergleich oder Diagnose aussehen. */
-const EXPORTARTIG = /\/(export|auskunft|einrichtung|nachweise?|vergleich|diagnose|fehlermeldung|loeschprotokoll|compliance)\b|\/(zip|datei)$/;
+const EXPORTARTIG =
+  /\/(export|auskunft|einrichtung|nachweise?|vergleich|diagnose|fehlermeldung|loeschprotokoll|compliance)\b|\/(zip|datei)$/;
 
 /** Alle Fundstellen eines Inhalts. */
-const funde = (text: string) => findeGeheimnisse(text, Object.values(G)).map((f) => f.replace(/^Geheimnis (\d+)/, (_, i: string) => Object.keys(G)[Number(i) - 1]));
+const funde = (text: string) =>
+  findeGeheimnisse(text, Object.values(G)).map((f) => f.replace(/^Geheimnis (\d+)/, (_, i: string) => Object.keys(G)[Number(i) - 1]));
 
 describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
   let app: App;
@@ -95,7 +109,8 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
   let alle: Array<{ methode: string; pfad: string; zugang: string; lesend?: boolean }> = [];
   const ids: Record<string, string> = {};
   const ordner: string[] = [];
-  const rufe = (method: string, url: string, payload?: unknown, kopf: Record<string, string> = {}) => app.inject({ method, url, ...(payload !== undefined ? { payload } : {}), headers: { cookie, 'x-dms': '1', ...kopf } });
+  const rufe = (method: string, url: string, payload?: unknown, kopf: Record<string, string> = {}) =>
+    app.inject({ method, url, ...(payload !== undefined ? { payload } : {}), headers: { cookie, 'x-dms': '1', ...kopf } });
 
   before(async () => {
     const tmp = await mkdtemp(join(tmpdir(), 'dms-geheim-'));
@@ -107,7 +122,11 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen, tresor });
     const kontoRepo = speicherKontoRepo();
     const konten = new Konten(kontoRepo, null, 'http://nas', d.systemtypen.benutzerspiegel());
-    const zweifaktor = new Zweifaktor(einstellungen, (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w));
+    const zweifaktor = new Zweifaktor(
+      einstellungen,
+      (k) => tresor.verschluessele(k),
+      (w) => tresor.entschluessele(w),
+    );
     konten.verbindeZweifaktor(zweifaktor);
     // Passkeys (#811): gespeichert sind nur öffentliche Schlüssel; die Kennung einer offenen Herausforderung ist ein
     // Einmal-Ticket und darf nirgends auftauchen.
@@ -124,38 +143,120 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
 
     const betrieb = new Betrieb(speicherBetrieb(), 'http://nas', tresor);
     await betrieb.laden();
-    await betrieb.speichereMail({ host: 'smtp.example.org', port: 587, sicherheit: 'starttls', benutzer: 'versand@example.org', passwort: G.mailPasswort, absender: 'versand@example.org' }, lena.email);
+    await betrieb.speichereMail(
+      {
+        host: 'smtp.example.org',
+        port: 587,
+        sicherheit: 'starttls',
+        benutzer: 'versand@example.org',
+        passwort: G.mailPasswort,
+        absender: 'versand@example.org',
+      },
+      lena.email,
+    );
 
     // Postfächer (#196, #358): eins mit Passwort, eins mit OAuth (App mit Client-Geheimnis, Token wie nach der Anmeldung).
     const verschluessele = (k: string) => tresor.verschluessele(k);
     const entschluessele = (w: string) => tresor.entschluessele(w);
     const postfachOAuth = new PostfachOAuth({ einstellungen, verschluessele, entschluessele });
     await postfachOAuth.speichereApp('microsoft', { clientId: 'app-1', clientSecret: G.oauthClientSecret, tenant: 'common' }, lena.email);
-    const postfaecher = new Postfaecher({ dienst: d, einstellungen, verbinde: async () => { throw new Error('ohne Netz'); }, lies: async () => { throw new Error('ohne Netz'); }, verschluessele, entschluessele, oauth: postfachOAuth });
-    const [pfPw] = await postfaecher.speichere({ name: 'Büro', server: 'imap.example.org', benutzer: 'buero@example.org', passwort: G.postfachPasswort }, null, lena.email);
-    const liste = await postfaecher.speichere({ name: 'Firma', server: 'outlook.office365.com', benutzer: 'dms@firma.example', anmeldung: 'oauth', anbieter: 'microsoft' }, null, lena.email);
+    const postfaecher = new Postfaecher({
+      dienst: d,
+      einstellungen,
+      verbinde: async () => {
+        throw new Error('ohne Netz');
+      },
+      lies: async () => {
+        throw new Error('ohne Netz');
+      },
+      verschluessele,
+      entschluessele,
+      oauth: postfachOAuth,
+    });
+    const [pfPw] = await postfaecher.speichere(
+      { name: 'Büro', server: 'imap.example.org', benutzer: 'buero@example.org', passwort: G.postfachPasswort },
+      null,
+      lena.email,
+    );
+    const liste = await postfaecher.speichere(
+      { name: 'Firma', server: 'outlook.office365.com', benutzer: 'dms@firma.example', anmeldung: 'oauth', anbieter: 'microsoft' },
+      null,
+      lena.email,
+    );
     const pfOAuth = liste.find((x) => x.name === 'Firma')!;
-    await einstellungen.schreibe(`postfach_oauth_${pfOAuth.id}`, { anbieter: 'microsoft', zugriff: verschluessele(G.oauthZugriff), aktualisierung: verschluessele(G.oauthRefresh), ablauf: new Date(Date.now() + 3600_000).toISOString(), oeffentlich: false, angemeldet: new Date().toISOString(), von: lena.email, zustand: 'ok', fehler: null, gemeldet: false, kennung: 'k1' });
-    ids.postfach = pfPw.id; ids.postfachOAuth = pfOAuth.id; ids.anbieter = 'microsoft';
+    await einstellungen.schreibe(`postfach_oauth_${pfOAuth.id}`, {
+      anbieter: 'microsoft',
+      zugriff: verschluessele(G.oauthZugriff),
+      aktualisierung: verschluessele(G.oauthRefresh),
+      ablauf: new Date(Date.now() + 3600_000).toISOString(),
+      oeffentlich: false,
+      angemeldet: new Date().toISOString(),
+      von: lena.email,
+      zustand: 'ok',
+      fehler: null,
+      gemeldet: false,
+      kennung: 'k1',
+    });
+    ids.postfach = pfPw.id;
+    ids.postfachOAuth = pfOAuth.id;
+    ids.anbieter = 'microsoft';
 
-    const einrichtung = new Einrichtung({ konten, code: null, einstellungen, mandant: { name: async () => 'Familie Brandt', umbenennen: async () => {} } });
+    const einrichtung = new Einrichtung({
+      konten,
+      code: null,
+      einstellungen,
+      mandant: { name: async () => 'Familie Brandt', umbenennen: async () => {} },
+    });
 
-    const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' }] });
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Zugang',
+      titelVorlage: '{name}',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text' },
+        { key: 'pw', label: 'Passwort', typ: 'passwort' },
+      ],
+    });
     const mappe = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Portal', pw: G.passwortfeld } }, lena.id);
-    ids.typ = typ.id; ids.mappe = mappe.id; ids.benutzer = lena.id;
+    ids.typ = typ.id;
+    ids.mappe = mappe.id;
+    ids.benutzer = lena.id;
 
     // Aufruf von außen (#679): Das Geheimnis steht nur in der Antwort auf „Adresse anlegen“ – nie in Liste, Export oder Verlauf.
     await konten.systemkonto('automatisierung');
     d.systemkonten = (k) => konten.systemkonto(k);
-    const automatisierungen = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(), aufruf: { verschluessele, entschluessele, basis: () => 'https://ablago.example.org' } });
-    const auto = await automatisierungen.lege({ name: 'Von außen', aktiv: true, wenn: { art: 'aufruf', parameter: ['raum'] },
-      dann: [{ id: 'a', art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: lena.id }], text: 'Aufruf {raum}' }] }, lena.id);
+    const automatisierungen = new Automatisierungen({
+      dienst: d,
+      repo: speicherAutomatisierungRepo(),
+      aufruf: { verschluessele, entschluessele, basis: () => 'https://ablago.example.org' },
+    });
+    const auto = await automatisierungen.lege(
+      {
+        name: 'Von außen',
+        aktiv: true,
+        wenn: { art: 'aufruf', parameter: ['raum'] },
+        dann: [{ id: 'a', art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: lena.id }], text: 'Aufruf {raum}' }],
+      },
+      lena.id,
+    );
     G.aufrufGeheimnis = (await automatisierungen.aufrufAnlegen(auto.id, 'adresse', lena.id)).geheimnis;
     ids.automatisierung = auto.id;
 
     const { baueApp } = await import('../src/http');
-    app = await baueApp(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth, automatisierungen }) as unknown as App;
-    const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email: lena.email, passwort: G.kontoPasswort }, headers: { 'x-dms': '1' } });
+    app = (await baueApp(d, konten, {
+      tresor,
+      betrieb,
+      apiSchluessel,
+      einrichtung,
+      postfaecher,
+      postfachOAuth,
+      automatisierungen,
+    })) as unknown as App;
+    const r = await app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      payload: { email: lena.email, passwort: G.kontoPasswort },
+      headers: { 'x-dms': '1' },
+    });
     assert.equal(r.statusCode, 200, r.body);
     cookie = ([] as string[]).concat(r.headers['set-cookie'])[0].split(';')[0];
     G.sitzung = decodeURIComponent(cookie.split('=')[1]);
@@ -173,7 +274,13 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
         erzeuge: async () => {
           const ziel = await mkdtemp(join(tmpdir(), 'dms-geheim-export-'));
           ordner.push(ziel);
-          const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Brandt', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+          const quelle = d.vollexport.vollexportQuelle({
+            mandant: 'Familie Brandt',
+            version: '0.0.0',
+            benutzer: () => konten.exportDaten(),
+            designs: async () => [],
+            protokoll: () => [],
+          });
           const e = await vollexport(quelle, ziel, {});
           return dateienAls(e.ordner);
         },
@@ -186,31 +293,76 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
         routen: ['POST /api/einrichtung/datei/schreiben'],
         // Wie der Assistent den Plan schickt: Passwörter im Klartext (sie werden beim Einrichten gebraucht).
         erzeuge: async () => {
-          const mail = { aktiv: true, host: 'smtp.example.org', port: 587, benutzer: 'versand@example.org', passwort: G.mailPasswort, absender: 'versand@example.org' };
-          const { text } = einrichtung.dateiSchreiben({ ablage: 'Familie Brandt', konto: { email: 'lena@example.org', name: 'Lena', passwort: G.kontoPasswort }, datenbank: { host: 'db', port: 5432, datenbank: 'ablago', benutzer: 'ablago', passwort: G.mailPasswort }, optional: { mail } });
+          const mail = {
+            aktiv: true,
+            host: 'smtp.example.org',
+            port: 587,
+            benutzer: 'versand@example.org',
+            passwort: G.mailPasswort,
+            absender: 'versand@example.org',
+          };
+          const { text } = einrichtung.dateiSchreiben({
+            ablage: 'Familie Brandt',
+            konto: { email: 'lena@example.org', name: 'Lena', passwort: G.kontoPasswort },
+            datenbank: { host: 'db', port: 5432, datenbank: 'ablago', benutzer: 'ablago', passwort: G.mailPasswort },
+            optional: { mail },
+          });
           assert.match(text, /lena@example\.org[\s\S]*smtp\.example\.org/, 'Datei wirklich geschrieben');
           return text;
         },
       },
       diagnose: {
         routen: ['GET /api/konto/diagnose'],
-        erzeuge: async () => { const r = await rufe('GET', '/api/konto/diagnose'); assert.equal(r.statusCode, 200, r.body); return r.body; },
+        erzeuge: async () => {
+          const r = await rufe('GET', '/api/konto/diagnose');
+          assert.equal(r.statusCode, 200, r.body);
+          return r.body;
+        },
       },
       auskunft: {
-        routen: ['POST /api/werkbank/auskunft', 'POST /api/v1/werkbank/auskunft', 'GET /api/werkbank/auskunft/:id/zip', 'GET /api/v1/werkbank/auskunft/:id/zip'],
+        routen: [
+          'POST /api/werkbank/auskunft',
+          'POST /api/v1/werkbank/auskunft',
+          'GET /api/werkbank/auskunft/:id/zip',
+          'GET /api/v1/werkbank/auskunft/:id/zip',
+        ],
         // Auskunft über die Mappe mit Passwortfeld (#455): Inhalt der ZIP.
         erzeuge: async () => {
           const sich = await mkdtemp(join(tmpdir(), 'dms-geheim-auskunft-'));
           ordner.push(sich);
-          const tabelle = routen(d, konten, { betrieb, tresor, sicherung: { ordner: sich } as never, exporte: { pfad: join(sich, 'export'), imSicherungsordner: false, volume: null } });
-          const rufeH = async (m: string, pfad: string, x: Partial<Anfrage> = {}) => tabelle.find((r) => r.methode === m && r.pfad === pfad)!.handler({ body: {}, params: {}, query: {}, ip: '203.0.113.5', ...x, benutzer: { ...(await konten.listeBenutzer()).find((b) => b.id === lena.id)!, rolle: 'admin' } } as Anfrage);
-          await rufeH('POST', '/api/werkbank/auskunft', { body: { mappeId: mappe.id, auswahl: { mappen: [mappe.id], dokumente: [], notizen: [], historie: [] }, geprueft: true, passwort: '' } });
+          const tabelle = routen(d, konten, {
+            betrieb,
+            tresor,
+            sicherung: { ordner: sich } as never,
+            exporte: { pfad: join(sich, 'export'), imSicherungsordner: false, volume: null },
+          });
+          const rufeH = async (m: string, pfad: string, x: Partial<Anfrage> = {}) =>
+            tabelle
+              .find((r) => r.methode === m && r.pfad === pfad)!
+              .handler({
+                body: {},
+                params: {},
+                query: {},
+                ip: '203.0.113.5',
+                ...x,
+                benutzer: { ...(await konten.listeBenutzer()).find((b) => b.id === lena.id)!, rolle: 'admin' },
+              } as Anfrage);
+          await rufeH('POST', '/api/werkbank/auskunft', {
+            body: {
+              mappeId: mappe.id,
+              auswahl: { mappen: [mappe.id], dokumente: [], notizen: [], historie: [] },
+              geprueft: true,
+              passwort: '',
+            },
+          });
           const f = await d.auftraege.warte();
           assert.equal(f?.status, 'fertig', f?.fehler);
           const id = (f!.ergebnis as { id: string }).id;
-          const inhalt = (await rufeH('GET', '/api/werkbank/auskunft/:id/zip', { params: { id } })).datei!.inhalt as unknown as AsyncIterable<Buffer> | Buffer;
+          const inhalt = (await rufeH('GET', '/api/werkbank/auskunft/:id/zip', { params: { id } })).datei!.inhalt as unknown as
+            AsyncIterable<Buffer> | Buffer;
           const t: Buffer[] = [];
-          if (Buffer.isBuffer(inhalt)) t.push(inhalt); else for await (const c of inhalt) t.push(c);
+          if (Buffer.isBuffer(inhalt)) t.push(inhalt);
+          else for await (const c of inhalt) t.push(c);
           const text = alsText(Buffer.concat(t));
           assert.match(text, /Portal/, 'Auskunft enthält die Mappe');
           return text;
@@ -219,10 +371,24 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
       // Einrichtung, Vergleich und Nachweise für Pakete (#1053): alle Bereiche, mit Postfächern, Versand, Konten und
       // einer Fehlanmeldung, bei der statt der Adresse ein Passwort eingetippt wurde.
       'einrichtung-und-nachweise': {
-        routen: ['GET /api/paketdaten/einrichtung/:bereich', 'POST /api/paketdaten/einrichtung/:bereich/vergleich', 'GET /api/paketdaten/nachweise/:bereich/:monat',
-          'GET /api/v1/paketdaten/einrichtung/:bereich', 'POST /api/v1/paketdaten/einrichtung/:bereich/vergleich', 'GET /api/v1/paketdaten/nachweise/:bereich/:monat'],
+        routen: [
+          'GET /api/paketdaten/einrichtung/:bereich',
+          'POST /api/paketdaten/einrichtung/:bereich/vergleich',
+          'GET /api/paketdaten/nachweise/:bereich/:monat',
+          'GET /api/v1/paketdaten/einrichtung/:bereich',
+          'POST /api/v1/paketdaten/einrichtung/:bereich/vergleich',
+          'GET /api/v1/paketdaten/nachweise/:bereich/:monat',
+        ],
         erzeuge: async () => {
-          const q = paketdatenQuellen(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth, automatisierungen });
+          const q = paketdatenQuellen(d, konten, {
+            tresor,
+            betrieb,
+            apiSchluessel,
+            einrichtung,
+            postfaecher,
+            postfachOAuth,
+            automatisierungen,
+          });
           setzeNachweisjournal(new Nachweisjournal(speicherJournal()));
           try {
             await fehlanmeldung(G.kontoPasswort, '203.0.113.9', false);
@@ -232,23 +398,37 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
               const s = await paketEinrichtung(b, q.einrichtung);
               teile.push(JSON.stringify(s), JSON.stringify(vergleiche([], s.eintraege)));
             }
-            for (const b of NACHWEIS_BEREICHE) teile.push(JSON.stringify(await paketNachweise(b, new Date().toISOString().slice(0, 7), q.nachweise)));
+            for (const b of NACHWEIS_BEREICHE)
+              teile.push(JSON.stringify(await paketNachweise(b, new Date().toISOString().slice(0, 7), q.nachweise)));
             const text = teile.join('\n');
             assert.match(text, /imap\.example\.org/, 'Postfach in der Einrichtung');
             assert.match(text, /zugang\.fehlanmeldung/, 'Fehlanmeldung in den Nachweisen');
             return text;
-          } finally { setzeNachweisjournal(null); }
+          } finally {
+            setzeNachweisjournal(null);
+          }
         },
       },
       'ohne-geheimnisse': {
         routen: [],
         // Die zentrale Sperre selbst: was sie zurückgibt, enthält kein Geheimnis mehr.
-        erzeuge: async () => JSON.stringify(ohneGeheimnisse({ passwort: G.kontoPasswort, liste: [{ token: G.oauthRefresh, clientSecret: G.oauthClientSecret }], wert: tresor.verschluessele(G.passwortfeld), hash: G.kontoHash })),
+        erzeuge: async () =>
+          JSON.stringify(
+            ohneGeheimnisse({
+              passwort: G.kontoPasswort,
+              liste: [{ token: G.oauthRefresh, clientSecret: G.oauthClientSecret }],
+              wert: tresor.verschluessele(G.passwortfeld),
+              hash: G.kontoHash,
+            }),
+          ),
       },
     };
   });
 
-  after(async () => { await app?.close(); for (const o of ordner) await rm(o, { recursive: true, force: true }); });
+  after(async () => {
+    await app?.close();
+    for (const o of ordner) await rm(o, { recursive: true, force: true });
+  });
 
   it('die Testgeheimnisse sind echt angelegt', () => {
     for (const [k, v] of Object.entries(G)) assert.ok(typeof v === 'string' && v.length >= 10, `${k}: ${String(v)}`);
@@ -256,7 +436,13 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
 
   it('findeGeheimnisse erkennt roh, Base64, Base64url, URL- und Hex-Kodierung sowie dms1$ und scrypt$', () => {
     const s = 'Ein-Test/Geheimnis+mit=Zeichen';
-    for (const k of [s, Buffer.from(s).toString('base64'), Buffer.from(s).toString('base64url'), encodeURIComponent(s), Buffer.from(s).toString('hex')]) {
+    for (const k of [
+      s,
+      Buffer.from(s).toString('base64'),
+      Buffer.from(s).toString('base64url'),
+      encodeURIComponent(s),
+      Buffer.from(s).toString('hex'),
+    ]) {
       assert.equal(findeGeheimnisse(`vor ${k} nach`, [s]).length, 1, k);
     }
     assert.equal(findeGeheimnisse('{"w":"dms1$c2FsejEyMzQ1Ng:Z2VoZWltMTIzNDU2"}', []).length, 1);
@@ -266,13 +452,29 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
   });
 
   it('ohneGeheimnisse lässt nur „eingerichtet: ja/nein“ stehen', () => {
-    const r = ohneGeheimnisse({ name: 'Postfach', passwort: 'x', clientSecret: '', tiefer: [{ refreshToken: 'y', wert: 'dms1$a:b' }], sha256: 'abc' }) as Record<string, unknown>;
-    assert.deepEqual(r, { name: 'Postfach', passwort: { eingerichtet: true }, clientSecret: { eingerichtet: false }, tiefer: [{ refreshToken: { eingerichtet: true }, wert: { eingerichtet: true } }], sha256: 'abc' });
+    const r = ohneGeheimnisse({
+      name: 'Postfach',
+      passwort: 'x',
+      clientSecret: '',
+      tiefer: [{ refreshToken: 'y', wert: 'dms1$a:b' }],
+      sha256: 'abc',
+    }) as Record<string, unknown>;
+    assert.deepEqual(r, {
+      name: 'Postfach',
+      passwort: { eingerichtet: true },
+      clientSecret: { eingerichtet: false },
+      tiefer: [{ refreshToken: { eingerichtet: true }, wert: { eingerichtet: true } }],
+      sha256: 'abc',
+    });
   });
 
   it('Systemprotokoll: Daten eines Eintrags ohne Geheimnisse', () => {
     const p = new Protokoll('info', () => {});
-    p.schreibe('info', 'konto', 'Test', { passwort: G.kontoPasswort, wert: `dms1$${'a'.repeat(12)}:${'b'.repeat(12)}`, email: 'lena@example.org' });
+    p.schreibe('info', 'konto', 'Test', {
+      passwort: G.kontoPasswort,
+      wert: `dms1$${'a'.repeat(12)}:${'b'.repeat(12)}`,
+      email: 'lena@example.org',
+    });
     const e = p.eintraege({}).at(-1)!;
     assert.deepEqual(e.daten, { passwort: { eingerichtet: true }, wert: { eingerichtet: true }, email: 'lena@example.org' });
   });
@@ -306,10 +508,18 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
 
   it('jede Route, die nach Export aussieht, ist geprüft oder mit Grund ausgenommen', () => {
     const geprueft = new Set(Object.values(EXPORTE).flatMap((e) => e.routen));
-    const offen = alle.map((r) => `${r.methode} ${r.pfad}`).filter((k) => EXPORTARTIG.test(k.split(' ')[1]) && (k.startsWith('GET ') || /\/(export|datei\/schreiben|nachweise?|vergleich)$/.test(k)))
+    const offen = alle
+      .map((r) => `${r.methode} ${r.pfad}`)
+      .filter(
+        (k) => EXPORTARTIG.test(k.split(' ')[1]) && (k.startsWith('GET ') || /\/(export|datei\/schreiben|nachweise?|vergleich)$/.test(k)),
+      )
       .filter((k) => !geprueft.has(k) && !(k in AUSGENOMMEN) && !k.startsWith('GET '));
     assert.deepEqual(offen, [], 'Neuer Export? In EXPORTE eintragen (oder mit Grund in AUSGENOMMEN)');
-    for (const k of [...geprueft, ...Object.keys(AUSGENOMMEN)]) assert.ok(alle.some((r) => `${r.methode} ${r.pfad}` === k), `${k} gibt es nicht mehr`);
+    for (const k of [...geprueft, ...Object.keys(AUSGENOMMEN)])
+      assert.ok(
+        alle.some((r) => `${r.methode} ${r.pfad}` === k),
+        `${k} gibt es nicht mehr`,
+      );
   });
 });
 

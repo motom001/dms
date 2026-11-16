@@ -17,7 +17,10 @@ const VERFALL_MS = 2 * 60 * 60 * 1000;
 const ID = /^[0-9a-f-]{36}$/;
 
 export class Fotostapel {
-  constructor(private wurzel = join(tmpdir(), 'dms-fotostapel'), private jetzt = () => Date.now()) {}
+  constructor(
+    private wurzel = join(tmpdir(), 'dms-fotostapel'),
+    private jetzt = () => Date.now(),
+  ) {}
 
   private ordner(benutzerId: string) {
     if (!ID.test(benutzerId)) throw new Fachfehler(403, t('meldungen.fotostapel.fotos-ablegen-geht-nur'));
@@ -47,7 +50,11 @@ export class Fotostapel {
     const o = this.ordner(benutzerId);
     const bilder: Buffer[] = [];
     for (const id of liste) {
-      try { bilder.push(await readFile(join(o, id))); } catch { throw new Fachfehler(410, t('meldungen.fotostapel.ein-foto-ist-nicht')); }
+      try {
+        bilder.push(await readFile(join(o, id)));
+      } catch {
+        throw new Fachfehler(410, t('meldungen.fotostapel.ein-foto-ist-nicht'));
+      }
     }
     return bilder;
   }
@@ -61,13 +68,25 @@ export class Fotostapel {
   /** Verfallene Fotos aller Benutzer löschen. */
   async aufraeumen() {
     let benutzer: string[];
-    try { benutzer = await readdir(this.wurzel); } catch { return; }
+    try {
+      benutzer = await readdir(this.wurzel);
+    } catch {
+      return;
+    }
     for (const b of benutzer) {
       const o = join(this.wurzel, b);
       let namen: string[];
-      try { namen = await readdir(o); } catch { continue; }
+      try {
+        namen = await readdir(o);
+      } catch {
+        continue;
+      }
       for (const n of namen) {
-        try { if (this.jetzt() - (await stat(join(o, n))).mtimeMs > VERFALL_MS) await rm(join(o, n), { force: true }); } catch { /* schon weg */ }
+        try {
+          if (this.jetzt() - (await stat(join(o, n))).mtimeMs > VERFALL_MS) await rm(join(o, n), { force: true });
+        } catch {
+          /* schon weg */
+        }
       }
     }
   }

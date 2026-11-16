@@ -20,10 +20,13 @@ async function aufbau() {
   const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' });
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
-    { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
-    { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
-  ] });
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Vorgang',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true },
+      { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
+    ],
+  });
   return { d, konten, anna, ben, t, A: { id: anna.id, rolle: 'admin' }, B: { id: ben.id, rolle: 'mitglied' } };
 }
 
@@ -31,7 +34,11 @@ describe('Aufgaben (#54, #56)', () => {
   it('„passt nicht“ wird eine Aufgabe des Erstellers, die sich selbst erledigt', async () => {
     const { d, t, B } = await aufbau();
     const a = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
-    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    await d.mappentypen.aendereTyp(t.id, {
+      ...t,
+      felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }],
+      register: undefined,
+    });
     assert.equal((await d.sichten.zaehler(B)).eingang, 1);
     const [auf] = await d.vertretung.meineAufgaben(B);
     assert.equal(auf.art, 'passung');
@@ -58,7 +65,11 @@ describe('Aufgaben (#54, #56)', () => {
     await d.vertretung.erledigeAufgabe(a.id, A);
     assert.equal((await d.sichten.zaehler(A)).eingang, 0);
     const h = (await d.mappenHistorie.historie(m.id)).filter((x) => x.art === 'aufgabe').map((x) => x.daten.text);
-    assert.deepEqual(h, ['erledigt: Bitte Rechnung prüfen', 'weitergegeben von Ben an Anna: Bitte Rechnung prüfen', 'für Ben: Bitte Rechnung prüfen']);
+    assert.deepEqual(h, [
+      'erledigt: Bitte Rechnung prüfen',
+      'weitergegeben von Ben an Anna: Bitte Rechnung prüfen',
+      'für Ben: Bitte Rechnung prüfen',
+    ]);
   });
 
   it('macht aus @-Erwähnungen genau eine Aufgabe; entfernte Erwähnungen stehen in der Historie', async () => {
@@ -66,7 +77,10 @@ describe('Aufgaben (#54, #56)', () => {
     const text = `Bitte ansehen, ${erwaehnung('Ben', ben.id)}`;
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '9', text } }, A.id);
     let meine = await d.vertretung.meineAufgaben(B);
-    assert.deepEqual(meine.map((x) => [x.art, x.text]), [['erwaehnung', 'Erwähnt von Anna in „Beschreibung“']]);
+    assert.deepEqual(
+      meine.map((x) => [x.art, x.text]),
+      [['erwaehnung', 'Erwähnt von Anna in „Beschreibung“']],
+    );
     await d.mappen.aendereMappe(m.id, { werte: { nr: '9', text: `${text} – noch einmal` } }, A.id);
     assert.equal((await d.vertretung.meineAufgaben(B)).length, 1, 'keine zweite Aufgabe');
     await d.mappen.aendereMappe(m.id, { werte: { nr: '9', text: 'ohne Erwähnung' } }, A.id);
@@ -82,7 +96,10 @@ describe('Aufgaben (#54, #56)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '11' } }, A.id);
     const n = await d.mappenNotizen.legeNotizAn(m.id, `Bitte Rückruf, ${erwaehnung('Ben', ben.id)}`, A.id);
     let meine = await d.vertretung.meineAufgaben(B);
-    assert.deepEqual(meine.map((x) => [x.art, x.text]), [['erwaehnung', 'Erwähnt von Anna in einer Notiz: Bitte Rückruf, @Ben']]);
+    assert.deepEqual(
+      meine.map((x) => [x.art, x.text]),
+      [['erwaehnung', 'Erwähnt von Anna in einer Notiz: Bitte Rückruf, @Ben']],
+    );
     await d.mappenNotizen.aendereNotiz(n.id, `Bitte Rückruf heute, ${erwaehnung('Ben', ben.id)}`, A.id);
     assert.equal((await d.vertretung.meineAufgaben(B)).length, 1, 'keine zweite Aufgabe');
     await d.mappenNotizen.legeNotizAn(m.id, `Ich selbst: ${erwaehnung('Anna', anna.id)}`, A.id);
@@ -98,14 +115,28 @@ describe('Aufgaben (#54, #56)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '11' } }, A.id);
     await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Kündigen' }, A.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
-    const mail = new Aufgabenmail({
-      benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
-      aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Vorgang',
-    }, () => ({ async sende(an, betreff, text) { mails.push({ an, betreff, text }); } }), () => 'http://nas:8080');
+    const mail = new Aufgabenmail(
+      {
+        benutzer: () => konten.listeBenutzer(),
+        einstellungenVon: (b) => konten.einstellungen(b),
+        aufgabenVon: (b) => d.vertretung.meineAufgaben(b),
+        typName: async () => 'Vorgang',
+      },
+      () => ({
+        async sende(an, betreff, text) {
+          mails.push({ an, betreff, text });
+        },
+      }),
+      () => 'http://nas:8080',
+    );
     assert.equal((await mail.fuerAutomatisierung(ben.id, false)).schluessel, 'gesendet');
     assert.equal(mails[0].an, 'ben@example.org');
     assert.match(mails[0].text, /11 \(Vorgang\): Kündigen\n  http:\/\/nas:8080\/ablage\/eingang\//);
-    await konten.setzeEinstellung((await konten.listeBenutzer()).find((b) => b.id === ben.id)!, 'aufgaben_mail', false);
+    await konten.setzeEinstellung(
+      (await konten.listeBenutzer()).find((b) => b.id === ben.id)!,
+      'aufgaben_mail',
+      false,
+    );
     assert.equal((await mail.fuerAutomatisierung(ben.id, false)).schluessel, 'abbestellt');
     assert.equal(mails.length, 1);
   });
@@ -119,11 +150,26 @@ describe('Sammel-Weitergabe (#415, #419)', () => {
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
     const C = { id: carl.id, rolle: 'mitglied' };
     // „Privat“ darf Carl nicht lesen – auch nicht über eine Aufgabe.
-    await d.berechtigungen.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
-      { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: 'privat' } } }], dann: { R: 'entziehen' }, stopp: true },
-    ] }, true);
+    await d.berechtigungen.setzeBerechtigungen(
+      t.id,
+      {
+        grund: ALLES,
+        regeln: [
+          {
+            id: 'p',
+            name: 'Privat',
+            wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: 'privat' } } }],
+            dann: { R: 'entziehen' },
+            stopp: true,
+          },
+        ],
+      },
+      true,
+    );
     const m = await Promise.all(['1', '2', '3', 'privat'].map((nr) => d.mappen.legeMappeAn({ typId: t.id, werte: { nr } }, A.id)));
-    const auf = await Promise.all(m.map((x, i) => d.vertretung.legeAufgabeAn(x.id, { empfaengerId: ben.id, text: `Aufgabe ${i + 1}` }, A.id)));
+    const auf = await Promise.all(
+      m.map((x, i) => d.vertretung.legeAufgabeAn(x.id, { empfaengerId: ben.id, text: `Aufgabe ${i + 1}` }, A.id)),
+    );
     const fuerAnna = await d.vertretung.legeAufgabeAn(m[0].id, { empfaengerId: anna.id, text: 'Annas eigene' }, A.id);
 
     await assert.rejects(d.vertretung.aufgabenWeitergeben([], carl.id, B), status(422));
@@ -131,10 +177,17 @@ describe('Sammel-Weitergabe (#415, #419)', () => {
     // Ben (Mitglied) darf nur seine eigenen weitergeben.
     const r = await d.vertretung.aufgabenWeitergeben([...auf.map((a) => a.id), fuerAnna.id], carl.id, B);
     assert.deepEqual(r.weitergegeben, [auf[0].id, auf[1].id, auf[2].id]);
-    assert.deepEqual(r.nicht.map((x) => x.id), [auf[3].id, fuerAnna.id]);
+    assert.deepEqual(
+      r.nicht.map((x) => x.id),
+      [auf[3].id, fuerAnna.id],
+    );
     assert.match(r.nicht[0].grund, /Carl darf die Mappe nicht lesen/);
     assert.match(r.nicht[1].grund, /nicht deine Aufgabe/);
-    assert.equal((await d.ohneLeserecht.aufgabenVon(m[3].id)).find((a) => a.id === auf[3].id)?.empfaengerId, ben.id, 'nicht lesbar: bleibt bei Ben');
+    assert.equal(
+      (await d.ohneLeserecht.aufgabenVon(m[3].id)).find((a) => a.id === auf[3].id)?.empfaengerId,
+      ben.id,
+      'nicht lesbar: bleibt bei Ben',
+    );
     // Historie je Mappe
     const h = (await d.mappenHistorie.historie(m[1].id)).filter((x) => x.art === 'aufgabe').map((x) => x.daten.text);
     assert.equal(h[0], 'weitergegeben von Ben an Carl: Aufgabe 2');
@@ -168,10 +221,17 @@ describe('Sammel-Weitergabe (#415, #419)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
     const a1 = await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'eins' }, A.id);
     const a2 = await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'zwei' }, A.id);
-    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    await d.mappentypen.aendereTyp(t.id, {
+      ...t,
+      felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }],
+      register: undefined,
+    });
     const passung = (await d.vertretung.meineAufgaben(B)).find((a) => a.art === 'passung')!;
     const r = await d.vertretung.aufgabenErledigen([a1.id, a2.id, passung.id], B);
     assert.deepEqual(r.erledigt, [a1.id, a2.id]);
-    assert.deepEqual(r.nicht.map((x) => x.id), [passung.id]);
+    assert.deepEqual(
+      r.nicht.map((x) => x.id),
+      [passung.id],
+    );
   });
 });

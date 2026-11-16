@@ -14,7 +14,17 @@ import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { ausprobierTypen, bereinigeVorlage, fragtDatum, kernVorlage, laeuftAm, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme, vorschlagDatum } from '../../shared/src/ablaufvorlagen';
+import {
+  ausprobierTypen,
+  bereinigeVorlage,
+  fragtDatum,
+  kernVorlage,
+  laeuftAm,
+  vorlageKurz,
+  vorlagenEingabeFehler,
+  vorlagenProbleme,
+  vorschlagDatum,
+} from '../../shared/src/ablaufvorlagen';
 import { datumDe } from '../../shared/src/fristen';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
@@ -40,7 +50,9 @@ const heute = heuteIn();
 const in_ = (tage: number) => verschiebe(heute, tage);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung geladen
 const offen: any[] = [];
-after(async () => { for (const s of offen) await s.end?.().catch(() => {}); });
+after(async () => {
+  for (const s of offen) await s.end?.().catch(() => {});
+});
 
 async function pgRepos(kurz: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo-pg');
@@ -55,18 +67,28 @@ async function aufbau(repos?: { repo: Repo; konto: KontoRepo }) {
   const konten = new Konten(repos?.konto ?? speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-  const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
-  const lena = await neu('Lena'); const jonas = await neu('Jonas'); const petra = await neu('Petra');
+  const neu = async (name: string) =>
+    (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
+  const lena = await neu('Lena');
+  const jonas = await neu('Jonas');
+  const petra = await neu('Petra');
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k);
   new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true },
-    { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
-  ] });
-  const lesen = (ids: string[]): Regelwerk => ({ grund: { ...NICHTS, C: true }, regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: ids }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }] });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{name}',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
+    ],
+  });
+  const lesen = (ids: string[]): Regelwerk => ({
+    grund: { ...NICHTS, C: true },
+    regeln: [{ id: 'r', name: 'Lesen', wenn: [{ art: 'benutzer', benutzer: ids }], dann: { R: 'erteilen', U: 'erteilen' }, stopp: false }],
+  });
   await d.berechtigungen.setzeBerechtigungen(vertrag.id, lesen([lena.id, jonas.id]), true);
   const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', verantwortlich: jonas.id } }, lena.id);
   return { d, konten, markus, lena, jonas, petra, vertrag, m, lesen, admin: { id: markus.id, rolle: 'admin' } };
@@ -82,40 +104,73 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       assert.equal(r.ablauf, null, 'sofort: kein geplanter Ablauf');
       assert.equal(r.aufgaben.length, 1);
       const a = r.aufgaben[0];
-      assert.equal(a.art, 'manuell'); assert.equal(a.text, 'Bitte prüfen'); assert.equal(a.erstelltVon, lena.id); assert.equal(a.empfaengerId, jonas.id);
-      assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => h.art === 'aufgabe' && h.benutzerId === lena.id && /Jonas/.test(String(h.daten.text)) && /Bitte prüfen/.test(String(h.daten.text))));
+      assert.equal(a.art, 'manuell');
+      assert.equal(a.text, 'Bitte prüfen');
+      assert.equal(a.erstelltVon, lena.id);
+      assert.equal(a.empfaengerId, jonas.id);
+      assert.ok(
+        (await d.mappenHistorie.historie(m.id)).some(
+          (h) =>
+            h.art === 'aufgabe' &&
+            h.benutzerId === lena.id &&
+            /Jonas/.test(String(h.daten.text)) &&
+            /Bitte prüfen/.test(String(h.daten.text)),
+        ),
+      );
       assert.equal((await d.kern.repo.ablaeufe({ mappeId: m.id })).length, 0, 'verschwindet sofort');
       // Vertretung: Jonas abwesend → Petra … darf den Vertrag aber nicht lesen (Fall #798, die Aufgabe kommt trotzdem an).
       await konten.setzeAbwesenheit(jonas, jonas.id, { an: true, vertreterId: petra.id });
       const v2 = (await d.ablaeufe.anwenden(m.id, 'aufgabe_vergeben', { empfaengerId: jonas.id, text: 'Zweite' }, lena.id)).aufgaben[0];
       assert.equal(v2.empfaengerId, petra.id, 'an den Vertreter weitergegeben');
-      assert.ok((await d.ohneLeserecht.offeneFaelle()).some((f) => f.benutzerId === petra.id), 'Fall ohne Leserecht für den Admin');
+      assert.ok(
+        (await d.ohneLeserecht.offeneFaelle()).some((f) => f.benutzerId === petra.id),
+        'Fall ohne Leserecht für den Admin',
+      );
       // Gleiche Meldungen wie früher.
       await assert.rejects(d.ablaeufe.anwenden(m.id, 'aufgabe_vergeben', { empfaengerId: jonas.id, text: ' ' }, lena.id), status(422));
       await assert.rejects(d.ablaeufe.anwenden(m.id, 'aufgabe_vergeben', { text: 'x' }, lena.id), status(422));
       // Der alte Weg ist derselbe Weg.
       const alt = await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: lena.id, text: 'Auch so' }, jonas.id);
-      assert.equal(alt.art, 'manuell'); assert.equal(alt.erstelltVon, jonas.id);
+      assert.equal(alt.art, 'manuell');
+      assert.equal(alt.erstelltVon, jonas.id);
     });
 
     it('„Erinnern“: geplant unter „Geplant“, am Datum dieselbe Aufgabe „Erinnerung“ – ändern, löschen, Termine, Zusammenfassung', async () => {
       const { d, lena, jonas, m } = await aufbau(await repos?.());
-      const r = await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(5), text: 'Angebote   vergleichen', empfaengerId: jonas.id }, lena.id);
-      assert.ok(r.ablauf); assert.equal(r.ablauf.text, 'Angebote vergleichen'); assert.equal(r.ablauf.erstelltVon, lena.id); assert.equal(r.ablauf.vorlage, 'erinnern');
+      const r = await d.ablaeufe.anwenden(
+        m.id,
+        'erinnern',
+        { datum: in_(5), text: 'Angebote   vergleichen', empfaengerId: jonas.id },
+        lena.id,
+      );
+      assert.ok(r.ablauf);
+      assert.equal(r.ablauf.text, 'Angebote vergleichen');
+      assert.equal(r.ablauf.erstelltVon, lena.id);
+      assert.equal(r.ablauf.vorlage, 'erinnern');
       assert.equal((await d.ablaeufe.anMappe(m.id)).length, 1);
       assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /Erinnerung für Jonas am/.test(String(h.daten.text))));
       // Termine von „Zu erledigen“: Jonas sieht sie, Lena nicht.
-      const termine = async (id: string) => (await d.fristen.termine(await d.rechtepruefung.zugriff({ id, rolle: 'mitglied' }), { von: heute, bis: in_(30) })).eintraege.filter((x) => x.art === 'erinnerung');
-      assert.equal((await termine(jonas.id)).length, 1); assert.equal((await termine(lena.id)).length, 0);
+      const termine = async (id: string) =>
+        (await d.fristen.termine(await d.rechtepruefung.zugriff({ id, rolle: 'mitglied' }), { von: heute, bis: in_(30) })).eintraege.filter(
+          (x) => x.art === 'erinnerung',
+        );
+      assert.equal((await termine(jonas.id)).length, 1);
+      assert.equal((await termine(lena.id)).length, 0);
       // Ändern: nur Ersteller, Empfänger, Admin.
-      await assert.rejects(d.ablaeufe.aendere(r.ablauf.id, { datum: in_(6), text: 'x' }, { id: (await d.kern.repo.listeTypen())[0].id, rolle: 'mitglied' }), status(403));
+      await assert.rejects(
+        d.ablaeufe.aendere(r.ablauf.id, { datum: in_(6), text: 'x' }, { id: (await d.kern.repo.listeTypen())[0].id, rolle: 'mitglied' }),
+        status(403),
+      );
       await d.ablaeufe.aendere(r.ablauf.id, { datum: in_(7), text: 'Neu' }, { id: jonas.id, rolle: 'mitglied' });
       assert.equal((await d.kern.repo.holeAblauf(r.ablauf.id))!.datum, in_(7));
       // Noch nicht fällig → nichts; fällig → Aufgabe „Erinnerung“ mit Datum, Ablauf weg, Verlauf der Vorlage.
       assert.equal(await d.ablaeufe.faellige(heute), 0);
       assert.equal(await d.ablaeufe.faellige(in_(7)), 1);
       const auf = (await d.kern.repo.offeneAufgaben({ mappeIds: [m.id] })).find((a) => a.art === 'erinnerung')!;
-      assert.equal(auf.text, 'Neu'); assert.equal(auf.datum, in_(7)); assert.equal(auf.empfaengerId, jonas.id); assert.equal(auf.erstelltVon, lena.id);
+      assert.equal(auf.text, 'Neu');
+      assert.equal(auf.datum, in_(7));
+      assert.equal(auf.empfaengerId, jonas.id);
+      assert.equal(auf.erstelltVon, lena.id);
       assert.equal((await d.kern.repo.ablaeufe({ mappeId: m.id })).length, 0, 'gelaufen: verschwunden');
       assert.equal(await d.ablaeufe.faellige(in_(8)), 0, 'genau einmal');
       assert.ok((await d.ablaeufe.verlauf('erinnern')).some((x) => x.art === 'gelaufen' && x.mappeId === m.id));
@@ -124,7 +179,10 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       await d.vertretung.erledigeAufgabe(auf.id, { id: jonas.id, rolle: 'mitglied' });
       // Datum heute: läuft gleich (wie früher die Erinnerung).
       await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: heute, text: 'Gleich' }, lena.id);
-      assert.ok((await d.kern.repo.offeneAufgaben({ mappeIds: [m.id] })).some((a) => a.text === 'Gleich' && a.empfaengerId === lena.id), 'ohne Empfänger: man selbst');
+      assert.ok(
+        (await d.kern.repo.offeneAufgaben({ mappeIds: [m.id] })).some((a) => a.text === 'Gleich' && a.empfaengerId === lena.id),
+        'ohne Empfänger: man selbst',
+      );
       // Löschen.
       const x = (await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(3), text: 'Weg' }, lena.id)).ablauf!;
       await d.ablaeufe.loesche(x.id, { id: lena.id, rolle: 'mitglied' });
@@ -147,7 +205,8 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       // Fortsetzen läuft am Datum (heute noch nicht): erst der Lauf am Datum.
       assert.equal(await d.ablaeufe.faellige(in_(2)), 1);
       // Deaktiviert → angehalten.
-      const b = (await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(3), text: 'Noch eins', empfaengerId: jonas.id }, lena.id)).ablauf!;
+      const b = (await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(3), text: 'Noch eins', empfaengerId: jonas.id }, lena.id))
+        .ablauf!;
       await konten.setzeAbwesenheit(lena, lena.id, { an: false, vertreterId: jonas.id });
       await konten.aendereBenutzer(markus, lena.id, { aktiv: false });
       assert.equal(await d.ablaeufe.faellige(in_(3)), 0);
@@ -156,20 +215,51 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
 
     it('Platzhalter mit den Rechten des Empfängers (#795); Ausprobieren zeigt es', async () => {
       const { d, lena, petra, m, admin } = await aufbau(await repos?.());
-      await d.ablaeufe.legeVorlage({ name: 'Nachfassen', wann: { art: 'sofort' }, fragen: ['empfaenger'], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'frage' }], text: 'Bitte {titel} nachfassen ({person})' }] }, admin.id);
+      await d.ablaeufe.legeVorlage(
+        {
+          name: 'Nachfassen',
+          wann: { art: 'sofort' },
+          fragen: ['empfaenger'],
+          karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'frage' }], text: 'Bitte {titel} nachfassen ({person})' }],
+        },
+        admin.id,
+      );
       const k = (await d.ablaeufe.vorlagen()).find((v) => v.name === 'Nachfassen')!.kennung;
-      const { zeilen, vorschau } = await d.ablaeufe.ausprobieren(k, m.id, { empfaengerId: petra.id }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
-      assert.ok(zeilen.some((z) => /nicht sichtbar/.test(z)), zeilen.join(' | '));
+      const { zeilen, vorschau } = await d.ablaeufe.ausprobieren(
+        k,
+        m.id,
+        { empfaengerId: petra.id },
+        { id: lena.id, rolle: 'mitglied' },
+        await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }),
+      );
+      assert.ok(
+        zeilen.some((z) => /nicht sichtbar/.test(z)),
+        zeilen.join(' | '),
+      );
       // Vorschau (#1176): so, wie Petra es sähe – sofort, also ohne Datum, mit dem Hinweis zum Leserecht.
       assert.equal(vorschau.length, 1);
-      assert.equal(vorschau[0].als, 'aufgabe'); assert.equal(vorschau[0].an, 'Petra'); assert.equal(vorschau[0].datum, null);
+      assert.equal(vorschau[0].als, 'aufgabe');
+      assert.equal(vorschau[0].an, 'Petra');
+      assert.equal(vorschau[0].datum, null);
       assert.match(vorschau[0].hinweis ?? '', /Petra darf die Mappe nicht lesen/);
-      assert.ok(zeilen.some((z) => /Petra darf die Mappe nicht lesen/.test(z)), zeilen.join(' | '));
+      assert.ok(
+        zeilen.some((z) => /Petra darf die Mappe nicht lesen/.test(z)),
+        zeilen.join(' | '),
+      );
       const a = (await d.ablaeufe.anwenden(m.id, k, { empfaengerId: petra.id }, lena.id)).aufgaben[0];
-      assert.match(a.text, /\(nicht sichtbar\)/); assert.match(a.text, /\(Lena\)/);
+      assert.match(a.text, /\(nicht sichtbar\)/);
+      assert.match(a.text, /\(Lena\)/);
       assert.doesNotMatch(a.text, /Strom/, 'Petra sieht den Titel nicht');
       // Die Eingabe wird nie selbst Platzhalter.
-      await d.ablaeufe.legeVorlage({ name: 'Echo', wann: { art: 'sofort' }, fragen: ['text'], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }] }, admin.id);
+      await d.ablaeufe.legeVorlage(
+        {
+          name: 'Echo',
+          wann: { art: 'sofort' },
+          fragen: ['text'],
+          karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }],
+        },
+        admin.id,
+      );
       const e = (await d.ablaeufe.vorlagen()).find((v) => v.name === 'Echo')!.kennung;
       assert.equal((await d.ablaeufe.anwenden(m.id, e, { text: '{titel}' }, lena.id)).aufgaben[0].text, '{titel}');
     });
@@ -177,23 +267,54 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
     it('Datum vorschlagen (#1180): „In 14 Tagen“ mit Frage „Datum“ ist änderbar, ohne bleibt es fest wie bisher', async () => {
       const { d, lena, m, admin } = await aufbau(await repos?.());
       const karten = [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }];
-      const v = await d.ablaeufe.legeVorlage({ name: 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], karten }, admin.id);
+      const v = await d.ablaeufe.legeVorlage(
+        { name: 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], karten },
+        admin.id,
+      );
       const ansicht = (await d.ablaeufe.uebersicht()).find((x) => x.kennung === v.kennung)!;
       assert.deepEqual(ansicht.probleme, []);
       assert.match(ansicht.kurz, /^In 14 Tagen \(änderbar\) → /, 'Kurzbeschreibung nennt den Vorschlag');
-      assert.ok((await d.ablaeufe.zumAnwenden(m.typId)).some((x) => x.kennung === v.kennung), 'im Menü „Mappe“');
+      assert.ok(
+        (await d.ablaeufe.zumAnwenden(m.typId)).some((x) => x.kennung === v.kennung),
+        'im Menü „Mappe“',
+      );
       // Ohne Datum: wie bei „Am gewählten Datum“ eine Rückfrage, kein stiller Vorschlag.
       await assert.rejects(d.ablaeufe.anwenden(m.id, v.kennung, { text: 'Angebot prüfen' }, lena.id), status(422));
-      assert.equal((await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(14), text: 'Angebot prüfen' }, lena.id)).ablauf!.datum, in_(14), 'Vorschlag übernommen');
-      assert.equal((await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(20), text: 'später' }, lena.id)).ablauf!.datum, in_(20), 'geändert');
+      assert.equal(
+        (await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(14), text: 'Angebot prüfen' }, lena.id)).ablauf!.datum,
+        in_(14),
+        'Vorschlag übernommen',
+      );
+      assert.equal(
+        (await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(20), text: 'später' }, lena.id)).ablauf!.datum,
+        in_(20),
+        'geändert',
+      );
       // Ausprobieren zeigt das gewählte Datum.
-      const probe = await d.ablaeufe.ausprobieren(v.kennung, m.id, { datum: in_(14), text: 'x' }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
+      const probe = await d.ablaeufe.ausprobieren(
+        v.kennung,
+        m.id,
+        { datum: in_(14), text: 'x' },
+        { id: lena.id, rolle: 'mitglied' },
+        await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }),
+      );
       assert.ok(probe.zeilen[0].includes(datumDe(in_(14))), probe.zeilen.join(' | '));
       // Vorschau (#1176): Aufgabe für Lena, fällig am gewählten Tag, mit ihrem Text; angelegt wird nichts.
       assert.deepEqual(probe.vorschau, [{ als: 'aufgabe', an: 'Lena', text: 'x', datum: in_(14) }]);
       // Bestehende Vorlagen unverändert: „In …“ ohne Frage „Datum“ übergeht ein mitgeschicktes Datum, „Erinnern“ verlangt es.
-      const fest = await d.ablaeufe.legeVorlage({ name: 'Fest', wann: { art: 'in', anzahl: 2, einheit: 'wochen' }, fragen: [], karten: [{ ...karten[0], text: 'Ansehen: {titel}' }] }, admin.id);
-      assert.equal((await d.ablaeufe.anwenden(m.id, fest.kennung, { datum: in_(3) }, lena.id)).ablauf!.datum, verschiebe(heute, 2, 'wochen'));
+      const fest = await d.ablaeufe.legeVorlage(
+        {
+          name: 'Fest',
+          wann: { art: 'in', anzahl: 2, einheit: 'wochen' },
+          fragen: [],
+          karten: [{ ...karten[0], text: 'Ansehen: {titel}' }],
+        },
+        admin.id,
+      );
+      assert.equal(
+        (await d.ablaeufe.anwenden(m.id, fest.kennung, { datum: in_(3) }, lena.id)).ablauf!.datum,
+        verschiebe(heute, 2, 'wochen'),
+      );
       assert.match((await d.ablaeufe.uebersicht()).find((x) => x.kennung === fest.kennung)!.kurz, /^In 2 Wochen → /);
       await assert.rejects(d.ablaeufe.anwenden(m.id, 'erinnern', { text: 'ohne Datum' }, lena.id), status(422));
       assert.equal((await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(5), text: 'mit Datum' }, lena.id)).ablauf!.datum, in_(5));
@@ -201,7 +322,18 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
 
     it('Bremse: höchstens N offene je Person und Mappe', async () => {
       const { d, lena, m } = await aufbau(await repos?.());
-      for (let i = 0; i < ABLAEUFE_JE_PERSON_UND_MAPPE; i++) await d.kern.repo.legeAblaufAn({ id: crypto.randomUUID(), vorlage: 'erinnern', mappeId: m.id, empfaengerId: lena.id, datum: in_(9), text: `x${i}`, erstellt: '', erstelltVon: lena.id, angehalten: null });
+      for (let i = 0; i < ABLAEUFE_JE_PERSON_UND_MAPPE; i++)
+        await d.kern.repo.legeAblaufAn({
+          id: crypto.randomUUID(),
+          vorlage: 'erinnern',
+          mappeId: m.id,
+          empfaengerId: lena.id,
+          datum: in_(9),
+          text: `x${i}`,
+          erstellt: '',
+          erstelltVon: lena.id,
+          angehalten: null,
+        });
       await assert.rejects(d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(9), text: 'eine zu viel' }, lena.id), status(429));
     });
 
@@ -209,9 +341,29 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       const { d, lena, m } = await aufbau(await repos?.());
       const p = { id: 'benachrichtigungen', name: 'Benachrichtigungen', typen: {} };
       await d.ablaeufe.ausPaket(p, [
-        { schluessel: 'erinnern', ersetzt: 'erinnern', daten: { name: 'Erinnern', wann: { art: 'datum' }, fragen: ['datum', 'empfaenger', 'text'], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'frage' }], text: '{eingabe}' }] } },
-        { schluessel: 'wiedervorlage', daten: { name: 'Wiedervorlage', wann: { art: 'in', anzahl: 6, einheit: 'monate' }, fragen: [], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: 'Wiedervorlage: {titel}' }] } },
-        { schluessel: 'boese', daten: { name: 'Böse', wann: { art: 'sofort' }, fragen: [], karten: [{ art: 'email', an: 'x@example.org' }] } },
+        {
+          schluessel: 'erinnern',
+          ersetzt: 'erinnern',
+          daten: {
+            name: 'Erinnern',
+            wann: { art: 'datum' },
+            fragen: ['datum', 'empfaenger', 'text'],
+            karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'frage' }], text: '{eingabe}' }],
+          },
+        },
+        {
+          schluessel: 'wiedervorlage',
+          daten: {
+            name: 'Wiedervorlage',
+            wann: { art: 'in', anzahl: 6, einheit: 'monate' },
+            fragen: [],
+            karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: 'Wiedervorlage: {titel}' }],
+          },
+        },
+        {
+          schluessel: 'boese',
+          daten: { name: 'Böse', wann: { art: 'sofort' }, fragen: [], karten: [{ art: 'email', an: 'x@example.org' }] },
+        },
       ]);
       const alle = await d.ablaeufe.uebersicht();
       assert.equal(alle.find((v) => v.kennung === 'erinnern')!.herkunft, 'paket');
@@ -225,7 +377,8 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       const danach = await d.ablaeufe.vorlagen();
       assert.equal(danach.find((v) => v.kennung === 'erinnern')!.herkunft, 'kern');
       assert.equal(danach.find((v) => v.kennung === 'benachrichtigungen:wiedervorlage')!.herkunft, 'eigen');
-      assert.ok(await d.kern.repo.holeAblauf(e.id)); assert.ok(await d.kern.repo.holeAblauf(w.id));
+      assert.ok(await d.kern.repo.holeAblauf(e.id));
+      assert.ok(await d.kern.repo.holeAblauf(w.id));
       assert.equal(await d.ablaeufe.faellige(in_(4)), 1, 'läuft mit der Kern-Vorgabe');
     });
 
@@ -233,27 +386,54 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       const { d, lena, m, admin } = await aufbau(await repos?.());
       const als = <T>(id: string, f: () => Promise<T>) => d.kern.mitFassungsKontext({ urheber: { art: 'person', id } }, f);
       const v = await als(admin.id, () => d.ablaeufe.aendereVorlage('aufgabe_vergeben', { name: 'Bitte erledigen', version: 0 }, admin.id));
-      assert.equal(v.name, 'Bitte erledigen'); assert.equal(v.herkunft, 'kern'); assert.equal(v.version, 1);
-      await assert.rejects(d.ablaeufe.aendereVorlage('aufgabe_vergeben', { karten: [{ art: 'url', adresse: 'https://example.org' }], version: 1 }, admin.id), status(422));
+      assert.equal(v.name, 'Bitte erledigen');
+      assert.equal(v.herkunft, 'kern');
+      assert.equal(v.version, 1);
+      await assert.rejects(
+        d.ablaeufe.aendereVorlage('aufgabe_vergeben', { karten: [{ art: 'url', adresse: 'https://example.org' }], version: 1 }, admin.id),
+        status(422),
+      );
       // Fassungen (#1006): gemeinsamer Mechanismus; Zurücksetzen ist eine Fassung (die Kern-Vorgabe gilt wieder), kein Löschen.
       assert.equal((await d.fassungen.liste('ablaufvorlage', 'aufgabe_vergeben')).fassungen.length, 1);
       assert.equal((await als(lena.id, () => d.ablaeufe.zuruecksetzen('aufgabe_vergeben'))).name, kernVorlage('aufgabe_vergeben').name);
       const f = await d.fassungen.liste('ablaufvorlage', 'aufgabe_vergeben');
-      assert.deepEqual(f.fassungen.map((x) => [x.nr, x.name, !!x.geloescht]), [[2, kernVorlage('aufgabe_vergeben').name, false], [1, 'Bitte erledigen', false]]);
+      assert.deepEqual(
+        f.fassungen.map((x) => [x.nr, x.name, !!x.geloescht]),
+        [
+          [2, kernVorlage('aufgabe_vergeben').name, false],
+          [1, 'Bitte erledigen', false],
+        ],
+      );
       assert.deepEqual(f.fassungen[0].aenderungen, [`Name „Bitte erledigen“ → „${kernVorlage('aufgabe_vergeben').name}“`]);
-      await als(admin.id, () => d.fassungen.stelleWiederHer('ablaufvorlage', 'aufgabe_vergeben', 1, { stand: f.stand }, { id: admin.id, email: null }));
+      await als(admin.id, () =>
+        d.fassungen.stelleWiederHer('ablaufvorlage', 'aufgabe_vergeben', 1, { stand: f.stand }, { id: admin.id, email: null }),
+      );
       assert.equal((await d.ablaeufe.vorlage('aufgabe_vergeben')).name, 'Bitte erledigen', 'über das normale Speichern wiederhergestellt');
       assert.equal((await d.fassungen.liste('ablaufvorlage', 'aufgabe_vergeben')).fassungen[0].wiederhergestellt, 1);
-      const eigen = await d.ablaeufe.legeVorlage({ name: 'Später ansehen', wann: { art: 'in', anzahl: 2, einheit: 'wochen' }, fragen: [], karten: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'selbst' }], text: 'Ansehen: {titel}' }] }, admin.id);
+      const eigen = await d.ablaeufe.legeVorlage(
+        {
+          name: 'Später ansehen',
+          wann: { art: 'in', anzahl: 2, einheit: 'wochen' },
+          fragen: [],
+          karten: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'selbst' }], text: 'Ansehen: {titel}' }],
+        },
+        admin.id,
+      );
       const a = (await d.ablaeufe.anwenden(m.id, eigen.kennung, {}, lena.id)).ablauf!;
       assert.equal((await d.ablaeufe.benutzt(eigen.kennung)).length, 1);
       await assert.rejects(d.ablaeufe.loescheVorlage(eigen.kennung), status(409));
       await assert.rejects(d.ablaeufe.loescheVorlage('erinnern'), status(409));
       assert.equal(await d.ablaeufe.faellige(a.datum), 1);
       // Benachrichtigung gebündelt an Lena.
-      assert.ok((await d.kern.repo.offeneAufgaben({ mappeIds: [m.id] })).some((x) => x.empfaengerId === lena.id && x.text === 'Ansehen: Strom'));
+      assert.ok(
+        (await d.kern.repo.offeneAufgaben({ mappeIds: [m.id] })).some((x) => x.empfaengerId === lena.id && x.text === 'Ansehen: Strom'),
+      );
       await d.ablaeufe.loescheVorlage(eigen.kennung);
-      assert.deepEqual((await d.fassungen.geloeschte(['ablaufvorlage'])).map((x) => x.name), ['Später ansehen'], 'Löschvermerk');
+      assert.deepEqual(
+        (await d.fassungen.geloeschte(['ablaufvorlage'])).map((x) => x.name),
+        ['Später ansehen'],
+        'Löschvermerk',
+      );
       await d.ablaeufe.schalteVorlage('erinnern', false, admin.id);
       await assert.rejects(d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(1), text: 'x' }, lena.id), status(409));
     });
@@ -266,9 +446,17 @@ if (url) verhalten('PostgreSQL', () => pgRepos('ablaufvorlagen'));
 describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
   it('nur erlaubte Karten und Empfänger; Fragen passen zum Wann', () => {
     assert.ok(vorlagenEingabeFehler({ karten: [{ art: 'email' }] }).length);
-    assert.ok(vorlagenEingabeFehler({ karten: [{ art: 'aufgabe', empfaenger: [{ art: 'person', id: 'x' }] }] }).length, 'keine festen Personen');
+    assert.ok(
+      vorlagenEingabeFehler({ karten: [{ art: 'aufgabe', empfaenger: [{ art: 'person', id: 'x' }] }] }).length,
+      'keine festen Personen',
+    );
     assert.deepEqual(vorlagenEingabeFehler({ karten: [{ art: 'aufgabe', empfaenger: [{ art: 'frage' }] }] }), []);
-    const d = bereinigeVorlage({ name: 'x', wann: { art: 'datum' }, fragen: ['text'], karten: [{ art: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }] });
+    const d = bereinigeVorlage({
+      name: 'x',
+      wann: { art: 'datum' },
+      fragen: ['text'],
+      karten: [{ art: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }],
+    });
     assert.ok(vorlagenProbleme(d, []).length, 'am Datum ohne Frage „Datum“');
     assert.deepEqual(vorlagenProbleme(kernVorlage('erinnern'), []), []);
     assert.deepEqual(vorlagenProbleme(kernVorlage('aufgabe_vergeben'), []), []);
@@ -278,23 +466,39 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
     const typ = (id: string, system?: string) => ({ id, name: id, felder: [], ...(system ? { system } : {}) }) as unknown as Mappentyp;
     const typen = [typ('benutzer', 'benutzer'), typ('rolle', 'rolle'), typ('post', 'post'), typ('ablageort'), typ('vertrag'), typ('auto')];
     // Keine Typen gewählt: alle eigenen und aus Paketen, von den eingebauten nur Post.
-    assert.deepEqual(ausprobierTypen({ typen: [] }, typen).map((x) => x.id), ['post', 'ablageort', 'vertrag', 'auto']);
+    assert.deepEqual(
+      ausprobierTypen({ typen: [] }, typen).map((x) => x.id),
+      ['post', 'ablageort', 'vertrag', 'auto'],
+    );
     // Mehrere gewählt: genau diese.
-    assert.deepEqual(ausprobierTypen({ typen: ['vertrag', 'auto'] }, typen).map((x) => x.id), ['vertrag', 'auto']);
+    assert.deepEqual(
+      ausprobierTypen({ typen: ['vertrag', 'auto'] }, typen).map((x) => x.id),
+      ['vertrag', 'auto'],
+    );
     const quelle = readFileSync(new URL('../../web/src/werkbank/Ablaufvorlagen.tsx', import.meta.url), 'utf8');
     const teil = quelle.slice(quelle.indexOf('function Ausprobieren('));
     assert.match(teil, /const ziele = ausprobierTypen\(v, d\.typen\)/);
-    assert.match(teil, /<MappenWahl [^>]*ziele=\{ziele\}/);
+    assert.match(teil, /<MappenWahl\s[^>]*ziele=\{ziele\}/);
   });
 
   it('Datum als Vorschlag (#1180): erlaubt bei „In …“, nicht bei „Sofort“; Vorbelegung und Lauftag', () => {
     const karten = [{ id: 'k1', art: 'aufgabe' as const, als: 'aufgabe' as const, empfaenger: [{ art: 'selbst' as const }], text: 'x' }];
-    const in14 = { name: 'x', beschreibung: '', reihenfolge: 50, typen: [], wann: { art: 'in' as const, anzahl: 14, einheit: 'tage' as const }, fragen: ['datum' as const], karten };
+    const in14 = {
+      name: 'x',
+      beschreibung: '',
+      reihenfolge: 50,
+      typen: [],
+      wann: { art: 'in' as const, anzahl: 14, einheit: 'tage' as const },
+      fragen: ['datum' as const],
+      karten,
+    };
     assert.deepEqual(vorlagenProbleme(in14, []), []);
     assert.ok(fragtDatum(in14));
     assert.ok(!fragtDatum({ ...in14, fragen: [] }), 'ohne Frage fest');
     assert.ok(fragtDatum(kernVorlage('erinnern')));
-    assert.deepEqual(vorlagenProbleme({ ...in14, wann: { art: 'sofort' } }, []), ['Eine Vorlage, die sofort läuft, fragt nicht nach dem Datum.']);
+    assert.deepEqual(vorlagenProbleme({ ...in14, wann: { art: 'sofort' } }, []), [
+      'Eine Vorlage, die sofort läuft, fragt nicht nach dem Datum.',
+    ]);
     assert.equal(vorschlagDatum(in14.wann, '2026-11-14'), '2026-11-28');
     assert.equal(vorschlagDatum({ art: 'datum' }, '2026-11-14'), '2026-11-21', '„Am gewählten Datum“ wie bisher in einer Woche');
     assert.equal(laeuftAm(in14.wann, '2026-11-14'), '2026-11-28');
@@ -304,12 +508,23 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
   });
 
   it('Paketformat: ablaufvorlagen mit verbotener Karte macht das Paket ungültig', async () => {
-    const manifest = 'schema: 1\nid: probe\nname: Probe\nversion: 1.0.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.256.0"\ninhalt:\n  ablaufvorlagen: inhalt/ablaufvorlagen.yaml\n';
-    const gut = '- schluessel: wiedervorlage\n  name: Wiedervorlage\n  wann: { art: in, anzahl: 6, einheit: monate }\n  fragen: []\n  karten:\n    - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }\n';
+    const manifest =
+      'schema: 1\nid: probe\nname: Probe\nversion: 1.0.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.256.0"\ninhalt:\n  ablaufvorlagen: inhalt/ablaufvorlagen.yaml\n';
+    const gut =
+      '- schluessel: wiedervorlage\n  name: Wiedervorlage\n  wann: { art: in, anzahl: 6, einheit: monate }\n  fragen: []\n  karten:\n    - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }\n';
     const boese = '- schluessel: weg\n  name: Weg\n  karten:\n    - { art: email, an: x@example.org }\n';
-    const lies = (inhalt: string) => liesPaket(new Map([['manifest.yaml', Buffer.from(manifest)], ['inhalt/ablaufvorlagen.yaml', Buffer.from(inhalt)]]));
+    const lies = (inhalt: string) =>
+      liesPaket(
+        new Map([
+          ['manifest.yaml', Buffer.from(manifest)],
+          ['inhalt/ablaufvorlagen.yaml', Buffer.from(inhalt)],
+        ]),
+      );
     assert.equal((await lies(gut)).ablaufvorlagen?.length, 1);
-    await assert.rejects(Promise.resolve().then(() => lies(boese)), (e: unknown) => e instanceof Fachfehler && /Aufgabe \/ Benachrichtigung/.test(JSON.stringify(e.details)));
+    await assert.rejects(
+      Promise.resolve().then(() => lies(boese)),
+      (e: unknown) => e instanceof Fachfehler && /Aufgabe \/ Benachrichtigung/.test(JSON.stringify(e.details)),
+    );
   });
 });
 
@@ -324,18 +539,33 @@ if (url) {
       // beim Anlegen von Typ und Mappe Fassungen und in_suche schreibt.
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
-        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && (x < '105' || x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage') || x.endsWith('_typ_in_suche.sql')))) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        for (const f of readdirSync(MIGRATIONEN).filter(
+          (x) =>
+            x.endsWith('.sql') &&
+            (x < '105' || (x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage')) || x.endsWith('_typ_in_suche.sql')),
+        ))
+          copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});
-      } finally { rmSync(vorher, { recursive: true, force: true }); }
+      } finally {
+        rmSync(vorher, { recursive: true, force: true });
+      }
       const sql = db.sql;
       const konten0 = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas');
-      const { benutzer: markus } = await konten0.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
+      const { benutzer: markus } = await konten0.einrichten({
+        email: 'markus@example.org',
+        name: 'Markus',
+        passwort: 'ein-langes-passwort',
+      });
       const { benutzer: lena } = await konten0.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' }, markus.id);
       const { benutzer: jonas } = await konten0.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, markus.id);
       const system = await konten0.systemkonto('automatisierung');
       // Typ und Mappe wie in der alten Version angelegt (das berührt die Erinnerungen nicht).
       const alt = new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await alt.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+      const typ = await alt.mappentypen.legeTypAn({
+        name: 'Vertrag',
+        titelVorlage: '{name}',
+        felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+      });
       const mappe = await alt.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Strom' } }, lena.id);
       const erinnerung = (id: string, von: string | null, an: string | null, datum: string, text: string) =>
         sql`INSERT INTO erinnerungen (id, haushalt_id, mappe_id, empfaenger_id, datum, text, erstellt_von) VALUES (${id}, ${HAUSHALT}, ${mappe.id}, ${an}, ${datum}::date, ${text}, ${von})`;
@@ -360,9 +590,14 @@ if (url) {
       await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       assert.equal(await d.ablaeufe.faellige(in_(1)), 3);
       const auf = await repo.offeneAufgaben({ mappeIds: [mappe.id] });
-      assert.deepEqual(auf.map((x) => [x.art, x.text, x.empfaengerId, x.datum]).sort(), [
-        ['erinnerung', 'Ohne Ersteller', jonas.id, in_(1)], ['erinnerung', 'Vom Systemkonto', lena.id, in_(1)], ['erinnerung', 'Von Lena für Jonas', jonas.id, in_(1)],
-      ].sort());
+      assert.deepEqual(
+        auf.map((x) => [x.art, x.text, x.empfaengerId, x.datum]).sort(),
+        [
+          ['erinnerung', 'Ohne Ersteller', jonas.id, in_(1)],
+          ['erinnerung', 'Vom Systemkonto', lena.id, in_(1)],
+          ['erinnerung', 'Von Lena für Jonas', jonas.id, in_(1)],
+        ].sort(),
+      );
     });
   });
 
@@ -373,14 +608,18 @@ if (url) {
       const db = await eigeneDatenbank('ablaufvorlagen_fassungen', { migrieren: false });
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
-        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '109')) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '109'))
+          copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});
-      } finally { rmSync(vorher, { recursive: true, force: true }); }
+      } finally {
+        rmSync(vorher, { recursive: true, force: true });
+      }
       const sql = db.sql;
       const [h] = await sql`SELECT id FROM haushalte LIMIT 1`;
       const haushalt = h.id as string;
       const person = '00000000-0000-4000-8000-0000000b1044';
-      const stand = (name: string) => sql.json({ name, reihenfolge: 50, aktiv: true, beschreibung: '', typen: [], wann: { art: 'sofort' }, fragen: [], karten: [] });
+      const stand = (name: string) =>
+        sql.json({ name, reihenfolge: 50, aktiv: true, beschreibung: '', typen: [], wann: { art: 'sofort' }, fragen: [], karten: [] });
       await sql`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, daten, herkunft, paket_id, version) VALUES
         (${haushalt}, 'eigen:a', 'Später', '{}'::jsonb, 'eigen', NULL, 2), (${haushalt}, 'probe:wv', 'Wiedervorlage', '{}'::jsonb, 'paket', 'probe', 1)`;
       await sql`INSERT INTO ablaufvorlage_fassungen (haushalt_id, kennung, version, daten, von, zeit) VALUES
@@ -388,10 +627,15 @@ if (url) {
         (${haushalt}, 'probe:wv', 1, ${stand('Wiedervorlage')}, NULL, '2026-10-03T00:00:00Z'), (${haushalt}, 'erinnern', 1, ${stand('Erinnern alt')}, NULL, '2026-10-04T00:00:00Z')`;
       await migriere(sql, MIGRATIONEN, () => {});
       const rows = await sql`SELECT eintrag, nr, name, urheber, zeit FROM fassungen WHERE art = 'ablaufvorlage' ORDER BY eintrag, nr`;
-      assert.deepEqual(rows.map((r) => [r.eintrag, r.nr, r.name, r.urheber]), [
-        ['eigen:a', 1, 'Erst', { art: 'person', id: person }], ['eigen:a', 2, 'Später', { art: 'person', id: person }],
-        ['erinnern', 1, 'Erinnern alt', { art: 'system' }], ['probe:wv', 1, 'Wiedervorlage', { art: 'paket', id: 'probe' }],
-      ]);
+      assert.deepEqual(
+        rows.map((r) => [r.eintrag, r.nr, r.name, r.urheber]),
+        [
+          ['eigen:a', 1, 'Erst', { art: 'person', id: person }],
+          ['eigen:a', 2, 'Später', { art: 'person', id: person }],
+          ['erinnern', 1, 'Erinnern alt', { art: 'system' }],
+          ['probe:wv', 1, 'Wiedervorlage', { art: 'paket', id: 'probe' }],
+        ],
+      );
       assert.equal(new Date(rows[0].zeit as string).toISOString(), '2026-10-01T00:00:00.000Z');
       assert.equal((await sql`SELECT to_regclass('ablaufvorlage_fassungen') AS t`)[0].t, null);
       // Danach: Abgleich über den gemeinsamen Mechanismus – die zurückgesetzte Kern-Vorgabe bekommt ihren heutigen Stand.

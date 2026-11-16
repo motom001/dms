@@ -16,9 +16,22 @@ import { aufVolume } from './tresor';
  * (wie APP_URL/SMTP_* in 0.9). Gibt es beides nicht, fragt der Einrichtungsassistent.
  * „mandant“ ist die interne Id des Mandanten (früher HAUSHALT_ID).
  */
-export interface Anbindung { host: string; port: number; datenbank: string; benutzer: string; passwort: string; mandant?: string }
+export interface Anbindung {
+  host: string;
+  port: number;
+  datenbank: string;
+  benutzer: string;
+  passwort: string;
+  mandant?: string;
+}
 /** Für die Oberfläche: nie mit Passwort. */
-export interface AnbindungAnsicht { host: string; port: number; datenbank: string; benutzer: string; passwortGesetzt: boolean }
+export interface AnbindungAnsicht {
+  host: string;
+  port: number;
+  datenbank: string;
+  benutzer: string;
+  passwortGesetzt: boolean;
+}
 
 export const ANBINDUNG_DATEI = 'datenbank.json';
 export const STANDARD_ANBINDUNG: Omit<Anbindung, 'passwort'> = { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms' };
@@ -29,11 +42,15 @@ export function ausUrl(url: string | undefined): Anbindung | null {
     const u = new URL(url);
     if (u.protocol !== 'postgres:' && u.protocol !== 'postgresql:') return null;
     return {
-      host: decodeURIComponent(u.hostname) || 'localhost', port: Number(u.port || 5432),
+      host: decodeURIComponent(u.hostname) || 'localhost',
+      port: Number(u.port || 5432),
       datenbank: decodeURIComponent(u.pathname.replace(/^\//, '')) || 'postgres',
-      benutzer: decodeURIComponent(u.username), passwort: decodeURIComponent(u.password),
+      benutzer: decodeURIComponent(u.username),
+      passwort: decodeURIComponent(u.password),
     };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -81,16 +98,20 @@ export function alsUrl(a: Anbindung, datenbank = a.datenbank): string {
   return `postgres://${e(a.benutzer)}${a.passwort ? `:${e(a.passwort)}` : ''}@${host}:${a.port}/${e(datenbank)}`;
 }
 
-export const ansicht = (a: Anbindung | null): AnbindungAnsicht | null => (a ? { host: a.host, port: a.port, datenbank: a.datenbank, benutzer: a.benutzer, passwortGesetzt: !!a.passwort } : null);
+export const ansicht = (a: Anbindung | null): AnbindungAnsicht | null =>
+  a ? { host: a.host, port: a.port, datenbank: a.datenbank, benutzer: a.benutzer, passwortGesetzt: !!a.passwort } : null;
 
 /** Gleiche Verbindung (ohne Mandant)? */
-export const gleicheVerbindung = (a: Anbindung, b: Anbindung) => a.host === b.host && a.port === b.port && a.datenbank === b.datenbank && a.benutzer === b.benutzer && a.passwort === b.passwort;
+export const gleicheVerbindung = (a: Anbindung, b: Anbindung) =>
+  a.host === b.host && a.port === b.port && a.datenbank === b.datenbank && a.benutzer === b.benutzer && a.passwort === b.passwort;
 
 /** Eingabe aus dem Formular prüfen; ein leeres Passwort heißt „wie bisher“. */
 export function anbindungAus(x: unknown, bisher: Anbindung | null): Anbindung {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const eintrag = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
-  const host = eintrag(o.host), datenbank = eintrag(o.datenbank), benutzer = eintrag(o.benutzer);
+  const host = eintrag(o.host),
+    datenbank = eintrag(o.datenbank),
+    benutzer = eintrag(o.benutzer);
   const port = Number(o.port ?? 5432);
   const fehler: Record<string, string> = {};
   if (!host || /[\s/]/.test(host)) fehler.host = t('meldungen.anbindung.rechnername-oder-ip-adresse');
@@ -98,23 +119,42 @@ export function anbindungAus(x: unknown, bisher: Anbindung | null): Anbindung {
   if (!datenbank) fehler.datenbank = t('meldungen.anbindung.name-der-datenbank-angeben');
   if (!benutzer) fehler.benutzer = t('meldungen.anbindung.benutzer-der-datenbank-angeben');
   if (Object.keys(fehler).length) throw new Fachfehler(422, t('meldungen.anbindung.bitte-die-markierten-angaben'), { felder: fehler });
-  const passwort = typeof o.passwort === 'string' && o.passwort !== '' ? o.passwort : bisher?.passwort ?? '';
+  const passwort = typeof o.passwort === 'string' && o.passwort !== '' ? o.passwort : (bisher?.passwort ?? '');
   return { host, port, datenbank, benutzer, passwort, ...(bisher?.mandant ? { mandant: bisher.mandant } : {}) };
 }
 
 export async function liesAnbindung(ordner: string): Promise<Anbindung | null> {
   let text: string;
-  try { text = await readFile(join(ordner, ANBINDUNG_DATEI), 'utf8'); } catch { return null; }
+  try {
+    text = await readFile(join(ordner, ANBINDUNG_DATEI), 'utf8');
+  } catch {
+    return null;
+  }
   const j = JSON.parse(text) as Partial<Anbindung>;
-  if (!j.host || !j.datenbank || !j.benutzer) throw new Error(`${join(ordner, ANBINDUNG_DATEI)} ist unvollständig (host, datenbank, benutzer).`);
-  return { host: j.host, port: Number(j.port ?? 5432), datenbank: j.datenbank, benutzer: j.benutzer, passwort: j.passwort ?? '', ...(j.mandant ? { mandant: j.mandant } : {}) };
+  if (!j.host || !j.datenbank || !j.benutzer)
+    throw new Error(`${join(ordner, ANBINDUNG_DATEI)} ist unvollständig (host, datenbank, benutzer).`);
+  return {
+    host: j.host,
+    port: Number(j.port ?? 5432),
+    datenbank: j.datenbank,
+    benutzer: j.benutzer,
+    passwort: j.passwort ?? '',
+    ...(j.mandant ? { mandant: j.mandant } : {}),
+  };
 }
 
 /** Schreibt die Datei erst vollständig, dann sichtbar; nur für den Besitzer lesbar. */
 export async function schreibeAnbindung(ordner: string, a: Anbindung) {
   const ziel = join(ordner, ANBINDUNG_DATEI);
   const tmp = `${ziel}.${randomBytes(4).toString('hex')}.tmp`;
-  const inhalt = { host: a.host, port: a.port, datenbank: a.datenbank, benutzer: a.benutzer, passwort: a.passwort, ...(a.mandant ? { mandant: a.mandant } : {}) };
+  const inhalt = {
+    host: a.host,
+    port: a.port,
+    datenbank: a.datenbank,
+    benutzer: a.benutzer,
+    passwort: a.passwort,
+    ...(a.mandant ? { mandant: a.mandant } : {}),
+  };
   await writeFile(tmp, `${JSON.stringify(inhalt, null, 2)}\n`, { mode: 0o600 });
   await chmod(tmp, 0o600).catch(() => {});
   await rename(tmp, ziel);
@@ -131,15 +171,23 @@ type Verbinder = (url: string) => postgres.Sql;
 const kurz: Verbinder = (url) => postgres(url, { max: 1, connect_timeout: 6, idle_timeout: 1, onnotice: () => {}, infer: true });
 
 /** Verständliche Meldung zu einem Verbindungsfehler. */
-export function deute(e: unknown, a: Pick<Anbindung, 'host' | 'port' | 'datenbank' | 'benutzer'>): { art: Fehlerart; text: string; technisch: string } {
+export function deute(
+  e: unknown,
+  a: Pick<Anbindung, 'host' | 'port' | 'datenbank' | 'benutzer'>,
+): { art: Fehlerart; text: string; technisch: string } {
   const x = e as { code?: string; message?: string; errno?: string };
   const code = x.code ?? x.errno ?? '';
   const technisch = `${code ? `${code}: ` : ''}${x.message ?? String(e)}`;
-  if (['ENOTFOUND', 'EAI_AGAIN'].includes(code)) return { art: 'nicht_erreichbar', text: t('meldungen.anbindung.den-rechner-gibt-es', { host: a.host }), technisch };
-  if (['ECONNREFUSED', 'ETIMEDOUT', 'CONNECT_TIMEOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'ECONNRESET'].includes(code)) return { art: 'nicht_erreichbar', text: t('meldungen.anbindung.der-datenbank-server-ist', { host: a.host, port: a.port }), technisch };
-  if (code === '28P01') return { art: 'anmeldung', text: t('meldungen.anbindung.das-passwort-fuer-den', { benutzer: a.benutzer }), technisch };
-  if (code === '28000') return { art: 'anmeldung', text: t('meldungen.anbindung.der-benutzer-darf-sich', { benutzer: a.benutzer }), technisch };
-  if (code === '3D000') return { art: 'datenbank_fehlt', text: t('meldungen.anbindung.die-datenbank-gibt-es', { datenbank: a.datenbank }), technisch };
+  if (['ENOTFOUND', 'EAI_AGAIN'].includes(code))
+    return { art: 'nicht_erreichbar', text: t('meldungen.anbindung.den-rechner-gibt-es', { host: a.host }), technisch };
+  if (['ECONNREFUSED', 'ETIMEDOUT', 'CONNECT_TIMEOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'ECONNRESET'].includes(code))
+    return { art: 'nicht_erreichbar', text: t('meldungen.anbindung.der-datenbank-server-ist', { host: a.host, port: a.port }), technisch };
+  if (code === '28P01')
+    return { art: 'anmeldung', text: t('meldungen.anbindung.das-passwort-fuer-den', { benutzer: a.benutzer }), technisch };
+  if (code === '28000')
+    return { art: 'anmeldung', text: t('meldungen.anbindung.der-benutzer-darf-sich', { benutzer: a.benutzer }), technisch };
+  if (code === '3D000')
+    return { art: 'datenbank_fehlt', text: t('meldungen.anbindung.die-datenbank-gibt-es', { datenbank: a.datenbank }), technisch };
   return { art: 'sonst', text: t('meldungen.anbindung.die-verbindung-ist-fehlgeschlagen', { wert: x.message ?? String(e) }), technisch };
 }
 
@@ -165,17 +213,24 @@ async function darfAnlegen(a: Anbindung, verbinde: Verbinder): Promise<boolean> 
   try {
     const [r] = await sql`SELECT rolcreatedb OR rolsuper AS darf FROM pg_roles WHERE rolname = current_user`;
     return !!r?.darf;
-  } catch { return false; } finally { await sql.end({ timeout: 1 }).catch(() => {}); }
+  } catch {
+    return false;
+  } finally {
+    await sql.end({ timeout: 1 }).catch(() => {});
+  }
 }
 
 export async function legeDatenbankAn(a: Anbindung, verbinde: Verbinder = kurz) {
-  if (!/^[\p{L}\p{N}_-]{1,63}$/u.test(a.datenbank)) throw new Error('Der Name der Datenbank darf nur Buchstaben, Ziffern, _ und - enthalten.');
+  if (!/^[\p{L}\p{N}_-]{1,63}$/u.test(a.datenbank))
+    throw new Error('Der Name der Datenbank darf nur Buchstaben, Ziffern, _ und - enthalten.');
   const sql = verbinde(alsUrl(a, 'postgres'));
   try {
     await sql.unsafe(`CREATE DATABASE "${a.datenbank}"`);
   } catch (e) {
     throw new Error(`Die Datenbank ließ sich nicht anlegen: ${(e as Error).message}`);
-  } finally { await sql.end({ timeout: 1 }).catch(() => {}); }
+  } finally {
+    await sql.end({ timeout: 1 }).catch(() => {});
+  }
 }
 
 /* ---------- Werkbank: Anbindung ansehen und ändern ---------- */
@@ -194,19 +249,28 @@ export interface AnbindungStand {
 }
 
 export class AnbindungVerwaltung {
-  constructor(readonly ordner: string, private laufend: Anbindung, private umgebung: Anbindung | null, private neustartFn: () => void,
-    private pruefer: (a: Anbindung) => Promise<Pruefung> = (a) => pruefeAnbindung(a), private ohneVolume = datenbankOhneVolume(process.env)) {}
+  constructor(
+    readonly ordner: string,
+    private laufend: Anbindung,
+    private umgebung: Anbindung | null,
+    private neustartFn: () => void,
+    private pruefer: (a: Anbindung) => Promise<Pruefung> = (a) => pruefeAnbindung(a),
+    private ohneVolume = datenbankOhneVolume(process.env),
+  ) {}
 
   /**
    * Gespeicherte Anbindung (#1341): aus der Datei, nicht aus dem Speicher des Prozesses, der gespeichert hat – so zeigen
    * alle Prozesse (und weitere Server mit demselben Ordner) dasselbe „Neustart nötig“. Ohne (lesbare) Datei: die laufende.
    */
-  private async gespeichert(): Promise<Anbindung> { return (await liesAnbindung(this.ordner).catch(() => null)) ?? this.laufend; }
+  private async gespeichert(): Promise<Anbindung> {
+    return (await liesAnbindung(this.ordner).catch(() => null)) ?? this.laufend;
+  }
 
   async stand(): Promise<AnbindungStand> {
     const gespeichert = await this.gespeichert();
     return {
-      anbindung: ansicht(gespeichert)!, datei: join(this.ordner, ANBINDUNG_DATEI),
+      anbindung: ansicht(gespeichert)!,
+      datei: join(this.ordner, ANBINDUNG_DATEI),
       umgebung: !this.umgebung ? 'fehlt' : gleicheVerbindung(this.umgebung, this.laufend) ? 'gleich' : 'abweichend',
       neustartNoetig: !gleicheVerbindung(gespeichert, this.laufend),
       imContainer: process.env.DMS_VARIANTE === 'komplett',
@@ -214,9 +278,13 @@ export class AnbindungVerwaltung {
     };
   }
 
-  private async eingabe(x: unknown): Promise<Anbindung> { return anbindungAus(x, await this.gespeichert()); }
+  private async eingabe(x: unknown): Promise<Anbindung> {
+    return anbindungAus(x, await this.gespeichert());
+  }
 
-  async pruefe(x: unknown): Promise<Pruefung> { return this.pruefer(await this.eingabe(x)); }
+  async pruefe(x: unknown): Promise<Pruefung> {
+    return this.pruefer(await this.eingabe(x));
+  }
 
   /** Erst testen, dann übernehmen; eine leere Datenbank nur mit ausdrücklicher Bestätigung. */
   async speichere(x: unknown, von: string): Promise<AnbindungStand & { pruefung: Pruefung }> {
@@ -228,8 +296,14 @@ export class AnbindungVerwaltung {
       throw new Fachfehler(409, t('meldungen.anbindung.in-dieser-datenbank-gibt'), { pruefung: p, leer: true });
     }
     await schreibeAnbindung(this.ordner, { ...a, mandant: leer ? undefined : this.laufend.mandant });
-    protokoll.modul('system').warn('Datenbank-Anbindung geändert – gilt nach dem Neustart', { von, host: a.host, port: a.port, datenbank: a.datenbank, benutzer: a.benutzer });
-    return { ...await this.stand(), pruefung: p };
+    protokoll.modul('system').warn('Datenbank-Anbindung geändert – gilt nach dem Neustart', {
+      von,
+      host: a.host,
+      port: a.port,
+      datenbank: a.datenbank,
+      benutzer: a.benutzer,
+    });
+    return { ...(await this.stand()), pruefung: p };
   }
 
   neustart(von: string) {

@@ -12,10 +12,15 @@ describe('Historie (#57)', () => {
   it('hält Anlegen, Änderungen je Speichern, Dokumente und Papierkorb fest', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const p = await d.mappentypen.legeTypAn({ name: 'Partner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
-    const t = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
-      { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }, { key: 'betrag', label: 'Betrag', typ: 'betrag' },
-      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id }, { key: 'pw', label: 'Kennwort', typ: 'passwort' },
-    ] });
+    const t = await d.mappentypen.legeTypAn({
+      name: 'Vertrag',
+      felder: [
+        { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
+        { key: 'betrag', label: 'Betrag', typ: 'betrag' },
+        { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: p.id },
+        { key: 'pw', label: 'Kennwort', typ: 'passwort' },
+      ],
+    });
     const a = await d.mappen.legeMappeAn({ typId: p.id, werte: { name: 'Stadtwerke' } }, ich.id);
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'V-1', betrag: { betrag: 10, waehrung: 'EUR' } } }, ich.id);
     await d.mappen.aendereMappe(m.id, { werte: { nr: 'V-2', betrag: { betrag: 12.5, waehrung: 'EUR' }, partner: a.id } }, ich.id);
@@ -24,7 +29,11 @@ describe('Historie (#57)', () => {
     await d.loeschen.loescheMappe(m.id, ich.id);
     await d.papierkorbVerwaltung.stelleWiederHer(m.id, ich);
     const h = await d.mappenHistorie.historie(m.id);
-    assert.deepEqual(h.map((e) => e.art), ['wiederhergestellt', 'papierkorb', 'dokument_hochgeladen', 'geaendert', 'angelegt'], 'unverändertes Speichern ohne Eintrag');
+    assert.deepEqual(
+      h.map((e) => e.art),
+      ['wiederhergestellt', 'papierkorb', 'dokument_hochgeladen', 'geaendert', 'angelegt'],
+      'unverändertes Speichern ohne Eintrag',
+    );
     const g = h.find((e) => e.art === 'geaendert')!;
     assert.equal(g.benutzerId, ich.id);
     assert.deepEqual(JSON.parse(JSON.stringify(g.daten.aenderungen).replace(/\u00a0/g, ' ')), [

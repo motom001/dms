@@ -25,7 +25,8 @@ export function pruefeAuswahl(roh: unknown, anzahl: number): SeitenWahl[] {
   return roh.map((x, i) => {
     const o = (x ?? {}) as Record<string, unknown>;
     const nr = Number(o.nr);
-    if (!Number.isInteger(nr) || nr < 1 || nr > anzahl) throw new Fachfehler(422, t('meldungen.pdfseiten.seite-die-seite-gibt', { wert: i + 1, nr: String(o.nr), zahl: anzahl }));
+    if (!Number.isInteger(nr) || nr < 1 || nr > anzahl)
+      throw new Fachfehler(422, t('meldungen.pdfseiten.seite-die-seite-gibt', { wert: i + 1, nr: String(o.nr), zahl: anzahl }));
     const drehung = o.drehung === undefined ? 0 : Number(o.drehung);
     if (!DREHUNGEN.includes(((drehung % 360) + 360) % 360)) throw new Fachfehler(422, t('meldungen.pdfseiten.drehen-geht-nur-in'));
     return { nr, drehung: ((drehung % 360) + 360) % 360 };
@@ -37,7 +38,8 @@ export function pruefeTeile(roh: unknown, laenge: number): number[] {
   if (roh === undefined || roh === null) return [0];
   if (!Array.isArray(roh)) throw new Fachfehler(422, t('meldungen.pdfseiten.teile-eine-liste-von'));
   const eintrag = [...new Set([0, ...roh.map(Number)])].sort((a, b) => a - b);
-  if (eintrag.some((x) => !Number.isInteger(x) || x < 0 || x >= laenge)) throw new Fachfehler(422, t('meldungen.pdfseiten.teile-jede-position-muss'));
+  if (eintrag.some((x) => !Number.isInteger(x) || x < 0 || x >= laenge))
+    throw new Fachfehler(422, t('meldungen.pdfseiten.teile-jede-position-muss'));
   if (eintrag.length > 200) throw new Fachfehler(422, t('meldungen.pdfseiten.hoechstens-200-teile'));
   return eintrag;
 }
@@ -62,7 +64,10 @@ export const SEITENBILDER_MAX = 400;
  */
 export class Seitenbilder {
   private cache = new Map<string, Promise<Buffer[]>>();
-  constructor(private max = 4, private erzeuge: (inhalt: Buffer) => Promise<Buffer[]> = popplerSeiten) {}
+  constructor(
+    private max = 4,
+    private erzeuge: (inhalt: Buffer) => Promise<Buffer[]> = popplerSeiten,
+  ) {}
 
   async bild(sha: string, nr: number, inhalt: () => Promise<Buffer>): Promise<Buffer | null> {
     let p = this.cache.get(sha);
@@ -74,7 +79,8 @@ export class Seitenbilder {
       while (this.cache.size > anteilVon(this.max)) this.cache.delete(this.cache.keys().next().value!);
     } else {
       // zuletzt benutzt ans Ende
-      this.cache.delete(sha); this.cache.set(sha, p);
+      this.cache.delete(sha);
+      this.cache.set(sha, p);
     }
     const bilder = await p;
     return bilder[nr - 1] ?? null;
@@ -85,9 +91,25 @@ function starte(cmd: string, args: string[], ms: number): Promise<void> {
   return new Promise((ok, fehler) => {
     execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_MITTEL }, (e, _out, err) => {
       // Ersatzschrift fehlt (#1329): Das Bild entsteht, aber ohne den Text – in der Werkbank melden.
-      if (!e) { merkeSchriftfehler(err, 'seitenbilder'); ok(); return; }
+      if (!e) {
+        merkeSchriftfehler(err, 'seitenbilder');
+        ok();
+        return;
+      }
       const f = e as NodeJS.ErrnoException & { killed?: boolean };
-      fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange.` : String(err || f.message).trim().split('\n').slice(-2).join(' ')));
+      fehler(
+        new Error(
+          f.code === 'ENOENT'
+            ? `${cmd} ist nicht installiert.`
+            : f.killed
+              ? `${cmd} brauchte zu lange.`
+              : String(err || f.message)
+                  .trim()
+                  .split('\n')
+                  .slice(-2)
+                  .join(' '),
+        ),
+      );
     });
   });
 }
@@ -98,9 +120,29 @@ export async function popplerSeiten(inhalt: Buffer): Promise<Buffer[]> {
   try {
     const pdf = join(dir, 'datei.pdf');
     await writeFile(pdf, inhalt);
-    await starte('pdftoppm', ['-f', '1', '-l', String(SEITENBILDER_MAX), '-scale-to', String(SEITENBILD_PX), '-jpeg', '-jpegopt', 'quality=75', pdf, join(dir, 's')], 300_000);
+    await starte(
+      'pdftoppm',
+      [
+        '-f',
+        '1',
+        '-l',
+        String(SEITENBILDER_MAX),
+        '-scale-to',
+        String(SEITENBILD_PX),
+        '-jpeg',
+        '-jpegopt',
+        'quality=75',
+        pdf,
+        join(dir, 's'),
+      ],
+      300_000,
+    );
     // pdftoppm nummeriert mit führenden Nullen je nach Seitenzahl (s-1.jpg, s-01.jpg …).
-    const namen = (await readdir(dir)).filter((n) => /^s-\d+\.jpg$/.test(n)).sort((a, b) => Number(a.slice(2, -4)) - Number(b.slice(2, -4)));
+    const namen = (await readdir(dir))
+      .filter((n) => /^s-\d+\.jpg$/.test(n))
+      .sort((a, b) => Number(a.slice(2, -4)) - Number(b.slice(2, -4)));
     return await Promise.all(namen.map((n) => readFile(join(dir, n))));
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }

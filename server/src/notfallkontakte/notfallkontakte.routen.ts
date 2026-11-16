@@ -21,10 +21,38 @@ export function notfallkontakteRouten(k: RoutenKontext): Route[] {
   const { dienst, x } = k;
   const blattAm = async () => (x.sicherung ? (await x.sicherung.notfallblatt()).am : null);
   return [
-    { methode: 'GET', pfad: '/api/werkbank/notfallkontakte', zugang: 'admin', handler: async (a) => { handelnder(a); return ok(await dienst.notfallkontakte.stand(await blattAm())); } },
-    { methode: 'POST', pfad: '/api/werkbank/notfallkontakte', zugang: 'admin', handler: async (a) => ok(await dienst.notfallkontakte.anlegen(a.body, handelnder(a)), 201) },
-    { methode: 'PUT', pfad: '/api/werkbank/notfallkontakte/:id', zugang: 'admin', handler: async (a) => ok(await dienst.notfallkontakte.aendern(a.params.id, a.body, handelnder(a))) },
-    { methode: 'DELETE', pfad: '/api/werkbank/notfallkontakte/:id', zugang: 'admin', handler: async (a) => ok(await dienst.notfallkontakte.loeschen(a.params.id, handelnder(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/notfallkontakte/:id/erneut', zugang: 'admin', handler: async (a) => ok(await dienst.notfallkontakte.erneutSenden(a.params.id, handelnder(a))) },
+    {
+      methode: 'GET',
+      pfad: '/api/werkbank/notfallkontakte',
+      zugang: 'admin',
+      handler: async (a) => {
+        handelnder(a);
+        return ok(await dienst.notfallkontakte.stand(await blattAm()));
+      },
+    },
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/notfallkontakte',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.notfallkontakte.anlegen(a.body, handelnder(a)), 201),
+    },
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/notfallkontakte/:id',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.notfallkontakte.aendern(a.params.id, a.body, handelnder(a))),
+    },
+    {
+      methode: 'DELETE',
+      pfad: '/api/werkbank/notfallkontakte/:id',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.notfallkontakte.loeschen(a.params.id, handelnder(a))),
+    },
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/notfallkontakte/:id/erneut',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.notfallkontakte.erneutSenden(a.params.id, handelnder(a))),
+    },
   ];
 }

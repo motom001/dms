@@ -14,13 +14,17 @@ let vorgemerkt = false;
 
 /** Die Oberfläche gehört zu einem älteren Stand. */
 export function meldeVeraltet() {
-  if (melder) melder(); else vorgemerkt = true;
+  if (melder) melder();
+  else vorgemerkt = true;
 }
 
 /** Empfänger der Meldung (erreichbar.tsx); eine schon vorgemerkte Meldung kommt sofort. */
 export function beiVeraltet(f: () => void) {
   melder = f;
-  if (vorgemerkt) { vorgemerkt = false; f(); }
+  if (vorgemerkt) {
+    vorgemerkt = false;
+    f();
+  }
 }
 
 let beobachtet = false;
@@ -28,14 +32,28 @@ let beobachtet = false;
 export function beobachteVeraltet() {
   if (beobachtet) return;
   beobachtet = true;
-  addEventListener('vite:preloadError', (e) => { e.preventDefault(); meldeVeraltet(); });
+  addEventListener('vite:preloadError', (e) => {
+    e.preventDefault();
+    meldeVeraltet();
+  });
   // Ladefehler von Elementen steigen nicht auf – nur in der Einfangphase am Fenster zu sehen.
-  addEventListener('error', (e) => { if (istOberflaechenDatei(e.target as Ladeziel | null, location.origin)) meldeVeraltet(); }, true);
+  addEventListener(
+    'error',
+    (e) => {
+      if (istOberflaechenDatei(e.target as Ladeziel | null, location.origin)) meldeVeraltet();
+    },
+    true,
+  );
 }
 
 /** Zeitpunkt des letzten eigenen Neuladens; null, wenn keins (oder sessionStorage nicht nutzbar). */
 export function zuletztNeuGeladen(): number | null {
-  try { const v = sessionStorage.getItem(ZULETZT); return v ? Number(v) : null; } catch { return null; }
+  try {
+    const v = sessionStorage.getItem(ZULETZT);
+    return v ? Number(v) : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -48,14 +66,24 @@ export function selbstNeuLaden(): boolean {
     if (!darfNeuLaden(zuletztNeuGeladen(), jetzt)) return false;
     sessionStorage.setItem(ZULETZT, String(jetzt));
     sessionStorage.setItem(HINWEIS, '1');
-  } catch { return false; }
+  } catch {
+    return false;
+  }
   location.reload();
   return true;
 }
 
 /** Nach dem eigenen Neuladen einmal sagen, warum (z. B. warum ein Passwortfeld leer ist). Beim Laden gelesen. */
 let hinweis = (() => {
-  try { const v = sessionStorage.getItem(HINWEIS) === '1'; sessionStorage.removeItem(HINWEIS); return v; } catch { return false; }
+  try {
+    const v = sessionStorage.getItem(HINWEIS) === '1';
+    sessionStorage.removeItem(HINWEIS);
+    return v;
+  } catch {
+    return false;
+  }
 })();
 export const neuGeladenHinweis = () => hinweis;
-export function neuGeladenHinweisSchliessen() { hinweis = false; }
+export function neuGeladenHinweisSchliessen() {
+  hinweis = false;
+}

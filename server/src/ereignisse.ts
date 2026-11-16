@@ -37,17 +37,32 @@ export class Ereignisverteiler {
   constructor(private o: { repo: () => Repo; ruht?: () => boolean | Promise<boolean> }) {}
 
   /** Einen Abnehmer anmelden (Name je Abnehmer eindeutig; ein zweiter Aufruf ersetzt ihn). */
-  abonniere(name: string, fn: Abnehmer) { this.abnehmer.set(name, fn); }
-  abbestellen(name: string) { this.abnehmer.delete(name); }
-  get namen() { return [...this.abnehmer.keys()]; }
+  abonniere(name: string, fn: Abnehmer) {
+    this.abnehmer.set(name, fn);
+  }
+  abbestellen(name: string) {
+    this.abnehmer.delete(name);
+  }
+  get namen() {
+    return [...this.abnehmer.keys()];
+  }
 
   /** Regelmäßig nachsehen (Start des Servers). */
-  starte() { this.uhr ??= setInterval(() => this.wecke(), PRUEF_MS); this.uhr.unref?.(); }
-  stoppe() { if (this.uhr) clearInterval(this.uhr); this.uhr = null; }
+  starte() {
+    this.uhr ??= setInterval(() => this.wecke(), PRUEF_MS);
+    this.uhr.unref?.();
+  }
+  stoppe() {
+    if (this.uhr) clearInterval(this.uhr);
+    this.uhr = null;
+  }
 
   /** Nach einer Änderung: gleich verteilen (nicht blockierend). */
   wecke() {
-    if (this.lauf) { this.nochmal = true; return; }
+    if (this.lauf) {
+      this.nochmal = true;
+      return;
+    }
     void this.verteile().catch((e) => log.error('Ereignisse nicht verteilt', { fehler: (e as Error).message }));
   }
 
@@ -55,7 +70,11 @@ export class Ereignisverteiler {
   async verteile(): Promise<number> {
     while (this.lauf) await this.lauf.catch(() => 0);
     this.lauf = this.lauf_();
-    try { return await this.lauf; } finally { this.lauf = null; }
+    try {
+      return await this.lauf;
+    } finally {
+      this.lauf = null;
+    }
   }
 
   private async lauf_(): Promise<number> {
@@ -70,29 +89,56 @@ export class Ereignisverteiler {
         // länger als die halbe Sperre, schon zwischendurch – sonst holte ein anderer Server sie noch einmal.
         let verteilt: string[] = [];
         let seit = Date.now();
-        const merke = async () => { if (verteilt.length) await this.o.repo().katalogEreignisseVerteilt(verteilt); verteilt = []; seit = Date.now(); };
+        const merke = async () => {
+          if (verteilt.length) await this.o.repo().katalogEreignisseVerteilt(verteilt);
+          verteilt = [];
+          seit = Date.now();
+        };
         try {
           for (const e of liste) {
-            if (await this.eines(e)) { verteilt.push(e.id); n++; }
+            if (await this.eines(e)) {
+              verteilt.push(e.id);
+              n++;
+            }
             if (Date.now() - seit > (SPERRE_S * 1000) / 2) await merke();
           }
-        } finally { await merke(); }
+        } finally {
+          await merke();
+        }
       }
     } while (this.nochmal);
-    if (Date.now() - this.aufgeraeumt > 600_000) { this.aufgeraeumt = Date.now(); await this.o.repo().raeumeKatalogEreignisseAuf(AUFBEWAHREN_TAGE); }
+    if (Date.now() - this.aufgeraeumt > 600_000) {
+      this.aufgeraeumt = Date.now();
+      await this.o.repo().raeumeKatalogEreignisseAuf(AUFBEWAHREN_TAGE);
+    }
     return n;
   }
 
   private async eines(g: GespeichertesKatalogEreignis): Promise<boolean> {
-    const e: KatalogEreignis = { id: g.id, art: g.art as KatalogArt, daten: g.daten, ausloeser: g.ausloeser as unknown as Ausloeser, erstellt: g.erstellt };
+    const e: KatalogEreignis = {
+      id: g.id,
+      art: g.art as KatalogArt,
+      daten: g.daten,
+      ausloeser: g.ausloeser as unknown as Ausloeser,
+      erstellt: g.erstellt,
+    };
     const fehler: string[] = [];
     for (const [name, fn] of this.abnehmer) {
-      try { await fn(e); } catch (x) { fehler.push(`${name}: ${(x as Error).message}`); }
+      try {
+        await fn(e);
+      } catch (x) {
+        fehler.push(`${name}: ${(x as Error).message}`);
+      }
     }
     if (!fehler.length) return true;
     const warte = WIEDERHOLEN_MIN[g.versuche];
-    await this.o.repo().katalogEreignisFehlgeschlagen(g.id, fehler.join('; '), warte === undefined ? null : new Date(Date.now() + warte * 60_000));
-    log[warte === undefined ? 'error' : 'warn'](warte === undefined ? t('meldungen.ereignisse.ereignis-aufgegeben') : t('meldungen.ereignisse.ereignis-wird-wiederholt'), { art: g.art, id: g.id, versuch: g.versuche + 1, fehler: fehler.join('; ') });
+    await this.o
+      .repo()
+      .katalogEreignisFehlgeschlagen(g.id, fehler.join('; '), warte === undefined ? null : new Date(Date.now() + warte * 60_000));
+    log[warte === undefined ? 'error' : 'warn'](
+      warte === undefined ? t('meldungen.ereignisse.ereignis-aufgegeben') : t('meldungen.ereignisse.ereignis-wird-wiederholt'),
+      { art: g.art, id: g.id, versuch: g.versuche + 1, fehler: fehler.join('; ') },
+    );
     return false;
   }
 }

@@ -22,7 +22,14 @@
 export const HEIMNETZ_ENDUNGEN: readonly string[] = ['local', 'lan', 'internal', 'home.arpa'];
 
 /** Für Hinweise zusätzlich: verbreitete, aber nicht reservierte Namen (Router, Gewohnheit). */
-export const HEIMNETZ_ENDUNGEN_HINWEIS: readonly string[] = [...HEIMNETZ_ENDUNGEN, 'home', 'intranet', 'localdomain', 'fritz.box', 'localhost'];
+export const HEIMNETZ_ENDUNGEN_HINWEIS: readonly string[] = [
+  ...HEIMNETZ_ENDUNGEN,
+  'home',
+  'intranet',
+  'localdomain',
+  'fritz.box',
+  'localhost',
+];
 
 export type HeimnetzArt = 'ausnahme' | 'hinweis';
 
@@ -31,7 +38,9 @@ export function rechnername(adresse: string | URL): string | null {
   try {
     const host = (typeof adresse === 'string' ? new URL(adresse) : adresse).hostname.toLowerCase().replace(/^\[|\]$/g, '');
     return host || null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Endet der Name auf eine der Endungen (als ganzes Namensteil, nicht nur als Zeichenfolge)? */

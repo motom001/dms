@@ -18,9 +18,18 @@ import s from './Anlagen.module.css';
  * „Original-E-Mail“, als Anlage wie als Hauptdokument (E-Mail ohne Anhänge).
  */
 export function AnlageMarke({ d }: { d: Pick<Dokument, 'anlageZu' | 'originalEmail'> }) {
-  if (d.originalEmail) return <span className="chip" title={t('ablage.anlagen.original-email-titel')}>{t('ablage.anlagen.original-email')}</span>;
+  if (d.originalEmail)
+    return (
+      <span className="chip" title={t('ablage.anlagen.original-email-titel')}>
+        {t('ablage.anlagen.original-email')}
+      </span>
+    );
   if (!d.anlageZu) return null;
-  return <span className="chip" title={t('ablage.anlagen.marke-titel')}>{t('ablage.anlagen.marke')}</span>;
+  return (
+    <span className="chip" title={t('ablage.anlagen.marke-titel')}>
+      {t('ablage.anlagen.marke')}
+    </span>
+  );
 }
 
 /**
@@ -36,41 +45,117 @@ export function anlageZeilentext(a: Dokument): string {
  * Eingeklappte Zeile einer Anlage unter ihrem Hauptdokument. `auf` und `umschalten` teilen sich die Vorschau mit den
  * übrigen Dokumenten (eine offen); `vorschau` ist die Anzeige darunter, `herunterladen` der Weg zum Mitnehmen.
  */
-export function AnlageZeile({ a, haupt, auf, umschalten, vorschau, herunterladen, bearbeitbar, weg, erste, fertig }: {
-  a: Dokument; haupt: Dokument; auf: boolean; umschalten?: () => void; vorschau?: ReactNode; herunterladen?: ReactNode;
-  bearbeitbar: boolean; weg: boolean; erste: boolean; fertig(meldung?: string): void | Promise<void>;
+export function AnlageZeile({
+  a,
+  haupt,
+  auf,
+  umschalten,
+  vorschau,
+  herunterladen,
+  bearbeitbar,
+  weg,
+  erste,
+  fertig,
+}: {
+  a: Dokument;
+  haupt: Dokument;
+  auf: boolean;
+  umschalten?: () => void;
+  vorschau?: ReactNode;
+  herunterladen?: ReactNode;
+  bearbeitbar: boolean;
+  weg: boolean;
+  erste: boolean;
+  fertig(meldung?: string): void | Promise<void>;
 }) {
   const [name, setName] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string>();
   async function benenne() {
     if (name === null) return;
     setFehler(undefined);
-    try { await dokumenteApi.anlageUmbenennen(haupt.id, a.id, name); setName(null); await fertig(); } catch (x) { setFehler((x as Error).message); }
+    try {
+      await dokumenteApi.anlageUmbenennen(haupt.id, a.id, name);
+      setName(null);
+      await fertig();
+    } catch (x) {
+      setFehler((x as Error).message);
+    }
   }
   return (
     <li className={`${s.zeile} ${auf ? 'an' : ''} ${weg ? 'weg' : ''}`} data-anlage={a.anlageNr ?? undefined}>
       <div className={s.kopf}>
-        {umschalten && !weg
-          ? <Knopf art="link" className={s.titel} aria-expanded={auf} onClick={umschalten}>{anlageZeilentext(a)}</Knopf>
-          : <span className={s.titel}>{anlageZeilentext(a)}</span>}
+        {umschalten && !weg ? (
+          <Knopf art="link" className={s.titel} aria-expanded={auf} onClick={umschalten}>
+            {anlageZeilentext(a)}
+          </Knopf>
+        ) : (
+          <span className={s.titel}>{anlageZeilentext(a)}</span>
+        )}
         <AnlageMarke d={a} />
         {weg && <span className="leise klein">{t('ablage.anlagen.geht-mit')}</span>}
         {!weg && (
           <span className={`${s.aktionen} klein`}>
             {herunterladen}
-            {bearbeitbar && !erste && <Knopf art="link" groesse="klein" title={t('ablage.anlagen.nach-oben-titel')} onClick={async () => { await dokumenteApi.anlagenSortieren(haupt.id, nachOben(await dokumenteApi.anlagen(haupt.id), a.id)); await fertig(); }}>{t('ablage.anlagen.nach-oben')}</Knopf>}
-            {bearbeitbar && name === null && <Knopf art="link" groesse="klein" onClick={() => setName(a.name)}>{t('ablage.anlagen.umbenennen')}</Knopf>}
-            {bearbeitbar && <Knopf art="link" groesse="klein" title={t('ablage.anlagen.loesen-titel')} onClick={async () => { await dokumenteApi.anlageLoesen(haupt.id, a.id); await fertig(t('ablage.anlagen.geloest', { name: a.name })); }}>{t('ablage.anlagen.loesen')}</Knopf>}
+            {bearbeitbar && !erste && (
+              <Knopf
+                art="link"
+                groesse="klein"
+                title={t('ablage.anlagen.nach-oben-titel')}
+                onClick={async () => {
+                  await dokumenteApi.anlagenSortieren(haupt.id, nachOben(await dokumenteApi.anlagen(haupt.id), a.id));
+                  await fertig();
+                }}>
+                {t('ablage.anlagen.nach-oben')}
+              </Knopf>
+            )}
+            {bearbeitbar && name === null && (
+              <Knopf art="link" groesse="klein" onClick={() => setName(a.name)}>
+                {t('ablage.anlagen.umbenennen')}
+              </Knopf>
+            )}
+            {bearbeitbar && (
+              <Knopf
+                art="link"
+                groesse="klein"
+                title={t('ablage.anlagen.loesen-titel')}
+                onClick={async () => {
+                  await dokumenteApi.anlageLoesen(haupt.id, a.id);
+                  await fertig(t('ablage.anlagen.geloest', { name: a.name }));
+                }}>
+                {t('ablage.anlagen.loesen')}
+              </Knopf>
+            )}
           </span>
         )}
       </div>
       {name !== null && (
         <div className={s.form}>
           <Feld beschriftung={t('ablage.anlagen.name')} fehler={fehler}>
-            <input value={name} maxLength={200} autoFocus onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void benenne(); } }} />
+            <input
+              value={name}
+              maxLength={200}
+              autoFocus
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void benenne();
+                }
+              }}
+            />
           </Feld>
-          <Knopf art="haupt" groesse="klein" gesperrt={!name.trim()} onClick={benenne}>{t('ablage.anlagen.speichern')}</Knopf>
-          <Knopf art="link" groesse="klein" onClick={() => { setName(null); setFehler(undefined); }}>{t('ablage.anlagen.abbrechen')}</Knopf>
+          <Knopf art="haupt" groesse="klein" gesperrt={!name.trim()} onClick={benenne}>
+            {t('ablage.anlagen.speichern')}
+          </Knopf>
+          <Knopf
+            art="link"
+            groesse="klein"
+            onClick={() => {
+              setName(null);
+              setFehler(undefined);
+            }}>
+            {t('ablage.anlagen.abbrechen')}
+          </Knopf>
         </div>
       )}
       {auf && vorschau}
@@ -87,18 +172,43 @@ function nachOben(stand: { anlagen: Dokument[] }, id: string): string[] {
 }
 
 /** „Als Anlage an … hängen“: ein anderes Dokument desselben Registers wird das Hauptdokument. */
-export function AlsAnlage({ d, ziele, schliessen, fertig }: { d: Dokument; ziele: Dokument[]; schliessen(): void; fertig(meldung?: string): void | Promise<void> }) {
+export function AlsAnlage({
+  d,
+  ziele,
+  schliessen,
+  fertig,
+}: {
+  d: Dokument;
+  ziele: Dokument[];
+  schliessen(): void;
+  fertig(meldung?: string): void | Promise<void>;
+}) {
   const [ziel, setZiel] = useState(ziele[0]?.id ?? '');
   const z = ziele.find((x) => x.id === ziel);
   return (
     <div className={s.form} role="group" aria-label={t('ablage.anlagen.als-anlage-titel', { name: d.name })}>
       <Feld beschriftung={t('ablage.anlagen.an-welches')} hinweis={t('ablage.anlagen.an-welches-hinweis')} hilfe="dokumente.anlagen">
         <select value={ziel} onChange={(e) => setZiel(e.target.value)}>
-          {ziele.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          {ziele.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
         </select>
       </Feld>
-      <Knopf art="haupt" groesse="klein" gesperrt={!z} onClick={async () => { await dokumenteApi.anlageAnhaengen(ziel, d.id); await fertig(t('ablage.anlagen.angehaengt', { name: d.name, haupt: z?.name ?? '' })); }}>{t('ablage.anlagen.anhaengen')}</Knopf>
-      <Knopf art="link" groesse="klein" onClick={schliessen}>{t('ablage.anlagen.abbrechen')}</Knopf>
+      <Knopf
+        art="haupt"
+        groesse="klein"
+        gesperrt={!z}
+        onClick={async () => {
+          await dokumenteApi.anlageAnhaengen(ziel, d.id);
+          await fertig(t('ablage.anlagen.angehaengt', { name: d.name, haupt: z?.name ?? '' }));
+        }}>
+        {t('ablage.anlagen.anhaengen')}
+      </Knopf>
+      <Knopf art="link" groesse="klein" onClick={schliessen}>
+        {t('ablage.anlagen.abbrechen')}
+      </Knopf>
     </div>
   );
 }
@@ -108,15 +218,30 @@ export function AlsAnlage({ d, ziele, schliessen, fertig }: { d: Dokument; ziele
  * (Vorgabe: sie geht mit). Sie enthält alle Anhänge der Mail; gehören nicht alle dorthin, wählt man sie hier ab.
  * Beim Übernehmen, im Dialog „mit Anlagen?“ (Herunterladen, Stempeln) und beim E-Mail-Versand.
  */
-export function OriginalEmailWahl({ emails, an, setze, wie = 'mit' }: {
-  emails: ReadonlyArray<Pick<Dokument, 'id' | 'name' | 'anlageZu' | 'originalEmail'>>; an: boolean; setze(an: boolean): void;
+export function OriginalEmailWahl({
+  emails,
+  an,
+  setze,
+  wie = 'mit',
+}: {
+  emails: ReadonlyArray<Pick<Dokument, 'id' | 'name' | 'anlageZu' | 'originalEmail'>>;
+  an: boolean;
+  setze(an: boolean): void;
   /** „mit“ (Herunterladen, Versand) oder „uebernehmen“ (bleibt sonst in der Post). */ wie?: 'mit' | 'uebernehmen';
 }) {
   if (!emails.length) return null;
   const name = emails.map((x) => x.name).join(', ');
   return (
-    <HakenFeld className={s.original} beschriftung={<>{t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen' : 'ablage.anlagen.original-mit', { name })} <AnlageMarke d={emails[0]} /></>}
-      hinweis={t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen-hinweis' : 'ablage.anlagen.original-mit-hinweis')} hilfe="dokumente.anlagen">
+    <HakenFeld
+      className={s.original}
+      beschriftung={
+        <>
+          {t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen' : 'ablage.anlagen.original-mit', { name })}{' '}
+          <AnlageMarke d={emails[0]} />
+        </>
+      }
+      hinweis={t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen-hinweis' : 'ablage.anlagen.original-mit-hinweis')}
+      hilfe="dokumente.anlagen">
       <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} data-original-email="" />
     </HakenFeld>
   );

@@ -35,7 +35,38 @@ import termine from './sprachen/en/termine.json';
 import volltext from './sprachen/en/volltext.json';
 import werkbank from './sprachen/en/werkbank.json';
 
-export const ENGLISCH: Readonly<Record<string, Sprachdatei>> = { ablage, aehnlich, anmeldung, api, automatisierung, dritte, einrichtung, entdecken, ereignisse, erkennung, felder, fragen, gemeinsam, konten, lasttest, mail, mappen, mappentypen, meldungen, notfall, oberflaeche, pakete, profil, spalten, start, suche, systemzustand, termine, volltext, werkbank };
+export const ENGLISCH: Readonly<Record<string, Sprachdatei>> = {
+  ablage,
+  aehnlich,
+  anmeldung,
+  api,
+  automatisierung,
+  dritte,
+  einrichtung,
+  entdecken,
+  ereignisse,
+  erkennung,
+  felder,
+  fragen,
+  gemeinsam,
+  konten,
+  lasttest,
+  mail,
+  mappen,
+  mappentypen,
+  meldungen,
+  notfall,
+  oberflaeche,
+  pakete,
+  profil,
+  spalten,
+  start,
+  suche,
+  systemzustand,
+  termine,
+  volltext,
+  werkbank,
+};
 
 /** Englisch eintragen – danach liefert jeder Übersetzer englische Texte, sobald die Sprache „en“ gilt. */
 export const registriereEnglisch = () => registriereSprache('en', ENGLISCH);

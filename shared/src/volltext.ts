@@ -20,7 +20,8 @@ export const INFO_TEXTEBENE = t('gemeinsam.volltext.textebene-des-pdfs');
 export const INFO_WARTET = t('gemeinsam.volltext.wartet-auf-texterkennung');
 
 /** Hinweis für Stand `paket`: mit dem Namen des Pakets oder ohne installiertes Paket. */
-export const infoWartet = (paket: { name: string } | null) => (paket ? `${INFO_WARTET} (Paket ${paket.name})` : t('gemeinsam.volltext.kein-paket-installiert', { INFO_WARTET }));
+export const infoWartet = (paket: { name: string } | null) =>
+  paket ? `${INFO_WARTET} (Paket ${paket.name})` : t('gemeinsam.volltext.kein-paket-installiert', { INFO_WARTET });
 
 export type VolltextHerkunft =
   | { art: 'pdf' }
@@ -36,16 +37,28 @@ export type VolltextHerkunft =
 /** Herkunft aus dem Stand; null, wenn es (noch) keine gibt oder sie unbekannt ist. */
 export function volltextHerkunft(o: OcrStand | null | undefined): VolltextHerkunft | null {
   if (!o) return null;
-  if (o.stand === 'paket' && (o.info ?? '').startsWith(INFO_UMWANDLUNG)) return { art: 'umwandlung', paket: /\(Paket (.+?)\)/.exec(o.info ?? '')?.[1] ?? '' };
-  if (o.stand === 'paket' && (o.info ?? '').startsWith(INFO_VOLLTEXT_PAKET)) return { art: 'volltext', paket: /\(Paket (.+?)\)/.exec(o.info ?? '')?.[1] ?? '' };
+  if (o.stand === 'paket' && (o.info ?? '').startsWith(INFO_UMWANDLUNG))
+    return { art: 'umwandlung', paket: /\(Paket (.+?)\)/.exec(o.info ?? '')?.[1] ?? '' };
+  if (o.stand === 'paket' && (o.info ?? '').startsWith(INFO_VOLLTEXT_PAKET))
+    return { art: 'volltext', paket: /\(Paket (.+?)\)/.exec(o.info ?? '')?.[1] ?? '' };
   if (o.stand === 'paket') return { art: 'wartet', paket: /\(Paket (.+?)\)/.exec(o.info ?? '')?.[1] ?? null };
   if (o.stand !== 'fertig' || !o.info) return null;
   // „übernommen (gleicher Inhalt): …“ – die Herkunft des übernommenen Texts zählt.
   const info = o.info.replace(/^übernommen \(gleicher Inhalt\): /, '');
-  if (info.startsWith(PAKET_TEXT)) return { art: 'paket', paket: info.slice(PAKET_TEXT.length).split(/ · | – /)[0].trim() };
+  if (info.startsWith(PAKET_TEXT))
+    return {
+      art: 'paket',
+      paket: info
+        .slice(PAKET_TEXT.length)
+        .split(/ · | – /)[0]
+        .trim(),
+    };
   if (info.startsWith(PAKET_VOLLTEXT)) {
     // „Volltext durch Paket X: Grund“ bzw. „… fehlgeschlagen“ heißt: kein Text geliefert (#614) – das ist keine Herkunft.
-    const name = info.slice(PAKET_VOLLTEXT.length).split(/ · | – /)[0].trim();
+    const name = info
+      .slice(PAKET_VOLLTEXT.length)
+      .split(/ · | – /)[0]
+      .trim();
     return name.includes(':') || name.endsWith('fehlgeschlagen') ? null : { art: 'paket', ausgelesen: true, paket: name };
   }
   if (info.startsWith(INFO_TEXTEBENE)) return { art: 'pdf' };

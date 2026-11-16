@@ -21,7 +21,11 @@ const endung = (name: string, mime: string) => {
   return mime === 'application/pdf' ? 'PDF' : mime.startsWith('image/') ? 'BILD' : 'DATEI';
 };
 
-export function Vorschaubild({ d }: { d: { id: string; name: string; mime: string; sha256: string; archivfassung?: { stand: string } | null } }) {
+export function Vorschaubild({
+  d,
+}: {
+  d: { id: string; name: string; mime: string; sha256: string; archivfassung?: { stand: string } | null };
+}) {
   const kern = kernTyp(d.mime);
   const archiv = d.archivfassung?.stand;
   const moeglich = kern || archiv === 'fertig';
@@ -33,14 +37,38 @@ export function Vorschaubild({ d }: { d: { id: string; name: string; mime: strin
   // (#946: E-Mails liegen oft als octet-stream mit Endung .eml da).
   const ohne = d.mime === 'application/octet-stream' && !archiv;
   const [fehlt, setFehlt] = useState(ohne);
-  useEffect(() => { setVersuch(0); setFehlt(ohne); }, [d.id, d.sha256, moeglich, ohne]);
+  useEffect(() => {
+    setVersuch(0);
+    setFehlt(ohne);
+  }, [d.id, d.sha256, moeglich, ohne]);
   useEffect(() => {
     if (!fehlt || versuch >= versuche) return;
-    const timer = setTimeout(() => { setVersuch((v) => v + 1); setFehlt(false); }, wartet ? 5000 * 2 ** versuch : 2500 * (versuch + 1));
+    const timer = setTimeout(
+      () => {
+        setVersuch((v) => v + 1);
+        setFehlt(false);
+      },
+      wartet ? 5000 * 2 ** versuch : 2500 * (versuch + 1),
+    );
     return () => clearTimeout(timer);
   }, [fehlt, versuche, wartet, versuch]);
-  return fehlt
+  return fehlt ? (
     // Ohne Bild (#1212): Dateisymbol (Lucide) mit der Endung darunter, statt nur Schrift.
-    ? <span className="vorschaubild ohne" aria-hidden="true"><Symbol name="dokument" /><span>{endung(d.name, d.mime)}</span></span>
-    : <img className="vorschaubild" src={vorschauUrl(d, versuch)} alt="" title={kern ? undefined : t('volltext.vorschau.fassung')} width={40} height={52} loading="lazy" decoding="async" onError={() => setFehlt(true)} />;
+    <span className="vorschaubild ohne" aria-hidden="true">
+      <Symbol name="dokument" />
+      <span>{endung(d.name, d.mime)}</span>
+    </span>
+  ) : (
+    <img
+      className="vorschaubild"
+      src={vorschauUrl(d, versuch)}
+      alt=""
+      title={kern ? undefined : t('volltext.vorschau.fassung')}
+      width={40}
+      height={52}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFehlt(true)}
+    />
+  );
 }

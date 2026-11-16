@@ -14,8 +14,12 @@ function protokoll() {
   return {
     eintraege,
     log: {
-      error: (text: string, kontext?: Record<string, unknown>) => { eintraege.push({ stufe: 'error', text, kontext }); },
-      warn: (text: string, kontext?: Record<string, unknown>) => { eintraege.push({ stufe: 'warn', text, kontext }); },
+      error: (text: string, kontext?: Record<string, unknown>) => {
+        eintraege.push({ stufe: 'error', text, kontext });
+      },
+      warn: (text: string, kontext?: Record<string, unknown>) => {
+        eintraege.push({ stufe: 'warn', text, kontext });
+      },
     },
   };
 }
@@ -29,14 +33,37 @@ describe('Beenden mit Gesamtfrist (#1340)', () => {
     const p = protokoll();
     const gelaufen: string[] = [];
     const codes: number[] = [];
-    await beendeGeordnet([
-      { name: 'a', f: () => { gelaufen.push('a'); } },
-      { name: 'b', f: async () => { gelaufen.push('b'); throw new Error('kaputt'); } },
-      { name: 'c', f: async () => { await new Promise((r) => setTimeout(r, 10)); gelaufen.push('c'); } },
-    ], { log: p.log, ende: (c) => codes.push(c), frist: 1000 });
+    await beendeGeordnet(
+      [
+        {
+          name: 'a',
+          f: () => {
+            gelaufen.push('a');
+          },
+        },
+        {
+          name: 'b',
+          f: async () => {
+            gelaufen.push('b');
+            throw new Error('kaputt');
+          },
+        },
+        {
+          name: 'c',
+          f: async () => {
+            await new Promise((r) => setTimeout(r, 10));
+            gelaufen.push('c');
+          },
+        },
+      ],
+      { log: p.log, ende: (c) => codes.push(c), frist: 1000 },
+    );
     assert.deepEqual(gelaufen, ['a', 'b', 'c']);
     assert.deepEqual(codes, [1]);
-    assert.deepEqual(p.eintraege.map((e) => e.text), ['Beenden: b fehlgeschlagen']);
+    assert.deepEqual(
+      p.eintraege.map((e) => e.text),
+      ['Beenden: b fehlgeschlagen'],
+    );
 
     const codes0: number[] = [];
     await beendeGeordnet([{ name: 'a', f: () => {} }], { log: protokoll().log, ende: (c) => codes0.push(c), frist: 1000 });
@@ -49,16 +76,37 @@ describe('Beenden mit Gesamtfrist (#1340)', () => {
     const codes: number[] = [];
     let danach = false;
     await new Promise<void>((fertig) => {
-      void beendeGeordnet([
-        { name: 'app.close', f: () => new Promise(() => {}) },
-        { name: 'sql.end', f: () => { danach = true; } },
-      ], { log: p.log, ende: (c) => { codes.push(c); fertig(); }, frist: 200 });
+      void beendeGeordnet(
+        [
+          { name: 'app.close', f: () => new Promise(() => {}) },
+          {
+            name: 'sql.end',
+            f: () => {
+              danach = true;
+            },
+          },
+        ],
+        {
+          log: p.log,
+          ende: (c) => {
+            codes.push(c);
+            fertig();
+          },
+          frist: 200,
+        },
+      );
     });
     const ms = Date.now() - t0;
     assert.ok(ms >= 190 && ms < 1000, `nach der Frist beendet (${ms} ms)`);
     assert.deepEqual(codes, [1]);
     assert.equal(danach, false);
-    assert.deepEqual(p.eintraege, [{ stufe: 'warn', text: 'Beenden: nach 0.2 s noch nicht fertig – hängt bei „app.close“, Prozess wird beendet', kontext: { ausgelassen: ['sql.end'] } }]);
+    assert.deepEqual(p.eintraege, [
+      {
+        stufe: 'warn',
+        text: 'Beenden: nach 0.2 s noch nicht fertig – hängt bei „app.close“, Prozess wird beendet',
+        kontext: { ausgelassen: ['sql.end'] },
+      },
+    ]);
   });
 
   it('echter Prozess: hängt ein Schritt, endet er selbst nach der Frist (ohne SIGKILL von außen)', { timeout: 20_000 }, async () => {
@@ -69,9 +117,15 @@ describe('Beenden mit Gesamtfrist (#1340)', () => {
       process.on('SIGTERM', () => void beendeGeordnet([{ name: 'haengt', f: () => new Promise(() => {}) }],
         { log: { error: () => {}, warn: (t) => console.log(t) }, ende: (c) => process.exit(c), frist: 300 }));
       console.log('bereit');`;
-    const p = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', code], { cwd: SERVER, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const p = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', code], {
+      cwd: SERVER,
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     let aus = '';
-    p.stdout.on('data', (d: Buffer) => { aus += d.toString(); });
+    p.stdout.on('data', (d: Buffer) => {
+      aus += d.toString();
+    });
     for (let i = 0; i < 200 && !aus.includes('bereit'); i++) await new Promise((r) => setTimeout(r, 50));
     const t0 = Date.now();
     p.kill('SIGTERM');

@@ -11,7 +11,17 @@ import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { liesAnrede, TEXTE_DRITTE, textDritte } from '../../shared/src/anrede';
 import {
-  auskunftMail, CODE_ZEICHEN, liesDatenschutz, RECHTE_STANDARD, rechteStandard, LINK_FEHLVERSUCHE_MAX, liesLinkEingabe, linkStatus, normiereCode, oeffentlichErreichbar, zeigeCode,
+  auskunftMail,
+  CODE_ZEICHEN,
+  liesDatenschutz,
+  RECHTE_STANDARD,
+  rechteStandard,
+  LINK_FEHLVERSUCHE_MAX,
+  liesLinkEingabe,
+  linkStatus,
+  normiereCode,
+  oeffentlichErreichbar,
+  zeigeCode,
 } from '../../shared/src/auskunft';
 import { AbrufBremse, AbrufTickets, ipBereich, kuerzeIp, neuerAbrufcode, TICKET_MS } from '../src/abruf';
 import { auskuenfteIn } from '../src/auskunft';
@@ -32,9 +42,11 @@ import { eigeneDatenbank } from './hilfe-db';
 
 /** Wartet, bis die Bedingung gilt (Abruf-Nachweis und Meldungen entstehen erst nach dem Ende des Downloads) – höchstens 5 s. */
 async function bis(ok: () => Promise<boolean> | boolean): Promise<void> {
-  for (let i = 0; i < 100; i++) { if (await ok()) return; await new Promise((x) => setTimeout(x, 50)); }
+  for (let i = 0; i < 100; i++) {
+    if (await ok()) return;
+    await new Promise((x) => setTimeout(x, 50));
+  }
 }
-
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const H = '00000000-0000-4000-8000-000000000001';
@@ -49,15 +61,20 @@ describe('Auskunft zustellen: reine Funktionen (#455)', () => {
     assert.equal(ipBereich('kaputt'), '–');
     let jetzt = 1_000_000;
     const b = new AbrufBremse({ fehlerMax: 3, sperreMs: 60_000, gleichzeitig: 2, jetzt: () => jetzt });
-    for (let i = 0; i < 3; i++) { assert.equal(await b.gesperrt('x'), false); await b.fehlschlag('x'); }
+    for (let i = 0; i < 3; i++) {
+      assert.equal(await b.gesperrt('x'), false);
+      await b.fehlschlag('x');
+    }
     assert.equal(await b.gesperrt('x'), true);
     assert.equal(await b.gesperrt('y'), false, 'andere Bereiche bleiben frei');
     jetzt += 60_001;
     assert.equal(await b.gesperrt('x'), false, 'Sperre läuft ab');
-    const p1 = b.belege(), p2 = b.belege();
+    const p1 = b.belege(),
+      p2 = b.belege();
     assert.ok(p1 && p2);
     assert.equal(b.belege(), null, 'höchstens zwei gleichzeitig');
-    p1!(); p1!();
+    p1!();
+    p1!();
     const p3 = b.belege();
     assert.ok(p3, 'Freigeben wirkt genau einmal');
     assert.equal(b.belege(), null);
@@ -66,7 +83,14 @@ describe('Auskunft zustellen: reine Funktionen (#455)', () => {
   it('Abrufcode: 8 Zeichen aus dem Alphabet ohne Verwechsler, zufällig; Eingabe tolerant', () => {
     const codes = new Set(Array.from({ length: 200 }, () => neuerAbrufcode()));
     assert.equal(codes.size, 200);
-    for (const c of codes) { assert.equal(c.length, 8); assert.ok([...c].every((z) => CODE_ZEICHEN.includes(z)), c); assert.ok(!/[01IO]/.test(c)); }
+    for (const c of codes) {
+      assert.equal(c.length, 8);
+      assert.ok(
+        [...c].every((z) => CODE_ZEICHEN.includes(z)),
+        c,
+      );
+      assert.ok(!/[01IO]/.test(c));
+    }
     assert.equal(normiereCode(' abcd-efgh '), 'ABCDEFGH');
     assert.equal(normiereCode('MV 2024.17'), 'MV202417');
     assert.equal(normiereCode(42), '');
@@ -93,9 +117,28 @@ describe('Auskunft zustellen: reine Funktionen (#455)', () => {
   });
 
   it('Erreichbarkeit: Heimnetz und localhost nicht, echte Namen und Adressen schon', () => {
-    for (const a of ['http://localhost:3000', 'http://192.168.1.20:8080', 'http://10.0.0.5', 'http://172.20.1.1', 'http://nas:3000', 'http://nas.local', 'https://dms.fritz.box', 'http://[::1]:3000', 'http://[fd00::1]', 'http://100.64.1.2', 'http://dms.home.arpa', 'kaputt'])
+    for (const a of [
+      'http://localhost:3000',
+      'http://192.168.1.20:8080',
+      'http://10.0.0.5',
+      'http://172.20.1.1',
+      'http://nas:3000',
+      'http://nas.local',
+      'https://dms.fritz.box',
+      'http://[::1]:3000',
+      'http://[fd00::1]',
+      'http://100.64.1.2',
+      'http://dms.home.arpa',
+      'kaputt',
+    ])
       assert.equal(oeffentlichErreichbar(a), false, a);
-    for (const a of ['https://dms.example.org', 'https://203.0.113.7', 'https://[2001:db8::1]', 'https://172.32.0.1', 'https://home.arpa.example.org'])
+    for (const a of [
+      'https://dms.example.org',
+      'https://203.0.113.7',
+      'https://[2001:db8::1]',
+      'https://172.32.0.1',
+      'https://home.arpa.example.org',
+    ])
       assert.equal(oeffentlichErreichbar(a), true, a);
   });
 
@@ -146,9 +189,14 @@ describe('Auskunft zustellen: reine Funktionen (#455)', () => {
     assert.match(z.nachricht, /Bitte antworten Sie bis 01\.12\.2026/);
     const duWort = /\b([Dd]u|[Dd]ich|[Dd]ir|[Dd]ein(e[mnrs]?)?)\b/;
     for (const [k, t] of Object.entries(TEXTE_DRITTE.sie)) assert.doesNotMatch(t, duWort, k);
-    const platzhalter = (t: string) => [...t.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]).sort().join();
+    const platzhalter = (t: string) =>
+      [...t.matchAll(/\{([^{}]+)\}/g)]
+        .map((x) => x[1])
+        .sort()
+        .join();
     assert.deepEqual(Object.keys(TEXTE_DRITTE.sie).sort(), Object.keys(TEXTE_DRITTE.du).sort());
-    for (const k of Object.keys(TEXTE_DRITTE.du) as Array<keyof typeof TEXTE_DRITTE.du>) assert.equal(platzhalter(TEXTE_DRITTE.sie[k]), platzhalter(TEXTE_DRITTE.du[k]), k);
+    for (const k of Object.keys(TEXTE_DRITTE.du) as Array<keyof typeof TEXTE_DRITTE.du>)
+      assert.equal(platzhalter(TEXTE_DRITTE.sie[k]), platzhalter(TEXTE_DRITTE.du[k]), k);
     assert.equal(textDritte('sie', 'abruf.rest', { wieOft: 'zweimal' }), 'Sie können sie mit diesem Link noch zweimal herunterladen.');
     assert.equal(liesAnrede('sie'), 'sie');
     for (const x of [undefined, null, 'Sie', 'ihr', 3]) assert.equal(liesAnrede(x), 'du');
@@ -180,22 +228,43 @@ async function repos(pg: boolean): Promise<{ repo: Repo; konto: ReturnType<typeo
   return { repo: pgRepo(sql, H) as never, konto: pgKontoRepo(sql, H) as never };
 }
 
-interface Gesendet { an: string; betreff: string; text: string; optionen?: MailOptionen; anhang?: Buffer }
+interface Gesendet {
+  an: string;
+  betreff: string;
+  text: string;
+  optionen?: MailOptionen;
+  anhang?: Buffer;
+}
 
 async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {}) {
   const r = await repos(pg);
   const tresor = new Tresor(speicherEinstellungen(), join(await mkdtemp(join(tmpdir(), 'dms-zust-')), 'dms.schluessel'), () => null);
-  await tresor.laden(); await tresor.erzeuge();
+  await tresor.laden();
+  await tresor.erzeuge();
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
   const konten = new Konten(r.konto, null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
-  const { benutzer: admin } = await konten.einrichten({ email: 'verwalter@example.org', name: 'Vera Verwalter', passwort: 'ein-langes-passwort' });
+  const { benutzer: admin } = await konten.einrichten({
+    email: 'verwalter@example.org',
+    name: 'Vera Verwalter',
+    passwort: 'ein-langes-passwort',
+  });
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna', verwaltung: ['*'] }, admin.id)).benutzer;
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
-  const mieterTyp = await d.mappentypen.legeTypAn({ name: 'Mieter', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: reg });
+  const reg = [
+    { key: 'daten', name: 'Daten', art: 'felder' as const },
+    { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const },
+  ];
+  const mieterTyp = await d.mappentypen.legeTypAn({
+    name: 'Mieter',
+    titelVorlage: '{name}',
+    felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+    register: reg,
+  });
   const max = await d.mappen.legeMappeAn({ typId: mieterTyp.id, werte: { name: 'Max Mustermieter' } }, admin.id);
-  const dok = (await d.dokumente.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)).dokument;
+  const dok = (
+    await d.dokumente.ladeHoch(max.id, { register: 'dok', name: 'Mietvertrag.pdf' }, pdfMitText(['Mietvertrag Max Mustermieter']), admin.id)
+  ).dokument;
   // Anna hat Max als Favorit (Stern = Abo, #422) und bekommt die Benachrichtigung.
   await d.mappen.setzeFavorit(anna, max.id, true);
   const gesendet: Gesendet[] = [];
@@ -203,40 +272,66 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
     async sende(an, betreff, text, optionen) {
       const g: Gesendet = { an, betreff, text, optionen };
       const inhalt = optionen?.anhaenge?.[0]?.inhalt;
-      if (inhalt) { if (Buffer.isBuffer(inhalt)) g.anhang = inhalt; else { const t: Buffer[] = []; for await (const c of inhalt) t.push(c as Buffer); g.anhang = Buffer.concat(t); } }
+      if (inhalt) {
+        if (Buffer.isBuffer(inhalt)) g.anhang = inhalt;
+        else {
+          const t: Buffer[] = [];
+          for await (const c of inhalt) t.push(c as Buffer);
+          g.anhang = Buffer.concat(t);
+        }
+      }
       gesendet.push(g);
     },
   };
   const ordner = await mkdtemp(join(tmpdir(), 'dms-zust-sich-'));
   const betrieb = { mailer: () => (o.mail === false ? null : mailer), adresseFuerLinks: () => o.adresse ?? 'https://dms.example.org' };
   // Export-Ordner (#797): Auskünfte unter export/auskunft/.
-  const tabelle = routen(d, konten, { betrieb: betrieb as never, sicherung: { ordner } as never, exporte: { pfad: join(ordner, 'export'), imSicherungsordner: false, volume: null } });
+  const tabelle = routen(d, konten, {
+    betrieb: betrieb as never,
+    sicherung: { ordner } as never,
+    exporte: { pfad: join(ordner, 'export'), imSicherungsordner: false, volume: null },
+  });
   const route = (m: string, p: string) => tabelle.find((x) => x.methode === m && x.pfad === p)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const rufe = async (b: { id: string } | null, m: string, p: string, x: Partial<Anfrage> = {}) =>
     route(m, p).handler({ body: {}, params: {}, query: {}, ip: '203.0.113.5', ...x, benutzer: b ? await ich(b.id) : undefined } as Anfrage);
   /** Auskunft über den Hintergrundauftrag erzeugen. */
   async function auskunft(passwort = '') {
-    await rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { mappeId: max.id, auswahl: { mappen: [max.id], dokumente: [dok.id], notizen: [], historie: [] }, geprueft: true, passwort } });
+    await rufe(admin, 'POST', '/api/werkbank/auskunft', {
+      body: { mappeId: max.id, auswahl: { mappen: [max.id], dokumente: [dok.id], notizen: [], historie: [] }, geprueft: true, passwort },
+    });
     const f = await d.auftraege.warte();
     assert.equal(f?.status, 'fertig', f?.fehler);
     return f!.ergebnis as { id: string; bytes: number; verschluesselt: boolean; bis: string; name: string };
   }
-  const zip = async (inhalt: unknown) => { const t: Buffer[] = []; for await (const c of inhalt as AsyncIterable<Buffer>) t.push(c); return Buffer.concat(t); };
+  const zip = async (inhalt: unknown) => {
+    const t: Buffer[] = [];
+    for await (const c of inhalt as AsyncIterable<Buffer>) t.push(c);
+    return Buffer.concat(t);
+  };
   return { d, r, konten, admin, anna, max, gesendet, ordner, rufe, auskunft, zip, route };
 }
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   describe(`Auskunft zustellen (${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => { if (pg) for (const s of offen.splice(0)) await s.end(); });
+    after(async () => {
+      if (pg) for (const s of offen.splice(0)) await s.end();
+    });
 
     it('Weg 1: per E-Mail nur verschlüsselt, ohne Passwort im Text; Nachweis in der Historie', async () => {
       const { d, admin, max, gesendet, rufe, auskunft } = await aufbau(pg);
       const offenZip = await auskunft();
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: offenZip.id }, body: { an: 'max@example.net' } }), status(422), 'unverschlüsselt nie per E-Mail');
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: offenZip.id }, body: { an: 'max@example.net' } }),
+        status(422),
+        'unverschlüsselt nie per E-Mail',
+      );
       const passwort = 'Sommer-im-Garten-2026';
       const a = await auskunft(passwort);
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'kein-mail' } }), status(422));
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'kein-mail' } }),
+        status(422),
+      );
       const r = await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'max@example.net' } });
       assert.deepEqual(r.body, { an: ['max@example.net'] });
       assert.equal(gesendet.length, 1);
@@ -251,16 +346,35 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const h = (await d.mappenHistorie.historie(max.id)).find((x) => x.art === 'auskunft' && x.daten.zustellung === 'email');
       assert.match(String(h?.daten.text), /Auskunft per E-Mail gesendet an max@example\.net/);
       // Zu groß für E-Mail → Abruf-Link vorgeschlagen.
-      await assert.rejects(d.auskunftZustellen.auskunftPerEmail({ ...a, mappeId: max.id, titel: '', erstellt: '', mappen: 1, dokumente: 1, von: '', bytes: 60_000_000 }, () => { throw new Error('nicht lesen'); }, { an: 'max@example.net' }, { id: admin.id, name: '', email: admin.email }, { sende: async () => {} }),
-        (e: unknown) => status(413)(e) && /Abruf-Link/.test((e as Error).message));
+      await assert.rejects(
+        d.auskunftZustellen.auskunftPerEmail(
+          { ...a, mappeId: max.id, titel: '', erstellt: '', mappen: 1, dokumente: 1, von: '', bytes: 60_000_000 },
+          () => {
+            throw new Error('nicht lesen');
+          },
+          { an: 'max@example.net' },
+          { id: admin.id, name: '', email: admin.email },
+          { sende: async () => {} },
+        ),
+        (e: unknown) => status(413)(e) && /Abruf-Link/.test((e as Error).message),
+      );
     });
 
     it('ohne E-Mail-Versand: E-Mail 409, Link nur zum Kopieren', async () => {
       const { admin, rufe, auskunft, gesendet } = await aufbau(pg, { mail: false });
       const a = await auskunft('Sommer-im-Garten-2026');
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'max@example.net' } }), status(409));
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { an: 'max@example.net', senden: true } }), status(409));
-      const r = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as { url: string; gesendet: boolean };
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'max@example.net' } }),
+        status(409),
+      );
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { an: 'max@example.net', senden: true } }),
+        status(409),
+      );
+      const r = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as {
+        url: string;
+        gesendet: boolean;
+      };
       assert.equal(r.gesendet, false);
       assert.equal(gesendet.length, 0);
       const s = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { mail: boolean; oeffentlich: boolean };
@@ -271,7 +385,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('Anrede Sie (#474): E-Mails, Meldungen der Abrufseite und ihre Anrede-Abfrage; Vorgabe du', async () => {
       const { admin, gesendet, rufe, auskunft } = await aufbau(pg);
       assert.deepEqual((await rufe(null, 'GET', '/api/abruf/anrede')).body, { anrede: 'du' });
-      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: '198.51.100.40' }), (e: unknown) => status(403)(e) && /Prüfe den Code/.test((e as Error).message));
+      await assert.rejects(
+        rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: '198.51.100.40' }),
+        (e: unknown) => status(403)(e) && /Prüfe den Code/.test((e as Error).message),
+      );
       await rufe(admin, 'PUT', '/api/werkbank/datenschutz', { body: { anrede: 'sie' } });
       const st = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { einstellung: { anrede: string; rechte: string } };
       assert.equal(st.einstellung.anrede, 'sie');
@@ -283,21 +400,42 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'max@example.net' } });
       assert.equal(gesendet[0].betreff, 'Ihre Auskunft nach Art. 15 DSGVO');
       assert.match(gesendet[0].text, /Sie haben eine Auskunft/);
-      const { url, code } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { an: 'max@example.net', senden: true } })).body as { url: string; code: string };
+      const { url, code } = (
+        await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', {
+          params: { id: a.id },
+          body: { an: 'max@example.net', senden: true },
+        })
+      ).body as { url: string; code: string };
       assert.equal(gesendet[1].betreff, 'Ihre Auskunft nach Art. 15 DSGVO zum Abrufen');
       assert.match(gesendet[1].text, /benötigen Sie Ihren Abrufcode/);
       assert.doesNotMatch(gesendet[1].text, /\b(du|dich|dir|deinen?)\b/);
       // Meldungen der Abrufseite
-      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code: 'AAAAAAAA' }, ip: '198.51.100.41' }), (e: unknown) => status(403)(e) && /Prüfen Sie den Code.*wenden Sie sich/.test((e as Error).message));
-      await assert.rejects(rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: 'x'.repeat(43) } }), (e: unknown) => status(410)(e) && /Geben Sie Ihren Abrufcode/.test((e as Error).message));
-      for (let i = 0; i < 5; i++) await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code: `FALSCH${i}X` }, ip: '192.0.2.77' }), status(403));
-      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code }, ip: '192.0.2.77' }), (e: unknown) => status(429)(e) && /von Ihrem Anschluss/.test((e as Error).message));
+      await assert.rejects(
+        rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code: 'AAAAAAAA' }, ip: '198.51.100.41' }),
+        (e: unknown) => status(403)(e) && /Prüfen Sie den Code.*wenden Sie sich/.test((e as Error).message),
+      );
+      await assert.rejects(
+        rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: 'x'.repeat(43) } }),
+        (e: unknown) => status(410)(e) && /Geben Sie Ihren Abrufcode/.test((e as Error).message),
+      );
+      for (let i = 0; i < 5; i++)
+        await assert.rejects(
+          rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code: `FALSCH${i}X` }, ip: '192.0.2.77' }),
+          status(403),
+        );
+      await assert.rejects(
+        rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code }, ip: '192.0.2.77' }),
+        (e: unknown) => status(429)(e) && /von Ihrem Anschluss/.test((e as Error).message),
+      );
     });
 
     it('Weg 2: Link nur mit Schlüssel im Fragment, Code nie in der Mail, nur Hashes gespeichert; Abruf mit Ticket, Nachweis, Benachrichtigung gebündelt', async () => {
       const { d, r, admin, anna, max, gesendet, ordner, rufe, auskunft, zip } = await aufbau(pg);
       const a = await auskunft();
-      const neu = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { an: 'max@example.net', senden: true, tage: 30, abrufe: 2 } }));
+      const neu = await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', {
+        params: { id: a.id },
+        body: { an: 'max@example.net', senden: true, tage: 30, abrufe: 2 },
+      });
       assert.equal(neu.status, 201);
       const { url, code, link } = neu.body as { url: string; code: string; link: Record<string, unknown> };
       const schluessel = url.split('#')[1];
@@ -322,12 +460,24 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
 
       // Öffentlich: falscher Code und unbekannter Link sehen gleich aus.
       const falsch = await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: 'AAAAAAAA' } }).catch((e) => e as Fachfehler);
-      const unbekannt = await rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code }, ip: '198.51.100.1' }).catch((e) => e as Fachfehler);
-      const kaputt = await rufe(null, 'POST', '/api/abruf', { body: { schluessel: '../../etc', code }, ip: '198.51.100.2' }).catch((e) => e as Fachfehler);
-      for (const f of [falsch, unbekannt, kaputt]) { assert.ok(f instanceof Fachfehler); assert.equal(f.status, 403); assert.equal(f.message, (falsch as Fachfehler).message); }
+      const unbekannt = await rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code }, ip: '198.51.100.1' }).catch(
+        (e) => e as Fachfehler,
+      );
+      const kaputt = await rufe(null, 'POST', '/api/abruf', { body: { schluessel: '../../etc', code }, ip: '198.51.100.2' }).catch(
+        (e) => e as Fachfehler,
+      );
+      for (const f of [falsch, unbekannt, kaputt]) {
+        assert.ok(f instanceof Fachfehler);
+        assert.equal(f.status, 403);
+        assert.equal(f.message, (falsch as Fachfehler).message);
+      }
       assert.ok((await d.mappenHistorie.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false));
       // Richtig (Schreibweise egal): Ticket, dann Download genau einmal.
-      const ok = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: zeigeCode(code).toLowerCase() } })).body as { ticket: string; groesse: number; maxAbrufe: number };
+      const ok = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: zeigeCode(code).toLowerCase() } })).body as {
+        ticket: string;
+        groesse: number;
+        maxAbrufe: number;
+      };
       assert.equal(ok.groesse, a.bytes);
       assert.equal(ok.maxAbrufe, 2);
       const dl = await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok.ticket } });
@@ -335,10 +485,25 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(daten.length, a.bytes);
       assert.equal(dl.datei!.name, `${a.name}.zip`);
       await assert.rejects(rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok.ticket } }), status(410), 'Ticket nur einmal');
-      await bis(async () => (await d.mappenHistorie.historie(max.id)).some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true));
+      await bis(async () =>
+        (await d.mappenHistorie.historie(max.id)).some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true),
+      );
       const h = await d.mappenHistorie.historie(max.id);
-      assert.ok(h.some((x) => x.daten.zustellung === 'link' && /Abruf-Link erstellt: gültig bis .*höchstens 2 Abrufe, per E-Mail an max@example\.net/.test(String(x.daten.text))));
-      assert.ok(h.some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true && /Auskunft abgerufen \(1\. von höchstens 2/.test(String(x.daten.text))));
+      assert.ok(
+        h.some(
+          (x) =>
+            x.daten.zustellung === 'link' &&
+            /Abruf-Link erstellt: gültig bis .*höchstens 2 Abrufe, per E-Mail an max@example\.net/.test(String(x.daten.text)),
+        ),
+      );
+      assert.ok(
+        h.some(
+          (x) =>
+            x.daten.zustellung === 'abruf' &&
+            x.daten.erfolg === true &&
+            /Auskunft abgerufen \(1\. von höchstens 2/.test(String(x.daten.text)),
+        ),
+      );
       assert.ok(!JSON.stringify(h).includes('203.0.113'), 'keine IP in der Historie');
       assert.ok(!JSON.stringify(h).includes(code), 'kein Code in der Historie');
       // Benachrichtigung an Ersteller und Favoriten-Inhaberin, je eine.
@@ -349,9 +514,14 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       // Zweiter (letzter) Abruf: gebündelt – keine weitere Meldung; danach ist die ZIP weg.
       const ok2 = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code } })).body as { ticket: string };
       await zip((await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok2.ticket } })).datei!.inhalt);
-      await bis(async () => ((await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { auskuenfte: unknown[] }).auskuenfte.length === 0);
+      await bis(
+        async () => ((await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { auskuenfte: unknown[] }).auskuenfte.length === 0,
+      );
       assert.equal((await meldungen()).length, 2);
-      const st = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { links: Array<{ abrufe: number; abgerufen: string | null }>; auskuenfte: unknown[] };
+      const st = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as {
+        links: Array<{ abrufe: number; abgerufen: string | null }>;
+        auskuenfte: unknown[];
+      };
       assert.equal(st.links[0].abrufe, 2);
       assert.ok(st.links[0].abgerufen, 'abgerufen am …');
       assert.equal(st.auskuenfte.length, 0, 'alle Abrufe verbraucht → ZIP gelöscht');
@@ -362,13 +532,27 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('Sperre: nach zu vielen falschen Codes hilft auch der richtige nicht mehr; Anmeldeschutz je IP', async () => {
       const { r, admin, max, rufe, auskunft } = await aufbau(pg);
       const a = await auskunft();
-      const { url, code } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as { url: string; code: string };
+      const { url, code } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as {
+        url: string;
+        code: string;
+      };
       const schluessel = url.split('#')[1];
       // Anmeldeschutz: nach 5 Fehlversuchen von derselben IP ist sie gesperrt (429) – auch für den richtigen Code.
-      for (let i = 0; i < 5; i++) await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: `FALSCH${i}X` }, ip: '192.0.2.10' }), status(403));
-      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel, code }, ip: '192.0.2.10' }), (e: unknown) => status(429)(e) && !/Anmeldung/.test((e as Error).message));
+      for (let i = 0; i < 5; i++)
+        await assert.rejects(
+          rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: `FALSCH${i}X` }, ip: '192.0.2.10' }),
+          status(403),
+        );
+      await assert.rejects(
+        rufe(null, 'POST', '/api/abruf', { body: { schluessel, code }, ip: '192.0.2.10' }),
+        (e: unknown) => status(429)(e) && !/Anmeldung/.test((e as Error).message),
+      );
       // Weitere Versuche von anderen Adressen, bis der Link selbst gesperrt ist.
-      for (let i = 5; i < LINK_FEHLVERSUCHE_MAX; i++) await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: 'ZZZZZZZZ' }, ip: `192.0.2.${100 + i}` }), status(403));
+      for (let i = 5; i < LINK_FEHLVERSUCHE_MAX; i++)
+        await assert.rejects(
+          rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: 'ZZZZZZZZ' }, ip: `192.0.2.${100 + i}` }),
+          status(403),
+        );
       const [l] = await r.repo.auskunftLinks({ auskunftId: a.id });
       assert.equal(l.fehlversuche, LINK_FEHLVERSUCHE_MAX);
       assert.ok(l.gesperrt);
@@ -377,41 +561,76 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel, code }, ip: '192.0.2.200' }), status(403));
       assert.equal((await r.repo.auskunftLinks({ auskunftId: a.id }))[0].fehlversuche, LINK_FEHLVERSUCHE_MAX);
       const auf = (await r.repo.offeneAufgaben({ mappeIds: [max.id] })).filter((x) => x.art === 'auskunft');
-      assert.ok(auf.some((x) => x.empfaengerId === admin.id && /gesperrt/.test(x.text)), 'Ersteller erfährt von der Sperre');
+      assert.ok(
+        auf.some((x) => x.empfaengerId === admin.id && /gesperrt/.test(x.text)),
+        'Ersteller erfährt von der Sperre',
+      );
       // Ein neuer Link ersetzt den gesperrten nicht stillschweigend – der alte bleibt gesperrt, der neue gilt.
-      const n2 = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { code: 'MV-2024-17' } })).body as { url: string; code: string };
+      const n2 = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { code: 'MV-2024-17' } }))
+        .body as { url: string; code: string };
       assert.equal(n2.code, 'MV-2024-17', 'eigener Code kommt so zurück, wie er eingegeben wurde (#666)');
-      assert.ok((await rufe(null, 'POST', '/api/abruf', { body: { schluessel: n2.url.split('#')[1], code: 'mv 2024 17' }, ip: '192.0.2.201' })).body);
+      assert.ok(
+        (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: n2.url.split('#')[1], code: 'mv 2024 17' }, ip: '192.0.2.201' }))
+          .body,
+      );
       // #666: Kundennummer mit Bindestrichen – Abruf mit und ohne Bindestriche, klein und mit Leerzeichen.
-      const n3 = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { code: 'KD-12-345', abrufe: 3 } })).body as { url: string; code: string };
+      const n3 = (
+        await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { code: 'KD-12-345', abrufe: 3 } })
+      ).body as { url: string; code: string };
       assert.equal(n3.code, 'KD-12-345');
       for (const [i, c] of ['KD12345', 'kd-12-345', 'KD 12 345'].entries())
-        assert.ok((await rufe(null, 'POST', '/api/abruf', { body: { schluessel: n3.url.split('#')[1], code: c }, ip: `192.0.2.${210 + i}` })).body, c);
+        assert.ok(
+          (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: n3.url.split('#')[1], code: c }, ip: `192.0.2.${210 + i}` })).body,
+          c,
+        );
     });
 
     it('Härtung: parallele Versuche kommen nicht an den Zählern vorbei, unbekannte Schlüssel kosten kein scrypt, Anmeldung bleibt frei, Download ohne Cache und ohne HEAD', async () => {
       const { r, konten, admin, rufe, auskunft, route } = await aufbau(pg);
       const a = await auskunft();
-      const { url } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as { url: string; code: string };
+      const { url } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as {
+        url: string;
+        code: string;
+      };
       const schluessel = url.split('#')[1];
       // Unbekannter (gut geformter) Schlüssel: schnell abgewiesen, ohne scrypt – 100 Stück deutlich unter einer Sekunde.
       const t0 = Date.now();
-      const fremd = await Promise.allSettled(Array.from({ length: 100 }, (_, i) => rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: `198.51.100.${i}` })));
+      const fremd = await Promise.allSettled(
+        Array.from({ length: 100 }, (_, i) =>
+          rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: `198.51.100.${i}` }),
+        ),
+      );
       assert.ok(fremd.every((x) => x.status === 'rejected' && status(403)(x.reason)));
       assert.ok(Date.now() - t0 < 2000, `unbekannte Schlüssel ohne scrypt (${Date.now() - t0} ms)`);
       // 30 parallele falsche Codes an einen Link von verschiedenen Adressen: höchstens LINK_FEHLVERSUCHE_MAX werden geprüft.
-      const schwall = await Promise.allSettled(Array.from({ length: 30 }, (_, i) => rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: `FALSCH${i}X` }, ip: `192.0.2.${i + 1}` })));
+      const schwall = await Promise.allSettled(
+        Array.from({ length: 30 }, (_, i) =>
+          rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: `FALSCH${i}X` }, ip: `192.0.2.${i + 1}` }),
+        ),
+      );
       assert.ok(schwall.every((x) => x.status === 'rejected'));
-      assert.ok(schwall.some((x) => x.status === 'rejected' && status(429)(x.reason)), 'parallele Versuche werden abgewiesen statt geprüft');
+      assert.ok(
+        schwall.some((x) => x.status === 'rejected' && status(429)(x.reason)),
+        'parallele Versuche werden abgewiesen statt geprüft',
+      );
       const [l] = await r.repo.auskunftLinks({ auskunftId: a.id });
       assert.ok(l.fehlversuche <= LINK_FEHLVERSUCHE_MAX, `höchstens ${LINK_FEHLVERSUCHE_MAX} geprüft, waren ${l.fehlversuche}`);
       // Fehlversuche am Abruf sperren nie die Anmeldung derselben IP.
-      for (let i = 0; i < 6; i++) await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: '192.0.2.250' }));
+      for (let i = 0; i < 6; i++)
+        await assert.rejects(
+          rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: '192.0.2.250' }),
+        );
       await konten.sperre.pruefe('anna@example.org', '192.0.2.250');
       // Neuer Link: Download ohne Browser-Cache, die Route hat keine HEAD-Variante (würde das Ticket verbrauchen).
-      const n = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as { url: string; code: string };
-      const ok = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: n.url.split('#')[1], code: n.code }, ip: '192.0.2.251' })).body as { ticket: string };
-      const dl = await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok.ticket } }) as { datei: { koepfe?: Record<string, string>; inhalt: NodeJS.ReadableStream } };
+      const n = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as {
+        url: string;
+        code: string;
+      };
+      const ok = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: n.url.split('#')[1], code: n.code }, ip: '192.0.2.251' }))
+        .body as { ticket: string };
+      const dl = (await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok.ticket } })) as {
+        datei: { koepfe?: Record<string, string>; inhalt: NodeJS.ReadableStream };
+      };
       assert.equal(dl.datei.koepfe?.['cache-control'], 'no-store');
       (dl.datei.inhalt as unknown as { destroy(): void }).destroy();
       assert.equal(route('GET', '/api/abruf/datei').ohneHead, true);
@@ -422,28 +641,63 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const a = await auskunft();
       // Abgelaufener Link (direkt angelegt).
       const s1 = neuerSchluessel();
-      await r.repo.legeAuskunftLinkAn({ id: crypto.randomUUID(), auskunftId: a.id, mappeId: max.id, titel: 'Max', schluessel: hasheSchluessel(s1), code: await hashePasswort('ABCDEFGH'), codeArt: 'erzeugt', empfaenger: null,
-        erstellt: new Date(Date.now() - 40 * 864e5).toISOString(), erstelltVon: admin.id, ablauf: new Date(Date.now() - 864e5).toISOString(), maxAbrufe: 3, abrufe: 0, fehlversuche: 0, gesperrt: null, widerrufen: null, abgerufen: null });
+      await r.repo.legeAuskunftLinkAn({
+        id: crypto.randomUUID(),
+        auskunftId: a.id,
+        mappeId: max.id,
+        titel: 'Max',
+        schluessel: hasheSchluessel(s1),
+        code: await hashePasswort('ABCDEFGH'),
+        codeArt: 'erzeugt',
+        empfaenger: null,
+        erstellt: new Date(Date.now() - 40 * 864e5).toISOString(),
+        erstelltVon: admin.id,
+        ablauf: new Date(Date.now() - 864e5).toISOString(),
+        maxAbrufe: 3,
+        abrufe: 0,
+        fehlversuche: 0,
+        gesperrt: null,
+        widerrufen: null,
+        abgerufen: null,
+      });
       await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: s1, code: 'ABCDEFGH' } }), status(410));
-      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: s1, code: 'ABCDEFGX' } }), status(403), 'falscher Code: nichts über den Ablauf');
+      await assert.rejects(
+        rufe(null, 'POST', '/api/abruf', { body: { schluessel: s1, code: 'ABCDEFGX' } }),
+        status(403),
+        'falscher Code: nichts über den Ablauf',
+      );
       const ab = (await r.repo.auskunftLinks()).find((x) => x.schluessel === hasheSchluessel(s1))!;
       assert.equal(ab.abrufe, 0);
       assert.equal(await r.repo.auskunftLinkAbruf(ab.id), null, 'abgelaufen zählt nicht');
       assert.ok((await d.mappenHistorie.historie(max.id)).some((h) => /Link ist abgelaufen/.test(String(h.daten.text))));
       // Zurückziehen
-      const n = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { tage: 60 } })).body as { url: string; code: string; link: { id: string } };
+      const n = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { tage: 60 } })).body as {
+        url: string;
+        code: string;
+        link: { id: string };
+      };
       const ziel = join(ordner, 'export', 'auskunft');
       assert.ok(new Date((await auskuenfteIn(ziel))[0].bis).getTime() > Date.now() + 50 * 864e5);
-      const w = (await rufe(admin, 'POST', '/api/werkbank/auskunft/link/:id/widerrufen', { params: { id: n.link.id } })).body as { widerrufen: string | null };
+      const w = (await rufe(admin, 'POST', '/api/werkbank/auskunft/link/:id/widerrufen', { params: { id: n.link.id } })).body as {
+        widerrufen: string | null;
+      };
       assert.ok(w.widerrufen);
       assert.ok(new Date((await auskuenfteIn(ziel))[0].bis).getTime() < Date.now() + 8 * 864e5, 'zurück auf 7 Tage');
       await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: n.url.split('#')[1], code: n.code } }), status(410));
-      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/link/:id/widerrufen', { params: { id: crypto.randomUUID() } }), status(404));
+      await assert.rejects(
+        rufe(admin, 'POST', '/api/werkbank/auskunft/link/:id/widerrufen', { params: { id: crypto.randomUUID() } }),
+        status(404),
+      );
       // Löschen der Auskunft zieht gültige Links mit zurück.
-      const n3 = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as { link: { id: string } };
+      const n3 = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as {
+        link: { id: string };
+      };
       await rufe(admin, 'DELETE', '/api/werkbank/auskunft/:id', { params: { id: a.id } });
       assert.equal(linkStatus((await r.repo.auskunftLinks()).find((x) => x.id === n3.link.id)!), 'widerrufen');
-      assert.deepEqual((await readdir(ziel)).filter((x) => x.startsWith(a.id)), []);
+      assert.deepEqual(
+        (await readdir(ziel)).filter((x) => x.startsWith(a.id)),
+        [],
+      );
       // Ohne ZIP kein Link
       await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} }), status(404));
     });
@@ -451,12 +705,19 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     it('Abbruch: ein nicht zu Ende gelesener Download zählt, steht aber als abgebrochen in der Historie', async () => {
       const { d, admin, max, rufe, auskunft } = await aufbau(pg);
       const a = await auskunft();
-      const { url, code } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as { url: string; code: string };
+      const { url, code } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} })).body as {
+        url: string;
+        code: string;
+      };
       const t = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code } })).body as { ticket: string };
       const dl = await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: t.ticket } });
       (dl.datei!.inhalt as { destroy(): void }).destroy();
       await bis(async () => (await d.mappenHistorie.historie(max.id)).some((h) => /abgebrochen/.test(String(h.daten.text))));
-      assert.ok((await d.mappenHistorie.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false && /abgebrochen/.test(String(h.daten.text))));
+      assert.ok(
+        (await d.mappenHistorie.historie(max.id)).some(
+          (h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false && /abgebrochen/.test(String(h.daten.text)),
+        ),
+      );
     });
   });
 }

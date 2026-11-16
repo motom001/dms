@@ -32,7 +32,16 @@ import { speicherKurzzustand } from '../src/kurzzustand';
 import { kontext, type Kontext } from '../src/protokoll';
 import type { Repo, SeitenAnfrage } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
-import { EIGENE_MAPPEN, Haushaltsstand, MINDESTENS_MS, mitFavoriten, NUR_FAVORITEN, richteZwischenspeicherEin, Zaehlerspeicher, zwischenspeicherAus } from '../src/zaehlerspeicher';
+import {
+  EIGENE_MAPPEN,
+  Haushaltsstand,
+  MINDESTENS_MS,
+  mitFavoriten,
+  NUR_FAVORITEN,
+  richteZwischenspeicherEin,
+  Zaehlerspeicher,
+  zwischenspeicherAus,
+} from '../src/zaehlerspeicher';
 import { wieImModus } from './hilfen';
 
 const PW = 'ein-langes-passwort';
@@ -58,7 +67,13 @@ const ZEITRAEUME: Array<[string, string]> = [
 const RHYTHMEN = [1, 2, 3, 5, 6, 12, 24];
 
 /** Zufällig, aber wiederholbar. */
-function zufall(start: number) { let s = start; return () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }; }
+function zufall(start: number) {
+  let s = start;
+  return () => {
+    s = (s * 1103515245 + 12345) % 2147483648;
+    return s / 2147483648;
+  };
+}
 function datumZufall(r: () => number): string {
   const j = 2018 + Math.floor(r() * (J - 2018 + 2));
   const m = 1 + Math.floor(r() * 12);
@@ -70,8 +85,17 @@ function datumZufall(r: () => number): string {
 describe('Vorfilter der Termine: kann im Zeitraum liegen (#918)', () => {
   it('jede Mappe mit Termin im Zeitraum ist Kandidat (gegen folgetermine); jährlich in einem Monat nur wenige', () => {
     const r = zufall(918);
-    const daten = [...Array.from({ length: 400 }, () => datumZufall(r)), '2024-02-29', '2023-01-31', '2022-12-31', '2025-11-30', `${L}-02-29`, `${J}-02-28`];
-    let jaehrlichImMonat = 0; let jaehrlich = 0;
+    const daten = [
+      ...Array.from({ length: 400 }, () => datumZufall(r)),
+      '2024-02-29',
+      '2023-01-31',
+      '2022-12-31',
+      '2025-11-30',
+      `${L}-02-29`,
+      `${J}-02-28`,
+    ];
+    let jaehrlichImMonat = 0;
+    let jaehrlich = 0;
     for (const [von, bis] of ZEITRAEUME) {
       for (const d of daten) {
         for (const m of [null, ...RHYTHMEN]) {
@@ -79,7 +103,10 @@ describe('Vorfilter der Termine: kann im Zeitraum liegen (#918)', () => {
           const kann = kannTerminHaben(d, m, von, bis);
           if (hat) assert.ok(kann, `${d} alle ${m} Monate in ${von} … ${bis}`);
           if (m === null) assert.equal(kann, hat, 'einmalig: genau das Datum im Zeitraum');
-          if (m === 12 && von === `${J}-02-01` && d < von) { jaehrlich++; if (kann) jaehrlichImMonat++; }
+          if (m === 12 && von === `${J}-02-01` && d < von) {
+            jaehrlich++;
+            if (kann) jaehrlichImMonat++;
+          }
         }
       }
     }
@@ -100,7 +127,13 @@ describe('Vorfilter der Termine: kann im Zeitraum liegen (#918)', () => {
 
 /* ---------- Dienst: gemeinsam für Arbeitsspeicher und PostgreSQL ---------- */
 
-const frist = (wiederholung: number | null) => ({ vorlauf: 1, einheit: 'tage', empfaengerFeld: null, text: '{feld} {datum}', wiederholung });
+const frist = (wiederholung: number | null) => ({
+  vorlauf: 1,
+  einheit: 'tage',
+  empfaengerFeld: null,
+  text: '{feld} {datum}',
+  wiederholung,
+});
 const FELDER = [
   { key: 'nr', label: 'Nummer', typ: 'text' },
   { key: 'einmal', label: 'Einmal', typ: 'datum', frist: frist(null) },
@@ -113,8 +146,13 @@ const FELDER = [
 ];
 
 interface Aufbau {
-  d: Dienst; roh: Repo; lena: { id: string; rolle: string }; jonas: { id: string; rolle: string };
-  vertrag: Mappentyp; neu: () => Dienst; einstellungen: Einstellungen;
+  d: Dienst;
+  roh: Repo;
+  lena: { id: string; rolle: string };
+  jonas: { id: string; rolle: string };
+  vertrag: Mappentyp;
+  neu: () => Dienst;
+  einstellungen: Einstellungen;
 }
 
 async function aufbau(roh: Repo, kontoRepo: ReturnType<typeof speicherKontoRepo>, einstellungen: Einstellungen): Promise<Aufbau> {
@@ -125,11 +163,23 @@ async function aufbau(roh: Repo, kontoRepo: ReturnType<typeof speicherKontoRepo>
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: PW });
   const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const ich = async (id: string) => { const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!); return { id: b.id, rolle: b.rolle }; };
+  const ich = async (id: string) => {
+    const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!);
+    return { id: b.id, rolle: b.rolle };
+  };
   const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: FELDER });
   return {
-    d, roh, lena: await ich(lena.id), jonas: await ich(jonas.id), vertrag, einstellungen,
-    neu: () => { const f = new Dienst(roh, speicherDateien(), { einstellungen }); f.mindestensMs = 0; return f; },
+    d,
+    roh,
+    lena: await ich(lena.id),
+    jonas: await ich(jonas.id),
+    vertrag,
+    einstellungen,
+    neu: () => {
+      const f = new Dienst(roh, speicherDateien(), { einstellungen });
+      f.mindestensMs = 0;
+      return f;
+    },
   };
 }
 
@@ -157,11 +207,19 @@ function erwartet(mappen: Mappe[], typ: Mappentyp, von: string, bis: string): st
   return s.sort();
 }
 const gesehen = (t: Awaited<ReturnType<Dienst['fristen']['termine']>>, typId: string) =>
-  t.eintraege.filter((e) => e.art === 'frist' && !e.faellig && e.typId === typId).map((e) => `${e.mappeId}|${e.feldKey}|${e.datum}|${e.folgetermin ? 'f' : 'e'}`).sort();
+  t.eintraege
+    .filter((e) => e.art === 'frist' && !e.faellig && e.typId === typId)
+    .map((e) => `${e.mappeId}|${e.feldKey}|${e.datum}|${e.folgetermin ? 'f' : 'e'}`)
+    .sort();
 
 async function mitSchalterAus<T>(f: () => Promise<T>): Promise<T> {
   richteZwischenspeicherEin({ DMS_ZWISCHENSPEICHER: 'aus' });
-  try { assert.equal(zwischenspeicherAus(), true); return await f(); } finally { richteZwischenspeicherEin({}); }
+  try {
+    assert.equal(zwischenspeicherAus(), true);
+    return await f();
+  } finally {
+    richteZwischenspeicherEin({});
+  }
 }
 
 async function pruefeTermine(h: Aufbau) {
@@ -179,7 +237,8 @@ async function pruefeTermine(h: Aufbau) {
     { nr: 'S2', zwei: `${L - 2}-02-29`, fuenf: '2025-11-30', einmal: `${L}-02-29` },
     { nr: 'S3', jahr: '2026-02-30', monat: '0099-05-05', quartal: 'kein Datum', einmal: '' },
     { nr: 'S4', jahr: `${J + 3}-01-01`, monat: ['2024-01-01'] },
-  ]) await roh.legeMappeAn(crypto.randomUUID(), vertrag.id, werte as never, [], lena.id);
+  ])
+    await roh.legeMappeAn(crypto.randomUUID(), vertrag.id, werte as never, [], lena.id);
   const z = await d.rechtepruefung.zugriff(lena);
   const typ = (await roh.listeTypen()).find((t) => t.id === vertrag.id)!;
   const mappen = await roh.listeMappen(vertrag.id);
@@ -190,7 +249,11 @@ async function pruefeTermine(h: Aufbau) {
     assert.deepEqual(gesehen(a, vertrag.id), soll, `frisch gerechnet ${von} … ${bis}`);
     const b = await d.fristen.termine(z, { von, bis });
     assert.deepEqual(b, a, `aus dem Zwischenspeicher gleich ${von} … ${bis}`);
-    assert.deepEqual(await frisch.fristen.termine(await frisch.rechtepruefung.zugriff(lena), { von, bis }), a, `anderer Dienst gleich ${von} … ${bis}`);
+    assert.deepEqual(
+      await frisch.fristen.termine(await frisch.rechtepruefung.zugriff(lena), { von, bis }),
+      a,
+      `anderer Dienst gleich ${von} … ${bis}`,
+    );
     assert.deepEqual(await mitSchalterAus(() => d.fristen.termine(z, { von, bis })), a, `ohne Zwischenspeicher gleich ${von} … ${bis}`);
   }
   assert.ok(erwartet(mappen, typ, `${L}-02-29`, `${L}-02-29`).length > 0, 'der 29.02. hat Termine');
@@ -200,12 +263,24 @@ async function pruefeNaechsterTermin(h: Aufbau) {
   const { d, lena, vertrag } = h;
   const ausJahr = async (x: Dienst) => {
     const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) });
-    return { termin: t.eintraege.find((e) => e.datum >= HEUTE) ?? null, ueberfaellig: t.eintraege.filter((e) => e.faellig && e.datum < HEUTE).length };
+    return {
+      termin: t.eintraege.find((e) => e.datum >= HEUTE) ?? null,
+      ueberfaellig: t.eintraege.filter((e) => e.faellig && e.datum < HEUTE).length,
+    };
   };
   // Nur ein jährlicher Termin in gut zwei Monaten: nichts in den ersten 31 Tagen, dann das ganze Jahr.
-  const typ2 = await d.mappentypen.legeTypAn({ name: 'Versicherung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) }] });
+  const typ2 = await d.mappentypen.legeTypAn({
+    name: 'Versicherung',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text' },
+      { key: 'jahr', label: 'Jährlich', typ: 'datum', frist: frist(12) },
+    ],
+  });
   await d.mappen.legeMappeAn({ typId: typ2.id, werte: { nr: 'A', jahr: verschiebe(verschiebe(HEUTE, 65), -12, 'monate') } }, lena.id);
-  const mitVertrag = async (x: Dienst) => { const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) }); return t.eintraege.some((e) => e.typId === vertrag.id); };
+  const mitVertrag = async (x: Dienst) => {
+    const t = await x.fristen.termine(await x.rechtepruefung.zugriff(lena), { von: HEUTE, bis: verschiebe(HEUTE, 365) });
+    return t.eintraege.some((e) => e.typId === vertrag.id);
+  };
   if (!(await mitVertrag(d))) {
     const n = await d.fristen.naechsterTermin(await d.rechtepruefung.zugriff(lena));
     assert.equal(n.termin?.datum, verschiebe(HEUTE, 65));
@@ -225,11 +300,20 @@ async function pruefeNaechsterTermin(h: Aufbau) {
 
 async function pruefeTypaenderung(h: Aufbau) {
   const { d, roh, lena } = h;
-  const typ = await d.mappentypen.legeTypAn({ name: 'Wartung', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }] });
+  const typ = await d.mappentypen.legeTypAn({
+    name: 'Wartung',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text' },
+      { key: 'datum', label: 'Datum', typ: 'datum' },
+    ],
+  });
   await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'W1', datum: `${J - 3}-03-31` } }, lena.id);
   const zeitraum = { von: `${J}-01-01`, bis: `${J}-12-31` };
   // Je Abruf ein neuer Zugriff – wie je Anfrage; er bringt die Mappentypen mit.
-  const zahl = async () => (await d.fristen.termine(await d.rechtepruefung.zugriff(lena), zeitraum)).eintraege.filter((e) => e.typId === typ.id).map((e) => e.datum);
+  const zahl = async () =>
+    (await d.fristen.termine(await d.rechtepruefung.zugriff(lena), zeitraum)).eintraege
+      .filter((e) => e.typId === typ.id)
+      .map((e) => e.datum);
   assert.deepEqual(await zahl(), [], 'noch keine Frist');
   // Feld wird zur jährlichen Frist: sofort der Termin, ohne dass die Mappe gespeichert wird.
   const t = (await roh.listeTypen()).find((x) => x.id === typ.id)!;
@@ -250,11 +334,21 @@ async function pruefeZahlen(h: Aufbau) {
     const z = await kontext.run(k, async () => d.sichten.zaehler(ich, await d.rechtepruefung.zugriff(ich)));
     return { z, art: k.zwischenspeicher?.art };
   };
-  const frisch = async (ich: { id: string; rolle: string }) => { const f = h.neu(); return f.sichten.zaehler(ich, await f.rechtepruefung.zugriff(ich)); };
-  const teil = (x: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({ typen: x.typen, eingang: x.eingang, favoriten: x.favoriten, sichten: x.sichten, papierkorb: x.papierkorb });
+  const frisch = async (ich: { id: string; rolle: string }) => {
+    const f = h.neu();
+    return f.sichten.zaehler(ich, await f.rechtepruefung.zugriff(ich));
+  };
+  const teil = (x: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({
+    typen: x.typen,
+    eingang: x.eingang,
+    favoriten: x.favoriten,
+    sichten: x.sichten,
+    papierkorb: x.papierkorb,
+  });
   const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z1' } }, lena.id);
   await ruhe();
-  await zahlen(jonas); await zahlen(lena);
+  await zahlen(jonas);
+  await zahlen(lena);
   assert.equal((await zahlen(jonas)).art, 'treffer');
   // Stern (von Lena) und Notiz: keine neue Zählung für Jonas – und Lenas Zahl der Favoriten stimmt trotzdem sofort.
   await d.mappen.setzeFavorit({ id: lena.id }, m.id, true);
@@ -277,25 +371,36 @@ async function pruefeZahlen(h: Aufbau) {
   d.mindestensMs = MINDESTENS_MS;
   try {
     const vorher = (await zahlen(jonas, jonas.id)).z.typen[vertrag.id].anzahl;
-    await kontext.run({ anfrage: 'l', db: { anzahl: 0, ms: 0 }, benutzerId: lena.id }, () => d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z3' } }, lena.id));
+    await kontext.run({ anfrage: 'l', db: { anzahl: 0, ms: 0 }, benutzerId: lena.id }, () =>
+      d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z3' } }, lena.id),
+    );
     assert.equal((await zahlen(lena, lena.id)).z.typen[vertrag.id].anzahl, vorher + 1, 'Lena sieht ihre Änderung sofort');
     const kurz = await zahlen(jonas, jonas.id);
     assert.ok([vorher, vorher + 1].includes(kurz.z.typen[vertrag.id].anzahl), 'Jonas: bisheriger oder neuer Wert');
-    await kontext.run({ anfrage: 'j', db: { anzahl: 0, ms: 0 }, benutzerId: jonas.id }, () => d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z4' } }, jonas.id));
+    await kontext.run({ anfrage: 'j', db: { anzahl: 0, ms: 0 }, benutzerId: jonas.id }, () =>
+      d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'Z4' } }, jonas.id),
+    );
     assert.equal((await zahlen(jonas, jonas.id)).z.typen[vertrag.id].anzahl, vorher + 2, 'Jonas sieht seine Änderung sofort');
-  } finally { d.mindestensMs = 0; }
+  } finally {
+    d.mindestensMs = 0;
+  }
 }
 
 async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
   const { d, lena, jonas, vertrag } = h;
-  const seite = async (x: Dienst, ich: { id: string; rolle: string }, q: Record<string, unknown>) => x.sichten.seite(ich, { sicht: `typ:${vertrag.id}`, anzahl: 5, ...q }, await x.rechtepruefung.zugriff(ich));
+  const seite = async (x: Dienst, ich: { id: string; rolle: string }, q: Record<string, unknown>) =>
+    x.sichten.seite(ich, { sicht: `typ:${vertrag.id}`, anzahl: 5, ...q }, await x.rechtepruefung.zugriff(ich));
   /** Wie oft der Dienst (nicht der frische zum Vergleich) gezählt hat. */
   const gezaehlt = () => aufrufe.filter((a) => a.zahl === undefined).length;
   const vergleiche = async (q: Record<string, unknown>, was: string) => {
     const a = await seite(d, jonas, q);
     const f = await seite(h.neu(), jonas, q);
     assert.equal(a.gesamt, f.gesamt, `${was}: Zahl wie frisch gezählt`);
-    assert.deepEqual(a.mappen.map((m) => m.id), f.mappen.map((m) => m.id), `${was}: dieselbe Seite`);
+    assert.deepEqual(
+      a.mappen.map((m) => m.id),
+      f.mappen.map((m) => m.id),
+      `${was}: dieselbe Seite`,
+    );
     return a.gesamt;
   };
   for (let i = 0; i < 7; i++) await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: `L${i}` } }, lena.id);
@@ -340,30 +445,62 @@ async function pruefeTrefferzahl(h: Aufbau, aufrufe: SeitenAnfrage[]) {
 
 /** Repo, das die Anfragen an seite() mitschreibt. */
 function mitProtokoll(roh: Repo, aufrufe: SeitenAnfrage[]): Repo {
-  return new Proxy(roh, { get(z, p, e) { const w = Reflect.get(z, p, e); if (p === 'seite') return (o: SeitenAnfrage) => { aufrufe.push(o); return (w as Repo['seite']).call(z, o); }; return w; } });
+  return new Proxy(roh, {
+    get(z, p, e) {
+      const w = Reflect.get(z, p, e);
+      if (p === 'seite')
+        return (o: SeitenAnfrage) => {
+          aufrufe.push(o);
+          return (w as Repo['seite']).call(z, o);
+        };
+      return w;
+    },
+  });
 }
 
 describe('Dienst im Arbeitsspeicher (#918)', () => {
-  const neu = async () => { const aufrufe: SeitenAnfrage[] = []; const h = await aufbau(speicherRepo(), speicherKontoRepo(), speicherEinstellungen()); return { h, aufrufe }; };
-  it('Termine wie frisch gerechnet – wiederkehrend über Monats- und Jahresenden und den 29.02., mit und ohne Zwischenspeicher', async () => { await pruefeTermine((await neu()).h); });
-  it('Startseite: nächster Termin wie aus dem ganzen Jahr', async () => { await pruefeNaechsterTermin((await neu()).h); });
-  it('Typ ändern (Frist dazu, Rhythmus ändern, Frist weg) wirkt sofort', async () => { await pruefeTypaenderung((await neu()).h); });
-  it('Zahlen: Stern und Notiz rechnen nicht neu; eigene Änderung sofort', async () => { await pruefeZahlen((await neu()).h); });
-  it('Zahl der Treffer: zwischengespeichert und genau', async () => { const x = await neu(); await pruefeTrefferzahl(mitProtokollDienst(x.h, x.aufrufe), x.aufrufe); });
+  const neu = async () => {
+    const aufrufe: SeitenAnfrage[] = [];
+    const h = await aufbau(speicherRepo(), speicherKontoRepo(), speicherEinstellungen());
+    return { h, aufrufe };
+  };
+  it('Termine wie frisch gerechnet – wiederkehrend über Monats- und Jahresenden und den 29.02., mit und ohne Zwischenspeicher', async () => {
+    await pruefeTermine((await neu()).h);
+  });
+  it('Startseite: nächster Termin wie aus dem ganzen Jahr', async () => {
+    await pruefeNaechsterTermin((await neu()).h);
+  });
+  it('Typ ändern (Frist dazu, Rhythmus ändern, Frist weg) wirkt sofort', async () => {
+    await pruefeTypaenderung((await neu()).h);
+  });
+  it('Zahlen: Stern und Notiz rechnen nicht neu; eigene Änderung sofort', async () => {
+    await pruefeZahlen((await neu()).h);
+  });
+  it('Zahl der Treffer: zwischengespeichert und genau', async () => {
+    const x = await neu();
+    await pruefeTrefferzahl(mitProtokollDienst(x.h, x.aufrufe), x.aufrufe);
+  });
 });
 
 describe('Mappenstand über zwei Prozesse (#918)', () => {
   it('Stern zählt nur den Haushaltsstand; eigene Änderung im anderen Prozess sofort, die anderer kurz später', async () => {
-    let db = 1; let dbM = 1;
+    let db = 1;
+    let dbM = 1;
     const z = speicherKurzzustand();
     const prozess = () => {
       const stand = new Haushaltsstand(new Set(), { lies: async () => db, erhoehe: async () => ++db });
-      const mappen = new Haushaltsstand(new Set(), { lies: async () => dbM, erhoehe: async () => ++dbM }, { ohne: NUR_FAVORITEN, art: EIGENE_MAPPEN });
-      stand.teileEigene(z); mappen.teileEigene(z);
+      const mappen = new Haushaltsstand(
+        new Set(),
+        { lies: async () => dbM, erhoehe: async () => ++dbM },
+        { ohne: NUR_FAVORITEN, art: EIGENE_MAPPEN },
+      );
+      stand.teileEigene(z);
+      mappen.teileEigene(z);
       const repo = stand.umhuelle({ setzeFavorit: async () => {}, aendereMappe: async () => {}, holeMappe: async () => 1 }, mappen);
       return { stand, mappen, repo };
     };
-    const A = prozess(); const B = prozess();
+    const A = prozess();
+    const B = prozess();
     const speicherB = new Zaehlerspeicher<number>(B.mappen);
     let zaehlungen = 0;
     const zaehle = async () => ({ wert: ++zaehlungen, zeitabhaengig: false });
@@ -395,9 +532,17 @@ describe('Mappenstand über zwei Prozesse (#918)', () => {
 
   it('DMS_ZWISCHENSPEICHER: aus, 0, nein, off schalten ab; sonst an', () => {
     try {
-      for (const w of ['aus', 'AUS', '0', 'nein', 'false', 'off']) { richteZwischenspeicherEin({ DMS_ZWISCHENSPEICHER: w }); assert.equal(zwischenspeicherAus(), true, w); }
-      for (const w of [undefined, '', 'an', '1']) { richteZwischenspeicherEin({ DMS_ZWISCHENSPEICHER: w }); assert.equal(zwischenspeicherAus(), false, String(w)); }
-    } finally { richteZwischenspeicherEin({}); }
+      for (const w of ['aus', 'AUS', '0', 'nein', 'false', 'off']) {
+        richteZwischenspeicherEin({ DMS_ZWISCHENSPEICHER: w });
+        assert.equal(zwischenspeicherAus(), true, w);
+      }
+      for (const w of [undefined, '', 'an', '1']) {
+        richteZwischenspeicherEin({ DMS_ZWISCHENSPEICHER: w });
+        assert.equal(zwischenspeicherAus(), false, String(w));
+      }
+    } finally {
+      richteZwischenspeicherEin({});
+    }
   });
 });
 
@@ -405,8 +550,10 @@ const url = process.env.TEST_DATABASE_URL;
 const EIGENE_DB = `dms_test_918_${process.pid}`;
 describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   const HAUSHALT = '00000000-0000-4000-8000-000000000001';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
-  let sql: any; let haupt: any;
+  /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
+  let sql: any;
+  let haupt: any;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   let ordner = '';
   let h!: Aufbau;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
@@ -416,36 +563,57 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
     const soll = sql`SELECT m.id AS mappe_id, m.haushalt_id, m.typ_id, e.key AS feld, e.value #>> '{}' AS datum
       FROM mappen m, jsonb_each(m.werte) e WHERE jsonb_typeof(e.value) = 'string' AND (e.value #>> '{}') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'`;
     const ist = sql`SELECT mappe_id, haushalt_id, typ_id, feld, datum::text FROM fristtermine`;
-    const [r] = await sql`SELECT (SELECT count(*) FROM (${soll} EXCEPT ${ist}) x)::int AS fehlt, (SELECT count(*) FROM (${ist} EXCEPT ${soll}) y)::int AS zuviel,
+    const [r] =
+      await sql`SELECT (SELECT count(*) FROM (${soll} EXCEPT ${ist}) x)::int AS fehlt, (SELECT count(*) FROM (${ist} EXCEPT ${soll}) y)::int AS zuviel,
       (SELECT count(*) FROM fristtermine WHERE monat IS DISTINCT FROM dms_fristmonat(datum))::int AS monat`;
     assert.deepEqual(r, { fehlt: 0, zuviel: 0, monat: 0 }, was);
   };
 
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
-    mod = { ...await import('../src/repo-pg'), ...await import('../src/konto-repo'), ...await import('../src/einstellungen') };
+    mod = { ...(await import('../src/repo-pg')), ...(await import('../src/konto-repo')), ...(await import('../src/einstellungen')) };
     // Eigene Datenbank: die Testdateien laufen parallel auf derselben Test-Datenbank; das Schema dort zu leeren
     // würde anderen Dateien mitten im Lauf die Tabellen wegnehmen.
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${EIGENE_DB}`);
     await haupt.unsafe(`CREATE DATABASE ${EIGENE_DB}`);
-    const u = new URL(url!); u.pathname = `/${EIGENE_DB}`;
+    const u = new URL(url!);
+    u.pathname = `/${EIGENE_DB}`;
     sql = verbinde(u.toString());
     // Migration füllt den Bestand: erst alle Migrationen außer 086 (spätere ändern Tabellen, die legeTypAn braucht), Mappen anlegen, dann der Rest.
     const alle = fileURLToPath(new URL('../migrations', import.meta.url));
     ordner = await mkdtemp(join(tmpdir(), 'dms-918-'));
-    for (const f of (await readdir(alle)).filter((x) => x.endsWith('.sql') && !x.startsWith('086'))) await copyFile(join(alle, f), join(ordner, f));
+    for (const f of (await readdir(alle)).filter((x) => x.endsWith('.sql') && !x.startsWith('086')))
+      await copyFile(join(alle, f), join(ordner, f));
     await migriere(sql, ordner, () => {});
     const repo = mod.pgRepo(sql, HAUSHALT) as Repo;
-    const typ = await repo.legeTypAn(crypto.randomUUID(), { name: 'Bestand', beschreibung: '', titelVorlage: '', felder: FELDER, register: [] } as never);
-    for (const werte of [{ jahr: '2024-02-29', nr: 'B1' }, { monat: '2023-01-31', einmal: '2026-02-30' }, { ohne: '2020-01-01', zwei: ['x'] }, {}]) {
+    const typ = await repo.legeTypAn(crypto.randomUUID(), {
+      name: 'Bestand',
+      beschreibung: '',
+      titelVorlage: '',
+      felder: FELDER,
+      register: [],
+    } as never);
+    for (const werte of [
+      { jahr: '2024-02-29', nr: 'B1' },
+      { monat: '2023-01-31', einmal: '2026-02-30' },
+      { ohne: '2020-01-01', zwei: ['x'] },
+      {},
+    ]) {
       await repo.legeMappeAn(crypto.randomUUID(), typ.id, werte as never, [], null);
     }
     await migriere(sql, alle, () => {});
     await abgleich('nach der Migration');
     h = await aufbau(mod.pgRepo(sql, HAUSHALT), mod.pgKontoRepo(sql, HAUSHALT), mod.pgEinstellungen(sql, HAUSHALT));
   });
-  after(async () => { if (ordner) await rm(ordner, { recursive: true, force: true }); if (sql) await sql.end(); if (haupt) { await haupt.unsafe(`DROP DATABASE IF EXISTS ${EIGENE_DB}`); await haupt.end(); } });
+  after(async () => {
+    if (ordner) await rm(ordner, { recursive: true, force: true });
+    if (sql) await sql.end();
+    if (haupt) {
+      await haupt.unsafe(`DROP DATABASE IF EXISTS ${EIGENE_DB}`);
+      await haupt.end();
+    }
+  });
 
   it('die Migration füllt den Vorfilter für den Bestand', async () => {
     const [r] = await sql`SELECT count(*)::int AS n FROM fristtermine`;
@@ -478,7 +646,8 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
   it('Pflege bei allen Wegen: ändern, Papierkorb, wiederherstellen, endgültig löschen, viele auf einmal, COPY', async () => {
     const { d, roh, lena, vertrag } = h;
     const z = await d.rechtepruefung.zugriff(lena);
-    const termine = async () => gesehen(await d.fristen.termine(z, { von: `${J}-01-01`, bis: `${J}-12-31` }), vertrag.id).filter((x) => x.startsWith(m.id));
+    const termine = async () =>
+      gesehen(await d.fristen.termine(z, { von: `${J}-01-01`, bis: `${J}-12-31` }), vertrag.id).filter((x) => x.startsWith(m.id));
     const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { nr: 'P1', jahr: `${J - 1}-05-17` } }, lena.id);
     await abgleich('anlegen');
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-05-17|f`]);
@@ -497,14 +666,31 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
     assert.deepEqual(await termine(), [`${m.id}|jahr|${J}-05-17|f`]);
     // Viele auf einmal (Import, Demo-Daten).
     const ids = [crypto.randomUUID(), crypto.randomUUID()];
-    await roh.legeMappenAn(ids.map((id, i) => ({ id, typId: vertrag.id, werte: { nr: `D${i}`, quartal: `${J - 1}-0${i + 1}-31` }, verweise: [], titel: `D${i}`, benutzerId: lena.id, demo: true })));
+    await roh.legeMappenAn(
+      ids.map((id, i) => ({
+        id,
+        typId: vertrag.id,
+        werte: { nr: `D${i}`, quartal: `${J - 1}-0${i + 1}-31` },
+        verweise: [],
+        titel: `D${i}`,
+        benutzerId: lena.id,
+        demo: true,
+      })),
+    );
     await abgleich('viele auf einmal');
     // Einspielen per COPY wie beim Wiederherstellen einer Sicherung (wiederherstellung.ts): Der Trigger füllt neu.
     const spalten = ['id', 'haushalt_id', 'typ_id', 'werte', 'erstellt', 'geaendert'];
     const zeilen: string[] = [];
-    for await (const c of await sql.unsafe(`COPY (SELECT ${spalten.join(', ')} FROM mappen WHERE id = ANY('{${ids.join(',')}}'::uuid[])) TO STDOUT`).readable()) zeilen.push(String(c));
+    for await (const c of await sql
+      .unsafe(`COPY (SELECT ${spalten.join(', ')} FROM mappen WHERE id = ANY('{${ids.join(',')}}'::uuid[])) TO STDOUT`)
+      .readable())
+      zeilen.push(String(c));
     await sql`DELETE FROM mappen WHERE id = ANY(${ids}::uuid[])`;
-    assert.equal((await sql`SELECT count(*)::int AS n FROM fristtermine WHERE mappe_id = ANY(${ids}::uuid[])`)[0].n, 0, 'mit der Mappe gelöscht');
+    assert.equal(
+      (await sql`SELECT count(*)::int AS n FROM fristtermine WHERE mappe_id = ANY(${ids}::uuid[])`)[0].n,
+      0,
+      'mit der Mappe gelöscht',
+    );
     await pipeline(Readable.from(zeilen), await sql.unsafe(`COPY mappen (${spalten.join(', ')}) FROM STDIN`).writable());
     await abgleich('COPY');
     assert.equal((await sql`SELECT count(*)::int AS n FROM fristtermine WHERE mappe_id = ANY(${ids}::uuid[])`)[0].n, 2);

@@ -7,7 +7,11 @@ import { t } from './texte';
 /** Schlüssel des System-Registers „Notizen“ (#427); beginnt mit „_“, damit er keinem Register eines Typs gleicht. */
 export const NOTIZEN_REGISTER = '_notizen';
 
-export interface NotizenRegister { key: typeof NOTIZEN_REGISTER; name: 'Notizen'; art: 'notizen' }
+export interface NotizenRegister {
+  key: typeof NOTIZEN_REGISTER;
+  name: 'Notizen';
+  art: 'notizen';
+}
 export type AnsichtsRegister = Register | NotizenRegister;
 
 /**
@@ -28,9 +32,15 @@ export const ausNotiz = (a: Pick<Aufgabe, 'art' | 'feldKey'>) => a.art === 'erwa
  * oder auf Notizen), sonst „Notizen“, wenn mich eine offene Erwähnung in einer Notiz hierher bringt (#427),
  * sonst das erste.
  */
-export function startRegister(register: AnsichtsRegister[], wunsch: string | null | undefined, aufgaben: Aufgabe[] = [], ich?: string): string | undefined {
+export function startRegister(
+  register: AnsichtsRegister[],
+  wunsch: string | null | undefined,
+  aufgaben: Aufgabe[] = [],
+  ich?: string,
+): string | undefined {
   if (wunsch && register.some((r) => r.key === wunsch)) return wunsch;
-  if (ich && aufgaben.some((a) => !a.erledigt && a.empfaengerId === ich && ausNotiz(a)) && register.some((r) => r.key === NOTIZEN_REGISTER)) return NOTIZEN_REGISTER;
+  if (ich && aufgaben.some((a) => !a.erledigt && a.empfaengerId === ich && ausNotiz(a)) && register.some((r) => r.key === NOTIZEN_REGISTER))
+    return NOTIZEN_REGISTER;
   return register[0]?.key;
 }
 
@@ -40,12 +50,18 @@ export function startRegister(register: AnsichtsRegister[], wunsch: string | nul
  */
 export function aufgabenBeschriftung(art: Aufgabenart, fuerMich: boolean, anlass?: Aufgabe['anlass']): string {
   // Ein Favorit wurde erwähnt (#889): nicht „Du wurdest erwähnt“.
-  if (art === 'erwaehnung' && anlass?.art === 'favorit') return fuerMich ? t('gemeinsam.mappenansicht.favorit-erwaehnt') : t('gemeinsam.mappenansicht.favorit-erwaehnt-fuer');
+  if (art === 'erwaehnung' && anlass?.art === 'favorit')
+    return fuerMich ? t('gemeinsam.mappenansicht.favorit-erwaehnt') : t('gemeinsam.mappenansicht.favorit-erwaehnt-fuer');
   switch (art) {
-    case 'post': return fuerMich ? t('gemeinsam.mappenansicht.post-fuer-dich') : t('gemeinsam.mappenansicht.post-fuer');
-    case 'erwaehnung': return fuerMich ? t('gemeinsam.mappenansicht.du-wurdest-erwaehnt') : t('gemeinsam.mappenansicht.erwaehnung-fuer');
-    case 'erinnerung': return fuerMich ? t('gemeinsam.mappenansicht.deine-erinnerung') : t('gemeinsam.mappenansicht.erinnerung-fuer');
-    case 'zugeordnet': return fuerMich ? t('gemeinsam.mappenansicht.bitte-pruefen') : t('gemeinsam.mappenansicht.zu-pruefen-von');
-    default: return fuerMich ? t('gemeinsam.mappenansicht.deine-aufgabe') : t('gemeinsam.mappenansicht.aufgabe-fuer');
+    case 'post':
+      return fuerMich ? t('gemeinsam.mappenansicht.post-fuer-dich') : t('gemeinsam.mappenansicht.post-fuer');
+    case 'erwaehnung':
+      return fuerMich ? t('gemeinsam.mappenansicht.du-wurdest-erwaehnt') : t('gemeinsam.mappenansicht.erwaehnung-fuer');
+    case 'erinnerung':
+      return fuerMich ? t('gemeinsam.mappenansicht.deine-erinnerung') : t('gemeinsam.mappenansicht.erinnerung-fuer');
+    case 'zugeordnet':
+      return fuerMich ? t('gemeinsam.mappenansicht.bitte-pruefen') : t('gemeinsam.mappenansicht.zu-pruefen-von');
+    default:
+      return fuerMich ? t('gemeinsam.mappenansicht.deine-aufgabe') : t('gemeinsam.mappenansicht.aufgabe-fuer');
   }
 }

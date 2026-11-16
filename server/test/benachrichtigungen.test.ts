@@ -32,16 +32,31 @@ async function aufbau(uhr = am('09:00')) {
   const zeit = { jetzt: uhr };
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo(), uhr: () => zeit.jetzt });
   const gesendet: string[] = [];
-  d.zusammenfassungAn = async (id) => { gesendet.push(id); return { gesendet: true, grund: 'ok' }; };
+  d.zusammenfassungAn = async (id) => {
+    gesendet.push(id);
+    return { gesendet: true, grund: 'ok' };
+  };
   return { d, konten, einst, admin, lena, jonas, motor, zeit, gesendet };
 }
 
-const zusammenfassung = (wenn: Record<string, unknown>) => ({ name: 'Zusammenfassung', wenn: { art: 'zeitplan', ...wenn }, dann: [{ id: 'z1', art: 'zusammenfassung' }] });
+const zusammenfassung = (wenn: Record<string, unknown>) => ({
+  name: 'Zusammenfassung',
+  wenn: { art: 'zeitplan', ...wenn },
+  dann: [{ id: 'z1', art: 'zusammenfassung' }],
+});
 
 describe('Wenn-Karte „Zeitplan“ (#678)', () => {
   it('bereinigt, Kurzform und Prüfung: Zusammenfassung nur mit „für jeden Benutzer“', () => {
     const a = bereinigeAutomatisierung(zusammenfassung({ uhrzeit: '07:00', tage: [5, 1, 2, 3, 4, 9], jeBenutzer: true }));
-    assert.deepEqual(a.wenn, { art: 'zeitplan', uhrzeit: '07:00', tage: [1, 2, 3, 4, 5], feiertage: false, jeBenutzer: true, rolle: null, profilzeit: false });
+    assert.deepEqual(a.wenn, {
+      art: 'zeitplan',
+      uhrzeit: '07:00',
+      tage: [1, 2, 3, 4, 5],
+      feiertage: false,
+      jeBenutzer: true,
+      rolle: null,
+      profilzeit: false,
+    });
     const k = { typen: [], sichten: [], benutzer: [], rollen: [] };
     assert.match(kurzform(a, k), /^Wenn werktags um 07:00 für jeden Benutzer → Tägliche Zusammenfassung senden$/);
     const ohne = bereinigeAutomatisierung(zusammenfassung({ uhrzeit: '07:00', jeBenutzer: false }));
@@ -100,15 +115,32 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: '1' } }, admin.id);
     await d.vertretung.legeAufgabeAn(m.id, { text: 'Bitte ansehen', empfaengerId: lena.id }, admin.id);
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
-    const mailer = { sende: async (an: string, betreff: string, text: string) => { mails.push({ an, betreff, text }); } };
-    const quelle = { benutzer: () => konten.listeBenutzer(), einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never), aufgabenVon: async (b: { id: string; rolle: string }) => d.vertretung.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)), typName: async () => 'Vorgang' };
-    const am_ = new Aufgabenmail(quelle as never, () => mailer as never, () => 'http://nas');
+    const mailer = {
+      sende: async (an: string, betreff: string, text: string) => {
+        mails.push({ an, betreff, text });
+      },
+    };
+    const quelle = {
+      benutzer: () => konten.listeBenutzer(),
+      einstellungenVon: (b: { id: string }) => konten.einstellungen(b as never),
+      aufgabenVon: async (b: { id: string; rolle: string }) =>
+        d.vertretung.meineAufgaben(b as never, await d.rechtepruefung.zugriff(b as never)),
+      typName: async () => 'Vorgang',
+    };
+    const am_ = new Aufgabenmail(
+      quelle as never,
+      () => mailer as never,
+      () => 'http://nas',
+    );
     const offen = (await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).length;
     assert.equal(offen, 1, 'Lena hat eine offene Aufgabe');
     const r = await am_.fuerAutomatisierung(lena.id, false);
     assert.equal(r.schluessel, 'gesendet');
     // Derselbe Text wie bis #678 („Jetzt senden“ gibt es seit #1001 nicht mehr).
-    assert.deepEqual(mails.map((x) => [x.an, x.betreff]), [['lena@example.org', 'Ablago: eine offene Aufgabe']]);
+    assert.deepEqual(
+      mails.map((x) => [x.an, x.betreff]),
+      [['lena@example.org', 'Ablago: eine offene Aufgabe']],
+    );
     assert.match(mails[0].text, /^Hallo Lena,/);
     assert.equal((await am_.fuerAutomatisierung(lena.id, true)).schluessel, 'trocken');
     await konten.setzeEinstellung(lena, 'aufgaben_mail', false);
@@ -123,7 +155,10 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
     const L = { id: lena.id, rolle: 'mitglied' };
     await d.mappen.setzeFavorit(L, m.id, true);
     await d.ereignisse.verteile();
-    const a = await motor.lege({ name: 'F', wenn: { art: 'favorit.geaendert', typ: null }, dann: [{ id: 'f1', art: 'favoriten' }] }, admin.id);
+    const a = await motor.lege(
+      { name: 'F', wenn: { art: 'favorit.geaendert', typ: null }, dann: [{ id: 'f1', art: 'favoriten' }] },
+      admin.id,
+    );
     await motor.schalte(a.id, true, admin.id);
     motor.start();
     try {
@@ -134,14 +169,26 @@ describe('Dann-Karten der Benachrichtigungen (#678)', () => {
       assert.match(n[0].text, /^Eine Änderung von Markus/);
       const l = (await motor.laeufe(a.id))[0];
       assert.equal(l.zustand, 'abgeschlossen');
-    } finally { motor.stop(); }
+    } finally {
+      motor.stop();
+    }
   });
 
   it('Sammelmeldung Anmeldeschutz: nur Zeitplan ohne „je Benutzer“; Kontosperre nur mit „Benutzerkonto gesperrt“', async () => {
     const { d, motor, zeit, admin } = await aufbau(am('00:10'));
     const rufe: string[] = [];
-    d.anmeldeschutzMelden = async (was) => { rufe.push(was); return { gesendet: true, grund: 'gemeldet' }; };
-    const a = await motor.lege({ name: 'S', wenn: { art: 'zeitplan', uhrzeit: '00:00', tage: [1, 2, 3, 4, 5, 6, 7] }, dann: [{ id: 'a1', art: 'anmeldeschutz', was: 'sammel' }] }, admin.id);
+    d.anmeldeschutzMelden = async (was) => {
+      rufe.push(was);
+      return { gesendet: true, grund: 'gemeldet' };
+    };
+    const a = await motor.lege(
+      {
+        name: 'S',
+        wenn: { art: 'zeitplan', uhrzeit: '00:00', tage: [1, 2, 3, 4, 5, 6, 7] },
+        dann: [{ id: 'a1', art: 'anmeldeschutz', was: 'sammel' }],
+      },
+      admin.id,
+    );
     await motor.schalte(a.id, true, admin.id);
     await motor.zeitplan();
     await motor.zeitplan();
@@ -162,16 +209,34 @@ describe('Übernahme beim Update (#678)', () => {
     const alle = (await motor.uebersicht()).automatisierungen;
     const z = alle.find((a) => a.dann[0]?.art === 'zusammenfassung')!;
     assert.equal(z.aktiv, false, 'war ausgeschaltet');
-    assert.deepEqual(z.wenn, { art: 'zeitplan', uhrzeit: '06:45', tage: [1, 2, 3, 4, 5], feiertage: true, jeBenutzer: true, rolle: null, profilzeit: true });
+    assert.deepEqual(z.wenn, {
+      art: 'zeitplan',
+      uhrzeit: '06:45',
+      tage: [1, 2, 3, 4, 5],
+      feiertage: true,
+      jeBenutzer: true,
+      rolle: null,
+      profilzeit: true,
+    });
     assert.equal(alle.find((a) => a.dann[0]?.art === 'favoriten')!.aktiv, true);
     assert.equal(alle.find((a) => a.dann[0]?.art === 'anmeldeschutz' && a.dann[0].was === 'sammel')!.aktiv, true);
     assert.equal(alle.find((a) => a.dann[0]?.art === 'anmeldeschutz' && a.dann[0].was === 'konto')!.aktiv, false);
     assert.equal((await motor.warnungen()).ohneBenachrichtigungen, false);
     // Paket „Benachrichtigungen“ bringt dieselben mit: Die übernommenen gehen in ihnen auf, an/aus bleibt.
     const paket = { id: 'benachrichtigungen', typen: {}, version: '1.1.0' } as never;
-    const n = await motor.ausPaket(paket, [
-      { schluessel: 'zusammenfassung', name: 'Tägliche Zusammenfassung', beschreibung: '', wenn: { art: 'zeitplan', uhrzeit: '07:00', jeBenutzer: true, profilzeit: true }, dann: [{ id: 'z1', art: 'zusammenfassung' }] },
-    ] as never, ['zusammenfassung']);
+    const n = await motor.ausPaket(
+      paket,
+      [
+        {
+          schluessel: 'zusammenfassung',
+          name: 'Tägliche Zusammenfassung',
+          beschreibung: '',
+          wenn: { art: 'zeitplan', uhrzeit: '07:00', jeBenutzer: true, profilzeit: true },
+          dann: [{ id: 'z1', art: 'zusammenfassung' }],
+        },
+      ] as never,
+      ['zusammenfassung'],
+    );
     assert.equal(n, 1);
     const nachher = (await motor.uebersicht()).automatisierungen.filter((a) => a.dann[0]?.art === 'zusammenfassung');
     assert.equal(nachher.length, 1, 'keine doppelte Zusammenfassung');

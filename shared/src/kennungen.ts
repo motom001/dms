@@ -58,9 +58,11 @@ export const HERAUSGEBER_MAX = 64;
 export const HERAUSGEBER = /^[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?){1,9}$/;
 /** Herausgeber der offiziellen Pakete (Katalog des Projekts). */
 export const OFFIZIELLER_HERAUSGEBER = 'app.ablago';
-export const istHerausgeber = (v: unknown): v is string => typeof v === 'string' && v.length <= HERAUSGEBER_MAX && HERAUSGEBER.test(v) && !v.split('.').some((t) => t.startsWith('xn--'));
+export const istHerausgeber = (v: unknown): v is string =>
+  typeof v === 'string' && v.length <= HERAUSGEBER_MAX && HERAUSGEBER.test(v) && !v.split('.').some((t) => t.startsWith('xn--'));
 /** `app.ablago` und alles darunter (`app.ablago.*`) gehört dem Projekt (#1084, Sicherheit C). */
-export const istOffiziellerHerausgeber = (h: string | null | undefined): boolean => !!h && (h === OFFIZIELLER_HERAUSGEBER || h.startsWith(`${OFFIZIELLER_HERAUSGEBER}.`));
+export const istOffiziellerHerausgeber = (h: string | null | undefined): boolean =>
+  !!h && (h === OFFIZIELLER_HERAUSGEBER || h.startsWith(`${OFFIZIELLER_HERAUSGEBER}.`));
 
 /**
  * Kennung eines Mappentyps in Datei- und Ordnernamen (#1084, Sicherheit A): nie mit Doppelpunkt (Windows/SMB lehnen ihn

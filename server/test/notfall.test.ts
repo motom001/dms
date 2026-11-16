@@ -19,11 +19,31 @@ async function aufbau() {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas:8080');
   await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
   const mails: Array<{ an: string; betreff: string }> = [];
-  const mailer = { async sende(an: string, betreff: string) { mails.push({ an, betreff }); } };
+  const mailer = {
+    async sende(an: string, betreff: string) {
+      mails.push({ an, betreff });
+    },
+  };
   const datei = join(await mkdtemp(join(tmpdir(), 'dms-rescue-')), 'RESCUE');
-  const n = new Notfallzugang(datei, konten, speicherEinstellungen(),
-    async (b, t) => { await anVerwaltende(await konten.listeBenutzer(), mailer, b, t); }, () => jetzt);
-  return { konten, n, datei, mails, start, stelle: (iso: string) => { jetzt = new Date(iso); } };
+  const n = new Notfallzugang(
+    datei,
+    konten,
+    speicherEinstellungen(),
+    async (b, t) => {
+      await anVerwaltende(await konten.listeBenutzer(), mailer, b, t);
+    },
+    () => jetzt,
+  );
+  return {
+    konten,
+    n,
+    datei,
+    mails,
+    start,
+    stelle: (iso: string) => {
+      jetzt = new Date(iso);
+    },
+  };
 }
 
 describe('Notfallzugang (#108)', () => {
@@ -41,9 +61,17 @@ describe('Notfallzugang (#108)', () => {
     assert.deepEqual(admin.verwaltung, ['*']);
     assert.match(admin.name, /^Notfall-Admin \d\d\.\d\d\.\d{4} \d\d:\d\d$/);
     assert.equal((await konten.linkPruefen(link[1])).zweck, 'einladung');
-    assert.deepEqual(mails.map((m) => m.an), ['admin@example.org'], 'Mail an die Administratoren (nicht an die .invalid-Adresse)');
+    assert.deepEqual(
+      mails.map((m) => m.an),
+      ['admin@example.org'],
+      'Mail an die Administratoren (nicht an die .invalid-Adresse)',
+    );
     assert.ok(protokoll.eintraege({ seit: vorher }).some((e) => e.text === 'Notfallzugang angelegt (RESCUE-Datei)'));
-    assert.deepEqual((await n.offen()).map((x) => x.name), [admin.name], 'Hinweis in der Werkbank');
+    assert.deepEqual(
+      (await n.offen()).map((x) => x.name),
+      [admin.name],
+      'Hinweis in der Werkbank',
+    );
 
     assert.equal(await n.pruefe(), 'wartet', 'der eigene Inhalt löst nichts Neues aus');
     assert.equal((await konten.listeBenutzer()).length, 2);

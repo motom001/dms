@@ -23,7 +23,9 @@ async function aufbau() {
   const tabelle = routen(d, konten, {});
   // Wie nach der Antwort über HTTP (#741): erst danach „zuletzt geöffnet“ merken.
   const rufe = async (b: { id: string }, m: string, pf: string, x: Partial<Anfrage> = {}) => {
-    const r = await tabelle.find((t) => t.methode === m && t.pfad === pf)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
+    const r = await tabelle
+      .find((t) => t.methode === m && t.pfad === pf)!
+      .handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus(await ich(b.id)) });
     for (const f of r.danach ?? []) await f();
     return r as { body: unknown };
   };
@@ -37,8 +39,15 @@ describe('Startseite (#334)', () => {
     assert.equal(((await rufe(anna, 'GET', '/api/startseite')).body as Start).leer, true, 'nur Systemmappen: leer');
     const ALLES = { C: true, R: true, U: true, D: true, P: true };
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
-    const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
-      berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
+    const geheim = await d.mappentypen.legeTypAn({
+      name: 'Geheim',
+      titelVorlage: '{nr}',
+      felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+      berechtigungen: {
+        grund: ALLES,
+        regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }],
+      },
+    } as never);
     const m = [];
     for (let i = 1; i <= 6; i++) m.push(await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: `V-${i}` } }, anna.id));
     const g = await d.mappen.legeMappeAn({ typId: geheim.id, werte: { nr: 'G' } }, admin.id);
@@ -46,10 +55,16 @@ describe('Startseite (#334)', () => {
     await rufe(anna, 'GET', '/api/mappen/:id', { params: { id: m[0].id } });
     const s = (await rufe(anna, 'GET', '/api/startseite')).body as Start;
     assert.equal(s.leer, false);
-    assert.deepEqual(s.zuletzt.map((x) => x.titel), ['V-1', 'V-6', 'V-5', 'V-4', 'V-3']);
+    assert.deepEqual(
+      s.zuletzt.map((x) => x.titel),
+      ['V-1', 'V-6', 'V-5', 'V-4', 'V-3'],
+    );
     // Admin öffnet die geheime Mappe; Anna sähe sie nicht, selbst wenn sie in ihrer Liste stünde.
     await rufe(admin, 'GET', '/api/mappen/:id', { params: { id: g.id } });
-    assert.deepEqual(((await rufe(admin, 'GET', '/api/startseite')).body as Start).zuletzt.map((x) => x.titel), ['G']);
+    assert.deepEqual(
+      ((await rufe(admin, 'GET', '/api/startseite')).body as Start).zuletzt.map((x) => x.titel),
+      ['G'],
+    );
     await d.loeschen.loescheMappe(m[0].id, anna.id);
     assert.equal(((await rufe(anna, 'GET', '/api/startseite')).body as Start).zuletzt[0].titel, 'V-6', 'gelöschte fallen heraus');
   });
@@ -85,8 +100,15 @@ describe('Liste „Zuletzt geöffnet“ (#940)', () => {
     await d.loeschen.loescheMappe(m[29].id, admin.id);
     assert.equal(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt)[0].titel, 'V-29');
     // Frühere Einträge ohne Zeitpunkt bleiben lesbar.
-    await konten.setzeEinstellung(await (async () => (await konten.listeBenutzer()).find((b) => b.id === anna.id)!)(), 'zuletzt_geoeffnet', [m[0].id]);
-    assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => [x.titel, x.am]), [['V-1', null]]);
+    await konten.setzeEinstellung(
+      await (async () => (await konten.listeBenutzer()).find((b) => b.id === anna.id)!)(),
+      'zuletzt_geoeffnet',
+      [m[0].id],
+    );
+    assert.deepEqual(
+      ((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => [x.titel, x.am]),
+      [['V-1', null]],
+    );
   });
 
   it('Anlegen und Ändern zählen als geöffnet – nur für die Person, die es tut', async () => {
@@ -94,12 +116,23 @@ describe('Liste „Zuletzt geöffnet“ (#940)', () => {
     const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
     const a = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'A' } }, anna.id);
     const b = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'B' } }, anna.id);
-    assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['B', 'A'], 'Anlegen');
+    assert.deepEqual(
+      ((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel),
+      ['B', 'A'],
+      'Anlegen',
+    );
     await d.mappen.aendereMappe(a.id, { werte: { nr: 'A2' } }, anna.id);
-    assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['A2', 'B'], 'Ändern');
+    assert.deepEqual(
+      ((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel),
+      ['A2', 'B'],
+      'Ändern',
+    );
     // Ändert jemand anderes, rückt die Mappe bei Anna nicht nach oben.
     await d.mappen.aendereMappe(b.id, { werte: { nr: 'B2' } }, admin.id);
-    assert.deepEqual(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel), ['A2', 'B2']);
+    assert.deepEqual(
+      ((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).map((x) => x.titel),
+      ['A2', 'B2'],
+    );
     // Ohne Benutzer (System, Eingangsordner) zählt nichts.
     await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'S' } }, null);
     assert.equal(((await rufe(anna, 'GET', '/api/startseite/zuletzt')).body as Zuletzt).length, 2);

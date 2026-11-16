@@ -23,9 +23,24 @@ type Stand =
   | { art: 'aus' }
   | { art: 'laeuft'; teil: number; teile: number }
   | { art: 'fehler'; text: string }
-  | { art: 'fertig'; text: string; von: string | null; nach: string; gleich: boolean; gekuerzt: boolean; netz: string[] | null; paket: string };
+  | {
+      art: 'fertig';
+      text: string;
+      von: string | null;
+      nach: string;
+      gleich: boolean;
+      gekuerzt: boolean;
+      netz: string[] | null;
+      paket: string;
+    };
 
-export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen = true, children }: {
+export function Uebersetzbar({
+  quelle,
+  original,
+  darstellen = (x) => x,
+  ersetzen = true,
+  children,
+}: {
   quelle: Uebersetzungsquelle;
   /** Der gespeicherte Text – für die Anzeige des Originals. */
   original: string;
@@ -47,7 +62,8 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
 
   async function starte() {
     const nr = ++lauf.current;
-    setFest(false); setSchwebt(false);
+    setFest(false);
+    setSchwebt(false);
     setStand({ art: 'laeuft', teil: 0, teile: 1 });
     try {
       const erst = await mappenApi.uebersetzung(quelle, 0);
@@ -63,49 +79,104 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
         von ??= r.von;
       }
       if (lauf.current !== nr) return;
-      setStand({ art: 'fertig', text: text.replace(/\s+$/u, ''), von, nach: erst.nach, gleich: !!erst.gleich, gekuerzt: !!erst.gekuerzt, netz: erst.netz, paket: erst.paket.name });
+      setStand({
+        art: 'fertig',
+        text: text.replace(/\s+$/u, ''),
+        von,
+        nach: erst.nach,
+        gleich: !!erst.gleich,
+        gekuerzt: !!erst.gekuerzt,
+        netz: erst.netz,
+        paket: erst.paket.name,
+      });
     } catch (e) {
       if (lauf.current === nr) setStand({ art: 'fehler', text: (e as Error).message });
     }
   }
-  const zurueck = () => { lauf.current++; setStand({ art: 'aus' }); setFest(false); setSchwebt(false); };
+  const zurueck = () => {
+    lauf.current++;
+    setStand({ art: 'aus' });
+    setFest(false);
+    setSchwebt(false);
+  };
   const ziele = (n: string[]) => n.join(', ');
 
   const knopf = (
-    <Knopf art="link" groesse="klein" className="uebersetzen-knopf" symbol="uebersetzen" onClick={() => void starte()}
-      title={netz ? t('ablage.uebersetzung.knopf.netz', { paket: angebot.paket.name, ziele: ziele(netz) }) : t('ablage.uebersetzung.knopf.titel', { paket: angebot.paket.name })}>
+    <Knopf
+      art="link"
+      groesse="klein"
+      className="uebersetzen-knopf"
+      symbol="uebersetzen"
+      onClick={() => void starte()}
+      title={
+        netz
+          ? t('ablage.uebersetzung.knopf.netz', { paket: angebot.paket.name, ziele: ziele(netz) })
+          : t('ablage.uebersetzung.knopf.titel', { paket: angebot.paket.name })
+      }>
       {t('ablage.uebersetzung.anzeigen')}
     </Knopf>
   );
 
-  if (stand.art === 'aus') return <>{children}<div className="uebersetzen-zeile">{knopf}</div></>;
+  if (stand.art === 'aus')
+    return (
+      <>
+        {children}
+        <div className="uebersetzen-zeile">{knopf}</div>
+      </>
+    );
   if (stand.art === 'laeuft') {
     return (
-      <>{children}
+      <>
+        {children}
         <div className="uebersetzen-zeile">
-          <span className="leise klein" role="status">{stand.teile > 1 ? t('ablage.uebersetzung.abschnitt', { teil: stand.teil + 1, teile: stand.teile }) : t('ablage.uebersetzung.laeuft')}</span>
-          <Knopf art="link" groesse="klein" onClick={zurueck}>{t('ablage.uebersetzung.abbrechen')}</Knopf>
+          <span className="leise klein" role="status">
+            {stand.teile > 1
+              ? t('ablage.uebersetzung.abschnitt', { teil: stand.teil + 1, teile: stand.teile })
+              : t('ablage.uebersetzung.laeuft')}
+          </span>
+          <Knopf art="link" groesse="klein" onClick={zurueck}>
+            {t('ablage.uebersetzung.abbrechen')}
+          </Knopf>
         </div>
       </>
     );
   }
   if (stand.art === 'fehler') {
-    return <>{children}<div className="uebersetzen-zeile"><span className="fehlertext klein" role="alert">{stand.text}</span>{knopf}</div></>;
+    return (
+      <>
+        {children}
+        <div className="uebersetzen-zeile">
+          <span className="fehlertext klein" role="alert">
+            {stand.text}
+          </span>
+          {knopf}
+        </div>
+      </>
+    );
   }
   if (stand.gleich) {
     return (
-      <>{children}
+      <>
+        {children}
         <div className="uebersetzen-zeile">
-          <span className="leise klein" role="status">{t('ablage.uebersetzung.gleich', { sprache: sprachname(stand.nach) })}</span>
-          <Knopf art="link" groesse="klein" onClick={zurueck}>{t('ablage.uebersetzung.ok')}</Knopf>
+          <span className="leise klein" role="status">
+            {t('ablage.uebersetzung.gleich', { sprache: sprachname(stand.nach) })}
+          </span>
+          <Knopf art="link" groesse="klein" onClick={zurueck}>
+            {t('ablage.uebersetzung.ok')}
+          </Knopf>
         </div>
       </>
     );
   }
   const originalSichtbar = fest || schwebt;
   const box = (
-    <div className="uebersetzt" role="group" aria-labelledby={`${id}-k`}
-      onMouseEnter={() => setSchwebt(true)} onMouseLeave={() => setSchwebt(false)}>
+    <div
+      className="uebersetzt"
+      role="group"
+      aria-labelledby={`${id}-k`}
+      onMouseEnter={() => setSchwebt(true)}
+      onMouseLeave={() => setSchwebt(false)}>
       <p className="uebersetzt-kennzeichnung" id={`${id}-k`}>
         <Symbol name="uebersetzen" /> <span>{kennzeichnung(stand.von, (s) => sprachname(s))}</span> <Hilfe ort="mappen.uebersetzen" />
       </p>
@@ -125,9 +196,18 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
         <Knopf art="link" groesse="klein" aria-expanded={originalSichtbar} aria-controls={`${id}-o`} onClick={() => setFest((x) => !x)}>
           {originalSichtbar ? t('ablage.uebersetzung.original-verbergen') : t('ablage.uebersetzung.original-zeigen')}
         </Knopf>
-        <Knopf art="link" groesse="klein" onClick={zurueck}>{t('ablage.uebersetzung.zurueck')}</Knopf>
+        <Knopf art="link" groesse="klein" onClick={zurueck}>
+          {t('ablage.uebersetzung.zurueck')}
+        </Knopf>
       </div>
     </div>
   );
-  return ersetzen ? box : <>{children}{box}</>;
+  return ersetzen ? (
+    box
+  ) : (
+    <>
+      {children}
+      {box}
+    </>
+  );
 }

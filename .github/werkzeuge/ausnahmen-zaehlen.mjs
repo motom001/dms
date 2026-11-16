@@ -11,6 +11,10 @@
  * mitwandern – solange die Summe gleich bleibt oder sinkt. Gibt es die Datei in der Basis noch nicht, gilt der
  * jetzige Stand als Ausgangspunkt.
  *
+ * Geänderte Grenze (#1280): Wer den Wert einer Regel in eslint.config.js ändert (etwa die Längen ×1,75 mit dem
+ * Formatierer), friert ihren Bestand ebenso neu ein. Geändert heißt: Die Zeilen, die die Regel (`'regel'`) nennen,
+ * unterscheiden sich ohne Kommentare und Leerraum von denen der Basis – die Änderung steht so im Pull Request.
+ *
  * Neue Regel (#968): Wer eine Regel neu einführt und ihren Bestand einfriert (`eslint --suppress-rule <regel> .`),
  * lässt die Summe steigen, ohne dass Code schlechter wird. Eine Regel gilt als neu, wenn sie in der Basis keinen
  * Eintrag hat **und** ihr Name (`'regel'`) in eslint.config.js neu dazukommt – so ist sie im Pull Request sichtbar,
@@ -47,9 +51,32 @@ export function neueRegeln(vorherJ, jetztJ, konfigVorher, konfigJetzt) {
   return Object.keys(jeRegel(jetztJ)).filter((r) => !(r in bisher) && konfigJetzt.includes(`'${r}'`) && !konfigVorher.includes(`'${r}'`));
 }
 
+/** Zeilen von eslint.config.js, die die Regel nennen – ohne Kommentare und Leerraum. */
+function nennungen(konfig, regel) {
+  return konfig
+    .split('\n')
+    .map((z) => z.replace(/\/\/.*$/, '').replace(/\s+/g, ''))
+    .filter((z) => z.includes(`'${regel}'`))
+    .join('\n');
+}
+
+/**
+ * Regeln mit Bestand in der Basis, deren Wert in eslint.config.js geändert ist (#1280): Ihr Bestand gilt neu.
+ * @param vorherJ Bestand der Basis, jetztJ jetziger Bestand, konfigVorher/konfigJetzt Text von eslint.config.js
+ */
+export function geaenderteRegeln(vorherJ, jetztJ, konfigVorher, konfigJetzt) {
+  const bisher = jeRegel(vorherJ ?? {});
+  return Object.keys(jeRegel(jetztJ)).filter((r) => {
+    const v = nennungen(konfigVorher, r);
+    return r in bisher && v !== '' && nennungen(konfigJetzt, r) !== '' && v !== nennungen(konfigJetzt, r);
+  });
+}
+
 /** Bestand ohne die genannten Regeln. */
 export function ohneRegeln(j, regeln) {
-  return Object.fromEntries(Object.entries(j).map(([datei, r]) => [datei, Object.fromEntries(Object.entries(r).filter(([regel]) => !regeln.includes(regel)))]));
+  return Object.fromEntries(
+    Object.entries(j).map(([datei, r]) => [datei, Object.fromEntries(Object.entries(r).filter(([regel]) => !regeln.includes(regel)))]),
+  );
 }
 
 /** Vergleich zweier Stände; `vorher` null = Datei gab es in der Basis nicht. */
@@ -62,7 +89,12 @@ export function vergleiche(vorher, jetzt) {
 const git = (...a) => execFileSync('git', a, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 function ausBasis(basis, datei, roh = false) {
-  try { const t = git('show', `${basis}:${datei}`); return roh ? t : JSON.parse(t); } catch { return roh ? '' : null; }
+  try {
+    const t = git('show', `${basis}:${datei}`);
+    return roh ? t : JSON.parse(t);
+  } catch {
+    return roh ? '' : null;
+  }
 }
 
 function main() {
@@ -70,13 +102,23 @@ function main() {
   let fehler = false;
   for (const l of LISTEN) {
     let jetzt = existsSync(l.datei) ? JSON.parse(readFileSync(l.datei, 'utf8')) : null;
-    if (!jetzt) { console.log(`::error title=${l.name}::${l.datei} fehlt`); fehler = true; continue; }
-    const vorherJ = ausBasis(basis, l.datei);
+    if (!jetzt) {
+      console.log(`::error title=${l.name}::${l.datei} fehlt`);
+      fehler = true;
+      continue;
+    }
+    let vorherJ = ausBasis(basis, l.datei);
     if (l.datei === 'eslint-suppressions.json' && vorherJ) {
-      const neu = neueRegeln(vorherJ, jetzt, ausBasis(basis, 'eslint.config.js', true), readFileSync('eslint.config.js', 'utf8'));
-      const z = jeRegel(jetzt);
+      const konfigVorher = ausBasis(basis, 'eslint.config.js', true);
+      const konfigJetzt = readFileSync('eslint.config.js', 'utf8');
+      const neu = neueRegeln(vorherJ, jetzt, konfigVorher, konfigJetzt);
+      const geaendert = geaenderteRegeln(vorherJ, jetzt, konfigVorher, konfigJetzt);
+      const z = jeRegel(jetzt),
+        a = jeRegel(vorherJ);
       for (const r of neu) console.log(`${l.name}, neue Regel ${r}: ${z[r]} Einträge (Ausgangspunkt)`);
-      jetzt = ohneRegeln(jetzt, neu);
+      for (const r of geaendert) console.log(`${l.name}, Grenze von ${r} geändert: ${a[r]} → ${z[r]} Einträge (neuer Ausgangspunkt)`);
+      jetzt = ohneRegeln(jetzt, [...neu, ...geaendert]);
+      vorherJ = ohneRegeln(vorherJ, geaendert);
     }
     const v = vergleiche(vorherJ === null ? null : l.zaehle(vorherJ), l.zaehle(jetzt));
     console.log(`${l.name} (${l.datei}): ${v.text}`);
@@ -84,10 +126,19 @@ function main() {
       fehler = true;
       let mehr = '';
       if (l.datei === 'eslint-suppressions.json') {
-        const a = jeRegel(vorherJ), b = jeRegel(jetzt);
-        mehr = ' Mehr bei: ' + Object.keys(b).filter((r) => b[r] > (a[r] ?? 0)).map((r) => `${r} +${b[r] - (a[r] ?? 0)}`).join(', ') + '.';
+        const a = jeRegel(vorherJ),
+          b = jeRegel(jetzt);
+        mehr =
+          ' Mehr bei: ' +
+          Object.keys(b)
+            .filter((r) => b[r] > (a[r] ?? 0))
+            .map((r) => `${r} +${b[r] - (a[r] ?? 0)}`)
+            .join(', ') +
+          '.';
       }
-      console.log(`::error title=${l.name} gewachsen (#899)::${l.datei}: ${v.text}.${mehr} Neuer Code muss die Regeln einhalten; Einträge umtragen ja, hinzufügen nein (Entwicklerhandbuch → Stil und Abhängigkeiten).`);
+      console.log(
+        `::error title=${l.name} gewachsen (#899)::${l.datei}: ${v.text}.${mehr} Neuer Code muss die Regeln einhalten; Einträge umtragen ja, hinzufügen nein (Entwicklerhandbuch → Stil und Abhängigkeiten).`,
+      );
     }
   }
   if (fehler) process.exitCode = 1;

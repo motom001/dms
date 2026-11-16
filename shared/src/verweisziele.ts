@@ -16,14 +16,19 @@ export const jedeMappe = (f: MitZielen): boolean => !!f.zielTypen?.includes(BELI
 /** Die Ziel-Mappentypen (Ids) – ohne „jede Mappe“; leer bei „jede Mappe“ oder wenn (noch) keiner da ist. */
 export const zieleVon = (f: MitZielen): string[] => (jedeMappe(f) ? [] : (f.zielTypen ?? []).filter(Boolean));
 /** Darf das Feld auf eine Mappe dieses Typs zeigen? */
-export const zielErlaubt = (f: MitZielen, typId: string | undefined): boolean => !!typId && (jedeMappe(f) || !!f.zielTypen?.includes(typId));
+export const zielErlaubt = (f: MitZielen, typId: string | undefined): boolean =>
+  !!typId && (jedeMappe(f) || !!f.zielTypen?.includes(typId));
 /** Der eine Zieltyp, wenn es genau einen gibt (Auswahlfilter, „folgt aus“, Spalten über den Verweis) – sonst undefined. */
-export const einzigesZiel = (f: MitZielen): string | undefined => { const z = zieleVon(f); return !jedeMappe(f) && z.length === 1 ? z[0] : undefined; };
+export const einzigesZiel = (f: MitZielen): string | undefined => {
+  const z = zieleVon(f);
+  return !jedeMappe(f) && z.length === 1 ? z[0] : undefined;
+};
 /** Mehr als ein möglicher Zieltyp (mehrere oder „jede Mappe“): Dann gibt es „zeigt auf Mappe vom Typ …“ und „alle vom selben Typ“. */
 export const mehrereZiele = (f: MitZielen): boolean => jedeMappe(f) || zieleVon(f).length > 1;
 /** Zeigen beide Felder auf dieselben Zieltypen (Reihenfolge egal)? */
 export const gleicheZiele = (a: MitZielen, b: MitZielen): boolean => {
-  const x = new Set(a.zielTypen ?? []); const y = new Set(b.zielTypen ?? []);
+  const x = new Set(a.zielTypen ?? []);
+  const y = new Set(b.zielTypen ?? []);
   return x.size === y.size && [...x].every((v) => y.has(v));
 };
 
@@ -34,13 +39,22 @@ export const gleicheZiele = (a: MitZielen, b: MitZielen): boolean => {
 export function gemeinsameFelder(listen: Feld[][]): Feld[] {
   const [erste, ...rest] = listen;
   if (!erste) return [];
-  return erste.filter((f) => rest.every((l) => l.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(f, g)))));
+  return erste.filter((f) =>
+    rest.every((l) => l.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || gleicheZiele(f, g)))),
+  );
 }
 
 /** Liste von Typ-Ids aus einer Eingabe: Texte, ohne Doppelte, „*“ allein, höchstens {@link ZIELTYPEN_MAX}. */
 export function zielTypenAus(v: unknown): string[] {
   const roh = Array.isArray(v) ? v : typeof v === 'string' && v ? [v] : [];
-  const l = [...new Set(roh.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter(Boolean))].slice(0, ZIELTYPEN_MAX);
+  const l = [
+    ...new Set(
+      roh
+        .filter((x): x is string => typeof x === 'string')
+        .map((x) => x.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, ZIELTYPEN_MAX);
   return l.includes(BELIEBIGER_TYP) ? [BELIEBIGER_TYP] : l;
 }
 
@@ -54,6 +68,8 @@ export function normalisiereZiele<F extends Partial<Feld>>(f: F): F {
   if (!x || typeof x !== 'object' || !('zielTyp' in x)) return f;
   const { zielTyp, ...rest } = x;
   if (rest.typ !== 'referenz') return rest as unknown as F;
-  return { ...rest, zielTypen: Array.isArray(rest.zielTypen) && rest.zielTypen.length ? zielTypenAus(rest.zielTypen) : zielTypenAus(zielTyp) } as unknown as F;
+  return {
+    ...rest,
+    zielTypen: Array.isArray(rest.zielTypen) && rest.zielTypen.length ? zielTypenAus(rest.zielTypen) : zielTypenAus(zielTyp),
+  } as unknown as F;
 }
-

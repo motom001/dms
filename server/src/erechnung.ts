@@ -22,7 +22,12 @@ const TEXT_MAX = 300;
 
 const text = (s: string | undefined): string | undefined => {
   // Steuerzeichen werden zu Leerzeichen.
-  const x = [...(s ?? '')].map((c) => (c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127 ? ' ' : c)).join('').replace(/\s+/g, ' ').trim().slice(0, TEXT_MAX);
+  const x = [...(s ?? '')]
+    .map((c) => (c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127 ? ' ' : c))
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, TEXT_MAX);
   return x || undefined;
 };
 /** Dezimalzahl, wie XML sie schreibt (Punkt, optional Vorzeichen) – sonst undefined. */
@@ -38,12 +43,25 @@ const datum = (s: string | undefined): string | undefined => {
   const m = /^(\d{4})-?(\d{2})-?(\d{2})$/.exec(x);
   if (!m) return undefined;
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  if (d.getUTCFullYear() !== Number(m[1]) || d.getUTCMonth() !== Number(m[2]) - 1 || d.getUTCDate() !== Number(m[3]) || Number(m[1]) < 1900 || Number(m[1]) > 2100) return undefined;
+  if (
+    d.getUTCFullYear() !== Number(m[1]) ||
+    d.getUTCMonth() !== Number(m[2]) - 1 ||
+    d.getUTCDate() !== Number(m[3]) ||
+    Number(m[1]) < 1900 ||
+    Number(m[1]) > 2100
+  )
+    return undefined;
   return `${m[1]}-${m[2]}-${m[3]}`;
 };
 const waehrung = (s: string | undefined) => (/^[A-Z]{3}$/.test((s ?? '').trim()) ? s!.trim() : undefined);
-const iban = (s: string | undefined) => { const x = (s ?? '').replace(/\s/g, '').toUpperCase(); return /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(x) ? x : undefined; };
-const ustid = (s: string | undefined) => { const x = (s ?? '').replace(/\s/g, '').toUpperCase(); return /^[A-Z]{2}[0-9A-Z]{2,13}$/.test(x) ? x : undefined; };
+const iban = (s: string | undefined) => {
+  const x = (s ?? '').replace(/\s/g, '').toUpperCase();
+  return /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(x) ? x : undefined;
+};
+const ustid = (s: string | undefined) => {
+  const x = (s ?? '').replace(/\s/g, '').toUpperCase();
+  return /^[A-Z]{2}[0-9A-Z]{2,13}$/.test(x) ? x : undefined;
+};
 const ohneLeere = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== '')) as T;
 
 /**
@@ -71,21 +89,30 @@ function begrenzt(liste: XmlKnoten[], lies: (k: XmlKnoten) => ERechnungPosition)
   return { positionen, ...(liste.length > ERECHNUNG_POSITIONEN_MAX ? { weitere: liste.length - ERECHNUNG_POSITIONEN_MAX } : {}) };
 }
 /** Der eine Steuersatz, wenn alle gleich sind. */
-const einSatz = (saetze: Array<number | undefined>) => { const s = [...new Set(saetze.filter((x): x is number => x != null))]; return s.length === 1 ? s[0] : undefined; };
+const einSatz = (saetze: Array<number | undefined>) => {
+  const s = [...new Set(saetze.filter((x): x is number => x != null))];
+  return s.length === 1 ? s[0] : undefined;
+};
 /** Betrag in der Rechnungswährung, wenn ein Element mehrfach steht (CII TaxTotalAmount in zwei Währungen). */
-const inWaehrung = (liste: XmlKnoten[], w: string) => zahl((liste.find((x) => !x.attr.currencyID || x.attr.currencyID === w) ?? liste[0])?.text);
+const inWaehrung = (liste: XmlKnoten[], w: string) =>
+  zahl((liste.find((x) => !x.attr.currencyID || x.attr.currencyID === w) ?? liste[0])?.text);
 
 /* ---------- CII (ZUGFeRD, Factur-X, XRechnung CII) ---------- */
 
 function ciiPartei(p: XmlKnoten | undefined): ERechnungPartei {
   if (!p) return {};
-  const steuer = kinder(p, 'SpecifiedTaxRegistration').map((x) => kind(x, 'ID')).find((x) => x?.attr.schemeID === 'VA');
+  const steuer = kinder(p, 'SpecifiedTaxRegistration')
+    .map((x) => kind(x, 'ID'))
+    .find((x) => x?.attr.schemeID === 'VA');
   const a = kind(p, 'PostalTradeAddress');
   return ohneLeere({
     name: text(textAm(p, 'Name')),
     ustid: ustid(steuer?.text),
     kennung: text(textAm(p, 'ID')),
-    strasse: text(textAm(a, 'LineOne')), plz: text(textAm(a, 'PostcodeCode')), ort: text(textAm(a, 'CityName')), land: text(textAm(a, 'CountryID')),
+    strasse: text(textAm(a, 'LineOne')),
+    plz: text(textAm(a, 'PostcodeCode')),
+    ort: text(textAm(a, 'CityName')),
+    land: text(textAm(a, 'CountryID')),
     email: text(textAm(p, 'DefinedTradeContact/EmailURIUniversalCommunication/URIID') || textAm(p, 'URIUniversalCommunication/URIID')),
     telefon: text(textAm(p, 'DefinedTradeContact/TelephoneUniversalCommunication/CompleteNumber')),
   });
@@ -107,7 +134,8 @@ function ausCii(w: XmlKnoten): ERechnung {
       nr: text(textAm(x, 'AssociatedDocumentLineDocument/LineID')),
       beschreibung: text(textAm(x, 'SpecifiedTradeProduct/Name')),
       artikelnummer: text(textAm(x, 'SpecifiedTradeProduct/SellerAssignedID')),
-      menge: zahl(menge?.text), einheit: text(menge?.attr.unitCode),
+      menge: zahl(menge?.text),
+      einheit: text(menge?.attr.unitCode),
       einzelpreis: zahl(textAm(x, 'SpecifiedLineTradeAgreement/NetPriceProductTradePrice/ChargeAmount')),
       gesamt: zahl(textAm(ls, 'SpecifiedTradeSettlementLineMonetarySummation/LineTotalAmount')),
       ustSatz: zahl(textAm(ls, 'ApplicableTradeTax/RateApplicablePercent')),
@@ -129,7 +157,11 @@ function ausCii(w: XmlKnoten): ERechnung {
     ustSatz: einSatz(kinder(st, 'ApplicableTradeTax').map((x) => zahl(textAm(x, 'RateApplicablePercent')))),
     verkaeufer: ciiPartei(kind(ag, 'SellerTradeParty')),
     kaeufer: ciiPartei(kind(ag, 'BuyerTradeParty')),
-    iban: iban(kinder(st, 'SpecifiedTradeSettlementPaymentMeans').map((x) => textAm(x, 'PayeePartyCreditorFinancialAccount/IBANID')).find(Boolean)),
+    iban: iban(
+      kinder(st, 'SpecifiedTradeSettlementPaymentMeans')
+        .map((x) => textAm(x, 'PayeePartyCreditorFinancialAccount/IBANID'))
+        .find(Boolean),
+    ),
     bestellnummer: text(textAm(ag, 'BuyerOrderReferencedDocument/IssuerAssignedID')),
     lieferschein: text(textAm(lf, 'DespatchAdviceReferencedDocument/IssuerAssignedID')),
     vertrag: text(textAm(ag, 'ContractReferencedDocument/IssuerAssignedID')),
@@ -151,7 +183,10 @@ function ublPartei(p: XmlKnoten | undefined): ERechnungPartei {
     name: text(textAm(p, 'PartyName/Name') || textAm(p, 'PartyLegalEntity/RegistrationName')),
     ustid: ustid(textAm(steuer, 'CompanyID')),
     kennung: text(textAm(p, 'PartyIdentification/ID')),
-    strasse: text(textAm(a, 'StreetName')), plz: text(textAm(a, 'PostalZone')), ort: text(textAm(a, 'CityName')), land: text(textAm(a, 'Country/IdentificationCode')),
+    strasse: text(textAm(a, 'StreetName')),
+    plz: text(textAm(a, 'PostalZone')),
+    ort: text(textAm(a, 'CityName')),
+    land: text(textAm(a, 'Country/IdentificationCode')),
     email: text(textAm(p, 'Contact/ElectronicMail')),
     telefon: text(textAm(p, 'Contact/Telephone')),
   });
@@ -169,7 +204,8 @@ function ausUbl(w: XmlKnoten): ERechnung {
       nr: text(textAm(x, 'ID')),
       beschreibung: text(textAm(x, 'Item/Name') || textAm(x, 'Item/Description')),
       artikelnummer: text(textAm(x, 'Item/SellersItemIdentification/ID')),
-      menge: zahl(menge?.text), einheit: text(menge?.attr.unitCode),
+      menge: zahl(menge?.text),
+      einheit: text(menge?.attr.unitCode),
       einzelpreis: zahl(textAm(x, 'Price/PriceAmount')),
       gesamt: zahl(textAm(x, 'LineExtensionAmount')),
       ustSatz: zahl(textAm(x, 'Item/ClassifiedTaxCategory/Percent')),
@@ -186,7 +222,10 @@ function ausUbl(w: XmlKnoten): ERechnung {
     faellig: datum(textAm(w, 'DueDate') || zahlung.map((x) => textAm(x, 'PaymentDueDate')).find(Boolean)),
     waehrung: w3,
     netto: zahl(textAm(sum, 'TaxExclusiveAmount')),
-    ust: inWaehrung(steuer.map((x) => kind(x, 'TaxAmount')).filter((x): x is XmlKnoten => !!x), w3),
+    ust: inWaehrung(
+      steuer.map((x) => kind(x, 'TaxAmount')).filter((x): x is XmlKnoten => !!x),
+      w3,
+    ),
     brutto: zahl(textAm(sum, 'TaxInclusiveAmount')),
     zahlbetrag: zahl(textAm(sum, 'PayableAmount')),
     ustSatz: einSatz(steuer.flatMap((x) => kinder(x, 'TaxSubtotal')).map((x) => zahl(textAm(x, 'TaxCategory/Percent')))),

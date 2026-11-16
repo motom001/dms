@@ -20,5 +20,10 @@ export function TypMarke({ typId }: { typId: string | undefined }) {
   const d = useDaten();
   const typ = d.typ(typId);
   if (!typ) return null;
-  return <span className="typmarke"><AnsichtSymbol name={typSymbol(d.sichten, typ.id)} /><span>{typName(typ)}</span></span>;
+  return (
+    <span className="typmarke">
+      <AnsichtSymbol name={typSymbol(d.sichten, typ.id)} />
+      <span>{typName(typ)}</span>
+    </span>
+  );
 }

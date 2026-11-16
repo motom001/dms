@@ -18,8 +18,14 @@ describe('Übergangsausnahmen (#902)', () => {
 
   it('keine Ausnahme ist abgelaufen (Version in package.json)', async () => {
     const { version } = JSON.parse(await readFile(new URL('package.json', WURZEL), 'utf8')) as { version: string };
-    const abgelaufen = UEBERGAENGE.filter((u) => vergleicheVersion(version, u.entfaelltMit) >= 0).map((u) => `${u.was} (entfällt mit ${u.entfaelltMit})`);
-    assert.deepEqual(abgelaufen, [], `Ablago ${version}: diese Ausnahmen entfernen, aus uebergaenge.ts streichen und im Änderungsprotokoll der API nennen`);
+    const abgelaufen = UEBERGAENGE.filter((u) => vergleicheVersion(version, u.entfaelltMit) >= 0).map(
+      (u) => `${u.was} (entfällt mit ${u.entfaelltMit})`,
+    );
+    assert.deepEqual(
+      abgelaufen,
+      [],
+      `Ablago ${version}: diese Ausnahmen entfernen, aus uebergaenge.ts streichen und im Änderungsprotokoll der API nennen`,
+    );
   });
 
   it('jede Fundstelle steht noch im Code', async () => {

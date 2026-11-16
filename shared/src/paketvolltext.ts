@@ -35,7 +35,9 @@ export const INFO_VOLLTEXT_DURCH = t('gemeinsam.paketvolltext.volltext-durch-pak
  */
 export const KATALOG_VOLLTEXT: Array<{ id: string; name: string; typen: string[] }> = [
   {
-    id: 'office_email', name: t('gemeinsam.paketvolltext.office-und-e-mail'), typen: [
+    id: 'office_email',
+    name: t('gemeinsam.paketvolltext.office-und-e-mail'),
+    typen: [
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
       'application/vnd.ms-word.document.macroenabled.12',
@@ -45,8 +47,14 @@ export const KATALOG_VOLLTEXT: Array<{ id: string; name: string; typen: string[]
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
       'application/vnd.ms-powerpoint.presentation.macroenabled.12',
-      'application/vnd.oasis.opendocument.text', 'application/vnd.oasis.opendocument.spreadsheet', 'application/vnd.oasis.opendocument.presentation',
-      'message/rfc822', 'application/vnd.ms-outlook', 'application/rtf', 'text/rtf', 'text/plain',
+      'application/vnd.oasis.opendocument.text',
+      'application/vnd.oasis.opendocument.spreadsheet',
+      'application/vnd.oasis.opendocument.presentation',
+      'message/rfc822',
+      'application/vnd.ms-outlook',
+      'application/rtf',
+      'text/rtf',
+      'text/plain',
     ],
   },
 ];

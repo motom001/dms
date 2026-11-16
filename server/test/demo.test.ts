@@ -13,7 +13,17 @@ import { Zufall } from '../src/zufall';
 
 const rastern = await kannRastern();
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
-const inhalt = { titel: 'Rechnung R-2025-4711', typ: 'Rechnung', angaben: [['Rechnungsnummer', 'R-2025-4711'], ['Vertragspartner', 'Müller Heizungsbau GmbH']] as Array<[string, string]>, partner: 'Müller Heizungsbau GmbH', betrag: 99.5, datum: '01.02.2025' };
+const inhalt = {
+  titel: 'Rechnung R-2025-4711',
+  typ: 'Rechnung',
+  angaben: [
+    ['Rechnungsnummer', 'R-2025-4711'],
+    ['Vertragspartner', 'Müller Heizungsbau GmbH'],
+  ] as Array<[string, string]>,
+  partner: 'Müller Heizungsbau GmbH',
+  betrag: 99.5,
+  datum: '01.02.2025',
+};
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien());
@@ -34,7 +44,8 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
   });
 
   it('Startwert: gleiche Folge, gleiche Datei', async () => {
-    const a = new Zufall('x'), b = new Zufall('x');
+    const a = new Zufall('x'),
+      b = new Zufall('x');
     assert.deepEqual([a.zahl(), a.int(100), a.bytes(16)], [b.zahl(), b.int(100), b.bytes(16)]);
     const d1 = await erzeugeDokument(new Zufall('s'), 'brief', inhalt, 'k1', false);
     const d2 = await erzeugeDokument(new Zufall('s'), 'brief', inhalt, 'k1', false);
@@ -70,7 +81,12 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
   it('erzeugt Mappen mit Dokumenten, reiht Volltext ein und entfernt alles in Paketen', async () => {
     const d = await aufbau();
     const stände: Array<[number, number]> = [];
-    const r = await erzeugeDemo(d, { anzahl: 60, startwert: 'test', dokumente: { anteil: 100, von: 1, bis: 2, mischung: { brief: 80, mehrseitig: 20 }, duplikate: 20 } }, null, (f, g) => stände.push([f, g]));
+    const r = await erzeugeDemo(
+      d,
+      { anzahl: 60, startwert: 'test', dokumente: { anteil: 100, von: 1, bis: 2, mischung: { brief: 80, mehrseitig: 20 }, duplikate: 20 } },
+      null,
+      (f, g) => stände.push([f, g]),
+    );
     assert.equal(r.startwert, 'test');
     assert.ok(r.dokumente && r.dokumente.anzahl > 0, 'Dokumente erzeugt');
     assert.ok(r.dokumente!.bytes > 0 && r.dokumente!.seiten >= r.dokumente!.anzahl - r.dokumente!.duplikate);
@@ -90,10 +106,25 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
 
   it('weniger als bestellt: übersprungen mit Grund je Mappentyp, sofort nach dem Schritt Mappen und schon vorab (#711)', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien());
-    await d.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort', pflicht: true }] });
+    await d.mappentypen.legeTypAn({
+      name: 'Zugang',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+        { key: 'kennwort', label: 'Kennwort', typ: 'passwort', pflicht: true },
+      ],
+    });
     const zugang = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Zugang')!;
-    await d.mappentypen.legeTypAn({ name: 'Konto', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'zugang', label: 'Zugang', typ: 'referenz', zielTyp: zugang.id, pflicht: true }] });
-    await d.mappentypen.legeTypAn({ name: 'Platz', felder: [{ key: 'nr', label: 'Platznummer', typ: 'zahl', min: 1, max: 3, pflicht: true, eindeutig: true }] });
+    await d.mappentypen.legeTypAn({
+      name: 'Konto',
+      felder: [
+        { key: 'nr', label: 'Nr', typ: 'text', pflicht: true },
+        { key: 'zugang', label: 'Zugang', typ: 'referenz', zielTyp: zugang.id, pflicht: true },
+      ],
+    });
+    await d.mappentypen.legeTypAn({
+      name: 'Platz',
+      felder: [{ key: 'nr', label: 'Platznummer', typ: 'zahl', min: 1, max: 3, pflicht: true, eindeutig: true }],
+    });
     await d.mappentypen.legeTypAn({ name: 'Notiz', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
     // Vorab: Passwort und Pflicht-Verweis auf einen Typ, der selbst nicht entsteht; eindeutige Werte zeigen sich erst beim Erzeugen.
     const s = await schaetzeDemo(d, { anzahl: 40 });
@@ -105,12 +136,19 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
     const r = await erzeugeDemo(d, { anzahl: 40 }, null, (f, g, p, x) => meldeFortschritt(a, f, g, p, x));
     assert.deepEqual(r.uebersprungen.map((x) => x.typ).sort(), ['Konto', 'Platz', 'Zugang']);
     assert.deepEqual([r.erzeugt.Zugang, r.erzeugt.Konto, r.erzeugt.Platz], [0, 0, 3], 'Platz: nur drei Nummern möglich');
-    assert.equal(r.uebersprungen.reduce((n, x) => n + x.anzahl, 0), 40 - r.gesamt);
+    assert.equal(
+      r.uebersprungen.reduce((n, x) => n + x.anzahl, 0),
+      40 - r.gesamt,
+    );
     assert.match(r.uebersprungen.find((x) => x.typ === 'Platz')!.grund, /„Platznummer“.*eindeutig/);
     assert.equal(a.phasen[0].uebersprungen, 40 - r.gesamt);
     assert.equal(a.phasen[0].gruende?.length, 3);
     a.phasen[0].status = 'fertig';
-    assert.equal(phasenText(a.phasen[0]), `Mappen anlegen: ${r.gesamt} von 40 – ${40 - r.gesamt} übersprungen`, 'kein Haken bei weniger als bestellt');
+    assert.equal(
+      phasenText(a.phasen[0]),
+      `Mappen anlegen: ${r.gesamt} von 40 – ${40 - r.gesamt} übersprungen`,
+      'kein Haken bei weniger als bestellt',
+    );
   });
 
   it('schätzt vorab und bricht bei zu wenig Platz gar nicht erst an', async () => {
@@ -120,7 +158,10 @@ describe('Demo-Daten für Wachstumstests (#248)', () => {
     const s = await schaetzeDemo(d, o, knapp);
     assert.ok(s.mappenMitRegister > 0 && s.dokumente!.dokumente > 0 && s.dokumente!.bytes > 0);
     assert.equal(s.reicht, false);
-    await assert.rejects(erzeugeDemo(d, o, null, () => {}, knapp), status(507));
+    await assert.rejects(
+      erzeugeDemo(d, o, null, () => {}, knapp),
+      status(507),
+    );
     assert.equal((await d.mappen.listeMappen()).filter((m) => m.demo).length, 0, 'nichts angelegt');
     const e = schaetze(100, { anteil: 100, von: 1, bis: 1, mischung: { ...MISCHUNGEN.leicht }, duplikate: 0 });
     assert.equal(e.dokumente, 100);

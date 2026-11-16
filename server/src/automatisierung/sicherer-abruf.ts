@@ -33,8 +33,20 @@ NIE.addSubnet('ff00::', 8, 'ipv6');
 
 /** Nur bei Heimnetz-Zielen: Loopback, private Netze, Link-Local, CGNAT, Benchmark- und Dokumentationsnetze. */
 const HEIMNETZ = new BlockList();
-for (const [n, l] of [['127.0.0.0', 8], ['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16], ['169.254.0.0', 16], ['100.64.0.0', 10],
-  ['192.0.0.0', 24], ['192.0.2.0', 24], ['198.18.0.0', 15], ['198.51.100.0', 24], ['203.0.113.0', 24]] as const) HEIMNETZ.addSubnet(n, l, 'ipv4');
+for (const [n, l] of [
+  ['127.0.0.0', 8],
+  ['10.0.0.0', 8],
+  ['172.16.0.0', 12],
+  ['192.168.0.0', 16],
+  ['169.254.0.0', 16],
+  ['100.64.0.0', 10],
+  ['192.0.0.0', 24],
+  ['192.0.2.0', 24],
+  ['198.18.0.0', 15],
+  ['198.51.100.0', 24],
+  ['203.0.113.0', 24],
+] as const)
+  HEIMNETZ.addSubnet(n, l, 'ipv4');
 HEIMNETZ.addAddress('::1', 'ipv6');
 HEIMNETZ.addSubnet('fc00::', 7, 'ipv6');
 HEIMNETZ.addSubnet('fe80::', 10, 'ipv6');
@@ -46,7 +58,11 @@ export function alsIpv4(ip: string): string {
   const m = /^(?:::ffff:|64:ff9b::)(?:0{1,4}:)?(\d+\.\d+\.\d+\.\d+)$/.exec(a);
   if (m) return m[1];
   const h = /^(?:::ffff:|64:ff9b::)([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(a);
-  if (h) { const x = parseInt(h[1], 16), y = parseInt(h[2], 16); return `${x >> 8}.${x & 255}.${y >> 8}.${y & 255}`; }
+  if (h) {
+    const x = parseInt(h[1], 16),
+      y = parseInt(h[2], 16);
+    return `${x >> 8}.${x & 255}.${y >> 8}.${y & 255}`;
+  }
   return a;
 }
 
@@ -66,77 +82,152 @@ export function adressArt(ip: string): AdressArt {
 }
 
 /** Darf Ablago diese Adresse ansprechen? Öffentlich immer, Heimnetz nur bei einem Heimnetz-Ziel, „nie“ nie. */
-export const adresseErlaubt = (ip: string, heimnetz: boolean) => { const art = adressArt(ip); return art === 'oeffentlich' || (art === 'heimnetz' && heimnetz); };
+export const adresseErlaubt = (ip: string, heimnetz: boolean) => {
+  const art = adressArt(ip);
+  return art === 'oeffentlich' || (art === 'heimnetz' && heimnetz);
+};
 
 /** Fehler „Adresse gesperrt“ – dauerhaft, nie wiederholt. */
-export class AdresseGesperrt extends Error { constructor(host: string) { super(`Adresse von ${host} nicht erlaubt (SSRF-Schutz)`); } }
+export class AdresseGesperrt extends Error {
+  constructor(host: string) {
+    super(`Adresse von ${host} nicht erlaubt (SSRF-Schutz)`);
+  }
+}
 
 type Aufloesen = (host: string, cb: (fehler: Error | null, adressen: LookupAddress[]) => void) => void;
 const dnsAlle: Aufloesen = (host, cb) => dnsLookup(host, { all: true, verbatim: true }, (e, a) => cb(e, a ?? []));
 
 /** `lookup` für die Verbindung: auflösen, alle Adressen prüfen, nur erlaubte weitergeben. */
 function pruefendesLookup(heimnetz: boolean, aufloesen: Aufloesen) {
-  return (host: string, opt: { all?: boolean; family?: number }, cb: (e: Error | null, a: string | LookupAddress[], f?: number) => void) => {
+  return (
+    host: string,
+    opt: { all?: boolean; family?: number },
+    cb: (e: Error | null, a: string | LookupAddress[], f?: number) => void,
+  ) => {
     aufloesen(host, (e, adressen) => {
-      if (e) { cb(e, ''); return; }
+      if (e) {
+        cb(e, '');
+        return;
+      }
       const passend = adressen.filter((x) => !opt.family || x.family === opt.family);
-      if (!passend.length) { cb(new Error(`${host}: keine Adresse`), ''); return; }
-      if (passend.some((x) => !adresseErlaubt(x.address, heimnetz))) { cb(new AdresseGesperrt(host), ''); return; }
+      if (!passend.length) {
+        cb(new Error(`${host}: keine Adresse`), '');
+        return;
+      }
+      if (passend.some((x) => !adresseErlaubt(x.address, heimnetz))) {
+        cb(new AdresseGesperrt(host), '');
+        return;
+      }
       if (opt.all) cb(null, passend);
       else cb(null, passend[0].address, passend[0].family);
     });
   };
 }
 
-export interface AbrufAuftrag { adresse: string; methode: 'GET' | 'POST'; koepfe: Record<string, string>; rumpf?: Buffer; heimnetz: boolean }
+export interface AbrufAuftrag {
+  adresse: string;
+  methode: 'GET' | 'POST';
+  koepfe: Record<string, string>;
+  rumpf?: Buffer;
+  heimnetz: boolean;
+}
 /**
  * Ergebnis: `ok` bei 2xx; `dauerhaft` = nicht wiederholen (Weiterleitung, 4xx außer 408/429, gesperrte Adresse,
  * ungültige Adresse) – sonst (Netz, Zeit, 408, 429, 5xx) später noch einmal.
  */
-export interface AbrufErgebnis { ok: boolean; status: number | null; fehler: string | null; dauerhaft: boolean; ms: number }
+export interface AbrufErgebnis {
+  ok: boolean;
+  status: number | null;
+  fehler: string | null;
+  dauerhaft: boolean;
+  ms: number;
+}
 
-export interface AbrufOptionen { zeitlimitMs?: number; antwortMax?: number; aufloesen?: Aufloesen }
+export interface AbrufOptionen {
+  zeitlimitMs?: number;
+  antwortMax?: number;
+  aufloesen?: Aufloesen;
+}
 
 export type SichererAbruf = (a: AbrufAuftrag, o?: AbrufOptionen) => Promise<AbrufErgebnis>;
 
-export const sichererAbruf: SichererAbruf = (a, o = {}) => new Promise((fertig) => {
-  const start = Date.now();
-  const ende = (x: Omit<AbrufErgebnis, 'ms'>) => fertig({ ...x, ms: Date.now() - start });
-  let u: URL;
-  try { u = new URL(a.adresse); } catch { ende({ ok: false, status: null, fehler: 'Adresse ungültig', dauerhaft: true }); return; }
-  if (u.username || u.password || (u.protocol !== 'https:' && !(u.protocol === 'http:' && a.heimnetz))) { ende({ ok: false, status: null, fehler: 'Nur https (http nur bei Heimnetz-Zielen), ohne Zugangsdaten', dauerhaft: true }); return; }
-  const host = u.hostname.replace(/^\[|\]$/g, '');
-  // IP-Adresse direkt in der Adresse: Node ruft dann kein lookup – also hier prüfen.
-  if (isIP(host) && !adresseErlaubt(host, a.heimnetz)) { ende({ ok: false, status: null, fehler: new AdresseGesperrt(host).message, dauerhaft: true }); return; }
-  const max = o.antwortMax ?? AUSSEN_ANTWORT_MAX;
-  const modul = u.protocol === 'https:' ? https : http;
-  let erledigt = false;
-  const req = modul.request(u, {
-    method: a.methode, agent: false,
-    headers: { 'user-agent': 'Ablago-Automatisierung', accept: '*/*', ...a.koepfe, ...(a.rumpf ? { 'content-length': String(a.rumpf.length) } : {}) },
-    lookup: pruefendesLookup(a.heimnetz, o.aufloesen ?? dnsAlle) as never,
-  }, (res) => {
-    const status = res.statusCode ?? 0;
-    let gelesen = 0;
-    const abschluss = () => {
+export const sichererAbruf: SichererAbruf = (a, o = {}) =>
+  new Promise((fertig) => {
+    const start = Date.now();
+    const ende = (x: Omit<AbrufErgebnis, 'ms'>) => fertig({ ...x, ms: Date.now() - start });
+    let u: URL;
+    try {
+      u = new URL(a.adresse);
+    } catch {
+      ende({ ok: false, status: null, fehler: 'Adresse ungültig', dauerhaft: true });
+      return;
+    }
+    if (u.username || u.password || (u.protocol !== 'https:' && !(u.protocol === 'http:' && a.heimnetz))) {
+      ende({ ok: false, status: null, fehler: 'Nur https (http nur bei Heimnetz-Zielen), ohne Zugangsdaten', dauerhaft: true });
+      return;
+    }
+    const host = u.hostname.replace(/^\[|\]$/g, '');
+    // IP-Adresse direkt in der Adresse: Node ruft dann kein lookup – also hier prüfen.
+    if (isIP(host) && !adresseErlaubt(host, a.heimnetz)) {
+      ende({ ok: false, status: null, fehler: new AdresseGesperrt(host).message, dauerhaft: true });
+      return;
+    }
+    const max = o.antwortMax ?? AUSSEN_ANTWORT_MAX;
+    const modul = u.protocol === 'https:' ? https : http;
+    let erledigt = false;
+    const req = modul.request(
+      u,
+      {
+        method: a.methode,
+        agent: false,
+        headers: {
+          'user-agent': 'Ablago-Automatisierung',
+          accept: '*/*',
+          ...a.koepfe,
+          ...(a.rumpf ? { 'content-length': String(a.rumpf.length) } : {}),
+        },
+        lookup: pruefendesLookup(a.heimnetz, o.aufloesen ?? dnsAlle) as never,
+      },
+      (res) => {
+        const status = res.statusCode ?? 0;
+        let gelesen = 0;
+        const abschluss = () => {
+          if (erledigt) return;
+          erledigt = true;
+          clearTimeout(uhr);
+          if (status >= 200 && status < 300) ende({ ok: true, status, fehler: null, dauerhaft: false });
+          else if (status >= 300 && status < 400)
+            ende({ ok: false, status, fehler: 'Weiterleitung – Ablago folgt keinen Weiterleitungen', dauerhaft: true });
+          else ende({ ok: false, status, fehler: `HTTP ${status}`, dauerhaft: status !== 408 && status !== 429 && status < 500 });
+        };
+        // Antwort lesen und verwerfen – höchstens `max` Bytes, dann abbrechen (der Status zählt).
+        res.on('data', (s: Buffer) => {
+          gelesen += s.length;
+          if (gelesen > max) {
+            res.destroy();
+            abschluss();
+          }
+        });
+        res.on('end', abschluss);
+        res.on('close', abschluss);
+        res.on('error', abschluss);
+      },
+    );
+    const uhr = setTimeout(
+      () => req.destroy(new Error(`Keine Antwort in ${Math.round((o.zeitlimitMs ?? AUSSEN_GRENZEN.zeitlimitS * 1000) / 1000)} Sekunden`)),
+      o.zeitlimitMs ?? AUSSEN_GRENZEN.zeitlimitS * 1000,
+    );
+    uhr.unref?.();
+    req.on('error', (e) => {
       if (erledigt) return;
-      erledigt = true; clearTimeout(uhr);
-      if (status >= 200 && status < 300) ende({ ok: true, status, fehler: null, dauerhaft: false });
-      else if (status >= 300 && status < 400) ende({ ok: false, status, fehler: 'Weiterleitung – Ablago folgt keinen Weiterleitungen', dauerhaft: true });
-      else ende({ ok: false, status, fehler: `HTTP ${status}`, dauerhaft: status !== 408 && status !== 429 && status < 500 });
-    };
-    // Antwort lesen und verwerfen – höchstens `max` Bytes, dann abbrechen (der Status zählt).
-    res.on('data', (s: Buffer) => { gelesen += s.length; if (gelesen > max) { res.destroy(); abschluss(); } });
-    res.on('end', abschluss);
-    res.on('close', abschluss);
-    res.on('error', abschluss);
+      erledigt = true;
+      clearTimeout(uhr);
+      ende({
+        ok: false,
+        status: null,
+        fehler: e.message.slice(0, 300),
+        dauerhaft: e instanceof AdresseGesperrt || e.message.includes('SSRF-Schutz'),
+      });
+    });
+    req.end(a.rumpf);
   });
-  const uhr = setTimeout(() => req.destroy(new Error(`Keine Antwort in ${Math.round((o.zeitlimitMs ?? AUSSEN_GRENZEN.zeitlimitS * 1000) / 1000)} Sekunden`)), o.zeitlimitMs ?? AUSSEN_GRENZEN.zeitlimitS * 1000);
-  uhr.unref?.();
-  req.on('error', (e) => {
-    if (erledigt) return;
-    erledigt = true; clearTimeout(uhr);
-    ende({ ok: false, status: null, fehler: e.message.slice(0, 300), dauerhaft: e instanceof AdresseGesperrt || e.message.includes('SSRF-Schutz') });
-  });
-  req.end(a.rumpf);
-});

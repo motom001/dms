@@ -22,7 +22,10 @@ async function repo(pg: boolean): Promise<{ r: Repo; sql?: import('postgres').Sq
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
   const { pgRepo } = await import('../src/repo-pg');
-  const a = { ...ausUrl(process.env.TEST_DATABASE_URL)!, datenbank: `dms_unscharf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
+  const a = {
+    ...ausUrl(process.env.TEST_DATABASE_URL)!,
+    datenbank: `dms_unscharf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  };
   await legeDatenbankAn(a);
   const sql = verbinde(alsUrl(a));
   offen.push(async () => {
@@ -61,238 +64,296 @@ describe('Unscharfe Suche (#356): Hilfsfunktionen', () => {
 });
 
 function faelle(pg: boolean) {
-  describe(`Unscharfe Suche (#356)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
-    async function aufbau() {
-      const { r, sql } = await repo(pg);
-      const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
-      const typ = await d.mappentypen.legeTypAn({ name: 'Unterlage', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'von', label: 'Von', typ: 'text' }] });
-      const lese = await d.mappentypen.legeTypAn({ name: 'Gesperrt', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }] });
-      const mappe = async (titel: string, text?: string, von?: string, t = typ) => {
-        const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
-        if (text !== undefined) {
-          const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' }, Buffer.from(titel), null);
-          await r.ocrSetze(dokument.id, { stand: 'fertig', text });
-        }
-        return m;
-      };
-      const suche = async (s: string, volltext = true, sicht = `typ:${typ.id}`) => {
-        // Neue Wörter kommen über den Eingang ins Wörterverzeichnis (#575); im Betrieb alle paar Sekunden.
-        await d.suche.woerterEinarbeiten();
-        const x = await d.sichten.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['sichten']['seite']>> & { unscharf?: { statt: string; vorschlag: string | null; treffer?: number } };
-        return { titel: x.mappen.map((m) => m.titel).sort(), unscharf: x.unscharf ?? null };
-      };
-      return { d, r, sql, typ, lese, mappe, suche };
-    }
+  describe(
+    `Unscharfe Suche (#356)${pg ? ' – PostgreSQL' : ''}`,
+    { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
+    () => {
+      async function aufbau() {
+        const { r, sql } = await repo(pg);
+        const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
+        const typ = await d.mappentypen.legeTypAn({
+          name: 'Unterlage',
+          titelVorlage: '{titel}',
+          felder: [
+            { key: 'titel', label: 'Titel', typ: 'text', pflicht: true },
+            { key: 'von', label: 'Von', typ: 'text' },
+          ],
+        });
+        const lese = await d.mappentypen.legeTypAn({
+          name: 'Gesperrt',
+          titelVorlage: '{titel}',
+          felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }],
+        });
+        const mappe = async (titel: string, text?: string, von?: string, t = typ) => {
+          const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { titel, ...(von ? { von } : {}) } });
+          if (text !== undefined) {
+            const { dokument } = await d.dokumente.ladeHoch(
+              m.id,
+              { register: 'dokumente', name: `${titel}.txt`, typ: 'text/plain' },
+              Buffer.from(titel),
+              null,
+            );
+            await r.ocrSetze(dokument.id, { stand: 'fertig', text });
+          }
+          return m;
+        };
+        const suche = async (s: string, volltext = true, sicht = `typ:${typ.id}`) => {
+          // Neue Wörter kommen über den Eingang ins Wörterverzeichnis (#575); im Betrieb alle paar Sekunden.
+          await d.suche.woerterEinarbeiten();
+          const x = (await d.sichten.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined })) as Awaited<
+            ReturnType<Dienst['sichten']['seite']>
+          > & { unscharf?: { statt: string; vorschlag: string | null; treffer?: number } };
+          return { titel: x.mappen.map((m) => m.titel).sort(), unscharf: x.unscharf ?? null };
+        };
+        return { d, r, sql, typ, lese, mappe, suche };
+      }
 
-    it('Umlaute, ß und Bindestriche in Titel, Werten und Volltext', async () => {
-      const { mappe, suche } = await aufbau();
-      await mappe('Brief', 'Sehr geehrter Herr Özdemir, die Gebühr für die Straße wird angepasst.');
-      await mappe('Kfz-Versicherung 2026', 'Beitrag');
-      await mappe('Police', 'Ihre Kfzversicherung beginnt am 1. März.');
-      await mappe('Vermerk', undefined, 'Herr Özdemir');
-      assert.deepEqual((await suche('Ozdemir')).titel, ['Brief', 'Vermerk']);
-      assert.deepEqual((await suche('Strasse')).titel, ['Brief']);
-      assert.deepEqual((await suche('Gebuhr')).titel, ['Brief']);
-      assert.deepEqual((await suche('Kfzversicherung')).titel, ['Kfz-Versicherung 2026', 'Police']);
-      assert.deepEqual((await suche('Kfz-Versicherung')).titel, ['Kfz-Versicherung 2026', 'Police']);
-      // Ohne Volltext nur Titel und Werte
-      assert.deepEqual((await suche('Kfzversicherung', false)).titel, ['Kfz-Versicherung 2026']);
-    });
+      it('Umlaute, ß und Bindestriche in Titel, Werten und Volltext', async () => {
+        const { mappe, suche } = await aufbau();
+        await mappe('Brief', 'Sehr geehrter Herr Özdemir, die Gebühr für die Straße wird angepasst.');
+        await mappe('Kfz-Versicherung 2026', 'Beitrag');
+        await mappe('Police', 'Ihre Kfzversicherung beginnt am 1. März.');
+        await mappe('Vermerk', undefined, 'Herr Özdemir');
+        assert.deepEqual((await suche('Ozdemir')).titel, ['Brief', 'Vermerk']);
+        assert.deepEqual((await suche('Strasse')).titel, ['Brief']);
+        assert.deepEqual((await suche('Gebuhr')).titel, ['Brief']);
+        assert.deepEqual((await suche('Kfzversicherung')).titel, ['Kfz-Versicherung 2026', 'Police']);
+        assert.deepEqual((await suche('Kfz-Versicherung')).titel, ['Kfz-Versicherung 2026', 'Police']);
+        // Ohne Volltext nur Titel und Werte
+        assert.deepEqual((await suche('Kfzversicherung', false)).titel, ['Kfz-Versicherung 2026']);
+      });
 
-    it('gleichbedeutende Wörter aus der Werkbank, nicht bei Suchsyntax', async () => {
-      const { d, mappe, suche } = await aufbau();
-      await mappe('Auto-Werkstatt', 'Inspektion');
-      await mappe('Steuer', 'Bescheid über die PKW-Steuer');
-      await mappe('Garten', 'Rasen');
-      const s = await d.suche.legeSynonymAn({ woerter: 'Kfz, Auto, PKW' }, ICH.email);
-      assert.equal(s.synonyme.length, 1);
-      await assert.rejects(d.suche.legeSynonymAn({ woerter: 'Kfz' }, ICH.email), /mindestens zwei/);
-      assert.deepEqual((await suche('Kfz')).titel, ['Auto-Werkstatt', 'Steuer']);
-      assert.deepEqual((await suche('"Kfz"')).titel, []);
-      const id = s.synonyme[0].id;
-      await d.suche.aendereSynonym(id, { woerter: 'Kfz, Auto' }, ICH.email);
-      assert.deepEqual((await suche('Kfz')).titel, ['Auto-Werkstatt']);
-      await d.suche.loescheSynonym(id, ICH.email);
-      assert.deepEqual((await suche('Kfz')).titel, []);
-    });
+      it('gleichbedeutende Wörter aus der Werkbank, nicht bei Suchsyntax', async () => {
+        const { d, mappe, suche } = await aufbau();
+        await mappe('Auto-Werkstatt', 'Inspektion');
+        await mappe('Steuer', 'Bescheid über die PKW-Steuer');
+        await mappe('Garten', 'Rasen');
+        const s = await d.suche.legeSynonymAn({ woerter: 'Kfz, Auto, PKW' }, ICH.email);
+        assert.equal(s.synonyme.length, 1);
+        await assert.rejects(d.suche.legeSynonymAn({ woerter: 'Kfz' }, ICH.email), /mindestens zwei/);
+        assert.deepEqual((await suche('Kfz')).titel, ['Auto-Werkstatt', 'Steuer']);
+        assert.deepEqual((await suche('"Kfz"')).titel, []);
+        const id = s.synonyme[0].id;
+        await d.suche.aendereSynonym(id, { woerter: 'Kfz, Auto' }, ICH.email);
+        assert.deepEqual((await suche('Kfz')).titel, ['Auto-Werkstatt']);
+        await d.suche.loescheSynonym(id, ICH.email);
+        assert.deepEqual((await suche('Kfz')).titel, []);
+      });
 
-    it('#992: Reihenfolge bleibt, neue Id, Konfliktschutz beim Speichern (#917)', async () => {
-      const { d } = await aufbau();
-      const s = await d.suche.legeSynonymAn({ woerter: ['Rechnung', 'Beleg', 'Faktura'] }, ICH.email);
-      const g = s.synonyme.find((x) => x.id === s.id)!;
-      assert.deepEqual(g.woerter, ['Rechnung', 'Beleg', 'Faktura']);
-      assert.ok(g.geaendert);
-      // Ohne stand wie bisher: wer zuletzt speichert, gilt.
-      const a = (await d.suche.aendereSynonym(g.id, { woerter: ['Faktura', 'Rechnung', 'Beleg'] }, ICH.email)).synonyme.find((x) => x.id === g.id)!;
-      assert.deepEqual(a.woerter, ['Faktura', 'Rechnung', 'Beleg']);
-      assert.ok(a.geaendert > g.geaendert);
-      // Mit dem alten Stand: 409, nichts überschrieben, der neue Stand steht in der Antwort.
-      await assert.rejects(d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: g.geaendert }, ICH.email),
-        (e) => { const f = e as { status: number; details?: { konflikt?: boolean; stand?: string } }; return f.status === 409 && f.details?.konflikt === true && f.details.stand === a.geaendert; });
-      assert.deepEqual((await d.suche.sucheStand()).synonyme.find((x) => x.id === g.id)!.woerter, ['Faktura', 'Rechnung', 'Beleg']);
-      // Mit dem aktuellen Stand geht es.
-      const b = await d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: a.geaendert }, ICH.email);
-      assert.deepEqual(b.synonyme.find((x) => x.id === g.id)!.woerter, ['Rechnung', 'Quittung']);
-      await assert.rejects(d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: 'gestern' }, ICH.email), (e) => (e as { status: number }).status === 422);
-      await assert.rejects(d.suche.aendereSynonym('00000000-0000-4000-8000-0000000000ff', { woerter: ['A1', 'B1'], stand: a.geaendert }, ICH.email), (e) => (e as { status: number }).status === 404);
-    });
+      it('#992: Reihenfolge bleibt, neue Id, Konfliktschutz beim Speichern (#917)', async () => {
+        const { d } = await aufbau();
+        const s = await d.suche.legeSynonymAn({ woerter: ['Rechnung', 'Beleg', 'Faktura'] }, ICH.email);
+        const g = s.synonyme.find((x) => x.id === s.id)!;
+        assert.deepEqual(g.woerter, ['Rechnung', 'Beleg', 'Faktura']);
+        assert.ok(g.geaendert);
+        // Ohne stand wie bisher: wer zuletzt speichert, gilt.
+        const a = (await d.suche.aendereSynonym(g.id, { woerter: ['Faktura', 'Rechnung', 'Beleg'] }, ICH.email)).synonyme.find(
+          (x) => x.id === g.id,
+        )!;
+        assert.deepEqual(a.woerter, ['Faktura', 'Rechnung', 'Beleg']);
+        assert.ok(a.geaendert > g.geaendert);
+        // Mit dem alten Stand: 409, nichts überschrieben, der neue Stand steht in der Antwort.
+        await assert.rejects(d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: g.geaendert }, ICH.email), (e) => {
+          const f = e as { status: number; details?: { konflikt?: boolean; stand?: string } };
+          return f.status === 409 && f.details?.konflikt === true && f.details.stand === a.geaendert;
+        });
+        assert.deepEqual((await d.suche.sucheStand()).synonyme.find((x) => x.id === g.id)!.woerter, ['Faktura', 'Rechnung', 'Beleg']);
+        // Mit dem aktuellen Stand geht es.
+        const b = await d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: a.geaendert }, ICH.email);
+        assert.deepEqual(b.synonyme.find((x) => x.id === g.id)!.woerter, ['Rechnung', 'Quittung']);
+        await assert.rejects(
+          d.suche.aendereSynonym(g.id, { woerter: ['Rechnung', 'Quittung'], stand: 'gestern' }, ICH.email),
+          (e) => (e as { status: number }).status === 422,
+        );
+        await assert.rejects(
+          d.suche.aendereSynonym('00000000-0000-4000-8000-0000000000ff', { woerter: ['A1', 'B1'], stand: a.geaendert }, ICH.email),
+          (e) => (e as { status: number }).status === 404,
+        );
+      });
 
-    it('Tippfehler: ohne genauen Treffer ähnliche Schreibweisen und „Meintest du …?“; genaue gehen vor', async () => {
-      const { d, mappe, suche } = await aufbau();
-      await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
-      await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
-      await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
-      // Genau geschrieben: nur genaue Treffer, kein Hinweis
-      let x = await suche('Waschmaschine');
-      assert.equal(x.unscharf, null);
-      assert.deepEqual(x.titel, ['Garantieschein', 'Rechnung Haushaltsgerät']);
-      // Tippfehler, den es genau so gibt: genauer Treffer geht vor
-      x = await suche('Waschmaschiene');
-      assert.deepEqual(x.titel, ['Notiz']);
-      assert.equal(x.unscharf, null);
-      // Tippfehler ohne genauen Treffer
-      x = await suche('Waschmashine');
-      assert.deepEqual(x.titel, ['Garantieschein', 'Notiz', 'Rechnung Haushaltsgerät']);
-      assert.equal(x.unscharf?.statt, 'Waschmashine');
-      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
-      // Abschalten in der Werkbank
-      await d.suche.setzeSuche({ unscharf: false }, ICH.email);
-      assert.deepEqual((await suche('Waschmashine')).titel, []);
-      assert.equal((await d.suche.sucheStand()).unscharf, false);
-    });
+      it('Tippfehler: ohne genauen Treffer ähnliche Schreibweisen und „Meintest du …?“; genaue gehen vor', async () => {
+        const { d, mappe, suche } = await aufbau();
+        await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
+        await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
+        await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
+        // Genau geschrieben: nur genaue Treffer, kein Hinweis
+        let x = await suche('Waschmaschine');
+        assert.equal(x.unscharf, null);
+        assert.deepEqual(x.titel, ['Garantieschein', 'Rechnung Haushaltsgerät']);
+        // Tippfehler, den es genau so gibt: genauer Treffer geht vor
+        x = await suche('Waschmaschiene');
+        assert.deepEqual(x.titel, ['Notiz']);
+        assert.equal(x.unscharf, null);
+        // Tippfehler ohne genauen Treffer
+        x = await suche('Waschmashine');
+        assert.deepEqual(x.titel, ['Garantieschein', 'Notiz', 'Rechnung Haushaltsgerät']);
+        assert.equal(x.unscharf?.statt, 'Waschmashine');
+        assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+        // Abschalten in der Werkbank
+        await d.suche.setzeSuche({ unscharf: false }, ICH.email);
+        assert.deepEqual((await suche('Waschmashine')).titel, []);
+        assert.equal((await d.suche.sucheStand()).unscharf, false);
+      });
 
-    it('#1191: „Meintest du …?“ auch bei Treffern, wenn eine ähnliche Schreibweise mehr findet', async () => {
-      const { d, mappe, suche } = await aufbau();
-      await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
-      await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
-      await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
-      // Vorgabe: nur, wenn nichts gefunden wurde.
-      assert.equal((await d.suche.sucheStand()).meintest, 'ohne-treffer');
-      assert.equal((await suche('Waschmaschiene')).unscharf, null);
-      await d.suche.setzeSuche({ meintest: 'mehr-treffer' }, ICH.email);
-      let stand = await d.suche.sucheStand();
-      assert.deepEqual([stand.unscharf, stand.meintest], [true, 'mehr-treffer'], 'nur die Wahl geändert, Tippfehler-Suche bleibt an');
-      // Genaue Treffer bleiben, dazu der Vorschlag mit seiner Trefferzahl.
-      let x = await suche('Waschmaschiene');
-      assert.deepEqual(x.titel, ['Notiz']);
-      assert.equal(x.unscharf?.statt, 'Waschmaschiene');
-      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
-      assert.equal(x.unscharf?.treffer, 2);
-      // Findet die ähnliche Schreibweise nicht mehr: kein Vorschlag.
-      x = await suche('Waschmaschine');
-      assert.deepEqual(x.titel, ['Garantieschein', 'Rechnung Haushaltsgerät']);
-      assert.equal(x.unscharf, null);
-      // Ohne Tippfehler-Suche gibt es auch diesen Vorschlag nicht; die Wahl bleibt gespeichert.
-      await d.suche.setzeSuche({ unscharf: false }, ICH.email);
-      stand = await d.suche.sucheStand();
-      assert.deepEqual([stand.unscharf, stand.meintest], [false, 'mehr-treffer']);
-      assert.equal((await suche('Waschmaschiene')).unscharf, null);
-      // Ungültige Angaben.
-      await assert.rejects(d.suche.setzeSuche({ meintest: 'immer' }, ICH.email), (e) => (e as { status: number }).status === 422);
-      await assert.rejects(d.suche.setzeSuche({}, ICH.email), (e) => (e as { status: number }).status === 422);
-      // Zurück zur Vorgabe.
-      stand = await d.suche.setzeSuche({ unscharf: true, meintest: 'ohne-treffer' }, ICH.email);
-      assert.deepEqual([stand.unscharf, stand.meintest], [true, 'ohne-treffer']);
-    });
+      it('#1191: „Meintest du …?“ auch bei Treffern, wenn eine ähnliche Schreibweise mehr findet', async () => {
+        const { d, mappe, suche } = await aufbau();
+        await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
+        await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
+        await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
+        // Vorgabe: nur, wenn nichts gefunden wurde.
+        assert.equal((await d.suche.sucheStand()).meintest, 'ohne-treffer');
+        assert.equal((await suche('Waschmaschiene')).unscharf, null);
+        await d.suche.setzeSuche({ meintest: 'mehr-treffer' }, ICH.email);
+        let stand = await d.suche.sucheStand();
+        assert.deepEqual([stand.unscharf, stand.meintest], [true, 'mehr-treffer'], 'nur die Wahl geändert, Tippfehler-Suche bleibt an');
+        // Genaue Treffer bleiben, dazu der Vorschlag mit seiner Trefferzahl.
+        let x = await suche('Waschmaschiene');
+        assert.deepEqual(x.titel, ['Notiz']);
+        assert.equal(x.unscharf?.statt, 'Waschmaschiene');
+        assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+        assert.equal(x.unscharf?.treffer, 2);
+        // Findet die ähnliche Schreibweise nicht mehr: kein Vorschlag.
+        x = await suche('Waschmaschine');
+        assert.deepEqual(x.titel, ['Garantieschein', 'Rechnung Haushaltsgerät']);
+        assert.equal(x.unscharf, null);
+        // Ohne Tippfehler-Suche gibt es auch diesen Vorschlag nicht; die Wahl bleibt gespeichert.
+        await d.suche.setzeSuche({ unscharf: false }, ICH.email);
+        stand = await d.suche.sucheStand();
+        assert.deepEqual([stand.unscharf, stand.meintest], [false, 'mehr-treffer']);
+        assert.equal((await suche('Waschmaschiene')).unscharf, null);
+        // Ungültige Angaben.
+        await assert.rejects(d.suche.setzeSuche({ meintest: 'immer' }, ICH.email), (e) => (e as { status: number }).status === 422);
+        await assert.rejects(d.suche.setzeSuche({}, ICH.email), (e) => (e as { status: number }).status === 422);
+        // Zurück zur Vorgabe.
+        stand = await d.suche.setzeSuche({ unscharf: true, meintest: 'ohne-treffer' }, ICH.email);
+        assert.deepEqual([stand.unscharf, stand.meintest], [true, 'ohne-treffer']);
+      });
 
-    it('#1256: Tippfehler-Abfrage nur, wenn sie gebraucht wird; „Meintest du …?“ wie bisher', async () => {
-      const { d, r, mappe, suche } = await aufbau();
-      await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
-      await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
-      await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
-      const abgefragt: string[][] = [];
-      const echt = r.aehnlicheWoerter.bind(r);
-      r.aehnlicheWoerter = async (w, max) => { abgefragt.push(w); return echt(w, max); };
-      // Mit Treffern und der Vorgabe „nur ohne Treffer“: keine Abfrage im Wörterverzeichnis.
-      let x = await suche('Waschmaschine');
-      assert.deepEqual([x.titel.length, x.unscharf], [2, null]);
-      x = await suche('Waschmaschiene');
-      assert.deepEqual([x.titel, x.unscharf], [['Notiz'], null]);
-      assert.equal(abgefragt.length, 0, 'mit Treffern keine Tippfehler-Abfrage');
-      // Ohne Treffer: „Meintest du …?“ wie bisher – dieselbe Suche noch einmal fragt nicht erneut ab.
-      x = await suche('Waschmashine');
-      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
-      assert.equal(x.titel.length, 3);
-      x = await suche('Waschmashine');
-      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
-      assert.equal(abgefragt.length, 1, 'ähnliche Wörter je Begriff gemerkt');
-      // Eine Änderung am Bestand macht das Gemerkte ungültig: neue Wörter wirken sofort.
-      await mappe('Waschmashine', 'so heißt das Modell');
-      x = await suche('Waschmashine');
-      assert.deepEqual([x.titel, x.unscharf], [['Waschmashine'], null]);
-      x = await suche('Waschmaschene');
-      assert.equal(abgefragt.length, 2, 'nach der Änderung wieder abgefragt');
-      assert.equal(x.unscharf?.statt, 'Waschmaschene');
-      // „auch bei Treffern“ (#1191) eingeschaltet: Abfrage auch mit Treffern, Vorschlag wie bisher.
-      await d.suche.setzeSuche({ meintest: 'mehr-treffer' }, ICH.email);
-      x = await suche('Waschmaschiene');
-      assert.deepEqual([x.titel, x.unscharf?.vorschlag, x.unscharf?.treffer], [['Notiz'], 'waschmaschine', 2]);
-      assert.equal(abgefragt.length, 3, 'mit „auch bei Treffern“ abgefragt');
-    });
+      it('#1256: Tippfehler-Abfrage nur, wenn sie gebraucht wird; „Meintest du …?“ wie bisher', async () => {
+        const { d, r, mappe, suche } = await aufbau();
+        await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
+        await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
+        await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
+        const abgefragt: string[][] = [];
+        const echt = r.aehnlicheWoerter.bind(r);
+        r.aehnlicheWoerter = async (w, max) => {
+          abgefragt.push(w);
+          return echt(w, max);
+        };
+        // Mit Treffern und der Vorgabe „nur ohne Treffer“: keine Abfrage im Wörterverzeichnis.
+        let x = await suche('Waschmaschine');
+        assert.deepEqual([x.titel.length, x.unscharf], [2, null]);
+        x = await suche('Waschmaschiene');
+        assert.deepEqual([x.titel, x.unscharf], [['Notiz'], null]);
+        assert.equal(abgefragt.length, 0, 'mit Treffern keine Tippfehler-Abfrage');
+        // Ohne Treffer: „Meintest du …?“ wie bisher – dieselbe Suche noch einmal fragt nicht erneut ab.
+        x = await suche('Waschmashine');
+        assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+        assert.equal(x.titel.length, 3);
+        x = await suche('Waschmashine');
+        assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+        assert.equal(abgefragt.length, 1, 'ähnliche Wörter je Begriff gemerkt');
+        // Eine Änderung am Bestand macht das Gemerkte ungültig: neue Wörter wirken sofort.
+        await mappe('Waschmashine', 'so heißt das Modell');
+        x = await suche('Waschmashine');
+        assert.deepEqual([x.titel, x.unscharf], [['Waschmashine'], null]);
+        x = await suche('Waschmaschene');
+        assert.equal(abgefragt.length, 2, 'nach der Änderung wieder abgefragt');
+        assert.equal(x.unscharf?.statt, 'Waschmaschene');
+        // „auch bei Treffern“ (#1191) eingeschaltet: Abfrage auch mit Treffern, Vorschlag wie bisher.
+        await d.suche.setzeSuche({ meintest: 'mehr-treffer' }, ICH.email);
+        x = await suche('Waschmaschiene');
+        assert.deepEqual([x.titel, x.unscharf?.vorschlag, x.unscharf?.treffer], [['Notiz'], 'waschmaschine', 2]);
+        assert.equal(abgefragt.length, 3, 'mit „auch bei Treffern“ abgefragt');
+      });
 
-    it('keine Treffer und kein Vorschlag aus Mappen ohne Leserecht', async () => {
-      const { d, mappe, suche, lese, typ } = await aufbau();
-      await mappe('Geheim', 'Das Wort Steuererklaerung steht nur hier', undefined, lese);
-      await mappe('Offen', 'Kein passendes Wort');
-      // Lesefilter nur auf „Unterlage“: Der Tippfehler findet nichts aus „Gesperrt“ und schlägt nichts von dort vor.
-      const lesen = { offen: [typ.id], je: [] };
-      const x = await d.sichten.seite(ICH, { sicht: 'suche', link: '', suche: 'Steuererklarung', volltext: 'true' }, { lesen } as never) as unknown as { gesamt: number; unscharf?: { vorschlag: string | null } };
-      assert.equal(x.gesamt, 0);
-      assert.equal(x.unscharf, undefined);
-      // Ohne Filter (Administrator) findet sie es
-      assert.deepEqual((await suche('Steuererklarung', true, 'suche')).titel, ['Geheim']);
-    });
+      it('keine Treffer und kein Vorschlag aus Mappen ohne Leserecht', async () => {
+        const { d, mappe, suche, lese, typ } = await aufbau();
+        await mappe('Geheim', 'Das Wort Steuererklaerung steht nur hier', undefined, lese);
+        await mappe('Offen', 'Kein passendes Wort');
+        // Lesefilter nur auf „Unterlage“: Der Tippfehler findet nichts aus „Gesperrt“ und schlägt nichts von dort vor.
+        const lesen = { offen: [typ.id], je: [] };
+        const x = (await d.sichten.seite(ICH, { sicht: 'suche', link: '', suche: 'Steuererklarung', volltext: 'true' }, {
+          lesen,
+        } as never)) as unknown as { gesamt: number; unscharf?: { vorschlag: string | null } };
+        assert.equal(x.gesamt, 0);
+        assert.equal(x.unscharf, undefined);
+        // Ohne Filter (Administrator) findet sie es
+        assert.deepEqual((await suche('Steuererklarung', true, 'suche')).titel, ['Geheim']);
+      });
 
-    it('Wortlisten aus Paketen: installieren, ersetzen, entfernen', async () => {
-      const { d, suche, mappe } = await aufbau();
-      await mappe('Abrechnung 2025', 'Die Betriebskosten für 2025');
-      const paket = (version: string, liste: string) => zipPuffer(Object.entries({
-        'manifest.yaml': `schema: 1\nid: wohnen\nname: Wohnen\nversion: ${version}\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.127.0"\ninhalt:\n  wortlisten: inhalt/wortlisten.yaml\n`,
-        'inhalt/wortlisten.yaml': liste,
-      }).map(([name, inhalt]) => ({ name, daten: Buffer.from(inhalt) })));
-      assert.throws(() => liesPaket(liesZip(paket('1.0.0', '- woerter: [Nebenkosten]\n'))), (e) => /wortlisten\[1\]: Eine Gruppe braucht/.test(JSON.stringify((e as { details?: unknown }).details)));
-      const p = new Paketverwaltung(d, { version: () => '0.127.0', abruf: async () => { throw new Error('offline'); } });
-      const h = await p.hochladen(paket('1.0.0', '- woerter: [Nebenkosten, Betriebskosten]\n'), { id: ICH.id, email: ICH.email });
-      assert.ok(h.vorschau.hinweise.some((x) => /eine Gruppe gleichbedeutender Wörter/.test(x)));
-      await p.installiere({ upload: h.upload, bestaetigt: true }, { id: ICH.id, email: ICH.email });
-      assert.deepEqual((await suche('Nebenkosten')).titel, ['Abrechnung 2025']);
-      const stand = await d.suche.sucheStand();
-      assert.deepEqual(stand.synonyme.map((g) => [g.quelle, g.paketName, g.woerter]), [['wohnen', 'Wohnen', ['Nebenkosten', 'Betriebskosten']]]);
-      // Werkbank ändert Paket-Gruppen nicht
-      await assert.rejects(d.suche.loescheSynonym(stand.synonyme[0].id, ICH.email), /gehört zu einem Paket/);
-      const h2 = await p.hochladen(paket('1.1.0', '- woerter: [Miete, Kaltmiete]\n'), { id: ICH.id, email: ICH.email });
-      await p.installiere({ upload: h2.upload, bestaetigt: true }, { id: ICH.id, email: ICH.email });
-      assert.deepEqual((await d.suche.sucheStand()).synonyme.map((g) => g.woerter), [['Miete', 'Kaltmiete']]);
-      await p.entferne('wohnen', { id: ICH.id, email: ICH.email });
-      assert.deepEqual((await d.suche.sucheStand()).synonyme, []);
-    });
+      it('Wortlisten aus Paketen: installieren, ersetzen, entfernen', async () => {
+        const { d, suche, mappe } = await aufbau();
+        await mappe('Abrechnung 2025', 'Die Betriebskosten für 2025');
+        const paket = (version: string, liste: string) =>
+          zipPuffer(
+            Object.entries({
+              'manifest.yaml': `schema: 1\nid: wohnen\nname: Wohnen\nversion: ${version}\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.127.0"\ninhalt:\n  wortlisten: inhalt/wortlisten.yaml\n`,
+              'inhalt/wortlisten.yaml': liste,
+            }).map(([name, inhalt]) => ({ name, daten: Buffer.from(inhalt) })),
+          );
+        assert.throws(
+          () => liesPaket(liesZip(paket('1.0.0', '- woerter: [Nebenkosten]\n'))),
+          (e) => /wortlisten\[1\]: Eine Gruppe braucht/.test(JSON.stringify((e as { details?: unknown }).details)),
+        );
+        const p = new Paketverwaltung(d, {
+          version: () => '0.127.0',
+          abruf: async () => {
+            throw new Error('offline');
+          },
+        });
+        const h = await p.hochladen(paket('1.0.0', '- woerter: [Nebenkosten, Betriebskosten]\n'), { id: ICH.id, email: ICH.email });
+        assert.ok(h.vorschau.hinweise.some((x) => /eine Gruppe gleichbedeutender Wörter/.test(x)));
+        await p.installiere({ upload: h.upload, bestaetigt: true }, { id: ICH.id, email: ICH.email });
+        assert.deepEqual((await suche('Nebenkosten')).titel, ['Abrechnung 2025']);
+        const stand = await d.suche.sucheStand();
+        assert.deepEqual(
+          stand.synonyme.map((g) => [g.quelle, g.paketName, g.woerter]),
+          [['wohnen', 'Wohnen', ['Nebenkosten', 'Betriebskosten']]],
+        );
+        // Werkbank ändert Paket-Gruppen nicht
+        await assert.rejects(d.suche.loescheSynonym(stand.synonyme[0].id, ICH.email), /gehört zu einem Paket/);
+        const h2 = await p.hochladen(paket('1.1.0', '- woerter: [Miete, Kaltmiete]\n'), { id: ICH.id, email: ICH.email });
+        await p.installiere({ upload: h2.upload, bestaetigt: true }, { id: ICH.id, email: ICH.email });
+        assert.deepEqual(
+          (await d.suche.sucheStand()).synonyme.map((g) => g.woerter),
+          [['Miete', 'Kaltmiete']],
+        );
+        await p.entferne('wohnen', { id: ICH.id, email: ICH.email });
+        assert.deepEqual((await d.suche.sucheStand()).synonyme, []);
+      });
 
-    if (pg) it('PostgreSQL: Suchindex per Trigger, Wörterverzeichnis, Papierkorb', async () => {
-      const { r, sql, mappe, suche } = await aufbau();
-      // unaccent liegt im eigenen Schema – das Wiederherstellen löscht das alte Schema public samt Inhalt.
-      const [ext] = await sql!`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'unaccent'`;
-      assert.equal(ext?.nspname, 'erweiterungen_dms');
-      const m = await mappe('Zettel', 'Wärmepumpe gewartet');
-      const [dok] = await sql!`SELECT id, suchindex IS NOT NULL AS da FROM dokumente WHERE mappe_id = ${m.id}`;
-      assert.equal(dok.da, true);
-      // Erst im Eingang (#575), nach dem Einarbeiten im Verzeichnis.
-      assert.equal((await sql!`SELECT 1 FROM suchwoerter WHERE wort = 'warmepumpe'`).length, 0);
-      assert.ok((await sql!`SELECT 1 FROM suchwoerter_eingang WHERE wort = 'warmepumpe'`).length > 0);
-      assert.ok(await r.woerterEinarbeiten() > 0);
-      const [w] = await sql!`SELECT anzahl FROM suchwoerter WHERE wort = 'warmepumpe'`;
-      assert.ok(w, 'Wort aus dem Volltext im Verzeichnis');
-      assert.ok(await r.woerterNeu() > 0);
-      // Dokument in den Papierkorb und zurück: Suchindex wieder da (Trigger), nicht aus dem JSON
-      await r.legeDokumentInPapierkorb(dok.id as string, null);
-      const [korb] = await sql!`SELECT dokument ? 'suchindex' AS mit FROM papierkorb_dokumente WHERE id = ${dok.id}`;
-      assert.equal(korb.mit, false);
-      assert.deepEqual((await suche('Warmepumpe')).titel, []);
-      await r.stelleDokumentWiederHer(dok.id as string);
-      assert.deepEqual((await suche('Warmepumpe')).titel, ['Zettel']);
-    });
-  });
+      if (pg)
+        it('PostgreSQL: Suchindex per Trigger, Wörterverzeichnis, Papierkorb', async () => {
+          const { r, sql, mappe, suche } = await aufbau();
+          // unaccent liegt im eigenen Schema – das Wiederherstellen löscht das alte Schema public samt Inhalt.
+          const [ext] =
+            await sql!`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'unaccent'`;
+          assert.equal(ext?.nspname, 'erweiterungen_dms');
+          const m = await mappe('Zettel', 'Wärmepumpe gewartet');
+          const [dok] = await sql!`SELECT id, suchindex IS NOT NULL AS da FROM dokumente WHERE mappe_id = ${m.id}`;
+          assert.equal(dok.da, true);
+          // Erst im Eingang (#575), nach dem Einarbeiten im Verzeichnis.
+          assert.equal((await sql!`SELECT 1 FROM suchwoerter WHERE wort = 'warmepumpe'`).length, 0);
+          assert.ok((await sql!`SELECT 1 FROM suchwoerter_eingang WHERE wort = 'warmepumpe'`).length > 0);
+          assert.ok((await r.woerterEinarbeiten()) > 0);
+          const [w] = await sql!`SELECT anzahl FROM suchwoerter WHERE wort = 'warmepumpe'`;
+          assert.ok(w, 'Wort aus dem Volltext im Verzeichnis');
+          assert.ok((await r.woerterNeu()) > 0);
+          // Dokument in den Papierkorb und zurück: Suchindex wieder da (Trigger), nicht aus dem JSON
+          await r.legeDokumentInPapierkorb(dok.id as string, null);
+          const [korb] = await sql!`SELECT dokument ? 'suchindex' AS mit FROM papierkorb_dokumente WHERE id = ${dok.id}`;
+          assert.equal(korb.mit, false);
+          assert.deepEqual((await suche('Warmepumpe')).titel, []);
+          await r.stelleDokumentWiederHer(dok.id as string);
+          assert.deepEqual((await suche('Warmepumpe')).titel, ['Zettel']);
+        });
+    },
+  );
 }
 
 faelle(false);
 faelle(true);
-after(async () => { for (const f of offen) await f(); });
+after(async () => {
+  for (const f of offen) await f();
+});

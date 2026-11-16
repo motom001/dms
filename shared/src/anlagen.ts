@@ -17,11 +17,20 @@ export const DMS_ANLAGEN_AB = '0.264.0';
 export const ANLAGEN_MAX = 99;
 
 /** Was die Funktionen hier von einem Dokument brauchen. */
-export interface AnlageTeil { id: string; name: string; anlageZu?: string | null; anlageNr?: number | null; eingangNr?: number | null; originalEmail?: boolean }
+export interface AnlageTeil {
+  id: string;
+  name: string;
+  anlageZu?: string | null;
+  anlageNr?: number | null;
+  eingangNr?: number | null;
+  originalEmail?: boolean;
+}
 
 /** Die Anlagen eines Dokuments aus einer Liste, in ihrer Reihenfolge (Anlage 1 zuerst). */
 export function anlagenVon<T extends AnlageTeil>(alle: readonly T[], id: string): T[] {
-  return alle.filter((d) => d.anlageZu === id).sort((a, b) => (a.anlageNr ?? 0) - (b.anlageNr ?? 0) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  return alle
+    .filter((d) => d.anlageZu === id)
+    .sort((a, b) => (a.anlageNr ?? 0) - (b.anlageNr ?? 0) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }
 
 /**
@@ -40,7 +49,8 @@ export function gruppiere<T extends AnlageTeil>(liste: readonly T[]): Array<{ ha
 export const ohneErkennung = (d: Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>): boolean => !!d.anlageZu || !!d.originalEmail;
 
 /** Nur Hauptdokumente und eigene Dokumente – ohne Anlagen und ohne Original-E-Mail (für Erkennung, Klassifizieren und KI). */
-export const nurHauptdokumente = <T extends Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>>(liste: readonly T[]): T[] => liste.filter((d) => !ohneErkennung(d));
+export const nurHauptdokumente = <T extends Pick<AnlageTeil, 'anlageZu' | 'originalEmail'>>(liste: readonly T[]): T[] =>
+  liste.filter((d) => !ohneErkennung(d));
 
 /**
  * Eingangsreihenfolge einer Post (#999): erst, was aus dem Postfach kam, in der Reihenfolge der E-Mail (`eingangNr`),
@@ -60,7 +70,12 @@ export function eingangsreihenfolge<T extends AnlageTeil & { erstellt: string }>
 export function mitAnlagen<T extends AnlageTeil>(auswahl: readonly T[], alle: readonly T[], an = true, originalEmail = true): T[] {
   const erg: T[] = [];
   const drin = new Set<string>();
-  const nimm = (d: T) => { if (!drin.has(d.id)) { drin.add(d.id); erg.push(d); } };
+  const nimm = (d: T) => {
+    if (!drin.has(d.id)) {
+      drin.add(d.id);
+      erg.push(d);
+    }
+  };
   for (const d of auswahl) {
     nimm(d);
     if (an) for (const a of anlagenVon(alle, d.id)) if (originalEmail || !a.originalEmail) nimm(a);

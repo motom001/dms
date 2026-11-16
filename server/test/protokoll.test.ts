@@ -7,7 +7,9 @@ describe('Protokoll', () => {
     const zeilen: string[] = [];
     const p = new Protokoll('info', (z) => zeilen.push(z));
     p.modul('ablage').debug('nicht sichtbar');
-    kontext.run({ anfrage: 'a1', benutzer: 'sabine@example.org', db: { anzahl: 0, ms: 0 } }, () => p.modul('ablage').info('Mappe angelegt', { titel: 'Strom 2026' }));
+    kontext.run({ anfrage: 'a1', benutzer: 'sabine@example.org', db: { anzahl: 0, ms: 0 } }, () =>
+      p.modul('ablage').info('Mappe angelegt', { titel: 'Strom 2026' }),
+    );
     p.modul('konto').warn('Anmeldung fehlgeschlagen', { email: 'x@example.org' });
     const alle = p.eintraege();
     assert.equal(alle.length, 2);
@@ -61,11 +63,21 @@ describe('Messung der Datenbankzugriffe', () => {
     const { Messung, speicherMessSpeicher } = await import('../src/messung');
     const m = new Messung(speicherMessSpeicher());
     await m.setze({ schwelleMs: 15, tage: 3 });
-    const repo = m.umhuelle({
-      async schnell() { return 1; },
-      async langsam() { await new Promise((r) => setTimeout(r, 30)); return 2; },
-      async kaputt() { throw new Error('nein'); },
-    }, 'test');
+    const repo = m.umhuelle(
+      {
+        async schnell() {
+          return 1;
+        },
+        async langsam() {
+          await new Promise((r) => setTimeout(r, 30));
+          return 2;
+        },
+        async kaputt() {
+          throw new Error('nein');
+        },
+      },
+      'test',
+    );
     const k = { anfrage: 'x', pfad: 'GET /api/test', benutzer: 'a@example.org', db: { anzahl: 0, ms: 0 } };
     await kontext.run(k, async () => {
       assert.equal(await repo.schnell(), 1);
@@ -87,16 +99,40 @@ describe('Versionsübersicht', () => {
     assert.ok(vergleicheVersion('22.11.0', '22.9.1') > 0);
     assert.equal(vergleicheVersion('v17.4', '17.4.0'), 0);
     process.env.DMS_COMMIT = 'aaaaaaa1111111';
-    const u = await uebersicht({ async datenbank() { return { version: '17.4 (Debian 17.4-1.pgdg120+2)', groesseBytes: 1, mappen: 1, typen: 1, benutzer: 1, dokumente: 0, dokumenteBytes: 0 }; } }, undefined);
+    const u = await uebersicht(
+      {
+        async datenbank() {
+          return {
+            version: '17.4 (Debian 17.4-1.pgdg120+2)',
+            groesseBytes: 1,
+            mappen: 1,
+            typen: 1,
+            benutzer: 1,
+            dokumente: 0,
+            dokumenteBytes: 0,
+          };
+        },
+      },
+      undefined,
+    );
     delete process.env.DMS_COMMIT;
     assert.equal(u.laufzeit.node, process.versions.node);
     assert.ok('version' in u.datenbank);
     const nodeReihe = process.versions.node.split('.')[0];
     const abruf = async (url: string): Promise<unknown> => {
-      if (url.includes('/commits/main')) return { sha: 'bbbbbbb2222222', commit: { committer: { date: '2026-10-28T08:00:00Z' }, message: 'Neues\n\nDetails' } };
+      if (url.includes('/commits/main'))
+        return { sha: 'bbbbbbb2222222', commit: { committer: { date: '2026-10-28T08:00:00Z' }, message: 'Neues\n\nDetails' } };
       if (url.includes('/compare/')) return { ahead_by: 3 };
-      if (url.endsWith('/nodejs.json')) return [{ cycle: '99', latest: '99.0.0', eol: '2099-01-01', lts: '2098-01-01' }, { cycle: nodeReihe, latest: '999.0.0', eol: '2000-01-01', lts: true }];
-      if (url.endsWith('/postgresql.json')) return [{ cycle: '18', latest: '18.1', eol: '2030-11-14' }, { cycle: '17', latest: '17.4', eol: '2029-11-08' }];
+      if (url.endsWith('/nodejs.json'))
+        return [
+          { cycle: '99', latest: '99.0.0', eol: '2099-01-01', lts: '2098-01-01' },
+          { cycle: nodeReihe, latest: '999.0.0', eol: '2000-01-01', lts: true },
+        ];
+      if (url.endsWith('/postgresql.json'))
+        return [
+          { cycle: '18', latest: '18.1', eol: '2030-11-14' },
+          { cycle: '17', latest: '17.4', eol: '2029-11-08' },
+        ];
       if (url.includes('registry.npmjs.org/fastify')) throw new Error('503 Service Unavailable');
       return { version: '0.0.1' };
     };
@@ -110,8 +146,14 @@ describe('Versionsübersicht', () => {
     const [ma, mi, pa] = u.dms.version.split('.').map(Number);
     const neu = `${ma}.${mi + 1}.0`;
     const mitRelease = async (url: string): Promise<unknown> => {
-      if (url.endsWith('/releases/latest')) return { tag_name: `v${neu}`, published_at: '2026-10-30T19:00:00Z', html_url: 'https://github.com/motom001/dms/releases/tag/v' + neu };
-      if (url.includes('/releases?')) return [{ tag_name: `v${neu}` }, { tag_name: `v${ma}.${mi}.${pa + 1}` }, { tag_name: `v${u.dms.version}` }, { tag_name: 'v0.1.0' }];
+      if (url.endsWith('/releases/latest'))
+        return {
+          tag_name: `v${neu}`,
+          published_at: '2026-10-30T19:00:00Z',
+          html_url: 'https://github.com/motom001/dms/releases/tag/v' + neu,
+        };
+      if (url.includes('/releases?'))
+        return [{ tag_name: `v${neu}` }, { tag_name: `v${ma}.${mi}.${pa + 1}` }, { tag_name: `v${u.dms.version}` }, { tag_name: 'v0.1.0' }];
       return abruf(url);
     };
     const d = (await versionsabgleich(u, {}, mitRelease)).find((x) => x.komponente === 'Ablago')!;
@@ -119,24 +161,38 @@ describe('Versionsübersicht', () => {
     assert.equal(d.status, 'neuer');
     assert.match(d.hinweis!, /neuere Versionen \(bis/);
     // #907: Releases über der stabilen Version („Latest“) zählen nicht mit – sie sind noch nicht stabil.
-    const mitVorschau = async (url: string): Promise<unknown> => (url.includes('/releases?')
-      ? [{ tag_name: `v${ma}.${mi + 3}.0` }, { tag_name: `v${ma}.${mi + 2}.0` }, { tag_name: `v${neu}` }, { tag_name: `v${ma}.${mi}.${pa + 1}` }, { tag_name: `v${u.dms.version}` }]
-      : mitRelease(url));
+    const mitVorschau = async (url: string): Promise<unknown> =>
+      url.includes('/releases?')
+        ? [
+            { tag_name: `v${ma}.${mi + 3}.0` },
+            { tag_name: `v${ma}.${mi + 2}.0` },
+            { tag_name: `v${neu}` },
+            { tag_name: `v${ma}.${mi}.${pa + 1}` },
+            { tag_name: `v${u.dms.version}` },
+          ]
+        : mitRelease(url);
     const vorschau = (await versionsabgleich(u, {}, mitVorschau)).find((x) => x.komponente === 'Ablago')!;
     assert.equal(vorschau.status, 'neuer');
     assert.ok(vorschau.hinweis!.startsWith(`2 neuere Versionen (bis ${neu})`), vorschau.hinweis);
     // Genau auf der stabilen Version (Commit des Releases): „aktuell“, kein Hinweis auf main – auch wenn main weiter ist.
-    const gleich = async (url: string): Promise<unknown> => (url.endsWith('/releases/latest') ? { tag_name: `v${u.dms.version}`, published_at: '2026-10-29T10:00:00Z', target_commitish: 'aaaaaaa1111111' } : abruf(url));
+    const gleich = async (url: string): Promise<unknown> =>
+      url.endsWith('/releases/latest')
+        ? { tag_name: `v${u.dms.version}`, published_at: '2026-10-29T10:00:00Z', target_commitish: 'aaaaaaa1111111' }
+        : abruf(url);
     const g = (await versionsabgleich(u, {}, gleich)).find((x) => x.komponente === 'Ablago')!;
     assert.equal(g.status, 'aktuell');
     assert.equal(g.hinweis, undefined);
     // Neuer als die stabile Version (`:main`): „aktuell“, mit dem Hinweis auf neuere Stände auf main.
-    const vorStabil = async (url: string): Promise<unknown> => (url.endsWith('/releases/latest') ? { tag_name: 'v0.1.0', published_at: '2026-10-29T10:00:00Z', target_commitish: 'ccccccc3333333' } : abruf(url));
+    const vorStabil = async (url: string): Promise<unknown> =>
+      url.endsWith('/releases/latest')
+        ? { tag_name: 'v0.1.0', published_at: '2026-10-29T10:00:00Z', target_commitish: 'ccccccc3333333' }
+        : abruf(url);
     const m = (await versionsabgleich(u, {}, vorStabil)).find((x) => x.komponente === 'Ablago')!;
     assert.equal(m.status, 'aktuell');
     assert.match(m.hinweis!, /Auf main gibt es 3 neuere Änderungen, die noch in keiner stabilen Version sind/);
     // Dieselbe Nummer wie die stabile, aber aus einem anderen Commit (`:main` nach einem Merge ohne neue Nummer).
-    const andererCommit = async (url: string): Promise<unknown> => (url.endsWith('/releases/latest') ? { tag_name: `v${u.dms.version}`, target_commitish: 'ddddddd4444444' } : abruf(url));
+    const andererCommit = async (url: string): Promise<unknown> =>
+      url.endsWith('/releases/latest') ? { tag_name: `v${u.dms.version}`, target_commitish: 'ddddddd4444444' } : abruf(url);
     assert.match((await versionsabgleich(u, {}, andererCommit)).find((x) => x.komponente === 'Ablago')!.hinweis!, /Auf main gibt es 3/);
     assert.equal(v('Node.js').status, 'veraltet');
     // #216: Gruppen und Bezeichnungen; PostgreSQL bei zwei Containern „selbst“, mit Hinweis aufs Image.
@@ -151,11 +207,14 @@ describe('Versionsübersicht', () => {
     assert.match(v('fastify').hinweis!, /503/);
     assert.equal(v('react').status, 'aktuell');
     // Neueres PostgreSQL in der Reihe: Hinweis je Variante (#214, #216).
-    const pgNeuer = async (url: string): Promise<unknown> => (url.endsWith('/postgresql.json') ? [{ cycle: '17', latest: '17.9', eol: '2029-11-08' }] : abruf(url));
+    const pgNeuer = async (url: string): Promise<unknown> =>
+      url.endsWith('/postgresql.json') ? [{ cycle: '17', latest: '17.9', eol: '2029-11-08' }] : abruf(url);
     const getrennt = (await versionsabgleich(u, {}, pgNeuer)).find((x) => x.komponente === 'PostgreSQL')!;
     assert.equal(getrennt.status, 'neuer');
     assert.match(getrennt.hinweis!, /Image postgres:17 neu ziehen/);
-    const komplett = (await versionsabgleich({ ...u, dms: { ...u.dms, variante: 'komplett' } }, {}, pgNeuer)).find((x) => x.komponente === 'PostgreSQL')!;
+    const komplett = (await versionsabgleich({ ...u, dms: { ...u.dms, variante: 'komplett' } }, {}, pgNeuer)).find(
+      (x) => x.komponente === 'PostgreSQL',
+    )!;
     assert.equal(komplett.gruppe, 'dms');
     assert.match(komplett.hinweis!, /nächsten Image dms-komplett/);
   });
@@ -165,10 +224,19 @@ describe('Module des Protokolls (#682)', () => {
   it('jedes Modul, in das der Server schreibt, steht in der Liste und hat einen Namen in der Sprachdatei', async () => {
     const { readdirSync, readFileSync } = await import('node:fs');
     const { MODULE } = await import('../../shared/src/protokollmodule');
-    const namen = JSON.parse(readFileSync(new URL('../../shared/src/sprachen/de/werkbank.json', import.meta.url), 'utf8')) as Record<string, string>;
+    const namen = JSON.parse(readFileSync(new URL('../../shared/src/sprachen/de/werkbank.json', import.meta.url), 'utf8')) as Record<
+      string,
+      string
+    >;
     const ordner = new URL('../src/', import.meta.url);
     const benutzt = new Set<string>();
-    const lies = (u: URL) => { for (const e of readdirSync(u, { withFileTypes: true })) { if (e.isDirectory()) lies(new URL(`${e.name}/`, u)); else if (e.name.endsWith('.ts')) for (const m of readFileSync(new URL(e.name, u), 'utf8').matchAll(/\.modul\('([a-z]+)'\)/g)) benutzt.add(m[1]); } };
+    const lies = (u: URL) => {
+      for (const e of readdirSync(u, { withFileTypes: true })) {
+        if (e.isDirectory()) lies(new URL(`${e.name}/`, u));
+        else if (e.name.endsWith('.ts'))
+          for (const m of readFileSync(new URL(e.name, u), 'utf8').matchAll(/\.modul\('([a-z]+)'\)/g)) benutzt.add(m[1]);
+      }
+    };
     lies(ordner);
     assert.ok(benutzt.has('konto') && benutzt.size >= 10);
     for (const m of benutzt) assert.ok((MODULE as readonly string[]).includes(m), `Modul „${m}“ fehlt in shared/src/protokollmodule.ts`);

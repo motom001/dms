@@ -28,7 +28,11 @@ export class Fehlergrenze extends Component<{ children: ReactNode }, { fehler: E
 }
 
 /** Was in die Zwischenablage kommt: Meldung, Seite, Zeit, Browser und der Anfang des Stacks. */
-export function fehlerAngaben(fehler: Error, wo = typeof location === 'undefined' ? '' : location.pathname, browser = typeof navigator === 'undefined' ? '' : navigator.userAgent): string {
+export function fehlerAngaben(
+  fehler: Error,
+  wo = typeof location === 'undefined' ? '' : location.pathname,
+  browser = typeof navigator === 'undefined' ? '' : navigator.userAgent,
+): string {
   return [
     `${t('oberflaeche.fehlergrenze.meldung')}: ${fehler.message}`,
     `${t('oberflaeche.fehlergrenze.seite')}: ${wo}`,
@@ -43,29 +47,46 @@ export function FehlerAnzeige({ fehler }: { fehler: Error }) {
   // Läuft inzwischen eine neue Version (#933), behebt Neuladen den Fehler meist – ohne Rückfrage, höchstens einmal je Minute.
   useNeuLadenBeiNeuerVersion();
   async function melden() {
-    if (jemandAngemeldet()) { location.href = '/profil/fehler-melden'; return; }
-    try { await navigator.clipboard.writeText(fehlerAngaben(fehler)); setKopiert('ja'); }
-    catch { setKopiert('nein'); }
+    if (jemandAngemeldet()) {
+      location.href = '/profil/fehler-melden';
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(fehlerAngaben(fehler));
+      setKopiert('ja');
+    } catch {
+      setKopiert('nein');
+    }
   }
   return (
     <>
-    <ErreichbarkeitsBanner aussen ansichtNeuLaden={() => location.reload()} />
-    <div className="kartenseite">
-      <div className="karte fehlergrenze" role="alert">
-        <h1>{t('oberflaeche.fehlergrenze.titel')}</h1>
-        <p>{t('oberflaeche.fehlergrenze.text')}</p>
-        <details className="klein">
-          <summary>{t('oberflaeche.fehlergrenze.angaben')}</summary>
-          <pre className="fehlergrenze-angaben">{fehler.message}</pre>
-        </details>
-        {kopiert === 'ja' && <p className="gutertext klein" role="status">{t('oberflaeche.fehlergrenze.kopiert')}</p>}
-        {kopiert === 'nein' && <p className="fehlertext klein" role="status">{t('oberflaeche.fehlergrenze.nicht-kopiert')}</p>}
-        <div className="knoepfe links">
-          <Knopf art="haupt" symbol="neu-laden" onClick={() => location.reload()}>{t('oberflaeche.fehlergrenze.neu-laden')}</Knopf>
-          <Knopf onClick={melden}>{t('oberflaeche.fehlergrenze.melden')}</Knopf>
+      <ErreichbarkeitsBanner aussen ansichtNeuLaden={() => location.reload()} />
+      <div className="kartenseite">
+        <div className="karte fehlergrenze" role="alert">
+          <h1>{t('oberflaeche.fehlergrenze.titel')}</h1>
+          <p>{t('oberflaeche.fehlergrenze.text')}</p>
+          <details className="klein">
+            <summary>{t('oberflaeche.fehlergrenze.angaben')}</summary>
+            <pre className="fehlergrenze-angaben">{fehler.message}</pre>
+          </details>
+          {kopiert === 'ja' && (
+            <p className="gutertext klein" role="status">
+              {t('oberflaeche.fehlergrenze.kopiert')}
+            </p>
+          )}
+          {kopiert === 'nein' && (
+            <p className="fehlertext klein" role="status">
+              {t('oberflaeche.fehlergrenze.nicht-kopiert')}
+            </p>
+          )}
+          <div className="knoepfe links">
+            <Knopf art="haupt" symbol="neu-laden" onClick={() => location.reload()}>
+              {t('oberflaeche.fehlergrenze.neu-laden')}
+            </Knopf>
+            <Knopf onClick={melden}>{t('oberflaeche.fehlergrenze.melden')}</Knopf>
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

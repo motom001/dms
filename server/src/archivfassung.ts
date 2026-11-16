@@ -29,8 +29,20 @@ import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { join } from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import {
-  ARCHIV_QUELLE_MAX_BYTES, ARCHIVFASSUNG_MAX_BYTES, ARCHIVFASSUNG_SEITEN_MAX, MAIL_TYPEN, mailTyp, PDFA_STUFEN, PDFA_TEILE, pdfaKennungAus, pdfaName,
-  type ArchivfassungInfo, type ArchivStand, type ArchivStandArt, type PdfaKennung, type WortSeite,
+  ARCHIV_QUELLE_MAX_BYTES,
+  ARCHIVFASSUNG_MAX_BYTES,
+  ARCHIVFASSUNG_SEITEN_MAX,
+  MAIL_TYPEN,
+  mailTyp,
+  PDFA_STUFEN,
+  PDFA_TEILE,
+  pdfaKennungAus,
+  pdfaName,
+  type ArchivfassungInfo,
+  type ArchivStand,
+  type ArchivStandArt,
+  type PdfaKennung,
+  type WortSeite,
 } from '../../shared/src/archivfassung';
 import { dateitypName, kernTyp, type FassungInfo } from '../../shared/src/dateiumwandlung';
 import type { Dokument } from '../../shared/src/model';
@@ -64,9 +76,19 @@ export const woerterOrdner = (dateiWurzel: string, haushalt: string) => join(dat
  * Stand einer Datei, solange es keine (neue) Archivfassung gibt: wartet, ausgelassen oder Fehler. `grund`: warum neu
  * erzeugt wird (#1329, z. B. „fehlende Schriften“) – steht dann mit in der Historie.
  */
-export interface ArchivStandDatei { stand: Exclude<ArchivStandArt, 'fertig'>; info: string | null; paket: { id: string; name: string; version?: string } | null; zeit: string; grund?: string }
+export interface ArchivStandDatei {
+  stand: Exclude<ArchivStandArt, 'fertig'>;
+  info: string | null;
+  paket: { id: string; name: string; version?: string } | null;
+  zeit: string;
+  grund?: string;
+}
 /** Wortpositionen aus der Texterkennung: je Seite des Volltexts die Wörter oder null. */
-export interface GespeicherteWoerter { seiten: Array<Wort[] | null>; von: string; erstellt: string }
+export interface GespeicherteWoerter {
+  seiten: Array<Wort[] | null>;
+  von: string;
+  erstellt: string;
+}
 
 export interface ArchivAblage {
   info(sha: string): Promise<ArchivfassungInfo | null>;
@@ -104,7 +126,11 @@ export function ordnerArchiv(wurzel: string, woerterWurzel: string): ArchivAblag
   const standPfad = (sha: string) => join(wurzel, pruefeSha(sha).slice(0, 2), `${sha}.stand`);
   const woerterPfad = (sha: string) => join(woerterWurzel, pruefeSha(sha).slice(0, 2), `${sha}.json.gz`);
   const stand = async (sha: string) => {
-    try { return JSON.parse(await readFile(standPfad(sha), 'utf8')) as ArchivStandDatei; } catch { return null; }
+    try {
+      return JSON.parse(await readFile(standPfad(sha), 'utf8')) as ArchivStandDatei;
+    } catch {
+      return null;
+    }
   };
   return {
     info: (sha) => f.info(sha) as unknown as Promise<ArchivfassungInfo | null>,
@@ -147,7 +173,11 @@ export function ordnerArchiv(wurzel: string, woerterWurzel: string): ArchivAblag
       return erg;
     },
     async woerter(sha) {
-      try { return JSON.parse(gunzipSync(await readFile(woerterPfad(sha))).toString('utf8')) as GespeicherteWoerter; } catch { return null; }
+      try {
+        return JSON.parse(gunzipSync(await readFile(woerterPfad(sha))).toString('utf8')) as GespeicherteWoerter;
+      } catch {
+        return null;
+      }
     },
     async setzeWoerter(sha, w) {
       if (w) await lege(woerterPfad(sha), gzipSync(JSON.stringify(w)));
@@ -165,28 +195,62 @@ export function speicherArchiv(): ArchivAblage & { fassungen: Map<string, { info
     fassungen,
     info: async (sha) => fassungen.get(sha)?.info ?? null,
     lies: async (sha) => fassungen.get(sha) ?? null,
-    schreibe: async (sha, info, inhalt) => { fassungen.set(pruefeSha(sha), { info, inhalt }); },
-    schreibeInfo: async (sha, info) => { fassungen.set(pruefeSha(sha), { info, inhalt: Buffer.alloc(0) }); },
-    loesche: async (sha) => { fassungen.delete(sha); staende.delete(sha); woerter.delete(sha); },
+    schreibe: async (sha, info, inhalt) => {
+      fassungen.set(pruefeSha(sha), { info, inhalt });
+    },
+    schreibeInfo: async (sha, info) => {
+      fassungen.set(pruefeSha(sha), { info, inhalt: Buffer.alloc(0) });
+    },
+    loesche: async (sha) => {
+      fassungen.delete(sha);
+      staende.delete(sha);
+      woerter.delete(sha);
+    },
     belegung: async () => ({ anzahl: fassungen.size, bytes: [...fassungen.values()].reduce((s, f) => s + f.inhalt.length, 0) }),
     alle: async () => [...fassungen.keys()],
     stand: async (sha) => staende.get(sha) ?? null,
-    setzeStand: async (sha, s) => { if (s) staende.set(pruefeSha(sha), s); else staende.delete(sha); },
+    setzeStand: async (sha, s) => {
+      if (s) staende.set(pruefeSha(sha), s);
+      else staende.delete(sha);
+    },
     staende: async () => [...staende.entries()].map(([sha256, stand]) => ({ sha256, stand })),
     woerter: async (sha) => woerter.get(sha) ?? null,
-    setzeWoerter: async (sha, w) => { if (w) woerter.set(pruefeSha(sha), w); else woerter.delete(sha); },
+    setzeWoerter: async (sha, w) => {
+      if (w) woerter.set(pruefeSha(sha), w);
+      else woerter.delete(sha);
+    },
   };
 }
 
 /* ---------- Prüfen, was ein Paket zurückgibt ---------- */
 
 /** Nennenswerter Text auf einer Seite (wie die Texterkennung: mindestens 20 Zeichen ohne Leerraum). */
-const mitText = (s: { woerter: Wort[] } | undefined | null) => !!s && s.woerter.map((w) => w[0]).join('').replace(/\s/g, '').length >= 20;
+const mitText = (s: { woerter: Wort[] } | undefined | null) =>
+  !!s &&
+  s.woerter
+    .map((w) => w[0])
+    .join('')
+    .replace(/\s/g, '').length >= 20;
 /** Je Seite die Wörter: aus der Textebene, sonst aus der Texterkennung, sonst keine – mit Maßen der Seite bzw. des Bilds. */
-function wortSeiten(anzahl: number, ebene: Array<{ breite: number; hoehe: number; woerter: Wort[] }> | null, erkannt: Array<Wort[] | null> | null, bild: { breite: number; hoehe: number } | null): WortSeite[] {
+function wortSeiten(
+  anzahl: number,
+  ebene: Array<{ breite: number; hoehe: number; woerter: Wort[] }> | null,
+  erkannt: Array<Wort[] | null> | null,
+  bild: { breite: number; hoehe: number } | null,
+): WortSeite[] {
   return Array.from({ length: anzahl }, (_, i) => {
-    const e = ebene?.[i], w = erkannt?.[i], masse = e ? { breite: e.breite, hoehe: e.hoehe } : bild ? { breite: bild.breite, hoehe: bild.hoehe } : {};
-    return { seite: i + 1, ...masse, ...(mitText(e) ? { quelle: 'textebene' as const, woerter: e!.woerter } : w ? { quelle: 'texterkennung' as const, woerter: w } : { quelle: 'keine' as const, woerter: [] }) };
+    const e = ebene?.[i],
+      w = erkannt?.[i],
+      masse = e ? { breite: e.breite, hoehe: e.hoehe } : bild ? { breite: bild.breite, hoehe: bild.hoehe } : {};
+    return {
+      seite: i + 1,
+      ...masse,
+      ...(mitText(e)
+        ? { quelle: 'textebene' as const, woerter: e!.woerter }
+        : w
+          ? { quelle: 'texterkennung' as const, woerter: w }
+          : { quelle: 'keine' as const, woerter: [] }),
+    };
   });
 }
 
@@ -194,7 +258,10 @@ function wortSeiten(anzahl: number, ebene: Array<{ breite: number; hoehe: number
  * Archivfassung prüfen (Grundprüfung, keine neue Abhängigkeit): PDF am Inhalt, Größe, lesbar, nicht verschlüsselt,
  * höchstens 1000 Seiten, XMP-Metadaten ungefiltert mit gültiger PDF/A-Kennung. Wirft einen Fachfehler mit Grund.
  */
-export async function pruefeArchivfassung(inhalt: unknown, lies: (pdf: Buffer) => Promise<PdfaBefund>): Promise<{ seiten: number; pdfa: PdfaKennung }> {
+export async function pruefeArchivfassung(
+  inhalt: unknown,
+  lies: (pdf: Buffer) => Promise<PdfaBefund>,
+): Promise<{ seiten: number; pdfa: PdfaKennung }> {
   if (!Buffer.isBuffer(inhalt) || !inhalt.length) throw new Fachfehler(422, t('pakete.archiv.leer'));
   if (inhalt.length > ARCHIVFASSUNG_MAX_BYTES) throw new Fachfehler(413, t('pakete.archiv.gross', { mb: ARCHIVFASSUNG_MAX_BYTES / MB }));
   if (inhalt.subarray(0, 5).toString('latin1') !== '%PDF-') throw new Fachfehler(415, t('pakete.archiv.typ'));
@@ -206,14 +273,16 @@ export function bewertePdfA(b: PdfaBefund): { seiten: number; pdfa: PdfaKennung 
   if (!b.lesbar) throw new Fachfehler(422, t('pakete.archiv.lesbar'));
   if (b.verschluesselt) throw new Fachfehler(422, t('pakete.archiv.verschluesselt'));
   if (!b.seiten) throw new Fachfehler(422, t('pakete.archiv.ohne-seiten'));
-  if (b.seiten > ARCHIVFASSUNG_SEITEN_MAX) throw new Fachfehler(422, t('pakete.archiv.seiten', { seiten: b.seiten, max: ARCHIVFASSUNG_SEITEN_MAX }));
+  if (b.seiten > ARCHIVFASSUNG_SEITEN_MAX)
+    throw new Fachfehler(422, t('pakete.archiv.seiten', { seiten: b.seiten, max: ARCHIVFASSUNG_SEITEN_MAX }));
   if (b.metadaten === null) throw new Fachfehler(422, b.gefiltert ? t('pakete.archiv.gefiltert') : t('pakete.archiv.ohne-xmp'));
   if (b.gefiltert) throw new Fachfehler(422, t('pakete.archiv.gefiltert'));
   const k = pdfaKennungAus(b.metadaten);
   if (!k) throw new Fachfehler(422, t('pakete.archiv.ohne-kennung'));
   if (!(PDFA_TEILE as readonly number[]).includes(k.teil)) throw new Fachfehler(422, t('pakete.archiv.teil', { teil: String(k.teil) }));
   if (k.teil !== 4 && !k.stufe) throw new Fachfehler(422, t('pakete.archiv.ohne-stufe', { teil: k.teil }));
-  if (k.stufe && !PDFA_STUFEN[k.teil].includes(k.stufe)) throw new Fachfehler(422, t('pakete.archiv.stufe', { stufe: k.stufe, teil: k.teil, erlaubt: PDFA_STUFEN[k.teil].join(', ') }));
+  if (k.stufe && !PDFA_STUFEN[k.teil].includes(k.stufe))
+    throw new Fachfehler(422, t('pakete.archiv.stufe', { stufe: k.stufe, teil: k.teil, erlaubt: PDFA_STUFEN[k.teil].join(', ') }));
   // Nie nachladen: nichts, was beim Öffnen etwas ausführt, sendet oder aus dem Netz holt.
   if (b.javascript) throw new Fachfehler(422, t('pakete.archiv.javascript'));
   if (b.aktionen.length) throw new Fachfehler(422, t('pakete.archiv.aktionen', { aktionen: b.aktionen.join(', ') }));
@@ -224,7 +293,13 @@ export function bewertePdfA(b: PdfaBefund): { seiten: number; pdfa: PdfaKennung 
 /* ---------- Ablauf ---------- */
 
 /** Ein Paket mit dms:archivfassung: Id, Name, Version, Dateitypen und ggf. je Art die Einstellung, ob sie eine Archivfassung bekommt (#660). */
-export interface ArchivPaket { id: string; name: string; version: string; typen: string[]; auswahl?: ArchivAuswahl }
+export interface ArchivPaket {
+  id: string;
+  name: string;
+  version: string;
+  typen: string[];
+  auswahl?: ArchivAuswahl;
+}
 
 export interface ArchivAnbindung {
   ablage: ArchivAblage;
@@ -247,7 +322,12 @@ export interface ArchivAnbindung {
 }
 
 /** Woraus das Paket die Archivfassung macht: das Original (PDF, JPEG, PNG) oder die Lesefassung. */
-interface Quelle { art: 'original' | 'lesefassung'; mime: string; inhalt: () => Promise<Buffer>; fassung?: FassungInfo }
+interface Quelle {
+  art: 'original' | 'lesefassung';
+  mime: string;
+  inhalt: () => Promise<Buffer>;
+  fassung?: FassungInfo;
+}
 
 export class Archivfassung {
   /** Prüfwert → Zeit der Meldung (nur Drosselung; der Stand liegt in der Ablage, das Ereignis in der Datenbank). */
@@ -260,7 +340,13 @@ export class Archivfassung {
     return (await this.o.pakete())
       .filter((p) => hatSchnittstelle(p.laeufer, 'dms:archivfassung') && p.laeufer?.archivfassung?.typen.length)
       .sort((a, b) => a.id.localeCompare(b.id))
-      .map((p) => ({ id: p.id, name: p.name, version: p.version, typen: p.laeufer!.archivfassung!.typen, ...(p.laeufer!.archivfassung!.auswahl ? { auswahl: p.laeufer!.archivfassung!.auswahl } : {}) }));
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        version: p.version,
+        typen: p.laeufer!.archivfassung!.typen,
+        ...(p.laeufer!.archivfassung!.auswahl ? { auswahl: p.laeufer!.archivfassung!.auswahl } : {}),
+      }));
   }
 
   /**
@@ -272,19 +358,25 @@ export class Archivfassung {
     const m = mime.toLowerCase();
     const mail = mailTyp(m, name);
     if (m === 'application/octet-stream' && !mail) return null;
-    return (liste ?? await this.pakete()).find((p) => p.typen.includes(m) || (!!mail && p.typen.includes(mail))) ?? null;
+    return (liste ?? (await this.pakete())).find((p) => p.typen.includes(m) || (!!mail && p.typen.includes(mail))) ?? null;
   }
 
-  info(sha: string) { return this.o.ablage.info(sha).catch(() => null); }
+  info(sha: string) {
+    return this.o.ablage.info(sha).catch(() => null);
+  }
   /** Archivfassung mit Inhalt; ist das Original schon PDF/A, dessen Inhalt. */
   async lies(sha: string): Promise<{ info: ArchivfassungInfo; inhalt: Buffer } | null> {
     const info = await this.info(sha);
     if (info?.imOriginal) return { info, inhalt: await this.o.datei(sha) };
     return this.o.ablage.lies(sha).catch(() => null);
   }
-  belegung() { return this.o.ablage.belegung(); }
+  belegung() {
+    return this.o.ablage.belegung();
+  }
   /** Prüfwerte aller Dateien mit Archivfassung (#1216). */
-  alle() { return this.o.ablage.alle().catch(() => [] as string[]); }
+  alle() {
+    return this.o.ablage.alle().catch(() => [] as string[]);
+  }
 
   /** Quelle der Archivfassung: PDF, JPEG, PNG und E-Mails (#946) im Original, sonst die Lesefassung (#577) – oder null. */
   private async quelle(d: Pick<Dokument, 'mime' | 'sha256' | 'name'>): Promise<Quelle | null> {
@@ -310,7 +402,12 @@ export class Archivfassung {
     }
     if (s) return { stand: s.stand, info: s.info, paket: s.paket, zeit: s.zeit };
     // Mit Passwort geschützte PDFs haben keinen Volltext und keine Archivfassung – der Grund steht am Dokument.
-    if (d.mime === 'application/pdf' && d.ocr?.stand === 'ausgelassen' && /Passwort/i.test(d.ocr.info ?? '') && (await this.paketFuer(d.mime))) {
+    if (
+      d.mime === 'application/pdf' &&
+      d.ocr?.stand === 'ausgelassen' &&
+      /Passwort/i.test(d.ocr.info ?? '') &&
+      (await this.paketFuer(d.mime))
+    ) {
       return { stand: 'ausgelassen', info: t('pakete.archiv.verschluesselt-original'), paket: null, zeit: '' };
     }
     return null;
@@ -340,7 +437,23 @@ export class Archivfassung {
     const abgewaehlt = async (art: ArchivArt) => {
       const k = p.auswahl?.[art];
       if (!k || (await this.o.einstellung(p.id, k).catch(() => true)) === true) return false;
-      await this.o.ablage.setzeStand(d.sha256, { stand: 'ausgelassen', info: t('pakete.archiv.laut-einstellung', { art: t(({ pdf_text: 'pakete.archiv.art.pdfText', pdf_scan: 'pakete.archiv.art.pdfScan', bilder: 'pakete.archiv.art.bilder', emails: 'pakete.archiv.art.emails' } as const)[art]) }), paket, zeit: jetztIso });
+      await this.o.ablage.setzeStand(d.sha256, {
+        stand: 'ausgelassen',
+        info: t('pakete.archiv.laut-einstellung', {
+          art: t(
+            (
+              {
+                pdf_text: 'pakete.archiv.art.pdfText',
+                pdf_scan: 'pakete.archiv.art.pdfScan',
+                bilder: 'pakete.archiv.art.bilder',
+                emails: 'pakete.archiv.art.emails',
+              } as const
+            )[art],
+          ),
+        }),
+        paket,
+        zeit: jetztIso,
+      });
       return true;
     };
     if (mail ? await abgewaehlt('emails') : d.mime.toLowerCase() !== 'application/pdf' && (await abgewaehlt('bilder'))) return false;
@@ -353,15 +466,35 @@ export class Archivfassung {
       befund = await this.o.liesPdfA(pdf).catch(() => null);
       // Verschlüsselt: keine Archivfassung, das Original bleibt die Ansicht; der Grund steht am Dokument.
       if (befund?.verschluesselt) {
-        await this.o.ablage.setzeStand(d.sha256, { stand: 'ausgelassen', info: t('pakete.archiv.verschluesselt-original'), paket, zeit: jetztIso });
+        await this.o.ablage.setzeStand(d.sha256, {
+          stand: 'ausgelassen',
+          info: t('pakete.archiv.verschluesselt-original'),
+          paket,
+          zeit: jetztIso,
+        });
         return false;
       }
       // Schon gültiges PDF/A (nur das Original selbst): Es gilt als Archivfassung – keine zweite Datei, kein Ereignis.
       if (q.art === 'original' && befund && !o.neu) {
         let k: { seiten: number; pdfa: PdfaKennung } | null = null;
-        try { k = bewertePdfA(befund); } catch { k = null; }
+        try {
+          k = bewertePdfA(befund);
+        } catch {
+          k = null;
+        }
         if (k) {
-          const info: ArchivfassungInfo = { mime: 'application/pdf', groesse: d.groesse, sha256: d.sha256, seiten: k.seiten, pdfa: k.pdfa, paket, erstellt: jetztIso, imOriginal: true, ...(befund.signiert ? { signiert: true } : {}), ...(befund.erechnung ? { erechnung: true } : {}) };
+          const info: ArchivfassungInfo = {
+            mime: 'application/pdf',
+            groesse: d.groesse,
+            sha256: d.sha256,
+            seiten: k.seiten,
+            pdfa: k.pdfa,
+            paket,
+            erstellt: jetztIso,
+            imOriginal: true,
+            ...(befund.signiert ? { signiert: true } : {}),
+            ...(befund.erechnung ? { erechnung: true } : {}),
+          };
           await this.o.ablage.schreibeInfo(d.sha256, info);
           await this.o.ablage.setzeStand(d.sha256, null);
           log.info('Original ist schon PDF/A – gilt als Archivfassung', { dokument: d.id, pdfa: pdfaName(k.pdfa) });
@@ -378,32 +511,65 @@ export class Archivfassung {
     let wortpositionen = true;
     if (!mail) {
       const w = await this.o.ablage.woerter(d.sha256).catch(() => null);
-      const anzahl = seiten?.length ?? (q.mime === 'application/pdf' ? d.ocr?.seiten ?? 1 : 1);
+      const anzahl = seiten?.length ?? (q.mime === 'application/pdf' ? (d.ocr?.seiten ?? 1) : 1);
       for (let i = 0; i < anzahl; i++) if (!mitText(seiten?.[i]) && !w?.seiten[i]) wortpositionen = false;
     }
     this.angefordert.set(d.sha256, jetzt);
-    await this.o.ablage.setzeStand(d.sha256, { stand: 'wartet', info: null, paket, zeit: jetztIso, ...(o.grund ? { grund: o.grund } : {}) });
+    await this.o.ablage.setzeStand(d.sha256, {
+      stand: 'wartet',
+      info: null,
+      paket,
+      zeit: jetztIso,
+      ...(o.grund ? { grund: o.grund } : {}),
+    });
     const daten = (x: Dokument) => ({
-      dokument: x.id, mappe: x.mappeId, name: x.name, mime: x.mime, groesse: x.groesse, sha256: x.sha256,
-      quelle: q.art, ...(q.fassung ? { lesefassung: { mime: q.fassung.mime, sha256: q.fassung.sha256 } } : {}),
-      seiten: mail ? null : seiten?.length ?? (q.mime === 'application/pdf' ? d.ocr?.seiten ?? null : 1), textebene, wortpositionen, sprache: d.sprache ?? null,
-      signiert: !!befund?.signiert, erechnung: !!befund?.erechnung, formular: !!befund?.formular,
+      dokument: x.id,
+      mappe: x.mappeId,
+      name: x.name,
+      mime: x.mime,
+      groesse: x.groesse,
+      sha256: x.sha256,
+      quelle: q.art,
+      ...(q.fassung ? { lesefassung: { mime: q.fassung.mime, sha256: q.fassung.sha256 } } : {}),
+      seiten: mail ? null : (seiten?.length ?? (q.mime === 'application/pdf' ? (d.ocr?.seiten ?? null) : 1)),
+      textebene,
+      wortpositionen,
+      sprache: d.sprache ?? null,
+      signiert: !!befund?.signiert,
+      erechnung: !!befund?.erechnung,
+      formular: !!befund?.formular,
       extern: !!befund && (befund.javascript || befund.aktionen.length > 0 || befund.extern.length > 0),
       // Zeitzone der Ablage (#946, Werkbank → Region): für Datumsangaben in der Archivfassung, z. B. im Kopf einer E-Mail.
-      zeitzone: zeitzone(), ...(o.neu ? { neu: true } : {}),
+      zeitzone: zeitzone(),
+      ...(o.neu ? { neu: true } : {}),
     });
     // KI-Sperre (#796): Die Archivfassung gilt für alle Dokumente mit dieser Datei – ist der Typ dieses Dokuments
     // gesperrt, geht der Auftrag über ein anderes derselben Datei in einem zugelassenen Typ; sonst ausgelassen.
     let gemeldet = false;
     for (const x of [d, ...(await this.o.dokumenteMitSha(d.sha256).catch(() => [])).filter((y) => y.id !== d.id)]) {
-      if ((await this.o.melde(p.id, daten(x))) !== 'gesperrt') { gemeldet = true; break; }
+      if ((await this.o.melde(p.id, daten(x))) !== 'gesperrt') {
+        gemeldet = true;
+        break;
+      }
     }
     if (!gemeldet) {
       this.angefordert.delete(d.sha256);
-      await this.o.ablage.setzeStand(d.sha256, { stand: 'ausgelassen', info: t('pakete.archiv.ki-gesperrt', { paket: p.name }), paket, zeit: jetztIso });
+      await this.o.ablage.setzeStand(d.sha256, {
+        stand: 'ausgelassen',
+        info: t('pakete.archiv.ki-gesperrt', { paket: p.name }),
+        paket,
+        zeit: jetztIso,
+      });
       return false;
     }
-    log.info('Dokument zur Archivfassung an das Paket gemeldet', { dokument: d.id, typ: d.mime, paket: p.id, textebene, wortpositionen, neu: !!o.neu });
+    log.info('Dokument zur Archivfassung an das Paket gemeldet', {
+      dokument: d.id,
+      typ: d.mime,
+      paket: p.id,
+      textebene,
+      wortpositionen,
+      neu: !!o.neu,
+    });
     return true;
   }
 
@@ -423,7 +589,13 @@ export class Archivfassung {
     for (const d of await this.o.dokumenteMitTyp([...abfrage])) {
       const mail = mailTyp(d.mime, d.name);
       if (!klein.has(d.mime.toLowerCase()) && !(mail && klein.has(mail))) continue;
-      if (await this.anfordern(d, { liste }).catch((e: Error) => { log.warn('Dokument nicht zur Archivfassung gemeldet', { dokument: d.id, fehler: e.message }); return false; })) n++;
+      if (
+        await this.anfordern(d, { liste }).catch((e: Error) => {
+          log.warn('Dokument nicht zur Archivfassung gemeldet', { dokument: d.id, fehler: e.message });
+          return false;
+        })
+      )
+        n++;
     }
     if (n) log.info('Vorhandene Dokumente zur Archivfassung gemeldet', { typen: [...klein], dokumente: n });
     return n;
@@ -444,14 +616,28 @@ export class Archivfassung {
   }
 
   /** Archivfassung eines Pakets annehmen (PUT /dokumente/{id}/archivfassung?sha256=…). */
-  async setze(paket: { id: string; schnittstellen?: string[] } | undefined, d: Dokument, sha: unknown, inhalt: unknown): Promise<ArchivfassungInfo> {
+  async setze(
+    paket: { id: string; schnittstellen?: string[] } | undefined,
+    d: Dokument,
+    sha: unknown,
+    inhalt: unknown,
+  ): Promise<ArchivfassungInfo> {
     const p = await this.zustaendig(paket, d);
     Archivfassung.pruefeStand(d, sha);
     let k: { seiten: number; pdfa: PdfaKennung };
-    try { k = await pruefeArchivfassung(inhalt, (pdf) => this.o.liesPdfA(pdf)); } catch (f) {
+    try {
+      k = await pruefeArchivfassung(inhalt, (pdf) => this.o.liesPdfA(pdf));
+    } catch (f) {
       // Abgelehnt: Der Grund steht am Dokument und in der Werkbank (bis eine gültige Archivfassung kommt).
       if (f instanceof Fachfehler && f.status < 500) {
-        await this.o.ablage.setzeStand(d.sha256, { stand: 'fehler', info: t('pakete.archiv.abgelehnt', { paket: p.name, grund: f.message }).slice(0, 500), paket: { id: p.id, name: p.name, version: p.version }, zeit: new Date().toISOString() }).catch(() => {});
+        await this.o.ablage
+          .setzeStand(d.sha256, {
+            stand: 'fehler',
+            info: t('pakete.archiv.abgelehnt', { paket: p.name, grund: f.message }).slice(0, 500),
+            paket: { id: p.id, name: p.name, version: p.version },
+            zeit: new Date().toISOString(),
+          })
+          .catch(() => {});
         log.warn('Archivfassung abgelehnt', { dokument: d.id, paket: p.id, grund: f.message });
       }
       throw f;
@@ -459,20 +645,53 @@ export class Archivfassung {
     const b = inhalt as Buffer;
     // Was das Original mitbringt (Signatur, E-Rechnung, externe Inhalte) – für die Hinweise am Dokument.
     // Neu angefordert mit Grund (#1329): Der Grund steht mit in der Historie.
-    const q = await this.quelle(d), grund = (await this.o.ablage.stand(d.sha256).catch(() => null))?.grund;
+    const q = await this.quelle(d),
+      grund = (await this.o.ablage.stand(d.sha256).catch(() => null))?.grund;
     const vom = q?.mime === 'application/pdf' ? await this.o.liesPdfA(await q.inhalt()).catch(() => null) : null;
     const weggelassen = !!vom && (vom.javascript || vom.aktionen.length > 0 || vom.extern.length > 0);
-    if (weggelassen) log.info('Externe Inhalte des Originals nicht in die Archivfassung übernommen', { dokument: d.id, adressen: vom!.extern, aktionen: vom!.aktionen, javascript: vom!.javascript });
-    const info: ArchivfassungInfo = { mime: 'application/pdf', groesse: b.length, sha256: createHash('sha256').update(b).digest('hex'), seiten: k.seiten, pdfa: k.pdfa, paket: { id: p.id, name: p.name, version: p.version }, erstellt: new Date().toISOString(),
-      ...(vom?.signiert ? { signiert: true } : {}), ...(vom?.erechnung ? { erechnung: true } : {}), ...(weggelassen ? { weggelassen: true } : {}) };
+    if (weggelassen)
+      log.info('Externe Inhalte des Originals nicht in die Archivfassung übernommen', {
+        dokument: d.id,
+        adressen: vom!.extern,
+        aktionen: vom!.aktionen,
+        javascript: vom!.javascript,
+      });
+    const info: ArchivfassungInfo = {
+      mime: 'application/pdf',
+      groesse: b.length,
+      sha256: createHash('sha256').update(b).digest('hex'),
+      seiten: k.seiten,
+      pdfa: k.pdfa,
+      paket: { id: p.id, name: p.name, version: p.version },
+      erstellt: new Date().toISOString(),
+      ...(vom?.signiert ? { signiert: true } : {}),
+      ...(vom?.erechnung ? { erechnung: true } : {}),
+      ...(weggelassen ? { weggelassen: true } : {}),
+    };
     await this.o.ablage.schreibe(d.sha256, info, b);
     await this.o.ablage.setzeStand(d.sha256, null);
     this.angefordert.delete(d.sha256);
-    log.info('Archivfassung gespeichert', { dokument: d.id, typ: d.mime, pdfa: pdfaName(k.pdfa), bytes: b.length, seiten: k.seiten, paket: p.id });
+    log.info('Archivfassung gespeichert', {
+      dokument: d.id,
+      typ: d.mime,
+      pdfa: pdfaName(k.pdfa),
+      bytes: b.length,
+      seiten: k.seiten,
+      paket: p.id,
+    });
     const alle = await this.o.dokumenteMitSha(d.sha256).catch(() => [] as Dokument[]);
-    const werte = { typ: dateitypName(d.mime), pdfa: pdfaName(k.pdfa), paket: `${p.name} ${p.version}` }, text = grund ? t('pakete.archiv.historie.neu', { ...werte, grund }) : t('pakete.archiv.historie', werte);
+    const werte = { typ: dateitypName(d.mime), pdfa: pdfaName(k.pdfa), paket: `${p.name} ${p.version}` },
+      text = grund ? t('pakete.archiv.historie.neu', { ...werte, grund }) : t('pakete.archiv.historie', werte);
     for (const x of alle.length ? alle : [d]) {
-      await this.o.notiere(x, p.id, { dokument: x.name, text, pdfa: pdfaName(k.pdfa), groesse: b.length, paket: `${p.name} ${p.version}`, ...(grund ? { grund } : {}) })
+      await this.o
+        .notiere(x, p.id, {
+          dokument: x.name,
+          text,
+          pdfa: pdfaName(k.pdfa),
+          groesse: b.length,
+          paket: `${p.name} ${p.version}`,
+          ...(grund ? { grund } : {}),
+        })
         .catch((e: Error) => log.warn('Historie zur Archivfassung nicht geschrieben', { dokument: x.id, fehler: e.message }));
     }
     return info;
@@ -482,7 +701,11 @@ export class Archivfassung {
    * Nach dem Ereignis (aus dem Läufer): Ohne Archivfassung steht der Grund des Pakets am Dokument (ausgelassen), gibt
    * der Läufer auf: Fehler. Eine Ablehnung beim Annehmen (Fehler mit Grund) bleibt stehen.
    */
-  async nachEreignis(paket: string, e: { daten: Record<string, unknown> }, r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean }) {
+  async nachEreignis(
+    paket: string,
+    e: { daten: Record<string, unknown> },
+    r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean },
+  ) {
     const sha = typeof e.daten.sha256 === 'string' && /^[0-9a-f]{64}$/.test(e.daten.sha256) ? e.daten.sha256 : '';
     if (!sha || (!r.ok && !r.aufgegeben)) return;
     this.angefordert.delete(sha);
@@ -491,13 +714,22 @@ export class Archivfassung {
     if (!s || s.stand !== 'wartet') return;
     const p = (await this.o.pakete()).find((x) => x.id === paket);
     const name = p?.name ?? paket;
-    const grund = (r.ok ? r.text : r.fehler ?? '').trim().replace(/\s+/g, ' ').slice(0, 300);
-    const info = r.ok ? t('pakete.archiv.ohne', { paket: name, grund: grund || t('pakete.archiv.ohne-grund') }) : t('pakete.archiv.fehlgeschlagen', { paket: name, grund: grund || '–' });
-    await this.o.ablage.setzeStand(sha, { stand: r.ok ? 'ausgelassen' : 'fehler', info: info.slice(0, 500), paket: { id: paket, name, version: p?.version }, zeit: new Date().toISOString() });
+    const grund = (r.ok ? r.text : (r.fehler ?? '')).trim().replace(/\s+/g, ' ').slice(0, 300);
+    const info = r.ok
+      ? t('pakete.archiv.ohne', { paket: name, grund: grund || t('pakete.archiv.ohne-grund') })
+      : t('pakete.archiv.fehlgeschlagen', { paket: name, grund: grund || '–' });
+    await this.o.ablage.setzeStand(sha, {
+      stand: r.ok ? 'ausgelassen' : 'fehler',
+      info: info.slice(0, 500),
+      paket: { id: paket, name, version: p?.version },
+      zeit: new Date().toISOString(),
+    });
   }
 
   /** Das Paket ist mit der Meldung fertig: Die Datei darf wieder gemeldet werden. */
-  erledigt(sha: string) { this.angefordert.delete(sha); }
+  erledigt(sha: string) {
+    this.angefordert.delete(sha);
+  }
 
   /** Datei gelöscht (kein Dokument zeigt mehr darauf): Archivfassung, Stand und Wortpositionen mit weg. */
   async entferne(sha: string) {
@@ -516,14 +748,33 @@ export class Archivfassung {
    * Wortpositionen eines Dokuments (GET /dokumente/{id}/wortpositionen): je Seite der Quelle (Original bzw.
    * Lesefassung) die Wörter mit Lage – aus der Textebene, sonst aus der Texterkennung, sonst keine.
    */
-  async wortpositionen(d: Dokument, o: { fassung?: 'archiv' } = {}): Promise<{ dokument: string; sha256: string; quelle: 'original' | 'lesefassung' | 'archiv'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }> {
+  async wortpositionen(
+    d: Dokument,
+    o: { fassung?: 'archiv' } = {},
+  ): Promise<{
+    dokument: string;
+    sha256: string;
+    quelle: 'original' | 'lesefassung' | 'archiv';
+    mime: string;
+    vollstaendig: boolean;
+    seiten: WortSeite[];
+  }> {
     const q = o.fassung === 'archiv' ? await this.archivQuelle(d) : await this.quelle(d);
     if (!q) throw new Fachfehler(404, t('pakete.archiv.keine-quelle', { typ: dateitypName(d.mime) }));
-    const inhalt = await q.inhalt(), pdf = q.mime === 'application/pdf';
-    const ebene = pdf ? await this.o.textebene(inhalt).catch(() => null) : null, w = q.art === 'archiv' ? null : await this.o.ablage.woerter(d.sha256).catch(() => null);
-    const anzahl = !pdf ? 1 : ebene?.length ?? (q.art === 'archiv' ? q.seiten : Math.max(d.ocr?.seiten ?? 0, w?.seiten.length ?? 0, 1));
+    const inhalt = await q.inhalt(),
+      pdf = q.mime === 'application/pdf';
+    const ebene = pdf ? await this.o.textebene(inhalt).catch(() => null) : null,
+      w = q.art === 'archiv' ? null : await this.o.ablage.woerter(d.sha256).catch(() => null);
+    const anzahl = !pdf ? 1 : (ebene?.length ?? (q.art === 'archiv' ? q.seiten : Math.max(d.ocr?.seiten ?? 0, w?.seiten.length ?? 0, 1)));
     const seiten = wortSeiten(anzahl, ebene, w?.seiten ?? null, pdf ? null : bildGroesse(inhalt, q.mime));
-    return { dokument: d.id, sha256: d.sha256, quelle: q.art, mime: q.mime, vollstaendig: seiten.every((s) => s.quelle !== 'keine'), seiten };
+    return {
+      dokument: d.id,
+      sha256: d.sha256,
+      quelle: q.art,
+      mime: q.mime,
+      vollstaendig: seiten.every((s) => s.quelle !== 'keine'),
+      seiten,
+    };
   }
 
   /**
@@ -544,12 +795,29 @@ export class Archivfassung {
     const { anzahl: fertig, bytes } = await this.belegung().catch(() => ({ anzahl: 0, bytes: 0 }));
     const staende = await this.o.ablage.staende().catch(() => []);
     const zaehler = { fertig, bytes, wartet: 0, ausgelassen: 0, fehler: 0 };
-    const liste: Array<{ dokument: string; name: string; mappeId: string; stand: ArchivStandArt; info: string | null; zeit: string; paket: string | null }> = [];
+    const liste: Array<{
+      dokument: string;
+      name: string;
+      mappeId: string;
+      stand: ArchivStandArt;
+      info: string | null;
+      zeit: string;
+      paket: string | null;
+    }> = [];
     for (const { sha256, stand: s } of staende.sort((a, b) => b.stand.zeit.localeCompare(a.stand.zeit))) {
       if (await this.info(sha256)) continue;
       zaehler[s.stand]++;
       if (s.stand === 'wartet' || liste.length >= 200) continue;
-      for (const d of await this.o.dokumenteMitSha(sha256).catch(() => [] as Dokument[])) liste.push({ dokument: d.id, name: d.name, mappeId: d.mappeId, stand: s.stand, info: s.info, zeit: s.zeit, paket: s.paket?.name ?? null });
+      for (const d of await this.o.dokumenteMitSha(sha256).catch(() => [] as Dokument[]))
+        liste.push({
+          dokument: d.id,
+          name: d.name,
+          mappeId: d.mappeId,
+          stand: s.stand,
+          info: s.info,
+          zeit: s.zeit,
+          paket: s.paket?.name ?? null,
+        });
     }
     return { pakete, zaehler, liste: liste.slice(0, 200) };
   }

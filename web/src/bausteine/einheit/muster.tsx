@@ -25,13 +25,19 @@ export function EinheitMuster() {
   return (
     <div className={s.raster}>
       <Karte zustand="zeitraum" titel={t('oberflaeche.muster.einheit.zeitraum')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.kuendigungsfrist')}><ZeitraumEingabe wert={frist} setze={setFrist} /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.kuendigungsfrist')}>
+          <ZeitraumEingabe wert={frist} setze={setFrist} />
+        </Feld>
       </Karte>
       <Karte zustand="zeitraum-einzahl" titel={t('oberflaeche.muster.einheit.einzahl')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.laufzeit')} hinweis={t('oberflaeche.muster.hinweis.einzahl')}><ZeitraumEingabe wert={laufzeit} setze={setLaufzeit} /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.laufzeit')} hinweis={t('oberflaeche.muster.hinweis.einzahl')}>
+          <ZeitraumEingabe wert={laufzeit} setze={setLaufzeit} />
+        </Feld>
       </Karte>
       <Karte zustand="zeitraum-fehler" titel={t('oberflaeche.muster.zustand.fehler')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.kuendigungsfrist')} fehler={leseZeitraum(falsch) ? null : t('oberflaeche.muster.fehler.zeitraum')}>
+        <Feld
+          beschriftung={t('oberflaeche.muster.beschriftung.kuendigungsfrist')}
+          fehler={leseZeitraum(falsch) ? null : t('oberflaeche.muster.fehler.zeitraum')}>
           <ZeitraumEingabe wert={falsch} setze={setFalsch} />
         </Feld>
       </Karte>
@@ -41,13 +47,17 @@ export function EinheitMuster() {
         </Feld>
       </Karte>
       <Karte zustand="prozent-leer" titel={t('oberflaeche.muster.zustand.optional')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.ermaessigt')} optional
+        <Feld
+          beschriftung={t('oberflaeche.muster.beschriftung.ermaessigt')}
+          optional
           fehler={ermaessigt.trim() && !Number.isFinite(leseProzent(ermaessigt)) ? t('oberflaeche.muster.fehler.prozent') : null}>
           <ProzentEingabe wert={ermaessigt} setze={setErmaessigt} />
         </Feld>
       </Karte>
       <Karte zustand="einheit-gesperrt" titel={t('oberflaeche.muster.zustand.gesperrt')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.laufzeit')}><ZeitraumEingabe wert={{ anzahl: '24', einheit: 'monate' }} setze={() => {}} disabled /></Feld>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.laufzeit')}>
+          <ZeitraumEingabe wert={{ anzahl: '24', einheit: 'monate' }} setze={() => {}} disabled />
+        </Feld>
       </Karte>
     </div>
   );

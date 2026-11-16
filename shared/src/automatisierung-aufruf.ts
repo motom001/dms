@@ -40,14 +40,30 @@ export const AUFRUF_PFAD = '/api/aufruf/';
 export const AUFRUF_KENNUNG = /^[A-Za-z0-9_-]{43}$/;
 
 /** Die Wenn-Karte: Namen der Parameter, die ein Aufruf mitbringen darf. */
-export interface WennAufruf { art: 'aufruf'; parameter: string[] }
+export interface WennAufruf {
+  art: 'aufruf';
+  parameter: string[];
+}
 
 export const istAufruf = (w: { art: string }): w is WennAufruf => w.art === 'aufruf';
 
 /** Name eines Parameters: klein, wie ein Platzhalter (`{raum}`). */
 export const PARAMETER_NAME = /^[a-z][a-z0-9_]*$/;
 /** Namen, die schon Platzhalter sind – ein Parameter darf sie nicht überdecken. */
-export const AUFRUF_RESERVIERT: readonly string[] = ['heute', 'automatisierung', 'zeitpunkt', 'titel', 'mappentyp', 'datum', 'tage', 'benutzer', 'vertreter', 'von', 'bis', 'zeitraum'];
+export const AUFRUF_RESERVIERT: readonly string[] = [
+  'heute',
+  'automatisierung',
+  'zeitpunkt',
+  'titel',
+  'mappentyp',
+  'datum',
+  'tage',
+  'benutzer',
+  'vertreter',
+  'von',
+  'bis',
+  'zeitraum',
+];
 
 /** Eingabe der Wenn-Karte bereinigen: gültige, nicht reservierte Namen ohne Doppelte, höchstens {@link AUFRUF_GRENZEN}.parameter. */
 export function bereinigeAufruf(x: Record<string, unknown>): WennAufruf {
@@ -69,8 +85,12 @@ export function aufrufParameter(w: WennAufruf, roh: unknown): Record<string, str
     if (!Object.hasOwn(o, n)) continue;
     const v = o[n];
     if (typeof v !== 'string' && typeof v !== 'number' && typeof v !== 'boolean') continue;
-    // eslint-disable-next-line no-control-regex -- Steuerzeichen bewusst entfernen (Text für Aufgaben und Verlauf)
-    erg[n] = String(v).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, AUFRUF_GRENZEN.wert);
+    /* eslint-disable no-control-regex -- Steuerzeichen bewusst entfernen (Text für Aufgaben und Verlauf) */
+    erg[n] = String(v)
+      .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+      .trim()
+      .slice(0, AUFRUF_GRENZEN.wert);
+    /* eslint-enable no-control-regex */
   }
   return erg;
 }
@@ -78,7 +98,8 @@ export function aufrufParameter(w: WennAufruf, roh: unknown): Record<string, str
 /** Platzhalter der Karte: Datum, Name, Zeitpunkt des Aufrufs und je Parameter einer. */
 export function aufrufPlatzhalter(w: WennAufruf): Array<{ key: string; label: string }> {
   return [
-    { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') }, { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') },
+    { key: 'heute', label: t('gemeinsam.automatisierung.datum-heute') },
+    { key: 'automatisierung', label: t('gemeinsam.automatisierung.name-dieser-automatisierung') },
     { key: 'zeitpunkt', label: t('gemeinsam.automatisierung.aufruf.zeitpunkt') },
     ...w.parameter.map((key) => ({ key, label: t('gemeinsam.automatisierung.aufruf.parameter', { name: key }) })),
   ];

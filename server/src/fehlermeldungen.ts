@@ -13,10 +13,22 @@ import { FEHLER_BILD_BYTES, MB } from './grenzen';
  * Screenshots und die technischen Angaben von Server und Gerät. Nur Administratoren sehen sie;
  * eine Rückmeldung an den Benutzer gibt es im DMS bewusst nicht.
  */
-export interface FehlerBild { nr: number; name: string; mime: string; groesse: number; sha256: string }
+export interface FehlerBild {
+  nr: number;
+  name: string;
+  mime: string;
+  groesse: number;
+  sha256: string;
+}
 export interface Fehlermeldung {
-  id: string; benutzerId: string | null; erstellt: string; text: string;
-  angaben: Record<string, unknown>; bilder: FehlerBild[]; erledigt: string | null; erledigtVon: string | null;
+  id: string;
+  benutzerId: string | null;
+  erstellt: string;
+  text: string;
+  angaben: Record<string, unknown>;
+  bilder: FehlerBild[];
+  erledigt: string | null;
+  erledigtVon: string | null;
 }
 
 export interface FehlerRepo {
@@ -41,20 +53,32 @@ function begrenze(v: unknown, tiefe = 0): unknown {
   if (typeof v === 'string') return v.slice(0, 2000);
   if (tiefe > 4) return undefined;
   if (Array.isArray(v)) return v.slice(0, 50).map((x) => begrenze(x, tiefe + 1));
-  if (typeof v === 'object') return Object.fromEntries(Object.entries(v as Record<string, unknown>).slice(0, 60).map(([k, x]) => [k.slice(0, 60), begrenze(x, tiefe + 1)]));
+  if (typeof v === 'object')
+    return Object.fromEntries(
+      Object.entries(v as Record<string, unknown>)
+        .slice(0, 60)
+        .map(([k, x]) => [k.slice(0, 60), begrenze(x, tiefe + 1)]),
+    );
   return undefined;
 }
 
 export class Fehlermeldungen {
   /** Nach dem Eingang (#677): Ereignis „Fehler gemeldet“ für Automatisierungen (ablago.ts verbindet mit dem Kern). */
   beimMelden?: (m: { id: string; benutzerId: string | null; erstellt: string }) => Promise<void>;
-  constructor(private repo: FehlerRepo, private dateien: Dateispeicher) {}
+  constructor(
+    private repo: FehlerRepo,
+    private dateien: Dateispeicher,
+  ) {}
 
   async melde(benutzerId: string | null, eingabe: unknown): Promise<{ id: string }> {
     const e = (eingabe ?? {}) as Record<string, unknown>;
     const text = typeof e.text === 'string' ? e.text.replace(/\r\n?/g, '\n').trim() : '';
     if (!text) throw new Fachfehler(422, t('meldungen.fehlermeldungen.bitte-beschreibe-kurz-was'));
-    if (text.length > FEHLER_TEXT_MAX) throw new Fachfehler(422, t('meldungen.fehlermeldungen.hoechstens-zeichen', { FEHLER_TEXT_MAX: FEHLER_TEXT_MAX.toLocaleString(gebietsschema()) }));
+    if (text.length > FEHLER_TEXT_MAX)
+      throw new Fachfehler(
+        422,
+        t('meldungen.fehlermeldungen.hoechstens-zeichen', { FEHLER_TEXT_MAX: FEHLER_TEXT_MAX.toLocaleString(gebietsschema()) }),
+      );
     const roh = Array.isArray(e.bilder) ? e.bilder : [];
     if (roh.length > FEHLER_BILDER_MAX) throw new Fachfehler(422, t('meldungen.fehlermeldungen.hoechstens-bilder', { FEHLER_BILDER_MAX }));
     const bilder: FehlerBild[] = [];
@@ -62,7 +86,8 @@ export class Fehlermeldungen {
       const x = (b ?? {}) as Record<string, unknown>;
       const inhalt = typeof x.daten === 'string' ? Buffer.from(x.daten.replace(/^data:[^,]*,/, ''), 'base64') : Buffer.alloc(0);
       if (!inhalt.length) throw new Fachfehler(422, t('meldungen.fehlermeldungen.ein-bild-ist-leer'));
-      if (inhalt.length > FEHLER_BILD_BYTES) throw new Fachfehler(413, t('meldungen.fehlermeldungen.ein-bild-darf-hoechstens', { wert: FEHLER_BILD_BYTES / MB }));
+      if (inhalt.length > FEHLER_BILD_BYTES)
+        throw new Fachfehler(413, t('meldungen.fehlermeldungen.ein-bild-darf-hoechstens', { wert: FEHLER_BILD_BYTES / MB }));
       const mime = erkenneAnzeigbar(inhalt);
       if (!mime || !BILDTYPEN.has(mime)) throw new Fachfehler(422, t('meldungen.fehlermeldungen.bilder-bitte-als-png'));
       const sha256 = createHash('sha256').update(inhalt).digest('hex');
@@ -76,12 +101,18 @@ export class Fehlermeldungen {
     await this.repo.lege({ id, benutzerId, erstellt, text, angaben, bilder, erledigt: null, erledigtVon: null });
     log.info('Fehlermeldung eingegangen', { id, bilder: bilder.length });
     // Die Meldung ist gespeichert – scheitert das Ereignis, steht es nur im Protokoll.
-    await this.beimMelden?.({ id, benutzerId, erstellt }).catch((x: Error) => log.warn('Ereignis „Fehler gemeldet“ nicht ausgelöst', { fehler: x.message }));
+    await this.beimMelden?.({ id, benutzerId, erstellt }).catch((x: Error) =>
+      log.warn('Ereignis „Fehler gemeldet“ nicht ausgelöst', { fehler: x.message }),
+    );
     return { id };
   }
 
-  liste(erledigt = false) { return this.repo.liste(erledigt); }
-  offen() { return this.repo.zaehleOffen(); }
+  liste(erledigt = false) {
+    return this.repo.liste(erledigt);
+  }
+  offen() {
+    return this.repo.zaehleOffen();
+  }
 
   async hole(id: string) {
     const m = await this.repo.hole(id);
@@ -114,10 +145,14 @@ export class Fehlermeldungen {
 /* ---------- Speicher ---------- */
 
 const alsMeldung = (r: Record<string, unknown>): Fehlermeldung => ({
-  id: r.id as string, benutzerId: (r.benutzer_id as string | null) ?? null,
-  erstellt: new Date(r.erstellt as string).toISOString(), text: r.text as string,
-  angaben: (r.angaben as Record<string, unknown>) ?? {}, bilder: (r.bilder as FehlerBild[]) ?? [],
-  erledigt: r.erledigt ? new Date(r.erledigt as string).toISOString() : null, erledigtVon: (r.erledigt_von as string | null) ?? null,
+  id: r.id as string,
+  benutzerId: (r.benutzer_id as string | null) ?? null,
+  erstellt: new Date(r.erstellt as string).toISOString(),
+  text: r.text as string,
+  angaben: (r.angaben as Record<string, unknown>) ?? {},
+  bilder: (r.bilder as FehlerBild[]) ?? [],
+  erledigt: r.erledigt ? new Date(r.erledigt as string).toISOString() : null,
+  erledigtVon: (r.erledigt_von as string | null) ?? null,
 });
 
 export function pgFehlerRepo(sql: postgres.Sql, haushaltId: string): FehlerRepo {
@@ -127,7 +162,8 @@ export function pgFehlerRepo(sql: postgres.Sql, haushaltId: string): FehlerRepo 
         VALUES (${m.id}, ${haushaltId}, ${m.benutzerId}, ${m.text}, ${sql.json(m.angaben as postgres.JSONValue)}, ${sql.json(m.bilder as unknown as postgres.JSONValue)})`;
     },
     async liste(erledigt) {
-      const r = await sql`SELECT * FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND (erledigt IS NOT NULL) = ${erledigt} ORDER BY erstellt DESC LIMIT 200`;
+      const r =
+        await sql`SELECT * FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND (erledigt IS NOT NULL) = ${erledigt} ORDER BY erstellt DESC LIMIT 200`;
       return r.map(alsMeldung);
     },
     async hole(id) {
@@ -137,13 +173,16 @@ export function pgFehlerRepo(sql: postgres.Sql, haushaltId: string): FehlerRepo 
     async setzeErledigt(id, von) {
       await sql`UPDATE fehlermeldungen SET erledigt = ${von === null ? null : sql`now()`}, erledigt_von = ${von} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
-    async loesche(id) { await sql`DELETE FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
+    async loesche(id) {
+      await sql`DELETE FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
     async zaehleOffen() {
       const [r] = await sql`SELECT count(*)::int AS n FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND erledigt IS NULL`;
       return r.n as number;
     },
     async shaInGebrauch(sha) {
-      const [r] = await sql`SELECT EXISTS (SELECT 1 FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND bilder @> ${sql.json([{ sha256: sha }])}) AS ja`;
+      const [r] =
+        await sql`SELECT EXISTS (SELECT 1 FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND bilder @> ${sql.json([{ sha256: sha }])}) AS ja`;
       return r.ja as boolean;
     },
   };
@@ -153,12 +192,31 @@ export function speicherFehlerRepo(): FehlerRepo {
   const m = new Map<string, Fehlermeldung>();
   const kopie = <T>(x: T): T => structuredClone(x);
   return {
-    async lege(x) { m.set(x.id, kopie(x)); },
-    async liste(erledigt) { return [...m.values()].filter((x) => !!x.erledigt === erledigt).sort((a, b) => b.erstellt.localeCompare(a.erstellt)).map(kopie); },
-    async hole(id) { const x = m.get(id); return x && kopie(x); },
-    async setzeErledigt(id, von) { const x = m.get(id); if (x) m.set(id, { ...x, erledigt: von === null ? null : new Date().toISOString(), erledigtVon: von }); },
-    async loesche(id) { m.delete(id); },
-    async zaehleOffen() { return [...m.values()].filter((x) => !x.erledigt).length; },
-    async shaInGebrauch(sha) { return [...m.values()].some((x) => x.bilder.some((b) => b.sha256 === sha)); },
+    async lege(x) {
+      m.set(x.id, kopie(x));
+    },
+    async liste(erledigt) {
+      return [...m.values()]
+        .filter((x) => !!x.erledigt === erledigt)
+        .sort((a, b) => b.erstellt.localeCompare(a.erstellt))
+        .map(kopie);
+    },
+    async hole(id) {
+      const x = m.get(id);
+      return x && kopie(x);
+    },
+    async setzeErledigt(id, von) {
+      const x = m.get(id);
+      if (x) m.set(id, { ...x, erledigt: von === null ? null : new Date().toISOString(), erledigtVon: von });
+    },
+    async loesche(id) {
+      m.delete(id);
+    },
+    async zaehleOffen() {
+      return [...m.values()].filter((x) => !x.erledigt).length;
+    },
+    async shaInGebrauch(sha) {
+      return [...m.values()].some((x) => x.bilder.some((b) => b.sha256 === sha));
+    },
   };
 }

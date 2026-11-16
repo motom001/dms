@@ -10,7 +10,13 @@ import type { Benutzer, Mappentyp } from '../../../shared/src/model';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
 import { istTeiltyp } from '../../../shared/src/teile';
 import { bereinigeBedingungen, kinderVon, klauselnFuer, type Sicht, type SichtDaten, waereKreis } from '../../../shared/src/sichten';
-import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, type SichtRegelwerk, sichtTestlauf } from '../../../shared/src/sichtrechte';
+import {
+  alleSichtRechte,
+  bereinigeSichtRegelwerk,
+  sichtRegelProblem,
+  type SichtRegelwerk,
+  sichtTestlauf,
+} from '../../../shared/src/sichtrechte';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import { liesStand, TYP_TEILE } from '../mappentypen';
@@ -27,11 +33,21 @@ export interface SichtenVerwaltungAnschluss {
 }
 
 export class SichtenVerwaltung {
-  constructor(private readonly kern: Kern, private readonly rechte: ZugriffDienst, private readonly anschluss: SichtenVerwaltungAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechte: ZugriffDienst,
+    private readonly anschluss: SichtenVerwaltungAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private aufloesung(benutzerId: string) { return this.rechte.aufloesung(benutzerId); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private aufloesung(benutzerId: string) {
+    return this.rechte.aufloesung(benutzerId);
+  }
 
   /* ---------- Sichten verwalten (#38) ---------- */
 
@@ -62,10 +78,23 @@ export class SichtenVerwaltung {
     if (!b) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
     const elternId = istUuid(x.elternId) && alle.some((s) => s.id === x.elternId) && !waereKreis(alle, id, x.elternId) ? x.elternId : null;
     const alt = alle.find((s) => s.id === id);
-    const probe: Sicht[] = [...alle.filter((s) => s.id !== id), {
-      ...(alt ?? { name: t('meldungen.dienst.neue-ansicht'), beschreibung: '', position: 0, typen: [], bedingungen: [], erstellt: '', geaendert: '' }),
-      id, elternId, berechtigungen: bereinigeSichtRegelwerk(x.berechtigungen),
-    }];
+    const probe: Sicht[] = [
+      ...alle.filter((s) => s.id !== id),
+      {
+        ...(alt ?? {
+          name: t('meldungen.dienst.neue-ansicht'),
+          beschreibung: '',
+          position: 0,
+          typen: [],
+          bedingungen: [],
+          erstellt: '',
+          geaendert: '',
+        }),
+        id,
+        elternId,
+        berechtigungen: bereinigeSichtRegelwerk(x.berechtigungen),
+      },
+    ];
     const a = await this.aufloesung(b.id);
     if (b.rolle === 'admin') return { admin: true, benutzer: { id: b.id, name: b.name || b.email }, kette: [] };
     const kette = sichtTestlauf(probe, id, { id: b.id, rollen: a.meineRollen });
@@ -83,23 +112,48 @@ export class SichtenVerwaltung {
     const gewaehlt = [...new Set((Array.isArray(x.typen) ? x.typen : []).map(String))];
     // „Alle Mappentypen“ (#725) steht allein; sonst nur vorhandene Typen.
     const typen = gewaehlt.includes(ALLE_TYPEN) ? [ALLE_TYPEN] : gewaehlt.filter((t) => vorhanden.has(t));
-    const geschwister = kinderVon(alle.filter((s) => s.id !== id), elternId);
+    const geschwister = kinderVon(
+      alle.filter((s) => s.id !== id),
+      elternId,
+    );
     // Ohne Stelle: bleibt die Elternsicht, bleibt auch die Stelle (#917) – sonst ans Ende der neuen Ebene.
     const bisher = alle.find((s) => s.id === id);
-    const position = Number.isFinite(Number(x.position)) && x.position !== null && x.position !== undefined
-      ? Math.trunc(Number(x.position))
-      : bisher && bisher.elternId === elternId ? bisher.position : (geschwister.at(-1)?.position ?? 0) + 10;
+    const position =
+      Number.isFinite(Number(x.position)) && x.position !== null && x.position !== undefined
+        ? Math.trunc(Number(x.position))
+        : bisher && bisher.elternId === elternId
+          ? bisher.position
+          : (geschwister.at(-1)?.position ?? 0) + 10;
     // Trefferliste (#75): nur der Schlüssel; passt er nicht (mehr), gilt der Standard und die Werkbank zeigt es an.
     const trefferliste = text(x.trefferliste).slice(0, 40) || null;
     // Berechtigungen (#148): fehlt die Angabe, bleiben sie, wie sie sind.
-    const berechtigungen: SichtRegelwerk | null = 'berechtigungen' in x ? bereinigeSichtRegelwerk(x.berechtigungen) : alle.find((s) => s.id === id)?.berechtigungen ?? null;
+    const berechtigungen: SichtRegelwerk | null =
+      'berechtigungen' in x ? bereinigeSichtRegelwerk(x.berechtigungen) : (alle.find((s) => s.id === id)?.berechtigungen ?? null);
     const probleme = (berechtigungen?.regeln ?? []).map((r) => sichtRegelProblem(r, !!elternId)).filter((p): p is string => !!p);
-    if (probleme.length) throw new Fachfehler(422, t('meldungen.dienst.berechtigungen', { probleme: probleme.join(' ') }), { gruende: probleme, berechtigungen: true });
+    if (probleme.length)
+      throw new Fachfehler(422, t('meldungen.dienst.berechtigungen', { probleme: probleme.join(' ') }), {
+        gruende: probleme,
+        berechtigungen: true,
+      });
     // Symbol (#428): nur Namen aus der festen Auswahl; fehlt die Angabe, bleibt es, wie es ist.
-    const symbol = 'symbol' in x ? ansichtSymbol(x.symbol) : alle.find((s) => s.id === id)?.symbol ?? null;
+    const symbol = 'symbol' in x ? ansichtSymbol(x.symbol) : (alle.find((s) => s.id === id)?.symbol ?? null);
     // Beschriftungen je Sprache (#728): fehlt die Angabe, bleiben sie, wie sie sind.
-    const beschriftungen = 'beschriftungen' in x ? bereinigeBeschriftungen<TypTeile>(x.beschriftungen, TYP_TEILE) : alle.find((s) => s.id === id)?.beschriftungen;
-    return { name, beschreibung: ausgangAus(x.beschriftungen, 'beschreibung', text(x.beschreibung)).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen), trefferliste, berechtigungen, symbol, beschriftungen };
+    const beschriftungen =
+      'beschriftungen' in x
+        ? bereinigeBeschriftungen<TypTeile>(x.beschriftungen, TYP_TEILE)
+        : alle.find((s) => s.id === id)?.beschriftungen;
+    return {
+      name,
+      beschreibung: ausgangAus(x.beschriftungen, 'beschreibung', text(x.beschreibung)).slice(0, 500),
+      elternId,
+      position,
+      typen,
+      bedingungen: bereinigeBedingungen(x.bedingungen),
+      trefferliste,
+      berechtigungen,
+      symbol,
+      beschriftungen,
+    };
   }
 
   async legeSichtAn(e: unknown): Promise<Sicht> {
@@ -119,13 +173,20 @@ export class SichtenVerwaltung {
     const stand = liesStand((e as { stand?: unknown } | null)?.stand, 'meldungen.dienst.stand-ungueltig');
     if (stand !== undefined && alt.geaendert !== stand) throw SichtenVerwaltung.konfigurationKonflikt('sicht', alt.geaendert);
     const d = await this.bereinigeSicht(e, id, alle);
-    try { return await this.repo.aendereSicht(id, d, stand); }
-    catch (f) { if (f instanceof KonfigurationVeraltet) throw SichtenVerwaltung.konfigurationKonflikt('sicht'); throw f; }
+    try {
+      return await this.repo.aendereSicht(id, d, stand);
+    } catch (f) {
+      if (f instanceof KonfigurationVeraltet) throw SichtenVerwaltung.konfigurationKonflikt('sicht');
+      throw f;
+    }
   }
 
   /** 409 „Jemand hat … inzwischen geändert“ (#917) für Mappentyp bzw. Ansicht; `aktuell` = der Stand jetzt. */
   static konfigurationKonflikt(art: 'typ' | 'sicht', aktuell?: string): Fachfehler {
-    return new Fachfehler(409, t(art === 'typ' ? 'meldungen.dienst.typ-konflikt' : 'meldungen.dienst.sicht-konflikt'), { konflikt: true, ...(aktuell ? { stand: aktuell } : {}) });
+    return new Fachfehler(409, t(art === 'typ' ? 'meldungen.dienst.typ-konflikt' : 'meldungen.dienst.sicht-konflikt'), {
+      konflikt: true,
+      ...(aktuell ? { stand: aktuell } : {}),
+    });
   }
 
   /** Untersichten rücken eine Ebene nach oben, an die Stelle der gelöschten. */
@@ -147,7 +208,8 @@ export class SichtenVerwaltung {
     const eltern = istUuid(elternId) ? elternId : null;
     const geschwister = kinderVon(alle, eltern);
     const liste = Array.isArray(ids) ? ids.map(String) : [];
-    if (liste.length !== geschwister.length || !geschwister.every((g) => liste.includes(g.id))) throw new Fachfehler(422, t('meldungen.dienst.die-reihenfolge-muss-genau'));
+    if (liste.length !== geschwister.length || !geschwister.every((g) => liste.includes(g.id)))
+      throw new Fachfehler(422, t('meldungen.dienst.die-reihenfolge-muss-genau'));
     for (const [i, sid] of liste.entries()) {
       const g = geschwister.find((x) => x.id === sid)!;
       if (g.position !== (i + 1) * 10) await this.repo.setzeSichtOrt(sid, g.elternId, (i + 1) * 10);
@@ -166,7 +228,10 @@ export class SichtenVerwaltung {
     const eltern = istUuid(elternId) ? elternId : null;
     if (eltern && !alle.some((x) => x.id === eltern)) throw new Fachfehler(422, t('meldungen.dienst.die-gewaehlte-elternsicht-gibt'));
     if (waereKreis(alle, id, eltern)) throw new Fachfehler(422, t('meldungen.dienst.eine-ansicht-kann-nicht'));
-    const geschwister = kinderVon(alle.filter((x) => x.id !== id), eltern);
+    const geschwister = kinderVon(
+      alle.filter((x) => x.id !== id),
+      eltern,
+    );
     const n = Number(stelle);
     const i = Number.isFinite(n) ? Math.max(0, Math.min(geschwister.length, Math.trunc(n))) : geschwister.length;
     const neu = [...geschwister.slice(0, i), s, ...geschwister.slice(i)];
@@ -201,10 +266,15 @@ export class SichtenVerwaltung {
     if (alle.some((s) => s.id === t.id)) return;
     const SYSTEM_AB = 100_000;
     const oben = kinderVon(alle, null).map((s) => s.position);
-    const position = t.system
-      ? Math.max(SYSTEM_AB, ...oben) + 10
-      : Math.max(0, ...oben.filter((p) => p < SYSTEM_AB)) + 10;
-    await this.repo.legeSichtAn(t.id, { name: t.name, beschreibung: t.beschreibung, elternId: null, position, typen: [t.id], bedingungen: [] });
+    const position = t.system ? Math.max(SYSTEM_AB, ...oben) + 10 : Math.max(0, ...oben.filter((p) => p < SYSTEM_AB)) + 10;
+    await this.repo.legeSichtAn(t.id, {
+      name: t.name,
+      beschreibung: t.beschreibung,
+      elternId: null,
+      position,
+      typen: [t.id],
+      bedingungen: [],
+    });
   }
 
   /**
@@ -214,7 +284,10 @@ export class SichtenVerwaltung {
    */
   async teilUmgeschaltet(alt: Mappentyp, typ: Mappentyp) {
     if (istTeiltyp(alt) === istTeiltyp(typ)) return;
-    if (!istTeiltyp(typ)) { await this.sichtFuerTyp(typ); return; }
+    if (!istTeiltyp(typ)) {
+      await this.sichtFuerTyp(typ);
+      return;
+    }
     const alle = await this.repo.listeSichten();
     for (const x of alle.filter((v) => v.typen.includes(typ.id))) {
       const typen = x.typen.filter((id) => id !== typ.id);

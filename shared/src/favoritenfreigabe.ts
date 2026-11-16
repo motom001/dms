@@ -23,7 +23,7 @@ export interface FavoritenFreigabe {
 export function liesFavoritenFreigabe(v: unknown): FavoritenFreigabe {
   if (!v || typeof v !== 'object') return { erlaubt: 'alle', rollen: [], vorgabe: true };
   const o = v as Record<string, unknown>;
-  const erlaubt = FREIGABEN.includes(o.erlaubt as Freigabe) ? o.erlaubt as Freigabe : 'alle';
+  const erlaubt = FREIGABEN.includes(o.erlaubt as Freigabe) ? (o.erlaubt as Freigabe) : 'alle';
   const rollen = Array.isArray(o.rollen) ? [...new Set(o.rollen.filter((x): x is string => typeof x === 'string' && !!x))] : [];
   return { erlaubt, rollen, vorgabe: o.vorgabe !== false };
 }

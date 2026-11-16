@@ -18,7 +18,10 @@ import { t } from './texte';
 import { SCHLUESSEL } from './kennungen';
 
 /** Ein Paar: `von` ist ein Feld der Mappe, auf die das Verweisfeld zeigt, `nach` ein Feld dieser Mappe. */
-export interface Vorbelegung { von: string; nach: string }
+export interface Vorbelegung {
+  von: string;
+  nach: string;
+}
 
 /**
  * Ab dieser Version kennt Ablago `vorbelegen` (#1037) – ältere übergehen die Angabe (das Feld bleibt ein Verweis ohne
@@ -78,7 +81,12 @@ export function moeglicheNach(felder: Feld[], f: Pick<Feld, 'key'>): Feld[] {
 export function moeglicheVon(zielFelder: Feld[][], nach: Feld): Feld[] {
   const gesehen = new Map<string, Feld>();
   for (const l of zielFelder) for (const x of l) if (!gesehen.has(x.key)) gesehen.set(x.key, x);
-  return [...gesehen.values()].filter((x) => zielFelder.every((l) => { const g = l.find((y) => y.key === x.key); return !g || passtZusammen(g, nach); }));
+  return [...gesehen.values()].filter((x) =>
+    zielFelder.every((l) => {
+      const g = l.find((y) => y.key === x.key);
+      return !g || passtZusammen(g, nach);
+    }),
+  );
 }
 
 /**
@@ -92,21 +100,43 @@ export function vorbelegenProbleme(felder: Feld[], f: Feld, felderVon: (typId: s
   if (!paare.length) return [];
   if (f.typ !== 'referenz' || jedeMappe(f)) return [t('gemeinsam.vorbelegen.nur-verweis')];
   const m: string[] = [];
-  const listen = zieleVon(f).map(felderVon).filter((x): x is Feld[] => !!x);
+  const listen = zieleVon(f)
+    .map(felderVon)
+    .filter((x): x is Feld[] => !!x);
   for (const p of paare) {
     const nach = felder.find((x) => x.key === p.nach);
-    if (!nach) { m.push(t('gemeinsam.vorbelegen.nach-fehlt', { feld: p.nach })); continue; }
+    if (!nach) {
+      m.push(t('gemeinsam.vorbelegen.nach-fehlt', { feld: p.nach }));
+      continue;
+    }
     const name = nach.label || nach.key;
-    if (nach.key === f.key) { m.push(t('gemeinsam.vorbelegen.nicht-sich-selbst')); continue; }
-    if (nach.typ === 'passwort') { m.push(t('gemeinsam.vorbelegen.passwort', { feld: name })); continue; }
-    if (nach.typ === 'tabelle') { m.push(t('gemeinsam.vorbelegen.tabelle', { feld: name })); continue; }
-    if (paare.filter((x) => x.nach === p.nach).length > 1) { m.push(t('gemeinsam.vorbelegen.doppelt', { feld: name })); continue; }
+    if (nach.key === f.key) {
+      m.push(t('gemeinsam.vorbelegen.nicht-sich-selbst'));
+      continue;
+    }
+    if (nach.typ === 'passwort') {
+      m.push(t('gemeinsam.vorbelegen.passwort', { feld: name }));
+      continue;
+    }
+    if (nach.typ === 'tabelle') {
+      m.push(t('gemeinsam.vorbelegen.tabelle', { feld: name }));
+      continue;
+    }
+    if (paare.filter((x) => x.nach === p.nach).length > 1) {
+      m.push(t('gemeinsam.vorbelegen.doppelt', { feld: name }));
+      continue;
+    }
     if (!listen.length) continue;
     const von = listen.map((l) => l.find((x) => x.key === p.von)).filter((x): x is Feld => !!x);
-    if (!von.length) { m.push(t('gemeinsam.vorbelegen.von-fehlt', { feld: p.von })); continue; }
-    if (von.some((x) => x.typ === 'passwort')) { m.push(t('gemeinsam.vorbelegen.passwort', { feld: von[0].label || p.von })); continue; }
+    if (!von.length) {
+      m.push(t('gemeinsam.vorbelegen.von-fehlt', { feld: p.von }));
+      continue;
+    }
+    if (von.some((x) => x.typ === 'passwort')) {
+      m.push(t('gemeinsam.vorbelegen.passwort', { feld: von[0].label || p.von }));
+      continue;
+    }
     if (von.some((x) => !passtZusammen(x, nach))) m.push(t('gemeinsam.vorbelegen.passt-nicht', { von: von[0].label || p.von, nach: name }));
   }
   return [...new Set(m)];
 }
-

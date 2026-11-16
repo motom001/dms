@@ -11,7 +11,14 @@ import { hatNetz, type PaketCode } from '../../../shared/src/pakete';
 import type { VorgabePlan } from '../../../shared/src/vorgaben';
 
 /** Was aus dem gelesenen Paket gebraucht wird (Paket in pakete.ts). */
-interface PaketAutomatisierung { schluessel: string; name: string; beschreibung: string; wenn: Record<string, unknown>; dann: unknown[]; eingeschaltet?: boolean }
+interface PaketAutomatisierung {
+  schluessel: string;
+  name: string;
+  beschreibung: string;
+  wenn: Record<string, unknown>;
+  dann: unknown[];
+  eingeschaltet?: boolean;
+}
 interface PaketTeile {
   manifest: { code?: unknown };
   typen: Array<{ schluessel: string; name: string; beschreibung: string; felder: unknown[] }>;
@@ -39,15 +46,35 @@ interface PlanTeile {
 }
 
 /** Namen auflösen: Mappentyp eines Verweises (eigener Schlüssel oder `paket:typ`) und Bezeichnung eines Felds darin. */
-export interface MitkommtNamen { typ(verweis: string): string; feld(verweis: string, key: string): string }
+export interface MitkommtNamen {
+  typ(verweis: string): string;
+  feld(verweis: string, key: string): string;
+}
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
 
 function wennAus(a: PaketAutomatisierung, n: MitkommtNamen): MitkommtWenn {
   const w = bereinigeAutomatisierung({ name: a.name, wenn: a.wenn, dann: [] }).wenn;
-  if (w.art === 'datum') return { art: 'datum', typ: n.typ(w.typ), feld: n.feld(w.typ, w.feld), vorlauf: w.vorlauf, einheit: w.einheit, uhrzeit: w.uhrzeit, wiederholung: w.wiederholung ?? null };
-  if (w.art === 'zeitplan') return { art: 'zeitplan', tage: w.tage, uhrzeit: w.uhrzeit, feiertage: w.feiertage, jeBenutzer: w.jeBenutzer, profilzeit: !!w.profilzeit };
+  if (w.art === 'datum')
+    return {
+      art: 'datum',
+      typ: n.typ(w.typ),
+      feld: n.feld(w.typ, w.feld),
+      vorlauf: w.vorlauf,
+      einheit: w.einheit,
+      uhrzeit: w.uhrzeit,
+      wiederholung: w.wiederholung ?? null,
+    };
+  if (w.art === 'zeitplan')
+    return {
+      art: 'zeitplan',
+      tage: w.tage,
+      uhrzeit: w.uhrzeit,
+      feiertage: w.feiertage,
+      jeBenutzer: w.jeBenutzer,
+      profilzeit: !!w.profilzeit,
+    };
   const typ = 'typ' in w && typeof w.typ === 'string' && w.typ ? w.typ : null;
   return { art: 'ereignis', ereignis: w.art, typ: typ ? n.typ(typ) : null };
 }
@@ -55,14 +82,24 @@ function wennAus(a: PaketAutomatisierung, n: MitkommtNamen): MitkommtWenn {
 function empfaengerAus(e: Record<string, unknown>, typ: string, n: MitkommtNamen): MitkommtEmpfaenger | null {
   if (e.art === 'ersteller') return { art: 'ersteller' };
   if (e.art === 'ereignis') return { art: 'ereignis', feld: text(e.feld) };
-  if (e.art === 'feld') return { art: 'feld', feld: typ ? n.feld(typ, text(e.feld)) : text(e.feld), sonstErsteller: e.sonst === 'ersteller' };
+  if (e.art === 'feld')
+    return { art: 'feld', feld: typ ? n.feld(typ, text(e.feld)) : text(e.feld), sonstErsteller: e.sonst === 'ersteller' };
   return null;
 }
 
 function dannAus(d: unknown, typ: string, n: MitkommtNamen): MitkommtDann {
   if (!istObjekt(d)) return { art: 'sonst' };
-  if (d.art === 'aufgabe') return { art: 'aufgabe', benachrichtigung: d.als === 'benachrichtigung', empfaenger: (Array.isArray(d.empfaenger) ? d.empfaenger : []).filter(istObjekt).map((e) => empfaengerAus(e, typ, n)).filter((e): e is MitkommtEmpfaenger => !!e) };
-  if (d.art === 'feld') return { art: 'feld', felder: Object.keys(istObjekt(d.werte) ? d.werte : {}).map((k) => (typ ? n.feld(typ, k) : k)) };
+  if (d.art === 'aufgabe')
+    return {
+      art: 'aufgabe',
+      benachrichtigung: d.als === 'benachrichtigung',
+      empfaenger: (Array.isArray(d.empfaenger) ? d.empfaenger : [])
+        .filter(istObjekt)
+        .map((e) => empfaengerAus(e, typ, n))
+        .filter((e): e is MitkommtEmpfaenger => !!e),
+    };
+  if (d.art === 'feld')
+    return { art: 'feld', felder: Object.keys(istObjekt(d.werte) ? d.werte : {}).map((k) => (typ ? n.feld(typ, k) : k)) };
   if (d.art === 'anmeldeschutz') return { art: d.was === 'sammel' ? 'sammelmeldung' : 'kontosperre' };
   if (d.art === 'zusammenfassung' || d.art === 'favoriten' || d.art === 'paket' || d.art === 'stopp') return { art: d.art };
   return { art: 'sonst' };
@@ -70,7 +107,15 @@ function dannAus(d: unknown, typ: string, n: MitkommtNamen): MitkommtDann {
 
 function automatisierungAus(a: PaketAutomatisierung, n: MitkommtNamen, neu: boolean): MitkommtAutomatisierung {
   const typ = istObjekt(a.wenn) && typeof a.wenn.typ === 'string' ? a.wenn.typ : '';
-  return { schluessel: a.schluessel, name: a.name, ...(a.beschreibung ? { beschreibung: a.beschreibung } : {}), wenn: wennAus(a, n), dann: a.dann.map((d) => dannAus(d, typ, n)), an: a.eingeschaltet === true, ...(neu ? { neu } : {}) };
+  return {
+    schluessel: a.schluessel,
+    name: a.name,
+    ...(a.beschreibung ? { beschreibung: a.beschreibung } : {}),
+    wenn: wennAus(a, n),
+    dann: a.dann.map((d) => dannAus(d, typ, n)),
+    an: a.eingeschaltet === true,
+    ...(neu ? { neu } : {}),
+  };
 }
 
 /**
@@ -88,23 +133,54 @@ export function mitkommtVon(paket: PaketTeile, plan: PlanTeile, n: MitkommtNamen
   }
   const einstellungNeu = new Set(plan.einstellungen?.neu ?? []);
   return {
-    mappentypen: paket.typen.map((x) => ({ schluessel: x.schluessel, name: x.name, ...(x.beschreibung ? { beschreibung: x.beschreibung } : {}), felder: x.felder.length,
-      ...neu(!plan.typen.find((p) => p.schluessel === x.schluessel)?.vorhanden && !plan.typen.find((p) => p.schluessel === x.schluessel)?.uebernimmt) })),
-    sichten: paket.sichten.map((s) => ({ schluessel: s.schluessel, name: s.name, ...(s.beschreibung ? { beschreibung: s.beschreibung } : {}), ...neu(!plan.sichten.find((p) => p.schluessel === s.schluessel)?.vorhanden) })),
+    mappentypen: paket.typen.map((x) => ({
+      schluessel: x.schluessel,
+      name: x.name,
+      ...(x.beschreibung ? { beschreibung: x.beschreibung } : {}),
+      felder: x.felder.length,
+      ...neu(
+        !plan.typen.find((p) => p.schluessel === x.schluessel)?.vorhanden &&
+          !plan.typen.find((p) => p.schluessel === x.schluessel)?.uebernimmt,
+      ),
+    })),
+    sichten: paket.sichten.map((s) => ({
+      schluessel: s.schluessel,
+      name: s.name,
+      ...(s.beschreibung ? { beschreibung: s.beschreibung } : {}),
+      ...neu(!plan.sichten.find((p) => p.schluessel === s.schluessel)?.vorhanden),
+    })),
     vorgaben: [...vorgaben].map(([typ, g]) => ({ typ, namen: g.namen, ...(g.neu.length ? { neu: g.neu } : {}) })),
     vorlagen: plan.vorgaben.reduce((x, v) => x + (v.vorlagen ?? 0), 0) + plan.ergaenzungen.reduce((x, e) => x + (e.vorlagen ?? 0), 0),
     beispiele: paket.beispiele.length,
     beispielDokumente: paket.beispiele.reduce((x, b) => x + (b.dokumente?.length ?? 0), 0),
     wortlisten: paket.wortlisten,
-    automatisierungen: paket.automatisierungen.map((a) => automatisierungAus(a, n, update && !!plan.automatisierungen.find((x) => x.schluessel === a.schluessel)?.neu)),
+    automatisierungen: paket.automatisierungen.map((a) =>
+      automatisierungAus(a, n, update && !!plan.automatisierungen.find((x) => x.schluessel === a.schluessel)?.neu),
+    ),
     ablaufvorlagen: (plan.ablaufvorlagen ?? []).map((a) => {
       const roh = paket.ablaufvorlagen?.find((x) => x.schluessel === a.schluessel)?.daten;
       const beschreibung = istObjekt(roh) ? text(roh.beschreibung) : '';
-      return { schluessel: a.schluessel, name: a.name, ...(beschreibung ? { beschreibung } : {}), karten: a.karten, ...neu(a.neu || a.geaendert) };
+      return {
+        schluessel: a.schluessel,
+        name: a.name,
+        ...(beschreibung ? { beschreibung } : {}),
+        karten: a.karten,
+        ...neu(a.neu || a.geaendert),
+      };
     }),
-    aktionen: (paket.mappenaktionen ?? []).map((a) => ({ schluessel: a.schluessel, name: a.name, ...(a.beschreibung ? { beschreibung: a.beschreibung } : {}), rechte: [...a.rechte], ...neu(!!plan.aktionen?.find((x) => x.schluessel === a.schluessel)?.neu) })),
+    aktionen: (paket.mappenaktionen ?? []).map((a) => ({
+      schluessel: a.schluessel,
+      name: a.name,
+      ...(a.beschreibung ? { beschreibung: a.beschreibung } : {}),
+      rechte: [...a.rechte],
+      ...neu(!!plan.aktionen?.find((x) => x.schluessel === a.schluessel)?.neu),
+    })),
     // Rundgänge (#831): Titel und Beschreibung wie im Paket (die Texte stehen direkt in der Datei).
-    rundgaenge: (paket.entdecken?.rundgaenge ?? []).filter(istObjekt).map((r) => ({ schluessel: text(r.schluessel), name: text(r.titel) || text(r.schluessel), ...(text(r.beschreibung) ? { beschreibung: text(r.beschreibung) } : {}) })),
+    rundgaenge: (paket.entdecken?.rundgaenge ?? []).filter(istObjekt).map((r) => ({
+      schluessel: text(r.schluessel),
+      name: text(r.titel) || text(r.schluessel),
+      ...(text(r.beschreibung) ? { beschreibung: text(r.beschreibung) } : {}),
+    })),
     tipps: paket.entdecken?.tipps?.length ?? 0,
     einstellungen: (paket.einstellungen?.bloecke ?? []).map((b) => {
       const titel = b.art === 'abschnitt' ? b.titel : b.name;
@@ -112,6 +188,8 @@ export function mitkommtVon(paket: PaketTeile, plan: PlanTeile, n: MitkommtNamen
       const namen = b.art === 'abschnitt' ? b.felder.map((f) => f.name) : [b.name, ...b.felder.map((f) => `${b.name} › ${f.name}`)];
       return { titel, felder, liste: b.art === 'liste', ...neu(namen.some((x) => einstellungNeu.has(x))) };
     }),
-    code: !!paket.code || paket.manifest.code !== undefined, netz: hatNetz(paket.code?.info), sprache: !!paket.sprache,
+    code: !!paket.code || paket.manifest.code !== undefined,
+    netz: hatNetz(paket.code?.info),
+    sprache: !!paket.sprache,
   };
 }

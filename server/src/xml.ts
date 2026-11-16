@@ -24,10 +24,17 @@ export interface XmlKnoten {
   /** Text direkt in diesem Element (ohne den der Kinder), getrimmt. */
   text: string;
 }
-export interface XmlGrenzen { zeichen: number; tiefe: number; elemente: number }
+export interface XmlGrenzen {
+  zeichen: number;
+  tiefe: number;
+  elemente: number;
+}
 
 export class XmlFehler extends Error {
-  constructor(message: string) { super(message); this.name = 'XmlFehler'; }
+  constructor(message: string) {
+    super(message);
+    this.name = 'XmlFehler';
+  }
 }
 
 const FEST: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
@@ -39,14 +46,18 @@ function entschluessle(s: string): string {
   let i = 0;
   while (i < s.length) {
     const a = s.indexOf('&', i);
-    if (a < 0) { aus += s.slice(i); break; }
+    if (a < 0) {
+      aus += s.slice(i);
+      break;
+    }
     aus += s.slice(i, a);
     const e = s.indexOf(';', a);
     if (e < 0 || e - a > 12) throw new XmlFehler('Ungültige Entität');
     const n = s.slice(a + 1, e);
     if (n[0] === '#') {
       const code = n[1] === 'x' || n[1] === 'X' ? Number.parseInt(n.slice(2), 16) : Number.parseInt(n.slice(1), 10);
-      if (!Number.isInteger(code) || code <= 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) throw new XmlFehler('Ungültige Zeichenreferenz');
+      if (!Number.isInteger(code) || code <= 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff))
+        throw new XmlFehler('Ungültige Zeichenreferenz');
       aus += String.fromCodePoint(code);
     } else if (Object.prototype.hasOwnProperty.call(FEST, n)) aus += FEST[n];
     else throw new XmlFehler('Entitäten sind nicht erlaubt');
@@ -55,11 +66,20 @@ function entschluessle(s: string): string {
   return aus;
 }
 
-const lokal = (q: string) => { const i = q.indexOf(':'); return i < 0 ? q : q.slice(i + 1); };
+const lokal = (q: string) => {
+  const i = q.indexOf(':');
+  return i < 0 ? q : q.slice(i + 1);
+};
 const NAME = /^[A-Za-z_][\w.\-:]*$/;
 
 /** Zustand beim Lesen: offene Elemente, Wurzel, gezählte Elemente. */
-interface Stand { s: string; g: XmlGrenzen; stapel: Array<{ q: string; k: XmlKnoten; text: string[] }>; wurzel: XmlKnoten | null; elemente: number }
+interface Stand {
+  s: string;
+  g: XmlGrenzen;
+  stapel: Array<{ q: string; k: XmlKnoten; text: string[] }>;
+  wurzel: XmlKnoten | null;
+  elemente: number;
+}
 
 /** Ein XML-Dokument lesen; wirft XmlFehler bei DTD, unbekannten Entitäten, kaputtem Aufbau oder überschrittenen Grenzen. */
 export function liesXml(roh: string, g: XmlGrenzen): XmlKnoten {
@@ -69,7 +89,10 @@ export function liesXml(roh: string, g: XmlGrenzen): XmlKnoten {
   let i = 0;
   while (i < s.length) {
     const lt = s.indexOf('<', i);
-    if (lt < 0) { text(st, entschluessle(s.slice(i))); break; }
+    if (lt < 0) {
+      text(st, entschluessle(s.slice(i)));
+      break;
+    }
     if (lt > i) text(st, entschluessle(s.slice(i, lt)));
     i = sonderteil(st, lt) ?? (s[lt + 1] === '/' ? endTag(st, lt) : startTag(st, lt));
   }
@@ -79,17 +102,28 @@ export function liesXml(roh: string, g: XmlGrenzen): XmlKnoten {
 
 /** Text an das offene Element hängen; außerhalb der Wurzel nur Leerraum. */
 function text(st: Stand, t: string) {
-  if (!st.stapel.length) { if (t.trim()) throw new XmlFehler('Text außerhalb des Wurzelelements'); return; }
+  if (!st.stapel.length) {
+    if (t.trim()) throw new XmlFehler('Text außerhalb des Wurzelelements');
+    return;
+  }
   st.stapel[st.stapel.length - 1].text.push(t);
 }
 
 /** Verarbeitungsanweisung, Kommentar, CDATA – Position danach; DTD und Ähnliches: Fehler; sonst undefined. */
 function sonderteil(st: Stand, lt: number): number | undefined {
   const s = st.s;
-  const bis = (ende: string, ab: number, was: string) => { const e = s.indexOf(ende, ab); if (e < 0) throw new XmlFehler(`${was} ohne Ende`); return e; };
+  const bis = (ende: string, ab: number, was: string) => {
+    const e = s.indexOf(ende, ab);
+    if (e < 0) throw new XmlFehler(`${was} ohne Ende`);
+    return e;
+  };
   if (s.startsWith('<?', lt)) return bis('?>', lt + 2, 'Verarbeitungsanweisung') + 2;
   if (s.startsWith('<!--', lt)) return bis('-->', lt + 4, 'Kommentar') + 3;
-  if (s.startsWith('<![CDATA[', lt)) { const e = bis(']]>', lt + 9, 'CDATA'); text(st, s.slice(lt + 9, e)); return e + 3; }
+  if (s.startsWith('<![CDATA[', lt)) {
+    const e = bis(']]>', lt + 9, 'CDATA');
+    text(st, s.slice(lt + 9, e));
+    return e + 3;
+  }
   // DOCTYPE, ENTITY, ELEMENT, ATTLIST …: nie.
   if (s[lt + 1] === '!') throw new XmlFehler('DTD und Entitäten sind nicht erlaubt');
   return undefined;
@@ -112,7 +146,10 @@ function startTag(st: Stand, lt: number): number {
   let quote = '';
   for (; j < s.length; j++) {
     const c = s[j];
-    if (quote) { if (c === quote) quote = ''; } else if (c === '"' || c === "'") quote = c; else if (c === '>' || c === '<') break;
+    if (quote) {
+      if (c === quote) quote = '';
+    } else if (c === '"' || c === "'") quote = c;
+    else if (c === '>' || c === '<') break;
   }
   if (j >= s.length || s[j] !== '>') throw new XmlFehler('Start-Tag ohne Ende');
   let inhalt = s.slice(lt + 1, j);
@@ -165,7 +202,10 @@ export const kinder = (k: XmlKnoten | undefined, name: string): XmlKnoten[] => k
 /** Knoten über einen Pfad lokaler Namen („A/B/C“), je Schritt das erste Kind. */
 export function pfad(k: XmlKnoten | undefined, p: string): XmlKnoten | undefined {
   let x = k;
-  for (const n of p.split('/')) { x = kind(x, n); if (!x) return undefined; }
+  for (const n of p.split('/')) {
+    x = kind(x, n);
+    if (!x) return undefined;
+  }
   return x;
 }
 /** Text am Pfad; '' wenn es ihn nicht gibt. */

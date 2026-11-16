@@ -25,16 +25,35 @@ export interface VersionenAnschluss {
 }
 
 export class DokumentVersionen {
-  constructor(private readonly kern: Kern, private readonly anschluss: VersionenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly anschluss: VersionenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get dateien() { return this.kern.dateien; }
-  private get ocr() { return this.anschluss.ocr(); }
-  private neueDateien(docs: Dokument[]) { this.anschluss.neueDateien(docs); }
-  private raeumeAuf(sha256: string) { return this.anschluss.raeumeAuf(sha256); }
-  private aktualisiereTitel(ids: string[]) { return this.anschluss.aktualisiereTitel(ids); }
-  private volltextAn(typ: Mappentyp | undefined, registerKey: string) { return this.anschluss.volltextAn(typ, registerKey); }
-  private notiere(...a: Parameters<Kern['historie']['schreibe']>) { return this.kern.historie.schreibe(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get dateien() {
+    return this.kern.dateien;
+  }
+  private get ocr() {
+    return this.anschluss.ocr();
+  }
+  private neueDateien(docs: Dokument[]) {
+    this.anschluss.neueDateien(docs);
+  }
+  private raeumeAuf(sha256: string) {
+    return this.anschluss.raeumeAuf(sha256);
+  }
+  private aktualisiereTitel(ids: string[]) {
+    return this.anschluss.aktualisiereTitel(ids);
+  }
+  private volltextAn(typ: Mappentyp | undefined, registerKey: string) {
+    return this.anschluss.volltextAn(typ, registerKey);
+  }
+  private notiere(...a: Parameters<Kern['historie']['schreibe']>) {
+    return this.kern.historie.schreibe(...a);
+  }
 
   /* ---------- Versionierung (#194) ---------- */
 
@@ -45,7 +64,12 @@ export class DokumentVersionen {
   }
 
   /** Neue Version eines Dokuments – unabhängig von Name und Dateityp; nur mit eingeschalteter Versionierung. */
-  async ersetzeDokument(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
+  async ersetzeDokument(
+    id: string,
+    e: { name?: string; typ?: string; herkunft?: Herkunft },
+    inhalt: unknown,
+    benutzerId: string | null,
+  ): Promise<Dokument> {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     const { typ, reg } = await this.registerVon(d);
@@ -57,7 +81,12 @@ export class DokumentVersionen {
    * Neue Fassung auch ohne Versionierung (#997, Leerseiten beim Übernehmen weglassen): Das Bisherige bleibt immer als
    * frühere Version – die Mappe zeigt sie dann am Dokument („Version 2“), auch wenn das Register sonst keine Versionen hat.
    */
-  async neueFassung(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
+  async neueFassung(
+    id: string,
+    e: { name?: string; typ?: string; herkunft?: Herkunft },
+    inhalt: unknown,
+    benutzerId: string | null,
+  ): Promise<Dokument> {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     const { typ, reg } = await this.registerVon(d);
@@ -65,7 +94,12 @@ export class DokumentVersionen {
     return this.legeFassungAn({ d, typ, reg }, e, inhalt, benutzerId);
   }
 
-  private async legeFassungAn(wo: { d: Dokument; typ: Mappentyp | undefined; reg: Register }, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
+  private async legeFassungAn(
+    wo: { d: Dokument; typ: Mappentyp | undefined; reg: Register },
+    e: { name?: string; typ?: string; herkunft?: Herkunft },
+    inhalt: unknown,
+    benutzerId: string | null,
+  ): Promise<Dokument> {
     const { d, typ, reg } = wo;
     const id = d.id;
     // Upload als temporäre Datei (#746) oder Puffer.
@@ -77,8 +111,13 @@ export class DokumentVersionen {
     const angegeben = erkenneBildtyp(ein.kopf) ?? (/^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream');
     await ein.lege(this.dateien, sha256);
     const neu = await this.repo.ersetzeDokument(id, {
-      name: e.name ? dateiname(e.name) : d.name, mime: erkannt ?? angegeben, groesse: ein.groesse, sha256, anzeigbar: !!erkannt,
-      erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
+      name: e.name ? dateiname(e.name) : d.name,
+      mime: erkannt ?? angegeben,
+      groesse: ein.groesse,
+      sha256,
+      anzeigbar: !!erkannt,
+      erstelltVon: benutzerId,
+      herkunft: e.herkunft ?? 'hochgeladen',
     });
     this.neueDateien([neu]);
     return this.nachNeuerVersion(d, neu, typ, reg, benutzerId);
@@ -93,14 +132,33 @@ export class DokumentVersionen {
     const { typ, reg } = await this.registerVon(d);
     if (!reg?.versionierung) throw new Fachfehler(409, t('meldungen.dienst.fuer-dieses-register-ist-7'));
     const neu = await this.repo.ersetzeDokument(id, {
-      name: v.name, mime: v.mime, groesse: v.groesse, sha256: v.sha256, anzeigbar: v.anzeigbar, erstelltVon: benutzerId, herkunft: 'zurueckgeholt', volltext: v.volltext,
+      name: v.name,
+      mime: v.mime,
+      groesse: v.groesse,
+      sha256: v.sha256,
+      anzeigbar: v.anzeigbar,
+      erstelltVon: benutzerId,
+      herkunft: 'zurueckgeholt',
+      volltext: v.volltext,
     });
     return this.nachNeuerVersion(d, neu, typ, reg, benutzerId, nummer);
   }
 
-  async nachNeuerVersion(alt: Dokument, neu: Dokument, typ: Mappentyp | undefined, reg: Register, benutzerId: string | null, zurueckgeholt?: number) {
+  async nachNeuerVersion(
+    alt: Dokument,
+    neu: Dokument,
+    typ: Mappentyp | undefined,
+    reg: Register,
+    benutzerId: string | null,
+    zurueckgeholt?: number,
+  ) {
     await this.notiere(neu.mappeId, benutzerId, 'dokument_version', {
-      dokument: neu.name, version: neu.version, vorher: alt.name, groesse: neu.groesse, mime: neu.mime, register: reg.name,
+      dokument: neu.name,
+      version: neu.version,
+      vorher: alt.name,
+      groesse: neu.groesse,
+      mime: neu.mime,
+      register: reg.name,
       ...(zurueckgeholt ? { zurueckgeholt } : {}),
     });
     await this.beruehre(neu.mappeId, typ, benutzerId);
@@ -111,8 +169,15 @@ export class DokumentVersionen {
       // Löschprotokoll (#470): auch ältere Versionen, die über die eingestellte Anzahl hinaus wegfallen.
       const bleiben = new Set((await this.repo.versionenVon(neu.id)).map((v) => v.nummer));
       const weg = vorher.filter((v) => !bleiben.has(v.nummer));
-      if (weg.length) await this.kern.loeschprotokoll.schreibe(this.kern.loeschprotokoll.dokEintraege(weg.map(versionInfo), { ...(await this.kern.loeschprotokoll.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id), schritt: 'endgueltig', weg: 'version' }),
-        await this.kern.loeschprotokoll.kontext(benutzerId, { ausloeser: 'automatisch' }));
+      if (weg.length)
+        await this.kern.loeschprotokoll.schreibe(
+          this.kern.loeschprotokoll.dokEintraege(weg.map(versionInfo), {
+            ...(await this.kern.loeschprotokoll.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id),
+            schritt: 'endgueltig',
+            weg: 'version',
+          }),
+          await this.kern.loeschprotokoll.kontext(benutzerId, { ausloeser: 'automatisch' }),
+        );
     }
     if (neu.ocr?.stand !== 'fertig' && this.volltextAn(typ, reg.key)) {
       await this.repo.ocrEinreihen([neu.id]);

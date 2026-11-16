@@ -48,8 +48,12 @@ async function aufbau() {
   const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
-  const neu = async (name: string) => (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
-  const lena = await neu('Lena'); const jonas = await neu('Jonas'); const petra = await neu('Petra'); const katrin = await neu('Katrin');
+  const neu = async (name: string) =>
+    (await konten.legeBenutzerAn({ email: `${name.toLowerCase()}@example.org`, name }, markus.id)).benutzer;
+  const lena = await neu('Lena');
+  const jonas = await neu('Jonas');
+  const petra = await neu('Petra');
+  const katrin = await neu('Katrin');
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   // Wie beim Start (ablago.ts): Systemkonto, Automatisierungen am Ausgangskorb, Erinnerungen am Feld übernommen (#712).
   await konten.systemkonto('automatisierung');
@@ -57,16 +61,34 @@ async function aufbau() {
   const motor = new Automatisierungen({ dienst: d, repo: pgAutomatisierungRepo(sql, HAUSHALT) });
   d.ereignisse.abonniere('automatisierungen', (e) => motor.ereignis(e));
   const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true },
-    { key: 'nummer', label: 'Vertragsnummer', typ: 'text' },
-    { key: 'kuendigung', label: 'Kündigung bis', typ: 'datum', frist: { vorlauf: 2, einheit: 'wochen', empfaengerFeld: 'verantwortlich', text: '{feld} {datum}', wiederholung: null } },
-    { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
-    { key: 'notiz', label: 'Notiz', typ: 'formatiert' },
-  ] });
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'nummer', label: 'Vertragsnummer', typ: 'text' },
+      {
+        key: 'kuendigung',
+        label: 'Kündigung bis',
+        typ: 'datum',
+        frist: { vorlauf: 2, einheit: 'wochen', empfaengerFeld: 'verantwortlich', text: '{feld} {datum}', wiederholung: null },
+      },
+      { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id },
+      { key: 'notiz', label: 'Notiz', typ: 'formatiert' },
+    ],
+  });
   await motor.fristenUebernehmen();
   // „Post für dich“ (#1001) wie aus dem Paket Benachrichtigungen.
-  const post = await motor.lege({ ...postFuerDichDaten((await d.kern.system()).post.id, { name: 'Post für dich', beschreibung: '', text: 'Post für dich – bitte zuordnen' }), aktiv: true }, null);
+  const post = await motor.lege(
+    {
+      ...postFuerDichDaten((await d.kern.system()).post.id, {
+        name: 'Post für dich',
+        beschreibung: '',
+        text: 'Post für dich – bitte zuordnen',
+      }),
+      aktiv: true,
+    },
+    null,
+  );
   const automatisierungKonto = (await konten.systemkonto('automatisierung')).id;
 
   /** Ausgangskorb verteilen; gebündelte Ereignisse (z. B. „Mappe geändert“, 5 s) nicht erst abwarten. */
@@ -75,34 +97,67 @@ async function aufbau() {
     await d.ereignisse.verteile();
   };
   /** Alle Aufgaben einer Mappe (offen und erledigt), sortiert nach Art und Empfänger. */
-  const aufgaben = async (mappeId: string) => (await d.ohneLeserecht.aufgabenVon(mappeId) as Aufgabe[]);
+  const aufgaben = async (mappeId: string) => (await d.ohneLeserecht.aufgabenVon(mappeId)) as Aufgabe[];
   const offene = async (mappeId: string, art?: string) => (await aufgaben(mappeId)).filter((a) => !a.erledigt && (!art || a.art === art));
   const ereignisse = async (art: string, mappeId?: string) =>
-    (await sql`SELECT daten FROM ereignisse WHERE haushalt_id = ${HAUSHALT} AND art = ${art} ORDER BY nr`).map((r) => r.daten as Record<string, unknown>)
+    (await sql`SELECT daten FROM ereignisse WHERE haushalt_id = ${HAUSHALT} AND art = ${art} ORDER BY nr`)
+      .map((r) => r.daten as Record<string, unknown>)
       .filter((x) => !mappeId || x.mappe === mappeId);
   const historie = async (mappeId: string) => d.mappenHistorie.historie(mappeId);
   const konto = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)! as Benutzer;
-  return { sql, d, konten, motor, markus, lena, jonas, petra, katrin, vertrag, benutzerTyp, verteile, aufgaben, offene, ereignisse, historie, konto, postFuerDich: post, automatisierungKonto };
+  return {
+    sql,
+    d,
+    konten,
+    motor,
+    markus,
+    lena,
+    jonas,
+    petra,
+    katrin,
+    vertrag,
+    benutzerTyp,
+    verteile,
+    aufgaben,
+    offene,
+    ereignisse,
+    historie,
+    konto,
+    postFuerDich: post,
+    automatisierungKonto,
+  };
 }
 
 describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   describe('Mappe anlegen und ändern', () => {
     it('Frist: beim Anlegen „Frist erreicht“ und Frist-Aufgabe; beim Ändern erledigt sich die alte, die neue kommt', async () => {
       const { d, lena, jonas, petra, vertrag, verteile, offene, aufgaben, ereignisse, historie } = await aufbau();
-      const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), verantwortlich: jonas.id } }, lena.id);
+      const m = await d.mappen.legeMappeAn(
+        { typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), verantwortlich: jonas.id } },
+        lena.id,
+      );
       // In der Transaktion: „Frist erreicht“ (Erinnerungstag ist vorbei, Datum noch nicht) im Ausgangskorb.
-      assert.deepEqual((await ereignisse('frist.erreicht', m.id)).map((e) => [e.feld, e.datum, e.zeitpunkt, e.empfaenger]), [['kuendigung', in_(10), 'vorlauf', jonas.id]]);
+      assert.deepEqual(
+        (await ereignisse('frist.erreicht', m.id)).map((e) => [e.feld, e.datum, e.zeitpunkt, e.empfaenger]),
+        [['kuendigung', in_(10), 'vorlauf', jonas.id]],
+      );
       // Die Aufgabe kommt über die Automatisierung „Datum erreicht“ (#712) – an den Verantwortlichen.
       assert.equal((await offene(m.id, 'frist')).length, 0);
       await verteile();
       let f = await offene(m.id, 'frist');
-      assert.deepEqual(f.map((a) => [a.empfaengerId, a.datum, a.feldKey, a.text]), [[jonas.id, in_(10), 'kuendigung', `Kündigung bis ${datumDe(in_(10))}`]]);
+      assert.deepEqual(
+        f.map((a) => [a.empfaengerId, a.datum, a.feldKey, a.text]),
+        [[jonas.id, in_(10), 'kuendigung', `Kündigung bis ${datumDe(in_(10))}`]],
+      );
       const erste = f[0].id;
 
       // Ändern ohne neues Datum: keine zweite Frist, kein zweites „Frist erreicht“.
       await d.mappen.aendereMappe(m.id, { werte: { name: 'Strom Haus' } }, lena.id);
       await verteile();
-      assert.deepEqual((await offene(m.id, 'frist')).map((a) => a.id), [erste]);
+      assert.deepEqual(
+        (await offene(m.id, 'frist')).map((a) => a.id),
+        [erste],
+      );
       assert.equal((await ereignisse('frist.erreicht', m.id)).length, 1);
 
       // Datum vorgezogen: die alte erledigt sich sofort (in der Transaktion, mit Grund in der Historie) ...
@@ -110,43 +165,88 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       const alt = (await aufgaben(m.id)).find((a) => a.id === erste)!;
       assert.ok(alt.erledigt, 'alte Frist erledigt');
       assert.equal(alt.erledigtVon, null);
-      assert.ok((await historie(m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === `erledigt (geändert auf ${datumDe(in_(5))}): Kündigung bis ${datumDe(in_(10))}`));
-      assert.deepEqual((await ereignisse('frist.erreicht', m.id)).map((e) => e.datum), [in_(10), in_(5)]);
+      assert.ok(
+        (await historie(m.id)).some(
+          (h) => h.art === 'aufgabe' && h.daten.text === `erledigt (geändert auf ${datumDe(in_(5))}): Kündigung bis ${datumDe(in_(10))}`,
+        ),
+      );
+      assert.deepEqual(
+        (await ereignisse('frist.erreicht', m.id)).map((e) => e.datum),
+        [in_(10), in_(5)],
+      );
       // ... und die neue kommt über die Automatisierung.
       await verteile();
       f = await offene(m.id, 'frist');
-      assert.deepEqual(f.map((a) => [a.empfaengerId, a.datum]), [[jonas.id, in_(5)]]);
+      assert.deepEqual(
+        f.map((a) => [a.empfaengerId, a.datum]),
+        [[jonas.id, in_(5)]],
+      );
 
       // Anderer Verantwortlicher und Datum weit voraus: die offene erledigt sich, eine neue gibt es noch nicht.
       await d.mappen.aendereMappe(m.id, { werte: { kuendigung: in_(60), verantwortlich: petra.id } }, lena.id);
       await verteile();
       assert.equal((await offene(m.id, 'frist')).length, 0);
-      assert.ok((await historie(m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === `erledigt (verschoben auf ${datumDe(in_(60))}): Kündigung bis ${datumDe(in_(5))}`));
+      assert.ok(
+        (await historie(m.id)).some(
+          (h) => h.art === 'aufgabe' && h.daten.text === `erledigt (verschoben auf ${datumDe(in_(60))}): Kündigung bis ${datumDe(in_(5))}`,
+        ),
+      );
       assert.equal((await ereignisse('frist.erreicht', m.id)).length, 2);
 
       // Datum geleert: nichts mehr offen, „Frist erreicht“ nicht mehr.
       await d.mappen.aendereMappe(m.id, { werte: { kuendigung: in_(3) } }, lena.id);
       await verteile();
-      assert.deepEqual((await offene(m.id, 'frist')).map((a) => [a.empfaengerId, a.datum]), [[petra.id, in_(3)]]);
+      assert.deepEqual(
+        (await offene(m.id, 'frist')).map((a) => [a.empfaengerId, a.datum]),
+        [[petra.id, in_(3)]],
+      );
       await d.mappen.aendereMappe(m.id, { werte: { kuendigung: null } }, lena.id);
       assert.equal((await offene(m.id, 'frist')).length, 0);
-      assert.ok((await historie(m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === `erledigt (Datum leer): Kündigung bis ${datumDe(in_(3))}`));
+      assert.ok(
+        (await historie(m.id)).some(
+          (h) => h.art === 'aufgabe' && h.daten.text === `erledigt (Datum leer): Kündigung bis ${datumDe(in_(3))}`,
+        ),
+      );
     });
 
     it('Erwähnung: neue werden Aufgaben (einmal je Person und Feld), entfernte stehen nur in der Historie', async () => {
       const { d, lena, jonas, petra, katrin, vertrag, offene, ereignisse, historie } = await aufbau();
-      const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Gas', notiz: `Bitte ${erwaehnung('Petra', petra.id)} ansehen, ${erwaehnung('Lena', lena.id)} weiß Bescheid.` } }, lena.id);
+      const m = await d.mappen.legeMappeAn(
+        {
+          typId: vertrag.id,
+          werte: { name: 'Gas', notiz: `Bitte ${erwaehnung('Petra', petra.id)} ansehen, ${erwaehnung('Lena', lena.id)} weiß Bescheid.` },
+        },
+        lena.id,
+      );
       // Petra ja, Lena nicht (wer erwähnt, bekommt keine Aufgabe).
       let e = await offene(m.id, 'erwaehnung');
-      assert.deepEqual(e.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon]), [[petra.id, 'notiz', 'Erwähnt von Lena in „Notiz“', lena.id]]);
-      assert.ok((await historie(m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'Petra erwähnt in „Notiz“' && h.daten.fuer === petra.id));
-      assert.deepEqual((await ereignisse('aufgabe.neu', m.id)).map((x) => [x.empfaenger, x.aufgabenart]), [[petra.id, 'erwaehnung']]);
+      assert.deepEqual(
+        e.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon]),
+        [[petra.id, 'notiz', 'Erwähnt von Lena in „Notiz“', lena.id]],
+      );
+      assert.ok(
+        (await historie(m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'Petra erwähnt in „Notiz“' && h.daten.fuer === petra.id),
+      );
+      assert.deepEqual(
+        (await ereignisse('aufgabe.neu', m.id)).map((x) => [x.empfaenger, x.aufgabenart]),
+        [[petra.id, 'erwaehnung']],
+      );
       const petras = e[0].id;
 
       // Ändern: Petra bleibt (keine zweite Aufgabe), Katrin kommt dazu – Jonas schreibt.
-      await d.mappen.aendereMappe(m.id, { werte: { notiz: `${erwaehnung('Petra', petra.id)} und ${erwaehnung('Katrin', katrin.id)}: bitte bis Freitag.` } }, jonas.id);
+      await d.mappen.aendereMappe(
+        m.id,
+        { werte: { notiz: `${erwaehnung('Petra', petra.id)} und ${erwaehnung('Katrin', katrin.id)}: bitte bis Freitag.` } },
+        jonas.id,
+      );
       e = await offene(m.id, 'erwaehnung');
-      assert.deepEqual(e.map((a) => [a.empfaengerId, a.text]).sort(), [[katrin.id, 'Erwähnt von Jonas in „Notiz“'], [petra.id, 'Erwähnt von Lena in „Notiz“']].sort());
+      assert.deepEqual(
+        e.map((a) => [a.empfaengerId, a.text]).sort(),
+        [
+          [katrin.id, 'Erwähnt von Jonas in „Notiz“'],
+          [petra.id, 'Erwähnt von Lena in „Notiz“'],
+        ].sort(),
+      );
 
       // Petra entfernt: ihre Aufgabe bleibt offen, die Historie sagt es.
       await d.mappen.aendereMappe(m.id, { werte: { notiz: `${erwaehnung('Katrin', katrin.id)}: bitte bis Freitag.` } }, jonas.id);
@@ -156,7 +256,11 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.ok((await historie(m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'Erwähnung von Petra in „Notiz“ entfernt'));
 
       // Wieder erwähnt, während die alte noch offen ist: keine zweite.
-      await d.mappen.aendereMappe(m.id, { werte: { notiz: `${erwaehnung('Petra', petra.id)} ${erwaehnung('Katrin', katrin.id)}` } }, jonas.id);
+      await d.mappen.aendereMappe(
+        m.id,
+        { werte: { notiz: `${erwaehnung('Petra', petra.id)} ${erwaehnung('Katrin', katrin.id)}` } },
+        jonas.id,
+      );
       assert.equal((await offene(m.id, 'erwaehnung')).filter((a) => a.empfaengerId === petra.id).length, 1);
     });
 
@@ -167,8 +271,14 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal((await d.mappen.holeMappe(a.id)).mappe.problem ?? null, null);
       // Vertragsnummer wird eindeutig: beide passen nicht mehr, je eine Aufgabe an den, der sie angelegt hat.
       const t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
-      await d.mappentypen.aendereTyp(vertrag.id, { ...t, felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f)) });
-      for (const [m, wer] of [[a, lena], [b, jonas]] as const) {
+      await d.mappentypen.aendereTyp(vertrag.id, {
+        ...t,
+        felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f)),
+      });
+      for (const [m, wer] of [
+        [a, lena],
+        [b, jonas],
+      ] as const) {
         assert.match(String((await d.mappen.holeMappe(m.id)).mappe.problem), /Vertragsnummer/);
         const p = await offene(m.id, 'passung');
         assert.equal(p.length, 1);
@@ -177,7 +287,10 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       }
       // Anlegen mit einer vergebenen Nummer geht nicht – und hinterlässt nichts.
       const vorher = (await d.mappen.listeMappen(vertrag.id)).length;
-      await assert.rejects(d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Doppelt', nummer: 'V-1' } }, lena.id), (e: { status?: number }) => e.status === 422);
+      await assert.rejects(
+        d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Doppelt', nummer: 'V-1' } }, lena.id),
+        (e: { status?: number }) => e.status === 422,
+      );
       assert.equal((await d.mappen.listeMappen(vertrag.id)).length, vorher);
       // B bekommt eine andere Nummer: B passt (gespeichert), und A auch wieder (neu geprüft) – beide Aufgaben erledigt.
       await d.mappen.aendereMappe(b.id, { werte: { nummer: 'V-2' } }, jonas.id);
@@ -197,17 +310,25 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.equal((await offene(post.id, 'post')).length, 0, 'der Kern legt sie nicht mehr selbst an');
       await verteile();
       let p = await offene(post.id, 'post');
-      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon, a.anlass?.art, a.anlass?.automatisierung]),
-        [[lena.id, `an:${lena.id}`, 'Post für dich – bitte zuordnen', automatisierungKonto, 'post', postFuerDich.id]]);
+      assert.deepEqual(
+        p.map((a) => [a.empfaengerId, a.feldKey, a.text, a.erstelltVon, a.anlass?.art, a.anlass?.automatisierung]),
+        [[lena.id, `an:${lena.id}`, 'Post für dich – bitte zuordnen', automatisierungKonto, 'post', postFuerDich.id]],
+      );
       // #1042: an, dazu fuer mit demselben Wert bis 1.0.0.
-      assert.deepEqual((await ereignisse('post.angelegt', post.id)).map((e) => [e.an, e.fuer]), [[lena.id, lena.id]]);
+      assert.deepEqual(
+        (await ereignisse('post.angelegt', post.id)).map((e) => [e.an, e.fuer]),
+        [[lena.id, lena.id]],
+      );
       const lenas = p[0].id;
 
       // An Jonas (alter Name fuer, Übergang #1042): Lenas Aufgabe erledigt (von Markus), Jonas bekommt eine.
       await d.mappen.aendereMappe(post.id, { werte: { fuer: jonas.id } }, markus.id);
       await verteile();
       p = await offene(post.id, 'post');
-      assert.deepEqual(p.map((a) => [a.empfaengerId, a.feldKey]), [[jonas.id, `an:${jonas.id}`]]);
+      assert.deepEqual(
+        p.map((a) => [a.empfaengerId, a.feldKey]),
+        [[jonas.id, `an:${jonas.id}`]],
+      );
       const erledigt = (await d.ohneLeserecht.aufgabenVon(post.id)).find((a) => a.id === lenas)!;
       assert.ok(erledigt.erledigt);
       assert.equal(erledigt.erledigtVon, markus.id);
@@ -229,8 +350,14 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
   describe('Mappentyp ändern', () => {
     it('Erinnerung am Feld geändert bzw. entfernt: Fristen der bestehenden Mappen stimmen', async () => {
       const { d, lena, jonas, vertrag, verteile, offene, ereignisse } = await aufbau();
-      const nah = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Nah', kuendigung: in_(10), verantwortlich: jonas.id } }, lena.id);
-      const fern = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Fern', kuendigung: in_(40), verantwortlich: jonas.id } }, lena.id);
+      const nah = await d.mappen.legeMappeAn(
+        { typId: vertrag.id, werte: { name: 'Nah', kuendigung: in_(10), verantwortlich: jonas.id } },
+        lena.id,
+      );
+      const fern = await d.mappen.legeMappeAn(
+        { typId: vertrag.id, werte: { name: 'Fern', kuendigung: in_(40), verantwortlich: jonas.id } },
+        lena.id,
+      );
       await verteile();
       assert.equal((await offene(nah.id, 'frist')).length, 1);
       assert.equal((await offene(fern.id, 'frist')).length, 0);
@@ -238,8 +365,14 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
 
       // Vorlauf am Feld auf 8 Wochen: „Frist erreicht“ jetzt auch für die ferne Mappe – genau einmal, die nahe nicht doppelt.
       let t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
-      await d.mappentypen.aendereTyp(vertrag.id, { ...t, felder: t.felder.map((f) => (f.key === 'kuendigung' ? { ...f, frist: { ...f.frist, vorlauf: 8 } } : f)) });
-      assert.deepEqual((await ereignisse('frist.erreicht', fern.id)).map((e) => [e.datum, e.zeitpunkt, e.empfaenger]), [[in_(40), 'vorlauf', jonas.id]]);
+      await d.mappentypen.aendereTyp(vertrag.id, {
+        ...t,
+        felder: t.felder.map((f) => (f.key === 'kuendigung' ? { ...f, frist: { ...f.frist, vorlauf: 8 } } : f)),
+      });
+      assert.deepEqual(
+        (await ereignisse('frist.erreicht', fern.id)).map((e) => [e.datum, e.zeitpunkt, e.empfaenger]),
+        [[in_(40), 'vorlauf', jonas.id]],
+      );
       assert.equal((await ereignisse('frist.erreicht', nah.id)).length, 1);
       // Die Frist-Aufgabe der nahen Mappe stammt aus der Automatisierung (Anlass Datum) und bleibt.
       assert.equal((await offene(nah.id, 'frist')).length, 1);
@@ -248,7 +381,11 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
       await d.mappentypen.aendereTyp(vertrag.id, { ...t, felder: t.felder.filter((f) => f.key !== 'kuendigung') });
       assert.equal((await offene(nah.id, 'frist')).length, 0);
-      assert.ok((await d.mappenHistorie.historie(nah.id)).some((h) => h.art === 'aufgabe' && String(h.daten.text).startsWith('erledigt (Feld entfernt)')));
+      assert.ok(
+        (await d.mappenHistorie.historie(nah.id)).some(
+          (h) => h.art === 'aufgabe' && String(h.daten.text).startsWith('erledigt (Feld entfernt)'),
+        ),
+      );
     });
   });
 
@@ -256,7 +393,10 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
     it('Abwesenheit, Ende und Deaktivieren: Benutzer-Mappe und Vertretung stimmen', async () => {
       const { d, konten, markus, lena, jonas, petra, vertrag, verteile, offene, historie, konto } = await aufbau();
       const erwaehne = async (wer: { id: string }, name: string) => {
-        const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name, notiz: `Frage an ${erwaehnung('Lena', lena.id)}` } }, wer.id);
+        const m = await d.mappen.legeMappeAn(
+          { typId: vertrag.id, werte: { name, notiz: `Frage an ${erwaehnung('Lena', lena.id)}` } },
+          wer.id,
+        );
         return { m, a: (await offene(m.id, 'erwaehnung'))[0] };
       };
 
@@ -269,15 +409,27 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       assert.ok((await historie(lena.id)).some((h) => h.art === 'abwesenheit' && /Vertreter Jonas/.test(String(h.daten.text))));
       // Übernommene Automatisierung „Vertretung eingetragen“ (#712): Jonas bekommt eine Aufgabe an Lenas Mappe.
       await verteile();
-      assert.deepEqual((await offene(lena.id)).map((a) => a.empfaengerId), [jonas.id]);
+      assert.deepEqual(
+        (await offene(lena.id)).map((a) => a.empfaengerId),
+        [jonas.id],
+      );
 
       // Neue Aufgaben für Lena gehen an Jonas – mit Eintrag in der Historie.
       let x = await erwaehne(petra, 'Telefon');
       assert.equal(x.a.empfaengerId, jonas.id);
-      assert.ok((await historie(x.m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'weitergegeben wegen Abwesenheit von Lena an Jonas: Erwähnung (Text nur für die erwähnte Person)'));
+      assert.ok(
+        (await historie(x.m.id)).some(
+          (h) =>
+            h.art === 'aufgabe' &&
+            h.daten.text === 'weitergegeben wegen Abwesenheit von Lena an Jonas: Erwähnung (Text nur für die erwähnte Person)',
+        ),
+      );
       const post = await d.post.legePostAn({ betreff: 'Brief', fuer: lena.id }, { id: markus.id, name: 'Markus' });
       await verteile();
-      assert.deepEqual((await offene(post.id, 'post')).map((a) => a.empfaengerId), [jonas.id]);
+      assert.deepEqual(
+        (await offene(post.id, 'post')).map((a) => a.empfaengerId),
+        [jonas.id],
+      );
 
       // Abwesenheit beendet: Mappe zeigt es, neue Aufgaben wieder an Lena; Jonas' Vertretungsaufgabe erledigt sich.
       await konten.setzeAbwesenheit(await konto(lena.id), lena.id, { an: false, vertreterId: jonas.id });
@@ -315,28 +467,50 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
      */
     it('Anlegen: wirft ein Empfänger, stehen weder Mappe noch Historie, Aufgaben oder Ereignisse in der Datenbank', async () => {
       const { sql, d, lena, petra, vertrag } = await aufbau();
-      const zaehle = async () => (await sql`SELECT
+      const zaehle = async () =>
+        (
+          await sql`SELECT
         (SELECT count(*) FROM mappen WHERE typ_id = ${vertrag.id})::int AS mappen,
         (SELECT count(*) FROM aufgaben)::int AS aufgaben,
         (SELECT count(*) FROM historie)::int AS historie,
-        (SELECT count(*) FROM ereignisse)::int AS ereignisse`)[0];
+        (SELECT count(*) FROM ereignisse)::int AS ereignisse`
+        )[0];
       const vorher = await zaehle();
-      const wirft = mock.method(d.fristen, 'fristenAbgleichen', async () => { throw new Error('Empfänger wirft'); });
+      const wirft = mock.method(d.fristen, 'fristenAbgleichen', async () => {
+        throw new Error('Empfänger wirft');
+      });
       const id = randomUUID();
       try {
-        await assert.rejects(d.mappen.legeMappeAn({ id, typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), notiz: erwaehnung('Petra', petra.id) } }, lena.id), /Empfänger wirft/);
-      } finally { wirft.mock.restore(); }
+        await assert.rejects(
+          d.mappen.legeMappeAn(
+            { id, typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), notiz: erwaehnung('Petra', petra.id) } },
+            lena.id,
+          ),
+          /Empfänger wirft/,
+        );
+      } finally {
+        wirft.mock.restore();
+      }
       assert.equal(wirft.mock.callCount(), 1, 'der Empfänger lief in der Transaktion');
       assert.deepEqual(await zaehle(), vorher);
       await assert.rejects(d.mappen.holeMappe(id), (e: { status?: number }) => e.status === 404);
       // Ohne den Fehler geht dasselbe durch (die Eingabe war in Ordnung).
-      await d.mappen.legeMappeAn({ id, typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), notiz: erwaehnung('Petra', petra.id) } }, lena.id);
+      await d.mappen.legeMappeAn(
+        { id, typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), notiz: erwaehnung('Petra', petra.id) } },
+        lena.id,
+      );
       assert.equal((await d.ohneLeserecht.aufgabenVon(id)).filter((a) => a.art === 'erwaehnung').length, 1);
     });
 
     it('Ändern: wirft ein Empfänger, bleiben Werte, Historie, Aufgaben und Ereignisse wie vorher', async () => {
       const { sql, d, lena, jonas, petra, katrin, vertrag, verteile } = await aufbau();
-      const m = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Strom', kuendigung: in_(10), verantwortlich: jonas.id, notiz: erwaehnung('Petra', petra.id) } }, lena.id);
+      const m = await d.mappen.legeMappeAn(
+        {
+          typId: vertrag.id,
+          werte: { name: 'Strom', kuendigung: in_(10), verantwortlich: jonas.id, notiz: erwaehnung('Petra', petra.id) },
+        },
+        lena.id,
+      );
       await verteile();
       const stand = async () => {
         const [z] = await sql`SELECT
@@ -346,11 +520,22 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
         return { ...z, werte: (await d.mappen.holeMappe(m.id)).mappe.werte };
       };
       const vorher = await stand();
-      const wirft = mock.method(d.fristen, 'fristenAbgleichen', async () => { throw new Error('Empfänger wirft'); });
+      const wirft = mock.method(d.fristen, 'fristenAbgleichen', async () => {
+        throw new Error('Empfänger wirft');
+      });
       try {
         // Name, Datum (würde die Frist erledigen) und Erwähnung (würde Katrin eine Aufgabe geben) auf einmal.
-        await assert.rejects(d.mappen.aendereMappe(m.id, { werte: { name: 'Strom Haus', kuendigung: in_(4), notiz: erwaehnung('Katrin', katrin.id) } }, jonas.id), /Empfänger wirft/);
-      } finally { wirft.mock.restore(); }
+        await assert.rejects(
+          d.mappen.aendereMappe(
+            m.id,
+            { werte: { name: 'Strom Haus', kuendigung: in_(4), notiz: erwaehnung('Katrin', katrin.id) } },
+            jonas.id,
+          ),
+          /Empfänger wirft/,
+        );
+      } finally {
+        wirft.mock.restore();
+      }
       assert.equal(wirft.mock.callCount(), 1);
       assert.deepEqual(await stand(), vorher);
     });
@@ -361,7 +546,10 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
      */
     it('Mappentyp ändern: wirft ein Empfänger, bleiben Typ, Ansicht, Titel, Passung, Historie und Ereignisse wie vorher', async () => {
       const { sql, d, lena, jonas, vertrag } = await aufbau();
-      const a = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Wasser', nummer: 'V-1', kuendigung: in_(40), verantwortlich: jonas.id } }, lena.id);
+      const a = await d.mappen.legeMappeAn(
+        { typId: vertrag.id, werte: { name: 'Wasser', nummer: 'V-1', kuendigung: in_(40), verantwortlich: jonas.id } },
+        lena.id,
+      );
       const b = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { name: 'Abwasser', nummer: 'V-1' } }, jonas.id);
       const stand = async () => {
         const [z] = await sql`SELECT
@@ -370,22 +558,42 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
           (SELECT count(*) FROM aufgaben)::int AS aufgaben,
           (SELECT json_agg(json_build_object('id', id, 'titel', titel, 'problem', problem) ORDER BY id) FROM mappen WHERE typ_id = ${vertrag.id}) AS mappen`;
         const typ = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
-        return { ...z, name: typ.name, felder: typ.felder, sicht: (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === vertrag.id)?.name };
+        return {
+          ...z,
+          name: typ.name,
+          felder: typ.felder,
+          sicht: (await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === vertrag.id)?.name,
+        };
       };
       const vorher = await stand();
       const t = (await d.mappentypen.listeTypen()).find((x) => x.id === vertrag.id)!;
-      const wirft = mock.method(d.fristen, 'fristenAbgleichen', async () => { throw new Error('Empfänger wirft'); });
+      const wirft = mock.method(d.fristen, 'fristenAbgleichen', async () => {
+        throw new Error('Empfänger wirft');
+      });
       try {
         // Name (Ansicht heißt mit), Titel-Vorlage, Nummer eindeutig (Passung), Vorlauf 8 Wochen (Frist) auf einmal.
-        await assert.rejects(d.mappentypen.aendereTyp(vertrag.id, {
-          ...t, name: 'Verträge', titelVorlage: '{name} ({nummer})',
-          felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f.key === 'kuendigung' ? { ...f, frist: { ...f.frist!, vorlauf: 8 } } : f)),
-        }), /Empfänger wirft/);
-      } finally { wirft.mock.restore(); }
+        await assert.rejects(
+          d.mappentypen.aendereTyp(vertrag.id, {
+            ...t,
+            name: 'Verträge',
+            titelVorlage: '{name} ({nummer})',
+            felder: t.felder.map((f) =>
+              f.key === 'nummer' ? { ...f, eindeutig: true } : f.key === 'kuendigung' ? { ...f, frist: { ...f.frist!, vorlauf: 8 } } : f,
+            ),
+          }),
+          /Empfänger wirft/,
+        );
+      } finally {
+        wirft.mock.restore();
+      }
       assert.equal(wirft.mock.callCount(), 1, 'der Empfänger lief in der Transaktion');
       assert.deepEqual(await stand(), vorher);
       // Ohne den Fehler geht dasselbe durch.
-      await d.mappentypen.aendereTyp(vertrag.id, { ...t, name: 'Verträge', felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f)) });
+      await d.mappentypen.aendereTyp(vertrag.id, {
+        ...t,
+        name: 'Verträge',
+        felder: t.felder.map((f) => (f.key === 'nummer' ? { ...f, eindeutig: true } : f)),
+      });
       assert.equal((await d.sichtenVerwaltung.listeSichten()).find((x) => x.id === vertrag.id)?.name, 'Verträge');
       for (const m of [a, b]) assert.match(String((await d.mappen.holeMappe(m.id)).mappe.problem), /Vertragsnummer/);
     });
@@ -404,10 +612,17 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
         return { ...z, werte: (await d.mappen.holeMappe(lena.id)).mappe.werte };
       };
       const vorher = await stand();
-      const wirft = mock.method(d.vertretung, 'abwesenheitGeaendert', async () => { throw new Error('Empfänger wirft'); });
+      const wirft = mock.method(d.vertretung, 'abwesenheitGeaendert', async () => {
+        throw new Error('Empfänger wirft');
+      });
       try {
-        await assert.rejects(konten.setzeAbwesenheit(await konto(lena.id), lena.id, { an: true, vertreterId: jonas.id }), /Empfänger wirft/);
-      } finally { wirft.mock.restore(); }
+        await assert.rejects(
+          konten.setzeAbwesenheit(await konto(lena.id), lena.id, { an: true, vertreterId: jonas.id }),
+          /Empfänger wirft/,
+        );
+      } finally {
+        wirft.mock.restore();
+      }
       assert.equal(wirft.mock.callCount(), 1, 'der Empfänger lief in der Transaktion');
       assert.deepEqual(await stand(), vorher);
       assert.equal((await konto(lena.id)).abwesenheit?.an, true, 'das Konto ist gespeichert (außerhalb der Transaktion)');

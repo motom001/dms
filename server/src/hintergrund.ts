@@ -26,14 +26,22 @@ import { tDe } from './sprache';
 export const HINTERGRUND_NICE_VORGABE = 10;
 export const HINTERGRUND_NICE_MAX = 19;
 
-export interface NiceEinstellung { wert: number; quelle: 'vorgabe' | 'umgebung'; fehler?: string }
+export interface NiceEinstellung {
+  wert: number;
+  quelle: 'vorgabe' | 'umgebung';
+  fehler?: string;
+}
 
 export function hintergrundNiceAus(env: Record<string, string | undefined>): NiceEinstellung {
   const roh = env.DMS_HINTERGRUND_NICE?.trim();
   if (!roh) return { wert: HINTERGRUND_NICE_VORGABE, quelle: 'vorgabe' };
   const n = Number(roh);
   if (!Number.isInteger(n) || n < 0 || n > HINTERGRUND_NICE_MAX) {
-    return { wert: HINTERGRUND_NICE_VORGABE, quelle: 'vorgabe', fehler: tDe('meldungen.hintergrund.ungueltig', { roh, max: HINTERGRUND_NICE_MAX, wert: HINTERGRUND_NICE_VORGABE }) };
+    return {
+      wert: HINTERGRUND_NICE_VORGABE,
+      quelle: 'vorgabe',
+      fehler: tDe('meldungen.hintergrund.ungueltig', { roh, max: HINTERGRUND_NICE_MAX, wert: HINTERGRUND_NICE_VORGABE }),
+    };
   }
   return { wert: n, quelle: 'umgebung' };
 }
@@ -51,7 +59,10 @@ export function richteHintergrundEin(env: Record<string, string | undefined> = p
 export const hintergrundNice = () => (einstellung ?? richteHintergrundEin()).wert;
 
 /** Für Tests: welche Funktionen des Betriebssystems benutzt werden. */
-export interface Prioritaet { getPriority: (pid?: number) => number; setPriority: (pid: number, wert: number) => void }
+export interface Prioritaet {
+  getPriority: (pid?: number) => number;
+  setPriority: (pid: number, wert: number) => void;
+}
 const SYSTEM: Prioritaet = { getPriority, setPriority };
 
 function melde(e: unknown) {
@@ -93,11 +104,19 @@ export function senkeProzess(pid: number, sys: Prioritaet = SYSTEM, faeden: (pid
   const n = hintergrundNice();
   if (!n) return false;
   let z: number;
-  try { z = ziel(sys, n); } catch (e) { melde(e); return false; }
+  try {
+    z = ziel(sys, n);
+  } catch (e) {
+    melde(e);
+    return false;
+  }
   for (const tid of faeden(pid)) {
-    try { if (sys.getPriority(tid) < z) sys.setPriority(tid, z); } catch (e) {
+    try {
+      if (sys.getPriority(tid) < z) sys.setPriority(tid, z);
+    } catch (e) {
       if ((e as NodeJS.ErrnoException)?.code === 'ESRCH') continue;
-      melde(e); return false;
+      melde(e);
+      return false;
     }
   }
   return true;
@@ -106,9 +125,13 @@ export function senkeProzess(pid: number, sys: Prioritaet = SYSTEM, faeden: (pid
 /** Fäden eines Prozesses (Linux: /proc/<pid>/task); sonst nur der Prozess selbst. */
 export function faedenVon(pid: number): number[] {
   try {
-    const tids = readdirSync(`/proc/${pid}/task`).map(Number).filter((x) => Number.isInteger(x) && x > 0);
+    const tids = readdirSync(`/proc/${pid}/task`)
+      .map(Number)
+      .filter((x) => Number.isInteger(x) && x > 0);
     if (tids.length) return tids;
-  } catch { /* kein /proc: nur der Prozess */ }
+  } catch {
+    /* kein /proc: nur der Prozess */
+  }
   return [pid];
 }
 
@@ -119,7 +142,15 @@ let endeVerbunden = false;
 /** Alle noch laufenden Programme beenden (synchron, auch im Ereignis `exit`). Ergebnis: wie viele. */
 export function beendeProgramme(signal: NodeJS.Signals = 'SIGKILL'): number {
   let n = 0;
-  for (const k of laufend) { if (k.exitCode === null && k.signalCode === null) { try { if (k.kill(signal)) n++; } catch { /* schon weg */ } } }
+  for (const k of laufend) {
+    if (k.exitCode === null && k.signalCode === null) {
+      try {
+        if (k.kill(signal)) n++;
+      } catch {
+        /* schon weg */
+      }
+    }
+  }
   laufend.clear();
   return n;
 }
@@ -130,7 +161,12 @@ export function niedrig<T extends kp.ChildProcess>(kind: T): T {
   if (kind.pid) {
     laufend.add(kind);
     kind.once('exit', () => laufend.delete(kind));
-    if (!endeVerbunden) { endeVerbunden = true; process.once('exit', () => { beendeProgramme(); }); }
+    if (!endeVerbunden) {
+      endeVerbunden = true;
+      process.once('exit', () => {
+        beendeProgramme();
+      });
+    }
   }
   return kind;
 }

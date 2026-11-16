@@ -62,32 +62,52 @@ export function Tabelle({ beschriftung, spalten, zeilen, leer, fuss, breitAb, an
   const { ref, breite } = useBreite();
   const breit = breite >= (breitAb ?? Math.max(480, spalten.length * 110));
   const [erste, zweite] = spalten;
-  const klick = (ziel: string) => (e: MouseEvent<HTMLElement>) => { if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel); };
+  const klick = (ziel: string) => (e: MouseEvent<HTMLElement>) => {
+    if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel);
+  };
   const zelle = (z: TabelleZeile, i: number, k: string) => (i === 0 ? <Link to={z.ziel}>{z.zellen[k] || z.ersatz}</Link> : z.zellen[k]);
   return (
     <div ref={ref} className={s.tabelle} data-anker={anker} data-darstellung={breit ? 'tabelle' : 'liste'}>
-      {!zeilen.length ? <p className={s.leer}>{leer}</p>
-        : breit ? (
-          <table aria-label={beschriftung}>
-            <thead><tr>{spalten.map((sp) => <th key={sp.key} scope="col" className={sp.rechts ? s.rechts : undefined}>{sp.titel}</th>)}</tr></thead>
-            <tbody>
-              {zeilen.map((z) => (
-                <tr key={z.key} onClick={klick(z.ziel)}>
-                  {spalten.map((sp, i) => <td key={sp.key} className={sp.rechts ? s.rechts : undefined}>{zelle(z, i, sp.key)}</td>)}
-                </tr>
+      {!zeilen.length ? (
+        <p className={s.leer}>{leer}</p>
+      ) : breit ? (
+        <table aria-label={beschriftung}>
+          <thead>
+            <tr>
+              {spalten.map((sp) => (
+                <th key={sp.key} scope="col" className={sp.rechts ? s.rechts : undefined}>
+                  {sp.titel}
+                </th>
               ))}
-            </tbody>
-          </table>
-        ) : (
-          <ul aria-label={beschriftung} className={s.liste}>
+            </tr>
+          </thead>
+          <tbody>
             {zeilen.map((z) => (
-              <li key={z.key} onClick={klick(z.ziel)}>
-                <span className={s.haupt}>{erste ? zelle(z, 0, erste.key) : <Link to={z.ziel}>{z.ersatz}</Link>}</span>
-                {zweite && z.zellen[zweite.key] ? <span className={s.neben}><span className={s.unsichtbar}>{zweite.titel}: </span>{z.zellen[zweite.key]}</span> : null}
-              </li>
+              <tr key={z.key} onClick={klick(z.ziel)}>
+                {spalten.map((sp, i) => (
+                  <td key={sp.key} className={sp.rechts ? s.rechts : undefined}>
+                    {zelle(z, i, sp.key)}
+                  </td>
+                ))}
+              </tr>
             ))}
-          </ul>
-        )}
+          </tbody>
+        </table>
+      ) : (
+        <ul aria-label={beschriftung} className={s.liste}>
+          {zeilen.map((z) => (
+            <li key={z.key} onClick={klick(z.ziel)}>
+              <span className={s.haupt}>{erste ? zelle(z, 0, erste.key) : <Link to={z.ziel}>{z.ersatz}</Link>}</span>
+              {zweite && z.zellen[zweite.key] ? (
+                <span className={s.neben}>
+                  <span className={s.unsichtbar}>{zweite.titel}: </span>
+                  {z.zellen[zweite.key]}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
       {fuss && <div className={s.fuss}>{fuss}</div>}
     </div>
   );

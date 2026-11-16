@@ -49,7 +49,10 @@ export interface TresorStatus {
   arten: ArtStand[];
 }
 
-interface Gespeichert { fingerabdruck: string; erstellt: string }
+interface Gespeichert {
+  fingerabdruck: string;
+  erstellt: string;
+}
 
 /** Bekanntes Wort, verschlüsselt in der Datenbank: zeigt nach einer Wiederherstellung, ob der Schlüssel passt (#103). */
 export const PRUEFWORT = 'Ablago';
@@ -84,7 +87,9 @@ export function entschluesseleMit(k: Buffer, wert: string): string | null {
     const d = createDecipheriv('aes-256-gcm', k, nonce);
     d.setAuthTag(geheim.subarray(geheim.length - 16));
     return Buffer.concat([d.update(geheim.subarray(0, geheim.length - 16)), d.final()]).toString('utf8');
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Einen Wert mit einem bestimmten Schlüssel verschlüsseln (Schlüsselwechsel, #47). */
@@ -97,9 +102,18 @@ export function verschluesseleMit(k: Buffer, klartext: string): string {
 
 /** Alle verschlüsselten Werte in einem JSON-Wert umschlüsseln; null aus um = unverändert lassen. */
 export function umschluesseleTief<T>(wert: T, um: (v: string) => string | null): { wert: T; geaendert: number; unlesbar: number } {
-  let geaendert = 0; let unlesbar = 0;
+  let geaendert = 0;
+  let unlesbar = 0;
   const gehe = (x: unknown): unknown => {
-    if (istVerschluesselt(x)) { const n = um(x); if (n === null) { unlesbar++; return x; } geaendert++; return n; }
+    if (istVerschluesselt(x)) {
+      const n = um(x);
+      if (n === null) {
+        unlesbar++;
+        return x;
+      }
+      geaendert++;
+      return n;
+    }
     if (Array.isArray(x)) return x.map(gehe);
     if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, gehe(v)]));
     return x;
@@ -112,10 +126,19 @@ export function umschluesseleTief<T>(wert: T, um: (v: string) => string | null):
  * Prüfwort) – ganz oder gar nicht (eine Transaktion). Liefert, wie viele Werte umgeschlüsselt wurden
  * und wie viele schon vorher nicht lesbar waren (die bleiben, wie sie sind).
  */
-export type Umschluesseln = (um: (wert: string) => string | null, einstellungen: Record<string, unknown>) => Promise<{ umgeschluesselt: number; unlesbar: number }>;
-export interface Wechsel { alt: string; neu: string; umgeschluesselt: number; unlesbar: number }
+export type Umschluesseln = (
+  um: (wert: string) => string | null,
+  einstellungen: Record<string, unknown>,
+) => Promise<{ umgeschluesselt: number; unlesbar: number }>;
+export interface Wechsel {
+  alt: string;
+  neu: string;
+  umgeschluesselt: number;
+  unlesbar: number;
+}
 
-export const fingerabdruck = (k: Buffer) => createHash('sha256').update(k).digest('hex').slice(0, 16).toUpperCase().match(/.{4}/g)!.join('-');
+export const fingerabdruck = (k: Buffer) =>
+  createHash('sha256').update(k).digest('hex').slice(0, 16).toUpperCase().match(/.{4}/g)!.join('-');
 export const istVerschluesselt = (v: unknown): v is string => typeof v === 'string' && v.startsWith(PRAEFIX);
 
 /**
@@ -125,7 +148,11 @@ export const istVerschluesselt = (v: unknown): v is string => typeof v === 'stri
 export function aufVolume(pfad: string, mountinfo = '/proc/self/mountinfo'): boolean | null {
   if (!existsSync('/.dockerenv') && !existsSync('/run/.containerenv')) return null;
   let text: string;
-  try { text = readFileSync(mountinfo, 'utf8'); } catch { return null; }
+  try {
+    text = readFileSync(mountinfo, 'utf8');
+  } catch {
+    return null;
+  }
   return punktFuer(pfad, text) !== '/';
 }
 
@@ -135,7 +162,11 @@ export function aufVolume(pfad: string, mountinfo = '/proc/self/mountinfo'): boo
  */
 export function geraetVon(pfad: string, mountinfo = '/proc/self/mountinfo'): string | null {
   let text: string;
-  try { text = readFileSync(mountinfo, 'utf8'); } catch { return null; }
+  try {
+    text = readFileSync(mountinfo, 'utf8');
+  } catch {
+    return null;
+  }
   const punkt = punktFuer(pfad, text);
   const zeile = text.split('\n').find((z) => z.split(' ')[4]?.replace(/\\040/g, ' ') === punkt);
   return zeile?.split(' ')[2] ?? null;
@@ -162,9 +193,15 @@ export class Tresor {
   private bestand: Bestand | null = null;
   private genauer = new Set<GeheimArt>();
   /** Datei mit dem neuen Schlüssel während eines Wechsels (#47). */
-  get neueDatei() { return `${this.datei}.neu`; }
+  get neueDatei() {
+    return `${this.datei}.neu`;
+  }
 
-  constructor(private einstellungen: TresorEinstellungen, readonly datei = STANDARD_DATEI, private volume: (p: string) => boolean | null = aufVolume) {}
+  constructor(
+    private einstellungen: TresorEinstellungen,
+    readonly datei = STANDARD_DATEI,
+    private volume: (p: string) => boolean | null = aufVolume,
+  ) {}
 
   /** Liest Schlüsseldatei und Fingerabdruck; einmal beim Start. */
   async laden() {
@@ -183,8 +220,14 @@ export class Tresor {
     const z = this.zustand;
     if (z === 'vorhanden') await this.pruefwort().catch(() => null);
     if (z === 'vorhanden') log.info('Schlüssel für Zugangsdaten geladen', { fingerabdruck: this.fingerabdruck });
-    else if (z === 'verloren') log.error(`Schlüssel für Zugangsdaten fehlt (${this.datei}). Gespeicherte Passwörter sind nicht lesbar – siehe Werkbank → Verschlüsselung.`);
-    else if (z === 'falsch') log.error(`Die Schlüsseldatei ${this.datei} passt nicht zu den gespeicherten Passwörtern (erwartet ${this.gespeichert?.fingerabdruck}).`);
+    else if (z === 'verloren')
+      log.error(
+        `Schlüssel für Zugangsdaten fehlt (${this.datei}). Gespeicherte Passwörter sind nicht lesbar – siehe Werkbank → Verschlüsselung.`,
+      );
+    else if (z === 'falsch')
+      log.error(
+        `Die Schlüsseldatei ${this.datei} passt nicht zu den gespeicherten Passwörtern (erwartet ${this.gespeichert?.fingerabdruck}).`,
+      );
     else log.warn('Noch kein Schlüssel für Zugangsdaten – Passwörter lassen sich erst nach dem Erzeugen in der Werkbank speichern.');
   }
 
@@ -199,11 +242,15 @@ export class Tresor {
     try {
       const k = Buffer.from((await readFile(this.datei, 'utf8')).trim(), 'base64url');
       this.schluessel = k.length === 32 ? k : null;
-    } catch { this.schluessel = null; }
+    } catch {
+      this.schluessel = null;
+    }
     return this.zustand !== 'falsch';
   }
 
-  get fingerabdruck() { return this.schluessel ? fingerabdruck(this.schluessel) : null; }
+  get fingerabdruck() {
+    return this.schluessel ? fingerabdruck(this.schluessel) : null;
+  }
 
   get zustand(): Zustand {
     if (this.schluessel) return !this.gespeichert || this.gespeichert.fingerabdruck === this.fingerabdruck ? 'vorhanden' : 'falsch';
@@ -211,7 +258,9 @@ export class Tresor {
   }
 
   /** Lassen sich gerade Passwörter speichern und lesen? */
-  get bereit() { return this.zustand === 'vorhanden'; }
+  get bereit() {
+    return this.zustand === 'vorhanden';
+  }
 
   /**
    * Meldet, welche verschlüsselten Werte ein Bereich hält, die gerade nicht lesbar sind; dazu, was nach
@@ -227,10 +276,15 @@ export class Tresor {
    * Bestand aller verschlüsselten Werte (#410) für die Anzeige je Art und die Liste nicht lesbarer Werte.
    * `genauer`: Arten, deren nicht lesbare Werte ein Prüfer schon mit Namen meldet.
    */
-  registriereBestand(b: Bestand, genauer: GeheimArt[] = []) { this.bestand = b; for (const a of genauer) this.genauer.add(a); }
+  registriereBestand(b: Bestand, genauer: GeheimArt[] = []) {
+    this.bestand = b;
+    for (const a of genauer) this.genauer.add(a);
+  }
 
   /** Nur Nacharbeit nach einem Wechsel, z. B. zwischengespeicherte Einstellungen vergessen (#410). */
-  beimWechsel(f: (um: (wert: string) => string | null) => Promise<void>) { this.nachWechsel.push(f); }
+  beimWechsel(f: (um: (wert: string) => string | null) => Promise<void>) {
+    this.nachWechsel.push(f);
+  }
 
   /**
    * Schlüssel wechseln (#47): neuen Schlüssel erzeugen, alle verschlüsselten Werte über `speichere`
@@ -251,9 +305,17 @@ export class Tresor {
         await mkdir(dirname(this.datei), { recursive: true, mode: 0o700 });
         await writeFile(this.neueDatei, `${k.toString('base64url')}\n`, { mode: 0o600 });
         await chmod(this.neueDatei, 0o600).catch(() => {});
-      } catch (e) { throw new Fachfehler(500, t('meldungen.tresor.der-neue-schluessel-liess', { neueDatei: this.neueDatei, message: (e as Error).message })); }
+      } catch (e) {
+        throw new Fachfehler(
+          500,
+          t('meldungen.tresor.der-neue-schluessel-liess', { neueDatei: this.neueDatei, message: (e as Error).message }),
+        );
+      }
       // 2. Alles umschlüsseln – ganz oder gar nicht.
-      const um = (wert: string) => { const klar = entschluesseleMit(alt, wert); return klar === null ? null : verschluesseleMit(k, klar); };
+      const um = (wert: string) => {
+        const klar = entschluesseleMit(alt, wert);
+        return klar === null ? null : verschluesseleMit(k, klar);
+      };
       let r: { umgeschluesselt: number; unlesbar: number };
       try {
         r = await speichere(um, { tresor: neu, pruefwort: verschluesseleMit(k, PRUEFWORT) });
@@ -269,12 +331,24 @@ export class Tresor {
       this.gespeichert = neu;
       await this.wechselAbschliessen();
       for (const f of this.nachWechsel) {
-        try { await f(um); } catch (e) { log.error('Nacharbeit nach dem Schlüsselwechsel fehlgeschlagen', { fehler: (e as Error).message }); }
+        try {
+          await f(um);
+        } catch (e) {
+          log.error('Nacharbeit nach dem Schlüsselwechsel fehlgeschlagen', { fehler: (e as Error).message });
+        }
       }
       const w: Wechsel = { alt: fingerabdruck(alt), neu: neu.fingerabdruck, ...r };
-      protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten gewechselt', { von, alt: w.alt, neu: w.neu, umgeschluesselt: w.umgeschluesselt, ...(w.unlesbar ? { schonVorherUnlesbar: w.unlesbar } : {}) });
+      protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten gewechselt', {
+        von,
+        alt: w.alt,
+        neu: w.neu,
+        umgeschluesselt: w.umgeschluesselt,
+        ...(w.unlesbar ? { schonVorherUnlesbar: w.unlesbar } : {}),
+      });
       return w;
-    } finally { this.wechselLaeuft = false; }
+    } finally {
+      this.wechselLaeuft = false;
+    }
   }
   private wechselLaeuft = false;
 
@@ -284,7 +358,11 @@ export class Tresor {
    */
   private async wechselAbschliessen() {
     let roh: string;
-    try { roh = (await readFile(this.neueDatei, 'utf8')).trim(); } catch { return; }
+    try {
+      roh = (await readFile(this.neueDatei, 'utf8')).trim();
+    } catch {
+      return;
+    }
     const k = Buffer.from(roh, 'base64url');
     if (k.length === 32 && this.gespeichert && fingerabdruck(k) === this.gespeichert.fingerabdruck) {
       await rename(this.neueDatei, this.datei);
@@ -298,18 +376,31 @@ export class Tresor {
   async status(): Promise<TresorStatus> {
     const betroffen: Betroffen[] = [];
     for (const p of this.pruefer) {
-      try { betroffen.push(...(await p())); } catch (e) { log.warn('Prüfung verschlüsselter Werte fehlgeschlagen', { fehler: (e as Error).message }); }
+      try {
+        betroffen.push(...(await p()));
+      } catch (e) {
+        log.warn('Prüfung verschlüsselter Werte fehlgeschlagen', { fehler: (e as Error).message });
+      }
     }
     let arten: ArtStand[] = [];
     if (this.bestand) {
       try {
         const b = bestandAus(await this.bestand(), (v) => this.lesbar(v), this.genauer);
-        arten = b.arten; betroffen.push(...b.betroffen);
-      } catch (e) { log.warn('Bestand verschlüsselter Werte nicht ermittelbar', { fehler: (e as Error).message }); }
+        arten = b.arten;
+        betroffen.push(...b.betroffen);
+      } catch (e) {
+        log.warn('Bestand verschlüsselter Werte nicht ermittelbar', { fehler: (e as Error).message });
+      }
     }
     return {
-      zustand: this.zustand, fingerabdruck: this.fingerabdruck, erwartet: this.gespeichert?.fingerabdruck ?? null,
-      erstellt: this.gespeichert?.erstellt ?? null, datei: this.datei, eingebunden: this.volume(dirname(this.datei)), betroffen, arten,
+      zustand: this.zustand,
+      fingerabdruck: this.fingerabdruck,
+      erwartet: this.gespeichert?.fingerabdruck ?? null,
+      erstellt: this.gespeichert?.erstellt ?? null,
+      datei: this.datei,
+      eingebunden: this.volume(dirname(this.datei)),
+      betroffen,
+      arten,
     };
   }
 
@@ -337,17 +428,28 @@ export class Tresor {
     await this.einstellungen.schreibe('tresor', this.gespeichert);
     // Neues Prüfwort zum neuen Schlüssel (#103).
     await this.einstellungen.schreibe('pruefwort', this.verschluessele(PRUEFWORT));
-    protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten erzeugt', { fingerabdruck: this.gespeichert.fingerabdruck, datei: this.datei, ...(vorher ? { ersetzt: vorher } : {}) });
+    protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten erzeugt', {
+      fingerabdruck: this.gespeichert.fingerabdruck,
+      datei: this.datei,
+      ...(vorher ? { ersetzt: vorher } : {}),
+    });
     for (const f of this.beiNeuemSchluessel) {
-      try { await f(); } catch (e) { log.error('Nacharbeit nach neuem Schlüssel fehlgeschlagen', { fehler: (e as Error).message }); }
+      try {
+        await f();
+      } catch (e) {
+        log.error('Nacharbeit nach neuem Schlüssel fehlgeschlagen', { fehler: (e as Error).message });
+      }
     }
     return this.status();
   }
 
   private fehlt(): never {
-    throw new Fachfehler(409, this.zustand === 'falsch'
-      ? t('meldungen.tresor.die-schluesseldatei-passt-nicht')
-      : t('meldungen.tresor.passwoerter-lassen-sich-erst'));
+    throw new Fachfehler(
+      409,
+      this.zustand === 'falsch'
+        ? t('meldungen.tresor.die-schluesseldatei-passt-nicht')
+        : t('meldungen.tresor.passwoerter-lassen-sich-erst'),
+    );
   }
 
   verschluessele(klartext: string): string {
@@ -361,10 +463,14 @@ export class Tresor {
   }
 
   /** Abgeleiteter Schlüssel für einen Zweck (z. B. Sicherungen); null ohne passenden Schlüssel. */
-  abgeleitet(zweck: string): Buffer | null { return this.bereit && this.schluessel ? leiteAb(this.schluessel, zweck) : null; }
+  abgeleitet(zweck: string): Buffer | null {
+    return this.bereit && this.schluessel ? leiteAb(this.schluessel, zweck) : null;
+  }
 
   /** Der Schlüssel als Text – nur für das Notfallblatt (#106). */
-  alsText(): string | null { return this.bereit && this.schluessel ? this.schluessel.toString('base64url') : null; }
+  alsText(): string | null {
+    return this.bereit && this.schluessel ? this.schluessel.toString('base64url') : null;
+  }
 
   /**
    * Prüfwort (#103): ein bekanntes Wort verschlüsselt in der Datenbank. Fehlt es, wird es angelegt.
@@ -382,7 +488,9 @@ export class Tresor {
   }
 
   /** Lässt sich der Wert lesen? (Für Listen betroffener Werte.) */
-  lesbar(wert: unknown): boolean { return istVerschluesselt(wert) && this.entschluessele(wert) !== null; }
+  lesbar(wert: unknown): boolean {
+    return istVerschluesselt(wert) && this.entschluessele(wert) !== null;
+  }
 }
 
 /**
@@ -395,7 +503,10 @@ export function maskiere<T>(wert: T, lesbar: (v: string) => boolean): T {
     let neu: unknown[] | null = null;
     wert.forEach((x, i) => {
       const m = maskiere(x, lesbar);
-      if (m !== x) { neu ??= [...wert]; neu[i] = m; }
+      if (m !== x) {
+        neu ??= [...wert];
+        neu[i] = m;
+      }
     });
     return (neu ?? wert) as T;
   }
@@ -403,7 +514,10 @@ export function maskiere<T>(wert: T, lesbar: (v: string) => boolean): T {
     let neu: Record<string, unknown> | null = null;
     for (const [k, x] of Object.entries(wert)) {
       const m = maskiere(x, lesbar);
-      if (m !== x) { neu ??= { ...(wert as Record<string, unknown>) }; neu[k] = m; }
+      if (m !== x) {
+        neu ??= { ...(wert as Record<string, unknown>) };
+        neu[k] = m;
+      }
     }
     return (neu ?? wert) as T;
   }

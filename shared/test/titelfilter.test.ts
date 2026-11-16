@@ -12,7 +12,8 @@ const felder = [
   { key: 'kennzeichen', label: 'Kennzeichen', typ: 'text' },
   { key: 'geheim', label: 'Geheim', typ: 'passwort' },
 ] as unknown as Feld[];
-const titel = (titelVorlage: string, werte: Record<string, unknown>, index = {}) => titelAus({ felder, titelVorlage }, werte as never, (id) => id, index);
+const titel = (titelVorlage: string, werte: Record<string, unknown>, index = {}) =>
+  titelAus({ felder, titelVorlage }, werte as never, (id) => id, index);
 
 describe('Titel-Filter', () => {
   it('alte Vorlagen bleiben gültig', () => {
@@ -60,7 +61,11 @@ describe('Titel-Filter', () => {
   });
 
   it('liest Filter mit Argumenten', () => {
-    assert.deepEqual(liesFilter('|jahr|kurz:20|sonst:"a: b"'), [{ name: 'jahr' }, { name: 'kurz', arg: '20' }, { name: 'sonst', arg: 'a: b' }]);
+    assert.deepEqual(liesFilter('|jahr|kurz:20|sonst:"a: b"'), [
+      { name: 'jahr' },
+      { name: 'kurz', arg: '20' },
+      { name: 'sonst', arg: 'a: b' },
+    ]);
   });
 
   it('prüft unbekannte Filter und falsche Feldarten', () => {
@@ -74,6 +79,11 @@ describe('Titel-Filter', () => {
     assert.match(p('{nummer|sonst}')[0], /Anführungszeichen/);
     assert.match(p('{nummer|gross:1}')[0], /keinen Zusatz/);
     const typ = { name: 'T', beschreibung: '', titelVorlage: '{bezeichnung|fett}', felder, register: [] };
-    assert.ok(pruefeMappentyp(typ as never, { namenAndererTypen: [], existiertTyp: () => true }).allgemein.some((m) => /unbekannter Filter/.test(m)), 'auch beim Speichern');
+    assert.ok(
+      pruefeMappentyp(typ as never, { namenAndererTypen: [], existiertTyp: () => true }).allgemein.some((m) =>
+        /unbekannter Filter/.test(m),
+      ),
+      'auch beim Speichern',
+    );
   });
 });

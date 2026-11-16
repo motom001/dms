@@ -11,10 +11,26 @@ let stand: EntdeckenStand | null = null;
 let laden: Promise<void> | null = null;
 let fehler = false;
 const hoerer = new Set<() => void>();
-const melde = () => { for (const h of hoerer) h(); };
+const melde = () => {
+  for (const h of hoerer) h();
+};
 
 export function ladeEntdecken(): Promise<void> {
-  laden ??= kontoApi.entdecken().then((s) => { stand = s; fehler = false; }, () => { fehler = true; }).finally(() => { laden = null; melde(); });
+  laden ??= kontoApi
+    .entdecken()
+    .then(
+      (s) => {
+        stand = s;
+        fehler = false;
+      },
+      () => {
+        fehler = true;
+      },
+    )
+    .finally(() => {
+      laden = null;
+      melde();
+    });
   return laden;
 }
 
@@ -23,14 +39,28 @@ export function ladeEntdecken(): Promise<void> {
  * (Startseite, „Ablago entdecken“) – z. B. nach dem Ein- oder Ausschalten der Tipps in Mein Konto.
  */
 export function useEntdecken(frisch = false): { stand: EntdeckenStand | null; fehler: boolean } {
-  const s = useSyncExternalStore((h) => { hoerer.add(h); return () => { hoerer.delete(h); }; }, () => stand);
-  useEffect(() => { if ((frisch || !stand) && !laden) void ladeEntdecken(); }, [frisch]);
+  const s = useSyncExternalStore(
+    (h) => {
+      hoerer.add(h);
+      return () => {
+        hoerer.delete(h);
+      };
+    },
+    () => stand,
+  );
+  useEffect(() => {
+    if ((frisch || !stand) && !laden) void ladeEntdecken();
+  }, [frisch]);
   return { stand: s, fehler };
 }
 
 /** Handlung an einem Tipp; danach den Stand neu holen. */
 export async function tippHandlung(schluessel: string, aktion: 'gezeigt' | 'erledigt' | 'ausblenden' | 'einblenden') {
-  try { await kontoApi.tippHandlung(schluessel, aktion); } catch { /* nur ein Merker – die Seite geht weiter */ }
+  try {
+    await kontoApi.tippHandlung(schluessel, aktion);
+  } catch {
+    /* nur ein Merker – die Seite geht weiter */
+  }
   if (aktion !== 'gezeigt') await ladeEntdecken();
 }
 
@@ -42,7 +72,10 @@ const rundgangHoerer = new Set<() => void>();
 
 export function starteRundgang(schluessel: string, vonSelbst = false) {
   const r = stand?.rundgaenge.find((x) => x.schluessel === schluessel);
-  if (!r) { console.debug(`Rundgang „${schluessel}“ gibt es für diese Person nicht.`); return; }
+  if (!r) {
+    console.debug(`Rundgang „${schluessel}“ gibt es für diese Person nicht.`);
+    return;
+  }
   aktiv = { rundgang: r, vonSelbst };
   for (const h of rundgangHoerer) h();
 }
@@ -57,10 +90,23 @@ export function beendeRundgang(stand2: 'gesehen' | 'spaeter' | null) {
   const a = aktiv;
   aktiv = null;
   for (const h of rundgangHoerer) h();
-  if (a && stand2 && !a.probe) void kontoApi.rundgangMerken(a.rundgang.schluessel, stand2).catch(() => {}).then(() => ladeEntdecken());
+  if (a && stand2 && !a.probe)
+    void kontoApi
+      .rundgangMerken(a.rundgang.schluessel, stand2)
+      .catch(() => {})
+      .then(() => ladeEntdecken());
 }
 
-export const useAktiverRundgang = () => useSyncExternalStore((h) => { rundgangHoerer.add(h); return () => { rundgangHoerer.delete(h); }; }, () => aktiv);
+export const useAktiverRundgang = () =>
+  useSyncExternalStore(
+    (h) => {
+      rundgangHoerer.add(h);
+      return () => {
+        rundgangHoerer.delete(h);
+      };
+    },
+    () => aktiv,
+  );
 
 /* ---------- Anker finden und hervorheben ---------- */
 
@@ -92,7 +138,10 @@ export function beiAnkerGesucht(f: (anker: readonly string[]) => void): () => vo
 export async function warteAufAnker(anker: readonly string[], ms = 2500): Promise<{ anker: string; el: HTMLElement } | null> {
   const ende = Date.now() + ms;
   for (;;) {
-    for (const a of anker) { const el = findeAnker(a); if (el) return { anker: a, el }; }
+    for (const a of anker) {
+      const el = findeAnker(a);
+      if (el) return { anker: a, el };
+    }
     // Noch nicht sichtbar: Bescheid sagen – vielleicht steht die Stelle hinter einem Umschalter (oder die Seite lädt noch).
     ankerGesucht(anker);
     if (Date.now() > ende) return null;
@@ -109,14 +158,28 @@ export const istSchmal = () => typeof innerWidth === 'number' && innerWidth <= 8
  * Fehlt die Stelle (z. B. am Handy ausgeblendet), bleibt es bei der Seite – ohne Fehlermeldung.
  */
 export async function zeigeZiel(x: TippAnzeige) {
-  if (x.rundgang) { starteRundgang(x.rundgang); return; }
+  if (x.rundgang) {
+    starteRundgang(x.rundgang);
+    return;
+  }
   if (!x.ziel) return;
   // Ziel in einer Mappe (Tipp mit Mappentyp, #832): erst die erste Mappe öffnen, die die Person lesen darf.
-  const seite = x.ziel.seite ?? await kontoApi.tippOeffnen(x.schluessel).then((r) => r.pfad, () => null);
-  if (!seite) { console.debug(`Tipp „${x.schluessel}“: keine Mappe vom Typ „${x.ziel.typ ?? ''}“ zum Zeigen.`); return; }
+  const seite =
+    x.ziel.seite ??
+    (await kontoApi.tippOeffnen(x.schluessel).then(
+      (r) => r.pfad,
+      () => null,
+    ));
+  if (!seite) {
+    console.debug(`Tipp „${x.schluessel}“: keine Mappe vom Typ „${x.ziel.typ ?? ''}“ zum Zeigen.`);
+    return;
+  }
   if (location.pathname !== seite) geheZu(seite);
   const z = await warteAufAnker([x.ziel.anker]);
-  if (!z) { console.debug(`Tipp „${x.schluessel}“: Anker „${x.ziel.anker}“ ist hier nicht sichtbar.`); return; }
+  if (!z) {
+    console.debug(`Tipp „${x.schluessel}“: Anker „${x.ziel.anker}“ ist hier nicht sichtbar.`);
+    return;
+  }
   z.el.scrollIntoView({ block: 'center', behavior: wenigBewegung() ? 'auto' : 'smooth' });
   z.el.classList.add('anker-hervor');
   setTimeout(() => z.el.classList.remove('anker-hervor'), 4000);

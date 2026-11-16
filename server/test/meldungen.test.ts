@@ -21,13 +21,31 @@ const AM = '2026-11-04T10:00:00.000Z';
 describe('Meldungen der Übersicht: Reihenfolge (#816)', () => {
   it('rot vor gelb vor Hinweis, egal in welcher Reihenfolge sie kommen', () => {
     // Wie gefunden: drei gelbe, ein Hinweis, wieder eine gelbe – dazu eine rote ganz hinten.
-    const liste = [m('sicherung.volume', 'warn'), m('tresor.volume', 'warn'), m('wartung', 'warn'), m('variablen', 'info'), m('mail', 'warn'), m('notfallzugang:1', 'schlecht')];
-    assert.deepEqual(nachSchwere(liste).map((x) => x.schluessel), ['notfallzugang:1', 'sicherung.volume', 'tresor.volume', 'wartung', 'mail', 'variablen']);
+    const liste = [
+      m('sicherung.volume', 'warn'),
+      m('tresor.volume', 'warn'),
+      m('wartung', 'warn'),
+      m('variablen', 'info'),
+      m('mail', 'warn'),
+      m('notfallzugang:1', 'schlecht'),
+    ];
+    assert.deepEqual(
+      nachSchwere(liste).map((x) => x.schluessel),
+      ['notfallzugang:1', 'sicherung.volume', 'tresor.volume', 'wartung', 'mail', 'variablen'],
+    );
   });
 
   it('innerhalb einer Stufe nach Datum, neuere zuerst; ohne Datum danach in fester Reihenfolge', () => {
-    const liste = [m('a', 'schlecht'), m('b', 'schlecht', '2026-11-01T08:00:00Z'), m('c', 'schlecht', '2026-11-03T08:00:00Z'), m('d', 'schlecht')];
-    assert.deepEqual(nachSchwere(liste).map((x) => x.schluessel), ['c', 'b', 'a', 'd']);
+    const liste = [
+      m('a', 'schlecht'),
+      m('b', 'schlecht', '2026-11-01T08:00:00Z'),
+      m('c', 'schlecht', '2026-11-03T08:00:00Z'),
+      m('d', 'schlecht'),
+    ];
+    assert.deepEqual(
+      nachSchwere(liste).map((x) => x.schluessel),
+      ['c', 'b', 'a', 'd'],
+    );
   });
 });
 
@@ -35,9 +53,18 @@ describe('Meldungen der Übersicht: bewusst akzeptieren (#816)', () => {
   const ak = (art: Meldung['art']): Akzeptiert[string] => ({ art, von: 'Lena', am: AM });
 
   it('akzeptierte wandern nach unten, der Rest bleibt oben', () => {
-    const g = ordneMeldungen([m('mail', 'warn'), m('sicherung.volume', 'warn'), m('variablen', 'info')], { 'sicherung.volume': ak('warn'), variablen: ak('info') });
-    assert.deepEqual(g.offen.map((x) => x.schluessel), ['mail']);
-    assert.deepEqual(g.akzeptiert.map((x) => x.schluessel), ['sicherung.volume', 'variablen']);
+    const g = ordneMeldungen([m('mail', 'warn'), m('sicherung.volume', 'warn'), m('variablen', 'info')], {
+      'sicherung.volume': ak('warn'),
+      variablen: ak('info'),
+    });
+    assert.deepEqual(
+      g.offen.map((x) => x.schluessel),
+      ['mail'],
+    );
+    assert.deepEqual(
+      g.akzeptiert.map((x) => x.schluessel),
+      ['sicherung.volume', 'variablen'],
+    );
     assert.equal(g.akzeptiert[0].akzeptanz.von, 'Lena');
     assert.deepEqual(g.aufheben, []);
   });
@@ -54,15 +81,27 @@ describe('Meldungen der Übersicht: bewusst akzeptieren (#816)', () => {
   });
 
   it('wird die Lage schlimmer (gelb → rot, Hinweis → gelb), steht die Meldung wieder oben', () => {
-    const g = ordneMeldungen([m('export.umzug', 'schlecht'), m('texterkennung.paket', 'warn')], { 'export.umzug': ak('info'), 'texterkennung.paket': ak('info') });
-    assert.deepEqual(g.offen.map((x) => x.schluessel), ['export.umzug', 'texterkennung.paket']);
+    const g = ordneMeldungen([m('export.umzug', 'schlecht'), m('texterkennung.paket', 'warn')], {
+      'export.umzug': ak('info'),
+      'texterkennung.paket': ak('info'),
+    });
+    assert.deepEqual(
+      g.offen.map((x) => x.schluessel),
+      ['export.umzug', 'texterkennung.paket'],
+    );
     assert.deepEqual(g.akzeptiert, []);
-    assert.deepEqual(g.aufheben, [{ schluessel: 'export.umzug', anlass: 'schwerer' }, { schluessel: 'texterkennung.paket', anlass: 'schwerer' }]);
+    assert.deepEqual(g.aufheben, [
+      { schluessel: 'export.umzug', anlass: 'schwerer' },
+      { schluessel: 'texterkennung.paket', anlass: 'schwerer' },
+    ]);
   });
 
   it('wird sie leichter (gelb → Hinweis), bleibt sie akzeptiert', () => {
     const g = ordneMeldungen([m('texterkennung.paket', 'info')], { 'texterkennung.paket': ak('warn') });
-    assert.deepEqual(g.akzeptiert.map((x) => x.schluessel), ['texterkennung.paket']);
+    assert.deepEqual(
+      g.akzeptiert.map((x) => x.schluessel),
+      ['texterkennung.paket'],
+    );
   });
 
   it('verschwindet eine akzeptierte Meldung (behoben), ist die Akzeptanz aufgehoben – tritt sie erneut auf, steht sie oben', () => {
@@ -70,7 +109,10 @@ describe('Meldungen der Übersicht: bewusst akzeptieren (#816)', () => {
     const behoben = ordneMeldungen([], vorher);
     assert.deepEqual(behoben.aufheben, [{ schluessel: 'mail', anlass: 'erledigt' }]);
     const danach: Akzeptiert = {}; // die Übersicht meldet „erledigt“, der Server entfernt sie
-    assert.deepEqual(ordneMeldungen([m('mail', 'warn')], danach).offen.map((x) => x.schluessel), ['mail']);
+    assert.deepEqual(
+      ordneMeldungen([m('mail', 'warn')], danach).offen.map((x) => x.schluessel),
+      ['mail'],
+    );
   });
 });
 
@@ -92,13 +134,18 @@ async function aufbau() {
 describe('Schnittstelle: Meldungen akzeptieren (#816)', () => {
   it('nur für Administratoren', async () => {
     const { tabelle } = await aufbau();
-    for (const p of ['/api/werkbank/uebersicht/akzeptieren', '/api/werkbank/uebersicht/aufheben']) assert.equal(tabelle.find((x) => x.pfad === p)?.zugang, 'admin');
+    for (const p of ['/api/werkbank/uebersicht/akzeptieren', '/api/werkbank/uebersicht/aufheben'])
+      assert.equal(tabelle.find((x) => x.pfad === p)?.zugang, 'admin');
   });
 
   it('akzeptieren: gespeichert mit wer, wann, Begründung, im Protokoll – und in der Übersicht', async () => {
     const { rufe } = await aufbau();
     const vorher = protokoll.letzteNr;
-    const r = await rufe('POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: 'sicherung.volume', art: 'warn', grund: '  Testinstallation  ' });
+    const r = await rufe('POST', '/api/werkbank/uebersicht/akzeptieren', {
+      schluessel: 'sicherung.volume',
+      art: 'warn',
+      grund: '  Testinstallation  ',
+    });
     const a = (r.body as Akzeptiert)['sicherung.volume'];
     assert.equal(a.von, 'Lena');
     assert.equal(a.art, 'warn');
@@ -120,9 +167,14 @@ describe('Schnittstelle: Meldungen akzeptieren (#816)', () => {
 
   it('rote Meldungen: abgelehnt, nichts gespeichert', async () => {
     const { rufe, einstellungen } = await aufbau();
-    await assert.rejects(rufe('POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: 'sicherung.fehler', art: 'schlecht' }),
-      (e: unknown) => e instanceof Fachfehler && e.status === 400 && /lassen sich nicht akzeptieren/.test(e.message));
-    await assert.rejects(rufe('POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: '../x', art: 'warn' }), (e: unknown) => e instanceof Fachfehler && e.status === 400);
+    await assert.rejects(
+      rufe('POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: 'sicherung.fehler', art: 'schlecht' }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 400 && /lassen sich nicht akzeptieren/.test(e.message),
+    );
+    await assert.rejects(
+      rufe('POST', '/api/werkbank/uebersicht/akzeptieren', { schluessel: '../x', art: 'warn' }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 400,
+    );
     assert.equal(await einstellungen.lies('uebersicht_akzeptiert'), null);
   });
 
@@ -144,7 +196,9 @@ describe('Schnittstelle: Meldungen akzeptieren (#816)', () => {
 
 describe('Alle Meldungen der Übersicht haben einen Schlüssel und stehen im Admin-Handbuch (#816)', () => {
   it('jeder Schlüssel aus der Übersicht steht in der Tabelle unter „Meldungen der Übersicht“', () => {
-    const quellen = ['web/src/werkbank/Uebersicht.tsx', 'web/src/werkbank/Sicherung.tsx', 'web/src/werkbank/Vollexport.tsx'].map((f) => readFileSync(join(WURZEL, f), 'utf8')).join('\n');
+    const quellen = ['web/src/werkbank/Uebersicht.tsx', 'web/src/werkbank/Sicherung.tsx', 'web/src/werkbank/Vollexport.tsx']
+      .map((f) => readFileSync(join(WURZEL, f), 'utf8'))
+      .join('\n');
     const schluessel = [...quellen.matchAll(/schluessel: (?:'([a-z0-9.-]+)'|`([a-z0-9.-]+):\$\{)/g)].map((x) => x[1] ?? x[2]);
     assert.ok(schluessel.length >= 40, `nur ${schluessel.length} gefunden`);
     const handbuch = readFileSync(join(WURZEL, 'docs/handbuch/admin/docs/uebersicht.md'), 'utf8');

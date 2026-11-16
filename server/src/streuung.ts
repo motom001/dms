@@ -25,7 +25,10 @@ export interface Uhren {
 const echteUhren: Uhren = {
   spaeter: (f, ms) => setTimeout(f, ms).unref(),
   immer: (f, ms) => setInterval(f, ms).unref(),
-  stoppe: (u) => { clearTimeout(u as NodeJS.Timeout); clearInterval(u as NodeJS.Timeout); },
+  stoppe: (u) => {
+    clearTimeout(u as NodeJS.Timeout);
+    clearInterval(u as NodeJS.Timeout);
+  },
 };
 
 /**
@@ -34,6 +37,15 @@ const echteUhren: Uhren = {
  */
 export function wiederkehrend(name: string, intervallMs: number, f: () => void, uhren: Uhren = echteUhren): () => void {
   let laufend: unknown = null;
-  const erst = uhren.spaeter(() => { f(); laufend = uhren.immer(f, intervallMs); }, versatzMs(name, intervallMs));
-  return () => { uhren.stoppe(erst); if (laufend) uhren.stoppe(laufend); };
+  const erst = uhren.spaeter(
+    () => {
+      f();
+      laufend = uhren.immer(f, intervallMs);
+    },
+    versatzMs(name, intervallMs),
+  );
+  return () => {
+    uhren.stoppe(erst);
+    if (laufend) uhren.stoppe(laufend);
+  };
 }

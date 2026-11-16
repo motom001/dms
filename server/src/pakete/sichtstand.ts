@@ -16,7 +16,15 @@ import { pruefwert } from './vorgaben';
 
 /** Was an einer Ansicht zählt (siehe oben). */
 function sichtBild(s: Pick<SichtDaten, 'name' | 'beschreibung' | 'elternId' | 'typen' | 'bedingungen' | 'trefferliste' | 'symbol'>) {
-  return { name: s.name, beschreibung: s.beschreibung ?? '', elternId: s.elternId ?? null, typen: [...s.typen].sort(), bedingungen: s.bedingungen, trefferliste: s.trefferliste ?? null, symbol: s.symbol ?? null };
+  return {
+    name: s.name,
+    beschreibung: s.beschreibung ?? '',
+    elternId: s.elternId ?? null,
+    typen: [...s.typen].sort(),
+    bedingungen: s.bedingungen,
+    trefferliste: s.trefferliste ?? null,
+    symbol: s.symbol ?? null,
+  };
 }
 
 /** Prüfwert einer Ansicht in Ablago. */
@@ -29,7 +37,12 @@ export const sichtFassung = (s: object): string => pruefwert(s);
  * Zustand einer vorhandenen Ansicht beim Update. `jetzt` = die Ansicht in Ablago (fehlt: gelöscht); `wieImPaket` = so
  * sähe die Fassung im Paket hier aus (nur nötig ohne Stand, also bei Installationen vor #1125).
  */
-export function sichtZustand(x: { stand?: SichtStand; fassung: string; jetzt?: Parameters<typeof sichtBild>[0]; wieImPaket?: Parameters<typeof sichtBild>[0] | null }): SichtZustand {
+export function sichtZustand(x: {
+  stand?: SichtStand;
+  fassung: string;
+  jetzt?: Parameters<typeof sichtBild>[0];
+  wieImPaket?: Parameters<typeof sichtBild>[0] | null;
+}): SichtZustand {
   if (!x.jetzt) return 'geloescht';
   if (!x.stand) return x.wieImPaket && sichtPruefwert(x.wieImPaket) === sichtPruefwert(x.jetzt) ? 'gleich' : 'unbekannt';
   if (x.stand.fassung === x.fassung) return 'gleich';
@@ -66,16 +79,21 @@ export function standNachUmbau(p: Pick<InstalliertesPaket, 'sichten' | 'sichtSta
  * genau der Fassung im Paket entsprechen (`gleich`). Was die neue Version nicht mehr nennt, behält seinen Stand.
  */
 export function sichtStandNach(x: {
-  sichten: Array<{ schluessel: string }>; alt: Pick<InstalliertesPaket, 'sichtStand'> | null; ids: Record<string, string>;
-  geschrieben: Set<string>; zustand: (schluessel: string) => SichtZustand | undefined;
-  jetzt: Array<Parameters<typeof sichtBild>[0] & { id: string }>; umbau?: SichtAenderungen;
+  sichten: Array<{ schluessel: string }>;
+  alt: Pick<InstalliertesPaket, 'sichtStand'> | null;
+  ids: Record<string, string>;
+  geschrieben: Set<string>;
+  zustand: (schluessel: string) => SichtZustand | undefined;
+  jetzt: Array<Parameters<typeof sichtBild>[0] & { id: string }>;
+  umbau?: SichtAenderungen;
 }): Record<string, SichtStand> {
   const erg: Record<string, SichtStand> = { ...x.alt?.sichtStand };
   if (x.umbau) standNachUmbau({ sichten: x.ids, sichtStand: erg }, x.umbau);
   for (const s of x.sichten) {
     const v = x.jetzt.find((y) => y.id === x.ids[s.schluessel]);
     if (!v) continue;
-    if (x.geschrieben.has(s.schluessel) || (!erg[s.schluessel] && x.zustand(s.schluessel) === 'gleich')) erg[s.schluessel] = { stand: sichtPruefwert(v), fassung: sichtFassung(s) };
+    if (x.geschrieben.has(s.schluessel) || (!erg[s.schluessel] && x.zustand(s.schluessel) === 'gleich'))
+      erg[s.schluessel] = { stand: sichtPruefwert(v), fassung: sichtFassung(s) };
   }
   return erg;
 }

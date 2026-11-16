@@ -51,7 +51,12 @@ function useLage(offen: boolean, gruppe: RefObject<HTMLSpanElement | null>, feld
 }
 
 /** Esc schließt und gibt den Fokus an den Knopf zurück, ein Klick außerhalb der Gruppe schließt. */
-function useSchliessen(offen: boolean, setOffen: (x: boolean) => void, gruppe: RefObject<HTMLSpanElement | null>, knopf: RefObject<HTMLButtonElement | null>) {
+function useSchliessen(
+  offen: boolean,
+  setOffen: (x: boolean) => void,
+  gruppe: RefObject<HTMLSpanElement | null>,
+  knopf: RefObject<HTMLButtonElement | null>,
+) {
   useEffect(() => {
     if (!offen) return;
     const taste = (e: KeyboardEvent) => {
@@ -62,10 +67,15 @@ function useSchliessen(offen: boolean, setOffen: (x: boolean) => void, gruppe: R
       setOffen(false);
       knopf.current?.focus();
     };
-    const klick = (e: MouseEvent) => { if (!gruppe.current?.contains(e.target as Node)) setOffen(false); };
+    const klick = (e: MouseEvent) => {
+      if (!gruppe.current?.contains(e.target as Node)) setOffen(false);
+    };
     document.addEventListener('keydown', taste, true);
     document.addEventListener('mousedown', klick);
-    return () => { document.removeEventListener('keydown', taste, true); document.removeEventListener('mousedown', klick); };
+    return () => {
+      document.removeEventListener('keydown', taste, true);
+      document.removeEventListener('mousedown', klick);
+    };
   }, [offen, setOffen, gruppe, knopf]);
 }
 
@@ -73,7 +83,16 @@ function useSchliessen(offen: boolean, setOffen: (x: boolean) => void, gruppe: R
  * Der gesperrte Knopf mit ⓘ und Erklärung. `knopf` ist das fertige `<button>` (der Baustein `Knopf` setzt
  * `aria-describedby` auf `grundId` und schaltet beim Klick `offen` um).
  */
-export function Erklaerung({ sperre, knopf, knopfRef, knopfId, grundId, erklaerungId, offen, setOffen }: {
+export function Erklaerung({
+  sperre,
+  knopf,
+  knopfRef,
+  knopfId,
+  grundId,
+  erklaerungId,
+  offen,
+  setOffen,
+}: {
   sperre: KnopfSperre;
   knopf: ReactNode;
   knopfRef: RefObject<HTMLButtonElement | null>;
@@ -91,21 +110,47 @@ export function Erklaerung({ sperre, knopf, knopfRef, knopfId, grundId, erklaeru
   return (
     <span ref={gruppe} className={s.gruppe}>
       {knopf}
-      <button type="button" className={s.warum} aria-labelledby={`${infoId} ${knopfId}`} aria-expanded={offen} aria-controls={offen ? erklaerungId : undefined} onClick={() => setOffen(!offen)}>
+      <button
+        type="button"
+        className={s.warum}
+        aria-labelledby={`${infoId} ${knopfId}`}
+        aria-expanded={offen}
+        aria-controls={offen ? erklaerungId : undefined}
+        onClick={() => setOffen(!offen)}>
         <Symbol name="info" />
-        <span id={infoId} hidden>{t('oberflaeche.knopf.warum')}</span>
+        <span id={infoId} hidden>
+          {t('oberflaeche.knopf.warum')}
+        </span>
       </button>
-      <span id={grundId} className={s.sr}>{sperre.grund}</span>
+      <span id={grundId} className={s.sr}>
+        {sperre.grund}
+      </span>
       {offen && (
-        <div ref={feld} id={erklaerungId} role="region" aria-labelledby={`${infoId} ${knopfId}`} className={klassen(s.erklaerung, lage.oben && s.oben)} style={lage.versatz ? { left: lage.versatz } : undefined} data-erklaerung="">
-          <p><strong>{sperre.titel ?? t('oberflaeche.knopf.geht-nicht')}</strong> {sperre.grund}</p>
+        <div
+          ref={feld}
+          id={erklaerungId}
+          role="region"
+          aria-labelledby={`${infoId} ${knopfId}`}
+          className={klassen(s.erklaerung, lage.oben && s.oben)}
+          style={lage.versatz ? { left: lage.versatz } : undefined}
+          data-erklaerung="">
+          <p>
+            <strong>{sperre.titel ?? t('oberflaeche.knopf.geht-nicht')}</strong> {sperre.grund}
+          </p>
           {!!sperre.eintraege?.length && (
             <ul>
-              {sperre.eintraege.map((e, i) => <li key={i}>{e}</li>)}
+              {sperre.eintraege.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
               {!!sperre.weitere && <li className="leise">{t('oberflaeche.knopf.und-weitere', { wert: sperre.weitere })}</li>}
             </ul>
           )}
-          {sperre.stattdessen && <div className={s.wege}><p className="leise">{t('oberflaeche.knopf.stattdessen')}</p><div className={s.wegknoepfe}>{sperre.stattdessen}</div></div>}
+          {sperre.stattdessen && (
+            <div className={s.wege}>
+              <p className="leise">{t('oberflaeche.knopf.stattdessen')}</p>
+              <div className={s.wegknoepfe}>{sperre.stattdessen}</div>
+            </div>
+          )}
         </div>
       )}
     </span>

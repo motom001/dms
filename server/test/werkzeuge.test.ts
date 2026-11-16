@@ -8,7 +8,14 @@ import { describe, it } from 'node:test';
 import { fehlendeProgramme, fehlendeWerkzeuge } from '../../shared/src/werkzeuge';
 import { pruefeWerkzeuge } from '../src/texterkennung';
 
-const da = (cmd: string, arg: string) => { try { execFileSync(cmd, [arg], { stdio: 'ignore' }); return true; } catch (e) { return (e as NodeJS.ErrnoException).code !== 'ENOENT'; } };
+const da = (cmd: string, arg: string) => {
+  try {
+    execFileSync(cmd, [arg], { stdio: 'ignore' });
+    return true;
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code !== 'ENOENT';
+  }
+};
 
 describe('Eingebaute Werkzeuge (#1189)', () => {
   it('nichts fehlt: kein Hinweis; noch nicht geprüft: auch keiner', () => {

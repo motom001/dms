@@ -20,7 +20,17 @@ import { anschriftZeilen, anzeigename, liesAngaben, type Angaben, type EigeneOrg
 import { formatiere, istLeer, titelAus, type Dokument, type Feld, type Mappe, type Mappentyp, type Wert } from '../../../shared/src/model';
 import { gebietsschemaVon, grundsprache, inSprache } from '../../../shared/src/sprache';
 import {
-  ergebnisName, laufText, lueckenText, setzeVorlage, type Brief, type Lauf, type Platzhalterwert, type PlatzhalterStand, type TextGesetzt, type VorlageEintrag, type VorlagenListe,
+  ergebnisName,
+  laufText,
+  lueckenText,
+  setzeVorlage,
+  type Brief,
+  type Lauf,
+  type Platzhalterwert,
+  type PlatzhalterStand,
+  type TextGesetzt,
+  type VorlageEintrag,
+  type VorlagenListe,
 } from '../../../shared/src/textsatz';
 import { VORLAGE_MIME } from '../../../shared/src/vorgaben';
 import { Fachfehler } from '../fehler';
@@ -39,7 +49,11 @@ const log = protokoll.modul('dokumente');
  * Wer setzt: Person (bzw. Dienstkonto eines Pakets) mit Zugriff. `paket`: Dienstkonto – liest Werte zur Verarbeitung in
  * Ablago und braucht wie beim Lesen von Dokumenten kein Exportrecht E.
  */
-export interface Setzender { ich: { id: string; rolle: string }; z: Zugriff; paket?: boolean }
+export interface Setzender {
+  ich: { id: string; rolle: string };
+  z: Zugriff;
+  paket?: boolean;
+}
 
 /** Was der Satz außer Kern und Rechten braucht – vom Dienst hereingereicht. */
 export interface TextsatzAnschluss {
@@ -48,13 +62,31 @@ export interface TextsatzAnschluss {
   /** Prüfstelle (#723): Welche Mappen dürfen hinaus? */
   mitnehmbar(ich: Setzender['ich'], z: Zugriff, ids: string[]): Promise<Set<string>>;
   /** Dokument ablegen (Hochladen mit Historie, Ereignis, Volltext). */
-  ladeHoch(mappeId: string, e: { register: string; name: string; typ: string }, inhalt: Buffer, von: string): Promise<{ dokument: Dokument }>;
+  ladeHoch(
+    mappeId: string,
+    e: { register: string; name: string; typ: string },
+    inhalt: Buffer,
+    von: string,
+  ): Promise<{ dokument: Dokument }>;
   /** Darf die Person an der Mappe Dokumente hinzufügen (Bearbeiten)? */
   darfAblegen(z: Zugriff, mappeId: string): Promise<boolean>;
 }
 
 /** Sprachkennung der Volltexte (#400) → Sprache der Texte. */
-const SPRACHE: Record<string, string> = { deu: 'de', eng: 'en', fra: 'fr', spa: 'es', ita: 'it', nld: 'nl', tur: 'tr', pol: 'pl', por: 'pt', rus: 'ru', ukr: 'uk', ara: 'ar' };
+const SPRACHE: Record<string, string> = {
+  deu: 'de',
+  eng: 'en',
+  fra: 'fr',
+  spa: 'es',
+  ita: 'it',
+  nld: 'nl',
+  tur: 'tr',
+  pol: 'pl',
+  por: 'pt',
+  rus: 'ru',
+  ukr: 'uk',
+  ara: 'ar',
+};
 /** Register, in dem eigene Vorlagen liegen dürfen (ohne Paket). */
 const VORLAGEN_REGISTER = 'vorlagen';
 /** Verweise der gemeinsamen Kennungen (dms-registry, „Gleiche Kennungen“): von = Gegenseite, an = wer es bekommt. */
@@ -68,12 +100,22 @@ const vorlagenName = (d: Dokument) => d.name.replace(/\.md$/i, '');
 const heuteIso = () => new Date().toISOString().slice(0, 10);
 
 /** Eine gefundene Vorlage mit Quelle und Paket. */
-interface Fund { dok: Dokument; quelle: Mappe; paket: { id: string; name: string } | null }
+interface Fund {
+  dok: Dokument;
+  quelle: Mappe;
+  paket: { id: string; name: string } | null;
+}
 
 export class TextsatzDienst {
-  constructor(private readonly kern: Kern, private readonly rechte: ZugriffDienst, private readonly anschluss: TextsatzAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechte: ZugriffDienst,
+    private readonly anschluss: TextsatzAnschluss,
+  ) {}
 
-  private get repo() { return this.kern.repo; }
+  private get repo() {
+    return this.kern.repo;
+  }
 
   /** Lesbar für diese Person – Mappe und ihr Typ (ein Dienstkonto kennt nur seine Typen). */
   private async lesbar(s: Setzender, ids: string[], hinaus: boolean): Promise<Set<string>> {
@@ -104,7 +146,10 @@ export class TextsatzDienst {
     const quellen = [mappe, ...(await this.repo.holeMappen([...new Set(ziele)].filter((x) => lesbar.has(x) && x !== mappe.id)))];
     const vonPaket = new Map<string, { id: string; name: string }>();
     for (const p of await this.repo.listePakete()) {
-      const staende = [...Object.values(p.vorgaben ?? {}).flatMap((v) => v.vorlagen ?? []), ...(p.ergaenzungen ?? []).flatMap((e) => e.vorlagen)];
+      const staende = [
+        ...Object.values(p.vorgaben ?? {}).flatMap((v) => v.vorlagen ?? []),
+        ...(p.ergaenzungen ?? []).flatMap((e) => e.vorlagen),
+      ];
       for (const v of staende) vonPaket.set(v.dokument, { id: p.id, name: p.name });
     }
     const funde: Fund[] = [];
@@ -128,13 +173,26 @@ export class TextsatzDienst {
       const text = await this.text(f.dok);
       const k = await this.kontext(s, mappe, typ, f.dok, false);
       const platzhalter = new Map<string, PlatzhalterStand>();
-      if (text !== null) setzeVorlage(text, (name) => { const w = k.wert(name); platzhalter.set(name, { name, beschriftung: k.beschriftung(name), fehlt: 'luecke' in w, ...feldVon(typ, name) }); return w; });
+      if (text !== null)
+        setzeVorlage(text, (name) => {
+          const w = k.wert(name);
+          platzhalter.set(name, { name, beschriftung: k.beschriftung(name), fehlt: 'luecke' in w, ...feldVon(typ, name) });
+          return w;
+        });
       vorlagen.push({
-        dokumentId: f.dok.id, name: vorlagenName(f.dok), quelle: { mappeId: f.quelle.id, titel: f.quelle.titel ?? '' }, paket: f.paket,
-        platzhalter: [...platzhalter.values()], absender: k.absender.length ? k.absender[0] : null, empfaenger: k.empfaengerName,
+        dokumentId: f.dok.id,
+        name: vorlagenName(f.dok),
+        quelle: { mappeId: f.quelle.id, titel: f.quelle.titel ?? '' },
+        paket: f.paket,
+        platzhalter: [...platzhalter.values()],
+        absender: k.absender.length ? k.absender[0] : null,
+        empfaenger: k.empfaengerName,
       });
     }
-    const [ablegen, hinaus] = await Promise.all([this.anschluss.darfAblegen(s.z, mappe.id), s.paket ? new Set([mappe.id]) : this.anschluss.mitnehmbar(s.ich, s.z, [mappe.id])]);
+    const [ablegen, hinaus] = await Promise.all([
+      this.anschluss.darfAblegen(s.z, mappe.id),
+      s.paket ? new Set([mappe.id]) : this.anschluss.mitnehmbar(s.ich, s.z, [mappe.id]),
+    ]);
     const register = (typ.register ?? []).filter((r) => r.art === 'dokumente').map((r) => ({ key: r.key, name: r.name }));
     return { vorlagen, register, ablegen: ablegen && register.length > 0, herunterladen: hinaus.has(mappe.id) };
   }
@@ -151,7 +209,12 @@ export class TextsatzDienst {
    * gibt nur das PDF zurück – Werte verwiesener Mappen dann nur mit Exportrecht E. Die Rechte an der Mappe selbst
    * (Bearbeiten bzw. Prüfstelle) prüft die Route vorher.
    */
-  async setze(s: Setzender, mappeId: string, dokumentId: string, e: unknown): Promise<{ art: 'abgelegt'; ergebnis: TextGesetzt } | { art: 'pdf'; pdf: Buffer; name: string }> {
+  async setze(
+    s: Setzender,
+    mappeId: string,
+    dokumentId: string,
+    e: unknown,
+  ): Promise<{ art: 'abgelegt'; ergebnis: TextGesetzt } | { art: 'pdf'; pdf: Buffer; name: string }> {
     const x = (e && typeof e === 'object' && !Array.isArray(e) ? e : {}) as { ziel?: unknown; register?: unknown };
     const ziel = x.ziel === 'herunterladen' ? 'herunterladen' : 'ablegen';
     const { mappe, typ } = await this.haupt(s, mappeId);
@@ -161,14 +224,27 @@ export class TextsatzDienst {
     const register = ziel === 'ablegen' ? zielRegister(typ, x.register) : undefined;
     const k = await this.kontext(s, mappe, typ, fund.dok, ziel === 'herunterladen' && !s.paket);
     const gesetzt = setzeVorlage(vorlage, k.wert);
-    if (Buffer.byteLength(gesetzt.text) > TEXTSATZ_TEXT_MAX) throw new Fachfehler(413, t('meldungen.textsatz.zu-gross', { max: groesseText(TEXTSATZ_TEXT_MAX) }));
+    if (Buffer.byteLength(gesetzt.text) > TEXTSATZ_TEXT_MAX)
+      throw new Fachfehler(413, t('meldungen.textsatz.zu-gross', { max: groesseText(TEXTSATZ_TEXT_MAX) }));
     const { pdf, seiten } = await zeichne(inSprache(k.sprache, () => briefAus(fund, k, gesetzt)));
     const name = ergebnisName(vorlagenName(fund.dok), heuteIso());
     const luecken = [...new Set(k.luecken)];
-    log.info('Brief aus Vorlage gesetzt', { mappe: mappe.id, vorlage: fund.dok.id, paket: fund.paket?.id, ziel, seiten, luecken: luecken.length || undefined });
+    log.info('Brief aus Vorlage gesetzt', {
+      mappe: mappe.id,
+      vorlage: fund.dok.id,
+      paket: fund.paket?.id,
+      ziel,
+      seiten,
+      luecken: luecken.length || undefined,
+    });
     if (!register) return { art: 'pdf', pdf, name: `${name}.pdf` };
     const pdfDok = await this.anschluss.ladeHoch(mappe.id, { register, name: `${name}.pdf`, typ: 'application/pdf' }, pdf, s.ich.id);
-    const textDok = await this.anschluss.ladeHoch(mappe.id, { register, name: `${name}.md`, typ: VORLAGE_MIME }, Buffer.from(gesetzt.text), s.ich.id);
+    const textDok = await this.anschluss.ladeHoch(
+      mappe.id,
+      { register, name: `${name}.md`, typ: VORLAGE_MIME },
+      Buffer.from(gesetzt.text),
+      s.ich.id,
+    );
     return { art: 'abgelegt', ergebnis: { pdf: pdfDok.dokument, text: textDok.dokument, luecken } };
   }
 
@@ -189,7 +265,10 @@ export class TextsatzDienst {
       stufe = [];
       for (const m of await this.repo.holeMappen(ziele.filter((id) => ok.has(id)))) {
         const ty = await this.typ(m.typId, s);
-        if (ty) { mappen.set(m.id, { mappe: m, typ: ty }); stufe.push(m.id); }
+        if (ty) {
+          mappen.set(m.id, { mappe: m, typ: ty });
+          stufe.push(m.id);
+        }
       }
     }
     return this.mitErwaehnungstiteln(s, mappen, hinaus);
@@ -200,16 +279,31 @@ export class TextsatzDienst {
    * mitnehmbare) Mappen mit aktuellem Titel, sonst „Mappe (nicht sichtbar)“.
    */
   private async mitErwaehnungstiteln(s: Setzender, mappen: Mappen, hinaus: boolean): Promise<Mappen> {
-    const formatiert = (x: { mappe: Mappe; typ: Mappentyp }) => x.typ.felder.filter((f) => f.typ === 'formatiert' && typeof x.mappe.werte[f.key] === 'string').map((f) => f.key);
+    const formatiert = (x: { mappe: Mappe; typ: Mappentyp }) =>
+      x.typ.felder.filter((f) => f.typ === 'formatiert' && typeof x.mappe.werte[f.key] === 'string').map((f) => f.key);
     const ids = [...new Set([...mappen.values()].flatMap((x) => formatiert(x).flatMap((k) => erwaehnungen(String(x.mappe.werte[k])))))];
     if (!ids.length) return mappen;
     const ok = await this.lesbar(s, ids, hinaus);
     const b = await this.repo.bezuege([...ok]);
-    const name = (id: string) => (b.has(id) ? b.get(id)!.titel || t('meldungen.dienst.ohne-titel') : t('meldungen.dienst.erwaehnung-nicht-sichtbar'));
-    return new Map([...mappen].map(([id, x]) => {
-      const keys = formatiert(x);
-      return [id, keys.length ? { ...x, mappe: { ...x.mappe, werte: { ...x.mappe.werte, ...Object.fromEntries(keys.map((k) => [k, mitTiteln(String(x.mappe.werte[k]), name)])) } } } : x];
-    }));
+    const name = (id: string) =>
+      b.has(id) ? b.get(id)!.titel || t('meldungen.dienst.ohne-titel') : t('meldungen.dienst.erwaehnung-nicht-sichtbar');
+    return new Map(
+      [...mappen].map(([id, x]) => {
+        const keys = formatiert(x);
+        return [
+          id,
+          keys.length
+            ? {
+                ...x,
+                mappe: {
+                  ...x.mappe,
+                  werte: { ...x.mappe.werte, ...Object.fromEntries(keys.map((k) => [k, mitTiteln(String(x.mappe.werte[k]), name)])) },
+                },
+              }
+            : x,
+        ];
+      }),
+    );
   }
 
   /**
@@ -224,7 +318,9 @@ export class TextsatzDienst {
     const titelVon = (id: string) => mappen.get(id)?.mappe.titel ?? '';
     const luecken: string[] = [];
     const fest: Record<string, string> = inSprache(sprache, () => ({
-      heute: formatiere({ key: 'heute', label: '', typ: 'datum' } as Feld, heuteIso()), titel: mappe.titel ?? titelAus(typ, mappe.werte, titelVon), mappentyp: typ.name,
+      heute: formatiere({ key: 'heute', label: '', typ: 'datum' } as Feld, heuteIso()),
+      titel: mappe.titel ?? titelAus(typ, mappe.werte, titelVon),
+      mappentyp: typ.name,
     }));
     const wert = (name: string): Platzhalterwert => {
       const r = inSprache(sprache, () => wertVon(name, { mappe, typ }, mappen, fest, titelVon));
@@ -233,8 +329,16 @@ export class TextsatzDienst {
     };
     // Briefkopf: die Person bzw. Organisation im Feld „an“ (Kunde, leer heißt: wir), sonst die eigene Organisation.
     const an = ziel(typ, mappe, AN, mappen);
-    const kopf = briefkopf(an ? liesAngaben(an.typ, an.mappe.werte) : (await this.anschluss.organisation())?.angaben ?? null);
-    return { sprache, wert, beschriftung: (name: string) => beschriftung(name, typ, mappen), luecken, ...kopf, ...anschrift(typ, mappe, mappen), datum: [kopf.ort, fest.heute].filter(Boolean).join(', ') };
+    const kopf = briefkopf(an ? liesAngaben(an.typ, an.mappe.werte) : ((await this.anschluss.organisation())?.angaben ?? null));
+    return {
+      sprache,
+      wert,
+      beschriftung: (name: string) => beschriftung(name, typ, mappen),
+      luecken,
+      ...kopf,
+      ...anschrift(typ, mappe, mappen),
+      datum: [kopf.ort, fest.heute].filter(Boolean).join(', '),
+    };
   }
 }
 
@@ -242,12 +346,14 @@ type Mappen = Map<string, { mappe: Mappe; typ: Mappentyp }>;
 type Kontext = Awaited<ReturnType<TextsatzDienst['kontext']>>;
 
 /** Ids in allen Verweisfeldern einer Mappe. */
-const verweiseIn = (m: { mappe: Mappe; typ: Mappentyp }) => m.typ.felder.filter((f) => f.typ === 'referenz').flatMap((f) => ids(m.mappe.werte[f.key]));
+const verweiseIn = (m: { mappe: Mappe; typ: Mappentyp }) =>
+  m.typ.felder.filter((f) => f.typ === 'referenz').flatMap((f) => ids(m.mappe.werte[f.key]));
 
 /** Register zum Ablegen: das gewünschte Dokumentenregister, sonst „dokumente“, sonst das erste. */
 function zielRegister(typ: Mappentyp, wunsch: unknown): string {
   const dok = (typ.register ?? []).filter((r) => r.art === 'dokumente');
-  const r = (typeof wunsch === 'string' ? dok.find((x) => x.key === wunsch) : undefined) ?? dok.find((x) => x.key === 'dokumente') ?? dok[0];
+  const r =
+    (typeof wunsch === 'string' ? dok.find((x) => x.key === wunsch) : undefined) ?? dok.find((x) => x.key === 'dokumente') ?? dok[0];
   if (!r) throw new Fachfehler(422, t('meldungen.dienst.dieses-dokumentenregister-gibt-es-2'));
   return r.key;
 }
@@ -261,7 +367,11 @@ function ziel(typ: Mappentyp, mappe: Mappe, key: string, mappen: Mappen) {
 /** Briefkopf und Rücksendeangabe aus der festen Liste (Name, Anschrift, Telefon, E-Mail); Ort fürs Datum. */
 function briefkopf(a: Angaben | null) {
   if (!a) return { absender: [] as string[], ruecksende: '', ort: undefined };
-  return { absender: [...anschriftZeilen(a), a.telefon, a.email].filter((z): z is string => !!z), ruecksende: anschriftZeilen(a).join(' · '), ort: a.ort };
+  return {
+    absender: [...anschriftZeilen(a), a.telefon, a.email].filter((z): z is string => !!z),
+    ruecksende: anschriftZeilen(a).join(' · '),
+    ort: a.ort,
+  };
 }
 
 /** Anschrift: die Gegenseite im Feld „von“ (Anbieter, Rechnungssteller …) – sonst ihr Titel, sonst die Lücke. */
@@ -292,10 +402,19 @@ function beschriftung(name: string, typ: Mappentyp, mappen: Mappen): string {
 function briefAus(fund: Fund, k: Kontext, g: ReturnType<typeof setzeVorlage>): Brief {
   const vorlage = vorlagenName(fund.dok);
   return {
-    sprache: gebietsschemaVon(k.sprache), titel: g.betreff ? laufText(g.betreff) : vorlage,
-    herkunft: fund.paket ? t('meldungen.textsatz.herkunft-paket', { paket: fund.paket.name, vorlage }) : t('meldungen.textsatz.herkunft', { vorlage }),
-    absender: k.absender, ruecksende: k.ruecksende, anschrift: k.anschrift, datum: k.datum, betreff: g.betreff, bloecke: g.bloecke,
-    seitenText: t('meldungen.textsatz.seite'), seitenMax: TEXTSATZ_SEITEN,
+    sprache: gebietsschemaVon(k.sprache),
+    titel: g.betreff ? laufText(g.betreff) : vorlage,
+    herkunft: fund.paket
+      ? t('meldungen.textsatz.herkunft-paket', { paket: fund.paket.name, vorlage })
+      : t('meldungen.textsatz.herkunft', { vorlage }),
+    absender: k.absender,
+    ruecksende: k.ruecksende,
+    anschrift: k.anschrift,
+    datum: k.datum,
+    betreff: g.betreff,
+    bloecke: g.bloecke,
+    seitenText: t('meldungen.textsatz.seite'),
+    seitenMax: TEXTSATZ_SEITEN,
   };
 }
 
@@ -309,7 +428,13 @@ async function zeichne(brief: Brief): Promise<{ pdf: Buffer; seiten: number }> {
 }
 
 /** Ein Platzhalter: fest (heute, titel, mappentyp) oder Feld, auch über Verweise ({von.name}); sonst Lücke. */
-function wertVon(name: string, start: { mappe: Mappe; typ: Mappentyp }, mappen: Mappen, fest: Record<string, string>, titelVon: (id: string) => string): Platzhalterwert {
+function wertVon(
+  name: string,
+  start: { mappe: Mappe; typ: Mappentyp },
+  mappen: Mappen,
+  fest: Record<string, string>,
+  titelVon: (id: string) => string,
+): Platzhalterwert {
   if (Object.hasOwn(fest, name)) return fest[name] ? { text: fest[name] } : { luecke: name };
   const teile = name.split('.');
   let akt = start;
@@ -342,9 +467,16 @@ const ids = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).filter((x): x
 /** Verweisfeld mit dieser Kennung. */
 const feldMit = (typ: Mappentyp, key: string) => typ.felder.find((f) => f.key === key && f.typ === 'referenz');
 /** Feld der Haupt-Mappe zum Hinspringen (erster Teil des Platzhalters), wenn es eins ist. */
-const feldVon = (typ: Mappentyp, name: string) => { const f = typ.felder.find((x) => x.key === name.split('.')[0]); return f ? { feld: f.key } : {}; };
+const feldVon = (typ: Mappentyp, name: string) => {
+  const f = typ.felder.find((x) => x.key === name.split('.')[0]);
+  return f ? { feld: f.key } : {};
+};
 /** Typ der Mappe hinter einem Verweisfeld – aus den gelesenen Mappen (eine genügt, die Beschriftung ist dieselbe). */
 function zielTyp(f: Feld, mappen: Map<string, { mappe: Mappe; typ: Mappentyp }>): Mappentyp | undefined {
-  for (const m of mappen.values()) for (const id of ids(m.mappe.werte[f.key])) { const z = mappen.get(id); if (z) return z.typ; }
+  for (const m of mappen.values())
+    for (const id of ids(m.mappe.werte[f.key])) {
+      const z = mappen.get(id);
+      if (z) return z.typ;
+    }
   return undefined;
 }

@@ -14,9 +14,18 @@ import { LOGO_MAX } from './grenzen';
 export const GRUNDLAGEN = ['automatisch', 'hell', 'dunkel', 'kontrast'] as const;
 export type Grundlage = (typeof GRUNDLAGEN)[number];
 /** Logo eines Designs (#72): Datei im eigenen Ordner, angezeigt nur als Bild. */
-export interface DesignLogo { sha256: string; mime: string; groesse: number }
+export interface DesignLogo {
+  sha256: string;
+  mime: string;
+  groesse: number;
+}
 export interface Design {
-  id: string; name: string; grundlage: Grundlage; primaer: string; sekundaer: string; css: string;
+  id: string;
+  name: string;
+  grundlage: Grundlage;
+  primaer: string;
+  sekundaer: string;
+  css: string;
   /** Text neben dem Logo (#72): null = „DMS“, leer = nur das Logo. */
   schriftzug?: string | null;
   logo?: DesignLogo | null;
@@ -38,14 +47,17 @@ const MAX_CSS = 50_000;
 
 function bereinige(e: unknown): DesignDaten {
   const x = (e ?? {}) as Record<string, unknown>;
-  const name = String(x.name ?? '').trim().slice(0, 60);
+  const name = String(x.name ?? '')
+    .trim()
+    .slice(0, 60);
   const grundlage = String(x.grundlage ?? '') as Grundlage;
   const primaer = String(x.primaer ?? '').trim();
   const sekundaer = String(x.sekundaer ?? '').trim();
   const css = String(x.css ?? '');
   const schriftzug = x.schriftzug === null || x.schriftzug === undefined ? null : String(x.schriftzug).replace(/\s+/g, ' ').trim();
   const fehler: string[] = [];
-  if (schriftzug !== null && schriftzug.length > SCHRIFTZUG_MAX) fehler.push(t('meldungen.designs.der-schriftzug-darf-hoechstens', { SCHRIFTZUG_MAX }));
+  if (schriftzug !== null && schriftzug.length > SCHRIFTZUG_MAX)
+    fehler.push(t('meldungen.designs.der-schriftzug-darf-hoechstens', { SCHRIFTZUG_MAX }));
   if (!name) fehler.push(t('meldungen.designs.bitte-einen-namen-angeben'));
   if (!GRUNDLAGEN.includes(grundlage)) fehler.push(t('meldungen.designs.grundlage-automatisch-hell-dunkel'));
   if (!FARBE.test(primaer)) fehler.push(t('meldungen.designs.primaerfarbe-als-rrggbb-angeben'));
@@ -85,8 +97,18 @@ export function pruefeLogo(b: Buffer): string {
   if (kopf.startsWith('RIFF') && kopf.slice(8, 12) === 'WEBP') return 'image/webp';
   const text = b.toString('utf8');
   if (istSvg(text)) {
-    const verboten = [/<script/i, /<foreignObject/i, /\son[a-z]+\s*=/i, /javascript:/i, /<!ENTITY/i, /<!DOCTYPE/i, /<(iframe|embed|object|link|meta|style)\b/i,
-      /(xlink:)?href\s*=\s*["']\s*(?!#)/i, /url\(\s*["']?\s*(?!#)/i, /@import/i];
+    const verboten = [
+      /<script/i,
+      /<foreignObject/i,
+      /\son[a-z]+\s*=/i,
+      /javascript:/i,
+      /<!ENTITY/i,
+      /<!DOCTYPE/i,
+      /<(iframe|embed|object|link|meta|style)\b/i,
+      /(xlink:)?href\s*=\s*["']\s*(?!#)/i,
+      /url\(\s*["']?\s*(?!#)/i,
+      /@import/i,
+    ];
     if (verboten.some((r) => r.test(text))) throw new Fachfehler(422, t('meldungen.designs.das-svg-enthaelt-skripte'));
     return 'image/svg+xml';
   }
@@ -94,7 +116,10 @@ export function pruefeLogo(b: Buffer): string {
 }
 
 export class Designs {
-  constructor(private repo: DesignRepo, private dateien?: Dateispeicher) {}
+  constructor(
+    private repo: DesignRepo,
+    private dateien?: Dateispeicher,
+  ) {}
 
   /** Logo hochladen bzw. entfernen (#72). */
   async setzeLogo(id: string, inhalt: unknown) {
@@ -132,7 +157,8 @@ export class Designs {
     const { designs, standard } = await this.liste();
     const d = designs.find((x) => x.id === id);
     // Ohne Anmeldung (Anmeldeseite) nur das Logo des Standard-Designs.
-    if (!d?.logo || !this.dateien || (!angemeldet && id !== standard)) throw new Fachfehler(404, t('meldungen.designs.dieses-logo-gibt-es'));
+    if (!d?.logo || !this.dateien || (!angemeldet && id !== standard))
+      throw new Fachfehler(404, t('meldungen.designs.dieses-logo-gibt-es'));
     return { logo: d.logo, inhalt: await this.dateien.lies(d.logo.sha256) };
   }
 
@@ -152,7 +178,7 @@ export class Designs {
   async liste() {
     const designs = await this.repo.liste();
     const st = await this.repo.standard();
-    return { designs, standard: designs.some((d) => d.id === st) ? st : designs[0]?.id ?? null };
+    return { designs, standard: designs.some((d) => d.id === st) ? st : (designs[0]?.id ?? null) };
   }
 
   private async pruefeName(name: string, ausser?: string) {
@@ -202,19 +228,35 @@ export function speicherDesignRepo(): DesignRepo {
   const liste = new Map(start.map((d) => [d.id, d]));
   let standard: string | null = start[0].id;
   return {
-    async liste() { return [...liste.values()].map((d) => ({ ...d })); },
-    async speichere(d) { liste.set(d.id, { ...d }); return { ...d }; },
-    async loesche(id) { liste.delete(id); },
-    async standard() { return standard; },
-    async setzeStandard(id) { standard = id; },
+    async liste() {
+      return [...liste.values()].map((d) => ({ ...d }));
+    },
+    async speichere(d) {
+      liste.set(d.id, { ...d });
+      return { ...d };
+    },
+    async loesche(id) {
+      liste.delete(id);
+    },
+    async standard() {
+      return standard;
+    },
+    async setzeStandard(id) {
+      standard = id;
+    },
   };
 }
 
 export function pgDesignRepo(sql: postgres.Sql, haushaltId: string): DesignRepo {
   const als = (r: Record<string, unknown>): Design => ({
-    id: r.id as string, name: r.name as string, grundlage: r.grundlage as Grundlage,
-    primaer: r.primaer as string, sekundaer: r.sekundaer as string, css: r.css as string,
-    schriftzug: (r.schriftzug as string | null) ?? null, logo: (r.logo as DesignLogo | null) ?? null,
+    id: r.id as string,
+    name: r.name as string,
+    grundlage: r.grundlage as Grundlage,
+    primaer: r.primaer as string,
+    sekundaer: r.sekundaer as string,
+    css: r.css as string,
+    schriftzug: (r.schriftzug as string | null) ?? null,
+    logo: (r.logo as DesignLogo | null) ?? null,
   });
   return {
     async liste() {
@@ -228,7 +270,9 @@ export function pgDesignRepo(sql: postgres.Sql, haushaltId: string): DesignRepo 
             css = ${d.css}, schriftzug = ${d.schriftzug ?? null}, logo = ${d.logo ? sql.json(d.logo as unknown as postgres.JSONValue) : null}, geaendert = now() WHERE id = ${d.id} AND haushalt_id = ${haushaltId} RETURNING *`;
       return als(r);
     },
-    async loesche(id) { await sql`DELETE FROM designs WHERE id = ${id} AND haushalt_id = ${haushaltId}`; },
+    async loesche(id) {
+      await sql`DELETE FROM designs WHERE id = ${id} AND haushalt_id = ${haushaltId}`;
+    },
     async standard() {
       const [r] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushaltId} AND schluessel = 'design_standard'`;
       return (r?.wert as string | undefined) ?? null;

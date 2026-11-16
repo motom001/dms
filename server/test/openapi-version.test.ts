@@ -7,7 +7,15 @@ import { after, before, describe, it } from 'node:test';
 import { API_VERSION_OHNE_ANMELDUNG } from '../src/api-v1';
 import { eigeneVersion } from '../src/system';
 
-interface App { inject(o: { method: string; url: string; headers?: Record<string, string>; payload?: unknown }): Promise<{ statusCode: number; body: string; headers: Record<string, string | string[] | undefined> }>; close(): Promise<unknown> }
+interface App {
+  inject(o: {
+    method: string;
+    url: string;
+    headers?: Record<string, string>;
+    payload?: unknown;
+  }): Promise<{ statusCode: number; body: string; headers: Record<string, string | string[] | undefined> }>;
+  close(): Promise<unknown>;
+}
 
 describe('openapi.json ohne genaue Version ohne Anmeldung (#1067)', () => {
   let app: App;
@@ -25,14 +33,21 @@ describe('openapi.json ohne genaue Version ohne Anmeldung (#1067)', () => {
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const api = new ApiSchluesselDienst(speicherApiSchluesselRepo());
-    app = await baueApp(dienst, konten, { apiSchluessel: api }) as unknown as App;
-    const e = await app.inject({ method: 'POST', url: '/api/konto/einrichten', headers: { 'x-dms': '1' }, payload: { email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' } });
+    app = (await baueApp(dienst, konten, { apiSchluessel: api })) as unknown as App;
+    const e = await app.inject({
+      method: 'POST',
+      url: '/api/konto/einrichten',
+      headers: { 'x-dms': '1' },
+      payload: { email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' },
+    });
     assert.equal(e.statusCode, 201, e.body);
     cookie = String(e.headers['set-cookie']).split(';')[0];
     const markus = (await konten.listeBenutzer()).find((b) => b.email === 'markus@example.org')!;
     schluessel = (await api.lege(markus, { name: 'Lesen', recht: 'lesen' })).schluessel;
   });
-  after(async () => { await app?.close(); });
+  after(async () => {
+    await app?.close();
+  });
 
   const version = async (url: string, headers: Record<string, string> = {}) => {
     const r = await app.inject({ method: 'GET', url, headers });

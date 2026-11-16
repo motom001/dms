@@ -34,12 +34,27 @@ export function kuerzeIp(ip: string | undefined): string {
 }
 
 const PRIVAT = new BlockList();
-for (const [netz, maske] of [['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16], ['127.0.0.0', 8], ['169.254.0.0', 16]] as const) PRIVAT.addSubnet(netz, maske, 'ipv4');
-for (const [netz, maske] of [['::1', 128], ['fe80::', 10], ['fc00::', 7]] as const) PRIVAT.addSubnet(netz, maske, 'ipv6');
+for (const [netz, maske] of [
+  ['10.0.0.0', 8],
+  ['172.16.0.0', 12],
+  ['192.168.0.0', 16],
+  ['127.0.0.0', 8],
+  ['169.254.0.0', 16],
+] as const)
+  PRIVAT.addSubnet(netz, maske, 'ipv4');
+for (const [netz, maske] of [
+  ['::1', 128],
+  ['fe80::', 10],
+  ['fc00::', 7],
+] as const)
+  PRIVAT.addSubnet(netz, maske, 'ipv6');
 
 /** Private Adresse (Heimnetz, Loopback, Link-Local, IPv6 ULA)? IPv4 in IPv6 (::ffff:…) zählt als IPv4. */
 export function istPrivat(ip: string | undefined): boolean {
-  const a = (ip ?? '').replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').replace(/%.*$/, '').trim();
+  const a = (ip ?? '')
+    .replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1')
+    .replace(/%.*$/, '')
+    .trim();
   const f = isIP(a);
   return !!f && PRIVAT.check(a, f === 6 ? 'ipv6' : 'ipv4');
 }
@@ -53,7 +68,12 @@ const TICKET = 'abruf-ticket';
  */
 export class AbrufTickets {
   private zustand: Kurzzustand;
-  constructor(private jetzt: () => number = Date.now, zustand?: Kurzzustand) { this.zustand = zustand ?? speicherKurzzustand(jetzt); }
+  constructor(
+    private jetzt: () => number = Date.now,
+    zustand?: Kurzzustand,
+  ) {
+    this.zustand = zustand ?? speicherKurzzustand(jetzt);
+  }
 
   async stelleAus(linkId: string): Promise<string> {
     const t = randomBytes(32).toString('base64url');
@@ -74,7 +94,10 @@ export class AbrufTickets {
  * Anschluss mit IPv6 praktisch unbegrenzt viele Adressen).
  */
 export function ipBereich(ip: string | undefined): string {
-  const a = (ip ?? '').replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').trim().replace(/%.*$/, '');
+  const a = (ip ?? '')
+    .replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1')
+    .trim()
+    .replace(/%.*$/, '');
   const f = isIP(a);
   if (f === 4) return a;
   if (f !== 6) return '–';
@@ -82,7 +105,10 @@ export function ipBereich(ip: string | undefined): string {
   const vorn = kopf ? kopf.split(':') : [];
   const hinten = rest ? rest.split(':') : [];
   const gruppen = [...vorn, ...Array(Math.max(0, 8 - vorn.length - hinten.length)).fill('0'), ...hinten];
-  return `${gruppen.slice(0, 4).map((g) => g.toLowerCase().replace(/^0+(?=.)/, '')).join(':')}::/64`;
+  return `${gruppen
+    .slice(0, 4)
+    .map((g) => g.toLowerCase().replace(/^0+(?=.)/, ''))
+    .join(':')}::/64`;
 }
 
 export interface BremseOptionen {
@@ -133,8 +159,16 @@ export class AbrufBremse {
   async versuch(bereich: string): Promise<{ zurueck(): Promise<void> } | null> {
     const { anzahl } = await this.zustand.zaehle(FEHLER, bereich, this.o.sperreMs, { gleitend: true });
     let weg = false;
-    const zurueck = async () => { if (!weg) { weg = true; await this.zustand.erhoehe(FEHLER, bereich, -1); } };
-    if (anzahl > this.o.fehlerMax) { await zurueck(); return null; }
+    const zurueck = async () => {
+      if (!weg) {
+        weg = true;
+        await this.zustand.erhoehe(FEHLER, bereich, -1);
+      }
+    };
+    if (anzahl > this.o.fehlerMax) {
+      await zurueck();
+      return null;
+    }
     return { zurueck };
   }
 
@@ -143,6 +177,11 @@ export class AbrufBremse {
     if (this.laufend >= this.o.gleichzeitig) return null;
     this.laufend++;
     let frei = false;
-    return () => { if (!frei) { frei = true; this.laufend--; } };
+    return () => {
+      if (!frei) {
+        frei = true;
+        this.laufend--;
+      }
+    };
   }
 }

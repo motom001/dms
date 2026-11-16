@@ -21,7 +21,9 @@ const ALLES = { C: true, R: true, U: true, D: true, P: true };
 
 /** Konto direkt deaktivieren (ohne die Vertreter-Prüfung der Benutzerverwaltung). */
 async function deaktiviere(konten: Konten, id: string) {
-  await (konten as unknown as { repo: { aendereBenutzer(id: string, d: { aktiv: boolean }): Promise<unknown> } }).repo.aendereBenutzer(id, { aktiv: false });
+  await (konten as unknown as { repo: { aendereBenutzer(id: string, d: { aktiv: boolean }): Promise<unknown> } }).repo.aendereBenutzer(id, {
+    aktiv: false,
+  });
 }
 
 async function aufbau(o: { grenze?: number } = {}) {
@@ -37,17 +39,30 @@ async function aufbau(o: { grenze?: number } = {}) {
   const annaKey = (await schluessel.lege(anna, { name: 'Laufwerk', recht: 'schreiben' })).schluessel;
   const bertKey = (await schluessel.lege(bert, { name: 'Laufwerk', recht: 'lesen' })).schluessel;
   const einstellungen = speicherEinstellungen();
-  const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [
-    { key: 'nr', label: 'Nr', typ: 'text' },
-  ], register: [
-    { key: 'daten', name: 'Daten', art: 'felder' },
-    { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
-    { key: 'briefe', name: 'Briefe/Post', art: 'dokumente' },
-  ] } as never);
+  const vertrag = await d.mappentypen.legeTypAn({
+    name: 'Vertrag',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+    register: [
+      { key: 'daten', name: 'Daten', art: 'felder' },
+      { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true },
+      { key: 'briefe', name: 'Briefe/Post', art: 'dokumente' },
+    ],
+  } as never);
   // Verweis auf einen anderen Vertrag – ergibt den Ordner „Verknüpft“.
-  const vt = await d.mappentypen.aendereTyp(vertrag.id, { ...vertrag, felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id }] });
-  const geheim = await d.mappentypen.legeTypAn({ name: 'Geheim', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
-    berechtigungen: { grund: ALLES, regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }] } } as never);
+  const vt = await d.mappentypen.aendereTyp(vertrag.id, {
+    ...vertrag,
+    felder: [...vertrag.felder, { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: vertrag.id }],
+  });
+  const geheim = await d.mappentypen.legeTypAn({
+    name: 'Geheim',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nr', typ: 'text' }],
+    berechtigungen: {
+      grund: ALLES,
+      regeln: [{ id: 'x', name: 'nicht Anna', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { R: 'entziehen' }, stopp: false }],
+    },
+  } as never);
   const sicht = await d.sichtenVerwaltung.legeSichtAn({ name: 'Verträge', typen: [vt.id] });
   const sichtG = await d.sichtenVerwaltung.legeSichtAn({ name: 'Geheimes', typen: [geheim.id] });
   const v1a = await d.mappen.legeMappeAn({ typId: vt.id, werte: { nr: 'V-1' } }, anna.id);
@@ -60,10 +75,24 @@ async function aufbau(o: { grenze?: number } = {}) {
   const A = auth('anna@example.org', annaKey);
   const B = auth('bert@example.org', bertKey);
   let ip = 1;
-  const rufe = async (methode: string, pfad: string, x: { auth?: string; depth?: string; body?: Buffer | string; kopf?: Record<string, string>; ip?: string } = {}): Promise<WebdavAntwort & { text: string }> => {
-    const koepfe: Record<string, string> = { ...(x.auth ? { authorization: x.auth } : {}), ...(x.depth ? { depth: x.depth } : {}), ...x.kopf };
+  const rufe = async (
+    methode: string,
+    pfad: string,
+    x: { auth?: string; depth?: string; body?: Buffer | string; kopf?: Record<string, string>; ip?: string } = {},
+  ): Promise<WebdavAntwort & { text: string }> => {
+    const koepfe: Record<string, string> = {
+      ...(x.auth ? { authorization: x.auth } : {}),
+      ...(x.depth ? { depth: x.depth } : {}),
+      ...x.kopf,
+    };
     const r = await wd.anfrage({
-      methode, url: pfad.split('/').map((t) => encodeURIComponent(t)).join('/'), ip: x.ip ?? `10.0.0.${ip}`, kopf: (n) => koepfe[n],
+      methode,
+      url: pfad
+        .split('/')
+        .map((t) => encodeURIComponent(t))
+        .join('/'),
+      ip: x.ip ?? `10.0.0.${ip}`,
+      kopf: (n) => koepfe[n],
       koerper: x.body === undefined ? null : Buffer.from(x.body),
     });
     let t = '';
@@ -71,9 +100,35 @@ async function aufbau(o: { grenze?: number } = {}) {
     else if (Buffer.isBuffer(r.body)) t = r.body.toString('utf8');
     return { ...r, text: t };
   };
-  const neueIp = () => { ip++; };
+  const neueIp = () => {
+    ip++;
+  };
   const namen = (r: { text: string }) => [...r.text.matchAll(/<D:displayname>([^<]*)<\/D:displayname>/g)].map((m) => m[1]);
-  return { d, konten, admin, anna, bert, wd, rufe, A, B, auth, annaKey, vt, sicht, sichtG, v1a, v1b, akte, g, einstellungen, namen, neueIp, schluessel, schluesselRepo };
+  return {
+    d,
+    konten,
+    admin,
+    anna,
+    bert,
+    wd,
+    rufe,
+    A,
+    B,
+    auth,
+    annaKey,
+    vt,
+    sicht,
+    sichtG,
+    v1a,
+    v1b,
+    akte,
+    g,
+    einstellungen,
+    namen,
+    neueIp,
+    schluessel,
+    schluesselRepo,
+  };
 }
 
 describe('WebDAV: reine Hilfen (#346)', () => {
@@ -90,8 +145,19 @@ describe('WebDAV: reine Hilfen (#346)', () => {
     assert.ok(lang.endsWith('.pdf'));
   });
   it('macht Namen eindeutig: Kurzkennung bei Mappen, Zähler bei Dateien, ohne Groß/klein, belegte Namen', () => {
-    assert.deepEqual(eindeutig([{ name: 'V-1', kurz: 'aaaaaa' }, { name: 'v-1', kurz: 'bbbbbb' }, { name: 'X' }]), ['V-1 (aaaaaa)', 'v-1 (bbbbbb)', 'X']);
-    assert.deepEqual(eindeutig([{ name: 'a.pdf', datei: true }, { name: 'A.pdf', datei: true }, { name: 'a:.pdf', datei: true }]), ['a.pdf', 'A (2).pdf', 'a_.pdf']);
+    assert.deepEqual(eindeutig([{ name: 'V-1', kurz: 'aaaaaa' }, { name: 'v-1', kurz: 'bbbbbb' }, { name: 'X' }]), [
+      'V-1 (aaaaaa)',
+      'v-1 (bbbbbb)',
+      'X',
+    ]);
+    assert.deepEqual(
+      eindeutig([
+        { name: 'a.pdf', datei: true },
+        { name: 'A.pdf', datei: true },
+        { name: 'a:.pdf', datei: true },
+      ]),
+      ['a.pdf', 'A (2).pdf', 'a_.pdf'],
+    );
     assert.deepEqual(eindeutig([{ name: 'Verknüpft' }], ['Verknüpft']), ['Verknüpft (2)']);
     // macOS schickt Umlaute zerlegt (NFD): gleicher Name.
     assert.deepEqual(eindeutig([{ name: 'Müller' }, { name: 'Müller' }]), ['Müller', 'Müller (2)']);
@@ -113,11 +179,19 @@ describe('WebDAV: reine Hilfen (#346)', () => {
     assert.ok(!istHilfsdatei('Rechnung.pdf'));
   });
   it('liest Eigenschaften aus PROPPATCH und begrenzt Anfragen', async () => {
-    assert.deepEqual(proppatchNamen('<D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:"><D:set><D:prop><Z:Win32CreationTime>x</Z:Win32CreationTime><Z:Win32FileAttributes>0</Z:Win32FileAttributes></D:prop></D:set></D:propertyupdate>'),
-      [{ ns: 'urn:schemas-microsoft-com:', name: 'Win32CreationTime' }, { ns: 'urn:schemas-microsoft-com:', name: 'Win32FileAttributes' }]);
+    assert.deepEqual(
+      proppatchNamen(
+        '<D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:"><D:set><D:prop><Z:Win32CreationTime>x</Z:Win32CreationTime><Z:Win32FileAttributes>0</Z:Win32FileAttributes></D:prop></D:set></D:propertyupdate>',
+      ),
+      [
+        { ns: 'urn:schemas-microsoft-com:', name: 'Win32CreationTime' },
+        { ns: 'urn:schemas-microsoft-com:', name: 'Win32FileAttributes' },
+      ],
+    );
     let t = 0;
     const r = new Ratenbegrenzung(2, () => t);
-    assert.ok((await r.pruefe('a')).ok); assert.ok((await r.pruefe('a')).ok);
+    assert.ok((await r.pruefe('a')).ok);
+    assert.ok((await r.pruefe('a')).ok);
     const n = await r.pruefe('a');
     assert.ok(!n.ok && n.sekunden === 60 && n.erstes);
     assert.ok((await r.pruefe('b')).ok);
@@ -147,12 +221,25 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     const ohne = await rufe('PROPFIND', '/webdav/', { depth: '0' });
     assert.equal(ohne.status, 401);
     assert.equal(ohne.koepfe['www-authenticate'], 'Basic realm="Ablago", charset="UTF-8"');
-    assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('admin@example.org', 'ein-langes-passwort'), ip: '9.9.9.1' })).status, 401, 'Hauptpasswort nie');
-    assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('bert@example.org', annaKey), ip: '9.9.9.1' })).status, 401, 'Schlüssel gehört zu Anna');
+    assert.equal(
+      (await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('admin@example.org', 'ein-langes-passwort'), ip: '9.9.9.1' })).status,
+      401,
+      'Hauptpasswort nie',
+    );
+    assert.equal(
+      (await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('bert@example.org', annaKey), ip: '9.9.9.1' })).status,
+      401,
+      'Schlüssel gehört zu Anna',
+    );
     assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: A })).status, 207);
-    assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('ANNA@example.org', annaKey) })).status, 207, 'E-Mail ohne Groß/klein');
+    assert.equal(
+      (await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('ANNA@example.org', annaKey) })).status,
+      207,
+      'E-Mail ohne Groß/klein',
+    );
     // Anmeldeschutz (#240): nach 5 Fehlversuchen für Konto und IP gesperrt – auch mit richtigem Schlüssel.
-    for (let i = 0; i < 5; i++) assert.equal((await rufe('GET', '/webdav/', { auth: auth('anna@example.org', 'dms_falsch'), ip: '9.9.9.2' })).status, 401);
+    for (let i = 0; i < 5; i++)
+      assert.equal((await rufe('GET', '/webdav/', { auth: auth('anna@example.org', 'dms_falsch'), ip: '9.9.9.2' })).status, 401);
     const gesperrt = await rufe('GET', '/webdav/', { auth: A, ip: '9.9.9.2' });
     assert.equal(gesperrt.status, 429);
     const st = await wd.stand();
@@ -199,7 +286,10 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.deepEqual(namen(verkn).slice(1), ['Akte_ 7_']);
     const tiefer = await rufe('PROPFIND', `/webdav/Ablage/Verträge/V-1 (${k(v1a.id)})/Verknüpft/Akte_ 7_/`, { auth: A, depth: '1' });
     assert.deepEqual(namen(tiefer).slice(1), ['Belege', 'Briefe_Post']);
-    assert.equal((await rufe('PROPFIND', `/webdav/Ablage/Verträge/V-1 (${k(v1a.id)})/Verknüpft/Akte_ 7_/Verknüpft/`, { auth: A, depth: '0' })).status, 404);
+    assert.equal(
+      (await rufe('PROPFIND', `/webdav/Ablage/Verträge/V-1 (${k(v1a.id)})/Verknüpft/Akte_ 7_/Verknüpft/`, { auth: A, depth: '0' })).status,
+      404,
+    );
     // Groß/klein egal wie unter Windows.
     assert.equal((await rufe('PROPFIND', '/webdav/ablage/verträge/', { auth: A, depth: '0' })).status, 207);
   });
@@ -220,10 +310,17 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     let h = await abrufe();
     assert.equal(h.length, 1);
     assert.equal(h[0].benutzerId, anna.id);
-    assert.deepEqual({ ...h[0].daten }, { dokument: 'Rechnung.pdf', dokumentId: h[0].daten.dokumentId, weg: 'webdav', fassung: 'original', schluessel: 'Laufwerk' });
+    assert.deepEqual(
+      { ...h[0].daten },
+      { dokument: 'Rechnung.pdf', dokumentId: h[0].daten.dokumentId, weg: 'webdav', fassung: 'original', schluessel: 'Laufwerk' },
+    );
     assert.equal((await rufe('GET', pfad, { auth: B })).status, 200);
     h = await abrufe();
-    assert.deepEqual(h.map((e) => e.benutzerId), [bert.id, anna.id], 'andere Person: eigener Eintrag');
+    assert.deepEqual(
+      h.map((e) => e.benutzerId),
+      [bert.id, anna.id],
+      'andere Person: eigener Eintrag',
+    );
   });
 
   it('Herunterladen nur mit Exportrecht E; ETag und If-None-Match', async () => {
@@ -242,7 +339,15 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     // Exportrecht entziehen: Lesen (PROPFIND) geht weiter, Herunterladen nicht.
     // Der Mappentyp hat auch seine eigene Ansicht „Vertrag“ – überall entziehen.
     for (const s of (await d.sichtenVerwaltung.listeSichten()).filter((x) => x.id === sicht.id || x.typen.includes(vt.id))) {
-      await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+      await d.sichtenVerwaltung.aendereSicht(s.id, {
+        ...s,
+        berechtigungen: {
+          grund: { R: true, C: true, E: true },
+          regeln: [
+            { id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { E: 'entziehen' }, stopp: false },
+          ],
+        },
+      });
     }
     assert.equal((await rufe('PROPFIND', pfad, { auth: A, depth: '0' })).status, 207);
     assert.equal((await rufe('GET', pfad, { auth: A })).status, 403);
@@ -263,14 +368,20 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     assert.equal(p[0].werte.kanal, 'WebDAV');
     assert.equal(p[0].werte.betreff, 'Scan 1');
     const doks = (await d.berechtigungen.laufwerkMappe(p[0].id, await d.rechtepruefung.zugriff(anna))).dokumente;
-    assert.deepEqual(doks.map((x) => [x.name, x.herkunft]), [['Scan 1.pdf', 'webdav']]);
+    assert.deepEqual(
+      doks.map((x) => [x.name, x.herkunft]),
+      [['Scan 1.pdf', 'webdav']],
+    );
     assert.deepEqual(namen(await rufe('PROPFIND', '/webdav/Neue Post/', { auth: A, depth: '1' })).slice(1), ['Scan 1.pdf']);
     // Register mit Versionierung: neues Dokument (201), gleicher Name → neue Version (204).
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})`;
     assert.equal((await rufe('PUT', `${reg}/Belege/Kündigung.pdf`, { auth: A, body: PDF('k1') })).status, 201);
     assert.equal((await rufe('PUT', `${reg}/Belege/rechnung.pdf`, { auth: A, body: PDF('r2') })).status, 204);
     const nach = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
-    assert.deepEqual(nach.map((x) => [x.name, x.version ?? 1, x.herkunft]).sort(), [['Kündigung.pdf', 1, 'webdav'], ['Rechnung.pdf', 2, 'webdav']]);
+    assert.deepEqual(nach.map((x) => [x.name, x.version ?? 1, x.herkunft]).sort(), [
+      ['Kündigung.pdf', 1, 'webdav'],
+      ['Rechnung.pdf', 2, 'webdav'],
+    ]);
     // Register ohne Versionierung: neu ja, gleicher Name 409.
     assert.equal((await rufe('PUT', `${reg}/Briefe_Post/Brief.pdf`, { auth: A, body: PDF('b1') })).status, 201);
     const wieder = await rufe('PUT', `${reg}/Briefe_Post/Brief.pdf`, { auth: A, body: PDF('b2') });
@@ -293,10 +404,14 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     }
     const post = await d.eingangskanaele.postTyp();
     assert.equal((await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
-    for (const m of ['MKCOL', 'DELETE', 'MOVE', 'COPY']) assert.equal((await rufe(m, '/webdav/Ablage/Verträge/neu/', { auth: A })).status, 403, m);
+    for (const m of ['MKCOL', 'DELETE', 'MOVE', 'COPY'])
+      assert.equal((await rufe(m, '/webdav/Ablage/Verträge/neu/', { auth: A })).status, 403, m);
     assert.equal((await rufe('TRACE', '/webdav/', { auth: A })).status, 405);
     // PROPPATCH (Windows setzt Zeiten): Antwort 207, jede Eigenschaft 403 – nichts wird gespeichert.
-    const pp = await rufe('PROPPATCH', '/webdav/Neue Post/', { auth: A, body: '<D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:"><D:set><D:prop><Z:Win32LastModifiedTime>x</Z:Win32LastModifiedTime></D:prop></D:set></D:propertyupdate>' });
+    const pp = await rufe('PROPPATCH', '/webdav/Neue Post/', {
+      auth: A,
+      body: '<D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:"><D:set><D:prop><Z:Win32LastModifiedTime>x</Z:Win32LastModifiedTime></D:prop></D:set></D:propertyupdate>',
+    });
     assert.equal(pp.status, 207);
     assert.match(pp.text, /Win32LastModifiedTime xmlns:x0="urn:schemas-microsoft-com:"\/>.*403 Forbidden/);
   });
@@ -304,13 +419,19 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
   it('LOCK/UNLOCK als Schein-Sperre nur, wo Ablegen erlaubt ist', async () => {
     const { wd, rufe, A, B, namen } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
-    const l = await rufe('LOCK', '/webdav/Neue Post/Scan.pdf', { auth: A, body: '<D:lockinfo xmlns:D="DAV:"><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockinfo>' });
+    const l = await rufe('LOCK', '/webdav/Neue Post/Scan.pdf', {
+      auth: A,
+      body: '<D:lockinfo xmlns:D="DAV:"><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockinfo>',
+    });
     assert.equal(l.status, 201);
     assert.match(l.koepfe['lock-token'], /^<opaquelocktoken:[0-9a-f-]{36}>$/);
     assert.match(l.text, /<D:activelock>/);
     // Erscheint als leere Datei, bis der Inhalt kommt.
     assert.deepEqual(namen(await rufe('PROPFIND', '/webdav/Neue Post/', { auth: A, depth: '1' })).slice(1), ['Scan.pdf']);
-    assert.equal((await rufe('UNLOCK', '/webdav/Neue Post/Scan.pdf', { auth: A, kopf: { 'lock-token': l.koepfe['lock-token'] } })).status, 204);
+    assert.equal(
+      (await rufe('UNLOCK', '/webdav/Neue Post/Scan.pdf', { auth: A, kopf: { 'lock-token': l.koepfe['lock-token'] } })).status,
+      204,
+    );
     assert.equal((await rufe('LOCK', '/webdav/Ablage/x.pdf', { auth: A, body: '' })).status, 403);
     assert.equal((await rufe('LOCK', '/webdav/Neue Post/y.pdf', { auth: B, body: '' })).status, 403, 'Lese-Schlüssel');
     assert.equal((await rufe('LOCK', '/webdav/Neue Post/._y.pdf', { auth: B, body: '' })).status, 200, 'Hilfsdatei');
@@ -334,14 +455,33 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     // Sitzungs-Cookie allein öffnet das Laufwerk nicht (Basic mit API-Schlüssel nötig).
     const sitzung = await konten.anmelden({ email: 'admin@example.org', passwort: 'ein-langes-passwort' }, '10.1.1.1');
     assert.ok('schluessel' in sitzung && sitzung.schluessel);
-    assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', kopf: { cookie: `dms_sitzung=${'schluessel' in sitzung ? sitzung.schluessel : ''}` } })).status, 401);
+    assert.equal(
+      (
+        await rufe('PROPFIND', '/webdav/', {
+          depth: '0',
+          kopf: { cookie: `dms_sitzung=${'schluessel' in sitzung ? sitzung.schluessel : ''}` },
+        })
+      ).status,
+      401,
+    );
     // Abgelaufener Schlüssel.
     const alt = await schluessel.lege(bert, { name: 'Alt', recht: 'schreiben' });
-    await schluesselRepo.aendere(alt.id, { name: 'Alt', recht: 'schreiben', ablauf: new Date(Date.now() - 60_000).toISOString(), passwoerter: false });
-    assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('bert@example.org', alt.schluessel), ip: '10.1.1.2' })).status, 401);
+    await schluesselRepo.aendere(alt.id, {
+      name: 'Alt',
+      recht: 'schreiben',
+      ablauf: new Date(Date.now() - 60_000).toISOString(),
+      passwoerter: false,
+    });
+    assert.equal(
+      (await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('bert@example.org', alt.schluessel), ip: '10.1.1.2' })).status,
+      401,
+    );
     // Dienstkonto (#338): auch mit gültigem Schlüssel abgelehnt.
     const echt = konten.benutzerMitId.bind(konten);
-    konten.benutzerMitId = async (id: string) => { const b = await echt(id); return b && ({ ...b, art: 'dienst' } as Benutzer); };
+    konten.benutzerMitId = async (id: string) => {
+      const b = await echt(id);
+      return b && ({ ...b, art: 'dienst' } as Benutzer);
+    };
     assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: A, ip: '10.1.1.3' })).status, 401);
     konten.benutzerMitId = echt;
     assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: A, ip: '10.1.1.3' })).status, 207);
@@ -355,14 +495,21 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     await wd.speichere({ aktiv: true }, 'admin');
     const aufrufe: Array<[string, boolean]> = [];
     const echt = konten.sperre.fehlschlag.bind(konten.sperre);
-    konten.sperre.fehlschlag = async (email: string, ip: string, bekannt = false) => { aufrufe.push([email, bekannt]); return echt(email, ip, bekannt); };
+    konten.sperre.fehlschlag = async (email: string, ip: string, bekannt = false) => {
+      aufrufe.push([email, bekannt]);
+      return echt(email, ip, bekannt);
+    };
     await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('anna@example.org', 'dms_falsch'), ip: '10.2.0.1' });
     await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('niemand@example.org', 'dms_falsch'), ip: '10.2.0.2' });
     await deaktiviere(konten, bert.id);
     await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth('bert@example.org', 'dms_falsch'), ip: '10.2.0.3' });
     const lang = `${'x'.repeat(1000)}@example.org`;
     assert.equal((await rufe('PROPFIND', '/webdav/', { depth: '0', auth: auth(lang, 'dms_falsch'), ip: '10.2.0.4' })).status, 401);
-    assert.deepEqual(aufrufe.slice(0, 3), [['anna@example.org', true], ['niemand@example.org', false], ['bert@example.org', false]]);
+    assert.deepEqual(aufrufe.slice(0, 3), [
+      ['anna@example.org', true],
+      ['niemand@example.org', false],
+      ['bert@example.org', false],
+    ]);
     assert.equal(aufrufe[3][0].length, 254);
     assert.equal((await wd.stand()).zugriffe[0].benutzer.length, 254);
   });
@@ -371,14 +518,28 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     const { d, wd, rufe, A, anna, v1a, vt } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
     const reg = `/webdav/Ablage/Verträge/V-1 (${v1a.id.replace(/-/g, '').slice(0, 6)})/Belege`;
-    await d.mappentypen.aendereTyp(vt.id, { ...vt, berechtigungen: { grund: ALLES, regeln: [{ id: 'u', name: 'Anna ändert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { U: 'entziehen' }, stopp: false }] } });
+    await d.mappentypen.aendereTyp(vt.id, {
+      ...vt,
+      berechtigungen: {
+        grund: ALLES,
+        regeln: [
+          { id: 'u', name: 'Anna ändert nicht', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { U: 'entziehen' }, stopp: false },
+        ],
+      },
+    });
     assert.equal((await rufe('PROPFIND', `${reg}/`, { auth: A, depth: '1' })).status, 207, 'lesen geht');
     assert.equal((await rufe('PUT', `${reg}/Neu.pdf`, { auth: A, body: PDF('n') })).status, 403);
     assert.equal((await rufe('PUT', `${reg}/Rechnung.pdf`, { auth: A, body: PDF('n') })).status, 403, 'auch keine neue Version');
     assert.equal((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.length, 1);
     // Post: Anlegen (C) am Post-Typ entziehen.
     const post = await d.eingangskanaele.postTyp();
-    await d.mappentypen.aendereTyp(post.id, { ...post, berechtigungen: { grund: ALLES, regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }] } });
+    await d.mappentypen.aendereTyp(post.id, {
+      ...post,
+      berechtigungen: {
+        grund: ALLES,
+        regeln: [{ id: 'c', name: 'keine Post', wenn: [{ art: 'benutzer', benutzer: [anna.id] }], dann: { C: 'entziehen' }, stopp: false }],
+      },
+    });
     assert.equal((await rufe('PUT', '/webdav/Neue Post/Scan.pdf', { auth: A, body: PDF('s') })).status, 403);
     assert.equal((await d.sichten.seite({ id: anna.id, rolle: 'mitglied' }, { sicht: `typ:${post.id}` })).gesamt, 0);
   });
@@ -400,13 +561,17 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
     // Welches Dokument hinter welchem Laufwerksnamen steht: über den ETag (Id + Inhalt) im Listing.
     const vorher = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
     const hinter = (name: string) => {
-      const m = new RegExp(`<D:displayname>${name.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}</D:displayname>[\\s\\S]*?<D:getetag>&quot;([0-9a-f]{32})&quot;`).exec(liste.text);
+      const m = new RegExp(
+        `<D:displayname>${name.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}</D:displayname>[\\s\\S]*?<D:getetag>&quot;([0-9a-f]{32})&quot;`,
+      ).exec(liste.text);
       assert.ok(m, name);
       return vorher.find((x) => etagVon(x) === `"${m[1]}"`)!;
     };
     for (const name of ['X (2).pdf', 'X.pdf', 'a_b (2).pdf', 'a_b.pdf']) {
       const ziel = hinter(name);
-      const stand = new Map((await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.map((x) => [x.id, x.version ?? 1]));
+      const stand = new Map(
+        (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente.map((x) => [x.id, x.version ?? 1]),
+      );
       assert.equal((await rufe('PUT', `${reg}/${name}`, { auth: A, body: PDF(`neu ${name}`) })).status, 204, name);
       const nach = (await d.berechtigungen.laufwerkMappe(v1a.id, await d.rechtepruefung.zugriff(anna))).dokumente;
       for (const x of nach) assert.equal(x.version ?? 1, (stand.get(x.id) ?? 1) + (x.id === ziel.id ? 1 : 0), `${name}: ${x.name}`);
@@ -420,10 +585,17 @@ describe('WebDAV-Laufwerk (#346, Stufe 1)', () => {
   it('Hilfsdateien werden nur gezählt; höchstens drei gleichzeitige Uploads je Benutzer (503 mit Retry-After)', async () => {
     const { wd, A, anna } = await aufbau();
     await wd.speichere({ aktiv: true }, 'admin');
-    const put = (pfad: string, koerper: PassThrough | Buffer) => wd.anfrage({
-      methode: 'PUT', url: pfad.split('/').map((t) => encodeURIComponent(t)).join('/'), ip: '10.3.0.1',
-      kopf: (n) => (n === 'authorization' ? A : undefined), koerper,
-    });
+    const put = (pfad: string, koerper: PassThrough | Buffer) =>
+      wd.anfrage({
+        methode: 'PUT',
+        url: pfad
+          .split('/')
+          .map((t) => encodeURIComponent(t))
+          .join('/'),
+        ip: '10.3.0.1',
+        kopf: (n) => (n === 'authorization' ? A : undefined),
+        koerper,
+      });
     // Hilfsdatei als Strom: wird leergelesen, nicht gepuffert.
     const h = new PassThrough();
     const hr = put('/webdav/Neue Post/.DS_Store', h);
@@ -460,7 +632,13 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
   }
   const groesseIn = (xmlText: string, name: string) => {
     const teil = xmlText.split('<D:response>').find((r) => r.includes(`<D:displayname>${name}</D:displayname>`)) ?? '';
-    return { laenge: Number(/<D:getcontentlength>(\d+)</.exec(teil)?.[1]), etag: /<D:getetag>([^<]*)</.exec(teil)?.[1]?.replace(/&quot;/g, '"'), nurLesend: teil.includes('Win32FileAttributes>00000001'), sperre: teil.includes('supportedlock'), teil };
+    return {
+      laenge: Number(/<D:getcontentlength>(\d+)</.exec(teil)?.[1]),
+      etag: /<D:getetag>([^<]*)</.exec(teil)?.[1]?.replace(/&quot;/g, '"'),
+      nurLesend: teil.includes('Win32FileAttributes>00000001'),
+      sperre: teil.includes('supportedlock'),
+      teil,
+    };
   };
 
   it('Vorgabe: mitgelieferte Vorlage an; PDFs kommen gestempelt, Größe und ETag passen zur gestempelten Fassung', async () => {
@@ -485,7 +663,11 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
     // HEAD und If-None-Match mit dem ETag der gestempelten Fassung.
     assert.equal((await rufe('HEAD', pfad, { auth: A })).koepfe['content-length'], String(inhalt.length));
     assert.equal((await rufe('GET', pfad, { auth: A, kopf: { 'if-none-match': r.koepfe.etag } })).status, 304);
-    assert.equal((await rufe('GET', pfad, { auth: A, kopf: { 'if-none-match': etagVon(dok) } })).status, 200, 'alter ETag des Originals gilt nicht');
+    assert.equal(
+      (await rufe('GET', pfad, { auth: A, kopf: { 'if-none-match': etagVon(dok) } })).status,
+      200,
+      'alter ETag des Originals gilt nicht',
+    );
   });
 
   it('Vorschlag umgesetzt: gestempelt ausgelieferte Dokumente sind nicht überschreibbar, neue Dateien gehen', async () => {
@@ -537,7 +719,16 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
     assert.equal(kaputt.status, 403);
     // Schreibgeschützt: alles Schreibende 403 mit verständlicher Meldung.
     const pflicht = /Mappentyp verlangt beim Weitergeben einen Stempel/;
-    for (const [m, ziel] of [['PUT', `${reg}/Belege/Neu.pdf`], ['PUT', pfad], ['LOCK', `${reg}/Belege/Neu.pdf`], ['PROPPATCH', `${reg}/Belege/`], ['DELETE', pfad], ['MOVE', pfad], ['COPY', pfad], ['MKCOL', `${reg}/Belege/Neu/`]] as const) {
+    for (const [m, ziel] of [
+      ['PUT', `${reg}/Belege/Neu.pdf`],
+      ['PUT', pfad],
+      ['LOCK', `${reg}/Belege/Neu.pdf`],
+      ['PROPPATCH', `${reg}/Belege/`],
+      ['DELETE', pfad],
+      ['MOVE', pfad],
+      ['COPY', pfad],
+      ['MKCOL', `${reg}/Belege/Neu/`],
+    ] as const) {
       const x = await rufe(m, ziel, { auth: A, body: m === 'PUT' ? PDF('x') : '' });
       assert.equal(x.status, 403, `${m} ${ziel}`);
       assert.match(x.text, pflicht, `${m} ${ziel}`);
@@ -556,8 +747,17 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
     const o = await rufe('OPTIONS', '/webdav/');
     assert.equal(o.koepfe.dav, '1');
     assert.doesNotMatch(o.koepfe.allow, /PUT|LOCK|DELETE/);
-    for (const [m, ziel] of [['PUT', '/webdav/Neue Post/Scan.pdf'], ['PUT', '/webdav/Neue Post/.DS_Store'], ['LOCK', '/webdav/Neue Post/Scan.pdf'], ['PROPPATCH', '/webdav/Neue Post/'],
-      ['PUT', `${reg}/Belege/Neu.pdf`], ['DELETE', pfad], ['MOVE', pfad], ['COPY', pfad], ['MKCOL', `${reg}/Neu/`]] as const) {
+    for (const [m, ziel] of [
+      ['PUT', '/webdav/Neue Post/Scan.pdf'],
+      ['PUT', '/webdav/Neue Post/.DS_Store'],
+      ['LOCK', '/webdav/Neue Post/Scan.pdf'],
+      ['PROPPATCH', '/webdav/Neue Post/'],
+      ['PUT', `${reg}/Belege/Neu.pdf`],
+      ['DELETE', pfad],
+      ['MOVE', pfad],
+      ['COPY', pfad],
+      ['MKCOL', `${reg}/Neu/`],
+    ] as const) {
       const x = await rufe(m, ziel, { auth: A, body: m === 'PUT' ? PDF('x') : '' });
       assert.equal(x.status, 403, `${m} ${ziel}`);
       assert.match(x.text, /nur zum Lesen/);
@@ -580,35 +780,48 @@ describe('WebDAV: Stempel beim Lesen, Pflicht, nur lesend (#722)', () => {
   });
 });
 
-describe('Migration 067 gegen PostgreSQL (#722)', { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  it('ergänzt die WebDAV-Vorlage bei gespeicherten Vorlagen, schaltet den Stempel ein und läuft doppelt ohne Doppel', async () => {
-    const { migriere } = await import('../src/db');
-    const db = await eigeneDatenbank('webdav', { migrieren: false });
-    const sql = db.sql;
-    try {
-      const dir = new URL('../migrations', import.meta.url).pathname;
-      await migriere(sql, dir, () => {});
-      const [h] = await sql`SELECT id FROM haushalte LIMIT 1`;
-      const haushalt = h?.id ?? (await sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') RETURNING id`)[0].id;
-      // Stand vor 067: eigene Vorlagen gespeichert, Laufwerk eingeschaltet ohne Angabe zum Stempel.
-      await sql`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushalt}, 'stempel', ${sql.json({ vorlagen: [{ id: 'eigen', name: 'Eigen', text: 'X' }], typen: {} })}),
+describe(
+  'Migration 067 gegen PostgreSQL (#722)',
+  { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' },
+  () => {
+    it('ergänzt die WebDAV-Vorlage bei gespeicherten Vorlagen, schaltet den Stempel ein und läuft doppelt ohne Doppel', async () => {
+      const { migriere } = await import('../src/db');
+      const db = await eigeneDatenbank('webdav', { migrieren: false });
+      const sql = db.sql;
+      try {
+        const dir = new URL('../migrations', import.meta.url).pathname;
+        await migriere(sql, dir, () => {});
+        const [h] = await sql`SELECT id FROM haushalte LIMIT 1`;
+        const haushalt =
+          h?.id ?? (await sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') RETURNING id`)[0].id;
+        // Stand vor 067: eigene Vorlagen gespeichert, Laufwerk eingeschaltet ohne Angabe zum Stempel.
+        await sql`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushalt}, 'stempel', ${sql.json({ vorlagen: [{ id: 'eigen', name: 'Eigen', text: 'X' }], typen: {} })}),
         (${haushalt}, 'webdav', ${sql.json({ aktiv: true })})
         ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
-      const text = readFileSync(new URL('../migrations/067_webdav_stempel.sql', import.meta.url), 'utf8');
-      await sql.unsafe(text);
-      await sql.unsafe(text);
-      const [st] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushalt} AND schluessel = 'stempel'`;
-      assert.deepEqual(st.wert.vorlagen.map((v: { id: string }) => v.id), ['eigen', 'webdav']);
-      assert.equal(st.wert.vorlagen[1].lage, 'fuss');
-      const [wd] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushalt} AND schluessel = 'webdav'`;
-      assert.deepEqual(wd.wert, { aktiv: true, stempel: 'webdav' });
-      // Eine bewusst ausgeschaltete Einstellung bleibt aus.
-      await sql`UPDATE einstellungen SET wert = ${sql.json({ aktiv: true, stempel: null })} WHERE haushalt_id = ${haushalt} AND schluessel = 'webdav'`;
-      await sql.unsafe(text);
-      assert.deepEqual((await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushalt} AND schluessel = 'webdav'`)[0].wert, { aktiv: true, stempel: null });
-    } finally { await db.ende(); }
-  });
-});
+        const text = readFileSync(new URL('../migrations/067_webdav_stempel.sql', import.meta.url), 'utf8');
+        await sql.unsafe(text);
+        await sql.unsafe(text);
+        const [st] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushalt} AND schluessel = 'stempel'`;
+        assert.deepEqual(
+          st.wert.vorlagen.map((v: { id: string }) => v.id),
+          ['eigen', 'webdav'],
+        );
+        assert.equal(st.wert.vorlagen[1].lage, 'fuss');
+        const [wd] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushalt} AND schluessel = 'webdav'`;
+        assert.deepEqual(wd.wert, { aktiv: true, stempel: 'webdav' });
+        // Eine bewusst ausgeschaltete Einstellung bleibt aus.
+        await sql`UPDATE einstellungen SET wert = ${sql.json({ aktiv: true, stempel: null })} WHERE haushalt_id = ${haushalt} AND schluessel = 'webdav'`;
+        await sql.unsafe(text);
+        assert.deepEqual((await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushalt} AND schluessel = 'webdav'`)[0].wert, {
+          aktiv: true,
+          stempel: null,
+        });
+      } finally {
+        await db.ende();
+      }
+    });
+  },
+);
 
 describe('WebDAV: Anlagen (#998)', () => {
   it('Anlagen stehen im Register gleich hinter ihrem Dokument, mit Namenszusatz „– Anlage n“', async () => {

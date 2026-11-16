@@ -7,7 +7,16 @@
  * es keine oder mehrere, bleibt das Feld leer und der Wert steht in der Notiz – angelegt wird nichts.
  */
 import { optionTexte } from '../../../shared/src/beschriftung';
-import { formatiere, istLeer, zieleVon, type Feld, type Feldaenderung, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
+import {
+  formatiere,
+  istLeer,
+  zieleVon,
+  type Feld,
+  type Feldaenderung,
+  type Mappentyp,
+  type Wert,
+  type Werte,
+} from '../../../shared/src/model';
 import { datumAusText, UMBAU_FELD, zahlAusText, zeitraumAusText } from '../../../shared/src/umbau';
 import { t } from '../sprache';
 
@@ -17,7 +26,10 @@ const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v 
 /** Was mit einem Feld des alten Typs geschieht. */
 export type Aktion = { art: 'nach'; ziel: string } | { art: 'notiz' } | { art: 'feld' };
 /** Ein Feld des alten Typs mit seiner Aktion (für die Werte nur Feld und Aktion). */
-export interface FeldAktion { feld: Feld; aktion: Aktion }
+export interface FeldAktion {
+  feld: Feld;
+  aktion: Aktion;
+}
 
 type Gewandelt = { wert: Wert; genau: boolean } | null;
 /** Typ einer Mappe nach dem Umbau – für Verweise (nur Mappen, die das neue Feld erlaubt). */
@@ -30,7 +42,10 @@ export type TitelSuche = (typen: string[], titel: string) => string[];
 /** Titel zum Vergleichen: ohne Rand, Leerraum zusammengefasst, ohne Groß- und Kleinschreibung. */
 export const titelKennung = (s: string) => s.trim().replace(/\s+/g, ' ').toLocaleLowerCase('de');
 /** Was die Umwandlung braucht, außer den Werten: Typ verwiesener Mappen und Mappen nach Titel. */
-export interface Umfeld { typVon?: TypVon; titel?: TitelSuche }
+export interface Umfeld {
+  typVon?: TypVon;
+  titel?: TitelSuche;
+}
 
 /** Ein Feld kann umziehen (Systemfelder, zusammengesetzte Felder und Tabellen speichern nichts Eigenes). */
 export const umziehbar = (f: Feld) => !f.system && f.typ !== 'zusammengesetzt' && f.typ !== 'tabelle' && f.key !== UMBAU_FELD;
@@ -55,7 +70,10 @@ function wandleGleich(nach: Feld, v: Wert, typVon?: TypVon): Gewandelt {
 /** Zahl aus einem Wert: Zahl, Betrag oder Text. */
 function zahlAus(von: Feld, v: Wert): number | null {
   if (typeof v === 'number') return v;
-  if (von.typ === 'betrag' && istObjekt(v)) { const n = Number(v.betrag); return Number.isFinite(n) ? n : null; }
+  if (von.typ === 'betrag' && istObjekt(v)) {
+    const n = Number(v.betrag);
+    return Number.isFinite(n) ? n : null;
+  }
   return typeof v === 'string' ? zahlAusText(v) : null;
 }
 
@@ -93,12 +111,18 @@ function wandleZuVerweis(von: Feld, nach: Feld, v: Wert, titel: TitelSuche | und
 function wandleAnders(von: Feld, nach: Feld, v: Wert, u: Umfeld): Gewandelt {
   const text = typeof v === 'string' ? v : formatiere(von, v);
   switch (nach.typ) {
-    case 'text': case 'langtext': case 'formatiert': return wandleText(von, nach, text);
+    case 'text':
+    case 'langtext':
+    case 'formatiert':
+      return wandleText(von, nach, text);
     case 'zeitraum': {
       const z = typeof v === 'string' ? zeitraumAusText(v) : null;
       return z ? { wert: { anzahl: z.anzahl, einheit: z.einheit }, genau: z.genau } : null;
     }
-    case 'betrag': case 'zahl': case 'prozent': return wandleZahl(von, nach, v);
+    case 'betrag':
+    case 'zahl':
+    case 'prozent':
+      return wandleZahl(von, nach, v);
     case 'datum': {
       const d = typeof v === 'string' ? datumAusText(v) : null;
       return d ? { wert: d, genau: true } : null;
@@ -107,8 +131,10 @@ function wandleAnders(von: Feld, nach: Feld, v: Wert, u: Umfeld): Gewandelt {
       const o = nach.optionen?.find((x) => x.toLowerCase() === text.trim().toLowerCase());
       return o ? { wert: nach.mehrfach ? [o] : o, genau: true } : null;
     }
-    case 'referenz': return wandleZuVerweis(von, nach, v, u.titel);
-    default: return null;
+    case 'referenz':
+      return wandleZuVerweis(von, nach, v, u.titel);
+    default:
+      return null;
   }
 }
 
@@ -129,7 +155,9 @@ export function wandle(von: Feld, nach: Feld, v: Wert | undefined, u: Umfeld | T
  */
 export function ohneZiel(von: Feld, nach: Feld, werte: Wert[], titel: TitelSuche): string[] {
   if (nach.typ !== 'referenz' || !['auswahl', 'text'].includes(von.typ)) return [];
-  const fehlt = werte.flatMap((v) => (Array.isArray(v) ? v : [v]).map(str).filter((x) => x.trim() && !wandleZuVerweis(von, { ...nach, mehrfach: false }, x, titel)));
+  const fehlt = werte.flatMap((v) =>
+    (Array.isArray(v) ? v : [v]).map(str).filter((x) => x.trim() && !wandleZuVerweis(von, { ...nach, mehrfach: false }, x, titel)),
+  );
   return [...new Set(fehlt)];
 }
 
@@ -144,17 +172,30 @@ function bleibendeWerte(alt: Mappentyp, ziel: Mappentyp, werte: Werte): Werte {
 }
 
 /** Werte einer Mappe im Zieltyp und die Zeilen für die Notiz. */
-export function neueWerte(x: { alt: Mappentyp; ziel: Mappentyp; felder: FeldAktion[] }, werte: Werte, titelVon: (id: string) => string, u: Umfeld | TypVon): { werte: Werte; notiz: string[] } {
+export function neueWerte(
+  x: { alt: Mappentyp; ziel: Mappentyp; felder: FeldAktion[] },
+  werte: Werte,
+  titelVon: (id: string) => string,
+  u: Umfeld | TypVon,
+): { werte: Werte; notiz: string[] } {
   const neu = bleibendeWerte(x.alt, x.ziel, werte);
   const notiz: string[] = [];
-  const merke = (f: Feld, v: Wert) => { if (f.typ !== 'passwort') notiz.push(`${f.label}: ${formatiere(f, v, titelVon)}`); };
+  const merke = (f: Feld, v: Wert) => {
+    if (f.typ !== 'passwort') notiz.push(`${f.label}: ${formatiere(f, v, titelVon)}`);
+  };
   for (const { feld, aktion } of x.felder) {
     const v = werte[feld.key];
     if (istLeer(v)) continue;
-    if (aktion.art === 'feld') { neu[feld.key] = v; continue; }
+    if (aktion.art === 'feld') {
+      neu[feld.key] = v;
+      continue;
+    }
     const zf = aktion.art === 'nach' ? x.ziel.felder.find((f) => f.key === aktion.ziel) : undefined;
     const w = zf ? wandle(feld, zf, v, u) : null;
-    if (!w || !zf || !istLeer(neu[zf.key])) { merke(feld, v); continue; }
+    if (!w || !zf || !istLeer(neu[zf.key])) {
+      merke(feld, v);
+      continue;
+    }
     neu[zf.key] = w.wert;
     if (!w.genau) merke(feld, v);
   }
@@ -162,14 +203,22 @@ export function neueWerte(x: { alt: Mappentyp; ziel: Mappentyp; felder: FeldAkti
 }
 
 /** Änderungen für die Historie: altes Feld mit Wert (vorher), neues Feld mit Wert oder „in der Notiz“ (nachher). */
-export function aenderungen(x: { alt: Mappentyp; ziel: Mappentyp; felder: FeldAktion[] }, vorher: Werte, nachher: Werte, titelVon: (id: string) => string): Feldaenderung[] {
+export function aenderungen(
+  x: { alt: Mappentyp; ziel: Mappentyp; felder: FeldAktion[] },
+  vorher: Werte,
+  nachher: Werte,
+  titelVon: (id: string) => string,
+): Feldaenderung[] {
   const erg: Feldaenderung[] = [];
   for (const { feld, aktion } of x.felder) {
     const v = vorher[feld.key];
     if (istLeer(v)) continue;
     const key = aktion.art === 'nach' ? aktion.ziel : aktion.art === 'feld' ? feld.key : null;
     const zf = key ? x.ziel.felder.find((f) => f.key === key) : undefined;
-    if (feld.typ === 'passwort') { erg.push({ feld: feld.key, label: feld.label, geheim: true }); continue; }
+    if (feld.typ === 'passwort') {
+      erg.push({ feld: feld.key, label: feld.label, geheim: true });
+      continue;
+    }
     const neu = zf && !istLeer(nachher[zf.key]) ? `${zf.label}: ${formatiere(zf, nachher[zf.key], titelVon)}` : t('pakete.umbau.in-notiz');
     erg.push({ feld: feld.key, label: feld.label, alt: formatiere(feld, v, titelVon), neu });
   }

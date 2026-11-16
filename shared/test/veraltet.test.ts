@@ -18,7 +18,10 @@ describe('Veraltete Oberfläche (#933)', () => {
 
   it('anderes zählt nicht: Bilder, fremde Server, Dateien außerhalb von /assets/, Symbol', () => {
     assert.equal(istOberflaechenDatei({ tagName: 'IMG', src: `${URSPRUNG}/assets/logo.png` } as never, URSPRUNG), false);
-    assert.equal(istOberflaechenDatei({ tagName: 'LINK', rel: 'stylesheet', href: 'https://fonts.example.com/assets/a.css' }, URSPRUNG), false);
+    assert.equal(
+      istOberflaechenDatei({ tagName: 'LINK', rel: 'stylesheet', href: 'https://fonts.example.com/assets/a.css' }, URSPRUNG),
+      false,
+    );
     assert.equal(istOberflaechenDatei({ tagName: 'LINK', rel: 'icon', href: `${URSPRUNG}/assets/symbol.svg` }, URSPRUNG), false);
     assert.equal(istOberflaechenDatei({ tagName: 'SCRIPT', src: `${URSPRUNG}/api/x.js` }, URSPRUNG), false);
     assert.equal(istOberflaechenDatei({ tagName: 'SCRIPT', src: '' }, URSPRUNG), false);
@@ -47,7 +50,9 @@ describe('Veraltete Oberfläche (#933)', () => {
     let stand = 'alt';
     const e = new Erreichbarkeit({
       gesundheit: async (): Promise<Gesundheit> => ({ ok: true, zustand: 'einrichtung', stand }),
-      jetzt: () => 0, spaeter: () => null, abbrechen: () => {},
+      jetzt: () => 0,
+      spaeter: () => null,
+      abbrechen: () => {},
     });
     await e.pruefe();
     assert.equal(e.zustand.neueVersion, false);

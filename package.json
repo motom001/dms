@@ -23,7 +23,9 @@
     "lint:farben": "node .github/werkzeuge/farben-pruefen.mjs",
     "lint:tot": "node .github/werkzeuge/knip-pruefen.mjs",
     "lint:umtragen": "eslint --suppress-all --pass-on-unpruned-suppressions . && eslint --prune-suppressions . && depcruise server/src server/test web/src web/test shared/src shared/test --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json && node .github/werkzeuge/ausnahmen-zaehlen.mjs",
-    "abhaengigkeitsbild": "node .github/werkzeuge/abhaengigkeitsbild.mjs"
+    "abhaengigkeitsbild": "node .github/werkzeuge/abhaengigkeitsbild.mjs",
+    "format": "prettier --write . --log-level warn && prettier --write . --log-level warn",
+    "format:pruefen": "prettier --check . --log-level warn"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
@@ -34,6 +36,7 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.14.0",
     "knip": "6.45.1",
+    "prettier": "3.9.10",
     "tsx": "4.23.15",
     "typescript": "^5.8.3",
     "typescript-eslint": "8.72.2"

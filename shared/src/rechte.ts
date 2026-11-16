@@ -9,7 +9,17 @@
  * Für Administratoren gelten die Regeln nicht (#128).
  */
 import { istLeer, type Mappe, type Mappentyp } from './model';
-import { bedingungsProblem, bereinigeBedingungen, erfuellt, filterFuer, merkmalTrifft, type Aufloesung, type Bedingung, type Filter, type Zaehlquelle } from './sichten';
+import {
+  bedingungsProblem,
+  bereinigeBedingungen,
+  erfuellt,
+  filterFuer,
+  merkmalTrifft,
+  type Aufloesung,
+  type Bedingung,
+  type Filter,
+  type Zaehlquelle,
+} from './sichten';
 import { istMerkmal, merkmalText, type Merkmal } from './merkmale';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
@@ -23,20 +33,21 @@ export const ALLES: Rechte = { C: true, R: true, U: true, D: true, P: true };
 export const NICHTS: Rechte = { C: false, R: false, U: false, D: false, P: false };
 
 /** Eine Bedingung im „Wenn“ einer Regel; nicht = verneint („ist nicht“). */
-export type RegelBedingung = { nicht?: boolean } & (
+export type RegelBedingung = { nicht?: boolean } &
   /** Der aktuelle Benutzer ist einer von … (Benutzer-Ids). */
-  | { art: 'benutzer'; benutzer: string[] }
-  /** Der aktuelle Benutzer hat eine dieser Rollen (Rollen-Mappen, auch Administrator/Mitglied). */
-  | { art: 'rolle'; rollen: string[] }
-  /** Ein Feld der Mappe – wie in Sichten, auch „zeigt auf aktuellen Benutzer / seine Rollen“ und „Erstellt von“. */
-  | { art: 'feld'; bedingung: Extract<Bedingung, { art: 'feld' }> }
-  /** Die Mappe hat eine offene Aufgabe für den aktuellen Benutzer. */
-  | { art: 'aufgabe' }
-  /** Die Mappe ist die Benutzer-Mappe des aktuellen Benutzers (Typ Benutzer). */
-  | { art: 'eigeneMappe' }
-  /** Merkmal der Ablage (#1032), z. B. „Ablage wird beruflich genutzt“ – gilt für alle Mappen gleich. */
-  | { art: 'merkmal'; merkmal: Merkmal }
-);
+  (
+    | { art: 'benutzer'; benutzer: string[] }
+    /** Der aktuelle Benutzer hat eine dieser Rollen (Rollen-Mappen, auch Administrator/Mitglied). */
+    | { art: 'rolle'; rollen: string[] }
+    /** Ein Feld der Mappe – wie in Sichten, auch „zeigt auf aktuellen Benutzer / seine Rollen“ und „Erstellt von“. */
+    | { art: 'feld'; bedingung: Extract<Bedingung, { art: 'feld' }> }
+    /** Die Mappe hat eine offene Aufgabe für den aktuellen Benutzer. */
+    | { art: 'aufgabe' }
+    /** Die Mappe ist die Benutzer-Mappe des aktuellen Benutzers (Typ Benutzer). */
+    | { art: 'eigeneMappe' }
+    /** Merkmal der Ablage (#1032), z. B. „Ablage wird beruflich genutzt“ – gilt für alle Mappen gleich. */
+    | { art: 'merkmal'; merkmal: Merkmal }
+  );
 
 export interface Regel {
   id: string;
@@ -47,7 +58,10 @@ export interface Regel {
 }
 
 /** grund: Standard je Recht (#146), gilt, solange keine Regel etwas anderes sagt. */
-export interface Regelwerk { grund: Rechte; regeln: Regel[] }
+export interface Regelwerk {
+  grund: Rechte;
+  regeln: Regel[];
+}
 export const OFFENES_REGELWERK: Regelwerk = { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [] };
 export const regelwerkVon = (t: Pick<Mappentyp, 'berechtigungen'> | undefined): Regelwerk => t?.berechtigungen ?? OFFENES_REGELWERK;
 export const istOffen = (r: Regelwerk) => RECHTE_LISTE.every((k) => r.grund[k]) && !r.regeln.length;
@@ -58,8 +72,10 @@ export const kurzStandard = (g: Rechte) => RECHTE_LISTE.filter((k) => g[k]).join
  * und verschwinden nur in der Benutzerverwaltung. Post (#192) legt man über „+ Post“ an; wer das darf,
  * regeln die Berechtigungen wie bei jedem Typ.
  */
-export const systemSperre = (t: Pick<Mappentyp, 'system'> | undefined): { C: boolean; D: boolean } =>
-  ({ C: t?.system === 'benutzer', D: t?.system === 'benutzer' });
+export const systemSperre = (t: Pick<Mappentyp, 'system'> | undefined): { C: boolean; D: boolean } => ({
+  C: t?.system === 'benutzer',
+  D: t?.system === 'benutzer',
+});
 
 /**
  * Konten, die kein Mensch sind (#673): Systemkonto „Automatisierung“ und Dienstkonten der Pakete. Für sie gilt die
@@ -76,14 +92,19 @@ export function kontoRegelwerk(typ: Mappentyp, rolleId: string): Mappentyp {
 export const hatKontoRegeln = (typ: Mappentyp, rolleId: string) => regelwerkVon(typ).regeln.some((r) => nenntRolle(r, rolleId));
 
 /** Wer gerade fragt. */
-export interface Wer { id: string; rollen: string[] }
+export interface Wer {
+  id: string;
+  rollen: string[];
+}
 
 /* ---------- Ausdrücke: einmal gebaut, im Arbeitsspeicher und als SQL ausgewertet ---------- */
 
 export type Ausdruck =
-  | { k: 'wahr' } | { k: 'falsch' }
+  | { k: 'wahr' }
+  | { k: 'falsch' }
   | { k: 'filter'; f: Filter }
-  | { k: 'und'; teile: Ausdruck[] } | { k: 'oder'; teile: Ausdruck[] }
+  | { k: 'und'; teile: Ausdruck[] }
+  | { k: 'oder'; teile: Ausdruck[] }
   | { k: 'nicht'; a: Ausdruck }
   | { k: 'wenn'; bed: Ausdruck; dann: Ausdruck; sonst: Ausdruck };
 
@@ -138,11 +159,21 @@ function imZweifel(x: Ausdruck, b: RegelBedingung, a: Aufloesung, zweifel: Zweif
 function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Aufloesung, zweifel: Zweifel = 'geben'): Ausdruck {
   let x: Ausdruck;
   switch (b.art) {
-    case 'benutzer': x = bool(b.benutzer.includes(wer.id)); break;
-    case 'rolle': x = bool(b.rollen.some((r) => wer.rollen.includes(r))); break;
-    case 'aufgabe': x = { k: 'filter', f: { art: 'aufgabe', benutzer: wer.id } }; break;
-    case 'eigeneMappe': x = { k: 'filter', f: { art: 'id', ids: [wer.id] } }; break;
-    case 'merkmal': x = bool(merkmalTrifft({ merkmal: b.merkmal }, a.merkmale)); break;
+    case 'benutzer':
+      x = bool(b.benutzer.includes(wer.id));
+      break;
+    case 'rolle':
+      x = bool(b.rollen.some((r) => wer.rollen.includes(r)));
+      break;
+    case 'aufgabe':
+      x = { k: 'filter', f: { art: 'aufgabe', benutzer: wer.id } };
+      break;
+    case 'eigeneMappe':
+      x = { k: 'filter', f: { art: 'id', ids: [wer.id] } };
+      break;
+    case 'merkmal':
+      x = bool(merkmalTrifft({ merkmal: b.merkmal }, a.merkmale));
+      break;
     case 'feld': {
       // Unbekanntes Feld (#1042, z. B. eine Kennung von vor einem Umzug): im Zweifel geschlossen – eine gebende Regel trifft
       // nicht zu, eine nehmende trifft zu, auch mit „nicht“ (sonst öffnete „ist nicht …“ auf ein fehlendes Feld).
@@ -165,12 +196,24 @@ export function rechtAusdruck(typ: Mappentyp, recht: Recht, wer: Wer, a: Aufloes
   let aktiv: Ausdruck = WAHR;
   for (const r of rw.regeln) {
     const zweifel = zweifelFuer(r, recht);
-    let bed = und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a, zweifel))));
+    let bed = und(
+      ...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a, zweifel))),
+    );
     bed = und(aktiv, bed);
     const w = r.dann[recht];
     if (w) e = wenn(bed, bool(w === 'erteilen'), e);
     // Stopp im Zweifel wie beim Erteilen (trifft nicht zu): dieselbe Seite wie in rechteAn.
-    if (r.stopp) aktiv = und(aktiv, nicht(und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a, 'geben'))))));
+    if (r.stopp)
+      aktiv = und(
+        aktiv,
+        nicht(
+          und(
+            ...r.wenn.map((b) =>
+              recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a, 'geben'),
+            ),
+          ),
+        ),
+      );
     if (aktiv.k === 'falsch') break;
   }
   return e;
@@ -198,7 +241,10 @@ export function mitSichtbarenTypen(typen: Mappentyp[], wer: Wer, a: Aufloesung):
 }
 
 /** Lesefilter je Typ für das Repo; null = ohne Einschränkung (Administrator oder alles offen). */
-export interface Lesefilter { offen: string[]; je: Array<{ typId: string; ausdruck: Ausdruck }> }
+export interface Lesefilter {
+  offen: string[];
+  je: Array<{ typId: string; ausdruck: Ausdruck }>;
+}
 
 export function lesefilter(typen: Mappentyp[], wer: Wer, a: Aufloesung): Lesefilter | null {
   const f: Lesefilter = { offen: [], je: [] };
@@ -216,13 +262,20 @@ export type Mappenquelle = Zaehlquelle;
 
 export function werte(x: Ausdruck, m: Mappe, z: Mappenquelle): boolean {
   switch (x.k) {
-    case 'wahr': return true;
-    case 'falsch': return false;
-    case 'und': return x.teile.every((t) => werte(t, m, z));
-    case 'oder': return x.teile.some((t) => werte(t, m, z));
-    case 'nicht': return !werte(x.a, m, z);
-    case 'wenn': return werte(x.bed, m, z) ? werte(x.dann, m, z) : werte(x.sonst, m, z);
-    case 'filter': return erfuellt(m, [x.f], z);
+    case 'wahr':
+      return true;
+    case 'falsch':
+      return false;
+    case 'und':
+      return x.teile.every((t) => werte(t, m, z));
+    case 'oder':
+      return x.teile.some((t) => werte(t, m, z));
+    case 'nicht':
+      return !werte(x.a, m, z);
+    case 'wenn':
+      return werte(x.bed, m, z) ? werte(x.dann, m, z) : werte(x.sonst, m, z);
+    case 'filter':
+      return erfuellt(m, [x.f], z);
   }
 }
 
@@ -247,7 +300,12 @@ export interface Spurschritt {
   /** Stand nach dieser Regel. */
   stand: Rechte;
 }
-export interface Ergebnis { rechte: Rechte; wirksam: Rechte; spur: Spurschritt[]; grund: Rechte }
+export interface Ergebnis {
+  rechte: Rechte;
+  wirksam: Rechte;
+  spur: Spurschritt[];
+  grund: Rechte;
+}
 
 /**
  * Rechte an einer Mappe. `wirksam` berücksichtigt „ohne R wirkt nichts außer C“.
@@ -260,18 +318,27 @@ export function rechteAn(typ: Mappentyp, m: Mappe, wer: Wer, a: Aufloesung, z: M
   const spur: Spurschritt[] = [];
   let gestoppt = false;
   for (const regel of rw.regeln) {
-    if (gestoppt) { spur.push({ regel: regel.id, name: regel.name, traf: null, gesetzt: {}, stopp: regel.stopp, bedingungen: [], stand: { ...r } }); continue; }
+    if (gestoppt) {
+      spur.push({ regel: regel.id, name: regel.name, traf: null, gesetzt: {}, stopp: regel.stopp, bedingungen: [], stand: { ...r } });
+      continue;
+    }
     // Im Zweifel geschlossen (#1036): je nach Wirkung kann dieselbe Regel für das Erteilen nicht und für das Entziehen
     // doch zutreffen. Spur und Stopp zeigen die Seite des Erteilens, wenn die Regel etwas erteilt, sonst die des Entziehens.
-    const trifft = (zweifel: Zweifel) => regel.wenn.map((b) => (neu && b.art === 'aufgabe' ? !!b.nicht : werte(bedingungAusdruck(b, typ, wer, a, zweifel), m, z)));
+    const trifft = (zweifel: Zweifel) =>
+      regel.wenn.map((b) => (neu && b.art === 'aufgabe' ? !!b.nicht : werte(bedingungAusdruck(b, typ, wer, a, zweifel), m, z)));
     const geben = trifft('geben');
-    const nehmen = regel.wenn.some((b) => b.art === 'feld' && (b.bedingung.op === 'zeigtAufTyp' || !!bedingungsProblem(b.bedingung, [typ]))) ? trifft('nehmen') : geben;
+    const nehmen = regel.wenn.some((b) => b.art === 'feld' && (b.bedingung.op === 'zeigtAufTyp' || !!bedingungsProblem(b.bedingung, [typ])))
+      ? trifft('nehmen')
+      : geben;
     const bedingungen = Object.values(regel.dann).includes('erteilen') || !Object.values(regel.dann).length ? geben : nehmen;
     const traf = bedingungen.every(Boolean);
     const gesetzt: Partial<Record<Recht, Wirkung>> = {};
     for (const k of RECHTE_LISTE) {
       const w = regel.dann[k];
-      if (w && (w === 'erteilen' ? geben : nehmen).every(Boolean)) { r[k] = w === 'erteilen'; gesetzt[k] = w; }
+      if (w && (w === 'erteilen' ? geben : nehmen).every(Boolean)) {
+        r[k] = w === 'erteilen';
+        gesetzt[k] = w;
+      }
     }
     if (geben.every(Boolean) && regel.stopp) gestoppt = true;
     spur.push({ regel: regel.id, name: regel.name, traf, gesetzt, stopp: regel.stopp, bedingungen, stand: { ...r } });
@@ -323,19 +390,27 @@ export function bereinigeRegelwerk(e: unknown): Regelwerk {
   const x = (e && typeof e === 'object' ? e : {}) as Record<string, unknown>;
   // Standard je Recht (#146); ältere Form: „erteilt“/„entzogen“ für alle.
   const g = x.grund;
-  const grund: Rechte = g === 'entzogen' ? { ...NICHTS } : g && typeof g === 'object'
-    ? Object.fromEntries(RECHTE_LISTE.map((k) => [k, (g as Record<string, unknown>)[k] !== false])) as Rechte
-    : { ...ALLES };
+  const grund: Rechte =
+    g === 'entzogen'
+      ? { ...NICHTS }
+      : g && typeof g === 'object'
+        ? (Object.fromEntries(RECHTE_LISTE.map((k) => [k, (g as Record<string, unknown>)[k] !== false])) as Rechte)
+        : { ...ALLES };
   const regeln = (Array.isArray(x.regeln) ? x.regeln : []).slice(0, 100).map((r): Regel => {
     const o = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
     const dann: Regel['dann'] = {};
     const d = (o.dann && typeof o.dann === 'object' ? o.dann : {}) as Record<string, unknown>;
     for (const k of RECHTE_LISTE) if (d[k] === 'erteilen' || d[k] === 'entziehen') dann[k] = d[k] as Wirkung;
-    const wenn = (Array.isArray(o.wenn) ? o.wenn : []).slice(0, 20).map(bereinigeBedingung).filter((b): b is RegelBedingung => !!b);
+    const wenn = (Array.isArray(o.wenn) ? o.wenn : [])
+      .slice(0, 20)
+      .map(bereinigeBedingung)
+      .filter((b): b is RegelBedingung => !!b);
     return {
       id: typeof o.id === 'string' && /^[\w-]{1,40}$/.test(o.id) ? o.id : neueId(),
       name: (typeof o.name === 'string' ? o.name : '').replace(/\s+/g, ' ').trim().slice(0, 80),
-      wenn, dann, stopp: o.stopp === true,
+      wenn,
+      dann,
+      stopp: o.stopp === true,
     };
   });
   return { grund, regeln };
@@ -347,11 +422,16 @@ function bereinigeBedingung(e: unknown): RegelBedingung | null {
   const n = x.nicht === true ? { nicht: true } : {};
   const ids = (v: unknown) => (Array.isArray(v) ? [...new Set(v.map(String))].slice(0, 200) : []);
   switch (x.art) {
-    case 'benutzer': return { ...n, art: 'benutzer', benutzer: ids(x.benutzer) };
-    case 'rolle': return { ...n, art: 'rolle', rollen: ids(x.rollen) };
-    case 'aufgabe': return { ...n, art: 'aufgabe' };
-    case 'eigeneMappe': return { ...n, art: 'eigeneMappe' };
-    case 'merkmal': return istMerkmal(x.merkmal) ? { ...n, art: 'merkmal', merkmal: x.merkmal } : null;
+    case 'benutzer':
+      return { ...n, art: 'benutzer', benutzer: ids(x.benutzer) };
+    case 'rolle':
+      return { ...n, art: 'rolle', rollen: ids(x.rollen) };
+    case 'aufgabe':
+      return { ...n, art: 'aufgabe' };
+    case 'eigeneMappe':
+      return { ...n, art: 'eigeneMappe' };
+    case 'merkmal':
+      return istMerkmal(x.merkmal) ? { ...n, art: 'merkmal', merkmal: x.merkmal } : null;
     case 'feld': {
       const [b] = bereinigeBedingungen([x.bedingung]);
       return b && b.art === 'feld' ? { ...n, art: 'feld', bedingung: b } : null;
@@ -366,7 +446,10 @@ export function regelProblem(r: Regel, typ: Mappentyp): string | null {
   if (!r.wenn.length) return t('gemeinsam.rechte.mindestens-eine-bedingung-angeben', { name: r.name });
   if (!RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp) return t('gemeinsam.rechte.aendert-nichts-mindestens-ein', { name: r.name });
   for (const b of r.wenn) {
-    if (b.art === 'feld') { const p = bedingungsProblem(b.bedingung, [typ]); if (p) return `„${r.name}“: ${p}`; }
+    if (b.art === 'feld') {
+      const p = bedingungsProblem(b.bedingung, [typ]);
+      if (p) return `„${r.name}“: ${p}`;
+    }
     if (b.art === 'benutzer' && !b.benutzer.length) return t('gemeinsam.rechte.benutzer-auswaehlen', { name: r.name });
     if (b.art === 'rolle' && !b.rollen.length) return t('gemeinsam.rechte.rolle-auswaehlen', { name: r.name });
     if (b.art === 'eigeneMappe' && typ.system !== 'benutzer') return t('gemeinsam.rechte.mappe-ist-die-des', { name: r.name });
@@ -378,8 +461,14 @@ export function regelProblem(r: Regel, typ: Mappentyp): string | null {
 export function kopiereRegel(r: Regel, ziel: Mappentyp): { regel: Regel; ausgelassen: number } {
   let ausgelassen = 0;
   const wenn = r.wenn.filter((b) => {
-    if (b.art === 'feld' && bedingungsProblem(b.bedingung, [ziel])) { ausgelassen++; return false; }
-    if (b.art === 'eigeneMappe' && ziel.system !== 'benutzer') { ausgelassen++; return false; }
+    if (b.art === 'feld' && bedingungsProblem(b.bedingung, [ziel])) {
+      ausgelassen++;
+      return false;
+    }
+    if (b.art === 'eigeneMappe' && ziel.system !== 'benutzer') {
+      ausgelassen++;
+      return false;
+    }
     return true;
   });
   return { regel: { ...r, id: neueId(), wenn }, ausgelassen };
@@ -389,16 +478,29 @@ export function kopiereRegel(r: Regel, ziel: Mappentyp): { regel: Regel; ausgela
 const oderListe = (x: string[]) => (x.length ? new Intl.ListFormat(gebietsschema(), { type: 'disjunction' }).format(x) : '…');
 
 /** Lesbarer Text einer Bedingung für Listen und den Testlauf. */
-export function beschreibeRegelBedingung(b: RegelBedingung, namen: { benutzer(id: string): string; rolle(id: string): string; feld(b: Extract<Bedingung, { art: 'feld' }>): string }): string {
+export function beschreibeRegelBedingung(
+  b: RegelBedingung,
+  namen: { benutzer(id: string): string; rolle(id: string): string; feld(b: Extract<Bedingung, { art: 'feld' }>): string },
+): string {
   const n = b.nicht;
   switch (b.art) {
     // Ganze Sätze je Fall (#729), die Aufzählung „A oder B“ nach der Sprache (Intl.ListFormat).
-    case 'benutzer': { const wer = oderListe(b.benutzer.map(namen.benutzer)); return n ? t('gemeinsam.rechte.benutzer-nicht', { wer }) : t('gemeinsam.rechte.benutzer-ist', { wer }); }
-    case 'rolle': { const rolle = oderListe(b.rollen.map(namen.rolle)); return n ? t('gemeinsam.rechte.rolle-nicht', { rolle }) : t('gemeinsam.rechte.rolle-hat', { rolle }); }
-    case 'aufgabe': return n ? t('gemeinsam.rechte.aufgabe-keine') : t('gemeinsam.rechte.aufgabe-eine');
-    case 'eigeneMappe': return n ? t('gemeinsam.rechte.eigene-nicht') : t('gemeinsam.rechte.eigene');
-    case 'merkmal': return merkmalText(b.merkmal, n);
-    case 'feld': return n ? t('gemeinsam.rechte.feld-nicht', { bedingung: namen.feld(b.bedingung) }) : namen.feld(b.bedingung);
+    case 'benutzer': {
+      const wer = oderListe(b.benutzer.map(namen.benutzer));
+      return n ? t('gemeinsam.rechte.benutzer-nicht', { wer }) : t('gemeinsam.rechte.benutzer-ist', { wer });
+    }
+    case 'rolle': {
+      const rolle = oderListe(b.rollen.map(namen.rolle));
+      return n ? t('gemeinsam.rechte.rolle-nicht', { rolle }) : t('gemeinsam.rechte.rolle-hat', { rolle });
+    }
+    case 'aufgabe':
+      return n ? t('gemeinsam.rechte.aufgabe-keine') : t('gemeinsam.rechte.aufgabe-eine');
+    case 'eigeneMappe':
+      return n ? t('gemeinsam.rechte.eigene-nicht') : t('gemeinsam.rechte.eigene');
+    case 'merkmal':
+      return merkmalText(b.merkmal, n);
+    case 'feld':
+      return n ? t('gemeinsam.rechte.feld-nicht', { bedingung: namen.feld(b.bedingung) }) : namen.feld(b.bedingung);
   }
 }
 

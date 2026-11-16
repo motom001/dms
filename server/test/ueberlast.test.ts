@@ -15,7 +15,8 @@ describe('Einstellungen (#544)', () => {
     assert.deepEqual(verbindungenAus({ DMS_DB_VERBINDUNGEN: '20' }), { max: 20, quelle: 'umgebung' });
     for (const x of ['1', '101', 'viele', '2.5']) {
       const v = verbindungenAus({ DMS_DB_VERBINDUNGEN: x });
-      assert.equal(v.max, 10); assert.match(v.fehler!, /DMS_DB_VERBINDUNGEN/);
+      assert.equal(v.max, 10);
+      assert.match(v.fehler!, /DMS_DB_VERBINDUNGEN/);
     }
   });
   it('DMS_MAX_ANFRAGEN: Vorgabe 250, 20–10.000', () => {
@@ -40,8 +41,13 @@ describe('Überlastschutz (#544)', () => {
     const app = Fastify();
     schutz.haengeEin(app);
     let loslassen!: () => void;
-    const tor = new Promise<void>((r) => { loslassen = r; });
-    app.get('/api/langsam', async () => { await tor; return { ok: true }; });
+    const tor = new Promise<void>((r) => {
+      loslassen = r;
+    });
+    app.get('/api/langsam', async () => {
+      await tor;
+      return { ok: true };
+    });
     app.get('/api/schnell', async () => ({ ok: true }));
     app.get('/api/gesundheit', async () => ({ ok: true }));
     await app.listen({ port: 0, host: '127.0.0.1' });
@@ -65,8 +71,14 @@ describe('Überlastschutz (#544)', () => {
       loslassen();
       assert.equal((await a).status, 200);
       for (let i = 0; i < 50 && schutz.laufend > 0; i++) await new Promise((r) => setTimeout(r, 20));
-      assert.deepEqual({ ...schutz.stand(), hoechstens: undefined, zuletztAbgewiesen: undefined }, { max: 2, quelle: 'vorgabe', laufend: 0, hoechstens: undefined, abgewiesen: 1, zuletztAbgewiesen: undefined });
-    } finally { loslassen(); await app.close(); }
+      assert.deepEqual(
+        { ...schutz.stand(), hoechstens: undefined, zuletztAbgewiesen: undefined },
+        { max: 2, quelle: 'vorgabe', laufend: 0, hoechstens: undefined, abgewiesen: 1, zuletztAbgewiesen: undefined },
+      );
+    } finally {
+      loslassen();
+      await app.close();
+    }
   });
 });
 
@@ -77,10 +89,15 @@ describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens 
     const u = new Ueberlastschutz(1, 'vorgabe', () => uhr);
     const zeilen: Array<{ stufe: string; text: string; daten?: Record<string, unknown> }> = [];
     const vorher = protokoll.letzteNr;
-    const warn = protokoll.beobachte((x) => { if (x.modul === 'system' && x.text.startsWith('Überlast')) zeilen.push(x); });
+    const warn = protokoll.beobachte((x) => {
+      if (x.modul === 'system' && x.text.startsWith('Überlast')) zeilen.push(x);
+    });
     try {
       assert.equal(u.herein(), true);
-      for (let i = 0; i < 5; i++) { uhr += 1000; assert.equal(u.herein(), false); }
+      for (let i = 0; i < 5; i++) {
+        uhr += 1000;
+        assert.equal(u.herein(), false);
+      }
       assert.deepEqual(zeilen, [], 'keine Warnung, kein Fehler');
       const info = () => protokoll.eintraege({ seit: vorher, modul: 'system' }).filter((x) => x.text.startsWith('Überlast'));
       assert.equal(info().length, 1, 'die erste sofort');
@@ -91,11 +108,17 @@ describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens 
       assert.equal(info()[0].daten?.seitLetzterMeldung, 4);
       u.leeren();
       assert.equal(info().length, 2, 'nichts offen – keine Zeile');
-      uhr += 10_000; u.herein(); u.leeren();
+      uhr += 10_000;
+      u.herein();
+      u.leeren();
       assert.equal(info().length, 3, 'nach der Zusammenfassung erst wieder nach einer Minute eine eigene Zeile');
-      uhr += 61_000; u.herein();
+      uhr += 61_000;
+      u.herein();
       assert.equal(info().length, 4);
-    } finally { warn(); u.leeren(); }
+    } finally {
+      warn();
+      u.leeren();
+    }
   });
 
   it('abgewiesene Anfragen: keine Zeile „… 503“ als Fehler (nur Debug), andere 5xx weiter als Fehler', async () => {
@@ -112,13 +135,19 @@ describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens 
     ueberlast.laufend = 20;
     const app = await baueApp(dienst, konten, { ueberlast });
     const fehler: string[] = [];
-    const weg = protokoll.beobachte((x) => { if (x.stufe === 'error') fehler.push(x.text); });
+    const weg = protokoll.beobachte((x) => {
+      if (x.stufe === 'error') fehler.push(x.text);
+    });
     try {
       const r = await app.inject({ method: 'GET', url: '/api/typen' });
       assert.equal(r.statusCode, 503);
       await new Promise((x) => setTimeout(x, 10));
       assert.deepEqual(fehler, []);
-    } finally { weg(); ueberlast.leeren(); await app.close(); }
+    } finally {
+      weg();
+      ueberlast.leeren();
+      await app.close();
+    }
   });
 });
 
@@ -134,9 +163,16 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
     assert.deepEqual(engpaesseAus({ schleife: false, verbindungen: { median: 80, messungen: 12 }, jetzt }), ['verbindungen']);
     // Abgewiesenes zählt ENGPASS_MINUTEN lang.
     const vor = (min: number) => new Date(jetzt - min * 60_000).toISOString();
-    assert.deepEqual(engpaesseAus({ schleife: false, arbeiterAbgewiesen: vor(2), ueberlastAbgewiesen: vor(ENGPASS_MINUTEN + 1), jetzt }), ['arbeiter']);
+    assert.deepEqual(engpaesseAus({ schleife: false, arbeiterAbgewiesen: vor(2), ueberlastAbgewiesen: vor(ENGPASS_MINUTEN + 1), jetzt }), [
+      'arbeiter',
+    ]);
     assert.deepEqual(engpaesseAus({ schleife: false, ueberlastAbgewiesen: vor(1), jetzt }), ['ueberlast']);
-    assert.deepEqual(ENGPASS_VARIABLE, { schleife: 'DMS_ARBEITER', verbindungen: 'DMS_DB_VERBINDUNGEN', arbeiter: 'DMS_ARBEITER', ueberlast: 'DMS_MAX_ANFRAGEN' });
+    assert.deepEqual(ENGPASS_VARIABLE, {
+      schleife: 'DMS_ARBEITER',
+      verbindungen: 'DMS_DB_VERBINDUNGEN',
+      arbeiter: 'DMS_ARBEITER',
+      ueberlast: 'DMS_MAX_ANFRAGEN',
+    });
   });
 
   it('Überlastschutz merkt sich, wann er zuletzt abgewiesen hat; Herkunft der Grenze im Stand', () => {
@@ -146,7 +182,10 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
     assert.equal(u.herein(), true);
     uhr += 1000;
     assert.equal(u.herein(), false);
-    assert.deepEqual({ ...u.stand() }, { max: 1, quelle: 'umgebung', laufend: 1, hoechstens: 1, abgewiesen: 1, zuletztAbgewiesen: '2026-11-02T12:00:01.000Z' });
+    assert.deepEqual(
+      { ...u.stand() },
+      { max: 1, quelle: 'umgebung', laufend: 1, hoechstens: 1, abgewiesen: 1, zuletztAbgewiesen: '2026-11-02T12:00:01.000Z' },
+    );
   });
 
   it('Werte für den Systemzustand über GET /api/werkbank/systemlast', async () => {
@@ -162,7 +201,12 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
     const ueberlast = new Ueberlastschutz(300, 'umgebung');
     const app = await baueApp(dienst, konten, { systemlast: new Systemlast({ lies: () => null }), ueberlast });
     try {
-      const e = await app.inject({ method: 'POST', url: '/api/konto/einrichten', headers: { 'x-dms': '1' }, payload: { email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' } });
+      const e = await app.inject({
+        method: 'POST',
+        url: '/api/konto/einrichten',
+        headers: { 'x-dms': '1' },
+        payload: { email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' },
+      });
       const cookie = String(e.headers['set-cookie']).split(';')[0];
       const r = await app.inject({ method: 'GET', url: '/api/werkbank/systemlast', headers: { cookie, 'x-dms': '1' } });
       assert.equal(r.statusCode, 200, r.body);
@@ -170,6 +214,8 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
       assert.deepEqual(s.grenzen.anfragen, { wert: 300, quelle: 'umgebung', variable: 'DMS_MAX_ANFRAGEN', min: 20, max: 10000 });
       assert.equal(s.grenzen.arbeiter.variable, 'DMS_ARBEITER');
       assert.deepEqual(s.engpaesse, []);
-    } finally { await app.close(); }
+    } finally {
+      await app.close();
+    }
   });
 });

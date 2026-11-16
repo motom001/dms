@@ -11,7 +11,10 @@ import { ladePdf } from './laden';
 import { t } from '../sprache';
 
 /** Eine Seite im Ergebnis: Nummer im Original (ab 1) und zusätzliche Drehung im Uhrzeigersinn. */
-export interface SeitenWahl { nr: number; drehung?: number }
+export interface SeitenWahl {
+  nr: number;
+  drehung?: number;
+}
 
 async function lade(inhalt: Buffer): Promise<PDFDocument> {
   try {
@@ -28,7 +31,9 @@ async function lade(inhalt: Buffer): Promise<PDFDocument> {
  * der Seiten (#823). Dann dieselbe verständliche Meldung wie beim Laden statt eines Fehlers aus pdf-lib.
  */
 async function lesbar<T>(f: () => Promise<T>): Promise<T> {
-  try { return await f(); } catch (e) {
+  try {
+    return await f();
+  } catch (e) {
     if (e instanceof Fachfehler) throw e;
     throw new Fachfehler(422, t('meldungen.seiten.die-datei-laesst-sich'));
   }
@@ -48,7 +53,10 @@ export async function baueSeiten(inhalt: Buffer, seiten: SeitenWahl[]): Promise<
   const quelle = await lade(inhalt);
   return lesbar(async () => {
     const ziel = await PDFDocument.create();
-    const kopien = await ziel.copyPages(quelle, seiten.map((s) => s.nr - 1));
+    const kopien = await ziel.copyPages(
+      quelle,
+      seiten.map((s) => s.nr - 1),
+    );
     kopien.forEach((p, i) => {
       const d = seiten[i].drehung ?? 0;
       if (d) p.setRotation(degrees((((p.getRotation().angle + d) % 360) + 360) % 360));
@@ -70,7 +78,9 @@ export async function fuegeZusammen(inhalte: Buffer[]): Promise<Buffer> {
   const ziel = await PDFDocument.create();
   for (const b of inhalte) {
     const q = await lade(b);
-    await lesbar(async () => { for (const p of await ziel.copyPages(q, q.getPageIndices())) ziel.addPage(p); });
+    await lesbar(async () => {
+      for (const p of await ziel.copyPages(q, q.getPageIndices())) ziel.addPage(p);
+    });
   }
   return Buffer.from(await ziel.save());
 }
@@ -91,9 +101,14 @@ export async function bilderZuPdf(bilder: Buffer[]): Promise<Buffer> {
     const art = bildArt(b);
     if (!art) throw new Fachfehler(422, t('meldungen.seiten.foto-nur-jpeg-und', { wert: i + 1 }));
     let bild;
-    try { bild = art === 'image/png' ? await doc.embedPng(eigenerPuffer(b)) : await doc.embedJpg(eigenerPuffer(b)); } catch { throw new Fachfehler(422, t('meldungen.seiten.foto-laesst-sich-nicht', { wert: i + 1 })); }
+    try {
+      bild = art === 'image/png' ? await doc.embedPng(eigenerPuffer(b)) : await doc.embedJpg(eigenerPuffer(b));
+    } catch {
+      throw new Fachfehler(422, t('meldungen.seiten.foto-laesst-sich-nicht', { wert: i + 1 }));
+    }
     const f = FOTOSEITE_PT / Math.max(bild.width, bild.height);
-    const w = bild.width * f, h = bild.height * f;
+    const w = bild.width * f,
+      h = bild.height * f;
     const seite = doc.addPage([w, h]);
     seite.drawImage(bild, { x: 0, y: 0, width: w, height: h });
     const d = art === 'image/jpeg' ? DREHUNG_EXIF[exifAusrichtung(b)] : undefined;

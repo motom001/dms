@@ -10,7 +10,10 @@ import { AUSGANGSSPRACHE, MEHRZAHLFORMEN, ohneMehrzahl, platzhalter } from './sp
 
 /** Sprache → Bereich → Schlüssel → Text. */
 export type Sprachstand = Record<string, Record<string, Record<string, unknown>>>;
-export interface Quelltext { datei: string; text: string }
+export interface Quelltext {
+  datei: string;
+  text: string;
+}
 
 /**
  * Bereiche mit eigener Zugriffsfunktion, deren Schlüssel im Code ohne Bereich stehen:
@@ -43,16 +46,40 @@ const MIT_WERTEN = /\b(?:t|tn|tDe)\(\s*'([a-z0-9-]+\.[^'$]+)'\s*,\s*\{/g;
  * [name, wert]; `null`, wenn das Objekt `...` enthält (dann ist die Prüfung nicht möglich).
  */
 export function werteImAufruf(text: string, start: number): string[] | null {
-  let tiefe = 0, i = start, teil = '';
+  let tiefe = 0,
+    i = start,
+    teil = '';
   const teile: string[] = [];
   let zeichen: string | null = null;
   for (; i < text.length; i++) {
     const c = text[i];
-    if (zeichen) { if (c === '\\') { i++; continue; } if (c === zeichen) zeichen = null; if (tiefe === 1) teil += c; continue; }
-    if (c === "'" || c === '"' || c === '`') { zeichen = c; if (tiefe === 1) teil += c; continue; }
-    if (c === '{' || c === '(' || c === '[') { tiefe++; if (tiefe === 1) continue; }
-    if (c === '}' || c === ')' || c === ']') { tiefe--; if (tiefe === 0) break; }
-    if (tiefe === 1 && c === ',') { teile.push(teil); teil = ''; continue; }
+    if (zeichen) {
+      if (c === '\\') {
+        i++;
+        continue;
+      }
+      if (c === zeichen) zeichen = null;
+      if (tiefe === 1) teil += c;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      zeichen = c;
+      if (tiefe === 1) teil += c;
+      continue;
+    }
+    if (c === '{' || c === '(' || c === '[') {
+      tiefe++;
+      if (tiefe === 1) continue;
+    }
+    if (c === '}' || c === ')' || c === ']') {
+      tiefe--;
+      if (tiefe === 0) break;
+    }
+    if (tiefe === 1 && c === ',') {
+      teile.push(teil);
+      teil = '';
+      continue;
+    }
     if (tiefe >= 1) teil += c;
   }
   teile.push(teil);
@@ -95,12 +122,20 @@ export function pruefeSprachdateien(stand: Sprachstand, code: Quelltext[]): stri
     for (const [bereich, datei] of Object.entries(bereiche)) {
       const ort = `${spr}/${bereich}.json`;
       const soll = ausgang[bereich];
-      if (!soll) { maengel.push(`${ort}: Bereich gibt es in „${AUSGANGSSPRACHE}“ nicht.`); continue; }
-      const a = grundschluessel(soll), b = grundschluessel(datei);
+      if (!soll) {
+        maengel.push(`${ort}: Bereich gibt es in „${AUSGANGSSPRACHE}“ nicht.`);
+        continue;
+      }
+      const a = grundschluessel(soll),
+        b = grundschluessel(datei);
       for (const k of a.keys()) if (!b.has(k)) maengel.push(`${ort}: Schlüssel „${k}“ fehlt.`);
       for (const [k, p] of b) {
-        if (!a.has(k)) { maengel.push(`${ort}: Schlüssel „${k}“ gibt es in „${AUSGANGSSPRACHE}“ nicht.`); continue; }
-        if (p.join() !== a.get(k)!.join()) maengel.push(`${ort}: „${k}“ hat die Platzhalter {${p.join('} {')}}, in „${AUSGANGSSPRACHE}“ {${a.get(k)!.join('} {')}}.`);
+        if (!a.has(k)) {
+          maengel.push(`${ort}: Schlüssel „${k}“ gibt es in „${AUSGANGSSPRACHE}“ nicht.`);
+          continue;
+        }
+        if (p.join() !== a.get(k)!.join())
+          maengel.push(`${ort}: „${k}“ hat die Platzhalter {${p.join('} {')}}, in „${AUSGANGSSPRACHE}“ {${a.get(k)!.join('} {')}}.`);
       }
     }
   }
@@ -130,14 +165,20 @@ export function pruefeSprachdateien(stand: Sprachstand, code: Quelltext[]): stri
       const datei = ausgang[voll.slice(0, i)];
       if (!datei || BEREICHE_DIREKT.has(voll.slice(0, i))) continue;
       const k = voll.slice(i + 1);
-      const texte = Object.entries(datei).filter(([x]) => x === k || ohneMehrzahl(x) === k).map(([, v]) => String(v));
+      const texte = Object.entries(datei)
+        .filter(([x]) => x === k || ohneMehrzahl(x) === k)
+        .map(([, v]) => String(v));
       if (!texte.length) continue;
       const werte = werteImAufruf(q.text, m.index! + m[0].length - 1);
       if (!werte) continue;
-      const fehlt = [...new Set(texte.flatMap(platzhalter))].filter((p) => !werte.includes(p) && !(p === 'anzahl' && werte.includes('anzahl')));
+      const fehlt = [...new Set(texte.flatMap(platzhalter))].filter(
+        (p) => !werte.includes(p) && !(p === 'anzahl' && werte.includes('anzahl')),
+      );
       if (fehlt.length) {
         const zeile = q.text.slice(0, m.index).split('\n').length;
-        maengel.push(`${q.datei}:${zeile}: „${voll}“ braucht {${fehlt.join('} {')}}, der Aufruf liefert ${werte.length ? `nur {${werte.join('} {')}}` : 'keine Werte'}.`);
+        maengel.push(
+          `${q.datei}:${zeile}: „${voll}“ braucht {${fehlt.join('} {')}}, der Aufruf liefert ${werte.length ? `nur {${werte.join('} {')}}` : 'keine Werte'}.`,
+        );
       }
     }
     for (const m of q.text.matchAll(ZEICHENKETTE)) literale.add(m[2]);

@@ -15,9 +15,15 @@ const FEHLENDE_DATEIEN_MAX = 1000;
 export class FehlendeDateien {
   constructor(private readonly kern: Kern) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get dateien() { return this.kern.dateien; }
-  private get einstellungen() { return this.kern.einstellungen; }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get dateien() {
+    return this.kern.dateien;
+  }
+  private get einstellungen() {
+    return this.kern.einstellungen;
+  }
 
   /* ---------- Fehlende Dateien (#877) ---------- */
 
@@ -28,8 +34,18 @@ export class FehlendeDateien {
   async merkeFehlendeDatei(f: { sha256: string; pfad: string; ablage: string }) {
     const doks = await this.repo.dokumenteMitSha(f.sha256).catch(() => [] as Dokument[]);
     protokoll.modul('dokumente').error('Datei eines Dokuments fehlt im Ablageordner', {
-      sha256: f.sha256, pfad: f.pfad, ablage: f.ablage,
-      ...(doks.length ? { dokumente: doks.slice(0, 5).map((d) => d.id).join(', '), mappen: [...new Set(doks.map((d) => d.mappeId))].slice(0, 5).join(', ') } : {}),
+      sha256: f.sha256,
+      pfad: f.pfad,
+      ablage: f.ablage,
+      ...(doks.length
+        ? {
+            dokumente: doks
+              .slice(0, 5)
+              .map((d) => d.id)
+              .join(', '),
+            mappen: [...new Set(doks.map((d) => d.mappeId))].slice(0, 5).join(', '),
+          }
+        : {}),
     });
     const alt = await this.gemerkteFehlendeDateien();
     if (!alt.includes(f.sha256)) await this.schreibeFehlendeDateien([...alt, f.sha256]);
@@ -61,7 +77,13 @@ export class FehlendeDateien {
 
   private async dateiVorhanden(sha: string): Promise<boolean> {
     if (this.dateien.vorhanden) return this.dateien.vorhanden(sha);
-    try { const s = await this.dateien.lies(sha); if (!Buffer.isBuffer(s)) s.destroy(); return true; } catch { return false; }
+    try {
+      const s = await this.dateien.lies(sha);
+      if (!Buffer.isBuffer(s)) s.destroy();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -73,11 +95,20 @@ export class FehlendeDateien {
     const shas = [...new Set(alle.map((x) => x.sha256))];
     const fehlt = new Set<string>();
     let i = 0;
-    await Promise.all(Array.from({ length: Math.min(32, shas.length) }, async () => {
-      while (i < shas.length) { const sha = shas[i++]; if (!(await this.dateiVorhanden(sha))) fehlt.add(sha); }
-    }));
+    await Promise.all(
+      Array.from({ length: Math.min(32, shas.length) }, async () => {
+        while (i < shas.length) {
+          const sha = shas[i++];
+          if (!(await this.dateiVorhanden(sha))) fehlt.add(sha);
+        }
+      }),
+    );
     if (fehlt.size) await this.schreibeFehlendeDateien([...(await this.gemerkteFehlendeDateien()), ...fehlt]).catch(() => {});
-    return { dateien: shas.length, fehlend: fehlt.size, dokumente: new Set(alle.filter((x) => fehlt.has(x.sha256)).map((x) => x.dokumentId)).size };
+    return {
+      dateien: shas.length,
+      fehlend: fehlt.size,
+      dokumente: new Set(alle.filter((x) => fehlt.has(x.sha256)).map((x) => x.dokumentId)).size,
+    };
   }
 
   /** Vor einem Strom, dessen Kopf schon unterwegs wäre (ZIP): fehlt eine Datei, gleich ein sauberer Fehler. */
@@ -86,7 +117,12 @@ export class FehlendeDateien {
     for (const d of docs) {
       if (await this.dateien.vorhanden(d.sha256)) continue;
       // Lesen meldet das Fehlen wie überall (einmal ins Protokoll, Hinweis der Übersicht).
-      await this.dateien.lies(d.sha256).then((x) => { if (!Buffer.isBuffer(x)) x.destroy(); }, () => {});
+      await this.dateien.lies(d.sha256).then(
+        (x) => {
+          if (!Buffer.isBuffer(x)) x.destroy();
+        },
+        () => {},
+      );
       throw new DateiFehlt(d.sha256, d.name);
     }
   }

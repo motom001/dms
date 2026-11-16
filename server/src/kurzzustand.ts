@@ -19,7 +19,12 @@ import { poolSperrquelle, Sperrverbindung } from './sperrverbindung';
  */
 
 /** Ein gültiger Eintrag; `bis` null = ohne Ablauf (bis jemand ihn löscht). */
-export interface KurzEintrag { schluessel: string; anzahl: number; wert: unknown; bis: number | null }
+export interface KurzEintrag {
+  schluessel: string;
+  anzahl: number;
+  wert: unknown;
+  bis: number | null;
+}
 
 export interface Kurzzustand {
   /**
@@ -27,7 +32,12 @@ export interface Kurzzustand {
    * beginnt ein neues Fenster von `fensterMs` (null = ohne Ablauf). `gleitend`: Jeder Aufruf schiebt das Ende auf
    * jetzt + `fensterMs`; sonst bleibt das Ende des laufenden Fensters (festes Fenster).
    */
-  zaehle(art: string, schluessel: string, fensterMs: number | null, o?: { gleitend?: boolean; um?: number }): Promise<{ anzahl: number; bis: number | null }>;
+  zaehle(
+    art: string,
+    schluessel: string,
+    fensterMs: number | null,
+    o?: { gleitend?: boolean; um?: number },
+  ): Promise<{ anzahl: number; bis: number | null }>;
   /** Zähler eines gültigen Eintrags erhöhen (Fenster und Wert bleiben); null, wenn es keinen gültigen gibt. */
   erhoehe(art: string, schluessel: string, um?: number): Promise<number | null>;
   /** Gültiger Eintrag oder null. */
@@ -74,30 +84,57 @@ export function speicherKurzzustand(jetzt: () => number = Date.now): Kurzzustand
   const hole = (art: string, s: string) => {
     const e = m.get(k(art, s));
     if (!e) return null;
-    if (!gueltig(e.bis, jetzt())) { m.delete(k(art, s)); return null; }
+    if (!gueltig(e.bis, jetzt())) {
+      m.delete(k(art, s));
+      return null;
+    }
     return e;
   };
-  const aus = (e: { schluessel: string; anzahl: number; wert: unknown; bis: number | null }): KurzEintrag => ({ schluessel: e.schluessel, anzahl: e.anzahl, wert: structuredClone(e.wert), bis: e.bis });
+  const aus = (e: { schluessel: string; anzahl: number; wert: unknown; bis: number | null }): KurzEintrag => ({
+    schluessel: e.schluessel,
+    anzahl: e.anzahl,
+    wert: structuredClone(e.wert),
+    bis: e.bis,
+  });
   return {
     async zaehle(art, s, fensterMs, o = {}) {
       const t = jetzt();
       const um = o.um ?? 1;
       const neuBis = fensterMs === null ? null : t + fensterMs;
       const e = hole(art, s);
-      if (!e) { m.set(k(art, s), { art, schluessel: s, anzahl: um, wert: null, bis: neuBis }); return { anzahl: um, bis: neuBis }; }
+      if (!e) {
+        m.set(k(art, s), { art, schluessel: s, anzahl: um, wert: null, bis: neuBis });
+        return { anzahl: um, bis: neuBis };
+      }
       e.anzahl += um;
       if (o.gleitend) e.bis = neuBis;
       return { anzahl: e.anzahl, bis: e.bis };
     },
-    async erhoehe(art, s, um = 1) { const e = hole(art, s); if (!e) return null; e.anzahl += um; return e.anzahl; },
-    async lies(art, s) { const e = hole(art, s); return e ? aus(e) : null; },
+    async erhoehe(art, s, um = 1) {
+      const e = hole(art, s);
+      if (!e) return null;
+      e.anzahl += um;
+      return e.anzahl;
+    },
+    async lies(art, s) {
+      const e = hole(art, s);
+      return e ? aus(e) : null;
+    },
     async liste(art, praefix = '', max = 10_000) {
       const t = jetzt();
-      return [...m.values()].filter((e) => e.art === art && e.schluessel.startsWith(praefix) && gueltig(e.bis, t))
-        .sort((a, b) => a.schluessel.localeCompare(b.schluessel)).slice(0, max).map(aus);
+      return [...m.values()]
+        .filter((e) => e.art === art && e.schluessel.startsWith(praefix) && gueltig(e.bis, t))
+        .sort((a, b) => a.schluessel.localeCompare(b.schluessel))
+        .slice(0, max)
+        .map(aus);
     },
-    async anzahl(art) { const t = jetzt(); return [...m.values()].filter((e) => e.art === art && gueltig(e.bis, t)).length; },
-    async setze(art, s, wert, bisMs, anzahl = 0) { m.set(k(art, s), { art, schluessel: s, anzahl, wert: structuredClone(wert ?? null), bis: bisMs }); },
+    async anzahl(art) {
+      const t = jetzt();
+      return [...m.values()].filter((e) => e.art === art && gueltig(e.bis, t)).length;
+    },
+    async setze(art, s, wert, bisMs, anzahl = 0) {
+      m.set(k(art, s), { art, schluessel: s, anzahl, wert: structuredClone(wert ?? null), bis: bisMs });
+    },
     async belege(art, s, ms, wert = null) {
       if (hole(art, s)) return false;
       m.set(k(art, s), { art, schluessel: s, anzahl: 0, wert: structuredClone(wert), bis: ms === null ? null : jetzt() + ms });
@@ -105,34 +142,59 @@ export function speicherKurzzustand(jetzt: () => number = Date.now): Kurzzustand
     },
     async belegeAlle(art, liste, ms) {
       const erg = new Set<string>();
-      for (const s of new Set(liste)) if (!hole(art, s)) { m.set(k(art, s), { art, schluessel: s, anzahl: 0, wert: null, bis: jetzt() + ms }); erg.add(s); }
+      for (const s of new Set(liste))
+        if (!hole(art, s)) {
+          m.set(k(art, s), { art, schluessel: s, anzahl: 0, wert: null, bis: jetzt() + ms });
+          erg.add(s);
+        }
       return erg;
     },
-    async nimm(art, s) { const e = hole(art, s); if (!e) return null; m.delete(k(art, s)); return aus(e); },
+    async nimm(art, s) {
+      const e = hole(art, s);
+      if (!e) return null;
+      m.delete(k(art, s));
+      return aus(e);
+    },
     async loesche(art, s, o = {}) {
       let n = 0;
       for (const [x, e] of m) {
         if (e.art !== art) continue;
-        if (s === undefined || (o.praefix ? e.schluessel.startsWith(s) : e.schluessel === s)) { m.delete(x); n++; }
+        if (s === undefined || (o.praefix ? e.schluessel.startsWith(s) : e.schluessel === s)) {
+          m.delete(x);
+          n++;
+        }
       }
       return n;
     },
     async raeumeAuf() {
       const t = jetzt();
       let n = 0;
-      for (const [x, e] of m) if (!gueltig(e.bis, t)) { m.delete(x); n++; }
+      for (const [x, e] of m)
+        if (!gueltig(e.bis, t)) {
+          m.delete(x);
+          n++;
+        }
       return n;
     },
     async exklusiv(name, f) {
       if (belegt.has(name)) return { ok: false };
       belegt.add(name);
-      try { return { ok: true, wert: await f() }; } finally { belegt.delete(name); }
+      try {
+        return { ok: true, wert: await f() };
+      } finally {
+        belegt.delete(name);
+      }
     },
   };
 }
 
 type Zeile = { schluessel: string; anzahl: string | number; wert: unknown; bis: Date | null };
-const eintrag = (r: Zeile): KurzEintrag => ({ schluessel: r.schluessel, anzahl: Number(r.anzahl), wert: r.wert ?? null, bis: r.bis ? r.bis.getTime() : null });
+const eintrag = (r: Zeile): KurzEintrag => ({
+  schluessel: r.schluessel,
+  anzahl: Number(r.anzahl),
+  wert: r.wert ?? null,
+  bis: r.bis ? r.bis.getTime() : null,
+});
 const json = (sql: postgres.Sql, w: unknown) => (w === null || w === undefined ? null : sql.json(w as postgres.JSONValue));
 /** LIKE-Muster für „beginnt mit“ (Sonderzeichen geschützt). */
 const anfang = (s: string) => `${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
@@ -143,7 +205,12 @@ const anfang = (s: string) => `${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
  * aus dem Pool, die während der Arbeit festgehalten wird. Ohne Angabe: eine eigene, aus dem Pool reserviert, solange eine
  * Sperre gehalten wird (Tests, Bausteine).
  */
-export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () => number = Date.now, sperren: Sperrverbindung = new Sperrverbindung(poolSperrquelle(sql))): Kurzzustand {
+export function pgKurzzustand(
+  sql: postgres.Sql,
+  haushaltId: string,
+  jetzt: () => number = Date.now,
+  sperren: Sperrverbindung = new Sperrverbindung(poolSperrquelle(sql)),
+): Kurzzustand {
   const d = (ms: number | null) => (ms === null ? null : new Date(ms));
   return {
     async zaehle(art, s, fensterMs, o = {}) {
@@ -182,7 +249,8 @@ export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () =
       return rs.map(eintrag);
     },
     async anzahl(art) {
-      const [r] = await sql`SELECT count(*)::int AS n FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art} AND (bis IS NULL OR bis > ${new Date(jetzt())})`;
+      const [r] =
+        await sql`SELECT count(*)::int AS n FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art} AND (bis IS NULL OR bis > ${new Date(jetzt())})`;
       return r.n as number;
     },
     async setze(art, s, wert, bisMs, anzahl = 0) {
@@ -218,11 +286,12 @@ export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () =
       return r ? eintrag(r) : null;
     },
     async loesche(art, s, o = {}) {
-      const r = s === undefined
-        ? await sql`DELETE FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art}`
-        : o.praefix
-          ? await sql`DELETE FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art} AND schluessel LIKE ${anfang(s)}`
-          : await sql`DELETE FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art} AND schluessel = ${s}`;
+      const r =
+        s === undefined
+          ? await sql`DELETE FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art}`
+          : o.praefix
+            ? await sql`DELETE FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art} AND schluessel LIKE ${anfang(s)}`
+            : await sql`DELETE FROM kurzzustand WHERE haushalt_id = ${haushaltId} AND art = ${art} AND schluessel = ${s}`;
       return r.count;
     },
     async raeumeAuf() {
@@ -233,7 +302,11 @@ export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () =
       // Sperrverbindung (#1198): Die Sperre hält keine Verbindung aus dem Pool fest – f() hat ihn ganz für sich.
       const s = await sperren.versuche({ klasse: SPERRE_KLASSE, name: `${haushaltId}:${name}` }, name);
       if (!s) return { ok: false };
-      try { return { ok: true, wert: await f() }; } finally { await s.gib().catch(() => {}); }
+      try {
+        return { ok: true, wert: await f() };
+      } finally {
+        await s.gib().catch(() => {});
+      }
     },
   };
 }

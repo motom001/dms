@@ -7,7 +7,12 @@ import { t } from './texte';
 
 /** Empfänger: eine Benutzer-Id, „admins“ (an Administratoren) oder „ohne-vertretung“ (abwesend, ohne Vertreter). */
 export type Faelligkeit = 'ueberfaellig' | 'woche' | 'spaeter' | 'ohne';
-export const FAELLIGKEITEN: Record<Faelligkeit, string> = { ueberfaellig: 'überfällig', woche: t('gemeinsam.aufgabenfilter.diese-woche'), spaeter: 'später', ohne: t('gemeinsam.aufgabenfilter.ohne-datum') };
+export const FAELLIGKEITEN: Record<Faelligkeit, string> = {
+  ueberfaellig: 'überfällig',
+  woche: t('gemeinsam.aufgabenfilter.diese-woche'),
+  spaeter: 'später',
+  ohne: t('gemeinsam.aufgabenfilter.ohne-datum'),
+};
 
 export interface AufgabenFilter {
   empfaenger?: string;
@@ -39,7 +44,10 @@ export function filterAusAdresse(suche: URLSearchParams): AufgabenFilter {
 /** Als Suchteil der Adresse, z. B. „?art=frist&faellig=ueberfaellig“ (leer ohne Filter). */
 export function filterInAdresse(f: AufgabenFilter): string {
   const p = new URLSearchParams();
-  for (const k of SCHLUESSEL) { const v = f[k]; if (v) p.set(k, v); }
+  for (const k of SCHLUESSEL) {
+    const v = f[k];
+    if (v) p.set(k, v);
+  }
   if (f.erledigt) p.set('erledigt', '1');
   const s = p.toString();
   return s ? `?${s}` : '';
@@ -69,9 +77,11 @@ export interface FilterUmfeld {
 export function filtereAufgaben(liste: Aufgabe[], f: AufgabenFilter, u: FilterUmfeld): Aufgabe[] {
   const text = f.text?.toLocaleLowerCase('de-DE');
   return liste.filter((a) => {
-    if (f.empfaenger === 'admins') { if (a.empfaengerId !== null) return false; }
-    else if (f.empfaenger === 'ohne-vertretung') { if (!a.empfaengerId || !u.ohneVertretung(a.empfaengerId)) return false; }
-    else if (f.empfaenger && a.empfaengerId !== f.empfaenger) return false;
+    if (f.empfaenger === 'admins') {
+      if (a.empfaengerId !== null) return false;
+    } else if (f.empfaenger === 'ohne-vertretung') {
+      if (!a.empfaengerId || !u.ohneVertretung(a.empfaengerId)) return false;
+    } else if (f.empfaenger && a.empfaengerId !== f.empfaenger) return false;
     if (f.art && a.art !== f.art) return false;
     if (f.typ && a.typId !== f.typ) return false;
     if (f.faellig && faelligkeit(a.datum, u.jetzt) !== f.faellig) return false;

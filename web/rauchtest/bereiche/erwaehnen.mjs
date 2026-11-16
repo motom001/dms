@@ -11,7 +11,8 @@ import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 /** Zwei Mappen: die eine erwähnt die andere – Ziel und Quelle mit eigenem Namen je Lauf. */
 async function zweiMappen(zusatz) {
   const cookie = await sitzung(LENA);
-  const neu = async (objekt) => (await api('POST', '/api/mappen', { cookie, body: { typId: daten.bausteine.id, werte: { objekt } } })).daten;
+  const neu = async (objekt) =>
+    (await api('POST', '/api/mappen', { cookie, body: { typId: daten.bausteine.id, werte: { objekt } } })).daten;
   return { ziel: await neu(`Erwähnziel ${zusatz}`), quelle: await neu(`Erwähnquelle ${zusatz}`), cookie };
 }
 
@@ -65,7 +66,8 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);
     // Auswahl, erwähnte Mappe und die ganze Werkzeugleiste (#1268: sichtbare Aufschrift im Namen der Knöpfe).
-    for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert', '.neuenotiz .formatleiste'])) funde.push(`Auswahl (${schema}): ${v}`);
+    for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert', '.neuenotiz .formatleiste']))
+      funde.push(`Auswahl (${schema}): ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });

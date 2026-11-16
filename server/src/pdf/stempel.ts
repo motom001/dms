@@ -8,8 +8,20 @@
  * Stempel nicht als eigener, leicht löschbarer Strom übrig bleibt.
  */
 import {
-  BlendMode, PDFArray, PDFContentStream, PDFDocument, PDFName, PDFRawStream, PDFRef, concatTransformationMatrix, decodePDFRawStream,
-  popGraphicsState, pushGraphicsState, rgb, type PDFFont, type PDFPage,
+  BlendMode,
+  PDFArray,
+  PDFContentStream,
+  PDFDocument,
+  PDFName,
+  PDFRawStream,
+  PDFRef,
+  concatTransformationMatrix,
+  decodePDFRawStream,
+  popGraphicsState,
+  pushGraphicsState,
+  rgb,
+  type PDFFont,
+  type PDFPage,
 } from 'pdf-lib';
 import { ersetzePlatzhalter, STEMPEL_FARBEN, stempelLayout, type Stempel } from '../../../shared/src/stempel';
 import { Fachfehler } from '../fehler';
@@ -20,7 +32,9 @@ import { t } from '../sprache';
 
 export interface StempelAuftrag {
   /** Name (nur für Meldungen), Art und Inhalt der Datei: PDF, JPEG oder PNG. */
-  name: string; mime: string; inhalt: Uint8Array;
+  name: string;
+  mime: string;
+  inhalt: Uint8Array;
   stempel: Stempel;
   /** Stempeltext mit ersetzten Platzhaltern; {seite} und {seiten} ersetzt erst diese Stelle je Seite (#799). */
   text: string;
@@ -32,10 +46,18 @@ export interface StempelAuftrag {
 export async function stempelePdf(a: StempelAuftrag): Promise<Buffer> {
   let doc: PDFDocument;
   try {
-    doc = a.mime === 'application/pdf' ? await ladePdf(a.inhalt, { updateMetadata: false }) : await bildDokument(a.inhalt, a.mime === 'image/png');
+    doc =
+      a.mime === 'application/pdf'
+        ? await ladePdf(a.inhalt, { updateMetadata: false })
+        : await bildDokument(a.inhalt, a.mime === 'image/png');
   } catch (x) {
     const verschluesselt = /encrypt/i.test((x as Error).message);
-    throw new Fachfehler(422, verschluesselt ? t('meldungen.stempel.ist-verschluesselt-und-laesst', { name: a.name }) : t('meldungen.stempel.liess-sich-nicht-lesen', { name: a.name }));
+    throw new Fachfehler(
+      422,
+      verschluesselt
+        ? t('meldungen.stempel.ist-verschluesselt-und-laesst', { name: a.name })
+        : t('meldungen.stempel.liess-sich-nicht-lesen', { name: a.name }),
+    );
   }
   // Kaputte Seiten (z. B. kreisförmiger Seitenbaum, falsche Inhalte) zeigen sich erst beim Zeichnen oder Speichern (#823):
   // dann dieselbe verständliche Meldung statt eines Fehlers aus pdf-lib.
@@ -55,7 +77,8 @@ export async function bildAlsA4Pdf(bild: Uint8Array, png: boolean): Promise<Buff
 
 async function bildDokument(bild: Uint8Array, png: boolean): Promise<PDFDocument> {
   const doc = await PDFDocument.create();
-  doc.setProducer('Ablago'); doc.setCreator('Ablago');
+  doc.setProducer('Ablago');
+  doc.setCreator('Ablago');
   const b = png ? await doc.embedPng(eigenerPuffer(bild)) : await doc.embedJpg(eigenerPuffer(bild));
   const quer = b.width > b.height;
   const [w, h] = quer ? [841.89, 595.28] : [595.28, 841.89];
@@ -89,13 +112,18 @@ function rahmen(p: PDFPage) {
   const box = p.getCropBox();
   const r = ((p.getRotation().angle % 360) + 360) % 360;
   const quer = r === 90 || r === 270;
-  const w = quer ? box.height : box.width, h = quer ? box.width : box.height;
+  const w = quer ? box.height : box.width,
+    h = quer ? box.width : box.height;
   const nach = (vx: number, vy: number): { x: number; y: number } => {
     switch (r) {
-      case 90: return { x: box.x + box.width - vy, y: box.y + vx };
-      case 180: return { x: box.x + box.width - vx, y: box.y + box.height - vy };
-      case 270: return { x: box.x + vy, y: box.y + box.height - vx };
-      default: return { x: box.x + vx, y: box.y + vy };
+      case 90:
+        return { x: box.x + box.width - vy, y: box.y + vx };
+      case 180:
+        return { x: box.x + box.width - vx, y: box.y + box.height - vy };
+      case 270:
+        return { x: box.x + vy, y: box.y + box.height - vx };
+      default:
+        return { x: box.x + vx, y: box.y + vy };
     }
   };
   return { w, h, r, nach };
@@ -110,9 +138,12 @@ function zeichneStempel(p: PDFPage, s: Stempel, t: string, font: PDFFont) {
   const L = stempelLayout(s, t, R.w, R.h, (z, g) => font.widthOfTextAtSize(z, g));
   // Lokal (lx, ly; y nach oben) → sichtbar (unten links) → Seite. Im Uhrzeigersinn drehen heißt mathematisch negativ.
   const phi = (-L.winkel * Math.PI) / 180;
-  const cos = Math.cos(phi), sin = Math.sin(phi);
+  const cos = Math.cos(phi),
+    sin = Math.sin(phi);
   const abb = (lx: number, ly: number) => R.nach(L.cx + lx * cos - ly * sin, R.h - L.cy + lx * sin + ly * cos);
-  const o = abb(0, 0), ex = abb(1, 0), ey = abb(0, 1);
+  const o = abb(0, 0),
+    ex = abb(1, 0),
+    ey = abb(0, 1);
   const [rr, gg, bb] = STEMPEL_FARBEN[s.farbe];
   const farbe = rgb(rr, gg, bb);
   const misch = s.tinte ? BlendMode.Multiply : undefined;
@@ -121,9 +152,13 @@ function zeichneStempel(p: PDFPage, s: Stempel, t: string, font: PDFFont) {
     const { b, h, doppelt } = L.rahmen;
     const rand = { borderColor: farbe, borderOpacity: s.deckkraft, opacity: 0, blendMode: misch };
     p.drawRectangle({ x: -b / 2, y: -h / 2, width: b, height: h, borderWidth: doppelt ? 2 : 1.5, ...rand });
-    if (doppelt) { const e = L.groesse * 0.22; p.drawRectangle({ x: -b / 2 + e, y: -h / 2 + e, width: b - 2 * e, height: h - 2 * e, borderWidth: 0.75, ...rand }); }
+    if (doppelt) {
+      const e = L.groesse * 0.22;
+      p.drawRectangle({ x: -b / 2 + e, y: -h / 2 + e, width: b - 2 * e, height: h - 2 * e, borderWidth: 0.75, ...rand });
+    }
   }
-  for (const z of L.zeilen) p.drawText(z.text, { x: z.x, y: -z.y, size: L.groesse, font, color: farbe, opacity: s.deckkraft, blendMode: misch });
+  for (const z of L.zeilen)
+    p.drawText(z.text, { x: z.x, y: -z.y, size: L.groesse, font, color: farbe, opacity: s.deckkraft, blendMode: misch });
   p.pushOperators(popGraphicsState());
 }
 
@@ -147,15 +182,25 @@ function verschmelzeInhalte(doc: PDFDocument, seiten: PDFPage[]) {
       try {
         if (st instanceof PDFRawStream) teile.push(decodePDFRawStream(st).decode());
         else if (st instanceof PDFContentStream) teile.push(st.getUnencodedContents());
-        else { ok = false; break; }
-      } catch { ok = false; break; }
+        else {
+          ok = false;
+          break;
+        }
+      } catch {
+        ok = false;
+        break;
+      }
       if (ref instanceof PDFRef) refs.push(ref);
     }
     if (!ok) continue;
     const laenge = teile.reduce((a, b) => a + b.length + 1, 0);
     const alles = new Uint8Array(laenge);
     let o = 0;
-    for (const b of teile) { alles.set(b, o); o += b.length; alles[o++] = 0x0a; }
+    for (const b of teile) {
+      alles.set(b, o);
+      o += b.length;
+      alles[o++] = 0x0a;
+    }
     p.node.set(PDFName.of('Contents'), ctx.register(ctx.flateStream(alles)));
     for (const r of refs) alt.add(r);
   }
@@ -165,7 +210,11 @@ function verschmelzeInhalte(doc: PDFDocument, seiten: PDFPage[]) {
     const c = p.node.get(PDFName.of('Contents'));
     if (c instanceof PDFRef) benutzt.add(c.toString());
     const arr = p.node.Contents();
-    if (arr instanceof PDFArray) for (let i = 0; i < arr.size(); i++) { const r = arr.get(i); if (r instanceof PDFRef) benutzt.add(r.toString()); }
+    if (arr instanceof PDFArray)
+      for (let i = 0; i < arr.size(); i++) {
+        const r = arr.get(i);
+        if (r instanceof PDFRef) benutzt.add(r.toString());
+      }
   }
   for (const r of alt) if (!benutzt.has(r.toString())) ctx.delete(r);
 }

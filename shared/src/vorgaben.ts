@@ -51,7 +51,11 @@ export function vorgabeVerweis(verweis: string, eigenes: string): { paket: strin
 
 /** Wert eines Felds, der auf eine Vorgabe zeigt: `{ vorgabe: strom }` bzw. `{ vorgabe: "vertraege:strom" }`. */
 export const istVorgabeWert = (w: unknown): w is { vorgabe: string } =>
-  !!w && typeof w === 'object' && !Array.isArray(w) && typeof (w as { vorgabe?: unknown }).vorgabe === 'string' && Object.keys(w).length === 1;
+  !!w &&
+  typeof w === 'object' &&
+  !Array.isArray(w) &&
+  typeof (w as { vorgabe?: unknown }).vorgabe === 'string' &&
+  Object.keys(w).length === 1;
 /** Alle Vorgabe-Verweise in Feldwerten (auch in Listen). */
 export const vorgabeWerte = (werte: Record<string, unknown>): string[] =>
   Object.values(werte).flatMap((w) => (Array.isArray(w) ? w : [w]).filter(istVorgabeWert).map((x) => x.vorgabe));
@@ -60,7 +64,11 @@ export const vorgabeWerte = (werte: Record<string, unknown>): string[] =>
  * Stand einer Vorlage (Markdown-Dokument) nach dem Installieren: Datei im Paket, Dokument in Ablago und sein Prüfwert.
  * Ein Update ersetzt sie nur, solange das Dokument noch genau so ist.
  */
-export interface VorlageStand { datei: string; dokument: string; sha256: string }
+export interface VorlageStand {
+  datei: string;
+  dokument: string;
+  sha256: string;
+}
 /** Was ein Paket über eine seiner Vorgaben weiß (Eintrag des installierten Pakets, `vorgaben`). */
 export interface VorgabeStand {
   /** Mappe in Ablago. */
@@ -75,7 +83,11 @@ export interface VorgabeStand {
   vorlagen?: VorlageStand[];
 }
 /** Vorlagen, die ein Paket an eine Vorgabe eines anderen Pakets angehängt hat (`ergaenzt`). */
-export interface ErgaenzungStand { ziel: string; mappe: string; vorlagen: VorlageStand[] }
+export interface ErgaenzungStand {
+  ziel: string;
+  mappe: string;
+  vorlagen: VorlageStand[];
+}
 
 /**
  * Was eine Installation bzw. ein Update mit einer Vorgabe tut (Vorschau):
@@ -122,7 +134,14 @@ export const fremdeVorgabe = (m: { vorgabe?: string | null } | undefined, paketI
 };
 
 /** Herkunft an der Mappe (GET /mappen/{id}): Vorgabe aus Paket … – eine Kennzeichnung wie bei Paket-Hinweisen. */
-export interface VorgabeHerkunft { paket: string; paketName: string }
+export interface VorgabeHerkunft {
+  paket: string;
+  paketName: string;
+}
 
 /** Vorgaben, die eine Paket-Entfernung stehen lässt oder erst nach Rückfrage mitnimmt (Antwort 409, `vorgaben`). */
-export interface VorgabeFrage { id: string; titel: string; typ: string }
+export interface VorgabeFrage {
+  id: string;
+  titel: string;
+  typ: string;
+}

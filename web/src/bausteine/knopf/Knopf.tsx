@@ -1,4 +1,14 @@
-import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type MouseEvent, type ReactNode, type Ref, type RefObject } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+  type Ref,
+  type RefObject,
+} from 'react';
 import { geheZu } from '../../ort';
 import { Symbol, type SymbolName } from '../../Symbol';
 import { t } from '../../sprache';
@@ -56,7 +66,14 @@ export type GefahrRueckfrage = Omit<Rueckfrage, 'gefahr'> & { mitGrund?: Loeschg
 export type KnopfGesperrt = boolean | string | KnopfSperre | null | undefined;
 
 // Gefahr sieht auf der Seite aus wie Neben (Leitsatz 4); rot gefüllt nur die Entscheidung in der Rückfrage.
-const KLASSEN: Record<Aussehen, string> = { anlegen: 'knopf gruen', haupt: 'knopf primaer', neben: 'knopf', gefahr: 'knopf', entscheidung: 'knopf gefahr', link: 'textknopf' };
+const KLASSEN: Record<Aussehen, string> = {
+  anlegen: 'knopf gruen',
+  haupt: 'knopf primaer',
+  neben: 'knopf',
+  gefahr: 'knopf',
+  entscheidung: 'knopf gefahr',
+  link: 'textknopf',
+};
 
 const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boolean).join(' ');
 
@@ -64,7 +81,11 @@ const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boo
  * Aussehen eines Knopfs für Elemente, die kein `<button>` sind (z. B. `<summary>` einer Aufklappform): Klassen und
  * `data-knopf`. Die Rauchtests erkennen Anlege-Knöpfe an `data-knopf="anlegen"`.
  */
-export function knopfAussehen({ art = 'neben', groesse = 'normal', className }: { art?: Exclude<KnopfArt, 'gefahr'>; groesse?: KnopfGroesse; className?: string } = {}) {
+export function knopfAussehen({
+  art = 'neben',
+  groesse = 'normal',
+  className,
+}: { art?: Exclude<KnopfArt, 'gefahr'>; groesse?: KnopfGroesse; className?: string } = {}) {
   return aussehen(art, groesse, className);
 }
 
@@ -81,7 +102,13 @@ export function sperreAus(g: KnopfGesperrt): KnopfSperre | null {
 
 /** Ist das ein KnopfErgebnis? (Ein Handler darf auch anderes liefern, etwa `true` – das zeigt der Knopf nicht an.) */
 export function istKnopfErgebnis(x: unknown): x is KnopfErgebnis {
-  return !!x && typeof x === 'object' && 'art' in x && 'text' in x && ['gut', 'info', 'warn', 'schlecht'].includes(String((x as KnopfErgebnis).art));
+  return (
+    !!x &&
+    typeof x === 'object' &&
+    'art' in x &&
+    'text' in x &&
+    ['gut', 'info', 'warn', 'schlecht'].includes(String((x as KnopfErgebnis).art))
+  );
 }
 
 /** Text eines abgefangenen Fehlers – wie die übrigen Meldungen der Oberfläche (die API liefert lesbare Texte). */
@@ -99,7 +126,10 @@ export function fehlerText(x: unknown): string {
  * `e.preventDefault()` am Anfang wirkt also wie gewohnt. Für Knöpfe den Baustein `Knopf` nehmen: Der zeigt „läuft“ und
  * den Fehler selbst am Knopf.
  */
-export function abfangen<A extends unknown[]>(fn: (...a: A) => Promise<unknown> | void, zeige: (text: string) => void = alsHinweis): (...a: A) => void {
+export function abfangen<A extends unknown[]>(
+  fn: (...a: A) => Promise<unknown> | void,
+  zeige: (text: string) => void = alsHinweis,
+): (...a: A) => void {
   return (...a: A) => {
     try {
       const r = fn(...a);
@@ -150,8 +180,19 @@ export function Ergebnis({ wert, id, className }: { wert?: KnopfErgebnis | null;
   const ref = useRef<HTMLSpanElement>(null);
   useInsBild(ref, wert);
   return (
-    <span ref={ref} id={id} role="status" aria-live="polite" data-ergebnis={wert?.art} className={klassen(s.ergebnis, wert && s[wert.art], className)}>
-      {wert && <><Symbol name={SYMBOL[wert.art]} className={s.ergebnissymbol} /><span>{wert.text}</span></>}
+    <span
+      ref={ref}
+      id={id}
+      role="status"
+      aria-live="polite"
+      data-ergebnis={wert?.art}
+      className={klassen(s.ergebnis, wert && s[wert.art], className)}>
+      {wert && (
+        <>
+          <Symbol name={SYMBOL[wert.art]} className={s.ergebnissymbol} />
+          <span>{wert.text}</span>
+        </>
+      )}
     </span>
   );
 }
@@ -164,7 +205,11 @@ export function Ergebnis({ wert, id, className }: { wert?: KnopfErgebnis | null;
 export function ErgebnisBlock({ anlass, className, children }: { anlass: unknown; className?: string; children?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useInsBild(ref, anlass);
-  return <div ref={ref} aria-live="polite" className={klassen(s.block, className)}>{children}</div>;
+  return (
+    <div ref={ref} aria-live="polite" className={klassen(s.block, className)}>
+      {children}
+    </div>
+  );
 }
 
 type Grundlage = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'disabled' | 'children' | 'aria-label'>;
@@ -199,10 +244,8 @@ interface KnopfBasis extends Grundlage {
  * Art `gefahr` (Leitsatz 4 und 5) nur mit Symbol und Rückfrage – ohne beides lässt die Typprüfung sie nicht zu. Der
  * Baustein stellt die Rückfrage selbst (Fokus startet auf „Abbrechen“) und ruft `onClick` erst nach „Ja“ auf.
  */
-export type KnopfProps = KnopfBasis & (
-  | { art?: Exclude<KnopfArt, 'gefahr'>; rueckfrage?: undefined }
-  | { art: 'gefahr'; symbol: SymbolName; rueckfrage: GefahrRueckfrage }
-);
+export type KnopfProps = KnopfBasis &
+  ({ art?: Exclude<KnopfArt, 'gefahr'>; rueckfrage?: undefined } | { art: 'gefahr'; symbol: SymbolName; rueckfrage: GefahrRueckfrage });
 
 /**
  * Der Klick samt asynchronem Handler: „läuft“ solange das Promise offen ist, kein zweiter Klick, Fehler und Ergebnis
@@ -214,11 +257,16 @@ function useHandlung(onClick: KnopfProps['onClick'], zu: boolean, ergebnis: Knop
   const [ausgeblendet, setAusgeblendet] = useState(false);
   const sperre = useRef(false);
   // Ein neues Ergebnis von außen zeigt sich wieder, auch wenn ein Klick das vorige ausgeblendet hat.
-  useEffect(() => { setAusgeblendet(false); }, [ergebnis]);
+  useEffect(() => {
+    setAusgeblendet(false);
+  }, [ergebnis]);
 
   async function klick(e: MouseEvent<HTMLButtonElement>) {
     // Gesperrt oder läuft: nichts tun – auch kein Absenden eines Formulars (Enter in einem Feld klickt den Knopf).
-    if (zu || sperre.current) { e.preventDefault(); return; }
+    if (zu || sperre.current) {
+      e.preventDefault();
+      return;
+    }
     let anlass: LoeschAnlass | undefined;
     if (frage) {
       // Gefahr (Leitsatz 5): erst die Rückfrage – solange sie offen ist, kein zweiter Klick und kein „läuft“.
@@ -230,7 +278,9 @@ function useHandlung(onClick: KnopfProps['onClick'], zu: boolean, ergebnis: Knop
           if (!a) return;
           anlass = a;
         } else if (!(await stelleRueckfrage({ ...r, gefahr: true }))) return;
-      } finally { sperre.current = false; }
+      } finally {
+        sperre.current = false;
+      }
     }
     if (!onClick) return;
     setEigen(null);
@@ -249,7 +299,7 @@ function useHandlung(onClick: KnopfProps['onClick'], zu: boolean, ergebnis: Knop
       setLaeuft(false);
     }
   }
-  const zeigen = eigen ?? (ausgeblendet ? null : ergebnis ?? null);
+  const zeigen = eigen ?? (ausgeblendet ? null : (ergebnis ?? null));
   return { laeuft, zeigen, klick };
 }
 
@@ -264,17 +314,46 @@ function Laeuft({ text, nurSymbol }: { text?: string; nurSymbol: boolean }) {
 }
 
 /** Beschriftung samt Symbol; während „läuft“ unsichtbar an ihrem Platz, darüber Kreisel und Text. */
-function Beschriftung({ zeichen, busy, laeuftText, nurSymbol, children }: { zeichen?: SymbolName; busy: boolean; laeuftText?: string; nurSymbol: boolean; children: ReactNode }) {
+function Beschriftung({
+  zeichen,
+  busy,
+  laeuftText,
+  nurSymbol,
+  children,
+}: {
+  zeichen?: SymbolName;
+  busy: boolean;
+  laeuftText?: string;
+  nurSymbol: boolean;
+  children: ReactNode;
+}) {
   return (
     <span className={s.stapel}>
-      <span className={s.text}>{zeichen && <Symbol name={zeichen} />}{children}</span>
+      <span className={s.text}>
+        {zeichen && <Symbol name={zeichen} />}
+        {children}
+      </span>
       {busy && <Laeuft text={laeuftText} nurSymbol={nurSymbol} />}
     </span>
   );
 }
 
 /** Zustände und Verknüpfungen am `<button>`: gesperrt, läuft, Name bei nur Symbol, Grund und Ergebnis. */
-function zustandsAttribute({ gesperrt, busy, grund, nurSymbol, title, beschrieben }: { gesperrt: KnopfGesperrt; busy: boolean; grund: boolean; nurSymbol?: string; title?: string; beschrieben?: string }) {
+function zustandsAttribute({
+  gesperrt,
+  busy,
+  grund,
+  nurSymbol,
+  title,
+  beschrieben,
+}: {
+  gesperrt: KnopfGesperrt;
+  busy: boolean;
+  grund: boolean;
+  nurSymbol?: string;
+  title?: string;
+  beschrieben?: string;
+}) {
   return {
     // Nichts zu tun: disabled – außer während der Knopf selbst läuft (sonst verlöre er den Tastaturfokus).
     disabled: gesperrt === true && !busy,
@@ -290,24 +369,58 @@ function zustandsAttribute({ gesperrt, busy, grund, nurSymbol, title, beschriebe
  * Was der Knopf öffnet: Gefahr die Rückfrage (`aria-haspopup="dialog"`), gesperrt aus einem Grund die Erklärung
  * (`aria-expanded`, `aria-controls`; dazu eine feste `id`, auf die das ⓘ verweist). Sonst gilt, was von außen kommt.
  */
-function oeffnet({ rueckfrage, sperre, offen, ids, type }: { rueckfrage: boolean; sperre: boolean; offen: boolean; ids: { knopf: string; erklaerung: string }; type: KnopfProps['type'] }) {
+function oeffnet({
+  rueckfrage,
+  sperre,
+  offen,
+  ids,
+  type,
+}: {
+  rueckfrage: boolean;
+  sperre: boolean;
+  offen: boolean;
+  ids: { knopf: string; erklaerung: string };
+  type: KnopfProps['type'];
+}) {
   // Gefahr und Sperre senden nie ein Formular ab: erst die Rückfrage bzw. die Erklärung.
-  if (sperre) return { type: 'button' as const, id: ids.knopf, 'aria-expanded': offen, 'aria-controls': offen ? ids.erklaerung : undefined };
+  if (sperre)
+    return { type: 'button' as const, id: ids.knopf, 'aria-expanded': offen, 'aria-controls': offen ? ids.erklaerung : undefined };
   return rueckfrage ? { type: 'button' as const, 'aria-haspopup': 'dialog' as const } : { type };
 }
 
 /** Eigener Verweis auf das `<button>` und der von außen (`ref`) zugleich. */
-function useVerweise(aussen: Ref<HTMLButtonElement> | undefined): [RefObject<HTMLButtonElement | null>, (el: HTMLButtonElement | null) => void] {
+function useVerweise(
+  aussen: Ref<HTMLButtonElement> | undefined,
+): [RefObject<HTMLButtonElement | null>, (el: HTMLButtonElement | null) => void] {
   const eigen = useRef<HTMLButtonElement | null>(null);
   const setze = (el: HTMLButtonElement | null) => {
     eigen.current = el;
-    if (typeof aussen === 'function') aussen(el); else if (aussen) aussen.current = el;
+    if (typeof aussen === 'function') aussen(el);
+    else if (aussen) aussen.current = el;
   };
   return [eigen, setze];
 }
 
 export function Knopf(props: KnopfProps) {
-  const { art = 'neben', groesse, children, gesperrt, laeuft, laeuftText, ergebnis, nurSymbol, symbol, rueckfrage, erklaerungOffen, onClick, type = 'button', className, title, ref, ...rest } = props;
+  const {
+    art = 'neben',
+    groesse,
+    children,
+    gesperrt,
+    laeuft,
+    laeuftText,
+    ergebnis,
+    nurSymbol,
+    symbol,
+    rueckfrage,
+    erklaerungOffen,
+    onClick,
+    type = 'button',
+    className,
+    title,
+    ref,
+    ...rest
+  } = props;
   const basis = useId();
   const sperre = sperreAus(gesperrt);
   const [offen, setOffen] = useState(!!erklaerungOffen);
@@ -326,17 +439,32 @@ export function Knopf(props: KnopfProps) {
       {...aussehen(art, groesse, klassen(nurSymbol && s.symbol, sperre && s.gesperrt, className))}
       {...zustandsAttribute({ gesperrt, busy, grund: !!sperre, nurSymbol, title, beschrieben })}
       {...oeffnet({ rueckfrage: !!rueckfrage, sperre: !!sperre, offen, ids, type })}
-      onClick={(e) => { if (sperre && !busy) setOffen(!offen); else void h.klick(e); }}
-    >
-      <Beschriftung zeichen={zeichen} busy={busy} laeuftText={laeuftText} nurSymbol={!!nurSymbol}>{children}</Beschriftung>
+      onClick={(e) => {
+        if (sperre && !busy) setOffen(!offen);
+        else void h.klick(e);
+      }}>
+      <Beschriftung zeichen={zeichen} busy={busy} laeuftText={laeuftText} nurSymbol={!!nurSymbol}>
+        {children}
+      </Beschriftung>
     </button>
   );
 
   return (
     <>
-      {sperre
-        ? <Erklaerung sperre={sperre} knopf={knopf} knopfRef={eigen} knopfId={ids.knopf} grundId={ids.grund} erklaerungId={ids.erklaerung} offen={offen} setOffen={setOffen} />
-        : knopf}
+      {sperre ? (
+        <Erklaerung
+          sperre={sperre}
+          knopf={knopf}
+          knopfRef={eigen}
+          knopfId={ids.knopf}
+          grundId={ids.grund}
+          erklaerungId={ids.erklaerung}
+          offen={offen}
+          setOffen={setOffen}
+        />
+      ) : (
+        knopf
+      )}
       {(!!onClick || ergebnis !== undefined) && <Ergebnis wert={h.zeigen} id={ids.ergebnis} />}
     </>
   );
@@ -346,10 +474,22 @@ export function Knopf(props: KnopfProps) {
  * Bestätigungsknopf der Rückfrage (#1210, Leitsatz 5): rot gefüllt bei Gefahr, sonst blau. Nur für den Baustein
  * `Rueckfragen` – nicht in index.ts, damit es auf der Seite nichts Rotes gibt.
  */
-export function BestaetigenKnopf({ gefahr, children, gesperrt, ref }: { gefahr?: boolean; children: ReactNode; gesperrt?: boolean; ref?: Ref<HTMLButtonElement> }) {
+export function BestaetigenKnopf({
+  gefahr,
+  children,
+  gesperrt,
+  ref,
+}: {
+  gefahr?: boolean;
+  children: ReactNode;
+  gesperrt?: boolean;
+  ref?: Ref<HTMLButtonElement>;
+}) {
   return (
     <button ref={ref} type="submit" disabled={gesperrt} {...aussehen(gefahr ? 'entscheidung' : 'haupt')}>
-      <span className={s.stapel}><span className={s.text}>{children}</span></span>
+      <span className={s.stapel}>
+        <span className={s.text}>{children}</span>
+      </span>
     </button>
   );
 }
@@ -373,5 +513,9 @@ export function KnopfLink({ to, art = 'neben', groesse = 'normal', className, ti
     e.preventDefault();
     geheZu(to);
   };
-  return <a href={to} onClick={klick} title={title} data-anker={anker} {...aussehen(art, groesse, className)}>{children}</a>;
+  return (
+    <a href={to} onClick={klick} title={title} data-anker={anker} {...aussehen(art, groesse, className)}>
+      {children}
+    </a>
+  );
 }

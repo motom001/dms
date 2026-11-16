@@ -16,13 +16,19 @@ export async function fundstellenFuer<T extends { datei: File }>(liste: T[], ohn
   const mitWert: Array<[T, string]> = [];
   for (const x of liste) {
     if (!x.datei.size || x.datei.size > 100 * 1024 * 1024) continue;
-    try { mitWert.push([x, await pruefwert(x.datei)]); } catch { /* nicht lesbar: ohne Hinweis hochladen */ }
+    try {
+      mitWert.push([x, await pruefwert(x.datei)]);
+    } catch {
+      /* nicht lesbar: ohne Hinweis hochladen */
+    }
   }
   if (!mitWert.length) return erg;
   try {
     const { fundstellen } = await dokumenteApi.gleicheDateien([...new Set(mitWert.map(([, w]) => w))].slice(0, 100), ohneMappe);
     for (const [x, w] of mitWert) if (fundstellen[w]?.length) erg.set(x, fundstellen[w]);
-  } catch { /* Prüfung ist eine Hilfe – ohne sie geht das Hochladen normal weiter */ }
+  } catch {
+    /* Prüfung ist eine Hilfe – ohne sie geht das Hochladen normal weiter */
+  }
   return erg;
 }
 
@@ -32,12 +38,24 @@ const tag = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(), {
 export function Fundstellen({ f, beiKlick }: { f: Fundstelle[]; beiKlick?: () => void }) {
   return (
     <span className="doppelt klein">
-      {t('ablage.doppelt.diese-datei-liegt-schon')}{' '}{f.map((x, i) => (
-        <span key={`${x.mappeId}-${i}`} onClick={beiKlick}>{i > 0 && (i === f.length - 1 ? ` ${t('ablage.doppelt.und')} ` : ', ')}
-          <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(x.titel)}</Link>
-          {' '}<span className="leise">{t('ablage.doppelt.register-hochgeladen-am', { wert: x.typ ? `${x.typ}, ` : '', register: x.register, name: x.name, tag: tag(x.erstellt) })}</span>
+      {t('ablage.doppelt.diese-datei-liegt-schon')}{' '}
+      {f.map((x, i) => (
+        <span key={`${x.mappeId}-${i}`} onClick={beiKlick}>
+          {i > 0 && (i === f.length - 1 ? ` ${t('ablage.doppelt.und')} ` : ', ')}
+          <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">
+            {titelOder(x.titel)}
+          </Link>{' '}
+          <span className="leise">
+            {t('ablage.doppelt.register-hochgeladen-am', {
+              wert: x.typ ? `${x.typ}, ` : '',
+              register: x.register,
+              name: x.name,
+              tag: tag(x.erstellt),
+            })}
+          </span>
         </span>
-      ))}.
+      ))}
+      .
     </span>
   );
 }

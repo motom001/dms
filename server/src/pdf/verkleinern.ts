@@ -26,7 +26,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
-  PDFArray, PDFDict, PDFDocument, PDFName, PDFNumber, PDFObjectCopier, PDFRawStream, PDFRef, PDFStream, decodePDFRawStream,
+  PDFArray,
+  PDFDict,
+  PDFDocument,
+  PDFName,
+  PDFNumber,
+  PDFObjectCopier,
+  PDFRawStream,
+  PDFRef,
+  PDFStream,
+  decodePDFRawStream,
   type PDFObject,
 } from 'pdf-lib';
 import { Fachfehler } from '../fehler';
@@ -42,9 +51,12 @@ type Matrix = [number, number, number, number, number, number];
 const EINS: Matrix = [1, 0, 0, 1, 0, 0];
 /** m × ctm (PDF-Konvention: neue CTM = cm-Matrix × alte CTM). */
 const mal = (m: Matrix, c: Matrix): Matrix => [
-  m[0] * c[0] + m[1] * c[2], m[0] * c[1] + m[1] * c[3],
-  m[2] * c[0] + m[3] * c[2], m[2] * c[1] + m[3] * c[3],
-  m[4] * c[0] + m[5] * c[2] + c[4], m[4] * c[1] + m[5] * c[3] + c[5],
+  m[0] * c[0] + m[1] * c[2],
+  m[0] * c[1] + m[1] * c[3],
+  m[2] * c[0] + m[3] * c[2],
+  m[2] * c[1] + m[3] * c[3],
+  m[4] * c[0] + m[5] * c[2] + c[4],
+  m[4] * c[1] + m[5] * c[3] + c[5],
 ];
 
 const WEISS = new Set([0x00, 0x09, 0x0a, 0x0c, 0x0d, 0x20]);
@@ -62,40 +74,99 @@ export function operatoren(daten: Uint8Array, f: (op: string, args: Array<number
   const td = new TextDecoder('latin1');
   while (i < n) {
     const b = daten[i];
-    if (WEISS.has(b)) { i++; continue; }
-    if (b === 0x25) { while (i < n && daten[i] !== 0x0a && daten[i] !== 0x0d) i++; continue; }
-    if (b === 0x28) { // (Zeichenkette) mit Klammerung und Escapes
-      let tiefe = 1; i++;
-      while (i < n && tiefe > 0) { const c = daten[i]; if (c === 0x5c) i += 2; else { if (c === 0x28) tiefe++; else if (c === 0x29) tiefe--; i++; } }
-      stapel.push(null); continue;
+    if (WEISS.has(b)) {
+      i++;
+      continue;
+    }
+    if (b === 0x25) {
+      while (i < n && daten[i] !== 0x0a && daten[i] !== 0x0d) i++;
+      continue;
+    }
+    if (b === 0x28) {
+      // (Zeichenkette) mit Klammerung und Escapes
+      let tiefe = 1;
+      i++;
+      while (i < n && tiefe > 0) {
+        const c = daten[i];
+        if (c === 0x5c) i += 2;
+        else {
+          if (c === 0x28) tiefe++;
+          else if (c === 0x29) tiefe--;
+          i++;
+        }
+      }
+      stapel.push(null);
+      continue;
     }
     if (b === 0x3c) {
-      if (daten[i + 1] === 0x3c) { i += 2; stapel.push(null); continue; }
+      if (daten[i + 1] === 0x3c) {
+        i += 2;
+        stapel.push(null);
+        continue;
+      }
       while (i < n && daten[i] !== 0x3e) i++;
-      i++; stapel.push(null); continue;
+      i++;
+      stapel.push(null);
+      continue;
     }
-    if (b === 0x3e) { i += daten[i + 1] === 0x3e ? 2 : 1; continue; }
-    if (b === 0x5b || b === 0x5d || b === 0x7b || b === 0x7d) { i++; stapel.push(null); continue; }
-    if (b === 0x29) { i++; continue; }
-    if (b === 0x2f) { // /Name
+    if (b === 0x3e) {
+      i += daten[i + 1] === 0x3e ? 2 : 1;
+      continue;
+    }
+    if (b === 0x5b || b === 0x5d || b === 0x7b || b === 0x7d) {
+      i++;
+      stapel.push(null);
+      continue;
+    }
+    if (b === 0x29) {
+      i++;
+      continue;
+    }
+    if (b === 0x2f) {
+      // /Name
       let j = i + 1;
       while (j < n && regulaer(daten[j])) j++;
       stapel.push(td.decode(daten.subarray(i + 1, j)).replace(/#([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16))));
-      i = j; continue;
+      i = j;
+      continue;
     }
     let j = i;
     while (j < n && regulaer(daten[j])) j++;
-    if (j === i) { i++; continue; }
+    if (j === i) {
+      i++;
+      continue;
+    }
     const wort = td.decode(daten.subarray(i, j));
     i = j;
-    if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(wort)) { stapel.push(Number(wort)); continue; }
-    if (wort === 'true' || wort === 'false' || wort === 'null') { stapel.push(null); continue; }
+    if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(wort)) {
+      stapel.push(Number(wort));
+      continue;
+    }
+    if (wort === 'true' || wort === 'false' || wort === 'null') {
+      stapel.push(null);
+      continue;
+    }
     if (wort === 'BI') {
       // Eingebettetes Bild: bis „ID“, dann Binärdaten bis „EI“ zwischen Leerraum.
-      while (i < n - 1 && !(daten[i] === 0x49 && daten[i + 1] === 0x44 && WEISS.has(daten[i - 1]) && (i + 2 >= n || WEISS.has(daten[i + 2])))) i++;
+      while (
+        i < n - 1 &&
+        !(daten[i] === 0x49 && daten[i + 1] === 0x44 && WEISS.has(daten[i - 1]) && (i + 2 >= n || WEISS.has(daten[i + 2])))
+      )
+        i++;
       i += 3;
-      while (i < n - 1 && !(daten[i] === 0x45 && daten[i + 1] === 0x49 && WEISS.has(daten[i - 1]) && (i + 2 >= n || WEISS.has(daten[i + 2]) || TRENNER.has(daten[i + 2])))) i++;
-      i += 2; stapel = []; continue;
+      while (
+        i < n - 1 &&
+        !(
+          daten[i] === 0x45 &&
+          daten[i + 1] === 0x49 &&
+          WEISS.has(daten[i - 1]) &&
+          (i + 2 >= n || WEISS.has(daten[i + 2]) || TRENNER.has(daten[i + 2]))
+        )
+      )
+        i++;
+      i += 2;
+      stapel = [];
+      continue;
     }
     f(wort, stapel);
     stapel = [];
@@ -109,12 +180,17 @@ function entpacke(st: PDFObject | undefined): Uint8Array | null {
   try {
     if (st instanceof PDFRawStream) return decodePDFRawStream(st).decode();
     if (st instanceof PDFStream) return st.getContents();
-  } catch { /* unbekannter Filter */ }
+  } catch {
+    /* unbekannter Filter */
+  }
   return null;
 }
 
 /** Wo ein Bild erscheint: größte Breite und Höhe auf einer Seite (Zoll). */
-interface Platzierung { breiteZoll: number; hoeheZoll: number }
+interface Platzierung {
+  breiteZoll: number;
+  hoeheZoll: number;
+}
 
 /** Alle Bilder, die auf den Seiten gezeichnet werden, mit ihrer größten Darstellung. */
 function verorte(doc: PDFDocument): Map<string, { ref: PDFRef; p: Platzierung }> {
@@ -129,7 +205,8 @@ function verorte(doc: PDFDocument): Map<string, { ref: PDFRef; p: Platzierung }>
       if (++schritte > 5_000_000) throw new Error('Zu viele Zeichenbefehle.');
       if (op === 'q') stapel.push(ctm);
       else if (op === 'Q') ctm = stapel.pop() ?? ctm;
-      else if (op === 'cm' && args.length >= 6 && args.slice(-6).every((x) => typeof x === 'number')) ctm = mal(args.slice(-6) as Matrix, ctm);
+      else if (op === 'cm' && args.length >= 6 && args.slice(-6).every((x) => typeof x === 'number'))
+        ctm = mal(args.slice(-6) as Matrix, ctm);
       else if (op === 'Do' && xo && typeof args[args.length - 1] === 'string') {
         const roh = xo.get(PDFName.of(args[args.length - 1] as string));
         if (!(roh instanceof PDFRef)) return;
@@ -137,15 +214,18 @@ function verorte(doc: PDFDocument): Map<string, { ref: PDFRef; p: Platzierung }>
         if (!(st instanceof PDFStream)) return;
         const art = st.dict.get(PDFName.of('Subtype'));
         if (art === PDFName.of('Image')) {
-          const b = Math.hypot(ctm[0], ctm[1]) / 72, h = Math.hypot(ctm[2], ctm[3]) / 72;
+          const b = Math.hypot(ctm[0], ctm[1]) / 72,
+            h = Math.hypot(ctm[2], ctm[3]) / 72;
           const alt = bilder.get(roh.toString());
-          if (alt) { alt.p.breiteZoll = Math.max(alt.p.breiteZoll, b); alt.p.hoeheZoll = Math.max(alt.p.hoeheZoll, h); }
-          else bilder.set(roh.toString(), { ref: roh, p: { breiteZoll: b, hoeheZoll: h } });
+          if (alt) {
+            alt.p.breiteZoll = Math.max(alt.p.breiteZoll, b);
+            alt.p.hoeheZoll = Math.max(alt.p.hoeheZoll, h);
+          } else bilder.set(roh.toString(), { ref: roh, p: { breiteZoll: b, hoeheZoll: h } });
         } else if (art === PDFName.of('Form') && tiefe < 12) {
           const daten = entpacke(st);
           if (!daten) return;
           const m = ctx.lookupMaybe(st.dict.get(PDFName.of('Matrix')), PDFArray);
-          const fm = m && m.size() === 6 ? Array.from({ length: 6 }, (_, k) => zahl(ctx.lookup(m.get(k))) ?? 0) as Matrix : EINS;
+          const fm = m && m.size() === 6 ? (Array.from({ length: 6 }, (_, k) => zahl(ctx.lookup(m.get(k))) ?? 0) as Matrix) : EINS;
           const eigene = ctx.lookupMaybe(st.dict.get(PDFName.of('Resources')), PDFDict);
           lauf(daten, eigene ?? res, mal(fm, ctm), tiefe + 1);
         }
@@ -155,8 +235,15 @@ function verorte(doc: PDFDocument): Map<string, { ref: PDFRef; p: Platzierung }>
   for (const seite of doc.getPages()) {
     const c = seite.node.Contents();
     const teile: Uint8Array[] = [];
-    if (c instanceof PDFArray) for (let k = 0; k < c.size(); k++) { const d = entpacke(ctx.lookup(c.get(k))); if (d) teile.push(d, new Uint8Array([0x0a])); }
-    else if (c) { const d = entpacke(c); if (d) teile.push(d); }
+    if (c instanceof PDFArray)
+      for (let k = 0; k < c.size(); k++) {
+        const d = entpacke(ctx.lookup(c.get(k)));
+        if (d) teile.push(d, new Uint8Array([0x0a]));
+      }
+    else if (c) {
+      const d = entpacke(c);
+      if (d) teile.push(d);
+    }
     const alles = Buffer.concat(teile);
     const ur = zahl(ctx.lookup(seite.node.get(PDFName.of('UserUnit'))));
     const start: Matrix = ur && ur !== 1 ? [ur, 0, 0, ur, 0, 0] : EINS;
@@ -168,7 +255,12 @@ function verorte(doc: PDFDocument): Map<string, { ref: PDFRef; p: Platzierung }>
 /* ---------- Welche Bilder, wie groß ---------- */
 
 interface BildInfo {
-  ref: PDFRef; breite: number; hoehe: number; bytes: number; filter: string; grau: boolean;
+  ref: PDFRef;
+  breite: number;
+  hoehe: number;
+  bytes: number;
+  filter: string;
+  grau: boolean;
   /** Größte Darstellung auf einer Seite (Zoll). */
   p: Platzierung;
   /** Warum das Bild nicht angefasst wird. */
@@ -178,7 +270,11 @@ interface BildInfo {
 function filterVon(d: PDFDict, ctx: PDFDocument['context']): string {
   const f = ctx.lookup(d.get(PDFName.of('Filter')));
   if (f instanceof PDFName) return f.decodeText();
-  if (f instanceof PDFArray) return f.asArray().map((x) => (ctx.lookup(x) as PDFName)?.decodeText?.() ?? '').join('+');
+  if (f instanceof PDFArray)
+    return f
+      .asArray()
+      .map((x) => (ctx.lookup(x) as PDFName)?.decodeText?.() ?? '')
+      .join('+');
   return '';
 }
 
@@ -187,11 +283,19 @@ function farbraum(o: PDFObject | undefined, ctx: PDFDocument['context']): 'grau'
   const cs = ctx.lookup(o);
   if (cs instanceof PDFName) {
     const n = cs.decodeText();
-    return n === 'DeviceGray' || n === 'CalGray' || n === 'G' ? 'grau' : n === 'DeviceRGB' || n === 'DeviceCMYK' || n === 'CalRGB' || n === 'RGB' || n === 'CMYK' ? 'farbe' : 'nein';
+    return n === 'DeviceGray' || n === 'CalGray' || n === 'G'
+      ? 'grau'
+      : n === 'DeviceRGB' || n === 'DeviceCMYK' || n === 'CalRGB' || n === 'RGB' || n === 'CMYK'
+        ? 'farbe'
+        : 'nein';
   }
   if (cs instanceof PDFArray && cs.size()) {
     const art = (ctx.lookup(cs.get(0)) as PDFName | undefined)?.decodeText?.();
-    if (art === 'ICCBased') { const st = ctx.lookup(cs.get(1)); const nn = st instanceof PDFStream ? zahl(ctx.lookup(st.dict.get(PDFName.of('N')))) : undefined; return nn === 1 ? 'grau' : nn === 3 || nn === 4 ? 'farbe' : 'nein'; }
+    if (art === 'ICCBased') {
+      const st = ctx.lookup(cs.get(1));
+      const nn = st instanceof PDFStream ? zahl(ctx.lookup(st.dict.get(PDFName.of('N')))) : undefined;
+      return nn === 1 ? 'grau' : nn === 3 || nn === 4 ? 'farbe' : 'nein';
+    }
     if (art === 'CalGray') return 'grau';
     if (art === 'CalRGB' || art === 'Lab' || art === 'Indexed' || art === 'I') return 'farbe';
   }
@@ -205,7 +309,8 @@ function bildInfos(doc: PDFDocument): BildInfo[] {
     const st = ctx.lookup(ref);
     if (!(st instanceof PDFRawStream)) continue;
     const d = st.dict;
-    const breite = zahl(ctx.lookup(d.get(PDFName.of('Width')))) ?? 0, hoehe = zahl(ctx.lookup(d.get(PDFName.of('Height')))) ?? 0;
+    const breite = zahl(ctx.lookup(d.get(PDFName.of('Width')))) ?? 0,
+      hoehe = zahl(ctx.lookup(d.get(PDFName.of('Height')))) ?? 0;
     const bpc = zahl(ctx.lookup(d.get(PDFName.of('BitsPerComponent'))));
     const filter = filterVon(d, ctx);
     const fr = farbraum(d.get(PDFName.of('ColorSpace')), ctx);
@@ -234,7 +339,11 @@ const MIN_SCHRUMPF = 0.85;
 /** Typische Bytes je Bildpunkt eines JPEG bei der Qualität der Stufe (Farbe; Grau etwa 60 %). */
 const BPP: Record<Stufe, number> = { bildschirm: 0.1, standard: 0.14, druck: 0.2 };
 
-interface Plan { b: BildInfo; breite: number; hoehe: number }
+interface Plan {
+  b: BildInfo;
+  breite: number;
+  hoehe: number;
+}
 function plane(bilder: BildInfo[], stufe: Stufe): Plan[] {
   const { dpi } = STUFEN[stufe];
   const r: Plan[] = [];
@@ -280,7 +389,11 @@ async function lade(inhalt: Buffer): Promise<PDFDocument> {
 export async function analysiere(inhalt: Buffer): Promise<Analyse> {
   const doc = await lade(inhalt);
   let bilder: BildInfo[];
-  try { bilder = bildInfos(doc); } catch { bilder = []; }
+  try {
+    bilder = bildInfos(doc);
+  } catch {
+    bilder = [];
+  }
   const stufen = {} as Analyse['stufen'];
   for (const s of Object.keys(STUFEN) as Stufe[]) {
     const plaene = plane(bilder, s);
@@ -295,8 +408,11 @@ export async function analysiere(inhalt: Buffer): Promise<Analyse> {
   }
   const sichtbar = bilder.filter((b) => !b.aus);
   return {
-    groesse: inhalt.length, seiten: doc.getPageCount(), bilder: bilder.length,
-    hoechsteDpi: sichtbar.length ? Math.max(...sichtbar.map(wirksameDpi)) : null, stufen,
+    groesse: inhalt.length,
+    seiten: doc.getPageCount(),
+    bilder: bilder.length,
+    hoechsteDpi: sichtbar.length ? Math.max(...sichtbar.map(wirksameDpi)) : null,
+    stufen,
   };
 }
 
@@ -328,17 +444,32 @@ async function rechne(doc: PDFDocument, plaene: Plan[], grau: boolean, qualitaet
     const ref = mini.context.register(st);
     const seite = mini.addPage([p.breite, p.hoehe]);
     const name = seite.node.newXObject('Bild', ref);
-    seite.node.set(PDFName.of('Contents'), mini.context.register(mini.context.flateStream(`q ${p.breite} 0 0 ${p.hoehe} 0 0 cm ${name.toString()} Do Q`)));
+    seite.node.set(
+      PDFName.of('Contents'),
+      mini.context.register(mini.context.flateStream(`q ${p.breite} 0 0 ${p.hoehe} 0 0 cm ${name.toString()} Do Q`)),
+    );
   }
   const ein = join(dir, `${tag}.pdf`);
   await writeFile(ein, await mini.save());
   try {
-    await starte('pdftoppm', ['-r', '72', '-jpeg', '-jpegopt', `quality=${qualitaet},optimize=y`, '-aaVector', 'no', ...(grau ? ['-gray'] : []), ein, join(dir, tag)]);
+    await starte('pdftoppm', [
+      '-r',
+      '72',
+      '-jpeg',
+      '-jpegopt',
+      `quality=${qualitaet},optimize=y`,
+      '-aaVector',
+      'no',
+      ...(grau ? ['-gray'] : []),
+      ein,
+      join(dir, tag),
+    ]);
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new Fachfehler(503, t('meldungen.verkleinern.pdftoppm-fehlt-pdfs-lassen'));
     throw new Fachfehler(422, t('meldungen.verkleinern.die-bilder-liessen-sich', { message: (e as Error).message }));
   }
-  const dateien = (await readdir(dir)).filter((n) => n.startsWith(`${tag}-`) && n.endsWith('.jpg'))
+  const dateien = (await readdir(dir))
+    .filter((n) => n.startsWith(`${tag}-`) && n.endsWith('.jpg'))
     .sort((a, b) => Number(a.slice(tag.length + 1, -4)) - Number(b.slice(tag.length + 1, -4)));
   if (dateien.length !== plaene.length) throw new Fachfehler(422, t('meldungen.verkleinern.die-bilder-liessen-sich-2'));
   return Promise.all(dateien.map((n) => readFile(join(dir, n))));
@@ -348,12 +479,18 @@ async function rechne(doc: PDFDocument, plaene: Plan[], grau: boolean, qualitaet
 function ersetzeVerweise(o: PDFObject, karte: Map<string, PDFRef>): void {
   if (o instanceof PDFDict) {
     for (const [k, v] of o.entries()) {
-      if (v instanceof PDFRef) { const z = karte.get(v.toString()); if (z) o.set(k, z); } else ersetzeVerweise(v, karte);
+      if (v instanceof PDFRef) {
+        const z = karte.get(v.toString());
+        if (z) o.set(k, z);
+      } else ersetzeVerweise(v, karte);
     }
   } else if (o instanceof PDFArray) {
     for (let i = 0; i < o.size(); i++) {
       const v = o.get(i);
-      if (v instanceof PDFRef) { const z = karte.get(v.toString()); if (z) o.set(i, z); } else ersetzeVerweise(v, karte);
+      if (v instanceof PDFRef) {
+        const z = karte.get(v.toString());
+        if (z) o.set(i, z);
+      } else ersetzeVerweise(v, karte);
     }
   } else if (o instanceof PDFStream) ersetzeVerweise(o.dict, karte);
 }
@@ -367,10 +504,15 @@ function legeDoppelteZusammen(doc: PDFDocument): number {
     if (!(o instanceof PDFRawStream) || o.getContentsSize() < 256) continue;
     const typ = o.dict.get(PDFName.of('Type'));
     if (typ === PDFName.of('ObjStm') || typ === PDFName.of('XRef')) continue;
-    const kopf = [...o.dict.entries()].filter(([k]) => k !== PDFName.of('Length')).map(([k, v]) => `${k.toString()} ${v.toString()}`).sort().join('|');
+    const kopf = [...o.dict.entries()]
+      .filter(([k]) => k !== PDFName.of('Length'))
+      .map(([k, v]) => `${k.toString()} ${v.toString()}`)
+      .sort()
+      .join('|');
     const h = createHash('sha256').update(kopf).update(o.getContents()).digest('hex');
     const da = gesehen.get(h);
-    if (da) karte.set(ref.toString(), da); else gesehen.set(h, ref);
+    if (da) karte.set(ref.toString(), da);
+    else gesehen.set(h, ref);
   }
   if (!karte.size) return 0;
   for (const [, o] of ctx.enumerateIndirectObjects()) ersetzeVerweise(o, karte);
@@ -388,8 +530,12 @@ function entferneUnbenutzte(doc: PDFDocument): number {
   const erreicht = new Set<string>();
   const offen: PDFObject[] = [];
   const merke = (o: PDFObject | undefined) => {
-    if (o instanceof PDFRef) { if (erreicht.has(o.toString())) return; erreicht.add(o.toString()); const z = ctx.lookup(o); if (z) offen.push(z); }
-    else if (o) offen.push(o);
+    if (o instanceof PDFRef) {
+      if (erreicht.has(o.toString())) return;
+      erreicht.add(o.toString());
+      const z = ctx.lookup(o);
+      if (z) offen.push(z);
+    } else if (o) offen.push(o);
   };
   merke(ctx.trailerInfo.Root as PDFObject | undefined);
   merke(ctx.trailerInfo.Info as PDFObject | undefined);
@@ -400,7 +546,11 @@ function entferneUnbenutzte(doc: PDFDocument): number {
     else if (o instanceof PDFStream) for (const [, v] of o.dict.entries()) merke(v);
   }
   let n = 0;
-  for (const [ref] of ctx.enumerateIndirectObjects()) if (!erreicht.has(ref.toString())) { ctx.delete(ref); n++; }
+  for (const [ref] of ctx.enumerateIndirectObjects())
+    if (!erreicht.has(ref.toString())) {
+      ctx.delete(ref);
+      n++;
+    }
   return n;
 }
 
@@ -422,7 +572,10 @@ function komprimiere(doc: PDFDocument): void {
 /** qpdf vorhanden? Einmal nachsehen. */
 let qpdfDa: Promise<boolean> | undefined;
 export function hatQpdf(): Promise<boolean> {
-  qpdfDa ??= starte('qpdf', ['--version'], 10_000).then(() => true, () => false);
+  qpdfDa ??= starte('qpdf', ['--version'], 10_000).then(
+    () => true,
+    () => false,
+  );
   return qpdfDa;
 }
 
@@ -449,7 +602,11 @@ export async function verkleinere(inhalt: Buffer, stufe: Stufe = STANDARD_STUFE)
   const { qualitaet } = STUFEN[stufe];
   const hinweise: Ergebnis['hinweise'] = [];
   let plaene: Plan[] = [];
-  try { plaene = plane(bildInfos(doc), stufe); } catch (e) { hinweise.push({ text: t('meldungen.verkleinern.pdf-verkleinern-bilder-nicht'), fehler: (e as Error).message }); }
+  try {
+    plaene = plane(bildInfos(doc), stufe);
+  } catch (e) {
+    hinweise.push({ text: t('meldungen.verkleinern.pdf-verkleinern-bilder-nicht'), fehler: (e as Error).message });
+  }
   const dir = await mkdtemp(join(tmpdir(), 'dms-klein-'));
   let neu = 0;
   try {
@@ -463,8 +620,13 @@ export async function verkleinere(inhalt: Buffer, stufe: Stufe = STANDARD_STUFE)
         if (!m || (m.komponenten !== 1 && m.komponenten !== 3)) return; // unerwartetes JPEG: Bild bleibt, wie es ist
         const alt = doc.context.lookup(p.b.ref) as PDFRawStream;
         const d = doc.context.obj({
-          Type: 'XObject', Subtype: 'Image', Width: m.breite, Height: m.hoehe,
-          ColorSpace: t('meldungen.verkleinern.devicergb', { anzahl: m.komponenten }), BitsPerComponent: 8, Filter: 'DCTDecode',
+          Type: 'XObject',
+          Subtype: 'Image',
+          Width: m.breite,
+          Height: m.hoehe,
+          ColorSpace: t('meldungen.verkleinern.devicergb', { anzahl: m.komponenten }),
+          BitsPerComponent: 8,
+          Filter: 'DCTDecode',
         });
         for (const k of ['SMask', 'Interpolate', 'Intent', 'OC', 'Metadata', 'StructParent']) {
           const v = alt.dict.get(PDFName.of(k));
@@ -481,13 +643,32 @@ export async function verkleinere(inhalt: Buffer, stufe: Stufe = STANDARD_STUFE)
     if (await hatQpdf()) {
       try {
         await writeFile(join(dir, 'ein.pdf'), erg);
-        await starte('qpdf', ['--object-streams=generate', '--compress-streams=y', '--recompress-flate', '--compression-level=9', '--warning-exit-0', join(dir, 'ein.pdf'), join(dir, 'aus.pdf')]);
+        await starte('qpdf', [
+          '--object-streams=generate',
+          '--compress-streams=y',
+          '--recompress-flate',
+          '--compression-level=9',
+          '--warning-exit-0',
+          join(dir, 'ein.pdf'),
+          join(dir, 'aus.pdf'),
+        ]);
         const q = await readFile(join(dir, 'aus.pdf'));
         if (q.length < erg.length) erg = q;
-      } catch (e) { hinweise.push({ text: t('meldungen.verkleinern.pdf-verkleinern-qpdf-uebersprungen'), fehler: (e as Error).message }); }
+      } catch (e) {
+        hinweise.push({ text: t('meldungen.verkleinern.pdf-verkleinern-qpdf-uebersprungen'), fehler: (e as Error).message });
+      }
     }
     const lohnt = erg.length <= inhalt.length * (1 - MIN_ERSPARNIS);
-    return { inhalt: lohnt ? erg : inhalt, vorher: inhalt.length, nachher: lohnt ? erg.length : inhalt.length, lohnt, stufe, bilder: neu, seiten, hinweise };
+    return {
+      inhalt: lohnt ? erg : inhalt,
+      vorher: inhalt.length,
+      nachher: lohnt ? erg.length : inhalt.length,
+      lohnt,
+      stufe,
+      bilder: neu,
+      seiten,
+      hinweise,
+    };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

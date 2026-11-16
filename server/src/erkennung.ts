@@ -8,7 +8,34 @@
  */
 
 import type { Fund, Nummernfund, Briefkopf, Treffer } from '../../shared/src/erkennung';
-import { eindeutigerTreffer, ENGINE_EINGEBAUT, typAusText, type TypFund, ERKENNEN_HINWEIS, findeAngaben, findeMappen, fuellfelder, gleicheAb, istAbsenderTyp, merkmalsfelder, type Abgleich, pruefeVorschlaege, schemaFuer, vorschlaegeAus, type Angaben, type AusDokument, type Vergleichsmappe, type Vorschlaege, eigeneAngaben, eigenerAussteller, wendeGutschriftAn, artVon, type Aussteller, type EigeneAngaben, type Vorschlag } from '../../shared/src/erkennung';
+import {
+  eindeutigerTreffer,
+  ENGINE_EINGEBAUT,
+  typAusText,
+  type TypFund,
+  ERKENNEN_HINWEIS,
+  findeAngaben,
+  findeMappen,
+  fuellfelder,
+  gleicheAb,
+  istAbsenderTyp,
+  merkmalsfelder,
+  type Abgleich,
+  pruefeVorschlaege,
+  schemaFuer,
+  vorschlaegeAus,
+  type Angaben,
+  type AusDokument,
+  type Vergleichsmappe,
+  type Vorschlaege,
+  eigeneAngaben,
+  eigenerAussteller,
+  wendeGutschriftAn,
+  artVon,
+  type Aussteller,
+  type EigeneAngaben,
+  type Vorschlag,
+} from '../../shared/src/erkennung';
 import { erechnungText, positionAusERechnung, vorschlaegeAusERechnung, type ERechnung } from '../../shared/src/erechnung';
 import { jedeMappe } from '../../shared/src/verweisziele';
 import { eingebetteteERechnung } from './pdf';
@@ -16,7 +43,18 @@ import { istXmlDatei, liesERechnung } from './erechnung';
 import { ERECHNUNG_XML_MAX } from './grenzen';
 import { hatNetz, hatSchnittstelle } from '../../shared/src/pakete';
 import type { Einstellungen } from './einstellungen';
-import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug, type Werte, type Wert } from '../../shared/src/model';
+import {
+  auswahlText,
+  geschuetzteFelder,
+  zieleVon,
+  type Betrag,
+  type Feld,
+  type Mappe,
+  type Mappentyp,
+  type MappenBezug,
+  type Werte,
+  type Wert,
+} from '../../shared/src/model';
 import { istEigeneOrganisation, merkmalFeld } from '../../shared/src/organisation';
 import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
 import type { Dienst } from './dienst';
@@ -34,11 +72,19 @@ import type { SchwaerzSeite } from '../../shared/src/schwaerzen';
 const log = protokoll.modul('ablage');
 
 /** Ein Vorschlag für die Zielmappe; die Gründe stehen ohne Titel da (die setzt erst das Lesen ein). */
-export interface Zielvorschlag { mappeId: string; typId: string; punkte: number; gruende: string[]; /** Direkt im Text gefunden (z. B. Vertragsnummer). */ direkt?: boolean }
+export interface Zielvorschlag {
+  mappeId: string;
+  typId: string;
+  punkte: number;
+  gruende: string[];
+  /** Direkt im Text gefunden (z. B. Vertragsnummer). */ direkt?: boolean;
+}
 
 /** Automatische Zuordnung (#337), festgehalten an der Erkennung der Post – für „Rückgängig“. */
 export interface AutoZuordnung {
-  ziel: string; zeit: string; grund: string;
+  ziel: string;
+  zeit: string;
+  grund: string;
   /** Dokumente, die zur Zielmappe gewandert sind, mit ihrem Register in der Post. */
   dokumente: Array<{ id: string; register: string }>;
   aufgabe: string | null;
@@ -51,7 +97,10 @@ export interface AutoZuordnung {
  * eine passende Zielmappe unter den Mappentypen mit „automatisch zuordnen“ – bei mehreren gewinnt die eine,
  * die direkt im Text steht (z. B. über ihre Vertragsnummer). Liefert Ziel und Begründung oder den Grund dagegen.
  */
-export function sichereZuordnung(e: Pick<PostErkennung, 'absender' | 'eindeutig' | 'ziele' | 'ausgehend'>, autoTypen: Set<string>): { ziel: Zielvorschlag; grund: string } | { ziel: null; grund: string } {
+export function sichereZuordnung(
+  e: Pick<PostErkennung, 'absender' | 'eindeutig' | 'ziele' | 'ausgehend'>,
+  autoTypen: Set<string>,
+): { ziel: Zielvorschlag; grund: string } | { ziel: null; grund: string } {
   // Eigene Post (#1043): nie still zuordnen – „ausgehend“ ist nur ein Vorschlag (Ergänzung Sicherheit).
   if (e.ausgehend) return { ziel: null, grund: t('meldungen.erkennung.ausgehend-nicht-automatisch') };
   const abs = e.absender.find((x) => x.mappeId === e.eindeutig);
@@ -59,8 +108,20 @@ export function sichereZuordnung(e: Pick<PostErkennung, 'absender' | 'eindeutig'
   const kandidaten = e.ziele.filter((z) => autoTypen.has(z.typId));
   const direkt = kandidaten.filter((z) => z.direkt);
   const ziel = direkt.length === 1 ? direkt[0] : !direkt.length && kandidaten.length === 1 ? kandidaten[0] : null;
-  if (!ziel) return { ziel: null, grund: kandidaten.length ? t('meldungen.erkennung.passende-mappen-nicht-eindeutig', { kandidaten: kandidaten.length }) : t('meldungen.erkennung.keine-passende-mappe-eines') };
-  return { ziel, grund: t('meldungen.erkennung.absender-eindeutig-erkannt-einzige', { gruende: abs.gruende.join(', '), gruende2: ziel.gruende.join(', ') }) };
+  if (!ziel)
+    return {
+      ziel: null,
+      grund: kandidaten.length
+        ? t('meldungen.erkennung.passende-mappen-nicht-eindeutig', { kandidaten: kandidaten.length })
+        : t('meldungen.erkennung.keine-passende-mappe-eines'),
+    };
+  return {
+    ziel,
+    grund: t('meldungen.erkennung.absender-eindeutig-erkannt-einzige', {
+      gruende: abs.gruende.join(', '),
+      gruende2: ziel.gruende.join(', '),
+    }),
+  };
 }
 
 /** Was an einer Post gespeichert ist. */
@@ -128,7 +189,11 @@ export interface TypVorschlaege {
    * angelegt werden – geprüft wie jede Eingabe; nur, wenn die Person sie anlegen darf.
    */
   positionen?: {
-    feld: string; typId: string; feldKey: string; zeilen: Array<Record<string, Wert>>; weitere?: number;
+    feld: string;
+    typId: string;
+    feldKey: string;
+    zeilen: Array<Record<string, Wert>>;
+    weitere?: number;
     /** So viele (lesbare) Positionen hat die Mappe schon – dann bietet die Oberfläche das Anlegen nur ohne Haken an. */
     vorhanden?: number;
     /** Hat die Mappe schon Positionen und fehlt `positionen: true` in der Anfrage: so viele wurden nicht mitgeschickt (zeilen leer). */
@@ -149,7 +214,10 @@ export interface ErkennAnbieter {
   erkenne(paket: string, eingang: Record<string, unknown>, ms: number): Promise<{ text: string; ms: number }>;
 }
 /** Wahl in der Werkbank: Standard für alle Mappentypen (null = eingebaut); abfluss: Hinweis bei Netzzugriff bestätigt. */
-export interface EngineWahl { paket: string | null; abfluss?: boolean }
+export interface EngineWahl {
+  paket: string | null;
+  abfluss?: boolean;
+}
 /** Zeitlimit für die Antwort eines Pakets (ms); danach übernimmt die eingebaute Erkennung. */
 export const ERKENNEN_MS = 60_000;
 /** Höchstens so viel Text (Zeichen) geht an ein Paket. */
@@ -163,7 +231,13 @@ export interface EigeneLage {
 }
 /** Aussteller eines Belegs: die Absenderzeile, bei einer E-Rechnung der Verkäufer. */
 export function ausstellerAus(a: Angaben, er?: ERechnung | null): Aussteller | null {
-  if (er?.verkaeufer.name || er?.verkaeufer.ustid) return { name: er.verkaeufer.name, ustid: er.verkaeufer.ustid, iban: er.iban, fundstelle: `${t('meldungen.erkennung.erechnung-verkaeufer')}: ${er.verkaeufer.name ?? er.verkaeufer.ustid}` };
+  if (er?.verkaeufer.name || er?.verkaeufer.ustid)
+    return {
+      name: er.verkaeufer.name,
+      ustid: er.verkaeufer.ustid,
+      iban: er.iban,
+      fundstelle: `${t('meldungen.erkennung.erechnung-verkaeufer')}: ${er.verkaeufer.name ?? er.verkaeufer.ustid}`,
+    };
   return a.briefkopf?.zeile && a.briefkopf.name ? { name: a.briefkopf.name, fundstelle: a.briefkopf.fundstelle } : null;
 }
 /** Höchstens so viele Mappen je Typ beim Suchen eigener Mappen. */
@@ -174,7 +248,11 @@ const MAX_ZIELE = 8;
 const MAX_MAPPEN = 20_000;
 
 export class Erkennung {
-  constructor(private d: Dienst, private repo: () => Repo, private einst: () => Einstellungen | undefined = () => undefined) {
+  constructor(
+    private d: Dienst,
+    private repo: () => Repo,
+    private einst: () => Einstellungen | undefined = () => undefined,
+  ) {
     this.klassifizierung = new Klassifizierung(d, this, repo);
   }
 
@@ -189,7 +267,8 @@ export class Erkennung {
   /** Installierte Pakete mit dms:erkennen (auch, wenn der Läufer sie gerade nicht geladen hat). */
   private async erkennPakete(): Promise<Array<{ id: string; name: string; netz: boolean; laeuft: boolean }>> {
     const geladen = new Set((this.anbieter?.pakete() ?? []).map((p) => p.id));
-    return (await this.repo().listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:erkennen'))
+    return (await this.repo().listePakete())
+      .filter((p) => hatSchnittstelle(p.laeufer, 'dms:erkennen'))
       .map((p) => ({ id: p.id, name: p.name, netz: hatNetz(p.laeufer), laeuft: geladen.has(p.id) }));
   }
 
@@ -244,18 +323,33 @@ export class Erkennung {
    * Text und Dokument-Ids; Antwort ein Objekt { feld: { wert, sicherheit, fundstelle } } (auch unter „vorschlaege“,
    * dann daneben optional `gekuerzt: true`, wenn das Paket den Text für den Dienst gekürzt hat, #564).
    */
-  private async perPaket(p: { id: string; name: string }, typ: Mappentyp, text: string, dokumente: string[], erlaubt: (f: Feld) => boolean): Promise<{ vorschlaege: Record<string, unknown>; gekuerzt: boolean; ohneFelder?: true }> {
+  private async perPaket(
+    p: { id: string; name: string },
+    typ: Mappentyp,
+    text: string,
+    dokumente: string[],
+    erlaubt: (f: Feld) => boolean,
+  ): Promise<{ vorschlaege: Record<string, unknown>; gekuerzt: boolean; ohneFelder?: true }> {
     const schema = schemaFuer(typ, (f) => erlaubt(f) && f.typ !== 'referenz');
     if (!Object.keys(schema.properties as object).length) return { vorschlaege: {}, gekuerzt: false, ohneFelder: true };
-    const r = await this.anbieter!.erkenne(p.id, { typ: typ.name, schema, text: text.slice(0, PAKET_TEXT_MAX), dokumente, hinweis: ERKENNEN_HINWEIS, sprache: 'de' }, ERKENNEN_MS);
+    const r = await this.anbieter!.erkenne(
+      p.id,
+      { typ: typ.name, schema, text: text.slice(0, PAKET_TEXT_MAX), dokumente, hinweis: ERKENNEN_HINWEIS, sprache: 'de' },
+      ERKENNEN_MS,
+    );
     const roh = r.text.trim();
-    const a = roh.indexOf('{'), b = roh.lastIndexOf('}');
+    const a = roh.indexOf('{'),
+      b = roh.lastIndexOf('}');
     let j: unknown;
-    try { j = a >= 0 && b > a ? JSON.parse(roh.slice(a, b + 1)) : null; } catch { j = null; }
+    try {
+      j = a >= 0 && b > a ? JSON.parse(roh.slice(a, b + 1)) : null;
+    } catch {
+      j = null;
+    }
     if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('Die Antwort ist kein JSON-Objekt.');
     const o = j as Record<string, unknown>;
     const huelle = !!o.vorschlaege && typeof o.vorschlaege === 'object' && !Array.isArray(o.vorschlaege);
-    const v = huelle ? o.vorschlaege as Record<string, unknown> : o;
+    const v = huelle ? (o.vorschlaege as Record<string, unknown>) : o;
     // Verweise nie vom Paket: Es kennt keine Mappen; eine Id daraus wäre ungeprüft.
     const vorschlaege = Object.fromEntries(Object.entries(v).filter(([k]) => typ.felder.find((f) => f.key === k)?.typ !== 'referenz'));
     return { vorschlaege, gekuerzt: text.length > PAKET_TEXT_MAX || (huelle && o.gekuerzt === true) };
@@ -284,9 +378,19 @@ export class Erkennung {
       if (!org && !person) continue;
       for (const m of (await this.repo().listeMappen(typ.id)).slice(0, MAX_EIGENE)) {
         const e = eigeneAngaben(typ, m);
-        const mails = typ.felder.filter((f) => artVon(f) === 'email').map((f) => auswahlText(m.werte[f.key]).trim().toLowerCase()).filter(Boolean);
+        const mails = typ.felder
+          .filter((f) => artVon(f) === 'email')
+          .map((f) => auswahlText(m.werte[f.key]).trim().toLowerCase())
+          .filter(Boolean);
         const istPerson = typ.felder.some((f) => artVon(f) === 'nachname') && e.namen.some((n) => kontoNamen.has(n.toLowerCase()));
-        if ((org && beruflich && istEigeneOrganisation(typ, m.werte as Werte)) || istPerson || (!org && mails.some((x) => kontoMails.has(x)))) { ids.add(m.id); angaben.push(e); }
+        if (
+          (org && beruflich && istEigeneOrganisation(typ, m.werte as Werte)) ||
+          istPerson ||
+          (!org && mails.some((x) => kontoMails.has(x)))
+        ) {
+          ids.add(m.id);
+          angaben.push(e);
+        }
       }
     }
     // Konten selbst zuletzt (eine Person-Mappe geht vor): Name mit Vor- und Nachname als Aussteller, z. B.
@@ -321,14 +425,19 @@ export class Erkennung {
       // (#999) nie, ihr Text steht schon als Nachricht an der Post.
       if (ohneErkennung(d)) continue;
       const t = d.ocr?.stand === 'fertig' ? await this.repo().volltext(d.id) : null;
-      if (t?.trim()) { teile.push(t); dokumente++; }
+      if (t?.trim()) {
+        teile.push(t);
+        dokumente++;
+      }
     }
     return { text: teile.join('\n\n'), dokumente };
   }
 
   /** Mappentypen mit Merkmalen und ihre Mappen (für den Abgleich). */
   private async vergleich(): Promise<{ typen: Mappentyp[]; mappen: Vergleichsmappe[] }> {
-    const typen = (await this.repo().listeTypen()).filter((t) => t.system !== 'post' && t.system !== 'benutzer' && merkmalsfelder(t).length);
+    const typen = (await this.repo().listeTypen()).filter(
+      (t) => t.system !== 'post' && t.system !== 'benutzer' && merkmalsfelder(t).length,
+    );
     const mappen: Vergleichsmappe[] = [];
     for (const t of typen) {
       for (const m of await this.repo().listeMappen(t.id)) {
@@ -369,48 +478,75 @@ export class Erkennung {
       if (!z.gruende.includes(grund)) z.gruende.push(grund);
       ziele.set(mappeId, z);
     };
-    for (const x of treffer) if (!istAbsenderTyp(typVon.get(x.typId)!)) dazu(x.mappeId, x.typId, x.punkte + 1, `gefunden: ${x.gruende.join(', ')}`, true);
+    for (const x of treffer)
+      if (!istAbsenderTyp(typVon.get(x.typId)!)) dazu(x.mappeId, x.typId, x.punkte + 1, `gefunden: ${x.gruende.join(', ')}`, true);
     if (haupt) {
       const alleTypen = new Map((await repo.listeTypen()).map((t) => [t.id, t]));
       for (const r of (await repo.rueckverweise(haupt.mappeId)).slice(0, 200)) {
         const qt = alleTypen.get(r.quelleTypId);
         if (!qt || qt.system || istAbsenderTyp(qt)) continue;
-        dazu(r.quelleId, r.quelleTypId, 2, t('meldungen.erkennung.verweist-ueber-auf-den', { wert: qt.felder.find((f) => f.key === r.feldKey)?.label ?? r.feldKey }));
+        dazu(
+          r.quelleId,
+          r.quelleTypId,
+          2,
+          t('meldungen.erkennung.verweist-ueber-auf-den', { wert: qt.felder.find((f) => f.key === r.feldKey)?.label ?? r.feldKey }),
+        );
       }
       const frueher = (await repo.erkennungenMitAbsender(haupt.mappeId, 50)).filter((id) => id !== post.id);
       const zaehler = new Map<string, number>();
-      for (const p of await repo.holeMappen(frueher)) for (const z of Array.isArray(p.werte.bezug) ? p.werte.bezug.map(String) : []) zaehler.set(z, (zaehler.get(z) ?? 0) + 1);
+      for (const p of await repo.holeMappen(frueher))
+        for (const z of Array.isArray(p.werte.bezug) ? p.werte.bezug.map(String) : []) zaehler.set(z, (zaehler.get(z) ?? 0) + 1);
       const ziel = await repo.holeMappen([...zaehler.keys()]);
       for (const m of ziel) {
         const n = zaehler.get(m.id)!;
         if (alleTypen.get(m.typId)?.system) continue;
-        dazu(m.id, m.typId, 2 + Math.min(n, 5), t('meldungen.erkennung.fruehere-post-dieses-absenders', { wert: n > 1 ? ` (${n}-mal)` : '' }));
+        dazu(
+          m.id,
+          m.typId,
+          2 + Math.min(n, 5),
+          t('meldungen.erkennung.fruehere-post-dieses-absenders', { wert: n > 1 ? ` (${n}-mal)` : '' }),
+        );
       }
       const at = alleTypen.get(haupt.typId);
-      if (at?.register.some((r) => r.art === 'dokumente')) dazu(haupt.mappeId, haupt.typId, 1, t('meldungen.erkennung.der-absender-selbst'));
+      if (at?.register.some((r) => r.art === 'dokumente'))
+        dazu(haupt.mappeId, haupt.typId, 1, t('meldungen.erkennung.der-absender-selbst'));
     }
     const vorher = await repo.erkennungLies(post.id);
     const auto = (vorher?.ergebnis as PostErkennung | undefined)?.auto;
-    const ergebnis: PostErkennung = { ...(auto ? { auto } : {}),
+    const ergebnis: PostErkennung = {
+      ...(auto ? { auto } : {}),
       zeit: new Date().toISOString(),
       dokumente,
       absender,
       eindeutig: eindeutig?.mappeId ?? null,
-      angaben: { datum: angaben.datum, betrag: angaben.betrag, nummern: angaben.nummern.slice(0, 10), ...(angaben.gutschrift ? { gutschrift: angaben.gutschrift } : {}) },
+      angaben: {
+        datum: angaben.datum,
+        betrag: angaben.betrag,
+        nummern: angaben.nummern.slice(0, 10),
+        ...(angaben.gutschrift ? { gutschrift: angaben.gutschrift } : {}),
+      },
       // Eigene Post: kein „neuen Absender anlegen“ mit den eigenen Angaben.
       briefkopf: absender.length || aus ? null : angaben.briefkopf,
       ziele: [...ziele.values()].sort((a, b) => b.punkte - a.punkte).slice(0, MAX_ZIELE),
       ...(aus ? { ausgehend: { mappeId: aus.mappeId, fundstelle: angaben.briefkopf?.fundstelle ?? '' } } : {}),
     };
     await repo.erkennungSchreibe(post.id, ergebnis, ergebnis.eindeutig);
-    log.info('Erkennung für Post', { post: post.id, dokumente, absender: absender.length, eindeutig: !!eindeutig, ziele: ergebnis.ziele.length, ausgehend: !!aus, ms: Date.now() - start });
+    log.info('Erkennung für Post', {
+      post: post.id,
+      dokumente,
+      absender: absender.length,
+      eindeutig: !!eindeutig,
+      ziele: ergebnis.ziele.length,
+      ausgehend: !!aus,
+      ms: Date.now() - start,
+    });
     return ergebnis;
   }
 
   /** Gespeichertes Ergebnis; fehlt es (ältere Post, E-Mail ohne Anhang), wird es jetzt einmal gerechnet. */
   async ergebnis(postId: string): Promise<PostErkennung | null> {
     const da = await this.repo().erkennungLies(postId);
-    return da ? da.ergebnis as PostErkennung : this.fuerPost(postId);
+    return da ? (da.ergebnis as PostErkennung) : this.fuerPost(postId);
   }
 
   /** Für die Oberfläche bzw. die API: nur, was der Benutzer lesen darf. */
@@ -420,21 +556,35 @@ export class Erkennung {
     if (typ?.system !== 'post') throw new Fachfehler(422, t('meldungen.erkennung.vorschlaege-beim-zuordnen-gibt'));
     const e = await this.ergebnis(postId);
     if (!e) throw new Fachfehler(404, t('meldungen.erkennung.diese-post-gibt-es'));
-    const ids = [...e.absender.map((x) => x.mappeId), ...e.ziele.map((x) => x.mappeId), ...(e.auto ? [e.auto.ziel] : []), ...(e.ausgehend ? [e.ausgehend.mappeId] : [])];
+    const ids = [
+      ...e.absender.map((x) => x.mappeId),
+      ...e.ziele.map((x) => x.mappeId),
+      ...(e.auto ? [e.auto.ziel] : []),
+      ...(e.ausgehend ? [e.ausgehend.mappeId] : []),
+    ];
     const lesbar = await this.d.rechtepruefung.lesbare(z, ids);
     const bezuege = await this.repo().bezuege(ids.filter((id) => lesbar.has(id)));
     const titel = (id: string) => bezuege.get(id)?.titel ?? '';
-    const absender = e.absender.filter((x) => lesbar.has(x.mappeId) && bezuege.has(x.mappeId)).map((x) => ({ ...x, titel: titel(x.mappeId) }));
+    const absender = e.absender
+      .filter((x) => lesbar.has(x.mappeId) && bezuege.has(x.mappeId))
+      .map((x) => ({ ...x, titel: titel(x.mappeId) }));
     const ziele = e.ziele.filter((x) => lesbar.has(x.mappeId) && bezuege.has(x.mappeId)).map((x) => ({ ...x, titel: titel(x.mappeId) }));
     return {
-      zeit: e.zeit, dokumente: e.dokumente, absender,
+      zeit: e.zeit,
+      dokumente: e.dokumente,
+      absender,
       eindeutig: e.eindeutig && lesbar.has(e.eindeutig) ? e.eindeutig : null,
       angaben: e.angaben,
       neuerAbsender: e.briefkopf && !absender.length ? await this.neuerAbsender(e.briefkopf, z) : null,
       ziele,
       bezuege: Object.fromEntries(bezuege),
-      auto: e.auto && lesbar.has(e.auto.ziel) && (!e.eindeutig || lesbar.has(e.eindeutig)) ? { ziel: e.auto.ziel, zeit: e.auto.zeit, grund: e.auto.grund, rueckgaengig: !!e.auto.rueckgaengig } : null,
-      ausgehend: e.ausgehend ? { titel: lesbar.has(e.ausgehend.mappeId) ? titel(e.ausgehend.mappeId) : '', fundstelle: e.ausgehend.fundstelle } : null,
+      auto:
+        e.auto && lesbar.has(e.auto.ziel) && (!e.eindeutig || lesbar.has(e.eindeutig))
+          ? { ziel: e.auto.ziel, zeit: e.auto.zeit, grund: e.auto.grund, rueckgaengig: !!e.auto.rueckgaengig }
+          : null,
+      ausgehend: e.ausgehend
+        ? { titel: lesbar.has(e.ausgehend.mappeId) ? titel(e.ausgehend.mappeId) : '', fundstelle: e.ausgehend.fundstelle }
+        : null,
     };
   }
 
@@ -455,7 +605,13 @@ export class Erkennung {
       if (mappe.typId !== typ.id) throw new Fachfehler(422, t('meldungen.erkennung.die-mappe-hat-einen'));
       return { typ, mappe };
     }
-    if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: typ.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) throw new Fachfehler(403, t('meldungen.erkennung.mappen-dieses-typs-darfst'));
+    if (
+      z &&
+      !(
+        await this.d.rechtepruefung.rechteAn(z, { id: '', typId: typ.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)
+      ).C
+    )
+      throw new Fachfehler(403, t('meldungen.erkennung.mappen-dieses-typs-darfst'));
     return { typ };
   }
 
@@ -487,10 +643,14 @@ export class Erkennung {
       quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, d.mappeId, 'R')).typId);
       // Anlagen (#998) und Original-E-Mail (#999): Erkennung und KI nutzen nur Hauptdokumente.
       if (ohneErkennung(d)) continue;
-      if (!er && (istXmlDatei(d.name, d.mime) || d.mime === 'application/pdf')) er = await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse);
+      if (!er && (istXmlDatei(d.name, d.mime) || d.mime === 'application/pdf'))
+        er = await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse);
       const eintrag = await this.repo().volltext(id);
       // Eine E-Rechnung als XML hat keinen Volltext – dann ist ihr Text der lesbare Auszug.
-      if (!eintrag?.trim() && er && istXmlDatei(d.name, d.mime)) { teile.push(erechnungText(er)); continue; }
+      if (!eintrag?.trim() && er && istXmlDatei(d.name, d.mime)) {
+        teile.push(erechnungText(er));
+        continue;
+      }
       if (!eintrag?.trim()) throw new Fachfehler(409, t('meldungen.erkennung.hat-noch-keinen-volltext', { name: d.name }));
       teile.push(eintrag);
     }
@@ -499,7 +659,9 @@ export class Erkennung {
     const erlaubt = this.erlaubteFelder(typ, mappe);
     const angaben = findeAngaben(text);
     // Erkennung per Paket (#511), wenn gewählt; sonst bzw. wenn das Paket nicht antwortet: eingebaut.
-    const dokIds = (await this.ohneAnlagen((Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10)));
+    const dokIds = await this.ohneAnlagen(
+      (Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10),
+    );
     let engine: TypVorschlaege['engine'] = { art: 'eingebaut' };
     let hinweis: string | undefined;
     let ausPaket: Record<string, unknown> | null = null;
@@ -519,10 +681,17 @@ export class Erkennung {
         try {
           const r = await this.perPaket(p, typ, text, dokIds, erlaubt);
           // Geantwortet, aber nichts, was die Prüfung übersteht (#564): wie bei einem Fehler die eingebaute Erkennung.
-          if (r.ohneFelder || Object.keys(pruefeVorschlaege(typ, r.vorschlaege, erlaubt).vorschlaege).length) { ausPaket = ohneFremdeFundstellen(r.vorschlaege, text, typ.name, p.id); gekuerzt = r.gekuerzt; engine = { art: 'paket', id: p.id, name: p.name }; }
-          else {
+          if (r.ohneFelder || Object.keys(pruefeVorschlaege(typ, r.vorschlaege, erlaubt).vorschlaege).length) {
+            ausPaket = ohneFremdeFundstellen(r.vorschlaege, text, typ.name, p.id);
+            gekuerzt = r.gekuerzt;
+            engine = { art: 'paket', id: p.id, name: p.name };
+          } else {
             hinweis = t('meldungen.erkennung.hat-nichts-brauchbares-geliefert', { name: p.name });
-            log.info('Erkennung per Paket ohne brauchbare Vorschläge', { typ: typ.name, paket: p.id, felder: Object.keys(r.vorschlaege).length });
+            log.info('Erkennung per Paket ohne brauchbare Vorschläge', {
+              typ: typ.name,
+              paket: p.id,
+              felder: Object.keys(r.vorschlaege).length,
+            });
           }
         } catch (x) {
           hinweis = t('meldungen.erkennung.hat-nicht-geantwortet-die', { name: p.name, message: (x as Error).message });
@@ -536,7 +705,11 @@ export class Erkennung {
     if (!ausPaket) for (const [k, v] of Object.entries(roh)) if ((v as Vorschlag).hinweis) hinweise.set(k, (v as Vorschlag).hinweis!);
     // E-Rechnung (#1043): Ihre Werte stehen exakt in den Daten und gehen vor – geprüft wird danach wie bei allen.
     const ausER = er ? vorschlaegeAusERechnung(typ, er) : {};
-    for (const [k, v] of Object.entries(ausER)) { roh[k] = v; if (v.hinweis) hinweise.set(k, v.hinweis); else hinweise.delete(k); }
+    for (const [k, v] of Object.entries(ausER)) {
+      roh[k] = v;
+      if (v.hinweis) hinweise.set(k, v.hinweis);
+      else hinweise.delete(k);
+    }
     const bezuege: Record<string, MappenBezug> = {};
     const neu: TypVorschlaege['neu'] = {};
     // Eigene Organisation und Haushalt (#995, #1043): nie „von“; stehen sie als Aussteller drin, ist der Beleg wohl ausgehend.
@@ -550,14 +723,18 @@ export class Erkennung {
       const v = await this.verweisFuer(f, text, angaben, z, { eigen, aussteller });
       if (v?.mappe) {
         roh[f.key] = { wert: f.mehrfach ? [v.mappe.id] : v.mappe.id, sicherheit: v.sicherheit, fundstelle: v.fundstelle };
-        if (v.hinweis) hinweise.set(f.key, v.hinweis); else hinweise.delete(f.key);
+        if (v.hinweis) hinweise.set(f.key, v.hinweis);
+        else hinweise.delete(f.key);
         bezuege[v.mappe.id] = { titel: v.mappe.titel ?? '', typId: v.mappe.typId };
       } else if (v?.neu) neu[f.key] = v.neu;
     }
     if (aussteller && !roh.von) hinweis = [hinweis, t('meldungen.erkennung.ausgehend-allgemein')].filter(Boolean).join(' ');
     // Jede Antwort – eingebaut oder vom Paket – geht durch die Prüfung gegen die Feldtypen; verworfen wird mit Grund protokolliert (ohne Werte).
     const { vorschlaege, verworfen } = pruefeVorschlaege(typ, roh, erlaubt);
-    for (const [k, v] of Object.entries(vorschlaege)) { const h = hinweise.get(k); if (h) v.hinweis = h; }
+    for (const [k, v] of Object.entries(vorschlaege)) {
+      const h = hinweise.get(k);
+      if (h) v.hinweis = h;
+    }
     // Gutschrift (#1043): positive Beträge negativ, wo das Feld es erlaubt – auch bei Antworten aus Paketen.
     wendeGutschriftAn(typ, vorschlaege, angaben.gutschrift, new Set(Object.keys(ausER)));
     // Lieferschein und Rechnung (#1043): Eine Mappe des Zieltyps, in deren Dokumenten die Nummer dieses Belegs steht.
@@ -567,15 +744,46 @@ export class Erkennung {
     // Beim Auswählen übernehmen (#1037): Werte aus vorgeschlagenen Mappen, mit den Rechten der Person – erst hier, nach
     // einer Erkennung per Paket, damit sie nie an ein KI-Paket gehen (#796).
     await this.d.mappenEingaben.vorbelegenVorschlaege(typ, { vorschlaege, bezuege, neu }, erlaubt, mappe, z);
-    if (verworfen.length) log.warn('Vorschläge der Erkennung verworfen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; ') });
+    if (verworfen.length)
+      log.warn('Vorschläge der Erkennung verworfen', {
+        typ: typ.name,
+        engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT,
+        felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; '),
+      });
     // Fundstellen (#939): Seite und Rahmen aus der Textebene bzw. Texterkennung; nicht gefunden = Wert ohne Rahmen.
     if (dokIds.length && Object.keys(vorschlaege).length) await this.stellen(typ, vorschlaege, dokIds);
     const positionen = er ? await this.positionen(typ, er, z, mappe, e.positionen === true || e.positionen === '1') : undefined;
     const dazu = text.trim() ? await this.dazu(text, typ, mappe, z) : [];
-    log.info('Aus Dokument ausfüllen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, zeichen: text.length, vorschlaege: Object.keys(vorschlaege).length, neu: Object.keys(neu).length, erechnung: er?.syntax ?? null, positionen: positionen?.zeilen.length ?? 0, dazu: dazu.length, ausgehend: !!aussteller });
+    log.info('Aus Dokument ausfüllen', {
+      typ: typ.name,
+      engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT,
+      zeichen: text.length,
+      vorschlaege: Object.keys(vorschlaege).length,
+      neu: Object.keys(neu).length,
+      erechnung: er?.syntax ?? null,
+      positionen: positionen?.zeilen.length ?? 0,
+      dazu: dazu.length,
+      ausgehend: !!aussteller,
+    });
     return {
-      vorschlaege, bezuege, neu, verworfen: verworfen.length, zeichen: text.length, engine, ...(hinweis ? { hinweis } : {}), ...(gekuerzt ? { gekuerzt: true as const } : {}),
-      ...(er ? { erechnung: { syntax: er.syntax, gutschrift: er.gutschrift, ...(er.profil ? { profil: er.profil } : {}), ...(er.nummer ? { nummer: er.nummer } : {}) } } : {}),
+      vorschlaege,
+      bezuege,
+      neu,
+      verworfen: verworfen.length,
+      zeichen: text.length,
+      engine,
+      ...(hinweis ? { hinweis } : {}),
+      ...(gekuerzt ? { gekuerzt: true as const } : {}),
+      ...(er
+        ? {
+            erechnung: {
+              syntax: er.syntax,
+              gutschrift: er.gutschrift,
+              ...(er.profil ? { profil: er.profil } : {}),
+              ...(er.nummer ? { nummer: er.nummer } : {}),
+            },
+          }
+        : {}),
       ...(positionen?.zeilen.length || positionen?.zurueckgehalten ? { positionen } : {}),
       ...(dazu.length ? { dazu } : {}),
     };
@@ -620,7 +828,8 @@ export class Erkennung {
     try {
       return { ...(await this.d.dokumente.textAusDatei(inhalt, name, mime)), erechnung: er };
     } catch (x) {
-      if (er && x instanceof Fachfehler && x.status === 503) return { text: erechnungText(er), info: t('meldungen.erkennung.erechnung-gelesen'), erechnung: er };
+      if (er && x instanceof Fachfehler && x.status === 503)
+        return { text: erechnungText(er), info: t('meldungen.erkennung.erechnung-gelesen'), erechnung: er };
       throw x;
     }
   }
@@ -629,21 +838,47 @@ export class Erkennung {
    * Positionen der E-Rechnung (#1043) für die erste Tabelle des Typs (#1030), deren Zeilen Teile sind (#1031) – nur,
    * wenn die Person Mappen dieses Typs anlegen darf. Jede Zeile geht durch dieselbe Prüfung wie Eingaben.
    */
-  private async positionen(typ: Mappentyp, er: ERechnung, z: Zugriff | undefined, mappe: Mappe | undefined, ausdruecklich: boolean): Promise<TypVorschlaege['positionen']> {
+  private async positionen(
+    typ: Mappentyp,
+    er: ERechnung,
+    z: Zugriff | undefined,
+    mappe: Mappe | undefined,
+    ausdruecklich: boolean,
+  ): Promise<TypVorschlaege['positionen']> {
     if (!er.positionen.length) return undefined;
     for (const f of typ.felder.filter((x) => x.typ === 'tabelle' && x.quelle?.typId && x.quelle.feldKey)) {
       const pt = z ? z.typen.get(f.quelle!.typId) : await this.repo().holeTyp(f.quelle!.typId);
       if (!pt || pt.system) continue;
-      if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: pt.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
+      if (
+        z &&
+        !(
+          await this.d.rechtepruefung.rechteAn(
+            z,
+            { id: '', typId: pt.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe,
+            true,
+          )
+        ).C
+      )
+        continue;
       const erlaubt = (x: Feld) => x.key !== f.quelle!.feldKey && this.erlaubteFelder(pt)(x);
-      const zeilen = er.positionen.map((p) => {
-        const roh = Object.fromEntries(Object.entries(positionAusERechnung(pt, p, er, f.quelle!.feldKey)).map(([k, w]) => [k, { wert: w }]));
-        return Object.fromEntries(Object.entries(pruefeVorschlaege(pt, roh, erlaubt).vorschlaege).map(([k, v]) => [k, v.wert]));
-      }).filter((w) => Object.keys(w).length > 0);
+      const zeilen = er.positionen
+        .map((p) => {
+          const roh = Object.fromEntries(
+            Object.entries(positionAusERechnung(pt, p, er, f.quelle!.feldKey)).map(([k, w]) => [k, { wert: w }]),
+          );
+          return Object.fromEntries(Object.entries(pruefeVorschlaege(pt, roh, erlaubt).vorschlaege).map(([k, v]) => [k, v.wert]));
+        })
+        .filter((w) => Object.keys(w).length > 0);
       if (!zeilen.length) continue;
       // Hat die Mappe schon Positionen, gibt es neue nur auf ausdrücklichen Wunsch (`positionen: true`) – sonst doppelt.
       const vorhanden = mappe ? await this.vorhandenePositionen(mappe.id, pt.id, f.quelle!.feldKey, z) : 0;
-      const basis = { feld: f.key, typId: pt.id, feldKey: f.quelle!.feldKey, ...(er.weiterePositionen ? { weitere: er.weiterePositionen } : {}), ...(vorhanden ? { vorhanden } : {}) };
+      const basis = {
+        feld: f.key,
+        typId: pt.id,
+        feldKey: f.quelle!.feldKey,
+        ...(er.weiterePositionen ? { weitere: er.weiterePositionen } : {}),
+        ...(vorhanden ? { vorhanden } : {}),
+      };
       return vorhanden && !ausdruecklich ? { ...basis, zeilen: [], zurueckgehalten: zeilen.length } : { ...basis, zeilen };
     }
     return undefined;
@@ -651,7 +886,9 @@ export class Erkennung {
 
   /** Lesbare Mappen des Teiltyps, die über `feldKey` schon zu dieser Mappe gehören. */
   private async vorhandenePositionen(mappeId: string, typId: string, feldKey: string, z?: Zugriff): Promise<number> {
-    const ids = (await this.repo().rueckverweise(mappeId)).filter((r) => r.quelleTypId === typId && r.feldKey === feldKey).map((r) => r.quelleId);
+    const ids = (await this.repo().rueckverweise(mappeId))
+      .filter((r) => r.quelleTypId === typId && r.feldKey === feldKey)
+      .map((r) => r.quelleId);
     return ids.length ? (await this.d.rechtepruefung.lesbare(z, [...new Set(ids)])).size : 0;
   }
 
@@ -662,10 +899,19 @@ export class Erkennung {
    */
   private async dazu(text: string, typ: Mappentyp, mappe: Mappe | undefined, z?: Zugriff): Promise<NonNullable<TypVorschlaege['dazu']>> {
     const a = await this.abgleich(text, typ.id, z).catch(() => null);
-    return (a?.dazu ?? []).filter((x) => x.mappeId !== mappe?.id).map((x) => ({
-      mappeId: x.mappeId, typId: x.typId, titel: a!.bezuege[x.mappeId]?.titel ?? '', feldKey: x.feldKey, feld: x.feld,
-      gruende: x.belege.filter((b) => b.stark && !b.ueber).map((b) => `${b.feld} ${b.wert}`).slice(0, 3),
-    }));
+    return (a?.dazu ?? [])
+      .filter((x) => x.mappeId !== mappe?.id)
+      .map((x) => ({
+        mappeId: x.mappeId,
+        typId: x.typId,
+        titel: a!.bezuege[x.mappeId]?.titel ?? '',
+        feldKey: x.feldKey,
+        feld: x.feld,
+        gruende: x.belege
+          .filter((b) => b.stark && !b.ueber)
+          .map((b) => `${b.feld} ${b.wert}`)
+          .slice(0, 3),
+      }));
   }
 
   /**
@@ -684,24 +930,53 @@ export class Erkennung {
   private async einzigeMitNummer(typen: string[], wert: string, z?: Zugriff): Promise<Mappe | null> {
     const gefunden: Mappe[] = [];
     for (const typId of typen) {
-      const s = await this.repo().seite({ typId, textfilter: { text: wert, dokumente: true, notizen: false }, von: 0, anzahl: 5 }).catch(() => null);
+      const s = await this.repo()
+        .seite({ typId, textfilter: { text: wert, dokumente: true, notizen: false }, von: 0, anzahl: 5 })
+        .catch(() => null);
       for (const m of s?.mappen ?? []) if (await this.nennt(m.id, wert)) gefunden.push(m);
     }
-    const lesbar = await this.d.rechtepruefung.lesbare(z, gefunden.map((m) => m.id));
+    const lesbar = await this.d.rechtepruefung.lesbare(
+      z,
+      gefunden.map((m) => m.id),
+    );
     const da = gefunden.filter((m) => lesbar.has(m.id));
     return da.length === 1 ? da[0] : null;
   }
 
-  private async nenntNummer(typ: Mappentyp, vorschlaege: Vorschlaege, bezuege: Record<string, MappenBezug>, erlaubt: (f: Feld) => boolean, z?: Zugriff) {
-    const nummern = typ.felder.filter((f) => f.wiederfinden && (f.typ === 'text' || f.typ === 'zahl') && vorschlaege[f.key])
-      .map((f) => ({ f, w: String(vorschlaege[f.key].wert).trim() })).filter((x) => x.w.length >= 4 && /\d/.test(x.w));
+  private async nenntNummer(
+    typ: Mappentyp,
+    vorschlaege: Vorschlaege,
+    bezuege: Record<string, MappenBezug>,
+    erlaubt: (f: Feld) => boolean,
+    z?: Zugriff,
+  ) {
+    const nummern = typ.felder
+      .filter((f) => f.wiederfinden && (f.typ === 'text' || f.typ === 'zahl') && vorschlaege[f.key])
+      .map((f) => ({ f, w: String(vorschlaege[f.key].wert).trim() }))
+      .filter((x) => x.w.length >= 4 && /\d/.test(x.w));
     if (!nummern.length) return;
     // Nur „gehört zu“-Verweise (Lieferschein → Rechnung, Rechnung → Vertrag), nie „von“ oder „an“.
-    for (const f of typ.felder.filter((x) => x.typ === 'referenz' && x.verweisart === 'zugehoerigkeit' && !vorschlaege[x.key] && erlaubt(x) && !jedeMappe(x) && zieleVon(x).length)) {
+    for (const f of typ.felder.filter(
+      (x) =>
+        x.typ === 'referenz' &&
+        x.verweisart === 'zugehoerigkeit' &&
+        !vorschlaege[x.key] &&
+        erlaubt(x) &&
+        !jedeMappe(x) &&
+        zieleVon(x).length,
+    )) {
       for (const { f: nf, w } of nummern) {
-        const m = await this.einzigeMitNummer(zieleVon(f).filter((x) => x !== typ.id && (!z || z.typen.has(x))), w, z);
+        const m = await this.einzigeMitNummer(
+          zieleVon(f).filter((x) => x !== typ.id && (!z || z.typen.has(x))),
+          w,
+          z,
+        );
         if (!m) continue;
-        vorschlaege[f.key] = { wert: f.mehrfach ? [m.id] : m.id, sicherheit: 'mittel', fundstelle: t('meldungen.erkennung.nennt-nummer', { titel: m.titel ?? '', feld: nf.label || nf.key, wert: w }) };
+        vorschlaege[f.key] = {
+          wert: f.mehrfach ? [m.id] : m.id,
+          sicherheit: 'mittel',
+          fundstelle: t('meldungen.erkennung.nennt-nummer', { titel: m.titel ?? '', feld: nf.label || nf.key, wert: w }),
+        };
         bezuege[m.id] = { titel: m.titel ?? '', typId: m.typId };
         break;
       }
@@ -721,7 +996,9 @@ export class Erkennung {
         const w = await this.d.dokumentArchiv.wortpositionen(id);
         const s = w.seiten.map((x) => ({ breite: x.breite ?? 1, hoehe: x.hoehe ?? 1, woerter: x.woerter }));
         if (s.some((x) => x.woerter.length)) seiten.push({ id, seiten: s });
-      } catch { /* ohne Wortpositionen: Werte ohne Rahmen */ }
+      } catch {
+        /* ohne Wortpositionen: Werte ohne Rahmen */
+      }
     }
     if (!seiten.length) return;
     for (const [k, v] of Object.entries(vorschlaege)) {
@@ -730,7 +1007,10 @@ export class Erkennung {
       const formen = textformen(f, v.wert);
       for (const d of seiten) {
         const b = stelleVon(d.seiten, formen, v.fundstelle);
-        if (b?.length) { v.stelle = { dokument: d.id, bereiche: b }; break; }
+        if (b?.length) {
+          v.stelle = { dokument: d.id, bereiche: b };
+          break;
+        }
       }
     }
   }
@@ -743,9 +1023,24 @@ export class Erkennung {
    * „von“. Steht eine von ihnen als Aussteller drin (`aussteller`), ist der Beleg wohl ausgehend: „von“ schlägt sie vor –
    * mit niedriger Sicherheit und Hinweis, nie still (Ergänzung Sicherheit) – und „an“ die Gegenseite.
    */
-  private async verweisFuer(f: Feld, text: string, a: Angaben, z: Zugriff | undefined, ctx: { eigen: EigeneLage; aussteller: EigeneAngaben | null }): Promise<{ mappe?: Mappe; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string; hinweis?: string; neu?: TypVorschlaege['neu'][string] } | null> {
+  private async verweisFuer(
+    f: Feld,
+    text: string,
+    a: Angaben,
+    z: Zugriff | undefined,
+    ctx: { eigen: EigeneLage; aussteller: EigeneAngaben | null },
+  ): Promise<{
+    mappe?: Mappe;
+    sicherheit: 'hoch' | 'mittel' | 'niedrig';
+    fundstelle: string;
+    hinweis?: string;
+    neu?: TypVorschlaege['neu'][string];
+  } | null> {
     const ziele: Mappentyp[] = [];
-    for (const id of zieleVon(f)) { const x = await this.repo().holeTyp(id); if (x && (!z || z.typen.has(x.id))) ziele.push(x); }
+    for (const id of zieleVon(f)) {
+      const x = await this.repo().holeTyp(id);
+      if (x && (!z || z.typen.has(x.id))) ziele.push(x);
+    }
     if (!ziele.length) return null;
     const von = f.key === 'von';
     const an = f.key === 'an';
@@ -754,23 +1049,61 @@ export class Erkennung {
     if (an && !aus) return null;
     if (von && aus) {
       // Ausgehend: die eigene Mappe – wenn das Feld auf ihren Typ zeigen darf und die Person sie lesen darf.
-      const m = ziele.some((x) => x.id === aus.typId) && (await this.d.rechtepruefung.lesbare(z, [aus.mappeId])).has(aus.mappeId) ? await this.repo().holeMappe(aus.mappeId) : null;
-      return m ? { mappe: m, sicherheit: 'niedrig', fundstelle: t('meldungen.erkennung.aussteller-eigen', { titel: m.titel ?? '' }), hinweis: t('meldungen.erkennung.ausgehend-hinweis') } : null;
+      const m =
+        ziele.some((x) => x.id === aus.typId) && (await this.d.rechtepruefung.lesbare(z, [aus.mappeId])).has(aus.mappeId)
+          ? await this.repo().holeMappe(aus.mappeId)
+          : null;
+      return m
+        ? {
+            mappe: m,
+            sicherheit: 'niedrig',
+            fundstelle: t('meldungen.erkennung.aussteller-eigen', { titel: m.titel ?? '' }),
+            hinweis: t('meldungen.erkennung.ausgehend-hinweis'),
+          }
+        : null;
     }
     const vergleiche: Array<Pick<Mappentyp, 'id' | 'felder'>> = [];
     const mappen: Mappe[] = [];
     for (const ziel of ziele) {
       const alle = await this.repo().listeMappen(ziel.id);
-      const lesbar = await this.d.rechtepruefung.lesbare(z, alle.map((m) => m.id));
+      const lesbar = await this.d.rechtepruefung.lesbare(
+        z,
+        alle.map((m) => m.id),
+      );
       // „von“ bzw. „an“ eines ausgehenden Belegs: nie eine eigene Mappe.
       mappen.push(...alle.filter((m) => lesbar.has(m.id) && !((von || (an && aus)) && ctx.eigen.ids.has(m.id))));
       // Ohne Felder zum Wiederfinden (#938) zählt der Titel als Name.
-      vergleiche.push(merkmalsfelder(ziel).length > 0 ? ziel : { id: ziel.id, felder: [{ key: '_titel', label: t('meldungen.erkennung.name'), typ: 'text' as const, erkennung: { art: 'name' as const }, wiederfinden: true }] });
+      vergleiche.push(
+        merkmalsfelder(ziel).length > 0
+          ? ziel
+          : {
+              id: ziel.id,
+              felder: [
+                {
+                  key: '_titel',
+                  label: t('meldungen.erkennung.name'),
+                  typ: 'text' as const,
+                  erkennung: { art: 'name' as const },
+                  wiederfinden: true,
+                },
+              ],
+            },
+      );
     }
     const markiertIn = new Set(ziele.filter((x) => merkmalsfelder(x).length > 0).map((x) => x.id));
-    const treffer = findeMappen(text, vergleiche, mappen.map((m) => ({ id: m.id, typId: m.typId, werte: markiertIn.has(m.typId) ? m.werte : { _titel: m.titel ?? '' } })));
+    const treffer = findeMappen(
+      text,
+      vergleiche,
+      mappen.map((m) => ({ id: m.id, typId: m.typId, werte: markiertIn.has(m.typId) ? m.werte : { _titel: m.titel ?? '' } })),
+    );
     const best = eindeutigerTreffer(treffer) ?? (treffer.length === 1 ? treffer[0] : null);
-    if (best) return { mappe: mappen.find((m) => m.id === best.mappeId), sicherheit: best.stark ? 'hoch' : 'mittel', fundstelle: `gefunden: ${best.gruende.join(', ')}`, ...(an ? { hinweis: t('meldungen.erkennung.ausgehend-an') } : {}) };
+    if (best)
+      return {
+        mappe: mappen.find((m) => m.id === best.mappeId),
+        sicherheit: best.stark ? 'hoch' : 'mittel',
+        fundstelle: `gefunden: ${best.gruende.join(', ')}`,
+        ...(an ? { hinweis: t('meldungen.erkennung.ausgehend-an') } : {}),
+      };
     if (ziele.length !== 1 || an) return null;
     const [ziel] = ziele;
     const markiert = markiertIn.has(ziel.id);
@@ -779,11 +1112,37 @@ export class Erkennung {
     if (!firma) return null;
     // Der Briefkopf ist der eigene (ausgehend): nicht als neue Organisation vorschlagen.
     if (von && eigenerAussteller({ name: firma, fundstelle: '' }, ctx.eigen.angaben)) return null;
-    if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: ziel.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) return null;
-    const werte = Object.fromEntries(Object.entries(vorschlaegeAus(ziel, text, { ...a, person: null, briefkopf: { ...(a.briefkopf ?? { fundstelle: a.person?.fundstelle ?? '' }), name: firma } }))
-      .filter(([k, v]) => typeof v.wert === 'string' && ziel.felder.some((x) => x.key === k && x.typ !== 'referenz')).map(([k, v]) => [k, v.wert as string]));
-    if (!Object.keys(werte).length) { const n = ziel.felder.find((x) => x.typ === 'text'); if (n) werte[n.key] = firma; }
-    return { sicherheit: 'mittel', fundstelle: a.briefkopf?.fundstelle ?? a.person?.fundstelle ?? '', neu: { typId: ziel.id, werte, fundstelle: a.briefkopf?.fundstelle ?? a.person?.fundstelle ?? firma } };
+    if (
+      z &&
+      !(
+        await this.d.rechtepruefung.rechteAn(
+          z,
+          { id: '', typId: ziel.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe,
+          true,
+        )
+      ).C
+    )
+      return null;
+    const werte = Object.fromEntries(
+      Object.entries(
+        vorschlaegeAus(ziel, text, {
+          ...a,
+          person: null,
+          briefkopf: { ...(a.briefkopf ?? { fundstelle: a.person?.fundstelle ?? '' }), name: firma },
+        }),
+      )
+        .filter(([k, v]) => typeof v.wert === 'string' && ziel.felder.some((x) => x.key === k && x.typ !== 'referenz'))
+        .map(([k, v]) => [k, v.wert as string]),
+    );
+    if (!Object.keys(werte).length) {
+      const n = ziel.felder.find((x) => x.typ === 'text');
+      if (n) werte[n.key] = firma;
+    }
+    return {
+      sicherheit: 'mittel',
+      fundstelle: a.briefkopf?.fundstelle ?? a.person?.fundstelle ?? '',
+      neu: { typId: ziel.id, werte, fundstelle: a.briefkopf?.fundstelle ?? a.person?.fundstelle ?? firma },
+    };
   }
 
   /**
@@ -799,21 +1158,36 @@ export class Erkennung {
     const typen = sichtbar.filter((x) => x.felder.some((f) => f.wiederfinden));
     const alle: Vergleichsmappe[] = [];
     for (const x of typen) {
-      for (const m of await this.repo().listeMappen(x.id)) { alle.push({ id: m.id, typId: m.typId, werte: m.werte }); if (alle.length >= MAX_MAPPEN) break; }
+      for (const m of await this.repo().listeMappen(x.id)) {
+        alle.push({ id: m.id, typId: m.typId, werte: m.werte });
+        if (alle.length >= MAX_MAPPEN) break;
+      }
       if (alle.length >= MAX_MAPPEN) break;
     }
-    const lesbar = await this.d.rechtepruefung.lesbare(z, alle.map((m) => m.id));
+    const lesbar = await this.d.rechtepruefung.lesbare(
+      z,
+      alle.map((m) => m.id),
+    );
     const mappen = alle.filter((m) => lesbar.has(m.id));
     const erg = gleicheAb(text.slice(0, TEXT_MAX), typen, mappen, ziel);
     // Eigene Organisation und Haushalt (#1043): nie als „von“ vorgeschlagen, nie „gehört dazu“; als Beleg für einen
     // Mappentyp zählen sie auch nicht (sie stehen auf fast jedem Dokument) – `eigene` nennt sie für die Klassifizierung.
     const eigen = await this.eigeneLage();
-    if (erg.verweise.von) { erg.verweise.von = erg.verweise.von.filter((x) => !eigen.ids.has(x.mappeId)); if (!erg.verweise.von.length) delete erg.verweise.von; }
+    if (erg.verweise.von) {
+      erg.verweise.von = erg.verweise.von.filter((x) => !eigen.ids.has(x.mappeId));
+      if (!erg.verweise.von.length) delete erg.verweise.von;
+    }
     if (erg.dazu) erg.dazu = erg.dazu.filter((x) => !eigen.ids.has(x.mappeId));
     const eigene = erg.treffer.filter((x) => eigen.ids.has(x.mappeId)).map((x) => x.mappeId);
     if (eigene.length) erg.eigene = eigene;
     const bezuege = Object.fromEntries(await this.repo().bezuege(erg.treffer.map((x) => x.mappeId)));
-    log.info('Abgleich mit vorhandenen Mappen', { zeichen: text.length, mappen: mappen.length, treffer: erg.treffer.length, doppelt: erg.doppelt.length, ...(ziel ? { typ: ziel.name } : {}) });
+    log.info('Abgleich mit vorhandenen Mappen', {
+      zeichen: text.length,
+      mappen: mappen.length,
+      treffer: erg.treffer.length,
+      doppelt: erg.doppelt.length,
+      ...(ziel ? { typ: ziel.name } : {}),
+    });
     return { ...erg, bezuege };
   }
 
@@ -823,9 +1197,15 @@ export class Erkennung {
    * „Wohin gehört das?“, dessen Name im Text steht – nur aus `ausPostZiele` (Haken und Recht zum Anlegen). Dokumente
    * ohne Volltext stehen in `ohneText`; das ist kein Fehler, die Seite zeigt dann eben keine Belege.
    */
-  async abgleichDokumente(eingabe: unknown, z?: Zugriff): Promise<Abgleich & { bezuege: Record<string, MappenBezug>; ohneText: string[]; typ?: TypFund | null }> {
+  async abgleichDokumente(
+    eingabe: unknown,
+    z?: Zugriff,
+  ): Promise<Abgleich & { bezuege: Record<string, MappenBezug>; ohneText: string[]; typ?: TypFund | null }> {
     const e = (eingabe ?? {}) as { dokumente?: unknown; typ?: unknown };
-    const ids = [...new Set((Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string'))].slice(0, 10);
+    const ids = [...new Set((Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string'))].slice(
+      0,
+      10,
+    );
     const typ = typeof e.typ === 'string' && e.typ ? e.typ : undefined;
     const teile: string[] = [];
     const ohneText: string[] = [];
@@ -837,8 +1217,13 @@ export class Erkennung {
       if (ohneErkennung(d)) continue;
       const text = await this.repo().volltext(id);
       // E-Rechnung als XML (#1043): ohne Volltext zählt ihr lesbarer Auszug.
-      const er = !text?.trim() && istXmlDatei(d.name, d.mime) ? await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse) : null;
-      if (text?.trim()) teile.push(text); else if (er) teile.push(erechnungText(er)); else ohneText.push(id);
+      const er =
+        !text?.trim() && istXmlDatei(d.name, d.mime)
+          ? await this.erechnungAus(() => this.d.kern.liesGanz(d.sha256), d.name, d.mime, d.groesse)
+          : null;
+      if (text?.trim()) teile.push(text);
+      else if (er) teile.push(erechnungText(er));
+      else ohneText.push(id);
     }
     const text = teile.join('\n\n').slice(0, TEXT_MAX);
     const erg = await this.abgleich(text, typ, z);
@@ -849,7 +1234,10 @@ export class Erkennung {
   /** Anlagen (#998) und Original-E-Mail (#999) weglassen: Erkennung, Fundstellen und KI arbeiten nur mit Hauptdokumenten. */
   private async ohneAnlagen(ids: string[]): Promise<string[]> {
     const erg: string[] = [];
-    for (const id of ids) { const d = await this.repo().holeDokument(id); if (d && !ohneErkennung(d)) erg.push(id); }
+    for (const id of ids) {
+      const d = await this.repo().holeDokument(id);
+      if (d && !ohneErkennung(d)) erg.push(id);
+    }
     return erg;
   }
 
@@ -858,12 +1246,36 @@ export class Erkennung {
     if (!b.name) return null;
     const typen = (await this.repo().listeTypen()).filter((t) => istAbsenderTyp(t) && (!z || z.typen.has(t.id)));
     // Organisation vor Person: kein Vorname/Nachname; ein Typ mit Kennung „…organisation“ zuerst.
-    const kandidaten = typen.filter((t) => !t.felder.some((f) => /vorname|nachname/.test(f.key)))
+    const kandidaten = typen
+      .filter((t) => !t.felder.some((f) => /vorname|nachname/.test(f.key)))
       .sort((a, c) => Number(/organisation/.test(c.schluessel ?? '')) - Number(/organisation/.test(a.schluessel ?? '')));
     for (const t of kandidaten) {
-      if (z && !(await this.d.rechtepruefung.rechteAn(z, { id: '', typId: t.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) continue;
-      const leer = { emails: [], internet: [], ibans: [], ustids: [], telefon: [], mobil: [], fax: [], datum: null, betrag: null, nummern: [], person: null, briefkopf: b };
-      const werte = Object.fromEntries(Object.entries(vorschlaegeAus(t, '', leer)).filter(([, v]) => typeof v.wert === 'string').map(([k, v]) => [k, v.wert as string]));
+      if (
+        z &&
+        !(
+          await this.d.rechtepruefung.rechteAn(z, { id: '', typId: t.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)
+        ).C
+      )
+        continue;
+      const leer = {
+        emails: [],
+        internet: [],
+        ibans: [],
+        ustids: [],
+        telefon: [],
+        mobil: [],
+        fax: [],
+        datum: null,
+        betrag: null,
+        nummern: [],
+        person: null,
+        briefkopf: b,
+      };
+      const werte = Object.fromEntries(
+        Object.entries(vorschlaegeAus(t, '', leer))
+          .filter(([, v]) => typeof v.wert === 'string')
+          .map(([k, v]) => [k, v.wert as string]),
+      );
       if (Object.keys(werte).length) return { typId: t.id, werte, fundstelle: b.fundstelle };
     }
     return null;
@@ -874,15 +1286,22 @@ export class Erkennung {
  * Fundstellen aus einem Paket (#939) müssen wörtlich im Dokument stehen (bis auf Leerraum und Groß-/Kleinschreibung) –
  * sonst fällt die Fundstelle weg, der Wert bleibt (ohne Rahmen). Alte Pakete ohne Fundstelle laufen unverändert weiter.
  */
-export function ohneFremdeFundstellen(vorschlaege: Record<string, unknown>, text: string, typ: string, paket: string): Record<string, unknown> {
+export function ohneFremdeFundstellen(
+  vorschlaege: Record<string, unknown>,
+  text: string,
+  typ: string,
+  paket: string,
+): Record<string, unknown> {
   let weg = 0;
-  const erg = Object.fromEntries(Object.entries(vorschlaege).map(([k, roh]) => {
-    if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return [k, roh];
-    const o = roh as Record<string, unknown>;
-    if (typeof o.fundstelle !== 'string' || !o.fundstelle.trim() || stehtImText(text, o.fundstelle)) return [k, roh];
-    weg++;
-    return [k, { ...o, fundstelle: '' }];
-  }));
+  const erg = Object.fromEntries(
+    Object.entries(vorschlaege).map(([k, roh]) => {
+      if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return [k, roh];
+      const o = roh as Record<string, unknown>;
+      if (typeof o.fundstelle !== 'string' || !o.fundstelle.trim() || stehtImText(text, o.fundstelle)) return [k, roh];
+      weg++;
+      return [k, { ...o, fundstelle: '' }];
+    }),
+  );
   if (weg) log.info('Fundstellen aus Paket verworfen (stehen nicht im Dokument)', { typ, paket, anzahl: weg });
   return erg;
 }

@@ -24,7 +24,7 @@ export const istMerkmal = (v: unknown): v is Merkmal => typeof v === 'string' &&
 
 /** Gespeicherten Wert oder Eingabe lesen; Unbekanntes fällt weg, Fehlendes gilt als nein. */
 export function liesMerkmale(v: unknown): Merkmale {
-  const o = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
   return Object.fromEntries(MERKMALE.map((m) => [m, o[m] === true])) as Merkmale;
 }
 

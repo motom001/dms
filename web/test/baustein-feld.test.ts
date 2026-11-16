@@ -12,7 +12,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 const g = globalThis as Record<string, unknown>;
 const speicher = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, String(v)), removeItem: (k: string) => void m.delete(k), clear: () => m.clear(), key: () => null, get length() { return m.size; } };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => void m.set(k, String(v)),
+    removeItem: (k: string) => void m.delete(k),
+    clear: () => m.clear(),
+    key: () => null,
+    get length() {
+      return m.size;
+    },
+  };
 };
 g.location = new URL('http://127.0.0.1/');
 g.localStorage = speicher();
@@ -20,7 +29,14 @@ g.sessionStorage = speicher();
 g.addEventListener = () => {};
 g.removeEventListener = () => {};
 g.window = globalThis;
-g.document = { title: '', querySelector: () => null, documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } }, addEventListener() {}, removeEventListener() {}, createElement: () => ({ style: {} }) };
+g.document = {
+  title: '',
+  querySelector: () => null,
+  documentElement: { lang: 'de', dataset: {}, style: { setProperty() {} } },
+  addEventListener() {},
+  removeEventListener() {},
+  createElement: () => ({ style: {} }),
+};
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
@@ -52,7 +68,13 @@ describe('Baustein Feld (#967)', () => {
   });
 
   it('eigene id der Eingabe bleibt; Hinweis und Fehler hängen über aria-describedby an der Eingabe', () => {
-    const html = zeichne(h(Feld, { beschriftung: 'Postleitzahl', hinweis: 'Fünf Ziffern', fehler: 'Bitte genau fünf Ziffern eingeben.' }, h('input', { id: 'plz', type: 'text', 'aria-describedby': 'extra' })));
+    const html = zeichne(
+      h(
+        Feld,
+        { beschriftung: 'Postleitzahl', hinweis: 'Fünf Ziffern', fehler: 'Bitte genau fünf Ziffern eingeben.' },
+        h('input', { id: 'plz', type: 'text', 'aria-describedby': 'extra' }),
+      ),
+    );
     assert.equal(attr(html, INPUT, 'id'), 'plz');
     assert.equal(attr(html, LABEL, 'for'), 'plz');
     assert.equal(attr(html, INPUT, 'aria-invalid'), 'true');
@@ -65,20 +87,35 @@ describe('Baustein Feld (#967)', () => {
 
   it('Reihenfolge: Beschriftung · Eingabe · Fehler · Hinweis – der Fehler direkt unter der Eingabe (Prüfung Qualität zu #967)', () => {
     for (const art of [Feld, HakenFeld]) {
-      const html = zeichne(h(art, { beschriftung: 'E-Mail-Adresse', hinweis: 'An diese Adresse schickt Ablago Erinnerungen.', fehler: 'Bitte eine vollständige Adresse eingeben.' }, h('input', { id: 'mail', type: art === Feld ? 'email' : 'checkbox', readOnly: true })));
+      const html = zeichne(
+        h(
+          art,
+          {
+            beschriftung: 'E-Mail-Adresse',
+            hinweis: 'An diese Adresse schickt Ablago Erinnerungen.',
+            fehler: 'Bitte eine vollständige Adresse eingeben.',
+          },
+          h('input', { id: 'mail', type: art === Feld ? 'email' : 'checkbox', readOnly: true }),
+        ),
+      );
       const eingabe = html.indexOf('<input');
       const fehler = html.indexOf('id="mail-fehler"');
       const hinweis = html.indexOf('id="mail-hinweis"');
       assert.ok(eingabe >= 0 && eingabe < fehler && fehler < hinweis, `Eingabe vor Fehler vor Hinweis: ${html}`);
       assert.equal(attr(html, INPUT, 'aria-describedby'), 'mail-fehler mail-hinweis', 'vorgelesen wie sichtbar');
     }
-    const gruppe = zeichne(h(FeldGruppe, { beschriftung: 'Wochentage', hinweis: 'An diesen Tagen.', fehler: 'Bitte einen Tag wählen.' }, h('span', null, 'Mo')));
+    const gruppe = zeichne(
+      h(FeldGruppe, { beschriftung: 'Wochentage', hinweis: 'An diesen Tagen.', fehler: 'Bitte einen Tag wählen.' }, h('span', null, 'Mo')),
+    );
     assert.ok(gruppe.search(/ id="[^"]+-fehler"/) < gruppe.search(/ id="[^"]+-hinweis"/), 'auch in der Gruppe');
   });
 
   it('id des Rahmens geht vor; als Funktion bekommt die Eingabe die Verknüpfung selbst', () => {
     let bekommen: Record<string, unknown> = {};
-    const eingabe = (v: Record<string, unknown>) => { bekommen = v; return h('input', v); };
+    const eingabe = (v: Record<string, unknown>) => {
+      bekommen = v;
+      return h('input', v);
+    };
     const html = zeichne(h(Feld, { beschriftung: 'Betrag', id: 'betrag', hinweis: 'in Euro', children: eingabe }));
     assert.deepEqual(bekommen, { id: 'betrag', 'aria-describedby': 'betrag-hinweis' });
     assert.equal(attr(html, LABEL, 'for'), 'betrag');
@@ -93,7 +130,13 @@ describe('Baustein Feld (#967)', () => {
   });
 
   it('Haken: Kästchen vor der Beschriftung, Hinweis über aria-describedby', () => {
-    const html = zeichne(h(HakenFeld, { beschriftung: 'Erinnerung per E-Mail', hinweis: 'Am Tag vor dem Termin.', fehler: 'Bitte bestätigen.' }, h('input', { id: 'erinnern', type: 'checkbox', readOnly: true })));
+    const html = zeichne(
+      h(
+        HakenFeld,
+        { beschriftung: 'Erinnerung per E-Mail', hinweis: 'Am Tag vor dem Termin.', fehler: 'Bitte bestätigen.' },
+        h('input', { id: 'erinnern', type: 'checkbox', readOnly: true }),
+      ),
+    );
     assert.ok(html.indexOf('<input') < html.indexOf('<label'), 'Das Kästchen steht vor seiner Beschriftung');
     assert.equal(attr(html, LABEL, 'for'), 'erinnern');
     assert.equal(attr(html, INPUT, 'aria-describedby'), 'erinnern-fehler erinnern-hinweis');
@@ -101,7 +144,13 @@ describe('Baustein Feld (#967)', () => {
   });
 
   it('Gruppe: role="group", benannt durch die Beschriftung, Hinweis an der Gruppe', () => {
-    const html = zeichne(h(FeldGruppe, { beschriftung: 'Wochentage', hinweis: 'An diesen Tagen.' }, h('label', null, h('input', { type: 'checkbox', readOnly: true }), 'Montag')));
+    const html = zeichne(
+      h(
+        FeldGruppe,
+        { beschriftung: 'Wochentage', hinweis: 'An diesen Tagen.' },
+        h('label', null, h('input', { type: 'checkbox', readOnly: true }), 'Montag'),
+      ),
+    );
     const gruppe = /<div role="group"[^>]*>/.exec(html)?.[0] ?? '';
     const name = /aria-labelledby="([^"]+)"/.exec(gruppe)?.[1];
     assert.ok(name);

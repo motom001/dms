@@ -35,22 +35,38 @@ export async function pdfFuerAnzeige(inhalt: Buffer): Promise<Buffer | null> {
   const sha = createHash('sha256').update(inhalt).digest('hex');
   if (cache.has(sha)) {
     const b = cache.get(sha)!;
-    cache.delete(sha); cache.set(sha, b);
+    cache.delete(sha);
+    cache.set(sha, b);
     return b;
   }
   let p = laufend.get(sha);
   if (!p) {
-    p = bereinigePdf(inhalt).then((r) => {
-      if (r.entfernt.length) L.info('PDF für die Anzeige bereinigt', { sha256: sha.slice(0, 12), entfernt: r.entfernt.join(', ') });
-      return Buffer.from(r.pdf);
-    }, (e) => {
-      L.warn('PDF lässt sich nicht für die Anzeige bereinigen – nur Herunterladen', { sha256: sha.slice(0, 12), fehler: (e as Error).message.slice(0, 200) });
-      return null;
-    }).then((b) => { merke(sha, b); return b; }).finally(() => laufend.delete(sha));
+    p = bereinigePdf(inhalt)
+      .then(
+        (r) => {
+          if (r.entfernt.length) L.info('PDF für die Anzeige bereinigt', { sha256: sha.slice(0, 12), entfernt: r.entfernt.join(', ') });
+          return Buffer.from(r.pdf);
+        },
+        (e) => {
+          L.warn('PDF lässt sich nicht für die Anzeige bereinigen – nur Herunterladen', {
+            sha256: sha.slice(0, 12),
+            fehler: (e as Error).message.slice(0, 200),
+          });
+          return null;
+        },
+      )
+      .then((b) => {
+        merke(sha, b);
+        return b;
+      })
+      .finally(() => laufend.delete(sha));
     laufend.set(sha, p);
   }
   return p;
 }
 
 /** Für Tests. */
-export function leereAnzeigeCache() { cache.clear(); belegt = 0; }
+export function leereAnzeigeCache() {
+  cache.clear();
+  belegt = 0;
+}

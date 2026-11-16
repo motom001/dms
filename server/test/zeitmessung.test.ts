@@ -16,10 +16,21 @@ const neuerKontext = (): Kontext => ({ anfrage: 't', db: { anzahl: 0, ms: 0 } })
 
 describe('Server-Timing (#477)', () => {
   it('teilt eine Anfrage auf und schreibt den Header', () => {
-    const t = zeitaufteilung({ eingang: 100, start: 103, ende: 203, senden: 204, jetzt: 210, db: { anzahl: 4, ms: 60 }, rechte: { ms: 30, dbMs: 10 } });
+    const t = zeitaufteilung({
+      eingang: 100,
+      start: 103,
+      ende: 203,
+      senden: 204,
+      jetzt: 210,
+      db: { anzahl: 4, ms: 60 },
+      rechte: { ms: 30, dbMs: 10 },
+    });
     assert.deepEqual(t, { vor: 3, app: 100, db: 60, dbAnzahl: 4, rechte: 20, json: 6, gesamt: 110 });
     assert.equal(serverTiming(t), 'vor;dur=3.0, app;dur=100.0, db;dur=60.0;desc="4", rechte;dur=20.0, json;dur=6.0, gesamt;dur=110.0');
-    assert.match(aufteilungText(t), /^110 ms gesamt · Warten vor dem Handler 3 · Datenbank 60 \(4\) · Rechte 20 · Aufbereitung 20 · JSON 6$/);
+    assert.match(
+      aufteilungText(t),
+      /^110 ms gesamt · Warten vor dem Handler 3 · Datenbank 60 \(4\) · Rechte 20 · Aufbereitung 20 · JSON 6$/,
+    );
   });
 
   it('keine negativen oder unsinnigen Werte (Rechte höchstens so lang wie der Handler)', () => {
@@ -32,11 +43,25 @@ describe('Server-Timing (#477)', () => {
   it('Rechte: verschachtelte und gleichzeitige Auswertungen zählen einmal, Datenbankzeit darin abgezogen', async () => {
     const k = neuerKontext();
     const messung = new Messung(speicherMessSpeicher());
-    const repo = messung.umhuelle({ async lies() { await warte(30); return 1; } }, 'test');
+    const repo = messung.umhuelle(
+      {
+        async lies() {
+          await warte(30);
+          return 1;
+        },
+      },
+      'test',
+    );
     await kontext.run(k, async () => {
       await rechteMessen(async () => {
         // zwei gleichzeitige, darin verschachtelt eine weitere und ein Datenbankzugriff
-        await Promise.all([rechteMessen(() => warte(40)), rechteMessen(async () => { await rechteMessen(() => warte(20)); await repo.lies(); })]);
+        await Promise.all([
+          rechteMessen(() => warte(40)),
+          rechteMessen(async () => {
+            await rechteMessen(() => warte(20));
+            await repo.lies();
+          }),
+        ]);
       });
     });
     const r = k.rechte!;
@@ -49,11 +74,22 @@ describe('Server-Timing (#477)', () => {
   });
 
   it('Rechte außerhalb einer Anfrage und bei Fehlern', async () => {
-    assert.equal(rechteMessen(() => 5), 5);
+    assert.equal(
+      rechteMessen(() => 5),
+      5,
+    );
     const k = neuerKontext();
     await kontext.run(k, async () => {
-      assert.throws(() => rechteMessen(() => { throw new Error('x'); }));
-      await assert.rejects(rechteMessen(async () => { throw new Error('y'); }));
+      assert.throws(() =>
+        rechteMessen(() => {
+          throw new Error('x');
+        }),
+      );
+      await assert.rejects(
+        rechteMessen(async () => {
+          throw new Error('y');
+        }),
+      );
     });
     assert.equal(k.rechte!.offen, 0);
   });
@@ -61,7 +97,15 @@ describe('Server-Timing (#477)', () => {
   it('lange Anfrage: Langläufer mit Aufteilung, kurze nicht', async () => {
     const m = new Messung(speicherMessSpeicher());
     await m.setze({ schwelleMs: 100 });
-    const t = zeitaufteilung({ eingang: 0, start: 2, ende: 150, senden: 150, jetzt: 155, db: { anzahl: 2, ms: 90 }, rechte: { ms: 10, dbMs: 0 } });
+    const t = zeitaufteilung({
+      eingang: 0,
+      start: 2,
+      ende: 150,
+      senden: 150,
+      jetzt: 155,
+      db: { anzahl: 2, ms: 90 },
+      rechte: { ms: 10, dbMs: 0 },
+    });
     m.erfasseAnfrage({ pfad: 'GET /api/sichten', benutzer: 'ben' }, t);
     m.erfasseAnfrage({ pfad: 'GET /api/typen' }, { ...t, gesamt: 20 });
     await warte(5);
@@ -84,8 +128,22 @@ describe('Aufteilung im Browser (#477)', () => {
   it('trennt Warten im Browser, Leitung und die Teile im Server', () => {
     const st = liesServerTiming('vor;dur=5, app;dur=80, db;dur=50;desc="7", rechte;dur=10, json;dur=3, gesamt;dur=90');
     // Start 1000, wartet 200 ms im Browser (6 Anfragen laufen schon), Verbindung 0, Antwort nach 100 ms.
-    const a = teileAuf(st, { startTime: 1000, connectStart: 1000, connectEnd: 1000, requestStart: 1200, responseStart: 1300, responseEnd: 1310 }, 0);
-    assert.deepEqual(a, { wartenBrowser: 200, leitung: 10, wartenServer: 5, rechte: 10, aufbereitung: 20, db: 50, dbAnzahl: 7, json: 3, uebertragung: 10 });
+    const a = teileAuf(
+      st,
+      { startTime: 1000, connectStart: 1000, connectEnd: 1000, requestStart: 1200, responseStart: 1300, responseEnd: 1310 },
+      0,
+    );
+    assert.deepEqual(a, {
+      wartenBrowser: 200,
+      leitung: 10,
+      wartenServer: 5,
+      rechte: 10,
+      aufbereitung: 20,
+      db: 50,
+      dbAnzahl: 7,
+      json: 3,
+      uebertragung: 10,
+    });
   });
 
   it('ohne Resource Timing: Leitung aus der Wartezeit, Warten im Browser unbekannt', () => {
@@ -97,7 +155,16 @@ describe('Aufteilung im Browser (#477)', () => {
   });
 });
 
-const TYP = { name: 'Vertrag', beschreibung: '', titelVorlage: '', felder: [{ key: 'ende', label: 'Ende', typ: 'datum' }, { key: 'kuendigen', label: 'Kündigen', typ: 'datum' }], register: [] } as never;
+const TYP = {
+  name: 'Vertrag',
+  beschreibung: '',
+  titelVorlage: '',
+  felder: [
+    { key: 'ende', label: 'Ende', typ: 'datum' },
+    { key: 'kuendigen', label: 'Kündigen', typ: 'datum' },
+  ],
+  register: [],
+} as never;
 const uuid = () => crypto.randomUUID();
 
 /** Gemeinsam für Arbeitsspeicher und PostgreSQL. */
@@ -116,7 +183,18 @@ async function pruefeMappenMitDatum(repo: import('../src/repo').Repo) {
 
 /** Eingang: Mappen mit offener Aufgabe für mich – auch mit Lesefilter, der nichts zeigt (#127). */
 async function pruefeEingang(repo: import('../src/repo').Repo, mappeId: string, ben: string) {
-  for (const text of ['a', 'b']) await repo.legeAufgabeAn({ id: uuid(), mappeId, empfaengerId: ben, art: 'manuell', text, erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null });
+  for (const text of ['a', 'b'])
+    await repo.legeAufgabeAn({
+      id: uuid(),
+      mappeId,
+      empfaengerId: ben,
+      art: 'manuell',
+      text,
+      erstellt: new Date().toISOString(),
+      erstelltVon: null,
+      erledigt: null,
+      erledigtVon: null,
+    });
   const ohne = await repo.zaehler(ben, false);
   const mit = await repo.zaehler(ben, false, { offen: [], je: [] });
   assert.equal(ohne.eingang, 1);
@@ -136,7 +214,8 @@ describe('Termine und Zähler ohne Durchgang über alle Mappen (#477)', () => {
 const url = process.env.TEST_DATABASE_URL;
 describe('PostgreSQL: mappenMitDatum und Eingang im Zähler (#477)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
-  let sql: any; let repo: import('../src/repo').Repo;
+  let sql: any;
+  let repo: import('../src/repo').Repo;
   const HAUSHALT = '00000000-0000-4000-8000-000000000477';
   const BEN = '00000000-0000-4000-8000-0000000004bb';
   const aufraeumen = async () => {
@@ -153,7 +232,12 @@ describe('PostgreSQL: mappenMitDatum und Eingang im Zähler (#477)', { skip: url
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${BEN}, ${HAUSHALT}, 'ben-477@example.org', 'Ben', 'mitglied')`;
     repo = pgRepo(sql, HAUSHALT);
   });
-  after(async () => { if (sql) { await aufraeumen(); await sql.end(); } });
+  after(async () => {
+    if (sql) {
+      await aufraeumen();
+      await sql.end();
+    }
+  });
 
   it('wie im Arbeitsspeicher', async () => {
     const { a } = await pruefeMappenMitDatum(repo);
@@ -162,10 +246,15 @@ describe('PostgreSQL: mappenMitDatum und Eingang im Zähler (#477)', { skip: url
   });
 });
 
-const echtesFastify = await import('fastify').then((m) => typeof m.default === 'function', () => false);
+const echtesFastify = await import('fastify').then(
+  (m) => typeof m.default === 'function',
+  () => false,
+);
 describe('HTTP: Server-Timing-Header (#477)', { skip: echtesFastify ? false : 'fastify nicht installiert' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
-  let app: any; let messung: Messung; let cookie = '';
+  let app: any;
+  let messung: Messung;
+  let cookie = '';
   before(async () => {
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
@@ -176,15 +265,25 @@ describe('HTTP: Server-Timing-Header (#477)', { skip: echtesFastify ? false : 'f
     // Typen etwas langsam, damit die Anfrage sicher über der kleinsten Schwelle (1 ms) liegt.
     const repo = speicherRepo();
     const typen = repo.listeTypen.bind(repo);
-    repo.listeTypen = async () => { await warte(3); return typen(); };
+    repo.listeTypen = async () => {
+      await warte(3);
+      return typen();
+    };
     const dienst = new Dienst(messung.umhuelle(repo, 'mappen'), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     app = await baueApp(dienst, konten, { messung });
   });
-  after(async () => { await app?.close(); });
+  after(async () => {
+    await app?.close();
+  });
 
   it('jede Antwort einer Route hat vor, app, db, rechte, json und gesamt – plausibel', async () => {
-    const r = await app.inject({ method: 'POST', url: '/api/konto/einrichten', headers: { 'x-dms': '1' }, payload: { email: 'a@example.org', name: 'A', passwort: 'ein-langes-passwort' } });
+    const r = await app.inject({
+      method: 'POST',
+      url: '/api/konto/einrichten',
+      headers: { 'x-dms': '1' },
+      payload: { email: 'a@example.org', name: 'A', passwort: 'ein-langes-passwort' },
+    });
     assert.equal(r.statusCode, 201);
     cookie = String(r.headers['set-cookie']).split(';')[0];
     const typen = await app.inject({ method: 'GET', url: '/api/typen', headers: { 'x-dms': '1', cookie } });
@@ -197,7 +296,11 @@ describe('HTTP: Server-Timing-Header (#477)', { skip: echtesFastify ? false : 'f
     assert.ok(werte.gesamt + 0.2 >= werte.vor + werte.app + werte.json, 'die Teile passen in gesamt');
     assert.ok(werte.app + 0.1 >= werte.db, 'Datenbank liegt im Handler');
     // Fehler (404 einer unbekannten Mappe): kein Server-Timing nötig, aber auch kein Absturz.
-    const fehlt = await app.inject({ method: 'GET', url: '/api/mappen/00000000-0000-4000-8000-000000000000', headers: { 'x-dms': '1', cookie } });
+    const fehlt = await app.inject({
+      method: 'GET',
+      url: '/api/mappen/00000000-0000-4000-8000-000000000000',
+      headers: { 'x-dms': '1', cookie },
+    });
     assert.equal(fehlt.statusCode, 404);
   });
 

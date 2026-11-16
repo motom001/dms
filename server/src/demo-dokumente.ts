@@ -1,4 +1,13 @@
-import { DOKUMENTARTEN, MAX_DUPLIKATE, MAX_JE_MAPPE, MISCHUNGEN, STUFEN, type DokumentOptionen, type Mischung, type Stufe } from '../../shared/src/demodaten';
+import {
+  DOKUMENTARTEN,
+  MAX_DUPLIKATE,
+  MAX_JE_MAPPE,
+  MISCHUNGEN,
+  STUFEN,
+  type DokumentOptionen,
+  type Mischung,
+  type Stufe,
+} from '../../shared/src/demodaten';
 import { Fachfehler } from './fehler';
 
 /**
@@ -8,7 +17,19 @@ import { Fachfehler } from './fehler';
 export { erzeugeDokument, kannRastern, png, type ErzeugtesDokument, type MappenInhalt } from './pdf';
 
 // Arten, Mischungen, Erwartungswerte und die Abschätzung liegen in shared (#365), damit die Oberfläche live rechnet.
-export { DOKUMENTARTEN, ERWARTUNG, MAX_JE_MAPPE, MISCHUNGEN, STUFEN, schaetze, type Abschaetzung, type DokumentOptionen, type Dokumentart, type Mischung, type Stufe } from '../../shared/src/demodaten';
+export {
+  DOKUMENTARTEN,
+  ERWARTUNG,
+  MAX_JE_MAPPE,
+  MISCHUNGEN,
+  STUFEN,
+  schaetze,
+  type Abschaetzung,
+  type DokumentOptionen,
+  type Dokumentart,
+  type Mischung,
+  type Stufe,
+} from '../../shared/src/demodaten';
 
 export function pruefeDokumentOptionen(x: unknown): DokumentOptionen | null {
   if (x == null || x === false) return null;

@@ -84,7 +84,8 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
     let t = 1_700_000_000_000;
     const speicher = speicherEinstellungen();
     const z = new Zweifaktor(speicher, ver, ent, () => t);
-    const vorher = new Date(t - 1000), nachher = new Date(t + 1000);
+    const vorher = new Date(t - 1000),
+      nachher = new Date(t + 1000);
     await z.setzePflicht({ admin: true }, 'test');
     const a = { id: 'a', verwaltung: ['*'] };
     assert.equal(await z.lage(a, vorher), 'ausstehend', 'laufende Sitzung arbeitet weiter');
@@ -126,7 +127,9 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
     };
     const alle = routen(d, konten);
     const route = (m: Route['methode'], p: string) => alle.find((x) => x.methode === m && x.pfad === p)!;
-    const typen = route('GET', '/api/typen'), pflichtLesen = route('GET', '/api/werkbank/zweifaktor'), pflichtSetzen = route('PUT', '/api/werkbank/zweifaktor');
+    const typen = route('GET', '/api/typen'),
+      pflichtLesen = route('GET', '/api/werkbank/zweifaktor'),
+      pflichtSetzen = route('PUT', '/api/werkbank/zweifaktor');
     const status = route('GET', '/api/konto/status');
     const koepfe = (n: string) => (n === 'x-dms' ? '1' : undefined);
     const frage = async (r: Route, sitzung: string, body: unknown = {}) => {
@@ -136,7 +139,8 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
     };
     const statusVon = async (sitzung: string) => {
       const a = await frage(status, sitzung);
-      return ((await status.handler(a)) as { body: { zweifaktor: { aktiv: boolean; fehlt: boolean; ausstehend: boolean } } }).body.zweifaktor;
+      return ((await status.handler(a)) as { body: { zweifaktor: { aktiv: boolean; fehlt: boolean; ausstehend: boolean } } }).body
+        .zweifaktor;
     };
 
     const laufend = await anmelden();
@@ -158,7 +162,10 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
     // Die Pflicht selbst: lesen und ausschalten immer, einschalten nicht.
     await frage(pflichtLesen, neu);
     await assert.rejects(frage(pflichtSetzen, neu, { mitglied: true }), (e: unknown) => e instanceof Fachfehler && e.status === 403);
-    await assert.rejects(frage(pflichtSetzen, neu, { admin: false, mitglied: true }), (e: unknown) => e instanceof Fachfehler && e.status === 403);
+    await assert.rejects(
+      frage(pflichtSetzen, neu, { admin: false, mitglied: true }),
+      (e: unknown) => e instanceof Fachfehler && e.status === 403,
+    );
     await pflichtSetzen.handler(await frage(pflichtSetzen, neu, { admin: false }));
     assert.deepEqual(await z.pflicht(), { admin: false, mitglied: false });
     await frage(typen, neu);
@@ -166,7 +173,8 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
   });
 
   it('pflichtZuruecknehmen: nur im Verwaltungsmodus, nur lesen oder ausschalten (#416, #819)', () => {
-    const admin = { rolle: 'admin' } as Anfrage['benutzer'], mitglied = { rolle: 'mitglied' } as Anfrage['benutzer'];
+    const admin = { rolle: 'admin' } as Anfrage['benutzer'],
+      mitglied = { rolle: 'mitglied' } as Anfrage['benutzer'];
     const r = (methode: Route['methode'], pfad = '/api/werkbank/zweifaktor') => ({ methode, pfad });
     assert.equal(pflichtZuruecknehmen(r('GET'), { body: undefined, benutzer: admin }), true);
     assert.equal(pflichtZuruecknehmen(r('PUT'), { body: { admin: false }, benutzer: admin }), true);
@@ -214,8 +222,13 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
     const k3 = (r3 as { zweiterSchritt: string }).zweiterSchritt;
     const echt = z.pruefe.bind(z);
     let geprueft = 0;
-    z.pruefe = async (...a: Parameters<typeof z.pruefe>) => { geprueft++; return echt(...a); };
-    await Promise.allSettled(Array.from({ length: 30 }, (_, i) => konten.anmeldenMitCode({ kennung: k3, code: String(100000 + i) }, '4.4.4.4')));
+    z.pruefe = async (...a: Parameters<typeof z.pruefe>) => {
+      geprueft++;
+      return echt(...a);
+    };
+    await Promise.allSettled(
+      Array.from({ length: 30 }, (_, i) => konten.anmeldenMitCode({ kennung: k3, code: String(100000 + i) }, '4.4.4.4')),
+    );
     z.pruefe = echt;
     assert.ok(geprueft <= 5, `${geprueft} Codes geprüft`);
     await assert.rejects(konten.anmeldenMitCode({ kennung: k3, code: codes[4] }, '4.4.4.4'), status(401), 'Kennung verfallen');

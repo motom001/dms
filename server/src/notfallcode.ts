@@ -66,7 +66,10 @@ const WEITERGELEITET = ['x-forwarded-for', 'forwarded', 'x-real-ip'];
  *   „nicht Heimnetz“; ebenso mit `TRUST_PROXY=true` (die Angabe könnte jeder setzen) und mit Köpfen, die Ablago nicht
  *   auswertet (Forwarded, X-Real-IP ohne X-Forwarded-For).
  */
-export function istHeimnetz(a: { ip: string; kopf?: (name: string) => string | undefined }, vertrauen: ProxyVertrauen | undefined): boolean {
+export function istHeimnetz(
+  a: { ip: string; kopf?: (name: string) => string | undefined },
+  vertrauen: ProxyVertrauen | undefined,
+): boolean {
   const weiter = WEITERGELEITET.filter((k) => !!a.kopf?.(k)?.trim());
   if (weiter.length) {
     if (vertrauen === false || vertrauen === undefined || vertrauen === true) return false;
@@ -82,7 +85,10 @@ export type HeimnetzGrund = 'oeffentlich' | 'proxy';
  * Für die Werkbank (#885): `istHeimnetz` plus Grund, wenn nicht. Die Prüfung selbst bleibt `istHeimnetz`; hier wird nur
  * nachträglich unterschieden, damit Markus sieht, was er beheben kann (lokaler DNS-Eintrag oder Proxy-Einstellung).
  */
-export function heimnetzStand(a: { ip: string; kopf?: (name: string) => string | undefined }, vertrauen: ProxyVertrauen | undefined): { heimnetz: true } | { heimnetz: false; grund: HeimnetzGrund } {
+export function heimnetzStand(
+  a: { ip: string; kopf?: (name: string) => string | undefined },
+  vertrauen: ProxyVertrauen | undefined,
+): { heimnetz: true } | { heimnetz: false; grund: HeimnetzGrund } {
   if (istHeimnetz(a, vertrauen)) return { heimnetz: true };
   const weiter = WEITERGELEITET.filter((k) => !!a.kopf?.(k)?.trim());
   const geglaubt = !weiter.length || (Array.isArray(vertrauen) && weiter.includes('x-forwarded-for'));
@@ -98,7 +104,12 @@ export function heimnetzStand(a: { ip: string; kopf?: (name: string) => string |
  */
 export class NotfallSperre {
   private zustand: Kurzzustand;
-  constructor(private jetzt: () => number = Date.now, zustand?: Kurzzustand) { this.zustand = zustand ?? speicherKurzzustand(jetzt); }
+  constructor(
+    private jetzt: () => number = Date.now,
+    zustand?: Kurzzustand,
+  ) {
+    this.zustand = zustand ?? speicherKurzzustand(jetzt);
+  }
 
   /** Noch gesperrt? Dann die Wartezeit in Sekunden, sonst 0. */
   async rest(bereich: string): Promise<number> {
@@ -114,16 +125,35 @@ export class NotfallSperre {
   async belege(bereich: string): Promise<(() => Promise<void>) | null> {
     if (!(await this.zustand.belege(PRUEFUNG, bereich, PRUEFUNG_MS))) return null;
     let frei = false;
-    return async () => { if (!frei) { frei = true; await this.zustand.loesche(PRUEFUNG, bereich).catch(() => {}); } };
+    return async () => {
+      if (!frei) {
+        frei = true;
+        await this.zustand.loesche(PRUEFUNG, bereich).catch(() => {});
+      }
+    };
   }
 }
 
 /* ---------- Ablauf ---------- */
 
-export interface NotfallAnfrage { ip: string; kopf?: (name: string) => string | undefined }
-export interface NotfallEinstellung { internet: boolean; von: string | null; am: string | null }
+export interface NotfallAnfrage {
+  ip: string;
+  kopf?: (name: string) => string | undefined;
+}
+export interface NotfallEinstellung {
+  internet: boolean;
+  von: string | null;
+  am: string | null;
+}
 /** Ein benutzter Notfallcode: steht in der Werkbank, bis ihn jemand mit „Gesamte Verwaltung“ als gelesen markiert. */
-export interface NotfallBenutzt { id: string; benutzerId: string; name: string; email: string; am: string; gelesen?: { von: string; am: string } }
+export interface NotfallBenutzt {
+  id: string;
+  benutzerId: string;
+  name: string;
+  email: string;
+  am: string;
+  gelesen?: { von: string; am: string };
+}
 
 export interface NotfallDeps {
   konten: Konten;
@@ -170,7 +200,10 @@ export class Notfallcode {
     if (alt.internet === internet) return alt;
     const neu: NotfallEinstellung = { internet, von, am: new Date(this.jetzt()).toISOString() };
     await this.d.einstellungen.schreibe(EINSTELLUNG, neu);
-    log.warn(internet ? 'Notfallzugang aus dem Internet erlaubt' : 'Notfallzugang nur noch aus dem Heimnetz', { von, imVerwaltungsmodus: true });
+    log.warn(internet ? 'Notfallzugang aus dem Internet erlaubt' : 'Notfallzugang nur noch aus dem Heimnetz', {
+      von,
+      imVerwaltungsmodus: true,
+    });
     return neu;
   }
 
@@ -188,7 +221,10 @@ export class Notfallcode {
     if (warten) throw new Fachfehler(429, t('konten.notfall.fehler.warten', { sekunden: warten }), { warten });
     await this.d.konten.sperre.pruefe('notfallzugang', a.ip);
     const frei = await this.sperre.belege(bereich);
-    if (!frei) throw new Fachfehler(429, t('konten.notfall.fehler.warten', { sekunden: NOTFALL_SPERRE_SEKUNDEN }), { warten: NOTFALL_SPERRE_SEKUNDEN });
+    if (!frei)
+      throw new Fachfehler(429, t('konten.notfall.fehler.warten', { sekunden: NOTFALL_SPERRE_SEKUNDEN }), {
+        warten: NOTFALL_SPERRE_SEKUNDEN,
+      });
     return { bereich, frei };
   }
 
@@ -200,7 +236,9 @@ export class Notfallcode {
     // Über alle Prozesse gezählt (#744), festes Fenster von einer Stunde; die Meldung höchstens einmal je Stunde.
     const { anzahl } = await this.zustand.zaehle(FEHLVERSUCHE, 'alle', STUNDE);
     if (anzahl >= FEHLVERSUCHE_MELDEN && (await this.zustand.belege(GEMELDET, 'alle', STUNDE))) {
-      await this.anVerwaltende(() => mailtexte.notfallFehlversuche(anzahl, kuerzeIp(a.ip))).catch((e) => log.warn('Meldung zu Fehlversuchen am Notfallzugang nicht verschickt', { fehler: (e as Error).message }));
+      await this.anVerwaltende(() => mailtexte.notfallFehlversuche(anzahl, kuerzeIp(a.ip))).catch((e) =>
+        log.warn('Meldung zu Fehlversuchen am Notfallzugang nicht verschickt', { fehler: (e as Error).message }),
+      );
       log.warn('Notfallzugang: viele Fehlversuche gemeldet', { anzahl });
     }
     throw new Fachfehler(403, t('konten.notfall.fehler.falsch'), { warten: NOTFALL_SPERRE_SEKUNDEN });
@@ -214,14 +252,19 @@ export class Notfallcode {
       if (!hash) return await this.falsch(a, bereich);
       log.info('Notfallzugang: Notfallcode richtig, Konto wird gewählt', { ip: kuerzeIp(a.ip) });
       return { konten: (await this.d.konten.notfallKonten()).map((b) => ({ id: b.id, name: b.name || b.email, email: b.email })) };
-    } finally { await frei(); }
+    } finally {
+      await frei();
+    }
   }
 
   /**
    * Schritt 2: Code erneut prüfen, zuerst benachrichtigen, dann einlösen (neues Passwort, Sitzungen weg, Zwei-Faktor
    * zurück). Liefert die Adresse fürs Anmelden und einen Schlüssel fürs neue Notfallblatt (15 Minuten).
    */
-  async einloesen(a: NotfallAnfrage, e: { code?: unknown; konto?: unknown; passwort?: unknown }): Promise<{ email: string; blatt: string }> {
+  async einloesen(
+    a: NotfallAnfrage,
+    e: { code?: unknown; konto?: unknown; passwort?: unknown },
+  ): Promise<{ email: string; blatt: string }> {
     const { bereich, frei } = await this.vorher(a);
     try {
       const hash = await this.d.konten.pruefeNotfallcode(e.code);
@@ -235,27 +278,47 @@ export class Notfallcode {
       await this.meldeBenutzung(konto, am, a.ip);
       const neu = await this.d.konten.loeseNotfallcodeEin(hash, konto.id, e.passwort);
       if (!neu) throw new Fachfehler(409, t('konten.notfall.fehler.benutzt'));
-      log.warn('Notfallzugang benutzt: neues Passwort mit dem Notfallcode', { konto: konto.email, ip: kuerzeIp(a.ip), zweifaktor: 'zurückgesetzt', sitzungen: 'beendet' });
+      log.warn('Notfallzugang benutzt: neues Passwort mit dem Notfallcode', {
+        konto: konto.email,
+        ip: kuerzeIp(a.ip),
+        zweifaktor: 'zurückgesetzt',
+        sitzungen: 'beendet',
+      });
       const liste = ((await this.d.einstellungen.lies(BENUTZT)) as NotfallBenutzt[] | null) ?? [];
       const id = randomBytes(6).toString('hex');
-      await this.d.einstellungen.schreibe(BENUTZT, [...liste, { id, benutzerId: konto.id, name: konto.name || konto.email, email: konto.email, am: am.toISOString() }].slice(-20));
+      await this.d.einstellungen.schreibe(
+        BENUTZT,
+        [...liste, { id, benutzerId: konto.id, name: konto.name || konto.email, email: konto.email, am: am.toISOString() }].slice(-20),
+      );
       await this.d.codeBenutzt?.().catch((x) => log.warn('Notfallblatt nicht als veraltet vermerkt', { fehler: (x as Error).message }));
       return { email: neu.email, blatt: await this.blattSchluessel(konto) };
-    } finally { await frei(); }
+    } finally {
+      await frei();
+    }
   }
 
   private async meldeBenutzung(konto: Benutzer, am: Date, ip: string) {
     const api = (await this.d.apiSchluessel?.(konto.id).catch(() => 0)) ?? 0;
     // Je Empfänger in seiner Sprache (#729).
-    const m = (b: Benutzer) => mitSpracheVon(b, () => mailtexte.notfallBenutzt(konto.name || konto.email, konto.email, datumText(am), kuerzeIp(ip), api));
+    const m = (b: Benutzer) =>
+      mitSpracheVon(b, () => mailtexte.notfallBenutzt(konto.name || konto.email, konto.email, datumText(am), kuerzeIp(ip), api));
     const mailer = this.d.mailer();
-    if (!mailer) { log.warn('Notfallzugang: kein E-Mail-Versand eingerichtet – niemand wurde benachrichtigt', { konto: konto.email }); return; }
+    if (!mailer) {
+      log.warn('Notfallzugang: kein E-Mail-Versand eingerichtet – niemand wurde benachrichtigt', { konto: konto.email });
+      return;
+    }
     const an = new Map<string, Benutzer>();
     if (konto.email && !konto.email.endsWith('.invalid')) an.set(konto.email.toLowerCase(), konto);
-    for (const b of await this.d.konten.listeBenutzer()) if (istPerson(b) && b.aktiv && darfVerwalten(b) && b.email && !b.email.endsWith('.invalid') && !an.has(b.email.toLowerCase())) an.set(b.email.toLowerCase(), b);
+    for (const b of await this.d.konten.listeBenutzer())
+      if (istPerson(b) && b.aktiv && darfVerwalten(b) && b.email && !b.email.endsWith('.invalid') && !an.has(b.email.toLowerCase()))
+        an.set(b.email.toLowerCase(), b);
     for (const [x, b] of an) {
       const text = m(b);
-      try { await mailer.sende(x, text.betreff, text.text); } catch (err) { log.warn('Mail zum Notfallzugang nicht verschickt', { an: x, fehler: (err as Error).message }); }
+      try {
+        await mailer.sende(x, text.betreff, text.text);
+      } catch (err) {
+        log.warn('Mail zum Notfallzugang nicht verschickt', { an: x, fehler: (err as Error).message });
+      }
     }
   }
 
@@ -263,7 +326,10 @@ export class Notfallcode {
     const mailer = this.d.mailer();
     if (!mailer) return;
     for (const b of await this.d.konten.listeBenutzer()) {
-      if (istPerson(b) && b.aktiv && darfVerwalten(b) && b.email && !b.email.endsWith('.invalid')) { const x = mitSpracheVon(b, () => m(b)); await mailer.sende(b.email, x.betreff, x.text); }
+      if (istPerson(b) && b.aktiv && darfVerwalten(b) && b.email && !b.email.endsWith('.invalid')) {
+        const x = mitSpracheVon(b, () => m(b));
+        await mailer.sende(b.email, x.betreff, x.text);
+      }
     }
   }
 
@@ -272,7 +338,12 @@ export class Notfallcode {
   /** Schlüssel fürs neue Notfallblatt (#744: im Kurzzustand nur sein Hash, gültig `BLATT_MINUTEN`). */
   private async blattSchluessel(konto: Benutzer): Promise<string> {
     const s = randomBytes(32).toString('base64url');
-    await this.zustand.setze(BLATT, hashe(s), { benutzerId: konto.id, name: konto.name || konto.email }, this.jetzt() + BLATT_MINUTEN * 60_000);
+    await this.zustand.setze(
+      BLATT,
+      hashe(s),
+      { benutzerId: konto.id, name: konto.name || konto.email },
+      this.jetzt() + BLATT_MINUTEN * 60_000,
+    );
     return s;
   }
 
@@ -291,14 +362,21 @@ export class Notfallcode {
     const vorhanden = async (): Promise<Buffer | null> => {
       const y = await this.zustand.lies(BLATT, h);
       const pdf = (y?.wert as { pdf?: string } | undefined)?.pdf;
-      if (pdf) { const klar = this.d.entschluessele?.(pdf); return klar ? Buffer.from(klar, 'base64') : null; }
+      if (pdf) {
+        const klar = this.d.entschluessele?.(pdf);
+        return klar ? Buffer.from(klar, 'base64') : null;
+      }
       return this.pdfs.get(h) ?? null;
     };
     const da = await vorhanden();
     if (da) return da;
     if (!(await this.zustand.belege(BLATT_ERZEUGEN, h, PRUEFUNG_MS))) {
       // Ein anderer erzeugt es gerade: kurz warten und dessen Blatt liefern.
-      for (let i = 0; i < 50; i++) { await new Promise((r) => setTimeout(r, 200)); const p = await vorhanden(); if (p) return p; }
+      for (let i = 0; i < 50; i++) {
+        await new Promise((r) => setTimeout(r, 200));
+        const p = await vorhanden();
+        if (p) return p;
+      }
       throw weg();
     }
     try {
@@ -306,7 +384,9 @@ export class Notfallcode {
       if (this.d.verschluessele) await this.zustand.setze(BLATT, h, { ...w, pdf: this.d.verschluessele(pdf.toString('base64')) }, x.bis);
       else this.pdfs.set(h, pdf);
       return pdf;
-    } finally { await this.zustand.loesche(BLATT_ERZEUGEN, h).catch(() => {}); }
+    } finally {
+      await this.zustand.loesche(BLATT_ERZEUGEN, h).catch(() => {});
+    }
   }
 
   /* ---------- Hinweis in der Werkbank ---------- */

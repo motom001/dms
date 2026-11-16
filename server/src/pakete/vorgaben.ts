@@ -23,8 +23,22 @@ import { SCHLUESSEL, TYPVERWEIS } from '../../../shared/src/kennungen';
 import { istLeer, titelAus, type Dokument, type Mappe, type Mappentyp, type Register } from '../../../shared/src/model';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import {
-  istVorgabeWert, teileVorgabe, VORGABEN_MAX, vorgabeKennung, vorgabePraefix, vorgabeVerweis, vorgabeWerte, VORLAGE_DATEI, VORLAGE_MIME, VORLAGEN_JE_VORGABE_MAX,
-  type ErgaenzungPlan, type ErgaenzungStand, type VorgabePlan, type VorgabeStand, type VorgabeZustand, type VorlageStand,
+  istVorgabeWert,
+  teileVorgabe,
+  VORGABEN_MAX,
+  vorgabeKennung,
+  vorgabePraefix,
+  vorgabeVerweis,
+  vorgabeWerte,
+  VORLAGE_DATEI,
+  VORLAGE_MIME,
+  VORLAGEN_JE_VORGABE_MAX,
+  type ErgaenzungPlan,
+  type ErgaenzungStand,
+  type VorgabePlan,
+  type VorgabeStand,
+  type VorgabeZustand,
+  type VorlageStand,
 } from '../../../shared/src/vorgaben';
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
@@ -33,16 +47,29 @@ import { pruefeVorlage, type Vorlagenpruefung } from './vorlagen';
 /* ---------- Paketformat ---------- */
 
 /** Text-Vorlage an einer Vorgabe: `datei` relativ zu inhalt/ (vorlagen/…md), Titel = Dokumentname, Register (Dokumente). */
-export interface PaketVorlage { datei: string; titel?: string; register?: string }
+export interface PaketVorlage {
+  datei: string;
+  titel?: string;
+  register?: string;
+}
 export interface PaketVorgabe {
-  schluessel: string; typ: string; werte: Record<string, unknown>;
+  schluessel: string;
+  typ: string;
+  werte: Record<string, unknown>;
   /** Werte je Sprache (#728): Sprache → Feld → Text, z. B. { en: { name: Electricity } }. */
   beschriftungen?: Record<string, Record<string, string>>;
   vorlagen?: PaketVorlage[];
 }
 /** Vorlagen an der Vorgabe eines anderen Pakets (`ergaenzt: paket:schluessel`). */
-export interface PaketErgaenzung { ziel: string; vorlagen: PaketVorlage[] }
-export interface PaketVorgabenTeil { vorgaben: PaketVorgabe[]; ergaenzungen: PaketErgaenzung[]; vorlagenDateien: Map<string, Buffer> }
+export interface PaketErgaenzung {
+  ziel: string;
+  vorlagen: PaketVorlage[];
+}
+export interface PaketVorgabenTeil {
+  vorgaben: PaketVorgabe[];
+  ergaenzungen: PaketErgaenzung[];
+  vorlagenDateien: Map<string, Buffer>;
+}
 
 /** Was das Lesen vom Paket braucht: Id, Abhängigkeiten, eigene Typen (Felder, Register) und die Dateien. */
 interface LeseKontext {
@@ -72,7 +99,13 @@ export function vorlagenFehlerText(p: Vorlagenpruefung, datei: string, max: stri
 }
 
 /** Was das Lesen eines Eintrags braucht: Paket, Passwortfelder, gesammelte Vorlagen und Fehler. */
-interface Lesen { k: LeseKontext; geheim: Set<string>; vorlagenDateien: Map<string, Buffer>; fehler: string[]; maxText: string }
+interface Lesen {
+  k: LeseKontext;
+  geheim: Set<string>;
+  vorlagenDateien: Map<string, Buffer>;
+  fehler: string[];
+  maxText: string;
+}
 
 /** Liest `inhalt/vorgaben.yaml` (schon als Liste); Fehler landen in `fehler`. */
 export function liesVorgaben(liste: Array<Record<string, unknown>>, k: LeseKontext, fehler: string[], maxText: string): PaketVorgabenTeil {
@@ -84,7 +117,10 @@ export function liesVorgaben(liste: Array<Record<string, unknown>>, k: LeseKonte
     const wo = `vorgaben[${i + 1}]`;
     const ergaenzung = e.ergaenzt !== undefined;
     const fremdeTeile = Object.keys(e).filter((x) => !(ergaenzung ? ERGAENZUNG_TEILE : VORGABE_TEILE).has(x));
-    if (ergaenzung && fremdeTeile.length) { fehler.push(t('meldungen.pakete.vorgaben.ergaenzung-nur-vorlagen', { wo, teile: fremdeTeile.join(', ') })); continue; }
+    if (ergaenzung && fremdeTeile.length) {
+      fehler.push(t('meldungen.pakete.vorgaben.ergaenzung-nur-vorlagen', { wo, teile: fremdeTeile.join(', ') }));
+      continue;
+    }
     if (fremdeTeile.length) fehler.push(t('meldungen.pakete.vorgaben.unbekannt', { wo, teile: fremdeTeile.join(', ') }));
     if (ergaenzung) ergaenzungen.push(liesErgaenzung(e, wo, l, ergaenzungen));
     else vorgaben.push(liesEineVorgabe(e, wo, l, vorgaben));
@@ -100,7 +136,8 @@ function liesErgaenzung(e: Record<string, unknown>, wo: string, l: Lesen, bisher
   const vorlagen = liesVorlagen(e.vorlagen, wo, l);
   const ziel = str(e.ergaenzt);
   const { paket } = vorgabeVerweis(ziel, l.k.id);
-  if (!ziel.includes(':') || !TYPVERWEIS.test(ziel) || !vonAbhaengigkeit(paket, l.k)) l.fehler.push(t('meldungen.pakete.vorgaben.ergaenzt-fremd', { wo, ziel }));
+  if (!ziel.includes(':') || !TYPVERWEIS.test(ziel) || !vonAbhaengigkeit(paket, l.k))
+    l.fehler.push(t('meldungen.pakete.vorgaben.ergaenzt-fremd', { wo, ziel }));
   else if (!vorlagen.length) l.fehler.push(t('meldungen.pakete.vorgaben.ergaenzt-ohne-vorlagen', { wo }));
   else if (bisher.some((x) => x.ziel === ziel)) l.fehler.push(t('meldungen.pakete.vorgaben.ergaenzt-doppelt', { wo, ziel }));
   return { ziel, vorlagen };
@@ -112,12 +149,14 @@ function liesEineVorgabe(e: Record<string, unknown>, wo: string, l: Lesen, bishe
   const vorlagen = liesVorlagen(e.vorlagen, wo, l);
   const schluessel = str(e.kennung);
   if (!SCHLUESSEL.test(schluessel)) fehler.push(t('meldungen.pakete.vorgaben.kennung', { wo, wert: schluessel }));
-  else if (bisher.some((x) => x.schluessel === schluessel)) fehler.push(t('meldungen.pakete.vorgaben.kennung-doppelt', { wo, wert: schluessel }));
+  else if (bisher.some((x) => x.schluessel === schluessel))
+    fehler.push(t('meldungen.pakete.vorgaben.kennung-doppelt', { wo, wert: schluessel }));
   const typ = str(e.typ);
   const tv = vorgabeVerweis(typ, k.id);
   const eigenerTyp = tv.paket === k.id ? k.typen.find((x) => x.schluessel === tv.schluessel) : undefined;
   if (!TYPVERWEIS.test(typ)) fehler.push(t('meldungen.pakete.vorgaben.typ', { wo, typ }));
-  else if (tv.paket === k.id ? !eigenerTyp : !vonAbhaengigkeit(tv.paket, k)) fehler.push(t('meldungen.pakete.vorgaben.typ-fremd', { wo, typ }));
+  else if (tv.paket === k.id ? !eigenerTyp : !vonAbhaengigkeit(tv.paket, k))
+    fehler.push(t('meldungen.pakete.vorgaben.typ-fremd', { wo, typ }));
   if (!istObjekt(e.werte) || !Object.keys(e.werte).length) fehler.push(t('meldungen.pakete.vorgaben.werte', { wo }));
   const werte = istObjekt(e.werte) ? e.werte : {};
   // Verweise auf Beispiele gehen nicht: Vorgaben bleiben, Beispiele lassen sich entfernen.
@@ -126,18 +165,27 @@ function liesEineVorgabe(e: Record<string, unknown>, wo: string, l: Lesen, bishe
   if (passwort.length) fehler.push(t('meldungen.pakete.vorgaben.passwort', { wo, felder: passwort.join(', ') }));
   const beschriftungen = liesBeschriftungen(e.beschriftungen, wo, fehler);
   // Register der Vorlagen am eigenen Typ: muss es geben und ein Dokumentenregister sein (fremde prüft das Installieren).
-  for (const v of eigenerTyp ? vorlagen : []) if (!vorlagenRegister(eigenerTyp!.register, v.register)) fehler.push(t('meldungen.pakete.vorgaben.register', { wo, datei: v.datei, register: v.register ?? '–' }));
+  for (const v of eigenerTyp ? vorlagen : [])
+    if (!vorlagenRegister(eigenerTyp!.register, v.register))
+      fehler.push(t('meldungen.pakete.vorgaben.register', { wo, datei: v.datei, register: v.register ?? '–' }));
   return { schluessel, typ, werte, ...(beschriftungen ? { beschriftungen } : {}), ...(vorlagen.length ? { vorlagen } : {}) };
 }
 
 /** Fehler zu Verweisen `{ vorgabe: … }` (in Vorgaben, Beispielen) bzw. Anzeige-Bedingungen `art: vorgabe`. */
-export function vorgabeVerweisFehler(verweise: string[], wo: string, vorgaben: Array<Pick<PaketVorgabe, 'schluessel'>>, k: Pick<LeseKontext, 'id' | 'abh'>): string[] {
+export function vorgabeVerweisFehler(
+  verweise: string[],
+  wo: string,
+  vorgaben: Array<Pick<PaketVorgabe, 'schluessel'>>,
+  k: Pick<LeseKontext, 'id' | 'abh'>,
+): string[] {
   const fehler: string[] = [];
   for (const z of verweise) {
     const v = vorgabeVerweis(z, k.id);
     if (!TYPVERWEIS.test(z)) fehler.push(t('meldungen.pakete.vorgaben.verweis-ungueltig', { wo, wert: z }));
-    else if (v.paket === k.id) { if (!vorgaben.some((x) => x.schluessel === v.schluessel)) fehler.push(t('meldungen.pakete.vorgaben.verweis-fehlt', { wo, wert: z })); }
-    else if (!vonAbhaengigkeit(v.paket, { ...k, typen: [], dateien: new Map() })) fehler.push(t('meldungen.pakete.vorgaben.verweis-fremd', { wo, wert: z, paket: v.paket }));
+    else if (v.paket === k.id) {
+      if (!vorgaben.some((x) => x.schluessel === v.schluessel)) fehler.push(t('meldungen.pakete.vorgaben.verweis-fehlt', { wo, wert: z }));
+    } else if (!vonAbhaengigkeit(v.paket, { ...k, typen: [], dateien: new Map() }))
+      fehler.push(t('meldungen.pakete.vorgaben.verweis-fremd', { wo, wert: z, paket: v.paket }));
   }
   return fehler;
 }
@@ -145,14 +193,18 @@ export function vorgabeVerweisFehler(verweise: string[], wo: string, vorgaben: A
 /** Register einer Vorlage: das genannte Dokumentenregister, sonst „vorlagen“, sonst das erste Dokumentenregister. */
 export function vorlagenRegister<R extends { key: string; art?: string }>(register: R[], name?: string): R | undefined {
   const dok = register.filter((r) => r.art === 'dokumente');
-  return name ? dok.find((r) => r.key === name) : dok.find((r) => r.key === 'vorlagen') ?? dok[0];
+  return name ? dok.find((r) => r.key === name) : (dok.find((r) => r.key === 'vorlagen') ?? dok[0]);
 }
 
 function liesVorlagen(roh: unknown, wo: string, l: Lesen): PaketVorlage[] {
   const { fehler } = l;
   if (roh === undefined) return [];
-  if (!Array.isArray(roh)) { fehler.push(t('meldungen.pakete.vorgaben.vorlagen-liste', { wo })); return []; }
-  if (roh.length > VORLAGEN_JE_VORGABE_MAX) fehler.push(t('meldungen.pakete.vorgaben.vorlagen-zu-viele', { wo, max: VORLAGEN_JE_VORGABE_MAX }));
+  if (!Array.isArray(roh)) {
+    fehler.push(t('meldungen.pakete.vorgaben.vorlagen-liste', { wo }));
+    return [];
+  }
+  if (roh.length > VORLAGEN_JE_VORGABE_MAX)
+    fehler.push(t('meldungen.pakete.vorgaben.vorlagen-zu-viele', { wo, max: VORLAGEN_JE_VORGABE_MAX }));
   return roh.slice(0, VORLAGEN_JE_VORGABE_MAX).flatMap((d) => liesVorlage(d, wo, l));
 }
 
@@ -160,32 +212,62 @@ function liesVorlagen(roh: unknown, wo: string, l: Lesen): PaketVorlage[] {
 function liesVorlage(d: unknown, wo: string, l: Lesen): PaketVorlage[] {
   const { fehler } = l;
   const x = istObjekt(d) ? d : typeof d === 'string' ? { datei: d } : null;
-  if (!x) { fehler.push(t('meldungen.pakete.vorgaben.vorlagen-liste', { wo })); return []; }
+  if (!x) {
+    fehler.push(t('meldungen.pakete.vorgaben.vorlagen-liste', { wo }));
+    return [];
+  }
   const datei = str(x.datei).replace(/^\.\//, '');
-  if (!VORLAGE_DATEI.test(datei)) { fehler.push(t('meldungen.pakete.vorgaben.vorlage-pfad', { wo, datei })); return []; }
+  if (!VORLAGE_DATEI.test(datei)) {
+    fehler.push(t('meldungen.pakete.vorgaben.vorlage-pfad', { wo, datei }));
+    return [];
+  }
   const daten = l.k.dateien.get(`inhalt/${datei}`);
-  if (!daten) { fehler.push(t('meldungen.pakete.vorgaben.vorlage-fehlt', { wo, datei })); return []; }
+  if (!daten) {
+    fehler.push(t('meldungen.pakete.vorgaben.vorlage-fehlt', { wo, datei }));
+    return [];
+  }
   const p = pruefeVorlage(daten, l.geheim);
-  if (p.fehler) { fehler.push(`${wo}: ${vorlagenFehlerText(p, datei, l.maxText)}`); return []; }
-  const titel = x.titel === undefined ? undefined : str(x.titel).replace(/\p{Cc}/gu, '').trim();
-  if (titel !== undefined && (!titel || titel.length > 200 || /[\\/]/.test(titel))) { fehler.push(t('meldungen.pakete.vorgaben.vorlage-titel', { wo, datei })); return []; }
+  if (p.fehler) {
+    fehler.push(`${wo}: ${vorlagenFehlerText(p, datei, l.maxText)}`);
+    return [];
+  }
+  const titel =
+    x.titel === undefined
+      ? undefined
+      : str(x.titel)
+          .replace(/\p{Cc}/gu, '')
+          .trim();
+  if (titel !== undefined && (!titel || titel.length > 200 || /[\\/]/.test(titel))) {
+    fehler.push(t('meldungen.pakete.vorgaben.vorlage-titel', { wo, datei }));
+    return [];
+  }
   const register = x.register === undefined ? undefined : str(x.register);
-  if (register !== undefined && !SCHLUESSEL.test(register)) { fehler.push(t('meldungen.pakete.vorgaben.register', { wo, datei, register })); return []; }
+  if (register !== undefined && !SCHLUESSEL.test(register)) {
+    fehler.push(t('meldungen.pakete.vorgaben.register', { wo, datei, register }));
+    return [];
+  }
   l.vorlagenDateien.set(datei, daten);
   return [{ datei, ...(titel ? { titel } : {}), ...(register ? { register } : {}) }];
 }
 
 function liesBeschriftungen(roh: unknown, wo: string, fehler: string[]): Record<string, Record<string, string>> | undefined {
   if (roh === undefined) return undefined;
-  const ok = istObjekt(roh) && Object.entries(roh).every(([s, x]) => SPRACHE.test(s) && istObjekt(x) && Object.values(x).every((w) => typeof w === 'string'));
-  if (!ok) { fehler.push(t('meldungen.pakete.vorgaben.beschriftungen', { wo })); return undefined; }
+  const ok =
+    istObjekt(roh) &&
+    Object.entries(roh).every(([s, x]) => SPRACHE.test(s) && istObjekt(x) && Object.values(x).every((w) => typeof w === 'string'));
+  if (!ok) {
+    fehler.push(t('meldungen.pakete.vorgaben.beschriftungen', { wo }));
+    return undefined;
+  }
   return roh as Record<string, Record<string, string>>;
 }
 
 /** Reihenfolge zum Anlegen: erst die Vorgaben, auf die andere zeigen. null = Kreis. */
 export function ordneVorgaben<V extends Pick<PaketVorgabe, 'schluessel' | 'werte'>>(vorgaben: V[], id: string): V[] | null {
   const nach = new Map(vorgaben.map((v) => [v.schluessel, v]));
-  const fertig = new Set<V>(), unterwegs = new Set<V>(), erg: V[] = [];
+  const fertig = new Set<V>(),
+    unterwegs = new Set<V>(),
+    erg: V[] = [];
   const besuche = (v: V): boolean => {
     if (fertig.has(v)) return true;
     if (unterwegs.has(v)) return false;
@@ -195,7 +277,9 @@ export function ordneVorgaben<V extends Pick<PaketVorgabe, 'schluessel' | 'werte
       const x = ziel.paket === id ? nach.get(ziel.schluessel) : undefined;
       if (x && !besuche(x)) return false;
     }
-    unterwegs.delete(v); fertig.add(v); erg.push(v);
+    unterwegs.delete(v);
+    fertig.add(v);
+    erg.push(v);
     return true;
   };
   for (const v of vorgaben) if (!besuche(v)) return null;
@@ -208,31 +292,68 @@ export function ordneVorgaben<V extends Pick<PaketVorgabe, 'schluessel' | 'werte
  * daraus die Feldbedingung „zeigt auf“ mit den Ids der Vorgaben; fehlt eine (gelöscht), zählt sie nicht – fehlen
  * alle, fällt die Bedingung weg.
  */
-export const istVorgabeBedingung = (b: unknown): b is { art: 'vorgabe'; feld: string; vorgabe: unknown; nicht?: boolean } => istObjekt(b) && b.art === 'vorgabe';
-export const bedingungsVorgaben = (b: { vorgabe: unknown }): string[] => (Array.isArray(b.vorgabe) ? b.vorgabe.map(str) : typeof b.vorgabe === 'string' ? [b.vorgabe] : []);
+export const istVorgabeBedingung = (b: unknown): b is { art: 'vorgabe'; feld: string; vorgabe: unknown; nicht?: boolean } =>
+  istObjekt(b) && b.art === 'vorgabe';
+export const bedingungsVorgaben = (b: { vorgabe: unknown }): string[] =>
+  Array.isArray(b.vorgabe) ? b.vorgabe.map(str) : typeof b.vorgabe === 'string' ? [b.vorgabe] : [];
 
 export function anzeigeMitVorgaben(a: unknown, id: (verweis: string) => string | null): unknown {
   if (!istObjekt(a) || !Array.isArray(a.bedingungen)) return a;
   const bedingungen = a.bedingungen.flatMap((b) => {
     if (!istVorgabeBedingung(b)) return [b];
-    const ids = [...new Set(bedingungsVorgaben(b).map(id).filter((x): x is string => !!x))];
-    return ids.length ? [{ ...(b.nicht === true ? { nicht: true } : {}), art: 'feld', bedingung: { art: 'feld', feld: str(b.feld), op: 'zeigtAuf', wert: { art: 'fest', wert: ids } } }] : [];
+    const ids = [
+      ...new Set(
+        bedingungsVorgaben(b)
+          .map(id)
+          .filter((x): x is string => !!x),
+      ),
+    ];
+    return ids.length
+      ? [
+          {
+            ...(b.nicht === true ? { nicht: true } : {}),
+            art: 'feld',
+            bedingung: { art: 'feld', feld: str(b.feld), op: 'zeigtAuf', wert: { art: 'fest', wert: ids } },
+          },
+        ]
+      : [];
   });
   return { ...a, bedingungen };
 }
 
 /** Alle Vorgabe-Verweise in den Anzeige-Bedingungen eines Typs (Felder und Abschnitte). */
-export function anzeigeVorgaben(typ: { felder: Array<Record<string, unknown> | object>; register: Array<{ abschnitte?: unknown }> }): Array<{ feld: string; verweise: string[] }> {
-  const regeln = [...typ.felder.map((f) => (f as Record<string, unknown>).anzeigen), ...typ.register.flatMap((r) => (Array.isArray(r.abschnitte) ? r.abschnitte : []).map((x) => (istObjekt(x) ? x.anzeigen : undefined)))];
-  return regeln.flatMap((r) => (istObjekt(r) && Array.isArray(r.bedingungen) ? r.bedingungen.filter(istVorgabeBedingung).map((b) => ({ feld: str(b.feld), verweise: bedingungsVorgaben(b) })) : []));
+export function anzeigeVorgaben(typ: {
+  felder: Array<Record<string, unknown> | object>;
+  register: Array<{ abschnitte?: unknown }>;
+}): Array<{ feld: string; verweise: string[] }> {
+  const regeln = [
+    ...typ.felder.map((f) => (f as Record<string, unknown>).anzeigen),
+    ...typ.register.flatMap((r) => (Array.isArray(r.abschnitte) ? r.abschnitte : []).map((x) => (istObjekt(x) ? x.anzeigen : undefined))),
+  ];
+  return regeln.flatMap((r) =>
+    istObjekt(r) && Array.isArray(r.bedingungen)
+      ? r.bedingungen.filter(istVorgabeBedingung).map((b) => ({ feld: str(b.feld), verweise: bedingungsVorgaben(b) }))
+      : [],
+  );
 }
 
 /* ---------- Werte ---------- */
 
 /** Prüfwert von Feldwerten: JSON mit sortierten Schlüsseln (Reihenfolge aus der Datenbank zählt nicht). */
 export function pruefwert(werte: unknown): string {
-  const sortiert = (v: unknown): unknown => (Array.isArray(v) ? v.map(sortiert) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, x]) => [k, sortiert(x)])) : v);
-  return createHash('sha256').update(JSON.stringify(sortiert(werte ?? {}))).digest('hex');
+  const sortiert = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.map(sortiert)
+      : v && typeof v === 'object'
+        ? Object.fromEntries(
+            Object.entries(v)
+              .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+              .map(([k, x]) => [k, sortiert(x)]),
+          )
+        : v;
+  return createHash('sha256')
+    .update(JSON.stringify(sortiert(werte ?? {})))
+    .digest('hex');
 }
 
 /**
@@ -253,7 +374,13 @@ export interface VorgabenLage {
 }
 
 /** Zustand jeder eigenen Vorgabe aus Eintrag des Pakets und den Mappen mit seiner Kennung. */
-export function vorgabenLage(vorgaben: PaketVorgabe[], ich: Pick<InstalliertesPaket, 'id' | 'vorgaben'> | null, paketId: string, mappen: Mappe[], sprache: string): VorgabenLage {
+export function vorgabenLage(
+  vorgaben: PaketVorgabe[],
+  ich: Pick<InstalliertesPaket, 'id' | 'vorgaben'> | null,
+  paketId: string,
+  mappen: Mappe[],
+  sprache: string,
+): VorgabenLage {
   const je: VorgabenLage['je'] = new Map();
   for (const v of vorgaben) {
     const kennung = vorgabeKennung(paketId, v.schluessel);
@@ -265,20 +392,32 @@ export function vorgabenLage(vorgaben: PaketVorgabe[], ich: Pick<InstalliertesPa
       je.set(v.schluessel, stand ? { id: stand.mappe, zustand: 'geloescht' } : { id: randomUUID(), zustand: 'neu' });
       continue;
     }
-    if (!stand) { je.set(v.schluessel, { id: mappe.id, mappe, zustand: 'uebernommen' }); continue; }
+    if (!stand) {
+      je.set(v.schluessel, { id: mappe.id, mappe, zustand: 'uebernommen' });
+      continue;
+    }
     const unveraendert = pruefwert(mappe.werte) === stand.stand;
     const neu = fassung !== stand.fassung;
-    je.set(v.schluessel, { id: mappe.id, mappe, zustand: !neu ? (unveraendert ? 'gleich' : 'geaendert') : unveraendert ? 'aktualisiert' : 'geaendert', ...(neu && !unveraendert ? { neueFassung: true } : {}) });
+    je.set(v.schluessel, {
+      id: mappe.id,
+      mappe,
+      zustand: !neu ? (unveraendert ? 'gleich' : 'geaendert') : unveraendert ? 'aktualisiert' : 'geaendert',
+      ...(neu && !unveraendert ? { neueFassung: true } : {}),
+    });
   }
   return { je };
 }
 
 /** Neue Vorlagen (noch nicht angelegt) einer Vorgabe bzw. Ergänzung. */
-const neueVorlagen = (vorlagen: PaketVorlage[] | undefined, staende: VorlageStand[] | undefined) => (vorlagen ?? []).filter((v) => !(staende ?? []).some((s) => s.datei === v.datei)).length;
+const neueVorlagen = (vorlagen: PaketVorlage[] | undefined, staende: VorlageStand[] | undefined) =>
+  (vorlagen ?? []).filter((v) => !(staende ?? []).some((s) => s.datei === v.datei)).length;
 
 /** Vorschau der Vorgaben: Name, Typ (fremd: Paket), Zustand und neue Vorlagen. */
 export function planeVorgaben(e: {
-  vorgaben: PaketVorgabe[]; lage: VorgabenLage; ich: Pick<InstalliertesPaket, 'vorgaben'> | null; sprache: string;
+  vorgaben: PaketVorgabe[];
+  lage: VorgabenLage;
+  ich: Pick<InstalliertesPaket, 'vorgaben'> | null;
+  sprache: string;
   /** Typ zu einem Typverweis: Daten (Felder, Titel) und Name; fremd: Name des Pakets. */
   typ: (verweis: string) => { daten?: Pick<Mappentyp, 'felder' | 'titelVorlage'>; name: string; fremd: string | null };
 }): VorgabePlan[] {
@@ -286,18 +425,37 @@ export function planeVorgaben(e: {
     const l = e.lage.je.get(v.schluessel)!;
     const ty = e.typ(v.typ);
     const werte = werteIn(v, e.sprache);
-    const titel = l.mappe?.titel || (ty.daten ? titelAus(ty.daten, werte as never) : '') || str(werte.name ?? werte.bezeichnung ?? v.schluessel);
+    const titel =
+      l.mappe?.titel || (ty.daten ? titelAus(ty.daten, werte as never) : '') || str(werte.name ?? werte.bezeichnung ?? v.schluessel);
     const vorlagen = l.zustand === 'geloescht' ? 0 : neueVorlagen(v.vorlagen, e.ich?.vorgaben?.[v.schluessel]?.vorlagen);
-    return { schluessel: v.schluessel, name: titel, typ: ty.name, fremd: ty.fremd, zustand: l.zustand, ...(l.neueFassung ? { neueFassung: true } : {}), vorlagen };
+    return {
+      schluessel: v.schluessel,
+      name: titel,
+      typ: ty.name,
+      fremd: ty.fremd,
+      zustand: l.zustand,
+      ...(l.neueFassung ? { neueFassung: true } : {}),
+      vorlagen,
+    };
   });
 }
 
 /** Vorschau der Ergänzungen: Ziel, Name der Mappe, Paket, neue Vorlagen; fehlt die Vorgabe, kommen sie nicht. */
-export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<InstalliertesPaket, 'ergaenzungen'> | null, ziel: (verweis: string) => { mappe?: Mappe; paket: string }): ErgaenzungPlan[] {
+export function planeErgaenzungen(
+  ergaenzungen: PaketErgaenzung[],
+  ich: Pick<InstalliertesPaket, 'ergaenzungen'> | null,
+  ziel: (verweis: string) => { mappe?: Mappe; paket: string },
+): ErgaenzungPlan[] {
   return ergaenzungen.map((e) => {
     const z = ziel(e.ziel);
     const alt = ich?.ergaenzungen?.find((x) => x.ziel === e.ziel);
-    return { ziel: e.ziel, name: z.mappe?.titel || vorgabeVerweis(e.ziel, '').schluessel, paket: z.paket, vorlagen: z.mappe ? neueVorlagen(e.vorlagen, alt?.vorlagen) : 0, ...(z.mappe ? {} : { fehlt: true }) };
+    return {
+      ziel: e.ziel,
+      name: z.mappe?.titel || vorgabeVerweis(e.ziel, '').schluessel,
+      paket: z.paket,
+      vorlagen: z.mappe ? neueVorlagen(e.vorlagen, alt?.vorlagen) : 0,
+      ...(z.mappe ? {} : { fehlt: true }),
+    };
   });
 }
 
@@ -306,10 +464,28 @@ export function planeErgaenzungen(ergaenzungen: PaketErgaenzung[], ich: Pick<Ins
 /** Was das Anlegen vom Dienst braucht – die Paketverwaltung gibt ihren Dienst hinein. */
 export interface VorgabenDienst {
   mappentypen: { listeTypen(): Promise<Mappentyp[]> };
-  mappen: { legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>; aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe> };
-  dokumente: { ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' }, inhalt: unknown, benutzerId: string | null): Promise<{ dokument: Dokument }>; loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown> };
+  mappen: {
+    legeMappeAn(eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
+    aendereMappe(id: string, eingabe: unknown, benutzerId: string | null): Promise<Mappe>;
+  };
+  dokumente: {
+    ladeHoch(
+      mappeId: string,
+      e: { register?: string; name?: string; typ?: string; herkunft?: 'paket' },
+      inhalt: unknown,
+      benutzerId: string | null,
+    ): Promise<{ dokument: Dokument }>;
+    loescheDokument(id: string, benutzerId: string | null, anlass?: { weg?: 'dokument' }): Promise<unknown>;
+  };
   listeDokumente(mappeId: string): Promise<Dokument[]>;
-  kern: { repo: { holeMappe(id: string): Promise<Mappe | undefined>; setzeVorgabe(id: string, kennung: string | null): Promise<void>; mappenMitVorgabe(praefix: string): Promise<Mappe[]> }; ohneEreignisse<T>(f: () => Promise<T>): Promise<T> };
+  kern: {
+    repo: {
+      holeMappe(id: string): Promise<Mappe | undefined>;
+      setzeVorgabe(id: string, kennung: string | null): Promise<void>;
+      mappenMitVorgabe(praefix: string): Promise<Mappe[]>;
+    };
+    ohneEreignisse<T>(f: () => Promise<T>): Promise<T>;
+  };
 }
 
 export interface VorgabenAuftrag {
@@ -358,12 +534,22 @@ export async function legeVorgaben(d: VorgabenDienst, a: VorgabenAuftrag, erg: V
 }
 
 /** Werte einer Vorgabe schreiben – nur neu oder unverändert seit dem letzten Schreiben (dann alle Felder vom Paket). */
-async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis, x: { v: PaketVorgabe; l: VorgabenLage['je'] extends Map<string, infer L> ? L : never; typ: Mappentyp; werte: Record<string, unknown> }) {
+async function schreibeWerte(
+  d: VorgabenDienst,
+  a: VorgabenAuftrag,
+  erg: VorgabenErgebnis,
+  x: { v: PaketVorgabe; l: VorgabenLage['je'] extends Map<string, infer L> ? L : never; typ: Mappentyp; werte: Record<string, unknown> },
+) {
   const { v, l, typ, werte } = x;
   const ohne = <T>(f: () => Promise<T>) => d.kern.ohneEreignisse(f);
-  const fehler = (f: unknown) => new Fachfehler(422, t('meldungen.pakete.vorgaben.anlegen', { name: v.schluessel, meldungen: (f as Error).message }));
+  const fehler = (f: unknown) =>
+    new Fachfehler(422, t('meldungen.pakete.vorgaben.anlegen', { name: v.schluessel, meldungen: (f as Error).message }));
   if (l.zustand === 'neu') {
-    try { await ohne(() => d.mappen.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von)); } catch (f) { throw fehler(f); }
+    try {
+      await ohne(() => d.mappen.legeMappeAn({ id: l.id, typId: typ.id, werte }, a.von));
+    } catch (f) {
+      throw fehler(f);
+    }
     erg.angelegt.push(l.id);
     await d.kern.repo.setzeVorgabe(l.id, vorgabeKennung(a.paketId, v.schluessel));
     return;
@@ -373,12 +559,22 @@ async function schreibeWerte(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgabe
   const leer = (keys: string[]) => Object.fromEntries(keys.map((k) => [k, null]));
   // Was das Paket jetzt weglässt, wird leer: Alle Werte dieser Mappe kamen vom Paket.
   const neu = { ...leer(Object.keys(m.werte).filter((k) => !(k in werte))), ...werte };
-  try { await ohne(() => d.mappen.aendereMappe(m.id, { werte: neu }, a.von)); } catch (f) { throw fehler(f); }
+  try {
+    await ohne(() => d.mappen.aendereMappe(m.id, { werte: neu }, a.von));
+  } catch (f) {
+    throw fehler(f);
+  }
   erg.rueck.unshift(() => ohne(() => d.mappen.aendereMappe(m.id, { werte: { ...leer(Object.keys(neu)), ...m.werte } }, a.von)));
 }
 
 /** Eine eigene Vorgabe anlegen bzw. aktualisieren, samt Vorlagen; gelöschte bleiben gelöscht. */
-async function legeEineVorgabe(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis, v: PaketVorgabe, typen: Map<string, Mappentyp>) {
+async function legeEineVorgabe(
+  d: VorgabenDienst,
+  a: VorgabenAuftrag,
+  erg: VorgabenErgebnis,
+  v: PaketVorgabe,
+  typen: Map<string, Mappentyp>,
+) {
   const l = a.lage.je.get(v.schluessel)!;
   const alt = a.alt?.vorgaben?.[v.schluessel];
   const typId = a.typId(v.typ);
@@ -386,12 +582,21 @@ async function legeEineVorgabe(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorga
   if (!typ) throw new Fachfehler(422, t('meldungen.pakete.vorgaben.typ-fehlt', { name: v.schluessel, typ: v.typ }));
   const roh = werteIn(v, a.sprache);
   const fassung = pruefwert(roh);
-  if (l.zustand === 'geloescht') { erg.vorgaben[v.schluessel] = { ...(alt ?? { mappe: l.id, stand: '', fassung }), geloescht: true }; return; }
+  if (l.zustand === 'geloescht') {
+    erg.vorgaben[v.schluessel] = { ...(alt ?? { mappe: l.id, stand: '', fassung }), geloescht: true };
+    return;
+  }
   await schreibeWerte(d, a, erg, { v, l, typ, werte: await feldwerte(typ, roh, a.vorgabeId) });
   const mappeId = l.mappe?.id ?? l.id;
   const s = await neuerStand(d, l.zustand, mappeId, alt, fassung);
   // Vorlagen ersetzen nur an Vorgaben, die das Paket noch so kennt, wie es sie geschrieben hat.
-  const vorlagen = await legeVorlagen(d, a, erg, { mappeId, typ, vorlagen: v.vorlagen ?? [], alt: alt?.vorlagen ?? [], ersetzen: !s.fremdGeaendert });
+  const vorlagen = await legeVorlagen(d, a, erg, {
+    mappeId,
+    typ,
+    vorlagen: v.vorlagen ?? [],
+    alt: alt?.vorlagen ?? [],
+    ersetzen: !s.fremdGeaendert,
+  });
   erg.vorgaben[v.schluessel] = { mappe: mappeId, stand: s.stand, fassung: s.fassung, ...(vorlagen.length ? { vorlagen } : {}) };
 }
 
@@ -413,8 +618,18 @@ async function legeErgaenzungen(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorg
     const mappe = (await d.kern.repo.mappenMitVorgabe(kennung)).find((m) => m.vorgabe === kennung);
     const alt = a.alt?.ergaenzungen?.find((x) => x.ziel === e.ziel);
     const typ = mappe ? typen.get(mappe.typId) : undefined;
-    if (!mappe || !typ) { erg.ausgelassen.push(e.ziel); if (alt) erg.ergaenzungen.push(alt); continue; }
-    const vorlagen = await legeVorlagen(d, a, erg, { mappeId: mappe.id, typ, vorlagen: e.vorlagen, alt: alt?.mappe === mappe.id ? alt.vorlagen : [], ersetzen: true });
+    if (!mappe || !typ) {
+      erg.ausgelassen.push(e.ziel);
+      if (alt) erg.ergaenzungen.push(alt);
+      continue;
+    }
+    const vorlagen = await legeVorlagen(d, a, erg, {
+      mappeId: mappe.id,
+      typ,
+      vorlagen: e.vorlagen,
+      alt: alt?.mappe === mappe.id ? alt.vorlagen : [],
+      ersetzen: true,
+    });
     erg.ergaenzungen.push({ ziel: e.ziel, mappe: mappe.id, vorlagen });
   }
   // Ergänzungen, die das neue Paket nicht mehr nennt: Ihre Vorlagen bleiben (ein Update löscht nichts) und gehören weiter dazu.
@@ -422,21 +637,34 @@ async function legeErgaenzungen(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorg
 }
 
 /** Feldwerte für Ablago: Beträge als Zahl, Verweise `{ vorgabe: … }` als Id; Vorgaben ohne Ziel bleiben leer. */
-async function feldwerte(typ: Mappentyp, roh: Record<string, unknown>, vorgabeId: (verweis: string) => Promise<string | null>): Promise<Record<string, unknown>> {
+async function feldwerte(
+  typ: Mappentyp,
+  roh: Record<string, unknown>,
+  vorgabeId: (verweis: string) => Promise<string | null>,
+): Promise<Record<string, unknown>> {
   const werte: Record<string, unknown> = {};
   for (const [k, w] of Object.entries(roh)) {
     const f = typ.felder.find((x) => x.key === k);
     if (!f || f.typ === 'passwort') continue;
     if (f.typ === 'betrag' && typeof w === 'number') werte[k] = { betrag: w, waehrung: f.waehrung || 'EUR' };
-    else if (Array.isArray(w) && w.some(istVorgabeWert)) { const l = (await Promise.all(w.map((x) => (istVorgabeWert(x) ? vorgabeId(x.vorgabe) : null)))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
-    else if (istVorgabeWert(w)) { const z = await vorgabeId(w.vorgabe); if (z) werte[k] = f.mehrfach ? [z] : z; }
-    else if (!istLeer(w)) werte[k] = w;
+    else if (Array.isArray(w) && w.some(istVorgabeWert)) {
+      const l = (await Promise.all(w.map((x) => (istVorgabeWert(x) ? vorgabeId(x.vorgabe) : null)))).filter((x): x is string => !!x);
+      if (l.length) werte[k] = l;
+    } else if (istVorgabeWert(w)) {
+      const z = await vorgabeId(w.vorgabe);
+      if (z) werte[k] = f.mehrfach ? [z] : z;
+    } else if (!istLeer(w)) werte[k] = w;
   }
   return werte;
 }
 
 /** Vorlagen an einer Mappe: neue anlegen; unveränderte mit neuem Inhalt ersetzen (wenn `ersetzen`); geänderte bleiben. */
-async function legeVorlagen(d: VorgabenDienst, a: VorgabenAuftrag, erg: VorgabenErgebnis, x: { mappeId: string; typ: Mappentyp; vorlagen: PaketVorlage[]; alt: VorlageStand[]; ersetzen: boolean }): Promise<VorlageStand[]> {
+async function legeVorlagen(
+  d: VorgabenDienst,
+  a: VorgabenAuftrag,
+  erg: VorgabenErgebnis,
+  x: { mappeId: string; typ: Mappentyp; vorlagen: PaketVorlage[]; alt: VorlageStand[]; ersetzen: boolean },
+): Promise<VorlageStand[]> {
   const da = new Map((await d.listeDokumente(x.mappeId)).map((dok) => [dok.id, dok] as const));
   const staende: VorlageStand[] = [];
   for (const v of x.vorlagen) {
@@ -446,15 +674,21 @@ async function legeVorlagen(d: VorgabenDienst, a: VorgabenAuftrag, erg: Vorgaben
     const p = pruefeVorlage(inhalt, a.geheim);
     if (p.fehler) throw new Fachfehler(422, vorlagenFehlerText(p, v.datei, a.maxText));
     const reg = vorlagenRegister(x.typ.register as Register[], v.register);
-    if (!reg) throw new Fachfehler(422, t('meldungen.pakete.vorgaben.register', { wo: x.typ.name, datei: v.datei, register: v.register ?? '–' }));
+    if (!reg)
+      throw new Fachfehler(422, t('meldungen.pakete.vorgaben.register', { wo: x.typ.name, datei: v.datei, register: v.register ?? '–' }));
     const sha = createHash('sha256').update(inhalt).digest('hex');
     const alt = x.alt.find((s) => s.datei === v.datei);
     const dok = alt ? da.get(alt.dokument) : undefined;
     if (alt && !dok) continue; // gelöscht: bleibt weg
-    if (alt && dok && (dok.sha256 !== alt.sha256 || !x.ersetzen || sha === alt.sha256)) { staende.push(alt); continue; }
+    if (alt && dok && (dok.sha256 !== alt.sha256 || !x.ersetzen || sha === alt.sha256)) {
+      staende.push(alt);
+      continue;
+    }
     // Die bisherige Fassung zuerst in den Papierkorb (sonst hieße die neue „… (2).md“).
     if (dok) await d.kern.ohneEreignisse(() => d.dokumente.loescheDokument(dok.id, a.von, { weg: 'dokument' }));
-    const neu = await d.kern.ohneEreignisse(() => d.dokumente.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von));
+    const neu = await d.kern.ohneEreignisse(() =>
+      d.dokumente.ladeHoch(x.mappeId, { register: reg.key, name: vorlagenName(v), typ: VORLAGE_MIME, herkunft: 'paket' }, inhalt, a.von),
+    );
     erg.rueck.unshift(() => d.dokumente.loescheDokument(neu.dokument.id, a.von, { weg: 'dokument' }));
     staende.push({ datei: v.datei, dokument: neu.dokument.id, sha256: neu.dokument.sha256 });
   }

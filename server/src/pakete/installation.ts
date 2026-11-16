@@ -17,7 +17,10 @@ const bedingungenVon = (roh: unknown): unknown[] => (istObjekt(roh) && Array.isA
 /** Die feste Liste von „zeigt auf Mappe vom Typ …“ (op zeigtAufTyp) einer inneren Bedingung – sonst null. */
 function zeigtAufTyp(b: Record<string, unknown>): unknown[] | null {
   const innen = istObjekt(b.bedingung) ? b.bedingung : null;
-  const w = innen && innen.op === 'zeigtAufTyp' && istObjekt(innen.wert) && innen.wert.art === 'fest' && Array.isArray(innen.wert.wert) ? innen.wert.wert : null;
+  const w =
+    innen && innen.op === 'zeigtAufTyp' && istObjekt(innen.wert) && innen.wert.art === 'fest' && Array.isArray(innen.wert.wert)
+      ? innen.wert.wert
+      : null;
   return b.art === 'feld' ? w : null;
 }
 
@@ -45,9 +48,15 @@ export function anzeigeWartet(roh: unknown, offen: Set<string>, typFehlt: (vw: s
  * Typverweise in Anzeige-Bedingungen eines Pakets → Ids (`id` wirft, wenn es den Typ nicht geben kann). Ein optionales
  * Ziel des Felds (`zielOptional`), dessen Paket fehlt, ist kein Fehler: Die Kennung bleibt stehen und trifft nie zu.
  */
-export function anzeigeTypIds(roh: unknown, felder: FeldZiele[], id: (vw: string) => string, optional: (vw: string) => string | null): unknown {
+export function anzeigeTypIds(
+  roh: unknown,
+  felder: FeldZiele[],
+  id: (vw: string) => string,
+  optional: (vw: string) => string | null,
+): unknown {
   if (!istObjekt(roh) || !Array.isArray(roh.bedingungen)) return roh;
-  const aufloesen = (feld: string, vw: string) => (felder.find((f) => f.key === feld)?.zielOptional?.includes(vw) ? optional(vw) ?? vw : id(vw));
+  const aufloesen = (feld: string, vw: string) =>
+    felder.find((f) => f.key === feld)?.zielOptional?.includes(vw) ? (optional(vw) ?? vw) : id(vw);
   const bedingungen = roh.bedingungen.map((b) => {
     if (!istObjekt(b)) return b;
     if (b.art === 'verweistyp' && typeof b.typ === 'string') return { ...b, typ: aufloesen(String(b.feld ?? ''), b.typ) };
@@ -75,33 +84,60 @@ export function optionaleInAnzeige(a: Anzeigeregel | undefined, felder: Feld[], 
   };
   const bedingungen = a.bedingungen.map((b) => {
     if (b.art === 'verweistyp') return { ...b, typ: id(b.feld, b.typ) };
-    if (b.art !== 'feld' || b.bedingung.op !== 'zeigtAufTyp' || b.bedingung.wert?.art !== 'fest' || !Array.isArray(b.bedingung.wert.wert)) return b;
-    return { ...b, bedingung: { ...b.bedingung, wert: { ...b.bedingung.wert, wert: b.bedingung.wert.wert.map((x) => id(b.bedingung.feld, String(x))) } } };
+    if (b.art !== 'feld' || b.bedingung.op !== 'zeigtAufTyp' || b.bedingung.wert?.art !== 'fest' || !Array.isArray(b.bedingung.wert.wert))
+      return b;
+    return {
+      ...b,
+      bedingung: { ...b.bedingung, wert: { ...b.bedingung.wert, wert: b.bedingung.wert.wert.map((x) => id(b.bedingung.feld, String(x))) } },
+    };
   });
   return anders ? { ...a, bedingungen } : a;
 }
 
 /** Felder und Abschnitte eines Typs mit `optionaleInAnzeige`; null = nichts geändert. */
-export function optionaleInTyp(typ: Pick<Mappentyp, 'felder' | 'register'>, kennung: Map<string, string>): Pick<Mappentyp, 'felder' | 'register'> | null {
+export function optionaleInTyp(
+  typ: Pick<Mappentyp, 'felder' | 'register'>,
+  kennung: Map<string, string>,
+): Pick<Mappentyp, 'felder' | 'register'> | null {
   let anders = false;
-  const felder = typ.felder.map((f) => { const a = optionaleInAnzeige(f.anzeigen, typ.felder, kennung); if (a === f.anzeigen) return f; anders = true; return { ...f, anzeigen: a }; });
+  const felder = typ.felder.map((f) => {
+    const a = optionaleInAnzeige(f.anzeigen, typ.felder, kennung);
+    if (a === f.anzeigen) return f;
+    anders = true;
+    return { ...f, anzeigen: a };
+  });
   const register = typ.register.map((r) => {
     if (!r.abschnitte?.some((x) => x.anzeigen)) return r;
-    const abschnitte = r.abschnitte.map((x) => { const a = optionaleInAnzeige(x.anzeigen, felder, kennung); if (a === x.anzeigen) return x; anders = true; return { ...x, anzeigen: a }; });
+    const abschnitte = r.abschnitte.map((x) => {
+      const a = optionaleInAnzeige(x.anzeigen, felder, kennung);
+      if (a === x.anzeigen) return x;
+      anders = true;
+      return { ...x, anzeigen: a };
+    });
     return { ...r, abschnitte };
   });
   return anders ? { felder, register } : null;
 }
 
 /** Eine Quelle, die ein Register laut Paket hat: `quelle` ist der Typverweis aus dem Paket (für die Meldung). */
-export interface SollQuelle { register: string; typId: string; feldKey: string; quelle: string }
+export interface SollQuelle {
+  register: string;
+  typId: string;
+  feldKey: string;
+  quelle: string;
+}
 
 /**
  * Ist eine Quelle schon anlegbar? Das Feld des anderen Typs (bzw. dieses Typs: `eigeneFelder`) muss ein Verweis sein,
  * der auf diesen Typ zeigen darf – sonst entfernt das Speichern sie still (mappentypen.dienst, pruefeTyp).
  */
-export function quelleAnlegbar(q: { typId: string; feldKey: string }, eigeneId: string, typen: Map<string, Pick<Mappentyp, 'felder'>>, eigeneFelder: Array<Pick<Feld, 'key' | 'typ' | 'zielTypen'>>): boolean {
-  const f = (q.typId === eigeneId ? eigeneFelder : typen.get(q.typId)?.felder ?? []).find((x) => x.key === q.feldKey);
+export function quelleAnlegbar(
+  q: { typId: string; feldKey: string },
+  eigeneId: string,
+  typen: Map<string, Pick<Mappentyp, 'felder'>>,
+  eigeneFelder: Array<Pick<Feld, 'key' | 'typ' | 'zielTypen'>>,
+): boolean {
+  const f = (q.typId === eigeneId ? eigeneFelder : (typen.get(q.typId)?.felder ?? [])).find((x) => x.key === q.feldKey);
   return f?.typ === 'referenz' && zielErlaubt(f, eigeneId);
 }
 
@@ -109,7 +145,11 @@ export function quelleAnlegbar(q: { typId: string; feldKey: string }, eigeneId: 
  * Am Ende der Installation (#1122): Quellen, die das Paket an Registern dieses Typs vorsieht, aber noch fehlen, jetzt
  * eintragen, wo es geht; was nicht geht, steht in `fehlen` (die Installation bricht dann mit Stelle ab).
  */
-export function quellenNachtragen(typ: Pick<Mappentyp, 'id' | 'felder' | 'register'>, soll: SollQuelle[], typen: Map<string, Pick<Mappentyp, 'felder'>>): { register: Register[]; fehlen: SollQuelle[]; geaendert: boolean } {
+export function quellenNachtragen(
+  typ: Pick<Mappentyp, 'id' | 'felder' | 'register'>,
+  soll: SollQuelle[],
+  typen: Map<string, Pick<Mappentyp, 'felder'>>,
+): { register: Register[]; fehlen: SollQuelle[]; geaendert: boolean } {
   const fehlen: SollQuelle[] = [];
   let geaendert = false;
   const register = typ.register.map((r) => {

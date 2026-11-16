@@ -14,33 +14,63 @@ import type { Werte } from '../../shared/src/model';
 // Module der Oberfläche zur Laufzeit laden (wie die Tests der Bausteine): Der Typcheck des Servers kennt kein DOM.
 const WEB = new URL('../../web/src/', import.meta.url).href;
 type Roh = Record<string, unknown>;
-const { anzahlWerte, anzeigeImFormular } = await import(`${WEB}ablage/anzeige.ts`) as {
+const { anzahlWerte, anzeigeImFormular } = (await import(`${WEB}ablage/anzeige.ts`)) as {
   anzeigeImFormular(typ: Mappentyp, roh: Roh, k: { merkmale?: Merkmale; bekannt: Record<string, { typId: string }> }): Anzeigestand;
   anzahlWerte(typ: Mappentyp, keys: string[], roh: Roh): number;
 };
-const { rohAusWerten, standardRoh, werteAusRoh } = await import(`${WEB}werte.ts`) as {
-  rohAusWerten(typ: Mappentyp, w: Werte): Roh; standardRoh(typ: Mappentyp): Roh; werteAusRoh(typ: Mappentyp, r: Roh): Werte;
+const { rohAusWerten, standardRoh, werteAusRoh } = (await import(`${WEB}werte.ts`)) as {
+  rohAusWerten(typ: Mappentyp, w: Werte): Roh;
+  standardRoh(typ: Mappentyp): Roh;
+  werteAusRoh(typ: Mappentyp, r: Roh): Werte;
 };
 
-const MIETE = { modus: 'alle', bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Miete'] } } }] };
-const typ = { ...bereinigeTyp({
-  name: 'Vertrag',
-  felder: [
-    { key: 'name', label: 'Name', typ: 'text', pflicht: true },
-    { key: 'art', label: 'Vertragsart', typ: 'auswahl', optionen: ['Miete', 'Strom'] },
-    { key: 'kaltmiete', label: 'Kaltmiete', typ: 'betrag', pflicht: true },
-    { key: 'kaution', label: 'Kaution', typ: 'betrag' },
-    { key: 'betrifft', label: 'betrifft', typ: 'referenz', zielTyp: '*', anzeigen: { modus: 'alle', bedingungen: [{ art: 'merkmal', merkmal: 'beruflich', nicht: true }] } },
-    { key: 'notiz', label: 'Notiz', typ: 'langtext' },
-  ],
-  register: [{ key: 'vertrag', name: 'Vertrag', art: 'felder', felder: ['name', 'art', 'kaltmiete', 'kaution', 'betrifft', 'notiz'], abschnitte: [{ vor: 'kaltmiete', titel: 'Miete', anzeigen: MIETE }, { vor: 'notiz', titel: 'Weiteres' }] }],
-}), id: 'vertrag', erstellt: '', geaendert: '' } as Mappentyp;
+const MIETE = {
+  modus: 'alle',
+  bedingungen: [{ art: 'feld', bedingung: { art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['Miete'] } } }],
+};
+const typ = {
+  ...bereinigeTyp({
+    name: 'Vertrag',
+    felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'art', label: 'Vertragsart', typ: 'auswahl', optionen: ['Miete', 'Strom'] },
+      { key: 'kaltmiete', label: 'Kaltmiete', typ: 'betrag', pflicht: true },
+      { key: 'kaution', label: 'Kaution', typ: 'betrag' },
+      {
+        key: 'betrifft',
+        label: 'betrifft',
+        typ: 'referenz',
+        zielTyp: '*',
+        anzeigen: { modus: 'alle', bedingungen: [{ art: 'merkmal', merkmal: 'beruflich', nicht: true }] },
+      },
+      { key: 'notiz', label: 'Notiz', typ: 'langtext' },
+    ],
+    register: [
+      {
+        key: 'vertrag',
+        name: 'Vertrag',
+        art: 'felder',
+        felder: ['name', 'art', 'kaltmiete', 'kaution', 'betrifft', 'notiz'],
+        abschnitte: [
+          { vor: 'kaltmiete', titel: 'Miete', anzeigen: MIETE },
+          { vor: 'notiz', titel: 'Weiteres' },
+        ],
+      },
+    ],
+  }),
+  id: 'vertrag',
+  erstellt: '',
+  geaendert: '',
+} as Mappentyp;
 
 describe('Anzeige-Bedingungen im Formular (#1033)', () => {
   it('reagiert sofort: Art gewählt → Abschnitt erscheint; abgewählt → ausgeblendet, Werte gezählt', () => {
     let roh = standardRoh(typ);
     const k = { bekannt: {} };
-    assert.deepEqual(anzeigeImFormular(typ, roh, k).abschnitte.map((a) => a.abschnitt.titel), ['Miete']);
+    assert.deepEqual(
+      anzeigeImFormular(typ, roh, k).abschnitte.map((a) => a.abschnitt.titel),
+      ['Miete'],
+    );
     roh = { ...roh, art: 'Miete' };
     assert.deepEqual(anzeigeImFormular(typ, roh, k).abschnitte, [], 'Abschnitt Miete erscheint');
     roh = { ...roh, kaltmiete: { betrag: '950', waehrung: 'EUR' }, kaution: { betrag: '2850,00', waehrung: 'EUR' } };

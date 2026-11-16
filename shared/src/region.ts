@@ -19,20 +19,54 @@ export const STANDARD_ZEITZONE = 'Europe/Berlin';
 
 /** Gängige Zeitzonen für die Auswahl (Europa zuerst); jede andere gültige IANA-Zone wird beim Speichern auch angenommen. */
 export const ZEITZONEN: readonly string[] = [
-  'Europe/Berlin', 'Europe/Vienna', 'Europe/Zurich', 'Europe/Amsterdam', 'Europe/Brussels', 'Europe/Luxembourg', 'Europe/Paris',
-  'Europe/Copenhagen', 'Europe/Oslo', 'Europe/Stockholm', 'Europe/Helsinki', 'Europe/Warsaw', 'Europe/Prague', 'Europe/Budapest',
-  'Europe/Rome', 'Europe/Madrid', 'Europe/Lisbon', 'Europe/London', 'Europe/Dublin', 'Europe/Athens', 'Europe/Istanbul',
-  'Atlantic/Canary', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Asia/Dubai', 'Asia/Tokyo',
-  'Australia/Sydney', 'UTC',
+  'Europe/Berlin',
+  'Europe/Vienna',
+  'Europe/Zurich',
+  'Europe/Amsterdam',
+  'Europe/Brussels',
+  'Europe/Luxembourg',
+  'Europe/Paris',
+  'Europe/Copenhagen',
+  'Europe/Oslo',
+  'Europe/Stockholm',
+  'Europe/Helsinki',
+  'Europe/Warsaw',
+  'Europe/Prague',
+  'Europe/Budapest',
+  'Europe/Rome',
+  'Europe/Madrid',
+  'Europe/Lisbon',
+  'Europe/London',
+  'Europe/Dublin',
+  'Europe/Athens',
+  'Europe/Istanbul',
+  'Atlantic/Canary',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Asia/Dubai',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+  'UTC',
 ];
 
 /** Gibt es diese Zeitzone (IANA)? */
 export function istZeitzone(v: unknown): v is string {
   if (typeof v !== 'string' || !v || v.length > 64) return false;
-  try { new Intl.DateTimeFormat('en', { timeZone: v }); return true; } catch { return false; }
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: v });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export interface Region { land: Land; bundesland: Bundesland | null; zeitzone: string }
+export interface Region {
+  land: Land;
+  bundesland: Bundesland | null;
+  zeitzone: string;
+}
 /** Neue Installation: Deutschland, ohne Bundesland, Europe/Berlin (Lena muss nichts tun). */
 export const REGION_STANDARD: Region = { land: 'DE', bundesland: null, zeitzone: STANDARD_ZEITZONE };
 
@@ -53,7 +87,9 @@ let aktuell = STANDARD_ZEITZONE;
 /** Die eingestellte Zeitzone der Ablage. */
 export const zeitzone = () => aktuell;
 /** Setzt die Zeitzone für diesen Prozess (Server nach dem Lesen der Einstellung, Oberfläche nach dem Kontostatus). */
-export function setzeZeitzone(z: unknown) { if (istZeitzone(z)) aktuell = z; }
+export function setzeZeitzone(z: unknown) {
+  if (istZeitzone(z)) aktuell = z;
+}
 
 const formate = new Map<string, Intl.DateTimeFormat>();
 /**
@@ -66,7 +102,10 @@ export function datumsformat(sprache: string, optionen: Intl.DateTimeFormatOptio
   const zone = fest ?? aktuell;
   const k = `${zone}|${sprache}|${JSON.stringify(optionen)}`;
   let f = formate.get(k);
-  if (!f) { f = new Intl.DateTimeFormat(sprache, { ...optionen, timeZone: zone }); formate.set(k, f); }
+  if (!f) {
+    f = new Intl.DateTimeFormat(sprache, { ...optionen, timeZone: zone });
+    formate.set(k, f);
+  }
   return f;
 }
 const zahlformate = new Map<string, Intl.NumberFormat>();
@@ -77,10 +116,14 @@ const zahlformate = new Map<string, Intl.NumberFormat>();
 export function zahlformat(sprache: string, optionen: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
   const k = `${sprache}|${JSON.stringify(optionen)}`;
   let f = zahlformate.get(k);
-  if (!f) { f = new Intl.NumberFormat(sprache, optionen); zahlformate.set(k, f); }
+  if (!f) {
+    f = new Intl.NumberFormat(sprache, optionen);
+    zahlformate.set(k, f);
+  }
   return f;
 }
 /** Kalendertag JJJJ-MM-TT in der eingestellten Zeitzone. */
 export const tagIn = (d: Date = new Date()) => datumsformat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 /** Wie `Date.toLocaleString` usw., aber in der eingestellten Zeitzone. */
-export const zeitText = (d: Date, optionen: Intl.DateTimeFormatOptions, sprache = gebietsschema()) => d.toLocaleString(sprache, { ...optionen, timeZone: aktuell });
+export const zeitText = (d: Date, optionen: Intl.DateTimeFormatOptions, sprache = gebietsschema()) =>
+  d.toLocaleString(sprache, { ...optionen, timeZone: aktuell });

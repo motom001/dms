@@ -10,7 +10,12 @@ import { sprache as oberflaechensprache } from './sprache';
 
 export const HANDBUCH_BASIS = 'https://help.ablago.app';
 export type Handbuch = 'admin' | 'benutzer';
-export interface Hilfeziel { handbuch: Handbuch; /** Seite mit Schrägstrich am Ende, z. B. „aufgaben/“. */ seite: string; anker?: string; /** „Hilfe zu …“ */ titel: string }
+export interface Hilfeziel {
+  handbuch: Handbuch;
+  /** Seite mit Schrägstrich am Ende, z. B. „aufgaben/“. */ seite: string;
+  anker?: string;
+  /** „Hilfe zu …“ */ titel: string;
+}
 
 const admin = (seite: string, titel: string, anker?: string): Hilfeziel => ({ handbuch: 'admin', seite, titel, anker });
 const benutzer = (seite: string, titel: string, anker?: string): Hilfeziel => ({ handbuch: 'benutzer', seite, titel, anker });
@@ -70,7 +75,11 @@ export const HILFE = {
   'werkbank.pakete': admin('pakete/', 'Pakete'),
   'werkbank.pakete.katalog': admin('pakete/', 'Im Katalog ansehen', 'im-katalog-ansehen'),
   'werkbank.pakete.sammeldatei': admin('pakete/', 'Pakete ohne Internet installieren', 'pakete-ohne-internet-installieren'),
-  'werkbank.pakete.ablauf': admin('pakete/', 'Mehrere Pakete in einem Schritt installieren', 'mehrere-pakete-in-einem-schritt-installieren'),
+  'werkbank.pakete.ablauf': admin(
+    'pakete/',
+    'Mehrere Pakete in einem Schritt installieren',
+    'mehrere-pakete-in-einem-schritt-installieren',
+  ),
   'werkbank.pakete.alle': admin('pakete/', 'Alle Pakete aktualisieren', 'alle-pakete-aktualisieren'),
   'werkbank.pakete.mitkommt': admin('pakete/', 'Was mitkommt', 'was-mitkommt'),
   'werkbank.pakete.kurzanleitung': admin('pakete/', 'So nutzt du es', 'so-nutzt-du-es'),
@@ -112,7 +121,11 @@ export const HILFE = {
   'pakete.fragen': admin('pakete/', '„Frag deine Ablage“ (Höchstmenge je Frage)', 'frag-deine-ablage'),
   'pakete.ereignisse': admin('pakete/', 'den Ereignissen für Pakete', 'ereignisse'),
   'pakete.ereignis.post_angelegt': admin('pakete/', 'dem Ereignis „Neue Post ist angelegt“', 'ereignis-post-angelegt'),
-  'pakete.ereignis.dokument_hochgeladen': admin('pakete/', 'dem Ereignis „Ein Dokument wurde hochgeladen“', 'ereignis-dokument-hochgeladen'),
+  'pakete.ereignis.dokument_hochgeladen': admin(
+    'pakete/',
+    'dem Ereignis „Ein Dokument wurde hochgeladen“',
+    'ereignis-dokument-hochgeladen',
+  ),
   'pakete.ereignis.texterkennung_fertig': admin('pakete/', 'dem Ereignis „Texterkennung fertig“', 'ereignis-texterkennung-fertig'),
   'pakete.ereignis.volltext_fertig': admin('pakete/', 'dem Ereignis „Volltext fertig“', 'ereignis-volltext-fertig'),
   'pakete.ereignis.einstellungen_geaendert': admin('pakete/', 'dem Ereignis „Einstellungen geändert“', 'ereignis-einstellungen-geandert'),
@@ -217,7 +230,11 @@ export const HILFE = {
   'sicherung.ort': admin('sicherung/', 'Speicherort', 'speicherort'),
   'werkbank.notfallzugang': admin('anmeldeschutz/', 'Notfallzugang', 'notfallzugang'),
   // #885: warum Ablago „nicht im Heimnetz“ meint.
-  'werkbank.notfallzugang.oeffentlich': admin('anmeldeschutz/', 'Zu Hause über den öffentlichen Namen', 'zu-hause-uber-den-offentlichen-namen'),
+  'werkbank.notfallzugang.oeffentlich': admin(
+    'anmeldeschutz/',
+    'Zu Hause über den öffentlichen Namen',
+    'zu-hause-uber-den-offentlichen-namen',
+  ),
   'werkbank.notfallzugang.proxy': admin('installation/', 'Was der Proxy Ablago mitteilt', 'was-der-proxy-dem-dms-mitteilt'),
   'sicherung.extern': admin('sicherung-ausser-haus/', 'Sicherung außer Haus'),
   'sicherung.probe': admin('wiederherstellen/', 'Probe-Wiederherstellung', 'probe-wiederherstellung'),

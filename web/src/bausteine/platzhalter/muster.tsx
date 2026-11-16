@@ -19,10 +19,29 @@ export function PlatzhalterMuster() {
         <Feld beschriftung={t('oberflaeche.muster.platzhalter.feld')}>
           <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} {...ein.feld('text', text, setText)} />
         </Feld>
-        <Platzhalter einsetzen={ein.einsetzen} gruppen={[
-          { name: t('oberflaeche.muster.platzhalter.allgemein'), eintraege: [{ key: 'titel', text: t('oberflaeche.muster.platzhalter.mappentitel') }, { key: 'heute', text: t('oberflaeche.muster.platzhalter.heute') }] },
-          { name: t('oberflaeche.muster.platzhalter.vertrag'), eintraege: [{ key: 'kuendigung', text: t('oberflaeche.muster.platzhalter.kuendigung') }, { key: 'anbieter', text: t('oberflaeche.muster.platzhalter.anbieter'), zusatz: t('oberflaeche.muster.platzhalter.nur-vertrag') }] },
-        ]} />
+        <Platzhalter
+          einsetzen={ein.einsetzen}
+          gruppen={[
+            {
+              name: t('oberflaeche.muster.platzhalter.allgemein'),
+              eintraege: [
+                { key: 'titel', text: t('oberflaeche.muster.platzhalter.mappentitel') },
+                { key: 'heute', text: t('oberflaeche.muster.platzhalter.heute') },
+              ],
+            },
+            {
+              name: t('oberflaeche.muster.platzhalter.vertrag'),
+              eintraege: [
+                { key: 'kuendigung', text: t('oberflaeche.muster.platzhalter.kuendigung') },
+                {
+                  key: 'anbieter',
+                  text: t('oberflaeche.muster.platzhalter.anbieter'),
+                  zusatz: t('oberflaeche.muster.platzhalter.nur-vertrag'),
+                },
+              ],
+            },
+          ]}
+        />
       </div>
     </div>
   );

@@ -23,13 +23,28 @@ import type { PaketdatenWert } from '../../shared/src/paketdaten';
 const log = protokoll.modul('system');
 
 /** Arten im Journal – die Kennung ist zugleich die Kennung des Nachweises. */
-export type JournalArt = 'zugang.fehlanmeldung' | 'zugang.rechte' | 'betrieb.update' | 'betrieb.paket' | 'betrieb.wartung'
-  | 'unveraenderbarkeit.pruefung' | 'datenschutz.auskunft' | 'datenschutz.papierkorb';
+export type JournalArt =
+  | 'zugang.fehlanmeldung'
+  | 'zugang.rechte'
+  | 'betrieb.update'
+  | 'betrieb.paket'
+  | 'betrieb.wartung'
+  | 'unveraenderbarkeit.pruefung'
+  | 'datenschutz.auskunft'
+  | 'datenschutz.papierkorb';
 /** Nur gezählt (ohne Einzelheiten): Fehlanmeldungen mit unbekanntem Konto. */
 export type JournalZaehler = 'zugang.fehlanmeldung_unbekannt';
 
-export interface JournalEintrag { art: JournalArt; zeit: string; daten: Record<string, PaketdatenWert> }
-export interface JournalMonat { eintraege: JournalEintrag[]; weitere: number; zaehler: Partial<Record<JournalZaehler, number>> }
+export interface JournalEintrag {
+  art: JournalArt;
+  zeit: string;
+  daten: Record<string, PaketdatenWert>;
+}
+export interface JournalMonat {
+  eintraege: JournalEintrag[];
+  weitere: number;
+  zaehler: Partial<Record<JournalZaehler, number>>;
+}
 
 export const JE_MONAT = 2000;
 export const MONATE = 25;
@@ -56,15 +71,29 @@ export interface JournalSpeicher {
 /** Im Arbeitsspeicher (Tests, Entwicklung ohne Datenbank). */
 export function speicherJournal(): JournalSpeicher {
   const m = new Map<string, { eintraege: JournalEintrag[]; versuche: number; zaehler: Partial<Record<JournalZaehler, number>> }>();
-  const hol = (k: string) => { let x = m.get(k); if (!x) m.set(k, x = { eintraege: [], versuche: 0, zaehler: {} }); return x; };
+  const hol = (k: string) => {
+    let x = m.get(k);
+    if (!x) m.set(k, (x = { eintraege: [], versuche: 0, zaehler: {} }));
+    return x;
+  };
   return {
     async monat(k) {
       const x = m.get(k);
-      return x ? { eintraege: structuredClone(x.eintraege), weitere: x.versuche - x.eintraege.length, zaehler: { ...x.zaehler } } : { eintraege: [], weitere: 0, zaehler: {} };
+      return x
+        ? { eintraege: structuredClone(x.eintraege), weitere: x.versuche - x.eintraege.length, zaehler: { ...x.zaehler } }
+        : { eintraege: [], weitere: 0, zaehler: {} };
     },
-    async trageEin(k, e, grenze) { const x = hol(k); if (++x.versuche <= grenze) x.eintraege.push(structuredClone(e)); },
-    async zaehle(k, art) { const x = hol(k); x.zaehler[art] = (x.zaehler[art] ?? 0) + 1; },
-    async raeume(bis) { for (const k of [...m.keys()]) if (k <= bis) m.delete(k); },
+    async trageEin(k, e, grenze) {
+      const x = hol(k);
+      if (++x.versuche <= grenze) x.eintraege.push(structuredClone(e));
+    },
+    async zaehle(k, art) {
+      const x = hol(k);
+      x.zaehler[art] = (x.zaehler[art] ?? 0) + 1;
+    },
+    async raeume(bis) {
+      for (const k of [...m.keys()]) if (k <= bis) m.delete(k);
+    },
   };
 }
 
@@ -107,9 +136,13 @@ async function uebernimmAltesJournal(sql: postgres.Sql, haushaltId: string): Pro
 export function pgJournal(sql: postgres.Sql, haushaltId: string): JournalSpeicher & { uebernimm(): Promise<void> } {
   const uebernimm = () => uebernimmAltesJournal(sql, haushaltId);
   let bereit: Promise<void> | null = null;
-  const vorher = () => bereit ??= uebernimm().then(
-    (n) => { if (n) log.info('Nachweis-Journal übernommen', { monate: n }); },
-    (e: Error) => log.warn('Altes Nachweis-Journal nicht übernommen – es bleibt in den Einstellungen', { fehler: e.message }));
+  const vorher = () =>
+    (bereit ??= uebernimm().then(
+      (n) => {
+        if (n) log.info('Nachweis-Journal übernommen', { monate: n });
+      },
+      (e: Error) => log.warn('Altes Nachweis-Journal nicht übernommen – es bleibt in den Einstellungen', { fehler: e.message }),
+    ));
   return {
     /** Beim Start anstoßen (sonst beim ersten Zugriff); scheitert nie, höchstens mit Warnung. */
     uebernimm: vorher,
@@ -118,7 +151,9 @@ export function pgJournal(sql: postgres.Sql, haushaltId: string): JournalSpeiche
       const [eintraege, zaehler] = await Promise.all([
         sql<{ art: JournalArt; zeit: Date; daten: Record<string, PaketdatenWert> }[]>`SELECT art, zeit, daten FROM nachweis_journal
           WHERE haushalt_id = ${haushaltId} AND monat = ${monat} ORDER BY nr`,
-        sql<{ art: string; anzahl: string }[]>`SELECT art, anzahl FROM nachweis_zaehler WHERE haushalt_id = ${haushaltId} AND monat = ${monat}`,
+        sql<
+          { art: string; anzahl: string }[]
+        >`SELECT art, anzahl FROM nachweis_zaehler WHERE haushalt_id = ${haushaltId} AND monat = ${monat}`,
       ]);
       const versuche = Number(zaehler.find((z) => z.art === VERSUCHE)?.anzahl ?? 0);
       return {
@@ -153,16 +188,24 @@ export function pgJournal(sql: postgres.Sql, haushaltId: string): JournalSpeiche
 export class Nachweisjournal {
   /** Monat, den dieser Prozess schon geräumt hat (einmal je Monat, wie früher beim ersten Eintrag). */
   private geraeumt: string | null = null;
-  constructor(private readonly speicher: JournalSpeicher, private readonly jetzt: () => Date = () => new Date()) {}
+  constructor(
+    private readonly speicher: JournalSpeicher,
+    private readonly jetzt: () => Date = () => new Date(),
+  ) {}
 
   /** Monat lesen (`JJJJ-MM`). */
-  async monat(monat: string): Promise<JournalMonat> { return this.speicher.monat(monat); }
+  async monat(monat: string): Promise<JournalMonat> {
+    return this.speicher.monat(monat);
+  }
 
   /** Den Monat räumen, der jetzt zu alt ist – einmal je Monat und Prozess, nebenher. */
   private raeume(monat: string) {
     if (this.geraeumt === monat) return;
     this.geraeumt = monat;
-    void this.speicher.raeume(monatMinus(monat, MONATE)).catch((e: Error) => { this.geraeumt = null; log.warn('Alte Nachweise nicht geräumt', { fehler: e.message }); });
+    void this.speicher.raeume(monatMinus(monat, MONATE)).catch((e: Error) => {
+      this.geraeumt = null;
+      log.warn('Alte Nachweise nicht geräumt', { fehler: e.message });
+    });
   }
 
   async schreibe(art: JournalArt, daten: Record<string, PaketdatenWert>): Promise<void> {
@@ -183,7 +226,9 @@ export class Nachweisjournal {
 
 let aktiv: Nachweisjournal | null = null;
 /** Vom Start bzw. von Tests gesetzt. */
-export function setzeNachweisjournal(j: Nachweisjournal | null) { aktiv = j; }
+export function setzeNachweisjournal(j: Nachweisjournal | null) {
+  aktiv = j;
+}
 export const nachweisjournal = () => aktiv;
 
 /** Eintragen, ohne den Aufrufer aufzuhalten oder scheitern zu lassen. Gibt das Versprechen für Tests zurück. */
@@ -195,7 +240,10 @@ export function nachweis(art: JournalArt, daten: Record<string, PaketdatenWert>)
 /** Fehlanmeldung: Konto nur, wenn es das Konto gibt; Adresse gekürzt, dazu Heimnetz oder außen. */
 export function fehlanmeldung(email: string, ip: string, bekannt: boolean): Promise<void> {
   if (!aktiv) return Promise.resolve();
-  if (!bekannt) return aktiv.zaehle('zugang.fehlanmeldung_unbekannt').catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art: 'zugang.fehlanmeldung_unbekannt', fehler: e.message }));
+  if (!bekannt)
+    return aktiv
+      .zaehle('zugang.fehlanmeldung_unbekannt')
+      .catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art: 'zugang.fehlanmeldung_unbekannt', fehler: e.message }));
   return nachweis('zugang.fehlanmeldung', { konto: email, netz: kuerzeIp(ip), heimnetz: istPrivat(ip) });
 }
 
@@ -206,6 +254,8 @@ export function fehlanmeldung(email: string, ip: string, bekannt: boolean): Prom
 export async function merkeVersion(einst: Einstellungen, version: string): Promise<void> {
   const alt = (await einst.lies('nachweise_version')) ?? null;
   if (alt === version) return;
-  const getauscht = einst.tausche ? await einst.tausche('nachweise_version', alt, version) : (await einst.schreibe('nachweise_version', version), true);
+  const getauscht = einst.tausche
+    ? await einst.tausche('nachweise_version', alt, version)
+    : (await einst.schreibe('nachweise_version', version), true);
   if (getauscht && typeof alt === 'string') await nachweis('betrieb.update', { von: alt, nach: version });
 }

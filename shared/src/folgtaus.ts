@@ -15,8 +15,10 @@ import { t } from './texte';
 import { SCHLUESSEL } from './kennungen';
 
 /** Am Verweisfeld: `feld` ist ein anderes Verweisfeld dieser Mappe, `zielFeld` ein Verweisfeld der Mappe, auf die es zeigt. */
-export interface FolgtAus { feld: string; zielFeld: string }
-
+export interface FolgtAus {
+  feld: string;
+  zielFeld: string;
+}
 
 /** Eingabe (Editor, Paket, Schnittstelle) bereinigen; ungültig = keine Angabe. */
 export function bereinigeFolgtAus(e: unknown): FolgtAus | undefined {
@@ -54,13 +56,15 @@ export function folgtAusProbleme(felder: Feld[], f: Feld, felderVon: (typId: str
   const quelle = felder.find((x) => x.key === fa.feld);
   if (!quelle) return [t('gemeinsam.folgtaus.quelle-fehlt', { feld: fa.feld })];
   if (quelle.key === f.key) return [t('gemeinsam.folgtaus.nicht-aus-sich')];
-  if (quelle.typ !== 'referenz' || !einzigesZiel(quelle)) return [t('gemeinsam.folgtaus.quelle-kein-verweis', { feld: quelle.label || quelle.key })];
+  if (quelle.typ !== 'referenz' || !einzigesZiel(quelle))
+    return [t('gemeinsam.folgtaus.quelle-kein-verweis', { feld: quelle.label || quelle.key })];
   if (quelle.mehrfach) return [t('gemeinsam.folgtaus.quelle-mehrfach', { feld: quelle.label || quelle.key })];
   const ziel = felderVon(einzigesZiel(quelle)!);
   if (!ziel) return [];
   const zf = ziel.find((x) => x.key === fa.zielFeld);
   if (!zf) return [t('gemeinsam.folgtaus.zielfeld-fehlt', { feld: fa.zielFeld, quelle: quelle.label || quelle.key })];
-  if (zf.typ !== 'referenz' || zf.mehrfach || einzigesZiel(zf) !== einzigesZiel(f)) return [t('gemeinsam.folgtaus.zielfeld-passt-nicht', { feld: zf.label || zf.key })];
+  if (zf.typ !== 'referenz' || zf.mehrfach || einzigesZiel(zf) !== einzigesZiel(f))
+    return [t('gemeinsam.folgtaus.zielfeld-passt-nicht', { feld: zf.label || zf.key })];
   return [];
 }
 
@@ -71,7 +75,10 @@ export function folgtAusKreis(felder: Feld[]): string[] {
   for (const start of kante.keys()) {
     const weg: string[] = [];
     let k: string | undefined = start;
-    while (k && kante.has(k) && !weg.includes(k)) { weg.push(k); k = kante.get(k); }
+    while (k && kante.has(k) && !weg.includes(k)) {
+      weg.push(k);
+      k = kante.get(k);
+    }
     if (k && weg.includes(k)) for (const x of weg.slice(weg.indexOf(k))) imKreis.add(x);
   }
   return felder.map((f) => f.key).filter((k) => imKreis.has(k));

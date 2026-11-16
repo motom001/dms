@@ -16,7 +16,11 @@ describe('Fehlermeldungen (#70)', () => {
     await assert.rejects(f.melde('u1', { text: '' }), status(422));
     await assert.rejects(f.melde('u1', { text: 'x', bilder: [{ daten: Buffer.from('kein Bild').toString('base64') }] }), status(422));
     await assert.rejects(f.melde('u1', { text: 'x', bilder: [{ daten: PNG }, { daten: PNG }, { daten: PNG }] }), status(422));
-    const { id } = await f.melde('u1', { text: 'Knopf geht nicht', bilder: [{ name: 'a.png', daten: `data:image/png;base64,${PNG}` }], angaben: { bildschirm: { breite: 402 }, riesig: 'x'.repeat(5000) } });
+    const { id } = await f.melde('u1', {
+      text: 'Knopf geht nicht',
+      bilder: [{ name: 'a.png', daten: `data:image/png;base64,${PNG}` }],
+      angaben: { bildschirm: { breite: 402 }, riesig: 'x'.repeat(5000) },
+    });
     assert.equal(await f.offen(), 1);
     const m = await f.hole(id);
     assert.equal(m.bilder[0].mime, 'image/png');

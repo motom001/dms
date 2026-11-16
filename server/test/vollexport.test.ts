@@ -17,32 +17,92 @@ import { csv, exportDateien, exporteIn, pruefeExport, vollexport } from '../src/
 import { alsHeruntergeladen, mitPruefsumme, pruefsummen, pruefsummenZeile } from '../src/vollexport-pruefsummen';
 import { kontaktVorschlaege } from '../src/routen';
 
-const sha256sumDa = (() => { try { execFileSync('sha256sum', ['--version']); return true; } catch { return false; } })();
+const sha256sumDa = (() => {
+  try {
+    execFileSync('sha256sum', ['--version']);
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 describe('Vollexport (#254)', () => {
   it('CSV nach RFC 4180 mit BOM', () => {
-    assert.equal(csv(['a', 'b'], [['1,5', 'sagt "hallo"'], ['x\ny', ' leer']]).toString('utf8'), '﻿a,b\r\n"1,5","sagt ""hallo"""\r\n"x\ny"," leer"\r\n');
+    assert.equal(
+      csv(
+        ['a', 'b'],
+        [
+          ['1,5', 'sagt "hallo"'],
+          ['x\ny', ' leer'],
+        ],
+      ).toString('utf8'),
+      '﻿a,b\r\n"1,5","sagt ""hallo"""\r\n"x\ny"," leer"\r\n',
+    );
   });
 
   it('exportiert alles lesbar, ohne Passwörter; mit Bestätigung Passwörter; Prüfwerte', async () => {
-    const tresor = { bereit: true, registriere: () => {}, registriereBestand: () => {}, verschluessele: (k: string) => `dms1$${k}`, entschluessele: (w: string) => (w.startsWith('dms1$') ? w.slice(5) : null) };
+    const tresor = {
+      bereit: true,
+      registriere: () => {},
+      registriereBestand: () => {},
+      verschluessele: (k: string) => `dms1$${k}`,
+      entschluessele: (w: string) => (w.startsWith('dms1$') ? w.slice(5) : null),
+    };
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor: tresor as never });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
-    const partner = await d.mappentypen.legeTypAn({ name: 'Vertragspartner', schluessel: 'partner', titelVorlage: '{name}', felder: [
-      { key: 'name', label: 'Name', typ: 'text' }, { key: 'email', label: 'E-Mail', typ: 'text' }, { key: 'telefon', label: 'Telefon', typ: 'text' },
-    ] });
-    const konto = await d.mappentypen.legeTypAn({ name: 'Zugang', titelVorlage: '{name}', felder: [
-      { key: 'name', label: 'Name', typ: 'text' }, { key: 'benutzer', label: 'Benutzername', typ: 'text' }, { key: 'pw', label: 'Passwort', typ: 'passwort' },
-      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id }, { key: 'betrag', label: 'Betrag', typ: 'betrag' }, { key: 'ab', label: 'Ab', typ: 'datum' },
-    ], register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'dok', name: 'Unterlagen', art: 'dokumente', versionierung: true }] });
-    const p = await d.mappen.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' } });
-    const z = await d.mappen.legeMappeAn({ typId: konto.id, werte: { name: 'Portal', benutzer: 'anna', pw: 'geheim123', partner: p.id, betrag: { betrag: 12.5, waehrung: 'EUR' }, ab: '2026-12-01' } });
+    const partner = await d.mappentypen.legeTypAn({
+      name: 'Vertragspartner',
+      schluessel: 'partner',
+      titelVorlage: '{name}',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text' },
+        { key: 'email', label: 'E-Mail', typ: 'text' },
+        { key: 'telefon', label: 'Telefon', typ: 'text' },
+      ],
+    });
+    const konto = await d.mappentypen.legeTypAn({
+      name: 'Zugang',
+      titelVorlage: '{name}',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text' },
+        { key: 'benutzer', label: 'Benutzername', typ: 'text' },
+        { key: 'pw', label: 'Passwort', typ: 'passwort' },
+        { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+        { key: 'betrag', label: 'Betrag', typ: 'betrag' },
+        { key: 'ab', label: 'Ab', typ: 'datum' },
+      ],
+      register: [
+        { key: 'daten', name: 'Daten', art: 'felder' },
+        { key: 'dok', name: 'Unterlagen', art: 'dokumente', versionierung: true },
+      ],
+    });
+    const p = await d.mappen.legeMappeAn({
+      typId: partner.id,
+      werte: { name: 'Stadtwerke, Nord', email: 'info@sw.example', telefon: '0123' },
+    });
+    const z = await d.mappen.legeMappeAn({
+      typId: konto.id,
+      werte: {
+        name: 'Portal',
+        benutzer: 'anna',
+        pw: 'geheim123',
+        partner: p.id,
+        betrag: { betrag: 12.5, waehrung: 'EUR' },
+        ab: '2026-12-01',
+      },
+    });
     const dok = (await d.dokumente.ladeHoch(z.id, { register: 'dok', name: 'Vertrag.pdf' }, Buffer.from('%PDF-1.4 eins'), null)).dokument;
     await d.dokumentVersionen.ersetzeDokument(dok.id, {}, Buffer.from('%PDF-1.4 zwei'), null);
     await d.mappenNotizen.legeNotizAn(z.id, 'Notiz zum Zugang', null);
 
-    const quelle = d.vollexport.vollexportQuelle({ mandant: 'Familie Test', version: '0.0.0', benutzer: () => konten.exportDaten(), designs: async () => [], protokoll: () => [] });
+    const quelle = d.vollexport.vollexportQuelle({
+      mandant: 'Familie Test',
+      version: '0.0.0',
+      benutzer: () => konten.exportDaten(),
+      designs: async () => [],
+      protokoll: () => [],
+    });
     const ziel = await mkdtemp(join(tmpdir(), 'dms-export-'));
     const vor = kontaktVorschlaege(await d.mappentypen.listeTypen()).find((v) => v.typId === partner.id)!;
     assert.deepEqual(vor.zuordnung, { name: 'name', email: 'email', telefon: 'telefon' });
@@ -52,10 +112,27 @@ describe('Vollexport (#254)', () => {
     assert.equal(m.formatversion, 1);
     assert.ok(m.anzahlen.mappen >= 3); // 2 + Benutzer-Mappe (+ Systemrollen)
     const pfade: string[] = m.dateien.map((x: { pfad: string }) => x.pfad);
-    for (const x of ['LIESMICH.md', 'struktur/mappentypen.json', 'struktur/benutzer.json', 'daten/partner.csv', 'daten/partner.jsonl', 'daten/partner.xlsx', 'daten/verweise.csv', 'daten/dokumente.csv', 'daten/historie.jsonl', 'kalender/fristen.ics', 'kontakte/partner.vcf', 'uebersicht/partner.pdf']) assert.ok(pfade.includes(x), x);
+    for (const x of [
+      'LIESMICH.md',
+      'struktur/mappentypen.json',
+      'struktur/benutzer.json',
+      'daten/partner.csv',
+      'daten/partner.jsonl',
+      'daten/partner.xlsx',
+      'daten/verweise.csv',
+      'daten/dokumente.csv',
+      'daten/historie.jsonl',
+      'kalender/fristen.ics',
+      'kontakte/partner.vcf',
+      'uebersicht/partner.pdf',
+    ])
+      assert.ok(pfade.includes(x), x);
     // Dokumente im Original, ältere Version im Unterordner
     const ablage = pfade.filter((x) => x.startsWith('ablage/Zugang/'));
-    assert.ok(ablage.some((x) => x.endsWith('/Unterlagen/Vertrag.pdf')), ablage.join('\n'));
+    assert.ok(
+      ablage.some((x) => x.endsWith('/Unterlagen/Vertrag.pdf')),
+      ablage.join('\n'),
+    );
     assert.ok(ablage.some((x) => /\/Unterlagen\/Versionen\/v1 Vertrag\.pdf$/.test(x)));
     assert.equal(await lies(ablage.find((x) => x.endsWith('/Unterlagen/Vertrag.pdf'))!), '%PDF-1.4 zwei');
     // CSV: Komma, Verweis als Id und Titel, Betrag getrennt, Passwort nur „gesetzt“
@@ -67,7 +144,10 @@ describe('Vollexport (#254)', () => {
     assert.match(zugang, /\(gesetzt\)/);
     assert.ok(!(await lies('daten/zugang.jsonl')).includes('geheim123'));
     assert.ok(!(await lies('struktur/benutzer.json')).includes('hash'));
-    assert.match(await lies('kontakte/partner.vcf'), /BEGIN:VCARD\r\nVERSION:4\.0\r\nFN:Stadtwerke\\, Nord\r\nEMAIL:info@sw\.example\r\nTEL:0123/);
+    assert.match(
+      await lies('kontakte/partner.vcf'),
+      /BEGIN:VCARD\r\nVERSION:4\.0\r\nFN:Stadtwerke\\, Nord\r\nEMAIL:info@sw\.example\r\nTEL:0123/,
+    );
     assert.ok(!pfade.includes('passwoerter.csv'));
     // Prüfen
     assert.deepEqual(await pruefeExport(r.ordner), { ok: true, dateien: m.dateien.length, fehlend: [], abweichend: [] });
@@ -77,7 +157,13 @@ describe('Vollexport (#254)', () => {
     assert.ok(summen.some((z) => z.endsWith('  manifest.json')) && summen.some((z) => /\/mappe\.json$/.test(z)));
     if (sha256sumDa) {
       const aus = execFileSync('sha256sum', ['-c', 'SHA256SUMS'], { cwd: r.ordner, encoding: 'utf8' });
-      assert.equal(aus.trim().split('\n').filter((z) => z.endsWith(': OK')).length, summen.length);
+      assert.equal(
+        aus
+          .trim()
+          .split('\n')
+          .filter((z) => z.endsWith(': OK')).length,
+        summen.length,
+      );
     }
     assert.match(await lies('LIESMICH.md'), /sha256sum -c --quiet SHA256SUMS/);
     await writeFile(join(r.ordner, 'daten', 'partner.csv'), 'verändert');
@@ -91,18 +177,30 @@ describe('Vollexport (#254)', () => {
     // Mit Passwörtern (Bitwarden-CSV)
     const r2 = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-export-')), { passwoerter: true, protokolle: true });
     const pw = await readFile(join(r2.ordner, 'passwoerter.csv'), 'utf8');
-    assert.match(pw, /^﻿folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\r\nZugang,,login,Portal,,,0,,anna,geheim123,\r\n$/);
+    assert.match(
+      pw,
+      /^﻿folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\r\nZugang,,login,Portal,,,0,,anna,geheim123,\r\n$/,
+    );
   });
 
   it('Prüfsummen (#1195): Format wie sha256sum, ZIP-Prüfsumme beim Herunterladen, Eintrag bleibt danach', async () => {
     assert.equal(pruefsummenZeile('ab', 'a b/c.pdf'), 'ab  a b/c.pdf');
     assert.equal(pruefsummenZeile('ab', 'a\\b\nc'), '\\ab  a\\\\b\\nc');
-    assert.equal(pruefsummen([{ pfad: 'b', sha256: '2' }, { pfad: 'a', sha256: '1' }]).toString(), '1  a\n2  b\n');
+    assert.equal(
+      pruefsummen([
+        { pfad: 'b', sha256: '2' },
+        { pfad: 'a', sha256: '1' },
+      ]).toString(),
+      '1  a\n2  b\n',
+    );
     // Durchreichen und mitrechnen.
     const inhalt = Buffer.from('ZIP-INHALT'.repeat(1000));
     let ergebnis: { sha256: string; bytes: number } | undefined;
     const teile: Buffer[] = [];
-    for await (const t of mitPruefsumme(Readable.from([inhalt.subarray(0, 100), inhalt.subarray(100)]), (e) => { ergebnis = e; })) teile.push(t as Buffer);
+    for await (const t of mitPruefsumme(Readable.from([inhalt.subarray(0, 100), inhalt.subarray(100)]), (e) => {
+      ergebnis = e;
+    }))
+      teile.push(t as Buffer);
     assert.deepEqual(Buffer.concat(teile), inhalt);
     assert.deepEqual(ergebnis, { sha256: createHash('sha256').update(inhalt).digest('hex'), bytes: inhalt.length });
     // Nach dem Herunterladen: nur SHA256SUMS und die Angaben bleiben, der Eintrag steht mit Prüfsumme in der Liste.
@@ -110,7 +208,14 @@ describe('Vollexport (#254)', () => {
     const ordner = join(ziel, 'dms-export-2026-11-14-10-00-00');
     await mkdir(join(ordner, 'daten'), { recursive: true });
     await writeFile(join(ordner, 'daten', 'a.csv'), 'a');
-    await writeFile(join(ordner, 'manifest.json'), JSON.stringify({ erstellt: '2026-11-14T10:00:00.000Z', dateien: [{ pfad: 'daten/a.csv', bytes: 1, sha256: 'x' }], anzahlen: { mappen: 3 } }));
+    await writeFile(
+      join(ordner, 'manifest.json'),
+      JSON.stringify({
+        erstellt: '2026-11-14T10:00:00.000Z',
+        dateien: [{ pfad: 'daten/a.csv', bytes: 1, sha256: 'x' }],
+        anzahlen: { mappen: 3 },
+      }),
+    );
     await writeFile(join(ordner, 'SHA256SUMS'), 'x  daten/a.csv\n');
     const jetzt = new Date('2026-11-14T12:00:00Z');
     await alsHeruntergeladen(ordner, { sha256: 'f'.repeat(64), bytes: 1234 }, jetzt);

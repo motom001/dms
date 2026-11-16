@@ -27,8 +27,16 @@ import type { AufgabenVertretung } from './vertretung';
 
 /** Die Teile, die die Aufgaben rufen – dazu alle Klassen dieses Ordners (zusammengesetzt im Dienst). */
 export interface AufgabenTeile {
-  rechte: ZugriffDienst; historie: MappenHistorie; mappen: MappenDienst; ereignisse: EreignisseDienst; systemmappen: PostSystemmappen;
-  aufgaben: AufgabenDienst; vertretung: AufgabenVertretung; ohneLeserecht: OhneLeserecht; fristen: Fristen; ohneEmpfaenger: OhneEmpfaenger;
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  mappen: MappenDienst;
+  ereignisse: EreignisseDienst;
+  systemmappen: PostSystemmappen;
+  aufgaben: AufgabenDienst;
+  vertretung: AufgabenVertretung;
+  ohneLeserecht: OhneLeserecht;
+  fristen: Fristen;
+  ohneEmpfaenger: OhneEmpfaenger;
   /** Mappen-Abläufe aus Automatisierungsvorlagen (#1044). */
   ablaeufe: MappenAblaeufe;
 }
@@ -61,25 +69,53 @@ export interface AufgabenAnschluss {
 }
 
 /** Art, Feld und Datum einer Aufgabe aus einer Automatisierung: Frist (#724), „Post für dich“ (#1001) oder Zugewiesen. */
-function artUndSchluessel(frist: { feld: string; datum: string } | null, post: string | null, datum: string | null): Pick<Aufgabe, 'art' | 'feldKey' | 'datum'> {
+function artUndSchluessel(
+  frist: { feld: string; datum: string } | null,
+  post: string | null,
+  datum: string | null,
+): Pick<Aufgabe, 'art' | 'feldKey' | 'datum'> {
   if (frist) return { art: 'frist', feldKey: frist.feld, datum: frist.datum };
   if (post) return { art: 'post', feldKey: post, datum };
   return { art: 'manuell', datum };
 }
 
 export class AufgabenDienst {
-  constructor(private readonly kern: Kern, private readonly teile: AufgabenTeile, private readonly anschluss: AufgabenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: AufgabenTeile,
+    private readonly anschluss: AufgabenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private sichtbarFuer(benutzerId: string, ids: string[]) { return this.teile.rechte.sichtbarFuer(benutzerId, ids); }
-  private neueAufgabe(a: Aufgabe, typ?: string) { return this.teile.ereignisse.neueAufgabe(a, typ); }
-  private leiteUm(a: Aufgabe) { return this.teile.vertretung.leiteUm(a); }
-  private empfaengerAufloesen(id: string | null) { return this.teile.vertretung.empfaengerAufloesen(id); }
-  private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.teile.vertretung.benachrichtigeGebuendelt(...a); }
-  private faelleNach(mappeIds: string[]) { return this.teile.ohneLeserecht.faelleNach(mappeIds); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private name(benutzerId: string | null): Promise<string> {
+    return this.kern.name(benutzerId);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private sichtbarFuer(benutzerId: string, ids: string[]) {
+    return this.teile.rechte.sichtbarFuer(benutzerId, ids);
+  }
+  private neueAufgabe(a: Aufgabe, typ?: string) {
+    return this.teile.ereignisse.neueAufgabe(a, typ);
+  }
+  private leiteUm(a: Aufgabe) {
+    return this.teile.vertretung.leiteUm(a);
+  }
+  private empfaengerAufloesen(id: string | null) {
+    return this.teile.vertretung.empfaengerAufloesen(id);
+  }
+  private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) {
+    return this.teile.vertretung.benachrichtigeGebuendelt(...a);
+  }
+  private faelleNach(mappeIds: string[]) {
+    return this.teile.ohneLeserecht.faelleNach(mappeIds);
+  }
 
   /** Ein aktiver Benutzer (seine Benutzer-Mappe), sonst 422. */
   async pruefeEmpfaenger(id: unknown): Promise<string> {
@@ -96,7 +132,13 @@ export class AufgabenDienst {
    */
   async pruefeErwaehnungen(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) {
     for (const f of typ.felder.filter((x) => x.typ === 'formatiert')) {
-      await this.erwaehnungenAbgleichen(mappeId, { key: f.key, ort: `in „${f.label}“` }, String(alt[f.key] ?? ''), String(neu[f.key] ?? ''), von);
+      await this.erwaehnungenAbgleichen(
+        mappeId,
+        { key: f.key, ort: `in „${f.label}“` },
+        String(alt[f.key] ?? ''),
+        String(neu[f.key] ?? ''),
+        von,
+      );
     }
   }
 
@@ -106,34 +148,61 @@ export class AufgabenDienst {
    * etwas aus, und nur solche, die der Erwähnende sehen darf (#137). Benutzer bekommen eine Aufgabe (#56); andere Mappen
    * melden sich bei denen, die sie als Favorit haben (#889).
    */
-  async erwaehnungenAbgleichen(mappeId: string, quelle: { key: string; ort: string; auszug?: string }, altText: string, neuText: string, von: string | null) {
+  async erwaehnungenAbgleichen(
+    mappeId: string,
+    quelle: { key: string; ort: string; auszug?: string },
+    altText: string,
+    neuText: string,
+    von: string | null,
+  ) {
     const vorher = new Set(erwaehnungen(altText));
     const jetzt = new Set(erwaehnungen(neuText));
     if (!vorher.size && !jetzt.size) return;
     const { benutzer } = await this.kern.system();
-    const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'erwaehnung' && a.feldKey === quelle.key);
+    const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter(
+      (a) => a.art === 'erwaehnung' && a.feldKey === quelle.key,
+    );
     const sichtbar = von ? await this.sichtbarFuer(von, [...jetzt]) : new Set(jetzt);
     for (const id of jetzt) {
       if (vorher.has(id) || !sichtbar.has(id) || id === mappeId) continue;
       const m = await this.repo.holeMappe(id);
       if (!m) continue;
-      if (m.typId !== benutzer.id) { await this.favoritErwaehnt(mappeId, m, quelle, von, offen); continue; }
+      if (m.typId !== benutzer.id) {
+        await this.favoritErwaehnt(mappeId, m, quelle, von, offen);
+        continue;
+      }
       if (id === von || offen.some((a) => a.empfaengerId === id && a.anlass?.art !== 'favorit')) continue;
       // Deaktivierte nur, wenn ihr Vertreter übernimmt (#78).
       if (m.werte.aktiv === false && (await this.empfaengerAufloesen(id)).ziel === id) continue;
       const a = await this.neueAufgabe({
-        id: randomUUID(), mappeId, empfaengerId: id, art: 'erwaehnung', feldKey: quelle.key,
+        id: randomUUID(),
+        mappeId,
+        empfaengerId: id,
+        art: 'erwaehnung',
+        feldKey: quelle.key,
         text: await this.erwaehntText(id, von, quelle, neuText),
-        erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
+        erstellt: '',
+        erstelltVon: von,
+        erledigt: null,
+        erledigtVon: null,
       });
       // In die Historie nur der neutrale Text (#1293): Der Text der Aufgabe ist für den Empfänger aufbereitet.
-      await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnt', { name: await this.name(id), ort: quelle.ort }), aufgabe: a.id, aufgabenart: 'erwaehnung', fuer: id, aufgabentext: historienAufgabentext(a, this.neutralerErwaehntText(quelle, neuText)) });
+      await this.notiere(mappeId, von, 'aufgabe', {
+        text: t('meldungen.dienst.erwaehnt', { name: await this.name(id), ort: quelle.ort }),
+        aufgabe: a.id,
+        aufgabenart: 'erwaehnung',
+        fuer: id,
+        aufgabentext: historienAufgabentext(a, this.neutralerErwaehntText(quelle, neuText)),
+      });
       await this.leiteUm(a);
     }
     for (const id of vorher) {
       if (jetzt.has(id)) continue;
       const m = await this.repo.holeMappe(id);
-      if (m?.typId === benutzer.id) await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnung-von-entfernt', { name: await this.name(id), ort: quelle.ort }) });
+      if (m?.typId === benutzer.id)
+        await this.notiere(mappeId, von, 'aufgabe', {
+          text: t('meldungen.dienst.erwaehnung-von-entfernt', { name: await this.name(id), ort: quelle.ort }),
+        });
     }
   }
 
@@ -148,18 +217,32 @@ export class AufgabenDienst {
    * Text der Aufgabe „Erwähnt von …“ für den Empfänger (#888, #889): Den Namen des Erwähnenden und Titel weiterer
    * Erwähnungen im Auszug nur, wenn der Empfänger diese Mappen lesen darf – sonst neutral.
    */
-  private async erwaehntText(empfaenger: string, von: string | null, quelle: { ort: string; auszug?: string }, text: string): Promise<string> {
+  private async erwaehntText(
+    empfaenger: string,
+    von: string | null,
+    quelle: { ort: string; auszug?: string },
+    text: string,
+  ): Promise<string> {
     const ids = erwaehnungen(text);
     const sieht = await this.sichtbarFuer(empfaenger, [...ids, ...(von ? [von] : [])]);
     // Titel erst hier (#1293): gespeichert ist nur die Kennung.
-    const titel = quelle.auszug === undefined ? new Map<string, { titel: string }>() : await this.repo.bezuege(ids.filter((id) => sieht.has(id)));
-    const auszug = quelle.auszug === undefined ? '' : (() => {
-      const x = alsText(text, (id) => (sieht.has(id) && titel.has(id) ? titel.get(id)!.titel || t('meldungen.dienst.ohne-titel') : t('meldungen.dienst.erwaehnung-nicht-sichtbar')));
-      return `: ${x.length > 80 ? `${x.slice(0, 77)} …` : x}`;
-    })();
-    const roh = von && !sieht.has(von)
-      ? t('meldungen.dienst.erwaehnt-ohne-name', { ort: quelle.ort, wert: auszug })
-      : t('meldungen.dienst.erwaehnt-von', { name: await this.name(von), ort: quelle.ort, wert: auszug });
+    const titel =
+      quelle.auszug === undefined ? new Map<string, { titel: string }>() : await this.repo.bezuege(ids.filter((id) => sieht.has(id)));
+    const auszug =
+      quelle.auszug === undefined
+        ? ''
+        : (() => {
+            const x = alsText(text, (id) =>
+              sieht.has(id) && titel.has(id)
+                ? titel.get(id)!.titel || t('meldungen.dienst.ohne-titel')
+                : t('meldungen.dienst.erwaehnung-nicht-sichtbar'),
+            );
+            return `: ${x.length > 80 ? `${x.slice(0, 77)} …` : x}`;
+          })();
+    const roh =
+      von && !sieht.has(von)
+        ? t('meldungen.dienst.erwaehnt-ohne-name', { ort: quelle.ort, wert: auszug })
+        : t('meldungen.dienst.erwaehnt-von', { name: await this.name(von), ort: quelle.ort, wert: auszug });
     return roh.slice(0, AUFGABE_MAX);
   }
 
@@ -168,7 +251,13 @@ export class AufgabenDienst {
    * erwähnt wird“ sofort (Aufgabe an der Mappe mit der Erwähnung), in der täglichen Zusammenfassung oder nie. Nur wer
    * **beide** Mappen lesen darf; nie der Erwähnende selbst. Der Text nennt nur den Titel des Favoriten.
    */
-  private async favoritErwaehnt(mappeId: string, ziel: { id: string; titel?: string | null }, quelle: { key: string; ort: string }, von: string | null, offen: Aufgabe[]) {
+  private async favoritErwaehnt(
+    mappeId: string,
+    ziel: { id: string; titel?: string | null },
+    quelle: { key: string; ort: string },
+    von: string | null,
+    offen: Aufgabe[],
+  ) {
     const fav = (await this.repo.favoritenDerMappe(ziel.id)).filter((f) => f.benutzerId !== von);
     if (!fav.length) return;
     const aktiv = this.konten?.benutzer ? new Set((await this.konten.benutzer()).filter((b) => b.aktiv).map((b) => b.id)) : null;
@@ -179,20 +268,43 @@ export class AufgabenDienst {
       if (wahl === 'nie') continue;
       const sieht = await this.sichtbarFuer(benutzerId, [ziel.id, mappeId]);
       if (!sieht.has(ziel.id) || !sieht.has(mappeId)) continue;
-      if (wahl === 'zusammenfassung') { await this.merkeFuerZusammenfassung(benutzerId, e, { quelle: mappeId, ziel: ziel.id, ort: quelle.ort, am: new Date().toISOString() }); continue; }
+      if (wahl === 'zusammenfassung') {
+        await this.merkeFuerZusammenfassung(benutzerId, e, {
+          quelle: mappeId,
+          ziel: ziel.id,
+          ort: quelle.ort,
+          am: new Date().toISOString(),
+        });
+        continue;
+      }
       if (offen.some((a) => a.empfaengerId === benutzerId && a.anlass?.art === 'favorit' && a.anlass.mappe === ziel.id)) continue;
       await this.neueAufgabe({
-        id: randomUUID(), mappeId, empfaengerId: benutzerId, art: 'erwaehnung', feldKey: quelle.key, anlass: { art: 'favorit', mappe: ziel.id },
-        text: t('meldungen.dienst.favorit-erwaehnt', { titel: ziel.titel || t('meldungen.dienst.ohne-titel'), ort: quelle.ort }).slice(0, AUFGABE_MAX),
-        erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
+        id: randomUUID(),
+        mappeId,
+        empfaengerId: benutzerId,
+        art: 'erwaehnung',
+        feldKey: quelle.key,
+        anlass: { art: 'favorit', mappe: ziel.id },
+        text: t('meldungen.dienst.favorit-erwaehnt', { titel: ziel.titel || t('meldungen.dienst.ohne-titel'), ort: quelle.ort }).slice(
+          0,
+          AUFGABE_MAX,
+        ),
+        erstellt: '',
+        erstelltVon: von,
+        erledigt: null,
+        erledigtVon: null,
       });
     }
   }
 
   /** Für die tägliche Zusammenfassung merken (persönliche Einstellung, höchstens 50, neueste zuletzt). */
   private async merkeFuerZusammenfassung(benutzerId: string, e: Record<string, unknown>, x: FavoritErwaehntMerk) {
-    const bisher = Array.isArray(e[FAVORIT_ERWAEHNT_OFFEN]) ? e[FAVORIT_ERWAEHNT_OFFEN] as FavoritErwaehntMerk[] : [];
-    await this.konten?.setzeEinstellung?.(benutzerId, FAVORIT_ERWAEHNT_OFFEN, [...bisher.filter((y) => !(y.quelle === x.quelle && y.ziel === x.ziel)), x].slice(-50));
+    const bisher = Array.isArray(e[FAVORIT_ERWAEHNT_OFFEN]) ? (e[FAVORIT_ERWAEHNT_OFFEN] as FavoritErwaehntMerk[]) : [];
+    await this.konten?.setzeEinstellung?.(
+      benutzerId,
+      FAVORIT_ERWAEHNT_OFFEN,
+      [...bisher.filter((y) => !(y.quelle === x.quelle && y.ziel === x.ziel)), x].slice(-50),
+    );
   }
 
   /**
@@ -205,7 +317,11 @@ export class AufgabenDienst {
     const m = istUuid(id) ? await this.repo.holeMappe(id) : undefined;
     if (!m || m.typId !== benutzer.id) throw new Fachfehler(422, t('meldungen.dienst.bitte-einen-benutzer-als'));
     const { ziel, abwesende } = await this.empfaengerAufloesen(id);
-    const aktiv = async (x: string | null) => !!x && (!this.konten?.benutzer ? (await this.repo.holeMappe(x))?.werte.aktiv !== false : (await this.konten.benutzer()).some((b) => b.id === x && b.aktiv));
+    const aktiv = async (x: string | null) =>
+      !!x &&
+      (!this.konten?.benutzer
+        ? (await this.repo.holeMappe(x))?.werte.aktiv !== false
+        : (await this.konten.benutzer()).some((b) => b.id === x && b.aktiv));
     if (await aktiv(ziel)) return { an: ziel, ueber: abwesende };
     return { an: null, ueber: [...abwesende, ...(ziel ? [ziel] : [])] };
   }
@@ -224,7 +340,18 @@ export class AufgabenDienst {
    *   Fälligkeit, der Admin den Fall in der Werkbank.
    * - Benachrichtigungen bündeln je Automatisierung, Mappe und Empfänger (eine offene, der Text wird aktualisiert).
    */
-  async aufgabeAusAutomatisierung(e: { mappeId: string; empfaengerId: string; text: string | ((an: string | null) => Promise<string>); datum: string | null; von: string; buendeln: string | null; anlass: Record<string, unknown>; aufgabenAnlass?: AufgabenAnlass | null; frist?: { feld: string; datum: string } | null; postAn?: string | null }): Promise<{ id: string; ohneLeserecht: boolean; vorhanden?: boolean; an: string | null }> {
+  async aufgabeAusAutomatisierung(e: {
+    mappeId: string;
+    empfaengerId: string;
+    text: string | ((an: string | null) => Promise<string>);
+    datum: string | null;
+    von: string;
+    buendeln: string | null;
+    anlass: Record<string, unknown>;
+    aufgabenAnlass?: AufgabenAnlass | null;
+    frist?: { feld: string; datum: string } | null;
+    postAn?: string | null;
+  }): Promise<{ id: string; ohneLeserecht: boolean; vorhanden?: boolean; an: string | null }> {
     // „Post für dich“ (#1001): Schlüssel an:<Person aus „An“> wie bisher im Kern – gibt es die Aufgabe schon offen
     // (auch eine vor dem Update angelegte oder an die Vertretung gegangene), entsteht keine zweite.
     const postSchluessel = e.postAn ? `an:${e.postAn}` : null;
@@ -234,31 +361,60 @@ export class AufgabenDienst {
     const ohneLeserecht = !!an && !(await this.sichtbarFuer(an, [e.mappeId])).has(e.mappeId);
     const text = (typeof e.text === 'string' ? e.text : await e.text(an)).slice(0, AUFGABE_MAX);
     if (e.buendeln && an) {
-      const id = await this.benachrichtigeGebuendelt({ empfaengerId: an, mappeId: e.mappeId, art: 'manuell', schluessel: `auto:${e.buendeln}:${e.mappeId}`.slice(0, 120), von: e.von, text: () => text });
+      const id = await this.benachrichtigeGebuendelt({
+        empfaengerId: an,
+        mappeId: e.mappeId,
+        art: 'manuell',
+        schluessel: `auto:${e.buendeln}:${e.mappeId}`.slice(0, 120),
+        von: e.von,
+        text: () => text,
+      });
       if (ohneLeserecht) await this.faelleNach([e.mappeId]);
       return { id, ohneLeserecht, an };
     }
     const frist = e.frist ?? null;
     if (frist) {
       // Schon eine Frist für diese Person (eingebaut, weitergegeben oder von einer anderen Automatisierung)? Dann keine zweite.
-      const schon = (await this.repo.fristAufgaben([e.mappeId])).find((x) => x.feldKey === frist.feld && x.datum === frist.datum && [an, e.empfaengerId].includes(x.empfaengerId));
+      const schon = (await this.repo.fristAufgaben([e.mappeId])).find(
+        (x) => x.feldKey === frist.feld && x.datum === frist.datum && [an, e.empfaengerId].includes(x.empfaengerId),
+      );
       if (schon) return { id: schon.id, ohneLeserecht, vorhanden: true, an };
     }
     let a: Aufgabe;
     try {
       a = await this.neueAufgabe({
-        id: randomUUID(), mappeId: e.mappeId, empfaengerId: an, text, ...artUndSchluessel(frist, postSchluessel, e.datum),
+        id: randomUUID(),
+        mappeId: e.mappeId,
+        empfaengerId: an,
+        text,
+        ...artUndSchluessel(frist, postSchluessel, e.datum),
         anlass: e.aufgabenAnlass ?? null,
-        erstellt: '', erstelltVon: e.von, erledigt: null, erledigtVon: null,
+        erstellt: '',
+        erstelltVon: e.von,
+        erledigt: null,
+        erledigtVon: null,
       });
     } catch (x) {
       // Gleichzeitig angelegt (eindeutiger Index der Fristen): die vorhandene zählt.
-      const schon = frist ? (await this.repo.fristAufgaben([e.mappeId])).find((y) => y.feldKey === frist.feld && y.datum === frist.datum && y.empfaengerId === an) : undefined;
+      const schon = frist
+        ? (await this.repo.fristAufgaben([e.mappeId])).find(
+            (y) => y.feldKey === frist.feld && y.datum === frist.datum && y.empfaengerId === an,
+          )
+        : undefined;
       if (schon) return { id: schon.id, ohneLeserecht, vorhanden: true, an };
       throw x;
     }
-    const weiter = ueber.length ? t('meldungen.dienst.weitergegeben-wegen-abwesenheit-von-2', { all: (await Promise.all(ueber.map((x) => this.name(x)))).join(', ') }) : '';
-    await this.notiere(e.mappeId, e.von, 'aufgabe', { ...e.anlass, text: t('meldungen.dienst.fuer-2', { name: await this.name(an), weiter, text }), aufgabe: a.id, aufgabenart: a.art, fuer: an, aufgabentext: text });
+    const weiter = ueber.length
+      ? t('meldungen.dienst.weitergegeben-wegen-abwesenheit-von-2', { all: (await Promise.all(ueber.map((x) => this.name(x)))).join(', ') })
+      : '';
+    await this.notiere(e.mappeId, e.von, 'aufgabe', {
+      ...e.anlass,
+      text: t('meldungen.dienst.fuer-2', { name: await this.name(an), weiter, text }),
+      aufgabe: a.id,
+      aufgabenart: a.art,
+      fuer: an,
+      aufgabentext: text,
+    });
     if (ohneLeserecht) await this.faelleNach([e.mappeId]);
     return { id: a.id, ohneLeserecht, an };
   }
@@ -274,7 +430,13 @@ export class AufgabenDienst {
     for (const a of await this.repo.offeneAufgaben({ mappeIds: [mappeId] })) {
       if (!a.anlass || !passt(a.anlass, a)) continue;
       await this.repo.erledigeAufgabe(a.id, null);
-      await this.notiere(mappeId, null, 'aufgabe', { text: t('meldungen.dienst.erledigt-3', { grund, text: historienAufgabentext(a) }), aufgabe: a.id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: historienAufgabentext(a) });
+      await this.notiere(mappeId, null, 'aufgabe', {
+        text: t('meldungen.dienst.erledigt-3', { grund, text: historienAufgabentext(a) }),
+        aufgabe: a.id,
+        aufgabenart: a.art,
+        fuer: a.empfaengerId,
+        aufgabentext: historienAufgabentext(a),
+      });
       n++;
     }
     if (n) await this.faelleNach([mappeId]);

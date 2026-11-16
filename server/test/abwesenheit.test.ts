@@ -26,10 +26,13 @@ async function aufbau() {
   const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben' }, anna.id);
   const { benutzer: cora } = await konten.legeBenutzerAn({ email: 'cora@example.org', name: 'Cora' }, anna.id);
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [
-    { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
-    { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
-  ] });
+  const t = await d.mappentypen.legeTypAn({
+    name: 'Vorgang',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
+      { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
+    ],
+  });
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   // Seit #712 legt die Automatisierung „Vertretung eingetragen“ die Vertretungs-Aufgabe an (beim Update übernommen).
   await konten.systemkonto('automatisierung');
@@ -37,8 +40,29 @@ async function aufbau() {
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
   d.ereignisse.abonniere('automatisierungen', (e) => motor.ereignis(e));
   await motor.fristenUebernehmen();
-  const verteile = async () => { const echt = Date.now; Date.now = () => echt() + 30_000; try { await d.ereignisse.verteile(); } finally { Date.now = echt; } };
-  return { d, konten, kontoRepo: kontoRepo as KontoRepo, anna, ben, cora, t, ich, verteile, A: { id: anna.id, rolle: 'admin' }, B: { id: ben.id, rolle: 'mitglied' }, C: { id: cora.id, rolle: 'mitglied' } };
+  const verteile = async () => {
+    const echt = Date.now;
+    Date.now = () => echt() + 30_000;
+    try {
+      await d.ereignisse.verteile();
+    } finally {
+      Date.now = echt;
+    }
+  };
+  return {
+    d,
+    konten,
+    kontoRepo: kontoRepo as KontoRepo,
+    anna,
+    ben,
+    cora,
+    t,
+    ich,
+    verteile,
+    A: { id: anna.id, rolle: 'admin' },
+    B: { id: ben.id, rolle: 'mitglied' },
+    C: { id: cora.id, rolle: 'mitglied' },
+  };
 }
 const vertretung = <T extends { text: string }>(l: T[]) => l.filter((a) => /als Vertreter hinterlegt/.test(a.text));
 
@@ -57,7 +81,11 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     assert.equal(bm.mappe.werte.abwesend, true);
     assert.equal(bm.mappe.werte.abwesend_bis, bis);
     assert.equal(bm.mappe.werte.vertreter, cora.id);
-    assert.ok((await d.mappenHistorie.historie(ben.id)).some((h) => h.art === 'abwesenheit' && /eingetragen.*Vertreter Cora/.test(String(h.daten.text))));
+    assert.ok(
+      (await d.mappenHistorie.historie(ben.id)).some(
+        (h) => h.art === 'abwesenheit' && /eingetragen.*Vertreter Cora/.test(String(h.daten.text)),
+      ),
+    );
     const [vt] = vertretung(await d.vertretung.meineAufgaben(C));
     assert.match(vt.text, /für Ben als Vertreter hinterlegt – ab sofort bis/);
     assert.equal(vt.mappeId, ben.id);
@@ -66,9 +94,15 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
     const a = await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'Prüfen' }, A.id);
     assert.equal(a.empfaengerId, cora.id);
-    assert.ok((await d.mappenHistorie.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Ben an Cora/.test(String(h.daten.text))));
+    assert.ok(
+      (await d.mappenHistorie.historie(m.id)).some((h) => /weitergegeben wegen Abwesenheit von Ben an Cora/.test(String(h.daten.text))),
+    );
     await d.mappen.aendereMappe(m.id, { werte: { nr: '1', text: `Bitte ${erwaehnung('Ben', ben.id)} ansehen` } }, A.id);
-    await d.mappentypen.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    await d.mappentypen.aendereTyp(t.id, {
+      ...t,
+      felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }],
+      register: undefined,
+    });
     const beiCora = await d.vertretung.meineAufgaben(C);
     assert.deepEqual(beiCora.map((x) => x.art).sort(), ['erwaehnung', 'manuell', 'manuell', 'passung']);
     assert.match(beiCora.find((x) => x.art === 'erwaehnung')!.text, /Erwähnt von Anna/, 'Text der Erwähnung bleibt');
@@ -106,10 +140,20 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'x' } }, A.id);
     await d.vertretung.legeAufgabeAn(m.id, { empfaengerId: cora.id, text: 'Für Cora' }, A.id);
     const an: string[] = [];
-    const mail = new Aufgabenmail({
-      benutzer: () => konten.listeBenutzer(), einstellungenVon: (b) => konten.einstellungen(b),
-      aufgabenVon: (b) => d.vertretung.meineAufgaben(b), typName: async () => 'Notiz',
-    }, () => ({ async sende(x) { an.push(x); } }), () => 'http://nas');
+    const mail = new Aufgabenmail(
+      {
+        benutzer: () => konten.listeBenutzer(),
+        einstellungenVon: (b) => konten.einstellungen(b),
+        aufgabenVon: (b) => d.vertretung.meineAufgaben(b),
+        typName: async () => 'Notiz',
+      },
+      () => ({
+        async sende(x) {
+          an.push(x);
+        },
+      }),
+      () => 'http://nas',
+    );
     for (const b of await konten.listeBenutzer()) await mail.fuerAutomatisierung(b.id, false);
     assert.ok(an.includes('cora@example.org'));
     assert.ok(!an.includes('ben@example.org'));
@@ -122,7 +166,9 @@ describe('Abwesenheit mit Vertreter (#78)', () => {
     assert.equal(b.abwesenheit?.an, false);
     assert.equal(b.abwesenheit?.vertreterId, anna.id, 'Vertreter bleibt hinterlegt');
     assert.equal(vertretung(await d.vertretung.meineAufgaben(A)).length, 0, 'erledigt mit dem Ende');
-    assert.ok((await d.mappenHistorie.historie(ben.id)).some((h) => h.art === 'abwesenheit' && /beendet.*abgelaufen/.test(String(h.daten.text))));
+    assert.ok(
+      (await d.mappenHistorie.historie(ben.id)).some((h) => h.art === 'abwesenheit' && /beendet.*abgelaufen/.test(String(h.daten.text))),
+    );
     assert.equal((await d.vertretung.meineAufgaben(B)).length, 0);
   });
 });
@@ -150,15 +196,29 @@ describe('Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77)', () => 
   it('ergänzt die Systemfelder und benennt gleichnamige eigene Felder um', async () => {
     const { d, ben } = await aufbau();
     const typ = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
-    assert.deepEqual(typ.felder.filter((f) => f.system).map((f) => f.key).slice(-4), ['abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter']);
+    assert.deepEqual(
+      typ.felder
+        .filter((f) => f.system)
+        .map((f) => f.key)
+        .slice(-4),
+      ['abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'],
+    );
     // Stand vor dem Update: ohne die neuen Systemfelder, aber mit einem eigenen Feld „vertreter“ (Text).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test greift auf interne Felder zu
     const intern = d as any;
     const neu = ['abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'];
-    await intern.repo.aendereTyp(typ.id, { ...typ, felder: [...typ.felder.filter((f) => !neu.includes(f.key)), { key: 'vertreter', label: 'Mein Vertreter', typ: 'text' }],
-      register: typ.register.map((r) => (r.felder ? { ...r, felder: r.felder.filter((k) => !neu.includes(k) || k === 'vertreter') } : r)) });
+    await intern.repo.aendereTyp(typ.id, {
+      ...typ,
+      felder: [...typ.felder.filter((f) => !neu.includes(f.key)), { key: 'vertreter', label: 'Mein Vertreter', typ: 'text' }],
+      register: typ.register.map((r) => (r.felder ? { ...r, felder: r.felder.filter((k) => !neu.includes(k) || k === 'vertreter') } : r)),
+    });
     const m = await intern.repo.holeMappe(ben.id);
-    await intern.repo.aendereMappe(ben.id, { name: m.werte.name, email: m.werte.email, rollen: m.werte.rollen, aktiv: true, vertreter: 'Onkel Willi' }, [], null);
+    await intern.repo.aendereMappe(
+      ben.id,
+      { name: m.werte.name, email: m.werte.email, rollen: m.werte.rollen, aktiv: true, vertreter: 'Onkel Willi' },
+      [],
+      null,
+    );
     intern.kern.sichern = undefined;
     const { benutzer } = await d.systemausstattung.sicherstellen();
     assert.equal(benutzer.felder.find((f) => f.key === 'vertreter_alt')?.label, 'Mein Vertreter');

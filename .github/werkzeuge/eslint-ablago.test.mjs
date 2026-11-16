@@ -7,7 +7,9 @@ import { test } from 'node:test';
 import { RuleTester } from 'eslint';
 import ablago from './eslint-ablago.mjs';
 
-const pruefer = new RuleTester({ languageOptions: { ecmaVersion: 2022, sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } } });
+const pruefer = new RuleTester({
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
+});
 const fehler = (klasse) => ({ messageId: 'farbe', data: { klasse } });
 
 test('ablago/knopf-farben: Farbe nur über die Art', () => {

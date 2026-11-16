@@ -21,15 +21,31 @@ export function AuskunftVorgaben({ w, setze }: { w: Vorgaben; setze(x: Vorgaben)
   const eigen = !istRechteStandard(w.rechte);
   return (
     <section className="blatt stapel" id="auskunft-vorgaben" aria-labelledby="auskunft-vorgaben-titel">
-      <h2 className="h3" id="auskunft-vorgaben-titel">{t('werkbank.auskunft.vorgaben.titel')} <Hilfe ort="werkbank.auskunft.vorgaben" /></h2>
-      <p className="leise klein">{t('werkbank.auskunft.einstellungen.text')} <Link to="/werkbank/auskuenfte" className="verweis">{t('werkbank.auskunft.vorgaben.zu-auskuenften')}</Link></p>
+      <h2 className="h3" id="auskunft-vorgaben-titel">
+        {t('werkbank.auskunft.vorgaben.titel')} <Hilfe ort="werkbank.auskunft.vorgaben" />
+      </h2>
+      <p className="leise klein">
+        {t('werkbank.auskunft.einstellungen.text')}{' '}
+        <Link to="/werkbank/auskuenfte" className="verweis">
+          {t('werkbank.auskunft.vorgaben.zu-auskuenften')}
+        </Link>
+      </p>
       <AnredeWahl anrede={w.anrede} setAnrede={(anrede) => setze({ ...w, anrede, rechte: eigen ? w.rechte : rechteStandard(anrede) })} />
-      <Feld beschriftung={t('werkbank.datenschutz.rechte-der-person')} id="auskunft-rechte"
+      <Feld
+        beschriftung={t('werkbank.datenschutz.rechte-der-person')}
+        id="auskunft-rechte"
         hinweis={eigen ? t('werkbank.auskunft.vorgaben.rechte-eigen') : t('werkbank.auskunft.vorgaben.rechte-folgt')}>
         <textarea rows={5} value={w.rechte} onChange={(x) => setze({ ...w, rechte: x.target.value })} />
       </Feld>
-      {eigen && <p><Knopf onClick={() => setze({ ...w, rechte: rechteStandard(w.anrede) })}>{t('werkbank.auskunft.vorgaben.zuruecksetzen')}</Knopf></p>}
-      <Feld beschriftung={t('werkbank.auskunft.vorgaben.empfaenger')} id="auskunft-empfaenger" hinweis={t('werkbank.auskunft.vorgaben.empfaenger.hinweis')}>
+      {eigen && (
+        <p>
+          <Knopf onClick={() => setze({ ...w, rechte: rechteStandard(w.anrede) })}>{t('werkbank.auskunft.vorgaben.zuruecksetzen')}</Knopf>
+        </p>
+      )}
+      <Feld
+        beschriftung={t('werkbank.auskunft.vorgaben.empfaenger')}
+        id="auskunft-empfaenger"
+        hinweis={t('werkbank.auskunft.vorgaben.empfaenger.hinweis')}>
         <textarea rows={2} value={w.empfaenger} onChange={(x) => setze({ ...w, empfaenger: x.target.value })} />
       </Feld>
     </section>
@@ -43,11 +59,19 @@ export function AuskunftVorgaben({ w, setze }: { w: Vorgaben; setze(x: Vorgaben)
 function AnredeWahl({ anrede, setAnrede }: { anrede: Anrede; setAnrede(a: Anrede): void }) {
   return (
     <div id="anrede">
-      <FeldGruppe beschriftung={t('werkbank.datenschutz.anrede-in-unterlagen-fuer')} hilfe="werkbank.datenschutz.anrede" hinweis={t('werkbank.datenschutz.gilt-fuer-alles-was')} className="anrede-dritte">
+      <FeldGruppe
+        beschriftung={t('werkbank.datenschutz.anrede-in-unterlagen-fuer')}
+        hilfe="werkbank.datenschutz.anrede"
+        hinweis={t('werkbank.datenschutz.gilt-fuer-alles-was')}
+        className="anrede-dritte">
         <div className="anrede-dritte-wahl">
           {ANREDEN.map((a) => (
             <label key={a} className={`anrede-dritte-form${a === anrede ? ' gewaehlt' : ''}`}>
-              <span className="anrede-dritte-kopf"><input type="radio" name="anrede-dritte" checked={a === anrede} onChange={() => setAnrede(a)} /><strong>{ANREDE_NAME[a]}</strong>{a === 'du' && <span className="leise klein"> {' '}{t('werkbank.datenschutz.vorgabe')}</span>}</span>
+              <span className="anrede-dritte-kopf">
+                <input type="radio" name="anrede-dritte" checked={a === anrede} onChange={() => setAnrede(a)} />
+                <strong>{ANREDE_NAME[a]}</strong>
+                {a === 'du' && <span className="leise klein"> {t('werkbank.datenschutz.vorgabe')}</span>}
+              </span>
               <q className="klein">{textDritte(a, ANREDE_BEISPIEL)}</q>
             </label>
           ))}

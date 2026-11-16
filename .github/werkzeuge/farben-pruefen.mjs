@@ -21,14 +21,16 @@ import { join, relative, sep } from 'node:path';
 export const AUSNAHMEN = {
   'web/src/tokens.css': 'Hier stehen die Tokens selbst.',
   'web/src/design.ts': 'Designs (#21): Grundpaletten und Mischrechnung für eigene Primär-/Sekundärfarben; Werte gleich tokens.css.',
-  'web/src/ablage/StempelVorschau.tsx': 'Beispielbelege der Stempel-Vorschau zeigen Papier, nicht Oberfläche – bleiben hell wie ein echter Beleg.',
+  'web/src/ablage/StempelVorschau.tsx':
+    'Beispielbelege der Stempel-Vorschau zeigen Papier, nicht Oberfläche – bleiben hell wie ein echter Beleg.',
 };
 
 /** Höchstzahl Zeilen je CSS-Datei unter web/src (#1234). */
 export const CSS_HOECHSTENS = 400;
 
 // Benannte CSS-Farben (Level 4), ohne transparent/currentcolor.
-const NAMEN = 'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen';
+const NAMEN =
+  'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen';
 const FUNKTIONEN = 'rgba?|hsla?|hwb|lab|lch|oklab|oklch|color';
 const HEX = /#[0-9a-fA-F]{3,8}(?![\w-])/g;
 const FUNK = new RegExp(`(?<![\\w-])(?:${FUNKTIONEN})\\([^()]*\\)`, 'gi');
@@ -96,19 +98,30 @@ export function pruefe(wurzel = 'web/src', ausnahmen = AUSNAHMEN) {
 export function zuLangeCss(wurzel = 'web/src', grenze = CSS_HOECHSTENS) {
   return dateien(wurzel)
     .filter((d) => d.endsWith('.css'))
-    .map((d) => ({ datei: relative(process.cwd(), d).split(sep).join('/'), zeilen: ohneKommentare(readFileSync(d, 'utf8')).split('\n').filter((z) => z.trim()).length }))
+    .map((d) => ({
+      datei: relative(process.cwd(), d).split(sep).join('/'),
+      zeilen: ohneKommentare(readFileSync(d, 'utf8'))
+        .split('\n')
+        .filter((z) => z.trim()).length,
+    }))
     .filter((f) => f.zeilen > grenze);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const lang = zuLangeCss(process.argv[2]);
   for (const f of lang) {
-    console.log(`::error file=${f.datei},title=CSS-Datei zu lang::${f.zeilen} Zeilen, höchstens ${CSS_HOECHSTENS} – an einer Abschnittsgrenze teilen (web/src/stile/index.css)`);
+    console.log(
+      `::error file=${f.datei},title=CSS-Datei zu lang::${f.zeilen} Zeilen, höchstens ${CSS_HOECHSTENS} – an einer Abschnittsgrenze teilen (web/src/stile/index.css)`,
+    );
   }
-  console.log(lang.length ? `${lang.length} CSS-Datei(en) über ${CSS_HOECHSTENS} Zeilen.` : `Alle CSS-Dateien höchstens ${CSS_HOECHSTENS} Zeilen.`);
+  console.log(
+    lang.length ? `${lang.length} CSS-Datei(en) über ${CSS_HOECHSTENS} Zeilen.` : `Alle CSS-Dateien höchstens ${CSS_HOECHSTENS} Zeilen.`,
+  );
   const funde = pruefe(process.argv[2]);
   for (const f of funde) {
-    console.log(`::error file=${f.datei},line=${f.zeile},title=Feste Farbe::${f.wert} – bitte ein Token aus web/src/tokens.css nehmen (oder begründen: farbe-erlaubt: Grund)`);
+    console.log(
+      `::error file=${f.datei},line=${f.zeile},title=Feste Farbe::${f.wert} – bitte ein Token aus web/src/tokens.css nehmen (oder begründen: farbe-erlaubt: Grund)`,
+    );
   }
   if (process.argv.includes('--liste')) for (const f of funde) console.error(`${f.datei}:${f.zeile}\t${f.eigenschaft ?? ''}\t${f.wert}`);
   console.log(funde.length ? `${funde.length} feste Farbe(n) gefunden.` : 'Keine festen Farben außerhalb von tokens.css.');

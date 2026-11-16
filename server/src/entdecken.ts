@@ -18,7 +18,29 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import { ANGEBOT_TAGE, istNeu, oeffneTyp, pruefeAnker, pruefeRundgaenge, pruefeTipps, rundgangFuer, rundgangMerkerAus, startetVonSelbst, tippDesTages, tippHandlung, tippPasst, tippStandAus, type Anker, type EntdeckenStand, type Funktion, type Rundgang, type Texte, type Tipp, type TippAnzeige, type TypInfo } from '../../shared/src/entdecken';
+import {
+  ANGEBOT_TAGE,
+  istNeu,
+  oeffneTyp,
+  pruefeAnker,
+  pruefeRundgaenge,
+  pruefeTipps,
+  rundgangFuer,
+  rundgangMerkerAus,
+  startetVonSelbst,
+  tippDesTages,
+  tippHandlung,
+  tippPasst,
+  tippStandAus,
+  type Anker,
+  type EntdeckenStand,
+  type Funktion,
+  type Rundgang,
+  type Texte,
+  type Tipp,
+  type TippAnzeige,
+  type TypInfo,
+} from '../../shared/src/entdecken';
 import { ausSchluessel } from '../../shared/src/entdecken-werkbank';
 import { sprache } from '../../shared/src/sprache';
 import type { Benutzer } from '../../shared/src/model';
@@ -29,19 +51,34 @@ import { Fachfehler } from './fehler';
 import { t } from './sprache';
 
 /** Einstellungen der Person, unter denen Ablago sich Rundgänge und Tipps merkt. */
-export const EINSTELLUNG = { rundgaenge: 'entdecken_rundgaenge', tipps: 'entdecken_tipps', version: 'entdecken_version', tippsAn: 'tipps' } as const;
+export const EINSTELLUNG = {
+  rundgaenge: 'entdecken_rundgaenge',
+  tipps: 'entdecken_tipps',
+  version: 'entdecken_version',
+  tippsAn: 'tipps',
+} as const;
 /** So viele Tipps merkt sich Ablago je Liste (gesehen, ausgeblendet) – die Einstellung bleibt klein. */
 const MERKEN_MAX = 100;
 
 /** Ordner mit anker.yaml, rundgaenge.yaml und tipps.yaml: neben dem Quelltext bzw. neben server/dist. */
 export function entdeckenOrdner(): string | null {
   const hier = dirname(fileURLToPath(import.meta.url));
-  const kandidaten = [process.env.DMS_ENTDECKEN_DIR, join(hier, '..', '..', 'shared', 'entdecken'), join(process.cwd(), 'shared', 'entdecken'), join(process.cwd(), '..', 'shared', 'entdecken')];
+  const kandidaten = [
+    process.env.DMS_ENTDECKEN_DIR,
+    join(hier, '..', '..', 'shared', 'entdecken'),
+    join(process.cwd(), 'shared', 'entdecken'),
+    join(process.cwd(), '..', 'shared', 'entdecken'),
+  ];
   return kandidaten.find((k): k is string => !!k && existsSync(join(k, 'anker.yaml'))) ?? null;
 }
 
 /** Inhalt einer Quelle, geprüft. */
-export interface Inhalt { anker: Anker[]; rundgaenge: Rundgang[]; tipps: Tipp[]; fehler: string[] }
+export interface Inhalt {
+  anker: Anker[];
+  rundgaenge: Rundgang[];
+  tipps: Tipp[];
+  fehler: string[];
+}
 
 const lies = (ordner: string, datei: string): unknown => {
   const p = join(ordner, datei);
@@ -54,10 +91,12 @@ let ankerGelesen: Anker[] | null = null;
  * shared/entdecken) leer: Dann lehnt die Prüfung jedes Ziel ab, statt still Falsches durchzulassen.
  */
 export function ankerListe(): Anker[] {
-  if (!ankerGelesen) { const o = entdeckenOrdner(); ankerGelesen = o ? pruefeAnker(lies(o, 'anker.yaml')).anker : []; }
+  if (!ankerGelesen) {
+    const o = entdeckenOrdner();
+    ankerGelesen = o ? pruefeAnker(lies(o, 'anker.yaml')).anker : [];
+  }
   return ankerGelesen;
 }
-
 
 /**
  * Mappentyp in einem Paket auflösen: ohne Präfix ein eigener Typ des Pakets (`vertrag` → `vertraege:vertrag`), sonst
@@ -69,19 +108,39 @@ export function paketTyp(paket: string, roh: string, typen: (kennung: string) =>
 }
 
 /** Rundgänge eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets. */
-export function paketRundgaenge(p: Pick<InstalliertesPaket, 'id'>, roh: unknown, o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined }): { rundgaenge: Rundgang[]; fehler: string[] } {
+export function paketRundgaenge(
+  p: Pick<InstalliertesPaket, 'id'>,
+  roh: unknown,
+  o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined },
+): { rundgaenge: Rundgang[]; fehler: string[] } {
   const r = pruefeRundgaenge(roh, { herkunft: `paket:${p.id}`, anker: o.anker, typ: (x) => paketTyp(p.id, x, o.typen) });
-  return { rundgaenge: r.rundgaenge.map((x) => ({ ...x, schluessel: `${p.id}:${x.schluessel}` })), fehler: r.fehler.map((f) => `${p.id}: ${f}`) };
+  return {
+    rundgaenge: r.rundgaenge.map((x) => ({ ...x, schluessel: `${p.id}:${x.schluessel}` })),
+    fehler: r.fehler.map((f) => `${p.id}: ${f}`),
+  };
 }
 
 /**
  * Tipps eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets, `rundgang` meint einen Rundgang
  * desselben Pakets.
  */
-export function paketTipps(p: Pick<InstalliertesPaket, 'id'>, roh: unknown, o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined }): { tipps: Tipp[]; fehler: string[] } {
-  const x = pruefeTipps(roh, { herkunft: `paket:${p.id}`, anker: o.anker, rundgaenge: o.rundgaenge, typ: (k) => paketTyp(p.id, k, o.typen) });
+export function paketTipps(
+  p: Pick<InstalliertesPaket, 'id'>,
+  roh: unknown,
+  o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined },
+): { tipps: Tipp[]; fehler: string[] } {
+  const x = pruefeTipps(roh, {
+    herkunft: `paket:${p.id}`,
+    anker: o.anker,
+    rundgaenge: o.rundgaenge,
+    typ: (k) => paketTyp(p.id, k, o.typen),
+  });
   return {
-    tipps: x.tipps.map((y) => ({ ...y, schluessel: `${p.id}:${y.schluessel}`, ...(y.rundgang ? { rundgang: `${p.id}:${y.rundgang}` } : {}) })),
+    tipps: x.tipps.map((y) => ({
+      ...y,
+      schluessel: `${p.id}:${y.schluessel}`,
+      ...(y.rundgang ? { rundgang: `${p.id}:${y.rundgang}` } : {}),
+    })),
     fehler: x.fehler.map((f) => `${p.id}: ${f}`),
   };
 }
@@ -97,7 +156,12 @@ export function ladeAblago(ordner: string, texte: Texte): Inhalt {
   fehler.push(...anker.fehler);
   const r = pruefeRundgaenge(lies(ordner, 'rundgaenge.yaml'), { herkunft: 'ablago', anker: anker.anker, texte });
   fehler.push(...r.fehler);
-  const x = pruefeTipps(lies(ordner, 'tipps.yaml'), { herkunft: 'ablago', anker: anker.anker, rundgaenge: r.rundgaenge.map((y) => y.schluessel), texte });
+  const x = pruefeTipps(lies(ordner, 'tipps.yaml'), {
+    herkunft: 'ablago',
+    anker: anker.anker,
+    rundgaenge: r.rundgaenge.map((y) => y.schluessel),
+    texte,
+  });
   fehler.push(...x.fehler);
   return { anker: anker.anker, rundgaenge: r.rundgaenge, tipps: x.tipps, fehler };
 }
@@ -148,10 +212,15 @@ export class Entdecken {
     const spr = sprache();
     let x = this.inhalt.get(spr);
     if (!x) {
-      x = this.ordner ? ladeAblago(this.ordner, sprachTexte) : { anker: [], rundgaenge: [], tipps: [], fehler: ['Ordner shared/entdecken nicht gefunden'] };
+      x = this.ordner
+        ? ladeAblago(this.ordner, sprachTexte)
+        : { anker: [], rundgaenge: [], tipps: [], fehler: ['Ordner shared/entdecken nicht gefunden'] };
       this.inhalt.set(spr, x);
       // Fehlerhafte Einträge fallen weg; für die Person ändert das nichts, im Protokoll steht es einmal.
-      if (x.fehler.length && !this.gemeldet) { this.gemeldet = true; this.o.log?.warn('Rundgänge und Tipps: fehlerhafte Einträge übergangen', { fehler: x.fehler.slice(0, 20) }); }
+      if (x.fehler.length && !this.gemeldet) {
+        this.gemeldet = true;
+        this.o.log?.warn('Rundgänge und Tipps: fehlerhafte Einträge übergangen', { fehler: x.fehler.slice(0, 20) });
+      }
     }
     return x;
   }
@@ -163,32 +232,54 @@ export class Entdecken {
    * Alle Quellen: Ablago und die installierten Pakete. Ein Rundgang aus einem Paket mit `nach_installation` bzw.
    * `nach_update` kommt kurz nach Installation bzw. Update als Angebot unter die Tipps (`angebot:<rundgang>`, „neu“).
    */
-  async quellen(o: { alle?: boolean } = {}): Promise<Inhalt & { neu: Map<string, boolean>; eigeneFehler: Map<string, string[]>; tippOriginale: Map<string, Tipp>; tippFehler: Map<string, string[]> }> {
+  async quellen(o: { alle?: boolean } = {}): Promise<
+    Inhalt & {
+      neu: Map<string, boolean>;
+      eigeneFehler: Map<string, string[]>;
+      tippOriginale: Map<string, Tipp>;
+      tippFehler: Map<string, string[]>;
+    }
+  > {
     const a = this.ablago();
     const neu = new Map<string, boolean>();
     const pakete = (await this.o.pakete?.()) ?? [];
     const w = werkbankAus(await this.o.werkbank?.());
     const eigeneFehler = new Map<string, string[]>();
-    if (!pakete.some((p) => p.entdecken) && !w.rundgaenge.length && !w.tipps.length && !Object.keys(w.anpassungen).length && !w.aus.length) return { ...a, neu, eigeneFehler, tippOriginale: new Map(), tippFehler: new Map() };
+    if (!pakete.some((p) => p.entdecken) && !w.rundgaenge.length && !w.tipps.length && !Object.keys(w.anpassungen).length && !w.aus.length)
+      return { ...a, neu, eigeneFehler, tippOriginale: new Map(), tippFehler: new Map() };
     const typen = new Map(((await this.o.typen?.()) ?? []).map((x) => [x.kennung, x]));
-    const rundgaenge = [...a.rundgaenge], tipps = [...a.tipps];
+    const rundgaenge = [...a.rundgaenge],
+      tipps = [...a.tipps];
     const jetzt = this.o.jetzt?.() ?? Date.now();
     for (const p of pakete) {
       const x = this.paketQuelle(p, a.anker, (k) => typen.get(k), jetzt);
       rundgaenge.push(...x.rundgaenge);
-      for (const [y, istNeuHier] of x.tipps) { tipps.push(y); neu.set(y.schluessel, istNeuHier); }
+      for (const [y, istNeuHier] of x.tipps) {
+        tipps.push(y);
+        neu.set(y.schluessel, istNeuHier);
+      }
     }
     // Eigene Rundgänge aus der Werkbank (#941): nie von selbst, fehlerhafte fallen weg (die Werkbank zeigt sie).
     const eigene = eigeneRundgaenge(w, { anker: a.anker, typ: (k) => typen.get(k) ?? null });
     rundgaenge.push(...eigene.rundgaenge);
     for (const [k, f] of eigene.fehler) eigeneFehler.set(k, f);
     // Eigene Tipps und Anpassungen (#942).
-    const mitW = tippsMitWerkbank(tipps, w, { anker: a.anker, rundgaenge: rundgaenge.map((r) => r.schluessel), typ: (k) => typen.get(k) ?? null });
+    const mitW = tippsMitWerkbank(tipps, w, {
+      anker: a.anker,
+      rundgaenge: rundgaenge.map((r) => r.schluessel),
+      typ: (k) => typen.get(k) ?? null,
+    });
     // Ausgeschaltet (Werkbank): fällt für alle weg – samt Tipps, die einen solchen Rundgang starten.
     const aus = new Set(o.alle ? [] : w.aus);
     return {
-      anker: a.anker, rundgaenge: rundgaenge.filter((r) => !aus.has(ausSchluessel('rundgang', r.schluessel))), tipps: mitW.tipps.filter((x) => !aus.has(ausSchluessel('tipp', x.schluessel))),
-      fehler: a.fehler, neu, eigeneFehler, tippOriginale: mitW.originale, tippFehler: mitW.fehler,
+      anker: a.anker,
+      rundgaenge: rundgaenge.filter((r) => !aus.has(ausSchluessel('rundgang', r.schluessel))),
+      tipps: mitW.tipps.filter((x) => !aus.has(ausSchluessel('tipp', x.schluessel))),
+      fehler: a.fehler,
+      neu,
+      eigeneFehler,
+      tippOriginale: mitW.originale,
+      tippFehler: mitW.fehler,
     };
   }
 
@@ -204,17 +295,36 @@ export class Entdecken {
    * Rundgänge und Tipps eines Pakets, je Tipp, ob er „neu“ ist: Tipps mit ab_version nach einem Update darauf, Angebote
    * für Rundgänge mit nach_installation/nach_update – jeweils {@link ANGEBOT_TAGE} lang.
    */
-  private paketQuelle(p: InstalliertesPaket, anker: readonly Anker[], typen: (k: string) => TypInfo | undefined, jetzt: number): { rundgaenge: Rundgang[]; tipps: Array<[Tipp, boolean]> } {
+  private paketQuelle(
+    p: InstalliertesPaket,
+    anker: readonly Anker[],
+    typen: (k: string) => TypInfo | undefined,
+    jetzt: number,
+  ): { rundgaenge: Rundgang[]; tipps: Array<[Tipp, boolean]> } {
     if (!p.entdecken) return { rundgaenge: [], tipps: [] };
     const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen });
     this.melde(p, 'Rundgänge', r.fehler);
     const x = paketTipps(p, p.entdecken.tipps, { anker, rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)), typen });
     this.melde(p, 'Tipps', x.fehler);
-    const tipps: Array<[Tipp, boolean]> = x.tipps.map((y) => [y, kuerzlich(p.aktualisiert, jetzt) && istNeu(y, p.entdecken?.vorher ?? null, p.version)]);
+    const tipps: Array<[Tipp, boolean]> = x.tipps.map((y) => [
+      y,
+      kuerzlich(p.aktualisiert, jetzt) && istNeu(y, p.entdecken?.vorher ?? null, p.version),
+    ]);
     for (const y of r.rundgaenge) {
-      const wann = y.start === 'nach_installation' ? (p.aktualisiert ? null : p.installiert) : y.start === 'nach_update' ? p.aktualisiert : null;
+      const wann =
+        y.start === 'nach_installation' ? (p.aktualisiert ? null : p.installiert) : y.start === 'nach_update' ? p.aktualisiert : null;
       if (!kuerzlich(wann, jetzt)) continue;
-      tipps.push([{ schluessel: `angebot:${y.schluessel}`, herkunft: y.herkunft, bereich: 'mappen', text: t('entdecken.angebot', { titel: y.titel }), fuer: y.fuer, rundgang: y.schluessel }, true]);
+      tipps.push([
+        {
+          schluessel: `angebot:${y.schluessel}`,
+          herkunft: y.herkunft,
+          bereich: 'mappen',
+          text: t('entdecken.angebot', { titel: y.titel }),
+          fuer: y.fuer,
+          rundgang: y.schluessel,
+        },
+        true,
+      ]);
     }
     return { rundgaenge: r.rundgaenge, tipps };
   }
@@ -222,7 +332,11 @@ export class Entdecken {
   private async fuerwen(b: Benutzer, q: { rundgaenge: Rundgang[]; tipps: Tipp[] }) {
     // Lesbare Mappentypen nur holen, wenn ein Eintrag einen Mappentyp nennt.
     const mitTyp = q.rundgaenge.some((r) => oeffneTyp(r.oeffne)) || q.tipps.some((x) => x.typ);
-    return { verwalten: b.rolle === 'admin' || darfVerwalten(b), funktionen: await this.o.funktionen(b), ...(mitTyp && this.o.lesbareTypen ? { lesbar: await this.o.lesbareTypen(b) } : {}) };
+    return {
+      verwalten: b.rolle === 'admin' || darfVerwalten(b),
+      funktionen: await this.o.funktionen(b),
+      ...(mitTyp && this.o.lesbareTypen ? { lesbar: await this.o.lesbareTypen(b) } : {}),
+    };
   }
 
   /**
@@ -245,34 +359,56 @@ export class Entdecken {
     const stand = tippStandAus(e[EINSTELLUNG.tipps]);
     const aus = new Set(stand.aus);
     // Tipps, die einen Rundgang starten, nur, wenn die Person ihn auch bekommt.
-    const tipps: TippAnzeige[] = q.tipps.filter((x) => tippPasst(x, p) && (!x.rundgang || rundgaenge.some((r) => r.schluessel === x.rundgang))).map((x) => {
-      const a = x.ziel ? q.anker.find((y) => y.anker === x.ziel) : undefined;
-      return {
-        schluessel: x.schluessel, herkunft: x.herkunft, bereich: x.bereich, text: x.text,
-        ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : x.ziel && x.typ ? { ziel: { anker: x.ziel, typ: x.typ } } : {}), ...(x.rundgang ? { rundgang: x.rundgang } : {}),
-        neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt), ausgeblendet: aus.has(x.schluessel), clients: x.rundgang ? false : !!a?.clients,
-      };
-    });
+    const tipps: TippAnzeige[] = q.tipps
+      .filter((x) => tippPasst(x, p) && (!x.rundgang || rundgaenge.some((r) => r.schluessel === x.rundgang)))
+      .map((x) => {
+        const a = x.ziel ? q.anker.find((y) => y.anker === x.ziel) : undefined;
+        return {
+          schluessel: x.schluessel,
+          herkunft: x.herkunft,
+          bereich: x.bereich,
+          text: x.text,
+          ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : x.ziel && x.typ ? { ziel: { anker: x.ziel, typ: x.typ } } : {}),
+          ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+          neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt),
+          ausgeblendet: aus.has(x.schluessel),
+          clients: x.rundgang ? false : !!a?.clients,
+        };
+      });
     const tippsAn = e[EINSTELLUNG.tippsAn] !== false;
     const heute = tippsAn ? tippDesTages(tipps, stand, this.o.heute()) : null;
     const merker = rundgangMerkerAus(e[EINSTELLUNG.rundgaenge]);
-    const starten = o.vertretung ? null : rundgaenge.find((r) => startetVonSelbst(r, merker, b.letzteAnmeldung))?.schluessel ?? null;
-    return { rundgaenge, tipps, tipp: heute ? { schluessel: heute.tipp.schluessel, weitere: heute.weitere, gesehen: (stand.gesehen ?? []).includes(heute.tipp.schluessel) } : null, tippsAn, starten };
+    const starten = o.vertretung ? null : (rundgaenge.find((r) => startetVonSelbst(r, merker, b.letzteAnmeldung))?.schluessel ?? null);
+    return {
+      rundgaenge,
+      tipps,
+      tipp: heute
+        ? { schluessel: heute.tipp.schluessel, weitere: heute.weitere, gesehen: (stand.gesehen ?? []).includes(heute.tipp.schluessel) }
+        : null,
+      tippsAn,
+      starten,
+    };
   }
 
   /** Tipp gezeigt, angeklickt (erledigt), mit × ausgeblendet oder auf „Ablago entdecken“ wieder eingeblendet. */
   async tipp(b: Benutzer, schluessel: string, aktion: unknown): Promise<void> {
-    if (aktion !== 'gezeigt' && aktion !== 'erledigt' && aktion !== 'ausblenden' && aktion !== 'einblenden') throw new Fachfehler(422, t('meldungen.entdecken.aktion'));
+    if (aktion !== 'gezeigt' && aktion !== 'erledigt' && aktion !== 'ausblenden' && aktion !== 'einblenden')
+      throw new Fachfehler(422, t('meldungen.entdecken.aktion'));
     if (!(await this.quellen()).tipps.some((x) => x.schluessel === schluessel)) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
     const e = await this.o.einstellungen(b);
     const neu = tippHandlung(tippStandAus(e[EINSTELLUNG.tipps]), schluessel, aktion, this.o.heute());
-    await this.o.setzeEinstellung(b, EINSTELLUNG.tipps, { ...neu, gesehen: (neu.gesehen ?? []).slice(-MERKEN_MAX), aus: (neu.aus ?? []).slice(-MERKEN_MAX) });
+    await this.o.setzeEinstellung(b, EINSTELLUNG.tipps, {
+      ...neu,
+      gesehen: (neu.gesehen ?? []).slice(-MERKEN_MAX),
+      aus: (neu.aus ?? []).slice(-MERKEN_MAX),
+    });
   }
 
   /** Rundgang gesehen (Fertig, Überspringen) oder „Später“ (wieder bei der nächsten Anmeldung). */
   async rundgang(b: Benutzer, schluessel: string, stand: unknown): Promise<void> {
     if (stand !== 'gesehen' && stand !== 'spaeter') throw new Fachfehler(422, t('meldungen.entdecken.stand'));
-    if (!(await this.quellen()).rundgaenge.some((r) => r.schluessel === schluessel)) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));
+    if (!(await this.quellen()).rundgaenge.some((r) => r.schluessel === schluessel))
+      throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));
     const e = await this.o.einstellungen(b);
     const merker = rundgangMerkerAus(e[EINSTELLUNG.rundgaenge]);
     // „gesehen“ bleibt gesehen: Wer den Rundgang über „Ablago entdecken“ noch einmal startet und „Später“ wählt, bekommt ihn nicht wieder von selbst.
@@ -283,7 +419,9 @@ export class Entdecken {
   }
 
   /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs, die die Person lesen darf, sonst null. */
-  async mappeVonTyp(b: Benutzer, typ: string): Promise<string | null> { return (await this.o.oeffnen?.(b, typ, 'mappe')) ?? null; }
+  async mappeVonTyp(b: Benutzer, typ: string): Promise<string | null> {
+    return (await this.o.oeffnen?.(b, typ, 'mappe')) ?? null;
+  }
 
   /**
    * „Ausprobieren“ in der Werkbank (#941): ein ungespeicherter Rundgang, wie diese Person ihn sähe, und was er vorher
@@ -292,7 +430,10 @@ export class Entdecken {
   async probe(b: Benutzer, r: Rundgang): Promise<{ rundgang: Rundgang | null; pfad: string | null }> {
     const fuer = rundgangFuer(r, await this.fuerwen(b, { rundgaenge: [r], tipps: [] }));
     const o = r.oeffne;
-    const pfad = fuer && o && !('seite' in o) ? (await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, 'mappe' in o ? 'mappe' : 'neu')) ?? null : null;
+    const pfad =
+      fuer && o && !('seite' in o)
+        ? ((await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, 'mappe' in o ? 'mappe' : 'neu')) ?? null)
+        : null;
     return { rundgang: fuer, pfad };
   }
 
@@ -305,7 +446,7 @@ export class Entdecken {
     if (art === 'tipp') {
       const x = s.tipps.find((y) => y.schluessel === schluessel);
       if (!x) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
-      return { pfad: x.ziel?.typ ? (await this.o.oeffnen?.(b, x.ziel.typ, 'mappe')) ?? null : x.ziel?.seite ?? null };
+      return { pfad: x.ziel?.typ ? ((await this.o.oeffnen?.(b, x.ziel.typ, 'mappe')) ?? null) : (x.ziel?.seite ?? null) };
     }
     const r = s.rundgaenge.find((x) => x.schluessel === schluessel);
     if (!r) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));

@@ -47,6 +47,9 @@
     },
     "max-depth": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/aufgaben/ohne-leserecht.ts": {
@@ -112,7 +115,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 2
+      "count": 3
     }
   },
   "server/src/baum.ts": {
@@ -185,6 +188,9 @@
   "server/src/dienst.ts": {
     "max-lines": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
     }
   },
   "server/src/dms.ts": {
@@ -206,6 +212,11 @@
       "count": 1
     }
   },
+  "server/src/dokumente/dokumente.routen.ts": {
+    "max-lines": {
+      "count": 1
+    }
+  },
   "server/src/dokumente/umwandeln.ts": {
     "complexity": {
       "count": 1
@@ -221,9 +232,6 @@
   },
   "server/src/eingangsordner.ts": {
     "complexity": {
-      "count": 1
-    },
-    "max-lines": {
       "count": 1
     },
     "max-params": {
@@ -258,7 +266,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
+      "count": 2
     }
   },
   "server/src/export.ts": {
@@ -325,7 +333,7 @@
   },
   "server/src/kurzzustand.ts": {
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
     }
   },
   "server/src/laeufer/arbeiter.ts": {
@@ -336,6 +344,11 @@
   "server/src/laeufer/modul.ts": {
     "max-depth": {
       "count": 2
+    }
+  },
+  "server/src/laeufer/prozess.ts": {
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/laeufer/verwaltung.ts": {
@@ -413,7 +426,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 6
+      "count": 7
     },
     "max-params": {
       "count": 2
@@ -436,7 +449,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
+      "count": 2
     }
   },
   "server/src/pdf-bearbeiten/pdf-bearbeiten.dienst.ts": {
@@ -449,6 +462,9 @@
   },
   "server/src/pdf-bearbeiten/schwaerzen.ts": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -521,9 +537,6 @@
     "max-depth": {
       "count": 1
     },
-    "max-lines": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     }
@@ -589,7 +602,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
     },
     "max-params": {
       "count": 2
@@ -783,7 +796,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
+      "count": 2
     }
   },
   "server/src/xlsx.ts": {
@@ -1024,6 +1037,9 @@
     "max-lines": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "no-irregular-whitespace": {
       "count": 2
     },
@@ -1113,7 +1129,7 @@
       "count": 3
     },
     "max-lines-per-function": {
-      "count": 2
+      "count": 3
     }
   },
   "shared/src/rechte.ts": {
@@ -1145,9 +1161,6 @@
   "shared/src/sprachpruefung.ts": {
     "complexity": {
       "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
     }
   },
   "shared/src/stempel.ts": {
@@ -1196,7 +1209,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
+      "count": 2
     },
     "max-params": {
       "count": 1
@@ -1209,6 +1222,9 @@
   },
   "web/src/ablage/Aufgaben.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines": {
       "count": 1
     }
   },
@@ -1226,10 +1242,16 @@
   "web/src/ablage/EmailMehrere.tsx": {
     "complexity": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "web/src/ablage/Historie.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines": {
       "count": 1
     },
     "max-lines-per-function": {
@@ -1242,6 +1264,9 @@
   "web/src/ablage/LoeschBaum.tsx": {
     "complexity": {
       "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "web/src/ablage/MappeFormular.tsx": {
@@ -1252,7 +1277,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
+      "count": 4
     },
     "no-useless-assignment": {
       "count": 1
@@ -1274,12 +1299,20 @@
       "count": 1
     }
   },
+  "web/src/ablage/PdfSeiten.tsx": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
   "web/src/ablage/Post.tsx": {
     "complexity": {
       "count": 2
     }
   },
   "web/src/ablage/PostKamera.tsx": {
+    "max-lines-per-function": {
+      "count": 1
+    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
@@ -1361,7 +1394,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 3
+      "count": 4
     }
   },
   "web/src/konto.tsx": {
@@ -1371,6 +1404,9 @@
   },
   "web/src/lasttest.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1393,7 +1429,15 @@
     }
   },
   "web/src/seiten.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
     "max-params": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Ablaufvorlagen.tsx": {
+    "max-lines": {
       "count": 1
     }
   },
@@ -1421,6 +1465,14 @@
     },
     "max-lines": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/BenutzerEditor.tsx": {
+    "max-lines": {
+      "count": 1
     }
   },
   "web/src/werkbank/Berechtigungen.tsx": {
@@ -1442,6 +1494,9 @@
   "web/src/werkbank/Demo.tsx": {
     "complexity": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "web/src/werkbank/Designs.tsx": {
@@ -1451,6 +1506,9 @@
   },
   "web/src/werkbank/Eingangsordner.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1478,6 +1536,11 @@
       "count": 1
     }
   },
+  "web/src/werkbank/PaketEinstellungen.tsx": {
+    "max-lines": {
+      "count": 1
+    }
+  },
   "web/src/werkbank/PaketErstellen.tsx": {
     "complexity": {
       "count": 1
@@ -1486,7 +1549,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
+      "count": 2
     }
   },
   "web/src/werkbank/PaketVorschau.tsx": {
@@ -1503,6 +1566,9 @@
     },
     "max-lines": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "web/src/werkbank/PaketeDazuholen.tsx": {
@@ -1513,11 +1579,20 @@
   "web/src/werkbank/Postfaecher.tsx": {
     "complexity": {
       "count": 2
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
     }
   },
   "web/src/werkbank/Sicherung.tsx": {
     "complexity": {
       "count": 2
+    },
+    "max-lines": {
+      "count": 1
     }
   },
   "web/src/werkbank/Sichten.tsx": {
@@ -1526,10 +1601,24 @@
     },
     "max-lines": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Texterkennung.tsx": {
+    "max-lines": {
+      "count": 1
     }
   },
   "web/src/werkbank/Uebersicht.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1540,6 +1629,9 @@
   },
   "web/src/werkbank/Verschluesselung.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1557,6 +1649,9 @@
     "complexity": {
       "count": 1
     },
+    "max-lines": {
+      "count": 1
+    },
     "max-lines-per-function": {
       "count": 1
     }
@@ -1568,6 +1663,9 @@
   },
   "web/src/wiederherstellen.tsx": {
     "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   }

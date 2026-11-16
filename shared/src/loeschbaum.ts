@@ -25,7 +25,11 @@ import { t } from './texte';
 import { gebietsschema } from './sprache';
 
 export type LoeschAktion = 'loeschen' | 'entkoppeln' | 'behalten';
-export const LOESCH_AKTIONEN: Record<LoeschAktion, string> = { loeschen: 'löschen', entkoppeln: t('gemeinsam.loeschbaum.nur-verweis-entfernen-mappe'), behalten: 'behalten' };
+export const LOESCH_AKTIONEN: Record<LoeschAktion, string> = {
+  loeschen: 'löschen',
+  entkoppeln: t('gemeinsam.loeschbaum.nur-verweis-entfernen-mappe'),
+  behalten: 'behalten',
+};
 export type LoeschKennzeichen = 'loeschen' | 'bezug' | 'geteilt' | 'gesperrt' | 'ohneRecht';
 /** `symbol`: Name in web/src/Symbol.tsx (#425: einfarbige Symbole statt bunter Emoji). */
 export const KENNZEICHEN: Record<LoeschKennzeichen, { symbol: 'geloescht' | 'link' | 'schloss' | 'verboten' | 'bezug'; text: string }> = {
@@ -38,7 +42,11 @@ export const KENNZEICHEN: Record<LoeschKennzeichen, { symbol: 'geloescht' | 'lin
 /** Standard-Tiefe der Vorschau (Ebenen unter der Start-Mappe). */
 export const LOESCH_TIEFE = 5;
 
-export interface LoeschKante { quelleId: string; feldKey: string; zielId: string }
+export interface LoeschKante {
+  quelleId: string;
+  feldKey: string;
+  zielId: string;
+}
 
 export interface LoeschVorschau {
   /** Baum nur „nach unten“ (verwiesenVon), ohne Benutzer und Rollen, nur über Zugehörigkeit weiter (`nurBezug` = Blatt). */
@@ -79,7 +87,8 @@ export function loeschVorschlag(v: Quelle): Record<string, LoeschAktion> {
 export function liesLoeschAuswahl(e: unknown): Record<string, LoeschAktion> {
   const r: Record<string, LoeschAktion> = {};
   if (!e || typeof e !== 'object' || Array.isArray(e)) return r;
-  for (const [id, a] of Object.entries(e as Record<string, unknown>)) if (typeof a === 'string' && a in LOESCH_AKTIONEN) r[id] = a as LoeschAktion;
+  for (const [id, a] of Object.entries(e as Record<string, unknown>))
+    if (typeof a === 'string' && a in LOESCH_AKTIONEN) r[id] = a as LoeschAktion;
   return r;
 }
 
@@ -110,29 +119,61 @@ export function planeLoeschung(v: Quelle, auswahl: Record<string, LoeschAktion>)
     const gewuenscht = auswahl[k.id] ?? 'behalten';
     const wunsch = k.nurBezug && gewuenscht === 'loeschen' ? 'entkoppeln' : gewuenscht;
     // Ohne Ende (#1051): Die Frist läuft noch nicht – gesperrt ohne Datum.
-    if (k.gesperrt) { bleibt[k.id] = { weil: 'frist', text: !k.aufbewahrenBis ? t('gemeinsam.loeschbaum.frist-laeuft-noch-nicht') : k.nurBezug ? t('gemeinsam.loeschbaum.aufbewahrungsfrist-bis-auch-der', { datumText: datumText(k.aufbewahrenBis) }) : t('gemeinsam.loeschbaum.darf-erst-nach-dem', { datumText: datumText(k.aufbewahrenBis) }) }; zahlen.frist++; continue; }
-    if (wunsch === 'entkoppeln') {
-      if (k.rechte.U) E.add(k.id);
-      else { bleibt[k.id] = { weil: 'recht', text: t('gemeinsam.loeschbaum.kein-recht-zum-bearbeiten') }; zahlen.ohneRecht++; }
+    if (k.gesperrt) {
+      bleibt[k.id] = {
+        weil: 'frist',
+        text: !k.aufbewahrenBis
+          ? t('gemeinsam.loeschbaum.frist-laeuft-noch-nicht')
+          : k.nurBezug
+            ? t('gemeinsam.loeschbaum.aufbewahrungsfrist-bis-auch-der', { datumText: datumText(k.aufbewahrenBis) })
+            : t('gemeinsam.loeschbaum.darf-erst-nach-dem', { datumText: datumText(k.aufbewahrenBis) }),
+      };
+      zahlen.frist++;
       continue;
     }
-    if (!k.rechte.D || v.nichtLoeschbar[k.id]) { bleibt[k.id] = { weil: 'recht', text: v.nichtLoeschbar[k.id] ?? t('gemeinsam.loeschbaum.kein-recht-zum-loeschen') }; zahlen.ohneRecht++; continue; }
+    if (wunsch === 'entkoppeln') {
+      if (k.rechte.U) E.add(k.id);
+      else {
+        bleibt[k.id] = { weil: 'recht', text: t('gemeinsam.loeschbaum.kein-recht-zum-bearbeiten') };
+        zahlen.ohneRecht++;
+      }
+      continue;
+    }
+    if (!k.rechte.D || v.nichtLoeschbar[k.id]) {
+      bleibt[k.id] = { weil: 'recht', text: v.nichtLoeschbar[k.id] ?? t('gemeinsam.loeschbaum.kein-recht-zum-loeschen') };
+      zahlen.ohneRecht++;
+      continue;
+    }
     if (wunsch === 'loeschen') L.add(k.id);
-    else { bleibt[k.id] = { weil: 'abgewaehlt', text: t('gemeinsam.loeschbaum.abgewaehlt') }; zahlen.abgewaehlt++; }
+    else {
+      bleibt[k.id] = { weil: 'abgewaehlt', text: t('gemeinsam.loeschbaum.abgewaehlt') };
+      zahlen.abgewaehlt++;
+    }
   }
   const nach = new Map<string, LoeschKante[]>();
-  for (const e of v.kanten) if (e.quelleId !== e.zielId && knoten.has(e.quelleId) && knoten.has(e.zielId)) nach.set(e.zielId, [...(nach.get(e.zielId) ?? []), e]);
+  for (const e of v.kanten)
+    if (e.quelleId !== e.zielId && knoten.has(e.quelleId) && knoten.has(e.zielId)) nach.set(e.zielId, [...(nach.get(e.zielId) ?? []), e]);
   for (let geaendert = true; geaendert;) {
     geaendert = false;
     for (const id of [...L]) {
       const k = knoten.get(id)!;
       let grund: { weil: BleibtWeil; text: string } | null = null;
-      if (k.aussen.anzahl.verwiesenVon > 0) grund = { weil: 'aussen', text: t('gemeinsam.loeschbaum.mappen-ausserhalb-verweisen-darauf', { anzahl: k.aussen.anzahl.verwiesenVon }) };
+      if (k.aussen.anzahl.verwiesenVon > 0)
+        grund = {
+          weil: 'aussen',
+          text: t('gemeinsam.loeschbaum.mappen-ausserhalb-verweisen-darauf', { anzahl: k.aussen.anzahl.verwiesenVon }),
+        };
       else {
         const halter = (nach.get(id) ?? []).find((e) => !L.has(e.quelleId) && !E.has(e.quelleId));
-        if (halter) grund = { weil: 'verweis', text: t('gemeinsam.loeschbaum.verweist-darauf-und-bleibt', { titel: titel(halter.quelleId) }) };
+        if (halter)
+          grund = { weil: 'verweis', text: t('gemeinsam.loeschbaum.verweist-darauf-und-bleibt', { titel: titel(halter.quelleId) }) };
       }
-      if (grund) { L.delete(id); bleibt[id] = grund; zahlen.gehalten++; geaendert = true; }
+      if (grund) {
+        L.delete(id);
+        bleibt[id] = grund;
+        zahlen.gehalten++;
+        geaendert = true;
+      }
     }
   }
   const entkoppeln = v.kanten.filter((e) => E.has(e.quelleId) && L.has(e.zielId) && e.quelleId !== e.zielId);
@@ -140,7 +181,9 @@ export function planeLoeschung(v: Quelle, auswahl: Record<string, LoeschAktion>)
     const n = entkoppeln.filter((e) => e.quelleId === id).length;
     const k = knoten.get(id)!;
     const feld = k.nurBezug && k.ueber ? ` „${k.ueber.feld}“` : '';
-    bleibt[id] = n ? { weil: 'entkoppelt', text: t('gemeinsam.loeschbaum.nur-die-verweise-werden', { anzahl: n, feld }) } : { weil: 'entkoppelt', text: t('gemeinsam.loeschbaum.bleibt-verweis-bleibt-auch') };
+    bleibt[id] = n
+      ? { weil: 'entkoppelt', text: t('gemeinsam.loeschbaum.nur-die-verweise-werden', { anzahl: n, feld }) }
+      : { weil: 'entkoppelt', text: t('gemeinsam.loeschbaum.bleibt-verweis-bleibt-auch') };
   }
   const loeschen = v.baum.knoten.filter((k) => L.has(k.id)).map((k) => k.id);
   zahlen.mappen = loeschen.length;
@@ -156,29 +199,51 @@ export function loeschZusammenfassung(p: LoeschPlan, papierkorb: boolean, erledi
   const z = p.zahlen;
   if (!z.mappen) return erledigt ? t('gemeinsam.loeschbaum.es-wurde-nichts-geloescht') : t('gemeinsam.loeschbaum.es-wird-nichts-geloescht');
   const eins = z.mappen + z.dokumente === 1;
-  const wird = erledigt ? (eins ? 'wurde' : 'wurden') : (eins ? 'wird' : 'werden');
-  const teile = [`${anzahl(z.mappen, 'Mappe', 'Mappen')}${z.dokumente ? ` und ${anzahl(z.dokumente, 'Dokument', 'Dokumente')}` : ''} ${wird} ${papierkorb ? t('gemeinsam.loeschbaum.in-den-papierkorb-gelegt') : t('gemeinsam.loeschbaum.endgueltig-geloescht')}`];
+  const wird = erledigt ? (eins ? 'wurde' : 'wurden') : eins ? 'wird' : 'werden';
+  const teile = [
+    `${anzahl(z.mappen, 'Mappe', 'Mappen')}${z.dokumente ? ` und ${anzahl(z.dokumente, 'Dokument', 'Dokumente')}` : ''} ${wird} ${papierkorb ? t('gemeinsam.loeschbaum.in-den-papierkorb-gelegt') : t('gemeinsam.loeschbaum.endgueltig-geloescht')}`,
+  ];
   if (z.frist) teile.push(t('gemeinsam.loeschbaum.bleiben-wegen-aufbewahrungsfrist', { anzahl: z.frist }));
   if (z.ohneRecht) teile.push(t('gemeinsam.loeschbaum.bleiben-mangels-recht', { anzahl: z.ohneRecht }));
   if (z.gehalten) teile.push(t('gemeinsam.loeschbaum.bleiben-weil-noch-darauf', { anzahl: z.gehalten }));
   if (z.abgewaehlt) teile.push(`${z.abgewaehlt} abgewählt`);
-  if (z.verweise) teile.push(`${anzahl(z.verweise, erledigt ? t('gemeinsam.loeschbaum.verweis-wurde') : t('gemeinsam.loeschbaum.verweis-wird'), erledigt ? t('gemeinsam.loeschbaum.verweise-wurden') : t('gemeinsam.loeschbaum.verweise-werden'))} entfernt`);
+  if (z.verweise)
+    teile.push(
+      `${anzahl(z.verweise, erledigt ? t('gemeinsam.loeschbaum.verweis-wurde') : t('gemeinsam.loeschbaum.verweis-wird'), erledigt ? t('gemeinsam.loeschbaum.verweise-wurden') : t('gemeinsam.loeschbaum.verweise-werden'))} entfernt`,
+    );
   return `${teile.join('; ')}.`;
 }
 
 /** Tag nach einem Datum (JJJJ-MM-TT). */
-const tagDanach = (iso: string) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
+const tagDanach = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
 
 /**
  * Erinnerung zum Fristende (#424, Option D): Bleiben Mappen wegen der Aufbewahrungsfrist stehen und mit
  * ihnen die Start-Mappe, erinnert das DMS den Löschenden am Tag nach dem spätesten Fristende daran, das
  * Löschen zu wiederholen. null, wenn nichts wegen einer Frist blieb oder die Start-Mappe gelöscht wird.
  */
-export function loeschErinnerung(v: Pick<LoeschVorschau, 'baum'>, p: Pick<LoeschPlan, 'loeschen' | 'bleibt'>): { datum: string; text: string } | null {
+export function loeschErinnerung(
+  v: Pick<LoeschVorschau, 'baum'>,
+  p: Pick<LoeschPlan, 'loeschen' | 'bleibt'>,
+): { datum: string; text: string } | null {
   const start = v.baum.knoten[0];
   if (!start || p.loeschen.includes(start.id)) return null;
-  const bis = v.baum.knoten.filter((k) => p.bleibt[k.id]?.weil === 'frist' && k.aufbewahrenBis).map((k) => k.aufbewahrenBis!).sort().pop();
+  const bis = v.baum.knoten
+    .filter((k) => p.bleibt[k.id]?.weil === 'frist' && k.aufbewahrenBis)
+    .map((k) => k.aufbewahrenBis!)
+    .sort()
+    .pop();
   if (!bis) return null;
   const datum = tagDanach(bis);
-  return { datum, text: t('gemeinsam.loeschbaum.kann-ab-geloescht-werden', { wert: (start.titel || t('gemeinsam.loeschbaum.ohne-titel')).slice(0, 200), datumText: datumText(datum) }) };
+  return {
+    datum,
+    text: t('gemeinsam.loeschbaum.kann-ab-geloescht-werden', {
+      wert: (start.titel || t('gemeinsam.loeschbaum.ohne-titel')).slice(0, 200),
+      datumText: datumText(datum),
+    }),
+  };
 }

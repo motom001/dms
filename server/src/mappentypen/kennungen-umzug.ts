@@ -13,7 +13,8 @@ export async function protokolliereKennungsUmzug(e: Einstellungen): Promise<numb
   const liste = await e.lies(UMZUG_SCHLUESSEL);
   if (!Array.isArray(liste)) return 0;
   const log = protokoll.modul('datenbank');
-  for (const x of liste as Array<{ id?: unknown; alt?: unknown; neu?: unknown }>) log.info('Kennung umgestellt', { typ: String(x.id ?? ''), alt: String(x.alt ?? '–'), neu: String(x.neu ?? '') });
+  for (const x of liste as Array<{ id?: unknown; alt?: unknown; neu?: unknown }>)
+    log.info('Kennung umgestellt', { typ: String(x.id ?? ''), alt: String(x.alt ?? '–'), neu: String(x.neu ?? '') });
   log.info('Kennungen der Mappentypen aus Paketen umgestellt (#1084)', { anzahl: liste.length });
   await e.schreibe(UMZUG_SCHLUESSEL, null);
   return liste.length;

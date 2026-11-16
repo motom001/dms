@@ -23,14 +23,45 @@ export function Wiederherstellungscodes({ codes, weiter }: { codes: string[]; we
   return (
     <div className="stapel">
       <p className="hinweis warn">{t('profil.zweifaktor.bewahre-diese-codes-sicher')}</p>
-      <ol className="codes" aria-label={t('profil.zweifaktor.wiederherstellungscodes')}>{codes.map((c) => <li key={c}><code>{c}</code></li>)}</ol>
+      <ol className="codes" aria-label={t('profil.zweifaktor.wiederherstellungscodes')}>
+        {codes.map((c) => (
+          <li key={c}>
+            <code>{c}</code>
+          </li>
+        ))}
+      </ol>
       <div className="knoepfe">
-        <Knopf onClick={() => { void navigator.clipboard?.writeText(text); setGesichert(true); }}>{t('profil.zweifaktor.kopieren')}</Knopf>
-        <a className="knopf" href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`} download="wiederherstellungscodes.txt" onClick={() => setGesichert(true)}><Symbol name="herunterladen" />{t('profil.zweifaktor.als-datei-speichern')}</a>
-        <Knopf onClick={() => { print(); setGesichert(true); }}>{t('profil.zweifaktor.drucken')}</Knopf>
+        <Knopf
+          onClick={() => {
+            void navigator.clipboard?.writeText(text);
+            setGesichert(true);
+          }}>
+          {t('profil.zweifaktor.kopieren')}
+        </Knopf>
+        <a
+          className="knopf"
+          href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`}
+          download="wiederherstellungscodes.txt"
+          onClick={() => setGesichert(true)}>
+          <Symbol name="herunterladen" />
+          {t('profil.zweifaktor.als-datei-speichern')}
+        </a>
+        <Knopf
+          onClick={() => {
+            print();
+            setGesichert(true);
+          }}>
+          {t('profil.zweifaktor.drucken')}
+        </Knopf>
       </div>
-      <HakenFeld beschriftung={t('profil.zweifaktor.ich-habe-die-codes')}><input type="checkbox" checked={gesichert} onChange={(e) => setGesichert(e.target.checked)} /></HakenFeld>
-      <div className="knoepfe"><Knopf art="haupt" gesperrt={!gesichert} onClick={weiter}>{t('profil.zweifaktor.fertig')}</Knopf></div>
+      <HakenFeld beschriftung={t('profil.zweifaktor.ich-habe-die-codes')}>
+        <input type="checkbox" checked={gesichert} onChange={(e) => setGesichert(e.target.checked)} />
+      </HakenFeld>
+      <div className="knoepfe">
+        <Knopf art="haupt" gesperrt={!gesichert} onClick={weiter}>
+          {t('profil.zweifaktor.fertig')}
+        </Knopf>
+      </div>
     </div>
   );
 }
@@ -47,13 +78,24 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
     try {
       const e = await kontoApi.zweifaktorBeginnen();
       setEntwurf({ ...e, bild: await QRCode.toDataURL(e.uri, { margin: 1, width: 200, errorCorrectionLevel: 'M' }) });
-    } catch (e) { setFehler((e as Error).message); }
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
   }, []);
-  useEffect(() => { void beginnen(); }, [beginnen]);
+  useEffect(() => {
+    void beginnen();
+  }, [beginnen]);
   async function bestaetigen(e: FormEvent) {
     e.preventDefault();
-    setSendet(true); setFehler(undefined);
-    try { setCodes((await kontoApi.zweifaktorBestaetigen(code)).codes); } catch (x) { setFehler((x as Error).message); } finally { setSendet(false); }
+    setSendet(true);
+    setFehler(undefined);
+    try {
+      setCodes((await kontoApi.zweifaktorBestaetigen(code)).codes);
+    } catch (x) {
+      setFehler((x as Error).message);
+    } finally {
+      setSendet(false);
+    }
   }
   if (codes) return <Wiederherstellungscodes codes={codes} weiter={fertig} />;
   return (
@@ -67,13 +109,26 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
             <code className="geheimnis">{entwurf.geheimnis}</code>
           </div>
         </div>
-      ) : !fehler && <p className="leise">{t('profil.zweifaktor.erzeuge-schluessel')}</p>}
+      ) : (
+        !fehler && <p className="leise">{t('profil.zweifaktor.erzeuge-schluessel')}</p>
+      )}
       <Feld beschriftung={t('profil.zweifaktor.2-sechsstelligen-code-aus')} fehler={fehler}>
-        <input id="zweifaktor-code" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]{6,7}" maxLength={7} required />
+        <input
+          id="zweifaktor-code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9 ]{6,7}"
+          maxLength={7}
+          required
+        />
       </Feld>
       <div className="knoepfe">
         {abbrechen && <Knopf onClick={abbrechen}>{t('profil.zweifaktor.abbrechen')}</Knopf>}
-        <Knopf art="haupt" type="submit" laeuft={sendet} gesperrt={!entwurf}>{t('profil.zweifaktor.bestaetigen')}</Knopf>
+        <Knopf art="haupt" type="submit" laeuft={sendet} gesperrt={!entwurf}>
+          {t('profil.zweifaktor.bestaetigen')}
+        </Knopf>
       </div>
     </form>
   );
@@ -87,32 +142,82 @@ export function ZweifaktorBlatt() {
   const [pw, setPw] = useState('');
   const [neueCodes, setNeueCodes] = useState<string[] | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const laden = useCallback(async () => { try { setStand(await kontoApi.zweifaktor()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
-  useEffect(() => { void laden(); }, [laden]);
+  const laden = useCallback(async () => {
+    try {
+      setStand(await kontoApi.zweifaktor());
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
+  }, []);
+  useEffect(() => {
+    void laden();
+  }, [laden]);
 
   async function mitPasswort(e?: FormEvent) {
-    e?.preventDefault(); setMeldung(undefined);
+    e?.preventDefault();
+    setMeldung(undefined);
     // Enter im Passwortfeld beim Abschalten: erst die Rückfrage wie am Knopf (#1215).
-    if (e && modus === 'aus' && !(await rueckfrage({ titel: t('profil.zweifaktor.abschalten.frage'), text: t('profil.zweifaktor.danach-reicht-wieder-das'), ja: t('profil.zweifaktor.abschalten'), gefahr: true }))) return;
+    if (
+      e &&
+      modus === 'aus' &&
+      !(await rueckfrage({
+        titel: t('profil.zweifaktor.abschalten.frage'),
+        text: t('profil.zweifaktor.danach-reicht-wieder-das'),
+        ja: t('profil.zweifaktor.abschalten'),
+        gefahr: true,
+      }))
+    )
+      return;
     try {
-      if (modus === 'codes') { setNeueCodes((await kontoApi.zweifaktorCodes(pw)).codes); }
-      else { await kontoApi.zweifaktorEntfernen(pw); setModus('ruhe'); setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-abgeschaltet') }); await laden(); }
+      if (modus === 'codes') {
+        setNeueCodes((await kontoApi.zweifaktorCodes(pw)).codes);
+      } else {
+        await kontoApi.zweifaktorEntfernen(pw);
+        setModus('ruhe');
+        setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-abgeschaltet') });
+        await laden();
+      }
       setPw('');
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    }
   }
 
   return (
     <div className="blatt" id="zweifaktor">
       <h2 className="h3">{tn('profil.zweifaktor.zwei-faktor-anmeldung', { hilfe: <Hilfe ort="profil.zweifaktor" /> })}</h2>
       <p className="leise">{t('profil.zweifaktor.neben-dem-passwort-fragt')}</p>
-      {!stand ? <p className="leise">{t('profil.zweifaktor.lade')}</p> : modus === 'einrichten' ? (
-        <ZweifaktorEinrichten fertig={() => { setModus('ruhe'); setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-eingerichtet') }); void laden(); void aktualisieren(); }} abbrechen={() => setModus('ruhe')} />
+      {!stand ? (
+        <p className="leise">{t('profil.zweifaktor.lade')}</p>
+      ) : modus === 'einrichten' ? (
+        <ZweifaktorEinrichten
+          fertig={() => {
+            setModus('ruhe');
+            setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-eingerichtet') });
+            void laden();
+            void aktualisieren();
+          }}
+          abbrechen={() => setModus('ruhe')}
+        />
       ) : neueCodes ? (
-        <Wiederherstellungscodes codes={neueCodes} weiter={() => { setNeueCodes(null); setModus('ruhe'); void laden(); }} />
+        <Wiederherstellungscodes
+          codes={neueCodes}
+          weiter={() => {
+            setNeueCodes(null);
+            setModus('ruhe');
+            void laden();
+          }}
+        />
       ) : stand.aktiv ? (
         <>
-          <p><span className="chip gut punkt">{t('profil.zweifaktor.eingerichtet')}</span>{stand.seit && <> {' '}{t('profil.zweifaktor.seit', { datum: datum(stand.seit) })}</>} {' '}{t('profil.zweifaktor.von-10-wiederherstellungscodes', { codesUebrig: stand.codesUebrig })}</p>
-          {stand.codesUebrig <= 3 && <p className="hinweis warn">{t('profil.zweifaktor.nur-noch-wiederherstellungscodes', { codesUebrig: stand.codesUebrig })}</p>}
+          <p>
+            <span className="chip gut punkt">{t('profil.zweifaktor.eingerichtet')}</span>
+            {stand.seit && <> {t('profil.zweifaktor.seit', { datum: datum(stand.seit) })}</>}{' '}
+            {t('profil.zweifaktor.von-10-wiederherstellungscodes', { codesUebrig: stand.codesUebrig })}
+          </p>
+          {stand.codesUebrig <= 3 && (
+            <p className="hinweis warn">{t('profil.zweifaktor.nur-noch-wiederherstellungscodes', { codesUebrig: stand.codesUebrig })}</p>
+          )}
           {modus === 'ruhe' ? (
             <div className="knoepfe">
               <Knopf onClick={() => setModus('codes')}>{t('profil.zweifaktor.neue-wiederherstellungscodes')}</Knopf>
@@ -120,15 +225,51 @@ export function ZweifaktorBlatt() {
             </div>
           ) : (
             <form className="stapel" onSubmit={abfangen(mitPasswort, (text) => setMeldung({ art: 'schlecht', text }))}>
-              <p className="leise">{t('profil.zweifaktor.bitte-mit-deinem-passwort', { wert: modus === 'codes' ? t('profil.zweifaktor.die-bisherigen-codes-gelten') : t('profil.zweifaktor.danach-reicht-wieder-das') })}</p>
-              <Feld beschriftung={t('profil.zweifaktor.aktuelles-passwort')}><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" autoFocus required /></Feld>
+              <p className="leise">
+                {t('profil.zweifaktor.bitte-mit-deinem-passwort', {
+                  wert:
+                    modus === 'codes'
+                      ? t('profil.zweifaktor.die-bisherigen-codes-gelten')
+                      : t('profil.zweifaktor.danach-reicht-wieder-das'),
+                })}
+              </p>
+              <Feld beschriftung={t('profil.zweifaktor.aktuelles-passwort')}>
+                <input
+                  type="password"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  autoComplete="current-password"
+                  autoFocus
+                  required
+                />
+              </Feld>
               <div className="knoepfe">
-                <Knopf onClick={() => { setModus('ruhe'); setPw(''); }}>{t('profil.zweifaktor.abbrechen')}</Knopf>
+                <Knopf
+                  onClick={() => {
+                    setModus('ruhe');
+                    setPw('');
+                  }}>
+                  {t('profil.zweifaktor.abbrechen')}
+                </Knopf>
                 {/* Abschalten ist Gefahr (#1215): leise mit Symbol und Rückfrage; Enter im Feld fragt ebenso nach. */}
-                {modus === 'codes'
-                  ? <Knopf art="haupt" type="submit" gesperrt={!pw}>{t('profil.zweifaktor.neue-codes-erzeugen')}</Knopf>
-                  : <Knopf art="gefahr" symbol="verboten" gesperrt={!pw} onClick={() => mitPasswort()}
-                    rueckfrage={{ titel: t('profil.zweifaktor.abschalten.frage'), text: t('profil.zweifaktor.danach-reicht-wieder-das'), ja: t('profil.zweifaktor.abschalten') }}>{t('profil.zweifaktor.abschalten')}</Knopf>}
+                {modus === 'codes' ? (
+                  <Knopf art="haupt" type="submit" gesperrt={!pw}>
+                    {t('profil.zweifaktor.neue-codes-erzeugen')}
+                  </Knopf>
+                ) : (
+                  <Knopf
+                    art="gefahr"
+                    symbol="verboten"
+                    gesperrt={!pw}
+                    onClick={() => mitPasswort()}
+                    rueckfrage={{
+                      titel: t('profil.zweifaktor.abschalten.frage'),
+                      text: t('profil.zweifaktor.danach-reicht-wieder-das'),
+                      ja: t('profil.zweifaktor.abschalten'),
+                    }}>
+                    {t('profil.zweifaktor.abschalten')}
+                  </Knopf>
+                )}
               </div>
             </form>
           )}
@@ -136,9 +277,22 @@ export function ZweifaktorBlatt() {
           {stand.passkeyErfuellt && <p className="leise klein">{t('profil.zweifaktor.passkey-erfuellt')}</p>}
         </>
       ) : (
-        <div className="knoepfe"><Knopf art="haupt" onClick={() => { setMeldung(undefined); setModus('einrichten'); }}>{t('profil.zweifaktor.einrichten')}</Knopf></div>
+        <div className="knoepfe">
+          <Knopf
+            art="haupt"
+            onClick={() => {
+              setMeldung(undefined);
+              setModus('einrichten');
+            }}>
+            {t('profil.zweifaktor.einrichten')}
+          </Knopf>
+        </div>
       )}
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
     </div>
   );
 }

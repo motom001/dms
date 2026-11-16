@@ -41,7 +41,10 @@ export const AKTION_NAME_MAX = 60;
 export const AKTION_BESCHREIBUNG_MAX = 300;
 
 /** Bedingung einer Aktion: wie „Anzeigen, wenn …“ (#1033) und der Grund, der im Menü steht, solange sie nicht zutrifft. */
-export interface AktionBedingung { regel: Anzeigeregel; grund: string }
+export interface AktionBedingung {
+  regel: Anzeigeregel;
+  grund: string;
+}
 
 /** Eine angemeldete Aktion, wie Ablago sie aus dem Manifest liest und mit dem Paket speichert. */
 export interface MappenAktion {
@@ -66,18 +69,24 @@ const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String
 /** Eingebaute Aktionen im Menü „Mappe“, die der Administrator ausblenden kann. */
 export const EINGEBAUTE_AKTIONEN = ['aufgabe', 'erinnern', 'email', 'drucken', 'link'] as const;
 export type EingebauteAktion = (typeof EINGEBAUTE_AKTIONEN)[number];
-export const istEingebauteAktion = (x: unknown): x is EingebauteAktion => typeof x === 'string' && (EINGEBAUTE_AKTIONEN as readonly string[]).includes(x);
+export const istEingebauteAktion = (x: unknown): x is EingebauteAktion =>
+  typeof x === 'string' && (EINGEBAUTE_AKTIONEN as readonly string[]).includes(x);
 
 /** Eine Aktion im Menü einer Mappe. `gesperrt`: Bedingung trifft nicht zu – Grund im Menü. */
 export interface AngeboteneAktion {
   paket: { id: string; name: string };
-  schluessel: string; name: string; beschreibung?: string;
+  schluessel: string;
+  name: string;
+  beschreibung?: string;
   rechte: AktionRecht[];
   dialog?: KernDialog;
   gesperrt?: string;
 }
 /** Antwort auf GET /api/mappen/{id}/paketaktionen. */
-export interface AktionenAnMappe { aktionen: AngeboteneAktion[]; eingebautAus: EingebauteAktion[] }
+export interface AktionenAnMappe {
+  aktionen: AngeboteneAktion[];
+  eingebautAus: EingebauteAktion[];
+}
 
 /** Feldarten eines Dialogs (Schreibweise im Paket). `text` ist ein Absatz zum Lesen, keine Eingabe. */
 export const DIALOG_ARTEN = ['text', 'auswahl', 'haken', 'textfeld', 'datum'] as const;
@@ -97,7 +106,12 @@ export interface DialogFeld {
   pflicht?: boolean;
 }
 /** Dialog-Beschreibung eines Pakets, geprüft. `gefahr`: Hauptknopf rot – nur, wenn das Paket etwas löscht. */
-export interface AktionsDialog { titel: string; felder: DialogFeld[]; knopf: string; gefahr?: boolean }
+export interface AktionsDialog {
+  titel: string;
+  felder: DialogFeld[];
+  knopf: string;
+  gefahr?: boolean;
+}
 
 /** Ergebnis eines Laufs für die Oberfläche. */
 export interface AktionsErgebnis {
@@ -119,11 +133,15 @@ export type AktionsSchritt =
   | { lauf: string; paket: { id: string; name: string }; aktion: string; name: string; kern: KernDialog; rechte: AktionRecht[] };
 
 /** Einstellungen der Werkbank zu den Aktionen im Menü „Mappe“ (Einstellung `mappenaktionen`). */
-export interface AktionenEinstellung { eingebautAus: EingebauteAktion[]; paketAus: Record<string, string[]> }
+export interface AktionenEinstellung {
+  eingebautAus: EingebauteAktion[];
+  paketAus: Record<string, string[]>;
+}
 export function liesAktionenEinstellung(v: unknown): AktionenEinstellung {
   const o = istObjekt(v) ? v : {};
   const eingebautAus = (Array.isArray(o.eingebautAus) ? o.eingebautAus : []).filter(istEingebauteAktion);
   const paketAus: Record<string, string[]> = {};
-  if (istObjekt(o.paketAus)) for (const [k, l] of Object.entries(o.paketAus)) if (Array.isArray(l)) paketAus[k] = l.map(str).filter((x) => SCHLUESSEL.test(x));
+  if (istObjekt(o.paketAus))
+    for (const [k, l] of Object.entries(o.paketAus)) if (Array.isArray(l)) paketAus[k] = l.map(str).filter((x) => SCHLUESSEL.test(x));
   return { eingebautAus: [...new Set(eingebautAus)], paketAus };
 }

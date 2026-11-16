@@ -22,7 +22,21 @@ import start from '../../shared/src/sprachen/de/start.json';
 import meldungen from '../../shared/src/sprachen/de/meldungen.json';
 import notfall from '../../shared/src/sprachen/de/notfall.json';
 
-export const t = uebersetzer({ api, anmeldung, einrichtung, entdecken, konten, mail, mappen, meldungen, notfall, pakete, start, systemzustand, werkbank });
+export const t = uebersetzer({
+  api,
+  anmeldung,
+  einrichtung,
+  entdecken,
+  konten,
+  mail,
+  mappen,
+  meldungen,
+  notfall,
+  pakete,
+  start,
+  systemzustand,
+  werkbank,
+});
 
 /*
  * Sprache je Anfrage (#729): Meldungen gehen in der Sprache der angemeldeten Person hinaus, vor der Anmeldung in der,

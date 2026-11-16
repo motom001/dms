@@ -41,7 +41,12 @@ export const ERSATZZEICHEN = '�';
 /** Ordner mit den Schriften: `server/schriften/`, neben dem Quelltext (src/pdf/) bzw. neben server/dist. */
 function schriftOrdner(): string {
   const hier = dirname(fileURLToPath(import.meta.url));
-  const kandidaten = [join(hier, '..', '..', 'schriften'), join(hier, '..', 'schriften'), join(process.cwd(), 'schriften'), join(process.cwd(), 'server', 'schriften')];
+  const kandidaten = [
+    join(hier, '..', '..', 'schriften'),
+    join(hier, '..', 'schriften'),
+    join(process.cwd(), 'schriften'),
+    join(process.cwd(), 'server', 'schriften'),
+  ];
   const ordner = kandidaten.find((k) => existsSync(join(k, DATEIEN.normal)));
   if (!ordner) throw new Error(`Schriften für PDFs fehlen (${DATEIEN.normal}, gesucht in ${kandidaten.join(', ')})`);
   return ordner;
@@ -64,8 +69,13 @@ function schriftDaten(s: Schnitt): Uint8Array {
 /** So viele gesetzte Texte merkt sich jede Schrift (Breite messen und Zeichnen setzen denselben Text oft mehrfach). */
 const GESETZT_MAX = 4000;
 type Gesetzt = { glyphs: unknown[] };
-interface Glyphe { codePoints: number[] }
-interface Fontkitschrift { layout: (text: string, features?: unknown) => Gesetzt; getGlyph: (id: number, zeichen?: number[]) => Glyphe | null }
+interface Glyphe {
+  codePoints: number[];
+}
+interface Fontkitschrift {
+  layout: (text: string, features?: unknown) => Gesetzt;
+  getGlyph: (id: number, zeichen?: number[]) => Glyphe | null;
+}
 
 /**
  * fontkit mit Gedächtnis: pdf-lib ruft `create` bei jedem Einbetten auf und wertet die ganze Datei neu aus. Für dieselben
@@ -128,7 +138,10 @@ export function fehlendeZeichen(): string[] {
 const zeichensaetze = new WeakMap<PDFFont, Set<number>>();
 const zeichensatz = (f: PDFFont) => {
   let z = zeichensaetze.get(f);
-  if (!z) { z = new Set(f.getCharacterSet()); zeichensaetze.set(f, z); }
+  if (!z) {
+    z = new Set(f.getCharacterSet());
+    zeichensaetze.set(f, z);
+  }
   return z;
 };
 /** Unsichtbare Zeichen ohne Glyphe (Variantenwähler, Steuerzeichen für die Schreibrichtung …) fallen weg. */
@@ -148,7 +161,10 @@ export function pdfText(s: string, font: PDFFont): string {
     else if (c < 0x20 || (c >= 0x7f && c < 0xa0)) continue;
     else if (z.has(c)) r += ch;
     else if (UNSICHTBAR.test(ch)) continue;
-    else { fehlend.add(ch); r += z.has(0xfffd) ? ERSATZZEICHEN : '?'; }
+    else {
+      fehlend.add(ch);
+      r += z.has(0xfffd) ? ERSATZZEICHEN : '?';
+    }
   }
   return r;
 }
@@ -160,12 +176,20 @@ export const angabe = (s: string) => s.normalize('NFC').replace(/\p{Cc}/gu, ' ')
 
 /** Sechs Großbuchstaben aus den verwendeten Zeichen: das Kürzel der Teilmenge („ABCDEF+NotoSans-Regular“, PDF 9.6.4). */
 function kuerzel(name: string, glyphen: Iterable<number>): string {
-  const h = createHash('sha256').update(name).update([...glyphen].sort((a, b) => a - b).join(',')).digest();
+  const h = createHash('sha256')
+    .update(name)
+    .update([...glyphen].sort((a, b) => a - b).join(','))
+    .digest();
   return Array.from(h.subarray(0, 6), (b) => String.fromCharCode(65 + (b % 26))).join('');
 }
 
 /** Interna von pdf-lib 1.17.1, die das Kürzel braucht (fest so in CustomFontSubsetEmbedder). */
-interface Einbetter { fontName: string; customName?: string; glyphIdMap: Map<number, number>; embedIntoContext: (...a: unknown[]) => unknown }
+interface Einbetter {
+  fontName: string;
+  customName?: string;
+  glyphIdMap: Map<number, number>;
+  embedIntoContext: (...a: unknown[]) => unknown;
+}
 
 /**
  * Bettet die Schnitte als Teilmenge in `doc` ein. Den Namen der Teilmenge bildet pdf-lib sonst als „NotoSans-Regular-1234“;
@@ -179,7 +203,10 @@ export async function schriften<S extends Schnitt>(doc: PDFDocument, schnitte: r
     const font = await doc.embedFont(schriftDaten(s), { subset: true, features: MERKMALE });
     const e = (font as unknown as { embedder: Einbetter }).embedder;
     const einbetten = e.embedIntoContext.bind(e);
-    e.embedIntoContext = (...a: unknown[]) => { e.customName = `${kuerzel(e.fontName, e.glyphIdMap.keys())}+${e.fontName}`; return einbetten(...a); };
+    e.embedIntoContext = (...a: unknown[]) => {
+      e.customName = `${kuerzel(e.fontName, e.glyphIdMap.keys())}+${e.fontName}`;
+      return einbetten(...a);
+    };
     aus[s] = font;
   }
   return aus;

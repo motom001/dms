@@ -23,12 +23,19 @@ import { gleicheStaende, type FassungArt } from './fassungen';
 export type TypStand = Omit<Mappentyp, 'id' | 'erstellt' | 'geaendert' | 'darfAnlegen' | 'paket'>;
 /** Stand einer Ansicht: ohne Position unter den Geschwistern (Umsortieren ist keine Änderung der Ansicht). */
 export type SichtStand = Omit<SichtDaten, 'position'>;
-export interface NummernkreisStand { schluessel: string; name: string; muster: string; start: number }
+export interface NummernkreisStand {
+  schluessel: string;
+  name: string;
+  muster: string;
+  start: number;
+}
 export type StempelStand = Omit<StempelVorlage, 'id' | 'umgestellt'>;
 /** Postfach ohne Passwort: nur, ob eines gesetzt ist. */
 export type PostfachStand = Record<string, unknown> & { name: string; passwortGesetzt?: boolean };
 /** Paket-Einstellungen: Werte; Geheimnisse nur als `{ gesetzt: true }`. */
-export interface PaketEinstellungenStand { werte: Record<string, unknown> }
+export interface PaketEinstellungenStand {
+  werte: Record<string, unknown>;
+}
 export type AutomatisierungStand = AutomatisierungDaten & { aktiv: boolean };
 /** Automatisierungsvorlage (#1044): ihre Daten und an/aus – nicht Herkunft und Paket. */
 export type AblaufvorlageStand = AblaufvorlageDaten & { aktiv: boolean };
@@ -68,15 +75,24 @@ export function beschreibeAenderungen(art: FassungArt, alt: unknown, neu: unknow
   if (gleich(wirksam(art, alt), wirksam(art, neu))) return [];
   const liste = (() => {
     switch (art) {
-      case 'typ': return beschreibeTyp(alt as TypStand, neu as TypStand);
-      case 'sicht': return beschreibeSicht(alt as SichtStand, neu as SichtStand, k);
-      case 'nummernkreis': return beschreibeNummernkreis(alt as NummernkreisStand, neu as NummernkreisStand);
-      case 'stempel': return beschreibeStempel(alt as StempelStand, neu as StempelStand);
-      case 'postfach': return beschreibePostfach(alt as PostfachStand, neu as PostfachStand);
-      case 'paketeinstellungen': return beschreibePaketEinstellungen(alt as PaketEinstellungenStand, neu as PaketEinstellungenStand, k);
-      case 'automatisierung': return beschreibeAutomatisierung(alt as AutomatisierungStand, neu as AutomatisierungStand, k);
-      case 'ablaufvorlage': return beschreibeAblaufvorlage(alt as AblaufvorlageStand, neu as AblaufvorlageStand, k);
-      default: return [];
+      case 'typ':
+        return beschreibeTyp(alt as TypStand, neu as TypStand);
+      case 'sicht':
+        return beschreibeSicht(alt as SichtStand, neu as SichtStand, k);
+      case 'nummernkreis':
+        return beschreibeNummernkreis(alt as NummernkreisStand, neu as NummernkreisStand);
+      case 'stempel':
+        return beschreibeStempel(alt as StempelStand, neu as StempelStand);
+      case 'postfach':
+        return beschreibePostfach(alt as PostfachStand, neu as PostfachStand);
+      case 'paketeinstellungen':
+        return beschreibePaketEinstellungen(alt as PaketEinstellungenStand, neu as PaketEinstellungenStand, k);
+      case 'automatisierung':
+        return beschreibeAutomatisierung(alt as AutomatisierungStand, neu as AutomatisierungStand, k);
+      case 'ablaufvorlage':
+        return beschreibeAblaufvorlage(alt as AblaufvorlageStand, neu as AblaufvorlageStand, k);
+      default:
+        return [];
     }
   })();
   // Etwas Unbenanntes hat sich geändert (z. B. eine neue Eigenschaft) – nie still „nichts“.
@@ -85,41 +101,72 @@ export function beschreibeAenderungen(art: FassungArt, alt: unknown, neu: unknow
 
 /* ---------- Mappentyp ---------- */
 
-function feldSaetze(a: { key: string; label: string; werte: Record<string, unknown> }, n: { key: string; label: string; werte: Record<string, unknown> }): string[] {
+function feldSaetze(
+  a: { key: string; label: string; werte: Record<string, unknown> },
+  n: { key: string; label: string; werte: Record<string, unknown> },
+): string[] {
   const s: string[] = [];
   if (a.label !== n.label) s.push(t('gemeinsam.fassungen.feld-umbenannt', { alt: a.label, neu: n.label }));
   const rest: string[] = [];
   for (const k of new Set([...Object.keys(a.werte), ...Object.keys(n.werte)])) {
     if (gleich(a.werte[k], n.werte[k])) continue;
-    if (k === 'pflicht') s.push(n.werte.pflicht ? t('gemeinsam.fassungen.feld-pflicht', { label: n.label }) : t('gemeinsam.fassungen.feld-nicht-pflicht', { label: n.label }));
-    else if (k === 'eindeutig') s.push(n.werte.eindeutig ? t('gemeinsam.fassungen.feld-eindeutig', { label: n.label }) : t('gemeinsam.fassungen.feld-nicht-eindeutig', { label: n.label }));
-    else if (k === 'ausgeblendet') s.push(n.werte.ausgeblendet ? t('gemeinsam.fassungen.feld-ausgeblendet', { label: n.label }) : t('gemeinsam.fassungen.feld-eingeblendet', { label: n.label }));
-    else if (k === 'typ') s.push(t('gemeinsam.fassungen.feld-art', { label: n.label, alt: String(a.werte.typ ?? ''), neu: String(n.werte.typ ?? '') }));
+    if (k === 'pflicht')
+      s.push(
+        n.werte.pflicht
+          ? t('gemeinsam.fassungen.feld-pflicht', { label: n.label })
+          : t('gemeinsam.fassungen.feld-nicht-pflicht', { label: n.label }),
+      );
+    else if (k === 'eindeutig')
+      s.push(
+        n.werte.eindeutig
+          ? t('gemeinsam.fassungen.feld-eindeutig', { label: n.label })
+          : t('gemeinsam.fassungen.feld-nicht-eindeutig', { label: n.label }),
+      );
+    else if (k === 'ausgeblendet')
+      s.push(
+        n.werte.ausgeblendet
+          ? t('gemeinsam.fassungen.feld-ausgeblendet', { label: n.label })
+          : t('gemeinsam.fassungen.feld-eingeblendet', { label: n.label }),
+      );
+    else if (k === 'typ')
+      s.push(t('gemeinsam.fassungen.feld-art', { label: n.label, alt: String(a.werte.typ ?? ''), neu: String(n.werte.typ ?? '') }));
     else rest.push(eigenschaftName(k));
   }
   if (rest.length) s.push(t('gemeinsam.fassungen.feld-geaendert', { label: n.label, was: [...new Set(rest)].join(', ') }));
   return s;
 }
 
-const spaltenName = (key: string, felder: Feld[]) => (istSystemspalte(key) ? SYSTEMSPALTEN[key] : felder.find((f) => f.key === key)?.label ?? key);
+const spaltenName = (key: string, felder: Feld[]) =>
+  istSystemspalte(key) ? SYSTEMSPALTEN[key] : (felder.find((f) => f.key === key)?.label ?? key);
 
-function regelSaetze(a: Regelwerk | SichtRegelwerk | null | undefined, n: Regelwerk | SichtRegelwerk | null | undefined, sicht: boolean): string[] {
+function regelSaetze(
+  a: Regelwerk | SichtRegelwerk | null | undefined,
+  n: Regelwerk | SichtRegelwerk | null | undefined,
+  sicht: boolean,
+): string[] {
   if (gleich(a, n)) return [];
   const s: string[] = [];
-  const kurz = (r: Regelwerk | SichtRegelwerk | null | undefined) => (r ? (sicht ? kurzSicht((r as SichtRegelwerk).grund) : kurzStandard((r as Regelwerk).grund)) : t('gemeinsam.fassungen.rechte-offen'));
+  const kurz = (r: Regelwerk | SichtRegelwerk | null | undefined) =>
+    r ? (sicht ? kurzSicht((r as SichtRegelwerk).grund) : kurzStandard((r as Regelwerk).grund)) : t('gemeinsam.fassungen.rechte-offen');
   if (!gleich(a?.grund, n?.grund) || !a !== !n) s.push(t('gemeinsam.fassungen.rechte-grund', { alt: kurz(a), neu: kurz(n) }));
-  const ar = a?.regeln ?? [], nr = n?.regeln ?? [];
+  const ar = a?.regeln ?? [],
+    nr = n?.regeln ?? [];
   const name = (r: { id: string; name?: string }) => r.name || r.id;
   for (const r of nr) if (!ar.some((x) => x.id === r.id)) s.push(t('gemeinsam.fassungen.regel-hinzugefuegt', { name: name(r) }));
   for (const r of ar) if (!nr.some((x) => x.id === r.id)) s.push(t('gemeinsam.fassungen.regel-entfernt', { name: name(r) }));
-  for (const r of nr) { const x = ar.find((y) => y.id === r.id); if (x && !gleich(x, r)) s.push(t('gemeinsam.fassungen.regel-geaendert', { name: name(r) })); }
+  for (const r of nr) {
+    const x = ar.find((y) => y.id === r.id);
+    if (x && !gleich(x, r)) s.push(t('gemeinsam.fassungen.regel-geaendert', { name: name(r) }));
+  }
   if (!s.length) s.push(t('gemeinsam.fassungen.regel-reihenfolge'));
   return s;
 }
 
 const REGISTER_TEXTE: Record<string, string> = {
-  volltext: 'gemeinsam.fassungen.register-volltext', versionierung: 'gemeinsam.fassungen.register-versionierung',
-  versionenBehalten: 'gemeinsam.fassungen.register-versionierung', historie: 'gemeinsam.fassungen.register-historie',
+  volltext: 'gemeinsam.fassungen.register-volltext',
+  versionierung: 'gemeinsam.fassungen.register-versionierung',
+  versionenBehalten: 'gemeinsam.fassungen.register-versionierung',
+  historie: 'gemeinsam.fassungen.register-historie',
 };
 
 /** Ein Register in beiden Ständen; `gemeinsam`: Felder, die es in beiden gibt – neue und entfernte nennt schon die Feldliste. */
@@ -127,9 +174,15 @@ function registerSatz(a: Register, n: Register, gemeinsam: Set<string>): string 
   const nur = (r: Register) => ({ ...r, ...(r.felder ? { felder: r.felder.filter((k) => gemeinsam.has(k)) } : {}) });
   const ba = typBild({ name: '', beschreibung: '', titelVorlage: '', felder: [], register: [nur(a)] } as unknown as Mappentyp).register[0];
   const bn = typBild({ name: '', beschreibung: '', titelVorlage: '', felder: [], register: [nur(n)] } as unknown as Mappentyp).register[0];
-  const was = [...(a.name !== n.name ? [t('gemeinsam.typvergleich.umbenannt-von-2', { name: a.name })] : []),
-    ...[...new Set([...Object.keys(ba.werte), ...Object.keys(bn.werte)])].filter((k) => !gleich(ba.werte[k], bn.werte[k])).map(eigenschaftName),
-    ...Object.keys(REGISTER_TEXTE).filter((k) => !gleich((a as unknown as Record<string, unknown>)[k], (n as unknown as Record<string, unknown>)[k])).map((k) => t.frei(REGISTER_TEXTE[k]))];
+  const was = [
+    ...(a.name !== n.name ? [t('gemeinsam.typvergleich.umbenannt-von-2', { name: a.name })] : []),
+    ...[...new Set([...Object.keys(ba.werte), ...Object.keys(bn.werte)])]
+      .filter((k) => !gleich(ba.werte[k], bn.werte[k]))
+      .map(eigenschaftName),
+    ...Object.keys(REGISTER_TEXTE)
+      .filter((k) => !gleich((a as unknown as Record<string, unknown>)[k], (n as unknown as Record<string, unknown>)[k]))
+      .map((k) => t.frei(REGISTER_TEXTE[k])),
+  ];
   return was.length ? t('gemeinsam.fassungen.register-geaendert', { name: n.name, was: [...new Set(was)].join(', ') }) : null;
 }
 
@@ -146,8 +199,15 @@ function felderSaetze(alt: TypStand, neu: TypStand, ba: Bild, bn: Bild): string[
   const neuF = new Map(bn.felder.map((f) => [f.key, f] as const));
   for (const f of bn.felder) if (!altF.has(f.key)) s.push(t('gemeinsam.typvergleich.feld-hinzugefuegt', { label: f.label }));
   for (const f of ba.felder) if (!neuF.has(f.key)) s.push(t('gemeinsam.typvergleich.feld-entfernt', { label: f.label }));
-  for (const f of bn.felder) { const a = altF.get(f.key); if (a) s.push(...feldSaetze(a, f)); }
-  const reihe = (x: TypStand) => x.felder.map((f) => f.key).filter((key) => altF.has(key) && neuF.has(key)).join(',');
+  for (const f of bn.felder) {
+    const a = altF.get(f.key);
+    if (a) s.push(...feldSaetze(a, f));
+  }
+  const reihe = (x: TypStand) =>
+    x.felder
+      .map((f) => f.key)
+      .filter((key) => altF.has(key) && neuF.has(key))
+      .join(',');
   if (reihe(alt) !== reihe(neu)) s.push(t('gemeinsam.fassungen.felder-reihenfolge'));
   return s;
 }
@@ -161,9 +221,11 @@ function registerSaetze(alt: TypStand, neu: TypStand): string[] {
     const satz = a ? registerSatz(a, r, gemeinsam) : t('gemeinsam.typvergleich.register-hinzugefuegt', { name: r.name });
     if (satz) s.push(satz);
   }
-  for (const r of alt.register) if (!neu.register.some((x) => x.key === r.key)) s.push(t('gemeinsam.typvergleich.register-entfernt', { name: r.name }));
+  for (const r of alt.register)
+    if (!neu.register.some((x) => x.key === r.key)) s.push(t('gemeinsam.typvergleich.register-entfernt', { name: r.name }));
   const gleicheMenge = alt.register.length === neu.register.length && alt.register.every((r) => neu.register.some((x) => x.key === r.key));
-  if (gleicheMenge && alt.register.map((r) => r.key).join(',') !== neu.register.map((r) => r.key).join(',')) s.push(t('gemeinsam.fassungen.register-reihenfolge'));
+  if (gleicheMenge && alt.register.map((r) => r.key).join(',') !== neu.register.map((r) => r.key).join(','))
+    s.push(t('gemeinsam.fassungen.register-reihenfolge'));
   return s;
 }
 
@@ -172,10 +234,16 @@ function listeSaetze(a: Trefferliste, l: Trefferliste, alt: TypStand, neu: TypSt
   const gemeinsam = (x: string[], y: string[]) => x.filter((z) => y.includes(z)).join(',');
   return [
     ...saetze([() => a.name !== l.name && t('gemeinsam.fassungen.liste-umbenannt', { alt: a.name, neu: l.name })]),
-    ...l.spalten.filter((sp) => !a.spalten.includes(sp)).map((sp) => t('gemeinsam.fassungen.spalte-hinzugefuegt', { liste: l.name, spalte: spaltenName(sp, neu.felder) })),
-    ...a.spalten.filter((sp) => !l.spalten.includes(sp)).map((sp) => t('gemeinsam.fassungen.spalte-entfernt', { liste: l.name, spalte: spaltenName(sp, alt.felder) })),
+    ...l.spalten
+      .filter((sp) => !a.spalten.includes(sp))
+      .map((sp) => t('gemeinsam.fassungen.spalte-hinzugefuegt', { liste: l.name, spalte: spaltenName(sp, neu.felder) })),
+    ...a.spalten
+      .filter((sp) => !l.spalten.includes(sp))
+      .map((sp) => t('gemeinsam.fassungen.spalte-entfernt', { liste: l.name, spalte: spaltenName(sp, alt.felder) })),
     ...saetze([
-      () => gemeinsam(a.spalten, l.spalten) !== gemeinsam(l.spalten, a.spalten) && t('gemeinsam.fassungen.spalten-reihenfolge', { liste: l.name }),
+      () =>
+        gemeinsam(a.spalten, l.spalten) !== gemeinsam(l.spalten, a.spalten) &&
+        t('gemeinsam.fassungen.spalten-reihenfolge', { liste: l.name }),
       () => !a.standard && !!l.standard && t('gemeinsam.fassungen.liste-standard', { name: l.name }),
       () => !gleich(a.beschriftungen, l.beschriftungen) && t('gemeinsam.fassungen.liste-beschriftungen', { name: l.name }),
     ]),
@@ -183,9 +251,13 @@ function listeSaetze(a: Trefferliste, l: Trefferliste, alt: TypStand, neu: TypSt
 }
 
 function listenSaetze(alt: TypStand, neu: TypStand): string[] {
-  const la = alt.trefferlisten ?? [], ln = neu.trefferlisten ?? [];
+  const la = alt.trefferlisten ?? [],
+    ln = neu.trefferlisten ?? [];
   return [
-    ...ln.flatMap((l) => { const a = la.find((x) => x.key === l.key); return a ? listeSaetze(a, l, alt, neu) : [t('gemeinsam.fassungen.liste-hinzugefuegt', { name: l.name })]; }),
+    ...ln.flatMap((l) => {
+      const a = la.find((x) => x.key === l.key);
+      return a ? listeSaetze(a, l, alt, neu) : [t('gemeinsam.fassungen.liste-hinzugefuegt', { name: l.name })];
+    }),
     ...la.filter((l) => !ln.some((x) => x.key === l.key)).map((l) => t('gemeinsam.fassungen.liste-entfernt', { name: l.name })),
   ];
 }
@@ -193,22 +265,35 @@ function listenSaetze(alt: TypStand, neu: TypStand): string[] {
 /** Einzelne Angaben des Typs. */
 function angabenSaetze(alt: TypStand, neu: TypStand): string[] {
   const text = (x: string | null | undefined) => x ?? '';
-  const archiv = () => (leer(neu.archiv) ? t('gemeinsam.fassungen.archiv-aus') : leer(alt.archiv) ? t('gemeinsam.fassungen.archiv-an') : t('gemeinsam.fassungen.archiv-geaendert'));
-  const teil = () => (neu.teilVon ? t('gemeinsam.fassungen.teil-an', { feld: neu.felder.find((f) => f.key === neu.teilVon)?.label ?? neu.teilVon }) : t('gemeinsam.fassungen.teil-aus'));
+  const archiv = () =>
+    leer(neu.archiv)
+      ? t('gemeinsam.fassungen.archiv-aus')
+      : leer(alt.archiv)
+        ? t('gemeinsam.fassungen.archiv-an')
+        : t('gemeinsam.fassungen.archiv-geaendert');
+  const teil = () =>
+    neu.teilVon
+      ? t('gemeinsam.fassungen.teil-an', { feld: neu.felder.find((f) => f.key === neu.teilVon)?.label ?? neu.teilVon })
+      : t('gemeinsam.fassungen.teil-aus');
   return saetze([
     () => text(alt.beschreibung) !== text(neu.beschreibung) && t('gemeinsam.typvergleich.beschreibung-geaendert'),
-    () => text(alt.titelVorlage) !== text(neu.titelVorlage) && t('gemeinsam.fassungen.titel', { alt: wert(alt.titelVorlage), neu: wert(neu.titelVorlage) }),
+    () =>
+      text(alt.titelVorlage) !== text(neu.titelVorlage) &&
+      t('gemeinsam.fassungen.titel', { alt: wert(alt.titelVorlage), neu: wert(neu.titelVorlage) }),
     () => !gleich(alt.beschriftungen, neu.beschriftungen) && t('gemeinsam.typvergleich.beschriftungen-geaendert'),
     () => text(alt.erkennbarAn) !== text(neu.erkennbarAn) && t('gemeinsam.fassungen.erkennbar-an'),
     // Wirksam vergleichen (#937): ohne Angabe gilt „mit Dokumentenregister“; Systemtypen nie.
     () => kannAusPost(alt) !== kannAusPost(neu) && t('gemeinsam.fassungen.aus-post', { wert: anAus(kannAusPost(neu)) }),
     () => !gleich(alt.teilVon, neu.teilVon) && teil(),
-    () => inAllgemeinerSuche(alt) !== inAllgemeinerSuche(neu) && (inAllgemeinerSuche(neu) ? t('gemeinsam.fassungen.in-suche-ja') : t('gemeinsam.fassungen.in-suche-nein')),
+    () =>
+      inAllgemeinerSuche(alt) !== inAllgemeinerSuche(neu) &&
+      (inAllgemeinerSuche(neu) ? t('gemeinsam.fassungen.in-suche-ja') : t('gemeinsam.fassungen.in-suche-nein')),
     () => !gleich(alt.archiv, neu.archiv) && archiv(),
     () => !gleich(alt.stempel, neu.stempel) && t('gemeinsam.fassungen.stempel-am-typ'),
     () => !gleich(alt.ausDokument, neu.ausDokument) && t('gemeinsam.fassungen.aus-dokument'),
     () => !alt.autoZuordnen !== !neu.autoZuordnen && t('gemeinsam.fassungen.auto-zuordnen', { wert: anAus(neu.autoZuordnen) }),
-    () => (!alt.erstellenErlaubt !== !neu.erstellenErlaubt || !alt.loeschenErlaubt !== !neu.loeschenErlaubt) && t('gemeinsam.fassungen.haken'),
+    () =>
+      (!alt.erstellenErlaubt !== !neu.erstellenErlaubt || !alt.loeschenErlaubt !== !neu.loeschenErlaubt) && t('gemeinsam.fassungen.haken'),
   ]);
 }
 
@@ -231,12 +316,18 @@ export function beschreibeTyp(alt: TypStand, neu: TypStand): string[] {
 /* ---------- Ansicht ---------- */
 
 /** Bedingungen: Anzahl, sonst „geändert“ (Ansichten und Automatisierungen). */
-const bedingungsSatz = (a: unknown[], n: unknown[]) => !gleich(a, n) && (a.length !== n.length
-  ? t('gemeinsam.fassungen.bedingungen-anzahl', { alt: a.length, neu: n.length }) : t('gemeinsam.fassungen.bedingungen-geaendert'));
+const bedingungsSatz = (a: unknown[], n: unknown[]) =>
+  !gleich(a, n) &&
+  (a.length !== n.length
+    ? t('gemeinsam.fassungen.bedingungen-anzahl', { alt: a.length, neu: n.length })
+    : t('gemeinsam.fassungen.bedingungen-geaendert'));
 
 export function beschreibeSicht(alt: SichtStand, neu: SichtStand, k: Vergleichskontext = {}): string[] {
   const typ = (id: string) => k.typName?.(id) ?? id;
-  const ort = () => (neu.elternId ? t('gemeinsam.fassungen.sicht-unter', { name: k.sichtName?.(neu.elternId) ?? neu.elternId }) : t('gemeinsam.fassungen.sicht-oben'));
+  const ort = () =>
+    neu.elternId
+      ? t('gemeinsam.fassungen.sicht-unter', { name: k.sichtName?.(neu.elternId) ?? neu.elternId })
+      : t('gemeinsam.fassungen.sicht-oben');
   return [
     ...saetze([
       () => alt.name !== neu.name && t('gemeinsam.typvergleich.name', { name: alt.name, name2: neu.name }),
@@ -266,42 +357,77 @@ export function beschreibeNummernkreis(alt: NummernkreisStand, neu: Nummernkreis
 }
 
 const STEMPEL_TEXTE: Record<string, string> = {
-  lage: 'gemeinsam.fassungen.stempel-lage', deckkraft: 'gemeinsam.fassungen.stempel-deckkraft', seiten: 'gemeinsam.fassungen.stempel-seiten', tinte: 'gemeinsam.fassungen.stempel-tinte',
-  drehung: 'gemeinsam.fassungen.stempel-drehung', x: 'gemeinsam.fassungen.stempel-ort', y: 'gemeinsam.fassungen.stempel-ort', farbe: 'gemeinsam.fassungen.stempel-farbe', groesse: 'gemeinsam.fassungen.stempel-groesse',
+  lage: 'gemeinsam.fassungen.stempel-lage',
+  deckkraft: 'gemeinsam.fassungen.stempel-deckkraft',
+  seiten: 'gemeinsam.fassungen.stempel-seiten',
+  tinte: 'gemeinsam.fassungen.stempel-tinte',
+  drehung: 'gemeinsam.fassungen.stempel-drehung',
+  x: 'gemeinsam.fassungen.stempel-ort',
+  y: 'gemeinsam.fassungen.stempel-ort',
+  farbe: 'gemeinsam.fassungen.stempel-farbe',
+  groesse: 'gemeinsam.fassungen.stempel-groesse',
 };
 
 export function beschreibeStempel(alt: StempelStand, neu: StempelStand): string[] {
   const s: string[] = [];
   if (alt.name !== neu.name) s.push(t('gemeinsam.typvergleich.name', { name: alt.name, name2: neu.name }));
   if (alt.text !== neu.text) s.push(t('gemeinsam.fassungen.stempel-text', { alt: alt.text, neu: neu.text }));
-  const a = alt as unknown as Record<string, unknown>, n = neu as unknown as Record<string, unknown>;
-  const was = [...new Set(Object.keys(STEMPEL_TEXTE).filter((x) => !gleich(a[x], n[x])).map((x) => t.frei(STEMPEL_TEXTE[x])))];
+  const a = alt as unknown as Record<string, unknown>,
+    n = neu as unknown as Record<string, unknown>;
+  const was = [
+    ...new Set(
+      Object.keys(STEMPEL_TEXTE)
+        .filter((x) => !gleich(a[x], n[x]))
+        .map((x) => t.frei(STEMPEL_TEXTE[x])),
+    ),
+  ];
   if (was.length) s.push(t('gemeinsam.fassungen.stempel-aussehen', { was: was.join(', ') }));
   return s;
 }
 
 const POSTFACH_TEXTE: Record<string, string> = {
-  server: 'gemeinsam.fassungen.postfach-verbindung', port: 'gemeinsam.fassungen.postfach-verbindung', verschluesselung: 'gemeinsam.fassungen.postfach-verbindung',
-  anmeldung: 'gemeinsam.fassungen.postfach-anmeldung', anbieter: 'gemeinsam.fassungen.postfach-anmeldung', benutzer: 'gemeinsam.fassungen.postfach-konto',
-  passwortGesetzt: 'gemeinsam.fassungen.postfach-passwort', ordner: 'gemeinsam.fassungen.postfach-ordner', abstand: 'gemeinsam.fassungen.postfach-abstand',
-  fuer: 'gemeinsam.fassungen.postfach-fuer', absender: 'gemeinsam.fassungen.postfach-absender', nachher: 'gemeinsam.fassungen.postfach-nachher',
-  zielordner: 'gemeinsam.fassungen.postfach-nachher', nurMitAnhang: 'gemeinsam.fassungen.postfach-anhang', original: 'gemeinsam.fassungen.postfach-original',
+  server: 'gemeinsam.fassungen.postfach-verbindung',
+  port: 'gemeinsam.fassungen.postfach-verbindung',
+  verschluesselung: 'gemeinsam.fassungen.postfach-verbindung',
+  anmeldung: 'gemeinsam.fassungen.postfach-anmeldung',
+  anbieter: 'gemeinsam.fassungen.postfach-anmeldung',
+  benutzer: 'gemeinsam.fassungen.postfach-konto',
+  passwortGesetzt: 'gemeinsam.fassungen.postfach-passwort',
+  ordner: 'gemeinsam.fassungen.postfach-ordner',
+  abstand: 'gemeinsam.fassungen.postfach-abstand',
+  fuer: 'gemeinsam.fassungen.postfach-fuer',
+  absender: 'gemeinsam.fassungen.postfach-absender',
+  nachher: 'gemeinsam.fassungen.postfach-nachher',
+  zielordner: 'gemeinsam.fassungen.postfach-nachher',
+  nurMitAnhang: 'gemeinsam.fassungen.postfach-anhang',
+  original: 'gemeinsam.fassungen.postfach-original',
 };
 
 export function beschreibePostfach(alt: PostfachStand, neu: PostfachStand): string[] {
   const s: string[] = [];
   if (alt.name !== neu.name) s.push(t('gemeinsam.typvergleich.name', { name: alt.name, name2: neu.name }));
   if (!!alt.aktiv !== !!neu.aktiv) s.push(t('gemeinsam.fassungen.postfach-aktiv', { wert: anAus(neu.aktiv) }));
-  const was = [...new Set(Object.keys(POSTFACH_TEXTE).filter((x) => !gleich(alt[x], neu[x])).map((x) => t.frei(POSTFACH_TEXTE[x])))];
+  const was = [
+    ...new Set(
+      Object.keys(POSTFACH_TEXTE)
+        .filter((x) => !gleich(alt[x], neu[x]))
+        .map((x) => t.frei(POSTFACH_TEXTE[x])),
+    ),
+  ];
   for (const w of was) s.push(w);
   return s;
 }
 
 /* ---------- Paket-Einstellungen ---------- */
 
-export function beschreibePaketEinstellungen(alt: PaketEinstellungenStand, neu: PaketEinstellungenStand, k: Vergleichskontext = {}): string[] {
+export function beschreibePaketEinstellungen(
+  alt: PaketEinstellungenStand,
+  neu: PaketEinstellungenStand,
+  k: Vergleichskontext = {},
+): string[] {
   const s: string[] = [];
-  const a = alt.werte ?? {}, n = neu.werte ?? {};
+  const a = alt.werte ?? {},
+    n = neu.werte ?? {};
   for (const key of [...new Set([...Object.keys(a), ...Object.keys(n)])].sort()) {
     if (gleich(a[key], n[key])) continue;
     const e = k.einstellung?.(key);
@@ -319,18 +445,31 @@ export function beschreibePaketEinstellungen(alt: PaketEinstellungenStand, neu: 
 /* ---------- Automatisierung ---------- */
 
 /** Dann- bzw. Sonst-Karten: hinzugefügt, geändert, entfernt, Reihenfolge. */
-function kartenSaetze(bereich: 'dann' | 'sonst', alt: AutomatisierungStand, neu: AutomatisierungStand, kx: NonNullable<Vergleichskontext['automatisierung']>): string[] {
+function kartenSaetze(
+  bereich: 'dann' | 'sonst',
+  alt: AutomatisierungStand,
+  neu: AutomatisierungStand,
+  kx: NonNullable<Vergleichskontext['automatisierung']>,
+): string[] {
   const titel = bereich === 'dann' ? t('gemeinsam.fassungen.dann') : t('gemeinsam.fassungen.sonst');
-  const typA = kontextTyp(alt.wenn, kx.typen), typN = kontextTyp(neu.wenn, kx.typen);
-  const va: DannKarte[] = alt[bereich] ?? [], vn: DannKarte[] = neu[bereich] ?? [];
-  const reihe = (l: DannKarte[], m: DannKarte[]) => l.filter((x) => m.some((y) => y.id === x.id)).map((x) => x.id).join(',');
+  const typA = kontextTyp(alt.wenn, kx.typen),
+    typN = kontextTyp(neu.wenn, kx.typen);
+  const va: DannKarte[] = alt[bereich] ?? [],
+    vn: DannKarte[] = neu[bereich] ?? [];
+  const reihe = (l: DannKarte[], m: DannKarte[]) =>
+    l
+      .filter((x) => m.some((y) => y.id === x.id))
+      .map((x) => x.id)
+      .join(',');
   return [
     ...vn.flatMap((x) => {
       const a = va.find((y) => y.id === x.id);
       if (!a) return [t('gemeinsam.fassungen.karte-dazu', { bereich: titel, karte: dannText(x, typN, kx) })];
       return gleich(a, x) ? [] : [t('gemeinsam.fassungen.karte-geaendert', { bereich: titel, karte: dannText(x, typN, kx) })];
     }),
-    ...va.filter((x) => !vn.some((y) => y.id === x.id)).map((x) => t('gemeinsam.fassungen.karte-weg', { bereich: titel, karte: dannText(x, typA, kx) })),
+    ...va
+      .filter((x) => !vn.some((y) => y.id === x.id))
+      .map((x) => t('gemeinsam.fassungen.karte-weg', { bereich: titel, karte: dannText(x, typA, kx) })),
     ...saetze([() => reihe(va, vn) !== reihe(vn, va) && t('gemeinsam.fassungen.karten-reihenfolge', { bereich: titel })]),
   ];
 }
@@ -357,9 +496,15 @@ export function beschreibeAblaufvorlage(alt: AblaufvorlageStand, neu: Ablaufvorl
   const typen = k.typen ?? [];
   const typ = (id: string) => k.typName?.(id) ?? typen.find((x) => x.id === id)?.name ?? id;
   const titel = t('gemeinsam.fassungen.karten');
-  const va: VorlagenKarte[] = alt.karten ?? [], vn: VorlagenKarte[] = neu.karten ?? [];
-  const reihe = (l: VorlagenKarte[], m: VorlagenKarte[]) => l.filter((x) => m.some((y) => y.id === x.id)).map((x) => x.id).join(',');
-  const at = alt.typen ?? [], nt = neu.typen ?? [];
+  const va: VorlagenKarte[] = alt.karten ?? [],
+    vn: VorlagenKarte[] = neu.karten ?? [];
+  const reihe = (l: VorlagenKarte[], m: VorlagenKarte[]) =>
+    l
+      .filter((x) => m.some((y) => y.id === x.id))
+      .map((x) => x.id)
+      .join(',');
+  const at = alt.typen ?? [],
+    nt = neu.typen ?? [];
   return [
     ...saetze([
       () => alt.name !== neu.name && t('gemeinsam.typvergleich.name', { name: alt.name, name2: neu.name }),
@@ -370,7 +515,8 @@ export function beschreibeAblaufvorlage(alt: AblaufvorlageStand, neu: Ablaufvorl
     ...nt.filter((id) => !at.includes(id)).map((id) => t('gemeinsam.fassungen.sicht-typ-dazu', { name: typ(id) })),
     ...at.filter((id) => !nt.includes(id)).map((id) => t('gemeinsam.fassungen.sicht-typ-weg', { name: typ(id) })),
     ...saetze([
-      () => !gleich(alt.wann, neu.wann) && t('gemeinsam.fassungen.wann', { alt: vorlageWannText(alt.wann), neu: vorlageWannText(neu.wann) }),
+      () =>
+        !gleich(alt.wann, neu.wann) && t('gemeinsam.fassungen.wann', { alt: vorlageWannText(alt.wann), neu: vorlageWannText(neu.wann) }),
       () => !gleich([...(alt.fragen ?? [])].sort(), [...(neu.fragen ?? [])].sort()) && t('gemeinsam.fassungen.fragen'),
     ]),
     ...vn.flatMap((x) => {
@@ -378,7 +524,9 @@ export function beschreibeAblaufvorlage(alt: AblaufvorlageStand, neu: Ablaufvorl
       if (!a) return [t('gemeinsam.fassungen.karte-dazu', { bereich: titel, karte: karteText(x, typen) })];
       return gleich(a, x) ? [] : [t('gemeinsam.fassungen.karte-geaendert', { bereich: titel, karte: karteText(x, typen) })];
     }),
-    ...va.filter((x) => !vn.some((y) => y.id === x.id)).map((x) => t('gemeinsam.fassungen.karte-weg', { bereich: titel, karte: karteText(x, typen) })),
+    ...va
+      .filter((x) => !vn.some((y) => y.id === x.id))
+      .map((x) => t('gemeinsam.fassungen.karte-weg', { bereich: titel, karte: karteText(x, typen) })),
     ...saetze([() => reihe(va, vn) !== reihe(vn, va) && t('gemeinsam.fassungen.karten-reihenfolge', { bereich: titel })]),
   ];
 }

@@ -21,8 +21,15 @@ describe('Notizen (#55)', () => {
     assert.equal((await d.mappen.holeMappe(m.id)).notizen[0].geaendertVon, ben, 'auch andere dürfen ändern');
     const s = await d.sichten.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich', notizen: 'true' });
     assert.equal(s.gesamt, 1);
-    assert.match((s as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id].text, /\u0002schriftlich\u0003/);
-    assert.equal((await d.sichten.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich' })).gesamt, 0, 'nur mit Haken');
+    assert.match(
+      (s as { ausschnitte?: Record<string, { dokument: string; text: string }> }).ausschnitte![m.id].text,
+      /\u0002schriftlich\u0003/,
+    );
+    assert.equal(
+      (await d.sichten.seite({ id: anna, rolle: 'admin' }, { sicht: `typ:${t.id}`, suche: 'schriftlich' })).gesamt,
+      0,
+      'nur mit Haken',
+    );
 
     await d.loeschen.loescheMappe(m.id, anna);
     await d.papierkorbVerwaltung.stelleWiederHer(m.id, { id: anna, rolle: 'admin' });
@@ -30,6 +37,10 @@ describe('Notizen (#55)', () => {
     await d.mappenNotizen.loescheNotiz(n.id, ben);
     assert.equal((await d.mappen.notizen(m.id)).length, 0);
     const h = (await d.mappenHistorie.historie(m.id)).filter((e) => e.art === 'notiz').map((e) => e.daten.text);
-    assert.deepEqual(h, ['gelöscht: Kündigung schriftlich bestätigt', 'geändert: Kündigung schriftlich bestätigt', 'angelegt: Kündigung telefonisch angekündigt']);
+    assert.deepEqual(h, [
+      'gelöscht: Kündigung schriftlich bestätigt',
+      'geändert: Kündigung schriftlich bestätigt',
+      'angelegt: Kündigung telefonisch angekündigt',
+    ]);
   });
 });

@@ -14,7 +14,10 @@ export function pdfMitText(zeilen: string[], groesse = 24, drehung = 0): Buffer 
   ];
   let text = '%PDF-1.4\n';
   const versatz: number[] = [];
-  objekte.forEach((o, i) => { versatz.push(Buffer.byteLength(text, 'latin1')); text += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  objekte.forEach((o, i) => {
+    versatz.push(Buffer.byteLength(text, 'latin1'));
+    text += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
   const xref = Buffer.byteLength(text, 'latin1');
   text += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${versatz.map((v) => `${String(v).padStart(10, '0')} 00000 n \n`).join('')}`;
   text += `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
@@ -36,10 +39,20 @@ export const wieImModus = <T extends { rolle?: string; verwaltung?: string[] }>(
 export async function frueherAblageort(d: Dienst, einstellungen?: { schreibe(k: string, w: unknown): Promise<void> }) {
   const id = crypto.randomUUID();
   const typ = await d.mappentypen.legeTypAn({
-    id, name: 'Ablageort', schluessel: 'ablageort', beschreibung: 'Wo Originale liegen – verschachtelt, z. B. zu Hause › Arbeitszimmer Schrank › roter Ordner',
+    id,
+    name: 'Ablageort',
+    schluessel: 'ablageort',
+    beschreibung: 'Wo Originale liegen – verschachtelt, z. B. zu Hause › Arbeitszimmer Schrank › roter Ordner',
     titelVorlage: '{liegt_in} › {name}',
     felder: [
-      { key: 'name', label: 'Name', typ: 'text', pflicht: true, maxLen: 120, hilfe: 'z. B. roter Ordner, Safe im Flur, beim Notar, vernichtet' },
+      {
+        key: 'name',
+        label: 'Name',
+        typ: 'text',
+        pflicht: true,
+        maxLen: 120,
+        hilfe: 'z. B. roter Ordner, Safe im Flur, beim Notar, vernichtet',
+      },
       { key: 'liegt_in', label: 'Liegt in', typ: 'referenz', zielTyp: id, verweisart: 'zugehoerigkeit' },
       { key: 'beschreibung', label: 'Beschreibung', typ: 'langtext', maxLen: 2000 },
     ],
@@ -57,7 +70,12 @@ export async function frueherAblageort(d: Dienst, einstellungen?: { schreibe(k: 
 
 /** Mappentyp Ablageort wie in Basis 1.6.0 (#883, dms-registry #138) – mit Ansicht „Ablageorte“ und englischen Beschriftungen. */
 export const ABLAGEORT_YAML = [
-  '- schluessel: ablageort', '  name: Ablageort', '  beschreibung: Wo Originale liegen', '  beschriftungen: { en: { name: "Storage location" } }', '  titelVorlage: "{liegt_in} › {name}"', '  felder:',
+  '- schluessel: ablageort',
+  '  name: Ablageort',
+  '  beschreibung: Wo Originale liegen',
+  '  beschriftungen: { en: { name: "Storage location" } }',
+  '  titelVorlage: "{liegt_in} › {name}"',
+  '  felder:',
   '    - { key: name, label: Name, typ: text, pflicht: true, maxLen: 120, beschriftungen: { en: { label: "Name" } } }',
   '    - { key: liegt_in, label: Liegt in, typ: referenz, ziel: ablageort, verweisart: zugehoerigkeit, beschriftungen: { en: { label: "Located in" } } }',
   '    - { key: beschreibung, label: Beschreibung, typ: langtext, maxLen: 2000 }',
@@ -66,7 +84,8 @@ export const ABLAGEORT_YAML = [
   '    - { key: enthaelt, name: Enthält, art: verknuepfungen, quellen: [{ typ: ablageort, feld: liegt_in }] }',
   '    - { key: liegt_hier, name: Liegt hier, art: verknuepfungen }',
   '    - { key: fotos, name: Fotos, art: dokumente }',
-  '  trefferliste: [_titel, beschreibung]', '',
+  '  trefferliste: [_titel, beschreibung]',
+  '',
 ].join('\n');
 /** Das Test-Paket Basis (Ordner test/pakete/basis) als Version 1.6.0 mit Ablageort. */
 export const basisMitAblageort = (basis: Record<string, string>): Record<string, string> => ({
@@ -81,7 +100,10 @@ export const basisMitAblageort = (basis: Record<string, string>): Record<string,
  * Karten (`postFuerDichDaten`). Seit #1001 legt der Kern die Aufgabe nicht mehr selbst an. `verteile` stellt auch
  * gebündelte Ereignisse („Mappe geändert“, 5 s) gleich zu.
  */
-export async function postFuerDich(d: Dienst, konten: { systemkonto(k: 'automatisierung'): Promise<import('../../shared/src/model').Benutzer> }) {
+export async function postFuerDich(
+  d: Dienst,
+  konten: { systemkonto(k: 'automatisierung'): Promise<import('../../shared/src/model').Benutzer> },
+) {
   const { Automatisierungen, speicherAutomatisierungRepo, postFuerDichDaten } = await import('../src/automatisierung');
   await import('../src/automatisierung-karten');
   await konten.systemkonto('automatisierung');
@@ -89,11 +111,18 @@ export async function postFuerDich(d: Dienst, konten: { systemkonto(k: 'automati
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });
   d.ereignisse.abonniere('automatisierungen', (e) => motor.ereignis(e));
   const postTyp = (await d.kern.system()).post.id;
-  const a = await motor.lege({ ...postFuerDichDaten(postTyp, { name: 'Post für dich', beschreibung: '', text: 'Post für dich – bitte zuordnen' }), aktiv: true }, null);
+  const a = await motor.lege(
+    { ...postFuerDichDaten(postTyp, { name: 'Post für dich', beschreibung: '', text: 'Post für dich – bitte zuordnen' }), aktiv: true },
+    null,
+  );
   const verteile = async () => {
     const echt = Date.now;
     Date.now = () => echt() + 6000;
-    try { await d.ereignisse.verteile(); } finally { Date.now = echt; }
+    try {
+      await d.ereignisse.verteile();
+    } finally {
+      Date.now = echt;
+    }
   };
   return { motor, automatisierung: a, verteile };
 }

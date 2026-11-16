@@ -13,7 +13,12 @@ const TRENNER = ' · ';
  * Schreibmarke, am Ende mit „ · “ davor. „Eindeutig“ steht wie bei
  * Text und Zahl bei den allgemeinen Eigenschaften; ob die Vorlage passt, sagt die Prüfung beim Speichern.
  */
-export function ZusammengesetztEditor({ f, id, felder, setze }: {
+export function ZusammengesetztEditor({
+  f,
+  id,
+  felder,
+  setze,
+}: {
   f: Pick<FeldDef, 'key' | 'vorlage'>;
   id: (x: string) => string;
   /** Die Felder dieses Typs, wie sie im Editor gerade stehen. */
@@ -25,11 +30,28 @@ export function ZusammengesetztEditor({ f, id, felder, setze }: {
   const ein = usePlatzhalterEinsetzen({ trenner: TRENNER });
   return (
     <div className="raster">
-      <Feld beschriftung={t('mappentypen.zusammengesetzt.vorlage')} id={id('vorlage')} hinweis={t('mappentypen.zusammengesetzt.vorlage-hilfe')}>
-        <input {...ein.feld('vorlage', vorlage, (x) => setze({ vorlage: x }))} className="mono" maxLength={VORLAGE_MAX} placeholder={teile.slice(0, 2).map((x) => `{${x.key}}`).join(TRENNER)} value={vorlage} onChange={(e) => setze({ vorlage: e.target.value })} />
+      <Feld
+        beschriftung={t('mappentypen.zusammengesetzt.vorlage')}
+        id={id('vorlage')}
+        hinweis={t('mappentypen.zusammengesetzt.vorlage-hilfe')}>
+        <input
+          {...ein.feld('vorlage', vorlage, (x) => setze({ vorlage: x }))}
+          className="mono"
+          maxLength={VORLAGE_MAX}
+          placeholder={teile
+            .slice(0, 2)
+            .map((x) => `{${x.key}}`)
+            .join(TRENNER)}
+          value={vorlage}
+          onChange={(e) => setze({ vorlage: e.target.value })}
+        />
       </Feld>
-      <Platzhalter beschriftung={t('mappentypen.zusammengesetzt.einfuegen')} einsetzen={ein.einsetzen} className="breit"
-        gruppen={[{ eintraege: teile.map((x) => ({ key: x.key, text: feldLabel(x) })) }]} />
+      <Platzhalter
+        beschriftung={t('mappentypen.zusammengesetzt.einfuegen')}
+        einsetzen={ein.einsetzen}
+        className="breit"
+        gruppen={[{ eintraege: teile.map((x) => ({ key: x.key, text: feldLabel(x) })) }]}
+      />
       <p className="leise klein">{t('mappentypen.zusammengesetzt.hinweis')}</p>
     </div>
   );

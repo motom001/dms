@@ -19,9 +19,19 @@ function skript(): string {
 /** Führt das Skript mit einer Adresse aus; liefert das Ziel von location.replace oder null. */
 async function ziel(pfad: string, gibt = true, ordner = 'aktuell/'): Promise<string | null> {
   let ersetzt: string | null = null;
-  const location = { pathname: pfad, hash: '', replace: (x: string) => { ersetzt = x; } };
+  const location = {
+    pathname: pfad,
+    hash: '',
+    replace: (x: string) => {
+      ersetzt = x;
+    },
+  };
   const fetch = async () => ({ ok: gibt });
-  await vm.runInNewContext(skript().replace('(async () => {', 'return (async () => {').replace(/^/, '(() => {').concat('\n})()'), { location, fetch, document: { documentElement: { dataset: { ordner } } } });
+  await vm.runInNewContext(skript().replace('(async () => {', 'return (async () => {').replace(/^/, '(() => {').concat('\n})()'), {
+    location,
+    fetch,
+    document: { documentElement: { dataset: { ordner } } },
+  });
   return ersetzt;
 }
 
@@ -36,7 +46,13 @@ describe('help.ablago.app: Seite „nicht gefunden“ (#846)', () => {
     assert.equal(await ziel('/hilfe/admin/v0.22/sicherung/', true, ''), null);
   });
   it('nie auf einen anderen Server (offene Weiterleitung)', async () => {
-    for (const p of ['//andere.example/admin/aktuell/x', '//andere.example/admin/v0.1/x', '/\\andere.example/admin/v0.1/x', '/\\/andere.example/admin/aktuell/x', '/a//b/admin/v0.1/x']) {
+    for (const p of [
+      '//andere.example/admin/aktuell/x',
+      '//andere.example/admin/v0.1/x',
+      '/\\andere.example/admin/v0.1/x',
+      '/\\/andere.example/admin/aktuell/x',
+      '/a//b/admin/v0.1/x',
+    ]) {
       assert.equal(await ziel(p), null, p);
     }
   });

@@ -8,8 +8,19 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { parse } from 'yaml';
 import {
-  istNeu, pruefeAnker, pruefeRundgaenge, pruefeTipps, RUNDGANG_TEXT_MAX, rundgangFuer, startetVonSelbst, TIPP_TEXT_MAX, tippDesTages, tippHandlung, tippPasst,
-  type Texte, type Tipp,
+  istNeu,
+  pruefeAnker,
+  pruefeRundgaenge,
+  pruefeTipps,
+  RUNDGANG_TEXT_MAX,
+  rundgangFuer,
+  startetVonSelbst,
+  TIPP_TEXT_MAX,
+  tippDesTages,
+  tippHandlung,
+  tippPasst,
+  type Texte,
+  type Tipp,
 } from '../../shared/src/entdecken';
 import { Entdecken, entdeckenOrdner, ladeAblago } from '../src/entdecken';
 import { Konten } from '../src/konten';
@@ -19,16 +30,22 @@ import { eigeneDatenbank } from './hilfe-db';
 const WURZEL = new URL('../..', import.meta.url).pathname;
 const ORDNER = join(WURZEL, 'shared/entdecken');
 const yaml = (datei: string): unknown => parse(readFileSync(join(ORDNER, datei), 'utf8'));
-const sprachdatei = (spr: string) => JSON.parse(readFileSync(join(WURZEL, `shared/src/sprachen/${spr}/entdecken.json`), 'utf8')) as Record<string, string>;
+const sprachdatei = (spr: string) =>
+  JSON.parse(readFileSync(join(WURZEL, `shared/src/sprachen/${spr}/entdecken.json`), 'utf8')) as Record<string, string>;
 /** Texte einer Sprache wie im Server: Schlüssel „entdecken.…“. */
-const texteIn = (spr: string): Texte => { const d = sprachdatei(spr); return (k) => d[k.replace(/^entdecken\./, '')]; };
+const texteIn = (spr: string): Texte => {
+  const d = sprachdatei(spr);
+  return (k) => d[k.replace(/^entdecken\./, '')];
+};
 const ANKER = pruefeAnker(yaml('anker.yaml')).anker;
 
 function quelltexte(ordner: string): string {
-  return readdirSync(ordner).map((n) => {
-    const p = join(ordner, n);
-    return statSync(p).isDirectory() ? quelltexte(p) : /\.tsx?$/.test(n) ? readFileSync(p, 'utf8') : '';
-  }).join('\n');
+  return readdirSync(ordner)
+    .map((n) => {
+      const p = join(ordner, n);
+      return statSync(p).isDirectory() ? quelltexte(p) : /\.tsx?$/.test(n) ? readFileSync(p, 'utf8') : '';
+    })
+    .join('\n');
 }
 
 describe('Format und Inhalt (Build-Test, #831, #832)', () => {
@@ -38,7 +55,10 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
       const x = ladeAblago(ORDNER, texteIn(spr));
       assert.deepEqual(x.fehler, [], `${spr}:\n${x.fehler.join('\n')}`);
       assert.equal(x.rundgaenge.length, 1);
-      assert.deepEqual(x.rundgaenge[0].schritte.map((s) => s.schluessel), ['dreiteilung', 'neu', 'suche', 'erledigen', 'konto']);
+      assert.deepEqual(
+        x.rundgaenge[0].schritte.map((s) => s.schluessel),
+        ['dreiteilung', 'neu', 'suche', 'erledigen', 'konto'],
+      );
       assert.ok(x.tipps.length >= 15, `${spr}: rund 15 Tipps, sind ${x.tipps.length}`);
       for (const t of x.tipps) assert.ok(t.text.length <= TIPP_TEXT_MAX, `${spr} ${t.schluessel}: ${t.text.length} Zeichen`);
       for (const s of x.rundgaenge[0].schritte) assert.ok(s.text.length <= RUNDGANG_TEXT_MAX);
@@ -46,10 +66,16 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
   });
 
   it('jeder Text in der Sprachdatei gehört zu einem Rundgang, Tipp oder zur Oberfläche; Deutsch und Englisch haben dieselben', () => {
-    const de = sprachdatei('de'), en = sprachdatei('en');
+    const de = sprachdatei('de'),
+      en = sprachdatei('en');
     assert.deepEqual(Object.keys(en).sort(), Object.keys(de).sort());
     // Ohne Text in der Sprachdatei kein Tipp: Eine Datei ohne Englisch fällt durch.
-    const ohne = pruefeTipps(yaml('tipps.yaml'), { herkunft: 'ablago', anker: ANKER, rundgaenge: ['ablago'], texte: (k) => (k.endsWith('.favoriten') ? undefined : texteIn('en')(k)) });
+    const ohne = pruefeTipps(yaml('tipps.yaml'), {
+      herkunft: 'ablago',
+      anker: ANKER,
+      rundgaenge: ['ablago'],
+      texte: (k) => (k.endsWith('.favoriten') ? undefined : texteIn('en')(k)),
+    });
     assert.match(ohne.fehler.join('\n'), /Tipp „favoriten“: Text „text“ fehlt/);
   });
 
@@ -60,21 +86,30 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
       const m = a.anker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return !new RegExp(`(?:data-anker|anker)(?:=|: )["'\`]${m}["'\`]`).test(code);
     });
-    assert.deepEqual(fehlen.map((a) => a.anker), []);
+    assert.deepEqual(
+      fehlen.map((a) => a.anker),
+      [],
+    );
   });
 
   it('die Prüfung lehnt unbekannte Felder, Anker und Rundgänge, zu lange Texte und zu viele Schritte ab', () => {
     const texte: Texte = (k) => (k.endsWith('.ort') ? undefined : 'Text');
-    const r = pruefeRundgaenge([
-      { schluessel: 'gut', schritte: [{ schluessel: 'a', ziel: 'neu', ort: 'Oben' }] },
-      { schluessel: 'feld', farbe: 'rot', schritte: [{ schluessel: 'a' }] },
-      { schluessel: 'anker', schritte: [{ schluessel: 'a', ziel: 'gibt.es.nicht', ort: 'x' }] },
-      { schluessel: 'lang', schritte: [{ schluessel: 'a', text: 'x'.repeat(RUNDGANG_TEXT_MAX + 1) }] },
-      { schluessel: 'viele', schritte: Array.from({ length: 9 }, (_, i) => ({ schluessel: `s${i}` })) },
-      { schluessel: 'ohne_ort', schritte: [{ schluessel: 'a', ziel: 'neu' }] },
-      { schluessel: 'muster', schritte: [{ schluessel: 'a', ziel: 'mappe.register:dokumente', ort: 'x' }] },
-    ], { herkunft: 'ablago', anker: ANKER, texte });
-    assert.deepEqual(r.rundgaenge.map((x) => x.schluessel), ['gut', 'muster']);
+    const r = pruefeRundgaenge(
+      [
+        { schluessel: 'gut', schritte: [{ schluessel: 'a', ziel: 'neu', ort: 'Oben' }] },
+        { schluessel: 'feld', farbe: 'rot', schritte: [{ schluessel: 'a' }] },
+        { schluessel: 'anker', schritte: [{ schluessel: 'a', ziel: 'gibt.es.nicht', ort: 'x' }] },
+        { schluessel: 'lang', schritte: [{ schluessel: 'a', text: 'x'.repeat(RUNDGANG_TEXT_MAX + 1) }] },
+        { schluessel: 'viele', schritte: Array.from({ length: 9 }, (_, i) => ({ schluessel: `s${i}` })) },
+        { schluessel: 'ohne_ort', schritte: [{ schluessel: 'a', ziel: 'neu' }] },
+        { schluessel: 'muster', schritte: [{ schluessel: 'a', ziel: 'mappe.register:dokumente', ort: 'x' }] },
+      ],
+      { herkunft: 'ablago', anker: ANKER, texte },
+    );
+    assert.deepEqual(
+      r.rundgaenge.map((x) => x.schluessel),
+      ['gut', 'muster'],
+    );
     const f = r.fehler.join('\n');
     assert.match(f, /unbekanntes Feld „farbe“/);
     assert.match(f, /unbekannter Anker „gibt\.es\.nicht“/);
@@ -82,24 +117,62 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
     assert.match(f, /9 Schritte, höchstens 8/);
     assert.match(f, /Zu einem Ziel gehört „ort“/);
     // Pakete (Stufe 2): Texte stehen direkt in der Datei; „erste_anmeldung“ gibt es für sie nicht.
-    const paket = pruefeRundgaenge([{ schluessel: 'vertraege', titel: 'Verträge', beschreibung: 'Kurz', start: 'erste_anmeldung', schritte: [{ schluessel: 'a', titel: 'A', text: 'B' }] }], { herkunft: 'paket:vertraege', anker: ANKER });
+    const paket = pruefeRundgaenge(
+      [
+        {
+          schluessel: 'vertraege',
+          titel: 'Verträge',
+          beschreibung: 'Kurz',
+          start: 'erste_anmeldung',
+          schritte: [{ schluessel: 'a', titel: 'A', text: 'B' }],
+        },
+      ],
+      { herkunft: 'paket:vertraege', anker: ANKER },
+    );
     assert.match(paket.fehler.join('\n'), /„erste_anmeldung“ gibt es nur für Ablagos eigenen Rundgang/);
-    assert.equal(pruefeRundgaenge([{ schluessel: 'vertraege', titel: 'Verträge', beschreibung: 'Kurz', schritte: [{ schluessel: 'a', titel: 'A', text: 'B' }] }], { herkunft: 'paket:vertraege', anker: ANKER }).rundgaenge.length, 1);
+    assert.equal(
+      pruefeRundgaenge(
+        [{ schluessel: 'vertraege', titel: 'Verträge', beschreibung: 'Kurz', schritte: [{ schluessel: 'a', titel: 'A', text: 'B' }] }],
+        { herkunft: 'paket:vertraege', anker: ANKER },
+      ).rundgaenge.length,
+      1,
+    );
 
-    const x = pruefeTipps([
-      { schluessel: 'gut', bereich: 'suche', ziel: 'startseite.suche' },
-      { schluessel: 'beides', bereich: 'suche', ziel: 'neu', rundgang: 'ablago' },
-      { schluessel: 'kein_rundgang', bereich: 'suche', rundgang: 'fehlt' },
-      { schluessel: 'muster', bereich: 'suche', ziel: 'mappe.feld:betrag' },
-      { schluessel: 'lang', bereich: 'suche', ziel: 'neu', text: 'x'.repeat(TIPP_TEXT_MAX + 1) },
-      { schluessel: 'saetze', bereich: 'suche', ziel: 'neu', text: 'Eins. Zwei. Drei.' },
-      { schluessel: 'bereich', bereich: 'wetter', ziel: 'neu' },
-      { schluessel: 'version', bereich: 'suche', ziel: 'neu', ab_version: 'bald' },
-    ], { herkunft: 'ablago', anker: ANKER, rundgaenge: ['ablago'], texte });
-    assert.deepEqual(x.tipps.map((y) => y.schluessel), ['gut']);
+    const x = pruefeTipps(
+      [
+        { schluessel: 'gut', bereich: 'suche', ziel: 'startseite.suche' },
+        { schluessel: 'beides', bereich: 'suche', ziel: 'neu', rundgang: 'ablago' },
+        { schluessel: 'kein_rundgang', bereich: 'suche', rundgang: 'fehlt' },
+        { schluessel: 'muster', bereich: 'suche', ziel: 'mappe.feld:betrag' },
+        { schluessel: 'lang', bereich: 'suche', ziel: 'neu', text: 'x'.repeat(TIPP_TEXT_MAX + 1) },
+        { schluessel: 'saetze', bereich: 'suche', ziel: 'neu', text: 'Eins. Zwei. Drei.' },
+        { schluessel: 'bereich', bereich: 'wetter', ziel: 'neu' },
+        { schluessel: 'version', bereich: 'suche', ziel: 'neu', ab_version: 'bald' },
+      ],
+      { herkunft: 'ablago', anker: ANKER, rundgaenge: ['ablago'], texte },
+    );
+    assert.deepEqual(
+      x.tipps.map((y) => y.schluessel),
+      ['gut'],
+    );
     const g = x.fehler.join('\n');
-    for (const m of [/genau eines von „ziel“/, /unbekannter Rundgang „fehlt“/, /keine feste Seite/, /161 Zeichen/, /höchstens zwei Sätze/, /„bereich“ muss/, /„ab_version“/]) assert.match(g, m);
-    assert.match(pruefeTipps(Array.from({ length: 21 }, (_, i) => ({ schluessel: `t${i}`, bereich: 'suche', ziel: 'neu', text: 'Ein Tipp.' })), { herkunft: 'paket:p', anker: ANKER, rundgaenge: [] }).fehler.join('\n'), /21 Tipps, höchstens 20/);
+    for (const m of [
+      /genau eines von „ziel“/,
+      /unbekannter Rundgang „fehlt“/,
+      /keine feste Seite/,
+      /161 Zeichen/,
+      /höchstens zwei Sätze/,
+      /„bereich“ muss/,
+      /„ab_version“/,
+    ])
+      assert.match(g, m);
+    assert.match(
+      pruefeTipps(
+        Array.from({ length: 21 }, (_, i) => ({ schluessel: `t${i}`, bereich: 'suche', ziel: 'neu', text: 'Ein Tipp.' })),
+        { herkunft: 'paket:p', anker: ANKER, rundgaenge: [] },
+      ).fehler.join('\n'),
+      /21 Tipps, höchstens 20/,
+    );
   });
 });
 
@@ -110,7 +183,13 @@ describe('Für die Person (#831, #832)', () => {
 
   it('Jonas bekommt keine Schritte und Tipps fürs Verwalten; Lena den Text mit „Ablago verwalten“', () => {
     const r = ablago.rundgaenge[0];
-    const mitWerkbank = { ...r, schritte: [...r.schritte, { schluessel: 'werkbank', ziel: [], fuer: 'verwalten' as const, titel: 'Werkbank', text: 'Nur für Verwaltende' }] };
+    const mitWerkbank = {
+      ...r,
+      schritte: [
+        ...r.schritte,
+        { schluessel: 'werkbank', ziel: [], fuer: 'verwalten' as const, titel: 'Werkbank', text: 'Nur für Verwaltende' },
+      ],
+    };
     const fuerJonas = rundgangFuer(mitWerkbank, jonas)!;
     assert.equal(fuerJonas.schritte.length, 5);
     assert.doesNotMatch(fuerJonas.schritte.at(-1)!.text, /Ablago verwalten/);
@@ -124,7 +203,12 @@ describe('Für die Person (#831, #832)', () => {
   });
 
   it('Tipp des Tages: höchstens einer am Tag, Neues zuerst mit „und n weitere“, Ausgeblendetes nie', () => {
-    const l = [{ schluessel: 'a', neu: false }, { schluessel: 'b', neu: true }, { schluessel: 'c', neu: true }, { schluessel: 'd', neu: true }];
+    const l = [
+      { schluessel: 'a', neu: false },
+      { schluessel: 'b', neu: true },
+      { schluessel: 'c', neu: true },
+      { schluessel: 'd', neu: true },
+    ];
     const erster = tippDesTages(l, {}, '2026-11-07');
     assert.deepEqual(erster && { s: erster.tipp.schluessel, w: erster.weitere }, { s: 'b', w: 2 });
     let st = tippHandlung({}, 'b', 'gezeigt', '2026-11-07');
@@ -166,21 +250,39 @@ describe('Server: Stand je Person und Merker (#831, #832)', () => {
     const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
     let heute = '2026-11-07';
     const e = new Entdecken({
-      einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
-      version: () => '0.215.0', heute: () => heute, funktionen: async () => new Set(o.fragen ? ['fragen' as const] : []),
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
+      version: () => '0.215.0',
+      heute: () => heute,
+      funktionen: async () => new Set(o.fragen ? ['fragen' as const] : []),
     });
-    return { e, konten, lena: { ...lena, letzteAnmeldung: '2026-11-07T09:00:00Z' }, jonas: { ...jonas, letzteAnmeldung: '2026-11-07T09:00:00Z' }, morgen: () => { heute = '2026-11-08'; } };
+    return {
+      e,
+      konten,
+      lena: { ...lena, letzteAnmeldung: '2026-11-07T09:00:00Z' },
+      jonas: { ...jonas, letzteAnmeldung: '2026-11-07T09:00:00Z' },
+      morgen: () => {
+        heute = '2026-11-08';
+      },
+    };
   }
 
   it('liest Ablagos Dateien, filtert nach der Person und startet den Rundgang einmal von selbst', async () => {
     assert.ok(entdeckenOrdner(), 'shared/entdecken gefunden');
     const { e, lena, jonas } = await aufbau({ fragen: true });
-    const sl = await e.stand(lena), sj = await e.stand(jonas);
+    const sl = await e.stand(lena),
+      sj = await e.stand(jonas);
     assert.equal(sl.starten, 'ablago');
     assert.ok(sl.tipps.some((x) => x.bereich === 'verwalten') && !sj.tipps.some((x) => x.bereich === 'verwalten'));
     assert.ok(sj.tipps.find((x) => x.schluessel === 'suche_in_dokumenten')?.ziel?.seite === '/ablage/start');
-    assert.equal(sj.tipps.find((x) => x.schluessel === 'pakete'), undefined);
-    assert.ok(sj.tipps.filter((x) => x.rundgang).every((x) => !x.clients), 'Rundgang-Tipps sind nichts für Clients');
+    assert.equal(
+      sj.tipps.find((x) => x.schluessel === 'pakete'),
+      undefined,
+    );
+    assert.ok(
+      sj.tipps.filter((x) => x.rundgang).every((x) => !x.clients),
+      'Rundgang-Tipps sind nichts für Clients',
+    );
     assert.ok(sj.tipps.some((x) => x.clients));
     // In Vertretung startet nichts von selbst.
     assert.equal((await e.stand(jonas, { vertretung: true })).starten, null);
@@ -189,7 +291,11 @@ describe('Server: Stand je Person und Merker (#831, #832)', () => {
     assert.equal((await e.stand({ ...jonas, letzteAnmeldung: new Date(Date.now() + 60_000).toISOString() })).starten, 'ablago');
     await e.rundgang(jonas, 'ablago', 'gesehen');
     await e.rundgang(jonas, 'ablago', 'spaeter');
-    assert.equal((await e.stand({ ...jonas, letzteAnmeldung: new Date(Date.now() + 120_000).toISOString() })).starten, null, 'gesehen bleibt gesehen');
+    assert.equal(
+      (await e.stand({ ...jonas, letzteAnmeldung: new Date(Date.now() + 120_000).toISOString() })).starten,
+      null,
+      'gesehen bleibt gesehen',
+    );
     await assert.rejects(e.rundgang(jonas, 'gibt_es_nicht', 'gesehen'));
     await assert.rejects(e.rundgang(jonas, 'ablago', 'irgendwas'));
   });
@@ -200,7 +306,11 @@ describe('Server: Stand je Person und Merker (#831, #832)', () => {
     assert.equal(a.tipp?.schluessel, 'suche_in_dokumenten');
     assert.equal(a.tipp?.gesehen, false, 'neu: Punkt am Assistenten (#1219)');
     await e.tipp(jonas, 'suche_in_dokumenten', 'gezeigt');
-    assert.deepEqual((await e.stand(jonas)).tipp, { schluessel: 'suche_in_dokumenten', weitere: 0, gesehen: true }, 'angesehen: derselbe Tipp, ohne Punkt');
+    assert.deepEqual(
+      (await e.stand(jonas)).tipp,
+      { schluessel: 'suche_in_dokumenten', weitere: 0, gesehen: true },
+      'angesehen: derselbe Tipp, ohne Punkt',
+    );
     await e.tipp(jonas, 'suche_in_dokumenten', 'ausblenden');
     const b = await e.stand(jonas);
     assert.equal(b.tipp, null, 'heute keiner mehr');
@@ -232,10 +342,12 @@ describe('Migration 088 (#831)', () => {
       ('00000000-0000-4000-8000-000000000002', ${h}, 'jonas@example.org', 'Jonas', 'mitglied', NULL)`;
     await sql.unsafe(readFileSync(join(WURZEL, 'server/migrations/088_entdecken.sql'), 'utf8'));
     const zeilen = await sql`SELECT benutzer_id::text AS id, wert FROM benutzer_einstellungen WHERE schluessel = 'entdecken_rundgaenge'`;
-    assert.deepEqual(zeilen.map((z) => z.id), ['00000000-0000-4000-8000-000000000001']);
+    assert.deepEqual(
+      zeilen.map((z) => z.id),
+      ['00000000-0000-4000-8000-000000000001'],
+    );
     assert.equal((zeilen[0].wert as { ablago: { stand: string } }).ablago.stand, 'gesehen');
     assert.ok(!Number.isNaN(Date.parse((zeilen[0].wert as { ablago: { am: string } }).ablago.am)));
     await db.ende();
   });
 });
-

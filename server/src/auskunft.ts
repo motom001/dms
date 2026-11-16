@@ -21,7 +21,14 @@ import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { textDritte } from '../../shared/src/anrede';
 import { datumText } from '../../shared/src/archiv';
-import { AUSKUNFT_TAGE, auskunftDateiname, erwaehnungText, type AuskunftErwaehnung, type AuskunftStand, type Datenschutz } from '../../shared/src/auskunft';
+import {
+  AUSKUNFT_TAGE,
+  auskunftDateiname,
+  erwaehnungText,
+  type AuskunftErwaehnung,
+  type AuskunftStand,
+  type Datenschutz,
+} from '../../shared/src/auskunft';
 import { formatiere, istLeer, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import { planer, textdokumentPdf } from './pdf';
@@ -48,7 +55,15 @@ export interface AuskunftDaten {
   passwort: string | null;
   /** Bezug-Mappen (#472), die nur als Erwähnung hinausgehen: Art, Titel und Feld – ohne Dokumente, Notizen, übrige Werte. */
   erwaehnungen: AuskunftErwaehnung[];
-  anzahl: { mappen: number; dokumente: number; bytes: number; notizen: number; historie: number; ohneNotizen: number; erwaehnungen: number };
+  anzahl: {
+    mappen: number;
+    dokumente: number;
+    bytes: number;
+    notizen: number;
+    historie: number;
+    ohneNotizen: number;
+    erwaehnungen: number;
+  };
   /** Begründungen abgewählter Notizen (nur für den Nachweis, nicht in der ZIP). */
   gruende: string[];
   empfaenger: string;
@@ -66,7 +81,8 @@ export const AUSKUNFT_PHASEN = [
 ];
 
 /** Wo die Auskünfte liegen: im Export-Ordner (#797) unter auskunft/, ohne ihn im temporären Ordner. */
-export const auskunftOrdner = (exportOrdner?: string | null) => (exportOrdner ? join(exportOrdner, 'auskunft') : join(tmpdir(), 'dms-auskunft'));
+export const auskunftOrdner = (exportOrdner?: string | null) =>
+  exportOrdner ? join(exportOrdner, 'auskunft') : join(tmpdir(), 'dms-auskunft');
 
 const zeit = (d: Date) => d.toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'long', timeStyle: 'short' });
 const tag = (d: Date) => new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(d);
@@ -78,14 +94,20 @@ const dokumenteText = (anzahl: number) => t('meldungen.auskunft.dokumente', { an
 function htmlText(k: string, werte: Record<string, string> = {}): string {
   const namen = Object.keys(werte);
   let s = esc(t.frei(k, Object.fromEntries(namen.map((n, i) => [n, `\u0001${i}\u0001`]))));
-  namen.forEach((n, i) => { s = s.split(`\u0001${i}\u0001`).join(werte[n]); });
+  namen.forEach((n, i) => {
+    s = s.split(`\u0001${i}\u0001`).join(werte[n]);
+  });
   return s;
 }
 
 /** Felder einer Mappe als lesbare Paare (ohne leere). */
 function felderVon(m: Mappe, t: Mappentyp | undefined, titel: Record<string, string>): Array<[string, string]> {
-  return (t?.felder ?? []).filter((f) => f.typ !== 'passwort' && !istLeer(m.werte[f.key]))
-    .map((f) => [f.label, formatiere(f, m.werte[f.key], (id) => titel[id] ?? '', { felder: t?.felder ?? [], werte: m.werte })] as [string, string]);
+  return (t?.felder ?? [])
+    .filter((f) => f.typ !== 'passwort' && !istLeer(m.werte[f.key]))
+    .map(
+      (f) =>
+        [f.label, formatiere(f, m.werte[f.key], (id) => titel[id] ?? '', { felder: t?.felder ?? [], werte: m.werte })] as [string, string],
+    );
 }
 
 /* ---------- Deckblatt ---------- */
@@ -100,8 +122,16 @@ async function deckblattRoh(d: AuskunftDaten, x: { von: string; jetzt: Date; man
   if (absender) s.text(absender, { groesse: 9, farbe: 0.35 });
   s.text(t('meldungen.auskunft.auskunft-nach-art-15'), { groesse: 18, fett: true, abstand: 14 });
   const titel = d.start.titel || t('meldungen.auskunft.ohne-titel');
-  s.text(d.start.typ ? t('meldungen.auskunft.fuer-typ', { titel, typ: d.start.typ }) : t('meldungen.auskunft.fuer', { titel }), { groesse: 12, abstand: 2 });
-  s.text(x.von ? t('meldungen.auskunft.erstellt-am-von', { zeit: zeit(x.jetzt), von: x.von }) : t('meldungen.auskunft.erstellt-am', { zeit: zeit(x.jetzt) }), { groesse: 9, farbe: 0.4, abstand: 2 });
+  s.text(d.start.typ ? t('meldungen.auskunft.fuer-typ', { titel, typ: d.start.typ }) : t('meldungen.auskunft.fuer', { titel }), {
+    groesse: 12,
+    abstand: 2,
+  });
+  s.text(
+    x.von
+      ? t('meldungen.auskunft.erstellt-am-von', { zeit: zeit(x.jetzt), von: x.von })
+      : t('meldungen.auskunft.erstellt-am', { zeit: zeit(x.jetzt) }),
+    { groesse: 9, farbe: 0.4, abstand: 2 },
+  );
   s.linie();
   s.text(eintrag('auskunft.deckblatt.einleitung'), { groesse: 10, abstand: 4 });
 
@@ -115,14 +145,24 @@ async function deckblattRoh(d: AuskunftDaten, x: { von: string; jetzt: Date; man
   for (const ty of d.typen) {
     const felder = ty.felder.filter((fd) => d.mappen.some((m) => m.typId === ty.id && !istLeer(m.werte[fd.key]))).map((fd) => fd.label);
     const anzahl = eintraege(jeTyp.get(ty.id) ?? 0);
-    punkt(felder.length ? t('meldungen.auskunft.typ-felder', { typ: ty.name, anzahl, felder: `${felder.slice(0, 12).join(', ')}${felder.length > 12 ? ' …' : ''}` }) : t('meldungen.auskunft.typ', { typ: ty.name, anzahl }));
+    punkt(
+      felder.length
+        ? t('meldungen.auskunft.typ-felder', {
+            typ: ty.name,
+            anzahl,
+            felder: `${felder.slice(0, 12).join(', ')}${felder.length > 12 ? ' …' : ''}`,
+          })
+        : t('meldungen.auskunft.typ', { typ: ty.name, anzahl }),
+    );
   }
   // Ganze Satzteile je Angabe (#729), verbunden als Aufzählung der Sprache.
-  punkt(new Intl.ListFormat(gebietsschema(), { type: 'unit' }).format([
-    t('meldungen.auskunft.umfang.dokumente', { anzahl: n.dokumente }),
-    ...(n.notizen ? [t('meldungen.auskunft.umfang.notizen', { anzahl: n.notizen })] : []),
-    ...(n.historie ? [t('meldungen.auskunft.umfang.historie', { anzahl: n.historie })] : []),
-  ]));
+  punkt(
+    new Intl.ListFormat(gebietsschema(), { type: 'unit' }).format([
+      t('meldungen.auskunft.umfang.dokumente', { anzahl: n.dokumente }),
+      ...(n.notizen ? [t('meldungen.auskunft.umfang.notizen', { anzahl: n.notizen })] : []),
+      ...(n.historie ? [t('meldungen.auskunft.umfang.historie', { anzahl: n.historie })] : []),
+    ]),
+  );
   if (d.erwaehnungen.length) {
     punkt(eintrag('auskunft.deckblatt.erwaehnungen', { anzahl: d.erwaehnungen.length }));
     for (const e of d.erwaehnungen.slice(0, 15)) s.text(`– ${erwaehnungText(e)}`, { groesse: 10, abstand: 1, x: 72 });
@@ -143,14 +183,27 @@ async function deckblattRoh(d: AuskunftDaten, x: { von: string; jetzt: Date; man
 
   abschnitt(t('meldungen.auskunft.5-speicherdauer'));
   for (const a of d.aufbewahrung) {
-    const w = a.archiv ? { typ: a.typ, anzahl: a.archiv.jahre, ab: a.archiv.stichtag ?? t('meldungen.auskunft.anlage'), bis: a.bis ? datumText(a.bis) : '' } : null;
-    punkt(!w ? t('meldungen.auskunft.speicher.ohne', { typ: a.typ }) : a.offen ? t('meldungen.auskunft.speicher.archiv-offen', w) : a.bis ? t('meldungen.auskunft.speicher.archiv-bis', w) : t('meldungen.auskunft.speicher.archiv', w));
+    const w = a.archiv
+      ? { typ: a.typ, anzahl: a.archiv.jahre, ab: a.archiv.stichtag ?? t('meldungen.auskunft.anlage'), bis: a.bis ? datumText(a.bis) : '' }
+      : null;
+    punkt(
+      !w
+        ? t('meldungen.auskunft.speicher.ohne', { typ: a.typ })
+        : a.offen
+          ? t('meldungen.auskunft.speicher.archiv-offen', w)
+          : a.bis
+            ? t('meldungen.auskunft.speicher.archiv-bis', w)
+            : t('meldungen.auskunft.speicher.archiv', w),
+    );
   }
 
   abschnitt(eintrag('auskunft.deckblatt.rechte'));
   s.text(d.datenschutz.rechte, { groesse: 10, abstand: 2 });
 
-  if (d.anmerkung) { abschnitt(t('meldungen.auskunft.anmerkung')); s.text(d.anmerkung, { groesse: 10, abstand: 2 }); }
+  if (d.anmerkung) {
+    abschnitt(t('meldungen.auskunft.anmerkung'));
+    s.text(d.anmerkung, { groesse: 10, abstand: 2 });
+  }
 
   abschnitt(t('meldungen.auskunft.inhalt-dieser-datei'));
   punkt(t('meldungen.auskunft.uebersicht-html-alle-eintraege'));
@@ -166,35 +219,71 @@ function uebersichtCsvRoh(d: AuskunftDaten, pfade: Map<string, string>): Buffer 
   const typ = new Map(d.typen.map((t) => [t.id, t] as const));
   const zeilen = d.mappen.map((m) => {
     const t = typ.get(m.typId);
-    return [t?.name ?? '', m.titel ?? '', felderVon(m, t, d.titel).map(([k, v]) => `${k}: ${v}`).join('; '), m.erstellt.slice(0, 10), m.geaendert.slice(0, 10), pfade.get(m.id) ?? '', m.id];
+    return [
+      t?.name ?? '',
+      m.titel ?? '',
+      felderVon(m, t, d.titel)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('; '),
+      m.erstellt.slice(0, 10),
+      m.geaendert.slice(0, 10),
+      pfade.get(m.id) ?? '',
+      m.id,
+    ];
   });
   // Erwähnungen (#472): nur Art, Titel und das Feld, über das die Person genannt ist.
   for (const e of d.erwaehnungen) zeilen.push([e.typ, e.titel, erwaehnungText(e), '', '', '', e.mappeId]);
   return csv(t('meldungen.auskunft.csv.kopf').split('|'), zeilen);
 }
 
-function uebersichtHtmlRoh(d: AuskunftDaten, x: { jetzt: Date; dokumente: Array<{ id: string; mappeId: string; name: string; groesse: number }>; pfade: { mappen: Map<string, string>; dokumente: Map<string, string> } }): Buffer {
+function uebersichtHtmlRoh(
+  d: AuskunftDaten,
+  x: {
+    jetzt: Date;
+    dokumente: Array<{ id: string; mappeId: string; name: string; groesse: number }>;
+    pfade: { mappen: Map<string, string>; dokumente: Map<string, string> };
+  },
+): Buffer {
   const typ = new Map(d.typen.map((t) => [t.id, t] as const));
   const doks = new Map<string, typeof x.dokumente>();
-  for (const dk of x.dokumente) doks.set(dk.mappeId, [...doks.get(dk.mappeId) ?? [], dk]);
+  for (const dk of x.dokumente) doks.set(dk.mappeId, [...(doks.get(dk.mappeId) ?? []), dk]);
   const link = (p: string) => p.split('/').map(encodeURIComponent).join('/');
-  const kb = (b: number) => (b < MB ? `${Math.max(1, Math.round(b / KB)).toLocaleString(gebietsschema())} KB` : `${(b / MB).toLocaleString(gebietsschema(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`);
-  const abschnitte = d.typen.map((mappentyp) => {
-    const ms = d.mappen.filter((m) => m.typId === mappentyp.id);
-    return `<h2>${esc(mappentyp.name)} <small>(${ms.length})</small></h2>\n${ms.map((m) => {
-      const f = felderVon(m, typ.get(m.typId), d.titel);
-      const ds = doks.get(m.id) ?? [];
-      const ordner = x.pfade.mappen.get(m.id);
-      return `<section><h3>${esc(m.titel || t('meldungen.auskunft.ohne-titel'))}</h3>
+  const kb = (b: number) =>
+    b < MB
+      ? `${Math.max(1, Math.round(b / KB)).toLocaleString(gebietsschema())} KB`
+      : `${(b / MB).toLocaleString(gebietsschema(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
+  const abschnitte = d.typen
+    .map((mappentyp) => {
+      const ms = d.mappen.filter((m) => m.typId === mappentyp.id);
+      return `<h2>${esc(mappentyp.name)} <small>(${ms.length})</small></h2>\n${ms
+        .map((m) => {
+          const f = felderVon(m, typ.get(m.typId), d.titel);
+          const ds = doks.get(m.id) ?? [];
+          const ordner = x.pfade.mappen.get(m.id);
+          return `<section><h3>${esc(m.titel || t('meldungen.auskunft.ohne-titel'))}</h3>
 <dl>${f.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}<dt>${htmlText('meldungen.auskunft.html.angelegt')}</dt><dd>${esc(new Date(m.erstellt).toLocaleDateString(gebietsschema()))}</dd></dl>
-${ds.length ? `<ul>${ds.map((dk) => { const p = x.pfade.dokumente.get(dk.id); return `<li>${p ? `<a href="${esc(link(p))}">${esc(dk.name)}</a>` : esc(dk.name)} <small>${kb(dk.groesse)}</small></li>`; }).join('')}</ul>` : ''}
+${
+  ds.length
+    ? `<ul>${ds
+        .map((dk) => {
+          const p = x.pfade.dokumente.get(dk.id);
+          return `<li>${p ? `<a href="${esc(link(p))}">${esc(dk.name)}</a>` : esc(dk.name)} <small>${kb(dk.groesse)}</small></li>`;
+        })
+        .join('')}</ul>`
+    : ''
+}
 ${ordner ? `<p><small>${htmlText('meldungen.auskunft.html.ordner', { ordner: `<a href="${esc(link(ordner))}/">${esc(ordner)}</a>` })}</small></p>` : ''}</section>`;
-    }).join('\n')}`;
-  }).join('\n');
-  const erwaehnt = d.erwaehnungen.length ? `<h2>${esc(textDritte(d.datenschutz.anrede, 'auskunft.uebersicht.genannt'))} <small>(${d.erwaehnungen.length})</small></h2>
+        })
+        .join('\n')}`;
+    })
+    .join('\n');
+  const erwaehnt = d.erwaehnungen.length
+    ? `<h2>${esc(textDritte(d.datenschutz.anrede, 'auskunft.uebersicht.genannt'))} <small>(${d.erwaehnungen.length})</small></h2>
 <p><small>${esc(textDritte(d.datenschutz.anrede, 'auskunft.uebersicht.genannt.hinweis'))}</small></p>
-<ul>${d.erwaehnungen.map((e) => `<li>${esc(erwaehnungText(e))}</li>`).join('')}</ul>` : '';
-  return Buffer.from(`<!doctype html>
+<ul>${d.erwaehnungen.map((e) => `<li>${esc(erwaehnungText(e))}</li>`).join('')}</ul>`
+    : '';
+  return Buffer.from(
+    `<!doctype html>
 <html lang="${esc(sprache())}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${htmlText('meldungen.auskunft.html.titel', { titel: esc(d.start.titel) })}</title>
 <style>
@@ -210,13 +299,19 @@ dl{display:grid;grid-template-columns:minmax(8rem,14rem) 1fr;gap:.2rem 1rem;marg
 ${abschnitte}
 ${erwaehnt}
 </body></html>
-`, 'utf8');
+`,
+    'utf8',
+  );
 }
 
 function liesmichTextRoh(d: AuskunftDaten, jetzt: Date): string {
   return t('meldungen.auskunft.liesmich', {
-    titel: d.start.titel || t('meldungen.auskunft.ohne-titel'), zeit: zeit(jetzt), eintraege: eintraege(d.anzahl.mappen), dokumente: dokumenteText(d.anzahl.dokumente),
-    deckblatt: textDritte(d.datenschutz.anrede, 'auskunft.liesmich.deckblatt'), uebersicht: textDritte(d.datenschutz.anrede, 'auskunft.liesmich.uebersicht'),
+    titel: d.start.titel || t('meldungen.auskunft.ohne-titel'),
+    zeit: zeit(jetzt),
+    eintraege: eintraege(d.anzahl.mappen),
+    dokumente: dokumenteText(d.anzahl.dokumente),
+    deckblatt: textDritte(d.datenschutz.anrede, 'auskunft.liesmich.deckblatt'),
+    uebersicht: textDritte(d.datenschutz.anrede, 'auskunft.liesmich.uebersicht'),
   });
 }
 
@@ -233,21 +328,34 @@ export const liesmichText = (...a: Parameters<typeof liesmichTextRoh>) => mitSpr
 
 const zuGross = () => new Fachfehler(422, t('meldungen.auskunft.die-auskunft-waere-groesser'));
 
-export interface AuskunftErgebnis extends AuskunftStand { name: string }
+export interface AuskunftErgebnis extends AuskunftStand {
+  name: string;
+}
 
 /**
  * Schreibt die ZIP nach `ordner/<id>.zip` und die Angaben nach `ordner/<id>.json`.
  * Zwischendateien liegen in `ordner/<id>.tmp/` und werden danach gelöscht.
  */
-export async function erzeugeAuskunft(d: AuskunftDaten, ordner: string, x: { von: { id: string; name: string; email: string }; mandant: string },
-  fortschritt: (fertig: number, gesamt: number, phase?: string) => void = () => {}, jetzt = new Date()): Promise<AuskunftErgebnis> {
+export async function erzeugeAuskunft(
+  d: AuskunftDaten,
+  ordner: string,
+  x: { von: { id: string; name: string; email: string }; mandant: string },
+  fortschritt: (fertig: number, gesamt: number, phase?: string) => void = () => {},
+  jetzt = new Date(),
+): Promise<AuskunftErgebnis> {
   const id = randomUUID();
   const arbeit = join(ordner, `${id}.tmp`);
   await mkdir(arbeit, { recursive: true });
   try {
-    const r = await vollexport(d.quelle, arbeit, { passwoerter: false, liesmich: liesmichText(d, jetzt), zweck: 'auskunft-art-15' }, fortschritt, jetzt);
+    const r = await vollexport(
+      d.quelle,
+      arbeit,
+      { passwoerter: false, liesmich: liesmichText(d, jetzt), zweck: 'auskunft-art-15' },
+      fortschritt,
+      jetzt,
+    );
     const name = auskunftDateiname(d.start.titel, tag(jetzt));
-    const dokListe = (await d.quelle.dokumente(d.mappen.map((m) => m.id)));
+    const dokListe = await d.quelle.dokumente(d.mappen.map((m) => m.id));
     const zusatz: Array<{ name: string; daten: Buffer }> = [
       { name: 'Deckblatt.pdf', daten: await deckblatt(d, { von: x.von.name || x.von.email, jetzt, mandant: d.quelle.mandant }) },
       { name: 'Uebersicht.html', daten: uebersichtHtml(d, { jetzt, dokumente: dokListe, pfade: r.pfade }) },
@@ -259,7 +367,13 @@ export async function erzeugeAuskunft(d: AuskunftDaten, ordner: string, x: { von
       ...dateien.map((f) => ({ name: `${name}/${f.name}`, groesse: f.groesse, inhalt: () => oeffneStrom(f.pfad) })),
     ];
     let fertig = 0;
-    const gezaehlt = eintraege.map((e) => ({ ...e, inhalt: async () => { fortschritt(++fertig, eintraege.length, 'zip'); return e.inhalt(); } }));
+    const gezaehlt = eintraege.map((e) => ({
+      ...e,
+      inhalt: async () => {
+        fortschritt(++fertig, eintraege.length, 'zip');
+        return e.inhalt();
+      },
+    }));
     const zipDatei = join(ordner, `${id}.zip`);
     let groesse: number;
     if (!d.passwort) {
@@ -279,8 +393,19 @@ export async function erzeugeAuskunft(d: AuskunftDaten, ordner: string, x: { von
     }
     const bis = new Date(jetzt.getTime() + AUSKUNFT_TAGE * 24 * 3600 * 1000).toISOString();
     const stand: AuskunftErgebnis = {
-      id, name: d.passwort ? `Auskunft-${tag(jetzt)}` : name, mappeId: d.start.id, titel: d.start.titel, erstellt: jetzt.toISOString(), bis, bytes: groesse,
-      mappen: d.anzahl.mappen, dokumente: d.anzahl.dokumente, verschluesselt: !!d.passwort, von: x.von.name || x.von.email, vonId: x.von.id, bisOhneLink: bis,
+      id,
+      name: d.passwort ? `Auskunft-${tag(jetzt)}` : name,
+      mappeId: d.start.id,
+      titel: d.start.titel,
+      erstellt: jetzt.toISOString(),
+      bis,
+      bytes: groesse,
+      mappen: d.anzahl.mappen,
+      dokumente: d.anzahl.dokumente,
+      verschluesselt: !!d.passwort,
+      von: x.von.name || x.von.email,
+      vonId: x.von.id,
+      bisOhneLink: bis,
     };
     await writeFile(join(ordner, `${id}.json`), JSON.stringify(stand, null, 2));
     return stand;
@@ -294,7 +419,11 @@ export async function erzeugeAuskunft(d: AuskunftDaten, ordner: string, x: { von
 /** Bereitliegende Auskünfte, neueste zuerst; Abgelaufenes (und Reste abgebrochener Läufe) wird dabei gelöscht. */
 export async function auskuenfteIn(ordner: string, jetzt = new Date()): Promise<AuskunftErgebnis[]> {
   let namen: string[];
-  try { namen = await readdir(ordner); } catch { return []; }
+  try {
+    namen = await readdir(ordner);
+  } catch {
+    return [];
+  }
   const erg: AuskunftErgebnis[] = [];
   for (const n of namen) {
     const m = /^([0-9a-f-]{36})\.(json|zip|tmp)$/.exec(n);
@@ -306,12 +435,20 @@ export async function auskuenfteIn(ordner: string, jetzt = new Date()): Promise<
       if (s && jetzt.getTime() - s.mtimeMs > 24 * 3600 * 1000) await rm(join(ordner, n), { recursive: true, force: true });
       continue;
     }
-    if (art === 'zip') { if (!namen.includes(`${id}.json`)) await rm(join(ordner, n), { force: true }); continue; }
+    if (art === 'zip') {
+      if (!namen.includes(`${id}.json`)) await rm(join(ordner, n), { force: true });
+      continue;
+    }
     try {
       const s = JSON.parse(await readFile(join(ordner, n), 'utf8')) as AuskunftErgebnis;
-      if (new Date(s.bis).getTime() <= jetzt.getTime() || !namen.includes(`${id}.zip`)) { await loescheAuskunft(ordner, id); continue; }
+      if (new Date(s.bis).getTime() <= jetzt.getTime() || !namen.includes(`${id}.zip`)) {
+        await loescheAuskunft(ordner, id);
+        continue;
+      }
       erg.push(s);
-    } catch { await loescheAuskunft(ordner, id); }
+    } catch {
+      await loescheAuskunft(ordner, id);
+    }
   }
   return erg.sort((a, b) => b.erstellt.localeCompare(a.erstellt));
 }
@@ -330,11 +467,18 @@ export async function haltenBis(ordner: string, id: string, bis: string | null, 
   if (!istUuid(id)) return null;
   const datei = join(ordner, `${id}.json`);
   let s: AuskunftErgebnis;
-  try { s = JSON.parse(await readFile(datei, 'utf8')) as AuskunftErgebnis; } catch { return null; }
+  try {
+    s = JSON.parse(await readFile(datei, 'utf8')) as AuskunftErgebnis;
+  } catch {
+    return null;
+  }
   const ohne = s.bisOhneLink ?? new Date(new Date(s.erstellt).getTime() + AUSKUNFT_TAGE * 24 * 3600 * 1000).toISOString();
   const neu = bis && bis > ohne ? bis : ohne;
   const n: AuskunftErgebnis = { ...s, bisOhneLink: ohne, bis: neu };
-  if (new Date(neu).getTime() <= jetzt.getTime()) { await loescheAuskunft(ordner, id); return null; }
+  if (new Date(neu).getTime() <= jetzt.getTime()) {
+    await loescheAuskunft(ordner, id);
+    return null;
+  }
   await writeFile(datei, JSON.stringify(n, null, 2));
   return n;
 }

@@ -2,7 +2,16 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import { formatiere, tagVon, type Feld } from '../../shared/src/model';
-import { datumsformat, istZeitzone, liesRegion, REGION_STANDARD, setzeZeitzone, tagIn, zahlformat, zeitzone } from '../../shared/src/region';
+import {
+  datumsformat,
+  istZeitzone,
+  liesRegion,
+  REGION_STANDARD,
+  setzeZeitzone,
+  tagIn,
+  zahlformat,
+  zeitzone,
+} from '../../shared/src/region';
 import { heuteIn } from '../../shared/src/sichten';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
@@ -60,23 +69,41 @@ describe('Region (#726)', () => {
     const f = RegionDienst.feiertageIm({ ...REGION_STANDARD, bundesland: 'SN' }, 2027);
     assert.equal(f[0].datum, '2027-01-01');
     assert.ok(f.some((x) => x.datum === '2027-11-17' && x.name === 'Buß- und Bettag'));
-    assert.deepEqual(f.map((x) => x.datum), [...f.map((x) => x.datum)].sort());
+    assert.deepEqual(
+      f.map((x) => x.datum),
+      [...f.map((x) => x.datum)].sort(),
+    );
   });
 
   it('Formate gemerkt (#970): dasselbe Format je Sprache und Optionen, Ausgabe wie toLocaleString', () => {
     assert.equal(zahlformat('de-DE', { maximumFractionDigits: 2 }), zahlformat('de-DE', { maximumFractionDigits: 2 }));
     assert.notEqual(zahlformat('de-DE', { maximumFractionDigits: 2 }), zahlformat('en-GB', { maximumFractionDigits: 2 }));
-    assert.equal(zahlformat('de-DE', { maximumFractionDigits: 10 }).format(1234.5), (1234.5).toLocaleString('de-DE', { maximumFractionDigits: 10 }));
+    assert.equal(
+      zahlformat('de-DE', { maximumFractionDigits: 10 }).format(1234.5),
+      (1234.5).toLocaleString('de-DE', { maximumFractionDigits: 10 }),
+    );
     assert.throws(() => zahlformat('de-DE', { style: 'currency', currency: 'XX1' }));
     const d = new Date('2026-11-15T23:30:00Z');
-    assert.equal(datumsformat('de-DE', { dateStyle: 'short', timeStyle: 'short' }), datumsformat('de-DE', { dateStyle: 'short', timeStyle: 'short' }));
-    assert.equal(datumsformat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(d), d.toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'short', timeStyle: 'short' }));
+    assert.equal(
+      datumsformat('de-DE', { dateStyle: 'short', timeStyle: 'short' }),
+      datumsformat('de-DE', { dateStyle: 'short', timeStyle: 'short' }),
+    );
+    assert.equal(
+      datumsformat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(d),
+      d.toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'short', timeStyle: 'short' }),
+    );
     // Feste Zeitzone (Kalendertage in UTC) und Wechsel der eingestellten Zone ergeben je ein eigenes Format.
     assert.equal(datumsformat('de-DE', {}, 'UTC').format(d), '15.11.2026');
     setzeZeitzone('America/New_York');
-    assert.equal(datumsformat('de-DE', { hour: '2-digit' }).format(d), d.toLocaleString('de-DE', { timeZone: 'America/New_York', hour: '2-digit' }));
+    assert.equal(
+      datumsformat('de-DE', { hour: '2-digit' }).format(d),
+      d.toLocaleString('de-DE', { timeZone: 'America/New_York', hour: '2-digit' }),
+    );
     const feld = (f: Partial<Feld>) => ({ key: 'x', label: 'X', typ: 'text', ...f }) as Feld;
     assert.equal(formatiere(feld({ typ: 'datum' }), '2026-11-15'), '15.11.2026');
-    assert.equal(formatiere(feld({ typ: 'betrag' }), { betrag: 12.5, waehrung: 'EUR' }), (12.5).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }));
+    assert.equal(
+      formatiere(feld({ typ: 'betrag' }), { betrag: 12.5, waehrung: 'EUR' }),
+      (12.5).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }),
+    );
   });
 });

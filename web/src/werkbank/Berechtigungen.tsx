@@ -5,8 +5,18 @@ import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
 import { merkmalName } from '../../../shared/src/merkmale';
 import {
-  beschreibeRegelBedingung, kurz, kurzStandard, RECHTE, RECHTE_LISTE, regelProblem, systemSperre,
-  type Recht, type Regel, type RegelBedingung, type Regelwerk, type Wirkung,
+  beschreibeRegelBedingung,
+  kurz,
+  kurzStandard,
+  RECHTE,
+  RECHTE_LISTE,
+  regelProblem,
+  systemSperre,
+  type Recht,
+  type Regel,
+  type RegelBedingung,
+  type Regelwerk,
+  type Wirkung,
 } from '../../../shared/src/rechte';
 import { mappenApi } from '../api/mappen';
 import { sucheApi } from '../api/suche';
@@ -31,7 +41,11 @@ import { gebietsschema } from '../../../shared/src/sprache';
  */
 
 const neueId = () => Math.random().toString(36).slice(2, 10);
-const WIRKUNG_TEXT: Record<'' | Wirkung, ReactNode> = { '': '–', erteilen: <Symbol name="haken" />, entziehen: <Symbol name="schliessen" /> };
+const WIRKUNG_TEXT: Record<'' | Wirkung, ReactNode> = {
+  '': '–',
+  erteilen: <Symbol name="haken" />,
+  entziehen: <Symbol name="schliessen" />,
+};
 const NAECHSTE: Record<'' | Wirkung, '' | Wirkung> = { '': 'erteilen', erteilen: 'entziehen', entziehen: '' };
 
 type Art = RegelBedingung['art'];
@@ -49,13 +63,31 @@ const ARTEN: Array<{ art: Art; name: string; nurBenutzerTyp?: boolean }> = [
  * Abschnitt „Berechtigungen“ im Mappentyp-Editor (#142, #146). `typ` ist der Entwurf (Felder wie gerade bearbeitet),
  * `gespeichert` die Regeln, wie sie gespeichert sind – Kopieren in andere Typen geht nur mit gespeicherten Regeln.
  */
-export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }: {
-  rw: Regelwerk; setRw: (f: (x: Regelwerk) => Regelwerk) => void; typ: Mappentyp; gespeichert: Regelwerk | null; neu: boolean; klappe: Klappe;
+export function RegelwerkAbschnitt({
+  rw,
+  setRw,
+  typ,
+  gespeichert,
+  neu,
+  klappe,
+}: {
+  rw: Regelwerk;
+  setRw: (f: (x: Regelwerk) => Regelwerk) => void;
+  typ: Mappentyp;
+  gespeichert: Regelwerk | null;
+  neu: boolean;
+  klappe: Klappe;
 }) {
   const [ansage, setAnsage] = useState('');
   const [titel, setTitel] = useState<Record<string, string>>({});
   const [offen, setOffen] = useState<Set<string>>(new Set());
-  const umschalten = (id: string) => setOffen((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const umschalten = (id: string) =>
+    setOffen((x) => {
+      const n = new Set(x);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   const merke = useCallback((id: string, text: string) => setTitel((x) => ({ ...x, [id]: text })), []);
   const zieh = useZiehen({
     fertig: (quelle, ziel, ort) => {
@@ -63,7 +95,13 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
       setRw((x) => {
         const von = x.regeln.findIndex((r) => r.id === quelle);
         const nach = x.regeln.findIndex((r) => r.id === ziel);
-        setAnsage(t('werkbank.berechtigungen.steht-jetzt', { wert: x.regeln[von]?.name || t('werkbank.berechtigungen.regel'), wert2: ort === 'vor' ? t('werkbank.berechtigungen.vor') : t('werkbank.berechtigungen.nach'), wert3: x.regeln[nach]?.name || t('werkbank.berechtigungen.regel') }));
+        setAnsage(
+          t('werkbank.berechtigungen.steht-jetzt', {
+            wert: x.regeln[von]?.name || t('werkbank.berechtigungen.regel'),
+            wert2: ort === 'vor' ? t('werkbank.berechtigungen.vor') : t('werkbank.berechtigungen.nach'),
+            wert3: x.regeln[nach]?.name || t('werkbank.berechtigungen.regel'),
+          }),
+        );
         return { ...x, regeln: umgestellt(x.regeln, von, nach, ort) };
       });
     },
@@ -71,12 +109,15 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
   const probleme = rw.regeln.map((r) => regelProblem(r, typ));
   const unveraendert = !!gespeichert && JSON.stringify(gespeichert) === JSON.stringify(rw);
   const setzeRegel = (i: number, r: Regel) => setRw((x) => ({ ...x, regeln: x.regeln.map((y, j) => (j === i ? r : y)) }));
-  const verschiebe = (i: number, r: number) => setRw((x) => {
-    const j = i + r;
-    if (j < 0 || j >= x.regeln.length) return x;
-    setAnsage(t('werkbank.berechtigungen.steht-jetzt-an-stelle', { wert: x.regeln[i].name || t('werkbank.berechtigungen.regel'), wert2: j + 1 }));
-    return { ...x, regeln: umgestellt(x.regeln, i, j, r < 0 ? 'vor' : 'nach') };
-  });
+  const verschiebe = (i: number, r: number) =>
+    setRw((x) => {
+      const j = i + r;
+      if (j < 0 || j >= x.regeln.length) return x;
+      setAnsage(
+        t('werkbank.berechtigungen.steht-jetzt-an-stelle', { wert: x.regeln[i].name || t('werkbank.berechtigungen.regel'), wert2: j + 1 }),
+      );
+      return { ...x, regeln: umgestellt(x.regeln, i, j, r < 0 ? 'vor' : 'nach') };
+    });
   const neueRegel = () => {
     const id = neueId();
     setOffen((x) => new Set([...x, id]));
@@ -85,45 +126,104 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
   const sperre = systemSperre(typ);
 
   return (
-    <Bereich id="berechtigungen" titel={t('werkbank.berechtigungen.berechtigungen')} hilfe={<Hilfe ort="werkbank.berechtigungen" />} klappe={klappe}
-      kurz={t('werkbank.berechtigungen.standard-regeln', { anzahl: rw.regeln.length, kurzStandard: kurzStandard(Object.fromEntries(RECHTE_LISTE.map((k) => [k, rw.grund[k] && !((k === 'C' && sperre.C) || (k === 'D' && sperre.D))])) as Record<Recht, boolean>), wert: rw.regeln.length || t('werkbank.berechtigungen.keine') })}
-      beschreibung={<>{tn('werkbank.berechtigungen.wer-mappen-dieses-mappentyps', { b: <strong>{t('werkbank.berechtigungen.verwaltungsmodus')}</strong> })}</>}>
-
-      <h3 className="zwischen">{t('werkbank.berechtigungen.standard')} <Hilfe ort="berechtigungen.grund" /></h3>
+    <Bereich
+      id="berechtigungen"
+      titel={t('werkbank.berechtigungen.berechtigungen')}
+      hilfe={<Hilfe ort="werkbank.berechtigungen" />}
+      klappe={klappe}
+      kurz={t('werkbank.berechtigungen.standard-regeln', {
+        anzahl: rw.regeln.length,
+        kurzStandard: kurzStandard(
+          Object.fromEntries(RECHTE_LISTE.map((k) => [k, rw.grund[k] && !((k === 'C' && sperre.C) || (k === 'D' && sperre.D))])) as Record<
+            Recht,
+            boolean
+          >,
+        ),
+        wert: rw.regeln.length || t('werkbank.berechtigungen.keine'),
+      })}
+      beschreibung={
+        <>
+          {tn('werkbank.berechtigungen.wer-mappen-dieses-mappentyps', {
+            b: <strong>{t('werkbank.berechtigungen.verwaltungsmodus')}</strong>,
+          })}
+        </>
+      }>
+      <h3 className="zwischen">
+        {t('werkbank.berechtigungen.standard')} <Hilfe ort="berechtigungen.grund" />
+      </h3>
       <p className="leise klein">{t('werkbank.berechtigungen.gilt-solange-keine-regel')}</p>
       <div className="rechtewahl" role="group" aria-label={t('werkbank.berechtigungen.standard-je-recht')}>
         {RECHTE_LISTE.map((k) => {
           const fest = (k === 'C' && sperre.C) || (k === 'D' && sperre.D);
           const an = rw.grund[k] && !fest;
           return (
-            <Knopf key={k} art="link" className={`rechtknopf ${an ? 'erteilen' : 'entziehen'}`} gesperrt={fest && t('werkbank.berechtigungen.geht-bei-diesem-systemtyp', { RECHTE: RECHTE[k] })}
-              nurSymbol={t('werkbank.berechtigungen.standard-2', { RECHTE: RECHTE[k], wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen') })} title={fest ? undefined : t('werkbank.berechtigungen.klicken-zum-wechseln', { RECHTE: RECHTE[k], wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen') })}
+            <Knopf
+              key={k}
+              art="link"
+              className={`rechtknopf ${an ? 'erteilen' : 'entziehen'}`}
+              gesperrt={fest && t('werkbank.berechtigungen.geht-bei-diesem-systemtyp', { RECHTE: RECHTE[k] })}
+              nurSymbol={t('werkbank.berechtigungen.standard-2', {
+                RECHTE: RECHTE[k],
+                wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen'),
+              })}
+              title={
+                fest
+                  ? undefined
+                  : t('werkbank.berechtigungen.klicken-zum-wechseln', {
+                      RECHTE: RECHTE[k],
+                      wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen'),
+                    })
+              }
               onClick={() => setRw((x) => ({ ...x, grund: { ...x.grund, [k]: !x.grund[k] } }))}>
-              <span className="buchstabe">{k}</span>{an ? WIRKUNG_TEXT.erteilen : WIRKUNG_TEXT.entziehen}
+              <span className="buchstabe">{k}</span>
+              {an ? WIRKUNG_TEXT.erteilen : WIRKUNG_TEXT.entziehen}
             </Knopf>
           );
         })}
       </div>
-      {(sperre.C || sperre.D) && <p className="leise klein">{typ.system === 'benutzer' ? t('werkbank.berechtigungen.benutzer-entstehen-und-verschwinden') : t('werkbank.berechtigungen.e-mail-mappen-entstehen')}</p>}
+      {(sperre.C || sperre.D) && (
+        <p className="leise klein">
+          {typ.system === 'benutzer'
+            ? t('werkbank.berechtigungen.benutzer-entstehen-und-verschwinden')
+            : t('werkbank.berechtigungen.e-mail-mappen-entstehen')}
+        </p>
+      )}
 
-      <h3 className="zwischen">{t('werkbank.berechtigungen.regeln')} <Hilfe ort="berechtigungen.regeln" /></h3>
+      <h3 className="zwischen">
+        {t('werkbank.berechtigungen.regeln')} <Hilfe ort="berechtigungen.regeln" />
+      </h3>
       <p className="leise">{t('werkbank.berechtigungen.von-oben-nach-unten')}</p>
       {rw.regeln.length > 0 && (
         <ol className="regeln">
           {rw.regeln.map((r, i) => (
             <li key={r.id} {...zieh.eintrag(r.id)}>
-              <RegelKarte r={r} typ={typ} problem={probleme[i]} setze={(n) => setzeRegel(i, n)} titel={titel} merke={merke}
-                offen={offen.has(r.id)} umschalten={() => umschalten(r.id)}
-                griff={<Ziehgriff griff={zieh.griff(r.id, r.name || t('werkbank.berechtigungen.regel'))} tasten={{ hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) }} />}
+              <RegelKarte
+                r={r}
+                typ={typ}
+                problem={probleme[i]}
+                setze={(n) => setzeRegel(i, n)}
+                titel={titel}
+                merke={merke}
+                offen={offen.has(r.id)}
+                umschalten={() => umschalten(r.id)}
+                griff={
+                  <Ziehgriff
+                    griff={zieh.griff(r.id, r.name || t('werkbank.berechtigungen.regel'))}
+                    tasten={{ hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) }}
+                  />
+                }
                 weg={() => setRw((x) => ({ ...x, regeln: x.regeln.filter((y) => y.id !== r.id) }))}
                 gespeichert={unveraendert && !neu}
-                nachKopie={() => {}} />
+                nachKopie={() => {}}
+              />
             </li>
           ))}
         </ol>
       )}
       <Ansage text={ansage} />
-      <div className="knoepfe"><Knopf onClick={neueRegel}>{t('werkbank.berechtigungen.regel-2')}</Knopf></div>
+      <div className="knoepfe">
+        <Knopf onClick={neueRegel}>{t('werkbank.berechtigungen.regel-2')}</Knopf>
+      </div>
     </Bereich>
   );
 }
@@ -140,36 +240,71 @@ export function PaketeAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }
   useEffect(() => {
     if (!typId) return;
     let weg = false;
-    werkbankApi.paketeAmTyp(typId).then((x) => { if (!weg) setListe(x); }, (e: Error) => { if (!weg) setFehler(e.message); });
-    return () => { weg = true; };
+    werkbankApi.paketeAmTyp(typId).then(
+      (x) => {
+        if (!weg) setListe(x);
+      },
+      (e: Error) => {
+        if (!weg) setFehler(e.message);
+      },
+    );
+    return () => {
+      weg = true;
+    };
   }, [typId]);
   if (typId && liste && !liste.length) return null;
   const verwehrt = liste?.filter((p) => p.verwehrt).length ?? 0;
   const setze = async (p: PaketAmTyp, darf: boolean) => {
-    setSendet(p.id); setFehler(''); setMeldung('');
-    try { setListe(await werkbankApi.paketVerwehren(typId, p.id, !darf)); setMeldung(t(darf ? 'pakete.amtyp.gespeichert.an' : 'pakete.amtyp.gespeichert.aus', { name: p.name })); }
-    catch (e) { setFehler((e as Error).message); }
-    finally { setSendet(''); }
+    setSendet(p.id);
+    setFehler('');
+    setMeldung('');
+    try {
+      setListe(await werkbankApi.paketVerwehren(typId, p.id, !darf));
+      setMeldung(t(darf ? 'pakete.amtyp.gespeichert.an' : 'pakete.amtyp.gespeichert.aus', { name: p.name }));
+    } catch (e) {
+      setFehler((e as Error).message);
+    } finally {
+      setSendet('');
+    }
   };
   return (
-    <Bereich id="pakete" titel={t('pakete.amtyp.titel')} hilfe={<Hilfe ort="werkbank.pakete_am_typ" />} klappe={klappe}
+    <Bereich
+      id="pakete"
+      titel={t('pakete.amtyp.titel')}
+      hilfe={<Hilfe ort="werkbank.pakete_am_typ" />}
+      klappe={klappe}
       kurz={liste ? t('pakete.amtyp.kurz', { anzahl: liste.length, verwehrt: verwehrt || t('pakete.amtyp.kurz.keine') }) : undefined}
       beschreibung={t('pakete.amtyp.beschreibung')}>
       {!typId && <p className="leise">{t('pakete.amtyp.neu')}</p>}
-      {fehler && <p className="hinweis schlecht" role="alert">{fehler}</p>}
+      {fehler && (
+        <p className="hinweis schlecht" role="alert">
+          {fehler}
+        </p>
+      )}
       {liste && (
         <ul className="liste-ohne">
           {liste.map((p) => (
             <li key={p.id}>
-              <HakenFeld beschriftung={t('pakete.amtyp.darf', { name: p.name })}
-                hinweis={[t(p.schreiben ? 'pakete.amtyp.was.schreiben' : 'pakete.amtyp.was.lesen'), ...(p.ereignisse ? [t('pakete.amtyp.was.ereignisse')] : [])].join(' · ')}>
-                <input type="checkbox" checked={!p.verwehrt} disabled={sendet === p.id} onChange={(ev) => void setze(p, ev.target.checked)} />
+              <HakenFeld
+                beschriftung={t('pakete.amtyp.darf', { name: p.name })}
+                hinweis={[
+                  t(p.schreiben ? 'pakete.amtyp.was.schreiben' : 'pakete.amtyp.was.lesen'),
+                  ...(p.ereignisse ? [t('pakete.amtyp.was.ereignisse')] : []),
+                ].join(' · ')}>
+                <input
+                  type="checkbox"
+                  checked={!p.verwehrt}
+                  disabled={sendet === p.id}
+                  onChange={(ev) => void setze(p, ev.target.checked)}
+                />
               </HakenFeld>
             </li>
           ))}
         </ul>
       )}
-      <p className="leise klein" role="status">{meldung}</p>
+      <p className="leise klein" role="status">
+        {meldung}
+      </p>
     </Bereich>
   );
 }
@@ -185,39 +320,95 @@ export function KiAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
   const [sendet, setSendet] = useState(false);
   useEffect(() => {
     let weg = false;
-    sucheApi.kiTypen().then((x) => { if (!weg) setK(x); }, (e: Error) => { if (!weg) setFehler(e.message); });
-    return () => { weg = true; };
+    sucheApi.kiTypen().then(
+      (x) => {
+        if (!weg) setK(x);
+      },
+      (e: Error) => {
+        if (!weg) setFehler(e.message);
+      },
+    );
+    return () => {
+      weg = true;
+    };
   }, [typId]);
   const eintrag = k?.typen.find((x) => x.id === typId);
   const an = !!eintrag?.zugelassen;
   const setze = async (zugelassen: boolean) => {
-    setSendet(true); setFehler(''); setMeldung('');
-    try { setK(await sucheApi.setzeKiTyp(typId, zugelassen)); setMeldung(t(zugelassen ? 'pakete.ki.typ.gespeichert.an' : 'pakete.ki.typ.gespeichert.aus')); }
-    catch (e) { setFehler((e as Error).message); }
-    finally { setSendet(false); }
+    setSendet(true);
+    setFehler('');
+    setMeldung('');
+    try {
+      setK(await sucheApi.setzeKiTyp(typId, zugelassen));
+      setMeldung(t(zugelassen ? 'pakete.ki.typ.gespeichert.an' : 'pakete.ki.typ.gespeichert.aus'));
+    } catch (e) {
+      setFehler((e as Error).message);
+    } finally {
+      setSendet(false);
+    }
   };
   const pakete = k?.pakete ?? [];
   return (
-    <Bereich id="ki" titel={t('pakete.ki.typ.titel')} hilfe={<Hilfe ort="pakete.ki" />} klappe={klappe}
+    <Bereich
+      id="ki"
+      titel={t('pakete.ki.typ.titel')}
+      hilfe={<Hilfe ort="pakete.ki" />}
+      klappe={klappe}
       kurz={k ? (!typId ? t('pakete.ki.typ.kurz.neu') : an ? t('pakete.ki.typ.kurz.an') : t('pakete.ki.typ.kurz.aus')) : undefined}
       beschreibung={t('pakete.ki.typ.beschreibung')}>
-      {fehler && <p className="hinweis schlecht" role="alert">{fehler}</p>}
-      {!typId ? <p className="leise">{t('pakete.ki.typ.neu')}</p> : k && (
-        <HakenFeld beschriftung={t('pakete.ki.typ.darf')} hinweis={an ? t('pakete.ki.typ.an.hilfe') : t('pakete.ki.typ.aus.hilfe')}>
-          <input type="checkbox" checked={an} disabled={sendet} onChange={(ev) => void setze(ev.target.checked)} />
-        </HakenFeld>
+      {fehler && (
+        <p className="hinweis schlecht" role="alert">
+          {fehler}
+        </p>
       )}
-      {k && <p className="leise klein">{pakete.length ? t('pakete.ki.typ.pakete', { namen: pakete.map((p) => p.name).join(', ') }) : t('pakete.ki.typ.keine-pakete')}</p>}
-      <p className="leise klein" role="status">{meldung}</p>
+      {!typId ? (
+        <p className="leise">{t('pakete.ki.typ.neu')}</p>
+      ) : (
+        k && (
+          <HakenFeld beschriftung={t('pakete.ki.typ.darf')} hinweis={an ? t('pakete.ki.typ.an.hilfe') : t('pakete.ki.typ.aus.hilfe')}>
+            <input type="checkbox" checked={an} disabled={sendet} onChange={(ev) => void setze(ev.target.checked)} />
+          </HakenFeld>
+        )
+      )}
+      {k && (
+        <p className="leise klein">
+          {pakete.length ? t('pakete.ki.typ.pakete', { namen: pakete.map((p) => p.name).join(', ') }) : t('pakete.ki.typ.keine-pakete')}
+        </p>
+      )}
+      <p className="leise klein" role="status">
+        {meldung}
+      </p>
     </Bereich>
   );
 }
 
-function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeichert, nachKopie, offen, umschalten }: {
-  r: Regel; typ: Mappentyp; problem: string | null; setze: (r: Regel) => void; weg: () => void; griff: ReactNode;
-  titel: Record<string, string>; merke: (id: string, text: string) => void; gespeichert: boolean; nachKopie: () => void;
+function RegelKarte({
+  r,
+  typ,
+  problem,
+  setze,
+  weg,
+  griff,
+  titel,
+  merke,
+  gespeichert,
+  nachKopie,
+  offen,
+  umschalten,
+}: {
+  r: Regel;
+  typ: Mappentyp;
+  problem: string | null;
+  setze: (r: Regel) => void;
+  weg: () => void;
+  griff: ReactNode;
+  titel: Record<string, string>;
+  merke: (id: string, text: string) => void;
+  gespeichert: boolean;
+  nachKopie: () => void;
   /** Zuklappen wie bei Feldern (#146). */
-  offen: boolean; umschalten: () => void;
+  offen: boolean;
+  umschalten: () => void;
 }) {
   const d = useDaten();
   const felder = useMemo(() => bedingungsfelder([typ]), [typ]);
@@ -225,7 +416,10 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
   const setzeB = (i: number, b: RegelBedingung) => setze({ ...r, wenn: r.wenn.map((x, j) => (j === i ? b : x)) });
   const neuB = (art: Art, nicht?: boolean): RegelBedingung => {
     const n = nicht ? { nicht: true } : {};
-    if (art === 'feld') { const f = felder[0]; return { ...n, art, bedingung: { art: 'feld', feld: f?.key ?? '_erstellt', op: OPERATOREN_JE_ART[f?.art ?? 'zeit'][0] } }; }
+    if (art === 'feld') {
+      const f = felder[0];
+      return { ...n, art, bedingung: { art: 'feld', feld: f?.key ?? '_erstellt', op: OPERATOREN_JE_ART[f?.art ?? 'zeit'][0] } };
+    }
     if (art === 'benutzer') return { ...n, art, benutzer: [] };
     if (art === 'rolle') return { ...n, art, rollen: [] };
     if (art === 'merkmal') return { ...n, art, merkmal: 'beruflich' };
@@ -233,38 +427,66 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
   };
   const rollenTyp = d.typen.find((mappentyp) => mappentyp.system === 'rolle')?.id;
   const benutzerTyp = d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id;
-  const feldName = (b: Extract<Bedingung, { art: 'feld' }>) => beschreibeBedingung(b, [typ], (id) => titel[id] ?? d.person(id), undefined, (id) => d.typ(id)?.name);
+  const feldName = (b: Extract<Bedingung, { art: 'feld' }>) =>
+    beschreibeBedingung(
+      b,
+      [typ],
+      (id) => titel[id] ?? d.person(id),
+      undefined,
+      (id) => d.typ(id)?.name,
+    );
 
-  const bedText = (b: RegelBedingung) => beschreibeRegelBedingung(b, { benutzer: (id) => titel[id] ?? d.person(id), rolle: (id) => titel[id] ?? '…', feld: feldName });
+  const bedText = (b: RegelBedingung) =>
+    beschreibeRegelBedingung(b, { benutzer: (id) => titel[id] ?? d.person(id), rolle: (id) => titel[id] ?? '…', feld: feldName });
   // Rollen- und Benutzernamen für die Kurzform nachladen.
-  const fehlend = r.wenn.flatMap((b) => (b.art === 'rolle' ? b.rollen : b.art === 'benutzer' ? b.benutzer : [])).filter((x) => !titel[x]).join(',');
+  const fehlend = r.wenn
+    .flatMap((b) => (b.art === 'rolle' ? b.rollen : b.art === 'benutzer' ? b.benutzer : []))
+    .filter((x) => !titel[x])
+    .join(',');
   useEffect(() => {
     if (offen) return;
-    for (const x of fehlend ? fehlend.split(',') : []) mappenApi.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)'));
+    for (const x of fehlend ? fehlend.split(',') : [])
+      mappenApi
+        .mappe(x)
+        .then((m) => merke(x, m.mappe.titel ?? ''))
+        .catch(() => merke(x, '(gelöscht)'));
   }, [fehlend, offen]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
 
-  if (!offen) return (
-    <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
-      <div className="regelkopf">
-        {griff}
-        <Knopf art="link" className="regelsumme" aria-expanded={false} onClick={umschalten}>
-          <strong>{r.name || t('werkbank.berechtigungen.ohne-namen')}</strong>
-          <span className="chip">{kurz(r.dann)}{r.stopp ? t('werkbank.berechtigungen.stopp') : ''}</span>
-          <span className="leise klein">{t('werkbank.berechtigungen.wenn')}{' '}{r.wenn.map(bedText).join(` ${t('werkbank.berechtigungen.und')} `) || '…'}</span>
-        </Knopf>
+  if (!offen)
+    return (
+      <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
+        <div className="regelkopf">
+          {griff}
+          <Knopf art="link" className="regelsumme" aria-expanded={false} onClick={umschalten}>
+            <strong>{r.name || t('werkbank.berechtigungen.ohne-namen')}</strong>
+            <span className="chip">
+              {kurz(r.dann)}
+              {r.stopp ? t('werkbank.berechtigungen.stopp') : ''}
+            </span>
+            <span className="leise klein">
+              {t('werkbank.berechtigungen.wenn')} {r.wenn.map(bedText).join(` ${t('werkbank.berechtigungen.und')} `) || '…'}
+            </span>
+          </Knopf>
+        </div>
+        {problem && <p className="fehlertext klein">{problem}</p>}
       </div>
-      {problem && <p className="fehlertext klein">{problem}</p>}
-    </div>
-  );
+    );
 
   return (
     <div className={`regel ${problem ? 'fehlerhaft' : ''}`}>
       <div className="regelkopf">
         {griff}
         <Feld beschriftung={t('werkbank.berechtigungen.name-der-regel')} beschriftungVerbergen className="regelname">
-          <input placeholder={t('werkbank.berechtigungen.name-z-b-buchhaltung')} value={r.name} onChange={(x) => setze({ ...r, name: x.target.value })} />
+          <input
+            placeholder={t('werkbank.berechtigungen.name-z-b-buchhaltung')}
+            value={r.name}
+            onChange={(x) => setze({ ...r, name: x.target.value })}
+          />
         </Feld>
-        <span className="chip" title={t('werkbank.berechtigungen.kurzform-der-wirkung')}>{kurz(r.dann)}{r.stopp ? t('werkbank.berechtigungen.stopp') : ''}</span>
+        <span className="chip" title={t('werkbank.berechtigungen.kurzform-der-wirkung')}>
+          {kurz(r.dann)}
+          {r.stopp ? t('werkbank.berechtigungen.stopp') : ''}
+        </span>
       </div>
       <p className="ueber klein">{t('werkbank.berechtigungen.wenn-2')}</p>
       <ul className="bedingungen">
@@ -275,49 +497,143 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
               <div className="bedingungszeile">
                 <Feld beschriftung={t('werkbank.berechtigungen.art-der-bedingung')} beschriftungVerbergen>
                   <select value={b.art} onChange={(x) => setzeB(i, neuB(x.target.value as Art, b.nicht))}>
-                    {ARTEN.filter((a) => !a.nurBenutzerTyp || typ.system === 'benutzer' || a.art === b.art).map((a) => <option key={a.art} value={a.art}>{a.name}</option>)}
+                    {ARTEN.filter((a) => !a.nurBenutzerTyp || typ.system === 'benutzer' || a.art === b.art).map((a) => (
+                      <option key={a.art} value={a.art}>
+                        {a.name}
+                      </option>
+                    ))}
                   </select>
                 </Feld>
-                <HakenFeld beschriftung={t('werkbank.berechtigungen.nicht')} className="klein"><input type="checkbox" title={t('werkbank.berechtigungen.bedingung-verneinen')} checked={!!b.nicht} onChange={(x) => setzeB(i, { ...b, nicht: x.target.checked || undefined })} /></HakenFeld>
-                {b.art === 'rolle' && rollenTyp && <MappenSuche typId={rollenTyp} gewaehlt={b.rollen} titel={titel} merke={merke} setze={(ids) => setzeB(i, { ...b, rollen: ids })} />}
-                {b.art === 'benutzer' && benutzerTyp && <MappenSuche typId={benutzerTyp} gewaehlt={b.benutzer} titel={titel} merke={merke} setze={(ids) => setzeB(i, { ...b, benutzer: ids })} />}
-                {b.art === 'feld' && <>
-                  <Feld beschriftung={t('werkbank.berechtigungen.feld')} beschriftungVerbergen>
-                    <select value={b.bedingung.feld} onChange={(x) => { const f = felder.find((y) => y.key === x.target.value); if (f) setzeB(i, { ...b, bedingung: { art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] } }); }}>
-                      {!feld && <option value={b.bedingung.feld}>{t('werkbank.berechtigungen.fehlt', { feld: b.bedingung.feld })}</option>}
-                      {felder.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
-                    </select>
-                  </Feld>
-                  {feld && <FeldBedingung b={b.bedingung} feld={feld} setze={(n) => n.art === 'feld' && setzeB(i, { ...b, bedingung: n })} titel={titel} merke={merke} />}
-                </>}
-                <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>{t('werkbank.berechtigungen.bedingung-entfernen')}</Knopf>
+                <HakenFeld beschriftung={t('werkbank.berechtigungen.nicht')} className="klein">
+                  <input
+                    type="checkbox"
+                    title={t('werkbank.berechtigungen.bedingung-verneinen')}
+                    checked={!!b.nicht}
+                    onChange={(x) => setzeB(i, { ...b, nicht: x.target.checked || undefined })}
+                  />
+                </HakenFeld>
+                {b.art === 'rolle' && rollenTyp && (
+                  <MappenSuche
+                    typId={rollenTyp}
+                    gewaehlt={b.rollen}
+                    titel={titel}
+                    merke={merke}
+                    setze={(ids) => setzeB(i, { ...b, rollen: ids })}
+                  />
+                )}
+                {b.art === 'benutzer' && benutzerTyp && (
+                  <MappenSuche
+                    typId={benutzerTyp}
+                    gewaehlt={b.benutzer}
+                    titel={titel}
+                    merke={merke}
+                    setze={(ids) => setzeB(i, { ...b, benutzer: ids })}
+                  />
+                )}
+                {b.art === 'feld' && (
+                  <>
+                    <Feld beschriftung={t('werkbank.berechtigungen.feld')} beschriftungVerbergen>
+                      <select
+                        value={b.bedingung.feld}
+                        onChange={(x) => {
+                          const f = felder.find((y) => y.key === x.target.value);
+                          if (f) setzeB(i, { ...b, bedingung: { art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] } });
+                        }}>
+                        {!feld && (
+                          <option value={b.bedingung.feld}>{t('werkbank.berechtigungen.fehlt', { feld: b.bedingung.feld })}</option>
+                        )}
+                        {felder.map((f) => (
+                          <option key={f.key} value={f.key}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </select>
+                    </Feld>
+                    {feld && (
+                      <FeldBedingung
+                        b={b.bedingung}
+                        feld={feld}
+                        setze={(n) => n.art === 'feld' && setzeB(i, { ...b, bedingung: n })}
+                        titel={titel}
+                        merke={merke}
+                      />
+                    )}
+                  </>
+                )}
+                <Knopf
+                  art="link"
+                  groesse="klein"
+                  symbol="schliessen"
+                  onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>
+                  {t('werkbank.berechtigungen.bedingung-entfernen')}
+                </Knopf>
               </div>
               <p className="leise klein">{bedText(b)}</p>
             </li>
           );
         })}
       </ul>
-      <div className="knoepfe"><Knopf onClick={() => setze({ ...r, wenn: [...r.wenn, neuB('rolle')] })}>{t('werkbank.berechtigungen.bedingung')}</Knopf>{r.wenn.length > 1 && <span className="leise klein">{t('werkbank.berechtigungen.alle-bedingungen-muessen-zutreffen')}</span>}</div>
+      <div className="knoepfe">
+        <Knopf onClick={() => setze({ ...r, wenn: [...r.wenn, neuB('rolle')] })}>{t('werkbank.berechtigungen.bedingung')}</Knopf>
+        {r.wenn.length > 1 && <span className="leise klein">{t('werkbank.berechtigungen.alle-bedingungen-muessen-zutreffen')}</span>}
+      </div>
       <p className="ueber klein">{t('werkbank.berechtigungen.dann')}</p>
       <div className="rechtewahl" role="group" aria-label={t('werkbank.berechtigungen.wirkung-je-recht')}>
         {RECHTE_LISTE.map((k) => {
           const w = r.dann[k] ?? '';
           return (
-            <Knopf key={k} art="link" className={`rechtknopf ${w}`} nurSymbol={w ? t('werkbank.berechtigungen.recht-wert', { recht: RECHTE[k], wert: w }) : t('werkbank.berechtigungen.recht-unveraendert', { recht: RECHTE[k] })} title={t('werkbank.berechtigungen.klicken-zum-wechseln', { RECHTE: RECHTE[k], wert: w || t('werkbank.berechtigungen.unveraendert') })}
-              onClick={() => { const n = NAECHSTE[w]; const dann = { ...r.dann }; if (n) dann[k] = n; else delete dann[k]; setze({ ...r, dann }); }}>
-              <span className="buchstabe">{k}</span>{WIRKUNG_TEXT[w]}
+            <Knopf
+              key={k}
+              art="link"
+              className={`rechtknopf ${w}`}
+              nurSymbol={
+                w
+                  ? t('werkbank.berechtigungen.recht-wert', { recht: RECHTE[k], wert: w })
+                  : t('werkbank.berechtigungen.recht-unveraendert', { recht: RECHTE[k] })
+              }
+              title={t('werkbank.berechtigungen.klicken-zum-wechseln', {
+                RECHTE: RECHTE[k],
+                wert: w || t('werkbank.berechtigungen.unveraendert'),
+              })}
+              onClick={() => {
+                const n = NAECHSTE[w];
+                const dann = { ...r.dann };
+                if (n) dann[k] = n;
+                else delete dann[k];
+                setze({ ...r, dann });
+              }}>
+              <span className="buchstabe">{k}</span>
+              {WIRKUNG_TEXT[w]}
             </Knopf>
           );
         })}
-        <HakenFeld beschriftung={t('werkbank.berechtigungen.stopp-2')} hinweis={t('werkbank.berechtigungen.trifft-die-regel-zu')}><input type="checkbox" checked={r.stopp} onChange={(x) => setze({ ...r, stopp: x.target.checked })} /></HakenFeld>
+        <HakenFeld beschriftung={t('werkbank.berechtigungen.stopp-2')} hinweis={t('werkbank.berechtigungen.trifft-die-regel-zu')}>
+          <input type="checkbox" checked={r.stopp} onChange={(x) => setze({ ...r, stopp: x.target.checked })} />
+        </HakenFeld>
       </div>
       {problem && <p className="fehlertext klein">{problem}</p>}
       <div className="knoepfe">
-        <Knopf gesperrt={!gespeichert && t('werkbank.berechtigungen.erst-speichern')} aria-expanded={kopie} onClick={() => setKopie((x) => !x)}>{t('werkbank.berechtigungen.in-andere-mappentypen-kopieren')}</Knopf>
-        <Knopf art="link" symbol="schliessen" onClick={weg}>{t('werkbank.berechtigungen.regel-entfernen')}</Knopf>
+        <Knopf
+          gesperrt={!gespeichert && t('werkbank.berechtigungen.erst-speichern')}
+          aria-expanded={kopie}
+          onClick={() => setKopie((x) => !x)}>
+          {t('werkbank.berechtigungen.in-andere-mappentypen-kopieren')}
+        </Knopf>
+        <Knopf art="link" symbol="schliessen" onClick={weg}>
+          {t('werkbank.berechtigungen.regel-entfernen')}
+        </Knopf>
         <Knopf onClick={umschalten}>{t('werkbank.berechtigungen.zuklappen')}</Knopf>
       </div>
-      {kopie && <Kopieren typ={typ} regel={r} fertig={() => { setKopie(false); nachKopie(); }} />}
+      {kopie && (
+        <Kopieren
+          typ={typ}
+          regel={r}
+          fertig={() => {
+            setKopie(false);
+            nachKopie();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -329,22 +645,46 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
   async function los() {
     try {
       const r = await werkbankApi.regelKopieren(typ.id, regel.id, ziele);
-      setMeldung(t('werkbank.berechtigungen.in-mappentypen-ans-ende', { anzahl: r.kopiert, wert: r.ausgelassen ? t('werkbank.berechtigungen.bedingungen-passten-dort-nicht', { anzahl: r.ausgelassen }) : '' }));
+      setMeldung(
+        t('werkbank.berechtigungen.in-mappentypen-ans-ende', {
+          anzahl: r.kopiert,
+          wert: r.ausgelassen ? t('werkbank.berechtigungen.bedingungen-passten-dort-nicht', { anzahl: r.ausgelassen }) : '',
+        }),
+      );
       setZiele([]);
       void d.neuLaden();
       setTimeout(fertig, 2500);
-    } catch (x) { setMeldung((x as Error).message); }
+    } catch (x) {
+      setMeldung((x as Error).message);
+    }
   }
   return (
     <div className="hinweis info">
       <p>{t('werkbank.berechtigungen.die-regel-kommt-in', { name: regel.name })}</p>
       <FeldGruppe beschriftung={t('werkbank.berechtigungen.kopieren-ziele')} beschriftungVerbergen className="typwahl">
-        {d.typen.filter((mappentyp) => mappentyp.id !== typ.id).map((mappentyp) => (
-          <label key={mappentyp.id} className="haken"><input type="checkbox" checked={ziele.includes(mappentyp.id)} onChange={(x) => setZiele(x.target.checked ? [...ziele, mappentyp.id] : ziele.filter((y) => y !== mappentyp.id))} /><span>{mappentyp.name}</span></label>
-        ))}
+        {d.typen
+          .filter((mappentyp) => mappentyp.id !== typ.id)
+          .map((mappentyp) => (
+            <label key={mappentyp.id} className="haken">
+              <input
+                type="checkbox"
+                checked={ziele.includes(mappentyp.id)}
+                onChange={(x) => setZiele(x.target.checked ? [...ziele, mappentyp.id] : ziele.filter((y) => y !== mappentyp.id))}
+              />
+              <span>{mappentyp.name}</span>
+            </label>
+          ))}
       </FeldGruppe>
-      <div className="knoepfe"><Knopf art="haupt" gesperrt={!ziele.length} onClick={() => los()}>{t('werkbank.berechtigungen.kopieren')}</Knopf></div>
-      {meldung && <p role="status" className="klein">{meldung}</p>}
+      <div className="knoepfe">
+        <Knopf art="haupt" gesperrt={!ziele.length} onClick={() => los()}>
+          {t('werkbank.berechtigungen.kopieren')}
+        </Knopf>
+      </div>
+      {meldung && (
+        <p role="status" className="klein">
+          {meldung}
+        </p>
+      )}
     </div>
   );
 }
@@ -354,7 +694,19 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
 function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
   return (
     <span className="rechtezeile">
-      {RECHTE_LISTE.map((k) => <span key={k} className={`recht ${r[k] ? 'ja' : 'nein'}`} title={r[k] ? t('werkbank.berechtigungen.recht-ja', { recht: RECHTE[k] }) : t('werkbank.berechtigungen.recht-nein', { recht: RECHTE[k] })}>{k}{r[k] ? WIRKUNG_TEXT.erteilen : WIRKUNG_TEXT.entziehen}</span>)}
+      {RECHTE_LISTE.map((k) => (
+        <span
+          key={k}
+          className={`recht ${r[k] ? 'ja' : 'nein'}`}
+          title={
+            r[k]
+              ? t('werkbank.berechtigungen.recht-ja', { recht: RECHTE[k] })
+              : t('werkbank.berechtigungen.recht-nein', { recht: RECHTE[k] })
+          }>
+          {k}
+          {r[k] ? WIRKUNG_TEXT.erteilen : WIRKUNG_TEXT.entziehen}
+        </span>
+      ))}
     </span>
   );
 }
@@ -368,50 +720,114 @@ export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwu
   // Das Ergebnis gehört zu (Benutzer, Mappe, Regeln) – wechselt eines davon, ist es sofort weg (#371).
   const stand = JSON.stringify(entwurf);
   const schluessel = testlaufSchluessel({ benutzerId: b, mappeId: mappe, stand });
-  const { erg, fehler, los } = useTestlauf<Testlauf>(schluessel, `${b}|${mappe}`,
-    () => werkbankApi.testlauf({ mappeId: mappe, benutzerId: b, berechtigungen: entwurf }));
+  const { erg, fehler, los } = useTestlauf<Testlauf>(schluessel, `${b}|${mappe}`, () =>
+    werkbankApi.testlauf({ mappeId: mappe, benutzerId: b, berechtigungen: entwurf }),
+  );
   return (
-    <Bereich id="testlauf" titel={t('werkbank.berechtigungen.testlauf')} hilfe={<Hilfe ort="berechtigungen.testlauf" />} klappe={klappe}
+    <Bereich
+      id="testlauf"
+      titel={t('werkbank.berechtigungen.testlauf')}
+      hilfe={<Hilfe ort="berechtigungen.testlauf" />}
+      klappe={klappe}
       kurz={typId ? t('werkbank.berechtigungen.rechte-eines-benutzers-an') : t('werkbank.berechtigungen.gibt-es-sobald-der')}
       beschreibung={t('werkbank.berechtigungen.welche-rechte-haette-ein')}>
-      {!typId ? <p className="leise klein">{t('werkbank.berechtigungen.den-testlauf-gibt-es')}</p> : <>
-      <div className="formular">
-        <TestBenutzerWahl id="testlauf-benutzer" wert={b} setze={setB} mitKonten />
-        <TestMappeWahl key={typId} id="testlauf-mappe" typId={typId} wert={mappe} setze={setMappe} />
-      </div>
-      {!schluessel && <p className="leise klein">{t('werkbank.berechtigungen.waehle-benutzer-und-testmappe')}</p>}
-      {schluessel && !erg && !fehler && <div className="knoepfe"><Knopf art="haupt" onClick={() => los()}>{t('werkbank.berechtigungen.pruefen')}</Knopf></div>}
-      {fehler && <p className="fehlertext klein">{fehler}</p>}
-      {erg && (
-        <div className="testlauf" role="status">
-          {erg.konto && <p className="leise klein">{erg.unbestaetigt ? t('werkbank.testlauf.konto.unbestaetigt') : t('werkbank.testlauf.konto.hinweis', { rolle: t.frei(`werkbank.testlauf.konto.kennzeichen.${erg.konto}`) })}</p>}
-          {erg.admin
-            ? <p>{tn('werkbank.berechtigungen.ist-administrator-fuer-ihn', { b: <strong>{erg.benutzer.name}</strong> })}</p>
-            : <>
-                <p>{tn('werkbank.berechtigungen.an', { b: <strong>{erg.benutzer.name}</strong>, wert: erg.mappe.titel || t('werkbank.berechtigungen.ohne-titel') })}{' '}<RechteZeile r={erg.wirksam} /></p>
-                <table className="tabelle klein">
-                  <thead><tr><th>{t('werkbank.berechtigungen.schritt')}</th><th>{t('werkbank.berechtigungen.trifft-zu')}</th><th>{t('werkbank.berechtigungen.setzt')}</th><th>{t('werkbank.berechtigungen.stand-danach')}</th></tr></thead>
-                  <tbody>
-                    <tr><td>{t('werkbank.berechtigungen.standard-3')}</td><td>–</td><td>–</td><td><RechteZeile r={erg.grund} /></td></tr>
-                    {erg.spur.map((s) => (
-                      <tr key={s.regel} className={s.traf ? 'traf' : ''}>
-                        <td>{s.name || t('werkbank.berechtigungen.regel')}{s.stopp && s.traf ? t('werkbank.berechtigungen.stopp') : ''}</td>
-                        <td>{s.traf === null ? t('werkbank.berechtigungen.nicht-geprueft-stopp-davor') : s.traf ? t('werkbank.berechtigungen.ja') : t('werkbank.berechtigungen.nein', { wert: s.bedingungen.length > 1 ? ` (${s.bedingungen.map((x) => (x ? '✓' : '✗')).join(' ')})` : '' })}</td>
-                        <td>{s.traf ? kurz(s.gesetzt) : '–'}</td>
-                        <td><RechteZeile r={s.stand} /></td>
+      {!typId ? (
+        <p className="leise klein">{t('werkbank.berechtigungen.den-testlauf-gibt-es')}</p>
+      ) : (
+        <>
+          <div className="formular">
+            <TestBenutzerWahl id="testlauf-benutzer" wert={b} setze={setB} mitKonten />
+            <TestMappeWahl key={typId} id="testlauf-mappe" typId={typId} wert={mappe} setze={setMappe} />
+          </div>
+          {!schluessel && <p className="leise klein">{t('werkbank.berechtigungen.waehle-benutzer-und-testmappe')}</p>}
+          {schluessel && !erg && !fehler && (
+            <div className="knoepfe">
+              <Knopf art="haupt" onClick={() => los()}>
+                {t('werkbank.berechtigungen.pruefen')}
+              </Knopf>
+            </div>
+          )}
+          {fehler && <p className="fehlertext klein">{fehler}</p>}
+          {erg && (
+            <div className="testlauf" role="status">
+              {erg.konto && (
+                <p className="leise klein">
+                  {erg.unbestaetigt
+                    ? t('werkbank.testlauf.konto.unbestaetigt')
+                    : t('werkbank.testlauf.konto.hinweis', { rolle: t.frei(`werkbank.testlauf.konto.kennzeichen.${erg.konto}`) })}
+                </p>
+              )}
+              {erg.admin ? (
+                <p>{tn('werkbank.berechtigungen.ist-administrator-fuer-ihn', { b: <strong>{erg.benutzer.name}</strong> })}</p>
+              ) : (
+                <>
+                  <p>
+                    {tn('werkbank.berechtigungen.an', {
+                      b: <strong>{erg.benutzer.name}</strong>,
+                      wert: erg.mappe.titel || t('werkbank.berechtigungen.ohne-titel'),
+                    })}{' '}
+                    <RechteZeile r={erg.wirksam} />
+                  </p>
+                  <table className="tabelle klein">
+                    <thead>
+                      <tr>
+                        <th>{t('werkbank.berechtigungen.schritt')}</th>
+                        <th>{t('werkbank.berechtigungen.trifft-zu')}</th>
+                        <th>{t('werkbank.berechtigungen.setzt')}</th>
+                        <th>{t('werkbank.berechtigungen.stand-danach')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {/* Leserecht auf Zeit (#798) mit seinem Grund. */}
-                {erg.aufZeit && <p className="hinweis info klein">{t(erg.aufZeit.wirkt ? 'werkbank.testlauf.auf-zeit' : 'werkbank.testlauf.auf-zeit.ohnehin', { aufgabe: erg.aufZeit.aufgabe, seit: new Date(erg.aufZeit.seit).toLocaleDateString(gebietsschema()), von: erg.aufZeit.von ?? t('werkbank.ohne-leserecht.unbekannt') })}</p>}
-                {RECHTE_LISTE.some((k) => erg.rechte[k] !== erg.wirksam[k]) && !erg.aufZeit?.wirkt && (
-                  <p className="leise klein">{t('werkbank.berechtigungen.wirksam-weicht-ab-ohne')}</p>
-                )}
-              </>}
-        </div>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>{t('werkbank.berechtigungen.standard-3')}</td>
+                        <td>–</td>
+                        <td>–</td>
+                        <td>
+                          <RechteZeile r={erg.grund} />
+                        </td>
+                      </tr>
+                      {erg.spur.map((s) => (
+                        <tr key={s.regel} className={s.traf ? 'traf' : ''}>
+                          <td>
+                            {s.name || t('werkbank.berechtigungen.regel')}
+                            {s.stopp && s.traf ? t('werkbank.berechtigungen.stopp') : ''}
+                          </td>
+                          <td>
+                            {s.traf === null
+                              ? t('werkbank.berechtigungen.nicht-geprueft-stopp-davor')
+                              : s.traf
+                                ? t('werkbank.berechtigungen.ja')
+                                : t('werkbank.berechtigungen.nein', {
+                                    wert: s.bedingungen.length > 1 ? ` (${s.bedingungen.map((x) => (x ? '✓' : '✗')).join(' ')})` : '',
+                                  })}
+                          </td>
+                          <td>{s.traf ? kurz(s.gesetzt) : '–'}</td>
+                          <td>
+                            <RechteZeile r={s.stand} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Leserecht auf Zeit (#798) mit seinem Grund. */}
+                  {erg.aufZeit && (
+                    <p className="hinweis info klein">
+                      {t(erg.aufZeit.wirkt ? 'werkbank.testlauf.auf-zeit' : 'werkbank.testlauf.auf-zeit.ohnehin', {
+                        aufgabe: erg.aufZeit.aufgabe,
+                        seit: new Date(erg.aufZeit.seit).toLocaleDateString(gebietsschema()),
+                        von: erg.aufZeit.von ?? t('werkbank.ohne-leserecht.unbekannt'),
+                      })}
+                    </p>
+                  )}
+                  {RECHTE_LISTE.some((k) => erg.rechte[k] !== erg.wirksam[k]) && !erg.aufZeit?.wirkt && (
+                    <p className="leise klein">{t('werkbank.berechtigungen.wirksam-weicht-ab-ohne')}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </>
       )}
-      </>}
     </Bereich>
   );
 }
@@ -430,34 +846,66 @@ export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin
   useEffect(() => {
     if (!an || admin) return;
     let aktuell = true;
-    werkbankApi.wasSieht(benutzerId).then((x) => aktuell && setErg({ schluessel: benutzerId, wert: x })).catch((x) => aktuell && setFehler({ schluessel: benutzerId, wert: (x as Error).message }));
-    return () => { aktuell = false; };
+    werkbankApi
+      .wasSieht(benutzerId)
+      .then((x) => aktuell && setErg({ schluessel: benutzerId, wert: x }))
+      .catch((x) => aktuell && setFehler({ schluessel: benutzerId, wert: (x as Error).message }));
+    return () => {
+      aktuell = false;
+    };
   }, [an, benutzerId, admin]);
   return (
     <section id="was-sieht" aria-labelledby="was-sieht-titel">
-      <h3 className="h4" id="was-sieht-titel">{t('werkbank.berechtigungen.was-sieht-dieser-benutzer')} <Hilfe ort="benutzer.wasSieht" /></h3>
-      {admin
-        ? <p className="leise">{t('konten.verwaltende.berechtigungen.modus')}</p>
-        : <>
-            <p className="leise">{t('werkbank.berechtigungen.je-mappentyp-wie-viele')}</p>
-            {!an && <div className="knoepfe"><Knopf onClick={() => setAn(true)}>{t('werkbank.berechtigungen.anzeigen')}</Knopf></div>}
-            {fehler && <p className="fehlertext klein">{fehler}</p>}
-            {an && !erg && !fehler && <p className="leise">{t('werkbank.berechtigungen.lade')}</p>}
-            {erg && (
-              <div className="tabellenrahmen"><table>
-                <thead><tr><th>{t('werkbank.berechtigungen.mappentyp')}</th><th>{t('werkbank.berechtigungen.lesbar')}</th><th>{t('werkbank.berechtigungen.beispiele')}</th></tr></thead>
+      <h3 className="h4" id="was-sieht-titel">
+        {t('werkbank.berechtigungen.was-sieht-dieser-benutzer')} <Hilfe ort="benutzer.wasSieht" />
+      </h3>
+      {admin ? (
+        <p className="leise">{t('konten.verwaltende.berechtigungen.modus')}</p>
+      ) : (
+        <>
+          <p className="leise">{t('werkbank.berechtigungen.je-mappentyp-wie-viele')}</p>
+          {!an && (
+            <div className="knoepfe">
+              <Knopf onClick={() => setAn(true)}>{t('werkbank.berechtigungen.anzeigen')}</Knopf>
+            </div>
+          )}
+          {fehler && <p className="fehlertext klein">{fehler}</p>}
+          {an && !erg && !fehler && <p className="leise">{t('werkbank.berechtigungen.lade')}</p>}
+          {erg && (
+            <div className="tabellenrahmen">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t('werkbank.berechtigungen.mappentyp')}</th>
+                    <th>{t('werkbank.berechtigungen.lesbar')}</th>
+                    <th>{t('werkbank.berechtigungen.beispiele')}</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {erg.typen.map((eintrag) => (
                     <tr key={eintrag.typId}>
-                      <td><Link to={`/werkbank/typen/${eintrag.typId}#berechtigungen`} className="verweis">{eintrag.name}</Link></td>
-                      <td>{t('werkbank.berechtigungen.von', { lesbar: eintrag.lesbar.toLocaleString(gebietsschema()), gesamt: eintrag.gesamt.toLocaleString(gebietsschema()) })}</td>
-                      <td className="klein">{eintrag.beispiele.map((x) => x.titel || t('werkbank.berechtigungen.ohne-titel')).join(' · ') || '–'}</td>
+                      <td>
+                        <Link to={`/werkbank/typen/${eintrag.typId}#berechtigungen`} className="verweis">
+                          {eintrag.name}
+                        </Link>
+                      </td>
+                      <td>
+                        {t('werkbank.berechtigungen.von', {
+                          lesbar: eintrag.lesbar.toLocaleString(gebietsschema()),
+                          gesamt: eintrag.gesamt.toLocaleString(gebietsschema()),
+                        })}
+                      </td>
+                      <td className="klein">
+                        {eintrag.beispiele.map((x) => x.titel || t('werkbank.berechtigungen.ohne-titel')).join(' · ') || '–'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
-              </table></div>
-            )}
-          </>}
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }

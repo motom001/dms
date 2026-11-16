@@ -25,7 +25,10 @@ import { bericht, besseresVon, grenzenPruefen, istRot, rundeAuswerten, vergleich
 import { einrichten, laden, verwaltungsSitzung } from './daten.mjs';
 
 const BASIS = (process.env.DMS_URL ?? 'http://localhost:3000').replace(/\/$/, '');
-const arg = (n, vorgabe) => { const i = process.argv.indexOf(n); return i < 0 ? vorgabe : process.argv[i + 1]; };
+const arg = (n, vorgabe) => {
+  const i = process.argv.indexOf(n);
+  return i < 0 ? vorgabe : process.argv[i + 1];
+};
 const hat = (n) => process.argv.includes(n);
 
 /**
@@ -38,12 +41,23 @@ const CI_GRENZEN = {};
 /** In jeder Seite vor ihren Skripten: lange Aufgaben und Eingaben mitschreiben (nur in diesem Mess-Lauf). */
 function beobachter() {
   const m = { lange: [], ereignisse: [] };
-  window.__messung = { holen: () => m, leeren: () => { m.lange.length = 0; m.ereignisse.length = 0; } };
+  window.__messung = {
+    holen: () => m,
+    leeren: () => {
+      m.lange.length = 0;
+      m.ereignisse.length = 0;
+    },
+  };
   try {
-    new PerformanceObserver((l) => { for (const e of l.getEntries()) m.lange.push([e.startTime, e.duration]); }).observe({ type: 'longtask', buffered: true });
-    new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.interactionId) m.ereignisse.push([e.duration, e.interactionId]); })
-      .observe({ type: 'event', durationThreshold: 16, buffered: true });
-  } catch { /* ohne Beobachter misst nur die Zeit bis bedienbar */ }
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) m.lange.push([e.startTime, e.duration]);
+    }).observe({ type: 'longtask', buffered: true });
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) if (e.interactionId) m.ereignisse.push([e.duration, e.interactionId]);
+    }).observe({ type: 'event', durationThreshold: 16, buffered: true });
+  } catch {
+    /* ohne Beobachter misst nur die Zeit bis bedienbar */
+  }
 }
 
 /** Server-Zeit einer Antwort aus Server-Timing („gesamt“). */
@@ -56,7 +70,12 @@ async function serverZeit(antwort) {
 class Frist extends Error {}
 const mitFrist = (p, ms) => {
   let timer;
-  return Promise.race([p, new Promise((_, nein) => { timer = setTimeout(() => nein(new Frist()), ms); })]).finally(() => clearTimeout(timer));
+  return Promise.race([
+    p,
+    new Promise((_, nein) => {
+      timer = setTimeout(() => nein(new Frist()), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
 };
 
 /** Neue Seite mit Drossel (CDP, nur Chromium). */
@@ -75,20 +94,30 @@ async function neueSeite(kontext, drossel) {
 async function runde(kontext, ablauf, d, { nr, drossel, frist }) {
   const s = await neueSeite(kontext, drossel);
   const antworten = [];
-  const hoerer = (a) => { if (a.url().startsWith(BASIS + '/api/')) antworten.push(serverZeit(a)); };
-  let zeitueberschritten = false, dauer = frist, roh = { lange: [[0, frist]], ereignisse: [] };
+  const hoerer = (a) => {
+    if (a.url().startsWith(BASIS + '/api/')) antworten.push(serverZeit(a));
+  };
+  let zeitueberschritten = false,
+    dauer = frist,
+    roh = { lange: [[0, frist]], ereignisse: [] };
   try {
     if (ablauf.vorbereiten) await mitFrist(ablauf.vorbereiten(s, d, nr), frist);
     // Erst messen, wenn die Seite nach dem Vorbereiten ein Bild gemalt hat und frei ist (eine leere Seite malt nicht).
     if (s.url() !== 'about:blank') {
-      await mitFrist(s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))), frist);
+      await mitFrist(
+        s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))),
+        frist,
+      );
       await s.evaluate(() => window.__messung?.leeren());
     }
     s.on('response', hoerer);
     const t0 = performance.now();
     await mitFrist(ablauf.schritt(s, d, nr), frist);
     // Bedienbar: Das Ergebnis ist zu sehen, ein Bild ist gemalt und die Seite nimmt wieder Eingaben an.
-    await mitFrist(s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))), frist);
+    await mitFrist(
+      s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))),
+      frist,
+    );
     dauer = performance.now() - t0;
     roh = await s.evaluate(() => window.__messung?.holen() ?? { lange: [], ereignisse: [] });
   } catch (e) {
@@ -100,7 +129,12 @@ async function runde(kontext, ablauf, d, { nr, drossel, frist }) {
   const zeiten = await Promise.all(antworten);
   if (!zeitueberschritten && ablauf.aufraeumen) await ablauf.aufraeumen(s, d, nr);
   await s.close().catch(() => {});
-  return { ...rundeAuswerten({ dauer, ...roh }), anfragen: zeiten.length, serverMs: Math.round(zeiten.reduce((a, b) => a + b, 0)), zeitueberschritten };
+  return {
+    ...rundeAuswerten({ dauer, ...roh }),
+    anfragen: zeiten.length,
+    serverMs: Math.round(zeiten.reduce((a, b) => a + b, 0)),
+    zeitueberschritten,
+  };
 }
 
 async function kontextMit(browser, cookie) {
@@ -123,7 +157,15 @@ async function messen() {
   const system = await verwaltung.api('GET', '/api/werkbank/system').catch(() => null);
   const demo = await verwaltung.api('GET', '/api/werkbank/demo').catch(() => null);
   const browser = await chromium.launch();
-  const ergebnis = { version: 1, ablago: system?.dms?.version ?? null, zeit: new Date().toISOString(), geraet: arg('--geraet', 'unbekannt'), runden, daten: d.beschreibung(Array.isArray(demo) ? demo.reduce((n, x) => n + (x.demo ?? 0), 0) : null), ergebnisse: {} };
+  const ergebnis = {
+    version: 1,
+    ablago: system?.dms?.version ?? null,
+    zeit: new Date().toISOString(),
+    geraet: arg('--geraet', 'unbekannt'),
+    runden,
+    daten: d.beschreibung(Array.isArray(demo) ? demo.reduce((n, x) => n + (x.demo ?? 0), 0) : null),
+    ergebnisse: {},
+  };
   let nr = 0;
   /** Ein Ablauf mit einer Drossel: eigener Kontext, eine Runde zum Aufwärmen (Zwischenspeicher), dann die gezählten. */
   const messeAblauf = async (ablauf, drossel) => {
@@ -135,7 +177,9 @@ async function messen() {
     }
     await k.close();
     const z = zusammenfassen(liste);
-    console.log(`${ablauf.name} (${drossel}×): bedienbar ${z.bedienbar.median} ms, INP ${z.inp.median ?? '–'} ms, längste Aufgabe ${z.laengste.median} ms${z.zeitueberschritten ? `, ${z.zeitueberschritten}× Frist überschritten` : ''}`);
+    console.log(
+      `${ablauf.name} (${drossel}×): bedienbar ${z.bedienbar.median} ms, INP ${z.inp.median ?? '–'} ms, längste Aufgabe ${z.laengste.median} ms${z.zeitueberschritten ? `, ${z.zeitueberschritten}× Frist überschritten` : ''}`,
+    );
     return z;
   };
   const vorherDatei = arg('--vorher');
@@ -155,7 +199,13 @@ async function messen() {
       const [id, drossel] = x.split('|');
       console.log(`Nachmessen: ${ergebnis.ergebnisse[id].name} (${drossel}×)`);
       const e = ergebnis.ergebnisse[id];
-      e.drosseln[drossel] = besseresVon(e.drosseln[drossel], await messeAblauf(ablaeufe.find((a) => a.id === id), Number(drossel)));
+      e.drosseln[drossel] = besseresVon(
+        e.drosseln[drossel],
+        await messeAblauf(
+          ablaeufe.find((a) => a.id === id),
+          Number(drossel),
+        ),
+      );
     }
     if (nach.length) vergleich = vergleichen(ergebnis, vorher);
   } finally {

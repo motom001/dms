@@ -17,7 +17,17 @@ import { pruefeZugang, type Anfrage, type Route } from '../src/routen';
 import type { Benutzer } from '../../shared/src/model';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
-const benutzer = (x: Partial<Benutzer>): Benutzer => ({ id: x.email!, email: '', name: '', rolle: 'mitglied', aktiv: true, hatPasswort: true, erstellt: '2026-01-01', letzteAnmeldung: null, ...x });
+const benutzer = (x: Partial<Benutzer>): Benutzer => ({
+  id: x.email!,
+  email: '',
+  name: '',
+  rolle: 'mitglied',
+  aktiv: true,
+  hatPasswort: true,
+  erstellt: '2026-01-01',
+  letzteAnmeldung: null,
+  ...x,
+});
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
@@ -28,8 +38,16 @@ async function aufbau() {
 
 describe('Befehl dms im Container (#244)', () => {
   it('zerlegt Argumente', () => {
-    assert.deepEqual(zerlege(['passwort', 'a@x.example', '--passwort', 'geheim', '--json']), { befehl: ['passwort', 'a@x.example'], opt: { json: true, ja: false, werte: { passwort: 'geheim' } } });
-    assert.deepEqual(zerlege(['--als=b@x.example', 'benutzer', 'anlegen', 'c@x.example', 'Carl', 'C.', '--admin', '--ja']).opt, { json: false, ja: true, als: 'b@x.example', werte: { admin: 'ja' } });
+    assert.deepEqual(zerlege(['passwort', 'a@x.example', '--passwort', 'geheim', '--json']), {
+      befehl: ['passwort', 'a@x.example'],
+      opt: { json: true, ja: false, werte: { passwort: 'geheim' } },
+    });
+    assert.deepEqual(zerlege(['--als=b@x.example', 'benutzer', 'anlegen', 'c@x.example', 'Carl', 'C.', '--admin', '--ja']).opt, {
+      json: false,
+      ja: true,
+      als: 'b@x.example',
+      werte: { admin: 'ja' },
+    });
     assert.deepEqual(zerlege(['api', 'POST', '/api/x', '--', '--json']).befehl, ['api', 'POST', '/api/x', '--json']);
     assert.throws(() => zerlege(['passwort', 'x', '--passwort']), KonsolenFehler);
   });
@@ -85,11 +103,30 @@ describe('Befehl dms im Container (#244)', () => {
     await pruefeZugang(admin, a, koepfe({ 'x-dms-konsole': schluessel }), konten, undefined, k);
     assert.equal(a.konsole, true);
     assert.equal(a.benutzer?.id, anna.id);
-    await assert.rejects(pruefeZugang(admin, anfrage('172.17.0.1'), koepfe({ 'x-dms-konsole': schluessel }), konten, undefined, k), status(401));
-    await assert.rejects(pruefeZugang(admin, anfrage('127.0.0.1'), koepfe({ 'x-dms-konsole': 'falsch' }), konten, undefined, k), status(401));
-    await assert.rejects(pruefeZugang(admin, anfrage('127.0.0.1'), koepfe({ 'x-dms-konsole': schluessel }), konten, undefined, undefined), status(401));
+    await assert.rejects(
+      pruefeZugang(admin, anfrage('172.17.0.1'), koepfe({ 'x-dms-konsole': schluessel }), konten, undefined, k),
+      status(401),
+    );
+    await assert.rejects(
+      pruefeZugang(admin, anfrage('127.0.0.1'), koepfe({ 'x-dms-konsole': 'falsch' }), konten, undefined, k),
+      status(401),
+    );
+    await assert.rejects(
+      pruefeZugang(admin, anfrage('127.0.0.1'), koepfe({ 'x-dms-konsole': schluessel }), konten, undefined, undefined),
+      status(401),
+    );
     await assert.rejects(pruefeZugang(nurKonsole, anfrage('127.0.0.1'), koepfe({ 'x-dms': '1' }), konten, undefined, k), status(404));
-    await assert.rejects(pruefeZugang(admin, anfrage('127.0.0.1'), koepfe({ 'x-dms-konsole': schluessel, 'x-dms-als': 'wer@x.example' }), konten, undefined, k), status(404));
+    await assert.rejects(
+      pruefeZugang(
+        admin,
+        anfrage('127.0.0.1'),
+        koepfe({ 'x-dms-konsole': schluessel, 'x-dms-als': 'wer@x.example' }),
+        konten,
+        undefined,
+        k,
+      ),
+      status(404),
+    );
   });
 
   it('Passwort direkt setzen beendet die Sitzungen', async () => {
@@ -110,18 +147,28 @@ describe('Befehl dms im Container (#244)', () => {
     const v: Verbindung = {
       async anfrage<T>(m: string, p: string, body?: unknown) {
         aufrufe.push(`${m} ${p}${body !== undefined ? ` ${JSON.stringify(body)}` : ''}`);
-        if (p === '/api/benutzer' && m === 'GET') return [{ id: 'u1', email: 'a@x.example', name: 'A', rolle: 'admin', aktiv: true, hatPasswort: true, letzteAnmeldung: null }] as T;
+        if (p === '/api/benutzer' && m === 'GET')
+          return [
+            { id: 'u1', email: 'a@x.example', name: 'A', rolle: 'admin', aktiv: true, hatPasswort: true, letzteAnmeldung: null },
+          ] as T;
         if (p.endsWith('/sitzungen')) return { beendet: 2 } as T;
         if (p === '/api/benutzer') return { benutzer: { email: 'c@x.example', rolle: 'admin' }, mailVerschickt: false } as T;
         if (p === '/api/konsole/passwort') return { email: 'a@x.example', aktiv: true, zweifaktor: true } as T;
-        if (p === '/api/werkbank/anmeldeschutz') return { gesperrt: [{ ip: '9.9.9.9', grund: 'zu viele', seit: '2026-10-31T10:00:00Z', bis: null }] } as T;
+        if (p === '/api/werkbank/anmeldeschutz')
+          return { gesperrt: [{ ip: '9.9.9.9', grund: 'zu viele', seit: '2026-10-31T10:00:00Z', bis: null }] } as T;
         return {} as T;
       },
     };
     const zeilen: string[] = [];
     const aus: Aus = { zeile: (t) => zeilen.push(t), json: (d) => zeilen.push(JSON.stringify(d)) };
     const fragen: string[] = [];
-    const ein = (antworten: string[], interaktiv = true): Ein => ({ interaktiv, frage: async (f) => { fragen.push(f); return antworten.shift() ?? ''; } });
+    const ein = (antworten: string[], interaktiv = true): Ein => ({
+      interaktiv,
+      frage: async (f) => {
+        fragen.push(f);
+        return antworten.shift() ?? '';
+      },
+    });
     const lauf = (args: string[], e: Ein = ein([])) => fuehreAus(zerlege(args), v, e, aus);
 
     await lauf(['passwort', 'a@x.example'], ein(['ein-neues-passwort', 'ein-neues-passwort']));
@@ -158,7 +205,12 @@ describe('Befehl dms im Container (#244)', () => {
 
   it('klare Meldung, wenn Ablago nicht läuft oder im Einrichtungsmodus ist', async () => {
     const env = { DMS_KONSOLE_DATEI: join(tmpdir(), 'gibt-es-nicht-dms.json'), PORT: '3999' };
-    await assert.rejects(verbinde(env, undefined, (async () => { throw new Error('ECONNREFUSED'); }) as Holen), /läuft nicht/);
+    await assert.rejects(
+      verbinde(env, undefined, (async () => {
+        throw new Error('ECONNREFUSED');
+      }) as Holen),
+      /läuft nicht/,
+    );
     await assert.rejects(verbinde(env, undefined, (async () => new Response('{}', { status: 200 })) as Holen), /Einrichtungsmodus/);
   });
 });

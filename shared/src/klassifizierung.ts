@@ -31,10 +31,20 @@ export const KURZ_MAX = 200;
 export const WEG_HOECHSTENS = 0.95;
 
 /** Ein Mappentyp, der in Frage kommt – so geht er an ein Paket. */
-export interface Kandidat { id: string; name: string; beschreibung: string; erkennbarAn: string }
+export interface Kandidat {
+  id: string;
+  name: string;
+  beschreibung: string;
+  erkennbarAn: string;
+}
 
 /** Ein Typ aus einer Antwort, geprüft. */
-export interface Typvorschlag { typ: string; sicherheit: number; begruendung: string; zitat?: string }
+export interface Typvorschlag {
+  typ: string;
+  sicherheit: number;
+  begruendung: string;
+  zitat?: string;
+}
 
 /** Woher ein Beleg kommt. */
 export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich';
@@ -51,13 +61,20 @@ export interface Klassbeleg {
   /** Paket, von dem der Beleg kommt. */
   paket?: { id: string; name: string };
   /** Kern-Erkennung: das Wort im Text und seine Fundstelle. */
-  wort?: string; fundstelle?: string;
+  wort?: string;
+  fundstelle?: string;
   /** Abgleich: wiedergefundene Mappe (lesbar für die Person) und das Verweisfeld des Typs, das auf ihren Typ zeigt. */
-  mappeId?: string; feld?: string; merkmal?: string;
+  mappeId?: string;
+  feld?: string;
+  merkmal?: string;
 }
 
 /** Ein Typ im Ergebnis: verbundene Sicherheit und alle Belege. */
-export interface Einschaetzung { typId: string; sicherheit: number; belege: Klassbeleg[] }
+export interface Einschaetzung {
+  typId: string;
+  sicherheit: number;
+  belege: Klassbeleg[];
+}
 
 /** Wie ein Weg gelaufen ist (für Hinweise und die API). */
 export interface Wegstand {
@@ -102,9 +119,12 @@ export function klassifizierSchema(kandidaten: string[]): Record<string, unknown
     additionalProperties: false,
     properties: {
       typen: {
-        type: 'array', maxItems: KLASSIFIZIEREN_MAX,
+        type: 'array',
+        maxItems: KLASSIFIZIEREN_MAX,
         items: {
-          type: 'object', required: ['typ', 'sicherheit', 'begruendung'], additionalProperties: false,
+          type: 'object',
+          required: ['typ', 'sicherheit', 'begruendung'],
+          additionalProperties: false,
           properties: {
             typ: { enum: kandidaten },
             sicherheit: { type: 'number', minimum: 0, maximum: 1 },
@@ -119,8 +139,13 @@ export function klassifizierSchema(kandidaten: string[]): Record<string, unknown
 
 /** Für den Vergleich: Leerraum zusammengefasst, Kleinbuchstaben, ohne „…“ und Anführungszeichen außen. */
 function normal(s: string): string {
-  return s.replace(/[\u00a0\u2007\u202f]/g, ' ').replace(/\s+/g, ' ').trim()
-    .replace(/^[…"„“”'‚‘’»«\s]+/, '').replace(/[…"„“”'‚‘’»«\s]+$/, '').toLocaleLowerCase('de-DE');
+  return s
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^[…"„“”'‚‘’»«\s]+/, '')
+    .replace(/[…"„“”'‚‘’»«\s]+$/, '')
+    .toLocaleLowerCase('de-DE');
 }
 
 /**
@@ -141,27 +166,58 @@ const ERLAUBT_EINTRAG = new Set(['typ', 'sicherheit', 'begruendung', 'zitat']);
  * oder falsch sind; ein Zitat, das nicht im Dokument steht, fällt weg (der Eintrag bleibt). Gründe ohne Werte – fürs
  * Protokoll.
  */
-export function pruefeKlassifizierung(antwort: unknown, kandidaten: ReadonlySet<string>, text: string): { typen: Typvorschlag[]; verworfen: string[]; ungueltig?: string; gekuerzt: boolean } {
+export function pruefeKlassifizierung(
+  antwort: unknown,
+  kandidaten: ReadonlySet<string>,
+  text: string,
+): { typen: Typvorschlag[]; verworfen: string[]; ungueltig?: string; gekuerzt: boolean } {
   const verworfen: string[] = [];
   const kaputt = (grund: string) => ({ typen: [], verworfen, ungueltig: grund, gekuerzt: false });
   if (!antwort || typeof antwort !== 'object' || Array.isArray(antwort)) return kaputt('kein Objekt');
   const o = antwort as Record<string, unknown>;
   const fremd = Object.keys(o).filter((k) => !ERLAUBT_OBEN.has(k));
-  if (fremd.length) return kaputt(`unbekannte Angaben: ${fremd.slice(0, 5).map((k) => k.slice(0, 30)).join(', ')}`);
+  if (fremd.length)
+    return kaputt(
+      `unbekannte Angaben: ${fremd
+        .slice(0, 5)
+        .map((k) => k.slice(0, 30))
+        .join(', ')}`,
+    );
   if (!Array.isArray(o.typen)) return kaputt('typen fehlt');
   if (o.typen.length > KLASSIFIZIEREN_MAX) return kaputt(`mehr als ${KLASSIFIZIEREN_MAX} Typen`);
   if (o.gekuerzt !== undefined && typeof o.gekuerzt !== 'boolean') return kaputt('gekuerzt ist kein Ja/Nein');
   const typen: Typvorschlag[] = [];
   for (const [i, roh] of o.typen.entries()) {
     const weg = (grund: string) => verworfen.push(`${i + 1}: ${grund}`);
-    if (!roh || typeof roh !== 'object' || Array.isArray(roh)) { weg('kein Objekt'); continue; }
+    if (!roh || typeof roh !== 'object' || Array.isArray(roh)) {
+      weg('kein Objekt');
+      continue;
+    }
     const e = roh as Record<string, unknown>;
-    if (Object.keys(e).some((k) => !ERLAUBT_EINTRAG.has(k))) { weg('unbekannte Angaben'); continue; }
-    if (typeof e.typ !== 'string' || !kandidaten.has(e.typ)) { weg('fremder Typ'); continue; }
-    if (typen.some((x) => x.typ === e.typ)) { weg('doppelt'); continue; }
-    if (typeof e.sicherheit !== 'number' || !Number.isFinite(e.sicherheit) || e.sicherheit < 0 || e.sicherheit > 1) { weg('Sicherheit nicht zwischen 0 und 1'); continue; }
-    if (typeof e.begruendung !== 'string' || e.begruendung.length > BEGRUENDUNG_MAX) { weg('Begründung fehlt oder zu lang'); continue; }
-    if (e.zitat !== undefined && (typeof e.zitat !== 'string' || e.zitat.length > ZITAT_MAX)) { weg('Zitat zu lang'); continue; }
+    if (Object.keys(e).some((k) => !ERLAUBT_EINTRAG.has(k))) {
+      weg('unbekannte Angaben');
+      continue;
+    }
+    if (typeof e.typ !== 'string' || !kandidaten.has(e.typ)) {
+      weg('fremder Typ');
+      continue;
+    }
+    if (typen.some((x) => x.typ === e.typ)) {
+      weg('doppelt');
+      continue;
+    }
+    if (typeof e.sicherheit !== 'number' || !Number.isFinite(e.sicherheit) || e.sicherheit < 0 || e.sicherheit > 1) {
+      weg('Sicherheit nicht zwischen 0 und 1');
+      continue;
+    }
+    if (typeof e.begruendung !== 'string' || e.begruendung.length > BEGRUENDUNG_MAX) {
+      weg('Begründung fehlt oder zu lang');
+      continue;
+    }
+    if (e.zitat !== undefined && (typeof e.zitat !== 'string' || e.zitat.length > ZITAT_MAX)) {
+      weg('Zitat zu lang');
+      continue;
+    }
     const x: Typvorschlag = { typ: e.typ, sicherheit: e.sicherheit, begruendung: einzeilig(e.begruendung) };
     if (typeof e.zitat === 'string' && e.zitat.trim()) {
       if (stehtImText(text, e.zitat)) x.zitat = einzeilig(e.zitat);
@@ -174,8 +230,12 @@ export function pruefeKlassifizierung(antwort: unknown, kandidaten: ReadonlySet<
 
 /** Text aus einer Antwort für die Anzeige: eine Zeile, ohne Steuerzeichen. */
 export function einzeilig(s: string): string {
-  // eslint-disable-next-line no-control-regex -- Steuerzeichen entfernen ist der Zweck
-  return s.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]+/g, ' ').replace(/\s+/g, ' ').trim();
+  /* eslint-disable no-control-regex -- Steuerzeichen entfernen ist der Zweck */
+  return s
+    .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  /* eslint-enable no-control-regex */
 }
 
 /**
@@ -198,7 +258,9 @@ export function verbindeWege(belege: Array<Klassbeleg & { typId: string }>, name
     erg.push({ typId, sicherheit: Math.round(s * 100) / 100, belege: [...liste].sort((a, b) => b.sicherheit - a.sicherheit) });
   }
   const wege = (e: Einschaetzung) => new Set(e.belege.map((b) => b.weg)).size;
-  return erg.sort((a, b) => b.sicherheit - a.sicherheit || wege(b) - wege(a) || name(a.typId).localeCompare(name(b.typId), 'de')).slice(0, KLASSIFIZIEREN_MAX);
+  return erg
+    .sort((a, b) => b.sicherheit - a.sicherheit || wege(b) - wege(a) || name(a.typId).localeCompare(name(b.typId), 'de'))
+    .slice(0, KLASSIFIZIEREN_MAX);
 }
 
 /** Kurztext eines Kandidaten (erster Satz bzw. gekürzt) – damit die Typliste in kleine Kontexte passt. */

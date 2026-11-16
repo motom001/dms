@@ -29,28 +29,78 @@ export function UeberDms({ schliessen }: { schliessen: () => void }) {
   }, []);
   const extern = { target: '_blank', rel: 'noreferrer', className: 'verweis' } as const;
   return (
-    <dialog ref={ref} className="ueber-dms" aria-labelledby={`${id}-t`}
-      onCancel={(e) => { e.preventDefault(); schliessen(); }}
+    <dialog
+      ref={ref}
+      className="ueber-dms"
+      aria-labelledby={`${id}-t`}
+      onCancel={(e) => {
+        e.preventDefault();
+        schliessen();
+      }}
       // Klick auf den abgedunkelten Rand (das <dialog> selbst, nicht sein Inhalt) schließt.
-      onClick={(e) => { if (e.target === ref.current) schliessen(); }}>
+      onClick={(e) => {
+        if (e.target === ref.current) schliessen();
+      }}>
       <div className="ueber-dms-inhalt">
-        <h2 id={`${id}-t`} className="marke ueber-dms-marke"><Marke logo={null} schriftzug="Ablago" gross /><span className="sr"> {' '}{t('oberflaeche.ueberdms.ueber-ablago')}</span></h2>
+        <h2 id={`${id}-t`} className="marke ueber-dms-marke">
+          <Marke logo={null} schriftzug="Ablago" gross />
+          <span className="sr"> {t('oberflaeche.ueberdms.ueber-ablago')}</span>
+        </h2>
         <p>{t('oberflaeche.ueberdms.ablago-ist-die-dokumentenablage')}</p>
         <dl className="ueber-dms-angaben">
           <dt>{t('oberflaeche.ueberdms.version')}</dt>
           <dd>{version ?? t('oberflaeche.ueberdms.unbekannt')}</dd>
           <dt>{t('oberflaeche.ueberdms.lizenz')}</dt>
-          <dd>{tn('oberflaeche.ueberdms.freie-software-du-darfst', { link: <a href={LIZENZ} {...extern}>{t('oberflaeche.ueberdms.apache-license-2-0')}</a> })}</dd>
+          <dd>
+            {tn('oberflaeche.ueberdms.freie-software-du-darfst', {
+              link: (
+                <a href={LIZENZ} {...extern}>
+                  {t('oberflaeche.ueberdms.apache-license-2-0')}
+                </a>
+              ),
+            })}
+          </dd>
           <dt>{t('oberflaeche.ueberdms.quellcode')}</dt>
-          <dd><a href={quellcodeUrl(version)} {...extern}>{version ? t('oberflaeche.ueberdms.quellcode-der-version', { version }) : t('oberflaeche.ueberdms.quellcode-auf-github')}</a></dd>
+          <dd>
+            <a href={quellcodeUrl(version)} {...extern}>
+              {version ? t('oberflaeche.ueberdms.quellcode-der-version', { version }) : t('oberflaeche.ueberdms.quellcode-auf-github')}
+            </a>
+          </dd>
         </dl>
         <ul className="ueber-dms-links">
-          <li><a href={handbuch('benutzer')} {...extern}>{t('oberflaeche.ueberdms.benutzerhandbuch')}</a></li>
-          <li><a href={handbuch('benutzer', 'neu/')} {...extern}>{t('oberflaeche.ueberdms.neu-in-dieser-version')}</a>{version && <> · <a href={`${REPOSITORY}/releases/tag/v${version}`} {...extern}>{t('oberflaeche.ueberdms.release-notizen')}</a></>}</li>
-          <li>{tn('oberflaeche.ueberdms.freiwillig-ablago-selbst-meldet', { link: <a href={WER_NUTZT} {...extern}>{t('oberflaeche.ueberdms.nutzt-du-ablago-erzaehl')}</a> })}</li>
+          <li>
+            <a href={handbuch('benutzer')} {...extern}>
+              {t('oberflaeche.ueberdms.benutzerhandbuch')}
+            </a>
+          </li>
+          <li>
+            <a href={handbuch('benutzer', 'neu/')} {...extern}>
+              {t('oberflaeche.ueberdms.neu-in-dieser-version')}
+            </a>
+            {version && (
+              <>
+                {' '}
+                ·{' '}
+                <a href={`${REPOSITORY}/releases/tag/v${version}`} {...extern}>
+                  {t('oberflaeche.ueberdms.release-notizen')}
+                </a>
+              </>
+            )}
+          </li>
+          <li>
+            {tn('oberflaeche.ueberdms.freiwillig-ablago-selbst-meldet', {
+              link: (
+                <a href={WER_NUTZT} {...extern}>
+                  {t('oberflaeche.ueberdms.nutzt-du-ablago-erzaehl')}
+                </a>
+              ),
+            })}
+          </li>
         </ul>
         <div className="ueber-dms-knoepfe">
-          <Knopf ref={knopf} art="haupt" onClick={schliessen}>{t('oberflaeche.ueberdms.schliessen')}</Knopf>
+          <Knopf ref={knopf} art="haupt" onClick={schliessen}>
+            {t('oberflaeche.ueberdms.schliessen')}
+          </Knopf>
         </div>
       </div>
     </dialog>

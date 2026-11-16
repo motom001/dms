@@ -13,11 +13,18 @@ import { speicherRepo } from '../src/repo-speicher';
 import { mailText } from '../src/mail';
 
 /** Eine Mail im Test: die „Quelle“ ist JSON, der Leser macht daraus wieder die Mail. */
-type TestMail = Omit<GeleseneMail, 'anhaenge' | 'datum'> & { datum?: string; anhaenge?: Array<{ name: string; mime: string; text: string; eingebettet?: boolean }> };
+type TestMail = Omit<GeleseneMail, 'anhaenge' | 'datum'> & {
+  datum?: string;
+  anhaenge?: Array<{ name: string; mime: string; text: string; eingebettet?: boolean }>;
+};
 const quelleVon = (m: TestMail) => Buffer.from(JSON.stringify(m));
 const lies = async (q: Buffer): Promise<GeleseneMail> => {
   const m = JSON.parse(q.toString()) as TestMail;
-  return { ...m, datum: m.datum ? new Date(m.datum) : null, anhaenge: (m.anhaenge ?? []).map((a) => ({ name: a.name, mime: a.mime, inhalt: Buffer.from(a.text), eingebettet: !!a.eingebettet })) };
+  return {
+    ...m,
+    datum: m.datum ? new Date(m.datum) : null,
+    anhaenge: (m.anhaenge ?? []).map((a) => ({ name: a.name, mime: a.mime, inhalt: Buffer.from(a.text), eingebettet: !!a.eingebettet })),
+  };
 };
 
 class TestServer {
@@ -28,18 +35,39 @@ class TestServer {
   uidValidity = '1';
   naechste = 1;
   fehler: Error | null = null;
-  lege(m: TestMail) { this.mails.set(this.naechste++, quelleVon(m)); }
+  lege(m: TestMail) {
+    this.mails.set(this.naechste++, quelleVon(m));
+  }
   verbinde = async (): Promise<ImapSitzung> => {
     if (this.fehler) throw this.fehler;
     const s = this;
     return {
-      uidValidity: s.uidValidity, anzahl: s.mails.size,
-      async neue(ab) { return [...s.mails.entries()].filter(([u]) => u >= ab).map(([uid, q]) => ({ uid, messageId: (JSON.parse(q.toString()) as TestMail).messageId })); },
-      async quelle(uid) { const q = s.mails.get(uid); if (!q) throw new Error('weg'); return q; },
-      async verschiebe(uid, o) { s.verschoben.push([uid, o]); s.mails.delete(uid); },
-      async gelesen(uid) { s.gelesenMarkiert.push(uid); },
-      async loesche(uid) { s.geloescht.push(uid); s.mails.delete(uid); },
-      async ordnerListe() { return ['INBOX', 'Ablago']; },
+      uidValidity: s.uidValidity,
+      anzahl: s.mails.size,
+      async neue(ab) {
+        return [...s.mails.entries()]
+          .filter(([u]) => u >= ab)
+          .map(([uid, q]) => ({ uid, messageId: (JSON.parse(q.toString()) as TestMail).messageId }));
+      },
+      async quelle(uid) {
+        const q = s.mails.get(uid);
+        if (!q) throw new Error('weg');
+        return q;
+      },
+      async verschiebe(uid, o) {
+        s.verschoben.push([uid, o]);
+        s.mails.delete(uid);
+      },
+      async gelesen(uid) {
+        s.gelesenMarkiert.push(uid);
+      },
+      async loesche(uid) {
+        s.geloescht.push(uid);
+        s.mails.delete(uid);
+      },
+      async ordnerListe() {
+        return ['INBOX', 'Ablago'];
+      },
       async schliessen() {},
     };
   };
@@ -55,11 +83,21 @@ async function aufbau(o: Record<string, unknown> = {}) {
   const einstellungen = speicherEinstellungen();
   const meldungen: string[] = [];
   const pf = new Postfaecher({
-    dienst: d, einstellungen, verbinde: server.verbinde, lies,
-    verschluessele: (k) => `v1:${Buffer.from(k).toString('base64')}`, entschluessele: (w) => Buffer.from(w.slice(3), 'base64').toString(),
-    anAdmins: async (b) => { meldungen.push(mailText(b)); },
+    dienst: d,
+    einstellungen,
+    verbinde: server.verbinde,
+    lies,
+    verschluessele: (k) => `v1:${Buffer.from(k).toString('base64')}`,
+    entschluessele: (w) => Buffer.from(w.slice(3), 'base64').toString(),
+    anAdmins: async (b) => {
+      meldungen.push(mailText(b));
+    },
   });
-  const [p] = await pf.speichere({ name: 'Rechnungen', server: 'imap.example.org', port: 993, benutzer: 'dms@example.org', passwort: 'app-passwort', ...o }, null, 'test');
+  const [p] = await pf.speichere(
+    { name: 'Rechnungen', server: 'imap.example.org', port: 993, benutzer: 'dms@example.org', passwort: 'app-passwort', ...o },
+    null,
+    'test',
+  );
   const posten = async () => {
     const post = await d.eingangskanaele.postTyp();
     return Promise.all((await d.mappen.listeMappen(post.id)).map(async (m) => ({ m, x: await d.mappen.holeMappe(m.id) })));
@@ -67,24 +105,54 @@ async function aufbau(o: Record<string, unknown> = {}) {
   return { d, pf, p, server, posten, einstellungen, anna, meldungen };
 }
 
-const RECHNUNG: TestMail = { messageId: '<r1@example.org>', betreff: 'Ihre Rechnung 4711', datum: '2026-10-30T09:15:00Z', absenderName: 'Stadtwerke', absenderAdresse: 'rechnung@stadtwerke.example', text: 'Anbei Ihre Rechnung.', anhaenge: [{ name: 'Rechnung 4711.pdf', mime: 'application/pdf', text: '%PDF-1.4 x' }, { name: 'logo.png', mime: 'image/png', text: 'png', eingebettet: true }] };
+const RECHNUNG: TestMail = {
+  messageId: '<r1@example.org>',
+  betreff: 'Ihre Rechnung 4711',
+  datum: '2026-10-30T09:15:00Z',
+  absenderName: 'Stadtwerke',
+  absenderAdresse: 'rechnung@stadtwerke.example',
+  text: 'Anbei Ihre Rechnung.',
+  anhaenge: [
+    { name: 'Rechnung 4711.pdf', mime: 'application/pdf', text: '%PDF-1.4 x' },
+    { name: 'logo.png', mime: 'image/png', text: 'png', eingebettet: true },
+  ],
+};
 
 describe('Postfächer (#196)', () => {
   it('nennt zu jedem Prüffehler den Bereich des Editors (#1000)', () => {
     const v = (k: string) => `enc:${k}`;
-    const orte = (x: unknown) => { try { pruefePostfach(x, null, v); } catch (e) { return ((e as Fachfehler).details as { orte: string[] }).orte; } return null; };
+    const orte = (x: unknown) => {
+      try {
+        pruefePostfach(x, null, v);
+      } catch (e) {
+        return ((e as Fachfehler).details as { orte: string[] }).orte;
+      }
+      return null;
+    };
     assert.deepEqual(orte({ server: 'imap.x.example', benutzer: 'a', passwort: 'p' }), ['grunddaten']);
     assert.deepEqual(orte({ name: 'X', benutzer: 'a', passwort: 'p' }), ['verbindung'], 'ohne Server');
-    assert.deepEqual(orte({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', abstand: 0, absender: 'kein adresse' }), ['abholen']);
+    assert.deepEqual(orte({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', abstand: 0, absender: 'kein adresse' }), [
+      'abholen',
+    ]);
     assert.deepEqual(orte({ server: 'imap.x.example', abstand: 5000 })?.sort(), ['abholen', 'grunddaten', 'verbindung']);
     assert.equal(orte({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p' }), null);
   });
 
   it('prüft Eingaben; Passwort verschlüsselt und nie in der Ansicht', async () => {
     const v = (k: string) => `enc:${k}`;
-    assert.throws(() => pruefePostfach({ name: 'X', server: 'imap.x.example', benutzer: 'a' }, null, v), (e) => e instanceof Fachfehler && /Passwort/.test(e.message));
-    assert.throws(() => pruefePostfach({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', verschluesselung: 'keine' }, null, v), /ausdrücklich/);
-    const p = pruefePostfach({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', absender: 'chef@firma.example, bank.example' }, null, v);
+    assert.throws(
+      () => pruefePostfach({ name: 'X', server: 'imap.x.example', benutzer: 'a' }, null, v),
+      (e) => e instanceof Fachfehler && /Passwort/.test(e.message),
+    );
+    assert.throws(
+      () => pruefePostfach({ name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', verschluesselung: 'keine' }, null, v),
+      /ausdrücklich/,
+    );
+    const p = pruefePostfach(
+      { name: 'X', server: 'imap.x.example', benutzer: 'a', passwort: 'p', absender: 'chef@firma.example, bank.example' },
+      null,
+      v,
+    );
     assert.equal(p.passwort, 'enc:p');
     assert.deepEqual(p.absender, ['chef@firma.example', 'bank.example']);
     assert.equal(pruefePostfach({ name: 'Y' }, p, v).passwort, 'enc:p', 'leeres Passwort behält das alte');
@@ -106,14 +174,23 @@ describe('Postfächer (#196)', () => {
     assert.equal(m.werte.von, 'Stadtwerke <rechnung@stadtwerke.example>');
     assert.equal(m.werte.datum, '2026-10-30');
     assert.equal(m.werte.nachricht, 'Anbei Ihre Rechnung.');
-    assert.deepEqual(x.dokumente.map((dok) => dok.name).sort(), ['Ihre Rechnung 4711.eml', 'Rechnung 4711.pdf'], 'Logo übersprungen, Original dabei');
+    assert.deepEqual(
+      x.dokumente.map((dok) => dok.name).sort(),
+      ['Ihre Rechnung 4711.eml', 'Rechnung 4711.pdf'],
+      'Logo übersprungen, Original dabei',
+    );
     assert.deepEqual(server.verschoben, [[1, 'Ablago']]);
     assert.equal(await pf.abrufen(p.id), 0, 'nichts doppelt');
     assert.equal((await pf.ansicht())[0].stand.uebernommen[0].mappeId, m.id);
   });
 
   it('Absenderfilter und „nur mit Anhang“ lassen Mails unverändert liegen; Markieren und Löschen', async () => {
-    const { pf, p, server, posten } = await aufbau({ absender: 'stadtwerke.example', nurMitAnhang: true, nachher: 'gelesen', fuer: undefined });
+    const { pf, p, server, posten } = await aufbau({
+      absender: 'stadtwerke.example',
+      nurMitAnhang: true,
+      nachher: 'gelesen',
+      fuer: undefined,
+    });
     server.lege({ ...RECHNUNG, messageId: '<a>', absenderAdresse: 'spam@werbung.example' });
     server.lege({ ...RECHNUNG, messageId: '<b>', anhaenge: [] });
     server.lege({ ...RECHNUNG, messageId: '<c>' });
@@ -147,7 +224,8 @@ describe('Postfächer (#196)', () => {
   it('meldet Fehler verständlich, wartet länger und benachrichtigt nach dem dritten Mal', async () => {
     const { pf, p, server, meldungen } = await aufbau();
     server.fehler = Object.assign(new Error('Command failed'), { authenticationFailed: true });
-    for (let i = 0; i < 3; i++) await assert.rejects(pf.abrufen(p.id), (e) => e instanceof Fachfehler && /Anmeldung abgelehnt/.test(e.message));
+    for (let i = 0; i < 3; i++)
+      await assert.rejects(pf.abrufen(p.id), (e) => e instanceof Fachfehler && /Anmeldung abgelehnt/.test(e.message));
     const [a] = await pf.ansicht();
     assert.equal(a.stand.fehlerFolge, 3);
     assert.ok(a.stand.naechsterAbruf);
@@ -183,10 +261,19 @@ describe('Postfächer (#196)', () => {
   it('zu große Anhänge stehen mit Grund in der Historie', async () => {
     const { pf, p, server, posten, d } = await aufbau({ original: false });
     const gross = 'x'.repeat(100 * 1024 * 1024 + 1);
-    server.lege({ ...RECHNUNG, anhaenge: [{ name: 'riesig.bin', mime: 'application/octet-stream', text: gross }, { name: 'ok.pdf', mime: 'application/pdf', text: '%PDF' }] });
+    server.lege({
+      ...RECHNUNG,
+      anhaenge: [
+        { name: 'riesig.bin', mime: 'application/octet-stream', text: gross },
+        { name: 'ok.pdf', mime: 'application/pdf', text: '%PDF' },
+      ],
+    });
     await pf.abrufen(p.id);
     const [{ m, x }] = await posten();
-    assert.deepEqual(x.dokumente.map((dok) => dok.name), ['ok.pdf']);
+    assert.deepEqual(
+      x.dokumente.map((dok) => dok.name),
+      ['ok.pdf'],
+    );
     const h = await d.mappenHistorie.historie(m.id);
     assert.ok(h.some((e) => e.art === 'uebernommen' && /riesig\.bin: größer als 100 MB/.test(String(e.daten.text))));
   });

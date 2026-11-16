@@ -66,11 +66,11 @@ export const gesperrt = (a: Archiv | null | undefined, m: MitWerten, jetzt = new
 
 /** Beschriftung des Stichtag-Felds („Frist beginnt mit …“, #1051); ohne Feld dessen Kennung. */
 export const stichtagName = (typ: { archiv?: Archiv | null; felder: Array<{ key: string; label: string }> } | null | undefined): string =>
-  (typ?.archiv?.stichtag ? typ.felder.find((f) => f.key === typ.archiv!.stichtag)?.label || typ.archiv.stichtag : '');
+  typ?.archiv?.stichtag ? typ.felder.find((f) => f.key === typ.archiv!.stichtag)?.label || typ.archiv.stichtag : '';
 
 /** Archivmodus aus Paket oder Schnittstelle (#212, #1051): Frist 1–30 Jahre, Stichtag ein Feldschlüssel oder null. */
 export function archivAus(roh: unknown): Archiv | null {
-  const a = roh && typeof roh === 'object' ? roh as Record<string, unknown> : null;
+  const a = roh && typeof roh === 'object' ? (roh as Record<string, unknown>) : null;
   const jahre = a ? Math.trunc(Number(a.jahre)) : 0;
   if (!a || !(jahre >= 1 && jahre <= JAHRE_MAX)) return null;
   const stichtag = (a.stichtag == null ? '' : String(a.stichtag)).trim() || null;
@@ -104,34 +104,50 @@ const ganzeJahre = (v: unknown) => typeof v === 'number' && Number.isInteger(v) 
 function jahreFehler(a: Record<string, unknown>, wo: string): string[] {
   const fehler: string[] = [];
   if (!ganzeJahre(a.jahre)) fehler.push(`${wo}: archiv.jahre muss eine ganze Zahl von 1 bis ${JAHRE_MAX} sein.`);
-  if (a.jahreBeruflich !== undefined && !ganzeJahre(a.jahreBeruflich)) fehler.push(`${wo}: archiv.jahreBeruflich muss eine ganze Zahl von 1 bis ${JAHRE_MAX} sein.`);
-  else if (ganzeJahre(a.jahre) && ganzeJahre(a.jahreBeruflich) && (a.jahreBeruflich as number) < (a.jahre as number)) fehler.push(`${wo}: archiv.jahreBeruflich ist kürzer als jahre – beruflich gilt meist länger.`);
+  if (a.jahreBeruflich !== undefined && !ganzeJahre(a.jahreBeruflich))
+    fehler.push(`${wo}: archiv.jahreBeruflich muss eine ganze Zahl von 1 bis ${JAHRE_MAX} sein.`);
+  else if (ganzeJahre(a.jahre) && ganzeJahre(a.jahreBeruflich) && (a.jahreBeruflich as number) < (a.jahre as number))
+    fehler.push(`${wo}: archiv.jahreBeruflich ist kürzer als jahre – beruflich gilt meist länger.`);
   return fehler;
 }
 
 /** Fehler in `archiv` eines Paket-Typs (wie `pruefen.py` der Registry); `felder` sind die des Typs im Paket. */
 export function paketArchivFehler(roh: unknown, felder: Array<{ key: string; typ?: unknown }>, wo: string): string[] {
   if (roh === undefined || roh === null) return [];
-  if (typeof roh !== 'object' || Array.isArray(roh)) return [`${wo}: archiv muss ein Objekt sein ({ jahre, jahreBeruflich, stichtag, leererStichtag }).`];
+  if (typeof roh !== 'object' || Array.isArray(roh))
+    return [`${wo}: archiv muss ein Objekt sein ({ jahre, jahreBeruflich, stichtag, leererStichtag }).`];
   const a = roh as Record<string, unknown>;
   const fehler: string[] = [];
-  for (const k of Object.keys(a)) if (!['jahre', 'jahreBeruflich', 'stichtag', 'leererStichtag'].includes(k)) fehler.push(`${wo}: archiv kennt „${k}“ nicht (möglich: jahre, jahreBeruflich, stichtag, leererStichtag).`);
+  for (const k of Object.keys(a))
+    if (!['jahre', 'jahreBeruflich', 'stichtag', 'leererStichtag'].includes(k))
+      fehler.push(`${wo}: archiv kennt „${k}“ nicht (möglich: jahre, jahreBeruflich, stichtag, leererStichtag).`);
   fehler.push(...jahreFehler(a, wo));
-  if (a.stichtag !== undefined && a.stichtag !== null && felder.find((f) => f.key === a.stichtag)?.typ !== 'datum') fehler.push(`${wo}: archiv.stichtag „${String(a.stichtag)}“ muss ein Datumsfeld dieses Typs sein.`);
-  if (a.leererStichtag !== undefined && !(LEERER_STICHTAG as readonly unknown[]).includes(a.leererStichtag)) fehler.push(`${wo}: archiv.leererStichtag ist „anlage“ oder „laeuftNicht“.`);
-  else if (a.leererStichtag !== undefined && (a.stichtag === undefined || a.stichtag === null)) fehler.push(`${wo}: archiv.leererStichtag nur mit archiv.stichtag.`);
+  if (a.stichtag !== undefined && a.stichtag !== null && felder.find((f) => f.key === a.stichtag)?.typ !== 'datum')
+    fehler.push(`${wo}: archiv.stichtag „${String(a.stichtag)}“ muss ein Datumsfeld dieses Typs sein.`);
+  if (a.leererStichtag !== undefined && !(LEERER_STICHTAG as readonly unknown[]).includes(a.leererStichtag))
+    fehler.push(`${wo}: archiv.leererStichtag ist „anlage“ oder „laeuftNicht“.`);
+  else if (a.leererStichtag !== undefined && (a.stichtag === undefined || a.stichtag === null))
+    fehler.push(`${wo}: archiv.leererStichtag nur mit archiv.stichtag.`);
   return fehler;
 }
 
 /** Archivmodus eines neuen Typs aus der Paketangabe; mit „beruflich genutzt“ (#1032) gilt `jahreBeruflich`. */
 export function archivAusPaket(p: PaketArchiv | undefined, beruflich: boolean): Archiv | null {
   if (!p) return null;
-  return archivAus({ jahre: beruflich && p.jahreBeruflich ? p.jahreBeruflich : p.jahre, stichtag: p.stichtag ?? null, leererStichtag: p.leererStichtag });
+  return archivAus({
+    jahre: beruflich && p.jahreBeruflich ? p.jahreBeruflich : p.jahre,
+    stichtag: p.stichtag ?? null,
+    leererStichtag: p.leererStichtag,
+  });
 }
 
 /** Archivmodus eines Typs ins Paket (Paket erstellen): wie eingestellt; `jahreBeruflich` gibt es am Typ nicht. */
 export function archivInsPaket(a: Archiv | null | undefined, felder: Array<{ key: string }>): PaketArchiv | null {
   if (!a) return null;
   const stichtag = a.stichtag && felder.some((f) => f.key === a.stichtag) ? a.stichtag : undefined;
-  return { jahre: a.jahre, ...(stichtag ? { stichtag } : {}), ...(stichtag && a.leererStichtag === 'laeuftNicht' ? { leererStichtag: 'laeuftNicht' as const } : {}) };
+  return {
+    jahre: a.jahre,
+    ...(stichtag ? { stichtag } : {}),
+    ...(stichtag && a.leererStichtag === 'laeuftNicht' ? { leererStichtag: 'laeuftNicht' as const } : {}),
+  };
 }

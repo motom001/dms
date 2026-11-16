@@ -24,7 +24,10 @@ describe('Überflüssige Umgebungsvariablen (#478)', () => {
 
   it('nur DATABASE_URL: Grund Datei, nicht „Ordner“, Knopf zur Anbindung', () => {
     const v = ueberfluessigeVariablen({ datenbank: true });
-    assert.deepEqual(v.map((x) => x.name), ['DATABASE_URL']);
+    assert.deepEqual(
+      v.map((x) => x.name),
+      ['DATABASE_URL'],
+    );
     const h = variablenHinweis(v)!;
     assert.equal(h.zeilen[0].grund, 'die Datenbank-Anbindung steht jetzt in einer Datei im Datenordner');
     assert.doesNotMatch(h.zeilen[0].grund, /Ordner im Container/);
@@ -42,7 +45,15 @@ describe('Überflüssige Umgebungsvariablen (#478)', () => {
 
   it('gemischt: Grund je Zeile, feste Reihenfolge, „diese Variablen“', () => {
     const v = ueberfluessigeVariablen({ ordner: ['DMS_DATEIEN', 'DMS_SICHERUNG'], datenbank: true, haushalt: true });
-    assert.deepEqual(v.map((x) => [x.name, x.art]), [['DMS_DATEIEN', 'ordner'], ['DMS_SICHERUNG', 'ordner'], ['DATABASE_URL', 'datenbank'], ['HAUSHALT_ID', 'haushalt']]);
+    assert.deepEqual(
+      v.map((x) => [x.name, x.art]),
+      [
+        ['DMS_DATEIEN', 'ordner'],
+        ['DMS_SICHERUNG', 'ordner'],
+        ['DATABASE_URL', 'datenbank'],
+        ['HAUSHALT_ID', 'haushalt'],
+      ],
+    );
     const h = variablenHinweis(v)!;
     assert.equal(h.zeilen.length, 4);
     assert.match(h.zeilen[2].grund, /Datenbank-Anbindung/);
@@ -64,20 +75,30 @@ describe('DATABASE_URL vom Image oder aus der Compose-Datei (#805)', () => {
 
   /** Umgebung, die Ablago nach start.sh sieht; `compose` sind die Variablen aus der Compose-Datei. */
   function nachStartSkript(compose: Record<string, string>): Record<string, string | undefined> {
-    const aus = execFileSync('sh', ['-c', `set -eu\n${abschnitt}\nenv`], { env: { PATH: process.env.PATH, DMS_VARIANTE: 'komplett', ...compose }, encoding: 'utf8' });
-    return Object.fromEntries(aus.split('\n').filter((z) => z.includes('=')).map((z) => [z.slice(0, z.indexOf('=')), z.slice(z.indexOf('=') + 1)]));
+    const aus = execFileSync('sh', ['-c', `set -eu\n${abschnitt}\nenv`], {
+      env: { PATH: process.env.PATH, DMS_VARIANTE: 'komplett', ...compose },
+      encoding: 'utf8',
+    });
+    return Object.fromEntries(
+      aus
+        .split('\n')
+        .filter((z) => z.includes('='))
+        .map((z) => [z.slice(0, z.indexOf('=')), z.slice(z.indexOf('=') + 1)]),
+    );
   }
 
   /** Was die Werkbank-Übersicht zu DATABASE_URL meldet (wie in werkbank/werkbank.routen.ts). */
   async function hinweis(env: Record<string, string | undefined>, laufend = ausUrl(INTERN)!) {
     const variante = process.env.DMS_VARIANTE;
     try {
-      if (env.DMS_VARIANTE) process.env.DMS_VARIANTE = env.DMS_VARIANTE; else delete process.env.DMS_VARIANTE;
+      if (env.DMS_VARIANTE) process.env.DMS_VARIANTE = env.DMS_VARIANTE;
+      else delete process.env.DMS_VARIANTE;
       const v = new AnbindungVerwaltung('/gibt-es-nicht', laufend, umgebungAusCompose(env, ausUrl(env.DATABASE_URL)), () => {});
       const umgebung = (await v.stand()).umgebung;
       return { umgebung, variablen: ueberfluessigeVariablen({ datenbank: umgebung === 'gleich' }).map((x) => x.name) };
     } finally {
-      if (variante === undefined) delete process.env.DMS_VARIANTE; else process.env.DMS_VARIANTE = variante;
+      if (variante === undefined) delete process.env.DMS_VARIANTE;
+      else process.env.DMS_VARIANTE = variante;
     }
   }
 

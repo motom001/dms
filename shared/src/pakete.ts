@@ -50,7 +50,10 @@ const mitVersion = (seite: string, dms: string) => (VERSION.test(dms) ? `${seite
 export const KATALOG_LINK_REL = 'noopener noreferrer';
 export const BEREICH = /^(>=|>|=|\^|~)?(\d+\.\d+\.\d+)( <(\d+\.\d+\.\d+))?$/;
 
-export interface Benannt { schluessel: string; name: string }
+export interface Benannt {
+  schluessel: string;
+  name: string;
+}
 export interface KatalogVersion {
   version: string;
   /** Nötige DMS-Version, z. B. „>=0.63.0“. */
@@ -63,14 +66,21 @@ export interface KatalogVersion {
   sha256: string;
   groesse: number;
   veroeffentlicht: string;
-  quelle: string; readme: string; changelog: string;
+  quelle: string;
+  readme: string;
+  changelog: string;
   /** Ergänzung eines anderen Pakets (#405, Manifest `ergaenzt`), z. B. eine Zusatzsprache der Texterkennung. */
   ergaenzt?: Ergaenzung;
   /** Sprachpaket (#731): Sprache, maschinell übersetzt oder geprüft – für den Hinweis im Katalog. */
   sprache?: KatalogSprache;
 }
 /** Angaben eines Sprachpakets im Katalog (#731, dms-registry #116). */
-export interface KatalogSprache { kennung: string; maschinell: boolean; geprueftVon?: string; ablago?: string }
+export interface KatalogSprache {
+  kennung: string;
+  maschinell: boolean;
+  geprueftVon?: string;
+  ablago?: string;
+}
 
 /** Liest `sprache` einer Katalogversion; Ungültiges zählt nicht (das Paket bleibt sichtbar, nur ohne Hinweis). */
 export function liesKatalogSprache(v: unknown): KatalogSprache | undefined {
@@ -79,7 +89,8 @@ export function liesKatalogSprache(v: unknown): KatalogSprache | undefined {
   if (typeof o.kennung !== 'string' || !/^[a-z]{2,3}(-[A-Z]{2})?$/.test(o.kennung)) return undefined;
   const gv = typeof o.geprueft_von === 'string' ? o.geprueft_von : typeof o.geprueftVon === 'string' ? o.geprueftVon : '';
   return {
-    kennung: o.kennung, maschinell: o.maschinell === true,
+    kennung: o.kennung,
+    maschinell: o.maschinell === true,
     ...(gv.trim() && gv.length <= 200 && !/[<>]/.test(gv) ? { geprueftVon: gv.trim() } : {}),
     ...(typeof o.ablago === 'string' && VERSION.test(o.ablago) ? { ablago: o.ablago } : {}),
   };
@@ -91,7 +102,10 @@ export function liesKatalogSprache(v: unknown): KatalogSprache | undefined {
  * ergänzten Paket, gruppiert nach `gruppe` (z. B. „Weitere Sprachen“); ohne Gruppe unter „Ergänzungen“.
  * Ältere DMS-Versionen übergehen das Feld (#635) – Pakete damit brauchen kein höheres `dms`.
  */
-export interface Ergaenzung { paket: string; gruppe?: string }
+export interface Ergaenzung {
+  paket: string;
+  gruppe?: string;
+}
 /** Ab dieser Version zeigt das DMS Ergänzungen als Häkchen und installiert mehrere Pakete in einem Ablauf (#405). */
 export const DMS_ERGAENZUNG_AB = '0.151.0';
 export const ERGAENZUNG_GRUPPE_MAX = 40;
@@ -99,14 +113,16 @@ export const ERGAENZUNG_GRUPPE_MAX = 40;
 /** Liest `ergaenzt` (Manifest oder Katalog); null, wenn nicht da. fehler: was daran ungültig ist. */
 export function liesErgaenzt(v: unknown, abhaengigkeiten: Record<string, unknown> = {}): { ergaenzt: Ergaenzung | null; fehler: string[] } {
   if (v === undefined || v === null) return { ergaenzt: null, fehler: [] };
-  const roh = typeof v === 'string' ? { paket: v } : v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : null;
+  const roh =
+    typeof v === 'string' ? { paket: v } : v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
   if (!roh) return { ergaenzt: null, fehler: ['ergaenzt: der Name eines Pakets oder { paket, gruppe }.'] };
   const fehler: string[] = [];
   const paket = typeof roh.paket === 'string' ? roh.paket : '';
   if (!PAKET_ID.test(paket)) fehler.push(t('gemeinsam.pakete.ergaenzt-ungueltige-paket-id'));
   else if (!(paket in abhaengigkeiten)) fehler.push(t('gemeinsam.pakete.ergaenzt-muss-auch-unter', { paket }));
   const gruppe = roh.gruppe === undefined ? undefined : typeof roh.gruppe === 'string' ? roh.gruppe.trim() : null;
-  if (gruppe === null || (gruppe !== undefined && (!gruppe || gruppe.length > ERGAENZUNG_GRUPPE_MAX))) fehler.push(t('gemeinsam.pakete.ergaenzt-gruppe-ein-text', { ERGAENZUNG_GRUPPE_MAX }));
+  if (gruppe === null || (gruppe !== undefined && (!gruppe || gruppe.length > ERGAENZUNG_GRUPPE_MAX)))
+    fehler.push(t('gemeinsam.pakete.ergaenzt-gruppe-ein-text', { ERGAENZUNG_GRUPPE_MAX }));
   for (const k of Object.keys(roh)) if (k !== 'paket' && k !== 'gruppe') fehler.push(t('gemeinsam.pakete.ergaenzt-gibt-es-nicht', { k }));
   return fehler.length ? { ergaenzt: null, fehler } : { ergaenzt: { paket, ...(gruppe ? { gruppe } : {}) }, fehler };
 }
@@ -137,7 +153,14 @@ export function liesErsetzt(v: unknown, id: string): { ersetzt: string[]; fehler
 }
 
 /** Ein Angebot zum Mitinstallieren (#405): Ergänzung eines Pakets aus dem Katalog. */
-export interface ErgaenzungAngebot { id: string; name: string; version: string; beschreibung: string; gruppe: string | null; code: boolean }
+export interface ErgaenzungAngebot {
+  id: string;
+  name: string;
+  version: string;
+  beschreibung: string;
+  gruppe: string | null;
+  code: boolean;
+}
 
 /**
  * Ergänzungen eines Pakets im Katalog (#405): Pakete, deren neueste zur DMS-Version passende Version `ergaenzt: <basis>`
@@ -149,18 +172,31 @@ export function ergaenzungenVon(k: Katalog, basis: string, dms: string, installi
     // Unter einer früheren Id installiert (#1084, `ersetzt`) zählt wie installiert – es kommt als Update.
     if (p.id === basis || installiert.some((x) => x.id === p.id || p.ersetzt?.includes(x.id))) continue;
     const v = [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => dmsPasst(dms, x.dms));
-    if (v?.ergaenzt?.paket === basis) erg.push({ id: p.id, name: p.name, version: v.version, beschreibung: p.beschreibung, gruppe: v.ergaenzt.gruppe ?? null, code: v.code });
+    if (v?.ergaenzt?.paket === basis)
+      erg.push({
+        id: p.id,
+        name: p.name,
+        version: v.version,
+        beschreibung: p.beschreibung,
+        gruppe: v.ergaenzt.gruppe ?? null,
+        code: v.code,
+      });
   }
   return erg.sort((a, b) => (a.gruppe ?? '').localeCompare(b.gruppe ?? '', 'de') || a.name.localeCompare(b.name, 'de'));
 }
 export interface KatalogPaket {
-  id: string; name: string; beschreibung: string;
+  id: string;
+  name: string;
+  beschreibung: string;
   autor: { name: string; github: string };
-  lizenz: string; aktuell: string;
+  lizenz: string;
+  aktuell: string;
   /** Neueste zuerst. */
   versionen: KatalogVersion[];
   /** Anzeige wie im Katalog (#645, dms-registry #84/#98): Lucide-Name, Sprachkürzel, Kategorien – optional. */
-  symbol?: string; kuerzel?: string; kategorien?: string[];
+  symbol?: string;
+  kuerzel?: string;
+  kategorien?: string[];
   /** Herausgeber (#1084, dms-registry #173) als umgedrehte Domain, z. B. `app.ablago`; fehlt in älteren Katalogen. */
   herausgeber?: string;
   /** Ersetzte Ids dieses Pakets (#1084, Manifest `ersetzt`), z. B. texterkennung_fra für texterkennung.fra. */
@@ -170,7 +206,13 @@ export interface KatalogPaket {
  * empfohlen (#1048): „Für den Anfang“ – Paket-Ids in dieser Reihenfolge (Liste im Katalog, dms-registry
  * `werkzeuge/empfohlen.yaml`); fehlt in älteren Katalogen, dann nimmt Ablago seine eigene Liste.
  */
-export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[]; empfohlen?: string[] }
+export interface Katalog {
+  format: number;
+  erstellt: string;
+  quelle: string;
+  pakete: KatalogPaket[];
+  empfohlen?: string[];
+}
 
 /**
  * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `ersetzt` nennt – so
@@ -182,7 +224,13 @@ export function katalogPaketZu(k: Katalog, id: string): KatalogPaket | undefined
 }
 
 /** Eine neuere Version eines installierten Pakets im Katalog seiner Quelle (#1167). */
-export interface NeueVersion { id: string; name: string; installiert: string; neu: string; quelle: string }
+export interface NeueVersion {
+  id: string;
+  name: string;
+  installiert: string;
+  neu: string;
+  quelle: string;
+}
 
 /**
  * Neuere Versionen der installierten Pakete (#1167, #1168): je Paket aus dem Katalog, aus dem es stammt, die aktuelle
@@ -190,7 +238,10 @@ export interface NeueVersion { id: string; name: string; installiert: string; ne
  * gemerkt: Nach einem Update verschwindet der Merker sofort, eine noch neuere Version steht weiter da. Umgezogene
  * Pakete (#1084) findet es unter der neuen Id. Pakete aus Quellen, die nicht abgerufen wurden, zählen nicht.
  */
-export function neueVersionen(installiert: ReadonlyArray<Pick<InstalliertesPaket, 'id' | 'name' | 'version' | 'herkunft'>>, kataloge: ReadonlyArray<{ url: string; katalog: Katalog | null }>): NeueVersion[] {
+export function neueVersionen(
+  installiert: ReadonlyArray<Pick<InstalliertesPaket, 'id' | 'name' | 'version' | 'herkunft'>>,
+  kataloge: ReadonlyArray<{ url: string; katalog: Katalog | null }>,
+): NeueVersion[] {
   const erg: NeueVersion[] = [];
   for (const p of installiert) {
     if (p.herkunft.art !== 'katalog') continue;
@@ -198,15 +249,14 @@ export function neueVersionen(installiert: ReadonlyArray<Pick<InstalliertesPaket
     const k = kataloge.find((x) => x.url === url)?.katalog;
     const kp = k ? katalogPaketZu(k, p.id) : undefined;
     const v = kp?.versionen.find((x) => x.version === kp.aktuell) ?? kp?.versionen[0];
-    if (v && vergleicheVersion(v.version, p.version) > 0) erg.push({ id: p.id, name: p.name, installiert: p.version, neu: v.version, quelle: url });
+    if (v && vergleicheVersion(v.version, p.version) > 0)
+      erg.push({ id: p.id, name: p.name, installiert: p.version, neu: v.version, quelle: url });
   }
   return erg;
 }
 
 /** Woher ein installiertes Paket stammt. */
-export type Herkunft =
-  | { art: 'katalog'; url: string }
-  | { art: 'hochgeladen'; von: string | null; am: string };
+export type Herkunft = { art: 'katalog'; url: string } | { art: 'hochgeladen'; von: string | null; am: string };
 
 /**
  * Herkunftsprüfung (#594): Was die Signatur über einen Katalog, eine Sammeldatei oder ein hochgeladenes Paket
@@ -241,7 +291,11 @@ export interface HerkunftPruefung {
 export const KATALOG_ALT_TAGE = 90;
 
 export interface InstalliertesPaket {
-  id: string; name: string; version: string; beschreibung: string; lizenz: string;
+  id: string;
+  name: string;
+  version: string;
+  beschreibung: string;
+  lizenz: string;
   autor: { name: string; github: string };
   herkunft: Herkunft;
   /** Herausgeber (#1084), umgedrehte Domain wie `app.ablago`; fehlt bei älteren Installationen (dann gilt der des Katalogs). */
@@ -252,8 +306,10 @@ export interface InstalliertesPaket {
   herausgeberSchluessel?: string;
   /** Ersetzte Ids dieser Installation (#1084), z. B. texterkennung_fra nach dem Umzug auf texterkennung.fra. */
   ersetzt?: string[];
-  installiert: string; installiertVon: string | null;
-  aktualisiert: string | null; aktualisiertVon: string | null;
+  installiert: string;
+  installiertVon: string | null;
+  aktualisiert: string | null;
+  aktualisiertVon: string | null;
   /** Schlüssel der mitgelieferten Automatisierungen dieser Version (#712) – bei einem Update stehen nur neue zur Wahl. */
   automatisierungen?: string[];
   /** Lokaler Schlüssel → Id des Mappentyps bzw. der Sicht im DMS. */
@@ -330,7 +386,8 @@ const teile = (v: string) => v.split('.').map((x) => Number.parseInt(x, 10) || 0
 
 /** < 0: a älter, 0: gleich, > 0: a neuer. Vorspann wie „v“ und Zusätze wie „-rc1“ zählen nicht. */
 export function vergleicheVersion(a: string, b: string): number {
-  const x = teile(a.replace(/^v/, '').split('-')[0]), y = teile(b.replace(/^v/, '').split('-')[0]);
+  const x = teile(a.replace(/^v/, '').split('-')[0]),
+    y = teile(b.replace(/^v/, '').split('-')[0]);
   for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
   return 0;
 }
@@ -348,17 +405,27 @@ export function passt(version: string, bereich: string): boolean {
   const [haupt, neben] = teile(basis);
   let ok: boolean;
   switch (op) {
-    case '>=': ok = c >= 0; break;
-    case '>': ok = c > 0; break;
-    case '^': ok = c >= 0 && (haupt > 0 ? vergleicheVersion(version, `${haupt + 1}.0.0`) < 0 : vergleicheVersion(version, `0.${neben + 1}.0`) < 0); break;
-    case '~': ok = c >= 0 && vergleicheVersion(version, `${haupt}.${neben + 1}.0`) < 0; break;
-    default: ok = c === 0;
+    case '>=':
+      ok = c >= 0;
+      break;
+    case '>':
+      ok = c > 0;
+      break;
+    case '^':
+      ok = c >= 0 && (haupt > 0 ? vergleicheVersion(version, `${haupt + 1}.0.0`) < 0 : vergleicheVersion(version, `0.${neben + 1}.0`) < 0);
+      break;
+    case '~':
+      ok = c >= 0 && vergleicheVersion(version, `${haupt}.${neben + 1}.0`) < 0;
+      break;
+    default:
+      ok = c === 0;
   }
   return ok && (!ober || vergleicheVersion(version, ober) < 0);
 }
 
 /** Eine DMS-Version ohne Zahl (z. B. „Entwicklung“) gilt als passend. */
-export const dmsPasst = (dms: string, bereich: string) => !/^\d+\.\d+\.\d+/.test(dms.replace(/^v/, '')) || passt(dms.replace(/^v/, ''), bereich);
+export const dmsPasst = (dms: string, bereich: string) =>
+  !/^\d+\.\d+\.\d+/.test(dms.replace(/^v/, '')) || passt(dms.replace(/^v/, ''), bereich);
 
 /** Neueste Version eines Katalogpakets, die zu einem Bereich passt. */
 export function neuestePassende(p: KatalogPaket, bereich?: string): KatalogVersion | undefined {
@@ -371,14 +438,20 @@ export function neuestePassende(p: KatalogPaket, bereich?: string): KatalogVersi
  */
 export function nachAbhaengigkeiten<T extends { id: string; abhaengigkeiten: Record<string, string> }>(liste: T[]): T[] | null {
   const nach = new Map(liste.map((x) => [x.id, x]));
-  const fertig = new Set<string>(), unterwegs = new Set<string>();
+  const fertig = new Set<string>(),
+    unterwegs = new Set<string>();
   const erg: T[] = [];
   const besuche = (x: T): boolean => {
     if (fertig.has(x.id)) return true;
     if (unterwegs.has(x.id)) return false;
     unterwegs.add(x.id);
-    for (const a of Object.keys(x.abhaengigkeiten)) { const z = nach.get(a); if (z && !besuche(z)) return false; }
-    unterwegs.delete(x.id); fertig.add(x.id); erg.push(x);
+    for (const a of Object.keys(x.abhaengigkeiten)) {
+      const z = nach.get(a);
+      if (z && !besuche(z)) return false;
+    }
+    unterwegs.delete(x.id);
+    fertig.add(x.id);
+    erg.push(x);
     return true;
   };
   for (const x of liste) if (!besuche(x)) return null;
@@ -387,7 +460,10 @@ export function nachAbhaengigkeiten<T extends { id: string; abhaengigkeiten: Rec
 
 /** Ein Paket in einer Auswahl aus dem Katalog (#460, #461): selbst gewählt oder als Abhängigkeit mitgenommen. */
 export interface AuswahlPaket {
-  id: string; name: string; version: string; code: boolean;
+  id: string;
+  name: string;
+  version: string;
+  code: boolean;
   /** Selbst gewählt (sonst: kommt als Abhängigkeit mit). */
   gewaehlt: boolean;
   /** Von diesen Paketen gebraucht. */
@@ -403,7 +479,13 @@ export interface AuswahlPaket {
  * Abhängigkeiten zuerst. probleme: was sich nicht auflösen lässt (dann fehlt das Paket in der Liste).
  * versionen: für selbst gewählte Pakete eine bestimmte Version statt der neuesten (#405).
  */
-export function auswahlMitAbhaengigkeiten(k: Katalog, gewaehlt: string[], dms: string, installiert: Array<{ id: string; version: string }> = [], versionen: Record<string, string> = {}): { pakete: AuswahlPaket[]; probleme: string[] } {
+export function auswahlMitAbhaengigkeiten(
+  k: Katalog,
+  gewaehlt: string[],
+  dms: string,
+  installiert: Array<{ id: string; version: string }> = [],
+  versionen: Record<string, string> = {},
+): { pakete: AuswahlPaket[]; probleme: string[] } {
   const plan = new Map<string, AuswahlPaket>();
   const probleme: string[] = [];
   const name = (id: string) => k.pakete.find((p) => p.id === id)?.name ?? id;
@@ -413,23 +495,45 @@ export function auswahlMitAbhaengigkeiten(k: Katalog, gewaehlt: string[], dms: s
     const schon = plan.get(id);
     if (schon) {
       if (von && !schon.fuer.includes(von)) schon.fuer.push(von);
-      if (bereich && !passt(schon.version, bereich)) probleme.push(t('gemeinsam.pakete.braucht-gewaehlt-ist', { name: name(von ?? id), name2: schon.name, bereich, version: schon.version }));
+      if (bereich && !passt(schon.version, bereich))
+        probleme.push(
+          t('gemeinsam.pakete.braucht-gewaehlt-ist', { name: name(von ?? id), name2: schon.name, bereich, version: schon.version }),
+        );
       return;
     }
     const kp = k.pakete.find((p) => p.id === id);
-    if (!kp) { probleme.push(t('gemeinsam.pakete.braucht-das-gibt-es', { name: name(von ?? id), id })); return; }
-    const fest = !von ? versionen[id] : undefined;
-    const v = [...kp.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => (fest ? x.version === fest : !bereich || passt(x.version, bereich)) && dmsPasst(dms, x.dms));
-    if (!v) {
-      probleme.push(von ? t('gemeinsam.pakete.braucht-dazu-passt-keine', { name: name(von), name2: kp.name, bereich: String(bereich), dms }) : t('gemeinsam.pakete.keine-version-passt-zu', { name: kp.name, dms }));
+    if (!kp) {
+      probleme.push(t('gemeinsam.pakete.braucht-das-gibt-es', { name: name(von ?? id), id }));
       return;
     }
-    plan.set(id, { id, name: kp.name, version: v.version, code: v.code, gewaehlt: !von, fuer: von ? [von] : [], abhaengigkeiten: v.abhaengigkeiten, ...(v.ergaenzt ? { ergaenzt: v.ergaenzt } : {}) });
+    const fest = !von ? versionen[id] : undefined;
+    const v = [...kp.versionen]
+      .sort((a, b) => vergleicheVersion(b.version, a.version))
+      .find((x) => (fest ? x.version === fest : !bereich || passt(x.version, bereich)) && dmsPasst(dms, x.dms));
+    if (!v) {
+      probleme.push(
+        von
+          ? t('gemeinsam.pakete.braucht-dazu-passt-keine', { name: name(von), name2: kp.name, bereich: String(bereich), dms })
+          : t('gemeinsam.pakete.keine-version-passt-zu', { name: kp.name, dms }),
+      );
+      return;
+    }
+    plan.set(id, {
+      id,
+      name: kp.name,
+      version: v.version,
+      code: v.code,
+      gewaehlt: !von,
+      fuer: von ? [von] : [],
+      abhaengigkeiten: v.abhaengigkeiten,
+      ...(v.ergaenzt ? { ergaenzt: v.ergaenzt } : {}),
+    });
     for (const [a, b] of Object.entries(v.abhaengigkeiten)) nimm(a, b, id);
   };
   for (const id of gewaehlt) {
     const x = plan.get(id);
-    if (x) x.gewaehlt = true; else nimm(id, null, null);
+    if (x) x.gewaehlt = true;
+    else nimm(id, null, null);
   }
   const liste = [...plan.values()];
   const geordnet = nachAbhaengigkeiten(liste);
@@ -447,7 +551,9 @@ function anzeige(p: Record<string, unknown>): Pick<KatalogPaket, 'symbol' | 'kue
   const r: Pick<KatalogPaket, 'symbol' | 'kuerzel' | 'kategorien'> = {};
   if (typeof p.symbol === 'string' && /^[a-z0-9-]{1,60}$/.test(p.symbol)) r.symbol = p.symbol;
   if (typeof p.kuerzel === 'string' && /^[A-Za-z]{1,3}$/.test(p.kuerzel)) r.kuerzel = p.kuerzel.toUpperCase();
-  const k = Array.isArray(p.kategorien) ? p.kategorien.filter((x): x is string => typeof x === 'string' && /^[a-z0-9_-]{1,40}$/.test(x)).slice(0, 5) : [];
+  const k = Array.isArray(p.kategorien)
+    ? p.kategorien.filter((x): x is string => typeof x === 'string' && /^[a-z0-9_-]{1,40}$/.test(x)).slice(0, 5)
+    : [];
   if (k.length) r.kategorien = k;
   return r;
 }
@@ -459,7 +565,8 @@ export function liesKatalog(j: unknown): Katalog {
   const pakete: KatalogPaket[] = [];
   for (const p of k.pakete) {
     if (!p || !PAKET_ID.test(text(p.id)) || !Array.isArray(p.versionen)) continue;
-    const versionen = p.versionen.filter((v) => v && VERSION.test(text(v.version)) && /^[0-9a-f]{64}$/.test(text(v.sha256)) && text(v.archiv))
+    const versionen = p.versionen
+      .filter((v) => v && VERSION.test(text(v.version)) && /^[0-9a-f]{64}$/.test(text(v.sha256)) && text(v.archiv))
       .map((v) => ({
         ...v,
         dms: text(v.dms) || '>=0.0.0',
@@ -467,7 +574,9 @@ export function liesKatalog(j: unknown): Katalog {
         inhalt: { mappentypen: v.inhalt?.mappentypen ?? [], sichten: v.inhalt?.sichten ?? [], beispiele: Number(v.inhalt?.beispiele) || 0 },
         code: !!v.code,
         // Ergänzung (#405): ungültige Angaben zählen nicht (das Paket bleibt installierbar, nur ohne Häkchen).
-        ergaenzt: liesErgaenzt(v.ergaenzt, v.abhaengigkeiten && typeof v.abhaengigkeiten === 'object' ? v.abhaengigkeiten : {}).ergaenzt ?? undefined,
+        ergaenzt:
+          liesErgaenzt(v.ergaenzt, v.abhaengigkeiten && typeof v.abhaengigkeiten === 'object' ? v.abhaengigkeiten : {}).ergaenzt ??
+          undefined,
         sprache: liesKatalogSprache(v.sprache),
       }))
       .sort((a, b) => vergleicheVersion(b.version, a.version));
@@ -477,20 +586,33 @@ export function liesKatalog(j: unknown): Katalog {
     pakete.push({
       ...(istHerausgeber(roh.herausgeber) ? { herausgeber: roh.herausgeber } : {}),
       ...(ersetzt.length ? { ersetzt } : {}),
-      id: p.id, name: text(p.name) || p.id, beschreibung: text(p.beschreibung),
-      autor: { name: text(p.autor?.name), github: text(p.autor?.github) }, lizenz: text(p.lizenz),
-      aktuell: VERSION.test(text(p.aktuell)) ? p.aktuell : versionen[0].version, versionen,
+      id: p.id,
+      name: text(p.name) || p.id,
+      beschreibung: text(p.beschreibung),
+      autor: { name: text(p.autor?.name), github: text(p.autor?.github) },
+      lizenz: text(p.lizenz),
+      aktuell: VERSION.test(text(p.aktuell)) ? p.aktuell : versionen[0].version,
+      versionen,
       ...anzeige(p as unknown as Record<string, unknown>),
     });
   }
   // Empfehlungen (#1048): nur gültige Ids, höchstens 20; Ungültiges zählt nicht (wie bei Symbol und Kategorien).
-  const empfohlen = Array.isArray(k.empfohlen) ? [...new Set(k.empfohlen.filter((x): x is string => typeof x === 'string' && PAKET_ID.test(x)))].slice(0, 20) : [];
-  return { format: 1, erstellt: text(k.erstellt), quelle: text(k.quelle), pakete: pakete.sort((a, b) => a.name.localeCompare(b.name, 'de')), ...(empfohlen.length ? { empfohlen } : {}) };
+  const empfohlen = Array.isArray(k.empfohlen)
+    ? [...new Set(k.empfohlen.filter((x): x is string => typeof x === 'string' && PAKET_ID.test(x)))].slice(0, 20)
+    : [];
+  return {
+    format: 1,
+    erstellt: text(k.erstellt),
+    quelle: text(k.quelle),
+    pakete: pakete.sort((a, b) => a.name.localeCompare(b.name, 'de')),
+    ...(empfohlen.length ? { empfohlen } : {}),
+  };
 }
 
 /** Herkunft lesbar, z. B. „offizieller Katalog“ oder „hochgeladen von … am …“. */
 export function herkunftText(h: Herkunft, person: (id: string | null) => string = (x) => x ?? '–'): string {
-  if (h.art === 'katalog') return h.url === OFFIZIELLER_KATALOG ? t('gemeinsam.pakete.offizieller-katalog') : t('gemeinsam.pakete.katalog', { url: h.url });
+  if (h.art === 'katalog')
+    return h.url === OFFIZIELLER_KATALOG ? t('gemeinsam.pakete.offizieller-katalog') : t('gemeinsam.pakete.katalog', { url: h.url });
   return t('gemeinsam.pakete.hochgeladen-von-am', { person: person(h.von), datum: new Date(h.am).toLocaleDateString(gebietsschema()) });
 }
 
@@ -505,7 +627,11 @@ export const istPaketText = (info: string | null | undefined) => !!info && (info
 
 /** Was ein Paket mit Dokumenten darf. */
 export type DokumentRecht = 'keine' | 'lesen' | 'schreiben';
-export const DOKUMENT_RECHTE: Record<DokumentRecht, string> = { keine: t('gemeinsam.pakete.keine-dokumente'), lesen: t('gemeinsam.pakete.dokumente-lesen'), schreiben: t('gemeinsam.pakete.dokumente-lesen-und-volltext') };
+export const DOKUMENT_RECHTE: Record<DokumentRecht, string> = {
+  keine: t('gemeinsam.pakete.keine-dokumente'),
+  lesen: t('gemeinsam.pakete.dokumente-lesen'),
+  schreiben: t('gemeinsam.pakete.dokumente-lesen-und-volltext'),
+};
 /**
  * Ereignisse, die ein Paket abonnieren kann (nicht blockierend, mit Wiederholung) – genau die des gemeinsamen
  * Ereigniskatalogs mit `paket: true` (shared/src/ereignisse.ts, #724) und die veralteten Namen im Übergang.
@@ -530,7 +656,13 @@ export const EREIGNISSE = {
   'zeitplan.ausgefuehrt': t('gemeinsam.pakete.zeitplan-ausgefuehrt'),
 } as const satisfies Record<PaketKatalogArt | keyof typeof VERALTETE_EREIGNISSE, string>;
 /** Ereignisse zu Mappen (#670): brauchen code.mappentypen, gelten nur für diese Typen (seit #686 auch fremde). */
-export const MAPPEN_EREIGNISSE: readonly EreignisArt[] = ['mappe.angelegt', 'mappe.geaendert', 'mappe.geloescht', 'mappe.wiederhergestellt', 'frist.erreicht'];
+export const MAPPEN_EREIGNISSE: readonly EreignisArt[] = [
+  'mappe.angelegt',
+  'mappe.geaendert',
+  'mappe.geloescht',
+  'mappe.wiederhergestellt',
+  'frist.erreicht',
+];
 /** Ab dieser Version kennt das DMS Mappen-Ereignisse für Pakete (#670); ältere lehnen die Ereignisse beim Installieren ab. */
 export const DMS_MAPPEN_EREIGNISSE_AB = '0.153.0';
 /** Ab dieser Version (#686) nimmt das DMS fremde Mappentypen und „*“ in code.mappentypen an; ältere lehnen sie ab. */
@@ -566,7 +698,22 @@ export const DMS_VEKTOREN_AB = '0.120.0';
  */
 export const DMS_ANTWORTEN_AB = '0.124.0';
 /** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
-export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:sicherung-holen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren', 'dms:hinweise': 'pakete.recht.hinweise', 'dms:leerseiten': 'pakete.recht.leerseiten', 'dms:anlagen': 'pakete.recht.anlagen' };
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = {
+  'dms:vektoren': 'pakete.recht.vektoren',
+  'dms:antworten': 'pakete.recht.antworten',
+  'dms:erkennen': 'pakete.recht.erkennen',
+  'dms:texterkennung': 'pakete.recht.texterkennung',
+  'dms:umwandeln': 'pakete.recht.umwandeln',
+  'dms:sicherung-lesen': 'pakete.recht.sicherung',
+  'dms:sicherung-holen': 'pakete.recht.sicherung',
+  'dms:volltext': 'pakete.recht.volltext',
+  'dms:archivfassung': 'pakete.recht.archivfassung',
+  'dms:uebersetzen': 'pakete.recht.uebersetzen',
+  'dms:klassifizieren': 'pakete.recht.klassifizieren',
+  'dms:hinweise': 'pakete.recht.hinweise',
+  'dms:leerseiten': 'pakete.recht.leerseiten',
+  'dms:anlagen': 'pakete.recht.anlagen',
+};
 /**
  * Ab dieser Version (#585) kennt das DMS das Ereignis `sicherung.fertig` und die Schnittstelle `dms:sicherung-lesen`:
  * Ein Paket liest die verschlüsselte Sicherung in Stücken, kopiert sie außer Haus und meldet je Sicherung zurück.
@@ -610,17 +757,33 @@ export const hatNetz = (c: PaketCode | undefined) => !!c && (c.netz.length > 0 |
  */
 export const EREIGNISSE_OHNE_INHALT: readonly EreignisArt[] = ['sicherung.fertig', 'paket.einstellungen_geaendert', 'zeitplan.ausgefuehrt'];
 /** Ereignisse, mit denen ein Paket etwas aus der Ablage erfährt (#796): alle außer {@link EREIGNISSE_OHNE_INHALT}. */
-export const INHALT_EREIGNISSE: readonly EreignisArt[] = (Object.keys(EREIGNISSE) as EreignisArt[]).filter((e) => !EREIGNISSE_OHNE_INHALT.includes(e));
-export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = ['dms:antworten', 'dms:erkennen', 'dms:klassifizieren', 'dms:uebersetzen', 'dms:vektoren', 'dms:texterkennung', 'dms:volltext', 'dms:umwandeln', 'dms:archivfassung'];
+export const INHALT_EREIGNISSE: readonly EreignisArt[] = (Object.keys(EREIGNISSE) as EreignisArt[]).filter(
+  (e) => !EREIGNISSE_OHNE_INHALT.includes(e),
+);
+export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = [
+  'dms:antworten',
+  'dms:erkennen',
+  'dms:klassifizieren',
+  'dms:uebersetzen',
+  'dms:vektoren',
+  'dms:texterkennung',
+  'dms:volltext',
+  'dms:umwandeln',
+  'dms:archivfassung',
+];
 /**
  * KI-Paket bzw. „KI-Dienst“ (#796): ein Paket, das Inhalte lesen oder bekommen kann (Mappen, Dokumente, Volltext,
  * Ausschnitte) und ins Netz darf. Es bekommt nur Inhalte aus Mappentypen, die der Administrator für KI-Dienste
  * zugelassen hat – neue Mappentypen erst nach ausdrücklicher Zulassung. Pakete ohne Netz rechnen im Haus und
  * sind davon nicht betroffen.
  */
-export const istKiPaket = (c: PaketCode | undefined): boolean => !!c && hatNetz(c)
-  && (c.rechte.lesen.length > 0 || c.rechte.dokumente !== 'keine' || (c.rechte.schnittstellen ?? []).some((s) => INHALT_SCHNITTSTELLEN.includes(s))
-    || c.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e)));
+export const istKiPaket = (c: PaketCode | undefined): boolean =>
+  !!c &&
+  hatNetz(c) &&
+  (c.rechte.lesen.length > 0 ||
+    c.rechte.dokumente !== 'keine' ||
+    (c.rechte.schnittstellen ?? []).some((s) => INHALT_SCHNITTSTELLEN.includes(s)) ||
+    c.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e)));
 
 /** Werkbank (#796): Mappentypen mit „für KI-Dienste zugelassen“, KI-Pakete und welche Mappentypen jedes bekommt. */
 export interface KiUebersicht {
@@ -644,12 +807,18 @@ export interface PaketCode {
   sprache: string;
   ereignisse: EreignisArt[];
   /** Typverweise wie in Inhalten (eigene ohne Präfix, <paket>:<schluessel>, dms:<kennung>) oder „*“. */
-  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht; schnittstellen?: Schnittstelle[];
+  rechte: {
+    lesen: string[];
+    schreiben: string[];
+    dokumente: DokumentRecht;
+    schnittstellen?: Schnittstelle[];
     /**
      * Einrichtung bzw. Nachweise lesen (#1053, #1054): die Bereiche, die das Paket anfragt. Nur lesend; wirksam ist nur,
      * was der Administrator in den Paket-Einstellungen anhakt. Nie zusammen mit Netz (Ergänzung Sicherheit).
      */
-    einrichtung?: PaketdatenBereich[]; nachweise?: PaketdatenBereich[] };
+    einrichtung?: PaketdatenBereich[];
+    nachweise?: PaketdatenBereich[];
+  };
   /** Erlaubte Adressen (https://host…); alles andere ist gesperrt. */
   netz: string[];
   /**
@@ -706,7 +875,9 @@ export const DMS_RECHTE_TYPEN: Record<string, string> = { ablageort: 'Ablageort'
  */
 export const DMS_ALIAS: Record<string, string> = { ablageort: 'basis:ablageort' };
 /** Veraltete `dms:…`-Verweise aus einer Liste (je einmal), z. B. ["dms:ablageort"]. */
-export const veralteteVerweise = (liste: Iterable<string>): string[] => [...new Set([...liste].filter((v) => v.startsWith('dms:') && DMS_ALIAS[v.slice(4)]))];
+export const veralteteVerweise = (liste: Iterable<string>): string[] => [
+  ...new Set([...liste].filter((v) => v.startsWith('dms:') && DMS_ALIAS[v.slice(4)])),
+];
 /** Ab dieser Version kennt das DMS `dms:post` in code.rechte (#435); ältere ignorieren die Kennung. */
 export const DMS_POST_RECHT_AB = '0.94.0';
 
@@ -726,11 +897,20 @@ export const CODE_MAX = PAKET_MAX;
  * zusammen zählen zur Paketgrenze (PAKET_MAX). dms-registry prüft dasselbe (pruefen.py).
  */
 export const BEISPIEL_ORDNER = 'inhalt/beispiele/';
-export const BEISPIEL_ENDUNGEN: Readonly<Record<string, string>> = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
+export const BEISPIEL_ENDUNGEN: Readonly<Record<string, string>> = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+};
 /** Ab dieser Version legt Ablago Beispiel-Dokumente an (#878); ältere übergehen `dokumente` an Beispielen. */
 export const BEISPIEL_DOKUMENTE_AB = '0.223.0';
 /** Stand einer Beispiel-Mappe nach dem Anlegen (#878): Prüfwert der Feldwerte und Dokumente als „Id:sha256“. */
-export interface BeispielStand { id: string; werte: string; dokumente: string[] }
+export interface BeispielStand {
+  id: string;
+  werte: string;
+  dokumente: string[];
+}
 
 /** Größe in MB für Meldungen, gerundet auf eine Stelle mit Komma. */
 export const inMB = (bytes: number): string => (Math.round(bytes / 104857.6) / 10).toString().replace('.', ',');
@@ -739,10 +919,21 @@ export const inMB = (bytes: number): string => (Math.round(bytes / 104857.6) / 1
  * Legt eine Neuinstallation sichtbar etwas an – Mappentypen, Ansichten oder Beispiele (#643)? Nur dann zeigt die
  * Vorschau „Das wird angelegt“; Pakete nur mit Code (z. B. Texterkennung) beschreiben stattdessen, was sie tun.
  */
-export function legtEtwasAn(v: { typen: Array<{ vorhanden: boolean; geloescht?: boolean }>; sichten: Array<{ vorhanden: boolean }>; beispiele: number; vorgaben?: Array<{ zustand: string }>; ergaenzungen?: Array<{ fehlt?: boolean }> }): boolean {
-  return v.typen.some((t) => !t.vorhanden && !t.geloescht) || v.sichten.some((s) => !s.vorhanden) || v.beispiele > 0
+export function legtEtwasAn(v: {
+  typen: Array<{ vorhanden: boolean; geloescht?: boolean }>;
+  sichten: Array<{ vorhanden: boolean }>;
+  beispiele: number;
+  vorgaben?: Array<{ zustand: string }>;
+  ergaenzungen?: Array<{ fehlt?: boolean }>;
+}): boolean {
+  return (
+    v.typen.some((t) => !t.vorhanden && !t.geloescht) ||
+    v.sichten.some((s) => !s.vorhanden) ||
+    v.beispiele > 0 ||
     // Vorgaben (#1038): neue Mappen und Vorlagen an Vorgaben anderer Pakete.
-    || !!v.vorgaben?.some((x) => x.zustand === 'neu') || !!v.ergaenzungen?.some((x) => !x.fehlt);
+    !!v.vorgaben?.some((x) => x.zustand === 'neu') ||
+    !!v.ergaenzungen?.some((x) => !x.fehlt)
+  );
 }
 
 /**
@@ -752,7 +943,10 @@ export function legtEtwasAn(v: { typen: Array<{ vorhanden: boolean; geloescht?: 
 export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: number }> = []): { code: PaketCode | null; fehler: string[] } {
   const fehler: string[] = [];
   const summe = dateien.filter((d) => d.name.startsWith('code/')).reduce((n, d) => n + d.groesse, 0);
-  if (summe > CODE_MAX) fehler.push(t('gemeinsam.pakete.code-die-dateien-unter', { replace: (summe / 1048576).toFixed(1).replace('.', ','), wert: CODE_MAX / 1048576 }));
+  if (summe > CODE_MAX)
+    fehler.push(
+      t('gemeinsam.pakete.code-die-dateien-unter', { replace: (summe / 1048576).toFixed(1).replace('.', ','), wert: CODE_MAX / 1048576 }),
+    );
   if (c === undefined || c === null) return { code: null, fehler };
   if (typeof c !== 'object' || Array.isArray(c)) return { code: null, fehler: [t('gemeinsam.pakete.code-muss-ein-objekt')] };
   const x = c as Record<string, unknown>;
@@ -760,38 +954,59 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   if (!SPRACHEN.includes(sprache)) fehler.push(t('gemeinsam.pakete.code-sprache-eine-von', { SPRACHEN: SPRACHEN.join(', ') }));
   const liste = (v: unknown, wo: string): string[] => {
     if (v === undefined) return [];
-    if (!Array.isArray(v) || v.some((y) => typeof y !== 'string')) { fehler.push(`${wo}: Liste von Texten erwartet.`); return []; }
+    if (!Array.isArray(v) || v.some((y) => typeof y !== 'string')) {
+      fehler.push(`${wo}: Liste von Texten erwartet.`);
+      return [];
+    }
     return [...new Set(v as string[])];
   };
   const ereignisse = liste(x.ereignisse, 'code.ereignisse');
-  for (const e of ereignisse) if (!(e in EREIGNISSE)) fehler.push(t('gemeinsam.pakete.code-ereignisse-gibt-es', { e, keys: Object.keys(EREIGNISSE).join(', ') }));
+  for (const e of ereignisse)
+    if (!(e in EREIGNISSE)) fehler.push(t('gemeinsam.pakete.code-ereignisse-gibt-es', { e, keys: Object.keys(EREIGNISSE).join(', ') }));
   // Mappen-Ereignisse (#670): nur zu den Typen unter code.mappentypen (eigene Typen des Pakets, ohne Präfix).
   const mappentypen = liste(x.mappentypen, 'code.mappentypen');
   const mitMappen = ereignisse.filter((e) => MAPPEN_EREIGNISSE.includes(e as EreignisArt));
   // Fremde Mappentypen (#686): wie in code.rechte (paket:typ, dms:post …) oder „*“ für alle, die das Paket lesen darf.
-  for (const k of mappentypen) if (!TYPVERWEIS_ODER_ALLE.test(k)) fehler.push(t('gemeinsam.pakete.code-mappentypen-schluessel-eines', { k }));
-  if (mitMappen.length && !mappentypen.length) fehler.push(t('gemeinsam.pakete.code-ereignisse-braucht-code', { mitMappen: mitMappen.join(', ') }));
+  for (const k of mappentypen)
+    if (!TYPVERWEIS_ODER_ALLE.test(k)) fehler.push(t('gemeinsam.pakete.code-mappentypen-schluessel-eines', { k }));
+  if (mitMappen.length && !mappentypen.length)
+    fehler.push(t('gemeinsam.pakete.code-ereignisse-braucht-code', { mitMappen: mitMappen.join(', ') }));
   if (!mitMappen.length && mappentypen.length) fehler.push(t('gemeinsam.pakete.code-mappentypen-nur-mit'));
   const r = (x.rechte ?? {}) as Record<string, unknown>;
   if (typeof r !== 'object' || Array.isArray(r)) fehler.push(t('gemeinsam.pakete.code-rechte-muss-ein'));
-  const lesen = liste(r.lesen, 'code.rechte.lesen'), schreiben = liste(r.schreiben, 'code.rechte.schreiben');
-  for (const text2 of [...lesen, ...schreiben]) if (!TYPVERWEIS_ODER_ALLE.test(text2)) fehler.push(t('gemeinsam.pakete.code-rechte-ist-kein', { t: text2 }));
+  const lesen = liste(r.lesen, 'code.rechte.lesen'),
+    schreiben = liste(r.schreiben, 'code.rechte.schreiben');
+  for (const text2 of [...lesen, ...schreiben])
+    if (!TYPVERWEIS_ODER_ALLE.test(text2)) fehler.push(t('gemeinsam.pakete.code-rechte-ist-kein', { t: text2 }));
   // Benutzer sehen Pakete nie (auch nicht mit "*"), siehe Handbuch „Pakete mit Code“.
-  for (const text2 of [...lesen, ...schreiben]) if (text2 === 'dms:benutzer') fehler.push(t('gemeinsam.pakete.code-rechte-dms-benutzer'));
-  else if (text2.startsWith('dms:') && !DMS_RECHTE_TYPEN[text2.slice(4)]) fehler.push(t('gemeinsam.pakete.code-rechte-diesen-mappentyp', { t: text2, map: Object.keys(DMS_RECHTE_TYPEN).map((k) => `dms:${k}`).join(', ') }));
+  for (const text2 of [...lesen, ...schreiben])
+    if (text2 === 'dms:benutzer') fehler.push(t('gemeinsam.pakete.code-rechte-dms-benutzer'));
+    else if (text2.startsWith('dms:') && !DMS_RECHTE_TYPEN[text2.slice(4)])
+      fehler.push(
+        t('gemeinsam.pakete.code-rechte-diesen-mappentyp', {
+          t: text2,
+          map: Object.keys(DMS_RECHTE_TYPEN)
+            .map((k) => `dms:${k}`)
+            .join(', '),
+        }),
+      );
   const dokumente = (r.dokumente ?? 'keine') as DokumentRecht;
   if (!(dokumente in DOKUMENT_RECHTE)) fehler.push(t('gemeinsam.pakete.code-rechte-dokumente-keine'));
   // Schnittstellen des Kerns (#442), z. B. dms:vektoren; Vektoren gibt es nur zu Dokumenten, die das Paket lesen darf.
   const schnittstellen = liste(r.schnittstellen, 'code.rechte.schnittstellen');
-  for (const s of schnittstellen) if (!(s in SCHNITTSTELLEN)) fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-gibt', { s, keys: Object.keys(SCHNITTSTELLEN).join(', ') }));
+  for (const s of schnittstellen)
+    if (!(s in SCHNITTSTELLEN))
+      fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-gibt', { s, keys: Object.keys(SCHNITTSTELLEN).join(', ') }));
   if (schnittstellen.includes('dms:vektoren') && dokumente === 'keine') fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-dms'));
   // Hinweise an Mappen (#1034): nur an Mappen, die das Paket auch schreiben darf.
   if (schnittstellen.includes('dms:hinweise') && !schreiben.length) fehler.push(t('gemeinsam.pakete.code-hinweise-braucht-schreiben'));
   // Leerseiten (#997): markiert nur Seiten in Post – das Paket muss Post und ihre Dokumente lesen dürfen.
-  if (schnittstellen.includes('dms:leerseiten') && (dokumente === 'keine' || !lesen.some((v) => v === 'dms:post' || v === ALLE_TYPEN))) fehler.push(t('gemeinsam.pakete.code-leerseiten-braucht-post'));
+  if (schnittstellen.includes('dms:leerseiten') && (dokumente === 'keine' || !lesen.some((v) => v === 'dms:post' || v === ALLE_TYPEN)))
+    fehler.push(t('gemeinsam.pakete.code-leerseiten-braucht-post'));
   // Anlagen (#998): legt beim Teilen einer Post Anlagen an – das Paket muss Post lesen und schreiben und Dokumente schreiben dürfen.
   const post = (l: string[]) => l.some((v) => v === 'dms:post' || v === ALLE_TYPEN);
-  if (schnittstellen.includes('dms:anlagen') && (dokumente !== 'schreiben' || !post(lesen) || !post(schreiben))) fehler.push(t('gemeinsam.pakete.code-anlagen-braucht-post'));
+  if (schnittstellen.includes('dms:anlagen') && (dokumente !== 'schreiben' || !post(lesen) || !post(schreiben)))
+    fehler.push(t('gemeinsam.pakete.code-anlagen-braucht-post'));
   // Dateien umwandeln (#577): zuständige Dateitypen, nur mit dms:umwandeln, Lesen von Dokumenten und dem Ereignis.
   const umwandeln = liste(x.umwandeln, 'code.umwandeln').map((m) => m.toLowerCase());
   const willUmwandeln = schnittstellen.includes('dms:umwandeln');
@@ -799,7 +1014,8 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
     if (!MIME.test(m)) fehler.push(t('gemeinsam.pakete.code-umwandeln-ist-kein', { m }));
     else if (kernTyp(m)) fehler.push(t('gemeinsam.pakete.code-umwandeln-liest-ablago', { dateitypName: dateitypName(m), m }));
   }
-  if (umwandeln.length > UMWANDELN_TYPEN_MAX) fehler.push(t('gemeinsam.pakete.code-umwandeln-hoechstens-dateitypen', { UMWANDELN_TYPEN_MAX }));
+  if (umwandeln.length > UMWANDELN_TYPEN_MAX)
+    fehler.push(t('gemeinsam.pakete.code-umwandeln-hoechstens-dateitypen', { UMWANDELN_TYPEN_MAX }));
   if (willUmwandeln && !umwandeln.length) fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-dms-2'));
   if (!willUmwandeln && umwandeln.length) fehler.push(t('gemeinsam.pakete.code-umwandeln-braucht-code'));
   if (willUmwandeln && dokumente === 'keine') fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-dms-3'));
@@ -829,19 +1045,33 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
       for (const m of typen) if (!MIME.test(m)) fehler.push(t('gemeinsam.pakete.code-archivfassung-typen-ist', { m }));
       if (!typen.length) fehler.push(t('gemeinsam.pakete.code-archivfassung-typen-mindestens'));
       if (typen.length > ARCHIV_TYPEN_MAX) fehler.push(t('gemeinsam.pakete.code-archivfassung-typen-hoechstens', { ARCHIV_TYPEN_MAX }));
-      for (const k of Object.keys(a)) if (k !== 'typen' && k !== 'auswahl') fehler.push(t('gemeinsam.pakete.code-archivfassung-gibt-es', { k }));
+      for (const k of Object.keys(a))
+        if (k !== 'typen' && k !== 'auswahl') fehler.push(t('gemeinsam.pakete.code-archivfassung-gibt-es', { k }));
       const auswahl: ArchivAuswahl = {};
       if (a.auswahl !== undefined) {
         // Je Art (PDFs mit Text, gescannte PDFs, Bilder, E-Mails) der Schlüssel einer Ja/Nein-Einstellung (Abschnitt, keine Liste): an = bekommt eine Archivfassung.
         const w = a.auswahl as Record<string, unknown>;
-        const felder = (Array.isArray(x.einstellungen) ? x.einstellungen : []).flatMap((b) => (b && typeof b === 'object' && !Array.isArray(b) && Array.isArray((b as Record<string, unknown>).felder) && (b as Record<string, unknown>).liste === undefined ? (b as Record<string, unknown>).felder as unknown[] : []));
+        const felder = (Array.isArray(x.einstellungen) ? x.einstellungen : []).flatMap((b) =>
+          b &&
+          typeof b === 'object' &&
+          !Array.isArray(b) &&
+          Array.isArray((b as Record<string, unknown>).felder) &&
+          (b as Record<string, unknown>).liste === undefined
+            ? ((b as Record<string, unknown>).felder as unknown[])
+            : [],
+        );
         if (!w || typeof w !== 'object' || Array.isArray(w)) fehler.push(t('gemeinsam.pakete.code-archivfassung-auswahl-ein'));
         else {
-          for (const k of Object.keys(w)) if (!(ARCHIV_ARTEN as readonly string[]).includes(k)) fehler.push(t('gemeinsam.pakete.code-archivfassung-auswahl-gibt', { k, ARCHIV_ARTEN: ARCHIV_ARTEN.join(', ') }));
+          for (const k of Object.keys(w))
+            if (!(ARCHIV_ARTEN as readonly string[]).includes(k))
+              fehler.push(t('gemeinsam.pakete.code-archivfassung-auswahl-gibt', { k, ARCHIV_ARTEN: ARCHIV_ARTEN.join(', ') }));
           for (const art of ARCHIV_ARTEN) {
             if (w[art] === undefined) continue;
-            const f = felder.find((y): y is Record<string, unknown> => !!y && typeof y === 'object' && (y as Record<string, unknown>).schluessel === w[art]);
-            if (typeof w[art] !== 'string' || !f || f.typ !== 'janein') fehler.push(t('gemeinsam.pakete.code-archivfassung-auswahl-der', { art }));
+            const f = felder.find(
+              (y): y is Record<string, unknown> => !!y && typeof y === 'object' && (y as Record<string, unknown>).schluessel === w[art],
+            );
+            if (typeof w[art] !== 'string' || !f || f.typ !== 'janein')
+              fehler.push(t('gemeinsam.pakete.code-archivfassung-auswahl-der', { art }));
             else auswahl[art] = w[art] as string;
           }
         }
@@ -863,14 +1093,26 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   const netz = liste(x.netz, 'code.netz');
   for (const n of netz) {
     let ok = false;
-    try { const u = new URL(n); ok = u.protocol === 'https:' && !u.username && !u.password && !u.search && !u.hash; } catch { /* unten */ }
+    try {
+      const u = new URL(n);
+      ok = u.protocol === 'https:' && !u.username && !u.password && !u.search && !u.hash;
+    } catch {
+      /* unten */
+    }
     if (!ok) fehler.push(`code.netz: „${n}“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).`);
   }
   // Dienst-Adresse als Einstellung (#444): Felder vom Typ adresse in den Abschnitten (geprüft in paketeinstellungen.ts).
-  const adressen = (Array.isArray(x.einstellungen) ? x.einstellungen : []).flatMap((b) => (b && typeof b === 'object' && !Array.isArray(b) && Array.isArray((b as Record<string, unknown>).felder) && (b as Record<string, unknown>).liste === undefined
-    ? ((b as Record<string, unknown>).felder as unknown[]).filter((f): f is Record<string, unknown> => !!f && typeof f === 'object' && (f as Record<string, unknown>).typ === 'adresse')
-      .map((f) => ({ schluessel: String(f.schluessel ?? ''), name: String(f.name ?? '') || String(f.schluessel ?? '') }))
-    : []));
+  const adressen = (Array.isArray(x.einstellungen) ? x.einstellungen : []).flatMap((b) =>
+    b &&
+    typeof b === 'object' &&
+    !Array.isArray(b) &&
+    Array.isArray((b as Record<string, unknown>).felder) &&
+    (b as Record<string, unknown>).liste === undefined
+      ? ((b as Record<string, unknown>).felder as unknown[])
+          .filter((f): f is Record<string, unknown> => !!f && typeof f === 'object' && (f as Record<string, unknown>).typ === 'adresse')
+          .map((f) => ({ schluessel: String(f.schluessel ?? ''), name: String(f.name ?? '') || String(f.schluessel ?? '') }))
+      : [],
+  );
   // Eigene Dann-Karten (#680): ausgeführt über das Ereignis zeitplan.ausgefuehrt.
   const karten = liesKarten(x.karten, ereignisse, fehler);
   // Einrichtung und Nachweise lesen (#1054): bekannte Bereiche, Nachweise nur, wo es welche gibt, nie mit Netz.
@@ -879,33 +1121,78 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   const lesenAlle = [...new Set([...lesen, ...schreiben])];
   // Ereignisse zu Mappen nur zu Typen, die das Paket lesen darf (#670) – sonst wüsste es von Mappen, die es nie sehen darf.
   // „*“ nur, wenn das Paket auch alle Mappentypen lesen darf; ob es eine einzelne Mappe sehen darf, prüft Ablago bei der Zustellung (#686).
-  for (const k of mappentypen) if (!lesenAlle.includes(k) && !lesenAlle.includes(ALLE_TYPEN)) fehler.push(k === ALLE_TYPEN ? t('gemeinsam.pakete.code-mappentypen-alle-mappentypen') : t('gemeinsam.pakete.code-mappentypen-das-paket', { k }));
+  for (const k of mappentypen)
+    if (!lesenAlle.includes(k) && !lesenAlle.includes(ALLE_TYPEN))
+      fehler.push(
+        k === ALLE_TYPEN
+          ? t('gemeinsam.pakete.code-mappentypen-alle-mappentypen')
+          : t('gemeinsam.pakete.code-mappentypen-das-paket', { k }),
+      );
   for (const k of mappentypen) if (k === 'dms:benutzer') fehler.push(t('gemeinsam.pakete.code-mappentypen-dms-benutzer'));
-  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}), ...paketdaten }, netz, ...(adressen.length ? { adressen } : {}), ...(umwandeln.length ? { umwandeln: [...new Set(umwandeln)] } : {}), ...(volltext.length ? { volltext: [...new Set(volltext)] } : {}), ...(archivfassung && willArchiv ? { archivfassung } : {}), ...(mappentypen.length ? { mappentypen } : {}), ...(karten.length ? { karten } : {}) }, fehler };
+  return {
+    code: fehler.length
+      ? null
+      : {
+          sprache,
+          ereignisse: ereignisse as EreignisArt[],
+          rechte: {
+            lesen: lesenAlle,
+            schreiben,
+            dokumente,
+            ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}),
+            ...paketdaten,
+          },
+          netz,
+          ...(adressen.length ? { adressen } : {}),
+          ...(umwandeln.length ? { umwandeln: [...new Set(umwandeln)] } : {}),
+          ...(volltext.length ? { volltext: [...new Set(volltext)] } : {}),
+          ...(archivfassung && willArchiv ? { archivfassung } : {}),
+          ...(mappentypen.length ? { mappentypen } : {}),
+          ...(karten.length ? { karten } : {}),
+        },
+    fehler,
+  };
 }
 
 /** Höchstzahlen für `code.karten` (#680). */
-export const KARTEN_MAX = 20, KARTEN_FELDER_MAX = 10;
+export const KARTEN_MAX = 20,
+  KARTEN_FELDER_MAX = 10;
 const KARTE_SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const KARTE_FELDTYPEN = ['text', 'zahl', 'janein'] as const;
 
 /** `code.karten` (#680): Schlüssel, Name, Hilfe, Felder (Text, Zahl, Ja/Nein); nur mit dem Ereignis `zeitplan.ausgefuehrt`. */
 function liesKarten(roh: unknown, ereignisse: string[], fehler: string[]): PaketKarte[] {
   if (roh === undefined) return [];
-  if (!Array.isArray(roh)) { fehler.push(t('gemeinsam.pakete.code-karten-liste')); return []; }
+  if (!Array.isArray(roh)) {
+    fehler.push(t('gemeinsam.pakete.code-karten-liste'));
+    return [];
+  }
   if (roh.length > KARTEN_MAX) fehler.push(t('gemeinsam.pakete.code-karten-max', { anzahl: KARTEN_MAX }));
   if (roh.length && !ereignisse.includes('zeitplan.ausgefuehrt')) fehler.push(t('gemeinsam.pakete.code-karten-ereignis'));
   const text = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : '');
   const aus: PaketKarte[] = [];
   for (const [i, k] of roh.slice(0, KARTEN_MAX).entries()) {
     const x = (k && typeof k === 'object' ? k : {}) as Record<string, unknown>;
-    const schluessel = text(x.schluessel, 40), name = text(x.name, 80), hilfe = text(x.hilfe, 500);
-    if (!KARTE_SCHLUESSEL.test(schluessel) || !name) { fehler.push(t('gemeinsam.pakete.code-karten-karte', { nr: i + 1 })); continue; }
-    if (aus.some((y) => y.schluessel === schluessel)) { fehler.push(t('gemeinsam.pakete.code-karten-doppelt', { schluessel })); continue; }
+    const schluessel = text(x.schluessel, 40),
+      name = text(x.name, 80),
+      hilfe = text(x.hilfe, 500);
+    if (!KARTE_SCHLUESSEL.test(schluessel) || !name) {
+      fehler.push(t('gemeinsam.pakete.code-karten-karte', { nr: i + 1 }));
+      continue;
+    }
+    if (aus.some((y) => y.schluessel === schluessel)) {
+      fehler.push(t('gemeinsam.pakete.code-karten-doppelt', { schluessel }));
+      continue;
+    }
     const felder = (Array.isArray(x.felder) ? x.felder : []).slice(0, KARTEN_FELDER_MAX).flatMap((f, j) => {
       const y = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>;
-      const fs = text(y.schluessel, 40), fn = text(y.name, 80), typ = y.typ ?? 'text';
-      if (!KARTE_SCHLUESSEL.test(fs) || !fn || !(KARTE_FELDTYPEN as readonly unknown[]).includes(typ)) { fehler.push(t('gemeinsam.pakete.code-karten-feld', { schluessel, nr: j + 1 })); return []; }
+      const fs = text(y.schluessel, 40),
+        fn = text(y.name, 80),
+        typ = y.typ ?? 'text';
+      if (!KARTE_SCHLUESSEL.test(fs) || !fn || !(KARTE_FELDTYPEN as readonly unknown[]).includes(typ)) {
+        fehler.push(t('gemeinsam.pakete.code-karten-feld', { schluessel, nr: j + 1 }));
+        return [];
+      }
       return [{ schluessel: fs, name: fn, typ: typ as (typeof KARTE_FELDTYPEN)[number] }];
     });
     aus.push({ schluessel, name, ...(hilfe ? { hilfe } : {}), ...(felder.length ? { felder } : {}) });
@@ -917,11 +1204,20 @@ function liesKarten(roh: unknown, ereignisse: string[], fehler: string[]): Paket
  * `code.rechte.einrichtung` und `code.rechte.nachweise` (#1054): Listen bekannter Bereiche. Ein Paket mit Netz (feste
  * Adresse oder Dienst-Adresse) bekommt beides nicht – die Daten sind eine Landkarte der Sicherheit des Hauses.
  */
-function paketdatenRechte(r: Record<string, unknown>, liste: (v: unknown, wo: string) => string[], fehler: string[], mitNetz: boolean): Pick<PaketCode['rechte'], 'einrichtung' | 'nachweise'> {
+function paketdatenRechte(
+  r: Record<string, unknown>,
+  liste: (v: unknown, wo: string) => string[],
+  fehler: string[],
+  mitNetz: boolean,
+): Pick<PaketCode['rechte'], 'einrichtung' | 'nachweise'> {
   const einrichtung = liste(r.einrichtung, 'code.rechte.einrichtung');
   const nachweise = liste(r.nachweise, 'code.rechte.nachweise');
-  for (const b of einrichtung) if (!istPaketdatenBereich(b)) fehler.push(t('gemeinsam.pakete.code-einrichtung-bereich', { b, bereiche: PAKETDATEN_BEREICHE.join(', ') }));
-  for (const b of nachweise) if (!istPaketdatenBereich(b) || !NACHWEIS_BEREICHE.includes(b)) fehler.push(t('gemeinsam.pakete.code-nachweise-bereich', { b, bereiche: NACHWEIS_BEREICHE.join(', ') }));
+  for (const b of einrichtung)
+    if (!istPaketdatenBereich(b))
+      fehler.push(t('gemeinsam.pakete.code-einrichtung-bereich', { b, bereiche: PAKETDATEN_BEREICHE.join(', ') }));
+  for (const b of nachweise)
+    if (!istPaketdatenBereich(b) || !NACHWEIS_BEREICHE.includes(b))
+      fehler.push(t('gemeinsam.pakete.code-nachweise-bereich', { b, bereiche: NACHWEIS_BEREICHE.join(', ') }));
   if (mitNetz && (einrichtung.length || nachweise.length)) fehler.push(t('gemeinsam.pakete.code-paketdaten-netz'));
   const ord = (l: string[]) => PAKETDATEN_BEREICHE.filter((b) => l.includes(b));
   return { ...(einrichtung.length ? { einrichtung: ord(einrichtung) } : {}), ...(nachweise.length ? { nachweise: ord(nachweise) } : {}) };
@@ -940,10 +1236,19 @@ export function laeuferZustandText(
 ): { text: string; fehler: boolean; wartet: boolean } {
   if (x.paket?.fehler) return { text: x.paket.fehler, fehler: true, wartet: false };
   if (x.zustand === 'pausiert') return { text: t('gemeinsam.pakete.pausiert-wartungsmodus'), fehler: false, wartet: false };
-  if (x.zustand === 'neustart') return { text: t('gemeinsam.pakete.abgestuerzt-startet-neu', { wert: x.absturz ? t('gemeinsam.pakete.um', { zeit: zeit(x.absturz) }) : '' }), fehler: true, wartet: true };
+  if (x.zustand === 'neustart')
+    return {
+      text: t('gemeinsam.pakete.abgestuerzt-startet-neu', { wert: x.absturz ? t('gemeinsam.pakete.um', { zeit: zeit(x.absturz) }) : '' }),
+      fehler: true,
+      wartet: true,
+    };
   if (x.zustand !== 'bereit' || !x.paket?.geladen) return { text: t('gemeinsam.pakete.startet'), fehler: false, wartet: true };
   if (x.absturz) return { text: t('gemeinsam.pakete.neu-gestartet-nach-absturz', { zeit: zeit(x.absturz) }), fehler: false, wartet: false };
-  return { text: x.paket.aufrufe ? t('gemeinsam.pakete.bereit') : t('gemeinsam.pakete.bereit-wartet-auf-das'), fehler: false, wartet: false };
+  return {
+    text: x.paket.aufrufe ? t('gemeinsam.pakete.bereit') : t('gemeinsam.pakete.bereit-wartet-auf-das'),
+    fehler: false,
+    wartet: false,
+  };
 }
 
 /**
@@ -986,42 +1291,91 @@ export function vorausgewaehlt(autos: ReadonlyArray<{ schluessel: string; einges
 }
 
 /** Ein Punkt der Rechte-Liste in der Vorschau (#449): Text, Handbuch-Stelle, ggf. Unterliste (Ereignisse). */
-export interface RechtePunkt { text: string; hilfe: Hilfeort; unter?: Array<{ text: string; hilfe: Hilfeort }> }
+export interface RechtePunkt {
+  text: string;
+  hilfe: Hilfeort;
+  unter?: Array<{ text: string; hilfe: Hilfeort }>;
+}
 
 /**
  * Berechnete Felder eines Pakets (#1034) für die Rechte-Vorschau: je Mappentyp (lesbarer Name) die Bezeichnungen der
  * Felder mit `berechnet: true`.
  */
-export interface BerechneteFelder { typ: string; felder: string[] }
+export interface BerechneteFelder {
+  typ: string;
+  felder: string[];
+}
 
 /**
  * Rechte und Netzwerkzugriff für die Rückfrage bei der Installation (#338, #449): je Recht ein Punkt, Ereignisse als
  * Unterliste. `berechnet` (#1034): Felder, die das Paket berechnet – sie und Hinweise (`dms:hinweise`) stehen als eigene
  * Punkte da, dazu der Satz, dass alle sie sehen, die die Mappe lesen (Ergänzung Sicherheit).
  */
-export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string, berechnet: BerechneteFelder[] = [], zeitplaene: string[] = []): RechtePunkt[] {
+export function rechtePunkte(
+  c: PaketCode,
+  typName: (verweis: string) => string,
+  berechnet: BerechneteFelder[] = [],
+  zeitplaene: string[] = [],
+): RechtePunkt[] {
   const eintrag = (l: string[]) => l.map((v) => (v === ALLE_TYPEN ? t('gemeinsam.pakete.alle-mappentypen') : typName(v))).join(', ');
   const z: RechtePunkt[] = [];
-  if (c.rechte.lesen.length) z.push({ text: t('gemeinsam.pakete.mappen-lesen', { lesen: eintrag(c.rechte.lesen) }), hilfe: 'pakete.recht.lesen' });
-  if (c.rechte.schreiben.length) z.push({ text: t('gemeinsam.pakete.mappen-anlegen-und-aendern', { schreiben: eintrag(c.rechte.schreiben) }), hilfe: 'pakete.recht.schreiben' });
+  if (c.rechte.lesen.length)
+    z.push({ text: t('gemeinsam.pakete.mappen-lesen', { lesen: eintrag(c.rechte.lesen) }), hilfe: 'pakete.recht.lesen' });
+  if (c.rechte.schreiben.length)
+    z.push({
+      text: t('gemeinsam.pakete.mappen-anlegen-und-aendern', { schreiben: eintrag(c.rechte.schreiben) }),
+      hilfe: 'pakete.recht.schreiben',
+    });
   if (c.rechte.dokumente !== 'keine') z.push({ text: DOKUMENT_RECHTE[c.rechte.dokumente], hilfe: 'pakete.recht.dokumente' });
   // Dateien umwandeln (#577) und Volltext aus Paketen (#614): mit den Dateitypen, für die das Paket zuständig sein will.
   // Archivfassung (#631) ebenso.
-  const typen = (s: Schnittstelle) => (s === 'dms:umwandeln' ? c.umwandeln : s === 'dms:volltext' ? c.volltext : s === 'dms:archivfassung' ? c.archivfassung?.typen : undefined);
-  for (const s of c.rechte.schnittstellen ?? []) z.push({ text: `${SCHNITTSTELLEN[s]} (${s})${typen(s)?.length ? `: ${[...new Set(typen(s)!.map(dateitypName))].join(', ')}` : ''}`, hilfe: SCHNITTSTELLE_HILFE[s] });
+  const typen = (s: Schnittstelle) =>
+    s === 'dms:umwandeln'
+      ? c.umwandeln
+      : s === 'dms:volltext'
+        ? c.volltext
+        : s === 'dms:archivfassung'
+          ? c.archivfassung?.typen
+          : undefined;
+  for (const s of c.rechte.schnittstellen ?? [])
+    z.push({
+      text: `${SCHNITTSTELLEN[s]} (${s})${typen(s)?.length ? `: ${[...new Set(typen(s)!.map(dateitypName))].join(', ')}` : ''}`,
+      hilfe: SCHNITTSTELLE_HILFE[s],
+    });
   // Berechnete Felder (#1034): je Mappentyp die Felder, die nur das Paket schreibt.
   const mitFeldern = berechnet.filter((b) => b.felder.length);
-  if (mitFeldern.length) z.push({ text: t('gemeinsam.pakete.berechnet-felder', { felder: mitFeldern.map((b) => `${b.typ}: ${b.felder.join(', ')}`).join('; ') }), hilfe: 'pakete.recht.berechnet' });
+  if (mitFeldern.length)
+    z.push({
+      text: t('gemeinsam.pakete.berechnet-felder', { felder: mitFeldern.map((b) => `${b.typ}: ${b.felder.join(', ')}`).join('; ') }),
+      hilfe: 'pakete.recht.berechnet',
+    });
   // Ein Weg über Mappen hinweg (Ergänzung Sicherheit): Was das Paket schreibt, sieht jeder, der die Mappe lesen darf.
-  if (mitFeldern.length || hatSchnittstelle(c, 'dms:hinweise')) z.push({ text: t('gemeinsam.pakete.berechnet-sichtbar'), hilfe: 'pakete.recht.berechnet' });
+  if (mitFeldern.length || hatSchnittstelle(c, 'dms:hinweise'))
+    z.push({ text: t('gemeinsam.pakete.berechnet-sichtbar'), hilfe: 'pakete.recht.berechnet' });
   z.push(...paketdatenPunkte(c));
-  z.push({ text: netzText(c.netz, (c.adressen ?? []).map((a) => a.name)), hilfe: c.adressen?.length ? 'pakete.recht.adresse' : 'pakete.recht.netz' });
+  z.push({
+    text: netzText(
+      c.netz,
+      (c.adressen ?? []).map((a) => a.name),
+    ),
+    hilfe: c.adressen?.length ? 'pakete.recht.adresse' : 'pakete.recht.netz',
+  });
   // KI-Dienst (#796): Inhalte nur aus Mappentypen, die für KI-Dienste zugelassen sind.
   if (istKiPaket(c)) z.push({ text: t('gemeinsam.pakete.ki-nur-zugelassene'), hilfe: 'pakete.ki' });
   // Mappen-Ereignisse (#670) mit den Mappentypen, zu denen das Paket sie bekommt.
   // #686: „*“ heißt hier „alle, die das Paket lesen darf“ – am Mappentyp lässt sich einzelnen Paketen der Zugriff verwehren.
-  const zuTypen = c.mappentypen?.length ? ` – zu: ${c.mappentypen.map((v) => (v === ALLE_TYPEN ? t('gemeinsam.pakete.allen-mappentypen-die-das') : typName(v))).join(', ')}` : '';
-  if (c.ereignisse.length) z.push({ text: t('gemeinsam.pakete.reagiert-auf-diese-ereignisse'), hilfe: 'pakete.ereignisse', unter: c.ereignisse.map((e) => ({ text: `${EREIGNISSE[e]}${MAPPEN_EREIGNISSE.includes(e) ? zuTypen : ''}`, hilfe: EREIGNIS_HILFE[e] })) });
+  const zuTypen = c.mappentypen?.length
+    ? ` – zu: ${c.mappentypen.map((v) => (v === ALLE_TYPEN ? t('gemeinsam.pakete.allen-mappentypen-die-das') : typName(v))).join(', ')}`
+    : '';
+  if (c.ereignisse.length)
+    z.push({
+      text: t('gemeinsam.pakete.reagiert-auf-diese-ereignisse'),
+      hilfe: 'pakete.ereignisse',
+      unter: c.ereignisse.map((e) => ({
+        text: `${EREIGNISSE[e]}${MAPPEN_EREIGNISSE.includes(e) ? zuTypen : ''}`,
+        hilfe: EREIGNIS_HILFE[e],
+      })),
+    });
   // Mitgelieferte Zeitpläne (#1082): „Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“ – ohne zusätzliche
   // Rechte; das Paket arbeitet mit den Rechten oben.
   z.push(...zeitplanPunkte(zeitplaene));
@@ -1032,14 +1386,30 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string,
 function paketdatenPunkte(c: PaketCode): RechtePunkt[] {
   const bereiche = (l: PaketdatenBereich[]) => l.map(bereichName).join(', ');
   return [
-    ...(c.rechte.einrichtung?.length ? [{ text: t('gemeinsam.pakete.recht-einrichtung', { bereiche: bereiche(c.rechte.einrichtung) }), hilfe: 'pakete.recht.einrichtung' as const }] : []),
-    ...(c.rechte.nachweise?.length ? [{ text: t('gemeinsam.pakete.recht-nachweise', { bereiche: bereiche(c.rechte.nachweise) }), hilfe: 'pakete.recht.nachweise' as const }] : []),
+    ...(c.rechte.einrichtung?.length
+      ? [
+          {
+            text: t('gemeinsam.pakete.recht-einrichtung', { bereiche: bereiche(c.rechte.einrichtung) }),
+            hilfe: 'pakete.recht.einrichtung' as const,
+          },
+        ]
+      : []),
+    ...(c.rechte.nachweise?.length
+      ? [
+          {
+            text: t('gemeinsam.pakete.recht-nachweise', { bereiche: bereiche(c.rechte.nachweise) }),
+            hilfe: 'pakete.recht.nachweise' as const,
+          },
+        ]
+      : []),
   ];
 }
 
 /** „Läuft nach Zeitplan: …“ (#1082) – leer ohne mitgelieferte Zeitpläne. */
 function zeitplanPunkte(zeitplaene: string[]): RechtePunkt[] {
-  return zeitplaene.length ? [{ text: t('gemeinsam.pakete.zeitplan-laeuft', { liste: zeitplaene.join('; ') }), hilfe: 'pakete.zeitplan' }] : [];
+  return zeitplaene.length
+    ? [{ text: t('gemeinsam.pakete.zeitplan-laeuft', { liste: zeitplaene.join('; ') }), hilfe: 'pakete.zeitplan' }]
+    : [];
 }
 
 /** Rechte-Punkte als einfache Zeilen (z. B. in der Fehlermeldung, wenn die Bestätigung fehlt). */
@@ -1050,7 +1420,22 @@ export const rechteText = (c: PaketCode, typName: (verweis: string) => string): 
 /** Gleiche Rechte und gleicher Netzwerkzugriff? (Sonst muss ein Update neu bestätigt werden.) */
 export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
   JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
-const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : []), ...(c.adressen?.length ? [c.adressen.map((a) => a.schluessel).sort()] : []), ...(c.volltext?.length ? [['volltext', ...[...c.volltext].sort()]] : []), ...(c.archivfassung?.typen.length ? [['archivfassung', ...[...c.archivfassung.typen].sort()]] : []), ...(c.mappentypen?.length ? [['mappentypen', ...[...c.mappentypen].sort()]] : []), ...(c.rechte.einrichtung?.length ? [['einrichtung', ...c.rechte.einrichtung]] : []), ...(c.rechte.nachweise?.length ? [['nachweise', ...c.rechte.nachweise]] : [])] : null;
+const rechteSchluessel = (c: PaketCode | undefined) =>
+  c
+    ? [
+        [...c.rechte.lesen].sort(),
+        [...c.rechte.schreiben].sort(),
+        c.rechte.dokumente,
+        [...c.netz].sort(),
+        ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : []),
+        ...(c.adressen?.length ? [c.adressen.map((a) => a.schluessel).sort()] : []),
+        ...(c.volltext?.length ? [['volltext', ...[...c.volltext].sort()]] : []),
+        ...(c.archivfassung?.typen.length ? [['archivfassung', ...[...c.archivfassung.typen].sort()]] : []),
+        ...(c.mappentypen?.length ? [['mappentypen', ...[...c.mappentypen].sort()]] : []),
+        ...(c.rechte.einrichtung?.length ? [['einrichtung', ...c.rechte.einrichtung]] : []),
+        ...(c.rechte.nachweise?.length ? [['nachweise', ...c.rechte.nachweise]] : []),
+      ]
+    : null;
 /** Ab dieser Version (#577) kennt das DMS Dateien umwandeln; siehe shared/src/dateiumwandlung.ts. */
 export { DMS_UMWANDELN_AB };
 /** Ab dieser Version (#614) kennt das DMS Volltext aus Paketen; siehe shared/src/paketvolltext.ts. */
@@ -1061,7 +1446,6 @@ export { DMS_ARCHIVFASSUNG_AB };
 export { DMS_UEBERSETZEN_AB };
 /** Darf das Paket diese Schnittstelle des Kerns nutzen (#442)? */
 export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
-
 
 /* ---------- Pakete dazuholen (#1048) ---------- */
 
@@ -1091,7 +1475,10 @@ export function empfehlungen(k: Katalog, o: { beruflich: boolean; dms: string; i
   const grund = k.empfohlen?.length ? k.empfohlen : [...PAKETE_JE_NUTZUNG.privat, ...EMPFOHLEN_OHNE_KATALOG];
   const ids = o.beruflich ? [...grund, ...nurBeruflich] : grund.filter((id) => !nurBeruflich.includes(id));
   const da = (p: KatalogPaket) => o.installiert.some((x) => x.id === p.id || p.ersetzt?.includes(x.id));
-  return [...new Set(ids)].flatMap((id) => k.pakete.filter((p) => p.id === id)).filter((p) => !da(p) && paketArt(p, o.dms) === 'paket').slice(0, EMPFOHLEN_MAX);
+  return [...new Set(ids)]
+    .flatMap((id) => k.pakete.filter((p) => p.id === id))
+    .filter((p) => !da(p) && paketArt(p, o.dms) === 'paket')
+    .slice(0, EMPFOHLEN_MAX);
 }
 
 /* ---------- Alle aktualisieren (#1168) ---------- */
@@ -1100,14 +1487,21 @@ export function empfehlungen(k: Katalog, o: { beruflich: boolean; dms: string; i
 export interface RundenVorschau {
   paket: { id: string; version: string; abhaengigkeiten: Record<string, string> };
   abhaengigkeiten: Array<{ id: string; bereich: string; problem?: string }>;
-  probleme: string[]; namenskonflikte?: string[];
-  laeufer?: { bestaetigen: boolean } | null; umbau?: unknown[]; herausgeberBestaetigen?: string | null; pruefung?: { bestaetigen?: boolean } | null;
+  probleme: string[];
+  namenskonflikte?: string[];
+  laeufer?: { bestaetigen: boolean } | null;
+  umbau?: unknown[];
+  herausgeberBestaetigen?: string | null;
+  pruefung?: { bestaetigen?: boolean } | null;
 }
 /** Ein Paket der Runde: Update, Vorschau (oder warum sie fehlt), was die Runde löst, was bleibt, ob es eine Entscheidung braucht. */
 export interface RundenEintrag<V extends RundenVorschau> {
-  u: NeueVersion; v: V | null; fehler: string | null;
+  u: NeueVersion;
+  v: V | null;
+  fehler: string | null;
   /** Id nach dem Update (#1084: Umzug unter eine neue Id); an ihr hängen die Abhängigkeiten. */
-  id: string; abhaengigkeiten: Record<string, string>;
+  id: string;
+  abhaengigkeiten: Record<string, string>;
   /** Probleme, die die Runde selbst löst: eine Abhängigkeit, die vorher auf eine passende Version kommt. */
   geloest: string[];
   /** Was das Update auch nach der Runde verhindert (Namenskonflikte zählen nicht – die löst das Umbenennen). */
@@ -1124,14 +1518,25 @@ export interface RundenEintrag<V extends RundenVorschau> {
  * in derselben Runde vorher auf eine passende Version kommt, verhindert nichts. offiziell: Ist das die Adresse des
  * offiziellen Katalogs?
  */
-export function aktualisierungsRunde<V extends RundenVorschau>(liste: ReadonlyArray<{ u: NeueVersion; v: V | null; fehler: string | null }>, offiziell: (quelle: string) => boolean): RundenEintrag<V>[] {
+export function aktualisierungsRunde<V extends RundenVorschau>(
+  liste: ReadonlyArray<{ u: NeueVersion; v: V | null; fehler: string | null }>,
+  offiziell: (quelle: string) => boolean,
+): RundenEintrag<V>[] {
   const runde = liste.flatMap((x) => (x.v ? [{ id: x.v.paket.id, version: x.v.paket.version }] : []));
   const eintraege = liste.map(({ u, v, fehler }): RundenEintrag<V> => {
     if (!v) return { u, v, fehler, id: u.id, abhaengigkeiten: {}, geloest: [], probleme: [], fremd: false, entscheiden: false };
-    const geloest = v.abhaengigkeiten.filter((a) => a.problem && runde.some((r) => r.id === a.id && passt(r.version, a.bereich))).map((a) => a.problem!);
+    const geloest = v.abhaengigkeiten
+      .filter((a) => a.problem && runde.some((r) => r.id === a.id && passt(r.version, a.bereich)))
+      .map((a) => a.problem!);
     const probleme = v.probleme.filter((p) => !geloest.includes(p) && !v.namenskonflikte?.includes(p));
     const fremd = !offiziell(u.quelle) && v.pruefung?.bestaetigen !== false;
-    const entscheiden = !!v.laeufer?.bestaetigen || !!v.umbau?.length || !!v.herausgeberBestaetigen || !!v.pruefung?.bestaetigen || fremd || !!v.namenskonflikte?.length;
+    const entscheiden =
+      !!v.laeufer?.bestaetigen ||
+      !!v.umbau?.length ||
+      !!v.herausgeberBestaetigen ||
+      !!v.pruefung?.bestaetigen ||
+      fremd ||
+      !!v.namenskonflikte?.length;
     return { u, v, fehler, id: v.paket.id, abhaengigkeiten: v.paket.abhaengigkeiten, geloest, probleme, fremd, entscheiden };
   });
   // Ein Kreis darf es nicht geben – dann bleibt die Reihenfolge, wie sie kam.
@@ -1178,9 +1583,12 @@ export interface AblaufInstallation extends AblaufEingabe {
 export interface AblaufPaket<V> {
   /** Paket-Id (Katalog) bzw. Upload-Kennung (Sammeldatei). */
   schluessel: string;
-  id: string; name: string; version: string;
+  id: string;
+  name: string;
+  version: string;
   /** Selbst gewählt; sonst kommt es als Abhängigkeit mit (fuer: Ids der Pakete, die es brauchen). */
-  gewaehlt: boolean; fuer: string[];
+  gewaehlt: boolean;
+  fuer: string[];
   ergaenzt: Ergaenzung | null;
   vorschau: V;
   /** Pflicht-Einstellungen (Abschnitte), die nach den Vorgaben noch leer sind – gefragt im selben Ablauf. */
@@ -1201,10 +1609,20 @@ export interface AblaufPlan<V> {
    */
   ausgelassen?: AblaufAusgelassen[];
   /** Auswahl für Einstellungen mit Verweisen (Mappentypen, Benutzer, Rollen, Ansichten). */
-  auswahl: { typen: Array<{ id: string; name: string; felder: Array<{ key: string; label: string }> }>; benutzer: Array<{ id: string; name: string }>; rollen: Array<{ id: string; name: string }>; sichten: Array<{ id: string; name: string }> };
+  auswahl: {
+    typen: Array<{ id: string; name: string; felder: Array<{ key: string; label: string }> }>;
+    benutzer: Array<{ id: string; name: string }>;
+    rollen: Array<{ id: string; name: string }>;
+    sichten: Array<{ id: string; name: string }>;
+  };
 }
 /** Ein Paket, das übersprungen wurde (#646), mit Grund – z. B. „lässt sich nicht herunterladen …“ oder „braucht …“. */
-export interface AblaufAusgelassen { id: string; name: string; version: string; grund: string }
+export interface AblaufAusgelassen {
+  id: string;
+  name: string;
+  version: string;
+  grund: string;
+}
 export interface AblaufErgebnis {
   installiert: Array<{ id: string; name: string; version: string; einstellungen: 'keine' | 'fertig' | 'spaeter' | 'fehler' }>;
   /** Pakete, die beim Installieren scheiterten (#646) – jedes ist vollständig zurückgenommen; die übrigen laufen weiter. */
@@ -1219,7 +1637,10 @@ export interface AblaufErgebnis {
  * Welche Pakete fallen weg, wenn diese scheitern (#646)? Alle, die – auch über Umwege – eines davon brauchen.
  * Liefert je wegfallendem Paket die Id des gescheiterten, an dem es hängt.
  */
-export function haengenAn(pakete: Array<{ id: string; abhaengigkeiten: Record<string, string> }>, gescheitert: string[]): Map<string, string> {
+export function haengenAn(
+  pakete: Array<{ id: string; abhaengigkeiten: Record<string, string> }>,
+  gescheitert: string[],
+): Map<string, string> {
   const weg = new Map<string, string>();
   let neu = true;
   while (neu) {
@@ -1227,7 +1648,10 @@ export function haengenAn(pakete: Array<{ id: string; abhaengigkeiten: Record<st
     for (const p of pakete) {
       if (weg.has(p.id) || gescheitert.includes(p.id)) continue;
       const an = Object.keys(p.abhaengigkeiten).find((a) => gescheitert.includes(a) || weg.has(a));
-      if (an) { weg.set(p.id, gescheitert.includes(an) ? an : weg.get(an)!); neu = true; }
+      if (an) {
+        weg.set(p.id, gescheitert.includes(an) ? an : weg.get(an)!);
+        neu = true;
+      }
     }
   }
   return weg;

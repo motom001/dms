@@ -7,8 +7,15 @@ import type postgres from 'postgres';
  * Hauptversion; das Schema entsteht beim Wiederherstellen aus den Migrationen.
  */
 
-export interface Tabelle { name: string; spalten: string[] }
-export interface Zaehler { mappen: number; dokumente: number; benutzer: number }
+export interface Tabelle {
+  name: string;
+  spalten: string[];
+}
+export interface Zaehler {
+  mappen: number;
+  dokumente: number;
+  benutzer: number;
+}
 
 /**
  * Tabellen, deren Inhalt nicht in die Sicherung gehört. Das Wörterverzeichnis der Suche (#356) füllen beim
@@ -17,7 +24,15 @@ export interface Zaehler { mappen: number; dokumente: number; benutzer: number }
  * Zustand zwischen Anfragen (#744: Fehlversuche, Sperren, Einmal-Tickets) gilt wie die Sitzungen nur für die laufende
  * Installation. Den Vorfilter der Termine (#918, `fristtermine`) füllt beim Einspielen der Mappen ihr Trigger.
  */
-export const OHNE_INHALT = new Set(['sitzungen', 'schema_migrationen', 'suchwoerter', 'suchwoerter_eingang', 'haushaltsstand', 'kurzzustand', 'fristtermine']);
+export const OHNE_INHALT = new Set([
+  'sitzungen',
+  'schema_migrationen',
+  'suchwoerter',
+  'suchwoerter_eingang',
+  'haushaltsstand',
+  'kurzzustand',
+  'fristtermine',
+]);
 /**
  * Abgeleitete Spalten ohne Sicherung: den Suchindex (#356) berechnet beim Einspielen ein Trigger aus dem Volltext,
  * den gefalteten Suchtext der Mappen (#615) einer aus Titel und Werten.
@@ -76,7 +91,10 @@ export async function tabellenIn(sql: Abfrage, schema = 'public'): Promise<Tabel
   while (offen.size) {
     const bereit = [...offen].filter((t) => [...eltern.get(t)!].every((e) => !offen.has(e)));
     const naechste = bereit.length ? bereit : [[...offen][0]];
-    for (const t of naechste) { fertig.push(t); offen.delete(t); }
+    for (const t of naechste) {
+      fertig.push(t);
+      offen.delete(t);
+    }
   }
   return fertig.map((name) => ({ name, spalten: je.get(name)! }));
 }
@@ -88,12 +106,20 @@ export function pgDatenquelle(sql: postgres.Sql, schema = 'public'): Datenquelle
         const [{ server_version: pg }] = await tx`SHOW server_version`;
         const migrationen = (await tx`SELECT name FROM ${tx(schema)}.schema_migrationen ORDER BY name`).map((r) => r.name as string);
         const tabellen = await tabellenIn(tx, schema);
-        const anzahl = async (t: string) => (tabellen.some((x) => x.name === t) ? Number((await tx.unsafe(`SELECT count(*)::int AS n FROM ${bezeichner(schema)}.${bezeichner(t)}`))[0].n) : 0);
+        const anzahl = async (t: string) =>
+          tabellen.some((x) => x.name === t)
+            ? Number((await tx.unsafe(`SELECT count(*)::int AS n FROM ${bezeichner(schema)}.${bezeichner(t)}`))[0].n)
+            : 0;
         const zaehler = { mappen: await anzahl('mappen'), dokumente: await anzahl('dokumente'), benutzer: await anzahl('benutzer') };
         return f({
-          postgres: pg as string, migrationen, tabellen, zaehler,
+          postgres: pg as string,
+          migrationen,
+          tabellen,
+          zaehler,
           inhalt: async (t) => {
-            const strom = await tx.unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) TO STDOUT`).readable();
+            const strom = await tx
+              .unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) TO STDOUT`)
+              .readable();
             // Bricht der Leser ab (z. B. Platte voll), muss das COPY trotzdem zu Ende gelesen werden:
             // Ein zerstörter Strom lässt die Verbindung hängen, und die Transaktion endet nie.
             return (async function* () {
@@ -102,7 +128,10 @@ export function pgDatenquelle(sql: postgres.Sql, schema = 'public'): Datenquelle
                 for await (const c of strom.iterator({ destroyOnReturn: false })) yield c as Buffer;
                 fertig = true;
               } finally {
-                if (!fertig) for await (const _ of strom) { /* Rest verwerfen */ }
+                if (!fertig)
+                  for await (const _ of strom) {
+                    /* Rest verwerfen */
+                  }
               }
             })();
           },

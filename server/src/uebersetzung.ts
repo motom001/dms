@@ -16,8 +16,18 @@ import type { KatalogEreignis } from '../../shared/src/ereignisse';
 import { hatNetz, hatSchnittstelle, type InstalliertesPaket } from '../../shared/src/pakete';
 import { erkenneSprache } from '../../shared/src/textsprache';
 import {
-  abschnitte, liesUebersetzenEinstellung, spracheAusTesseract, SPRACHKENNUNG_KURZ, UEBERSETZBARE_FELDER, UEBERSETZEN_MS, UEBERSETZEN_TEXT_MAX,
-  UEBERSETZUNG_TAGE, type UebersetzenAngebot, type UebersetzenEinstellung, type Uebersetzt, type Uebersetzungsquelle,
+  abschnitte,
+  liesUebersetzenEinstellung,
+  spracheAusTesseract,
+  SPRACHKENNUNG_KURZ,
+  UEBERSETZBARE_FELDER,
+  UEBERSETZEN_MS,
+  UEBERSETZEN_TEXT_MAX,
+  UEBERSETZUNG_TAGE,
+  type UebersetzenAngebot,
+  type UebersetzenEinstellung,
+  type Uebersetzt,
+  type Uebersetzungsquelle,
 } from '../../shared/src/uebersetzung';
 import { ohneTitel } from '../../shared/src/markdown';
 import type { Benutzer } from '../../shared/src/model';
@@ -46,13 +56,15 @@ const GLEICH_AB = 0.5;
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 /** Schlüssel im Zwischenspeicher: Mappe | Quelle | Prüfwert | Zielsprache | Paket@Version. */
 const praefix = (mappe: string, quelle?: string) => `${mappe}|${quelle ? `${quelle}|` : ''}`;
-const quelleText = (q: Uebersetzungsquelle) => (q.art === 'feld' ? `feld:${q.feld}` : q.art === 'notiz' ? `notiz:${q.notiz}` : `volltext:${q.dokument}`);
+const quelleText = (q: Uebersetzungsquelle) =>
+  q.art === 'feld' ? `feld:${q.feld}` : q.art === 'notiz' ? `notiz:${q.notiz}` : `volltext:${q.dokument}`;
 
 /** Quelle aus der Anfrage prüfen (nur Kennungen, kein Text). */
 export function liesQuelle(x: unknown): Uebersetzungsquelle {
   const q = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
   const id = (v: unknown) => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
-  if (q.art === 'feld' && id(q.mappe) && typeof q.feld === 'string' && /^[a-z0-9_]{1,64}$/.test(q.feld)) return { art: 'feld', mappe: q.mappe as string, feld: q.feld };
+  if (q.art === 'feld' && id(q.mappe) && typeof q.feld === 'string' && /^[a-z0-9_]{1,64}$/.test(q.feld))
+    return { art: 'feld', mappe: q.mappe as string, feld: q.feld };
   if (q.art === 'notiz' && id(q.notiz)) return { art: 'notiz', notiz: q.notiz as string };
   if (q.art === 'volltext' && id(q.dokument)) return { art: 'volltext', dokument: q.dokument as string };
   throw new Fachfehler(422, t('meldungen.uebersetzung.quelle-unbekannt'));
@@ -61,15 +73,31 @@ export function liesQuelle(x: unknown): Uebersetzungsquelle {
 /** Wohin der Text geht, wenn das Paket ins Netz darf: Rechner der festen Adressen und die Dienst-Adressen. */
 function netzZiele(p: InstalliertesPaket): string[] | null {
   if (!hatNetz(p.laeufer)) return null;
-  const host = (u: string) => { try { return new URL(u).host; } catch { return u; } };
-  return [...new Set([...(p.laeufer!.netz ?? []).map(host), ...(p.laeufer!.adressen ?? []).map((a) => t('meldungen.uebersetzung.dienst-adresse', { name: a.name }))])];
+  const host = (u: string) => {
+    try {
+      return new URL(u).host;
+    } catch {
+      return u;
+    }
+  };
+  return [
+    ...new Set([
+      ...(p.laeufer!.netz ?? []).map(host),
+      ...(p.laeufer!.adressen ?? []).map((a) => t('meldungen.uebersetzung.dienst-adresse', { name: a.name })),
+    ]),
+  ];
 }
 
 export class Uebersetzung {
   /** Wird gesetzt, sobald der Paket-Läufer läuft (verwaltung.ts bzw. fern.ts). */
   anbieter?: UebersetzAnbieter;
 
-  constructor(private d: Dienst, private repo: () => Repo, private einst: () => Einstellungen | undefined, private zustand: () => Kurzzustand) {}
+  constructor(
+    private d: Dienst,
+    private repo: () => Repo,
+    private einst: () => Einstellungen | undefined,
+    private zustand: () => Kurzzustand,
+  ) {}
 
   async einstellung(): Promise<UebersetzenEinstellung> {
     return liesUebersetzenEinstellung(await this.einst()?.lies('uebersetzen'));
@@ -78,8 +106,10 @@ export class Uebersetzung {
   /** Installierte Pakete mit dms:uebersetzen; `laeuft`: der Läufer hat es fehlerfrei geladen. */
   private async pakete(): Promise<Array<{ p: InstalliertesPaket; laeuft: boolean; netz: string[] | null }>> {
     const geladen = new Set((this.anbieter?.pakete() ?? []).map((x) => x.id));
-    return (await this.repo().listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:uebersetzen'))
-      .sort((a, b) => a.id.localeCompare(b.id)).map((p) => ({ p, laeuft: geladen.has(p.id), netz: netzZiele(p) }));
+    return (await this.repo().listePakete())
+      .filter((p) => hatSchnittstelle(p.laeufer, 'dms:uebersetzen'))
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((p) => ({ p, laeuft: geladen.has(p.id), netz: netzZiele(p) }));
   }
 
   /**
@@ -87,7 +117,7 @@ export class Uebersetzung {
    * Ohne Wahl: das erste laufende Paket ohne Netz; ein Paket mit Netz nie stillschweigend (#701).
    */
   private async wirksam(e?: UebersetzenEinstellung) {
-    const s = e ?? await this.einstellung();
+    const s = e ?? (await this.einstellung());
     if (!s.an) return null;
     const alle = (await this.pakete()).filter((x) => x.laeuft);
     if (s.paket) {
@@ -113,11 +143,16 @@ export class Uebersetzung {
     const s = this.einst();
     if (!s) throw new Fachfehler(404, t('meldungen.erkennung.einstellungen-sind-nicht'));
     const x = (e ?? {}) as Record<string, unknown>;
-    const neu = liesUebersetzenEinstellung({ ...await this.einstellung(), ...x });
+    const neu = liesUebersetzenEinstellung({ ...(await this.einstellung()), ...x });
     if (neu.paket) {
       const p = (await this.pakete()).find((y) => y.p.id === neu.paket);
       if (!p) throw new Fachfehler(422, t('meldungen.uebersetzung.kein-paket', { paket: neu.paket }));
-      if (p.netz && !neu.abfluss) throw new Fachfehler(409, t('meldungen.uebersetzung.abfluss-bestaetigen', { name: p.p.name, ziele: p.netz.join(', ') }), { abfluss: true, paket: p.p.name, ziele: p.netz });
+      if (p.netz && !neu.abfluss)
+        throw new Fachfehler(409, t('meldungen.uebersetzung.abfluss-bestaetigen', { name: p.p.name, ziele: p.netz.join(', ') }), {
+          abfluss: true,
+          paket: p.p.name,
+          ziele: p.netz,
+        });
       if (!p.netz) delete neu.abfluss;
     }
     await s.schreibe('uebersetzen', neu);
@@ -134,15 +169,25 @@ export class Uebersetzung {
   }
 
   /** Den Text lesen – mit den Rechten der Person. Liefert die Mappe (für den Zwischenspeicher) und Hinweise zur Sprache. */
-  private async lies(q: Uebersetzungsquelle, z: Zugriff): Promise<{ mappe: string; text: string; format: 'text' | 'markdown'; von: string | null; gemischt: boolean }> {
+  private async lies(
+    q: Uebersetzungsquelle,
+    z: Zugriff,
+  ): Promise<{ mappe: string; text: string; format: 'text' | 'markdown'; von: string | null; gemischt: boolean }> {
     if (q.art === 'feld') {
       const m = await this.d.rechtepruefung.pruefeRecht(z, q.mappe, 'R');
-      const typ = z.typen.get(m.typId) ?? await this.repo().holeTyp(m.typId);
+      const typ = z.typen.get(m.typId) ?? (await this.repo().holeTyp(m.typId));
       const f = typ?.felder.find((x) => x.key === q.feld);
-      if (!f || !(UEBERSETZBARE_FELDER as readonly string[]).includes(f.typ) || (f.typ === 'text' && f.format)) throw new Fachfehler(422, t('meldungen.uebersetzung.feld-nicht'));
+      if (!f || !(UEBERSETZBARE_FELDER as readonly string[]).includes(f.typ) || (f.typ === 'text' && f.format))
+        throw new Fachfehler(422, t('meldungen.uebersetzung.feld-nicht'));
       const v = m.werte[q.feld];
       // Erwähnungen nur mit Kennung (#1293): Kein Titel geht an das Paket oder in den Zwischenspeicher.
-      return { mappe: m.id, text: typeof v === 'string' ? (f.typ === 'formatiert' ? ohneTitel(v) : v) : '', format: f.typ === 'formatiert' ? 'markdown' : 'text', von: null, gemischt: false };
+      return {
+        mappe: m.id,
+        text: typeof v === 'string' ? (f.typ === 'formatiert' ? ohneTitel(v) : v) : '',
+        format: f.typ === 'formatiert' ? 'markdown' : 'text',
+        von: null,
+        gemischt: false,
+      };
     }
     if (q.art === 'notiz') {
       const n = await this.repo().holeNotiz(q.notiz);
@@ -154,7 +199,13 @@ export class Uebersetzung {
     await this.d.rechtepruefung.pruefeRecht(z, mappe, 'R');
     const v = await this.d.volltexte.volltext(q.dokument);
     // Sprache aus der Texterkennung (#400) als Hinweis für das Paket.
-    return { mappe, text: v.text ?? '', format: 'text', von: spracheAusTesseract(v.dokument.sprache), gemischt: !!v.dokument.weitereSprachen?.length };
+    return {
+      mappe,
+      text: v.text ?? '',
+      format: 'text',
+      von: spracheAusTesseract(v.dokument.sprache),
+      gemischt: !!v.dokument.weitereSprachen?.length,
+    };
   }
 
   /**
@@ -169,15 +220,26 @@ export class Uebersetzung {
     const quelle = await this.lies(q, o.z);
     // KI-Dienste (#796): Inhalte aus nicht zugelassenen Mappentypen gehen an kein KI-Paket.
     const typ = (await this.repo().holeMappe(quelle.mappe))?.typId;
-    if (!typ || (await this.d.ki.kiSperreFuer(w.p.id))(typ)) throw new Fachfehler(409, t('meldungen.uebersetzung.ki-nicht-zugelassen', { name: w.p.name }));
+    if (!typ || (await this.d.ki.kiSperreFuer(w.p.id))(typ))
+      throw new Fachfehler(409, t('meldungen.uebersetzung.ki-nicht-zugelassen', { name: w.p.name }));
     const gekuerzt = quelle.text.length > UEBERSETZEN_TEXT_MAX;
     const original = gekuerzt ? quelle.text.slice(0, UEBERSETZEN_TEXT_MAX) : quelle.text;
     if (!original.trim()) throw new Fachfehler(422, t('meldungen.uebersetzung.leer'));
     const teile = abschnitte(original);
     const teil = o.teil === undefined ? 0 : Number(o.teil);
-    if (!Number.isInteger(teil) || teil < 0 || teil >= teile.length) throw new Fachfehler(422, t('meldungen.uebersetzung.abschnitt-unbekannt', { teile: teile.length }));
+    if (!Number.isInteger(teil) || teil < 0 || teil >= teile.length)
+      throw new Fachfehler(422, t('meldungen.uebersetzung.abschnitt-unbekannt', { teile: teile.length }));
     const paket = { id: w.p.id, name: w.p.name, version: w.p.version };
-    const basis = { teil, teile: teile.length, trenner: teile[teil].trenner, nach: o.nach, paket, netz: w.netz, pruefwert: sha(quelle.text), ...(gekuerzt ? { gekuerzt: true as const } : {}) };
+    const basis = {
+      teil,
+      teile: teile.length,
+      trenner: teile[teil].trenner,
+      nach: o.nach,
+      paket,
+      netz: w.netz,
+      pruefwert: sha(quelle.text),
+      ...(gekuerzt ? { gekuerzt: true as const } : {}),
+    };
     // Ausgangssprache: aus der Texterkennung, sonst mit der eingebauten Erkennung (#395) am ganzen Text.
     const erkannt = erkenneSprache(original);
     const von = quelle.von ?? (erkannt && erkannt.konfidenz >= GLEICH_AB ? spracheAusTesseract(erkannt.sprache) : null);
@@ -199,12 +261,16 @@ export class Uebersetzung {
     }
     const eingang = { text: abschnitt, nach: o.nach, von, art: q.art, format: quelle.format, teil, teile: teile.length };
     let antwort: { text: string };
-    try { antwort = await this.anbieter.uebersetze(paket.id, eingang, UEBERSETZEN_MS); }
-    catch (e) { throw new Fachfehler(502, t('meldungen.uebersetzung.paket-fehler', { name: paket.name, grund: (e as Error).message })); }
+    try {
+      antwort = await this.anbieter.uebersetze(paket.id, eingang, UEBERSETZEN_MS);
+    } catch (e) {
+      throw new Fachfehler(502, t('meldungen.uebersetzung.paket-fehler', { name: paket.name, grund: (e as Error).message }));
+    }
     const r = liesAntwort(antwort.text);
     if ('fehler' in r) throw new Fachfehler(502, t('meldungen.uebersetzung.paket-fehler', { name: paket.name, grund: r.fehler }));
     const vonPaket = r.von ?? von;
-    await kz.setze(ZWISCHENSPEICHER, schluessel, { text: r.text, von: vonPaket }, Date.now() + UEBERSETZUNG_TAGE * 86_400_000)
+    await kz
+      .setze(ZWISCHENSPEICHER, schluessel, { text: r.text, von: vonPaket }, Date.now() + UEBERSETZUNG_TAGE * 86_400_000)
       .catch((e) => log.warn('Übersetzung nicht zwischengespeichert', { fehler: (e as Error).message }));
     return { ...basis, text: r.text, von: vonPaket };
   }
@@ -217,13 +283,16 @@ export class Uebersetzung {
     for (const e of alle) {
       const [hash, , pv] = e.schluessel.slice(p.length).split('|');
       const [pid, version] = (pv ?? '').split('@');
-      if (!gueltig.has(hash) || (pid === paket.id && version !== paket.version)) await kz.loesche(ZWISCHENSPEICHER, e.schluessel).catch(() => 0);
+      if (!gueltig.has(hash) || (pid === paket.id && version !== paket.version))
+        await kz.loesche(ZWISCHENSPEICHER, e.schluessel).catch(() => 0);
     }
   }
 
   /** Übersetzungen einer Mappe (ganz) oder einer Quelle vergessen – nach Änderung oder Löschen. */
   async vergiss(mappe: string, quelle?: string) {
-    await this.zustand().loesche(ZWISCHENSPEICHER, praefix(mappe, quelle), { praefix: true }).catch(() => 0);
+    await this.zustand()
+      .loesche(ZWISCHENSPEICHER, praefix(mappe, quelle), { praefix: true })
+      .catch(() => 0);
   }
 
   /** Abnehmer im Ereigniskatalog (#670): Änderungen am Original lassen die Übersetzungen verfallen. */
@@ -243,7 +312,11 @@ export class Uebersetzung {
 /** Antwort des Pakets: JSON `{ "text": "…", "von": "en" }` oder `{ "fehler": "…" }`. */
 export function liesAntwort(roh: string): { text: string; von: string | null } | { fehler: string } {
   let j: unknown;
-  try { j = JSON.parse(roh.trim()); } catch { return { fehler: t('meldungen.uebersetzung.kein-json') }; }
+  try {
+    j = JSON.parse(roh.trim());
+  } catch {
+    return { fehler: t('meldungen.uebersetzung.kein-json') };
+  }
   if (!j || typeof j !== 'object' || Array.isArray(j)) return { fehler: t('meldungen.uebersetzung.kein-json') };
   const o = j as Record<string, unknown>;
   if (typeof o.fehler === 'string' && o.fehler.trim()) return { fehler: o.fehler.trim().slice(0, 300) };

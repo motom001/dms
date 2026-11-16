@@ -30,15 +30,25 @@ describe('Werkbank → Rundgänge: Prüfen (#941)', () => {
   it('Fehler mit Zeile und verständlicher Ursache', async () => {
     const o = await pruefung();
     assert.deepEqual(pruefeRundgangDatei(GUT, o).fehler, []);
-    const falsch = pruefeRundgangDatei(GUT.replace('mappe.feld:zeitraum', 'mappe.feld:gibt_es_nicht').replace('titel: Zeitraum', 'titel: Zeitraum\n    farbe: rot'), o);
-    assert.deepEqual(falsch.fehler.map((f) => f.zeile), [11, 8]);
+    const falsch = pruefeRundgangDatei(
+      GUT.replace('mappe.feld:zeitraum', 'mappe.feld:gibt_es_nicht').replace('titel: Zeitraum', 'titel: Zeitraum\n    farbe: rot'),
+      o,
+    );
+    assert.deepEqual(
+      falsch.fehler.map((f) => f.zeile),
+      [11, 8],
+    );
     assert.match(falsch.fehler[1].text, /^Schritt 1: Das Feld „gibt_es_nicht“ gibt es im Mappentyp „urlaubsantrag“ nicht\./);
     assert.match(falsch.fehler[0].text, /unbekanntes Feld „farbe“/);
     assert.match(pruefeRundgangDatei('schluessel: [', o).fehler[0].text, /Kein gültiges YAML/);
     assert.match(pruefeRundgangDatei('- a: 1\n- b: 2\n', o).fehler[0].text, /genau einen Rundgang/);
     const neun = `${GUT.split('schritte:')[0]}schritte:\n${Array.from({ length: 9 }, (_, i) => `  - { schluessel: s${i}, titel: T, text: X }`).join('\n')}\n`;
     assert.match(pruefeRundgangDatei(neun, o).fehler[0].text, /9 Schritte, höchstens 8/);
-    assert.match(pruefeRundgangDatei(GUT.replace('schritte:', 'start: erste_anmeldung\nschritte:'), o).fehler[0].text, /nur für Ablagos eigenen Rundgang/, 'eigene starten nie von selbst');
+    assert.match(
+      pruefeRundgangDatei(GUT.replace('schritte:', 'start: erste_anmeldung\nschritte:'), o).fehler[0].text,
+      /nur für Ablagos eigenen Rundgang/,
+      'eigene starten nie von selbst',
+    );
   });
 
   it('Datei eines Rundgangs zum Ansehen und Kopieren lässt sich wieder prüfen', async () => {
@@ -53,26 +63,40 @@ describe('Werkbank → Rundgänge: Prüfen (#941)', () => {
 describe('Werkbank → Rundgänge: speichern, an/aus, in „Ablago entdecken“ (#941)', () => {
   async function aufbau() {
     const e = speicherEinstellungen();
-    const speicher = { lies: () => e.lies(WERKBANK_EINSTELLUNG), schreibe: (w: unknown) => e.schreibe(WERKBANK_EINSTELLUNG, w), tausche: (a: unknown, n: unknown) => e.tausche!(WERKBANK_EINSTELLUNG, a, n) };
+    const speicher = {
+      lies: () => e.lies(WERKBANK_EINSTELLUNG),
+      schreibe: (w: unknown) => e.schreibe(WERKBANK_EINSTELLUNG, w),
+      tausche: (a: unknown, n: unknown) => e.tausche!(WERKBANK_EINSTELLUNG, a, n),
+    };
     const w = new RundgaengeWerkbank({ speicher, pruefung });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas');
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const ent = new Entdecken({
-      einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, x) => konten.setzeEinstellung(b, k, x),
-      version: () => '0.260.0', heute: () => '2026-11-15', funktionen: async () => new Set(),
-      typen: async () => [...TYPEN.values()], werkbank: () => e.lies(WERKBANK_EINSTELLUNG),
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, x) => konten.setzeEinstellung(b, k, x),
+      version: () => '0.260.0',
+      heute: () => '2026-11-15',
+      funktionen: async () => new Set(),
+      typen: async () => [...TYPEN.values()],
+      werkbank: () => e.lies(WERKBANK_EINSTELLUNG),
     });
     return { w, ent, lena: { ...lena, letzteAnmeldung: null } };
   }
 
   it('nur ohne Fehler; zwei Verwaltende überschreiben sich nicht (409)', async () => {
     const { w } = await aufbau();
-    await assert.rejects(w.speichere(null, { yaml: 'schluessel: x' }, 'lena@example.org'), (x: unknown) => x instanceof Fachfehler && x.status === 422);
+    await assert.rejects(
+      w.speichere(null, { yaml: 'schluessel: x' }, 'lena@example.org'),
+      (x: unknown) => x instanceof Fachfehler && x.status === 422,
+    );
     const a = await w.speichere(null, { yaml: GUT }, 'lena@example.org');
     assert.equal(a.schluessel, 'urlaub');
     await assert.rejects(w.speichere(null, { yaml: GUT }, 'markus@example.org'), /gibt es schon/);
     const b = await w.speichere('urlaub', { yaml: GUT.replace('Urlaub beantragen', 'Urlaub'), stand: a.geaendert }, 'markus@example.org');
-    await assert.rejects(w.speichere('urlaub', { yaml: GUT, stand: a.geaendert }, 'lena@example.org'), (x: unknown) => x instanceof Fachfehler && x.status === 409);
+    await assert.rejects(
+      w.speichere('urlaub', { yaml: GUT, stand: a.geaendert }, 'lena@example.org'),
+      (x: unknown) => x instanceof Fachfehler && x.status === 409,
+    );
     assert.equal((await w.lies()).rundgaenge[0].von, 'markus@example.org');
     assert.notEqual(b.geaendert, '');
   });
@@ -108,25 +132,57 @@ describe('Werkbank → Rundgänge: speichern, an/aus, in „Ablago entdecken“ 
 describe('Werkbank → Tipps (#942)', () => {
   async function aufbau() {
     const e = speicherEinstellungen();
-    const speicher = { lies: () => e.lies(WERKBANK_EINSTELLUNG), schreibe: (w: unknown) => e.schreibe(WERKBANK_EINSTELLUNG, w), tausche: (a: unknown, n: unknown) => e.tausche!(WERKBANK_EINSTELLUNG, a, n) };
+    const speicher = {
+      lies: () => e.lies(WERKBANK_EINSTELLUNG),
+      schreibe: (w: unknown) => e.schreibe(WERKBANK_EINSTELLUNG, w),
+      tausche: (a: unknown, n: unknown) => e.tausche!(WERKBANK_EINSTELLUNG, a, n),
+    };
     const w = new RundgaengeWerkbank({ speicher, pruefung });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas');
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const ent = new Entdecken({
-      einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, x) => konten.setzeEinstellung(b, k, x),
-      version: () => '0.260.0', heute: () => '2026-11-15', funktionen: async () => new Set(),
-      typen: async () => [...TYPEN.values()], werkbank: () => e.lies(WERKBANK_EINSTELLUNG),
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, x) => konten.setzeEinstellung(b, k, x),
+      version: () => '0.260.0',
+      heute: () => '2026-11-15',
+      funktionen: async () => new Set(),
+      typen: async () => [...TYPEN.values()],
+      werkbank: () => e.lies(WERKBANK_EINSTELLUNG),
     });
-    const kontext = async () => { const q = await ent.quellen({ alle: true }); return { anker: q.anker, typ: (k: string) => TYPEN.get(k) ?? null, rundgaenge: q.rundgaenge.map((r) => r.schluessel), tipps: q.tipps, originale: q.tippOriginale }; };
+    const kontext = async () => {
+      const q = await ent.quellen({ alle: true });
+      return {
+        anker: q.anker,
+        typ: (k: string) => TYPEN.get(k) ?? null,
+        rundgaenge: q.rundgaenge.map((r) => r.schluessel),
+        tipps: q.tipps,
+        originale: q.tippOriginale,
+      };
+    };
     return { w, ent, lena: { ...lena, letzteAnmeldung: null }, kontext };
   }
 
   it('eigener Tipp: Formularfehler am Feld, gespeichert erscheint er für alle', async () => {
     const { w, ent, lena, kontext } = await aufbau();
-    await assert.rejects(w.speichereTipp(null, { daten: { text: 'x'.repeat(161), bereich: 'suche', ziel: 'startseite.suche' } }, 'lena@example.org', await kontext()),
-      (x: unknown) => x instanceof Fachfehler && JSON.stringify(x.details).includes('"feld":"text"'));
-    await assert.rejects(w.speichereTipp(null, { daten: { text: 'Kurz.', bereich: 'suche', ziel: 'mappe.feld:zeitraum' } }, null, await kontext()), /fehler/i);
-    const n = await w.speichereTipp(null, { daten: { text: 'Urlaub trägst du in der Mappe ein.', bereich: 'mappen', ziel: 'mappe.feld:zeitraum', typ: 'urlaubsantrag' } }, 'lena@example.org', await kontext());
+    await assert.rejects(
+      w.speichereTipp(
+        null,
+        { daten: { text: 'x'.repeat(161), bereich: 'suche', ziel: 'startseite.suche' } },
+        'lena@example.org',
+        await kontext(),
+      ),
+      (x: unknown) => x instanceof Fachfehler && JSON.stringify(x.details).includes('"feld":"text"'),
+    );
+    await assert.rejects(
+      w.speichereTipp(null, { daten: { text: 'Kurz.', bereich: 'suche', ziel: 'mappe.feld:zeitraum' } }, null, await kontext()),
+      /fehler/i,
+    );
+    const n = await w.speichereTipp(
+      null,
+      { daten: { text: 'Urlaub trägst du in der Mappe ein.', bereich: 'mappen', ziel: 'mappe.feld:zeitraum', typ: 'urlaubsantrag' } },
+      'lena@example.org',
+      await kontext(),
+    );
     assert.equal(n.schluessel, 'eigen:tipp_1');
     const s = await ent.stand(lena);
     assert.deepEqual(s.tipps.find((x) => x.schluessel === 'eigen:tipp_1')?.ziel, { anker: 'mappe.feld:zeitraum', typ: 'urlaubsantrag' });
@@ -136,7 +192,10 @@ describe('Werkbank → Tipps (#942)', () => {
     const { w, ent, lena, kontext } = await aufbau();
     const k = await kontext();
     const original = k.tipps.find((x) => x.schluessel === 'favoriten')!;
-    await w.speichereTipp('favoriten', { daten: { ...original, text: 'Bei uns heißen Favoriten „Merkliste“.' } }, 'lena@example.org', { ...k, original });
+    await w.speichereTipp('favoriten', { daten: { ...original, text: 'Bei uns heißen Favoriten „Merkliste“.' } }, 'lena@example.org', {
+      ...k,
+      original,
+    });
     assert.equal((await ent.stand(lena)).tipps.find((x) => x.schluessel === 'favoriten')?.text, 'Bei uns heißen Favoriten „Merkliste“.');
     const q = await ent.quellen({ alle: true });
     let liste = await w.tippListe(q.tipps, q.tippOriginale, () => undefined, q.tippFehler);
@@ -150,7 +209,10 @@ describe('Werkbank → Tipps (#942)', () => {
     assert.equal(f.originalVorher?.text, original.text);
     assert.equal(f.daten.text, 'Bei uns heißen Favoriten „Merkliste“.');
     // Konfliktschutz und zurücksetzen.
-    await assert.rejects(w.speichereTipp('favoriten', { daten: original, stand: 'veraltet' }, null, { ...k, original }), (x: unknown) => x instanceof Fachfehler && x.status === 409);
+    await assert.rejects(
+      w.speichereTipp('favoriten', { daten: original, stand: 'veraltet' }, null, { ...k, original }),
+      (x: unknown) => x instanceof Fachfehler && x.status === 409,
+    );
     await w.loescheTipp('favoriten');
     assert.equal((await ent.stand(lena)).tipps.find((x) => x.schluessel === 'favoriten')?.text, original.text);
     // Ausschalten gilt für alle.

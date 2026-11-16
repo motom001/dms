@@ -12,18 +12,34 @@
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { availableParallelism, cpus, loadavg, totalmem } from 'node:os';
-import { dauerhaftHoch, VERLAUF_MINUTEN, type Anteile, type Messpunkt, type SystemlastStand, type Warnung } from '../../shared/src/systemlast';
+import {
+  dauerhaftHoch,
+  VERLAUF_MINUTEN,
+  type Anteile,
+  type Messpunkt,
+  type SystemlastStand,
+  type Warnung,
+} from '../../shared/src/systemlast';
 import { KB } from './grenzen';
 
 export { dauerhaftHoch, type Messpunkt, type SystemlastStand } from '../../shared/src/systemlast';
 
 /** Liest eine Datei als Text; `null`, wenn es sie nicht gibt oder sie nicht lesbar ist. */
 export type Leser = (pfad: string) => string | null;
-export const dateiLeser: Leser = (p) => { try { return readFileSync(p, 'utf8'); } catch { return null; } };
+export const dateiLeser: Leser = (p) => {
+  try {
+    return readFileSync(p, 'utf8');
+  } catch {
+    return null;
+  }
+};
 
 /** Grenzen über 2^60 Byte bedeuten bei cgroup v1 „keine Grenze“. */
 const OHNE_GRENZE = 2 ** 60;
-const zahl = (s: string | null | undefined) => { const n = Number(s?.trim()); return s != null && s.trim() !== '' && Number.isFinite(n) ? n : null; };
+const zahl = (s: string | null | undefined) => {
+  const n = Number(s?.trim());
+  return s != null && s.trim() !== '' && Number.isFinite(n) ? n : null;
+};
 
 export interface Cgroup {
   version: 'v2' | 'v1' | null;
@@ -73,21 +89,39 @@ export function liesCgroup(lies: Leser, wurzel = '/sys/fs/cgroup'): Cgroup {
  * memory.stat; v1: memory.usage_in_bytes, memory.max_usage_in_bytes, memory.stat (total_rss/total_cache).
  * Was nicht lesbar ist, bleibt null – geschätzt wird nichts.
  */
-export interface ContainerSpeicher { aktuell: number | null; spitze: number | null; programme: number | null; zwischenspeicher: number | null }
+export interface ContainerSpeicher {
+  aktuell: number | null;
+  spitze: number | null;
+  programme: number | null;
+  zwischenspeicher: number | null;
+}
 export function liesContainerSpeicher(lies: Leser, wurzel = '/sys/fs/cgroup'): ContainerSpeicher {
   const stat = (text: string | null, ...namen: string[]) => {
-    for (const n of namen) { const m = text?.match(new RegExp(`^${n}\\s+(\\d+)`, 'm')); if (m) return Number(m[1]); }
+    for (const n of namen) {
+      const m = text?.match(new RegExp(`^${n}\\s+(\\d+)`, 'm'));
+      if (m) return Number(m[1]);
+    }
     return null;
   };
   const v2 = lies(`${wurzel}/memory.current`);
   if (v2 !== null) {
     const s = lies(`${wurzel}/memory.stat`);
-    return { aktuell: zahl(v2), spitze: zahl(lies(`${wurzel}/memory.peak`)), programme: stat(s, 'anon'), zwischenspeicher: stat(s, 'file') };
+    return {
+      aktuell: zahl(v2),
+      spitze: zahl(lies(`${wurzel}/memory.peak`)),
+      programme: stat(s, 'anon'),
+      zwischenspeicher: stat(s, 'file'),
+    };
   }
   const v1 = lies(`${wurzel}/memory/memory.usage_in_bytes`);
   if (v1 !== null) {
     const s = lies(`${wurzel}/memory/memory.stat`);
-    return { aktuell: zahl(v1), spitze: zahl(lies(`${wurzel}/memory/memory.max_usage_in_bytes`)), programme: stat(s, 'total_rss', 'rss'), zwischenspeicher: stat(s, 'total_cache', 'cache') };
+    return {
+      aktuell: zahl(v1),
+      spitze: zahl(lies(`${wurzel}/memory/memory.max_usage_in_bytes`)),
+      programme: stat(s, 'total_rss', 'rss'),
+      zwischenspeicher: stat(s, 'total_cache', 'cache'),
+    };
   }
   return { aktuell: null, spitze: null, programme: null, zwischenspeicher: null };
 }
@@ -95,13 +129,17 @@ export function liesContainerSpeicher(lies: Leser, wurzel = '/sys/fs/cgroup'): C
 /** Empfangene und gesendete Bytes aller Schnittstellen außer `lo` aus `/proc/net/dev`. */
 export function liesNetz(text: string | null): { rx: number; tx: number } | null {
   if (!text) return null;
-  let rx = 0, tx = 0, gefunden = false;
+  let rx = 0,
+    tx = 0,
+    gefunden = false;
   for (const z of text.split('\n').slice(2)) {
     const m = z.match(/^\s*([^:]+):\s*(.*)$/);
     if (!m || m[1].trim() === 'lo') continue;
     const f = m[2].trim().split(/\s+/).map(Number);
     if (f.length < 9 || !Number.isFinite(f[0]) || !Number.isFinite(f[8])) continue;
-    rx += f[0]; tx += f[8]; gefunden = true;
+    rx += f[0];
+    tx += f[8];
+    gefunden = true;
   }
   return gefunden ? { rx, tx } : null;
 }
@@ -121,12 +159,18 @@ export function liesRss(lies: Leser, pid: number): number | null {
 export function liesAnteile(lies: Leser, o: { eigen: number; laeufer: number | null; postgres: boolean; pids?: () => number[] }): Anteile {
   let datenbank: number | null = null;
   if (o.postgres) {
-    let summe = 0, ok = false, unlesbar = false;
+    let summe = 0,
+      ok = false,
+      unlesbar = false;
     for (const pid of (o.pids ?? alleProzesse)()) {
       if (lies(`/proc/${pid}/comm`)?.trim() !== 'postgres') continue;
       const p = liesPss(lies, pid);
-      if (p === null) { unlesbar = true; continue; }
-      summe += p; ok = true;
+      if (p === null) {
+        unlesbar = true;
+        continue;
+      }
+      summe += p;
+      ok = true;
     }
     datenbank = ok && !unlesbar ? summe : null;
   }
@@ -144,7 +188,10 @@ export function liesCpuSekunden(lies: Leser, pid: number): number | null {
   const text = lies(`/proc/${pid}/stat`);
   if (!text) return null;
   // Der Name in Klammern darf Leerzeichen enthalten: erst nach der letzten Klammer zählen.
-  const f = text.slice(text.lastIndexOf(')') + 2).trim().split(/\s+/);
+  const f = text
+    .slice(text.lastIndexOf(')') + 2)
+    .trim()
+    .split(/\s+/);
   // f[0] ist Feld 3 (state); utime … cstime sind die Felder 14–17.
   const t = [11, 12, 13, 14].map((i) => Number(f[i]));
   return t.every(Number.isFinite) ? t.reduce((a, b) => a + b, 0) / USER_HZ : null;
@@ -155,17 +202,30 @@ export function liesCpuSekunden(lies: Leser, pid: number): number | null {
  * im selben Container läuft), Ablago (die genannten Prozesse: Hauptprozess und alle Prozesse für Anfragen) und der
  * ganze Container (cgroup). Den Anteil in Prozent eines Kerns bildet der Lasttest aus zwei Ständen.
  */
-export interface CpuJeArt { postgres: number | null; ablago: number | null; container: number | null }
+export interface CpuJeArt {
+  postgres: number | null;
+  ablago: number | null;
+  container: number | null;
+}
 export function liesCpuJeArt(lies: Leser, o: { ablago: number[]; postgres: boolean; pids?: () => number[] }): CpuJeArt {
-  let ablago = 0, ablagoOk = o.ablago.length > 0;
-  for (const pid of o.ablago) { const c = liesCpuSekunden(lies, pid); if (c === null) ablagoOk = false; else ablago += c; }
+  let ablago = 0,
+    ablagoOk = o.ablago.length > 0;
+  for (const pid of o.ablago) {
+    const c = liesCpuSekunden(lies, pid);
+    if (c === null) ablagoOk = false;
+    else ablago += c;
+  }
   let postgres: number | null = null;
   if (o.postgres) {
-    let summe = 0, ok = false;
+    let summe = 0,
+      ok = false;
     for (const pid of (o.pids ?? alleProzesse)()) {
       if (lies(`/proc/${pid}/comm`)?.trim() !== 'postgres') continue;
       const c = liesCpuSekunden(lies, pid);
-      if (c !== null) { summe += c; ok = true; }
+      if (c !== null) {
+        summe += c;
+        ok = true;
+      }
     }
     postgres = ok ? Math.round(summe * 100) / 100 : null;
   }
@@ -174,12 +234,22 @@ export function liesCpuJeArt(lies: Leser, o: { ablago: number[]; postgres: boole
 }
 
 function alleProzesse(): number[] {
-  try { return readdirSync('/proc').filter((n) => /^\d+$/.test(n)).map(Number); } catch { return []; }
+  try {
+    return readdirSync('/proc')
+      .filter((n) => /^\d+$/.test(n))
+      .map(Number);
+  } catch {
+    return [];
+  }
 }
 
 /* ---------- Verlauf und Schwellen ---------- */
 
-interface Roh { t: number; cpuUs: number | null; netz: { rx: number; tx: number } | null }
+interface Roh {
+  t: number;
+  cpuUs: number | null;
+  netz: { rx: number; tx: number } | null;
+}
 
 export interface SystemlastOptionen {
   lies?: Leser;
@@ -210,22 +280,41 @@ export class Systemlast {
     this.zeitgeber.unref();
   }
 
-  stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); this.zeitgeber = undefined; }
+  stop() {
+    if (this.zeitgeber) clearInterval(this.zeitgeber);
+    this.zeitgeber = undefined;
+  }
 
-  private roh(): Roh { return { t: this.uhr(), cpuUs: liesCgroup(this.lies).cpuUs, netz: liesNetz(this.lies('/proc/net/dev')) }; }
+  private roh(): Roh {
+    return { t: this.uhr(), cpuUs: liesCgroup(this.lies).cpuUs, netz: liesNetz(this.lies('/proc/net/dev')) };
+  }
 
-  private kerne(c = liesCgroup(this.lies)) { return c.kerne ?? availableParallelism(); }
+  private kerne(c = liesCgroup(this.lies)) {
+    return c.kerne ?? availableParallelism();
+  }
 
   /** Messpunkt zwischen zwei Rohwerten. */
   private punkt(von: Roh, bis: Roh): Messpunkt {
     const c = liesCgroup(this.lies);
     const sek = Math.max(0.001, (bis.t - von.t) / 1000);
-    const cpu = von.cpuUs !== null && bis.cpuUs !== null ? Math.min(100, Math.max(0, ((bis.cpuUs - von.cpuUs) / 1e6 / sek / this.kerne(c)) * 100)) : null;
+    const cpu =
+      von.cpuUs !== null && bis.cpuUs !== null
+        ? Math.min(100, Math.max(0, ((bis.cpuUs - von.cpuUs) / 1e6 / sek / this.kerne(c)) * 100))
+        : null;
     const grenze = c.grenze ?? (c.speicher !== null ? totalmem() : null);
     const speicher = c.speicher !== null && grenze ? Math.min(100, (c.speicher / grenze) * 100) : null;
-    const netz = von.netz && bis.netz ? { rx: Math.max(0, (bis.netz.rx - von.netz.rx) / sek), tx: Math.max(0, (bis.netz.tx - von.netz.tx) / sek) } : null;
+    const netz =
+      von.netz && bis.netz
+        ? { rx: Math.max(0, (bis.netz.rx - von.netz.rx) / sek), tx: Math.max(0, (bis.netz.tx - von.netz.tx) / sek) }
+        : null;
     const r = (x: number | null) => (x === null ? null : Math.round(x * 10) / 10);
-    return { zeit: new Date(bis.t).toISOString(), cpu: r(cpu), speicher: r(speicher), rx: netz ? Math.round(netz.rx) : null, tx: netz ? Math.round(netz.tx) : null };
+    return {
+      zeit: new Date(bis.t).toISOString(),
+      cpu: r(cpu),
+      speicher: r(speicher),
+      rx: netz ? Math.round(netz.rx) : null,
+      tx: netz ? Math.round(netz.tx) : null,
+    };
   }
 
   /** Eine Messung (jede Minute); öffentlich für Tests. */
@@ -241,7 +330,9 @@ export class Systemlast {
   }
 
   /** Warnung für Übersicht und Navigation: Werte, die seit 5 Minuten über 90 % liegen; Wartezeit des Servers (#542). */
-  warnung(): Warnung[] { return [...dauerhaftHoch(this.verlauf), ...(this.o.schleife?.() ? ['schleife' as const] : [])]; }
+  warnung(): Warnung[] {
+    return [...dauerhaftHoch(this.verlauf), ...(this.o.schleife?.() ? ['schleife' as const] : [])];
+  }
 
   /** Speicher des ganzen Containers (#696) und – wenn PostgreSQL mitläuft – dessen Anteil (Pss). */
   container(): ContainerSpeicher & { datenbank: number | null } {
@@ -251,26 +342,40 @@ export class Systemlast {
   }
 
   /** Rechenzeit von PostgreSQL, Ablago und Container (#874), fortlaufend in Sekunden. */
-  cpuJeArt(ablago: number[]): CpuJeArt { return liesCpuJeArt(this.lies, { ablago, postgres: !!this.o.postgres }); }
+  cpuJeArt(ablago: number[]): CpuJeArt {
+    return liesCpuJeArt(this.lies, { ablago, postgres: !!this.o.postgres });
+  }
 
   /** Kerne und Grenze des Arbeitsspeichers (#895, für den Lasttest) – wie in `stand()`. */
   rahmen(): { kerne: number; kerneBegrenzt: boolean; grenze: number | null; ohneGrenze: boolean } {
     const c = liesCgroup(this.lies);
-    return { kerne: Math.round(this.kerne(c) * 100) / 100, kerneBegrenzt: c.kerne !== null, grenze: c.grenze ?? (c.speicher !== null ? totalmem() : null), ohneGrenze: c.grenze === null };
+    return {
+      kerne: Math.round(this.kerne(c) * 100) / 100,
+      kerneBegrenzt: c.kerne !== null,
+      grenze: c.grenze ?? (c.speicher !== null ? totalmem() : null),
+      ohneGrenze: c.grenze === null,
+    };
   }
 
   stand(): SystemlastStand {
     const c = liesCgroup(this.lies);
     const jetztRoh = this.roh();
     // „Jetzt“: seit der letzten Minutenmessung; liegt die weniger als eine Sekunde zurück, gilt der letzte Messpunkt.
-    const jetzt = this.letzte && jetztRoh.t - this.letzte.t >= 1000 ? this.punkt(this.letzte, jetztRoh) : this.verlauf.at(-1) ?? { zeit: new Date(jetztRoh.t).toISOString(), cpu: null, speicher: null, rx: null, tx: null };
+    const jetzt =
+      this.letzte && jetztRoh.t - this.letzte.t >= 1000
+        ? this.punkt(this.letzte, jetztRoh)
+        : (this.verlauf.at(-1) ?? { zeit: new Date(jetztRoh.t).toISOString(), cpu: null, speicher: null, rx: null, tx: null });
     const laeufer = this.o.laeufer?.() ?? null;
     return {
-      jetzt, verlauf: [...this.verlauf], cgroup: c.version,
-      kerne: Math.round(this.kerne(c) * 100) / 100, kerneBegrenzt: c.kerne !== null,
+      jetzt,
+      verlauf: [...this.verlauf],
+      cgroup: c.version,
+      kerne: Math.round(this.kerne(c) * 100) / 100,
+      kerneBegrenzt: c.kerne !== null,
       speicher: { belegt: c.speicher, grenze: c.grenze ?? (c.speicher !== null ? totalmem() : null), ohneGrenze: c.grenze === null },
       anteile: liesAnteile(this.lies, { eigen: process.pid, laeufer, postgres: !!this.o.postgres }),
-      last: loadavg().map((x) => Math.round(x * 100) / 100) as [number, number, number], hostKerne: cpus().length,
+      last: loadavg().map((x) => Math.round(x * 100) / 100) as [number, number, number],
+      hostKerne: cpus().length,
       netz: jetztRoh.netz !== null,
       datenbankImContainer: !!this.o.postgres,
       warnung: this.warnung(),

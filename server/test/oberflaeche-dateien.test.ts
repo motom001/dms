@@ -15,10 +15,20 @@ import type { ChildProcess } from 'node:child_process';
 import { after, before, describe, it } from 'node:test';
 import { istDateipfad } from '../src/oberflaeche';
 
-const echtesFastify = await import('fastify').then((m) => typeof m.default === 'function', () => false);
+const echtesFastify = await import('fastify').then(
+  (m) => typeof m.default === 'function',
+  () => false,
+);
 const ohneFastify = echtesFastify ? false : 'Fastify nicht installiert';
 
-const freierPort = () => new Promise<number>((r) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const a = s.address(); s.close(() => r(typeof a === 'object' && a ? a.port : 0)); }); });
+const freierPort = () =>
+  new Promise<number>((r) => {
+    const s = createServer();
+    s.listen(0, '127.0.0.1', () => {
+      const a = s.address();
+      s.close(() => r(typeof a === 'object' && a ? a.port : 0));
+    });
+  });
 
 let wurzel = '';
 let web = '';
@@ -35,13 +45,27 @@ before(async () => {
   await writeFile(join(web, 'hilfe', 'index.html'), 'HILFE-START');
   await writeFile(join(web, 'hilfe', 'admin', 'index.html'), 'ADMIN-HANDBUCH');
 });
-after(async () => { if (wurzel) await rm(wurzel, { recursive: true, force: true }); });
+after(async () => {
+  if (wurzel) await rm(wurzel, { recursive: true, force: true });
+});
 
-type Hole = (pfad: string, kodierung?: string) => Promise<{ status: number; typ: string; text: string; cache?: string; kodiert?: string; vary?: string }>;
+type Hole = (
+  pfad: string,
+  kodierung?: string,
+) => Promise<{ status: number; typ: string; text: string; cache?: string; kodiert?: string; vary?: string }>;
 
 /** Dieselben Erwartungen für jede Betriebsart. */
 async function pruefeBetriebsart(hole: Hole) {
-  for (const pfad of ['/assets/start-gibtsnicht.js', '/assets/index-gibtsnicht.css', '/assets/start-gibtsnicht.js.map', '/assets/bild.png', '/assets/ohne-endung', '/favicon-alt.svg', '/manifest.webmanifest', '/ablage/x/skript.js?v=1']) {
+  for (const pfad of [
+    '/assets/start-gibtsnicht.js',
+    '/assets/index-gibtsnicht.css',
+    '/assets/start-gibtsnicht.js.map',
+    '/assets/bild.png',
+    '/assets/ohne-endung',
+    '/favicon-alt.svg',
+    '/manifest.webmanifest',
+    '/ablage/x/skript.js?v=1',
+  ]) {
     const r = await hole(pfad);
     assert.equal(r.status, 404, pfad);
     assert.doesNotMatch(r.typ, /text\/html/, pfad);
@@ -75,7 +99,14 @@ async function pruefeBetriebsart(hole: Hole) {
   // Die Fassungen selbst haben keine eigene Adresse.
   assert.equal((await hole('/assets/start-neu.js.br')).status, 404);
   // Seiten der Oberfläche (auch mit Punkt, etwa eine E-Mail-Adresse) bekommen index.html.
-  for (const pfad of ['/', '/ablage/eingang', '/werkbank/pakete/ablago.steuer', '/ablage/email/lena@example.org', '/anmelden/code', '/passwort/abc']) {
+  for (const pfad of [
+    '/',
+    '/ablage/eingang',
+    '/werkbank/pakete/ablago.steuer',
+    '/ablage/email/lena@example.org',
+    '/anmelden/code',
+    '/passwort/abc',
+  ]) {
     const r = await hole(pfad);
     assert.equal(r.status, 200, pfad);
     assert.match(r.typ, /text\/html/, pfad);
@@ -91,24 +122,56 @@ async function pruefeBetriebsart(hole: Hole) {
 }
 
 /** Antwort entpacken wie ein Browser; `kodiert` sagt, was der Server geschickt hat. */
-const entpacken = (roh: Buffer, kodiert?: string) => (kodiert === 'br' ? brotliDecompressSync(roh) : kodiert === 'gzip' ? gunzipSync(roh) : roh).toString('utf8');
+const entpacken = (roh: Buffer, kodiert?: string) =>
+  (kodiert === 'br' ? brotliDecompressSync(roh) : kodiert === 'gzip' ? gunzipSync(roh) : roh).toString('utf8');
 
-const ueberHttp = (port: number): Hole => (pfad, kodierung) => new Promise((fertig, fehler) => {
-  // node:http statt fetch: fetch fragt selbst nach gzip/br und entpackt still.
-  get({ host: '127.0.0.1', port, path: pfad, headers: kodierung ? { 'accept-encoding': kodierung } : {} }, (r) => {
-    const teile: Buffer[] = [];
-    r.on('data', (t: Buffer) => teile.push(t));
-    r.on('end', () => {
-      const kodiert = r.headers['content-encoding'];
-      fertig({ status: r.statusCode ?? 0, typ: r.headers['content-type'] ?? '', text: entpacken(Buffer.concat(teile), kodiert), cache: r.headers['cache-control'], kodiert, vary: r.headers.vary });
+const ueberHttp =
+  (port: number): Hole =>
+  (pfad, kodierung) =>
+    new Promise((fertig, fehler) => {
+      // node:http statt fetch: fetch fragt selbst nach gzip/br und entpackt still.
+      get({ host: '127.0.0.1', port, path: pfad, headers: kodierung ? { 'accept-encoding': kodierung } : {} }, (r) => {
+        const teile: Buffer[] = [];
+        r.on('data', (t: Buffer) => teile.push(t));
+        r.on('end', () => {
+          const kodiert = r.headers['content-encoding'];
+          fertig({
+            status: r.statusCode ?? 0,
+            typ: r.headers['content-type'] ?? '',
+            text: entpacken(Buffer.concat(teile), kodiert),
+            cache: r.headers['cache-control'],
+            kodiert,
+            vary: r.headers.vary,
+          });
+        });
+      }).on('error', fehler);
     });
-  }).on('error', fehler);
-});
 
 describe('Fehlende Dateien der Oberfläche (#932)', () => {
   it('erkennt Dateipfade an /assets/ und an Endungen der Oberfläche', () => {
-    for (const p of ['/assets/a.js', '/assets/a', '/assets/', '/x.css', '/a/b/c.map', '/favicon.ICO', '/manifest.webmanifest', '/assets/a.js?x=1', '/sw.js#a']) assert.equal(istDateipfad(p), true, p);
-    for (const p of ['/', '/ablage', '/ablage/eingang', '/ablage/email/lena@example.org', '/werkbank/pakete/ablago.steuer', '/ablage/x?datei=a.js', '/assetsx/a', '/hilfe/admin/']) assert.equal(istDateipfad(p), false, p);
+    for (const p of [
+      '/assets/a.js',
+      '/assets/a',
+      '/assets/',
+      '/x.css',
+      '/a/b/c.map',
+      '/favicon.ICO',
+      '/manifest.webmanifest',
+      '/assets/a.js?x=1',
+      '/sw.js#a',
+    ])
+      assert.equal(istDateipfad(p), true, p);
+    for (const p of [
+      '/',
+      '/ablage',
+      '/ablage/eingang',
+      '/ablage/email/lena@example.org',
+      '/werkbank/pakete/ablago.steuer',
+      '/ablage/x?datei=a.js',
+      '/assetsx/a',
+      '/hilfe/admin/',
+    ])
+      assert.equal(istDateipfad(p), false, p);
   });
 
   it('normaler Betrieb: 404 für fehlende Dateien, index.html für Seiten', { skip: ohneFastify }, async () => {
@@ -120,15 +183,31 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
-    const app = await baueApp(dienst, konten, { webDir: web }) as unknown as { inject(o: { method: string; url: string; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string> }>; close(): Promise<unknown> };
+    const app = (await baueApp(dienst, konten, { webDir: web })) as unknown as {
+      inject(o: {
+        method: string;
+        url: string;
+        headers?: Record<string, string>;
+      }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string> }>;
+      close(): Promise<unknown>;
+    };
     try {
       await pruefeBetriebsart(async (pfad, kodierung) => {
         const r = await app.inject({ method: 'GET', url: pfad, headers: kodierung ? { 'accept-encoding': kodierung } : {} });
         const kodiert = r.headers['content-encoding'] as string | undefined;
-        return { status: r.statusCode, typ: String(r.headers['content-type'] ?? ''), text: entpacken(r.rawPayload, kodiert), cache: r.headers['cache-control'], kodiert, vary: r.headers.vary as string | undefined };
+        return {
+          status: r.statusCode,
+          typ: String(r.headers['content-type'] ?? ''),
+          text: entpacken(r.rawPayload, kodiert),
+          cache: r.headers['cache-control'],
+          kodiert,
+          vary: r.headers.vary as string | undefined,
+        };
       });
       assert.equal((await app.inject({ method: 'GET', url: '/api/gibtsnicht' })).statusCode, 404);
-    } finally { await app.close(); }
+    } finally {
+      await app.close();
+    }
   });
 
   it('Einrichtungsmodus: dieselbe Regel', { skip: ohneFastify }, async () => {
@@ -138,12 +217,23 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
     const code = new Einrichtungscode(geheim);
     const port = await freierPort();
     const fertig = einrichtungsmodus({
-      geheim, code, vorbelegt: null, quelle: null, fehler: null, port, host: '127.0.0.1', webDir: web,
-      pruefe: async () => ({ ok: true, postgres: '17', eingerichtet: false, benutzer: 0 }), anlegen: async () => {},
+      geheim,
+      code,
+      vorbelegt: null,
+      quelle: null,
+      fehler: null,
+      port,
+      host: '127.0.0.1',
+      webDir: web,
+      pruefe: async () => ({ ok: true, postgres: '17', eingerichtet: false, benutzer: 0 }),
+      anlegen: async () => {},
     });
     let bereit = false;
     for (let i = 0; i < 100 && !bereit; i++) {
-      bereit = await fetch(`http://127.0.0.1:${port}/api/gesundheit`).then((r) => r.ok, () => false);
+      bereit = await fetch(`http://127.0.0.1:${port}/api/gesundheit`).then(
+        (r) => r.ok,
+        () => false,
+      );
       if (!bereit) await new Promise((r) => setTimeout(r, 30));
     }
     assert.ok(bereit, 'Einrichtungsmodus antwortet');
@@ -153,7 +243,8 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
       // Modus beenden: Anbindung übernehmen (geprüft wird nur zum Schein).
       const gelesen = (await readFile(join(geheim, 'EINRICHTUNGSCODE'), 'utf8')).trim();
       await fetch(`http://127.0.0.1:${port}/api/einrichtung/datenbank/uebernehmen`, {
-        method: 'POST', headers: { 'content-type': 'application/json', 'x-dms': '1', 'x-einrichtungscode': gelesen },
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-dms': '1', 'x-einrichtungscode': gelesen },
         body: JSON.stringify({ anbindung: { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: 'x' } }),
       });
       await fertig;
@@ -162,16 +253,32 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
 
   it('Lasttestmodus: dieselbe Regel', { skip: ohneFastify }, async () => {
     const { Lasttestmodus } = await import('../src/lasttestmodus');
-    class FalschesKind extends EventEmitter { kill() { setImmediate(() => this.emit('exit', null)); return true; } }
+    class FalschesKind extends EventEmitter {
+      kill() {
+        setImmediate(() => this.emit('exit', null));
+        return true;
+      }
+    }
     const port = await freierPort();
     const m = new Lasttestmodus({
-      wahl: 'klein', dauer: 5, skript: '/x/lasttest.mjs', ziel: 'http://127.0.0.1:1', ergebnisOrdner: join(wurzel, 'ergebnis'), env: {}, speicherart: 'SSD',
-      port, host: '127.0.0.1', webDir: web, beenden: () => {},
+      wahl: 'klein',
+      dauer: 5,
+      skript: '/x/lasttest.mjs',
+      ziel: 'http://127.0.0.1:1',
+      ergebnisOrdner: join(wurzel, 'ergebnis'),
+      env: {},
+      speicherart: 'SSD',
+      port,
+      host: '127.0.0.1',
+      webDir: web,
+      beenden: () => {},
       starte: () => new FalschesKind() as unknown as ChildProcess,
     });
     await m.start();
     try {
       await pruefeBetriebsart(ueberHttp(port));
-    } finally { await m.stop(); }
+    } finally {
+      await m.stop();
+    }
   });
 });

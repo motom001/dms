@@ -13,7 +13,9 @@ import { liesMerkmale, MERKMALE, MERKMALE_EINSTELLUNG, type Merkmale } from '../
 export class WerkbankDienst {
   constructor(private readonly kern: Kern) {}
 
-  private get einstellungen() { return this.kern.einstellungen; }
+  private get einstellungen() {
+    return this.kern.einstellungen;
+  }
 
   async werkbankAnsicht(wer: { id: string | null; email: string }) {
     const installation = liesAnsicht(await this.einstellungen?.lies('werkbank_ansicht'));
@@ -40,7 +42,9 @@ export class WerkbankDienst {
   }
 
   /** Merkmale der Ablage (#1032); ohne Einstellung privat. */
-  merkmale(): Promise<Merkmale> { return this.kern.merkmale(); }
+  merkmale(): Promise<Merkmale> {
+    return this.kern.merkmale();
+  }
 
   /**
    * Merkmale ändern (#1032, nur „Gesamte Verwaltung“ – verwaltungsbereiche.ts). Nur genannte Merkmale ändern sich;
@@ -48,8 +52,9 @@ export class WerkbankDienst {
    */
   async setzeMerkmale(body: unknown, von: string): Promise<Merkmale> {
     if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    const roh = body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {};
-    for (const m of MERKMALE) if (m in roh && typeof roh[m] !== 'boolean') throw new Fachfehler(422, t('meldungen.dienst.merkmal-ja-nein', { merkmal: m }));
+    const roh = body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
+    for (const m of MERKMALE)
+      if (m in roh && typeof roh[m] !== 'boolean') throw new Fachfehler(422, t('meldungen.dienst.merkmal-ja-nein', { merkmal: m }));
     const alt = await this.merkmale();
     const neu = liesMerkmale({ ...alt, ...Object.fromEntries(MERKMALE.filter((m) => m in roh).map((m) => [m, roh[m]])) });
     const an = Object.fromEntries(MERKMALE.filter((m) => neu[m]).map((m) => [m, true]));
@@ -58,7 +63,13 @@ export class WerkbankDienst {
     protokoll.modul('werkbank').info('Merkmale der Ablage geändert', { vorher: alt, nachher: neu, von });
     // Vorgabe der Werkbank-Vorlage (#1032, #987): Steht sie noch unverändert auf der Vorgabe des alten Merkmals, folgt sie.
     const ansicht = liesAnsicht(await this.einstellungen.lies('werkbank_ansicht'));
-    if (ansicht && ansicht.vorlage === vorlageFuer(alt) && !ansicht.ein.length && !ansicht.aus.length && vorlageFuer(alt) !== vorlageFuer(neu)) {
+    if (
+      ansicht &&
+      ansicht.vorlage === vorlageFuer(alt) &&
+      !ansicht.ein.length &&
+      !ansicht.aus.length &&
+      vorlageFuer(alt) !== vorlageFuer(neu)
+    ) {
       await this.einstellungen.schreibe('werkbank_ansicht', { ...ansicht, vorlage: vorlageFuer(neu) });
     }
     return neu;

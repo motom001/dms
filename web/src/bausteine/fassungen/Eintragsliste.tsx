@@ -32,8 +32,12 @@ export function Eintragsliste({ eintraege }: { eintraege: Listeneintrag[] }) {
     <>
       {aufklappbar && (
         <div className="historie-kopf">
-          <Knopf art="link" onClick={() => setAlleOffen(true)}>{t('ablage.historie.alle-aufklappen')}</Knopf>
-          <Knopf art="link" onClick={() => setAlleOffen(false)}>{t('ablage.historie.alle-zuklappen')}</Knopf>
+          <Knopf art="link" onClick={() => setAlleOffen(true)}>
+            {t('ablage.historie.alle-aufklappen')}
+          </Knopf>
+          <Knopf art="link" onClick={() => setAlleOffen(false)}>
+            {t('ablage.historie.alle-zuklappen')}
+          </Knopf>
         </div>
       )}
       <ul className="historie">
@@ -50,12 +54,14 @@ export function Eintragsliste({ eintraege }: { eintraege: Listeneintrag[] }) {
           );
           return (
             <li key={x.id}>
-              {x.inhalt
-                ? <details open={x.offen || (alleOffen ?? undefined)} key={String(alleOffen)}>
-                    <summary aria-label={x.label}>{kopf}</summary>
-                    <div className="einzelheiten">{x.inhalt}</div>
-                  </details>
-                : <div className="zeile">{kopf}</div>}
+              {x.inhalt ? (
+                <details open={x.offen || (alleOffen ?? undefined)} key={String(alleOffen)}>
+                  <summary aria-label={x.label}>{kopf}</summary>
+                  <div className="einzelheiten">{x.inhalt}</div>
+                </details>
+              ) : (
+                <div className="zeile">{kopf}</div>
+              )}
             </li>
           );
         })}

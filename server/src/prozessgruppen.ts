@@ -38,12 +38,22 @@ export interface GruppenWert {
   mb: number;
 }
 
-export type GruppenStand =
-  | { verfuegbar: true; zeit: number; postgresImContainer: boolean; gruppen: GruppenWert[] }
-  | { verfuegbar: false };
+export type GruppenStand = { verfuegbar: true; zeit: number; postgresImContainer: boolean; gruppen: GruppenWert[] } | { verfuegbar: false };
 
 const TEXTERKENNUNG = new Set(['tesseract', 'ocrmypdf', 'unpaper', 'jbig2', 'pngquant']);
-const BILDER = new Set(['pdftoppm', 'pdftocairo', 'pdfinfo', 'pdftotext', 'pdfimages', 'qpdf', 'gs', 'magick', 'convert', 'mutool', 'vips']);
+const BILDER = new Set([
+  'pdftoppm',
+  'pdftocairo',
+  'pdfinfo',
+  'pdftotext',
+  'pdfimages',
+  'qpdf',
+  'gs',
+  'magick',
+  'convert',
+  'mutool',
+  'vips',
+]);
 
 /** Gruppe nach dem Namen des Programms (ohne bekannte Prozess-Id). */
 export function artNachName(comm: string, befehl: () => string | null = () => null): Exclude<GruppenArt, 'ablago' | 'lastgenerator'> {
@@ -57,14 +67,24 @@ export function artNachName(comm: string, befehl: () => string | null = () => nu
 }
 
 const USER_HZ = 100;
-export interface ProzessStat { comm: string; ppid: number; eigen: number; kinder: number; start: number }
+export interface ProzessStat {
+  comm: string;
+  ppid: number;
+  eigen: number;
+  kinder: number;
+  start: number;
+}
 
 /** Eine Zeile aus /proc/<pid>/stat: Name, Elternprozess, eigene und Kinder-Rechenzeit (Sekunden), Startzeit. */
 export function liesStat(text: string | null): ProzessStat | null {
   if (!text) return null;
-  const a = text.indexOf('('), z = text.lastIndexOf(')');
+  const a = text.indexOf('('),
+    z = text.lastIndexOf(')');
   if (a < 0 || z < a) return null;
-  const f = text.slice(z + 2).trim().split(/\s+/);
+  const f = text
+    .slice(z + 2)
+    .trim()
+    .split(/\s+/);
   // f[0] ist Feld 3 (state): ppid Feld 4, utime … cstime 14–17, starttime 22.
   const n = (i: number) => Number(f[i]);
   const w = [n(1), n(11), n(12), n(13), n(14), n(19)];
@@ -72,10 +92,19 @@ export function liesStat(text: string | null): ProzessStat | null {
   return { comm: text.slice(a + 1, z), ppid: w[0], eigen: (w[1] + w[2]) / USER_HZ, kinder: (w[3] + w[4]) / USER_HZ, start: w[5] };
 }
 
-const rssMb = (text: string | null) => { const kb = text?.match(/^VmRSS:\s+(\d+)\s+kB/m)?.[1]; return kb ? Number(kb) / KB : 0; };
+const rssMb = (text: string | null) => {
+  const kb = text?.match(/^VmRSS:\s+(\d+)\s+kB/m)?.[1];
+  return kb ? Number(kb) / KB : 0;
+};
 
 function allePids(): number[] {
-  try { return readdirSync('/proc').filter((n) => /^\d+$/.test(n)).map(Number); } catch { return []; }
+  try {
+    return readdirSync('/proc')
+      .filter((n) => /^\d+$/.test(n))
+      .map(Number);
+  } catch {
+    return [];
+  }
 }
 
 export interface Bekannt {
@@ -83,7 +112,13 @@ export interface Bekannt {
   lastgenerator: number | null;
 }
 
-interface Vorher { start: number; eigen: number; kinder: number; ppid: number; gruppe: string }
+interface Vorher {
+  start: number;
+  eigen: number;
+  kinder: number;
+  ppid: number;
+  gruppe: string;
+}
 
 /** Je Prozess, der fragt (im Leiter): fortlaufende Rechenzeit je Gruppe. */
 export class Prozessgruppen {
@@ -124,7 +159,8 @@ export class Prozessgruppen {
         const n = jetzt.get(pid);
         if (n && n.start === v.start) continue;
         const e = beendet.get(v.ppid) ?? { summe: 0, gruppen: new Set<string>() };
-        e.summe += v.eigen + v.kinder; e.gruppen.add(v.gruppe);
+        e.summe += v.eigen + v.kinder;
+        e.gruppen.add(v.gruppe);
         beendet.set(v.ppid, e);
       }
       for (const [pid, n] of jetzt) {
@@ -135,9 +171,10 @@ export class Prozessgruppen {
         // Beendete Kinder: Zuwachs von cutime + cstime ohne das, was bei ihnen schon gezählt war.
         const zuwachs = n.kinder - (gleich ? v.kinder : 0);
         const e = beendet.get(pid);
-        const rest = zuwachs - (gleich ? e?.summe ?? 0 : 0);
+        const rest = zuwachs - (gleich ? (e?.summe ?? 0) : 0);
         if (gleich && rest > 0.005) {
-          const g = n.gruppe === 'postgres' || n.gruppe === 'lastgenerator' ? n.gruppe : e && e.gruppen.size === 1 ? [...e.gruppen][0] : 'rest';
+          const g =
+            n.gruppe === 'postgres' || n.gruppe === 'lastgenerator' ? n.gruppe : e && e.gruppen.size === 1 ? [...e.gruppen][0] : 'rest';
           plus(this.summen, g, rest);
         }
       }
@@ -152,7 +189,15 @@ export class Prozessgruppen {
       const p = nr === undefined ? undefined : b.ablago.find((x) => x.nr === Number(nr));
       // Ablago-Prozesse, die es nicht mehr gibt (Neustart unter derselben Nummer bleibt), und leere Gruppen ohne Zeit weg.
       if (art === 'ablago' && !p && !anzahl.get(k)) continue;
-      gruppen.push({ art, ...(nr !== undefined ? { nr: Number(nr), rolle: p?.rolle ?? (Number(nr) === 0 ? 'haupt' : Number(nr) === 1 ? 'leiter' : 'anfragen') } : {}), anzahl: anzahl.get(k) ?? 0, cpuSekunden: r2(this.summen.get(k) ?? 0), mb: Math.round(mb.get(k) ?? 0) });
+      gruppen.push({
+        art,
+        ...(nr !== undefined
+          ? { nr: Number(nr), rolle: p?.rolle ?? (Number(nr) === 0 ? 'haupt' : Number(nr) === 1 ? 'leiter' : 'anfragen') }
+          : {}),
+        anzahl: anzahl.get(k) ?? 0,
+        cpuSekunden: r2(this.summen.get(k) ?? 0),
+        mb: Math.round(mb.get(k) ?? 0),
+      });
     }
     gruppen.sort((a, b2) => GRUPPEN_FOLGE.indexOf(a.art) - GRUPPEN_FOLGE.indexOf(b2.art) || (a.nr ?? 0) - (b2.nr ?? 0));
     return { verfuegbar: true, zeit: (this.o.jetzt ?? Date.now)(), postgresImContainer: this.o.postgresImContainer, gruppen };

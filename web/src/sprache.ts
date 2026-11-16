@@ -4,7 +4,15 @@
  * abgerufen; ein neuer Bereich wird unten ergänzt. Anleitung: Entwicklerhandbuch → Aufbau → Texte.
  */
 import { createElement, Fragment, type ReactNode } from 'react';
-import { AUSGANGSSPRACHE, registriereSprache, RUECKFALLSPRACHE, setzeSprache, sprache, uebersetzer, type Schluessel } from '../../shared/src/sprache';
+import {
+  AUSGANGSSPRACHE,
+  registriereSprache,
+  RUECKFALLSPRACHE,
+  setzeSprache,
+  sprache,
+  uebersetzer,
+  type Schluessel,
+} from '../../shared/src/sprache';
 import ablage from '../../shared/src/sprachen/de/ablage.json';
 import mappentypen from '../../shared/src/sprachen/de/mappentypen.json';
 import notfall from '../../shared/src/sprachen/de/notfall.json';
@@ -31,7 +39,33 @@ import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import volltext from '../../shared/src/sprachen/de/volltext.json';
 import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 
-const bereiche = { ablage, aehnlich, api, anmeldung, automatisierung, einrichtung, entdecken, erkennung, ereignisse, felder, fragen, konten, lasttest, mappen, mappentypen, notfall, oberflaeche, pakete, profil, spalten, suche, systemzustand, termine, volltext, werkbank };
+const bereiche = {
+  ablage,
+  aehnlich,
+  api,
+  anmeldung,
+  automatisierung,
+  einrichtung,
+  entdecken,
+  erkennung,
+  ereignisse,
+  felder,
+  fragen,
+  konten,
+  lasttest,
+  mappen,
+  mappentypen,
+  notfall,
+  oberflaeche,
+  pakete,
+  profil,
+  spalten,
+  suche,
+  systemzustand,
+  termine,
+  volltext,
+  werkbank,
+};
 export const t = uebersetzer(bereiche);
 
 /**
@@ -59,10 +93,18 @@ export function tn(schluessel: Schluessel<typeof bereiche>, werte: Readonly<Reco
 const GEMERKT = 'ablago:sprache';
 /** Zuletzt benutzte Sprache in diesem Browser (nur Bequemlichkeit: der Server entscheidet). */
 export function gemerkteSprache(): string | null {
-  try { return localStorage.getItem(GEMERKT); } catch { return null; }
+  try {
+    return localStorage.getItem(GEMERKT);
+  } catch {
+    return null;
+  }
 }
 export function merkeSprache(spr: string) {
-  try { localStorage.setItem(GEMERKT, spr); } catch { /* privates Fenster */ }
+  try {
+    localStorage.setItem(GEMERKT, spr);
+  } catch {
+    /* privates Fenster */
+  }
 }
 /** Sprache des Browsers als Vorschlag, z. B. „en“ aus „en-GB“. */
 export const browserSprache = () => (typeof navigator === 'undefined' ? '' : (navigator.language || '').split('-')[0].toLowerCase());
@@ -76,7 +118,10 @@ export const browserSprache = () => (typeof navigator === 'undefined' ? '' : (na
  * bleibt es bei Englisch bzw. Deutsch – Ablago zeigt nie eine leere Stelle.
  */
 export async function ladeSprache(spr: string) {
-  if (spr !== AUSGANGSSPRACHE) { const { registriereEnglisch } = await import('../../shared/src/englisch'); registriereEnglisch(); }
+  if (spr !== AUSGANGSSPRACHE) {
+    const { registriereEnglisch } = await import('../../shared/src/englisch');
+    registriereEnglisch();
+  }
   if (spr !== AUSGANGSSPRACHE && spr !== RUECKFALLSPRACHE) await ladeSprachpaket(spr);
   setzeSprache(spr);
   merkeSprache(spr);
@@ -88,9 +133,16 @@ async function ladeSprachpaket(spr: string) {
   try {
     const r = await fetch(`/api/sprache/texte/${encodeURIComponent(spr)}`, { credentials: 'same-origin', headers: { 'x-dms': '1' } });
     if (!r.ok) return;
-    const d = await r.json() as { kennung: string; gebietsschema: string; maschinell: boolean; texte: Record<string, Record<string, string>> };
+    const d = (await r.json()) as {
+      kennung: string;
+      gebietsschema: string;
+      maschinell: boolean;
+      texte: Record<string, Record<string, string>>;
+    };
     registriereSprache(spr, d.texte, { maschinell: d.maschinell, gebietsschema: d.gebietsschema });
-  } catch { /* nicht erreichbar: Rückfall Englisch, sonst Deutsch */ }
+  } catch {
+    /* nicht erreichbar: Rückfall Englisch, sonst Deutsch */
+  }
 }
 
 /** Andere Sprache gewählt (Mein Konto, Anmeldung, Assistent): merken und neu laden – alle Texte entstehen neu. */

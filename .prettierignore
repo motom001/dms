@@ -1,0 +1,40 @@
+# Was Prettier nicht anfasst (#1280). Dazu kommt alles aus .gitignore (node_modules, dist, site, erzeugte Bilder).
+
+# CSS bleibt in der Form „eine Regel je Zeile“: Prüfungen arbeiten zeilenweise (farbe-erlaubt je Zeile, höchstens
+# 400 Zeilen je Datei in .github/werkzeuge/farben-pruefen.mjs, Tests lesen Regeln als Text).
+*.css
+
+# Prosa und Konfiguration: Markdown (Handbuch mit mkdocs-Eigenheiten, Release-Notizen, READMEs), YAML (Workflows,
+# mkdocs, Compose-Beispiele zum Abschreiben), HTML (Jinja-Vorlagen des Handbuchs, Startseiten).
+*.md
+*.yml
+*.yaml
+*.html
+docs/handbuch/*/docs/
+docs/handbuch/*/docs-en/
+docs/releases/
+docs/messungen/
+
+# Lockfiles schreibt npm, nicht wir.
+**/package-lock.json
+
+# Erzeugte Dateien: Bestandslisten von ESLint, knip und dependency-cruiser.
+eslint-suppressions.json
+knip-bestand.json
+.dependency-cruiser-known-violations.json
+
+# Test-Fixtures, deren Bytes zählen (Bedingung Sicherheit, #1280): Rohtext, signierte Körper, Prüfsummen.
+# Aufruf von außen: HMAC über Zeitstempel und Rumpf (#679).
+server/test/automatisierung-aufruf.test.ts
+server/test/automatisierung-aussen.test.ts
+# Katalogsignatur: Testschlüssel, signierte Kataloge, Basis-Paket als Archivinhalt (#594).
+server/test/katalogschluessel.ts
+server/test/katalogsignatur.test.ts
+server/test/pakete/
+# Sicherungen: Archivformat, Prüfsummen, Wiederherstellung.
+server/test/sicherung*.test.ts
+server/test/wiederherstellung.test.ts
+# Rohe PDF-Körper mit Byte-Versätzen (xref) und kaputte PDFs.
+server/test/hilfen-einfach-pdf.ts
+server/test/hilfen-grossespdf.ts
+server/test/pdf-korpus/

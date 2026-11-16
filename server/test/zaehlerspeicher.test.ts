@@ -41,11 +41,21 @@ describe('Zwischenspeicher der Zahlen (#512)', () => {
   it('gleichzeitige Aufrufe zählen einmal; ein Fehler bleibt nicht im Speicher', async () => {
     const zs = new Zaehlerspeicher<number>(new Haushaltsstand());
     let n = 0;
-    const langsam = async () => { n++; await new Promise((r) => setTimeout(r, 10)); return { wert: n, zeitabhaengig: false }; };
+    const langsam = async () => {
+      n++;
+      await new Promise((r) => setTimeout(r, 10));
+      return { wert: n, zeitabhaengig: false };
+    };
     const [a, b] = await Promise.all([zs.hole('x', langsam), zs.hole('x', langsam)]);
     assert.equal(n, 1);
-    assert.equal(a.wert, 1); assert.equal(b.wert, 1); assert.equal(b.art, 'treffer');
-    await assert.rejects(zs.hole('y', async () => { throw new Error('weg'); }));
+    assert.equal(a.wert, 1);
+    assert.equal(b.wert, 1);
+    assert.equal(b.art, 'treffer');
+    await assert.rejects(
+      zs.hole('y', async () => {
+        throw new Error('weg');
+      }),
+    );
     assert.equal((await zs.hole('y', async () => ({ wert: 7, zeitabhaengig: false }))).wert, 7);
   });
 
@@ -53,15 +63,23 @@ describe('Zwischenspeicher der Zahlen (#512)', () => {
     const stand = new Haushaltsstand();
     let fertig!: () => void;
     const repo = stand.umhuelle({
-      holeMappe: async () => 1, seite: async () => 2, merkeGesehen: async () => {},
-      aendereMappe: () => new Promise<void>((r) => { fertig = r; }),
+      holeMappe: async () => 1,
+      seite: async () => 2,
+      merkeGesehen: async () => {},
+      aendereMappe: () =>
+        new Promise<void>((r) => {
+          fertig = r;
+        }),
       unbekannt: async () => 3,
     });
-    await repo.holeMappe(); await repo.seite(); await repo.merkeGesehen();
+    await repo.holeMappe();
+    await repo.seite();
+    await repo.merkeGesehen();
     assert.equal(stand.stand, 0);
     const p = repo.aendereMappe();
     assert.equal(stand.stand, 0, 'noch nicht fertig');
-    fertig(); await p;
+    fertig();
+    await p;
     assert.equal(stand.stand, 1);
     await repo.unbekannt();
     assert.equal(stand.stand, 2, 'unbekannte Methoden zählen – lieber einmal zu viel');
@@ -92,19 +110,45 @@ async function aufbau() {
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const rolleTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'rolle')!;
   const fibu = (await d.mappen.legeMappeAn({ typId: rolleTyp.id, werte: { name: 'FiBu' } }, admin.id)).id;
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', felder: [
-    { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
-    { key: 'privat', label: 'Privat', typ: 'janein' },
-    { key: 'faellig', label: 'Fällig', typ: 'datum' },
-  ] });
-  const privatNurFibu: Regelwerk = { grund: ALLES, regeln: [
-    { id: 'privat', name: 'Privat nur FiBu', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } }, { art: 'rolle', rollen: [fibu], nicht: true }], dann: { R: 'entziehen' }, stopp: true },
-  ] };
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    felder: [
+      { key: 'nr', label: 'Nummer', typ: 'text', pflicht: true },
+      { key: 'privat', label: 'Privat', typ: 'janein' },
+      { key: 'faellig', label: 'Fällig', typ: 'datum' },
+    ],
+  });
+  const privatNurFibu: Regelwerk = {
+    grund: ALLES,
+    regeln: [
+      {
+        id: 'privat',
+        name: 'Privat nur FiBu',
+        wenn: [
+          { art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } },
+          { art: 'rolle', rollen: [fibu], nicht: true },
+        ],
+        dann: { R: 'entziehen' },
+        stopp: true,
+      },
+    ],
+  };
   await d.berechtigungen.setzeBerechtigungen(rechnung.id, privatNurFibu, true);
   const alle = await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Rechnungen', typen: [rechnung.id], bedingungen: [] });
-  const privat = await d.sichtenVerwaltung.legeSichtAn({ name: 'Privat', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }] });
-  const faellig = await d.sichtenVerwaltung.legeSichtAn({ name: 'Fällig bis heute', typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }] });
-  const ich = async (id: string) => { const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!); return { id: b.id, rolle: b.rolle }; };
+  const privat = await d.sichtenVerwaltung.legeSichtAn({
+    name: 'Privat',
+    typen: [rechnung.id],
+    bedingungen: [{ art: 'feld', feld: 'privat', op: 'ja' }],
+  });
+  const faellig = await d.sichtenVerwaltung.legeSichtAn({
+    name: 'Fällig bis heute',
+    typen: [rechnung.id],
+    bedingungen: [{ art: 'feld', feld: 'faellig', op: 'kleiner', wert: { art: 'heute', versatz: 1, einheit: 'tage' } }],
+  });
+  const ich = async (id: string) => {
+    const b = wieImModus((await konten.listeBenutzer()).find((x) => x.id === id)!);
+    return { id: b.id, rolle: b.rolle };
+  };
   /** Zahlen wie der Server sie liefert, und ob der Zwischenspeicher traf. */
   const zahlen = async (id: string) => {
     const k: Kontext = { anfrage: 't', db: { anzahl: 0, ms: 0 } };
@@ -121,7 +165,13 @@ async function aufbau() {
   return { d, admin, max, fibu, rechnung, privatNurFibu, alle, privat, faellig, zahlen, frisch };
 }
 
-const teil = (z: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({ typen: z.typen, eingang: z.eingang, favoriten: z.favoriten, sichten: z.sichten, papierkorb: z.papierkorb });
+const teil = (z: Awaited<ReturnType<Dienst['sichten']['zaehler']>>) => ({
+  typen: z.typen,
+  eingang: z.eingang,
+  favoriten: z.favoriten,
+  sichten: z.sichten,
+  papierkorb: z.papierkorb,
+});
 
 describe('Dienst: Zahlen der Ansichten (#512)', () => {
   it('wiederholtes Laden ohne Änderung zählt nicht neu', async () => {
@@ -134,7 +184,11 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     // Rahmen ist immer frisch dabei.
     assert.equal('papierkorbTage' in zweites.z && 'neuePost' in zweites.z, true);
     // Lesen ändert den Stand nicht.
-    await h.d.sichten.seite({ id: h.max.id, rolle: 'mitglied' }, { sicht: h.alle.id }, await h.d.rechtepruefung.zugriff({ id: h.max.id, rolle: 'mitglied' }));
+    await h.d.sichten.seite(
+      { id: h.max.id, rolle: 'mitglied' },
+      { sicht: h.alle.id },
+      await h.d.rechtepruefung.zugriff({ id: h.max.id, rolle: 'mitglied' }),
+    );
     assert.equal((await h.zahlen(h.max.id)).art, 'treffer');
   });
 
@@ -147,7 +201,10 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
       }
     };
     const stimmt = async (was: string, erwartet: { admin: [number, number]; max: [number, number] }) => {
-      for (const [wer, id] of [['admin', h.admin.id], ['max', h.max.id]] as const) {
+      for (const [wer, id] of [
+        ['admin', h.admin.id],
+        ['max', h.max.id],
+      ] as const) {
         const { z } = await h.zahlen(id);
         assert.deepEqual(teil(z), teil(await h.frisch(id)), `${was}: ${wer} wie frisch gezählt`);
         assert.deepEqual([z.sichten[h.alle.id], z.sichten[h.privat.id]], erwartet[wer], `${was}: ${wer} (alle, privat)`);
@@ -174,7 +231,11 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     await stimmt('Rolle', { admin: [2, 2], max: [2, 2] });
     await pruefe('Rolle');
     // Ansicht ändern
-    await h.d.sichtenVerwaltung.aendereSicht(h.privat.id, { name: 'Nicht privat', typen: [h.rechnung.id], bedingungen: [{ art: 'feld', feld: 'privat', op: 'nein' }] });
+    await h.d.sichtenVerwaltung.aendereSicht(h.privat.id, {
+      name: 'Nicht privat',
+      typen: [h.rechnung.id],
+      bedingungen: [{ art: 'feld', feld: 'privat', op: 'nein' }],
+    });
     await stimmt('Ansicht ändern', { admin: [2, 0], max: [2, 0] });
     await pruefe('Ansicht ändern');
     // Aufgabe vergeben und erledigen (Eingang)
@@ -203,12 +264,14 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     };
     await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R1' } }, h.admin.id);
     await h.d.ereignisse.verteile();
-    await h.zahlen(h.max.id); await termine();
+    await h.zahlen(h.max.id);
+    await termine();
     const vorher = h.d.fristenstand.stand;
     // Nichts fällig und einmal mit einem Ereignis im Ausgangskorb: holen, verteilen, aufräumen.
     await h.d.ereignisse.verteile();
     await h.d.mappen.legeMappeAn({ typId: h.rechnung.id, werte: { nr: 'R2' } }, h.admin.id);
-    await h.zahlen(h.max.id); await termine();
+    await h.zahlen(h.max.id);
+    await termine();
     const nachAenderung = h.d.fristenstand.stand;
     assert.ok(nachAenderung > vorher, 'die Änderung zählt');
     await h.d.ereignisse.verteile();
@@ -246,4 +309,3 @@ describe('Dienst: Zahlen der Ansichten (#512)', () => {
     assert.equal(z.z.sichten[h.faellig.id], 1, 'jetzt fällig');
   });
 });
-

@@ -12,13 +12,25 @@ export function WiederherstellungPanel({ abschnitt }: { abschnitt?: boolean } = 
   const { stand } = useWartung();
   return (
     <div className="einspaltig">
-      <Kopf titel={t('werkbank.wiederherstellung.wiederherstellen')} abschnitt={abschnitt} id="wiederherstellen" hilfe="werkbank.wiederherstellung">
+      <Kopf
+        titel={t('werkbank.wiederherstellung.wiederherstellen')}
+        abschnitt={abschnitt}
+        id="wiederherstellen"
+        hilfe="werkbank.wiederherstellung">
         <p className="leise">{t('werkbank.wiederherstellung.ersetzt-den-jetzigen-stand')}</p>
       </Kopf>
       {stand && stand.stufe !== 'aktiv' ? (
         <div className="hinweis warn stapel">
-          <p>{tn('werkbank.wiederherstellung.damit-niemand-gleichzeitig-arbeitet', { b: <strong>{t('werkbank.wiederherstellung.wiederherstellen-geht-nur-im')}</strong> })}</p>
-          <div><Link to="/werkbank/wartung#wartungsmodus" className="knopf klein">{t('werkbank.wiederherstellung.zum-wartungsmodus')}</Link></div>
+          <p>
+            {tn('werkbank.wiederherstellung.damit-niemand-gleichzeitig-arbeitet', {
+              b: <strong>{t('werkbank.wiederherstellung.wiederherstellen-geht-nur-im')}</strong>,
+            })}
+          </p>
+          <div>
+            <Link to="/werkbank/wartung#wartungsmodus" className="knopf klein">
+              {t('werkbank.wiederherstellung.zum-wartungsmodus')}
+            </Link>
+          </div>
         </div>
       ) : (
         <section className="blatt">

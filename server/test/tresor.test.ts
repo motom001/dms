@@ -12,7 +12,14 @@ import { istPruefwort, istVerschluesselt, punktFuer, PRUEFWORT, Tresor } from '.
 /** Einstellungen im Arbeitsspeicher (wie speicherBetrieb, ohne den Mailversand zu laden). */
 function speicherBetrieb() {
   const m = new Map<string, unknown>();
-  return { async lies(k: string) { return m.get(k) ?? null; }, async schreibe(k: string, w: unknown) { m.set(k, structuredClone(w)); } };
+  return {
+    async lies(k: string) {
+      return m.get(k) ?? null;
+    },
+    async schreibe(k: string, w: unknown) {
+      m.set(k, structuredClone(w));
+    },
+  };
 }
 
 const ordner = async () => join(await mkdtemp(join(tmpdir(), 'dms-tresor-')), 'geheim');
@@ -34,12 +41,14 @@ describe('Tresor (#39)', () => {
     const gespeichert = JSON.stringify(await einst.lies('tresor'));
     assert.ok(!gespeichert.includes(inhalt), 'in der Datenbank steht nur der Fingerabdruck');
 
-    const a = t.verschluessele('geheim'); const b = t.verschluessele('geheim');
+    const a = t.verschluessele('geheim');
+    const b = t.verschluessele('geheim');
     assert.ok(istVerschluesselt(a));
     assert.notEqual(a, b, 'eigene Nonce je Wert');
     assert.equal(t.entschluessele(a), 'geheim');
     // Ein Zeichen in der Mitte sicher ändern (am Ende wären 'AA' schon möglich oder nur ungenutzte Bits betroffen).
-    const m = Math.floor(a.length / 2); const neu = a[m] === 'A' ? 'B' : 'A';
+    const m = Math.floor(a.length / 2);
+    const neu = a[m] === 'A' ? 'B' : 'A';
     assert.equal(t.entschluessele(a.slice(0, m) + neu + a.slice(m + 1)), null, 'manipuliert = nicht lesbar');
     await assert.rejects(t.erzeuge(), /schon einen Schlüssel/);
 
@@ -107,13 +116,28 @@ describe('Schlüssel wechseln (#47)', () => {
     const einst = speicherBetrieb();
     const datei = join(await ordner(), 'dms.schluessel');
     const t = new Tresor(einst, datei, () => null);
-    await t.laden(); await t.erzeuge();
+    await t.laden();
+    await t.erzeuge();
     const repo = speicherRepo();
     const d = new Dienst(repo, speicherDateien(), { tresor: t, einstellungen: einst });
     const betrieb = new Betrieb(einst, 'http://nas', t);
     await betrieb.laden();
-    await betrieb.speichereMail({ aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'mail-geheim', absender: 'dms@example.org' });
-    const typ = await d.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
+    await betrieb.speichereMail({
+      aktiv: true,
+      host: 'smtp.example.org',
+      port: 587,
+      verbindung: 'starttls',
+      benutzer: 'dms',
+      passwort: 'mail-geheim',
+      absender: 'dms@example.org',
+    });
+    const typ = await d.mappentypen.legeTypAn({
+      name: 'Zugang',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+        { key: 'pw', label: 'Kennwort', typ: 'passwort' },
+      ],
+    });
     const m1 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
     const m2 = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
     await d.loeschen.loescheMappe(m2.id);
@@ -156,7 +180,13 @@ describe('Schlüssel wechseln (#47)', () => {
     const alt = t.fingerabdruck;
     const altDatei = await readFile(datei, 'utf8');
     const vorher = (await d.mappen.holeMappe(m1.id)).mappe.werte.pw;
-    await assert.rejects(t.wechsle(async (um) => { um(String(vorher)); throw new Error('Verbindung weg'); }, 'admin'), /abgebrochen.*bisherige Schlüssel/);
+    await assert.rejects(
+      t.wechsle(async (um) => {
+        um(String(vorher));
+        throw new Error('Verbindung weg');
+      }, 'admin'),
+      /abgebrochen.*bisherige Schlüssel/,
+    );
     assert.equal(t.fingerabdruck, alt);
     assert.equal(await readFile(datei, 'utf8'), altDatei);
     await assert.rejects(stat(`${datei}.neu`));
@@ -192,7 +222,10 @@ describe('Schlüssel wechseln (#47)', () => {
   it('nur mit passendem Schlüssel', async () => {
     const t = new Tresor(speicherBetrieb(), join(await ordner(), 'dms.schluessel'), () => null);
     await t.laden();
-    await assert.rejects(t.wechsle(async () => ({ umgeschluesselt: 0, unlesbar: 0 }), 'admin'), (e: unknown) => e instanceof Fachfehler && e.status === 409);
+    await assert.rejects(
+      t.wechsle(async () => ({ umgeschluesselt: 0, unlesbar: 0 }), 'admin'),
+      (e: unknown) => e instanceof Fachfehler && e.status === 409,
+    );
   });
 });
 

@@ -35,16 +35,17 @@ export interface TeureAbfrage {
 export type Grund = 'nicht-geladen' | 'keine-erweiterung' | 'keine-rechte' | 'fehler';
 
 export type AbfragenStand =
-  | { verfuegbar: true; gesamtMs: number; abfragen: TeureAbfrage[] }
-  | { verfuegbar: false; grund: Grund; hinweis: string };
+  { verfuegbar: true; gesamtMs: number; abfragen: TeureAbfrage[] } | { verfuegbar: false; grund: Grund; hinweis: string };
 
 /** Ergebnis des Zurücksetzens: ok, oder warum nicht (dann zählen die Werte seit dem letzten Zurücksetzen weiter). */
 export type Zuruecksetzen = { zurueckgesetzt: true } | { zurueckgesetzt: false; grund: Grund; hinweis: string };
 
 const HINWEIS: Record<Grund, string> = {
   'nicht-geladen': `pg_stat_statements nicht geladen, so einschalten: ${EINSCHALTEN}`,
-  'keine-erweiterung': 'pg_stat_statements geladen, aber die Erweiterung fehlt: als Superuser in der Datenbank von Ablago „CREATE EXTENSION pg_stat_statements“',
-  'keine-rechte': 'pg_stat_statements vorhanden, aber ohne Recht: als Superuser „GRANT pg_read_all_stats TO <Rolle>“ und das Ausführen von pg_stat_statements_reset erlauben',
+  'keine-erweiterung':
+    'pg_stat_statements geladen, aber die Erweiterung fehlt: als Superuser in der Datenbank von Ablago „CREATE EXTENSION pg_stat_statements“',
+  'keine-rechte':
+    'pg_stat_statements vorhanden, aber ohne Recht: als Superuser „GRANT pg_read_all_stats TO <Rolle>“ und das Ausführen von pg_stat_statements_reset erlauben',
   fehler: 'pg_stat_statements nicht lesbar',
 };
 const ohne = (grund: Grund) => ({ grund, hinweis: HINWEIS[grund] });
@@ -69,7 +70,8 @@ const grundAus = (e: unknown): Grund => (code(e) === '55000' ? 'nicht-geladen' :
 
 /** Schema der Erweiterung (z. B. `erweiterungen_dms`), null, wenn sie fehlt. */
 async function schemaDerErweiterung(sql: postgres.Sql): Promise<string | null> {
-  const [z] = await sql`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_stat_statements'`;
+  const [z] =
+    await sql`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_stat_statements'`;
   return (z?.nspname as string | undefined) ?? null;
 }
 
@@ -77,8 +79,13 @@ async function schemaDerErweiterung(sql: postgres.Sql): Promise<string | null> {
 async function geladen(sql: postgres.Sql): Promise<boolean | null> {
   try {
     const [z] = await sql`SELECT current_setting('shared_preload_libraries') AS w`;
-    return String(z.w).split(',').map((x) => x.trim().replace(/^"|"$/g, '')).includes('pg_stat_statements');
-  } catch { return null; }
+    return String(z.w)
+      .split(',')
+      .map((x) => x.trim().replace(/^"|"$/g, ''))
+      .includes('pg_stat_statements');
+  } catch {
+    return null;
+  }
 }
 
 const id = (n: string) => `"${n.replace(/"/g, '""')}"`;
@@ -90,12 +97,14 @@ const id = (n: string) => `"${n.replace(/"/g, '""')}"`;
 async function erweiterung(sql: postgres.Sql, anlegen: boolean): Promise<{ schema: string } | { grund: Grund }> {
   const schema = await schemaDerErweiterung(sql);
   if (schema) return { schema };
-  if (await geladen(sql) === false) return { grund: 'nicht-geladen' };
+  if ((await geladen(sql)) === false) return { grund: 'nicht-geladen' };
   if (!anlegen) return { grund: 'keine-erweiterung' };
   try {
     await sql.unsafe(`CREATE SCHEMA IF NOT EXISTS ${ERWEITERUNGEN_SCHEMA}`);
     await sql.unsafe(`CREATE EXTENSION IF NOT EXISTS pg_stat_statements SCHEMA ${ERWEITERUNGEN_SCHEMA}`);
-  } catch (e) { return { grund: code(e) === '42501' ? 'keine-erweiterung' : grundAus(e) }; }
+  } catch (e) {
+    return { grund: code(e) === '42501' ? 'keine-erweiterung' : grundAus(e) };
+  }
   return { schema: (await schemaDerErweiterung(sql)) ?? ERWEITERUNGEN_SCHEMA };
 }
 
@@ -104,9 +113,13 @@ export async function abfragenZuruecksetzen(sql: postgres.Sql): Promise<Zuruecks
   try {
     const e = await erweiterung(sql, true);
     if ('grund' in e) return { zurueckgesetzt: false, ...ohne(e.grund) };
-    await sql.unsafe(`SELECT ${id(e.schema)}.pg_stat_statements_reset(0, (SELECT oid FROM pg_database WHERE datname = current_database()), 0)`);
+    await sql.unsafe(
+      `SELECT ${id(e.schema)}.pg_stat_statements_reset(0, (SELECT oid FROM pg_database WHERE datname = current_database()), 0)`,
+    );
     return { zurueckgesetzt: true };
-  } catch (e) { return { zurueckgesetzt: false, ...ohne(grundAus(e)) }; }
+  } catch (e) {
+    return { zurueckgesetzt: false, ...ohne(grundAus(e)) };
+  }
 }
 
 /**
@@ -131,13 +144,19 @@ export async function teuersteAbfragen(sql: postgres.Sql, anzahl = 10): Promise<
     const gesamt = Number(rows[0]?.gesamt ?? 0);
     const r1 = (x: number) => Math.round(x * 10) / 10;
     return {
-      verfuegbar: true, gesamtMs: Math.round(gesamt),
+      verfuegbar: true,
+      gesamtMs: Math.round(gesamt),
       abfragen: rows.map((r) => ({
         // Ohne Recht auf fremde Abfragen steht dort „<insufficient privilege>“ – das bleibt so stehen.
         abfrage: kuerzeAbfrage(String(r.query ?? '')),
-        gesamtMs: r1(Number(r.ms)), anzahl: Number(r.calls), mittelMs: Number(r.calls) ? Math.round((Number(r.ms) / Number(r.calls)) * 100) / 100 : 0,
-        zeilen: Number(r.rows), anteil: gesamt > 0 ? Math.round((Number(r.ms) / gesamt) * 1000) / 1000 : 0,
+        gesamtMs: r1(Number(r.ms)),
+        anzahl: Number(r.calls),
+        mittelMs: Number(r.calls) ? Math.round((Number(r.ms) / Number(r.calls)) * 100) / 100 : 0,
+        zeilen: Number(r.rows),
+        anteil: gesamt > 0 ? Math.round((Number(r.ms) / gesamt) * 1000) / 1000 : 0,
       })),
     };
-  } catch (e) { return { verfuegbar: false, ...ohne(grundAus(e)) }; }
+  } catch (e) {
+    return { verfuegbar: false, ...ohne(grundAus(e)) };
+  }
 }

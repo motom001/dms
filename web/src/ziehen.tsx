@@ -24,7 +24,11 @@ interface Optionen {
   fertig: (quelle: string, ziel: string, ort: Ort) => void;
 }
 
-interface Zug { quelle: string; ziel?: string; ort?: Ort }
+interface Zug {
+  quelle: string;
+  ziel?: string;
+  ort?: Ort;
+}
 
 const LANG_DRUECKEN = 350;
 const SCHWELLE_MAUS = 4;
@@ -48,31 +52,38 @@ export function useZiehen(o: Optionen) {
   const aufraeumen = useRef<(() => void) | null>(null);
   useEffect(() => () => aufraeumen.current?.(), []);
 
-  const zielBei = useCallback((quelle: string, x: number, y: number): { ziel: string; ort: Ort } | null => {
-    const sel = `[data-zieh-gruppe="${CSS.escape(gruppe)}"], [data-zieh-ablage="${CSS.escape(gruppe)}"]`;
-    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>(sel);
-    if (!el) return null;
-    const id = el.dataset.ziehId!;
-    let ort: Ort;
-    if (el.dataset.ziehAblage) ort = 'in';
-    else {
-      if (id === quelle) return null;
-      const r = el.getBoundingClientRect();
-      const rel = (y - r.top) / Math.max(1, r.height);
-      ort = opt.current.hinein ? (rel < 0.28 ? 'vor' : rel > 0.72 ? 'nach' : 'in') : rel < 0.5 ? 'vor' : 'nach';
-    }
-    if (opt.current.erlaubt && !opt.current.erlaubt(quelle, id, ort)) return null;
-    return { ziel: id, ort };
-  }, [gruppe]);
+  const zielBei = useCallback(
+    (quelle: string, x: number, y: number): { ziel: string; ort: Ort } | null => {
+      const sel = `[data-zieh-gruppe="${CSS.escape(gruppe)}"], [data-zieh-ablage="${CSS.escape(gruppe)}"]`;
+      const el = document.elementFromPoint(x, y)?.closest<HTMLElement>(sel);
+      if (!el) return null;
+      const id = el.dataset.ziehId!;
+      let ort: Ort;
+      if (el.dataset.ziehAblage) ort = 'in';
+      else {
+        if (id === quelle) return null;
+        const r = el.getBoundingClientRect();
+        const rel = (y - r.top) / Math.max(1, r.height);
+        ort = opt.current.hinein ? (rel < 0.28 ? 'vor' : rel > 0.72 ? 'nach' : 'in') : rel < 0.5 ? 'vor' : 'nach';
+      }
+      if (opt.current.erlaubt && !opt.current.erlaubt(quelle, id, ort)) return null;
+      return { ziel: id, ort };
+    },
+    [gruppe],
+  );
 
-  const setze = (z: Zug | null) => { zugRef.current = z; setZug(z); };
+  const setze = (z: Zug | null) => {
+    zugRef.current = z;
+    setZug(z);
+  };
 
   function onPointerDown(id: string, e: ReactPointerEvent<HTMLElement>) {
     if (e.button !== 0) return;
     aufraeumen.current?.();
     const griff = e.currentTarget;
     const touch = e.pointerType !== 'mouse';
-    const x0 = e.clientX, y0 = e.clientY;
+    const x0 = e.clientX,
+      y0 = e.clientY;
     let aktiv = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const scroller = scrollbarerVorfahr(griff);
@@ -81,7 +92,11 @@ export function useZiehen(o: Optionen) {
 
     const beginne = () => {
       aktiv = true;
-      try { griff.setPointerCapture(e.pointerId); } catch { /* egal */ }
+      try {
+        griff.setPointerCapture(e.pointerId);
+      } catch {
+        /* egal */
+      }
       setze({ quelle: id });
       if (touch && navigator.vibrate) navigator.vibrate(15);
       // Am Rand des scrollbaren Bereichs weiterscrollen.
@@ -96,7 +111,10 @@ export function useZiehen(o: Optionen) {
     const bewege = (ev: PointerEvent) => {
       const weit = Math.hypot(ev.clientX - x0, ev.clientY - y0);
       if (!aktiv) {
-        if (touch) { if (weit > SCHWELLE_TOUCH) ende(); return; }
+        if (touch) {
+          if (weit > SCHWELLE_TOUCH) ende();
+          return;
+        }
         if (weit < SCHWELLE_MAUS) return;
         beginne();
       }
@@ -111,9 +129,12 @@ export function useZiehen(o: Optionen) {
       ende();
       if (aktiv && z?.ziel && z.ort) opt.current.fertig(z.quelle, z.ziel, z.ort);
     };
-    const taste = (ev: globalThis.KeyboardEvent) => { if (ev.key === 'Escape') ende(); };
+    const taste = (ev: globalThis.KeyboardEvent) => {
+      if (ev.key === 'Escape') ende();
+    };
     const ende = () => {
-      clearTimeout(timer); clearInterval(rand);
+      clearTimeout(timer);
+      clearInterval(rand);
       window.removeEventListener('pointermove', bewege);
       window.removeEventListener('pointerup', loslassen);
       window.removeEventListener('pointercancel', ende);
@@ -142,15 +163,24 @@ export function useZiehen(o: Optionen) {
       onClick: (e: React.MouseEvent) => e.preventDefault(),
     }),
     eintrag: (id: string) => ({ 'data-zieh-gruppe': gruppe, 'data-zieh-id': id, className: klasse(id) }),
-    ablage: (id: string) => ({ 'data-zieh-ablage': gruppe, 'data-zieh-id': id, className: zug && zug.ziel === id ? 'zieh-in' : zug ? 'zieh-bereit' : '' }),
+    ablage: (id: string) => ({
+      'data-zieh-ablage': gruppe,
+      'data-zieh-id': id,
+      className: zug && zug.ziel === id ? 'zieh-in' : zug ? 'zieh-bereit' : '',
+    }),
   };
 }
 
 /** Alt+Pfeiltasten am Griff: ↑/↓ verschieben, → hinein (Untersicht), ← heraus (eine Ebene höher). */
 export function ziehTasten(e: KeyboardEvent, f: { hoch?: () => void; runter?: () => void; rein?: () => void; raus?: () => void }) {
   if (!e.altKey || e.ctrlKey || e.metaKey) return;
-  const fn = ({ ArrowUp: f.hoch, ArrowDown: f.runter, ArrowRight: f.rein, ArrowLeft: f.raus } as Record<string, (() => void) | undefined>)[e.key];
-  if (fn) { e.preventDefault(); fn(); }
+  const fn = ({ ArrowUp: f.hoch, ArrowDown: f.runter, ArrowRight: f.rein, ArrowLeft: f.raus } as Record<string, (() => void) | undefined>)[
+    e.key
+  ];
+  if (fn) {
+    e.preventDefault();
+    fn();
+  }
 }
 
 /** Neue Reihenfolge: Eintrag von `von` vor bzw. nach den Eintrag `ziel` setzen. */
@@ -165,17 +195,34 @@ export function umgestellt<T>(liste: T[], von: number, ziel: number, ort: 'vor' 
 
 /** Ansage für Screenreader, z. B. „Rechnungen steht jetzt an Stelle 2.“ */
 export function Ansage({ text }: { text: string }) {
-  return <p className="sr" role="status" aria-live="polite">{text}</p>;
+  return (
+    <p className="sr" role="status" aria-live="polite">
+      {text}
+    </p>
+  );
 }
 
 /**
  * Der Griff zum Ziehen als Baustein Knopf (#1213): Symbol „griff“ statt „⠿“, Name für Screenreader „… verschieben“,
  * am Rechner mindestens 24 px, am Handy 44 × 44 px (D6). Alt+Pfeiltasten wie `ziehTasten`.
  */
-export function Ziehgriff({ griff, tasten, className }: { griff: ReturnType<ReturnType<typeof useZiehen>['griff']>; tasten: Parameters<typeof ziehTasten>[1]; className?: string }) {
+export function Ziehgriff({
+  griff,
+  tasten,
+  className,
+}: {
+  griff: ReturnType<ReturnType<typeof useZiehen>['griff']>;
+  tasten: Parameters<typeof ziehTasten>[1];
+  className?: string;
+}) {
   return (
-    <Knopf art="link" nurSymbol={griff['aria-label']} title={griff.title} className={className ? `${griff.className} ${className}` : griff.className}
-      onPointerDown={griff.onPointerDown} onKeyDown={(ev) => ziehTasten(ev, tasten)}>
+    <Knopf
+      art="link"
+      nurSymbol={griff['aria-label']}
+      title={griff.title}
+      className={className ? `${griff.className} ${className}` : griff.className}
+      onPointerDown={griff.onPointerDown}
+      onKeyDown={(ev) => ziehTasten(ev, tasten)}>
       <Symbol name="griff" />
     </Knopf>
   );

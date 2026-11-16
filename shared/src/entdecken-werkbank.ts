@@ -10,7 +10,10 @@ export const EIGEN = 'eigen';
 export const ausSchluessel = (art: 'rundgang' | 'tipp', schluessel: string) => `${art}:${schluessel}`;
 
 /** Ein Fehler beim Prüfen in der Werkbank: Zeile in der Datei (1-basiert, null = ganze Datei) und verständliche Ursache. */
-export interface ZeilenFehler { zeile: number | null; text: string }
+export interface ZeilenFehler {
+  zeile: number | null;
+  text: string;
+}
 
 /** Ein Rundgang in der Werkbank: alle (Ablago, Pakete, eigene), mit Herkunft, Start, für wen und an/aus. */
 export interface WerkbankRundgang {
@@ -37,7 +40,12 @@ export interface WerkbankRundgang {
 export interface WerkbankRundgaengeStand {
   rundgaenge: WerkbankRundgang[];
   anker: Anker[];
-  typen: Array<{ kennung: string; name: string; felder: Array<{ key: string; name: string }>; register: Array<{ key: string; name: string }> }>;
+  typen: Array<{
+    kennung: string;
+    name: string;
+    felder: Array<{ key: string; name: string }>;
+    register: Array<{ key: string; name: string }>;
+  }>;
   bereiche: Array<{ pfad: string; name: string }>;
 }
 
@@ -48,7 +56,6 @@ export interface RundgangPruefergebnis {
   /** Was „Ausprobieren“ vorher öffnet (oeffne mappe/neu), sonst null. */
   pfad: string | null;
 }
-
 
 /* ---------- Werkbank → Tipps (#942) ---------- */
 
@@ -96,4 +103,7 @@ export interface WerkbankTippsStand {
 }
 
 /** Fehler eines Tipps am Feld (für das Formular); `feld` null = am ganzen Tipp. */
-export interface FeldFehler { feld: string | null; text: string }
+export interface FeldFehler {
+  feld: string | null;
+  text: string;
+}

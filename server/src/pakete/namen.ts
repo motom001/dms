@@ -10,13 +10,21 @@ import { neuestePassende, type Benannt, type InstalliertesPaket, type Katalog } 
 import { t } from '../sprache';
 
 /** Mappentypen einer Abhängigkeit, die mit dem Paket installiert würde (laut Katalog). */
-export interface AbhaengigeTypen { id: string; name: string; typen: Benannt[] }
+export interface AbhaengigeTypen {
+  id: string;
+  name: string;
+  typen: Benannt[];
+}
 
 /**
  * Fehlende Abhängigkeiten samt deren fehlenden Abhängigkeiten, wie „fehlende Pakete mitinstallieren“ sie anlegen würde:
  * je die neueste passende Version aus dem Katalog. Was der Katalog nicht kennt, zählt nicht (das ist ein anderes Problem).
  */
-export function abhaengigeTypen(abhaengigkeiten: Record<string, string>, katalog: Katalog | undefined, installiert: (id: string) => boolean): AbhaengigeTypen[] {
+export function abhaengigeTypen(
+  abhaengigkeiten: Record<string, string>,
+  katalog: Katalog | undefined,
+  installiert: (id: string) => boolean,
+): AbhaengigeTypen[] {
   const erg: AbhaengigeTypen[] = [];
   const offen = Object.entries(abhaengigkeiten);
   const gesehen = new Set<string>();
@@ -38,7 +46,14 @@ const klein = (s: string) => s.trim().toLowerCase();
 
 /** Wer einen Namen schon hat – als Satzteil für die Meldungen. */
 export class Namensherkunft {
-  constructor(private x: { typen: Array<{ id: string; name: string }>; sichten: Array<{ id: string; name: string; elternId?: string | null }>; installierte: Installiert[]; abhaengig: AbhaengigeTypen[] }) {}
+  constructor(
+    private x: {
+      typen: Array<{ id: string; name: string }>;
+      sichten: Array<{ id: string; name: string; elternId?: string | null }>;
+      installierte: Installiert[];
+      abhaengig: AbhaengigeTypen[];
+    },
+  ) {}
 
   /** Mappentyp mit diesem Namen; `ohne`: Typen, die nicht zählen (vom Umbau übernommene). */
   typ(name: string, ohne: Set<string> = new Set()): string {
@@ -70,8 +85,18 @@ export function abhaengigkeitsKonflikte(abhaengig: AbhaengigeTypen[], belegt: Se
   for (const a of abhaengig) {
     for (const y of a.typen) {
       const n = klein(y.name);
-      if (belegt.has(n)) probleme.push(t('meldungen.pakete.namen.abhaengigkeit', { paket: a.name, name: y.name, wer: herkunft.typ(y.name) }));
-      else if (dazu.has(n)) probleme.push(t('meldungen.pakete.namen.abhaengigkeit', { paket: a.name, name: y.name, wer: t('meldungen.pakete.namen.typ-abhaengigkeit', { paket: abhaengig.find((b) => b !== a && b.typen.some((z) => klein(z.name) === n))?.name ?? a.name }) }));
+      if (belegt.has(n))
+        probleme.push(t('meldungen.pakete.namen.abhaengigkeit', { paket: a.name, name: y.name, wer: herkunft.typ(y.name) }));
+      else if (dazu.has(n))
+        probleme.push(
+          t('meldungen.pakete.namen.abhaengigkeit', {
+            paket: a.name,
+            name: y.name,
+            wer: t('meldungen.pakete.namen.typ-abhaengigkeit', {
+              paket: abhaengig.find((b) => b !== a && b.typen.some((z) => klein(z.name) === n))?.name ?? a.name,
+            }),
+          }),
+        );
       dazu.add(n);
     }
   }
@@ -83,10 +108,17 @@ export function abhaengigkeitsKonflikte(abhaengig: AbhaengigeTypen[], belegt: Se
 export function eigeneKonflikte(x: {
   typen: Array<{ name: string; konflikt: string | null; vorschlag: string | null; vorhanden: boolean; geloescht?: boolean }>;
   sichten: Array<{ name: string; konflikt: string | null; vorschlag: string | null; vorhanden: boolean; ausgelassen?: string | null }>;
-  herkunft: Namensherkunft; uebernommen: Set<string>;
+  herkunft: Namensherkunft;
+  uebernommen: Set<string>;
 }): string[] {
   return [
-    ...x.typen.filter((y) => y.konflikt && !y.vorhanden && !y.geloescht).map((y) => t('meldungen.pakete.namen.typ', { name: y.name, wer: x.herkunft.typ(y.name, x.uebernommen), vorschlag: y.vorschlag ?? '' })),
-    ...x.sichten.filter((y) => y.konflikt && !y.vorhanden && !y.ausgelassen).map((y) => t('meldungen.pakete.namen.sicht', { name: y.name, wer: x.herkunft.sicht(y.name), vorschlag: y.vorschlag ?? '' })),
+    ...x.typen
+      .filter((y) => y.konflikt && !y.vorhanden && !y.geloescht)
+      .map((y) =>
+        t('meldungen.pakete.namen.typ', { name: y.name, wer: x.herkunft.typ(y.name, x.uebernommen), vorschlag: y.vorschlag ?? '' }),
+      ),
+    ...x.sichten
+      .filter((y) => y.konflikt && !y.vorhanden && !y.ausgelassen)
+      .map((y) => t('meldungen.pakete.namen.sicht', { name: y.name, wer: x.herkunft.sicht(y.name), vorschlag: y.vorschlag ?? '' })),
   ];
 }

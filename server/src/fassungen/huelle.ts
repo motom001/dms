@@ -13,15 +13,24 @@ const erstes = (a: unknown[]) => a[0];
 
 /** Schreibende Methoden → Gegenstand und Eintrag. */
 const SCHREIBT: Readonly<Record<string, Ziel>> = {
-  legeTypAn: ['typ', erstes], aendereTyp: ['typ', erstes], setzeBerechtigungen: ['typ', erstes], setzeTypSchluessel: ['typ', erstes], setzeTypKennung: ['typ', erstes],
-  legeSichtAn: ['sicht', erstes], aendereSicht: ['sicht', erstes], setzeSichtOrt: ['sicht', erstes],
+  legeTypAn: ['typ', erstes],
+  aendereTyp: ['typ', erstes],
+  setzeBerechtigungen: ['typ', erstes],
+  setzeTypSchluessel: ['typ', erstes],
+  setzeTypKennung: ['typ', erstes],
+  legeSichtAn: ['sicht', erstes],
+  aendereSicht: ['sicht', erstes],
+  setzeSichtOrt: ['sicht', erstes],
   speichereNummernkreis: ['nummernkreis', (a) => (a[0] as { schluessel?: unknown } | undefined)?.schluessel],
   // Automatisierungsvorlagen (#1044): Werkbank, Pakete (anlegen, ersetzen, entfernen) und Zurücksetzen gehen alle hier durch.
   speichereAblaufvorlage: ['ablaufvorlage', (a) => (a[0] as { kennung?: unknown } | undefined)?.kennung],
 };
 /** Löschende Methoden. */
 const LOESCHT: Readonly<Record<string, Ziel>> = {
-  loescheTyp: ['typ', erstes], loescheSicht: ['sicht', erstes], loescheNummernkreis: ['nummernkreis', erstes], loescheAblaufvorlage: ['ablaufvorlage', erstes],
+  loescheTyp: ['typ', erstes],
+  loescheSicht: ['sicht', erstes],
+  loescheNummernkreis: ['nummernkreis', erstes],
+  loescheAblaufvorlage: ['ablaufvorlage', erstes],
 };
 
 export interface FassungenHalten {
@@ -55,7 +64,9 @@ export function mitFassungen(repo: Repo, f: () => FassungenHalten | undefined): 
             const h = f();
             if (!h || typeof id !== 'string') return fn.apply(ziel, args);
             let erg: unknown;
-            await h.geloescht(l[0], id, p, async () => { erg = await fn.apply(ziel, args); });
+            await h.geloescht(l[0], id, p, async () => {
+              erg = await fn.apply(ziel, args);
+            });
             return erg;
           };
         }

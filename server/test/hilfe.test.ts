@@ -4,7 +4,16 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { handbuchOnlineUrl, handbuchStartUrl, handbuchsprache, handbuchUrl, hilfeOnlineUrl, hilfeUrl, HILFE, installierenUrl } from '../../shared/src/hilfe';
+import {
+  handbuchOnlineUrl,
+  handbuchStartUrl,
+  handbuchsprache,
+  handbuchUrl,
+  hilfeOnlineUrl,
+  hilfeUrl,
+  HILFE,
+  installierenUrl,
+} from '../../shared/src/hilfe';
 import { setzeSprache } from '../../shared/src/sprache';
 import { hilfeAntwort, hilfeSenden } from '../src/hilfe';
 
@@ -46,7 +55,24 @@ describe('Offline-Hilfe (#219)', () => {
     assert.deepEqual(hilfeAntwort('/hilfe/admin/bild.png', web), { fehlt: true });
     // Ausgeliefert mit Status 404 als HTML.
     const gesendet: { code?: number; typ?: string; inhalt?: string } = {};
-    const antwort = { redirect: () => null, sendFile: () => null, code: (c: number) => { gesendet.code = c; return { type: (t: string) => { gesendet.typ = t; return { send: (b: string) => { gesendet.inhalt = b; return null; } }; } }; } };
+    const antwort = {
+      redirect: () => null,
+      sendFile: () => null,
+      code: (c: number) => {
+        gesendet.code = c;
+        return {
+          type: (t: string) => {
+            gesendet.typ = t;
+            return {
+              send: (b: string) => {
+                gesendet.inhalt = b;
+                return null;
+              },
+            };
+          },
+        };
+      },
+    };
     hilfeSenden(antwort, { fehlt: true, seite });
     assert.deepEqual(gesendet, { code: 404, typ: 'text/html; charset=utf-8', inhalt: '<p>Diese Seite gibt es hier nicht</p>' });
   });
@@ -56,11 +82,15 @@ describe('Offline-Hilfe (#219)', () => {
     const alt = process.env.DMS_VERSION;
     process.env.DMS_VERSION = '0.44.4';
     try {
-      assert.deepEqual(hilfeAntwort('/hilfe/admin/sicherung/', web), { umleiten: 'https://help.ablago.app/admin/aktuell/sicherung/', status: 302 });
+      assert.deepEqual(hilfeAntwort('/hilfe/admin/sicherung/', web), {
+        umleiten: 'https://help.ablago.app/admin/aktuell/sicherung/',
+        status: 302,
+      });
       assert.deepEqual(hilfeAntwort('/hilfe/', web), { umleiten: 'https://help.ablago.app/', status: 302 });
       assert.deepEqual(hilfeAntwort('/hilfe/benutzer', undefined), { umleiten: 'https://help.ablago.app/benutzer/aktuell/', status: 302 });
     } finally {
-      if (alt === undefined) delete process.env.DMS_VERSION; else process.env.DMS_VERSION = alt;
+      if (alt === undefined) delete process.env.DMS_VERSION;
+      else process.env.DMS_VERSION = alt;
     }
   });
 
@@ -70,7 +100,10 @@ describe('Offline-Hilfe (#219)', () => {
       assert.equal(hilfeUrl(HILFE['sicherung.zeitplan'], '0.44.4', 'en'), '/hilfe/admin/en/sicherung/#zeitplan-und-aufbewahrung');
       assert.equal(handbuchUrl('benutzer', null, 'mappen/', 'en'), '/hilfe/benutzer/en/mappen/');
       assert.equal(handbuchOnlineUrl('admin', 'sicherung/', 'en'), 'https://help.ablago.app/admin/aktuell/en/sicherung/');
-      assert.equal(hilfeOnlineUrl(HILFE['einrichtung.code'], 'en'), 'https://help.ablago.app/admin/aktuell/en/installation/#einrichtungscode');
+      assert.equal(
+        hilfeOnlineUrl(HILFE['einrichtung.code'], 'en'),
+        'https://help.ablago.app/admin/aktuell/en/installation/#einrichtungscode',
+      );
       assert.equal(installierenUrl('en'), 'https://help.ablago.app/installieren/aktuell/en/');
       assert.equal(installierenUrl('de'), 'https://help.ablago.app/installieren/aktuell/');
       assert.equal(handbuchStartUrl('en'), 'https://help.ablago.app/en/');
@@ -98,7 +131,10 @@ describe('Offline-Hilfe (#219)', () => {
 
     it('ohne gebaute Handbücher: englische Seiten und Startseite online', async () => {
       const web = await mkdtemp(join(tmpdir(), 'dms-hilfe-'));
-      assert.deepEqual(hilfeAntwort('/hilfe/admin/en/sicherung/', web), { umleiten: 'https://help.ablago.app/admin/aktuell/en/sicherung/', status: 302 });
+      assert.deepEqual(hilfeAntwort('/hilfe/admin/en/sicherung/', web), {
+        umleiten: 'https://help.ablago.app/admin/aktuell/en/sicherung/',
+        status: 302,
+      });
       assert.deepEqual(hilfeAntwort('/hilfe/en/', web), { umleiten: 'https://help.ablago.app/en/', status: 302 });
     });
 

@@ -25,7 +25,10 @@ export interface PlatzhalterEintrag {
   /** Tooltip; Vorgabe der technische Platzhalter. */
   titel?: string;
 }
-export interface PlatzhalterGruppe { name?: string; eintraege: PlatzhalterEintrag[] }
+export interface PlatzhalterGruppe {
+  name?: string;
+  eintraege: PlatzhalterEintrag[];
+}
 
 export interface PlatzhalterProps {
   gruppen: PlatzhalterGruppe[];
@@ -42,14 +45,21 @@ export function Platzhalter({ gruppen, einsetzen, beschriftung, className }: Pla
   if (!da.length) return null;
   return (
     <div role="group" aria-label={name} className={[s.platzhalter, className].filter(Boolean).join(' ')}>
-      <span className={s.name} aria-hidden="true">{name}</span>
+      <span className={s.name} aria-hidden="true">
+        {name}
+      </span>
       {da.map((g, i) => (
         <div key={g.name ?? i} className={s.gruppe} role={g.name ? 'group' : undefined} aria-label={g.name}>
-          {g.name && <span className={s.gruppenname} aria-hidden="true">{g.name}</span>}
+          {g.name && (
+            <span className={s.gruppenname} aria-hidden="true">
+              {g.name}
+            </span>
+          )}
           <span className={s.chips}>
             {g.eintraege.map((e) => (
               <Knopf key={e.key} groesse="klein" title={e.titel ?? `{${e.key}}`} onClick={() => einsetzen(e.key)}>
-                {e.text}{e.zusatz && <span className={s.zusatz}>{e.zusatz}</span>}
+                {e.text}
+                {e.zusatz && <span className={s.zusatz}>{e.zusatz}</span>}
               </Knopf>
             ))}
           </span>
@@ -60,7 +70,12 @@ export function Platzhalter({ gruppen, einsetzen, beschriftung, className }: Pla
 }
 
 type Eingabe = HTMLInputElement | HTMLTextAreaElement;
-interface Ziel { el: Eingabe | null; wert: string; setze(v: string): void; benutzt: boolean }
+interface Ziel {
+  el: Eingabe | null;
+  wert: string;
+  setze(v: string): void;
+  benutzt: boolean;
+}
 
 /**
  * Einsetzen an der Schreibmarke (#1177). `feld(name, wert, setze)` an jede Eingabe hängen, die Platzhalter annimmt
@@ -75,8 +90,15 @@ export function usePlatzhalterEinsetzen(o: { trenner?: string } = {}) {
     const alt = ziele.current.get(name);
     ziele.current.set(name, { el: alt?.el ?? null, wert, setze, benutzt: alt?.benutzt ?? false });
     return {
-      ref: (el: Eingabe | null) => { const z = ziele.current.get(name); if (z) z.el = el; },
-      onFocus: () => { letztes.current = name; const z = ziele.current.get(name); if (z) z.benutzt = true; },
+      ref: (el: Eingabe | null) => {
+        const z = ziele.current.get(name);
+        if (z) z.el = el;
+      },
+      onFocus: () => {
+        letztes.current = name;
+        const z = ziele.current.get(name);
+        if (z) z.benutzt = true;
+      },
     };
   }
   function einsetzen(key: string) {
@@ -84,8 +106,8 @@ export function usePlatzhalterEinsetzen(o: { trenner?: string } = {}) {
     const [, z] = da.find(([n]) => n === letztes.current) ?? da[da.length - 1] ?? [];
     if (!z) return;
     const el = z.el!;
-    const von = z.benutzt ? el.selectionStart ?? z.wert.length : z.wert.length;
-    const bis = z.benutzt ? el.selectionEnd ?? von : von;
+    const von = z.benutzt ? (el.selectionStart ?? z.wert.length) : z.wert.length;
+    const bis = z.benutzt ? (el.selectionEnd ?? von) : von;
     const davor = o.trenner && von === z.wert.length && von === bis && z.wert.trim() ? o.trenner : '';
     const vorn = davor ? z.wert.trimEnd() : z.wert.slice(0, von);
     const platz = `${davor}{${key}}`;
@@ -93,7 +115,10 @@ export function usePlatzhalterEinsetzen(o: { trenner?: string } = {}) {
     z.benutzt = true;
     letztes.current = [...ziele.current.entries()].find(([, x]) => x === z)?.[0] ?? null;
     const ende = vorn.length + platz.length;
-    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(ende, ende); });
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(ende, ende);
+    });
   }
   return { feld, einsetzen };
 }

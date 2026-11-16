@@ -8,7 +8,16 @@
  * - Ausblenden: Ein ausgeblendetes Feld (oder ein Feld auf einem ausgeblendeten Register) fehlt in Formular und
  *   Mappenansicht und steht nicht zur Auswahl für neue Spalten und Bedingungen. Seine Werte bleiben gespeichert.
  */
-import { ABSCHNITT_TITEL_MAX, trefferlistenVon, vorlageFelder, type Abschnitt, type Feld, type Mappentyp, type MappentypDaten, type Register } from './model';
+import {
+  ABSCHNITT_TITEL_MAX,
+  trefferlistenVon,
+  vorlageFelder,
+  type Abschnitt,
+  type Feld,
+  type Mappentyp,
+  type MappentypDaten,
+  type Register,
+} from './model';
 import { regelwerkVon } from './rechte';
 import { ausgangAus, bereinigeBeschriftungen, feldLabel, listenName, sichtName, type AbschnittTeile } from './beschriftung';
 import type { Sicht } from './sichten';
@@ -34,7 +43,10 @@ export function ausgeblendeteFelder(typ: Pick<MappentypDaten, 'felder'> & { regi
 }
 
 /** Felder, die Formular und Auswahllisten zeigen – in ihrer Reihenfolge. */
-export function sichtbareFelder<F extends Pick<Feld, 'key'>>(typ: Pick<MappentypDaten, 'felder'> & { register?: Register[] }, felder: F[] = typ.felder as unknown as F[]): F[] {
+export function sichtbareFelder<F extends Pick<Feld, 'key'>>(
+  typ: Pick<MappentypDaten, 'felder'> & { register?: Register[] },
+  felder: F[] = typ.felder as unknown as F[],
+): F[] {
   const aus = ausgeblendeteFelder(typ);
   return felder.filter((f) => !aus.has(f.key));
 }
@@ -53,7 +65,11 @@ export function festigeDarstellung(d: Pick<MappentypDaten, 'felder' | 'register'
   for (const r of d.register) if (r.ausgeblendet && !registerAusblendbar(r, d.felder)) delete r.ausgeblendet;
   const aus = ausgeblendeteFelder(d);
   const aufgehoben: string[] = [];
-  for (const f of d.felder) if (aus.has(f.key) && f.pflicht) { f.pflicht = false; aufgehoben.push(f.key); }
+  for (const f of d.felder)
+    if (aus.has(f.key) && f.pflicht) {
+      f.pflicht = false;
+      aufgehoben.push(f.key);
+    }
   return aufgehoben;
 }
 
@@ -68,7 +84,10 @@ export function bereinigeAbschnitte(roh: unknown, feldKeys: string[]): Abschnitt
     const o = x as Record<string, unknown>;
     const vor = typeof o.vor === 'string' ? o.vor.trim() : '';
     if (!feldKeys.includes(vor) || aus.some((a) => a.vor === vor)) continue;
-    const titel = ausgangAus(o.beschriftungen, 'titel', typeof o.titel === 'string' ? o.titel : '').replace(/\s+/g, ' ').trim().slice(0, ABSCHNITT_TITEL_MAX);
+    const titel = ausgangAus(o.beschriftungen, 'titel', typeof o.titel === 'string' ? o.titel : '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, ABSCHNITT_TITEL_MAX);
     const a: Abschnitt = { vor };
     // Anzeigen, wenn … (#1033): auch an Abschnitten ohne Überschrift.
     const anzeigen = bereinigeAnzeige(o.anzeigen);
@@ -106,7 +125,11 @@ export interface Feldgruppe<F> {
  * ist, beginnt er beim nächsten sichtbaren; treffen zwei aufeinander, gewinnt der mit Überschrift (bzw. der spätere).
  * Abschnitte ohne sichtbares Feld danach fallen weg.
  */
-export function gruppiere<F extends { key: string }>(abschnitte: Abschnitt[] | undefined, alle: F[], zeigen: (f: F) => boolean = () => true): Array<Feldgruppe<F>> {
+export function gruppiere<F extends { key: string }>(
+  abschnitte: Abschnitt[] | undefined,
+  alle: F[],
+  zeigen: (f: F) => boolean = () => true,
+): Array<Feldgruppe<F>> {
   const vor = new Map((abschnitte ?? []).map((a) => [a.vor, a] as const));
   const gruppen: Array<Feldgruppe<F>> = [{ abschnitt: null, felder: [] }];
   let offen: Abschnitt | undefined;
@@ -114,7 +137,10 @@ export function gruppiere<F extends { key: string }>(abschnitte: Abschnitt[] | u
     const a = vor.get(f.key);
     if (a && (!offen || a.titel || !offen.titel)) offen = a;
     if (!zeigen(f)) continue;
-    if (offen) { gruppen.push({ abschnitt: offen, felder: [] }); offen = undefined; }
+    if (offen) {
+      gruppen.push({ abschnitt: offen, felder: [] });
+      offen = undefined;
+    }
     gruppen[gruppen.length - 1].felder.push(f);
   }
   return gruppen.filter((g) => g.felder.length > 0);
@@ -126,23 +152,32 @@ export function gruppiere<F extends { key: string }>(abschnitte: Abschnitt[] | u
  * Wo das Feld noch genutzt wird – für den Hinweis vor dem Ausblenden: Titel, Trefferlisten und Ansichten, Aus Dokument
  * füllen und Zum Wiederfinden, Fristen und Archivmodus, Berechtigungen. Je Fundstelle ein kurzer Text.
  */
-export function feldVerwendung(typ: Pick<Mappentyp, 'id' | 'felder' | 'titelVorlage' | 'trefferlisten' | 'trefferliste' | 'archiv' | 'berechtigungen'>, key: string, sichten: Array<Pick<Sicht, 'name' | 'beschriftungen' | 'typen' | 'bedingungen'>> = []): string[] {
+export function feldVerwendung(
+  typ: Pick<Mappentyp, 'id' | 'felder' | 'titelVorlage' | 'trefferlisten' | 'trefferliste' | 'archiv' | 'berechtigungen'>,
+  key: string,
+  sichten: Array<Pick<Sicht, 'name' | 'beschriftungen' | 'typen' | 'bedingungen'>> = [],
+): string[] {
   const f = typ.felder.find((x) => x.key === key);
   if (!f) return [];
   const aus: string[] = [];
   if (vorlageFelder(typ.titelVorlage ?? '').includes(key)) aus.push(t('gemeinsam.darstellung.verwendung.titel'));
-  for (const l of trefferlistenVon(typ)) if (l.spalten.includes(key)) aus.push(t('gemeinsam.darstellung.verwendung.trefferliste', { name: listenName(l) }));
+  for (const l of trefferlistenVon(typ))
+    if (l.spalten.includes(key)) aus.push(t('gemeinsam.darstellung.verwendung.trefferliste', { name: listenName(l) }));
   for (const s of sichten) {
     if (!s.typen.includes(typ.id)) continue;
-    if (s.bedingungen.some((b) => (b.art === 'feld' || b.art === 'frist') && b.feld === key)) aus.push(t('gemeinsam.darstellung.verwendung.ansicht', { name: sichtName(s) }));
+    if (s.bedingungen.some((b) => (b.art === 'feld' || b.art === 'frist') && b.feld === key))
+      aus.push(t('gemeinsam.darstellung.verwendung.ansicht', { name: sichtName(s) }));
   }
   if (f.erkennung) aus.push(t('gemeinsam.darstellung.verwendung.erkennung'));
   if (f.wiederfinden) aus.push(t('gemeinsam.darstellung.verwendung.wiederfinden'));
   if (f.frist) aus.push(t('gemeinsam.darstellung.verwendung.frist'));
-  for (const g of typ.felder) if (g.key !== key && g.frist?.empfaengerFeld === key) aus.push(t('gemeinsam.darstellung.verwendung.frist-empfaenger', { feld: feldLabel(g) }));
+  for (const g of typ.felder)
+    if (g.key !== key && g.frist?.empfaengerFeld === key)
+      aus.push(t('gemeinsam.darstellung.verwendung.frist-empfaenger', { feld: feldLabel(g) }));
   if (typ.archiv?.stichtag === key) aus.push(t('gemeinsam.darstellung.verwendung.archiv'));
   for (const r of regelwerkVon(typ).regeln) {
-    if (r.wenn.some((w) => w.art === 'feld' && w.bedingung.feld === key)) aus.push(t('gemeinsam.darstellung.verwendung.berechtigung', { name: r.name }));
+    if (r.wenn.some((w) => w.art === 'feld' && w.bedingung.feld === key))
+      aus.push(t('gemeinsam.darstellung.verwendung.berechtigung', { name: r.name }));
   }
   return aus;
 }

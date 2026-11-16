@@ -22,7 +22,27 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 
 /** Kleinstes JPEG mit Maßen (Breite × Höhe) und optional EXIF-Ausrichtung – pdf-lib liest nur SOF. */
 function jpeg(breite: number, hoehe: number, ausrichtung?: number): Buffer {
-  const sof = Buffer.from([0xff, 0xc0, 0, 0x11, 8, hoehe >> 8, hoehe & 255, breite >> 8, breite & 255, 3, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0]);
+  const sof = Buffer.from([
+    0xff,
+    0xc0,
+    0,
+    0x11,
+    8,
+    hoehe >> 8,
+    hoehe & 255,
+    breite >> 8,
+    breite & 255,
+    3,
+    1,
+    0x11,
+    0,
+    2,
+    0x11,
+    0,
+    3,
+    0x11,
+    0,
+  ]);
   const teile = [Buffer.from([0xff, 0xd8])];
   if (ausrichtung) {
     const tiff = Buffer.from([0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, ausrichtung, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -44,9 +64,21 @@ async function aufbau() {
   const stapel = new Fotostapel(wurzel);
   const tabelle = routen(d, konten, { fotostapel: stapel });
   const rufe = async (m: string, p: string, x: Partial<Anfrage> = {}) =>
-    tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === anna.id)!) }) as Promise<{ status: number; body: Record<string, unknown> }>;
+    tabelle
+      .find((r) => r.methode === m && r.pfad === p)!
+      .handler({
+        body: {},
+        params: {},
+        query: {},
+        ip: '1',
+        ...x,
+        benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === anna.id)!),
+      }) as Promise<{ status: number; body: Record<string, unknown> }>;
   const foto = async (b: Buffer) => (await rufe('POST', '/api/fotostapel', { body: b })).body.id as string;
-  const pdfVon = async (id: string) => { const s = await dateien.lies((await d.mappen.holeMappe(id)).dokumente[0].sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); };
+  const pdfVon = async (id: string) => {
+    const s = await dateien.lies((await d.mappen.holeMappe(id)).dokumente[0].sha256);
+    return Buffer.isBuffer(s) ? s : Buffer.concat((await s.toArray()) as Buffer[]);
+  };
   return { d, anna, rufe, foto, pdfVon, stapel, wurzel, aufraeumen: () => rm(wurzel, { recursive: true, force: true }) };
 }
 
@@ -73,7 +105,7 @@ describe('Fotos als PDF (#490)', () => {
       const ids = [await foto(jpeg(30, 40)), await foto(jpeg(30, 40)), await foto(jpeg(40, 30))];
       const r = await rufe('POST', '/api/post/fotos', { body: { stapel: ids } });
       assert.equal(r.status, 201);
-      const post = (r.body.post as { id: string; werte: Record<string, unknown> });
+      const post = r.body.post as { id: string; werte: Record<string, unknown> };
       assert.match(String(post.werte.betreff), /^Post vom \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/);
       assert.equal(post.werte.kanal, POST_KANAL.hochgeladen);
       assert.equal(post.werte.stand, POST_STAND.neu);
@@ -90,7 +122,9 @@ describe('Fotos als PDF (#490)', () => {
       const r2 = await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(10, 10))], betreff: 'Brief Finanzamt' } });
       assert.equal((r2.body.post as { werte: Record<string, unknown> }).werte.betreff, 'Brief Finanzamt');
       assert.match(fotoBetreff(new Date('2026-11-01T19:52:00Z')), /^Post vom 01\.11\.2026, 20:52$/);
-    } finally { await aufraeumen(); }
+    } finally {
+      await aufraeumen();
+    }
   });
 
   it('Seite hinzufügen: hängt an das PDF der Post an (neue Version), ohne PDF entsteht eins', async () => {
@@ -99,29 +133,48 @@ describe('Fotos als PDF (#490)', () => {
       const r = await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40))] } });
       const post = r.body.post as { id: string };
       const dok = (await d.mappen.holeMappe(post.id)).dokumente[0];
-      const a = await rufe('POST', '/api/mappen/:id/fotos', { params: { id: post.id }, body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], dokument: dok.id } });
+      const a = await rufe('POST', '/api/mappen/:id/fotos', {
+        params: { id: post.id },
+        body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], dokument: dok.id },
+      });
       assert.equal(a.body.seiten, 3);
       const doks = (await d.mappen.holeMappe(post.id)).dokumente;
       assert.equal(doks.length, 1);
       assert.equal(doks[0].name, dok.name);
       assert.equal((await seiten(await pdfVon(post.id))).length, 3);
-      assert.match(String((await d.mappenHistorie.historie(post.id)).find((h) => h.art === 'pdf_bearbeitet')!.daten.text), /2 Seiten an „.*“ angehängt/);
+      assert.match(
+        String((await d.mappenHistorie.historie(post.id)).find((h) => h.art === 'pdf_bearbeitet')!.daten.text),
+        /2 Seiten an „.*“ angehängt/,
+      );
       // Fremdes Dokument: 422.
       const anders = await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(5, 5))] } });
       const fremd = (await d.mappen.holeMappe((anders.body.post as { id: string }).id)).dokumente[0];
-      await assert.rejects(rufe('POST', '/api/mappen/:id/fotos', { params: { id: post.id }, body: { stapel: [await foto(jpeg(5, 5))], dokument: fremd.id } }), status(422));
+      await assert.rejects(
+        rufe('POST', '/api/mappen/:id/fotos', { params: { id: post.id }, body: { stapel: [await foto(jpeg(5, 5))], dokument: fremd.id } }),
+        status(422),
+      );
       // Post ohne Dokument: neues PDF.
       const leer = await rufe('POST', '/api/post', { body: { betreff: 'leer' } });
-      const n = await rufe('POST', '/api/mappen/:id/fotos', { params: { id: (leer.body as { id: string }).id }, body: { stapel: [await foto(jpeg(5, 5))] } });
+      const n = await rufe('POST', '/api/mappen/:id/fotos', {
+        params: { id: (leer.body as { id: string }).id },
+        body: { stapel: [await foto(jpeg(5, 5))] },
+      });
       assert.match(String((n.body.dokument as { name: string }).name), /^Fotos vom .*\.pdf$/);
-    } finally { await aufraeumen(); }
+    } finally {
+      await aufraeumen();
+    }
   });
 
   it('zwei Posts zusammenlegen: Seiten der zweiten ans PDF der ersten, zweite in den Papierkorb', async () => {
     const { d, rufe, foto, pdfVon, anna, aufraeumen } = await aufbau();
     try {
-      const vorne = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40))], betreff: 'Brief Vorderseite' } })).body.post as { id: string };
-      const hinten = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], betreff: 'Brief Rückseite' } })).body.post as { id: string };
+      const vorne = (await rufe('POST', '/api/post/fotos', { body: { stapel: [await foto(jpeg(30, 40))], betreff: 'Brief Vorderseite' } }))
+        .body.post as { id: string };
+      const hinten = (
+        await rufe('POST', '/api/post/fotos', {
+          body: { stapel: [await foto(jpeg(30, 40)), await foto(jpeg(30, 40))], betreff: 'Brief Rückseite' },
+        })
+      ).body.post as { id: string };
       // Ein Foto als eigenes Dokument kommt auch mit.
       await d.dokumente.ladeHoch(hinten.id, { register: 'dokumente', name: 'image.jpg', typ: 'image/jpeg' }, jpeg(20, 20), anna.id);
       const r = await rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: hinten.id } });
@@ -129,12 +182,25 @@ describe('Fotos als PDF (#490)', () => {
       assert.equal((await seiten(await pdfVon(vorne.id))).length, 4);
       await assert.rejects(d.mappen.holeMappe(hinten.id), status(404));
       assert.ok((await d.papierkorbVerwaltung.papierkorb({ id: anna.id, rolle: 'admin' })).some((m: { id: string }) => m.id === hinten.id));
-      await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: vorne.id } }), status(422));
+      await assert.rejects(
+        rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: vorne.id } }),
+        status(422),
+      );
       // Andere Dateien lassen sich nicht anhängen.
       const word = (await rufe('POST', '/api/post', { body: { betreff: 'Word' } })).body as { id: string };
-      await d.dokumente.ladeHoch(word.id, { register: 'dokumente', name: 'brief.docx', typ: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, Buffer.from('PK\x03\x04 docx'), anna.id);
-      await assert.rejects(rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: word.id } }), status(422));
-    } finally { await aufraeumen(); }
+      await d.dokumente.ladeHoch(
+        word.id,
+        { register: 'dokumente', name: 'brief.docx', typ: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+        Buffer.from('PK\x03\x04 docx'),
+        anna.id,
+      );
+      await assert.rejects(
+        rufe('POST', '/api/post/:id/zusammenlegen', { params: { id: vorne.id }, body: { quelle: word.id } }),
+        status(422),
+      );
+    } finally {
+      await aufraeumen();
+    }
   });
 
   it('Fotostapel: verfällt nach zwei Stunden, fremde Kennungen gehen nicht', async () => {
@@ -152,6 +218,8 @@ describe('Fotos als PDF (#490)', () => {
       jetzt = Date.now();
       await s.aufraeumen();
       await assert.rejects(s.nimm(ben, [id]), status(410));
-    } finally { await rm(wurzel, { recursive: true, force: true }); }
+    } finally {
+      await rm(wurzel, { recursive: true, force: true });
+    }
   });
 });

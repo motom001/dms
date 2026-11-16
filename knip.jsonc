@@ -14,18 +14,24 @@
         // Lädt die Einstiegsseite der Handbücher (docs/handbuch/start/*.html) per <script type="module">.
         "docs/handbuch/start/suche.mjs",
         // Bindet mkdocs über extra_javascript ein (docs/handbuch/benutzer/mkdocs.yml).
-        "docs/handbuch/benutzer/docs/javascripts/selbstcheck.js"
+        "docs/handbuch/benutzer/docs/javascripts/selbstcheck.js",
       ],
-      "project": [".github/werkzeuge/**", "docs/handbuch/**/*.{js,mjs,ts}"]
+      "project": [".github/werkzeuge/**", "docs/handbuch/**/*.{js,mjs,ts}"],
     },
     // Gemeinsamer Code; shared/package.json ist kein npm-Workspace, nur für die Tests unter shared/test (#1282).
     "shared": {
       "entry": ["test/**/*.test.ts"],
-      "project": ["src/**", "test/**"]
+      "project": ["src/**", "test/**"],
     },
     "server": {
-      "entry": ["src/{index,ablago,dms,pakete-pruefen}.ts", "src/laeufer/{prozess,arbeiter}.ts", "src/arbeit/arbeitsfaden.ts", "werkzeuge/*.ts", "test/**/*.{ts,mjs}"],
-      "project": ["src/**", "test/**", "werkzeuge/**"]
+      "entry": [
+        "src/{index,ablago,dms,pakete-pruefen}.ts",
+        "src/laeufer/{prozess,arbeiter}.ts",
+        "src/arbeit/arbeitsfaden.ts",
+        "werkzeuge/*.ts",
+        "test/**/*.{ts,mjs}",
+      ],
+      "project": ["src/**", "test/**", "werkzeuge/**"],
     },
     "web": {
       "entry": [
@@ -34,20 +40,20 @@
         "src/bausteine/knopf/typpruefung.ts",
         // Oberflächentests (#1282), Lader für *.css?raw und *.module.css.
         "test/**/*.test.{ts,tsx}",
-        "test/lader.mjs"
+        "test/lader.mjs",
       ],
-      "project": ["src/**", "test/**"]
+      "project": ["src/**", "test/**"],
     },
     // Eigenes Lockfile, kein npm-Workspace (#1272): Playwright für Rauchtests und Handbuchbilder.
     "web/rauchtest": {
       "entry": ["rauchtest.mjs", "bereiche/*.mjs", "messen/*.mjs", "playwright.mjs"],
-      "project": ["**/*.mjs"]
-    }
+      "project": ["**/*.mjs"],
+    },
   },
   "ignoreDependencies": [
     // Wird als Datei gelesen, nicht importiert: createRequire(…).resolve('axe-core/axe.min.js') in
     // web/rauchtest/muster.mjs und docs/handbuch/screenshots/start-pruefen.mjs (axe in der Seite ausführen).
-    "axe-core"
+    "axe-core",
   ],
   "ignoreBinaries": [
     // Systemprogramme aus apt bzw. dem Image (poppler-utils, qpdf, coreutils), keine npm-Pakete.
@@ -57,6 +63,6 @@
     "qpdf",
     "sha256sum",
     // Mermaid-CLI: optional, nur wenn lokal vorhanden (abhaengigkeitsbild.mjs prüft das selbst).
-    "mmdc"
-  ]
+    "mmdc",
+  ],
 }

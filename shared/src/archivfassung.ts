@@ -44,7 +44,10 @@ export const PDFA_TEILE = [1, 2, 3, 4] as const;
 export const PDFA_STUFEN: Record<number, readonly string[]> = { 1: ['A', 'B'], 2: ['A', 'B', 'U'], 3: ['A', 'B', 'U'], 4: ['E', 'F'] };
 
 /** PDF/A-Kennung aus den XMP-Metadaten. */
-export interface PdfaKennung { teil: number; stufe: string | null }
+export interface PdfaKennung {
+  teil: number;
+  stufe: string | null;
+}
 /** „PDF/A-2b“ */
 export const pdfaName = (k: PdfaKennung) => `PDF/A-${k.teil}${k.stufe ? k.stufe.toLowerCase() : ''}`;
 
@@ -91,7 +94,13 @@ export const WOERTER_MAX = 1_500_000;
 /** Woher die Wörter einer Seite kommen. */
 export type WortQuelle = 'textebene' | 'texterkennung' | 'keine';
 /** Eine Seite mit Wörtern: [Text, x, y, Breite, Höhe] relativ zur Seite (0…1, Ursprung oben links). */
-export interface WortSeite { seite: number; quelle: WortQuelle; breite?: number; hoehe?: number; woerter: Wort[] }
+export interface WortSeite {
+  seite: number;
+  quelle: WortQuelle;
+  breite?: number;
+  hoehe?: number;
+  woerter: Wort[];
+}
 
 const zahl = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 
@@ -111,11 +120,14 @@ export function pruefeWoerter(x: unknown, seiten: number): Array<Wort[] | null> 
     if (gesamt > WOERTER_MAX) throw new Error(`woerter: höchstens ${WOERTER_MAX} Wörter je Dokument.`);
     return s.map((w, j): Wort => {
       const wo = t('gemeinsam.archivfassung.woerter-seite-wort', { wert: i + 1, wert2: j + 1 });
-      if (!Array.isArray(w) || w.length !== 5 || typeof w[0] !== 'string' || !w.slice(1).every(zahl)) throw new Error(`${wo}: [Text, x, y, b, h] erwartet.`);
+      if (!Array.isArray(w) || w.length !== 5 || typeof w[0] !== 'string' || !w.slice(1).every(zahl))
+        throw new Error(`${wo}: [Text, x, y, b, h] erwartet.`);
       const [text, xx, y, b, h] = w as Wort;
-      if (!text.trim() || text.length > WORT_MAX_LAENGE) throw new Error(`${wo}: der Text ist leer oder länger als ${WORT_MAX_LAENGE} Zeichen.`);
+      if (!text.trim() || text.length > WORT_MAX_LAENGE)
+        throw new Error(`${wo}: der Text ist leer oder länger als ${WORT_MAX_LAENGE} Zeichen.`);
       const e = 0.001;
-      if (xx < -e || y < -e || b <= 0 || h <= 0 || xx + b > 1 + e || y + h > 1 + e) throw new Error(`${wo}: Lage außerhalb der Seite (relativ 0…1, x + b und y + h höchstens 1).`);
+      if (xx < -e || y < -e || b <= 0 || h <= 0 || xx + b > 1 + e || y + h > 1 + e)
+        throw new Error(`${wo}: Lage außerhalb der Seite (relativ 0…1, x + b und y + h höchstens 1).`);
       const r = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 1e5) / 1e5;
       return [text, r(xx), r(y), r(b), r(h)];
     });

@@ -63,6 +63,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     execFileSync('mmdc', ['-i', `${ZIEL}.mmd`, '-o', `${ZIEL}.png`, '-s', '2', '-b', 'white'], { stdio: 'inherit' });
     console.log(`${ZIEL}.png geschrieben`);
   } catch {
-    console.log('mmdc (Mermaid-CLI) nicht gefunden oder fehlgeschlagen – nur die .mmd-Datei. Bild: npx -p @mermaid-js/mermaid-cli mmdc -i … -s 2');
+    console.log(
+      'mmdc (Mermaid-CLI) nicht gefunden oder fehlgeschlagen – nur die .mmd-Datei. Bild: npx -p @mermaid-js/mermaid-cli mmdc -i … -s 2',
+    );
   }
 }

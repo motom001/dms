@@ -53,12 +53,31 @@ describe('Entwurf in Werkbank-Formularen (#370)', () => {
     assert.deepEqual(sendet.haupt, { text: 'Speichere …', aktiv: false });
     assert.equal(sendet.verwerfen.aktiv, false);
     assert.equal(leistenknoepfe({ neu: false, geaendert: true }).haupt.text, 'Speichern');
-    assert.equal(leistenknoepfe({ neu: false, geaendert: false, speicherbar: true }).haupt.aktiv, true, 'z. B. fehlende Paket-Einstellungen');
+    assert.equal(
+      leistenknoepfe({ neu: false, geaendert: false, speicherbar: true }).haupt.aktiv,
+      true,
+      'z. B. fehlende Paket-Einstellungen',
+    );
   });
 
   it('alle Werkbank-Formulare nutzen die gemeinsame Speicherleiste', () => {
     const wb = new URL('../../web/src/werkbank', import.meta.url).pathname;
-    const erwartet = ['Nummernkreise', 'Benutzer', 'Postfaecher', 'Eingangsordner', 'Anmeldeschutz', 'Datenbank', 'Sicherung', 'Speicherplatz', 'PaketEinstellungen', 'Sichten', 'Designs', 'Betrieb', 'Ansicht', 'DatenEinstellungen'];
+    const erwartet = [
+      'Nummernkreise',
+      'Benutzer',
+      'Postfaecher',
+      'Eingangsordner',
+      'Anmeldeschutz',
+      'Datenbank',
+      'Sicherung',
+      'Speicherplatz',
+      'PaketEinstellungen',
+      'Sichten',
+      'Designs',
+      'Betrieb',
+      'Ansicht',
+      'DatenEinstellungen',
+    ];
     const dateien = new Set(readdirSync(wb).map((d) => d.replace(/\.tsx$/, '')));
     for (const f of erwartet) {
       assert.ok(dateien.has(f), f);

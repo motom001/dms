@@ -61,7 +61,13 @@ export interface Kontext {
    * Haushaltsstand aus der Datenbank (#741), mit der Sitzung in derselben Abfrage gelesen (lesespeicher.ts). Gilt nur
    * für dieselbe Verbindung und denselben Haushalt, kurz und bis zur nächsten Änderung in dieser Anfrage.
    */
-  staende?: { quelle: object; haushalt: string; werte: Partial<Record<'lesen' | 'zahlen' | 'mappen', number>>; aenderungen: number; zeit: number };
+  staende?: {
+    quelle: object;
+    haushalt: string;
+    werte: Partial<Record<'lesen' | 'zahlen' | 'mappen', number>>;
+    aenderungen: number;
+    zeit: number;
+  };
   /** Änderungen über das Repo oder die Einstellungen in dieser Anfrage (#741): macht Gemerktes der Anfrage ungültig. */
   aenderungen?: number;
   /** Einmal je Anfrage gebildet (#741): Zugriff, Rollen. Gilt bis zur nächsten Änderung in dieser Anfrage. */
@@ -77,7 +83,15 @@ export interface Kontext {
 }
 export const kontext = new AsyncLocalStorage<Kontext>();
 
-export interface ProtokollFilter { seit?: number; stufe?: Stufe; modul?: string; benutzer?: string; anfrage?: string; suche?: string; max?: number }
+export interface ProtokollFilter {
+  seit?: number;
+  stufe?: Stufe;
+  modul?: string;
+  benutzer?: string;
+  anfrage?: string;
+  suche?: string;
+  max?: number;
+}
 
 export class Protokoll {
   private puffer: Eintrag[] = [];
@@ -93,18 +107,31 @@ export class Protokoll {
     private ausgabe: (zeile: string) => void = (z) => process.stdout.write(z + '\n'),
   ) {}
 
-  get stufe(): Stufe { return this.debugAn ? 'debug' : this.grund; }
-  get debugAn() { return this.debugBis > Date.now(); }
-  get debugStand() { return { an: this.debugAn, bis: this.debugAn ? new Date(this.debugBis).toISOString() : null, grundstufe: this.grund }; }
-  setzeGrundstufe(s: string | undefined) { if (s && (STUFEN as readonly string[]).includes(s)) this.grund = s as Stufe; }
-  aktiv(s: Stufe) { return RANG[s] >= RANG[this.stufe]; }
+  get stufe(): Stufe {
+    return this.debugAn ? 'debug' : this.grund;
+  }
+  get debugAn() {
+    return this.debugBis > Date.now();
+  }
+  get debugStand() {
+    return { an: this.debugAn, bis: this.debugAn ? new Date(this.debugBis).toISOString() : null, grundstufe: this.grund };
+  }
+  setzeGrundstufe(s: string | undefined) {
+    if (s && (STUFEN as readonly string[]).includes(s)) this.grund = s as Stufe;
+  }
+  aktiv(s: Stufe) {
+    return RANG[s] >= RANG[this.stufe];
+  }
 
   /** Debug-Modus ein (für eine Stunde) oder aus. */
   setzeDebug(an: boolean) {
     clearTimeout(this.abschalten);
     this.debugBis = an ? Date.now() + DEBUG_DAUER_MS : 0;
     if (an) {
-      this.abschalten = setTimeout(() => this.schreibe('info', 'system', tDe('meldungen.protokoll.debug-modus-nach-einer')), DEBUG_DAUER_MS);
+      this.abschalten = setTimeout(
+        () => this.schreibe('info', 'system', tDe('meldungen.protokoll.debug-modus-nach-einer')),
+        DEBUG_DAUER_MS,
+      );
       this.abschalten.unref?.();
     }
     return this.debugStand;
@@ -120,14 +147,27 @@ export class Protokoll {
     if (daten && Object.keys(daten).length) e.daten = ohneGeheimnisse(daten);
     this.puffer.push(e);
     this.aufraeumen();
-    try { this.ausgabe(zeile(e)); } catch { /* Ausgabe darf nie die Anwendung stören */ }
-    if (RANG[stufe] >= RANG.warn) for (const f of this.beobachter) { try { f(e); } catch { /* s. o. */ } }
+    try {
+      this.ausgabe(zeile(e));
+    } catch {
+      /* Ausgabe darf nie die Anwendung stören */
+    }
+    if (RANG[stufe] >= RANG.warn)
+      for (const f of this.beobachter) {
+        try {
+          f(e);
+        } catch {
+          /* s. o. */
+        }
+      }
   }
 
   /** Warnungen und Fehler mitbekommen (#895); gibt eine Funktion zum Abmelden zurück. */
   beobachte(f: (e: Eintrag) => void): () => void {
     this.beobachter.push(f);
-    return () => { this.beobachter = this.beobachter.filter((x) => x !== f); };
+    return () => {
+      this.beobachter = this.beobachter.filter((x) => x !== f);
+    };
   }
 
   private aufraeumen() {
@@ -155,14 +195,18 @@ export class Protokoll {
     return r;
   }
 
-  get anzahl() { return this.puffer.length; }
+  get anzahl() {
+    return this.puffer.length;
+  }
   /** Einträge je Modul (#682), für „(keine Einträge)“ im Filter. */
   jeModul(): Record<string, number> {
     const z: Record<string, number> = {};
     for (const e of this.puffer) z[e.modul] = (z[e.modul] ?? 0) + 1;
     return z;
   }
-  get letzteNr() { return this.nr; }
+  get letzteNr() {
+    return this.nr;
+  }
 
   /** Logger für ein Modul. */
   modul(name: Modul): Log {
@@ -181,23 +225,34 @@ export class Protokoll {
    */
   fuerFastify(bindungen: Record<string, unknown> = {}): FastifyLog {
     const self = this;
-    const melde = (stufe: Stufe) => (a?: unknown, b?: unknown, ...rest: unknown[]) => {
-      if (!self.aktiv(stufe)) return;
-      let text = '';
-      let daten: Record<string, unknown> = {};
-      if (typeof a === 'string') text = [a, b, ...rest].filter((x) => x !== undefined).map(String).join(' ');
-      else {
-        if (a instanceof Error) daten = { fehler: fehlerText(a) };
-        else if (a && typeof a === 'object') daten = serialisiere(a as Record<string, unknown>);
-        text = typeof b === 'string' ? b : a instanceof Error ? a.message : '';
-      }
-      const modul = (daten.modul as string) ?? (bindungen.reqId ? 'http' : 'system');
-      delete daten.modul;
-      self.schreibe(stufe, modul, text || tDe('meldungen.protokoll.ohne-text'), daten);
-    };
+    const melde =
+      (stufe: Stufe) =>
+      (a?: unknown, b?: unknown, ...rest: unknown[]) => {
+        if (!self.aktiv(stufe)) return;
+        let text = '';
+        let daten: Record<string, unknown> = {};
+        if (typeof a === 'string')
+          text = [a, b, ...rest]
+            .filter((x) => x !== undefined)
+            .map(String)
+            .join(' ');
+        else {
+          if (a instanceof Error) daten = { fehler: fehlerText(a) };
+          else if (a && typeof a === 'object') daten = serialisiere(a as Record<string, unknown>);
+          text = typeof b === 'string' ? b : a instanceof Error ? a.message : '';
+        }
+        const modul = (daten.modul as string) ?? (bindungen.reqId ? 'http' : 'system');
+        delete daten.modul;
+        self.schreibe(stufe, modul, text || tDe('meldungen.protokoll.ohne-text'), daten);
+      };
     const log: FastifyLog = {
       level: this.stufe,
-      trace: melde('trace'), debug: melde('debug'), info: melde('info'), warn: melde('warn'), error: melde('error'), fatal: melde('fatal'),
+      trace: melde('trace'),
+      debug: melde('debug'),
+      info: melde('info'),
+      warn: melde('warn'),
+      error: melde('error'),
+      fatal: melde('fatal'),
       silent: () => {},
       child: (b: Record<string, unknown>) => self.fuerFastify({ ...bindungen, ...b }),
       isLevelEnabled: (s: string) => self.aktiv(s as Stufe),
@@ -217,7 +272,13 @@ export interface Log {
 type Melde = (a?: unknown, b?: unknown, ...rest: unknown[]) => void;
 export interface FastifyLog {
   level: string;
-  trace: Melde; debug: Melde; info: Melde; warn: Melde; error: Melde; fatal: Melde; silent: () => void;
+  trace: Melde;
+  debug: Melde;
+  info: Melde;
+  warn: Melde;
+  error: Melde;
+  fatal: Melde;
+  silent: () => void;
   child(b: Record<string, unknown>): FastifyLog;
   isLevelEnabled(s: string): boolean;
 }
@@ -231,8 +292,10 @@ export function fehlerText(e: unknown): string {
 function serialisiere(o: Record<string, unknown>): Record<string, unknown> {
   const r: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(o)) {
-    if (k === 'req' && v && typeof v === 'object') { const q = v as { method?: string; url?: string }; r.anfrage = `${q.method} ${q.url}`; }
-    else if (k === 'res' && v && typeof v === 'object') r.status = (v as { statusCode?: number }).statusCode;
+    if (k === 'req' && v && typeof v === 'object') {
+      const q = v as { method?: string; url?: string };
+      r.anfrage = `${q.method} ${q.url}`;
+    } else if (k === 'res' && v && typeof v === 'object') r.status = (v as { statusCode?: number }).statusCode;
     else if (k === 'err' || v instanceof Error) r.fehler = fehlerText(v);
     else if (v === undefined || typeof v === 'function') continue;
     else r[k] = v;

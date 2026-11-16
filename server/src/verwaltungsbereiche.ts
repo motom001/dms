@@ -62,7 +62,18 @@ const REGELN: Regel[] = [
   // Tipps (#942).
   R('*', '/api/werkbank/tipps*', 'tipps'),
   // Gelöschte Einträge mit ihrer letzten Fassung (#1006): wer einen der Bereiche verwaltet – die Liste zeigt nur dessen Einträge.
-  R('GET', '/api/werkbank/fassungen/geloescht', 'typen', 'sichten', 'nummernkreise', 'stempel', 'postfaecher', 'pakete', 'automatisierungen', 'ablaufvorlagen'),
+  R(
+    'GET',
+    '/api/werkbank/fassungen/geloescht',
+    'typen',
+    'sichten',
+    'nummernkreise',
+    'stempel',
+    'postfaecher',
+    'pakete',
+    'automatisierungen',
+    'ablaufvorlagen',
+  ),
 
   // Benutzer und Sicherheit – die Liste der Benutzer lesen auch die Testläufe der Rechte (Typen, Ansichten) und die
   // Automatisierungen; Verwaltungsrechte selbst vergibt nur „Gesamte Verwaltung“ (prüft konten.setzeVerwaltung).
@@ -154,7 +165,8 @@ function paketdatenHeikel(body: unknown): HeikleHandlung | null {
 }
 
 const UMBAU_ROUTEN = new Set(['POST /api/werkbank/pakete/installieren', 'POST /api/werkbank/pakete/:id/aktualisieren']);
-const umbauHandlung = (body: unknown): HeikleHandlung | null => ((body as { umbauBestaetigt?: unknown } | null)?.umbauBestaetigt === true ? 'rechte' : null);
+const umbauHandlung = (body: unknown): HeikleHandlung | null =>
+  (body as { umbauBestaetigt?: unknown } | null)?.umbauBestaetigt === true ? 'rechte' : null;
 
 /** Heikle Handlungen ohne Bedingung am Körper der Anfrage: Methode und Pfad der Route genügen. */
 const HEIKEL: Record<string, HeikleHandlung> = {
@@ -195,11 +207,15 @@ export function heikleHandlung(methode: string, pfad: string, body: unknown): He
   if (UMBAU_ROUTEN.has(k)) return umbauHandlung(body);
   if (Object.hasOwn(HEIKEL, k)) return HEIKEL[k];
   switch (k) {
-    case 'POST /api/werkbank/export': return (body as { passwoerter?: unknown } | null)?.passwoerter === true ? 'vollexport' : null;
+    case 'POST /api/werkbank/export':
+      return (body as { passwoerter?: unknown } | null)?.passwoerter === true ? 'vollexport' : null;
     // Notfallzugang aus dem Internet erlauben (#815); zurück auf „nur Heimnetz“ geht ohne.
-    case 'PUT /api/werkbank/anmeldeschutz/notfallzugang': return (body as { internet?: unknown } | null)?.internet === true ? 'notfall' : null;
+    case 'PUT /api/werkbank/anmeldeschutz/notfallzugang':
+      return (body as { internet?: unknown } | null)?.internet === true ? 'notfall' : null;
     // Einrichtung und Nachweise für Pakete (#1054): „Zugang und Berechtigungen“ und Nachweise nur mit frischer Anmeldung.
-    case 'PUT /api/werkbank/pakete/:id/paketdaten': return paketdatenHeikel(body);
-    default: return null;
+    case 'PUT /api/werkbank/pakete/:id/paketdaten':
+      return paketdatenHeikel(body);
+    default:
+      return null;
   }
 }

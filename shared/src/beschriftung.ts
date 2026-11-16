@@ -18,15 +18,27 @@ import type { SichtDaten } from './sichten';
 /** Beschriftungen je Sprache: Sprache → Teile. */
 export type Beschriftungen<T> = Partial<Record<string, T>>;
 /** Name eines Registers, einer Trefferliste. */
-export interface NamensTeile { name?: string }
+export interface NamensTeile {
+  name?: string;
+}
 /** Überschrift eines Abschnitts im Feldregister (#890). */
-export interface AbschnittTeile { titel?: string }
+export interface AbschnittTeile {
+  titel?: string;
+}
 /** Name und Beschreibung eines Mappentyps bzw. einer Ansicht; beim Mappentyp auch „Woran man ihn erkennt“ (#937). */
-export interface TypTeile { name?: string; beschreibung?: string; erkennbarAn?: string }
+export interface TypTeile {
+  name?: string;
+  beschreibung?: string;
+  erkennbarAn?: string;
+}
 /** Bezeichnung, Hilfetext und Beschriftung der Optionen (fester Wert → Text) eines Felds. */
-export interface FeldTeile { label?: string; hilfe?: string; optionen?: Record<string, string>;
+export interface FeldTeile {
+  label?: string;
+  hilfe?: string;
+  optionen?: Record<string, string>;
   /** Tabelle (#1030): Beschriftung von „+ Neu“, z. B. „+ Item“. */
-  neu?: string }
+  neu?: string;
+}
 
 /**
  * Sprachen, in denen sich Beschriftungen pflegen lassen: die in der Werkbank erlaubten (#729, Werkbank → Sprachen).
@@ -50,7 +62,11 @@ export const BESCHRIFTUNG_MAX = 500;
 
 /** Sprachname in der Sprache der Oberfläche, z. B. „Englisch“ (aus `Intl`, kein eigener Text nötig). */
 export function sprachname(kennung: string, in_: string = sprache()): string {
-  try { return new Intl.DisplayNames([in_], { type: 'language' }).of(kennung) ?? kennung; } catch { return kennung; }
+  try {
+    return new Intl.DisplayNames([in_], { type: 'language' }).of(kennung) ?? kennung;
+  } catch {
+    return kennung;
+  }
 }
 
 const teil = <T>(b: Beschriftungen<T> | null | undefined, spr: string, k: keyof T): string | undefined => {
@@ -59,32 +75,47 @@ const teil = <T>(b: Beschriftungen<T> | null | undefined, spr: string, k: keyof 
 };
 /** Text in einer Sprache: Beschriftung, sonst Ausgangstext (Deutsch hat keine eigene Beschriftung außer bei Optionen). */
 function inSprache<T>(ausgang: string, b: Beschriftungen<T> | null | undefined, k: keyof T, spr: string): string {
-  return spr === AUSGANGSSPRACHE ? ausgang : teil(b, spr, k) ?? ausgang;
+  return spr === AUSGANGSSPRACHE ? ausgang : (teil(b, spr, k) ?? ausgang);
 }
 
-export const feldLabel = (f: Pick<Feld, 'label' | 'key' | 'beschriftungen'>, spr = sprache()) => inSprache(f.label || f.key, f.beschriftungen, 'label', spr);
-export const feldHilfe = (f: Pick<Feld, 'hilfe' | 'beschriftungen'>, spr = sprache()) => (f.hilfe ? inSprache(f.hilfe, f.beschriftungen, 'hilfe', spr) : '');
-export const typName = (t: Pick<MappentypDaten, 'name' | 'beschriftungen'>, spr = sprache()) => inSprache(t.name, t.beschriftungen, 'name', spr);
-export const typBeschreibung = (t: Pick<MappentypDaten, 'beschreibung' | 'beschriftungen'>, spr = sprache()) => (t.beschreibung ? inSprache(t.beschreibung, t.beschriftungen, 'beschreibung', spr) : '');
+export const feldLabel = (f: Pick<Feld, 'label' | 'key' | 'beschriftungen'>, spr = sprache()) =>
+  inSprache(f.label || f.key, f.beschriftungen, 'label', spr);
+export const feldHilfe = (f: Pick<Feld, 'hilfe' | 'beschriftungen'>, spr = sprache()) =>
+  f.hilfe ? inSprache(f.hilfe, f.beschriftungen, 'hilfe', spr) : '';
+export const typName = (t: Pick<MappentypDaten, 'name' | 'beschriftungen'>, spr = sprache()) =>
+  inSprache(t.name, t.beschriftungen, 'name', spr);
+export const typBeschreibung = (t: Pick<MappentypDaten, 'beschreibung' | 'beschriftungen'>, spr = sprache()) =>
+  t.beschreibung ? inSprache(t.beschreibung, t.beschriftungen, 'beschreibung', spr) : '';
 /** „Woran man ihn erkennt“ (#937) in einer Sprache. */
-export const typErkennbarAn = (t: Pick<MappentypDaten, 'erkennbarAn' | 'beschriftungen'>, spr = sprache()) => (t.erkennbarAn ? inSprache(t.erkennbarAn, t.beschriftungen, 'erkennbarAn', spr) : '');
-export const registerName = (r: Pick<Register, 'name' | 'key' | 'beschriftungen'>, spr = sprache()) => inSprache(r.name || r.key, r.beschriftungen, 'name', spr);
+export const typErkennbarAn = (t: Pick<MappentypDaten, 'erkennbarAn' | 'beschriftungen'>, spr = sprache()) =>
+  t.erkennbarAn ? inSprache(t.erkennbarAn, t.beschriftungen, 'erkennbarAn', spr) : '';
+export const registerName = (r: Pick<Register, 'name' | 'key' | 'beschriftungen'>, spr = sprache()) =>
+  inSprache(r.name || r.key, r.beschriftungen, 'name', spr);
 /** Überschrift eines Abschnitts (#890) in einer Sprache; ohne Überschrift leer. */
-export const abschnittTitel = (a: Pick<Abschnitt, 'titel' | 'beschriftungen'>, spr = sprache()) => (a.titel ? inSprache(a.titel, a.beschriftungen, 'titel', spr) : '');
-export const listenName = (l: Pick<Trefferliste, 'name' | 'beschriftungen'>, spr = sprache()) => inSprache(l.name, l.beschriftungen, 'name', spr);
-export const sichtName = (s: Pick<SichtDaten, 'name' | 'beschriftungen'>, spr = sprache()) => inSprache(s.name, s.beschriftungen, 'name', spr);
-export const sichtBeschreibung = (s: Pick<SichtDaten, 'beschreibung' | 'beschriftungen'>, spr = sprache()) => (s.beschreibung ? inSprache(s.beschreibung, s.beschriftungen, 'beschreibung', spr) : '');
+export const abschnittTitel = (a: Pick<Abschnitt, 'titel' | 'beschriftungen'>, spr = sprache()) =>
+  a.titel ? inSprache(a.titel, a.beschriftungen, 'titel', spr) : '';
+export const listenName = (l: Pick<Trefferliste, 'name' | 'beschriftungen'>, spr = sprache()) =>
+  inSprache(l.name, l.beschriftungen, 'name', spr);
+export const sichtName = (s: Pick<SichtDaten, 'name' | 'beschriftungen'>, spr = sprache()) =>
+  inSprache(s.name, s.beschriftungen, 'name', spr);
+export const sichtBeschreibung = (s: Pick<SichtDaten, 'beschreibung' | 'beschriftungen'>, spr = sprache()) =>
+  s.beschreibung ? inSprache(s.beschreibung, s.beschriftungen, 'beschreibung', spr) : '';
 
 /** Beschriftung einer Option (fester Wert) in einer Sprache; ohne Beschriftung der feste Wert selbst. */
 export function optionText(f: Pick<Feld, 'beschriftungen'>, wert: string, spr = sprache()): string {
   const b = f.beschriftungen;
-  const in_ = (s: string) => { const v = b?.[s]?.optionen?.[wert]; return typeof v === 'string' && v.trim() ? v : undefined; };
+  const in_ = (s: string) => {
+    const v = b?.[s]?.optionen?.[wert];
+    return typeof v === 'string' && v.trim() ? v : undefined;
+  };
   return in_(spr) ?? in_(AUSGANGSSPRACHE) ?? wert;
 }
 
 /** Alle Beschriftungen einer Option über alle Sprachen (ohne den festen Wert), z. B. für Suche und Erkennung. */
 export function optionTexte(f: Pick<Feld, 'beschriftungen'>, wert: string): string[] {
-  const texte = Object.values(f.beschriftungen ?? {}).map((x) => x?.optionen?.[wert]).filter((x): x is string => typeof x === 'string' && !!x.trim());
+  const texte = Object.values(f.beschriftungen ?? {})
+    .map((x) => x?.optionen?.[wert])
+    .filter((x): x is string => typeof x === 'string' && !!x.trim());
   return [...new Set(texte)];
 }
 
@@ -116,9 +147,17 @@ export function optionsGruppen(felder: Array<Pick<Feld, 'typ' | 'optionen' | 'be
 /* ---------- Stand je Sprache (Werkbank: „12 von 14 Beschriftungen auf Englisch“) ---------- */
 
 /** Wie viele der beschriftbaren Texte eines Mappentyps es in einer Sprache gibt. Hinweis, nie Fehler. */
-export function beschriftungsstand(t: Pick<MappentypDaten, 'name' | 'beschreibung' | 'beschriftungen' | 'felder' | 'register' | 'trefferlisten'> & { erkennbarAn?: string }, spr: string): { vorhanden: number; gesamt: number } {
-  let vorhanden = 0, gesamt = 0;
-  const zaehle = (ausgang: string | undefined, da: boolean) => { if (!ausgang?.trim()) return; gesamt++; if (da) vorhanden++; };
+export function beschriftungsstand(
+  t: Pick<MappentypDaten, 'name' | 'beschreibung' | 'beschriftungen' | 'felder' | 'register' | 'trefferlisten'> & { erkennbarAn?: string },
+  spr: string,
+): { vorhanden: number; gesamt: number } {
+  let vorhanden = 0,
+    gesamt = 0;
+  const zaehle = (ausgang: string | undefined, da: boolean) => {
+    if (!ausgang?.trim()) return;
+    gesamt++;
+    if (da) vorhanden++;
+  };
   zaehle(t.name, !!teil(t.beschriftungen, spr, 'name'));
   zaehle(t.beschreibung, !!teil(t.beschriftungen, spr, 'beschreibung'));
   zaehle(t.erkennbarAn, !!teil(t.beschriftungen, spr, 'erkennbarAn'));
@@ -145,7 +184,11 @@ const kurz = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, BESCHRIF
  * nur Texte; Optionen nur für vorhandene feste Werte. Deutsche Angaben außer Optionen fallen weg – Deutsch ist der
  * Ausgangstext (wer sie mitgibt, übernimmt sie über `ausgangAus`). Leer → undefined (nichts gespeichert).
  */
-export function bereinigeBeschriftungen<T extends object>(roh: unknown, teile: ReadonlyArray<keyof T & string>, optionen?: string[]): Beschriftungen<T> | undefined {
+export function bereinigeBeschriftungen<T extends object>(
+  roh: unknown,
+  teile: ReadonlyArray<keyof T & string>,
+  optionen?: string[],
+): Beschriftungen<T> | undefined {
   if (!istObjekt(roh)) return undefined;
   const aus: Record<string, Record<string, unknown>> = {};
   for (const [spr, x] of Object.entries(roh).slice(0, BESCHRIFTUNG_SPRACHEN_MAX)) {
@@ -154,13 +197,17 @@ export function bereinigeBeschriftungen<T extends object>(roh: unknown, teile: R
     for (const k of teile) {
       if (k === 'optionen') {
         if (!optionen?.length || !istObjekt(x.optionen)) continue;
-        const o = Object.fromEntries(Object.entries(x.optionen).filter(([w, v]) => optionen.includes(w) && kurz(v)).map(([w, v]) => [w, kurz(v)]));
+        const o = Object.fromEntries(
+          Object.entries(x.optionen)
+            .filter(([w, v]) => optionen.includes(w) && kurz(v))
+            .map(([w, v]) => [w, kurz(v)]),
+        );
         if (Object.keys(o).length) eintrag.optionen = o;
       } else if (spr !== AUSGANGSSPRACHE && kurz(x[k])) eintrag[k] = kurz(x[k]);
     }
     if (Object.keys(eintrag).length) aus[spr] = eintrag;
   }
-  return Object.keys(aus).length ? aus as Beschriftungen<T> : undefined;
+  return Object.keys(aus).length ? (aus as Beschriftungen<T>) : undefined;
 }
 
 /** Deutscher Text aus den Beschriftungen einer Eingabe (`beschriftungen.de.label`), sonst der Ausgangstext. */
@@ -173,7 +220,10 @@ export function ausgangAus(roh: unknown, k: string, ausgang: string): string {
  * Fehlende Beschriftungen aus `neu` in `alt` ergänzen (Paket-Update): Was der Administrator schon beschriftet hat,
  * bleibt; je Sprache, Teil und Option. Ergebnis undefined, wenn beide leer sind.
  */
-export function ergaenzeBeschriftungen<T extends object>(alt: Beschriftungen<T> | undefined, neu: Beschriftungen<T> | undefined): Beschriftungen<T> | undefined {
+export function ergaenzeBeschriftungen<T extends object>(
+  alt: Beschriftungen<T> | undefined,
+  neu: Beschriftungen<T> | undefined,
+): Beschriftungen<T> | undefined {
   if (!neu) return alt;
   const aus = structuredClone(alt ?? {}) as Record<string, Record<string, unknown>>;
   for (const [spr, x] of Object.entries(neu as Record<string, Record<string, unknown> | undefined>)) {
@@ -184,5 +234,5 @@ export function ergaenzeBeschriftungen<T extends object>(alt: Beschriftungen<T> 
       else if (ziel[k] === undefined || ziel[k] === '') ziel[k] = v;
     }
   }
-  return Object.keys(aus).length ? aus as Beschriftungen<T> : undefined;
+  return Object.keys(aus).length ? (aus as Beschriftungen<T>) : undefined;
 }

@@ -26,14 +26,24 @@ interface Stand {
 
 let stand: Stand = { text: '', bereich: null, aufgehoben: null };
 const hoerer = new Set<() => void>();
-const setze = (neu: Partial<Stand>) => { stand = { ...stand, ...neu }; for (const h of hoerer) h(); };
-const abo = (h: () => void) => { hoerer.add(h); return () => { hoerer.delete(h); }; };
+const setze = (neu: Partial<Stand>) => {
+  stand = { ...stand, ...neu };
+  for (const h of hoerer) h();
+};
+const abo = (h: () => void) => {
+  hoerer.add(h);
+  return () => {
+    hoerer.delete(h);
+  };
+};
 
 export const kopfsuche = {
   jetzt: () => stand,
   setzeText: (text: string) => setze({ text }),
   /** Bereich wegnehmen: Das Feld sucht wieder in allem, der Text bleibt stehen. */
-  bereichWeg: () => { if (stand.bereich) setze({ aufgehoben: stand.bereich.schluessel, bereich: null }); },
+  bereichWeg: () => {
+    if (stand.bereich) setze({ aufgehoben: stand.bereich.schluessel, bereich: null });
+  },
   anmelden(b: Suchbereich) {
     if (stand.bereich?.schluessel === b.schluessel) {
       if (stand.bereich.name !== b.name || stand.bereich.typ !== b.typ) setze({ bereich: b });

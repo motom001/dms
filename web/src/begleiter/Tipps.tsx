@@ -38,19 +38,41 @@ export function TippKarte({ schliessen }: { schliessen(): void }) {
     <div className={s.tipps}>
       {x ? (
         <section className={s.tippkarte} data-anker="startseite.tipp" aria-labelledby="begleiter-tipp">
-          <h3 id="begleiter-tipp" className={s.tippkopf}><Symbol name="tipp" />{desTages ? t('oberflaeche.begleiter.tipps.des-tages') : t('oberflaeche.begleiter.tipps.tipp')}</h3>
-          <p>{!x.neu ? x.text : desTages && stand.tipp?.weitere ? t('entdecken.zeile.neu-weitere', { text: x.text, anzahl: stand.tipp.weitere }) : t('entdecken.zeile.neu', { text: x.text })}</p>
+          <h3 id="begleiter-tipp" className={s.tippkopf}>
+            <Symbol name="tipp" />
+            {desTages ? t('oberflaeche.begleiter.tipps.des-tages') : t('oberflaeche.begleiter.tipps.tipp')}
+          </h3>
+          <p>
+            {!x.neu
+              ? x.text
+              : desTages && stand.tipp?.weitere
+                ? t('entdecken.zeile.neu-weitere', { text: x.text, anzahl: stand.tipp.weitere })
+                : t('entdecken.zeile.neu', { text: x.text })}
+          </p>
           <div className="knoepfe">
             {(x.ziel || x.rundgang) && (
-              <Knopf onClick={() => { schliessen(); if (desTages) void tippHandlung(x.schluessel, 'erledigt'); void zeigeZiel(x); }}>{t('oberflaeche.begleiter.tipps.zeigen')}</Knopf>
+              <Knopf
+                onClick={() => {
+                  schliessen();
+                  if (desTages) void tippHandlung(x.schluessel, 'erledigt');
+                  void zeigeZiel(x);
+                }}>
+                {t('oberflaeche.begleiter.tipps.zeigen')}
+              </Knopf>
             )}
             {reihe.length > 1 && <Knopf onClick={() => setNr(nr + 1)}>{t('oberflaeche.begleiter.tipps.naechster')}</Knopf>}
           </div>
         </section>
-      ) : <p className="leise">{t('entdecken.seite.keine-tipps')}</p>}
+      ) : (
+        <p className="leise">{t('entdecken.seite.keine-tipps')}</p>
+      )}
       {d.einstellungen.tipps === false && <p className="leise klein">{t('oberflaeche.begleiter.tipps.aus')}</p>}
       {/* Der Weg nach „Ablago entdecken“ schließt das Fenster – die Seite zeigt alle Tipps. */}
-      <p onClickCapture={schliessen}><Link to="/entdecken" className="verweis">{t('oberflaeche.begleiter.tipps.alle')}</Link></p>
+      <p onClickCapture={schliessen}>
+        <Link to="/entdecken" className="verweis">
+          {t('oberflaeche.begleiter.tipps.alle')}
+        </Link>
+      </p>
     </div>
   );
 }

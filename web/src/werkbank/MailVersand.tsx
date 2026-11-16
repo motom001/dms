@@ -1,6 +1,13 @@
 import { ErgebnisBlock, Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
-import { absenderVorschlag, anbieterFuerAdresse, domainVon, MAIL_ANBIETER, OAUTH_VERSAND_SERVER, type MailAnbieter } from '../../../shared/src/mailanbieter';
+import {
+  absenderVorschlag,
+  anbieterFuerAdresse,
+  domainVon,
+  MAIL_ANBIETER,
+  OAUTH_VERSAND_SERVER,
+  type MailAnbieter,
+} from '../../../shared/src/mailanbieter';
 import { PLAN_VERBINDUNGEN } from '../../../shared/src/einrichtungsplan';
 import { betriebApi, type BetriebAnsicht, type MailEingabe, type Probe } from '../api/betrieb';
 import { einrichtungApi, type MailSuche, type Verbindung } from '../api/einrichtung';
@@ -30,7 +37,9 @@ import type { BetriebZustand } from './Betrieb';
  */
 
 /** Angaben, wie sie im Formular stehen – das Passwort nur im Speicher des Assistenten, nie in sessionStorage. */
-export type MailAngaben = Pick<MailEingabe, 'aktiv' | 'host' | 'port' | 'verbindung' | 'benutzer' | 'absender' | 'selbstsigniert'> & { passwort: string };
+export type MailAngaben = Pick<MailEingabe, 'aktiv' | 'host' | 'port' | 'verbindung' | 'benutzer' | 'absender' | 'selbstsigniert'> & {
+  passwort: string;
+};
 export interface MailGriff {
   /** Die sichtbaren Angaben für den Sammelstand (#804) – speichert nichts. */
   sammle(): MailAngaben;
@@ -38,9 +47,14 @@ export interface MailGriff {
 
 type Feld = 'host' | 'port' | 'verbindung' | 'benutzer' | 'absender' | 'an' | 'aktiv';
 const portFuer = (v: Verbindung) => (v === 'ssl' ? 465 : v === 'starttls' ? 587 : 25);
-const adresseAus = (absender: string, benutzer: string) => /<([^>]+)>\s*$/.exec(absender)?.[1] ?? (benutzer.includes('@') ? benutzer : absender.includes('@') ? absender.trim() : '');
+const adresseAus = (absender: string, benutzer: string) =>
+  /<([^>]+)>\s*$/.exec(absender)?.[1] ?? (benutzer.includes('@') ? benutzer : absender.includes('@') ? absender.trim() : '');
 const QUELLE: Record<NonNullable<MailSuche['fund']>['quelle'], string> = {
-  liste: 'werkbank.mail.quelle.liste', dns: 'werkbank.mail.quelle.dns', mx: 'werkbank.mail.quelle.mx', autoconfig: 'werkbank.mail.quelle.autoconfig', thunderbird: 'werkbank.mail.quelle.thunderbird',
+  liste: 'werkbank.mail.quelle.liste',
+  dns: 'werkbank.mail.quelle.dns',
+  mx: 'werkbank.mail.quelle.mx',
+  autoconfig: 'werkbank.mail.quelle.autoconfig',
+  thunderbird: 'werkbank.mail.quelle.thunderbird',
 };
 
 /** Werkbank → E-Mail und Adresse: speichert über die Leiste unten. */
@@ -54,28 +68,70 @@ export function MailVersand({ b }: { b: BetriebZustand }) {
  * darum weder `useKonto` noch Betriebsstand; vorbelegt mit dem Gesammelten (oder der Datei, #806) und der Adresse aus
  * „Dein Konto“ (#821). Der Schlüssel für das Passwort entsteht bei „Jetzt einrichten“ vor dem E-Mail-Versand.
  */
-export function MailSammeln({ wert, passwort, email, ablage, griff }: {
-  wert: Omit<MailAngaben, 'passwort'> | null; passwort: string; email: string; ablage: string; griff: MutableRefObject<MailGriff | null>;
+export function MailSammeln({
+  wert,
+  passwort,
+  email,
+  ablage,
+  griff,
+}: {
+  wert: Omit<MailAngaben, 'passwort'> | null;
+  passwort: string;
+  email: string;
+  ablage: string;
+  griff: MutableRefObject<MailGriff | null>;
 }) {
   const [s] = useState((): BetriebAnsicht => ({
     mail: {
-      aktiv: wert?.aktiv ?? true, host: wert?.host ?? '', port: wert?.port ?? 587, verbindung: wert?.verbindung ?? 'starttls', benutzer: wert?.benutzer ?? '',
-      absender: wert?.absender ?? '', selbstsigniert: wert?.selbstsigniert ?? false, anmeldung: 'passwort', passwortGesetzt: false, passwortLesbar: true, passwortUnverschluesselt: false,
+      aktiv: wert?.aktiv ?? true,
+      host: wert?.host ?? '',
+      port: wert?.port ?? 587,
+      verbindung: wert?.verbindung ?? 'starttls',
+      benutzer: wert?.benutzer ?? '',
+      absender: wert?.absender ?? '',
+      selbstsigniert: wert?.selbstsigniert ?? false,
+      anmeldung: 'passwort',
+      passwortGesetzt: false,
+      passwortLesbar: true,
+      passwortUnverschluesselt: false,
     },
-    adresse: '', vorschlag: null, passwoerterMoeglich: true, ablage: ablage.trim() || null,
-    verbindungen: Object.fromEntries(PLAN_VERBINDUNGEN.map((v) => [v, t(`einrichtung.optional.mail.verbindung.${v}`)])) as Record<Verbindung, string>,
+    adresse: '',
+    vorschlag: null,
+    passwoerterMoeglich: true,
+    ablage: ablage.trim() || null,
+    verbindungen: Object.fromEntries(PLAN_VERBINDUNGEN.map((v) => [v, t(`einrichtung.optional.mail.verbindung.${v}`)])) as Record<
+      Verbindung,
+      string
+    >,
   }));
   return <MailFormular s={s} email={email} sammeln={{ griff, passwort }} />;
 }
 
-function MailFormular({ s, email, b, aktualisieren, sammeln }: {
-  s: BetriebAnsicht; email: string; b?: BetriebZustand; aktualisieren?: () => Promise<void>;
+function MailFormular({
+  s,
+  email,
+  b,
+  aktualisieren,
+  sammeln,
+}: {
+  s: BetriebAnsicht;
+  email: string;
+  b?: BetriebZustand;
+  aktualisieren?: () => Promise<void>;
   sammeln?: { griff: MutableRefObject<MailGriff | null>; passwort: string };
 }) {
   const assistent = !!sammeln;
   const start = (): MailEingabe & { passwort: string } => ({
-    aktiv: s.mail.aktiv, host: s.mail.host, port: s.mail.port, verbindung: s.mail.verbindung, benutzer: s.mail.benutzer, absender: s.mail.absender,
-    selbstsigniert: s.mail.selbstsigniert, anmeldung: s.mail.anmeldung ?? 'passwort', anbieter: s.mail.anbieter, passwort: sammeln?.passwort ?? '',
+    aktiv: s.mail.aktiv,
+    host: s.mail.host,
+    port: s.mail.port,
+    verbindung: s.mail.verbindung,
+    benutzer: s.mail.benutzer,
+    absender: s.mail.absender,
+    selbstsigniert: s.mail.selbstsigniert,
+    anmeldung: s.mail.anmeldung ?? 'passwort',
+    anbieter: s.mail.anbieter,
+    passwort: sammeln?.passwort ?? '',
   });
   const [m, setM] = useState(start);
   const [adresse, setAdresse] = useState(() => adresseAus(s.mail.absender, s.mail.benutzer) || email);
@@ -91,13 +147,31 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
   const [meldung, setMeldung] = useState<Meldung | undefined>(rueckkehr);
   const [erweitert, setErweitert] = useState(!!s.mail.host && !assistent);
   const gesucht = useRef('');
-  const ent = useEntwurf({ ...start(), loeschen: false }, { ...m, loeschen }, { aus: assistent, zuruecksetzen: () => { setM(start()); setLoeschen(false); setMeldung(undefined); setVorgeschlagen(new Set()); } });
+  const ent = useEntwurf(
+    { ...start(), loeschen: false },
+    { ...m, loeschen },
+    {
+      aus: assistent,
+      zuruecksetzen: () => {
+        setM(start());
+        setLoeschen(false);
+        setMeldung(undefined);
+        setVorgeschlagen(new Set());
+      },
+    },
+  );
   const eingabe = (): MailEingabe => ({ ...m, passwortLoeschen: loeschen || undefined });
 
   /** Eingabe von Hand: ist kein Vorschlag mehr. */
   const setze = (p: Partial<typeof m>) => {
-    setM((x) => ({ ...x, ...p })); setMeldung(undefined); setProbe(undefined);
-    setVorgeschlagen((v) => { const n = new Set(v); for (const k of Object.keys(p)) n.delete(k as Feld); return n; });
+    setM((x) => ({ ...x, ...p }));
+    setMeldung(undefined);
+    setProbe(undefined);
+    setVorgeschlagen((v) => {
+      const n = new Set(v);
+      for (const k of Object.keys(p)) n.delete(k as Feld);
+      return n;
+    });
   };
 
   /** Vorschläge aus Adresse und Fund – nur in leere oder selbst vorgeschlagene Felder. */
@@ -105,19 +179,43 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
     if (!domainVon(adr)) return;
     const n = { ...m };
     const neu = new Set(vorgeschlagen);
-    const vor = (f: Feld, wert: unknown, setz: () => void) => { if (!wert || vorgeschlagen.has(f)) { setz(); neu.add(f); } };
-    vor('benutzer', m.benutzer, () => { n.benutzer = lokalteil ? adr.split('@')[0] : adr; });
-    vor('absender', m.absender, () => { n.absender = absenderVorschlag(adr, s.ablage); });
+    const vor = (f: Feld, wert: unknown, setz: () => void) => {
+      if (!wert || vorgeschlagen.has(f)) {
+        setz();
+        neu.add(f);
+      }
+    };
+    vor('benutzer', m.benutzer, () => {
+      n.benutzer = lokalteil ? adr.split('@')[0] : adr;
+    });
+    vor('absender', m.absender, () => {
+      n.absender = absenderVorschlag(adr, s.ablage);
+    });
     if (fund) {
-      vor('host', m.host, () => { n.host = fund.host; });
-      if (neu.has('host')) { n.port = fund.port; n.verbindung = fund.verbindung; neu.add('port'); neu.add('verbindung'); }
+      vor('host', m.host, () => {
+        n.host = fund.host;
+      });
+      if (neu.has('host')) {
+        n.port = fund.port;
+        n.verbindung = fund.verbindung;
+        neu.add('port');
+        neu.add('verbindung');
+      }
     } else if (vorgeschlagen.has('host')) {
       // Nichts gefunden: ein früherer Vorschlag (andere Domain) passt nicht mehr.
-      n.host = ''; n.port = 587; n.verbindung = 'starttls';
+      n.host = '';
+      n.port = 587;
+      n.verbindung = 'starttls';
       for (const f of ['host', 'port', 'verbindung'] as Feld[]) neu.delete(f);
     }
-    if (!m.aktiv && !s.mail.host && fund) { n.aktiv = true; neu.add('aktiv'); }
-    if (!an || an === email || vorgeschlagen.has('an')) { setAn(adr); neu.add('an'); }
+    if (!m.aktiv && !s.mail.host && fund) {
+      n.aktiv = true;
+      neu.add('aktiv');
+    }
+    if (!an || an === email || vorgeschlagen.has('an')) {
+      setAn(adr);
+      neu.add('an');
+    }
     setM(n);
     setVorgeschlagen(neu);
   }
@@ -126,8 +224,14 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
   useEffect(() => {
     if (s.mail.host) return;
     const a = anbieterFuerAdresse(adresse);
-    if (a) { setSuche({ domain: domainVon(adresse)!, gefragt: [], fund: { host: a.host, port: a.port, verbindung: a.verbindung, quelle: 'liste', anbieter: a.id, benutzer: 'adresse' } }); schlageVor(adresse, a); }
-    else if (domainVon(adresse)) schlageVor(adresse, null);
+    if (a) {
+      setSuche({
+        domain: domainVon(adresse)!,
+        gefragt: [],
+        fund: { host: a.host, port: a.port, verbindung: a.verbindung, quelle: 'liste', anbieter: a.id, benutzer: 'adresse' },
+      });
+      schlageVor(adresse, a);
+    } else if (domainVon(adresse)) schlageVor(adresse, null);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschlag nur beim ersten Anzeigen, spätere Eingaben nicht überschreiben
 
   /** Server zur Adresse suchen (beim Verlassen des Felds); Thunderbird nur auf Knopfdruck. */
@@ -142,17 +246,31 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
       setSuche(r);
       schlageVor(adr, r.fund, r.fund?.benutzer === 'lokalteil');
       if (!r.fund && !thunderbird) setErweitert(true);
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSucht(false); }
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    } finally {
+      setSucht(false);
+    }
   }
 
-  const anbieter = useMemo(() => MAIL_ANBIETER.find((a) => a.id === suche?.fund?.anbieter) ?? MAIL_ANBIETER.find((a) => a.host === m.host.toLowerCase()) ?? null, [suche, m.host]);
+  const anbieter = useMemo(
+    () => MAIL_ANBIETER.find((a) => a.id === suche?.fund?.anbieter) ?? MAIL_ANBIETER.find((a) => a.host === m.host.toLowerCase()) ?? null,
+    [suche, m.host],
+  );
   const oauthAnbieter = anbieter?.oauth ?? (m.anmeldung === 'oauth' ? m.anbieter : undefined);
   const oauth = m.anmeldung === 'oauth';
 
   function anmeldungWaehlen(art: 'passwort' | 'oauth') {
     if (art === 'oauth' && oauthAnbieter) {
       const host = OAUTH_VERSAND_SERVER[oauthAnbieter].includes(m.host.toLowerCase()) ? m.host : OAUTH_VERSAND_SERVER[oauthAnbieter][0];
-      setze({ anmeldung: 'oauth', anbieter: oauthAnbieter, host, verbindung: m.verbindung === 'keine' ? 'starttls' : m.verbindung, benutzer: m.benutzer.includes('@') ? m.benutzer : adresse, selbstsigniert: false });
+      setze({
+        anmeldung: 'oauth',
+        anbieter: oauthAnbieter,
+        host,
+        verbindung: m.verbindung === 'keine' ? 'starttls' : m.verbindung,
+        benutzer: m.benutzer.includes('@') ? m.benutzer : adresse,
+        selbstsigniert: false,
+      });
     } else setze({ anmeldung: 'passwort', anbieter: undefined });
   }
 
@@ -160,53 +278,133 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
     ev?.preventDefault();
     setLaeuft('speichern');
     try {
-      b!.setStand({ ...b!.stand!, ...await betriebApi.mailSpeichern(eingabe()) });
-      setM((x) => ({ ...x, passwort: '' })); setLoeschen(false); setVorgeschlagen(new Set()); await aktualisieren?.();
+      b!.setStand({ ...b!.stand!, ...(await betriebApi.mailSpeichern(eingabe())) });
+      setM((x) => ({ ...x, passwort: '' }));
+      setLoeschen(false);
+      setVorgeschlagen(new Set());
+      await aktualisieren?.();
       setMeldung({ art: 'gut', text: t('werkbank.mail.gespeichert') });
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(null); }
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    } finally {
+      setLaeuft(null);
+    }
   }
   // Assistent (#803, #804): „Weiter“ übernimmt, was sichtbar dasteht – in den Sammelstand, gespeichert wird nichts.
-  if (sammeln) sammeln.griff.current = {
-    sammle: () => ({ aktiv: m.aktiv, host: m.host, port: m.port, verbindung: m.verbindung, benutzer: m.benutzer, absender: m.absender, selbstsigniert: m.selbstsigniert, passwort: m.passwort }),
-  };
+  if (sammeln)
+    sammeln.griff.current = {
+      sammle: () => ({
+        aktiv: m.aktiv,
+        host: m.host,
+        port: m.port,
+        verbindung: m.verbindung,
+        benutzer: m.benutzer,
+        absender: m.absender,
+        selbstsigniert: m.selbstsigniert,
+        passwort: m.passwort,
+      }),
+    };
 
   async function teste(was: 'pruefen' | 'testmail') {
-    setLaeuft(was); setProbe(undefined);
-    try { setProbe({ ...(was === 'pruefen' ? await betriebApi.mailPruefen(eingabe()) : await betriebApi.testmail(eingabe(), an)), was }); }
-    catch (x) { setProbe({ ok: false, meldung: (x as Error).message, was }); }
-    finally { setLaeuft(null); }
+    setLaeuft(was);
+    setProbe(undefined);
+    try {
+      setProbe({ ...(was === 'pruefen' ? await betriebApi.mailPruefen(eingabe()) : await betriebApi.testmail(eingabe(), an)), was });
+    } catch (x) {
+      setProbe({ ok: false, meldung: (x as Error).message, was });
+    } finally {
+      setLaeuft(null);
+    }
   }
 
   const vor = (f: Feld) => vorgeschlagen.has(f) && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>;
   const domain = domainVon(adresse);
   const ergebnis = probe && (
-    <div className={`hinweis ${probe.ok ? 'gut' : 'schlecht'}`}><p>{probe.ok && probe.was === 'pruefen' ? `${t('werkbank.mail.geprueft')} ${probe.meldung}` : probe.meldung}</p>
-      {probe.technisch && <details className="klein"><summary>{t('werkbank.mail.antwort-server')}</summary><p className="mono">{probe.technisch}</p></details>}</div>
+    <div className={`hinweis ${probe.ok ? 'gut' : 'schlecht'}`}>
+      <p>{probe.ok && probe.was === 'pruefen' ? `${t('werkbank.mail.geprueft')} ${probe.meldung}` : probe.meldung}</p>
+      {probe.technisch && (
+        <details className="klein">
+          <summary>{t('werkbank.mail.antwort-server')}</summary>
+          <p className="mono">{probe.technisch}</p>
+        </details>
+      )}
+    </div>
   );
 
   const inhalt = (
     <>
-      {!assistent && <Schalter an={m.aktiv} setze={(an) => setze({ aktiv: an })} beschriftung={t('werkbank.mail.schalter')} hinweis={vor('aktiv') || undefined} />}
+      {!assistent && (
+        <Schalter
+          an={m.aktiv}
+          setze={(an) => setze({ aktiv: an })}
+          beschriftung={t('werkbank.mail.schalter')}
+          hinweis={vor('aktiv') || undefined}
+        />
+      )}
       <div className="raster">
         <Feld beschriftung={t('werkbank.mail.adresse')} hinweis={t('werkbank.mail.adresse.hilfe')}>
-          <input id="mail-adresse" type="email" value={adresse} autoComplete="off" spellCheck={false} onChange={(e) => setAdresse(e.target.value)} onBlur={() => void finden()} />
+          <input
+            id="mail-adresse"
+            type="email"
+            value={adresse}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(e) => setAdresse(e.target.value)}
+            onBlur={() => void finden()}
+          />
         </Feld>
-        {!oauth && <Feld beschriftung={t('werkbank.mail.passwort')} hinweis={s.mail.passwortGesetzt && !loeschen ? t('werkbank.mail.passwort.gesetzt') : t('werkbank.mail.passwort.app')}>
-          <input id="mail-passwort" type="password" value={m.passwort} disabled={!s.passwoerterMoeglich} onChange={(e) => { setze({ passwort: e.target.value }); setLoeschen(false); }} autoComplete="new-password" placeholder={s.mail.passwortGesetzt && !loeschen ? '••••••••' : ''} />
-        </Feld>}
+        {!oauth && (
+          <Feld
+            beschriftung={t('werkbank.mail.passwort')}
+            hinweis={s.mail.passwortGesetzt && !loeschen ? t('werkbank.mail.passwort.gesetzt') : t('werkbank.mail.passwort.app')}>
+            <input
+              id="mail-passwort"
+              type="password"
+              value={m.passwort}
+              disabled={!s.passwoerterMoeglich}
+              onChange={(e) => {
+                setze({ passwort: e.target.value });
+                setLoeschen(false);
+              }}
+              autoComplete="new-password"
+              placeholder={s.mail.passwortGesetzt && !loeschen ? '••••••••' : ''}
+            />
+          </Feld>
+        )}
         {oauthAnbieter && (
-          <Feld beschriftung={t('werkbank.mail.anmeldung')} hilfe={assistent ? undefined : 'werkbank.mail.oauth'} hinweis={assistent ? t('werkbank.mail.anmeldung.spaeter') : undefined}>
-            <select id="mail-anmeldung" value={m.anmeldung} disabled={assistent} onChange={(e) => anmeldungWaehlen(e.target.value as 'passwort' | 'oauth')}>
+          <Feld
+            beschriftung={t('werkbank.mail.anmeldung')}
+            hilfe={assistent ? undefined : 'werkbank.mail.oauth'}
+            hinweis={assistent ? t('werkbank.mail.anmeldung.spaeter') : undefined}>
+            <select
+              id="mail-anmeldung"
+              value={m.anmeldung}
+              disabled={assistent}
+              onChange={(e) => anmeldungWaehlen(e.target.value as 'passwort' | 'oauth')}>
               <option value="passwort">{t('werkbank.mail.anmeldung.passwort')}</option>
-              <option value="oauth">{oauthAnbieter === 'microsoft' ? t('werkbank.mail.anmeldung.microsoft') : t('werkbank.mail.anmeldung.google')}</option>
+              <option value="oauth">
+                {oauthAnbieter === 'microsoft' ? t('werkbank.mail.anmeldung.microsoft') : t('werkbank.mail.anmeldung.google')}
+              </option>
             </select>
           </Feld>
         )}
       </div>
       <div className="knoepfe">
         {/* Prüfen und Testmail brauchen eine Anmeldung – im Assistenten erst danach in der Werkbank (#803). */}
-        {!assistent && <Knopf gesperrt={(!!laeuft && laeuft !== 'pruefen') || !m.host} laeuft={laeuft === 'pruefen'} laeuftText={t('werkbank.mail.pruefe')} onClick={() => teste('pruefen')}>{t('werkbank.mail.pruefen')}</Knopf>}
-        {sucht && <span className="leise klein" role="status">{t('werkbank.mail.sucht')}</span>}
+        {!assistent && (
+          <Knopf
+            gesperrt={(!!laeuft && laeuft !== 'pruefen') || !m.host}
+            laeuft={laeuft === 'pruefen'}
+            laeuftText={t('werkbank.mail.pruefe')}
+            onClick={() => teste('pruefen')}>
+            {t('werkbank.mail.pruefen')}
+          </Knopf>
+        )}
+        {sucht && (
+          <span className="leise klein" role="status">
+            {t('werkbank.mail.sucht')}
+          </span>
+        )}
       </div>
       {/* Ergebnis direkt unter dem Knopf (#986), angesagt und bei Bedarf ins Bild gerollt. */}
       {!assistent && <ErgebnisBlock anlass={probe?.was === 'pruefen' && probe}>{probe?.was === 'pruefen' && ergebnis}</ErgebnisBlock>}
@@ -214,17 +412,63 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
       {/* Was der Assistent vorschlägt – alles sichtbar, nichts Verstecktes. */}
       {(m.host || suche) && (
         <div className="hinweis info mail-vorschlag">
-          {m.host
-            ? <p><strong>{anbieter ? t('werkbank.mail.ueber', { anbieter: anbieter.name }) : t('werkbank.mail.ueber-server')}</strong> <span className="mono">{m.host}:{m.port}</span> ({s.verbindungen[m.verbindung]}){vor('host')}
-              {suche?.fund && vorgeschlagen.has('host') && <> <span className="leise klein">– {t.frei(QUELLE[suche.fund.quelle])}</span></>}</p>
-            : <p><strong>{t('werkbank.mail.nicht-gefunden', { domain: suche?.domain ?? '' })}</strong> {t('werkbank.mail.nicht-gefunden.text')}</p>}
-          {suche && <p className="leise klein">{suche.gefragt.length ? t('werkbank.mail.gefragt', { wen: suche.gefragt.join(', ') }) : t('werkbank.mail.ohne-netz')}</p>}
-          {suche && !suche.fund && !sucht && domain && (
-            <p className="klein"><Knopf groesse="klein" onClick={() => finden(true)}>{t('werkbank.mail.thunderbird')}</Knopf> <span className="leise">{t('werkbank.mail.thunderbird.text', { domain })}</span></p>
+          {m.host ? (
+            <p>
+              <strong>{anbieter ? t('werkbank.mail.ueber', { anbieter: anbieter.name }) : t('werkbank.mail.ueber-server')}</strong>{' '}
+              <span className="mono">
+                {m.host}:{m.port}
+              </span>{' '}
+              ({s.verbindungen[m.verbindung]}){vor('host')}
+              {suche?.fund && vorgeschlagen.has('host') && (
+                <>
+                  {' '}
+                  <span className="leise klein">– {t.frei(QUELLE[suche.fund.quelle])}</span>
+                </>
+              )}
+            </p>
+          ) : (
+            <p>
+              <strong>{t('werkbank.mail.nicht-gefunden', { domain: suche?.domain ?? '' })}</strong> {t('werkbank.mail.nicht-gefunden.text')}
+            </p>
           )}
-          {anbieter?.hinweise.map((h) => <p key={h.text}>{t.frei(h.text, { anbieter: anbieter.name })}{h.link && <> <a className="verweis" href={h.link} target="_blank" rel="noreferrer noopener">{t('werkbank.mail.hilfe-anbieter', { anbieter: anbieter.name })} <Symbol name="extern" /></a></>}</p>)}
-          {m.benutzer && <p className="klein">{t('werkbank.mail.benutzer')}: <span className="mono">{m.benutzer}</span>{vor('benutzer')}</p>}
-          {m.absender && <p className="klein">{t('werkbank.mail.absender')}: <span className="mono">{m.absender}</span>{vor('absender')}</p>}
+          {suche && (
+            <p className="leise klein">
+              {suche.gefragt.length ? t('werkbank.mail.gefragt', { wen: suche.gefragt.join(', ') }) : t('werkbank.mail.ohne-netz')}
+            </p>
+          )}
+          {suche && !suche.fund && !sucht && domain && (
+            <p className="klein">
+              <Knopf groesse="klein" onClick={() => finden(true)}>
+                {t('werkbank.mail.thunderbird')}
+              </Knopf>{' '}
+              <span className="leise">{t('werkbank.mail.thunderbird.text', { domain })}</span>
+            </p>
+          )}
+          {anbieter?.hinweise.map((h) => (
+            <p key={h.text}>
+              {t.frei(h.text, { anbieter: anbieter.name })}
+              {h.link && (
+                <>
+                  {' '}
+                  <a className="verweis" href={h.link} target="_blank" rel="noreferrer noopener">
+                    {t('werkbank.mail.hilfe-anbieter', { anbieter: anbieter.name })} <Symbol name="extern" />
+                  </a>
+                </>
+              )}
+            </p>
+          ))}
+          {m.benutzer && (
+            <p className="klein">
+              {t('werkbank.mail.benutzer')}: <span className="mono">{m.benutzer}</span>
+              {vor('benutzer')}
+            </p>
+          )}
+          {m.absender && (
+            <p className="klein">
+              {t('werkbank.mail.absender')}: <span className="mono">{m.absender}</span>
+              {vor('absender')}
+            </p>
+          )}
         </div>
       )}
 
@@ -232,48 +476,117 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
         <summary>{t('werkbank.mail.erweitert')}</summary>
         <div className="raster">
           <Feld beschriftung={t('werkbank.mail.server')} hinweis={t('werkbank.mail.server.beispiel')}>
-            <input value={m.host} disabled={oauth} onChange={(e) => setze({ host: e.target.value })} autoComplete="off" spellCheck={false} />
+            <input
+              value={m.host}
+              disabled={oauth}
+              onChange={(e) => setze({ host: e.target.value })}
+              autoComplete="off"
+              spellCheck={false}
+            />
           </Feld>
           <Feld beschriftung={t('werkbank.mail.verbindung')}>
-            <select value={m.verbindung} onChange={(e) => { const v = e.target.value as Verbindung; setze({ verbindung: v, port: m.port === portFuer(m.verbindung) ? portFuer(v) : m.port }); }}>
-              {(Object.entries(s.verbindungen) as Array<[Verbindung, string]>).map(([k, v]) => <option key={k} value={k} disabled={oauth && k === 'keine'}>{v}</option>)}
+            <select
+              value={m.verbindung}
+              onChange={(e) => {
+                const v = e.target.value as Verbindung;
+                setze({ verbindung: v, port: m.port === portFuer(m.verbindung) ? portFuer(v) : m.port });
+              }}>
+              {(Object.entries(s.verbindungen) as Array<[Verbindung, string]>).map(([k, v]) => (
+                <option key={k} value={k} disabled={oauth && k === 'keine'}>
+                  {v}
+                </option>
+              ))}
             </select>
           </Feld>
           <Feld beschriftung={t('werkbank.mail.port')}>
             <input type="number" min={1} max={65535} value={m.port} onChange={(e) => setze({ port: Number(e.target.value) })} />
           </Feld>
-          <Feld beschriftung={t('werkbank.mail.benutzer')} hinweis={oauth ? t('werkbank.mail.benutzer.oauth') : t('werkbank.mail.benutzer.leer')}>
+          <Feld
+            beschriftung={t('werkbank.mail.benutzer')}
+            hinweis={oauth ? t('werkbank.mail.benutzer.oauth') : t('werkbank.mail.benutzer.leer')}>
             <input value={m.benutzer} onChange={(e) => setze({ benutzer: e.target.value })} autoComplete="off" spellCheck={false} />
           </Feld>
           <Feld beschriftung={t('werkbank.mail.absender')} hinweis={t('werkbank.mail.absender.beispiel')}>
             <input value={m.absender} onChange={(e) => setze({ absender: e.target.value })} autoComplete="off" spellCheck={false} />
           </Feld>
         </div>
-        {s.mail.passwortGesetzt && !oauth && <HakenFeld beschriftung={t('werkbank.mail.passwort.entfernen')}>
-          <input type="checkbox" checked={loeschen} onChange={(e) => { setLoeschen(e.target.checked); if (e.target.checked) setze({ passwort: '' }); }} />
-        </HakenFeld>}
-        {!oauth && <HakenFeld beschriftung={t('werkbank.mail.selbstsigniert')} hinweis={t('werkbank.mail.selbstsigniert.hilfe')}>
-          <input type="checkbox" checked={m.selbstsigniert} onChange={(e) => setze({ selbstsigniert: e.target.checked })} />
-        </HakenFeld>}
+        {s.mail.passwortGesetzt && !oauth && (
+          <HakenFeld beschriftung={t('werkbank.mail.passwort.entfernen')}>
+            <input
+              type="checkbox"
+              checked={loeschen}
+              onChange={(e) => {
+                setLoeschen(e.target.checked);
+                if (e.target.checked) setze({ passwort: '' });
+              }}
+            />
+          </HakenFeld>
+        )}
+        {!oauth && (
+          <HakenFeld beschriftung={t('werkbank.mail.selbstsigniert')} hinweis={t('werkbank.mail.selbstsigniert.hilfe')}>
+            <input type="checkbox" checked={m.selbstsigniert} onChange={(e) => setze({ selbstsigniert: e.target.checked })} />
+          </HakenFeld>
+        )}
       </details>
 
-      {!s.passwoerterMoeglich
-        ? <div className="hinweis warn"><p>{t('werkbank.mail.schluessel-fehlt')} <Link to="/werkbank/verschluesselung" className="verweis">{t('werkbank.mail.schluessel-erzeugen')}</Link>.{s.mail.passwortUnverschluesselt ? ` ${t('werkbank.mail.passwort.unverschluesselt')}` : ''}</p></div>
-        : !s.mail.passwortLesbar
-          ? <div className="hinweis schlecht"><p>{t('werkbank.mail.passwort.unlesbar')}</p></div>
-          : !oauth && <p className="leise klein">{t('werkbank.mail.passwort.verschluesselt')}</p>}
+      {!s.passwoerterMoeglich ? (
+        <div className="hinweis warn">
+          <p>
+            {t('werkbank.mail.schluessel-fehlt')}{' '}
+            <Link to="/werkbank/verschluesselung" className="verweis">
+              {t('werkbank.mail.schluessel-erzeugen')}
+            </Link>
+            .{s.mail.passwortUnverschluesselt ? ` ${t('werkbank.mail.passwort.unverschluesselt')}` : ''}
+          </p>
+        </div>
+      ) : !s.mail.passwortLesbar ? (
+        <div className="hinweis schlecht">
+          <p>{t('werkbank.mail.passwort.unlesbar')}</p>
+        </div>
+      ) : (
+        !oauth && <p className="leise klein">{t('werkbank.mail.passwort.verschluesselt')}</p>
+      )}
 
-      {!assistent && <><h3 className="zwischen">{t('werkbank.mail.testen')}</h3>
-      <div className="raster">
-        <Feld beschriftung={t('werkbank.mail.testmail-an')} kopfZusatz={vorgeschlagen.has('an') && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>}>
-          <input type="email" value={an} onChange={(e) => { setAn(e.target.value); setVorgeschlagen((v) => { const n = new Set(v); n.delete('an'); return n; }); }} />
-        </Feld>
-        <div className="eigenschaft unten"><div className="knoepfe">
-          <Knopf gesperrt={(!!laeuft && laeuft !== 'testmail') || !m.host || !an} laeuft={laeuft === 'testmail'} laeuftText={t('werkbank.mail.sende')} onClick={() => teste('testmail')}>{t('werkbank.mail.testmail')}</Knopf>
-        </div></div>
-      </div></>}
+      {!assistent && (
+        <>
+          <h3 className="zwischen">{t('werkbank.mail.testen')}</h3>
+          <div className="raster">
+            <Feld
+              beschriftung={t('werkbank.mail.testmail-an')}
+              kopfZusatz={vorgeschlagen.has('an') && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>}>
+              <input
+                type="email"
+                value={an}
+                onChange={(e) => {
+                  setAn(e.target.value);
+                  setVorgeschlagen((v) => {
+                    const n = new Set(v);
+                    n.delete('an');
+                    return n;
+                  });
+                }}
+              />
+            </Feld>
+            <div className="eigenschaft unten">
+              <div className="knoepfe">
+                <Knopf
+                  gesperrt={(!!laeuft && laeuft !== 'testmail') || !m.host || !an}
+                  laeuft={laeuft === 'testmail'}
+                  laeuftText={t('werkbank.mail.sende')}
+                  onClick={() => teste('testmail')}>
+                  {t('werkbank.mail.testmail')}
+                </Knopf>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       {!assistent && <ErgebnisBlock anlass={probe?.was === 'testmail' && probe}>{probe?.was === 'testmail' && ergebnis}</ErgebnisBlock>}
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
     </>
   );
 
@@ -281,17 +594,34 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
   return (
     <>
       <form className="blatt" id="mail" onSubmit={(e) => void speichern(e)} onKeyDown={ent.tasten} noValidate>
-        <h2 className="h3">{t('werkbank.mail.titel')} <Hilfe ort="werkbank.mail" /></h2>
+        <h2 className="h3">
+          {t('werkbank.mail.titel')} <Hilfe ort="werkbank.mail" />
+        </h2>
         <p className="leise">{t('werkbank.mail.unter')}</p>
         {inhalt}
         <Speicherleiste ent={ent} gegenstand={t('werkbank.mail.gegenstand')} sendet={laeuft === 'speichern'} />
       </form>
       {oauth && m.anbieter && (
-        <OAuthBereich anbieter={m.anbieter} versand geaendert={ent.geaendert || s.mail.anmeldung !== 'oauth'} setMeldung={setMeldung}
-          ziel={s.mail.anmeldung === 'oauth' ? {
-            oauth: s.oauth, start: betriebApi.mailOAuthStart, geraet: betriebApi.mailOAuthGeraet, geraetPruefen: betriebApi.mailOAuthGeraetPruefen,
-            abmelden: async () => { b.setStand({ ...b.stand!, ...await betriebApi.mailOAuthAbmelden() }); }, neuLaden: b.laden,
-          } : undefined} />
+        <OAuthBereich
+          anbieter={m.anbieter}
+          versand
+          geaendert={ent.geaendert || s.mail.anmeldung !== 'oauth'}
+          setMeldung={setMeldung}
+          ziel={
+            s.mail.anmeldung === 'oauth'
+              ? {
+                  oauth: s.oauth,
+                  start: betriebApi.mailOAuthStart,
+                  geraet: betriebApi.mailOAuthGeraet,
+                  geraetPruefen: betriebApi.mailOAuthGeraetPruefen,
+                  abmelden: async () => {
+                    b.setStand({ ...b.stand!, ...(await betriebApi.mailOAuthAbmelden()) });
+                  },
+                  neuLaden: b.laden,
+                }
+              : undefined
+          }
+        />
       )}
     </>
   );

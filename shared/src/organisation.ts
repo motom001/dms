@@ -44,7 +44,8 @@ export const istEigeneOrganisation = (typ: Pick<Mappentyp, 'felder'> | undefined
   return !!f && werte?.[f.key] === true;
 };
 /** Felder mit Schreibschutz. */
-export const geschuetzteSchreibfelder = (typ: Pick<Mappentyp, 'felder'> | undefined): Feld[] => (typ?.felder ?? []).filter((f) => !!f.schreibschutz && !f.system);
+export const geschuetzteSchreibfelder = (typ: Pick<Mappentyp, 'felder'> | undefined): Feld[] =>
+  (typ?.felder ?? []).filter((f) => !!f.schreibschutz && !f.system);
 
 /* ---------- Einstellung ---------- */
 
@@ -74,16 +75,29 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const ROLLEN_MAX = 20;
 
 export function liesOrganisationEinstellung(v: unknown): OrganisationEinstellung {
-  const o = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
   const text = (x: unknown, max: number) => (typeof x === 'string' ? x.slice(0, max) : '');
-  const notizen = (Array.isArray(o.notizen) ? o.notizen : []).flatMap((n): OrganisationNotiz[] => {
-    const x = n && typeof n === 'object' ? n as Record<string, unknown> : {};
-    if (!NOTIZ_ARTEN.includes(x.was as OrganisationNotiz['was']) || typeof x.am !== 'string' || typeof x.mappeId !== 'string') return [];
-    return [{ am: text(x.am, 40), von: text(x.von, 200), mappeId: text(x.mappeId, 40), titel: text(x.titel, 300), was: x.was as OrganisationNotiz['was'] }];
-  }).slice(0, NOTIZEN_MAX);
+  const notizen = (Array.isArray(o.notizen) ? o.notizen : [])
+    .flatMap((n): OrganisationNotiz[] => {
+      const x = n && typeof n === 'object' ? (n as Record<string, unknown>) : {};
+      if (!NOTIZ_ARTEN.includes(x.was as OrganisationNotiz['was']) || typeof x.am !== 'string' || typeof x.mappeId !== 'string') return [];
+      return [
+        {
+          am: text(x.am, 40),
+          von: text(x.von, 200),
+          mappeId: text(x.mappeId, 40),
+          titel: text(x.titel, 300),
+          was: x.was as OrganisationNotiz['was'],
+        },
+      ];
+    })
+    .slice(0, NOTIZEN_MAX);
   return {
     auskunft: typeof o.auskunft === 'string' && UUID.test(o.auskunft) ? o.auskunft : null,
-    rollen: [...new Set((Array.isArray(o.rollen) ? o.rollen : []).filter((r): r is string => typeof r === 'string' && UUID.test(r)))].slice(0, ROLLEN_MAX),
+    rollen: [...new Set((Array.isArray(o.rollen) ? o.rollen : []).filter((r): r is string => typeof r === 'string' && UUID.test(r)))].slice(
+      0,
+      ROLLEN_MAX,
+    ),
     notizen,
     gesehen: typeof o.gesehen === 'string' ? o.gesehen.slice(0, 40) : null,
   };
@@ -96,8 +110,12 @@ export const neueNotizen = (e: OrganisationEinstellung) => e.notizen.filter((n) 
  * „Eigene Organisation“ (oder „Gesamte Verwaltung“) – oder mit einer freigegebenen Rolle. API-Schlüssel, Pakete und
  * Systemkonten sind nie im Verwaltungsmodus (#818); für sie zählt nur eine freigegebene Rolle.
  */
-export function darfGeschuetztSchreiben(p: { verwaltungsmodus: boolean; verwaltung?: string[] | null; art?: string; rollen: string[] }, e: Pick<OrganisationEinstellung, 'rollen'>): boolean {
-  if (p.verwaltungsmodus && darfBereich({ verwaltung: p.verwaltung ?? [], ...(p.art ? { art: p.art } : {}) }, ORGANISATION_BEREICH)) return true;
+export function darfGeschuetztSchreiben(
+  p: { verwaltungsmodus: boolean; verwaltung?: string[] | null; art?: string; rollen: string[] },
+  e: Pick<OrganisationEinstellung, 'rollen'>,
+): boolean {
+  if (p.verwaltungsmodus && darfBereich({ verwaltung: p.verwaltung ?? [], ...(p.art ? { art: p.art } : {}) }, ORGANISATION_BEREICH))
+    return true;
   return !p.art && p.rollen.some((r) => e.rollen.includes(r));
 }
 
@@ -126,7 +144,10 @@ export function felderInRegisterfolge(typ: Pick<Mappentyp, 'felder'> & { registe
     if (r.art !== 'felder') continue;
     for (const k of r.felder ?? []) {
       const f = nachKey.get(k);
-      if (f && !schon.has(k)) { aus.push(f); schon.add(k); }
+      if (f && !schon.has(k)) {
+        aus.push(f);
+        schon.add(k);
+      }
     }
   }
   return aus;
@@ -166,7 +187,11 @@ export function liesAngaben(typ: Pick<Mappentyp, 'felder'> & { register?: Regist
 }
 
 /** Eine Stelle hinter einem Verweis: Person oder Organisation mit derselben Liste. */
-export interface Stelle { mappeId: string; typId: string; angaben: Angaben }
+export interface Stelle {
+  mappeId: string;
+  typId: string;
+  angaben: Angaben;
+}
 
 /** Eine eigene Organisation, so wie die Werkbank und die Auskunft sie sehen. */
 export interface EigeneOrganisation {
@@ -206,7 +231,10 @@ export function verantwortlicherText(o: EigeneOrganisation): string {
   if (email) zeilen.push(t('gemeinsam.organisation.email', { wert: email }));
   if (telefon) zeilen.push(t('gemeinsam.organisation.telefon', { wert: telefon }));
   const d = o.datenschutzbeauftragter?.angaben;
-  if (d && anzeigename(d)) zeilen.push(t('gemeinsam.organisation.datenschutzbeauftragter', { wert: [anzeigename(d), d.email, d.telefon].filter(Boolean).join(', ') }));
+  if (d && anzeigename(d))
+    zeilen.push(
+      t('gemeinsam.organisation.datenschutzbeauftragter', { wert: [anzeigename(d), d.email, d.telefon].filter(Boolean).join(', ') }),
+    );
   return zeilen.join('\n');
 }
 

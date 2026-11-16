@@ -8,7 +8,15 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { PDFDocument } from 'pdf-lib';
-import { DMS_LEERSEITEN_AB, neueErkennung, pruefeSeitenliste, waehle, wegfallendeSeiten, wirdGekuerzt, type Leerseiten } from '../../shared/src/leerseiten';
+import {
+  DMS_LEERSEITEN_AB,
+  neueErkennung,
+  pruefeSeitenliste,
+  waehle,
+  wegfallendeSeiten,
+  wirdGekuerzt,
+  type Leerseiten,
+} from '../../shared/src/leerseiten';
 import { POST_STAND } from '../../shared/src/model';
 import { liesCode, rechtePunkte, rechteZeilen } from '../../shared/src/pakete';
 import { openapi } from '../src/api-v1';
@@ -31,7 +39,9 @@ const url = process.env.TEST_DATABASE_URL;
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Verbindungen nur zum Schließen
 const offen: any[] = [];
-after(async () => { for (const s of offen) await s.end(); });
+after(async () => {
+  for (const s of offen) await s.end();
+});
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo-pg');
@@ -54,7 +64,11 @@ const breitenVon = async (inhalt: Buffer) => (await PDFDocument.load(inhalt)).ge
 
 /* ---------- Paket „Leerseiten“ als Archiv ---------- */
 const WASM = Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
-const archiv = (d: Record<string, string | Buffer>) => zipPuffer(Object.entries(d).map(([name, inhalt]) => ({ name, daten: Buffer.isBuffer(inhalt) ? inhalt : Buffer.from(inhalt) })), new Date('2026-01-01T12:00:00Z'));
+const archiv = (d: Record<string, string | Buffer>) =>
+  zipPuffer(
+    Object.entries(d).map(([name, inhalt]) => ({ name, daten: Buffer.isBuffer(inhalt) ? inhalt : Buffer.from(inhalt) })),
+    new Date('2026-01-01T12:00:00Z'),
+  );
 const paket = (id: string, name: string, schnittstellen = '[dms:leerseiten]') => ({
   'manifest.yaml': `schema: 1\nid: ${id}\nname: ${name}\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=${DMS_LEERSEITEN_AB}"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  ereignisse: [dokument.hochgeladen]\n  rechte:\n    lesen: [dms:post]\n    dokumente: lesen\n    schnittstellen: ${schnittstellen}\n  netz: []\n`,
   'code/modul.wasm': WASM,
@@ -65,18 +79,37 @@ const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.
 async function aufbau(pg: boolean, name: string) {
   const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
-  const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
+  const konten = new Konten(
+    r.konto,
+    () => null,
+    () => 'http://localhost',
+    d.systemtypen.benutzerspiegel(),
+  );
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const p = new Paketverwaltung(d, { version: () => DMS_LEERSEITEN_AB, abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: 'https://katalog.test/katalog.json' });
-  const installiere = async (dateien: Record<string, string | Buffer>) => { const h = await p.hochladen(archiv(dateien), ICH); return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };
+  const p = new Paketverwaltung(d, {
+    version: () => DMS_LEERSEITEN_AB,
+    abruf: async (u) => {
+      throw new Error(`404 ${u}`);
+    },
+    katalogUrl: 'https://katalog.test/katalog.json',
+  });
+  const installiere = async (dateien: Record<string, string | Buffer>) => {
+    const h = await p.hochladen(archiv(dateien), ICH);
+    return p.installiere({ upload: h.upload, bestaetigt: true, rechteBestaetigt: true }, ICH);
+  };
   await installiere(paket('leerseiten', 'Leerseiten'));
   const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
   const tabelle = routen(d, konten, { apiSchluessel: schluessel });
-  const route = (m: string, pfad: string) => { const x = tabelle.find((y) => y.methode === m && y.pfad === pfad); assert.ok(x, `${m} ${pfad}`); return x!; };
+  const route = (m: string, pfad: string) => {
+    const x = tabelle.find((y) => y.methode === m && y.pfad === pfad);
+    assert.ok(x, `${m} ${pfad}`);
+    return x!;
+  };
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-  const oberflaeche = async (b: { id: string }, m: string, pfad: string, x: Partial<Anfrage> = {}) => route(m, pfad).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: await ich(b.id) } as Anfrage);
+  const oberflaeche = async (b: { id: string }, m: string, pfad: string, x: Partial<Anfrage> = {}) =>
+    route(m, pfad).handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: await ich(b.id) } as Anfrage);
   const alsPaket = async (paketId: string, m: string, pfad: string, x: Partial<Anfrage> = {}) => {
     const konto = await konten.dienstkonto(paketId, paketId);
     d.kern.paketKonten.set(konto.id, paketId);
@@ -87,21 +120,44 @@ async function aufbau(pg: boolean, name: string) {
     await pruefeZugang(rt as Route, anfrage, (n) => (n === 'authorization' ? `Bearer ${k}` : undefined), konten, schluessel);
     return rt.handler(anfrage);
   };
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'belege', name: 'Belege', art: 'dokumente' },
-  ] });
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nummer', typ: 'text' }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'belege', name: 'Belege', art: 'dokumente' },
+    ],
+  });
   // Ein beidseitiger Scan mit sechs Seiten: Rückseiten 2, 4 und 6 sind leer.
   const post = await d.post.legePostAn({ betreff: 'Brief der Stadtwerke' }, { id: lena.id, name: 'Lena' });
-  const scan = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, await pdf([101, 102, 103, 104, 105, 106]), lena.id)).dokument;
-  const markiere = (seiten: unknown, sha = scan.sha256, id = scan.id, paketId = 'leerseiten') => alsPaket(paketId, 'PUT', '/dokumente/:id/leerseiten', { params: { id }, body: { sha256: sha, seiten } });
-  const waehleSeite = (nr: number, weglassen: boolean, id = scan.id) => oberflaeche(lena, 'PUT', '/api/dokumente/:id/leerseiten/:nr', { params: { id, nr: String(nr) }, body: { weglassen } });
+  const scan = (
+    await d.dokumente.ladeHoch(
+      post.id,
+      { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' },
+      await pdf([101, 102, 103, 104, 105, 106]),
+      lena.id,
+    )
+  ).dokument;
+  const markiere = (seiten: unknown, sha = scan.sha256, id = scan.id, paketId = 'leerseiten') =>
+    alsPaket(paketId, 'PUT', '/dokumente/:id/leerseiten', { params: { id }, body: { sha256: sha, seiten } });
+  const waehleSeite = (nr: number, weglassen: boolean, id = scan.id) =>
+    oberflaeche(lena, 'PUT', '/api/dokumente/:id/leerseiten/:nr', { params: { id, nr: String(nr) }, body: { weglassen } });
   const neueMappe = () => d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2026-0815' } }, lena.id);
   return { d, p, konten, lena, rechnung, post, scan, installiere, oberflaeche, alsPaket, markiere, waehleSeite, neueMappe, repo: r.repo };
 }
 
 describe('Leerseiten (#997): Regeln in shared/src/leerseiten.ts', () => {
-  const l: Leerseiten = { paket: 'leerseiten', paketName: 'Leerseiten', sha256: 'a', seiten: 6, erkannt: [2, 4, 6], behalten: [4], weglassen: [5], geaendert: '' };
+  const l: Leerseiten = {
+    paket: 'leerseiten',
+    paketName: 'Leerseiten',
+    sha256: 'a',
+    seiten: 6,
+    erkannt: [2, 4, 6],
+    behalten: [4],
+    weglassen: [5],
+    geaendert: '',
+  };
   it('wegfallend = erkannt ohne „Doch behalten“, dazu „Auch weglassen“', () => {
     assert.deepEqual(wegfallendeSeiten(l), [2, 5, 6]);
     assert.deepEqual(wegfallendeSeiten(waehle(l, 4, true, 'x')), [2, 4, 5, 6]);
@@ -116,7 +172,10 @@ describe('Leerseiten (#997): Regeln in shared/src/leerseiten.ts', () => {
   });
   it('ein Dokument fällt nie ganz weg; nur PDFs werden gekürzt', () => {
     assert.equal(wirdGekuerzt({ sha256: 'a', mime: 'application/pdf', leerseiten: l }), true);
-    assert.equal(wirdGekuerzt({ sha256: 'a', mime: 'application/pdf', leerseiten: { ...l, seiten: 1, erkannt: [1], behalten: [], weglassen: [] } }), false);
+    assert.equal(
+      wirdGekuerzt({ sha256: 'a', mime: 'application/pdf', leerseiten: { ...l, seiten: 1, erkannt: [1], behalten: [], weglassen: [] } }),
+      false,
+    );
     assert.equal(wirdGekuerzt({ sha256: 'a', mime: 'image/png', leerseiten: l }), false);
     assert.equal(wirdGekuerzt({ sha256: 'b', mime: 'application/pdf', leerseiten: l }), false, 'andere Datei');
   });
@@ -130,13 +189,29 @@ describe('Leerseiten (#997): Regeln in shared/src/leerseiten.ts', () => {
 
 describe('Leerseiten (#997): Paketformat und Rechte-Vorschau', () => {
   it('dms:leerseiten braucht Lesen von Post und ihren Dokumenten', () => {
-    assert.deepEqual(liesCode({ sprache: 'c', rechte: { lesen: ['dms:post'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).fehler, []);
-    assert.match(liesCode({ sprache: 'c', rechte: { lesen: ['dms:post'], schnittstellen: ['dms:leerseiten'] } }).fehler.join(' '), /dms:leerseiten braucht/);
-    assert.match(liesCode({ sprache: 'c', rechte: { lesen: ['rechnung'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).fehler.join(' '), /dms:leerseiten braucht/);
-    assert.deepEqual(liesCode({ sprache: 'c', rechte: { lesen: ['*'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).fehler, []);
+    assert.deepEqual(
+      liesCode({ sprache: 'c', rechte: { lesen: ['dms:post'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).fehler,
+      [],
+    );
+    assert.match(
+      liesCode({ sprache: 'c', rechte: { lesen: ['dms:post'], schnittstellen: ['dms:leerseiten'] } }).fehler.join(' '),
+      /dms:leerseiten braucht/,
+    );
+    assert.match(
+      liesCode({ sprache: 'c', rechte: { lesen: ['rechnung'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).fehler.join(' '),
+      /dms:leerseiten braucht/,
+    );
+    assert.deepEqual(
+      liesCode({ sprache: 'c', rechte: { lesen: ['*'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).fehler,
+      [],
+    );
   });
   it('Rechte-Vorschau: „Markiert leere Seiten in neuer Post – löscht nichts“; Schlüssel mit Schreibrecht', () => {
-    const c = liesCode({ sprache: 'c', ereignisse: ['dokument.hochgeladen'], rechte: { lesen: ['dms:post'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] } }).code!;
+    const c = liesCode({
+      sprache: 'c',
+      ereignisse: ['dokument.hochgeladen'],
+      rechte: { lesen: ['dms:post'], dokumente: 'lesen', schnittstellen: ['dms:leerseiten'] },
+    }).code!;
     const zeilen = rechteZeilen(rechtePunkte(c, (v) => (v === 'dms:post' ? 'Post' : v))).join('\n');
     assert.match(zeilen, /Markiert leere Seiten in neuer Post – löscht nichts.*\(dms:leerseiten\)/);
     assert.match(zeilen, /Mappen lesen: Post/);
@@ -167,7 +242,10 @@ for (const pg of [false, true]) {
       const dok = nachher.dokumente.find((y) => y.id === x.scan.id)!;
       assert.equal(dok.sha256, x.scan.sha256, 'Datei unverändert');
       assert.deepEqual(dok.leerseiten?.erkannt, [2, 4, 6]);
-      const lesen = (await x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: x.scan.id } })).body as { wegfallend: number[]; seiten: number };
+      const lesen = (await x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: x.scan.id } })).body as {
+        wegfallend: number[];
+        seiten: number;
+      };
       assert.deepEqual([lesen.seiten, lesen.wegfallend], [6, [2, 4, 6]]);
     });
 
@@ -177,17 +255,43 @@ for (const pg of [false, true]) {
       await assert.rejects(x.markiere([7]), fehler(400, /1 bis 6/));
       await assert.rejects(x.markiere('2'), fehler(400));
       // Menschen markieren nicht.
-      await assert.rejects(x.oberflaeche(x.lena, 'PUT', '/api/dokumente/:id/leerseiten', { params: { id: x.scan.id }, body: { sha256: x.scan.sha256, seiten: [2] } }), fehler(403));
+      await assert.rejects(
+        x.oberflaeche(x.lena, 'PUT', '/api/dokumente/:id/leerseiten', {
+          params: { id: x.scan.id },
+          body: { sha256: x.scan.sha256, seiten: [2] },
+        }),
+        fehler(403),
+      );
       // Ein Paket ohne das Recht.
       await x.installiere(paket('anderes', 'Anderes', '[]'));
       await assert.rejects(x.markiere([2], x.scan.sha256, x.scan.id, 'anderes'), fehler(403));
-      await assert.rejects(x.d.postLeerseiten.markiere({ paket: { id: 'anderes', schreiben: new Set(), dokumente: 'lesen', schnittstellen: [] } } as never, x.scan.id, { sha256: x.scan.sha256, seiten: [2] }), fehler(403, /dms:leerseiten/));
+      await assert.rejects(
+        x.d.postLeerseiten.markiere(
+          { paket: { id: 'anderes', schreiben: new Set(), dokumente: 'lesen', schnittstellen: [] } } as never,
+          x.scan.id,
+          { sha256: x.scan.sha256, seiten: [2] },
+        ),
+        fehler(403, /dms:leerseiten/),
+      );
       // Ein Dokument in einer Mappe: Lena darf es lesen, aber es ist keine Post.
       const m = await x.neueMappe();
-      const beleg = (await x.d.dokumente.ladeHoch(m.id, { register: 'belege', name: 'beleg.pdf', typ: 'application/pdf' }, await pdf([200, 201]), x.lena.id)).dokument;
-      await assert.rejects(x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: beleg.id } }), fehler(409, /nur an Dokumenten in Post/));
+      const beleg = (
+        await x.d.dokumente.ladeHoch(
+          m.id,
+          { register: 'belege', name: 'beleg.pdf', typ: 'application/pdf' },
+          await pdf([200, 201]),
+          x.lena.id,
+        )
+      ).dokument;
+      await assert.rejects(
+        x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: beleg.id } }),
+        fehler(409, /nur an Dokumenten in Post/),
+      );
       // Das Paket sieht nur Post: Die Rechnung ist für es nicht da.
-      await assert.rejects(x.markiere([2], beleg.sha256, beleg.id), (e: unknown) => e instanceof Fachfehler && (e.status === 404 || e.status === 403));
+      await assert.rejects(
+        x.markiere([2], beleg.sha256, beleg.id),
+        (e: unknown) => e instanceof Fachfehler && (e.status === 404 || e.status === 403),
+      );
     });
 
     it('„Doch behalten“ und „Auch weglassen“: nur Menschen; die Wahl bleibt bei neuer Erkennung derselben Datei', async () => {
@@ -197,13 +301,33 @@ for (const pg of [false, true]) {
       const r = (await x.waehleSeite(5, true)).body as { wegfallend: number[] };
       assert.deepEqual(r.wegfallend, [2, 5, 6]);
       await x.markiere([2, 4, 6]);
-      assert.deepEqual(((await x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: x.scan.id } })).body as { wegfallend: number[] }).wegfallend, [2, 5, 6]);
-      await assert.rejects(x.alsPaket('leerseiten', 'PUT', '/dokumente/:id/leerseiten/:nr', { params: { id: x.scan.id, nr: '3' }, body: { weglassen: true } }), fehler(403));
+      assert.deepEqual(
+        (
+          (await x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: x.scan.id } })).body as {
+            wegfallend: number[];
+          }
+        ).wegfallend,
+        [2, 5, 6],
+      );
+      await assert.rejects(
+        x.alsPaket('leerseiten', 'PUT', '/dokumente/:id/leerseiten/:nr', { params: { id: x.scan.id, nr: '3' }, body: { weglassen: true } }),
+        fehler(403),
+      );
       await assert.rejects(x.waehleSeite(9, true), fehler(404));
       // Ohne Markierung eines Pakets geht die Wahl auch (z. B. über die Schnittstelle).
       const p2 = await x.d.post.legePostAn({ betreff: 'Zweiter Brief' }, { id: x.lena.id, name: 'Lena' });
-      const s2 = (await x.d.dokumente.ladeHoch(p2.id, { register: 'dokumente', name: 'zwei.pdf', typ: 'application/pdf' }, await pdf([301, 302]), x.lena.id)).dokument;
-      assert.deepEqual(((await x.waehleSeite(2, true, s2.id)).body as { wegfallend: number[]; leerseiten: Leerseiten }).leerseiten.paket, null);
+      const s2 = (
+        await x.d.dokumente.ladeHoch(
+          p2.id,
+          { register: 'dokumente', name: 'zwei.pdf', typ: 'application/pdf' },
+          await pdf([301, 302]),
+          x.lena.id,
+        )
+      ).dokument;
+      assert.deepEqual(
+        ((await x.waehleSeite(2, true, s2.id)).body as { wegfallend: number[]; leerseiten: Leerseiten }).leerseiten.paket,
+        null,
+      );
     });
 
     it('Übernehmen: neue Fassung ohne die Seiten, Original als frühere Version, Historie, Texterkennung neu', async () => {
@@ -220,11 +344,22 @@ for (const pg of [false, true]) {
       assert.equal(dok.leerseiten ?? null, null, 'Markierung ist weg');
       assert.deepEqual(await breitenVon(await x.d.kern.liesGanz(dok.sha256)), [101, 103, 104, 105]);
       const v = await x.d.dokumentVersionen.versionen(x.scan.id);
-      assert.deepEqual(v.aeltere.map((y) => [y.nummer, y.sha256]), [[1, x.scan.sha256]], 'das Original bleibt als frühere Version – auch ohne Versionierung');
+      assert.deepEqual(
+        v.aeltere.map((y) => [y.nummer, y.sha256]),
+        [[1, x.scan.sha256]],
+        'das Original bleibt als frühere Version – auch ohne Versionierung',
+      );
       const h = await x.d.mappenHistorie.historie(ziel.id);
-      assert.ok(h.some((y) => y.art === 'pdf_bearbeitet' && /2 leere Seiten entfernt/.test(String(y.daten.text))), 'Historie „2 leere Seiten entfernt“');
+      assert.ok(
+        h.some((y) => y.art === 'pdf_bearbeitet' && /2 leere Seiten entfernt/.test(String(y.daten.text))),
+        'Historie „2 leere Seiten entfernt“',
+      );
       assert.ok(['wartet', 'laeuft', 'fertig', 'keiner'].includes(dok.ocr?.stand ?? ''));
-      assert.equal(dok.ocr?.stand === 'fertig' && dok.ocr.zeit && dok.ocr.zeit < dok.erstellt, false, 'kein alter Volltext auf der neuen Fassung');
+      assert.equal(
+        dok.ocr?.stand === 'fertig' && dok.ocr.zeit && dok.ocr.zeit < dok.erstellt,
+        false,
+        'kein alter Volltext auf der neuen Fassung',
+      );
     });
 
     it('Zuordnen in eine bestehende Mappe, mit Kopie und mit „alle behalten“', async () => {
@@ -252,7 +387,10 @@ for (const pg of [false, true]) {
       const x = await aufbau(pg, 'leer_nichts');
       await x.markiere([2, 4, 6]);
       await x.d.mappen.aendereMappe(x.post.id, { werte: { stand: POST_STAND.erledigt } }, x.lena.id);
-      assert.deepEqual(await breitenVon(await x.d.kern.liesGanz((await x.repo.holeDokument(x.scan.id))!.sha256)), [101, 102, 103, 104, 105, 106]);
+      assert.deepEqual(
+        await breitenVon(await x.d.kern.liesGanz((await x.repo.holeDokument(x.scan.id))!.sha256)),
+        [101, 102, 103, 104, 105, 106],
+      );
       // Automatisch (#337): niemand hat hingesehen – keine Seite fällt weg.
       const ziel = await x.neueMappe();
       await x.d.post.ordneZu(x.post.id, { ziel: ziel.id, register: 'belege' }, null, undefined, { grund: 'Test' });
@@ -261,7 +399,14 @@ for (const pg of [false, true]) {
       assert.equal(auto.version, 1);
       // Alle Seiten markiert: Das Dokument fällt nicht ganz weg.
       const p2 = await x.d.post.legePostAn({ betreff: 'Leerer Scan' }, { id: x.lena.id, name: 'Lena' });
-      const leer = (await x.d.dokumente.ladeHoch(p2.id, { register: 'dokumente', name: 'leer.pdf', typ: 'application/pdf' }, await pdf([401, 402]), x.lena.id)).dokument;
+      const leer = (
+        await x.d.dokumente.ladeHoch(
+          p2.id,
+          { register: 'dokumente', name: 'leer.pdf', typ: 'application/pdf' },
+          await pdf([401, 402]),
+          x.lena.id,
+        )
+      ).dokument;
       await x.markiere([1, 2], leer.sha256, leer.id);
       const ziel2 = await x.neueMappe();
       const r = await x.d.post.ordneZu(p2.id, { ziel: ziel2.id, register: 'belege', aufloesen: true }, x.lena.id);
@@ -272,9 +417,15 @@ for (const pg of [false, true]) {
     it('eine neue Fassung in der Post (PDF bearbeiten) setzt die Markierung zurück', async () => {
       const x = await aufbau(pg, 'leer_fassung');
       await x.markiere([2]);
-      await x.d.pdfBearbeiten.bearbeitePdf(x.scan.id, { seiten: [{ nr: 2 }, { nr: 1 }, { nr: 3 }, { nr: 4 }, { nr: 5 }, { nr: 6 }], bestaetigt: true }, x.lena.id);
+      await x.d.pdfBearbeiten.bearbeitePdf(
+        x.scan.id,
+        { seiten: [{ nr: 2 }, { nr: 1 }, { nr: 3 }, { nr: 4 }, { nr: 5 }, { nr: 6 }], bestaetigt: true },
+        x.lena.id,
+      );
       const nach = (await x.d.mappen.holeMappe(x.post.id)).dokumente[0];
-      const stand = (await x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: nach.id } })).body as { leerseiten: Leerseiten | null };
+      const stand = (await x.oberflaeche(x.lena, 'GET', '/api/dokumente/:id/leerseiten', { params: { id: nach.id } })).body as {
+        leerseiten: Leerseiten | null;
+      };
       assert.equal(stand.leerseiten, null);
     });
   });

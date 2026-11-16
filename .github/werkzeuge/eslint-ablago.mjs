@@ -34,7 +34,10 @@ function istRegistrierfunktion(knoten) {
 }
 
 const handlerLaenge = {
-  meta: { ...maxLinesPerFunction.meta, docs: { description: 'max-lines-per-function je Handler in Routendateien (Registrierfunktion ausgenommen)' } },
+  meta: {
+    ...maxLinesPerFunction.meta,
+    docs: { description: 'max-lines-per-function je Handler in Routendateien (Registrierfunktion ausgenommen)' },
+  },
   create(context) {
     const lauscher = maxLinesPerFunction.create(context);
     const gefiltert = {};
@@ -58,7 +61,11 @@ function attributWert(oeffnend, name) {
 /** Trägt das Element das Attribut `hidden` (ohne Wert oder als festes `{true}`)? Dann ist es kein Bedienelement. */
 function unsichtbar(oeffnend) {
   const a = oeffnend.attributes.find((x) => x.type === 'JSXAttribute' && x.name.name === 'hidden');
-  return !!a && (a.value === null || (a.value.type === 'JSXExpressionContainer' && a.value.expression.type === 'Literal' && a.value.expression.value === true));
+  return (
+    !!a &&
+    (a.value === null ||
+      (a.value.type === 'JSXExpressionContainer' && a.value.expression.type === 'Literal' && a.value.expression.value === true))
+  );
 }
 
 /** Steht das Element (irgendwo) in einem Feldrahmen? Auch über eine Funktion als Kind: {(v) => <input {...v} />}. */
@@ -84,7 +91,10 @@ const bausteine = {
       JSXOpeningElement(knoten) {
         const name = knoten.name.type === 'JSXIdentifier' ? knoten.name.name : null;
         if (!name || !ROH.has(name)) return;
-        if (name === 'button') { context.report({ node: knoten, messageId: 'knopf' }); return; }
+        if (name === 'button') {
+          context.report({ node: knoten, messageId: 'knopf' });
+          return;
+        }
         if (name === 'input' && (UNSICHTBAR.has(attributWert(knoten, 'type')) || unsichtbar(knoten))) return;
         if (!imRahmen(knoten.parent)) context.report({ node: knoten, messageId: 'feld', data: { name } });
       },
@@ -108,7 +118,10 @@ function texteIn(knoten, aus = []) {
   return aus;
 }
 
-const farbklasseIn = (wert) => texteIn(wert).flatMap((x) => x.split(/\s+/)).find((k) => FARBKLASSEN.has(k));
+const farbklasseIn = (wert) =>
+  texteIn(wert)
+    .flatMap((x) => x.split(/\s+/))
+    .find((k) => FARBKLASSEN.has(k));
 
 const knopfFarben = {
   meta: {
@@ -116,7 +129,8 @@ const knopfFarben = {
     docs: { description: 'Keine Farbklassen über className am Baustein Knopf – die Farbe kommt aus der Art (#1210)' },
     schema: [],
     messages: {
-      farbe: 'Farbklasse „{{klasse}}“ über className am Knopf: Bitte die Art nehmen – art="haupt" (blau), art="anlegen" (grün, „+ …“), art="gefahr" mit rueckfrage (Entwicklerhandbuch „Gestaltung und Bausteine → Leitsätze“).',
+      farbe:
+        'Farbklasse „{{klasse}}“ über className am Knopf: Bitte die Art nehmen – art="haupt" (blau), art="anlegen" (grün, „+ …“), art="gefahr" mit rueckfrage (Entwicklerhandbuch „Gestaltung und Bausteine → Leitsätze“).',
     },
   },
   create(context) {
@@ -133,7 +147,10 @@ const knopfFarben = {
       CallExpression(knoten) {
         if (knoten.callee.type !== 'Identifier' || knoten.callee.name !== 'knopfAussehen') return;
         const arg = knoten.arguments[0];
-        const p = arg?.type === 'ObjectExpression' ? arg.properties.find((x) => x.type === 'Property' && x.key.type === 'Identifier' && x.key.name === 'className') : undefined;
+        const p =
+          arg?.type === 'ObjectExpression'
+            ? arg.properties.find((x) => x.type === 'Property' && x.key.type === 'Identifier' && x.key.name === 'className')
+            : undefined;
         if (p) melde(p, p.value);
       },
     };

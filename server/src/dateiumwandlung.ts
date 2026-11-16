@@ -21,7 +21,15 @@ import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readdir, readFile, rename, rm, rmdir, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { BILDPUNKTE_MAX, dateitypName, FASSUNG_MAX_BYTES, kernTyp, UMWANDELN_MAX_BYTES, VORSCHAUBILD_MAX_BYTES, type FassungInfo } from '../../shared/src/dateiumwandlung';
+import {
+  BILDPUNKTE_MAX,
+  dateitypName,
+  FASSUNG_MAX_BYTES,
+  kernTyp,
+  UMWANDELN_MAX_BYTES,
+  VORSCHAUBILD_MAX_BYTES,
+  type FassungInfo,
+} from '../../shared/src/dateiumwandlung';
 import type { Dokument } from '../../shared/src/model';
 import { hatSchnittstelle, type InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';
@@ -60,8 +68,17 @@ export async function zieheFassungenUm(dateiWurzel: string, haushalt: string): P
       const ziel = join(neu, o, name);
       await mkdir(join(neu, o), { recursive: true });
       // Gibt es sie am neuen Ort schon, gilt die (neuer oder aus einer Wiederherstellung).
-      if (await stat(ziel).then(() => true, () => false)) await rm(join(alt, o, name), { force: true });
-      else { await rename(join(alt, o, name), ziel); n++; }
+      if (
+        await stat(ziel).then(
+          () => true,
+          () => false,
+        )
+      )
+        await rm(join(alt, o, name), { force: true });
+      else {
+        await rename(join(alt, o, name), ziel);
+        n++;
+      }
     }
   }
   // Leere Ordner entfernen (übrig gebliebene .tmp-Dateien eines Abbruchs mit).
@@ -94,7 +111,11 @@ export function ordnerFassungen(wurzel: string): FassungsAblage {
     await rename(tmp, ziel);
   };
   const info = async (sha: string) => {
-    try { return JSON.parse(await readFile(pfad(sha, 'json'), 'utf8')) as FassungInfo; } catch { return null; }
+    try {
+      return JSON.parse(await readFile(pfad(sha, 'json'), 'utf8')) as FassungInfo;
+    } catch {
+      return null;
+    }
   };
   return {
     info,
@@ -114,12 +135,16 @@ export function ordnerFassungen(wurzel: string): FassungsAblage {
       await rm(pfad(sha, 'fassung'), { force: true });
     },
     async belegung() {
-      let anzahl = 0; let bytes = 0;
+      let anzahl = 0;
+      let bytes = 0;
       for (const o of await readdir(wurzel).catch(() => [] as string[])) {
         for (const n of await readdir(join(wurzel, o)).catch(() => [] as string[])) {
           if (!n.endsWith('.fassung')) continue;
           const s = await stat(join(wurzel, o, n)).catch(() => null);
-          if (s?.isFile()) { anzahl++; bytes += s.size; }
+          if (s?.isFile()) {
+            anzahl++;
+            bytes += s.size;
+          }
         }
       }
       return { anzahl, bytes };
@@ -134,8 +159,12 @@ export function speicherFassungen(): FassungsAblage & { fassungen: Map<string, {
     fassungen,
     info: async (sha) => fassungen.get(sha)?.info ?? null,
     lies: async (sha) => fassungen.get(sha) ?? null,
-    schreibe: async (sha, info, inhalt) => { fassungen.set(pruefeSha(sha), { info, inhalt }); },
-    loesche: async (sha) => { fassungen.delete(sha); },
+    schreibe: async (sha, info, inhalt) => {
+      fassungen.set(pruefeSha(sha), { info, inhalt });
+    },
+    loesche: async (sha) => {
+      fassungen.delete(sha);
+    },
     belegung: async () => ({ anzahl: fassungen.size, bytes: [...fassungen.values()].reduce((s, f) => s + f.inhalt.length, 0) }),
   };
 }
@@ -152,16 +181,24 @@ export function fassungsTyp(b: Buffer): string | null {
 
 /** Breite und Höhe eines PNG (IHDR) oder JPEG (erster SOF-Abschnitt); null, wenn nicht lesbar. */
 export function bildGroesse(b: Buffer, mime: string): { breite: number; hoehe: number } | null {
-  if (mime === 'image/png') return b.subarray(12, 16).toString('latin1') === 'IHDR' ? { breite: b.readUInt32BE(16), hoehe: b.readUInt32BE(20) } : null;
+  if (mime === 'image/png')
+    return b.subarray(12, 16).toString('latin1') === 'IHDR' ? { breite: b.readUInt32BE(16), hoehe: b.readUInt32BE(20) } : null;
   let i = 2;
   while (i + 9 < b.length) {
     if (b[i] !== 0xff) return null;
     const marke = b[i + 1];
-    if (marke === 0xff) { i++; continue; }
-    if (marke === 0xd8 || marke === 0x01 || (marke >= 0xd0 && marke <= 0xd7)) { i += 2; continue; }
+    if (marke === 0xff) {
+      i++;
+      continue;
+    }
+    if (marke === 0xd8 || marke === 0x01 || (marke >= 0xd0 && marke <= 0xd7)) {
+      i += 2;
+      continue;
+    }
     const laenge = b.readUInt16BE(i + 2);
     // SOF0–SOF15 außer DHT (C4), JPG (C8) und DAC (CC)
-    if (marke >= 0xc0 && marke <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marke)) return { hoehe: b.readUInt16BE(i + 5), breite: b.readUInt16BE(i + 7) };
+    if (marke >= 0xc0 && marke <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marke))
+      return { hoehe: b.readUInt16BE(i + 5), breite: b.readUInt16BE(i + 7) };
     i += 2 + laenge;
   }
   return null;
@@ -174,13 +211,31 @@ async function pdfSeiten(inhalt: Buffer): Promise<number | null> {
     await writeFile(join(dir, 'f.pdf'), inhalt);
     return await new Promise<number | null>((ok, fehler) => {
       execFile('pdfinfo', [join(dir, 'f.pdf')], { timeout: 30_000, maxBuffer: AUSGABE_KLEIN }, (e, out, err) => {
-        if (e && (e as NodeJS.ErrnoException).code === 'ENOENT') { ok(null); return; }
+        if (e && (e as NodeJS.ErrnoException).code === 'ENOENT') {
+          ok(null);
+          return;
+        }
         const n = Number(/^Pages:\s+(\d+)/m.exec(String(out))?.[1]);
-        if (e || !n) { fehler(new Fachfehler(422, t('pakete.fassung.pdf', { grund: String(err || (e as Error | null)?.message || '').trim().split('\n')[0].slice(0, 200) }))); return; }
+        if (e || !n) {
+          fehler(
+            new Fachfehler(
+              422,
+              t('pakete.fassung.pdf', {
+                grund: String(err || (e as Error | null)?.message || '')
+                  .trim()
+                  .split('\n')[0]
+                  .slice(0, 200),
+              }),
+            ),
+          );
+          return;
+        }
         ok(n);
       });
     });
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 /** Fassung prüfen: Typ am Inhalt, Größe, Bildpunkte bzw. Seiten. Liefert den Typ und ggf. die Seitenzahl. */
@@ -192,18 +247,25 @@ export async function pruefeFassung(inhalt: unknown): Promise<{ mime: string; se
   if (mime !== 'application/pdf') {
     const g = bildGroesse(inhalt, mime);
     if (!g || !g.breite || !g.hoehe) throw new Fachfehler(422, t('pakete.fassung.bild'));
-    if (g.breite * g.hoehe > BILDPUNKTE_MAX) throw new Fachfehler(422, t('pakete.fassung.punkte', { breite: g.breite, hoehe: g.hoehe, max: BILDPUNKTE_MAX / 1_000_000 }));
+    if (g.breite * g.hoehe > BILDPUNKTE_MAX)
+      throw new Fachfehler(422, t('pakete.fassung.punkte', { breite: g.breite, hoehe: g.hoehe, max: BILDPUNKTE_MAX / 1_000_000 }));
     return { mime, seiten: 1 };
   }
   const seiten = await pdfSeiten(inhalt);
-  if (seiten !== null && seiten > FASSUNG_SEITEN_MAX) throw new Fachfehler(422, t('pakete.fassung.seiten', { seiten, max: FASSUNG_SEITEN_MAX }));
+  if (seiten !== null && seiten > FASSUNG_SEITEN_MAX)
+    throw new Fachfehler(422, t('pakete.fassung.seiten', { seiten, max: FASSUNG_SEITEN_MAX }));
   return { mime, seiten };
 }
 
 /* ---------- Ablauf ---------- */
 
 /** Ein Paket, das Dateien umwandelt: Id, Name, Version und seine Dateitypen. */
-export interface UmwandelPaket { id: string; name: string; version: string; typen: string[] }
+export interface UmwandelPaket {
+  id: string;
+  name: string;
+  version: string;
+  typen: string[];
+}
 
 export interface UmwandlungsAnbindung {
   ablage: FassungsAblage;
@@ -239,21 +301,32 @@ export class Dateiumwandlung {
   /** Das zuständige Paket für einen Dateityp (bei mehreren das erste nach Id) oder null. */
   async paketFuer(mime: string, liste?: UmwandelPaket[]): Promise<UmwandelPaket | null> {
     if (kernTyp(mime)) return null;
-    return (liste ?? await this.pakete()).find((p) => p.typen.includes(mime)) ?? null;
+    return (liste ?? (await this.pakete())).find((p) => p.typen.includes(mime)) ?? null;
   }
 
-  info(sha: string) { return this.o.ablage.info(sha).catch(() => null); }
+  info(sha: string) {
+    return this.o.ablage.info(sha).catch(() => null);
+  }
   /** Ging die Datei beim letzten Versuch wegen der KI-Sperre nicht an das Paket (#796)? */
-  gesperrt(sha: string) { return this.gesperrtSha.has(sha); }
-  lies(sha: string) { return this.o.ablage.lies(sha).catch(() => null); }
-  belegung() { return this.o.ablage.belegung(); }
+  gesperrt(sha: string) {
+    return this.gesperrtSha.has(sha);
+  }
+  lies(sha: string) {
+    return this.o.ablage.lies(sha).catch(() => null);
+  }
+  belegung() {
+    return this.o.ablage.belegung();
+  }
 
   /**
    * Dateien an die zuständigen Pakete melden (`datei.umwandeln`) – nur, wenn es noch keine Fassung gibt und die Datei
    * nicht gerade unterwegs ist. `erneut`: auch mit Fassung (z. B. nach einem Update des Pakets). Liefert, wie viele
    * Meldungen hinausgingen.
    */
-  async anfordern(docs: Array<Pick<Dokument, 'id' | 'mappeId' | 'name' | 'mime' | 'groesse' | 'sha256'>>, o: { erneut?: boolean } = {}): Promise<number> {
+  async anfordern(
+    docs: Array<Pick<Dokument, 'id' | 'mappeId' | 'name' | 'mime' | 'groesse' | 'sha256'>>,
+    o: { erneut?: boolean } = {},
+  ): Promise<number> {
     const liste = await this.pakete();
     if (!liste.length) return 0;
     const jetzt = Date.now();
@@ -272,9 +345,25 @@ export class Dateiumwandlung {
       const kandidaten = [d, ...(await this.o.dokumenteMitSha(d.sha256).catch(() => [])).filter((x) => x.id !== d.id)];
       let gemeldet = false;
       for (const x of kandidaten) {
-        if ((await this.o.melde(p.id, { dokument: x.id, mappe: x.mappeId, name: x.name, mime: x.mime, groesse: x.groesse, sha256: x.sha256 })) !== 'gesperrt') { gemeldet = true; break; }
+        if (
+          (await this.o.melde(p.id, {
+            dokument: x.id,
+            mappe: x.mappeId,
+            name: x.name,
+            mime: x.mime,
+            groesse: x.groesse,
+            sha256: x.sha256,
+          })) !== 'gesperrt'
+        ) {
+          gemeldet = true;
+          break;
+        }
       }
-      if (!gemeldet) { this.angefordert.delete(d.sha256); this.gesperrtSha.add(d.sha256); continue; }
+      if (!gemeldet) {
+        this.angefordert.delete(d.sha256);
+        this.gesperrtSha.add(d.sha256);
+        continue;
+      }
       this.gesperrtSha.delete(d.sha256);
       n++;
     }
@@ -298,12 +387,23 @@ export class Dateiumwandlung {
   }
 
   /** Fassung eines Pakets übernehmen (PUT /dokumente/{id}/fassung). */
-  async setzeFassung(paket: { id: string; schnittstellen?: string[] } | undefined, d: Dokument, sha: unknown, inhalt: unknown): Promise<FassungInfo & { seiten: number | null }> {
+  async setzeFassung(
+    paket: { id: string; schnittstellen?: string[] } | undefined,
+    d: Dokument,
+    sha: unknown,
+    inhalt: unknown,
+  ): Promise<FassungInfo & { seiten: number | null }> {
     const p = await this.zustaendig(paket, d);
     Dateiumwandlung.pruefeStand(d, sha);
     const { mime, seiten } = await pruefeFassung(inhalt);
     const b = inhalt as Buffer;
-    const info: FassungInfo = { mime, groesse: b.length, sha256: createHash('sha256').update(b).digest('hex'), paket: { id: p.id, name: p.name, version: p.version }, erstellt: new Date().toISOString() };
+    const info: FassungInfo = {
+      mime,
+      groesse: b.length,
+      sha256: createHash('sha256').update(b).digest('hex'),
+      paket: { id: p.id, name: p.name, version: p.version },
+      erstellt: new Date().toISOString(),
+    };
     await this.o.ablage.schreibe(d.sha256, info, b);
     this.angefordert.delete(d.sha256);
     log.info('Fassung gespeichert', { dokument: d.id, typ: d.mime, fassung: mime, bytes: b.length, seiten, paket: p.id });
@@ -313,23 +413,35 @@ export class Dateiumwandlung {
   }
 
   /** Vorschaubild eines Pakets übernehmen (PUT /dokumente/{id}/vorschaubild): JPEG oder PNG, der Kern verkleinert es. */
-  async setzeVorschaubild(paket: { id: string; schnittstellen?: string[] } | undefined, d: Dokument, sha: unknown, inhalt: unknown): Promise<{ dokument: string; mime: string; groesse: number }> {
+  async setzeVorschaubild(
+    paket: { id: string; schnittstellen?: string[] } | undefined,
+    d: Dokument,
+    sha: unknown,
+    inhalt: unknown,
+  ): Promise<{ dokument: string; mime: string; groesse: number }> {
     await this.zustaendig(paket, d);
     Dateiumwandlung.pruefeStand(d, sha);
     if (!Buffer.isBuffer(inhalt) || !inhalt.length) throw new Fachfehler(422, t('pakete.fassung.leer'));
-    if (inhalt.length > VORSCHAUBILD_MAX_BYTES) throw new Fachfehler(413, t('pakete.vorschaubild.gross', { mb: VORSCHAUBILD_MAX_BYTES / MB }));
+    if (inhalt.length > VORSCHAUBILD_MAX_BYTES)
+      throw new Fachfehler(413, t('pakete.vorschaubild.gross', { mb: VORSCHAUBILD_MAX_BYTES / MB }));
     const mime = fassungsTyp(inhalt);
     if (mime !== 'image/png' && mime !== 'image/jpeg') throw new Fachfehler(415, t('pakete.vorschaubild.typ'));
     const g = bildGroesse(inhalt, mime);
     if (!g || !g.breite || !g.hoehe || g.breite * g.hoehe > BILDPUNKTE_MAX) throw new Fachfehler(422, t('pakete.fassung.bild'));
     if (!this.o.vorschaubild) throw new Fachfehler(503, t('pakete.vorschaubild.aus'));
-    try { await this.o.vorschaubild(d.sha256, inhalt, mime); } catch (e) { throw new Fachfehler(422, t('pakete.vorschaubild.fehler', { grund: (e as Error).message.slice(0, 200) })); }
+    try {
+      await this.o.vorschaubild(d.sha256, inhalt, mime);
+    } catch (e) {
+      throw new Fachfehler(422, t('pakete.vorschaubild.fehler', { grund: (e as Error).message.slice(0, 200) }));
+    }
     log.info('Vorschaubild eines Pakets gespeichert', { dokument: d.id, typ: d.mime, paket: paket?.id });
     return { dokument: d.id, mime: 'image/jpeg', groesse: inhalt.length };
   }
 
   /** Das Paket ist mit der Meldung fertig (oder hat aufgegeben): Die Datei darf wieder gemeldet werden. */
-  erledigt(sha: string) { this.angefordert.delete(sha); }
+  erledigt(sha: string) {
+    this.angefordert.delete(sha);
+  }
 
   /** Datei gelöscht (kein Dokument zeigt mehr darauf): Fassung mit weg. */
   async entferne(sha: string) {
@@ -338,6 +450,7 @@ export class Dateiumwandlung {
   }
 
   /** Name des Dateityps für Hinweise. */
-  static name(mime: string) { return dateitypName(mime); }
+  static name(mime: string) {
+    return dateitypName(mime);
+  }
 }
-

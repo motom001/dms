@@ -27,9 +27,24 @@ export const IN_ANFRAGE_MS = 10_000;
  * einzelner Personen (`zweifaktor_<id>`, `werkbank_ansicht:<id>` …) und Zugangsdaten stehen bewusst nicht darin.
  */
 export const GEMERKTE_EINSTELLUNGEN: ReadonlySet<string> = new Set([
-  'zweifaktor_pflicht', 'zweifaktor_pflicht_seit', 'passkey_pflicht', 'passkey_pflicht_seit', 'aufgaben_empfaenger', 'post', 'papierkorb', 'favoriten_sicht',
-  'stempel', 'erkennung_typen', 'ablageort', 'datenschutz', 'paket_verwehrt', 'ki_typen', 'suche', 'vektoren',
-  'historie', 'wiederherstellung_abschluss',
+  'zweifaktor_pflicht',
+  'zweifaktor_pflicht_seit',
+  'passkey_pflicht',
+  'passkey_pflicht_seit',
+  'aufgaben_empfaenger',
+  'post',
+  'papierkorb',
+  'favoriten_sicht',
+  'stempel',
+  'erkennung_typen',
+  'ablageort',
+  'datenschutz',
+  'paket_verwehrt',
+  'ki_typen',
+  'suche',
+  'vektoren',
+  'historie',
+  'wiederherstellung_abschluss',
   // Merkmale der Ablage (#1032): jede Prüfung von Rechten, Ansichten und Pflichtfeldern liest sie.
   'merkmale',
 ]);
@@ -49,7 +64,13 @@ export function merkeStaende(quelle: object, haushalt: string, werte: Partial<Re
   if (!k) return;
   const da = k.staende;
   const gleich = da && da.quelle === quelle && da.haushalt === haushalt && da.aenderungen === (k.aenderungen ?? 0);
-  k.staende = { quelle, haushalt, werte: gleich ? { ...da.werte, ...werte } : { ...werte }, aenderungen: k.aenderungen ?? 0, zeit: gleich ? da.zeit : Date.now() };
+  k.staende = {
+    quelle,
+    haushalt,
+    werte: gleich ? { ...da.werte, ...werte } : { ...werte },
+    aenderungen: k.aenderungen ?? 0,
+    zeit: gleich ? da.zeit : Date.now(),
+  };
 }
 
 /** Stand aus der Anfrage, wenn er noch gilt (gleiche Verbindung und Haushalt, keine Änderung seitdem, kurz genug). */
@@ -111,7 +132,9 @@ export function jeAnfrage<T>(schluessel: string, bilde: () => Promise<T>): Promi
   if (da && da.aenderungen === aenderungen && Date.now() - da.zeit <= IN_ANFRAGE_MS) return da.wert as Promise<T>;
   const wert = bilde();
   m.set(schluessel, { aenderungen, zeit: Date.now(), wert });
-  wert.catch(() => { if (m.get(schluessel)?.wert === wert) m.delete(schluessel); });
+  wert.catch(() => {
+    if (m.get(schluessel)?.wert === wert) m.delete(schluessel);
+  });
   return wert;
 }
 
@@ -146,8 +169,12 @@ export class Lesespeicher {
   }
 
   /** Für Tests und den Systemzustand: Zahl der Einträge. */
-  get groesse() { return this.eintraege.size; }
-  leere() { this.eintraege.clear(); }
+  get groesse() {
+    return this.eintraege.size;
+  }
+  leere() {
+    this.eintraege.clear();
+  }
 }
 
 const speicher = new WeakMap<object, Map<string, Lesespeicher>>();

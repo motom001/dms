@@ -7,8 +7,28 @@ import { nachweis } from './nachweisjournal';
 const log = protokoll.modul('konto');
 import { Anmeldesperre, type Versuch } from './anmeldesperre';
 import { randomInt, randomUUID } from 'node:crypto';
-import { abwesenheitWirkt, istEmail, istPerson, KEINE_ABWESENHEIT, PASSWORT_MINDESTLAENGE, SYSTEMKONTEN, type Abwesenheit, type Benutzer, type Systemkonto } from '../../shared/src/model';
-import { darfVerwalten, FRISCH_MINUTEN, GESAMT, gleicheVerwaltung, hatGesamt, liesVerwaltung, MODUS_MINUTEN, verwaltungText, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
+import {
+  abwesenheitWirkt,
+  istEmail,
+  istPerson,
+  KEINE_ABWESENHEIT,
+  PASSWORT_MINDESTLAENGE,
+  SYSTEMKONTEN,
+  type Abwesenheit,
+  type Benutzer,
+  type Systemkonto,
+} from '../../shared/src/model';
+import {
+  darfVerwalten,
+  FRISCH_MINUTEN,
+  GESAMT,
+  gleicheVerwaltung,
+  hatGesamt,
+  liesVerwaltung,
+  MODUS_MINUTEN,
+  verwaltungText,
+  type Verwaltungsstand,
+} from '../../shared/src/verwaltungsrecht';
 import { heuteIn } from '../../shared/src/sichten';
 import { Fachfehler } from './fehler';
 import type { KontoRepo, Schutzpruefung, SitzungIntern, SitzungsInfo, Zweck } from './konto-repo';
@@ -37,7 +57,7 @@ const MINUTE = 60_000;
 export const zaehltAlsGesamt = (b: Benutzer) => istPerson(b) && b.aktiv && hatGesamt(b) && (b.hatPasswort || !!b.letzteAnmeldung);
 /** Schutzregel: Mindestens eine Person behält „Gesamte Verwaltung“ – eine Änderung darf die Zahl nicht auf null bringen. */
 export const schutzGesamt: Schutzpruefung = (nachher, vorher) =>
-  (vorher.some(zaehltAlsGesamt) && !nachher.some(zaehltAlsGesamt) ? t('konten.verwaltung.fehler.letzte') : null);
+  vorher.some(zaehltAlsGesamt) && !nachher.some(zaehltAlsGesamt) ? t('konten.verwaltung.fehler.letzte') : null;
 /** Datum (JJJJ-MM-TT) in der Zeitzone der Ablage – der Tagesmerker endet um Mitternacht. */
 const tagVon = (d: Date) => heuteIn(d);
 
@@ -59,13 +79,27 @@ const OHNE_GERAET: Geraet = { geraet: '', ip: '' };
 /** Zweiter Anmeldeschritt (#242, seit #744 im Kurzzustand): Schlüssel ist der Hash der Kennung. */
 const ZWEITER_SCHRITT = 'zweiter-schritt';
 const ZWEITER_SCHRITT_MS = 5 * 60_000;
-interface ZweiterSchritt { benutzerId: string; email: string; ip: string; geraet: string }
+interface ZweiterSchritt {
+  benutzerId: string;
+  email: string;
+  ip: string;
+  geraet: string;
+}
 /** Erneute Anmeldung (#819): Passwort und Code – oder ein Passkey (#811) als `{ kennung, antwort }`. */
-export interface Bestaetigung { passwort?: unknown; code?: unknown; passkey?: unknown }
+export interface Bestaetigung {
+  passwort?: unknown;
+  code?: unknown;
+  passkey?: unknown;
+}
 /** Letzte Aktivität höchstens einmal je Minute schreiben. */
 const BERUEHREN_MS = 60_000;
 
-export interface Ergebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
+export interface Ergebnis {
+  benutzer: Benutzer;
+  mailVerschickt: boolean;
+  link?: string;
+  mailFehler?: string;
+}
 
 /**
  * Anmeldung, Sitzungen, Benutzerverwaltung und Passwort-Links.
@@ -78,13 +112,21 @@ const ZULETZT_MERKEN = 40;
 export class Konten {
   /** Anmeldeschutz (#240); ohne Verbindung mit Standardwerten im Arbeitsspeicher. */
   sperre = new Anmeldesperre();
-  verbindeSperre(s: Anmeldesperre) { this.sperre = s; }
+  verbindeSperre(s: Anmeldesperre) {
+    this.sperre = s;
+  }
   /** Zwei-Faktor-Anmeldung (#242); ohne Verbindung gibt es keine. */
   zweifaktor: Zweifaktor | null = null;
-  verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; this.verbindeAlternative(); }
+  verbindeZweifaktor(z: Zweifaktor) {
+    this.zweifaktor = z;
+    this.verbindeAlternative();
+  }
   /** Passkeys (#811); ohne Verbindung gibt es keine. */
   passkeys: Passkeys | null = null;
-  verbindePasskeys(p: Passkeys) { this.passkeys = p; this.verbindeAlternative(); }
+  verbindePasskeys(p: Passkeys) {
+    this.passkeys = p;
+    this.verbindeAlternative();
+  }
   /** Ein Passkey erfüllt auch die Zwei-Faktor-Pflicht (Entscheidung 11.11.2026, #811). */
   private verbindeAlternative() {
     // Nur ein Passkey für die gepflegte Adresse zählt (Durchsicht Sicherheit): nie die Adresse der Anfrage.
@@ -92,13 +134,17 @@ export class Konten {
   }
   /** Anmeldung über einen Anbieter (#241): aktive Einstellung, sonst null. */
   private anbieter: () => Promise<OidcEinstellung | null> = async () => null;
-  verbindeAnbieter(f: () => Promise<OidcEinstellung | null>) { this.anbieter = f; }
+  verbindeAnbieter(f: () => Promise<OidcEinstellung | null>) {
+    this.anbieter = f;
+  }
   /**
    * Zustand zwischen Anfragen (#744), u. a. der zweite Anmeldeschritt: Nach richtigem Passwort, vor dem Code eine
    * kurzlebige Kennung je Anmeldung – in der Datenbank nur ihr Hash, gültig 5 Minuten, einmal einlösbar.
    */
   private zustand: Kurzzustand = speicherKurzzustand();
-  verbindeZustand(z: Kurzzustand) { this.zustand = z; }
+  verbindeZustand(z: Kurzzustand) {
+    this.zustand = z;
+  }
 
   /**
    * `spiegel` hält die Benutzer-Mappen (#26) auf dem Stand der Konten: Das Konto ist führend,
@@ -113,8 +159,12 @@ export class Konten {
     private spiegel: Benutzerspiegel | null = null,
   ) {}
 
-  private get mailer(): Mailer | null { return typeof this.mailQuelle === 'function' ? this.mailQuelle() : this.mailQuelle; }
-  private get appUrl(): string { return typeof this.adresse === 'function' ? this.adresse() : this.adresse; }
+  private get mailer(): Mailer | null {
+    return typeof this.mailQuelle === 'function' ? this.mailQuelle() : this.mailQuelle;
+  }
+  private get appUrl(): string {
+    return typeof this.adresse === 'function' ? this.adresse() : this.adresse;
+  }
 
   /**
    * Adresse für Links **in Mails**: nur die gepflegte Adresse, nie die der Anfrage. Sonst könnte jemand mit einem
@@ -122,8 +172,12 @@ export class Konten {
    * lassen. Leer: keine Links per Mail – wie ohne Mailversand. Ohne Verbindung (Tests) gilt `adresse`.
    */
   private mailAdresse?: () => string;
-  verbindeMailAdresse(f: () => string) { this.mailAdresse = f; }
-  private get mailUrl(): string { return (this.mailAdresse ? this.mailAdresse() : this.appUrl).replace(/\/+$/, ''); }
+  verbindeMailAdresse(f: () => string) {
+    this.mailAdresse = f;
+  }
+  private get mailUrl(): string {
+    return (this.mailAdresse ? this.mailAdresse() : this.appUrl).replace(/\/+$/, '');
+  }
 
   /** Benutzer-Mappe nachziehen; `abwesenheit` (#962), wenn sich die Abwesenheit geändert hat – dann in derselben Transaktion. */
   private async spiegle(b: Benutzer, von: string | null = null, abwesenheit?: { vorher: Abwesenheit; wegen?: string }) {
@@ -131,9 +185,13 @@ export class Konten {
     return b;
   }
 
-  get mailAktiv() { return !!this.mailer; }
+  get mailAktiv() {
+    return !!this.mailer;
+  }
 
-  async einrichtungNoetig() { return (await this.repo.anzahlBenutzer()) === 0; }
+  async einrichtungNoetig() {
+    return (await this.repo.anzahlBenutzer()) === 0;
+  }
 
   /** Erster Aufruf: legt den Administrator an und meldet ihn an. */
   async einrichten(e: { email?: unknown; name?: unknown; passwort?: unknown }, info: Geraet = OHNE_GERAET) {
@@ -141,13 +199,23 @@ export class Konten {
     const email = pruefeEmail(e.email);
     const passwort = pruefePasswortRegeln(e.passwort);
     // #818: Die erste Person bekommt „Gesamte Verwaltung“ – ein eigenes Admin-Konto gibt es nicht mehr.
-    const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name: text(e.name) || email, verwaltung: [GESAMT], passwortHash: await hashePasswort(passwort) });
+    const benutzer = await this.repo.legeBenutzerAn({
+      id: randomUUID(),
+      email,
+      name: text(e.name) || email,
+      verwaltung: [GESAMT],
+      passwortHash: await hashePasswort(passwort),
+    });
     await this.repo.notiereAnmeldung(benutzer.id);
     await this.spiegle(benutzer, benutzer.id);
     // Gleich im Verwaltungsmodus (#819): Der Einrichtungsassistent richtet danach weiter ein.
     const schluessel = await this.neueSitzung(benutzer.id, { ...info, voll: true });
     const jetzt = new Date();
-    await this.repo.setzeSitzungsVerwaltung(hasheSchluessel(schluessel), { verwaltungSeit: jetzt, verwaltungAktiv: jetzt, verwaltungBestaetigt: jetzt });
+    await this.repo.setzeSitzungsVerwaltung(hasheSchluessel(schluessel), {
+      verwaltungSeit: jetzt,
+      verwaltungAktiv: jetzt,
+      verwaltungBestaetigt: jetzt,
+    });
     log.warn('Verwaltungsmodus begonnen', { person: benutzer.email, imVerwaltungsmodus: true, anmeldung: 'Einrichtung' });
     return { benutzer, schluessel };
   }
@@ -166,7 +234,8 @@ export class Konten {
     await this.sperre.erfolg(email, ip, v);
     // Anbieter (#241): Passwort nur noch für Personen, die verwalten dürfen (Notzugang, #818)?
     const a = await this.anbieter();
-    if (a?.lokalNurAdmins && !darfVerwalten(treffer.benutzer)) throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
+    if (a?.lokalNurAdmins && !darfVerwalten(treffer.benutzer))
+      throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
     return this.nachErstemFaktor(treffer.benutzer, { ip, geraet });
   }
 
@@ -224,17 +293,30 @@ export class Konten {
     const gruppeAdmin = e.adminGruppe ? id.gruppen.includes(e.adminGruppe) : null;
     let b = (await this.repo.holeHash(id.email))?.benutzer;
     if (!b) {
-      if (!e.anlegen) throw new Fachfehler(403, t('anmeldung.fehler.anbieter.unbekannt', { email: id.email }), { anmeldefehler: 'kein-konto' });
+      if (!e.anlegen)
+        throw new Fachfehler(403, t('anmeldung.fehler.anbieter.unbekannt', { email: id.email }), { anmeldefehler: 'kein-konto' });
       const gesamt = gruppeAdmin ?? e.standardrolle === 'admin';
-      b = await this.repo.legeBenutzerAn({ id: randomUUID(), email: id.email, name: id.name || id.email, verwaltung: gesamt ? [GESAMT] : [], passwortHash: null });
+      b = await this.repo.legeBenutzerAn({
+        id: randomUUID(),
+        email: id.email,
+        name: id.name || id.email,
+        verwaltung: gesamt ? [GESAMT] : [],
+        passwortHash: null,
+      });
       await this.spiegle(b, b.id);
       log.info('Benutzer über den Anbieter angelegt', { email: b.email, verwaltung: verwaltungText(b.verwaltung) });
     } else if (gruppeAdmin !== null && gruppeAdmin !== hatGesamt(b) && b.aktiv) {
       const neu = gruppeAdmin ? [GESAMT] : [];
       const r = await this.repo.aendereGeschuetzt(b.id, { verwaltung: neu }, schutzGesamt);
-      if ('grund' in r) log.warn('Verwaltungsrecht nicht aus der Gruppe übernommen: letzte Person mit „Gesamte Verwaltung“', { email: b.email });
+      if ('grund' in r)
+        log.warn('Verwaltungsrecht nicht aus der Gruppe übernommen: letzte Person mit „Gesamte Verwaltung“', { email: b.email });
       else {
-        log.warn('Verwaltungsrecht aus der Gruppe des Anbieters übernommen', { person: b.email, vorher: verwaltungText(b.verwaltung), nachher: verwaltungText(neu), von: 'Anbieter' });
+        log.warn('Verwaltungsrecht aus der Gruppe des Anbieters übernommen', {
+          person: b.email,
+          vorher: verwaltungText(b.verwaltung),
+          nachher: verwaltungText(neu),
+          von: 'Anbieter',
+        });
         if (!gruppeAdmin) await this.repo.vergissVerwaltungVon(b.id);
         b = r.benutzer;
       }
@@ -259,13 +341,19 @@ export class Konten {
   /** Eigenes Passwort bestätigen (z. B. vor dem Abschalten der Zwei-Faktor-Anmeldung). */
   async pruefeEigenesPasswort(b: Benutzer, passwort: unknown) {
     const eintrag = await this.repo.holeHash(b.email);
-    if (!eintrag || !(await pruefePasswort(typeof passwort === 'string' ? passwort : '', eintrag.hash))) throw new Fachfehler(403, t('meldungen.konten.das-passwort-stimmt-nicht'));
+    if (!eintrag || !(await pruefePasswort(typeof passwort === 'string' ? passwort : '', eintrag.hash)))
+      throw new Fachfehler(403, t('meldungen.konten.das-passwort-stimmt-nicht'));
   }
 
   /** Zweiter Schritt (#242): Code aus der App oder ein Wiederherstellungscode. */
   private async merkeZweitenSchritt(benutzerId: string, email: string, g: Geraet) {
     const kennung = neuerSchluessel();
-    await this.zustand.setze(ZWEITER_SCHRITT, hashe(kennung), { benutzerId, email, ip: g.ip, geraet: g.geraet } satisfies ZweiterSchritt, Date.now() + ZWEITER_SCHRITT_MS);
+    await this.zustand.setze(
+      ZWEITER_SCHRITT,
+      hashe(kennung),
+      { benutzerId, email, ip: g.ip, geraet: g.geraet } satisfies ZweiterSchritt,
+      Date.now() + ZWEITER_SCHRITT_MS,
+    );
     return kennung;
   }
 
@@ -294,7 +382,11 @@ export class Konten {
     const benutzer = await this.repo.holeBenutzer(k.benutzerId);
     if (!benutzer || !benutzer.aktiv) throw new Fachfehler(401, t('anmeldung.fehler.falsch'));
     await this.repo.notiereAnmeldung(benutzer.id);
-    return { benutzer, schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: k.geraet, voll: true }), wiederherstellung: art === 'wiederherstellung' };
+    return {
+      benutzer,
+      schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: k.geraet, voll: true }),
+      wiederherstellung: art === 'wiederherstellung',
+    };
   }
 
   /* ---------- Passkeys (#811) ---------- */
@@ -307,7 +399,7 @@ export class Konten {
   /** Zweiter Schritt mit Kennung (aus dem Kurzzustand), nur von derselben Adresse wie der erste. */
   private async zweiterSchritt(kennung: unknown, ip: string): Promise<{ schluessel: string; k: ZweiterSchritt }> {
     const schluessel = typeof kennung === 'string' && kennung ? hashe(kennung) : '';
-    const k = schluessel ? (await this.zustand.lies(ZWEITER_SCHRITT, schluessel))?.wert as ZweiterSchritt | undefined : undefined;
+    const k = schluessel ? ((await this.zustand.lies(ZWEITER_SCHRITT, schluessel))?.wert as ZweiterSchritt | undefined) : undefined;
     if (!k || k.ip !== ip) throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
     return { schluessel, k };
   }
@@ -343,19 +435,34 @@ export class Konten {
     if (z && !(await this.zustand.nimm(ZWEITER_SCHRITT, z.schluessel))) throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
     const benutzer = await this.passkeyPerson(treffer.benutzerId, !z);
     await this.repo.notiereAnmeldung(benutzer.id);
-    return { benutzer, schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: z?.k.geraet ?? geraet, voll: true }), passkey: treffer.name };
+    return {
+      benutzer,
+      schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: z?.k.geraet ?? geraet, voll: true }),
+      passkey: treffer.name,
+    };
   }
 
   /** Höchstens 5 Versuche je Kennung des zweiten Schritts, wie beim Code (#744, #956). */
   private async zaehleZweitenSchritt(schluessel: string) {
     const n = await this.zustand.erhoehe(ZWEITER_SCHRITT, schluessel);
-    if (n === null || n > 5) { await this.zustand.loesche(ZWEITER_SCHRITT, schluessel); throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen')); }
+    if (n === null || n > 5) {
+      await this.zustand.loesche(ZWEITER_SCHRITT, schluessel);
+      throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
+    }
   }
 
   /** Antwort des Geräts prüfen; ein Fehlschlag zählt in den Anmeldeschutz, ein Erfolg setzt ihn zurück. */
-  private async pruefePasskey(e: { kennung?: unknown; antwort?: unknown }, z: { schluessel: string; k: ZweiterSchritt } | null, s: { email: string; ip: string; v: Versuch; bekannt: boolean }) {
+  private async pruefePasskey(
+    e: { kennung?: unknown; antwort?: unknown },
+    z: { schluessel: string; k: ZweiterSchritt } | null,
+    s: { email: string; ip: string; v: Versuch; bekannt: boolean },
+  ) {
     try {
-      const treffer = await this.pk().pruefeAnmeldung(e.kennung, e.antwort, z ? { zweck: 'zweiter-schritt', benutzerId: z.k.benutzerId } : { zweck: 'anmelden' });
+      const treffer = await this.pk().pruefeAnmeldung(
+        e.kennung,
+        e.antwort,
+        z ? { zweck: 'zweiter-schritt', benutzerId: z.k.benutzerId } : { zweck: 'anmelden' },
+      );
       if (z && treffer.bezug !== z.schluessel) throw new Fachfehler(401, t('anmeldung.passkey.fehler.falsch'));
       await this.sperre.erfolg(s.email, s.ip, s.v);
       return treffer;
@@ -385,7 +492,9 @@ export class Konten {
   /** Bestätigung für „Passwörter für Dokumente“ mit Passkey (#811, #827); wirft 403 bei Fehlern. */
   async pruefePasskeyFuerDokumente(b: Benutzer, passkey: unknown) {
     const p = (passkey && typeof passkey === 'object' ? passkey : {}) as { kennung?: unknown; antwort?: unknown };
-    try { await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'dokumentpasswoerter', benutzerId: b.id }); } catch (x) {
+    try {
+      await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'dokumentpasswoerter', benutzerId: b.id });
+    } catch (x) {
       throw new Fachfehler(403, x instanceof Fachfehler ? x.message : t('anmeldung.passkey.fehler.falsch'));
     }
   }
@@ -393,7 +502,11 @@ export class Konten {
   private async neueSitzung(benutzerId: string, info: Geraet & { voll?: boolean }, vertretungId: string | null = null) {
     const schluessel = neuerSchluessel();
     // Eine vertretene Sitzung (#43) ist nie eine Anmeldung mit allen Faktoren (#819).
-    await this.repo.legeSitzungAn(hasheSchluessel(schluessel), benutzerId, new Date(Date.now() + SITZUNG_TAGE * TAG), { ...info, vertretungId, voll: !!info.voll && !vertretungId });
+    await this.repo.legeSitzungAn(hasheSchluessel(schluessel), benutzerId, new Date(Date.now() + SITZUNG_TAGE * TAG), {
+      ...info,
+      vertretungId,
+      voll: !!info.voll && !vertretungId,
+    });
     return schluessel;
   }
 
@@ -428,10 +541,14 @@ export class Konten {
     const aktiv = this.modusAktiv(b, s);
     const zuletzt = s?.verwaltungAktiv ?? s?.verwaltungSeit;
     return {
-      darf: darfVerwalten(b) && !s?.vertretungId, aktiv,
+      darf: darfVerwalten(b) && !s?.vertretungId,
+      aktiv,
       bis: aktiv && zuletzt ? new Date(zuletzt.getTime() + MODUS_MINUTEN * MINUTE).toISOString() : null,
-      heuteBestaetigt: this.heuteBestaetigt(s), frisch: this.istFrisch(s),
-      code: !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id)), passwort: b.hatPasswort, passkey: await this.passkeyNutzbar(b),
+      heuteBestaetigt: this.heuteBestaetigt(s),
+      frisch: this.istFrisch(s),
+      code: !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id)),
+      passwort: b.hatPasswort,
+      passkey: await this.passkeyNutzbar(b),
       bereiche: hatGesamt(b) ? null : [...(b.verwaltung ?? [])],
     };
   }
@@ -440,13 +557,22 @@ export class Konten {
    * Bei jeder Anfrage: Läuft der Modus, zählt eine Aktivität (Klick, Eingabe, Änderung) als „noch da“; ist er
    * abgelaufen, endet er hier – mit Eintrag im Protokoll. Liefert, ob er (noch) läuft.
    */
-  async modusPruefen(b: Benutzer | undefined, schluessel: string | undefined, s: SitzungIntern | undefined, aktivitaet: boolean): Promise<boolean> {
+  async modusPruefen(
+    b: Benutzer | undefined,
+    schluessel: string | undefined,
+    s: SitzungIntern | undefined,
+    aktivitaet: boolean,
+  ): Promise<boolean> {
     if (!b || !s || !schluessel || !s.verwaltungSeit) return false;
     const hash = hasheSchluessel(schluessel);
     if (!this.modusAktiv(b, s)) {
       await this.repo.setzeSitzungsVerwaltung(hash, { verwaltungSeit: null, verwaltungAktiv: null });
-      s.verwaltungSeit = null; s.verwaltungAktiv = null;
-      log.info(darfVerwalten(b) ? 'Verwaltungsmodus abgelaufen' : 'Verwaltungsmodus beendet: kein Verwaltungsrecht mehr', { person: b.email, imVerwaltungsmodus: true });
+      s.verwaltungSeit = null;
+      s.verwaltungAktiv = null;
+      log.info(darfVerwalten(b) ? 'Verwaltungsmodus abgelaufen' : 'Verwaltungsmodus beendet: kein Verwaltungsrecht mehr', {
+        person: b.email,
+        imVerwaltungsmodus: true,
+      });
       return false;
     }
     // Höchstens alle 30 Sekunden schreiben – das genügt für 15 Minuten.
@@ -468,7 +594,9 @@ export class Konten {
     if (e.passkey !== undefined && e.passkey !== null) {
       const p = (typeof e.passkey === 'object' ? e.passkey : {}) as { kennung?: unknown; antwort?: unknown };
       const v = await this.sperre.versuch(email, ip);
-      try { await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'bestaetigen', benutzerId: b.id }); } catch (x) {
+      try {
+        await this.pk().pruefeAnmeldung(p.kennung, p.antwort, { zweck: 'bestaetigen', benutzerId: b.id });
+      } catch (x) {
         await this.sperre.fehlschlag(email, ip, true, v);
         log.warn('Erneute Anmeldung fehlgeschlagen', { person: b.email, wofuer, ip, grund: 'Passkey' });
         const m = x instanceof Fachfehler ? x.message : t('anmeldung.passkey.fehler.falsch');
@@ -477,7 +605,8 @@ export class Konten {
       await this.sperre.erfolg(email, ip, v);
       return;
     }
-    if (!b.hatPasswort) throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true, passkey: await this.passkeyNutzbar(b) });
+    if (!b.hatPasswort)
+      throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true, passkey: await this.passkeyNutzbar(b) });
     const v = await this.sperre.versuch(email, ip);
     const treffer = await this.repo.holeHash(email);
     const ok = await pruefePasswort(typeof e.passwort === 'string' ? e.passwort : '', treffer?.hash);
@@ -486,7 +615,11 @@ export class Konten {
     if (!ok || !codeOk) {
       await this.sperre.fehlschlag(email, ip, true, v);
       log.warn('Erneute Anmeldung fehlgeschlagen', { person: b.email, wofuer, ip, grund: ok ? 'Code' : 'Passwort' });
-      throw new Fachfehler(401, t(ok ? 'anmeldung.fehler.code' : 'konten.verwaltung.fehler.passwort'), { bestaetigen: true, code: mitCode, passkey: await this.passkeyNutzbar(b) });
+      throw new Fachfehler(401, t(ok ? 'anmeldung.fehler.code' : 'konten.verwaltung.fehler.passwort'), {
+        bestaetigen: true,
+        code: mitCode,
+        passkey: await this.passkeyNutzbar(b),
+      });
     }
     await this.sperre.erfolg(email, ip, v);
   }
@@ -503,21 +636,40 @@ export class Konten {
     const jetzt = new Date(this.uhr());
     const mitAngaben = e.passwort !== undefined || (e.passkey !== undefined && e.passkey !== null);
     let wie: 'bestaetigt' | 'frisch' | 'wieder';
-    if (mitAngaben) { await this.bestaetigeErneut(b, e, ip, 'Verwaltungsmodus'); wie = 'bestaetigt'; }
-    else if (this.istFrisch(s)) wie = 'frisch';
+    if (mitAngaben) {
+      await this.bestaetigeErneut(b, e, ip, 'Verwaltungsmodus');
+      wie = 'bestaetigt';
+    } else if (this.istFrisch(s)) wie = 'frisch';
     else if (this.heuteBestaetigt(s)) wie = 'wieder';
     else {
       const mitCode = !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id));
-      throw new Fachfehler(401, t('konten.verwaltung.fehler.bestaetigen'), { bestaetigen: true, code: mitCode, anbieter: !b.hatPasswort, passkey: await this.passkeyNutzbar(b) });
+      throw new Fachfehler(401, t('konten.verwaltung.fehler.bestaetigen'), {
+        bestaetigen: true,
+        code: mitCode,
+        anbieter: !b.hatPasswort,
+        passkey: await this.passkeyNutzbar(b),
+      });
     }
     await this.repo.setzeSitzungsVerwaltung(hash, {
-      verwaltungSeit: jetzt, verwaltungAktiv: jetzt,
+      verwaltungSeit: jetzt,
+      verwaltungAktiv: jetzt,
       // Die Anmeldung selbst oder die erneute zählt als Bestätigung für heute; der Wiedereinstieg verlängert nichts.
       ...(wie === 'wieder' ? {} : { verwaltungBestaetigt: jetzt }),
       ...(wie === 'bestaetigt' ? { frisch: jetzt } : {}),
     });
-    log.warn(wie === 'wieder' ? 'Verwaltungsmodus wieder aufgenommen' : 'Verwaltungsmodus begonnen', { person: b.email, imVerwaltungsmodus: true, anmeldung: wie === 'bestaetigt' ? 'erneut angemeldet' : wie === 'frisch' ? 'Anmeldung vor höchstens 10 Minuten' : 'heute schon bestätigt', ip });
-    return this.verwaltungsstand(b, { ...s, verwaltungSeit: jetzt, verwaltungAktiv: jetzt, ...(wie === 'bestaetigt' ? { frisch: jetzt, verwaltungBestaetigt: jetzt } : {}) });
+    log.warn(wie === 'wieder' ? 'Verwaltungsmodus wieder aufgenommen' : 'Verwaltungsmodus begonnen', {
+      person: b.email,
+      imVerwaltungsmodus: true,
+      anmeldung:
+        wie === 'bestaetigt' ? 'erneut angemeldet' : wie === 'frisch' ? 'Anmeldung vor höchstens 10 Minuten' : 'heute schon bestätigt',
+      ip,
+    });
+    return this.verwaltungsstand(b, {
+      ...s,
+      verwaltungSeit: jetzt,
+      verwaltungAktiv: jetzt,
+      ...(wie === 'bestaetigt' ? { frisch: jetzt, verwaltungBestaetigt: jetzt } : {}),
+    });
   }
 
   /**
@@ -542,7 +694,9 @@ export class Konten {
       const da = je.get(b.id);
       if (!da || seit < da.seit) je.set(b.id, { name: b.name || b.email, seit });
     }
-    return [...je.values()].sort((a, b) => a.seit - b.seit || a.name.localeCompare(b.name, 'de')).map((x) => ({ name: x.name, seit: new Date(x.seit).toISOString() }));
+    return [...je.values()]
+      .sort((a, b) => a.seit - b.seit || a.name.localeCompare(b.name, 'de'))
+      .map((x) => ({ name: x.name, seit: new Date(x.seit).toISOString() }));
   }
 
   /** „Verwaltung beenden“ (#819). Der Tagesmerker bleibt – der Wiedereinstieg heute geht mit einem Klick. */
@@ -563,10 +717,14 @@ export class Konten {
   }
 
   /** Kann die Person hier mit einem Passkey bestätigen (#811)? */
-  private async passkeyNutzbar(b: Benutzer): Promise<boolean> { return !!this.passkeys && (await this.passkeys.nutzbar(b.id)); }
+  private async passkeyNutzbar(b: Benutzer): Promise<boolean> {
+    return !!this.passkeys && (await this.passkeys.nutzbar(b.id));
+  }
 
   /** Zwei-Faktor geändert (#819): Modus, Tagesmerker und frische Anmeldung in allen Sitzungen aufheben. */
-  async zweifaktorGeaendert(benutzerId: string) { await this.repo.vergissVerwaltungVon(benutzerId); }
+  async zweifaktorGeaendert(benutzerId: string) {
+    await this.repo.vergissVerwaltungVon(benutzerId);
+  }
 
   async abmelden(schluessel?: string) {
     if (!schluessel) return;
@@ -582,9 +740,15 @@ export class Konten {
     const hash = hasheSchluessel(schluessel);
     // Sitzung und Person in einer Abfrage (#741), nie aus einem Zwischenspeicher: Sperren, Abmelden und Löschen
     // wirken mit der nächsten Anfrage – in jedem Prozess.
-    const x = this.repo.holeAnmeldung ? await this.repo.holeAnmeldung(hash)
-      : await (async () => { const s = await this.repo.holeSitzung(hash); const b = s && await this.repo.holeBenutzer(s.benutzerId); return s && b ? { sitzung: s, benutzer: b } : undefined; })();
-    const s = x?.sitzung; const b = x?.benutzer;
+    const x = this.repo.holeAnmeldung
+      ? await this.repo.holeAnmeldung(hash)
+      : await (async () => {
+          const s = await this.repo.holeSitzung(hash);
+          const b = s && (await this.repo.holeBenutzer(s.benutzerId));
+          return s && b ? { sitzung: s, benutzer: b } : undefined;
+        })();
+    const s = x?.sitzung;
+    const b = x?.benutzer;
     if (!s || s.ablauf.getTime() < Date.now()) return undefined;
     // Systemkonten (#673) haben nie eine Sitzung – auch eine untergeschobene gilt nicht.
     if (!b || !b.aktiv || b.art === 'system') return undefined;
@@ -616,7 +780,9 @@ export class Konten {
     if (da?.aktiv) await this.repo.aendereBenutzer(da.id, { aktiv: false });
   }
 
-  listeDienstkonten() { return this.repo.listeDienstkonten(); }
+  listeDienstkonten() {
+    return this.repo.listeDienstkonten();
+  }
 
   /**
    * Systemkonto des DMS (#673) anlegen, falls es fehlt (beim Start). Meldet sich nie an: kein Passwort, keine Sitzung,
@@ -627,7 +793,9 @@ export class Konten {
     if (da) return da.aktiv ? da : this.repo.aendereBenutzer(da.id, { aktiv: true });
     return this.repo.legeSystemkontoAn({ id: randomUUID(), kennung, name: SYSTEMKONTEN[kennung] });
   }
-  listeSystemkonten() { return this.repo.listeSystemkonten(); }
+  listeSystemkonten() {
+    return this.repo.listeSystemkonten();
+  }
 
   /** Benutzer für Verwaltung, Vertretung, Abwesenheit, Links (#338): Dienstkonten von Paketen gibt es dort nicht. */
   private async person(id: string): Promise<Benutzer | undefined> {
@@ -636,7 +804,9 @@ export class Konten {
   }
 
   /** Mensch zur E-Mail-Adresse (#670: Ereignis „Benutzerkonto gesperrt“ nennt die Id, nicht die Adresse). */
-  async personMitEmail(email: string): Promise<Benutzer | undefined> { return (await this.repo.holeHash(email))?.benutzer; }
+  async personMitEmail(email: string): Promise<Benutzer | undefined> {
+    return (await this.repo.holeHash(email))?.benutzer;
+  }
 
   /** Aktiver Benutzer zur Id (für API-Schlüssel). */
   async benutzerMitId(id: string): Promise<Benutzer | undefined> {
@@ -684,10 +854,32 @@ export class Konten {
 
   /** Alle angemeldeten Sitzungen aller Benutzer, für den Wartungsmodus (#102). */
   async alleSitzungen(aktuelleId?: string) {
-    const erg: Array<{ id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }> = [];
+    const erg: Array<{
+      id: string;
+      benutzerId: string;
+      name: string;
+      email: string;
+      rolle: string;
+      geraet: string;
+      ip: string;
+      zuletztAktiv: string;
+      erstellt: string;
+      aktuell: boolean;
+    }> = [];
     for (const b of await this.repo.listeBenutzer()) {
       for (const s of await this.repo.listeSitzungen(b.id)) {
-        erg.push({ id: s.id, benutzerId: b.id, name: b.name, email: b.email, rolle: darfVerwalten(b) ? 'admin' : 'mitglied', geraet: s.geraet, ip: s.ip, zuletztAktiv: s.zuletztAktiv, erstellt: s.erstellt, aktuell: s.id === aktuelleId });
+        erg.push({
+          id: s.id,
+          benutzerId: b.id,
+          name: b.name,
+          email: b.email,
+          rolle: darfVerwalten(b) ? 'admin' : 'mitglied',
+          geraet: s.geraet,
+          ip: s.ip,
+          zuletztAktiv: s.zuletztAktiv,
+          erstellt: s.erstellt,
+          aktuell: s.id === aktuelleId,
+        });
       }
     }
     return erg.sort((a, b) => b.zuletztAktiv.localeCompare(a.zuletztAktiv));
@@ -745,7 +937,9 @@ export class Konten {
 
   /* ---------- Persönliche Einstellungen ---------- */
 
-  einstellungen(ich: Benutzer) { return this.repo.einstellungen(ich.id); }
+  einstellungen(ich: Benutzer) {
+    return this.repo.einstellungen(ich.id);
+  }
 
   /**
    * Startseite (#334): zuletzt geöffnete Mappen merken, neueste zuerst, mit Zeitpunkt (#940). Die Liste „Zuletzt
@@ -758,13 +952,18 @@ export class Konten {
 
   async setzeEinstellung(ich: Benutzer, schluessel: string, wert: unknown) {
     if (!/^[a-z][a-z0-9:_-]{0,80}$/i.test(schluessel)) throw new Fachfehler(422, t('meldungen.konten.ungueltiger-name-der-einstellung'));
-    if (wert !== null && JSON.stringify(wert ?? null).length > 4000) throw new Fachfehler(422, t('meldungen.konten.die-einstellung-ist-zu'));
+    if (wert !== null && JSON.stringify(wert ?? null).length > 4000)
+      throw new Fachfehler(422, t('meldungen.konten.die-einstellung-ist-zu'));
     await this.repo.setzeEinstellung(ich.id, schluessel, wert ?? null);
   }
 
   /** Hinweise für den Benutzer: Wer hat als er agiert? */
-  hinweise(benutzerId: string) { return this.repo.ungeseheneVertretungen(benutzerId); }
-  hinweiseGesehen(benutzerId: string) { return this.repo.markiereGesehen(benutzerId); }
+  hinweise(benutzerId: string) {
+    return this.repo.ungeseheneVertretungen(benutzerId);
+  }
+  hinweiseGesehen(benutzerId: string) {
+    return this.repo.markiereGesehen(benutzerId);
+  }
 
   /* ---------- Eigenes Profil ---------- */
 
@@ -777,7 +976,11 @@ export class Konten {
 
   private async benachrichtige(an: string, m: { betreff: string; text: string }, log: (m: string) => void) {
     if (!this.mailer) return;
-    try { await this.mailer.sende(an, m.betreff, m.text); } catch (e) { log(`Hinweis-Mail an ${an} fehlgeschlagen: ${(e as Error).message}`); }
+    try {
+      await this.mailer.sende(an, m.betreff, m.text);
+    } catch (e) {
+      log(`Hinweis-Mail an ${an} fehlgeschlagen: ${(e as Error).message}`);
+    }
   }
 
   async aendereProfil(ich: Benutzer, e: { name?: unknown; entwicklermodus?: unknown; sprache?: unknown; uebersetzen?: unknown }) {
@@ -812,7 +1015,12 @@ export class Konten {
   }
 
   /** Neues Passwort; beendet alle Sitzungen und gibt eine frische zurück. */
-  async aenderePasswort(ich: Benutzer, e: { passwortAlt?: unknown; passwortNeu?: unknown }, log: (m: string) => void = () => {}, info: Geraet = OHNE_GERAET) {
+  async aenderePasswort(
+    ich: Benutzer,
+    e: { passwortAlt?: unknown; passwortNeu?: unknown },
+    log: (m: string) => void = () => {},
+    info: Geraet = OHNE_GERAET,
+  ) {
     await this.bestaetige(ich, e.passwortAlt);
     const neu = pruefePasswortRegeln(e.passwortNeu);
     await this.repo.setzeHash(ich.id, await hashePasswort(neu));
@@ -826,16 +1034,29 @@ export class Konten {
 
   /* ---------- Benutzerverwaltung (nur Admin) ---------- */
 
-  listeBenutzer() { return this.repo.listeBenutzer(); }
+  listeBenutzer() {
+    return this.repo.listeBenutzer();
+  }
 
   /** Vollexport (#254): Benutzer ohne Passwörter, mit ihren Einstellungen; Vertretungen. */
   async exportDaten() {
-    const benutzer = await Promise.all((await this.repo.listeBenutzer()).map(async (b) => ({
-      id: b.id, email: b.email, name: b.name, verwaltung: b.verwaltung ?? [], aktiv: b.aktiv, erstellt: b.erstellt, letzteAnmeldung: b.letzteAnmeldung,
-      abwesenheit: b.abwesenheit ?? null, einstellungen: await this.repo.einstellungen(b.id),
-      // Passkeys (#811): nur Name und Zeitpunkte – Schlüssel gehören zur Installation, nicht in einen Export.
-      passkeys: this.passkeys ? (await this.passkeys.liste(b.id)).map((p) => ({ name: p.name, erstellt: p.erstellt, zuletzt: p.zuletzt })) : [],
-    })));
+    const benutzer = await Promise.all(
+      (await this.repo.listeBenutzer()).map(async (b) => ({
+        id: b.id,
+        email: b.email,
+        name: b.name,
+        verwaltung: b.verwaltung ?? [],
+        aktiv: b.aktiv,
+        erstellt: b.erstellt,
+        letzteAnmeldung: b.letzteAnmeldung,
+        abwesenheit: b.abwesenheit ?? null,
+        einstellungen: await this.repo.einstellungen(b.id),
+        // Passkeys (#811): nur Name und Zeitpunkte – Schlüssel gehören zur Installation, nicht in einen Export.
+        passkeys: this.passkeys
+          ? (await this.passkeys.liste(b.id)).map((p) => ({ name: p.name, erstellt: p.erstellt, zuletzt: p.zuletzt }))
+          : [],
+      })),
+    );
     return { benutzer, vertretungen: await this.repo.alleVertretungen() };
   }
   /** Persönlicher Export (#255): nur der Benutzer selbst. */
@@ -848,19 +1069,32 @@ export class Konten {
   /** Für Namen und Empfängerauswahl; mit Abwesenheit, solange sie an ist (#78). */
   async personen() {
     const alle = await this.repo.listeBenutzer();
-    const name = (id: string | null) => { const b = alle.find((x) => x.id === id); return b ? b.name || b.email : ''; };
+    const name = (id: string | null) => {
+      const b = alle.find((x) => x.id === id);
+      return b ? b.name || b.email : '';
+    };
     const heute = heuteIn();
-    return alle.map((b) => {
-      const a = b.abwesenheit;
-      const abwesend = a?.an && (!a.bis || a.bis >= heute)
-        ? { wirkt: abwesenheitWirkt(a, heute), von: a.von, bis: a.bis, vertreter: name(a.vertreterId) } : undefined;
-      return { id: b.id, name: b.name || b.email, aktiv: b.aktiv, ...(!b.aktiv && b.deaktiviert ? { deaktiviert: b.deaktiviert } : {}), ...(abwesend ? { abwesend } : {}) };
-    }).concat(
-      // Dienstkonten der Pakete (#338): nur für Namen in Historie und „angelegt von“ – nie auswählbar (aktiv: false).
-      (await this.repo.listeDienstkonten()).map((b) => ({ id: b.id, name: b.name, aktiv: false, art: 'dienst' as const })),
-      // Systemkonten (#673), z. B. „Automatisierung“: ebenso nur für Namen.
-      (await this.repo.listeSystemkonten()).map((b) => ({ id: b.id, name: b.name, aktiv: false, art: 'system' as const })),
-    );
+    return alle
+      .map((b) => {
+        const a = b.abwesenheit;
+        const abwesend =
+          a?.an && (!a.bis || a.bis >= heute)
+            ? { wirkt: abwesenheitWirkt(a, heute), von: a.von, bis: a.bis, vertreter: name(a.vertreterId) }
+            : undefined;
+        return {
+          id: b.id,
+          name: b.name || b.email,
+          aktiv: b.aktiv,
+          ...(!b.aktiv && b.deaktiviert ? { deaktiviert: b.deaktiviert } : {}),
+          ...(abwesend ? { abwesend } : {}),
+        };
+      })
+      .concat(
+        // Dienstkonten der Pakete (#338): nur für Namen in Historie und „angelegt von“ – nie auswählbar (aktiv: false).
+        (await this.repo.listeDienstkonten()).map((b) => ({ id: b.id, name: b.name, aktiv: false, art: 'dienst' as const })),
+        // Systemkonten (#673), z. B. „Automatisierung“: ebenso nur für Namen.
+        (await this.repo.listeSystemkonten()).map((b) => ({ id: b.id, name: b.name, aktiv: false, art: 'system' as const })),
+      );
   }
 
   /* ---------- Abwesenheit mit Vertreter (#78) ---------- */
@@ -875,10 +1109,16 @@ export class Konten {
     const datum = (v: unknown, was: string): string | null => {
       const text2 = text(v);
       if (!text2) return null;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(text2) || Number.isNaN(Date.parse(text2))) throw new Fachfehler(422, t('meldungen.konten.bitte-ein-gueltiges-datum', { was }));
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(text2) || Number.isNaN(Date.parse(text2)))
+        throw new Fachfehler(422, t('meldungen.konten.bitte-ein-gueltiges-datum', { was }));
       return text2;
     };
-    const a: Abwesenheit = { an: e.an === true || e.an === 'true', von: datum(e.von, 'von'), bis: datum(e.bis, 'bis'), vertreterId: text(e.vertreterId) || null };
+    const a: Abwesenheit = {
+      an: e.an === true || e.an === 'true',
+      von: datum(e.von, 'von'),
+      bis: datum(e.bis, 'bis'),
+      vertreterId: text(e.vertreterId) || null,
+    };
     if (a.von && a.bis && a.bis < a.von) throw new Fachfehler(422, t('meldungen.konten.bis-liegt-vor-von'));
     if (a.an && a.bis && a.bis < heuteIn()) throw new Fachfehler(422, t('meldungen.konten.bis-liegt-in-der'));
     if (a.vertreterId) {
@@ -911,7 +1151,10 @@ export class Konten {
       if (!a) continue;
       if (a.an && a.bis && a.bis < heute) {
         const neu = await this.repo.setzeAbwesenheit(b.id, { ...a, an: false, von: null, bis: null });
-        await this.spiegle(neu, null, { vorher: a, wegen: t('meldungen.konten.zeitraum-bis-abgelaufen', { reverse: a.bis.split('-').reverse().join('.') }) });
+        await this.spiegle(neu, null, {
+          vorher: a,
+          wegen: t('meldungen.konten.zeitraum-bis-abgelaufen', { reverse: a.bis.split('-').reverse().join('.') }),
+        });
       } else if (a.an) await this.spiegle(b);
     }
   }
@@ -923,9 +1166,21 @@ export class Konten {
   async legeBenutzerAn(e: { email?: unknown; name?: unknown; verwaltung?: unknown }, von: string | null = null): Promise<Ergebnis> {
     const email = pruefeEmail(e.email);
     if (await this.repo.holeHash(email)) throw new Fachfehler(409, t('meldungen.konten.fuer-diese-e-mail'));
-    const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name: text(e.name), verwaltung: liesVerwaltung(e.verwaltung), passwortHash: null });
+    const benutzer = await this.repo.legeBenutzerAn({
+      id: randomUUID(),
+      email,
+      name: text(e.name),
+      verwaltung: liesVerwaltung(e.verwaltung),
+      passwortHash: null,
+    });
     await this.spiegle(benutzer, von);
-    if (benutzer.verwaltung?.length) log.warn('Verwaltungsrecht vergeben', { person: benutzer.email, vorher: '–', nachher: verwaltungText(benutzer.verwaltung), von: von ?? 'Konsole' });
+    if (benutzer.verwaltung?.length)
+      log.warn('Verwaltungsrecht vergeben', {
+        person: benutzer.email,
+        vorher: '–',
+        nachher: verwaltungText(benutzer.verwaltung),
+        von: von ?? 'Konsole',
+      });
     return this.verschickeLink(benutzer, 'einladung');
   }
 
@@ -960,12 +1215,20 @@ export class Konten {
     const entzogen = vorher.some((x) => !neu.includes(x)) && !neu.includes(GESAMT);
     if (entzogen) await this.repo.vergissVerwaltungVon(id);
     // Protokoll deutsch, die Mail in der Sprache der Person, die sie bekommt (#729).
-    const daten = inSprache('de', () => ({ person: b.email, vorher: verwaltungText(vorher), nachher: verwaltungText(neu), von: ich.email, imVerwaltungsmodus: ich.rolle === 'admin' }));
+    const daten = inSprache('de', () => ({
+      person: b.email,
+      vorher: verwaltungText(vorher),
+      nachher: verwaltungText(neu),
+      von: ich.email,
+      imVerwaltungsmodus: ich.rolle === 'admin',
+    }));
     log.warn(!neu.length ? 'Verwaltungsrecht entzogen' : !vorher.length ? 'Verwaltungsrecht vergeben' : 'Verwaltungsrecht geändert', daten);
     void nachweis('zugang.rechte', { was: 'verwaltung', konto: b.email, vorher, nachher: neu, von: ich.email });
     for (const x of await this.repo.listeBenutzer()) {
       if (!zaehltAlsGesamt(x) || x.email.endsWith('.invalid')) continue;
-      const m = mitSpracheVon(x, () => mailtexte.verwaltungsrecht(b.name || b.email, verwaltungText(vorher), verwaltungText(neu), ich.name || ich.email));
+      const m = mitSpracheVon(x, () =>
+        mailtexte.verwaltungsrecht(b.name || b.email, verwaltungText(vorher), verwaltungText(neu), ich.name || ich.email),
+      );
       await this.benachrichtige(x.email, m, mailLog);
     }
     return r.benutzer;
@@ -1002,7 +1265,8 @@ export class Konten {
     if (!b) throw new Fachfehler(404, t('meldungen.konten.diesen-benutzer-gibt-es'));
     if (id === ich.id) throw new Fachfehler(409, t('meldungen.konten.du-kannst-dich-nicht-2'));
     this.pruefeKontoVonVerwaltenden(ich, b);
-    if (zaehltAlsGesamt(b) && !(await this.repo.listeBenutzer()).some((x) => x.id !== id && zaehltAlsGesamt(x))) throw new Fachfehler(409, t('konten.verwaltung.fehler.letzte'));
+    if (zaehltAlsGesamt(b) && !(await this.repo.listeBenutzer()).some((x) => x.id !== id && zaehltAlsGesamt(x)))
+      throw new Fachfehler(409, t('konten.verwaltung.fehler.letzte'));
     // Wer schon angemeldet war, hat Spuren hinterlassen (angelegt von, Verweise): deaktivieren statt löschen (#26).
     // Löschen bleibt für Einladungen, die nie angenommen wurden, z. B. bei einer vertippten Adresse.
     if (b.hatPasswort || b.letzteAnmeldung) throw new Fachfehler(409, t('meldungen.konten.wer-sich-schon-angemeldet'));
@@ -1030,7 +1294,7 @@ export class Konten {
       // Eine Person ohne die Liste aller (#1256): Vertretung und Alltags-Empfänger je Anfrage.
       person: (id: string) => this.person(id),
       // Testlauf der Rechte (#710): auch Systemkonten und Dienstkonten der Pakete.
-      ohneMensch: async () => [...await this.repo.listeSystemkonten(), ...await this.repo.listeDienstkonten()],
+      ohneMensch: async () => [...(await this.repo.listeSystemkonten()), ...(await this.repo.listeDienstkonten())],
       dienstkonten: () => this.repo.listeDienstkonten(),
       // Favorit = Abo (#422): persönliche Einstellungen (Benachrichtigen, Hervorheben).
       einstellungen: (id: string) => this.repo.einstellungen(id),
@@ -1103,9 +1367,27 @@ export class Konten {
    * `minuten` gilt; beim Öffnen legt man ein eigenes Passwort fest. Der Link wird nicht verschickt.
    */
   async notfallzugang(minuten: number, jetzt = new Date()): Promise<{ benutzer: Benutzer; link: string; ablauf: Date }> {
-    const teile = Object.fromEntries(new Intl.DateTimeFormat('de-DE', { timeZone: zeitzone(), year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-      .formatToParts(jetzt).map((x) => [x.type, x.value]));
-    const name = t('meldungen.konten.notfall-admin', { day: teile.day, month: teile.month, year: teile.year, hour: teile.hour, minute: teile.minute });
+    const teile = Object.fromEntries(
+      new Intl.DateTimeFormat('de-DE', {
+        timeZone: zeitzone(),
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      })
+        .formatToParts(jetzt)
+        .map((x) => [x.type, x.value]),
+    );
+    const name = t('meldungen.konten.notfall-admin', {
+      day: teile.day,
+      month: teile.month,
+      year: teile.year,
+      hour: teile.hour,
+      minute: teile.minute,
+    });
     const email = `notfall-${teile.year}${teile.month}${teile.day}-${teile.hour}${teile.minute}${teile.second}@notfall.invalid`;
     const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name, verwaltung: [GESAMT], passwortHash: null });
     await this.spiegle(benutzer);
@@ -1133,9 +1415,11 @@ export class Konten {
     if (!basis) return { benutzer: b, mailVerschickt: false, link, mailFehler: t('meldungen.konten.link-ohne-adresse') };
     const mailLink = `${basis}/passwort/${schluessel}`;
     // In der Sprache der Person (#729); eine neue Person hat noch keine Wahl – dann die der Installation.
-    const m = mitSpracheVon(b, () => (zweck === 'einladung'
-      ? mailtexte.einladung(b.name, b.email, mailLink, EINLADUNG_TAGE)
-      : mailtexte.zuruecksetzen(b.name, b.email, mailLink, ZURUECKSETZEN_STUNDEN)));
+    const m = mitSpracheVon(b, () =>
+      zweck === 'einladung'
+        ? mailtexte.einladung(b.name, b.email, mailLink, EINLADUNG_TAGE)
+        : mailtexte.zuruecksetzen(b.name, b.email, mailLink, ZURUECKSETZEN_STUNDEN),
+    );
     try {
       await this.mailer.sende(b.email, m.betreff, m.text);
       return { benutzer: b, mailVerschickt: true };
@@ -1151,7 +1435,10 @@ export class Konten {
     const email = text(e.email);
     if (!this.mailer || !istEmail(email)) return;
     // Ohne gepflegte Adresse keine Mail mit Link (siehe mailAdresse); antwortet trotzdem gleich.
-    if (!this.mailUrl) { log('Passwort vergessen: keine Mail, weil die Adresse von Ablago nicht gepflegt ist'); return; }
+    if (!this.mailUrl) {
+      log('Passwort vergessen: keine Mail, weil die Adresse von Ablago nicht gepflegt ist');
+      return;
+    }
     const t = await this.repo.holeHash(email);
     if (!t || !t.benutzer.aktiv) return;
     const r = await this.verschickeLink(t.benutzer, t.benutzer.hatPasswort ? 'zuruecksetzen' : 'einladung');
@@ -1174,7 +1461,8 @@ export class Konten {
     const l = (await this.repo.holeLink(hash))!;
     // Anbieter (#241) mit „Passwort nur für Verwaltende“ (#818): kein Passwort für alle anderen.
     const a = await this.anbieter();
-    if (a?.lokalNurAdmins && !darfVerwalten(await this.repo.holeBenutzer(l.benutzerId))) throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
+    if (a?.lokalNurAdmins && !darfVerwalten(await this.repo.holeBenutzer(l.benutzerId)))
+      throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
     if (!(await this.repo.verbraucheLink(hash))) throw new Fachfehler(410, t('anmeldung.fehler.link.benutzt'));
     await this.repo.setzeHash(l.benutzerId, await hashePasswort(passwort));
     await this.repo.loescheSitzungenVon(l.benutzerId);

@@ -43,9 +43,14 @@ const SPRACHDATEIEN = join(import.meta.dirname, '../../../shared/src/sprachen');
 function texte(sprache) {
   const aus = new Map();
   let dateien = [];
-  try { dateien = readdirSync(join(SPRACHDATEIEN, sprache)).filter((n) => n.endsWith('.json')); } catch { return aus; }
+  try {
+    dateien = readdirSync(join(SPRACHDATEIEN, sprache)).filter((n) => n.endsWith('.json'));
+  } catch {
+    return aus;
+  }
   for (const n of dateien) {
-    for (const [k, v] of Object.entries(JSON.parse(readFileSync(join(SPRACHDATEIEN, sprache, n), 'utf8')))) aus.set(`${n.slice(0, -5)}.${k}`, v);
+    for (const [k, v] of Object.entries(JSON.parse(readFileSync(join(SPRACHDATEIEN, sprache, n), 'utf8'))))
+      aus.set(`${n.slice(0, -5)}.${k}`, v);
   }
   return aus;
 }
@@ -64,7 +69,10 @@ function w(text) {
   if (!(text instanceof RegExp)) return wText(text);
   const ziele = new Set();
   for (const [k, v] of DEUTSCH) if ((text.test(v) || text.test(ohnePlatzhalter(v))) && ZIELTEXTE.has(k)) ziele.add(ZIELTEXTE.get(k));
-  if (ziele.size === 0) { fehlendeTexte.add(String(text)); return text; }
+  if (ziele.size === 0) {
+    fehlendeTexte.add(String(text));
+    return text;
+  }
   // Platzhalter samt Leerzeichen daneben: „{symbol} Link kopieren“ passt auch auf „Copy link“ ohne Symbol.
   const muster = [...ziele].map((z) => maskiert(z).replace(/\s*\\\{[A-Za-z0-9_]+\\\}\s*/g, '.*'));
   return new RegExp(muster.map((m) => `(?:${m})`).join('|'), text.flags);
@@ -82,19 +90,34 @@ function wText(text) {
   for (const [k, v] of DEUTSCH) {
     if (!ZIELTEXTE.has(k)) continue;
     const z = ZIELTEXTE.get(k);
-    if (v === text || v.trim() === text) { genau.add(z); continue; }
+    if (v === text || v.trim() === text) {
+      genau.add(z);
+      continue;
+    }
     // Vorlage mit den meisten festen Zeichen gewinnt („Seite {nr} nach rechts drehen“ vor „Seite {nr}“).
     const fest = v.replace(/\{[A-Za-z0-9_]+\}/g, '').trim().length;
     if (!/\{[A-Za-z0-9_]+\}/.test(v) || fest < 3 || fest < bestes) continue;
     const namen = [];
-    const m = new RegExp(`^${maskiert(v.trim()).replace(/\\\{([A-Za-z0-9_]+)\\\}/g, (_, n) => { namen.push(n); return '(.*?)'; })}$`, 's').exec(text);
+    const m = new RegExp(
+      `^${maskiert(v.trim()).replace(/\\\{([A-Za-z0-9_]+)\\\}/g, (_, n) => {
+        namen.push(n);
+        return '(.*?)';
+      })}$`,
+      's',
+    ).exec(text);
     if (!m) continue;
     const werte = Object.fromEntries(namen.map((n, i) => [n, m[i + 1]]));
-    if (fest > bestes) { bestes = fest; vorlagen = new Set(); }
+    if (fest > bestes) {
+      bestes = fest;
+      vorlagen = new Set();
+    }
     vorlagen.add(z.replace(/\{([A-Za-z0-9_]+)\}/g, (a, n) => werte[n] ?? a));
   }
   let ziele = [...(genau.size ? genau : vorlagen)];
-  if (ziele.length === 0) { fehlendeTexte.add(String(text)); return text; }
+  if (ziele.length === 0) {
+    fehlendeTexte.add(String(text));
+    return text;
+  }
   const gross = (s) => s.charAt(0) !== s.charAt(0).toLowerCase();
   if (ziele.length > 1 && ziele.some((z) => gross(z) === gross(text))) ziele = ziele.filter((z) => gross(z) === gross(text));
   const muster = [...new Set(ziele)].map((z) => maskiert(z).replace(/\s*\\\{[A-Za-z0-9_]+\\\}\s*/g, '.*'));
@@ -104,7 +127,10 @@ function wText(text) {
 /** Punkt im Menü „⋯“ eines Dokuments (#1211): Seiten, Verkleinern, Schwärzen, Mit Stempel … stehen dort. */
 async function dokMenue(zeile, punkt) {
   await zeile.getByRole('button', { name: w(/^Weitere Handlungen für/) }).click();
-  await zeile.page().getByRole('menuitem', { name: w(punkt) }).click();
+  await zeile
+    .page()
+    .getByRole('menuitem', { name: w(punkt) })
+    .click();
 }
 // Persona-Namen (Lena: Einsteigerin, richtet ein; Jonas: Familienmitglied) und nur Beispiel-Domains (example.org).
 const ADMIN = { email: 'lena@example.org', name: 'Lena Beispiel', passwort: 'handbuch-passwort-1' };
@@ -116,7 +142,11 @@ let cookie = '';
 async function api(methode, pfad, body, roh) {
   const r = await fetch(BASIS + pfad, {
     method: methode,
-    headers: { 'x-dms': '1', ...(cookie ? { cookie } : {}), ...(body !== undefined ? { 'content-type': roh ? 'application/octet-stream' : 'application/json' } : {}) },
+    headers: {
+      'x-dms': '1',
+      ...(cookie ? { cookie } : {}),
+      ...(body !== undefined ? { 'content-type': roh ? 'application/octet-stream' : 'application/json' } : {}),
+    },
     body: body === undefined ? undefined : roh ? body : JSON.stringify(body),
   });
   const gesetzt = r.headers.get('set-cookie');
@@ -129,7 +159,11 @@ async function api(methode, pfad, body, roh) {
 async function warteAufServer() {
   for (let i = 0; i < 120; i++) {
     // Auch im Einrichtungsmodus (#119) erreichbar; /api/gesundheit gibt es erst danach.
-    try { if ((await fetch(`${BASIS}/api/konto/status`)).ok) return; } catch { /* startet noch */ }
+    try {
+      if ((await fetch(`${BASIS}/api/konto/status`)).ok) return;
+    } catch {
+      /* startet noch */
+    }
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`DMS unter ${BASIS} antwortet nicht.`);
@@ -156,12 +190,17 @@ function beispielPdf(zeile) {
   ];
   zeilen.forEach((z, i) => {
     const inhalt = `BT /F1 18 Tf 60 760 Td (${z}) Tj ET`;
-    objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
+    objekte.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`,
+    );
     objekte.push(`<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
   });
   let pdf = '%PDF-1.4\n';
   const pos = [];
-  objekte.forEach((o, i) => { pos.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  objekte.forEach((o, i) => {
+    pos.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
   const xref = pdf.length;
   pdf += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${pos.map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}`;
   pdf += `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
@@ -177,33 +216,71 @@ function fotoPdf(zeilen, dpi = 600) {
   execFileSync('mkdir', ['-p', dir]);
   writeFileSync(join(dir, 'q.pdf'), beispielPdf(zeilen));
   execFileSync('pdftoppm', ['-r', String(dpi), '-jpeg', '-jpegopt', 'quality=95', join(dir, 'q.pdf'), join(dir, 's')]);
-  const bilder = execFileSync('ls', [dir]).toString().split('\n').filter((n) => n.startsWith('s-') && n.endsWith('.jpg')).sort();
+  const bilder = execFileSync('ls', [dir])
+    .toString()
+    .split('\n')
+    .filter((n) => n.startsWith('s-') && n.endsWith('.jpg'))
+    .sort();
   const teile = [];
   const pos = [];
   let laenge = 0;
-  const schreibe = (b) => { teile.push(b); laenge += b.length; };
+  const schreibe = (b) => {
+    teile.push(b);
+    laenge += b.length;
+  };
   const n = bilder.length;
   schreibe(Buffer.from('%PDF-1.4\n', 'latin1'));
   const obj = (nr, kopf, strom) => {
     pos[nr] = laenge;
-    if (!strom) { schreibe(Buffer.from(`${nr} 0 obj\n${kopf}\nendobj\n`, 'latin1')); return; }
-    schreibe(Buffer.from(`${nr} 0 obj\n${kopf}\nstream\n`, 'latin1')); schreibe(strom); schreibe(Buffer.from('\nendstream\nendobj\n', 'latin1'));
+    if (!strom) {
+      schreibe(Buffer.from(`${nr} 0 obj\n${kopf}\nendobj\n`, 'latin1'));
+      return;
+    }
+    schreibe(Buffer.from(`${nr} 0 obj\n${kopf}\nstream\n`, 'latin1'));
+    schreibe(strom);
+    schreibe(Buffer.from('\nendstream\nendobj\n', 'latin1'));
   };
   obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
   obj(2, `<< /Type /Pages /Kids [${bilder.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${n} >>`);
   bilder.forEach((name, i) => {
     const jpg = readFileSync(join(dir, name));
     // Breite und Höhe aus dem SOF-Kopf des JPEG.
-    let k = 2; let b = 0; let h = 0;
-    while (k < jpg.length) { const m = jpg[k + 1]; const l = jpg.readUInt16BE(k + 2); if (m >= 0xc0 && m <= 0xc2) { h = jpg.readUInt16BE(k + 5); b = jpg.readUInt16BE(k + 7); break; } k += 2 + l; }
+    let k = 2;
+    let b = 0;
+    let h = 0;
+    while (k < jpg.length) {
+      const m = jpg[k + 1];
+      const l = jpg.readUInt16BE(k + 2);
+      if (m >= 0xc0 && m <= 0xc2) {
+        h = jpg.readUInt16BE(k + 5);
+        b = jpg.readUInt16BE(k + 7);
+        break;
+      }
+      k += 2 + l;
+    }
     const inhalt = Buffer.from('q 595 0 0 842 0 0 cm /Im Do Q', 'latin1');
-    obj(3 + i * 3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im ${5 + i * 3} 0 R >> >> /Contents ${4 + i * 3} 0 R >>`);
+    obj(
+      3 + i * 3,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im ${5 + i * 3} 0 R >> >> /Contents ${4 + i * 3} 0 R >>`,
+    );
     obj(4 + i * 3, `<< /Length ${inhalt.length} >>`, inhalt);
-    obj(5 + i * 3, `<< /Type /XObject /Subtype /Image /Width ${b} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>`, jpg);
+    obj(
+      5 + i * 3,
+      `<< /Type /XObject /Subtype /Image /Width ${b} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>`,
+      jpg,
+    );
   });
   const anzahl = 2 + n * 3;
   const xref = laenge;
-  schreibe(Buffer.from(`xref\n0 ${anzahl + 1}\n0000000000 65535 f \n${pos.slice(1).map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${anzahl + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`, 'latin1'));
+  schreibe(
+    Buffer.from(
+      `xref\n0 ${anzahl + 1}\n0000000000 65535 f \n${pos
+        .slice(1)
+        .map((p) => `${String(p).padStart(10, '0')} 00000 n \n`)
+        .join('')}trailer\n<< /Size ${anzahl + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`,
+      'latin1',
+    ),
+  );
   execFileSync('rm', ['-rf', dir]);
   return Buffer.concat(teile);
 }
@@ -228,7 +305,12 @@ async function vorbereiten() {
   // Rollen und ein Mitglied, das sie hat
   const steuern = await api('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Steuern und Finanzen' } });
   const garten = await api('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Haus und Garten' } });
-  const einladung = await api('POST', '/api/benutzer', { email: MITGLIED.email, name: MITGLIED.name, rolle: 'mitglied', rollen: [steuern.id] });
+  const einladung = await api('POST', '/api/benutzer', {
+    email: MITGLIED.email,
+    name: MITGLIED.name,
+    rolle: 'mitglied',
+    rollen: [steuern.id],
+  });
   const schluessel = einladung.link.split('/passwort/')[1];
   await api('POST', '/api/konto/passwort-setzen', { schluessel, passwort: MITGLIED.passwort });
   await api('POST', '/api/konto/anmelden', { email: MITGLIED.email, passwort: MITGLIED.passwort });
@@ -238,11 +320,26 @@ async function vorbereiten() {
   // Vertrag bekommt einen verantwortlichen Benutzer (#26)
   const vertrag = typ('Vertrag');
   // dazu eine formatierte Bemerkung (#53) und ein Protokollregister (#57)
-  const felder = [...vertrag.felder,
-    { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id, verweisart: 'bezug', hilfe: 'Wer die Fristen im Blick behält' },
-    { key: 'bemerkung', label: 'Bemerkung', typ: 'formatiert' }];
-  const register = [...vertrag.register.map((r) => (r.art === 'felder' && r.key === 'vertrag' ? { ...r, felder: [...(r.felder ?? vertrag.felder.map((f) => f.key)), 'verantwortlich', 'bemerkung'] } : r)),
-    { key: 'protokoll', name: 'Historie', art: 'protokoll' }];
+  const felder = [
+    ...vertrag.felder,
+    {
+      key: 'verantwortlich',
+      label: 'Verantwortlich',
+      typ: 'referenz',
+      zielTyp: benutzerTyp.id,
+      verweisart: 'bezug',
+      hilfe: 'Wer die Fristen im Blick behält',
+    },
+    { key: 'bemerkung', label: 'Bemerkung', typ: 'formatiert' },
+  ];
+  const register = [
+    ...vertrag.register.map((r) =>
+      r.art === 'felder' && r.key === 'vertrag'
+        ? { ...r, felder: [...(r.felder ?? vertrag.felder.map((f) => f.key)), 'verantwortlich', 'bemerkung'] }
+        : r,
+    ),
+    { key: 'protokoll', name: 'Historie', art: 'protokoll' },
+  ];
   await api('PUT', `/api/typen/${vertrag.id}`, { ...vertrag, felder, register });
   typen = await api('GET', '/api/typen');
 
@@ -252,29 +349,59 @@ async function vorbereiten() {
   await api('PUT', `/api/mappen/${strom.id}`, { werte: { ...strom.werte, verantwortlich: admin.id } });
   // Bemerkung mit Erwähnung (#56), Notizen (#55), eine Aufgabe (#54); dabei füllt sich das Protokoll (#57)
   const mitgliedId = einladung.benutzer.id;
-  await api('PUT', `/api/mappen/${strom.id}`, { werte: { ...strom.werte, verantwortlich: admin.id,
-    bemerkung: `**Preisanpassung zum 1. April.** Bitte bis Ende März prüfen:\n\n- neuer Arbeitspreis\n- Grundgebühr\n\n@[${MITGLIED.name}](benutzer:${mitgliedId}), magst du die Angebote vergleichen?` } });
+  await api('PUT', `/api/mappen/${strom.id}`, {
+    werte: {
+      ...strom.werte,
+      verantwortlich: admin.id,
+      bemerkung: `**Preisanpassung zum 1. April.** Bitte bis Ende März prüfen:\n\n- neuer Arbeitspreis\n- Grundgebühr\n\n@[${MITGLIED.name}](benutzer:${mitgliedId}), magst du die Angebote vergleichen?`,
+    },
+  });
   // Erwähnung einer Mappe (#889): der Vertragspartner – dort steht dann „Erwähnt in einer Notiz bei Stromvertrag Haus“.
   const stadtwerkeErw = mappe('name', 'Stadtwerke Musterstadt');
-  await api('POST', `/api/mappen/${strom.id}/notizen`, { text: `Kundenservice von @[Stadtwerke Musterstadt](mappe:${stadtwerkeErw.id}) angerufen: Sonderkündigung wegen Preisanpassung ist **bis 31. März** möglich.` });
+  await api('POST', `/api/mappen/${strom.id}/notizen`, {
+    text: `Kundenservice von @[Stadtwerke Musterstadt](mappe:${stadtwerkeErw.id}) angerufen: Sonderkündigung wegen Preisanpassung ist **bis 31. März** möglich.`,
+  });
   await api('POST', `/api/mappen/${strom.id}/notizen`, { text: 'Zählerstand am 01.03.: 48 211 kWh' });
   await api('POST', `/api/mappen/${strom.id}/aufgaben`, { empfaengerId: mitgliedId, text: 'Zählerstand an die Stadtwerke melden' });
   // E-Mail-Versand eingerichtet (ohne zu senden), damit die Maske zum Versenden erscheint (#58)
-  await api('PUT', '/api/werkbank/betrieb/mail', { aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms@example.org', passwort: 'nur-fuer-bilder', absender: 'DMS <dms@example.org>' });
-  await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Stromvertrag 2022.pdf')}&typ=application/pdf`, beispielPdf('Stromvertrag Haus - Vertragsunterlagen'), true);
-  await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2026.pdf')}&typ=application/pdf`, beispielPdf('Preisanpassung 2026 - neue Arbeitspreise ab April'), true);
+  await api('PUT', '/api/werkbank/betrieb/mail', {
+    aktiv: true,
+    host: 'smtp.example.org',
+    port: 587,
+    verbindung: 'starttls',
+    benutzer: 'dms@example.org',
+    passwort: 'nur-fuer-bilder',
+    absender: 'DMS <dms@example.org>',
+  });
+  await api(
+    'POST',
+    `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Stromvertrag 2022.pdf')}&typ=application/pdf`,
+    beispielPdf('Stromvertrag Haus - Vertragsunterlagen'),
+    true,
+  );
+  await api(
+    'POST',
+    `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2026.pdf')}&typ=application/pdf`,
+    beispielPdf('Preisanpassung 2026 - neue Arbeitspreise ab April'),
+    true,
+  );
 
   // Passwortfeld (#46) beim Vertragspartner, gesetzt bei den Stadtwerken
   const partnerTyp = typ('Vertragspartner');
   const partnerReg = partnerTyp.register.find((r) => r.art === 'felder');
   await api('PUT', `/api/typen/${partnerTyp.id}`, {
     ...partnerTyp,
-    felder: [...partnerTyp.felder, { key: 'portal_kennwort', label: 'Kennwort Kundenportal', typ: 'passwort', hilfe: 'Wird verschlüsselt gespeichert' }],
+    felder: [
+      ...partnerTyp.felder,
+      { key: 'portal_kennwort', label: 'Kennwort Kundenportal', typ: 'passwort', hilfe: 'Wird verschlüsselt gespeichert' },
+    ],
     register: partnerTyp.register.map((r) => (r === partnerReg ? { ...r, felder: [...(r.felder ?? []), 'portal_kennwort'] } : r)),
   });
   typen = await api('GET', '/api/typen');
   const stadtwerkeVorher = mappe('name', 'Stadtwerke Musterstadt');
-  await api('PUT', `/api/mappen/${stadtwerkeVorher.id}`, { werte: { ...stadtwerkeVorher.werte, portal_kennwort: { neu: 'Sommer-2026!' } } });
+  await api('PUT', `/api/mappen/${stadtwerkeVorher.id}`, {
+    werte: { ...stadtwerkeVorher.werte, portal_kennwort: { neu: 'Sommer-2026!' } },
+  });
 
   // Papierkorb (#43): eine Zahlung aus den Demo-Daten löschen
   const zahlung = alle.find((m) => m.typId === typ('Zahlung').id && m.demo) ?? alle.find((m) => m.typId === typ('Zahlung').id);
@@ -288,24 +415,55 @@ async function vorbereiten() {
   }
 
   // Sichten (#38, #40): eine Gruppe „Finanzen“ mit Untersichten und eine mit Bedingungen
-  const rechnungTyp = typ('Rechnung'); const zahlungTyp = typ('Zahlung'); const vertragTyp = typ('Vertrag');
-  const finanzen = await api('POST', '/api/sichten/definitionen', { name: 'Finanzen', beschreibung: 'Offene Rechnungen und Zahlungen', typen: [] });
-  await api('POST', '/api/sichten/definitionen', { name: 'Offene Rechnungen', elternId: finanzen.id, typen: [rechnungTyp.id], bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'nein' }] });
-  await api('POST', '/api/sichten/definitionen', { name: 'Zahlungen dieses Jahr', elternId: finanzen.id, typen: [zahlungTyp.id], bedingungen: [{ art: 'feld', feld: 'zahlungsdatum', op: 'imZeitraum', wert: { art: 'jahr', versatz: 0 } }] });
-  const fristen = await api('POST', '/api/sichten/definitionen', {
-    name: 'Kündigung in den nächsten 12 Monaten', beschreibung: 'Verträge, deren Kündigungsfrist bald endet', typen: [vertragTyp.id],
-    bedingungen: [{ art: 'feld', feld: 'kuendigung_bis', op: 'zwischen', wert: { art: 'heute' }, bis: { art: 'heute', versatz: 12, einheit: 'monate' } }],
+  const rechnungTyp = typ('Rechnung');
+  const zahlungTyp = typ('Zahlung');
+  const vertragTyp = typ('Vertrag');
+  const finanzen = await api('POST', '/api/sichten/definitionen', {
+    name: 'Finanzen',
+    beschreibung: 'Offene Rechnungen und Zahlungen',
+    typen: [],
   });
   await api('POST', '/api/sichten/definitionen', {
-    name: 'Rechnungen ohne Beleg', typen: [rechnungTyp.id],
+    name: 'Offene Rechnungen',
+    elternId: finanzen.id,
+    typen: [rechnungTyp.id],
+    bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'nein' }],
+  });
+  await api('POST', '/api/sichten/definitionen', {
+    name: 'Zahlungen dieses Jahr',
+    elternId: finanzen.id,
+    typen: [zahlungTyp.id],
+    bedingungen: [{ art: 'feld', feld: 'zahlungsdatum', op: 'imZeitraum', wert: { art: 'jahr', versatz: 0 } }],
+  });
+  const fristen = await api('POST', '/api/sichten/definitionen', {
+    name: 'Kündigung in den nächsten 12 Monaten',
+    beschreibung: 'Verträge, deren Kündigungsfrist bald endet',
+    typen: [vertragTyp.id],
+    bedingungen: [
+      {
+        art: 'feld',
+        feld: 'kuendigung_bis',
+        op: 'zwischen',
+        wert: { art: 'heute' },
+        bis: { art: 'heute', versatz: 12, einheit: 'monate' },
+      },
+    ],
+  });
+  await api('POST', '/api/sichten/definitionen', {
+    name: 'Rechnungen ohne Beleg',
+    typen: [rechnungTyp.id],
     bedingungen: [{ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }],
   });
 
   return {
-    finanzen, fristen,
-    admin, adminCookie,
+    finanzen,
+    fristen,
+    admin,
+    adminCookie,
     typ: (name) => typen.find((t) => t.name === name),
-    benutzerTyp, rolleTyp, garten,
+    benutzerTyp,
+    rolleTyp,
+    garten,
     mitglied: (await api('GET', '/api/benutzer')).find((b) => b.email === MITGLIED.email),
     strom,
     stadtwerke: mappe('name', 'Stadtwerke Musterstadt'),
@@ -322,8 +480,14 @@ async function erinnerungenAnlegen(d) {
   const tagIn = (n) => new Date(Date.now() + n * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
   const vertraege = (await api('GET', '/api/mappen')).filter((m) => m.typId === vertrag.id);
   const wartung = vertraege.find((m) => m.werte.bezeichnung === 'Wartungsvertrag Heizung') ?? d.strom;
-  for (const [n, text, m] of [[-12, 'Zählerstand ablesen und melden', d.strom], [3, 'Termin für die Wartung vereinbaren', wartung], [3, 'Rechnung der Wartung prüfen', wartung],
-    [10, 'Abschlag anpassen lassen', d.strom], [17, 'Unterlagen für die Steuererklärung zusammenstellen', vertraege[2] ?? d.strom], [24, 'Neue Tarife vergleichen', vertraege[3] ?? d.strom]]) {
+  for (const [n, text, m] of [
+    [-12, 'Zählerstand ablesen und melden', d.strom],
+    [3, 'Termin für die Wartung vereinbaren', wartung],
+    [3, 'Rechnung der Wartung prüfen', wartung],
+    [10, 'Abschlag anpassen lassen', d.strom],
+    [17, 'Unterlagen für die Steuererklärung zusammenstellen', vertraege[2] ?? d.strom],
+    [24, 'Neue Tarife vergleichen', vertraege[3] ?? d.strom],
+  ]) {
     await api('POST', `/api/mappen/${m.id}/erinnerungen`, { datum: tagIn(n), text });
   }
 }
@@ -331,7 +495,12 @@ async function erinnerungenAnlegen(d) {
 /** Post (#192): ein neuer Brief mit Dokument in „Neue Post“. */
 async function briefAnlegen() {
   const brief = await api('POST', '/api/post', { betreff: 'Preisanpassung Strom 2027' });
-  await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2027.pdf')}&typ=application/pdf`, beispielPdf('Preisanpassung zum 1. Januar 2027'), true);
+  await api(
+    'POST',
+    `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2027.pdf')}&typ=application/pdf`,
+    beispielPdf('Preisanpassung zum 1. Januar 2027'),
+    true,
+  );
   return brief;
 }
 
@@ -342,14 +511,24 @@ async function einrichtungscode() {
   if (process.env.DMS_EINRICHTUNGSCODE) return process.env.DMS_EINRICHTUNGSCODE;
   const datei = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../../../data'), 'geheim', 'EINRICHTUNGSCODE');
   for (let i = 0; i < 60; i++) {
-    try { return (await readFile(datei, 'utf8')).trim(); } catch { await new Promise((r) => setTimeout(r, 500)); }
+    try {
+      return (await readFile(datei, 'utf8')).trim();
+    } catch {
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
   throw new Error(`Einrichtungscode nicht gefunden (${datei}).`);
 }
 
 /** Einrichtungsassistent (#119) im Browser durchgehen – mit Bildern jedes Schritts. */
 async function einrichtenImBrowser(browser, bild) {
-  const k = await browser.newContext({ viewport: { width: 1100, height: 900 }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+  const k = await browser.newContext({
+    viewport: { width: 1100, height: 900 },
+    colorScheme: 'light',
+    locale: GEBIET,
+    timezoneId: 'Europe/Berlin',
+    deviceScaleFactor: 1,
+  });
   const s = await k.newPage();
   await s.goto(BASIS + '/');
   // Erster Schritt (#729): Sprache – vorgeschlagen ist die des Browsers, also nur weiter.
@@ -360,7 +539,13 @@ async function einrichtenImBrowser(browser, bild) {
   await bild(s, 'einrichtung-code');
   await s.getByLabel(w('Einrichtungscode')).fill(await einrichtungscode());
   await s.getByRole('button', { name: w('Weiter') }).click();
-  const ohneDb = await s.getByRole('heading', { name: w('Datenbank'), exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false);
+  const ohneDb = await s
+    .getByRole('heading', { name: w('Datenbank'), exact: true })
+    .waitFor({ timeout: 5000 })
+    .then(
+      () => true,
+      () => false,
+    );
   if (ohneDb) {
     await s.getByRole('textbox', { name: w(/^Server/) }).fill(process.env.DB_HOST ?? 'db');
     await s.getByLabel(w(/^Passwort/)).fill(process.env.DB_PASSWORT ?? 'dms');
@@ -419,7 +604,10 @@ async function einrichtenImBrowser(browser, bild) {
   await s.locator('#mail-adresse').focus();
   await s.locator('#mail-passwort').focus();
   await s.locator('#mail .mail-vorschlag').waitFor({ timeout: 20_000 });
-  await s.getByText(w('Suche den Server …')).waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+  await s
+    .getByText(w('Suche den Server …'))
+    .waitFor({ state: 'detached', timeout: 20_000 })
+    .catch(() => {});
   await s.locator('#mail').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'einrichtung-mail');
   await s.getByLabel(w('E-Mail-Versand jetzt einrichten')).uncheck();
@@ -436,7 +624,10 @@ async function einrichtenImBrowser(browser, bild) {
   await (await download).cancel().catch(() => {});
   await s.getByText(w(/Notfallblatt heruntergeladen/)).waitFor({ timeout: 15_000 });
   // Auf localhost bietet der Assistent danach auch einen Passkey an (#811), ebenfalls mit „Später“: der erste ist die Zwei-Faktor-Anmeldung.
-  await s.getByRole('button', { name: w('Später') }).first().click();
+  await s
+    .getByRole('button', { name: w('Später') })
+    .first()
+    .click();
   await s.getByRole('button', { name: w('Einrichtung abschließen') }).click();
   await s.waitForURL(/\/werkbank/);
   const sitzung = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
@@ -449,29 +640,77 @@ async function einrichtenImBrowser(browser, bild) {
 function lasttestStand(fertig) {
   const jetzt = Date.now();
   const vorlage = [
-    '```text', 'Messergebnis Lasttest (#563)', 'Ablago-Version: 0.244.0 · Image: dms-komplett · Datenbank: im Container', 'Gerät/Modell: {{geraet}}',
-    'CPU: Intel(R) N100 · 4 Kerne für Ablago, Rechner 4 · x64', 'RAM: 15,5 GB · Speicher: {{speicher}}', 'Bestand: 5013 Mappen, 110 Dokumente (PDF)',
+    '```text',
+    'Messergebnis Lasttest (#563)',
+    'Ablago-Version: 0.244.0 · Image: dms-komplett · Datenbank: im Container',
+    'Gerät/Modell: {{geraet}}',
+    'CPU: Intel(R) N100 · 4 Kerne für Ablago, Rechner 4 · x64',
+    'RAM: 15,5 GB · Speicher: {{speicher}}',
+    'Bestand: 5013 Mappen, 110 Dokumente (PDF)',
     'Einstellungen: DMS_ARBEITER=2, DMS_DB_VERBINDUNGEN=10, DMS_MAX_ANFRAGEN=250',
     'klein    25 gleichzeitig: p50 48 ms, p95 131 ms, p99 212 ms, Fehler 0,00 % – Ziel eingehalten (Ziel < 300 ms, CI-Grenze 300 ms)',
-    'Arbeitsspeicher Ablago höchstens: 342 MB · Ereignisschleife p99 höchstens: 21 ms', 'Gemessen: 2026-11-02', '```',
+    'Arbeitsspeicher Ablago höchstens: 342 MB · Ereignisschleife p99 höchstens: 21 ms',
+    'Gemessen: 2026-11-02',
+    '```',
   ].join('\n');
   // #1117: Auslastung schon beim Anlegen der Demo-Mappen – ohne Durchgang und p95.
-  const verlauf = Array.from({ length: 30 }, (_, i) => ({ zeit: new Date(jetzt - (30 - i) * 2000).toISOString(), cpu: 30 + Math.round(25 * Math.abs(Math.sin(i / 4))), speicher: 18 + Math.round(i / 3) }));
+  const verlauf = Array.from({ length: 30 }, (_, i) => ({
+    zeit: new Date(jetzt - (30 - i) * 2000).toISOString(),
+    cpu: 30 + Math.round(25 * Math.abs(Math.sin(i / 4))),
+    speicher: 18 + Math.round(i / 3),
+  }));
   const live = {
-    jetzt: { ...verlauf.at(-1), name: null, n: null, p95: null, anfragen: 0, speicherMb: 2900, grenzeMb: 15_872, ohneGrenze: false, kerne: 4, kerneBegrenzt: false, warteschlange: 0, belegt: 3, verbindungen: 10,
-      gruppen: [{ art: 'ablago', nr: 0, rolle: 'haupt', anzahl: 1, cpu: 2, mb: 120 }, { art: 'ablago', nr: 1, rolle: 'leiter', anzahl: 1, cpu: 38, mb: 310 }, { art: 'ablago', nr: 2, rolle: 'anfragen', anzahl: 1, cpu: 9, mb: 260 },
-        { art: 'lastgenerator', anzahl: 1, cpu: 3, mb: 90 }, { art: 'postgres', anzahl: 9, cpu: 71, mb: 410 }, { art: 'texterkennung', anzahl: 2, cpu: 64, mb: 180 }, { art: 'rest', anzahl: 3, cpu: 1, mb: 20 }],
-      postgresExtern: false, meldungen: [] },
+    jetzt: {
+      ...verlauf.at(-1),
+      name: null,
+      n: null,
+      p95: null,
+      anfragen: 0,
+      speicherMb: 2900,
+      grenzeMb: 15_872,
+      ohneGrenze: false,
+      kerne: 4,
+      kerneBegrenzt: false,
+      warteschlange: 0,
+      belegt: 3,
+      verbindungen: 10,
+      gruppen: [
+        { art: 'ablago', nr: 0, rolle: 'haupt', anzahl: 1, cpu: 2, mb: 120 },
+        { art: 'ablago', nr: 1, rolle: 'leiter', anzahl: 1, cpu: 38, mb: 310 },
+        { art: 'ablago', nr: 2, rolle: 'anfragen', anzahl: 1, cpu: 9, mb: 260 },
+        { art: 'lastgenerator', anzahl: 1, cpu: 3, mb: 90 },
+        { art: 'postgres', anzahl: 9, cpu: 71, mb: 410 },
+        { art: 'texterkennung', anzahl: 2, cpu: 64, mb: 180 },
+        { art: 'rest', anzahl: 3, cpu: 1, mb: 20 },
+      ],
+      postgresExtern: false,
+      meldungen: [],
+    },
     verlauf,
   };
   return {
-    version: '0.244.0', live: fertig ? null : live,
-    wahl: 'klein', zustand: fertig ? 'fertig' : 'laeuft', stufe: 'klein', nr: 1, von: 1, schritt: fertig ? 'auswerten' : 'demo',
-    demo: fertig ? null : { fertig: 3150, gesamt: 5000 }, durchgang: null,
+    version: '0.244.0',
+    live: fertig ? null : live,
+    wahl: 'klein',
+    zustand: fertig ? 'fertig' : 'laeuft',
+    stufe: 'klein',
+    nr: 1,
+    von: 1,
+    schritt: fertig ? 'auswerten' : 'demo',
+    demo: fertig ? null : { fertig: 3150, gesamt: 5000 },
+    durchgang: null,
     durchgaenge: fertig ? [{ name: 'klein', n: 25, p95: 131, fehlerquote: 0 }] : [],
-    begonnen: jetzt - 90_000, stufeBegonnen: jetzt - 90_000, jetzt, fertigeStufen: fertig ? ['klein'] : [],
-    ergebnis: fertig ? { bericht: '## Lasttest (2026-11-02 10:15 UTC)\n\nBestand: 5013 Mappen (5000 Demo-Mappen) …', vorlage, verfehlt: false } : null,
-    meldung: null, angaben: { geraet: '', speicher: 'SSD' }, speicherErkannt: 'SSD', datei: fertig ? '/data/ergebnis/lasttest-klein.md' : null,
+    begonnen: jetzt - 90_000,
+    stufeBegonnen: jetzt - 90_000,
+    jetzt,
+    fertigeStufen: fertig ? ['klein'] : [],
+    ergebnis: fertig
+      ? { bericht: '## Lasttest (2026-11-02 10:15 UTC)\n\nBestand: 5013 Mappen (5000 Demo-Mappen) …', vorlage, verfehlt: false }
+      : null,
+    meldung: null,
+    angaben: { geraet: '', speicher: 'SSD' },
+    speicherErkannt: 'SSD',
+    datei: fertig ? '/data/ergebnis/lasttest-klein.md' : null,
   };
 }
 
@@ -485,9 +724,18 @@ async function lasttestSeite(browser, bild) {
   ];
   for (const [name, fertig, schema, viewport] of aufnahmen) {
     const handy = viewport.width < 500;
-    const k = await browser.newContext({ viewport, colorScheme: schema, locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1, ...(handy ? { isMobile: true, hasTouch: true } : {}) });
+    const k = await browser.newContext({
+      viewport,
+      colorScheme: schema,
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+      deviceScaleFactor: 1,
+      ...(handy ? { isMobile: true, hasTouch: true } : {}),
+    });
     const stand = lasttestStand(fertig);
-    await k.route('**/api/konto/status', (r) => r.fulfill({ json: { einrichtungNoetig: false, mail: false, benutzer: null, marke: null, wartung: null, lasttest: true } }));
+    await k.route('**/api/konto/status', (r) =>
+      r.fulfill({ json: { einrichtungNoetig: false, mail: false, benutzer: null, marke: null, wartung: null, lasttest: true } }),
+    );
     await k.route('**/api/lasttest', (r) => r.fulfill({ json: { ...stand, jetzt: Date.now() } }));
     await k.route('**/api/lasttest/angaben', (r) => r.fulfill({ json: stand }));
     const s = await k.newPage();
@@ -502,7 +750,11 @@ async function lasttestSeite(browser, bild) {
 async function main() {
   await mkdir(ZIEL, { recursive: true });
   // Oberfläche in der Sprache der Aufnahme, auch für Datumsfelder (Chromium richtet sich dafür nach --lang).
-  const browser = await chromium.launch({ channel: 'chromium', args: [`--lang=${GEBIET}`], env: { ...process.env, LANG: `${GEBIET.replace('-', '_')}.UTF-8`, LANGUAGE: SPRACHE } });
+  const browser = await chromium.launch({
+    channel: 'chromium',
+    args: [`--lang=${GEBIET}`],
+    env: { ...process.env, LANG: `${GEBIET.replace('-', '_')}.UTF-8`, LANGUAGE: SPRACHE },
+  });
   const erstellt = [];
   const bild = async (seite, name, optionen = {}) => {
     await seite.waitForLoadState('networkidle');
@@ -530,16 +782,32 @@ async function main() {
     return;
   }
   const kontext = async (mitCookie = true, breite = 1440, hoehe = 860, adminHinweis = false) => {
-    const k = await browser.newContext({ viewport: { width: breite, height: hoehe }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+    const k = await browser.newContext({
+      viewport: { width: breite, height: hoehe },
+      colorScheme: 'light',
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+      deviceScaleFactor: 1,
+    });
     if (mitCookie) {
       const [name, wert] = d.adminCookie.split('=');
       await k.addCookies([{ name, value: wert, url: BASIS }]);
     }
     // Die Bilder der Ablage zeigen, was ein normaler Benutzer sieht: ohne den roten Admin-Hinweis (#128).
-    if (!adminHinweis) await k.addInitScript(() => addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '.verwaltungsbalken{display:none!important}'; document.head.appendChild(st); }));
+    if (!adminHinweis)
+      await k.addInitScript(() =>
+        addEventListener('DOMContentLoaded', () => {
+          const st = document.createElement('style');
+          st.textContent = '.verwaltungsbalken{display:none!important}';
+          document.head.appendChild(st);
+        }),
+      );
     return k;
   };
-  const geheZu = async (seite, pfad) => { await seite.goto(BASIS + pfad); await seite.waitForLoadState('networkidle'); };
+  const geheZu = async (seite, pfad) => {
+    await seite.goto(BASIS + pfad);
+    await seite.waitForLoadState('networkidle');
+  };
 
   // Anmeldung (ohne Sitzung)
   {
@@ -568,7 +836,10 @@ async function main() {
     await geheZu(s, '/entdecken');
     await s.getByRole('heading', { name: w('Ablago entdecken'), level: 1 }).waitFor();
     await bild(s, 'entdecken', { fullPage: true });
-    await s.getByRole('button', { name: w('Rundgang starten') }).first().click();
+    await s
+      .getByRole('button', { name: w('Rundgang starten') })
+      .first()
+      .click();
     await s.locator('dialog.rundgang').waitFor();
     await bild(s, 'rundgang');
     await k.close();
@@ -585,11 +856,26 @@ async function main() {
   await s.getByRole('heading', { name: 'Stromvertrag Haus' }).waitFor();
   await bild(s, 'ablage');
   // README (#290): breiter, doppelte Auflösung, hell und dunkel – feste Namen, die README holt sie vom Handbuch.
-  for (const [schema, name] of [['light', 'readme'], ['dark', 'readme-dunkel']]) {
-    const kr = await browser.newContext({ viewport: { width: 1600, height: 900 }, colorScheme: schema, locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 2 });
+  for (const [schema, name] of [
+    ['light', 'readme'],
+    ['dark', 'readme-dunkel'],
+  ]) {
+    const kr = await browser.newContext({
+      viewport: { width: 1600, height: 900 },
+      colorScheme: schema,
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+      deviceScaleFactor: 2,
+    });
     const [cn, cw] = d.adminCookie.split('=');
     await kr.addCookies([{ name: cn, value: cw, url: BASIS }]);
-    await kr.addInitScript(() => addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '.verwaltungsbalken{display:none!important}'; document.head.appendChild(st); }));
+    await kr.addInitScript(() =>
+      addEventListener('DOMContentLoaded', () => {
+        const st = document.createElement('style');
+        st.textContent = '.verwaltungsbalken{display:none!important}';
+        document.head.appendChild(st);
+      }),
+    );
     const sr = await kr.newPage();
     await geheZu(sr, `/ablage/${vertrag.id}/${d.strom.id}`);
     await sr.getByRole('heading', { name: 'Stromvertrag Haus' }).waitFor();
@@ -600,27 +886,54 @@ async function main() {
   // Register mit Dokumenten. Namen von Registern, Feldern und Mappen sind Daten der Beispiele – die bleiben deutsch, ohne w (#730).
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   // Vorschaubilder der ersten Seite (#332) entstehen im Hintergrund – kurz warten, bis sie geladen sind.
-  await s.waitForFunction(() => [...document.querySelectorAll('img.vorschaubild')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15_000 }).catch(() => {});
+  await s
+    .waitForFunction(() => [...document.querySelectorAll('img.vorschaubild')].every((i) => i.complete && i.naturalWidth > 0), null, {
+      timeout: 15_000,
+    })
+    .catch(() => {});
   // Erstes anzeigbares Dokument öffnen: die Anzeige steht direkt unter seiner Zeile (#85).
   const anzeigbar = s.locator('.dokumentliste li.klickbar').first();
-  if (await anzeigbar.count()) { await anzeigbar.locator('.dokname > button').first().click(); await s.waitForTimeout(800); }
+  if (await anzeigbar.count()) {
+    await anzeigbar.locator('.dokname > button').first().click();
+    await s.waitForTimeout(800);
+  }
   await bild(s, 'dokumente');
 
   // PDF bearbeiten (#335): Seitenansicht eines mehrseitigen Scans, eine Seite gedreht, Teilen ab Seite 3.
-  await api('POST', `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Vertragsunterlagen.pdf')}&typ=application/pdf`,
-    beispielPdf(['Vertrag Seite 1', 'Vertrag Seite 2', 'Preisblatt', 'Widerrufsbelehrung']), true);
+  await api(
+    'POST',
+    `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Vertragsunterlagen.pdf')}&typ=application/pdf`,
+    beispielPdf(['Vertrag Seite 1', 'Vertrag Seite 2', 'Preisblatt', 'Widerrufsbelehrung']),
+    true,
+  );
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   const scan = s.locator('.dokumentliste li', { hasText: 'Scan Vertragsunterlagen.pdf' });
   await dokMenue(scan, 'Seiten …');
-  await s.waitForFunction(() => [...document.querySelectorAll('.seitenbild img')].length > 0 && [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 20_000 }).catch(() => {});
+  await s
+    .waitForFunction(
+      () =>
+        [...document.querySelectorAll('.seitenbild img')].length > 0 &&
+        [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0),
+      null,
+      { timeout: 20_000 },
+    )
+    .catch(() => {});
   await s.getByRole('button', { name: w('Seite 2 nach rechts drehen') }).click();
-  await s.locator('.seitenraster .seite').nth(2).getByRole('button', { name: w('Teilen ab hier') }).click();
+  await s
+    .locator('.seitenraster .seite')
+    .nth(2)
+    .getByRole('button', { name: w('Teilen ab hier') })
+    .click();
   await s.locator('.pdfseiten').scrollIntoViewIfNeeded();
   await bild(s, 'pdf-bearbeiten');
 
   // Herunterladen mit Stempel (#394): Dialog am Scan, Vorlage „Kopie für …“ mit Empfänger.
-  await s.locator('.pdfseiten').getByRole('button', { name: w('Abbrechen') }).click().catch(() => {});
+  await s
+    .locator('.pdfseiten')
+    .getByRole('button', { name: w('Abbrechen') })
+    .click()
+    .catch(() => {});
   await dokMenue(scan, 'Mit Stempel …');
   const stempel = s.locator('.stempeldialog');
   await stempel.locator('input[id$="-empfaenger"]').fill('Hausverwaltung Müller');
@@ -631,8 +944,12 @@ async function main() {
   await stempel.getByRole('button', { name: w('Schließen') }).click();
 
   // PDF verkleinern (#393): ein Foto-Scan mit 600 dpi, Dialog mit den drei Stufen.
-  await api('POST', `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Foto Zählerstand.pdf')}&typ=application/pdf`,
-    fotoPdf(['Zählerstand 12.345 kWh', 'Ablesekarte Rückseite']), true);
+  await api(
+    'POST',
+    `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Foto Zählerstand.pdf')}&typ=application/pdf`,
+    fotoPdf(['Zählerstand 12.345 kWh', 'Ablesekarte Rückseite']),
+    true,
+  );
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   const foto = s.locator('.dokumentliste li', { hasText: 'Foto Zählerstand.pdf' });
@@ -645,8 +962,12 @@ async function main() {
   await klein.getByRole('button', { name: w('Abbrechen') }).click();
 
   // Schwärzen (#392): Suchbegriff überall, IBAN als Vorschlag angehakt, Vorschau der schwarzen Bereiche.
-  await api('POST', `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kontoauszug.pdf')}&typ=application/pdf`,
-    beispielPdf('Lena Beispiel - IBAN DE89 3704 0044 0532 0130 00 - Telefon 0351 1234567'), true);
+  await api(
+    'POST',
+    `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kontoauszug.pdf')}&typ=application/pdf`,
+    beispielPdf('Lena Beispiel - IBAN DE89 3704 0044 0532 0130 00 - Telefon 0351 1234567'),
+    true,
+  );
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   const auszug = s.locator('.dokumentliste li', { hasText: /^Kontoauszug\.pdf/ }).first();
@@ -655,7 +976,11 @@ async function main() {
   await schwarz.locator('.schwarz-seite img').first().waitFor({ timeout: 30_000 });
   await schwarz.getByLabel(w('Überall schwärzen')).fill('Beispiel');
   await schwarz.getByRole('button', { name: w('Hinzufügen') }).click();
-  await schwarz.locator('.schwarz-art', { hasText: w('IBAN') }).locator('input[type="checkbox"]').first().check();
+  await schwarz
+    .locator('.schwarz-art', { hasText: w('IBAN') })
+    .locator('input[type="checkbox"]')
+    .first()
+    .check();
   await schwarz.getByRole('button', { name: w('Vorschau') }).click();
   await s.waitForTimeout(500);
   await schwarz.scrollIntoViewIfNeeded();
@@ -706,7 +1031,10 @@ async function main() {
 
   // Formatierter Text, Notizen, Aufgabe, Protokoll, Aktionen (#53–#58)
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
-  await s.locator('.formateingabe').first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await s
+    .locator('.formateingabe')
+    .first()
+    .evaluate((e) => e.scrollIntoView({ block: 'center' }));
   await bild(s, 'formatiert');
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   // Notizen als Register vor der Historie, „Mappe ▾“ neben dem Stern (#427)
@@ -714,9 +1042,16 @@ async function main() {
   await s.locator('.notizliste li').first().waitFor();
   await bild(s, 'notizen');
   // Erwähnen mit @ (#889): „Erwähnen“ in der Leiste, Auswahl mit Mappentyp vor dem Titel.
-  await s.getByRole('button', { name: w('Erwähnen') }).last().click();
+  await s
+    .getByRole('button', { name: w('Erwähnen') })
+    .last()
+    .click();
   await s.keyboard.type('Stadt');
-  await s.getByRole('listbox', { name: w('Mappe oder Benutzer erwähnen') }).getByRole('option').first().waitFor();
+  await s
+    .getByRole('listbox', { name: w('Mappe oder Benutzer erwähnen') })
+    .getByRole('option')
+    .first()
+    .waitFor();
   await bild(s, 'erwaehnen-auswahl');
   await s.keyboard.press('Escape');
   await s.locator('#neue-notiz').fill('');
@@ -755,10 +1090,24 @@ async function main() {
   await api('PUT', '/api/konto/einstellungen/erledigen_ansicht', { wert: null });
   // Am Handy: Monat kompakt mit Punkten, darunter die Einträge des gewählten Tags.
   {
-    const kh = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+    const kh = await browser.newContext({
+      viewport: { width: 393, height: 852 },
+      isMobile: true,
+      hasTouch: true,
+      colorScheme: 'light',
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+      deviceScaleFactor: 1,
+    });
     const [name, wert] = d.adminCookie.split('=');
     await kh.addCookies([{ name, value: wert, url: BASIS }]);
-    await kh.addInitScript(() => addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '.verwaltungsbalken{display:none!important}'; document.head.append(st); }));
+    await kh.addInitScript(() =>
+      addEventListener('DOMContentLoaded', () => {
+        const st = document.createElement('style');
+        st.textContent = '.verwaltungsbalken{display:none!important}';
+        document.head.append(st);
+      }),
+    );
     const sh = await kh.newPage();
     await geheZu(sh, '/ablage/eingang');
     await sh.getByRole('radio', { name: w('Monat') }).click();
@@ -786,7 +1135,10 @@ async function main() {
   await s.getByRole('button', { name: w('Mappe'), exact: true }).click();
   await s.getByRole('menuitem', { name: w(/Mit verknüpften Mappen löschen/) }).click();
   // Gefahr im Menü (#1211): erst die Rückfrage, dann die Auswahl als Baum.
-  await s.getByRole('alertdialog').getByRole('button', { name: w('Weiter zur Auswahl') }).click();
+  await s
+    .getByRole('alertdialog')
+    .getByRole('button', { name: w('Weiter zur Auswahl') })
+    .click();
   const loeschBaum = s.getByRole('region', { name: w('Mit verknüpften Mappen löschen') });
   await loeschBaum.locator('.lb-summe').waitFor();
   await loeschBaum.evaluate((e) => e.scrollIntoView({ block: 'start' }));
@@ -801,7 +1153,10 @@ async function main() {
   await s.waitForURL(/\/uebernehmen$/);
   await s.locator('.ue-wohin').waitFor();
   await s.getByRole('combobox', { name: w('Mappentyp suchen …') }).click();
-  await s.locator('.ue-wohin .wahlliste button', { hasText: vertrag.beschriftungen?.[SPRACHE]?.name ?? vertrag.name }).first().click();
+  await s
+    .locator('.ue-wohin .wahlliste button', { hasText: vertrag.beschriftungen?.[SPRACHE]?.name ?? vertrag.name })
+    .first()
+    .click();
   await s.locator('.ue-rechts .mappenkopf h1').waitFor();
   await s.locator('.ue-seite img').first().waitFor();
   await bild(s, 'post-zuordnen');
@@ -809,7 +1164,12 @@ async function main() {
   // „Vorhandene Mappe“ (#1217): ein Abschlag zum Stromvertrag – Vorschlag aus dem Brief (wo die Erkennung ihn kennt),
   // sonst über die Suche; darunter die Kurzansicht. Danach erledigt, damit „Neue Post“ in den folgenden Bildern gleich bleibt.
   const abschlag = await api('POST', '/api/post', { betreff: 'Abschlag Strom 2027' });
-  await api('POST', `/api/mappen/${abschlag.id}/dokumente?register=dokumente&name=${encodeURIComponent('Abschlag 2027.pdf')}&typ=application/pdf`, beispielPdf('Abschlag Strom 2027 - Vertragsnummer SV-4711'), true);
+  await api(
+    'POST',
+    `/api/mappen/${abschlag.id}/dokumente?register=dokumente&name=${encodeURIComponent('Abschlag 2027.pdf')}&typ=application/pdf`,
+    beispielPdf('Abschlag Strom 2027 - Vertragsnummer SV-4711'),
+    true,
+  );
   await geheZu(s, `/ablage/${neuePost}/${abschlag.id}`);
   await s.waitForURL(/\/uebernehmen$/);
   await s.locator('.ue-seite img').first().waitFor();
@@ -829,7 +1189,12 @@ async function main() {
   // die Wahl einer Person („Auch weglassen“) – das Paket Leerseiten setzt dieselbe Markierung. Danach erledigt, damit
   // die Zahl bei „Neue Post“ in den folgenden Bildern gleich bleibt.
   const beidseitig = await api('POST', '/api/post', { betreff: 'Kontoauszug, beidseitig gescannt' });
-  await api('POST', `/api/mappen/${beidseitig.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kontoauszug.pdf')}&typ=application/pdf`, beispielPdf(['Kontoauszug Seite 1', '', 'Kontoauszug Seite 2', '']), true);
+  await api(
+    'POST',
+    `/api/mappen/${beidseitig.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kontoauszug.pdf')}&typ=application/pdf`,
+    beispielPdf(['Kontoauszug Seite 1', '', 'Kontoauszug Seite 2', '']),
+    true,
+  );
   const scanDok = (await api('GET', `/api/mappen/${beidseitig.id}`)).dokumente[0];
   for (const nr of [2, 4]) await api('PUT', `/api/dokumente/${scanDok.id}/leerseiten/${nr}`, { weglassen: true });
   await geheZu(s, `/ablage/${neuePost}/${beidseitig.id}`);
@@ -842,9 +1207,21 @@ async function main() {
   // Anlagen (#998): Werkstattrechnung mit HU/AU-Protokoll, Arbeiten und Teilebestellung als Anlage 1–3, eingeklappt
   // unter dem Hauptdokument in der Post. Danach erledigt, damit „Neue Post“ in den folgenden Bildern gleich bleibt.
   const werkstatt = await api('POST', '/api/post', { betreff: 'Werkstatt Petra – Inspektion' });
-  const lade = async (name, seiten) => (await api('POST', `/api/mappen/${werkstatt.id}/dokumente?register=dokumente&name=${encodeURIComponent(name)}&typ=application/pdf`, beispielPdf(seiten), true)).dokument;
+  const lade = async (name, seiten) =>
+    (
+      await api(
+        'POST',
+        `/api/mappen/${werkstatt.id}/dokumente?register=dokumente&name=${encodeURIComponent(name)}&typ=application/pdf`,
+        beispielPdf(seiten),
+        true,
+      )
+    ).dokument;
   const haupt = await lade('Werkstattrechnung.pdf', ['Rechnung Nr. W-2026-0815']);
-  for (const [name, seiten] of [['HU-AU-Protokoll.pdf', ['HU/AU-Protokoll', 'Seite 2']], ['Arbeiten.pdf', ['Auflistung der Arbeiten']], ['Teilebestellung.pdf', ['Teilebestellung']]]) {
+  for (const [name, seiten] of [
+    ['HU-AU-Protokoll.pdf', ['HU/AU-Protokoll', 'Seite 2']],
+    ['Arbeiten.pdf', ['Auflistung der Arbeiten']],
+    ['Teilebestellung.pdf', ['Teilebestellung']],
+  ]) {
     await api('POST', `/api/dokumente/${haupt.id}/anlagen`, { dokument: (await lade(name, seiten)).id });
   }
   await geheZu(s, `/ablage/${neuePost}/${werkstatt.id}?als=post`);
@@ -857,16 +1234,36 @@ async function main() {
   // „Anlage ab hier“ (#1162): eingescannte Werkstattrechnung mit HU-Protokoll in einem PDF – Seite 3 beginnt die Anlage.
   // Nur vorgemerkt (Abbrechen), danach erledigt, damit „Neue Post“ in den folgenden Bildern gleich bleibt.
   const hu = await api('POST', '/api/post', { betreff: 'Werkstatt Petra – HU' });
-  await api('POST', `/api/mappen/${hu.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Werkstatt.pdf')}&typ=application/pdf`,
-    beispielPdf(['Rechnung Nr. W-2026-0912', 'Rechnung Seite 2', 'HU-Protokoll', 'HU-Protokoll Seite 2', 'HU-Protokoll Seite 3']), true);
+  await api(
+    'POST',
+    `/api/mappen/${hu.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Werkstatt.pdf')}&typ=application/pdf`,
+    beispielPdf(['Rechnung Nr. W-2026-0912', 'Rechnung Seite 2', 'HU-Protokoll', 'HU-Protokoll Seite 2', 'HU-Protokoll Seite 3']),
+    true,
+  );
   await geheZu(s, `/ablage/${neuePost}/${hu.id}?als=post`);
   await s.getByRole('tab', { name: w(/^Dokumente/) }).click();
   await dokMenue(s.locator('.dokumentliste li', { hasText: 'Scan Werkstatt.pdf' }), 'Seiten …');
-  await s.waitForFunction(() => [...document.querySelectorAll('.seitenbild img')].length > 0 && [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 20_000 }).catch(() => {});
-  await s.locator('.seitenraster .seite').nth(2).getByRole('button', { name: w('Anlage ab hier') }).click();
+  await s
+    .waitForFunction(
+      () =>
+        [...document.querySelectorAll('.seitenbild img')].length > 0 &&
+        [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0),
+      null,
+      { timeout: 20_000 },
+    )
+    .catch(() => {});
+  await s
+    .locator('.seitenraster .seite')
+    .nth(2)
+    .getByRole('button', { name: w('Anlage ab hier') })
+    .click();
   await s.locator('.pdfseiten').scrollIntoViewIfNeeded();
   await bild(s, 'post-anlage-ab-hier');
-  await s.locator('.pdfseiten').getByRole('button', { name: w('Abbrechen') }).click().catch(() => {});
+  await s
+    .locator('.pdfseiten')
+    .getByRole('button', { name: w('Abbrechen') })
+    .click()
+    .catch(() => {});
   await api('PUT', `/api/mappen/${hu.id}`, { werte: { stand: 'Erledigt' } });
 
   // E-Mail-Postfach (#999): eine abgeholte E-Mail mit drei Anhängen (und einem Logo in der Signatur) – drei Dokumente in
@@ -874,20 +1271,35 @@ async function main() {
   // gelöscht und Post erledigt, damit die Werkbank und „Neue Post“ in den folgenden Bildern gleich bleiben.
   {
     const b64 = (x) => Buffer.from(x).toString('base64').replace(/.{76}/g, '$&\r\n');
-    const teil = (typ, name, inhalt, art = 'attachment', cid) => `--aussen\r\nContent-Type: ${typ}; name="${name}"\r\nContent-Disposition: ${art}; filename="${name}"\r\n`
-      + `Content-Transfer-Encoding: base64\r\n${cid ? `Content-ID: <${cid}>\r\n` : ''}\r\n${b64(inhalt)}\r\n`;
-    const mail = Buffer.from('From: Autohaus Beispiel <service@autohaus.example.org>\r\nTo: ablage@example.org\r\nSubject: Ihr Auftrag W-2026-0815: Unterlagen\r\n'
-      + 'Date: Tue, 10 Nov 2026 09:12:00 +0100\r\nMessage-ID: <auftrag-0815@autohaus.example.org>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="aussen"\r\n\r\n'
-      + '--aussen\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nGuten Tag Herr Özdemir,\r\nanbei Rechnung, HU-Bericht und Garantiebedingungen zu Ihrem Auftrag.\r\n'
-      + teil('image/png', 'logo.png', 'logo', 'inline', 'logo1')
-      + teil('application/pdf', 'Rechnung W-2026-0815.pdf', beispielPdf('Rechnung W-2026-0815'))
-      + teil('application/pdf', 'HU-Bericht.pdf', beispielPdf(['HU-Bericht', 'Seite 2']))
-      + teil('application/pdf', 'Garantiebedingungen.pdf', beispielPdf('Garantiebedingungen'))
-      + '--aussen--\r\n', 'utf8');
+    const teil = (typ, name, inhalt, art = 'attachment', cid) =>
+      `--aussen\r\nContent-Type: ${typ}; name="${name}"\r\nContent-Disposition: ${art}; filename="${name}"\r\n` +
+      `Content-Transfer-Encoding: base64\r\n${cid ? `Content-ID: <${cid}>\r\n` : ''}\r\n${b64(inhalt)}\r\n`;
+    const mail = Buffer.from(
+      'From: Autohaus Beispiel <service@autohaus.example.org>\r\nTo: ablage@example.org\r\nSubject: Ihr Auftrag W-2026-0815: Unterlagen\r\n' +
+        'Date: Tue, 10 Nov 2026 09:12:00 +0100\r\nMessage-ID: <auftrag-0815@autohaus.example.org>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="aussen"\r\n\r\n' +
+        '--aussen\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nGuten Tag Herr Özdemir,\r\nanbei Rechnung, HU-Bericht und Garantiebedingungen zu Ihrem Auftrag.\r\n' +
+        teil('image/png', 'logo.png', 'logo', 'inline', 'logo1') +
+        teil('application/pdf', 'Rechnung W-2026-0815.pdf', beispielPdf('Rechnung W-2026-0815')) +
+        teil('application/pdf', 'HU-Bericht.pdf', beispielPdf(['HU-Bericht', 'Seite 2'])) +
+        teil('application/pdf', 'Garantiebedingungen.pdf', beispielPdf('Garantiebedingungen')) +
+        '--aussen--\r\n',
+      'utf8',
+    );
     const attrappe = await imapAttrappe([mail]);
     try {
-      const pf = (await api('POST', '/api/werkbank/postfaecher', { name: 'Autohaus', aktiv: false, server: '127.0.0.1', port: attrappe.port, verschluesselung: 'keine', unverschluesseltBestaetigt: true,
-        benutzer: 'ablage@example.org', passwort: 'nur-fuer-bilder', nachher: 'verschieben' })).at(-1);
+      const pf = (
+        await api('POST', '/api/werkbank/postfaecher', {
+          name: 'Autohaus',
+          aktiv: false,
+          server: '127.0.0.1',
+          port: attrappe.port,
+          verschluesselung: 'keine',
+          unverschluesseltBestaetigt: true,
+          benutzer: 'ablage@example.org',
+          passwort: 'nur-fuer-bilder',
+          nachher: 'verschieben',
+        })
+      ).at(-1);
       await api('POST', `/api/werkbank/postfaecher/${pf.id}/abrufen`, {});
       const emailPost = (await api('GET', '/api/werkbank/postfaecher')).find((x) => x.id === pf.id).stand.uebernommen[0].mappeId;
       await api('DELETE', `/api/werkbank/postfaecher/${pf.id}`);
@@ -897,18 +1309,21 @@ async function main() {
       await s.locator('[data-anlage="1"]').scrollIntoViewIfNeeded();
       await bild(s, 'post-email-anhaenge');
       await api('PUT', `/api/mappen/${emailPost}`, { werte: { stand: 'Erledigt' } });
-    } finally { await attrappe.schliessen(); }
+    } finally {
+      await attrappe.schliessen();
+    }
   }
 
   // Neue Post von überall (#193): zwei Dateien irgendwo ins Fenster ziehen → eine Post mit beiden.
   await geheZu(s, `/ablage/${vertrag.id}`);
   // Je Seite neu erzeugen: ein JSHandle gilt nur auf der Seite, auf der es entstand.
-  const neueDateien = () => s.evaluateHandle(() => {
-    const dt = new DataTransfer();
-    dt.items.add(new File(['Kündigung Fitnessstudio zum 31.12.'], 'Kündigung Fitnessstudio.txt', { type: 'text/plain' }));
-    dt.items.add(new File(['Mitgliedsnummer 4711'], 'Notiz zur Kündigung.txt', { type: 'text/plain' }));
-    return dt;
-  });
+  const neueDateien = () =>
+    s.evaluateHandle(() => {
+      const dt = new DataTransfer();
+      dt.items.add(new File(['Kündigung Fitnessstudio zum 31.12.'], 'Kündigung Fitnessstudio.txt', { type: 'text/plain' }));
+      dt.items.add(new File(['Mitgliedsnummer 4711'], 'Notiz zur Kündigung.txt', { type: 'text/plain' }));
+      return dt;
+    });
   let dateien = await neueDateien();
   await s.dispatchEvent('body', 'dragenter', { dataTransfer: dateien });
   await s.locator('.ablageflaeche').waitFor();
@@ -959,7 +1374,10 @@ async function main() {
   await s.locator('.trefferliste table').waitFor();
   await bild(s, 'tabelle');
   // Eingeklappte Spalten (#536): links die Leiste „Ansichten“, rechts der Titel der geöffneten Mappe.
-  await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 340, linksZu: true, rechtsZu: true })), [breitSchluessel]);
+  await s.evaluate(
+    ([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 340, linksZu: true, rechtsZu: true })),
+    [breitSchluessel],
+  );
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.locator('.spl-lasche-rechts').getByText('Stromvertrag Haus').waitFor();
   await bild(s, 'spalten-eingeklappt');
@@ -973,9 +1391,17 @@ async function main() {
   await bild(s, 'favoriten');
   // Favorit = Abo (#422): Jonas ändert einen Favoriten von Lena – Punkt in der Liste, „Geändert“ unter Zu erledigen.
   {
-    const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }) });
+    const anm = await fetch(`${BASIS}/api/konto/anmelden`, {
+      method: 'POST',
+      headers: { 'x-dms': '1', 'content-type': 'application/json' },
+      body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }),
+    });
     const benCookie = (anm.headers.get('set-cookie') ?? '').split(';')[0];
-    await fetch(`${BASIS}/api/mappen/${d.stadtwerke.id}/notizen`, { method: 'POST', headers: { 'x-dms': '1', cookie: benCookie, 'content-type': 'application/json' }, body: JSON.stringify({ text: 'Neue Abschlagshöhe ab Januar notiert.' }) });
+    await fetch(`${BASIS}/api/mappen/${d.stadtwerke.id}/notizen`, {
+      method: 'POST',
+      headers: { 'x-dms': '1', cookie: benCookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'Neue Abschlagshöhe ab Januar notiert.' }),
+    });
     await geheZu(s, '/ablage/favoriten');
     await s.locator('li.abo-geaendert').first().waitFor();
     await bild(s, 'favoriten-geaendert');
@@ -983,11 +1409,23 @@ async function main() {
 
   // Mehrere Trefferlisten (#75): „Kurz“ bei Rechnung, im Register des Vertragspartners als Tabelle
   const rechnungAktuell = (await api('GET', '/api/typen')).find((t) => t.id === rechnung.id);
-  await api('PUT', `/api/typen/${rechnung.id}`, { ...rechnungAktuell, trefferliste: undefined,
-    trefferlisten: [...rechnungAktuell.trefferlisten, { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag', 'rechnungsdatum', 'bezahlt'] }] });
+  await api('PUT', `/api/typen/${rechnung.id}`, {
+    ...rechnungAktuell,
+    trefferliste: undefined,
+    trefferlisten: [
+      ...rechnungAktuell.trefferlisten,
+      { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag', 'rechnungsdatum', 'bezahlt'] },
+    ],
+  });
   const partnerAktuell = (await api('GET', '/api/typen')).find((t) => t.id === partner.id);
-  await api('PUT', `/api/typen/${partner.id}`, { ...partnerAktuell, register: partnerAktuell.register.map((r) => (r.key === 'rechnungen'
-    ? { ...r, quellen: (r.quellen ?? []).map((q) => (q.typId === rechnung.id ? { ...q, trefferliste: 'kurz' } : q)) } : r)) });
+  await api('PUT', `/api/typen/${partner.id}`, {
+    ...partnerAktuell,
+    register: partnerAktuell.register.map((r) =>
+      r.key === 'rechnungen'
+        ? { ...r, quellen: (r.quellen ?? []).map((q) => (q.typId === rechnung.id ? { ...q, trefferliste: 'kurz' } : q)) }
+        : r,
+    ),
+  });
   await geheZu(s, `/werkbank/typen/${rechnung.id}#trefferlisten`);
   await s.locator('.trefferlistenblock').nth(1).scrollIntoViewIfNeeded();
   await bild(s, 'werkbank-trefferlisten');
@@ -998,20 +1436,61 @@ async function main() {
   // Feldart Tabelle (#1030): die Positionen einer Rechnung zwischen den Feldern, darunter „+ Position“.
   {
     const r = (await api('GET', '/api/typen')).find((t) => t.id === rechnung.id);
-    const pos = await api('POST', '/api/typen', { name: 'Rechnungsposition', schluessel: 'rechnungsposition', titelVorlage: '{nr}. {beschreibung}', beschriftungen: { en: { name: 'Invoice item' } },
-      trefferliste: ['nr', 'beschreibung', 'menge', 'einzelpreis'], felder: [
-        { key: 'rechnung', label: 'Rechnung', typ: 'referenz', zielTypen: [rechnung.id], pflicht: true, verweisart: 'zugehoerigkeit', beschriftungen: { en: { label: 'Invoice' } } },
+    const pos = await api('POST', '/api/typen', {
+      name: 'Rechnungsposition',
+      schluessel: 'rechnungsposition',
+      titelVorlage: '{nr}. {beschreibung}',
+      beschriftungen: { en: { name: 'Invoice item' } },
+      trefferliste: ['nr', 'beschreibung', 'menge', 'einzelpreis'],
+      felder: [
+        {
+          key: 'rechnung',
+          label: 'Rechnung',
+          typ: 'referenz',
+          zielTypen: [rechnung.id],
+          pflicht: true,
+          verweisart: 'zugehoerigkeit',
+          beschriftungen: { en: { label: 'Invoice' } },
+        },
         { key: 'nr', label: 'Nr.', typ: 'zahl', beschriftungen: { en: { label: 'No.' } } },
         { key: 'beschreibung', label: 'Beschreibung', typ: 'text', pflicht: true, beschriftungen: { en: { label: 'Description' } } },
         { key: 'menge', label: 'Menge', typ: 'zahl', beschriftungen: { en: { label: 'Quantity' } } },
         { key: 'einzelpreis', label: 'Einzelpreis', typ: 'betrag', waehrung: 'EUR', beschriftungen: { en: { label: 'Unit price' } } },
-      ] });
+      ],
+    });
     const reg = r.register.find((x) => x.art === 'felder');
-    await api('PUT', `/api/typen/${rechnung.id}`, { ...r, trefferliste: undefined,
-      felder: [...r.felder, { key: 'positionen', label: 'Positionen', typ: 'tabelle', quelle: { typId: pos.id, feldKey: 'rechnung', neu: '+ Position' }, beschriftungen: { en: { label: 'Items', neu: '+ Item' } } }],
-      register: r.register.map((x) => (x === reg ? { ...x, felder: [...(x.felder ?? []), 'positionen'], abschnitte: [...(x.abschnitte ?? []), { vor: 'positionen', titel: 'Positionen', beschriftungen: { en: { titel: 'Items' } } }] } : x)) });
-    for (const [nr, beschreibung, menge, betrag] of [[1, 'Wartung Heizung', 1, 149], [2, 'Dichtungssatz', 2, 18.5], [3, 'Anfahrt', 1, 35]]) {
-      await api('POST', '/api/mappen', { typId: pos.id, werte: { rechnung: d.rechnung.id, nr, beschreibung, menge, einzelpreis: { betrag, waehrung: 'EUR' } } });
+    await api('PUT', `/api/typen/${rechnung.id}`, {
+      ...r,
+      trefferliste: undefined,
+      felder: [
+        ...r.felder,
+        {
+          key: 'positionen',
+          label: 'Positionen',
+          typ: 'tabelle',
+          quelle: { typId: pos.id, feldKey: 'rechnung', neu: '+ Position' },
+          beschriftungen: { en: { label: 'Items', neu: '+ Item' } },
+        },
+      ],
+      register: r.register.map((x) =>
+        x === reg
+          ? {
+              ...x,
+              felder: [...(x.felder ?? []), 'positionen'],
+              abschnitte: [...(x.abschnitte ?? []), { vor: 'positionen', titel: 'Positionen', beschriftungen: { en: { titel: 'Items' } } }],
+            }
+          : x,
+      ),
+    });
+    for (const [nr, beschreibung, menge, betrag] of [
+      [1, 'Wartung Heizung', 1, 149],
+      [2, 'Dichtungssatz', 2, 18.5],
+      [3, 'Anfahrt', 1, 35],
+    ]) {
+      await api('POST', '/api/mappen', {
+        typId: pos.id,
+        werte: { rechnung: d.rechnung.id, nr, beschreibung, menge, einzelpreis: { betrag, waehrung: 'EUR' } },
+      });
     }
     await geheZu(s, `/ablage/${rechnung.id}/${d.rechnung.id}`);
     const tabelle = s.locator('[data-anker="mappe.tabellenfeld:positionen"]');
@@ -1053,7 +1532,11 @@ async function main() {
   await s.locator('[data-anker="assistent"] button').first().click();
   const assistent = s.getByRole('dialog', { name: w('Assistent') });
   await assistent.getByRole('radio', { name: new RegExp(`^${w('Tipps')}`) }).click();
-  await assistent.locator('[data-anker="startseite.tipp"]').or(assistent.getByRole('link', { name: w('Alle Tipps ansehen ›') })).first().waitFor();
+  await assistent
+    .locator('[data-anker="startseite.tipp"]')
+    .or(assistent.getByRole('link', { name: w('Alle Tipps ansehen ›') }))
+    .first()
+    .waitFor();
   await bild(s, 'assistent');
   await assistent.getByRole('button', { name: w('Assistent schließen') }).click();
   await s.unroute('**/api/fragen');
@@ -1077,16 +1560,37 @@ async function main() {
   await bild(s, 'benutzer-mappe');
 
   // Berechtigungen (#123–#127, #142): Regeln am Mappentyp Vertrag, Prüfung, „Meine Rechte“ eines Mitglieds
-  await api('PUT', `/api/werkbank/berechtigungen/${vertrag.id}`, { bestaetigt: true, berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [
-    { id: 'garten', name: 'Haus und Garten darf alles', wenn: [{ art: 'rolle', rollen: [d.garten.id] }], dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' }, stopp: true },
-    { id: 'andere', name: 'Sonst bearbeitet nur, wer verantwortlich ist', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'verantwortlich', op: 'zeigtAuf', wert: { art: 'ich' } } }], dann: { U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: false },
-  ] } });
+  await api('PUT', `/api/werkbank/berechtigungen/${vertrag.id}`, {
+    bestaetigt: true,
+    berechtigungen: {
+      grund: { C: true, R: true, U: true, D: true, P: true },
+      regeln: [
+        {
+          id: 'garten',
+          name: 'Haus und Garten darf alles',
+          wenn: [{ art: 'rolle', rollen: [d.garten.id] }],
+          dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' },
+          stopp: true,
+        },
+        {
+          id: 'andere',
+          name: 'Sonst bearbeitet nur, wer verantwortlich ist',
+          wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'verantwortlich', op: 'zeigtAuf', wert: { art: 'ich' } } }],
+          dann: { U: 'entziehen', D: 'entziehen', P: 'entziehen' },
+          stopp: false,
+        },
+      ],
+    },
+  });
   await geheZu(s, `/werkbank/typen/${vertrag.id}#berechtigungen`);
   await s.locator('#berechtigungen .regel').first().waitFor();
   await s.locator('#berechtigungen').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-berechtigungen');
   {
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Testlauf') }).click();
+    await s
+      .locator('[data-sprungleiste]')
+      .getByRole('button', { name: w('Testlauf') })
+      .click();
     await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
     const test = s.locator('#testlauf');
     // Benutzer und Testmappe wie im Verweisfeld (#371); das Ergebnis erscheint ohne „Prüfen“.
@@ -1099,9 +1603,18 @@ async function main() {
     await bild(s, 'werkbank-berechtigungen-testlauf');
   }
   {
-    const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }) });
+    const anm = await fetch(`${BASIS}/api/konto/anmelden`, {
+      method: 'POST',
+      headers: { 'x-dms': '1', 'content-type': 'application/json' },
+      body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }),
+    });
     const [name, wert] = (anm.headers.get('set-cookie') ?? '').split(';')[0].split('=');
-    const km = await browser.newContext({ viewport: { width: 1100, height: 900 }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin' });
+    const km = await browser.newContext({
+      viewport: { width: 1100, height: 900 },
+      colorScheme: 'light',
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+    });
     await km.addCookies([{ name, value: wert, url: BASIS }]);
     const sm = await km.newPage();
     await geheZu(sm, '/profil/konto');
@@ -1121,7 +1634,10 @@ async function main() {
     await meine.scrollIntoViewIfNeeded();
     const mb = await meine.boundingBox();
     const oben = await sm.evaluate(() => scrollY);
-    await bild(sm, 'profil-abwesenheit-aufgaben', { clip: { x: mb.x - 8, y: mb.y + oben - 8, width: mb.width + 16, height: Math.min(mb.height + 16, 900) }, fullPage: true });
+    await bild(sm, 'profil-abwesenheit-aufgaben', {
+      clip: { x: mb.x - 8, y: mb.y + oben - 8, width: mb.width + 16, height: Math.min(mb.height + 16, 900) },
+      fullPage: true,
+    });
     await km.close();
   }
 
@@ -1143,15 +1659,31 @@ async function main() {
 
   // Fehler nachstellen (#418): eigene Admin-Sitzung, als Jonas anmelden; zurück nur über den gelben Banner.
   {
-    const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: ADMIN.email, passwort: ADMIN.passwort }) });
+    const anm = await fetch(`${BASIS}/api/konto/anmelden`, {
+      method: 'POST',
+      headers: { 'x-dms': '1', 'content-type': 'application/json' },
+      body: JSON.stringify({ email: ADMIN.email, passwort: ADMIN.passwort }),
+    });
     const adminCookie = (anm.headers.get('set-cookie') ?? '').split(';')[0];
     // Vertreten gehört zur Verwaltung (#819): erst den Modus beginnen – direkt nach der Anmeldung ohne erneute Abfrage.
-    await fetch(`${BASIS}/api/konto/verwaltung`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json', cookie: adminCookie }, body: '{}' });
+    await fetch(`${BASIS}/api/konto/verwaltung`, {
+      method: 'POST',
+      headers: { 'x-dms': '1', 'content-type': 'application/json', cookie: adminCookie },
+      body: '{}',
+    });
     const jonas = (await api('GET', '/api/benutzer')).find((b) => b.email === MITGLIED.email);
-    const v = await fetch(`${BASIS}/api/benutzer/${jonas.id}/vertreten`, { method: 'POST', headers: { 'x-dms': '1', cookie: adminCookie } });
+    const v = await fetch(`${BASIS}/api/benutzer/${jonas.id}/vertreten`, {
+      method: 'POST',
+      headers: { 'x-dms': '1', cookie: adminCookie },
+    });
     const vc = (v.headers.get('set-cookie') ?? adminCookie).split(';')[0];
     const [name, wert] = vc.split('=');
-    const kv = await browser.newContext({ viewport: { width: 1100, height: 520 }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin' });
+    const kv = await browser.newContext({
+      viewport: { width: 1100, height: 520 },
+      colorScheme: 'light',
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+    });
     await kv.addCookies([{ name, value: wert, url: BASIS }]);
     const sv = await kv.newPage();
     await geheZu(sv, '/ablage/eingang');
@@ -1159,10 +1691,14 @@ async function main() {
     await sv.locator('.benutzermenue .wer').click();
     const menue = sv.locator('.benutzermenue .menue');
     await menue.waitFor();
-    if (await menue.getByText(w('Zurück zum eigenen Konto')).count()) throw new Error('#418: „Zurück zum eigenen Konto“ steht wieder im Benutzermenü.');
+    if (await menue.getByText(w('Zurück zum eigenen Konto')).count())
+      throw new Error('#418: „Zurück zum eigenen Konto“ steht wieder im Benutzermenü.');
     await bild(sv, 'vertretung', { clip: { x: 0, y: 0, width: 1100, height: 420 } });
     await sv.keyboard.press('Escape');
-    await sv.locator('.vertretungsbanner').getByRole('button', { name: w('Zurück zum eigenen Konto') }).click();
+    await sv
+      .locator('.vertretungsbanner')
+      .getByRole('button', { name: w('Zurück zum eigenen Konto') })
+      .click();
     await sv.locator('.vertretungsbanner').waitFor({ state: 'detached' });
     await kv.close();
   }
@@ -1179,7 +1715,9 @@ async function main() {
   await s.getByRole('heading', { name: w(/Aufgaben/) }).waitFor();
   await bild(s, 'profil-benachrichtigungen', { fullPage: true });
   await geheZu(s, '/profil/fehler-melden');
-  await s.getByPlaceholder(w(/^z\. B\. Beim Speichern/)).fill('Beim Speichern einer Rechnung kam „Fehler 500“, nachdem ich ein Dokument hinzugefügt hatte.');
+  await s
+    .getByPlaceholder(w(/^z\. B\. Beim Speichern/))
+    .fill('Beim Speichern einer Rechnung kam „Fehler 500“, nachdem ich ein Dokument hinzugefügt hatte.');
   await s.getByText(w('Technische Angaben ansehen')).click();
   await bild(s, 'fehler-melden');
   await s.getByRole('button', { name: w('Meldung senden') }).click();
@@ -1203,10 +1741,19 @@ async function main() {
   await bild(s, 'werkbank-fehlermeldung');
   // Werkbank
   // Bestehende Typen starten eingeklappt (#144): Übersicht mit Kurzinfos, dann „Felder“ aufklappen.
-  await s.evaluate(() => { try { localStorage.removeItem('dms.typeditor.offen'); } catch { /* egal */ } });
+  await s.evaluate(() => {
+    try {
+      localStorage.removeItem('dms.typeditor.offen');
+    } catch {
+      /* egal */
+    }
+  });
   await geheZu(s, `/werkbank/typen/${vertrag.id}`);
   await bild(s, 'werkbank-mappentyp');
-  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Felder') }).click();
+  await s
+    .locator('[data-sprungleiste]')
+    .getByRole('button', { name: w('Felder') })
+    .click();
   await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
   await s.locator('button.feldkopfknopf').filter({ hasText: 'Kündigung bis' }).click();
   await s.locator('.feldzeile.offen').scrollIntoViewIfNeeded();
@@ -1217,11 +1764,17 @@ async function main() {
   // In der allgemeinen Suche zeigen (#1220): eine reine Auswahlliste „Vertragsart“ mit abgewähltem Haken in den Grunddaten.
   {
     const art = await api('POST', '/api/typen', {
-      name: SPRACHE === 'en' ? 'Contract type' : 'Vertragsart', titelVorlage: '{name}', inSuche: false, sichtAnlegen: false,
+      name: SPRACHE === 'en' ? 'Contract type' : 'Vertragsart',
+      titelVorlage: '{name}',
+      inSuche: false,
+      sichtAnlegen: false,
       felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
     });
     await geheZu(s, `/werkbank/typen/${art.id}`);
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Grunddaten') }).click();
+    await s
+      .locator('[data-sprungleiste]')
+      .getByRole('button', { name: w('Grunddaten') })
+      .click();
     const haken = s.getByRole('checkbox', { name: w('In der allgemeinen Suche zeigen') });
     await haken.waitFor();
     await haken.evaluate((e) => e.scrollIntoView({ block: 'center' }));
@@ -1245,7 +1798,10 @@ async function main() {
   // Archivnummern (#345): Aufkleber drucken beim Nummernkreis „Archivnummer“.
   // Seit #1000 ein Bereich: über die Sprungleiste öffnen (auf eindeutige Elemente warten, nicht auf Köpfe mit Hilfe).
   await geheZu(s, '/werkbank/nummernkreise/archivnummer');
-  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Aufkleber drucken'), exact: true }).click();
+  await s
+    .locator('[data-sprungleiste]')
+    .getByRole('button', { name: w('Aufkleber drucken'), exact: true })
+    .click();
   await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
   await s.locator('#aufkleber-inhalt form').waitFor();
   await s.locator('#aufkleber').evaluate((e) => e.scrollIntoView({ block: 'start' }));
@@ -1255,40 +1811,79 @@ async function main() {
   await s.locator('.spalte.liste a[href="/werkbank/stempel/kopie"]').click();
   await s.locator('.stempeleditor').waitFor();
   // Bereiche (#1000): alle aufklappen, damit Angaben und Vorschau zu sehen sind.
-  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+  await s
+    .locator('[data-sprungleiste]')
+    .getByRole('button', { name: w('Alle aufklappen') })
+    .click();
   await s.locator('#stempel-name').waitFor();
   await bild(s, 'werkbank-stempel');
   // Automatisierungen (#675): Beispiel aus dem Handbuch – Vertrag „Kündigung bis“ in 30 Tagen → Aufgabe an Verantwortlich.
   // Ein Probelauf füllt den Verlauf. Bilder: Liste und Editor, aufgeklappte Dann-Karte, dunkel und am Handy.
   {
     const vt = d.typ('Vertrag');
-    const auto = await api('POST', '/api/werkbank/automatisierungen', { name: 'Kündigung prüfen', aktiv: true,
+    const auto = await api('POST', '/api/werkbank/automatisierungen', {
+      name: 'Kündigung prüfen',
+      aktiv: true,
       wenn: { art: 'datum', typ: vt.id, feld: 'kuendigung_bis', tage: 30, uhrzeit: '07:00' },
       und: { modus: 'alle', karten: [{ art: 'bedingung', bedingung: { art: 'feld', feld: 'verantwortlich', op: 'nichtLeer' } }] },
-      dann: [{ art: 'aufgabe', als: 'aufgabe', faellig: 7, empfaenger: [{ art: 'feld', feld: 'verantwortlich' }], text: 'Bitte {titel} prüfen – kündbar bis {kuendigung_bis}.' }] });
+      dann: [
+        {
+          art: 'aufgabe',
+          als: 'aufgabe',
+          faellig: 7,
+          empfaenger: [{ art: 'feld', feld: 'verantwortlich' }],
+          text: 'Bitte {titel} prüfen – kündbar bis {kuendigung_bis}.',
+        },
+      ],
+    });
     await api('POST', `/api/werkbank/automatisierungen/${auto.id}/wiedergeben`, { mappeId: d.strom.id, trocken: true });
     await geheZu(s, `/werkbank/automatisierungen/${auto.id}`);
     // Bereiche (#1000): erst zugeklappt nichts zu sehen – alle aufklappen.
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+    await s
+      .locator('[data-sprungleiste]')
+      .getByRole('button', { name: w('Alle aufklappen') })
+      .click();
     await s.locator('.automatisierung-bereich').first().waitFor();
     await bild(s, 'werkbank-automatisierungen');
     await s.locator('.automatisierung-karten .karte-kopf button[aria-expanded]').first().click();
     await s.locator('.automatisierung-karten .karte.offen').scrollIntoViewIfNeeded();
     await bild(s, 'werkbank-automatisierung-karte');
     await s.locator('#verlauf').evaluate((e) => e.scrollIntoView({ block: 'start' }));
-    await s.locator('.automatisierung-schritte').first().waitFor({ state: 'attached' }).catch(() => null);
+    await s
+      .locator('.automatisierung-schritte')
+      .first()
+      .waitFor({ state: 'attached' })
+      .catch(() => null);
     // Verlauf wie die Historie (#707): den Probelauf aufklappen, damit Karte · Ergebnis · Einzelheiten zu sehen ist.
-    await s.locator('#verlauf .historie summary').first().click().catch(() => null);
+    await s
+      .locator('#verlauf .historie summary')
+      .first()
+      .click()
+      .catch(() => null);
     await bild(s, 'werkbank-automatisierung-verlauf');
-    for (const [name, schema, viewport] of [['werkbank-automatisierung-dunkel', 'dark', { width: 1440, height: 860 }], ['werkbank-automatisierung-handy', 'light', { width: 393, height: 852 }]]) {
+    for (const [name, schema, viewport] of [
+      ['werkbank-automatisierung-dunkel', 'dark', { width: 1440, height: 860 }],
+      ['werkbank-automatisierung-handy', 'light', { width: 393, height: 852 }],
+    ]) {
       const handy = viewport.width < 500;
-      const ka = await browser.newContext({ viewport, colorScheme: schema, locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1, ...(handy ? { isMobile: true, hasTouch: true } : {}) });
+      const ka = await browser.newContext({
+        viewport,
+        colorScheme: schema,
+        locale: GEBIET,
+        timezoneId: 'Europe/Berlin',
+        deviceScaleFactor: 1,
+        ...(handy ? { isMobile: true, hasTouch: true } : {}),
+      });
       const [cn, cw] = d.adminCookie.split('=');
       await ka.addCookies([{ name: cn, value: cw, url: BASIS }]);
       const sa = await ka.newPage();
       await geheZu(sa, `/werkbank/automatisierungen/${auto.id}`);
       // Dunkel ganz aufgeklappt; am Handy wie beim Mappentyp zugeklappt mit Sprungleiste und Kurzinfos (#1000).
-      if (!handy) await sa.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+      if (!handy)
+        await sa
+          .locator('[data-sprungleiste]')
+          .getByRole('button', { name: w('Alle aufklappen') })
+          .click();
       await (handy ? sa.locator('[data-sprungleiste]') : sa.locator('.automatisierung-bereich').first()).waitFor();
       await bild(sa, name, handy ? { fullPage: true } : {});
       await ka.close();
@@ -1299,12 +1894,25 @@ async function main() {
   {
     await api('POST', '/api/konto/verwaltung/bestaetigen', { passwort: ADMIN.passwort });
     const lena = (await api('GET', '/api/benutzer')).find((b) => b.email === ADMIN.email);
-    const auf = await api('POST', '/api/werkbank/automatisierungen', { name: 'Wassermelder im Keller', aktiv: true,
+    const auf = await api('POST', '/api/werkbank/automatisierungen', {
+      name: 'Wassermelder im Keller',
+      aktiv: true,
       wenn: { art: 'aufruf', parameter: ['raum', 'stufe'] },
-      dann: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'person', id: lena.id }], text: 'Wassermelder im {raum} (Stufe {stufe}) um {zeitpunkt}' }] });
+      dann: [
+        {
+          art: 'aufgabe',
+          als: 'benachrichtigung',
+          empfaenger: [{ art: 'person', id: lena.id }],
+          text: 'Wassermelder im {raum} (Stufe {stufe}) um {zeitpunkt}',
+        },
+      ],
+    });
     await api('POST', `/api/werkbank/automatisierungen/${auf.id}/aufruf`, { was: 'adresse' });
     await geheZu(s, `/werkbank/automatisierungen/${auf.id}`);
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+    await s
+      .locator('[data-sprungleiste]')
+      .getByRole('button', { name: w('Alle aufklappen') })
+      .click();
     const karte = s.locator('.automatisierung-bereich.aufruf');
     await karte.waitFor();
     await karte.locator('details summary').click();
@@ -1318,13 +1926,33 @@ async function main() {
   // Inhalt „Mit Kennungen“, ein Parameter; darunter das Geheimnis (angelegt, nicht sichtbar). Und die Seite der Ziele.
   {
     await api('POST', '/api/konto/verwaltung/bestaetigen', { passwort: ADMIN.passwort });
-    await api('PUT', '/api/werkbank/automatisierungen/ziele', { ziele: [{ adresse: 'https://hooks.example.org/ablago', heimnetz: false, notiz: 'Monitoring' }, { adresse: 'http://homeassistant.local:8123/api/webhook', heimnetz: true }] });
-    const post = await api('POST', '/api/werkbank/automatisierungen', { name: 'Neue Post melden', aktiv: true,
+    await api('PUT', '/api/werkbank/automatisierungen/ziele', {
+      ziele: [
+        { adresse: 'https://hooks.example.org/ablago', heimnetz: false, notiz: 'Monitoring' },
+        { adresse: 'http://homeassistant.local:8123/api/webhook', heimnetz: true },
+      ],
+    });
+    const post = await api('POST', '/api/werkbank/automatisierungen', {
+      name: 'Neue Post melden',
+      aktiv: true,
       wenn: { art: 'post.angelegt', typ: null },
-      dann: [{ id: 'u1', art: 'url', adresse: 'http://homeassistant.local:8123/api/webhook/ablago-post', methode: 'POST', inhalt: 'kennungen', parameter: [{ name: 'quelle', wert: '{automatisierung}' }] }] });
+      dann: [
+        {
+          id: 'u1',
+          art: 'url',
+          adresse: 'http://homeassistant.local:8123/api/webhook/ablago-post',
+          methode: 'POST',
+          inhalt: 'kennungen',
+          parameter: [{ name: 'quelle', wert: '{automatisierung}' }],
+        },
+      ],
+    });
     await api('POST', `/api/werkbank/automatisierungen/${post.id}/geheimnis/u1`);
     await geheZu(s, `/werkbank/automatisierungen/${post.id}`);
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Alle aufklappen') }).click();
+    await s
+      .locator('[data-sprungleiste]')
+      .getByRole('button', { name: w('Alle aufklappen') })
+      .click();
     const kopf = s.locator('ol.automatisierung-karten .karte-kopf button[aria-expanded]').first();
     await kopf.click();
     // Nach dem Aufklappen springt der Fokus kurz – erst danach an die Stelle rollen: Kopf der Karte oben, unter der Sprungleiste.
@@ -1348,7 +1976,10 @@ async function main() {
   // Datum vorschlagen (#1180): eigene Vorlage „Erinnere mich in 14 Tagen“ – Wann „In 14 Tagen“, Haken „Datum“ frei wählbar.
   {
     const v = await api('POST', '/api/werkbank/ablaufvorlagen', {
-      name: SPRACHE === 'en' ? 'Remind me in 14 days' : 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], typen: [d.typ('Vertrag').id],
+      name: SPRACHE === 'en' ? 'Remind me in 14 days' : 'Erinnere mich in 14 Tagen',
+      wann: { art: 'in', anzahl: 14, einheit: 'tage' },
+      fragen: ['datum', 'text'],
+      typen: [d.typ('Vertrag').id],
       karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }],
     });
     await geheZu(s, `/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
@@ -1374,7 +2005,11 @@ async function main() {
   // Datenschutz gehört zur beruflichen Nutzung (#1170, #1184): für diese Bilder an, danach wieder privat wie vorher.
   await api('PUT', '/api/werkbank/merkmale', { beruflich: true });
   // Datenschutz (#396): Vertragspartner „betrifft eine Person“, Auskunft für die Stadtwerke gesammelt – Prüfliste.
-  await api('PUT', '/api/werkbank/datenschutz', { verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01234 Musterstadt', empfaenger: '', typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } } });
+  await api('PUT', '/api/werkbank/datenschutz', {
+    verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01234 Musterstadt',
+    empfaenger: '',
+    typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } },
+  });
   await geheZu(s, `/werkbank/auskuenfte/neu?mappe=${d.stadtwerke.id}`);
   await s.getByRole('button', { name: w('Sammeln'), exact: true }).click();
   await s.getByRole('heading', { name: w('3. Prüfen') }).waitFor();
@@ -1384,16 +2019,33 @@ async function main() {
   {
     const v = await api('POST', '/api/werkbank/auskunft/vorschau', { mappeId: d.stadtwerke.id, tiefe: 1, vorschlaege: false });
     const x = v.mappen[d.stadtwerke.id];
-    await api('POST', '/api/werkbank/auskunft', { mappeId: d.stadtwerke.id, tiefe: 1, geprueft: true, passwort: 'Handbuch-Passwort-2026',
-      auswahl: { mappen: [d.stadtwerke.id], dokumente: x.dokumente.map((y) => y.id), notizen: x.notizen.map((y) => y.id), historie: [d.stadtwerke.id], ohneNotizen: [] } });
+    await api('POST', '/api/werkbank/auskunft', {
+      mappeId: d.stadtwerke.id,
+      tiefe: 1,
+      geprueft: true,
+      passwort: 'Handbuch-Passwort-2026',
+      auswahl: {
+        mappen: [d.stadtwerke.id],
+        dokumente: x.dokumente.map((y) => y.id),
+        notizen: x.notizen.map((y) => y.id),
+        historie: [d.stadtwerke.id],
+        ohneNotizen: [],
+      },
+    });
     await warteAufAuftrag();
     // Liste der Auskünfte (#668): die neue Auskunft wählen, rechts Zustellen.
     await geheZu(s, '/werkbank/auskuenfte');
     await s.locator('.spalte.liste .eintrag').first().click();
     // Bereiche (#1000): „Zustellen“ über die Sprungleiste öffnen.
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Zustellen'), exact: true }).click();
+    await s
+      .locator('[data-sprungleiste]')
+      .getByRole('button', { name: w('Zustellen'), exact: true })
+      .click();
     await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
-    await s.getByRole('button', { name: w('Zustellen …') }).first().click();
+    await s
+      .getByRole('button', { name: w('Zustellen …') })
+      .first()
+      .click();
     await s.getByRole('radio', { name: w(/Abruf-Link mit Abrufcode/) }).check();
     await s.getByRole('checkbox', { name: w(/Link per E-Mail/) }).uncheck();
     await s.getByRole('button', { name: w('Abruf-Link erstellen') }).click();
@@ -1435,23 +2087,51 @@ async function main() {
   await paketBilder(s, bild, geheZu);
   await paketReiterBilder(s, bild, geheZu);
   // Postfächer (#358): Anmeldung mit OAuth 2.0 – App eingetragen, noch nicht angemeldet (kein echter Anbieter).
-  await api('PUT', '/api/werkbank/postfaecher-oauth/microsoft', { clientId: '0b5c6a1e-1234-4c8d-9e0f-5a6b7c8d9e0f', clientSecret: 'nur-fuer-bilder', tenant: 'common' });
-  const pfOauth = (await api('POST', '/api/werkbank/postfaecher', { name: 'Büro', aktiv: false, server: 'outlook.office365.com', benutzer: 'buero@example.org', anmeldung: 'oauth', anbieter: 'microsoft' })).at(-1);
+  await api('PUT', '/api/werkbank/postfaecher-oauth/microsoft', {
+    clientId: '0b5c6a1e-1234-4c8d-9e0f-5a6b7c8d9e0f',
+    clientSecret: 'nur-fuer-bilder',
+    tenant: 'common',
+  });
+  const pfOauth = (
+    await api('POST', '/api/werkbank/postfaecher', {
+      name: 'Büro',
+      aktiv: false,
+      server: 'outlook.office365.com',
+      benutzer: 'buero@example.org',
+      anmeldung: 'oauth',
+      anbieter: 'microsoft',
+    })
+  ).at(-1);
   await geheZu(s, `/werkbank/postfaecher/${pfOauth.id}`);
   // Seit #1000 ein Bereich: über die Sprungleiste öffnen (Kopf mit Hilfesymbol – auf den Inhalt warten).
-  await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Anmeldung per OAuth 2.0'), exact: true }).click();
+  await s
+    .locator('[data-sprungleiste]')
+    .getByRole('button', { name: w('Anmeldung per OAuth 2.0'), exact: true })
+    .click();
   await s.waitForFunction(() => document.activeElement?.id?.endsWith('-kopf'), null, { timeout: 2000 }).catch(() => {}); // Sprung setzt den Fokus auf den Kopf (#1000)
   await s.locator('#pf-oauth-client').waitFor();
   await s.locator('#anbieter').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-postfach-oauth');
   // Editoren am Handy (#1000): Sprungleiste oben, Bereiche zugeklappt mit Kurzinfo – wie beim Mappentyp.
   {
-    const kh = await browser.newContext({ viewport: { width: 393, height: 852 }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    const kh = await browser.newContext({
+      viewport: { width: 393, height: 852 },
+      colorScheme: 'light',
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true,
+    });
     const [cn, cw] = d.adminCookie.split('=');
     await kh.addCookies([{ name: cn, value: cw, url: BASIS }]);
     const sh = await kh.newPage();
-    for (const [name, pfad] of [['werkbank-benutzer-handy', `/werkbank/benutzer/${d.mitglied.id}`], ['werkbank-postfach-handy', `/werkbank/postfaecher/${pfOauth.id}`],
-      ['werkbank-nummernkreis-handy', '/werkbank/nummernkreise/archivnummer'], ['werkbank-stempel-handy', '/werkbank/stempel/kopie']]) {
+    for (const [name, pfad] of [
+      ['werkbank-benutzer-handy', `/werkbank/benutzer/${d.mitglied.id}`],
+      ['werkbank-postfach-handy', `/werkbank/postfaecher/${pfOauth.id}`],
+      ['werkbank-nummernkreis-handy', '/werkbank/nummernkreise/archivnummer'],
+      ['werkbank-stempel-handy', '/werkbank/stempel/kopie'],
+    ]) {
       await geheZu(sh, pfad);
       await sh.locator('[data-sprungleiste]').waitFor();
       await bild(sh, name, { fullPage: true });
@@ -1470,7 +2150,10 @@ async function main() {
   await s.locator('#mail').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-mail');
   await geheZu(s, '/werkbank/verschluesselung');
-  await s.getByRole('heading', { name: w(/^Schlüssel\b/) }).first().waitFor();
+  await s
+    .getByRole('heading', { name: w(/^Schlüssel\b/) })
+    .first()
+    .waitFor();
   await bild(s, 'werkbank-verschluesselung');
   await geheZu(s, '/werkbank/aufgaben');
   await s.locator('[data-anker="werkbank.aufgaben.suche"]').waitFor();
@@ -1481,13 +2164,22 @@ async function main() {
   await s.getByLabel(w('Alle angezeigten auswählen')).check();
   await s.locator('.sammel-leiste').waitFor();
   await bild(s, 'werkbank-aufgaben-auswahl');
-  await s.locator('.sammel-leiste').getByRole('button', { name: w('Auswahl aufheben') }).click();
+  await s
+    .locator('.sammel-leiste')
+    .getByRole('button', { name: w('Auswahl aufheben') })
+    .click();
   await geheZu(s, '/werkbank/papierkorb');
-  await s.getByRole('heading', { name: w('Papierkorb') }).first().waitFor();
+  await s
+    .getByRole('heading', { name: w('Papierkorb') })
+    .first()
+    .waitFor();
   // #366: Liste in der Mitte, rechts die gewählte Mappe; die Aufbewahrung steht seit #1197 unter Daten sichern → Einstellungen.
   if (await s.locator('.spalte.liste a.eintrag, .spalte.liste tbody tr').count()) {
     await s.locator('.spalte.liste a.eintrag, .spalte.liste tbody tr').first().click();
-    await s.getByRole('button', { name: w('Wiederherstellen') }).first().waitFor();
+    await s
+      .getByRole('button', { name: w('Wiederherstellen') })
+      .first()
+      .waitFor();
   }
   await bild(s, 'werkbank-papierkorb');
   await geheZu(s, '/werkbank/texterkennung');
@@ -1501,25 +2193,45 @@ async function main() {
   await s.locator('#suche').screenshot({ path: join(ZIEL, 'werkbank-suche.png') });
   erstellt.push('werkbank-suche');
   // Gleichbedeutende Wörter (#992): Gruppen in der Mitte mit Suche, rechts die Wörter einer Gruppe.
-  const gruppen = SPRACHE === 'en' ? [['Invoice', 'Receipt', 'Bill'], ['Car', 'Vehicle', 'Auto']] : [['Rechnung', 'Beleg', 'Faktura'], ['Kfz', 'Auto', 'PKW']];
+  const gruppen =
+    SPRACHE === 'en'
+      ? [
+          ['Invoice', 'Receipt', 'Bill'],
+          ['Car', 'Vehicle', 'Auto'],
+        ]
+      : [
+          ['Rechnung', 'Beleg', 'Faktura'],
+          ['Kfz', 'Auto', 'PKW'],
+        ];
   const ids = [];
   for (const woerter of gruppen) ids.push((await api('POST', '/api/werkbank/suche/synonyme', { woerter }).catch(() => null))?.id);
   const gruppe = ids.find(Boolean);
   await geheZu(s, gruppe ? `/werkbank/woerter/${gruppe}` : '/werkbank/woerter');
   // Rechts steht das erste Wort der Gruppe als Überschrift, in der Mitte die Liste der Gruppen.
   await s.locator('.spalte.liste').first().waitFor();
-  if (gruppe) await s.getByRole('heading', { name: gruppen[ids.indexOf(gruppe)][0], exact: true }).first().waitFor();
+  if (gruppe)
+    await s
+      .getByRole('heading', { name: gruppen[ids.indexOf(gruppe)][0], exact: true })
+      .first()
+      .waitFor();
   await bild(s, 'werkbank-woerter');
   // Rundgänge (#941): alle in der Mitte, rechts ein eigener Rundgang als Datei mit der Ankerhilfe daneben.
-  const rundgang = SPRACHE === 'en'
-    ? 'schluessel: suchen\ntitel: Finding things\nbeschreibung: Where to search.\nschritte:\n  - schluessel: suche\n    ziel: startseite.suche\n    ort: At the top in the header\n    titel: Search\n    text: Search all folders here.\n'
-    : 'schluessel: suchen\ntitel: Etwas finden\nbeschreibung: Wo du suchst.\nschritte:\n  - schluessel: suche\n    ziel: startseite.suche\n    ort: Oben in der Kopfzeile\n    titel: Suchen\n    text: Hier suchst du in allen Mappen.\n';
+  const rundgang =
+    SPRACHE === 'en'
+      ? 'schluessel: suchen\ntitel: Finding things\nbeschreibung: Where to search.\nschritte:\n  - schluessel: suche\n    ziel: startseite.suche\n    ort: At the top in the header\n    titel: Search\n    text: Search all folders here.\n'
+      : 'schluessel: suchen\ntitel: Etwas finden\nbeschreibung: Wo du suchst.\nschritte:\n  - schluessel: suche\n    ziel: startseite.suche\n    ort: Oben in der Kopfzeile\n    titel: Suchen\n    text: Hier suchst du in allen Mappen.\n';
   await api('POST', '/api/werkbank/rundgaenge', { yaml: rundgang }).catch(() => null);
   await geheZu(s, '/werkbank/rundgaenge/eigen%3Asuchen');
   await s.locator('textarea.yaml-datei').first().waitFor();
   await bild(s, 'werkbank-rundgaenge');
   // Tipps (#942): alle in der Mitte, rechts das Formular mit Vorschau.
-  const tipp = await api('POST', '/api/werkbank/tipps', { daten: { text: SPRACHE === 'en' ? 'Search finds words inside documents too.' : 'Die Suche findet auch Wörter in Dokumenten.', bereich: 'suche', ziel: 'startseite.suche' } }).catch(() => null);
+  const tipp = await api('POST', '/api/werkbank/tipps', {
+    daten: {
+      text: SPRACHE === 'en' ? 'Search finds words inside documents too.' : 'Die Suche findet auch Wörter in Dokumenten.',
+      bereich: 'suche',
+      ziel: 'startseite.suche',
+    },
+  }).catch(() => null);
   await geheZu(s, tipp?.schluessel ? `/werkbank/tipps/${encodeURIComponent(tipp.schluessel)}` : '/werkbank/tipps');
   await s.locator('.tipp-vorschau').first().waitFor();
   await bild(s, 'werkbank-tipps');
@@ -1540,7 +2252,10 @@ async function main() {
   await bild(s, 'werkbank-speicherplatz');
   // #409: Auslastung zwischen Schwellen und Ordnern (Kurven erst nach zwei Minuten).
   await s.locator('#auslastung').scrollIntoViewIfNeeded();
-  await s.getByRole('heading', { name: w(/^Auslastung\b/) }).first().waitFor();
+  await s
+    .getByRole('heading', { name: w(/^Auslastung\b/) })
+    .first()
+    .waitFor();
   await bild(s, 'werkbank-auslastung');
   await geheZu(s, '/werkbank/demo');
   // Mit Dokumenten (#365): Schieberegler, Mischung und Abschätzung sichtbar.
@@ -1566,14 +2281,19 @@ async function main() {
   await s.locator('#notfallkontakte').screenshot({ path: join(ZIEL, 'werkbank-notfallkontakte.png') });
   erstellt.push('werkbank-notfallkontakte');
   const download = s.waitForEvent('download');
-  await s.locator('#notfallblatt').getByRole('link', { name: w(/Notfallblatt herunterladen/) }).click();
+  await s
+    .locator('#notfallblatt')
+    .getByRole('link', { name: w(/Notfallblatt herunterladen/) })
+    .click();
   const pdf = join(ZIEL, 'notfallblatt.pdf');
   await (await download).saveAs(pdf);
   try {
     execFileSync('pdftoppm', ['-png', '-r', '80', '-singlefile', pdf, join(ZIEL, 'notfallblatt')]);
     erstellt.push('notfallblatt');
     console.log('  notfallblatt.png');
-  } catch (e) { console.warn(`Notfallblatt nicht als Bild: ${e.message}`); }
+  } catch (e) {
+    console.warn(`Notfallblatt nicht als Bild: ${e.message}`);
+  }
   await rm(pdf, { force: true });
   await geheZu(s, '/werkbank/sicherung');
   await s.locator('#liste tbody tr').first().waitFor();
@@ -1588,21 +2308,33 @@ async function main() {
 
   // Wartungsmodus (#102): ankündigen, Banner bei einem Mitglied, danach beenden – ganz am Ende,
   // weil die Wartung Anmeldungen sperrt.
-  const mitgliedAnmeldung = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }) });
+  const mitgliedAnmeldung = await fetch(`${BASIS}/api/konto/anmelden`, {
+    method: 'POST',
+    headers: { 'x-dms': '1', 'content-type': 'application/json' },
+    body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }),
+  });
   const mitgliedCookie = (mitgliedAnmeldung.headers.get('set-cookie') ?? '').split(';')[0];
   await geheZu(s, '/werkbank/wartung');
   await s.getByLabel(w(/Text für alle/)).fill('Update auf die neue Version');
   // #402: Zeitschiene Beginn → Ende mit Satz darunter und „Jetzt sofort sperren“ – vor dem Ankündigen.
-  await s.getByLabel(w(/Erwartetes Ende/)).fill(await s.locator('#wartung-beginn').evaluate((e) => {
-    const d = new Date(new Date(e.value).getTime() + 3600_000); const p = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-  }));
+  await s.getByLabel(w(/Erwartetes Ende/)).fill(
+    await s.locator('#wartung-beginn').evaluate((e) => {
+      const d = new Date(new Date(e.value).getTime() + 3600_000);
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    }),
+  );
   await s.getByRole('button', { name: w('Jetzt sofort sperren') }).waitFor();
   await bild(s, 'werkbank-wartungsmodus');
   await s.getByRole('button', { name: w('Wartung ankündigen') }).click();
   await s.locator('.wartungsbanner').waitFor();
   if (mitgliedCookie) {
-    const km = await browser.newContext({ viewport: { width: 1100, height: 620 }, colorScheme: 'light', locale: GEBIET, timezoneId: 'Europe/Berlin' });
+    const km = await browser.newContext({
+      viewport: { width: 1100, height: 620 },
+      colorScheme: 'light',
+      locale: GEBIET,
+      timezoneId: 'Europe/Berlin',
+    });
     const [name, wert] = mitgliedCookie.split('=');
     await km.addCookies([{ name, value: wert, url: BASIS }]);
     const sm = await km.newPage();
@@ -1614,7 +2346,10 @@ async function main() {
   // Wiederherstellen (#107): nur im aktiven Wartungsmodus – Abgleich einer Sicherung, ohne zu starten.
   // Rückfragen sind eigene Dialoge (#355), keine Browser-Fenster.
   await s.getByRole('button', { name: w('Alle jetzt abmelden') }).click();
-  await s.getByRole('alertdialog').getByRole('button', { name: w('Alle abmelden') }).click();
+  await s
+    .getByRole('alertdialog')
+    .getByRole('button', { name: w('Alle abmelden') })
+    .click();
   await s.getByText(w('Wartungsmodus aktiv.'), { exact: false }).first().waitFor();
   await geheZu(s, '/werkbank/sicherung#wiederherstellen');
   await s.locator('.auswahlliste input[type=radio]').first().check();
@@ -1643,10 +2378,25 @@ async function main() {
     const t0 = alle.find((x) => x.system === 'post');
     const pflicht = t0.felder.find((f) => f.pflicht && !f.system);
     const liste = (t0.trefferlisten ?? []).map((l, i) => (i === 0 && l.spalten.length > 2 ? { ...l, spalten: l.spalten.slice(0, -1) } : l));
-    await api('PUT', `/api/typen/${t0.id}`, { ...t0, trefferlisten: liste,
-      felder: [...t0.felder.map((f) => (f === pflicht ? { ...f, pflicht: false } : f)), { key: 'interne_notiz', label: SPRACHE === 'de' ? 'Interne Notiz' : 'Internal note', typ: 'text' }] });
-    for (const [name, schema] of [['werkbank-fassungen', 'light'], ['werkbank-fassungen-dunkel', 'dark']]) {
-      const kf = await browser.newContext({ viewport: { width: 1440, height: 860 }, colorScheme: schema, locale: GEBIET, timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+    await api('PUT', `/api/typen/${t0.id}`, {
+      ...t0,
+      trefferlisten: liste,
+      felder: [
+        ...t0.felder.map((f) => (f === pflicht ? { ...f, pflicht: false } : f)),
+        { key: 'interne_notiz', label: SPRACHE === 'de' ? 'Interne Notiz' : 'Internal note', typ: 'text' },
+      ],
+    });
+    for (const [name, schema] of [
+      ['werkbank-fassungen', 'light'],
+      ['werkbank-fassungen-dunkel', 'dark'],
+    ]) {
+      const kf = await browser.newContext({
+        viewport: { width: 1440, height: 860 },
+        colorScheme: schema,
+        locale: GEBIET,
+        timezoneId: 'Europe/Berlin',
+        deviceScaleFactor: 1,
+      });
       const [cn, cw] = d.adminCookie.split('=');
       await kf.addCookies([{ name: cn, value: cw, url: BASIS }]);
       const sf = await kf.newPage();
@@ -1674,7 +2424,8 @@ async function main() {
 
   await browser.close();
   console.log(`${erstellt.length} Bilder in ${ZIEL}`);
-  if (fehlendeTexte.size) console.log(`::warning title=Bildschirmfotos ${SPRACHE}::Ohne Übersetzung gesucht: ${[...fehlendeTexte].join(' · ')}`);
+  if (fehlendeTexte.size)
+    console.log(`::warning title=Bildschirmfotos ${SPRACHE}::Ohne Übersetzung gesucht: ${[...fehlendeTexte].join(' · ')}`);
 }
 
 /** Zeigt die Oberfläche die Sprache der Aufnahme? Deutsch immer; sonst am Attribut lang der Seite (#730). */
@@ -1689,7 +2440,10 @@ async function spricht(browser) {
   return lang.toLowerCase().startsWith(SPRACHE);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
 
 /**
  * Pakete mit Katalog (#1047, #1048, #1168): Der Workflow hat kein Internet – Katalog und ein installiertes Paket mit
@@ -1702,38 +2456,214 @@ main().catch((e) => { console.error(e); process.exit(1); });
  */
 async function paketReiterBilder(s, bild, geheZu) {
   const id = 'ki_assistent';
-  const laeufer = { sprache: 'c', ereignisse: ['post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'lesen' }, netz: ['https://ki.example.org'],
-    reiter: { anzeigen: [{ schluessel: 'vektoren', name: 'Dokumente mit Vektor', art: 'anteil' }, { schluessel: 'modell', name: 'Modell', art: 'zustand' }],
-      ausprobieren: { ereignis: 'post.angelegt', dateiarten: ['application/pdf', 'image/*'] } } };
-  const eigene = { art: 'abschnitt', titel: 'Dienst', felder: [{ schluessel: 'modell', name: 'Modell', typ: 'text', hilfe: 'Name des Modells beim KI-Dienst, z. B. „llama3.1“.', laengeMax: 40 }] };
-  const paket = { id, name: 'KI-Assistent', version: '1.4.0', beschreibung: 'Fragen an die Ablage und Vorschläge mit einem KI-Dienst.', lizenz: 'Apache-2.0', autor: { name: 'Ablago-Projekt', github: '' },
-    herausgeber: 'app.ablago', herausgeberGeprueft: true, herkunft: { art: 'hochgeladen', von: null, am: '2026-11-01T08:00:00Z' }, installiert: '2026-11-01T08:00:00Z', installiertVon: null,
-    aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer, einstellungen: { bloecke: [eigene], aktionen: [] } };
-  const typen = [{ id: 'a', name: 'Rechnung', zugelassen: true }, { id: 'b', name: 'Vertrag', zugelassen: true }, { id: 'c', name: 'Gesundheit', zugelassen: false }];
-  const kern = { art: 'abschnitt', titel: w('Was die KI lesen darf'), felder: [{ schluessel: 'ki_mappentypen', name: w('Was die KI lesen darf'), typ: 'ki_mappentypen' }] };
+  const laeufer = {
+    sprache: 'c',
+    ereignisse: ['post.angelegt'],
+    rechte: { lesen: [], schreiben: [], dokumente: 'lesen' },
+    netz: ['https://ki.example.org'],
+    reiter: {
+      anzeigen: [
+        { schluessel: 'vektoren', name: 'Dokumente mit Vektor', art: 'anteil' },
+        { schluessel: 'modell', name: 'Modell', art: 'zustand' },
+      ],
+      ausprobieren: { ereignis: 'post.angelegt', dateiarten: ['application/pdf', 'image/*'] },
+    },
+  };
+  const eigene = {
+    art: 'abschnitt',
+    titel: 'Dienst',
+    felder: [
+      { schluessel: 'modell', name: 'Modell', typ: 'text', hilfe: 'Name des Modells beim KI-Dienst, z. B. „llama3.1“.', laengeMax: 40 },
+    ],
+  };
+  const paket = {
+    id,
+    name: 'KI-Assistent',
+    version: '1.4.0',
+    beschreibung: 'Fragen an die Ablage und Vorschläge mit einem KI-Dienst.',
+    lizenz: 'Apache-2.0',
+    autor: { name: 'Ablago-Projekt', github: '' },
+    herausgeber: 'app.ablago',
+    herausgeberGeprueft: true,
+    herkunft: { art: 'hochgeladen', von: null, am: '2026-11-01T08:00:00Z' },
+    installiert: '2026-11-01T08:00:00Z',
+    installiertVon: null,
+    aktualisiert: null,
+    aktualisiertVon: null,
+    typen: {},
+    sichten: {},
+    abhaengigkeiten: {},
+    code: true,
+    laeufer,
+    einstellungen: { bloecke: [eigene], aktionen: [] },
+  };
+  const typen = [
+    { id: 'a', name: 'Rechnung', zugelassen: true },
+    { id: 'b', name: 'Vertrag', zugelassen: true },
+    { id: 'c', name: 'Gesundheit', zugelassen: false },
+  ];
+  const kern = {
+    art: 'abschnitt',
+    titel: w('Was die KI lesen darf'),
+    felder: [{ schluessel: 'ki_mappentypen', name: w('Was die KI lesen darf'), typ: 'ki_mappentypen' }],
+  };
   await s.route('**/api/werkbank/pakete', async (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
     const echt = await (await r.fetch()).json();
     await r.fulfill({ json: { ...echt, installiert: [...echt.installiert, paket] } });
   });
-  await s.route(`**/api/werkbank/pakete/${id}/einstellungen`, (r) => r.fulfill({ json: { beschreibung: { bloecke: [eigene, kern], aktionen: [] }, werte: { modell: 'llama3.1' }, fehlend: [], status: null, laeufer: true, auswahl: { typen: [], benutzer: [], rollen: [], sichten: [] } } }));
-  await s.route(`**/api/werkbank/pakete/${id}/anzeigen`, (r) => r.fulfill({ json: { anzeigen: [{ ...laeufer.reiter.anzeigen[0], wert: { art: 'anteil', zahl: 1234, von: 1300 } }, { ...laeufer.reiter.anzeigen[1], wert: { art: 'zustand', zustand: 'ok', text: 'llama3.1' } }], status: null } }));
+  await s.route(`**/api/werkbank/pakete/${id}/einstellungen`, (r) =>
+    r.fulfill({
+      json: {
+        beschreibung: { bloecke: [eigene, kern], aktionen: [] },
+        werte: { modell: 'llama3.1' },
+        fehlend: [],
+        status: null,
+        laeufer: true,
+        auswahl: { typen: [], benutzer: [], rollen: [], sichten: [] },
+      },
+    }),
+  );
+  await s.route(`**/api/werkbank/pakete/${id}/anzeigen`, (r) =>
+    r.fulfill({
+      json: {
+        anzeigen: [
+          { ...laeufer.reiter.anzeigen[0], wert: { art: 'anteil', zahl: 1234, von: 1300 } },
+          { ...laeufer.reiter.anzeigen[1], wert: { art: 'zustand', zustand: 'ok', text: 'llama3.1' } },
+        ],
+        status: null,
+      },
+    }),
+  );
   await s.route(`**/api/werkbank/pakete/${id}/umwandlungen`, (r) => r.fulfill({ json: { felder: [], vorgaenge: [] } }));
-  await s.route('**/api/werkbank/ki-typen', (r) => r.fulfill({ json: { typen, pakete: [{ id, name: 'KI-Assistent', bekommt: ['a', 'b'] }], hinweis: false } }));
-  await s.route('**/api/werkbank/pakete/laeufer', (r) => r.fulfill({ json: { laeuft: true, pausiert: false, grenzen: { speicherMB: 256, sekunden: 120, parallel: 2 }, zustand: 'bereit', absturz: null,
-    pakete: [{ id, name: 'KI-Assistent', version: '1.4.0', dienstkonto: 'Paket KI-Assistent', geladen: true, fehler: null, aufrufe: 41, fehlgeschlagen: 2, letzterAufruf: null, dauerMs: null, speicherMB: null,
-      ereignisse: { offen: 0, aufgegeben: 0, zugestellt: 39 }, letzte: [], protokoll: [] }] } }));
+  await s.route('**/api/werkbank/ki-typen', (r) =>
+    r.fulfill({ json: { typen, pakete: [{ id, name: 'KI-Assistent', bekommt: ['a', 'b'] }], hinweis: false } }),
+  );
+  await s.route('**/api/werkbank/pakete/laeufer', (r) =>
+    r.fulfill({
+      json: {
+        laeuft: true,
+        pausiert: false,
+        grenzen: { speicherMB: 256, sekunden: 120, parallel: 2 },
+        zustand: 'bereit',
+        absturz: null,
+        pakete: [
+          {
+            id,
+            name: 'KI-Assistent',
+            version: '1.4.0',
+            dienstkonto: 'Paket KI-Assistent',
+            geladen: true,
+            fehler: null,
+            aufrufe: 41,
+            fehlgeschlagen: 2,
+            letzterAufruf: null,
+            dauerMs: null,
+            speicherMB: null,
+            ereignisse: { offen: 0, aufgegeben: 0, zugestellt: 39 },
+            letzte: [],
+            protokoll: [],
+          },
+        ],
+      },
+    }),
+  );
   const vor = (min) => new Date(Date.now() - min * 60_000).toISOString();
   const tag = (d) => new Date(Date.now() - d * 86_400_000).toISOString().slice(0, 10);
-  await s.route(`**/api/werkbank/pakete/${id}/auslastung`, (r) => r.fulfill({ json: { zuletzt: vor(5), tage: [0, 1, 2, 3, 4, 5, 6].map((d) => ({ tag: tag(d), aufrufe: 5 + d, fehler: d === 2 ? 2 : 0, zeit: 0, speicher: 0, msSumme: (5 + d) * 6000, msMax: 14_000, speicherMax: 48 })) } }));
-  await s.route(`**/api/werkbank/pakete/${id}/verlauf*`, (r) => r.fulfill({ json: { mehr: true, eintraege: [
-    { nr: 9, zeit: vor(5), art: 'ereignis', was: 'post.angelegt', ergebnis: 'ok', ms: 6200, speicherMB: 41, text: '', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 200, 4,1 KB hin, 1,2 KB zurück'] },
-    { nr: 8, zeit: vor(48), art: 'aufruf', was: w('Frage beantwortet'), ergebnis: 'ok', ms: 11_800, speicherMB: 48, text: '', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 200, 9,8 KB hin, 2,4 KB zurück'] },
-    { nr: 7, zeit: vor(2 * 1440), art: 'ereignis', was: 'post.angelegt', ergebnis: 'fehler', ms: 3100, speicherMB: 22, text: 'Der KI-Dienst antwortet nicht (503).', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 503, 4,0 KB hin, 0 B zurück'] },
-    { nr: 6, zeit: vor(3 * 1440), art: 'einstellungen', was: 'Modell', ergebnis: null, ms: null, speicherMB: null, text: '', wer: 'markus@example.org', bezug: null, netz: [] },
-  ] } }));
-  await s.route(`**/api/werkbank/pakete/${id}/ausprobieren`, (r) => r.fulfill({ json: { ok: true, fehler: null, ms: 2300, speicherMB: 38, zeilen: ['2 leere Seiten würden entfernt.'],
-    seiten: [{ seite: 1, text: 'Barcode ABLAGO-TRENNEN' }, { seite: 4, text: 'Barcode ABLAGO-ANLAGE' }], dateien: [{ name: 'Rechnung-archiv.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7').toString('base64') }] } }));
+  await s.route(`**/api/werkbank/pakete/${id}/auslastung`, (r) =>
+    r.fulfill({
+      json: {
+        zuletzt: vor(5),
+        tage: [0, 1, 2, 3, 4, 5, 6].map((d) => ({
+          tag: tag(d),
+          aufrufe: 5 + d,
+          fehler: d === 2 ? 2 : 0,
+          zeit: 0,
+          speicher: 0,
+          msSumme: (5 + d) * 6000,
+          msMax: 14_000,
+          speicherMax: 48,
+        })),
+      },
+    }),
+  );
+  await s.route(`**/api/werkbank/pakete/${id}/verlauf*`, (r) =>
+    r.fulfill({
+      json: {
+        mehr: true,
+        eintraege: [
+          {
+            nr: 9,
+            zeit: vor(5),
+            art: 'ereignis',
+            was: 'post.angelegt',
+            ergebnis: 'ok',
+            ms: 6200,
+            speicherMB: 41,
+            text: '',
+            wer: null,
+            bezug: null,
+            netz: ['Netz: 1 × POST ki.example.org – 200, 4,1 KB hin, 1,2 KB zurück'],
+          },
+          {
+            nr: 8,
+            zeit: vor(48),
+            art: 'aufruf',
+            was: w('Frage beantwortet'),
+            ergebnis: 'ok',
+            ms: 11_800,
+            speicherMB: 48,
+            text: '',
+            wer: null,
+            bezug: null,
+            netz: ['Netz: 1 × POST ki.example.org – 200, 9,8 KB hin, 2,4 KB zurück'],
+          },
+          {
+            nr: 7,
+            zeit: vor(2 * 1440),
+            art: 'ereignis',
+            was: 'post.angelegt',
+            ergebnis: 'fehler',
+            ms: 3100,
+            speicherMB: 22,
+            text: 'Der KI-Dienst antwortet nicht (503).',
+            wer: null,
+            bezug: null,
+            netz: ['Netz: 1 × POST ki.example.org – 503, 4,0 KB hin, 0 B zurück'],
+          },
+          {
+            nr: 6,
+            zeit: vor(3 * 1440),
+            art: 'einstellungen',
+            was: 'Modell',
+            ergebnis: null,
+            ms: null,
+            speicherMB: null,
+            text: '',
+            wer: 'markus@example.org',
+            bezug: null,
+            netz: [],
+          },
+        ],
+      },
+    }),
+  );
+  await s.route(`**/api/werkbank/pakete/${id}/ausprobieren`, (r) =>
+    r.fulfill({
+      json: {
+        ok: true,
+        fehler: null,
+        ms: 2300,
+        speicherMB: 38,
+        zeilen: ['2 leere Seiten würden entfernt.'],
+        seiten: [
+          { seite: 1, text: 'Barcode ABLAGO-TRENNEN' },
+          { seite: 4, text: 'Barcode ABLAGO-ANLAGE' },
+        ],
+        dateien: [{ name: 'Rechnung-archiv.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7').toString('base64') }],
+      },
+    }),
+  );
   await geheZu(s, `/werkbank/pakete/${id}`);
   await s.getByRole('tab', { name: w('Übersicht') }).waitFor();
   await s.getByText(w('Meldet das Paket')).waitFor();
@@ -1742,20 +2672,49 @@ async function paketReiterBilder(s, bild, geheZu) {
   await s.getByRole('heading', { name: w('Was die KI lesen darf') }).waitFor();
   await bild(s, 'werkbank-paket-einstellungen', { fullPage: true });
   await s.getByRole('tab', { name: w('Ausprobieren') }).click();
-  await s.getByLabel(w('Datei zum Ausprobieren')).setInputFiles({ name: 'Rechnung.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7') });
+  await s
+    .getByLabel(w('Datei zum Ausprobieren'))
+    .setInputFiles({ name: 'Rechnung.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7') });
   await s.getByRole('button', { name: w('Ausprobieren'), exact: true }).click();
   await s.getByText('Barcode ABLAGO-TRENNEN').waitFor();
   await bild(s, 'werkbank-paket-ausprobieren', { fullPage: true });
   await s.getByRole('tab', { name: w('Verlauf') }).click();
-  await s.getByRole('list', { name: w('Verlauf') }).locator('li').first().waitFor();
+  await s
+    .getByRole('list', { name: w('Verlauf') })
+    .locator('li')
+    .first()
+    .waitFor();
   await bild(s, 'werkbank-paket-verlauf', { fullPage: true });
   await s.unrouteAll({ behavior: 'ignoreErrors' });
 }
 
 async function paketBilder(s, bild, geheZu) {
   let katalogUrl = '';
-  const version = (version, mehr = {}) => ({ version, dms: '>=0.0.0', abhaengigkeiten: {}, inhalt: { mappentypen: [], sichten: [], beispiele: 0 }, code: false, archiv: 'a.zip', sha256: '0'.repeat(64), groesse: 4096, veroeffentlicht: '2026-11-01T00:00:00Z', quelle: '', readme: '', changelog: '', ...mehr });
-  const paket = (id, name, beschreibung, versionen) => ({ id, name, beschreibung, autor: { name: 'Ablago-Projekt', github: '' }, lizenz: 'Apache-2.0', aktuell: versionen[0].version, herausgeber: 'app.ablago', versionen });
+  const version = (version, mehr = {}) => ({
+    version,
+    dms: '>=0.0.0',
+    abhaengigkeiten: {},
+    inhalt: { mappentypen: [], sichten: [], beispiele: 0 },
+    code: false,
+    archiv: 'a.zip',
+    sha256: '0'.repeat(64),
+    groesse: 4096,
+    veroeffentlicht: '2026-11-01T00:00:00Z',
+    quelle: '',
+    readme: '',
+    changelog: '',
+    ...mehr,
+  });
+  const paket = (id, name, beschreibung, versionen) => ({
+    id,
+    name,
+    beschreibung,
+    autor: { name: 'Ablago-Projekt', github: '' },
+    lizenz: 'Apache-2.0',
+    aktuell: versionen[0].version,
+    herausgeber: 'app.ablago',
+    versionen,
+  });
   const katalog = [
     paket('haushalt', 'Haushalt', 'Anschaffungen, Garantien und Haushaltsunterlagen.', [version('1.2.0')]),
     paket('vertraege', 'Verträge', 'Verträge mit Laufzeit, Kündigungsfrist und Erinnerung.', [version('1.1.0')]),
@@ -1766,25 +2725,97 @@ async function paketBilder(s, bild, geheZu) {
     paket('sprache_es', 'Español', 'Ablago auf Spanisch.', [version('1.0.0', { sprache: { kennung: 'es', maschinell: true } })]),
     paket('vermietung', 'Vermietung', 'Mietobjekte, Wohnungen und Nebenkostenabrechnungen.', [version('2.1.0'), version('2.0.0')]),
   ];
-  const vermietung = { id: 'vermietung', name: 'Vermietung', version: '2.0.0', beschreibung: 'Mietobjekte, Wohnungen und Nebenkostenabrechnungen.', lizenz: 'Apache-2.0', autor: { name: 'Ablago-Projekt', github: '' },
-    herausgeber: 'app.ablago', herausgeberGeprueft: true, herkunft: { art: 'katalog', url: '' }, installiert: '2026-10-01T08:00:00Z', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {},
-    kurzanleitung: { de: ['Lege unter „+ Neu“ ein Mietobjekt und seine Wohnungen an.', 'Ordne jedem Mietvertrag die Wohnung zu.', 'Ablago erinnert dich an Abrechnung und Kündigung.'], en: ['Create a rental property and its flats under “+ New”.', 'Link every tenancy to its flat.', 'Ablago reminds you of statements and notice.'] },
+  const vermietung = {
+    id: 'vermietung',
+    name: 'Vermietung',
+    version: '2.0.0',
+    beschreibung: 'Mietobjekte, Wohnungen und Nebenkostenabrechnungen.',
+    lizenz: 'Apache-2.0',
+    autor: { name: 'Ablago-Projekt', github: '' },
+    herausgeber: 'app.ablago',
+    herausgeberGeprueft: true,
+    herkunft: { art: 'katalog', url: '' },
+    installiert: '2026-10-01T08:00:00Z',
+    installiertVon: null,
+    aktualisiert: null,
+    aktualisiertVon: null,
+    typen: {},
+    sichten: {},
+    abhaengigkeiten: {},
+    kurzanleitung: {
+      de: [
+        'Lege unter „+ Neu“ ein Mietobjekt und seine Wohnungen an.',
+        'Ordne jedem Mietvertrag die Wohnung zu.',
+        'Ablago erinnert dich an Abrechnung und Kündigung.',
+      ],
+      en: [
+        'Create a rental property and its flats under “+ New”.',
+        'Link every tenancy to its flat.',
+        'Ablago reminds you of statements and notice.',
+      ],
+    },
     mitkommt: {
-      mappentypen: [{ schluessel: 'mietobjekt', name: 'Mietobjekt', felder: 9 }, { schluessel: 'wohnung', name: 'Wohnung', felder: 11 }, { schluessel: 'nebenkostenabrechnung', name: 'Nebenkostenabrechnung', felder: 8 }],
-      sichten: [{ schluessel: 'vermietung', name: 'Vermietung' }, { schluessel: 'abrechnung_offen', name: 'Abrechnung offen' }],
-      vorgaben: [], vorlagen: 0, beispiele: 11, beispielDokumente: 0, wortlisten: [['Nebenkosten', 'Betriebskosten']],
-      automatisierungen: [{ schluessel: 'kuendigung', name: 'Mietvertrag endet', an: true, wenn: { art: 'datum', typ: 'Mietvertrag', feld: 'Ende', vorlauf: 60, einheit: 'tage', uhrzeit: '07:00', wiederholung: null },
-        dann: [{ art: 'aufgabe', benachrichtigung: false, empfaenger: [{ art: 'ersteller' }] }] }],
-      ablaufvorlagen: [], aktionen: [], einstellungen: [], code: false, netz: false, sprache: false,
-    } };
+      mappentypen: [
+        { schluessel: 'mietobjekt', name: 'Mietobjekt', felder: 9 },
+        { schluessel: 'wohnung', name: 'Wohnung', felder: 11 },
+        { schluessel: 'nebenkostenabrechnung', name: 'Nebenkostenabrechnung', felder: 8 },
+      ],
+      sichten: [
+        { schluessel: 'vermietung', name: 'Vermietung' },
+        { schluessel: 'abrechnung_offen', name: 'Abrechnung offen' },
+      ],
+      vorgaben: [],
+      vorlagen: 0,
+      beispiele: 11,
+      beispielDokumente: 0,
+      wortlisten: [['Nebenkosten', 'Betriebskosten']],
+      automatisierungen: [
+        {
+          schluessel: 'kuendigung',
+          name: 'Mietvertrag endet',
+          an: true,
+          wenn: { art: 'datum', typ: 'Mietvertrag', feld: 'Ende', vorlauf: 60, einheit: 'tage', uhrzeit: '07:00', wiederholung: null },
+          dann: [{ art: 'aufgabe', benachrichtigung: false, empfaenger: [{ art: 'ersteller' }] }],
+        },
+      ],
+      ablaufvorlagen: [],
+      aktionen: [],
+      einstellungen: [],
+      code: false,
+      netz: false,
+      sprache: false,
+    },
+  };
   await s.route('**/api/werkbank/pakete', async (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
     const echt = await (await r.fetch()).json();
     katalogUrl = echt.katalogUrl;
-    await r.fulfill({ json: { ...echt, installiert: [...echt.installiert, { ...vermietung, herkunft: { art: 'katalog', url: katalogUrl } }] } });
+    await r.fulfill({
+      json: { ...echt, installiert: [...echt.installiert, { ...vermietung, herkunft: { art: 'katalog', url: katalogUrl } }] },
+    });
   });
-  await s.route('**/api/werkbank/pakete/katalog', (r) => r.fulfill({ json: { kataloge: [{ url: katalogUrl, offiziell: true, fehler: null, pruefung: null,
-    katalog: { format: 1, erstellt: '2026-11-14T08:00:00Z', quelle: '', pakete: katalog, empfohlen: ['basis', 'haushalt', 'texterkennung', 'vertraege', 'rechnungen', 'trennblatt'] } }], abgerufen: new Date().toISOString() } }));
+  await s.route('**/api/werkbank/pakete/katalog', (r) =>
+    r.fulfill({
+      json: {
+        kataloge: [
+          {
+            url: katalogUrl,
+            offiziell: true,
+            fehler: null,
+            pruefung: null,
+            katalog: {
+              format: 1,
+              erstellt: '2026-11-14T08:00:00Z',
+              quelle: '',
+              pakete: katalog,
+              empfohlen: ['basis', 'haushalt', 'texterkennung', 'vertraege', 'rechnungen', 'trennblatt'],
+            },
+          },
+        ],
+        abgerufen: new Date().toISOString(),
+      },
+    }),
+  );
   await s.route('**/api/werkbank/pakete/vermietung/umwandlungen', (r) => r.fulfill({ json: { felder: [], vorgaenge: [] } }));
   // Verfügbar (#1048): empfohlen zuerst, Sprachen über den Umschalter; Rückmeldung am Knopf (#1168).
   await geheZu(s, '/werkbank/pakete');
@@ -1797,4 +2828,3 @@ async function paketBilder(s, bild, geheZu) {
   await bild(s, 'werkbank-pakete-mitkommt', { fullPage: true });
   await s.unrouteAll({ behavior: 'ignoreErrors' });
 }
-

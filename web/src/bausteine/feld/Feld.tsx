@@ -63,7 +63,11 @@ function useVerknuepfung(vorgabe: string | undefined, { hinweis, fehler }: Pick<
   const fehlerId = `${id}-fehler`;
   const fehlerhaft = vorhanden(fehler);
   const beschrieben = [bisher, fehlerhaft ? fehlerId : null, hinweise(hinweis).length ? hinweisId : null].filter(Boolean).join(' ');
-  const v: FeldVerknuepfung = { id, ...(beschrieben ? { 'aria-describedby': beschrieben } : {}), ...(fehlerhaft ? { 'aria-invalid': true } : {}) };
+  const v: FeldVerknuepfung = {
+    id,
+    ...(beschrieben ? { 'aria-describedby': beschrieben } : {}),
+    ...(fehlerhaft ? { 'aria-invalid': true } : {}),
+  };
   return { v, hinweisId, fehlerId, fehlerhaft };
 }
 
@@ -83,13 +87,53 @@ function verknuepfe(eingabe: FeldEingabe, v: FeldVerknuepfung): ReactNode {
  * aber außerhalb von `<label>`, damit es nicht zum Namen der Eingabe gehört. Mit Hilfesymbol ist die Zeile am Handy
  * 44 px hoch (Tippfläche, #1027).
  */
-function Kopf({ text, optional, hilfe, fuer, textId, className, verbergen, zusatz }: { text: ReactNode; optional?: boolean; hilfe?: Hilfeort; fuer?: string; textId?: string; className: string; verbergen?: boolean; zusatz?: ReactNode }) {
-  const inhalt = <>{text}{optional && <span className={s.optional}> {t('oberflaeche.feld.optional')}</span>}</>;
+function Kopf({
+  text,
+  optional,
+  hilfe,
+  fuer,
+  textId,
+  className,
+  verbergen,
+  zusatz,
+}: {
+  text: ReactNode;
+  optional?: boolean;
+  hilfe?: Hilfeort;
+  fuer?: string;
+  textId?: string;
+  className: string;
+  verbergen?: boolean;
+  zusatz?: ReactNode;
+}) {
+  const inhalt = (
+    <>
+      {text}
+      {optional && <span className={s.optional}> {t('oberflaeche.feld.optional')}</span>}
+    </>
+  );
   // Nur für Screenreader: ohne eigene Zeile, das „?“ und der Zusatz entfallen (die Umgebung erklärt die Eingabe).
-  if (verbergen) return fuer ? <label htmlFor={fuer} className={s.sr}>{inhalt}</label> : <span id={textId} className={s.sr}>{inhalt}</span>;
+  if (verbergen)
+    return fuer ? (
+      <label htmlFor={fuer} className={s.sr}>
+        {inhalt}
+      </label>
+    ) : (
+      <span id={textId} className={s.sr}>
+        {inhalt}
+      </span>
+    );
   return (
     <div className={hilfe ? `${className} ${s.mitHilfe}` : className}>
-      {fuer ? <label htmlFor={fuer} className={s.beschriftung}>{inhalt}</label> : <span id={textId} className={s.beschriftung}>{inhalt}</span>}
+      {fuer ? (
+        <label htmlFor={fuer} className={s.beschriftung}>
+          {inhalt}
+        </label>
+      ) : (
+        <span id={textId} className={s.beschriftung}>
+          {inhalt}
+        </span>
+      )}
       {hilfe && <Hilfe ort={hilfe} />}
       {zusatz && <span className={s.kopfzusatz}>{zusatz}</span>}
     </div>
@@ -100,14 +144,30 @@ function Kopf({ text, optional, hilfe, fuer, textId, className, verbergen, zusat
  * Fehler- und Hinweisreihe: erst der Fehler, dann der Hinweis – so wie sie auch vorgelesen werden (`aria-describedby`:
  * Fehler vor Hinweis). Der Fehlerbereich steht immer da (aria-live), damit eine neue Meldung angesagt wird.
  */
-function Unterzeilen({ hinweis, fehler, hinweisId, fehlerId }: Pick<Gemeinsam, 'hinweis' | 'fehler'> & { hinweisId: string; fehlerId: string }) {
+function Unterzeilen({
+  hinweis,
+  fehler,
+  hinweisId,
+  fehlerId,
+}: Pick<Gemeinsam, 'hinweis' | 'fehler'> & { hinweisId: string; fehlerId: string }) {
   const h = hinweise(hinweis);
   return (
     <>
       <p id={fehlerId} className={s.fehler} aria-live="polite">
-        {vorhanden(fehler) && <><Symbol name="warnung" className={s.fehlersymbol} />{fehler}</>}
+        {vorhanden(fehler) && (
+          <>
+            <Symbol name="warnung" className={s.fehlersymbol} />
+            {fehler}
+          </>
+        )}
       </p>
-      {h.length > 0 && <div id={hinweisId} className={s.hinweis}>{h.map((x, i) => <span key={i}>{x}</span>)}</div>}
+      {h.length > 0 && (
+        <div id={hinweisId} className={s.hinweis}>
+          {h.map((x, i) => (
+            <span key={i}>{x}</span>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -117,11 +177,35 @@ const eigeneId = (e: FeldEingabe) => (typeof e !== 'function' && isValidElement(
 const eigeneBeschreibung = (e: FeldEingabe) => (typeof e !== 'function' && isValidElement(e) ? e.props['aria-describedby'] : undefined);
 
 /** Ein Feld: Beschriftung über der Eingabe (Text, Zahl, Datum, Auswahlliste, mehrzeilig …). */
-export function Feld({ beschriftung, hinweis, fehler, hilfe, optional, beschriftungVerbergen, kopfZusatz, anker, id, className, children }: FeldProps) {
-  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(id ?? eigeneId(children), { hinweis, fehler }, eigeneBeschreibung(children));
+export function Feld({
+  beschriftung,
+  hinweis,
+  fehler,
+  hilfe,
+  optional,
+  beschriftungVerbergen,
+  kopfZusatz,
+  anker,
+  id,
+  className,
+  children,
+}: FeldProps) {
+  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(
+    id ?? eigeneId(children),
+    { hinweis, fehler },
+    eigeneBeschreibung(children),
+  );
   return (
     <div className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)} data-anker={anker}>
-      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} fuer={v.id} className={s.kopf} verbergen={beschriftungVerbergen} zusatz={kopfZusatz} />
+      <Kopf
+        text={beschriftung}
+        optional={optional}
+        hilfe={hilfe}
+        fuer={v.id}
+        className={s.kopf}
+        verbergen={beschriftungVerbergen}
+        zusatz={kopfZusatz}
+      />
       {verknuepfe(children, v)}
       <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
     </div>
@@ -133,7 +217,11 @@ export function Feld({ beschriftung, hinweis, fehler, hilfe, optional, beschrift
  * Beschreibung in der Hinweiszeile (#801). Die Eingabe ist ein `<input type="checkbox">`.
  */
 export function HakenFeld({ beschriftung, hinweis, fehler, hilfe, optional, anker, id, className, children }: FeldProps) {
-  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(id ?? eigeneId(children), { hinweis, fehler }, eigeneBeschreibung(children));
+  const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(
+    id ?? eigeneId(children),
+    { hinweis, fehler },
+    eigeneBeschreibung(children),
+  );
   return (
     <div className={klassen(s.feld, s.haken, fehlerhaft && s.fehlerhaft, className)} data-anker={anker}>
       <div className={s.hakenzeile}>
@@ -155,12 +243,36 @@ export interface FeldGruppeProps extends Gemeinsam {
  * (`role="group"`), benannt durch die Beschriftung. Hinweis und Fehler hängen an der Gruppe; `aria-invalid` gibt es für
  * Gruppen nicht, der Fehler steht im Text.
  */
-export function FeldGruppe({ beschriftung, hinweis, fehler, hilfe, optional, beschriftungVerbergen, kopfZusatz, anker, className, children }: FeldGruppeProps) {
+export function FeldGruppe({
+  beschriftung,
+  hinweis,
+  fehler,
+  hilfe,
+  optional,
+  beschriftungVerbergen,
+  kopfZusatz,
+  anker,
+  className,
+  children,
+}: FeldGruppeProps) {
   const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(undefined, { hinweis, fehler });
   const textId = `${v.id}-beschriftung`;
   return (
-    <div role="group" aria-labelledby={textId} aria-describedby={v['aria-describedby']} className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)} data-anker={anker}>
-      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} textId={textId} className={s.kopf} verbergen={beschriftungVerbergen} zusatz={kopfZusatz} />
+    <div
+      role="group"
+      aria-labelledby={textId}
+      aria-describedby={v['aria-describedby']}
+      className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)}
+      data-anker={anker}>
+      <Kopf
+        text={beschriftung}
+        optional={optional}
+        hilfe={hilfe}
+        textId={textId}
+        className={s.kopf}
+        verbergen={beschriftungVerbergen}
+        zusatz={kopfZusatz}
+      />
       <div className={s.gruppeninhalt}>{children}</div>
       <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
     </div>
@@ -196,17 +308,36 @@ export interface NurLesenFeldProps {
  * wie eine Eingabe mit `readonly` (gestrichelt, eingesenkt), darunter die Herkunft mit Symbol. Keine Eingabe, nichts zum
  * Anklicken außer Links im Wert selbst; die Gruppe ist nach der Beschriftung benannt und beschreibt sich mit der Herkunft.
  */
-export function NurLesenFeld({ beschriftung, children, herkunft, symbol = 'schloss', hilfe, breit, className, anker, unter }: NurLesenFeldProps) {
+export function NurLesenFeld({
+  beschriftung,
+  children,
+  herkunft,
+  symbol = 'schloss',
+  hilfe,
+  breit,
+  className,
+  anker,
+  unter,
+}: NurLesenFeldProps) {
   const basis = useId();
   const textId = `${basis}-beschriftung`;
   const hinweisId = `${basis}-hinweis`;
   const leer = !vorhanden(children as ReactNode);
   return (
-    <div role="group" aria-labelledby={textId} aria-describedby={vorhanden(herkunft) ? hinweisId : undefined} data-anker={anker}
+    <div
+      role="group"
+      aria-labelledby={textId}
+      aria-describedby={vorhanden(herkunft) ? hinweisId : undefined}
+      data-anker={anker}
       className={klassen(s.feld, breit && s.breit, className)}>
       <Kopf text={beschriftung} hilfe={hilfe} textId={textId} className={s.kopf} />
       <div className={klassen(s.wert, leer && s.leer)}>{leer ? '–' : children}</div>
-      {vorhanden(herkunft) && <p id={hinweisId} className={s.herkunft}><Symbol name={symbol} className={s.herkunftsymbol} /><span>{herkunft}</span></p>}
+      {vorhanden(herkunft) && (
+        <p id={hinweisId} className={s.herkunft}>
+          <Symbol name={symbol} className={s.herkunftsymbol} />
+          <span>{herkunft}</span>
+        </p>
+      )}
       {unter}
     </div>
   );

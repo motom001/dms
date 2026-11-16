@@ -19,7 +19,10 @@ describe('CodeQL-Funde (#250)', () => {
   it('prüft präparierte SVGs schnell (kein ReDoS)', () => {
     const boese = '<!---->'.repeat(20000) + '<!--' + ' '.repeat(50000);
     const start = performance.now();
-    assert.throws(() => pruefeLogo(Buffer.from(boese)), (e) => e instanceof Fachfehler && e.status === 422);
+    assert.throws(
+      () => pruefeLogo(Buffer.from(boese)),
+      (e) => e instanceof Fachfehler && e.status === 422,
+    );
     assert.ok(performance.now() - start < 1000, 'unter einer Sekunde');
   });
 

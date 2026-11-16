@@ -73,9 +73,14 @@ rauchtest('Werkbank: Vollexport mit Prüfsummen, Eintrag bleibt nach dem Herunte
   const knoepfe = (await eintrag.locator('.knoepfe').first().locator('a, button').allInnerTexts()).map((x) => x.trim());
   assert.deepEqual(knoepfe.slice(0, 2), ['Prüfsummen (SHA256SUMS)', 'ZIP herunterladen'], 'Prüfsummen vor der ZIP');
   await eintrag.getByText(/wird der Export auf dem Server gelöscht/).waitFor();
-  const summen = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).click()]).then(([d]) => d);
+  const summen = await Promise.all([
+    s.waitForEvent('download'),
+    eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).click(),
+  ]).then(([d]) => d);
   assert.match(summen.suggestedFilename(), /SHA256SUMS$/);
-  const zip = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'ZIP herunterladen' }).click()]).then(([d]) => d);
+  const zip = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'ZIP herunterladen' }).click()]).then(
+    ([d]) => d,
+  );
   assert.equal(await zip.failure(), null);
   await eintrag.getByText(/^Heruntergeladen am .* und auf dem Server gelöscht/).waitFor({ timeout: 30_000 });
   assert.match(await eintrag.locator('dd.mono').innerText(), /^[0-9a-f]{64}$/);
@@ -85,26 +90,41 @@ rauchtest('Werkbank: Vollexport mit Prüfsummen, Eintrag bleibt nach dem Herunte
 
 // „Benutzer dürfen ihre eigenen Daten exportieren“ unter Daten sichern → Einstellungen (#1196): im Vollexport nur ein
 // leiser Satz mit Link.
-rauchtest('Werkbank: eigener Export der Benutzer unter Daten sichern → Einstellungen, nicht im Vollexport (#1196)', { als: LENA }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.goto(BASIS + '/werkbank/vollexport');
-  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  await bearbeitung.getByRole('heading', { name: 'Vollexport', level: 1 }).waitFor();
-  assert.equal(await bearbeitung.getByRole('switch').count(), 0, 'kein Schalter im Vollexport');
-  await bearbeitung.getByText('Ob Benutzer ihre eigenen Daten exportieren dürfen, stellst du unter Einstellungen ein.').waitFor();
-  await bearbeitung.getByRole('link', { name: 'Einstellungen', exact: true }).click();
-  await s.waitForURL(/\/werkbank\/daten/);
-  await bearbeitung.getByRole('heading', { name: 'Einstellungen', level: 1 }).waitFor();
-  const schalter = bearbeitung.getByRole('switch', { name: 'Benutzer dürfen ihre eigenen Daten exportieren' });
-  const vorher = await schalter.getAttribute('aria-checked');
-  await schalter.click();
-  await bearbeitung.getByText(vorher === 'true' ? 'Meine Daten exportieren ist abgeschaltet.' : 'Benutzer dürfen ihre eigenen Daten exportieren.', { exact: true }).waitFor();
-  await schalter.click();
-  await bearbeitung.getByText(vorher === 'true' ? 'Benutzer dürfen ihre eigenen Daten exportieren.' : 'Meine Daten exportieren ist abgeschaltet.', { exact: true }).waitFor();
-  // In der Leiste unter „Daten sichern“.
-  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Einstellungen/ }).waitFor();
-});
+rauchtest(
+  'Werkbank: eigener Export der Benutzer unter Daten sichern → Einstellungen, nicht im Vollexport (#1196)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/vollexport');
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    await bearbeitung.getByRole('heading', { name: 'Vollexport', level: 1 }).waitFor();
+    assert.equal(await bearbeitung.getByRole('switch').count(), 0, 'kein Schalter im Vollexport');
+    await bearbeitung.getByText('Ob Benutzer ihre eigenen Daten exportieren dürfen, stellst du unter Einstellungen ein.').waitFor();
+    await bearbeitung.getByRole('link', { name: 'Einstellungen', exact: true }).click();
+    await s.waitForURL(/\/werkbank\/daten/);
+    await bearbeitung.getByRole('heading', { name: 'Einstellungen', level: 1 }).waitFor();
+    const schalter = bearbeitung.getByRole('switch', { name: 'Benutzer dürfen ihre eigenen Daten exportieren' });
+    const vorher = await schalter.getAttribute('aria-checked');
+    await schalter.click();
+    await bearbeitung
+      .getByText(vorher === 'true' ? 'Meine Daten exportieren ist abgeschaltet.' : 'Benutzer dürfen ihre eigenen Daten exportieren.', {
+        exact: true,
+      })
+      .waitFor();
+    await schalter.click();
+    await bearbeitung
+      .getByText(vorher === 'true' ? 'Benutzer dürfen ihre eigenen Daten exportieren.' : 'Meine Daten exportieren ist abgeschaltet.', {
+        exact: true,
+      })
+      .waitFor();
+    // In der Leiste unter „Daten sichern“.
+    await s
+      .getByRole('complementary', { name: 'Bereiche' })
+      .getByRole('link', { name: /^Einstellungen/ })
+      .waitFor();
+  },
+);
 
 // Papierkorb (#1197): Suche, Filter und Mehrfachauswahl in der Ablage; die Aufbewahrung steht unter Daten sichern →
 // Einstellungen, im Papierkorb der Werkbank nur eine Zeile mit Link dorthin.
@@ -125,7 +145,10 @@ rauchtest('Papierkorb: suchen, mehrere wiederherstellen; Aufbewahrung unter Eins
   await s.getByRole('checkbox', { name: 'Alle auswählen' }).check();
   await s.getByRole('button', { name: 'Wiederherstellen (2)' }).click();
   await s.getByText('2 Einträge wiederhergestellt.').waitFor({ timeout: 30_000 });
-  await s.getByText(/Keine Treffer|Papierkorb ist leer/).first().waitFor();
+  await s
+    .getByText(/Keine Treffer|Papierkorb ist leer/)
+    .first()
+    .waitFor();
   // Werkbank: keine Aufbewahrung mehr im Papierkorb, nur die Zeile mit Link zu den Einstellungen.
   await verwalten(s);
   await s.goto(BASIS + '/werkbank/papierkorb');
@@ -141,10 +164,32 @@ rauchtest('Papierkorb: suchen, mehrere wiederherstellen; Aufbewahrung unter Eins
 // die es nur noch am Ziel gibt – eine holbar, eine von einem älteren Paket (nur Ort und Dateiname mit Anleitung).
 const ENTFERNT = {
   nur: [
-    { name: '2026-10-01_0200-automatisch', datei: '2026-10-01_0200-automatisch.dms-sicherung', paket: 'webdav', paketName: 'Sicherungsziel WebDAV', ziel: 'WebDAV https://cloud.example.org/Ablago', groesse: 52_428_800, sha256: 'a'.repeat(64), beginn: '2026-10-01T00:00:00.000Z', holbar: true },
-    { name: '2026-09-01_0200-automatisch', datei: '2026-09-01_0200-automatisch.dms-sicherung', paket: 'webdav', paketName: 'Sicherungsziel WebDAV', ziel: 'WebDAV https://cloud.example.org/Ablago', groesse: 51_380_224, sha256: 'b'.repeat(64), beginn: '2026-09-01T00:00:00.000Z', holbar: false, grund: 'kann-nicht' },
+    {
+      name: '2026-10-01_0200-automatisch',
+      datei: '2026-10-01_0200-automatisch.dms-sicherung',
+      paket: 'webdav',
+      paketName: 'Sicherungsziel WebDAV',
+      ziel: 'WebDAV https://cloud.example.org/Ablago',
+      groesse: 52_428_800,
+      sha256: 'a'.repeat(64),
+      beginn: '2026-10-01T00:00:00.000Z',
+      holbar: true,
+    },
+    {
+      name: '2026-09-01_0200-automatisch',
+      datei: '2026-09-01_0200-automatisch.dms-sicherung',
+      paket: 'webdav',
+      paketName: 'Sicherungsziel WebDAV',
+      ziel: 'WebDAV https://cloud.example.org/Ablago',
+      groesse: 51_380_224,
+      sha256: 'b'.repeat(64),
+      beginn: '2026-09-01T00:00:00.000Z',
+      holbar: false,
+      grund: 'kann-nicht',
+    },
   ],
-  auchAmZiel: {}, fehler: [],
+  auchAmZiel: {},
+  fehler: [],
 };
 async function mitEntfernten(s) {
   await s.route(/\/api\/werkbank\/sicherung(\?.*)?$/, async (route) => {
@@ -160,31 +205,42 @@ async function mitEntfernten(s) {
   return bearbeitung;
 }
 
-rauchtest('Werkbank: Sicherungen nur außer Haus in der Liste, axe hell und dunkel (#976)', { als: LENA, erwartet: SICHERUNG_ERWARTET }, async (s) => {
-  const bearbeitung = await mitEntfernten(s);
-  const zeilen = bearbeitung.locator('#liste tbody tr', { hasText: 'nur außer Haus (Sicherungsziel WebDAV)' });
-  assert.equal(await zeilen.count(), 2);
-  await zeilen.nth(0).getByRole('button', { name: 'Herunterladen' }).waitFor();
-  await zeilen.nth(0).getByRole('button', { name: 'Prüfen' }).waitFor();
-  await zeilen.nth(1).getByText('Liegt am Ziel als 2026-09-01_0200-automatisch.dms-sicherung').waitFor();
-  assert.match(await zeilen.nth(1).getByRole('link', { name: 'Anleitung' }).getAttribute('href'), /wiederherstellen\/#aus-einer-kopie-ausser-haus$/);
-  assert.equal(await zeilen.nth(1).getByRole('button').count(), 0, 'kein toter Knopf');
-  await bearbeitung.getByRole('button', { name: 'Ziele außer Haus neu abfragen' }).waitFor();
-  // axe hell und dunkel ohne Maus über den Knöpfen und erst nach dem Farbübergang (Hover und Übergang beim Wechsel des
-  // Schemas verfälschen sonst den Kontrast, vgl. #1189).
-  const funde = [];
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    for (const v of await axePruefen(s, ['#liste'])) funde.push(`${schema}: ${v}`);
-  }
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-});
+rauchtest(
+  'Werkbank: Sicherungen nur außer Haus in der Liste, axe hell und dunkel (#976)',
+  { als: LENA, erwartet: SICHERUNG_ERWARTET },
+  async (s) => {
+    const bearbeitung = await mitEntfernten(s);
+    const zeilen = bearbeitung.locator('#liste tbody tr', { hasText: 'nur außer Haus (Sicherungsziel WebDAV)' });
+    assert.equal(await zeilen.count(), 2);
+    await zeilen.nth(0).getByRole('button', { name: 'Herunterladen' }).waitFor();
+    await zeilen.nth(0).getByRole('button', { name: 'Prüfen' }).waitFor();
+    await zeilen.nth(1).getByText('Liegt am Ziel als 2026-09-01_0200-automatisch.dms-sicherung').waitFor();
+    assert.match(
+      await zeilen.nth(1).getByRole('link', { name: 'Anleitung' }).getAttribute('href'),
+      /wiederherstellen\/#aus-einer-kopie-ausser-haus$/,
+    );
+    assert.equal(await zeilen.nth(1).getByRole('button').count(), 0, 'kein toter Knopf');
+    await bearbeitung.getByRole('button', { name: 'Ziele außer Haus neu abfragen' }).waitFor();
+    // axe hell und dunkel ohne Maus über den Knöpfen und erst nach dem Farbübergang (Hover und Übergang beim Wechsel des
+    // Schemas verfälschen sonst den Kontrast, vgl. #1189).
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, ['#liste'])) funde.push(`${schema}: ${v}`);
+    }
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  },
+);
 
-rauchtest('Handy: Sicherungen nur außer Haus mit 44-px-Tippflächen (#976)', { handy: true, als: LENA, erwartet: SICHERUNG_ERWARTET }, async (s) => {
-  await mitEntfernten(s);
-  const funde = await tippflaechenPruefen(s, ['#liste']);
-  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
-});
+rauchtest(
+  'Handy: Sicherungen nur außer Haus mit 44-px-Tippflächen (#976)',
+  { handy: true, als: LENA, erwartet: SICHERUNG_ERWARTET },
+  async (s) => {
+    await mitEntfernten(s);
+    const funde = await tippflaechenPruefen(s, ['#liste']);
+    assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+  },
+);
 
 // „Lokal nur die neueste behalten“ (#1194): ohne erfolgreiche Kopie außer Haus gesperrt, mit Grund und Link; gesetzt,
 // aber nicht wirksam: Hinweis. Der Test ergänzt die Antwort der Werkbank um den Stand (kein echtes Ziel außer Haus).
@@ -203,30 +259,42 @@ async function nurNeuesteStand(s, nurNeueste, plan = {}) {
   return zeitplan;
 }
 
-rauchtest('Werkbank: „Lokal nur die neueste“ nur mit Sicherung außer Haus, axe hell und dunkel (#1194)', { als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 }, async (s) => {
-  const zeitplan = await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
-  assert.equal(await zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' }).isDisabled(), true);
-  await zeitplan.getByText('Erst möglich, wenn eine Sicherung außer Haus eingerichtet ist').waitFor();
-  assert.equal(await zeitplan.getByRole('link', { name: 'Zur Sicherung außer Haus' }).getAttribute('href'), '#ausser-haus');
-  assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false, 'die Aufbewahrung bleibt änderbar');
-  const funde = [];
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    for (const v of await axePruefen(s, ['#zeitplan'])) funde.push(`${schema}: ${v}`);
-  }
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-});
+rauchtest(
+  'Werkbank: „Lokal nur die neueste“ nur mit Sicherung außer Haus, axe hell und dunkel (#1194)',
+  { als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 },
+  async (s) => {
+    const zeitplan = await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
+    assert.equal(await zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' }).isDisabled(), true);
+    await zeitplan.getByText('Erst möglich, wenn eine Sicherung außer Haus eingerichtet ist').waitFor();
+    assert.equal(await zeitplan.getByRole('link', { name: 'Zur Sicherung außer Haus' }).getAttribute('href'), '#ausser-haus');
+    assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false, 'die Aufbewahrung bleibt änderbar');
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, ['#zeitplan'])) funde.push(`${schema}: ${v}`);
+    }
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  },
+);
 
-rauchtest('Werkbank: „Lokal nur die neueste“ gesetzt, aber ohne Wirkung – Hinweis, Aufbewahrung änderbar (#1194)', { als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 }, async (s) => {
-  const zeitplan = await nurNeuesteStand(s, { gesetzt: true, moeglich: false, wirksam: false }, { nurNeueste: true });
-  const haken = zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' });
-  assert.equal(await haken.isDisabled(), false, 'abwählen geht immer');
-  await zeitplan.getByText('Es gibt gerade keine erfolgreiche Kopie außer Haus').waitFor();
-  assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false);
-});
+rauchtest(
+  'Werkbank: „Lokal nur die neueste“ gesetzt, aber ohne Wirkung – Hinweis, Aufbewahrung änderbar (#1194)',
+  { als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 },
+  async (s) => {
+    const zeitplan = await nurNeuesteStand(s, { gesetzt: true, moeglich: false, wirksam: false }, { nurNeueste: true });
+    const haken = zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' });
+    assert.equal(await haken.isDisabled(), false, 'abwählen geht immer');
+    await zeitplan.getByText('Es gibt gerade keine erfolgreiche Kopie außer Haus').waitFor();
+    assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false);
+  },
+);
 
-rauchtest('Handy: Zeitplan der Sicherung mit 44-px-Tippflächen (#1194)', { handy: true, als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 }, async (s) => {
-  await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
-  const funde = await tippflaechenPruefen(s, ['#zeitplan']);
-  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
-});
+rauchtest(
+  'Handy: Zeitplan der Sicherung mit 44-px-Tippflächen (#1194)',
+  { handy: true, als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 },
+  async (s) => {
+    await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
+    const funde = await tippflaechenPruefen(s, ['#zeitplan']);
+    assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+  },
+);

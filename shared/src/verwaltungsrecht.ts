@@ -31,7 +31,15 @@ export const HEIKLE_BEREICHE: ReadonlySet<string> = new Set([
   // Verschlüsselung (Schlüssel, Notfallblatt), Datenbank-Anbindung, Sicherung mit Wiederherstellen, Vollexport;
   // dazu die Bereiche mit Umweg: Mappentypen (Regeln), Pakete, Automatisierungen, E-Mail-Versand (Betrieb),
   // Anmeldung über Anbieter (Anmeldeschutz).
-  'verschluesselung', 'anbindung', 'sicherung', 'vollexport', 'typen', 'pakete', 'automatisierungen', 'betrieb', 'anmeldeschutz',
+  'verschluesselung',
+  'anbindung',
+  'sicherung',
+  'vollexport',
+  'typen',
+  'pakete',
+  'automatisierungen',
+  'betrieb',
+  'anmeldeschutz',
 ]);
 
 /**
@@ -40,7 +48,19 @@ export const HEIKLE_BEREICHE: ReadonlySet<string> = new Set([
  * Sicherung herunterladen (#975). `aufruf`: Adresse für Aufrufe von außen anlegen oder erneuern (#679). `aussen`: Ziele
  * nach außen freigeben, Geheimnis für „URL aufrufen“ (#671).
  */
-export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'sicherung' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall' | 'anmeldung' | 'aufruf' | 'aussen';
+export type HeikleHandlung =
+  | 'rechte'
+  | 'schluessel'
+  | 'vollexport'
+  | 'wiederherstellen'
+  | 'sicherung'
+  | 'anbindung'
+  | 'anbieter'
+  | 'mailversand'
+  | 'notfall'
+  | 'anmeldung'
+  | 'aufruf'
+  | 'aussen';
 
 /**
  * Bereiche nur für „Gesamte Verwaltung“: Sie lassen sich nicht einzeln vergeben. Derzeit keiner: Die Nutzung (#1032)
@@ -77,7 +97,11 @@ export function darfBereich(b: MitRecht, pfad: string): boolean {
 }
 
 /** Der Baum für Werkbank → Benutzer → Person (#818): Gruppen gliedern nur, Haken gibt es je Bereich. */
-export interface Verwaltungsast { gruppe: Gruppe; name: string; bereiche: Array<{ pfad: string; heikel: boolean }> }
+export interface Verwaltungsast {
+  gruppe: Gruppe;
+  name: string;
+  bereiche: Array<{ pfad: string; heikel: boolean }>;
+}
 export function verwaltungsbaum(): Verwaltungsast[] {
   const aeste = new Map<Gruppe, Verwaltungsast>();
   for (const b of BEREICHE) {

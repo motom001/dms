@@ -3,7 +3,19 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { feiertageZwischen } from '../../shared/src/feiertage';
 import { folgetermine } from '../../shared/src/fristen';
-import { blaettere, istTag, jahresZeitraum, monatsende, monatsraster, monatsZeitraum, montag, tageZwischen, ueberfaelligSeit, wochentag, zeitraumProblem } from '../../shared/src/kalender';
+import {
+  blaettere,
+  istTag,
+  jahresZeitraum,
+  monatsende,
+  monatsraster,
+  monatsZeitraum,
+  montag,
+  tageZwischen,
+  ueberfaelligSeit,
+  wochentag,
+  zeitraumProblem,
+} from '../../shared/src/kalender';
 
 describe('Kalender (#528)', () => {
   it('Tage, Wochentage, Monate', () => {
@@ -53,7 +65,12 @@ describe('Kalender (#528)', () => {
   });
 
   it('Feiertage im Zeitraum, auch über den Jahreswechsel', () => {
-    assert.deepEqual(feiertageZwischen('2026-12-20', '2027-01-07', 'BY'), { '2026-12-25': '1. Weihnachtstag', '2026-12-26': '2. Weihnachtstag', '2027-01-01': 'Neujahr', '2027-01-06': 'Heilige Drei Könige' });
+    assert.deepEqual(feiertageZwischen('2026-12-20', '2027-01-07', 'BY'), {
+      '2026-12-25': '1. Weihnachtstag',
+      '2026-12-26': '2. Weihnachtstag',
+      '2027-01-01': 'Neujahr',
+      '2027-01-06': 'Heilige Drei Könige',
+    });
     assert.deepEqual(feiertageZwischen('2026-12-20', '2027-01-07', null), {});
   });
 });

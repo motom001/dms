@@ -32,21 +32,28 @@ export class RegionDienst {
   }
 
   starte() {
-    this.uhr ??= setInterval(() => { void this.lade().catch(() => {}); }, REGION_NEU_LESEN_MS);
+    this.uhr ??= setInterval(() => {
+      void this.lade().catch(() => {});
+    }, REGION_NEU_LESEN_MS);
     this.uhr.unref?.();
   }
-  stoppe() { if (this.uhr) clearInterval(this.uhr); this.uhr = null; }
+  stoppe() {
+    if (this.uhr) clearInterval(this.uhr);
+    this.uhr = null;
+  }
 
   async speichere(e: unknown): Promise<Region> {
     const x = (e ?? {}) as Record<string, unknown>;
     const alt = await this.lies();
     if (x.land !== undefined && !istLand(x.land)) throw new Fachfehler(422, t('meldungen.region.unbekanntes-land'));
-    if (x.bundesland !== undefined && x.bundesland !== null && x.bundesland !== '' && !istBundesland(x.bundesland)) throw new Fachfehler(422, t('meldungen.region.unbekanntes-bundesland'));
-    if (x.zeitzone !== undefined && !istZeitzone(x.zeitzone)) throw new Fachfehler(422, t('meldungen.region.unbekannte-zeitzone-bitte-eine'));
+    if (x.bundesland !== undefined && x.bundesland !== null && x.bundesland !== '' && !istBundesland(x.bundesland))
+      throw new Fachfehler(422, t('meldungen.region.unbekanntes-bundesland'));
+    if (x.zeitzone !== undefined && !istZeitzone(x.zeitzone))
+      throw new Fachfehler(422, t('meldungen.region.unbekannte-zeitzone-bitte-eine'));
     const neu: Region = {
-      land: x.land === undefined ? alt.land : x.land as Region['land'],
+      land: x.land === undefined ? alt.land : (x.land as Region['land']),
       bundesland: x.bundesland === undefined ? alt.bundesland : istBundesland(x.bundesland) ? x.bundesland : null,
-      zeitzone: x.zeitzone === undefined ? alt.zeitzone : x.zeitzone as string,
+      zeitzone: x.zeitzone === undefined ? alt.zeitzone : (x.zeitzone as string),
     };
     await this.einstellungen.schreibe('region', neu);
     setzeZeitzone(neu.zeitzone);

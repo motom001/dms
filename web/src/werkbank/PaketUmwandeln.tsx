@@ -18,7 +18,8 @@ import { Feld, Knopf } from '../bausteine';
 const datum = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
 /** Wert der Auswahl je Name: „p:<Id>“, „neu“ oder „weg“. */
 const alsWert = (e: Entscheidung) => (e.art === 'person' ? `p:${e.id}` : e.art === 'neu' ? 'neu' : 'weg');
-const ausWert = (w: string): Entscheidung => (w.startsWith('p:') ? { art: 'person', id: w.slice(2) } : w === 'neu' ? { art: 'neu' } : { art: 'ueberspringen' });
+const ausWert = (w: string): Entscheidung =>
+  w.startsWith('p:') ? { art: 'person', id: w.slice(2) } : w === 'neu' ? { art: 'neu' } : { art: 'ueberspringen' };
 
 export function PaketUmwandeln({ paket }: { paket: string }) {
   const d = useDaten();
@@ -28,36 +29,88 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
   const [wahl, setWahl] = useState<Record<string, string>>({});
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung>();
-  const laden = useCallback(() => { paketeApi.paketUmwandlungen(paket).then(setStand, () => setStand(null)); }, [paket]);
-  useEffect(() => { laden(); }, [laden]);
+  const laden = useCallback(() => {
+    paketeApi.paketUmwandlungen(paket).then(setStand, () => setStand(null));
+  }, [paket]);
+  useEffect(() => {
+    laden();
+  }, [laden]);
 
   async function zeige(f: UmwandlungsFeld) {
-    setMeldung(undefined); setLaeuft(true);
+    setMeldung(undefined);
+    setLaeuft(true);
     try {
       const v = await paketeApi.paketUmwandlungVorschau(paket, f.typId, f.feldKey);
-      setOffen(f); setVorschau(v); setWahl(Object.fromEntries(v.zeilen.map((z) => [z.schluessel, alsWert(z.vorschlag)])));
-    } catch (e) { setMeldung(alsMeldung(e)); }
-    finally { setLaeuft(false); }
+      setOffen(f);
+      setVorschau(v);
+      setWahl(Object.fromEntries(v.zeilen.map((z) => [z.schluessel, alsWert(z.vorschlag)])));
+    } catch (e) {
+      setMeldung(alsMeldung(e));
+    } finally {
+      setLaeuft(false);
+    }
   }
   async function umwandeln() {
     if (!offen || !vorschau) return;
-    setLaeuft(true); setMeldung(undefined);
+    setLaeuft(true);
+    setMeldung(undefined);
     try {
-      const r = await paketeApi.paketUmwandeln(paket, offen.typId, offen.feldKey, Object.fromEntries(Object.entries(wahl).map(([k, w]) => [k, ausWert(w)])));
-      setMeldung({ art: 'gut', text: t('pakete.umwandeln.fertig', { anzahl: r.umgewandelt, neu: r.neuePersonen, aus: r.ausgelassen.length }), gruende: r.ausgelassen.map((x) => `${x.titel || t('pakete.umwandeln.ohnetitel')}: ${x.grund}`) });
-      setOffen(null); setVorschau(null); laden(); await d.neuLaden();
-    } catch (e) { setMeldung(alsMeldung(e)); }
-    finally { setLaeuft(false); }
+      const r = await paketeApi.paketUmwandeln(
+        paket,
+        offen.typId,
+        offen.feldKey,
+        Object.fromEntries(Object.entries(wahl).map(([k, w]) => [k, ausWert(w)])),
+      );
+      setMeldung({
+        art: 'gut',
+        text: t('pakete.umwandeln.fertig', { anzahl: r.umgewandelt, neu: r.neuePersonen, aus: r.ausgelassen.length }),
+        gruende: r.ausgelassen.map((x) => `${x.titel || t('pakete.umwandeln.ohnetitel')}: ${x.grund}`),
+      });
+      setOffen(null);
+      setVorschau(null);
+      laden();
+      await d.neuLaden();
+    } catch (e) {
+      setMeldung(alsMeldung(e));
+    } finally {
+      setLaeuft(false);
+    }
   }
   async function zurueck(v: Umwandlungsvorgang) {
-    if (!(await rueckfrage({ titel: t('pakete.umwandeln.zurueck.frage'), text: [t('pakete.umwandeln.zurueck.frage.text', { anzahl: v.mappen.length }), v.neuePersonen.length ? t('pakete.umwandeln.zurueck.frage.neu', { anzahl: v.neuePersonen.length }) : ''].filter(Boolean).join(' '), ja: t('pakete.umwandeln.zurueck.frage.ja') }))) return;
-    setLaeuft(true); setMeldung(undefined);
+    if (
+      !(await rueckfrage({
+        titel: t('pakete.umwandeln.zurueck.frage'),
+        text: [
+          t('pakete.umwandeln.zurueck.frage.text', { anzahl: v.mappen.length }),
+          v.neuePersonen.length ? t('pakete.umwandeln.zurueck.frage.neu', { anzahl: v.neuePersonen.length }) : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        ja: t('pakete.umwandeln.zurueck.frage.ja'),
+      }))
+    )
+      return;
+    setLaeuft(true);
+    setMeldung(undefined);
     try {
       const r = await paketeApi.paketUmwandlungZurueck(paket, v.id);
-      setMeldung({ art: 'gut', text: [t('pakete.umwandeln.zurueck.fertig', { anzahl: r.zurueck }), r.personenBehalten ? t('pakete.umwandeln.zurueck.behalten', { anzahl: r.personenBehalten }) : ''].filter(Boolean).join(' '), gruende: r.ausgelassen.map((x) => `${x.titel || t('pakete.umwandeln.ohnetitel')}: ${x.grund}`) });
-      laden(); await d.neuLaden();
-    } catch (e) { setMeldung(alsMeldung(e)); }
-    finally { setLaeuft(false); }
+      setMeldung({
+        art: 'gut',
+        text: [
+          t('pakete.umwandeln.zurueck.fertig', { anzahl: r.zurueck }),
+          r.personenBehalten ? t('pakete.umwandeln.zurueck.behalten', { anzahl: r.personenBehalten }) : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        gruende: r.ausgelassen.map((x) => `${x.titel || t('pakete.umwandeln.ohnetitel')}: ${x.grund}`),
+      });
+      laden();
+      await d.neuLaden();
+    } catch (e) {
+      setMeldung(alsMeldung(e));
+    } finally {
+      setLaeuft(false);
+    }
   }
 
   if (!stand || (!stand.felder.length && !stand.vorgaenge.length)) return null;
@@ -65,21 +118,42 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
   const nichts = !!vorschau && vorschau.zeilen.every((z) => wahl[z.schluessel] === 'weg');
   return (
     <section className="blatt" aria-label={t('pakete.umwandeln.titel')}>
-      <h2 className="h3">{t('pakete.umwandeln.titel')} <Hilfe ort="werkbank.pakete.umwandeln" /></h2>
+      <h2 className="h3">
+        {t('pakete.umwandeln.titel')} <Hilfe ort="werkbank.pakete.umwandeln" />
+      </h2>
       <p className="leise klein">{t('pakete.umwandeln.text')}</p>
       <MeldungBox m={meldung} />
-      {!offeneFelder.length ? <p className="leise klein">{t('pakete.umwandeln.keine')}</p> : (
+      {!offeneFelder.length ? (
+        <p className="leise klein">{t('pakete.umwandeln.keine')}</p>
+      ) : (
         <ul className="stapel umw-felder">
           {offeneFelder.map((f) => (
             <li key={f.typId + f.feldKey} className="umw-feld">
-              <span><strong>{f.typName} – {f.feldLabel}</strong><br /><span className="leise klein">{t('pakete.umwandeln.anzahl', { anzahl: f.anzahl, aus: f.ausLabel, ziel: f.zielTypName })}</span></span>
-              <Knopf groesse="klein" aria-pressed={offen?.typId === f.typId && offen.feldKey === f.feldKey} gesperrt={laeuft} onClick={() => void zeige(f)}>{t('pakete.umwandeln.vorschau')}</Knopf>
+              <span>
+                <strong>
+                  {f.typName} – {f.feldLabel}
+                </strong>
+                <br />
+                <span className="leise klein">
+                  {t('pakete.umwandeln.anzahl', { anzahl: f.anzahl, aus: f.ausLabel, ziel: f.zielTypName })}
+                </span>
+              </span>
+              <Knopf
+                groesse="klein"
+                aria-pressed={offen?.typId === f.typId && offen.feldKey === f.feldKey}
+                gesperrt={laeuft}
+                onClick={() => void zeige(f)}>
+                {t('pakete.umwandeln.vorschau')}
+              </Knopf>
             </li>
           ))}
         </ul>
       )}
       {offen && vorschau && (
-        <div className="stapel umw-vorschau" role="region" aria-label={t('pakete.umwandeln.vorschau.titel', { feld: `${offen.typName} – ${offen.feldLabel}` })}>
+        <div
+          className="stapel umw-vorschau"
+          role="region"
+          aria-label={t('pakete.umwandeln.vorschau.titel', { feld: `${offen.typName} – ${offen.feldLabel}` })}>
           <h3>{t('pakete.umwandeln.vorschau.titel', { feld: `${offen.typName} – ${offen.feldLabel}` })}</h3>
           <div className="hinweis info klein">
             <ul>
@@ -89,15 +163,35 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
               <li>{t('pakete.umwandeln.vorschau.zurueck')}</li>
             </ul>
           </div>
-          {!vorschau.zeilen.length ? <p className="leise">{t('pakete.umwandeln.vorschau.leer')}</p> : (
+          {!vorschau.zeilen.length ? (
+            <p className="leise">{t('pakete.umwandeln.vorschau.leer')}</p>
+          ) : (
             <ul className="umw-zeilen">
               {vorschau.zeilen.map((z) => (
                 <li key={z.schluessel}>
-                  <Feld beschriftung={<><strong>„{z.name}“</strong> <span className="leise klein">{t('pakete.umwandeln.vorschau.mappen', { anzahl: z.mappen })}</span>
-                    {z.passend.length > 1 && <> <span className="chip warn">{t('pakete.umwandeln.vorschau.mehrere', { anzahl: z.passend.length })}</span></>}</>}>
-                    <select className="umw-wahl" value={wahl[z.schluessel] ?? 'weg'} onChange={(e) => setWahl({ ...wahl, [z.schluessel]: e.target.value })}>
+                  <Feld
+                    beschriftung={
+                      <>
+                        <strong>„{z.name}“</strong>{' '}
+                        <span className="leise klein">{t('pakete.umwandeln.vorschau.mappen', { anzahl: z.mappen })}</span>
+                        {z.passend.length > 1 && (
+                          <>
+                            {' '}
+                            <span className="chip warn">{t('pakete.umwandeln.vorschau.mehrere', { anzahl: z.passend.length })}</span>
+                          </>
+                        )}
+                      </>
+                    }>
+                    <select
+                      className="umw-wahl"
+                      value={wahl[z.schluessel] ?? 'weg'}
+                      onChange={(e) => setWahl({ ...wahl, [z.schluessel]: e.target.value })}>
                       <optgroup label={t('pakete.umwandeln.vorschau.vorhanden', { ziel: offen.zielTypName })}>
-                        {vorschau.kandidaten.map((k) => <option key={k.id} value={`p:${k.id}`}>{k.titel}</option>)}
+                        {vorschau.kandidaten.map((k) => (
+                          <option key={k.id} value={`p:${k.id}`}>
+                            {k.titel}
+                          </option>
+                        ))}
                       </optgroup>
                       <option value="neu">{t('pakete.umwandeln.vorschau.neu', { ziel: offen.zielTypName, name: z.name })}</option>
                       <option value="weg">{t('pakete.umwandeln.vorschau.weg')}</option>
@@ -110,12 +204,34 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
           {vorschau.ausgelassen.length > 0 && (
             <details className="klein">
               <summary>{t('pakete.umwandeln.vorschau.ausgelassen', { anzahl: vorschau.ausgelassen.length })}</summary>
-              <ul>{vorschau.ausgelassen.map((x) => <li key={x.mappeId}><Link to={`/ablage/${offen.typId}/${x.mappeId}`} className="verweis">{x.titel || t('pakete.umwandeln.ohnetitel')}</Link>: {x.grund}</li>)}</ul>
+              <ul>
+                {vorschau.ausgelassen.map((x) => (
+                  <li key={x.mappeId}>
+                    <Link to={`/ablage/${offen.typId}/${x.mappeId}`} className="verweis">
+                      {x.titel || t('pakete.umwandeln.ohnetitel')}
+                    </Link>
+                    : {x.grund}
+                  </li>
+                ))}
+              </ul>
             </details>
           )}
           <div className="knoepfe">
-            <Knopf art="haupt" gesperrt={!vorschau.zeilen.length || nichts} laeuft={laeuft} laeuftText={t('pakete.umwandeln.laeuft')} onClick={() => void umwandeln()}>{t('pakete.umwandeln.los')}</Knopf>
-            <Knopf onClick={() => { setOffen(null); setVorschau(null); }}>{t('pakete.umwandeln.abbrechen')}</Knopf>
+            <Knopf
+              art="haupt"
+              gesperrt={!vorschau.zeilen.length || nichts}
+              laeuft={laeuft}
+              laeuftText={t('pakete.umwandeln.laeuft')}
+              onClick={() => void umwandeln()}>
+              {t('pakete.umwandeln.los')}
+            </Knopf>
+            <Knopf
+              onClick={() => {
+                setOffen(null);
+                setVorschau(null);
+              }}>
+              {t('pakete.umwandeln.abbrechen')}
+            </Knopf>
           </div>
         </div>
       )}
@@ -125,10 +241,19 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
           <ul className="stapel klein umw-felder">
             {stand.vorgaenge.map((v) => (
               <li key={v.id}>
-                {datum(v.zeit)} · {v.typName} – {v.feldLabel}: {t('pakete.umwandeln.bisher.zeile', { anzahl: v.mappen.length, neu: v.neuePersonen.length })}
-                {v.rueckgaengig
-                  ? <span className="leise"> · {t('pakete.umwandeln.bisher.zurueck', { zeit: datum(v.rueckgaengig.zeit) })}</span>
-                  : <> · <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => void zurueck(v)}>{t('pakete.umwandeln.bisher.knopf')}</Knopf></>}
+                {datum(v.zeit)} · {v.typName} – {v.feldLabel}:{' '}
+                {t('pakete.umwandeln.bisher.zeile', { anzahl: v.mappen.length, neu: v.neuePersonen.length })}
+                {v.rueckgaengig ? (
+                  <span className="leise"> · {t('pakete.umwandeln.bisher.zurueck', { zeit: datum(v.rueckgaengig.zeit) })}</span>
+                ) : (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => void zurueck(v)}>
+                      {t('pakete.umwandeln.bisher.knopf')}
+                    </Knopf>
+                  </>
+                )}
               </li>
             ))}
           </ul>

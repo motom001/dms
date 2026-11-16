@@ -1,6 +1,14 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { Erreichbarkeit, istAusfall, istDatenbankAusfall, wartezeit, ZURUECK_MS, PRUEF_ABSTAND_MS, type Gesundheit } from '../../shared/src/erreichbarkeit';
+import {
+  Erreichbarkeit,
+  istAusfall,
+  istDatenbankAusfall,
+  wartezeit,
+  ZURUECK_MS,
+  PRUEF_ABSTAND_MS,
+  type Gesundheit,
+} from '../../shared/src/erreichbarkeit';
 
 /** Uhr und Timer zum Weiterdrehen, Server zum Umschalten. */
 function aufbau() {
@@ -9,15 +17,31 @@ function aufbau() {
   let id = 0;
   const server: { antwort: Gesundheit | null; abfragen: number } = { antwort: { ok: true, stand: 'a' }, abfragen: 0 };
   let wieder = 0;
-  const e = new Erreichbarkeit({
-    gesundheit: async () => { server.abfragen++; return server.antwort; },
-    jetzt: () => jetzt,
-    spaeter: (f, ms) => { timer.push({ f, bis: jetzt + ms, id: ++id }); return id; },
-    abbrechen: (t) => { timer = timer.filter((x) => x.id !== t); },
-  }, () => { wieder++; });
+  const e = new Erreichbarkeit(
+    {
+      gesundheit: async () => {
+        server.abfragen++;
+        return server.antwort;
+      },
+      jetzt: () => jetzt,
+      spaeter: (f, ms) => {
+        timer.push({ f, bis: jetzt + ms, id: ++id });
+        return id;
+      },
+      abbrechen: (t) => {
+        timer = timer.filter((x) => x.id !== t);
+      },
+    },
+    () => {
+      wieder++;
+    },
+  );
   const warte = async (ms: number) => {
     jetzt += ms;
-    for (const t of timer.filter((x) => x.bis <= jetzt)) { timer = timer.filter((x) => x !== t); t.f(); }
+    for (const t of timer.filter((x) => x.bis <= jetzt)) {
+      timer = timer.filter((x) => x !== t);
+      t.f();
+    }
     await new Promise((r) => setImmediate(r));
   };
   return { e, server, warte, wieder: () => wieder, offeneTimer: () => timer.length };
@@ -86,11 +110,13 @@ test('Antwort einer Anfrage während des Ausfalls: sofort nachsehen', async () =
 test('bedarf: höchstens einmal pro Minute, während eines Ausfalls immer', async () => {
   const { e, server, warte } = aufbau();
   await e.pruefe();
-  e.bedarf(); await warte(0);
+  e.bedarf();
+  await warte(0);
   assert.equal(server.abfragen, 1);
   await warte(PRUEF_ABSTAND_MS);
   server.antwort = { ok: true, stand: 'neu' };
-  e.bedarf(); await warte(0);
+  e.bedarf();
+  await warte(0);
   assert.equal(server.abfragen, 2);
   assert.equal(e.zustand.neueVersion, true, 'Update im Hintergrund ohne bemerkten Ausfall');
   assert.equal(e.zustand.stufe, 'ok');
@@ -115,7 +141,8 @@ test('veraltet: nachgeladene Teile fehlen', () => {
   const { e } = aufbau();
   let gemeldet = 0;
   e.abonniere(() => gemeldet++);
-  e.veraltet(); e.veraltet();
+  e.veraltet();
+  e.veraltet();
   assert.equal(e.zustand.neueVersion, true);
   assert.equal(gemeldet, 1);
 });
@@ -129,7 +156,10 @@ test('standKennung (#122): kurzer Hash, ändert sich mit dem Commit', async () =
     assert.match(a, /^[0-9a-f]{12}$/);
     process.env.DMS_COMMIT = 'bbb';
     assert.notEqual(standKennung(), a);
-  } finally { if (alt === undefined) delete process.env.DMS_COMMIT; else process.env.DMS_COMMIT = alt; }
+  } finally {
+    if (alt === undefined) delete process.env.DMS_COMMIT;
+    else process.env.DMS_COMMIT = alt;
+  }
 });
 
 test('standKennung (#1067): mit Zufallswert der Installation – von außen nicht der Version zuzuordnen, für alle Prozesse gleich', async () => {
@@ -150,7 +180,10 @@ test('standKennung (#1067): mit Zufallswert der Installation – von außen nich
     // Andere Installation, gleiche Version: andere Kennung.
     setzeStandSalz(b);
     assert.notEqual(standKennung(), erste);
-  } finally { await rm(a, { recursive: true, force: true }); await rm(b, { recursive: true, force: true }); }
+  } finally {
+    await rm(a, { recursive: true, force: true });
+    await rm(b, { recursive: true, force: true });
+  }
 });
 
 test('Datenbank antwortet nicht (#1198): „beschäftigt“ statt „wieder erreichbar“, erst mit Datenbank zurück', async () => {

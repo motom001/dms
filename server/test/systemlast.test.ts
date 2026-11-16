@@ -2,9 +2,21 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { totalmem } from 'node:os';
-import { dauerhaftHoch, liesAnteile, liesCgroup, liesContainerSpeicher, liesNetz, Systemlast, type Leser, type Messpunkt } from '../src/systemlast';
+import {
+  dauerhaftHoch,
+  liesAnteile,
+  liesCgroup,
+  liesContainerSpeicher,
+  liesNetz,
+  Systemlast,
+  type Leser,
+  type Messpunkt,
+} from '../src/systemlast';
 
-const dateien = (d: Record<string, string>): Leser => (p) => (p in d ? d[p] : null);
+const dateien =
+  (d: Record<string, string>): Leser =>
+  (p) =>
+    p in d ? d[p] : null;
 const G = '/sys/fs/cgroup';
 
 const NETZ = `Inter-|   Receive                                                |  Transmit
@@ -16,27 +28,51 @@ const NETZ = `Inter-|   Receive                                                |
 
 describe('Auslastung lesen (#409)', () => {
   it('cgroup v2 mit Grenzen', () => {
-    const c = liesCgroup(dateien({ [`${G}/cpu.stat`]: 'usage_usec 5000000\nuser_usec 4000000\n', [`${G}/cpu.max`]: '150000 100000\n', [`${G}/memory.current`]: '536870912\n', [`${G}/memory.max`]: '1073741824\n' }));
+    const c = liesCgroup(
+      dateien({
+        [`${G}/cpu.stat`]: 'usage_usec 5000000\nuser_usec 4000000\n',
+        [`${G}/cpu.max`]: '150000 100000\n',
+        [`${G}/memory.current`]: '536870912\n',
+        [`${G}/memory.max`]: '1073741824\n',
+      }),
+    );
     assert.deepEqual(c, { version: 'v2', cpuUs: 5_000_000, kerne: 1.5, speicher: 536870912, grenze: 1073741824 });
   });
 
   it('cgroup v2 ohne Grenzen', () => {
-    const c = liesCgroup(dateien({ [`${G}/cpu.stat`]: 'usage_usec 42\n', [`${G}/cpu.max`]: 'max 100000\n', [`${G}/memory.current`]: '1000\n', [`${G}/memory.max`]: 'max\n' }));
+    const c = liesCgroup(
+      dateien({
+        [`${G}/cpu.stat`]: 'usage_usec 42\n',
+        [`${G}/cpu.max`]: 'max 100000\n',
+        [`${G}/memory.current`]: '1000\n',
+        [`${G}/memory.max`]: 'max\n',
+      }),
+    );
     assert.equal(c.kerne, null);
     assert.equal(c.grenze, null);
     assert.equal(c.speicher, 1000);
   });
 
   it('cgroup v1, auch ohne Grenze (riesiger Wert, Quote -1)', () => {
-    const c = liesCgroup(dateien({
-      [`${G}/cpuacct/cpuacct.usage`]: '3000000000\n', [`${G}/cpu/cpu.cfs_quota_us`]: '200000\n', [`${G}/cpu/cpu.cfs_period_us`]: '100000\n',
-      [`${G}/memory/memory.usage_in_bytes`]: '2048\n', [`${G}/memory/memory.limit_in_bytes`]: '4096\n',
-    }));
+    const c = liesCgroup(
+      dateien({
+        [`${G}/cpuacct/cpuacct.usage`]: '3000000000\n',
+        [`${G}/cpu/cpu.cfs_quota_us`]: '200000\n',
+        [`${G}/cpu/cpu.cfs_period_us`]: '100000\n',
+        [`${G}/memory/memory.usage_in_bytes`]: '2048\n',
+        [`${G}/memory/memory.limit_in_bytes`]: '4096\n',
+      }),
+    );
     assert.deepEqual(c, { version: 'v1', cpuUs: 3_000_000, kerne: 2, speicher: 2048, grenze: 4096 });
-    const ohne = liesCgroup(dateien({
-      [`${G}/cpuacct/cpuacct.usage`]: '1\n', [`${G}/cpu/cpu.cfs_quota_us`]: '-1\n', [`${G}/cpu/cpu.cfs_period_us`]: '100000\n',
-      [`${G}/memory/memory.usage_in_bytes`]: '2048\n', [`${G}/memory/memory.limit_in_bytes`]: '9223372036854771712\n',
-    }));
+    const ohne = liesCgroup(
+      dateien({
+        [`${G}/cpuacct/cpuacct.usage`]: '1\n',
+        [`${G}/cpu/cpu.cfs_quota_us`]: '-1\n',
+        [`${G}/cpu/cpu.cfs_period_us`]: '100000\n',
+        [`${G}/memory/memory.usage_in_bytes`]: '2048\n',
+        [`${G}/memory/memory.limit_in_bytes`]: '9223372036854771712\n',
+      }),
+    );
     assert.equal(ohne.kerne, null);
     assert.equal(ohne.grenze, null);
   });
@@ -54,11 +90,24 @@ describe('Auslastung lesen (#409)', () => {
   it('Anteile am Arbeitsspeicher: Ablago, Paket-Läufer, PostgreSQL (nur lesbar zählt)', () => {
     const pss = (kb: number) => `Rss: 1 kB\nPss:  ${kb} kB\n`;
     const lies = dateien({
-      '/proc/10/smaps_rollup': pss(100), '/proc/20/smaps_rollup': pss(50),
-      '/proc/30/comm': 'postgres\n', '/proc/30/smaps_rollup': pss(30), '/proc/31/comm': 'postgres\n', '/proc/31/smaps_rollup': pss(20), '/proc/40/comm': 'sh\n',
+      '/proc/10/smaps_rollup': pss(100),
+      '/proc/20/smaps_rollup': pss(50),
+      '/proc/30/comm': 'postgres\n',
+      '/proc/30/smaps_rollup': pss(30),
+      '/proc/31/comm': 'postgres\n',
+      '/proc/31/smaps_rollup': pss(20),
+      '/proc/40/comm': 'sh\n',
     });
-    assert.deepEqual(liesAnteile(lies, { eigen: 10, laeufer: 20, postgres: true, pids: () => [10, 20, 30, 31, 40] }), { dms: 102400, pakete: 51200, datenbank: 51200 });
-    assert.deepEqual(liesAnteile(lies, { eigen: 10, laeufer: null, postgres: false, pids: () => [] }), { dms: 102400, pakete: null, datenbank: null });
+    assert.deepEqual(liesAnteile(lies, { eigen: 10, laeufer: 20, postgres: true, pids: () => [10, 20, 30, 31, 40] }), {
+      dms: 102400,
+      pakete: 51200,
+      datenbank: 51200,
+    });
+    assert.deepEqual(liesAnteile(lies, { eigen: 10, laeufer: null, postgres: false, pids: () => [] }), {
+      dms: 102400,
+      pakete: null,
+      datenbank: null,
+    });
     // Ein PostgreSQL-Prozess nicht lesbar (anderer Benutzer): lieber „nicht verfügbar“ als zu wenig.
     const halb = dateien({ '/proc/30/comm': 'postgres\n', '/proc/30/smaps_rollup': pss(30), '/proc/31/comm': 'postgres\n' });
     assert.equal(liesAnteile(halb, { eigen: 1, laeufer: null, postgres: true, pids: () => [30, 31] }).datenbank, null);
@@ -73,20 +122,33 @@ describe('Auslastung lesen (#409)', () => {
   });
 
   it('Messung: CPU-Anteil an den erlaubten Kernen, Speicher an der Grenze, Netz je Sekunde; höchstens 60 Punkte', () => {
-    let t = 0, usage = 0, rx = 0;
-    const lies: Leser = (pfad) => ({
-      [`${G}/cpu.stat`]: `usage_usec ${usage}\n`, [`${G}/cpu.max`]: '200000 100000\n', [`${G}/memory.current`]: '900\n', [`${G}/memory.max`]: '1000\n',
-      '/proc/net/dev': `a\nb\n  eth0: ${rx} 0 0 0 0 0 0 0 ${rx / 2} 0 0 0 0 0 0 0\n`,
-    } as Record<string, string>)[pfad] ?? null;
+    let t = 0,
+      usage = 0,
+      rx = 0;
+    const lies: Leser = (pfad) =>
+      (
+        ({
+          [`${G}/cpu.stat`]: `usage_usec ${usage}\n`,
+          [`${G}/cpu.max`]: '200000 100000\n',
+          [`${G}/memory.current`]: '900\n',
+          [`${G}/memory.max`]: '1000\n',
+          '/proc/net/dev': `a\nb\n  eth0: ${rx} 0 0 0 0 0 0 0 ${rx / 2} 0 0 0 0 0 0 0\n`,
+        }) as Record<string, string>
+      )[pfad] ?? null;
     const s = new Systemlast({ lies, jetzt: () => t });
     assert.equal(s.messe(), null, 'erste Messung ist nur der Ausgangswert');
     for (let i = 0; i < 70; i++) {
-      t += 60_000; usage += 60_000_000; rx += 6_000_000; // eine volle Kern-Minute bei zwei Kernen = 50 %
+      t += 60_000;
+      usage += 60_000_000;
+      rx += 6_000_000; // eine volle Kern-Minute bei zwei Kernen = 50 %
       s.messe();
     }
     const st = s.stand();
     assert.equal(st.verlauf.length, 60);
-    assert.deepEqual({ cpu: st.verlauf[59].cpu, speicher: st.verlauf[59].speicher, rx: st.verlauf[59].rx, tx: st.verlauf[59].tx }, { cpu: 50, speicher: 90, rx: 100_000, tx: 50_000 });
+    assert.deepEqual(
+      { cpu: st.verlauf[59].cpu, speicher: st.verlauf[59].speicher, rx: st.verlauf[59].rx, tx: st.verlauf[59].tx },
+      { cpu: 50, speicher: 90, rx: 100_000, tx: 50_000 },
+    );
     assert.equal(st.kerne, 2);
     assert.ok(st.kerneBegrenzt);
     assert.deepEqual(st.speicher, { belegt: 900, grenze: 1000, ohneGrenze: false });
@@ -103,11 +165,23 @@ describe('Arbeitsspeicher des ganzen Containers (#696)', () => {
   const G = '/sys/fs/cgroup';
   const MB = 1024 * 1024;
   it('cgroup v2: memory.current, memory.peak und memory.stat (anon, file)', () => {
-    const c = liesContainerSpeicher(dateien({ [`${G}/memory.current`]: `${1900 * MB}\n`, [`${G}/memory.peak`]: `${1950 * MB}\n`, [`${G}/memory.stat`]: `anon ${1700 * MB}\nfile ${250 * MB}\nkernel 1000\n` }));
+    const c = liesContainerSpeicher(
+      dateien({
+        [`${G}/memory.current`]: `${1900 * MB}\n`,
+        [`${G}/memory.peak`]: `${1950 * MB}\n`,
+        [`${G}/memory.stat`]: `anon ${1700 * MB}\nfile ${250 * MB}\nkernel 1000\n`,
+      }),
+    );
     assert.deepEqual(c, { aktuell: 1900 * MB, spitze: 1950 * MB, programme: 1700 * MB, zwischenspeicher: 250 * MB });
   });
   it('cgroup v1: usage, max_usage, memory.stat (total_rss, total_cache)', () => {
-    const c = liesContainerSpeicher(dateien({ [`${G}/memory/memory.usage_in_bytes`]: '300\n', [`${G}/memory/memory.max_usage_in_bytes`]: '500\n', [`${G}/memory/memory.stat`]: 'cache 10\nrss 20\ntotal_cache 100\ntotal_rss 200\n' }));
+    const c = liesContainerSpeicher(
+      dateien({
+        [`${G}/memory/memory.usage_in_bytes`]: '300\n',
+        [`${G}/memory/memory.max_usage_in_bytes`]: '500\n',
+        [`${G}/memory/memory.stat`]: 'cache 10\nrss 20\ntotal_cache 100\ntotal_rss 200\n',
+      }),
+    );
     assert.deepEqual(c, { aktuell: 300, spitze: 500, programme: 200, zwischenspeicher: 100 });
   });
   it('nichts lesbar: alles null, nichts geschätzt; ältere Kernel ohne memory.peak', () => {

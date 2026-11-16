@@ -19,7 +19,12 @@ import { liesServerTiming, teileAuf, type Anfragemessung } from '../../shared/sr
 import { liesExternTiming, type ExternMessung } from '../../shared/src/extern';
 
 export type { Anfragemessung };
-export interface Seitenmessung { pfad: string; start: number; anfragen: Anfragemessung[]; bisAnzeige?: number }
+export interface Seitenmessung {
+  pfad: string;
+  start: number;
+  anfragen: Anfragemessung[];
+  bisAnzeige?: number;
+}
 
 let aktiv = false;
 let seite: Seitenmessung = { pfad: location.pathname, start: 0, anfragen: [] };
@@ -29,18 +34,40 @@ const melde = () => hoerer.forEach((f) => f());
 
 function neueSeite() {
   seite = { pfad: location.pathname + location.search, start: performance.now(), anfragen: [] };
-  try { performance.clearResourceTimings(); } catch { /* ältere Browser */ }
+  try {
+    performance.clearResourceTimings();
+  } catch {
+    /* ältere Browser */
+  }
   melde();
 }
 // Vor dem Router registriert: Eine neue Seite beginnt, bevor ihre Anfragen starten.
 addEventListener('popstate', neueSeite);
-try { performance.setResourceTimingBufferSize(1000); } catch { /* egal */ }
+try {
+  performance.setResourceTimingBufferSize(1000);
+} catch {
+  /* egal */
+}
 
 export const messung = {
-  get aktiv() { return aktiv; },
-  setzeAktiv(an: boolean) { if (aktiv !== an) { aktiv = an; melde(); } },
-  get seite() { return seite; },
-  abonniere(f: () => void) { hoerer.add(f); return () => { hoerer.delete(f); }; },
+  get aktiv() {
+    return aktiv;
+  },
+  setzeAktiv(an: boolean) {
+    if (aktiv !== an) {
+      aktiv = an;
+      melde();
+    }
+  },
+  get seite() {
+    return seite;
+  },
+  abonniere(f: () => void) {
+    hoerer.add(f);
+    return () => {
+      hoerer.delete(f);
+    };
+  },
 
   /** Nach einer Anfrage: Zeiten zusammentragen; die Darstellung folgt nach dem nächsten Zeichnen. */
   erfasse(s: Seitenmessung, methode: string, url: string, antwort: Response, start: number, kopf: number, fertig: number) {
@@ -50,7 +77,10 @@ export const messung = {
     const teile = teileAuf(st, rt, kopf - start);
     const ex = liesExternTiming(antwort.headers.get('server-timing') ?? '');
     const m: Anfragemessung = {
-      nr: ++nr, methode, url, status: antwort.status,
+      nr: ++nr,
+      methode,
+      url,
+      status: antwort.status,
       gesamt: fertig - start,
       ...teile,
       auswerten: Math.max(0, fertig - kopf - (teile.uebertragung ?? 0)),
@@ -60,12 +90,14 @@ export const messung = {
     s.anfragen.push(m);
     melde();
     // Zwei Frames später hat der Browser das Ergebnis gezeichnet.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const jetzt = performance.now();
-      m.darstellung = jetzt - fertig;
-      s.bisAnzeige = Math.max(s.bisAnzeige ?? 0, jetzt - s.start);
-      melde();
-    }));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const jetzt = performance.now();
+        m.darstellung = jetzt - fertig;
+        s.bisAnzeige = Math.max(s.bisAnzeige ?? 0, jetzt - s.start);
+        melde();
+      }),
+    );
   },
 
   /**
@@ -76,7 +108,15 @@ export const messung = {
     if (!aktiv) return;
     const jetzt = performance.now();
     const { extern } = a;
-    s.anfragen.push({ nr: ++nr, methode: a.methode, url: a.url, status: a.status, gesamt: jetzt - a.start, auswerten: 0, ...(extern?.length ? { extern, externMs: extern.reduce((n, x) => n + x.ms, 0) } : {}) });
+    s.anfragen.push({
+      nr: ++nr,
+      methode: a.methode,
+      url: a.url,
+      status: a.status,
+      gesamt: jetzt - a.start,
+      auswerten: 0,
+      ...(extern?.length ? { extern, externMs: extern.reduce((n, x) => n + x.ms, 0) } : {}),
+    });
     melde();
   },
 };

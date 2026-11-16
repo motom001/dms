@@ -5,7 +5,28 @@ import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag } from '
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
 import { alsLeerseiten } from '../../shared/src/leerseiten';
-import { normalisiereZiele, standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallEnde, type FallOhneLeserecht, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import {
+  normalisiereZiele,
+  standardliste,
+  TREFFER_ANFANG,
+  TREFFER_ENDE,
+  trefferlistenVon,
+  type Aufgabe,
+  type Ausschnitt,
+  type Dokument,
+  type FallEnde,
+  type FallOhneLeserecht,
+  type DokumentVersion,
+  type Herkunft,
+  type Historienart,
+  type Historieneintrag,
+  type Mappe,
+  type Notiz,
+  type Mappentyp,
+  type MappentypDaten,
+  type OcrStandArt,
+  type Werte,
+} from '../../shared/src/model';
 import { istZahlvergleich, type Filter, type Klausel, type Sicht, type SichtDaten } from '../../shared/src/sichten';
 import { TAGE_JE_EINHEIT } from '../../shared/src/feldarten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
@@ -18,7 +39,20 @@ import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { beiVerklemmungWiederholen } from './db';
 import { protokoll } from './protokoll';
 import { erhoeheMappenstand, erhoeheZahlenstand, lesespeicherFuer, liesStand, merkeAenderung } from './lesespeicher';
-import { dienstEmail, feldweise, istUuid, KonfigurationVeraltet, StandVeraltet, WOERTER_JE_LAUF, type AuskunftLinkIntern, type DokumentImPapierkorb, type PapierkorbEintrag, type Repo, type SeitenAnfrage, type Verweis } from './repo';
+import {
+  dienstEmail,
+  feldweise,
+  istUuid,
+  KonfigurationVeraltet,
+  StandVeraltet,
+  WOERTER_JE_LAUF,
+  type AuskunftLinkIntern,
+  type DokumentImPapierkorb,
+  type PapierkorbEintrag,
+  type Repo,
+  type SeitenAnfrage,
+  type Verweis,
+} from './repo';
 import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
@@ -36,17 +70,39 @@ const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v));
 const isoOder = (v: unknown) => (v === null || v === undefined ? null : iso(v));
 /** Zeile der Tabelle notfallkontakte (#812). */
 const notfallkontaktAus = (z: Record<string, unknown>): Notfallkontakt => ({
-  id: z.id as string, name: z.name as string, email: z.email as string, telefon: z.telefon as string, notiz: z.notiz as string,
-  antwortAn: z.antwort_an === true, eingetragenVon: (z.eingetragen_von as string | null) ?? null, eingetragenVonName: z.eingetragen_von_name as string,
-  mailStand: z.mail_stand as Notfallkontakt['mailStand'], mailAm: isoOder(z.mail_am), mailFehler: (z.mail_fehler as string | null) ?? null,
-  erstellt: iso(z.erstellt), geaendert: iso(z.geaendert),
+  id: z.id as string,
+  name: z.name as string,
+  email: z.email as string,
+  telefon: z.telefon as string,
+  notiz: z.notiz as string,
+  antwortAn: z.antwort_an === true,
+  eingetragenVon: (z.eingetragen_von as string | null) ?? null,
+  eingetragenVonName: z.eingetragen_von_name as string,
+  mailStand: z.mail_stand as Notfallkontakt['mailStand'],
+  mailAm: isoOder(z.mail_am),
+  mailFehler: (z.mail_fehler as string | null) ?? null,
+  erstellt: iso(z.erstellt),
+  geaendert: iso(z.geaendert),
 });
 /** Abruf-Link (#455) aus einer Zeile. */
 const alsLink = (r: Record<string, unknown>): AuskunftLinkIntern => ({
-  id: r.id as string, auskunftId: r.auskunft_id as string, mappeId: r.mappe_id as string, titel: (r.titel as string) ?? '',
-  schluessel: r.schluessel as string, code: r.code as string, codeArt: r.code_art as 'erzeugt' | 'eigen', empfaenger: (r.empfaenger as string | null) ?? null,
-  erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null, ablauf: iso(r.ablauf), maxAbrufe: r.max_abrufe as number,
-  abrufe: r.abrufe as number, fehlversuche: r.fehlversuche as number, gesperrt: isoOder(r.gesperrt), widerrufen: isoOder(r.widerrufen), abgerufen: isoOder(r.abgerufen),
+  id: r.id as string,
+  auskunftId: r.auskunft_id as string,
+  mappeId: r.mappe_id as string,
+  titel: (r.titel as string) ?? '',
+  schluessel: r.schluessel as string,
+  code: r.code as string,
+  codeArt: r.code_art as 'erzeugt' | 'eigen',
+  empfaenger: (r.empfaenger as string | null) ?? null,
+  erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
+  ablauf: iso(r.ablauf),
+  maxAbrufe: r.max_abrufe as number,
+  abrufe: r.abrufe as number,
+  fehlversuche: r.fehlversuche as number,
+  gesperrt: isoOder(r.gesperrt),
+  widerrufen: isoOder(r.widerrufen),
+  abgerufen: isoOder(r.abgerufen),
 });
 const alsTyp = (r: Zeile): Mappentyp => ({
   id: r.id as string,
@@ -79,13 +135,24 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   geaendert: iso(r.geaendert),
 });
 const alsKreis = (r: Zeile): Nummernkreis => ({
-  schluessel: String(r.schluessel), name: String(r.name), muster: String(r.muster), start: Number(r.start),
-  staende: (r.staende ?? {}) as Record<string, number>, zuletzt: (r.zuletzt ?? []) as Nummernkreis['zuletzt'],
+  schluessel: String(r.schluessel),
+  name: String(r.name),
+  muster: String(r.muster),
+  start: Number(r.start),
+  staende: (r.staende ?? {}) as Record<string, number>,
+  zuletzt: (r.zuletzt ?? []) as Nummernkreis['zuletzt'],
 });
 
 const alsVersion = (r: Zeile): DokumentVersion => ({
-  dokumentId: r.dokument_id as string, nummer: r.nummer as number, name: r.name as string, mime: r.mime as string, groesse: Number(r.groesse),
-  sha256: r.sha256 as string, anzeigbar: r.anzeigbar as boolean, erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
+  dokumentId: r.dokument_id as string,
+  nummer: r.nummer as number,
+  name: r.name as string,
+  mime: r.mime as string,
+  groesse: Number(r.groesse),
+  sha256: r.sha256 as string,
+  anzeigbar: r.anzeigbar as boolean,
+  erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
   herkunft: (r.herkunft as Herkunft | null) ?? null,
 });
 
@@ -122,7 +189,9 @@ const alsDokument = (r: Zeile): Dokument => ({
   erstelltVon: (r.erstellt_von as string | null) ?? null,
   archivnummer: (r.archivnummer as string | null) ?? null,
   // Sprache (#400): eigenes Feld; ältere Dokumente nennen sie nur im Hinweis der Texterkennung (#395).
-  sprache: (r.sprache as string | null | undefined) ?? (r.ocr_stand === 'fertig' ? spracheAusInfo(r.ocr_info as string | null)?.sprache ?? null : null),
+  sprache:
+    (r.sprache as string | null | undefined) ??
+    (r.ocr_stand === 'fertig' ? (spracheAusInfo(r.ocr_info as string | null)?.sprache ?? null) : null),
   // Mehrere Sprachen (#579): weitere Sprachen und der Hinweis „Post teilen?“ aus den Seitensprachen.
   weitereSprachen: (r.weitere_sprachen as string[] | null | undefined) ?? [],
   teilenAb: r.teilen_hinweis_aus ? null : teilenAb(alsSeitensprachen(r.seitensprachen)),
@@ -132,7 +201,7 @@ const alsDokument = (r: Zeile): Dokument => ({
   ...(r.anlage_zu ? { anlageZu: r.anlage_zu as string, anlageNr: (r.anlage_nr as number | null) ?? null } : {}),
   ...eingangsfelder(r),
   ocr: {
-    stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
+    stand: (r.ocr_stand as OcrStandArt | null) ?? 'keiner',
     info: (r.ocr_info as string | null) ?? null,
     seiten: (r.ocr_seiten as number | null) ?? null,
     zeit: r.ocr_zeit ? iso(r.ocr_zeit) : null,
@@ -146,14 +215,55 @@ const alsDokument = (r: Zeile): Dokument => ({
  * Spalten eines Dokuments ohne `volltext` (#367): Der Volltext kann je Dokument viele KB bis MB groß
  * sein und wird nur über `volltext()`/`volltexte()` gelesen, nie in Listen.
  */
-export const DOKUMENT_SPALTEN = ['id', 'haushalt_id', 'mappe_id', 'register_key', 'name', 'mime', 'groesse', 'sha256', 'anzeigbar', 'erstellt', 'erstellt_von',
-  'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer', 'sprache', 'weitere_sprachen', 'seitensprachen', 'teilen_hinweis_aus', 'leerseiten',
-  'anlage_zu', 'anlage_nr', 'eingang_nr', 'original_email'] as const;
+export const DOKUMENT_SPALTEN = [
+  'id',
+  'haushalt_id',
+  'mappe_id',
+  'register_key',
+  'name',
+  'mime',
+  'groesse',
+  'sha256',
+  'anzeigbar',
+  'erstellt',
+  'erstellt_von',
+  'ocr_stand',
+  'ocr_info',
+  'ocr_seiten',
+  'ocr_zeit',
+  'version',
+  'herkunft',
+  'archivnummer',
+  'sprache',
+  'weitere_sprachen',
+  'seitensprachen',
+  'teilen_hinweis_aus',
+  'leerseiten',
+  'anlage_zu',
+  'anlage_nr',
+  'eingang_nr',
+  'original_email',
+] as const;
 /**
  * Spalten einer Mappe ohne `suchtext` (#615): Der gefaltete Suchtext (Migration 055) ist nur für die Suche da und
  * etwa so groß wie Titel und Werte zusammen – Listen und „Mappe öffnen“ lesen ihn nie.
  */
-export const MAPPEN_SPALTEN = ['id', 'haushalt_id', 'typ_id', 'werte', 'erstellt', 'geaendert', 'erstellt_von', 'geaendert_von', 'demo', 'titel', 'passt', 'problem', 'system_kennung', 'vorgabe'] as const;
+export const MAPPEN_SPALTEN = [
+  'id',
+  'haushalt_id',
+  'typ_id',
+  'werte',
+  'erstellt',
+  'geaendert',
+  'erstellt_von',
+  'geaendert_von',
+  'demo',
+  'titel',
+  'passt',
+  'problem',
+  'system_kennung',
+  'vorgabe',
+] as const;
 /**
  * ANALYZE (#367) für Tabellen mit Volltext nur über diese Spalten: Ohne Spaltenliste rechnet PostgreSQL
  * auch die Statistik des Index `to_tsvector('german', volltext)` – über eine Minute bei 20.000 Dokumenten.
@@ -176,33 +286,54 @@ type SqlTeil = postgres.PendingQuery<postgres.Row[]> | postgres.Fragment;
  */
 function suchanfrage(sql: Sql, t: string, v: Varianten, konfigs: string[] = ['dms_german']): SqlTeil {
   // Je Sprache der Ablage (#400) die Anfrage mit deren Wortstämmen; ein Dokument passt, wenn eine davon passt.
-  return konfigs.map((konfig) => {
-    const eins = (x: string) => sql`websearch_to_tsquery(${konfig}::regconfig, dms_falte(${x}::text))`;
-    const b = suchbegriffe(t);
-    if (!b) return eins(t);
-    return b.map((w) => [w, ...(v[falte(w)] ?? [])].map(eins).reduce((x, y) => sql`(${x} || ${y})`)).reduce((x, y) => sql`(${x} && ${y})`);
-  }).reduce((x, y) => sql`(${x} || ${y})`);
+  return konfigs
+    .map((konfig) => {
+      const eins = (x: string) => sql`websearch_to_tsquery(${konfig}::regconfig, dms_falte(${x}::text))`;
+      const b = suchbegriffe(t);
+      if (!b) return eins(t);
+      return b
+        .map((w) => [w, ...(v[falte(w)] ?? [])].map(eins).reduce((x, y) => sql`(${x} || ${y})`))
+        .reduce((x, y) => sql`(${x} && ${y})`);
+    })
+    .reduce((x, y) => sql`(${x} || ${y})`);
 }
 /** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
 const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
 const alsFall = (r: Zeile): FallOhneLeserecht => ({
-  id: r.id as string, aufgabeId: r.aufgabe_id as string, mappeId: r.mappe_id as string, benutzerId: r.benutzer_id as string,
-  aufgabentext: r.aufgabentext as string, beginn: iso(r.beginn), ende: isoOder(r.ende), endeGrund: (r.ende_grund as FallEnde | null) ?? null,
-  leserechtSeit: isoOder(r.leserecht_seit), leserechtVon: (r.leserecht_von as string | null) ?? null,
+  id: r.id as string,
+  aufgabeId: r.aufgabe_id as string,
+  mappeId: r.mappe_id as string,
+  benutzerId: r.benutzer_id as string,
+  aufgabentext: r.aufgabentext as string,
+  beginn: iso(r.beginn),
+  ende: isoOder(r.ende),
+  endeGrund: (r.ende_grund as FallEnde | null) ?? null,
+  leserechtSeit: isoOder(r.leserecht_seit),
+  leserechtVon: (r.leserecht_von as string | null) ?? null,
   ...(r.typ_id ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
 });
 const alsAufgabe = (r: Zeile): Aufgabe => ({
-  id: r.id as string, mappeId: r.mappe_id as string, empfaengerId: (r.empfaenger_id as string | null) ?? null,
-  art: r.art as Aufgabe['art'], text: r.text as string, feldKey: (r.feld_key as string | null) ?? null,
+  id: r.id as string,
+  mappeId: r.mappe_id as string,
+  empfaengerId: (r.empfaenger_id as string | null) ?? null,
+  art: r.art as Aufgabe['art'],
+  text: r.text as string,
+  feldKey: (r.feld_key as string | null) ?? null,
   ...(r.datum ? { datum: tag(r.datum) } : {}),
   ...(r.anlass ? { anlass: r.anlass as Aufgabe['anlass'] } : {}),
-  erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
-  erledigt: r.erledigt ? iso(r.erledigt) : null, erledigtVon: (r.erledigt_von as string | null) ?? null,
+  erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
+  erledigt: r.erledigt ? iso(r.erledigt) : null,
+  erledigtVon: (r.erledigt_von as string | null) ?? null,
   ...(r.mappe_titel !== undefined ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
 });
 const alsHistorie = (r: Zeile): Historieneintrag => ({
-  id: Number(r.id), mappeId: r.mappe_id as string, zeit: iso(r.zeit), benutzerId: (r.benutzer_id as string | null) ?? null,
-  art: r.art as Historienart, daten: (r.daten as Historieneintrag['daten']) ?? {},
+  id: Number(r.id),
+  mappeId: r.mappe_id as string,
+  zeit: iso(r.zeit),
+  benutzerId: (r.benutzer_id as string | null) ?? null,
+  art: r.art as Historienart,
+  daten: (r.daten as Historieneintrag['daten']) ?? {},
 });
 /** date-Spalte → JJJJ-MM-TT (postgres.js liest „2027-09-30“ als Mitternacht UTC). */
 const tag = (v: unknown): string => {
@@ -210,83 +341,165 @@ const tag = (v: unknown): string => {
   return String(v).slice(0, 10);
 };
 const alsAblauf = (r: Zeile): MappenAblauf => ({
-  id: r.id as string, vorlage: (r.vorlage as string | null) ?? 'erinnern', mappeId: r.mappe_id as string, empfaengerId: (r.empfaenger_id as string | null) ?? null,
-  datum: tag(r.datum), text: r.text as string, erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
+  id: r.id as string,
+  vorlage: (r.vorlage as string | null) ?? 'erinnern',
+  mappeId: r.mappe_id as string,
+  empfaengerId: (r.empfaenger_id as string | null) ?? null,
+  datum: tag(r.datum),
+  text: r.text as string,
+  erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
   angehalten: (r.angehalten as MappenAblauf['angehalten']) ?? null,
   ...(r.mappe_titel !== undefined ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
 });
 const alsVorlage = (r: Zeile): Ablaufvorlage => {
   const d = (r.daten ?? {}) as Partial<AblaufvorlageDaten>;
   return {
-    kennung: r.kennung as string, name: r.name as string, reihenfolge: Number(r.reihenfolge), beschreibung: d.beschreibung ?? '', typen: d.typen ?? [],
-    wann: d.wann ?? { art: 'sofort' }, fragen: d.fragen ?? [], karten: d.karten ?? [], aktiv: r.aktiv as boolean,
-    herkunft: r.herkunft as Ablaufvorlage['herkunft'], paketId: (r.paket_id as string | null) ?? null, version: Number(r.version),
-    geaendert: iso(r.geaendert), geaendertVon: (r.geaendert_von as string | null) ?? null,
+    kennung: r.kennung as string,
+    name: r.name as string,
+    reihenfolge: Number(r.reihenfolge),
+    beschreibung: d.beschreibung ?? '',
+    typen: d.typen ?? [],
+    wann: d.wann ?? { art: 'sofort' },
+    fragen: d.fragen ?? [],
+    karten: d.karten ?? [],
+    aktiv: r.aktiv as boolean,
+    herkunft: r.herkunft as Ablaufvorlage['herkunft'],
+    paketId: (r.paket_id as string | null) ?? null,
+    version: Number(r.version),
+    geaendert: iso(r.geaendert),
+    geaendertVon: (r.geaendert_von as string | null) ?? null,
   };
 };
 const alsVerlauf = (r: Zeile): AblaufVerlauf => ({
-  id: r.id as string, vorlage: r.vorlage as string, mappeId: (r.mappe_id as string | null) ?? null, ablaufId: (r.ablauf_id as string | null) ?? null,
-  personId: (r.person_id as string | null) ?? null, zeit: iso(r.zeit), art: r.art as AblaufVerlauf['art'], text: (r.text as string) ?? '',
+  id: r.id as string,
+  vorlage: r.vorlage as string,
+  mappeId: (r.mappe_id as string | null) ?? null,
+  ablaufId: (r.ablauf_id as string | null) ?? null,
+  personId: (r.person_id as string | null) ?? null,
+  zeit: iso(r.zeit),
+  art: r.art as AblaufVerlauf['art'],
+  text: (r.text as string) ?? '',
 });
 const alsNotiz = (r: Zeile): Notiz => ({
-  id: r.id as string, mappeId: r.mappe_id as string, text: r.text as string,
-  erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
-  geaendert: iso(r.geaendert), geaendertVon: (r.geaendert_von as string | null) ?? null,
+  id: r.id as string,
+  mappeId: r.mappe_id as string,
+  text: r.text as string,
+  erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
+  geaendert: iso(r.geaendert),
+  geaendertVon: (r.geaendert_von as string | null) ?? null,
 });
 /** Fundstelle in einem Text: ein Ausschnitt um den ersten Treffer, markiert (#55). */
 export function ausschnittAus(text: string, suche: string): string | null {
   const i = text.toLowerCase().indexOf(suche.toLowerCase());
   if (i < 0) return null;
   const vor = text.slice(Math.max(0, i - 50), i);
-  return `${i > 50 ? '… ' : ''}${vor}${TREFFER_ANFANG}${text.slice(i, i + suche.length)}${TREFFER_ENDE}${text.slice(i + suche.length, i + suche.length + 60)}${i + suche.length + 60 < text.length ? ' …' : ''}`.replace(/\s+/g, ' ');
+  return `${i > 50 ? '… ' : ''}${vor}${TREFFER_ANFANG}${text.slice(i, i + suche.length)}${TREFFER_ENDE}${text.slice(i + suche.length, i + suche.length + 60)}${i + suche.length + 60 < text.length ? ' …' : ''}`.replace(
+    /\s+/g,
+    ' ',
+  );
 }
 /** Eintrag im Papierkorb aus der Zeile; die Mappe steht als jsonb (Spaltennamen der Tabelle mappen) darin. */
 /** Dokument im Papierkorb (#344). */
 const alsDokPapierkorb = (r: Zeile): DokumentImPapierkorb => {
   const d = r.dokument as Zeile;
   return {
-    id: r.id as string, mappeId: r.mappe_id as string, registerKey: d.register_key as string, name: d.name as string, mime: d.mime as string,
-    groesse: Number(d.groesse), sha256: d.sha256 as string, erstellt: iso(d.erstellt), erstelltVon: (d.erstellt_von as string | null) ?? null,
+    id: r.id as string,
+    mappeId: r.mappe_id as string,
+    registerKey: d.register_key as string,
+    name: d.name as string,
+    mime: d.mime as string,
+    groesse: Number(d.groesse),
+    sha256: d.sha256 as string,
+    erstellt: iso(d.erstellt),
+    erstelltVon: (d.erstellt_von as string | null) ?? null,
     ...(d.anlage_zu ? { anlageZu: d.anlage_zu as string } : {}),
-    versionen: Number(r.anzahl_versionen ?? 0), geloescht: iso(r.geloescht), geloeschtVon: (r.geloescht_von as string | null) ?? null,
+    versionen: Number(r.anzahl_versionen ?? 0),
+    geloescht: iso(r.geloescht),
+    geloeschtVon: (r.geloescht_von as string | null) ?? null,
   };
 };
 const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
   const m = r.mappe as Zeile;
   return {
-    id: r.id as string, typId: r.typ_id as string, titel: (m.titel as string | null) ?? '', werte: (m.werte as Werte) ?? {}, demo: !!m.demo,
-    erstellt: iso(m.erstellt), erstelltVon: (m.erstellt_von as string | null) ?? null,
-    geaendert: iso(m.geaendert), geaendertVon: (m.geaendert_von as string | null) ?? null,
-    geloescht: iso(r.geloescht), geloeschtVon: (r.geloescht_von as string | null) ?? null,
+    id: r.id as string,
+    typId: r.typ_id as string,
+    titel: (m.titel as string | null) ?? '',
+    werte: (m.werte as Werte) ?? {},
+    demo: !!m.demo,
+    erstellt: iso(m.erstellt),
+    erstelltVon: (m.erstellt_von as string | null) ?? null,
+    geaendert: iso(m.geaendert),
+    geaendertVon: (m.geaendert_von as string | null) ?? null,
+    geloescht: iso(r.geloescht),
+    geloeschtVon: (r.geloescht_von as string | null) ?? null,
     dokumente: Number(r.anzahl_dokumente ?? 0),
-    vorgang: (r.vorgang as string | null) ?? null, entkoppelt: (r.entkoppelt as Array<{ quelleId: string; feldKey: string }> | null) ?? [],
+    vorgang: (r.vorgang as string | null) ?? null,
+    entkoppelt: (r.entkoppelt as Array<{ quelleId: string; feldKey: string }> | null) ?? [],
   };
 };
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
 /** Eine Zeile der Tabelle fassungen (#1006). */
 const alsFassung = (r: postgres.Row): GespeicherteFassung => ({
-  art: r.art as FassungArt, eintrag: r.eintrag as string, nr: Number(r.nr), name: r.name as string, daten: r.daten, urheber: r.urheber as GespeicherteFassung['urheber'],
-  vorgang: (r.vorgang as string | null) ?? null, wiederhergestellt: r.wiederhergestellt == null ? null : Number(r.wiederhergestellt),
-  zeit: iso(r.zeit), bis: iso(r.bis), geloescht: (r.geloescht as GespeicherteFassung['geloescht']) ?? null,
+  art: r.art as FassungArt,
+  eintrag: r.eintrag as string,
+  nr: Number(r.nr),
+  name: r.name as string,
+  daten: r.daten,
+  urheber: r.urheber as GespeicherteFassung['urheber'],
+  vorgang: (r.vorgang as string | null) ?? null,
+  wiederhergestellt: r.wiederhergestellt == null ? null : Number(r.wiederhergestellt),
+  zeit: iso(r.zeit),
+  bis: iso(r.bis),
+  geloescht: (r.geloescht as GespeicherteFassung['geloescht']) ?? null,
 });
 
 /* Löschprotokoll (#470) */
 const loeschDok = (d: Zeile): LoeschDokument => ({
-  dokumentId: d.id as string, version: Number(d.version ?? 1), sha256: d.sha256 as string, groesse: Number(d.groesse), mime: String(d.mime ?? ''),
-  seiten: d.ocr_seiten === null || d.ocr_seiten === undefined ? null : Number(d.ocr_seiten), archivnummer: (d.archivnummer as string | null) ?? null,
+  dokumentId: d.id as string,
+  version: Number(d.version ?? 1),
+  sha256: d.sha256 as string,
+  groesse: Number(d.groesse),
+  mime: String(d.mime ?? ''),
+  seiten: d.ocr_seiten === null || d.ocr_seiten === undefined ? null : Number(d.ocr_seiten),
+  archivnummer: (d.archivnummer as string | null) ?? null,
 });
 const loeschVersion = (v: Zeile): LoeschDokument => ({
-  dokumentId: v.dokument_id as string, version: Number(v.nummer), sha256: v.sha256 as string, groesse: Number(v.groesse), mime: String(v.mime ?? ''), seiten: null, archivnummer: null,
+  dokumentId: v.dokument_id as string,
+  version: Number(v.nummer),
+  sha256: v.sha256 as string,
+  groesse: Number(v.groesse),
+  mime: String(v.mime ?? ''),
+  seiten: null,
+  archivnummer: null,
 });
 const alsLoeschEintrag = (r: Zeile): LoeschEintrag => ({
-  id: r.id as string, zeit: iso(r.zeit), art: r.art as LoeschEintrag['art'], schritt: r.schritt as LoeschEintrag['schritt'], weg: r.weg as LoeschEintrag['weg'],
-  mappeId: r.mappe_id as string, typId: (r.typ_id as string | null) ?? null, typ: r.typ_name as string, nummer: (r.nummer as string | null) ?? null, archivnummer: (r.archivnummer as string | null) ?? null,
-  dokumentId: (r.dokument_id as string | null) ?? null, version: r.version === null ? null : Number(r.version), sha256: (r.sha256 as string | null) ?? null,
-  groesse: r.groesse === null ? null : Number(r.groesse), mime: (r.mime as string | null) ?? null, seiten: r.seiten === null ? null : Number(r.seiten),
-  anzahl: (r.anzahl as LoeschEintrag['anzahl']) ?? null, vonId: (r.von_id as string | null) ?? null, von: r.von_name as string,
-  ausloeser: r.ausloeser as LoeschEintrag['ausloeser'], grund: (r.grund as LoeschEintrag['grund']) ?? null, grundText: r.grund_text as string,
-  vorgang: (r.vorgang as string | null) ?? null, startId: (r.start_id as string | null) ?? null,
+  id: r.id as string,
+  zeit: iso(r.zeit),
+  art: r.art as LoeschEintrag['art'],
+  schritt: r.schritt as LoeschEintrag['schritt'],
+  weg: r.weg as LoeschEintrag['weg'],
+  mappeId: r.mappe_id as string,
+  typId: (r.typ_id as string | null) ?? null,
+  typ: r.typ_name as string,
+  nummer: (r.nummer as string | null) ?? null,
+  archivnummer: (r.archivnummer as string | null) ?? null,
+  dokumentId: (r.dokument_id as string | null) ?? null,
+  version: r.version === null ? null : Number(r.version),
+  sha256: (r.sha256 as string | null) ?? null,
+  groesse: r.groesse === null ? null : Number(r.groesse),
+  mime: (r.mime as string | null) ?? null,
+  seiten: r.seiten === null ? null : Number(r.seiten),
+  anzahl: (r.anzahl as LoeschEintrag['anzahl']) ?? null,
+  vonId: (r.von_id as string | null) ?? null,
+  von: r.von_name as string,
+  ausloeser: r.ausloeser as LoeschEintrag['ausloeser'],
+  grund: (r.grund as LoeschEintrag['grund']) ?? null,
+  grundText: r.grund_text as string,
+  vorgang: (r.vorgang as string | null) ?? null,
+  startId: (r.start_id as string | null) ?? null,
 });
 
 const alsSicht = (r: Zeile): Sicht => ({
@@ -322,18 +535,28 @@ function zeitraumTageSql(sql: Sql, werte: Teil, k: string) {
 function ausdruck(sql: Sql, f: Extract<Filter, { art: 'feld' }>) {
   const k = f.key;
   switch (f.key) {
-    case '_erstellt': return sql`(mappen.erstellt AT TIME ZONE ${zeitzone()})::date`;
-    case '_geaendert': return sql`(mappen.geaendert AT TIME ZONE ${zeitzone()})::date`;
-    case '_erstelltVon': return sql`mappen.erstellt_von::text`;
-    case '_geaendertVon': return sql`mappen.geaendert_von::text`;
+    case '_erstellt':
+      return sql`(mappen.erstellt AT TIME ZONE ${zeitzone()})::date`;
+    case '_geaendert':
+      return sql`(mappen.geaendert AT TIME ZONE ${zeitzone()})::date`;
+    case '_erstelltVon':
+      return sql`mappen.erstellt_von::text`;
+    case '_geaendertVon':
+      return sql`mappen.geaendert_von::text`;
   }
   switch (f.feldart) {
-    case 'zahl': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
-    case 'betrag': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text -> 'betrag') = 'number' THEN (mappen.werte -> ${k}::text ->> 'betrag')::numeric END)`;
-    case 'prozent': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
-    case 'zeitraum': return zeitraumTageSql(sql, sql`mappen.werte`, k);
-    case 'datum': return sql`(CASE WHEN mappen.werte ->> ${k}::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN (mappen.werte ->> ${k}::text)::date END)`;
-    default: return sql`nullif(mappen.werte ->> ${k}::text, '')`;
+    case 'zahl':
+      return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
+    case 'betrag':
+      return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text -> 'betrag') = 'number' THEN (mappen.werte -> ${k}::text ->> 'betrag')::numeric END)`;
+    case 'prozent':
+      return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
+    case 'zeitraum':
+      return zeitraumTageSql(sql, sql`mappen.werte`, k);
+    case 'datum':
+      return sql`(CASE WHEN mappen.werte ->> ${k}::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN (mappen.werte ->> ${k}::text)::date END)`;
+    default:
+      return sql`nullif(mappen.werte ->> ${k}::text, '')`;
   }
 }
 
@@ -345,15 +568,22 @@ function feldBedingung(sql: Sql, f: Extract<Filter, { art: 'feld' }>): Teil {
   const wert = (v: unknown) => (zahl ? sql`${Number(v)}::numeric` : datum ? sql`${String(v)}::date` : sql`${String(v ?? '')}`);
   const liste = (v: unknown) => (Array.isArray(v) ? v.map(String) : v == null ? [] : [String(v)]);
   // Leer: auch leere Listen und Beträge ohne Zahl.
-  const leer = f.key.startsWith('_') ? sql`${x} IS NULL`
-    : f.feldart === 'referenz' ? sql`NOT EXISTS (SELECT 1 FROM verweise v WHERE v.quelle_id = mappen.id AND v.feld_key = ${k})`
-    : zahl || datum ? sql`${x} IS NULL`
-    : sql`(mappen.werte -> ${k}::text IS NULL OR mappen.werte -> ${k}::text IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb))`;
+  const leer = f.key.startsWith('_')
+    ? sql`${x} IS NULL`
+    : f.feldart === 'referenz'
+      ? sql`NOT EXISTS (SELECT 1 FROM verweise v WHERE v.quelle_id = mappen.id AND v.feld_key = ${k})`
+      : zahl || datum
+        ? sql`${x} IS NULL`
+        : sql`(mappen.werte -> ${k}::text IS NULL OR mappen.werte -> ${k}::text IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb))`;
   switch (f.op) {
-    case 'leer': return leer;
-    case 'nichtLeer': return sql`NOT (${leer})`;
-    case 'ja': return sql`mappen.werte -> ${k}::text = 'true'::jsonb`;
-    case 'nein': return sql`coalesce(mappen.werte -> ${k}::text, 'false'::jsonb) <> 'true'::jsonb`;
+    case 'leer':
+      return leer;
+    case 'nichtLeer':
+      return sql`NOT (${leer})`;
+    case 'ja':
+      return sql`mappen.werte -> ${k}::text = 'true'::jsonb`;
+    case 'nein':
+      return sql`coalesce(mappen.werte -> ${k}::text, 'false'::jsonb) <> 'true'::jsonb`;
     case 'enthaelt': {
       const muster = `%${String(f.a ?? '').replace(/[\\%_]/g, (c) => '\\' + c)}%`;
       return sql`${x} ILIKE ${muster}`;
@@ -372,11 +602,18 @@ function feldBedingung(sql: Sql, f: Extract<Filter, { art: 'feld' }>): Teil {
       if (!ziele.length) return sql`false`;
       return sql`mappen.id IN (SELECT v.quelle_id FROM verweise v WHERE v.ziel_id = ANY(${ziele}::uuid[]) AND v.feld_key = ${k})`;
     }
-    case 'gleich': return f.feldart === 'text' || f.feldart === 'zusammengesetzt' ? sql`lower(${x}) = lower(${String(f.a ?? '')})` : sql`${x} = ${wert(f.a)}`;
-    case 'kleiner': return sql`${x} < ${wert(f.a)}`;
-    case 'groesser': return sql`${x} > ${wert(f.a)}`;
-    case 'zwischen': return sql`${x} BETWEEN ${wert(f.a)} AND ${wert(f.b)}`;
-    case 'ausserhalb': return sql`(${x} < ${wert(f.a)} OR ${x} > ${wert(f.b)})`;
+    case 'gleich':
+      return f.feldart === 'text' || f.feldart === 'zusammengesetzt'
+        ? sql`lower(${x}) = lower(${String(f.a ?? '')})`
+        : sql`${x} = ${wert(f.a)}`;
+    case 'kleiner':
+      return sql`${x} < ${wert(f.a)}`;
+    case 'groesser':
+      return sql`${x} > ${wert(f.a)}`;
+    case 'zwischen':
+      return sql`${x} BETWEEN ${wert(f.a)} AND ${wert(f.b)}`;
+    case 'ausserhalb':
+      return sql`(${x} < ${wert(f.a)} OR ${x} > ${wert(f.b)})`;
   }
   return sql`false`;
 }
@@ -400,9 +637,11 @@ function filterSql(sql: Sql, f: Filter): Teil {
     // Eines der Datumsfelder in [von, bis]; mit ich nur Fristen dieses Empfängers (Benutzerfeld, sonst Ersteller).
     const teile = f.felder.map((x) => {
       const d = sql`(CASE WHEN mappen.werte ->> ${x.key}::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN (mappen.werte ->> ${x.key}::text)::date END)`;
-      const wer = !f.ich ? sql``
-        : x.empfaengerFeld ? sql`AND coalesce(nullif(mappen.werte ->> ${x.empfaengerFeld}::text, ''), mappen.erstellt_von::text) = ${f.ich}`
-        : sql`AND mappen.erstellt_von::text = ${f.ich}`;
+      const wer = !f.ich
+        ? sql``
+        : x.empfaengerFeld
+          ? sql`AND coalesce(nullif(mappen.werte ->> ${x.empfaengerFeld}::text, ''), mappen.erstellt_von::text) = ${f.ich}`
+          : sql`AND mappen.erstellt_von::text = ${f.ich}`;
       return sql`(${d} BETWEEN ${f.von}::date AND ${f.bis}::date ${wer})`;
     });
     return teile.length ? sql`(${teile.reduce((a, b) => sql`${a} OR ${b}`)})` : sql`false`;
@@ -420,11 +659,18 @@ function filterSql(sql: Sql, f: Filter): Teil {
     const q = quellen.length
       ? sql`AND EXISTS (SELECT 1 FROM unnest(${quellen.map((x) => x.typId)}::text[], ${quellen.map((x) => x.feldKey)}::text[]) AS w(t, f) WHERE w.t = q.typ_id::text AND w.f = v.feld_key)`
       : sql``;
-    return zaehlBedingung(sql, sql`SELECT count(DISTINCT v.quelle_id) FROM verweise v JOIN mappen q ON q.id = v.quelle_id WHERE v.ziel_id = mappen.id AND v.quelle_id <> mappen.id ${q}`, f.vergleich, f.anzahl);
+    return zaehlBedingung(
+      sql,
+      sql`SELECT count(DISTINCT v.quelle_id) FROM verweise v JOIN mappen q ON q.id = v.quelle_id WHERE v.ziel_id = mappen.id AND v.quelle_id <> mappen.id ${q}`,
+      f.vergleich,
+      f.anzahl,
+    );
   };
   if (f.quellenJeTyp) {
     // Gemeinsames Register mehrerer Typen (#66): je Typ über die Quellen seines eigenen Registers.
-    const teile = Object.entries(f.quellenJeTyp).filter(([t]) => istUuid(t)).map(([t, q]) => sql`(mappen.typ_id = ${t}::uuid AND ${zaehle(q)})`);
+    const teile = Object.entries(f.quellenJeTyp)
+      .filter(([t]) => istUuid(t))
+      .map(([t, q]) => sql`(mappen.typ_id = ${t}::uuid AND ${zaehle(q)})`);
     return teile.length ? teile.slice(1).reduce<Teil>((acc, x) => sql`${acc} OR ${x}`, teile[0]) : sql`false`;
   }
   return zaehle(f.quellen);
@@ -463,17 +709,21 @@ function eingangSql(sql: Sql, haushaltId: string, ich: string | null, ohneEmpfae
 function nurFavoritenVon(klauseln: Klausel[]): string | null {
   const wirksam = klauseln.filter((k) => k.typen.some(istUuid));
   if (!wirksam.length) return null;
-  const je = wirksam.map((k) => k.filter.find((f): f is Extract<Filter, { art: 'favorit' }> => f.art === 'favorit' && istUuid(f.benutzer))?.benutzer ?? null);
+  const je = wirksam.map(
+    (k) => k.filter.find((f): f is Extract<Filter, { art: 'favorit' }> => f.art === 'favorit' && istUuid(f.benutzer))?.benutzer ?? null,
+  );
   return je.every((b) => b && b === je[0]) ? je[0] : null;
 }
 
 /** ODER der Klauseln; jede Klausel: Typ passt UND alle Filter. Ohne Klauseln: nichts. */
 export function klauselnSql(sql: Sql, klauseln: Klausel[]): Teil {
-  const teile = klauseln.filter((k) => k.typen.some(istUuid)).map((k) => {
-    const typen = k.typen.filter(istUuid);
-    const und = k.filter.reduce<Teil>((acc, f) => sql`${acc} AND ${filterSql(sql, f)}`, typIn(sql, typen));
-    return sql`(${und})`;
-  });
+  const teile = klauseln
+    .filter((k) => k.typen.some(istUuid))
+    .map((k) => {
+      const typen = k.typen.filter(istUuid);
+      const und = k.filter.reduce<Teil>((acc, f) => sql`${acc} AND ${filterSql(sql, f)}`, typIn(sql, typen));
+      return sql`(${und})`;
+    });
   if (!teile.length) return sql`false`;
   return teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${t}`, teile[0]);
 }
@@ -481,16 +731,23 @@ export function klauselnSql(sql: Sql, klauseln: Klausel[]): Teil {
 /** Ausdruck der Berechtigungen (#123) als SQL über `mappen`. */
 export function ausdruckSql(sql: Sql, x: Ausdruck): Teil {
   switch (x.k) {
-    case 'wahr': return sql`true`;
-    case 'falsch': return sql`false`;
+    case 'wahr':
+      return sql`true`;
+    case 'falsch':
+      return sql`false`;
     // Ein Feld ohne Wert ergibt in SQL NULL, im Arbeitsspeicher „trifft nicht zu“ (rechte.ts, werte). Ohne coalesce
     // machte ein „nicht“ daraus wieder NULL – eine entziehende Regel auf ein leeres Feld (z. B. die mitgenommenen Regeln
     // nach einem Paket-Umbau, #1041) sperrte dann in Listen auch Mappen, die sie gar nicht betrifft.
-    case 'filter': return sql`coalesce((${filterSql(sql, x.f)}), false)`;
-    case 'nicht': return sql`NOT (${ausdruckSql(sql, x.a)})`;
-    case 'und': return x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} AND ${ausdruckSql(sql, t)}`, sql`(${ausdruckSql(sql, x.teile[0])})`);
-    case 'oder': return sql`(${x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${ausdruckSql(sql, t)}`, ausdruckSql(sql, x.teile[0]))})`;
-    case 'wenn': return sql`(CASE WHEN ${ausdruckSql(sql, x.bed)} THEN ${ausdruckSql(sql, x.dann)} ELSE ${ausdruckSql(sql, x.sonst)} END)`;
+    case 'filter':
+      return sql`coalesce((${filterSql(sql, x.f)}), false)`;
+    case 'nicht':
+      return sql`NOT (${ausdruckSql(sql, x.a)})`;
+    case 'und':
+      return x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} AND ${ausdruckSql(sql, t)}`, sql`(${ausdruckSql(sql, x.teile[0])})`);
+    case 'oder':
+      return sql`(${x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${ausdruckSql(sql, t)}`, ausdruckSql(sql, x.teile[0]))})`;
+    case 'wenn':
+      return sql`(CASE WHEN ${ausdruckSql(sql, x.bed)} THEN ${ausdruckSql(sql, x.dann)} ELSE ${ausdruckSql(sql, x.sonst)} END)`;
   }
 }
 
@@ -524,7 +781,8 @@ export function ohneWarten(sql: Sql): Teil {
 function inTransaktion(tx: postgres.TransactionSql): Sql {
   return new Proxy(tx, {
     get(ziel, prop, empfaenger) {
-      if (prop === 'begin') return (...args: unknown[]) => ziel.savepoint(args[args.length - 1] as (s: postgres.TransactionSql) => Promise<unknown>);
+      if (prop === 'begin')
+        return (...args: unknown[]) => ziel.savepoint(args[args.length - 1] as (s: postgres.TransactionSql) => Promise<unknown>);
       return Reflect.get(ziel, prop, empfaenger);
     },
   }) as unknown as Sql;
@@ -549,8 +807,10 @@ export function realArray(b: Buffer): Float32Array {
  */
 export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
   /** Mappentypen, Ansichten und Pakete (#741): für alle gleich, gültig bei gleichem Haushaltsstand `lesen`. */
-  const gemerkt = <T>(schluessel: string, lade: () => Promise<T>): Promise<T> => (imTx ? lade() : lesespeicherFuer(sql, haushaltId).hole(schluessel, lade));
-  const alleTypen = () => gemerkt('typen', async () => (await sql`SELECT * FROM mappentypen WHERE haushalt_id = ${haushaltId} ORDER BY lower(name)`).map(alsTyp));
+  const gemerkt = <T>(schluessel: string, lade: () => Promise<T>): Promise<T> =>
+    imTx ? lade() : lesespeicherFuer(sql, haushaltId).hole(schluessel, lade);
+  const alleTypen = () =>
+    gemerkt('typen', async () => (await sql`SELECT * FROM mappentypen WHERE haushalt_id = ${haushaltId} ORDER BY lower(name)`).map(alsTyp));
   // Dokumente immer mit ausdrücklichen Spalten, nie `d.*` (#367): sonst kommt der Volltext mit.
   const DOK = sql.unsafe(DOKUMENT_SPALTEN.map((c) => `d.${c}`).join(', '));
   const DOK_RUECK = sql.unsafe(DOKUMENT_SPALTEN.join(', '));
@@ -558,7 +818,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
   const MAP = sql.unsafe(MAPPEN_SPALTEN.join(', '));
   const SUCHINDEX = sql.unsafe(SUCHINDEX_TEXT);
   // „Zuletzt geändert“ (#609): auf Millisekunden genau (wie in der API) und bei jedem Schreiben größer als vorher.
-  const STAND_WEITER = sql.unsafe("greatest(date_trunc('milliseconds', clock_timestamp()), date_trunc('milliseconds', geaendert) + interval '1 millisecond')");
+  const STAND_WEITER = sql.unsafe(
+    "greatest(date_trunc('milliseconds', clock_timestamp()), date_trunc('milliseconds', geaendert) + interval '1 millisecond')",
+  );
   /**
    * Suchkonfigurationen der Sprachen, die in der Ablage vorkommen (#400): Deutsch immer, dazu die der Dokumente.
    * Eine Minute gemerkt; neu, sobald eine Sprache gesetzt wird. Lockerer Indexlauf über (haushalt_id, sprache), dazu
@@ -567,15 +829,20 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
   let sprachenZwischen: { zeit: number; konfigs: Promise<string[]> } | null = null;
   const sprachKonfigs = () => {
     if (!sprachenZwischen || Date.now() - sprachenZwischen.zeit > 60_000) {
-      sprachenZwischen = { zeit: Date.now(), konfigs: sql`
+      sprachenZwischen = {
+        zeit: Date.now(),
+        konfigs: sql`
         WITH RECURSIVE s AS (
           (SELECT sprache FROM dokumente WHERE haushalt_id = ${haushaltId} AND sprache IS NOT NULL ORDER BY sprache LIMIT 1)
           UNION ALL
           SELECT (SELECT d.sprache FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.sprache > s.sprache ORDER BY d.sprache LIMIT 1) FROM s WHERE s.sprache IS NOT NULL)
         SELECT sprache FROM s WHERE sprache IS NOT NULL
         UNION
-        SELECT DISTINCT unnest(weitere_sprachen) FROM dokumente WHERE haushalt_id = ${haushaltId} AND weitere_sprachen IS NOT NULL`
-        .then((r) => [...new Set(['dms_german', ...r.map((z) => suchkonfig(z.sprache as string))])], () => ['dms_german']) };
+        SELECT DISTINCT unnest(weitere_sprachen) FROM dokumente WHERE haushalt_id = ${haushaltId} AND weitere_sprachen IS NOT NULL`.then(
+          (r) => [...new Set(['dms_german', ...r.map((z) => suchkonfig(z.sprache as string))])],
+          () => ['dms_german'],
+        ),
+      };
     }
     return sprachenZwischen.konfigs;
   };
@@ -587,13 +854,18 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
   const tsAnfrage = async (t: string, v: Varianten): Promise<{ q: SqlTeil }> => {
     const konfigs = await sprachKonfigs();
     if (konfigs.length === 1) return { q: suchanfrage(sql, t, v, konfigs) };
-    const [z] = await sql`SELECT ARRAY[${konfigs.map((k) => sql`${suchanfrage(sql, t, v, [k])}::text`).reduce((a, b) => sql`${a}, ${b}`)}] AS q`;
+    const [z] =
+      await sql`SELECT ARRAY[${konfigs.map((k) => sql`${suchanfrage(sql, t, v, [k])}::text`).reduce((a, b) => sql`${a}, ${b}`)}] AS q`;
     return { q: [...new Set(z.q as string[])].map((q) => sql`${q}::tsquery`).reduce((a, b) => sql`(${a} || ${b})`) };
   };
   /** Schema von pg_trgm (#356), einmal nachgesehen; null ohne Erweiterung. */
   let trgmSchema: Promise<string | null> | null = null;
-  const trigrammSchema = () => (trgmSchema ??= sql`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm'`
-    .then((r) => (r[0] ? `"${String(r[0].nspname).replace(/"/g, '""')}"` : null), () => null));
+  const trigrammSchema = () =>
+    (trgmSchema ??=
+      sql`SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm'`.then(
+        (r) => (r[0] ? `"${String(r[0].nspname).replace(/"/g, '""')}"` : null),
+        () => null,
+      ));
   const VERS = sql.unsafe(VERSION_SPALTEN);
   let ereignisseAufgeraeumt = 0;
   let verlaufAufgeraeumt = 0;
@@ -688,7 +960,11 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
   /** Treffermenge und Textfilter (#740) samt übergeordneten Mappen, die über ihre Teile gefunden wurden (#1031). */
   const mitTeilen = (roh: Teil | null, tf: Teil | null, auch: string[]) => ({
     treffer: roh && auch.length ? sql`${roh} UNION SELECT unnest(${auch}::uuid[])` : roh,
-    textfilter: !tf ? sql`` : auch.length ? sql`AND (mappen.id IN (${tf}) OR mappen.id = ANY(${auch}::uuid[]))` : sql`AND mappen.id IN (${tf})`,
+    textfilter: !tf
+      ? sql``
+      : auch.length
+        ? sql`AND (mappen.id IN (${tf}) OR mappen.id = ANY(${auch}::uuid[]))`
+        : sql`AND mappen.id IN (${tf})`,
   });
 
   /**
@@ -698,14 +974,19 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
    * der Dokumente) – mit OR in einer Bedingung über alle Mappen ginge das nicht. Gleiche Treffer wie vorher.
    */
   const seitenTeile = async (o: SeitenAnfrage) => {
-    const typ = o.klauseln ? sql`AND (${klauselnSql(sql, o.klauseln)})`
-      : o.typId && istUuid(o.typId) ? sql`AND typ_id = ${o.typId}` : o.typId ? sql`AND false` : sql``;
+    const typ = o.klauseln
+      ? sql`AND (${klauselnSql(sql, o.klauseln)})`
+      : o.typId && istUuid(o.typId)
+        ? sql`AND typ_id = ${o.typId}`
+        : o.typId
+          ? sql`AND false`
+          : sql``;
     const eingang = o.eingang
       ? sql`AND EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
           AND (a.empfaenger_id = ${istUuid(o.eingang.benutzerId) ? o.eingang.benutzerId : null}::uuid ${o.eingang.admin ? sql`OR a.empfaenger_id IS NULL` : sql``}))`
       : o.favoriten
-      ? sql`AND EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(o.favoriten.benutzerId) ? o.favoriten.benutzerId : null}::uuid)`
-      : sql``;
+        ? sql`AND EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(o.favoriten.benutzerId) ? o.favoriten.benutzerId : null}::uuid)`
+        : sql``;
     const musterAus = (t: string) => `%${t.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
     // Unscharfe Suche (#356): Titel, Werte und Notizen ohne Umlaute, Groß-/Kleinschreibung und Bindestriche
     // verglichen; ein einzelner Begriff auch in seinen Varianten (gleichbedeutende Wörter, ähnliche Schreibweisen).
@@ -718,15 +999,26 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     for (const t of [o.volltext ? o.suche : undefined, o.textfilter?.dokumente ? o.textfilter.text.trim() : undefined]) {
       if (t && !anfragen.has(t)) anfragen.set(t, (await tsAnfrage(t, v)).q);
     }
-    const schreibweisen = (t: string) => { const b = suchbegriffe(t); return b?.length === 1 ? [t, ...(v[falte(b[0])] ?? [])] : [t]; };
-    const enthaelt = (spalte: Teil, t: string) => schreibweisen(t)
-      .map((x) => sql`replace(lower(dms_falte(${spalte})), '-', '') LIKE ${musterAus(normal(x))}`).reduce((a, b) => sql`${a} OR ${b}`);
+    const schreibweisen = (t: string) => {
+      const b = suchbegriffe(t);
+      return b?.length === 1 ? [t, ...(v[falte(b[0])] ?? [])] : [t];
+    };
+    const enthaelt = (spalte: Teil, t: string) =>
+      schreibweisen(t)
+        .map((x) => sql`replace(lower(dms_falte(${spalte})), '-', '') LIKE ${musterAus(normal(x))}`)
+        .reduce((a, b) => sql`${a} OR ${b}`);
     // Teilwörter im Volltext (#161): „Ofen“ findet „Backofen“ – zusätzlich zu den Wortformen; je Wort auch die Varianten.
-    const teilSql = (spalte: string, teil: string[]) => teil.map((w) => [w, ...(nurV[falte(w)] ?? []).map((x) => x.toLowerCase()).filter((x) => x.length >= 3)]
-      .map((x) => sql`${sql.unsafe(spalte)} ILIKE ${musterAus(x)}`).reduce((a, b) => sql`${a} OR ${b}`))
-      .reduce((a, b) => sql`(${a}) AND (${b})`);
+    const teilSql = (spalte: string, teil: string[]) =>
+      teil
+        .map((w) =>
+          [w, ...(nurV[falte(w)] ?? []).map((x) => x.toLowerCase()).filter((x) => x.length >= 3)]
+            .map((x) => sql`${sql.unsafe(spalte)} ILIKE ${musterAus(x)}`)
+            .reduce((a, b) => sql`${a} OR ${b}`),
+        )
+        .reduce((a, b) => sql`(${a}) AND (${b})`);
     // Ids der Mappen mit dem Begriff in einer Notiz bzw. einem Dokument – einmal über die Indizes (#356).
-    const inNotizen = (t: string) => sql`SELECT n.mappe_id FROM notizen n WHERE n.haushalt_id = ${haushaltId} AND (${enthaelt(sql`n.text`, t)})`;
+    const inNotizen = (t: string) =>
+      sql`SELECT n.mappe_id FROM notizen n WHERE n.haushalt_id = ${haushaltId} AND (${enthaelt(sql`n.text`, t)})`;
     const inDokumenten = (t: string) => {
       const teil = teilwoerter(t);
       return sql`SELECT d.mappe_id FROM dokumente d WHERE d.haushalt_id = ${haushaltId}
@@ -735,8 +1027,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     // Vorfilter (#615, #740): Titel und Werte stehen gefaltet in suchtext (Migration 055, nie leer seit 075) – was in
     // einem davon vorkommt, kommt auch dort vor; der Trigramm-Index findet diese Mappen. Danach wird je Titel und Wert
     // genau verglichen (dieselben Treffer wie vorher), aber nur noch für die wenigen Mappen, die den Begriff enthalten.
-    const vorfilter = (t: string) => schreibweisen(t)
-      .map((x) => sql`mappen.suchtext LIKE ${musterAus(normal(x))}`).reduce((a, b) => sql`${a} OR ${b}`);
+    const vorfilter = (t: string) =>
+      schreibweisen(t)
+        .map((x) => sql`mappen.suchtext LIKE ${musterAus(normal(x))}`)
+        .reduce((a, b) => sql`${a} OR ${b}`);
     const inMappen = (t: string) => sql`SELECT mappen.id FROM mappen WHERE mappen.haushalt_id = ${haushaltId} AND (${vorfilter(t)})
       AND (${enthaelt(sql`titel`, t)} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value NOT LIKE 'dms1$%' AND (${enthaelt(sql`e.value`, t)})))`;
     const vereint = (teile: Teil[]) => teile.reduce((a, b) => sql`${a} UNION ${b}`);
@@ -746,7 +1040,13 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     // Erweiterte Suche (#199): Begriff in Dokumenten oder Notizen, zusätzlich zu allen anderen Bedingungen.
     // Mit `felder` (#1218) auch Titel und Felder – so findet Enter im Suchfeld oben dasselbe wie die Suche einer Liste.
     const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen || o.textfilter.felder) ? o.textfilter : null;
-    const tfMenge = tf ? vereint([...(tf.felder ? [inMappen(tf.text)] : []), ...(tf.dokumente ? [inDokumenten(tf.text)] : []), ...(tf.notizen ? [inNotizen(tf.text)] : [])]) : null;
+    const tfMenge = tf
+      ? vereint([
+          ...(tf.felder ? [inMappen(tf.text)] : []),
+          ...(tf.dokumente ? [inDokumenten(tf.text)] : []),
+          ...(tf.notizen ? [inNotizen(tf.text)] : []),
+        ])
+      : null;
     // Ohne Suche ist der Textfilter die Treffermenge; mit Suche eine weitere Bedingung. Teile (#1031): übergeordnete
     // Mappen, in deren Teilen der Begriff steht (auchIds), zählen für beides als Treffer.
     const { treffer, textfilter } = mitTeilen(suche ?? tfMenge, suche && tfMenge, (o.auchIds ?? []).filter(istUuid));
@@ -757,18 +1057,31 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     const ohneLesen = sql`${typ} ${eingang} ${textfilter}`;
     const so = o.sortierung;
     const k = so?.key ?? '';
-    const ausdruck = !so || so.art === 'titel' ? sql`lower(titel)`
-      : so.art === 'erstellt' ? sql`erstellt` : so.art === 'geaendert' ? sql`geaendert`
-      : so.art === 'erstelltVon' ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.erstellt_von)`
-      : so.art === 'geaendertVon' ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.geaendert_von)`
-      : so.art === 'typ' ? sql`(SELECT lower(t.name) FROM mappentypen t WHERE t.id = mappen.typ_id)`
-      // Zahl und Prozent (#1035) als Zahl: Ein gespeichertes null (JSON) stünde sonst vor allen Zahlen statt zuletzt.
-      : so.art === 'zahl' ? sql`(CASE WHEN jsonb_typeof(werte -> ${k}::text) = 'number' THEN (werte ->> ${k}::text)::numeric END)`
-      : so.art === 'janein' ? sql`(werte -> ${k}::text)`
-      : so.art === 'betrag' ? sql`((werte -> ${k}::text ->> 'betrag')::numeric)`
-      : so.art === 'zeitraum' ? zeitraumTageSql(sql, sql`werte`, k)
-      : so.art === 'datum' ? sql`(werte ->> ${k}::text)`
-      : sql`lower(werte ->> ${k}::text)`;
+    const ausdruck =
+      !so || so.art === 'titel'
+        ? sql`lower(titel)`
+        : so.art === 'erstellt'
+          ? sql`erstellt`
+          : so.art === 'geaendert'
+            ? sql`geaendert`
+            : so.art === 'erstelltVon'
+              ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.erstellt_von)`
+              : so.art === 'geaendertVon'
+                ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.geaendert_von)`
+                : so.art === 'typ'
+                  ? sql`(SELECT lower(t.name) FROM mappentypen t WHERE t.id = mappen.typ_id)`
+                  : // Zahl und Prozent (#1035) als Zahl: Ein gespeichertes null (JSON) stünde sonst vor allen Zahlen statt zuletzt.
+                    so.art === 'zahl'
+                    ? sql`(CASE WHEN jsonb_typeof(werte -> ${k}::text) = 'number' THEN (werte ->> ${k}::text)::numeric END)`
+                    : so.art === 'janein'
+                      ? sql`(werte -> ${k}::text)`
+                      : so.art === 'betrag'
+                        ? sql`((werte -> ${k}::text ->> 'betrag')::numeric)`
+                        : so.art === 'zeitraum'
+                          ? zeitraumTageSql(sql, sql`werte`, k)
+                          : so.art === 'datum'
+                            ? sql`(werte ->> ${k}::text)`
+                            : sql`lower(werte ->> ${k}::text)`;
     // Leere Werte zuletzt. erstellt und geaendert sind nie leer (NOT NULL), ohne „NULLS LAST“ liest PostgreSQL ihren
     // Index auch rückwärts (#740). Ebenso Titel absteigend: Ein Titel fehlt nur kurz vor dem ersten Berechnen.
     const ohneLeere = !so || ['titel', 'erstellt', 'geaendert'].includes(so.art);
@@ -780,7 +1093,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     transaktion(f) {
       return sql.begin((tx) => f(pgRepo(inTransaktion(tx), haushaltId, true))) as Promise<Awaited<ReturnType<typeof f>>>;
     },
-    async listeTypen() { return alleTypen(); },
+    async listeTypen() {
+      return alleTypen();
+    },
     async holeTyp(id) {
       if (!istUuid(id)) return undefined;
       // Aus den gemerkten Typen (#928, gleicher Stand `lesen` wie listeTypen): Anlegen einer Aufgabe las sonst dreimal
@@ -834,7 +1149,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
 
     async listeMappen(typId) {
       const r = typId
-        ? (istUuid(typId) ? await sql`SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} ORDER BY erstellt` : [])
+        ? istUuid(typId)
+          ? await sql`SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} ORDER BY erstellt`
+          : []
         : await sql`SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId} ORDER BY erstellt`;
       return r.map(alsMappe);
     },
@@ -852,7 +1169,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       // Zeitraum, der um ein Vielfaches des Rhythmus nach dem des Datums liegt (wie kannTerminHaben in shared/src/fristen.ts).
       const alle = felder.map((f) => f.key);
       const wk = felder.filter((f) => f.monate && f.monate >= 1);
-      const von = fristMonat(ab); const ende = fristMonat(bis);
+      const von = fristMonat(ab);
+      const ende = fristMonat(bis);
       const wiederkehrend = wk.length
         ? sql`OR (f.datum <= ${bis} AND EXISTS (SELECT 1 FROM unnest(${wk.map((f) => f.key)}::text[], ${wk.map((f) => Math.trunc(f.monate!))}::int[]) AS w(k, n)
             WHERE w.k = f.feld AND (f.monat IS NULL OR ${von === null || ende === null} OR (
@@ -866,16 +1184,27 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           SELECT f.mappe_id FROM fristtermine f
           WHERE f.haushalt_id = ${haushaltId} AND f.typ_id = ${typId} AND f.feld = ANY(${alle}::text[])
             AND ((f.datum BETWEEN ${ab} AND ${bis}) ${wiederkehrend}))`;
-      return r.map((z) => ({ id: z.id as string, typId: z.typ_id as string, titel: (z.titel as string | null) ?? null, werte: (z.werte ?? {}) as Werte }));
+      return r.map((z) => ({
+        id: z.id as string,
+        typId: z.typ_id as string,
+        titel: (z.titel as string | null) ?? null,
+        werte: (z.werte ?? {}) as Werte,
+      }));
     },
     async mappenKurz() {
-      return (await sql`SELECT id, typ_id, coalesce(titel, '') AS titel FROM mappen WHERE haushalt_id = ${haushaltId}`)
-        .map((r) => ({ id: r.id as string, typId: r.typ_id as string, titel: r.titel as string }));
+      return (await sql`SELECT id, typ_id, coalesce(titel, '') AS titel FROM mappen WHERE haushalt_id = ${haushaltId}`).map((r) => ({
+        id: r.id as string,
+        typId: r.typ_id as string,
+        titel: r.titel as string,
+      }));
     },
     async feldwerte(typId, key) {
       if (!istUuid(typId)) return [];
-      return (await sql`SELECT werte ->> ${key} AS w FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND werte ? ${key}`)
-        .map((r) => r.w as string).filter((w) => w != null);
+      return (
+        await sql`SELECT werte ->> ${key} AS w FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND werte ? ${key}`
+      )
+        .map((r) => r.w as string)
+        .filter((w) => w != null);
     },
     async holeMappe(id) {
       if (!istUuid(id)) return undefined;
@@ -901,29 +1230,48 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async aktualisiereStatistik() {
       // Ohne frische Statistik plant PostgreSQL nach zehntausenden neuen Zeilen mit alten Zahlen (#367).
       // Dokumente nur über ausgewählte Spalten (STATISTIK_SPALTEN): 0,1 s statt über einer Minute.
-      await sql.unsafe(`ANALYZE mappen, verweise, aufgaben, notizen, historie, favoriten, ${Object.entries(STATISTIK_SPALTEN).map(([t, c]) => `${t} (${c})`).join(', ')}`);
+      await sql.unsafe(
+        `ANALYZE mappen, verweise, aufgaben, notizen, historie, favoriten, ${Object.entries(STATISTIK_SPALTEN)
+          .map(([t, c]) => `${t} (${c})`)
+          .join(', ')}`,
+      );
     },
     async legeMappenAn(liste) {
       if (!liste.length) return;
       await sql.begin(async (tx) => {
-        await tx`INSERT INTO mappen ${tx(liste.map((m) => ({
-          id: m.id, haushalt_id: haushaltId, typ_id: m.typId, werte: json(sql, m.werte), titel: m.titel,
-          erstellt_von: m.benutzerId, geaendert_von: m.benutzerId, demo: m.demo,
-        })))}`;
-        const vs = liste.flatMap((m) => m.verweise.filter((v) => istUuid(v.zielId))
-          .map((v) => ({ quelle_id: m.id, feld_key: v.feldKey, ziel_id: v.zielId, haushalt_id: haushaltId })));
+        await tx`INSERT INTO mappen ${tx(
+          liste.map((m) => ({
+            id: m.id,
+            haushalt_id: haushaltId,
+            typ_id: m.typId,
+            werte: json(sql, m.werte),
+            titel: m.titel,
+            erstellt_von: m.benutzerId,
+            geaendert_von: m.benutzerId,
+            demo: m.demo,
+          })),
+        )}`;
+        const vs = liste.flatMap((m) =>
+          m.verweise
+            .filter((v) => istUuid(v.zielId))
+            .map((v) => ({ quelle_id: m.id, feld_key: v.feldKey, ziel_id: v.zielId, haushalt_id: haushaltId })),
+        );
         if (vs.length) await tx`INSERT INTO verweise ${tx(vs)} ON CONFLICT DO NOTHING`;
       });
     },
     async listePakete() {
-      return gemerkt('pakete', async () => (await sql`SELECT daten FROM pakete WHERE haushalt_id = ${haushaltId} ORDER BY id`).map((r) => r.daten as InstalliertesPaket));
+      return gemerkt('pakete', async () =>
+        (await sql`SELECT daten FROM pakete WHERE haushalt_id = ${haushaltId} ORDER BY id`).map((r) => r.daten as InstalliertesPaket),
+      );
     },
     async speicherePaket(p) {
       await sql`
         INSERT INTO pakete (haushalt_id, id, version, daten, installiert) VALUES (${haushaltId}, ${p.id}, ${p.version}, ${json(sql, p)}, ${p.installiert})
         ON CONFLICT (haushalt_id, id) DO UPDATE SET version = EXCLUDED.version, daten = EXCLUDED.daten`;
     },
-    async loeschePaket(id) { await sql`DELETE FROM pakete WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
+    async loeschePaket(id) {
+      await sql`DELETE FROM pakete WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
     async benennePaketUm(alt, neu) {
       await sql.begin(async (tx) => {
         await tx`UPDATE pakete SET id = ${neu}, daten = jsonb_set(daten, '{id}', to_jsonb(${neu}::text)) WHERE haushalt_id = ${haushaltId} AND id = ${alt}`;
@@ -947,23 +1295,36 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async speicherePaketCode(id, dateien) {
       await sql.begin(async (tx) => {
         await tx`DELETE FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;
-        for (const d of dateien) await tx`INSERT INTO paket_code (haushalt_id, paket_id, name, inhalt) VALUES (${haushaltId}, ${id}, ${d.name}, ${d.inhalt})`;
+        for (const d of dateien)
+          await tx`INSERT INTO paket_code (haushalt_id, paket_id, name, inhalt) VALUES (${haushaltId}, ${id}, ${d.name}, ${d.inhalt})`;
       });
     },
     async paketCode(id) {
-      return (await sql`SELECT name, inhalt FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} ORDER BY name`).map((r) => ({ name: r.name as string, inhalt: Buffer.from(r.inhalt as Uint8Array) }));
+      return (await sql`SELECT name, inhalt FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} ORDER BY name`).map(
+        (r) => ({ name: r.name as string, inhalt: Buffer.from(r.inhalt as Uint8Array) }),
+      );
     },
-    async loeschePaketCode(id) { await sql`DELETE FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
+    async loeschePaketCode(id) {
+      await sql`DELETE FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;
+    },
     async speichereSprachpaket(id, d) {
       await sql`
         INSERT INTO paket_sprachen (haushalt_id, paket_id, kennung, texte, paketbeschriftungen) VALUES (${haushaltId}, ${id}, ${d.kennung}, ${json(sql, d.texte)}, ${json(sql, d.beschriftungen)})
         ON CONFLICT (haushalt_id, paket_id) DO UPDATE SET kennung = EXCLUDED.kennung, texte = EXCLUDED.texte, paketbeschriftungen = EXCLUDED.paketbeschriftungen`;
     },
     async sprachpakete() {
-      return (await sql`SELECT paket_id, kennung, texte, paketbeschriftungen FROM paket_sprachen WHERE haushalt_id = ${haushaltId} ORDER BY paket_id`)
-        .map((r) => ({ paketId: r.paket_id as string, kennung: r.kennung as string, texte: r.texte as import('../../shared/src/sprachpaket').Sprachtexte, beschriftungen: r.paketbeschriftungen as Record<string, import('../../shared/src/sprachpaket').SprachBeschriftung> }));
+      return (
+        await sql`SELECT paket_id, kennung, texte, paketbeschriftungen FROM paket_sprachen WHERE haushalt_id = ${haushaltId} ORDER BY paket_id`
+      ).map((r) => ({
+        paketId: r.paket_id as string,
+        kennung: r.kennung as string,
+        texte: r.texte as import('../../shared/src/sprachpaket').Sprachtexte,
+        beschriftungen: r.paketbeschriftungen as Record<string, import('../../shared/src/sprachpaket').SprachBeschriftung>,
+      }));
     },
-    async loescheSprachpaket(id) { await sql`DELETE FROM paket_sprachen WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
+    async loescheSprachpaket(id) {
+      await sql`DELETE FROM paket_sprachen WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;
+    },
     async legeEreignisseAn(liste) {
       if (!liste.length) return;
       // Gleiche Id = schon angelegt (#670: Ereignisse aus dem Katalog kommen mindestens einmal).
@@ -971,12 +1332,20 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async faelligeEreignisse(anzahl) {
       // Reihenfolge je Paket: Wartet ein älteres Ereignis auf seine Wiederholung, warten die späteren mit.
-      return (await sql`SELECT e.id, e.paket_id, e.art, e.daten, e.erstellt, e.versuche FROM paket_ereignisse e
+      return (
+        await sql`SELECT e.id, e.paket_id, e.art, e.daten, e.erstellt, e.versuche FROM paket_ereignisse e
         WHERE e.haushalt_id = ${haushaltId} AND e.zugestellt IS NULL AND e.faellig <= now()
           AND NOT EXISTS (SELECT 1 FROM paket_ereignisse a WHERE a.haushalt_id = e.haushalt_id AND a.paket_id = e.paket_id
             AND a.zugestellt IS NULL AND a.faellig > now() AND a.faellig <> 'infinity' AND a.erstellt < e.erstellt)
-        ORDER BY e.erstellt, e.id LIMIT ${anzahl}`)
-        .map((r) => ({ id: r.id as string, paketId: r.paket_id as string, art: r.art as string, daten: r.daten as Record<string, unknown>, erstellt: (r.erstellt as Date).toISOString(), versuche: r.versuche as number }));
+        ORDER BY e.erstellt, e.id LIMIT ${anzahl}`
+      ).map((r) => ({
+        id: r.id as string,
+        paketId: r.paket_id as string,
+        art: r.art as string,
+        daten: r.daten as Record<string, unknown>,
+        erstellt: (r.erstellt as Date).toISOString(),
+        versuche: r.versuche as number,
+      }));
     },
     async ereignisZugestellt(id) {
       await sql`UPDATE paket_ereignisse SET zugestellt = now(), fehler = NULL WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -999,7 +1368,13 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           count(*) FILTER (WHERE zugestellt IS NULL AND faellig = 'infinity')::int AS aufgegeben,
           count(*) FILTER (WHERE zugestellt IS NOT NULL)::int AS zugestellt,
           max(zugestellt) AS zuletzt
-        FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} GROUP BY paket_id`) erg[r.paket_id as string] = { offen: r.offen as number, aufgegeben: r.aufgegeben as number, zugestellt: r.zugestellt as number, zuletzt: r.zuletzt ? (r.zuletzt as Date).toISOString() : null };
+        FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} GROUP BY paket_id`)
+        erg[r.paket_id as string] = {
+          offen: r.offen as number,
+          aufgegeben: r.aufgegeben as number,
+          zugestellt: r.zugestellt as number,
+          zuletzt: r.zuletzt ? (r.zuletzt as Date).toISOString() : null,
+        };
       return erg;
     },
     async legeKatalogEreignisAn(e, mische) {
@@ -1018,11 +1393,21 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return e.id;
     },
     async holeKatalogEreignisse(anzahl, sperreS) {
-      return (await sql`UPDATE ereignisse SET gesperrt_bis = now() + make_interval(secs => ${sperreS})
+      return (
+        await sql`UPDATE ereignisse SET gesperrt_bis = now() + make_interval(secs => ${sperreS})
         WHERE haushalt_id = ${haushaltId} AND id IN (SELECT id FROM ereignisse WHERE haushalt_id = ${haushaltId} AND verteilt IS NULL
           AND faellig <= now() AND (gesperrt_bis IS NULL OR gesperrt_bis < now()) ORDER BY nr LIMIT ${anzahl} FOR UPDATE SKIP LOCKED)
-        RETURNING id, nr, art, daten, ausloeser, erstellt, versuche`)
-        .map((r) => ({ id: r.id as string, nr: Number(r.nr), art: r.art as string, daten: r.daten as Record<string, unknown>, ausloeser: r.ausloeser as Record<string, unknown>, erstellt: (r.erstellt as Date).toISOString(), versuche: r.versuche as number }))
+        RETURNING id, nr, art, daten, ausloeser, erstellt, versuche`
+      )
+        .map((r) => ({
+          id: r.id as string,
+          nr: Number(r.nr),
+          art: r.art as string,
+          daten: r.daten as Record<string, unknown>,
+          ausloeser: r.ausloeser as Record<string, unknown>,
+          erstellt: (r.erstellt as Date).toISOString(),
+          versuche: r.versuche as number,
+        }))
         .sort((a, b) => a.nr - b.nr);
     },
     async katalogEreignisseVerteilt(ids) {
@@ -1045,20 +1430,38 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           count(*) FILTER (WHERE verteilt IS NOT NULL AND fehler IS NULL)::int AS verteilt,
           min(erstellt) FILTER (WHERE verteilt IS NULL) AS aeltestes
         FROM ereignisse WHERE haushalt_id = ${haushaltId}`;
-      return { offen: r.offen as number, aufgegeben: r.aufgegeben as number, verteilt: r.verteilt as number, aeltestesOffen: r.aeltestes ? (r.aeltestes as Date).toISOString() : null };
+      return {
+        offen: r.offen as number,
+        aufgegeben: r.aufgegeben as number,
+        verteilt: r.verteilt as number,
+        aeltestesOffen: r.aeltestes ? (r.aeltestes as Date).toISOString() : null,
+      };
     },
     async merkeFristMeldung(f) {
       const r = await sql`INSERT INTO frist_meldungen (haushalt_id, mappe_id, feld, datum, zeitpunkt)
         VALUES (${haushaltId}, ${f.mappeId}, ${f.feld}, ${f.datum}, ${f.zeitpunkt}) ON CONFLICT DO NOTHING RETURNING 1`;
       return r.length > 0;
     },
-    async loescheEreignisse(id) { await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
+    async loescheEreignisse(id) {
+      await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;
+    },
     async notiereVerlauf(liste) {
       if (!liste.length) return;
-      await sql`INSERT INTO paket_verlauf ${sql(liste.map((e) => ({
-        haushalt_id: haushaltId, paket_id: e.paket, art: e.art, was: (e.was ?? '').slice(0, 200), ergebnis: e.ergebnis ?? null, ms: e.ms ?? null, speicher_mb: e.speicherMB ?? null,
-        text: (e.text ?? '').slice(0, 500), wer: e.wer ?? null, bezug: e.bezug ? json(sql, e.bezug) : null, netz: e.netz?.length ? json(sql, e.netz.slice(0, 20)) : null,
-      })))}`;
+      await sql`INSERT INTO paket_verlauf ${sql(
+        liste.map((e) => ({
+          haushalt_id: haushaltId,
+          paket_id: e.paket,
+          art: e.art,
+          was: (e.was ?? '').slice(0, 200),
+          ergebnis: e.ergebnis ?? null,
+          ms: e.ms ?? null,
+          speicher_mb: e.speicherMB ?? null,
+          text: (e.text ?? '').slice(0, 500),
+          wer: e.wer ?? null,
+          bezug: e.bezug ? json(sql, e.bezug) : null,
+          netz: e.netz?.length ? json(sql, e.netz.slice(0, 20)) : null,
+        })),
+      )}`;
       // Aufräumen höchstens alle 10 Minuten: 30 Tage, höchstens VERLAUF_MAX je Paket.
       if (Date.now() - verlaufAufgeraeumt < 600_000) return;
       verlaufAufgeraeumt = Date.now();
@@ -1068,13 +1471,25 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async paketVerlauf(id, f) {
       const fehler = f.nurFehler ? sql`AND ergebnis = ANY(${[...VERLAUF_FEHLER]}::text[])` : sql``;
-      const suche = f.suche?.trim() ? sql`AND (was || ' ' || text) ILIKE ${`%${f.suche.trim().replace(/[\\%_]/g, (x) => `\\${x}`)}%`}` : sql``;
+      const suche = f.suche?.trim()
+        ? sql`AND (was || ' ' || text) ILIKE ${`%${f.suche.trim().replace(/[\\%_]/g, (x) => `\\${x}`)}%`}`
+        : sql``;
       const vor = f.vor ? sql`AND nr < ${f.vor}` : sql``;
-      return (await sql`SELECT nr, zeit, art, was, ergebnis, ms, speicher_mb, text, wer, bezug, netz FROM paket_verlauf
-        WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} ${vor} ${fehler} ${suche} ORDER BY nr DESC LIMIT ${f.anzahl}`).map((r) => ({
-        nr: Number(r.nr), zeit: (r.zeit as Date).toISOString(), art: r.art as VerlaufEintrag['art'], was: r.was as string, ergebnis: (r.ergebnis as VerlaufEintrag['ergebnis']) ?? null,
-        ms: (r.ms as number | null) ?? null, speicherMB: (r.speicher_mb as number | null) ?? null, text: r.text as string, wer: (r.wer as string | null) ?? null,
-        bezug: (r.bezug as VerlaufEintrag['bezug']) ?? null, netz: (r.netz as string[] | null) ?? [],
+      return (
+        await sql`SELECT nr, zeit, art, was, ergebnis, ms, speicher_mb, text, wer, bezug, netz FROM paket_verlauf
+        WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} ${vor} ${fehler} ${suche} ORDER BY nr DESC LIMIT ${f.anzahl}`
+      ).map((r) => ({
+        nr: Number(r.nr),
+        zeit: (r.zeit as Date).toISOString(),
+        art: r.art as VerlaufEintrag['art'],
+        was: r.was as string,
+        ergebnis: (r.ergebnis as VerlaufEintrag['ergebnis']) ?? null,
+        ms: (r.ms as number | null) ?? null,
+        speicherMB: (r.speicher_mb as number | null) ?? null,
+        text: r.text as string,
+        wer: (r.wer as string | null) ?? null,
+        bezug: (r.bezug as VerlaufEintrag['bezug']) ?? null,
+        netz: (r.netz as string[] | null) ?? [],
       }));
     },
     async paketAuslastung(id, tage) {
@@ -1084,16 +1499,29 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           coalesce(sum(ms), 0)::bigint AS ms_summe, coalesce(max(ms), 0)::int AS ms_max, coalesce(max(speicher_mb), 0)::int AS speicher_max
         FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} AND art IN ('ereignis', 'aufruf') AND zeit >= now() - make_interval(days => ${tage})
         GROUP BY 1 ORDER BY 1`;
-      const [z] = await sql`SELECT max(zeit) AS zuletzt FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} AND art IN ('ereignis', 'aufruf')`;
+      const [z] =
+        await sql`SELECT max(zeit) AS zuletzt FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} AND art IN ('ereignis', 'aufruf')`;
       return {
-        tage: zeilen.map((r) => ({ tag: r.tag as string, aufrufe: r.aufrufe as number, fehler: r.fehler as number, zeit: r.zeit as number, speicher: r.speicher as number, msSumme: Number(r.ms_summe), msMax: r.ms_max as number, speicherMax: r.speicher_max as number })),
+        tage: zeilen.map((r) => ({
+          tag: r.tag as string,
+          aufrufe: r.aufrufe as number,
+          fehler: r.fehler as number,
+          zeit: r.zeit as number,
+          speicher: r.speicher as number,
+          msSumme: Number(r.ms_summe),
+          msMax: r.ms_max as number,
+          speicherMax: r.speicher_max as number,
+        })),
         zuletzt: z?.zuletzt ? (z.zuletzt as Date).toISOString() : null,
       };
     },
-    async loescheVerlauf(id) { await sql`DELETE FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
+    async loescheVerlauf(id) {
+      await sql`DELETE FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;
+    },
     async loescheOffeneEreignisse(art, dokumente) {
       if (!dokumente.length) return 0;
-      const r = await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND art = ${art} AND zugestellt IS NULL AND daten->>'dokument' = ANY(${dokumente}::text[])`;
+      const r =
+        await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND art = ${art} AND zugestellt IS NULL AND daten->>'dokument' = ANY(${dokumente}::text[])`;
       return r.count;
     },
     async listeNummernkreise() {
@@ -1106,7 +1534,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         RETURNING *`;
       return alsKreis(r);
     },
-    async loescheNummernkreis(s) { await sql`DELETE FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${s}`; },
+    async loescheNummernkreis(s) {
+      await sql`DELETE FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${s}`;
+    },
     async setzeZaehler(s, zeitraum, letzter) {
       const [r] = await sql`
         UPDATE nummernkreise SET staende = staende || ${json(sql, { [zeitraum]: letzter })}
@@ -1135,11 +1565,16 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async setzeArchivnummer(dokumentId, nummer) {
       if (!istUuid(dokumentId)) return false;
       if (nummer) {
-        const [x] = await sql`SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND lower(archivnummer) = lower(${nummer}) AND id <> ${dokumentId}`;
+        const [x] =
+          await sql`SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND lower(archivnummer) = lower(${nummer}) AND id <> ${dokumentId}`;
         if (x) return false;
       }
-      try { await sql`UPDATE dokumente SET archivnummer = ${nummer} WHERE haushalt_id = ${haushaltId} AND id = ${dokumentId}`; }
-      catch (e) { if ((e as { code?: string }).code === '23505') return false; throw e; }
+      try {
+        await sql`UPDATE dokumente SET archivnummer = ${nummer} WHERE haushalt_id = ${haushaltId} AND id = ${dokumentId}`;
+      } catch (e) {
+        if ((e as { code?: string }).code === '23505') return false;
+        throw e;
+      }
       return true;
     },
     async findeArchivnummer(nummer) {
@@ -1149,7 +1584,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async aendereMappe(id, werte, vs, benutzerId, fw) {
       return sql.begin(async (tx) => {
-        let neu = werte; let verweise = vs;
+        let neu = werte;
+        let verweise = vs;
         // Feldweise (#609): unter Sperre der Zeile auf den aktuellen Stand legen. FOR NO KEY UPDATE (#928): Zwei
         // Änderungen derselben Mappe warten aufeinander wie bisher; neue Aufgaben, Notizen, Historie und Favoriten der
         // Mappe (Fremdschlüssel, FOR KEY SHARE) warten nicht mehr bis zum Ende der Transaktion.
@@ -1192,7 +1628,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       await sql`UPDATE mappen SET vorgabe = ${kennung} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async mappenMitVorgabe(praefix) {
-      return (await sql`SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId} AND left(vorgabe, ${praefix.length}) = ${praefix}`).map(alsMappe);
+      return (await sql`SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId} AND left(vorgabe, ${praefix.length}) = ${praefix}`).map(
+        alsMappe,
+      );
     },
     async loescheMappe(id) {
       await sql`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -1231,7 +1669,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const r = new Map<string, { titel: string; typId: string }>();
       const gueltig = [...new Set(ids.filter(istUuid))];
       for (let i = 0; i < gueltig.length; i += 5000) {
-        const zeilen = await sql`SELECT id, typ_id, titel FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig.slice(i, i + 5000)}::uuid[])`;
+        const zeilen =
+          await sql`SELECT id, typ_id, titel FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig.slice(i, i + 5000)}::uuid[])`;
         for (const z of zeilen) r.set(z.id as string, { titel: (z.titel as string | null) ?? '', typId: z.typ_id as string });
       }
       return r;
@@ -1252,7 +1691,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           ) AS mappen WHERE dms_lesbar
           ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
         // Blatt hinter dem Ende: keine Zeile, die die Zahlen trägt – dann eigens zählen (auch das in einer Abfrage).
-        const [z] = r.length ? [{ n: Number(r[0].dms_gesamt), alle: Number(r[0].dms_alle) }]
+        const [z] = r.length
+          ? [{ n: Number(r[0].dms_gesamt), alle: Number(r[0].dms_alle) }]
           : await sql`SELECT count(*) FILTER (WHERE ${lesbar})::int AS n, count(*)::int AS alle FROM mappen WHERE haushalt_id = ${haushaltId} ${ohneLesen}`;
         return { gesamt: Number(z.n), verborgen: Math.max(0, Number(z.alle) - Number(z.n)), mappen: r.map(alsMappe) };
       }
@@ -1277,7 +1717,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
         // Blatt hinter dem Ende: keine Zeile, die die Zahl trägt – dann eigens zählen.
         n = r.length ? Number(r[0].dms_gesamt) : o.von === 0 ? 0 : undefined;
-        if (n === undefined) [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND id IN (SELECT id FROM (${treffer}) AS t(id)) ${wo}`;
+        if (n === undefined)
+          [{ n }] =
+            await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND id IN (SELECT id FROM (${treffer}) AS t(id)) ${wo}`;
       } else {
         // Ohne Suche liefert ein Index die Seite direkt in der richtigen Reihenfolge (#740).
         r = await sql`
@@ -1291,15 +1733,22 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       }
       const mappen = r.map(alsMappe);
       // Fundstellen: zur Suche oder – in der erweiterten Suche – zum Volltextfilter.
-      const fund = o.suche && (o.volltext || o.notizen) ? { text: o.suche, volltext: !!o.volltext, notizen: !!o.notizen }
-        : tf ? { text: tf.text.trim(), volltext: tf.dokumente, notizen: tf.notizen } : null;
+      const fund =
+        o.suche && (o.volltext || o.notizen)
+          ? { text: o.suche, volltext: !!o.volltext, notizen: !!o.notizen }
+          : tf
+            ? { text: tf.text.trim(), volltext: tf.dokumente, notizen: tf.notizen }
+            : null;
       if (!fund || !mappen.length) return { gesamt: n as number, mappen };
       const ausschnitte: Record<string, Ausschnitt> = {};
       if (fund.notizen) {
-        const nz = await sql`SELECT mappe_id, text FROM notizen n WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[]) AND (${enthaelt(sql`n.text`, fund.text)}) ORDER BY erstellt`;
+        const nz =
+          await sql`SELECT mappe_id, text FROM notizen n WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[]) AND (${enthaelt(sql`n.text`, fund.text)}) ORDER BY erstellt`;
         for (const z of nz) {
           const klar = alsText(z.text as string);
-          const t = schreibweisen(fund.text).map((x) => ausschnittAus(klar, x)).find(Boolean);
+          const t = schreibweisen(fund.text)
+            .map((x) => ausschnittAus(klar, x))
+            .find(Boolean);
           if (t && !ausschnitte[z.mappe_id as string]) ausschnitte[z.mappe_id as string] = { dokument: 'Notiz', text: t };
         }
       }
@@ -1356,7 +1805,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         WHERE f.haushalt_id = ${haushaltId} AND f.benutzer_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid ${lesen}`;
       return {
         favoriten: f.n as number,
-        typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
+        typen: new Map(
+          r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }]),
+        ),
         eingang: e.n as number,
       };
     },
@@ -1371,7 +1822,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           count(*) FILTER (WHERE demo)::int AS demo ${sel}
         FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen} GROUP BY typ_id`;
       return {
-        typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
+        typen: new Map(
+          r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }]),
+        ),
         sichten: liste.map((_, i) => r.reduce((n, z) => n + (z[`s${i}`] as number), 0)),
       };
     },
@@ -1384,14 +1837,22 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       // Typen (#928: bei 50.000 Mappen 34 ms → unter 1 ms) – jede ihrer Klauseln verlangt den Favoriten, also fehlt
       // keine Mappe, die sie zählen würden.
       const gruppen = new Map<string, number[]>();
-      liste.forEach((k, i) => { const g = nurFavoritenVon(k) ?? ''; gruppen.set(g, [...(gruppen.get(g) ?? []), i]); });
+      liste.forEach((k, i) => {
+        const g = nurFavoritenVon(k) ?? '';
+        gruppen.set(g, [...(gruppen.get(g) ?? []), i]);
+      });
       const teile = [...gruppen].flatMap(([fav, idx], g) => {
         const typIds = [...new Set(idx.flatMap((i) => liste[i].flatMap((k) => k.typen)))].filter(istUuid);
         if (!typIds.length) return [];
         const spalten = idx.map((i) => sql`count(*) FILTER (WHERE ${klauselnSql(sql, liste[i])})::int`);
         const nurFav = fav ? sql`AND id IN (SELECT mappe_id FROM favoriten WHERE benutzer_id = ${fav}::uuid)` : sql``;
-        return [{ idx, teil: sql`, (SELECT ARRAY[${spalten.slice(1).reduce((acc, t) => sql`${acc}, ${t}`, spalten[0])}] FROM mappen
-            WHERE haushalt_id = ${haushaltId} AND typ_id = ANY(${typIds}::uuid[]) ${nurFav} ${lesen}) AS ${sql(`s${g}`)}` }];
+        return [
+          {
+            idx,
+            teil: sql`, (SELECT ARRAY[${spalten.slice(1).reduce((acc, t) => sql`${acc}, ${t}`, spalten[0])}] FROM mappen
+            WHERE haushalt_id = ${haushaltId} AND typ_id = ANY(${typIds}::uuid[]) ${nurFav} ${lesen}) AS ${sql(`s${g}`)}`,
+          },
+        ];
       });
       // Drei kleine Zählungen über Indizes in einer Abfrage (#742); Eingang wie in `zaehler` (#477, #928), Papierkorb wie
       // in `zaehlePapierkorb` (eigene Mappen und Dokumente, #344).
@@ -1403,13 +1864,29 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           + (SELECT count(*)::int FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND geloescht_von = ${ich}::uuid) AS papierkorb
         ${teile.reduce<Teil>((acc, t) => sql`${acc} ${t.teil}`, sql``)}`;
       const n = new Map<number, number>();
-      [...gruppen].forEach(([, idx], g) => { const w = (r[`s${g}`] as number[] | undefined) ?? []; idx.forEach((i, j) => n.set(i, Number(w[j] ?? 0))); });
-      return { eingang: r.eingang as number, favoriten: r.favoriten as number, papierkorb: r.papierkorb as number, sichten: liste.map((_, i) => n.get(i) ?? 0) };
+      [...gruppen].forEach(([, idx], g) => {
+        const w = (r[`s${g}`] as number[] | undefined) ?? [];
+        idx.forEach((i, j) => n.set(i, Number(w[j] ?? 0)));
+      });
+      return {
+        eingang: r.eingang as number,
+        favoriten: r.favoriten as number,
+        papierkorb: r.papierkorb as number,
+        sichten: liste.map((_, i) => n.get(i) ?? 0),
+      };
     },
-    async haushaltsstand() { return liesStand(sql, haushaltId, 'zahlen'); },
-    async erhoeheHaushaltsstand() { return erhoeheZahlenstand(sql); },
-    async mappenstand() { return liesStand(sql, haushaltId, 'mappen'); },
-    async erhoeheMappenstand() { return erhoeheMappenstand(sql); },
+    async haushaltsstand() {
+      return liesStand(sql, haushaltId, 'zahlen');
+    },
+    async erhoeheHaushaltsstand() {
+      return erhoeheZahlenstand(sql);
+    },
+    async mappenstand() {
+      return liesStand(sql, haushaltId, 'mappen');
+    },
+    async erhoeheMappenstand() {
+      return erhoeheMappenstand(sql);
+    },
     async zaehleKlauseln(liste, lesefilter) {
       if (!liste.length) return [];
       const spalten = liste.map((k, i) => sql`count(*) FILTER (WHERE ${klauselnSql(sql, k)})::int AS ${sql(`s${i}`)}`);
@@ -1420,7 +1897,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
 
     async listeSichten() {
-      return gemerkt('sichten', async () => (await sql`SELECT * FROM sichten WHERE haushalt_id = ${haushaltId} ORDER BY position, lower(name)`).map(alsSicht));
+      return gemerkt('sichten', async () =>
+        (await sql`SELECT * FROM sichten WHERE haushalt_id = ${haushaltId} ORDER BY position, lower(name)`).map(alsSicht),
+      );
     },
     async legeSichtAn(id, d: SichtDaten) {
       const [r] = await sql`
@@ -1468,10 +1947,14 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async unpassende(typId) {
       if (!istUuid(typId)) return [];
-      return (await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND passt IS NOT TRUE`).map((z) => z.id as string);
+      return (await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND passt IS NOT TRUE`).map(
+        (z) => z.id as string,
+      );
     },
     async typenOhnePassung() {
-      return (await sql`SELECT DISTINCT typ_id FROM mappen WHERE haushalt_id = ${haushaltId} AND passt IS NULL`).map((z) => z.typ_id as string);
+      return (await sql`SELECT DISTINCT typ_id FROM mappen WHERE haushalt_id = ${haushaltId} AND passt IS NULL`).map(
+        (z) => z.typ_id as string,
+      );
     },
     async belegung(typId) {
       if (!istUuid(typId)) return {};
@@ -1522,25 +2005,29 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
             WHERE d.haushalt_id = ${haushaltId} AND d.typ_id = ${typId} AND d.id <> q.mappe
               AND lower(trim(d.werte ->> q.feld)) = lower(trim(q.wert))
             LIMIT 1) m`;
-        for (const z of zeilen) erg.set(`${z.mappe === ohne ? '' : z.mappe}|${z.feld}`, { id: z.id as string, titel: (z.titel as string | null) ?? '' });
+        for (const z of zeilen)
+          erg.set(`${z.mappe === ohne ? '' : z.mappe}|${z.feld}`, { id: z.id as string, titel: (z.titel as string | null) ?? '' });
       }
       return erg;
     },
     async lesbare(ids, lesefilter) {
       const gueltig = [...new Set(ids.filter(istUuid))];
       if (!gueltig.length) return new Set();
-      const r = await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND ${lesefilterSql(sql, lesefilter)}`;
+      const r =
+        await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND ${lesefilterSql(sql, lesefilter)}`;
       return new Set(r.map((z) => z.id as string));
     },
     async inKlauseln(ids, klauseln) {
       const gueltig = [...new Set(ids.filter(istUuid))];
       if (!gueltig.length || !klauseln.length) return new Set();
-      const r = await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND (${klauselnSql(sql, klauseln)})`;
+      const r =
+        await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND (${klauselnSql(sql, klauseln)})`;
       return new Set(r.map((z) => z.id as string));
     },
     async zaehleAusdruck(typId, x) {
       if (!istUuid(typId)) return 0;
-      const [r] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND ${ausdruckSql(sql, x)}`;
+      const [r] =
+        await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND ${ausdruckSql(sql, x)}`;
       return r.n as number;
     },
     async setzeTypKennung(typId, kennung) {
@@ -1551,7 +2038,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       await sql`UPDATE mappentypen SET schluessel = ${schluessel} WHERE haushalt_id = ${haushaltId} AND id = ${typId} AND schluessel IS NULL`;
     },
     async setzeBerechtigungen(typId, rw) {
-      const [r] = await sql`UPDATE mappentypen SET berechtigungen = ${rw ? json(sql, rw) : null}, geaendert = ${STAND_WEITER} WHERE haushalt_id = ${haushaltId} AND id = ${typId} RETURNING *`;
+      const [r] =
+        await sql`UPDATE mappentypen SET berechtigungen = ${rw ? json(sql, rw) : null}, geaendert = ${STAND_WEITER} WHERE haushalt_id = ${haushaltId} AND id = ${typId} RETURNING *`;
       return alsTyp(r);
     },
     async rueckverweise(zielId) {
@@ -1561,7 +2049,12 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         FROM verweise v JOIN mappen m ON m.id = v.quelle_id
         WHERE v.ziel_id = ${zielId} AND v.haushalt_id = ${haushaltId}
         ORDER BY lower(m.titel), m.id`;
-      return r.map((z) => ({ quelleId: z.quelle_id as string, quelleTypId: z.typ_id as string, feldKey: z.feld_key as string, titel: (z.titel as string | null) ?? '' }));
+      return r.map((z) => ({
+        quelleId: z.quelle_id as string,
+        quelleTypId: z.typ_id as string,
+        feldKey: z.feld_key as string,
+        titel: (z.titel as string | null) ?? '',
+      }));
     },
 
     async kantenVon(ids) {
@@ -1576,20 +2069,25 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async zaehleDokumente(ids) {
       const gueltig = [...new Set(ids.filter(istUuid))];
       if (!gueltig.length) return new Map();
-      const r = await sql`SELECT mappe_id, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) GROUP BY mappe_id`;
+      const r =
+        await sql`SELECT mappe_id, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) GROUP BY mappe_id`;
       return new Map(r.map((z) => [z.mappe_id as string, z.n as number]));
     },
 
     async listeDokumente(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
-        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ${mappeId} ORDER BY d.erstellt DESC`).map(alsDokument);
+      return (
+        await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ${mappeId} ORDER BY d.erstellt DESC`
+      ).map(alsDokument);
     },
     async dokumenteVon(mappeIds) {
       const gueltig = [...new Set(mappeIds.filter(istUuid))];
       if (!gueltig.length) return [];
-      return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
-        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${gueltig}::uuid[]) ORDER BY d.mappe_id, d.erstellt DESC`).map(alsDokument);
+      return (
+        await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${gueltig}::uuid[]) ORDER BY d.mappe_id, d.erstellt DESC`
+      ).map(alsDokument);
     },
     async holeDokument(id) {
       if (!istUuid(id)) return undefined;
@@ -1617,16 +2115,21 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     /* ---------- Versionierung (#194) ---------- */
     async versionenVon(dokumentId) {
       if (!istUuid(dokumentId)) return [];
-      return (await sql`SELECT ${VERS} FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} ORDER BY nummer DESC`).map(alsVersion);
+      return (
+        await sql`SELECT ${VERS} FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} ORDER BY nummer DESC`
+      ).map(alsVersion);
     },
     async versionenVonDokumenten(dokumentIds) {
       const gueltig = [...new Set(dokumentIds.filter(istUuid))];
       if (!gueltig.length) return [];
-      return (await sql`SELECT ${VERS} FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ANY(${gueltig}::uuid[]) ORDER BY dokument_id, nummer DESC`).map(alsVersion);
+      return (
+        await sql`SELECT ${VERS} FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ANY(${gueltig}::uuid[]) ORDER BY dokument_id, nummer DESC`
+      ).map(alsVersion);
     },
     async holeVersion(dokumentId, nummer) {
       if (!istUuid(dokumentId) || !Number.isInteger(nummer)) return undefined;
-      const [r] = await sql`SELECT * FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND nummer = ${nummer}`;
+      const [r] =
+        await sql`SELECT * FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND nummer = ${nummer}`;
       return r ? { ...alsVersion(r), volltext: (r.volltext as string | null) ?? null } : undefined;
     },
     async ersetzeDokument(id, neu) {
@@ -1643,7 +2146,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         const [r] = await tx`
           UPDATE dokumente SET name = ${neu.name}, mime = ${neu.mime}, groesse = ${neu.groesse}, sha256 = ${neu.sha256}, anzeigbar = ${neu.anzeigbar},
             erstellt = now(), erstellt_von = ${neu.erstelltVon}, herkunft = ${neu.herkunft}, version = ${nummer + 1},
-            volltext = ${uebernehmen ? neu.volltext ?? null : null}, ocr_stand = ${uebernehmen && neu.volltext != null ? 'fertig' : 'keiner'},
+            volltext = ${uebernehmen ? (neu.volltext ?? null) : null}, ocr_stand = ${uebernehmen && neu.volltext != null ? 'fertig' : 'keiner'},
             ocr_info = NULL, ocr_seiten = NULL, ocr_zeit = ${uebernehmen && neu.volltext != null ? sql`now()` : null},
             weitere_sprachen = NULL, seitensprachen = NULL, teilen_hinweis_aus = NULL, leerseiten = NULL
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
@@ -1656,7 +2159,14 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         SELECT d.sha256, d.groesse, d.id AS dokument_id, d.mappe_id, d.name, coalesce(d.version, 1) AS version FROM dokumente d WHERE d.haushalt_id = ${haushaltId}
         UNION ALL
         SELECT v.sha256, v.groesse, v.dokument_id, d.mappe_id, v.name, v.nummer FROM dokument_versionen v JOIN dokumente d ON d.id = v.dokument_id WHERE v.haushalt_id = ${haushaltId}`;
-      return r.map((z) => ({ sha256: z.sha256 as string, groesse: Number(z.groesse), dokumentId: z.dokument_id as string, mappeId: z.mappe_id as string, name: z.name as string, version: Number(z.version) }));
+      return r.map((z) => ({
+        sha256: z.sha256 as string,
+        groesse: Number(z.groesse),
+        dokumentId: z.dokument_id as string,
+        mappeId: z.mappe_id as string,
+        name: z.name as string,
+        version: Number(z.version),
+      }));
     },
     async kuerzeVersionen(dokumentId, behalten) {
       const weg = await sql`
@@ -1677,22 +2187,28 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async anlagenVon(id) {
       if (!istUuid(id)) return [];
-      return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
-        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.anlage_zu = ${id} ORDER BY d.anlage_nr, d.name, d.id`).map(alsDokument);
+      return (
+        await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.anlage_zu = ${id} ORDER BY d.anlage_nr, d.name, d.id`
+      ).map(alsDokument);
     },
     async setzeAnlage(id, anlageZu, nr, name) {
       if (!istUuid(id) || (anlageZu !== null && !istUuid(anlageZu))) return false;
-      const r = await sql`UPDATE dokumente SET anlage_zu = ${anlageZu}, anlage_nr = ${anlageZu ? nr : null} ${name !== undefined ? sql`, name = ${name}` : sql``}
+      const r =
+        await sql`UPDATE dokumente SET anlage_zu = ${anlageZu}, anlage_nr = ${anlageZu ? nr : null} ${name !== undefined ? sql`, name = ${name}` : sql``}
         WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r.count > 0;
     },
     async setzeFavorit(benutzerId, mappeId, an) {
       if (!istUuid(benutzerId) || !istUuid(mappeId)) return;
-      if (an) await sql`INSERT INTO favoriten (benutzer_id, mappe_id, haushalt_id) VALUES (${benutzerId}, ${mappeId}, ${haushaltId}) ON CONFLICT DO NOTHING`;
+      if (an)
+        await sql`INSERT INTO favoriten (benutzer_id, mappe_id, haushalt_id) VALUES (${benutzerId}, ${mappeId}, ${haushaltId}) ON CONFLICT DO NOTHING`;
       else await sql`DELETE FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ${mappeId}`;
     },
     async alleFavoriten() {
-      return (await sql`SELECT benutzer_id, mappe_id FROM favoriten WHERE haushalt_id = ${haushaltId} ORDER BY benutzer_id, mappe_id`).map((r) => ({ benutzerId: r.benutzer_id as string, mappeId: r.mappe_id as string }));
+      return (await sql`SELECT benutzer_id, mappe_id FROM favoriten WHERE haushalt_id = ${haushaltId} ORDER BY benutzer_id, mappe_id`).map(
+        (r) => ({ benutzerId: r.benutzer_id as string, mappeId: r.mappe_id as string }),
+      );
     },
     async legeAuskunftLinkAn(l) {
       await sql`INSERT INTO auskunft_links (id, haushalt_id, auskunft_id, mappe_id, titel, schluessel, code, code_art, empfaenger, erstellt, erstellt_von, ablauf, max_abrufe)
@@ -1723,16 +2239,20 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const [r] = await sql`UPDATE auskunft_links SET abrufe = abrufe + 1, abgerufen = now()
         WHERE haushalt_id = ${haushaltId} AND id = ${id} AND abrufe < max_abrufe AND ablauf > now() AND gesperrt IS NULL AND widerrufen IS NULL
         RETURNING abrufe`;
-      return r ? r.abrufe as number : null;
+      return r ? (r.abrufe as number) : null;
     },
     async widerrufeAuskunftLink(id) {
       if (!istUuid(id)) return false;
-      const r = await sql`UPDATE auskunft_links SET widerrufen = now() WHERE haushalt_id = ${haushaltId} AND id = ${id} AND widerrufen IS NULL RETURNING id`;
+      const r =
+        await sql`UPDATE auskunft_links SET widerrufen = now() WHERE haushalt_id = ${haushaltId} AND id = ${id} AND widerrufen IS NULL RETURNING id`;
       return r.length > 0;
     },
     async favoritenDerMappe(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT benutzer_id, benachrichtigen FROM favoriten WHERE mappe_id = ${mappeId}`).map((r) => ({ benutzerId: r.benutzer_id as string, benachrichtigen: r.benachrichtigen !== false }));
+      return (await sql`SELECT benutzer_id, benachrichtigen FROM favoriten WHERE mappe_id = ${mappeId}`).map((r) => ({
+        benutzerId: r.benutzer_id as string,
+        benachrichtigen: r.benachrichtigen !== false,
+      }));
     },
     async setzeFavoritBenachrichtigen(benutzerId, mappeId, an) {
       if (!istUuid(benutzerId) || !istUuid(mappeId)) return;
@@ -1741,7 +2261,11 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async stummeFavoriten(benutzerId, mappeIds) {
       const ids = mappeIds.filter(istUuid);
       if (!istUuid(benutzerId) || !ids.length) return new Set();
-      return new Set((await sql`SELECT mappe_id FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ANY(${ids}::uuid[]) AND benachrichtigen = false`).map((r) => r.mappe_id as string));
+      return new Set(
+        (
+          await sql`SELECT mappe_id FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ANY(${ids}::uuid[]) AND benachrichtigen = false`
+        ).map((r) => r.mappe_id as string),
+      );
     },
     async zaehlerstand(benutzerId) {
       if (!istUuid(benutzerId)) return undefined;
@@ -1750,7 +2274,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async setzeZaehlerstand(benutzerId, abdruck) {
       // Ein Befehl: gleichzeitige Abrufe zählen je echter Änderung höchstens einmal hoch (Zeilensperre im UPSERT).
-      const [r] = await sql`INSERT INTO zaehlerstaende (benutzer_id, haushalt_id, stand, abdruck) VALUES (${benutzerId}, ${haushaltId}, 1, ${abdruck})
+      const [r] =
+        await sql`INSERT INTO zaehlerstaende (benutzer_id, haushalt_id, stand, abdruck) VALUES (${benutzerId}, ${haushaltId}, 1, ${abdruck})
         ON CONFLICT (benutzer_id) DO UPDATE SET stand = zaehlerstaende.stand + 1, abdruck = EXCLUDED.abdruck, geaendert = now()
           WHERE zaehlerstaende.abdruck IS DISTINCT FROM EXCLUDED.abdruck
         RETURNING stand, abdruck, geaendert`;
@@ -1770,7 +2295,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const ids = [...new Set(mappeIds.filter(istUuid))];
       if (!istUuid(benutzerId) || !ids.length) return new Set();
       // Nur die Mappen dieser Seite: Favorit oder selbst angelegt; je Mappe ein Blick in den Index historie (mappe_id, zeit).
-      return new Set((await sql`
+      return new Set(
+        (
+          await sql`
         WITH k AS (
           SELECT m.id, GREATEST(g.zeit, f.erstellt, m.erstellt) AS seit
           FROM mappen m
@@ -1780,12 +2307,18 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         )
         SELECT k.id FROM k WHERE EXISTS (
           SELECT 1 FROM historie h WHERE h.mappe_id = k.id AND h.zeit > k.seit AND h.benutzer_id IS NOT NULL AND h.benutzer_id <> ${benutzerId}
-            AND h.art = ANY(${[...arten]}::text[]) AND coalesce(h.daten->>'aufgabenart', '') <> 'aenderung')`).map((r) => r.id as string));
+            AND h.art = ANY(${[...arten]}::text[]) AND coalesce(h.daten->>'aufgabenart', '') <> 'aenderung')`
+        ).map((r) => r.id as string),
+      );
     },
     async favoritenVon(benutzerId, mappeIds) {
       const ids = mappeIds.filter(istUuid);
       if (!istUuid(benutzerId) || !ids.length) return new Set();
-      return new Set((await sql`SELECT mappe_id FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ANY(${ids}::uuid[])`).map((r) => r.mappe_id as string));
+      return new Set(
+        (await sql`SELECT mappe_id FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ANY(${ids}::uuid[])`).map(
+          (r) => r.mappe_id as string,
+        ),
+      );
     },
     /* ---------- Papierkorb (#43) ---------- */
     async legeInPapierkorb(id, benutzerId) {
@@ -1830,13 +2363,15 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       });
     },
     async papierkorb(f = {}) {
-      return (await sql`
+      return (
+        await sql`
         SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente, vorgang, entkoppelt
         FROM papierkorb WHERE haushalt_id = ${haushaltId}
           ${f.von ? sql`AND geloescht_von = ${istUuid(f.von) ? f.von : null}::uuid` : sql``}
           ${f.vor ? sql`AND geloescht < ${f.vor}` : sql``}
           ${f.typId ? sql`AND typ_id = ${istUuid(f.typId) ? f.typId : null}::uuid` : sql``}
-        ORDER BY geloescht DESC, id`).map(alsPapierkorb);
+        ORDER BY geloescht DESC, id`
+      ).map(alsPapierkorb);
     },
     async holeAusPapierkorb(id) {
       if (!istUuid(id)) return undefined;
@@ -1852,8 +2387,13 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async leerePapierkorb(ids) {
       const gueltig = ids.filter(istUuid);
       if (!gueltig.length) return [];
-      const r = await sql`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokumente, versionen`;
-      return [...new Set<string>(r.flatMap((z: Zeile) => [...(z.dokumente as Zeile[]), ...((z.versionen as Zeile[] | null) ?? [])].map((d) => d.sha256 as string)))];
+      const r =
+        await sql`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokumente, versionen`;
+      return [
+        ...new Set<string>(
+          r.flatMap((z: Zeile) => [...(z.dokumente as Zeile[]), ...((z.versionen as Zeile[] | null) ?? [])].map((d) => d.sha256 as string)),
+        ),
+      ];
     },
     async zaehlePapierkorb(von) {
       // Mappen und einzelne Dokumente (#344).
@@ -1878,13 +2418,15 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async papierkorbDokumente(f = {}) {
       const ids = (f.mappeIds ?? []).filter(istUuid);
-      return (await sql`
+      return (
+        await sql`
         SELECT id, mappe_id, dokument - 'volltext' AS dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
         FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId}
           ${f.von ? sql`AND geloescht_von = ${istUuid(f.von) ? f.von : null}::uuid` : sql``}
           ${f.vor ? sql`AND geloescht < ${f.vor}` : sql``}
           ${f.mappeIds ? sql`AND mappe_id = ANY(${ids}::uuid[])` : sql``}
-        ORDER BY geloescht DESC, id`).map(alsDokPapierkorb);
+        ORDER BY geloescht DESC, id`
+      ).map(alsDokPapierkorb);
     },
     async holeDokumentAusPapierkorb(id) {
       if (!istUuid(id)) return undefined;
@@ -1918,8 +2460,16 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async leereDokumentPapierkorb(ids) {
       const gueltig = ids.filter(istUuid);
       if (!gueltig.length) return [];
-      const r = await sql`DELETE FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokument, versionen`;
-      return [...new Set<string>(r.flatMap((z: Zeile) => [(z.dokument as Zeile).sha256 as string, ...((z.versionen as Zeile[]) ?? []).map((v) => v.sha256 as string)]))];
+      const r =
+        await sql`DELETE FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokument, versionen`;
+      return [
+        ...new Set<string>(
+          r.flatMap((z: Zeile) => [
+            (z.dokument as Zeile).sha256 as string,
+            ...((z.versionen as Zeile[]) ?? []).map((v) => v.sha256 as string),
+          ]),
+        ),
+      ];
     },
     /* ---------- Löschprotokoll (#470) ---------- */
     async papierkorbInhalt(ids) {
@@ -1930,25 +2480,56 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           jsonb_array_length(coalesce(entkoppelt, '[]'::jsonb)) AS entkoppelt, jsonb_array_length(coalesce(notizen, '[]'::jsonb)) AS notizen, dokumente, versionen
         FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${g}::uuid[])`;
       return r.map((z: Zeile) => ({
-        id: z.id as string, typId: z.typ_id as string, werte: (z.werte as Werte) ?? {}, demo: !!z.demo, vorgang: (z.vorgang as string | null) ?? null,
-        entkoppelt: Number(z.entkoppelt), notizen: Number(z.notizen),
+        id: z.id as string,
+        typId: z.typ_id as string,
+        werte: (z.werte as Werte) ?? {},
+        demo: !!z.demo,
+        vorgang: (z.vorgang as string | null) ?? null,
+        entkoppelt: Number(z.entkoppelt),
+        notizen: Number(z.notizen),
         dokumente: [...((z.dokumente as Zeile[]) ?? []).map(loeschDok), ...((z.versionen as Zeile[] | null) ?? []).map(loeschVersion)],
       }));
     },
     async papierkorbDokumentInhalt(ids) {
       const g = ids.filter(istUuid);
       if (!g.length) return [];
-      const r = await sql`SELECT id, mappe_id, dokument - 'volltext' AS dokument, versionen FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${g}::uuid[])`;
-      return r.map((z: Zeile) => ({ id: z.id as string, mappeId: z.mappe_id as string, dokumente: [loeschDok(z.dokument as Zeile), ...((z.versionen as Zeile[]) ?? []).map(loeschVersion)] }));
+      const r =
+        await sql`SELECT id, mappe_id, dokument - 'volltext' AS dokument, versionen FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${g}::uuid[])`;
+      return r.map((z: Zeile) => ({
+        id: z.id as string,
+        mappeId: z.mappe_id as string,
+        dokumente: [loeschDok(z.dokument as Zeile), ...((z.versionen as Zeile[]) ?? []).map(loeschVersion)],
+      }));
     },
     async loeschprotokollSchreibe(liste) {
       if (!liste.length) return;
       const u = (v: string | null) => (v && istUuid(v) ? v : null);
       const zeilen = liste.map((e) => ({
-        id: e.id, haushalt_id: haushaltId, zeit: e.zeit, art: e.art, schritt: e.schritt, weg: e.weg, mappe_id: e.mappeId, typ_id: u(e.typId), typ_name: e.typ,
-        nummer: e.nummer, archivnummer: e.archivnummer, dokument_id: u(e.dokumentId), version: e.version, sha256: e.sha256, groesse: e.groesse, mime: e.mime, seiten: e.seiten,
-        anzahl: e.anzahl ? json(sql, e.anzahl) : null, von_id: u(e.vonId), von_name: e.von, ausloeser: e.ausloeser, grund: e.grund, grund_text: e.grundText,
-        vorgang: u(e.vorgang), start_id: u(e.startId),
+        id: e.id,
+        haushalt_id: haushaltId,
+        zeit: e.zeit,
+        art: e.art,
+        schritt: e.schritt,
+        weg: e.weg,
+        mappe_id: e.mappeId,
+        typ_id: u(e.typId),
+        typ_name: e.typ,
+        nummer: e.nummer,
+        archivnummer: e.archivnummer,
+        dokument_id: u(e.dokumentId),
+        version: e.version,
+        sha256: e.sha256,
+        groesse: e.groesse,
+        mime: e.mime,
+        seiten: e.seiten,
+        anzahl: e.anzahl ? json(sql, e.anzahl) : null,
+        von_id: u(e.vonId),
+        von_name: e.von,
+        ausloeser: e.ausloeser,
+        grund: e.grund,
+        grund_text: e.grundText,
+        vorgang: u(e.vorgang),
+        start_id: u(e.startId),
       }));
       for (let i = 0; i < zeilen.length; i += 500) await sql`INSERT INTO loeschprotokoll ${sql(zeilen.slice(i, i + 500))}`;
     },
@@ -2002,14 +2583,25 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async ocrSetze(id, e) {
       // Bricht PostgreSQL das Speichern wegen einer Verklemmung ab (#575), noch einmal versuchen – in einer eigenen
       // Transaktion bzw. innerhalb einer Transaktion in einem Sicherungspunkt, damit der Versuch wiederholbar ist.
-      await beiVerklemmungWiederholen(() => sql.begin((tx) => tx`
+      await beiVerklemmungWiederholen(
+        () =>
+          sql.begin(
+            (tx) => tx`
         UPDATE dokumente SET ocr_stand = ${e.stand}, ocr_info = ${e.info ?? null}, ocr_seiten = ${e.seiten ?? null}, ocr_zeit = now()
           ${e.text !== undefined ? tx`, volltext = ${e.text}` : tx``}${e.sprache !== undefined ? tx`, sprache = ${e.sprache}` : tx``}
           ${e.text !== undefined || e.weitere !== undefined ? tx`, weitere_sprachen = ${e.weitere?.length ? e.weitere : null}` : tx``}
           ${e.text !== undefined || e.seitensprachen !== undefined ? tx`, seitensprachen = ${e.seitensprachen?.length ? tx.json(e.seitensprachen as unknown as postgres.JSONValue) : null}, teilen_hinweis_aus = NULL` : tx``}
-        WHERE haushalt_id = ${haushaltId} AND id = ${id}`), {
-        nochmal: (versuch, f) => log.warn('Volltext speichern: Datenbank hat abgebrochen, neuer Versuch', { dokument: id, versuch, fehler: (f as Error).message }),
-      });
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`,
+          ),
+        {
+          nochmal: (versuch, f) =>
+            log.warn('Volltext speichern: Datenbank hat abgebrochen, neuer Versuch', {
+              dokument: id,
+              versuch,
+              fehler: (f as Error).message,
+            }),
+        },
+      );
       if (e.sprache || e.weitere?.length) sprachenZwischen = null;
     },
     async ocrVonSha(sha256, ausser) {
@@ -2017,8 +2609,16 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         SELECT volltext, ocr_seiten, ocr_info, sprache, weitere_sprachen, seitensprachen FROM dokumente
         WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256} AND id IS DISTINCT FROM ${istUuid(ausser) ? ausser : null}::uuid AND ocr_stand = 'fertig' AND volltext IS NOT NULL
         LIMIT 1`;
-      return r ? { text: r.volltext as string, seiten: (r.ocr_seiten as number | null) ?? null, info: (r.ocr_info as string | null) ?? null, sprache: (r.sprache as string | null) ?? null,
-        weitere: (r.weitere_sprachen as string[] | null) ?? null, seitensprachen: alsSeitensprachen(r.seitensprachen) } : undefined;
+      return r
+        ? {
+            text: r.volltext as string,
+            seiten: (r.ocr_seiten as number | null) ?? null,
+            info: (r.ocr_info as string | null) ?? null,
+            sprache: (r.sprache as string | null) ?? null,
+            weitere: (r.weitere_sprachen as string[] | null) ?? null,
+            seitensprachen: alsSeitensprachen(r.seitensprachen),
+          }
+        : undefined;
     },
     async setzeDokumentSprache(id, sprache, weitere) {
       if (!istUuid(id)) return false;
@@ -2027,9 +2627,11 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       // ganze Dokument, die Seitensprachen entfallen.
       const r = await sql`UPDATE dokumente SET sprache = ${sprache},
           ocr_info = CASE WHEN ocr_info IS NULL THEN NULL ELSE regexp_replace(ocr_info, ${SPRACHE_INFO_SQL}, '') || coalesce(${SPRACHE_MARKE} || ${sprache}::text, '') END,
-          ${weitere !== undefined
-            ? sql`weitere_sprachen = ${weitere.length ? weitere : null}, seitensprachen = NULL, teilen_hinweis_aus = NULL`
-            : sql`weitere_sprachen = nullif(array_remove(weitere_sprachen, ${sprache}::text), '{}')`}
+          ${
+            weitere !== undefined
+              ? sql`weitere_sprachen = ${weitere.length ? weitere : null}, seitensprachen = NULL, teilen_hinweis_aus = NULL`
+              : sql`weitere_sprachen = nullif(array_remove(weitere_sprachen, ${sprache}::text), '{}')`
+          }
         WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       if (r.count) sprachenZwischen = null;
       return r.count > 0;
@@ -2065,26 +2667,32 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async ocrAuftraege({ stand, von, anzahl }) {
       const bed = stand === 'keiner' ? sql`coalesce(d.ocr_stand, 'keiner') = 'keiner'` : sql`d.ocr_stand = ${stand}`;
-      const [{ n }] = await sql`SELECT count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id WHERE d.haushalt_id = ${haushaltId} AND ${bed}`;
+      const [{ n }] =
+        await sql`SELECT count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id WHERE d.haushalt_id = ${haushaltId} AND ${bed}`;
       const r = await sql`
         SELECT ${DOK}, m.titel AS mappe_titel, m.typ_id AS mappe_typ FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
         WHERE d.haushalt_id = ${haushaltId} AND ${bed}
         ORDER BY coalesce(d.ocr_zeit, d.erstellt) DESC, d.id LIMIT ${anzahl} OFFSET ${von}`;
-      return { gesamt: n as number, eintraege: r.map((x) => ({ dokument: alsDokument(x), mappeTitel: (x.mappe_titel as string) ?? '', typId: x.mappe_typ as string })) };
+      return {
+        gesamt: n as number,
+        eintraege: r.map((x) => ({ dokument: alsDokument(x), mappeTitel: (x.mappe_titel as string) ?? '', typId: x.mappe_typ as string })),
+      };
     },
     async ocrOhneVolltext() {
-      return (await sql`
+      return (
+        await sql`
         SELECT d.id, m.typ_id, d.register_key FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
-        WHERE d.haushalt_id = ${haushaltId} AND coalesce(d.ocr_stand, 'keiner') = 'keiner'`)
-        .map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
+        WHERE d.haushalt_id = ${haushaltId} AND coalesce(d.ocr_stand, 'keiner') = 'keiner'`
+      ).map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
     },
     async volltextKandidaten(umfang) {
       const ohne = umfang === 'ohne' ? sql`AND coalesce(btrim(d.volltext), '') = ''` : sql``;
-      return (await sql`
+      return (
+        await sql`
         SELECT d.id, m.typ_id, d.register_key FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
         WHERE d.haushalt_id = ${haushaltId} AND coalesce(d.ocr_stand, 'keiner') NOT IN ('wartet', 'laeuft') ${ohne}
-        ORDER BY d.erstellt, d.id`)
-        .map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
+        ORDER BY d.erstellt, d.id`
+      ).map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
     },
     async volltextHerkunft() {
       const [r] = await sql`
@@ -2096,7 +2704,14 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           count(*) FILTER (WHERE NOT leer AND i NOT LIKE 'Texterkennung durch Paket %' AND i NOT LIKE 'Volltext durch Paket %' AND i NOT LIKE 'Textebene des PDFs%' AND i NOT LIKE 'Volltext über die API%' AND i NOT LIKE '%Texterkennung%')::int AS sonst
         FROM (SELECT coalesce(btrim(volltext), '') = '' AS leer, regexp_replace(coalesce(ocr_info, ''), '^übernommen \\(gleicher Inhalt\\): ', '') AS i
           FROM dokumente WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'fertig') x`;
-      return { pdf: r.pdf as number, paket: r.paket as number, api: r.api as number, eingebaut: r.eingebaut as number, sonst: r.sonst as number, ohneText: r.ohne as number };
+      return {
+        pdf: r.pdf as number,
+        paket: r.paket as number,
+        api: r.api as number,
+        eingebaut: r.eingebaut as number,
+        sonst: r.sonst as number,
+        ohneText: r.ohne as number,
+      };
     },
     async ocrSprachen() {
       const z: Record<string, number> = {};
@@ -2117,15 +2732,17 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async vektorLoesche(dokumentId, modell) {
       if (!istUuid(dokumentId)) return 0;
-      const r = modell === undefined
-        ? await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId}`
-        : await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND modell = ${modell}`;
+      const r =
+        modell === undefined
+          ? await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId}`
+          : await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND modell = ${modell}`;
       return r.count;
     },
     async vektorenLoeschePaket(paket, ausser) {
-      const r = ausser === undefined
-        ? await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND paket = ${paket}`
-        : await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND paket = ${paket} AND modell <> ${ausser}`;
+      const r =
+        ausser === undefined
+          ? await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND paket = ${paket}`
+          : await sql`DELETE FROM vektoren WHERE haushalt_id = ${haushaltId} AND paket = ${paket} AND modell <> ${ausser}`;
       return r.count;
     },
     async vektorenLaden(modell, jeTeil) {
@@ -2137,22 +2754,27 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async vektorVon(dokumentId, modell) {
       if (!istUuid(dokumentId)) return null;
-      const [r] = await sql`SELECT vektor::text AS v FROM vektoren WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND modell = ${modell}`;
+      const [r] =
+        await sql`SELECT vektor::text AS v FROM vektoren WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND modell = ${modell}`;
       return r ? Float32Array.from((r.v as string).slice(1, -1).split(','), Number) : null;
     },
     async vektorStand() {
-      return (await sql`SELECT paket, modell, count(*)::int AS n FROM vektoren WHERE haushalt_id = ${haushaltId} GROUP BY 1, 2 ORDER BY 1, 2`)
-        .map((r: Zeile) => ({ paket: r.paket as string, modell: r.modell as string, anzahl: r.n as number }));
+      return (
+        await sql`SELECT paket, modell, count(*)::int AS n FROM vektoren WHERE haushalt_id = ${haushaltId} GROUP BY 1, 2 ORDER BY 1, 2`
+      ).map((r: Zeile) => ({ paket: r.paket as string, modell: r.modell as string, anzahl: r.n as number }));
     },
     async ohneVektor(modell, max, nach) {
       const ab = nach && istUuid(nach) ? nach : '00000000-0000-0000-0000-000000000000';
-      return (await sql`SELECT d.id, d.mappe_id FROM dokumente d
+      return (
+        await sql`SELECT d.id, d.mappe_id FROM dokumente d
         WHERE d.haushalt_id = ${haushaltId} AND d.id > ${ab}::uuid AND d.volltext IS NOT NULL AND d.volltext <> ''
           AND NOT EXISTS (SELECT 1 FROM vektoren v WHERE v.dokument_id = d.id AND v.modell = ${modell})
-        ORDER BY d.id LIMIT ${max}`).map((r: Zeile) => ({ id: r.id as string, mappeId: r.mappe_id as string }));
+        ORDER BY d.id LIMIT ${max}`
+      ).map((r: Zeile) => ({ id: r.id as string, mappeId: r.mappe_id as string }));
     },
     async mitVolltext() {
-      const [r] = await sql`SELECT count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} AND volltext IS NOT NULL AND volltext <> ''`;
+      const [r] =
+        await sql`SELECT count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} AND volltext IS NOT NULL AND volltext <> ''`;
       return r.n as number;
     },
 
@@ -2169,7 +2791,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async erkennungenMitAbsender(absenderId, max) {
       if (!istUuid(absenderId)) return [];
-      return (await sql`SELECT mappe_id FROM erkennungen WHERE haushalt_id = ${haushaltId} AND absender_id = ${absenderId} ORDER BY zeit DESC LIMIT ${max}`).map((r) => r.mappe_id as string);
+      return (
+        await sql`SELECT mappe_id FROM erkennungen WHERE haushalt_id = ${haushaltId} AND absender_id = ${absenderId} ORDER BY zeit DESC LIMIT ${max}`
+      ).map((r) => r.mappe_id as string);
     },
     async volltext(id) {
       if (!istUuid(id)) return null;
@@ -2180,7 +2804,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const r = new Map<string, string>();
       const gueltig = [...new Set(ids.filter(istUuid))];
       if (!gueltig.length) return r;
-      for (const z of await sql`SELECT id, volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND volltext IS NOT NULL`) r.set(z.id as string, z.volltext as string);
+      for (const z of await sql`SELECT id, volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND volltext IS NOT NULL`)
+        r.set(z.id as string, z.volltext as string);
       return r;
     },
     async fragenFundstellen(o) {
@@ -2191,8 +2816,13 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       // nur für sie die Ausschnitte (ts_headline ist teuer).
       const q = woerter.join(' | ');
       // Je Sprache der Ablage (#400) die Wortstämme dieser Sprache.
-      const anfrage = (await sprachKonfigs()).map((k) => sql`to_tsquery(${k}::regconfig, dms_falte(${q}::text))`).reduce((x, y) => sql`(${x} || ${y})`);
-      const dokumente = o.dokumente < 1 ? [] : await sql`
+      const anfrage = (await sprachKonfigs())
+        .map((k) => sql`to_tsquery(${k}::regconfig, dms_falte(${q}::text))`)
+        .reduce((x, y) => sql`(${x} || ${y})`);
+      const dokumente =
+        o.dokumente < 1
+          ? []
+          : await sql`
         WITH beste AS (
           SELECT d.id, d.mappe_id, d.name, ts_rank_cd(${SUCHINDEX}, x.q) AS rang
           FROM dokumente d JOIN mappen ON mappen.id = d.mappe_id AND mappen.haushalt_id = ${haushaltId} CROSS JOIN LATERAL (SELECT ${anfrage} AS q) x
@@ -2202,14 +2832,22 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           'MaxFragments=3, MaxWords=40, MinWords=15, ShortWord=2, StartSel="", StopSel="", FragmentDelimiter=" … "') AS text
         FROM beste b JOIN dokumente d ON d.id = b.id ORDER BY b.rang DESC, b.id`;
       const muster = woerter.map((w) => `%${w}%`);
-      const mappen = o.mappen < 1 ? [] : await sql`
+      const mappen =
+        o.mappen < 1
+          ? []
+          : await sql`
         SELECT * FROM (
           SELECT ${sql.unsafe(MAPPEN_SPALTEN.map((x) => `mappen.${x}`).join(', '))}, (SELECT count(*) FROM unnest(${muster}::text[]) w
             WHERE mappen.titel ILIKE w OR EXISTS (SELECT 1 FROM jsonb_each_text(mappen.werte) e WHERE e.value ILIKE w AND e.value NOT LIKE 'dms1$%')) AS punkte
           FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen}) x
         WHERE punkte > 0 ORDER BY punkte DESC, geaendert DESC, id LIMIT ${o.mappen}`;
       return {
-        dokumente: dokumente.map((z) => ({ id: z.id as string, mappeId: z.mappe_id as string, name: z.name as string, text: String(z.text ?? '') })),
+        dokumente: dokumente.map((z) => ({
+          id: z.id as string,
+          mappeId: z.mappe_id as string,
+          name: z.name as string,
+          text: String(z.text ?? ''),
+        })),
         mappen: mappen.map(alsMappe),
       };
     },
@@ -2246,8 +2884,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return Number(r.n);
     },
     async synonyme() {
-      return (await sql`SELECT id, woerter, quelle, geaendert FROM synonyme WHERE haushalt_id = ${haushaltId} ORDER BY quelle <> 'werkbank', quelle, erstellt, id`)
-        .map((z) => ({ id: z.id as string, woerter: z.woerter as string[], quelle: z.quelle as string, geaendert: iso(z.geaendert) }));
+      return (
+        await sql`SELECT id, woerter, quelle, geaendert FROM synonyme WHERE haushalt_id = ${haushaltId} ORDER BY quelle <> 'werkbank', quelle, erstellt, id`
+      ).map((z) => ({ id: z.id as string, woerter: z.woerter as string[], quelle: z.quelle as string, geaendert: iso(z.geaendert) }));
     },
     async legeSynonymAn(g) {
       await sql`INSERT INTO synonyme (id, haushalt_id, woerter, quelle) VALUES (${g.id}, ${haushaltId}, ${g.woerter}::text[], ${g.quelle})`;
@@ -2257,10 +2896,15 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return sql.begin(async (tx) => {
         // Gleichzeitig bearbeitet (#917, #992): nur auf dem Stand, auf dem die Bearbeitung beruht.
         if (erwartet !== undefined) {
-          const [a] = await tx`SELECT geaendert FROM synonyme WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank' FOR UPDATE`;
+          const [a] =
+            await tx`SELECT geaendert FROM synonyme WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank' FOR UPDATE`;
           if (a && iso(a.geaendert) !== erwartet) throw new KonfigurationVeraltet();
         }
-        return (await tx`UPDATE synonyme SET woerter = ${woerter}::text[], geaendert = ${STAND_WEITER} WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank'`).count > 0;
+        return (
+          (
+            await tx`UPDATE synonyme SET woerter = ${woerter}::text[], geaendert = ${STAND_WEITER} WHERE haushalt_id = ${haushaltId} AND id = ${id} AND quelle = 'werkbank'`
+          ).count > 0
+        );
       });
     },
     async loescheSynonym(id) {
@@ -2270,10 +2914,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async setzeSynonyme(quelle, gruppen) {
       await sql.begin(async (tx) => {
         await tx`DELETE FROM synonyme WHERE haushalt_id = ${haushaltId} AND quelle = ${quelle}`;
-        for (const g of gruppen) await tx`INSERT INTO synonyme (id, haushalt_id, woerter, quelle) VALUES (gen_random_uuid(), ${haushaltId}, ${g}::text[], ${quelle})`;
+        for (const g of gruppen)
+          await tx`INSERT INTO synonyme (id, haushalt_id, woerter, quelle) VALUES (gen_random_uuid(), ${haushaltId}, ${g}::text[], ${quelle})`;
       });
     },
-
 
     /* ---------- Notfallkontakte (#812) ---------- */
     async notfallkontakte() {
@@ -2299,13 +2943,21 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async aendereNotfallkontakt(id, w) {
       if (!istUuid(id)) return false;
-      return (await sql`UPDATE notfallkontakte SET name = ${w.name}, email = ${w.email}, telefon = ${w.telefon}, notiz = ${w.notiz}, antwort_an = ${w.antwortAn},
+      return (
+        (
+          await sql`UPDATE notfallkontakte SET name = ${w.name}, email = ${w.email}, telefon = ${w.telefon}, notiz = ${w.notiz}, antwort_an = ${w.antwortAn},
         mail_stand = ${w.mailStand}, mail_am = ${w.mailAm}, mail_fehler = ${w.mailFehler}, geaendert = ${STAND_WEITER}
-        WHERE haushalt_id = ${haushaltId} AND id = ${id}`).count > 0;
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`
+        ).count > 0
+      );
     },
     async setzeNotfallkontaktMail(id, m) {
       if (!istUuid(id)) return false;
-      return (await sql`UPDATE notfallkontakte SET mail_stand = ${m.mailStand}, mail_am = ${m.mailAm}, mail_fehler = ${m.mailFehler} WHERE haushalt_id = ${haushaltId} AND id = ${id}`).count > 0;
+      return (
+        (
+          await sql`UPDATE notfallkontakte SET mail_stand = ${m.mailStand}, mail_am = ${m.mailAm}, mail_fehler = ${m.mailFehler} WHERE haushalt_id = ${haushaltId} AND id = ${id}`
+        ).count > 0
+      );
     },
     async loescheNotfallkontakt(id) {
       if (!istUuid(id)) return null;
@@ -2348,27 +3000,35 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async aufgabenVon(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erledigt IS NOT NULL, erstellt DESC, id`).map(alsAufgabe);
+      return (
+        await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erledigt IS NOT NULL, erstellt DESC, id`
+      ).map(alsAufgabe);
     },
     async aufgabenVonMappen(mappeIds) {
       const gueltig = [...new Set(mappeIds.filter(istUuid))];
       if (!gueltig.length) return [];
-      return (await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, erledigt IS NOT NULL, erstellt DESC, id`).map(alsAufgabe);
+      return (
+        await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, erledigt IS NOT NULL, erstellt DESC, id`
+      ).map(alsAufgabe);
     },
     async offeneAufgaben(f = {}) {
       const wer = f.benutzerId
         ? sql`AND (a.empfaenger_id = ${istUuid(f.benutzerId) ? f.benutzerId : null}::uuid ${f.admin ? sql`OR a.empfaenger_id IS NULL` : sql``})`
         : sql``;
       const welche = f.mappeIds ? sql`AND a.mappe_id = ANY(${f.mappeIds.filter(istUuid)}::uuid[])` : sql``;
-      return (await sql`
+      return (
+        await sql`
         SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
         WHERE a.haushalt_id = ${haushaltId} AND a.erledigt IS NULL ${wer} ${welche}
-        ORDER BY a.erstellt, a.id`).map(alsAufgabe);
+        ORDER BY a.erstellt, a.id`
+      ).map(alsAufgabe);
     },
     async erledigteAufgaben(max) {
-      return (await sql`
+      return (
+        await sql`
         SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
-        WHERE a.haushalt_id = ${haushaltId} AND a.erledigt IS NOT NULL ORDER BY a.erledigt DESC, a.id LIMIT ${max}`).map(alsAufgabe);
+        WHERE a.haushalt_id = ${haushaltId} AND a.erledigt IS NOT NULL ORDER BY a.erledigt DESC, a.id LIMIT ${max}`
+      ).map(alsAufgabe);
     },
     async erledigeAufgabe(id, von) {
       await sql`UPDATE aufgaben SET erledigt = now(), erledigt_von = ${istUuid(von) ? von : null}::uuid WHERE haushalt_id = ${haushaltId} AND id = ${id} AND erledigt IS NULL`;
@@ -2381,19 +3041,23 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async fristAufgaben(mappeIds) {
       const welche = mappeIds ? sql`AND a.mappe_id = ANY(${mappeIds.filter(istUuid)}::uuid[])` : sql``;
-      return (await sql`
+      return (
+        await sql`
         SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
-        WHERE a.haushalt_id = ${haushaltId} AND a.art = 'frist' ${welche} ORDER BY a.erstellt, a.id`).map(alsAufgabe);
+        WHERE a.haushalt_id = ${haushaltId} AND a.art = 'frist' ${welche} ORDER BY a.erstellt, a.id`
+      ).map(alsAufgabe);
     },
 
     // Aufgaben bei Personen ohne Leserecht (#798)
     async faelleOhneLeserecht(f = {}) {
       const offen = f.offen ? sql`AND f.ende IS NULL` : sql``;
       const welche = f.mappeIds ? sql`AND f.mappe_id = ANY(${f.mappeIds.filter(istUuid)}::uuid[])` : sql``;
-      return (await sql`
+      return (
+        await sql`
         SELECT f.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben_ohne_leserecht f LEFT JOIN mappen m ON m.id = f.mappe_id
         WHERE f.haushalt_id = ${haushaltId} ${offen} ${welche}
-        ORDER BY f.ende IS NOT NULL, coalesce(f.ende, f.beginn) DESC, f.id LIMIT ${f.max ?? 1000}`).map(alsFall);
+        ORDER BY f.ende IS NOT NULL, coalesce(f.ende, f.beginn) DESC, f.id LIMIT ${f.max ?? 1000}`
+      ).map(alsFall);
     },
     async legeFallAn(f) {
       const r = await sql`
@@ -2414,43 +3078,62 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async leserechteAufZeit(benutzerId) {
       if (!istUuid(benutzerId)) return [];
-      return (await sql`
+      return (
+        await sql`
         SELECT f.id, f.mappe_id, m.typ_id, f.aufgabe_id, f.aufgabentext, f.leserecht_seit, f.leserecht_von
         FROM aufgaben_ohne_leserecht f JOIN aufgaben a ON a.id = f.aufgabe_id JOIN mappen m ON m.id = f.mappe_id
         WHERE f.haushalt_id = ${haushaltId} AND f.benutzer_id = ${benutzerId} AND f.ende IS NULL AND f.leserecht_seit IS NOT NULL
-          AND a.erledigt IS NULL AND a.empfaenger_id = f.benutzer_id AND a.mappe_id = f.mappe_id`).map((r) => ({
-        fallId: r.id as string, mappeId: r.mappe_id as string, typId: r.typ_id as string, aufgabeId: r.aufgabe_id as string,
-        aufgabentext: r.aufgabentext as string, seit: iso(r.leserecht_seit), von: (r.leserecht_von as string | null) ?? null,
+          AND a.erledigt IS NULL AND a.empfaenger_id = f.benutzer_id AND a.mappe_id = f.mappe_id`
+      ).map((r) => ({
+        fallId: r.id as string,
+        mappeId: r.mappe_id as string,
+        typId: r.typ_id as string,
+        aufgabeId: r.aufgabe_id as string,
+        aufgabentext: r.aufgabentext as string,
+        seit: iso(r.leserecht_seit),
+        von: (r.leserecht_von as string | null) ?? null,
       }));
     },
 
     async umschluesseln(um, einstellungen) {
       return sql.begin(async (tx) => {
-        let umgeschluesselt = 0; let unlesbar = 0;
-        const zaehle = (x: { geaendert: number; unlesbar: number }) => { umgeschluesselt += x.geaendert; unlesbar += x.unlesbar; };
+        let umgeschluesselt = 0;
+        let unlesbar = 0;
+        const zaehle = (x: { geaendert: number; unlesbar: number }) => {
+          umgeschluesselt += x.geaendert;
+          unlesbar += x.unlesbar;
+        };
         const muster = '%dms1$%';
         for (const r of await tx`SELECT id, werte FROM mappen WHERE haushalt_id = ${haushaltId} AND werte::text LIKE ${muster} FOR UPDATE`) {
-          const x = umschluesseleTief(r.werte, um); zaehle(x);
+          const x = umschluesseleTief(r.werte, um);
+          zaehle(x);
           if (x.geaendert) await tx`UPDATE mappen SET werte = ${tx.json(x.wert as postgres.JSONValue)} WHERE id = ${r.id}`;
         }
         for (const r of await tx`SELECT id, mappe FROM papierkorb WHERE haushalt_id = ${haushaltId} AND mappe::text LIKE ${muster} FOR UPDATE`) {
-          const x = umschluesseleTief(r.mappe, um); zaehle(x);
+          const x = umschluesseleTief(r.mappe, um);
+          zaehle(x);
           if (x.geaendert) await tx`UPDATE papierkorb SET mappe = ${tx.json(x.wert as postgres.JSONValue)} WHERE id = ${r.id}`;
         }
         const gesetzt = Object.keys(einstellungen);
         for (const r of await tx`SELECT schluessel, wert FROM einstellungen WHERE haushalt_id = ${haushaltId} AND wert::text LIKE ${muster} AND NOT (schluessel = ANY(${gesetzt}::text[])) FOR UPDATE`) {
-          const x = umschluesseleTief(r.wert, um); zaehle(x);
-          if (x.geaendert) await tx`UPDATE einstellungen SET wert = ${tx.json(x.wert as postgres.JSONValue)} WHERE haushalt_id = ${haushaltId} AND schluessel = ${r.schluessel}`;
+          const x = umschluesseleTief(r.wert, um);
+          zaehle(x);
+          if (x.geaendert)
+            await tx`UPDATE einstellungen SET wert = ${tx.json(x.wert as postgres.JSONValue)} WHERE haushalt_id = ${haushaltId} AND schluessel = ${r.schluessel}`;
         }
         // Aufruf von außen (#679): Geheimnis für die Signatur.
         for (const r of await tx`SELECT automatisierung_id, geheimnis FROM automatisierung_aufrufe WHERE haushalt_id = ${haushaltId} AND geheimnis LIKE ${muster} FOR UPDATE`) {
-          const x = umschluesseleTief(r.geheimnis as string, um); zaehle(x);
-          if (x.geaendert) await tx`UPDATE automatisierung_aufrufe SET geheimnis = ${x.wert} WHERE automatisierung_id = ${r.automatisierung_id}`;
+          const x = umschluesseleTief(r.geheimnis as string, um);
+          zaehle(x);
+          if (x.geaendert)
+            await tx`UPDATE automatisierung_aufrufe SET geheimnis = ${x.wert} WHERE automatisierung_id = ${r.automatisierung_id}`;
         }
         // URL aufrufen (#671): Geheimnis je Karte für die Signatur.
         for (const r of await tx`SELECT automatisierung_id, karte, geheimnis FROM automatisierung_geheimnisse WHERE haushalt_id = ${haushaltId} AND geheimnis LIKE ${muster} FOR UPDATE`) {
-          const x = umschluesseleTief(r.geheimnis as string, um); zaehle(x);
-          if (x.geaendert) await tx`UPDATE automatisierung_geheimnisse SET geheimnis = ${x.wert} WHERE automatisierung_id = ${r.automatisierung_id} AND karte = ${r.karte}`;
+          const x = umschluesseleTief(r.geheimnis as string, um);
+          zaehle(x);
+          if (x.geaendert)
+            await tx`UPDATE automatisierung_geheimnisse SET geheimnis = ${x.wert} WHERE automatisierung_id = ${r.automatisierung_id} AND karte = ${r.karte}`;
         }
         for (const [k, w] of Object.entries(einstellungen)) {
           await tx`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${tx.json(w as postgres.JSONValue)})
@@ -2469,23 +3152,46 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         SELECT e.schluessel, e.wert, coalesce(nullif(b.name, ''), b.email) AS titel FROM einstellungen e
         LEFT JOIN benutzer b ON b.haushalt_id = e.haushalt_id AND (e.schluessel = 'zweifaktor_' || b.id::text OR e.schluessel = 'dokpasswoerter_' || b.id::text)
         WHERE e.haushalt_id = ${haushaltId} AND e.wert::text LIKE ${muster} ORDER BY e.schluessel`;
-      const aufrufe = await sql`SELECT x.automatisierung_id, x.geheimnis, a.name FROM automatisierung_aufrufe x JOIN automatisierungen a ON a.id = x.automatisierung_id
+      const aufrufe =
+        await sql`SELECT x.automatisierung_id, x.geheimnis, a.name FROM automatisierung_aufrufe x JOIN automatisierungen a ON a.id = x.automatisierung_id
         WHERE x.haushalt_id = ${haushaltId} AND x.geheimnis LIKE ${muster} ORDER BY x.erstellt, x.automatisierung_id`;
-      const aussen = await sql`SELECT x.automatisierung_id, x.karte, x.geheimnis, a.name FROM automatisierung_geheimnisse x JOIN automatisierungen a ON a.id = x.automatisierung_id
+      const aussen =
+        await sql`SELECT x.automatisierung_id, x.karte, x.geheimnis, a.name FROM automatisierung_geheimnisse x JOIN automatisierungen a ON a.id = x.automatisierung_id
         WHERE x.haushalt_id = ${haushaltId} AND x.geheimnis LIKE ${muster} ORDER BY x.erstellt, x.automatisierung_id, x.karte`;
       return [
         ...mappen.map((r) => ({ quelle: 'mappe' as const, schluessel: String(r.id), wert: r.werte, titel: r.titel as string })),
-        ...korb.map((r) => ({ quelle: 'papierkorb' as const, schluessel: String(r.id), wert: r.mappe, titel: (r.mappe as { titel?: string }).titel ?? null })),
-        ...einst.map((r) => ({ quelle: 'einstellung' as const, schluessel: r.schluessel as string, wert: r.wert, titel: (r.titel as string | null) ?? null })),
-        ...aufrufe.map((r) => ({ quelle: 'aufruf' as const, schluessel: String(r.automatisierung_id), wert: r.geheimnis, titel: r.name as string })),
-        ...aussen.map((r) => ({ quelle: 'aussen' as const, schluessel: `${String(r.automatisierung_id)}:${String(r.karte)}`, wert: r.geheimnis, titel: r.name as string })),
+        ...korb.map((r) => ({
+          quelle: 'papierkorb' as const,
+          schluessel: String(r.id),
+          wert: r.mappe,
+          titel: (r.mappe as { titel?: string }).titel ?? null,
+        })),
+        ...einst.map((r) => ({
+          quelle: 'einstellung' as const,
+          schluessel: r.schluessel as string,
+          wert: r.wert,
+          titel: (r.titel as string | null) ?? null,
+        })),
+        ...aufrufe.map((r) => ({
+          quelle: 'aufruf' as const,
+          schluessel: String(r.automatisierung_id),
+          wert: r.geheimnis,
+          titel: r.name as string,
+        })),
+        ...aussen.map((r) => ({
+          quelle: 'aussen' as const,
+          schluessel: `${String(r.automatisierung_id)}:${String(r.karte)}`,
+          wert: r.geheimnis,
+          titel: r.name as string,
+        })),
       ];
     },
 
     /* ---------- Mappen-Abläufe (#1044; früher freie Erinnerungen, #131) ---------- */
     async ablaeufe(f = {}) {
       const id = (x: string | undefined) => (istUuid(x) ? x : null);
-      return (await sql`
+      return (
+        await sql`
         SELECT e.*, m.titel AS mappe_titel, m.typ_id FROM mappen_ablaeufe e JOIN mappen m ON m.id = e.mappe_id
         WHERE e.haushalt_id = ${haushaltId}
           ${f.mappeId ? sql`AND e.mappe_id = ${id(f.mappeId)}::uuid` : sql``}
@@ -2494,7 +3200,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           ${f.vorlage ? sql`AND e.vorlage = ${f.vorlage}` : sql``}
           ${f.bis ? sql`AND e.datum <= ${f.bis}::date` : sql``}
           ${f.angehalten === undefined ? sql`` : f.angehalten ? sql`AND e.angehalten IS NOT NULL` : sql`AND e.angehalten IS NULL`}
-        ORDER BY e.datum, e.erstellt, e.id`).map(alsAblauf);
+        ORDER BY e.datum, e.erstellt, e.id`
+      ).map(alsAblauf);
     },
     async holeAblauf(id) {
       if (!istUuid(id)) return undefined;
@@ -2517,7 +3224,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return r ? alsAblauf(r) : undefined;
     },
     async setzeAblaufAngehalten(id, a) {
-      if (istUuid(id)) await sql`UPDATE mappen_ablaeufe SET angehalten = ${a ? json(sql, a) : null}::jsonb WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      if (istUuid(id))
+        await sql`UPDATE mappen_ablaeufe SET angehalten = ${a ? json(sql, a) : null}::jsonb WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async loescheAblauf(id) {
       if (!istUuid(id)) return false;
@@ -2527,7 +3235,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     /* ---------- Automatisierungsvorlagen (#1044) ---------- */
     async ablaufvorlagen() {
       // Gemerkt wie Typen und Pakete (Trigger in 105): Mappe öffnen braucht sie fürs Menü „Mappe“ (#1044).
-      return gemerkt('ablaufvorlagen', async () => (await sql`SELECT * FROM ablaufvorlagen WHERE haushalt_id = ${haushaltId} ORDER BY reihenfolge, name, kennung`).map(alsVorlage));
+      return gemerkt('ablaufvorlagen', async () =>
+        (await sql`SELECT * FROM ablaufvorlagen WHERE haushalt_id = ${haushaltId} ORDER BY reihenfolge, name, kennung`).map(alsVorlage),
+      );
     },
     async speichereAblaufvorlage(v, von, erwartet) {
       // Ändert keine Zahl (OHNE_FOLGEN), aber die gemerkten Vorlagen: Der Stand aus dieser Anfrage gilt nicht mehr – sonst
@@ -2535,13 +3245,21 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       merkeAenderung();
       const daten = { beschreibung: v.beschreibung, typen: v.typen, wann: v.wann, fragen: v.fragen, karten: v.karten };
       if (erwartet === null) {
-        return (await sql`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, reihenfolge, daten, aktiv, herkunft, paket_id, version, geaendert_von)
+        return (
+          (
+            await sql`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, reihenfolge, daten, aktiv, herkunft, paket_id, version, geaendert_von)
           VALUES (${haushaltId}, ${v.kennung}, ${v.name}, ${v.reihenfolge}, ${json(sql, daten)}::jsonb, ${v.aktiv}, ${v.herkunft}, ${v.paketId}, 1, ${istUuid(von) ? von : null}::uuid)
-          ON CONFLICT DO NOTHING RETURNING version`).length > 0;
+          ON CONFLICT DO NOTHING RETURNING version`
+          ).length > 0
+        );
       }
-      return (await sql`UPDATE ablaufvorlagen SET name = ${v.name}, reihenfolge = ${v.reihenfolge}, daten = ${json(sql, daten)}::jsonb, aktiv = ${v.aktiv},
+      return (
+        (
+          await sql`UPDATE ablaufvorlagen SET name = ${v.name}, reihenfolge = ${v.reihenfolge}, daten = ${json(sql, daten)}::jsonb, aktiv = ${v.aktiv},
         herkunft = ${v.herkunft}, paket_id = ${v.paketId}, version = version + 1, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
-        WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung} AND version = ${erwartet} RETURNING version`).length > 0;
+        WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung} AND version = ${erwartet} RETURNING version`
+        ).length > 0
+      );
     },
     async loescheAblaufvorlage(kennung) {
       merkeAenderung();
@@ -2553,13 +3271,16 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
           ${istUuid(e.personId) ? e.personId : null}::uuid, ${e.art}, ${e.text}, ${e.zeit || new Date().toISOString()}::timestamptz)`;
     },
     async ablaufVerlauf(f) {
-      return (await sql`SELECT * FROM ablauf_verlauf WHERE haushalt_id = ${haushaltId}
+      return (
+        await sql`SELECT * FROM ablauf_verlauf WHERE haushalt_id = ${haushaltId}
         ${f.vorlage ? sql`AND vorlage = ${f.vorlage}` : sql``} ${f.mappeId ? sql`AND mappe_id = ${istUuid(f.mappeId) ? f.mappeId : null}::uuid` : sql``}
-        ORDER BY zeit DESC, id LIMIT ${f.anzahl}`).map(alsVerlauf);
+        ORDER BY zeit DESC, id LIMIT ${f.anzahl}`
+      ).map(alsVerlauf);
     },
     async zaehleAblaufVerlauf(personId, seit, arten) {
       if (!istUuid(personId)) return 0;
-      const [r] = await sql`SELECT count(*)::int AS n FROM ablauf_verlauf WHERE haushalt_id = ${haushaltId} AND person_id = ${personId} AND zeit >= ${seit}::timestamptz AND art = ANY(${arten}::text[])`;
+      const [r] =
+        await sql`SELECT count(*)::int AS n FROM ablauf_verlauf WHERE haushalt_id = ${haushaltId} AND person_id = ${personId} AND zeit >= ${seit}::timestamptz AND art = ANY(${arten}::text[])`;
       return r.n as number;
     },
     async raeumeAblaufVerlaufAuf(tage, je) {
@@ -2573,8 +3294,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     // Hinweise von Paketen (#1034)
     async hinweise(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT paket_id, schluessel, text, gesetzt FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY gesetzt, paket_id, schluessel`)
-        .map((r) => ({ paket: r.paket_id as string, schluessel: r.schluessel as string, text: r.text as string, gesetzt: iso(r.gesetzt) }));
+      return (
+        await sql`SELECT paket_id, schluessel, text, gesetzt FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY gesetzt, paket_id, schluessel`
+      ).map((r) => ({ paket: r.paket_id as string, schluessel: r.schluessel as string, text: r.text as string, gesetzt: iso(r.gesetzt) }));
     },
     async setzeHinweis(h) {
       if (!istUuid(h.mappeId)) return;
@@ -2583,14 +3305,20 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async loescheHinweis(mappeId, paket, schluessel) {
       if (!istUuid(mappeId)) return false;
-      return (await sql`DELETE FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND paket_id = ${paket} AND schluessel = ${schluessel}`).count > 0;
+      return (
+        (
+          await sql`DELETE FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND paket_id = ${paket} AND schluessel = ${schluessel}`
+        ).count > 0
+      );
     },
     async loescheHinweiseVon(paket) {
       return (await sql`DELETE FROM mappen_hinweise WHERE haushalt_id = ${haushaltId} AND paket_id = ${paket}`).count;
     },
     async notizen(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt, id`).map(alsNotiz);
+      return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt, id`).map(
+        alsNotiz,
+      );
     },
     async erwaehntIn(mappeId) {
       if (!istUuid(mappeId)) return [];
@@ -2598,7 +3326,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const notiz = await sql`SELECT id, mappe_id, geaendert FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id <> ${mappeId}
         AND (text LIKE ${`%(mappe${muster.slice(1)}`} OR text LIKE ${`%(benutzer${muster.slice(1)}`}) ORDER BY geaendert DESC LIMIT 200`;
       // Formatierte Felder: Werte mit der Erwähnung – den Schlüssel sucht der Dienst heraus (Feldtyp „formatiert“).
-      const felder = await sql`SELECT m.id, m.geaendert, w.key FROM mappen m, jsonb_each_text(m.werte) w WHERE m.haushalt_id = ${haushaltId} AND m.id <> ${mappeId}
+      const felder =
+        await sql`SELECT m.id, m.geaendert, w.key FROM mappen m, jsonb_each_text(m.werte) w WHERE m.haushalt_id = ${haushaltId} AND m.id <> ${mappeId}
         AND m.werte::text LIKE ${muster} AND (w.value LIKE ${`%(mappe${muster.slice(1)}`} OR w.value LIKE ${`%(benutzer${muster.slice(1)}`}) ORDER BY m.geaendert DESC LIMIT 200`;
       return [
         ...notiz.map((x) => ({ mappeId: x.mappe_id as string, stelle: `notiz:${x.id as string}`, am: iso(x.geaendert) })),
@@ -2608,7 +3337,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async notizenVon(mappeIds) {
       const gueltig = [...new Set(mappeIds.filter(istUuid))];
       if (!gueltig.length) return [];
-      return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, erstellt, id`).map(alsNotiz);
+      return (
+        await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, erstellt, id`
+      ).map(alsNotiz);
     },
     async holeNotiz(id) {
       if (!istUuid(id)) return undefined;
@@ -2624,32 +3355,49 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return alsNotiz(r);
     },
     async aendereNotiz(id, text, von) {
-      const [r] = await sql`UPDATE notizen SET text = ${ohneTitel(text)}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
+      const [r] =
+        await sql`UPDATE notizen SET text = ${ohneTitel(text)}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
         WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
       return alsNotiz(r);
     },
-    async loescheNotiz(id) { await sql`DELETE FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
+    async loescheNotiz(id) {
+      await sql`DELETE FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
 
     /* ---------- Änderungshistorie (#57) ---------- */
     async historieSchreibe(e) {
       if (!e.length) return;
-      await sql`INSERT INTO historie ${sql(e.map((x) => ({
-        haushalt_id: haushaltId, mappe_id: x.mappeId, benutzer_id: istUuid(x.benutzerId) ? x.benutzerId : null, art: x.art, daten: json(sql, x.daten ?? {}),
-      })), 'haushalt_id', 'mappe_id', 'benutzer_id', 'art', 'daten')}`;
+      await sql`INSERT INTO historie ${sql(
+        e.map((x) => ({
+          haushalt_id: haushaltId,
+          mappe_id: x.mappeId,
+          benutzer_id: istUuid(x.benutzerId) ? x.benutzerId : null,
+          art: x.art,
+          daten: json(sql, x.daten ?? {}),
+        })),
+        'haushalt_id',
+        'mappe_id',
+        'benutzer_id',
+        'art',
+        'daten',
+      )}`;
     },
     async historie(mappeId, o = {}) {
       if (!istUuid(mappeId)) return [];
       const vor = Number.isSafeInteger(o.vor) ? o.vor! : null;
       // #800: Seiten über den Index historie (mappe_id, zeit DESC, id DESC) – ab dem Eintrag `vor`, nicht mit OFFSET.
-      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId}
+      return (
+        await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId}
         ${o.arten ? sql`AND art = ANY(${[...o.arten]}::text[])` : sql``}
         ${vor !== null ? sql`AND (zeit, id) < (SELECT v.zeit, v.id FROM historie v WHERE v.id = ${vor} AND v.mappe_id = ${mappeId})` : sql``}
-        ORDER BY zeit DESC, id DESC ${o.max ? sql`LIMIT ${o.max}` : sql``}`).map(alsHistorie);
+        ORDER BY zeit DESC, id DESC ${o.max ? sql`LIMIT ${o.max}` : sql``}`
+      ).map(alsHistorie);
     },
     async letzterAbruf(mappeId, art, benutzerId, dokumentId, fassung, version, seit) {
       if (!istUuid(mappeId)) return null;
       // #800: nur die Einträge der Mappe seit `seit` (Index historie_mappe_idx), darin dieselbe Person, Datei und Fassung.
-      const [r] = await sql`SELECT zeit FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND zeit >= ${seit} AND art = ${art}
+      const [r] =
+        await sql`SELECT zeit FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND zeit >= ${seit} AND art = ${art}
         AND benutzer_id IS NOT DISTINCT FROM ${istUuid(benutzerId) ? benutzerId : null}::uuid AND daten->>'dokumentId' = ${dokumentId}
         AND coalesce(daten->>'fassung', '') = ${fassung} AND coalesce(daten->>'version', '') = ${version === null ? '' : String(version)}
         ORDER BY zeit DESC LIMIT 1`;
@@ -2657,7 +3405,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async letzteBerechnung(mappeId, benutzerId, seit) {
       if (!istUuid(mappeId)) return null;
-      const [r] = await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND zeit >= ${seit} AND art = 'geaendert'
+      const [r] =
+        await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} AND zeit >= ${seit} AND art = 'geaendert'
         AND benutzer_id IS NOT DISTINCT FROM ${istUuid(benutzerId) ? benutzerId : null}::uuid AND daten->>'berechnet' = 'true'
         ORDER BY zeit DESC, id DESC LIMIT 1`;
       return r ? alsHistorie(r) : null;
@@ -2669,15 +3418,20 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async historieVon(mappeIds) {
       const gueltig = [...new Set(mappeIds.filter(istUuid))];
       if (!gueltig.length) return [];
-      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, zeit DESC, id DESC`).map(alsHistorie);
+      return (
+        await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, zeit DESC, id DESC`
+      ).map(alsHistorie);
     },
     async historieArt(art, max) {
-      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND art = ${art} ORDER BY zeit DESC, id DESC LIMIT ${max}`).map(alsHistorie);
+      return (
+        await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND art = ${art} ORDER BY zeit DESC, id DESC LIMIT ${max}`
+      ).map(alsHistorie);
     },
     async uebertrageAnMappe(von, nach) {
       if (!istUuid(von) || !istUuid(nach)) return { historie: 0, notizen: 0, aufgaben: 0, ablaeufe: 0 };
       // Aufgaben „Post für dich“ bleiben an der Post: Sie gelten nur dort und sind beim Auflösen schon erledigt.
-      const h = await sql`UPDATE historie SET mappe_id = ${nach}, daten = daten || ${json(sql, { ausPost: von })}::jsonb WHERE haushalt_id = ${haushaltId} AND mappe_id = ${von}`;
+      const h =
+        await sql`UPDATE historie SET mappe_id = ${nach}, daten = daten || ${json(sql, { ausPost: von })}::jsonb WHERE haushalt_id = ${haushaltId} AND mappe_id = ${von}`;
       const n = await sql`UPDATE notizen SET mappe_id = ${nach} WHERE haushalt_id = ${haushaltId} AND mappe_id = ${von}`;
       const a = await sql`UPDATE aufgaben SET mappe_id = ${nach} WHERE haushalt_id = ${haushaltId} AND mappe_id = ${von} AND art <> 'post'`;
       const e = await sql`UPDATE mappen_ablaeufe SET mappe_id = ${nach} WHERE haushalt_id = ${haushaltId} AND mappe_id = ${von}`;
@@ -2697,18 +3451,25 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     /* ---------- Fassungen (#1006) ---------- */
     async fassungen(art, eintrag, max) {
-      return (await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}
-        ORDER BY nr DESC ${max !== undefined ? sql`LIMIT ${max}` : sql``}`).map(alsFassung);
+      return (
+        await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}
+        ORDER BY nr DESC ${max !== undefined ? sql`LIMIT ${max}` : sql``}`
+      ).map(alsFassung);
     },
     async zaehleFassungen(art, eintrag) {
-      return Number((await sql`SELECT count(*)::int AS n FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}`)[0].n);
+      return Number(
+        (await sql`SELECT count(*)::int AS n FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}`)[0]
+          .n,
+      );
     },
     async fassung(art, eintrag, nr) {
-      const [r] = await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${nr}`;
+      const [r] =
+        await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${nr}`;
       return r ? alsFassung(r) : undefined;
     },
     async letzteFassungen(art) {
-      const rows = await sql`SELECT DISTINCT ON (eintrag) * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} ORDER BY eintrag, nr DESC`;
+      const rows =
+        await sql`SELECT DISTINCT ON (eintrag) * FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} ORDER BY eintrag, nr DESC`;
       return new Map(rows.map((r) => [r.eintrag as string, alsFassung(r)] as const));
     },
     async legeFassungAn(f) {
@@ -2724,14 +3485,17 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       await sql`DELETE FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${nr}`;
     },
     async vermerkeLoeschung(art, eintrag, vermerk) {
-      const [r] = await sql`SELECT max(nr) AS nr FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}`;
+      const [r] =
+        await sql`SELECT max(nr) AS nr FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag}`;
       if (r?.nr == null) return;
       await sql`DELETE FROM fassungen WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr < ${r.nr}`;
       await sql`UPDATE fassungen SET geloescht = ${json(sql, vermerk)} WHERE haushalt_id = ${haushaltId} AND art = ${art} AND eintrag = ${eintrag} AND nr = ${r.nr}`;
     },
     async geloeschteFassungen(arten) {
-      return (await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND geloescht IS NOT NULL AND art = ANY(${[...arten] as string[]}::text[])
-        ORDER BY geloescht->>'zeit' DESC, art, eintrag`).map(alsFassung);
+      return (
+        await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} AND geloescht IS NOT NULL AND art = ANY(${[...arten] as string[]}::text[])
+        ORDER BY geloescht->>'zeit' DESC, art, eintrag`
+      ).map(alsFassung);
     },
     async alleFassungen() {
       return (await sql`SELECT * FROM fassungen WHERE haushalt_id = ${haushaltId} ORDER BY art, eintrag, nr`).map(alsFassung);
@@ -2753,22 +3517,28 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     },
     async dokumenteMitTyp(mimes) {
       if (!mimes.length) return [];
-      return (await sql`SELECT ${DOK} FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mime = ANY(${mimes}::text[]) ORDER BY d.erstellt, d.id`).map(alsDokument);
+      return (
+        await sql`SELECT ${DOK} FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mime = ANY(${mimes}::text[]) ORDER BY d.erstellt, d.id`
+      ).map(alsDokument);
     },
     async dokumentTypen() {
       const z: Record<string, number> = {};
-      for (const r of await sql`SELECT mime, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} GROUP BY mime`) z[r.mime as string] = r.n as number;
+      for (const r of await sql`SELECT mime, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} GROUP BY mime`)
+        z[r.mime as string] = r.n as number;
       return z;
     },
     async grossePdfs(ab, max) {
-      return (await sql`
+      return (
+        await sql`
         SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere FROM dokumente d
         WHERE d.haushalt_id = ${haushaltId} AND d.mime = 'application/pdf' AND d.groesse >= ${ab}
-        ORDER BY d.groesse DESC, d.id LIMIT ${max}`).map(alsDokument);
+        ORDER BY d.groesse DESC, d.id LIMIT ${max}`
+      ).map(alsDokument);
     },
     async loescheVersion(dokumentId, nummer) {
-      const [r] = await sql`DELETE FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND nummer = ${nummer} RETURNING sha256`;
-      return r ? r.sha256 as string : null;
+      const [r] =
+        await sql`DELETE FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND nummer = ${nummer} RETURNING sha256`;
+      return r ? (r.sha256 as string) : null;
     },
     async zaehleDemo() {
       const r = await sql`SELECT typ_id, count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND demo GROUP BY typ_id`;
@@ -2784,11 +3554,17 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async loescheDemo(max) {
       return sql.begin(async (tx) => {
         const grenze = max && Number.isFinite(max) ? Math.max(1, Math.floor(max)) : null;
-        const ids = (grenze
-          ? await tx`SELECT id FROM mappen WHERE demo AND haushalt_id = ${haushaltId} LIMIT ${grenze}`
-          : await tx`SELECT id FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`).map((z) => z.id as string);
-        const dateien = ids.length ? (await tx`
-          SELECT DISTINCT sha256 FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${ids}::uuid[])`).map((z) => z.sha256 as string) : [];
+        const ids = (
+          grenze
+            ? await tx`SELECT id FROM mappen WHERE demo AND haushalt_id = ${haushaltId} LIMIT ${grenze}`
+            : await tx`SELECT id FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`
+        ).map((z) => z.id as string);
+        const dateien = ids.length
+          ? (
+              await tx`
+          SELECT DISTINCT sha256 FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${ids}::uuid[])`
+            ).map((z) => z.sha256 as string)
+          : [];
         let anzahl = 0;
         if (ids.length) {
           // Demo-Mappen verweisen aufeinander. Erst die Verweise entfernen (auch die auf dieses Paket),
@@ -2798,7 +3574,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         }
         // Demo-Mappen im Papierkorb gehen mit (#43) – im letzten Paket.
         if (!grenze || ids.length < grenze) {
-          const korb = await tx`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND (mappe ->> 'demo')::boolean RETURNING dokumente`;
+          const korb =
+            await tx`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND (mappe ->> 'demo')::boolean RETURNING dokumente`;
           for (const z of korb) for (const d of z.dokumente as Zeile[]) dateien.push(d.sha256 as string);
           anzahl += korb.count;
         }

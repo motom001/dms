@@ -31,7 +31,8 @@ import { MODUS_KOERPER_MAX } from './grenzen';
 
 const log = protokoll.modul('system');
 
-export type Startschritt = 'datenbank' | 'migration' | 'schluessel' | 'suchindex' | 'ordner' | 'titel' | 'benutzer' | 'typen' | 'dienste' | 'lasttest';
+export type Startschritt =
+  'datenbank' | 'migration' | 'schluessel' | 'suchindex' | 'ordner' | 'titel' | 'benutzer' | 'typen' | 'dienste' | 'lasttest';
 
 export type Startfehler =
   | { art: 'neuere-datenbank'; unbekannt: string[] }
@@ -74,7 +75,7 @@ export function startfehlerAus(e: unknown, stand: Pick<Startstand, 'schritt' | '
   return { art: 'allgemein', schritt: stand.schritt };
 }
 
-const html = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+const html = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 export class Startmodus {
   private app: FastifyInstance | null = null;
@@ -87,15 +88,20 @@ export class Startmodus {
     this.stand = { zustand: 'startet', schritt: 'datenbank', nr: null, von: null, menge: null, seit: this.jetzt(), fehler: null };
   }
 
-  get offen() { return !!this.app; }
+  get offen() {
+    return !!this.app;
+  }
   /** Tatsächlicher Port (Tests mit Port 0). */
-  get port(): number | null { const a = this.app?.server.address(); return typeof a === 'object' && a ? a.port : null; }
+  get port(): number | null {
+    const a = this.app?.server.address();
+    return typeof a === 'object' && a ? a.port : null;
+  }
 
   /** Nächster Schritt; `nr`/`von` z. B. für die Migrationen. */
   schritt(s: Startschritt, z?: { nr: number; von: number; datei?: string }) {
     if (this.stand.zustand === 'fehler') return;
     Object.assign(this.stand, { schritt: s, nr: z?.nr ?? null, von: z?.von ?? null, menge: null });
-    this.migration = s === 'migration' ? z?.datei ?? null : null;
+    this.migration = s === 'migration' ? (z?.datei ?? null) : null;
   }
 
   /** Mengenangabe im aktuellen Schritt, z. B. „120 von 200 Mappentypen“. */
@@ -128,7 +134,7 @@ export class Startmodus {
   /** Die Seite selbst: schlicht, ohne Skript (Neuladen per meta refresh), Stil inline (CSP erlaubt nur das). */
   seite(): string {
     const s = this.stand;
-    const neu = s.zustand === 'fehler' ? 30 : this.o.neuLadenS ?? 3;
+    const neu = s.zustand === 'fehler' ? 30 : (this.o.neuLadenS ?? 3);
     const teile: string[] = [];
     if (s.zustand === 'startet') {
       const anteil = s.menge && s.menge.gesamt > 0 ? s.menge.fertig / s.menge.gesamt : s.nr && s.von ? (s.nr - 1) / s.von : null;
@@ -142,11 +148,12 @@ export class Startmodus {
       );
     } else {
       const f = s.fehler!;
-      const grund = f.art === 'neuere-datenbank'
-        ? t('start.fehler.neuere-datenbank', { anzahl: f.unbekannt.length, letzte: f.unbekannt[f.unbekannt.length - 1] ?? '–' })
-        : f.art === 'migration'
-          ? t('start.fehler.migration', { nr: f.nr, von: f.von, datei: f.datei, code: f.code })
-          : t('start.fehler.allgemein', { schritt: this.schrittText({ schritt: f.schritt, nr: null, von: null }) });
+      const grund =
+        f.art === 'neuere-datenbank'
+          ? t('start.fehler.neuere-datenbank', { anzahl: f.unbekannt.length, letzte: f.unbekannt[f.unbekannt.length - 1] ?? '–' })
+          : f.art === 'migration'
+            ? t('start.fehler.migration', { nr: f.nr, von: f.von, datei: f.datei, code: f.code })
+            : t('start.fehler.allgemein', { schritt: this.schrittText({ schritt: f.schritt, nr: null, von: null }) });
       teile.push(
         `<h1>${html(t('start.fehler.titel'))}</h1>`,
         `<p class="schritt" role="alert">${html(grund)}</p>`,
@@ -183,21 +190,41 @@ ${teile.join('\n')}
     const app = Fastify({ trustProxy: this.o.proxy ?? false, bodyLimit: MODUS_KOERPER_MAX });
     app.setErrorHandler((e: unknown, _req, reply) => {
       log.warn('Fehler auf der Startseite', { fehler: (e as Error)?.message ?? String(e) });
-      return reply.code(503).header('retry-after', '5').send({ fehler: t('start.api'), startet: true });
+      return reply
+        .code(503)
+        .header('retry-after', '5')
+        .send({ fehler: t('start.api'), startet: true });
     });
     // Körper werden nie gelesen: jeder Inhalt wird angenommen und verworfen.
     app.removeAllContentTypeParsers();
-    app.addContentTypeParser('*', (req, _nutzlast, fertig) => { req.raw.resume(); fertig(null, null); });
-    app.addHook('onRequest', async (_req, reply) => { reply.header('cache-control', 'no-store'); });
+    app.addContentTypeParser('*', (req, _nutzlast, fertig) => {
+      req.raw.resume();
+      fertig(null, null);
+    });
+    app.addHook('onRequest', async (_req, reply) => {
+      reply.header('cache-control', 'no-store');
+    });
     app.addHook('onSend', async (req, reply, nutzlast) => {
       const typ = String(reply.getHeader('content-type') ?? '');
-      for (const [k, v] of Object.entries(sicherheitsKoepfe({ pfad: req.url.split('?')[0], https: req.protocol === 'https', html: typ.startsWith('text/html'), csp: reply.hasHeader('content-security-policy') }, this.o.einbetten ?? einbettenAus(undefined)))) {
+      for (const [k, v] of Object.entries(
+        sicherheitsKoepfe(
+          {
+            pfad: req.url.split('?')[0],
+            https: req.protocol === 'https',
+            html: typ.startsWith('text/html'),
+            csp: reply.hasHeader('content-security-policy'),
+          },
+          this.o.einbetten ?? einbettenAus(undefined),
+        ),
+      )) {
         if (!reply.hasHeader(k)) reply.header(k, v);
       }
       return nutzlast;
     });
     const nichtBereit = (reply: { code(c: number): { header(k: string, v: string): { send(b: unknown): unknown } } }) =>
-      reply.code(503).header('retry-after', this.stand.zustand === 'fehler' ? '30' : '5')
+      reply
+        .code(503)
+        .header('retry-after', this.stand.zustand === 'fehler' ? '30' : '5')
         .send({ fehler: this.stand.zustand === 'fehler' ? t('start.api.fehler') : t('start.api'), startet: true });
     app.get('/api/gesundheit', async (_req, reply) => reply.code(503).header('retry-after', '5').send(this.gesundheit()));
 
@@ -208,7 +235,11 @@ ${teile.join('\n')}
       const pfad = decodeURIComponent(req.url.split('?')[0]);
       const rel = normalize(pfad.slice(1));
       if (webDir && rel.startsWith(`hilfe${sep}`) && !rel.split(sep).includes('..')) {
-        try { if (statSync(join(webDir, rel)).isFile()) return reply.sendFile(rel); } catch { /* keine Datei: weiter unten */ }
+        try {
+          if (statSync(join(webDir, rel)).isFile()) return reply.sendFile(rel);
+        } catch {
+          /* keine Datei: weiter unten */
+        }
       }
       const a = hilfeAntwort(req.url, webDir ?? undefined);
       return a ? hilfeSenden(reply, a) : null;

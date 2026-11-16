@@ -18,8 +18,20 @@ import { chromium } from '../../../web/rauchtest/playwright.mjs';
 const WURZEL = resolve(process.argv[2] ?? 'seite');
 const BILDER = resolve(process.argv[3] ?? 'start-bilder');
 await mkdir(BILDER, { recursive: true });
-const AXE = await readFile(createRequire(join(import.meta.dirname, '..', '..', '..', 'package.json')).resolve('axe-core/axe.min.js'), 'utf8');
-const TYP = { '.html': 'text/html; charset=utf-8', '.mjs': 'text/javascript', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const AXE = await readFile(
+  createRequire(join(import.meta.dirname, '..', '..', '..', 'package.json')).resolve('axe-core/axe.min.js'),
+  'utf8',
+);
+const TYP = {
+  '.html': 'text/html; charset=utf-8',
+  '.mjs': 'text/javascript',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+};
 
 const server = createServer(async (req, res) => {
   let p = join(WURZEL, decodeURIComponent(new URL(req.url, 'http://x').pathname));
@@ -37,12 +49,18 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const BASIS = `http://127.0.0.1:${server.address().port}`;
 
 const fehler = [];
-const pruefe = (bedingung, text) => { if (!bedingung) fehler.push(text); };
+const pruefe = (bedingung, text) => {
+  if (!bedingung) fehler.push(text);
+};
 const browser = await chromium.launch();
 
 async function axe(s, name) {
   await s.evaluate(AXE);
-  const v = await s.evaluate(async () => (await globalThis.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'] } })).violations.map((x) => `${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`));
+  const v = await s.evaluate(async () =>
+    (
+      await globalThis.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'] } })
+    ).violations.map((x) => `${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`),
+  );
   for (const x of v) fehler.push(`axe ${name}: ${x}`);
 }
 
@@ -63,10 +81,16 @@ try {
   pruefe(await feld.evaluate((el) => el === document.activeElement), 'Suchfeld hat beim Laden nicht den Fokus');
   pruefe(await s.getByRole('img', { name: 'Ablago' }).first().isVisible(), 'Logo fehlt');
   await feld.fill('Sicherung');
-  await s.locator('.hs-liste a').first().filter({ hasText: /Sicherung/i }).waitFor();
+  await s
+    .locator('.hs-liste a')
+    .first()
+    .filter({ hasText: /Sicherung/i })
+    .waitFor();
   const treffer = s.locator('.hs-liste a');
-  pruefe(await treffer.count() > 1 && await treffer.count() <= 10, `Treffer: ${await treffer.count()} (erwartet 2–10)`);
-  const handbuecher = new Set(await s.locator('.hs-liste a').evaluateAll((as) => as.map((a) => a.className.replace('hs-treffer', '').trim() || 'benutzer')));
+  pruefe((await treffer.count()) > 1 && (await treffer.count()) <= 10, `Treffer: ${await treffer.count()} (erwartet 2–10)`);
+  const handbuecher = new Set(
+    await s.locator('.hs-liste a').evaluateAll((as) => as.map((a) => a.className.replace('hs-treffer', '').trim() || 'benutzer')),
+  );
   pruefe(handbuecher.size >= 2, `Treffer nur aus ${[...handbuecher].join(', ')}`);
   await feld.press('ArrowDown');
   pruefe(await treffer.first().evaluate((el) => el === document.activeElement), 'Pfeil runter führt nicht in den ersten Treffer');
@@ -78,9 +102,17 @@ try {
   await s.getByRole('status').filter({ hasText: 'Nichts gefunden' }).waitFor();
   // Umlaut-Toleranz: „Gebuhr“/„Kuendigen“ wie „Gebühr“/„Kündigen“.
   await feld.fill('kuendigen');
-  await s.locator('.hs-liste a').first().filter({ hasText: /kündigen/i }).waitFor();
+  await s
+    .locator('.hs-liste a')
+    .first()
+    .filter({ hasText: /kündigen/i })
+    .waitFor();
   await feld.fill('Sicherung');
-  await s.locator('.hs-liste a').first().filter({ hasText: /Sicherung/i }).waitFor();
+  await s
+    .locator('.hs-liste a')
+    .first()
+    .filter({ hasText: /Sicherung/i })
+    .waitFor();
   await s.screenshot({ path: join(BILDER, '404-hell.png'), fullPage: true });
   // Meldelink: Vorlage, Adresse vorausgefüllt – hier (nicht help.ablago.app) nur der Pfad, nie Rechnername.
   const melden = new URL(await s.getByRole('link', { name: 'Kaputten Link melden' }).getAttribute('href'));
@@ -107,11 +139,20 @@ try {
   s = await seite({ locale: 'en-GB' });
   await s.goto(`${BASIS}/en/gibt-es-nicht/`);
   await s.getByRole('heading', { name: 'This page doesn’t exist here', level: 1 }).waitFor();
-  pruefe(await s.evaluate(() => document.documentElement.lang) === 'en', 'lang nicht en');
-  pruefe((await s.getByRole('link', { name: /^User manual/ }).getAttribute('href')).endsWith('benutzer/aktuell/en/'), 'Karte Benutzerhandbuch nicht englisch');
+  pruefe((await s.evaluate(() => document.documentElement.lang)) === 'en', 'lang nicht en');
+  pruefe(
+    (await s.getByRole('link', { name: /^User manual/ }).getAttribute('href')).endsWith('benutzer/aktuell/en/'),
+    'Karte Benutzerhandbuch nicht englisch',
+  );
   await s.getByRole('searchbox', { name: 'Search all manuals' }).fill('backup');
-  await s.getByRole('status').filter({ hasText: /\d+ results?/ }).waitFor();
-  pruefe((await s.locator('.hs-liste a').first().getAttribute('href')).includes('/aktuell/en/'), 'Englische Suche trifft nicht die englischen Handbücher');
+  await s
+    .getByRole('status')
+    .filter({ hasText: /\d+ results?/ })
+    .waitFor();
+  pruefe(
+    (await s.locator('.hs-liste a').first().getAttribute('href')).includes('/aktuell/en/'),
+    'Englische Suche trifft nicht die englischen Handbücher',
+  );
   await s.screenshot({ path: join(BILDER, '404-en.png'), fullPage: true });
   await s.context().close();
 
@@ -126,7 +167,10 @@ try {
   await s.goto(`${BASIS}/`);
   const startfeld = s.getByRole('searchbox', { name: 'In allen Handbüchern suchen' });
   await startfeld.fill('Post');
-  await s.getByRole('status').filter({ hasText: /\d+ Treffer/ }).waitFor();
+  await s
+    .getByRole('status')
+    .filter({ hasText: /\d+ Treffer/ })
+    .waitFor();
   await s.screenshot({ path: join(BILDER, 'start-suche.png'), fullPage: true });
   await s.context().close();
 

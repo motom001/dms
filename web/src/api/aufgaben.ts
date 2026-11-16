@@ -7,8 +7,9 @@ import { ApiFehler, anfrage } from './anfrage';
 export type AufgabenEmpfaenger = { benutzerId: string | null; wirksam: string | null; gesetzt: boolean; gespeichert: string | null };
 /** 404 ohne Leserecht (#124): eigene offene Aufgaben an der Mappe, zum Erledigen oder Weitergeben. */
 export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
-  const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
-  return d?.verborgen ? d.aufgaben ?? [] : null;
+  const d =
+    x instanceof ApiFehler && x.status === 404 ? (x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined) : undefined;
+  return d?.verborgen ? (d.aufgaben ?? []) : null;
 };
 
 export const aufgabenApi = {
@@ -19,19 +20,29 @@ export const aufgabenApi = {
   zuordnungRueckgaengig: (id: string) => anfrage<{ post: Mappe; dokumente: number }>('POST', `/api/aufgaben/${id}/rueckgaengig`),
   folgetermin: (id: string) => anfrage<Mappe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/folgetermin`),
   /** „Zu erledigen“ → Monat und Jahr (#528, #725): ein Zeitraum in einer Anfrage, mit Folgeterminen und Feiertagen. */
-  termine: (von: string, bis: string, favoriten = false) => anfrage<TermineAntwort>('GET', `/api/termine?von=${von}&bis=${bis}${favoriten ? '&favoriten=1' : ''}`),
+  termine: (von: string, bis: string, favoriten = false) =>
+    anfrage<TermineAntwort>('GET', `/api/termine?von=${von}&bis=${bis}${favoriten ? '&favoriten=1' : ''}`),
   /** Startseite (#725): Kachel „Nächster Termin“. */
   naechsterTermin: () => anfrage<{ termin: Termin | null; ueberfaellig: number }>('GET', '/api/termine/naechster'),
-  aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
+  aufgabeDelegieren: (id: string, empfaengerId: string) =>
+    anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
   /** Sammel-Weitergabe und -Erledigen (#415, #419). */
-  aufgabenWeitergeben: (ids: string[], empfaengerId: string) => anfrage<{ weitergegeben: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/weitergeben', { ids, empfaengerId }),
-  aufgabenErledigen: (ids: string[]) => anfrage<{ erledigt: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/erledigt', { ids }),
+  aufgabenWeitergeben: (ids: string[], empfaengerId: string) =>
+    anfrage<{ weitergegeben: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/weitergeben', {
+      ids,
+      empfaengerId,
+    }),
+  aufgabenErledigen: (ids: string[]) =>
+    anfrage<{ erledigt: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/erledigt', { ids }),
   meineAufgaben: () => anfrage<Array<Aufgabe & { verborgen?: boolean }>>('GET', '/api/aufgaben'),
   /** Aufgaben bei Personen ohne Leserecht (#798): Übersicht und Leserecht auf Zeit (nur Administratoren). */
-  ohneLeserecht: () => anfrage<{ offen: FallOhneLeserecht[]; vergangen: FallOhneLeserecht[] }>('GET', '/api/werkbank/aufgaben/ohne-leserecht'),
+  ohneLeserecht: () =>
+    anfrage<{ offen: FallOhneLeserecht[]; vergangen: FallOhneLeserecht[] }>('GET', '/api/werkbank/aufgaben/ohne-leserecht'),
   leserechtAufZeit: (fallId: string) => anfrage<FallOhneLeserecht>('POST', `/api/werkbank/aufgaben/ohne-leserecht/${fallId}/leserecht`),
-  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; unlesbar?: string[] }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
+  aufgabenWerkbank: (erledigt = false) =>
+    anfrage<{ aufgaben: Aufgabe[]; unlesbar?: string[] }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
   // Aufgaben ohne Empfänger gehen an einen Alltags-Benutzer (#719).
   aufgabenEmpfaenger: () => anfrage<AufgabenEmpfaenger>('GET', '/api/werkbank/aufgaben-empfaenger'),
-  aufgabenEmpfaengerSpeichern: (benutzerId: string | null) => anfrage<AufgabenEmpfaenger>('PUT', '/api/werkbank/aufgaben-empfaenger', { benutzerId }),
+  aufgabenEmpfaengerSpeichern: (benutzerId: string | null) =>
+    anfrage<AufgabenEmpfaenger>('PUT', '/api/werkbank/aufgaben-empfaenger', { benutzerId }),
 };

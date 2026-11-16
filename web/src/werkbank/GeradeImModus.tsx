@@ -20,5 +20,9 @@ export function GeradeImModus() {
   useNachladen(kontoApi.geradeImModus, setAndere, { nachlauf: false, erstesMelden: true });
   if (!andere.length) return null;
   const namen = andere.map((x) => t('konten.verwaltung.andere.person', { name: x.name, uhrzeit: uhrzeit(x.seit) })).join(', ');
-  return <p className="gerade-im-modus klein" id="gerade-im-modus">{t('konten.verwaltung.andere.text', { namen })}</p>;
+  return (
+    <p className="gerade-im-modus klein" id="gerade-im-modus">
+      {t('konten.verwaltung.andere.text', { namen })}
+    </p>
+  );
 }

@@ -20,12 +20,17 @@ import { SprachDienst } from '../src/sprachwahl';
 
 const PW = 'ein-langes-passwort';
 
-after(() => { setzeSprache('de'); setzeErlaubteSprachen(['de', 'en']); });
+after(() => {
+  setzeSprache('de');
+  setzeErlaubteSprachen(['de', 'en']);
+});
 
 describe('Rückfall und Sprache je Anfrage (#729)', () => {
   it('fehlt ein Text, kommt erst Englisch, dann Deutsch – nie eine leere Stelle', () => {
-    const tt = uebersetzer({ p: { a: 'A-de', b: 'B-de', c: 'C-de' } },
-      { en: { p: { a: 'A-en', b: 'B-en' } }, fr: { p: { a: 'A-fr', b: '' } } });
+    const tt = uebersetzer(
+      { p: { a: 'A-de', b: 'B-de', c: 'C-de' } },
+      { en: { p: { a: 'A-en', b: 'B-en' } }, fr: { p: { a: 'A-fr', b: '' } } },
+    );
     inSprache('fr', () => {
       assert.equal(tt('p.a'), 'A-fr');
       assert.equal(tt('p.b'), 'B-en', 'leerer Text zählt als fehlend');
@@ -47,10 +52,19 @@ describe('Rückfall und Sprache je Anfrage (#729)', () => {
 
   it('mitSpracheVon nimmt die Wahl der Person nur, wenn sie erlaubt ist', () => {
     setzeErlaubteSprachen(['de']);
-    assert.equal(mitSpracheVon({ sprache: 'en' }, () => sprache()), 'de');
+    assert.equal(
+      mitSpracheVon({ sprache: 'en' }, () => sprache()),
+      'de',
+    );
     setzeErlaubteSprachen(['de', 'en']);
-    assert.equal(mitSpracheVon({ sprache: 'en' }, () => sprache()), 'en');
-    assert.equal(mitSpracheVon({ sprache: null }, () => sprache()), 'de');
+    assert.equal(
+      mitSpracheVon({ sprache: 'en' }, () => sprache()),
+      'en',
+    );
+    assert.equal(
+      mitSpracheVon({ sprache: null }, () => sprache()),
+      'de',
+    );
   });
 
   it('Kopf X-Sprache: erste erlaubte, auch aus „en-GB“', () => {
@@ -92,7 +106,11 @@ describe('Formate und Systemfelder je Sprache (#729)', () => {
 describe('Einstellung „sprachen“ und Sprache der Person (#729)', () => {
   async function aufbau() {
     const mails: Array<{ an: string; betreff: string; text: string }> = [];
-    const mailer: Mailer = { async sende(an, betreff, text) { mails.push({ an, betreff: String(betreff), text: String(text) }); } };
+    const mailer: Mailer = {
+      async sende(an, betreff, text) {
+        mails.push({ an, betreff: String(betreff), text: String(text) });
+      },
+    };
     const einst = speicherEinstellungen();
     const sprachen = new SprachDienst(einst);
     await sprachen.lade();
@@ -107,12 +125,22 @@ describe('Einstellung „sprachen“ und Sprache der Person (#729)', () => {
     const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
     const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), sprachen });
     const anmelden = async (email: string) => {
-      const a = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email, passwort: PW }, headers: { 'x-dms': '1' } });
+      const a = await app.inject({
+        method: 'POST',
+        url: '/api/konto/anmelden',
+        payload: { email, passwort: PW },
+        headers: { 'x-dms': '1' },
+      });
       assert.equal(a.statusCode, 200, a.body);
       return ([] as string[]).concat(a.headers['set-cookie'] as string | string[])[0].split(';')[0];
     };
     const rufe = (cookie: string, method: 'GET' | 'PUT' | 'POST', url: string, payload?: unknown, kopf: Record<string, string> = {}) =>
-      app.inject({ method, url, ...(payload === undefined ? {} : { payload: payload as object }), headers: { 'x-dms': '1', cookie, ...kopf } });
+      app.inject({
+        method,
+        url,
+        ...(payload === undefined ? {} : { payload: payload as object }),
+        headers: { 'x-dms': '1', cookie, ...kopf },
+      });
     return { app, konten, sprachen, mails, lena, jonas: r.benutzer, anmelden, rufe };
   }
 
@@ -134,7 +162,10 @@ describe('Einstellung „sprachen“ und Sprache der Person (#729)', () => {
       // Englisch nicht mehr erlaubt: die Person darf es nicht wählen.
       assert.equal((await x.rufe(jonas, 'PUT', '/api/konto/profil', { sprache: 'en' })).statusCode, 422);
       await x.rufe(lena, 'PUT', '/api/werkbank/sprachen', { standard: 'de', erlaubt: ['de', 'en'] });
-    } finally { await x.app.close(); x.sprachen.stoppe(); }
+    } finally {
+      await x.app.close();
+      x.sprachen.stoppe();
+    }
   });
 
   it('die Person wählt ihre Sprache; Meldungen und Mails kommen dann in ihr', async () => {
@@ -155,10 +186,16 @@ describe('Einstellung „sprachen“ und Sprache der Person (#729)', () => {
       // Mail an Jonas auf Englisch, an Lena auf Deutsch
       await x.konten.neuerLink(x.jonas.id);
       await x.konten.neuerLink(x.lena.id);
-      assert.deepEqual(x.mails.slice(-2).map((m) => m.betreff), ['Reset your Ablago password', 'Passwort für Ablago zurücksetzen']);
+      assert.deepEqual(
+        x.mails.slice(-2).map((m) => m.betreff),
+        ['Reset your Ablago password', 'Passwort für Ablago zurücksetzen'],
+      );
       // Zurück auf „wie die Ablage“
       assert.equal((await x.rufe(jonas, 'PUT', '/api/konto/profil', { sprache: null })).statusCode, 200);
       assert.equal((await x.rufe(jonas, 'GET', '/api/sprache')).json().sprache, 'de');
-    } finally { await x.app.close(); x.sprachen.stoppe(); }
+    } finally {
+      await x.app.close();
+      x.sprachen.stoppe();
+    }
   });
 });

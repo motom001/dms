@@ -71,10 +71,25 @@ import { mappenRouten } from './mappen/mappen.routen';
 import { dokumenteRouten } from './dokumente/dokumente.routen';
 
 /** Früher hier definiert (#960: nach http/routen-hilfen.ts verschoben), weiter auch von hier erreichbar. */
-export { SITZUNG_COOKIE, SITZUNG_SEKUNDEN, ZWEITE_ABGELEHNT, leseCookie, BINDUNG_COOKIE, ANBIETER_COOKIE, POSTFACH_BINDUNG_COOKIE, kurzCookie, passtEtag, nurEigeneBereiche, kontaktVorschlaege } from './http/routen-hilfen';
+export {
+  SITZUNG_COOKIE,
+  SITZUNG_SEKUNDEN,
+  ZWEITE_ABGELEHNT,
+  leseCookie,
+  BINDUNG_COOKIE,
+  ANBIETER_COOKIE,
+  POSTFACH_BINDUNG_COOKIE,
+  kurzCookie,
+  passtEtag,
+  nurEigeneBereiche,
+  kontaktVorschlaege,
+} from './http/routen-hilfen';
 
 /** Teuerste Abfragen (#894): nur auf Anfrage gelesen bzw. zurückgesetzt (Lasttest). */
-export interface Abfragestatistik { stand(anzahl: number): Promise<AbfragenStand>; zuruecksetzen(): Promise<Zuruecksetzen> }
+export interface Abfragestatistik {
+  stand(anzahl: number): Promise<AbfragenStand>;
+  zuruecksetzen(): Promise<Zuruecksetzen>;
+}
 
 /**
  * Alle Schnittstellen an einem Ort, jede mit ihrer Zugriffsstufe:
@@ -123,7 +138,10 @@ export interface Datei {
   koepfe?: Record<string, string>;
 }
 export interface Antwort {
-  status?: number; body?: unknown; sitzungSetzen?: string | null; datei?: Datei;
+  status?: number;
+  body?: unknown;
+  sitzungSetzen?: string | null;
+  datei?: Datei;
   /** Weiterleitung (302), z. B. zum Anbieter (#241). */
   weiterleiten?: string;
   /** Weitere Cookies (Set-Cookie). */
@@ -359,9 +377,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   // Vektoren (#442) ändern das Dokument nicht: Lesen reicht, das Recht dms:vektoren prüft der Dienst.
   // Fassung und Vorschaubild (#577) ändern das Dokument auch nicht: Lesen reicht, dms:umwandeln prüft der Dienst.
   // Leerseiten markieren (#997) ändert das Dokument nicht: Lesen reicht, dms:leerseiten prüft der Dienst.
-  const lesendePost = (r: Route) => /\/dokumente\/gleiche$|\/dokumente\/:id\/vektor$|\/vektoren\/aehnliche$|\/dokumente\/:id\/(fassung|vorschaubild|archivfassung|leerseiten)$/.test(r.pfad);
+  const lesendePost = (r: Route) =>
+    /\/dokumente\/gleiche$|\/dokumente\/:id\/vektor$|\/vektoren\/aehnliche$|\/dokumente\/:id\/(fassung|vorschaubild|archivfassung|leerseiten)$/.test(
+      r.pfad,
+    );
   // Volltext und Sprache (#614): mit dms:volltext reicht Lesen – für welche Dokumente, prüft der Dienst (Dateitypen des Pakets).
-  const nurVolltext = (r: Route, s: readonly string[] | undefined) => r.methode === 'PUT' && /\/dokumente\/:id\/(volltext|sprache)$/.test(r.pfad) && !!s?.includes('dms:volltext');
+  const nurVolltext = (r: Route, s: readonly string[] | undefined) =>
+    r.methode === 'PUT' && /\/dokumente\/:id\/(volltext|sprache)$/.test(r.pfad) && !!s?.includes('dms:volltext');
   const dokumentRecht = async (r: Route, a: Anfrage): Promise<'keine' | 'lesen' | 'schreiben' | null> => {
     if (a.benutzer?.art !== 'dienst') return null;
     if (nieFuerPakete(r)) throw new Fachfehler(403, t('meldungen.routen.pakete-duerfen-keine-e'));
@@ -384,12 +406,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const paketRecht = await dokumentRecht(r, a);
       const antwort = await r.handler(a);
       if (antwort.body === undefined) return antwort;
-      const body = paketRecht === 'keine' && r.methode === 'GET' && /\/mappen\/:id$/.test(r.pfad) ? ohneDokumente(antwort.body) : antwort.body;
+      const body =
+        paketRecht === 'keine' && r.methode === 'GET' && /\/mappen\/:id$/.test(r.pfad) ? ohneDokumente(antwort.body) : antwort.body;
       return { ...antwort, body: maskiere(body, lesbar) };
     },
   }));
 }
-
 
 /** Zu welchem Modul eine Anfrage gehört (für das Protokoll). */
 /**
@@ -436,7 +458,13 @@ export function dateiKoepfe(d: Datei): Record<string, string> {
 /** Set-Cookie für die Sitzung; `null` löscht sie. HttpOnly: kein Zugriff aus Skripten. */
 
 export function sitzungsCookie(schluessel: string | null, sicher: boolean): string {
-  const teile = [`${SITZUNG_COOKIE}=${schluessel ? encodeURIComponent(schluessel) : ''}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${schluessel ? SITZUNG_SEKUNDEN : 0}`];
+  const teile = [
+    `${SITZUNG_COOKIE}=${schluessel ? encodeURIComponent(schluessel) : ''}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${schluessel ? SITZUNG_SEKUNDEN : 0}`,
+  ];
   if (sicher) teile.push('Secure');
   return teile.join('; ');
 }
@@ -458,14 +486,25 @@ export function pflichtZuruecknehmen(r: Pick<Route, 'methode' | 'pfad'>, a: Pick
  * müssen den Header X-DMS tragen, den nur die eigene Oberfläche setzt.
  */
 
-export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => string | undefined, konten: Konten, schluessel?: ApiSchluesselDienst, konsole?: Konsolenzugang) {
+export async function pruefeZugang(
+  r: Route,
+  a: Anfrage,
+  kopf: (n: string) => string | undefined,
+  konten: Konten,
+  schluessel?: ApiSchluesselDienst,
+  konsole?: Konsolenzugang,
+) {
   // Befehl `dms` im Container (#244): Schlüssel aus /tmp, nur über Loopback; handelt als Person mit „Gesamte
   // Verwaltung“ im Verwaltungsmodus (#818) – wer Zugang zum Container hat, hat ohnehin alles.
   const k = kopf(KONSOLE_KOPF);
   if (k !== undefined) {
-    if (!konsole || !konsole.passt(k) || !istLoopback(a.peer)) throw new Fachfehler(401, t('meldungen.routen.konsolenzugang-ungueltig-der-befehl'));
+    if (!konsole || !konsole.passt(k) || !istLoopback(a.peer))
+      throw new Fachfehler(401, t('meldungen.routen.konsolenzugang-ungueltig-der-befehl'));
     a.konsole = true;
-    try { a.benutzer = { ...konsolenBenutzer(await konten.listeBenutzer(), kopf(ALS_KOPF)), rolle: 'admin' }; a.verwaltungsmodus = true; } catch (e) {
+    try {
+      a.benutzer = { ...konsolenBenutzer(await konten.listeBenutzer(), kopf(ALS_KOPF)), rolle: 'admin' };
+      a.verwaltungsmodus = true;
+    } catch (e) {
       // Nur die Konsolen-Befehle selbst gehen auch ohne Administrator (z. B. Passwort setzen).
       if (!r.konsole) throw e;
     }
@@ -479,14 +518,17 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
     const s = await schluessel.pruefe(auth);
     const b = s ? await konten.benutzerMitId(s.benutzerId) : undefined;
     if (!s || !b) throw new Fachfehler(401, t('meldungen.routen.der-benutzer-dieses-schluessels'));
-    a.benutzer = b; a.apiSchluessel = s;
+    a.benutzer = b;
+    a.apiSchluessel = s;
     // „Nur Zähler“ (#625): genau eine Adresse, alles andere 403.
-    if (s.recht === NUR_ZAEHLER && !(r.methode === 'GET' && r.pfad === ZAEHLER_PFAD)) throw new Fachfehler(403, t('api.schluessel.nur-zaehler'));
+    if (s.recht === NUR_ZAEHLER && !(r.methode === 'GET' && r.pfad === ZAEHLER_PFAD))
+      throw new Fachfehler(403, t('api.schluessel.nur-zaehler'));
     // Übergang (#636): Pakete für die Kopie außer Haus haben seit 0.158.1 nur noch einen Leseschlüssel und melden ihren
     // Stand in der Antwort auf das Ereignis. Ältere Fassungen dürfen noch per PUT melden (die Route prüft, ob ein Paket
     // mit dms:sicherung-lesen fragt). Entfällt mit 1.0.0 (uebergaenge.ts, #902).
     const uebergang = r.methode === 'PUT' && (r.pfad === SICHERUNG_EXTERN_PFAD || r.pfad === SICHERUNG_HOLEN_PFAD);
-    if (r.methode !== 'GET' && s.recht === 'lesen' && !uebergang) throw new Fachfehler(403, t('meldungen.routen.dieser-api-schluessel-darf'));
+    if (r.methode !== 'GET' && s.recht === 'lesen' && !uebergang)
+      throw new Fachfehler(403, t('meldungen.routen.dieser-api-schluessel-darf'));
     // #818 (Frage 9 von Sicherheit): API-Schlüssel bekommen nie Verwaltungsrechte – auch nicht von Verwaltenden.
     a.benutzer = { ...b, rolle: 'mitglied' };
     if (r.zugang === 'admin') throw new Fachfehler(403, t('konten.verwaltung.fehler.schluessel'));
@@ -505,12 +547,20 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
     if (!anmeldung?.benutzer) return {};
     // Verwaltungsmodus (#819): Zustand der Sitzung auf dem Server. Aktivität = jede ändernde Anfrage oder eine, die die
     // Oberfläche nach einer Eingabe als „aktiv“ kennzeichnet – Abfragen im Hintergrund (#919, `still`) nie.
-    const aktiv = !r.still && ((r.methode !== 'GET' && !r.lesend && !r.pfad.startsWith('/api/konto/verwaltung')) || kopf('x-dms-aktiv') === '1');
+    const aktiv =
+      !r.still && ((r.methode !== 'GET' && !r.lesend && !r.pfad.startsWith('/api/konto/verwaltung')) || kopf('x-dms-aktiv') === '1');
     const verwaltungsmodus = await konten.modusPruefen(anmeldung.benutzer, a.sitzung, anmeldung.sitzung, aktiv);
-    return { benutzer: { ...anmeldung.benutzer, rolle: verwaltungsmodus ? 'admin' as const : 'mitglied' as const }, sitzungsDaten: anmeldung.sitzung, verwaltungsmodus };
+    return {
+      benutzer: { ...anmeldung.benutzer, rolle: verwaltungsmodus ? ('admin' as const) : ('mitglied' as const) },
+      sitzungsDaten: anmeldung.sitzung,
+      verwaltungsmodus,
+    };
   };
   // Datenbank antwortet nicht (#1198): offene Anfragen mit Zeitgrenze laufen dann ohne Anmeldung weiter.
-  const s = r.zugang === 'offen' && r.anmeldungHoechstensMs ? await hoechstens(sitzung(), r.anmeldungHoechstensMs, (): Sitzung => ({})) : await sitzung();
+  const s =
+    r.zugang === 'offen' && r.anmeldungHoechstensMs
+      ? await hoechstens(sitzung(), r.anmeldungHoechstensMs, (): Sitzung => ({}))
+      : await sitzung();
   a.benutzer = s.benutzer;
   a.sitzungsDaten = s.sitzungsDaten;
   if (s.benutzer) a.verwaltungsmodus = s.verwaltungsmodus;
@@ -518,13 +568,23 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
   if (!a.benutzer) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: nur das eigene Konto.
   // #416: gilt erst für Sitzungen ab dem Einschalten der Pflicht; die Pflicht selbst lesen und ausschalten geht immer.
-  if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)
-    && (await konten.zweifaktor.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))) {
+  if (
+    konten.zweifaktor &&
+    !a.sitzungsDaten?.vertretungId &&
+    !r.pfad.startsWith('/api/konto/') &&
+    !pflichtZuruecknehmen(r, a) &&
+    (await konten.zweifaktor.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))
+  ) {
     throw new Fachfehler(403, t('meldungen.routen.bitte-zuerst-die-zwei'));
   }
   // Passkey vorgeschrieben (#811), aber noch keiner da: ebenso nur das eigene Konto (#416: erst für neue Sitzungen).
-  if (konten.passkeys && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)
-    && (await konten.passkeys.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))) {
+  if (
+    konten.passkeys &&
+    !a.sitzungsDaten?.vertretungId &&
+    !r.pfad.startsWith('/api/konto/') &&
+    !pflichtZuruecknehmen(r, a) &&
+    (await konten.passkeys.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))
+  ) {
     throw new Fachfehler(403, t('anmeldung.passkey.fehler.pflicht'));
   }
   if (r.zugang === 'admin') pruefeVerwaltung(r, a, konten);
@@ -539,10 +599,19 @@ export function pruefeVerwaltung(route: Pick<Route, 'methode' | 'pfad' | 'bereic
   const b = a.benutzer!;
   if (a.konsole) return;
   if (!darfVerwalten(b)) throw new Fachfehler(403, t('konten.verwaltung.fehler.recht'));
-  if (!a.verwaltungsmodus) throw new Fachfehler(403, t('konten.verwaltung.fehler.modus'), { verwaltungsmodus: true, heuteBestaetigt: konten.heuteBestaetigt(a.sitzungsDaten), frisch: konten.istFrisch(a.sitzungsDaten) });
+  if (!a.verwaltungsmodus)
+    throw new Fachfehler(403, t('konten.verwaltung.fehler.modus'), {
+      verwaltungsmodus: true,
+      heuteBestaetigt: konten.heuteBestaetigt(a.sitzungsDaten),
+      frisch: konten.istFrisch(a.sitzungsDaten),
+    });
   const bereiche = bereicheDerRoute(r.methode, r.pfad);
-  const darf = bereiche === null ? hatGesamt(b) : bereiche.some((x) => (x === JEDER ? darfVerwalten(b) : x === NUR_GESAMT ? hatGesamt(b) : darfBereich(b, x)));
+  const darf =
+    bereiche === null
+      ? hatGesamt(b)
+      : bereiche.some((x) => (x === JEDER ? darfVerwalten(b) : x === NUR_GESAMT ? hatGesamt(b) : darfBereich(b, x)));
   if (!darf) throw new Fachfehler(403, t('konten.verwaltung.fehler.bereich'), { bereich: bereiche?.[0] ?? null });
   const heikel = heikleHandlung(r.methode, r.pfad, a.body);
-  if (heikel && !konten.istFrisch(a.sitzungsDaten)) throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung: heikel });
+  if (heikel && !konten.istFrisch(a.sitzungsDaten))
+    throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung: heikel });
 }

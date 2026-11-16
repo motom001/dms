@@ -19,11 +19,39 @@ const istVerschluesselt = (v: unknown): v is string => typeof v === 'string' && 
  * allgemeine Wörter wie `zugriff` – solche Werte liegen verschlüsselt (`dms1$`) vor und fallen über den Wert heraus.
  */
 const GEHEIME_NAMEN = new Set([
-  'passwort', 'password', 'passwd', 'passworthash', 'passwordhash', 'schluesselhash', 'hashschluessel',
-  'geheimnis', 'secret', 'clientsecret', 'client_secret', 'secretaccesskey', 'secret_access_key',
-  'token', 'accesstoken', 'access_token', 'refreshtoken', 'refresh_token', 'id_token', 'oauthtoken', 'zugriffstoken',
-  'apikey', 'api_key', 'apischluessel', 'privatekey', 'private_key', 'privaterschluessel',
-  'totp', 'totpgeheimnis', 'wiederherstellungscodes', 'notfallcode', 'codehash', 'sitzungsschluessel',
+  'passwort',
+  'password',
+  'passwd',
+  'passworthash',
+  'passwordhash',
+  'schluesselhash',
+  'hashschluessel',
+  'geheimnis',
+  'secret',
+  'clientsecret',
+  'client_secret',
+  'secretaccesskey',
+  'secret_access_key',
+  'token',
+  'accesstoken',
+  'access_token',
+  'refreshtoken',
+  'refresh_token',
+  'id_token',
+  'oauthtoken',
+  'zugriffstoken',
+  'apikey',
+  'api_key',
+  'apischluessel',
+  'privatekey',
+  'private_key',
+  'privaterschluessel',
+  'totp',
+  'totpgeheimnis',
+  'wiederherstellungscodes',
+  'notfallcode',
+  'codehash',
+  'sitzungsschluessel',
 ]);
 
 /** Ist dieser Name einer Eigenschaft ein Geheimnis? */
@@ -48,7 +76,9 @@ export function ohneGeheimnisse<T>(wert: T): T {
     if (istVerschluesselt(w) || (typeof w === 'string' && GEHEIM_MUSTER.some((m) => m.muster.test(w)))) return eingerichtet(w);
     if (Array.isArray(w)) return w.map((x) => geh(x, tiefe + 1));
     if (!w || typeof w !== 'object' || w instanceof Date || Buffer.isBuffer(w)) return w;
-    return Object.fromEntries(Object.entries(w as Record<string, unknown>).map(([k, v]) => [k, istGeheimerName(k) ? eingerichtet(v) : geh(v, tiefe + 1)]));
+    return Object.fromEntries(
+      Object.entries(w as Record<string, unknown>).map(([k, v]) => [k, istGeheimerName(k) ? eingerichtet(v) : geh(v, tiefe + 1)]),
+    );
   };
   return geh(wert, 0) as T;
 }

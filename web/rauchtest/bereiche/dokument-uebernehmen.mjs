@@ -4,7 +4,20 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, archivfassungAblegen, BASIS, beispielPdf, beispielPdfSeiten, daten, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
+import {
+  api,
+  archivfassungAblegen,
+  BASIS,
+  beispielPdf,
+  beispielPdfSeiten,
+  daten,
+  keineWaagerechteRolle,
+  LENA,
+  rauchtest,
+  schemaWechseln,
+  sitzung,
+  verwalten,
+} from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */
@@ -13,7 +26,12 @@ import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 async function eigenePost(betreff, zeilen = [betreff]) {
   const cookie = await sitzung(LENA);
   const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
-  for (const z of zeilen) await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${z.split('\n')[0]}.pdf`)}&typ=application/pdf`, { cookie, body: beispielPdf(z), roh: true });
+  for (const z of zeilen)
+    await api(
+      'POST',
+      `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${z.split('\n')[0]}.pdf`)}&typ=application/pdf`,
+      { cookie, body: beispielPdf(z), roh: true },
+    );
   return brief;
 }
 
@@ -51,7 +69,10 @@ rauchtest('Neue Post: Mappentyp wählen, ausfüllen, speichern – die Post wird
   const betreff = 'Schornsteinfeger 2027';
   const brief = await eigenePost(betreff);
   await s.goto(BASIS + `/ablage/start`);
-  await s.getByRole('link', { name: /^Neue Post \d/ }).first().click();
+  await s
+    .getByRole('link', { name: /^Neue Post \d/ })
+    .first()
+    .click();
   await s.getByRole('region', { name: 'Mappen' }).locator(`a[href$="/${brief.id}"]`).click();
   await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
   const mappe = s.getByRole('region', { name: 'Mappe' });
@@ -77,7 +98,10 @@ rauchtest('Neue Post: Mappentyp wählen, ausfüllen, speichern – die Post wird
 
 rauchtest('Dokument übernehmen: in eine vorhandene Mappe legen, auch dann wird die Post aufgelöst (#934)', { als: LENA }, async (s) => {
   await s.goto(BASIS + `/ablage/start`);
-  await s.getByRole('link', { name: /^Neue Post \d/ }).first().click();
+  await s
+    .getByRole('link', { name: /^Neue Post \d/ })
+    .first()
+    .click();
   await s.getByRole('region', { name: 'Mappen' }).locator(`a[href$="/${daten.brief.id}"]`).click();
   await s.waitForURL(/\/uebernehmen$/);
   const mappe = s.getByRole('region', { name: 'Mappe' });
@@ -100,36 +124,59 @@ rauchtest('Dokument übernehmen: in eine vorhandene Mappe legen, auch dann wird 
 });
 
 // #1217: „Wohin gehört das?“ mit Umschalter – Tastatur, Vorschläge für „Vorhandene Mappe“ aus dem Brief, „Nur erledigen“.
-rauchtest('Dokument übernehmen: Vorhandene Mappe aus dem Brief, Nur erledigen, Tastatur im Umschalter (#1217)', { als: LENA }, async (s) => {
-  // Ein eigener Mappentyp mit „Zum Wiederfinden nutzen“ (die Beispiele haben keinen) und eine Mappe, deren Nummer im Brief steht.
-  const verwaltung = await sitzung(LENA);
-  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
-  const gas = (await api('POST', '/api/typen', { cookie: verwaltung, body: { name: 'Gasanschluss', schluessel: 'gasanschluss', titelVorlage: '{objekt}',
-    felder: [{ key: 'objekt', label: 'Objekt', typ: 'text', pflicht: true }, { key: 'anschlussnummer', label: 'Anschlussnummer', typ: 'text', wiederfinden: true }] } })).daten;
-  await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: gas.id, werte: { objekt: 'Gasanschluss Keller', anschlussnummer: 'GA-2027-881' } } });
-  const brief = await eigenePost('Abschlag Gas Beispiel', ['Abschlag Gas\nAnschlussnummer GA-2027-881']);
-  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
-  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
-  const mappe = s.getByRole('region', { name: 'Mappe' });
-  const wohin = mappe.getByRole('radiogroup', { name: 'Wohin gehört das?' });
-  await wohin.getByRole('radio', { name: 'Neue Mappe', checked: true }).focus();
-  // Pfeiltasten wählen im Umschalter (wie Optionsfelder).
-  await s.keyboard.press('ArrowRight');
-  await wohin.getByRole('radio', { name: 'Vorhandene Mappe', checked: true }).waitFor();
-  await s.waitForFunction(() => document.activeElement?.getAttribute('aria-checked') === 'true' && document.activeElement?.textContent === 'Vorhandene Mappe');
-  // Die Erkennung kennt den Gasanschluss (Anschlussnummer im Brief): Vorschlag als Chip, ohne vorherige Typwahl.
-  await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Gasanschluss Keller · Gasanschluss' }).click();
-  await mappe.locator('.ue-kurz').getByText('GA-2027-881').waitFor();
-  await mappe.getByRole('button', { name: 'Zu „Gasanschluss Keller“ legen' }).waitFor();
-  // „Nur erledigen“: ein Satz, ein Knopf „Erledigt“ – nichts wird gelöscht.
-  await wohin.getByRole('radio', { name: 'Nur erledigen' }).click();
-  await mappe.getByText('Nichts wird gelöscht. Die Post verschwindet aus „Neue Post“ und bleibt unter „Post“ mit Stand „Erledigt“.').waitFor();
-  await mappe.getByRole('button', { name: 'Erledigt' }).click();
-  await s.waitForURL((u) => !u.pathname.includes(brief.id));
-  const nachher = (await api('GET', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA) })).daten;
-  assert.match(JSON.stringify(nachher.mappe.werte.stand), /Erledigt/);
-  assert.equal(nachher.dokumente.length, 1, 'Die Dokumente bleiben in der Post');
-});
+rauchtest(
+  'Dokument übernehmen: Vorhandene Mappe aus dem Brief, Nur erledigen, Tastatur im Umschalter (#1217)',
+  { als: LENA },
+  async (s) => {
+    // Ein eigener Mappentyp mit „Zum Wiederfinden nutzen“ (die Beispiele haben keinen) und eine Mappe, deren Nummer im Brief steht.
+    const verwaltung = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+    const gas = (
+      await api('POST', '/api/typen', {
+        cookie: verwaltung,
+        body: {
+          name: 'Gasanschluss',
+          schluessel: 'gasanschluss',
+          titelVorlage: '{objekt}',
+          felder: [
+            { key: 'objekt', label: 'Objekt', typ: 'text', pflicht: true },
+            { key: 'anschlussnummer', label: 'Anschlussnummer', typ: 'text', wiederfinden: true },
+          ],
+        },
+      })
+    ).daten;
+    await api('POST', '/api/mappen', {
+      cookie: verwaltung,
+      body: { typId: gas.id, werte: { objekt: 'Gasanschluss Keller', anschlussnummer: 'GA-2027-881' } },
+    });
+    const brief = await eigenePost('Abschlag Gas Beispiel', ['Abschlag Gas\nAnschlussnummer GA-2027-881']);
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+    await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+    const mappe = s.getByRole('region', { name: 'Mappe' });
+    const wohin = mappe.getByRole('radiogroup', { name: 'Wohin gehört das?' });
+    await wohin.getByRole('radio', { name: 'Neue Mappe', checked: true }).focus();
+    // Pfeiltasten wählen im Umschalter (wie Optionsfelder).
+    await s.keyboard.press('ArrowRight');
+    await wohin.getByRole('radio', { name: 'Vorhandene Mappe', checked: true }).waitFor();
+    await s.waitForFunction(
+      () => document.activeElement?.getAttribute('aria-checked') === 'true' && document.activeElement?.textContent === 'Vorhandene Mappe',
+    );
+    // Die Erkennung kennt den Gasanschluss (Anschlussnummer im Brief): Vorschlag als Chip, ohne vorherige Typwahl.
+    await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Gasanschluss Keller · Gasanschluss' }).click();
+    await mappe.locator('.ue-kurz').getByText('GA-2027-881').waitFor();
+    await mappe.getByRole('button', { name: 'Zu „Gasanschluss Keller“ legen' }).waitFor();
+    // „Nur erledigen“: ein Satz, ein Knopf „Erledigt“ – nichts wird gelöscht.
+    await wohin.getByRole('radio', { name: 'Nur erledigen' }).click();
+    await mappe
+      .getByText('Nichts wird gelöscht. Die Post verschwindet aus „Neue Post“ und bleibt unter „Post“ mit Stand „Erledigt“.')
+      .waitFor();
+    await mappe.getByRole('button', { name: 'Erledigt' }).click();
+    await s.waitForURL((u) => !u.pathname.includes(brief.id));
+    const nachher = (await api('GET', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA) })).daten;
+    assert.match(JSON.stringify(nachher.mappe.werte.stand), /Erledigt/);
+    assert.equal(nachher.dokumente.length, 1, 'Die Dokumente bleiben in der Post');
+  },
+);
 
 /** Die drei Wahlen auf „Dokument übernehmen“ (#1217) und worauf je Wahl gewartet wird. */
 const UEBERNEHMEN_WAHLEN = [
@@ -138,24 +185,28 @@ const UEBERNEHMEN_WAHLEN = [
   ['Nur erledigen', (m) => m.getByRole('button', { name: 'Erledigt' }).waitFor()],
 ];
 
-rauchtest('Dokument übernehmen aus Bausteinen: axe ohne Verstoß in allen drei Wahlen, hell und dunkel (#1217)', { als: LENA }, async (s) => {
-  const brief = await eigenePost('Werbung Möbelhaus Beispiel', ['Werbung Möbelhaus Beispiel']);
-  const funde = [];
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
-    await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
-    const mappe = s.getByRole('region', { name: 'Mappe' });
-    await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1' }).waitFor();
-    for (const [wahl, warte] of UEBERNEHMEN_WAHLEN) {
-      await mappe.getByRole('radio', { name: wahl }).click();
-      await warte(mappe);
-      await s.waitForLoadState('networkidle');
-      for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) funde.push(`${wahl} (${schema}): ${v}`);
+rauchtest(
+  'Dokument übernehmen aus Bausteinen: axe ohne Verstoß in allen drei Wahlen, hell und dunkel (#1217)',
+  { als: LENA },
+  async (s) => {
+    const brief = await eigenePost('Werbung Möbelhaus Beispiel', ['Werbung Möbelhaus Beispiel']);
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+      await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+      const mappe = s.getByRole('region', { name: 'Mappe' });
+      await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1' }).waitFor();
+      for (const [wahl, warte] of UEBERNEHMEN_WAHLEN) {
+        await mappe.getByRole('radio', { name: wahl }).click();
+        await warte(mappe);
+        await s.waitForLoadState('networkidle');
+        for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) funde.push(`${wahl} (${schema}): ${v}`);
+      }
     }
-  }
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-});
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  },
+);
 
 rauchtest('Handy: Dokument übernehmen mit 44-px-Tippflächen in allen drei Wahlen (#1217)', { handy: true, als: LENA }, async (s) => {
   const brief = await eigenePost('Werbung Gartenmarkt Beispiel', ['Werbung Gartenmarkt Beispiel']);
@@ -178,62 +229,84 @@ rauchtest('Handy: Dokument übernehmen mit 44-px-Tippflächen in allen drei Wahl
 });
 
 /** Eine kleine E-Mail (nur Persona-Adressen) für Post mit Archivfassung (#1137). */
-const MAIL_EML = Buffer.from([
-  'From: Lena Beispiel <lena@example.org>', 'To: Jonas Beispiel <jonas@example.org>', 'Subject: Angebot Dachrinne',
-  'Date: Tue, 16 Nov 2027 08:15:00 +0100', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '',
-  'Hallo Jonas, anbei das Angebot für die Dachrinne.', '',
-].join('\r\n'));
+const MAIL_EML = Buffer.from(
+  [
+    'From: Lena Beispiel <lena@example.org>',
+    'To: Jonas Beispiel <jonas@example.org>',
+    'Subject: Angebot Dachrinne',
+    'Date: Tue, 16 Nov 2027 08:15:00 +0100',
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    'Hallo Jonas, anbei das Angebot für die Dachrinne.',
+    '',
+  ].join('\r\n'),
+);
 
 /** Post mit einer E-Mail, deren Archivfassung (PDF/A mit Textebene) fertig ist. */
 async function postMitMail(betreff) {
   const cookie = await sitzung(LENA);
   const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
-  const mail = (await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${betreff}.eml`)}&typ=message/rfc822`, { cookie, body: MAIL_EML, roh: true })).daten.dokument;
+  const mail = (
+    await api(
+      'POST',
+      `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${betreff}.eml`)}&typ=message/rfc822`,
+      { cookie, body: MAIL_EML, roh: true },
+    )
+  ).daten.dokument;
   await archivfassungAblegen(mail.sha256, beispielPdf(`Angebot Dachrinne Beispiel 2027\nVon: Lena Beispiel`));
   return brief;
 }
 
-rauchtest('Dokument übernehmen: E-Mail mit Archivfassung als Seitenbilder mit Text, nicht im PDF-Betrachter (#1137)', { als: LENA, timeout: 90_000 }, async (s) => {
-  const brief = await postMitMail('Angebot Dachrinne');
-  const funde = [];
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
+rauchtest(
+  'Dokument übernehmen: E-Mail mit Archivfassung als Seitenbilder mit Text, nicht im PDF-Betrachter (#1137)',
+  { als: LENA, timeout: 90_000 },
+  async (s) => {
+    const brief = await postMitMail('Angebot Dachrinne');
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+      await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+      const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
+      // Seitenbild der Archivfassung mit Wörtern – kein iframe mit dem Betrachter des Browsers.
+      const bild = blatt.getByRole('img', { name: 'Seite 1' });
+      await bild.waitFor();
+      await s.waitForFunction((el) => el.complete && el.naturalWidth > 0, await bild.elementHandle(), { timeout: 20_000 });
+      assert.ok((await blatt.locator('.ue-wort').count()) > 0, 'Wörter der Archivfassung zum Markieren');
+      assert.equal(await blatt.locator('iframe').count(), 0, 'kein PDF-Betrachter des Browsers');
+      await s.waitForLoadState('networkidle');
+      for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) funde.push(`PDF/A (${schema}): ${v}`);
+    }
+    const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
+    // „Original“: Der Browser zeigt die Mail nicht – Satz und „Original herunterladen“ wie in der Mappe, kein Betrachter.
+    await blatt.getByRole('radio', { name: 'Original' }).click();
+    await blatt.getByText('Ein Original im Format .eml kann Ablago nicht direkt anzeigen.').waitFor();
+    await blatt.getByRole('button', { name: 'Original herunterladen' }).waitFor();
+    assert.equal(await blatt.locator('iframe, img').count(), 0);
+    await blatt.getByRole('radio', { name: 'PDF/A' }).click();
+    await blatt.getByRole('img', { name: 'Seite 1' }).waitFor();
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+    await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
+  },
+);
+
+rauchtest(
+  'Handy: E-Mail mit Archivfassung beim Übernehmen – Seitenbild, 44-px-Tippflächen (#1137)',
+  { handy: true, als: LENA },
+  async (s) => {
+    const brief = await postMitMail('Angebot Regenfass');
     await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
     await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
-    const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
-    // Seitenbild der Archivfassung mit Wörtern – kein iframe mit dem Betrachter des Browsers.
-    const bild = blatt.getByRole('img', { name: 'Seite 1' });
-    await bild.waitFor();
-    await s.waitForFunction((el) => el.complete && el.naturalWidth > 0, await bild.elementHandle(), { timeout: 20_000 });
-    assert.ok(await blatt.locator('.ue-wort').count() > 0, 'Wörter der Archivfassung zum Markieren');
-    assert.equal(await blatt.locator('iframe').count(), 0, 'kein PDF-Betrachter des Browsers');
+    const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Regenfass.eml' });
+    await blatt.getByRole('img', { name: 'Seite 1' }).waitFor();
+    assert.equal(await blatt.locator('iframe').count(), 0);
     await s.waitForLoadState('networkidle');
-    for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) funde.push(`PDF/A (${schema}): ${v}`);
-  }
-  const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
-  // „Original“: Der Browser zeigt die Mail nicht – Satz und „Original herunterladen“ wie in der Mappe, kein Betrachter.
-  await blatt.getByRole('radio', { name: 'Original' }).click();
-  await blatt.getByText('Ein Original im Format .eml kann Ablago nicht direkt anzeigen.').waitFor();
-  await blatt.getByRole('button', { name: 'Original herunterladen' }).waitFor();
-  assert.equal(await blatt.locator('iframe, img').count(), 0);
-  await blatt.getByRole('radio', { name: 'PDF/A' }).click();
-  await blatt.getByRole('img', { name: 'Seite 1' }).waitFor();
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-  await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
-});
-
-rauchtest('Handy: E-Mail mit Archivfassung beim Übernehmen – Seitenbild, 44-px-Tippflächen (#1137)', { handy: true, als: LENA }, async (s) => {
-  const brief = await postMitMail('Angebot Regenfass');
-  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
-  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
-  const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Regenfass.eml' });
-  await blatt.getByRole('img', { name: 'Seite 1' }).waitFor();
-  assert.equal(await blatt.locator('iframe').count(), 0);
-  await s.waitForLoadState('networkidle');
-  assert.deepEqual(await tippflaechenPruefen(s, ['.ue-dokkopf']), [], 'Zu kleine Tippflächen am Handy');
-  await keineWaagerechteRolle(s);
-  await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
-});
+    assert.deepEqual(await tippflaechenPruefen(s, ['.ue-dokkopf']), [], 'Zu kleine Tippflächen am Handy');
+    await keineWaagerechteRolle(s);
+    await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
+  },
+);
 
 rauchtest('Lange Post übernehmen: Tippen bleibt flüssig, während die Rahmen erscheinen (#1255)', { als: LENA }, async (s) => {
   // 80 Seiten mit je 55 Zeilen Text (rund 40 000 Wörter); der Betreff steht erst auf der letzten Seite.
@@ -242,7 +315,11 @@ rauchtest('Lange Post übernehmen: Tippen bleibt flüssig, während die Rahmen e
   seiten[79] += '\nHausrat Versicherung Beispiel 2027';
   const cookie = await sitzung(LENA);
   const brief = (await api('POST', '/api/post', { cookie, body: { betreff: 'Hausrat Versicherung Beispiel 2027' } })).daten;
-  await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Hausrat Bedingungen.pdf')}&typ=application/pdf`, { cookie, body: beispielPdfSeiten(seiten), roh: true });
+  await api(
+    'POST',
+    `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Hausrat Bedingungen.pdf')}&typ=application/pdf`,
+    { cookie, body: beispielPdfSeiten(seiten), roh: true },
+  );
   try {
     await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
     await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
@@ -270,8 +347,15 @@ rauchtest('Lange Post übernehmen: Tippen bleibt flüssig, während die Rahmen e
 async function postMitScan(betreff) {
   const cookie = await sitzung(LENA);
   const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
-  await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Werkstatt.pdf')}&typ=application/pdf`,
-    { cookie, body: beispielPdfSeiten(['Rechnung Werkstatt', 'Rechnung Seite 2', 'HU-Protokoll', 'HU-Protokoll Seite 2', 'HU-Protokoll Seite 3']), roh: true });
+  await api(
+    'POST',
+    `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Werkstatt.pdf')}&typ=application/pdf`,
+    {
+      cookie,
+      body: beispielPdfSeiten(['Rechnung Werkstatt', 'Rechnung Seite 2', 'HU-Protokoll', 'HU-Protokoll Seite 2', 'HU-Protokoll Seite 3']),
+      roh: true,
+    },
+  );
   return { brief, cookie };
 }
 
@@ -287,68 +371,78 @@ async function seitenansicht(s, brief) {
   return ansicht;
 }
 
-rauchtest('Post: „Anlage ab hier“ in der Seitenansicht – Seiten 3–5 werden Anlage 1 des Dokuments (#1162)', { als: LENA, timeout: 90_000 }, async (s) => {
-  const { brief, cookie } = await postMitScan('Werkstatt Petra – HU');
-  const ansicht = await seitenansicht(s, brief);
-  const kacheln = ansicht.locator('.seitenraster .seite');
-  // Nicht an der ersten Seite; an jeder anderen.
-  assert.equal(await kacheln.nth(0).getByRole('button', { name: 'Anlage ab hier' }).count(), 0, 'an Seite 1 kein „Anlage ab hier“');
-  assert.equal(await ansicht.getByRole('button', { name: 'Anlage ab hier' }).count(), 4);
-  // Zwei Anlagen markieren (Anlage 1, 2), eine wieder zurücknehmen; „Teilen ab hier“ und „Anlage ab hier“ schließen sich aus.
-  await kacheln.nth(2).getByRole('button', { name: 'Anlage ab hier' }).click();
-  await kacheln.nth(4).getByRole('button', { name: 'Anlage ab hier' }).click();
-  await kacheln.nth(4).getByText('Anlage 2', { exact: true }).waitFor();
-  await kacheln.nth(2).getByText('Anlage 1', { exact: true }).waitFor();
-  await ansicht.getByText(/· 2 Anlagen$/).waitFor();
-  await kacheln.nth(4).getByRole('button', { name: 'Teilen ab hier' }).click();
-  await kacheln.nth(4).getByText('Teil 2', { exact: true }).waitFor();
-  assert.equal(await kacheln.nth(4).getByText('Anlage 2', { exact: true }).count(), 0);
-  await kacheln.nth(4).getByRole('button', { name: 'Nicht teilen' }).click();
-  await ansicht.getByText(/· 1 Anlage$/).waitFor();
-  await ansicht.getByText('Die Seiten ab „Anlage ab hier“ werden Anlagen des Dokuments.', { exact: false }).waitFor();
-  // axe hell und dunkel auf der Seitenansicht mit Markierung.
-  const funde = [];
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    for (const v of await axePruefen(s, ['.pdfseiten'])) funde.push(`${schema}: ${v}`);
-  }
-  await schemaWechseln(s, 'light');
-  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
-  // Übernehmen: Rückfrage, dann neue Post mit Dokument und Anlage; die Ausgangspost behält das ganze PDF und ist erledigt.
-  await ansicht.getByRole('button', { name: 'Übernehmen' }).click();
-  const frage = s.getByRole('alertdialog', { name: 'Anlage anlegen?' });
-  await frage.getByText('Aus dieser Post entsteht eine neue Post mit „Scan Werkstatt.pdf“ und einer Anlage.', { exact: false }).waitFor();
-  await frage.getByRole('button', { name: 'Anlegen' }).click();
-  await s.getByText('Neue Post angelegt:').waitFor();
-  const alt = (await api('GET', `/api/mappen/${brief.id}`, { cookie })).daten;
-  assert.equal(alt.mappe.werte.stand, 'Erledigt');
-  assert.equal(alt.dokumente.length, 1, 'die Ausgangspost behält das ganze PDF');
-  const neuId = [].concat(alt.mappe.werte.bezug).find((x) => x !== brief.id);
-  const neu = (await api('GET', `/api/mappen/${neuId}`, { cookie })).daten;
-  assert.equal(neu.mappe.werte.betreff, 'Werkstatt Petra – HU', 'der Betreff bleibt');
-  const haupt = neu.dokumente.find((x) => !x.anlageZu);
-  const anlage = neu.dokumente.find((x) => x.anlageZu);
-  assert.equal(haupt.name, 'Scan Werkstatt.pdf');
-  assert.equal(anlage.anlageZu, haupt.id);
-  assert.equal(anlage.anlageNr, 1);
-  assert.equal(anlage.name, 'Scan Werkstatt – Anlage 1.pdf');
-  // Aufräumen: die neue Post erledigen, damit „Neue Post“ für spätere Tests gleich bleibt.
-  await api('PUT', `/api/mappen/${neuId}`, { cookie, body: { werte: { stand: 'Erledigt' } } });
-});
+rauchtest(
+  'Post: „Anlage ab hier“ in der Seitenansicht – Seiten 3–5 werden Anlage 1 des Dokuments (#1162)',
+  { als: LENA, timeout: 90_000 },
+  async (s) => {
+    const { brief, cookie } = await postMitScan('Werkstatt Petra – HU');
+    const ansicht = await seitenansicht(s, brief);
+    const kacheln = ansicht.locator('.seitenraster .seite');
+    // Nicht an der ersten Seite; an jeder anderen.
+    assert.equal(await kacheln.nth(0).getByRole('button', { name: 'Anlage ab hier' }).count(), 0, 'an Seite 1 kein „Anlage ab hier“');
+    assert.equal(await ansicht.getByRole('button', { name: 'Anlage ab hier' }).count(), 4);
+    // Zwei Anlagen markieren (Anlage 1, 2), eine wieder zurücknehmen; „Teilen ab hier“ und „Anlage ab hier“ schließen sich aus.
+    await kacheln.nth(2).getByRole('button', { name: 'Anlage ab hier' }).click();
+    await kacheln.nth(4).getByRole('button', { name: 'Anlage ab hier' }).click();
+    await kacheln.nth(4).getByText('Anlage 2', { exact: true }).waitFor();
+    await kacheln.nth(2).getByText('Anlage 1', { exact: true }).waitFor();
+    await ansicht.getByText(/· 2 Anlagen$/).waitFor();
+    await kacheln.nth(4).getByRole('button', { name: 'Teilen ab hier' }).click();
+    await kacheln.nth(4).getByText('Teil 2', { exact: true }).waitFor();
+    assert.equal(await kacheln.nth(4).getByText('Anlage 2', { exact: true }).count(), 0);
+    await kacheln.nth(4).getByRole('button', { name: 'Nicht teilen' }).click();
+    await ansicht.getByText(/· 1 Anlage$/).waitFor();
+    await ansicht.getByText('Die Seiten ab „Anlage ab hier“ werden Anlagen des Dokuments.', { exact: false }).waitFor();
+    // axe hell und dunkel auf der Seitenansicht mit Markierung.
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, ['.pdfseiten'])) funde.push(`${schema}: ${v}`);
+    }
+    await schemaWechseln(s, 'light');
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+    // Übernehmen: Rückfrage, dann neue Post mit Dokument und Anlage; die Ausgangspost behält das ganze PDF und ist erledigt.
+    await ansicht.getByRole('button', { name: 'Übernehmen' }).click();
+    const frage = s.getByRole('alertdialog', { name: 'Anlage anlegen?' });
+    await frage.getByText('Aus dieser Post entsteht eine neue Post mit „Scan Werkstatt.pdf“ und einer Anlage.', { exact: false }).waitFor();
+    await frage.getByRole('button', { name: 'Anlegen' }).click();
+    await s.getByText('Neue Post angelegt:').waitFor();
+    const alt = (await api('GET', `/api/mappen/${brief.id}`, { cookie })).daten;
+    assert.equal(alt.mappe.werte.stand, 'Erledigt');
+    assert.equal(alt.dokumente.length, 1, 'die Ausgangspost behält das ganze PDF');
+    const neuId = [].concat(alt.mappe.werte.bezug).find((x) => x !== brief.id);
+    const neu = (await api('GET', `/api/mappen/${neuId}`, { cookie })).daten;
+    assert.equal(neu.mappe.werte.betreff, 'Werkstatt Petra – HU', 'der Betreff bleibt');
+    const haupt = neu.dokumente.find((x) => !x.anlageZu);
+    const anlage = neu.dokumente.find((x) => x.anlageZu);
+    assert.equal(haupt.name, 'Scan Werkstatt.pdf');
+    assert.equal(anlage.anlageZu, haupt.id);
+    assert.equal(anlage.anlageNr, 1);
+    assert.equal(anlage.name, 'Scan Werkstatt – Anlage 1.pdf');
+    // Aufräumen: die neue Post erledigen, damit „Neue Post“ für spätere Tests gleich bleibt.
+    await api('PUT', `/api/mappen/${neuId}`, { cookie, body: { werte: { stand: 'Erledigt' } } });
+  },
+);
 
-rauchtest('Handy: „Anlage ab hier“ in der Seitenansicht mit 44-px-Tippflächen (#1162)', { handy: true, als: LENA, timeout: 90_000 }, async (s) => {
-  const { brief, cookie } = await postMitScan('Werkstatt Jonas – HU');
-  const ansicht = await seitenansicht(s, brief);
-  await ansicht.locator('.seitenraster .seite').nth(2).getByRole('button', { name: 'Anlage ab hier' }).click();
-  await ansicht.locator('.seitenraster .seite').nth(2).getByText('Anlage 1', { exact: true }).waitFor();
-  assert.deepEqual(await tippflaechenPruefen(s, ['.pdfseiten']), [], 'Zu kleine Tippflächen am Handy');
-  await keineWaagerechteRolle(s);
-  await api('PUT', `/api/mappen/${brief.id}`, { cookie, body: { werte: { stand: 'Erledigt' } } });
-});
+rauchtest(
+  'Handy: „Anlage ab hier“ in der Seitenansicht mit 44-px-Tippflächen (#1162)',
+  { handy: true, als: LENA, timeout: 90_000 },
+  async (s) => {
+    const { brief, cookie } = await postMitScan('Werkstatt Jonas – HU');
+    const ansicht = await seitenansicht(s, brief);
+    await ansicht.locator('.seitenraster .seite').nth(2).getByRole('button', { name: 'Anlage ab hier' }).click();
+    await ansicht.locator('.seitenraster .seite').nth(2).getByText('Anlage 1', { exact: true }).waitFor();
+    assert.deepEqual(await tippflaechenPruefen(s, ['.pdfseiten']), [], 'Zu kleine Tippflächen am Handy');
+    await keineWaagerechteRolle(s);
+    await api('PUT', `/api/mappen/${brief.id}`, { cookie, body: { werte: { stand: 'Erledigt' } } });
+  },
+);
 
 // #935: Steht am Ende – legt einen Vertragspartner an. Die Mappe dahinter (aus der Post) bleibt ungespeichert offen.
 rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument (#935)', { als: LENA }, async (s) => {
-  const brief = await eigenePost('Heizungsbau Rechnung', ['Rechnung R-2027-55\nHeizungsbau Muster KG · Musterweg 1 · 01234 Musterstadt\nKundennummer K-4711']);
+  const brief = await eigenePost('Heizungsbau Rechnung', [
+    'Rechnung R-2027-55\nHeizungsbau Muster KG · Musterweg 1 · 01234 Musterstadt\nKundennummer K-4711',
+  ]);
   await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
   await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
   const mappe = s.getByRole('region', { name: 'Mappe' });
@@ -370,7 +464,11 @@ rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument 
   await s.waitForFunction(() => document.activeElement?.textContent === '+ Vertragspartner anlegen');
   // Wie die rechte Spalte einer Mappe: Kopf, Register, Felder, Speicherleiste – vorausgefüllt mit dem Briefkopf.
   await anlegen.click();
-  await fenster.getByText('Neue Mappe').or(fenster.getByText('Heizungsbau Muster KG', { exact: true })).first().waitFor();
+  await fenster
+    .getByText('Neue Mappe')
+    .or(fenster.getByText('Heizungsbau Muster KG', { exact: true }))
+    .first()
+    .waitFor();
   await fenster.getByRole('tab', { name: 'Stammdaten' }).waitFor();
   await fenster.getByRole('button', { name: 'Mappe speichern' }).waitFor();
   const name = fenster.getByRole('textbox', { name: 'Name', exact: true });
@@ -396,7 +494,10 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
   // Im Mappentyp-Editor: Aussteller → „Folgt aus“ Vertrag, Angabe Vertragspartner.
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
-  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Mappentypen/ }).click();
+  await s
+    .getByRole('complementary', { name: 'Bereiche' })
+    .getByRole('link', { name: /^Mappentypen/ })
+    .click();
   await s.getByRole('link', { name: /^Rechnung \d+ Felder/ }).click();
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
   await bearbeitung.getByRole('heading', { name: 'Rechnung', level: 1 }).waitFor();
@@ -430,7 +531,9 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
   await aussteller.getByRole('combobox').fill('Stadtwerke');
   await aussteller.getByRole('option', { name: 'Stadtwerke Musterstadt' }).click();
   const frage = s.getByRole('alertdialog', { name: 'Vertrag leeren?' });
-  await frage.getByText('Vertrag „Wartungsvertrag Heizung“ gehört zu „Heizungsbau Beispiel GmbH“, nicht zu „Stadtwerke Musterstadt“.').waitFor();
+  await frage
+    .getByText('Vertrag „Wartungsvertrag Heizung“ gehört zu „Heizungsbau Beispiel GmbH“, nicht zu „Stadtwerke Musterstadt“.')
+    .waitFor();
   await frage.getByRole('button', { name: 'Behalten' }).click();
   // Gelb am Feld, mit dem Grund statt „Filter“; Speichern geht trotzdem.
   await vertrag.getByText('passt nicht zu „Aussteller“').waitFor();

@@ -31,7 +31,11 @@ const LINKZIELE = [/\]\(\s*<?([^)\s>]*)/g, /^\s{0,3}\[[^\]\n]+\]:\s*<?(\S*?)>?(?
 /** Steuerzeichen außer Tab, Zeilenvorschub und Wagenrücklauf. */
 const STEUERZEICHEN = /(?![\t\n\r])\p{Cc}/u;
 
-export interface Vorlagenpruefung { text?: string; fehler?: VorlagenFehler; wert?: string }
+export interface Vorlagenpruefung {
+  text?: string;
+  fehler?: VorlagenFehler;
+  wert?: string;
+}
 
 /**
  * Prüft eine Vorlage. `passwortFelder`: Kennungen von Passwortfeldern, die kein Platzhalter nennen darf (beim Lesen die
@@ -41,7 +45,11 @@ export function pruefeVorlage(inhalt: Buffer, passwortFelder: ReadonlySet<string
   if (!inhalt.length) return { fehler: 'leer' };
   if (inhalt.length > VORLAGE_MAX) return { fehler: 'gross' };
   let text: string;
-  try { text = new TextDecoder('utf-8', { fatal: true }).decode(inhalt); } catch { return { fehler: 'utf8' }; }
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(inhalt);
+  } catch {
+    return { fehler: 'utf8' };
+  }
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // Byte-Order-Mark
   if (!text.trim()) return { fehler: 'leer' };
   if (STEUERZEICHEN.test(text)) return { fehler: 'steuerzeichen' };

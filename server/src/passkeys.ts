@@ -1,6 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
-import type { AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
+import type {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+} from '@simplewebauthn/server';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { PASSKEY_ANTWORT_MAX, PASSKEY_OPTIONEN_GESAMT, PASSKEY_OPTIONEN_JE_ADRESSE } from './grenzen';
@@ -47,17 +57,27 @@ const JE_ADRESSE = 'passkey-optionen-adresse';
 
 /** Adressbereich für die Grenze je Adresse: IPv4 wie sie ist (auch ::ffff:1.2.3.4), IPv6 die ersten 64 Bit. */
 export function adressbereich(ip: string): string {
-  const a = ip.trim().toLowerCase().replace(/^::ffff:(?=\d+\.)/, '');
+  const a = ip
+    .trim()
+    .toLowerCase()
+    .replace(/^::ffff:(?=\d+\.)/, '');
   if (!a.includes(':')) return a;
   const [vorne, hinten = ''] = a.split('::');
   const v = vorne ? vorne.split(':') : [];
   const h = hinten ? hinten.split(':') : [];
   const voll = a.includes('::') ? [...v, ...Array(Math.max(0, 8 - v.length - h.length)).fill('0'), ...h] : v;
-  return `${voll.slice(0, 4).map((x) => x.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+  return `${voll
+    .slice(0, 4)
+    .map((x) => x.replace(/^0+(?=.)/, ''))
+    .join(':')}::/64`;
 }
 
 /** Relying Party: für wen der Passkey gilt. */
-export interface RelyingParty { rpId: string; origin: string; name: string }
+export interface RelyingParty {
+  rpId: string;
+  origin: string;
+  name: string;
+}
 
 /**
  * RP aus einer Adresse wie `https://ablago.example.org` oder `http://localhost:8080`. null, wenn Passkeys dort nicht
@@ -65,7 +85,11 @@ export interface RelyingParty { rpId: string; origin: string; name: string }
  */
 export function relyingParty(adresse: string, name = 'Ablago'): RelyingParty | null {
   let u: URL;
-  try { u = new URL(adresse); } catch { return null; }
+  try {
+    u = new URL(adresse);
+  } catch {
+    return null;
+  }
   const host = u.hostname.toLowerCase();
   const lokal = host === 'localhost' || host.endsWith('.localhost');
   if (u.protocol !== 'https:' && !(u.protocol === 'http:' && lokal)) return null;
@@ -90,18 +114,40 @@ interface Eintrag {
   /** Auf mehrere Geräte übertragbar (z. B. in einem Passwortmanager oder der Cloud des Handys). */
   mehrgeraete: boolean;
 }
-interface Gespeichert { liste: Eintrag[] }
+interface Gespeichert {
+  liste: Eintrag[];
+}
 
 /** Für die Oberfläche (Mein Konto → Sicherheit). */
-export interface PasskeyAnsicht { nr: string; name: string; erstellt: string; zuletzt: string | null; mehrgeraete: boolean; passt: boolean; rpId: string }
+export interface PasskeyAnsicht {
+  nr: string;
+  name: string;
+  erstellt: string;
+  zuletzt: string | null;
+  mehrgeraete: boolean;
+  passt: boolean;
+  rpId: string;
+}
 
 /** Wozu eine Anmelde-Herausforderung ausgegeben wurde. */
 /** Wofür: Anmelden, zweiter Schritt, erneute Anmeldung (#819) oder Bestätigung für „Passwörter für Dokumente“ (#827). */
 export type PasskeyZweck = 'anmelden' | 'zweiter-schritt' | 'bestaetigen' | 'dokumentpasswoerter';
-interface Herausforderung { challenge: string; rpId: string; origin: string; zweck: PasskeyZweck; benutzerId: string | null; bezug: string | null }
+interface Herausforderung {
+  challenge: string;
+  rpId: string;
+  origin: string;
+  zweck: PasskeyZweck;
+  benutzerId: string | null;
+  bezug: string | null;
+}
 
 /** Was eine geprüfte Anmeldung liefert. */
-export interface PasskeyTreffer { benutzerId: string; name: string; zweck: PasskeyZweck; bezug: string | null }
+export interface PasskeyTreffer {
+  benutzerId: string;
+  name: string;
+  zweck: PasskeyZweck;
+  bezug: string | null;
+}
 
 const istUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 /** Name ohne Steuerzeichen, Leerraum zusammengefasst, gekürzt; leer = `ersatz`. */
@@ -112,7 +158,13 @@ const nameAus = (v: unknown, ersatz: string) => {
 };
 /** Allgemeine Ablehnung – den Grund schreibt nur das Protokoll. */
 const falsch = () => new Fachfehler(401, t('anmeldung.passkey.fehler.falsch'));
-const groesse = (x: unknown) => { try { return JSON.stringify(x ?? null).length; } catch { return Infinity; } };
+const groesse = (x: unknown) => {
+  try {
+    return JSON.stringify(x ?? null).length;
+  } catch {
+    return Infinity;
+  }
+};
 
 export class Passkeys {
   private zustand: Kurzzustand;
@@ -130,7 +182,11 @@ export class Passkeys {
   private name: () => Promise<string>;
   private gepflegt: () => string;
 
-  constructor(private speicher: Einstellungen, private adresse: () => string, o: { zustand?: Kurzzustand; jetzt?: () => number; name?: () => Promise<string>; gepflegt?: () => string } = {}) {
+  constructor(
+    private speicher: Einstellungen,
+    private adresse: () => string,
+    o: { zustand?: Kurzzustand; jetzt?: () => number; name?: () => Promise<string>; gepflegt?: () => string } = {},
+  ) {
     this.jetzt = o.jetzt ?? Date.now;
     this.name = o.name ?? (async () => 'Ablago');
     this.gepflegt = o.gepflegt ?? adresse;
@@ -139,14 +195,18 @@ export class Passkeys {
   }
 
   /** RP der aktuellen Anfrage; null = Passkeys gehen hier nicht (kein HTTPS). */
-  rp(): RelyingParty | null { return relyingParty(this.adresse()); }
+  rp(): RelyingParty | null {
+    return relyingParty(this.adresse());
+  }
   private async rpMitName(): Promise<RelyingParty> {
     const rp = this.rp();
     if (!rp) throw new Fachfehler(409, t('anmeldung.passkey.fehler.https'), { https: false });
     return { ...rp, name: (await this.name()) || 'Ablago' };
   }
 
-  private schluessel(id: string) { return `passkeys_${id}`; }
+  private schluessel(id: string) {
+    return `passkeys_${id}`;
+  }
   /** Gespeicherter Stand; `roh` ist der Wert, wie er in der Datenbank steht (für den Vergleich beim Schreiben). */
   private async lies(id: string): Promise<Gespeichert & { roh: unknown }> {
     const roh = await this.speicher.lies(this.schluessel(id));
@@ -164,16 +224,30 @@ export class Passkeys {
   }
 
   /** Passkeys einer Person, die zur aktuellen Adresse passen. */
-  private passende(g: Gespeichert, rp: RelyingParty | null) { return rp ? g.liste.filter((e) => e.rpId === rp.rpId) : []; }
+  private passende(g: Gespeichert, rp: RelyingParty | null) {
+    return rp ? g.liste.filter((e) => e.rpId === rp.rpId) : [];
+  }
 
   /** Hat die Person einen Passkey, der hier (bei dieser Adresse, über HTTPS) gilt? */
-  async nutzbar(id: string): Promise<boolean> { return this.passende(await this.lies(id), this.rp()).length > 0; }
+  async nutzbar(id: string): Promise<boolean> {
+    return this.passende(await this.lies(id), this.rp()).length > 0;
+  }
   /** Hat die Person überhaupt einen Passkey (auch für eine andere Adresse)? */
-  async anzahl(id: string): Promise<number> { return (await this.lies(id)).liste.length; }
+  async anzahl(id: string): Promise<number> {
+    return (await this.lies(id)).liste.length;
+  }
 
   async liste(id: string): Promise<PasskeyAnsicht[]> {
     const rp = this.rp();
-    return (await this.lies(id)).liste.map((e) => ({ nr: e.nr, name: e.name, erstellt: e.erstellt, zuletzt: e.zuletzt, mehrgeraete: e.mehrgeraete, passt: !!rp && e.rpId === rp.rpId, rpId: e.rpId }));
+    return (await this.lies(id)).liste.map((e) => ({
+      nr: e.nr,
+      name: e.name,
+      erstellt: e.erstellt,
+      zuletzt: e.zuletzt,
+      mehrgeraete: e.mehrgeraete,
+      passt: !!rp && e.rpId === rp.rpId,
+      rpId: e.rpId,
+    }));
   }
 
   /* ---------- Pflicht ---------- */
@@ -182,11 +256,17 @@ export class Passkeys {
    * RP der **gepflegten** Adresse – Grundlage jeder Entscheidung über eine Pflicht. null: keine gepflegte Adresse oder
    * keine, unter der Passkeys gehen (ohne HTTPS).
    */
-  pflichtRp(): RelyingParty | null { return relyingParty(this.gepflegt()); }
+  pflichtRp(): RelyingParty | null {
+    return relyingParty(this.gepflegt());
+  }
   /** Hat die Person einen Passkey für die gepflegte Adresse? Nur der erfüllt eine Pflicht. */
-  async fuerPflicht(id: string): Promise<boolean> { return this.passende(await this.lies(id), this.pflichtRp()).length > 0; }
+  async fuerPflicht(id: string): Promise<boolean> {
+    return this.passende(await this.lies(id), this.pflichtRp()).length > 0;
+  }
 
-  async pflicht(): Promise<Pflicht> { return this.vorschrift.pflicht(); }
+  async pflicht(): Promise<Pflicht> {
+    return this.vorschrift.pflicht();
+  }
   /**
    * Einschalten nur mit gepflegter HTTPS-Adresse (409 sonst); ausschalten geht immer. Ist die Pflicht schon an und die
    * Adresse wird entfernt, gilt sie weiter (geschlossen) – die Werkbank warnt.
@@ -199,7 +279,9 @@ export class Passkeys {
     return this.vorschrift.setze(x, von);
   }
   /** Gilt die Pflicht für die Rolle dieser Person (unabhängig davon, ob sie erfüllt ist)? Auch ohne Adresse (geschlossen). */
-  async pflichtGilt(b: PflichtPerson): Promise<boolean> { return (await this.vorschrift.lage(b, undefined, async () => false)) !== 'ok'; }
+  async pflichtGilt(b: PflichtPerson): Promise<boolean> {
+    return (await this.vorschrift.lage(b, undefined, async () => false)) !== 'ok';
+  }
   /**
    * 'fehlt' / 'ausstehend' / 'ok' wie bei der Zwei-Faktor-Anmeldung (#242, #416) – erfüllt nur mit einem Passkey für die
    * gepflegte Adresse. Fehlt sie (entfernt, während die Pflicht an ist), bleibt es bei 'fehlt': nur das eigene Konto und
@@ -208,7 +290,9 @@ export class Passkeys {
   async lage(b: PflichtPerson, sitzungSeit?: Date): Promise<'ok' | 'ausstehend' | 'fehlt'> {
     return this.vorschrift.lage(b, sitzungSeit, () => this.fuerPflicht(b.id));
   }
-  async fehlt(b: PflichtPerson, sitzungSeit?: Date): Promise<boolean> { return (await this.lage(b, sitzungSeit)) === 'fehlt'; }
+  async fehlt(b: PflichtPerson, sitzungSeit?: Date): Promise<boolean> {
+    return (await this.lage(b, sitzungSeit)) === 'fehlt';
+  }
 
   /* ---------- Hinzufügen ---------- */
 
@@ -216,16 +300,25 @@ export class Passkeys {
   async beginneRegistrierung(b: { id: string; email: string; name: string }): Promise<PublicKeyCredentialCreationOptionsJSON> {
     const rp = await this.rpMitName();
     const g = await this.lies(b.id);
-    if (g.liste.length >= PASSKEYS_HOECHSTENS) throw new Fachfehler(409, t('anmeldung.passkey.fehler.zu-viele', { anzahl: PASSKEYS_HOECHSTENS }));
+    if (g.liste.length >= PASSKEYS_HOECHSTENS)
+      throw new Fachfehler(409, t('anmeldung.passkey.fehler.zu-viele', { anzahl: PASSKEYS_HOECHSTENS }));
     const optionen = await generateRegistrationOptions({
-      rpName: rp.name, rpID: rp.rpId, userName: b.email, userDisplayName: b.name || b.email,
+      rpName: rp.name,
+      rpID: rp.rpId,
+      userName: b.email,
+      userDisplayName: b.name || b.email,
       // Kennung für das Gerät: die Konto-Id (zufällig, keine E-Mail-Adresse) – so findet die Anmeldung ohne E-Mail das Konto.
       userID: new TextEncoder().encode(b.id),
       attestationType: 'none',
       excludeCredentials: this.passende(g, rp).map((e) => ({ id: e.id, transports: e.transports })),
       authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' },
     });
-    await this.zustand.setze(NEU, b.id, { challenge: optionen.challenge, rpId: rp.rpId, origin: rp.origin }, this.jetzt() + HERAUSFORDERUNG_MS);
+    await this.zustand.setze(
+      NEU,
+      b.id,
+      { challenge: optionen.challenge, rpId: rp.rpId, origin: rp.origin },
+      this.jetzt() + HERAUSFORDERUNG_MS,
+    );
     return optionen;
   }
 
@@ -237,8 +330,12 @@ export class Passkeys {
     let info;
     try {
       const r = await verifyRegistrationResponse({
-        response: antwort as RegistrationResponseJSON, expectedChallenge: h.challenge, expectedOrigin: h.origin, expectedRPID: h.rpId,
-        requireUserPresence: true, requireUserVerification: true,
+        response: antwort as RegistrationResponseJSON,
+        expectedChallenge: h.challenge,
+        expectedOrigin: h.origin,
+        expectedRPID: h.rpId,
+        requireUserPresence: true,
+        requireUserVerification: true,
       });
       if (!r.verified) throw new Error('nicht bestätigt');
       info = r.registrationInfo;
@@ -249,12 +346,19 @@ export class Passkeys {
     for (let i = 0; i < 3; i++) {
       const g = await this.lies(b.id);
       if (g.liste.some((e) => e.id === info.credential.id)) throw new Fachfehler(409, t('anmeldung.passkey.fehler.doppelt'));
-      if (g.liste.length >= PASSKEYS_HOECHSTENS) throw new Fachfehler(409, t('anmeldung.passkey.fehler.zu-viele', { anzahl: PASSKEYS_HOECHSTENS }));
+      if (g.liste.length >= PASSKEYS_HOECHSTENS)
+        throw new Fachfehler(409, t('anmeldung.passkey.fehler.zu-viele', { anzahl: PASSKEYS_HOECHSTENS }));
       const e: Eintrag = {
-        nr: randomUUID(), id: info.credential.id, oeffentlich: Buffer.from(info.credential.publicKey).toString('base64url'),
-        zaehler: info.credential.counter, name: nameAus(name, t('anmeldung.passkey.name.standard', { nr: g.liste.length + 1 })), rpId: h.rpId,
-        erstellt: new Date(this.jetzt()).toISOString(), zuletzt: null,
-        transports: (info.credential.transports ?? []).filter((x) => typeof x === 'string').slice(0, 8), mehrgeraete: info.credentialDeviceType === 'multiDevice',
+        nr: randomUUID(),
+        id: info.credential.id,
+        oeffentlich: Buffer.from(info.credential.publicKey).toString('base64url'),
+        zaehler: info.credential.counter,
+        name: nameAus(name, t('anmeldung.passkey.name.standard', { nr: g.liste.length + 1 })),
+        rpId: h.rpId,
+        erstellt: new Date(this.jetzt()).toISOString(),
+        zuletzt: null,
+        transports: (info.credential.transports ?? []).filter((x) => typeof x === 'string').slice(0, 8),
+        mehrgeraete: info.credentialDeviceType === 'multiDevice',
       };
       if (await this.ersetze(b.id, g, { liste: [...g.liste, e] })) {
         log.info('Passkey hinzugefügt', { benutzer: b.email, name: e.name, mehrgeraete: e.mehrgeraete });
@@ -310,7 +414,12 @@ export class Passkeys {
    * im Kurzzustand). Mit `benutzerId` nur deren Passkeys (zweiter Schritt, erneute Anmeldung); ohne fragt das Gerät,
    * welcher Passkey (Anmeldung ohne E-Mail-Adresse).
    */
-  async beginneAnmeldung(zweck: PasskeyZweck, benutzerId: string | null = null, bezug: string | null = null, ip = ''): Promise<{ kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }> {
+  async beginneAnmeldung(
+    zweck: PasskeyZweck,
+    benutzerId: string | null = null,
+    bezug: string | null = null,
+    ip = '',
+  ): Promise<{ kennung: string; optionen: PublicKeyCredentialRequestOptionsJSON }> {
     const rp = await this.rpMitName();
     const offen = zweck === 'anmelden';
     // Nur die offene Anmeldung zählt (Durchsicht Sicherheit): je Adressbereich höchstens PASSKEY_OPTIONEN_JE_ADRESSE in
@@ -318,7 +427,8 @@ export class Passkeys {
     if (offen) {
       const { anzahl } = await this.zustand.zaehle(JE_ADRESSE, adressbereich(ip), HERAUSFORDERUNG_MS);
       if (anzahl > PASSKEY_OPTIONEN_JE_ADRESSE) throw new Fachfehler(429, t('anmeldung.passkey.fehler.viele-adresse'));
-      if ((await this.zustand.anzahl(ANMELDUNG_OFFEN)) >= PASSKEY_OPTIONEN_GESAMT) throw new Fachfehler(429, t('anmeldung.passkey.fehler.viele'));
+      if ((await this.zustand.anzahl(ANMELDUNG_OFFEN)) >= PASSKEY_OPTIONEN_GESAMT)
+        throw new Fachfehler(429, t('anmeldung.passkey.fehler.viele'));
     }
     let allow: Array<{ id: string; transports?: string[] }> | undefined;
     if (benutzerId) {
@@ -327,7 +437,12 @@ export class Passkeys {
     }
     const optionen = await generateAuthenticationOptions({ rpID: rp.rpId, allowCredentials: allow, userVerification: 'required' });
     const kennung = neuerSchluessel();
-    await this.zustand.setze(offen ? ANMELDUNG_OFFEN : ANMELDUNG, hashe(kennung), { challenge: optionen.challenge, rpId: rp.rpId, origin: rp.origin, zweck, benutzerId, bezug } satisfies Herausforderung, this.jetzt() + HERAUSFORDERUNG_MS);
+    await this.zustand.setze(
+      offen ? ANMELDUNG_OFFEN : ANMELDUNG,
+      hashe(kennung),
+      { challenge: optionen.challenge, rpId: rp.rpId, origin: rp.origin, zweck, benutzerId, bezug } satisfies Herausforderung,
+      this.jetzt() + HERAUSFORDERUNG_MS,
+    );
     return { kennung, optionen };
   }
 
@@ -336,9 +451,14 @@ export class Passkeys {
    * erneute Anmeldung) oder sonst die Kennung des Kontos, die das Gerät mitschickt. Nur ein Hinweis – geprüft wird in
    * `pruefeAnmeldung`.
    */
-  async vermutlich(kennung: unknown, antwort: unknown): Promise<{ benutzerId: string | null; zweck: PasskeyZweck | null; bezug: string | null }> {
+  async vermutlich(
+    kennung: unknown,
+    antwort: unknown,
+  ): Promise<{ benutzerId: string | null; zweck: PasskeyZweck | null; bezug: string | null }> {
     const k = typeof kennung === 'string' && kennung ? hashe(kennung) : '';
-    const h = k ? ((await this.zustand.lies(ANMELDUNG, k)) ?? (await this.zustand.lies(ANMELDUNG_OFFEN, k)))?.wert as Herausforderung | undefined : undefined;
+    const h = k
+      ? (((await this.zustand.lies(ANMELDUNG, k)) ?? (await this.zustand.lies(ANMELDUNG_OFFEN, k)))?.wert as Herausforderung | undefined)
+      : undefined;
     if (h?.benutzerId) return { benutzerId: h.benutzerId, zweck: h.zweck, bezug: h.bezug };
     return { benutzerId: benutzerAusAntwort(antwort), zweck: h?.zweck ?? null, bezug: h?.bezug ?? null };
   }
@@ -348,10 +468,16 @@ export class Passkeys {
    * diesem Konto), Signatur, Origin, RP-ID, Nutzer-Verifizierung und Zähler prüfen, Zähler speichern.
    * Wirft 401 mit einer allgemeinen Meldung; den Grund schreibt nur das Protokoll.
    */
-  async pruefeAnmeldung(kennung: unknown, antwort: unknown, erwartet: { zweck: PasskeyZweck; benutzerId?: string }): Promise<PasskeyTreffer> {
+  async pruefeAnmeldung(
+    kennung: unknown,
+    antwort: unknown,
+    erwartet: { zweck: PasskeyZweck; benutzerId?: string },
+  ): Promise<PasskeyTreffer> {
     if (groesse(antwort) > PASSKEY_ANTWORT_MAX) throw new Fachfehler(413, t('anmeldung.passkey.fehler.antwort'));
     const k = typeof kennung === 'string' && kennung ? hashe(kennung) : '';
-    const h = k ? ((await this.zustand.nimm(ANMELDUNG, k)) ?? (await this.zustand.nimm(ANMELDUNG_OFFEN, k)))?.wert as Herausforderung | undefined : undefined;
+    const h = k
+      ? (((await this.zustand.nimm(ANMELDUNG, k)) ?? (await this.zustand.nimm(ANMELDUNG_OFFEN, k)))?.wert as Herausforderung | undefined)
+      : undefined;
     if (!h) throw new Fachfehler(401, t('anmeldung.passkey.fehler.abgelaufen'));
     if (h.zweck !== erwartet.zweck || (erwartet.benutzerId && h.benutzerId !== erwartet.benutzerId)) throw falsch();
     const a = antwort as AuthenticationResponseJSON | null;
@@ -360,7 +486,10 @@ export class Passkeys {
     if (!credId || !benutzerId) throw falsch();
     const g = await this.lies(benutzerId);
     const e = g.liste.find((x) => x.id === credId && x.rpId === h.rpId);
-    if (!e) { log.warn('Anmeldung mit Passkey abgelehnt: Passkey unbekannt', { zweck: h.zweck }); throw falsch(); }
+    if (!e) {
+      log.warn('Anmeldung mit Passkey abgelehnt: Passkey unbekannt', { zweck: h.zweck });
+      throw falsch();
+    }
     const neuerZaehler = await this.signatur(a!, h, e);
     await this.merkeBenutzung(benutzerId, g, e, neuerZaehler, h.zweck);
     return { benutzerId, name: e.name, zweck: h.zweck, bezug: h.bezug };
@@ -370,15 +499,21 @@ export class Passkeys {
   private async signatur(a: AuthenticationResponseJSON, h: Herausforderung, e: Eintrag): Promise<number> {
     try {
       const r = await verifyAuthenticationResponse({
-        response: a, expectedChallenge: h.challenge, expectedOrigin: h.origin, expectedRPID: h.rpId, requireUserVerification: true,
+        response: a,
+        expectedChallenge: h.challenge,
+        expectedOrigin: h.origin,
+        expectedRPID: h.rpId,
+        requireUserVerification: true,
         credential: { id: e.id, publicKey: Buffer.from(e.oeffentlich, 'base64url'), counter: e.zaehler, transports: e.transports },
       });
       if (!r.verified) throw new Error('nicht bestätigt');
       return r.authenticationInfo.newCounter;
     } catch (x) {
       const m = (x as Error).message;
-      if (/counter/i.test(m)) log.warn('Passkey abgelehnt: Zähler nicht gestiegen – womöglich kopiert', { passkey: e.name, zweck: h.zweck });
-      else log.warn('Anmeldung mit Passkey abgelehnt', { passkey: e.name, zweck: h.zweck, grund: m.replace(/"[^"]*"/g, '…').slice(0, 200) });
+      if (/counter/i.test(m))
+        log.warn('Passkey abgelehnt: Zähler nicht gestiegen – womöglich kopiert', { passkey: e.name, zweck: h.zweck });
+      else
+        log.warn('Anmeldung mit Passkey abgelehnt', { passkey: e.name, zweck: h.zweck, grund: m.replace(/"[^"]*"/g, '…').slice(0, 200) });
       throw falsch();
     }
   }
@@ -387,7 +522,13 @@ export class Passkeys {
    * Zähler und „zuletzt benutzt“ speichern – nur mit Vergleich: Holt ein anderer Prozess denselben Zähler, verliert einer.
    * Ist der Zähler inzwischen nicht mehr kleiner als der neue, war es eine Wiederholung oder eine Kopie.
    */
-  private async merkeBenutzung(benutzerId: string, g: Gespeichert & { roh: unknown }, e: Eintrag, neuerZaehler: number, zweck: PasskeyZweck) {
+  private async merkeBenutzung(
+    benutzerId: string,
+    g: Gespeichert & { roh: unknown },
+    e: Eintrag,
+    neuerZaehler: number,
+    zweck: PasskeyZweck,
+  ) {
     const jetzt = new Date(this.jetzt()).toISOString();
     for (let i = 0; i < 3; i++) {
       const akt = i === 0 ? g : await this.lies(benutzerId);
@@ -397,7 +538,12 @@ export class Passkeys {
         log.warn('Passkey abgelehnt: Zähler nicht gestiegen – womöglich kopiert', { passkey: e.name, zweck });
         throw falsch();
       }
-      if (await this.ersetze(benutzerId, akt, { liste: akt.liste.map((y) => (y.nr === e.nr ? { ...y, zaehler: neuerZaehler, zuletzt: jetzt } : y)) })) return;
+      if (
+        await this.ersetze(benutzerId, akt, {
+          liste: akt.liste.map((y) => (y.nr === e.nr ? { ...y, zaehler: neuerZaehler, zuletzt: jetzt } : y)),
+        })
+      )
+        return;
     }
     throw falsch();
   }

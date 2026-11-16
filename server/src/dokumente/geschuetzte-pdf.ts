@@ -19,7 +19,10 @@ import type { DokumentUmwandlung } from './umwandeln';
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 
 /** Die Teile dieses Ordners, die die geschützten PDFs rufen. */
-export interface GeschuetztePdfsTeile { umwandlung: DokumentUmwandlung; archiv: DokumentArchivfassung }
+export interface GeschuetztePdfsTeile {
+  umwandlung: DokumentUmwandlung;
+  archiv: DokumentArchivfassung;
+}
 
 /** Was die geschützten PDFs außer dem Kern brauchen – vom Dienst hereingereicht. */
 export interface GeschuetztePdfsAnschluss {
@@ -30,20 +33,40 @@ export interface GeschuetztePdfsAnschluss {
 }
 
 export class GeschuetztePdfs {
-  constructor(private readonly kern: Kern, private readonly teile: GeschuetztePdfsTeile, private readonly anschluss: GeschuetztePdfsAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: GeschuetztePdfsTeile,
+    private readonly anschluss: GeschuetztePdfsAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get ocr() { return this.anschluss.ocr(); }
-  private get vorschauFassung() { return this.teile.umwandlung.vorschauFassung; }
-  private listeTypen() { return this.anschluss.listeTypen(); }
-  private archivNachVolltext(id: string, neu?: boolean) { return this.teile.archiv.archivNachVolltext(id, neu); }
-  private notiere(...a: Parameters<Kern['historie']['schreibe']>) { return this.kern.historie.schreibe(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get ocr() {
+    return this.anschluss.ocr();
+  }
+  private get vorschauFassung() {
+    return this.teile.umwandlung.vorschauFassung;
+  }
+  private listeTypen() {
+    return this.anschluss.listeTypen();
+  }
+  private archivNachVolltext(id: string, neu?: boolean) {
+    return this.teile.archiv.archivNachVolltext(id, neu);
+  }
+  private notiere(...a: Parameters<Kern['historie']['schreibe']>) {
+    return this.kern.historie.schreibe(...a);
+  }
 
   /* ---------- Geschützte PDFs (#827) ---------- */
 
   entsperren?: PdfEntsperren;
-  verbindeEntsperren(e: PdfEntsperren) { this.entsperren = e; }
-  get pdfEntsperren() { return this.entsperren; }
+  verbindeEntsperren(e: PdfEntsperren) {
+    this.entsperren = e;
+  }
+  get pdfEntsperren() {
+    return this.entsperren;
+  }
 
   /** Inhalt der entsperrten Fassung zum Inhalt einer Datei (Stempel, Verkleinern, #827); null ohne. */
   entsperrtZu = async (inhalt: Buffer): Promise<Buffer | null> => {
@@ -53,7 +76,12 @@ export class GeschuetztePdfs {
 
   /** Was PdfEntsperren vom Dienst braucht (#827) – für index.ts und Tests. */
   entsperrenAnbindung(o: Omit<EntsperrenAnbindung, 'datei' | 'dokumenteMitSha' | 'nachEntsperren'>): EntsperrenAnbindung {
-    return { ...o, datei: (sha) => this.kern.liesGanz(sha), dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha), nachEntsperren: (docs, info) => this.nachEntsperren(docs, info) };
+    return {
+      ...o,
+      datei: (sha) => this.kern.liesGanz(sha),
+      dokumenteMitSha: (sha) => this.repo.dokumenteMitSha(sha),
+      nachEntsperren: (docs, info) => this.nachEntsperren(docs, info),
+    };
   }
 
   /**
@@ -75,14 +103,19 @@ export class GeschuetztePdfs {
   private async nachEntsperren(docs: Dokument[], info: FassungInfo) {
     this.vorschauFassung?.ausFassung(docs);
     const neu = docs.filter((d) => d.ocr && (d.ocr.stand === 'ausgelassen' || d.ocr.stand === 'fehler')).map((d) => d.id);
-    if (neu.length) { await this.repo.ocrEinreihen(neu); this.ocr?.anstossen(); }
+    if (neu.length) {
+      await this.repo.ocrEinreihen(neu);
+      this.ocr?.anstossen();
+    }
     for (const d of docs) if (d.ocr?.stand === 'fertig') void this.archivNachVolltext(d.id);
     const e = info.entsperrt;
     if (!e || e.art === 'rechte') return;
     for (const d of docs) {
-      const text = e.art === 'gemerkt' ? t('mappen.entsperren.historie.gemerkt', { name: e.name ?? '' }) : t('mappen.entsperren.historie.passwort');
-      await this.notiere(d.mappeId, e.von, 'entsperrt', { dokument: d.name, text })
-        .catch((f: Error) => protokoll.modul('dokumente').warn('Historie zum Entsperren nicht geschrieben', { dokument: d.id, fehler: f.message }));
+      const text =
+        e.art === 'gemerkt' ? t('mappen.entsperren.historie.gemerkt', { name: e.name ?? '' }) : t('mappen.entsperren.historie.passwort');
+      await this.notiere(d.mappeId, e.von, 'entsperrt', { dokument: d.name, text }).catch((f: Error) =>
+        protokoll.modul('dokumente').warn('Historie zum Entsperren nicht geschrieben', { dokument: d.id, fehler: f.message }),
+      );
     }
   }
 
@@ -99,9 +132,11 @@ export class GeschuetztePdfs {
   /** Schutz je Dokument (#827), nur bei geschützten PDFs. */
   async mitPdfSchutz(docs: Dokument[]): Promise<Dokument[]> {
     if (!this.entsperren || !docs.length) return docs;
-    return Promise.all(docs.map(async (d) => {
-      const s = await this.entsperren!.stand(d).catch(() => null);
-      return s ? { ...d, pdfSchutz: s } : d;
-    }));
+    return Promise.all(
+      docs.map(async (d) => {
+        const s = await this.entsperren!.stand(d).catch(() => null);
+        return s ? { ...d, pdfSchutz: s } : d;
+      }),
+    );
   }
 }

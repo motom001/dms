@@ -9,12 +9,16 @@ import { t } from './texte';
 /** Ansichten von „Zu erledigen“ (#725); die Wahl merkt sich Ablago je Benutzer. */
 export const ERLEDIGEN_ANSICHTEN = ['liste', 'monat', 'jahr'] as const;
 export type ErledigenAnsicht = (typeof ERLEDIGEN_ANSICHTEN)[number];
-export const istAnsicht = (v: unknown): v is ErledigenAnsicht => typeof v === 'string' && (ERLEDIGEN_ANSICHTEN as readonly string[]).includes(v);
+export const istAnsicht = (v: unknown): v is ErledigenAnsicht =>
+  typeof v === 'string' && (ERLEDIGEN_ANSICHTEN as readonly string[]).includes(v);
 
 /** Längster Zeitraum einer Abfrage in Tagen: ein ganzes Jahr samt angeschnittener Wochen. */
 export const ZEITRAUM_MAX_TAGE = 400;
 
-const utc = (iso: string) => { const [j, m, t] = iso.split('-').map(Number); return Date.UTC(j, m - 1, t); };
+const utc = (iso: string) => {
+  const [j, m, t] = iso.split('-').map(Number);
+  return Date.UTC(j, m - 1, t);
+};
 
 /** Gültiges Kalenderdatum JJJJ-MM-TT (auch 31.02. fällt durch)? */
 export function istTag(v: unknown): v is string {
@@ -58,7 +62,10 @@ export function monatsZeitraum(monat: string): { von: string; bis: string } {
 }
 
 /** Zeitraum, den die Jahresansicht lädt: 01.01. bis 31.12. */
-export const jahresZeitraum = (jahr: number) => ({ von: `${String(jahr).padStart(4, '0')}-01-01`, bis: `${String(jahr).padStart(4, '0')}-12-31` });
+export const jahresZeitraum = (jahr: number) => ({
+  von: `${String(jahr).padStart(4, '0')}-01-01`,
+  bis: `${String(jahr).padStart(4, '0')}-12-31`,
+});
 
 /**
  * Zeitraum einer Abfrage prüfen: beide Tage gültig, von ≤ bis, höchstens `ZEITRAUM_MAX_TAGE`.

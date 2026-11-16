@@ -11,30 +11,57 @@ import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import { ABGEMELDET, ApiFehler, anfrage } from './anfrage';
 
 /** Erkennung per Paket (#511): Standard in der Werkbank und Pakete mit dms:erkennen. */
-export interface ErkennungStand { standard: { paket: string | null; abfluss?: boolean }; pakete: Array<{ id: string; name: string; netz: boolean; laeuft: boolean }> }
+export interface ErkennungStand {
+  standard: { paket: string | null; abfluss?: boolean };
+  pakete: Array<{ id: string; name: string; netz: boolean; laeuft: boolean }>;
+}
 /** Werkbank → Suche (#356). */
-export interface SucheStand { unscharf: boolean; /** #1191 */ meintest: Meintest; woerter: number; synonyme: Wortgruppe[] }
+export interface SucheStand {
+  unscharf: boolean;
+  /** #1191 */ meintest: Meintest;
+  woerter: number;
+  synonyme: Wortgruppe[];
+}
 /** „Frag deine Ablage“ (#444): Werkbank (Höchstmenge) und Frage stellen (Antwort als NDJSON-Strom). */
-export interface FragenStand { verfuegbar: boolean; paket: string | null; grenzen: FragenGrenzen }
+export interface FragenStand {
+  verfuegbar: boolean;
+  paket: string | null;
+  grenzen: FragenGrenzen;
+}
 /**
  * Frage stellen (#444): Die Antwort kommt Zeile für Zeile (NDJSON) – erst die Ausschnitte, dann Teile, zum Schluss
  * „fertig“ oder „fehler“. Fehler vor dem Start (keine Frage, kein Paket) kommen als ApiFehler.
  */
-export async function frageStellen(frage: string, verlauf: VerlaufEintrag[], zeile: (z: FrageZeile) => void, signal?: AbortSignal): Promise<void> {
+export async function frageStellen(
+  frage: string,
+  verlauf: VerlaufEintrag[],
+  zeile: (z: FrageZeile) => void,
+  signal?: AbortSignal,
+): Promise<void> {
   let r: Response;
   const start = performance.now();
   const seite = messung.seite;
   // Messpanel (#565): Die letzte Zeile bringt die Zeiten der externen Dienste mit.
-  const mitMessung = (z: FrageZeile) => { if (z.art === 'fertig' || z.art === 'fehler') messung.erfasseStrom(seite, { methode: 'POST', url: '/api/fragen', status: r.status, start, extern: z.extern }); zeile(z); };
+  const mitMessung = (z: FrageZeile) => {
+    if (z.art === 'fertig' || z.art === 'fehler')
+      messung.erfasseStrom(seite, { methode: 'POST', url: '/api/fragen', status: r.status, start, extern: z.extern });
+    zeile(z);
+  };
   try {
-    r = await fetch('/api/fragen', { method: 'POST', credentials: 'same-origin', signal, headers: { 'x-dms': '1', 'x-sprache': sprache(), 'content-type': 'application/json' }, body: JSON.stringify({ frage, verlauf }) });
+    r = await fetch('/api/fragen', {
+      method: 'POST',
+      credentials: 'same-origin',
+      signal,
+      headers: { 'x-dms': '1', 'x-sprache': sprache(), 'content-type': 'application/json' },
+      body: JSON.stringify({ frage, verlauf }),
+    });
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;
     erreichbarkeit.ausfall();
     throw new ApiFehler(0, NICHT_ERREICHBAR);
   }
   if (!r.ok || !r.body) {
-    const d = await r.json().catch(() => null) as { fehler?: string; details?: unknown } | null;
+    const d = (await r.json().catch(() => null)) as { fehler?: string; details?: unknown } | null;
     if (r.status === 401) dispatchEvent(new Event(ABGEMELDET));
     throw new ApiFehler(r.status, d?.fehler ?? t('oberflaeche.api.fehler', { status: r.status }), d?.details);
   }
@@ -54,13 +81,26 @@ export async function frageStellen(frage: string, verlauf: VerlaufEintrag[], zei
   if (rest.trim()) mitMessung(JSON.parse(rest) as FrageZeile);
 }
 /** Vektoren in der Werkbank (#442). */
-export interface VektorStand { paket: string | null; modell: string | null; mitVektor: number; mitVolltext: number; modelle: Array<{ paket: string; modell: string; anzahl: number }>; suche: boolean; zwischenspeicherMB: number | null }
+export interface VektorStand {
+  paket: string | null;
+  modell: string | null;
+  mitVektor: number;
+  mitVolltext: number;
+  modelle: Array<{ paket: string; modell: string; anzahl: number }>;
+  suche: boolean;
+  zwischenspeicherMB: number | null;
+}
 /** Volltext und Texterkennung (#45, #459): Stand, Werkzeuge und Einstellungen für die Werkbank. */
-export interface OcrEinstellungen { aktiv: boolean; auftraege: number }
+export interface OcrEinstellungen {
+  aktiv: boolean;
+  auftraege: number;
+}
 export interface OcrStatus {
-  zaehler: Record<OcrStandArt, number>; laufend: number;
+  zaehler: Record<OcrStandArt, number>;
+  laufend: number;
   werkzeuge: Werkzeuge;
-  einstellungen: OcrEinstellungen; dateitypen: Record<string, string>;
+  einstellungen: OcrEinstellungen;
+  dateitypen: Record<string, string>;
   /** #395: erkannte Sprachen (Kennung → Anzahl Dokumente). */
   erkannteSprachen?: Record<string, number>;
   /** #458: Paket, das die Texterkennung übernimmt (null = keins), mit seinen Sprachen (#459). */
@@ -72,15 +112,30 @@ export interface OcrStatus {
     pakete: Array<{ id: string; name: string; version: string; typen: string[] }>;
     /** #614: Pakete mit dms:volltext. */
     volltextPakete?: Array<{ id: string; name: string; version: string; typen: string[] }>;
-    typen: Array<{ mime: string; name: string; anzahl: number; paket: { id: string; name: string } | null; katalog: { id: string; name: string } | null;
+    typen: Array<{
+      mime: string;
+      name: string;
+      anzahl: number;
+      paket: { id: string; name: string } | null;
+      katalog: { id: string; name: string } | null;
       /** #614: Paket, das den Volltext liefert (bzw. das aus dem Katalog). */
-      volltext?: { id: string; name: string } | null; volltextKatalog?: { id: string; name: string } | null }>;
+      volltext?: { id: string; name: string } | null;
+      volltextKatalog?: { id: string; name: string } | null;
+    }>;
   };
   /** #631: Archivfassung (PDF/A) – Pakete, Anzahl je Stand, Dokumente mit Fehler oder ausgelassen; null ohne. */
   archivfassung?: {
     pakete: Array<{ id: string; name: string; version: string; typen: string[] }>;
     zaehler: { fertig: number; bytes: number; wartet: number; ausgelassen: number; fehler: number };
-    liste: Array<{ dokument: string; name: string; mappeId: string; stand: 'wartet' | 'ausgelassen' | 'fehler' | 'fertig'; info: string | null; zeit: string; paket: string | null }>;
+    liste: Array<{
+      dokument: string;
+      name: string;
+      mappeId: string;
+      stand: 'wartet' | 'ausgelassen' | 'fehler' | 'fertig';
+      info: string | null;
+      zeit: string;
+      paket: string | null;
+    }>;
     /** #1216: Nachlauf der Vorschaubilder aus der Archivfassung – offen, erstellt, ohne Bild; null ohne Nachlauf. */
     vorschau?: { offen: number; erledigt: number; ohne: number; seit: string; zeit: string } | null;
   } | null;
@@ -101,18 +156,24 @@ export const sucheApi = {
   sucheSetze: (e: { unscharf?: boolean; meintest?: Meintest }) => anfrage<SucheStand>('PUT', '/api/werkbank/suche', e),
   // Gleichbedeutende Wörter (#356, #992): Wörter als Liste in ihrer Reihenfolge; `stand` = `geaendert` der Gruppe (#917).
   synonymNeu: (woerter: string[]) => anfrage<SucheStand & { id: string }>('POST', '/api/werkbank/suche/synonyme', { woerter }),
-  synonymAendern: (id: string, woerter: string[], stand?: string) => anfrage<SucheStand>('PUT', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`, { woerter, ...(stand ? { stand } : {}) }),
+  synonymAendern: (id: string, woerter: string[], stand?: string) =>
+    anfrage<SucheStand>('PUT', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`, { woerter, ...(stand ? { stand } : {}) }),
   synonymLoeschen: (id: string) => anfrage<SucheStand>('DELETE', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`),
   woerterNeu: () => anfrage<SucheStand>('POST', '/api/werkbank/suche/woerter'),
   /* Erkennung per Paket (#511) */
   erkennungStand: () => anfrage<ErkennungStand>('GET', '/api/werkbank/erkennung'),
-  erkennungStandard: (paket: string | null, abfluss = false) => anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { paket, ...(abfluss ? { abfluss: true } : {}) }),
+  erkennungStandard: (paket: string | null, abfluss = false) =>
+    anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { paket, ...(abfluss ? { abfluss: true } : {}) }),
   /* „Frag deine Ablage“ (#444) */
   fragenVerfuegbar: () => anfrage<{ verfuegbar: boolean; paket: string | null }>('GET', '/api/fragen'),
   fragenStand: () => anfrage<FragenStand>('GET', '/api/werkbank/fragen'),
   fragenGrenzen: (g: FragenGrenzen) => anfrage<FragenStand>('PUT', '/api/werkbank/fragen', g),
   // Aufträge der Texterkennung (#61)
-  ocrAuftraege: (stand: string, von = 0) => anfrage<{ gesamt: number; eintraege: Array<{ dokument: Dokument; mappeTitel: string; typId: string }> }>('GET', `/api/werkbank/texterkennung/auftraege?stand=${stand}&von=${von}&anzahl=100`),
+  ocrAuftraege: (stand: string, von = 0) =>
+    anfrage<{ gesamt: number; eintraege: Array<{ dokument: Dokument; mappeTitel: string; typId: string }> }>(
+      'GET',
+      `/api/werkbank/texterkennung/auftraege?stand=${stand}&von=${von}&anzahl=100`,
+    ),
   ocrNeu: (ids: string[]) => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/texterkennung/auftraege/neu', { ids }),
   ocrFehlerNeu: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/texterkennung/auftraege/fehler-neu'),
   ocrAbbrechen: (ids: string[]) => anfrage<{ abgebrochen: number }>('POST', '/api/werkbank/texterkennung/auftraege/abbrechen', { ids }),

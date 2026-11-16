@@ -48,7 +48,13 @@ export interface TabellenTeile {
  * Eine Seite der Tabelle `feldKey` an der Mappe `id`. `q.von` blättert (je {@link TABELLE_SEITE} Zeilen), `q.sortierung`
  * und `q.absteigend` sortieren wie in der Trefferliste des anderen Typs (ohne: nach Titel).
  */
-export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: string, q: { von?: unknown; sortierung?: unknown; absteigend?: unknown; gesamt?: unknown }, z?: Zugriff): Promise<Tabellenseite> {
+export async function tabellenSeite(
+  teile: TabellenTeile,
+  id: string,
+  feldKey: string,
+  q: { von?: unknown; sortierung?: unknown; absteigend?: unknown; gesamt?: unknown },
+  z?: Zugriff,
+): Promise<Tabellenseite> {
   const mappe = await teile.rechte.pruefeRecht(z, id, 'R');
   const typen = await teile.typen(z);
   const typ = typen.get(mappe.typId);
@@ -62,7 +68,9 @@ export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: s
   const von = Math.max(0, Math.floor(Number(q.von) || 0));
   const sortierung = teile.sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, quelltyp);
   const repo = teile.repo();
-  const klauseln: Klausel[] = [{ typen: [quelltyp.id], filter: [{ art: 'feld', key: f.quelle.feldKey, feldart: 'referenz', op: 'zeigtAuf', a: [mappe.id] }] }];
+  const klauseln: Klausel[] = [
+    { typen: [quelltyp.id], filter: [{ art: 'feld', key: f.quelle.feldKey, feldart: 'referenz', op: 'zeigtAuf', a: [mappe.id] }] },
+  ];
   // Verborgene Zeilen (#1208) in derselben Abfrage wie die Seite (#1265): alle Zeilen ohne Lesefilter gezählt, die
   // lesbaren abgezogen – nur die Zahl verlässt die Datenbank. Ohne Lesefilter (Verwaltung) gibt es keine verborgenen.
   // Gezählt wird auf jedem Blatt in dieser einen Abfrage; ein mitgegebenes `gesamt` (#740) braucht es nicht mehr und
@@ -70,9 +78,23 @@ export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: s
   const r = await repo.seite({ klauseln, sortierung, lesen: z?.lesen ?? null, von, anzahl: TABELLE_SEITE, mitVerborgenen: true });
   // Nur Werte der gezeigten Spalten verlassen den Server (keine Passwörter, nichts sonst aus der Mappe) – und nur deren Bezüge.
   // Eine zusammengesetzte Spalte (#1050) zeigt den Text aus ihren Teilen: deren Werte gehen mit (nie Passwörter).
-  const teilKeys = spalten.flatMap((k) => { const g = quelltyp.felder.find((x) => x.key === k); return g?.typ === 'zusammengesetzt' ? teileVon(quelltyp.felder, g).map((x) => x.key) : []; });
+  const teilKeys = spalten.flatMap((k) => {
+    const g = quelltyp.felder.find((x) => x.key === k);
+    return g?.typ === 'zusammengesetzt' ? teileVon(quelltyp.felder, g).map((x) => x.key) : [];
+  });
   const mitWert = [...new Set([...spalten, ...teilKeys])];
-  const mappen = r.mappen.map((m) => ({ ...m, werte: Object.fromEntries(mitWert.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])) }));
+  const mappen = r.mappen.map((m) => ({
+    ...m,
+    werte: Object.fromEntries(mitWert.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])),
+  }));
   const ziele = mappen.flatMap((m) => verweiseVon(quelltyp, m.werte).map((v) => v.zielId));
-  return { typId: quelltyp.id, spalten, gesamt: r.gesamt, verborgen: r.verborgen ?? 0, von, mappen, bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)) };
+  return {
+    typId: quelltyp.id,
+    spalten,
+    gesamt: r.gesamt,
+    verborgen: r.verborgen ?? 0,
+    von,
+    mappen,
+    bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)),
+  };
 }

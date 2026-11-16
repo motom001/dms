@@ -26,7 +26,9 @@ export function SucheOben() {
   const b = s.bereich;
   // Auf eine andere Seite ohne Liste: Das Feld beginnt leer. In einer Ansicht bleibt der Text, wenn man eine Mappe
   // öffnet; eine neue Liste leert es beim Anmelden selbst.
-  useEffect(() => { if (!pfad.startsWith(SUCHE_PFAD) && !kopfsuche.jetzt().bereich) kopfsuche.setzeText(''); }, [pfad]);
+  useEffect(() => {
+    if (!pfad.startsWith(SUCHE_PFAD) && !kopfsuche.jetzt().bereich) kopfsuche.setzeText('');
+  }, [pfad]);
 
   async function enter(wert: string) {
     const text = wert.trim();
@@ -37,7 +39,9 @@ export function SucheOben() {
         kopfsuche.setzeText('');
         geheZu(`/ablage/${r.typId}/${r.mappeId}?register=${encodeURIComponent(r.dokument.registerKey)}&dokument=${r.dokument.id}`);
         return;
-      } catch { /* keine Archivnummer: weiter wie sonst */ }
+      } catch {
+        /* keine Archivnummer: weiter wie sonst */
+      }
     }
     if (b) return;
     // In der erweiterten Suche bleiben Mappentypen, Bedingungen und „in“; sonst beginnt sie neu.
@@ -53,25 +57,34 @@ export function SucheOben() {
   if (s.text.trim()) mehr.set('volltext', s.text.trim());
   const suchenIn = b && {
     text: t('ablage.kopfsuche.suchen-in'),
-    inhalt: <>
-      <HakenFeld beschriftung={t('ablage.kopfsuche.in-feldern')} hinweis={t('ablage.kopfsuche.in-feldern.immer')} className="klein">
-        <input type="checkbox" checked disabled />
-      </HakenFeld>
-      <HakenFeld beschriftung={t('ablage.kopfsuche.in-dokumenten')} className="klein">
-        <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} />
-      </HakenFeld>
-      <HakenFeld beschriftung={t('ablage.kopfsuche.in-notizen')} className="klein">
-        <input type="checkbox" checked={notizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} />
-      </HakenFeld>
-      <Link to={`${SUCHE_PFAD}${mehr.toString() ? `?${mehr.toString()}` : ''}`} className="verweis sucheoben-mehr">{t('ablage.kopfsuche.mehr-filter')}</Link>
-    </>,
+    inhalt: (
+      <>
+        <HakenFeld beschriftung={t('ablage.kopfsuche.in-feldern')} hinweis={t('ablage.kopfsuche.in-feldern.immer')} className="klein">
+          <input type="checkbox" checked disabled />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('ablage.kopfsuche.in-dokumenten')} className="klein">
+          <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('ablage.kopfsuche.in-notizen')} className="klein">
+          <input type="checkbox" checked={notizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} />
+        </HakenFeld>
+        <Link to={`${SUCHE_PFAD}${mehr.toString() ? `?${mehr.toString()}` : ''}`} className="verweis sucheoben-mehr">
+          {t('ablage.kopfsuche.mehr-filter')}
+        </Link>
+      </>
+    ),
   };
 
   return (
-    <KopfSuche wert={s.text} setze={kopfsuche.setzeText} anker="startseite.suche" onEnter={(w) => void enter(w)}
+    <KopfSuche
+      wert={s.text}
+      setze={kopfsuche.setzeText}
+      anker="startseite.suche"
+      onEnter={(w) => void enter(w)}
       beschriftung={b ? t('ablage.kopfsuche.bereich-beschriftung', { name: b.name }) : t('ablage.kopfsuche.beschriftung')}
       platzhalter={b ? t('ablage.kopfsuche.bereich-platzhalter', { name: b.name }) : t('ablage.kopfsuche.platzhalter')}
       bereich={b ? { text: t('ablage.kopfsuche.chip', { name: b.name }), weg: kopfsuche.bereichWeg } : null}
-      suchenIn={suchenIn || null} />
+      suchenIn={suchenIn || null}
+    />
   );
 }

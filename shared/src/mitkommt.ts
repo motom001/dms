@@ -12,22 +12,37 @@ import { zeitplanText } from './automatisierung';
 import { t } from './texte';
 
 /** Ein Eintrag; neu: kommt mit diesem Update dazu (nur in der Vorschau eines Updates). */
-export interface MitkommtEintrag { schluessel: string; name: string; beschreibung?: string; neu?: boolean }
+export interface MitkommtEintrag {
+  schluessel: string;
+  name: string;
+  beschreibung?: string;
+  neu?: boolean;
+}
 
 /** Wann eine mitgelieferte Automatisierung läuft – Namen von Mappentyp und Feld schon aufgelöst. */
 export type MitkommtWenn =
-  | { art: 'datum'; typ: string; feld: string; vorlauf: number; einheit: 'tage' | 'wochen' | 'monate'; uhrzeit: string; wiederholung: number | null }
+  | {
+      art: 'datum';
+      typ: string;
+      feld: string;
+      vorlauf: number;
+      einheit: 'tage' | 'wochen' | 'monate';
+      uhrzeit: string;
+      wiederholung: number | null;
+    }
   | { art: 'zeitplan'; tage: number[]; uhrzeit: string; feiertage: boolean; jeBenutzer: boolean; profilzeit: boolean }
   | { art: 'ereignis'; ereignis: string; typ: string | null };
 /** An wen eine Aufgabe geht – Felder mit ihrer Bezeichnung. */
-export type MitkommtEmpfaenger = { art: 'ersteller' } | { art: 'feld'; feld: string; sonstErsteller: boolean } | { art: 'ereignis'; feld: string };
+export type MitkommtEmpfaenger =
+  { art: 'ersteller' } | { art: 'feld'; feld: string; sonstErsteller: boolean } | { art: 'ereignis'; feld: string };
 /** Was eine mitgelieferte Automatisierung tut. */
 export type MitkommtDann =
   | { art: 'aufgabe'; benachrichtigung: boolean; empfaenger: MitkommtEmpfaenger[] }
   | { art: 'feld'; felder: string[] }
   | { art: 'zusammenfassung' | 'favoriten' | 'sammelmeldung' | 'kontosperre' | 'paket' | 'stopp' | 'sonst' };
 export interface MitkommtAutomatisierung extends MitkommtEintrag {
-  wenn: MitkommtWenn; dann: MitkommtDann[];
+  wenn: MitkommtWenn;
+  dann: MitkommtDann[];
   /** Das Paket schlägt vor, sie gleich einzuschalten (#1082). */
   an: boolean;
 }
@@ -39,7 +54,8 @@ export interface Mitkommt {
   /** Mitgelieferte Mappen (#1038) je Mappentyp; vorlagen: Text-Vorlagen zum Ausfüllen. */
   vorgaben: Array<{ typ: string; namen: string[]; neu?: string[] }>;
   vorlagen: number;
-  beispiele: number; beispielDokumente: number;
+  beispiele: number;
+  beispielDokumente: number;
   /** Gruppen gleichbedeutender Wörter für die Suche (#356). */
   wortlisten: string[][];
   automatisierungen: MitkommtAutomatisierung[];
@@ -54,7 +70,9 @@ export interface Mitkommt {
   /** Einstellungen (#197): Abschnitte und Listen mit ihren Feldern. */
   einstellungen: Array<{ titel: string; felder: Array<{ name: string; typ: string }>; liste: boolean; neu?: boolean }>;
   /** Rechte und Netz: Code (läuft im Paket-Läufer), Zugriff auf Netzwerk/Internet, nur Texte (Sprachpaket). */
-  code: boolean; netz: boolean; sprache: boolean;
+  code: boolean;
+  netz: boolean;
+  sprache: boolean;
 }
 
 /** Ist nichts in der Ablage angelegt (Funktion, Sprache)? Dann sagt die Werkbank das ausdrücklich, wie der Katalog. */
@@ -66,8 +84,12 @@ const WIEDERHOLUNG: Record<number, string> = { 1: 'monatlich', 3: 'vierteljaehrl
 function datumText(w: Extract<MitkommtWenn, { art: 'datum' }>): string {
   const n = Math.abs(w.vorlauf);
   const feld = t('gemeinsam.mitkommt.feld-im-typ', { feld: w.feld, typ: w.typ });
-  const wann = !n ? t('gemeinsam.mitkommt.am-tag', { feld })
-    : t(w.vorlauf > 0 ? 'gemeinsam.mitkommt.vor' : 'gemeinsam.mitkommt.nach', { dauer: t.frei(`gemeinsam.mitkommt.einheit.${w.einheit}`, { anzahl: n }), feld });
+  const wann = !n
+    ? t('gemeinsam.mitkommt.am-tag', { feld })
+    : t(w.vorlauf > 0 ? 'gemeinsam.mitkommt.vor' : 'gemeinsam.mitkommt.nach', {
+        dauer: t.frei(`gemeinsam.mitkommt.einheit.${w.einheit}`, { anzahl: n }),
+        feld,
+      });
   return t('gemeinsam.mitkommt.geprueft-um', { wann, uhrzeit: w.uhrzeit });
 }
 
@@ -79,8 +101,12 @@ function empfaengerText(e: MitkommtEmpfaenger): string {
 }
 
 function dannText(d: MitkommtDann): string {
-  if (d.art === 'aufgabe') return t(d.benachrichtigung ? 'gemeinsam.mitkommt.benachrichtigung-an' : 'gemeinsam.mitkommt.aufgabe-an', { wer: d.empfaenger.map(empfaengerText).join(', ') || '?' });
-  if (d.art === 'feld') return t('gemeinsam.mitkommt.felder-setzen', { felder: d.felder.map((f) => t('gemeinsam.mitkommt.feld', { feld: f })).join(', ') });
+  if (d.art === 'aufgabe')
+    return t(d.benachrichtigung ? 'gemeinsam.mitkommt.benachrichtigung-an' : 'gemeinsam.mitkommt.aufgabe-an', {
+      wer: d.empfaenger.map(empfaengerText).join(', ') || '?',
+    });
+  if (d.art === 'feld')
+    return t('gemeinsam.mitkommt.felder-setzen', { felder: d.felder.map((f) => t('gemeinsam.mitkommt.feld', { feld: f })).join(', ') });
   return t.frei(`gemeinsam.mitkommt.dann.${d.art}`);
 }
 
@@ -88,14 +114,31 @@ function dannText(d: MitkommtDann): string {
  * Eine mitgelieferte Automatisierung in Klartext (#1047): Wenn, Dann und ob sie einmal je Termin oder wiederkehrend
  * läuft. ereignisName: Name eines Ereignisses (Oberfläche: aus ereignisse.json).
  */
-export function automatisierungKlartext(a: Pick<MitkommtAutomatisierung, 'wenn' | 'dann'>, ereignisName: (art: string) => string): { wenn: string; dann: string; ablauf: string } {
+export function automatisierungKlartext(
+  a: Pick<MitkommtAutomatisierung, 'wenn' | 'dann'>,
+  ereignisName: (art: string) => string,
+): { wenn: string; dann: string; ablauf: string } {
   const w = a.wenn;
-  const wenn = w.art === 'datum' ? datumText(w)
-    : w.art === 'zeitplan' ? `${zeitplanText({ ...w, rolle: null })}${w.jeBenutzer ? t('gemeinsam.mitkommt.je-benutzer') : ''}`
-    : `${w.typ ? `${w.typ}: ` : ''}${ereignisName(w.ereignis)}`;
-  const ablauf = w.art === 'datum'
-    ? (w.wiederholung ? t('gemeinsam.mitkommt.wiederkehrend', { wie: WIEDERHOLUNG[w.wiederholung] ? t.frei(`gemeinsam.mitkommt.wiederholung.${WIEDERHOLUNG[w.wiederholung]}`) : w.wiederholung % 12 === 0 ? t('gemeinsam.mitkommt.alle-jahre', { anzahl: w.wiederholung / 12 }) : t('gemeinsam.mitkommt.alle-monate', { anzahl: w.wiederholung }) }) : t('gemeinsam.mitkommt.einmal'))
-    : w.art === 'zeitplan' ? t('gemeinsam.mitkommt.nach-zeitplan') : t('gemeinsam.mitkommt.je-ereignis');
+  const wenn =
+    w.art === 'datum'
+      ? datumText(w)
+      : w.art === 'zeitplan'
+        ? `${zeitplanText({ ...w, rolle: null })}${w.jeBenutzer ? t('gemeinsam.mitkommt.je-benutzer') : ''}`
+        : `${w.typ ? `${w.typ}: ` : ''}${ereignisName(w.ereignis)}`;
+  const ablauf =
+    w.art === 'datum'
+      ? w.wiederholung
+        ? t('gemeinsam.mitkommt.wiederkehrend', {
+            wie: WIEDERHOLUNG[w.wiederholung]
+              ? t.frei(`gemeinsam.mitkommt.wiederholung.${WIEDERHOLUNG[w.wiederholung]}`)
+              : w.wiederholung % 12 === 0
+                ? t('gemeinsam.mitkommt.alle-jahre', { anzahl: w.wiederholung / 12 })
+                : t('gemeinsam.mitkommt.alle-monate', { anzahl: w.wiederholung }),
+          })
+        : t('gemeinsam.mitkommt.einmal')
+      : w.art === 'zeitplan'
+        ? t('gemeinsam.mitkommt.nach-zeitplan')
+        : t('gemeinsam.mitkommt.je-ereignis');
   return { wenn, dann: a.dann.map(dannText).join(', ') || '…', ablauf };
 }
 
@@ -107,7 +150,8 @@ export function automatisierungKlartext(a: Pick<MitkommtAutomatisierung, 'wenn' 
 export function automatisierungAussen(a: Pick<MitkommtAutomatisierung, 'dann'>, netz: boolean): string[] {
   const aus = new Set<string>();
   for (const d of a.dann) {
-    if ((d.art === 'aufgabe' && d.benachrichtigung) || d.art === 'zusammenfassung' || d.art === 'sammelmeldung' || d.art === 'kontosperre') aus.add(t('gemeinsam.mitkommt.aussen.mail'));
+    if ((d.art === 'aufgabe' && d.benachrichtigung) || d.art === 'zusammenfassung' || d.art === 'sammelmeldung' || d.art === 'kontosperre')
+      aus.add(t('gemeinsam.mitkommt.aussen.mail'));
     if (d.art === 'paket') aus.add(netz ? t('gemeinsam.mitkommt.aussen.paket-netz') : t('gemeinsam.mitkommt.aussen.paket'));
   }
   return [...aus];
@@ -116,9 +160,17 @@ export function automatisierungAussen(a: Pick<MitkommtAutomatisierung, 'dann'>, 
 /** Kurzfassung wie im Katalog: „3 Mappentypen · 5 Ansichten · 2 Automatisierungen“ – für den zugeklappten Bereich. */
 export function mitkommtKurz(m: Mitkommt): string {
   const teile: Array<[number, string]> = [
-    [m.mappentypen.length, 'mappentypen'], [m.sichten.length, 'sichten'], [m.vorgaben.reduce((n, v) => n + v.namen.length, 0), 'vorgaben'], [m.beispiele, 'beispiele'],
-    [m.wortlisten.length, 'wortlisten'], [m.automatisierungen.length, 'automatisierungen'], [m.ablaufvorlagen.length, 'ablaufvorlagen'], [m.aktionen.length, 'aktionen'],
-    [m.rundgaenge?.length ?? 0, 'rundgaenge'], [m.tipps ?? 0, 'tipps'], [m.einstellungen.reduce((n, e) => n + e.felder.length, 0), 'einstellungen'],
+    [m.mappentypen.length, 'mappentypen'],
+    [m.sichten.length, 'sichten'],
+    [m.vorgaben.reduce((n, v) => n + v.namen.length, 0), 'vorgaben'],
+    [m.beispiele, 'beispiele'],
+    [m.wortlisten.length, 'wortlisten'],
+    [m.automatisierungen.length, 'automatisierungen'],
+    [m.ablaufvorlagen.length, 'ablaufvorlagen'],
+    [m.aktionen.length, 'aktionen'],
+    [m.rundgaenge?.length ?? 0, 'rundgaenge'],
+    [m.tipps ?? 0, 'tipps'],
+    [m.einstellungen.reduce((n, e) => n + e.felder.length, 0), 'einstellungen'],
   ];
   const text = teile.filter(([n]) => n > 0).map(([n, k]) => t.frei(`gemeinsam.mitkommt.kurz.${k}`, { anzahl: n }));
   if (m.sprache) return t('gemeinsam.mitkommt.kurz.sprache');
@@ -130,11 +182,30 @@ export function mitkommtKurz(m: Mitkommt): string {
  * Was der Katalog allein verrät (#1047): Mappentypen, Ansichten und Beispiele einer Katalogversion – für die Paketseite
  * vor der Installation. Alles Weitere zeigt die Vorschau, die das Paket selbst liest.
  */
-export function mitkommtAusKatalog(v: { inhalt: { mappentypen: Array<{ schluessel: string; name: string }>; sichten: Array<{ schluessel: string; name: string }>; beispiele: number }; code: boolean; sprache?: unknown }): Mitkommt {
+export function mitkommtAusKatalog(v: {
+  inhalt: {
+    mappentypen: Array<{ schluessel: string; name: string }>;
+    sichten: Array<{ schluessel: string; name: string }>;
+    beispiele: number;
+  };
+  code: boolean;
+  sprache?: unknown;
+}): Mitkommt {
   return {
-    mappentypen: v.inhalt.mappentypen.map((x) => ({ schluessel: x.schluessel, name: x.name, felder: 0 })), sichten: v.inhalt.sichten.map((x) => ({ schluessel: x.schluessel, name: x.name })),
-    vorgaben: [], vorlagen: 0, beispiele: v.inhalt.beispiele, beispielDokumente: 0, wortlisten: [], automatisierungen: [], ablaufvorlagen: [], aktionen: [], einstellungen: [],
-    code: v.code, netz: false, sprache: !!v.sprache,
+    mappentypen: v.inhalt.mappentypen.map((x) => ({ schluessel: x.schluessel, name: x.name, felder: 0 })),
+    sichten: v.inhalt.sichten.map((x) => ({ schluessel: x.schluessel, name: x.name })),
+    vorgaben: [],
+    vorlagen: 0,
+    beispiele: v.inhalt.beispiele,
+    beispielDokumente: 0,
+    wortlisten: [],
+    automatisierungen: [],
+    ablaufvorlagen: [],
+    aktionen: [],
+    einstellungen: [],
+    code: v.code,
+    netz: false,
+    sprache: !!v.sprache,
   };
 }
 
@@ -153,7 +224,11 @@ export function liesKurzanleitung(v: unknown): Record<string, string[]> | undefi
   const erg: Record<string, string[]> = {};
   for (const [sprache, schritte] of Object.entries(v as Record<string, unknown>)) {
     if (!/^[a-z]{2,3}(-[A-Z]{2})?$/.test(sprache) || !Array.isArray(schritte)) continue;
-    const l = schritte.filter((x): x is string => typeof x === 'string').map((x) => x.replace(/\s+/g, ' ').trim()).filter((x) => x && x.length <= KURZANLEITUNG_ZEICHEN && !/[<>]/.test(x)).slice(0, KURZANLEITUNG_SCHRITTE);
+    const l = schritte
+      .filter((x): x is string => typeof x === 'string')
+      .map((x) => x.replace(/\s+/g, ' ').trim())
+      .filter((x) => x && x.length <= KURZANLEITUNG_ZEICHEN && !/[<>]/.test(x))
+      .slice(0, KURZANLEITUNG_SCHRITTE);
     if (l.length) erg[sprache] = l;
   }
   return Object.keys(erg).length ? erg : undefined;

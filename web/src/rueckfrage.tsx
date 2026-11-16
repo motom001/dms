@@ -31,7 +31,11 @@ export interface Rueckfrage {
   bestaetigeMit?: string;
 }
 
-export interface OffeneRueckfrage extends Rueckfrage { nr: number; nurHinweis?: boolean; fertig(ok: boolean): void }
+export interface OffeneRueckfrage extends Rueckfrage {
+  nr: number;
+  nurHinweis?: boolean;
+  fertig(ok: boolean): void;
+}
 
 let naechste = 0;
 let zeige: ((r: OffeneRueckfrage) => void) | null = null;
@@ -41,15 +45,24 @@ const wartend: OffeneRueckfrage[] = [];
 export function rueckfrage(r: Rueckfrage): Promise<boolean> {
   return new Promise((fertig) => {
     const o = { ...r, nr: ++naechste, fertig };
-    if (zeige) zeige(o); else wartend.push(o);
+    if (zeige) zeige(o);
+    else wartend.push(o);
   });
 }
 
 /** Nur ein Hinweis mit einem Knopf (statt `alert()`). */
 export function hinweis(r: { titel: string; text?: ReactNode; ok?: string }): Promise<void> {
   return new Promise((fertig) => {
-    const o: OffeneRueckfrage = { nr: ++naechste, titel: r.titel, text: r.text, ja: r.ok ?? t('oberflaeche.rueckfrage.verstanden'), nurHinweis: true, fertig: () => fertig() };
-    if (zeige) zeige(o); else wartend.push(o);
+    const o: OffeneRueckfrage = {
+      nr: ++naechste,
+      titel: r.titel,
+      text: r.text,
+      ja: r.ok ?? t('oberflaeche.rueckfrage.verstanden'),
+      nurHinweis: true,
+      fertig: () => fertig(),
+    };
+    if (zeige) zeige(o);
+    else wartend.push(o);
   });
 }
 
@@ -60,5 +73,7 @@ export function hinweis(r: { titel: string; text?: ReactNode; ok?: string }): Pr
 export function rueckfragenAnzeigen(anzeigen: (r: OffeneRueckfrage[]) => void): () => void {
   zeige = (o) => anzeigen([o]);
   if (wartend.length) anzeigen(wartend.splice(0));
-  return () => { zeige = null; };
+  return () => {
+    zeige = null;
+  };
 }

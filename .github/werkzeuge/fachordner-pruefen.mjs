@@ -28,7 +28,10 @@ export function pruefe(wurzel = 'server/src') {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const funde = pruefe(process.argv[2]);
   for (const f of funde) {
-    for (const n of f.fehlt) console.log(`::error file=${f.ordner}/${n},title=Fachordner::${f.ordner}/ hat einen Dienst, aber keine ${n} – jeder Fachordner mit *.dienst.ts braucht index.ts und README.md`);
+    for (const n of f.fehlt)
+      console.log(
+        `::error file=${f.ordner}/${n},title=Fachordner::${f.ordner}/ hat einen Dienst, aber keine ${n} – jeder Fachordner mit *.dienst.ts braucht index.ts und README.md`,
+      );
   }
   console.log(funde.length ? `${funde.length} Fachordner unvollständig.` : 'Alle Fachordner mit Dienst haben index.ts und README.md.');
   process.exitCode = funde.length ? 1 : 0;

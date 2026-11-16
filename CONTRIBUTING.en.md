@@ -23,7 +23,7 @@ The pull request template asks for this; the "Abhängigkeiten" (dependencies) ch
 
 ## Checking style and dependencies
 
-Before the pull request, `npm run lint` (ESLint with type information) and `npm run lint:abh` (dependency-cruiser) pass without errors. Whatever existed when they were introduced is listed in `eslint-suppressions.json` or `.dependency-cruiser-known-violations.json` and is not reported – new code is fully strict, and the lists must not grow: **move yes, add no**. Exceptions in the code only with a reason (`// eslint-disable-next-line rule -- reason`). Details in the [developer manual](https://help.ablago.app/entwickler/aktuell/en/stil/).
+Before the pull request, `npm run format` formats the code (Prettier, checked by CI), and `npm run lint` (ESLint with type information) and `npm run lint:abh` (dependency-cruiser) pass without errors. Whatever existed when they were introduced is listed in `eslint-suppressions.json` or `.dependency-cruiser-known-violations.json` and is not reported – new code is fully strict, and the lists must not grow: **move yes, add no**. Exceptions in the code only with a reason (`// eslint-disable-next-line rule -- reason`). Details in the [developer manual](https://help.ablago.app/entwickler/aktuell/en/stil/).
 
 ## Graphics and images per language
 

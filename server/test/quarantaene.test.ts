@@ -37,14 +37,33 @@ not ok 2 - Abschnitt B
 ok 3 - Abschnitt C
 1..3
 `;
-const eintrag = (name: string, faellig = '2026-12-31'): QuarantaeneEintrag => ({ name, datei: 'x.test.ts', issue: 900, faellig, grund: 'Test' });
+const eintrag = (name: string, faellig = '2026-12-31'): QuarantaeneEintrag => ({
+  name,
+  datei: 'x.test.ts',
+  issue: 900,
+  faellig,
+  grund: 'Test',
+});
 
 describe('Quarantäne (#900)', () => {
   it('liest den Baum: Untertests stehen vor ihrem Abschnitt, \\# und SKIP entfernt', () => {
     const b = liesTap(TAP);
-    assert.deepEqual(b.map((k) => [k.name, k.ok]), [['Abschnitt A', false], ['Abschnitt B', false], ['Abschnitt C', true]]);
-    assert.deepEqual(b[0].kinder.map((k) => k.name), ['stabil', 'wackelt (#1)', 'übersprungen']);
-    assert.deepEqual(b[1].kinder[0].kinder.map((k) => [k.name, k.ok]), [['kaputt', false]]);
+    assert.deepEqual(
+      b.map((k) => [k.name, k.ok]),
+      [
+        ['Abschnitt A', false],
+        ['Abschnitt B', false],
+        ['Abschnitt C', true],
+      ],
+    );
+    assert.deepEqual(
+      b[0].kinder.map((k) => k.name),
+      ['stabil', 'wackelt (#1)', 'übersprungen'],
+    );
+    assert.deepEqual(
+      b[1].kinder[0].kinder.map((k) => [k.name, k.ok]),
+      [['kaputt', false]],
+    );
   });
 
   it('ohne Liste: nur die untersten Fehlschläge zählen, mit Pfad', () => {
@@ -57,16 +76,30 @@ describe('Quarantäne (#900)', () => {
     const a = werteAus(liesTap(TAP), [eintrag('wackelt (#1)'), eintrag('Gruppe'), eintrag('gut'), eintrag('umbenannt')], '2026-11-06', 1);
     assert.deepEqual(a.echt, []);
     assert.equal(a.scheitert, false);
-    assert.deepEqual(a.quarantaene.map((q) => [q.name, q.ergebnis]), [['wackelt (#1)', 'fehlgeschlagen'], ['Gruppe', 'fehlgeschlagen'], ['gut', 'bestanden'], ['umbenannt', 'nicht gefunden']]);
+    assert.deepEqual(
+      a.quarantaene.map((q) => [q.name, q.ergebnis]),
+      [
+        ['wackelt (#1)', 'fehlgeschlagen'],
+        ['Gruppe', 'fehlgeschlagen'],
+        ['gut', 'bestanden'],
+        ['umbenannt', 'nicht gefunden'],
+      ],
+    );
     const md = zusammenfassung(a);
     assert.match(md, /\| wackelt \(#1\) \| x\.test\.ts \| #900 \| 2026-12-31 \| fehlgeschlagen \|/);
   });
 
   it('überfällig: CI scheitert, auch wenn der Test bestanden hat; am Tag der Fälligkeit noch nicht', () => {
-    assert.equal(werteAus(liesTap(TAP), [eintrag('wackelt (#1)'), eintrag('Gruppe'), eintrag('gut', '2026-11-06')], '2026-11-06', 1).scheitert, false);
+    assert.equal(
+      werteAus(liesTap(TAP), [eintrag('wackelt (#1)'), eintrag('Gruppe'), eintrag('gut', '2026-11-06')], '2026-11-06', 1).scheitert,
+      false,
+    );
     const a = werteAus(liesTap(TAP), [eintrag('wackelt (#1)'), eintrag('Gruppe'), eintrag('gut', '2026-11-05')], '2026-11-06', 1);
     assert.equal(a.scheitert, true);
-    assert.deepEqual(a.quarantaene.filter((q) => q.ueberfaellig).map((q) => q.name), ['gut']);
+    assert.deepEqual(
+      a.quarantaene.filter((q) => q.ueberfaellig).map((q) => q.name),
+      ['gut'],
+    );
     assert.match(zusammenfassung(a), /2026-11-05 \*\*überfällig\*\*/);
   });
 

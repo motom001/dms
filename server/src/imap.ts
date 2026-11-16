@@ -11,7 +11,8 @@ import { MAIL_INLINE_BILD_MAX } from './grenzen';
 
 export const verbindeImap: ImapVerbinder = async (z, ordner) => {
   const client = new ImapFlow({
-    host: z.server, port: z.port,
+    host: z.server,
+    port: z.port,
     secure: z.verschluesselung === 'ssl',
     // STARTTLS: verlangen (kein stilles Zurückfallen auf Klartext); „keine“: ausdrücklich ohne.
     doSTARTTLS: z.verschluesselung === 'starttls' ? true : z.verschluesselung === 'keine' ? false : undefined,
@@ -26,7 +27,10 @@ export const verbindeImap: ImapVerbinder = async (z, ordner) => {
   let lock: { release(): void } | null = null;
   try {
     lock = await client.getMailboxLock(ordner);
-  } catch (e) { await client.logout().catch(() => {}); throw e; }
+  } catch (e) {
+    await client.logout().catch(() => {});
+    throw e;
+  }
   const box = client.mailbox;
   const sitzung: ImapSitzung = {
     uidValidity: box ? String(box.uidValidity) : '',
@@ -49,12 +53,24 @@ export const verbindeImap: ImapVerbinder = async (z, ordner) => {
       if (!liste.some((x) => x.path === ziel)) await client.mailboxCreate(ziel).catch(() => {});
       await client.messageMove(String(uid), ziel, { uid: true });
     },
-    async gelesen(uid) { await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true }); },
-    async loesche(uid) { await client.messageDelete(String(uid), { uid: true }); },
-    async ordnerListe() { return (await client.list()).map((x) => x.path); },
-    async schliessen() { lock?.release(); await client.logout().catch(() => {}); },
+    async gelesen(uid) {
+      await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
+    },
+    async loesche(uid) {
+      await client.messageDelete(String(uid), { uid: true });
+    },
+    async ordnerListe() {
+      return (await client.list()).map((x) => x.path);
+    },
+    async schliessen() {
+      lock?.release();
+      await client.logout().catch(() => {});
+    },
     // Externe Dienste (#565): Bytes der Sitzung laut imapflow.
-    bytes() { const s = client.stats(); return { hin: s.sent, zurueck: s.received }; },
+    bytes() {
+      const s = client.stats();
+      return { hin: s.sent, zurueck: s.received };
+    },
   };
   return sitzung;
 };
@@ -68,14 +84,28 @@ export const liesMail: MailLeser = async (quelle) => {
     const eingebettet = bild && (a.related === true || (a.contentDisposition === 'inline' && a.size < MAIL_INLINE_BILD_MAX));
     const endung = a.contentType === 'message/rfc822' ? '.eml' : '';
     const name = (a.filename || t('meldungen.imap.anhang', { wert: i + 1, endung })).replace(/[\\/:*?"<>|\r\n]+/g, ' ').trim();
-    return { name: endung && !name.toLowerCase().endsWith('.eml') ? `${name}${endung}` : name, mime: a.contentType, inhalt: a.content, eingebettet };
+    return {
+      name: endung && !name.toLowerCase().endsWith('.eml') ? `${name}${endung}` : name,
+      mime: a.contentType,
+      inhalt: a.content,
+      eingebettet,
+    };
   });
   // Nur Text: HTML wandelt mailparser in Text um; externe Inhalte werden nie geladen.
   // Bild-Adressen (Logos, Zählpixel) aus der Umwandlung entfernen; Links bleiben lesbar.
-  const text = (m.text ?? '').replace(/\[https?:\/\/[^\]\s]*\.(gif|png|jpe?g|webp|svg|bmp)(\?[^\]\s]*)?\]/gi, '')
-    .replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  const text = (m.text ?? '')
+    .replace(/\[https?:\/\/[^\]\s]*\.(gif|png|jpe?g|webp|svg|bmp)(\?[^\]\s]*)?\]/gi, '')
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   return {
-    messageId: m.messageId, betreff: (m.subject ?? '').trim(), datum: m.date ?? null,
-    absenderName: von?.name ?? '', absenderAdresse: (von?.address ?? '').toLowerCase(), text, anhaenge,
+    messageId: m.messageId,
+    betreff: (m.subject ?? '').trim(),
+    datum: m.date ?? null,
+    absenderName: von?.name ?? '',
+    absenderAdresse: (von?.address ?? '').toLowerCase(),
+    text,
+    anhaenge,
   };
 };

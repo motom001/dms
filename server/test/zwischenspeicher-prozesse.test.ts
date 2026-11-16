@@ -21,7 +21,10 @@ describe('Zwischenspeicher je Prozess (#874)', () => {
 
   it('Seitenbilder: mit 2 Prozessen behält jeder 2 der 4 Dokumente', async () => {
     let erzeugt = 0;
-    const s = new Seitenbilder(4, async () => { erzeugt++; return [Buffer.from('x')]; });
+    const s = new Seitenbilder(4, async () => {
+      erzeugt++;
+      return [Buffer.from('x')];
+    });
     teileZwischenspeicher(2);
     for (const sha of ['a', 'b', 'c']) await s.bild(sha, 1, async () => Buffer.alloc(0));
     assert.equal(erzeugt, 3);

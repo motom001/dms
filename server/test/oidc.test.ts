@@ -19,38 +19,89 @@ const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.statu
 const b64 = (x: unknown) => Buffer.from(JSON.stringify(x)).toString('base64url');
 
 function schluesselpaar(art: 'rsa' | 'ec' | 'ed', kid: string) {
-  const p = art === 'rsa' ? generateKeyPairSync('rsa', { modulusLength: 2048 }) : art === 'ec' ? generateKeyPairSync('ec', { namedCurve: 'P-256' }) : generateKeyPairSync('ed25519');
-  return { privat: p.privateKey, jwk: { ...(p.publicKey.export({ format: 'jwk' }) as JsonWebKey), kid, use: 'sig' }, alg: art === 'rsa' ? 'RS256' : art === 'ec' ? 'ES256' : 'EdDSA' };
+  const p =
+    art === 'rsa'
+      ? generateKeyPairSync('rsa', { modulusLength: 2048 })
+      : art === 'ec'
+        ? generateKeyPairSync('ec', { namedCurve: 'P-256' })
+        : generateKeyPairSync('ed25519');
+  return {
+    privat: p.privateKey,
+    jwk: { ...(p.publicKey.export({ format: 'jwk' }) as JsonWebKey), kid, use: 'sig' },
+    alg: art === 'rsa' ? 'RS256' : art === 'ec' ? 'ES256' : 'EdDSA',
+  };
 }
-function token(claims: Record<string, unknown>, k: { privat: KeyObject; jwk: JsonWebKey; alg: string }, kopf: Record<string, unknown> = {}) {
+function token(
+  claims: Record<string, unknown>,
+  k: { privat: KeyObject; jwk: JsonWebKey; alg: string },
+  kopf: Record<string, unknown> = {},
+) {
   const h = b64({ alg: k.alg, kid: k.jwk.kid, typ: 'JWT', ...kopf });
   const c = b64(claims);
   const d = Buffer.from(`${h}.${c}`);
-  const sig = k.alg === 'EdDSA' ? sign(null, d, k.privat) : k.alg === 'ES256' ? sign('sha256', d, { key: k.privat, dsaEncoding: 'ieee-p1363' }) : sign('sha256', d, k.privat);
+  const sig =
+    k.alg === 'EdDSA'
+      ? sign(null, d, k.privat)
+      : k.alg === 'ES256'
+        ? sign('sha256', d, { key: k.privat, dsaEncoding: 'ieee-p1363' })
+        : sign('sha256', d, k.privat);
   return `${h}.${c}.${sig.toString('base64url')}`;
 }
 
 /** Nachgestellter Anbieter: Discovery, JWKS, Token-Endpunkt; prüft PKCE und Client-Zugang. */
-function anbieter(opt: { schluessel: ReturnType<typeof schluesselpaar>[]; signiert?: ReturnType<typeof schluesselpaar>; claims?: Record<string, unknown>; jetzt: () => number }) {
+function anbieter(opt: {
+  schluessel: ReturnType<typeof schluesselpaar>[];
+  signiert?: ReturnType<typeof schluesselpaar>;
+  claims?: Record<string, unknown>;
+  jetzt: () => number;
+}) {
   const codes = new Map<string, { challenge: string; nonce: string; redirect: string }>();
   const log: string[] = [];
   const abruf: Abruf = async (url, init) => {
     log.push(`${init?.method ?? 'GET'} ${url}`);
-    const antwort = (status: number, daten: unknown) => ({ ok: status < 400, status, json: async () => daten, text: async () => JSON.stringify(daten) });
-    if (url === `${ISS}/.well-known/openid-configuration`) return antwort(200, {
-      issuer: ISS, authorization_endpoint: 'https://login.example.org/authorize', token_endpoint: 'https://login.example.org/token',
-      jwks_uri: 'https://login.example.org/keys', end_session_endpoint: 'https://login.example.org/logout', token_endpoint_auth_methods_supported: ['client_secret_basic'],
+    const antwort = (status: number, daten: unknown) => ({
+      ok: status < 400,
+      status,
+      json: async () => daten,
+      text: async () => JSON.stringify(daten),
     });
+    if (url === `${ISS}/.well-known/openid-configuration`)
+      return antwort(200, {
+        issuer: ISS,
+        authorization_endpoint: 'https://login.example.org/authorize',
+        token_endpoint: 'https://login.example.org/token',
+        jwks_uri: 'https://login.example.org/keys',
+        end_session_endpoint: 'https://login.example.org/logout',
+        token_endpoint_auth_methods_supported: ['client_secret_basic'],
+      });
     if (url === 'https://login.example.org/keys') return antwort(200, { keys: opt.schluessel.map((k) => k.jwk) });
     if (url === 'https://login.example.org/token') {
-      if (init?.headers?.authorization !== `Basic ${Buffer.from('dms-client:geheim%20123').toString('base64')}`) return antwort(401, { error: 'invalid_client' });
+      if (init?.headers?.authorization !== `Basic ${Buffer.from('dms-client:geheim%20123').toString('base64')}`)
+        return antwort(401, { error: 'invalid_client' });
       const q = new URLSearchParams(init.body);
       const c = codes.get(q.get('code')!);
       if (!c) return antwort(400, { error: 'invalid_grant' });
-      if (createHash('sha256').update(q.get('code_verifier')!).digest('base64url') !== c.challenge) return antwort(400, { error: 'invalid_grant', error_description: 'PKCE' });
+      if (createHash('sha256').update(q.get('code_verifier')!).digest('base64url') !== c.challenge)
+        return antwort(400, { error: 'invalid_grant', error_description: 'PKCE' });
       if (q.get('redirect_uri') !== c.redirect) return antwort(400, { error: 'invalid_grant' });
       const s = Math.floor(opt.jetzt() / 1000);
-      return antwort(200, { id_token: token({ iss: ISS, aud: 'dms-client', sub: 'abc', exp: s + 300, iat: s, nonce: c.nonce, email: 'anna@example.org', name: 'Anna A.', groups: ['dms-admins'], ...opt.claims }, opt.signiert ?? opt.schluessel[0]) });
+      return antwort(200, {
+        id_token: token(
+          {
+            iss: ISS,
+            aud: 'dms-client',
+            sub: 'abc',
+            exp: s + 300,
+            iat: s,
+            nonce: c.nonce,
+            email: 'anna@example.org',
+            name: 'Anna A.',
+            groups: ['dms-admins'],
+            ...opt.claims,
+          },
+          opt.signiert ?? opt.schluessel[0],
+        ),
+      });
     }
     return antwort(404, {});
   };
@@ -58,14 +109,24 @@ function anbieter(opt: { schluessel: ReturnType<typeof schluesselpaar>[]; signie
   const anmelden = (url: string) => {
     const u = new URL(url);
     const code = `code-${codes.size}`;
-    codes.set(code, { challenge: u.searchParams.get('code_challenge')!, nonce: u.searchParams.get('nonce')!, redirect: u.searchParams.get('redirect_uri')! });
+    codes.set(code, {
+      challenge: u.searchParams.get('code_challenge')!,
+      nonce: u.searchParams.get('nonce')!,
+      redirect: u.searchParams.get('redirect_uri')!,
+    });
     return { code, state: u.searchParams.get('state')! };
   };
   return { abruf, anmelden, log };
 }
 
 async function oidcMit(a: ReturnType<typeof anbieter>, jetzt: () => number, extra: Record<string, unknown> = {}) {
-  const o = new Oidc({ einstellungen: speicherEinstellungen(), verschluessele: (k) => `v:${k}`, entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null), abruf: a.abruf, jetzt });
+  const o = new Oidc({
+    einstellungen: speicherEinstellungen(),
+    verschluessele: (k) => `v:${k}`,
+    entschluessele: (w) => (w.startsWith('v:') ? w.slice(2) : null),
+    abruf: a.abruf,
+    jetzt,
+  });
   await o.speichere({ aktiv: true, aussteller: `${ISS}/`, clientId: 'dms-client', clientSecret: 'geheim 123', ...extra }, 'test');
   return o;
 }
@@ -80,7 +141,14 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     assert.throws(() => pruefeAussteller('http://home.arpa.example.org'), status(422));
     assert.throws(() => pruefeAussteller('http://auth.home.arpa.example.org'), status(422));
     // Nichts sonst gelockert: Router-Namen und Namen, die nur wie private Adressen beginnen, brauchen https.
-    for (const a of ['http://dms.fritz.box', 'http://nas.home', 'http://localhost.example.org', 'http://10.example.org', 'http://100.64.1.2', 'http://[2001:db8::1]'])
+    for (const a of [
+      'http://dms.fritz.box',
+      'http://nas.home',
+      'http://localhost.example.org',
+      'http://10.example.org',
+      'http://100.64.1.2',
+      'http://[2001:db8::1]',
+    ])
       assert.throws(() => pruefeAussteller(a), status(422), a);
     assert.throws(() => pruefeAussteller('http://login.example.org'), status(422));
     assert.throws(() => pruefeAussteller('kein url'), status(422));
@@ -109,24 +177,42 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     assert.deepEqual(id, { sub: 'abc', email: 'anna@example.org', name: 'Anna A.', gruppen: ['dms-admins'] });
     // Fehler vom Anbieter
     const s3 = await o.start('https://dms.example.org/r');
-    await assert.rejects(o.rueckkehr({ state: new URL(s3.url).searchParams.get('state')!, error: 'access_denied', error_description: 'nein' }, s3.bindung), /abgelehnt: access_denied \(nein\)/);
+    await assert.rejects(
+      o.rueckkehr({ state: new URL(s3.url).searchParams.get('state')!, error: 'access_denied', error_description: 'nein' }, s3.bindung),
+      /abgelehnt: access_denied \(nein\)/,
+    );
     // Abgelaufen
     const s4 = await o.start('https://dms.example.org/r');
     t += 11 * 60_000;
     await assert.rejects(o.rueckkehr(a.anmelden(s4.url), s4.bindung), /abgelaufen/);
-    assert.equal(await o.abmeldeUrl('https://dms.example.org/'), 'https://login.example.org/logout?client_id=dms-client&post_logout_redirect_uri=https%3A%2F%2Fdms.example.org%2F');
+    assert.equal(
+      await o.abmeldeUrl('https://dms.example.org/'),
+      'https://login.example.org/logout?client_id=dms-client&post_logout_redirect_uri=https%3A%2F%2Fdms.example.org%2F',
+    );
   });
 
   it('Fehler nur als fester Code in der Adresse, nie als Text (#1263)', async () => {
     let t = 1_800_000_000_000;
     const a = anbieter({ schluessel: [schluesselpaar('rsa', 'k1')], jetzt: () => t });
     const o = await oidcMit(a, () => t);
-    const code = async (p: Promise<unknown>) => { try { await p; } catch (e) { return anbieterFehlerCode(e); } return 'kein Fehler'; };
+    const code = async (p: Promise<unknown>) => {
+      try {
+        await p;
+      } catch (e) {
+        return anbieterFehlerCode(e);
+      }
+      return 'kein Fehler';
+    };
     const s = await o.start('https://dms.example.org/r');
     assert.equal(await code(o.rueckkehr(a.anmelden(s.url), 'fremd')), 'anderer-browser');
     const s2 = await o.start('https://dms.example.org/r');
     const boese = 'Bitte melde dich unter https://boese.example.net an';
-    assert.equal(await code(o.rueckkehr({ state: new URL(s2.url).searchParams.get('state')!, error: 'access_denied', error_description: boese }, s2.bindung)), 'abgelehnt');
+    assert.equal(
+      await code(
+        o.rueckkehr({ state: new URL(s2.url).searchParams.get('state')!, error: 'access_denied', error_description: boese }, s2.bindung),
+      ),
+      'abgelehnt',
+    );
     const s3 = await o.start('https://dms.example.org/r');
     t += 11 * 60_000;
     assert.equal(await code(o.rueckkehr(a.anmelden(s3.url), s3.bindung)), 'abgelaufen');
@@ -144,14 +230,15 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const start = routen(d, konten, {}).find((r) => r.methode === 'GET' && r.pfad === '/api/konto/anbieter/start')!;
-    const r = await start.handler({ body: {}, params: {}, query: {}, ip: '127.0.0.1' } as unknown as Anfrage) as { weiterleiten: string };
+    const r = (await start.handler({ body: {}, params: {}, query: {}, ip: '127.0.0.1' } as unknown as Anfrage)) as { weiterleiten: string };
     const wert = new URL(r.weiterleiten, 'http://x').searchParams.get('anmeldefehler');
     assert.ok((ANMELDEFEHLER as readonly unknown[]).includes(wert), r.weiterleiten);
   });
 
   it('holt neue Schlüssel, wenn der Anbieter gewechselt hat; EC und Ed25519', async () => {
     const t = 1_800_000_000_000;
-    const alt = schluesselpaar('rsa', 'alt'), neu = schluesselpaar('ec', 'neu');
+    const alt = schluesselpaar('rsa', 'alt'),
+      neu = schluesselpaar('ec', 'neu');
     const keys = [alt];
     const a = anbieter({ schluessel: keys, signiert: neu, jetzt: () => t });
     const o = await oidcMit(a, () => t);
@@ -168,13 +255,16 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
   });
 
   it('lehnt falsche Tokens ab', () => {
-    const t = 1_800_000_000_000, s = t / 1000;
-    const k = schluesselpaar('rsa', 'k1'), fremd = schluesselpaar('rsa', 'k1');
+    const t = 1_800_000_000_000,
+      s = t / 1000;
+    const k = schluesselpaar('rsa', 'k1'),
+      fremd = schluesselpaar('rsa', 'k1');
     const p = { aussteller: ISS, clientId: 'dms', nonce: 'n1', jetzt: t };
     const gut = { iss: ISS, aud: 'dms', sub: 'u', exp: s + 60, iat: s, nonce: 'n1' };
     assert.equal(pruefeIdToken(token(gut, k), [k.jwk], p).sub, 'u');
     assert.equal(pruefeIdToken(token({ ...gut, aud: ['dms', 'andere'], azp: 'dms' }, k), [k.jwk], p).sub, 'u');
-    const falsch = (claims: Record<string, unknown>, re: RegExp, schl = k, kopf = {}) => assert.throws(() => pruefeIdToken(token({ ...gut, ...claims }, schl, kopf), [k.jwk], p), re);
+    const falsch = (claims: Record<string, unknown>, re: RegExp, schl = k, kopf = {}) =>
+      assert.throws(() => pruefeIdToken(token({ ...gut, ...claims }, schl, kopf), [k.jwk], p), re);
     falsch({}, /Signatur/, fremd);
     falsch({ iss: 'https://boese.example.org' }, /Aussteller/);
     falsch({ aud: 'andere' }, /andere Anwendung/);
@@ -191,8 +281,14 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
   });
 
   it('E-Mail aus email, preferred_username oder upn; unbestätigte Adresse abgelehnt', () => {
-    assert.equal(identitaetAus({ sub: '1', preferred_username: 'Bob@Firma.example', given_name: 'Bob', family_name: 'B' }, 'groups').email, 'bob@firma.example');
-    assert.equal(identitaetAus({ sub: '1', preferred_username: 'Bob@Firma.example', given_name: 'Bob', family_name: 'B' }, 'groups').name, 'Bob B');
+    assert.equal(
+      identitaetAus({ sub: '1', preferred_username: 'Bob@Firma.example', given_name: 'Bob', family_name: 'B' }, 'groups').email,
+      'bob@firma.example',
+    );
+    assert.equal(
+      identitaetAus({ sub: '1', preferred_username: 'Bob@Firma.example', given_name: 'Bob', family_name: 'B' }, 'groups').name,
+      'Bob B',
+    );
     assert.deepEqual(identitaetAus({ sub: '1', email: 'a@b.example', rollen: 'x' }, 'rollen').gruppen, ['x']);
     assert.throws(() => identitaetAus({ sub: '1', email: 'a@b.example', email_verified: false }, 'groups'), status(403));
     assert.throws(() => identitaetAus({ sub: '1', preferred_username: 'bob' }, 'groups'), /E-Mail-Adresse/);
@@ -202,22 +298,45 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     const { benutzer: chef } = await konten.einrichten({ email: 'chef@example.org', name: 'Chef', passwort: 'ein-langes-passwort' });
-    const basis = { aktiv: true, aussteller: ISS, clientId: 'c', clientSecret: '', knopf: 'Mit Firmenkonto', anlegen: false, standardrolle: 'mitglied' as const, adminGruppe: '', gruppenClaim: 'groups', lokalNurAdmins: false, abmeldenBeimAnbieter: false };
+    const basis = {
+      aktiv: true,
+      aussteller: ISS,
+      clientId: 'c',
+      clientSecret: '',
+      knopf: 'Mit Firmenkonto',
+      anlegen: false,
+      standardrolle: 'mitglied' as const,
+      adminGruppe: '',
+      gruppenClaim: 'groups',
+      lokalNurAdmins: false,
+      abmeldenBeimAnbieter: false,
+    };
     const g = { ip: '1.1.1.1', geraet: '' };
     // Vorhandener Benutzer
     const r = await konten.anmeldenMitAnbieter({ sub: 'x', email: 'chef@example.org', name: '', gruppen: [] }, basis, g);
     assert.equal((r as { benutzer: { id: string } }).benutzer.id, chef.id);
     // Unbekannt, ohne Anlegen
-    await assert.rejects(konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] }, basis, g), (e) => anbieterFehlerCode(e) === 'kein-konto');
+    await assert.rejects(
+      konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] }, basis, g),
+      (e) => anbieterFehlerCode(e) === 'kein-konto',
+    );
     // Anlegen mit Standardrolle bzw. Admin-Gruppe
-    const neu = await konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] }, { ...basis, anlegen: true }, g);
+    const neu = await konten.anmeldenMitAnbieter(
+      { sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] },
+      { ...basis, anlegen: true },
+      g,
+    );
     assert.equal((neu as { benutzer: { rolle: string; name: string } }).benutzer.rolle, 'mitglied');
     assert.equal((neu as { benutzer: { name: string } }).benutzer.name, 'Neu');
     const mitGruppe = { ...basis, anlegen: true, adminGruppe: 'dms-admins' };
     const it2 = await konten.anmeldenMitAnbieter({ sub: 'z', email: 'it@example.org', name: 'IT', gruppen: ['dms-admins'] }, mitGruppe, g);
     assert.deepEqual((it2 as { benutzer: { verwaltung: string[] } }).benutzer.verwaltung, ['*']);
     // „Gesamte Verwaltung“ folgt der Gruppe (#818)
-    const neu2 = await konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: ['dms-admins'] }, mitGruppe, g);
+    const neu2 = await konten.anmeldenMitAnbieter(
+      { sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: ['dms-admins'] },
+      mitGruppe,
+      g,
+    );
     assert.deepEqual((neu2 as { benutzer: { verwaltung: string[] } }).benutzer.verwaltung, ['*']);
     const it3 = await konten.anmeldenMitAnbieter({ sub: 'z', email: 'it@example.org', name: 'IT', gruppen: [] }, mitGruppe, g);
     assert.deepEqual((it3 as { benutzer: { verwaltung: string[] } }).benutzer.verwaltung, []);
@@ -229,6 +348,9 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     konten.verbindeAnbieter(async () => ({ ...basis, lokalNurAdmins: true }));
     await konten.anmelden({ email: 'chef@example.org', passwort: 'ein-langes-passwort' }, '1.1.1.1');
     const link = await konten.neuerLink((await konten.listeBenutzer()).find((b) => b.email === 'neu@example.org')!.id);
-    await assert.rejects(konten.passwortSetzen({ schluessel: link.link!.split('/passwort/')[1], passwort: 'ein-langes-passwort' }), /Mit Firmenkonto/);
+    await assert.rejects(
+      konten.passwortSetzen({ schluessel: link.link!.split('/passwort/')[1], passwort: 'ein-langes-passwort' }),
+      /Mit Firmenkonto/,
+    );
   });
 });

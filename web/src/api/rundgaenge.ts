@@ -2,7 +2,12 @@
 import type { RundgangPruefergebnis, TippDaten, WerkbankRundgaengeStand, WerkbankTippsStand } from '../../../shared/src/entdecken-werkbank';
 import { anfrage } from './anfrage';
 
-interface Gespeichert { schluessel: string; yaml: string; geaendert: string; von: string | null }
+interface Gespeichert {
+  schluessel: string;
+  yaml: string;
+  geaendert: string;
+  von: string | null;
+}
 const pfad = (schluessel: string) => `/api/werkbank/rundgaenge/${encodeURIComponent(schluessel)}`;
 
 export const rundgaengeApi = {
@@ -10,7 +15,8 @@ export const rundgaengeApi = {
   pruefen: (yaml: string) => anfrage<RundgangPruefergebnis>('POST', '/api/werkbank/rundgaenge/pruefen', { yaml }),
   neu: (yaml: string) => anfrage<Gespeichert>('POST', '/api/werkbank/rundgaenge', { yaml }),
   /** `schluessel` ohne „eigen:“; `stand` = geaendert, wie gelesen (#917). */
-  aendern: (schluessel: string, yaml: string, stand?: string) => anfrage<Gespeichert>('PUT', pfad(schluessel), { yaml, ...(stand ? { stand } : {}) }),
+  aendern: (schluessel: string, yaml: string, stand?: string) =>
+    anfrage<Gespeichert>('PUT', pfad(schluessel), { yaml, ...(stand ? { stand } : {}) }),
   loeschen: (schluessel: string) => anfrage<null>('DELETE', pfad(schluessel)),
   /** Voller Schlüssel (ablago, paket:schluessel, eigen:schluessel). */
   schalten: (schluessel: string, an: boolean) => anfrage<null>('PUT', `${pfad(schluessel)}/an`, { an }),
@@ -22,7 +28,8 @@ export const tippsApi = {
   stand: () => anfrage<WerkbankTippsStand>('GET', '/api/werkbank/tipps'),
   neu: (daten: TippDaten) => anfrage<{ schluessel: string; geaendert: string }>('POST', '/api/werkbank/tipps', { daten }),
   /** Eigenen ändern bzw. Tipp von Ablago oder aus einem Paket anpassen; `stand` wie gelesen (#917). */
-  aendern: (schluessel: string, daten: TippDaten, stand?: string) => anfrage<{ schluessel: string; geaendert: string }>('PUT', tippPfad(schluessel), { daten, ...(stand !== undefined ? { stand } : {}) }),
+  aendern: (schluessel: string, daten: TippDaten, stand?: string) =>
+    anfrage<{ schluessel: string; geaendert: string }>('PUT', tippPfad(schluessel), { daten, ...(stand !== undefined ? { stand } : {}) }),
   /** Eigenen löschen bzw. auf das Original zurücksetzen. */
   loeschen: (schluessel: string) => anfrage<null>('DELETE', tippPfad(schluessel)),
   schalten: (schluessel: string, an: boolean) => anfrage<null>('PUT', `${tippPfad(schluessel)}/an`, { an }),

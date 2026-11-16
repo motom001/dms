@@ -19,7 +19,9 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 3
   await mkdir(MUSTERORDNER, { recursive: true });
   const fehler = [];
   const beobachte = (k) => {
-    k.on('console', (m) => { if (m.type() === 'error') fehler.push(`Konsole: ${m.text()}`); });
+    k.on('console', (m) => {
+      if (m.type() === 'error') fehler.push(`Konsole: ${m.text()}`);
+    });
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
@@ -70,7 +72,11 @@ test('Baustein Knopf: Gefahr mit Rückfrage, gesperrt mit Erklärung (#1210)', {
     const karte = s.locator('[data-zustand="knopf-ausprobieren"]');
     const loeschen = karte.getByRole('button', { name: 'Löschen' });
     assert.equal(await loeschen.getAttribute('aria-haspopup'), 'dialog');
-    assert.equal(await s.locator('.knopf.gefahr, [data-knopf="entscheidung"]').filter({ visible: true }).count(), 1, 'rot gefüllt nur die stehende Rückfrage der Musterseite');
+    assert.equal(
+      await s.locator('.knopf.gefahr, [data-knopf="entscheidung"]').filter({ visible: true }).count(),
+      1,
+      'rot gefüllt nur die stehende Rückfrage der Musterseite',
+    );
     await loeschen.click();
     const frage = s.getByRole('alertdialog', { name: 'Notiz löschen?' });
     await frage.waitFor();
@@ -118,7 +124,8 @@ async function anlegeKnoepfe(s) {
   return s.evaluate(() => {
     const sichtbar = (el) => el.getClientRects().length > 0;
     const text = (el) => el.textContent.replace(/\s+/g, ' ').trim();
-    const alle = [...document.querySelectorAll('a, button, summary, [data-knopf="anlegen"]')].filter(sichtbar)
+    const alle = [...document.querySelectorAll('a, button, summary, [data-knopf="anlegen"]')]
+      .filter(sichtbar)
       .filter((el) => el.dataset.knopf === 'anlegen' || /^\+ ?Neu/.test(text(el)) || /^\+ /.test(text(el)));
     return { alle: alle.map(text), ohneArt: alle.filter((el) => el.dataset.knopf !== 'anlegen').map(text) };
   });
@@ -134,9 +141,15 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   };
   // Ablage: eine Ansicht mit „+ Neu“ und das Menü „+ Neu“ oben.
   await s.goto(BASIS + '/ablage/start');
-  await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
+  await s
+    .getByRole('complementary', { name: 'Ansichten' })
+    .getByRole('link', { name: /^Vertrag \d/ })
+    .click();
   // Kopf der Ansicht (#1212): „+ <Typ>“ statt „+ Neu“.
-  await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /^\+ Vertrag/ }).waitFor();
+  await s
+    .getByRole('region', { name: 'Mappen' })
+    .getByRole('link', { name: /^\+ Vertrag/ })
+    .waitFor();
   await pruefe('Ablage → Vertrag');
   // Mein Konto: API-Schlüssel.
   for (const b of ['sicherheit', 'benachrichtigungen']) {
@@ -149,7 +162,17 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   const elemente = s.getByRole('region', { name: 'Elemente' });
-  for (const b of ['typen', 'sichten', 'benutzer', 'designs', 'automatisierungen', 'nummernkreise', 'postfaecher', 'auskuenfte', 'stempel']) {
+  for (const b of [
+    'typen',
+    'sichten',
+    'benutzer',
+    'designs',
+    'automatisierungen',
+    'nummernkreise',
+    'postfaecher',
+    'auskuenfte',
+    'stempel',
+  ]) {
     await s.goto(BASIS + `/werkbank/${b}`);
     await elemente.getByRole('heading', { level: 1 }).first().waitFor();
     await s.waitForLoadState('networkidle');
@@ -158,7 +181,10 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   assert.deepEqual(ohneArt, [], `Anlege-Knöpfe ohne Knopfart „Anlegen“:\n${ohneArt.join('\n')}`);
   // Die Erkennung selbst: In der Werkbank stehen mindestens Mappentypen, Ansichten, Benutzer und Designs.
   assert.ok(gefunden.filter((x) => x.startsWith('Werkbank')).length >= 4, `Zu wenige Anlege-Knöpfe gefunden: ${gefunden.join(' | ')}`);
-  assert.ok(gefunden.some((x) => x.startsWith('Ablage')), 'Kein „+ Neu“ in der Ablage gefunden');
+  assert.ok(
+    gefunden.some((x) => x.startsWith('Ablage')),
+    'Kein „+ Neu“ in der Ablage gefunden',
+  );
 });
 
 /* ---------- Seiten-Hilfe hinter der Überschrift (#985) ---------- */
@@ -181,35 +207,88 @@ async function kopfHilfen(s) {
 // Alle Bereiche der Werkbank (shared/src/werkbankansicht.ts) und was die Leiste darüber hinaus zeigt, dazu Seiten, die
 // erst beim Anlegen einen Kopf mit Beschreibung zeigen.
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
-rauchtest('Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des Kopfs (#985)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.waitForURL(/\/werkbank/);
-  const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
-  await bereiche.getByRole('link').first().waitFor();
-  const alle = ['pakete', 'beispielablage', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'rundgaenge', 'tipps', 'benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll',
-    'aufbewahrung', 'stempel', 'postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'sicherung', 'vollexport', 'papierkorb', 'daten',
-    'betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']
-    .map((b) => `/werkbank/${b}`);
-  const leiste = await bereiche.evaluate((b) => [...b.querySelectorAll('a[href^="/werkbank/"]')].map((a) => a.getAttribute('href').split(/[?#]/)[0]));
-  const wege = [...new Set([...alle, ...leiste, '/werkbank/stempel/neu', '/werkbank/auskuenfte/neu', '/werkbank/rundgaenge/neu', '/werkbank/tipps/neu'])];
-  const imText = [];
-  const mitHilfe = [];
-  for (const weg of wege) {
-    await s.goto(BASIS + weg);
-    await s.getByRole('heading', { level: 1 }).first().waitFor();
-    await s.waitForLoadState('networkidle');
-    const r = await kopfHilfen(s);
-    imText.push(...r.imText.map((x) => `${weg}: ${x}`));
-    mitHilfe.push(...r.inUeberschrift.map((x) => `${weg}: ${x}`));
-  }
-  assert.deepEqual(imText, [], `Hilfesymbol im Text eines Seitenkopfs statt hinter der Überschrift:\n${imText.join('\n')}`);
-  // Die Erkennung selbst: Eingangsordner, WebDAV und Stempel haben ihre Hilfe hinter der Überschrift.
-  for (const weg of ['/werkbank/eingangsordner', '/werkbank/webdav', '/werkbank/stempel/neu']) {
-    if (wege.includes(weg)) assert.ok(mitHilfe.some((x) => x.startsWith(`${weg}: `)), `Keine Hilfe hinter der Überschrift auf ${weg}: ${mitHilfe.join(' | ')}`);
-  }
-  assert.ok(wege.length >= 20, `Zu wenige Bereiche der Werkbank gefunden: ${wege.join(' ')}`);
-});
+rauchtest(
+  'Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des Kopfs (#985)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.waitForURL(/\/werkbank/);
+    const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
+    await bereiche.getByRole('link').first().waitFor();
+    const alle = [
+      'pakete',
+      'beispielablage',
+      'typen',
+      'sichten',
+      'nummernkreise',
+      'automatisierungen',
+      'rundgaenge',
+      'tipps',
+      'benutzer',
+      'verschluesselung',
+      'organisation',
+      'auskuenfte',
+      'loeschkonzept',
+      'loeschprotokoll',
+      'aufbewahrung',
+      'stempel',
+      'postfaecher',
+      'eingangsordner',
+      'webdav',
+      'texterkennung',
+      'sicherung',
+      'vollexport',
+      'papierkorb',
+      'daten',
+      'betrieb',
+      'region',
+      'sprachen',
+      'aufgaben',
+      'anmeldeschutz',
+      'designs',
+      'anbindung',
+      'systemzustand',
+      'protokoll',
+      'fehlermeldungen',
+      'wartung',
+      'demo',
+    ].map((b) => `/werkbank/${b}`);
+    const leiste = await bereiche.evaluate((b) =>
+      [...b.querySelectorAll('a[href^="/werkbank/"]')].map((a) => a.getAttribute('href').split(/[?#]/)[0]),
+    );
+    const wege = [
+      ...new Set([
+        ...alle,
+        ...leiste,
+        '/werkbank/stempel/neu',
+        '/werkbank/auskuenfte/neu',
+        '/werkbank/rundgaenge/neu',
+        '/werkbank/tipps/neu',
+      ]),
+    ];
+    const imText = [];
+    const mitHilfe = [];
+    for (const weg of wege) {
+      await s.goto(BASIS + weg);
+      await s.getByRole('heading', { level: 1 }).first().waitFor();
+      await s.waitForLoadState('networkidle');
+      const r = await kopfHilfen(s);
+      imText.push(...r.imText.map((x) => `${weg}: ${x}`));
+      mitHilfe.push(...r.inUeberschrift.map((x) => `${weg}: ${x}`));
+    }
+    assert.deepEqual(imText, [], `Hilfesymbol im Text eines Seitenkopfs statt hinter der Überschrift:\n${imText.join('\n')}`);
+    // Die Erkennung selbst: Eingangsordner, WebDAV und Stempel haben ihre Hilfe hinter der Überschrift.
+    for (const weg of ['/werkbank/eingangsordner', '/werkbank/webdav', '/werkbank/stempel/neu']) {
+      if (wege.includes(weg))
+        assert.ok(
+          mitHilfe.some((x) => x.startsWith(`${weg}: `)),
+          `Keine Hilfe hinter der Überschrift auf ${weg}: ${mitHilfe.join(' | ')}`,
+        );
+    }
+    assert.ok(wege.length >= 20, `Zu wenige Bereiche der Werkbank gefunden: ${wege.join(' ')}`);
+  },
+);
 
 // Eingangsordner (#986): „Jetzt prüfen“ steht unten im Block „Einstellungen“; das Ergebnis erscheint direkt unter dem
 // Knopf – auch wenn die Seite dorthin gerollt ist –, nicht oben auf der Seite. Braucht einen Eingangsordner
@@ -232,5 +311,12 @@ rauchtest('Eingangsordner: „Jetzt prüfen“ – Ergebnis unter dem Knopf (#98
   assert.ok(e.y - (k.y + k.height) < 80, 'Ergebnis steht direkt unter dem Knopf');
   assert.ok(e.y + e.height <= (s.viewportSize()?.height ?? 900) && e.y >= 0, 'Ergebnis ist zu sehen, ohne zu rollen');
   assert.ok(Math.abs((await s.evaluate(() => scrollY)) - vorher) < 200, 'Die Seite springt nicht');
-  assert.equal(await s.locator('.einspaltig > .hinweis').filter({ hasText: /Geprüft – nichts/ }).count(), 0, 'Kein Ergebnis oben auf der Seite');
+  assert.equal(
+    await s
+      .locator('.einspaltig > .hinweis')
+      .filter({ hasText: /Geprüft – nichts/ })
+      .count(),
+    0,
+    'Kein Ergebnis oben auf der Seite',
+  );
 });

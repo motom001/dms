@@ -28,10 +28,17 @@ export function proxyVertrauen(wert: string | undefined): { trust: ProxyVertraue
   if (!w || w.toLowerCase() === 'auto') return { trust: PRIVATE_NETZE, text: t('meldungen.proxy.automatisch-eigener-rechner-und') };
   if (w.toLowerCase() === 'false') return { trust: false, text: t('meldungen.proxy.aus') };
   if (w.toLowerCase() === 'true') return { trust: true, text: t('meldungen.proxy.alle-absender') };
-  const liste = w.split(',').map((x) => x.trim()).filter(Boolean);
+  const liste = w
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
   const falsch = liste.filter((x) => !gueltig(x));
   if (falsch.length || !liste.length) {
-    return { trust: PRIVATE_NETZE, text: t('meldungen.proxy.automatisch-eigener-rechner-und'), fehler: t('meldungen.proxy.trust-proxy-ist-keine', { wert: falsch.join(', ') || w }) };
+    return {
+      trust: PRIVATE_NETZE,
+      text: t('meldungen.proxy.automatisch-eigener-rechner-und'),
+      fehler: t('meldungen.proxy.trust-proxy-ist-keine', { wert: falsch.join(', ') || w }),
+    };
   }
   return { trust: liste, text: liste.join(', ') };
 }

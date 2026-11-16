@@ -8,7 +8,19 @@ import { randomUUID } from 'node:crypto';
 import { aufbewahrenBis, datumText, laeuftNochNicht, stichtagName } from '../../../shared/src/archiv';
 import type { Datenschutz } from '../../../shared/src/auskunft';
 import { alsText, ohneTitel } from '../../../shared/src/markdown';
-import { type Aufgabe, darfErstellen, type Dokument, geschuetzteFelder, type Mappe, type Mappenkonflikt, type Mappentyp, type Notiz, NOTIZ_MAX, verweiseVon, type Werte } from '../../../shared/src/model';
+import {
+  type Aufgabe,
+  darfErstellen,
+  type Dokument,
+  geschuetzteFelder,
+  type Mappe,
+  type Mappenkonflikt,
+  type Mappentyp,
+  type Notiz,
+  NOTIZ_MAX,
+  verweiseVon,
+  type Werte,
+} from '../../../shared/src/model';
 import { kreisVon } from '../../../shared/src/nummernkreis';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { fremdeVorgabe, teileVorgabe, type VorgabeHerkunft } from '../../../shared/src/vorgaben';
@@ -29,7 +41,12 @@ import type { MappenHistorie } from './historie';
 import type { MappenTitel } from './titel';
 
 /** Die Teile der Mappen, die der Mappen-Dienst ruft (eigene Klassen in diesem Ordner). */
-export interface MappenTeile { historie: MappenHistorie; titel: MappenTitel; eingaben: MappenEingaben; hinweise: MappenHinweise }
+export interface MappenTeile {
+  historie: MappenHistorie;
+  titel: MappenTitel;
+  eingaben: MappenEingaben;
+  hinweise: MappenHinweise;
+}
 
 /** Was die Mappen außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappenAnschluss {
@@ -45,7 +62,12 @@ export interface MappenAnschluss {
   /** Datenschutz-Einstellungen (#396; Datenschutz, noch im Dienst). */
   datenschutz(): Promise<Datenschutz>;
   /** Ob und warum nicht die Mappe gelöscht werden kann (#79; Löschen, noch im Dienst). */
-  loeschPruefung(m: Mappe, typ: Mappentyp | undefined, rueck: Rueckverweis[], alleTypen?: Mappentyp[]): Promise<{ ok: true; grund: undefined; fremd: Rueckverweis[] } | { ok: false; grund: string; fremd: Rueckverweis[] }>;
+  loeschPruefung(
+    m: Mappe,
+    typ: Mappentyp | undefined,
+    rueck: Rueckverweis[],
+    alleTypen?: Mappentyp[],
+  ): Promise<{ ok: true; grund: undefined; fremd: Rueckverweis[] } | { ok: false; grund: string; fremd: Rueckverweis[] }>;
   /** Ereignis „verknüpft“ je neu verknüpfter Mappe (#670; Ereignisse, noch im Dienst). */
   meldeVerknuepft(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null): Promise<unknown>;
   /** Passwortfelder verschlüsseln (#46; Schlüssel aus tresor.ts). */
@@ -60,36 +82,95 @@ export interface MappenAnschluss {
 }
 
 export class MappenDienst {
-  constructor(private readonly kern: Kern, private readonly rechtepruefung: ZugriffDienst, private readonly teile: MappenTeile, private readonly anschluss: MappenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly rechtepruefung: ZugriffDienst,
+    private readonly teile: MappenTeile,
+    private readonly anschluss: MappenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
   private readonly verschluessele = (klartext: string) => this.anschluss.verschluessele(klartext);
-  private inTransaktion<T>(f: () => Promise<T>): Promise<T> { return this.kern.inTransaktion(f); }
-  private inEinemZug<T>(f: () => Promise<T>): Promise<T> { return this.kern.inEinemZug(f); }
-  private ereignis(...a: Parameters<Kern['ereignis']>) { return this.kern.ereignis(...a); }
-  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.rechtepruefung.lesbare(...a); }
-  private rechteAn(...a: Parameters<ZugriffDienst['rechteAn']>) { return this.rechtepruefung.rechteAn(...a); }
-  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) { return this.rechtepruefung.pruefeRecht(...a); }
-  private maskiereBezuege(...a: Parameters<ZugriffDienst['maskiereBezuege']>) { return this.rechtepruefung.maskiereBezuege(...a); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private aenderungen(...a: Parameters<MappenHistorie['aenderungen']>) { return this.teile.historie.aenderungen(...a); }
-  private aktualisiereTitel(ids: string[]) { return this.anschluss.aktualisiereTitel(ids); }
-  private titelVorab(...a: Parameters<MappenTitel['titelVorab']>) { return this.teile.titel.titelVorab(...a); }
-  private verweiskonflikte(...a: Parameters<MappenEingaben['verweiskonflikte']>) { return this.teile.eingaben.verweiskonflikte(...a); }
-  private folgeFuellen(...a: Parameters<MappenEingaben['folgeFuellen']>) { return this.teile.eingaben.folgeFuellen(...a); }
-  private pruefeVerweisziele(...a: Parameters<MappenEingaben['pruefeVerweisziele']>) { return this.teile.eingaben.pruefeVerweisziele(...a); }
-  private pruefeAuswahlfilter(...a: Parameters<MappenEingaben['pruefeAuswahlfilter']>) { return this.teile.eingaben.pruefeAuswahlfilter(...a); }
-  private pruefeWerte(...a: Parameters<MappenEingaben['pruefeWerte']>) { return this.teile.eingaben.pruefeWerte(...a); }
-  private hinweisDanach(...a: Parameters<MappenEingaben['hinweisDanach']>) { return this.teile.eingaben.hinweisDanach(...a); }
-  private feldkonflikte(...a: Parameters<MappenEingaben['feldkonflikte']>) { return this.teile.eingaben.feldkonflikte(...a); }
-  private favoritenBenachrichtigungErlaubt(benutzerId: string) { return this.anschluss.favoritenBenachrichtigungErlaubt(benutzerId); }
-  private ohneLeserechtText<T extends Aufgabe>(liste: T[], lesbar: Set<string>, ich: string) { return this.anschluss.ohneLeserechtText(liste, lesbar, ich); }
-  private mitArchivStand(docs: Dokument[]) { return this.anschluss.mitArchivStand(docs); }
-  private mitPdfSchutz(docs: Dokument[]) { return this.anschluss.mitPdfSchutz(docs); }
-  private datenschutz() { return this.anschluss.datenschutz(); }
-  private loeschPruefung(...a: Parameters<MappenAnschluss['loeschPruefung']>) { return this.anschluss.loeschPruefung(...a); }
-  private meldeVerknuepft(...a: Parameters<MappenAnschluss['meldeVerknuepft']>) { return this.anschluss.meldeVerknuepft(...a); }
+  private inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inTransaktion(f);
+  }
+  private inEinemZug<T>(f: () => Promise<T>): Promise<T> {
+    return this.kern.inEinemZug(f);
+  }
+  private ereignis(...a: Parameters<Kern['ereignis']>) {
+    return this.kern.ereignis(...a);
+  }
+  private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) {
+    return this.rechtepruefung.lesbare(...a);
+  }
+  private rechteAn(...a: Parameters<ZugriffDienst['rechteAn']>) {
+    return this.rechtepruefung.rechteAn(...a);
+  }
+  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) {
+    return this.rechtepruefung.pruefeRecht(...a);
+  }
+  private maskiereBezuege(...a: Parameters<ZugriffDienst['maskiereBezuege']>) {
+    return this.rechtepruefung.maskiereBezuege(...a);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private aenderungen(...a: Parameters<MappenHistorie['aenderungen']>) {
+    return this.teile.historie.aenderungen(...a);
+  }
+  private aktualisiereTitel(ids: string[]) {
+    return this.anschluss.aktualisiereTitel(ids);
+  }
+  private titelVorab(...a: Parameters<MappenTitel['titelVorab']>) {
+    return this.teile.titel.titelVorab(...a);
+  }
+  private verweiskonflikte(...a: Parameters<MappenEingaben['verweiskonflikte']>) {
+    return this.teile.eingaben.verweiskonflikte(...a);
+  }
+  private folgeFuellen(...a: Parameters<MappenEingaben['folgeFuellen']>) {
+    return this.teile.eingaben.folgeFuellen(...a);
+  }
+  private pruefeVerweisziele(...a: Parameters<MappenEingaben['pruefeVerweisziele']>) {
+    return this.teile.eingaben.pruefeVerweisziele(...a);
+  }
+  private pruefeAuswahlfilter(...a: Parameters<MappenEingaben['pruefeAuswahlfilter']>) {
+    return this.teile.eingaben.pruefeAuswahlfilter(...a);
+  }
+  private pruefeWerte(...a: Parameters<MappenEingaben['pruefeWerte']>) {
+    return this.teile.eingaben.pruefeWerte(...a);
+  }
+  private hinweisDanach(...a: Parameters<MappenEingaben['hinweisDanach']>) {
+    return this.teile.eingaben.hinweisDanach(...a);
+  }
+  private feldkonflikte(...a: Parameters<MappenEingaben['feldkonflikte']>) {
+    return this.teile.eingaben.feldkonflikte(...a);
+  }
+  private favoritenBenachrichtigungErlaubt(benutzerId: string) {
+    return this.anschluss.favoritenBenachrichtigungErlaubt(benutzerId);
+  }
+  private ohneLeserechtText<T extends Aufgabe>(liste: T[], lesbar: Set<string>, ich: string) {
+    return this.anschluss.ohneLeserechtText(liste, lesbar, ich);
+  }
+  private mitArchivStand(docs: Dokument[]) {
+    return this.anschluss.mitArchivStand(docs);
+  }
+  private mitPdfSchutz(docs: Dokument[]) {
+    return this.anschluss.mitPdfSchutz(docs);
+  }
+  private datenschutz() {
+    return this.anschluss.datenschutz();
+  }
+  private loeschPruefung(...a: Parameters<MappenAnschluss['loeschPruefung']>) {
+    return this.anschluss.loeschPruefung(...a);
+  }
+  private meldeVerknuepft(...a: Parameters<MappenAnschluss['meldeVerknuepft']>) {
+    return this.anschluss.meldeVerknuepft(...a);
+  }
 
   /* ---------- Notizen (#55) ---------- */
 
@@ -97,10 +178,14 @@ export class MappenDienst {
     // Erwähnungen (#1293): nur die Kennung speichern, den Titel setzt erst die Ausgabe ein.
     const text2 = typeof e === 'string' ? ohneTitel(e.replace(/\r\n?/g, '\n').trim()) : '';
     if (!text2) throw new Fachfehler(422, t('meldungen.dienst.die-notiz-ist-leer'));
-    if (text2.length > NOTIZ_MAX) throw new Fachfehler(422, t('meldungen.dienst.eine-notiz-darf-hoechstens', { NOTIZ_MAX: NOTIZ_MAX.toLocaleString(gebietsschema()) }));
+    if (text2.length > NOTIZ_MAX)
+      throw new Fachfehler(422, t('meldungen.dienst.eine-notiz-darf-hoechstens', { NOTIZ_MAX: NOTIZ_MAX.toLocaleString(gebietsschema()) }));
     return text2;
   }
-  static vorschau(t: string) { const x = alsText(t); return x.length > 80 ? `${x.slice(0, 77)} …` : x; }
+  static vorschau(t: string) {
+    const x = alsText(t);
+    return x.length > 80 ? `${x.slice(0, 77)} …` : x;
+  }
 
   async notizen(mappeId: string): Promise<Notiz[]> {
     if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
@@ -114,7 +199,9 @@ export class MappenDienst {
    * Benachrichtigen nur, wenn die Werkbank es für den Benutzer erlaubt (#506); seine Einstellung bleibt dabei gespeichert.
    */
   /** Persönliche Einstellungen eines Benutzers (#678: Zeitplan „für jeden Benutzer“ mit Uhrzeit aus dem Profil). */
-  async persoenlicheEinstellungen(benutzerId: string): Promise<Record<string, unknown>> { return (await this.konten?.einstellungen?.(benutzerId)) ?? {}; }
+  async persoenlicheEinstellungen(benutzerId: string): Promise<Record<string, unknown>> {
+    return (await this.konten?.einstellungen?.(benutzerId)) ?? {};
+  }
 
   async persoenlichAn(benutzerId: string, schluessel: string): Promise<boolean> {
     if (schluessel === 'favoriten_benachrichtigen' && !(await this.favoritenBenachrichtigungErlaubt(benutzerId))) return false;
@@ -130,7 +217,9 @@ export class MappenDienst {
     const ids = (Array.isArray(mappeIds) ? mappeIds : [mappeIds]).filter((x): x is string => istUuid(x)).slice(0, 1000);
     if (!ids.length) return;
     await this.repo.merkeGesehen(ich.id, ids);
-    const offen = aufgaben ? aufgaben.filter((x) => !x.erledigt && ids.includes(x.mappeId)) : await this.repo.offeneAufgaben({ mappeIds: ids });
+    const offen = aufgaben
+      ? aufgaben.filter((x) => !x.erledigt && ids.includes(x.mappeId))
+      : await this.repo.offeneAufgaben({ mappeIds: ids });
     for (const a of offen.filter((x) => x.art === 'aenderung' && x.empfaengerId === ich.id)) {
       await this.repo.erledigeAufgabe(a.id, ich.id);
     }
@@ -138,15 +227,22 @@ export class MappenDienst {
 
   /** Je Favorit „bei Änderungen benachrichtigen“ (#422, Schalter in der Favoritenliste). */
   async setzeFavoritBenachrichtigen(ich: { id: string }, mappeId: string, an: unknown) {
-    if (!(await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId)) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-ist-kein'));
+    if (!(await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId))
+      throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-ist-kein'));
     await this.repo.setzeFavoritBenachrichtigen(ich.id, mappeId, an !== false);
     return { benachrichtigen: an !== false };
   }
 
-  listeMappen(typId?: string) { return this.repo.listeMappen(typId); }
+  listeMappen(typId?: string) {
+    return this.repo.listeMappen(typId);
+  }
   /** Schlank für viele Mappen (Demo-Daten, #248). */
-  mappenKurz() { return this.repo.mappenKurz(); }
-  feldwerte(typId: string, key: string) { return this.repo.feldwerte(typId, key); }
+  mappenKurz() {
+    return this.repo.mappenKurz();
+  }
+  feldwerte(typId: string, key: string) {
+    return this.repo.feldwerte(typId, key);
+  }
 
   /**
    * Verweisende Mappen eines Typs über ein Feld, vollständig (für die Tabelle im
@@ -155,7 +251,10 @@ export class MappenDienst {
   async verweisende(id: string, typId: string, feldKey: string, z?: Zugriff) {
     await this.pruefeRecht(z, id, 'R');
     const rv = (await this.repo.rueckverweise(id)).filter((r) => r.quelleTypId === typId && r.feldKey === feldKey);
-    const sichtbar = await this.lesbare(z, rv.map((r) => r.quelleId));
+    const sichtbar = await this.lesbare(
+      z,
+      rv.map((r) => r.quelleId),
+    );
     const ids = [...new Set(rv.map((r) => r.quelleId))].filter((x) => sichtbar.has(x));
     const mappen = (await this.repo.holeMappen(ids.slice(0, 1000))).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
     const typ = await this.repo.holeTyp(typId);
@@ -172,18 +271,27 @@ export class MappenDienst {
     const rechte = z ? await this.rechteAn(z, mappe, false, aufgaben) : null;
     if (z && rechte && !rechte.R) {
       // #798: automatische Aufgaben nur mit Hinweis und Fälligkeit; von Hand geschriebene mit Text.
-      const meine = await this.ohneLeserechtText(aufgaben.filter((x) => !x.erledigt && x.empfaengerId === z.ich.id), new Set(), z.ich.id);
+      const meine = await this.ohneLeserechtText(
+        aufgaben.filter((x) => !x.erledigt && x.empfaengerId === z.ich.id),
+        new Set(),
+        z.ich.id,
+      );
       throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es-2'), { verborgen: true, aufgaben: meine });
     }
     // Mappentypen hat der Zugriff schon gelesen (#615); ein Dienstkonto kennt nur seine – dann wie bisher.
     const alleTypen = z?.typen && !z.paket ? [...z.typen.values()] : undefined;
-    const typ = (alleTypen ? z!.typen.get(mappe.typId) : undefined) ?? await this.repo.holeTyp(mappe.typId);
+    const typ = (alleTypen ? z!.typen.get(mappe.typId) : undefined) ?? (await this.repo.holeTyp(mappe.typId));
     const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
     // Was nur noch von der Mappe abhängt, gleichzeitig (#741) – erst nach der Prüfung des Leserechts.
     const [alleRueck, roheBezuege, dokumente, notizen, erinnerungen, unpassend, datenschutz, hinweise] = await Promise.all([
-      this.repo.rueckverweise(id), this.repo.bezuege(ziele),
-      this.repo.listeDokumente(id).then((d) => this.mitArchivStand(d)).then((d) => this.mitPdfSchutz(d)),
-      this.repo.notizen(id), this.repo.ablaeufe({ mappeId: id }),
+      this.repo.rueckverweise(id),
+      this.repo.bezuege(ziele),
+      this.repo
+        .listeDokumente(id)
+        .then((d) => this.mitArchivStand(d))
+        .then((d) => this.mitPdfSchutz(d)),
+      this.repo.notizen(id),
+      this.repo.ablaeufe({ mappeId: id }),
       this.verweiskonflikte(typ, mappe.werte, z?.ich.id ?? '', alleTypen && z?.a ? { typen: alleTypen, a: z.a } : undefined, z),
       z?.admin ? this.datenschutz() : Promise.resolve(null),
       this.teile.hinweise.von(id),
@@ -194,9 +302,18 @@ export class MappenDienst {
     const sichtbar = await this.lesbare(z, [...alleRueck.map((r) => r.quelleId), ...roheBezuege.keys()]);
     const rueckverweise = alleRueck.filter((r) => sichtbar.has(r.quelleId));
     // Teile (#1031) halten das Löschen nicht auf – sie gehen mit (die Rechte an ihnen prüft das Löschen).
-    const typenFuerTeile = alleRueck.length ? new Map((alleTypen ?? await this.repo.listeTypen()).map((x) => [x.id, x] as const)) : new Map<string, Mappentyp>();
-    const teile = new Set(alleRueck.filter((r) => r.quelleId !== id && istTeilVerweis(typenFuerTeile.get(r.quelleTypId), r.feldKey)).map((r) => r.quelleId));
-    const p = await this.loeschPruefung(mappe, typ, alleRueck.filter((r) => !teile.has(r.quelleId)), alleTypen);
+    const typenFuerTeile = alleRueck.length
+      ? new Map((alleTypen ?? (await this.repo.listeTypen())).map((x) => [x.id, x] as const))
+      : new Map<string, Mappentyp>();
+    const teile = new Set(
+      alleRueck.filter((r) => r.quelleId !== id && istTeilVerweis(typenFuerTeile.get(r.quelleTypId), r.feldKey)).map((r) => r.quelleId),
+    );
+    const p = await this.loeschPruefung(
+      mappe,
+      typ,
+      alleRueck.filter((r) => !teile.has(r.quelleId)),
+      alleTypen,
+    );
     // Verweisende Mappen, die man nicht sehen darf: nur ihre Anzahl (#126).
     const fremd = p.fremd.map((r) => (sichtbar.has(r.quelleId) ? r : { ...r, titel: NICHT_SICHTBAR, verborgen: true }));
     return {
@@ -248,7 +365,8 @@ export class MappenDienst {
   async pruefeFremdeVorgabe(z: Zugriff | undefined, mappe: string | Mappe | undefined): Promise<void> {
     if (!z?.paket?.id || !mappe) return;
     const m = typeof mappe === 'string' ? await this.repo.holeMappe(mappe) : mappe;
-    if (fremdeVorgabe(m, z.paket.id)) throw new Fachfehler(403, t('meldungen.dienst.vorgabe-fremdes-paket', { titel: m?.titel || m?.id || '' }));
+    if (fremdeVorgabe(m, z.paket.id))
+      throw new Fachfehler(403, t('meldungen.dienst.vorgabe-fremdes-paket', { titel: m?.titel || m?.id || '' }));
   }
 
   /* ---------- Favoriten (#62) ---------- */
@@ -263,13 +381,22 @@ export class MappenDienst {
     return { favorit: an };
   }
 
-  async istFavorit(ich: { id: string }, mappeId: string) { return (await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId); }
+  async istFavorit(ich: { id: string }, mappeId: string) {
+    return (await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId);
+  }
 
   async legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> {
     const e = (eingabe ?? {}) as { id?: unknown; typId?: unknown; werte?: unknown };
     const typ = istUuid(e.typId) ? await this.repo.holeTyp(e.typId) : undefined;
     if (!typ) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
-    if (!darfErstellen(typ)) throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-lassen', { name: typ.name, wert: typ.system === 'benutzer' ? t('meldungen.dienst.benutzer-legt-ein-administrator') : '' }));
+    if (!darfErstellen(typ))
+      throw new Fachfehler(
+        403,
+        t('meldungen.dienst.mappen-vom-typ-lassen', {
+          name: typ.name,
+          wert: typ.system === 'benutzer' ? t('meldungen.dienst.benutzer-legt-ein-administrator') : '',
+        }),
+      );
     const werte = bereinigeWerte(typ, e.werte, {}, this.verschluessele);
     // Berechnete Felder (#1034): schon beim Anlegen nur das Paket, das sie berechnet (sonst 400 mit seinem Namen).
     await pruefeBerechnete(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte, typ) }, z);
@@ -277,16 +404,35 @@ export class MappenDienst {
     await pruefeSchreibschutz(this.kern, typ, { alt: {}, neu: werte, gesendet: gesendeteFelder(e.werte, typ) }, z);
     // Berechtigungen (#123): Anlegen wird mit den eingegebenen Werten geprüft.
     if (z && !z.admin) {
-      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: z.ich.id, geaendert: new Date().toISOString(), geaendertVon: z.ich.id };
-      if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-mit', { name: typ.name }));
+      const entwurf: Mappe = {
+        id: '00000000-0000-4000-8000-000000000000',
+        typId: typ.id,
+        werte,
+        erstellt: new Date().toISOString(),
+        erstelltVon: z.ich.id,
+        geaendert: new Date().toISOString(),
+        geaendertVon: z.ich.id,
+      };
+      if (!(await this.rechteAn(z, entwurf, true)).C)
+        throw new Fachfehler(403, t('meldungen.dienst.mappen-vom-typ-mit', { name: typ.name }));
     }
     // Nummernkreise (#171): Eingaben zählen nicht; die Nummer zieht das Repo beim Anlegen.
-    const nummern = typ.felder.flatMap((f) => { const k = kreisVon(f); return k ? [{ feldKey: f.key, kreis: k }] : []; });
+    const nummern = typ.felder.flatMap((f) => {
+      const k = kreisVon(f);
+      return k ? [{ feldKey: f.key, kreis: k }] : [];
+    });
     for (const n of nummern) delete werte[n.feldKey];
     if (nummern.length) {
       const da = new Set((await this.repo.listeNummernkreise()).map((k) => k.schluessel));
       const fehlt = nummern.find((n) => !da.has(n.kreis));
-      if (fehlt) throw new Fachfehler(409, t('meldungen.dienst.den-nummernkreis-fuer-gibt', { kreis: fehlt.kreis, label: String(typ.felder.find((f) => f.key === fehlt.feldKey)?.label) }));
+      if (fehlt)
+        throw new Fachfehler(
+          409,
+          t('meldungen.dienst.den-nummernkreis-fuer-gibt', {
+            kreis: fehlt.kreis,
+            label: String(typ.felder.find((f) => f.key === fehlt.feldKey)?.label),
+          }),
+        );
     }
     // Folgt aus (#886): leere Felder füllen sich aus ihrer Quelle – was die Anfrage selbst setzt, bleibt.
     await this.folgeFuellen(typ, werte, {}, gesendeteFelder(e.werte, typ), z);
@@ -298,7 +444,16 @@ export class MappenDienst {
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     // In einer Transaktion (#743): Mappe, Titel, Historie, Ereignisse und die sofortigen Empfänger (#962) ganz oder gar nicht.
     const { m, titel } = await this.inEinemZug(async () => {
-      const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo, null, nummern.length ? { felder: nummern, jetzt: new Date() } : undefined);
+      const m = await this.repo.legeMappeAn(
+        id,
+        typ.id,
+        werte,
+        verweiseVon(typ, werte),
+        benutzerId,
+        demo,
+        null,
+        nummern.length ? { felder: nummern, jetzt: new Date() } : undefined,
+      );
       if (!demo) {
         await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, m.werte) });
         await this.meldeVerknuepft(typ, m.id, {}, m.werte, benutzerId);
@@ -319,7 +474,13 @@ export class MappenDienst {
    * geändert und soll es jetzt anders lauten, kommt 409 mit den Feldern (`Mappenkonflikt`) statt Überschreiben.
    * `anlass`: steht zusätzlich im Eintrag der Historie, z. B. die Umwandlung nach einem Paket-Update (#534).
    */
-  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> {
+  async aendereMappe(
+    id: string,
+    eingabe: unknown,
+    benutzerId: string | null = null,
+    z?: Zugriff,
+    anlass?: Record<string, unknown>,
+  ): Promise<Mappe & { hinweis?: string }> {
     // Schreibt zwischen Lesen und Schreiben jemand anderes, noch einmal von vorn (#609). In einer eigenen Transaktion
     // (#743) auch nach einer Verklemmung – die Transaktion ist dann ganz zurückgerollt.
     const eigene = !this.kern.inEigenerTransaktion();
@@ -328,12 +489,20 @@ export class MappenDienst {
         const neu = await this.inTransaktion(() => this.aendereMappeEinmal(id, eingabe, benutzerId, z, anlass));
         const hinweis = z ? await this.hinweisDanach(z, id) : undefined;
         return { ...neu, ...(hinweis ? { hinweis } : {}) };
-      } catch (e) { if (!(e instanceof StandVeraltet || (eigene && istVerklemmung(e))) || versuch >= 5) throw e; }
+      } catch (e) {
+        if (!(e instanceof StandVeraltet || (eigene && istVerklemmung(e))) || versuch >= 5) throw e;
+      }
     }
   }
 
   /** Ein Versuch, in einer Transaktion (#743): Werte, Titel, Historie, Ereignisse und die sofortigen Empfänger (#962) ganz oder gar nicht. */
-  private async aendereMappeEinmal(id: string, eingabe: unknown, benutzerId: string | null, z: Zugriff | undefined, anlass: Record<string, unknown> | undefined): Promise<Mappe> {
+  private async aendereMappeEinmal(
+    id: string,
+    eingabe: unknown,
+    benutzerId: string | null,
+    z: Zugriff | undefined,
+    anlass: Record<string, unknown> | undefined,
+  ): Promise<Mappe> {
     const m = z ? await this.pruefeRecht(z, id, 'U') : await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, t('meldungen.dienst.diese-mappe-gibt-es'));
     await this.pruefeFremdeVorgabe(z, m);
@@ -358,7 +527,10 @@ export class MappenDienst {
     // Geschützte Felder (Benutzer, Name einer Systemrolle) ändert nur das System.
     for (const [k, grund] of Object.entries(geschuetzteFelder(typ, m))) {
       if (JSON.stringify(werte[k] ?? null) !== JSON.stringify(m.werte[k] ?? null)) {
-        throw new Fachfehler(403, t('meldungen.dienst.laesst-sich-hier-nicht', { wert: typ.felder.find((f) => f.key === k)?.label ?? k, grund }));
+        throw new Fachfehler(
+          403,
+          t('meldungen.dienst.laesst-sich-hier-nicht', { wert: typ.felder.find((f) => f.key === k)?.label ?? k, grund }),
+        );
       }
     }
     await this.folgeFuellen(typ, werte, m.werte, gesendeteFelder(e.werte, typ), z);
@@ -370,16 +542,33 @@ export class MappenDienst {
     // Archivmodus (#212): eine neue Frist steht in der Historie – auch, wenn sie erst jetzt beginnt (#1051) oder wieder offen ist.
     const fristText = (w: Mappe['werte']) => {
       const bis = aufbewahrenBis(typ.archiv, { ...m, werte: w });
-      return bis ? datumText(bis) : laeuftNochNicht(typ.archiv, { ...m, werte: w }) ? t('meldungen.dienst.frist-laeuft-noch-nicht', { feld: stichtagName(typ) }) : '';
+      return bis
+        ? datumText(bis)
+        : laeuftNochNicht(typ.archiv, { ...m, werte: w })
+          ? t('meldungen.dienst.frist-laeuft-noch-nicht', { feld: stichtagName(typ) })
+          : '';
     };
-    const bisAlt = fristText(m.werte), bisNeu = fristText(werte);
-    if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: t('meldungen.dienst.aufbewahren-bis'), alt: bisAlt, neu: bisNeu });
+    const bisAlt = fristText(m.werte),
+      bisNeu = fristText(werte);
+    if (bisAlt !== bisNeu)
+      aenderungen.push({ feld: '_aufbewahrenBis', label: t('meldungen.dienst.aufbewahren-bis'), alt: bisAlt, neu: bisNeu });
     // Feldweise (#609); mit Stand nur, wenn sich die Mappe seit dem Lesen oben nicht geändert hat.
     const titelFuer = await this.titelVorab(typ, werte, m);
-    const neu = await this.repo.aendereMappe(id, werte, [], benutzerId, { basis: m.werte, verweise: (w) => verweiseVon(typ, w), titel: titelFuer, ...(stand ? { stand: m.geaendert } : {}) });
+    const neu = await this.repo.aendereMappe(id, werte, [], benutzerId, {
+      basis: m.werte,
+      verweise: (w) => verweiseVon(typ, w),
+      titel: titelFuer,
+      ...(stand ? { stand: m.geaendert } : {}),
+    });
     // Kein Rauschen (#1034): Ändert das Paket nur seine berechneten Felder, ein Eintrag je Mappe und Tag (historie.ts).
-    const nurBerechnet = !!z?.paket && !anlass && aenderungen.length > 0 && aenderungen.every((a) => berechnet.some((f) => f.key === a.feld));
-    if (nurBerechnet) await this.teile.historie.notiereBerechnet(id, typ.id, benutzerId, { paketName: (await this.repo.listePakete()).find((p) => p.id === z!.paket!.id)?.name ?? z!.paket!.id, stand: neu.geaendert, aenderungen });
+    const nurBerechnet =
+      !!z?.paket && !anlass && aenderungen.length > 0 && aenderungen.every((a) => berechnet.some((f) => f.key === a.feld));
+    if (nurBerechnet)
+      await this.teile.historie.notiereBerechnet(id, typ.id, benutzerId, {
+        paketName: (await this.repo.listePakete()).find((p) => p.id === z!.paket!.id)?.name ?? z!.paket!.id,
+        stand: neu.geaendert,
+        aenderungen,
+      });
     else if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen, stand: neu.geaendert });
     await this.meldeVerknuepft(typ, id, m.werte, neu.werte, benutzerId);
     // Titel (#743): stand er schon im UPDATE, nur noch die Mappen nachziehen, die auf diese verweisen (wenn er sich
@@ -389,7 +578,15 @@ export class MappenDienst {
     if (vorab === undefined || vorab !== neu.titel) titel = (await this.aktualisiereTitel([id])).get(id);
     else if (vorab !== m.titel) await this.aktualisiereTitel(await this.repo.quellenVon([id]));
     // Passung, Erwähnungen, Fristen, Post-Aufgaben (#962).
-    await this.kern.anlaesse.mappeGeaendert.melde({ typ, mappe: neu, alt: m.werte, neu: werte, von: benutzerId, angelegt: false, demo: false });
+    await this.kern.anlaesse.mappeGeaendert.melde({
+      typ,
+      mappe: neu,
+      alt: m.werte,
+      neu: werte,
+      von: benutzerId,
+      angelegt: false,
+      demo: false,
+    });
     this.organisationNotiz(typ, m.werte, neu.werte, id, benutzerId);
     return { ...neu, titel };
   }
@@ -399,9 +596,13 @@ export class MappenDienst {
     const was = organisationsNotizen(typ, alt, neu);
     const f = this.anschluss.organisationGeaendert;
     if (!was.length || !f) return;
-    this.kern.danach(() => { void this.kern.nachDerAntwort(() => f({ mappeId, was, von })); });
+    this.kern.danach(() => {
+      void this.kern.nachDerAntwort(() => f({ mappeId, was, von }));
+    });
   }
 
   /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */
-  legeMappenAn(liste: NeueMappe[]) { return this.repo.legeMappenAn(liste); }
+  legeMappenAn(liste: NeueMappe[]) {
+    return this.repo.legeMappenAn(liste);
+  }
 }

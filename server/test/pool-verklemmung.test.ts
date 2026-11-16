@@ -9,23 +9,48 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { after, before, describe, it } from 'node:test';
-import { abgewiesenOderHaengt, Datenbankpruefung, hoechstens, istVerbindungWarten, poolGroesse, verbinde, Verbindungswarten, type DatenbankBefund } from '../src/db';
+import {
+  abgewiesenOderHaengt,
+  Datenbankpruefung,
+  hoechstens,
+  istVerbindungWarten,
+  poolGroesse,
+  verbinde,
+  Verbindungswarten,
+  type DatenbankBefund,
+} from '../src/db';
 import { lebenszeichen, pgKurzzustand } from '../src/kurzzustand';
 import { protokoll } from '../src/protokoll';
 import { eigeneSperrquelle, Sperrverbindung } from '../src/sperrverbindung';
 import { versatzMs, wiederkehrend, type Uhren } from '../src/streuung';
-import { schonNeuGeladen, NEU_GELADEN_MS, startbildAusTexten, startbildDauer, startbildLage, startbildSprache, STARTBILD_PLATZHALTER } from '../../shared/src/startbild';
+import {
+  schonNeuGeladen,
+  NEU_GELADEN_MS,
+  startbildAusTexten,
+  startbildDauer,
+  startbildLage,
+  startbildSprache,
+  STARTBILD_PLATZHALTER,
+} from '../../shared/src/startbild';
 import { eigeneDatenbank, type EigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
 const warte = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 /** Läuft `p` nicht in `ms` durch, ist es eine Verklemmung. */
-const mitGrenze = <T>(p: Promise<T>, ms: number, was: string) => Promise.race([p, warte(ms).then(() => { throw new Error(`${was}: nach ${ms} ms nicht fertig – Verklemmung?`); })]);
+const mitGrenze = <T>(p: Promise<T>, ms: number, was: string) =>
+  Promise.race([
+    p,
+    warte(ms).then(() => {
+      throw new Error(`${was}: nach ${ms} ms nicht fertig – Verklemmung?`);
+    }),
+  ]);
 
 /** Warnungen des Protokolls mitschreiben. */
 function warnungen() {
   const liste: string[] = [];
-  const weg = protokoll.beobachte((e) => { liste.push(`${e.text} ${JSON.stringify(e.daten ?? {})}`); });
+  const weg = protokoll.beobachte((e) => {
+    liste.push(`${e.text} ${JSON.stringify(e.daten ?? {})}`);
+  });
   return { liste, weg };
 }
 
@@ -37,7 +62,9 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
     H = randomUUID();
     await db.sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Test')`;
   });
-  after(async () => { await db?.ende(); });
+  after(async () => {
+    await db?.ende();
+  });
 
   it('kleiner Pool (4), viele gleichzeitige exklusiv-Läufe, deren Arbeit selbst Abfragen macht: alle fertig', async () => {
     const sql = verbinde(db.url, 4);
@@ -50,31 +77,57 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       const post = sperren.dauerhaft({ klasse: 4711196 }, 'postfaecher');
       assert.equal(await eingang.halte(), true);
       assert.equal(await post.halte(), true);
-      const laeufe = Array.from({ length: 12 }, (_, i) => z.exklusiv(`plan-${i}`, async () => {
-        // Arbeit mit mehreren Abfragen, teils gleichzeitig, und einer Transaktion – wie Papierkorb, Fristen …
-        await Promise.all([sql`SELECT pg_sleep(0.05)`, sql`SELECT 1`, sql`SELECT count(*) FROM haushalte`]);
-        await sql.begin(async (tx) => { await tx`SELECT pg_sleep(0.02)`; });
-        return i;
-      }));
+      const laeufe = Array.from({ length: 12 }, (_, i) =>
+        z.exklusiv(`plan-${i}`, async () => {
+          // Arbeit mit mehreren Abfragen, teils gleichzeitig, und einer Transaktion – wie Papierkorb, Fristen …
+          await Promise.all([sql`SELECT pg_sleep(0.05)`, sql`SELECT 1`, sql`SELECT count(*) FROM haushalte`]);
+          await sql.begin(async (tx) => {
+            await tx`SELECT pg_sleep(0.02)`;
+          });
+          return i;
+        }),
+      );
       const erg = await mitGrenze(Promise.all(laeufe), 15_000, 'exklusiv-Läufe');
-      assert.deepEqual(erg.map((r) => r.ok), Array(12).fill(true));
+      assert.deepEqual(
+        erg.map((r) => r.ok),
+        Array(12).fill(true),
+      );
       // Der Pool hält nichts fest: Alle Sperren liegen auf der einen Sperrverbindung.
-      const sitzungen = await sql`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND application_name = 'Ablago Sperren'`;
+      const sitzungen =
+        await sql`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND application_name = 'Ablago Sperren'`;
       assert.equal(sitzungen[0].n, 1, 'genau eine Sperrverbindung');
-      assert.deepEqual(sperren.stand().gehalten.map((g) => g.bezeichnung).sort(), ['eingangsordner', 'lebenszeichen', 'postfaecher']);
-      await eingang.gib(); await post.gib(); await lebt.ende();
+      assert.deepEqual(
+        sperren
+          .stand()
+          .gehalten.map((g) => g.bezeichnung)
+          .sort(),
+        ['eingangsordner', 'lebenszeichen', 'postfaecher'],
+      );
+      await eingang.gib();
+      await post.gib();
+      await lebt.ende();
       assert.equal(sperren.stand().offen, false, 'ohne Sperren ist die Verbindung zu');
-    } finally { await sperren.ende(); await sql.end(); }
+    } finally {
+      await sperren.ende();
+      await sql.end();
+    }
   });
 
   it('auch mit der Sperrverbindung aus dem Pool (Vorgabe ohne Angabe) keine Verklemmung', async () => {
     const sql = verbinde(db.url, 3);
     const z = pgKurzzustand(sql, H);
     try {
-      const laeufe = Array.from({ length: 8 }, (_, i) => z.exklusiv(`pool-${i}`, async () => { await Promise.all([sql`SELECT pg_sleep(0.02)`, sql`SELECT 1`]); return i; }));
+      const laeufe = Array.from({ length: 8 }, (_, i) =>
+        z.exklusiv(`pool-${i}`, async () => {
+          await Promise.all([sql`SELECT pg_sleep(0.02)`, sql`SELECT 1`]);
+          return i;
+        }),
+      );
       const erg = await mitGrenze(Promise.all(laeufe), 15_000, 'exklusiv aus dem Pool');
       assert.ok(erg.every((r) => r.ok));
-    } finally { await sql.end(); }
+    } finally {
+      await sql.end();
+    }
   });
 
   it('Sperren: nie doppelt (auch nicht im selben Prozess), Paket-Sperre mit einer Zahl, frei nach dem Lauf', async () => {
@@ -94,7 +147,10 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       assert.ok(s2, 'nach dem Freigeben frei');
       await s2!.gib();
       await zwei.find(Boolean)!.gib();
-    } finally { await a.ende(); await b.ende(); }
+    } finally {
+      await a.ende();
+      await b.ende();
+    }
   });
 
   it('Abbruch der Sperrverbindung: Sperren verloren, Arbeit läuft weiter, Warnung, neu aufgebaut; Lebenszeichen und Dauersperre kommen wieder', async () => {
@@ -107,13 +163,22 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       const eingang = sperren.dauerhaft({ klasse: 4711195 }, 'eingangsordner');
       assert.equal(await eingang.halte(), true);
       let weiter!: () => void;
-      const haelt = new Promise<void>((ok) => { weiter = ok; });
-      const lauf = z.exklusiv('lang', async () => { await haelt; await sql`SELECT 1`; return 'fertig'; });
+      const haelt = new Promise<void>((ok) => {
+        weiter = ok;
+      });
+      const lauf = z.exklusiv('lang', async () => {
+        await haelt;
+        await sql`SELECT 1`;
+        return 'fertig';
+      });
       await warte(50);
       // Verbindung von außen trennen (wie ein Neustart von PostgreSQL oder ein Netzfehler).
       await sql`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() AND application_name = 'Ablago Sperren'`;
       for (let i = 0; i < 50 && !w.liste.some((x) => x.includes('Verbindung für Sperren abgebrochen')); i++) await warte(20);
-      assert.ok(w.liste.some((x) => x.includes('Verbindung für Sperren abgebrochen') && x.includes('lang') && x.includes('eingangsordner')), w.liste.join('\n'));
+      assert.ok(
+        w.liste.some((x) => x.includes('Verbindung für Sperren abgebrochen') && x.includes('lang') && x.includes('eingangsordner')),
+        w.liste.join('\n'),
+      );
       assert.equal(eingang.gueltig, false, 'Dauersperre verloren');
       weiter();
       assert.deepEqual(await lauf, { ok: true, wert: 'fertig' }, 'laufende Arbeit läuft weiter');
@@ -121,13 +186,27 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       assert.deepEqual(await z.exklusiv('lang', async () => 'wieder'), { ok: true, wert: 'wieder' });
       assert.equal(await eingang.halte(), true);
       // Lebenszeichen von selbst wieder gesetzt: ein zweiter Prozess ist nicht allein.
-      for (let i = 0; i < 50 && !(await sql`SELECT count(*)::int AS n FROM pg_locks WHERE locktype = 'advisory' AND mode = 'ShareLock' AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`)[0].n; i++) await warte(20);
+      for (
+        let i = 0;
+        i < 50 &&
+        !(
+          await sql`SELECT count(*)::int AS n FROM pg_locks WHERE locktype = 'advisory' AND mode = 'ShareLock' AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`
+        )[0].n;
+        i++
+      )
+        await warte(20);
       const zweiter = new Sperrverbindung(eigeneSperrquelle(db.url));
       const p2 = await lebenszeichen(zweiter, H);
       assert.equal(p2.allein, false, 'Lebenszeichen nach Abbruch wieder da');
-      await p2.ende(); await zweiter.ende();
-      await eingang.gib(); await lebt.ende();
-    } finally { w.weg(); await sperren.ende(); await sql.end(); }
+      await p2.ende();
+      await zweiter.ende();
+      await eingang.gib();
+      await lebt.ende();
+    } finally {
+      w.weg();
+      await sperren.ende();
+      await sql.end();
+    }
   });
 
   it('Gesundheitsprüfung: schlägt bei vollem Pool fehl (Zeitgrenze), ohne weitere Abfragen anzuhäufen; zwischengespeichert', async () => {
@@ -144,7 +223,10 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       const t0 = Date.now();
       assert.equal(await p.pruefe(), false, 'keine Verbindung frei');
       assert.ok(Date.now() - t0 < 1500, 'mit Zeitgrenze');
-      for (let i = 0; i < 5; i++) { jetzt += 1500; assert.equal(await p.pruefe(), false); }
+      for (let i = 0; i < 5; i++) {
+        jetzt += 1500;
+        assert.equal(await p.pruefe(), false);
+      }
       const stats = (sql as unknown as { stats: { waiting: number } }).stats;
       assert.ok(stats.waiting <= 1, `höchstens eine Prüfung wartet (${stats.waiting})`);
       // Befund (#1199): „antwortet nicht“ seit der ersten fehlgeschlagenen Prüfung, ohne Fehlertext.
@@ -152,12 +234,15 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       assert.equal(b.datenbank, 'antwortet-nicht');
       assert.equal(b.seit, new Date(1500).toISOString());
       assert.equal(b.dauerS, Math.round((jetzt - 1500) / 1000));
-      v1.release(); v2.release();
+      v1.release();
+      v2.release();
       await warte(50);
       jetzt += 1500;
       assert.equal(await p.pruefe(), true, 'wieder frei');
       assert.deepEqual(await p.befund(), { datenbank: 'ok', seit: null, dauerS: null });
-    } finally { await sql.end(); }
+    } finally {
+      await sql.end();
+    }
   });
 
   it('Gesundheitsprüfung: Datenbank aus (Verbindung abgelehnt) → „abgewiesen“, nicht „antwortet nicht“ (#1199)', async () => {
@@ -172,7 +257,9 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       assert.equal(JSON.stringify(b).includes('127.0.0.1'), false, 'keine Adresse im Befund');
       jetzt += 61_000;
       assert.equal((await p.befund()).dauerS, 61);
-    } finally { await sql.end({ timeout: 0 }); }
+    } finally {
+      await sql.end({ timeout: 0 });
+    }
     assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: 'ECONNREFUSED' })), 'abgewiesen');
     assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: '57P03' })), 'abgewiesen');
     assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: 'QUEUE_TIMEOUT' })), 'antwortet-nicht');
@@ -194,10 +281,21 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       assert.ok(zeile, w.liste.join('\n'));
       assert.match(zeile!, /"reserviert":1/);
       assert.match(zeile!, /papierkorb, fristen/);
-      assert.deepEqual(warten.belegung(), { verbindungen: 1, frei: 0, belegt: 1, reserviert: 1, wartend: 1, max: 1, sperren: ['papierkorb', 'fristen'] });
+      assert.deepEqual(warten.belegung(), {
+        verbindungen: 1,
+        frei: 0,
+        belegt: 1,
+        reserviert: 1,
+        wartend: 1,
+        max: 1,
+        sperren: ['papierkorb', 'fristen'],
+      });
       v.release();
       assert.notEqual(await probe, -1);
-    } finally { w.weg(); await sql.end(); }
+    } finally {
+      w.weg();
+      await sql.end();
+    }
   });
 });
 
@@ -210,7 +308,16 @@ describe('Ohne Datenbank (#1198)', () => {
 
   it('hoechstens: Ersatz nach der Grenze, sonst das Ergebnis; ein späterer Fehler geht ins Leere', async () => {
     assert.equal(await hoechstens(Promise.resolve(1), 50, () => 2), 1);
-    assert.equal(await hoechstens(warte(200).then(() => { throw new Error('zu spät'); }), 20, () => 'ersatz'), 'ersatz');
+    assert.equal(
+      await hoechstens(
+        warte(200).then(() => {
+          throw new Error('zu spät');
+        }),
+        20,
+        () => 'ersatz',
+      ),
+      'ersatz',
+    );
     await warte(250);
   });
 
@@ -233,7 +340,9 @@ describe('Ohne Datenbank (#1198)', () => {
       if (haengt) return new Promise<never>(() => {});
       return echt(...a);
     };
-    const app = await baueApp(dienst, konten, { datenbank: { befund: async () => (dbOk ? { datenbank: 'ok', seit: null, dauerS: null } : befund) } });
+    const app = await baueApp(dienst, konten, {
+      datenbank: { befund: async () => (dbOk ? { datenbank: 'ok', seit: null, dauerS: null } : befund) },
+    });
     const cookie = { cookie: 'dms_sitzung=irgendwas' };
     try {
       let r = await app.inject({ method: 'GET', url: '/api/gesundheit', headers: cookie });
@@ -262,12 +371,16 @@ describe('Ohne Datenbank (#1198)', () => {
       assert.equal(r.json().sprache, 'en');
       assert.ok(Date.now() - t0 < 4000, `nach ${Date.now() - t0} ms`);
       // Keine Verbindung frei nach der Grenze (QUEUE_TIMEOUT): 503 mit „datenbank“, kein interner Fehler.
-      konten.anmeldungZu = async () => { throw Object.assign(new Error('Waited more than 30 seconds for a connection'), { code: 'QUEUE_TIMEOUT' }); };
+      konten.anmeldungZu = async () => {
+        throw Object.assign(new Error('Waited more than 30 seconds for a connection'), { code: 'QUEUE_TIMEOUT' });
+      };
       r = await app.inject({ method: 'GET', url: '/api/konto/status', headers: cookie });
       assert.equal(r.statusCode, 503);
       assert.equal(r.json().datenbank, true);
       assert.equal(r.headers['retry-after'], '10');
-    } finally { await app.close(); }
+    } finally {
+      await app.close();
+    }
   });
 
   it('Zeitpläne gestreut: Versatz fest je Name, innerhalb des Intervalls, verschieden je Name', () => {
@@ -286,26 +399,59 @@ describe('Ohne Datenbank (#1198)', () => {
     const plan: Array<{ art: string; ms: number; f: () => void }> = [];
     const gestoppt: unknown[] = [];
     const uhren: Uhren = {
-      spaeter: (f, ms) => { const e = { art: 'spaeter', ms, f }; plan.push(e); return e; },
-      immer: (f, ms) => { const e = { art: 'immer', ms, f }; plan.push(e); return e; },
-      stoppe: (u) => { gestoppt.push(u); },
+      spaeter: (f, ms) => {
+        const e = { art: 'spaeter', ms, f };
+        plan.push(e);
+        return e;
+      },
+      immer: (f, ms) => {
+        const e = { art: 'immer', ms, f };
+        plan.push(e);
+        return e;
+      },
+      stoppe: (u) => {
+        gestoppt.push(u);
+      },
     };
     let n = 0;
-    const stopp = wiederkehrend('fristen', 300_000, () => { n++; }, uhren);
-    assert.deepEqual(plan.map((e) => [e.art, e.ms]), [['spaeter', versatzMs('fristen', 300_000)]]);
+    const stopp = wiederkehrend(
+      'fristen',
+      300_000,
+      () => {
+        n++;
+      },
+      uhren,
+    );
+    assert.deepEqual(
+      plan.map((e) => [e.art, e.ms]),
+      [['spaeter', versatzMs('fristen', 300_000)]],
+    );
     plan[0].f();
     assert.equal(n, 1);
-    assert.deepEqual(plan.map((e) => [e.art, e.ms]), [['spaeter', versatzMs('fristen', 300_000)], ['immer', 300_000]]);
+    assert.deepEqual(
+      plan.map((e) => [e.art, e.ms]),
+      [
+        ['spaeter', versatzMs('fristen', 300_000)],
+        ['immer', 300_000],
+      ],
+    );
     stopp();
     assert.equal(gestoppt.length, 2);
   });
 
   it('Startbild: Deutsch und Englisch aus den Sprachdateien, ohne Skript; Sprache und „schon neu geladen“', () => {
-    const texte = (s: string) => JSON.parse(readFileSync(new URL(`../../shared/src/sprachen/${s}/oberflaeche.json`, import.meta.url), 'utf8')) as Record<string, string>;
+    const texte = (s: string) =>
+      JSON.parse(readFileSync(new URL(`../../shared/src/sprachen/${s}/oberflaeche.json`, import.meta.url), 'utf8')) as Record<
+        string,
+        string
+      >;
     const html = startbildAusTexten({ de: texte('de'), en: texte('en') });
     assert.match(html, /Verbindung zu Ablago wird aufgebaut …/);
     assert.match(html, /Connecting to Ablago …/);
-    assert.match(html, /class="startbild-text startbild-spaeter" data-sprache="de" lang="de">Ablago antwortet noch nicht – wir versuchen es weiter\./);
+    assert.match(
+      html,
+      /class="startbild-text startbild-spaeter" data-sprache="de" lang="de">Ablago antwortet noch nicht – wir versuchen es weiter\./,
+    );
     assert.match(html, /ablago-logo-mit-schriftzug-dunkel\.svg/);
     // Was tun? Notfallseite im Handbuch, je Sprache (Zusatzwunsch zu #1198).
     assert.ok(html.includes('href="https://help.ablago.app/admin/aktuell/was-ist-passiert/#laedt-nicht"'), html);
@@ -335,12 +481,35 @@ describe('Ohne Datenbank (#1198)', () => {
     assert.deepEqual(startbildDauer(180), { art: 'minuten', anzahl: 3 });
     assert.deepEqual(startbildDauer(7300), { art: 'stunden', anzahl: 2 });
     for (const spr of ['de', 'en']) {
-      const texte = JSON.parse(readFileSync(new URL(`../../shared/src/sprachen/${spr}/oberflaeche.json`, import.meta.url), 'utf8')) as Record<string, string>;
-      for (const k of ['lage.antwortet-nicht', 'lage.abgewiesen', 'lage.unbekannt', 'schritt.neustart', 'schritt.datenbank', 'schritt.verwaltung', 'handbuch', 'stand', 'stand-version', 'dauer.kurz', 'dauer.minuten_one', 'dauer.minuten_other', 'dauer.stunden_one', 'dauer.stunden_other']) {
+      const texte = JSON.parse(
+        readFileSync(new URL(`../../shared/src/sprachen/${spr}/oberflaeche.json`, import.meta.url), 'utf8'),
+      ) as Record<string, string>;
+      for (const k of [
+        'lage.antwortet-nicht',
+        'lage.abgewiesen',
+        'lage.unbekannt',
+        'schritt.neustart',
+        'schritt.datenbank',
+        'schritt.verwaltung',
+        'handbuch',
+        'stand',
+        'stand-version',
+        'dauer.kurz',
+        'dauer.minuten_one',
+        'dauer.minuten_other',
+        'dauer.stunden_one',
+        'dauer.stunden_other',
+      ]) {
         assert.ok(texte[`startbild.${k}`], `${spr}: startbild.${k}`);
       }
       // Keine Aktion und kein Protokoll ohne Anmeldung (Entscheidung Sicherheit): Die Meldung bietet keinen Neustart an.
-      assert.doesNotMatch(Object.entries(texte).filter(([k]) => k.startsWith('startbild.')).map(([, v]) => v).join(' '), /docker logs/);
+      assert.doesNotMatch(
+        Object.entries(texte)
+          .filter(([k]) => k.startsWith('startbild.'))
+          .map(([, v]) => v)
+          .join(' '),
+        /docker logs/,
+      );
     }
   });
 });

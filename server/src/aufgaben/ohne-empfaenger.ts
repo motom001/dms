@@ -25,25 +25,51 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
 export const taugtAlsAufgabenEmpfaenger = (b: Benutzer) => b.aktiv && !b.art;
 
 export class OhneEmpfaenger {
-  constructor(private readonly kern: Kern, private readonly teile: AufgabenTeile, private readonly anschluss: AufgabenAnschluss) {}
+  constructor(
+    private readonly kern: Kern,
+    private readonly teile: AufgabenTeile,
+    private readonly anschluss: AufgabenAnschluss,
+  ) {}
 
-  private get repo(): Repo { return this.kern.repo; }
-  private get konten() { return this.anschluss.konten(); }
-  private name(benutzerId: string | null): Promise<string> { return this.kern.name(benutzerId); }
-  private notiere(...a: Parameters<MappenHistorie['notiere']>) { return this.teile.historie.notiere(...a); }
-  private get einstellungen() { return this.kern.einstellungen; }
-  private get stand() { return this.kern.stand; }
-  private kannLesen(benutzerId: string, mappeId: string) { return this.teile.rechte.kannLesen(benutzerId, mappeId); }
-  private persoenlichAn(benutzerId: string, schluessel: string) { return this.teile.mappen.persoenlichAn(benutzerId, schluessel); }
-  private empfaengerAufloesen(id: string | null, lies?: (id: string) => Promise<Benutzer | undefined>) { return this.teile.vertretung.empfaengerAufloesen(id, lies); }
-  private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.teile.vertretung.benachrichtigeGebuendelt(...a); }
+  private get repo(): Repo {
+    return this.kern.repo;
+  }
+  private get konten() {
+    return this.anschluss.konten();
+  }
+  private name(benutzerId: string | null): Promise<string> {
+    return this.kern.name(benutzerId);
+  }
+  private notiere(...a: Parameters<MappenHistorie['notiere']>) {
+    return this.teile.historie.notiere(...a);
+  }
+  private get einstellungen() {
+    return this.kern.einstellungen;
+  }
+  private get stand() {
+    return this.kern.stand;
+  }
+  private kannLesen(benutzerId: string, mappeId: string) {
+    return this.teile.rechte.kannLesen(benutzerId, mappeId);
+  }
+  private persoenlichAn(benutzerId: string, schluessel: string) {
+    return this.teile.mappen.persoenlichAn(benutzerId, schluessel);
+  }
+  private empfaengerAufloesen(id: string | null, lies?: (id: string) => Promise<Benutzer | undefined>) {
+    return this.teile.vertretung.empfaengerAufloesen(id, lies);
+  }
+  private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) {
+    return this.teile.vertretung.benachrichtigeGebuendelt(...a);
+  }
   /** Regeln aus den Automatisierungen (#1001); ohne Motor: für alle, Vorgabe an. */
   private async favoritenRegeln(): Promise<Array<{ rollen: string[]; vorgabe: boolean }>> {
     const lies = async () => (await this.anschluss.favoritenRegeln?.()) ?? [{ rollen: [], vorgabe: true }];
     // Einmal je Anfrage: Profil, Favoritenliste und Benachrichtigen fragen es je Person.
-    return this.kern.inEigenerTransaktion() ? lies() : [...await jeAnfrage(`${this.kennung}|favoritenregeln`, lies)];
+    return this.kern.inEigenerTransaktion() ? lies() : [...(await jeAnfrage(`${this.kennung}|favoritenregeln`, lies))];
   }
-  private async rollenVon(benutzerId: string): Promise<string[]> { return alsListe((await this.repo.holeMappe(benutzerId))?.werte.rollen); }
+  private async rollenVon(benutzerId: string): Promise<string[]> {
+    return alsListe((await this.repo.holeMappe(benutzerId))?.werte.rollen);
+  }
 
   /** Unterscheidet zwei Dienste in derselben Anfrage (Tests mit zwei „Prozessen“). */
   private readonly kennung = randomUUID();
@@ -57,10 +83,15 @@ export class OhneEmpfaenger {
   async alltagsEmpfaenger(): Promise<{ benutzerId: string | null; wirksam: string | null; gesetzt: boolean; gespeichert: string | null }> {
     // Einmal je Anfrage (#741): Zahlen, Termine und Eingang fragen es mehrfach; braucht die Liste aller Personen.
     if (this.kern.inEigenerTransaktion()) return this.bildeAlltagsEmpfaenger();
-    return { ...await jeAnfrage(`${this.kennung}|alltag`, () => this.bildeAlltagsEmpfaenger()) };
+    return { ...(await jeAnfrage(`${this.kennung}|alltag`, () => this.bildeAlltagsEmpfaenger())) };
   }
 
-  private async bildeAlltagsEmpfaenger(): Promise<{ benutzerId: string | null; wirksam: string | null; gesetzt: boolean; gespeichert: string | null }> {
+  private async bildeAlltagsEmpfaenger(): Promise<{
+    benutzerId: string | null;
+    wirksam: string | null;
+    gesetzt: boolean;
+    gespeichert: string | null;
+  }> {
     const e = (await this.einstellungen?.lies('aufgaben_empfaenger')) as { benutzer?: unknown } | null;
     const gespeichert = typeof e?.benutzer === 'string' ? e.benutzer : null;
     if (!gespeichert) return { benutzerId: null, wirksam: null, gesetzt: !!e, gespeichert: null };
@@ -70,7 +101,12 @@ export class OhneEmpfaenger {
     // Abwesend oder deaktiviert: wie jede Aufgabe beim Vertreter (#78) – sofern er sie bekommen darf.
     const { ziel } = b ? await this.empfaengerAufloesen(b.id, lies) : { ziel: null };
     const z = ziel && lies ? await lies(ziel) : undefined;
-    return { benutzerId: b && taugtAlsAufgabenEmpfaenger(b) ? b.id : null, wirksam: z && taugtAlsAufgabenEmpfaenger(z) ? z.id : null, gesetzt: true, gespeichert };
+    return {
+      benutzerId: b && taugtAlsAufgabenEmpfaenger(b) ? b.id : null,
+      wirksam: z && taugtAlsAufgabenEmpfaenger(z) ? z.id : null,
+      gesetzt: true,
+      gespeichert,
+    };
   }
 
   /** Werkbank → Benutzer und Sicherheit (#719): Alltags-Benutzer wählen oder `null` (nur im Verwaltungsmodus). */
@@ -84,7 +120,10 @@ export class OhneEmpfaenger {
     }
     await this.einstellungen.schreibe('aufgaben_empfaenger', { benutzer: id });
     await this.stand.erhoehe();
-    protokoll.modul('werkbank').info('Empfänger für Aufgaben ohne Empfänger eingestellt', { von: await this.name(von), an: id ? await this.name(id as string) : 'nur im Verwaltungsmodus' });
+    protokoll.modul('werkbank').info('Empfänger für Aufgaben ohne Empfänger eingestellt', {
+      von: await this.name(von),
+      an: id ? await this.name(id as string) : 'nur im Verwaltungsmodus',
+    });
     return this.alltagsEmpfaenger();
   }
 
@@ -98,7 +137,11 @@ export class OhneEmpfaenger {
   async vorgabeAufgabenEmpfaenger(b: Benutzer) {
     if (!this.einstellungen || !taugtAlsAufgabenEmpfaenger(b) || (await this.alltagsEmpfaenger()).gesetzt) return;
     const neu = { benutzer: b.id };
-    if (this.einstellungen.tausche ? await this.einstellungen.tausche('aufgaben_empfaenger', null, neu) : (await this.einstellungen.schreibe('aufgaben_empfaenger', neu), true)) {
+    if (
+      this.einstellungen.tausche
+        ? await this.einstellungen.tausche('aufgaben_empfaenger', null, neu)
+        : (await this.einstellungen.schreibe('aufgaben_empfaenger', neu), true)
+    ) {
       await this.stand.erhoehe();
       protokoll.modul('werkbank').info('Aufgaben ohne Empfänger gehen an den ersten Benutzer', { an: b.name || b.email });
     }
@@ -142,17 +185,36 @@ export class OhneEmpfaenger {
       if (rollen.length && !(await this.rollenVon(benutzerId)).some((r) => rollen.includes(r))) continue;
       n++;
       await this.benachrichtigeGebuendelt({
-        empfaengerId: benutzerId, mappeId, art: 'aenderung', schluessel: 'aenderung', von,
+        empfaengerId: benutzerId,
+        mappeId,
+        art: 'aenderung',
+        schluessel: 'aenderung',
+        von,
         text: async (bisher) => {
           const seit = bisher?.erstellt ?? '';
-          const h = (await this.repo.historie(mappeId)).filter((x) => x.zeit > seit && x.benutzerId && x.benutzerId !== benutzerId
-            && (ABO_ARTEN as readonly string[]).includes(x.art) && x.daten?.aufgabenart !== 'aenderung');
+          const h = (await this.repo.historie(mappeId)).filter(
+            (x) =>
+              x.zeit > seit &&
+              x.benutzerId &&
+              x.benutzerId !== benutzerId &&
+              (ABO_ARTEN as readonly string[]).includes(x.art) &&
+              x.daten?.aufgabenart !== 'aenderung',
+          );
           // Die erste Änderung steht vor der Aufgabe in der Historie; ihr Urheber ist erstelltVon der Aufgabe.
           const n = bisher ? 1 + h.length : 1;
           const namen = [...new Set(bisher ? [bisher.erstelltVon ?? von, ...h.map((x) => x.benutzerId!)] : [von])];
           const liste = await Promise.all(namen.slice(0, 3).map((id) => this.name(id)));
-          const wer = namen.length > 3 ? t('meldungen.dienst.und-weiteren', { liste: liste.join(', ') }) : liste.length > 1 ? `${liste.slice(0, -1).join(', ')} und ${liste.at(-1)}` : liste[0];
-          const tag = new Date(bisher?.erstellt || Date.now()).toLocaleDateString(gebietsschema(), { day: '2-digit', month: '2-digit', timeZone: zeitzone() });
+          const wer =
+            namen.length > 3
+              ? t('meldungen.dienst.und-weiteren', { liste: liste.join(', ') })
+              : liste.length > 1
+                ? `${liste.slice(0, -1).join(', ')} und ${liste.at(-1)}`
+                : liste[0];
+          const tag = new Date(bisher?.erstellt || Date.now()).toLocaleDateString(gebietsschema(), {
+            day: '2-digit',
+            month: '2-digit',
+            timeZone: zeitzone(),
+          });
           return t('meldungen.dienst.aenderungen-von-seit', { anzahl: n, wer, tag });
         },
       });

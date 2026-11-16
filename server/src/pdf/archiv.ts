@@ -46,17 +46,51 @@ export interface PdfaBefund {
 }
 
 /** Aktionen, die die Archivfassung nicht enthalten darf (PDF/A verbietet sie bzw. sie laden nach oder senden). */
-const VERBOTENE_AKTIONEN = new Set(['JavaScript', 'Launch', 'URI', 'SubmitForm', 'ImportData', 'GoToR', 'GoToE', 'ResetForm', 'Sound', 'Movie', 'Rendition', 'Hide', 'SetOCGState', 'Trans', 'GoTo3DView', 'RichMediaExecute']);
+const VERBOTENE_AKTIONEN = new Set([
+  'JavaScript',
+  'Launch',
+  'URI',
+  'SubmitForm',
+  'ImportData',
+  'GoToR',
+  'GoToE',
+  'ResetForm',
+  'Sound',
+  'Movie',
+  'Rendition',
+  'Hide',
+  'SetOCGState',
+  'Trans',
+  'GoTo3DView',
+  'RichMediaExecute',
+]);
 /** Dateinamen eingebetteter E-Rechnungen (#1043: eine Stelle in shared/src/erechnung.ts). */
 const ERECHNUNG = ERECHNUNG_DATEINAME;
 
-const text = (o: PDFObject | undefined): string | null => (o instanceof PDFString || o instanceof PDFHexString ? o.decodeText() : o instanceof PDFName ? o.decodeText() : null);
+const text = (o: PDFObject | undefined): string | null =>
+  o instanceof PDFString || o instanceof PDFHexString ? o.decodeText() : o instanceof PDFName ? o.decodeText() : null;
 
 /** PDF lesen: Verschlüsselung, Seiten, Metadaten (XMP), Signatur, E-Rechnung, Formular, JavaScript, Aktionen, Externes. */
 export async function liesPdfA(inhalt: Uint8Array): Promise<PdfaBefund> {
-  const leer: PdfaBefund = { lesbar: false, verschluesselt: false, seiten: 0, metadaten: null, gefiltert: false, signiert: false, erechnung: false, formular: false, javascript: false, aktionen: [], extern: [] };
+  const leer: PdfaBefund = {
+    lesbar: false,
+    verschluesselt: false,
+    seiten: 0,
+    metadaten: null,
+    gefiltert: false,
+    signiert: false,
+    erechnung: false,
+    formular: false,
+    javascript: false,
+    aktionen: [],
+    extern: [],
+  };
   let doc: PDFDocument;
-  try { doc = await ladePdf(inhalt, { updateMetadata: false, ignoreEncryption: true, throwOnInvalidObject: false }); } catch { return leer; }
+  try {
+    doc = await ladePdf(inhalt, { updateMetadata: false, ignoreEncryption: true, throwOnInvalidObject: false });
+  } catch {
+    return leer;
+  }
   const b: PdfaBefund = { ...leer, lesbar: true, verschluesselt: doc.isEncrypted, seiten: doc.getPageCount() };
   if (b.verschluesselt) return b;
   const strom = doc.catalog.lookup(PDFName.of('Metadata'));
@@ -91,7 +125,11 @@ export async function liesPdfA(inhalt: Uint8Array): Promise<PdfaBefund> {
     if (name && text(get('Type')) === 'Filespec' && ERECHNUNG.test(name)) b.erechnung = true;
     for (const [, v] of d.entries()) {
       if (v instanceof PDFDict) pruefe(v);
-      else if (v instanceof PDFArray) for (const x of v.asArray()) { if (x instanceof PDFDict) pruefe(x); else if (text(x) && ERECHNUNG.test(text(x)!)) b.erechnung = true; }
+      else if (v instanceof PDFArray)
+        for (const x of v.asArray()) {
+          if (x instanceof PDFDict) pruefe(x);
+          else if (text(x) && ERECHNUNG.test(text(x)!)) b.erechnung = true;
+        }
     }
   };
   for (const [, o] of doc.context.enumerateIndirectObjects()) {
@@ -99,7 +137,8 @@ export async function liesPdfA(inhalt: Uint8Array): Promise<PdfaBefund> {
     else if (o instanceof PDFStream) {
       pruefe(o.dict);
       // Ein Strom mit /F holt seine Daten aus einer externen Datei.
-      if (o.dict.get(PDFName.of('F')) !== undefined && !(o.dict.get(PDFName.of('F')) instanceof PDFRef)) extern.add(text(o.dict.get(PDFName.of('F'))) ?? t('meldungen.archiv.externe-datei'));
+      if (o.dict.get(PDFName.of('F')) !== undefined && !(o.dict.get(PDFName.of('F')) instanceof PDFRef))
+        extern.add(text(o.dict.get(PDFName.of('F'))) ?? t('meldungen.archiv.externe-datei'));
     }
   }
   // Öffnen-Aktion: Sprungziele sind harmlos, Aktionen nicht.
@@ -133,7 +172,9 @@ export async function textebeneWoerter(inhalt: Uint8Array): Promise<SchwaerzSeit
     const doc = await ladePdf(inhalt, { updateMetadata: false, ignoreEncryption: true });
     if (doc.isEncrypted) return null;
     drehungen = doc.getPages().map((p) => ((p.getRotation().angle % 360) + 360) % 360);
-  } catch { return null; }
+  } catch {
+    return null;
+  }
   const dir = await mkdtemp(join(tmpdir(), 'dms-archiv-'));
   try {
     const ein = join(dir, 'ein.pdf');

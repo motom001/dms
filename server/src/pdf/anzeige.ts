@@ -14,17 +14,40 @@ import { ladePdf } from './laden';
 import { t } from '../sprache';
 
 /** Aktionen, die beim Ansehen etwas ausführen, nachladen oder senden. URI, GoTo, Named u. a. bleiben. */
-const GEFAEHRLICHE_AKTIONEN = new Set(['JavaScript', 'Launch', 'SubmitForm', 'ImportData', 'GoToR', 'GoToE', 'GoToDp', 'Rendition', 'Sound', 'Movie', 'RichMediaExecute', 'GoTo3DView']);
+const GEFAEHRLICHE_AKTIONEN = new Set([
+  'JavaScript',
+  'Launch',
+  'SubmitForm',
+  'ImportData',
+  'GoToR',
+  'GoToE',
+  'GoToDp',
+  'Rendition',
+  'Sound',
+  'Movie',
+  'RichMediaExecute',
+  'GoTo3DView',
+]);
 /** Anmerkungen, die Dateien, Medien oder Skripte tragen. */
 const GEFAEHRLICHE_ANMERKUNGEN = new Set(['FileAttachment', 'Sound', 'Movie', 'Screen', 'RichMedia', '3D']);
 /** Schlüssel, die überall wegfallen: Skripte, automatische Aktionen, eingebettete Dateien, XFA-Formulare (mit Skripten). */
-const WEG = ['JS', 'JavaScript', 'AA', 'OpenAction', 'EmbeddedFiles', 'EF', 'XFA', 'RichMediaContent', 'Collection'].map((k) => PDFName.of(k));
-const JS = PDFName.of('JS'), S = PDFName.of('S'), A = PDFName.of('A'), NEXT = PDFName.of('Next'), SUBTYPE = PDFName.of('Subtype'), ANNOTS = PDFName.of('Annots');
+const WEG = ['JS', 'JavaScript', 'AA', 'OpenAction', 'EmbeddedFiles', 'EF', 'XFA', 'RichMediaContent', 'Collection'].map((k) =>
+  PDFName.of(k),
+);
+const JS = PDFName.of('JS'),
+  S = PDFName.of('S'),
+  A = PDFName.of('A'),
+  NEXT = PDFName.of('Next'),
+  SUBTYPE = PDFName.of('Subtype'),
+  ANNOTS = PDFName.of('Annots');
 
 /** Art, die eine entfernte Aktion bekommt (unbekannt – Betrachter übergehen sie). */
 const ENTFERNT = 'Entfernt';
 
-export interface Bereinigt { pdf: Uint8Array; entfernt: string[] }
+export interface Bereinigt {
+  pdf: Uint8Array;
+  entfernt: string[];
+}
 
 const name = (o: PDFObject | undefined) => (o instanceof PDFName ? o.decodeText() : null);
 
@@ -48,23 +71,35 @@ export async function bereinigePdf(inhalt: Uint8Array): Promise<Bereinigt> {
       if (v instanceof PDFDict) reinige(v);
       else if (v instanceof PDFArray) for (const x of v.asArray()) if (x instanceof PDFDict) reinige(x);
     }
-    for (const k of WEG) if (d.has(k)) {
-      // Skript-Ströme ganz weg (nicht nur den Verweis), damit der Text nicht in der Kopie steht.
-      const v = d.get(k);
-      if (k === JS && v instanceof PDFRef) ctx.delete(v);
-      d.delete(k); entfernt.add(k.decodeText());
-    }
+    for (const k of WEG)
+      if (d.has(k)) {
+        // Skript-Ströme ganz weg (nicht nur den Verweis), damit der Text nicht in der Kopie steht.
+        const v = d.get(k);
+        if (k === JS && v instanceof PDFRef) ctx.delete(v);
+        d.delete(k);
+        entfernt.add(k.decodeText());
+      }
     // Aktion: Verweise darauf (/A) und Ketten (/Next) fallen weg; die Aktion selbst wird unkenntlich (unbekannte Art –
     // Betrachter übergehen sie), falls sie noch von woanders erreichbar ist.
-    for (const k of [A, NEXT]) if (d.has(k) && (gefaehrlich(d.get(k)) || k === NEXT)) { d.delete(k); entfernt.add(k === A ? 'Aktion' : 'Next'); }
+    for (const k of [A, NEXT])
+      if (d.has(k) && (gefaehrlich(d.get(k)) || k === NEXT)) {
+        d.delete(k);
+        entfernt.add(k === A ? 'Aktion' : 'Next');
+      }
     const art = name(d.get(S));
-    if (art && GEFAEHRLICHE_AKTIONEN.has(art)) { d.set(S, PDFName.of(ENTFERNT)); entfernt.add(art); }
+    if (art && GEFAEHRLICHE_AKTIONEN.has(art)) {
+      d.set(S, PDFName.of(ENTFERNT));
+      entfernt.add(art);
+    }
     const annots = d.lookup(ANNOTS);
     if (annots instanceof PDFArray) {
       const bleiben = annots.asArray().filter((x) => {
         const an = ctx.lookup(x);
         const weg = an instanceof PDFDict && GEFAEHRLICHE_ANMERKUNGEN.has(name(an.get(SUBTYPE)) ?? '');
-        if (weg) { entfernt.add(`Anmerkung ${name((an as PDFDict).get(SUBTYPE))}`); if (x instanceof PDFRef) ctx.delete(x); }
+        if (weg) {
+          entfernt.add(`Anmerkung ${name((an as PDFDict).get(SUBTYPE))}`);
+          if (x instanceof PDFRef) ctx.delete(x);
+        }
         return !weg;
       });
       if (bleiben.length !== annots.size()) d.set(ANNOTS, ctx.obj(bleiben));
@@ -77,7 +112,10 @@ export async function bereinigePdf(inhalt: Uint8Array): Promise<Bereinigt> {
   // Eingebettete Dateien (Ströme /Type /EmbeddedFile) sind nach dem Entfernen von /EF nicht mehr erreichbar; save()
   // schreibt trotzdem alle Objekte – deshalb leeren.
   for (const [ref, o] of ctx.enumerateIndirectObjects()) {
-    if (o instanceof PDFStream && name(o.dict.get(PDFName.of('Type'))) === 'EmbeddedFile') { ctx.delete(ref); entfernt.add(t('meldungen.anzeige.eingebettete-datei')); }
+    if (o instanceof PDFStream && name(o.dict.get(PDFName.of('Type'))) === 'EmbeddedFile') {
+      ctx.delete(ref);
+      entfernt.add(t('meldungen.anzeige.eingebettete-datei'));
+    }
   }
   return { pdf: await doc.save({ updateFieldAppearances: false, useObjectStreams: false }), entfernt: [...entfernt].sort() };
 }

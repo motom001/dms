@@ -17,8 +17,17 @@ import ablago from './.github/werkzeuge/eslint-ablago.mjs';
 // Tests (#1282): server/test für den Server, web/test für die Oberfläche, shared/test für Sprachdateien und Gemeinsames.
 const TESTS = ['server/test/**/*.ts', 'web/test/**/*.ts', 'shared/test/**/*.ts'];
 const CODE = ['server/src/**/*.ts', 'web/src/**/*.{ts,tsx}', 'shared/src/**/*.ts', ...TESTS];
-const WERKZEUGE = ['.github/werkzeuge/*.mjs', 'server/test/*.mjs', 'web/test/*.mjs', 'web/rauchtest/**/*.mjs', 'eslint.config.js', '.dependency-cruiser.cjs'];
+const WERKZEUGE = [
+  '.github/werkzeuge/*.mjs',
+  'server/test/*.mjs',
+  'web/test/*.mjs',
+  'web/rauchtest/**/*.mjs',
+  'eslint.config.js',
+  '.dependency-cruiser.cjs',
+];
 // Leerzeilen und Kommentare zählen bei den Längen nicht mit: Erklärungen im Code sollen nichts kosten.
+// Längen ×1,75 wegen Formatierer (#1280): gleiche Strenge in formatierten Zeilen (vorher 400 je Datei, 60 je Funktion,
+// 150 je Komponente, 60 je Handler; Prettier bricht dichten Code auf rund das 1,8-Fache der Zeilen um).
 const ZEILEN = { skipBlankLines: true, skipComments: true };
 
 export default defineConfig([
@@ -33,8 +42,8 @@ export default defineConfig([
   },
   { files: ['**/*.cjs'], languageOptions: { sourceType: 'commonjs' } },
   { files: ['web/rauchtest/**/*.mjs'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
-  // Rauchtests (#1234): je Bereich eine Datei unter web/rauchtest/bereiche/ – höchstens 400 Zeilen wie Code.
-  { files: ['web/rauchtest/**/*.mjs'], rules: { 'max-lines': ['error', { max: 400, ...ZEILEN }] } },
+  // Rauchtests (#1234): je Bereich eine Datei unter web/rauchtest/bereiche/ – höchstens 700 Zeilen wie Code.
+  { files: ['web/rauchtest/**/*.mjs'], rules: { 'max-lines': ['error', { max: 700, ...ZEILEN }] } },
 
   // Server, Oberfläche, gemeinsamer Code: mit Typinformation (je Datei das passende tsconfig.json).
   {
@@ -49,8 +58,8 @@ export default defineConfig([
       'max-params': ['error', 5],
       complexity: ['error', 20],
       'ablago/komplexitaet-hinweis': ['warn', 15],
-      'max-lines-per-function': ['error', { max: 60, ...ZEILEN }],
-      'max-lines': ['error', { max: 400, ...ZEILEN }],
+      'max-lines-per-function': ['error', { max: 105, ...ZEILEN }],
+      'max-lines': ['error', { max: 700, ...ZEILEN }],
       'max-depth': ['error', 4],
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
@@ -76,12 +85,12 @@ export default defineConfig([
   // Keine Farbklassen über className am Knopf (#1210): Die Farbe kommt aus der Art. Bestand beim Einführen in
   // eslint-suppressions.json (Regel ablago/knopf-farben), abgebaut in #1211–#1215.
   { files: ['web/src/**/*.tsx'], rules: { 'ablago/knopf-farben': 'error' } },
-  // Komponenten sind länger als Funktionen im Server: 150 Zeilen je Funktion.
-  { files: ['web/src/**/*.tsx'], rules: { 'max-lines-per-function': ['error', { max: 150, ...ZEILEN }] } },
-  // Routendateien (#960): 60 Zeilen je Handler, die äußere Registrierfunktion ist ausgenommen.
+  // Komponenten sind länger als Funktionen im Server: 260 Zeilen je Funktion.
+  { files: ['web/src/**/*.tsx'], rules: { 'max-lines-per-function': ['error', { max: 260, ...ZEILEN }] } },
+  // Routendateien (#960): 105 Zeilen je Handler, die äußere Registrierfunktion ist ausgenommen.
   {
     files: ['server/src/**/*.routen.ts'],
-    rules: { 'max-lines-per-function': 'off', 'ablago/handler-laenge': ['error', { max: 60, ...ZEILEN }] },
+    rules: { 'max-lines-per-function': 'off', 'ablago/handler-laenge': ['error', { max: 105, ...ZEILEN }] },
   },
   // Reine Daten (Lizenztexte, #374): die Länge der Datei ist kein Maß für ihre Verständlichkeit.
   { files: ['server/src/lizenztexte.ts'], rules: { 'max-lines': 'off' } },
@@ -92,9 +101,22 @@ export default defineConfig([
     rules: {
       'max-lines': 'off',
       'max-lines-per-function': 'off',
-      '@typescript-eslint/no-floating-promises': ['error', {
-        allowForKnownSafeCalls: [{ from: 'package', package: 'node:test', name: ['test', 'it', 'describe', 'suite', 'before', 'after', 'beforeEach', 'afterEach'] }],
-      }],
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        {
+          allowForKnownSafeCalls: [
+            {
+              from: 'package',
+              package: 'node:test',
+              name: ['test', 'it', 'describe', 'suite', 'before', 'after', 'beforeEach', 'afterEach'],
+            },
+          ],
+        },
+      ],
     },
   },
+  // Formatierung macht Prettier (#1280, `npm run format`): Regeln, die mit ihm kollidieren, sind aus – wie in
+  // eslint-config-prettier, ohne zusätzliche Abhängigkeit. Aus den eingeschalteten Regelsätzen betrifft das nur
+  // no-unexpected-multiline (Prettier bricht lange Ketten so um, dass sie anschlägt, ohne dass sich etwas ändert).
+  { rules: { 'no-unexpected-multiline': 'off' } },
 ]);

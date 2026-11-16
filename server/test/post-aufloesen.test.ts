@@ -40,20 +40,31 @@ async function repo(pg: boolean): Promise<Repo> {
 /** Lena legt Post mit zwei Briefseiten ab und daraus eine Rechnung an – wie die Seite „Dokument übernehmen“. */
 async function aufbau(pg: boolean, einstellungen = speicherEinstellungen()) {
   const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen });
-  await d.postSystemmappen.gleicheBenutzerAb([{ id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer]);
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'belege', name: 'Belege', art: 'dokumente' },
-  ] });
+  await d.postSystemmappen.gleicheBenutzerAb([
+    { id: LENA, email: 'lena@example.org', name: 'Lena', rolle: 'admin', aktiv: true } as Benutzer,
+  ]);
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'belege', name: 'Belege', art: 'dokumente' },
+    ],
+  });
   const post = await d.post.legePostAn({ betreff: 'Brief der Stadtwerke' }, { id: LENA, name: 'Lena' });
-  const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'rechnung.pdf', typ: 'application/pdf' }, PDF('a'), LENA)).dokument;
-  const b = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'werbung.pdf', typ: 'application/pdf' }, PDF('b'), LENA)).dokument;
+  const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'rechnung.pdf', typ: 'application/pdf' }, PDF('a'), LENA))
+    .dokument;
+  const b = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'werbung.pdf', typ: 'application/pdf' }, PDF('b'), LENA))
+    .dokument;
   return { d, rechnung, post, a, b };
 }
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   describe(`Post auflösen (#936, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => { for (const s of offen.splice(0)) await s.end(); });
+    after(async () => {
+      for (const s of offen.splice(0)) await s.end();
+    });
 
     it('Dokumente wandern ins Register der neuen Mappe, die Post kommt in den Papierkorb', async () => {
       const { d, rechnung, post, a, b } = await aufbau(pg);
@@ -61,14 +72,23 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const r = await d.post.ordneZu(post.id, { ziel: neu.id, register: 'belege', aufloesen: true }, LENA);
       assert.equal(r.aufgeloest, true);
       assert.ok('papierkorb' in r && r.papierkorb);
-      assert.deepEqual((await d.mappen.holeMappe(neu.id)).dokumente.map((x) => [x.id, x.registerKey]).sort(), [[a.id, 'belege'], [b.id, 'belege']].sort());
+      assert.deepEqual(
+        (await d.mappen.holeMappe(neu.id)).dokumente.map((x) => [x.id, x.registerKey]).sort(),
+        [
+          [a.id, 'belege'],
+          [b.id, 'belege'],
+        ].sort(),
+      );
       await assert.rejects(d.mappen.holeMappe(post.id), status(404), 'die Post ist weg');
       const korb = await d.papierkorbVerwaltung.papierkorb({ id: LENA, rolle: 'admin' }, true);
       const e = korb.find((x) => x.id === post.id)!;
       assert.equal(e.dokumente, 0, 'keine Dokumente mehr in der Post');
       assert.deepEqual(e.aufgeloestIn, { id: neu.id, typId: rechnung.id, titel: 'R-2026-0815', da: true });
       assert.equal(e.werte.stand, POST_STAND.zugeordnet);
-      assert.deepEqual((await d.papierkorbVerwaltung.papierkorbEintrag(post.id, { id: LENA, rolle: 'admin' }, true)).aufgeloestIn?.id, neu.id);
+      assert.deepEqual(
+        (await d.papierkorbVerwaltung.papierkorbEintrag(post.id, { id: LENA, rolle: 'admin' }, true)).aufgeloestIn?.id,
+        neu.id,
+      );
     });
 
     it('die ganze Historie der Post steht bei der Mappe – mit Herkunft, Änderungen, Notizen, Aufgaben – dazu „Aus Post … angelegt“', async () => {
@@ -83,7 +103,11 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       await d.post.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
       const h = await d.mappenHistorie.historie(neu.id);
       const ausPost = h.filter((x) => x.daten.ausPost === post.id);
-      for (const art of ['angelegt', 'uebernommen', 'geaendert', 'dokument_hochgeladen', 'notiz', 'aufgabe']) assert.ok(ausPost.some((x) => x.art === art), art);
+      for (const art of ['angelegt', 'uebernommen', 'geaendert', 'dokument_hochgeladen', 'notiz', 'aufgabe'])
+        assert.ok(
+          ausPost.some((x) => x.art === art),
+          art,
+        );
       assert.ok(ausPost.length >= vorher.length, 'nichts geht verloren');
       const ursprung = h.find((x) => x.art === 'zugeordnet' && x.daten.aufgeloest === true)!;
       assert.match(String(ursprung.daten.text), /Aus Post „Abschlag Strom“ angelegt mit 2 Dokumenten ins Register „Belege“/);
@@ -91,7 +115,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(ursprung.daten.ausPost, undefined, 'der Ursprung ist ein eigener Eintrag der Mappe');
       // Notizen, Aufgaben und Erinnerungen gehören jetzt der Mappe.
       const m = await d.mappen.holeMappe(neu.id);
-      assert.deepEqual(m.notizen.map((n) => n.id), [notiz.id]);
+      assert.deepEqual(
+        m.notizen.map((n) => n.id),
+        [notiz.id],
+      );
       assert.ok(m.aufgaben.some((x) => x.id === aufgabe.id));
       assert.equal((m.erinnerungen ?? []).length, 1);
       // Bei der Post bleibt nur, was zum Auflösen gehört: „Aufgelöst in …“ und „in den Papierkorb gelegt“.
@@ -105,13 +132,20 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-77' } }, LENA);
       await d.post.ordneZu(post.id, { ziel: neu.id, aufloesen: true }, LENA);
       const p = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
-      assert.deepEqual(p.map((x) => x.art), ['mappe'], 'kein Dokument der Post ist gelöscht');
+      assert.deepEqual(
+        p.map((x) => x.art),
+        ['mappe'],
+        'kein Dokument der Post ist gelöscht',
+      );
       assert.equal(p[0].schritt, 'papierkorb');
       assert.equal(p[0].weg, 'aufgeloest');
       assert.equal(p[0].grundText, `Post aufgelöst in Mappe ${neu.id} (Rechnung)`);
       assert.ok(!JSON.stringify(p[0]).includes('Stadtwerke') && !JSON.stringify(p[0]).includes('R-77'), 'kein Titel, kein Betreff');
       assert.equal(p[0].anzahl?.dokumente, 0, 'die Dokumente sind nicht gelöscht, sie liegen in der Mappe');
-      await assert.rejects(d.papierkorbVerwaltung.stelleWiederHer(post.id, { id: LENA, rolle: 'admin' }, true), status(409, /aufgelöst.*Mappe dabei neu angelegt, löschst du sie/));
+      await assert.rejects(
+        d.papierkorbVerwaltung.stelleWiederHer(post.id, { id: LENA, rolle: 'admin' }, true),
+        status(409, /aufgelöst.*Mappe dabei neu angelegt, löschst du sie/),
+      );
       // Der Weg zurück: die neue Mappe löschen – sie kommt samt Dokumenten und Historie in den Papierkorb.
       await d.loeschen.loescheMappe(neu.id, LENA);
       const korb = await d.papierkorbVerwaltung.papierkorb({ id: LENA, rolle: 'admin' }, true);
@@ -127,13 +161,25 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const ab = r.abgetrennt!;
       assert.equal(ab.werte.stand, POST_STAND.neu);
       assert.equal(ab.titel, 'Brief der Stadtwerke (abgetrennt)');
-      assert.deepEqual((await d.mappen.holeMappe(ab.id)).dokumente.map((x) => x.id), [b.id]);
-      assert.deepEqual((await d.mappen.holeMappe(neu.id)).dokumente.map((x) => x.id), [a.id]);
+      assert.deepEqual(
+        (await d.mappen.holeMappe(ab.id)).dokumente.map((x) => x.id),
+        [b.id],
+      );
+      assert.deepEqual(
+        (await d.mappen.holeMappe(neu.id)).dokumente.map((x) => x.id),
+        [a.id],
+      );
       const herkunft = (await d.mappenHistorie.historie(ab.id)).find((x) => x.art === 'post_geteilt')!;
-      assert.match(String(herkunft.daten.text), /Abgetrennt aus Post „Brief der Stadtwerke“ mit 1 Dokument, als daraus Rechnung „R-2“ wurde/);
+      assert.match(
+        String(herkunft.daten.text),
+        /Abgetrennt aus Post „Brief der Stadtwerke“ mit 1 Dokument, als daraus Rechnung „R-2“ wurde/,
+      );
       assert.equal(herkunft.daten.ziel, neu.id);
       assert.equal(herkunft.daten.post, post.id);
-      assert.match(String((await d.mappenHistorie.historie(neu.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /1 Dokument als neue Post abgetrennt/);
+      assert.match(
+        String((await d.mappenHistorie.historie(neu.id)).find((x) => x.daten.aufgeloest === true)!.daten.text),
+        /1 Dokument als neue Post abgetrennt/,
+      );
     });
 
     it('nicht aufgelöst: mit „Kopie behalten“ und bei versendeten E-Mails; in eine bestehende Mappe schon (#934)', async () => {
@@ -150,10 +196,22 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const fremd = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-4' } }, null);
       const inFremd = await d.post.ordneZu(zweite.id, { ziel: fremd.id, aufloesen: true }, LENA);
       assert.equal(inFremd.aufgeloest, true);
-      assert.match(String((await d.mappenHistorie.historie(fremd.id)).find((x) => x.daten.aufgeloest === true)!.daten.text), /^Post „Noch ein Brief“ übernommen/);
+      assert.match(
+        String((await d.mappenHistorie.historie(fremd.id)).find((x) => x.daten.aufgeloest === true)!.daten.text),
+        /^Post „Noch ein Brief“ übernommen/,
+      );
       // Versendete E-Mails bleiben Post, wie sie verschickt wurden.
-      const mailer = { async sende() { /* ok */ } };
-      const mail = await d.ausgangEmail.versendeMappe(fremd.id, { an: 'jonas@example.org', betreff: 'Hallo' }, { id: LENA, name: 'Lena', email: 'lena@example.org' }, mailer);
+      const mailer = {
+        async sende() {
+          /* ok */
+        },
+      };
+      const mail = await d.ausgangEmail.versendeMappe(
+        fremd.id,
+        { an: 'jonas@example.org', betreff: 'Hallo' },
+        { id: LENA, name: 'Lena', email: 'lena@example.org' },
+        mailer,
+      );
       const ziel = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-5' } }, LENA);
       const v = await d.post.ordneZu(mail.id, { ziel: ziel.id, dokumente: [], aufloesen: true }, LENA);
       assert.equal(v.aufgeloest, false);
@@ -171,7 +229,10 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal((await d.mappen.holeMappe(neu.id)).dokumente.length, 2);
       assert.ok((await d.mappenHistorie.historie(neu.id)).some((x) => x.daten.ausPost === post.id && x.art === 'angelegt'));
       const p = (await d.loeschprotokollVerwaltung.loeschprotokoll({})).eintraege.filter((x) => x.mappeId === post.id);
-      assert.deepEqual(p.map((x) => [x.art, x.schritt, x.weg]), [['mappe', 'endgueltig', 'aufgeloest']]);
+      assert.deepEqual(
+        p.map((x) => [x.art, x.schritt, x.weg]),
+        [['mappe', 'endgueltig', 'aufgeloest']],
+      );
     });
   });
 }
@@ -184,14 +245,28 @@ async function mitKonten() {
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
   const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const rechnung = await d.mappentypen.legeTypAn({ name: 'Rechnung', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }], register: [
-    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
-    { key: 'belege', name: 'Belege', art: 'dokumente' },
-  ] });
+  const rechnung = await d.mappentypen.legeTypAn({
+    name: 'Rechnung',
+    titelVorlage: '{nr}',
+    felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }],
+    register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] },
+      { key: 'belege', name: 'Belege', art: 'dokumente' },
+    ],
+  });
   const postTyp = (await d.mappentypen.listeTypen()).find((x) => x.system === 'post')!;
   const tabelle = routen(d, konten, {});
   const rufe = async (b: { id: string }, m: string, p: string, x: Partial<Anfrage> = {}) =>
-    tabelle.find((r) => r.methode === m && r.pfad === p)!.handler({ body: {}, params: {}, query: {}, ip: '1', ...x, benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!) });
+    tabelle
+      .find((r) => r.methode === m && r.pfad === p)!
+      .handler({
+        body: {},
+        params: {},
+        query: {},
+        ip: '1',
+        ...x,
+        benutzer: wieImModus((await konten.listeBenutzer()).find((u) => u.id === b.id)!),
+      });
   return { d, konten, lena, jonas, rechnung, postTyp, rufe };
 }
 
@@ -204,7 +279,8 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const post = (await rufe(lena, 'POST', '/api/post', { body: { betreff: 'Brief vom Finanzamt' } })).body as { id: string };
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'bescheid.pdf', typ: 'application/pdf' }, PDF('f'), lena.id);
     const neu = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'St-1' } } })).body as { id: string };
-    const r = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: neu.id, aufloesen: true } })).body as { aufgeloest: boolean; hinweis?: string; post: { werte: Record<string, unknown> } };
+    const r = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: neu.id, aufloesen: true } }))
+      .body as { aufgeloest: boolean; hinweis?: string; post: { werte: Record<string, unknown> } };
     assert.equal(r.aufgeloest, false);
     assert.match(r.hinweis ?? '', /bleibt als „Zugeordnet“ stehen.*kein Recht zum Löschen/);
     assert.equal(r.post.werte.stand, POST_STAND.zugeordnet);
@@ -222,17 +298,25 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     const ohneAnlegen: Regelwerk = { grund: { ...NICHTS, R: true, U: true, D: true }, regeln: [] };
     await d.berechtigungen.setzeBerechtigungen(postTyp.id, ohneAnlegen, true);
     const post = await d.post.legePostAn({ betreff: 'Zwei Briefe' }, { id: lena.id, name: 'Lena' });
-    const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id)).dokument;
+    const a = (await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'a.pdf', typ: 'application/pdf' }, PDF('a'), lena.id))
+      .dokument;
     await d.dokumente.ladeHoch(post.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, PDF('b'), lena.id);
     const neu = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'Z-1' } } })).body as { id: string };
-    const teil = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: post.id }, body: { ziel: neu.id, dokumente: [a.id], aufloesen: true } })).body as { aufgeloest: boolean; hinweis?: string };
+    const teil = (
+      await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', {
+        params: { id: post.id },
+        body: { ziel: neu.id, dokumente: [a.id], aufloesen: true },
+      })
+    ).body as { aufgeloest: boolean; hinweis?: string };
     assert.equal(teil.aufgeloest, false);
     assert.match(teil.hinweis ?? '', /Post anlegen darfst du/);
     // Ganz übernommen geht es: Jonas darf die Post löschen.
     const zweite = await d.post.legePostAn({ betreff: 'Ein Brief' }, { id: lena.id, name: 'Lena' });
     await d.dokumente.ladeHoch(zweite.id, { register: 'dokumente', name: 'c.pdf', typ: 'application/pdf' }, PDF('c'), lena.id);
     const neu2 = (await rufe(jonas, 'POST', '/api/mappen', { body: { typId: rechnung.id, werte: { nr: 'Z-2' } } })).body as { id: string };
-    const ganz = (await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: zweite.id }, body: { ziel: neu2.id, aufloesen: true } })).body as { aufgeloest: boolean };
+    const ganz = (
+      await rufe(jonas, 'POST', '/api/mappen/:id/zuordnen', { params: { id: zweite.id }, body: { ziel: neu2.id, aufloesen: true } })
+    ).body as { aufgeloest: boolean };
     assert.equal(ganz.aufgeloest, true);
     const korb = (await rufe(jonas, 'GET', '/api/papierkorb')).body as Array<{ id: string; aufgeloestIn?: { id: string } }>;
     assert.equal(korb.find((x) => x.id === zweite.id)?.aufgeloestIn?.id, neu2.id);
@@ -255,7 +339,12 @@ describe('Post auflösen: Rechte, „Neue Post“ und Aufgaben (#936)', () => {
     assert.equal((await d.vertretung.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 1);
     const neu = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'J-1' } }, lena.id);
     await d.post.ordneZu(post.id, { ziel: neu.id, dokumente: [], aufloesen: true }, lena.id, z);
-    assert.equal((await d.sichten.zaehler({ id: lena.id, rolle: 'admin' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }))).sichten[sicht], 1);
+    assert.equal(
+      (await d.sichten.zaehler({ id: lena.id, rolle: 'admin' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'admin' }))).sichten[
+        sicht
+      ],
+      1,
+    );
     assert.equal((await d.vertretung.meineAufgaben({ id: jonas.id, rolle: 'mitglied' })).filter((x) => x.art === 'post').length, 0);
     assert.ok(!(await d.mappen.holeMappe(neu.id)).aufgaben.some((x) => x.art === 'post'), '„Post für dich“ gehört nicht zur Rechnung');
   });
