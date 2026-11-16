@@ -36,6 +36,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   const lauf = useRef(0);
   const geladen = useRef(0);
 
+  /* eslint-disable react-hooks/exhaustive-deps -- lade hängt an den Suchparametern, die übrigen Werte liest es über Refs */
   const lade = useCallback(async (von: number, anzahl: number, ersetzen: boolean, bekannt?: number) => {
     if (!sicht) return;
     const nr = ++lauf.current;
@@ -59,7 +60,8 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     } finally {
       if (nr === lauf.current) setLaedt(false);
     }
-  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen, link]); // eslint-disable-line react-hooks/exhaustive-deps -- lade hängt an den Suchparametern, die übrigen Werte liest es über Refs
+  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen, link]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Neue Sicht oder Suche: von vorn.
   useEffect(() => { setMappen([]); setGesamt(null); geladen.current = 0; void lade(0, SEITE, true); }, [lade]);

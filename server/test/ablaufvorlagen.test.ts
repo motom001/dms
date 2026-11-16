@@ -284,7 +284,7 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
     const quelle = readFileSync(new URL('../../web/src/werkbank/Ablaufvorlagen.tsx', import.meta.url), 'utf8');
     const teil = quelle.slice(quelle.indexOf('function Ausprobieren('));
     assert.match(teil, /const ziele = ausprobierTypen\(v, d\.typen\)/);
-    assert.match(teil, /<MappenWahl [^>]*ziele=\{ziele\}/);
+    assert.match(teil, /<MappenWahl\s[^>]*ziele=\{ziele\}/);
   });
 
   it('Datum als Vorschlag (#1180): erlaubt bei „In …“, nicht bei „Sofort“; Vorbelegung und Lauftag', () => {

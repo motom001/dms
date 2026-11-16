@@ -6,6 +6,8 @@ Zwei Werkzeuge prüfen den Code, bevor er nach `main` kommt (#899): **ESLint** f
 
 | Befehl | Was |
 | --- | --- |
+| `npm run format` | alle Dateien [formatieren](#formatierung) (Prettier; zwei Durchgänge, weil Prettier lange Methodenketten manchmal erst im zweiten fertig umbricht; zusammen gut zwei Minuten) |
+| `npm run format:pruefen` | nur prüfen, ob alles formatiert ist – genau die Prüfung der CI |
 | `npm run lint` | ESLint über Server, Tests, Oberfläche und `shared` (mit Typinformation, gut eine Minute); `npm run lint -- --quiet` zeigt nur Fehler |
 | `npx eslint server/src/dienst.ts` | nur einzelne Dateien – schneller beim Arbeiten |
 | `npm run lint:abh` | Abhängigkeiten prüfen (dependency-cruiser, wenige Sekunden) |
@@ -18,6 +20,17 @@ Zwei Werkzeuge prüfen den Code, bevor er nach `main` kommt (#899): **ESLint** f
 
 Die Werkzeuge sind feste Versionen (ohne `^`) unter `devDependencies` im Wurzelordner und kommen nicht ins Image: Dort installiert `npm ci --omit=dev --workspace server` nur die Laufzeit-Pakete des Servers.
 
+## Formatierung { #formatierung }
+
+Wie der Code aussieht – Einrückung, Umbrüche, Anführungszeichen, Kommas –, entscheidet **Prettier** (#1280), nicht der Autor. Reviews drehen sich so um den Inhalt. Prettier ist eine feste Version unter `devDependencies`; die CI prüft im Job **stil** mit `npm run format:pruefen`, ob jede Datei so aussieht, wie Prettier sie schreibt.
+
+- **Einstellungen** in `.prettierrc.json`: Zeilenlänge 140, Einrückung 2 Leerzeichen, einfache Anführungszeichen (in JSX doppelte), Semikolons, Komma nach dem letzten Eintrag mehrzeiliger Listen. Vorlagen-Texte (`` `…` ``) bleiben unangetastet, auch eingebettetes CSS oder HTML.
+- **Ausnahmen** in `.prettierignore`: Markdown, YAML, HTML und CSS (CSS bleibt bei „eine Regel je Zeile“, weil die [Farbprüfung](#farben) zeilenweise arbeitet), `package-lock.json`, erzeugte Dateien wie die Bestandslisten und Test-Fixtures, deren Bytes zählen (Signaturen, Prüfsummen, rohe PDF-Körper). Neue Fixtures dieser Art dort eintragen.
+- **Sprachdateien** formatiert Prettier mit; `shared/test/sprachdateien-format.test.ts` stellt sicher, dass dabei jeder Wert gleich bleibt.
+- **Editor**: In VS Code die Erweiterung *Prettier – Code formatter* (`esbenp.prettier-vscode`) mit `"editor.formatOnSave": true` und `"prettier.requireConfig": true`; sie nimmt das Prettier aus `node_modules`. In JetBrains-IDEs unter *Languages & Frameworks → Prettier* „Automatic Prettier configuration“ und „Run on save“. Ohne Editor-Anbindung vor dem Commit `npm run format`.
+- **`git blame`**: Der eine Commit, der alles formatiert hat, steht in `.git-blame-ignore-revs` (Abschnitt „Formatierer“). GitHub überspringt ihn von selbst, lokal einmal `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+- **Nachprüfbar**: Ein Formatier-Commit enthält nur die Ausgabe von Prettier. `bash .github/werkzeuge/formatierung-nachpruefen.sh <commit>` lässt Prettier auf dem Stand davor laufen und vergleicht – der Unterschied muss leer sein. Die CI macht das für jeden neuen Eintrag im Abschnitt „Formatierer“ (Bedingung Sicherheit). Ein späterer Formatier-Commit (etwa nach einem Update von Prettier) kommt genauso in diesen Abschnitt.
+
 ## Regeln und Werte { #regeln }
 
 Die Einstellungen stehen in `eslint.config.js` (flache Konfiguration, ESLint 10). Grundlage sind die empfohlenen Regeln von ESLint und `typescript-eslint`; dazu kommen:
@@ -27,8 +40,8 @@ Die Einstellungen stehen in `eslint.config.js` (flache Konfiguration, ESLint 10)
 | `max-params` | 5 | 4 |
 | `complexity` | 20 (Fehler) | 10 |
 | `ablago/komplexitaet-hinweis` | 15 (nur Warnung) | – |
-| `max-lines-per-function` | 60; in `*.tsx` 150; in `*.routen.ts` je Handler 60 | – |
-| `max-lines` | 400 je Datei | – |
+| `max-lines-per-function` | 105; in `*.tsx` 260; in `*.routen.ts` je Handler 105 | – |
+| `max-lines` | 700 je Datei | – |
 | `max-depth` | 4 | – |
 | `@typescript-eslint/no-floating-promises` | an | – |
 | `@typescript-eslint/no-misused-promises` | an | – |
@@ -43,7 +56,7 @@ Längen zählen ohne Leerzeilen und Kommentare – Erklärungen im Code sollen n
 - **Zwei Schwellen für die Komplexität:** Eine Regel hat in ESLint nur eine Stufe. `ablago/komplexitaet-hinweis` ist dieselbe Regel `complexity` noch einmal, mit 15 als Warnung; die CI zeigt die Warnungen nur für die Dateien, die ein Pull Request ändert, als Anmerkung an der Zeile. Die eigenen Regeln stehen in `.github/werkzeuge/eslint-ablago.mjs`.
 - **Routendateien (`*.routen.ts`, #960):** Gemessen wird jeder Handler für sich. Ausgenommen ist nur die äußere Registrierfunktion – eine exportierte Funktion auf oberster Ebene, die die Handler einträgt. Stehen die Routen als Liste auf Modulebene, zählt ohnehin jeder Handler einzeln.
 - **Tests (`server/test/`, `web/test/`, `shared/test/`):** ohne `max-lines` und `max-lines-per-function`, sonst dieselben Regeln. `test()`, `describe()` und `it()` aus `node:test` gelten nicht als „nicht abgewartet“.
-- **Werkzeug-Skripte** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/test/*.mjs`, `web/rauchtest/**/*.mjs`): nur die Grundregeln von ESLint, ohne Typinformation; die Rauchtests zusätzlich mit `max-lines` 400 je Datei (#1234). Für die Gestaltung begrenzt `npm run lint:farben` jede CSS-Datei unter `web/src/` auf 400 Zeilen, ebenfalls ohne Leerzeilen und Kommentare.
+- **Werkzeug-Skripte** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/test/*.mjs`, `web/rauchtest/**/*.mjs`): nur die Grundregeln von ESLint, ohne Typinformation; die Rauchtests zusätzlich mit `max-lines` 700 je Datei (#1234). Für die Gestaltung begrenzt `npm run lint:farben` jede CSS-Datei unter `web/src/` auf 400 Zeilen, ebenfalls ohne Leerzeilen und Kommentare.
 - **Bausteine (`ablago/bausteine`, #968):** In der Oberfläche ist ein rohes `<button>` ein Fehler – dafür gibt es `Knopf`. `<input>`, `<select>` und `<textarea>` sind es, wenn sie nicht in `Feld`, `HakenFeld` oder `FeldGruppe` stehen. Ausgenommen sind unsichtbare Eingaben (`type="hidden"`, `type="file"`) und die Bausteine selbst unter `web/src/bausteine/`. Für Fälle, die die Bausteine bewusst nicht abdecken (Suchfeld ohne sichtbare Beschriftung, Eingabe in einer Tabellenzelle, siehe [Feld](bausteine-feld.md#wann)), gilt eine Ausnahme mit Begründung im Code. Der Bestand beim Einschalten steht in `eslint-suppressions.json`.
 - **Farbe am Knopf (`ablago/knopf-farben`, #1210):** Farbklassen über `className` an `Knopf`, `KnopfLink` und `knopfAussehen()` – `gefahr`, `gefahr-rand`, `gruen`, `primaer` – sind ein Fehler; die Farbe kommt aus der Art ([Leitsätze](bausteine.md#leitsaetze)). Geprüft werden alle festen Texte im Wert, auch in Bedingungen und Vorlagen-Texten. Der Bestand beim Einschalten (11 Stellen) steht in `eslint-suppressions.json` und wird in #1211–#1215 abgebaut. Test: `.github/werkzeuge/eslint-ablago.test.mjs`.
 - **Promises in der Oberfläche:** `onClick={async () => …}` meldet `no-misused-promises`, denn React wartet nicht auf das Promise und ein Fehler bliebe unbemerkt. Besser: `onClick={() => void speichern()}` mit eigenem `try`/`catch` in `speichern`.
@@ -56,7 +69,7 @@ Muss eine Regel an einer Stelle wirklich weichen, dann mit Begründung nach `--`
 }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste ändert
 ```
 
-Ohne Begründung, ohne Regelname (`/* eslint-disable */`) oder ohne Wirkung ist die Ausnahme selbst ein Fehler.
+Ohne Begründung, ohne Regelname (`/* eslint-disable */`) oder ohne Wirkung ist die Ausnahme selbst ein Fehler. Kann [Prettier](#formatierung) die Stelle auf mehrere Zeilen umbrechen, besser ein Paar `/* eslint-disable regel -- Grund */` … `/* eslint-enable regel */` um die Anweisung – eine `-line`-Ausnahme gilt nur für ihre eine Zeile.
 
 ## Bestand: umtragen ja, hinzufügen nein { #bestand }
 
@@ -67,6 +80,7 @@ Für beide Listen – und für `knip-bestand.json` ([Toter Code](#toter-code)) �
 - **Umtragen ist erlaubt.** Zieht eine Funktion in eine andere Datei um (etwa beim Teilen von `routen.ts`), wandert ihr Eintrag mit: `npm run lint:umtragen` schreibt die Listen neu und streicht, was nicht mehr vorkommt. Die Summe bleibt gleich – die Prüfung ist grün.
 - **Hinzufügen nicht.** Neuer oder geänderter Code, der eine Regel verletzt, wird korrigiert, nicht eingetragen. `lint:umtragen` würde ihn zwar aufnehmen, aber dann wächst die Zahl, und die CI meldet, bei welcher Regel.
 - **Neue Regel einschalten.** Wer eine Regel neu einführt, friert nur ihren Bestand ein: `npx eslint --suppress-rule <regel> --pass-on-unpruned-suppressions .` – die übrigen Einträge bleiben, wie sie sind. Die Gesamtzahl steigt dabei, ohne dass Code schlechter wird; `ausnahmen-zaehlen.mjs` rechnet die neue Regel deshalb heraus und zeigt ihren Bestand als „neue Regel … (Ausgangspunkt)“. Neu ist eine Regel, wenn sie in der Basis keinen Eintrag hat **und** ihr Name (`'regel'`) in `eslint.config.js` neu dazukommt – so steht sie sichtbar im Pull Request, und eine längst eingeschaltete Regel ohne Bestand lässt sich nicht still einfrieren. Ab dem nächsten Stand zählt ihr Bestand wie jeder andere.
+- **Grenze ändern.** Ändert sich der Wert einer Regel in `eslint.config.js` (so mit dem [Formatierer](#formatierung) die Längen ×1,75, #1280), gilt ihr Bestand ebenfalls neu: `ausnahmen-zaehlen.mjs` rechnet die Regel heraus und zeigt „Grenze von … geändert (neuer Ausgangspunkt)“. Geändert heißt: Die Zeilen, die die Regel nennen, unterscheiden sich ohne Kommentare und Leerraum von der Basis.
 - **Weniger ist willkommen.** Wer eine Funktion vereinfacht, kann die Liste mit `npx eslint --prune-suppressions .` gleich mit verkleinern – sonst erledigt das der Workflow unten.
 
 ### Aufräumen auf main { #aufraeumen }

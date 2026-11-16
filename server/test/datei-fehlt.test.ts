@@ -76,7 +76,9 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
   const wurzel = join(tmp, 'ablage');
   const speicher = ordnerSpeicher(wurzel, HAUSHALT);
   const pfad = (sha: string) => join(wurzel, HAUSHALT, sha.slice(0, 2), sha);
-  let app: { inject(o: { method: string; url: string; headers?: Record<string, string>; payload?: unknown }): Promise<{ statusCode: number; body: string; json(): any }>; close(): Promise<unknown> }; // eslint-disable-line @typescript-eslint/no-explicit-any -- json() liefert je Anfrage etwas anderes
+  /* eslint-disable @typescript-eslint/no-explicit-any -- json() liefert je Anfrage etwas anderes */
+  let app: { inject(o: { method: string; url: string; headers?: Record<string, string>; payload?: unknown }): Promise<{ statusCode: number; body: string; json(): any }>; close(): Promise<unknown> };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   let d: Dienst;
   let cookie = '';
   let basic = '';

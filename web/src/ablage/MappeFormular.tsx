@@ -730,6 +730,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   // Die Brücke setzt Werte vom Dokument und zeigt Felder; über Refs immer mit dem aktuellen Stand.
   const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege });
   anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege };
+  /* eslint-disable react-hooks/exhaustive-deps -- die Brücke liest über anschluss.current immer den aktuellen Stand */
   useEffect(() => bruecke?.anschliessen({
     setze(k, wert, bezug) {
       const a = anschluss.current;
@@ -753,7 +754,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       a.oeffneAbschnitte([k]);
       window.setTimeout(() => document.querySelector(`.spalte.mappe [data-anker="mappe.feld:${k}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 30);
     },
-  }), [bruecke?.anschliessen, typ]); // eslint-disable-line react-hooks/exhaustive-deps -- die Brücke liest über anschluss.current immer den aktuellen Stand
+  }), [bruecke?.anschliessen, typ]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   async function neuAnlegen(k: string) {
     const n = adNeu[k]; const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n?.typId);

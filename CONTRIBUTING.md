@@ -23,7 +23,7 @@ Die Vorlage für Pull Requests fragt danach; die Prüfung „Abhängigkeiten“ 
 
 ## Stil und Abhängigkeiten prüfen
 
-Vor dem Pull Request laufen `npm run lint` (ESLint mit Typinformation) und `npm run lint:abh` (dependency-cruiser) ohne Fehler durch. Was es beim Einführen schon gab, steht in `eslint-suppressions.json` bzw. `.dependency-cruiser-known-violations.json` und meldet sich nicht – neuer Code ist voll streng, und die Listen dürfen nicht wachsen: **umtragen ja, hinzufügen nein**. Ausnahmen im Code nur mit Begründung (`// eslint-disable-next-line regel -- Grund`). Einzelheiten im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/stil/).
+Vor dem Pull Request formatiert `npm run format` den Code (Prettier, die CI prüft das), und es laufen `npm run lint` (ESLint mit Typinformation) und `npm run lint:abh` (dependency-cruiser) ohne Fehler durch. Was es beim Einführen schon gab, steht in `eslint-suppressions.json` bzw. `.dependency-cruiser-known-violations.json` und meldet sich nicht – neuer Code ist voll streng, und die Listen dürfen nicht wachsen: **umtragen ja, hinzufügen nein**. Ausnahmen im Code nur mit Begründung (`// eslint-disable-next-line regel -- Grund`). Einzelheiten im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/stil/).
 
 ## Grafiken und Bilder je Sprache
 

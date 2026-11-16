@@ -43,6 +43,8 @@ import { JSON_KOERPER_MAX, MB } from './grenzen';
 
 /** zeit (#477): Zeitpunkte der Anfrage (performance.now()) für Server-Timing. */
 type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean; zeit?: { eingang: number; start?: number; ende?: number; senden?: number }; nachher?: () => void };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Antwort im WebDAV-Bereich mit eigenen HTTP-Methoden, die Typen von Fastify passen dort nicht
+type WebdavAntwort = any;
 
 /**
  * Arbeit nach der Antwort (#741, `Antwort.danach`): beginnt, wenn die Antwort gesendet ist (onResponse, spätestens nach
@@ -355,7 +357,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     await app.register(async (bereich) => {
       bereich.removeAllContentTypeParsers();
       bereich.addContentTypeParser('*', (_req, nutzlast, fertig) => fertig(null, nutzlast));
-      const handler = async (req: FastifyRequest, reply: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any -- Antwort im WebDAV-Bereich mit eigenen HTTP-Methoden, die Typen von Fastify passen dort nicht
+      const handler = async (req: FastifyRequest, reply: WebdavAntwort) => {
         const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };
         (req as MitKontext).dms = k;
         const koerper: Readable = req.body && typeof (req.body as { pipe?: unknown }).pipe === 'function' ? req.body as Readable : req.raw;
@@ -374,7 +376,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
       // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
       for (const url of ['/webdav', '/webdav/*']) bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + MB, handler });
       // Windows fragt beim Verbinden manchmal erst OPTIONS auf „/“: dort dieselben DAV-Köpfe (ausgeschaltet 404).
-      bereich.route({ method: 'OPTIONS', url: '/', handler: async (req: FastifyRequest, reply: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any -- Antwort im WebDAV-Bereich mit eigenen HTTP-Methoden, die Typen von Fastify passen dort nicht
+      bereich.route({ method: 'OPTIONS', url: '/', handler: async (req: FastifyRequest, reply: WebdavAntwort) => {
         const r = await wd.anfrage({ methode: 'OPTIONS', url: '/webdav/', ip: req.ip, kopf: () => undefined, koerper: null });
         reply.code(r.status);
         for (const [n, v] of Object.entries(r.koepfe)) reply.header(n, v);

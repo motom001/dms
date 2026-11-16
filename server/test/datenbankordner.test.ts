@@ -105,7 +105,7 @@ describe('Datenbank ohne Volume (#943)', () => {
     const quelle = lies('server/src/ablago.ts');
     assert.match(quelle, /const ohneDatenbankVolume = datenbankOhneVolume\(env\);/);
     assert.match(quelle, /if \(ohneDatenbankVolume && leiter\) log\.error\(tDe\('meldungen\.index\.datenbank-ohne-volume'/);
-    assert.match(quelle, /new AnbindungVerwaltung\([^\n]*, ohneDatenbankVolume\)/);
+    assert.match(quelle, /new AnbindungVerwaltung\([^;]*?,\s*ohneDatenbankVolume,?\s*\)/);
   });
 
   const A: Anbindung = { host: '127.0.0.1', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: '' };
@@ -134,9 +134,9 @@ describe('Datenbank ohne Volume (#943)', () => {
 
   it('die Übersicht zeigt die Meldung rot und verlinkt zur Datenbank-Anbindung, die Seite dort zum Handbuch', () => {
     const uebersicht = lies('web/src/werkbank/Uebersicht.tsx');
-    assert.match(uebersicht, /if \(u\.anbindung\?\.ohneVolume\) h\.push\(\{ schluessel: 'datenbank\.ohne-volume', art: 'schlecht'[^\n]*ziel: '\/werkbank\/anbindung'/);
+    assert.match(uebersicht, /if \(u\.anbindung\?\.ohneVolume\)\s*h\.push\(\{\s*schluessel: 'datenbank\.ohne-volume',\s*art: 'schlecht'[\s\S]{0,300}?ziel: '\/werkbank\/anbindung'/);
     const seite = lies('web/src/werkbank/Anbindung.tsx');
-    assert.match(seite, /s\.ohneVolume && <div className="hinweis schlecht">/);
+    assert.match(seite, /s\.ohneVolume && \(?\s*<div className="hinweis schlecht">/);
     assert.match(seite, /komplett\/#datenbank-retten/);
   });
 });

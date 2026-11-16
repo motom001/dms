@@ -69,8 +69,9 @@ export function aufrufParameter(w: WennAufruf, roh: unknown): Record<string, str
     if (!Object.hasOwn(o, n)) continue;
     const v = o[n];
     if (typeof v !== 'string' && typeof v !== 'number' && typeof v !== 'boolean') continue;
-    // eslint-disable-next-line no-control-regex -- Steuerzeichen bewusst entfernen (Text für Aufgaben und Verlauf)
+    /* eslint-disable no-control-regex -- Steuerzeichen bewusst entfernen (Text für Aufgaben und Verlauf) */
     erg[n] = String(v).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, AUFRUF_GRENZEN.wert);
+    /* eslint-enable no-control-regex */
   }
   return erg;
 }

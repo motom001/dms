@@ -95,8 +95,9 @@ export type HinweisFehler = 'leer' | 'lang' | 'html' | 'markdown' | 'link';
  * {@link HINWEIS_MAX} Zeichen. Zeilenumbrüche und Steuerzeichen werden zu Leerzeichen, mehrere Leerzeichen zu einem.
  */
 export function pruefeHinweistext(roh: unknown): { text: string } | { fehler: HinweisFehler } {
-  // eslint-disable-next-line no-control-regex -- Steuerzeichen gehören nicht in einen Hinweis
+  /* eslint-disable no-control-regex -- Steuerzeichen gehören nicht in einen Hinweis */
   const text = typeof roh === 'string' ? roh.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  /* eslint-enable no-control-regex */
   if (!text) return { fehler: 'leer' };
   if ([...text].length > HINWEIS_MAX) return { fehler: 'lang' };
   if (/[<>]|&(?:[a-z]+|#\d+|#x[0-9a-f]+);/i.test(text)) return { fehler: 'html' };

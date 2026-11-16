@@ -81,7 +81,7 @@ describe('Notfallblatt (#814): Schlüssel', () => {
     assert.deepEqual(Object.keys(VERWECHSELBAR).sort(), ['-', '0', '1', 'I', 'O', '_', 'l', 'o']);
     assert.equal(p.schluessel.fingerabdruck, 'a1b2c3d4e5f60718');
     // Die Null wird durchgestrichen gezeichnet.
-    assert.match(readFileSync(join(WURZEL, 'server/src/pdf/notfallblatt.ts'), 'utf8'), /z\.zeichen === '0'\) seite\.drawLine/);
+    assert.match(readFileSync(join(WURZEL, 'server/src/pdf/notfallblatt.ts'), 'utf8'), /z\.zeichen === '0'\)\s*seite\.drawLine/);
   });
 
   it('kein QR-Code mit dem Schlüssel: der einzige QR-Code ist der feste Link zur Hilfeseite', async () => {

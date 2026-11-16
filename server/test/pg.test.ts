@@ -17,8 +17,9 @@ const dbUrl = async () => (await (eigene ??= eigeneDatenbank('pg', { migrieren: 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
 describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang
+  /* eslint-disable @typescript-eslint/no-explicit-any -- Module erst nach dem Setzen der Umgebung dynamisch geladen; Typ im Test ohne Belang */
   let sql: any; let app: any; let betrieb: any; let texterkennung: any;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');

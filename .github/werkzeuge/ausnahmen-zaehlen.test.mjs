@@ -1,7 +1,7 @@
 // Tests für ausnahmen-zaehlen.mjs (#899): node --test .github/werkzeuge/ausnahmen-zaehlen.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { jeRegel, neueRegeln, ohneRegeln, vergleiche, zaehleEslint } from './ausnahmen-zaehlen.mjs';
+import { geaenderteRegeln, jeRegel, neueRegeln, ohneRegeln, vergleiche, zaehleEslint } from './ausnahmen-zaehlen.mjs';
 
 const vorher = { 'a.ts': { complexity: { count: 2 }, 'max-params': { count: 1 } }, 'b.ts': { complexity: { count: 1 } } };
 
@@ -38,4 +38,17 @@ test('neue Regel (#968): eingefrorener Bestand zählt nicht, wenn die Regel in e
   assert.deepEqual(neueRegeln(vorher, jetzt, alt, alt), []);
   // Eine Regel mit Bestand in der Basis ist nie neu, auch wenn sie in der Konfiguration neu genannt wird.
   assert.deepEqual(neueRegeln(vorher, { 'a.ts': { complexity: { count: 9 } } }, '', "'complexity'"), []);
+});
+
+test('geänderte Grenze (#1280): der Bestand der Regel gilt neu, nur wenn sich ihr Wert in der Konfiguration ändert', () => {
+  const alt = "  'max-params': ['error', 5],\n  complexity: ['error', 20],";
+  const neu = "  'max-params': ['error', 7], // mehr\n  complexity: ['error', 20],";
+  const jetzt = { 'a.ts': { complexity: { count: 2 }, 'max-params': { count: 4 } }, 'b.ts': { complexity: { count: 1 } } };
+  assert.deepEqual(geaenderteRegeln(vorher, jetzt, alt, neu), ['max-params']);
+  // Nur Kommentar oder Leerraum geändert: keine geänderte Grenze.
+  assert.deepEqual(geaenderteRegeln(vorher, jetzt, alt, "  'max-params':  ['error', 5], // nur ein Kommentar\n  complexity: ['error', 20],"), []);
+  assert.deepEqual(geaenderteRegeln(vorher, jetzt, alt, alt), []);
+  // Ohne Bestand in der Basis oder ohne Nennung ist es keine geänderte Grenze.
+  assert.deepEqual(geaenderteRegeln({}, jetzt, alt, neu), []);
+  assert.deepEqual(geaenderteRegeln(vorher, jetzt, '', neu), []);
 });

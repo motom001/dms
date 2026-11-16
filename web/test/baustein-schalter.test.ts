@@ -54,12 +54,12 @@ describe('Baustein Schalter (#1188)', () => {
     ];
     for (const [datei, id] of stellen) {
       const q = readFileSync(new URL(datei, WEB), 'utf8');
-      assert.match(q, new RegExp(`<Schalter id="${id}"`), `${datei}: ${id} als Schalter`);
-      assert.doesNotMatch(q, new RegExp(`<input id="${id}" type="checkbox"`), `${datei}: ${id} nicht mehr als Haken`);
+      assert.match(q, new RegExp(`<Schalter\\s+id="${id}"`), `${datei}: ${id} als Schalter`);
+      assert.doesNotMatch(q, new RegExp(`<input\\s+id="${id}"\\s+type="checkbox"`), `${datei}: ${id} nicht mehr als Haken`);
     }
     // Werkbank anpassen hat seit #987 keinen Ein/Aus-Schalter mehr (Expertenmodus ersetzt durch „Meine Leiste“).
     for (const datei of ['werkbank/MailVersand.tsx', 'werkbank/Sicherung.tsx', 'werkbank/Verkleinern.tsx', 'werkbank/DatenEinstellungen.tsx', 'werkbank/SucheEinstellungen.tsx', 'werkbank/Automatisierungen.tsx', 'werkbank/Ablaufvorlagen.tsx']) {
-      assert.match(readFileSync(new URL(datei, WEB), 'utf8'), /<Schalter /, datei);
+      assert.match(readFileSync(new URL(datei, WEB), 'utf8'), /<Schalter\s/, datei);
     }
     // Keine doppelte Zustandsanzeige beim WebDAV-Laufwerk.
     assert.doesNotMatch(readFileSync(new URL('werkbank/Webdav.tsx', WEB), 'utf8'), /webdav\.zustand/);

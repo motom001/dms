@@ -140,8 +140,9 @@ async function empfaengerDerMail(k: DannEmail, c: KartenKontext): Promise<MailZi
   return [...ziele.values()];
 }
 
-// eslint-disable-next-line no-control-regex -- Betreff als eine Zeile (keine Kopfzeilen über Platzhalter)
+/* eslint-disable no-control-regex -- Betreff als eine Zeile (keine Kopfzeilen über Platzhalter) */
 const eineZeile = (s: string) => s.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, AUSSEN_GRENZEN.betreff);
+/* eslint-enable no-control-regex */
 
 /** Betreff und Text je Empfänger: Personen mit Konto mit ihren Rechten (#795), Feld-Adressen mit denen der auslösenden Person, feste Adressen mit denen des Systemkontos. */
 async function mailFuer(k: DannEmail, z: MailZiel, c: KartenKontext, fuss: string) {

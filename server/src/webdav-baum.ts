@@ -114,9 +114,10 @@ export function href(teile: string[], ordner: boolean): string {
 
 /** Text für XML (Inhalt und Attribute). Zeichen, die XML 1.0 nicht erlaubt, fallen weg. */
 export function xml(s: string): string {
-  // eslint-disable-next-line no-control-regex -- Steuerzeichen entfernen ist der Zweck
+  /* eslint-disable no-control-regex -- Steuerzeichen entfernen ist der Zweck */
   return String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g, '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  /* eslint-enable no-control-regex */
 }
 
 /** Datum im HTTP-Format (RFC 1123), z. B. für getlastmodified und Last-Modified. */

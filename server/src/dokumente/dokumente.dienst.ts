@@ -26,8 +26,9 @@ interface Volltextuebernahme { text: string; seiten: number | null; info: string
 const AUTOMATISCH_VERKLEINERN: ReadonlySet<Herkunft> = new Set<Herkunft>(['hochgeladen', 'api', 'webdav', 'eingang']);
 
 export function dateiname(v: unknown): string {
-  // eslint-disable-next-line no-control-regex -- Steuerzeichen aus Dateinamen entfernen ist der Zweck
+  /* eslint-disable no-control-regex -- Steuerzeichen aus Dateinamen entfernen ist der Zweck */
   const s = text(v).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  /* eslint-enable no-control-regex */
   return (s || 'Dokument').slice(0, 200);
 }
 
