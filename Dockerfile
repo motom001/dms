@@ -76,7 +76,7 @@ COPY server/migrations server/migrations
 # Schriften für Ablagos eigene PDFs (#826): Noto Sans und Noto Sans Mono, schon aufbereitet (server/werkzeuge/schriften/),
 # zusammen 1,4 MB, mit der Lizenz (OFL.txt). Der Bau braucht dafür kein Python.
 COPY server/schriften server/schriften
-# Lizenztexte für selbst erstellte Pakete (#374, als Datendateien seit #1278): liest server/src/lizenztexte.ts beim Start.
+# Lizenztexte für selbst erstellte Pakete (#374, als Datendateien seit #1278): liest server/src/pakete/lizenztexte.ts beim Start.
 COPY server/lizenzen server/lizenzen
 # Ablagos eigene Rundgänge, Tipps und die Ankerliste (#831, #832): YAML, liest der Server beim Start.
 COPY shared/entdecken shared/entdecken
@@ -87,7 +87,7 @@ RUN printf '#!/bin/sh\nexec node /app/server/dist/dms.js "$@"\n' > /usr/local/bi
 # Lasttest selbst durchführen (#563): docker exec -it <Test-Container> dms-lasttest klein – nur gegen eine eigene
 # Test-Installation; das Skript prüft das selbst. Ohne Abhängigkeiten, nur node.
 # Ohne Konsole (#612): DMS_LASTTEST=klein|mittel|gross|extrem|alle – Ablago startet dieses Skript selbst und zeigt
-# Fortschritt und Ergebnis unter seinem Port (server/src/lasttestmodus.ts).
+# Fortschritt und Ergebnis unter seinem Port (server/src/lasttest/lasttestmodus.ts).
 COPY server/test/lasttest.mjs /app/lasttest/lasttest.mjs
 RUN printf '#!/bin/sh\nexec node /app/lasttest/lasttest.mjs "$@"\n' > /usr/local/bin/dms-lasttest && chmod 755 /usr/local/bin/dms-lasttest
 # Pakete mit dem Installer dieser Version prüfen (#1124), ohne Datenbank-Server und ohne Netz – für die CI von

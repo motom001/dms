@@ -41,7 +41,7 @@ How this is built in detail is described in the [developer manual](https://help.
 
 ## Verifying where packages come from
 
-The Ablago project signs the official package catalog ([dms-registry](https://github.com/motom001/dms-registry)) with Ed25519. Ablago verifies the signature with these two public keys of the maintainer (built into the code, `server/src/projektschluessel.ts`); a signature made with either of them is valid:
+The Ablago project signs the official package catalog ([dms-registry](https://github.com/motom001/dms-registry)) with Ed25519. Ablago verifies the signature with these two public keys of the maintainer (built into the code, `server/src/pakete/projektschluessel.ts`); a signature made with either of them is valid:
 
 | Key | Key ID | Fingerprint (SHA-256 of the public key) |
 | --- | --- | --- |

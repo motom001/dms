@@ -71,7 +71,13 @@ test('Version im Lockfile: oben, Wurzel und Arbeitsbereiche, sonst nichts; Forma
 });
 
 test('Programm oder nicht', () => {
-  for (const p of ['server/src/dienst.ts', 'web/src/App.tsx', 'shared/src/sprachen/de/werkbank.json', 'Dockerfile', 'docker/start.sh'])
+  for (const p of [
+    'server/src/dienst/dienst.ts',
+    'web/src/App.tsx',
+    'shared/src/sprachen/de/werkbank.json',
+    'Dockerfile',
+    'docker/start.sh',
+  ])
     assert.ok(istProgramm(p), p);
   for (const p of [
     'server/test/x.test.ts',

@@ -26,7 +26,7 @@ const issues = [
   },
   {
     ...leer,
-    file: 'server/src/grenzen.ts',
+    file: 'server/src/grundlagen/grenzen.ts',
     duplicates: [
       [
         { name: 'KB', line: 19 },
@@ -41,7 +41,7 @@ test('liest Exporte, Typen und doppelte Exporte als flache Liste', () => {
   assert.equal(l.length, 4);
   assert.deepEqual(
     l.find((f) => f.art === 'duplicates'),
-    { art: 'duplicates', datei: 'server/src/grenzen.ts', name: 'KB = KOERPER_SPIELRAUM', zeile: 19 },
+    { art: 'duplicates', datei: 'server/src/grundlagen/grenzen.ts', name: 'KB = KOERPER_SPIELRAUM', zeile: 19 },
   );
 });
 

@@ -44,3 +44,6 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
   ein `max-params` in `eingaben.ts`).
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Mappen*.
+
+**Ohne Tür** (#1278, Schritt 4a): `aufkleber.ts`, `erwaehnungen.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

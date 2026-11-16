@@ -31,7 +31,7 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 
 ## Limits { #grenzen }
 
-How large something may be at most. Ablago checks every limit before it processes the data; anything larger is rejected with a message (usually “413 – too large”). In the source code all limits are in one place: `server/src/grenzen.ts`.
+How large something may be at most. Ablago checks every limit before it processes the data; anything larger is rejected with a message (usually “413 – too large”). In the source code all limits are in one place: `server/src/grundlagen/grenzen.ts`.
 
 | What | At most |
 | --- | --- |

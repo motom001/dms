@@ -31,7 +31,7 @@ Browser ── HTTP ──▶ Ablago-Container (Node.js) ──▶ PostgreSQL-Co
 
 ## Grenzen { #grenzen }
 
-Wie groß etwas höchstens sein darf. Ablago prüft jede Grenze, bevor es die Daten verarbeitet; was größer ist, lehnt es mit einer Meldung ab (meist „413 – zu groß“). Im Quelltext stehen alle Grenzen an einer Stelle: `server/src/grenzen.ts`.
+Wie groß etwas höchstens sein darf. Ablago prüft jede Grenze, bevor es die Daten verarbeitet; was größer ist, lehnt es mit einer Meldung ab (meist „413 – zu groß“). Im Quelltext stehen alle Grenzen an einer Stelle: `server/src/grundlagen/grenzen.ts`.
 
 | Was | Höchstens |
 | --- | --- |

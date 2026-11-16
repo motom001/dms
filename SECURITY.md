@@ -41,7 +41,7 @@ Wie das im Einzelnen gebaut ist, steht im [Entwicklerhandbuch](https://help.abla
 
 ## Herkunft der Pakete prüfen
 
-Das Ablago-Projekt signiert den offiziellen Paketkatalog ([dms-registry](https://github.com/motom001/dms-registry)) mit Ed25519. Ablago prüft die Signatur mit diesen beiden öffentlichen Schlüsseln des Maintainers (fest im Code, `server/src/projektschluessel.ts`); gültig ist eine Signatur mit einem der beiden:
+Das Ablago-Projekt signiert den offiziellen Paketkatalog ([dms-registry](https://github.com/motom001/dms-registry)) mit Ed25519. Ablago prüft die Signatur mit diesen beiden öffentlichen Schlüsseln des Maintainers (fest im Code, `server/src/pakete/projektschluessel.ts`); gültig ist eine Signatur mit einem der beiden:
 
 | Schlüssel | Kennung | Fingerabdruck (SHA-256 des öffentlichen Schlüssels) |
 | --- | --- | --- |

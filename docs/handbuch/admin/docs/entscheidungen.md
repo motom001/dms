@@ -30,7 +30,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Passwörter** mit scrypt aus Node (keine native Bibliothek). **Sitzungen** als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).
 - **Schutz vor fremden Seiten:** Ändernde Anfragen brauchen den Header `X-DMS`, den nur die eigene Oberfläche setzt; dazu `SameSite=Lax`.
 - **E-Mail optional:** Ohne SMTP zeigt die Benutzerverwaltung die Links zum Kopieren an.
-- **Routen je Fachbereich** in `server/src/<fach>/<fach>.routen.ts`, an einer Stelle zusammengeführt in `server/src/routen.ts` (#960), jede mit Zugriffsstufe (offen, angemeldet, admin).
+- **Routen je Fachbereich** in `server/src/<fach>/<fach>.routen.ts`, an einer Stelle zusammengeführt in `server/src/http/routen.ts` (#960), jede mit Zugriffsstufe (offen, angemeldet, admin).
 
 ## Ablage
 
@@ -70,7 +70,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 ## Betrieb und Fehlersuche
 
-- **Eigenes Protokoll** (`server/src/protokoll.ts`) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.
+- **Eigenes Protokoll** (`server/src/protokoll/protokoll.ts`) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.
 - **Live-Anzeige per Abfrage alle zwei Sekunden** statt Server-Sent Events: funktioniert hinter jedem Reverse-Proxy ohne Sonderkonfiguration (nginx puffert SSE sonst).
 - **Messung je Datenbankzugriff:** Jede Methode der Repos wird über einen Proxy gezählt und gestoppt (ein Zugriff kann mehrere SQL-Anweisungen umfassen). Die Summe je Anfrage geht im Header `Server-Timing` an die Oberfläche; die übrigen Schritte misst der Browser (Resource Timing). „Netzwerk“ ist dabei eine Näherung.
 - **Langläufer** stehen in der Datenbank (Tabelle `langlaeufer`), Schwelle und Aufbewahrung in `einstellungen`. Geschrieben wird gesammelt, höchstens einmal je Sekunde (#615): Unter Last dauern viele Zugriffe länger als die Schwelle, und ein eigenes Schreiben je Langläufer bremste dann zusätzlich. Ein Absturz verliert höchstens die Langläufer der letzten Sekunde; im Protokoll stehen sie trotzdem.
@@ -104,7 +104,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 ## E-Mail und Adresse in der Werkbank (#37)
 
-- **Keine Umgebungsvariablen mehr** für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in `einstellungen` (`mail`, `adresse`), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (`Betrieb` in `server/src/betrieb.ts`).
+- **Keine Umgebungsvariablen mehr** für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in `einstellungen` (`mail`, `adresse`), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (`Betrieb` in `server/src/einstellungen/betrieb.ts`).
 - **Einmalige Übernahme** der früheren Variablen `SMTP_*` und `APP_URL` beim ersten Start, nur solange nichts gespeichert ist; danach ignoriert, mit Hinweis im Protokoll. So fällt der Versand beim Update nicht aus.
 - **Ohne gepflegte Adresse** gilt die Adresse der aktuellen Anfrage (`req.protocol` und `req.host`, hinter einem Proxy über `X-Forwarded-*`, siehe unten). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.
 - **Passwort verschlüsselt** (seit #39), nie an die Oberfläche zurück; leeres Feld behält es.

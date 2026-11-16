@@ -31,3 +31,6 @@ Volltext lesen und schreiben, Sprache und Hinweis „Post teilen?“. Schicht 3 
   `no-control-regex` in `volltext.dienst.ts`, ein `complexity` in `aus-paketen.ts`).
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Volltext*.
+
+**Ohne Tür** (#1278, Schritt 4a): `paketvolltext.ts`, `texterkennung.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

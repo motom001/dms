@@ -22,8 +22,8 @@ Anschluss. So können tiefere Ordner sie künftig direkt nutzen, ohne Umweg übe
   `nachTexterkennungsEreignis`.
 - `Automatisierungshilfen` bekommt Kern und Rechteprüfung, die Rollen über den Anschluss.
 - Importiert nur sich selbst, Kern, `zugriff/`, `mappentypen/` (je über `index.ts`), `shared/` und die Basis.
-- Von außen als `ereignisse/index` einbinden: Neben dem Ordner liegt `ereignisse.ts` (der Verteiler des Katalogs),
-  `../ereignisse` fände diese Datei – wie bei `pakete/index`.
+- Von außen als `ereignisse/index` einbinden. Im Ordner liegt seit #1278 auch `ereignisse.ts` (der Verteiler des
+  Katalogs), noch ohne Tür: Der Dienst und das Repo binden ihn direkt ein (`ereignisse/ereignisse`).
 
 **Regeln**
 

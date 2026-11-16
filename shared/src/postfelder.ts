@@ -4,7 +4,7 @@
  * Textfeld `an` („Empfänger“, die Adressen einer versendeten E-Mail) heißt `an_adresse`. Die Datenbank zieht Migration
  * 099 um.
  *
- * Übergang bis 1.0.0 (server/src/uebergaenge.ts): Die Schnittstelle v1 nimmt `absender` und `fuer` weiter an und liefert
+ * Übergang bis 1.0.0 (server/src/grundlagen/uebergaenge.ts): Die Schnittstelle v1 nimmt `absender` und `fuer` weiter an und liefert
  * sie an der Post zusätzlich mit; Platzhalter `{absender}` und `{fuer}` gelten als `{von}` und `{an}`. Das frühere `an`
  * (Adresse) lässt sich so nicht weiterführen – unter `an` steht jetzt der Verweis.
  */

@@ -59,7 +59,7 @@ def main():
         if f.is_file() and f.name not in ('index.html', '404.html'):
             shutil.copy(f, ziel / f.name)
     # Seite „nicht gefunden“ (#841): Adressen ab /hilfe/, ohne „aktuell“ und ohne Umleitung alter Adressen; die Version
-    # füllt „Kaputten Link melden“ vor. Ablago liefert sie für unbekannte Adressen unter /hilfe/ aus (server/src/hilfe.ts).
+    # füllt „Kaputten Link melden“ vor. Ablago liefert sie für unbekannte Adressen unter /hilfe/ aus (server/src/oberflaeche/hilfe.ts).
     (ziel / '404.html').write_text(nicht_gefunden_offline((WURZEL / 'docs/handbuch/start/404.html').read_text(encoding='utf-8'), version), encoding='utf-8')
 
     fehler = pruefe(ziel)

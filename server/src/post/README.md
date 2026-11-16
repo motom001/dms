@@ -40,3 +40,6 @@ Benutzer, Rollen). Schicht 3 der Zielaufteilung – über Mappen, Dokumenten, Re
   `post.dienst.ts`).
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Post*.
+
+**Ohne Tür** (#1278, Schritt 4a): `postfach.ts`, `postfach-anhaenge.ts`, `postfach-oauth.ts`, `imap.ts`, `eingangsordner.ts`, `fotostapel.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

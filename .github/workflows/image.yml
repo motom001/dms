@@ -316,7 +316,7 @@ jobs:
   # Pakete aus dms-registry main gegen diesen Stand (#1124): Bricht eine strengere Prüfung im Kern Pakete aus dem Katalog
   # (wie #1108 Basis, Verträge und Rechnungen), steht das hier als Warnung – kein Blocker, nicht in „pruefen“: Die
   # Pakete ändert das Paket-Team in dms-registry, und der Fund gehört dorthin oder in diesen Pull Request. Installiert
-  # wird mit dem echten Installer in eine Ablage im Arbeitsspeicher (server/src/paketpruefung.ts), ohne Netz.
+  # wird mit dem echten Installer in eine Ablage im Arbeitsspeicher (server/src/pakete/paketpruefung.ts), ohne Netz.
   katalog-pakete:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -381,7 +381,7 @@ jobs:
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
-      # Lizenztexte im Image (#1278): Datendateien in server/lizenzen/, die server/src/lizenztexte.ts beim Start liest.
+      # Lizenztexte im Image (#1278): Datendateien in server/lizenzen/, die server/src/pakete/lizenztexte.ts beim Start liest.
       - name: Lizenztexte im Image
         run: docker run --rm --entrypoint sh dms:probe -c 'for s in MIT Apache-2.0 BSD-2-Clause BSD-3-Clause MPL-2.0 LGPL-3.0-or-later GPL-3.0-or-later AGPL-3.0-or-later CC0-1.0; do test -s "/app/server/lizenzen/$s.txt" || { echo "::error::Lizenztext $s fehlt im Image"; exit 1; }; done'
       # Schriften im Image (#1329): Ein PDF mit nicht eingebetteter Helvetica und Arial muss sichtbaren Text haben

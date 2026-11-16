@@ -3,7 +3,7 @@ import { t } from './texte';
  * Dokumente schwärzen (#392): Suchbegriffe und Muster in den Wörtern einer Seite finden und daraus
  * Bereiche machen – gemeinsam für Server (API, Ergebnis) und Oberfläche (Vorschau, Vorschläge), ohne
  * Netz. Koordinaten sind relativ zur angezeigten Seite (0…1, Ursprung oben links), so wie man sie sieht.
- * Das eigentliche Schwärzen (neu rendern, Textebene ohne die Stellen) steht in server/src/schwaerzen.ts.
+ * Das eigentliche Schwärzen (neu rendern, Textebene ohne die Stellen) steht in server/src/dateien/schwaerzen.ts.
  */
 
 /** Ein Wort mit Lage: [Text, x, y, Breite, Höhe] (relativ). Als Tupel, weil es viele sind. */

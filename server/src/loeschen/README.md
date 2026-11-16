@@ -35,3 +35,6 @@ Paketen. Schicht 3 der Zielaufteilung.
 - Umgetragen aus `dienst.ts`: zwei `complexity`, ein `max-lines-per-function`.
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Löschen*.
+
+**Ohne Tür** (#1278, Schritt 4a): `baum.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

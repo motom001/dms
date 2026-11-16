@@ -12,7 +12,7 @@
 import type { Lauf } from './automatisierung';
 import { t } from './texte';
 
-/** Grenzen des Aufrufs von außen, die auch die Oberfläche kennt (Parameter, Länge, Zeitfenster, angenommene je Adresse). Bytes und die übrige Bremse stehen in server/src/grenzen.ts. */
+/** Grenzen des Aufrufs von außen, die auch die Oberfläche kennt (Parameter, Länge, Zeitfenster, angenommene je Adresse). Bytes und die übrige Bremse stehen in server/src/grundlagen/grenzen.ts. */
 export const AUFRUF_GRENZEN = {
   /** Höchstens so viele Parameter je Karte (Namen) und je Aufruf (Werte). */
   parameter: 10,
@@ -24,7 +24,7 @@ export const AUFRUF_GRENZEN = {
   fensterS: 300,
   /**
    * Bremse je Adresse für **angenommene** Aufrufe (gültig signiert) je Minute – unter der Bremse der Automatisierung (30
-   * Läufe je Minute, sie hält sonst an). Die Grenzen für abgelehnte Aufrufe und je IP-Bereich stehen in server/src/grenzen.ts.
+   * Läufe je Minute, sie hält sonst an). Die Grenzen für abgelehnte Aufrufe und je IP-Bereich stehen in server/src/grundlagen/grenzen.ts.
    */
   jeAdresseJeMinute: 12,
 } as const;

@@ -54,7 +54,7 @@ export const EREIGNISKATALOG = {
   'frist.erreicht': { gruppe: 'zeit', felder: ['mappe', 'typ', 'feld', 'datum', 'zeitpunkt', 'empfaenger'], paket: true, mappentyp: true },
   // Für Personen
   'aufgabe.neu': { gruppe: 'person', felder: ['aufgabe', 'mappe', 'typ', 'empfaenger', 'aufgabenart'] },
-  // „an“ (#1042); „fuer“ mit demselben Wert nur noch bis 1.0.0 (server/src/uebergaenge.ts).
+  // „an“ (#1042); „fuer“ mit demselben Wert nur noch bis 1.0.0 (server/src/grundlagen/uebergaenge.ts).
   'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'an', 'fuer'], paket: true },
   'favorit.neu': { gruppe: 'person', felder: ['benutzer', 'mappe', 'typ'] },
   // #678: Jemand hat eine Mappe geändert, die andere als Favorit mit „benachrichtigen“ haben (Dann-Karte „Favoriten-Änderungen melden“).
@@ -104,7 +104,7 @@ export type PaketKatalogArt = { [K in KatalogArt]: (typeof EREIGNISKATALOG)[K] e
  * Veraltete Namen, die Pakete noch abonnieren dürfen (Übergang, #724): Der Kern meldet nur das neue Ereignis; wer den
  * alten Namen abonniert hat, bekommt es beim Zustellen unter diesem Namen – `texterkennung.fertig` nur für den
  * Volltext der eingebauten Texterkennung (`quelle: kern`), wie vor 0.133.0. Entfällt mit Ablago 1.0.0
- * (server/src/uebergaenge.ts, #902).
+ * (server/src/grundlagen/uebergaenge.ts, #902).
  */
 export const VERALTETE_EREIGNISSE = { 'texterkennung.fertig': 'volltext.fertig' } as const satisfies Record<string, KatalogArt>;
 
