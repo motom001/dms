@@ -1209,20 +1209,6 @@
       "count": 1
     }
   },
-  "web/src/ablage/MappeFormular.tsx": {
-    "complexity": {
-      "count": 8
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 4
-    },
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "web/src/ablage/NeuePost.tsx": {
     "ablago/bausteine": {
       "count": 9
@@ -1284,6 +1270,11 @@
     }
   },
   "web/src/ablage/Termine.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "web/src/ablage/mappe-formular/PasswortEingabe.tsx": {
     "complexity": {
       "count": 1
     }
