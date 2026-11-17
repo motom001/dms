@@ -1345,7 +1345,7 @@ async function main() {
   await s.keyboard.press('Escape');
   // „+ Neu“ in der Kopfzeile
   await s.getByRole('button', { name: w('+ Neu') }).click();
-  await s.getByRole('menuitem', { name: w(/Mappe/) }).waitFor();
+  await s.getByRole('menu').waitFor();
   await bild(s, 'neu-knopf');
   await s.keyboard.press('Escape');
 

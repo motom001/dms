@@ -53,11 +53,11 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 - **Short, consistent area names:** *Basic details* first, then in the order in which the entry is set up; try out, status and history at the end.
 - **Headings:** the area carries the `h2`; sections inside it use `h3` (`className="h4"`), not another `blatt` or a box with the same heading.
 - **Red means error.** Areas are not coloured as a danger zone – in the editor, red means “something went wrong here when saving”. Dangerous actions are shown by the red button (`art="gefahr"`) and the confirmation.
-- **References to another area** (“choose one in the area *Stand-in*”) are a jump: a `Knopf` of type link that calls `oeffne([k], true, true)`.
+- **References to another area** (“choose one in the area *Stand-in*”) are a jump: a `Knopf` (secondary) that calls `oeffne([k], true, true)`.
 
 ## On the phone { #handy }
 
-Jumps and the head of an area are at least 44 px high with `(pointer: coarse)` ([On the phone](bausteine.md#handy)); "Expand all" is a `Knopf` of type link. The bar wraps and scrolls along.
+Jumps and the head of an area are at least 44 px high with `(pointer: coarse)` ([On the phone](bausteine.md#handy)); "Expand all" is a small `Knopf` (secondary). The bar wraps and scrolls along.
 
 The pattern page shows the component in the section **Areas**: with jump bar (one area with an error), collapsed with a summary and with fewer than three areas.
 

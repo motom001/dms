@@ -1,6 +1,6 @@
 # Button { #knopf }
 
-`Knopf` (button) is the building block for every button (#968, sharpened in #1210). It fixes the kind (main, create, secondary, danger, link), shows disabled, “working” and the result the same way everywhere and sets `aria` itself – so that every button shows the same way what it does, whether it is working or why it can't be used. The [principles](bausteine.md#leitsaetze) apply to every button.
+`Knopf` (button) is the building block for every button (#968, sharpened in #1210). It fixes the kind (main, create, secondary, danger, special form), shows disabled, “working” and the result the same way everywhere and sets `aria` itself – so that every button shows the same way what it does, whether it is working or why it can't be used. The [principles](bausteine.md#leitsaetze) apply to every button.
 
 ![“Button” section of the pattern page: kinds, small, mouse over, keyboard focus, danger at rest, on hover and focus, the confirmation, disabled in two forms, the opened explanation, working, icon only, result, error, row of buttons](bilder/muster-knopf.png){ loading=lazy }
 
@@ -12,13 +12,15 @@
 | `anlegen` | solid green | **only** starting something new; the label begins with **“+”** | “+ New”, “+ Post”, “+ Row”, “+ Emergency contact” |
 | `neben` | surface with a border | everything else (default), also “Discard” and “Cancel” | “Test connection”, “Discard changes” |
 | `gefahr` | **like secondary, with an icon**; text and border turn red only on hover and keyboard focus | something where saved data is lost or someone is locked out – **always with a confirmation**, which the button asks itself | “Delete”, “Lock immediately”, “Sign everyone out” |
-| `link` | like a link | **for ways only**: back, to the list – never for an action that changes something | “Back to the list”, “Back” |
+| `eigen` | special form: the look comes entirely from `className`, never like a link | column headers, disclosure toggles, menu entries, stars, handles, tiles, calendar days – until #1270 gives them their own building blocks | column header “Name ↕”, star, tile “File your first post” |
+
+**Links take you somewhere, actions are buttons** (principle 7, pattern catalogue C8, #1277): there is no kind `link` on `Knopf` – type checking does not allow it. Whatever does something (“Clear selection”, “Hide”, “Expand all”, “Remove”) is a button of kind `neben`, small in list headers, rows, bars and messages. A way that should look like a link (“Back to the list”, “Download” in a row) is a `KnopfLink art="link"`.
 
 The colours come from the tokens (`--akzent`, `--gruen`, `--schlecht`) and apply in every design. **Colour classes via `className`** (`gefahr`, `gefahr-rand`, `gruen`, `primaer`) do not exist on the button – the colour comes from the kind; ESLint reports it (`ablago/knopf-farben`). Size: `groesse="klein"` in list headers, table rows and bars, otherwise normal. On a phone every button has a touch target of at least 44 × 44 px, the small one, too ([On a phone](bausteine.md#handy)).
 
 **Solid red** is only the confirm button of a confirmation – the moment of decision (principle 5). The building block `Rueckfragen` (`web/src/bausteine/rueckfrage/`) sets it; it does not exist on a page.
 
-**Whatever can be undone** – taking a link out of a field, removing a row from a list before saving – is not a danger button but a normal “Remove” (kind secondary or link) or an “×”.
+**Whatever can be undone** – taking a link out of a field, removing a row from a list before saving – is not a danger button but a normal “Remove” (kind secondary, small) or an “×”.
 
 **“+ New” (#989):** If a page has only one thing to create, the button is called exactly “+ New”. If several things can be created on one page, it is “+ New …” with the item, e.g. “+ New key”.
 
@@ -41,14 +43,14 @@ import { Knopf, KnopfLink, type KnopfErgebnis } from '../bausteine';
 | Variant | When |
 | --- | --- |
 | `Knopf` | a `<button>`: every action |
-| `KnopfLink` | a way within Ablago that looks like a button – e.g. “+ New”, which opens the page for creating (never danger) |
+| `KnopfLink` | a way that looks like a button (kinds `haupt`, `anlegen`, `neben`) or, with `art="link"`, like a link – never danger. Within Ablago `to` (e.g. “+ New”, which opens the page for creating); a file to download or an address outside `href` (#1269) with `download` or `neuesFenster`; `onClick` only with `href` and only as an aftercare (e.g. reload the list after the download) |
 | `knopfAussehen({ art, groesse })` | only classes and `data-knopf` for elements that cannot be a `<button>`, such as the `<summary>` of a disclosure (never danger – that needs the confirmation on the button) |
 | `ErgebnisBlock` | detailed result below a button (e.g. a checklist): `aria-live`, scrolls gently into view |
 | `rueckfrage()`, `hinweis()` | a confirmation without a danger button (e.g. “Create a new address?”) and a notice window, from `web/src/rueckfrage.tsx`; shown by the building block `Rueckfragen` |
 
 | Property (`Knopf`) | Meaning |
 | --- | --- |
-| `art` | `haupt`, `anlegen`, `neben` (default), `gefahr`, `link` |
+| `art` | `haupt`, `anlegen`, `neben` (default), `gefahr`, `eigen` (special form with its own class) |
 | `groesse` | `normal` (default) or `klein` |
 | `symbol` | icon before the label (name from `Symbol.tsx`, Lucide); **required for danger** |
 | `rueckfrage` | **only and required for danger:** `{ titel, text?, ja, nein?, bestaetigeMit?, mitGrund? }` – title as a question, consequences, verb on the confirm button; `mitGrund` (`true` or a suggestion) asks for the reason for the deletion log, `onClick(e, anlass)` receives it |
@@ -90,7 +92,7 @@ A click on the locked button or the ⓘ opens the **explanation at the button**:
 
 | State | How it comes about | How it looks |
 | --- | --- | --- |
-| mouse over | – | secondary: surface `--senke`, border `--leise`; danger: the same plus text and border `--schlecht`; main and create: surface with `--knopf-hover` (slightly darker in light mode, slightly lighter in dark mode); link: underlined |
+| mouse over | – | secondary: surface `--senke`, border `--leise`; danger: the same plus text and border `--schlecht`; main and create: surface with `--knopf-hover` (slightly darker in light mode, slightly lighter in dark mode); `KnopfLink art="link"`: underlined; special form: as its class defines |
 | keyboard focus | – | 2 px ring with offset in `--akzent`; for danger ring, text and border in `--schlecht` |
 | nothing to do | `gesperrt` | faded, no hover, `disabled` |
 | locked for a reason | `gesperrt="…"` or `KnopfSperre` | dashed with a padlock, text `--leise`, ⓘ next to it, explanation on click |
@@ -143,7 +145,7 @@ Messages about **saving** stay with the [save bar](bausteine-speicherleiste.md);
 **Don't use it**
 
 - for menu entries (`role="menuitem"`), disclosure headers and tiles – they have their own patterns; for tabs use the building block [Tabs](bausteine-reiter.md);
-- for links to other sites or into the manual (`<a className="verweis">`);
+- for ways: use `KnopfLink` (`to`, `href`); links in running text and into the manual stay `<a className="verweis">`;
 - for buttons whose look is fully defined by a design (substitution and administration bars).
 
 ## Accessibility { #barrierefreiheit }
@@ -171,12 +173,14 @@ Hover and focus are visible for all kinds in light and dark mode; the pattern pa
 | `gesperrt={verwendet && t('…wird-noch-verwendet')}` | `disabled title="Still in use"` or a sentence next to the button |
 | result at the button (return value or `ErgebnisBlock`) | result at the top of the page while the button is at the bottom |
 | `<Knopf nurSymbol={t('…neu-laden')}><Symbol name="neu-laden" /></Knopf>` | an icon button without a name |
-| `art="link"` for “Back to the list” | `art="link"` for “Delete” or “Send” |
+| `<KnopfLink to="…" art="link">Back to the list</KnopfLink>` | `<Knopf art="link" onClick={…}>` – no longer exists; an action that looks like a link |
+| `<KnopfLink href={url} download groesse="klein">As PDF</KnopfLink>` | `<a className="knopf klein" href={url}>` – ESLint reports it (`ablago/bausteine`) |
+| `<Knopf groesse="klein" onClick={leeren}>Clear selection</Knopf>` | “Clear selection” as a text link |
 
 ## Code { #code }
 
 - Building block: `web/src/bausteine/knopf/Knopf.tsx`, explanation when locked: `Erklaerung.tsx`, look: `Knopf.module.css` (basic shape and colours per kind from `.knopf` in `web/src/stile/01-kopf-und-formulare.css`)
 - Confirmation: `web/src/bausteine/rueckfrage/Rueckfrage.tsx` (window, preview for the pattern page), queue `web/src/rueckfrage.tsx`
 - Pattern page: `web/src/bausteine/knopf/muster.tsx`; type check: `web/src/bausteine/knopf/typpruefung.ts`
-- Lint: `ablago/knopf-farben` in `.github/werkzeuge/eslint-ablago.mjs` (test `eslint-ablago.test.mjs`)
+- Lint: `ablago/knopf-farben` and `ablago/bausteine` (also `knopf`/`textknopf` on `<a>`, `<Link>`, `<label>`, `<span>`, #1269) in `.github/werkzeuge/eslint-ablago.mjs` (test `eslint-ablago.test.mjs`)
 - Tests: `web/test/baustein-knopf.test.ts` (renders with react-dom/server and checks kinds, danger, disabled in two forms, `aria-*` and `data-knopf`); smoke tests in `web/rauchtest/bereiche/bausteine-und-knoepfe.mjs`: button on the pattern page (working, result, error; danger with a confirmation; locked with an explanation), the guard on every page, “+ New” in lists (#989), inbox folder “Check now” (#986)

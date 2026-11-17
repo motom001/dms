@@ -81,8 +81,14 @@ rauchtest('„+ Neu“: Mappe anlegen und speichern', { als: LENA }, async (s) =
   await s.getByRole('button', { name: '+ Neu' }).click();
   const menue = s.getByRole('banner').getByRole('menu');
   await menue.getByRole('menuitem', { name: /^Post/ }).waitFor();
-  await menue.getByRole('menuitem', { name: 'Mappe …' }).click();
-  await menue.getByRole('menuitem', { name: 'Vertragspartner' }).click();
+  // Baustein Menue (#1269): Fokus auf dem ersten Punkt, Esc schließt und gibt den Fokus an „+ Neu“ zurück; die
+  // Mappentypen stehen als eigene Gruppe im selben Menü.
+  assert.match(await s.evaluate(() => document.activeElement?.getAttribute('role') ?? ''), /^menuitem$/);
+  await s.keyboard.press('Escape');
+  await menue.waitFor({ state: 'detached' });
+  assert.equal(await s.evaluate(() => document.activeElement?.textContent?.trim()), '+ Neu');
+  await s.keyboard.press('ArrowDown');
+  await menue.getByRole('group', { name: 'Neue Mappe vom Mappentyp' }).getByRole('menuitem', { name: 'Vertragspartner' }).click();
   await s.waitForURL(/\/neu$/);
   const mappe = s.getByRole('region', { name: 'Mappe' });
   await mappe.getByRole('heading', { name: 'Neue Mappe', level: 1 }).waitFor();

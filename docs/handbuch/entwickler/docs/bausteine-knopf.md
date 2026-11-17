@@ -1,6 +1,6 @@
 # Knopf
 
-`Knopf` ist der Baustein für jeden Knopf (#968, nachgeschärft in #1210). Er legt die Art fest (Haupt, Anlegen, Neben, Gefahr, Link), zeigt gesperrt, „läuft“ und das Ergebnis überall gleich und setzt `aria` selbst – damit jeder Knopf gleich zeigt, was er tut, ob er gerade arbeitet oder warum er nicht geht. Die [Leitsätze](bausteine.md#leitsaetze) gelten für jeden Knopf.
+`Knopf` ist der Baustein für jeden Knopf (#968, nachgeschärft in #1210). Er legt die Art fest (Haupt, Anlegen, Neben, Gefahr, Sonderform), zeigt gesperrt, „läuft“ und das Ergebnis überall gleich und setzt `aria` selbst – damit jeder Knopf gleich zeigt, was er tut, ob er gerade arbeitet oder warum er nicht geht. Die [Leitsätze](bausteine.md#leitsaetze) gelten für jeden Knopf.
 
 ![Bereich „Knopf“ der Musterseite: Arten, klein, Maus darüber, Tastaturfokus, Gefahr in Ruhe, mit Maus und Fokus, die Rückfrage, gesperrt in zwei Formen, die geöffnete Erklärung, läuft, nur Symbol, Ergebnis, Fehler, Knopfreihe](bilder/muster-knopf.png){ loading=lazy }
 
@@ -12,13 +12,15 @@
 | `anlegen` | grün gefüllt | **nur** etwas Neues anfangen; die Beschriftung beginnt mit **„+“** | „+ Neu“, „+ Post“, „+ Zeile“, „+ Notfallkontakt“ |
 | `neben` | Fläche mit Rand | alles Übrige (Vorgabe), auch „Verwerfen“ und „Abbrechen“ | „Verbindung testen“, „Änderungen verwerfen“ |
 | `gefahr` | **wie Neben, mit Symbol**; Schrift und Rand erst bei Maus und Tastaturfokus rot | etwas, bei dem Gespeichertes verloren geht oder jemand ausgesperrt wird – **immer mit Rückfrage**, die der Knopf selbst stellt | „Löschen“, „Jetzt sofort sperren“, „Alle abmelden“ |
-| `link` | wie ein Verweis | **nur für Wege**: zurück, zur Liste – nie für eine Handlung, die etwas ändert | „Zur Liste“, „Zurück“ |
+| `eigen` | Sonderform: das Aussehen kommt ganz aus `className`, nie wie ein Verweis | Spaltenköpfe, Aufklapper, Menüpunkte, Sterne, Griffe, Kacheln, Kalendertage – bis #1270 ihnen eigene Bausteine gibt | Spaltenkopf „Name ↕“, Stern, Kachel „Erste Post ablegen“ |
+
+**Links führen woanders hin, Aktionen sind Knöpfe** (Leitsatz 7, Musterkatalog C8, #1277): Eine Art `link` gibt es am `Knopf` nicht – die Typprüfung lässt sie nicht zu. Was etwas tut („Auswahl aufheben“, „Ausblenden“, „Alle aufklappen“, „Entfernen“), ist ein Knopf der Art `neben`, in Listenköpfen, Zeilen, Leisten und Meldungen klein. Ein Weg, der wie ein Verweis aussehen soll („Zur Liste“, „Herunterladen“ in einer Zeile), ist ein `KnopfLink art="link"`.
 
 Die Farben kommen aus den Tokens (`--akzent`, `--gruen`, `--schlecht`) und gelten in jedem Design. **Farbklassen über `className`** (`gefahr`, `gefahr-rand`, `gruen`, `primaer`) gibt es am Knopf nicht – die Farbe kommt aus der Art; ESLint meldet es (`ablago/knopf-farben`). Größe: `groesse="klein"` in Listenköpfen, Tabellenzeilen und Leisten, sonst normal. Am Handy hat jeder Knopf eine Tippfläche von mindestens 44 × 44 px, auch der kleine ([Am Handy](bausteine.md#handy)).
 
 **Rot gefüllt** ist nur der Bestätigungsknopf einer Rückfrage – der Moment der Entscheidung (Leitsatz 5). Ihn setzt der Baustein `Rueckfragen` (`web/src/bausteine/rueckfrage/`); auf einer Seite gibt es ihn nicht.
 
-**Was sich rückgängig machen lässt** – einen Verweis aus einem Feld nehmen, eine Zeile vor dem Speichern aus einer Liste entfernen – ist kein Gefahr-Knopf, sondern ein normales „Entfernen“ (Art Neben oder Link) bzw. ein „×“.
+**Was sich rückgängig machen lässt** – einen Verweis aus einem Feld nehmen, eine Zeile vor dem Speichern aus einer Liste entfernen – ist kein Gefahr-Knopf, sondern ein normales „Entfernen“ (Art Neben, klein) bzw. ein „×“.
 
 **„+ Neu“ (#989):** Steht auf einer Seite nur eine Sache zum Anlegen, heißt der Knopf genau „+ Neu“. Lassen sich auf einer Seite mehrere Dinge anlegen, heißt er „+ Neu…“ mit dem Gegenstand, z. B. „+ Neuer Schlüssel“.
 
@@ -46,14 +48,14 @@ async function jetztPruefen(): Promise<KnopfErgebnis> {
 | Variante | Wann |
 | --- | --- |
 | `Knopf` | ein `<button>`: jede Handlung |
-| `KnopfLink` | ein Weg innerhalb von Ablago, der wie ein Knopf aussieht – z. B. „+ Neu“, das die Seite zum Anlegen öffnet (nie Gefahr) |
+| `KnopfLink` | ein Weg, der wie ein Knopf aussieht (Arten `haupt`, `anlegen`, `neben`) oder mit `art="link"` wie ein Verweis – nie Gefahr. Innerhalb von Ablago `to` (z. B. „+ Neu“, das die Seite zum Anlegen öffnet); eine Datei zum Herunterladen oder eine Adresse außerhalb `href` (#1269) mit `download` bzw. `neuesFenster`; `onClick` nur bei `href` und nur als Nachsorge (z. B. die Liste nach dem Herunterladen neu laden) |
 | `knopfAussehen({ art, groesse })` | nur Klassen und `data-knopf` für Elemente, die kein `<button>` sein können, etwa das `<summary>` einer Aufklappform (nie Gefahr – die braucht die Rückfrage am Knopf) |
 | `ErgebnisBlock` | ausführliches Ergebnis unter einem Knopf (z. B. eine Prüfliste): `aria-live`, rollt sanft ins Bild |
 | `rueckfrage()`, `hinweis()` | Rückfrage ohne Gefahr-Knopf (z. B. „Neue Adresse erzeugen?“) und Hinweisfenster, aus `web/src/rueckfrage.tsx`; angezeigt im Baustein `Rueckfragen` |
 
 | Eigenschaft (`Knopf`) | Bedeutung |
 | --- | --- |
-| `art` | `haupt`, `anlegen`, `neben` (Vorgabe), `gefahr`, `link` |
+| `art` | `haupt`, `anlegen`, `neben` (Vorgabe), `gefahr`, `eigen` (Sonderform mit eigener Klasse) |
 | `groesse` | `normal` (Vorgabe) oder `klein` |
 | `symbol` | Symbol vor der Beschriftung (Name aus `Symbol.tsx`, Lucide); **Pflicht bei Gefahr** |
 | `rueckfrage` | **nur und Pflicht bei Gefahr:** `{ titel, text?, ja, nein?, bestaetigeMit?, mitGrund? }` – Titel als Frage, Folgen, Verb auf dem Bestätigungsknopf; `mitGrund` (`true` oder ein Vorschlag) fragt beim Löschen nach dem Grund fürs Löschprotokoll, `onClick(e, anlass)` bekommt ihn |
@@ -95,7 +97,7 @@ Ein Klick auf den gesperrten Knopf oder das ⓘ öffnet die **Erklärung am Knop
 
 | Zustand | So entsteht er | So sieht er aus |
 | --- | --- | --- |
-| Maus darüber | – | Neben: Fläche `--senke`, Rahmen `--leise`; Gefahr: ebenso, dazu Schrift und Rand `--schlecht`; Haupt und Anlegen: Fläche mit `--knopf-hover` (hell etwas dunkler, dunkel etwas heller); Link: unterstrichen |
+| Maus darüber | – | Neben: Fläche `--senke`, Rahmen `--leise`; Gefahr: ebenso, dazu Schrift und Rand `--schlecht`; Haupt und Anlegen: Fläche mit `--knopf-hover` (hell etwas dunkler, dunkel etwas heller); `KnopfLink art="link"`: unterstrichen; Sonderform: wie ihre Klasse es festlegt |
 | Tastaturfokus | – | Ring 2 px mit Abstand in `--akzent`; bei Gefahr Ring, Schrift und Rand in `--schlecht` |
 | nichts zu tun | `gesperrt` | blass, kein Hover, `disabled` |
 | gesperrt aus einem Grund | `gesperrt="…"` oder `KnopfSperre` | gestrichelt mit Schloss, Schrift `--leise`, ⓘ daneben, Erklärung auf Klick |
@@ -148,7 +150,7 @@ Meldungen zum **Speichern** bleiben bei der [Speicherleiste](bausteine-speicherl
 **Nicht verwenden**
 
 - für Einträge eines Menüs (`role="menuitem"`), Aufklappköpfe und Kacheln – die haben eigene Muster; für Register den Baustein [Reiter](bausteine-reiter.md);
-- für Verweise auf fremde Seiten oder ins Handbuch (`<a className="verweis">`);
+- für Wege: dafür gibt es `KnopfLink` (`to`, `href`); Verweise im Fließtext und ins Handbuch bleiben `<a className="verweis">`;
 - für Knöpfe, deren Aussehen ein Design ganz bestimmt (Vertretungs- und Verwaltungsbalken).
 
 ## Barrierefreiheit { #barrierefreiheit }
@@ -176,12 +178,14 @@ Hover und Fokus sind für alle Arten hell und dunkel sichtbar; die Musterseite z
 | `gesperrt={verwendet && t('…wird-noch-verwendet')}` | `disabled title="Wird noch verwendet"` oder ein Satz neben dem Knopf |
 | Ergebnis am Knopf (Rückgabe oder `ErgebnisBlock`) | Ergebnis oben auf der Seite, während der Knopf unten steht |
 | `<Knopf nurSymbol={t('…neu-laden')}><Symbol name="neu-laden" /></Knopf>` | ein Symbolknopf ohne Namen |
-| `art="link"` für „Zur Liste“ | `art="link"` für „Löschen“ oder „Senden“ |
+| `<KnopfLink to="…" art="link">Zur Liste</KnopfLink>` | `<Knopf art="link" onClick={…}>` – gibt es nicht mehr; eine Handlung in Linkoptik |
+| `<KnopfLink href={url} download groesse="klein">Als PDF</KnopfLink>` | `<a className="knopf klein" href={url}>` – ESLint meldet es (`ablago/bausteine`) |
+| `<Knopf groesse="klein" onClick={leeren}>Auswahl aufheben</Knopf>` | „Auswahl aufheben“ als Textlink |
 
 ## Code { #code }
 
 - Baustein: `web/src/bausteine/knopf/Knopf.tsx`, Erklärung bei gesperrt: `Erklaerung.tsx`, Aussehen: `Knopf.module.css` (Grundform und Farben je Art aus `.knopf` in `web/src/stile/01-kopf-und-formulare.css`)
 - Rückfrage: `web/src/bausteine/rueckfrage/Rueckfrage.tsx` (Fenster, Vorschau der Musterseite), Warteschlange `web/src/rueckfrage.tsx`
 - Musterseite: `web/src/bausteine/knopf/muster.tsx`; Typprüfung: `web/src/bausteine/knopf/typpruefung.ts`
-- Lint: `ablago/knopf-farben` in `.github/werkzeuge/eslint-ablago.mjs` (Test `eslint-ablago.test.mjs`)
+- Lint: `ablago/knopf-farben` und `ablago/bausteine` (auch `knopf`/`textknopf` an `<a>`, `<Link>`, `<label>`, `<span>`, #1269) in `.github/werkzeuge/eslint-ablago.mjs` (Test `eslint-ablago.test.mjs`)
 - Tests: `web/test/baustein-knopf.test.ts` (zeichnet mit react-dom/server und prüft Arten, Gefahr, gesperrt in zwei Formen, `aria-*` und `data-knopf`); Rauchtests in `web/rauchtest/bereiche/bausteine-und-knoepfe.mjs`: Knopf auf der Musterseite (läuft, Ergebnis, Fehler; Gefahr mit Rückfrage; gesperrt mit Erklärung), Wächter auf jeder Seite, „+ Neu“ in Listen (#989), Eingangsordner „Jetzt prüfen“ (#986)

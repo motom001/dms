@@ -15,7 +15,7 @@
 | `ohneSuche`, `darunter`, `schliessen` | without a search field; something below the chosen entries; when the suggestions close |
 
 - **Enter** takes the first suggestion, arrow keys move through the list, Esc closes it.
-- **Remove** is a quiet button (kind link), not red: the field only changes on saving (principle 5).
+- **Remove** is a small button (kind secondary), not red: the field only changes on saving (principle 5).
 - **On the phone** the search field, suggestions and “Remove” are at least 44 px high.
 - The pattern page shows the building block in the area **Multiple selection**.
 

@@ -8,6 +8,7 @@
 | --- | --- |
 | `beschriftung` | text of the button (“Folder”); with `nurSymbol` the name for screen readers (“More actions for invoice.pdf”) |
 | `nurSymbol` | show only “⋯” |
+| `art` | `neben` (default) or `anlegen`: green create button without an arrow for a menu that only starts something new – “+ New” in the header (#1269); the label starts with “+” |
 | `punkte` | the actions, see below |
 | `groesse` | `klein` (default) or `normal` |
 | `links` | list left-aligned below the button instead of right-aligned |

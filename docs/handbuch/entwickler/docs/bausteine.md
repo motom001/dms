@@ -25,7 +25,7 @@ Alle Bausteine stehen unter `web/src/bausteine/`:
 
 ## Leitsätze für Knöpfe { #leitsaetze }
 
-Knöpfe bedeuten überall dasselbe, und nichts erschreckt unnötig (#1210). Wer einen Knopf setzt, prüft ihn gegen diese sechs Sätze; die Musterseite zeigt sie oben, die Bausteine setzen sie um.
+Knöpfe bedeuten überall dasselbe, und nichts erschreckt unnötig (#1210). Wer einen Knopf setzt, prüft ihn gegen diese sieben Sätze; die Musterseite zeigt sie oben, die Bausteine setzen sie um.
 
 1. **Blau ist die Hauptaktion.** Speichern, Anlegen nach dem Ausfüllen, Weiter und Übernehmen sind blau (`Knopf art="haupt"`), höchstens einer je Bereich. Blau ist auch die Akzentfarbe (Links, Fokus, Auswahl) – das wirkt ruhig und zusammengehörig.
 2. **Grün heißt „etwas Neues anfangen“**, und nur das: „+ Neu“, „+ Post“, „+ Zeile“, „+ Notfallkontakt“ (`art="anlegen"`). Die Beschriftung beginnt mit „+“. Sonst ist Grün für Zustände reserviert (aktiv, erledigt, gut gegangen).
@@ -33,8 +33,9 @@ Knöpfe bedeuten überall dasselbe, und nichts erschreckt unnötig (#1210). Wer 
 4. **Auf der Seite ist nichts rot.** Gefährliche Knöpfe (Löschen, Sperren, Abmelden, Entfernen eines Pakets …) sehen aus wie ein Nebenknopf mit Symbol (`art="gefahr"`). Beim Darüberfahren und beim Tastaturfokus werden Schrift und Rand rot.
 5. **Rot gefüllt nur im Moment der Entscheidung:** am Bestätigungsknopf der Rückfrage. Ohne Rückfrage kein Gefahr-Knopf – die Typprüfung lässt `art="gefahr"` nur mit `rueckfrage` und `symbol` zu. Was sich rückgängig machen lässt (Verweis aus einem Feld entfernen, Zeile aus einer Liste vor dem Speichern), ist ein normales „Entfernen“ bzw. „×“, nicht rot.
 6. **Zwei Arten von „geht nicht“.** *Nichts zu tun* (Speichern oder Verwerfen ohne Änderung, leere Auswahl): `gesperrt` – blass, ohne Erklärung. *Gesperrt aus einem Grund* (Löschen mit Verweisen, fehlendes Recht, Archivmodus): `gesperrt="<Grund>"` oder eine `KnopfSperre` – gestrichelter Rand mit Schloss, daneben ein kleines ⓘ; ein Klick auf Knopf oder ⓘ öffnet die Erklärung am Knopf (Grund, betroffene Einträge, „Stattdessen“ als Knöpfe). Kein langer Satz in der Zeile; für Screenreader hängt der Grund am Knopf (`aria-describedby`). Gestrichelt heißt überall „für dich gesperrt“, wie „nur lesen“ am Feld (C4). Kein „?“ – das führt ins Handbuch (C7); ⓘ erklärt genau diesen Fall.
+7. **Links führen woanders hin, Aktionen sind Knöpfe** (Musterkatalog C8, #1277). Was etwas tut – „Auswahl aufheben“, „Ausblenden“, „Alle aufklappen“, „Entfernen“ –, ist ein `Knopf` (meist `neben`, in Listen und Leisten klein). Wie ein Link sieht nur ein Weg aus: eine Seite in Ablago (`KnopfLink to`), eine Datei zum Herunterladen oder eine Adresse außerhalb (`KnopfLink href`). Am `Knopf` gibt es keine Art `link`; Sonderformen wie Spaltenköpfe, Aufklapper, Menüpunkte, Sterne, Griffe und Kacheln sind `art="eigen"` mit ihrer eigenen Klasse (eigene Bausteine folgen in #1270).
 
-**Geprüft wird das** an drei Stellen: Die Typprüfung verlangt bei `art="gefahr"` Rückfrage und Symbol (`web/src/bausteine/knopf/typpruefung.ts`). ESLint verbietet Farbklassen über `className` am Knopf (`ablago/knopf-farben`, [Stil und Abhängigkeiten](stil.md#regeln)). Die Rauchtests melden auf jeder besuchten Seite Anlege-Knöpfe ohne „+“, Gefahr-Knöpfe ohne Rückfrage und rot Gefülltes außerhalb einer Rückfrage ([Rauchtest und Bilder](#rauchtest)).
+**Geprüft wird das** an drei Stellen: Die Typprüfung verlangt bei `art="gefahr"` Rückfrage und Symbol und lässt am `Knopf` keine Art `link` zu (`web/src/bausteine/knopf/typpruefung.ts`). ESLint verbietet Farbklassen über `className` am Knopf (`ablago/knopf-farben`) und Elemente, die per Klasse `knopf` oder `textknopf` wie ein Knopf aussehen (`ablago/bausteine`, #1269; [Stil und Abhängigkeiten](stil.md#regeln)). Die Rauchtests melden auf jeder besuchten Seite Anlege-Knöpfe ohne „+“ (auch grün über die Klasse), Gefahr-Knöpfe ohne Rückfrage, rot Gefülltes und rote Links außerhalb einer Rückfrage und alles, was wie ein Link aussieht, aber kein Ziel hat ([Rauchtest und Bilder](#rauchtest)).
 
 ![Musterseite, Bereich „Knopf“: Arten, Gefahr in Ruhe, mit Maus und Fokus, die Rückfrage, gesperrt in zwei Formen und die geöffnete Erklärung](bilder/muster-knopf.png){ loading=lazy }
 
@@ -44,14 +45,14 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 
 | Baustein | Am Handy |
 | --- | --- |
-| `Knopf`, `KnopfLink` (normal, alle Arten) | mindestens 44 px hoch, nur Symbol auch 44 px breit; die Art Link ohne sichtbare Fläche ebenso |
+| `Knopf`, `KnopfLink` (normal, alle Arten) | mindestens 44 px hoch, nur Symbol auch 44 px breit; `KnopfLink art="link"` und Sonderformen (`art="eigen"`) ohne sichtbare Fläche ebenso |
 | `Knopf` klein | bleibt optisch klein; ein unsichtbares Pseudo-Element vergrößert die Tippfläche, ein Außenabstand derselben Breite hält Nachbarn frei |
 | `Feld` | Eingaben und Auswahllisten mindestens 44 px hoch |
 | Hilfesymbol „?“ im Feld | bleibt optisch klein; unsichtbare Tippfläche 44 × 44 px, Kopfzeile 44 px hoch, Abstand zur Beschriftung |
 | `HakenFeld`, Haken in `FeldGruppe` | die ganze Zeile mit Beschriftung ist mindestens 44 px hoch; die Beschriftung schaltet den Haken mit |
 | `Suchfeld`, `ListenSuche`, `KopfSuche` | Eingabe wie ein Feld; „×“ als Knopf nur mit Symbol; Auswahl „Paket“ und `FilterHaken` mindestens 44 px hoch; `KopfSuche` am Handy als Lupe mit 44 px, aufgeklappt Chip-„×“ und „Suchen in“ 44 px |
 | `Umschalter` | jede Wahl mindestens 44 × 44 px |
-| `Bereich`, Sprungleiste aus `useBereiche` | Sprünge und Kopf eines Bereichs mindestens 44 px hoch; „Alle aufklappen“ als Knopf der Art Link |
+| `Bereich`, Sprungleiste aus `useBereiche` | Sprünge und Kopf eines Bereichs mindestens 44 px hoch; „Alle aufklappen“ als kleiner Knopf (Neben) |
 | ⓘ am gesperrten `Knopf` | bleibt optisch klein; Tippfläche 44 × 44 px |
 | `Speicherleiste` | alle Knöpfe in einer Zeile; „… löschen“ zeigt nur sein Symbol (der Name bleibt für Screenreader) |
 | `Reiter` | jeder Reiter mindestens 44 px hoch; die Reihe rollt waagerecht, die Seite nicht |
@@ -91,7 +92,7 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | Baustein | Wofür |
 | --- | --- |
 | [Feld](bausteine-feld.md) | Rahmen für jedes Eingabeelement: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol |
-| [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Haupt (blau), Anlegen (grün, „+ …“), Neben, Gefahr (mit Rückfrage), Link; gesperrt in zwei Formen, „läuft“, Ergebnis und Fehler am Knopf; dazu die Rückfrage |
+| [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Haupt (blau), Anlegen (grün, „+ …“), Neben, Gefahr (mit Rückfrage), Sonderform; Wege als `KnopfLink` (auch Downloads und Adressen außerhalb); gesperrt in zwei Formen, „läuft“, Ergebnis und Fehler am Knopf; dazu die Rückfrage |
 | [Speicherleiste](bausteine-speicherleiste.md) | Unten in jedem Formular: „… löschen“ links, Status, „Verwerfen“ mit Rand und der blaue Hauptknopf; Entwurf mit Esc und Warnung beim Verlassen |
 | [Reiter](bausteine-reiter.md) | Register über einem Inhalt, ein aktives Aussehen, Tastatur und `aria` nach WAI-ARIA |
 | [Schalter](bausteine-schalter.md) | Etwas ist an oder aus (Funktion, Dienst, Automatisierung) – Schiebeschalter; für Auswahl und Optionen bleibt der Haken |
