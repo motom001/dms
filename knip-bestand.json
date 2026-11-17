@@ -1907,22 +1907,6 @@
       "AehnlichChip"
     ]
   },
-  "web/src/ablage/Aufgaben.tsx": {
-    "exports": [
-      "trotzdemZuweisen"
-    ]
-  },
-  "web/src/ablage/Dokumente.tsx": {
-    "exports": [
-      "DOKUMENT_SORTIERUNGEN",
-      "groesse",
-      "sortiereDokumente",
-      "sprachenAnzeige"
-    ],
-    "types": [
-      "Dokumentsortierung"
-    ]
-  },
   "web/src/ablage/EmailMehrere.tsx": {
     "exports": [
       "EMAIL_MAPPEN_HOECHSTENS"
