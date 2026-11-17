@@ -309,82 +309,25 @@ export class Dienst extends DienstBauteile {
     opt: DienstOptionen = {},
   ) {
     super();
-    // Stand aus der Datenbank (#742), sonst nur dieser Prozess (speicherRepo in Tests).
-    if (typeof grundRepo.haushaltsstand === 'function' && typeof grundRepo.erhoeheHaushaltsstand === 'function') {
-      this.stand.verbinde({ lies: () => grundRepo.haushaltsstand!(), erhoehe: () => grundRepo.erhoeheHaushaltsstand!() });
-    }
-    if (typeof grundRepo.mappenstand === 'function' && typeof grundRepo.erhoeheMappenstand === 'function') {
-      this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
-    }
-    this.kern = new Kern({
-      repo: this.stand.umhuelle(
-        mitFassungen(grundRepo, () => this.fassungen),
-        this.mappenstand,
-      ),
-      dateien,
-      einstellungen: opt.einstellungen,
-      stand: this.stand,
-      wecke: () => this.ereignisse.wecke(),
-      ausstatten: () => this.systemausstattung.anlegen(),
-      zugriff: (ich) => this.rechtepruefung.zugriff(ich),
-      fassungen: () => this.fassungen.fuerKern(),
-    });
-    this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
-    this.mappentypen = new MappentypenDienst(this.kern, {
-      mitStempel: (typen) => this.ausgang.mitStempel(typen),
-      pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v),
-      setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
-      erkennung: () => this.erkennung,
-      berechtigungenAusEingabe: (typ, e) => this.berechtigungen.berechtigungenAusEingabe(typ, e),
-      protokolliereBerechtigungen: (typ, n) => BerechtigungenDienst.protokolliereBerechtigungen(typ, n),
-      konfigurationKonflikt: (art, aktuell) => SichtenVerwaltung.konfigurationKonflikt(art, aktuell),
-    });
-    this.typpakete = new TypPakete(this.kern, this.rechtepruefung, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
-    this.passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste) });
-    this.nummernkreise = new Nummernkreise(this.kern, {
-      archivKreis: () => this.mappenArchiv.archivKreis(),
-      aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids),
-      auftraege: this.auftraege,
-    });
-    this.systemtypen = new Systemtypen(this.kern, this.rechtepruefung, {
-      schreibeSystemMappe: (typ, id, e, von, kennung) => this.postSystemmappen.schreibeSystemMappe(typ, id, e, von, kennung),
-      loescheMappeIntern: (id, typ, von) => this.loeschen.loescheMappeIntern(id, typ, von),
-      spiegleBenutzer: (b, von, abwesenheit) => this.postSystemmappen.spiegleBenutzer(b, von, abwesenheit),
-      aufgabenUebergeben: (id, an, von) => this.vertretung.aufgabenUebergeben(id, an, von),
-      kurzzustand: () => this.kurzzustand,
-    });
-    this.mappenHistorie = new MappenHistorie(this.kern);
-    this.mappenTitel = new MappenTitel(this.kern, this.mappenHistorie);
-    this.mappenEingaben = new MappenEingaben(this.kern, this.rechtepruefung, { verschluessele: (k) => this.verschluessele(k) });
-    this.passwortfelder = new Passwortfelder(this.kern, this.mappenHistorie, { tresor: () => this.tresor, istVerschluesselt });
-    this.mappenArchiv = new MappenArchiv(this.kern, this.rechtepruefung, this.mappenHistorie, {
-      aufkleber: { ETIKETTEN, aufkleberPdf },
-      auftraege: this.auftraege,
-      schreibeFehlendeDateien: (shas) => this.dateienFehlen.schreibeFehlendeDateien(shas),
-    });
-    this.mappen = new MappenDienst(
-      this.kern,
-      this.rechtepruefung,
-      {
-        historie: this.mappenHistorie,
-        titel: this.mappenTitel,
-        eingaben: this.mappenEingaben,
-        hinweise: (this.mappenHinweise = new MappenHinweise(this.kern, this.rechtepruefung)),
-      },
-      {
-        konten: () => this.konten,
-        favoritenBenachrichtigungErlaubt: (id) => this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(id),
-        ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich),
-        mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d),
-        mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d),
-        datenschutz: () => this.datenschutzDienst.datenschutz(),
-        loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschen.loeschPruefung(m, typ, rueck, alleTypen),
-        meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
-        verschluessele: (k) => this.verschluessele(k),
-        aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids),
-        organisationGeaendert: (e) => this.organisation.geaendert(e),
-      },
-    );
+    this.verbindeStand(grundRepo);
+    this.kern = this.baueKern(grundRepo, dateien, opt);
+    ({
+      rechtepruefung: this.rechtepruefung,
+      mappentypen: this.mappentypen,
+      typpakete: this.typpakete,
+      passung: this.passung,
+      nummernkreise: this.nummernkreise,
+      systemtypen: this.systemtypen,
+    } = this.baueZugriffUndTypen());
+    ({
+      historie: this.mappenHistorie,
+      titel: this.mappenTitel,
+      eingaben: this.mappenEingaben,
+      passwortfelder: this.passwortfelder,
+      archiv: this.mappenArchiv,
+      hinweise: this.mappenHinweise,
+      mappen: this.mappen,
+    } = this.baueMappen());
     ({
       dokumente: this.dokumente,
       umwandlung: this.dokumentUmwandlung,
@@ -418,15 +361,7 @@ export class Dienst extends DienstBauteile {
       email: this.ausgangEmail,
       export: this.ausgangExport,
     } = this.bauePdfPostAusgang());
-    // Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander.
-    this.systemausstattung = new Systemausstattung(this.kern, {
-      mappentypen: { sichereSystemtypen: () => this.systemtypen.sichereSystemtypen() },
-      sichten: {
-        sichtFuerTyp: (typ) => this.sichtenVerwaltung.sichtFuerTyp(typ),
-        sichereFavoritenSicht: () => this.systemsichten.sichereFavoritenSicht(),
-      },
-      post: { sicherePostSichten: (post) => this.systemsichten.sicherePostSichten(post) },
-    });
+    this.systemausstattung = this.baueSystemausstattung();
     ({
       ki: this.ki,
       notizen: this.mappenNotizen,
@@ -453,23 +388,141 @@ export class Dienst extends DienstBauteile {
     this.kurzzustand = opt.zustand ?? speicherKurzzustand();
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
+    this.registriereImTresor();
+    ({
+      erkennung: this.erkennung,
+      fragen: this.fragen,
+      uebersetzung: this.uebersetzung,
+      paketVolltext: this.paketVolltext,
+    } = this.baueHintergrund());
+  }
+
+  /* ---------- Schritte des Konstruktors (#1278, Schritt 6b-1: verschoben, Reihenfolge unverändert) ---------- */
+
+  /** Stand aus der Datenbank (#742), sonst nur dieser Prozess (speicherRepo in Tests). */
+  private verbindeStand(grundRepo: Repo) {
+    if (typeof grundRepo.haushaltsstand === 'function' && typeof grundRepo.erhoeheHaushaltsstand === 'function') {
+      this.stand.verbinde({ lies: () => grundRepo.haushaltsstand!(), erhoehe: () => grundRepo.erhoeheHaushaltsstand!() });
+    }
+    if (typeof grundRepo.mappenstand === 'function' && typeof grundRepo.erhoeheMappenstand === 'function') {
+      this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
+    }
+  }
+
+  /** Der Kern (#961) über dem Repo mit Fassungen (#1006) und Ständen (#742, #918). */
+  private baueKern(grundRepo: Repo, dateien: Dateispeicher, opt: DienstOptionen): Kern {
+    return new Kern({
+      repo: this.stand.umhuelle(
+        mitFassungen(grundRepo, () => this.fassungen),
+        this.mappenstand,
+      ),
+      dateien,
+      einstellungen: opt.einstellungen,
+      stand: this.stand,
+      wecke: () => this.ereignisse.wecke(),
+      ausstatten: () => this.systemausstattung.anlegen(),
+      zugriff: (ich) => this.rechtepruefung.zugriff(ich),
+      fassungen: () => this.fassungen.fuerKern(),
+    });
+  }
+
+  /** Rechte prüfen (#1072) und Mappentypen mit Paketen, Passung, Nummernkreisen und Systemtypen (#1073). */
+  private baueZugriffUndTypen() {
+    const rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
+    const mappentypen = new MappentypenDienst(this.kern, {
+      mitStempel: (typen) => this.ausgang.mitStempel(typen),
+      pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v),
+      setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
+      erkennung: () => this.erkennung,
+      berechtigungenAusEingabe: (typ, e) => this.berechtigungen.berechtigungenAusEingabe(typ, e),
+      protokolliereBerechtigungen: (typ, n) => BerechtigungenDienst.protokolliereBerechtigungen(typ, n),
+      konfigurationKonflikt: (art, aktuell) => SichtenVerwaltung.konfigurationKonflikt(art, aktuell),
+    });
+    const typpakete = new TypPakete(this.kern, rechtepruefung, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
+    const passung = new Passung(this.kern, { passungsAufgaben: (liste) => this.vertretung.passungsAufgaben(liste) });
+    const nummernkreise = new Nummernkreise(this.kern, {
+      archivKreis: () => this.mappenArchiv.archivKreis(),
+      aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids),
+      auftraege: this.auftraege,
+    });
+    const systemtypen = new Systemtypen(this.kern, rechtepruefung, {
+      schreibeSystemMappe: (typ, id, e, von, kennung) => this.postSystemmappen.schreibeSystemMappe(typ, id, e, von, kennung),
+      loescheMappeIntern: (id, typ, von) => this.loeschen.loescheMappeIntern(id, typ, von),
+      spiegleBenutzer: (b, von, abwesenheit) => this.postSystemmappen.spiegleBenutzer(b, von, abwesenheit),
+      aufgabenUebergeben: (id, an, von) => this.vertretung.aufgabenUebergeben(id, an, von),
+      kurzzustand: () => this.kurzzustand,
+    });
+    return { rechtepruefung, mappentypen, typpakete, passung, nummernkreise, systemtypen };
+  }
+
+  /** Mappen (#1074): Historie, Titel, Eingaben, Passwortfelder, Archiv, Hinweise (#1034) und der Mappen-Dienst. */
+  private baueMappen() {
+    const historie = new MappenHistorie(this.kern);
+    const titel = new MappenTitel(this.kern, historie);
+    const eingaben = new MappenEingaben(this.kern, this.rechtepruefung, { verschluessele: (k) => this.verschluessele(k) });
+    const passwortfelder = new Passwortfelder(this.kern, historie, { tresor: () => this.tresor, istVerschluesselt });
+    const archiv = new MappenArchiv(this.kern, this.rechtepruefung, historie, {
+      aufkleber: { ETIKETTEN, aufkleberPdf },
+      auftraege: this.auftraege,
+      schreibeFehlendeDateien: (shas) => this.dateienFehlen.schreibeFehlendeDateien(shas),
+    });
+    const hinweise = new MappenHinweise(this.kern, this.rechtepruefung);
+    const mappen = new MappenDienst(
+      this.kern,
+      this.rechtepruefung,
+      { historie, titel, eingaben, hinweise },
+      {
+        konten: () => this.konten,
+        favoritenBenachrichtigungErlaubt: (id) => this.ohneEmpfaenger.favoritenBenachrichtigungErlaubt(id),
+        ohneLeserechtText: (liste, lesbar, ich) => this.ohneLeserecht.ohneLeserechtText(liste, lesbar, ich),
+        mitArchivStand: (d) => this.dokumentArchiv.mitArchivStand(d),
+        mitPdfSchutz: (d) => this.geschuetztePdfs.mitPdfSchutz(d),
+        datenschutz: () => this.datenschutzDienst.datenschutz(),
+        loeschPruefung: (m, typ, rueck, alleTypen) => this.loeschen.loeschPruefung(m, typ, rueck, alleTypen),
+        meldeVerknuepft: (typ, id, alt, neu, von) => this.ereignisseDienst.meldeVerknuepft(typ, id, alt, neu, von),
+        verschluessele: (k) => this.verschluessele(k),
+        aktualisiereTitel: (ids) => this.mappenTitel.aktualisiereTitel(ids),
+        organisationGeaendert: (e) => this.organisation.geaendert(e),
+      },
+    );
+    return { historie, titel, eingaben, passwortfelder, archiv, hinweise, mappen };
+  }
+
+  /** Systemausstattung (#963): Mappentypen, Ansichten und Post nacheinander. */
+  private baueSystemausstattung(): Systemausstattung {
+    return new Systemausstattung(this.kern, {
+      mappentypen: { sichereSystemtypen: () => this.systemtypen.sichereSystemtypen() },
+      sichten: {
+        sichtFuerTyp: (typ) => this.sichtenVerwaltung.sichtFuerTyp(typ),
+        sichereFavoritenSicht: () => this.systemsichten.sichereFavoritenSicht(),
+      },
+      post: { sicherePostSichten: (post) => this.systemsichten.sicherePostSichten(post) },
+    });
+  }
+
+  /** Beim Tresor anmelden, was er lesen können muss (#410). */
+  private registriereImTresor() {
     this.tresor?.registriere(() => this.passwortfelder.unlesbarePasswoerter());
     // Was verschlüsselt ist, je Art (#410): dieselben Stellen, die der Schlüsselwechsel umschlüsselt.
     // Passwortfelder meldet unlesbarePasswoerter genauer (mit Feldnamen), den Mailserver der Betrieb.
     this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
+  }
+
+  /** Erkennung, Fragen, Übersetzung und Volltext aus Paketen – mit ihren Abnehmern im Ereigniskatalog. */
+  private baueHintergrund() {
     // Erkennung (#336): rechnet, sobald der Volltext eines Dokuments fertig ist – egal, wer ihn geliefert hat.
-    this.erkennung = new Erkennung(
+    const erkennung = new Erkennung(
       this,
       () => this.repo,
       () => this.einstellungen,
     );
-    this.fragen = new FragenAnDieAblage(
+    const fragen = new FragenAnDieAblage(
       this,
       () => this.repo,
       () => this.einstellungen,
     );
     // Inhalte übersetzen (#732): auf Knopfdruck; Änderungen am Original lassen die Übersetzungen verfallen.
-    this.uebersetzung = new Uebersetzung(
+    const uebersetzung = new Uebersetzung(
       this,
       () => this.repo,
       () => this.einstellungen,
@@ -482,10 +535,11 @@ export class Dienst extends DienstBauteile {
     // Ereigniskatalog (#670): Mappen-Ereignisse und Fristen an die Pakete, die diese Mappentypen abonniert haben.
     this.ereignisse.abonniere('pakete', (e) => this.ereignisseDienst.ereignisAnPakete(e));
     // Volltext aus Paketen (#614): zuständige Pakete mit dms:volltext, Ereignis datei.volltext an genau dieses.
-    this.paketVolltext = new PaketVolltext({
+    const paketVolltext = new PaketVolltext({
       pakete: () => this.repo.listePakete(),
       melde: (paket, daten) => this.ereignisseDienst.auftrag(paket, 'datei.volltext', daten),
     });
+    return { erkennung, fragen, uebersetzung, paketVolltext };
   }
 
   /** Volltext aus Paketen (#614, paketvolltext.ts); die Texterkennung meldet darüber (index.ts). */

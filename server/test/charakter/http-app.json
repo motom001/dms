@@ -1,0 +1,292 @@
+{
+  "wurzel": {
+    "onRequest": 2,
+    "preParsing": 0,
+    "preValidation": 0,
+    "preSerialization": 0,
+    "preHandler": 0,
+    "onResponse": 2,
+    "onSend": 2,
+    "onError": 0,
+    "onRoute": 0,
+    "onRegister": 0,
+    "onReady": 0,
+    "onListen": 0,
+    "onTimeout": 0,
+    "onRequestAbort": 0,
+    "preClose": 0
+  },
+  "parser": ["application/json", "text/plain", "application/octet-stream"],
+  "routen": {
+    "GET /api/gesundheit": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "preParsing": ["preParsing()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "HEAD /api/gesundheit": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "preParsing": ["preParsing()"],
+      "onSend": ["anonymous()", "anonymous()", "headRouteOnSendHandler()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "POST /api/typen": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "preParsing": ["preParsing()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "POST /api/fotostapel": {
+      "onRequest": ["anonymous()", "anonymous()", "onRequest()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "POST /api/aufruf/:kennung": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "POST /api/mappen/:id/dokumente": {
+      "onRequest": ["anonymous()", "anonymous()", "onRequest()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()", "aufraeumen()"],
+      "onRequestAbort": ["aufraeumen()"]
+    },
+    "PROPFIND /webdav*": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "OPTIONS /webdav": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "GET /": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "OPTIONS /": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    },
+    "GET /assets/a.js": {
+      "onRequest": ["anonymous()", "anonymous()"],
+      "onSend": ["anonymous()", "anonymous()"],
+      "onResponse": ["anonymous()", "anonymous()"]
+    }
+  },
+  "antworten": {
+    "gesundheit": {
+      "status": 200,
+      "koepfe": [
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "server-timing",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "einrichten": {
+      "status": 201,
+      "koepfe": [
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "server-timing",
+        "set-cookie",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "typ anlegen": {
+      "status": 201,
+      "koepfe": [
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "server-timing",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "Datei an JSON-Route": {
+      "status": 415,
+      "koepfe": [
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ],
+      "body": "{\"fehler\":\"Diese Adresse nimmt keine Datei als Körper an.\"}"
+    },
+    "Upload ohne Anmeldung": {
+      "status": 401,
+      "koepfe": [
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ],
+      "body": "{\"fehler\":\"Bitte anmelden.\"}"
+    },
+    "JSON kaputt": {
+      "status": 400,
+      "koepfe": [
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ],
+      "body": "{\"fehler\":\"Body is not valid JSON but content-type is set to 'application/json'\"}"
+    },
+    "API unbekannt": {
+      "status": 404,
+      "koepfe": [
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ],
+      "body": "{\"fehler\":\"Diese Schnittstelle gibt es nicht.\"}"
+    },
+    "Fehler im Handler": {
+      "status": 500,
+      "koepfe": [
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ],
+      "body": "{\"fehler\":\"Interner Fehler (Anfrage ID). Details stehen im Protokoll.\"}"
+    },
+    "Fehler vor dem Körper": {
+      "status": 500,
+      "koepfe": [
+        "connection",
+        "content-security-policy",
+        "content-type: application/json; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ],
+      "body": "{\"fehler\":\"Interner Fehler (Anfrage ID). Details stehen im Protokoll.\"}"
+    },
+    "Strom": {
+      "status": 200,
+      "koepfe": [
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "content-type: application/x-ndjson; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "server-timing",
+        "x-accel-buffering",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "Strom: Inhalt": "{\"art\":\"fertig\"}\n",
+    "Oberfläche": {
+      "status": 200,
+      "koepfe": [
+        "accept-ranges",
+        "cache-control: no-cache",
+        "connection",
+        "content-security-policy",
+        "content-type: text/html; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "vary",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "Datei der Oberfläche": {
+      "status": 200,
+      "koepfe": [
+        "accept-ranges",
+        "cache-control: public, max-age=31536000, immutable",
+        "connection",
+        "content-security-policy",
+        "content-type: application/javascript; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "vary",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "WebDAV aus": {
+      "status": 404,
+      "koepfe": [
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "content-type: text/plain; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "WebDAV an": {
+      "status": 200,
+      "koepfe": [
+        "allow",
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "dav",
+        "ms-author-via",
+        "permissions-policy",
+        "referrer-policy",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    },
+    "WebDAV ohne Anmeldung": {
+      "status": 401,
+      "koepfe": [
+        "cache-control: no-store",
+        "connection",
+        "content-security-policy",
+        "content-type: text/plain; charset=utf-8",
+        "permissions-policy",
+        "referrer-policy",
+        "www-authenticate",
+        "x-content-type-options",
+        "x-frame-options: SAMEORIGIN"
+      ]
+    }
+  }
+}

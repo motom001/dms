@@ -14,16 +14,42 @@ import { dienstEmail } from '../repo';
 
 /* ---------------- Arbeitsspeicher (Tests) ---------------- */
 
-export function speicherKontoRepo(): KontoRepo {
-  const benutzer = new Map<string, Benutzer & { hash: string | null }>();
-  const sitzungen = new Map<string, SitzungIntern & { erstellt: Date; geraet: string; ip: string }>();
-  const OHNE_MODUS: SitzungsVerwaltung = { verwaltungSeit: null, verwaltungAktiv: null, verwaltungBestaetigt: null, frisch: null };
-  const vertretungen = new Map<string, Vertretung & { gesehen: Date | null }>();
-  const einstellungen = new Map<string, Record<string, unknown>>();
-  const links = new Map<string, Link>();
-  let notfall: { hash: string; erstellt: Date } | null = null;
-  const ohneHash = ({ hash: _h, ...b }: Benutzer & { hash: string | null }): Benutzer => ({ ...b, hatPasswort: !!_h });
+/** Was die Teile der Ablage im Arbeitsspeicher gemeinsam halten. */
+interface Stand {
+  benutzer: Map<string, Benutzer & { hash: string | null }>;
+  sitzungen: Map<string, SitzungIntern & { erstellt: Date; geraet: string; ip: string }>;
+  vertretungen: Map<string, Vertretung & { gesehen: Date | null }>;
+  einstellungen: Map<string, Record<string, unknown>>;
+  links: Map<string, Link>;
+  notfall: { hash: string; erstellt: Date } | null;
+}
+const OHNE_MODUS: SitzungsVerwaltung = { verwaltungSeit: null, verwaltungAktiv: null, verwaltungBestaetigt: null, frisch: null };
+const ohneHash = ({ hash: _h, ...b }: Benutzer & { hash: string | null }): Benutzer => ({ ...b, hatPasswort: !!_h });
 
+/** Die Ablage aus ihren Teilen (#1278, Schritt 6b-1: nach Fachgruppen zerlegt, Rümpfe unverändert). */
+export function speicherKontoRepo(): KontoRepo {
+  const s: Stand = {
+    benutzer: new Map(),
+    sitzungen: new Map(),
+    vertretungen: new Map(),
+    einstellungen: new Map(),
+    links: new Map(),
+    notfall: null,
+  };
+  return {
+    ...speicherPersonen(s),
+    ...speicherAenderungen(s),
+    ...speicherKontenOhneMensch(s),
+    ...speicherSitzungen(s),
+    ...speicherVerwaltungsmodus(s),
+    ...speicherVertretungen(s),
+    ...speicherLinksUndNotfall(s),
+  };
+}
+
+/** Personen: zählen, auflisten, holen, anlegen und löschen. */
+function speicherPersonen(s: Stand) {
+  const { benutzer, sitzungen, links } = s;
   return {
     async anzahlBenutzer() {
       return [...benutzer.values()].filter((b) => !b.art).length;
@@ -48,6 +74,95 @@ export function speicherKontoRepo(): KontoRepo {
       const b = [...benutzer.values()].find((x) => !x.art && x.email.toLowerCase() === email.toLowerCase());
       return b && { benutzer: ohneHash(b), hash: b.hash };
     },
+    async legeBenutzerAn(n) {
+      if ([...benutzer.values()].some((x) => x.email.toLowerCase() === n.email.toLowerCase()))
+        throw Object.assign(new Error('doppelt'), { code: '23505' });
+      const b = {
+        id: n.id,
+        email: n.email,
+        name: n.name,
+        rolle: 'mitglied' as Rolle,
+        verwaltung: [...(n.verwaltung ?? [])],
+        aktiv: true,
+        hatPasswort: !!n.passwortHash,
+        erstellt: new Date().toISOString(),
+        letzteAnmeldung: null,
+        entwicklermodus: false,
+        sprache: null,
+        hash: n.passwortHash,
+        abwesenheit: { ...KEINE_ABWESENHEIT },
+        deaktiviert: null,
+      };
+      benutzer.set(n.id, b);
+      return ohneHash(b);
+    },
+    async loescheBenutzer(id) {
+      benutzer.delete(id);
+      for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k);
+      for (const [k, l] of links) if (l.benutzerId === id) links.delete(k);
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Änderungen an Personen: Angaben, geschützte Änderungen, Abwesenheit, Passwort und Anmeldung. */
+function speicherAenderungen(s: Stand) {
+  const { benutzer } = s;
+  return {
+    async aendereBenutzer(id, d) {
+      const alt = benutzer.get(id)!;
+      const deaktiviert =
+        d.aktiv === undefined
+          ? (alt.deaktiviert ?? null)
+          : d.aktiv
+            ? null
+            : alt.aktiv
+              ? new Date().toISOString()
+              : (alt.deaktiviert ?? null);
+      const b = { ...alt, ...d, deaktiviert };
+      benutzer.set(id, b);
+      return ohneHash(b);
+    },
+    async aendereGeschuetzt(id, d, pruefe) {
+      // Ohne await zwischen Prüfen und Ändern: im Arbeitsspeicher ist das schon eine Einheit.
+      const alt = benutzer.get(id)!;
+      const neu = {
+        ...alt,
+        ...(d.verwaltung ? { verwaltung: [...d.verwaltung] } : {}),
+        ...(d.aktiv !== undefined ? { aktiv: d.aktiv } : {}),
+      };
+      const vorher = [...benutzer.values()].filter((b) => !b.art).map(ohneHash);
+      const alle = [...benutzer.values()].filter((b) => !b.art).map((b) => ohneHash(b.id === id ? neu : b));
+      const grund = pruefe(alle, vorher);
+      if (grund) return { grund };
+      const deaktiviert =
+        d.aktiv === undefined
+          ? (alt.deaktiviert ?? null)
+          : d.aktiv
+            ? null
+            : alt.aktiv
+              ? new Date().toISOString()
+              : (alt.deaktiviert ?? null);
+      benutzer.set(id, { ...neu, deaktiviert });
+      return { benutzer: ohneHash({ ...neu, deaktiviert }) };
+    },
+    async setzeAbwesenheit(id, a) {
+      const b = { ...benutzer.get(id)!, abwesenheit: { ...a } };
+      benutzer.set(id, b);
+      return ohneHash(b);
+    },
+    async setzeHash(id, hash) {
+      benutzer.get(id)!.hash = hash;
+    },
+    async notiereAnmeldung(id) {
+      benutzer.get(id)!.letzteAnmeldung = new Date().toISOString();
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Dienstkonten der Pakete und Systemkonten. */
+function speicherKontenOhneMensch(s: Stand) {
+  const { benutzer } = s;
+  return {
     async dienstkonto(paketId) {
       const b = [...benutzer.values()].find((x) => x.art === 'dienst' && x.paketId === paketId);
       return b && ohneHash(b);
@@ -106,81 +221,13 @@ export function speicherKontoRepo(): KontoRepo {
     async listeSystemkonten() {
       return [...benutzer.values()].filter((b) => b.art === 'system').map(ohneHash);
     },
-    async legeBenutzerAn(n) {
-      if ([...benutzer.values()].some((x) => x.email.toLowerCase() === n.email.toLowerCase()))
-        throw Object.assign(new Error('doppelt'), { code: '23505' });
-      const b = {
-        id: n.id,
-        email: n.email,
-        name: n.name,
-        rolle: 'mitglied' as Rolle,
-        verwaltung: [...(n.verwaltung ?? [])],
-        aktiv: true,
-        hatPasswort: !!n.passwortHash,
-        erstellt: new Date().toISOString(),
-        letzteAnmeldung: null,
-        entwicklermodus: false,
-        sprache: null,
-        hash: n.passwortHash,
-        abwesenheit: { ...KEINE_ABWESENHEIT },
-        deaktiviert: null,
-      };
-      benutzer.set(n.id, b);
-      return ohneHash(b);
-    },
-    async aendereBenutzer(id, d) {
-      const alt = benutzer.get(id)!;
-      const deaktiviert =
-        d.aktiv === undefined
-          ? (alt.deaktiviert ?? null)
-          : d.aktiv
-            ? null
-            : alt.aktiv
-              ? new Date().toISOString()
-              : (alt.deaktiviert ?? null);
-      const b = { ...alt, ...d, deaktiviert };
-      benutzer.set(id, b);
-      return ohneHash(b);
-    },
-    async aendereGeschuetzt(id, d, pruefe) {
-      // Ohne await zwischen Prüfen und Ändern: im Arbeitsspeicher ist das schon eine Einheit.
-      const alt = benutzer.get(id)!;
-      const neu = {
-        ...alt,
-        ...(d.verwaltung ? { verwaltung: [...d.verwaltung] } : {}),
-        ...(d.aktiv !== undefined ? { aktiv: d.aktiv } : {}),
-      };
-      const vorher = [...benutzer.values()].filter((b) => !b.art).map(ohneHash);
-      const alle = [...benutzer.values()].filter((b) => !b.art).map((b) => ohneHash(b.id === id ? neu : b));
-      const grund = pruefe(alle, vorher);
-      if (grund) return { grund };
-      const deaktiviert =
-        d.aktiv === undefined
-          ? (alt.deaktiviert ?? null)
-          : d.aktiv
-            ? null
-            : alt.aktiv
-              ? new Date().toISOString()
-              : (alt.deaktiviert ?? null);
-      benutzer.set(id, { ...neu, deaktiviert });
-      return { benutzer: ohneHash({ ...neu, deaktiviert }) };
-    },
-    async setzeAbwesenheit(id, a) {
-      const b = { ...benutzer.get(id)!, abwesenheit: { ...a } };
-      benutzer.set(id, b);
-      return ohneHash(b);
-    },
-    async setzeHash(id, hash) {
-      benutzer.get(id)!.hash = hash;
-    },
-    async notiereAnmeldung(id) {
-      benutzer.get(id)!.letzteAnmeldung = new Date().toISOString();
-    },
-    async loescheBenutzer(id) {
-      benutzer.delete(id);
-      for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k);
-      for (const [k, l] of links) if (l.benutzerId === id) links.delete(k);
-    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Sitzungen: anlegen, holen, berühren, auflisten und beenden. */
+function speicherSitzungen(s: Stand) {
+  const { benutzer, sitzungen } = s;
+  return {
     async legeSitzungAn(hash, benutzerId, ablauf, info) {
       sitzungen.set(hash, {
         id: randomUUID(),
@@ -207,20 +254,6 @@ export function speicherKontoRepo(): KontoRepo {
     async beruehreSitzung(hash) {
       const x = sitzungen.get(hash);
       if (x) x.zuletztAktiv = new Date();
-    },
-    async sitzungenImVerwaltungsmodus() {
-      return [...sitzungen.values()].flatMap((x) => {
-        const b = benutzer.get(x.benutzerId);
-        if (!b || b.art || !b.aktiv || !x.verwaltungSeit || x.vertretungId || x.ablauf.getTime() <= Date.now()) return [];
-        return [{ benutzer: ohneHash(b), sitzung: { ...x } }];
-      });
-    },
-    async setzeSitzungsVerwaltung(hash, d) {
-      const x = sitzungen.get(hash);
-      if (x) Object.assign(x, d);
-    },
-    async vergissVerwaltungVon(id) {
-      for (const x of sitzungen.values()) if (x.benutzerId === id) Object.assign(x, OHNE_MODUS);
     },
     async listeSitzungen(benutzerId) {
       return [...sitzungen]
@@ -249,6 +282,37 @@ export function speicherKontoRepo(): KontoRepo {
         }
       return false;
     },
+    async loescheSitzungenVon(id) {
+      for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k);
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Verwaltungsmodus der Sitzungen (#818). */
+function speicherVerwaltungsmodus(s: Stand) {
+  const { benutzer, sitzungen } = s;
+  return {
+    async sitzungenImVerwaltungsmodus() {
+      return [...sitzungen.values()].flatMap((x) => {
+        const b = benutzer.get(x.benutzerId);
+        if (!b || b.art || !b.aktiv || !x.verwaltungSeit || x.vertretungId || x.ablauf.getTime() <= Date.now()) return [];
+        return [{ benutzer: ohneHash(b), sitzung: { ...x } }];
+      });
+    },
+    async setzeSitzungsVerwaltung(hash, d) {
+      const x = sitzungen.get(hash);
+      if (x) Object.assign(x, d);
+    },
+    async vergissVerwaltungVon(id) {
+      for (const x of sitzungen.values()) if (x.benutzerId === id) Object.assign(x, OHNE_MODUS);
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Vertretungen und persönliche Einstellungen. */
+function speicherVertretungen(s: Stand) {
+  const { vertretungen, einstellungen } = s;
+  return {
     async legeVertretungAn(v) {
       vertretungen.set(v.id, { ...v, beginn: new Date().toISOString(), ende: null, gesehen: null });
     },
@@ -297,9 +361,13 @@ export function speicherKontoRepo(): KontoRepo {
       );
       einstellungen.set(id, e);
     },
-    async loescheSitzungenVon(id) {
-      for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k);
-    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Links zum Setzen des Passworts und der Notfallcode. */
+function speicherLinksUndNotfall(s: Stand) {
+  const { benutzer, sitzungen, links } = s;
+  return {
     async legeLinkAn(hash, benutzerId, zweck, ablauf) {
       links.set(hash, { benutzerId, zweck, ablauf, benutzt: null });
     },
@@ -316,20 +384,20 @@ export function speicherKontoRepo(): KontoRepo {
       for (const [k, l] of links) if (l.benutzerId === id) links.delete(k);
     },
     async notfallcode() {
-      return notfall && { ...notfall };
+      return s.notfall && { ...s.notfall };
     },
     async setzeNotfallcode(hash) {
-      notfall = hash ? { hash, erstellt: new Date() } : null;
+      s.notfall = hash ? { hash, erstellt: new Date() } : null;
     },
     async loeseNotfallcodeEin(erwartet, benutzerId, passwortHash) {
       // Ohne await zwischen Prüfen und Ändern: im Arbeitsspeicher ist das schon eine Einheit.
       const b = benutzer.get(benutzerId);
-      if (!notfall || notfall.hash !== erwartet || !b) return false;
-      notfall = null;
+      if (!s.notfall || s.notfall.hash !== erwartet || !b) return false;
+      s.notfall = null;
       b.hash = passwortHash;
       for (const [k, x] of sitzungen) if (x.benutzerId === benutzerId) sitzungen.delete(k);
       for (const [k, l] of links) if (l.benutzerId === benutzerId) links.delete(k);
       return true;
     },
-  };
+  } satisfies Partial<KontoRepo>;
 }

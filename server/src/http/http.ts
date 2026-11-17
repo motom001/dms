@@ -7,7 +7,7 @@ import type { OrdnerPruefung } from '../dateien/ordner';
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
 import { randomBytes } from 'node:crypto';
-import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyRequest } from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { Hochgeladen, nimmAuf } from '../dateien/hochladen';
 import type { Dienst } from '../dienst/dienst';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -209,6 +209,40 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   // Überlastschutz (#544): vor allem anderen – eine abgewiesene Anfrage kostet so fast nichts.
   opt.ueberlast?.haengeEin(app);
 
+  setzeFehlerbehandlung(app);
+  haengeZeitmessungEin(app, opt);
+  // Arbeit nach der Antwort (#741).
+  const nachlauf = opt.nachlauf ?? new Nachlauf();
+  haengeAntwortHooksEin(app, opt);
+
+  // Datei-Uploads kommen als rohe Bytes (application/octet-stream) – nur an Routen mit `roh` (#901).
+  app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
+
+  const definiere = (ziel: FastifyInstance, r: Route) => definiereRoute(ziel, r, { konten, opt, nachlauf });
+  const alle = routen(dienst, konten, opt);
+  for (const r of alle) if (!r.strom && !r.rohKoerper) definiere(app, r);
+  await registriereKoerperBereiche(app, alle, definiere);
+
+  // WebDAV-Laufwerk (#346): eigene Methoden (PROPFIND, LOCK …) und rohe Körper beliebigen Typs.
+  // Eigener Plugin-Bereich, damit der Parser für „alles“ nur hier gilt.
+  if (opt.webdav) await registriereWebdav(app, opt.webdav);
+
+  if (opt.webDir && existsSync(opt.webDir)) {
+    await app.register(fastifyStatic, { root: opt.webDir, wildcard: false, ...statischeDateien(opt.webDir) });
+    // Alle Nicht-API-Pfade liefern die Oberfläche aus (Routing im Browser) – fehlende Dateien nicht (#932).
+    app.setNotFoundHandler((req, reply) => {
+      if (req.url.startsWith('/api/')) return reply.code(404).send({ fehler: t('meldungen.http.diese-schnittstelle-gibt-es') });
+      return oberflaecheSenden(req.url, reply, opt.webDir);
+    });
+  }
+
+  return app;
+}
+
+/* ---------- Schritte von baueApp (#1278, Schritt 6b-1: verschoben, Reihenfolge der Hooks unverändert) ---------- */
+
+/** Fehler als Antwort: Fachfehler mit Status, Wartung und volle Warteschlange mit Wartezeit, sonst 500 ins Protokoll. */
+function setzeFehlerbehandlung(app: FastifyInstance) {
   app.setErrorHandler((fehler: unknown, req, reply) => {
     if (fehler instanceof WartungFehler) reply.header('retry-after', String(fehler.retryAfter));
     // 503 mit Wartezeit (#542, #544): z. B. volle Warteschlange der Arbeiter.
@@ -239,7 +273,10 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     else schreibe();
     return reply.code(500).send({ fehler: t('meldungen.http.interner-fehler-anfrage-details', { id: req.id }) });
   });
+}
 
+/** Zeitmessung (#477): Eingang der Anfrage und Server-Timing beim Senden. */
+function haengeZeitmessungEin(app: FastifyInstance, opt: Optionen) {
   // Zeitmessung (#477): Eingang der Anfrage – das Warten bis zum Handler steht in Server-Timing als „vor“.
   app.addHook('onRequest', async (req) => {
     (req as MitKontext).zeit = { eingang: performance.now() };
@@ -263,9 +300,10 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     }
     return nutzlast;
   });
+}
 
-  // Arbeit nach der Antwort (#741).
-  const nachlauf = opt.nachlauf ?? new Nachlauf();
+/** Nach der Antwort: Nachlauf starten, eine Zeile je Anfrage ins Protokoll; beim Senden die Sicherheits-Header. */
+function haengeAntwortHooksEin(app: FastifyInstance, opt: Optionen) {
   app.addHook('onResponse', async (req) => {
     (req as MitKontext).nachher?.();
   });
@@ -305,23 +343,24 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
       if (!reply.hasHeader(k)) reply.header(k, v);
     return nutzlast;
   });
+}
 
-  // Datei-Uploads kommen als rohe Bytes (application/octet-stream) – nur an Routen mit `roh` (#901).
-  // Dateien als Körper nur, wo die Route eine eigene Grenze nennt (#901): Sonst gälte still die Grenze für JSON (2 MB).
-  const ohneDatei = {
-    preParsing: async (req: FastifyRequest) => {
-      if (
-        String(req.headers['content-type'] ?? '')
-          .split(';')[0]
-          .trim()
-          .toLowerCase() === 'application/octet-stream'
-      )
-        throw new Fachfehler(415, t('meldungen.http.keine-datei-erwartet'));
-    },
-  };
-  app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
+// Dateien als Körper nur, wo die Route eine eigene Grenze nennt (#901): Sonst gälte still die Grenze für JSON (2 MB).
+const ohneDatei = {
+  preParsing: async (req: FastifyRequest) => {
+    if (
+      String(req.headers['content-type'] ?? '')
+        .split(';')[0]
+        .trim()
+        .toLowerCase() === 'application/octet-stream'
+    )
+      throw new Fachfehler(415, t('meldungen.http.keine-datei-erwartet'));
+  },
+};
 
-  const anfrageAus = (req: FastifyRequest): Anfrage => ({
+/** Die Anfrage, wie die Routen sie sehen. */
+function anfrageAus(req: FastifyRequest, opt: Optionen): Anfrage {
+  return {
     body: req.body,
     params: req.params as Record<string, string>,
     query: req.query as Record<string, string | undefined>,
@@ -348,103 +387,143 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
       const v = req.headers[n];
       return Array.isArray(v) ? v.join(', ') : v;
     },
-  });
-  const definiere = (ziel: FastifyInstance, r: Route) => {
-    ziel.route({
-      method: r.methode,
-      url: r.pfad,
-      ...(r.roh ? { bodyLimit: r.roh } : r.rohKoerper ? { bodyLimit: r.rohKoerper } : ohneDatei),
-      ...(r.ohneHead ? { exposeHeadRoute: false } : {}),
-      // Große Uploads (#683): Anmeldung und Rolle prüfen, **bevor** der Körper (bis zu 256 MB) gelesen wird –
-      // sonst hält jede Anfrage ohne Anmeldung den ganzen Körper im Speicher, bis die 401 kommt.
-      ...(r.roh && r.zugang !== 'offen'
-        ? {
-            onRequest: async (req: FastifyRequest) => {
-              await pruefeZugang(r, anfrageAus(req), (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel, opt.konsole);
-            },
-          }
-        : {}),
-      handler: async (req, reply) => {
-        const a: Anfrage = anfrageAus(req);
-        const start = performance.now();
-        const zeit = ((req as MitKontext).zeit ??= { eingang: start });
-        zeit.start = start;
-        if (r.lesend) (req as MitKontext).lesend = true;
-        const k: Kontext = {
-          anfrage: req.id,
-          pfad: `${req.method} ${req.url.split('?')[0]}`,
-          muster: `${req.method} ${r.pfad}`,
-          db: { anzahl: 0, ms: 0 },
-          ursprung: `${req.protocol}://${req.host}`,
-          nachAntwort: [],
-        };
-        (req as MitKontext).dms = k;
-        // Sprache (#729): erst die, die die Oberfläche mitschickt, dann die der angemeldeten Person.
-        const kopfSprache = spracheAusKopf(a.kopf?.('x-sprache'), erlaubteSprachen());
-        // Was der Dienst nach der Antwort erledigt (#928), läuft auch nach einem Fehler – die Änderung kann schon stehen.
-        // Danach ist die Liste zu: Was nach dem Handler noch in dieser Anfrage anfällt (Strom, Nachlauf, angestoßene
-        // Arbeit), läuft gleich.
-        const nachAntwort = () => {
-          const l = k.nachAntwort ?? [];
-          k.nachAntwort = undefined;
-          return l;
-        };
-        const antwort = await mitSprache(kopfSprache, () =>
-          kontext.run(k, async () => {
-            await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel, opt.konsole);
-            if (a.benutzer?.sprache && erlaubteSprachen().includes(a.benutzer.sprache)) setzeAnfrageSprache(a.benutzer.sprache);
-            // Eigene Änderungen zeigen die Zahlen sofort (#742).
-            k.benutzerId = a.benutzer?.id;
-            await personImProtokoll(k, a, konten);
-            // Wartungsmodus (#102): API 503, in der aktiven Stufe nur Administratoren.
-            // Die Konsole (#244) arbeitet auch im Wartungsmodus – etwa um ihn zu beenden.
-            if (!a.konsole) opt.wartung?.pruefeAnfrage(r, a.benutzer);
-            return r.handler(a);
-          }),
-        ).catch((e: unknown) => {
-          const danach = nachAntwort();
-          if (danach.length) (req as MitKontext).nachher = nachlauf.melde(k, danach);
-          throw e;
-        });
-        // Für den Entwicklermodus: Server-Timing setzt der onSend-Hook (#477), dann mit JSON und gesamt.
-        zeit.ende = performance.now();
-        const danach = [...(antwort.danach ?? []), ...nachAntwort()];
-        if (danach.length) (req as MitKontext).nachher = nachlauf.melde(k, danach);
-        if (antwort.sitzungSetzen !== undefined || antwort.cookies?.length) {
-          const sicher = typeof opt.sicher === 'function' ? kontext.run(k, opt.sicher) : (opt.sicher ?? false);
-          reply.header('set-cookie', [
-            ...(antwort.sitzungSetzen !== undefined ? [sitzungsCookie(antwort.sitzungSetzen, sicher)] : []),
-            ...(antwort.cookies ?? []).map((c) => (sicher ? `${c}; Secure` : c)),
-          ]);
-        }
-        if (antwort.weiterleiten) {
-          reply.header('cache-control', 'no-store');
-          return reply.code(302).header('location', antwort.weiterleiten).send();
-        }
-        if (antwort.datei) {
-          for (const [k, v] of Object.entries({ ...dateiKoepfe(antwort.datei), ...antwort.datei.koepfe })) reply.header(k, v);
-          return reply.code(antwort.status ?? 200).send(antwort.datei.inhalt); // 206: Teil einer Datei (#975)
-        }
-        // Stück für Stück (#444): ohne Länge, nicht zwischenspeichern (auch nicht in nginx: X-Accel-Buffering).
-        if (antwort.strom) {
-          reply
-            .header('content-type', 'application/x-ndjson; charset=utf-8')
-            .header('cache-control', 'no-store')
-            .header('x-accel-buffering', 'no')
-            .header('x-content-type-options', 'nosniff');
-          zeit.senden = performance.now();
-          return reply.code(200).send(antwort.strom);
-        }
-        reply.header('cache-control', 'no-store');
-        for (const [n, v] of Object.entries(antwort.koepfe ?? {})) reply.header(n, v);
-        reply.code(antwort.status ?? 200);
-        zeit.senden = performance.now();
-        return antwort.status === 204 || antwort.status === 304 || antwort.body === undefined ? reply.send() : reply.send(antwort.body);
-      },
-    });
   };
-  const alle = routen(dienst, konten, opt);
-  for (const r of alle) if (!r.strom && !r.rohKoerper) definiere(app, r);
+}
+
+interface RoutenUmgebung {
+  konten: Konten;
+  opt: Optionen;
+  nachlauf: Nachlauf;
+}
+
+/** Eine Route bei Fastify anmelden: Grenze für den Körper, Zugang vor dem Lesen großer Körper, Handler. */
+function definiereRoute(ziel: FastifyInstance, r: Route, u: RoutenUmgebung) {
+  const { konten, opt } = u;
+  ziel.route({
+    method: r.methode,
+    url: r.pfad,
+    ...(r.roh ? { bodyLimit: r.roh } : r.rohKoerper ? { bodyLimit: r.rohKoerper } : ohneDatei),
+    ...(r.ohneHead ? { exposeHeadRoute: false } : {}),
+    // Große Uploads (#683): Anmeldung und Rolle prüfen, **bevor** der Körper (bis zu 256 MB) gelesen wird –
+    // sonst hält jede Anfrage ohne Anmeldung den ganzen Körper im Speicher, bis die 401 kommt.
+    ...(r.roh && r.zugang !== 'offen'
+      ? {
+          onRequest: async (req: FastifyRequest) => {
+            await pruefeZugang(
+              r,
+              anfrageAus(req, opt),
+              (n) => req.headers[n] as string | undefined,
+              konten,
+              opt.apiSchluessel,
+              opt.konsole,
+            );
+          },
+        }
+      : {}),
+    handler: async (req, reply) => {
+      const a: Anfrage = anfrageAus(req, opt);
+      const start = performance.now();
+      const zeit = ((req as MitKontext).zeit ??= { eingang: start });
+      zeit.start = start;
+      if (r.lesend) (req as MitKontext).lesend = true;
+      const k: Kontext = {
+        anfrage: req.id,
+        pfad: `${req.method} ${req.url.split('?')[0]}`,
+        muster: `${req.method} ${r.pfad}`,
+        db: { anzahl: 0, ms: 0 },
+        ursprung: `${req.protocol}://${req.host}`,
+        nachAntwort: [],
+      };
+      (req as MitKontext).dms = k;
+      const antwort = await fuehreRouteAus(req, r, a, k, u);
+      // Für den Entwicklermodus: Server-Timing setzt der onSend-Hook (#477), dann mit JSON und gesamt.
+      zeit.ende = performance.now();
+      const danach = [...(antwort.danach ?? []), ...nachAntwortListe(k)];
+      if (danach.length) (req as MitKontext).nachher = u.nachlauf.melde(k, danach);
+      return sendeAntwort(reply, antwort, k, zeit, opt);
+    },
+  });
+}
+
+/**
+ * Was der Dienst nach der Antwort erledigt (#928), läuft auch nach einem Fehler – die Änderung kann schon stehen.
+ * Danach ist die Liste zu: Was nach dem Handler noch in dieser Anfrage anfällt (Strom, Nachlauf, angestoßene Arbeit),
+ * läuft gleich.
+ */
+function nachAntwortListe(k: Kontext) {
+  const l = k.nachAntwort ?? [];
+  k.nachAntwort = undefined;
+  return l;
+}
+
+/** Zugang prüfen, Sprache und Person setzen, Wartungsmodus prüfen und den Handler der Route rufen. */
+async function fuehreRouteAus(req: FastifyRequest, r: Route, a: Anfrage, k: Kontext, u: RoutenUmgebung) {
+  const { konten, opt } = u;
+  // Sprache (#729): erst die, die die Oberfläche mitschickt, dann die der angemeldeten Person.
+  const kopfSprache = spracheAusKopf(a.kopf?.('x-sprache'), erlaubteSprachen());
+  return mitSprache(kopfSprache, () =>
+    kontext.run(k, async () => {
+      await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel, opt.konsole);
+      if (a.benutzer?.sprache && erlaubteSprachen().includes(a.benutzer.sprache)) setzeAnfrageSprache(a.benutzer.sprache);
+      // Eigene Änderungen zeigen die Zahlen sofort (#742).
+      k.benutzerId = a.benutzer?.id;
+      await personImProtokoll(k, a, konten);
+      // Wartungsmodus (#102): API 503, in der aktiven Stufe nur Administratoren.
+      // Die Konsole (#244) arbeitet auch im Wartungsmodus – etwa um ihn zu beenden.
+      if (!a.konsole) opt.wartung?.pruefeAnfrage(r, a.benutzer);
+      return r.handler(a);
+    }),
+  ).catch((e: unknown) => {
+    const danach = nachAntwortListe(k);
+    if (danach.length) (req as MitKontext).nachher = u.nachlauf.melde(k, danach);
+    throw e;
+  });
+}
+
+type Zeit = NonNullable<MitKontext['zeit']>;
+type RoutenAntwort = Awaited<ReturnType<Route['handler']>>;
+
+/** Sitzungs-Cookie und weitere Cookies der Antwort; Secure nur bei HTTPS (#37). */
+function setzeCookies(reply: FastifyReply, antwort: RoutenAntwort, k: Kontext, opt: Optionen) {
+  if (antwort.sitzungSetzen !== undefined || antwort.cookies?.length) {
+    const sicher = typeof opt.sicher === 'function' ? kontext.run(k, opt.sicher) : (opt.sicher ?? false);
+    reply.header('set-cookie', [
+      ...(antwort.sitzungSetzen !== undefined ? [sitzungsCookie(antwort.sitzungSetzen, sicher)] : []),
+      ...(antwort.cookies ?? []).map((c) => (sicher ? `${c}; Secure` : c)),
+    ]);
+  }
+}
+
+/** Die Antwort der Route senden: Cookies, Weiterleitung, Datei, Strom oder JSON. */
+function sendeAntwort(reply: FastifyReply, antwort: RoutenAntwort, k: Kontext, zeit: Zeit, opt: Optionen) {
+  setzeCookies(reply, antwort, k, opt);
+  if (antwort.weiterleiten) {
+    reply.header('cache-control', 'no-store');
+    return reply.code(302).header('location', antwort.weiterleiten).send();
+  }
+  if (antwort.datei) {
+    for (const [k, v] of Object.entries({ ...dateiKoepfe(antwort.datei), ...antwort.datei.koepfe })) reply.header(k, v);
+    return reply.code(antwort.status ?? 200).send(antwort.datei.inhalt); // 206: Teil einer Datei (#975)
+  }
+  // Stück für Stück (#444): ohne Länge, nicht zwischenspeichern (auch nicht in nginx: X-Accel-Buffering).
+  if (antwort.strom) {
+    reply
+      .header('content-type', 'application/x-ndjson; charset=utf-8')
+      .header('cache-control', 'no-store')
+      .header('x-accel-buffering', 'no')
+      .header('x-content-type-options', 'nosniff');
+    zeit.senden = performance.now();
+    return reply.code(200).send(antwort.strom);
+  }
+  reply.header('cache-control', 'no-store');
+  for (const [n, v] of Object.entries(antwort.koepfe ?? {})) reply.header(n, v);
+  reply.code(antwort.status ?? 200);
+  zeit.senden = performance.now();
+  return antwort.status === 204 || antwort.status === 304 || antwort.body === undefined ? reply.send() : reply.send(antwort.body);
+}
+
+/** Bereiche mit eigenem Parser: Körper als Bytes (#679) und Hochladen als Strom (#746). */
+async function registriereKoerperBereiche(app: FastifyInstance, alle: Route[], definiere: (ziel: FastifyInstance, r: Route) => void) {
   // Körper als Bytes, wie sie ankamen (#679: Signatur des Aufrufs von außen): eigener Bereich, in dem jeder Content-Type
   // – auch JSON – als Puffer ankommt; die Grenze nennt die Route.
   await app.register(async (bereich) => {
@@ -471,73 +550,64 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     bereich.addHook('onRequestAbort', aufraeumen);
     for (const r of alle) if (r.strom) definiere(bereich, r);
   });
+}
 
-  // WebDAV-Laufwerk (#346): eigene Methoden (PROPFIND, LOCK …) und rohe Körper beliebigen Typs.
-  // Eigener Plugin-Bereich, damit der Parser für „alles“ nur hier gilt.
-  if (opt.webdav) {
-    const wd = opt.webdav;
-    const bekannt = new Set<string>((app.supportedMethods as string[] | undefined) ?? []);
-    for (const [m, koerper] of WEBDAV_ZUSATZMETHODEN) if (!bekannt.has(m)) app.addHttpMethod(m, { hasBody: koerper });
-    await app.register(async (bereich) => {
-      bereich.removeAllContentTypeParsers();
-      bereich.addContentTypeParser('*', (_req, nutzlast, fertig) => fertig(null, nutzlast));
-      const handler = async (req: FastifyRequest, reply: WebdavAntwort) => {
-        const k: Kontext = {
-          anfrage: req.id,
-          pfad: `${req.method} ${req.url.split('?')[0]}`,
-          db: { anzahl: 0, ms: 0 },
-          ursprung: `${req.protocol}://${req.host}`,
-        };
-        (req as MitKontext).dms = k;
-        const koerper: Readable =
-          req.body && typeof (req.body as { pipe?: unknown }).pipe === 'function' ? (req.body as Readable) : req.raw;
-        const antwort = await kontext.run(k, () =>
-          wd.anfrage({
-            methode: req.method,
-            url: req.url,
-            ip: req.ip,
-            koerper: ['GET', 'HEAD', 'OPTIONS', 'DELETE', 'COPY', 'MOVE', 'UNLOCK'].includes(req.method) ? null : koerper,
-            kopf: (n: string) => {
-              const v = req.headers[n];
-              return Array.isArray(v) ? v[0] : v;
-            },
-          }),
-        );
-        if (antwort.lesend) (req as MitKontext).lesend = true;
-        reply.code(antwort.status);
-        for (const [n, v] of Object.entries(antwort.koepfe)) reply.header(n, v);
-        if (!reply.hasHeader('cache-control')) reply.header('cache-control', 'no-store');
-        return antwort.body === undefined || req.method === 'HEAD' || antwort.status === 204 || antwort.status === 304
-          ? reply.send()
-          : reply.send(antwort.body);
-      };
-      // Der Parser reicht den Körper als Strom durch – dafür wirkt `bodyLimit` nicht (Fastify zählt nur, was es
-      // selbst liest). Begrenzt wird in webdav/webdav-hilfen.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
-      // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
-      for (const url of ['/webdav', '/webdav/*'])
-        bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + MB, handler });
-      // Windows fragt beim Verbinden manchmal erst OPTIONS auf „/“: dort dieselben DAV-Köpfe (ausgeschaltet 404).
-      bereich.route({
-        method: 'OPTIONS',
-        url: '/',
-        handler: async (req: FastifyRequest, reply: WebdavAntwort) => {
-          const r = await wd.anfrage({ methode: 'OPTIONS', url: '/webdav/', ip: req.ip, kopf: () => undefined, koerper: null });
-          reply.code(r.status);
-          for (const [n, v] of Object.entries(r.koepfe)) reply.header(n, v);
-          return r.body === undefined ? reply.send() : reply.send(r.body);
+/** WebDAV-Laufwerk (#346): eigene Methoden und ein Bereich, in dem jeder Körper als Strom durchgeht. */
+async function registriereWebdav(app: FastifyInstance, wd: Webdav) {
+  const bekannt = new Set<string>((app.supportedMethods as string[] | undefined) ?? []);
+  for (const [m, koerper] of WEBDAV_ZUSATZMETHODEN) if (!bekannt.has(m)) app.addHttpMethod(m, { hasBody: koerper });
+  await app.register(async (bereich) => {
+    bereich.removeAllContentTypeParsers();
+    bereich.addContentTypeParser('*', (_req, nutzlast, fertig) => fertig(null, nutzlast));
+    const handler = webdavHandler(wd);
+    // Der Parser reicht den Körper als Strom durch – dafür wirkt `bodyLimit` nicht (Fastify zählt nur, was es
+    // selbst liest). Begrenzt wird in webdav/webdav-hilfen.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
+    // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
+    for (const url of ['/webdav', '/webdav/*'])
+      bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + MB, handler });
+    // Windows fragt beim Verbinden manchmal erst OPTIONS auf „/“: dort dieselben DAV-Köpfe (ausgeschaltet 404).
+    bereich.route({
+      method: 'OPTIONS',
+      url: '/',
+      handler: async (req: FastifyRequest, reply: WebdavAntwort) => {
+        const r = await wd.anfrage({ methode: 'OPTIONS', url: '/webdav/', ip: req.ip, kopf: () => undefined, koerper: null });
+        reply.code(r.status);
+        for (const [n, v] of Object.entries(r.koepfe)) reply.header(n, v);
+        return r.body === undefined ? reply.send() : reply.send(r.body);
+      },
+    });
+  });
+}
+
+/** Handler der WebDAV-Routen: Anfrage im eigenen Kontext an das Laufwerk, Antwort ohne Zwischenspeichern. */
+function webdavHandler(wd: Webdav) {
+  return async (req: FastifyRequest, reply: WebdavAntwort) => {
+    const k: Kontext = {
+      anfrage: req.id,
+      pfad: `${req.method} ${req.url.split('?')[0]}`,
+      db: { anzahl: 0, ms: 0 },
+      ursprung: `${req.protocol}://${req.host}`,
+    };
+    (req as MitKontext).dms = k;
+    const koerper: Readable = req.body && typeof (req.body as { pipe?: unknown }).pipe === 'function' ? (req.body as Readable) : req.raw;
+    const antwort = await kontext.run(k, () =>
+      wd.anfrage({
+        methode: req.method,
+        url: req.url,
+        ip: req.ip,
+        koerper: ['GET', 'HEAD', 'OPTIONS', 'DELETE', 'COPY', 'MOVE', 'UNLOCK'].includes(req.method) ? null : koerper,
+        kopf: (n: string) => {
+          const v = req.headers[n];
+          return Array.isArray(v) ? v[0] : v;
         },
-      });
-    });
-  }
-
-  if (opt.webDir && existsSync(opt.webDir)) {
-    await app.register(fastifyStatic, { root: opt.webDir, wildcard: false, ...statischeDateien(opt.webDir) });
-    // Alle Nicht-API-Pfade liefern die Oberfläche aus (Routing im Browser) – fehlende Dateien nicht (#932).
-    app.setNotFoundHandler((req, reply) => {
-      if (req.url.startsWith('/api/')) return reply.code(404).send({ fehler: t('meldungen.http.diese-schnittstelle-gibt-es') });
-      return oberflaecheSenden(req.url, reply, opt.webDir);
-    });
-  }
-
-  return app;
+      }),
+    );
+    if (antwort.lesend) (req as MitKontext).lesend = true;
+    reply.code(antwort.status);
+    for (const [n, v] of Object.entries(antwort.koepfe)) reply.header(n, v);
+    if (!reply.hasHeader('cache-control')) reply.header('cache-control', 'no-store');
+    return antwort.body === undefined || req.method === 'HEAD' || antwort.status === 204 || antwort.status === 304
+      ? reply.send()
+      : reply.send(antwort.body);
+  };
 }

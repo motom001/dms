@@ -1,0 +1,631 @@
+{
+  "schluessel": [
+    "EXPORT_FEHLER",
+    "EXPORT_LAEUFT",
+    "abgerufen",
+    "abrufBremse",
+    "abrufText",
+    "abrufTickets",
+    "adresse",
+    "anbindung",
+    "ausgabeDatei",
+    "auskunftZiel",
+    "autos",
+    "betrieb",
+    "danachLoeschen",
+    "darf",
+    "darfWiederherstellen",
+    "demoPlatz",
+    "designs",
+    "dienst",
+    "eigenerExport",
+    "einrichtungZugang",
+    "empfaengerSichtbar",
+    "entdecken",
+    "entschluessele",
+    "exportZiel",
+    "fotostapel",
+    "fuerAnzeige",
+    "herausgeben",
+    "konten",
+    "leseHinweis",
+    "loeschkonzeptQuelle",
+    "log",
+    "meldungen",
+    "messung",
+    "mitRollen",
+    "mitnehmen",
+    "modusSpur",
+    "nf",
+    "notfallblattDatei",
+    "notfallblattErzeugen",
+    "nurAdminsInWartung",
+    "nurSelbst",
+    "oauthPostfach",
+    "ocr",
+    "oidc",
+    "pakete",
+    "paketerstellung",
+    "passwoerterAnzeigen",
+    "pfOAuth",
+    "pfRueckruf",
+    "pk",
+    "postfaecher",
+    "region",
+    "regionStand",
+    "rundgaengeWerkbank",
+    "schluessel",
+    "seitenquelle",
+    "sicherung",
+    "sicherungsPaket",
+    "speicherplatz",
+    "spracheFuer",
+    "sprachen",
+    "system",
+    "tresor",
+    "typName",
+    "umwandlung",
+    "verwaltungHinweis",
+    "wartung",
+    "weitergabe",
+    "wer",
+    "wh",
+    "whStand",
+    "x",
+    "zf",
+    "zg",
+    "zuletztGeoeffnet",
+    "zumAbspeichern",
+    "zusammenfassung"
+  ],
+  "fehlt designs": {
+    "fehler": "Designs sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt betrieb": {
+    "fehler": "Betriebseinstellungen sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt region": {
+    "fehler": "Die Region ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt sprachen": {
+    "fehler": "Die Sprachen lassen sich hier nicht einstellen.",
+    "status": 404
+  },
+  "fehlt ocr": {
+    "fehler": "Die Texterkennung ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt meldungen": {
+    "fehler": "Gemeldete Fehler sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt tresor": {
+    "fehler": "Die Verschlüsselung ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt schluessel": {
+    "fehler": "API-Schlüssel sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt autos": {
+    "fehler": "Automatisierungen sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt sicherung": {
+    "fehler": "Sicherungen sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt nf": {
+    "fehler": "Den Notfallzugang gibt es hier nicht.",
+    "status": 404
+  },
+  "fehlt exportZiel": {
+    "fehler": "Ohne Export-Ordner gibt es keinen Export.",
+    "status": 404
+  },
+  "fehlt oidc": {
+    "fehler": "Die Anmeldung über einen Anbieter ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt zf": {
+    "fehler": "Die Zwei-Faktor-Anmeldung ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt pk": {
+    "fehler": "Passkeys sind hier nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt postfaecher": {
+    "fehler": "Postfächer sind nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt pfOAuth": {
+    "fehler": "Die Anmeldung per OAuth ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt wh": {
+    "fehler": "Die Wiederherstellung ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt anbindung": {
+    "fehler": "Die Datenbank-Anbindung ist hier nicht einstellbar.",
+    "status": 404
+  },
+  "fehlt speicherplatz": {
+    "fehler": "Die Speicherplatz-Überwachung ist nicht eingerichtet.",
+    "status": 404
+  },
+  "fehlt wartung": {
+    "fehler": "Der Wartungsmodus ist nicht eingerichtet.",
+    "status": 404
+  },
+  "einrichtungZugang ohne Assistent": {
+    "fehler": "Kein Einrichtungsassistent.",
+    "status": 404
+  },
+  "spracheFuer ohne Sprachen": {
+    "ok": {
+      "sprache": "en",
+      "standard": "de",
+      "erlaubt": ["de", "en"],
+      "maschinell": []
+    }
+  },
+  "spracheFuer mit Person": {
+    "ok": {
+      "sprache": "en",
+      "standard": "de",
+      "erlaubt": ["de", "en", "fr"],
+      "maschinell": []
+    }
+  },
+  "verwaltungHinweis ohne Verwaltung": {
+    "ok": false
+  },
+  "whStand ohne Wiederherstellung": {
+    "ok": {
+      "lauf": null,
+      "abschluss": null
+    }
+  },
+  "demoPlatz ohne Speicherplatz": null,
+  "nurAdminsInWartung ohne Wartung": {
+    "ok": null
+  },
+  "notfallblatt ohne Tresor": {
+    "fehler": "Die Verschlüsselung ist nicht eingerichtet.",
+    "status": 404
+  },
+  "adresse ohne Betrieb": ["", ""],
+  "oauthPostfach ohne Postfächer": {
+    "fehler": "Postfächer sind nicht eingerichtet.",
+    "status": 404
+  },
+  "zusammenfassung ohne Betrieb": {
+    "ok": {
+      "aktiv": true,
+      "uhrzeit": null,
+      "tage": [1, 2, 3, 4, 5],
+      "feiertage": true,
+      "standard": {
+        "uhrzeit": "07:00",
+        "tage": [1, 2, 3, 4, 5],
+        "bundesland": null
+      },
+      "versand": false
+    }
+  },
+  "paketerstellung ohne Automatisierungen": false,
+  "verwaltungHinweis scheitert": {
+    "ok": false
+  },
+  "regionStand": {
+    "schluessel": ["region", "laender", "bundeslaender", "zeitzonen", "feiertage"],
+    "region": {
+      "land": "DE",
+      "bundesland": "SN",
+      "zeitzone": "Europe/Berlin"
+    },
+    "feiertage": "object"
+  },
+  "da designs": true,
+  "da betrieb": true,
+  "da region": true,
+  "da sprachen": true,
+  "da ocr": true,
+  "da meldungen": true,
+  "da tresor": true,
+  "da schluessel": true,
+  "da autos": true,
+  "da sicherung": true,
+  "da nf": true,
+  "da oidc": true,
+  "da postfaecher": true,
+  "da pfOAuth": true,
+  "da wh": true,
+  "da anbindung": true,
+  "da speicherplatz": true,
+  "da wartung": true,
+  "exportZiel": "/exporte",
+  "auskunftZiel mit Export-Ordner": "/exporte/auskunft",
+  "adresse und Rückruf": ["https://dms.example.org", "https://dms.example.org/api/oauth/postfach/rueckruf"],
+  "oauthPostfach": {
+    "ok": {
+      "id": "o",
+      "anbieter": "google",
+      "benutzer": "post@example.org"
+    }
+  },
+  "oauthPostfach ohne OAuth": {
+    "fehler": "Dieses Postfach meldet sich mit Passwort an. Erst „OAuth 2.0“ wählen und speichern.",
+    "status": 409
+  },
+  "notfallblatt ohne Schlüssel": {
+    "fehler": "Es gibt noch keinen passenden Schlüssel. Erzeuge ihn zuerst unter Werkbank → Verschlüsselung.",
+    "status": 409
+  },
+  "demoPlatz": [5000, 2147483648],
+  "whStand frisch": {
+    "ok": {
+      "lauf": {
+        "art": "wiederherstellung",
+        "von": "",
+        "schritt": 1
+      },
+      "abschluss": {
+        "ok": true,
+        "von": ""
+      }
+    }
+  },
+  "whStand Spiegel": {
+    "ok": {
+      "lauf": null,
+      "abschluss": {
+        "ok": true,
+        "von": ""
+      }
+    }
+  },
+  "spracheFuer mit Kopf": {
+    "ok": {
+      "sprache": "fr",
+      "standard": "de",
+      "erlaubt": ["de", "en", "fr"],
+      "maschinell": []
+    }
+  },
+  "zusammenfassung": {
+    "ok": {
+      "aktiv": true,
+      "uhrzeit": null,
+      "tage": [1, 2, 3, 4, 5],
+      "feiertage": true,
+      "standard": {
+        "uhrzeit": "07:00",
+        "tage": [1, 2, 3, 4, 5],
+        "bundesland": "SN"
+      },
+      "versand": false
+    }
+  },
+  "loeschkonzeptQuelle": {
+    "ok": [
+      "auskunftTage",
+      "datenschutz",
+      "historieTage",
+      "loeschprotokoll",
+      "mandant",
+      "papierkorbTage",
+      "sicherung",
+      "stand",
+      "typen",
+      "version"
+    ]
+  },
+  "eigenerExport": {
+    "ok": {
+      "laeuft": false,
+      "fehler": null
+    }
+  },
+  "einrichtungZugang": [
+    {
+      "ok": null
+    },
+    {
+      "ok": null
+    }
+  ],
+  "verwaltungHinweis": [
+    {
+      "ok": true
+    },
+    {
+      "ok": false
+    },
+    {
+      "ok": false
+    },
+    {
+      "ok": false
+    }
+  ],
+  "darfWiederherstellen": [true, false],
+  "nurAdminsInWartung": {
+    "ok": null
+  },
+  "sicherungsPaket für Menschen": {
+    "fehler": "Sicherungen außer Haus kopieren nur Pakete mit dem Recht „dms:sicherung-lesen“.",
+    "status": 403
+  },
+  "modusSpur ohne Modus": {
+    "ok": []
+  },
+  "modusSpur Konsole": {
+    "ok": []
+  },
+  "modusSpur ohne Mappen": {
+    "ok": []
+  },
+  "wer": [
+    "anna@example.org",
+    {
+      "id": null,
+      "email": null
+    }
+  ],
+  "typName": ["Vertrag", "gibt-es-nicht"],
+  "mitRollen": {
+    "id": "ID",
+    "email": "ben@example.org",
+    "name": "Ben",
+    "rolle": "mitglied",
+    "verwaltung": [],
+    "aktiv": true,
+    "hatPasswort": false,
+    "erstellt": "DATUM",
+    "letzteAnmeldung": null,
+    "entwicklermodus": false,
+    "sprache": null,
+    "abwesenheit": {
+      "an": false,
+      "von": null,
+      "bis": null,
+      "vertreterId": null
+    },
+    "deaktiviert": null,
+    "rollen": []
+  },
+  "zuletztGeoeffnet": {
+    "ok": []
+  },
+  "empfaengerSichtbar": [
+    {
+      "ok": null
+    },
+    {
+      "ok": null
+    },
+    {
+      "ok": null
+    },
+    {
+      "ok": null
+    }
+  ],
+  "leseHinweis": [{}, {}, {}],
+  "darf": {
+    "ok": {
+      "id": "ID",
+      "typId": "ID",
+      "werte": {
+        "nr": "V-1"
+      },
+      "erstellt": "DATUM",
+      "erstelltVon": "ID",
+      "geaendert": "DATUM",
+      "geaendertVon": "ID",
+      "demo": false,
+      "passt": true,
+      "problem": null,
+      "systemKennung": null,
+      "titel": "V-1"
+    }
+  },
+  "weitergabe": {
+    "anzeigen": [false, false, false],
+    "herunterladen": [true, false, true],
+    "verkleinern": [true, false, false],
+    "stempel": [true, false, false],
+    "schluessel": [true, true, true],
+    "paket": [false, false, false]
+  },
+  "seitenquelle Oberfläche": {
+    "ok": null
+  },
+  "mitnehmen Paket": {
+    "ok": null
+  },
+  "abgerufen Paket": true,
+  "abgerufen mit Anlagen": {
+    "ok": ["datei"]
+  },
+  "abgerufen mit Anlagen: Strom offen": false,
+  "abgerufen Fehler": {
+    "fehler": "Historie voll",
+    "status": null
+  },
+  "abgerufen Fehler: Strom zu": true,
+  "abgerufen Fehler mit Puffer": {
+    "fehler": "Historie voll",
+    "status": null
+  },
+  "nurSelbst": [
+    {
+      "fehler": "Passwörter für Dokumente gibt es nur in der eigenen Anmeldung im Browser oder in der App, nicht mit einem API-Schlüssel.",
+      "status": 403
+    },
+    {
+      "fehler": "Passwörter für Dokumente gibt es nur in der eigenen Anmeldung im Browser oder in der App, nicht mit einem API-Schlüssel.",
+      "status": 403
+    },
+    {
+      "fehler": "Passwörter für Dokumente gehören nur dieser Person – auch in einer Vertretung nicht sichtbar.",
+      "status": 403
+    },
+    {
+      "fehler": "Passwörter für Dokumente sind hier nicht eingerichtet.",
+      "status": 404
+    }
+  ],
+  "passwoerterAnzeigen": [
+    {
+      "ok": null
+    },
+    {
+      "fehler": "„passwoerter“ kennt nur den Wert „anzeigen“.",
+      "status": 422
+    },
+    {
+      "fehler": "Passwörter liefert die API nur mit einem API-Schlüssel, der das Recht „Passwörter lesen“ hat.",
+      "status": 403
+    },
+    {
+      "ok": "P"
+    }
+  ],
+  "fuerAnzeige ohne PDF": {
+    "ok": "a.txt"
+  },
+  "fuerAnzeige kaputtes PDF": {
+    "ok": {
+      "inhalt": "Dieses PDF lässt sich nicht si",
+      "name": "hinweis.txt",
+      "mime": "text/plain; charset=utf-8",
+      "anzeigen": true,
+      "groesse": 249,
+      "koepfe": {
+        "x-dms-anzeige": "nur-herunterladen",
+        "cache-control": "no-store"
+      }
+    }
+  },
+  "ausgabeDatei": [
+    {
+      "x-dms-stempel": "1",
+      "x-dms-verkleinert": "9/3"
+    },
+    {
+      "inhalt": {
+        "type": "Buffer",
+        "data": [97, 98, 99]
+      },
+      "name": "a.bin",
+      "mime": "application/octet-stream",
+      "anzeigen": false,
+      "groesse": 3
+    }
+  ],
+  "entschluessele ohne Passwörter": {
+    "ok": 1
+  },
+  "danachLoeschen": true,
+  "entdecken funktionen": {
+    "ok": ["laufwerk"]
+  },
+  "entdecken typen": {
+    "ok": [
+      {
+        "kennung": "benutzer",
+        "felder": ["name", "email", "rollen", "aktiv", "abwesend", "abwesend_von", "abwesend_bis", "vertreter"],
+        "register": ["allgemein", "dokumente", "verknuepfungen"]
+      },
+      {
+        "kennung": "post",
+        "felder": ["betreff", "stand", "kanal", "richtung", "datum", "von", "an", "an_adresse", "bezug", "nachricht"],
+        "register": ["allgemein", "dokumente", "protokoll"]
+      },
+      {
+        "kennung": "rolle",
+        "felder": ["name"],
+        "register": ["allgemein", "benutzer"]
+      },
+      {
+        "kennung": "vertrag",
+        "felder": ["nr"],
+        "register": ["daten", "belege"]
+      }
+    ]
+  },
+  "entdecken lesbareTypen": [
+    {
+      "ok": ["benutzer", "post", "rolle", "vertrag"]
+    },
+    {
+      "ok": ["benutzer", "post", "rolle", "vertrag"]
+    }
+  ],
+  "entdecken oeffnen": [
+    {
+      "ok": "/ablage/ID/neu"
+    },
+    {
+      "ok": "/ablage/ID/ID"
+    },
+    {
+      "ok": "/ablage/ID/ID"
+    },
+    {
+      "ok": null
+    }
+  ],
+  "entdecken pakete und werkbank": [
+    {
+      "ok": []
+    },
+    {
+      "ok": null
+    }
+  ],
+  "entdecken einstellungen": 1,
+  "entdecken version und heute": ["string", true],
+  "pakete benutzer": [
+    {
+      "id": "ID",
+      "name": "Anna"
+    },
+    {
+      "id": "ID",
+      "name": "Ben"
+    }
+  ],
+  "paketerstellung automatisierungen": [
+    {
+      "id": "a1"
+    }
+  ],
+  "rundgänge speicher": [
+    {
+      "eigene": []
+    },
+    true,
+    true,
+    {
+      "eigene": [1]
+    }
+  ],
+  "rundgänge prüfung": [
+    true,
+    {
+      "kennung": "vertrag",
+      "felder": ["nr"],
+      "register": ["daten", "belege"]
+    },
+    null
+  ],
+  "ki-sperre": "object"
+}

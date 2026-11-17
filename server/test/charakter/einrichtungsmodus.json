@@ -1,0 +1,260 @@
+{
+  "sprache": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"sprache\":\"de\",\"standard\":\"de\",\"erlaubt\":[\"de\",\"en\"],\"maschinell\":[]}"
+  },
+  "sprache englisch": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"sprache\":\"en\",\"standard\":\"de\",\"erlaubt\":[\"de\",\"en\"],\"maschinell\":[]}"
+  },
+  "status englisch": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"einrichtungNoetig\":true,\"mail\":false,\"benutzer\":null,\"marke\":null,\"wartung\":null,\"einrichtung\":{\"phase\":\"datenbank\",\"code\":true}}"
+  },
+  "sprache zurück": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"sprache\":\"de\",\"standard\":\"de\",\"erlaubt\":[\"de\",\"en\"],\"maschinell\":[]}"
+  },
+  "status ohne Code": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"einrichtungNoetig\":true,\"mail\":false,\"benutzer\":null,\"marke\":null,\"wartung\":null,\"einrichtung\":{\"phase\":\"datenbank\",\"code\":true}}"
+  },
+  "status mit Code": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"einrichtungNoetig\":true,\"mail\":false,\"benutzer\":null,\"marke\":null,\"wartung\":null,\"einrichtung\":{\"phase\":\"datenbank\",\"code\":true,\"anbindung\":{\"host\":\"alt\",\"port\":5432,\"datenbank\":\"dms\",\"benutzer\":\"dms\",\"passwortGesetzt\":true},\"quelle\":\"datei\",\"fehler\":\"Verbindung abgelehnt\"}}"
+  },
+  "gesundheit": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"ok\":true,\"zustand\":\"einrichtung\",\"einrichtung\":true,\"stand\":\"X\"}"
+  },
+  "code ohne Kennung": {
+    "status": 403,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"fehler\":\"Anfrage ohne Kennung der Oberfläche abgelehnt.\"}"
+  },
+  "code falsch": {
+    "status": 403,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"fehler\":\"Der Einrichtungscode stimmt nicht.\"}"
+  },
+  "code": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"ok\":true}"
+  },
+  "pruefen": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"ok\":false,\"art\":\"verbindung\",\"text\":\"Keine Verbindung.\"}"
+  },
+  "pruefen ohne Angaben": {
+    "status": 422,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"fehler\":\"Bitte die markierten Angaben prüfen.\",\"details\":{\"felder\":{\"host\":\"Rechnername oder IP-Adresse angeben, z. B. db.\",\"datenbank\":\"Name der Datenbank angeben, z. B. dms.\",\"benutzer\":\"Benutzer der Datenbank angeben, z. B. dms.\"}}}"
+  },
+  "anlegen scheitert": {
+    "status": 422,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"fehler\":\"Keine Rechte zum Anlegen.\"}"
+  },
+  "anlegen": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"ok\":true,\"postgres\":\"17\",\"eingerichtet\":false,\"benutzer\":0}"
+  },
+  "uebernehmen scheitert": {
+    "status": 422,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"fehler\":\"Keine Verbindung.\",\"details\":{\"pruefung\":{\"ok\":false,\"art\":\"verbindung\",\"text\":\"Keine Verbindung.\"}}}"
+  },
+  "status nach Fehlschlag": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"einrichtungNoetig\":true,\"mail\":false,\"benutzer\":null,\"marke\":null,\"wartung\":null,\"einrichtung\":{\"phase\":\"datenbank\",\"code\":true,\"anbindung\":{\"host\":\"schlecht\",\"port\":5432,\"datenbank\":\"dms\",\"benutzer\":\"dms\",\"passwortGesetzt\":true},\"quelle\":\"datei\",\"fehler\":\"Keine Verbindung.\"}}"
+  },
+  "datei lesen leer": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"plan\":null,\"fehler\":[{\"zeile\":null,\"feld\":\"Datei\",\"text\":\"Die Datei ist leer.\"}],\"hinweise\":[]}"
+  },
+  "sonst 503": {
+    "status": 503,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "retry-after": "30",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"fehler\":\"Ablago ist noch nicht eingerichtet: Es fehlt die Verbindung zur Datenbank. Öffne Ablago im Browser, um den Einrichtungsassistenten zu starten.\"}"
+  },
+  "oberflaeche": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-cache",
+      "content-type": "text/html; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": 41
+  },
+  "oberflaeche tief": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-cache",
+      "content-type": "text/html; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": 41
+  },
+  "uebernehmen": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"ok\":true,\"pruefung\":{\"ok\":true,\"postgres\":\"17\",\"eingerichtet\":false,\"benutzer\":0}}"
+  },
+  "status startet": {
+    "status": 200,
+    "koepfe": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "x-frame-options": "SAMEORIGIN",
+      "content-security-policy": "ja"
+    },
+    "body": "{\"einrichtungNoetig\":true,\"mail\":false,\"benutzer\":null,\"marke\":null,\"wartung\":null,\"einrichtung\":{\"phase\":\"startet\",\"code\":true}}"
+  },
+  "ergebnis": {
+    "host": "gut",
+    "port": 5432,
+    "datenbank": "dms",
+    "benutzer": "dms",
+    "passwort": "x",
+    "mandant": "m1"
+  },
+  "geprueft": [
+    {
+      "host": "neu",
+      "mandant": "m1"
+    },
+    {
+      "host": "gut",
+      "mandant": "m1"
+    },
+    {
+      "host": "schlecht",
+      "mandant": "m1"
+    },
+    {
+      "host": "gut",
+      "mandant": "m1"
+    }
+  ],
+  "port frei": true,
+  "wiederholt": {
+    "ergebnis": {
+      "host": "spaet",
+      "port": 5432,
+      "datenbank": "dms",
+      "benutzer": "dms",
+      "passwort": "p"
+    },
+    "mindestensDreiVersuche": true
+  }
+}

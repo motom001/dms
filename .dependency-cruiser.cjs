@@ -353,10 +353,17 @@ module.exports = {
       name: 'routen-hilfen-nur-in-routen',
       severity: 'error',
       comment:
-        'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und http/routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
+        'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts, http/routen.ts und den Gruppen http/routen-kontext-*.ts (#961, #1278): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
       from: {
         path: '^(server|shared|web)/',
-        pathNot: ['\\.routen\\.ts$', '^server/src/http/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'],
+        // Die Gruppen des Routen-Kontexts (routen-kontext-*.ts, #1278) gehören zum Kontext; sein Charakterisierungstest prüft ihn direkt.
+        pathNot: [
+          '\\.routen\\.ts$',
+          '^server/src/http/routen\\.ts$',
+          '^server/src/http/routen-(hilfen|kontext)\\.ts$',
+          '^server/src/http/routen-kontext-[a-z]+\\.ts$',
+          '^server/test/routen-kontext-charakter\\.test\\.ts$',
+        ],
       },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
     },

@@ -142,18 +142,7 @@
       "count": 1
     }
   },
-  "server/src/dienst/dienst.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/dms.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "no-useless-assignment": {
       "count": 1
     }
@@ -181,11 +170,6 @@
   },
   "server/src/einrichtung/einrichtungsdatei.ts": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "server/src/einrichtung/einrichtungsmodus.ts": {
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -269,22 +253,9 @@
       "count": 1
     }
   },
-  "server/src/http/http.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/http/routen-hilfen.ts": {
     "complexity": {
       "count": 2
-    }
-  },
-  "server/src/http/routen-kontext.ts": {
-    "max-lines-per-function": {
-      "count": 1
     }
   },
   "server/src/http/routen.ts": {
@@ -305,16 +276,6 @@
   },
   "server/src/konten/benutzer.ts": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "server/src/konten/konto-repo-pg.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "server/src/konten/konto-repo-speicher.ts": {
-    "max-lines-per-function": {
       "count": 1
     }
   },
