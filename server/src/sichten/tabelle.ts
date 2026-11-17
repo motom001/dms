@@ -10,7 +10,7 @@
  * Verborgene Zeilen (#1208): Damit niemand eine Summe für falsch hält, kommt dazu nur die **Anzahl** der Zeilen, die die
  * Person nicht lesen darf (`verborgen`) – keine Titel, Werte, Ids oder Lücken. Auch sie nur mit Leserecht an der Mappe.
  */
-import { trefferlistenVon, verweiseVon, type Mappe, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
+import { bezugsZiele, trefferlistenVon, type Mappe, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
 import type { Klausel } from '../../../shared/src/sichten';
 import { TABELLE_SEITE, tabellenSpalten } from '../../../shared/src/tabelle';
 import { teileVon } from '../../../shared/src/zusammengesetzt';
@@ -87,7 +87,8 @@ export async function tabellenSeite(
     ...m,
     werte: Object.fromEntries(mitWert.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])),
   }));
-  const ziele = mappen.flatMap((m) => verweiseVon(quelltyp, m.werte).map((v) => v.zielId));
+  // Mit Erwähnungen in den gezeigten formatierten Spalten (#1333).
+  const ziele = mappen.flatMap((m) => bezugsZiele(quelltyp, m.werte));
   return {
     typId: quelltyp.id,
     spalten,

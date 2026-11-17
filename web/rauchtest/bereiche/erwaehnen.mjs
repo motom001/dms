@@ -1,11 +1,12 @@
 /**
  * Rauchtests: Erwähnen mit @ – alle Mappen (#889), ohne Pause weitertippen (#1267), Werkzeugleiste mit axe (#1268). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
  * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
+ * Trefferliste (#1333): Titel der erwähnten Mappe in der Spalte, nach den Rechten der lesenden Person (Lena und Jonas).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, daten, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
+import { api, BASIS, daten, JONAS, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /** Zwei Mappen: die eine erwähnt die andere – Ziel und Quelle mit eigenem Namen je Lauf. */
@@ -84,3 +85,79 @@ rauchtest('Handy: Erwähnen mit 44-px-Tippflächen (#889)', { handy: true, als: 
   for (const v of await tippflaechenPruefen(s, ['.neuenotiz'])) funde.push(`Eingabe: ${v}`);
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
+
+/**
+ * Trefferliste mit formatiertem Feld (#1333): ein eigener Typ, dessen private Mappen nur die anlegende Person lesen darf.
+ * Lena legt eine private und eine offene Mappe an und eine dritte, die beide erwähnt. Einmal angelegt, für beide Tests.
+ */
+let kellernotiz;
+function listeMitErwaehnungen() {
+  kellernotiz ??= (async () => {
+    const verwaltung = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+    const typ = (
+      await api('POST', '/api/typen', {
+        cookie: verwaltung,
+        body: {
+          name: 'Kellernotiz',
+          schluessel: 'kellernotiz',
+          titelVorlage: '{objekt}',
+          trefferliste: ['_titel', 'text'],
+          felder: [
+            { key: 'objekt', label: 'Objekt', typ: 'text', pflicht: true },
+            { key: 'privat', label: 'Privat', typ: 'janein' },
+            { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
+          ],
+        },
+      })
+    ).daten;
+    const ersteller = { art: 'feld', feld: '_erstelltVon', op: 'zeigtAuf', wert: { art: 'ich' } };
+    await api('PUT', `/api/werkbank/berechtigungen/${typ.id}`, {
+      cookie: verwaltung,
+      body: {
+        bestaetigt: true,
+        berechtigungen: {
+          grund: { C: true, R: true, U: true, D: true, P: true },
+          regeln: [
+            {
+              id: 'privat',
+              name: 'Privat nur für die anlegende Person',
+              wenn: [
+                { art: 'feld', bedingung: { art: 'feld', feld: 'privat', op: 'ja' } },
+                { art: 'feld', nicht: true, bedingung: ersteller },
+              ],
+              dann: { C: 'entziehen', R: 'entziehen', U: 'entziehen', D: 'entziehen', P: 'entziehen' },
+              stopp: true,
+            },
+          ],
+        },
+      },
+    });
+    const cookie = await sitzung(LENA);
+    const neu = async (werte) => (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte } })).daten;
+    const privat = await neu({ objekt: 'Kellerschlüssel', privat: true });
+    const offen = await neu({ objekt: 'Kellerplan' });
+    await neu({ objekt: 'Kellerübersicht', text: `**Siehe** @[](mappe:${privat.id}) und @[](mappe:${offen.id})` });
+    return typ;
+  })();
+  return kellernotiz;
+}
+
+for (const [person, erwartet] of [
+  [LENA, 'Siehe @Kellerschlüssel und @Kellerplan'],
+  [JONAS, 'Siehe @Mappe (nicht sichtbar) und @Kellerplan'],
+])
+  rauchtest(`Trefferliste: Titel erwähnter Mappen nach Rechten – ${person.name} (#1333)`, { als: person }, async (s) => {
+    const typ = await listeMitErwaehnungen();
+    // Ein Rundgang, der bei der ersten Anmeldung von selbst startet (Jonas allein gestartet), läge über der Liste.
+    const cookie = await sitzung(person);
+    const { starten } = (await api('GET', '/api/entdecken', { cookie })).daten;
+    if (starten) await api('POST', `/api/entdecken/rundgaenge/${starten}`, { cookie, body: { stand: 'gesehen' } });
+    await s.goto(BASIS + `/ablage/${typ.id}`);
+    const liste = s.getByRole('region', { name: 'Mappen' });
+    // Die Nebenzeile der Liste zeigt die erste Spalte nach dem Titel, hier das formatierte Feld.
+    await liste.getByText(erwartet, { exact: true }).waitFor();
+    // Jonas sieht die private Mappe weder als Zeile noch ihren Titel in der Erwähnung.
+    if (person === JONAS) assert.equal(await liste.getByText('Kellerschlüssel').count(), 0);
+    assert.equal(await liste.getByText(/@Erwähnung/).count(), 0);
+  });

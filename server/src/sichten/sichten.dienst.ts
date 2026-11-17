@@ -4,7 +4,7 @@
  * Rechteprüfung, Mappen, Suche und die übrigen Teile dieses Ordners, nicht den ganzen Dienst.
  */
 import type { TermineAntwort } from '../../../shared/src/fristen';
-import { type Aufgabe, type Mappentyp, MAX_AUSWAHL, POST_STAND, verweiseVon } from '../../../shared/src/model';
+import { type Aufgabe, type Mappentyp, MAX_AUSWAHL, POST_STAND, bezugsZiele } from '../../../shared/src/model';
 import { type Bedingung, filterFuer, heuteIn, klauselnFuer, type Sicht } from '../../../shared/src/sichten';
 import { suchbegriffe, type Varianten, vorschlagAus } from '../../../shared/src/suche';
 import { ABO_ARTEN, type Kern, type Zugriff } from '../kern';
@@ -217,9 +217,10 @@ export class SichtenDienst {
     );
     const { r, unscharf } = await this.treffer(anfrage, typen, varianten, bekanntesGesamt(q, p, textfilter), p.von === 0);
     if (q.sicht === 'eingang' && lesen) r.mappen = await this.ohneLeserecht(r.mappen, lesen);
+    // Verweise und Erwähnungen in formatierten Feldern (#1333): Titel aller Zeilen der Seite in einer Abfrage, maskiert.
     const ziele = r.mappen.flatMap((m) => {
       const t = typen.get(m.typId);
-      return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : [];
+      return t ? bezugsZiele(t, m.werte) : [];
     });
     const aufgaben = q.sicht === 'eingang' ? await this.eingangAufgaben(ich, r.mappen) : {};
     const aehnlich = await this.aehnlicheTreffer(z, p, ziel.erweitert, typen, r.mappen);

@@ -39,7 +39,7 @@ export const V1_MAPPEN: V1[] = [
     gruppe: 'Ablage',
     zusammenfassung: 'Mappen einer Ansicht, seitenweise',
     beschreibung:
-      'Mappen eines Typs (oder von „Zu erledigen“), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen. Teile (#1031, Mappentypen mit teilVon) stehen in keiner Ansicht und nicht in der erweiterten Suche; mit sicht=typ:<Id> kommen sie wie alle Mappen. Eine Suche findet über ihre Teile die übergeordnete Mappe (ausschnitte[].teil) – nur, wenn der Schlüssel den Teil lesen darf.',
+      'Mappen eines Typs (oder von „Zu erledigen“), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen oder die sie in formatierten Feldern erwähnen (#1333; nicht lesbare ohne Titel als verborgen, gelöschte fehlen). Teile (#1031, Mappentypen mit teilVon) stehen in keiner Ansicht und nicht in der erweiterten Suche; mit sicht=typ:<Id> kommen sie wie alle Mappen. Eine Suche findet über ihre Teile die übergeordnete Mappe (ausschnitte[].teil) – nur, wenn der Schlüssel den Teil lesen darf.',
     parameter: [
       {
         name: 'sicht',
@@ -120,7 +120,7 @@ export const V1_MAPPEN: V1[] = [
     gruppe: 'Ablage',
     zusammenfassung: 'Zeilen einer Tabelle an einer Mappe',
     beschreibung:
-      'Feldart Tabelle (#1030): die Mappen des anderen Typs, die über das Verweisfeld der Quelle auf diese Mappe verweisen – je 50 (von blättert; gesamt vom ersten Blatt mitgeben), sortiert wie eine Trefferliste (sortierung: Spalte, absteigend: true; ohne nach Titel). Lesen an der Mappe nötig. Nur Mappen, die der Aufrufer lesen darf – auch gesamt zählt nur sie. Dazu verborgen (#1208): nur die Zahl der Zeilen ohne Leserecht, damit eine Oberfläche „3 von 7“ zeigen kann. Je Mappe nur die Werte der Spalten (spalten, ohne Passwortfelder); Verweise auf nicht lesbare Mappen in bezuege ohne Titel (verborgen). Neue Zeilen legt POST /mappen an (Verweisfeld auf diese Mappe gesetzt); der Server prüft dabei das Anlegerecht am anderen Typ und das Leserecht auf diese Mappe.',
+      'Feldart Tabelle (#1030): die Mappen des anderen Typs, die über das Verweisfeld der Quelle auf diese Mappe verweisen – je 50 (von blättert; gesamt vom ersten Blatt mitgeben), sortiert wie eine Trefferliste (sortierung: Spalte, absteigend: true; ohne nach Titel). Lesen an der Mappe nötig. Nur Mappen, die der Aufrufer lesen darf – auch gesamt zählt nur sie. Dazu verborgen (#1208): nur die Zahl der Zeilen ohne Leserecht, damit eine Oberfläche „3 von 7“ zeigen kann. Je Mappe nur die Werte der Spalten (spalten, ohne Passwortfelder); Verweise und Erwähnungen (#1333) auf nicht lesbare Mappen in bezuege ohne Titel (verborgen). Neue Zeilen legt POST /mappen an (Verweisfeld auf diese Mappe gesetzt); der Server prüft dabei das Anlegerecht am anderen Typ und das Leserecht auf diese Mappe.',
     intern: { methode: 'GET', pfad: '/api/mappen/:id/tabelle/:feld' },
     parameter: [
       id('der Mappe'),

@@ -19,6 +19,7 @@ import {
   type Notiz,
   NOTIZ_MAX,
   verweiseVon,
+  bezugsZiele,
   type Werte,
 } from '../../../shared/src/model';
 import { kreisVon } from '../../../shared/src/nummernkreis';
@@ -258,7 +259,8 @@ export class MappenDienst {
     const ids = [...new Set(rv.map((r) => r.quelleId))].filter((x) => sichtbar.has(x));
     const mappen = (await this.repo.holeMappen(ids.slice(0, 1000))).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
     const typ = await this.repo.holeTyp(typId);
-    const ziele = typ ? mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)) : [];
+    // Mit Erwähnungen in formatierten Feldern (#1333), wie jede Trefferliste.
+    const ziele = typ ? mappen.flatMap((m) => bezugsZiele(typ, m.werte)) : [];
     return { gesamt: ids.length, mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)) };
   }
 

@@ -18,6 +18,7 @@ import { zusammengesetztProbleme, teileVon, meldefeld } from '../zusammengesetzt
 import { istZeitraum, leseZeitraum, leseProzent, ZEITRAUM_ANZAHL_MAX } from '../feldarten';
 import { pruefeFormatDefinition } from '../feldformate';
 import { kreisImStandard, kreisVon } from '../nummernkreis';
+import { erwaehnungen } from '../markdown';
 import { gebietsschema } from '../sprache';
 import { feldLabel as feldLabelVon } from '../beschriftung';
 
@@ -387,4 +388,16 @@ export function verweiseVon(t: Pick<Mappentyp, 'felder'>, werte: Werte): Array<{
     for (const id of Array.isArray(v) ? v : [v]) if (typeof id === 'string') out.push({ feldKey: f.key, zielId: id });
   }
   return out;
+}
+
+/**
+ * Mappen, deren Titel eine Trefferliste zu dieser Mappe braucht: Verweise und (#1333) in formatierten Feldern erwähnte
+ * Mappen. Der Server liefert sie je Seite gesammelt als `bezuege` – nach den Rechten der lesenden Person maskiert.
+ */
+export function bezugsZiele(t: Pick<Mappentyp, 'felder'>, werte: Werte): string[] {
+  const erwaehnt = t.felder.flatMap((f) => {
+    const v = werte?.[f.key];
+    return f.typ === 'formatiert' && typeof v === 'string' ? erwaehnungen(v) : [];
+  });
+  return [...verweiseVon(t, werte).map((v) => v.zielId), ...erwaehnt];
 }
