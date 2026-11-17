@@ -5,7 +5,7 @@
  *
  * Eigene Domains (z. B. bei IONOS, Strato, Microsoft 365, Google Workspace) erkennt der Server über den
  * MX-Eintrag der Domain (siehe server/src/mail/mailsuche.ts); dafür steht hier `mx`.
- * Die Texte der Hinweise stehen in shared/src/sprachen/de/werkbank.json.
+ * Die Texte der Hinweise stehen in shared/src/sprachen/de/werkbank/postfaecher.json.
  */
 
 export type MailVerbindung = 'starttls' | 'ssl' | 'keine';
@@ -15,7 +15,7 @@ export type MailAnbieterId =
   'gmx' | 'webde' | 'tonline' | 'gmail' | 'outlook' | 'microsoft365' | 'icloud' | 'posteo' | 'mailboxorg' | 'ionos' | 'strato';
 
 export interface MailHinweis {
-  /** Schlüssel in werkbank.json. */
+  /** Schlüssel im Bereich werkbank (Datei werkbank/postfaecher.json). */
   text: string;
   /** Hilfe des Anbieters. */
   link?: string;

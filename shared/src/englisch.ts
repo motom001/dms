@@ -22,7 +22,7 @@ import lasttest from './sprachen/en/lasttest.json';
 import mail from './sprachen/en/mail.json';
 import mappen from './sprachen/en/mappen.json';
 import mappentypen from './sprachen/en/mappentypen.json';
-import meldungen from './sprachen/en/meldungen.json';
+import meldungen from './sprachen/en/meldungen';
 import notfall from './sprachen/en/notfall.json';
 import oberflaeche from './sprachen/en/oberflaeche.json';
 import pakete from './sprachen/en/pakete.json';
@@ -33,7 +33,7 @@ import suche from './sprachen/en/suche.json';
 import systemzustand from './sprachen/en/systemzustand.json';
 import termine from './sprachen/en/termine.json';
 import volltext from './sprachen/en/volltext.json';
-import werkbank from './sprachen/en/werkbank.json';
+import werkbank from './sprachen/en/werkbank';
 
 export const ENGLISCH: Readonly<Record<string, Sprachdatei>> = {
   ablage,

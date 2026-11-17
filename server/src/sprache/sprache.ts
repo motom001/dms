@@ -15,11 +15,11 @@ import konten from '../../../shared/src/sprachen/de/konten.json';
 import mappen from '../../../shared/src/sprachen/de/mappen.json';
 import pakete from '../../../shared/src/sprachen/de/pakete.json';
 import systemzustand from '../../../shared/src/sprachen/de/systemzustand.json';
-import werkbank from '../../../shared/src/sprachen/de/werkbank.json';
+import werkbank from '../../../shared/src/sprachen/de/werkbank';
 import api from '../../../shared/src/sprachen/de/api.json';
 import automatisierung from '../../../shared/src/sprachen/de/automatisierung.json';
 import start from '../../../shared/src/sprachen/de/start.json';
-import meldungen from '../../../shared/src/sprachen/de/meldungen.json';
+import meldungen from '../../../shared/src/sprachen/de/meldungen';
 import notfall from '../../../shared/src/sprachen/de/notfall.json';
 
 export const t = uebersetzer({

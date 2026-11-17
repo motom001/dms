@@ -6,7 +6,7 @@ import { protokoll } from '../../protokoll/protokoll';
 import { uebersetzer } from '../../../../shared/src/sprache';
 import texte from '../../../../shared/src/sprachen/de/automatisierung.json';
 import ereignisTexte from '../../../../shared/src/sprachen/de/ereignisse.json';
-import werkbankTexte from '../../../../shared/src/sprachen/de/werkbank.json';
+import werkbankTexte from '../../../../shared/src/sprachen/de/werkbank';
 
 /**
  * Motor der Automatisierungen (#674): Wenn · Und · Dann · Sonst (#677), ausgeführt unter dem Systemkonto „Automatisierung“ (#673).

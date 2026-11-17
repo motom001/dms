@@ -4,7 +4,6 @@
  * neue Lage „Stempel“, Drehen 0–360°, gemeinsame Lage-Rechnung für PDF und Vorschau.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { after, describe, it } from 'node:test';
 import { PDFDocument, degrees } from 'pdf-lib';
 import {
@@ -20,6 +19,7 @@ import {
   wunschAus,
   type Stempel,
 } from '../../shared/src/stempel';
+import { DEUTSCH } from '../../shared/src/deutsch';
 import { fuerAusgabe } from '../src/ausgang/ausgabe';
 import { beendeArbeiter } from '../src/arbeit';
 import { speicherDateien } from '../src/dateien/dateispeicher';
@@ -58,10 +58,7 @@ describe('Deckkraft und „wie Tinte“ (#799)', () => {
     assert.equal(NEUER_STEMPEL.deckkraft, 0.7);
     assert.equal(NEUER_STEMPEL.tinte, true);
     assert.equal(DECKKRAFT_HINWEIS_AB, 0.8);
-    const texte = JSON.parse(readFileSync(new URL('../../shared/src/sprachen/de/werkbank.json', import.meta.url), 'utf8')) as Record<
-      string,
-      string
-    >;
+    const texte = DEUTSCH.werkbank;
     assert.equal(
       texte['stempel.deckkraft.hinweis'],
       'Bitte bedenke: Der Stempel kann Informationen aus dem Beleg verdecken und unlesbar machen.',

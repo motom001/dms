@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
 Tabellen der Werkbank-Bereiche im Administratorhandbuch aus shared/src/werkbankansicht.ts (#296)
-und den Namen in der Sprachdatei shared/src/sprachen/de/werkbank.json (#473, #354).
+und den Namen in den Sprachdateien shared/src/sprachen/de/werkbank/*.json (#473, #354; seit #1279 je Bereich geteilt).
 
     python3 docs/handbuch/werkzeuge/werkbank_bereiche.py            # schreibt admin/docs/uebersicht.md
     python3 docs/handbuch/werkzeuge/werkbank_bereiche.py --pruefen  # Fehler, wenn die Seite veraltet ist
 
-Englisch (#730): admin/docs-en/uebersicht.md trägt dieselben Marker. Gibt es die Sprachdatei
-shared/src/sprachen/en/werkbank.json (kommt mit #729), schreibt und prüft das Werkzeug auch sie;
-bis dahin sind die englischen Tabellen von Hand übersetzt.
+Englisch (#730): admin/docs-en/uebersicht.md trägt dieselben Marker; die Texte stehen in
+shared/src/sprachen/en/werkbank/*.json (#729), das Werkzeug schreibt und prüft auch sie.
 
 Ersetzt in uebersicht.md die Abschnitte zwischen den Markern
   <!-- bereiche:gruppen -->        … <!-- /bereiche:gruppen -->        Gruppen und ihre Bereiche
@@ -21,7 +20,8 @@ from pathlib import Path
 
 WURZEL = Path(__file__).resolve().parents[3]
 QUELLE = WURZEL / 'shared' / 'src' / 'werkbankansicht.ts'
-TEXTE = WURZEL / 'shared' / 'src' / 'sprachen' / 'de' / 'werkbank.json'
+# Bereich „werkbank“ der Sprachdateien: ein Ordner mit Teildateien (#1279), zusammen ein Bereich.
+TEXTE = WURZEL / 'shared' / 'src' / 'sprachen' / 'de' / 'werkbank'
 ZIEL = WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs' / 'uebersicht.md'
 # Je Sprache: Sprachdatei, Seite und die festen Wörter der Tabellen.
 # „bedingt“: Bereiche, die nur unter einer Bedingung in der Leiste stehen.
@@ -31,7 +31,7 @@ SPRACHEN = {
            'kopf_gruppen': '| Gruppe | Bereiche |', 'kopf_wofuer': '| Bereich | Wofür | Stufe |',
            'bedingt': {'aufbewahrung': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ordner eingebunden ist',
                        'auskuenfte': 'nur bei beruflicher Nutzung', 'loeschkonzept': 'nur bei beruflicher Nutzung', 'loeschprotokoll': 'nur bei beruflicher Nutzung'}},
-    'en': {'texte': WURZEL / 'shared' / 'src' / 'sprachen' / 'en' / 'werkbank.json',
+    'en': {'texte': WURZEL / 'shared' / 'src' / 'sprachen' / 'en' / 'werkbank',
            'ziel': WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs-en' / 'uebersicht.md',
            'bereich': 'Area', 'anzahl': 'Number', 'ab': 'from {v}', 'nur': '{v} only',
            'kopf_gruppen': '| Group | Areas |', 'kopf_wofuer': '| Area | What for | Level |',
@@ -56,9 +56,22 @@ STUFEN = ['einsteiger', 'haushalt', 'selbstaendig', 'organisation', 'alles']
 KUERZEL = {'E': 'einsteiger', 'H': 'haushalt', 'S': 'selbstaendig', 'B': 'organisation', 'A': 'alles'}
 
 
+def lies_texte(ordner):
+    """Alle Teildateien des Bereichs zusammen; ein Schlüssel in zwei Dateien ist ein Fehler."""
+    texte = {}
+    for datei in sorted(ordner.glob('*.json')):
+        for k, v in json.loads(datei.read_text(encoding='utf-8')).items():
+            if k in texte:
+                sys.exit(f'werkbank_bereiche.py: Schlüssel {k} doppelt in {ordner.relative_to(WURZEL)}')
+            texte[k] = v
+    if not texte:
+        sys.exit(f'werkbank_bereiche.py: keine Texte in {ordner.relative_to(WURZEL)}')
+    return texte
+
+
 def lies(sp=SPRACHEN['de']):
     ts = QUELLE.read_text(encoding='utf-8')
-    texte = json.loads(sp['texte'].read_text(encoding='utf-8'))
+    texte = lies_texte(sp['texte'])
     folge = re.findall(r"'(\w+)'", re.search(r'const GRUPPENFOLGE = \[([^\]]*)\]', ts).group(1))
     gruppen = {g: texte[f'gruppe.{g}'] for g in folge}
     bereiche = []
@@ -108,8 +121,8 @@ def ersetze(text, inhalt):
 
 def main():
     for code, sp in SPRACHEN.items():
-        if not sp['texte'].exists() or not sp['ziel'].exists():
-            continue  # z. B. Englisch, solange es die Sprachdatei noch nicht gibt
+        if not sp['texte'].is_dir() or not sp['ziel'].exists():
+            sys.exit(f'werkbank_bereiche.py: {sp["texte"].relative_to(WURZEL)} oder {sp["ziel"].relative_to(WURZEL)} fehlt')
         alt = sp['ziel'].read_text(encoding='utf-8')
         neu = ersetze(alt, bloecke(*lies(sp), sp))
         if '--pruefen' in sys.argv:

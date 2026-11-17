@@ -29,7 +29,8 @@ function werte(): Array<{ datei: string; schluessel: string; wert: string }> {
   for (const sprache of readdirSync(SPRACHEN)) {
     let dateien: string[];
     try {
-      dateien = readdirSync(join(SPRACHEN, sprache)).filter((f) => f.endsWith('.json'));
+      // Auch Teildateien geteilter Bereiche (#1279), z. B. werkbank/pakete.json.
+      dateien = (readdirSync(join(SPRACHEN, sprache), { recursive: true }) as string[]).filter((f) => f.endsWith('.json'));
     } catch {
       continue;
     }

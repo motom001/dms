@@ -74,7 +74,7 @@ test('Programm oder nicht', () => {
   for (const p of [
     'server/src/dienst/dienst.ts',
     'web/src/App.tsx',
-    'shared/src/sprachen/de/werkbank.json',
+    'shared/src/sprachen/de/werkbank/pakete.json',
     'Dockerfile',
     'docker/start.sh',
   ])
