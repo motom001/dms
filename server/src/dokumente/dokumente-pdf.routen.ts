@@ -10,6 +10,11 @@ import { liesAnlass } from '../../../shared/src/loeschprotokoll';
 import type { RoutenKontext } from '../http/routen-kontext';
 
 export function dokumentePdfRouten(k: RoutenKontext): Route[] {
+  return [...pdfBearbeitenRouten(k), ...schwaerzenRouten(k), ...verkleinernRouten(k), ...archivnummernRouten(k)];
+}
+
+/** PDF bearbeiten (#335): Seiten, Seitenbilder, bearbeiten und zusammenfügen. */
+function pdfBearbeitenRouten(k: RoutenKontext): Route[] {
   const { dienst, abgerufen, herausgeben, seitenquelle, zg, darf } = k;
   return [
     /* PDF bearbeiten (#335): Seiten ansehen mit „Lesen“, bearbeiten mit „Bearbeiten“. */
@@ -61,6 +66,13 @@ export function dokumentePdfRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => ok(await dienst.pdfBearbeiten.fuegePdfZusammen(a.body, ich(a).id, await zg(a)), 201),
     },
+  ];
+}
+
+/** Schwärzen (#392): Vorschau, Seitenbilder und Schwärzen. */
+function schwaerzenRouten(k: RoutenKontext): Route[] {
+  const { dienst, abgerufen, herausgeben, seitenquelle, darf } = k;
+  return [
     /* Schwärzen (#392): Ansehen und Analyse mit „Lesen“, Schwärzen (neues Dokument bzw. Version) mit „Bearbeiten“. */
     {
       methode: 'GET',
@@ -107,6 +119,13 @@ export function dokumentePdfRouten(k: RoutenKontext): Route[] {
         return ok(await dienst.schwaerzen.schwaerzeDokument(a.params.id, a.body, ich(a).id), 201);
       },
     },
+  ];
+}
+
+/** PDF verkleinern (#393): je Dokument und in der Werkbank. */
+function verkleinernRouten(k: RoutenKontext): Route[] {
+  const { dienst, darf } = k;
+  return [
     /* PDF verkleinern (#393): Schätzung mit „Lesen“, Verkleinern (neue Version) mit „Bearbeiten“. */
     {
       methode: 'GET',
@@ -152,6 +171,13 @@ export function dokumentePdfRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.pdfVerkleinern.setzeVerkleinernEinstellung(a.body)),
     },
+  ];
+}
+
+/** Archivnummern (#345) und Dokument löschen. */
+function archivnummernRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, darf } = k;
+  return [
     /* Archivnummer (#345): setzen mit „Bearbeiten“, suchen mit „Lesen“, Aufkleber in der Werkbank. */
     {
       methode: 'PUT',
