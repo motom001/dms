@@ -167,6 +167,8 @@ jobs:
           DMS_EINGANG: ${{ runner.temp }}/rauchtest-eingang
           PORT: '3000'
           DMS_VERSION: rauchtest
+          # Ein Prozess wie bisher: Ohne DMS_PROZESSE nähme Ablago seit #1309 auf diesem Runner (4 Kerne, 16 GB) zwei.
+          DMS_PROZESSE: '1'
       # Playwright mit fester Version aus web/rauchtest/package.json und eigenem Lockfile (#289, #1272), nur Chromium.
       # Die Rechner von GitHub bringen die Bibliotheken für Chromium mit; nur wenn der Browser so nicht startet, kommen
       # sie per apt dazu – höchstens 5 Minuten je Versuch, dann ein zweiter (die apt-Installation hängt gelegentlich).

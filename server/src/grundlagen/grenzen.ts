@@ -220,8 +220,8 @@ export const PLATZ_RESERVE = 50 * MB;
 export const SPEICHER_RESERVE = GB;
 export const HALDE_MIN_MB = GB / MB;
 /**
- * Ab so viel Arbeitsspeicher (Grenze des Containers, sonst des Rechners) nimmt die Vorgabe von dms-komplett bzw. `auto`
- * zwei Prozesse (#1259): „8 GB“ – Geräte mit 8 GB melden dem System etwas weniger (Grafik, Kernel), darum 7,5 GB.
+ * Ab so viel Arbeitsspeicher (Grenze des Containers, sonst des Rechners) nimmt `auto` (ohne `DMS_PROZESSE` die Vorgabe)
+ * zwei Prozesse (#1259, #1309): „8 GB“ – Geräte mit 8 GB melden dem System etwas weniger (Grafik, Kernel), darum 7,5 GB.
  */
 export const ZWEI_PROZESSE_SPEICHER_AB = 7.5 * GB;
 

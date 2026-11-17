@@ -28,6 +28,10 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://dms:dms@db:5432/dms
+      # Prozesse für Anfragen (#1309): Ohne DMS_PROZESSE wählt Ablago selbst – 2, wenn der Container mindestens
+      # 4 Kerne und 8 GB darf (Grenzen mit cpus und mem_limit), sonst 1; nie mehr, als DMS_DB_VERBINDUNGEN trägt.
+      # Zurück zu einem Prozess:
+      # DMS_PROZESSE: "1"
     volumes:
       - ./data/files:/data/files
       - ./data/geheim:/data/geheim

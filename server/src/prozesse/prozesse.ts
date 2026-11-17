@@ -1,8 +1,9 @@
 /**
  * Mehrere Prozesse für Anfragen (#745): `DMS_PROZESSE` – eine feste Zahl gilt, wie sie ist; `auto` = 2 Prozesse, wenn
  * der Container mindestens 4 Kerne und 8 GB Arbeitsspeicher darf, sonst 1 (#1259, {@link empfohleneProzesse}). Ohne
- * `DMS_PROZESSE` gilt bei dms-komplett `auto` (#1259: „dann kann es über den Container beschränkt werden, wie viel man
- * an Ressourcen freigibt“), beim Image `dms` mit eigener Datenbank weiter 1.
+ * `DMS_PROZESSE` gilt `auto` – bei dms-komplett seit #1259 („dann kann es über den Container beschränkt werden, wie
+ * viel man an Ressourcen freigibt“), beim Image `dms` mit eigener Datenbank seit #1309 nach derselben Regel. Weg zurück:
+ * `DMS_PROZESSE=1`.
  *
  * Aufbau mit `node:cluster`:
  * - Der **Hauptprozess** ist schlank (lädt nur diese Datei): Er startet die Prozesse, startet einen abgestürzten neu,
@@ -16,7 +17,7 @@
  *   Anfragen. Was dabei Hintergrundarbeit anstößt, geht als Meldung oder Aufruf an den Leiter ({@link Verbund}).
  *
  * Zustand zwischen Anfragen steht seit #744 in der Datenbank; Anmeldungen überstehen den Neustart eines Prozesses.
- * Mit einem Prozess (Vorgabe) gibt es keinen Hauptprozess: {@link einzeln} erledigt alles im eigenen Prozess.
+ * Mit einem Prozess gibt es keinen Hauptprozess: {@link einzeln} erledigt alles im eigenen Prozess.
  */
 import cluster, { type Worker } from 'node:cluster';
 import { randomBytes } from 'node:crypto';
@@ -42,7 +43,7 @@ export { SPEICHER_RESERVE };
 
 export interface ProzessEinstellung {
   anzahl: number;
-  /** `auto`: DMS_PROZESSE=auto oder – ohne DMS_PROZESSE – die Vorgabe von dms-komplett (dann `autoVorgabe`, #1259). */
+  /** `auto`: DMS_PROZESSE=auto oder – ohne DMS_PROZESSE – die Vorgabe (dann `autoVorgabe`; #1259, im Image `dms` seit #1309). */
   quelle: 'vorgabe' | 'umgebung' | 'auto';
   autoVorgabe?: boolean;
   /** Nutzbare Kerne und Arbeitsspeicher (Grenze des Containers, sonst des Rechners) – Grundlage der Empfehlung. */
@@ -158,8 +159,8 @@ export function prozesseAus(env: Record<string, string | undefined>, lies: Leser
       datenbankImContainer,
     };
   };
-  // Ohne DMS_PROZESSE (#1259): dms-komplett automatisch, das Image `dms` (eigene Datenbank) wie bisher mit einem.
-  if (!roh) return datenbankImContainer ? auto(true) : { anzahl: 1, quelle: 'vorgabe', kerne, speicher, herkunft, datenbankImContainer };
+  // Ohne DMS_PROZESSE: automatisch – dms-komplett seit #1259, das Image `dms` (eigene Datenbank) seit #1309.
+  if (!roh) return auto(true);
   if (roh.toLowerCase() === 'auto') return auto(false);
   const n = Number(roh);
   if (!Number.isInteger(n) || n < 1 || n > PROZESSE_MAX) {
@@ -793,7 +794,7 @@ class Leitung {
     process.on('SIGTERM', () => this.beendeAlle(0));
     process.on('SIGINT', () => this.beendeAlle(0));
     this.log.info(
-      `Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe von dms-komplett' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`,
+      `Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`,
       {
         kerne: e.kerne,
         speicherMb: e.speicher === null ? null : Math.round(e.speicher / MB),

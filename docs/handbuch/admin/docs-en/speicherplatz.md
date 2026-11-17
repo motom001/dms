@@ -64,7 +64,7 @@ Below the values is **Settings for many simultaneous requests** – only for vie
 
 | Line | Variable | allowed | Default |
 | --- | --- | --- | --- |
-| Processes for requests | `DMS_PROZESSE` | 1–16 or `auto` | `dms-komplett`: automatic (2 from 4 cores and 8 GB), image `dms`: 1 |
+| Processes for requests | `DMS_PROZESSE` | 1–16 or `auto` | automatic (2 from 4 cores and 8 GB), in both images (image `dms` since #1309) |
 | Workers for PDF and exports | `DMS_ARBEITER` | 0–16 | half of the cores, 1 to 4 |
 | Database connections (all processes together) | `DMS_DB_VERBINDUNGEN` | 2–100 | 10, 4 more for each further process |
 | Simultaneous requests at most | `DMS_MAX_ANFRAGEN` | 20–10,000 | 250 |
