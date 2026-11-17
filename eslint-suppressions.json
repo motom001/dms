@@ -1358,17 +1358,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Werkbank.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/werte.ts": {
     "complexity": {
       "count": 2

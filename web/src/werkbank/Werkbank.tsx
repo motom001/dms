@@ -1,77 +1,21 @@
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
-import { SuchePanel } from './SucheEinstellungen';
-import { useWoerter, WoerterListe, WoerterRechts } from './Woerter';
-import { RundgaengeListe, RundgaengeRechts, useRundgaenge } from './Rundgaenge';
-import { TippsListe, TippsRechts, useTippsWerkbank } from './TippsWerkbank';
 import { Symbol } from '../Symbol';
-import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
-import { RegionPanel, useRegion } from './Region';
-import { DatenEinstellungenPanel, useDatenEinstellungen } from './DatenEinstellungen';
-import { OrganisationPanel, useNutzung, useOrganisation } from './Organisation';
-import { SprachenPanel, useSprachen } from './Sprachen';
-import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
-import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
-import { DarfWegPanel, useDarfWeg } from './Archiv';
-import { AuskuenfteListe, AuskunftRechts, useDatenschutz } from './Datenschutz';
-import { LoeschkonzeptPanel } from './Loeschkonzept';
-import { LoeschprotokollPanel } from './Loeschprotokoll';
 import { PaketeListe, PaketLink, PaketePanel } from './Pakete';
 import { usePakete } from './paketeZustand';
-import { useVollexport, VollexportPanel } from './Vollexport';
-import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
-import { EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
-import { useWebdav, WebdavPanel } from './Webdav';
 import { AutomatisierungEditor, AutomatisierungenListe, automatisierungWarnungen, useAutomatisierungen } from './Automatisierungen';
 import { AussenZiele } from './AutomatisierungAussen';
-import { AblaufvorlageEditor, AblaufvorlagenListe, useAblaufvorlagen } from './Ablaufvorlagen';
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useKonto } from '../konto';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
-import { geheZu, Link } from '../ort';
-import {
-  abschnittUmleitung,
-  bereichName,
-  hatMitte,
-  inLeiste,
-  wartungsPlakette,
-  werkbankEbene,
-  werkbankUmleitung,
-  werkbankZurueck,
-} from '../../../shared/src/werkbankansicht';
+import { Link } from '../ort';
+import { hatMitte, inLeiste, wartungsPlakette, werkbankEbene, werkbankZurueck } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
-import { BenutzerDetail, BenutzerListe, BenutzerNeu, SystemkontoDetail, useBenutzer } from './Benutzer';
-import { BetriebPanel } from './Betrieb';
-import { useBetrieb } from './betriebZustand';
-import { SichtEditor, SichtenListe } from './Sichten';
-import { DatenbankAbschnitte, useDatenbank } from './Datenbank';
-import { ExterneDiensteAbschnitt, KiKostenAbschnitt, useExtern } from './ExterneDienste';
-import { DemoPanel } from './Demo';
-import { BeispielAblagePanel } from './BeispielAblage';
-import { DesignEditor, DesignListe } from './Designs';
-import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
-import { TechnikPanel, useTechnik } from './Technik';
-import { TresorPanel, useTresor } from './Verschluesselung';
-import { AufgabenListe, AufgabenPanel, useAufgaben } from './Aufgaben';
-import { AufgabenEmpfaengerBlock, useAufgabenEmpfaenger } from './AufgabenEmpfaenger';
-import { TexterkennungPanel, useTexterkennung, WartungPanel } from './Texterkennung';
 import { useHandbuch } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
-import { AnsichtPanel, useWerkbankAnsicht, type BereichZustand } from './Ansicht';
-import { UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation, type WerkbankEintrag } from './Uebersicht';
-import { useWartungsmodus, WartungsmodusPanel } from './Wartungsmodus';
-import { SicherungPanel, useSicherung } from './Sicherung';
-import { WiederherstellungPanel } from './Wiederherstellung';
-import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
-import { AnbindungPanel, useAnbindung } from './Anbindung';
-import { SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
-import { WerkzeugeHinweis } from './Werkzeuge';
-import { AuslastungAbschnitt, ErweiterungenHinweis, useSystemlast } from './Auslastung';
-import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
-import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
-import { istOffen } from '../../../shared/src/auskunft';
-import { useBeiWiederErreichbar } from '../erreichbar';
+import { AnsichtPanel, type BereichZustand } from './Ansicht';
+import { WerkbankNavigation } from './Uebersicht';
 import { gebietsschema } from '../../../shared/src/sprache';
 import {
   GeloeschteEintraege,
@@ -87,6 +31,10 @@ import {
 import { herkunftTyp, paketHerkunft, paketVonTyp, paketWahl, quellenTyp } from './listensuche';
 import { uebergeordneterTyp } from '../../../shared/src/teile';
 import { typName } from '../../../shared/src/beschriftung';
+import { useWerkbankSprung, useWerkbankZustaende1, useWerkbankZustaende2, useWerkbankZustaende3, useWiederLaden } from './rahmen/zustaende';
+import { benutzerInhalt, sichtenUndListen, uebersichtUndPflege, vorlagenUndDatenschutz, type Inhalt, type Kontext } from './rahmen/inhalt';
+import { einstellungen, postUndWartung, systemzustand } from './rahmen/inhalt-betrieb';
+import { leistenEintraege } from './rahmen/leiste';
 
 /**
  * Umgezogen (#717, #725): /werkbank/darfweg → aufbewahrung, /werkbank/suche → texterkennung#suche,
@@ -149,611 +97,39 @@ export function Werkbank({ teile }: { teile: string[] }) {
     pfad === 'ansicht' ||
     verwaltungsmodus.bereiche.includes(pfad) ||
     (pfad === 'loeschprotokoll' && verwaltungsmodus.bereiche.includes('loeschkonzept'));
-  const benutzer = useBenutzer();
-  const protokoll = useProtokoll(bereich === 'protokoll');
-  const datenbank = useDatenbank(bereich === 'systemzustand');
-  const externeDienste = useExtern(bereich === 'systemzustand');
-  const technik = useTechnik(bereich === 'systemzustand');
-  const betrieb = useBetrieb();
-  const tresor = useTresor(darf('verschluesselung'));
-  const papierkorb = usePapierkorb(true, bereich === 'papierkorb');
+  const z1 = useWerkbankZustaende1(bereich, darf);
   // Pakete: Installation über einen Link (?installieren=…) steht rechts, auch ohne gewähltes Paket.
   const installieren = bereich === 'pakete' && !id ? new URLSearchParams(location.search).get('installieren') : null;
-  const aufgabenFilter = filterAusAdresse(new URLSearchParams(location.search));
-  const aufgaben = useAufgaben(bereich === 'aufgaben', !!aufgabenFilter.erledigt);
-  const aufgabenEmpfaenger = useAufgabenEmpfaenger(bereich === 'benutzer');
-  const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
-  const woerter = useWoerter(bereich === 'woerter');
-  const uebersicht = useUebersicht();
-  const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
-  const wartungsmodus = useWartungsmodus(bereich === 'wartung');
-  const sicherung = useSicherung(bereich === 'sicherung');
-  const speicherplatz = useSpeicherplatz(bereich === 'systemzustand');
-  const systemlast = useSystemlast(bereich === 'systemzustand');
-  const eingang = useEingangsordner(bereich === 'eingangsordner');
-  const webdav = useWebdav(bereich === 'webdav');
   const automatisierungen = useAutomatisierungen(bereich === 'automatisierungen');
-  const ablaufvorlagen = useAblaufvorlagen(bereich === 'ablaufvorlagen');
-  const rundgaenge = useRundgaenge(bereich === 'rundgaenge');
-  const tipps = useTippsWerkbank(bereich === 'tipps');
-  const postfaecher = usePostfaecher(bereich === 'postfaecher');
-  const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
-  const stempel = useStempelVorlagenWerkbank(bereich === 'stempel');
-  const darfWeg = useDarfWeg(bereich === 'aufbewahrung');
-  // Vorgaben der Auskünfte stehen seit #1183 auf „Eigene Organisation“ – dort nur mit Recht auf die Datenschutz-Bereiche.
-  const datenschutzRecht = darf('auskuenfte') || darf('loeschkonzept');
-  const datenschutz = useDatenschutz(
-    bereich === 'auskuenfte' || bereich === 'loeschkonzept' || (bereich === 'organisation' && datenschutzRecht),
-  );
-  const vollexport = useVollexport(bereich === 'vollexport');
+  const z2 = useWerkbankZustaende2(bereich, darf);
   // Herkunft und Paketfilter (#978) in Mappentypen, Ansichten und Nummernkreisen – nur mit Recht auf die Pakete (#818),
   // sonst gilt die Kennung des Typs (`typ.paket`).
   const pakete = usePakete(
     bereich === 'pakete' ||
       (['typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen'].includes(bereich) && darf('pakete')),
   );
-  const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
-  const region = useRegion(bereich === 'region');
-  const daten = useDatenEinstellungen(bereich === 'daten');
-  const nutzung = useNutzung(bereich === 'organisation');
-  const organisation = useOrganisation(bereich === 'organisation');
-  const sprachen = useSprachen(bereich === 'sprachen');
-  const anbindung = useAnbindung(bereich === 'anbindung');
-  const ansicht = useWerkbankAnsicht();
-  // Zahlen links (#375): die des geladenen Bereichs, sonst die aus der Übersicht; nur > 0 anzeigen.
-  const uz = uebersicht.stand?.zahlen;
-  const zahl = (geladen: number | null | undefined, ersatz: number | null | undefined) => (geladen ?? ersatz) || undefined;
-  // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
-  useBeiWiederErreichbar(() => {
-    void uebersicht.laden();
-    const offen: Record<string, (() => Promise<unknown>) | undefined> = {
-      protokoll: protokoll.neu,
-      betrieb: betrieb.laden,
-      verschluesselung: tresor.laden,
-      papierkorb: papierkorb.laden,
-      aufgaben: aufgaben.laden,
-      texterkennung: ocr.laden,
-      woerter: woerter.laden,
-      wartung: async () => {
-        await ocr.laden();
-        await wartungsmodus.laden();
-      },
-      fehlermeldungen: meldungen.laden,
-      sicherung: sicherung.laden,
-      systemzustand: async () => {
-        await speicherplatz.laden();
-        await systemlast.laden();
-        await technik.laden();
-        await datenbank.laden();
-      },
-      anbindung: anbindung.laden,
-      benutzer: benutzer.laden,
-      webdav: webdav.laden,
-      automatisierungen: automatisierungen.laden,
-      ablaufvorlagen: ablaufvorlagen.laden,
-      rundgaenge: rundgaenge.laden,
-      tipps: tipps.laden,
-      auskuenfte: datenschutz.laden,
-      loeschkonzept: datenschutz.laden,
-      daten: daten.laden,
-    };
-    void offen[bereich]?.();
-  });
-  // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
-  useEffect(() => {
-    if (bereich === 'benutzer') void benutzer.laden();
-  }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps -- neu laden nur beim Wechsel von Bereich oder Eintrag
-  // Alte Direktlinks (#366): in Bereiche ohne Mitte → Seite, Eintrag aufgeklappt; /werkbank/stempel?offen=:id → /werkbank/stempel/:id (#990);
-  // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle.
-  const umleitung = werkbankUmleitung(bereich, id, location.search);
-  useEffect(() => {
-    if (umleitung) geheZu(umleitung, true);
-  }, [umleitung]);
-  // Umgezogene Abschnitte (#1184): /werkbank/loeschkonzept#loeschprotokoll → /werkbank/loeschprotokoll.
-  const abschnittNeu = abschnittUmleitung(bereich, location.hash.slice(1));
-  useEffect(() => {
-    if (abschnittNeu) geheZu(abschnittNeu, true);
-  }, [abschnittNeu]);
-  // Sprungmarke (#725): Zusammengelegte Bereiche stehen als Abschnitt auf einer Seite (z. B. /werkbank/wartung#wartungsmodus).
-  // Der Abschnitt erscheint oft erst nach dem Laden – kurz danach suchen.
-  const marke = location.hash.slice(1);
-  useEffect(() => {
-    if (!marke) return;
-    let n = 0;
-    const iv = setInterval(() => {
-      const el = document.getElementById(marke);
-      if (el) {
-        el.scrollIntoView({ block: 'start' });
-        clearInterval(iv);
-      } else if (++n > 30) clearInterval(iv);
-    }, 150);
-    return () => clearInterval(iv);
-  }, [bereich, marke]);
+  const z3 = useWerkbankZustaende3(bereich);
+  const z = { ...z1, automatisierungen, ...z2, pakete, ...z3 };
+  const { uebersicht, wartungsmodus, ansicht } = z;
+  useWiederLaden(bereich, z);
+  const umleitung = useWerkbankSprung(bereich, id, z.benutzer);
   // Hintergrundarbeit ruht nur im aktiven Wartungsmodus (#366: Hinweis bei Texterkennung und Volltext).
   const wartungAn = wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null) === 'an';
 
-  let liste: ReactNode = null;
-  let rechts: ReactNode = (
-    <div className="platzhalter">
-      <p>{t('werkbank.werkbank.waehle-in-der-liste')}</p>
-    </div>
-  );
+  const inhalt = inhaltVon({ bereich, id, d, z, installieren, wartungAn }, automatisierungen);
+  let liste = inhalt.liste;
+  let rechts = inhalt.rechts;
 
-  if (bereich === 'uebersicht') {
-    liste = <UebersichtListe u={uebersicht} />;
-    rechts = <UebersichtPanel u={uebersicht} />;
-  } else if (bereich === 'fehlermeldungen') {
-    liste = <FehlermeldungenListe z={meldungen} offen={id} />;
-    rechts = id ? (
-      <FehlermeldungDetail
-        key={id}
-        id={id}
-        z={meldungen}
-        neuLaden={async () => {
-          await meldungen.laden();
-          await uebersicht.laden();
-        }}
-      />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.werkbank.waehle-links-eine-meldung')}</p>
-      </div>
-    );
-  } else if (bereich === 'typen') {
-    liste = <TypenListe offen={id} pakete={pakete.stand?.installiert ?? []} />;
-    if (id === 'neu') {
-      // Mappentyp kopieren (#147): /werkbank/typen/neu?kopie=<id>
-      const kopie = new URLSearchParams(location.search).get('kopie');
-      const vorlage = kopie ? d.typ(kopie) : undefined;
-      rechts = <TypEditor key={`neu-${vorlage?.id ?? ''}`} vorlage={vorlage && !vorlage.system ? vorlage : undefined} />;
-    } else if (id) {
-      const eintrag = d.typ(id);
-      rechts = eintrag ? (
-        <TypEditor key={eintrag.id} typ={eintrag} />
-      ) : (
-        <div className="leer">
-          <p>{t('werkbank.werkbank.diesen-mappentyp-gibt-es')}</p>
-        </div>
-      );
-    } else if (!d.typen.length) {
-      rechts = (
-        <div className="platzhalter">
-          <p>
-            {tn('werkbank.werkbank.noch-keine-mappentypen-lege', {
-              link: (
-                <Link to="/werkbank/beispielablage" className="verweis">
-                  {t('werkbank.bereich.beispielablage.name')}
-                </Link>
-              ),
-            })}
-          </p>
-        </div>
-      );
-    }
-  } else if (bereich === 'sichten') {
-    liste = <SichtenListe offen={id} pakete={pakete.stand?.installiert ?? []} />;
-    rechts = id ? (
-      <SichtEditor key={`${id}-${d.sicht(id)?.geaendert ?? ''}`} id={id} />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.werkbank.waehle-links-eine-ansicht')}</p>
-      </div>
-    );
-  } else if (bereich === 'benutzer') {
-    liste = <BenutzerListe liste={benutzer.liste} offen={id} alltag={aufgabenEmpfaenger.stand?.benutzerId ?? null} />;
-    // Ohne Auswahl (#719): wer im Alltag die Aufgaben ohne Empfänger bekommt.
-    if (!id) rechts = <AufgabenEmpfaengerBlock z={aufgabenEmpfaenger} benutzer={benutzer.liste} />;
-    else if (id === 'neu') rechts = <BenutzerNeu key="neu" neuLaden={benutzer.laden} />;
-    else if (id?.startsWith('konto-')) rechts = <SystemkontoDetail key={id} id={id.slice(6)} />;
-    else if (id) {
-      const b = benutzer.liste.find((x) => x.id === id);
-      rechts = b ? (
-        <BenutzerDetail key={b.id} b={b} neuLaden={benutzer.laden} />
-      ) : benutzer.geladen ? (
-        <div className="leer">
-          <p>{t('werkbank.werkbank.diesen-benutzer-gibt-es')}</p>
-        </div>
-      ) : (
-        <p className="leise">{t('werkbank.werkbank.lade')}</p>
-      );
-    }
-  } else if (bereich === 'demo') {
-    rechts = <DemoPanel />;
-  } else if (bereich === 'beispielablage') {
-    rechts = <BeispielAblagePanel />;
-  } else if (bereich === 'designs') {
-    liste = <DesignListe offen={id} />;
-    rechts = id ? (
-      <DesignEditor key={id} id={id} />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.werkbank.waehle-ein-design-zum')}</p>
-      </div>
-    );
-  } else if (bereich === 'betrieb') {
-    rechts = <BetriebPanel b={betrieb} />;
-  } else if (bereich === 'aufgaben') {
-    liste = <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} />;
-    rechts = <AufgabenPanel z={aufgaben} id={id} />;
-  } else if (bereich === 'texterkennung') {
-    // Suche und Volltext (#725): Texterkennung, Tippfehler und gleichbedeutende Wörter. „Neue PDFs automatisch
-    // verkleinern“ steht seit #1190 im Systemzustand beim Speicherplatz.
-    rechts = (
-      <>
-        <TexterkennungPanel t={ocr} wartungAn={wartungAn} />
-        <SuchePanel />
-      </>
-    );
-  } else if (bereich === 'woerter') {
-    // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
-    liste = <WoerterListe z={woerter} offen={id} />;
-    rechts = <WoerterRechts z={woerter} id={id} />;
-  } else if (bereich === 'wartung') {
-    // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.
-    rechts = (
-      <>
-        <WartungsmodusPanel w={wartungsmodus} />
-        <WartungPanel t={ocr} wartungAn={wartungAn} abschnitt />
-      </>
-    );
-  } else if (bereich === 'sicherung') {
-    // Sicherung mit Wiederherstellen als Abschnitt (#725).
-    rechts = (
-      <>
-        <SicherungPanel z={sicherung} />
-        <WiederherstellungPanel abschnitt />
-      </>
-    );
-  } else if (bereich === 'anbindung') {
-    rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
-  } else if (bereich === 'region') {
-    rechts = <RegionPanel z={region} />;
-  } else if (bereich === 'daten') {
-    rechts = <DatenEinstellungenPanel z={daten} />;
-  } else if (bereich === 'organisation') {
-    // Nutzung und Eigene Organisation auf einer Seite (#1170).
-    rechts = (
-      <OrganisationPanel
-        z={organisation}
-        nutzung={nutzung}
-        datenschutz={datenschutzRecht ? datenschutz : null}
-        nachNutzung={() => void ansicht.laden()}
-      />
-    );
-  } else if (bereich === 'sprachen') {
-    rechts = <SprachenPanel z={sprachen} />;
-  } else if (bereich === 'anmeldeschutz') {
-    rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
-  } else if (bereich === 'pakete') {
-    liste = <PaketeListe z={pakete} offen={id} />;
-    rechts = installieren ? <PaketLink key={installieren} z={pakete} wert={installieren} /> : <PaketePanel z={pakete} id={id} />;
-  } else if (bereich === 'vollexport') {
-    rechts = <VollexportPanel z={vollexport} />;
-  } else if (bereich === 'aufbewahrung') {
-    rechts = <DarfWegPanel z={darfWeg} />;
-  } else if (bereich === 'auskuenfte') {
-    // Datenschutz-Auskünfte (#668): Liste in der Mitte, rechts Auskunft, Assistent („neu“) oder Einstellungen.
-    liste = <AuskuenfteListe z={datenschutz} offen={id} />;
-    rechts = <AuskunftRechts z={datenschutz} id={id} />;
-  } else if (bereich === 'loeschkonzept') {
-    rechts = <LoeschkonzeptPanel z={datenschutz} />;
-  } else if (bereich === 'loeschprotokoll') {
-    rechts = <LoeschprotokollPanel />;
-  } else if (bereich === 'nummernkreise') {
-    liste = <NummernkreiseListe z={nummernkreise} offen={id} pakete={pakete.stand?.installiert ?? []} />;
-    rechts = id ? (
-      <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.werkbank.waehle-links-einen-nummernkreis')}</p>
-      </div>
-    );
-  } else if (bereich === 'automatisierungen') {
-    liste = <AutomatisierungenListe z={automatisierungen} offen={id} pakete={pakete.stand?.installiert ?? []} />;
-    // Ziele nach außen (#671): eigene Seite rechts, neben der Liste.
-    rechts =
-      id === 'ziele' ? (
-        <AussenZiele nachher={() => void automatisierungen.laden()} />
-      ) : id ? (
-        <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} />
-      ) : (
-        <div className="platzhalter">
-          <p>{t('automatisierung.ui.waehlen')}</p>
-        </div>
-      );
-  } else if (bereich === 'ablaufvorlagen') {
-    // Automatisierungsvorlagen (#1044): dreiteilig wie die Automatisierungen.
-    const kennung = id ? decodeURIComponent(id) : undefined;
-    liste = <AblaufvorlagenListe z={ablaufvorlagen} offen={kennung} pakete={pakete.stand?.installiert ?? []} />;
-    rechts = kennung ? (
-      <AblaufvorlageEditor key={`${kennung}-${ablaufvorlagen.stand ? 1 : 0}`} z={ablaufvorlagen} kennung={kennung} />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('automatisierung.vorlage.ui.waehlen')}</p>
-      </div>
-    );
-  } else if (bereich === 'rundgaenge') {
-    // Rundgänge (#941): alle in der Mitte, rechts der gewählte (eigene als YAML zum Bearbeiten).
-    const schluessel = id ? decodeURIComponent(id) : undefined;
-    liste = <RundgaengeListe z={rundgaenge} offen={schluessel} />;
-    rechts = <RundgaengeRechts z={rundgaenge} schluessel={schluessel} />;
-  } else if (bereich === 'tipps') {
-    // Tipps (#942): alle in der Mitte, rechts das Formular.
-    const schluessel = id ? decodeURIComponent(id) : undefined;
-    liste = <TippsListe z={tipps} offen={schluessel} />;
-    rechts = <TippsRechts z={tipps} schluessel={schluessel} />;
-  } else if (bereich === 'stempel') {
-    // Dreiteilig seit #990: Vorlagen in der Mitte, rechts die gewählte mit Live-Vorschau (#799).
-    liste = <StempelListe z={stempel} offen={id} />;
-    rechts = id ? (
-      <StempelEditor key={`${id}-${stempel.liste ? 1 : 0}`} z={stempel} id={id} />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.stempel.waehle')}</p>
-      </div>
-    );
-  } else if (bereich === 'postfaecher') {
-    liste = <PostfaecherListe z={postfaecher} offen={id} />;
-    rechts = id ? (
-      <PostfachEditor key={`${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.werkbank.waehle-links-ein-postfach')}</p>
-      </div>
-    );
-  } else if (bereich === 'eingangsordner') {
-    rechts = <EingangsordnerPanel z={eingang} />;
-  } else if (bereich === 'webdav') {
-    rechts = <WebdavPanel z={webdav} />;
-  } else if (bereich === 'systemzustand') {
-    // Systemzustand (#725) nimmt Version und Updates (früher „Technik“) und die Auslastung der Datenbank auf.
-    rechts = (
-      <SpeicherplatzPanel
-        z={speicherplatz}
-        nachAenderung={() => {
-          void uebersicht.laden();
-          void wartungsmodus.laden();
-        }}
-        hinweise={<WerkzeugeHinweis werkzeuge={technik.u?.werkzeuge} pruefen={() => technik.laden(true)} />}
-        auslastung={
-          <>
-            <ErweiterungenHinweis liste={systemlast.stand?.erweiterungen} />
-            <AuslastungAbschnitt z={systemlast} />
-          </>
-        }
-        unten={
-          <>
-            <div id="datenbank">
-              <DatenbankAbschnitte z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} />
-            </div>
-            {/* Externe Dienste und KI-Kosten (#565). */}
-            <ExterneDiensteAbschnitt z={externeDienste} />
-            <KiKostenAbschnitt sichtbar nachAenderung={() => void externeDienste.laden()} />
-            <TechnikPanel t={technik} abschnitt />
-          </>
-        }
-      />
-    );
-  } else if (bereich === 'papierkorb') {
-    liste = <PapierkorbListe z={papierkorb} werkbank offen={id} />;
-    rechts = id ? (
-      <PapierkorbDetail key={id} id={id} werkbank />
-    ) : (
-      <div className="platzhalter">
-        <p>{t('werkbank.werkbank.waehle-links-eine-geloeschte')}</p>
-      </div>
-    );
-  } else if (bereich === 'verschluesselung') {
-    rechts = <TresorPanel t={tresor} />;
-  } else if (bereich === 'protokoll') {
-    liste = <ProtokollListe p={protokoll} offen={id} />;
-    rechts = <ProtokollDetail p={protokoll} nr={id} />;
-  }
-
-  // Reihenfolge und Gruppen wie in BEREICHE (#354); Namen aus der Sprachdatei (#473).
-  const n = bereichName;
-  const eintraege: WerkbankEintrag[] = [
-    { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
-    // Ablage aufbauen (#717)
-    { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
-    { pfad: 'beispielablage', name: n('beispielablage'), gruppe: 'ablage' },
-    { pfad: 'typen', name: n('typen'), gruppe: 'ablage', zahl: d.typen.length },
-    { pfad: 'sichten', name: n('sichten'), gruppe: 'ablage', zahl: d.sichten.length || undefined },
-    { pfad: 'nummernkreise', name: n('nummernkreise'), gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },
-    {
-      pfad: 'automatisierungen',
-      name: n('automatisierungen'),
-      gruppe: 'ablage',
+  const eintraege = leistenEintraege({
+    d,
+    z,
+    uz: uebersicht.stand?.zahlen,
+    wartungAn,
+    automatisierung: {
       zahl: automatisierungen.stand?.automatisierungen.length || undefined,
-      warn: automatisierungWarnungen(automatisierungen.stand) || uebersicht.stand?.automatisierungen?.angehalten.length ? '!' : undefined,
-      warnTitel: t('automatisierung.ui.leiste'),
+      warn: automatisierungWarnungen(automatisierungen.stand),
     },
-    {
-      pfad: 'ablaufvorlagen',
-      name: n('ablaufvorlagen'),
-      gruppe: 'ablage',
-      zahl: ablaufvorlagen.stand?.vorlagen.length || undefined,
-      warn: (ablaufvorlagen.stand?.angehalten.length ?? uebersicht.stand?.ablaeufe?.angehalten.length) ? '!' : undefined,
-      warnTitel: t('automatisierung.vorlage.ui.leiste'),
-    },
-    { pfad: 'rundgaenge', name: n('rundgaenge'), gruppe: 'ablage', zahl: rundgaenge.stand?.rundgaenge.length || undefined },
-    { pfad: 'tipps', name: n('tipps'), gruppe: 'ablage', zahl: tipps.stand?.tipps.length || undefined },
-    // Benutzer und Sicherheit
-    {
-      pfad: 'benutzer',
-      name: n('benutzer'),
-      gruppe: 'benutzer',
-      zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer),
-    },
-    {
-      pfad: 'verschluesselung',
-      name: n('verschluesselung'),
-      gruppe: 'benutzer',
-      warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined,
-    },
-    ...(d.typen.some((x) => x.archiv)
-      ? [{ pfad: 'aufbewahrung', name: n('aufbewahrung'), gruppe: 'benutzer' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }]
-      : []),
-    { pfad: 'stempel', name: n('stempel'), gruppe: 'benutzer', zahl: stempel.liste?.length || undefined },
-    // Datenschutz (#1184): drei Einträge, nur bei beruflicher Nutzung in der Leiste (`inLeiste` unten).
-    {
-      pfad: 'auskuenfte',
-      name: n('auskuenfte'),
-      gruppe: 'datenschutz',
-      zahl: datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length || undefined,
-    },
-    {
-      pfad: 'loeschkonzept',
-      name: n('loeschkonzept'),
-      gruppe: 'datenschutz',
-      warn: datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined,
-      warnTitel: t('werkbank.loeschkonzept.personendaten'),
-    },
-    { pfad: 'loeschprotokoll', name: n('loeschprotokoll'), gruppe: 'datenschutz' },
-    // Post und Eingänge
-    {
-      pfad: 'postfaecher',
-      name: n('postfaecher'),
-      gruppe: 'post',
-      zahl: zahl(postfaecher.liste?.length, uz?.postfaecher),
-      warn:
-        uebersicht.stand?.postfachAnmeldung?.length ||
-        postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok'))
-          ? '!'
-          : undefined,
-      warnTitel: uebersicht.stand?.postfachAnmeldung?.length
-        ? t('werkbank.leiste.postfach.anmeldung')
-        : t('werkbank.leiste.postfach.abruf'),
-    },
-    ...(eingang.stand?.vorhanden
-      ? [
-          {
-            pfad: 'eingangsordner',
-            name: n('eingangsordner'),
-            gruppe: 'post' as const,
-            warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined,
-            warnTitel: t('werkbank.leiste.eingangsordner'),
-          },
-        ]
-      : []),
-    {
-      pfad: 'webdav',
-      name: n('webdav'),
-      gruppe: 'post',
-      warn: webdav.stand?.einstellung.aktiv ? t('werkbank.leiste.an') : undefined,
-      warnTitel: t('werkbank.leiste.webdav'),
-    },
-    {
-      pfad: 'texterkennung',
-      name: n('texterkennung'),
-      gruppe: 'post',
-      warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined,
-      warnTitel: t('werkbank.leiste.texterkennung'),
-    },
-    { pfad: 'woerter', name: n('woerter'), gruppe: 'post', zahl: woerter.gruppen?.length || undefined },
-    // Daten sichern
-    {
-      pfad: 'sicherung',
-      name: n('sicherung'),
-      gruppe: 'sichern',
-      warn:
-        uebersicht.stand?.sicherung &&
-        (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt))
-          ? '!'
-          : undefined,
-      warnTitel: t('werkbank.leiste.sicherung'),
-    },
-    { pfad: 'vollexport', name: n('vollexport'), gruppe: 'sichern' },
-    {
-      pfad: 'papierkorb',
-      name: n('papierkorb'),
-      gruppe: 'sichern',
-      zahl: zahl(
-        papierkorb.eintraege ? papierkorb.eintraege.length + papierkorb.dokumente.length : undefined,
-        uebersicht.stand?.papierkorb.anzahl,
-      ),
-    },
-    { pfad: 'daten', name: n('daten'), gruppe: 'sichern' },
-    // Einstellungen
-    {
-      pfad: 'betrieb',
-      name: n('betrieb'),
-      gruppe: 'einstellungen',
-      warn: uebersicht.stand && !uebersicht.stand.mail ? t('werkbank.leiste.aus') : undefined,
-      warnTitel: t('werkbank.leiste.mail'),
-    },
-    { pfad: 'region', name: n('region'), gruppe: 'einstellungen' },
-    { pfad: 'sprachen', name: n('sprachen'), gruppe: 'einstellungen' },
-    // Eigene Organisation (#995) mit der Nutzung (#1170): Notizen an die Verwaltung (Merkmal oder Verantwortliche geändert).
-    {
-      pfad: 'organisation',
-      name: n('organisation'),
-      gruppe: 'einstellungen',
-      warn: organisation.stand?.neu ? String(organisation.stand.neu) : undefined,
-      warnTitel: t('werkbank.organisation.notizen.titel'),
-    },
-    {
-      pfad: 'aufgaben',
-      name: n('aufgaben'),
-      gruppe: 'einstellungen',
-      zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen),
-      // #798: Aufgaben bei Personen ohne Leserecht.
-      warn: uebersicht.stand?.ohneLeserecht ? '!' : undefined,
-      warnTitel: t('werkbank.ohne-leserecht.titel'),
-    },
-    { pfad: 'anmeldeschutz', name: n('anmeldeschutz'), gruppe: 'einstellungen', zahl: anmeldeschutz.stand?.gesperrt.length || undefined },
-    { pfad: 'designs', name: n('designs'), gruppe: 'einstellungen', zahl: d.designs.length || undefined },
-    {
-      pfad: 'anbindung',
-      name: n('anbindung'),
-      gruppe: 'einstellungen',
-      warn:
-        uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig)
-          ? '!'
-          : undefined,
-      warnTitel: t('werkbank.leiste.anbindung'),
-    },
-    // Wartung und Fehlersuche
-    {
-      pfad: 'systemzustand',
-      name: n('systemzustand'),
-      gruppe: 'wartung',
-      ...(uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok'
-        ? {
-            warn:
-              uebersicht.stand.speicherplatz.zustand === 'grenze'
-                ? t('werkbank.leiste.speicher.voll')
-                : t('werkbank.leiste.speicher.knapp'),
-            warnTitel: t('werkbank.leiste.speicher'),
-          }
-        : // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
-          systemlast.stand?.warnung.length || uebersicht.stand?.auslastung?.length
-          ? { warn: t('systemzustand.warnung.plakette'), warnTitel: t('systemzustand.warnung.leiste') }
-          : {}),
-    },
-    {
-      pfad: 'protokoll',
-      name: n('protokoll'),
-      gruppe: 'wartung',
-      warn: protokoll.debug?.an ? t('werkbank.leiste.debug') : undefined,
-      warnTitel: t('werkbank.leiste.debug.titel'),
-    },
-    {
-      pfad: 'fehlermeldungen',
-      name: n('fehlermeldungen'),
-      gruppe: 'wartung',
-      warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined,
-      warnTitel: t('werkbank.leiste.fehlermeldungen'),
-    },
-    {
-      pfad: 'wartung',
-      name: n('wartung'),
-      gruppe: 'wartung',
-      warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null),
-      warnTitel: wartungAn ? t('werkbank.leiste.wartung.an') : t('werkbank.leiste.wartung.angekuendigt'),
-    },
-    { pfad: 'demo', name: n('demo'), gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },
-  ];
+  });
   const zustand: Record<string, BereichZustand> = Object.fromEntries(eintraege.map((e) => [e.pfad, { warn: e.warn }]));
   if (bereich === 'ansicht') {
     rechts = <AnsichtPanel z={ansicht} zustand={zustand} />;
@@ -795,6 +171,97 @@ export function Werkbank({ teile }: { teile: string[] }) {
       </section>
     </Dreiteilung>
   );
+}
+
+/**
+ * Inhalt des offenen Bereichs: je Gruppe eine Funktion (rahmen/inhalt*.tsx), Mappentypen, Pakete und Automatisierungen
+ * hier – die Liste der Mappentypen steht in dieser Datei, Pakete und Automatisierungen werden hier eingebunden.
+ * Ohne Inhalt rechts: „Wähle in der Liste“.
+ */
+function inhaltVon(k: Kontext, automatisierungen: ReturnType<typeof useAutomatisierungen>): { liste: ReactNode; rechts: ReactNode } {
+  const inhalt =
+    typenInhalt(k) ??
+    paketeUndAutomatisierungen(k, automatisierungen) ??
+    uebersichtUndPflege(k) ??
+    sichtenUndListen(k) ??
+    benutzerInhalt(k) ??
+    vorlagenUndDatenschutz(k) ??
+    einstellungen(k) ??
+    postUndWartung(k) ??
+    systemzustand(k);
+  return {
+    liste: inhalt?.liste ?? null,
+    rechts: inhalt?.rechts ?? (
+      <div className="platzhalter">
+        <p>{t('werkbank.werkbank.waehle-in-der-liste')}</p>
+      </div>
+    ),
+  };
+}
+
+/** Mappentypen (#978): Liste in der Mitte, rechts neu (auch als Kopie, #147), ein Typ oder der Weg zur Beispiel-Ablage. */
+function typenInhalt(k: Kontext): Inhalt | undefined {
+  const { bereich, id, d } = k;
+  const { pakete } = k.z;
+  if (bereich !== 'typen') return undefined;
+  let rechts: ReactNode;
+  const liste = <TypenListe offen={id} pakete={pakete.stand?.installiert ?? []} />;
+  if (id === 'neu') {
+    // Mappentyp kopieren (#147): /werkbank/typen/neu?kopie=<id>
+    const kopie = new URLSearchParams(location.search).get('kopie');
+    const vorlage = kopie ? d.typ(kopie) : undefined;
+    rechts = <TypEditor key={`neu-${vorlage?.id ?? ''}`} vorlage={vorlage && !vorlage.system ? vorlage : undefined} />;
+  } else if (id) {
+    const eintrag = d.typ(id);
+    rechts = eintrag ? (
+      <TypEditor key={eintrag.id} typ={eintrag} />
+    ) : (
+      <div className="leer">
+        <p>{t('werkbank.werkbank.diesen-mappentyp-gibt-es')}</p>
+      </div>
+    );
+  } else if (!d.typen.length) {
+    rechts = (
+      <div className="platzhalter">
+        <p>
+          {tn('werkbank.werkbank.noch-keine-mappentypen-lege', {
+            link: (
+              <Link to="/werkbank/beispielablage" className="verweis">
+                {t('werkbank.bereich.beispielablage.name')}
+              </Link>
+            ),
+          })}
+        </p>
+      </div>
+    );
+  }
+  return { liste, rechts };
+}
+
+/** Pakete (Installation über einen Link) und Automatisierungen mit den Zielen nach außen (#671). */
+function paketeUndAutomatisierungen(k: Kontext, automatisierungen: ReturnType<typeof useAutomatisierungen>): Inhalt | undefined {
+  const { bereich, id, installieren } = k;
+  const { pakete } = k.z;
+  let liste: ReactNode;
+  let rechts: ReactNode;
+  if (bereich === 'pakete') {
+    liste = <PaketeListe z={pakete} offen={id} />;
+    rechts = installieren ? <PaketLink key={installieren} z={pakete} wert={installieren} /> : <PaketePanel z={pakete} id={id} />;
+  } else if (bereich === 'automatisierungen') {
+    liste = <AutomatisierungenListe z={automatisierungen} offen={id} pakete={pakete.stand?.installiert ?? []} />;
+    // Ziele nach außen (#671): eigene Seite rechts, neben der Liste.
+    rechts =
+      id === 'ziele' ? (
+        <AussenZiele nachher={() => void automatisierungen.laden()} />
+      ) : id ? (
+        <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} />
+      ) : (
+        <div className="platzhalter">
+          <p>{t('automatisierung.ui.waehlen')}</p>
+        </div>
+      );
+  } else return undefined;
+  return { liste, rechts };
 }
 
 /**
