@@ -220,7 +220,12 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
 }
 
 export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, x, system, pakete, nf, ocr } = k;
+  return [...ansichtRouten(k), ...uebersichtRouten(k), ...meldungenRouten(k), ...systemuebersichtRouten(k)];
+}
+
+/** Ansicht der Werkbank (#281), Merkmale der Ablage (#1032) und wer gerade im Verwaltungsmodus ist (#921). */
+function ansichtRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x } = k;
   return [
     // Ansicht der Werkbank (#281): für alle und je Administrator.
     {
@@ -276,6 +281,13 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       still: true,
       handler: async (a) => ok(await konten.andereImVerwaltungsmodus(ich(a))),
     },
+  ];
+}
+
+/** Übersicht als Startseite der Werkbank (#68). */
+function uebersichtRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x, system } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/werkbank/uebersicht',
@@ -326,91 +338,123 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
             version: sys.dms,
             bestand: 'fehler' in sys.datenbank ? null : sys.datenbank,
             fehlermeldungen: x.fehlermeldungen ? await sicher(() => x.fehlermeldungen!.offen()) : null,
-            // Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind.
-            notfallzugaenge: x.notfall ? ((await sicher(() => x.notfall!.offen())) ?? []) : [],
-            // Notfallcode benutzt (#815): bis jemand mit „Gesamte Verwaltung“ den Hinweis als gelesen markiert.
-            notfallcodeBenutzt: x.notfallcode
-              ? ((await sicher(() => x.notfallcode!.offen()))?.map((n) => ({
-                  id: n.id,
-                  benutzerId: n.benutzerId,
-                  name: n.name,
-                  am: n.am,
-                })) ?? [])
-              : [],
-            // Zweite Person mit Verwaltungsrecht empfehlen (#821, Konzept Punkt 7): nach der Einrichtung, solange nur eine
-            // Person verwalten darf und niemand „Nein, danke“ gewählt hat.
-            zweitePerson:
-              (await sicher(
-                async () =>
-                  !(await dienst.kern.einstellungen?.lies(ZWEITE_ABGELEHNT)) &&
-                  !(x.einrichtung && (await x.einrichtung.stand()).offen) &&
-                  (await konten.listeBenutzer()).filter((p) => istPerson(p) && p.aktiv && darfVerwalten(p)).length === 1,
-              )) ?? false,
-            wartung: x.wartung?.oeffentlich() ?? null,
-            // Sicherung (#105): fehlgeschlagen, zu alt, Speicherort, Notfallblatt.
-            sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
-            // Export-Ordner (#797): liegt im Sicherungsordner; Exporte beim Update aus dem Sicherungsordner verschoben.
-            exporte: x.exporte
-              ? {
-                  pfad: x.exporte.pfad,
-                  imSicherungsordner: x.exporte.imSicherungsordner,
-                  umzug: (await sicher(() => umzugHinweis(dienst.kern.einstellungen))) ?? null,
-                }
-              : null,
-            // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
-            speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
-            // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
-            auslastung: x.systemlast?.warnung() ?? [],
-            // Engpässe (#544): Wartezeit, Verbindungen, Arbeiter, Überlast – je mit der Variable.
-            engpaesse: grenzenUndEngpaesse(x).engpaesse,
-            // Erweiterungen der Suche (#562): fehlend oder in einem Schema, das eine Wiederherstellung löscht.
-            erweiterungen: x.erweiterungen ? ((await sicher(() => x.erweiterungen!()))?.filter((e) => e.zustand !== 'ok') ?? []) : [],
-            // Je Variable mit Grund (#478).
-            variablen: ueberfluessigeVariablen({
-              ordner: x.ordner?.ueberfluessig,
-              datenbank: anb?.umgebung === 'gleich',
-              haushalt: !!(x.mandantHinweis && process.env.HAUSHALT_ID),
-            }),
-            // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119); dms-komplett ohne Volume
-            // für /data/postgres (#943): Die Datenbank ginge beim nächsten Update verloren.
-            anbindung: anb ? { umgebung: anb.umgebung, neustartNoetig: anb.neustartNoetig, ohneVolume: anb.ohneVolume } : null,
-            // Beispiel-Ablage (#988): Zahl der Beispiel-Mappen aus Paketen – die Übersicht kennzeichnet sie, bis sie weg sind.
-            beispielablage:
-              (await sicher(async () => (await dienst.kern.repo.listePakete()).reduce((n, p) => n + (p.beispielMappen?.length ?? 0), 0))) ??
-              0,
-            // DMS_LASTTEST in einer echten Installation (#612): nicht gestartet, das DMS läuft normal.
-            lasttestAbbruch: x.lasttestAbbruch?.() ?? null,
-            einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,
-            // Automatisierungen (#674): fehlgeschlagene Läufe und angehaltene Automatisierungen.
-            automatisierungen: x.automatisierungen ? await sicher(() => x.automatisierungen!.warnungen()) : null,
-            // Mappen-Abläufe (#1044): angehalten, weil die Person die Mappe nicht mehr lesen darf, deaktiviert ist …
-            ablaeufe: await sicher(() => dienst.ablaeufe.warnungen()),
-            // Pflicht-Einstellungen eines Pakets fehlen (#405: im Ablauf „später ausfüllen“) – Aufgabe für den Administrator.
-            paketeEinstellungen:
-              (await sicher(() => pakete.installierte()))?.filter((p) => p.einstellungenNoetig).map((p) => ({ id: p.id, name: p.name })) ??
-              [],
-            // KI-Dienste (#796): nach dem Update einmal sagen, dass sich Mappentypen jetzt ausschließen lassen (nur mit KI-Paketen).
-            kiTypen:
-              (await sicher(async () => {
-                const k = await dienst.ki.kiUebersicht();
-                return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null;
-              })) ?? null,
-            // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
-            zahlen: await werkbankZahlen({
-              nummernkreise: () => dienst.nummernkreise.listeNummernkreise(),
-              pakete: () => pakete.installierte(),
-              benutzer: () => konten.listeBenutzer(),
-              postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
-              darfWeg: () => dienst.mappenArchiv.darfWeg(),
-            }),
-            // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
-            postfachAnmeldung: x.postfaecher ? ((await sicher(() => x.postfaecher!.anmeldungFehlt())) ?? []) : [],
-            // Bewusst akzeptierte Meldungen (#816): wer, wann, Begründung; die Übersicht stellt sie unten zusammen.
-            akzeptiert: (await sicher(() => akzeptierteMeldungen(dienst.kern.einstellungen))) ?? {},
+            ...(await uebersichtHinweise(k, sicher)),
+            ...(await uebersichtBetrieb(k, sicher, anb)),
           }),
         );
       },
     },
+  ];
+}
+
+/** Lesen, bei dem ein Fehler `null` ergibt (Übersicht der Werkbank). */
+type Sicher = <T>(f: () => Promise<T>) => Promise<T | null>;
+type Anbindungsstand = Awaited<ReturnType<NonNullable<RoutenKontext['x']['anbindung']>['stand']>>;
+
+/**
+ * Hinweise der Übersicht der Werkbank (#68; #1278 aus dem Handler gelöst): Notfallzugänge und Notfallcode, zweite Person
+ * mit Verwaltungsrecht, Wartung, Sicherung, Exporte, Speicherplatz, Auslastung, Engpässe und Erweiterungen der Suche – in
+ * derselben Reihenfolge gelesen wie vorher an Ort und Stelle.
+ */
+async function uebersichtHinweise(k: RoutenKontext, sicher: Sicher) {
+  const { dienst, konten, x } = k;
+  return {
+    // Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind.
+    notfallzugaenge: x.notfall ? ((await sicher(() => x.notfall!.offen())) ?? []) : [],
+    // Notfallcode benutzt (#815): bis jemand mit „Gesamte Verwaltung“ den Hinweis als gelesen markiert.
+    notfallcodeBenutzt: x.notfallcode
+      ? ((await sicher(() => x.notfallcode!.offen()))?.map((n) => ({
+          id: n.id,
+          benutzerId: n.benutzerId,
+          name: n.name,
+          am: n.am,
+        })) ?? [])
+      : [],
+    // Zweite Person mit Verwaltungsrecht empfehlen (#821, Konzept Punkt 7): nach der Einrichtung, solange nur eine
+    // Person verwalten darf und niemand „Nein, danke“ gewählt hat.
+    zweitePerson:
+      (await sicher(
+        async () =>
+          !(await dienst.kern.einstellungen?.lies(ZWEITE_ABGELEHNT)) &&
+          !(x.einrichtung && (await x.einrichtung.stand()).offen) &&
+          (await konten.listeBenutzer()).filter((p) => istPerson(p) && p.aktiv && darfVerwalten(p)).length === 1,
+      )) ?? false,
+    wartung: x.wartung?.oeffentlich() ?? null,
+    // Sicherung (#105): fehlgeschlagen, zu alt, Speicherort, Notfallblatt.
+    sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
+    // Export-Ordner (#797): liegt im Sicherungsordner; Exporte beim Update aus dem Sicherungsordner verschoben.
+    exporte: x.exporte
+      ? {
+          pfad: x.exporte.pfad,
+          imSicherungsordner: x.exporte.imSicherungsordner,
+          umzug: (await sicher(() => umzugHinweis(dienst.kern.einstellungen))) ?? null,
+        }
+      : null,
+    // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
+    speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
+    // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
+    auslastung: x.systemlast?.warnung() ?? [],
+    // Engpässe (#544): Wartezeit, Verbindungen, Arbeiter, Überlast – je mit der Variable.
+    engpaesse: grenzenUndEngpaesse(x).engpaesse,
+    // Erweiterungen der Suche (#562): fehlend oder in einem Schema, das eine Wiederherstellung löscht.
+    erweiterungen: x.erweiterungen ? ((await sicher(() => x.erweiterungen!()))?.filter((e) => e.zustand !== 'ok') ?? []) : [],
+  };
+}
+
+/**
+ * Betrieb in der Übersicht der Werkbank (#68; #1278 aus dem Handler gelöst): Variablen, Anbindung, Beispiel-Ablage,
+ * Automatisierungen, Abläufe, Pakete, Zahlen, Postfächer und akzeptierte Meldungen – in derselben Reihenfolge wie vorher.
+ */
+async function uebersichtBetrieb(k: RoutenKontext, sicher: Sicher, anb: Anbindungsstand | null) {
+  const { dienst, konten, x, pakete } = k;
+  return {
+    // Je Variable mit Grund (#478).
+    variablen: ueberfluessigeVariablen({
+      ordner: x.ordner?.ueberfluessig,
+      datenbank: anb?.umgebung === 'gleich',
+      haushalt: !!(x.mandantHinweis && process.env.HAUSHALT_ID),
+    }),
+    // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119); dms-komplett ohne Volume
+    // für /data/postgres (#943): Die Datenbank ginge beim nächsten Update verloren.
+    anbindung: anb ? { umgebung: anb.umgebung, neustartNoetig: anb.neustartNoetig, ohneVolume: anb.ohneVolume } : null,
+    // Beispiel-Ablage (#988): Zahl der Beispiel-Mappen aus Paketen – die Übersicht kennzeichnet sie, bis sie weg sind.
+    beispielablage:
+      (await sicher(async () => (await dienst.kern.repo.listePakete()).reduce((n, p) => n + (p.beispielMappen?.length ?? 0), 0))) ?? 0,
+    // DMS_LASTTEST in einer echten Installation (#612): nicht gestartet, das DMS läuft normal.
+    lasttestAbbruch: x.lasttestAbbruch?.() ?? null,
+    einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,
+    // Automatisierungen (#674): fehlgeschlagene Läufe und angehaltene Automatisierungen.
+    automatisierungen: x.automatisierungen ? await sicher(() => x.automatisierungen!.warnungen()) : null,
+    // Mappen-Abläufe (#1044): angehalten, weil die Person die Mappe nicht mehr lesen darf, deaktiviert ist …
+    ablaeufe: await sicher(() => dienst.ablaeufe.warnungen()),
+    // Pflicht-Einstellungen eines Pakets fehlen (#405: im Ablauf „später ausfüllen“) – Aufgabe für den Administrator.
+    paketeEinstellungen:
+      (await sicher(() => pakete.installierte()))?.filter((p) => p.einstellungenNoetig).map((p) => ({ id: p.id, name: p.name })) ?? [],
+    // KI-Dienste (#796): nach dem Update einmal sagen, dass sich Mappentypen jetzt ausschließen lassen (nur mit KI-Paketen).
+    kiTypen:
+      (await sicher(async () => {
+        const k = await dienst.ki.kiUebersicht();
+        return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null;
+      })) ?? null,
+    // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
+    zahlen: await werkbankZahlen({
+      nummernkreise: () => dienst.nummernkreise.listeNummernkreise(),
+      pakete: () => pakete.installierte(),
+      benutzer: () => konten.listeBenutzer(),
+      postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
+      darfWeg: () => dienst.mappenArchiv.darfWeg(),
+    }),
+    // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
+    postfachAnmeldung: x.postfaecher ? ((await sicher(() => x.postfaecher!.anmeldungFehlt())) ?? []) : [],
+    // Bewusst akzeptierte Meldungen (#816): wer, wann, Begründung; die Übersicht stellt sie unten zusammen.
+    akzeptiert: (await sicher(() => akzeptierteMeldungen(dienst.kern.einstellungen))) ?? {},
+  };
+}
+
+/** Im Verwaltungsmodus angesehen (#820), Meldungen akzeptieren (#816) und Hinweise abschließen (#821, #815). */
+function meldungenRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x, nf } = k;
+  return [
     // Im Verwaltungsmodus angesehen (#820): Person, Mappe, Zeit – nur für „Gesamte Verwaltung“ (verwaltungsbereiche.ts).
     {
       methode: 'GET',
@@ -470,6 +514,13 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         return leer;
       },
     },
+  ];
+}
+
+/** Systemübersicht der Werkbank mit Werkzeugen (#1189). */
+function systemuebersichtRouten(k: RoutenKontext): Route[] {
+  const { x, system, ocr } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/werkbank/system',
