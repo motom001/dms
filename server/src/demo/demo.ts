@@ -414,9 +414,34 @@ export async function erzeugeDemo(
   const beginn = Date.now();
   const o: DemoOptionen =
     typeof eingabe === 'number' || typeof eingabe === 'string' ? { anzahl: pruefeAnzahl(eingabe) } : pruefeDemoOptionen(eingabe);
-  const n = o.anzahl;
   z = new Zufall(o.startwert);
   heute = o.startwert ? Date.UTC(2026, 0, 1) : Date.now();
+  const typen = await demoTypen(dienst, o, platz);
+  const ziel = verteilung(typen, o.anzahl);
+  const lauf = new MappenLauf(
+    dienst,
+    benutzerId,
+    fortschritt,
+    [...ziel.values()].reduce((a, b) => a + b, 0),
+  );
+  await lauf.ladeVorhandene();
+  lauf.beginne();
+  for (const t of typen) await lauf.erzeugeTyp(t, ziel.get(t.id)!, !!o.dokumente && dokumentRegister(t).length > 0);
+  await lauf.schreibe();
+  // Weniger als bestellt (#711): sofort zeigen, nicht erst nach den Dokumenten – kein Haken, sondern „übersprungen“.
+  const { erzeugt, uebersprungen, fertig: mappen, mappenZiel } = lauf;
+  if (uebersprungen.length)
+    fortschritt(mappen, mappenZiel, 'mappen', { uebersprungen: mappenZiel - mappen, gruende: uebersprungen.map(uebersprungenText) });
+  // Statistik nach dem Massen-Einfügen (#367), sonst plant PostgreSQL mit veralteten Zahlen.
+  if (mappen) await dienst.sichten.aktualisiereStatistik();
+  const ergebnis: DemoErgebnis = { erzeugt, uebersprungen, gesamt: mappen, startwert: z.startwert, dauerMs: 0, dokumente: null };
+  if (o.dokumente) await erzeugeDokumente(lauf, o.dokumente, ergebnis, platz);
+  ergebnis.dauerMs = Date.now() - beginn;
+  return ergebnis;
+}
+
+/** Mappentypen in der Reihenfolge der Verweise (ohne Systemtypen) – und vorab: Grenze je Lauf und freier Platz. */
+async function demoTypen(dienst: Dienst, o: DemoOptionen, platz?: DemoPlatz): Promise<Mappentyp[]> {
   // Benutzer und Rollen pflegt das System; Demo-Mappen dürfen aber auf sie verweisen.
   const typen = reihenfolge((await dienst.mappentypen.listeTypen()).filter((t) => !t.system));
   if (!typen.length) throw new Fachfehler(409, 'Es gibt noch keine Mappentypen. Lege zuerst welche an oder lade die Beispiele.');
@@ -434,191 +459,259 @@ export async function erzeugeDemo(
         `Zu wenig Speicherplatz: Die Dokumente brauchen etwa ${gb(s.dokumente?.bytes ?? 0)}, frei sind ${gb(s.frei ?? 0)}, mindestens frei bleiben müssen ${gb(s.mindest)} (Sicherung und Speicherplatz-Grenze).`,
       );
   }
+  return typen;
+}
 
-  const ziel = verteilung(typen, n);
-  const mappenZiel = [...ziel.values()].reduce((a, b) => a + b, 0);
+/** Eine Demo-Mappe mit Dokument-Register: Für sie entstehen danach wahlweise Dokumente. */
+interface MitDokumenten {
+  id: string;
+  t: Mappentyp;
+  werte: Werte;
+  titel: string;
+}
 
-  // Schlank laden (#248): Id, Typ, Titel – Werte nur für eindeutige Felder.
-  const vorhanden = await dienst.mappen.mappenKurz();
-  const pools = new Map<string, string[]>();
-  const typVon = new Map<string, string>();
-  const titel = new Map<string, string>();
-  for (const m of vorhanden) {
-    (pools.get(m.typId) ?? pools.set(m.typId, []).get(m.typId)!).push(m.id);
-    typVon.set(m.id, m.typId);
-    titel.set(m.id, m.titel ?? '');
+/** Ein Versuch für eine Mappe: Werte, ein Fehler der Prüfung (neuer Versuch) oder unmöglich (Pflichtfeld ohne Wert). */
+type Versuch = { werte: Werte } | { fehler: string } | { unmoeglich: string };
+
+/**
+ * Die Mappen eines Laufs: vorhandene und neue Mappen als Ziele für Verweise (Pools, Typ, Titel), das Paket, das als
+ * Nächstes geschrieben wird (#367: 250 Mappen je Paket, danach nachgeben), und was entstanden bzw. übersprungen ist.
+ */
+class MappenLauf {
+  readonly pools = new Map<string, string[]>();
+  readonly typVon = new Map<string, string>();
+  readonly titel = new Map<string, string>();
+  readonly erzeugt: Record<string, number> = {};
+  readonly uebersprungen: DemoErgebnis['uebersprungen'] = [];
+  readonly mitDokumenten: MitDokumenten[] = [];
+  fertig = 0;
+  private paket: NeueMappe[] = [];
+  weiter: () => Promise<void> = async () => {};
+  private jetzt = '';
+
+  constructor(
+    readonly dienst: Dienst,
+    readonly benutzerId: string | null,
+    readonly fortschritt: Fortschritt,
+    readonly mappenZiel: number,
+  ) {}
+
+  /** Schlank laden (#248): Id, Typ, Titel – Werte nur für eindeutige Felder. */
+  async ladeVorhandene() {
+    for (const m of await this.dienst.mappen.mappenKurz()) this.merke(m.id, m.typId, m.titel ?? '');
   }
 
-  const erzeugt: Record<string, number> = {};
-  const uebersprungen: DemoErgebnis['uebersprungen'] = [];
-  const mitDokumenten: Array<{ id: string; t: Mappentyp; werte: Werte; titel: string }> = [];
-  let fertig = 0;
-  fortschritt(0, mappenZiel, 'mappen');
-  let paket: NeueMappe[] = [];
-  const weiter = takt();
-  // Kleinere Transaktionen (#367): 250 Mappen je Paket, danach nachgeben.
-  const schreibe = async () => {
-    await dienst.mappen.legeMappenAn(paket);
-    fertig += paket.length;
-    paket = [];
-    fortschritt(fertig, mappenZiel, 'mappen');
-    await weiter();
-  };
-  const jetzt = new Date().toISOString();
+  private merke(id: string, typId: string, titel: string) {
+    (this.pools.get(typId) ?? this.pools.set(typId, []).get(typId)!).push(id);
+    this.typVon.set(id, typId);
+    this.titel.set(id, titel);
+  }
 
-  for (const t of typen) {
+  beginne() {
+    this.fortschritt(0, this.mappenZiel, 'mappen');
+    this.paket = [];
+    this.weiter = takt();
+    this.jetzt = new Date().toISOString();
+  }
+
+  /** Kleinere Transaktionen (#367): das Paket schreiben, danach nachgeben. */
+  async schreibe() {
+    await this.dienst.mappen.legeMappenAn(this.paket);
+    this.fertig += this.paket.length;
+    this.paket = [];
+    this.fortschritt(this.fertig, this.mappenZiel, 'mappen');
+    await this.weiter();
+  }
+
+  titelVon = (x: string) => this.titel.get(x) || 'Ohne Titel';
+
+  /** Bis zu `soll` Mappen eines Typs; nach 25 Fehlversuchen in Folge oder einem unmöglichen Pflichtfeld übersprungen. */
+  async erzeugeTyp(t: Mappentyp, soll: number, mitRegister: boolean) {
     const vergeben = new Map<string, Set<string>>();
     for (const f of t.felder.filter((x) => x.eindeutig))
-      vergeben.set(f.key, new Set((await dienst.mappen.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
-    const mitRegister = o.dokumente && dokumentRegister(t).length > 0;
+      vergeben.set(f.key, new Set((await this.dienst.mappen.feldwerte(t.id, f.key)).map((w) => String(w).trim().toLowerCase())));
     let ok = 0,
       fehlversuche = 0,
       letzterFehler = '';
-    while (ok < ziel.get(t.id)! && fehlversuche < 25) {
-      const werte: Werte = {};
-      let unmoeglich = '';
-      for (const f of t.felder) {
-        // Berechnete Felder (#1034) füllt ihr Paket, nicht der Demo-Generator; zusammengesetzte (#1050) setzt Ablago unten.
-        if (f.berechnetVon || f.typ === 'zusammengesetzt' || (!f.pflicht && z.chance(0.2))) continue;
-        const w = wertFuer(f, ok + 1, pools, vergeben.get(f.key) ?? new Set());
-        if (w === undefined) {
-          if (f.pflicht)
-            unmoeglich = pflichtGrund(
-              f.label,
-              f.typ === 'referenz' ? 'verweis' : f.typ === 'passwort' ? 'passwort' : f.eindeutig ? 'eindeutig' : 'sonst',
-            );
-          continue;
-        }
-        werte[f.key] = w;
-      }
-      if (unmoeglich) {
-        letzterFehler = unmoeglich;
+    while (ok < soll && fehlversuche < 25) {
+      const v = this.versuch(t, ok, vergeben);
+      if ('unmoeglich' in v) {
+        letzterFehler = v.unmoeglich;
         break;
       }
-      setzeZusammengesetzte(t, werte);
-      const p = pruefeMappe(t, werte, {
-        typVon: (id) => typVon.get(id),
-        doppelt: (k, v) => (vergeben.get(k)?.has(String(v).trim().toLowerCase()) ? 'eine andere Mappe' : undefined),
-      });
-      // Formate und Grenzen (#535) wie beim Anlegen.
-      Object.assign(p.felder, pruefeFormate(t, werte, undefined, iso(new Date(heute))));
-      if (!istOk(p)) {
+      if ('fehler' in v) {
         fehlversuche++;
-        const [k, msg] = Object.entries(p.felder)[0] ?? [];
-        letzterFehler = k ? `${t.felder.find((f) => f.key === k)?.label ?? k}: ${msg?.[0]}` : (p.allgemein[0] ?? 'ungültig');
+        letzterFehler = v.fehler;
         continue;
       }
-      const id = randomUUID();
-      const tt = titelAus(t, werte, (x) => titel.get(x) || 'Ohne Titel', { erstellt: jetzt, geaendert: jetzt });
-      paket.push({ id, typId: t.id, werte, verweise: verweiseVon(t, werte), titel: tt, benutzerId, demo: true });
-      if (mitRegister) mitDokumenten.push({ id, t, werte, titel: tt });
       ok++;
       fehlversuche = 0;
-      (pools.get(t.id) ?? pools.set(t.id, []).get(t.id)!).push(id);
-      typVon.set(id, t.id);
-      titel.set(id, tt);
-      for (const [k, set] of vergeben) if (werte[k] != null) set.add(String(werte[k]).trim().toLowerCase());
-      if (paket.length >= 250) await schreibe();
+      await this.nimm(t, v.werte, vergeben, mitRegister);
     }
-    erzeugt[t.name] = ok;
-    if (ok < ziel.get(t.id)!) uebersprungen.push({ typ: t.name, grund: letzterFehler || 'unbekannt', anzahl: ziel.get(t.id)! - ok });
+    this.erzeugt[t.name] = ok;
+    if (ok < soll) this.uebersprungen.push({ typ: t.name, grund: letzterFehler || 'unbekannt', anzahl: soll - ok });
   }
-  await schreibe();
-  // Weniger als bestellt (#711): sofort zeigen, nicht erst nach den Dokumenten – kein Haken, sondern „übersprungen“.
-  if (uebersprungen.length)
-    fortschritt(fertig, mappenZiel, 'mappen', { uebersprungen: mappenZiel - fertig, gruende: uebersprungen.map(uebersprungenText) });
-  const mappen = fertig;
-  // Statistik nach dem Massen-Einfügen (#367), sonst plant PostgreSQL mit veralteten Zahlen.
-  if (mappen) await dienst.sichten.aktualisiereStatistik();
-  const ergebnis: DemoErgebnis = { erzeugt, uebersprungen, gesamt: mappen, startwert: z.startwert, dauerMs: 0, dokumente: null };
 
-  if (o.dokumente) {
-    const d = o.dokumente;
-    // Erst planen (wie viele je Mappe), damit der Fortschritt die Gesamtzahl kennt.
-    const plan = mitDokumenten.map((m) => ({ m, anzahl: z.chance(d.anteil / 100) ? z.von(d.von, d.bis) : 0 })).filter((x) => x.anzahl > 0);
-    // Ab hier zählt die Phase „Dokumente erzeugen“; die Mappen-Phase gilt damit als fertig.
-    const gesamt = plan.reduce((a, x) => a + x.anzahl, 0);
-    let erzeugtDok = 0;
-    fortschritt(0, gesamt, 'dokumente');
-    const rastern = await kannRastern();
-    const gewichte = DOKUMENTARTEN.map((a) => d.mischung[a]);
+  /** Werte für eine Mappe erzeugen und prüfen wie beim Anlegen (Regeln, eindeutige Werte, Formate und Grenzen #535). */
+  private versuch(t: Mappentyp, ok: number, vergeben: Map<string, Set<string>>): Versuch {
+    const werte: Werte = {};
+    let unmoeglich = '';
+    for (const f of t.felder) {
+      // Berechnete Felder (#1034) füllt ihr Paket, nicht der Demo-Generator; zusammengesetzte (#1050) setzt Ablago unten.
+      if (f.berechnetVon || f.typ === 'zusammengesetzt' || (!f.pflicht && z.chance(0.2))) continue;
+      const w = wertFuer(f, ok + 1, this.pools, vergeben.get(f.key) ?? new Set());
+      if (w === undefined) {
+        if (f.pflicht)
+          unmoeglich = pflichtGrund(
+            f.label,
+            f.typ === 'referenz' ? 'verweis' : f.typ === 'passwort' ? 'passwort' : f.eindeutig ? 'eindeutig' : 'sonst',
+          );
+        continue;
+      }
+      werte[f.key] = w;
+    }
+    if (unmoeglich) return { unmoeglich };
+    setzeZusammengesetzte(t, werte);
+    const p = pruefeMappe(t, werte, {
+      typVon: (id) => this.typVon.get(id),
+      doppelt: (k, v) => (vergeben.get(k)?.has(String(v).trim().toLowerCase()) ? 'eine andere Mappe' : undefined),
+    });
+    // Formate und Grenzen (#535) wie beim Anlegen.
+    Object.assign(p.felder, pruefeFormate(t, werte, undefined, iso(new Date(heute))));
+    if (istOk(p)) return { werte };
+    const [k, msg] = Object.entries(p.felder)[0] ?? [];
+    return { fehler: k ? `${t.felder.find((f) => f.key === k)?.label ?? k}: ${msg?.[0]}` : (p.allgemein[0] ?? 'ungültig') };
+  }
+
+  /** Eine geprüfte Mappe ins Paket; als Ziel für Verweise merken; ein volles Paket schreiben. */
+  private async nimm(t: Mappentyp, werte: Werte, vergeben: Map<string, Set<string>>, mitRegister: boolean) {
+    const id = randomUUID();
+    const tt = titelAus(t, werte, this.titelVon, { erstellt: this.jetzt, geaendert: this.jetzt });
+    this.paket.push({ id, typId: t.id, werte, verweise: verweiseVon(t, werte), titel: tt, benutzerId: this.benutzerId, demo: true });
+    if (mitRegister) this.mitDokumenten.push({ id, t, werte, titel: tt });
+    this.merke(id, t.id, tt);
+    for (const [k, set] of vergeben) if (werte[k] != null) set.add(String(werte[k]).trim().toLowerCase());
+    if (this.paket.length >= 250) await this.schreibe();
+  }
+}
+
+/** Dateien eines Laufs: Statistik, Vorrat für Duplikate, gesammelte Texterkennung, Zähler für Statistik und Platz. */
+class DokumentLauf {
+  readonly gewichte: number[];
+  readonly statistik: NonNullable<DemoErgebnis['dokumente']>;
+  readonly vorrat: Array<{ name: string; mime: string; inhalt: Buffer }> = [];
+  ocr: string[] = [];
+  seitPruefung = 0;
+  readonly beginn = Date.now();
+  seitStatistik = 0;
+  erzeugt = 0;
+
+  constructor(
+    readonly lauf: MappenLauf,
+    readonly d: DokumentOptionen,
+    readonly rastern: boolean,
+    readonly gesamt: number,
+    readonly platz?: DemoPlatz,
+  ) {
+    this.gewichte = DOKUMENTARTEN.map((a) => d.mischung[a]);
     const jeArt = Object.fromEntries(DOKUMENTARTEN.map((a) => [a, 0])) as Record<Dokumentart, number>;
-    const statistik = { anzahl: 0, bytes: 0, seiten: 0, texterkennung: 0, duplikate: 0, jeArt, dauerMs: 0 };
-    const vorrat: Array<{ name: string; mime: string; inhalt: Buffer }> = [];
-    let ocr: string[] = [];
-    let seitPruefung = 0;
-    const docBeginn = Date.now();
-    let seitStatistik = 0;
-    try {
-      aussen: for (const { m, anzahl } of plan) {
-        const register = dokumentRegister(m.t);
-        const inhalt = inhaltVon(m.t, m.werte, m.titel, (x) => titel.get(x) || 'Ohne Titel');
-        for (let i = 0; i < anzahl; i++) {
-          let datei: { name: string; mime: string; inhalt: Buffer };
-          if (vorrat.length && z.chance(d.duplikate / 100)) {
-            datei = z.eins(vorrat);
-            statistik.duplikate++;
-          } else {
-            const art = DOKUMENTARTEN[z.gewichtet(gewichte)];
-            const kennung = `${z
-              .int(2 ** 31)
-              .toString(16)
-              .padStart(8, '0')}${z
-              .int(2 ** 31)
-              .toString(16)
-              .padStart(8, '0')}`;
-            const e = await erzeugeDokument(z, art, inhalt, kennung, rastern);
-            datei = e;
-            jeArt[e.art]++;
-            statistik.seiten += e.seiten;
-            if (e.inhalt.length < DEMO_VORRAT_MAX) {
-              vorrat.push(datei);
-              if (vorrat.length > 50) vorrat.shift();
-            }
-            statistik.bytes += e.inhalt.length;
-            seitPruefung += e.inhalt.length;
-          }
-          const reg = z.eins(register);
-          const r = await dienst.datenschutzDienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
-          if (r.volltext) {
-            ocr.push(r.id);
-            statistik.texterkennung++;
-          }
-          if (ocr.length >= 200) {
-            await dienst.eingangskanaele.demoTexterkennung(ocr);
-            ocr = [];
-          }
-          statistik.anzahl++;
-          erzeugtDok++;
-          await weiter();
-          // Zwischendurch die Statistik auffrischen (#367): Bei vielen Dokumenten wächst die Tabelle stark.
-          if (++seitStatistik >= 5000) {
-            seitStatistik = 0;
-            await dienst.sichten.aktualisiereStatistik();
-          }
-          if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
-          // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
-          if (platz && seitPruefung > DEMO_PLATZ_PRUEFEN) {
-            seitPruefung = 0;
-            const [frei, mindest] = await Promise.all([platz.frei().catch(() => null), platz.mindest().catch(() => 0)]);
-            if (frei !== null && frei < mindest) {
-              ergebnis.abgebrochen = `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`;
-              break aussen;
-            }
-          }
+    this.statistik = { anzahl: 0, bytes: 0, seiten: 0, texterkennung: 0, duplikate: 0, jeArt, dauerMs: 0 };
+  }
+
+  /** Ein Duplikat aus dem Vorrat (Anteil Duplikate) oder ein neues Dokument einer gewichtet gewählten Art. */
+  async naechsteDatei(inhalt: MappenInhalt): Promise<{ name: string; mime: string; inhalt: Buffer }> {
+    const { statistik, vorrat } = this;
+    if (vorrat.length && z.chance(this.d.duplikate / 100)) {
+      statistik.duplikate++;
+      return z.eins(vorrat);
+    }
+    const art = DOKUMENTARTEN[z.gewichtet(this.gewichte)];
+    const kennung = `${z
+      .int(2 ** 31)
+      .toString(16)
+      .padStart(8, '0')}${z
+      .int(2 ** 31)
+      .toString(16)
+      .padStart(8, '0')}`;
+    const e = await erzeugeDokument(z, art, inhalt, kennung, this.rastern);
+    statistik.jeArt[e.art]++;
+    statistik.seiten += e.seiten;
+    if (e.inhalt.length < DEMO_VORRAT_MAX) {
+      vorrat.push(e);
+      if (vorrat.length > 50) vorrat.shift();
+    }
+    statistik.bytes += e.inhalt.length;
+    this.seitPruefung += e.inhalt.length;
+    return e;
+  }
+
+  /**
+   * Das Dokument an die Mappe; Texterkennung gesammelt (200), Statistik der Datenbank alle 5000 (#367), Fortschritt alle
+   * 10. Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn) – dann der Grund.
+   */
+  async lege(m: MitDokumenten, reg: { key: string }, datei: { name: string; mime: string; inhalt: Buffer }): Promise<string | null> {
+    const { dienst, benutzerId, fortschritt } = this.lauf;
+    const r = await dienst.datenschutzDienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
+    if (r.volltext) {
+      this.ocr.push(r.id);
+      this.statistik.texterkennung++;
+    }
+    if (this.ocr.length >= 200) {
+      await dienst.eingangskanaele.demoTexterkennung(this.ocr);
+      this.ocr = [];
+    }
+    this.statistik.anzahl++;
+    this.erzeugt++;
+    await this.lauf.weiter();
+    // Zwischendurch die Statistik auffrischen (#367): Bei vielen Dokumenten wächst die Tabelle stark.
+    if (++this.seitStatistik >= 5000) {
+      this.seitStatistik = 0;
+      await dienst.sichten.aktualisiereStatistik();
+    }
+    if (this.statistik.anzahl % 10 === 0) fortschritt(this.erzeugt, this.gesamt, 'dokumente');
+    if (this.platz && this.seitPruefung > DEMO_PLATZ_PRUEFEN) {
+      this.seitPruefung = 0;
+      const [frei, mindest] = await Promise.all([this.platz.frei().catch(() => null), this.platz.mindest().catch(() => 0)]);
+      if (frei !== null && frei < mindest)
+        return `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`;
+    }
+    return null;
+  }
+}
+
+/** Dokumente (#248) zu den Mappen mit Dokument-Register: erst planen (wie viele je Mappe), dann erzeugen. */
+async function erzeugeDokumente(lauf: MappenLauf, d: DokumentOptionen, ergebnis: DemoErgebnis, platz?: DemoPlatz) {
+  const { dienst, fortschritt } = lauf;
+  // Erst planen (wie viele je Mappe), damit der Fortschritt die Gesamtzahl kennt.
+  const plan = lauf.mitDokumenten
+    .map((m) => ({ m, anzahl: z.chance(d.anteil / 100) ? z.von(d.von, d.bis) : 0 }))
+    .filter((x) => x.anzahl > 0);
+  // Ab hier zählt die Phase „Dokumente erzeugen“; die Mappen-Phase gilt damit als fertig.
+  const gesamt = plan.reduce((a, x) => a + x.anzahl, 0);
+  fortschritt(0, gesamt, 'dokumente');
+  const rastern = await kannRastern();
+  const dl = new DokumentLauf(lauf, d, rastern, gesamt, platz);
+  try {
+    aussen: for (const { m, anzahl } of plan) {
+      const register = dokumentRegister(m.t);
+      const inhalt = inhaltVon(m.t, m.werte, m.titel, lauf.titelVon);
+      for (let i = 0; i < anzahl; i++) {
+        const datei = await dl.naechsteDatei(inhalt);
+        const abgebrochen = await dl.lege(m, z.eins(register), datei);
+        if (abgebrochen) {
+          ergebnis.abgebrochen = abgebrochen;
+          break aussen;
         }
       }
-      await dienst.eingangskanaele.demoTexterkennung(ocr);
-    } finally {
-      if (erzeugtDok) await dienst.sichten.aktualisiereStatistik();
     }
-    statistik.dauerMs = Date.now() - docBeginn;
-    ergebnis.dokumente = statistik;
-    if (!rastern) ergebnis.ohneRastern = true;
-    fortschritt(erzeugtDok, erzeugtDok, 'dokumente');
+    await dienst.eingangskanaele.demoTexterkennung(dl.ocr);
+  } finally {
+    if (dl.erzeugt) await dienst.sichten.aktualisiereStatistik();
   }
-  ergebnis.dauerMs = Date.now() - beginn;
-  return ergebnis;
+  dl.statistik.dauerMs = Date.now() - dl.beginn;
+  ergebnis.dokumente = dl.statistik;
+  if (!rastern) ergebnis.ohneRastern = true;
+  fortschritt(dl.erzeugt, dl.erzeugt, 'dokumente');
 }
 
 const gb = (b: number) => `${(b / GB).toFixed(1).replace('.', ',')} GB`;

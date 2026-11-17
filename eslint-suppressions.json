@@ -134,12 +134,6 @@
   },
   "server/src/demo/demo.ts": {
     "complexity": {
-      "count": 2
-    },
-    "max-depth": {
-      "count": 10
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
