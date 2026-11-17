@@ -1176,9 +1176,6 @@
     },
     "complexity": {
       "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
     }
   },
   "web/src/ablage/Papierkorb.tsx": {
