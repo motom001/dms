@@ -1153,17 +1153,6 @@
       "count": 1
     }
   },
-  "shared/src/pakete/code.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 5
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "shared/src/pakete/katalog.ts": {
     "complexity": {
       "count": 1
