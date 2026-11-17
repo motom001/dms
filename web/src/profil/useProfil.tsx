@@ -42,6 +42,8 @@ export function useProfilZustand() {
   const [neu2, setNeu2] = useState('');
   const [entwickler, setEntwickler] = useState(!!ich.entwicklermodus);
   const [ansicht, setAnsicht] = useState(false);
+  // #1352: nach dem neuen Passwort die eigenen API-Schlüssel zeigen und das Löschen anbieten.
+  const [schluesselPruefen, setSchluesselPruefen] = useState(false);
 
   const fName = useFormular(async () => {
     await kontoApi.profil(name);
@@ -60,6 +62,7 @@ export function useProfilZustand() {
     setAlt('');
     setNeu('');
     setNeu2('');
+    setSchluesselPruefen(true);
     return t('profil.profil.passwort-geaendert-alle-anderen');
   });
   return {
@@ -82,6 +85,8 @@ export function useProfilZustand() {
     fName,
     fEmail,
     fPw,
+    schluesselPruefen,
+    setSchluesselPruefen,
   };
 }
 export type ProfilZustand = ReturnType<typeof useProfilZustand>;

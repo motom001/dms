@@ -15,9 +15,11 @@ const STUFEN: ApiSchluesselRecht[] = ['lesen', 'schreiben', 'zaehler'];
 const stufe = (r: ApiSchluesselRecht) => t.frei(`api.stufe.${r}`);
 const alsDatum = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
 const ausDatum = (text: string) => (text ? new Date(`${text}T23:59:59`).toISOString() : null);
+/** Ereignis: Schlüssel außerhalb des Blatts gelöscht (#1352). */
+const GEAENDERT = 'dms:api-schluessel';
 
 export function ApiSchluesselBlatt() {
-  const { laufwerk } = useKonto();
+  const { laufwerk, vertretung } = useKonto();
   const [liste, setListe] = useState<ApiSchluessel[] | null>(null);
   const [neu, setNeu] = useState<(ApiSchluessel & { schluessel: string }) | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -31,6 +33,10 @@ export function ApiSchluesselBlatt() {
   }, []);
   useEffect(() => {
     void laden();
+    // Gelöscht über „Deine API-Schlüssel“ nach einem neuen Passwort (#1352): Liste neu laden.
+    const neu = () => void laden();
+    addEventListener(GEAENDERT, neu);
+    return () => removeEventListener(GEAENDERT, neu);
   }, [laden]);
 
   async function aktion(fn: () => Promise<unknown>) {
@@ -79,6 +85,8 @@ export function ApiSchluesselBlatt() {
         </div>
       )}
       {neu && <NeuerSchluessel s={neu} schliessen={() => setNeu(null)} />}
+      {/* #1356: In einer Vertretung lässt der Server nichts ändern – die Oberfläche bietet es gar nicht erst an. */}
+      {vertretung && <p className="leise">{t('profil.apischluessel.vertretung')}</p>}
       {liste && liste.length > 0 && (
         <ul className="sitzungsliste">
           {liste.map((s) =>
@@ -125,34 +133,39 @@ export function ApiSchluesselBlatt() {
                     })}
                   </span>
                 </div>
-                <span className="zeilenaktionen">
-                  <Knopf onClick={() => setBearbeite(s.id)}>{t('profil.apischluessel.aendern')}</Knopf>
-                  <Knopf
-                    art="gefahr"
-                    symbol="geloescht"
-                    onClick={() => aktion(() => kontoApi.apiSchluesselLoeschen(s.id))}
-                    rueckfrage={{
-                      titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }),
-                      text: t('profil.apischluessel.programme-die-ihn-nutzen'),
-                      ja: t('profil.apischluessel.loeschen'),
-                    }}>
-                    {t('profil.apischluessel.loeschen')}
-                  </Knopf>
-                </span>
+                {!vertretung && (
+                  <span className="zeilenaktionen">
+                    <Knopf onClick={() => setBearbeite(s.id)}>{t('profil.apischluessel.aendern')}</Knopf>
+                    <Knopf
+                      art="gefahr"
+                      symbol="geloescht"
+                      onClick={() => aktion(() => kontoApi.apiSchluesselLoeschen(s.id))}
+                      rueckfrage={{
+                        titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }),
+                        text: t('profil.apischluessel.programme-die-ihn-nutzen'),
+                        ja: t('profil.apischluessel.loeschen'),
+                      }}>
+                      {t('profil.apischluessel.loeschen')}
+                    </Knopf>
+                  </span>
+                )}
               </li>
             ),
           )}
         </ul>
       )}
       {liste && !liste.length && !neu && <p className="leise">{t('profil.apischluessel.noch-keine-schluessel')}</p>}
-      {/* #818: Schlüssel bekommen nie Verwaltungsrechte – auch die von Personen, die verwalten. */}
-      <details className="neuerschluessel">
-        <summary {...knopfAussehen({ art: 'anlegen' })}>{t('profil.apischluessel.neuen-schluessel-erzeugen')}</summary>
-        <SchluesselFormular
-          knopf={t('profil.apischluessel.erzeugen')}
-          senden={(d) => aktion(async () => setNeu(await kontoApi.apiSchluesselAnlegen(d)))}
-        />
-      </details>
+      {/* #818: Schlüssel bekommen nie Verwaltungsrechte – auch die von Personen, die verwalten. #1352: Anlegen
+          („lesen“, „schreiben“) und Erweitern fragen, wenn nötig, nach der erneuten Bestätigung (Dialog der Anmeldung). */}
+      {!vertretung && (
+        <details className="neuerschluessel">
+          <summary {...knopfAussehen({ art: 'anlegen' })}>{t('profil.apischluessel.neuen-schluessel-erzeugen')}</summary>
+          <SchluesselFormular
+            knopf={t('profil.apischluessel.erzeugen')}
+            senden={(d) => aktion(async () => setNeu(await kontoApi.apiSchluesselAnlegen(d)))}
+          />
+        </details>
+      )}
     </div>
   );
 }
@@ -238,6 +251,75 @@ export function NeuerSchluessel({ s, schliessen }: { s: ApiSchluessel & { schlue
           {kopiert ? t('profil.apischluessel.kopiert') : t('profil.apischluessel.kopieren')}
         </Knopf>
         <Knopf onClick={schliessen}>{t('profil.apischluessel.habe-ihn-gesichert')}</Knopf>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Nach einem neuen Passwort oder „Alle anderen abmelden“ (#1352): die eigenen API-Schlüssel zeigen und anbieten, sie zu
+ * löschen – denn Programme mit einem Schlüssel bleiben angemeldet. Vorausgewählt: Schlüssel mit „Passwörter lesen“.
+ * Ohne Schlüssel zeigt der Teil nichts.
+ */
+export function ApiSchluesselPruefen({ fertig }: { fertig: (meldung?: string) => void }) {
+  const [liste, setListe] = useState<ApiSchluessel[] | null>(null);
+  const [weg, setWeg] = useState<Set<string>>(new Set());
+  const [fehler, setFehler] = useState<string>();
+  useEffect(() => {
+    kontoApi.apiSchluessel().then(
+      (l) => {
+        setListe(l);
+        setWeg(new Set(l.filter((s) => s.passwoerter).map((s) => s.id)));
+      },
+      () => setListe([]),
+    );
+  }, []);
+  if (!liste?.length) return null;
+  const umschalten = (id: string, an: boolean) =>
+    setWeg((alt) => {
+      const neu = new Set(alt);
+      if (an) neu.add(id);
+      else neu.delete(id);
+      return neu;
+    });
+  async function loeschen() {
+    setFehler(undefined);
+    try {
+      for (const id of weg) await kontoApi.apiSchluesselLoeschen(id);
+      dispatchEvent(new Event(GEAENDERT));
+      fertig(t('profil.apischluessel.pruefen.geloescht', { anzahl: weg.size }));
+    } catch (e) {
+      setFehler((e as Error).message);
+    }
+  }
+  return (
+    <div className="hinweis warn stapel" role="group" aria-label={t('profil.apischluessel.pruefen.titel')}>
+      <p>
+        <strong>{t('profil.apischluessel.pruefen.titel')}</strong>
+      </p>
+      <p>{t('profil.apischluessel.pruefen.text')}</p>
+      {liste.map((s) => (
+        <HakenFeld
+          key={s.id}
+          beschriftung={`${s.name} (${stufe(s.recht)}${s.passwoerter ? `, ${t('profil.apischluessel.passwoerter-lesen')}` : ''})`}>
+          <input type="checkbox" checked={weg.has(s.id)} onChange={(e) => umschalten(s.id, e.target.checked)} />
+        </HakenFeld>
+      ))}
+      {fehler && <p className="fehlertext">{fehler}</p>}
+      <div className="knoepfe">
+        <Knopf onClick={() => fertig()}>{t('profil.apischluessel.pruefen.behalten')}</Knopf>
+        <Knopf
+          art="gefahr"
+          symbol="geloescht"
+          gesperrt={!weg.size}
+          onClick={loeschen}
+          rueckfrage={{
+            titel: t('profil.apischluessel.pruefen.loeschen'),
+            text: t('profil.apischluessel.programme-die-ihn-nutzen'),
+            ja: t('profil.apischluessel.loeschen'),
+          }}>
+          {t('profil.apischluessel.pruefen.loeschen')}
+        </Knopf>
       </div>
     </div>
   );

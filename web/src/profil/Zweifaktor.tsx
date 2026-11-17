@@ -66,8 +66,12 @@ export function Wiederherstellungscodes({ codes, weiter }: { codes: string[]; we
   );
 }
 
-/** QR-Code scannen, Code eingeben – danach die Wiederherstellungscodes. */
-export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void; abbrechen?: () => void }) {
+/**
+ * QR-Code scannen, Code eingeben – danach die Wiederherstellungscodes. Der Server verlangt dafür eine frische Anmeldung
+ * (#1356); fehlt sie, fragt der Dialog der erneuten Anmeldung und die Anfrage geht danach noch einmal hinaus.
+ * `ersetzt`: Es ist schon eine App verbunden – sie gilt nach dem Bestätigen nicht mehr.
+ */
+export function ZweifaktorEinrichten({ fertig, abbrechen, ersetzt }: { fertig: () => void; abbrechen?: () => void; ersetzt?: boolean }) {
   const [entwurf, setEntwurf] = useState<{ geheimnis: string; uri: string; bild: string } | null>(null);
   const [code, setCode] = useState('');
   const [codes, setCodes] = useState<string[] | null>(null);
@@ -100,6 +104,7 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
   if (codes) return <Wiederherstellungscodes codes={codes} weiter={fertig} />;
   return (
     <form className="stapel" onSubmit={abfangen(bestaetigen, setFehler)}>
+      {ersetzt && <p className="hinweis warn">{t('profil.zweifaktor.ersetzen-hinweis')}</p>}
       <p>{t('profil.zweifaktor.1-oeffne-eine-authenticator')}</p>
       {entwurf ? (
         <div className="qr">
@@ -136,6 +141,19 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
 
 /** Profil → Sicherheit. */
 export function ZweifaktorBlatt() {
+  const { vertretung } = useKonto();
+  // #1356: In einer Vertretung lässt der Server nichts ändern – die Oberfläche bietet es gar nicht erst an.
+  if (vertretung)
+    return (
+      <div className="blatt" id="zweifaktor">
+        <h2 className="h3">{tn('profil.zweifaktor.zwei-faktor-anmeldung', { hilfe: <Hilfe ort="profil.zweifaktor" /> })}</h2>
+        <p className="leise">{t('profil.zweifaktor.vertretung')}</p>
+      </div>
+    );
+  return <ZweifaktorVerwalten />;
+}
+
+function ZweifaktorVerwalten() {
   const { aktualisieren } = useKonto();
   const [stand, setStand] = useState<ZweifaktorStand | null>(null);
   const [modus, setModus] = useState<'ruhe' | 'einrichten' | 'codes' | 'aus'>('ruhe');
@@ -191,6 +209,7 @@ export function ZweifaktorBlatt() {
         <p className="leise">{t('profil.zweifaktor.lade')}</p>
       ) : modus === 'einrichten' ? (
         <ZweifaktorEinrichten
+          ersetzt={stand.aktiv}
           fertig={() => {
             setModus('ruhe');
             setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-eingerichtet') });
@@ -221,6 +240,13 @@ export function ZweifaktorBlatt() {
           {modus === 'ruhe' ? (
             <div className="knoepfe">
               <Knopf onClick={() => setModus('codes')}>{t('profil.zweifaktor.neue-wiederherstellungscodes')}</Knopf>
+              <Knopf
+                onClick={() => {
+                  setMeldung(undefined);
+                  setModus('einrichten');
+                }}>
+                {t('profil.zweifaktor.neue-app')}
+              </Knopf>
               {!stand.pflicht && <Knopf onClick={() => setModus('aus')}>{t('profil.zweifaktor.abschalten')}</Knopf>}
             </div>
           ) : (

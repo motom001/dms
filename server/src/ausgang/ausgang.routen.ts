@@ -24,7 +24,7 @@ import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from '../formate/zip';
 import { eigeneVersion } from '../system/system';
 import { protokoll } from '../protokoll/protokoll';
 import { MB, PLATZ_RESERVE } from '../grundlagen/grenzen';
-import { L, ok, leer, ich, kontaktVorschlaege } from '../http/routen-hilfen';
+import { L, ok, leer, ich, kontaktVorschlaege, ohneVertretung, verlangeFrisch } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 import { WERKBANK_EINSTELLUNG } from '../entdecken/entdecken-werkbank';
@@ -262,14 +262,16 @@ function persoenlicherExportRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/export',
       zugang: 'angemeldet',
       handler: async (a) => {
+        if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, t('meldungen.routen.waehrend-jemand-in-diesem'));
         if (!(await dienst.auskunftZustellen.persoenlicherExportErlaubt()))
           throw new Fachfehler(403, t('meldungen.routen.der-persoenliche-export-ist'));
         const e = (a.body ?? {}) as { passwoerter?: unknown; passwoerterBestaetigt?: unknown };
         if (e.passwoerter === true && e.passwoerterBestaetigt !== true)
           throw new Fachfehler(422, t('meldungen.routen.passwoerter-im-klartext-nur'));
+        // Passwörter im Klartext (#1356): nur mit frischer Anmeldung, wie andere heikle Handlungen am eigenen Konto.
+        if (e.passwoerter === true) verlangeFrisch(konten, a, 'export-passwoerter');
         const id = ich(a).id;
         if ((await eigenerExport(id)).laeuft) throw new Fachfehler(409, t('meldungen.routen.dein-export-laeuft-schon'));
-        if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, t('meldungen.routen.waehrend-jemand-in-diesem'));
         const ziel = persoenlicherOrdner(exportZiel(), id);
         const quelle = await dienst.vollexport.persoenlicheQuelle(await zg(a), {
           mandant: (await x.mandantName?.()) ?? '',
@@ -308,7 +310,7 @@ function persoenlicherExportRouten(k: RoutenKontext): Route[] {
 
 /** Persönlicher Export (#255): herunterladen. */
 function persoenlicherExportZipRouten(k: RoutenKontext): Route[] {
-  const { exportZiel, danachLoeschen } = k;
+  const { konten, exportZiel, danachLoeschen } = k;
   return [
     {
       methode: 'GET',
@@ -318,6 +320,11 @@ function persoenlicherExportZipRouten(k: RoutenKontext): Route[] {
         const ziel = persoenlicherOrdner(exportZiel(), ich(a).id);
         const fertig = (await exporteIn(ziel))[0];
         if (!fertig) throw new Fachfehler(404, t('meldungen.routen.es-gibt-noch-keinen-2'));
+        // Mit Passwörtern im Klartext (#1356): Herunterladen wie das Erstellen nur selbst und mit frischer Anmeldung.
+        if (fertig.passwoerter) {
+          ohneVertretung(a);
+          verlangeFrisch(konten, a, 'export-passwoerter');
+        }
         const ordner = exportOrdner(ziel, fertig.name);
         const dateien = await exportDateien(ordner);
         const eintraege: ZipEintrag[] = dateien.map((d) => ({

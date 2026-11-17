@@ -60,6 +60,16 @@ export const mailtexte = {
     betreff: t('mail.passwort-geaendert.betreff'),
     text: brief(name || email, t('mail.passwort-geaendert.text'), t('mail.nicht-du')),
   }),
+  /** #1352, #1356: Ein neuer Weg in das Konto (Passkey, Code-App, API-Schlüssel) – an die Person selbst. */
+  neuerZugang: (
+    name: string,
+    email: string,
+    was: 'passkey' | 'zweifaktor' | 'api-schluessel',
+    werte: { name?: string; recht?: string } = {},
+  ) => ({
+    betreff: t('mail.neuer-zugang.betreff'),
+    text: brief(name || email, t.frei(`mail.neuer-zugang.${was}`, werte), t('mail.nicht-du')),
+  }),
   einladung: (name: string, email: string, link: string, tage: number) => ({
     betreff: t('mail.einladung.betreff'),
     text: brief(

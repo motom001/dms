@@ -93,6 +93,7 @@
   "passkey.fehler.letzter.zweifaktor": "Two-factor sign-in is required for you, and this passkey fulfils it. Add a new passkey or set up the code app first, then you can remove this one.",
   "passkey.fehler.keine": "This person has no passkeys.",
   "passkey.fehler.vertretung": "While you are acting for someone else, their passkeys cannot be changed.",
+  "vertretung.gesperrt": "While you are acting for someone else, their sign-in, API keys and export cannot be changed.",
   "passkey.fehler.pflicht": "Please add a passkey first (My account → Security).",
   "passkey.name.standard": "Passkey {nr}",
   "passkey.knopf": "Sign in with a passkey",

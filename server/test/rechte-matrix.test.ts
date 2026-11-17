@@ -7,7 +7,7 @@
  * Recht hieße, dass der Handler vor der Rechteprüfung den Rumpf liest.
  *
  * Rollen: ohne Anmeldung, Person ohne Verwaltungsrecht, Person mit Verwaltungsrecht ohne Verwaltungsmodus,
- * Verwaltung mit nur einem Bereich, API-Schlüssel (lesen, schreiben), Anfrage ohne X-DMS.
+ * Verwaltung mit nur einem Bereich, API-Schlüssel (lesen, schreiben), Anfrage ohne X-DMS, Vertretung (#1356).
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
@@ -34,6 +34,22 @@ const OBJEKT_AUSNAHMEN: Record<string, string> = {
   'DELETE /api/mappen/:id/favorit':
     'entfernt nur den eigenen Favoriten-Merker; muss auch gehen, wenn das Leserecht inzwischen fehlt; verrät nichts über die Mappe',
   'DELETE /api/v1/mappen/:id/favorit': 'wie intern: nur der eigene Favoriten-Merker',
+};
+
+/**
+ * Vertretung (#1356): Ändernde Routen unter /api/konto/, die in einer Vertretung bewusst gehen – mit Grund. Alle übrigen
+ * antworten mit 403. Eine neue Route ohne Eintrag macht den Test rot: sperren (`ohneVertretung`) oder hier begründen.
+ */
+const VERTRETUNG_ERLAUBT: Record<string, string> = {
+  'POST /api/konto/verwaltung/beenden': 'beendet nur einen Verwaltungsmodus; in einer Vertretung gibt es keinen',
+  'POST /api/konto/hinweise/gesehen': 'tut in einer Vertretung nichts – die Hinweise bleiben für die Person stehen',
+  'POST /api/konto/vertretung-beenden': 'beendet die Vertretung selbst',
+  'PUT /api/konto/profil': 'Name, Sprache und Entwicklermodus – ändert keinen Zugang',
+  'PUT /api/konto/abwesenheit': 'Abwesenheit und Vertreter einzutragen ist ein Zweck der Vertretung',
+  'POST /api/konto/abwesenheit/aufgaben-uebergeben': 'wie die Abwesenheit: Aufgaben an den Vertreter',
+  'PUT /api/konto/einstellungen/:schluessel': 'Einstellungen der Oberfläche – ändern keinen Zugang',
+  'PUT /api/konto/zusammenfassung': 'Zeit der täglichen Zusammenfassung – ändert keinen Zugang',
+  'POST /api/konto/fehlermeldung': 'einen Fehler melden ändert nichts am Konto',
 };
 
 /** Rumpf, der die Prüfung des Rumpfs besteht, damit die Rechteprüfung dahinter erreicht wird. */
@@ -80,6 +96,23 @@ async function aufbau() {
   const schluesselKatrin = (await schluessel.lege(katrin, { name: 'Katrin', recht: 'schreiben' })).schluessel;
   const modus = await app.inject({ method: 'POST', url: '/api/konto/verwaltung', payload: {}, headers: { 'x-dms': '1', cookie: cJonas } });
   assert.equal(modus.statusCode, 200, modus.body);
+  // Vertretung (#1356): Lena (Gesamte Verwaltung, eigene Sitzung im Modus) handelt für Markus.
+  const cLenaModus = await anmelden('lena@example.org');
+  const lenaModus = await app.inject({
+    method: 'POST',
+    url: '/api/konto/verwaltung',
+    payload: {},
+    headers: { 'x-dms': '1', cookie: cLenaModus },
+  });
+  assert.equal(lenaModus.statusCode, 200, lenaModus.body);
+  const vertreten = await app.inject({
+    method: 'POST',
+    url: `/api/benutzer/${markus.id}/vertreten`,
+    payload: {},
+    headers: { 'x-dms': '1', cookie: cLenaModus },
+  });
+  assert.equal(vertreten.statusCode, 200, vertreten.body);
+  const cVertretung = ([] as string[]).concat(vertreten.headers['set-cookie'] as string | string[])[0].split(';')[0];
   // Objektebene: Markus' private Mappen – nur er darf lesen; Katrin hat keine Rechte daran.
   const nurMarkus: Regelwerk = {
     grund: { ...NICHTS, C: true },
@@ -121,7 +154,7 @@ async function aufbau() {
     ablauf: ablauf.id,
     markus: markus.id,
   };
-  return { d, konten, app, cLena, cMarkus, cJonas, cKatrin, lesen, schreiben, schluesselKatrin, fremd };
+  return { d, konten, app, cLena, cMarkus, cJonas, cKatrin, cVertretung, lesen, schreiben, schluesselKatrin, fremd };
 }
 
 type Aufbau = Awaited<ReturnType<typeof aufbau>>;
@@ -198,6 +231,33 @@ describe('Rechte-Matrix (#1262)', () => {
       [403],
     );
     assert.deepEqual(ab, [], ab.join('\n'));
+  });
+
+  it('Vertretung: ändernde Routen unter /api/konto/ → 403, außer den begründeten (#1356)', async () => {
+    const konto = (r: Route) => r.zugang === 'angemeldet' && r.methode !== 'GET' && r.pfad.startsWith('/api/konto/');
+    const ab = await pruefe((r) => konto(r) && !(name(r) in VERTRETUNG_ERLAUBT), { 'x-dms': '1', cookie: x.cVertretung }, [403], 20);
+    assert.deepEqual(ab, [], ab.join('\n'));
+    const da = new Set(alle.filter(konto).map(name));
+    assert.deepEqual(
+      Object.keys(VERTRETUNG_ERLAUBT).filter((k) => !da.has(k)),
+      [],
+      'Ausnahme ohne passende Route',
+    );
+    for (const [k, grund] of Object.entries(VERTRETUNG_ERLAUBT)) assert.ok(grund.trim().length >= 10, `${k}: Grund fehlt`);
+    // Gesperrt wegen der Vertretung (nicht aus einem anderen Grund), auch mit gültigem Rumpf.
+    for (const [methode, url, payload] of [
+      ['POST', '/api/konto/api-schluessel', { name: 'Fremd', recht: 'schreiben' }],
+      ['POST', '/api/konto/zweifaktor/beginnen', {}],
+      ['PUT', '/api/konto/email', { email: 'neu@example.org', passwort: PW }],
+    ] as const) {
+      const r = await x.app.inject({ method: methode, url, payload, headers: { 'x-dms': '1', cookie: x.cVertretung } });
+      assert.equal(r.statusCode, 403, `${methode} ${url}`);
+      assert.match(r.json().fehler, /für jemand anderen/, `${methode} ${url}`);
+    }
+    // Die Sitzung ist wirklich eine Vertretung: Markus' Status.
+    const s = await x.app.inject({ method: 'GET', url: '/api/konto/status', headers: { 'x-dms': '1', cookie: x.cVertretung } });
+    assert.equal(s.json().benutzer.email, 'markus@example.org');
+    assert.ok(s.json().vertretung);
   });
 
   it('Gegenprobe: mit dem passenden Recht kommt die Anfrage durch', async () => {

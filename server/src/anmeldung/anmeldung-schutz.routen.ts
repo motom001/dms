@@ -5,14 +5,12 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { pflichtRolle } from './zweifaktor';
 import { PASSKEYS_HOECHSTENS } from './passkeys';
 import { t } from '../sprache/sprache';
-import { L, ok, leer, b, ich } from '../http/routen-hilfen';
+import { L, ok, leer, b, ich, ohneVertretung as ohneVertretungAllgemein, verlangeFrisch } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 
-/** Eigene Anmeldung ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
-function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }) {
-  if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, t('anmeldung.passkey.fehler.vertretung'));
-}
+/** Eigene Passkeys ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
+const ohneVertretung = (a: { sitzungsDaten?: { vertretungId?: string | null } }) => ohneVertretungAllgemein(a, true);
 
 /** Zwei-Faktor-Anmeldung (#242). */
 export function zweifaktorRouten(k: RoutenKontext): Route[] {
@@ -30,20 +28,29 @@ export function zweifaktorRouten(k: RoutenKontext): Route[] {
         return ok({ ...(await zf().status(ich(a).id)), pflicht: rolle && !passkey, passkeyErfuellt: rolle && passkey });
       },
     },
+    // Einrichten – auch Ersetzen einer schon eingerichteten App – nur mit frischer Anmeldung und nie in einer
+    // Vertretung (#1356): Wer kurz an einem fremden, angemeldeten Gerät sitzt, verbindet keine eigene App.
     {
       methode: 'POST',
       pfad: '/api/konto/zweifaktor/beginnen',
       zugang: 'angemeldet',
-      handler: async (a) => ok(await zf().beginne(ich(a), (await x.designs?.marke())?.schriftzug || 'Ablago')),
+      handler: async (a) => {
+        ohneVertretungAllgemein(a);
+        verlangeFrisch(konten, a, 'zweifaktor-einrichten');
+        return ok(await zf().beginne(ich(a), (await x.designs?.marke())?.schriftzug || 'Ablago'));
+      },
     },
     {
       methode: 'POST',
       pfad: '/api/konto/zweifaktor/bestaetigen',
       zugang: 'angemeldet',
       handler: async (a) => {
+        ohneVertretungAllgemein(a);
+        verlangeFrisch(konten, a, 'zweifaktor-einrichten');
         const codes = await zf().bestaetige(ich(a).id, b(a).code, ich(a).email);
         // #819: Zwei-Faktor geändert – Verwaltungsmodus und Tagesmerker gelten nicht mehr.
         await konten.zweifaktorGeaendert(ich(a).id);
+        await konten.meldeNeuenZugang(ich(a), 'zweifaktor');
         return ok({ codes });
       },
     },
@@ -52,6 +59,7 @@ export function zweifaktorRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/zweifaktor/codes',
       zugang: 'angemeldet',
       handler: async (a) => {
+        ohneVertretungAllgemein(a);
         await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
         return ok({ codes: await zf().neueCodes(ich(a).id, ich(a).email) });
       },
@@ -61,6 +69,7 @@ export function zweifaktorRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/zweifaktor/entfernen',
       zugang: 'angemeldet',
       handler: async (a) => {
+        ohneVertretungAllgemein(a);
         if ((await zf().pflicht())[pflichtRolle(ich(a))] && !(konten.passkeys && (await konten.passkeys.fuerPflicht(ich(a).id))))
           throw new Fachfehler(409, t('meldungen.routen.fuer-dich-ist-die'));
         await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
@@ -137,6 +146,8 @@ export function eigenePasskeysRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => {
         ohneVertretung(a);
+        // Hinzufügen nur mit frischer Anmeldung (#1356), wie das Entfernen.
+        verlangeFrisch(konten, a, 'passkey-hinzufuegen');
         return ok(await pk().beginneRegistrierung(ich(a)));
       },
     },
@@ -146,7 +157,10 @@ export function eigenePasskeysRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => {
         ohneVertretung(a);
-        return { status: 201, body: await pk().bestaetigeRegistrierung(ich(a), b(a).antwort, b(a).name) };
+        verlangeFrisch(konten, a, 'passkey-hinzufuegen');
+        const neu = await pk().bestaetigeRegistrierung(ich(a), b(a).antwort, b(a).name);
+        await konten.meldeNeuenZugang(ich(a), 'passkey', { name: neu.name });
+        return { status: 201, body: neu };
       },
     },
     {
@@ -165,8 +179,7 @@ export function eigenePasskeysRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => {
         ohneVertretung(a);
-        if (!konten.istFrisch(a.sitzungsDaten))
-          throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung: 'passkey-entfernen' });
+        verlangeFrisch(konten, a, 'passkey-entfernen');
         // Vorgeschrieben (wie bei der Zwei-Faktor-Anmeldung): den letzten passenden nicht entfernen.
         const liste = await pk().liste(ich(a).id);
         const der = liste.find((p) => p.nr === a.params.nr);

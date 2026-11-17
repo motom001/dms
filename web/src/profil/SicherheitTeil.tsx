@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { geraetText, istGeradeAktiv, PASSWORT_MINDESTLAENGE, type Sitzung } from '../../../shared/src/model';
 import { kontoApi } from '../api/konto';
-import { ApiSchluesselBlatt } from './ApiSchluessel';
+import { ApiSchluesselBlatt, ApiSchluesselPruefen } from './ApiSchluessel';
 import { useDaten } from '../daten';
 import { ZweifaktorBlatt } from './Zweifaktor';
 import { PasskeyBlatt } from './Passkeys';
@@ -16,7 +16,8 @@ import type { ProfilZustand } from './useProfil';
 export function SicherheitTeil({ z }: { z: ProfilZustand }) {
   const { ich } = useKonto();
   const d = useDaten();
-  const { alt, setAlt, neu, setNeu, neu2, setNeu2, fPw } = z;
+  const { alt, setAlt, neu, setNeu, neu2, setNeu2, fPw, schluesselPruefen, setSchluesselPruefen } = z;
+  const [schluesselMeldung, setSchluesselMeldung] = useState<string>();
   return (
     <>
       <form className="blatt" onSubmit={fPw.absenden}>
@@ -36,6 +37,19 @@ export function SicherheitTeil({ z }: { z: ProfilZustand }) {
           </Feld>
         </div>
         {fPw.anzeige}
+        {schluesselPruefen && (
+          <ApiSchluesselPruefen
+            fertig={(m) => {
+              setSchluesselPruefen(false);
+              setSchluesselMeldung(m);
+            }}
+          />
+        )}
+        {schluesselMeldung && !schluesselPruefen && (
+          <p className="gutertext" role="status">
+            {schluesselMeldung}
+          </p>
+        )}
         <div className="knoepfe">
           <Knopf art="haupt" type="submit" laeuft={fPw.sendet} gesperrt={!alt || !neu}>
             {t('profil.profil.passwort-aendern')}
@@ -85,6 +99,8 @@ function MeineGeraete() {
   const { vertretung } = useKonto();
   const [liste, setListe] = useState<Sitzung[] | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  // #1352: nach „Alle anderen abmelden“ die eigenen API-Schlüssel zeigen und das Löschen anbieten.
+  const [schluesselPruefen, setSchluesselPruefen] = useState(false);
   const laden = useCallback(async () => {
     try {
       setListe(await kontoApi.meineSitzungen());
@@ -170,6 +186,14 @@ function MeineGeraete() {
           {meldung.text}
         </p>
       )}
+      {schluesselPruefen && (
+        <ApiSchluesselPruefen
+          fertig={(m) => {
+            setSchluesselPruefen(false);
+            if (m) setMeldung({ art: 'gut', text: m });
+          }}
+        />
+      )}
       {andere.length > 0 && !vertretung && (
         <div className="knoepfe">
           <Knopf
@@ -182,6 +206,7 @@ function MeineGeraete() {
             onClick={() =>
               tu(async () => {
                 const r = await kontoApi.andereSitzungenBeenden();
+                setSchluesselPruefen(true);
                 return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet });
               })
             }>

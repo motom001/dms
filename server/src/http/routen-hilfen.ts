@@ -402,6 +402,24 @@ export function kontaktVorschlaege(typen: Mappentyp[]): Array<{ typId: string; t
   return erg;
 }
 
+/**
+ * Zugang zu einem Konto (#1356): Anmeldewege, API-Schlüssel, E-Mail-Adresse, Passwort und der Export mit Passwörtern
+ * gehören nur der Person selbst. In einer Vertretung antworten diese Routen mit 403 – wie schon die Passkeys (#811).
+ * Vor dem Lesen des Rumpfs aufrufen.
+ */
+export function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }, nurPasskeys = false) {
+  if (a.sitzungsDaten?.vertretungId)
+    throw new Fachfehler(403, nurPasskeys ? t('anmeldung.passkey.fehler.vertretung') : t('anmeldung.vertretung.gesperrt'));
+}
+
+/**
+ * Heikle Handlung am eigenen Konto (#819, #1352, #1356): nur mit frischer Anmeldung – sonst 403 mit `frisch`, und die
+ * Oberfläche fragt dieselbe erneute Bestätigung ab wie beim Entfernen eines Passkeys und schickt die Anfrage noch einmal.
+ */
+export function verlangeFrisch(konten: { istFrisch(s: SitzungIntern | undefined): boolean }, a: Anfrage, handlung: string) {
+  if (!konten.istFrisch(a.sitzungsDaten)) throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung });
+}
+
 export {
   L,
   ok,

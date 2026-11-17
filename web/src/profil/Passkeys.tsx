@@ -11,7 +11,7 @@ import { PASSKEY_NAME_MAX } from '../../../shared/src/passkey';
 
 /**
  * Passkeys (#811) in Mein Konto → Sicherheit: hinzufügen, benennen, entfernen. Mehrere je Person (Handy, Rechner,
- * Sicherheitsschlüssel). Entfernen verlangt eine frische Anmeldung – fehlt sie, fragt der Dialog des Verwaltungsmodus
+ * Sicherheitsschlüssel). Hinzufügen (#1356) und Entfernen verlangen eine frische Anmeldung – fehlt sie, fragt der Dialog des Verwaltungsmodus
  * (api/anfrage.ts) und schickt die Anfrage danach noch einmal.
  */
 

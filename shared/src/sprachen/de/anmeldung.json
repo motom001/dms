@@ -93,6 +93,7 @@
   "passkey.fehler.letzter.zweifaktor": "Für dich ist die Zwei-Faktor-Anmeldung vorgeschrieben, und dieser Passkey erfüllt sie. Füge zuerst einen neuen Passkey hinzu oder richte die Code-App ein, dann kannst du diesen entfernen.",
   "passkey.fehler.keine": "Diese Person hat keine Passkeys.",
   "passkey.fehler.vertretung": "Während du für jemand anderen handelst, lassen sich dessen Passkeys nicht ändern.",
+  "vertretung.gesperrt": "Während du für jemand anderen handelst, lassen sich dessen Anmeldung, API-Schlüssel und Export nicht ändern.",
   "passkey.fehler.pflicht": "Bitte zuerst einen Passkey hinzufügen (Mein Konto → Sicherheit).",
   "passkey.name.standard": "Passkey {nr}",
   "passkey.knopf": "Mit Passkey anmelden",

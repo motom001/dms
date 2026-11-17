@@ -3,7 +3,7 @@
  */
 import { KontenSitzungen } from './sitzungen';
 import type { Benutzer } from '../../../shared/src/model';
-import { ZULETZT_MERKEN, text, pruefeEmail, type Geraet, OHNE_GERAET, pruefePasswortRegeln } from './hilfen';
+import { ZULETZT_MERKEN, text, pruefeEmail, type Geraet, OHNE_GERAET, pruefePasswortRegeln, log } from './hilfen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { hashePasswort } from '../anmeldung/passwort';
@@ -89,6 +89,14 @@ export abstract class KontenProfil extends KontenSitzungen {
     await this.spiegle(neu, ich.id);
     await this.benachrichtige(ich.email, mailtexte.emailGeaendert(ich.name, ich.email, email), log);
     return neu;
+  }
+
+  /**
+   * Hinweis-Mail an die Person (#1352, #1356), wenn ein neuer Weg in ihr Konto dazukommt: Passkey, Code-App oder ein
+   * API-Schlüssel „lesen“ bzw. „schreiben“ – wie bei einer geänderten E-Mail-Adresse oder einem neuen Passwort.
+   */
+  async meldeNeuenZugang(ich: Benutzer, was: 'passkey' | 'zweifaktor' | 'api-schluessel', werte: { name?: string; recht?: string } = {}) {
+    await this.benachrichtige(ich.email, mailtexte.neuerZugang(ich.name, ich.email, was, werte), (m) => log.warn(m));
   }
 
   /** Neues Passwort; beendet alle Sitzungen und gibt eine frische zurück. */
