@@ -1490,13 +1490,5 @@
     "complexity": {
       "count": 2
     }
-  },
-  "web/src/wiederherstellen.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
   }
 }
