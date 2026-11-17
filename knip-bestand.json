@@ -2219,11 +2219,6 @@
       "curlBeispiel"
     ]
   },
-  "web/src/werkbank/Automatisierungen.tsx": {
-    "exports": [
-      "zielVon"
-    ]
-  },
   "web/src/werkbank/Eingangsordner.tsx": {
     "exports": [
       "groesse"
@@ -2259,7 +2254,6 @@
   },
   "web/src/werkbank/PaketAblauf.tsx": {
     "exports": [
-      "AblaufErgebnisAnsicht",
       "Fragen"
     ]
   },
@@ -2267,13 +2261,6 @@
     "exports": [
       "EreignisKatalogListe",
       "ereignisName"
-    ]
-  },
-  "web/src/werkbank/Pakete.tsx": {
-    "exports": [
-      "ALLE",
-      "SAMMEL",
-      "UPLOAD"
     ]
   },
   "web/src/werkbank/Protokoll.tsx": {
