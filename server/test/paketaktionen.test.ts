@@ -6,7 +6,7 @@
  * „Brief aus Vorlage“. Der Paket-Läufer ist hier ein Ersatz, der vorgegebene Antworten liefert. Namen sind erfunden.
  */
 import assert from 'node:assert/strict';
-import { after, describe, it } from 'node:test';
+import { after, afterEach, describe, it } from 'node:test';
 import type { AktionsSchritt } from '../../shared/src/paketaktionen';
 import type { Regelwerk } from '../../shared/src/rechte';
 import { NICHTS } from '../../shared/src/rechte';
@@ -30,21 +30,28 @@ import { zipPuffer } from '../src/formate/zip';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { eigeneDatenbank } from './hilfe-db';
+import { eigeneDatenbank, type EigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Verbindungen nur zum Schließen
-const offen: any[] = [];
-after(async () => {
-  for (const s of offen) await s.end();
-});
+/**
+ * Datenbanken der Tests (#1419): Jeder Test baut sich eine eigene auf. Blieben alle bis zum Ende der Datei offen, hielte
+ * die Datei allein bis zu 48 Verbindungen – mit den parallel laufenden Dateien reichte das im CI für „too many clients“.
+ * Darum gibt jeder Test seine Datenbank nach dem Ende frei.
+ */
+const offen: EigeneDatenbank[] = [];
+const freigeben = async () => {
+  for (const d of offen.splice(0)) await d.ende();
+};
+afterEach(freigeben);
+after(freigeben);
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konten/konto-repo');
-  const { sql } = await eigeneDatenbank(name);
-  offen.push(sql);
+  const db = await eigeneDatenbank(name);
+  offen.push(db);
+  const { sql } = db;
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };
 }
