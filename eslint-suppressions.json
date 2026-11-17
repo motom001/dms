@@ -79,11 +79,6 @@
       "count": 1
     }
   },
-  "server/src/beispiele/beispiele.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/berechtigungen/berechtigungen.dienst.ts": {
     "complexity": {
       "count": 1
