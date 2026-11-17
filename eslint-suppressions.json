@@ -1303,18 +1303,9 @@
       "count": 1
     }
   },
-  "web/src/einrichtung/Einrichtung.tsx": {
+  "web/src/einrichtung/entwurf.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 13
-    },
-    "complexity": {
-      "count": 3
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 4
     }
   },
   "web/src/konto.tsx": {

@@ -2138,11 +2138,6 @@
       "mitText"
     ]
   },
-  "web/src/einrichtung/Einrichtung.tsx": {
-    "exports": [
-      "TYP_BEREICHE"
-    ]
-  },
   "web/src/entdecken/stand.ts": {
     "exports": [
       "ankerGesucht"
