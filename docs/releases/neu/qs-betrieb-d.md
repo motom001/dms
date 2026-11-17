@@ -1,0 +1,9 @@
+art: minor
+
+## Neu
+
+- **Fehlgeschlagene Sicherungen in den Nachweisen** (#1308): Scheitert eine Sicherung oder ihre Kopie außer Haus, steht das im Nachweis-Journal (`sicherung.fehlgeschlagen`) und in den Nachweisen des Monats im Bereich Sicherung – mit Art (automatisch oder von Hand), Ort (lokal oder außer Haus mit dem Namen des Ziels) und einem festen Grund (`platz`, `schluessel`, `ziel`, `abbruch`, `fehler`), ohne Fehlertext, Pfade oder Zugangsdaten. Ein Eintrag je Tag und Grund mit Anzahl: Ein Zeitplan, der jede Nacht scheitert, flutet das Journal nicht.
+
+## Geändert
+
+- **Image `dms`: ohne `DMS_PROZESSE` automatisch zwei Prozesse** (#1309): Wie `dms-komplett` nimmt jetzt auch das Image `dms` mit eigener Datenbank ohne die Variable 2 Prozesse, wenn der Container mindestens 4 Kerne und 8 GB darf, sonst 1 – und nie mehr, als `DMS_DB_VERBINDUNGEN` trägt (sonst 1 Prozess, mit Hinweis im Systemzustand). Bisher blieb es bei einem. Zwei Prozesse brauchen unter Last rund 1 GB mehr Arbeitsspeicher und 14 statt 10 Verbindungen zur Datenbank. **Weg zurück:** `DMS_PROZESSE=1`. Eine feste Zahl gilt weiter, wie sie ist.

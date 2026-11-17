@@ -24,6 +24,8 @@ import {
   type Probeergebnis,
   type ProbePlan,
   PROBE_TAGE,
+  artAusName,
+  vermerkeFehlschlag,
 } from './sicherung-hilfen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
@@ -80,6 +82,18 @@ export abstract class SicherungExtern extends SicherungAnlegen {
     return pakete.map((p) => ({ ...p, ziel: zuletzt(p.id) }));
   }
 
+  /**
+   * Kopie außer Haus gescheitert (#1308): ins Nachweis-Journal mit dem Namen des Pakets als Ziel – nicht mit der Angabe
+   * des Pakets zum Ziel und nicht mit seinem Fehlertext (beides kann Adressen oder Pfade enthalten).
+   */
+  private async vermerkeExtern(name: string, paket: string, vorher: ExternStand, status: ExternStatus) {
+    // Nur der Wechsel nach „fehlgeschlagen“ zählt: fehlgeschlagen und danach aufgegeben ist ein Fehlschlag, nicht zwei.
+    if (status !== 'fehlgeschlagen' || vorher.status === 'fehlgeschlagen') return;
+    const pakete = (await this.extern?.pakete().catch(() => [])) ?? [];
+    const ziel = pakete.find((p) => p.id === paket)?.name ?? paket;
+    await vermerkeFehlschlag({ art: artAusName(name), ort: 'ausser_haus', ziel, grund: 'ziel' });
+  }
+
   /** Nach einer Sicherung: Ereignis an die Pakete, Stand „offen“ je Paket. Fehler hier stören die Sicherung nicht. */
   protected async kuendigeAn(name: string, meta: Metadaten) {
     try {
@@ -93,6 +107,7 @@ export abstract class SicherungExtern extends SicherungAnlegen {
       await this.extern!.melde({ name, ...schlankeMetadaten(meta) });
     } catch (e) {
       log.error('Kopie außer Haus nicht angestoßen', { name, fehler: (e as Error).message });
+      await vermerkeFehlschlag({ art: meta.art, ort: 'ausser_haus', grund: 'fehler' });
     }
   }
 
@@ -164,6 +179,7 @@ export abstract class SicherungExtern extends SicherungAnlegen {
       am: this.jetzt().toISOString(),
     };
     await this.setzeExtern(name, paket, neu);
+    await this.vermerkeExtern(name, paket, stand, status);
     if (status === 'fehlgeschlagen') log.warn('Kopie außer Haus fehlgeschlagen', { name, paket, grund, endgueltig: !!neu.endgueltig });
     else if (status !== 'laeuft')
       log.info(status === 'geprueft' ? 'Kopie außer Haus geprüft' : 'Kopie außer Haus hochgeladen', {
@@ -202,10 +218,11 @@ export abstract class SicherungExtern extends SicherungAnlegen {
     // Erfolg ohne Stand; schon erfolgreich; oder während des Aufrufs schon gemeldet (Pakete vor #636, PUT): nichts ändern.
     if (r.ok || erfolgreich(stand) || Date.parse(stand.am) >= r.beginn) return;
     const endgueltig = r.rc === 2;
+    const status: ExternStatus = endgueltig ? 'fehlgeschlagen' : 'laeuft';
     const grund =
       ohneZugangsdaten((r.fehler ?? '').trim().replace(/\s+/g, ' ')).slice(0, 500) || t('meldungen.sicherung.das-paket-meldet-einen');
     await this.setzeExtern(name, paket, {
-      status: endgueltig ? 'fehlgeschlagen' : 'laeuft',
+      status,
       grund,
       ...(endgueltig ? { endgueltig: true } : {}),
       ...(stand.ziel ? { ziel: stand.ziel } : {}),
@@ -214,6 +231,7 @@ export abstract class SicherungExtern extends SicherungAnlegen {
       seit: stand.seit,
       am: this.jetzt().toISOString(),
     });
+    await this.vermerkeExtern(name, paket, stand, status);
     log.warn(endgueltig ? 'Kopie außer Haus fehlgeschlagen' : 'Kopie außer Haus: Versuch fehlgeschlagen', {
       name,
       paket,
@@ -238,6 +256,7 @@ export abstract class SicherungExtern extends SicherungAnlegen {
       }),
       am: this.jetzt().toISOString(),
     });
+    await this.vermerkeExtern(name, paket, stand, 'fehlgeschlagen');
     log.error('Kopie außer Haus aufgegeben', { name, paket, fehler });
     void this.melde().catch(() => {});
   }

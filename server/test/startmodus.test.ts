@@ -331,6 +331,8 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
           PORT: String(port),
           HOST: '127.0.0.1',
           LOG_LEVEL: 'warn',
+          // Ein Prozess wie bisher: Ohne DMS_PROZESSE wählt Ablago seit #1309 selbst (2 ab 4 Kernen und 8 GB).
+          DMS_PROZESSE: '1',
           DMS_LASTTEST: '',
           DMS_EINRICHTUNGSCODE: 'aus',
         },

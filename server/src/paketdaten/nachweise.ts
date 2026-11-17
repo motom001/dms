@@ -1,6 +1,7 @@
 /**
  * Nachweise je Monat als Daten für Pakete (#1053). Je Bereich, was im Monat geschehen ist bzw. wie es zum Stichtag
- * stand. Quellen: das Nachweis-Journal (journal.ts), Sicherungen samt Prüfung und Probe, Löschprotokoll und Post.
+ * stand. Quellen: das Nachweis-Journal (nachweisjournal.ts; dort auch fehlgeschlagene Sicherungen, #1308), Sicherungen
+ * samt Prüfung und Probe, Löschprotokoll und Post.
  *
  * Bewusst so eng wie möglich: keine Titel, Feldwerte oder Dateinamen; Fehlanmeldungen nur mit Konto (falls es das
  * Konto gibt), gekürzter Adresse und „Heimnetz/außen“; unbekannte Konten nur als Anzahl (Ergänzung Sicherheit).
@@ -45,6 +46,7 @@ const imMonat = (zeit: string | null | undefined, g: { von: string; bis: string 
 const JOURNAL: Partial<Record<PaketdatenBereich, JournalArt[]>> = {
   zugang: ['zugang.rechte', 'zugang.fehlanmeldung'],
   betrieb: ['betrieb.update', 'betrieb.paket', 'betrieb.wartung'],
+  sicherung: ['sicherung.fehlgeschlagen'],
   unveraenderbarkeit: ['unveraenderbarkeit.pruefung'],
   datenschutz: ['datenschutz.papierkorb', 'datenschutz.auskunft'],
 };
@@ -62,7 +64,10 @@ const zugang: Teil = async (q, _g, j, aus) => {
     });
 };
 
-/** Sicherung: Läufe, Prüfungen und Probe-Wiederherstellungen, die in den Monat fallen. */
+/**
+ * Sicherung: Läufe, Prüfungen und Probe-Wiederherstellungen der vorhandenen Sicherungen, die in den Monat fallen.
+ * Fehlgeschlagene Läufe hinterlassen keine Sicherung – sie kommen aus dem Journal (`sicherung.fehlgeschlagen`, #1308).
+ */
 const sicherung: Teil = async (q, g, _j, aus) => {
   for (const s of (await q.sicherungen?.()) ?? []) {
     if (imMonat(s.beginn, g))

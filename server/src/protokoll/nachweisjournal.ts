@@ -1,7 +1,7 @@
 /**
  * Nachweis-Journal (#1053): was für die Nachweise eines Monats sonst nirgends dauerhaft steht – Fehlanmeldungen,
  * Rechteänderungen, Updates und Paket-Verlauf, Wartungszeiten, Läufe von „Alle Dateien prüfen“, geleerter Papierkorb,
- * erzeugte Datenschutzauskünfte. Das Protokoll hält nur 24 Stunden.
+ * erzeugte Datenschutzauskünfte, fehlgeschlagene Sicherungen (#1308). Das Protokoll hält nur 24 Stunden.
  *
  * Abgelegt in den Tabellen `nachweis_journal` (je Eintrag eine Zeile) und `nachweis_zaehler` (Migration 118, Teil der
  * Sicherung). Bis #1253 stand jeder Monat als ein JSON-Wert `nachweise:JJJJ-MM` in den Einstellungen: Jede
@@ -10,7 +10,8 @@
  * einfügen); ein unbekanntes Konto nur das Hochzählen. Die alten Werte übernimmt der Server beim ersten Zugriff.
  *
  * Je Monat höchstens `JE_MONAT` Einträge, danach nur noch gezählt („weitere“); nach `MONATE` Monaten fällt ein Monat
- * weg. Nie Geheimnisse, nie volle IP-Adressen (Ergänzung Sicherheit: IPv4 /24, IPv6 /48 und „Heimnetz/außen“;
+ * weg. Was sich wiederholen kann (fehlgeschlagene Sicherungen, #1308), steht als **ein** Eintrag je Tag und Merkmalen
+ * mit Anzahl ({@link Nachweisjournal.vermerkeJeTag}): Ein Zeitplan, der jede Nacht scheitert, flutet das Journal nicht. Nie Geheimnisse, nie volle IP-Adressen (Ergänzung Sicherheit: IPv4 /24, IPv6 /48 und „Heimnetz/außen“;
  * unbekannte Konten nur als Anzahl).
  */
 import type postgres from 'postgres';
@@ -31,7 +32,8 @@ export type JournalArt =
   | 'betrieb.wartung'
   | 'unveraenderbarkeit.pruefung'
   | 'datenschutz.auskunft'
-  | 'datenschutz.papierkorb';
+  | 'datenschutz.papierkorb'
+  | 'sicherung.fehlgeschlagen';
 /** Nur gezählt (ohne Einzelheiten): Fehlanmeldungen mit unbekanntem Konto. */
 export type JournalZaehler = 'zugang.fehlanmeldung_unbekannt';
 
@@ -64,6 +66,12 @@ export interface JournalSpeicher {
   /** Eintrag anfügen; ab `grenze` Einträgen im Monat nur noch „weitere“ hochzählen. */
   trageEin(monat: string, e: JournalEintrag, grenze: number): Promise<void>;
   zaehle(monat: string, art: JournalZaehler): Promise<void>;
+  /**
+   * Eintrag je Tag (#1308): Gibt es im Monat schon einen Eintrag derselben Art, dessen Daten `gleich` enthalten, zählt
+   * er dort `anzahl` hoch und setzt `letzte` auf die Zeit von `e` – ohne neuen Eintrag und ohne den Zähler des Monats.
+   * Sonst wie `trageEin`. Auch mit mehreren Prozessen an einer Datenbank genau ein Eintrag (Sperre je Art und Monat).
+   */
+  vermerke(monat: string, e: JournalEintrag, gleich: Record<string, PaketdatenWert>, grenze: number): Promise<void>;
   /** Alle Monate bis einschließlich `bis` löschen. */
   raeume(bis: string): Promise<void>;
 }
@@ -91,11 +99,28 @@ export function speicherJournal(): JournalSpeicher {
       const x = hol(k);
       x.zaehler[art] = (x.zaehler[art] ?? 0) + 1;
     },
+    async vermerke(k, e, gleich, grenze) {
+      const x = hol(k);
+      const da = x.eintraege.find((y) => y.art === e.art && enthaelt(y.daten, gleich));
+      if (!da) {
+        if (++x.versuche <= grenze) x.eintraege.push(structuredClone(e));
+        return;
+      }
+      da.daten.anzahl = (typeof da.daten.anzahl === 'number' ? da.daten.anzahl : 1) + 1;
+      da.daten.letzte = e.zeit;
+    },
     async raeume(bis) {
       for (const k of [...m.keys()]) if (k <= bis) m.delete(k);
     },
   };
 }
+
+/** Enthalten die Daten alle Werte von `gleich` (wie `@>` in PostgreSQL)? */
+const enthaelt = (daten: Record<string, PaketdatenWert>, gleich: Record<string, PaketdatenWert>) =>
+  Object.entries(gleich).every(([k, v]) => JSON.stringify(daten[k] ?? null) === JSON.stringify(v));
+
+/** Klasse der Sitzungssperre für `vermerke` (#1308), daneben ein Hash aus Haushalt, Art und Monat. */
+const VERMERK_SPERRE = 4711308;
 
 /** Zählerzeile „alle Versuche einzutragen“ je Monat; die übrigen Zeilen sind `JournalZaehler`. */
 const VERSUCHE = 'eintraege';
@@ -126,6 +151,17 @@ async function uebernimmAltesJournal(sql: postgres.Sql, haushaltId: string): Pro
     )
     SELECT (SELECT count(*) FROM alt)::int AS monate, (SELECT count(*) FROM e)::int AS eintraege, (SELECT count(*) FROM z)::int AS zaehler`;
   return r.monate;
+}
+
+/** Ein Eintrag: Zähler des Monats hochzählen und, solange unter der Grenze, einfügen – in einer Anweisung. */
+function fuegeEin(sql: postgres.Sql | postgres.TransactionSql, haushaltId: string, monat: string, e: JournalEintrag, grenze: number) {
+  return sql`
+    WITH z AS (
+      INSERT INTO nachweis_zaehler (haushalt_id, monat, art, anzahl) VALUES (${haushaltId}, ${monat}, ${VERSUCHE}, 1)
+      ON CONFLICT (haushalt_id, monat, art) DO UPDATE SET anzahl = nachweis_zaehler.anzahl + 1 RETURNING anzahl
+    )
+    INSERT INTO nachweis_journal (haushalt_id, monat, art, zeit, daten)
+    SELECT ${haushaltId}::uuid, ${monat}, ${e.art}, ${e.zeit}::timestamptz, ${sql.json(e.daten as postgres.JSONValue)} FROM z WHERE z.anzahl <= ${grenze}`;
 }
 
 /**
@@ -164,13 +200,23 @@ export function pgJournal(sql: postgres.Sql, haushaltId: string): JournalSpeiche
     },
     async trageEin(monat, e, grenze) {
       await vorher();
-      await sql`
-        WITH z AS (
-          INSERT INTO nachweis_zaehler (haushalt_id, monat, art, anzahl) VALUES (${haushaltId}, ${monat}, ${VERSUCHE}, 1)
-          ON CONFLICT (haushalt_id, monat, art) DO UPDATE SET anzahl = nachweis_zaehler.anzahl + 1 RETURNING anzahl
-        )
-        INSERT INTO nachweis_journal (haushalt_id, monat, art, zeit, daten)
-        SELECT ${haushaltId}::uuid, ${monat}, ${e.art}, ${e.zeit}::timestamptz, ${sql.json(e.daten as postgres.JSONValue)} FROM z WHERE z.anzahl <= ${grenze}`;
+      await fuegeEin(sql, haushaltId, monat, e, grenze);
+    },
+    async vermerke(monat, e, gleich, grenze) {
+      await vorher();
+      // Selten (eine gescheiterte Sicherung), darum genügt eine Sperre je Art und Monat: Zwei Prozesse, die zugleich
+      // vermerken, finden so nacheinander den Eintrag des anderen – kein doppelter Eintrag, keine verlorene Zählung.
+      await sql.begin(async (tx) => {
+        await tx`SELECT pg_advisory_xact_lock(${VERMERK_SPERRE}, hashtext(${`${haushaltId}:${e.art}:${monat}`}))`;
+        const [da] = await tx<{ nr: string }[]>`
+          UPDATE nachweis_journal SET daten = daten || jsonb_build_object(
+            'anzahl', CASE WHEN jsonb_typeof(daten->'anzahl') = 'number' THEN (daten->>'anzahl')::bigint ELSE 1 END + 1,
+            'letzte', ${e.zeit}::text)
+          WHERE nr = (SELECT nr FROM nachweis_journal WHERE haushalt_id = ${haushaltId} AND monat = ${monat} AND art = ${e.art}
+            AND daten @> ${tx.json(gleich as postgres.JSONValue)} ORDER BY nr LIMIT 1)
+          RETURNING nr`;
+        if (!da) await fuegeEin(tx, haushaltId, monat, e, grenze);
+      });
     },
     async zaehle(monat, art) {
       await vorher();
@@ -215,6 +261,19 @@ export class Nachweisjournal {
     this.raeume(monat);
   }
 
+  /**
+   * Ein Eintrag je Tag (UTC) und Merkmalen (#1308): `merkmale` samt `tag` bestimmen den Eintrag; wiederholt sich das
+   * am selben Tag, zählt `anzahl` hoch und `letzte` nennt die letzte Zeit. `zeit` bleibt die erste.
+   */
+  async vermerkeJeTag(art: JournalArt, merkmale: Record<string, PaketdatenWert>): Promise<void> {
+    const jetzt = this.jetzt();
+    const zeit = jetzt.toISOString();
+    const monat = monatVon(jetzt);
+    const gleich = ohneGeheimnisse({ tag: zeit.slice(0, 10), ...merkmale });
+    await this.speicher.vermerke(monat, { art, zeit, daten: { ...gleich, anzahl: 1, letzte: zeit } }, gleich, JE_MONAT);
+    this.raeume(monat);
+  }
+
   async zaehle(art: JournalZaehler): Promise<void> {
     const monat = monatVon(this.jetzt());
     await this.speicher.zaehle(monat, art);
@@ -235,6 +294,12 @@ export const nachweisjournal = () => aktiv;
 export function nachweis(art: JournalArt, daten: Record<string, PaketdatenWert>): Promise<void> {
   if (!aktiv) return Promise.resolve();
   return aktiv.schreibe(art, daten).catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art, fehler: e.message }));
+}
+
+/** Wie `nachweis`, aber ein Eintrag je Tag und Merkmalen mit Anzahl (#1308). */
+export function nachweisJeTag(art: JournalArt, merkmale: Record<string, PaketdatenWert>): Promise<void> {
+  if (!aktiv) return Promise.resolve();
+  return aktiv.vermerkeJeTag(art, merkmale).catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art, fehler: e.message }));
 }
 
 /** Fehlanmeldung: Konto nur, wenn es das Konto gibt; Adresse gekürzt, dazu Heimnetz oder außen. */

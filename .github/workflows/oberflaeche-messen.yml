@@ -65,7 +65,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/daten"
           cd server
-          NODE_ENV=production DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
+          # DMS_PROZESSE=1: vergleichbar mit früheren Messungen (ohne die Variable seit #1309 zwei Prozesse ab 4 Kernen).
+          NODE_ENV=production DMS_PROZESSE=1 DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
             DATABASE_URL=postgres://dms:dms@127.0.0.1:5432/dmsmessung PORT=3100 HOST=127.0.0.1 LOG_LEVEL=warn \
             nohup node --enable-source-maps dist/index.js > "$RUNNER_TEMP/dms.log" 2>&1 &
           timeout 120 bash -c 'until curl -sf http://127.0.0.1:3100/api/gesundheit >/dev/null; do sleep 1; done'

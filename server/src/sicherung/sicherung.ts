@@ -6,7 +6,16 @@
 import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { SicherungExtern } from './sicherung-extern';
-import { type Lauf, type ExternAnbindung, type SicherungsQuellen, ortszeit, log } from './sicherung-hilfen';
+import {
+  type Lauf,
+  type ExternAnbindung,
+  type SicherungsQuellen,
+  ortszeit,
+  log,
+  ENDUNG,
+  artAusName,
+  vermerkeFehlschlag,
+} from './sicherung-hilfen';
 import { EntfernteSicherungen } from './sicherung-entfernt';
 import { wochentagVon, laufeFaellige, einstellungsMerker } from '../zeitplan/zeitplan';
 
@@ -76,7 +85,10 @@ export class Sicherung extends SicherungExtern {
     return gestartet;
   }
 
-  /** Nach einem Neustart: halb geschriebene Sicherungen entfernen. */
+  /**
+   * Nach einem Neustart: halb geschriebene Sicherungen entfernen. Jede davon ist ein abgebrochener Lauf und steht als
+   * `abbruch` im Nachweis-Journal (#1308) – sonst fehlte er dort, weil er keine Sicherung hinterlässt.
+   */
   async raeumeTeileAuf() {
     let namen: string[] = [];
     try {
@@ -84,6 +96,8 @@ export class Sicherung extends SicherungExtern {
     } catch {
       return;
     }
+    for (const n of namen.filter((x) => x.startsWith('.') && x.endsWith(`${ENDUNG}.teil`)))
+      await vermerkeFehlschlag({ art: artAusName(n.slice(1, -`${ENDUNG}.teil`.length)), ort: 'lokal', grund: 'abbruch' });
     // Auch angefangenes Zurückholen (#976): Teildatei und Stand.
     for (const n of namen.filter((x) => (x.startsWith('.') && x.endsWith('.teil')) || x.startsWith('.holen-')))
       await rm(join(this.ordner, n), { force: true });

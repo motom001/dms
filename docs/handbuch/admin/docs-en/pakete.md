@@ -499,7 +499,7 @@ If a package has calculated fields or sets notes, the confirmation also says: **
 
 #### Reading evidence { #recht-nachweise }
 
-**"Read evidence (users, failed sign-ins, backups …), requested: … – only the areas you tick"** – since version 0.287. Per month: users with roles, two-factor, passkey and administration rights, permission changes, failed sign-ins (account, time, shortened address; unknown accounts only as a count), backup runs and test restores, runs of "Check all files", updates and package history, maintenance times, deletions after the period, emptied Bin, subject access requests and incoming post per channel. Only someone with **full administration** and a fresh sign-in can release it. If the package files the evidence in folders, **restrict that folder type** – it contains people.
+**"Read evidence (users, failed sign-ins, backups …), requested: … – only the areas you tick"** – since version 0.287. Per month: users with roles, two-factor, passkey and administration rights, permission changes, failed sign-ins (account, time, shortened address; unknown accounts only as a count), backup runs and test restores, failed backups (local and off-site, with kind, target and reason – one entry per day with a count, without error text and paths), runs of "Check all files", updates and package history, maintenance times, deletions after the period, emptied Bin, subject access requests and incoming post per channel. Only someone with **full administration** and a fresh sign-in can release it. If the package files the evidence in folders, **restrict that folder type** – it contains people.
 
 ### Service address { #dienst-adresse }
 

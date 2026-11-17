@@ -14,6 +14,8 @@ import {
   behalten,
   ZU_ALT_TAGE,
   TAG_MS,
+  fehlgrundVon,
+  vermerkeFehlschlag,
 } from './sicherung-hilfen';
 import { ZWECK, type Eintrag, schreibeSicherung } from './sicherungsformat';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -43,9 +45,15 @@ export abstract class SicherungAnlegen extends SicherungBasis {
       await this.q.tresor.nachladen();
       schluessel = this.q.tresor.abgeleitet(ZWECK);
     }
-    if (!schluessel || !this.q.tresor.fingerabdruck) throw new Fachfehler(409, t('meldungen.sicherung.ohne-schluessel-keine-sicherung'));
+    if (!schluessel || !this.q.tresor.fingerabdruck) {
+      await vermerkeFehlschlag({ art, ort: 'lokal', grund: 'schluessel' });
+      throw new Fachfehler(409, t('meldungen.sicherung.ohne-schluessel-keine-sicherung'));
+    }
     const plan = await this.plan();
-    await mkdir(this.ordner, { recursive: true });
+    await mkdir(this.ordner, { recursive: true }).catch(async (e: unknown) => {
+      await vermerkeFehlschlag({ art, ort: 'lokal', grund: fehlgrundVon(e) });
+      throw e;
+    });
     try {
       const f = await statfs(this.ordner);
       const frei = f.bavail * f.bsize;
@@ -55,6 +63,7 @@ export abstract class SicherungAnlegen extends SicherungBasis {
           mindestFreiGB: plan.mindestFreiGB,
         });
         await this.merkeFehler(art, grund);
+        await vermerkeFehlschlag({ art, ort: 'lokal', grund: 'platz' });
         throw new Fachfehler(507, grund);
       }
     } catch (e) {
@@ -97,6 +106,8 @@ export abstract class SicherungAnlegen extends SicherungBasis {
     const beginn = this.jetzt();
     const vorlaeufig: string[] = [];
     let fertig: Metadaten | null = null;
+    /** Liegt die Sicherung schon fertig im Ordner? Scheitert danach nur eine Nacharbeit, fehlt keine Sicherung (#1308). */
+    let abgelegt = false;
     try {
       const name = await this.freierName(art);
       const teil = join(this.ordner, `.${name}${ENDUNG}.teil`);
@@ -178,6 +189,7 @@ export abstract class SicherungAnlegen extends SicherungBasis {
       await writeFile(join(this.ordner, `.${name}.json.teil`), `${JSON.stringify(meta, null, 2)}\n`, { mode: 0o600 });
       await rename(teil, join(this.ordner, `${name}${ENDUNG}`));
       await rename(join(this.ordner, `.${name}.json.teil`), join(this.ordner, `${name}.json`));
+      abgelegt = true;
       // Danach im Hintergrund außer Haus (#585): Die lokale Sicherung ist fertig, egal was dort geschieht.
       await this.kuendigeAn(name, meta);
       if (art === 'automatisch') await this.raeumeAuf();
@@ -195,6 +207,8 @@ export abstract class SicherungAnlegen extends SicherungBasis {
       for (const pfad of vorlaeufig) await rm(pfad, { force: true }).catch(() => {});
       lauf.fehler = (e as Error).message;
       await this.merkeFehler(art, (e as Error).message).catch(() => {});
+      // Ins Nachweis-Journal nur der feste Grund – der Fehlertext kann Pfade enthalten (#1308).
+      if (!abgelegt) await vermerkeFehlschlag({ art, ort: 'lokal', grund: fehlgrundVon(e) });
     }
     lauf.beendet = this.jetzt().toISOString();
     lauf.schritt = fertig ? 'Fertig' : 'Abgebrochen';

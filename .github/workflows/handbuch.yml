@@ -101,6 +101,8 @@ jobs:
           DMS_DATENWURZEL: ${{ runner.temp }}/daten
           PORT: '3000'
           DMS_VERSION: handbuch
+          # Ein Prozess wie bisher (gleiche Bilder des Systemzustands): Ohne DMS_PROZESSE nähme Ablago seit #1309 zwei.
+          DMS_PROZESSE: '1'
 
       # Browser je Playwright-Version zwischenspeichern (#1059): spart den Download in jedem Bilder-Job. Der Schlüssel
       # folgt dem Lockfile in web/rauchtest (#1272), damit Paket und Browser immer zusammenpassen.
