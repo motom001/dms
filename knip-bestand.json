@@ -1053,9 +1053,7 @@
   },
   "server/src/sichten/sichten.dienst.ts": {
     "exports": [
-      "TEIL_TREFFER_MAX",
-      "sortierungAus",
-      "suchTypen"
+      "TEIL_TREFFER_MAX"
     ]
   },
   "server/src/sprache/sprachwahl.ts": {
