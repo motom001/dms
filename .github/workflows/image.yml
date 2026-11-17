@@ -136,6 +136,9 @@ jobs:
       # Auswahl im Wochenlauf (mindestens 24 Stunden alt, nie zurück).
       - name: Regeln für :stabil
         run: .github/werkzeuge/stabil-pruefen.test.sh
+      # Vergleich der Alpine-Pakete beider Varianten (#1397), angewandt in image-probe.
+      - name: Vergleich der Alpine-Pakete
+        run: .github/werkzeuge/apk-versionen-vergleichen.test.sh
       # Die Musterseite der Bausteine (#967) darf nie ins Image: Produktivbau der Oberfläche ohne VITE_MUSTER bauen und
       # prüfen, dass weder der Teil „muster“ noch der Weg /muster darin steckt.
       - name: Produktivbau ohne Musterseite
@@ -367,9 +370,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # Dieselbe Tageskennung der Paketschicht wie beim Bau auf main (#1397): So kommt sie wie dort aus dem Cache, und
+      # der Vergleich der Paketlisten unten sieht, was ein Release sähe.
+      - id: zeit
+        run: echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
+          build-args: |
+            APK_TAG=${{ steps.zeit.outputs.tag }}
           platforms: ${{ matrix.plattform }}
           load: true
           push: false
@@ -403,7 +412,7 @@ jobs:
       # Einrichtungsskript für den Raspberry Pi (#578); shellcheck ist auf den GitHub-Rechnern vorinstalliert.
       - name: Einrichtungsskript prüfen
         if: matrix.plattform == 'linux/amd64'
-        run: shellcheck deploy/raspberry-pi/einrichten.sh .github/werkzeuge/update-test.sh .github/werkzeuge/stabil-pruefen.sh .github/werkzeuge/stabil-pruefen.test.sh .github/werkzeuge/stabil-bisher.sh .github/werkzeuge/stabil-auswahl.sh .github/werkzeuge/pr-labels.sh
+        run: shellcheck deploy/raspberry-pi/einrichten.sh .github/werkzeuge/update-test.sh .github/werkzeuge/stabil-pruefen.sh .github/werkzeuge/stabil-pruefen.test.sh .github/werkzeuge/stabil-bisher.sh .github/werkzeuge/stabil-auswahl.sh .github/werkzeuge/pr-labels.sh .github/werkzeuge/apk-versionen-vergleichen.sh .github/werkzeuge/apk-versionen-vergleichen.test.sh
       # dms-komplett (#208): Ablago und PostgreSQL in einem Container – auf beiden Architekturen.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -412,8 +421,20 @@ jobs:
           platforms: ${{ matrix.plattform }}
           load: true
           push: false
+          build-args: |
+            APK_TAG=${{ steps.zeit.outputs.tag }}
           tags: dms-komplett:probe
           cache-from: type=gha,scope=${{ matrix.plattform }}
+      # Gleiche Alpine-Pakete in beiden Varianten (#1397): gemeinsame Pakete müssen dieselbe Version haben, je
+      # Architektur. Liest nur /lib/apk/db/installed aus beiden Images (wenige Sekunden).
+      - name: Alpine-Pakete beider Varianten gleich
+        run: |
+          docker run --rm --entrypoint cat dms:probe /lib/apk/db/installed > "$RUNNER_TEMP/apk-dms"
+          docker run --rm --entrypoint cat dms-komplett:probe /lib/apk/db/installed > "$RUNNER_TEMP/apk-komplett"
+          if ! .github/werkzeuge/apk-versionen-vergleichen.sh "$RUNNER_TEMP/apk-dms" "$RUNNER_TEMP/apk-komplett" dms dms-komplett > "$RUNNER_TEMP/apk-abweichend"; then
+            while read -r zeile; do echo "::error title=Alpine-Pakete ${{ matrix.plattform }}::$zeile"; done < "$RUNNER_TEMP/apk-abweichend"
+            exit 1
+          fi
       # Probe-Installationen gleichzeitig (#1059) – sie sind voneinander unabhängig (eigene Ports, Namen, Ordner):
       # - Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid (#179) und den Raspberry Pi (#578): starten, Ablago
       #   antwortet, Assistent beginnt ohne Datenbankschritt (nur amd64);
@@ -622,6 +643,8 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          # :latest setzt nur der Job „latest“ nach dem Release (#1398) – auch nicht bei einem von Hand gepushten Tag.
+          flavor: latest=false
           tags: |
             type=ref,event=branch
             type=raw,value=main,enable=${{ github.event_name == 'schedule' }}
