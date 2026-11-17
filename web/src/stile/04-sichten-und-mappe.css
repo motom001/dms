@@ -215,6 +215,8 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .gruppentitel { margin: 4px 10px 2px; font-size: calc(11px * var(--skala, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--leise); }
 .sicht.ausgeblendet .nm { opacity: .65; font-style: italic; }
 .ausgeblendet-fuss { margin: 12px 10px 0; }
+/* „n Bereiche ausgeblendet“ ist seit #1277 ein Knopf: in der schmalen Leiste darf er umbrechen. */
+.ausgeblendet-fuss .knopf { white-space: normal; text-align: left; max-width: 100%; }
 .ausgeblendet-fuss .verweis { background: none; border: 0; padding: 0; font: inherit; color: var(--akzent); cursor: pointer; text-decoration: underline; }
 /* Solange die Stufe lädt, steht statt der Bereiche eine leise Zeile (#1418). */
 .werkbankleiste-laedt { margin: 4px 10px; }

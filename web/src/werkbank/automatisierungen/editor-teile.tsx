@@ -168,7 +168,9 @@ export function Vorrat({
               {liste.map((v) => (
                 <li key={`${v.bereich}|${v.art}`} className="vorratkarte">
                   <Ziehgriff griff={ablage.griff(`${v.bereich}|${v.art}`, vorratName(v))} tasten={{}} />
-                  <Knopf onClick={() => fuegeHinzu(v.bereich, v.art)}>{vorratName(v)}</Knopf>
+                  <Knopf groesse="klein" onClick={() => fuegeHinzu(v.bereich, v.art)}>
+                    {vorratName(v)}
+                  </Knopf>
                 </li>
               ))}
             </ul>
