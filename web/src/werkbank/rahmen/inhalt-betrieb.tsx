@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { SuchePanel } from '../SucheEinstellungen';
 import { WoerterListe, WoerterRechts } from '../Woerter';
 import { AnmeldeschutzPanel } from '../Anmeldeschutz';
@@ -25,134 +24,101 @@ import { SpeicherplatzPanel } from '../Speicherplatz';
 import { WerkzeugeHinweis } from '../Werkzeuge';
 import { AuslastungAbschnitt, ErweiterungenHinweis } from '../Auslastung';
 import { PapierkorbDetail, PapierkorbListe } from '../../ablage/Papierkorb';
-import type { Inhalt, Kontext } from './inhalt';
+import type { Seiten } from './inhalt';
 
-/* Inhalte der Bereiche, zweiter Teil: Einstellungen, Post, Wartung, Sichern, Systemzustand. */
+/* Inhalte der Bereiche, zweiter Teil (#819, Tabelle seit #1281): Einstellungen, Post, Wartung, Sichern, Systemzustand. */
 
 /** E-Mail-Versand, Aufgaben, Anbindung, Region, Daten, Organisation, Sprachen, Anmeldeschutz, Vollexport. */
-export function einstellungen(k: Kontext): Inhalt | undefined {
-  const { bereich, id } = k;
-  const {
-    betrieb,
-    aufgabenFilter,
-    aufgaben,
-    uebersicht,
-    datenschutzRecht,
-    datenschutz,
-    vollexport,
-    anmeldeschutz,
-    region,
-    daten,
-    nutzung,
-    organisation,
-    sprachen,
-    anbindung,
-    ansicht,
-  } = k.z;
-  let liste: ReactNode;
-  let rechts: ReactNode;
-  if (bereich === 'betrieb') {
-    rechts = <BetriebPanel b={betrieb} />;
-  } else if (bereich === 'aufgaben') {
-    liste = <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} />;
-    rechts = <AufgabenPanel z={aufgaben} id={id} />;
-  } else if (bereich === 'anbindung') {
-    rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
-  } else if (bereich === 'region') {
-    rechts = <RegionPanel z={region} />;
-  } else if (bereich === 'daten') {
-    rechts = <DatenEinstellungenPanel z={daten} />;
-  } else if (bereich === 'organisation') {
-    // Nutzung und Eigene Organisation auf einer Seite (#1170).
-    rechts = (
+export const einstellungenSeiten = {
+  betrieb: ({ z }) => ({ rechts: <BetriebPanel b={z.betrieb} /> }),
+  aufgaben: ({ id, z: { aufgaben, aufgabenFilter } }) => ({
+    liste: <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} />,
+    rechts: <AufgabenPanel z={aufgaben} id={id} />,
+  }),
+  anbindung: ({ z: { anbindung, uebersicht } }) => ({
+    rechts: <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />,
+  }),
+  region: ({ z }) => ({ rechts: <RegionPanel z={z.region} /> }),
+  daten: ({ z }) => ({ rechts: <DatenEinstellungenPanel z={z.daten} /> }),
+  // Nutzung und Eigene Organisation auf einer Seite (#1170).
+  organisation: ({ z: { organisation, nutzung, datenschutzRecht, datenschutz, ansicht } }) => ({
+    rechts: (
       <OrganisationPanel
         z={organisation}
         nutzung={nutzung}
         datenschutz={datenschutzRecht ? datenschutz : null}
         nachNutzung={() => void ansicht.laden()}
       />
-    );
-  } else if (bereich === 'sprachen') {
-    rechts = <SprachenPanel z={sprachen} />;
-  } else if (bereich === 'anmeldeschutz') {
-    rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
-  } else if (bereich === 'vollexport') {
-    rechts = <VollexportPanel z={vollexport} />;
-  } else return undefined;
-  return { liste, rechts };
-}
+    ),
+  }),
+  sprachen: ({ z }) => ({ rechts: <SprachenPanel z={z.sprachen} /> }),
+  anmeldeschutz: ({ z }) => ({ rechts: <AnmeldeschutzPanel z={z.anmeldeschutz} /> }),
+  vollexport: ({ z }) => ({ rechts: <VollexportPanel z={z.vollexport} /> }),
+} satisfies Seiten;
 
 /** Texterkennung, Wörter, Wartung, Sicherung, Postfächer, Eingangsordner, WebDAV, Papierkorb. */
-export function postUndWartung(k: Kontext): Inhalt | undefined {
-  const { bereich, id, wartungAn } = k;
-  const { papierkorb, ocr, woerter, wartungsmodus, sicherung, eingang, webdav, postfaecher } = k.z;
-  let liste: ReactNode;
-  let rechts: ReactNode;
-  if (bereich === 'texterkennung') {
-    // Suche und Volltext (#725): Texterkennung, Tippfehler und gleichbedeutende Wörter. „Neue PDFs automatisch
-    // verkleinern“ steht seit #1190 im Systemzustand beim Speicherplatz.
-    rechts = (
+export const postUndWartungSeiten = {
+  // Suche und Volltext (#725): Texterkennung, Tippfehler und gleichbedeutende Wörter. „Neue PDFs automatisch
+  // verkleinern“ steht seit #1190 im Systemzustand beim Speicherplatz.
+  texterkennung: ({ z, wartungAn }) => ({
+    rechts: (
       <>
-        <TexterkennungPanel t={ocr} wartungAn={wartungAn} />
+        <TexterkennungPanel t={z.ocr} wartungAn={wartungAn} />
         <SuchePanel />
       </>
-    );
-  } else if (bereich === 'woerter') {
-    // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
-    liste = <WoerterListe z={woerter} offen={id} />;
-    rechts = <WoerterRechts z={woerter} id={id} />;
-  } else if (bereich === 'wartung') {
-    // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.
-    rechts = (
+    ),
+  }),
+  // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
+  woerter: ({ id, z: { woerter } }) => ({ liste: <WoerterListe z={woerter} offen={id} />, rechts: <WoerterRechts z={woerter} id={id} /> }),
+  // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.
+  wartung: ({ z, wartungAn }) => ({
+    rechts: (
       <>
-        <WartungsmodusPanel w={wartungsmodus} />
-        <WartungPanel t={ocr} wartungAn={wartungAn} abschnitt />
+        <WartungsmodusPanel w={z.wartungsmodus} />
+        <WartungPanel t={z.ocr} wartungAn={wartungAn} abschnitt />
       </>
-    );
-  } else if (bereich === 'sicherung') {
-    // Sicherung mit Wiederherstellen als Abschnitt (#725).
-    rechts = (
+    ),
+  }),
+  // Sicherung mit Wiederherstellen als Abschnitt (#725).
+  sicherung: ({ z }) => ({
+    rechts: (
       <>
-        <SicherungPanel z={sicherung} />
+        <SicherungPanel z={z.sicherung} />
         <WiederherstellungPanel abschnitt />
       </>
-    );
-  } else if (bereich === 'postfaecher') {
-    liste = <PostfaecherListe z={postfaecher} offen={id} />;
+    ),
+  }),
+  postfaecher: ({ id, z: { postfaecher } }) => ({
+    liste: <PostfaecherListe z={postfaecher} offen={id} />,
     // Ein bestehendes Postfach baut sich neu auf, sobald die Liste da ist (Stand aus der Liste); ein neues nicht –
     // sonst gingen Eingaben und Fehler verloren, die vor dem Laden der Liste kamen (#1409).
-    rechts = id ? (
+    rechts: id ? (
       <PostfachEditor key={id === 'neu' ? id : `${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} />
     ) : (
       <div className="platzhalter">
         <p>{t('werkbank.werkbank.waehle-links-ein-postfach')}</p>
       </div>
-    );
-  } else if (bereich === 'eingangsordner') {
-    rechts = <EingangsordnerPanel z={eingang} />;
-  } else if (bereich === 'webdav') {
-    rechts = <WebdavPanel z={webdav} />;
-  } else if (bereich === 'papierkorb') {
-    liste = <PapierkorbListe z={papierkorb} werkbank offen={id} />;
-    rechts = id ? (
+    ),
+  }),
+  eingangsordner: ({ z }) => ({ rechts: <EingangsordnerPanel z={z.eingang} /> }),
+  webdav: ({ z }) => ({ rechts: <WebdavPanel z={z.webdav} /> }),
+  papierkorb: ({ id, z: { papierkorb } }) => ({
+    liste: <PapierkorbListe z={papierkorb} werkbank offen={id} />,
+    rechts: id ? (
       <PapierkorbDetail key={id} id={id} werkbank />
     ) : (
       <div className="platzhalter">
         <p>{t('werkbank.werkbank.waehle-links-eine-geloeschte')}</p>
       </div>
-    );
-  } else return undefined;
-  return { liste, rechts };
-}
+    ),
+  }),
+} satisfies Seiten;
 
 /** Systemzustand (#725): Speicherplatz, Auslastung, Datenbank, externe Dienste, Version. */
-export function systemzustand(k: Kontext): Inhalt | undefined {
-  const { bereich } = k;
-  const { datenbank, externeDienste, technik, uebersicht, wartungsmodus, speicherplatz, systemlast } = k.z;
-  let rechts: ReactNode;
-  if (bereich === 'systemzustand') {
-    // Systemzustand (#725) nimmt Version und Updates (früher „Technik“) und die Auslastung der Datenbank auf.
-    rechts = (
+export const systemSeiten = {
+  // Systemzustand (#725) nimmt Version und Updates (früher „Technik“) und die Auslastung der Datenbank auf.
+  systemzustand: ({ z: { datenbank, externeDienste, technik, uebersicht, wartungsmodus, speicherplatz, systemlast } }) => ({
+    rechts: (
       <SpeicherplatzPanel
         z={speicherplatz}
         nachAenderung={() => {
@@ -178,7 +144,6 @@ export function systemzustand(k: Kontext): Inhalt | undefined {
           </>
         }
       />
-    );
-  } else return undefined;
-  return { rechts };
-}
+    ),
+  }),
+} satisfies Seiten;

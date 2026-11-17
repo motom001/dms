@@ -64,7 +64,7 @@ describe('Baustein PaketChip (#1192)', () => {
 
   it('die Werkbank-Listen nutzen ihn, nirgends mehr „aus Paket“ ohne Namen (#1192)', () => {
     for (const datei of [
-      'werkbank/Werkbank.tsx',
+      'werkbank/rahmen/inhalt-ablage.tsx',
       'werkbank/sichten/SichtenListe.tsx',
       'werkbank/Nummernkreise.tsx',
       'werkbank/Woerter.tsx',

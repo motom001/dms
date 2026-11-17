@@ -373,8 +373,8 @@ describe('Worin die Werkbank-Listen suchen (#978)', () => {
       { id: EINGEBAUT, name: 'Ablago (eingebaut)' },
       { id: 'haushalt', name: 'Haushalt' },
     ]);
-    // Die Liste der Mappentypen nimmt diese Herkunft.
-    const quelle = readFileSync(new URL('../../web/src/werkbank/Werkbank.tsx', import.meta.url), 'utf8');
+    // Die Liste der Mappentypen nimmt diese Herkunft (seit #1281 in rahmen/inhalt-ablage.tsx).
+    const quelle = readFileSync(new URL('../../web/src/werkbank/rahmen/inhalt-ablage.tsx', import.meta.url), 'utf8');
     assert.match(quelle, /herkunft: \(typ\) => herkunftTyp\(typ, pakete\)/);
   });
 });
