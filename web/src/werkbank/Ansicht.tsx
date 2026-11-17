@@ -42,7 +42,9 @@ export function useWerkbankAnsicht() {
   }, [laden]);
   /** Ohne Stand (z. B. ältere Server) bleibt alles sichtbar. */
   const zeigen = useCallback((pfad: string) => !stand || sichtbar(stand.installation, stand.eigene, pfad), [stand]);
-  return { stand, setStand, fehler, laden, zeigen };
+  /** Noch ohne Stand und ohne Fehler: Die Leiste zeigt bis dahin alles (#1409, `aria-busy`). */
+  const laedt = !stand && !fehler;
+  return { stand, setStand, fehler, laden, zeigen, laedt };
 }
 export type WerkbankAnsichtZustand = ReturnType<typeof useWerkbankAnsicht>;
 

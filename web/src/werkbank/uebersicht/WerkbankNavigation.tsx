@@ -18,17 +18,21 @@ export interface WerkbankEintrag {
 /**
  * Leiste der Werkbank. Ausgeblendete Bereiche (#281) fehlen – außer dem offenen und solchen mit Hinweis.
  * Unten: wie viele ausgeblendet sind, zum Aufklappen, und der Weg zu „Werkbank anpassen“.
+ * `laedt`: Die gewählte Stufe und die Einblendungen (#987) kommen noch – bis dahin zeigt `zeigen` alles; die Leiste
+ * sagt das mit `aria-busy` (#1409).
  */
 export function WerkbankNavigation({
   bereich,
   eintraege,
   zeigen = () => true,
   benutzt: eingerichtet = [],
+  laedt = false,
 }: {
   bereich: string;
   eintraege: WerkbankEintrag[];
   zeigen?: (pfad: string) => boolean;
   benutzt?: string[];
+  laedt?: boolean;
 }) {
   const [alleZeigen, setAlleZeigen] = useState(false);
   // Werkbank-Suche (#725): findet Bereiche unter neuem und altem Namen, auch ausgeblendete.
@@ -50,7 +54,7 @@ export function WerkbankNavigation({
   return (
     <>
       {gruppenwahl({ liste, gruppen, gewaehlt, setGewaehlt, eintrag, warnIn })}
-      <nav className="sichtliste werkbankleiste">
+      <nav className="sichtliste werkbankleiste" aria-busy={laedt || undefined}>
         <Suchfeld
           className="werkbanksuche"
           wert={suche}
