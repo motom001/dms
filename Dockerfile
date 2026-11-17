@@ -94,6 +94,14 @@ RUN printf '#!/bin/sh\nexec node /app/lasttest/lasttest.mjs "$@"\n' > /usr/local
 # dms-registry: docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete/basis …
 # Der Befehl ersetzt CMD; das Entrypoint-Skript von node (bzw. tini in dms-komplett) startet ihn direkt.
 RUN printf '#!/bin/sh\nexec node --enable-source-maps /app/server/dist/pakete-pruefen.js "$@"\n' > /usr/local/bin/pakete-pruefen && chmod 755 /usr/local/bin/pakete-pruefen
+# Alpine-Pakete bei jedem Bau frisch (#1397): Die Schicht mit „apk add“ oben bleibt mit APK_TAG bis zu einen Tag im
+# Cache, weil sie vor den COPY-Schritten liegt (dort gehört sie hin, sonst käme poppler bei jedem Bau neu ins Image).
+# Diese Schicht liegt bewusst hinter DMS_GEBAUT und allen COPY-Schritten: Beim Bau in GitHub Actions kommt sie nie aus
+# dem Cache (Bauzeit und Commit ändern sich jedes Mal, die gebaute Oberfläche ebenso) und hebt nur,
+# was Alpine seit der Schicht oben korrigiert hat – meist nichts, also klein. So haben dms und dms-komplett (baut auf
+# dieser Stufe auf) dieselben Versionen; früher bekam dms Korrekturen bis zu einen Tag später als dms-komplett.
+# Prüfung in der CI: image-probe vergleicht die Paketlisten beider Varianten (.github/werkzeuge/apk-versionen-vergleichen.sh).
+RUN apk upgrade --no-cache
 
 # Feste Ordner (#115): /data/files, /data/geheim, /data/sicherung – zugeordnet nur über Volumes.
 # Dazu /data/export (#797) für Exporte: ohne eigenes Volume im Container, nie im Sicherungsordner.
@@ -108,8 +116,10 @@ CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 # Containers erreichbar (127.0.0.1, „trust“) – kein Passwort, das jemand kennen muss. tini startet das
 # Skript, das erst PostgreSQL, dann Ablago startet und beim Stoppen beide sauber beendet.
 FROM laufzeit AS komplett
-ARG APK_TAG=""
-RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache && apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
+# Ohne eigenes „apk upgrade“ (#1397): laufzeit endet mit einer frischen Paketschicht aus demselben Bau. Ein zweites
+# Upgrade hier könnte Pakete heben, die dms nicht bekommt. „apk add“ holt die neuesten PostgreSQL-Pakete und hebt nur,
+# was sie zwingend brauchen.
+RUN apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett

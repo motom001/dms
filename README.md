@@ -103,7 +103,16 @@ Das Image `ghcr.io/motom001/dms` ist öffentlich – eine Anmeldung bei der Regi
 2. Daneben eine Datei `.env` mit `DB_PASSWORD=<langes zufälliges Passwort>` ablegen.
 3. Starten und `http://<NAS>:8080` aufrufen. Ein Assistent führt durch die Einrichtung: Einrichtungscode (steht im Protokoll des Containers und in `geheim/EINRICHTUNGSCODE`), Datenbank, dann **Neu einrichten** oder **Aus einer Sicherung wiederherstellen**, Name deiner Ablage, Administrator, erster Benutzer, Schlüssel und Notfallblatt.
 
-`ghcr.io/motom001/dms:stabil` (in allen Vorlagen) folgt den geprüften Releases einmal pro Woche; `:main` folgt jedem Stand auf `main` und ist nur zum Testen; mit einer Versionsnummer, also `ghcr.io/motom001/dms:<Version>` mit einer Nummer aus den [Releases](https://github.com/motom001/dms/releases), bleibt die Installation auf einem Release. Alles Weitere steht im Administratorhandbuch unter [Einrichtung und Betrieb](https://help.ablago.app/admin/aktuell/installation/) und [Aktualisieren und Sichern](https://help.ablago.app/admin/aktuell/aktualisieren/).
+Welches Image-Tag (gilt ebenso für `ghcr.io/motom001/dms-komplett`):
+
+| Tag | Zeigt auf | Für wen |
+|---|---|---|
+| `:stabil` | die geprüfte Version, wandert einmal pro Woche | Standard in allen Vorlagen |
+| `:latest` | die zuletzt veröffentlichte Version, wandert mit jedem Release | wer immer das Neueste möchte |
+| `:<Version>` | genau diese Version, z. B. `:0.290.14` aus den [Releases](https://github.com/motom001/dms/releases) | wer selbst entscheidet, wann aktualisiert wird |
+| `:main` | jeden Stand auf `main`, auch ohne Release | nur zum Testen |
+
+Ohne Tag nimmt Docker `:latest`. Nicht verwechseln: Die Markierung „Latest“ bei den Releases auf GitHub trägt die stabile Version (`:stabil`), das Image-Tag `:latest` die neueste. Alles Weitere steht im Administratorhandbuch unter [Einrichtung und Betrieb](https://help.ablago.app/admin/aktuell/installation/) und [Aktualisieren und Sichern](https://help.ablago.app/admin/aktuell/aktualisieren/#image-tag).
 
 ## Sicherheit und Offenheit
 
