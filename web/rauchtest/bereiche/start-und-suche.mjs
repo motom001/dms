@@ -110,12 +110,16 @@ rauchtest('Mappe öffnen, ändern und speichern', { als: LENA }, async (s) => {
     .click();
   const mappe = s.getByRole('region', { name: 'Mappe' });
   await mappe.getByRole('heading', { name: 'Wartungsvertrag Heizung', level: 1 }).waitFor();
-  // „Änderungen verwerfen“ geht nur mit ungespeicherten Änderungen – daran sieht man, dass gespeichert ist.
+  // „Änderungen verwerfen“ geht nur mit ungespeicherten Änderungen – und ist auch gesperrt, solange gespeichert wird.
   const verwerfen = (gesperrt) => mappe.getByRole('button', { name: 'Änderungen verwerfen', disabled: gesperrt }).waitFor();
   await verwerfen(true);
   await mappe.getByRole('textbox', { name: 'Vertragsnummer' }).fill('WV-2027-1');
   await verwerfen(false);
+  // Gespeichert ist erst mit der Antwort auf das PUT (#1419): Lud der Test schon neu, sobald „Änderungen verwerfen“
+  // gesperrt war, lief das Speichern unter Last mitunter noch – nach dem Neuladen stand der alte Wert da.
+  const gespeichert = s.waitForResponse((r) => r.request().method() === 'PUT' && /^\/api\/mappen\/[^/]+$/.test(new URL(r.url()).pathname));
   await mappe.getByRole('button', { name: 'Mappe speichern' }).click();
+  assert.equal((await gespeichert).status(), 200);
   await verwerfen(true);
   await s.reload();
   await mappe.getByRole('heading', { name: 'Wartungsvertrag Heizung', level: 1 }).waitFor();
