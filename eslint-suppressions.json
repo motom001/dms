@@ -1370,17 +1370,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Sichten.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Texterkennung.tsx": {
     "max-lines": {
       "count": 1
