@@ -79,7 +79,7 @@ Meldet ein Benutzer einen Fehler, kannst du dich mit **Als … anmelden** als di
 
 ![Als Jonas angemeldet: gelber Warnhinweis oben, im Menü „Konto von Jonas Beispiel“](bilder/vertretung.png)
 
-Der Benutzer sieht bei seiner nächsten Anmeldung, wer wann in seinem Namen gearbeitet hat. Alles, was du in dieser Zeit tust, geschieht unter seinem Konto.
+Der Benutzer sieht bei seiner nächsten Anmeldung, wer wann in seinem Namen gearbeitet hat. Alles, was du in dieser Zeit tust, geschieht unter seinem Konto. Seinen Zugang änderst du dabei nicht (#1356): Passwort, E-Mail-Adresse, Passkeys, Zwei-Faktor-Anmeldung, API-Schlüssel, angemeldete Geräte, Passwörter für Dokumente und der Export mit Passwörtern sind gesperrt – Ablago antwortet mit einem Hinweis.
 
 ## Benutzer als Mappen
 

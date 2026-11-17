@@ -56,7 +56,7 @@ Under **Account → Export my data** you get a copy of everything you may see �
 
 What belongs to the whole household – deletion log, synonyms for the search, automations – is only in the administrator's full export. If a folder links to one you may not read, it says "Folder not visible" instead of the title.
 
-**The export is unencrypted** – keep the file safe. Password fields are only included if you may see them and explicitly confirm it; they are then in plain text in the file `passwoerter.csv`. The export runs in the background; when it's ready, you download it as a ZIP. There is only ever your latest export – a new one replaces the old one. **After downloading it is deleted**, at the latest after 7 days; until when it is available is shown next to the button. If you need it longer, keep the ZIP file. While someone is [working in your name](#in-deinem-namen), no export can be started. **The personal export is off by default**; the administrator switches it on in the Workbench. While it is off, you see a note here instead of the button – you then get information about your data from the administrator.
+**The export is unencrypted** – keep the file safe. Password fields are only included if you may see them and explicitly confirm it; they are then in plain text in the file `passwoerter.csv`. With passwords, Ablago asks once more for your password (and code) or a [passkey](#passkeys) before starting and before downloading if you signed in more than ten minutes ago. The export runs in the background; when it's ready, you download it as a ZIP. There is only ever your latest export – a new one replaces the old one. **After downloading it is deleted**, at the latest after 7 days; until when it is available is shown next to the button. If you need it longer, keep the ZIP file. While someone is [working in your name](#in-deinem-namen), no export can be started and none with passwords downloaded. **The personal export is off by default**; the administrator switches it on in the Workbench. While it is off, you see a note here instead of the button – you then get information about your data from the administrator.
 
 ### My permissions { #meine-rechte }
 
@@ -66,19 +66,21 @@ At the bottom of the area *Account*, below name and email address, it says what 
 
 ### Security {#sicherheit}
 
-- **Password** – enter your current password and the new one twice (at least 10 characters). After changing it, all other sign-ins are ended.
+- **Password** – enter your current password and the new one twice (at least 10 characters). After changing it, all other sign-ins are ended. If you have [API keys](#api-schluessel), Ablago then shows them and offers to delete them – otherwise programs with a key still get in. Keys that may read passwords are preselected.
 - **Passkeys** – sign in without a password, with your fingerprint, face or device PIN; see [below](#passkeys).
 - **Two-factor sign-in** – see [below](#zwei-faktor-anmeldung).
-- **My signed-in devices** – everywhere you are currently signed in, with browser, device and last activity; *this device* is marked. **Sign out** ends a single sign-in, **Sign out all others** all except this one – for instance if you have lost a phone. Both ask once more first. Then it's best to change your password too.
+- **My signed-in devices** – everywhere you are currently signed in, with browser, device and last activity; *this device* is marked. **Sign out** ends a single sign-in, **Sign out all others** all except this one – for instance if you have lost a phone. Both ask once more first. After **Sign out all others**, Ablago shows your API keys as after a new password and offers to delete them. Then it's best to change your password too.
 - <span id="passwoerter-fuer-dokumente"></span>**Passwords for documents** – the passwords of protected PDFs that you stored with **Remember for further documents** when [unlocking](dokumente.md#passwortgeschuetzte-pdfs). For each password you see the name, the password hidden and when Ablago last used it. The eye shows it, **Change** lets you enter a new name or a new password, and **Delete** deletes it after a confirmation. Documents already unlocked stay unlocked.
     - **Showing and changing** the password only works after you have confirmed yourself again: with your Ablago password, with two-factor sign-in also with a code from the app, or with a [passkey](#passkeys) (**Confirm with a passkey**). The confirmation applies for five minutes to this area.
     - The passwords belong **only to you**: Ablago stores them in your account, encrypted with Ablago's key. Nobody else sees them in Ablago, not even whoever administers Ablago (not even in administration mode), and not in a stand-in arrangement either. They never come out via API keys or packages; they are missing from the full export and are only stored encrypted in the backup. To be honest: whoever has the server itself and Ablago's key in their hands could technically decrypt them – like any password field in a folder.
     - You can remember at most 20 passwords.
     - This is **not a password manager**: Ablago only uses these passwords to open protected documents that you file. For your accounts on websites and apps, please use a password manager.
-- **API keys** – with them, other programs can access Ablago in your name, for example a scanner. If you don't need this, you can skip this section. A key only delivers password fields if you tick **Read passwords** when creating it. Under **Permissions** you choose one of three levels:
+- <span id="api-schluessel"></span>**API keys** – with them, other programs can access Ablago in your name, for example a scanner. If you don't need this, you can skip this section. A key only delivers password fields if you tick **Read passwords** when creating it. Under **Permissions** you choose one of three levels:
     - **read only** – the program reads everything you may read and changes nothing.
     - **read and write** – the program reads and changes everything you may, e.g. a scanner that files post.
     - **counters only** – for home automation and displays, e.g. a lamp for new post or the number on the wall tablet. The key only retrieves your numbers: new post, To do and overdue deadlines. If it is lost, someone learns at most how much post and how many tasks you have – no titles, senders or contents. Ablago rejects everything else.
+
+    You create a key **read only** or **read and write** only with confirmation: if you signed in more than ten minutes ago, Ablago asks once more for your password (and code) or a [passkey](#passkeys). The same applies when a key gets **more** – a higher permission, the tick **Read passwords**, or a later expiry or none at all. **Counters only** needs no confirmation. For every new key **read only** or **read and write** you get an email.
 
     How to connect, for example, a Homey Pro with it is described under [Connecting Ablago to home automation](hausautomatisierung.md); the [Administrator manual](https://help.ablago.app/admin/aktuell/en/api/#zaehler) describes the technology.
 - <span id="papierkorb"></span>**Bin** – **Empty when signing out** deletes your deleted folders permanently as soon as you sign out. When the switch is off, they stay in the [Bin](ablage.md#papierkorb) for as long as the administrator has set.
@@ -95,6 +97,8 @@ With a **passkey** you sign in without a password: your phone or computer asks f
 1. Under **My account → Security**, at **Passkeys**, tap **Add a passkey**.
 2. Give it a name you will recognise later – Ablago suggests the kind of device, e.g. "My iPhone".
 3. Tap **Continue** and confirm on the device (fingerprint, face or PIN). With a security key, plug it in and touch it.
+
+If you signed in more than ten minutes ago, Ablago first asks again for your password (and code) or an existing passkey. You get an email for every new passkey.
 
 You can have **several** passkeys, for example one on your phone, one on your laptop and a security key as a spare. Many phones and password managers also copy a passkey to your other devices; the list then says *on several devices*.
 
@@ -121,6 +125,8 @@ With two-factor sign-in, Ablago asks after the password additionally for a six-d
 2. Scan the QR code in an authenticator app (e.g. Google Authenticator, Microsoft Authenticator, Aegis, 2FAS, Bitwarden or the Passwords app on the iPhone). If that doesn't work, type in the key below it.
 3. Enter the code from the app and **Confirm**.
 4. You receive **ten recovery codes**. Save or print them and keep them separate from your phone – they are only shown this one time.
+
+If you signed in more than ten minutes ago, Ablago asks once more for your password (and code) or a [passkey](#passkeys) before setting up. Afterwards you get an email. You connect a new phone with **Connect a new app** in the same way: as soon as you confirm the new app's code, the previous app is no longer valid and you get new recovery codes.
 
 From now on you sign in with password **and** code – or, if you have a [passkey](#passkeys), with the passkey alone. If your phone isn't at hand, click **Use recovery code** when signing in; each code only works once. When they run low, **New recovery codes** creates fresh ones (the old ones then no longer work). **Switch off** switches two-factor sign-in off again; you confirm both with your password, and before switching off Ablago also asks once more.
 
@@ -201,4 +207,4 @@ With **End administration** (in the bar or in the menu) you are back to everyday
 
 ## Notice "… has worked in your name" { #in-deinem-namen }
 
-To reproduce a problem, someone who administers Ablago can sign in as you. They then see exactly what you see – with your permissions, not in administration mode. Afterwards, Ablago shows you a notice at the top next time saying who did this and when. **Understood** hides it. While someone is working as you, the notice **someone is working in your name** appears for that sign-in under *My signed-in devices*.
+To reproduce a problem, someone who administers Ablago can sign in as you. They then see exactly what you see – with your permissions, not in administration mode. They cannot change or use your sign-in (password, email address, passkeys, two-factor sign-in), your API keys or your export with passwords while doing so. Afterwards, Ablago shows you a notice at the top next time saying who did this and when. **Understood** hides it. While someone is working as you, the notice **someone is working in your name** appears for that sign-in under *My signed-in devices*.
