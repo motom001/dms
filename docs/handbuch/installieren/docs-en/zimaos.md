@@ -8,9 +8,9 @@ This is how you install Ablago on a device with **ZimaOS**, e.g. a ZimaCube or Z
 !!! tip "CasaOS instead of ZimaOS?"
     The steps for CasaOS are on a [page of their own](casaos.md).
 
-## 1. Add the DMS store {#1-dms-store-hinzufugen}
+## 1. Add the Ablago store {#1-dms-store-hinzufugen}
 
-Ablago is not (yet) in the official ZimaOS App Store. You add the DMS store once as an additional source:
+Ablago is not (yet) in the official ZimaOS App Store. You add the Ablago store once as an additional source:
 
 1. Open the **App Store**.
 2. Choose **Manage sources** (depending on the version also *Add source* or a **+** next to the store selection).
