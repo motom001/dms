@@ -395,7 +395,7 @@ describe('Werkbank-Rechte des Systemkontos (#677): genau die Tabelle', () => {
     assert.match(probe.schritte[2].text!, /Würde eine Sicherung anstoßen/);
     assert.equal(sich.s.starts.length, 0);
     await motor.ereignis(ereignis('mappe.angelegt', { mappe: m.id, typ: vertrag.id }));
-    let [l] = (await motor.laeufe(a.id)).filter((x) => !x.test);
+    const [l] = (await motor.laeufe(a.id)).filter((x) => !x.test);
     assert.equal(l.zustand, 'abgeschlossen');
     assert.equal(l.schritte[2].text, 'Sicherung angestoßen.');
     assert.deepEqual(
@@ -404,8 +404,12 @@ describe('Werkbank-Rechte des Systemkontos (#677): genau die Tabelle', () => {
     );
     sich.s.laeuft = true;
     await motor.ereignis(ereignis('mappe.angelegt', { mappe: m.id, typ: vertrag.id }));
-    [l] = (await motor.laeufe(a.id)).filter((x) => !x.test);
-    assert.match(l.schritte[2].text!, /läuft schon/);
+    // Der zweite Lauf über seine Id, nicht als „neuester“: In derselben Millisekunde gestartet, sortiert der Verlauf
+    // beide gleich, und der erste stünde vorn (#1409).
+    const laeufe = (await motor.laeufe(a.id)).filter((x) => !x.test);
+    assert.equal(laeufe.length, 2);
+    const zweiter = laeufe.find((x) => x.id !== l.id)!;
+    assert.match(zweiter.schritte[2].text!, /läuft schon/);
   });
 
   it('Einrichten nur mit dem Recht am Bereich; Bestehendes bleibt bearbeitbar; Kopieren prüft wie Anlegen', async () => {
