@@ -1286,11 +1286,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/BenutzerEditor.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Demo.tsx": {
     "complexity": {
       "count": 1
