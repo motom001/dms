@@ -1279,14 +1279,6 @@
       "count": 1
     }
   },
-  "web/src/assistent/Schritte.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/bereiche.tsx": {
     "complexity": {
       "count": 1
