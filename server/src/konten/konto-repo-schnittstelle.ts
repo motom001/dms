@@ -101,6 +101,8 @@ export interface KontoRepo {
   /** Abwesenheit mit Vertreter setzen (#78). */
   setzeAbwesenheit(id: string, a: Abwesenheit): Promise<Benutzer>;
   setzeHash(id: string, hash: string): Promise<void>;
+  /** Hash neu speichern (#1358, neue scrypt-Parameter) – nur, wenn noch `alt` gespeichert ist; true = ersetzt. */
+  ersetzeHash(id: string, alt: string, neu: string): Promise<boolean>;
   notiereAnmeldung(id: string): Promise<void>;
   loescheBenutzer(id: string): Promise<void>;
   /** Dienstkonto eines Pakets (#338); nicht in listeBenutzer, anzahlBenutzer, holeHash. */

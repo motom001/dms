@@ -61,6 +61,8 @@ Für die heikelsten Handlungen fragt Ablago **immer** das Passwort (und den Code
 - Notfallzugang aus dem Internet erlauben ([Anmeldeschutz](anmeldeschutz.md#notfallzugang))
 - Zwei-Faktor-Anmeldung oder Passkeys einer Person zurücksetzen ([Benutzer](benutzer.md))
 
+Dieselbe Bestätigung verlangt Ablago von **jeder Person** für Handlungen am eigenen Konto, die den Zugang dauerhaft ändern oder Passwörter herausgeben (#1352, #1356) – sofern die Anmeldung nicht höchstens zehn Minuten zurückliegt: Passkey hinzufügen oder entfernen, Zwei-Faktor-Anmeldung einrichten oder durch eine neue App ersetzen, API-Schlüssel „nur lesen“ oder „lesen und schreiben“ anlegen oder erweitern, *Meine Daten exportieren* mit Passwörtern starten und herunterladen. Neue Passkeys, eine neue Code-App und neue API-Schlüssel dieser Stufen melden eine Mail an die Person. In einer [Vertretung](benutzer.md) sind diese Handlungen gesperrt.
+
 Fehlversuche zählen in den [Anmeldeschutz](anmeldeschutz.md) wie bei der Anmeldung selbst. Die Zwei-Faktor-Anmeldung bleibt freiwillig; vorschreiben lässt sie sich unter *Anmeldeschutz* weiter „für alle, die verwalten dürfen“.
 
 ## Spur im Verwaltungsmodus { #spur }

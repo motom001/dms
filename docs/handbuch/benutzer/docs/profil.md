@@ -56,7 +56,7 @@ Unter **Konto → Meine Daten exportieren** bekommst du eine Kopie von allem, wa
 
 Was dem ganzen Haushalt gehört – Löschprotokoll, gleichbedeutende Wörter der Suche, Automatisierungen –, steht nur im Vollexport des Administrators. Verweist eine Mappe auf eine, die du nicht lesen darfst, steht dort statt des Titels „nicht sichtbare Mappe“.
 
-**Der Export ist unverschlüsselt** – bewahre die Datei sicher auf. Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst; sie liegen dann im Klartext in der Datei `passwoerter.csv`. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. **Nach dem Herunterladen wird er gelöscht**, spätestens nach 7 Tagen; bis wann er bereitliegt, steht neben dem Knopf. Brauchst du ihn länger, bewahre die ZIP-Datei auf. Solange jemand [in deinem Namen arbeitet](#in-deinem-namen), lässt sich kein Export starten. **Ab Werk ist der eigene Export aus**; der Administrator schaltet ihn in der Werkbank ein. Solange er aus ist, steht an dieser Stelle ein Hinweis statt des Knopfs – eine Auskunft über deine Daten bekommst du dann beim Administrator.
+**Der Export ist unverschlüsselt** – bewahre die Datei sicher auf. Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst; sie liegen dann im Klartext in der Datei `passwoerter.csv`. Mit Passwörtern fragt Ablago vor dem Start und vor dem Herunterladen noch einmal nach deinem Passwort (und Code) oder einem [Passkey](#passkeys), wenn deine Anmeldung länger als zehn Minuten zurückliegt. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. **Nach dem Herunterladen wird er gelöscht**, spätestens nach 7 Tagen; bis wann er bereitliegt, steht neben dem Knopf. Brauchst du ihn länger, bewahre die ZIP-Datei auf. Solange jemand [in deinem Namen arbeitet](#in-deinem-namen), lässt sich kein Export starten und keiner mit Passwörtern herunterladen. **Ab Werk ist der eigene Export aus**; der Administrator schaltet ihn in der Werkbank ein. Solange er aus ist, steht an dieser Stelle ein Hinweis statt des Knopfs – eine Auskunft über deine Daten bekommst du dann beim Administrator.
 
 ### Meine Rechte
 
@@ -66,19 +66,21 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 
 ### Sicherheit
 
-- **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.
+- **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet. Hast du [API-Schlüssel](#api-schluessel), zeigt Ablago sie danach und bietet an, sie zu löschen – Programme mit einem Schlüssel kommen sonst weiter herein. Vorausgewählt sind die Schlüssel, die Passwörter lesen dürfen.
 - **Passkeys** – anmelden ohne Passwort, mit Fingerabdruck, Gesicht oder Geräte-PIN; siehe [unten](#passkeys).
 - **Zwei-Faktor-Anmeldung** – siehe [unten](#zwei-faktor-anmeldung).
-- **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Beides fragt vorher noch einmal nach. Ändere dann am besten auch dein Passwort.
+- **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Beides fragt vorher noch einmal nach. Nach **Alle anderen abmelden** zeigt Ablago wie nach einem neuen Passwort deine API-Schlüssel und bietet an, sie zu löschen. Ändere dann am besten auch dein Passwort.
 - <span id="passwoerter-fuer-dokumente"></span>**Passwörter für Dokumente** – die Passwörter geschützter PDFs, die du beim [Entsperren](dokumente.md#passwortgeschuetzte-pdfs) mit **Für weitere Dokumente merken** abgelegt hast. Je Passwort siehst du den Namen, das Passwort verdeckt und wann Ablago es zuletzt benutzt hat. Mit dem Auge zeigst du es an, mit **Ändern** gibst du einen neuen Namen oder ein neues Passwort ein, und **Löschen** löscht es nach einer Rückfrage. Bereits entsperrte Dokumente bleiben dabei entsperrt.
     - **Anzeigen und Ändern** des Passworts geht erst, nachdem du dich noch einmal bestätigt hast: mit deinem Ablago-Passwort, mit Zwei-Faktor-Anmeldung auch mit einem Code aus der App, oder mit einem [Passkey](#passkeys) (**Mit Passkey bestätigen**). Die Bestätigung gilt fünf Minuten für diesen Bereich.
     - Die Passwörter gehören **nur dir**: Ablago speichert sie in deinem Konto, verschlüsselt mit dem Schlüssel von Ablago. In Ablago sieht sie niemand sonst, auch nicht, wer Ablago verwaltet (auch nicht im Verwaltungsmodus), und auch nicht in einer Vertretung. Über API-Schlüssel oder Pakete kommen sie nie heraus; im Vollexport fehlen sie, in der Sicherung stehen sie nur verschlüsselt. Ehrlich gesagt: Wer den Server selbst und den Schlüssel von Ablago in der Hand hat, könnte sie technisch entschlüsseln – wie jedes Passwortfeld in einer Mappe.
     - Du kannst höchstens 20 Passwörter merken.
     - Das ist **keine Passwortverwaltung**: Ablago nutzt diese Passwörter nur, um geschützte Dokumente zu öffnen, die du ablegst. Für deine Zugänge zu Websites und Apps nimm bitte einen Passwort-Manager.
-- **API-Schlüssel** – damit können andere Programme in deinem Namen auf Ablago zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Unter **Rechte** wählst du eine von drei Stufen:
+- <span id="api-schluessel"></span>**API-Schlüssel** – damit können andere Programme in deinem Namen auf Ablago zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Unter **Rechte** wählst du eine von drei Stufen:
     - **nur lesen** – das Programm liest alles, was du lesen darfst, und ändert nichts.
     - **lesen und schreiben** – das Programm liest und ändert alles, was du darfst, z. B. ein Scanner, der Post ablegt.
     - **nur Zähler** – für Hausautomatisierung und Anzeigen, z. B. eine Lampe bei neuer Post oder die Zahl auf dem Wand-Tablet. Der Schlüssel ruft nur deine Zahlen ab: neue Post, Zu erledigen und überfällige Fristen. Geht er verloren, erfährt jemand höchstens, wie viel Post und Aufgaben du hast – keine Titel, Absender oder Inhalte. Alles andere lehnt das Ablago ab.
+
+    Einen Schlüssel **nur lesen** oder **lesen und schreiben** erzeugst du nur mit Bestätigung: Liegt deine Anmeldung länger als zehn Minuten zurück, fragt Ablago noch einmal nach Passwort (und Code) oder einem [Passkey](#passkeys). Dasselbe gilt, wenn ein Schlüssel **mehr** bekommt – ein höheres Recht, den Haken **Passwörter lesen** oder einen späteren oder gar keinen Ablauf. **Nur Zähler** braucht keine Bestätigung. Für jeden neuen Schlüssel **nur lesen** oder **lesen und schreiben** bekommst du eine Mail.
 
     Wie du damit zum Beispiel einen Homey Pro einbindest, steht unter [Ablago in die Hausautomatisierung einbinden](hausautomatisierung.md); die Technik beschreibt das [Administratorhandbuch](https://help.ablago.app/admin/aktuell/api/#zaehler).
 - <span id="papierkorb"></span>**Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ist der Schalter aus, bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
@@ -95,6 +97,8 @@ Mit einem **Passkey** meldest du dich ohne Passwort an: Dein Handy oder Rechner 
 1. Unter **Mein Konto → Sicherheit** bei **Passkeys** auf **Passkey hinzufügen** tippen.
 2. Einen Namen vergeben, an dem du ihn später erkennst – Ablago schlägt die Art des Geräts vor, z. B. „Mein iPhone“.
 3. Auf **Weiter** tippen und auf dem Gerät bestätigen (Fingerabdruck, Gesicht oder PIN). Mit einem Sicherheitsschlüssel steckst du ihn ein und tippst ihn an.
+
+Liegt deine Anmeldung länger als zehn Minuten zurück, fragt Ablago vorher noch einmal nach Passwort (und Code) oder einem vorhandenen Passkey. Für jeden neuen Passkey bekommst du eine Mail.
 
 Du kannst **mehrere** Passkeys haben, etwa einen auf dem Handy, einen auf dem Laptop und einen Sicherheitsschlüssel als Reserve. Viele Handys und Passwortmanager übertragen einen Passkey auch auf deine anderen Geräte; in der Liste steht dann *auf mehreren Geräten*.
 
@@ -121,6 +125,8 @@ Mit der Zwei-Faktor-Anmeldung fragt Ablago nach dem Passwort zusätzlich einen s
 2. In einer Authenticator-App (z. B. Google Authenticator, Microsoft Authenticator, Aegis, 2FAS, Bitwarden oder den Passwörtern auf dem iPhone) den QR-Code scannen. Geht das nicht, tippst du den Schlüssel darunter ab.
 3. Den Code aus der App eingeben und **Bestätigen**.
 4. Du bekommst **zehn Wiederherstellungscodes**. Speichere oder drucke sie und bewahre sie getrennt vom Handy auf – sie werden nur dieses eine Mal angezeigt.
+
+Liegt deine Anmeldung länger als zehn Minuten zurück, fragt Ablago vor dem Einrichten noch einmal nach Passwort (und Code) oder einem [Passkey](#passkeys). Danach bekommst du eine Mail. Ein neues Handy verbindest du mit **Neue App verbinden** genauso: Sobald du den Code der neuen App bestätigst, gilt die bisherige App nicht mehr, und du bekommst neue Wiederherstellungscodes.
 
 Ab jetzt meldest du dich mit Passwort **und** Code an – oder, wenn du einen [Passkey](#passkeys) hast, mit dem Passkey allein. Ist das Handy nicht zur Hand, klickst du bei der Anmeldung auf **Wiederherstellungscode verwenden**; jeder Code gilt nur einmal. Gehen sie zur Neige, erzeugst du mit **Neue Wiederherstellungscodes** frische (die alten gelten dann nicht mehr). **Abschalten** schaltet die Zwei-Faktor-Anmeldung wieder aus; beides bestätigst du mit deinem Passwort, vor dem Abschalten fragt Ablago außerdem noch einmal nach.
 
@@ -201,4 +207,4 @@ Mit **Verwaltung beenden** (im Balken oder im Menü) bist du zurück im Alltag. 
 
 ## Hinweis „… hat in deinem Namen gearbeitet“ { #in-deinem-namen }
 
-Um einen Fehler nachzustellen, kann sich jemand, der Ablago verwaltet, als du anmelden. Er sieht dann genau, was du siehst – mit deinen Rechten, nicht im Verwaltungsmodus. Danach zeigt dir Ablago beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit **Verstanden** blendest du ihn aus. Solange jemand als du arbeitet, steht bei dieser Anmeldung unter *Meine angemeldeten Geräte* der Hinweis **jemand arbeitet in deinem Namen**.
+Um einen Fehler nachzustellen, kann sich jemand, der Ablago verwaltet, als du anmelden. Er sieht dann genau, was du siehst – mit deinen Rechten, nicht im Verwaltungsmodus. Deine Anmeldung (Passwort, E-Mail-Adresse, Passkeys, Zwei-Faktor-Anmeldung), deine API-Schlüssel und deinen Export mit Passwörtern kann er dabei nicht ändern oder nutzen. Danach zeigt dir Ablago beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit **Verstanden** blendest du ihn aus. Solange jemand als du arbeitet, steht bei dieser Anmeldung unter *Meine angemeldeten Geräte* der Hinweis **jemand arbeitet in deinem Namen**.

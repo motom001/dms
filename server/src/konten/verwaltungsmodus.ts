@@ -8,7 +8,7 @@ import { type Benutzer, type Systemkonto, SYSTEMKONTEN, istPerson } from '../../
 import type { SitzungIntern } from './konto-repo';
 import { darfVerwalten, MODUS_MINUTEN, FRISCH_MINUTEN, type Verwaltungsstand, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { MINUTE, tagVon, log, type Bestaetigung, BERUEHREN_MS } from './hilfen';
-import { hasheSchluessel, pruefePasswort } from '../anmeldung/passwort';
+import { hasheSchluessel } from '../anmeldung/passwort';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 
@@ -113,7 +113,9 @@ export abstract class KontenVerwaltungsmodus extends KontenPasskeys {
       throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true, passkey: await this.passkeyNutzbar(b) });
     const v = await this.sperre.versuch(email, ip);
     const treffer = await this.repo.holeHash(email);
-    const ok = await pruefePasswort(typeof e.passwort === 'string' ? e.passwort : '', treffer?.hash);
+    const ok = await this.passwortStimmt(treffer?.benutzer.id, typeof e.passwort === 'string' ? e.passwort : '', treffer?.hash, () =>
+      this.sperre.zurueck(email, ip, v),
+    );
     const mitCode = !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id));
     const codeOk = !ok || !mitCode ? true : !!(await this.zweifaktor!.pruefe(b.id, e.code));
     if (!ok || !codeOk) {

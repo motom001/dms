@@ -79,7 +79,7 @@ If a user reports an error, you can sign in as this user with **Sign in as …**
 
 ![Signed in as Jonas: yellow warning at the top, in the menu "Account of Jonas Beispiel"](bilder/vertretung.png)
 
-At their next sign-in, the user sees who worked in their name and when. Everything you do during this time happens under their account.
+At their next sign-in, the user sees who worked in their name and when. Everything you do during this time happens under their account. You don't change their access while doing so (#1356): password, email address, passkeys, two-factor sign-in, API keys, signed-in devices, passwords for documents and the export with passwords are blocked – Ablago answers with a notice.
 
 ## Users as folders {#benutzer-als-mappen}
 

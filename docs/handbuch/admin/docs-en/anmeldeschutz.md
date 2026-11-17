@@ -87,7 +87,7 @@ If you require it for everyone who may manage and don't have it yourself yet, Ab
 
 **A passkey fulfils the requirement as well** (#811) – but only a passkey for the maintained HTTPS address (see [Requiring them](#vorschreiben)); without it only the code app counts. Anyone required can add a [passkey](#passkeys) instead of the code app – it is then needed as a second step when signing in with a password, and the person cannot remove the last one themselves. With a passkey they may switch off the code app. The passkey requirement further down stays separate: it demands a passkey; the code app is not enough there.
 
-Wrong codes count like wrong passwords for [sign-in protection](#zwei-sperren). A link for resetting the password only replaces the password; Ablago still asks for the code.
+Setting up and replacing the app require a [fresh sign-in](verwalten.md#frische-anmeldung) (#1356); the person then gets an email. Wrong codes count like wrong passwords for [sign-in protection](#zwei-sperren). A link for resetting the password only replaces the password; Ablago still asks for the code.
 
 **Lost your phone?** Under **Workbench → Users** it says for the user whether two-factor sign-in is set up; **Reset** removes it. Afterwards the password is enough again – if it is required, the user sets it up anew at the next sign-in. Every setup, reset and every sign-in with a recovery code is in the [log](fehlersuche.md#protokoll).
 

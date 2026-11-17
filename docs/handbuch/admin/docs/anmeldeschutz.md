@@ -87,7 +87,7 @@ Schreibst du sie für alle vor, die verwalten dürfen, und hast sie selbst noch 
 
 **Ein Passkey erfüllt die Pflicht ebenfalls** (#811) – aber nur ein Passkey für die gepflegte HTTPS-Adresse (siehe [Vorschreiben](#vorschreiben)); ohne sie zählt nur die Code-App. Wer vorgeschrieben ist, kann statt der Code-App einen [Passkey](#passkeys) hinzufügen – er gehört dann beim Anmelden mit Passwort als zweiter Schritt dazu, und den letzten kann die Person nicht selbst entfernen. Mit Passkey darf sie die Code-App abschalten. Die Passkey-Pflicht weiter unten bleibt davon getrennt: Sie verlangt einen Passkey, die Code-App genügt dort nicht.
 
-Falsche Codes zählen wie falsche Passwörter für den [Anmeldeschutz](#zwei-sperren). Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt Ablago trotzdem ab.
+Einrichten und Ersetzen der App verlangen eine [frische Anmeldung](verwalten.md#frische-anmeldung) (#1356); die Person bekommt danach eine Mail. Falsche Codes zählen wie falsche Passwörter für den [Anmeldeschutz](#zwei-sperren). Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt Ablago trotzdem ab.
 
 **Handy verloren?** Unter **Werkbank → Benutzer** steht beim Benutzer, ob die Zwei-Faktor-Anmeldung eingerichtet ist; **Zurücksetzen** entfernt sie. Danach reicht wieder das Passwort – ist sie vorgeschrieben, richtet der Benutzer sie bei der nächsten Anmeldung neu ein. Jedes Einrichten, Zurücksetzen und jede Anmeldung mit Wiederherstellungscode steht im [Protokoll](fehlersuche.md#protokoll).
 

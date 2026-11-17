@@ -21,6 +21,7 @@
   "anmeldesperre.konto-gebremst_other": "Für dieses Konto kamen zu viele Fehlversuche von verschiedenen Adressen. Die Anmeldung mit Passwort ist für {anzahl} Minuten gebremst.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_one": "Zu viele Fehlversuche. Bitte in einer Minute erneut versuchen.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_other": "Zu viele Fehlversuche. Bitte in {anzahl} Minuten erneut versuchen.",
+  "anmeldesperre.passwortpruefung-voll": "Gerade melden sich sehr viele an. Bitte versuche es in ein paar Sekunden noch einmal.",
   "anmeldesperre.ohne-e-mail-adresse": "ohne E-Mail-Adresse",
   "anmeldesperre.fehlgeschlagene-anmeldungen-zuletzt": "{m} fehlgeschlagene Anmeldungen (zuletzt {wert})",
   "anmeldesperre.ablago-benutzerkonto-nach": "Ablago: Benutzerkonto nach Fehlversuchen gesperrt",

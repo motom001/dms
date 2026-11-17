@@ -151,6 +151,10 @@ export type Bereichskennung = (typeof EINTRAEGE)[number]['pfad'];
 /** Zahlen der Leiste aus der Übersicht, in der Reihenfolge der Liste (#375). */
 export type Zaehler = Extract<(typeof EINTRAEGE)[number], { zaehler: string }>['zaehler'];
 export const ZAEHLER: readonly Zaehler[] = EINTRAEGE.flatMap((e) => ('zaehler' in e ? [e.zaehler] : []));
+/** Bereich je Zahl (#375, #818): Die Übersicht liefert eine Zahl nur an Personen, die diesen Bereich verwalten. */
+export const ZAEHLER_BEREICH = Object.fromEntries(
+  EINTRAEGE.flatMap((e) => ('zaehler' in e ? [[e.zaehler, e.pfad] as const] : [])),
+) as Readonly<Record<Zaehler, Bereichskennung>>;
 /** Hilfeseite je Bereich (#110). */
 export const bereichHilfe = (pfad: Bereichskennung): Hilfeort => EINTRAEGE.find((e) => e.pfad === pfad)!.hilfe;
 

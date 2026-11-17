@@ -5,7 +5,7 @@
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { GEMERKT_MAX } from '../../../shared/src/entsperren';
-import { L, ok, leer, b, info, ich } from '../http/routen-hilfen';
+import { L, ok, leer, b, info, ich, ohneVertretung, verlangeFrisch } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 import { entdeckenRouten, rundgaengeRouten, tippsRouten } from './konten-entdecken.routen';
@@ -46,6 +46,7 @@ function profilRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/email',
       zugang: 'angemeldet',
       handler: async (a) => {
+        ohneVertretung(a);
         const alt = ich(a).email;
         const r = await konten.aendereEmail(ich(a), b(a), log);
         if (r.email !== alt) L.konto.info('Eigene E-Mail-Adresse geändert', { alt, neu: r.email });
@@ -57,6 +58,7 @@ function profilRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/passwort',
       zugang: 'angemeldet',
       handler: async (a) => {
+        ohneVertretung(a);
         const r = await konten.aenderePasswort(ich(a), b(a), log, info(a));
         L.konto.info('Eigenes Passwort geändert, andere Sitzungen beendet');
         return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
@@ -309,18 +311,24 @@ function sitzungenRouten(k: RoutenKontext): Route[] {
   ];
 }
 
+/**
+ * API-Schlüssel im eigenen Profil (#20). Ändern nie in einer Vertretung (#1356); anlegen („lesen“, „schreiben“) und
+ * erweitern nur mit frischer Anmeldung (#1352), dazu eine Mail an die Person bei jedem neuen Schlüssel dieser Stufen.
+ */
 export function apiSchluesselRouten(k: RoutenKontext): Route[] {
-  const { schluessel } = k;
+  const { schluessel, konten } = k;
   return [
-    /* ---------- API-Schlüssel im eigenen Profil ---------- */
     { methode: 'GET', pfad: '/api/konto/api-schluessel', zugang: 'angemeldet', handler: async (a) => ok(await schluessel().liste(ich(a))) },
     {
       methode: 'POST',
       pfad: '/api/konto/api-schluessel',
       zugang: 'angemeldet',
       handler: async (a) => {
-        const r = await schluessel().lege(ich(a), a.body);
+        ohneVertretung(a);
+        const r = await schluessel().lege(ich(a), a.body, () => verlangeFrisch(konten, a, 'api-schluessel'));
         L.konto.info('API-Schlüssel erzeugt', { name: r.name, recht: r.recht, praefix: r.praefix });
+        if (r.recht !== 'zaehler')
+          await konten.meldeNeuenZugang(ich(a), 'api-schluessel', { name: r.name, recht: t.frei(`api.stufe.${r.recht}`) });
         return ok(r, 201);
       },
     },
@@ -329,7 +337,8 @@ export function apiSchluesselRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/api-schluessel/:id',
       zugang: 'angemeldet',
       handler: async (a) => {
-        const r = await schluessel().aendere(ich(a), a.params.id, a.body);
+        ohneVertretung(a);
+        const r = await schluessel().aendere(ich(a), a.params.id, a.body, () => verlangeFrisch(konten, a, 'api-schluessel'));
         L.konto.info('API-Schlüssel geändert', { name: r.name, recht: r.recht });
         return ok(r);
       },
@@ -339,6 +348,7 @@ export function apiSchluesselRouten(k: RoutenKontext): Route[] {
       pfad: '/api/konto/api-schluessel/:id',
       zugang: 'angemeldet',
       handler: async (a) => {
+        ohneVertretung(a);
         await schluessel().loesche(ich(a), a.params.id);
         L.konto.info('API-Schlüssel gelöscht', { id: a.params.id });
         return leer;

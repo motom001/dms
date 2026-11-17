@@ -119,9 +119,10 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
         : kontoApi.verwaltungBeginnen({ passwort, ...(mitCode ? { code } : {}) }),
     );
   // Nur Anbieter (#241): dort erneut anmelden; danach ist die Anmeldung frisch und es geht ohne Abfrage weiter.
+  // Für eine heikle Handlung zurück auf dieselbe Seite (#1356: auch Mein Konto), sonst in die Werkbank.
   const beimAnbieter = () => {
     try {
-      sessionStorage.setItem('dms:nach-anmeldung', '/werkbank?verwalten=1');
+      sessionStorage.setItem('dms:nach-anmeldung', o.art === 'frisch' ? location.pathname + location.search : '/werkbank?verwalten=1');
     } catch {
       /* ohne */
     }

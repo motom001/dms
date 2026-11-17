@@ -1,11 +1,11 @@
 /**
  * Rauchtests: Dreiteilung fest im Fenster (#1063), Werte vorschlagen, Systemzustand (mit automatisch verkleinern, #1190),
- * Passkey, Ansichten-Baum.
+ * Passkey, API-Schlüssel nach neuem Passwort, Ansichten-Baum.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/dreiteilung-und-systemzustand.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, daten, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, BASIS, daten, JONAS, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
 
 /* ---------- Dreiteilung fest im Fenster (#1063) ---------- */
 
@@ -215,6 +215,41 @@ rauchtest('Passkey: hinzufügen, damit anmelden, entfernen (#811)', { als: LENA 
   await blatt.getByRole('button', { name: 'Entfernen' }).click();
   await s.getByRole('alertdialog', { name: '„Rauchtest-Laptop“ entfernen?' }).getByRole('button', { name: 'Entfernen' }).click();
   await blatt.getByText('Rauchtest-Laptop', { exact: true }).waitFor({ state: 'detached' });
+});
+
+// API-Schlüssel (#1352): Jonas (eben angemeldet, also ohne erneute Abfrage) erzeugt einen Schlüssel „nur lesen“ mit
+// „Passwörter lesen“ und ändert sein Passwort. Danach zeigt Ablago seine Schlüssel – dieser ist vorausgewählt – und
+// löscht ihn nach der Rückfrage. Zum Schluss bekommt Jonas sein bisheriges Passwort zurück.
+rauchtest('Mein Konto: API-Schlüssel nach neuem Passwort löschen (#1352)', { als: JONAS }, async (s) => {
+  await s.goto(BASIS + '/profil/sicherheit');
+  await s.getByText('+ Neuer Schlüssel').click();
+  const formular = s.locator('form.schluesselformular').last();
+  await formular.getByLabel('Name').fill('Rauchtest-Skript');
+  await formular.getByLabel('Passwörter lesen').check();
+  await formular.getByRole('button', { name: 'Erzeugen' }).click();
+  await s.getByRole('button', { name: 'Habe ihn gesichert' }).click();
+  await s.locator('.sitzungsliste').getByText('Rauchtest-Skript', { exact: true }).waitFor();
+  const passwort = s.locator('form.blatt').filter({ has: s.getByRole('heading', { name: 'Passwort', exact: true }) });
+  const aendern = async (alt, neu) => {
+    await passwort.getByLabel('Aktuelles Passwort').fill(alt);
+    await passwort.getByLabel('Neues Passwort', { exact: true }).fill(neu);
+    await passwort.getByLabel('Neues Passwort wiederholen').fill(neu);
+    await passwort.getByRole('button', { name: 'Passwort ändern' }).click();
+    await passwort.getByText('Passwort geändert. Alle anderen Anmeldungen wurden beendet.').waitFor();
+  };
+  const neu = 'rauchtest-passwort-neu-2';
+  await aendern(JONAS.passwort, neu);
+  try {
+    const pruefen = s.getByRole('group', { name: 'Deine API-Schlüssel' });
+    assert.equal(await pruefen.getByRole('checkbox', { name: /^Rauchtest-Skript/ }).isChecked(), true, 'mit Passwörtern vorausgewählt');
+    await pruefen.getByRole('button', { name: 'Ausgewählte löschen' }).click();
+    await s.getByRole('alertdialog').getByRole('button', { name: 'Löschen' }).click();
+    await passwort.getByText('1 Schlüssel gelöscht.').waitFor();
+    // Die Liste im Blatt „API-Schlüssel“ lädt danach neu: Der Schlüssel ist weg.
+    await s.locator('.sitzungsliste').getByText('Rauchtest-Skript', { exact: true }).waitFor({ state: 'detached' });
+  } finally {
+    await aendern(neu, JONAS.passwort);
+  }
 });
 
 // Baum der Ansichten ohne Neuladen (#888): Eine für alle gesperrte Ansicht (R entzogen) sieht Lena nur im

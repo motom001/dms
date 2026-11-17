@@ -61,6 +61,8 @@ For the most sensitive actions, Ablago **always** asks for the password (and the
 - allowing emergency access from the internet ([sign-in protection](anmeldeschutz.md#notfallzugang))
 - resetting a person's two-factor sign-in or passkeys ([users](benutzer.md))
 
+Ablago asks **every person** for the same confirmation for actions on their own account that permanently change access or hand out passwords (#1352, #1356) – unless they signed in at most ten minutes ago: adding or removing a passkey, setting up two-factor sign-in or replacing it with a new app, creating or extending API keys "read only" or "read and write", starting and downloading *Export my data* with passwords. New passkeys, a new code app and new API keys of these levels trigger an email to the person. In a [stand-in session](benutzer.md) these actions are blocked.
+
 Failed attempts count towards [sign-in protection](anmeldeschutz.md) as with signing in itself. Two-factor sign-in remains voluntary; it can still be required under *Sign-in protection* "for everyone who may administer".
 
 ## Trail in administration mode { #spur }

@@ -73,6 +73,18 @@ function daten(e: unknown): Pick<ApiSchluessel, 'name' | 'recht' | 'ablauf' | 'p
   return { name, recht, ablauf, passwoerter: recht !== NUR_ZAEHLER && x.passwoerter === true };
 }
 
+const STUFE: Record<Recht, number> = { zaehler: 0, lesen: 1, schreiben: 2 };
+
+/**
+ * Braucht das Anlegen oder Ändern eine erneute Bestätigung (#1352)? Neu: jeder Schlüssel außer „nur Zähler“. Bestehend:
+ * sobald er mehr darf als vorher – höheres Recht, Haken „Passwörter“ an, Ablauf entfernt oder später.
+ */
+export function brauchtBestaetigung(alt: ApiSchluessel | null, neu: Pick<ApiSchluessel, 'recht' | 'passwoerter' | 'ablauf'>): boolean {
+  if (!alt) return neu.recht !== NUR_ZAEHLER;
+  if (STUFE[neu.recht] > STUFE[alt.recht] || (neu.passwoerter && !alt.passwoerter)) return true;
+  return alt.ablauf !== null && (neu.ablauf === null || Date.parse(neu.ablauf) > Date.parse(alt.ablauf));
+}
+
 export class ApiSchluesselDienst {
   private zuletzt = new Map<string, number>();
   constructor(private repo: ApiSchluesselRepo) {}
@@ -81,11 +93,15 @@ export class ApiSchluesselDienst {
     return this.repo.liste(ich.id);
   }
 
-  /** Liefert den vollständigen Schlüssel – nur dieses eine Mal. */
-  async lege(ich: Benutzer, e: unknown) {
+  /**
+   * Liefert den vollständigen Schlüssel – nur dieses eine Mal. `bestaetigt` wirft, wenn die erneute Bestätigung fehlt
+   * (#1352: die Route prüft die frische Anmeldung); aufgerufen nur, wenn der Schlüssel sie braucht.
+   */
+  async lege(ich: Benutzer, e: unknown, bestaetigt: () => void = () => {}) {
     // #128, #818: Über die API arbeitet die Person immer mit ihren Alltagsrechten – ein Schlüssel bekommt nie
     // Verwaltungsrechte (pruefeZugang), auch wenn sie ihn im Verwaltungsmodus anlegt.
     const d = daten(e);
+    if (brauchtBestaetigung(null, d)) bestaetigt();
     if ((await this.repo.liste(ich.id)).length >= 50) throw new Fachfehler(409, t('meldungen.apischluessel.hoechstens-50-schluessel-je'));
     const schluessel = `${PRAEFIX}${randomBytes(30).toString('base64url')}`;
     const s: ApiSchluessel = {
@@ -129,9 +145,12 @@ export class ApiSchluesselDienst {
     return s;
   }
 
-  async aendere(ich: Benutzer, id: string, e: unknown) {
-    await this.eigener(ich, id);
-    return this.repo.aendere(id, daten(e));
+  /** Ändern; bekommt der Schlüssel mehr Rechte (#1352), nur mit erneuter Bestätigung (`bestaetigt` wirft sonst). */
+  async aendere(ich: Benutzer, id: string, e: unknown, bestaetigt: () => void = () => {}) {
+    const alt = await this.eigener(ich, id);
+    const d = daten(e);
+    if (brauchtBestaetigung(alt, d)) bestaetigt();
+    return this.repo.aendere(id, d);
   }
 
   async loesche(ich: Benutzer, id: string) {

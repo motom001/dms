@@ -13,7 +13,7 @@ import { t } from '../sprache/sprache';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { NUR_GESAMT } from '../werkbank/verwaltungsbereiche';
 import { darfBereich, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import type { Bereichskennung } from '../../../shared/src/werkbankansicht';
+import { ZAEHLER_BEREICH, type Bereichskennung, type Zaehler } from '../../../shared/src/werkbankansicht';
 import { protokoll } from '../protokoll/protokoll';
 import { KLASSEN_MS, poolZusammen, type PoolStand } from '../datenbank/poolmessung';
 import { dateiLeser, liesPss, liesRss } from '../system/systemlast';
@@ -366,6 +366,10 @@ export function nurEigeneBereiche<T extends Record<string, unknown>>(b: Benutzer
     if (!(k in erg)) continue;
     if (bereich === NUR_GESAMT || !darfBereich(b, bereich)) erg[k] = leer;
   }
+  // Zahlen der Leiste (#375): je Zahl nur mit dem Bereich, zu dem sie gehört (Liste der Werkbank-Seiten, #1281).
+  const zahlen = erg.zahlen as Partial<Record<Zaehler, number | null>> | undefined;
+  if (zahlen && typeof zahlen === 'object')
+    erg.zahlen = Object.fromEntries(Object.entries(zahlen).map(([z, n]) => [z, darfBereich(b, ZAEHLER_BEREICH[z as Zaehler]) ? n : null]));
   return erg as T;
 }
 
@@ -396,6 +400,24 @@ export function kontaktVorschlaege(typen: Mappentyp[]): Array<{ typId: string; t
     });
   }
   return erg;
+}
+
+/**
+ * Zugang zu einem Konto (#1356): Anmeldewege, API-Schlüssel, E-Mail-Adresse, Passwort und der Export mit Passwörtern
+ * gehören nur der Person selbst. In einer Vertretung antworten diese Routen mit 403 – wie schon die Passkeys (#811).
+ * Vor dem Lesen des Rumpfs aufrufen.
+ */
+export function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }, nurPasskeys = false) {
+  if (a.sitzungsDaten?.vertretungId)
+    throw new Fachfehler(403, nurPasskeys ? t('anmeldung.passkey.fehler.vertretung') : t('anmeldung.vertretung.gesperrt'));
+}
+
+/**
+ * Heikle Handlung am eigenen Konto (#819, #1352, #1356): nur mit frischer Anmeldung – sonst 403 mit `frisch`, und die
+ * Oberfläche fragt dieselbe erneute Bestätigung ab wie beim Entfernen eines Passkeys und schickt die Anfrage noch einmal.
+ */
+export function verlangeFrisch(konten: { istFrisch(s: SitzungIntern | undefined): boolean }, a: Anfrage, handlung: string) {
+  if (!konten.istFrisch(a.sitzungsDaten)) throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung });
 }
 
 export {
