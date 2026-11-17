@@ -13,6 +13,8 @@
  *   (`Feld`, `HakenFeld`, `FeldGruppe`). Ausgenommen sind unsichtbare Eingaben (`type="hidden"`, `type="file"` – der
  *   Dateiwähler öffnet sich über einen Knopf –, und solche mit dem Attribut `hidden`, z. B. der Benutzername für den
  *   Passwortmanager neben einem Passwortfeld, #1215) und alles unter `web/src/bausteine/` (dort entstehen die Bausteine).
+ *   Seit #1269 auch jedes andere Element, das per `className` wie ein Knopf aussieht (`knopf`, `textknopf` an `<a>`,
+ *   `<Link>`, `<label>`, `<span>` …): Wege und Downloads nimmt `KnopfLink` (`to` bzw. `href`), Handlungen `Knopf`.
  *   Der Bestand beim Einführen steht in `eslint-suppressions.json`; begründete Ausnahmen im Code wie sonst
  *   (`// eslint-disable-next-line ablago/bausteine -- Suchfeld ohne sichtbare Beschriftung`).
  * - `ablago/knopf-farben`: keine Farbklassen über `className` am Baustein Knopf (#1210) – `gefahr`, `gefahr-rand`,
@@ -49,6 +51,8 @@ const handlerLaenge = {
 };
 
 const ROH = new Set(['button', 'input', 'select', 'textarea']);
+/** Klassen, mit denen ein Element wie ein Knopf aussieht (#1269); `ka-mt-knopf` o. Ä. sind eigene Klassen. */
+const KNOPF_KLASSEN = new Set(['knopf', 'textknopf']);
 const RAHMEN = new Set(['Feld', 'HakenFeld', 'FeldGruppe']);
 const UNSICHTBAR = new Set(['hidden', 'file']);
 
@@ -84,12 +88,20 @@ const bausteine = {
     messages: {
       knopf: '<button> direkt: Bitte den Baustein Knopf nehmen (web/src/bausteine, Entwicklerhandbuch „Gestaltung und Bausteine“).',
       feld: '<{{name}}> ohne Feldrahmen: Bitte in Feld, HakenFeld oder FeldGruppe setzen (Entwicklerhandbuch „Gestaltung und Bausteine“).',
+      klasse:
+        '<{{name}}> mit Klasse „{{klasse}}“ sieht aus wie ein Knopf: Bitte KnopfLink (Weg: to, Datei oder Adresse außerhalb: href) oder Knopf (Handlung) nehmen (#1269).',
     },
   },
   create(context) {
     return {
       JSXOpeningElement(knoten) {
         const name = knoten.name.type === 'JSXIdentifier' ? knoten.name.name : null;
+        const klasse = knoten.attributes.find((x) => x.type === 'JSXAttribute' && x.name.name === 'className');
+        const knopfKlasse = klasse?.value && knopfKlasseIn(klasse.value);
+        if (name && name !== 'button' && knopfKlasse) {
+          context.report({ node: knoten, messageId: 'klasse', data: { name, klasse: knopfKlasse } });
+          return;
+        }
         if (!name || !ROH.has(name)) return;
         if (name === 'button') {
           context.report({ node: knoten, messageId: 'knopf' });
@@ -117,6 +129,11 @@ function texteIn(knoten, aus = []) {
   }
   return aus;
 }
+
+const knopfKlasseIn = (wert) =>
+  texteIn(wert)
+    .flatMap((x) => x.split(/\s+/))
+    .find((k) => KNOPF_KLASSEN.has(k));
 
 const farbklasseIn = (wert) =>
   texteIn(wert)

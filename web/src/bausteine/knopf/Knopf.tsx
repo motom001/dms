@@ -27,7 +27,9 @@ export type { KnopfSperre } from './Erklaerung';
  * - Arten: `haupt` (blau – Speichern, Anlegen nach dem Ausfüllen, Weiter, Übernehmen; höchstens einer je Bereich),
  *   `anlegen` (grün, nur „etwas Neues anfangen“: die Beschriftung beginnt mit „+“), `neben` (Rand – alles Übrige, auch
  *   „Verwerfen“), `gefahr` (wie `neben` mit Pflicht-Symbol, Schrift und Rand erst bei Hover und Fokus rot; stellt
- *   seine Rückfrage selbst), `link` (sieht aus wie ein Verweis – nur für Wege, z. B. „Zurück“, „Zur Liste“).
+ *   seine Rückfrage selbst), `eigen` (Sonderform: Spaltenkopf, Aufklapper, Menüpunkt, Stern, Griff, Kachel … – das
+ *   Aussehen kommt ganz aus `className`, nie wie ein Verweis; eigene Bausteine dafür folgen in #1270).
+ * - Links sind Wege, Knöpfe sind Handlungen (#1277, Musterkatalog C8): Eine Art `link` gibt es nur an `KnopfLink`.
  * - Gesperrt in zwei Formen (Leitsatz 6): `gesperrt` (true) = blass, nichts zu tun; `gesperrt` mit Grund (Text oder
  *   `KnopfSperre`) = gestrichelt mit Schloss und ⓘ, bleibt erreichbar, Klick öffnet die Erklärung am Knopf.
  * - „läuft“ (`aria-busy`, kein zweiter Klick, Breite bleibt), Ergebnis am Knopf.
@@ -35,16 +37,18 @@ export type { KnopfSperre } from './Erklaerung';
  *   ein Fehler wird abgefangen und direkt am Knopf angezeigt, statt in der Konsole zu verschwinden. Liefert das Promise
  *   ein `KnopfErgebnis`, steht es ebenso am Knopf (#986, Muster B2: Ergebnis an der Stelle des Knopfs, nichts springt).
  *
- * Benannte Varianten statt Schalter: `Knopf` (ein `<button>`) und `KnopfLink` (ein Weg innerhalb von Ablago, der wie
- * ein Knopf aussieht, z. B. „+ Neu“ → `/…/neu`). Für `<summary>` und fremde Elemente gibt `knopfAussehen()` Klassen und
- * Datenattribut. Den rot gefüllten Bestätigungsknopf gibt es nur in der Rückfrage (`BestaetigenKnopf`, nicht in
+ * Benannte Varianten statt Schalter: `Knopf` (ein `<button>`) und `KnopfLink` (ein Weg, der wie ein Knopf oder ein
+ * Verweis aussieht: innerhalb von Ablago `to`, z. B. „+ Neu“ → `/…/neu`; eine Datei zum Herunterladen oder eine Adresse
+ * außerhalb `href`, #1269). Für `<summary>` und fremde Elemente gibt `knopfAussehen()` Klassen und Datenattribut. Den rot gefüllten Bestätigungsknopf gibt es nur in der Rückfrage (`BestaetigenKnopf`, nicht in
  * index.ts).
  */
 
-export type KnopfArt = 'anlegen' | 'haupt' | 'neben' | 'gefahr' | 'link';
+export type KnopfArt = 'anlegen' | 'haupt' | 'neben' | 'gefahr' | 'eigen';
+/** Arten eines Wegs (`KnopfLink`): wie ein Knopf oder wie ein Verweis (`link`) – nie Gefahr, nie Sonderform. */
+type KnopfLinkArt = 'anlegen' | 'haupt' | 'neben' | 'link';
 export type KnopfGroesse = 'normal' | 'klein';
-/** Aussehen samt dem Bestätigungsknopf der Rückfrage (`entscheidung`, rot gefüllt – nur dort). */
-type Aussehen = KnopfArt | 'entscheidung';
+/** Aussehen samt Verweis (nur `KnopfLink`) und Bestätigungsknopf der Rückfrage (`entscheidung`, rot gefüllt – nur dort). */
+type Aussehen = KnopfArt | 'link' | 'entscheidung';
 
 /** Ergebnis einer Handlung, angezeigt direkt am Knopf – im Stil der Hinweise (B1/B6): ruhig, Ursache und Ausweg. */
 export interface KnopfErgebnis {
@@ -73,6 +77,9 @@ const KLASSEN: Record<Aussehen, string> = {
   gefahr: 'knopf',
   entscheidung: 'knopf gefahr',
   link: 'textknopf',
+  // Sonderformen bauen bis #1270 auf der Grundform des Verweises auf (.textknopf.spaltenknopf, .textknopf.griff …);
+  // ihre Klasse legt Farbe und Form fest.
+  eigen: 'textknopf',
 };
 
 const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boolean).join(' ');
@@ -85,7 +92,7 @@ export function knopfAussehen({
   art = 'neben',
   groesse = 'normal',
   className,
-}: { art?: Exclude<KnopfArt, 'gefahr'>; groesse?: KnopfGroesse; className?: string } = {}) {
+}: { art?: Exclude<KnopfArt, 'gefahr' | 'eigen'>; groesse?: KnopfGroesse; className?: string } = {}) {
   return aussehen(art, groesse, className);
 }
 
@@ -494,27 +501,60 @@ export function BestaetigenKnopf({
   );
 }
 
-export interface KnopfLinkProps {
-  /** Ziel innerhalb von Ablago, z. B. `/werkbank/benutzer/neu`. */
-  to: string;
-  art?: Exclude<KnopfArt, 'link' | 'gefahr'>;
+interface KnopfLinkBasis {
+  /** `link` sieht aus wie ein Verweis (z. B. „Zur Liste“, „Herunterladen“ in einer Zeile), sonst wie ein Knopf. */
+  art?: KnopfLinkArt;
   groesse?: KnopfGroesse;
   className?: string;
   title?: string;
+  id?: string;
+  'aria-label'?: string;
   /** Sprungziel für Rundgänge und Tests (`data-anker`), wie bei `Link`. */
   anker?: string;
   children: ReactNode;
 }
 
-/** Ein Weg innerhalb von Ablago, der wie ein Knopf aussieht – z. B. „+ Neu“, das die Seite zum Anlegen öffnet. */
-export function KnopfLink({ to, art = 'neben', groesse = 'normal', className, title, anker, children }: KnopfLinkProps) {
+/**
+ * Ziel eines Wegs: innerhalb von Ablago `to` (ohne Neuladen der Seite); eine Datei zum Herunterladen oder eine Adresse
+ * außerhalb `href` (#1269) – mit `download` als Datei, mit `neuesFenster` in einem neuen Fenster. `onClick` nur bei
+ * `href` und nur als Nachsorge (z. B. die Liste nach dem Herunterladen neu laden); der Weg selbst bleibt der Link.
+ */
+type KnopfLinkZiel =
+  | { to: string; href?: undefined; download?: undefined; neuesFenster?: undefined; onClick?: undefined }
+  | {
+      href: string;
+      to?: undefined;
+      download?: boolean | string;
+      neuesFenster?: boolean;
+      onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
+    };
+
+export type KnopfLinkProps = KnopfLinkBasis & KnopfLinkZiel;
+
+/**
+ * Ein Weg, der wie ein Knopf (oder mit `art="link"` wie ein Verweis) aussieht – z. B. „+ Neu“, das die Seite zum
+ * Anlegen öffnet, „Als PDF herunterladen“ oder die Anmeldung beim Anbieter.
+ */
+export function KnopfLink(props: KnopfLinkProps) {
+  const { art = 'neben', groesse = 'normal', className, title, id, anker, children } = props;
+  const gemeinsam = { id, title, 'aria-label': props['aria-label'], 'data-anker': anker, ...aussehen(art, groesse, className) };
+  if (props.href !== undefined) {
+    const { href, download, neuesFenster, onClick } = props;
+    const fenster = neuesFenster ? { target: '_blank', rel: 'noreferrer' } : {};
+    return (
+      <a href={href} download={download === true ? '' : download || undefined} onClick={onClick} {...fenster} {...gemeinsam}>
+        {children}
+      </a>
+    );
+  }
+  const to = props.to;
   const klick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     geheZu(to);
   };
   return (
-    <a href={to} onClick={klick} title={title} data-anker={anker} {...aussehen(art, groesse, className)}>
+    <a href={to} onClick={klick} {...gemeinsam}>
       {children}
     </a>
   );

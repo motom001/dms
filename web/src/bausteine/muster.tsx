@@ -118,7 +118,7 @@ const BAUSTEINE: Musterbereich[] = [
 ];
 
 /** Leitsätze für Knöpfe (#1210), ausführlich im Entwicklerhandbuch unter „Gestaltung und Bausteine“. */
-const LEITSAETZE = [1, 2, 3, 4, 5, 6];
+const LEITSAETZE = [1, 2, 3, 4, 5, 6, 7];
 
 const DARSTELLUNGEN = Object.keys(GRUNDLAGEN) as Grundlage[];
 

@@ -1,6 +1,6 @@
 /**
  * Eigene ESLint-Regeln `ablago/knopf-farben` (#1210): keine Farbklassen über `className` am Baustein Knopf; `ablago/bausteine`
- * (#968, #1215): unsichtbare Eingaben ohne Feldrahmen.
+ * (#968, #1215): unsichtbare Eingaben ohne Feldrahmen; Links und andere Elemente mit Knopf-Klasse (#1269).
  * Aufruf: `node --test .github/werkzeuge/eslint-ablago.test.mjs` (CI-Job „pruefen“, Schritt ESLint).
  */
 import { test } from 'node:test';
@@ -27,7 +27,7 @@ test('ablago/knopf-farben: Farbe nur über die Art', () => {
     ],
     invalid: [
       { code: '<Knopf className="gefahr-rand">Entfernen</Knopf>', errors: [fehler('gefahr-rand')] },
-      { code: '<Knopf art="link" className="gefahr">Löschen</Knopf>', errors: [fehler('gefahr')] },
+      { code: '<Knopf art="eigen" className="gefahr">Löschen</Knopf>', errors: [fehler('gefahr')] },
       { code: '<KnopfLink to="/x" className="klein gruen">+ Neu</KnopfLink>', errors: [fehler('gruen')] },
       { code: '<Knopf className={weg ? undefined : "gefahr"}>x</Knopf>', errors: [fehler('gefahr')] },
       { code: '<Knopf className={`breit ${a ? "primaer" : ""}`}>x</Knopf>', errors: [fehler('primaer')] },
@@ -50,6 +50,26 @@ test('ablago/bausteine: unsichtbare Eingaben brauchen keinen Feldrahmen (#1215)'
       { code: '<input type="email" />', errors: [{ messageId: 'feld', data: { name: 'input' } }] },
       { code: '<input hidden={versteckt} />', errors: [{ messageId: 'feld', data: { name: 'input' } }] },
       { code: '<button>x</button>', errors: [{ messageId: 'knopf' }] },
+    ],
+  });
+});
+
+test('ablago/bausteine: Links und andere Elemente mit Knopf-Klasse (#1269)', () => {
+  const klasse = (name, k) => ({ messageId: 'klasse', data: { name, klasse: k } });
+  pruefer.run('bausteine', ablago.rules.bausteine, {
+    valid: [
+      '<KnopfLink href="/api/x" download>PDF</KnopfLink>',
+      '<a className="verweis" href="/x">x</a>',
+      // Eigene Klassen, die „knopf“ nur enthalten, sind keine Knopf-Klasse.
+      '<span className="ka-mt-knopf uebersetzen-knopf">x</span>',
+      '<div className="knoepfe">x</div>',
+    ],
+    invalid: [
+      { code: '<a className="knopf">x</a>', errors: [klasse('a', 'knopf')] },
+      { code: '<a className="knopf klein" href="/api/x" download>PDF</a>', errors: [klasse('a', 'knopf')] },
+      { code: '<Link to="/x" className="textknopf klein">x</Link>', errors: [klasse('Link', 'textknopf')] },
+      { code: '<label className={`knopf${a ? " primaer" : ""}`}>x</label>', errors: [klasse('label', 'knopf')] },
+      { code: '<span className="knopf">Datei wählen</span>', errors: [klasse('span', 'knopf')] },
     ],
   });
 });

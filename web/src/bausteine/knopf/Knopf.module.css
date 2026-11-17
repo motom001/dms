@@ -23,7 +23,7 @@
 /* Gesperrt aus einem Grund: gestrichelt mit Schloss wie „nur lesen“ am Feld (C4), volle Schrift in --leise (lesbar),
    keine Fläche; bleibt erreichbar, ein Klick öffnet die Erklärung. Gilt für jede Art, auch Haupt und Anlegen. */
 .baustein.gesperrt[aria-disabled="true"]:not([aria-busy="true"]) { opacity: 1; cursor: pointer; color: var(--leise); background: transparent; border-color: var(--rand-eingabe); border-style: dashed; filter: none; }
-.baustein.gesperrt[data-knopf="link"] { border: 1px dashed var(--rand-eingabe); border-radius: 6px; padding: 3px 8px; }
+.baustein.gesperrt:is([data-knopf="link"], [data-knopf="eigen"]) { border: 1px dashed var(--rand-eingabe); border-radius: 6px; padding: 3px 8px; }
 
 /* ⓘ neben dem gesperrten Knopf, Erklärung darüber (bzw. darunter, wenn oben im Bild kein Platz ist). */
 .gruppe { position: relative; display: inline-flex; align-items: center; gap: 2px; max-width: 100%; }
@@ -75,7 +75,7 @@
 @media (pointer: coarse) {
   .baustein:not(:global(.klein)) { min-height: 44px; }
   .baustein.symbol:not(:global(.klein)) { min-width: 44px; }
-  .baustein[data-knopf="link"] { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; }
+  .baustein:is([data-knopf="link"], [data-knopf="eigen"]) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; }
   .baustein:global(.klein) { position: relative; min-height: 28px; min-width: 44px; margin-block: 8px; }
   .baustein:global(.klein)::before { content: ""; position: absolute; inset: -9px -1px; }
   .baustein.symbol:global(.klein) { min-width: 28px; margin-inline: 8px; }

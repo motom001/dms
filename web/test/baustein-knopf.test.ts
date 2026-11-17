@@ -61,7 +61,7 @@ const nichts = () => {};
 
 describe('Baustein Knopf (#968)', () => {
   it('Arten: feste Klassen und data-knopf; Vorgabe ist „neben“, type="button"', () => {
-    const erwartet = { anlegen: 'knopf gruen', haupt: 'knopf primaer', neben: 'knopf', link: 'textknopf' } as const;
+    const erwartet = { anlegen: 'knopf gruen', haupt: 'knopf primaer', neben: 'knopf', eigen: 'textknopf' } as const;
     for (const [art, klasse] of Object.entries(erwartet)) {
       const html = zeichne(h(Knopf, { art }, 'Los'));
       assert.equal(attr(html, KNOPF, 'data-knopf'), art);
@@ -191,6 +191,22 @@ describe('Baustein Knopf (#968)', () => {
     );
     assert.deepEqual(knopfAussehen({ art: 'anlegen' }), { className: 'knopf gruen baustein', 'data-knopf': 'anlegen' });
     assert.match(html, />\+ /, 'Anlegen beginnt mit „+“ (Leitsatz 2)');
+  });
+
+  it('KnopfLink mit href (#1269): Datei zum Herunterladen und Adresse außerhalb, auch wie ein Verweis', () => {
+    const datei = zeichne(h(KnopfLink, { href: '/api/x?format=pdf', download: true, groesse: 'klein' }, 'Als PDF herunterladen'));
+    assert.match(datei, /^<a href="\/api\/x\?format=pdf" download=""[^>]*class="knopf klein baustein"[^>]*data-knopf="neben"/);
+    const aussen = zeichne(h(KnopfLink, { href: 'https://example.org', neuesFenster: true, art: 'link' }, 'example.org'));
+    assert.match(aussen, /target="_blank"/);
+    assert.match(aussen, /rel="noreferrer"/);
+    assert.match(aussen, /class="textknopf baustein"[^>]*data-knopf="link"/);
+    assert.doesNotMatch(aussen, /download/);
+  });
+
+  it('Sonderform (#1277): Art eigen trägt die eigene Klasse, nie data-knopf="link"', () => {
+    const html = zeichne(h(Knopf, { art: 'eigen', className: 'spaltenknopf', onClick: nichts }, 'Name'));
+    assert.equal(attr(html, KNOPF, 'data-knopf'), 'eigen');
+    assert.match(attr(html, KNOPF, 'class') ?? '', /\bspaltenknopf\b/);
   });
 
   it('istKnopfErgebnis und fehlerText', () => {
