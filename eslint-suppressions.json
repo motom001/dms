@@ -1150,20 +1150,6 @@
       "count": 2
     }
   },
-  "web/src/ablage/Ablage.tsx": {
-    "complexity": {
-      "count": 3
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "max-params": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Aktionen.tsx": {
     "complexity": {
       "count": 1
