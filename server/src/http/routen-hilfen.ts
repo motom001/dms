@@ -13,6 +13,7 @@ import { t } from '../sprache/sprache';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { NUR_GESAMT } from '../werkbank/verwaltungsbereiche';
 import { darfBereich, hatGesamt } from '../../../shared/src/verwaltungsrecht';
+import type { Bereichskennung } from '../../../shared/src/werkbankansicht';
 import { protokoll } from '../protokoll/protokoll';
 import { KLASSEN_MS, poolZusammen, type PoolStand } from '../datenbank/poolmessung';
 import { dateiLeser, liesPss, liesRss } from '../system/systemlast';
@@ -321,7 +322,7 @@ export function passtEtag(kopf: string | undefined, etag: string): boolean {
  * Übersicht der Werkbank (#818, Bauvorgabe Sicherheit): nur Meldungen der eigenen Bereiche. Was zu einem anderen
  * Bereich gehört, kommt neutral zurück (keine Warnung), damit die Oberfläche dieselben Felder hat.
  */
-const UEBERSICHT_BEREICHE: Record<string, { bereich: string; leer: unknown }> = {
+const UEBERSICHT_BEREICHE: Record<string, { bereich: Bereichskennung | typeof NUR_GESAMT; leer: unknown }> = {
   tresor: { bereich: 'verschluesselung', leer: null },
   mail: { bereich: 'betrieb', leer: true },
   adresse: { bereich: 'betrieb', leer: true },
