@@ -180,6 +180,12 @@ describe('Verwaltungsrecht an der Person (#818)', () => {
     assert.equal(u.statusCode, 200);
     assert.deepEqual(u.json().notfallzugaenge, []);
     assert.equal(u.json().papierkorb.anzahl, 0);
+    // Zahlen der Leiste: nur die des eigenen Bereichs („Benutzer“), die übrigen leer.
+    assert.equal(typeof u.json().zahlen.benutzer, 'number');
+    assert.deepEqual(
+      [u.json().zahlen.pakete, u.json().zahlen.nummernkreise, u.json().zahlen.postfaecher, u.json().zahlen.darfWeg],
+      [null, null, null, null],
+    );
     // Verwaltungsrechte vergibt nur „Gesamte Verwaltung“ …
     assert.equal((await x.rufe(c, 'PUT', `/api/benutzer/${x.petra.id}/verwaltung`, { verwaltung: ['benutzer'] })).statusCode, 403);
     // … und an Konten von Verwaltenden kommt man mit „Benutzer“ nicht heran.

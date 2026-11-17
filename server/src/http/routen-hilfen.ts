@@ -13,7 +13,7 @@ import { t } from '../sprache/sprache';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
 import { NUR_GESAMT } from '../werkbank/verwaltungsbereiche';
 import { darfBereich, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import type { Bereichskennung } from '../../../shared/src/werkbankansicht';
+import { ZAEHLER_BEREICH, type Bereichskennung, type Zaehler } from '../../../shared/src/werkbankansicht';
 import { protokoll } from '../protokoll/protokoll';
 import { KLASSEN_MS, poolZusammen, type PoolStand } from '../datenbank/poolmessung';
 import { dateiLeser, liesPss, liesRss } from '../system/systemlast';
@@ -366,6 +366,10 @@ export function nurEigeneBereiche<T extends Record<string, unknown>>(b: Benutzer
     if (!(k in erg)) continue;
     if (bereich === NUR_GESAMT || !darfBereich(b, bereich)) erg[k] = leer;
   }
+  // Zahlen der Leiste (#375): je Zahl nur mit dem Bereich, zu dem sie gehört (Liste der Werkbank-Seiten, #1281).
+  const zahlen = erg.zahlen as Partial<Record<Zaehler, number | null>> | undefined;
+  if (zahlen && typeof zahlen === 'object')
+    erg.zahlen = Object.fromEntries(Object.entries(zahlen).map(([z, n]) => [z, darfBereich(b, ZAEHLER_BEREICH[z as Zaehler]) ? n : null]));
   return erg as T;
 }
 
