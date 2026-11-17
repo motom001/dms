@@ -1160,10 +1160,10 @@
   },
   "shared/src/paketeinstellungen.ts": {
     "complexity": {
-      "count": 3
+      "count": 1
     },
     "max-lines-per-function": {
-      "count": 3
+      "count": 2
     }
   },
   "shared/src/rechte.ts": {

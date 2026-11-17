@@ -174,123 +174,182 @@ const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));
 
+/** Ganze Zahl ab 0 (Länge bei den Prüfregeln, #996). */
+const ganz = (x: unknown) => typeof x === 'number' && Number.isInteger(x) && x >= 0;
+/** Muster nur bei text, nicht leer, höchstens MUSTER_MAX Zeichen (#996). */
+const mitMuster = (f: Record<string, unknown>, typ: EinstellungTyp) =>
+  typ === 'text' && typeof f.muster === 'string' && f.muster.length > 0 && f.muster.length <= MUSTER_MAX;
+/** Merkt sich einen Schlüssel; ein zweites Mal ist ein Fehler. */
+const einmal = (s: string, menge: Set<string>, wo: string, fehler: string[]) => {
+  if (menge.has(s)) fehler.push(`${wo}: Schlüssel „${s}“ doppelt.`);
+  menge.add(s);
+};
+
 /** Liest die Beschreibung aus code.einstellungen und code.aktionen; null = das Paket hat keine. */
 export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbeschreibung | null; fehler: string[] } {
   const fehler: string[] = [];
   if (!istObjekt(code) || (!Array.isArray(code.einstellungen) && !Array.isArray(code.aktionen))) return { beschreibung: null, fehler };
-  const feld = (f: unknown, wo: string): EinstellungFeld | null => {
-    if (!istObjekt(f)) {
-      fehler.push(`${wo}: Feld ungültig.`);
-      return null;
-    }
-    const typ = str(f.typ) as EinstellungTyp;
-    if (!SCHLUESSEL.test(str(f.schluessel))) fehler.push(`${wo}: ungültiger Schlüssel „${str(f.schluessel)}“.`);
-    if (!(typ in EINSTELLUNG_TYPEN)) {
-      fehler.push(`${wo}/${str(f.schluessel)}: unbekannter Typ „${typ}“.`);
-      return null;
-    }
-    if ((typ === 'auswahl' || typ === 'mehrfachauswahl') && !(Array.isArray(f.optionen) && f.optionen.length))
-      fehler.push(`${wo}/${str(f.schluessel)}: ${typ} braucht optionen.`);
-    if (typ === 'geheim' && f.standard !== undefined) fehler.push(`${wo}/${str(f.schluessel)}: geheim hat keine Vorgabe.`);
-    // Dienst-Adresse (#444): nie voreingestellt – der Administrator trägt sie selbst ein und bestätigt sie.
-    if (typ === 'adresse' && f.standard !== undefined)
-      fehler.push(`${wo}/${str(f.schluessel)}: adresse hat keine Vorgabe (höchstens ein beispiel, das im leeren Feld steht).`);
-    if (typ === 'adresse' && f.beispiel !== undefined && (typeof f.beispiel !== 'string' || pruefeAdresse(f.beispiel)))
-      fehler.push(`${wo}/${str(f.schluessel)}: beispiel ist keine gültige Adresse.`);
-    // Zahlen (#657): Schrittweite und Vorschläge; Vorschläge liegen in min/max, die Vorgabe ist einer davon.
-    let vorschlaege: ZahlVorschlag[] | undefined;
-    if (f.schritt !== undefined && (typ !== 'zahl' || typeof f.schritt !== 'number' || !(f.schritt > 0)))
-      fehler.push(`${wo}/${str(f.schluessel)}: schritt nur bei zahl, größer als 0.`);
-    if (f.vorschlaege !== undefined) {
-      if (typ !== 'zahl' || !Array.isArray(f.vorschlaege) || !f.vorschlaege.length)
-        fehler.push(`${wo}/${str(f.schluessel)}: vorschlaege nur bei zahl, als Liste mit wert und name.`);
-      else {
-        vorschlaege = [];
-        for (const x of f.vorschlaege) {
-          if (!istObjekt(x) || typeof x.wert !== 'number' || !Number.isFinite(x.wert) || !str(x.name).trim()) {
-            fehler.push(`${wo}/${str(f.schluessel)}: vorschlaege: jeder Eintrag braucht wert (Zahl) und name.`);
-            continue;
-          }
-          if ((typeof f.min === 'number' && x.wert < f.min) || (typeof f.max === 'number' && x.wert > f.max))
-            fehler.push(`${wo}/${str(f.schluessel)}: Vorschlag ${x.wert} liegt nicht zwischen min und max.`);
-          vorschlaege.push({ wert: x.wert, name: str(x.name).trim().slice(0, 100) });
+  const bloecke = liesBloecke(code.einstellungen, fehler);
+  pruefeBloecke(bloecke, fehler);
+  const aktionen = liesAktionen(code.aktionen, fehler);
+  return { beschreibung: { bloecke, aktionen }, fehler };
+}
+
+/** Ein Feld einer Einstellung; null = ungültig (Fehler steht dann in `fehler`). */
+function liesFeld(f: unknown, wo: string, fehler: string[]): EinstellungFeld | null {
+  if (!istObjekt(f)) {
+    fehler.push(`${wo}: Feld ungültig.`);
+    return null;
+  }
+  const typ = str(f.typ) as EinstellungTyp;
+  if (!SCHLUESSEL.test(str(f.schluessel))) fehler.push(`${wo}: ungültiger Schlüssel „${str(f.schluessel)}“.`);
+  if (!(typ in EINSTELLUNG_TYPEN)) {
+    fehler.push(`${wo}/${str(f.schluessel)}: unbekannter Typ „${typ}“.`);
+    return null;
+  }
+  const bei = `${wo}/${str(f.schluessel)}`;
+  pruefeFeldArt(f, typ, bei, fehler);
+  const vorschlaege = liesVorschlaege(f, typ, bei, fehler);
+  pruefeFeldRegeln(f, typ, bei, fehler);
+  return feldAus(f, typ, vorschlaege);
+}
+
+/** Auswahl braucht Optionen; Geheimnis und Dienst-Adresse haben keine Vorgabe. */
+function pruefeFeldArt(f: Record<string, unknown>, typ: EinstellungTyp, bei: string, fehler: string[]) {
+  if ((typ === 'auswahl' || typ === 'mehrfachauswahl') && !(Array.isArray(f.optionen) && f.optionen.length))
+    fehler.push(`${bei}: ${typ} braucht optionen.`);
+  if (typ === 'geheim' && f.standard !== undefined) fehler.push(`${bei}: geheim hat keine Vorgabe.`);
+  // Dienst-Adresse (#444): nie voreingestellt – der Administrator trägt sie selbst ein und bestätigt sie.
+  if (typ === 'adresse' && f.standard !== undefined)
+    fehler.push(`${bei}: adresse hat keine Vorgabe (höchstens ein beispiel, das im leeren Feld steht).`);
+  if (typ === 'adresse' && f.beispiel !== undefined && (typeof f.beispiel !== 'string' || pruefeAdresse(f.beispiel)))
+    fehler.push(`${bei}: beispiel ist keine gültige Adresse.`);
+}
+
+/** Zahlen (#657): Schrittweite und Vorschläge; Vorschläge liegen in min/max, die Vorgabe ist einer davon. */
+function liesVorschlaege(f: Record<string, unknown>, typ: EinstellungTyp, bei: string, fehler: string[]): ZahlVorschlag[] | undefined {
+  let vorschlaege: ZahlVorschlag[] | undefined;
+  if (f.schritt !== undefined && (typ !== 'zahl' || typeof f.schritt !== 'number' || !(f.schritt > 0)))
+    fehler.push(`${bei}: schritt nur bei zahl, größer als 0.`);
+  if (f.vorschlaege !== undefined) {
+    if (typ !== 'zahl' || !Array.isArray(f.vorschlaege) || !f.vorschlaege.length)
+      fehler.push(`${bei}: vorschlaege nur bei zahl, als Liste mit wert und name.`);
+    else {
+      vorschlaege = [];
+      for (const x of f.vorschlaege) {
+        if (!istObjekt(x) || typeof x.wert !== 'number' || !Number.isFinite(x.wert) || !str(x.name).trim()) {
+          fehler.push(`${bei}: vorschlaege: jeder Eintrag braucht wert (Zahl) und name.`);
+          continue;
         }
-        if (f.standard !== undefined && !vorschlaege.some((x) => x.wert === f.standard))
-          fehler.push(`${wo}/${str(f.schluessel)}: standard muss einer der vorschlaege sein.`);
+        if ((typeof f.min === 'number' && x.wert < f.min) || (typeof f.max === 'number' && x.wert > f.max))
+          fehler.push(`${bei}: Vorschlag ${x.wert} liegt nicht zwischen min und max.`);
+        vorschlaege.push({ wert: x.wert, name: str(x.name).trim().slice(0, 100) });
       }
+      if (f.standard !== undefined && !vorschlaege.some((x) => x.wert === f.standard))
+        fehler.push(`${bei}: standard muss einer der vorschlaege sein.`);
     }
-    if (f.mehrfach !== undefined && (f.mehrfach !== true || !MEHRFACH_VERWEISE.includes(typ)))
-      fehler.push(`${wo}/${str(f.schluessel)}: mehrfach: true gibt es nur bei ${MEHRFACH_VERWEISE.join(', ')}.`);
-    if (f.schliesst_aus !== undefined && !SCHLUESSEL.test(str(f.schliesst_aus)))
-      fehler.push(`${wo}/${str(f.schluessel)}: schliesst_aus nennt keinen gültigen Schlüssel.`);
-    // Prüfregeln (#996): Länge bei text/mehrzeilig, Muster nur bei text (kurze Werte), das Muster muss sich übersetzen lassen.
-    const ganz = (x: unknown) => typeof x === 'number' && Number.isInteger(x) && x >= 0;
-    for (const k of ['laenge_min', 'laenge_max'] as const) {
-      if (f[k] !== undefined && (!['text', 'mehrzeilig'].includes(typ) || !ganz(f[k])))
-        fehler.push(`${wo}/${str(f.schluessel)}: ${k} nur bei text und mehrzeilig, als ganze Zahl ab 0.`);
-    }
-    if (ganz(f.laenge_min) && ganz(f.laenge_max) && (f.laenge_min as number) > (f.laenge_max as number))
-      fehler.push(`${wo}/${str(f.schluessel)}: laenge_min ist größer als laenge_max.`);
-    if (f.muster !== undefined) {
-      let ok = typ === 'text' && typeof f.muster === 'string' && f.muster.length > 0 && f.muster.length <= MUSTER_MAX;
-      if (ok)
-        try {
-          new RegExp(f.muster as string, 'u');
-        } catch {
-          ok = false;
-        }
-      if (!ok)
-        fehler.push(`${wo}/${str(f.schluessel)}: muster nur bei text, als gültiger regulärer Ausdruck (höchstens ${MUSTER_MAX} Zeichen).`);
-    }
-    if (f.meldung !== undefined && (f.muster === undefined || typeof f.meldung !== 'string' || f.meldung.length > MELDUNG_MAX))
-      fehler.push(`${wo}/${str(f.schluessel)}: meldung nur zusammen mit muster, höchstens ${MELDUNG_MAX} Zeichen.`);
-    // Feldarten des Kerns (#996): ohne Vorgabe und Pflicht – den Wert hält Ablago.
-    if ((KERN_TYPEN as readonly string[]).includes(typ) && (f.standard !== undefined || f.pflicht !== undefined))
-      fehler.push(`${wo}/${str(f.schluessel)}: ${typ} hat keine Vorgabe und keine Pflicht – den Wert hält Ablago.`);
-    const mitMuster = typ === 'text' && typeof f.muster === 'string' && f.muster.length > 0 && f.muster.length <= MUSTER_MAX;
-    return {
-      schluessel: str(f.schluessel),
-      name: str(f.name) || str(f.schluessel),
-      typ,
-      ...(f.hilfe ? { hilfe: str(f.hilfe) } : {}),
-      ...(f.pflicht === true ? { pflicht: true } : {}),
-      ...(f.standard !== undefined && typ !== 'geheim' && typ !== 'adresse' && !VERWEISE.includes(typ) ? { standard: f.standard } : {}),
-      ...(typ === 'adresse' && typeof f.beispiel === 'string' ? { beispiel: f.beispiel } : {}),
-      ...(Array.isArray(f.optionen) ? { optionen: f.optionen.map(str) } : {}),
-      ...(typeof f.min === 'number' ? { min: f.min } : {}),
-      ...(typeof f.max === 'number' ? { max: f.max } : {}),
-      ...(typ === 'zahl' && typeof f.schritt === 'number' && f.schritt > 0 ? { schritt: f.schritt } : {}),
-      ...(vorschlaege?.length ? { vorschlaege } : {}),
-      ...(typ === 'feld' && f.mappentyp ? { mappentyp: str(f.mappentyp) } : {}),
-      ...(f.mehrfach === true && MEHRFACH_VERWEISE.includes(typ) ? { mehrfach: true as const } : {}),
-      ...(f.schliesst_aus !== undefined && SCHLUESSEL.test(str(f.schliesst_aus)) ? { schliesstAus: str(f.schliesst_aus) } : {}),
-      ...(['text', 'mehrzeilig'].includes(typ) && ganz(f.laenge_min) ? { laengeMin: f.laenge_min as number } : {}),
-      ...(['text', 'mehrzeilig'].includes(typ) && ganz(f.laenge_max) ? { laengeMax: f.laenge_max as number } : {}),
-      ...(mitMuster
-        ? {
-            muster: f.muster as string,
-            ...(typeof f.meldung === 'string' && f.meldung ? { meldung: f.meldung.slice(0, MELDUNG_MAX) } : {}),
-          }
-        : {}),
-    };
+  }
+  return vorschlaege;
+}
+
+/** Mehrfach, gegenseitiger Ausschluss, Prüfregeln (#658, #996) und Feldarten des Kerns. */
+function pruefeFeldRegeln(f: Record<string, unknown>, typ: EinstellungTyp, bei: string, fehler: string[]) {
+  if (f.mehrfach !== undefined && (f.mehrfach !== true || !MEHRFACH_VERWEISE.includes(typ)))
+    fehler.push(`${bei}: mehrfach: true gibt es nur bei ${MEHRFACH_VERWEISE.join(', ')}.`);
+  if (f.schliesst_aus !== undefined && !SCHLUESSEL.test(str(f.schliesst_aus)))
+    fehler.push(`${bei}: schliesst_aus nennt keinen gültigen Schlüssel.`);
+  pruefeTextregeln(f, typ, bei, fehler);
+  // Feldarten des Kerns (#996): ohne Vorgabe und Pflicht – den Wert hält Ablago.
+  if ((KERN_TYPEN as readonly string[]).includes(typ) && (f.standard !== undefined || f.pflicht !== undefined))
+    fehler.push(`${bei}: ${typ} hat keine Vorgabe und keine Pflicht – den Wert hält Ablago.`);
+}
+
+/** Prüfregeln (#996): Länge bei text/mehrzeilig, Muster nur bei text (kurze Werte), das Muster muss sich übersetzen lassen. */
+function pruefeTextregeln(f: Record<string, unknown>, typ: EinstellungTyp, bei: string, fehler: string[]) {
+  for (const k of ['laenge_min', 'laenge_max'] as const) {
+    if (f[k] !== undefined && (!['text', 'mehrzeilig'].includes(typ) || !ganz(f[k])))
+      fehler.push(`${bei}: ${k} nur bei text und mehrzeilig, als ganze Zahl ab 0.`);
+  }
+  if (ganz(f.laenge_min) && ganz(f.laenge_max) && (f.laenge_min as number) > (f.laenge_max as number))
+    fehler.push(`${bei}: laenge_min ist größer als laenge_max.`);
+  if (f.muster !== undefined) {
+    let ok = mitMuster(f, typ);
+    if (ok)
+      try {
+        new RegExp(f.muster as string, 'u');
+      } catch {
+        ok = false;
+      }
+    if (!ok) fehler.push(`${bei}: muster nur bei text, als gültiger regulärer Ausdruck (höchstens ${MUSTER_MAX} Zeichen).`);
+  }
+  if (f.meldung !== undefined && (f.muster === undefined || typeof f.meldung !== 'string' || f.meldung.length > MELDUNG_MAX))
+    fehler.push(`${bei}: meldung nur zusammen mit muster, höchstens ${MELDUNG_MAX} Zeichen.`);
+}
+
+/** Das gelesene Feld: nur die Angaben, die zum Typ passen (in dieser Reihenfolge). */
+const feldAus = (f: Record<string, unknown>, typ: EinstellungTyp, vorschlaege: ZahlVorschlag[] | undefined): EinstellungFeld => ({
+  ...feldGrund(f, typ),
+  ...feldZahl(f, typ, vorschlaege),
+  ...feldVerweis(f, typ),
+  ...feldText(f, typ),
+});
+
+/** Schlüssel, Name, Typ, Hilfe, Pflicht, Vorgabe, Beispiel und Optionen. */
+function feldGrund(f: Record<string, unknown>, typ: EinstellungTyp): EinstellungFeld {
+  return {
+    schluessel: str(f.schluessel),
+    name: str(f.name) || str(f.schluessel),
+    typ,
+    ...(f.hilfe ? { hilfe: str(f.hilfe) } : {}),
+    ...(f.pflicht === true ? { pflicht: true } : {}),
+    ...(f.standard !== undefined && typ !== 'geheim' && typ !== 'adresse' && !VERWEISE.includes(typ) ? { standard: f.standard } : {}),
+    ...(typ === 'adresse' && typeof f.beispiel === 'string' ? { beispiel: f.beispiel } : {}),
+    ...(Array.isArray(f.optionen) ? { optionen: f.optionen.map(str) } : {}),
   };
+}
+
+/** Grenzen, Schrittweite und Vorschläge (#657). */
+const feldZahl = (f: Record<string, unknown>, typ: EinstellungTyp, vorschlaege: ZahlVorschlag[] | undefined): Partial<EinstellungFeld> => ({
+  ...(typeof f.min === 'number' ? { min: f.min } : {}),
+  ...(typeof f.max === 'number' ? { max: f.max } : {}),
+  ...(typ === 'zahl' && typeof f.schritt === 'number' && f.schritt > 0 ? { schritt: f.schritt } : {}),
+  ...(vorschlaege?.length ? { vorschlaege } : {}),
+});
+
+/** Mappentyp beim Feld-Verweis, Mehrfachauswahl und gegenseitiger Ausschluss (#658). */
+const feldVerweis = (f: Record<string, unknown>, typ: EinstellungTyp): Partial<EinstellungFeld> => ({
+  ...(typ === 'feld' && f.mappentyp ? { mappentyp: str(f.mappentyp) } : {}),
+  ...(f.mehrfach === true && MEHRFACH_VERWEISE.includes(typ) ? { mehrfach: true as const } : {}),
+  ...(f.schliesst_aus !== undefined && SCHLUESSEL.test(str(f.schliesst_aus)) ? { schliesstAus: str(f.schliesst_aus) } : {}),
+});
+
+/** Prüfregeln für Texte (#996): Länge, Muster und Meldung. */
+const feldText = (f: Record<string, unknown>, typ: EinstellungTyp): Partial<EinstellungFeld> => ({
+  ...(['text', 'mehrzeilig'].includes(typ) && ganz(f.laenge_min) ? { laengeMin: f.laenge_min as number } : {}),
+  ...(['text', 'mehrzeilig'].includes(typ) && ganz(f.laenge_max) ? { laengeMax: f.laenge_max as number } : {}),
+  ...(mitMuster(f, typ)
+    ? {
+        muster: f.muster as string,
+        ...(typeof f.meldung === 'string' && f.meldung ? { meldung: f.meldung.slice(0, MELDUNG_MAX) } : {}),
+      }
+    : {}),
+});
+
+/** Abschnitte und Listen aus `code.einstellungen`; Schlüssel je Ebene nur einmal. */
+function liesBloecke(einstellungen: unknown, fehler: string[]): EinstellungBlock[] {
   const bloecke: EinstellungBlock[] = [];
   const oben = new Set<string>();
-  const einmal = (s: string, menge: Set<string>, wo: string) => {
-    if (menge.has(s)) fehler.push(`${wo}: Schlüssel „${s}“ doppelt.`);
-    menge.add(s);
-  };
-  for (const [i, b] of (Array.isArray(code.einstellungen) ? code.einstellungen : []).entries()) {
+  for (const [i, b] of (Array.isArray(einstellungen) ? einstellungen : []).entries()) {
     if (!istObjekt(b)) continue;
     const felder = (Array.isArray(b.felder) ? b.felder : [])
-      .map((f, j) => feld(f, `einstellungen[${i + 1}].felder[${j + 1}]`))
+      .map((f, j) => liesFeld(f, `einstellungen[${i + 1}].felder[${j + 1}]`, fehler))
       .filter((f): f is EinstellungFeld => !!f);
     if (b.liste !== undefined) {
       if (!SCHLUESSEL.test(str(b.liste)))
         fehler.push(t('gemeinsam.paketeinstellungen.einstellungen-ungueltiger-schluessel', { wert: i + 1 }));
-      einmal(str(b.liste), oben, 'einstellungen');
+      einmal(str(b.liste), oben, 'einstellungen', fehler);
       const innen = new Set<string>();
-      for (const f of felder) einmal(f.schluessel, innen, `Liste ${str(b.liste)}`);
+      for (const f of felder) einmal(f.schluessel, innen, `Liste ${str(b.liste)}`, fehler);
       for (const f of felder)
         if (istKernFeld(f)) fehler.push(`Liste ${str(b.liste)}/${f.schluessel}: ${f.typ} geht nur in einem Abschnitt.`);
       for (const f of felder)
@@ -306,10 +365,15 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
         felder,
       });
     } else {
-      for (const f of felder) einmal(f.schluessel, oben, 'einstellungen');
+      for (const f of felder) einmal(f.schluessel, oben, 'einstellungen', fehler);
       bloecke.push({ art: 'abschnitt', titel: str(b.abschnitt), ...(b.hilfe ? { hilfe: str(b.hilfe) } : {}), felder });
     }
   }
+  return bloecke;
+}
+
+/** Über alle Blöcke: höchstens eine Dienst-Adresse, jede Feldart des Kerns einmal, schliesst_aus passend (#658). */
+function pruefeBloecke(bloecke: EinstellungBlock[], fehler: string[]) {
   if (bloecke.flatMap((x) => (x.art === 'abschnitt' ? x.felder : [])).filter((f) => f.typ === 'adresse').length > 1)
     fehler.push(t('gemeinsam.paketeinstellungen.einstellungen-hoechstens-eine'));
   for (const k of KERN_TYPEN)
@@ -329,14 +393,18 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
           }),
         );
     }
+}
+
+/** Aktionen aus `code.aktionen`; ungültige fallen mit Fehler weg. */
+function liesAktionen(roh: unknown, fehler: string[]): PaketAktion[] {
   const aktionen: PaketAktion[] = [];
   const ak = new Set<string>();
-  for (const a of Array.isArray(code.aktionen) ? code.aktionen : []) {
+  for (const a of Array.isArray(roh) ? roh : []) {
     if (!istObjekt(a) || !SCHLUESSEL.test(str(a.schluessel))) {
       fehler.push(t('gemeinsam.paketeinstellungen.aktionen-ungueltige-aktion'));
       continue;
     }
-    einmal(str(a.schluessel), ak, 'aktionen');
+    einmal(str(a.schluessel), ak, 'aktionen', fehler);
     aktionen.push({
       schluessel: str(a.schluessel),
       name: str(a.name) || str(a.schluessel),
@@ -344,7 +412,7 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
       ...(a.bestaetigen === true ? { bestaetigen: true } : {}),
     });
   }
-  return { beschreibung: { bloecke, aktionen }, fehler };
+  return aktionen;
 }
 
 /** Alle Felder der obersten Ebene (Abschnitte) und die Listen. */
