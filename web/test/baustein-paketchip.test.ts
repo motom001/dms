@@ -70,7 +70,7 @@ describe('Baustein PaketChip (#1192)', () => {
       'werkbank/Woerter.tsx',
       'werkbank/Automatisierungen.tsx',
       'werkbank/Ablaufvorlagen.tsx',
-      'werkbank/PaketErstellen.tsx',
+      'werkbank/paket-erstellen/auswahl.tsx',
     ]) {
       const q = readFileSync(new URL(datei, WEB), 'utf8');
       assert.match(q, /<PaketChip /, datei);
