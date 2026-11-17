@@ -1197,15 +1197,6 @@
     }
   },
   "web/src/ablage/Historie.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
