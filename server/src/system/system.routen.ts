@@ -281,7 +281,12 @@ export function systemRouten(k: RoutenKontext): Route[] {
 }
 
 export function systemzustandRouten(k: RoutenKontext): Route[] {
-  const { x, messung, system, speicherplatz, konten, pakete } = k;
+  return [...externRouten(k), ...laufwerkRouten(k), ...auslastungRouten(k), ...lastRouten(k)];
+}
+
+/** Externe Dienste (#565): Laufzeit, Datenmenge, Fehler; KI-Kosten und Budget. */
+function externRouten(k: RoutenKontext): Route[] {
+  const { konten, pakete } = k;
   /** Namen zu den Ids der Auswertung (#565): Personen (gelöschte fehlen) und KI-Pakete (für die Preise). */
   const namen = async () => {
     const [benutzer, installiert] = await Promise.all([konten.listeBenutzer(), pakete.installierte().catch(() => [])]);
@@ -318,6 +323,13 @@ export function systemzustandRouten(k: RoutenKontext): Route[] {
         return ok({ ...(await extern.auswertung(new Date())), ...(await namen()) });
       },
     },
+  ];
+}
+
+/** WebDAV-Laufwerk (#346), Eingangsordner (#195, #915) und Speicherplatz (#116, #332). */
+function laufwerkRouten(k: RoutenKontext): Route[] {
+  const { x, speicherplatz } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/werkbank/webdav',
@@ -384,6 +396,13 @@ export function systemzustandRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)),
     },
+  ];
+}
+
+/** Auslastung (#409, #477), Versionsabgleich und lange Datenbankzugriffe. */
+function auslastungRouten(k: RoutenKontext): Route[] {
+  const { x, messung, system } = k;
+  return [
     // Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk des Containers; dazu die Wartezeit der Ereignisschleife (#477).
     {
       methode: 'GET',
@@ -450,6 +469,13 @@ export function systemzustandRouten(k: RoutenKontext): Route[] {
         });
       },
     },
+  ];
+}
+
+/** Messwerte für den Lasttest (#544, #894) und Einstellungen für lange Datenbankzugriffe. */
+function lastRouten(k: RoutenKontext): Route[] {
+  const { x, messung } = k;
+  return [
     // Messwerte für den Lasttest (#544): Ereignisschleife, Arbeitsspeicher, Warten auf Verbindungen, Überlastschutz,
     // Arbeiter. Wird vom Überlastschutz nie abgewiesen.
     {
