@@ -23,6 +23,7 @@ import { t } from '../sprache/sprache';
 import { EINGEBAUTE_SPRACHEN, setzeSprache } from '../../../shared/src/sprache';
 import { spracheAusKopf } from '../../../shared/src/sprachwahl';
 import { EINRICHTUNG_KOERPER_MAX } from '../grundlagen/grenzen';
+import { sanftesEnde } from './startmodus';
 
 /**
  * Einrichtungsmodus (#119): Das DMS läuft ohne erreichbare Datenbank und liefert nur den
@@ -63,6 +64,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
 
   const app = Fastify({ trustProxy: o.proxy ?? false, bodyLimit: EINRICHTUNG_KOERPER_MAX });
   richteGrundlagenEin(app, o);
+  const ende = sanftesEnde(app);
 
   const uebernehmen = async (a: Anbindung, wer: string) => {
     await schreibeAnbindung(o.geheim, a);
@@ -73,9 +75,10 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
       benutzer: a.benutzer,
     });
     z.beendet = true;
-    // Erst antworten, dann den Port für das eigentliche DMS freigeben.
+    // Erst antworten, dann den Port für das eigentliche DMS freigeben – laufende Anfragen (der Assistent fragt schon
+    // den Stand ab) bekommen noch ihre Antwort (#1419).
     setTimeout(() => {
-      void app.close().then(() => fertig(a));
+      void ende().then(() => fertig(a));
     }, 300).unref?.();
   };
   richteRoutenEin(app, o, z, pruefe, uebernehmen);
