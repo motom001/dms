@@ -446,7 +446,6 @@ export function FormatiertEingabe({
                   {WERKZEUGE.map((w) => (
                     <Knopf
                       key={w.titel}
-
                       nurSymbol={w.aufschrift ? `${w.aufschrift} ${w.titel}` : w.titel}
                       title={w.titel}
                       onMouseDown={(e) => e.preventDefault()}

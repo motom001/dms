@@ -72,7 +72,8 @@ export function MappenSuche({
                   .map((m) => (
                     <Knopf
                       key={m.id}
-
+                      art="eigen"
+                      className="wahloption"
                       onClick={() => {
                         merke(m.id, titelOder(m.titel));
                         setze([...gewaehlt, m.id]);

@@ -36,7 +36,7 @@ export function Schrittleiste({ schritt, setSchritt }: { schritt: number; setSch
       })}>
       {SCHRITTE.map((s, i) => (
         <li key={s} className={i < schritt ? 'erledigt' : i === schritt ? 'aktiv' : ''} aria-current={i === schritt ? 'step' : undefined}>
-          <Knopf onClick={() => setSchritt(i)}>
+          <Knopf art="eigen" className="schrittknopf" onClick={() => setSchritt(i)}>
             <span className="nr" aria-hidden="true">
               {i < schritt ? <Symbol name="haken" /> : i + 1}
             </span>
