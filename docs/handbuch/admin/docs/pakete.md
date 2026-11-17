@@ -499,7 +499,7 @@ Hat ein Paket berechnete Felder oder setzt es Hinweise, steht zusätzlich da: **
 
 #### Nachweise lesen { #recht-nachweise }
 
-**„Nachweise lesen (Benutzer, Fehlanmeldungen, Sicherungen …), angefragt: … – nur die Bereiche, die du anhakst“** – Seit Version 0.287. Je Monat: Benutzer mit Rollen, Zwei-Faktor, Passkey und Verwaltungsrechten, Rechteänderungen, Fehlanmeldungen (Konto, Zeit, gekürzte Adresse; unbekannte Konten nur als Anzahl), Sicherungsläufe und Probe-Wiederherstellungen, Läufe von „Alle Dateien prüfen“, Updates und Paket-Verlauf, Wartungszeiten, Löschungen nach Fristende, geleerter Papierkorb, Auskünfte und eingegangene Post je Weg. Freigeben kann das nur jemand mit **Gesamter Verwaltung** und frischer Anmeldung. Legt das Paket die Nachweise in Mappen ab, **verrechte diesen Mappentyp** – sie enthalten Personen.
+**„Nachweise lesen (Benutzer, Fehlanmeldungen, Sicherungen …), angefragt: … – nur die Bereiche, die du anhakst“** – Seit Version 0.287. Je Monat: Benutzer mit Rollen, Zwei-Faktor, Passkey und Verwaltungsrechten, Rechteänderungen, Fehlanmeldungen (Konto, Zeit, gekürzte Adresse; unbekannte Konten nur als Anzahl), Sicherungsläufe und Probe-Wiederherstellungen, fehlgeschlagene Sicherungen (lokal und außer Haus, mit Art, Ziel und Grund – ein Eintrag je Tag mit Anzahl, ohne Fehlertext und Pfade), Läufe von „Alle Dateien prüfen“, Updates und Paket-Verlauf, Wartungszeiten, Löschungen nach Fristende, geleerter Papierkorb, Auskünfte und eingegangene Post je Weg. Freigeben kann das nur jemand mit **Gesamter Verwaltung** und frischer Anmeldung. Legt das Paket die Nachweise in Mappen ab, **verrechte diesen Mappentyp** – sie enthalten Personen.
 
 ### Dienst-Adresse { #dienst-adresse }
 

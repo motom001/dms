@@ -1094,7 +1094,7 @@ A package such as “Compliance” keeps a process documentation up to date with
 | `ablage` | Folder types with fields (kind, required), versions per document tab, archive mode, period, reference date, AI approval | – |
 | `zugang` | Two-factor and passkey possible/required, sign-in protection, WebDAV, number of API keys, roles, permissions per folder type with rules, number of people per administration right | users at the reference date (roles, two-factor, passkey, administration rights), permission changes, failed sign-ins |
 | `betrieb` | installed packages with version and permissions, automations on/off, assistant, maintenance mode | Ablago updates, package history, maintenance times |
-| `sicherung` | schedule, retention, encryption, off-site targets (host only), test restore | backup runs, checks, test restores with result |
+| `sicherung` | schedule, retention, encryption, off-site targets (host only), test restore | backup runs, checks, test restores with result, failed backups (local and off-site) |
 | `unveraenderbarkeit` | schedule of “Check all files” (none so far), folder types in archive mode | runs of “Check all files” with findings |
 | `datenschutz` | deletion concept per folder type (personal data, purpose, period), Bin, history, deletion log, subject access | deletions after the period, final deletions, emptied Bin, subject access requests |
 | `betriebspruefung` | auditor access (does not exist yet), export formats | – |
@@ -1112,6 +1112,8 @@ A package such as “Compliance” keeps a process documentation up to date with
 - **`pfad`** is unique within the area (key followed by folder type, field, mailbox …). The core compares by it.
 - **`wert`** is flat: text, number, yes/no, `null` or a list of texts. Entries carry no timestamps – two reads without a change are identical.
 - **Evidence** uses the same frame with `"art": "nachweise"`, `monat` (`YYYY-MM`), `stichtag` and entries `{ kennung, zeit?, daten }`. Lists such as the users apply at the reference date (time of the read, at most the end of the month); for past months this is today’s state. Beyond 2000 entries per month the core only counts (`weitere`).
+- **Failed backups** (#1308, key `sicherung.fehlgeschlagen`) come as **one entry per day** and attributes: `daten` = `{ tag, art, ort, ziel, grund, anzahl, letzte }`. `tag` is the day in UTC (`YYYY-MM-DD`), `art` `automatisch` (automatic) or `hand` (manual), `ort` `lokal` (local) or `ausser_haus` (off-site), `ziel` the name of the package that copies off-site (`null` locally), `grund` a fixed key: `platz` (not enough space), `schluessel` (no key), `ziel` (off-site copy failed), `abbruch` (run interrupted, e.g. a restart in the middle of the backup) or `fehler` (other). No error text, no path, no address. `zeit` is the first failure of the day, `letzte` the last one, `anzahl` counts them. New reasons may be added; treat unknown ones like `fehler`.
+- **Comparing two reads:** evidence has no comparison like the setup – past entries don't change. Exception: in the entry of a failed backup, `anzahl` and `letzte` can grow until the end of the day. It stays the same entry (same `zeit`, `tag`, `art`, `ort`, `ziel`, `grund`); recognise it by these, not by its whole content.
 
 ### Manifest and release { #einrichtung-manifest }
 
@@ -1147,9 +1149,9 @@ code:
 
 What the interface delivers per area with Ablago 0.287 and what is (still) missing:
 
-- **Delivered:** all setup entries from the table above, from the services the Workbench shows as well. For evidence that was not stored permanently before (the log keeps 24 hours), the core keeps an **evidence journal** per month since 0.287 (since #1253 in the tables `nachweis_journal` and `nachweis_zaehler`, before that the setting `nachweise:YYYY-MM`; part of the backup, 25 months, at most 2000 entries per month, after that only counted): failed sign-ins, permission changes (administration rights, roles, folder type rules), updates, package history, maintenance times, “Check all files”, emptied Bin, subject access requests. This evidence therefore starts with the update.
+- **Delivered:** all setup entries from the table above, from the services the Workbench shows as well. For evidence that was not stored permanently before (the log keeps 24 hours), the core keeps an **evidence journal** per month since 0.287 (since #1253 in the tables `nachweis_journal` and `nachweis_zaehler`, before that the setting `nachweise:YYYY-MM`; part of the backup, 25 months, at most 2000 entries per month, after that only counted): failed sign-ins, permission changes (administration rights, roles, folder type rules), updates, package history, maintenance times, “Check all files”, emptied Bin, subject access requests, since #1308 failed backups. This evidence therefore starts with the update that introduces it.
 - **From existing data:** backup runs only for backups that still exist (retention); deletions from the deletion log; post per channel from the post folders.
-- **Missing:** separator sheet and barcode rules live in the settings of the respective package – only the responsible package is delivered. “Check all files” has no schedule, and there is no auditor access. Failed backups exist only as the last message, not as a history. Folder types come as flat entries, not as a file in the “Create package” format.
+- **Missing:** separator sheet and barcode rules live in the settings of the respective package – only the responsible package is delivered. “Check all files” has no schedule, and there is no auditor access. Successful backup runs disappear from the evidence with the retention (failed ones are in the journal since #1308). Folder types come as flat entries, not as a file in the “Create package” format.
 
 ## Trying it out { #ausprobieren }
 

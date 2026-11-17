@@ -7,6 +7,7 @@ import { t } from '../sprache/sprache';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { zeitzone } from '../../../shared/src/region';
 import { Fachfehler } from '../grundlagen/fehler';
+import { nachweisJeTag } from '../protokoll/nachweisjournal';
 
 /**
  * Sicherungen (#103–#105): Datenbank und Dateien zum selben Zeitpunkt, verschlüsselt mit dem
@@ -21,6 +22,44 @@ export const TAG_MS = 24 * 60 * 60 * 1000;
 export const ZU_ALT_TAGE = 2;
 
 export type Sicherungsart = 'manuell' | 'automatisch' | 'vor-wiederherstellung';
+
+/**
+ * Grund einer fehlgeschlagenen Sicherung im Nachweis-Journal (#1308) – nur diese festen Kennungen, nie ein Fehlertext,
+ * ein Pfad oder Zugangsdaten (Geheimnis-Sperre #1055): `platz` zu wenig Speicherplatz, `schluessel` kein Schlüssel,
+ * `ziel` Kopie außer Haus gescheitert, `abbruch` Lauf unterbrochen (z. B. Neustart mitten in der Sicherung), `fehler`
+ * alles andere (Einzelheiten im Protokoll und unter Werkbank → Sicherung).
+ */
+export type Fehlgrund = 'platz' | 'schluessel' | 'ziel' | 'abbruch' | 'fehler';
+
+/** Grund aus einem Fehler: voller Datenträger oder erschöpftes Kontingent → `platz`, sonst `fehler`. */
+export function fehlgrundVon(e: unknown): Fehlgrund {
+  const code = (e as NodeJS.ErrnoException | null)?.code;
+  return code === 'ENOSPC' || code === 'EDQUOT' ? 'platz' : 'fehler';
+}
+
+/** Art aus dem Namen einer Sicherung (`JJJJ-MM-TT_HHMM-<art>`, ggf. mit `-2` …); null, wenn der Name anders lautet. */
+export function artAusName(name: string): Sicherungsart | null {
+  const m = /-(manuell|automatisch|vor-wiederherstellung)(?:-\d+)?$/.exec(name);
+  return m ? (m[1] as Sicherungsart) : null;
+}
+
+/**
+ * Fehlgeschlagene Sicherung ins Nachweis-Journal (#1308): Art (automatisch oder von Hand), Ort (lokal oder außer Haus
+ * mit dem Namen des Ziels) und Grund – ein Eintrag je Tag mit Anzahl. Scheitert nie.
+ */
+export function vermerkeFehlschlag(o: {
+  art: Sicherungsart | null;
+  ort: 'lokal' | 'ausser_haus';
+  ziel?: string | null;
+  grund: Fehlgrund;
+}): Promise<void> {
+  return nachweisJeTag('sicherung.fehlgeschlagen', {
+    art: o.art === 'automatisch' ? 'automatisch' : 'hand',
+    ort: o.ort,
+    ziel: o.ort === 'ausser_haus' ? (o.ziel ?? null) : null,
+    grund: o.grund,
+  });
+}
 
 export interface Umgebung {
   dms: string;

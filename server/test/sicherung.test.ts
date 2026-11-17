@@ -12,6 +12,8 @@ import { behalten, bereinigePlan, isoWoche, ortszeit, PLAN_STANDARD, Sicherung, 
 import { liesSicherung, sammle, ZWECK } from '../src/sicherung/sicherungsformat';
 import { leiteAb, Tresor } from '../src/geheimnisse/tresor';
 import { mailText } from '../src/mail/mail';
+import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/protokoll/nachweisjournal';
+import { nachweise } from '../src/paketdaten';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
@@ -266,6 +268,80 @@ describe('Sicherung (#103–#105)', () => {
     assert.equal(s.laeuft(), false, 'der Lauf blockiert keine weitere Sicherung');
     assert.equal(s.aktuellerLauf()?.fehler, 'Ordner nicht lesbar');
     assert.equal((await s.zustand()).fehler?.grund, 'Ordner nicht lesbar');
+  });
+});
+
+/* ---------- Fehlgeschlagene Sicherungen im Nachweis-Journal (#1308) ---------- */
+
+describe('Fehlgeschlagene Sicherungen im Nachweis-Journal (#1308)', () => {
+  /** Journal im Arbeitsspeicher mit fester Zeit; nach dem Test wieder abgemeldet. */
+  async function mitJournal(f: (j: Nachweisjournal, zeit: (iso: string) => void) => Promise<void>) {
+    let jetzt = new Date('2026-11-03T01:00:00Z');
+    const j = new Nachweisjournal(speicherJournal(), () => jetzt);
+    setzeNachweisjournal(j);
+    try {
+      await f(j, (iso) => { jetzt = new Date(iso); });
+    } finally {
+      setzeNachweisjournal(null);
+    }
+  }
+  const daten = async (j: Nachweisjournal) => (await j.monat('2026-11')).eintraege.filter((e) => e.art === 'sicherung.fehlgeschlagen').map((e) => e.daten);
+
+  it('Lauf scheitert: ein Eintrag mit festem Grund, ohne Fehlertext und Pfad – auch in den Nachweisen', async () => {
+    const geheim = 'Konto-Geheim-7f3a9c2e5b';
+    const kaputt: Datenquelle = { ...falscheDaten(), async imSchnappschuss() { throw new Error(`postgres://ablago:${geheim}@db/ablago: /data/files/geheimer-ordner`); } };
+    await mitJournal(async (j, zeit) => {
+      const { s } = await aufbau({ daten: kaputt });
+      assert.equal(await (await s.starte('automatisch', 'Zeitplan')).fertig, null);
+      zeit('2026-11-03T01:30:00Z');
+      assert.equal(await (await s.starte('automatisch', 'Zeitplan')).fertig, null);
+      zeit('2026-11-03T09:00:00Z');
+      assert.equal(await (await s.starte('manuell', 'admin@example.org')).fertig, null);
+      assert.deepEqual(await daten(j), [
+        { tag: '2026-11-03', art: 'automatisch', ort: 'lokal', ziel: null, grund: 'fehler', anzahl: 2, letzte: '2026-11-03T01:30:00.000Z' },
+        { tag: '2026-11-03', art: 'hand', ort: 'lokal', ziel: null, grund: 'fehler', anzahl: 1, letzte: '2026-11-03T09:00:00.000Z' },
+      ]);
+      const n = await nachweise('sicherung', '2026-11', { journal: (m) => j.monat(m), jetzt: () => new Date('2026-11-20T00:00:00Z') });
+      assert.deepEqual(n.eintraege.map((e) => [e.kennung, e.zeit, e.daten.grund, e.daten.anzahl]), [
+        ['sicherung.fehlgeschlagen', '2026-11-03T01:00:00.000Z', 'fehler', 2],
+        ['sicherung.fehlgeschlagen', '2026-11-03T09:00:00.000Z', 'fehler', 1],
+      ]);
+      const text = JSON.stringify(n);
+      assert.ok(!text.includes(geheim) && !text.includes('/data/files') && !text.includes('postgres://'), text);
+    });
+  });
+
+  it('Gründe: kein Schlüssel, zu wenig Platz (auch ENOSPC), abgebrochener Lauf nach dem Neustart', async () => {
+    await mitJournal(async (j) => {
+      const wurzel = await mkdtemp(join(tmpdir(), 'dms-sich-'));
+      const t = new Tresor(speicherEinstellungen(), join(wurzel, 'k'), () => null);
+      await t.laden();
+      const ohne = new Sicherung(join(wurzel, 's'), join(wurzel, 'f'), HAUSHALT, { tresor: t, einstellungen: speicherEinstellungen(), daten: falscheDaten(), umgebung: async () => ({ dms: '', node: '', system: '', architektur: '' }) });
+      await assert.rejects(ohne.starte('automatisch', 'Zeitplan'), /Verschlüsselung/);
+      const { s, einstellungen } = await aufbau();
+      await einstellungen.schreibe('sicherung_plan', { ...PLAN_STANDARD, mindestFreiGB: 100_000 });
+      await assert.rejects(s.starte('manuell', 'x'), /Zu wenig freier Speicherplatz/);
+      const voll: Datenquelle = { ...falscheDaten(), async imSchnappschuss() { throw Object.assign(new Error('no space left on device, write /sicherung/x'), { code: 'ENOSPC' }); } };
+      const { s: s2 } = await aufbau({ daten: voll });
+      assert.equal(await (await s2.starte('vor-wiederherstellung', 'x')).fertig, null);
+      // Neustart mitten im Lauf: die halbe Datei bleibt liegen; beim Start aufgeräumt und als Abbruch vermerkt.
+      await mkdir(s2.ordner, { recursive: true });
+      await writeFile(join(s2.ordner, '.2026-11-03_0100-automatisch.dms-sicherung.teil'), 'halb');
+      await writeFile(join(s2.ordner, '.2026-11-03_0100-automatisch.json.teil'), '{}');
+      await s2.raeumeTeileAuf();
+      assert.deepEqual(await readdir(s2.ordner), []);
+      assert.deepEqual((await daten(j)).map((d) => `${d.art}:${d.grund}:${d.anzahl}`), ['automatisch:schluessel:1', 'hand:platz:2', 'automatisch:abbruch:1']);
+    });
+  });
+
+  it('scheitert nur die Nacharbeit, fehlt keine Sicherung: kein Eintrag', async () => {
+    await mitJournal(async (j) => {
+      const { s } = await aufbau();
+      (s as unknown as { raeumeAuf: () => Promise<string[]> }).raeumeAuf = async () => { throw new Error('Aufräumen gestört'); };
+      assert.equal(await (await s.starte('automatisch', 'Zeitplan')).fertig, null);
+      assert.equal((await s.liste()).length, 1, 'die Sicherung selbst liegt vor');
+      assert.deepEqual(await daten(j), []);
+    });
   });
 });
 

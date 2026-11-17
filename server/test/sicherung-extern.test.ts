@@ -17,6 +17,7 @@ import { Tresor } from '../src/geheimnisse/tresor';
 import { EREIGNISSE, liesCode, rechteText, SCHNITTSTELLEN } from '../../shared/src/pakete';
 import { HILFE } from '../../shared/src/hilfe';
 import { mailText } from '../src/mail/mail';
+import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/protokoll/nachweisjournal';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const TAG = 24 * 3600_000;
@@ -229,6 +230,33 @@ describe('Sicherung außer Haus (#585)', () => {
     await s.externRueckmeldung('sicherung_webdav', name, { status: 'hochgeladen', pruefung: 'groesse' });
     await s.externAufgegeben('sicherung_webdav', name, 'x');
     assert.equal((await s.liste())[0].extern!.sicherung_webdav.status, 'hochgeladen');
+  });
+
+  it('gescheiterte Kopie außer Haus im Nachweis-Journal (#1308): Name des Ziels, fester Grund, kein Fehlertext, je Tag gezählt', async () => {
+    const j = new Nachweisjournal(speicherJournal(), () => new Date('2026-11-02T04:00:00Z'));
+    setzeNachweisjournal(j);
+    try {
+      const { s, sichere } = await aufbau();
+      const auto = (await sichere('automatisch')).datei.replace('.dms-sicherung', '');
+      const hand = (await sichere('manuell')).datei.replace('.dms-sicherung', '');
+      // Erst fehlgeschlagen, dann aufgegeben: ein Fehlschlag, nicht zwei.
+      await s.externRueckmeldung('sicherung_webdav', auto, { status: 'fehlgeschlagen', grund: 'Anmeldung lena:Passwort-123 an https://cloud.example.org/remote.php/dav abgelehnt' });
+      await s.externAufgegeben('sicherung_webdav', auto, 'Zeitgrenze erreicht');
+      // Antwort auf das Ereignis mit Rückgabewert 2: endgültig fehlgeschlagen.
+      await s.externAntwort('sicherung_webdav', hand, { ok: false, rc: 2, text: '', fehler: '/srv/ziel voll', beginn: Date.parse('2030-01-01') });
+      const m = await j.monat('2026-11');
+      assert.deepEqual(
+        m.eintraege.map((e) => e.daten),
+        [
+          { tag: '2026-11-02', art: 'automatisch', ort: 'ausser_haus', ziel: 'Sicherungsziel WebDAV', grund: 'ziel', anzahl: 1, letzte: '2026-11-02T04:00:00.000Z' },
+          { tag: '2026-11-02', art: 'hand', ort: 'ausser_haus', ziel: 'Sicherungsziel WebDAV', grund: 'ziel', anzahl: 1, letzte: '2026-11-02T04:00:00.000Z' },
+        ],
+      );
+      const text = JSON.stringify(m);
+      assert.ok(!/Passwort-123|cloud\.example\.org|remote\.php|\/srv\/ziel/.test(text), text);
+    } finally {
+      setzeNachweisjournal(null);
+    }
   });
 
   it('mehr als 2 Tage ohne neue Kopie außer Haus: Hinweis und E-Mail; frische Kopie beendet den Vorfall', async () => {

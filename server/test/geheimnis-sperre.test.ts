@@ -15,7 +15,7 @@
  * Anmeldung und Protokoll. Ebenso das Notfallblatt (trägt den Schlüssel, nur mit „Verschlüsselung“).
  */
 import assert from 'node:assert/strict';
-import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
@@ -46,6 +46,7 @@ import { einrichtung as paketEinrichtung, nachweise as paketNachweise, vergleich
 import { paketdatenQuellen } from '../src/paketdaten/paketdaten.routen';
 import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/protokoll/nachweisjournal';
 import { NACHWEIS_BEREICHE, PAKETDATEN_BEREICHE } from '../../shared/src/paketdaten';
+import { Sicherung } from '../src/sicherung/sicherung';
 
 type App = {
   inject(o: {
@@ -393,6 +394,25 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
           try {
             await fehlanmeldung(G.kontoPasswort, '203.0.113.9', false);
             await fehlanmeldung(lena.email, '203.0.113.9', true);
+            // Fehlgeschlagene Sicherung (#1308), deren Fehlertext Testgeheimnisse und einen Pfad trägt: Ins Journal
+            // kommt nur der feste Grund.
+            const sich = await mkdtemp(join(tmpdir(), 'dms-geheim-sicherung-'));
+            ordner.push(sich);
+            const haushalt = '00000000-0000-4000-8000-000000001308';
+            await mkdir(join(sich, 'files', haushalt), { recursive: true });
+            const kaputt = new Sicherung(join(sich, 'sicherung'), join(sich, 'files'), haushalt, {
+              tresor,
+              einstellungen: speicherEinstellungen(),
+              daten: {
+                imSchnappschuss: async () => {
+                  throw new Error(`postgres://ablago:${G.mailPasswort}@db/ablago – ${sich}/files/${G.passwortfeld}`);
+                },
+                groesse: async () => 0,
+              },
+              umgebung: async () => ({ dms: '', node: '', system: '', architektur: '' }),
+              mountinfo: '/gibt-es-nicht',
+            });
+            assert.equal(await (await kaputt.starte('automatisch', 'Zeitplan')).fertig, null);
             const teile: string[] = [];
             for (const b of PAKETDATEN_BEREICHE) {
               const s = await paketEinrichtung(b, q.einrichtung);
@@ -403,6 +423,8 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
             const text = teile.join('\n');
             assert.match(text, /imap\.example\.org/, 'Postfach in der Einrichtung');
             assert.match(text, /zugang\.fehlanmeldung/, 'Fehlanmeldung in den Nachweisen');
+            assert.match(text, /"kennung":"sicherung\.fehlgeschlagen"[^}]*"grund":"fehler"/, 'fehlgeschlagene Sicherung in den Nachweisen');
+            assert.ok(!text.includes(sich), 'kein Pfad aus dem Fehlertext');
             return text;
           } finally {
             setzeNachweisjournal(null);

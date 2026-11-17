@@ -20,6 +20,7 @@ import {
   type JournalSpeicher,
 } from '../src/protokoll/nachweisjournal';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { verbinde } from '../src/datenbank/db';
 import { findeGeheimnisse } from '../src/geheimnisse/geheimnis-sperre';
 import { PAKETDATEN_BEREICHE, darfPaketdaten, type EinrichtungEintrag } from '../../shared/src/paketdaten';
 import type { Mappentyp } from '../../shared/src/model';
@@ -396,7 +397,58 @@ function journalPruefungen(speicher: () => Promise<JournalSpeicher>) {
     assert.equal(m.eintraege.length + m.weitere, JE_MONAT - 5 + 10);
     assert.equal(m.zaehler['zugang.fehlanmeldung_unbekannt'], 10);
   });
+
+  it('je Tag und Merkmalen ein Eintrag mit Anzahl (#1308): Wiederholungen – auch gleichzeitig – zählen nur hoch', async () => {
+    const sp = await speicher();
+    let jetzt = new Date('2026-11-03T01:00:00Z');
+    const j = new Nachweisjournal(sp, () => jetzt);
+    await Promise.all(Array.from({ length: 6 }, () => j.vermerkeJeTag('sicherung.fehlgeschlagen', PLATZ)));
+    jetzt = new Date('2026-11-03T02:00:00Z');
+    await j.vermerkeJeTag('sicherung.fehlgeschlagen', PLATZ);
+    await j.vermerkeJeTag('sicherung.fehlgeschlagen', { ...PLATZ, ort: 'ausser_haus', ziel: 'Sicherungsziel WebDAV', grund: 'ziel' });
+    jetzt = new Date('2026-11-04T01:00:00Z');
+    await j.vermerkeJeTag('sicherung.fehlgeschlagen', PLATZ);
+    const m = await j.monat('2026-11');
+    assert.deepEqual(
+      m.eintraege.map((e) => [e.zeit, e.daten]),
+      [
+        ['2026-11-03T01:00:00.000Z', { tag: '2026-11-03', ...PLATZ, anzahl: 7, letzte: '2026-11-03T02:00:00.000Z' }],
+        [
+          '2026-11-03T02:00:00.000Z',
+          {
+            tag: '2026-11-03',
+            ...PLATZ,
+            ort: 'ausser_haus',
+            ziel: 'Sicherungsziel WebDAV',
+            grund: 'ziel',
+            anzahl: 1,
+            letzte: '2026-11-03T02:00:00.000Z',
+          },
+        ],
+        ['2026-11-04T01:00:00.000Z', { tag: '2026-11-04', ...PLATZ, anzahl: 1, letzte: '2026-11-04T01:00:00.000Z' }],
+      ],
+    );
+    assert.equal(m.weitere, 0);
+  });
+
+  it('voller Monat (#1308): keine weiteren Einträge, jeder Fehlschlag zählt als „weitere“', async () => {
+    const sp = await speicher();
+    for (let i = 0; i < JE_MONAT; i++)
+      await sp.trageEin('2026-11', { art: 'betrieb.wartung', zeit: '2026-11-01T00:00:00.000Z', daten: { nr: i } }, JE_MONAT);
+    let jetzt = new Date('2026-11-05T01:00:00Z');
+    const j = new Nachweisjournal(sp, () => jetzt);
+    for (const tag of ['05', '05', '06', '06', '06']) {
+      jetzt = new Date(`2026-11-${tag}T01:00:00Z`);
+      await j.vermerkeJeTag('sicherung.fehlgeschlagen', PLATZ);
+    }
+    const m = await j.monat('2026-11');
+    assert.equal(m.eintraege.length, JE_MONAT);
+    assert.equal(m.weitere, 5, 'ohne Eintrag gibt es nichts hochzuzählen – nichts geht unbemerkt verloren');
+  });
 }
+
+/** Fehlgeschlagene Sicherung (#1308) – Merkmale ohne Tag; den setzt das Journal. */
+const PLATZ = { art: 'automatisch', ort: 'lokal', ziel: null, grund: 'platz' };
 
 describe('Nachweis-Journal (#1053, #1253)', () => {
   journalPruefungen(async () => speicherJournal());
@@ -431,8 +483,11 @@ describe(
   () => {
     let sql: EigeneDatenbank['sql'];
     let haushalt = '';
+    let url = '';
     before(async () => {
-      sql = (await eigeneDatenbank('nachweisjournal')).sql;
+      const db = await eigeneDatenbank('nachweisjournal');
+      sql = db.sql;
+      url = db.url;
       haushalt = '00000000-0000-4000-8000-000000001253';
       await sql`INSERT INTO haushalte (id, name) VALUES (${haushalt}, 'Nachweis-Journal')`;
     });
@@ -475,6 +530,28 @@ describe(
       );
       await new Nachweisjournal(a, () => new Date('2026-10-20T00:00:00Z')).zaehle('zugang.fehlanmeldung_unbekannt');
       assert.equal((await a.monat('2026-10')).zaehler['zugang.fehlanmeldung_unbekannt'], 8);
+    });
+
+    it('zwei Prozesse an einer Datenbank vermerken zugleich (#1308): ein Eintrag, keine Zählung verloren', async () => {
+      await leer();
+      const zweiter = verbinde(url, 4);
+      try {
+        const jetzt = () => new Date('2026-11-03T01:00:00Z');
+        const [a, b] = [new Nachweisjournal(pgJournal(sql, haushalt), jetzt), new Nachweisjournal(pgJournal(zweiter, haushalt), jetzt)];
+        await Promise.all(Array.from({ length: 8 }, (_, i) => (i % 2 ? a : b).vermerkeJeTag('sicherung.fehlgeschlagen', PLATZ)));
+        const m = await a.monat('2026-11');
+        assert.deepEqual(
+          m.eintraege.map((e) => e.daten.anzahl),
+          [8],
+        );
+        assert.equal(m.weitere, 0);
+        const [z] = await sql<
+          { anzahl: string }[]
+        >`SELECT anzahl FROM nachweis_zaehler WHERE haushalt_id = ${haushalt} AND monat = '2026-11'`;
+        assert.equal(Number(z.anzahl), 1, 'der Zähler des Monats nur für den neuen Eintrag');
+      } finally {
+        await zweiter.end({ timeout: 5 });
+      }
     });
   },
 );
