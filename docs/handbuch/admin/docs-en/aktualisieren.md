@@ -38,14 +38,23 @@ The templates use **`:stabil`**. That way, when updating you only get versions w
 | Tag | What you get | For whom |
 |---|---|---|
 | `ghcr.io/motom001/dms:stabil` (or `dms-komplett:stabil`) | once a week, the newest tested version with number and release notes | **Recommended** for everyone |
+| `ghcr.io/motom001/dms:latest` (or `dms-komplett:latest`) | the most recently released version with number and release notes, right after each release | anyone who always wants the newest |
 | `ghcr.io/motom001/dms:0.158.0` (a fixed number) | exactly this version, until you raise the number yourself | whoever wants to start every update themselves |
 | `ghcr.io/motom001/dms:main` | every state on `main`, right after each change – including unreleased ones without number and release notes | for the curious and for testing |
+
+Without a tag (e.g. `docker pull ghcr.io/motom001/dms`), Docker uses `:latest`. Many NAS interfaces do the same if you don't enter a tag. You then get the newest version, not the tested one: enter `:stabil` if you want the version tested once a week.
+
+!!! note "Two different “Latest”"
+    - The **image tag `:latest`** points to the **most recently released** version. It moves with every release.
+    - The **“Latest” marker on the [releases on GitHub](https://github.com/motom001/dms/releases)** is on the **stable** version, the same as `:stabil`. The notice about a new version in the workbench follows it.
+
+    Between two weekly runs, the two therefore usually point to different versions.
 
 `:stabil` moves on **once a week**, early on Tuesday: to the newest version that has been released for at least 24 hours and has passed all checks – release with number and release notes, both images built for amd64 and arm64 with provenance, and an **update test** from the previous `:stabil` to the new version (with sample data, all migrations and a test restore of the old backup). New versions still appear with every new number on `main`; with `:stabil` they come bundled, and the release of the new stable version lists every version added since then under *Seit der letzten stabilen Version* (since the last stable version) – the week's changes at a glance. The maintainer can hold back a version; then `:stabil` moves to the one before.
 
 **Urgent fixes** (for example for a security vulnerability) don't wait for the week: with the label `sofort-stabil` on the pull request, `:stabil` moves along right after the release – with the same checks.
 
-If you want to see new features earlier, use `:main`. The notice about a new version under **Workbench → System health → Version and updates** follows the stable version: with `:stabil` it appears once a week; with `:main` it names newer states on `main` as before.
+If you want new versions earlier, use `:latest`; if you want to see every state before the release, `:main`. The notice about a new version under **Workbench → System health → Version and updates** follows the stable version: with `:stabil` it appears once a week. With `:latest` or `:main` you usually run a version above the stable one; then it names newer states on `main` as before.
 
 With two containers, `postgres:17` stays open for security updates of the 17 series – independently of Ablago's tag.
 
@@ -110,9 +119,10 @@ Every version of Ablago has a number like `0.8.1`. As soon as a new number is on
 
 - a **release** on GitHub with the changelog – [Releases](https://github.com/motom001/dms/releases),
 - an **image** with this number, e.g. `ghcr.io/motom001/dms:0.8.1`,
+- right after that, the tag **`:latest`** on this version (for `dms` and `dms-komplett`, amd64 and arm64),
 - with the next weekly run (early on Tuesday), once the update test has passed, the tag **`:stabil`** on the newest version that is at least 24 hours old – for an urgent fix (label `sofort-stabil`) right after the release.
 
-Changes without a new number (small fixes, docs) only land in the image `main`, never in `:stabil`. Several requests can thus be bundled into one release: the number is only raised with the last one.
+Changes without a new number (small fixes, docs) and the weekly rebuild with fresh Alpine packages only land in the image `main`, never in `:stabil` or `:latest`. Several requests can thus be bundled into one release: the number is only raised with the last one.
 
 ## Backing up { #sichern }
 

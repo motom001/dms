@@ -110,7 +110,16 @@ The image `ghcr.io/motom001/dms` is public – you do not need to sign in to the
 2. Next to it, put a file `.env` with `DB_PASSWORD=<long random password>`.
 3. Start it and open `http://<NAS>:8080`. A wizard guides you through the setup: setup code (shown in the container log and in `geheim/EINRICHTUNGSCODE`), database, then **set up new** or **restore from a backup**, name of your filing system, administrator, first user, key and emergency sheet.
 
-`ghcr.io/motom001/dms:stabil` (used by all templates) follows the tested releases once a week; `:main` follows every state of `main` and is for testing only; with a version number, i.e. `ghcr.io/motom001/dms:<version>` with a number from the [releases](https://github.com/motom001/dms/releases), the installation stays on a release. Everything else is in the administrator manual under [Setup and operation](https://help.ablago.app/admin/aktuell/en/installation/) and [Updating and backing up](https://help.ablago.app/admin/aktuell/en/aktualisieren/).
+Which image tag (the same applies to `ghcr.io/motom001/dms-komplett`):
+
+| Tag | Points to | For whom |
+|---|---|---|
+| `:stabil` | the tested version, moves once a week | default in all templates |
+| `:latest` | the most recently released version, moves with every release | anyone who always wants the newest |
+| `:<version>` | exactly this version, e.g. `:0.290.14` from the [releases](https://github.com/motom001/dms/releases) | anyone who decides when to update |
+| `:main` | every state of `main`, even without a release | for testing only |
+
+Without a tag, Docker uses `:latest`. Don't mix them up: the “Latest” marker on the releases on GitHub is on the stable version (`:stabil`), the image tag `:latest` on the newest. Everything else is in the administrator manual under [Setup and operation](https://help.ablago.app/admin/aktuell/en/installation/) and [Updating and backing up](https://help.ablago.app/admin/aktuell/en/aktualisieren/#image-tag).
 
 ## Security and openness
 

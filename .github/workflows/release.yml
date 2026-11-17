@@ -69,7 +69,7 @@ jobs:
           {
             echo
             echo "---"
-            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` bzw. \`ghcr.io/motom001/dms-komplett:${tag#v}\` (oder \`:main\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://help.ablago.app/admin/aktualisieren/)."
+            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` bzw. \`ghcr.io/motom001/dms-komplett:${tag#v}\` (oder \`:latest\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://help.ablago.app/admin/aktualisieren/)."
           } >> notizen.md
       - name: Release anlegen oder Text setzen
         run: |

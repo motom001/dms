@@ -714,6 +714,54 @@ jobs:
       tag: v${{ needs.version.outputs.version }}
       ziel: ${{ github.sha }}
 
+  # :latest (#1398): immer die zuletzt veröffentlichte Version, für dms und dms-komplett (beide Architekturen) –
+  # gesetzt erst, wenn das Release angelegt ist, und nur bei einer neuen Version (der wöchentliche Neubau setzt
+  # nur :main). Nicht zu verwechseln mit der Markierung „Latest“ bei GitHub: die trägt das Release von :stabil.
+  # Laufen zwei Releases kurz hintereinander, wandert :latest nie zurück: gesetzt wird nur, wenn kein höheres
+  # Release X.Y.Z existiert.
+  latest:
+    needs: [version, release]
+    if: needs.release.result == 'success' && needs.version.outputs.neu == 'true'
+    runs-on: ubuntu-latest
+    # Zeitgrenze: zwei Manifeste umhängen, gewöhnlich unter einer Minute.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: image-latest
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: :latest auf die neue Version
+        run: |
+          set -o pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::notice title=:latest::$VERSION ist keine Version X.Y.Z – :latest bleibt"; exit 0; }
+          hoechste=$(gh api "repos/$REPO/releases?per_page=100" -q '.[] | select(.draft | not) | select(.prerelease | not) | .tag_name' |
+            sed 's/^v//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          if [ -n "$hoechste" ] && [ "$hoechste" != "$VERSION" ] && [ "$(printf '%s\n%s\n' "$hoechste" "$VERSION" | sort -V | tail -1)" = "$hoechste" ]; then
+            echo "::notice title=:latest::bleibt – v$hoechste ist neuer als v$VERSION"; exit 0
+          fi
+          for image in dms dms-komplett; do
+            ref="ghcr.io/$OWNER/$image"
+            docker buildx imagetools inspect --raw "$ref:$VERSION" | jq -e '[.manifests[].platform.architecture] | (index("amd64") != null and index("arm64") != null)' >/dev/null \
+              || { echo "::error::$ref:$VERSION fehlt oder hat nicht beide Architekturen"; exit 1; }
+            docker buildx imagetools create -t "$ref:latest" "$ref:$VERSION"
+            d() { docker buildx imagetools inspect "$ref:$1" --format '{{json .Manifest}}' | jq -r .digest; }
+            [ "$(d latest)" = "$(d "$VERSION")" ] || { echo "::error::$ref:latest zeigt nicht auf $VERSION"; exit 1; }
+            echo "::notice title=:latest::$image:latest → $VERSION"
+          done
+
   # :stabil (#714, #907): wandert nicht mehr mit jedem Release, sondern einmal pro Woche (stabil.yml).
   # Ausnahme für dringende Fehlerbehebungen: Label „sofort-stabil“ am Pull Request – dann gleich nach
   # dem Release, mit denselben Prüfungen (beide Images, Herkunftsnachweis, Update-Test vom bisherigen
