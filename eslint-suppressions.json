@@ -1268,11 +1268,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Ablaufvorlagen.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Anmeldeschutz.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 3
@@ -1291,53 +1286,8 @@
       "count": 1
     }
   },
-  "web/src/werkbank/BenutzerEditor.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Berechtigungen.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Datenschutz.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Demo.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Designs.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Eingangsordner.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/MailVersand.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1351,62 +1301,8 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Postfaecher.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
-  "web/src/werkbank/Sicherung.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Sichten.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Texterkennung.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Uebersicht.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Verkleinern.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Verschluesselung.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1417,17 +1313,6 @@
   },
   "web/src/werkbank/Wartungsmodus.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Werkbank.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },

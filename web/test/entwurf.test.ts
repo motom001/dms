@@ -78,10 +78,14 @@ describe('Entwurf in Werkbank-Formularen (#370)', () => {
       'Ansicht',
       'DatenEinstellungen',
     ];
+    const TEILE: Record<string, string> = { Postfaecher: 'postfach', Sicherung: 'sicherung', Sichten: 'sichten' };
     const dateien = new Set(readdirSync(wb).map((d) => d.replace(/\.tsx$/, '')));
     for (const f of erwartet) {
       assert.ok(dateien.has(f), f);
-      const q = readFileSync(join(wb, `${f}.tsx`), 'utf8');
+      // Türen (#1279): die Teile stehen im Unterordner.
+      const ordner = TEILE[f];
+      const teile = ordner ? readdirSync(join(wb, ordner)).map((d) => readFileSync(join(wb, ordner, d), 'utf8')) : [];
+      const q = [readFileSync(join(wb, `${f}.tsx`), 'utf8'), ...teile].join('\n');
       assert.match(q, /<Speicherleiste\b/, `${f}.tsx ohne <Speicherleiste>`);
       assert.match(q, /useEntwurf\(/, `${f}.tsx ohne useEntwurf`);
     }

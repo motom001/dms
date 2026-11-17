@@ -65,11 +65,11 @@ describe('Baustein PaketChip (#1192)', () => {
   it('die Werkbank-Listen nutzen ihn, nirgends mehr „aus Paket“ ohne Namen (#1192)', () => {
     for (const datei of [
       'werkbank/Werkbank.tsx',
-      'werkbank/Sichten.tsx',
+      'werkbank/sichten/SichtenListe.tsx',
       'werkbank/Nummernkreise.tsx',
       'werkbank/Woerter.tsx',
       'werkbank/automatisierungen/liste.tsx',
-      'werkbank/Ablaufvorlagen.tsx',
+      'werkbank/ablaufvorlage/AblaufvorlagenListe.tsx',
       'werkbank/paket-erstellen/auswahl.tsx',
     ]) {
       const q = readFileSync(new URL(datei, WEB), 'utf8');

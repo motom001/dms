@@ -157,7 +157,7 @@ describe('Datenbank ohne Volume (#943)', () => {
   });
 
   it('die Übersicht zeigt die Meldung rot und verlinkt zur Datenbank-Anbindung, die Seite dort zum Handbuch', () => {
-    const uebersicht = lies('web/src/werkbank/Uebersicht.tsx');
+    const uebersicht = lies('web/src/werkbank/uebersicht/hinweise-betrieb.tsx');
     assert.match(
       uebersicht,
       /if \(u\.anbindung\?\.ohneVolume\)\s*h\.push\(\{\s*schluessel: 'datenbank\.ohne-volume',\s*art: 'schlecht'[\s\S]{0,300}?ziel: '\/werkbank\/anbindung'/,

@@ -475,7 +475,7 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
       ausprobierTypen({ typen: ['vertrag', 'auto'] }, typen).map((x) => x.id),
       ['vertrag', 'auto'],
     );
-    const quelle = readFileSync(new URL('../../web/src/werkbank/Ablaufvorlagen.tsx', import.meta.url), 'utf8');
+    const quelle = readFileSync(new URL('../../web/src/werkbank/ablaufvorlage/Ausprobieren.tsx', import.meta.url), 'utf8');
     const teil = quelle.slice(quelle.indexOf('function Ausprobieren('));
     assert.match(teil, /const ziele = ausprobierTypen\(v, d\.typen\)/);
     assert.match(teil, /<MappenWahl\s[^>]*ziele=\{ziele\}/);

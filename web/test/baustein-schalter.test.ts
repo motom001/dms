@@ -73,7 +73,7 @@ describe('Baustein Schalter (#1188)', () => {
     const stellen: Array<[string, string]> = [
       ['werkbank/Webdav.tsx', 'webdav-aktiv'],
       ['werkbank/Eingangsordner.tsx', 'eingang-aktiv'],
-      ['werkbank/Postfaecher.tsx', 'pf-aktiv'],
+      ['werkbank/postfach/PostfachEditor.tsx', 'pf-aktiv'],
       ['werkbank/Sprachen.tsx', 'uebersetzen-an'],
       ['werkbank/Anmeldeschutz.tsx', 'oidc-aktiv'],
     ];
@@ -84,13 +84,13 @@ describe('Baustein Schalter (#1188)', () => {
     }
     // Werkbank anpassen hat seit #987 keinen Ein/Aus-Schalter mehr (Expertenmodus ersetzt durch „Meine Leiste“).
     for (const datei of [
-      'werkbank/MailVersand.tsx',
-      'werkbank/Sicherung.tsx',
+      'werkbank/mail/MailTeile.tsx',
+      'werkbank/sicherung/Zeitplan.tsx',
       'werkbank/Verkleinern.tsx',
       'werkbank/DatenEinstellungen.tsx',
       'werkbank/SucheEinstellungen.tsx',
       'werkbank/automatisierungen/editor.tsx',
-      'werkbank/Ablaufvorlagen.tsx',
+      'werkbank/ablaufvorlage/EditorTeile.tsx',
     ]) {
       assert.match(readFileSync(new URL(datei, WEB), 'utf8'), /<Schalter\s/, datei);
     }

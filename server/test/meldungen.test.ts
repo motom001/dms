@@ -196,7 +196,12 @@ describe('Schnittstelle: Meldungen akzeptieren (#816)', () => {
 
 describe('Alle Meldungen der Übersicht haben einen Schlüssel und stehen im Admin-Handbuch (#816)', () => {
   it('jeder Schlüssel aus der Übersicht steht in der Tabelle unter „Meldungen der Übersicht“', () => {
-    const quellen = ['web/src/werkbank/Uebersicht.tsx', 'web/src/werkbank/Sicherung.tsx', 'web/src/werkbank/Vollexport.tsx']
+    const quellen = [
+      'web/src/werkbank/uebersicht/hinweise.tsx',
+      'web/src/werkbank/uebersicht/hinweise-betrieb.tsx',
+      'web/src/werkbank/sicherung/hinweise.tsx',
+      'web/src/werkbank/Vollexport.tsx',
+    ]
       .map((f) => readFileSync(join(WURZEL, f), 'utf8'))
       .join('\n');
     const schluessel = [...quellen.matchAll(/schluessel: (?:'([a-z0-9.-]+)'|`([a-z0-9.-]+):\$\{)/g)].map((x) => x[1] ?? x[2]);

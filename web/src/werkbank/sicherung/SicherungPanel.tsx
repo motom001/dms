@@ -1,0 +1,168 @@
+import { useState } from 'react';
+import { betriebApi, type SicherungStand } from '../../api/betrieb';
+import { t, tn } from '../../sprache';
+import { Link } from '../../ort';
+import { Knopf } from '../../bausteine';
+import { Kopf } from '../Kopf';
+import { bytes, zeit } from '../sicherungFormat';
+import { SicherungListe } from '../SicherungListe';
+import { useVerwaltetVerschluesselung, type SicherungZustand } from './zustand';
+import { sicherungsHinweise, type SicherungsHinweis } from './hinweise';
+import { AusserHaus, Speicherort, Speicherplatz, StandZeile } from './Abschnitte';
+import { Zeitplan } from './Zeitplan';
+import { Probe } from './Probe';
+
+type Meldung = { art: 'gut' | 'schlecht'; text: string };
+
+export function SicherungPanel({ z }: { z: SicherungZustand }) {
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const mitNotfallblatt = useVerwaltetVerschluesselung();
+  const s = z.stand;
+  if (z.fehler)
+    return (
+      <div className="hinweis schlecht">
+        <p>{z.fehler}</p>
+      </div>
+    );
+  if (!s) return <p className="leise">{t('werkbank.sicherung.lade')}</p>;
+  const laeuft = s.lauf?.status === 'laeuft';
+  const hinweise = sicherungsHinweise(s.zustand, mitNotfallblatt);
+  async function tu(f: () => Promise<unknown>, gut?: string) {
+    setMeldung(undefined);
+    try {
+      await f();
+      await z.laden();
+      if (gut) setMeldung({ art: 'gut', text: gut });
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+    }
+  }
+  return (
+    <div className="einspaltig">
+      <Kopf titel={t('werkbank.sicherung.sicherung')} ueber={t('werkbank.sicherung.werkbank')} hilfe="werkbank.sicherung">
+        <p className="leise">
+          {tn('werkbank.sicherung.eine-sicherung-enthaelt-die', {
+            link: (
+              <Link to="/werkbank/verschluesselung" className="verweis">
+                {t('werkbank.sicherung.verschluesselung')}
+              </Link>
+            ),
+          })}
+        </p>
+      </Kopf>
+
+      {hinweisListe(s, hinweise)}
+
+      {jetztSichern(s, meldung, tu)}
+
+      <SicherungListe s={s} laeuft={laeuft} laden={z.laden} />
+
+      {s.zustand.probe && (
+        <Probe
+          stand={s.zustand.probe}
+          lauf={s.probe ?? null}
+          sicherungen={s.liste.some((x) => x.meta)}
+          gesperrt={laeuft}
+          neuLaden={() => void z.laden()}
+        />
+      )}
+
+      <Zeitplan
+        key={JSON.stringify(s.plan)}
+        plan={s.plan}
+        nurNeuesteMoeglich={!!s.zustand.nurNeueste?.moeglich}
+        notfallblatt={s.zustand.notfallblatt.aktuell}
+        mitNotfallblatt={mitNotfallblatt}
+        gespeichert={() => void z.laden()}
+      />
+
+      <Speicherplatz s={s} />
+
+      <Speicherort s={s} />
+
+      <AusserHaus x={s.zustand.extern} />
+    </div>
+  );
+}
+
+/** Ohne Schlüssel keine Sicherung; darunter die Hinweise zur Sicherung (wie in der Übersicht). */
+function hinweisListe(s: SicherungStand, hinweise: SicherungsHinweis[]) {
+  return (
+    <>
+      {!s.zustand.schluessel && (
+        <div className="hinweis warn">
+          <p>
+            {tn('werkbank.sicherung.erzeuge-ihn-zuerst-unter', {
+              b: <strong>{t('werkbank.sicherung.ohne-schluessel-keine-sicherung')}</strong>,
+            })}
+          </p>
+          <Link to="/werkbank/verschluesselung" className="knopf klein">
+            {t('werkbank.sicherung.zur-verschluesselung')}
+          </Link>
+        </div>
+      )}
+      {hinweise.map((h, i) => (
+        <div key={i} className={`hinweis ${h.art === 'info' ? 'info' : h.art}`}>
+          <p>{h.text}</p>
+          {h.ziel && (
+            <Link to={h.ziel} className="knopf klein">
+              {h.knopf}
+            </Link>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** „Jetzt sichern“: Stand in einer Zeile, Fortschritt oder Knopf, Ergebnis darunter (#986). */
+function jetztSichern(s: SicherungStand, meldung: Meldung | undefined, tu: (f: () => Promise<unknown>, gut?: string) => Promise<void>) {
+  const lauf = s.lauf;
+  const laeuft = lauf?.status === 'laeuft';
+  return (
+    <section className="blatt" id="jetzt">
+      <h2 className="h3">{t('werkbank.sicherung.jetzt-sichern')}</h2>
+      <StandZeile s={s} />
+      {laeuft ? (
+        <div className="stapel">
+          <p>
+            <strong>{lauf!.titel}</strong> – {lauf!.schritt}
+          </p>
+          <progress max={Math.max(lauf!.gesamt, lauf!.bytes, 1)} value={lauf!.bytes} />
+          <p className="leise klein">
+            {t('werkbank.sicherung.seit-du-kannst-die', {
+              bytes: bytes(lauf!.bytes),
+              wert: lauf!.gesamt ? t('werkbank.sicherung.von-etwa', { bytes: bytes(lauf!.gesamt) }) : '',
+              zeit: zeit(lauf!.gestartet),
+            })}
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="leise">{t('werkbank.sicherung.ablago-laeuft-dabei-weiter')}</p>
+          <div className="knoepfe">
+            <Knopf art="haupt" gesperrt={!s.zustand.schluessel} onClick={() => tu(() => betriebApi.sicherungJetzt())}>
+              {t('werkbank.sicherung.jetzt-sichern')}
+            </Knopf>
+          </div>
+          {/* Ergebnis unter dem Knopf (#986). */}
+          {lauf?.status === 'fehler' && (
+            <p className="fehlertext" role="alert">
+              {tn('werkbank.sicherung.fehlgeschlagen-2', { titel: lauf.titel, fehler: lauf.fehler })}
+            </p>
+          )}
+          {lauf?.status === 'fertig' && (lauf.art === 'sicherung' || lauf.art === 'holen') && (
+            <p className="gutertext" role="status">
+              {t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}
+            </p>
+          )}
+        </>
+      )}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
+    </section>
+  );
+}
