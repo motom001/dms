@@ -216,6 +216,8 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .sicht.ausgeblendet .nm { opacity: .65; font-style: italic; }
 .ausgeblendet-fuss { margin: 12px 10px 0; }
 .ausgeblendet-fuss .verweis { background: none; border: 0; padding: 0; font: inherit; color: var(--akzent); cursor: pointer; text-decoration: underline; }
+/* Solange die Stufe lädt, steht statt der Bereiche eine leise Zeile (#1418). */
+.werkbankleiste-laedt { margin: 4px 10px; }
 /* Werkbank anpassen (#281) */
 .ansichtgruppe + .ansichtgruppe { margin-top: 14px; }
 .ansichtgruppe .gruppentitel { margin: 0 0 6px; }

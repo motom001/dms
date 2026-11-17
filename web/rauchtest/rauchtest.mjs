@@ -51,3 +51,4 @@ import './bereiche/organisation-und-datenschutz.mjs';
 import './bereiche/werkbank-post.mjs';
 import './bereiche/rundgaenge-und-tipps.mjs';
 import './bereiche/erwaehnen.mjs';
+import './bereiche/werkbank-laden.mjs';

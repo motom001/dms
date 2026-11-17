@@ -18,8 +18,10 @@ export interface WerkbankEintrag {
 /**
  * Leiste der Werkbank. Ausgeblendete Bereiche (#281) fehlen – außer dem offenen und solchen mit Hinweis.
  * Unten: wie viele ausgeblendet sind, zum Aufklappen, und der Weg zu „Werkbank anpassen“.
- * `laedt`: Die gewählte Stufe und die Einblendungen (#987) kommen noch – bis dahin zeigt `zeigen` alles; die Leiste
- * sagt das mit `aria-busy` (#1409).
+ * `laedt`: Die gewählte Stufe und die Einblendungen (#987) kommen noch; die Leiste sagt das mit `aria-busy` (#1409).
+ * Bis dahin steht nur die Übersicht da (sie ist immer sichtbar) und darunter eine leise Zeile – vorher zeigte die Leiste
+ * kurz alle Bereiche und schrumpfte danach (#1418). So bleibt die Übersicht oben stehen, am Handy auch die Zeile der
+ * Gruppen; die Suche findet ohnehin auch ausgeblendete Bereiche.
  */
 export function WerkbankNavigation({
   bereich,
@@ -40,7 +42,7 @@ export function WerkbankNavigation({
   const treffer = suche.trim() ? eintraege.filter((e) => bereichPasst(e.pfad, suche)) : null;
   const ausgeblendet = eintraege.filter((e) => e.pfad !== 'uebersicht' && !zeigen(e.pfad));
   const sichtbar = (e: WerkbankEintrag) => alleZeigen || zeigen(e.pfad) || e.pfad === bereich || !!e.warn;
-  const liste = eintraege.filter(sichtbar);
+  const liste = inDerLeiste(eintraege, laedt, sichtbar);
   const gruppen = (Object.keys(GRUPPEN) as Gruppe[]).filter((g) => liste.some((e) => e.gruppe === g));
   const aktiv = liste.find((e) => e.pfad === bereich)?.gruppe ?? null;
   // Am Handy: erst die Gruppe, dann ihre Einträge; vorausgewählt ist die Gruppe des offenen Bereichs.
@@ -83,6 +85,7 @@ export function WerkbankNavigation({
                 {eintrag(e)}
               </div>
             ))}
+        {ladezeile(laedt, treffer)}
         {!treffer &&
           gruppen.map((g) => (
             <div key={g} className={`wbgruppe ${gewaehlt === g ? 'gewaehlt' : ''}`}>
@@ -111,6 +114,17 @@ export function WerkbankNavigation({
       </nav>
     </>
   );
+}
+
+/** Einträge der Leiste; solange die Stufe lädt (#1418), nur die Übersicht – sie ist immer sichtbar. */
+function inDerLeiste(eintraege: WerkbankEintrag[], laedt: boolean, sichtbar: (e: WerkbankEintrag) => boolean) {
+  return eintraege.filter(laedt ? (e) => e.pfad === 'uebersicht' : sichtbar);
+}
+
+/** Leise Zeile statt der Bereiche, solange die Stufe lädt (#1418) – nicht bei Suchtreffern. */
+function ladezeile(laedt: boolean, treffer: WerkbankEintrag[] | null) {
+  if (!laedt || treffer) return null;
+  return <p className="leise klein werkbankleiste-laedt">{t('werkbank.uebersicht.bereiche-laden')}</p>;
 }
 
 /** Ein Bereich in der Leiste: Name, Hinweis oder Zahl; ausgeblendete mit Titel. */
