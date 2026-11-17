@@ -1197,15 +1197,6 @@
     }
   },
   "web/src/ablage/Historie.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
@@ -1215,20 +1206,6 @@
       "count": 2
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/ablage/MappeFormular.tsx": {
-    "complexity": {
-      "count": 8
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 4
-    },
-    "no-useless-assignment": {
       "count": 1
     }
   },
@@ -1297,14 +1274,8 @@
       "count": 1
     }
   },
-  "web/src/ablage/Uebernehmen.tsx": {
+  "web/src/ablage/mappe-formular/PasswortEingabe.tsx": {
     "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
