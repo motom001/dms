@@ -174,6 +174,10 @@ function pgAenderungen(sql: postgres.Sql, haushaltId: string) {
     async setzeHash(id, hash) {
       await sql`UPDATE benutzer SET passwort_hash = ${hash} WHERE id = ${id}`;
     },
+    async ersetzeHash(id, alt, neu) {
+      const r = await sql`UPDATE benutzer SET passwort_hash = ${neu} WHERE id = ${id} AND passwort_hash = ${alt}`;
+      return r.count === 1;
+    },
     async notiereAnmeldung(id) {
       await sql`UPDATE benutzer SET letzte_anmeldung = now() WHERE id = ${id}`;
     },

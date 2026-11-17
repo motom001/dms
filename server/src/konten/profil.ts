@@ -6,7 +6,7 @@ import type { Benutzer } from '../../../shared/src/model';
 import { ZULETZT_MERKEN, text, pruefeEmail, type Geraet, OHNE_GERAET, pruefePasswortRegeln } from './hilfen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
-import { pruefePasswort, hashePasswort } from '../anmeldung/passwort';
+import { hashePasswort } from '../anmeldung/passwort';
 import { erlaubteSprachen } from '../../../shared/src/beschriftung';
 import { mailtexte } from '../mail/mail';
 
@@ -46,7 +46,7 @@ export abstract class KontenProfil extends KontenSitzungen {
 
   private async bestaetige(ich: Benutzer, passwort: unknown) {
     const eintrag = await this.repo.holeHash(ich.email);
-    if (!eintrag || !(await pruefePasswort(typeof passwort === 'string' ? passwort : '', eintrag.hash))) {
+    if (!eintrag || !(await this.passwortStimmt(eintrag.benutzer.id, typeof passwort === 'string' ? passwort : '', eintrag.hash))) {
       throw new Fachfehler(403, t('meldungen.konten.das-aktuelle-passwort-stimmt'));
     }
   }

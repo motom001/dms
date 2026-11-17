@@ -153,6 +153,12 @@ function speicherAenderungen(s: Stand) {
     async setzeHash(id, hash) {
       benutzer.get(id)!.hash = hash;
     },
+    async ersetzeHash(id, alt, neu) {
+      const b = benutzer.get(id);
+      if (!b || b.hash !== alt) return false;
+      b.hash = neu;
+      return true;
+    },
     async notiereAnmeldung(id) {
       benutzer.get(id)!.letzteAnmeldung = new Date().toISOString();
     },

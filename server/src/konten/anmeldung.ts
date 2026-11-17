@@ -21,7 +21,7 @@ import {
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { GESAMT, darfVerwalten, verwaltungText, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import { hashePasswort, hasheSchluessel, pruefePasswort, neuerSchluessel } from '../anmeldung/passwort';
+import { hashePasswort, hasheSchluessel, neuerSchluessel } from '../anmeldung/passwort';
 import type { Benutzer } from '../../../shared/src/model';
 import type { AnbieterIdentitaet, OidcEinstellung } from '../anmeldung/oidc';
 import { hashe } from '../zwischenspeicher/kurzzustand';
@@ -65,7 +65,7 @@ export abstract class KontenAnmeldung extends KontenBasis {
     // Vorab gezählt (#956): Auch gleichzeitige Anfragen kommen nicht an der Grenze vorbei.
     const v = await this.sperre.versuch(email, ip);
     const treffer = email ? await this.repo.holeHash(email) : undefined;
-    const ok = await pruefePasswort(passwort, treffer?.hash);
+    const ok = await this.passwortStimmt(treffer?.benutzer.id, passwort, treffer?.hash);
     if (!ok || !treffer || !treffer.benutzer.aktiv) {
       await this.sperre.fehlschlag(email, ip, !!treffer?.benutzer.aktiv, v);
       throw new Fachfehler(401, t('anmeldung.fehler.falsch'));
@@ -180,7 +180,7 @@ export abstract class KontenAnmeldung extends KontenBasis {
   /** Eigenes Passwort bestätigen (z. B. vor dem Abschalten der Zwei-Faktor-Anmeldung). */
   async pruefeEigenesPasswort(b: Benutzer, passwort: unknown) {
     const eintrag = await this.repo.holeHash(b.email);
-    if (!eintrag || !(await pruefePasswort(typeof passwort === 'string' ? passwort : '', eintrag.hash)))
+    if (!eintrag || !(await this.passwortStimmt(eintrag.benutzer.id, typeof passwort === 'string' ? passwort : '', eintrag.hash)))
       throw new Fachfehler(403, t('meldungen.konten.das-passwort-stimmt-nicht'));
   }
 

@@ -70,6 +70,7 @@ A household has 2–6 users, a small business 10–20. A single user already tri
 - **Several processes** ([below](#mehrere-prozesse)): several processes answer the requests together and so use several cores. `dms-komplett` takes 2 by itself if the container may use at least 4 cores and 8 GB of memory (#1259); the image `dms` stays at one without `DMS_PROZESSE`.
 - The current values of `DMS_PROZESSE`, `DMS_ARBEITER`, `DMS_DB_VERBINDUNGEN` and `DMS_MAX_ANFRAGEN` and where they come from are shown by **Workbench → system health**; if something gets tight, the notice there names the variable that can help ([Settings and bottlenecks](speicherplatz.md#einstellungen-und-engpasse)).
 - **Sign-in protection** counts every failed attempt even under load; a rejected sign-in (503) checks no password and therefore doesn't count.
+- **Password checks (#1358):** every check of a password (signing in, confirming again, changing the password) deliberately costs computing time with scrypt – about **265 ms** and 16 MB of memory on a small NAS. At most **2** run at once per process; further ones wait briefly in a queue, none is rejected. That way a wave of sign-in attempts doesn't tie up more computing time than necessary, and files and other requests carry on.
 
 ### Several processes {#mehrere-prozesse}
 

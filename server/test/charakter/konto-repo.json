@@ -820,6 +820,36 @@
           "zuletztAktiv": null
         }
       ]
+    ],
+    ["setzeHash", null],
+    ["ersetzeHash", false],
+    ["ersetzeHash", true],
+    ["ersetzeHash", false],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null
+        },
+        "hash": "h6"
+      }
     ]
   ],
   "pg": [
@@ -1641,6 +1671,36 @@
           "zuletztAktiv": null
         }
       ]
+    ],
+    ["setzeHash", null],
+    ["ersetzeHash", false],
+    ["ersetzeHash", true],
+    ["ersetzeHash", false],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        },
+        "hash": "h6"
+      }
     ]
   ]
 }

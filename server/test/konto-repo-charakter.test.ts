@@ -147,6 +147,12 @@ async function folge(repo: KontoRepo) {
   await f('loescheBenutzer', B);
   await f('holeBenutzer', B);
   await f('listeBenutzer');
+  // #1358: Hash nur ersetzen, wenn noch der erwartete gespeichert ist.
+  await f('setzeHash', A, 'h5');
+  await f('ersetzeHash', A, 'nicht-h5', 'h6');
+  await f('ersetzeHash', A, 'h5', 'h6');
+  await f('ersetzeHash', id(99), 'h5', 'h6');
+  await f('holeHash', 'anna@example.org');
   return aus;
 }
 
