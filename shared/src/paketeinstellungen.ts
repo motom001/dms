@@ -538,141 +538,15 @@ export function pruefeWerte(
   const e = istObjekt(eingabe) ? eingabe : {};
   const fehler: Record<string, string> = {};
   const werte: Record<string, unknown> = {};
-  const eins = (f: EinstellungFeld, v: unknown, pfad: string): unknown => {
-    if (f.typ === 'geheim') {
-      if (v === null || v === undefined || v === '') return null;
-      if (istObjekt(v) && v.behalten === true) return { behalten: true };
-      if (typeof v !== 'string') {
-        fehler[pfad] = t('gemeinsam.paketeinstellungen.ungueltiger-wert');
-        return null;
-      }
-      return v;
-    }
-    if (leer(v)) {
-      if (f.pflicht) fehler[pfad] = 'Pflichtfeld.';
-      return f.typ === 'mehrfachauswahl' || f.mehrfach ? [] : null;
-    }
-    // Verweise als Mehrfachauswahl (#658): jede Id muss es geben.
-    if (f.mehrfach) {
-      const l = [...new Set((Array.isArray(v) ? v : [v]).map(String))].slice(0, 500);
-      const gibt = (x: string) =>
-        f.typ === 'mappentyp'
-          ? q.typen.some((t) => t.id === x)
-          : f.typ === 'benutzer'
-            ? q.benutzer.includes(x)
-            : f.typ === 'rolle'
-              ? q.rollen.includes(x)
-              : q.sichten.includes(x);
-      if (l.some((x) => !gibt(x))) {
-        fehler[pfad] =
-          {
-            mappentyp: t('gemeinsam.paketeinstellungen.einen-der-mappentypen-gibt'),
-            benutzer: t('gemeinsam.paketeinstellungen.einen-der-benutzer-gibt'),
-            rolle: t('gemeinsam.paketeinstellungen.eine-der-rollen-gibt'),
-            sicht: t('gemeinsam.paketeinstellungen.eine-der-ansichten-gibt'),
-          }[f.typ as 'mappentyp'] ?? t('gemeinsam.paketeinstellungen.ungueltiger-wert');
-        return [];
-      }
-      return l;
-    }
-    switch (f.typ) {
-      case 'text':
-      case 'mehrzeilig': {
-        if (typeof v !== 'string') {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.text-erwartet');
-          return null;
-        }
-        if (v.length > (f.typ === 'text' ? 500 : 10000)) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.zu-lang');
-          return null;
-        }
-        const falsch = textFehler(f, f.typ === 'text' ? v.trim() : v);
-        if (falsch) {
-          fehler[pfad] = falsch;
-          return null;
-        }
-        return f.typ === 'text' ? v.trim() : v;
-      }
-      case 'adresse': {
-        const a = typeof v === 'string' ? v.trim() : '';
-        const falsch = typeof v !== 'string' ? t('gemeinsam.paketeinstellungen.text-erwartet') : pruefeAdresse(a);
-        if (falsch) {
-          fehler[pfad] = falsch;
-          return null;
-        }
-        return a;
-      }
-      case 'zahl': {
-        // Nur Ziffern (ggf. Komma), in min/max und Schrittweite (#657) – dieselbe Prüfung wie im Formular.
-        const falsch = zahlFehler(f, v);
-        if (falsch) {
-          fehler[pfad] = falsch;
-          return null;
-        }
-        return typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
-      }
-      case 'janein':
-        return v === true || v === 'true';
-      case 'datum':
-        if (typeof v !== 'string' || !DATUM.test(v) || Number.isNaN(Date.parse(v))) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.kein-datum');
-          return null;
-        }
-        return v;
-      case 'auswahl':
-        if (!f.optionen?.includes(String(v))) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.steht-nicht-zur-auswahl', { v: String(v) });
-          return null;
-        }
-        return String(v);
-      case 'mehrfachauswahl': {
-        const l = (Array.isArray(v) ? v : [v]).map(String);
-        const falsch = l.filter((x) => !f.optionen?.includes(x));
-        if (falsch.length) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.steht-nicht-zur-auswahl-2', { falsch: falsch[0] });
-          return null;
-        }
-        return [...new Set(l)];
-      }
-      case 'mappentyp':
-        if (!q.typen.some((t) => t.id === v)) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.diesen-mappentyp-gibt-es');
-          return null;
-        }
-        return v;
-      case 'benutzer':
-        if (!q.benutzer.includes(String(v))) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.diesen-benutzer-gibt-es');
-          return null;
-        }
-        return v;
-      case 'rolle':
-        if (!q.rollen.includes(String(v))) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.diese-rolle-gibt-es');
-          return null;
-        }
-        return v;
-      case 'sicht':
-        if (!q.sichten.includes(String(v))) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.diese-ansicht-gibt-es');
-          return null;
-        }
-        return v;
-      case 'feld': {
-        const x = v as Partial<FeldVerweis>;
-        const soll = f.mappentyp ? q.typVon(f.mappentyp) : null;
-        const typ = q.typen.find((t) => t.id === x?.typ);
-        if (!typ || !typ.felder.some((g) => g.key === x?.feld) || (f.mappentyp && typ.id !== soll)) {
-          fehler[pfad] = t('gemeinsam.paketeinstellungen.dieses-feld-gibt-es');
-          return null;
-        }
-        return { typ: typ.id, feld: String(x.feld) };
-      }
-    }
-    return null;
-  };
+  const eins = (f: EinstellungFeld, v: unknown, pfad: string): unknown => pruefeWert(f, v, pfad, q, fehler);
   for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) werte[f.schluessel] = eins(f, e[f.schluessel], f.schluessel);
-  // Gegenseitiger Ausschluss (#658): dieselbe Kennung nicht in beiden Feldern.
+  pruefeAusschluss(b, werte, fehler);
+  for (const l of listen(b)) werte[l.schluessel] = listenWerte(l, e[l.schluessel], eins);
+  return { werte, fehler };
+}
+
+/** Gegenseitiger Ausschluss (#658): dieselbe Kennung nicht in beiden Feldern. */
+function pruefeAusschluss(b: Einstellungsbeschreibung, werte: Record<string, unknown>, fehler: Record<string, string>) {
   const ids = (v: unknown) => (Array.isArray(v) ? v.map(String) : v == null || v === '' ? [] : [String(v)]);
   for (const f of abschnittsfelder(b)) {
     const g = f.schliesstAus ? abschnittsfelder(b).find((x) => x.schluessel === f.schliesstAus) : undefined;
@@ -680,18 +554,185 @@ export function pruefeWerte(
     if (ids(werte[f.schluessel]).some((x) => ids(werte[g.schluessel]).includes(x)))
       fehler[f.schluessel] = t('gemeinsam.paketeinstellungen.steht-auch-in-beides', { name: g.name });
   }
-  for (const l of listen(b)) {
-    const roh = Array.isArray(e[l.schluessel]) ? (e[l.schluessel] as unknown[]).filter(istObjekt).slice(0, 500) : [];
-    werte[l.schluessel] = roh.map((x, i) => {
-      const n: Record<string, unknown> = {
-        [EINTRAG_ID]:
-          typeof x[EINTRAG_ID] === 'string' && x[EINTRAG_ID]
-            ? String(x[EINTRAG_ID]).slice(0, 64)
-            : `e${Date.now().toString(36)}${i}${Math.random().toString(36).slice(2, 6)}`,
-      };
-      for (const f of l.felder) n[f.schluessel] = eins(f, x[f.schluessel], `${l.schluessel}.${i + 1}.${f.schluessel}`);
-      return n;
-    });
+}
+
+/** Einträge einer Liste (höchstens 500), je mit fester Id; Pfad der Fehler „liste.<nr>.schluessel“. */
+function listenWerte(
+  l: Extract<EinstellungBlock, { art: 'liste' }>,
+  v: unknown,
+  eins: (f: EinstellungFeld, v: unknown, pfad: string) => unknown,
+): Array<Record<string, unknown>> {
+  const roh = Array.isArray(v) ? (v as unknown[]).filter(istObjekt).slice(0, 500) : [];
+  return roh.map((x, i) => {
+    const n: Record<string, unknown> = {
+      [EINTRAG_ID]:
+        typeof x[EINTRAG_ID] === 'string' && x[EINTRAG_ID]
+          ? String(x[EINTRAG_ID]).slice(0, 64)
+          : `e${Date.now().toString(36)}${i}${Math.random().toString(36).slice(2, 6)}`,
+    };
+    for (const f of l.felder) n[f.schluessel] = eins(f, x[f.schluessel], `${l.schluessel}.${i + 1}.${f.schluessel}`);
+    return n;
+  });
+}
+
+/** Ein Wert: Geheimnis, leer (Pflicht), Mehrfach-Verweis, Verweis oder einfacher Wert; Fehler unter `pfad`. */
+function pruefeWert(f: EinstellungFeld, v: unknown, pfad: string, q: Verweisquelle, fehler: Record<string, string>): unknown {
+  if (f.typ === 'geheim') {
+    if (v === null || v === undefined || v === '') return null;
+    if (istObjekt(v) && v.behalten === true) return { behalten: true };
+    if (typeof v !== 'string') {
+      fehler[pfad] = t('gemeinsam.paketeinstellungen.ungueltiger-wert');
+      return null;
+    }
+    return v;
   }
-  return { werte, fehler };
+  if (leer(v)) {
+    if (f.pflicht) fehler[pfad] = 'Pflichtfeld.';
+    return f.typ === 'mehrfachauswahl' || f.mehrfach ? [] : null;
+  }
+  if (f.mehrfach) return pruefeMehrfachVerweis(f, v, pfad, q, fehler);
+  if (VERWEISE.includes(f.typ)) return pruefeVerweis(f, v, pfad, q, fehler);
+  return pruefeEinfach(f, v, pfad, fehler);
+}
+
+/** Verweise als Mehrfachauswahl (#658): jede Id muss es geben. */
+function pruefeMehrfachVerweis(f: EinstellungFeld, v: unknown, pfad: string, q: Verweisquelle, fehler: Record<string, string>): string[] {
+  const l = [...new Set((Array.isArray(v) ? v : [v]).map(String))].slice(0, 500);
+  const gibt = (x: string) =>
+    f.typ === 'mappentyp'
+      ? q.typen.some((t) => t.id === x)
+      : f.typ === 'benutzer'
+        ? q.benutzer.includes(x)
+        : f.typ === 'rolle'
+          ? q.rollen.includes(x)
+          : q.sichten.includes(x);
+  if (l.some((x) => !gibt(x))) {
+    fehler[pfad] =
+      {
+        mappentyp: t('gemeinsam.paketeinstellungen.einen-der-mappentypen-gibt'),
+        benutzer: t('gemeinsam.paketeinstellungen.einen-der-benutzer-gibt'),
+        rolle: t('gemeinsam.paketeinstellungen.eine-der-rollen-gibt'),
+        sicht: t('gemeinsam.paketeinstellungen.eine-der-ansichten-gibt'),
+      }[f.typ as 'mappentyp'] ?? t('gemeinsam.paketeinstellungen.ungueltiger-wert');
+    return [];
+  }
+  return l;
+}
+
+/** Text, Adresse, Zahl, Ja/Nein, Datum und Auswahl. */
+function pruefeEinfach(f: EinstellungFeld, v: unknown, pfad: string, fehler: Record<string, string>): unknown {
+  switch (f.typ) {
+    case 'text':
+    case 'mehrzeilig':
+      return pruefeText(f, v, pfad, fehler);
+    case 'adresse': {
+      const a = typeof v === 'string' ? v.trim() : '';
+      const falsch = typeof v !== 'string' ? t('gemeinsam.paketeinstellungen.text-erwartet') : pruefeAdresse(a);
+      if (falsch) {
+        fehler[pfad] = falsch;
+        return null;
+      }
+      return a;
+    }
+    case 'zahl': {
+      // Nur Ziffern (ggf. Komma), in min/max und Schrittweite (#657) – dieselbe Prüfung wie im Formular.
+      const falsch = zahlFehler(f, v);
+      if (falsch) {
+        fehler[pfad] = falsch;
+        return null;
+      }
+      return typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+    }
+    case 'janein':
+      return v === true || v === 'true';
+    case 'datum':
+      if (typeof v !== 'string' || !DATUM.test(v) || Number.isNaN(Date.parse(v))) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.kein-datum');
+        return null;
+      }
+      return v;
+    default:
+      return pruefeAuswahl(f, v, pfad, fehler);
+  }
+}
+
+/** Text und mehrzeiliger Text: Länge und Prüfregeln (#996); Text ohne Leerraum am Rand. */
+function pruefeText(f: EinstellungFeld, v: unknown, pfad: string, fehler: Record<string, string>): unknown {
+  if (typeof v !== 'string') {
+    fehler[pfad] = t('gemeinsam.paketeinstellungen.text-erwartet');
+    return null;
+  }
+  if (v.length > (f.typ === 'text' ? 500 : 10000)) {
+    fehler[pfad] = t('gemeinsam.paketeinstellungen.zu-lang');
+    return null;
+  }
+  const falsch = textFehler(f, f.typ === 'text' ? v.trim() : v);
+  if (falsch) {
+    fehler[pfad] = falsch;
+    return null;
+  }
+  return f.typ === 'text' ? v.trim() : v;
+}
+
+/** Auswahl und Mehrfachauswahl: nur angebotene Optionen. */
+function pruefeAuswahl(f: EinstellungFeld, v: unknown, pfad: string, fehler: Record<string, string>): unknown {
+  switch (f.typ) {
+    case 'auswahl':
+      if (!f.optionen?.includes(String(v))) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.steht-nicht-zur-auswahl', { v: String(v) });
+        return null;
+      }
+      return String(v);
+    case 'mehrfachauswahl': {
+      const l = (Array.isArray(v) ? v : [v]).map(String);
+      const falsch = l.filter((x) => !f.optionen?.includes(x));
+      if (falsch.length) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.steht-nicht-zur-auswahl-2', { falsch: falsch[0] });
+        return null;
+      }
+      return [...new Set(l)];
+    }
+  }
+  return null;
+}
+
+/** Ein Verweis (Mappentyp, Benutzer, Rolle, Ansicht, Feld eines Mappentyps): Es muss ihn geben. */
+function pruefeVerweis(f: EinstellungFeld, v: unknown, pfad: string, q: Verweisquelle, fehler: Record<string, string>): unknown {
+  switch (f.typ) {
+    case 'mappentyp':
+      if (!q.typen.some((t) => t.id === v)) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.diesen-mappentyp-gibt-es');
+        return null;
+      }
+      return v;
+    case 'benutzer':
+      if (!q.benutzer.includes(String(v))) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.diesen-benutzer-gibt-es');
+        return null;
+      }
+      return v;
+    case 'rolle':
+      if (!q.rollen.includes(String(v))) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.diese-rolle-gibt-es');
+        return null;
+      }
+      return v;
+    case 'sicht':
+      if (!q.sichten.includes(String(v))) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.diese-ansicht-gibt-es');
+        return null;
+      }
+      return v;
+    case 'feld': {
+      const x = v as Partial<FeldVerweis>;
+      const soll = f.mappentyp ? q.typVon(f.mappentyp) : null;
+      const typ = q.typen.find((t) => t.id === x?.typ);
+      if (!typ || !typ.felder.some((g) => g.key === x?.feld) || (f.mappentyp && typ.id !== soll)) {
+        fehler[pfad] = t('gemeinsam.paketeinstellungen.dieses-feld-gibt-es');
+        return null;
+      }
+      return { typ: typ.id, feld: String(x.feld) };
+    }
+  }
+  return null;
 }

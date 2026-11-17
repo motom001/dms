@@ -1158,14 +1158,6 @@
       "count": 1
     }
   },
-  "shared/src/paketeinstellungen.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
   "shared/src/rechte.ts": {
     "max-params": {
       "count": 1
