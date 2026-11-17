@@ -67,7 +67,15 @@ gh attestation verify oci://ghcr.io/motom001/dms@sha256:<Digest des Index> -R mo
 gh attestation verify oci://ghcr.io/motom001/dms-komplett@sha256:<Digest des Index> -R motom001/dms
 ```
 
-Die signierte Stückliste deckt die Systempakete und die npm-Pakete des Servers ab, so wie Trivy sie für amd64 erkennt. Die Ergänzungen (Oberfläche, Schriften, Handbuch) und die Liste für arm64 stehen nur in den Anhängen; sie entstehen im selben Lauf aus demselben Commit.
+Die signierte Stückliste am Image deckt die Systempakete und die npm-Pakete des Servers ab, so wie Trivy sie für amd64 erkennt. Die Ergänzungen (Oberfläche, Schriften, Handbuch) und die Liste für arm64 stehen in den Anhängen. Sie entstehen im selben Lauf aus demselben Commit und tragen einen **eigenen Herkunftsnachweis**. Lade die Datei vom Release herunter und prüfe sie:
+
+```sh
+gh attestation verify ablago-bestandteile.csv -R motom001/dms
+gh attestation verify ablago-bestandteile.spdx.json -R motom001/dms
+gh attestation verify ablago-bestandteile.cdx.json -R motom001/dms
+```
+
+Der Nachweis nennt Workflow und Commit des Releases. Wird ein Release neu erzeugt, bekommen die neuen Dateien einen neuen Nachweis.
 
 **Unabhängig:** Lade das Image über den Digest in einer abgeschotteten Testumgebung, erzeuge selbst eine Stückliste und vergleiche sie mit dem Anhang – mit Trivy oder einem anderen Werkzeug wie Syft:
 
