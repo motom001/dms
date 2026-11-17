@@ -73,7 +73,7 @@ describe('Baustein Schalter (#1188)', () => {
     const stellen: Array<[string, string]> = [
       ['werkbank/Webdav.tsx', 'webdav-aktiv'],
       ['werkbank/Eingangsordner.tsx', 'eingang-aktiv'],
-      ['werkbank/Postfaecher.tsx', 'pf-aktiv'],
+      ['werkbank/postfach/PostfachEditor.tsx', 'pf-aktiv'],
       ['werkbank/Sprachen.tsx', 'uebersetzen-an'],
       ['werkbank/Anmeldeschutz.tsx', 'oidc-aktiv'],
     ];
