@@ -17,6 +17,11 @@ import type { Route } from '../http/routen-typen';
 import { nachweis } from '../protokoll/nachweisjournal';
 
 export function datenschutzRouten(k: RoutenKontext): Route[] {
+  return [...baumUndUebersichtRouten(k), ...loeschprotokollRouten(k), ...auskunftRouten(k), ...auskunftZustellenRouten(k)];
+}
+
+/** Baum über Verweise (#396, #424), Übersicht Datenschutz und Löschkonzept. */
+function baumUndUebersichtRouten(k: RoutenKontext): Route[] {
   const { dienst, x, zg, auskunftZiel, loeschkonzeptQuelle, adresse } = k;
   return [
     /* ---------- Baum über Verweise (#396, #424): mit den Rechten des Aufrufers ---------- */
@@ -82,6 +87,13 @@ export function datenschutzRouten(k: RoutenKontext): Route[] {
         };
       },
     },
+  ];
+}
+
+/** Löschprotokoll (#470), Einstellungen zum Datenschutz und Vorbereitung der Auskunft. */
+function loeschprotokollRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, zg } = k;
+  return [
     /* Löschprotokoll (#470): nur lesen und ausgeben; ändern lässt sich nur die Aufbewahrung. */
     {
       methode: 'GET',
@@ -131,6 +143,13 @@ export function datenschutzRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.datenschutzDienst.auskunftFrist(a.body, await zg(a), ich(a).id), 201),
     },
+  ];
+}
+
+/** Auskunft nach Art. 15 DSGVO (#396): erstellen und herunterladen. */
+function auskunftRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, zg, auskunftZiel } = k;
+  return [
     {
       methode: 'POST',
       pfad: '/api/werkbank/auskunft',
@@ -199,6 +218,13 @@ export function datenschutzRouten(k: RoutenKontext): Route[] {
         };
       },
     },
+  ];
+}
+
+/** Auskunft löschen und zustellen (#455). */
+function auskunftZustellenRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, auskunftZiel, adresse } = k;
+  return [
     {
       methode: 'DELETE',
       pfad: '/api/werkbank/auskunft/:id',

@@ -30,7 +30,18 @@ import type { Route } from '../http/routen-typen';
 import { WERKBANK_EINSTELLUNG } from '../entdecken/entdecken-werkbank';
 
 export function exportRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, x, zg, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, exportZiel, danachLoeschen } = k;
+  return [
+    ...vollexportStandRouten(k),
+    ...vollexportStartenRouten(k),
+    ...vollexportDateienRouten(k),
+    ...persoenlicherExportRouten(k),
+    ...persoenlicherExportZipRouten(k),
+  ];
+}
+
+/** Vollexport (#254): Stand mit Zielordner, Exporten und Abschätzung. */
+function vollexportStandRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, exportZiel } = k;
   return [
     /* ---------- Vollexport (#254) ---------- */
     {
@@ -54,6 +65,13 @@ export function exportRouten(k: RoutenKontext): Route[] {
         });
       },
     },
+  ];
+}
+
+/** Vollexport (#254) starten; Hinweis zum Umzug der Exporte gelesen (#797). */
+function vollexportStartenRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x, exportZiel } = k;
+  return [
     {
       methode: 'POST',
       pfad: '/api/werkbank/export',
@@ -131,6 +149,13 @@ export function exportRouten(k: RoutenKontext): Route[] {
         return ok(null);
       },
     },
+  ];
+}
+
+/** Vollexport (#254): erstellte Exporte prüfen, löschen und herunterladen, Prüfsummen (#1195). */
+function vollexportDateienRouten(k: RoutenKontext): Route[] {
+  const { exportZiel } = k;
+  return [
     {
       methode: 'POST',
       pfad: '/api/werkbank/export/:name/pruefen',
@@ -206,6 +231,13 @@ export function exportRouten(k: RoutenKontext): Route[] {
         };
       },
     },
+  ];
+}
+
+/** Persönlicher Export (#255): Einstellung, Stand und Start. */
+function persoenlicherExportRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x, zg, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, exportZiel } = k;
+  return [
     /* ---------- Persönlicher Export (#255) ---------- */
     {
       methode: 'PUT',
@@ -271,6 +303,13 @@ export function exportRouten(k: RoutenKontext): Route[] {
         return ok({ laeuft: true }, 202);
       },
     },
+  ];
+}
+
+/** Persönlicher Export (#255): herunterladen. */
+function persoenlicherExportZipRouten(k: RoutenKontext): Route[] {
+  const { exportZiel, danachLoeschen } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/konto/export/zip',

@@ -9,7 +9,19 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 
 export function aufgabenRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, x, zusammenfassung, zg, empfaengerSichtbar, leseHinweis, darf } = k;
+  return [
+    ...aufgabenMappeRouten(k),
+    ...aufgabenWeitergebenRouten(k),
+    ...fristenRouten(k),
+    ...ablaeufeRouten(k),
+    ...ablaufvorlagenRouten(k),
+    ...zusammenfassungRouten(k),
+  ];
+}
+
+/** Aufgaben (#54, #56): Liste, an der Mappe vergeben, erledigen und rückgängig. */
+function aufgabenMappeRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, empfaengerSichtbar, leseHinweis, darf } = k;
   return [
     // Aufgaben (#54, #56)
     {
@@ -63,6 +75,13 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => ok(await dienst.post.automatikRueckgaengig(a.params.id, ich(a), await zg(a))),
     },
+  ];
+}
+
+/** Aufgaben weitergeben, delegieren und in der Werkbank (#415, #419, #798). */
+function aufgabenWeitergebenRouten(k: RoutenKontext): Route[] {
+  const { dienst, empfaengerSichtbar, leseHinweis } = k;
+  return [
     // Sammel-Weitergabe und -Erledigen (#415, #419): Werkbank → Aufgaben und Profil → Abwesenheit.
     {
       methode: 'POST',
@@ -115,6 +134,13 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.ohneLeserecht.leserechtAufZeitGeben(a.params.id, ich(a).id)),
     },
+  ];
+}
+
+/** Fristen (#129–#132), Termine (#725) und Erinnerungen (#131). */
+function fristenRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, zg, empfaengerSichtbar, leseHinweis, darf } = k;
+  return [
     // Fristen (#129–#132)
     {
       methode: 'POST',
@@ -188,6 +214,13 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
         },
       },
     ]),
+  ];
+}
+
+/** Mappen-Abläufe (#1044). */
+function ablaeufeRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, empfaengerSichtbar, leseHinweis, darf } = k;
+  return [
     // Mappen-Abläufe (#1044): Vorlagen dieser Mappe und was geplant ist; anwenden mit den Antworten auf die Fragen.
     {
       methode: 'GET',
@@ -217,6 +250,13 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.ablaeufe.fortsetzen(a.params.id, ich(a).id)),
     },
+  ];
+}
+
+/** Werkbank → Automatisierungsvorlagen (#1044). */
+function ablaufvorlagenRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg } = k;
+  return [
     // Werkbank → Automatisierungsvorlagen (#1044).
     {
       methode: 'GET',
@@ -287,6 +327,13 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.ablaeufe.ausprobieren(a.params.kennung, b(a).mappeId, b(a), ich(a), await zg(a))),
     },
+  ];
+}
+
+/** Tägliche Zusammenfassung je Benutzer. */
+function zusammenfassungRouten(k: RoutenKontext): Route[] {
+  const { konten, zusammenfassung } = k;
+  return [
     // Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage, Feiertage (#92, #94)
     { methode: 'GET', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => ok(await zusammenfassung(ich(a))) },
     {
