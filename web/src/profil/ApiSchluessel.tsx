@@ -301,7 +301,10 @@ export function ApiSchluesselPruefen({ fertig }: { fertig: (meldung?: string) =>
       {liste.map((s) => (
         <HakenFeld
           key={s.id}
-          beschriftung={`${s.name} (${stufe(s.recht)}${s.passwoerter ? `, ${t('profil.apischluessel.passwoerter-lesen')}` : ''})`}>
+          beschriftung={t(s.passwoerter ? 'profil.apischluessel.pruefen.eintrag-passwoerter' : 'profil.apischluessel.pruefen.eintrag', {
+            name: s.name,
+            stufe: stufe(s.recht),
+          })}>
           <input type="checkbox" checked={weg.has(s.id)} onChange={(e) => umschalten(s.id, e.target.checked)} />
         </HakenFeld>
       ))}

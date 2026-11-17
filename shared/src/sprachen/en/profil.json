@@ -166,6 +166,8 @@
   "apischluessel.pruefen.text": "Programs with an API key still get in – even after a new password and when all devices are signed out. Delete keys you no longer need or that someone else might know. Keys that may read passwords are preselected.",
   "apischluessel.pruefen.loeschen": "Delete selected",
   "apischluessel.pruefen.behalten": "Keep all",
+  "apischluessel.pruefen.eintrag": "{name} ({stufe})",
+  "apischluessel.pruefen.eintrag-passwoerter": "{name} ({stufe}, read passwords)",
   "apischluessel.pruefen.geloescht_one": "{anzahl} key deleted.",
   "apischluessel.pruefen.geloescht_other": "{anzahl} keys deleted.",
   "apischluessel.neuen-schluessel-erzeugen": "+ New key",

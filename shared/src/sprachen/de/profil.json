@@ -166,6 +166,8 @@
   "apischluessel.pruefen.text": "Programme mit einem API-Schlüssel kommen weiter herein – auch nach einem neuen Passwort und wenn alle Geräte abgemeldet sind. Lösche Schlüssel, die du nicht mehr brauchst oder die jemand anderes kennen könnte. Vorausgewählt sind die Schlüssel, die Passwörter lesen dürfen.",
   "apischluessel.pruefen.loeschen": "Ausgewählte löschen",
   "apischluessel.pruefen.behalten": "Alle behalten",
+  "apischluessel.pruefen.eintrag": "{name} ({stufe})",
+  "apischluessel.pruefen.eintrag-passwoerter": "{name} ({stufe}, Passwörter lesen)",
   "apischluessel.pruefen.geloescht_one": "{anzahl} Schlüssel gelöscht.",
   "apischluessel.pruefen.geloescht_other": "{anzahl} Schlüssel gelöscht.",
   "apischluessel.neuen-schluessel-erzeugen": "+ Neuer Schlüssel",
