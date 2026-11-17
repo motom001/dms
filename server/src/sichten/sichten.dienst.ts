@@ -3,37 +3,14 @@
  * Ablage (#512, #742, #918), Zähler-Endpunkt (#625), Stand der Ablage (#919). Schicht 3 – bekommt den Kern, die
  * Rechteprüfung, Mappen, Suche und die übrigen Teile dieses Ordners, nicht den ganzen Dienst.
  */
-import { liesDirektlink } from '../../../shared/src/direktlink';
-import { abfrageAus, liesSuche } from '../../../shared/src/erweitertesuche';
 import type { TermineAntwort } from '../../../shared/src/fristen';
-import {
-  type Aufgabe,
-  inAllgemeinerSuche,
-  type Mappentyp,
-  MAX_AUSWAHL,
-  POST_STAND,
-  sortierbar,
-  verweiseVon,
-  type Werte,
-  zieleVon,
-} from '../../../shared/src/model';
-import {
-  auswahlKlausel,
-  type Bedingung,
-  filterFuer,
-  heuteIn,
-  klauselnFuer,
-  setzeEigeneWerte,
-  type Sicht,
-  wirksameTypen,
-} from '../../../shared/src/sichten';
+import { type Aufgabe, type Mappentyp, MAX_AUSWAHL, POST_STAND, verweiseVon } from '../../../shared/src/model';
+import { type Bedingung, filterFuer, heuteIn, klauselnFuer, type Sicht } from '../../../shared/src/sichten';
 import { suchbegriffe, type Varianten, vorschlagAus } from '../../../shared/src/suche';
-import { Fachfehler } from '../grundlagen/fehler';
 import { ABO_ARTEN, type Kern, type Zugriff } from '../kern';
 import type { MappenDienst } from '../mappen';
 import { kontext, protokoll } from '../protokoll/protokoll';
-import type { Repo, SeitenAnfrage, SortierungIntern } from '../repo';
-import { t } from '../sprache/sprache';
+import type { Repo, SeitenAnfrage } from '../repo';
 import type { SucheDienst } from '../suche';
 import {
   fingerabdruck,
@@ -47,6 +24,17 @@ import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import type { Systemsichten } from './systemsichten';
 import type { SichtenVerwaltung } from './verwalten';
 import { tabellenSeite } from './tabelle';
+import {
+  bekanntesGesamt,
+  type SeitenParameter,
+  seitenParameter,
+  type SeitenQuery,
+  seitenAnfrage,
+  type SeitenZiel,
+  seitenZiel,
+  sortierungAus,
+  suchTypen,
+} from './seite-schritte';
 import { istTeiltyp, uebergeordneteId, uebergeordneterTyp } from '../../../shared/src/teile';
 import type { Ausschnitt } from '../../../shared/src/model';
 
@@ -58,44 +46,16 @@ export const TEIL_TREFFER_MAX = 2000;
 /** Fundstelle in einem Teil (#1031) je übergeordneter Mappe. */
 type TeilFunde = Map<string, NonNullable<Ausschnitt['teil']> & { ausschnitt?: Ausschnitt }>;
 
-const text = (v: unknown) => (v == null ? '' : String(v)).trim();
-
-/**
- * Mappentypen der erweiterten Suche (#199): die gewählten – sonst alle, außer solchen mit „In der allgemeinen Suche
- * zeigen: nein“ (#1220, z. B. reine Auswahllisten). Teile (#1031) nie.
- */
-export function suchTypen(gewaehlt: Mappentyp[], typen: Map<string, Mappentyp>): Mappentyp[] {
-  return (gewaehlt.length ? gewaehlt : [...typen.values()].filter(inAllgemeinerSuche)).filter((t) => !istTeiltyp(t));
-}
+/** „Meintest du …?“ (#356, #1191): statt welcher Suche, der Vorschlag und die ähnlichen Wörter je Begriff. */
+type Unscharf = { statt: string; vorschlag: string | null; begriffe: Record<string, string[]>; treffer?: number };
+/** Eine Mappe auf einer Seite, wie das Repo sie liefert. */
+type SeitenMappe = Awaited<ReturnType<Repo['seite']>>['mappen'][number];
 
 /** Zähler-Endpunkt (#625): nur Zahlen, keine Inhalte. */
 export interface Zaehlerzahlen {
   neuePost: number;
   zuErledigen: number;
   ueberfaellig: number;
-}
-
-const SYSTEMSORTIERUNG: Record<string, SortierungIntern['art']> = {
-  _titel: 'titel',
-  _typ: 'typ',
-  _erstellt: 'erstellt',
-  _geaendert: 'geaendert',
-  _erstelltVon: 'erstelltVon',
-  _geaendertVon: 'geaendertVon',
-};
-/** Sortierung aus Spalte und Richtung; unbekannte oder nicht sortierbare Spalten → nach Titel. */
-export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappentyp): SortierungIntern | undefined {
-  if (!spalte) return undefined;
-  if (SYSTEMSORTIERUNG[spalte]) return { art: SYSTEMSORTIERUNG[spalte], absteigend };
-  const f = typ?.felder.find((x) => x.key === spalte);
-  if (!f || !sortierbar(spalte, typ)) return undefined;
-  const art =
-    f.typ === 'prozent'
-      ? 'zahl'
-      : f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'zeitraum' || f.typ === 'datum' || f.typ === 'janein'
-        ? f.typ
-        : 'text';
-  return { art, key: f.key, absteigend };
 }
 
 /** Die Teile, die die Sichten rufen: Rechteprüfung, Mappen, Suche und die anderen Klassen dieses Ordners. */
@@ -237,199 +197,71 @@ export class SichtenDienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(
-    ich: { id: string; rolle: string },
-    q: {
-      sicht?: string;
-      link?: unknown;
-      eigene?: unknown;
-      von?: unknown;
-      anzahl?: unknown;
-      suche?: unknown;
-      sortierung?: unknown;
-      absteigend?: unknown;
-      volltext?: unknown;
-      notizen?: unknown;
-      gesamt?: unknown;
-    },
-    z?: Zugriff,
-    grenze = 500,
-  ) {
+  async seite(ich: { id: string; rolle: string }, q: SeitenQuery, z?: Zugriff, grenze = 500) {
     // Berechtigungen (#124): nur lesbare Mappen; der Eingang zeigt Aufgaben auch zu nicht lesbaren – ohne Inhalt.
     const lesen = z?.lesen ?? null;
-    const von = Math.max(0, Math.floor(Number(q.von) || 0));
-    const anzahl = Math.min(grenze, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
-    const suche = text(q.suche).slice(0, 200) || undefined;
-    // Auch im Volltext der Dokumente (#45) und in Notizen (#55) suchen.
-    const volltext = q.volltext === true || q.volltext === 'true' || undefined;
-    const notizen = q.notizen === true || q.notizen === 'true' || undefined;
+    const p = seitenParameter(q, grenze);
     // Mappentypen und Auflösung (Rollen, heute) hat der Zugriff schon gelesen (#615); ein Dienstkonto kennt nur seine Typen.
     const typen = z?.typen && !z.paket ? z.typen : new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const aufloesung = () => (z?.a && z.ich?.id === ich.id ? Promise.resolve(z.a) : this.aufloesung(ich.id));
     const sichten = await this.repo.listeSichten();
-    // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
-    const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
-    // „feld:<typId>:<feldKey>“ (#172): Auswahl für ein Referenzfeld – Zieltypen (#1036: einer oder mehrere) mit dem
-    // Auswahlfilter des Felds. Nur Typen, die der Zugriff kennt; lesbar sind wie immer nur die Mappen, die die Person sieht.
-    const auswahl = String(q.sicht ?? '').startsWith('feld:')
-      ? (() => {
-          const [, typId, key] = String(q.sicht).split(':');
-          const f = typen.get(typId)?.felder.find((x) => x.key === key && x.typ === 'referenz');
-          const ziele = f
-            ? zieleVon(f)
-                .map((id) => typen.get(id))
-                .filter((x): x is Mappentyp => !!x)
-            : [];
-          if (!f || !ziele.length) throw new Fachfehler(404, t('meldungen.dienst.dieses-verweisfeld-gibt-es'));
-          // Werte der Mappe, die gerade ausgefüllt wird (#173).
-          let eigene: Werte = {};
-          try {
-            const w = JSON.parse(text(q.eigene).slice(0, 8000) || '{}');
-            if (w && typeof w === 'object' && !Array.isArray(w)) eigene = w;
-          } catch {
-            /* ohne */
-          }
-          return { f, ziele, eigene };
-        })()
-      : null;
-    // Verborgene Sichten (#148) gibt es für den Benutzer nicht; ihre Mappen fehlen auch in der Elternsicht.
-    const verborgen = this.verborgeneSichten(sichten, z);
-    const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht && !verborgen.has(x.id));
-    // Sprechender Link (#98): „link“ mit den Parametern des Links in `link`.
-    const gelesen = q.sicht === 'link' ? liesDirektlink(new URLSearchParams(text(q.link).slice(0, 4000)), [...typen.values()]) : null;
-    if (gelesen && !gelesen.ok) throw new Fachfehler(422, gelesen.fehler.join(' '));
-    const link = gelesen?.ok ? gelesen.link : null;
-    // Erweiterte Suche (#199): „suche“ mit den Parametern der Suche in `link`; Rechte wie bei Sichten über `lesen`.
-    const erweitert =
-      q.sicht === 'suche' ? abfrageAus(liesSuche(new URLSearchParams(text(q.link).slice(0, 8000))), [...typen.values()]) : null;
-    if (erweitert?.fehler.length) throw new Fachfehler(422, erweitert.fehler.join(' '));
-    // Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt.
-    const fest = q.sicht === 'eingang' || q.sicht === 'favoriten';
-    const einTyp = erweitert
-      ? erweitert.typen.length === 1
-        ? erweitert.typen[0]
-        : undefined
-      : link
-        ? link.typ
-        : fest
-          ? undefined
-          : sicht
-            ? (() => {
-                const w = wirksameTypen(sichten, sicht.id, typen.keys());
-                return w.length === 1 ? typen.get(w[0]) : undefined;
-              })()
-            : typen.get(nurTyp ?? String(q.sicht));
-    const sortierung =
-      link && !text(q.sortierung)
-        ? link.sortierung
-          ? sortierungAus(link.sortierung.spalte, link.sortierung.absteigend, einTyp)
-          : undefined
-        : sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
+    const ziel = seitenZiel(q, typen, sichten, () => this.verborgeneSichten(sichten, z));
     // Unscharfe Suche (#356): Varianten (gleichbedeutende Wörter, ohne Bindestrich) für Suche und Volltextfilter.
-    const textfilter = erweitert?.volltext ?? undefined;
-    const varianten = await this.suchVarianten([suche, textfilter?.text]);
-    const anfrage: SeitenAnfrage =
-      q.sicht === 'eingang'
-        ? {
-            eingang: { benutzerId: ich.id, admin: await this.siehtOhneEmpfaenger(ich) },
-            suche,
-            volltext,
-            notizen,
-            von,
-            anzahl,
-            sortierung,
-            lesen: suche ? lesen : null,
-          }
-        : q.sicht === 'favoriten'
-          ? { favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung, lesen }
-          : erweitert
-            ? {
-                // Teile (#1031) nie in der erweiterten Suche – nur an ihrer übergeordneten Mappe. Ohne gewählten Typ (Suchfeld
-                // oben) auch nicht Typen mit „In der allgemeinen Suche zeigen: nein“ (#1220).
-                klauseln: [
-                  {
-                    typen: suchTypen(erweitert.typen, typen).map((t) => t.id),
-                    filter: filterFuer(erweitert, erweitert.typen, await aufloesung()),
-                  },
-                ],
-                textfilter,
-                suche,
-                volltext,
-                notizen,
-                von,
-                anzahl,
-                sortierung,
-                lesen,
-              }
-            : link
-              ? {
-                  klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await aufloesung()) }],
-                  suche,
-                  volltext,
-                  notizen,
-                  von,
-                  anzahl,
-                  sortierung,
-                  lesen,
-                }
-              : auswahl
-                ? {
-                    klauseln: [
-                      auswahlKlausel(setzeEigeneWerte(auswahl.f.auswahlFilter ?? [], auswahl.eigene), auswahl.ziele, await aufloesung()),
-                    ],
-                    suche,
-                    volltext,
-                    notizen,
-                    von,
-                    anzahl,
-                    sortierung,
-                    lesen,
-                  }
-                : sicht
-                  ? {
-                      klauseln: klauselnFuer(sichten, sicht.id, typen, await aufloesung(), verborgen),
-                      suche,
-                      volltext,
-                      notizen,
-                      von,
-                      anzahl,
-                      sortierung,
-                      lesen,
-                    }
-                  : { typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung, lesen };
-    // Beim Blättern ohne Suche (#740): die Zahl vom ersten Blatt statt noch einmal zu zählen.
-    const bekannt = Number(q.gesamt);
-    const gesamt = von > 0 && !suche && !textfilter && Number.isInteger(bekannt) && bekannt >= 0 ? bekannt : undefined;
+    const textfilter = ziel.erweitert?.volltext ?? undefined;
+    const varianten = await this.suchVarianten([p.suche, textfilter?.text]);
+    const anfrage = await seitenAnfrage(
+      q,
+      ziel,
+      { ...p, lesen, sortierung: ziel.sortierung },
+      { ich, typen, sichten, aufloesung, siehtOhneEmpfaenger: () => this.siehtOhneEmpfaenger(ich) },
+    );
+    const { r, unscharf } = await this.treffer(anfrage, typen, varianten, bekanntesGesamt(q, p, textfilter), p.von === 0);
+    if (q.sicht === 'eingang' && lesen) r.mappen = await this.ohneLeserecht(r.mappen, lesen);
+    const ziele = r.mappen.flatMap((m) => {
+      const t = typen.get(m.typId);
+      return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : [];
+    });
+    const aufgaben = q.sicht === 'eingang' ? await this.eingangAufgaben(ich, r.mappen) : {};
+    const aehnlich = await this.aehnlicheTreffer(z, p, ziel.erweitert, typen, r.mappen);
+    return {
+      gesamt: r.gesamt,
+      von: p.von,
+      mappen: r.mappen,
+      bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
+      ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}),
+      ...(q.sicht === 'eingang' ? { aufgaben } : {}),
+      ...(aehnlich.length ? { aehnlich } : {}),
+      ...(unscharf ? { unscharf } : {}),
+      ...(await this.persoenlicheMarken(
+        ich,
+        r.mappen,
+        q.sicht === 'favoriten' || !!ziel.sicht?.bedingungen.some((x) => x.art === 'favorit'),
+      )),
+    };
+  }
+
+  /**
+   * Treffer einer Seite: Teile (#1031) als Treffer ihrer übergeordneten Mappe; ohne genauen Treffer (#356) mit ähnlichen
+   * Wörtern aus dem Wörterverzeichnis noch einmal – genaue Treffer gehen so immer vor; „Meintest du …?“ schlägt die Suche
+   * mit dem besten ähnlichen Wort vor, auf dem ersten Blatt auch bei Treffern (#1191).
+   */
+  private async treffer(
+    anfrage: SeitenAnfrage,
+    typen: Map<string, Mappentyp>,
+    varianten: Varianten,
+    gesamt: number | undefined,
+    erstesBlatt: boolean,
+  ) {
     // Teile (#1031): Was in einem lesbaren Teil steht, ist ein Treffer seiner übergeordneten Mappe.
     let funde = await this.teilFunde(anfrage, typen, varianten);
     if (funde) anfrage.auchIds = [...funde.keys()];
     let r = gesamt !== undefined ? await this.repo.seite({ ...anfrage, varianten, gesamt }) : await this.seiteMitZahl(anfrage, varianten);
-    // Ohne genauen Treffer (#356): mit ähnlichen Wörtern aus dem Wörterverzeichnis noch einmal – genaue Treffer gehen so
-    // immer vor; „Meintest du …?“ schlägt die Suche mit dem besten ähnlichen Wort vor.
-    let unscharf: { statt: string; vorschlag: string | null; begriffe: Record<string, string[]>; treffer?: number } | null = null;
-    const gesucht = suche ?? textfilter?.text;
+    let unscharf: Unscharf | null = null;
+    const gesucht = anfrage.suche ?? anfrage.textfilter?.text;
     if (r.gesamt === 0 && gesucht && (await this.unscharfAn())) {
-      const begriffe = suchbegriffe(gesucht);
-      const aehnlich = begriffe ? await this.teile.suche.aehnlicheWoerter(begriffe, 5) : {};
-      if (Object.keys(aehnlich).length) {
-        const funde2 = await this.teilFunde(anfrage, typen, varianten, aehnlich);
-        const r2 = await this.repo.seite({ ...anfrage, varianten, aehnlich, ...(funde2 ? { auchIds: [...funde2.keys()] } : {}) });
-        if (r2.gesamt > 0) {
-          r = r2;
-          funde = funde2;
-          // „Meintest du …?“ nur, wenn der Vorschlag selbst etwas findet, das der Benutzer lesen darf – das
-          // Wörterverzeichnis kennt auch Wörter aus Mappen, die er nicht sehen darf (ohne Lesefilter: alles lesbar).
-          let vorschlag = vorschlagAus(begriffe!, aehnlich);
-          if (vorschlag && anfrage.lesen) {
-            const probe: SeitenAnfrage = suche
-              ? { ...anfrage, suche: vorschlag }
-              : { ...anfrage, textfilter: { ...textfilter!, text: vorschlag } };
-            if (!(await this.repo.gibtTreffer(probe))) vorschlag = null;
-          }
-          unscharf = { statt: gesucht, vorschlag, begriffe: aehnlich };
-        }
-      }
-    } else if (r.gesamt > 0 && von === 0 && gesucht && (await this.meintestBeiTreffern())) {
+      const u = await this.unscharfeSuche(anfrage, typen, varianten, gesucht);
+      if (u) ({ r, funde, unscharf } = u);
+    } else if (r.gesamt > 0 && erstesBlatt && gesucht && (await this.meintestBeiTreffern())) {
       // „Meintest du …?“ auch bei Treffern (#1191, Werkbank → Suche): nur auf dem ersten Blatt und nur, wenn die Suche
       // mit der ähnlichen Schreibweise mehr Mappen findet. Die Treffer bleiben die genauen.
       unscharf = await this.besserGeschrieben(anfrage, gesucht, r.gesamt);
@@ -443,70 +275,99 @@ export class SichtenDienst {
           funde,
         ),
       };
-    if (q.sicht === 'eingang' && lesen) {
-      const ok = await this.repo.lesbare(
-        r.mappen.map((m) => m.id),
-        lesen,
-      );
-      r.mappen = r.mappen.map((m) =>
-        ok.has(m.id)
-          ? m
-          : {
-              id: m.id,
-              typId: m.typId,
-              werte: {},
-              titel: NICHT_SICHTBAR,
-              erstellt: m.erstellt,
-              erstelltVon: null,
-              geaendert: m.geaendert,
-              geaendertVon: null,
-              verborgen: true,
-            },
-      );
+    return { r, unscharf };
+  }
+
+  /** Ohne genauen Treffer (#356): mit ähnlichen Wörtern noch einmal; null, wenn auch das nichts findet. */
+  private async unscharfeSuche(anfrage: SeitenAnfrage, typen: Map<string, Mappentyp>, varianten: Varianten, gesucht: string) {
+    const begriffe = suchbegriffe(gesucht);
+    const aehnlich = begriffe ? await this.teile.suche.aehnlicheWoerter(begriffe, 5) : {};
+    if (!Object.keys(aehnlich).length) return null;
+    const funde = await this.teilFunde(anfrage, typen, varianten, aehnlich);
+    const r = await this.repo.seite({ ...anfrage, varianten, aehnlich, ...(funde ? { auchIds: [...funde.keys()] } : {}) });
+    if (!(r.gesamt > 0)) return null;
+    // „Meintest du …?“ nur, wenn der Vorschlag selbst etwas findet, das der Benutzer lesen darf – das
+    // Wörterverzeichnis kennt auch Wörter aus Mappen, die er nicht sehen darf (ohne Lesefilter: alles lesbar).
+    let vorschlag = vorschlagAus(begriffe!, aehnlich);
+    if (vorschlag && anfrage.lesen) {
+      const probe: SeitenAnfrage = anfrage.suche
+        ? { ...anfrage, suche: vorschlag }
+        : { ...anfrage, textfilter: { ...anfrage.textfilter!, text: vorschlag } };
+      if (!(await this.repo.gibtTreffer(probe))) vorschlag = null;
     }
-    const ziele = r.mappen.flatMap((m) => {
-      const t = typen.get(m.typId);
-      return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : [];
-    });
-    // Eingang (#54): je Mappe, was für mich zu tun ist.
+    const unscharf: Unscharf = { statt: gesucht, vorschlag, begriffe: aehnlich };
+    return { r, funde, unscharf };
+  }
+
+  /** Eingang (#124): Mappen ohne Leserecht nur mit Kennung, Typ und Zeiten – ohne Inhalt. */
+  private async ohneLeserecht(mappen: SeitenMappe[], lesen: NonNullable<SeitenAnfrage['lesen']>): Promise<SeitenMappe[]> {
+    const ok = await this.repo.lesbare(
+      mappen.map((m) => m.id),
+      lesen,
+    );
+    return mappen.map((m) =>
+      ok.has(m.id)
+        ? m
+        : {
+            id: m.id,
+            typId: m.typId,
+            werte: {},
+            titel: NICHT_SICHTBAR,
+            erstellt: m.erstellt,
+            erstelltVon: null,
+            geaendert: m.geaendert,
+            geaendertVon: null,
+            verborgen: true,
+          },
+    );
+  }
+
+  /** Eingang (#54): je Mappe, was für mich zu tun ist; automatische Aufgaben an Mappen ohne Leserecht nur mit Hinweis (#798). */
+  private async eingangAufgaben(ich: { id: string; rolle: string }, mappen: SeitenMappe[]): Promise<Record<string, string>> {
     const aufgaben: Record<string, string> = {};
-    if (q.sicht === 'eingang' && r.mappen.length) {
-      const offen = await this.repo.offeneAufgaben({
-        benutzerId: ich.id,
-        admin: await this.siehtOhneEmpfaenger(ich),
-        mappeIds: r.mappen.map((m) => m.id),
-      });
-      // #798: automatische Aufgaben an Mappen ohne Leserecht nur mit Hinweis.
-      for (const a of await this.ohneLeserechtText(offen, new Set(r.mappen.filter((m) => !m.verborgen).map((m) => m.id)), ich.id)) {
-        aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
-      }
+    if (!mappen.length) return aufgaben;
+    const offen = await this.repo.offeneAufgaben({
+      benutzerId: ich.id,
+      admin: await this.siehtOhneEmpfaenger(ich),
+      mappeIds: mappen.map((m) => m.id),
+    });
+    for (const a of await this.ohneLeserechtText(offen, new Set(mappen.filter((m) => !m.verborgen).map((m) => m.id)), ich.id)) {
+      aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
     }
-    // Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen,
-    // auf der ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen.
-    // Seit #1218 kommt man mit Enter im Suchfeld oben dorthin: dann ist der Begriff der Volltext (in Dokumenten).
+    return aufgaben;
+  }
+
+  /**
+   * Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen, auf der
+   * ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen. Seit #1218
+   * kommt man mit Enter im Suchfeld oben dorthin: dann ist der Begriff der Volltext (in Dokumenten).
+   */
+  private async aehnlicheTreffer(
+    z: Zugriff | undefined,
+    p: SeitenParameter,
+    erweitert: SeitenZiel['erweitert'],
+    typen: Map<string, Mappentyp>,
+    mappen: SeitenMappe[],
+  ) {
+    const { suche, volltext, von } = p;
     const aehnlichZu = suche && volltext ? suche : !suche && erweitert?.volltext?.dokumente ? erweitert.volltext.text : null;
-    const aehnlich =
-      erweitert && !erweitert.bedingungen.length && aehnlichZu && von === 0
-        ? // Teile (#1031) auch hier nicht.
-          await this.aehnlicheZurSuche(z, aehnlichZu, {
-            typen: new Set(suchTypen(erweitert.typen, typen).map((t) => t.id)),
-            ohneMappen: new Set(r.mappen.map((m) => m.id)),
-          })
-        : [];
+    return erweitert && !erweitert.bedingungen.length && aehnlichZu && von === 0
+      ? // Teile (#1031) auch hier nicht.
+        await this.aehnlicheZurSuche(z, aehnlichZu, {
+          typen: new Set(suchTypen(erweitert.typen, typen).map((t) => t.id)),
+          ohneMappen: new Set(mappen.map((m) => m.id)),
+        })
+      : [];
+  }
+
+  /** Favoriten (#62), Geänderte (Favorit = Abo, #422) und stumme Favoriten (#725) unter den Mappen der Seite. */
+  private async persoenlicheMarken(ich: { id: string }, mappen: SeitenMappe[], mitStumm: boolean) {
     return {
-      gesamt: r.gesamt,
-      von,
-      mappen: r.mappen,
-      bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
-      ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}),
-      ...(q.sicht === 'eingang' ? { aufgaben } : {}),
-      ...(aehnlich.length ? { aehnlich } : {}),
-      ...(unscharf ? { unscharf } : {}),
       /** Welche Mappen dieser Seite Favoriten des Benutzers sind (#62). */
       favoriten: [
         ...(await this.repo.favoritenVon(
           ich.id,
-          r.mappen.map((m) => m.id),
+          mappen.map((m) => m.id),
         )),
       ],
       /** Favorit = Abo (#422): Favoriten und eigene Mappen, die andere seit dem letzten Sehen geändert haben. */
@@ -514,18 +375,18 @@ export class SichtenDienst {
         ? [
             ...(await this.repo.geaendertVonAnderen(
               ich.id,
-              r.mappen.filter((m) => !m.verborgen).map((m) => m.id),
+              mappen.filter((m) => !m.verborgen).map((m) => m.id),
               ABO_ARTEN,
             )),
           ]
         : [],
       /** In der Favoritenliste und Ansichten mit „ist mein Favorit“ (#725): Favoriten ohne Benachrichtigung (#422). */
-      ...(q.sicht === 'favoriten' || sicht?.bedingungen.some((x) => x.art === 'favorit')
+      ...(mitStumm
         ? {
             stumm: [
               ...(await this.repo.stummeFavoriten(
                 ich.id,
-                r.mappen.map((m) => m.id),
+                mappen.map((m) => m.id),
               )),
             ],
           }

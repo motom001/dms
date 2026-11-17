@@ -255,19 +255,9 @@ export function luecken(q: Pick<LoeschkonzeptQuelle, 'typen' | 'datenschutz' | '
   return l;
 }
 
-/** Das ganze Löschkonzept: Abschnitte 1–9 wie die Vorlage, vorbelegt mit dem, was das DMS weiß. */
-export function loeschkonzept(q: LoeschkonzeptQuelle): Loeschkonzept {
-  const arten = datenarten(q);
-  const fehlt = luecken(q, arten);
-  const verantwortlicher = q.datenschutz.verantwortlicher.trim().replace(/\n+/g, ', ');
-  const ohne = q.typen
-    .filter(ohneSystem)
-    .filter((t) => !arten.some((a) => a.typId === t.id))
-    .map((t) => t.name)
-    .sort((a, b) => a.localeCompare(b, 'de'));
-  const korb = q.papierkorbTage > 0;
-  const s = q.sicherung;
-  const sicherungText = !s
+/** Abschnitt 6: Wie lange automatische Sicherungen liegen. */
+function sicherungText(s: LoeschkonzeptQuelle['sicherung']): string {
+  return !s
     ? t('gemeinsam.loeschkonzept.keine-automatischen-sicherungen')
     : !s.aktiv
       ? t('gemeinsam.loeschkonzept.automatische-sicherung-ausgeschaltet')
@@ -278,88 +268,100 @@ export function loeschkonzept(q: LoeschkonzeptQuelle): Loeschkonzept {
         ]
           .filter(Boolean)
           .join(', ') || t('gemeinsam.loeschkonzept.nur-die-jeweils-letzte');
+}
 
-  const abschnitte: Abschnitt[] = [
-    {
-      titel: t('gemeinsam.loeschkonzept.1-allgemeines'),
-      bloecke: [
-        {
-          art: 'tabelle',
-          breiten: [1, 2.4],
-          kopf: ['', ''],
-          zeilen: [
-            ['Verantwortlicher', verantwortlicher || FEHLT(t('gemeinsam.loeschkonzept.name-anschrift-wie-unter'))],
-            [t('gemeinsam.loeschkonzept.ansprechpartner-fuer-datenschutz'), FEHLT(t('gemeinsam.loeschkonzept.name-e-mail-ggf'))],
-            [t('gemeinsam.loeschkonzept.verantwortlich-fuer-loeschungen'), FEHLT('Name')],
-            ['Vertretung', FEHLT('Name')],
-            [
-              t('gemeinsam.loeschkonzept.eingesetzte-software'),
-              `Ablago (Open Source, https://github.com/motom001/dms), Version ${q.version}, selbst betrieben auf ${FEHLT(t('gemeinsam.loeschkonzept.geraet-anbieter'))}`,
-            ],
-            [
-              'Geltungsbereich',
-              arten.length
-                ? t('gemeinsam.loeschkonzept.datenarten-aus-abschnitt-2', { map: arten.map((a) => a.typ).join(', ') })
-                : FEHLT(t('gemeinsam.loeschkonzept.welche-daten-z-b')),
-            ],
-            [t('gemeinsam.loeschkonzept.gueltig-ab'), FEHLT('Datum')],
+/** Abschnitt 1: Allgemeines – Verantwortlicher, Software, Geltungsbereich. */
+function abschnittAllgemeines(q: LoeschkonzeptQuelle, arten: Datenart[], verantwortlicher: string): Abschnitt {
+  return {
+    titel: t('gemeinsam.loeschkonzept.1-allgemeines'),
+    bloecke: [
+      {
+        art: 'tabelle',
+        breiten: [1, 2.4],
+        kopf: ['', ''],
+        zeilen: [
+          ['Verantwortlicher', verantwortlicher || FEHLT(t('gemeinsam.loeschkonzept.name-anschrift-wie-unter'))],
+          [t('gemeinsam.loeschkonzept.ansprechpartner-fuer-datenschutz'), FEHLT(t('gemeinsam.loeschkonzept.name-e-mail-ggf'))],
+          [t('gemeinsam.loeschkonzept.verantwortlich-fuer-loeschungen'), FEHLT('Name')],
+          ['Vertretung', FEHLT('Name')],
+          [
+            t('gemeinsam.loeschkonzept.eingesetzte-software'),
+            `Ablago (Open Source, https://github.com/motom001/dms), Version ${q.version}, selbst betrieben auf ${FEHLT(t('gemeinsam.loeschkonzept.geraet-anbieter'))}`,
           ],
-        },
-      ],
-    },
-    {
-      titel: t('gemeinsam.loeschkonzept.2-datenarten-und-fristen'),
-      bloecke: [
-        { art: 'absatz', text: t('gemeinsam.loeschkonzept.jeder-mappentyp-in-ablago', { datum: datum(q.stand) }) },
-        {
-          art: 'tabelle',
-          breiten: [1.1, 1.3, 1.3, 0.6, 1.1, 1.2, 0.95, 1.4],
-          kopf: [
-            t('gemeinsam.loeschkonzept.datenart-mappentyp'),
-            'Betroffene',
-            'Zweck',
-            'Frist',
-            t('gemeinsam.loeschkonzept.grund-der-frist'),
-            t('gemeinsam.loeschkonzept.beginn-der-frist-stichtag'),
-            t('gemeinsam.loeschkonzept.sperre-in-ablago'),
-            'Löschweg',
+          [
+            'Geltungsbereich',
+            arten.length
+              ? t('gemeinsam.loeschkonzept.datenarten-aus-abschnitt-2', { map: arten.map((a) => a.typ).join(', ') })
+              : FEHLT(t('gemeinsam.loeschkonzept.welche-daten-z-b')),
           ],
-          zeilen: arten.length
-            ? arten.map((a) => [a.typ, a.betroffene, a.zweck, a.frist, a.grund, a.stichtag, a.sperre, a.loeschweg])
-            : [
-                [
-                  FEHLT('Mappentyp'),
-                  FEHLT('Betroffene'),
-                  FEHLT('Zweck'),
-                  FEHLT('Frist'),
-                  FEHLT('Grund'),
-                  FEHLT('Stichtag'),
-                  'keine',
-                  FEHLT('Löschweg'),
-                ],
+          [t('gemeinsam.loeschkonzept.gueltig-ab'), FEHLT('Datum')],
+        ],
+      },
+    ],
+  };
+}
+
+/** Abschnitt 2: Datenarten und Fristen – die Tabelle aus den Mappentypen, Lücken, Typen ohne Personenbezug. */
+function abschnittDatenarten(q: LoeschkonzeptQuelle, arten: Datenart[], fehlt: Luecke[], ohne: string[]): Abschnitt {
+  return {
+    titel: t('gemeinsam.loeschkonzept.2-datenarten-und-fristen'),
+    bloecke: [
+      { art: 'absatz', text: t('gemeinsam.loeschkonzept.jeder-mappentyp-in-ablago', { datum: datum(q.stand) }) },
+      {
+        art: 'tabelle',
+        breiten: [1.1, 1.3, 1.3, 0.6, 1.1, 1.2, 0.95, 1.4],
+        kopf: [
+          t('gemeinsam.loeschkonzept.datenart-mappentyp'),
+          'Betroffene',
+          'Zweck',
+          'Frist',
+          t('gemeinsam.loeschkonzept.grund-der-frist'),
+          t('gemeinsam.loeschkonzept.beginn-der-frist-stichtag'),
+          t('gemeinsam.loeschkonzept.sperre-in-ablago'),
+          'Löschweg',
+        ],
+        zeilen: arten.length
+          ? arten.map((a) => [a.typ, a.betroffene, a.zweck, a.frist, a.grund, a.stichtag, a.sperre, a.loeschweg])
+          : [
+              [
+                FEHLT('Mappentyp'),
+                FEHLT('Betroffene'),
+                FEHLT('Zweck'),
+                FEHLT('Frist'),
+                FEHLT('Grund'),
+                FEHLT('Stichtag'),
+                'keine',
+                FEHLT('Löschweg'),
               ],
-        },
-        ...(fehlt.length
-          ? [{ art: 'hinweis' as const, titel: t('gemeinsam.loeschkonzept.bitte-ergaenzen'), punkte: fehlt.map((x) => x.text) }]
-          : []),
-        ...(ohne.length
-          ? [{ art: 'absatz' as const, text: t('gemeinsam.loeschkonzept.ohne-personenbezug-nicht-in', { ohne: ohne.join(', ') }) }]
-          : []),
-        { art: 'absatz', text: t('gemeinsam.loeschkonzept.sperre-in-ablago-2') },
-        {
-          art: 'punkte',
-          punkte: [t('gemeinsam.loeschkonzept.archivmodus-werkbank-mappentypen'), t('gemeinsam.loeschkonzept.keine-die-mappen-lassen')],
-        },
-        { art: 'absatz', text: t('gemeinsam.loeschkonzept.loeschweg') },
-        {
-          art: 'punkte',
-          punkte: [
-            t('gemeinsam.loeschkonzept.aufbewahrung-abgelaufen-nach'),
-            t('gemeinsam.loeschkonzept.ansicht-fuer-fristen-ohne', { FEHLT: FEHLT('Name'), FEHLT2: FEHLT('Datumsfeld') }),
-          ],
-        },
-      ],
-    },
+            ],
+      },
+      ...(fehlt.length
+        ? [{ art: 'hinweis' as const, titel: t('gemeinsam.loeschkonzept.bitte-ergaenzen'), punkte: fehlt.map((x) => x.text) }]
+        : []),
+      ...(ohne.length
+        ? [{ art: 'absatz' as const, text: t('gemeinsam.loeschkonzept.ohne-personenbezug-nicht-in', { ohne: ohne.join(', ') }) }]
+        : []),
+      { art: 'absatz', text: t('gemeinsam.loeschkonzept.sperre-in-ablago-2') },
+      {
+        art: 'punkte',
+        punkte: [t('gemeinsam.loeschkonzept.archivmodus-werkbank-mappentypen'), t('gemeinsam.loeschkonzept.keine-die-mappen-lassen')],
+      },
+      { art: 'absatz', text: t('gemeinsam.loeschkonzept.loeschweg') },
+      {
+        art: 'punkte',
+        punkte: [
+          t('gemeinsam.loeschkonzept.aufbewahrung-abgelaufen-nach'),
+          t('gemeinsam.loeschkonzept.ansicht-fuer-fristen-ohne', { FEHLT: FEHLT('Name'), FEHLT2: FEHLT('Datumsfeld') }),
+        ],
+      },
+    ],
+  };
+}
+
+/** Abschnitte 3–5: regelmäßiges Löschen, Sperren auf Verlangen, wer löschen darf. */
+function abschnitteLoeschen(q: LoeschkonzeptQuelle): Abschnitt[] {
+  const korb = q.papierkorbTage > 0;
+  return [
     {
       titel: t('gemeinsam.loeschkonzept.3-regelmaessiges-loeschen'),
       bloecke: [
@@ -409,51 +411,61 @@ export function loeschkonzept(q: LoeschkonzeptQuelle): Loeschkonzept {
         },
       ],
     },
-    {
-      titel: t('gemeinsam.loeschkonzept.6-kopien-ausserhalb-der'),
-      bloecke: [
-        { art: 'absatz', text: t('gemeinsam.loeschkonzept.geloeschte-daten-koennen-noch') },
-        {
-          art: 'tabelle',
-          breiten: [1.4, 1.2, 1.6],
-          kopf: ['Wo', t('gemeinsam.loeschkonzept.wie-lange'), t('gemeinsam.loeschkonzept.wie-geloescht')],
-          zeilen: [
-            [
-              t('gemeinsam.loeschkonzept.automatische-sicherungen-werkbank'),
-              sicherungText,
-              t('gemeinsam.loeschkonzept.ablago-entfernt-aeltere-sicherungen'),
-            ],
-            [
-              t('gemeinsam.loeschkonzept.von-hand-angelegte-sicherungen'),
-              t('gemeinsam.loeschkonzept.bis-zum-loeschen'),
-              t('gemeinsam.loeschkonzept.loescht-sie', { FEHLT: FEHLT('Wer'), FEHLT2: FEHLT('wann') }),
-            ],
-            [
-              t('gemeinsam.loeschkonzept.kopie-der-sicherungen-ausser'),
-              FEHLT(t('gemeinsam.loeschkonzept.z-b-die-letzten')),
-              FEHLT(t('gemeinsam.loeschkonzept.wer-wie')),
-            ],
-            // #797: eigener Export-Ordner, nicht in der Sicherung; dieselbe Frist wie die Auskunft.
-            [
-              t('gemeinsam.loeschkonzept.vollexporte-und-persoenliche-exporte'),
-              `höchstens ${tage(q.auskunftTage).replace('Tagen', 'Tage')}`,
-              t('gemeinsam.loeschkonzept.ablago-loescht-sie-nach'),
-            ],
-            [
-              t('gemeinsam.loeschkonzept.bereitliegende-auskuenfte'),
-              t('gemeinsam.loeschkonzept.hoechstens-mit-abruf-link', { replace: tage(q.auskunftTage).replace('Tagen', 'Tage') }),
-              t('gemeinsam.loeschkonzept.ablago-loescht-sie-selbst'),
-            ],
-            [
-              t('gemeinsam.loeschkonzept.protokoll-werkbank-protokoll'),
-              t('gemeinsam.loeschkonzept.24-stunden-in-der', { FEHLT: FEHLT(t('gemeinsam.loeschkonzept.nach-einstellung-von-docker')) }),
-              FEHLT(t('gemeinsam.loeschkonzept.ggf-log-rotation-einstellen')),
-            ],
-            [t('gemeinsam.loeschkonzept.heruntergeladene-dateien-ausdrucke-e'), FEHLT('Regel'), FEHLT('Regel')],
+  ];
+}
+
+/** Abschnitt 6: Kopien außerhalb der Ablage (Sicherungen, Exporte, Auskünfte, Protokoll). */
+function abschnittKopien(q: LoeschkonzeptQuelle): Abschnitt {
+  return {
+    titel: t('gemeinsam.loeschkonzept.6-kopien-ausserhalb-der'),
+    bloecke: [
+      { art: 'absatz', text: t('gemeinsam.loeschkonzept.geloeschte-daten-koennen-noch') },
+      {
+        art: 'tabelle',
+        breiten: [1.4, 1.2, 1.6],
+        kopf: ['Wo', t('gemeinsam.loeschkonzept.wie-lange'), t('gemeinsam.loeschkonzept.wie-geloescht')],
+        zeilen: [
+          [
+            t('gemeinsam.loeschkonzept.automatische-sicherungen-werkbank'),
+            sicherungText(q.sicherung),
+            t('gemeinsam.loeschkonzept.ablago-entfernt-aeltere-sicherungen'),
           ],
-        },
-      ],
-    },
+          [
+            t('gemeinsam.loeschkonzept.von-hand-angelegte-sicherungen'),
+            t('gemeinsam.loeschkonzept.bis-zum-loeschen'),
+            t('gemeinsam.loeschkonzept.loescht-sie', { FEHLT: FEHLT('Wer'), FEHLT2: FEHLT('wann') }),
+          ],
+          [
+            t('gemeinsam.loeschkonzept.kopie-der-sicherungen-ausser'),
+            FEHLT(t('gemeinsam.loeschkonzept.z-b-die-letzten')),
+            FEHLT(t('gemeinsam.loeschkonzept.wer-wie')),
+          ],
+          // #797: eigener Export-Ordner, nicht in der Sicherung; dieselbe Frist wie die Auskunft.
+          [
+            t('gemeinsam.loeschkonzept.vollexporte-und-persoenliche-exporte'),
+            `höchstens ${tage(q.auskunftTage).replace('Tagen', 'Tage')}`,
+            t('gemeinsam.loeschkonzept.ablago-loescht-sie-nach'),
+          ],
+          [
+            t('gemeinsam.loeschkonzept.bereitliegende-auskuenfte'),
+            t('gemeinsam.loeschkonzept.hoechstens-mit-abruf-link', { replace: tage(q.auskunftTage).replace('Tagen', 'Tage') }),
+            t('gemeinsam.loeschkonzept.ablago-loescht-sie-selbst'),
+          ],
+          [
+            t('gemeinsam.loeschkonzept.protokoll-werkbank-protokoll'),
+            t('gemeinsam.loeschkonzept.24-stunden-in-der', { FEHLT: FEHLT(t('gemeinsam.loeschkonzept.nach-einstellung-von-docker')) }),
+            FEHLT(t('gemeinsam.loeschkonzept.ggf-log-rotation-einstellen')),
+          ],
+          [t('gemeinsam.loeschkonzept.heruntergeladene-dateien-ausdrucke-e'), FEHLT('Regel'), FEHLT('Regel')],
+        ],
+      },
+    ],
+  };
+}
+
+/** Abschnitte 7–9: Benutzerkonten, Nachweis, Änderungen dieses Löschkonzepts. */
+function abschnitteNachweis(q: LoeschkonzeptQuelle): Abschnitt[] {
+  return [
     {
       titel: t('gemeinsam.loeschkonzept.7-benutzerkonten'),
       bloecke: [
@@ -505,6 +517,25 @@ export function loeschkonzept(q: LoeschkonzeptQuelle): Loeschkonzept {
         },
       ],
     },
+  ];
+}
+
+/** Das ganze Löschkonzept: Abschnitte 1–9 wie die Vorlage, vorbelegt mit dem, was das DMS weiß. */
+export function loeschkonzept(q: LoeschkonzeptQuelle): Loeschkonzept {
+  const arten = datenarten(q);
+  const fehlt = luecken(q, arten);
+  const verantwortlicher = q.datenschutz.verantwortlicher.trim().replace(/\n+/g, ', ');
+  const ohne = q.typen
+    .filter(ohneSystem)
+    .filter((t) => !arten.some((a) => a.typId === t.id))
+    .map((t) => t.name)
+    .sort((a, b) => a.localeCompare(b, 'de'));
+  const abschnitte: Abschnitt[] = [
+    abschnittAllgemeines(q, arten, verantwortlicher),
+    abschnittDatenarten(q, arten, fehlt, ohne),
+    ...abschnitteLoeschen(q),
+    abschnittKopien(q),
+    ...abschnitteNachweis(q),
   ];
   return {
     titel: LOESCHKONZEPT_TITEL,

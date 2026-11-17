@@ -37,6 +37,11 @@ import { type Handelnder, log, type Quelle } from './optionen';
 import { type InstallierenEingabe, type UmbauEingabe, type Vorschau } from './plan';
 import { PaketEntfernen } from './entfernen';
 
+/** Plan und Pakete eines Ablaufs, wie ablaufIntern sie liefert. */
+type AblaufIntern = Awaited<ReturnType<Paketverwaltung['ablaufIntern']>>;
+type AblaufPlanIntern = AblaufIntern['plan'];
+type AblaufTeileIntern = AblaufIntern['teile'];
+
 /**
  * Die Paketverwaltung (#1278: aufgeteilt in Teil-Klassen, siehe basis.ts). Hier stehen die Schritte, die eine Bestätigung
  * brauchen: Fingerabdruck einer Quelle, Herausgeber und Rechte beim Installieren, Aktualisieren und im Ablauf.
@@ -298,17 +303,63 @@ export class Paketverwaltung extends PaketEntfernen {
    * gescheiterte brauchen, fallen mit Grund weg (#646) – das Ergebnis sagt genau, was installiert ist.
    */
   async ablaufInstallieren(e: AblaufInstallation, von: Handelnder): Promise<AblaufErgebnis> {
-    const karte = (x: unknown): Record<string, Record<string, string>> =>
-      x && typeof x === 'object' && !Array.isArray(x)
-        ? Object.fromEntries(
-            Object.entries(x as Record<string, unknown>)
-              .filter(([, v]) => v && typeof v === 'object')
-              .map(([k, v]) => [k, Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([a, b]) => [a, String(b)]))]),
-          )
-        : {};
-    const namen = karte(e.namen),
-      sichtNamen = karte(e.sichtNamen);
+    const namen = namenKarte(e.namen),
+      sichtNamen = namenKarte(e.sichtNamen);
     const { plan, teile } = await this.ablaufIntern(e, namen, sichtNamen);
+    this.pruefeAblaufFreigaben(plan, teile, e);
+    const { spaeter, zuSpeichern } = await this.ablaufEinstellungen(plan, teile, e);
+    const beispiele = new Set(Array.isArray(e.beispiele) ? e.beispiele.map(String) : []);
+    const ein =
+      e.automatisierungen && typeof e.automatisierungen === 'object' && !Array.isArray(e.automatisierungen)
+        ? (e.automatisierungen as Record<string, unknown>)
+        : {};
+    const erg: AblaufErgebnis = { installiert: [], fehlgeschlagen: [], fehler: null, nichtInstalliert: [...(plan.ausgelassen ?? [])] };
+    const abh = plan.pakete.map((p, i) => ({ id: p.id, abhaengigkeiten: teile[i].paket.manifest.abhaengigkeiten }));
+    for (const [i, p] of plan.pakete.entries()) {
+      // Ein gescheitertes Paket hält nur auf, was es braucht (#646); die übrigen werden weiter installiert.
+      const an = haengenAn(
+        abh,
+        erg.fehlgeschlagen.map((x) => x.id),
+      ).get(p.id);
+      if (an) {
+        erg.nichtInstalliert.push({
+          id: p.id,
+          name: p.name,
+          version: p.version,
+          grund: t('pakete.ablauf.braucht.gescheitert', { name: plan.pakete.find((y) => y.id === an)?.name ?? an }),
+        });
+        continue;
+      }
+      try {
+        const ds = await this.installiereImAblauf(p, teile[i], teile, { namen, sichtNamen, beispiele, ein, von });
+        const einst = await this.speichereAblaufEinstellungen(p, spaeter, zuSpeichern.get(p.id), von);
+        erg.installiert.push({ id: p.id, name: ds.name, version: ds.version, einstellungen: einst });
+      } catch (f) {
+        erg.fehlgeschlagen.push({
+          id: p.id,
+          name: p.name,
+          meldung: (f as Error).message,
+          gruende: ((f as Fachfehler).details as { gruende?: string[] } | undefined)?.gruende ?? [],
+        });
+        erg.fehler ??= erg.fehlgeschlagen[0];
+        log.warn('Ablauf: Paket nicht installiert', { paket: p.id, fehler: meldungen(f) });
+      }
+    }
+    log.info('Pakete in einem Ablauf', {
+      von: von.email,
+      installiert: erg.installiert.map((y) => `${y.id}@${y.version}`).join(', ') || '–',
+      fehler: erg.fehlgeschlagen.map((y) => y.id).join(', ') || '–',
+      ausgelassen: erg.nichtInstalliert.map((y) => y.id).join(', ') || '–',
+      spaeter: [...spaeter].join(', ') || '–',
+    });
+    return erg;
+  }
+
+  /**
+   * Vor dem Installieren (#405): keine Probleme, keine Namenskonflikte (#1123), Herkunft, erstmals ein Herausgeber
+   * (Sicherheit C) und genau die gesehenen Rechte bestätigt – sonst wird nichts installiert.
+   */
+  private pruefeAblaufFreigaben(plan: AblaufPlanIntern, teile: AblaufTeileIntern, e: AblaufInstallation) {
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
     // Namen zuerst (#1123), wie beim einzelnen Paket.
     const konflikte = plan.pakete.flatMap((p) => p.vorschau.namenskonflikte.map((x) => `${p.name}: ${x}`));
@@ -342,7 +393,10 @@ export class Paketverwaltung extends PaketEntfernen {
         rechteStand: plan.rechte.stand,
       });
     }
-    // Pflicht-Einstellungen: ausgefüllt und gültig – oder bewusst später.
+  }
+
+  /** Pflicht-Einstellungen: ausgefüllt und gültig – oder bewusst später; Dienst-Adressen (#444) bestätigt. */
+  private async ablaufEinstellungen(plan: AblaufPlanIntern, teile: AblaufTeileIntern, e: AblaufInstallation) {
     const spaeter = new Set(Array.isArray(e.spaeter) ? e.spaeter.map(String) : []);
     const eingaben =
       e.einstellungen && typeof e.einstellungen === 'object' ? (e.einstellungen as Record<string, Record<string, unknown>>) : {};
@@ -353,17 +407,7 @@ export class Paketverwaltung extends PaketEntfernen {
       const b = teile[i].paket.einstellungen;
       if (!b || !p.einstellungen.length || spaeter.has(p.id)) continue;
       const eingabe = eingaben[p.id] && typeof eingaben[p.id] === 'object' ? eingaben[p.id] : {};
-      const werte = Paketverwaltung.alsEingabe(b, await this.startwerte(teile[i].paket));
-      for (const f of p.einstellungen) werte[f.schluessel] = eingabe[f.schluessel] ?? null;
-      const r = pruefeWerte(b, werte, await this.verweisquelle(p.id));
-      for (const [k, v] of Object.entries(r.fehler)) felderFehler[`${p.id}.${k}`] = `${p.name}: ${v}`;
-      for (const f of p.einstellungen)
-        if (f.typ === 'geheim' && !(typeof werte[f.schluessel] === 'string' && werte[f.schluessel]))
-          felderFehler[`${p.id}.${f.schluessel}`] = `${p.name}: Pflichtfeld.`;
-      for (const f of adressfelder(b))
-        if (typeof r.werte[f.schluessel] === 'string' && r.werte[f.schluessel])
-          adressen.push({ paket: p.name, feld: f.name, wert: String(r.werte[f.schluessel]) });
-      zuSpeichern.set(p.id, werte);
+      zuSpeichern.set(p.id, await this.pruefeAblaufWerte(p, b, teile[i].paket, eingabe, { felderFehler, adressen }));
     }
     if (Object.keys(felderFehler).length)
       throw new Fachfehler(422, t('pakete.ablauf.fehler.einstellungen'), { felderFehler, gruende: Object.values(felderFehler) });
@@ -372,101 +416,116 @@ export class Paketverwaltung extends PaketEntfernen {
         adresse: adressen.map((a) => ({ feld: `${a.paket}: ${a.feld}`, wert: a.wert })),
       });
     }
-    const beispiele = new Set(Array.isArray(e.beispiele) ? e.beispiele.map(String) : []);
-    const ein =
-      e.automatisierungen && typeof e.automatisierungen === 'object' && !Array.isArray(e.automatisierungen)
-        ? (e.automatisierungen as Record<string, unknown>)
-        : {};
-    const erg: AblaufErgebnis = { installiert: [], fehlgeschlagen: [], fehler: null, nichtInstalliert: [...(plan.ausgelassen ?? [])] };
-    const abh = plan.pakete.map((p, i) => ({ id: p.id, abhaengigkeiten: teile[i].paket.manifest.abhaengigkeiten }));
-    for (const [i, p] of plan.pakete.entries()) {
-      // Ein gescheitertes Paket hält nur auf, was es braucht (#646); die übrigen werden weiter installiert.
-      const an = haengenAn(
-        abh,
-        erg.fehlgeschlagen.map((x) => x.id),
-      ).get(p.id);
-      if (an) {
-        erg.nichtInstalliert.push({
-          id: p.id,
-          name: p.name,
-          version: p.version,
-          grund: t('pakete.ablauf.braucht.gescheitert', { name: plan.pakete.find((y) => y.id === an)?.name ?? an }),
-        });
-        continue;
-      }
-      const x = teile[i];
+    return { spaeter, zuSpeichern };
+  }
+
+  /** Werte eines Pakets: gespeicherte bzw. Vorgaben, darüber die Eingaben für die Pflichtfelder – geprüft wie beim Speichern. */
+  private async pruefeAblaufWerte(
+    p: AblaufPlanIntern['pakete'][number],
+    b: Einstellungsbeschreibung,
+    paket: AblaufTeileIntern[number]['paket'],
+    eingabe: Record<string, unknown>,
+    { felderFehler, adressen }: { felderFehler: Record<string, string>; adressen: Array<{ paket: string; feld: string; wert: string }> },
+  ): Promise<Record<string, unknown>> {
+    const werte = Paketverwaltung.alsEingabe(b, await this.startwerte(paket));
+    for (const f of p.einstellungen) werte[f.schluessel] = eingabe[f.schluessel] ?? null;
+    const r = pruefeWerte(b, werte, await this.verweisquelle(p.id));
+    for (const [k, v] of Object.entries(r.fehler)) felderFehler[`${p.id}.${k}`] = `${p.name}: ${v}`;
+    for (const f of p.einstellungen)
+      if (f.typ === 'geheim' && !(typeof werte[f.schluessel] === 'string' && werte[f.schluessel]))
+        felderFehler[`${p.id}.${f.schluessel}`] = `${p.name}: Pflichtfeld.`;
+    for (const f of adressfelder(b))
+      if (typeof r.werte[f.schluessel] === 'string' && r.werte[f.schluessel])
+        adressen.push({ paket: p.name, feld: f.name, wert: String(r.werte[f.schluessel]) });
+    return werte;
+  }
+
+  /** Ein Paket des Ablaufs frisch planen (die davor sind jetzt installiert) und anlegen bzw. aktualisieren. */
+  private async installiereImAblauf(
+    p: AblaufPlanIntern['pakete'][number],
+    x: AblaufTeileIntern[number],
+    teile: AblaufTeileIntern,
+    o: {
+      namen: Record<string, Record<string, string>>;
+      sichtNamen: Record<string, Record<string, string>>;
+      beispiele: Set<string>;
+      ein: Record<string, unknown>;
+      von: Handelnder;
+    },
+  ) {
+    const { von } = o;
+    const jetzt = await this.d.kern.repo.listePakete();
+    const alt = jetzt.find((y) => y.id === p.id) ?? installierteErsetzt(jetzt, x.paket.manifest) ?? null;
+    // Frisch planen: Die Pakete davor sind jetzt installiert (Verweise, Namen).
+    const vorschau = await this.plane(x.paket, x.v, x.katalog ?? (await this.offiziell()), o.namen[p.id] ?? {}, o.sichtNamen[p.id] ?? {}, {
+      quelle: { herkunft: x.herkunft, pruefung: x.pruefung },
+      ablauf: true,
+      ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}),
+    });
+    if (vorschau.namenskonflikte.length)
+      throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: vorschau.namenskonflikte, konflikte: true });
+    if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
+    const ds = await this.lege(
+      x.paket,
+      x.herkunft,
+      x.v,
+      vorschau,
+      o.beispiele.has(p.id) && !alt,
+      von,
+      alt,
+      einzuschalten(o.ein[p.id], x.paket),
+    );
+    if (x.upload) await this.vergissUpload(x.upload);
+    log.info(alt ? 'Paket aktualisiert (Ablauf)' : 'Paket installiert (Ablauf)', {
+      von: von.email,
+      paket: p.id,
+      version: ds.version,
+      ...(alt ? { vorher: alt.version } : {}),
+      herkunft: x.herkunft.art === 'katalog' ? x.herkunft.url : 'hochgeladen',
+      pruefung: x.pruefung.art,
+      gebrauchtVon: p.fuer.join(', ') || '–',
+    });
+    void nachweis('betrieb.paket', {
+      aktion: alt ? 'aktualisiert' : 'installiert',
+      paket: p.id,
+      version: ds.version,
+      vorher: alt?.version ?? null,
+      von: von.email,
+    });
+    return ds;
+  }
+
+  /** Einstellungen aus dem Ablauf speichern; scheitert das, ist das Paket trotzdem installiert („fehler“). */
+  private async speichereAblaufEinstellungen(
+    p: AblaufPlanIntern['pakete'][number],
+    spaeter: Set<string>,
+    w: Record<string, unknown> | undefined,
+    von: Handelnder,
+  ): Promise<AblaufErgebnis['installiert'][number]['einstellungen']> {
+    let einst: AblaufErgebnis['installiert'][number]['einstellungen'] = p.einstellungen.length
+      ? spaeter.has(p.id)
+        ? 'spaeter'
+        : 'fertig'
+      : 'keine';
+    if (w) {
       try {
-        const jetzt = await this.d.kern.repo.listePakete();
-        const alt = jetzt.find((y) => y.id === p.id) ?? installierteErsetzt(jetzt, x.paket.manifest) ?? null;
-        // Frisch planen: Die Pakete davor sind jetzt installiert (Verweise, Namen).
-        const vorschau = await this.plane(x.paket, x.v, x.katalog ?? (await this.offiziell()), namen[p.id] ?? {}, sichtNamen[p.id] ?? {}, {
-          quelle: { herkunft: x.herkunft, pruefung: x.pruefung },
-          ablauf: true,
-          ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}),
-        });
-        if (vorschau.namenskonflikte.length)
-          throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: vorschau.namenskonflikte, konflikte: true });
-        if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
-        const ds = await this.lege(
-          x.paket,
-          x.herkunft,
-          x.v,
-          vorschau,
-          beispiele.has(p.id) && !alt,
-          von,
-          alt,
-          einzuschalten(ein[p.id], x.paket),
-        );
-        if (x.upload) await this.vergissUpload(x.upload);
-        log.info(alt ? 'Paket aktualisiert (Ablauf)' : 'Paket installiert (Ablauf)', {
-          von: von.email,
-          paket: p.id,
-          version: ds.version,
-          ...(alt ? { vorher: alt.version } : {}),
-          herkunft: x.herkunft.art === 'katalog' ? x.herkunft.url : 'hochgeladen',
-          pruefung: x.pruefung.art,
-          gebrauchtVon: p.fuer.join(', ') || '–',
-        });
-        void nachweis('betrieb.paket', {
-          aktion: alt ? 'aktualisiert' : 'installiert',
-          paket: p.id,
-          version: ds.version,
-          vorher: alt?.version ?? null,
-          von: von.email,
-        });
-        let einst: AblaufErgebnis['installiert'][number]['einstellungen'] = p.einstellungen.length
-          ? spaeter.has(p.id)
-            ? 'spaeter'
-            : 'fertig'
-          : 'keine';
-        const w = zuSpeichern.get(p.id);
-        if (w) {
-          try {
-            await this.speichereEinstellungen(p.id, { werte: w, adresseBestaetigt: true }, von);
-          } catch (f) {
-            einst = 'fehler';
-            log.warn('Einstellungen aus dem Ablauf nicht gespeichert', { paket: p.id, fehler: meldungen(f) });
-          }
-        }
-        erg.installiert.push({ id: p.id, name: ds.name, version: ds.version, einstellungen: einst });
+        await this.speichereEinstellungen(p.id, { werte: w, adresseBestaetigt: true }, von);
       } catch (f) {
-        erg.fehlgeschlagen.push({
-          id: p.id,
-          name: p.name,
-          meldung: (f as Error).message,
-          gruende: ((f as Fachfehler).details as { gruende?: string[] } | undefined)?.gruende ?? [],
-        });
-        erg.fehler ??= erg.fehlgeschlagen[0];
-        log.warn('Ablauf: Paket nicht installiert', { paket: p.id, fehler: meldungen(f) });
+        einst = 'fehler';
+        log.warn('Einstellungen aus dem Ablauf nicht gespeichert', { paket: p.id, fehler: meldungen(f) });
       }
     }
-    log.info('Pakete in einem Ablauf', {
-      von: von.email,
-      installiert: erg.installiert.map((y) => `${y.id}@${y.version}`).join(', ') || '–',
-      fehler: erg.fehlgeschlagen.map((y) => y.id).join(', ') || '–',
-      ausgelassen: erg.nichtInstalliert.map((y) => y.id).join(', ') || '–',
-      spaeter: [...spaeter].join(', ') || '–',
-    });
-    return erg;
+    return einst;
   }
+}
+
+/** Namen je Paket aus der Eingabe (#1123): { paket: { schluessel: name } }, alles als Text. */
+function namenKarte(x: unknown): Record<string, Record<string, string>> {
+  return x && typeof x === 'object' && !Array.isArray(x)
+    ? Object.fromEntries(
+        Object.entries(x as Record<string, unknown>)
+          .filter(([, v]) => v && typeof v === 'object')
+          .map(([k, v]) => [k, Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([a, b]) => [a, String(b)]))]),
+      )
+    : {};
 }

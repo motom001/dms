@@ -79,11 +79,6 @@
       "count": 1
     }
   },
-  "server/src/beispiele/beispiele.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/berechtigungen/berechtigungen.dienst.ts": {
     "complexity": {
       "count": 1
@@ -139,12 +134,6 @@
   },
   "server/src/demo/demo.ts": {
     "complexity": {
-      "count": 2
-    },
-    "max-depth": {
-      "count": 10
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -418,17 +407,6 @@
       "count": 2
     }
   },
-  "server/src/pakete/verwaltung/ablauf.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/src/pakete/verwaltung/abruf.ts": {
     "max-depth": {
       "count": 1
@@ -488,9 +466,6 @@
   },
   "server/src/pakete/verwaltung/paketverwaltung.ts": {
     "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -568,9 +543,6 @@
   },
   "server/src/pdf/notfallblatt.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     },
     "max-params": {
@@ -722,15 +694,6 @@
   "server/src/sichten/sichten.dienst.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 5
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
     }
   },
   "server/src/sichten/verwalten.ts": {
@@ -1088,14 +1051,6 @@
       "count": 1
     }
   },
-  "shared/src/erkennung/vorschlaege.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "shared/src/erweitertesuche.ts": {
     "complexity": {
       "count": 2
@@ -1132,11 +1087,6 @@
       "count": 1
     }
   },
-  "shared/src/loeschkonzept.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "shared/src/loeschprotokoll.ts": {
     "complexity": {
       "count": 1
@@ -1158,28 +1108,9 @@
       "count": 1
     }
   },
-  "shared/src/pakete/code.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 5
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "shared/src/pakete/katalog.ts": {
     "complexity": {
       "count": 1
-    }
-  },
-  "shared/src/paketeinstellungen.ts": {
-    "complexity": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 3
     }
   },
   "shared/src/rechte.ts": {
