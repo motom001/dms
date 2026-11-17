@@ -30,7 +30,12 @@ import { monatAus } from '../../../shared/src/extern';
 import { istKiPaket } from '../../../shared/src/pakete';
 
 export function betriebRouten(k: RoutenKontext): Route[] {
-  const { x, system, betrieb, meldungen, pfOAuth, pfRueckruf } = k;
+  return [...mailRouten(k), ...mailOauthRouten(k), ...fehlermeldungRouten(k)];
+}
+
+/** Betrieb und E-Mail-Versand (#37, #813): Stand, Einstellungen und Server zur Adresse finden. */
+function mailRouten(k: RoutenKontext): Route[] {
+  const { x, betrieb } = k;
   return [
     // Name der Ablage für den vorgeschlagenen Absender (#813).
     {
@@ -62,6 +67,13 @@ export function betriebRouten(k: RoutenKontext): Route[] {
       lesend: true,
       handler: async (a) => ok(await betrieb().findeServer(b(a))),
     },
+  ];
+}
+
+/** Anmeldung über OAuth für den Versand (#813), Adresse, Verbindung prüfen und Testmail. */
+function mailOauthRouten(k: RoutenKontext): Route[] {
+  const { betrieb, pfOAuth, pfRueckruf } = k;
+  return [
     // Anmeldung über OAuth für den Versand (#813): dieselbe App und derselbe Rückruf wie bei den Postfächern.
     {
       methode: 'POST',
@@ -112,7 +124,13 @@ export function betriebRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await betrieb().sendeTestmail(b(a).mail, b(a).an)),
     },
+  ];
+}
 
+/** Fehler melden (#70): Diagnose für jeden angemeldeten Benutzer, gemeldete Fehler in der Werkbank. */
+function fehlermeldungRouten(k: RoutenKontext): Route[] {
+  const { x, system, meldungen } = k;
+  return [
     // Fehler melden (#70): technische Angaben des Servers für jeden angemeldeten Benutzer – ohne Betriebsgeheimnisse.
     {
       methode: 'GET',
@@ -281,7 +299,12 @@ export function systemRouten(k: RoutenKontext): Route[] {
 }
 
 export function systemzustandRouten(k: RoutenKontext): Route[] {
-  const { x, messung, system, speicherplatz, konten, pakete } = k;
+  return [...externRouten(k), ...laufwerkRouten(k), ...auslastungRouten(k), ...lastRouten(k)];
+}
+
+/** Externe Dienste (#565): Laufzeit, Datenmenge, Fehler; KI-Kosten und Budget. */
+function externRouten(k: RoutenKontext): Route[] {
+  const { konten, pakete } = k;
   /** Namen zu den Ids der Auswertung (#565): Personen (gelöschte fehlen) und KI-Pakete (für die Preise). */
   const namen = async () => {
     const [benutzer, installiert] = await Promise.all([konten.listeBenutzer(), pakete.installierte().catch(() => [])]);
@@ -318,6 +341,13 @@ export function systemzustandRouten(k: RoutenKontext): Route[] {
         return ok({ ...(await extern.auswertung(new Date())), ...(await namen()) });
       },
     },
+  ];
+}
+
+/** WebDAV-Laufwerk (#346), Eingangsordner (#195, #915) und Speicherplatz (#116, #332). */
+function laufwerkRouten(k: RoutenKontext): Route[] {
+  const { x, speicherplatz } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/werkbank/webdav',
@@ -384,6 +414,13 @@ export function systemzustandRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)),
     },
+  ];
+}
+
+/** Auslastung (#409, #477), Versionsabgleich und lange Datenbankzugriffe. */
+function auslastungRouten(k: RoutenKontext): Route[] {
+  const { x, messung, system } = k;
+  return [
     // Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk des Containers; dazu die Wartezeit der Ereignisschleife (#477).
     {
       methode: 'GET',
@@ -450,6 +487,13 @@ export function systemzustandRouten(k: RoutenKontext): Route[] {
         });
       },
     },
+  ];
+}
+
+/** Messwerte für den Lasttest (#544, #894) und Einstellungen für lange Datenbankzugriffe. */
+function lastRouten(k: RoutenKontext): Route[] {
+  const { x, messung } = k;
+  return [
     // Messwerte für den Lasttest (#544): Ereignisschleife, Arbeitsspeicher, Warten auf Verbindungen, Überlastschutz,
     // Arbeiter. Wird vom Überlastschutz nie abgewiesen.
     {

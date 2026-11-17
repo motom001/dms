@@ -741,11 +741,6 @@
       "count": 1
     }
   },
-  "server/src/werkbank/werkbank.routen.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "server/src/zugriff/zugriff.dienst.ts": {
     "complexity": {
       "count": 1

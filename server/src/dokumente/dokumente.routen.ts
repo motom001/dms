@@ -17,7 +17,21 @@ import { dokumenteVersionenRouten } from './dokumente-versionen.routen';
 import { dokumentePdfRouten } from './dokumente-pdf.routen';
 
 export function dokumenteRouten(k: RoutenKontext): Route[] {
-  const { dienst, x, weitergabe, mitnehmen, abgerufen, herausgeben, seitenquelle, fuerAnzeige, ausgabeDatei, zg, darf } = k;
+  return [
+    ...ablegenRouten(k),
+    ...inhaltRouten(k),
+    ...herunterladenRouten(k),
+    ...vorschauRouten(k),
+    ...dokumenteFassungenRouten(k),
+    ...dokumenteVolltextRouten(k),
+    ...dokumenteVersionenRouten(k),
+    ...dokumentePdfRouten(k),
+  ];
+}
+
+/** Dokument hochladen und doppelte Dateien vor dem Hochladen erkennen (#333). */
+function ablegenRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, darf } = k;
   return [
     /* ---------- Dokumente ---------- */
     {
@@ -74,6 +88,13 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         });
       },
     },
+  ];
+}
+
+/** Inhalt eines Dokuments anzeigen oder herunterladen (#394, #723, #800, #827). */
+function inhaltRouten(k: RoutenKontext): Route[] {
+  const { dienst, weitergabe, mitnehmen, abgerufen, fuerAnzeige, ausgabeDatei, darf } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/dokumente/:id/inhalt',
@@ -136,6 +157,13 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         });
       },
     },
+  ];
+}
+
+/** Herunterladen mit Stempel aus der Oberfläche (#394), auch mit Anlagen (#998). */
+function herunterladenRouten(k: RoutenKontext): Route[] {
+  const { dienst, mitnehmen, abgerufen, ausgabeDatei, darf } = k;
+  return [
     // Herunterladen mit Stempel aus der Oberfläche (#394): Angaben im Körper, sonst wie oben.
     {
       methode: 'POST',
@@ -192,6 +220,13 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         );
       },
     },
+  ];
+}
+
+/** Vorschaubild der ersten Seite (#332, #799). */
+function vorschauRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, abgerufen, herausgeben, seitenquelle, darf } = k;
+  return [
     // Vorschaubild der ersten Seite (#332): gleiche Rechte wie das Dokument; 404, solange es keins gibt.
     {
       methode: 'GET',
@@ -239,9 +274,5 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
         return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten' }, antwort) : antwort;
       },
     },
-    ...dokumenteFassungenRouten(k),
-    ...dokumenteVolltextRouten(k),
-    ...dokumenteVersionenRouten(k),
-    ...dokumentePdfRouten(k),
   ];
 }
