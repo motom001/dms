@@ -260,7 +260,8 @@ test('Release-Text: Stand, Änderungen, Lizenzen, Hinweise auf Attest und „kei
 });
 
 test('SPDX und CycloneDX: gültiger Aufbau, eindeutige Kennungen, Images mit Digest', () => {
-  const bestandteile = zusammenfuehren([ausSpdx(stueckliste(), { variante: 'dms', arch: 'amd64' })]);
+  const scoped = { name: '@zone-eu/mailsplit', versionInfo: '5.4.30', licenseDeclared: 'MIT', annotations: anm('PkgType: node-pkg') };
+  const bestandteile = zusammenfuehren([ausSpdx(stueckliste([scoped]), { variante: 'dms', arch: 'amd64' })]);
   const daten = { tag: 'v1.2.3', commit: 'abc', datum: '2026-11-17T10:00:00Z', stand: STAND, bestandteile, trivy: '0.76.1' };
   const spdx = spdxDokument(daten);
   assert.equal(spdx.spdxVersion, 'SPDX-2.3');
@@ -278,6 +279,7 @@ test('SPDX und CycloneDX: gültiger Aufbau, eindeutige Kennungen, Images mit Dig
   assert.match(cdx.serialNumber, /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-a[0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.equal(cdx.components.length, bestandteile.length);
   assert.equal(cdx.components.find((c) => c.name === 'nodemailer').purl, 'pkg:npm/nodemailer@7.0.0');
+  assert.equal(cdx.components.find((c) => c.name === '@zone-eu/mailsplit').purl, 'pkg:npm/%40zone-eu/mailsplit@5.4.30');
   assert.equal(cdx.components.find((c) => c.name === 'transport').licenses, undefined);
 });
 

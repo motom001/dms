@@ -342,7 +342,11 @@ export function ausCsv(text) {
 const kennung = (b) => createHash('sha256').update(schluessel(b)).digest('hex').slice(0, 16);
 
 function purlFuer(b) {
-  if (b.art === 'npm (Server)' || b.art === 'npm (Oberfläche)') return `pkg:npm/${b.name.replace('@', '%40')}@${b.version}`;
+  // npm-Namen tragen höchstens vorn ein „@“ (Scope); das wird im Purl zu %40, der Schrägstrich bleibt.
+  if (b.art === 'npm (Server)' || b.art === 'npm (Oberfläche)') {
+    const name = b.name.startsWith('@') ? `%40${b.name.slice(1)}` : b.name;
+    return `pkg:npm/${name}@${b.version}`;
+  }
   if (b.art === 'Alpine-Paket' || b.art === 'Schrift (Alpine)') return `pkg:apk/alpine/${b.name}@${b.version}`;
   return '';
 }
@@ -380,7 +384,7 @@ export function spdxDokument({ bestandteile, stand, tag, commit, datum, trivy })
       licenseConcluded: 'NOASSERTION',
       licenseDeclared: 'NOASSERTION',
       primaryPackagePurpose: 'CONTAINER',
-      checksums: [{ algorithm: 'SHA256', checksumValue: digest.replace('sha256:', '') }],
+      checksums: [{ algorithm: 'SHA256', checksumValue: digest.replace(/^sha256:/, '') }],
     })),
   );
   return {
