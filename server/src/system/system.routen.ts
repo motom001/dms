@@ -30,7 +30,12 @@ import { monatAus } from '../../../shared/src/extern';
 import { istKiPaket } from '../../../shared/src/pakete';
 
 export function betriebRouten(k: RoutenKontext): Route[] {
-  const { x, system, betrieb, meldungen, pfOAuth, pfRueckruf } = k;
+  return [...mailRouten(k), ...mailOauthRouten(k), ...fehlermeldungRouten(k)];
+}
+
+/** Betrieb und E-Mail-Versand (#37, #813): Stand, Einstellungen und Server zur Adresse finden. */
+function mailRouten(k: RoutenKontext): Route[] {
+  const { x, betrieb } = k;
   return [
     // Name der Ablage für den vorgeschlagenen Absender (#813).
     {
@@ -62,6 +67,13 @@ export function betriebRouten(k: RoutenKontext): Route[] {
       lesend: true,
       handler: async (a) => ok(await betrieb().findeServer(b(a))),
     },
+  ];
+}
+
+/** Anmeldung über OAuth für den Versand (#813), Adresse, Verbindung prüfen und Testmail. */
+function mailOauthRouten(k: RoutenKontext): Route[] {
+  const { betrieb, pfOAuth, pfRueckruf } = k;
+  return [
     // Anmeldung über OAuth für den Versand (#813): dieselbe App und derselbe Rückruf wie bei den Postfächern.
     {
       methode: 'POST',
@@ -112,7 +124,13 @@ export function betriebRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await betrieb().sendeTestmail(b(a).mail, b(a).an)),
     },
+  ];
+}
 
+/** Fehler melden (#70): Diagnose für jeden angemeldeten Benutzer, gemeldete Fehler in der Werkbank. */
+function fehlermeldungRouten(k: RoutenKontext): Route[] {
+  const { x, system, meldungen } = k;
+  return [
     // Fehler melden (#70): technische Angaben des Servers für jeden angemeldeten Benutzer – ohne Betriebsgeheimnisse.
     {
       methode: 'GET',
