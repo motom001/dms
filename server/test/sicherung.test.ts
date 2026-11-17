@@ -108,6 +108,22 @@ describe('Sicherung (#103–#105)', () => {
     assert.match((await s2.zustand()).fehler!.grund, /Speicherplatz/);
   });
 
+  it('Schlüssel eben in einem anderen Prozess erzeugt (#1419): „Sicherung jetzt“ liest ihn nach, statt abzulehnen', async () => {
+    const wurzel = await mkdtemp(join(tmpdir(), 'dms-sich-'));
+    // Zwei Prozesse: dieselbe Schlüsseldatei, dieselben Einstellungen, je ein eigener Tresor im Arbeitsspeicher.
+    const einstellungen = speicherEinstellungen();
+    const datei = join(wurzel, 'geheim', 'dms.schluessel');
+    const anderer = new Tresor(einstellungen, datei, () => null);
+    const dieser = new Tresor(einstellungen, datei, () => null);
+    await anderer.laden();
+    await dieser.laden();
+    const s = new Sicherung(join(wurzel, 's'), join(wurzel, 'f'), HAUSHALT, { tresor: dieser, einstellungen, daten: falscheDaten(), umgebung: async () => ({ dms: '', node: '', system: '', architektur: '' }), mountinfo: '/gibt-es-nicht' });
+    await anderer.erzeuge();
+    assert.equal(dieser.bereit, false, 'dieser Prozess kennt den neuen Schlüssel noch nicht');
+    const meta = await (await s.starte('manuell', 'admin@example.org')).fertig;
+    assert.equal(meta?.verschluesselung.fingerabdruck, anderer.fingerabdruck);
+  });
+
   it('behält je Tag, Woche und Monat die neueste Sicherung (7/4/12)', () => {
     const liste = Array.from({ length: 120 }, (_, i) => ({ name: `s${i}`, beginn: new Date(Date.UTC(2026, 9, 29, 1) - i * 24 * 3600 * 1000).toISOString() }));
     const bleibt = behalten(liste, { taeglich: 7, woechentlich: 4, monatlich: 12 });

@@ -206,7 +206,13 @@ export interface Fehlerstand {
 }
 
 export interface SicherungsQuellen {
-  tresor: { bereit: boolean; fingerabdruck: string | null; abgeleitet(zweck: string): Buffer | null };
+  tresor: {
+    bereit: boolean;
+    fingerabdruck: string | null;
+    abgeleitet(zweck: string): Buffer | null;
+    /** Mehrere Prozesse (#745): Schlüssel neu lesen, den ein anderer Prozess eben erzeugt hat (#1419). */
+    nachladen?(): Promise<boolean>;
+  };
   einstellungen: Einstellungen;
   daten: Datenquelle;
   umgebung(): Promise<Omit<Umgebung, 'datenbankStand' | 'postgres'>>;
