@@ -24,6 +24,111 @@ import { titelOder } from '../seiten';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
+interface Kontext {
+  v: LoeschVorschau;
+  plan: ReturnType<typeof planeLoeschung>;
+  auswahl: Record<string, LoeschAktion>;
+  zu: Set<string>;
+  laeuft: boolean;
+  setze(id: string, a: LoeschAktion): void;
+  klappe(id: string): void;
+}
+
+/** Eine Mappe im Baum (#424) mit Kennzeichen (#425), Kästchen, Stand und ihren Kindern. */
+function knoten(c: Kontext, k: BaumKnoten): ReactNode {
+  const { v, plan, auswahl, zu, laeuft, setze, klappe } = c;
+  const kinder = kinderVon(v.baum, k.id);
+  const z = kennzeichen(v, k);
+  const a = auswahl[k.id] ?? 'behalten';
+  const fest = z === 'gesperrt' || z === 'ohneRecht' || (z === 'bezug' && !k.rechte.U);
+  const weg = plan.loeschen.includes(k.id);
+  const bleibt = plan.bleibt[k.id];
+  const status = weg
+    ? t('ablage.loeschbaum.wird-geloescht')
+    : bleibt?.weil === 'abgewaehlt'
+      ? 'bleibt'
+      : bleibt
+        ? bleibt.weil === 'entkoppelt'
+          ? bleibt.text
+          : t('ablage.loeschbaum.bleibt', { text: bleibt.text })
+        : 'bleibt';
+  return (
+    <li key={k.id}>
+      <div className={`lb-knoten ${weg ? 'lb-weg' : 'lb-bleibt'}`}>
+        {kinder.length > 0 ? (
+          <Knopf
+            art="link"
+            className="lb-klapp"
+            aria-expanded={!zu.has(k.id)}
+            nurSymbol={t('ablage.loeschbaum.darunter', {
+              wert: zu.has(k.id) ? t('ablage.loeschbaum.aufklappen') : t('ablage.loeschbaum.zuklappen'),
+              kinder: kinder.length,
+            })}
+            onClick={() => klappe(k.id)}>
+            <Symbol name="pfeil-rechts" />
+          </Knopf>
+        ) : (
+          <span className="lb-klapp" aria-hidden="true" />
+        )}
+        <HakenFeld
+          className="lb-haken"
+          beschriftung={
+            <>
+              <span className="lb-zeichen" title={KENNZEICHEN[z].text} aria-label={KENNZEICHEN[z].text} role="img">
+                <Symbol name={KENNZEICHEN[z].symbol} />
+              </span>{' '}
+              <strong>{titelOder(k.titel)}</strong>{' '}
+              <span className="leise klein">
+                {k.typ}
+                {k.dokumente ? t('ablage.loeschbaum.dokumente', { anzahl: k.dokumente }) : ''}
+              </span>
+              {k.auchUeber.length > 0 && (
+                <span className="chip lb-chip" title={t('ablage.loeschbaum.auf-mehreren-wegen-erreichbar')}>
+                  <Symbol name="neu-laden" /> {k.auchUeber.length}
+                </span>
+              )}
+            </>
+          }>
+          <input
+            type="checkbox"
+            checked={a !== 'behalten'}
+            disabled={fest || laeuft}
+            onChange={(e) =>
+              setze(k.id, e.target.checked ? (z === 'bezug' || (z === 'geteilt' && k.rechte.U) ? 'entkoppeln' : 'loeschen') : 'behalten')
+            }
+          />
+        </HakenFeld>
+        <div className="lb-status leise klein">
+          <span>{status}</span>
+          {z === 'geteilt' && a !== 'behalten' && !fest && (
+            <Feld beschriftung={t('ablage.loeschbaum.was-mit-geschieht', { titelOder: titelOder(k.titel) })} beschriftungVerbergen>
+              <select value={a} disabled={laeuft} onChange={(e) => setze(k.id, e.target.value as LoeschAktion)}>
+                {k.rechte.U && <option value="entkoppeln">{t('ablage.loeschbaum.nur-verweis-entfernen-mappe')}</option>}
+                <option value="loeschen">{t('ablage.loeschbaum.mitloeschen')}</option>
+              </select>
+            </Feld>
+          )}
+          {k.nurBezug && k.ueber && <span>{t('ablage.loeschbaum.ueber-bezug-wird-nie', { feld: k.ueber.feld })}</span>}
+          {z === 'geteilt' && (
+            <span>
+              {t('ablage.loeschbaum.haengt-auch-an')}{' '}
+              {k.aussen.verweistAuf
+                .slice(0, 3)
+                .map((x) => (x.verborgen ? x.titel : `„${titelOder(x.titel)}“`))
+                .join(', ')}
+              {k.aussen.anzahl.verweistAuf > 3 ? ' …' : ''}
+            </span>
+          )}
+          <Link to={`/ablage/${k.typId}/${k.id}`} className="verweis">
+            {t('ablage.loeschbaum.oeffnen')}
+          </Link>
+        </div>
+      </div>
+      {kinder.length > 0 && !zu.has(k.id) && <ul className="lb-baum">{kinder.map((x) => knoten(c, x))}</ul>}
+    </li>
+  );
+}
+
 /**
  * Mappe mit allen verknüpften Mappen löschen (#424): Vorschau als Baum (Mappen, die auf diese Mappe
  * verweisen, und so weiter) mit den Kennzeichnungen (einfarbige Symbole, #425), Kästchen je Mappe, Zusammenfassung;
@@ -132,98 +237,7 @@ export function LoeschBaum({
     }
   }
 
-  const zeige = (k: BaumKnoten): ReactNode => {
-    const kinder = kinderVon(v!.baum, k.id);
-    const z = kennzeichen(v!, k);
-    const a = auswahl[k.id] ?? 'behalten';
-    const fest = z === 'gesperrt' || z === 'ohneRecht' || (z === 'bezug' && !k.rechte.U);
-    const weg = plan!.loeschen.includes(k.id);
-    const bleibt = plan!.bleibt[k.id];
-    const status = weg
-      ? t('ablage.loeschbaum.wird-geloescht')
-      : bleibt?.weil === 'abgewaehlt'
-        ? 'bleibt'
-        : bleibt
-          ? bleibt.weil === 'entkoppelt'
-            ? bleibt.text
-            : t('ablage.loeschbaum.bleibt', { text: bleibt.text })
-          : 'bleibt';
-    return (
-      <li key={k.id}>
-        <div className={`lb-knoten ${weg ? 'lb-weg' : 'lb-bleibt'}`}>
-          {kinder.length > 0 ? (
-            <Knopf
-              art="link"
-              className="lb-klapp"
-              aria-expanded={!zu.has(k.id)}
-              nurSymbol={t('ablage.loeschbaum.darunter', {
-                wert: zu.has(k.id) ? t('ablage.loeschbaum.aufklappen') : t('ablage.loeschbaum.zuklappen'),
-                kinder: kinder.length,
-              })}
-              onClick={() => klappe(k.id)}>
-              <Symbol name="pfeil-rechts" />
-            </Knopf>
-          ) : (
-            <span className="lb-klapp" aria-hidden="true" />
-          )}
-          <HakenFeld
-            className="lb-haken"
-            beschriftung={
-              <>
-                <span className="lb-zeichen" title={KENNZEICHEN[z].text} aria-label={KENNZEICHEN[z].text} role="img">
-                  <Symbol name={KENNZEICHEN[z].symbol} />
-                </span>{' '}
-                <strong>{titelOder(k.titel)}</strong>{' '}
-                <span className="leise klein">
-                  {k.typ}
-                  {k.dokumente ? t('ablage.loeschbaum.dokumente', { anzahl: k.dokumente }) : ''}
-                </span>
-                {k.auchUeber.length > 0 && (
-                  <span className="chip lb-chip" title={t('ablage.loeschbaum.auf-mehreren-wegen-erreichbar')}>
-                    <Symbol name="neu-laden" /> {k.auchUeber.length}
-                  </span>
-                )}
-              </>
-            }>
-            <input
-              type="checkbox"
-              checked={a !== 'behalten'}
-              disabled={fest || laeuft}
-              onChange={(e) =>
-                setze(k.id, e.target.checked ? (z === 'bezug' || (z === 'geteilt' && k.rechte.U) ? 'entkoppeln' : 'loeschen') : 'behalten')
-              }
-            />
-          </HakenFeld>
-          <div className="lb-status leise klein">
-            <span>{status}</span>
-            {z === 'geteilt' && a !== 'behalten' && !fest && (
-              <Feld beschriftung={t('ablage.loeschbaum.was-mit-geschieht', { titelOder: titelOder(k.titel) })} beschriftungVerbergen>
-                <select value={a} disabled={laeuft} onChange={(e) => setze(k.id, e.target.value as LoeschAktion)}>
-                  {k.rechte.U && <option value="entkoppeln">{t('ablage.loeschbaum.nur-verweis-entfernen-mappe')}</option>}
-                  <option value="loeschen">{t('ablage.loeschbaum.mitloeschen')}</option>
-                </select>
-              </Feld>
-            )}
-            {k.nurBezug && k.ueber && <span>{t('ablage.loeschbaum.ueber-bezug-wird-nie', { feld: k.ueber.feld })}</span>}
-            {z === 'geteilt' && (
-              <span>
-                {t('ablage.loeschbaum.haengt-auch-an')}{' '}
-                {k.aussen.verweistAuf
-                  .slice(0, 3)
-                  .map((x) => (x.verborgen ? x.titel : `„${titelOder(x.titel)}“`))
-                  .join(', ')}
-                {k.aussen.anzahl.verweistAuf > 3 ? ' …' : ''}
-              </span>
-            )}
-            <Link to={`/ablage/${k.typId}/${k.id}`} className="verweis">
-              {t('ablage.loeschbaum.oeffnen')}
-            </Link>
-          </div>
-        </div>
-        {kinder.length > 0 && !zu.has(k.id) && <ul className="lb-baum">{kinder.map(zeige)}</ul>}
-      </li>
-    );
-  };
+  const ctx: Kontext = { v: v!, plan: plan!, auswahl, zu, laeuft, setze, klappe };
 
   return (
     <section className="blatt lb-blatt" aria-label={t('ablage.loeschbaum.mit-verknuepften-mappen-loeschen')}>
@@ -294,7 +308,7 @@ export function LoeschBaum({
               </p>
             </div>
           )}
-          <ul className="lb-baum lb-wurzel">{zeige(v.baum.knoten[0])}</ul>
+          <ul className="lb-baum lb-wurzel">{knoten(ctx, v.baum.knoten[0])}</ul>
           {v.baum.knoten.filter((k) => k.gesperrt).length > 0 && (
             <p className="leise klein">
               {tn('ablage.loeschbaum.aufbewahrung', { symbol: <Symbol name="schloss" /> })}{' '}
