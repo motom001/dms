@@ -1364,17 +1364,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Uebersicht.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Verkleinern.tsx": {
     "complexity": {
       "count": 1
