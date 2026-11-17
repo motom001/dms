@@ -1183,11 +1183,6 @@
       "count": 1
     }
   },
-  "web/src/ablage/PdfSeiten.tsx": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Post.tsx": {
     "complexity": {
       "count": 2
