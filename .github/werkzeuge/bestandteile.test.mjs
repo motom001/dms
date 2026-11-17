@@ -245,6 +245,7 @@ test('Release-Text: Stand, Änderungen, Lizenzen, Hinweise auf Attest und „kei
     'Keine Änderungen an Bestandteilen.',
     DATEIEN.csv,
     'gh attestation verify oci://ghcr.io/motom001/dms@sha256:aaa',
+    'gh attestation verify ablago-bestandteile.csv -R motom001/dms',
   ]) {
     assert.ok(text.includes(muss), `fehlt: ${muss}`);
   }

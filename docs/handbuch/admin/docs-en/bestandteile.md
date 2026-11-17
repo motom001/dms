@@ -67,7 +67,15 @@ gh attestation verify oci://ghcr.io/motom001/dms@sha256:<index digest> -R motom0
 gh attestation verify oci://ghcr.io/motom001/dms-komplett@sha256:<index digest> -R motom001/dms
 ```
 
-The signed bill of materials covers the system packages and the server's npm packages as Trivy recognises them for amd64. The additions (web interface, fonts, manual) and the list for arm64 are only in the attachments; they are made in the same run from the same commit.
+The signed bill of materials on the image covers the system packages and the server's npm packages as Trivy recognises them for amd64. The additions (web interface, fonts, manual) and the list for arm64 are in the attachments. They are made in the same run from the same commit and carry **their own provenance attestation**. Download the file from the release and check it:
+
+```sh
+gh attestation verify ablago-bestandteile.csv -R motom001/dms
+gh attestation verify ablago-bestandteile.spdx.json -R motom001/dms
+gh attestation verify ablago-bestandteile.cdx.json -R motom001/dms
+```
+
+The attestation names the workflow and commit of the release. If a release is made again, the new files get a new attestation.
 
 **Independently:** load the image by its digest in an isolated test environment, generate a bill of materials yourself and compare it with the attachment – with Trivy or another tool such as Syft:
 

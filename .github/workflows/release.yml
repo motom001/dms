@@ -38,6 +38,9 @@ jobs:
   release:
     permissions:
       contents: write
+      # Herkunftsnachweis der Anhänge „Bestandteile und Lizenzen“ (#1405); sonst keine weiteren Rechte.
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     # Zeitgrenze (#1369): gewöhnlich 10–60 s.
     timeout-minutes: 10
@@ -114,6 +117,22 @@ jobs:
               echo "Die Übersicht ließ sich für dieses Release nicht erzeugen. Stückliste und Herkunftsnachweis hängen, soweit erzeugt, signiert am Image: [Administratorhandbuch](https://help.ablago.app/admin/aktuell/bestandteile/)."
             } >> notizen.md
           fi
+      # Herkunftsnachweis der Anhänge (#1405): Text und Anhänge schreibt dasselbe Token, eine Prüfsumme im Text belegt
+      # also nichts. Das Attest bindet jede Datei an Workflow und Commit; jeder Lauf attestiert seine Dateien neu, auch
+      # nach einem Neulauf mit --clobber. Prüfen: gh attestation verify ablago-bestandteile.csv -R motom001/dms
+      # Ein Fehler hier hält das Release nicht auf, es gibt eine Warnung.
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        id: attest
+        if: env.ANHAENGE != ''
+        continue-on-error: true
+        with:
+          subject-path: |
+            ${{ env.ANHAENGE }}/ablago-bestandteile.csv
+            ${{ env.ANHAENGE }}/ablago-bestandteile.spdx.json
+            ${{ env.ANHAENGE }}/ablago-bestandteile.cdx.json
+      - name: Warnung, wenn der Herkunftsnachweis fehlt
+        if: steps.attest.outcome == 'failure'
+        run: echo "::warning title=Bestandteile::Herkunftsnachweis der Anhänge ließ sich nicht erzeugen (siehe Protokoll)."
       - name: Fußzeile
         run: |
           {
