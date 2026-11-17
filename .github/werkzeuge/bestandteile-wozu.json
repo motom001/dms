@@ -1,0 +1,60 @@
+{
+  "_hinweis": "Wozu die Systemprogramme im Image stecken (#1393). Quelle für die Übersicht „Bestandteile und Lizenzen“ im Release-Text. Jedes Paket aus einer Zeile „apk add“ im Dockerfile braucht hier einen Eintrag (Test in bestandteile.test.mjs). Die Begründungen stehen außerdem als Kommentar im Dockerfile; ändert sich dort etwas, hier nachziehen.",
+  "pakete": {
+    "node": {
+      "wozu": "Laufzeit für Server und Werkzeuge von Ablago; aus dem offiziellen Image „node“ für Alpine (npm, Yarn und Corepack werden entfernt).",
+      "issues": [220, 1272],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "busybox": {
+      "wozu": "Grundprogramme von Alpine (Shell, wget für die Gesundheitsprüfung des Containers); kommt mit dem Basis-Image.",
+      "issues": [321],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "poppler-utils": {
+      "wozu": "Textebene von PDFs (pdftotext), Vorschau- und Seitenbilder, Schwärzen, Verkleinern (pdftoppm).",
+      "issues": [45, 393],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "qpdf": {
+      "wozu": "PDF verkleinern: optimiert die Struktur der Datei (bewusst kein Ghostscript).",
+      "issues": [393],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "fontconfig": {
+      "wozu": "Findet die Ersatzschriften für PDFs, die ihre Schriften nicht einbetten.",
+      "issues": [1329],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "font-liberation": {
+      "wozu": "Ersatzschriften, metrisch passend für Helvetica/Arial, Times und Courier (Seiten- und Vorschaubilder, Archivfassung).",
+      "issues": [1329],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "font-dejavu": {
+      "wozu": "Ersatzschrift für weitere Zeichen.",
+      "issues": [1329],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "postgresql17": {
+      "wozu": "Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar).",
+      "issues": [208],
+      "varianten": ["dms-komplett"]
+    },
+    "postgresql17-contrib": {
+      "wozu": "Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen.",
+      "issues": [208],
+      "varianten": ["dms-komplett"]
+    },
+    "tini": {
+      "wozu": "Startet PostgreSQL und Ablago und beendet beide sauber.",
+      "issues": [208],
+      "varianten": ["dms-komplett"]
+    },
+    "su-exec": {
+      "wozu": "Startet PostgreSQL unter einem eigenen Benutzer statt als root.",
+      "issues": [208],
+      "varianten": ["dms-komplett"]
+    }
+  }
+}

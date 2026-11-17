@@ -140,6 +140,7 @@ nav:
   - Interface (API): api.md
   - Background:
       - Technology: technik.md
+      - Components and licences: bestandteile.md
       - Decisions: entscheidungen.md
       - Terms (glossary): https://help.ablago.app/benutzer/aktuell/en/begriffe/
   - More:

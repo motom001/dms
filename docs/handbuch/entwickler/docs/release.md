@@ -103,6 +103,8 @@ So liest du sie: Stimmt der Satz noch? Wenn nicht, korrigieren. Ist er gewollt (
     gh attestation verify oci://ghcr.io/motom001/dms:stabil -R motom001/dms --predicate-type https://spdx.dev/Document/v2.3
     ```
 
+- **Bestandteile und Lizenzen im Release-Text** (#1393): Bei einer neuen Version erzeugt `image-zusammen` je Variante und Architektur eine Stückliste mit Trivy und hält Digests und Node-Version fest (Artefakte `bestandteile-dms`, `bestandteile-dms-komplett`). `release.yml` macht daraus mit `.github/werkzeuge/bestandteile.mjs` den Abschnitt *Bestandteile und Lizenzen* im Release-Text und hängt die vollständige Liste als CSV, SPDX und CycloneDX an; verglichen wird mit der CSV am vorigen Release. Was Trivy nicht sieht (Bibliotheken der Oberfläche, Schriften, Handbuch, Node.js), ergänzt das Werkzeug. Holt das `Dockerfile` ein neues Paket mit `apk add`, braucht es einen Eintrag in `.github/werkzeuge/bestandteile-wozu.json` (sonst schlägt der Test im Job `stil` fehl). Fehlen die Daten, erscheint das Release trotzdem, mit Hinweis. Für Betreiber: [Bestandteile und Lizenzen](https://help.ablago.app/admin/aktuell/bestandteile/).
+
 ### OpenSSF Scorecard und Regeln für Workflows
 
 Der Workflow *Scorecard* bewertet wöchentlich und bei jedem Push auf `main`, wie das Projekt mit Sicherheit umgeht. Das Ergebnis ist öffentlich ([scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)) und steht als Abzeichen in der README; die einzelnen Hinweise stehen unter **Security → Code scanning**. Daraus folgen diese Regeln:

@@ -278,6 +278,10 @@ jobs:
         run: |
           node --test .github/werkzeuge/fachordner-pruefen.test.mjs
           node .github/werkzeuge/fachordner-pruefen.mjs
+      # Werkzeug für „Bestandteile und Lizenzen“ im Release-Text (#1393); prüft auch, dass jedes Paket aus „apk add“
+      # im Dockerfile in bestandteile-wozu.json steht.
+      - name: Bestandteile und Lizenzen (Werkzeug)
+        run: node --test .github/werkzeuge/bestandteile.test.mjs
       - run: npm ci --no-audit --no-fund
       # Formatierung (#1280): Prettier in fester Version aus npm ci; Einstellungen in .prettierrc.json, Ausnahmen in
       # .prettierignore. Rot, wenn eine Datei nicht so aussieht, wie Prettier sie schreibt (`npm run format` behebt das).
@@ -701,6 +705,38 @@ jobs:
           subject-digest: ${{ steps.digest.outputs.digest }}
           sbom-path: ${{ runner.temp }}/sbom.spdx.json
           push-to-registry: true
+      # Bestandteile und Lizenzen im Release-Text (#1393): je Architektur eine Stückliste (die angehängte oben deckt
+      # nur die Architektur des Runners ab), dazu die Digests und die Node-Version aus dem Image. Daraus schreibt
+      # release.yml die Übersicht und die Anhänge. Gelingt das nicht, erscheint das Release trotzdem – mit Hinweis.
+      - name: Stand für „Bestandteile und Lizenzen“
+        id: bestandteile
+        if: needs.version.outputs.neu == 'true' && steps.trivy.outcome == 'success'
+        continue-on-error: true
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          VARIANTE: ${{ matrix.image }}
+          DIGEST: ${{ steps.digest.outputs.digest }}
+        run: |
+          set -euo pipefail
+          ordner="$RUNNER_TEMP/bestandteile"
+          mkdir -p "$ordner"
+          archs=$(docker buildx imagetools inspect --raw "$IMAGE@$DIGEST" |
+            jq -c '[.manifests[] | select(.platform.os == "linux" and (.platform.architecture == "amd64" or .platform.architecture == "arm64")) | {(.platform.architecture): .digest}] | add')
+          [ "$(jq 'keys | length' <<< "$archs")" -eq 2 ] || { echo "::error::Nicht beide Architekturen im Index: $archs"; exit 1; }
+          node=$(docker buildx imagetools inspect "$IMAGE@$(jq -r .amd64 <<< "$archs")" --format '{{json .Image}}' |
+            jq -r '(.config.Env // [])[] | select(startswith("NODE_VERSION=")) | ltrimstr("NODE_VERSION=")')
+          for arch in amd64 arm64; do
+            trivy image --quiet --image-src remote --platform "linux/$arch" --format spdx-json \
+              --output "$ordner/$VARIANTE-$arch.spdx.json" "$IMAGE@$DIGEST"
+          done
+          jq -n --arg variante "$VARIANTE" --arg image "$IMAGE" --arg digest "$DIGEST" --arg node "$node" --argjson architekturen "$archs" \
+            '{variante: $variante, image: $image, digest: $digest, node: $node, architekturen: $architekturen}' > "$ordner/stand-$VARIANTE.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.bestandteile.outcome == 'success'
+        with:
+          name: bestandteile-${{ matrix.image }}
+          path: ${{ runner.temp }}/bestandteile
+          retention-days: 7
 
   # Tag und Release anlegen. Ein vom Workflow angelegter Tag startet keine weiteren
   # Workflows; deshalb trägt das Image oben schon die Versionsnummer.

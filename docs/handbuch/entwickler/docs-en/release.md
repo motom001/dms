@@ -78,6 +78,8 @@ How to read it: is the sentence still true? If not, correct it. If it is intende
     gh attestation verify oci://ghcr.io/motom001/dms:stabil -R motom001/dms --predicate-type https://spdx.dev/Document/v2.3
     ```
 
+- **Components and licences in the release text** (#1393): for a new version, `image-zusammen` creates a bill of materials with Trivy per variant and architecture and records the digests and the Node version (artifacts `bestandteile-dms`, `bestandteile-dms-komplett`). From this, `release.yml` uses `.github/werkzeuge/bestandteile.mjs` to write the section *Bestandteile und Lizenzen* in the release text and attaches the complete list as CSV, SPDX and CycloneDX; the comparison is with the CSV attached to the previous release. What Trivy can't see (web interface libraries, fonts, manual, Node.js) is added by the tool. If the `Dockerfile` adds a new package with `apk add`, it needs an entry in `.github/werkzeuge/bestandteile-wozu.json` (otherwise the test in the job `stil` fails). If the data is missing, the release still appears, with a note. For operators: [Components and licences](https://help.ablago.app/admin/aktuell/en/bestandteile/).
+
 ### OpenSSF Scorecard and rules for workflows { #openssf-scorecard-und-regeln-fur-workflows }
 
 The workflow *Scorecard* rates weekly and with every push to `main` how the project deals with security. The result is public ([scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)) and is a badge in the README; the individual notes are under **Security → Code scanning**. These rules follow from it:
