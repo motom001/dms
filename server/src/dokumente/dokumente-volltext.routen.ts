@@ -10,7 +10,12 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 
 export function dokumenteVolltextRouten(k: RoutenKontext): Route[] {
-  const { dienst, mitnehmen, abgerufen, seitenquelle, zg, darf } = k;
+  return [...volltextRouten(k), ...leerseitenRouten(k), ...vektorenRouten(k), ...seitenRouten(k)];
+}
+
+/** Volltext lesen und schreiben (#45, #338, #614), Sprache (#400) und Hinweis „Post teilen?“ (#579). */
+function volltextRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, darf } = k;
   return [
     // Volltext und Texterkennung (#45)
     {
@@ -81,6 +86,13 @@ export function dokumenteVolltextRouten(k: RoutenKontext): Route[] {
         return ok({ id: d.id, teilenAb: d.teilenAb ?? null });
       },
     },
+  ];
+}
+
+/** Leerseiten (#997): lesen, markieren und je Seite wählen. */
+function leerseitenRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg } = k;
+  return [
     // Leerseiten (#997): lesen mit Lesen an der Post; markieren nur Pakete mit dms:leerseiten (nur Markierung, nichts wird
     // gelöscht); je Seite wählen („Doch behalten“ / „Auch weglassen“) nur Menschen mit Bearbeiten. Rechte prüft der Dienst.
     {
@@ -101,6 +113,13 @@ export function dokumenteVolltextRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => ok(await dienst.postLeerseiten.waehleSeite(await zg(a), a.params.id, Number(a.params.nr), b(a))),
     },
+  ];
+}
+
+/** Vektoren zu Dokumenten (#442) und ähnliche Dokumente. */
+function vektorenRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, darf } = k;
+  return [
     // Vektoren zu Dokumenten (#442): schreiben nur Pakete mit dms:vektoren, die das Dokument lesen dürfen.
     {
       methode: 'PUT',
@@ -160,6 +179,13 @@ export function dokumenteVolltextRouten(k: RoutenKontext): Route[] {
       lesend: true,
       handler: async (a) => ok(await dienst.suche.aehnlicheZurMappe(await zg(a), a.params.id)),
     },
+  ];
+}
+
+/** Seite als Bild für die Texterkennung (#338, #716) und Texterkennung erneut anstoßen. */
+function seitenRouten(k: RoutenKontext): Route[] {
+  const { dienst, mitnehmen, abgerufen, seitenquelle, darf } = k;
+  return [
     // Seite als Graustufenbild (#338): Eingabe für eine Texterkennung im Paket (PGM, 8 Bit).
     // Mit ?farbe=1 (#716) als Farbbild (PPM) – für die Archivfassung; wie das Graustufenbild nur mit Leserecht.
     {
