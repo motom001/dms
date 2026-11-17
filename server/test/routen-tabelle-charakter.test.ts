@@ -1,65 +1,107 @@
 /**
- * Charakterisierung der Routentabellen (#1278, Schritt 6b-4b): Vor dem Aufteilen der langen Registrierfunktionen hält
- * dieser Test fest, welche Routen sie in welcher Reihenfolge liefern – Methode, Pfad, Zugang und alle weiteren Angaben
- * (Grenzen für den Körper, `lesend`, `still`, `api` …), ohne die Handler.
+ * Charakterisierung der Routentabelle (#1278, Schritt 6b-4a): Vor dem Aufteilen der langen Registrierfunktionen
+ * (`anmeldungRouten`, `mappenRouten`, `kontenRouten`, `aufgabenRouten`, `exportRouten`, `datenschutzRouten`,
+ * `sicherungRouten`, `typenRouten`) hält dieser Test fest, welche Routen `routen()` in welcher Reihenfolge liefert –
+ * Methode, Pfad, Zugang und alle weiteren Angaben (roh, strom, api, lesend, ohneHead …) – und welche Hooks Fastify
+ * daraus an jede Route hängt (Anmeldung, Rechte, Ratenbegrenzung, CSRF, aus `printRoutes`).
  *
  * Erwartung: `test/charakter/routen-tabelle.json`. Neu schreiben nur, wenn sich die Routen bewusst ändern:
  * `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/routen-tabelle-charakter.test.ts` – dann den Unterschied prüfen.
  */
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { describe, it } from 'node:test';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { after, before, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import type { Route } from '../src/http/routen-typen';
-import { betriebRouten, systemzustandRouten } from '../src/system/system.routen';
-import { werkbankRouten, werkbankUebersichtRouten } from '../src/werkbank/werkbank.routen';
-import { ablageRouten } from '../src/sichten/sichten.routen';
-import { dokumenteRouten } from '../src/dokumente/dokumente.routen';
-import { dokumentePdfRouten } from '../src/dokumente/dokumente-pdf.routen';
-import { dokumenteVolltextRouten } from '../src/dokumente/dokumente-volltext.routen';
-import { automatisierungRouten } from '../src/automatisierung/automatisierung.routen';
-import { paketeRouten } from '../src/pakete/pakete.routen';
+import { baueApp } from '../src/http/http';
+import { routen } from '../src/http/routen';
+import { Ueberlastschutz } from '../src/http/ueberlast';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherRepo } from '../src/repo/speicher';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Konten } from '../src/konten';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { Webdav } from '../src/webdav/webdav';
 
 const DATEI = fileURLToPath(new URL('./charakter/routen-tabelle.json', import.meta.url));
 
-const BEREICHE = {
-  betriebRouten,
-  systemzustandRouten,
-  werkbankRouten,
-  werkbankUebersichtRouten,
-  ablageRouten,
-  dokumenteRouten,
-  dokumentePdfRouten,
-  dokumenteVolltextRouten,
-  automatisierungRouten,
-  paketeRouten,
-};
-
-/** Eine Route ohne Handler, als eine Zeile: „METHODE /pfad zugang {weitere Angaben}“. */
-function zeile(r: Route): string {
-  const { methode, pfad, zugang } = r;
-  const rest = Object.fromEntries(Object.entries(r).filter(([s]) => !['methode', 'pfad', 'zugang', 'handler'].includes(s)));
-  const weitere = Object.keys(rest).length ? ` ${JSON.stringify(rest)}` : '';
-  return `${methode} ${pfad} ${zugang}${weitere}`;
-}
-
-describe('Routentabellen der langen Registrierfunktionen (#1278, Schritt 6b-4b)', () => {
-  // Beim Registrieren wird nichts aus dem Kontext aufgerufen, nur weitergereicht: Ein Stellvertreter genügt, der jede
-  // Angabe als leere Funktion liefert (Routen-Kontext nur aus Routen, .dependency-cruiser.cjs).
-  const leer = (): unknown => k;
-  const k = new Proxy(leer, { get: () => leer }) as unknown as Parameters<typeof betriebRouten>[0];
-  const ist = Object.fromEntries(Object.entries(BEREICHE).map(([name, f]) => [name, f(k).map(zeile)]));
-  if (process.env.CHARAKTER_SCHREIBEN) {
-    mkdirSync(dirname(DATEI), { recursive: true });
-    writeFileSync(DATEI, `${JSON.stringify(ist, null, 2)}\n`);
-  }
-  const soll = existsSync(DATEI) ? (JSON.parse(readFileSync(DATEI, 'utf8')) as Record<string, string[]>) : {};
-
-  for (const name of Object.keys(BEREICHE)) {
-    it(`${name}: Routen in Reihenfolge`, () => {
-      assert.ok(ist[name].length > 0);
-      assert.deepEqual(ist[name], soll[name]);
+/** `printRoutes` als Baum in volle Pfade zerlegen: „METHODE /pfad“ → Hooks als Text (wie in http-app-charakter). */
+function routenMitHooks(baum: string): Map<string, string> {
+  const routen = new Map<string, Record<string, string[]>>();
+  const stapel: string[] = [];
+  let aktuell: Array<Record<string, string[]>> = [];
+  for (const zeile of baum.split('\n')) {
+    const m = /^([│ ]*(?:[├└]── )?)(.*)$/.exec(zeile)!;
+    const inhalt = m[2];
+    if (!inhalt) continue;
+    const hook = /^• \((\w+)\) (.*)$/.exec(inhalt);
+    if (hook) {
+      for (const h of aktuell) h[hook[1]] = JSON.parse(hook[2]) as string[];
+      continue;
+    }
+    const knoten = /^(.*) \(([A-Z, ]+)\)$/.exec(inhalt);
+    if (!knoten) continue;
+    const tiefe = m[1].length / 4 - 1;
+    stapel.length = tiefe;
+    stapel[tiefe] = knoten[1];
+    const pfad = stapel.join('');
+    aktuell = knoten[2].split(', ').map((methode) => {
+      const h: Record<string, string[]> = {};
+      routen.set(`${methode} ${pfad}`, h);
+      return h;
     });
   }
+  return new Map([...routen].map(([r, h]) => [r, JSON.stringify(h)]));
+}
+
+/** Eine Route als Zeile: Methode, Pfad, Zugang und alle weiteren Angaben außer dem Handler. */
+function zeile(r: Record<string, unknown>): string {
+  const { methode, pfad, zugang, handler, ...rest } = r;
+  assert.equal(typeof handler, 'function', `${String(methode)} ${String(pfad)}: Handler fehlt`);
+  const mehr = Object.keys(rest).length ? ` ${JSON.stringify(rest)}` : '';
+  return `${String(methode)} ${String(pfad)} ${String(zugang)}${mehr}`;
+}
+
+describe('Routentabelle: Reihenfolge, Angaben und Hooks (#1278, Schritt 6b-4a)', () => {
+  let web = '';
+  let ist: { routen: string[]; hookArten: string[]; hooks: Record<string, number> } = { routen: [], hookArten: [], hooks: {} };
+  before(async () => {
+    web = mkdtempSync(join(tmpdir(), 'routen-tabelle-'));
+    const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
+    dienst.verbindeKonten(konten.papierkorbHaken());
+    const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
+    const wd = new Webdav({ dienst, konten, schluessel, einstellungen: speicherEinstellungen(), adresse: () => 'https://dms.example.org' });
+    const liste = routen(dienst, konten, { apiSchluessel: schluessel }) as unknown as Array<Record<string, unknown>>;
+    const app = await baueApp(dienst, konten, { apiSchluessel: schluessel, webdav: wd, webDir: web, ueberlast: new Ueberlastschutz(50) });
+    await app.ready();
+    const hooks = routenMitHooks(app.printRoutes({ commonPrefix: false, includeHooks: true }));
+    await app.close();
+    // Hooks je Route: Viele Routen haben dieselben – jede Art einmal, die Route verweist auf ihre Nummer.
+    const hookArten = [...new Set(hooks.values())];
+    ist = {
+      routen: liste.map(zeile),
+      hookArten,
+      hooks: Object.fromEntries([...hooks].map(([r, h]) => [r, hookArten.indexOf(h)])),
+    };
+    if (process.env.CHARAKTER_SCHREIBEN) {
+      mkdirSync(dirname(DATEI), { recursive: true });
+      writeFileSync(DATEI, `${JSON.stringify(ist, null, 2)}\n`);
+    }
+  });
+  after(() => rmSync(web, { recursive: true, force: true }));
+
+  const soll = () =>
+    existsSync(DATEI) ? (JSON.parse(readFileSync(DATEI, 'utf8')) as typeof ist) : { routen: [], hookArten: [], hooks: {} };
+  it('Routen in Reihenfolge, mit allen Angaben', () => {
+    assert.ok(ist.routen.length > 700);
+    assert.deepEqual(ist.routen, soll().routen);
+  });
+  it('Hooks je Route (Fastify)', () => {
+    assert.deepEqual(ist.hookArten, soll().hookArten);
+    assert.deepEqual(ist.hooks, soll().hooks);
+  });
 });
