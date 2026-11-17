@@ -1322,14 +1322,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Verschluesselung.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Vollexport.tsx": {
     "complexity": {
       "count": 1
