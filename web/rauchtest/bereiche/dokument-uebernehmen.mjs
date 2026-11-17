@@ -506,7 +506,17 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
   await felder.getByRole('button', { name: /^Aussteller aussteller/ }).click();
   await felder.getByLabel('Folgt aus').selectOption({ label: 'Vertrag' });
   assert.equal(await felder.getByLabel('Angabe aus „Vertrag“').inputValue(), 'vertragspartner');
+  // Erst fertig speichern lassen (#1409, wie #1396): Gesperrt ist der Knopf auch, solange gespeichert wird. Nach dem
+  // Speichern lädt der Editor die Typen und danach seine Fassungen neu – endet die Verwaltung vorher, antwortet der
+  // Server darauf mit 403. Also: PUT fertig, Meldung da, Fassungen neu geladen.
+  const pfad = (r) => new URL(r.url()).pathname;
+  const gespeichert = s.waitForResponse((r) => r.request().method() === 'PUT' && /^\/api\/typen\//.test(pfad(r)));
   await bearbeitung.getByRole('button', { name: 'Mappentyp speichern' }).click();
+  await gespeichert;
+  // Erst jetzt lauschen: Die Fassungen lädt der Editor erst nach dem Neuladen der Typen, also nach dem PUT.
+  const fassungen = s.waitForResponse((r) => r.request().method() === 'GET' && /^\/api\/typen\/[^/]+\/fassungen$/.test(pfad(r)));
+  await bearbeitung.getByText('Mappentyp gespeichert.').waitFor();
+  await fassungen;
   await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
   await felder.getByText('folgt aus Vertrag').waitFor();
   await s.getByRole('button', { name: 'Verwaltung beenden' }).click();

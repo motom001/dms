@@ -540,8 +540,13 @@ class Leitung {
     this.sammlung = sammlungHier(0);
   }
 
+  /**
+   * Nachricht an einen Prozess. Ist er eben gestorben (z. B. SIGKILL), meldet `isConnected()` das erst etwas später;
+   * das Schreiben scheitert dann mit EPIPE. Ohne Rückruf käme das als 'error' am Worker an und brächte den
+   * Hauptprozess zu Fall (#1409). Die Nachricht ist ohnehin hinfällig – den Neustart übernimmt `beendet`.
+   */
   private sende(w: Worker, m: Record<string, unknown>) {
-    if (w.isConnected()) w.send({ dms: KANAL, ...m });
+    if (w.isConnected()) w.send({ dms: KANAL, ...m }, () => undefined);
   }
   private liste(): ProzessInfo[] {
     return [...this.plaetze].filter(([, p]) => p.w.process.pid).map(([nr, p]) => ({ nr, pid: p.w.process.pid!, leiter: nr === 1 }));

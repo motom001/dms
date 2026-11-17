@@ -148,7 +148,13 @@ export function Werkbank({ teile }: { teile: string[] }) {
   return (
     <Dreiteilung ort="werkbank" ebene={werkbankEbene(bereich, id, !!installieren)} mitte={hatMitte(bereich)} offen={id}>
       <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')}>
-        <WerkbankNavigation bereich={bereich} eintraege={eigene} zeigen={ansicht.zeigen} benutzt={ansicht.stand?.benutzt} />
+        <WerkbankNavigation
+          bereich={bereich}
+          eintraege={eigene}
+          zeigen={ansicht.zeigen}
+          benutzt={ansicht.stand?.benutzt}
+          laedt={ansicht.laedt}
+        />
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
           {tn('werkbank.werkbank.projekt-unterstuetzen', {

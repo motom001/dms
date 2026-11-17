@@ -119,8 +119,10 @@ export function postUndWartung(k: Kontext): Inhalt | undefined {
     );
   } else if (bereich === 'postfaecher') {
     liste = <PostfaecherListe z={postfaecher} offen={id} />;
+    // Ein bestehendes Postfach baut sich neu auf, sobald die Liste da ist (Stand aus der Liste); ein neues nicht –
+    // sonst gingen Eingaben und Fehler verloren, die vor dem Laden der Liste kamen (#1409).
     rechts = id ? (
-      <PostfachEditor key={`${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} />
+      <PostfachEditor key={id === 'neu' ? id : `${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} />
     ) : (
       <div className="platzhalter">
         <p>{t('werkbank.werkbank.waehle-links-ein-postfach')}</p>

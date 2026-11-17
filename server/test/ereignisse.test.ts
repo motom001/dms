@@ -317,6 +317,10 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
   it('#958: mappe.geloescht nur an Pakete, die die Mappe lesen durften – geprüft mit der Mappe im Papierkorb', async () => {
     for (const repos of [undefined, ...(url ? [await pgRepos()] : [])]) {
       const { d, repo, konten, admin, vertrag, verteile } = await aufbau(repos);
+      // Jedes Ereignis weckt den Verteiler im Hintergrund (#928). Liefe er vor dem Leeren des Papierkorbs, wäre „Gas“
+      // noch lesbar und ginge mit (#1409) – darum ruht er, bis der Test selbst verteilt.
+      let ruhen = true;
+      d.ereignisseRuhen = () => ruhen;
       const code = { sprache: 'c', ereignisse: ['mappe.geloescht'], mappentypen: ['basis:vertrag'], rechte: { lesen: ['basis:vertrag'] } };
       const basis: InstalliertesPaket = {
         id: 'basis',
@@ -370,6 +374,7 @@ describe('Ereigniskatalog (#670): Ausgangskorb und Verteiler', () => {
       assert.equal(await repo.holeMappe(geheim.id), undefined, 'im Papierkorb');
       // Papierkorb schon geleert, bevor verteilt wird: Das Leserecht lässt sich nicht mehr prüfen – nichts zustellen.
       await repo.leerePapierkorb([weg.id]);
+      ruhen = false;
       await verteile();
       const da = (await spaeter(30 * 60_000, () => repo.faelligeEreignisse(100)))
         .filter((e) => e.paketId === 'kuendigen' && e.art === 'mappe.geloescht')
