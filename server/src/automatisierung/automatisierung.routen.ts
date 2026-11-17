@@ -10,11 +10,17 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import { AUFRUF_SIGNATUR_KOPF, AUFRUF_ZEIT_KOPF, laufFuer } from '../../../shared/src/automatisierung';
 import type { Anfrage, Route } from '../http/routen-typen';
 
+// Werkbank-Karten (#677): nur mit dem Recht am jeweiligen Bereich einrichten (Sicherung, Gemeldete Fehler, Protokoll, Systemzustand);
+// im Verlauf ohne Text bzw. Konto aus „Protokoll“ und „Gemeldete Fehler“, solange man den Bereich nicht verwaltet (laufFuer).
+const darf = (a: Anfrage) => (bereich: string) => darfBereich(ich(a), bereich);
+
 export function automatisierungRouten(k: RoutenKontext): Route[] {
+  return [...automatisierungenRouten(k), ...jeAutomatisierungRouten(k), ...aufrufRouten(k)];
+}
+
+/** Übersicht, Anlegen, Ziele nach außen (#671) und Läufe (#674). */
+function automatisierungenRouten(k: RoutenKontext): Route[] {
   const { autos } = k;
-  // Werkbank-Karten (#677): nur mit dem Recht am jeweiligen Bereich einrichten (Sicherung, Gemeldete Fehler, Protokoll, Systemzustand);
-  // im Verlauf ohne Text bzw. Konto aus „Protokoll“ und „Gemeldete Fehler“, solange man den Bereich nicht verwaltet (laufFuer).
-  const darf = (a: Anfrage) => (bereich: string) => darfBereich(ich(a), bereich);
   return [
     // Eingangsordner (#195): nur sichtbar, wenn /eingang eingebunden ist.
     // WebDAV-Laufwerk (#346): an/aus (Standard aus), Adresse, Stand und letzte Zugriffe.
@@ -84,6 +90,13 @@ export function automatisierungRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await autos().nichtWiederholen({}, ich(a).id)),
     },
+  ];
+}
+
+/** Eine Automatisierung: lesen, ändern, löschen, schalten, kopieren, Läufe und Testmappen. */
+function jeAutomatisierungRouten(k: RoutenKontext): Route[] {
+  const { autos } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/werkbank/automatisierungen/:id',
@@ -135,6 +148,13 @@ export function automatisierungRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await autos().testmappen(a.params.id, (a.query as { suche?: unknown }).suche)),
     },
+  ];
+}
+
+/** Aufruf von außen (#679), Geheimnisse für „URL aufrufen“ (#671), Zustellungen und Wiedergeben. */
+function aufrufRouten(k: RoutenKontext): Route[] {
+  const { autos } = k;
+  return [
     // Fassungen (#1006): fassungen/fassungen.routen.ts, für alle Gegenstände gleich.
     // Aufruf von außen (#679): Adresse anlegen bzw. erneuern oder neues Geheimnis (frische Anmeldung, verwaltungsbereiche.ts) –
     // das Geheimnis steht nur in dieser Antwort; Adresse entfernen.
