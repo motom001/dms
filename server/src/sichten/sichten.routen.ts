@@ -9,7 +9,12 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 
 export function ablageRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, passwoerterAnzeigen, modusSpur, zg, darf, zuletztGeoeffnet, entschluessele } = k;
+  return [...mappenlisteRouten(k), ...favoritenUndZaehlerRouten(k), ...sichtenVerwaltenRouten(k), ...mappeUndStartseiteRouten(k)];
+}
+
+/** Mappenliste mit und ohne Sicht und verweisende Mappen der Feldart Tabelle (#1030). */
+function mappenlisteRouten(k: RoutenKontext): Route[] {
+  const { dienst, passwoerterAnzeigen, zg, entschluessele } = k;
   return [
     /* ---------- Mappen ---------- */
     // Mit ?sicht=… seitenweise (von, anzahl, suche); ohne: alle Mappen (für Skripte und Tests).
@@ -60,6 +65,13 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       zugang: 'angemeldet',
       handler: async (a) => ok(await dienst.sichten.tabelle(a.params.id, a.params.feld, a.query, await zg(a))),
     },
+  ];
+}
+
+/** Favoriten (#62, #422), „gesehen“, Zähler der Sichten und Stand der Ablage (#919, #512, #625). */
+function favoritenUndZaehlerRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg, darf } = k;
+  return [
     // Favoriten (#62)
     {
       methode: 'PUT',
@@ -121,7 +133,13 @@ export function ablageRouten(k: RoutenKontext): Route[] {
         return { status: 200, body: { ...r.zahlen, stand: r.stand, geaendert: r.geaendert }, koepfe };
       },
     },
+  ];
+}
 
+/** Sichten verwalten (#38, #40, #41) und Belegung eines Mappentyps. */
+function sichtenVerwaltenRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg } = k;
+  return [
     /* ---------- Sichten verwalten (#38, #40, #41) ---------- */
     {
       methode: 'GET',
@@ -188,6 +206,13 @@ export function ablageRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.sichtenVerwaltung.belegung(a.params.id)),
     },
+  ];
+}
+
+/** Mappe öffnen und Startseite mit „Zuletzt geöffnet“ (#334, #940). */
+function mappeUndStartseiteRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, passwoerterAnzeigen, modusSpur, zg, zuletztGeoeffnet } = k;
+  return [
     {
       methode: 'GET',
       pfad: '/api/mappen/:id',
