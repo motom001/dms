@@ -10,7 +10,12 @@ import { abruf } from '../http/teilabruf';
 import { STUECK_MAX } from '../grundlagen/grenzen';
 
 export function sicherungRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, x, tresor, sicherung, sicherungsPaket, notfallblattDatei, wh, whStand, darfWiederherstellen } = k;
+  return [...wiederherstellenRouten(k), ...sicherungenRouten(k), ...sicherungDateiRouten(k), ...ausserHausRouten(k)];
+}
+
+/** Wiederherstellen (#107) und Probe-Wiederherstellung (#109). */
+function wiederherstellenRouten(k: RoutenKontext): Route[] {
+  const { konten, x, sicherung, wh, whStand, darfWiederherstellen } = k;
   return [
     /* ---------- Wiederherstellen (#107): frisches System ohne Anmeldung, sonst Admin im Wartungsmodus ---------- */
     // Stand der Läufe (#1341): `laufStand()` fragt bei mehreren Prozessen den Leiter – aus jedem Prozess derselbe Stand.
@@ -84,7 +89,13 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await sicherung().speichereProbePlan(a.body, ich(a).email)),
     },
+  ];
+}
 
+/** Sicherungen (#103–#105): Übersicht, Lauf, Plan und Prüfen. */
+function sicherungenRouten(k: RoutenKontext): Route[] {
+  const { x, sicherung } = k;
+  return [
     /* ---------- Sicherung (#103–#105) und Notfallblatt (#106) ---------- */
     {
       methode: 'GET',
@@ -130,6 +141,13 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await sicherung().pruefe(a.params.name, ich(a).email)),
     },
+  ];
+}
+
+/** Eine Sicherung herunterladen, zurückholen und löschen (#975, #976). */
+function sicherungDateiRouten(k: RoutenKontext): Route[] {
+  const { sicherung } = k;
+  return [
     // Herunterladen (#975): die verschlüsselte Datei unverändert, als Strom mit Weiterlesen (Range). Heikle Handlung
     // „sicherung“ (frische Anmeldung, verwaltungsbereiche.ts), Bereich „Sicherung“. Ohne HEAD: Jeder Abruf steht im Protokoll.
     {
@@ -179,6 +197,13 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
         return leer;
       },
     },
+  ];
+}
+
+/** Sicherung außer Haus (#585, #976), Notfallblatt (#106) und Verschlüsselung (#47). */
+function ausserHausRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, tresor, sicherung, sicherungsPaket, notfallblattDatei } = k;
+  return [
     // Sicherung außer Haus (#585): nur Pakete mit dms:sicherung-lesen, nur die Sicherungen aus ihrem Ereignis sicherung.fertig –
     // die verschlüsselte Datei in Stücken, schlanke Metadaten und die Rückmeldung. Nie Schlüssel, nie andere Dateien.
     {
