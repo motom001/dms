@@ -258,11 +258,31 @@ export function zusammenfuehren(listen) {
   );
 }
 
+/**
+ * Nur npm-Pakete, die wirklich installiert sind (#1393): Trivy liest jede package.json im Image, auch die von
+ * Testdaten und Messprogrammen innerhalb eines Pakets (z. B. `pino/test/fixtures/transport`,
+ * `secure-json-parse/benchmarks`). Das sind keine eigenen Pakete; sie gehören zum umgebenden Paket und dessen
+ * Lizenz, und der Link auf npmjs.com zeigte auf ein fremdes Paket gleichen Namens. Maßgeblich ist das Lockfile, aus
+ * dem `npm ci` das Image füllt.
+ */
+export function nurInstalliert(liste, lock) {
+  const da = new Set();
+  for (const [ort, e] of Object.entries(lock.packages ?? {})) {
+    const i = ort.lastIndexOf('node_modules/');
+    if (i >= 0) da.add(`${e.name ?? ort.slice(i + 'node_modules/'.length)}@${e.version}`);
+  }
+  return liste.filter((b) => b.art !== 'npm (Server)' || da.has(`${b.name}@${b.version}`));
+}
+
+/** Ablagos eigene Teile: ihre Version steigt mit jedem Release, für die Lizenzprüfung ändert sich dadurch nichts. */
+const EIGEN = (b) => b.art === 'Ablago selbst' || b.name === 'Offline-Handbuch (Texte und Bilder)';
+
 /** Neu, entfernt, neue Version, geänderte Lizenz – je Art und Name (eine Zeile je Name und Version). */
 export function vergleiche(alt, neu) {
   const gruppe = (liste) => {
     const m = new Map();
     for (const b of liste) {
+      if (EIGEN(b)) continue;
       const k = `${b.art}\u0000${b.name}`;
       const e = m.get(k) ?? { art: b.art, name: b.name, versionen: new Set(), lizenzen: new Set() };
       e.versionen.add(b.version);
@@ -633,8 +653,9 @@ export function main(argv) {
     schriften: schriftenLesen(),
     material: pipVersion(readFileSync('docs/handbuch/requirements.txt', 'utf8'), 'mkdocs-material'),
   });
-  const web = webBibliotheken(JSON.parse(readFileSync('package-lock.json', 'utf8')), JSON.parse(readFileSync('web/package.json', 'utf8')));
-  const bestandteile = zusammenfuehren([...listen, extra, web]);
+  const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+  const web = webBibliotheken(lock, JSON.parse(readFileSync('web/package.json', 'utf8')));
+  const bestandteile = zusammenfuehren([...listen.map((l) => nurInstalliert(l, lock)), extra, web]);
   const alt = a.vorher && existsSync(a.vorher) ? ausCsv(readFileSync(a.vorher, 'utf8')) : null;
   const aenderungen = alt ? vergleiche(alt, bestandteile) : null;
   const wozu = JSON.parse(readFileSync(new URL('./bestandteile-wozu.json', import.meta.url), 'utf8')).pakete;

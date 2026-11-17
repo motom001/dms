@@ -20,6 +20,7 @@ import {
   schriftVersion,
   spdxDokument,
   vergleiche,
+  nurInstalliert,
   webBibliotheken,
   zusammenfuehren,
 } from './bestandteile.mjs';
@@ -175,6 +176,39 @@ test('Vergleich mit der Vorversion: neu, entfernt, neue Version, geänderte Lize
   assert.deepEqual(v.entfernt, [{ name: 'weg', art: 'Alpine-Paket', version: '1.0' }]);
   const leer = vergleiche(neu, neu);
   assert.equal(leer.neu.length + leer.entfernt.length + leer.version.length + leer.lizenz.length, 0);
+});
+
+test('Vergleich: Ablagos eigene Teile mit neuer Versionsnummer zählen nicht als Änderung', () => {
+  const eigen = (v) => [
+    { art: 'Ablago selbst', name: 'Ablago', version: v, lizenz: 'Apache-2.0' },
+    { art: 'Ablago selbst', name: '@dms/server', version: v, lizenz: 'Apache-2.0' },
+    { art: 'Handbuch', name: 'Offline-Handbuch (Texte und Bilder)', version: v, lizenz: 'Apache-2.0' },
+  ];
+  const v = vergleiche(eigen('1.0.0'), eigen('1.0.1'));
+  assert.equal(v.neu.length + v.entfernt.length + v.version.length + v.lizenz.length, 0);
+});
+
+test('npm: nur Pakete aus dem Lockfile, keine package.json aus Testdaten oder Messprogrammen', () => {
+  const lock = {
+    packages: {
+      '': { name: 'dms' },
+      'node_modules/pino': { version: '10.4.0' },
+      'node_modules/imapflow/node_modules/pino': { version: '10.3.1' },
+      server: { name: '@dms/server', version: '1.2.3' },
+    },
+  };
+  const b = (name, version, art = 'npm (Server)') => ({ art, name, version });
+  const liste = [
+    b('pino', '10.4.0'),
+    b('pino', '10.3.1'),
+    b('transport', '0.0.1'),
+    b('benchmarks', '1.0.0'),
+    b('busybox', '1', 'Alpine-Paket'),
+  ];
+  assert.deepEqual(
+    nurInstalliert(liste, lock).map((x) => `${x.name}@${x.version}`),
+    ['pino@10.4.0', 'pino@10.3.1', 'busybox@1'],
+  );
 });
 
 test('CSV: Hin und zurück, auch mit Komma und Anführungszeichen', () => {
