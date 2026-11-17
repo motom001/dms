@@ -156,6 +156,8 @@ export const HILFE = {
   'werkbank.aufbewahrung': admin('archiv/', '„Aufbewahrung abgelaufen“', 'nach-der-frist-aufbewahrung-abgelaufen'),
   'werkbank.datenschutz': admin('datenschutz/', 'Datenschutz in Ablago'),
   'werkbank.datenschutz.anrede': admin('datenschutz/', 'Anrede in Unterlagen für Dritte', 'anrede'),
+  // Bereich „Auskünfte“ in der Liste der Werkbank-Seiten (#1281): der Abschnitt zur Seite Werkbank → Datenschutz → Auskünfte.
+  'werkbank.auskuenfte': admin('datenschutz/', 'Auskunft erteilen', 'auskunft-erteilen'),
   'werkbank.auskunft': admin('datenschutz/', 'Auskunft nach Art. 15 DSGVO', 'auskunft-nach-art-15-dsgvo'),
   // #994: Empfänger, Rechte der Person und Anrede – rechts ohne Auswahl und als Seite vom Assistenten aus.
   'werkbank.auskunft.vorgaben': admin('datenschutz/', 'Vorgaben für jede Auskunft', 'einstellungen'),

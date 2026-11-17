@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Tabellen der Werkbank-Bereiche im Administratorhandbuch aus shared/src/werkbankansicht.ts (#296)
-und den Namen in den Sprachdateien shared/src/sprachen/de/werkbank/*.json (#473, #354; seit #1279 je Bereich geteilt).
+Tabellen der Werkbank-Bereiche im Administratorhandbuch aus der Liste der Werkbank-Seiten in
+shared/src/werkbankansicht.ts (#296, #1281) und den Namen in den Sprachdateien shared/src/sprachen/de/werkbank/*.json
+(#473, #354; seit #1279 je Bereich geteilt). Die Handbuchseite je Bereich kommt aus seiner Hilfestelle (`hilfe` in der
+Liste, Seite und Anker in shared/src/hilfe.ts).
 
     python3 docs/handbuch/werkzeuge/werkbank_bereiche.py            # schreibt admin/docs/uebersicht.md
     python3 docs/handbuch/werkzeuge/werkbank_bereiche.py --pruefen  # Fehler, wenn die Seite veraltet ist
@@ -39,18 +41,7 @@ SPRACHEN = {
                        'auskuenfte': 'only when used for work', 'loeschkonzept': 'only when used for work', 'loeschprotokoll': 'only when used for work'}},
 }
 
-# Seite im Administratorhandbuch je Bereich (Pfad unter /werkbank).
-SEITE = {
-    'pakete': 'pakete.md', 'beispielablage': 'beispielablage.md', 'typen': 'mappentypen.md', 'sichten': 'sichten.md', 'nummernkreise': 'nummernkreise.md', 'automatisierungen': 'automatisierungen.md', 'ablaufvorlagen': 'automatisierungsvorlagen.md', 'rundgaenge': 'rundgaenge.md', 'tipps': 'tipps.md',
-    'benutzer': 'benutzer.md', 'verschluesselung': 'verschluesselung.md', 'auskuenfte': 'datenschutz.md#auskunft-erteilen', 'loeschkonzept': 'loeschkonzept.md#aus-dem-dms-erzeugen', 'loeschprotokoll': 'datenschutz.md#loschprotokoll',
-    'aufbewahrung': 'archiv.md#nach-der-frist-aufbewahrung-abgelaufen', 'stempel': 'stempel.md',
-    'postfaecher': 'postfaecher.md', 'eingangsordner': 'eingangsordner.md', 'webdav': 'webdav.md',
-    'texterkennung': 'texterkennung.md', 'woerter': 'suche.md#gleichbedeutende-worter', 'sicherung': 'sicherung.md', 'vollexport': 'export.md', 'papierkorb': 'papierkorb.md',
-    'organisation': 'organisation.md', 'betrieb': 'installation.md#e-mail-und-adresse', 'region': 'region.md', 'sprachen': 'sprachen.md', 'aufgaben': 'aufgaben.md', 'daten': 'daten-einstellungen.md', 'anmeldeschutz': 'anmeldeschutz.md',
-    'designs': 'designs.md', 'anbindung': 'installation.md#datenbank-anbindung',
-    'systemzustand': 'speicherplatz.md', 'protokoll': 'fehlersuche.md#protokoll', 'fehlermeldungen': 'fehlersuche.md#gemeldete-fehler',
-    'wartung': 'wartungsmodus.md', 'demo': 'demo.md',
-}
+HILFE = WURZEL / 'shared' / 'src' / 'hilfe.ts'
 # Stufen der Werkbank (#987), aufsteigend; Kürzel wie in werkbankansicht.ts.
 STUFEN = ['einsteiger', 'haushalt', 'selbstaendig', 'organisation', 'alles']
 KUERZEL = {'E': 'einsteiger', 'H': 'haushalt', 'S': 'selbstaendig', 'B': 'organisation', 'A': 'alles'}
@@ -69,25 +60,37 @@ def lies_texte(ordner):
     return texte
 
 
+def hilfeseiten():
+    """Hilfestellen des Administratorhandbuchs aus hilfe.ts: Schlüssel → Seite mit Anker (z. B. „suche.md#gleichbedeutende-worter“)."""
+    seiten = {}
+    for k, seite, anker in re.findall(r"^  '([\w.]+)': admin\('([\w-]+)/', '[^']*'(?:, '([\w-]+)')?\),?$", HILFE.read_text(encoding='utf-8'), re.M):
+        seiten[k] = f'{seite}.md' + (f'#{anker}' if anker else '')
+    return seiten
+
+
 def lies(sp=SPRACHEN['de']):
     ts = QUELLE.read_text(encoding='utf-8')
+    hilfe = hilfeseiten()
     texte = lies_texte(sp['texte'])
     folge = re.findall(r"'(\w+)'", re.search(r'const GRUPPENFOLGE = \[([^\]]*)\]', ts).group(1))
     gruppen = {g: texte[f'gruppe.{g}'] for g in folge}
     bereiche = []
     # Namen der Stufen und der Übersicht aus der Sprachdatei (für die Matrix).
     sp['texte_stufen'] = {**{v: texte[f'vorlage.{v}.name'] for v in STUFEN}, 'uebersicht': texte['bereich.uebersicht.name']}
-    for pfad, gruppe, ab in re.findall(r"\{ pfad: '(\w+)', gruppe: '(\w+)', ab: ([EHSBA]) \}", ts):
-        bereiche.append({'pfad': pfad, 'gruppe': gruppe, 'name': texte[f'bereich.{pfad}.name'], 'ab': KUERZEL[ab], 'wann': texte[f'bereich.{pfad}.wann']})
-    if not bereiche or any(b['pfad'] not in SEITE for b in bereiche) or any(b['gruppe'] not in gruppen for b in bereiche):
-        fehlt = [b['pfad'] for b in bereiche if b['pfad'] not in SEITE or b['gruppe'] not in gruppen]
-        sys.exit(f'werkbank_bereiche.py: Bereiche nicht gelesen, ohne Handbuchseite oder ohne Gruppe: {fehlt}')
+    liste = re.search(r'const EINTRAEGE = \[(.*?)\] as const', ts, re.S).group(1)
+    for pfad, felder in re.findall(r"\{\s*pfad: '(\w+)',([^}]*)\}", liste):
+        f = dict(re.findall(r"(\w+): '?([\w.]+)'?", felder))
+        bereiche.append({'pfad': pfad, 'gruppe': f.get('gruppe'), 'name': texte[f'bereich.{pfad}.name'], 'ab': KUERZEL[f['ab']],
+                         'wann': texte[f'bereich.{pfad}.wann'], 'seite': hilfe.get(f.get('hilfe'))})
+    if not bereiche or any(not b['seite'] for b in bereiche) or any(b['gruppe'] not in gruppen for b in bereiche):
+        fehlt = [b['pfad'] for b in bereiche if not b['seite'] or b['gruppe'] not in gruppen]
+        sys.exit(f'werkbank_bereiche.py: Bereiche nicht gelesen, ohne Handbuchseite (hilfe) oder ohne Gruppe: {fehlt}')
     return gruppen, bereiche
 
 
 def verweis(b, sp=SPRACHEN['de']):
     zusatz = f' ({sp["bedingt"][b["pfad"]]})' if b['pfad'] in sp['bedingt'] else ''
-    return f'[{b["name"]}]({SEITE[b["pfad"]]}){zusatz}'
+    return f'[{b["name"]}]({b["seite"]}){zusatz}'
 
 
 def bloecke(gruppen, bereiche, sp=SPRACHEN['de']):
@@ -99,14 +102,14 @@ def bloecke(gruppen, bereiche, sp=SPRACHEN['de']):
     z = ['| ' + sp['bereich'] + ' | ' + ' | '.join(namen[v] for v in STUFEN) + ' |', '| --- |' + ' :-: |' * len(STUFEN)]
     z.append(f'| {sp["texte_stufen"]["uebersicht"]} |' + ' ● |' * len(STUFEN))
     for b in bereiche:
-        z.append(f'| [{b["name"]}]({SEITE[b["pfad"]]}) |' + ''.join(' ● |' if STUFEN.index(v) >= STUFEN.index(b['ab']) else '   |' for v in STUFEN))
+        z.append(f'| [{b["name"]}]({b["seite"]}) |' + ''.join(' ● |' if STUFEN.index(v) >= STUFEN.index(b['ab']) else '   |' for v in STUFEN))
     z.append(f'| **{sp["anzahl"]}** |' + ''.join(f' **{1 + sum(STUFEN.index(v) >= STUFEN.index(b["ab"]) for b in bereiche)}** |' for v in STUFEN))
     stufen = '\n'.join(z)
     z = [sp['kopf_wofuer'], '| --- | --- | --- |']
     for b in bereiche:
         wann = b['wann'][0].upper() + b['wann'][1:]
         stufe = (sp['nur'] if b['ab'] == 'alles' else sp['ab']).format(v=namen[b['ab']])
-        z.append(f'| [{b["name"]}]({SEITE[b["pfad"]]}) | {wann} | {stufe} |')
+        z.append(f'| [{b["name"]}]({b["seite"]}) | {wann} | {stufe} |')
     return {'gruppen': gr, 'stufen': stufen, 'wofuer': '\n'.join(z)}
 
 

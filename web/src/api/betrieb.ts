@@ -8,6 +8,7 @@ import { anfrage } from './anfrage';
 import type { ExportUmzug, KontaktZuordnung, VollexportStand, WartungOeffentlich } from './konto';
 import type { EinrichtungStand, MailSuche, SicherungSchlank, SicherungsMeta, Verbindung, WhLauf } from './einrichtung';
 import type { Werkzeuge } from '../../../shared/src/werkzeuge';
+import type { Zaehler } from '../../../shared/src/werkbankansicht';
 import type { ExternUebersicht, ExternZeile } from './pakete';
 /** Seit #1278 (Schritt 5) bei ihrer Schnittstelle; hier weiter erreichbar. */
 export type { ExternZeile } from './pakete';
@@ -367,14 +368,8 @@ export interface WerkbankUebersicht {
   paketeEinstellungen?: Array<{ id: string; name: string }>;
   /** KI-Dienste (#796): Hinweis nach dem Update, solange niemand „Verstanden“ gewählt hat. */
   kiTypen?: { pakete: Array<{ id: string; name: string }> } | null;
-  /** Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist; null = unbekannt. */
-  zahlen?: {
-    nummernkreise: number | null;
-    pakete: number | null;
-    benutzer: number | null;
-    postfaecher: number | null;
-    darfWeg: number | null;
-  };
+  /** Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist; null = unbekannt. Welche: `zaehler` in der Liste der Werkbank-Seiten (#1281). */
+  zahlen?: Record<Zaehler, number | null>;
   /** Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358). */
   postfachAnmeldung?: Array<{ id: string; name: string; zustand: 'abgelaufen' | 'abgemeldet' }>;
   /** Eingangsordner (#915): Warnungen, Ordner ohne Person, nicht umbenannte Personenordner. */

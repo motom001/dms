@@ -6,6 +6,7 @@
  * abgestufte Administratorrechte sein können (#282); ihre Kennung ist der Pfad unter /werkbank.
  */
 
+import type { Hilfeort } from './hilfe';
 import { uebersetzer } from './sprache';
 import werkbank from './sprachen/de/werkbank';
 
@@ -52,81 +53,130 @@ const E = 'einsteiger',
   S = 'selbstaendig',
   B = 'organisation',
   A = 'alles';
-type Eintrag = { pfad: string; gruppe: Gruppe; ab: Vorlage };
+/** Zahlen links aus der Übersicht (#375): Name in `WerkbankZahlen` (server/src/werkbank/werkbankzahlen.ts). */
+type Zaehlername = 'pakete' | 'nummernkreise' | 'benutzer' | 'postfaecher' | 'darfWeg';
+
+/** Ein Eintrag der Liste der Werkbank-Seiten (#1281). */
+interface Eintrag {
+  /** Pfad unter /werkbank, zugleich Kennung des Bereichs und des Verwaltungsrechts (#818). */
+  readonly pfad: string;
+  readonly gruppe: Gruppe;
+  /** Ab welcher Stufe der Bereich in der Leiste steht (#987). */
+  readonly ab: Vorlage;
+  /** Hilfeseite (#110): Stelle im Administratorhandbuch, Schlüssel in `HILFE` (hilfe.ts); daraus auch die Tabellen im Handbuch. */
+  readonly hilfe: Hilfeort;
+  /** Liste in der Mitte (#366, `hatMitte`). */
+  readonly mitte?: true;
+  /**
+   * Weitere Bereiche, deren Verwaltungsrecht die Seite in der Oberfläche auch öffnet (#1184: das Löschprotokoll mit dem
+   * Löschkonzept). Der Server prüft je Schnittstelle (`verwaltungsbereiche.ts`, Regel mit `seitenRecht`).
+   */
+  readonly auchMit?: readonly string[];
+  /** Zahl links aus der Übersicht, bis der Bereich selbst geladen ist (#375). */
+  readonly zaehler?: Zaehlername;
+}
 
 /**
- * Alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der Leiste (#354).
+ * Die Liste der Werkbank-Seiten (#1281): alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der
+ * Leiste (#354). Eine neue Seite braucht hier einen Eintrag; Leiste, Wegwahl (`web/src/werkbank/rahmen/seiten.ts`),
+ * Verwaltungsrecht, Hilfe, Zahlen und die Tabellen im Handbuch lesen daraus. Name und „wann“ kommen aus der Sprachdatei
+ * (`werkbank.bereich.<pfad>.name` / `.wann`); ein Test meldet fehlende Texte, Seiten und Handbuchseiten.
  * Datenschutz steht unter „Benutzer und Sicherheit“ (#354, vorher „Ablage aufbauen“).
- * Name und „wann“ kommen aus der Sprachdatei (`werkbank.bereich.<pfad>.name` / `.wann`).
  */
-const EINTRAEGE: Eintrag[] = [
+const EINTRAEGE = [
   // Ablage aufbauen (#717): erst Fertiges, dann Feinarbeit, zum Schluss, was auf allem aufbaut.
   // Die Nutzung (#1032, privat oder auch beruflich) steht seit #1170 oben auf „Eigene Organisation“ unter Einstellungen.
-  { pfad: 'pakete', gruppe: 'ablage', ab: E },
+  { pfad: 'pakete', gruppe: 'ablage', ab: E, hilfe: 'werkbank.pakete', mitte: true, zaehler: 'pakete' },
   // Beispiel-Ablage (#988): gleich nach den Paketen, deren Beispiele sie anlegt – schon für Einsteiger.
-  { pfad: 'beispielablage', gruppe: 'ablage', ab: E },
-  { pfad: 'typen', gruppe: 'ablage', ab: H },
-  { pfad: 'sichten', gruppe: 'ablage', ab: H },
-  { pfad: 'nummernkreise', gruppe: 'ablage', ab: S },
+  { pfad: 'beispielablage', gruppe: 'ablage', ab: E, hilfe: 'werkbank.beispielablage' },
+  { pfad: 'typen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.typen', mitte: true },
+  { pfad: 'sichten', gruppe: 'ablage', ab: H, hilfe: 'werkbank.sichten', mitte: true },
+  { pfad: 'nummernkreise', gruppe: 'ablage', ab: S, hilfe: 'werkbank.nummernkreise', mitte: true, zaehler: 'nummernkreise' },
   // Automatisierungen (#675): ab Haushalt (#987, vorher dort nur im Expertenmodus).
-  { pfad: 'automatisierungen', gruppe: 'ablage', ab: H },
+  { pfad: 'automatisierungen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.automatisierungen', mitte: true },
   // Automatisierungsvorlagen (#1044): daneben, gleich sichtbar – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage …
-  { pfad: 'ablaufvorlagen', gruppe: 'ablage', ab: H },
+  { pfad: 'ablaufvorlagen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.ablaufvorlagen', mitte: true },
   // Rundgänge (#941): alle sehen, an/aus, eigene schreiben – zum Schluss, weil sie auf allem anderen aufbauen.
-  { pfad: 'rundgaenge', gruppe: 'ablage', ab: H },
+  { pfad: 'rundgaenge', gruppe: 'ablage', ab: H, hilfe: 'werkbank.rundgaenge', mitte: true },
   // Tipps (#942): daneben – Tipps können Rundgänge starten.
-  { pfad: 'tipps', gruppe: 'ablage', ab: H },
-  { pfad: 'benutzer', gruppe: 'benutzer', ab: E },
-  { pfad: 'verschluesselung', gruppe: 'benutzer', ab: E },
+  { pfad: 'tipps', gruppe: 'ablage', ab: H, hilfe: 'werkbank.tipps', mitte: true },
+  { pfad: 'benutzer', gruppe: 'benutzer', ab: E, hilfe: 'werkbank.benutzer', mitte: true, zaehler: 'benutzer' },
+  { pfad: 'verschluesselung', gruppe: 'benutzer', ab: E, hilfe: 'werkbank.verschluesselung' },
   // „Aufbewahrung abgelaufen“ (#725, früher „Darf weg“) und Stempel (#717) regeln, was die Ablage verlässt.
-  { pfad: 'aufbewahrung', gruppe: 'benutzer', ab: S },
-  { pfad: 'stempel', gruppe: 'benutzer', ab: H },
+  { pfad: 'aufbewahrung', gruppe: 'benutzer', ab: S, hilfe: 'werkbank.aufbewahrung', zaehler: 'darfWeg' },
+  { pfad: 'stempel', gruppe: 'benutzer', ab: H, hilfe: 'werkbank.stempel', mitte: true },
   // Datenschutz (#1184, vorher unter „Benutzer und Sicherheit“, #668): Auskünfte (mit Mitte, wachsende Sammlung),
   // Löschkonzept und Löschprotokoll (vorher Abschnitt des Löschkonzepts) als drei klar getrennte Einträge.
-  { pfad: 'auskuenfte', gruppe: 'datenschutz', ab: S },
-  { pfad: 'loeschkonzept', gruppe: 'datenschutz', ab: S },
-  { pfad: 'loeschprotokoll', gruppe: 'datenschutz', ab: S },
-  { pfad: 'postfaecher', gruppe: 'post', ab: H },
-  { pfad: 'eingangsordner', gruppe: 'post', ab: H },
-  { pfad: 'webdav', gruppe: 'post', ab: H },
+  { pfad: 'auskuenfte', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.auskuenfte', mitte: true },
+  { pfad: 'loeschkonzept', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.loeschkonzept' },
+  { pfad: 'loeschprotokoll', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.loeschprotokoll', auchMit: ['loeschkonzept'] },
+  { pfad: 'postfaecher', gruppe: 'post', ab: H, hilfe: 'werkbank.postfaecher', mitte: true, zaehler: 'postfaecher' },
+  { pfad: 'eingangsordner', gruppe: 'post', ab: H, hilfe: 'werkbank.eingangsordner' },
+  { pfad: 'webdav', gruppe: 'post', ab: H, hilfe: 'werkbank.webdav' },
   // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“).
-  { pfad: 'texterkennung', gruppe: 'post', ab: H },
+  { pfad: 'texterkennung', gruppe: 'post', ab: H, hilfe: 'werkbank.texterkennung' },
   // Gleichbedeutende Wörter (#992): eigener Bereich mit Mitte direkt darunter, sichtbar wie „Suche und Volltext“.
-  { pfad: 'woerter', gruppe: 'post', ab: H },
+  { pfad: 'woerter', gruppe: 'post', ab: H, hilfe: 'werkbank.woerter', mitte: true },
   // Sicherung mit Wiederherstellen als Abschnitt (#725).
-  { pfad: 'sicherung', gruppe: 'sichern', ab: E },
-  { pfad: 'vollexport', gruppe: 'sichern', ab: H },
-  { pfad: 'papierkorb', gruppe: 'sichern', ab: E },
+  { pfad: 'sicherung', gruppe: 'sichern', ab: E, hilfe: 'werkbank.sicherung' },
+  { pfad: 'vollexport', gruppe: 'sichern', ab: H, hilfe: 'werkbank.vollexport' },
+  { pfad: 'papierkorb', gruppe: 'sichern', ab: E, hilfe: 'werkbank.papierkorb', mitte: true },
   // Einstellungen zum Sichern (#1196, #1197): Aufbewahrung im Papierkorb und eigener Export der Benutzer – getrennt von
   // den Abläufen (Grundsatz: Einstellungen und Abläufe nicht mischen). In dieser Gruppe, weil „Einstellungen“ schon
   // sieben Bereiche hat (#354).
-  { pfad: 'daten', gruppe: 'sichern', ab: H },
-  { pfad: 'betrieb', gruppe: 'einstellungen', ab: E },
+  { pfad: 'daten', gruppe: 'sichern', ab: H, hilfe: 'werkbank.daten' },
+  { pfad: 'betrieb', gruppe: 'einstellungen', ab: E, hilfe: 'werkbank.betrieb' },
   // Region (#726): Land, Bundesland, Zeitzone an einer Stelle.
-  { pfad: 'region', gruppe: 'einstellungen', ab: E },
+  { pfad: 'region', gruppe: 'einstellungen', ab: E, hilfe: 'werkbank.region' },
   // Sprachen (#729): erlaubte Sprachen und Sprache der Installation.
-  { pfad: 'sprachen', gruppe: 'einstellungen', ab: H },
+  { pfad: 'sprachen', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.sprachen' },
   // Eigene Organisation (#995) mit der Nutzung obenauf (#1170): einmal gesetzt, dann ist Ruhe – darum unter Einstellungen.
   // Ab Haushalt, weil der Haken „auch beruflich genutzt“ gerade für den Haushalt erreichbar sein muss.
-  { pfad: 'organisation', gruppe: 'einstellungen', ab: H },
-  { pfad: 'aufgaben', gruppe: 'einstellungen', ab: H },
-  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', ab: H },
-  { pfad: 'designs', gruppe: 'einstellungen', ab: B },
-  { pfad: 'anbindung', gruppe: 'einstellungen', ab: A },
+  { pfad: 'organisation', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.organisation' },
+  { pfad: 'aufgaben', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.aufgaben', mitte: true },
+  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.anmeldeschutz' },
+  { pfad: 'designs', gruppe: 'einstellungen', ab: B, hilfe: 'werkbank.designs', mitte: true },
+  { pfad: 'anbindung', gruppe: 'einstellungen', ab: A, hilfe: 'werkbank.anbindung' },
   // Systemzustand nimmt „Technik“ (Version und Updates) und die Auslastung der Datenbank auf (#725).
-  { pfad: 'systemzustand', gruppe: 'wartung', ab: E },
-  { pfad: 'protokoll', gruppe: 'wartung', ab: H },
-  { pfad: 'fehlermeldungen', gruppe: 'wartung', ab: H },
+  { pfad: 'systemzustand', gruppe: 'wartung', ab: E, hilfe: 'werkbank.speicherplatz' },
+  { pfad: 'protokoll', gruppe: 'wartung', ab: H, hilfe: 'werkbank.protokoll', mitte: true },
+  { pfad: 'fehlermeldungen', gruppe: 'wartung', ab: H, hilfe: 'werkbank.fehlermeldungen', mitte: true },
   // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.
-  { pfad: 'wartung', gruppe: 'wartung', ab: H },
-  { pfad: 'demo', gruppe: 'wartung', ab: A },
-];
+  { pfad: 'wartung', gruppe: 'wartung', ab: H, hilfe: 'werkbank.wartungsmodus' },
+  { pfad: 'demo', gruppe: 'wartung', ab: A, hilfe: 'werkbank.demo' },
+] as const satisfies readonly Eintrag[];
+
+/** Kennung einer Werkbank-Seite aus der Liste (ohne die Übersicht). */
+export type Bereichskennung = (typeof EINTRAEGE)[number]['pfad'];
+/** Zahlen der Leiste aus der Übersicht, in der Reihenfolge der Liste (#375). */
+export type Zaehler = Extract<(typeof EINTRAEGE)[number], { zaehler: string }>['zaehler'];
+export const ZAEHLER: readonly Zaehler[] = EINTRAEGE.flatMap((e) => ('zaehler' in e ? [e.zaehler] : []));
+/** Hilfeseite je Bereich (#110). */
+export const bereichHilfe = (pfad: Bereichskennung): Hilfeort => EINTRAEGE.find((e) => e.pfad === pfad)!.hilfe;
+
+/**
+ * Verwaltungsbereiche, deren Recht eine Seite öffnet (#818, #1184): die Seite selbst und `auchMit` aus der Liste, diese
+ * zuerst. Eine unbekannte Seite nur mit ihrem eigenen Namen.
+ */
+export function seitenRecht(pfad: string): string[] {
+  const e = EINTRAEGE.find((x) => x.pfad === pfad);
+  return [...(e && 'auchMit' in e ? e.auchMit : []), pfad];
+}
+
+/**
+ * Darf eine Person mit diesen Verwaltungsbereichen die Seite in der Oberfläche öffnen (#818)? `null` = Gesamte Verwaltung;
+ * die Übersicht und „Werkbank anpassen“ darf jeder, der verwalten darf. Der Server prüft dasselbe je Schnittstelle.
+ */
+export const darfSeite = (bereiche: readonly string[] | null, pfad: string): boolean =>
+  bereiche === null || pfad === 'uebersicht' || pfad === 'ansicht' || seitenRecht(pfad).some((b) => bereiche.includes(b));
 
 /** Stufe als Zahl: 0 = Einsteiger … 4 = Alles. */
 export const stufeNr = (v: Vorlage) => STUFEN.indexOf(v);
 
 export const BEREICHE: Bereich[] = EINTRAEGE.map((e) => ({
-  ...e,
+  pfad: e.pfad,
+  gruppe: e.gruppe,
+  ab: e.ab,
   in: STUFEN.filter((v): v is Exclude<Vorlage, 'alles'> => v !== 'alles' && stufeNr(v) >= stufeNr(e.ab)),
   name: t.frei(`werkbank.bereich.${e.pfad}.name`),
   wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
@@ -308,34 +358,10 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
  * die man durchsieht (Protokoll, Fehlermeldungen, Papierkorb). Nur lesende Listen und Einstellungen, die zu
  * einem Abschnitt gehören (lange Datenbankzugriffe unter Datenbank-Anbindung #407, Demo-Übersicht, Technik,
  * Exporte, gesperrte Adressen, Löschkonzept #668), stehen rechts im
- * passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
+ * passenden Abschnitt. Welche Bereiche eine Mitte haben, sagt `mitte: true` in der Liste (#1281); die Übersicht hat
+ * immer eine. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
-export const MIT_MITTE: ReadonlySet<string> = new Set([
-  'uebersicht',
-  'typen',
-  'sichten',
-  'nummernkreise',
-  'pakete',
-  'benutzer',
-  'aufgaben',
-  'designs',
-  'papierkorb',
-  'automatisierungen',
-  'ablaufvorlagen',
-  'postfaecher',
-  'protokoll',
-  'fehlermeldungen',
-  // Datenschutz-Auskünfte (#668): die Sammlung wächst mit jeder Anfrage.
-  'auskuenfte',
-  // Stempel-Vorlagen (#990): klein, aber man legt sie an und bearbeitet sie – wie Nummernkreise und Designs.
-  'stempel',
-  // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
-  'woerter',
-  // Rundgänge (#941): alle in der Mitte, rechts der gewählte (eigene zum Bearbeiten).
-  'rundgaenge',
-  // Tipps (#942): alle in der Mitte, rechts das Formular.
-  'tipps',
-]);
+export const MIT_MITTE: ReadonlySet<string> = new Set(['uebersicht', ...EINTRAEGE.filter((e) => 'mitte' in e).map((e) => e.pfad)]);
 
 export const hatMitte = (bereich: string) => MIT_MITTE.has(bereich);
 

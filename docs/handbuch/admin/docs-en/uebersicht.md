@@ -10,7 +10,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Settings](daten-einstellungen.md) |
-| **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
+| **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md#werkbank-aufgaben), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Load test data](demo.md) |
 <!-- /bereiche:gruppen -->
 
@@ -200,7 +200,7 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | [Region](region.md) | ● | ● | ● | ● | ● |
 | [Languages](sprachen.md) |   | ● | ● | ● | ● |
 | [Own organisation](organisation.md) |   | ● | ● | ● | ● |
-| [Tasks](aufgaben.md) |   | ● | ● | ● | ● |
+| [Tasks](aufgaben.md#werkbank-aufgaben) |   | ● | ● | ● | ● |
 | [Sign-in protection](anmeldeschutz.md) |   | ● | ● | ● | ● |
 | [Themes](designs.md) |   |   |   | ● | ● |
 | [Database connection](installation.md#datenbank-anbindung) |   |   |   |   | ● |
@@ -259,7 +259,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Region](region.md) | Country, federal state and time zone – for public holidays, “today” and the times of reminders and summaries | from Beginner |
 | [Languages](sprachen.md) | If English or another language is also spoken in your library. | from Household |
 | [Own organisation](organisation.md) | Whether the Library is also used for work, plus name, address and controllers of your own business – kept at the organisation in the Library | from Household |
-| [Tasks](aufgaben.md) | Keep an eye on all open tasks of all users | from Household |
+| [Tasks](aufgaben.md#werkbank-aufgaben) | Keep an eye on all open tasks of all users | from Household |
 | [Sign-in protection](anmeldeschutz.md) | Require two-factor, sign-in through a provider, locked addresses | from Household |
 | [Themes](designs.md) | Logo, colours and custom CSS | from Business |
 | [Database connection](installation.md#datenbank-anbindung) | The connection to the database | Everything only |

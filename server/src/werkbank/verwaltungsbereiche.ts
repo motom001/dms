@@ -2,8 +2,9 @@
  * Welche Schnittstelle gehört zu welchem Werkbank-Bereich (#818)? Server und Oberfläche prüfen gleich: Eine Route der
  * Werkbank ohne Recht auf ihren Bereich ist nicht erreichbar, auch nicht über die API.
  *
- * Jede Route mit `zugang: 'admin'` ist hier einem oder mehreren Bereichen aus `BEREICHE` zugeordnet (mehrere, wenn
- * verschiedene Seiten dieselbe Liste lesen). `JEDER` = jeder, der verwalten darf (Übersicht, eigene Leiste, laufende
+ * Jede Route mit `zugang: 'admin'` ist hier einem oder mehreren Bereichen aus der Liste der Werkbank-Seiten zugeordnet
+ * (`shared/src/werkbankansicht.ts`, #1281; mehrere, wenn verschiedene Seiten dieselbe Liste lesen). Die Namen prüft tsc
+ * gegen die Liste (`Bereichskennung`), ein Test, dass jede Seite der Liste mindestens eine Route hat. `JEDER` = jeder, der verwalten darf (Übersicht, eigene Leiste, laufende
  * Aufträge, Namen der Rollen). Eine Route ohne Zuordnung dürfen nur Personen mit „Gesamte Verwaltung“ – Vorgabe
  * „nein“; ein Test schlägt fehl, wenn eine Route keinen Eintrag hat.
  *
@@ -11,6 +12,7 @@
  */
 import type { HeikleHandlung } from '../../../shared/src/verwaltungsrecht';
 import { brauchtFrisch, istPaketdatenBereich, type PaketdatenArt } from '../../../shared/src/paketdaten';
+import { seitenRecht, type Bereichskennung } from '../../../shared/src/werkbankansicht';
 
 /** Jeder, der verwalten darf. */
 export const JEDER = 'uebersicht';
@@ -18,10 +20,14 @@ export const JEDER = 'uebersicht';
 export const NUR_GESAMT = '*';
 
 type Methode = 'GET' | 'POST' | 'PUT' | 'DELETE';
+/** Ein Bereich aus der Liste der Werkbank-Seiten, `JEDER` oder `NUR_GESAMT`. */
+type Bereich = Bereichskennung | typeof JEDER | typeof NUR_GESAMT;
 /** [Methode oder „alle“, Pfad oder Anfang mit „*“ am Ende, Bereiche] – der erste passende Eintrag gilt. */
 type Regel = [Methode | '*', string, string[]];
 
-const R = (m: Methode | '*', p: string, ...b: string[]): Regel => [m, p, b];
+const R = (m: Methode | '*', p: string, ...b: Bereich[]): Regel => [m, p, b];
+/** Regel für die Schnittstellen einer Seite, deren Recht auch andere Bereiche geben (`auchMit` in der Liste). */
+const S = (m: Methode | '*', p: string, seite: Bereichskennung): Regel => [m, p, seitenRecht(seite)];
 
 const REGELN: Regel[] = [
   // Für alle, die verwalten: Übersicht, eigene Leiste (die Vorlage für alle nur „Gesamte Verwaltung“), laufende
@@ -89,8 +95,8 @@ const REGELN: Regel[] = [
   R('GET', '/api/werkbank/datenschutz', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/datenschutz*', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/auskunft*', 'auskuenfte'),
-  // Löschprotokoll (#1184): eigener Bereich; wer das Löschkonzept verwaltet, behält es.
-  R('*', '/api/werkbank/loeschprotokoll*', 'loeschkonzept', 'loeschprotokoll'),
+  // Löschprotokoll (#1184): eigener Bereich; wer das Löschkonzept verwaltet, behält es (`auchMit` in der Liste).
+  S('*', '/api/werkbank/loeschprotokoll*', 'loeschprotokoll'),
   // Eigene Organisation (#995): Verweis auf die Mappe, Rollen für das Merkmal, Notizen.
   R('*', '/api/werkbank/organisation*', 'organisation'),
   R('*', '/api/werkbank/darf-weg', 'aufbewahrung'),
@@ -149,6 +155,9 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/beispielablage*', 'beispielablage'),
   R('*', '/api/beispiele', 'demo'),
 ];
+
+/** Bereiche, denen mindestens eine Route zugeordnet ist (für den Test: jede Seite der Liste hat eine). */
+export const bereicheMitRoute = (): ReadonlySet<string> => new Set(REGELN.flatMap(([, , b]) => b));
 
 const passt = (muster: string, pfad: string) => (muster.endsWith('*') ? pfad.startsWith(muster.slice(0, -1)) : pfad === muster);
 
