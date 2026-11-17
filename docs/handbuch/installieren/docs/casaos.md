@@ -8,9 +8,9 @@ So installierst du Ablago auf einem Rechner mit **CasaOS**, z. B. einem Raspberr
 !!! tip "ZimaOS statt CasaOS?"
     Die Schritte für ZimaOS stehen auf einer [eigenen Seite](zimaos.md).
 
-## 1. DMS-Store hinzufügen
+## 1. Ablago-Store hinzufügen {#1-dms-store-hinzufugen}
 
-Ablago steht (noch) nicht im offiziellen CasaOS App Store. Du fügst einmal den DMS-Store als zusätzliche Quelle hinzu:
+Ablago steht (noch) nicht im offiziellen CasaOS App Store. Du fügst einmal den Ablago-Store als zusätzliche Quelle hinzu:
 
 1. **App Store** öffnen.
 2. Unter der App-Liste auf **Weitere Apps** (*More apps*) gehen und das Feld für eine weitere Quelle öffnen.

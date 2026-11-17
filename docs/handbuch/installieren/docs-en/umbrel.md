@@ -5,9 +5,9 @@
 
 This is how you install Ablago on a home server with **umbrelOS**, e.g. an Umbrel Home or a mini PC with umbrelOS. You need neither a Compose file nor the command line. The app brings its own database and is already connected to it.
 
-## 1. Add the DMS store {#1-dms-store-hinzufugen}
+## 1. Add the Ablago store {#1-dms-store-hinzufugen}
 
-Ablago is not (yet) in the official Umbrel App Store. You add the DMS store once as an additional source:
+Ablago is not (yet) in the official Umbrel App Store. You add the Ablago store once as an additional source:
 
 1. Open the **App Store**.
 2. Click **⋯** at the top right and choose **Community App Stores**.
