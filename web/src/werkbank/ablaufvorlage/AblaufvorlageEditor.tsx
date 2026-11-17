@@ -8,7 +8,6 @@ import {
   vorlagenTypen,
   wannText,
   type AblaufvorlageAnsicht,
-  type AblaufvorlageDaten,
   type Frage,
 } from '../../../../shared/src/ablaufvorlagen';
 import { automatisierungApi } from '../../api/automatisierung';
@@ -17,7 +16,7 @@ import { geheZu, loeseWache } from '../../ort';
 import { t } from '../../sprache';
 import { Speicherleiste, useEntwurf } from '../../Speicherleiste';
 import { Fassungen, Feld, FeldGruppe, HakenFeld, Knopf } from '../../bausteine';
-import { FEST, pfad, type AblaufvorlagenZustand } from './zustand';
+import { FEST, pfad, type AblaufvorlagenZustand, type Entwurf } from './zustand';
 import { KartenEditor } from './KartenEditor';
 import { DatumFrage, datumGrund, TypenWahl, VorlageKopf, WannEditor } from './EditorTeile';
 import { Ausprobieren } from './Ausprobieren';
@@ -25,7 +24,6 @@ import { GeradeBenutzt, Verlauf } from './Verlauf';
 
 /* ---------- Editor ---------- */
 
-export type Entwurf = AblaufvorlageDaten & { aktiv: boolean };
 const LEER: Entwurf = {
   name: '',
   beschreibung: '',

@@ -1,23 +1,11 @@
 import { t, tn } from '../../sprache';
 import type { WerkbankUebersicht } from '../../api/betrieb';
-import type { Schwere } from '../../../../shared/src/meldungen';
 import { ENGPASS_VARIABLE } from '../../../../shared/src/systemlast';
 import { AufrufeUebersicht } from '../AutomatisierungAufruf';
-import type { ReactNode } from 'react';
-import { datum, platzText } from './hilfen';
+import { datum, platzText, type Hinweis } from './hilfen';
 import { eingangsordner, sicherungUndAnbindung, paketeUndEinrichtung, mailUndTexterkennung, aufgabenUndMappen } from './hinweise-betrieb';
 
-/** Eine Meldung der Übersicht; `schluessel` bleibt je Meldungsart gleich (#816: Akzeptieren), `datum` sortiert innerhalb der Stufe. */
-export interface Hinweis {
-  schluessel: string;
-  art: Schwere;
-  text: ReactNode;
-  ziel: string;
-  knopf: string;
-  datum?: string | null;
-  /** Statt „Zur Kenntnis nehmen“: ein Knopf, der den Hinweis endgültig abschließt (#821 „Nein, danke“, #815 „Gelesen“). */
-  erledigen?: string;
-}
+export type { Hinweis } from './hilfen';
 
 /** Alle Meldungen der Übersicht, ungeordnet; `ordneMeldungen` sortiert sie und trennt die akzeptierten ab (#816). */
 export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hinweis[] {
@@ -35,7 +23,7 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
 }
 
 /** Notfallzugang und Notfallcode (#108, #815), Speicherplatz (#116). */
-export function notfallUndSpeicher(u: WerkbankUebersicht, h: Hinweis[]) {
+function notfallUndSpeicher(u: WerkbankUebersicht, h: Hinweis[]) {
   // Notfallzugang (#108): bis er umbenannt oder deaktiviert ist.
   for (const n of u.notfallzugaenge ?? [])
     h.push({
@@ -109,7 +97,7 @@ export function notfallUndSpeicher(u: WerkbankUebersicht, h: Hinweis[]) {
 }
 
 /** Automatisierungen (#675) und Mappen-Abläufe (#1044). */
-export function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
+function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
   // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
   // Automatisierungen (#675): angehaltene zuerst, dann fehlgeschlagene Läufe.
   const au = u.automatisierungen;
@@ -209,7 +197,7 @@ export function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
 }
 
 /** Auslastung (#409), Engpässe (#544), Erweiterungen (#562), Wartung. */
-export function lastUndWartung(u: WerkbankUebersicht, h: Hinweis[]) {
+function lastUndWartung(u: WerkbankUebersicht, h: Hinweis[]) {
   const sp = u.speicherplatz;
   if (u.auslastung?.length)
     h.push({
@@ -285,7 +273,7 @@ export function lastUndWartung(u: WerkbankUebersicht, h: Hinweis[]) {
 }
 
 /** Schlüssel für Passwörter (#39) und Anmeldung der Postfächer (#358). */
-export function tresorUndPostfaecher(u: WerkbankUebersicht, h: Hinweis[]) {
+function tresorUndPostfaecher(u: WerkbankUebersicht, h: Hinweis[]) {
   const tr = u.tresor;
   if (tr && tr.zustand === 'fehlt')
     h.push({

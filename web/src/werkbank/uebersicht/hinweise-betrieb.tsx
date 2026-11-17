@@ -6,7 +6,7 @@ import { gebietsschema } from '../../../../shared/src/sprache';
 import { sicherungsHinweise } from '../Sicherung';
 import { exportHinweise } from '../Vollexport';
 import { bytes, datum, zahl } from './hilfen';
-import type { Hinweis } from './hinweise';
+import type { Hinweis } from './hilfen';
 
 /* Meldungen der Übersicht (#68, #816), zweiter Teil: Post, Sicherung, Anbindung, Pakete, Einrichtung, Texterkennung, Aufgaben. */
 

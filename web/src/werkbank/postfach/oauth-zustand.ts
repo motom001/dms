@@ -3,7 +3,17 @@ import { t } from '../../sprache';
 import { eingaengeApi, type OAuthAnbieter, type OAuthAppEingabe, type OAuthAppsStand } from '../../api/eingaenge';
 import { useEntwurf } from '../../Speicherleiste';
 import type { Meldung } from './hilfen';
-import type { OAuthZiel } from './OAuthBereich';
+import type { OAuthStatus } from '../../api/betrieb';
+
+/** Was angemeldet wird: ein Postfach (#358) oder der E-Mail-Versand (#813). */
+export interface OAuthZiel {
+  oauth: OAuthStatus | null | undefined;
+  start(): Promise<{ url: string }>;
+  geraet(): Promise<{ code: string; adresse: string; bis: string; intervall: number }>;
+  geraetPruefen(): Promise<{ fertig: boolean; text: string }>;
+  abmelden(): Promise<void>;
+  neuLaden(): Promise<void>;
+}
 
 export type Geraetecode = { code: string; adresse: string; bis: string; intervall: number };
 

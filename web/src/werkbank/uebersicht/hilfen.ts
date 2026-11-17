@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import type { Schwere } from '../../../../shared/src/meldungen';
 import { t } from '../../sprache';
 import { gebietsschema } from '../../../../shared/src/sprache';
 
@@ -10,3 +12,15 @@ export const platzText = (o: Array<{ frei: number | null }>) => {
   const f = Math.min(...o.map((x) => x.frei ?? Infinity));
   return Number.isFinite(f) ? bytes(f) : t('werkbank.uebersicht.genug-platz');
 };
+
+/** Eine Meldung der Übersicht; `schluessel` bleibt je Meldungsart gleich (#816: Akzeptieren), `datum` sortiert innerhalb der Stufe. */
+export interface Hinweis {
+  schluessel: string;
+  art: Schwere;
+  text: ReactNode;
+  ziel: string;
+  knopf: string;
+  datum?: string | null;
+  /** Statt „Zur Kenntnis nehmen“: ein Knopf, der den Hinweis endgültig abschließt (#821 „Nein, danke“, #815 „Gelesen“). */
+  erledigen?: string;
+}

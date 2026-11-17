@@ -7,20 +7,10 @@ import { Speicherleiste } from '../../Speicherleiste';
 import { Hilfe } from '../../Hilfe';
 import { Feld, Knopf } from '../../bausteine';
 import { ANBIETER, rueckrufOk, zeit, type Meldung } from './hilfen';
-import { anmeldeAktionen, useGeraetecode, useOAuthApp } from './oauth-zustand';
+import { anmeldeAktionen, useGeraetecode, useOAuthApp, type OAuthZiel } from './oauth-zustand';
 import type { PostfachZustand } from './zustand';
 
 type App = ReturnType<typeof useOAuthApp>;
-
-/** Was angemeldet wird: ein Postfach (#358) oder der E-Mail-Versand (#813). */
-export interface OAuthZiel {
-  oauth: OAuthStatus | null | undefined;
-  start(): Promise<{ url: string }>;
-  geraet(): Promise<{ code: string; adresse: string; bis: string; intervall: number }>;
-  geraetPruefen(): Promise<{ fertig: boolean; text: string }>;
-  abmelden(): Promise<void>;
-  neuLaden(): Promise<void>;
-}
 
 export function postfachZiel(p: PostfachAnsicht, z: PostfachZustand): OAuthZiel {
   return {

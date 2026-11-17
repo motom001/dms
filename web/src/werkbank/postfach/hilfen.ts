@@ -1,6 +1,7 @@
 import { t } from '../../sprache';
 import type { OAuthAnbieter, PostfachAnsicht, PostfachEingabe } from '../../api/eingaenge';
 import { gebietsschema } from '../../../../shared/src/sprache';
+import type { BereichListe } from '../../bausteine';
 
 /**
  * Werkbank → Postfächer (#196): Mails per IMAP abholen, jede Mail wird neue Post.
@@ -58,3 +59,15 @@ export const alsEingabe = (v: PostfachAnsicht): PostfachEingabe => ({
   anmeldung: v.anmeldung ?? 'passwort',
   anbieter: v.anbieter ?? 'microsoft',
 });
+
+/** Bereiche eines Postfachs (#1000): Anmeldung beim Anbieter nur mit OAuth, der Stand erst nach dem Anlegen. */
+export type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
+export function postfachBereiche(oauth: boolean, gespeichert: boolean): BereichListe<PostfachBereich> {
+  return [
+    ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')],
+    ['verbindung', t('werkbank.postfaecher.bereich.verbindung')],
+    ...(oauth ? [['anbieter', t('werkbank.postfaecher.anmeldung-per-oauth-2')] as const] : []),
+    ['abholen', t('werkbank.postfaecher.bereich.abholen')],
+    ...(gespeichert ? [['stand', t('werkbank.postfaecher.stand')] as const, ['fassungen', t('oberflaeche.fassungen.titel')] as const] : []),
+  ];
+}

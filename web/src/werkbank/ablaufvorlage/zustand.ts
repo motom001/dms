@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AblaufvorlageAnsicht } from '../../../../shared/src/ablaufvorlagen';
+import type { AblaufvorlageAnsicht, AblaufvorlageDaten } from '../../../../shared/src/ablaufvorlagen';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { automatisierungApi } from '../../api/automatisierung';
 import type { Klappe } from '../../bausteine';
@@ -36,3 +36,6 @@ export const zeit = (iso: string | null | undefined) =>
 /** Die Abschnitte des Editors sind nicht klappbar – Fassungen (#1006) ebenso. */
 export const FEST: Klappe = { offen: true, umschalten: () => undefined, fest: true };
 export const pfad = (kennung: string) => `/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}`;
+
+/** Entwurf einer Vorlage im Editor: ihre Daten und ob sie an ist. */
+export type Entwurf = AblaufvorlageDaten & { aktiv: boolean };

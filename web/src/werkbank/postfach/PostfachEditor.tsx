@@ -5,26 +5,14 @@ import { useDaten } from '../../daten';
 import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../../Speicherleiste';
 import { Hilfe } from '../../Hilfe';
 import { PostfachStand } from '../PostfachStand';
-import { Bereich, Fassungen, Feld, HakenFeld, Schalter, useBereiche, type BereichListe, type Klappe } from '../../bausteine';
-import { alsEingabe, NEU, type Meldung } from './hilfen';
+import { Bereich, Fassungen, Feld, HakenFeld, Schalter, useBereiche, type Klappe } from '../../bausteine';
+import { alsEingabe, NEU, postfachBereiche, type Meldung, type PostfachBereich } from './hilfen';
 import { useRueckkehr, type PostfachZustand } from './zustand';
 import { postfachAktionen } from './postfach-aktionen';
 import { Verbindung } from './Verbindung';
 import { OAuthBereich, postfachZiel } from './OAuthBereich';
 
 type Setze = (x: Partial<PostfachEingabe>) => void;
-
-/** Bereiche eines Postfachs (#1000): Anmeldung beim Anbieter nur mit OAuth, der Stand erst nach dem Anlegen. */
-export type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
-function postfachBereiche(oauth: boolean, gespeichert: boolean): BereichListe<PostfachBereich> {
-  return [
-    ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')],
-    ['verbindung', t('werkbank.postfaecher.bereich.verbindung')],
-    ...(oauth ? [['anbieter', t('werkbank.postfaecher.anmeldung-per-oauth-2')] as const] : []),
-    ['abholen', t('werkbank.postfaecher.bereich.abholen')],
-    ...(gespeichert ? [['stand', t('werkbank.postfaecher.stand')] as const, ['fassungen', t('oberflaeche.fassungen.titel')] as const] : []),
-  ];
-}
 
 export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
   const d = useDaten();

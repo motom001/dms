@@ -23,8 +23,7 @@ import {
   ZeitraumEingabe,
   type ZeitraumRoh,
 } from '../../bausteine';
-import { pfad } from './zustand';
-import type { Entwurf } from './AblaufvorlageEditor';
+import { pfad, type Entwurf } from './zustand';
 
 /**
  * Mappentypen fürs Menü „Mappe“ (#1175): dieselbe Mehrfachauswahl wie im Verweisfeld einer Mappe – Suchfeld mit

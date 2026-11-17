@@ -3,7 +3,7 @@
  * Seite mit ihren Abschnitten, Zeitplan, Probe-Wiederherstellung und der Grund zum Notfallblatt stehen dort in Teilen.
  */
 export { zeit } from './sicherungFormat';
-export { NOTFALLBLATT_URL, meldeSicherung, useSicherung, useVerwaltetVerschluesselung, type SicherungZustand } from './sicherung/zustand';
-export { sicherungsHinweise, type SicherungsHinweis } from './sicherung/hinweise';
+export { NOTFALLBLATT_URL, meldeSicherung, useSicherung, useVerwaltetVerschluesselung } from './sicherung/zustand';
+export { sicherungsHinweise } from './sicherung/hinweise';
 export { SicherungPanel } from './sicherung/SicherungPanel';
 export { Erledigt, NotfallblattGrund } from './sicherung/NotfallblattGrund';

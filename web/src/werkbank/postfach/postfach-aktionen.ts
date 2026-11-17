@@ -3,9 +3,8 @@ import { eingaengeApi, type PostfachAnsicht, type PostfachEingabe } from '../../
 import { useDaten } from '../../daten';
 import { geheZu, loeseWache } from '../../ort';
 import { fehlerBereiche, type BereichListe, type KnopfErgebnis, type useBereiche } from '../../bausteine';
-import { alsEingabe, gleicherServer, type Meldung } from './hilfen';
+import { alsEingabe, gleicherServer, type Meldung, type PostfachBereich } from './hilfen';
 import type { PostfachZustand } from './zustand';
-import type { PostfachBereich } from './PostfachEditor';
 
 /** Speichern, „Verbindung testen“, „Jetzt abrufen“ und Löschen eines Postfachs. */
 export function postfachAktionen({
