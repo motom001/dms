@@ -30,8 +30,10 @@ rauchtest(
       { status: 503, pfad: /^\/api\/konto\/status$/ },
       { status: 503, pfad: /^\/api\/gesundheit$/ },
     ],
-    // … und zwischen Beenden und Start lehnt der Port die Verbindung kurz ab.
-    neustart: [/^\/api\/konto\/status$/],
+    // … und zwischen Beenden und Start lehnt der Port die Verbindung kurz ab – für den Stand, den der Assistent abfragt,
+    // und für die Gesundheit, die die Oberfläche nach einer gescheiterten Anfrage prüft (#1419). Laufende Anfragen
+    // beantwortet Ablago vor dem Freigeben des Ports noch; ein Abbruch (Reset, leere Antwort) bleibt ein Fehler.
+    neustart: [/^\/api\/konto\/status$/, /^\/api\/gesundheit$/],
   },
   async (s, k) => {
     await warteAufAblago();
