@@ -1279,14 +1279,6 @@
       "count": 1
     }
   },
-  "web/src/assistent/Schritte.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/bereiche.tsx": {
     "complexity": {
       "count": 1
@@ -1303,30 +1295,13 @@
       "count": 1
     }
   },
-  "web/src/einrichtung/Einrichtung.tsx": {
+  "web/src/einrichtung/entwurf.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 13
-    },
-    "complexity": {
-      "count": 3
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 4
     }
   },
   "web/src/konto.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/lasttest.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1337,14 +1312,6 @@
   },
   "web/src/profil/DokumentPasswoerter.tsx": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "web/src/profil/Profil.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1522,14 +1489,6 @@
   "web/src/werte.ts": {
     "complexity": {
       "count": 2
-    }
-  },
-  "web/src/wiederherstellen.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
     }
   }
 }

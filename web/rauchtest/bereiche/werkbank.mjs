@@ -33,6 +33,9 @@ rauchtest('Werkbank: Mappentyp bearbeiten (Felder)', { als: LENA }, async (s) =>
   await felder.getByRole('button', { name: '+ Feld hinzufügen' }).click();
   await felder.getByRole('textbox', { name: 'Bezeichnung' }).fill('Kundenportal');
   await bearbeitung.getByRole('button', { name: 'Mappentyp speichern' }).click();
+  // Gesperrt ist der Knopf auch, solange gespeichert wird – erst die Meldung sagt, dass der Server fertig ist. Sonst
+  // bricht der Wechsel in die Ablage das Speichern ab oder lädt die Typen, bevor das Feld da ist.
+  await bearbeitung.getByText('Mappentyp gespeichert.').waitFor();
   await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
   await felder.getByRole('button', { name: /^Kundenportal kundenportal/ }).waitFor();
   // Das neue Feld steht im Formular der Mappen.

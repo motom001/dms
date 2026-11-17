@@ -2008,12 +2008,6 @@
       "ErkFund"
     ]
   },
-  "web/src/assistent/Schritte.tsx": {
-    "exports": [
-      "NR",
-      "SCHRITTE"
-    ]
-  },
   "web/src/assistent/datei.ts": {
     "exports": [
       "ersterProblemschritt"
@@ -2136,11 +2130,6 @@
     "exports": [
       "SprachWahl",
       "mitText"
-    ]
-  },
-  "web/src/einrichtung/Einrichtung.tsx": {
-    "exports": [
-      "TYP_BEREICHE"
     ]
   },
   "web/src/entdecken/stand.ts": {
