@@ -1155,14 +1155,6 @@
       "count": 1
     }
   },
-  "web/src/ablage/Aufgaben.tsx": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/ablage/EmailMehrere.tsx": {
     "complexity": {
       "count": 1
