@@ -504,7 +504,6 @@ export class Anmeldesperre {
     return true;
   }
 
-  /** Nach erfolgreicher Anmeldung: Zähler für Konto und IP zurücksetzen. */
   /**
    * Vorab gezählten Versuch zurücknehmen, ohne dass geprüft wurde (#1358: Warteschlange der Passwortprüfungen voll,
    * 503). Anders als `erfolg` löscht das keine Zähler – es nimmt nur genau diesen einen Versuch zurück.
@@ -517,6 +516,7 @@ export class Anmeldesperre {
     if (email && v.gesamt) await this.zustand.erhoehe(KONTO_GESAMT_ART, email, -1);
   }
 
+  /** Nach erfolgreicher Anmeldung: Zähler für Konto und IP zurücksetzen. */
   async erfolg(email: string, ip: string, v?: Versuch) {
     const a = norm(ip);
     await this.zustand.loesche(KONTO, `${a}|${email}`);
