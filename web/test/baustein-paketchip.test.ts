@@ -68,7 +68,7 @@ describe('Baustein PaketChip (#1192)', () => {
       'werkbank/Sichten.tsx',
       'werkbank/Nummernkreise.tsx',
       'werkbank/Woerter.tsx',
-      'werkbank/Automatisierungen.tsx',
+      'werkbank/automatisierungen/liste.tsx',
       'werkbank/Ablaufvorlagen.tsx',
       'werkbank/paket-erstellen/auswahl.tsx',
     ]) {

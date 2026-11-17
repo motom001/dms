@@ -2219,11 +2219,6 @@
       "curlBeispiel"
     ]
   },
-  "web/src/werkbank/Automatisierungen.tsx": {
-    "exports": [
-      "zielVon"
-    ]
-  },
   "web/src/werkbank/Eingangsordner.tsx": {
     "exports": [
       "groesse"
