@@ -1193,11 +1193,6 @@
       "count": 1
     }
   },
-  "web/src/ablage/Schwaerzen.tsx": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Startseite.tsx": {
     "ablago/bausteine": {
       "count": 2
