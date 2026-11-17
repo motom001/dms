@@ -33,6 +33,73 @@ interface MappeMitDokumenten {
   dokumente: Dokument[];
 }
 
+/** Ohne eingerichteten Versand (#151): Hinweis, für Administratoren mit dem Weg in die Werkbank. */
+function NichtBereit({ admin }: { admin: boolean }) {
+  return (
+    <div className="hinweis warn">
+      <p>
+        {t('ablage.emailmehrere.der-e-mail-versand')}
+        {admin ? (
+          <>
+            {' '}
+            {tn('ablage.emailmehrere.das-geht-unter', {
+              link: (
+                <Link to="/werkbank/betrieb" className="verweis">
+                  {t('ablage.emailmehrere.werkbank-e-mail-und')}
+                </Link>
+              ),
+            })}
+          </>
+        ) : (
+          t('ablage.emailmehrere.bitte-einen-administrator-ihn')
+        )}
+      </p>
+    </div>
+  );
+}
+
+/** „Auswählen“: je Mappe ihre Dokumente mit Anlagen (#998) darunter zum Anhaken. */
+function DokumentAuswahl({
+  liste,
+  gewaehlt,
+  umschalten,
+}: {
+  liste: MappeMitDokumenten[] | null;
+  gewaehlt: Set<string>;
+  umschalten(id: string): void;
+}) {
+  if (liste === null) return <p className="leise klein">{t('ablage.emailmehrere.lade-dokumente')}</p>;
+  return (
+    <FeldGruppe beschriftung={t('ablage.emailmehrere.dokumente')} beschriftungVerbergen className="anhangwahl">
+      <ul className="emailmappen">
+        {liste.map((m) => (
+          <li key={m.id}>
+            <strong className="klein">{m.titel}</strong>
+            {!m.dokumente.length ? (
+              <p className="leise klein">{t('ablage.emailmehrere.keine-dokumente-2')}</p>
+            ) : (
+              <ul>
+                {gruppiere(m.dokumente)
+                  .flatMap((g) => [g.haupt, ...g.anlagen])
+                  .map((x) => (
+                    <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}>
+                      <label className="haken">
+                        <input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} />
+                        <span>
+                          {x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </FeldGruppe>
+  );
+}
+
 export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: string): void }) {
   const d = useDaten();
   const { ich } = useKonto();
@@ -162,25 +229,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
           <p>{t('ablage.emailmehrere.hoechstens-mappen-in-einer', { EMAIL_MAPPEN_HOECHSTENS })}</p>
         </div>
       ) : bereit === false ? (
-        <div className="hinweis warn">
-          <p>
-            {t('ablage.emailmehrere.der-e-mail-versand')}
-            {ich?.rolle === 'admin' ? (
-              <>
-                {' '}
-                {tn('ablage.emailmehrere.das-geht-unter', {
-                  link: (
-                    <Link to="/werkbank/betrieb" className="verweis">
-                      {t('ablage.emailmehrere.werkbank-e-mail-und')}
-                    </Link>
-                  ),
-                })}
-              </>
-            ) : (
-              t('ablage.emailmehrere.bitte-einen-administrator-ihn')
-            )}
-          </p>
-        </div>
+        <NichtBereit admin={ich?.rolle === 'admin'} />
       ) : (
         <form
           onSubmit={(e) => {
@@ -237,38 +286,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
               </label>
             </FeldGruppe>
             {umfang === 'alle' && <OriginalEmailWahl emails={emails} an={eml} setze={setEml} />}
-            {umfang === 'auswahl' &&
-              (liste === null ? (
-                <p className="leise klein">{t('ablage.emailmehrere.lade-dokumente')}</p>
-              ) : (
-                <FeldGruppe beschriftung={t('ablage.emailmehrere.dokumente')} beschriftungVerbergen className="anhangwahl">
-                  <ul className="emailmappen">
-                    {liste.map((m) => (
-                      <li key={m.id}>
-                        <strong className="klein">{m.titel}</strong>
-                        {!m.dokumente.length ? (
-                          <p className="leise klein">{t('ablage.emailmehrere.keine-dokumente-2')}</p>
-                        ) : (
-                          <ul>
-                            {gruppiere(m.dokumente)
-                              .flatMap((g) => [g.haupt, ...g.anlagen])
-                              .map((x) => (
-                                <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}>
-                                  <label className="haken">
-                                    <input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} />
-                                    <span>
-                                      {x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small>
-                                    </span>
-                                  </label>
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </FeldGruppe>
-              ))}
+            {umfang === 'auswahl' && <DokumentAuswahl liste={liste} gewaehlt={gewaehlt} umschalten={umschalten} />}
             {docs.length > 0 && stempel && vorlagen && (
               <StempelFelder
                 wahl={stempel}

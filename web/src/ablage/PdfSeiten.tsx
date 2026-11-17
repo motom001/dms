@@ -72,6 +72,122 @@ function postRueckfrage(name: string, anzahlTeile: number, anlagen: number) {
   });
 }
 
+/** Eine Kachel (#335): Bild, drehen, verschieben, löschen, „Teilen ab hier“ und „Anlage ab hier“ (#1162). */
+function Kachel({
+  s,
+  i,
+  pos,
+  teile,
+  anlagen,
+  info,
+  letzte,
+  anlagenMoeglich,
+  gezogen,
+  setGezogen,
+  element,
+  fallen,
+  taste,
+  aendere,
+  verschiebe,
+}: {
+  s: Seite;
+  i: number;
+  pos: number;
+  teile: number[];
+  anlagen: number[];
+  info: Info;
+  letzte: boolean;
+  anlagenMoeglich: boolean;
+  gezogen: number | undefined;
+  setGezogen(i: number | undefined): void;
+  element(el: HTMLLIElement | null): void;
+  fallen(e: DragEvent): void;
+  taste(e: KeyboardEvent): void;
+  aendere(p: Partial<Seite>): void;
+  verschiebe(nach: number): void;
+}) {
+  const neuerTeil = !s.weg && pos > 0 && s.teilAb;
+  const anlage = anlagen.includes(pos) ? anlageNr(pos, teile, anlagen) : 0;
+  return (
+    <li
+      ref={element}
+      tabIndex={0}
+      className={`seite ${s.weg ? 'weg' : ''} ${neuerTeil ? 'teilab' : ''} ${anlage ? 'anlageab' : ''} ${gezogen === i ? 'zieht' : ''}`}
+      aria-label={kachelText(s, neuerTeil, anlage)}
+      draggable
+      onDragStart={() => setGezogen(i)}
+      onDragEnd={() => setGezogen(undefined)}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={fallen}
+      onKeyDown={taste}>
+      {neuerTeil && <span className="teilmarke">{t('ablage.pdfseiten.teil', { wert: teile.indexOf(pos) + 2 })}</span>}
+      {anlage > 0 && <span className="teilmarke anlagemarke">{t('ablage.pdfseiten.anlage-marke', { nr: anlage })}</span>}
+      <div className="seitenbild">
+        {s.nr <= info.bilderBis ? (
+          <img src={seitenbildUrl(info, s.nr)} alt="" loading="lazy" style={{ transform: `rotate(${s.drehung}deg)` }} draggable={false} />
+        ) : (
+          <span className="leise">{s.nr}</span>
+        )}
+      </div>
+      <span className="klein">{t('ablage.pdfseiten.seite-2', { nr: s.nr })}</span>
+      <div className="seitenknoepfe">
+        <Knopf
+          art="link"
+          groesse="klein"
+          title={t('ablage.pdfseiten.nach-links-drehen')}
+          nurSymbol={t('ablage.pdfseiten.seite-nach-links-drehen', { nr: s.nr })}
+          gesperrt={s.weg}
+          onClick={() => aendere({ drehung: (s.drehung + 270) % 360 })}>
+          <Symbol name="zuruecksetzen" />
+        </Knopf>
+        <Knopf
+          art="link"
+          groesse="klein"
+          title={t('ablage.pdfseiten.nach-rechts-drehen')}
+          nurSymbol={t('ablage.pdfseiten.seite-nach-rechts-drehen', { nr: s.nr })}
+          gesperrt={s.weg}
+          onClick={() => aendere({ drehung: (s.drehung + 90) % 360 })}>
+          <Symbol name="neu-laden" />
+        </Knopf>
+        <Knopf
+          art="link"
+          groesse="klein"
+          title={t('ablage.pdfseiten.nach-vorn')}
+          nurSymbol={t('ablage.pdfseiten.seite-nach-vorn', { nr: s.nr })}
+          gesperrt={i === 0}
+          onClick={() => verschiebe(i - 1)}>
+          <Symbol name="pfeil-links" />
+        </Knopf>
+        <Knopf
+          art="link"
+          groesse="klein"
+          title={t('ablage.pdfseiten.nach-hinten')}
+          nurSymbol={t('ablage.pdfseiten.seite-nach-hinten', { nr: s.nr })}
+          gesperrt={letzte}
+          onClick={() => verschiebe(i + 1)}>
+          <Symbol name="pfeil-rechts" />
+        </Knopf>
+      </div>
+      <div className="seitenknoepfe">
+        {/* Erst mit „Übernehmen“ wirksam, bis dahin „Behalten“ (Leitsatz 5): kein roter Link. */}
+        <Knopf art="link" groesse="klein" onClick={() => aendere({ weg: !s.weg })}>
+          {s.weg ? t('ablage.pdfseiten.behalten') : t('ablage.pdfseiten.loeschen')}
+        </Knopf>
+        {pos > 0 && (
+          <Knopf art="link" groesse="klein" aria-pressed={s.teilAb} onClick={() => aendere({ teilAb: !s.teilAb, anlageAb: false })}>
+            {s.teilAb ? t('ablage.pdfseiten.nicht-teilen') : t('ablage.pdfseiten.teilen-ab-hier')}
+          </Knopf>
+        )}
+        {pos > 0 && anlagenMoeglich && (
+          <Knopf art="link" groesse="klein" aria-pressed={s.anlageAb} onClick={() => aendere({ anlageAb: !s.anlageAb, teilAb: false })}>
+            {s.anlageAb ? t('ablage.pdfseiten.keine-anlage') : t('ablage.pdfseiten.anlage-ab-hier')}
+          </Knopf>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export function PdfSeiten({
   d,
   post,
@@ -225,102 +341,27 @@ export function PdfSeiten({
       <ol className="seitenraster">
         {seiten.map((s, i) => {
           const pos = bleiben.indexOf(s);
-          const neuerTeil = !s.weg && pos > 0 && s.teilAb;
-          const anlage = anlagen.includes(pos) ? anlageNr(pos, teile, anlagen) : 0;
           return (
-            <li
+            <Kachel
               key={s.nr}
-              ref={(el) => {
+              s={s}
+              i={i}
+              pos={pos}
+              teile={teile}
+              anlagen={anlagen}
+              info={info}
+              letzte={i === seiten.length - 1}
+              anlagenMoeglich={anlagenMoeglich}
+              gezogen={gezogen}
+              setGezogen={setGezogen}
+              element={(el) => {
                 kacheln.current[i] = el;
               }}
-              tabIndex={0}
-              className={`seite ${s.weg ? 'weg' : ''} ${neuerTeil ? 'teilab' : ''} ${anlage ? 'anlageab' : ''} ${gezogen === i ? 'zieht' : ''}`}
-              aria-label={kachelText(s, neuerTeil, anlage)}
-              draggable
-              onDragStart={() => setGezogen(i)}
-              onDragEnd={() => setGezogen(undefined)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => fallen(i, e)}
-              onKeyDown={(e) => taste(i, e)}>
-              {neuerTeil && <span className="teilmarke">{t('ablage.pdfseiten.teil', { wert: teile.indexOf(pos) + 2 })}</span>}
-              {anlage > 0 && <span className="teilmarke anlagemarke">{t('ablage.pdfseiten.anlage-marke', { nr: anlage })}</span>}
-              <div className="seitenbild">
-                {s.nr <= info.bilderBis ? (
-                  <img
-                    src={seitenbildUrl(info, s.nr)}
-                    alt=""
-                    loading="lazy"
-                    style={{ transform: `rotate(${s.drehung}deg)` }}
-                    draggable={false}
-                  />
-                ) : (
-                  <span className="leise">{s.nr}</span>
-                )}
-              </div>
-              <span className="klein">{t('ablage.pdfseiten.seite-2', { nr: s.nr })}</span>
-              <div className="seitenknoepfe">
-                <Knopf
-                  art="link"
-                  groesse="klein"
-                  title={t('ablage.pdfseiten.nach-links-drehen')}
-                  nurSymbol={t('ablage.pdfseiten.seite-nach-links-drehen', { nr: s.nr })}
-                  gesperrt={s.weg}
-                  onClick={() => aendere(i, { drehung: (s.drehung + 270) % 360 })}>
-                  <Symbol name="zuruecksetzen" />
-                </Knopf>
-                <Knopf
-                  art="link"
-                  groesse="klein"
-                  title={t('ablage.pdfseiten.nach-rechts-drehen')}
-                  nurSymbol={t('ablage.pdfseiten.seite-nach-rechts-drehen', { nr: s.nr })}
-                  gesperrt={s.weg}
-                  onClick={() => aendere(i, { drehung: (s.drehung + 90) % 360 })}>
-                  <Symbol name="neu-laden" />
-                </Knopf>
-                <Knopf
-                  art="link"
-                  groesse="klein"
-                  title={t('ablage.pdfseiten.nach-vorn')}
-                  nurSymbol={t('ablage.pdfseiten.seite-nach-vorn', { nr: s.nr })}
-                  gesperrt={i === 0}
-                  onClick={() => verschiebe(i, i - 1)}>
-                  <Symbol name="pfeil-links" />
-                </Knopf>
-                <Knopf
-                  art="link"
-                  groesse="klein"
-                  title={t('ablage.pdfseiten.nach-hinten')}
-                  nurSymbol={t('ablage.pdfseiten.seite-nach-hinten', { nr: s.nr })}
-                  gesperrt={i === seiten.length - 1}
-                  onClick={() => verschiebe(i, i + 1)}>
-                  <Symbol name="pfeil-rechts" />
-                </Knopf>
-              </div>
-              <div className="seitenknoepfe">
-                {/* Erst mit „Übernehmen“ wirksam, bis dahin „Behalten“ (Leitsatz 5): kein roter Link. */}
-                <Knopf art="link" groesse="klein" onClick={() => aendere(i, { weg: !s.weg })}>
-                  {s.weg ? t('ablage.pdfseiten.behalten') : t('ablage.pdfseiten.loeschen')}
-                </Knopf>
-                {pos > 0 && (
-                  <Knopf
-                    art="link"
-                    groesse="klein"
-                    aria-pressed={s.teilAb}
-                    onClick={() => aendere(i, { teilAb: !s.teilAb, anlageAb: false })}>
-                    {s.teilAb ? t('ablage.pdfseiten.nicht-teilen') : t('ablage.pdfseiten.teilen-ab-hier')}
-                  </Knopf>
-                )}
-                {pos > 0 && anlagenMoeglich && (
-                  <Knopf
-                    art="link"
-                    groesse="klein"
-                    aria-pressed={s.anlageAb}
-                    onClick={() => aendere(i, { anlageAb: !s.anlageAb, teilAb: false })}>
-                    {s.anlageAb ? t('ablage.pdfseiten.keine-anlage') : t('ablage.pdfseiten.anlage-ab-hier')}
-                  </Knopf>
-                )}
-              </div>
-            </li>
+              fallen={(e) => fallen(i, e)}
+              taste={(e) => taste(i, e)}
+              aendere={(p) => aendere(i, p)}
+              verschiebe={(nach) => verschiebe(i, nach)}
+            />
           );
         })}
       </ol>

@@ -83,6 +83,60 @@ function useAktuellesZiel(): MappenZiel | null {
 const nurDateien = (e: DragEvent) => !!e.dataTransfer && [...e.dataTransfer.types].includes('Files');
 const postTyp = (typen: Mappentyp[]) => typen.find((mappentyp) => mappentyp.system === 'post');
 
+type Doppelt = { dateien: File[]; doppelt: Array<{ datei: File; f: Fundstelle[] }>; trotzdem: Set<File> };
+
+/** Doppelte Dateien (#333): je betroffener Datei „Trotzdem ablegen“, dann weiter oder abbrechen. */
+function DoppeltFrage({
+  rueckfrage,
+  setRueckfrage,
+  weiter,
+}: {
+  rueckfrage: Doppelt;
+  setRueckfrage(r: Doppelt | null): void;
+  weiter(): void;
+}) {
+  return (
+    <div className="ablagestatus doppeltfrage" role="dialog" aria-label={t('ablage.neuepost.dateien-schon-vorhanden')}>
+      <p>
+        <strong>{t('ablage.neuepost.dateien-gibt-es-schon', { anzahl: rueckfrage.doppelt.length })}</strong>
+      </p>
+      <ul>
+        {rueckfrage.doppelt.map(({ datei, f }) => (
+          <li key={`${datei.name}-${datei.size}-${datei.lastModified}`}>
+            <strong>{datei.name}</strong> – <Fundstellen f={f} beiKlick={() => setRueckfrage(null)} />
+            <label className="haken klein">
+              <input
+                type="checkbox"
+                checked={rueckfrage.trotzdem.has(datei)}
+                onChange={(e) => {
+                  const set = new Set(rueckfrage.trotzdem);
+                  if (e.target.checked) set.add(datei);
+                  else set.delete(datei);
+                  setRueckfrage({ ...rueckfrage, trotzdem: set });
+                }}
+              />
+              <span>{t('ablage.neuepost.trotzdem-ablegen')}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {rueckfrage.dateien.length > rueckfrage.doppelt.length && (
+        <p className="leise klein">
+          {t('ablage.neuepost.die-uebrigen-dateien-werden', { wert: rueckfrage.dateien.length - rueckfrage.doppelt.length })}
+        </p>
+      )}
+      <div className="knoepfe">
+        <button type="button" className="knopf primaer klein" onClick={weiter}>
+          {t('ablage.neuepost.weiter')}
+        </button>
+        <button type="button" className="knopf klein" onClick={() => setRueckfrage(null)}>
+          {t('ablage.neuepost.abbrechen')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Fläche beim Ziehen, Fortschritt und Fehler beim Hochladen. Einmal in der App eingebunden. */
 /**
  * Ablegen überall (#193). In der Werkbank (#649) legt eine hineingezogene Datei keine Post an – es erscheint nur der
@@ -111,11 +165,7 @@ export function PostAblage({ werkbank = false }: { werkbank?: boolean }) {
   zustand.current = { darf, gesperrt, werkbank };
 
   // Doppelte Dateien (#333): vor dem Anlegen fragen, je betroffener Datei.
-  const [rueckfrage, setRueckfrage] = useState<{
-    dateien: File[];
-    doppelt: Array<{ datei: File; f: Fundstelle[] }>;
-    trotzdem: Set<File>;
-  } | null>(null);
+  const [rueckfrage, setRueckfrage] = useState<Doppelt | null>(null);
   async function pruefen(alle: File[]) {
     if (!typ || !register) return;
     setLaeuft(t('ablage.neuepost.pruefe-ob-es-die'));
@@ -288,46 +338,7 @@ export function PostAblage({ werkbank = false }: { werkbank?: boolean }) {
           </div>
         </div>
       )}
-      {rueckfrage && (
-        <div className="ablagestatus doppeltfrage" role="dialog" aria-label={t('ablage.neuepost.dateien-schon-vorhanden')}>
-          <p>
-            <strong>{t('ablage.neuepost.dateien-gibt-es-schon', { anzahl: rueckfrage.doppelt.length })}</strong>
-          </p>
-          <ul>
-            {rueckfrage.doppelt.map(({ datei, f }) => (
-              <li key={`${datei.name}-${datei.size}-${datei.lastModified}`}>
-                <strong>{datei.name}</strong> – <Fundstellen f={f} beiKlick={() => setRueckfrage(null)} />
-                <label className="haken klein">
-                  <input
-                    type="checkbox"
-                    checked={rueckfrage.trotzdem.has(datei)}
-                    onChange={(e) => {
-                      const set = new Set(rueckfrage.trotzdem);
-                      if (e.target.checked) set.add(datei);
-                      else set.delete(datei);
-                      setRueckfrage({ ...rueckfrage, trotzdem: set });
-                    }}
-                  />
-                  <span>{t('ablage.neuepost.trotzdem-ablegen')}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-          {rueckfrage.dateien.length > rueckfrage.doppelt.length && (
-            <p className="leise klein">
-              {t('ablage.neuepost.die-uebrigen-dateien-werden', { wert: rueckfrage.dateien.length - rueckfrage.doppelt.length })}
-            </p>
-          )}
-          <div className="knoepfe">
-            <button type="button" className="knopf primaer klein" onClick={() => void weiter()}>
-              {t('ablage.neuepost.weiter')}
-            </button>
-            <button type="button" className="knopf klein" onClick={() => setRueckfrage(null)}>
-              {t('ablage.neuepost.abbrechen')}
-            </button>
-          </div>
-        </div>
-      )}
+      {rueckfrage && <DoppeltFrage rueckfrage={rueckfrage} setRueckfrage={setRueckfrage} weiter={() => void weiter()} />}
       {inWerkbank && (
         <div className="ablagestatus" role="status" id="werkbank-ablegen">
           <p>

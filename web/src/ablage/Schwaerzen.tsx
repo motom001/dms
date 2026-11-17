@@ -69,6 +69,200 @@ interface Ziehen {
   id: number;
 }
 
+/** Suchbegriffe „überall schwärzen“ (#392): eingeben, mit Zahl der Funde zeigen, wieder entfernen. */
+function Begriffe({
+  mitText,
+  eingabe,
+  setEingabe,
+  begriffDazu,
+  begriffe,
+  setBegriffe,
+  begriffFunde,
+}: {
+  mitText: boolean;
+  eingabe: string;
+  setEingabe(x: string): void;
+  begriffDazu(): void;
+  begriffe: string[];
+  setBegriffe(b: string[]): void;
+  begriffFunde: Fund[][];
+}) {
+  return (
+    <>
+      {/* Kein <form>: der Dialog steht im Formular der Mappe – Enter darf die Mappe nicht speichern. */}
+      {mitText && (
+        <div className="schwarz-suche" role="search">
+          <Feld beschriftung={t('ablage.schwaerzen.ueberall-schwaerzen')}>
+            <input
+              value={eingabe}
+              maxLength={BEGRIFF_MAX_LAENGE}
+              placeholder={t('ablage.schwaerzen.z-b-name-oder')}
+              onChange={(e) => setEingabe(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  begriffDazu();
+                }
+              }}
+            />
+          </Feld>
+          <Knopf groesse="klein" gesperrt={!eingabe.trim()} onClick={begriffDazu}>
+            {t('ablage.schwaerzen.hinzufuegen')}
+          </Knopf>
+        </div>
+      )}
+      {/* div/span statt ul/li: die Regeln für .dokumentliste li sollen hier nicht greifen. */}
+      {begriffe.length > 0 && (
+        <div className="schwarz-begriffe" role="list" aria-label={t('ablage.schwaerzen.suchbegriffe')}>
+          {begriffe.map((b, i) => {
+            const n = begriffFunde[i]?.length ?? 0;
+            return (
+              <span key={b} role="listitem" className={`chip ${n ? '' : 'warn'}`}>
+                <span>
+                  {b} · {n ? `${n}×` : t('ablage.schwaerzen.nicht-gefunden')}
+                </span>
+                <Knopf
+                  art="link"
+                  groesse="klein"
+                  nurSymbol={t('ablage.schwaerzen.entfernen', { b })}
+                  onClick={() => setBegriffe(begriffe.filter((x) => x !== b))}>
+                  <Symbol name="schliessen" />
+                </Knopf>
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Vorschläge per Muster zum Anhaken (#392), je Art alle auf einmal. */
+function Vorschlaege({
+  vorschlaege,
+  arten,
+  gewaehlt,
+  umschalten,
+  alleVorschlaege,
+}: {
+  vorschlaege: Fund[];
+  arten: Musterart[];
+  gewaehlt: Set<string>;
+  umschalten(k: string): void;
+  alleVorschlaege(art: Musterart, an: boolean): void;
+}) {
+  return (
+    <details className="schwarz-vorschlaege" open={arten.length > 0}>
+      <summary className="klein">
+        {t('ablage.schwaerzen.vorschlaege')}{' '}
+        {arten.length
+          ? t('ablage.schwaerzen.gefunden', { vorschlaege: vorschlaege.length, map: arten.map((a) => MUSTER[a]).join(', ') })
+          : t('ablage.schwaerzen.keine-gefunden', { values: Object.values(MUSTER).join(', ') })}
+      </summary>
+      {arten.map((a) => {
+        const liste = vorschlaege.filter((f) => f.art === a);
+        const an = liste.every((f) => gewaehlt.has(schluessel(f)));
+        return (
+          <div key={a} className="schwarz-art">
+            <HakenFeld
+              beschriftung={
+                <>
+                  <strong>{MUSTER[a]}</strong> ({liste.length})
+                </>
+              }>
+              <input type="checkbox" checked={an} onChange={() => alleVorschlaege(a, !an)} />
+            </HakenFeld>
+            <FeldGruppe beschriftung={MUSTER[a]} beschriftungVerbergen className="schwarz-funde">
+              {liste.map((f) => (
+                <label key={schluessel(f)} className="haken klein">
+                  <input type="checkbox" checked={gewaehlt.has(schluessel(f))} onChange={() => umschalten(schluessel(f))} />
+                  <span className="mono umbruch">{f.text}</span>{' '}
+                  <span className="leise">{t('ablage.schwaerzen.seite', { seite: f.seite })}</span>
+                </label>
+              ))}
+            </FeldGruppe>
+          </div>
+        );
+      })}
+    </details>
+  );
+}
+
+/** Aufziehen an/aus, Vorschau, Textstellen zeigen, eigene Bereiche entfernen. */
+function Schalter({
+  zeichnen,
+  setZeichnen,
+  vorschau,
+  setVorschau,
+  mitText,
+  woerterZeigen,
+  setWoerterZeigen,
+  eigene,
+  setEigene,
+}: {
+  zeichnen: boolean;
+  setZeichnen(an: boolean): void;
+  vorschau: boolean;
+  setVorschau(an: boolean): void;
+  mitText: boolean;
+  woerterZeigen: boolean;
+  setWoerterZeigen(an: boolean): void;
+  eigene: Bereich[];
+  setEigene(b: Bereich[]): void;
+}) {
+  return (
+    <div className="schwarz-schalter">
+      <Knopf groesse="klein" aria-pressed={zeichnen} onClick={() => setZeichnen(!zeichnen)} title={t('ablage.schwaerzen.am-handy-an-mit')}>
+        {zeichnen ? t('ablage.schwaerzen.aufziehen-an') : t('ablage.schwaerzen.aufziehen-aus-blaettern')}
+      </Knopf>
+      <Knopf groesse="klein" aria-pressed={vorschau} onClick={() => setVorschau(!vorschau)}>
+        {vorschau ? t('ablage.schwaerzen.vorschau-beenden') : t('ablage.schwaerzen.vorschau')}
+      </Knopf>
+      {mitText && (
+        <HakenFeld beschriftung={t('ablage.schwaerzen.textstellen-zeigen')}>
+          <input type="checkbox" checked={woerterZeigen} onChange={(e) => setWoerterZeigen(e.target.checked)} />
+        </HakenFeld>
+      )}
+      {eigene.length > 0 && (
+        <Knopf art="link" groesse="klein" onClick={() => setEigene(eigene.slice(0, -1))}>
+          {t('ablage.schwaerzen.letzten-bereich-entfernen')}
+        </Knopf>
+      )}
+      {eigene.length > 1 && (
+        <Knopf art="link" groesse="klein" onClick={() => setEigene([])}>
+          {t('ablage.schwaerzen.alle-bereiche-entfernen')}
+        </Knopf>
+      )}
+    </div>
+  );
+}
+
+/** Versioniertes Register: geschwärzte Kopie als eigenes Dokument oder neue Version. */
+function ZielWahl({
+  id,
+  kopieName,
+  ziel,
+  setZiel,
+}: {
+  id: string;
+  kopieName: string;
+  ziel: 'kopie' | 'version';
+  setZiel(z: 'kopie' | 'version'): void;
+}) {
+  return (
+    <FeldGruppe beschriftung={t('ablage.schwaerzen.ergebnis')} className="schwarz-ziel">
+      <label className="haken klein">
+        <input type="radio" name={`ziel-${id}`} checked={ziel === 'kopie'} onChange={() => setZiel('kopie')} />{' '}
+        {t('ablage.schwaerzen.eigenes-dokument-original-bleibt', { kopieName })}
+      </label>
+      <label className="haken klein">
+        <input type="radio" name={`ziel-${id}`} checked={ziel === 'version'} onChange={() => setZiel('version')} />{' '}
+        {t('ablage.schwaerzen.neue-version-die-ungeschwaerzte')}
+      </label>
+    </FeldGruppe>
+  );
+}
+
 export function Schwaerzen({ d, schliessen, fertig }: { d: Dokument; schliessen(): void; fertig(meldung: string): void }) {
   const [v, setV] = useState<SchwaerzenVorschau>();
   const [fehler, setFehler] = useState<string>();
@@ -236,112 +430,29 @@ export function Schwaerzen({ d, schliessen, fertig }: { d: Dokument; schliessen(
       <p className="leise klein">{t('ablage.schwaerzen.zieh-bereiche-auf-oder')}</p>
 
       <div className="schwarz-werkzeuge">
-        {/* Kein <form>: der Dialog steht im Formular der Mappe – Enter darf die Mappe nicht speichern. */}
+        <Begriffe
+          mitText={mitText}
+          eingabe={eingabe}
+          setEingabe={setEingabe}
+          begriffDazu={begriffDazu}
+          begriffe={begriffe}
+          setBegriffe={setBegriffe}
+          begriffFunde={begriffFunde}
+        />
         {mitText && (
-          <div className="schwarz-suche" role="search">
-            <Feld beschriftung={t('ablage.schwaerzen.ueberall-schwaerzen')}>
-              <input
-                value={eingabe}
-                maxLength={BEGRIFF_MAX_LAENGE}
-                placeholder={t('ablage.schwaerzen.z-b-name-oder')}
-                onChange={(e) => setEingabe(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    begriffDazu();
-                  }
-                }}
-              />
-            </Feld>
-            <Knopf groesse="klein" gesperrt={!eingabe.trim()} onClick={begriffDazu}>
-              {t('ablage.schwaerzen.hinzufuegen')}
-            </Knopf>
-          </div>
+          <Vorschlaege
+            vorschlaege={vorschlaege}
+            arten={arten}
+            gewaehlt={gewaehlt}
+            umschalten={umschalten}
+            alleVorschlaege={alleVorschlaege}
+          />
         )}
-        {/* div/span statt ul/li: die Regeln für .dokumentliste li sollen hier nicht greifen. */}
-        {begriffe.length > 0 && (
-          <div className="schwarz-begriffe" role="list" aria-label={t('ablage.schwaerzen.suchbegriffe')}>
-            {begriffe.map((b, i) => {
-              const n = begriffFunde[i]?.length ?? 0;
-              return (
-                <span key={b} role="listitem" className={`chip ${n ? '' : 'warn'}`}>
-                  <span>
-                    {b} · {n ? `${n}×` : t('ablage.schwaerzen.nicht-gefunden')}
-                  </span>
-                  <Knopf
-                    art="link"
-                    groesse="klein"
-                    nurSymbol={t('ablage.schwaerzen.entfernen', { b })}
-                    onClick={() => setBegriffe(begriffe.filter((x) => x !== b))}>
-                    <Symbol name="schliessen" />
-                  </Knopf>
-                </span>
-              );
-            })}
-          </div>
-        )}
-        {mitText && (
-          <details className="schwarz-vorschlaege" open={arten.length > 0}>
-            <summary className="klein">
-              {t('ablage.schwaerzen.vorschlaege')}{' '}
-              {arten.length
-                ? t('ablage.schwaerzen.gefunden', { vorschlaege: vorschlaege.length, map: arten.map((a) => MUSTER[a]).join(', ') })
-                : t('ablage.schwaerzen.keine-gefunden', { values: Object.values(MUSTER).join(', ') })}
-            </summary>
-            {arten.map((a) => {
-              const liste = vorschlaege.filter((f) => f.art === a);
-              const an = liste.every((f) => gewaehlt.has(schluessel(f)));
-              return (
-                <div key={a} className="schwarz-art">
-                  <HakenFeld
-                    beschriftung={
-                      <>
-                        <strong>{MUSTER[a]}</strong> ({liste.length})
-                      </>
-                    }>
-                    <input type="checkbox" checked={an} onChange={() => alleVorschlaege(a, !an)} />
-                  </HakenFeld>
-                  <FeldGruppe beschriftung={MUSTER[a]} beschriftungVerbergen className="schwarz-funde">
-                    {liste.map((f) => (
-                      <label key={schluessel(f)} className="haken klein">
-                        <input type="checkbox" checked={gewaehlt.has(schluessel(f))} onChange={() => umschalten(schluessel(f))} />
-                        <span className="mono umbruch">{f.text}</span>{' '}
-                        <span className="leise">{t('ablage.schwaerzen.seite', { seite: f.seite })}</span>
-                      </label>
-                    ))}
-                  </FeldGruppe>
-                </div>
-              );
-            })}
-          </details>
-        )}
-        <div className="schwarz-schalter">
-          <Knopf
-            groesse="klein"
-            aria-pressed={zeichnen}
-            onClick={() => setZeichnen(!zeichnen)}
-            title={t('ablage.schwaerzen.am-handy-an-mit')}>
-            {zeichnen ? t('ablage.schwaerzen.aufziehen-an') : t('ablage.schwaerzen.aufziehen-aus-blaettern')}
-          </Knopf>
-          <Knopf groesse="klein" aria-pressed={vorschau} onClick={() => setVorschau(!vorschau)}>
-            {vorschau ? t('ablage.schwaerzen.vorschau-beenden') : t('ablage.schwaerzen.vorschau')}
-          </Knopf>
-          {mitText && (
-            <HakenFeld beschriftung={t('ablage.schwaerzen.textstellen-zeigen')}>
-              <input type="checkbox" checked={woerterZeigen} onChange={(e) => setWoerterZeigen(e.target.checked)} />
-            </HakenFeld>
-          )}
-          {eigene.length > 0 && (
-            <Knopf art="link" groesse="klein" onClick={() => setEigene(eigene.slice(0, -1))}>
-              {t('ablage.schwaerzen.letzten-bereich-entfernen')}
-            </Knopf>
-          )}
-          {eigene.length > 1 && (
-            <Knopf art="link" groesse="klein" onClick={() => setEigene([])}>
-              {t('ablage.schwaerzen.alle-bereiche-entfernen')}
-            </Knopf>
-          )}
-        </div>
+        <Schalter
+          {...{ zeichnen, setZeichnen, vorschau, setVorschau, mitText, woerterZeigen, setWoerterZeigen }}
+          eigene={eigene}
+          setEigene={setEigene}
+        />
       </div>
 
       <div className={`schwarz-seiten ${vorschau ? 'vorschau' : ''}`}>
@@ -395,18 +506,7 @@ export function Schwaerzen({ d, schliessen, fertig }: { d: Dokument; schliessen(
         })}
       </div>
 
-      {v.versioniert && (
-        <FeldGruppe beschriftung={t('ablage.schwaerzen.ergebnis')} className="schwarz-ziel">
-          <label className="haken klein">
-            <input type="radio" name={`ziel-${d.id}`} checked={ziel === 'kopie'} onChange={() => setZiel('kopie')} />{' '}
-            {t('ablage.schwaerzen.eigenes-dokument-original-bleibt', { kopieName: v.kopieName })}
-          </label>
-          <label className="haken klein">
-            <input type="radio" name={`ziel-${d.id}`} checked={ziel === 'version'} onChange={() => setZiel('version')} />{' '}
-            {t('ablage.schwaerzen.neue-version-die-ungeschwaerzte')}
-          </label>
-        </FeldGruppe>
-      )}
+      {v.versioniert && <ZielWahl id={d.id} kopieName={v.kopieName} ziel={ziel} setZiel={setZiel} />}
       {fehler && (
         <div className="hinweis schlecht">
           <p>{fehler}</p>
