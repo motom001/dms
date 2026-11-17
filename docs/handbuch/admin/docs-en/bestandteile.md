@@ -58,12 +58,13 @@ The tool for this is in the repository at [`.github/werkzeuge/bestandteile.mjs`]
 
 Overview and attachments are a **readable view**. The proof is the **signed attestation** on the image: the provenance (which commit and which workflow the image comes from) and a bill of materials in SPDX format. Both are next to the image in the registry, see also [Where does the image come from?](aktualisieren.md).
 
-**Provenance and signed bill of materials**, using the digest from the section *Stand*:
+**Provenance and signed bill of materials**, using the digest of the **index** (row *alle (Index)* in the section *Stand*). The attestation is attached to the index, not to the per-architecture digests; with the digest for amd64 or arm64, `gh` reports "no attestations found". Each image has its own attestation:
 
 ```sh
-gh attestation verify oci://ghcr.io/motom001/dms@sha256:<digest> -R motom001/dms
-gh attestation verify oci://ghcr.io/motom001/dms@sha256:<digest> -R motom001/dms \
+gh attestation verify oci://ghcr.io/motom001/dms@sha256:<index digest> -R motom001/dms
+gh attestation verify oci://ghcr.io/motom001/dms@sha256:<index digest> -R motom001/dms \
   --predicate-type https://spdx.dev/Document/v2.3
+gh attestation verify oci://ghcr.io/motom001/dms-komplett@sha256:<index digest> -R motom001/dms
 ```
 
 The signed bill of materials covers the system packages and the server's npm packages as Trivy recognises them for amd64. The additions (web interface, fonts, manual) and the list for arm64 are only in the attachments; they are made in the same run from the same commit.

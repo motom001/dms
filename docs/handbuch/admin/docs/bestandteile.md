@@ -58,12 +58,13 @@ Das Werkzeug dafür liegt im Repository unter [`.github/werkzeuge/bestandteile.m
 
 Übersicht und Anhänge sind eine **lesbare Ansicht**. Den Nachweis liefert das **signierte Attest** am Image: der Herkunftsnachweis (aus welchem Commit und welchem Workflow das Image stammt) und eine Stückliste im SPDX-Format. Beides liegt neben dem Image in der Registry, siehe auch [Woher kommt das Image?](aktualisieren.md).
 
-**Herkunft und signierte Stückliste**, über den Digest aus dem Abschnitt *Stand*:
+**Herkunft und signierte Stückliste**, über den Digest des **Index** (Zeile *alle (Index)* im Abschnitt *Stand*). Das Attest hängt am Index, nicht an den Digests je Architektur; mit dem Digest für amd64 oder arm64 meldet `gh` „no attestations found“. Jedes Image hat sein eigenes Attest:
 
 ```sh
-gh attestation verify oci://ghcr.io/motom001/dms@sha256:<Digest> -R motom001/dms
-gh attestation verify oci://ghcr.io/motom001/dms@sha256:<Digest> -R motom001/dms \
+gh attestation verify oci://ghcr.io/motom001/dms@sha256:<Digest des Index> -R motom001/dms
+gh attestation verify oci://ghcr.io/motom001/dms@sha256:<Digest des Index> -R motom001/dms \
   --predicate-type https://spdx.dev/Document/v2.3
+gh attestation verify oci://ghcr.io/motom001/dms-komplett@sha256:<Digest des Index> -R motom001/dms
 ```
 
 Die signierte Stückliste deckt die Systempakete und die npm-Pakete des Servers ab, so wie Trivy sie für amd64 erkennt. Die Ergänzungen (Oberfläche, Schriften, Handbuch) und die Liste für arm64 stehen nur in den Anhängen; sie entstehen im selben Lauf aus demselben Commit.
