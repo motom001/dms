@@ -234,6 +234,8 @@ const ansichtSetzen = (s, data) => s.request.put(BASIS + '/api/werkbank/ansicht'
 /** Was die Leiste regulär zeigt (ohne Bereiche, die nur wegen eines Hinweises dastehen), als Pfade. */
 async function leisteRegulaer(s) {
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
+  // Bis die gewählte Stufe geladen ist, zeigt die Leiste alles und ist `aria-busy` (#1409) – erst danach lesen.
+  await bereiche.locator('nav.werkbankleiste:not([aria-busy])').waitFor();
   await bereiche.getByRole('link').first().waitFor();
   // Ohne Doppelte: Die Übersicht steht als eigener Eintrag und als Kopf der Leiste.
   return [
@@ -273,7 +275,8 @@ rauchtest('Werkbank: fünf Stufen – Einträge je Stufe, Meine Leiste nur für 
     await ansichtSetzen(s, { installation: { vorlage: 'einsteiger', ein: [], aus: [] }, eigene: { ein: [], vorlage: 'alles' } });
     await s.goto(BASIS + '/werkbank/ansicht');
     await s.getByRole('heading', { name: 'Werkbank anpassen', level: 1 }).waitFor();
-    assert.ok(await s.getByRole('group', { name: 'Meine Leiste' }).getByRole('radio', { name: 'Alles' }).isChecked());
+    // Die Auswahl übernimmt den geladenen Stand erst nach dem ersten Zeichnen – auf die gewählte Stufe warten.
+    await s.getByRole('group', { name: 'Meine Leiste' }).getByRole('radio', { name: 'Alles', checked: true }).waitFor();
     assert.ok((await leisteRegulaer(s)).includes('protokoll'), 'Meine Leiste zeigt Alles');
   } finally {
     // Zurück auf die Stufe aus der Einrichtung (einrichtung.mjs: Haushalt).
