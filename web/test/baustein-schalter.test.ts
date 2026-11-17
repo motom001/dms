@@ -84,7 +84,7 @@ describe('Baustein Schalter (#1188)', () => {
     }
     // Werkbank anpassen hat seit #987 keinen Ein/Aus-Schalter mehr (Expertenmodus ersetzt durch „Meine Leiste“).
     for (const datei of [
-      'werkbank/MailVersand.tsx',
+      'werkbank/mail/MailTeile.tsx',
       'werkbank/sicherung/Zeitplan.tsx',
       'werkbank/Verkleinern.tsx',
       'werkbank/DatenEinstellungen.tsx',
