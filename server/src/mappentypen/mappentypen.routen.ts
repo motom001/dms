@@ -11,7 +11,12 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 
 export function typenRouten(k: RoutenKontext): Route[] {
-  const { dienst, typName, zg, demoPlatz } = k;
+  return [...stempelRouten(k), ...mappentypenRouten(k), ...demoRouten(k)];
+}
+
+/** Stempel beim Weitergeben (#394). */
+function stempelRouten(k: RoutenKontext): Route[] {
+  const { dienst } = k;
   return [
     /* ---------- Stempel beim Weitergeben (#394) ---------- */
     {
@@ -38,7 +43,13 @@ export function typenRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.stempelvorlagen.loescheStempelVorlage(a.params.id, ich(a).email)),
     },
+  ];
+}
 
+/** Mappentypen, eigene Rechte und Beispiele. */
+function mappentypenRouten(k: RoutenKontext): Route[] {
+  const { dienst, typName, zg } = k;
+  return [
     /* ---------- Mappentypen ---------- */
     // Regeln (#123) sehen nur Administratoren; alle anderen erfahren, ob sie anlegen dürfen.
     { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.mappentypen.typenFuer(await zg(a))) },
@@ -110,6 +121,13 @@ export function typenRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async () => ok(await dienst.datenschutzDienst.demoUebersicht()),
     },
+  ];
+}
+
+/** Demo-Daten (#248) und Aufträge im Hintergrund (#458). */
+function demoRouten(k: RoutenKontext): Route[] {
+  const { dienst, demoPlatz } = k;
+  return [
     // Erzeugen und Entfernen laufen im Hintergrund (202); den Stand liefert /api/werkbank/auftrag.
     {
       methode: 'POST',
