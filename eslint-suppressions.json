@@ -466,9 +466,6 @@
   },
   "server/src/pakete/verwaltung/paketverwaltung.ts": {
     "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
