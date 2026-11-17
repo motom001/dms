@@ -21,6 +21,7 @@
   "anmeldesperre.konto-gebremst_other": "Too many failed attempts for this account came from different addresses. Signing in with a password is slowed down for {anzahl} minutes.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_one": "Too many failed attempts. Please try again in one minute.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_other": "Too many failed attempts. Please try again in {anzahl} minutes.",
+  "anmeldesperre.passwortpruefung-voll": "A great many sign-ins are happening right now. Please try again in a few seconds.",
   "anmeldesperre.ohne-e-mail-adresse": "without email address",
   "anmeldesperre.fehlgeschlagene-anmeldungen-zuletzt": "{m} failed sign-ins (most recently {wert})",
   "anmeldesperre.ablago-benutzerkonto-nach": "Ablago: user account locked after failed attempts",

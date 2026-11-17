@@ -65,7 +65,7 @@ export abstract class KontenAnmeldung extends KontenBasis {
     // Vorab gezählt (#956): Auch gleichzeitige Anfragen kommen nicht an der Grenze vorbei.
     const v = await this.sperre.versuch(email, ip);
     const treffer = email ? await this.repo.holeHash(email) : undefined;
-    const ok = await this.passwortStimmt(treffer?.benutzer.id, passwort, treffer?.hash);
+    const ok = await this.passwortStimmt(treffer?.benutzer.id, passwort, treffer?.hash, () => this.sperre.zurueck(email, ip, v));
     if (!ok || !treffer || !treffer.benutzer.aktiv) {
       await this.sperre.fehlschlag(email, ip, !!treffer?.benutzer.aktiv, v);
       throw new Fachfehler(401, t('anmeldung.fehler.falsch'));

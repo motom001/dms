@@ -113,7 +113,9 @@ export abstract class KontenVerwaltungsmodus extends KontenPasskeys {
       throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true, passkey: await this.passkeyNutzbar(b) });
     const v = await this.sperre.versuch(email, ip);
     const treffer = await this.repo.holeHash(email);
-    const ok = await this.passwortStimmt(treffer?.benutzer.id, typeof e.passwort === 'string' ? e.passwort : '', treffer?.hash);
+    const ok = await this.passwortStimmt(treffer?.benutzer.id, typeof e.passwort === 'string' ? e.passwort : '', treffer?.hash, () =>
+      this.sperre.zurueck(email, ip, v),
+    );
     const mitCode = !!this.zweifaktor && (await this.zweifaktor.aktiv(b.id));
     const codeOk = !ok || !mitCode ? true : !!(await this.zweifaktor!.pruefe(b.id, e.code));
     if (!ok || !codeOk) {

@@ -14,7 +14,7 @@ import type { KontoRepo } from './konto-repo';
 import type { Mailer } from '../mail/mail';
 import type { Benutzerspiegel } from '../mappentypen';
 import type { Benutzer, Abwesenheit } from '../../../shared/src/model';
-import { hashePasswort, hashVeraltet, pruefePasswort } from '../anmeldung/passwort';
+import { hashePasswort, hashVeraltet, istWarteschlangeVoll, pruefePasswort } from '../anmeldung/passwort';
 import { log } from './hilfen';
 
 /** Zustand, Verbindungen und gemeinsame Hilfen. */
@@ -99,12 +99,24 @@ export abstract class KontenBasis {
   }
 
   /**
-   * Passwort prüfen (#1358): Stimmt es und trägt der Hash ältere scrypt-Parameter, speichert Ablago ihn gleich mit den
+   * Passwort prüfen (#1358): Stimmt es und trägt der Hash schwächere scrypt-Parameter, speichert Ablago ihn gleich mit den
    * aktuellen neu – ohne dass jemand etwas tun muss. Nur, wenn noch derselbe Hash gespeichert ist (ein gleichzeitiger
    * Passwortwechsel gewinnt). Ein Fehler dabei verhindert die Anmeldung nicht.
    */
-  protected async passwortStimmt(benutzerId: string | undefined, passwort: string, hash: string | null | undefined): Promise<boolean> {
-    const ok = await pruefePasswort(passwort, hash);
+  protected async passwortStimmt(
+    benutzerId: string | undefined,
+    passwort: string,
+    hash: string | null | undefined,
+    abgewiesen?: () => Promise<void>,
+  ): Promise<boolean> {
+    let ok: boolean;
+    try {
+      ok = await pruefePasswort(passwort, hash);
+    } catch (e) {
+      // Warteschlange voll (503): nicht geprüft – den vorab gezählten Versuch des Anmeldeschutzes zurücknehmen.
+      if (abgewiesen && istWarteschlangeVoll(e)) await abgewiesen();
+      throw e;
+    }
     if (ok && benutzerId && hash && hashVeraltet(hash)) {
       try {
         if (await this.repo.ersetzeHash(benutzerId, hash, await hashePasswort(passwort)))

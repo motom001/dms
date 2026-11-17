@@ -8,5 +8,5 @@ art: minor
 
 ## Verbessert
 
-- **Passwort-Hashes** (#1358): scrypt mit N = 2^14, r = 8, p = 5 (OWASP-gleichwertig); bestehende Hashes stellt Ablago beim nächsten Anmelden von selbst um. Höchstens zwei Passwortprüfungen gleichzeitig je Prozess, weitere warten kurz.
+- **Passwort-Hashes** (#1358): scrypt mit N = 2^14, r = 8, p = 5 (OWASP-gleichwertig); schwächere Hashes stellt Ablago beim nächsten Anmelden von selbst um. Höchstens zwei Passwortprüfungen gleichzeitig je Prozess, weitere warten kurz; ab 50 Wartenden antwortet die Anmeldung mit 503 und `Retry-After`.
 - **Übersicht der Werkbank:** Zahlen nur für die eigenen Bereiche.
