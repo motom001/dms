@@ -54,24 +54,8 @@
       "count": 1
     }
   },
-  "server/src/ausgang/export.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/automatisierung/automatisierung-karten.ts": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "server/src/automatisierung/motor/ausfuehren.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -269,15 +253,6 @@
     }
   },
   "server/src/export/vollexport-schreiben.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 6
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     }
@@ -369,11 +344,6 @@
       "count": 2
     }
   },
-  "server/src/laeufer/prozess.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/laeufer/webassembly.d.ts": {
     "@typescript-eslint/no-unsafe-function-type": {
       "count": 2
@@ -389,17 +359,6 @@
   },
   "server/src/lasttest/prozessgruppen.ts": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "server/src/loeschen/baum.ts": {
-    "complexity": {
-      "count": 2
-    },
-    "max-depth": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -679,19 +638,6 @@
       "count": 1
     }
   },
-  "server/src/prozesse/aufteilung.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "server/src/prozesse/prozesse.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
   "server/src/repo/pg/historie.ts": {
     "max-params": {
       "count": 1
@@ -762,20 +708,6 @@
       "count": 1
     },
     "preserve-caught-error": {
-      "count": 1
-    }
-  },
-  "server/src/sicherung/wiederherstellung-ausfuehren.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 7
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },

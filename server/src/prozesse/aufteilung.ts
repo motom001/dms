@@ -130,106 +130,107 @@ export function prozessstand(o: Pick<TeilungsDeps, 'messung' | 'ueberlast' | 've
   };
 }
 
-export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<void>; stop(): void } {
-  const uhren: NodeJS.Timeout[] = [];
-  v.bediene('prozess.stand', () => prozessstand(o));
-  // Lasttest (#874): schaltet die Messung der Wartezeit auf Verbindungen ein (für einige Minuten) und liefert sie mit.
-  v.bediene('prozess.last', () => {
-    o.pool?.an();
-    return { ...prozessstand(o), ...(o.pool ? { pool: o.pool.stand() } : {}) };
-  });
-  cpuJetzt();
+type Teilung = { start(): Promise<void>; stop(): void };
 
-  // Zustand, der über die Prozesse geteilt werden muss (nur mit mehreren; ein Prozess bleibt wie bisher).
-  if (v.mehrere) {
-    o.dienst.auftraege.teile(o.zustand);
-    o.dienst.stand.teileEigene(o.zustand);
-    o.dienst.mappenstand.teileEigene(o.zustand);
-    // Einstellungen im Arbeitsspeicher neu laden, sobald sich der Haushaltsstand `lesen` ändert.
-    let stand: string | null = null;
-    let nochmal = false;
-    let laeuft = false;
-    const pruefe = async () => {
-      if (laeuft) return;
-      laeuft = true;
-      try {
-        const [r] = await o.sql`SELECT lesen FROM haushaltsstand WHERE haushalt_id = ${o.haushalt}`;
-        const neu = r ? String(r.lesen) : '';
-        if (stand !== null && (neu !== stand || nochmal)) {
-          const ok = await o.tresor.nachladen();
-          await o.betrieb.nachladen();
-          o.oidc.vergiss();
-          await o.messung.start();
-          nochmal = !ok;
-        }
-        stand = neu;
-      } catch (e) {
-        log.debug('Einstellungen nicht abgeglichen', { fehler: (e as Error).message });
-      } finally {
-        laeuft = false;
+/** Zeitgeber lösen sich vom Prozess; `stop` hält sie an. */
+function teilung(uhren: NodeJS.Timeout[], start: () => Promise<void>): Teilung {
+  for (const u of uhren) u.unref?.();
+  return {
+    start,
+    stop: () => {
+      for (const u of uhren) clearInterval(u);
+    },
+  };
+}
+
+/**
+ * Zustand, der über die Prozesse geteilt werden muss (nur mit mehreren; ein Prozess bleibt wie bisher). Einstellungen im
+ * Arbeitsspeicher neu laden, sobald sich der Haushaltsstand `lesen` ändert.
+ */
+function gleicheAb(o: TeilungsDeps, uhren: NodeJS.Timeout[]) {
+  o.dienst.auftraege.teile(o.zustand);
+  o.dienst.stand.teileEigene(o.zustand);
+  o.dienst.mappenstand.teileEigene(o.zustand);
+  let stand: string | null = null;
+  let nochmal = false;
+  let laeuft = false;
+  const pruefe = async () => {
+    if (laeuft) return;
+    laeuft = true;
+    try {
+      const [r] = await o.sql`SELECT lesen FROM haushaltsstand WHERE haushalt_id = ${o.haushalt}`;
+      const neu = r ? String(r.lesen) : '';
+      if (stand !== null && (neu !== stand || nochmal)) {
+        const ok = await o.tresor.nachladen();
+        await o.betrieb.nachladen();
+        o.oidc.vergiss();
+        await o.messung.start();
+        nochmal = !ok;
       }
-    };
-    void pruefe();
-    uhren.push(setInterval(() => void pruefe(), NACHLADEN_MS));
-  }
-
-  if (v.leiter) {
-    const { texterkennung: te, vorschau: vs, sicherung: si, wiederherstellung: wh } = o;
-    v.hoere('texterkennung.anstossen', () => te.anstossen());
-    v.hoere('vorschau.einreihen', (d) => vs.einreihen(d as VorschauDok[]));
-    v.hoere('vorschau.ausFassung', (d) => vs.ausFassung(d as VorschauDok[]));
-    v.hoere('vorschau.ausArchiv', (d) => vs.ausArchiv(d as VorschauDok[]));
-    v.bediene('vorschau.nachholen', ([d]) => vs.nachholen(d as VorschauDok[]));
-    v.hoere('ereignisse.wecke', () => o.dienst.ereignisse.wecke());
-    v.bediene('postfach.abrufen', ([id]) => o.postfaecher.abrufen(String(id)));
-    v.bediene('eingang.pruefe', ([sofort]) => o.eingangsordner.pruefe(sofort === true));
-    v.bediene('eingang.stand', () => o.eingangsordner.stand());
-    // Neu planen nach dem Speichern in einem anderen Prozess (#1341): mit dem gespeicherten Abstand.
-    v.hoere(
-      'eingang.plane',
-      () =>
-        void o.eingangsordner
-          .einstellung()
-          .then((e) => o.eingangsordner.neuPlanen(e.abstand))
-          .catch((e: Error) => log.warn('Eingangsordner nicht neu geplant', { fehler: e.message })),
-    );
-    v.bediene('texterkennung.status', ([neu]) => te.status(neu === true));
-    v.bediene('sicherung.starte', async ([art, von]) => (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von))).lauf);
-    v.bediene('sicherung.pruefe', ([name, von]) => si.pruefe(String(name), String(von)));
-    v.bediene('wiederherstellung.starte', ([e, admin, code]) =>
-      wh.starte(e as Parameters<Wiederherstellung['starte']>[0], admin as { email: string } | null, code),
-    );
-    v.bediene(
-      'wiederherstellung.probe',
-      async ([name, von]) => (await wh.starteProbe(name === null ? null : String(name), String(von))).lauf,
-    );
-    const spiegel = (): Spiegel => ({ sicherung: si.aktuellerLauf(), wiederherstellung: wh.aktuellerLauf(), whLaeuft: wh.laeuft() });
-    v.bediene('spiegel', () => spiegel());
-    if (o.paketlaeufer) bedieneLaeufer(v, o.paketlaeufer, o.dienst);
-    if (v.mehrere) {
-      let zuletzt = '';
-      uhren.push(
-        setInterval(() => {
-          const s = spiegel();
-          const j = JSON.stringify(s);
-          if (j !== zuletzt) {
-            zuletzt = j;
-            v.melde('spiegel', s, 'andere');
-          }
-        }, SPIEGEL_MS),
-      );
+      stand = neu;
+    } catch (e) {
+      log.debug('Einstellungen nicht abgeglichen', { fehler: (e as Error).message });
+    } finally {
+      laeuft = false;
     }
-    for (const u of uhren) u.unref?.();
-    return {
-      start: async () => {},
-      stop: () => {
-        for (const u of uhren) clearInterval(u);
-      },
-    };
-  }
+  };
+  void pruefe();
+  uhren.push(setInterval(() => void pruefe(), NACHLADEN_MS));
+}
 
-  // ---------- Weitere Prozesse: Hintergrundarbeit an den Leiter ----------
-  const { texterkennung: te, vorschau: vs, sicherung: si, wiederherstellung: wh, dienst } = o;
+/** Der Leiter bedient Anstöße und Aufrufe der anderen und spiegelt laufende Sicherungen und Wiederherstellungen. */
+function leiterArbeit(v: Verbund, o: TeilungsDeps, uhren: NodeJS.Timeout[]): Teilung {
+  const { texterkennung: te, vorschau: vs, sicherung: si, wiederherstellung: wh } = o;
+  v.hoere('texterkennung.anstossen', () => te.anstossen());
+  v.hoere('vorschau.einreihen', (d) => vs.einreihen(d as VorschauDok[]));
+  v.hoere('vorschau.ausFassung', (d) => vs.ausFassung(d as VorschauDok[]));
+  v.hoere('vorschau.ausArchiv', (d) => vs.ausArchiv(d as VorschauDok[]));
+  v.bediene('vorschau.nachholen', ([d]) => vs.nachholen(d as VorschauDok[]));
+  v.hoere('ereignisse.wecke', () => o.dienst.ereignisse.wecke());
+  v.bediene('postfach.abrufen', ([id]) => o.postfaecher.abrufen(String(id)));
+  v.bediene('eingang.pruefe', ([sofort]) => o.eingangsordner.pruefe(sofort === true));
+  v.bediene('eingang.stand', () => o.eingangsordner.stand());
+  // Neu planen nach dem Speichern in einem anderen Prozess (#1341): mit dem gespeicherten Abstand.
+  v.hoere(
+    'eingang.plane',
+    () =>
+      void o.eingangsordner
+        .einstellung()
+        .then((e) => o.eingangsordner.neuPlanen(e.abstand))
+        .catch((e: Error) => log.warn('Eingangsordner nicht neu geplant', { fehler: e.message })),
+  );
+  v.bediene('texterkennung.status', ([neu]) => te.status(neu === true));
+  v.bediene('sicherung.starte', async ([art, von]) => (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von))).lauf);
+  v.bediene('sicherung.pruefe', ([name, von]) => si.pruefe(String(name), String(von)));
+  v.bediene('wiederherstellung.starte', ([e, admin, code]) =>
+    wh.starte(e as Parameters<Wiederherstellung['starte']>[0], admin as { email: string } | null, code),
+  );
+  v.bediene(
+    'wiederherstellung.probe',
+    async ([name, von]) => (await wh.starteProbe(name === null ? null : String(name), String(von))).lauf,
+  );
+  const spiegel = (): Spiegel => ({ sicherung: si.aktuellerLauf(), wiederherstellung: wh.aktuellerLauf(), whLaeuft: wh.laeuft() });
+  v.bediene('spiegel', () => spiegel());
+  if (o.paketlaeufer) bedieneLaeufer(v, o.paketlaeufer, o.dienst);
+  if (v.mehrere) {
+    let zuletzt = '';
+    uhren.push(
+      setInterval(() => {
+        const s = spiegel();
+        const j = JSON.stringify(s);
+        if (j !== zuletzt) {
+          zuletzt = j;
+          v.melde('spiegel', s, 'andere');
+        }
+      }, SPIEGEL_MS),
+    );
+  }
+  return teilung(uhren, async () => {});
+}
+
+/** Weitere Prozesse: Texterkennung, Vorschaubilder, Ereignisse, Postfach und Eingangsordner an den Leiter. */
+function hintergrundAnLeiter(v: Verbund, o: TeilungsDeps) {
+  const { texterkennung: te, vorschau: vs, dienst } = o;
   te.anstossen = () => v.melde('texterkennung.anstossen');
   vs.anstossen = () => {};
   vs.einreihen = (docs) => {
@@ -262,7 +263,11 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
   o.eingangsordner.stand = () => v.rufe<Awaited<ReturnType<Eingangsordner['stand']>>>('eingang.stand', [], { ms: STAND_MS });
   // Laufende Aufträge der Texterkennung zählt nur der Leiter (#1341).
   te.status = (neu = false) => v.rufe<Awaited<ReturnType<Texterkennung['status']>>>('texterkennung.status', [neu], { ms: STAND_MS });
+}
 
+/** Weitere Prozesse: Sicherung und Wiederherstellung beim Leiter, ihr Stand aus dem Spiegel; liefert den Start. */
+function spiegelVomLeiter(v: Verbund, o: TeilungsDeps): () => Promise<void> {
+  const { sicherung: si, wiederherstellung: wh } = o;
   let s: Spiegel = { sicherung: null, wiederherstellung: null, whLaeuft: false };
   v.hoere('spiegel', (x) => {
     s = x as Spiegel;
@@ -302,14 +307,23 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
     lauf: merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.probe', [name, von])),
     fertig: Promise.resolve(false),
   });
-
-  for (const u of uhren) u.unref?.();
-  return {
-    start: async () => {
-      s = await v.rufe<Spiegel>('spiegel').catch(() => s);
-    },
-    stop: () => {
-      for (const u of uhren) clearInterval(u);
-    },
+  return async () => {
+    s = await v.rufe<Spiegel>('spiegel').catch(() => s);
   };
+}
+
+export function teileArbeit(v: Verbund, o: TeilungsDeps): Teilung {
+  const uhren: NodeJS.Timeout[] = [];
+  v.bediene('prozess.stand', () => prozessstand(o));
+  // Lasttest (#874): schaltet die Messung der Wartezeit auf Verbindungen ein (für einige Minuten) und liefert sie mit.
+  v.bediene('prozess.last', () => {
+    o.pool?.an();
+    return { ...prozessstand(o), ...(o.pool ? { pool: o.pool.stand() } : {}) };
+  });
+  cpuJetzt();
+  if (v.mehrere) gleicheAb(o, uhren);
+  if (v.leiter) return leiterArbeit(v, o, uhren);
+  // ---------- Weitere Prozesse: Hintergrundarbeit an den Leiter ----------
+  hintergrundAnLeiter(v, o);
+  return teilung(uhren, spiegelVomLeiter(v, o));
 }
