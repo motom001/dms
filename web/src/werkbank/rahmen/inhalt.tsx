@@ -88,6 +88,13 @@ export const pflegeSeiten = {
   verschluesselung: ({ z }) => ({ rechts: <TresorPanel t={z.tresor} /> }),
 } satisfies Seiten;
 
+/**
+ * Schlüssel eines Editors, der seinen Stand aus der Liste nimmt: Ein bestehender Eintrag baut sich neu auf, sobald die
+ * Liste da ist; ein neuer nicht – sonst gingen Eingaben verloren, die vor dem Laden der Liste kamen (#1418, wie das
+ * Postfach in #1409).
+ */
+const editorSchluessel = (id: string, listeDa: boolean) => (id === 'neu' ? id : `${id}-${listeDa ? 1 : 0}`);
+
 /** Ansichten, Nummernkreise, Stempel. */
 export const listenSeiten = {
   sichten: ({ id, d, z }) => ({
@@ -101,7 +108,7 @@ export const listenSeiten = {
   nummernkreise: ({ id, z: { nummernkreise, pakete } }) => ({
     liste: <NummernkreiseListe z={nummernkreise} offen={id} pakete={pakete.stand?.installiert ?? []} />,
     rechts: id ? (
-      <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} />
+      <NummernkreisEditor key={editorSchluessel(id, !!nummernkreise.liste)} z={nummernkreise} schluessel={id} />
     ) : (
       waehle(t('werkbank.werkbank.waehle-links-einen-nummernkreis'))
     ),
@@ -109,7 +116,7 @@ export const listenSeiten = {
   // Dreiteilig seit #990: Vorlagen in der Mitte, rechts die gewählte mit Live-Vorschau (#799).
   stempel: ({ id, z: { stempel } }) => ({
     liste: <StempelListe z={stempel} offen={id} />,
-    rechts: id ? <StempelEditor key={`${id}-${stempel.liste ? 1 : 0}`} z={stempel} id={id} /> : waehle(t('werkbank.stempel.waehle')),
+    rechts: id ? <StempelEditor key={editorSchluessel(id, !!stempel.liste)} z={stempel} id={id} /> : waehle(t('werkbank.stempel.waehle')),
   }),
 } satisfies Seiten;
 
