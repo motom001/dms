@@ -653,6 +653,7 @@ Texte für Benutzer stehen nicht im Code, sondern in **Sprachdateien** (#473, #7
 
 ```
 shared/src/sprachen/de/<bereich>.json         Ausgangssprache Deutsch (du), immer vollständig
+shared/src/sprachen/de/<bereich>/*.json       große Bereiche geteilt (werkbank, meldungen; #1279), index.ts führt zusammen
 shared/src/sprachen/de-formal/dritte.json     Texte für Dritte mit „Sie“ (siehe unten)
 shared/src/sprachen/en/<bereich>.json         Englisch, britische Schreibweise, vollständig
 shared/src/englisch.ts                        lädt alle englischen Dateien (eigener Chunk in der Oberfläche)
@@ -680,10 +681,27 @@ shared/src/texte.ts                           t() für gemeinsamen Code (Bereich
 
 Daneben gibt es Fachbereiche aus früheren Issues (`anmeldung`, `automatisierung`, `pakete`, `suche` …); dort bleiben ihre Texte.
 
+**Geteilte Bereiche** (#1279): `werkbank` und `meldungen` sind für eine Datei zu groß. Sie stehen je Sprache in einem Ordner mit Teildateien, `index.ts` im Ordner führt sie zum Bereich zusammen. Die Schlüssel im Code bleiben gleich: `t('werkbank.pakete.dazu.titel')`.
+
+| Teildatei | enthält |
+|---|---|
+| `werkbank/rahmen.json`, `uebersicht.json` | Leiste, Namen der Bereiche und Gruppen, Vorlagen, Kopf, Listensuche; die Übersicht |
+| `werkbank/pakete.json`, `paketerstellen.json`, `sichten.json`, `ablage.json` | Gruppe „Ablage aufbauen“ der Leiste |
+| `werkbank/benutzer.json`, `verschluesselung.json`, `stempel.json` | Gruppe „Benutzer und Sicherheit“ (mit Notfallblatt und Notfallkontakten, Aufbewahrung) |
+| `werkbank/datenschutz.json`, `postfaecher.json`, `post.json`, `sicherung.json`, `einstellungen.json`, `wartung.json` | die gleichnamigen Gruppen der Leiste (`postfaecher.json` mit den Mail-Anbietern) |
+| `meldungen/<datei>.json` | je Fachordner des Servers: `dienst`, `pakete`, `paketerstellung`, `sicherung`, `datenschutz`, `anmeldung`, `post`, `dateien` (mit `pdf/`), `http`, `start` (Start, Läufer, Prozesse), `system` (mit Datenbank und Einrichtung), `einstellungen`, `erkennung`, `ablage` (Mappen, WebDAV, Automatisierung) |
+
+**Wohin ein neuer Schlüssel gehört:**
+
+- Gibt es seine **Gruppe** schon – den ersten Teil des Schlüssels, `pakete` in `pakete.dazu.titel` –, kommt er in die Datei, in der die Gruppe steht. Jede Gruppe steht ganz in einer Datei.
+- Eine **neue Gruppe** kommt in die Datei ihres Teils der Werkbank (eine neue Seite unter „Post und Eingänge“ nach `werkbank/post.json`) bzw. ihres Fachordners im Server (`server/src/post/` nach `meldungen/post.json`).
+- Eine **neue Teildatei** lohnt erst ab etwa 50 Schlüsseln. Sie bekommt in jeder Sprache denselben Namen und eine Zeile in jeder `index.ts`.
+- In jeder Sprache dieselbe Datei: Steht ein Schlüssel in `de/werkbank/post.json`, steht er auch in `en/werkbank/post.json`.
+
 **Text anlegen**
 
 1. Passenden Bereich wählen (Tabelle oben). Ein neuer Bereich wird in `web/src/sprache.ts` bzw. `server/src/sprache/sprache.ts` eingetragen; Dateiname = Bereich, klein, ohne Punkt.
-2. Schlüssel in die JSON-Datei schreiben – flach, Teile mit Punkt oder Bindestrich, klein beginnend: `"vergessen.knopf": "Link anfordern"`.
+2. Schlüssel in die JSON-Datei schreiben (bei geteilten Bereichen in die Teildatei seiner Gruppe, siehe oben) – flach, Teile mit Punkt oder Bindestrich, klein beginnend: `"vergessen.knopf": "Link anfordern"`.
 3. Im Code abrufen: `t('anmeldung.vergessen.knopf')`. Die Typprüfung kennt alle Schlüssel und meldet Tippfehler.
 
 **Benennung:** vorne die Komponente bzw. Datei, dann Ort und Zweck – `vergessen.titel`, `vergessen.knopf`, `fehler.link.abgelaufen`. Beim Umzug in #727 entstanden die Schlüssel aus Datei und Textanfang (`wartungsmodus.alle-jetzt-abmelden`); wer einen Text ändert, darf den Schlüssel passend umbenennen. Wiederkehrende Wörter („Speichern“, „Abbrechen“) bekommen keinen gemeinsamen Schlüssel – so bleibt jede Übersetzung im Zusammenhang.
@@ -714,6 +732,7 @@ Daneben gibt es Fachbereiche aus früheren Issues (`anmeldung`, `automatisierung
 
 - `shared/test/sprachdateien.test.ts`: Schlüssel, die der Code abruft, aber nicht gibt; Schlüssel, die niemand benutzt; Sprachen, die Schlüssel auslassen oder zusätzliche haben; Platzhalter, die zwischen den Sprachen abweichen; **Platzhalter, die ein Aufruf nicht liefert** (`t('…', { nam })` für `{name}`); Mehrzahl ohne `_other`; leere Texte.
 - `shared/test/sprachdateien-fest.test.ts`: **feste Texte in der Oberfläche** – Text zwischen Tags, in sichtbaren Attributen (`title`, `aria-label`, `placeholder`, `titel` …) und als Wert in geschweiften Klammern. Was in jeder Sprache gleich bleibt (Produktnamen, Befehle in `<code>`, Beispieladressen), ist erlaubt; weitere Ausnahmen stehen mit Grund in `AUSNAHMEN` in der Testdatei.
+- `shared/test/sprachdateien-teile.test.ts` (#1279): geteilte Bereiche – kein Schlüssel in zwei Teildateien, jede Gruppe in einer Datei, jede Sprache teilt wie Deutsch, und der Code bekommt genau die Texte der Dateien (eine Teildatei, die in `index.ts` fehlt, fällt auf). Die Meldungen von `sprachdateien.test.ts` nennen bei geteilten Bereichen den Bereich (`de/werkbank.json`); die Teildatei findet man über die Gruppe.
 - `web/test/symbole.test.ts`: keine bunten Emoji und keine Textzeichen als Symbol – auch in den Sprachdateien.
 
 **Bewusst noch im Code** (#727): Protokollzeilen (`log.*`, Werkbank → Protokoll) bleiben Deutsch, damit Fehlermeldungen vergleichbar und durchsuchbar sind; die Beschreibung der Schnittstelle (OpenAPI in `server/src/http/api-v1/`) ist Entwicklerdoku wie dieses Handbuch; Lizenztexte (seit #1278 als Dateien in `server/lizenzen/`); Beispieldaten und Demo-Inhalte; die Titel der Handbuch-Abschnitte in `shared/src/hilfe.ts` (sie folgen den Überschriften im Handbuch und kommen mit dessen Übersetzung, #730); die festen Werte der Auswahlfelder von Post (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model/systemtypen.ts`) – sie stehen so in jeder Mappe; gezeigt wird ihre Beschriftung (siehe unten). Namen, Felder und Hilfetexte der Systemmappentypen kommen seit #728 aus `gemeinsam.json` (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).

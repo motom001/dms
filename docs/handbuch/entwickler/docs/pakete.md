@@ -470,7 +470,7 @@ sprache:
 inhalt: {}
 ```
 
-**Texte** (`texte/<bereich>.json`): flach wie die eingebauten Sprachdateien, dieselben Bereiche, Schlüssel und Platzhalter wie `shared/src/sprachen/de/` – am bequemsten übersetzt man die englischen Dateien (`en/`). Mehrzahl nach den Regeln der Sprache (`_one`, `_few`, `_many`, `_other` …); immer die vertraute Anrede (du, tu, je, ty …), eine förmliche Fassung gibt es nicht. Beim Installieren prüft Ablago jeden Text:
+**Texte** (`texte/<bereich>.json`): flach wie die eingebauten Sprachdateien, dieselben Bereiche, Schlüssel und Platzhalter wie `shared/src/sprachen/de/` – am bequemsten übersetzt man die englischen Dateien (`en/`). Geteilte Bereiche (#1279, z. B. `en/werkbank/*.json`) ergeben im Paket zusammen eine Datei (`texte/werkbank.json`). Mehrzahl nach den Regeln der Sprache (`_one`, `_few`, `_many`, `_other` …); immer die vertraute Anrede (du, tu, je, ty …), eine förmliche Fassung gibt es nicht. Beim Installieren prüft Ablago jeden Text:
 
 - **abgelehnt** wird das Paket bei Texten, die keine Zeichenkette sind, bei Steuerzeichen, bei mehr als 4000 Zeichen je Text oder 4 MB für alle Texte und bei **spitzen Klammern**, wo der deutsche Text keine hat – also bei HTML. Ablago setzt Texte nie als HTML, die Prüfung ist eine zweite Sicherung.
 - **übergangen** werden Bereiche und Schlüssel, die es in dieser Version nicht gibt, und Texte mit Platzhaltern, die der deutsche Text nicht hat. An ihrer Stelle erscheint Englisch, die Vorschau nennt die Zahl. So bleibt ein Paket für eine ältere Version installierbar.

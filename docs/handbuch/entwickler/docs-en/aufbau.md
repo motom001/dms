@@ -654,6 +654,7 @@ Texts for users are not in the code but in **language files** (#473, #727, part 
 
 ```
 shared/src/sprachen/de/<area>.json            source language German (du), always complete
+shared/src/sprachen/de/<area>/*.json          large areas split (werkbank, meldungen; #1279), index.ts merges them
 shared/src/sprachen/de-formal/dritte.json     texts for third parties with "Sie" (see below)
 shared/src/sprachen/en/<area>.json            English, British spelling, complete
 shared/src/englisch.ts                        loads all English files (a chunk of its own in the interface)
@@ -681,10 +682,27 @@ shared/src/texte.ts                           t() for shared code (area gemeinsa
 
 In addition there are domain areas from earlier issues (`anmeldung`, `automatisierung`, `pakete`, `suche` …); their texts stay there.
 
+**Split areas** (#1279): `werkbank` and `meldungen` are too large for one file. Per language they live in a folder with part files; `index.ts` in the folder merges them into the area. The keys in the code stay the same: `t('werkbank.pakete.dazu.titel')`.
+
+| Part file | contains |
+|---|---|
+| `werkbank/rahmen.json`, `uebersicht.json` | sidebar, names of areas and groups, templates, header, list search; the overview |
+| `werkbank/pakete.json`, `paketerstellen.json`, `sichten.json`, `ablage.json` | sidebar group "Build the Library" |
+| `werkbank/benutzer.json`, `verschluesselung.json`, `stempel.json` | group "Users and security" (with emergency sheet and emergency contacts, retention) |
+| `werkbank/datenschutz.json`, `postfaecher.json`, `post.json`, `sicherung.json`, `einstellungen.json`, `wartung.json` | the sidebar groups of the same name (`postfaecher.json` with the mail providers) |
+| `meldungen/<file>.json` | per domain folder of the server: `dienst`, `pakete`, `paketerstellung`, `sicherung`, `datenschutz`, `anmeldung`, `post`, `dateien` (with `pdf/`), `http`, `start` (start-up, runner, processes), `system` (with database and setup), `einstellungen`, `erkennung`, `ablage` (folders, WebDAV, automation) |
+
+**Where a new key goes:**
+
+- If its **group** already exists – the first part of the key, `pakete` in `pakete.dazu.titel` – it goes into the file that holds the group. Each group is entirely in one file.
+- A **new group** goes into the file of its part of the Workbench (a new page under "Post and intake" into `werkbank/post.json`) or of its domain folder in the server (`server/src/post/` into `meldungen/post.json`).
+- A **new part file** is only worth it from about 50 keys. It gets the same name in every language and a line in every `index.ts`.
+- The same file in every language: if a key is in `de/werkbank/post.json`, it is also in `en/werkbank/post.json`.
+
 **Creating a text**
 
 1. Choose the matching area (table above). A new area is entered in `web/src/sprache.ts` or `server/src/sprache/sprache.ts`; file name = area, lower case, without a dot.
-2. Write the key into the JSON file – flat, parts with a dot or hyphen, starting in lower case: `"vergessen.knopf": "Link anfordern"`.
+2. Write the key into the JSON file (for split areas into the part file of its group, see above) – flat, parts with a dot or hyphen, starting in lower case: `"vergessen.knopf": "Link anfordern"`.
 3. Retrieve it in the code: `t('anmeldung.vergessen.knopf')`. The type check knows all keys and reports typos.
 
 **Naming:** first the component or file, then place and purpose – `vergessen.titel`, `vergessen.knopf`, `fehler.link.abgelaufen`. During the move in #727 the keys arose from file and beginning of the text (`wartungsmodus.alle-jetzt-abmelden`); whoever changes a text may rename the key accordingly. Recurring words ("Save", "Cancel") don't get a shared key – that way every translation stays in context.
@@ -715,6 +733,7 @@ In addition there are domain areas from earlier issues (`anmeldung`, `automatisi
 
 - `shared/test/sprachdateien.test.ts`: keys the code asks for but that don't exist; keys nobody uses; languages that leave out keys or have extra ones; placeholders that differ between languages; **placeholders a call doesn't supply** (`t('…', { nam })` for `{name}`); plurals without `_other`; empty texts.
 - `shared/test/sprachdateien-fest.test.ts`: **fixed texts in the interface** – text between tags, in visible attributes (`title`, `aria-label`, `placeholder`, `titel` …) and as a value in curly braces. What stays the same in every language (product names, commands in `<code>`, example addresses) is allowed; further exceptions are listed with a reason in `AUSNAHMEN` in the test file.
+- `shared/test/sprachdateien-teile.test.ts` (#1279): split areas – no key in two part files, each group in one file, every language splits like German, and the code gets exactly the texts of the files (a part file missing from `index.ts` is noticed). For split areas the messages of `sprachdateien.test.ts` name the area (`de/werkbank.json`); you find the part file via the group.
 - `web/test/symbole.test.ts`: no coloured emoji and no text characters used as symbols – in the language files too.
 
 **Deliberately still in the code** (#727): log lines (`log.*`, Workbench → Log) stay German so that error messages remain comparable and searchable; the description of the interface (OpenAPI in `server/src/http/api-v1/`) is developer documentation like this handbook; licence texts (since #1278 as files in `server/lizenzen/`); sample data and demo content; the titles of the handbook sections in `shared/src/hilfe.ts` (they follow the headings in the handbook and come with its translation, #730); the fixed values of the post choice fields (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model/systemtypen.ts`) – they are stored like that in every folder; what is shown is their label (see below). Names, fields and help texts of the system folder types have come from `gemeinsam.json` since #728 (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).

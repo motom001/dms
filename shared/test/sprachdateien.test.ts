@@ -10,23 +10,11 @@ import { join, relative } from 'node:path';
 import { describe, it } from 'node:test';
 import { fuelle, platzhalter, setzeSprache, uebersetzer } from '../../shared/src/sprache';
 import { pruefeSprachdateien, type Quelltext, type Sprachstand } from '../../shared/src/sprachpruefung';
+import { sprachstand } from './sprachdateien-lesen';
 import { textDritte } from '../../shared/src/anrede';
 import { mailtexte } from '../../server/src/mail/mail';
 
 const WURZEL = new URL('../..', import.meta.url).pathname;
-const SPRACHEN = join(WURZEL, 'shared/src/sprachen');
-
-function sprachstand(): Sprachstand {
-  const stand: Sprachstand = {};
-  for (const spr of readdirSync(SPRACHEN)) {
-    if (!statSync(join(SPRACHEN, spr)).isDirectory()) continue;
-    stand[spr] = {};
-    for (const f of readdirSync(join(SPRACHEN, spr))) {
-      if (f.endsWith('.json')) stand[spr][f.slice(0, -5)] = JSON.parse(readFileSync(join(SPRACHEN, spr, f), 'utf8'));
-    }
-  }
-  return stand;
-}
 
 function quelltexte(): Quelltext[] {
   const aus = (ordner: string): Quelltext[] =>

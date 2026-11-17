@@ -44,13 +44,14 @@ function texte(sprache) {
   const aus = new Map();
   let dateien = [];
   try {
-    dateien = readdirSync(join(SPRACHDATEIEN, sprache)).filter((n) => n.endsWith('.json'));
+    // Bereich als Datei (ablage.json) oder als Ordner mit Teildateien (werkbank/pakete.json, #1279).
+    dateien = readdirSync(join(SPRACHDATEIEN, sprache), { recursive: true }).filter((n) => n.endsWith('.json'));
   } catch {
     return aus;
   }
   for (const n of dateien) {
-    for (const [k, v] of Object.entries(JSON.parse(readFileSync(join(SPRACHDATEIEN, sprache, n), 'utf8'))))
-      aus.set(`${n.slice(0, -5)}.${k}`, v);
+    const bereich = n.split(/[\\/]/)[0].replace(/\.json$/, '');
+    for (const [k, v] of Object.entries(JSON.parse(readFileSync(join(SPRACHDATEIEN, sprache, n), 'utf8')))) aus.set(`${bereich}.${k}`, v);
   }
   return aus;
 }

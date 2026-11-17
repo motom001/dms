@@ -1332,11 +1332,6 @@
       "LINK_PARAMETER"
     ]
   },
-  "shared/src/englisch.ts": {
-    "exports": [
-      "ENGLISCH"
-    ]
-  },
   "shared/src/entdecken.ts": {
     "exports": [
       "BILDER",

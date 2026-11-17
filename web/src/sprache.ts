@@ -37,7 +37,7 @@ import spalten from '../../shared/src/sprachen/de/spalten.json';
 import suche from '../../shared/src/sprachen/de/suche.json';
 import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import volltext from '../../shared/src/sprachen/de/volltext.json';
-import werkbank from '../../shared/src/sprachen/de/werkbank.json';
+import werkbank from '../../shared/src/sprachen/de/werkbank';
 
 const bereiche = {
   ablage,

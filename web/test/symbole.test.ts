@@ -40,11 +40,12 @@ const ERSATZ_ERLAUBT: Record<string, string> = {
 
 /** Seit #727 stehen die Texte dieser Dateien in den Sprachdateien: dort gilt dieselbe Ausnahme je Schlüsselanfang. */
 const ERSATZ_ERLAUBT_SCHLUESSEL: Record<string, string[]> = {
-  '../../shared/src/sprachen/de/werkbank.json': ['berechtigungen.', 'sichtrechte.', 'sichten.'],
+  '../../shared/src/sprachen/de/werkbank/benutzer.json': ['berechtigungen.'],
+  '../../shared/src/sprachen/de/werkbank/sichten.json': ['sichtrechte.', 'sichten.'],
   '../../shared/src/sprachen/de/oberflaeche.json': ['wiederherstellen.'],
   '../../shared/src/sprachen/de/gemeinsam.json': ['sichtrechte.'],
 };
-// Die Ausnahmen gelten in jeder Sprache (#729): en/werkbank.json wie de/werkbank.json.
+// Die Ausnahmen gelten in jeder Sprache (#729): en/werkbank/sichten.json wie de/werkbank/sichten.json.
 const erlaubterSchluessel = (rel: string, zeile: string) =>
   (ERSATZ_ERLAUBT_SCHLUESSEL[rel.replace(/\/sprachen\/[^/]+\//, '/sprachen/de/')] ?? []).some((a) => zeile.trimStart().startsWith(`"${a}`));
 

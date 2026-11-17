@@ -7,9 +7,9 @@
  */
 
 import { uebersetzer } from './sprache';
-import werkbank from './sprachen/de/werkbank.json';
+import werkbank from './sprachen/de/werkbank';
 
-/** Texte der Werkbank (#473): Gruppen, Bereiche, Vorlagen stehen in `sprachen/de/werkbank.json`. */
+/** Texte der Werkbank (#473): Gruppen, Bereiche, Vorlagen stehen in `sprachen/de/werkbank/rahmen.json`. */
 const t = uebersetzer({ werkbank });
 
 /**
