@@ -22,8 +22,12 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
-  const { dienst, x, designs, ocr } = k;
-  const { pakete, wer } = k;
+  return [...beispielUndProtokollRouten(k), ...designRouten(k), ...logoRouten(k), ...texterkennungRouten(k)];
+}
+
+/** Beispiel-Ablage (#988), Protokoll und Debug-Modus. */
+function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
+  const { dienst, pakete, wer } = k;
   const beispielAblage = () => new BeispielAblage(pakete, () => dienst.kern.repo.listePakete());
   return [
     /* ---------- Beispiel-Ablage (#988) ---------- */
@@ -82,7 +86,13 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
         return ok(r);
       },
     },
+  ];
+}
 
+/** Designs: lesen alle Angemeldeten, ändern nur Administratoren. */
+function designRouten(k: RoutenKontext): Route[] {
+  const { x, designs } = k;
+  return [
     /* ---------- Designs ---------- */
     // Alle Angemeldeten lesen (zum Anwenden und Auswählen), nur Administratoren ändern.
     {
@@ -121,6 +131,13 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
         return leer;
       },
     },
+  ];
+}
+
+/** Logo je Design (#72) und Standard-Design. */
+function logoRouten(k: RoutenKontext): Route[] {
+  const { designs } = k;
+  return [
     // Logo je Design (#72): hochladen als rohe Bytes, entfernen, ausliefern (ohne Anmeldung nur das des Standard-Designs).
     {
       methode: 'PUT',
@@ -162,7 +179,13 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
         return ok(r);
       },
     },
+  ];
+}
 
+/** Texterkennung (#45, #577) und ihre Aufträge (#61). */
+function texterkennungRouten(k: RoutenKontext): Route[] {
+  const { dienst, ocr } = k;
+  return [
     /* ---------- Technik und Versionen ---------- */
     /* ---------- E-Mail-Versand und Adresse (#37) ---------- */
     /* ---------- Texterkennung und Wartungsoperationen (#45) ---------- */
