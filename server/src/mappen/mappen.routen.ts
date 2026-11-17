@@ -2,18 +2,33 @@
  * Mappen (#960: aus routen.ts): E-Mail, Post und Fotos, Zuordnen und Abgleich, Vorschläge und Erkennung, Notizen,
  * Historie, Anlegen und Ändern, Export einer Sicht, Auswahl, Löschen und Papierkorb.
  */
-import { MAX_DATEIGROESSE, POST_KANAL } from '../../../shared/src/model';
-import { Fachfehler } from '../grundlagen/fehler';
-import { t } from '../sprache/sprache';
 import { liesAnlass } from '../../../shared/src/loeschprotokoll';
 import { liesQuelle } from '../sprache/uebersetzung';
-import { VORSCHLAG_DATEI_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, quelle, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
+import { mappenPostRouten, zuordnenRouten } from './mappen-post.routen';
+import { erkennungRouten } from './mappen-erkennung.routen';
+import { papierkorbRouten, werkbankPapierkorbRouten } from './mappen-papierkorb.routen';
 
 export function mappenRouten(k: RoutenKontext): Route[] {
-  const { dienst, x, fotostapel, typName, spracheFuer, modusSpur, zg, darf, zuletztGeoeffnet } = k;
+  return [
+    ...erwaehnungenRouten(k),
+    ...mappenPostRouten(k),
+    ...zuordnenRouten(k),
+    ...erkennungRouten(k),
+    ...notizenRouten(k),
+    ...mappeBearbeitenRouten(k),
+    ...mehrereMappenRouten(k),
+    ...loeschenRouten(k),
+    ...papierkorbRouten(k),
+    ...werkbankPapierkorbRouten(k),
+  ];
+}
+
+/** Sichtbarkeit verwiesener Mappen (#888), Erwähnen mit @ (#889) und E-Mail aus der Mappe. */
+function erwaehnungenRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, modusSpur, zg, zuletztGeoeffnet } = k;
   return [
     // Sichtbarkeit verwiesener Mappen (#888): Erwähnungen und Namen unterscheiden „nicht sichtbar“ von „gelöscht“.
     // Nur für Ids, die die Oberfläche schon kennt; keine Titel, kein Typ (wie „nicht sichtbare Mappe“, #124).
@@ -65,159 +80,13 @@ export function mappenRouten(k: RoutenKontext): Route[] {
         return ok(r, 201);
       },
     },
-    // Post (#192): anlegen („+ Post“, Dokumente danach über das Hochladen) und einer Mappe zuordnen.
-    {
-      methode: 'POST',
-      pfad: '/api/post',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const i = ich(a);
-        return ok(
-          await dienst.post.legePostAn(
-            b(a),
-            { id: i.id, name: i.name },
-            await zg(a),
-            a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen,
-          ),
-          201,
-        );
-      },
-    },
-    // Post fotografieren (#490): Fotos einzeln in den Stapel, „Fertig“ macht ein PDF daraus.
-    {
-      methode: 'POST',
-      pfad: '/api/fotostapel',
-      zugang: 'angemeldet',
-      roh: MAX_DATEIGROESSE,
-      handler: async (a) => ok({ id: await fotostapel.lege(ich(a).id, a.body) }, 201),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/post/fotos',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const i = ich(a);
-        const ids = (b(a) as { stapel?: unknown }).stapel;
-        const fotos = await fotostapel.nimm(i.id, ids);
-        const r = await dienst.postFotos.postAusFotos(
-          b(a),
-          fotos,
-          { id: i.id, name: i.name },
-          await zg(a),
-          a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen,
-        );
-        await fotostapel.weg(i.id, ids as string[]);
-        return ok(r, 201);
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/mappen/:id/fotos',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        // Erst das Recht an der Mappe (#1262), dann der eigene Fotostapel.
-        await darf(a, a.params.id, 'U');
-        const i = ich(a);
-        const ids = (b(a) as { stapel?: unknown }).stapel;
-        const fotos = await fotostapel.nimm(i.id, ids);
-        const r = await dienst.postFotos.fotosAnMappe(a.params.id, b(a), fotos, i.id, await zg(a));
-        await fotostapel.weg(i.id, ids as string[]);
-        return ok(r, 201);
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/post/:id/zusammenlegen',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.postFotos.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/mappen/:id/zuordnen',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.post.ordneZu(a.params.id, b(a), ich(a).id, await zg(a), undefined, quelle(a))),
-    },
-    // „Dokument übernehmen“ (#934): Folgedokumente als neue Post abtrennen; Abgleich mit vorhandenen Mappen (Belege, Doppelte, Typ).
-    {
-      methode: 'POST',
-      pfad: '/api/mappen/:id/abtrennen',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.postAufloesen.trennePostAb(a.params.id, b(a), ich(a).id, await zg(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/abgleich',
-      zugang: 'angemeldet',
-      lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.abgleichDokumente(b(a), await zg(a))),
-    },
-    // „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich – ein Vorschlag mit Belegen.
-    {
-      methode: 'POST',
-      pfad: '/api/klassifizieren',
-      zugang: 'angemeldet',
-      lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.klassifizierung.klassifiziere(b(a), await zg(a))),
-    },
-    // „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps aus Text, Dokumenten oder einer Datei.
-    {
-      methode: 'POST',
-      pfad: '/api/typen/:id/vorschlaege',
-      zugang: 'angemeldet',
-      lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.fuerTyp(a.params.id, b(a), await zg(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/typen/:id/vorschlaege/datei',
-      zugang: 'angemeldet',
-      lesend: true,
-      roh: VORSCHLAG_DATEI_MAX,
-      handler: async (a) => {
-        const z = await zg(a);
-        if (!Buffer.isBuffer(a.body) || !a.body.length) throw new Fachfehler(422, t('meldungen.routen.die-datei-ist-leer'));
-        // Erst Zugriff prüfen, dann die (teure) Texterkennung.
-        await dienst.erkennung.fuerTyp(a.params.id, { mappe: a.query.mappe }, z);
-        // E-Rechnung (#1043): XML direkt, im PDF aus dem Anhang – ihre Angaben gehen vor.
-        const { text, info, erechnung } = await dienst.erkennung.dateiLesen(a.body, String(a.query.name ?? ''), String(a.query.typ ?? ''));
-        return ok({
-          ...(await dienst.erkennung.fuerTyp(
-            a.params.id,
-            { text, mappe: a.query.mappe, positionen: a.query.positionen === '1' || a.query.positionen === 'true' },
-            z,
-            { erechnung },
-          )),
-          text: text.slice(0, 200_000),
-          info,
-        });
-      },
-    },
-    {
-      methode: 'GET',
-      pfad: '/api/typen/:id/erkennungsschema',
-      zugang: 'angemeldet',
-      lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.schema(a.params.id, await zg(a))),
-    },
-    // Erkennung (#336): Vorschläge beim Zuordnen; POST rechnet neu (z. B. nach dem Anlegen einer Organisation).
-    {
-      methode: 'GET',
-      pfad: '/api/mappen/:id/erkennung',
-      zugang: 'angemeldet',
-      lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.fuerBenutzer(a.params.id, await zg(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/mappen/:id/erkennung',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const z = await zg(a);
-        await dienst.rechtepruefung.pruefeRecht(z, a.params.id, 'R');
-        await dienst.erkennung.fuerPost(a.params.id);
-        return ok(await dienst.erkennung.fuerBenutzer(a.params.id, z));
-      },
-    },
+  ];
+}
+
+/** Übersetzung, Notizen (#55, #124), verweisende Mappen und Änderungshistorie (#57). */
+function notizenRouten(k: RoutenKontext): Route[] {
+  const { dienst, spracheFuer, zg, darf } = k;
+  return [
     // Notizen brauchen nur Lesen (#124).
     // Übersetzung anzeigen (#732): nur Kennungen – den Text liest der Kern mit den Rechten der Person; je Aufruf ein Abschnitt.
     // Gespeichert wird nichts an der Mappe; die Übersetzung liegt nur im Zwischenspeicher.
@@ -291,6 +160,13 @@ export function mappenRouten(k: RoutenKontext): Route[] {
         return ok(await dienst.mappenHistorie.historie(a.params.id, { register: a.query.register, max: a.query.max, vor: a.query.vor }));
       },
     },
+  ];
+}
+
+/** Passwortfelder (#46), Hinweise von Paketen (#1034), Rechte-Vorschau (#126), Mappe anlegen und ändern. */
+function mappeBearbeitenRouten(k: RoutenKontext): Route[] {
+  const { dienst, typName, modusSpur, zg, darf } = k;
+  return [
     // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
     {
       methode: 'POST',
@@ -346,6 +222,13 @@ export function mappenRouten(k: RoutenKontext): Route[] {
         return ok(m);
       },
     },
+  ];
+}
+
+/** Export (#152, #153), Auswahl (#149) und mehrere Mappen per E-Mail (#151). */
+function mehrereMappenRouten(k: RoutenKontext): Route[] {
+  const { dienst, x, modusSpur, zg } = k;
+  return [
     // Export (#152, #153): Tabelle, ZIP mit Dokumenten oder PDF – Recht E an der Sicht, Lesen je Mappe.
     {
       methode: 'POST',
@@ -404,6 +287,13 @@ export function mappenRouten(k: RoutenKontext): Route[] {
         return ok(r, 201);
       },
     },
+  ];
+}
+
+/** Mappen löschen, auch mit allen verknüpften (#424). */
+function loeschenRouten(k: RoutenKontext): Route[] {
+  const { dienst, zg } = k;
+  return [
     {
       methode: 'POST',
       pfad: '/api/mappen/loeschen',
@@ -443,143 +333,6 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       pfad: '/api/mappen/:id/mit-verknuepften-loeschen',
       zugang: 'angemeldet',
       handler: async (a) => ok(await dienst.mitVerknuepften.loescheMitVerknuepften(a.params.id, a.body, ich(a).id, await zg(a), quelle(a))),
-    },
-
-    /* ---------- Papierkorb (#43): in der Ablage nur, was ich gelöscht habe ---------- */
-    {
-      methode: 'GET',
-      pfad: '/api/papierkorb',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorb(ich(a))),
-    },
-    // Einzelne Dokumente (#344): eigene Liste, damit die Antwort von /api/papierkorb gleich bleibt.
-    {
-      methode: 'GET',
-      pfad: '/api/papierkorb/dokumente',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorbDokumente(ich(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/papierkorb/dokumente/:id/wiederherstellen',
-      zugang: 'angemeldet',
-      handler: async (a) =>
-        ok(await dienst.papierkorbVerwaltung.stelleDokumentWiederHer(a.params.id, ich(a), await zg(a), false, quelle(a))),
-    },
-    {
-      methode: 'DELETE',
-      pfad: '/api/papierkorb/dokumente/:id',
-      zugang: 'angemeldet',
-      handler: async (a) =>
-        ok({ geloescht: await dienst.papierkorbVerwaltung.loescheDokumentEndgueltig([a.params.id], ich(a), false, quelle(a)) }),
-    },
-    {
-      methode: 'DELETE',
-      pfad: '/api/papierkorb',
-      zugang: 'angemeldet',
-      handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.leerePapierkorb(ich(a), false, { quelle: quelle(a) }) }),
-    },
-    {
-      methode: 'GET',
-      pfad: '/api/papierkorb/:id',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorbEintrag(a.params.id, ich(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/papierkorb/:id/wiederherstellen',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const r = await dienst.papierkorbVerwaltung.stelleWiederHer(a.params.id, ich(a), false, quelle(a));
-        // Eigener Papierkorb (#126): immer wiederherstellbar; danach gelten wieder die Regeln.
-        const sichtbar = (await dienst.rechtepruefung.lesbare(await zg(a), [a.params.id])).has(a.params.id);
-        return ok(sichtbar ? r : { ...r, hinweis: t('meldungen.routen.wiederhergestellt-diese-mappe-kannst') });
-      },
-    },
-    {
-      methode: 'DELETE',
-      pfad: '/api/papierkorb/:id',
-      zugang: 'angemeldet',
-      handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.loescheEndgueltig([a.params.id], ich(a), false, quelle(a)) }),
-    },
-    // Ein Vorgang (#424): alle Mappen, die zusammen gelöscht wurden.
-    {
-      methode: 'POST',
-      pfad: '/api/papierkorb/vorgang/:id/wiederherstellen',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.mitVerknuepften.stelleVorgangWiederHer(a.params.id, ich(a), false, quelle(a))),
-    },
-    /* … und in der Werkbank alles */
-    {
-      methode: 'GET',
-      pfad: '/api/werkbank/papierkorb',
-      zugang: 'admin',
-      handler: async (a) =>
-        ok({
-          tage: await dienst.kern.papierkorbTage(),
-          historieTage: await dienst.mappenHistorie.historieTage(),
-          eintraege: await dienst.papierkorbVerwaltung.papierkorb(ich(a), true),
-          dokumente: await dienst.papierkorbVerwaltung.papierkorbDokumente(ich(a), true),
-        }),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen',
-      zugang: 'admin',
-      handler: async (a) => ok(await dienst.papierkorbVerwaltung.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true, quelle(a))),
-    },
-    {
-      methode: 'DELETE',
-      pfad: '/api/werkbank/papierkorb/dokumente/:id',
-      zugang: 'admin',
-      handler: async (a) =>
-        ok({ geloescht: await dienst.papierkorbVerwaltung.loescheDokumentEndgueltig([a.params.id], ich(a), true, quelle(a)) }),
-    },
-    {
-      methode: 'PUT',
-      pfad: '/api/werkbank/papierkorb/einstellungen',
-      zugang: 'admin',
-      handler: async (a) => {
-        const historieTage =
-          b(a).historieTage === undefined
-            ? await dienst.mappenHistorie.historieTage()
-            : await dienst.mappenHistorie.setzeHistorieTage(b(a).historieTage);
-        const r =
-          b(a).tage === undefined
-            ? { tage: await dienst.kern.papierkorbTage(), geleert: 0 }
-            : await dienst.papierkorbVerwaltung.setzePapierkorbTage(b(a).tage, ich(a).id);
-        return ok({ ...r, historieTage });
-      },
-    },
-    {
-      methode: 'DELETE',
-      pfad: '/api/werkbank/papierkorb',
-      zugang: 'admin',
-      handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.leerePapierkorb(ich(a), true, { quelle: quelle(a) }) }),
-    },
-    {
-      methode: 'GET',
-      pfad: '/api/werkbank/papierkorb/:id',
-      zugang: 'admin',
-      handler: async (a) => ok(await dienst.papierkorbVerwaltung.papierkorbEintrag(a.params.id, ich(a), true)),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/werkbank/papierkorb/:id/wiederherstellen',
-      zugang: 'admin',
-      handler: async (a) => ok(await dienst.papierkorbVerwaltung.stelleWiederHer(a.params.id, ich(a), true, quelle(a))),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/werkbank/papierkorb/vorgang/:id/wiederherstellen',
-      zugang: 'admin',
-      handler: async (a) => ok(await dienst.mitVerknuepften.stelleVorgangWiederHer(a.params.id, ich(a), true, quelle(a))),
-    },
-    {
-      methode: 'DELETE',
-      pfad: '/api/werkbank/papierkorb/:id',
-      zugang: 'admin',
-      handler: async (a) => ok({ geloescht: await dienst.papierkorbVerwaltung.loescheEndgueltig([a.params.id], ich(a), true, quelle(a)) }),
     },
   ];
 }
