@@ -1189,9 +1189,6 @@
     }
   },
   "web/src/ablage/PostKamera.tsx": {
-    "max-lines-per-function": {
-      "count": 1
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }

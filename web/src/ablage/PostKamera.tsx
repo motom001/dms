@@ -64,13 +64,76 @@ interface Seite {
 }
 type Phase = 'zu' | 'aufnehmen' | 'speichert' | 'gespeichert' | 'ende';
 
+type Beleg = { id: string; typId: string; titel: string; seiten: number };
+
+/** Post gespeichert (#490): nächsten Beleg fotografieren (Serie), jetzt zuordnen oder fertig. */
+function Gespeichert({ letzte, naechster, schliessen, ende }: { letzte: Beleg; naechster(): void; schliessen(): void; ende(): void }) {
+  return (
+    <>
+      <p className="pk-titel pk-gut" role="status">
+        {tn('ablage.postkamera.post-gespeichert', { symbol: <Symbol name="haken" /> })}
+      </p>
+      <p className="leise">{t('ablage.postkamera.seiten-zuordnen-kannst-du', { anzahl: letzte.seiten, titel: letzte.titel })}</p>
+      <div className="pk-knoepfe">
+        {/* Blau ist die Hauptaktion (Leitsatz 1), Grün bleibt „+ …“ (Leitsatz 2). */}
+        <Knopf art="haupt" className="pk-gross" symbol="kamera" autoFocus onClick={naechster}>
+          {t('ablage.postkamera.naechsten-beleg-fotografieren')}
+        </Knopf>
+        <Knopf
+          className="pk-gross"
+          onClick={() => {
+            schliessen();
+            geheZu(`/ablage/${letzte.typId}/${letzte.id}`);
+          }}>
+          {t('ablage.postkamera.jetzt-zuordnen')}
+        </Knopf>
+        <Knopf className="pk-gross" onClick={ende}>
+          {t('ablage.postkamera.fertig')}
+        </Knopf>
+      </div>
+    </>
+  );
+}
+
+/** Ende der Serie: wie viele Belege, wo sie liegen („Neue Post“). */
+function Ende({ anzahl, neuePostSicht, schliessen }: { anzahl: number; neuePostSicht: string | null | undefined; schliessen(): void }) {
+  return (
+    <>
+      <p className="pk-titel pk-gut" role="status">
+        <Symbol name="haken" /> {t('ablage.postkamera.belege-erfasst', { anzahl })}
+      </p>
+      <p>
+        {t('ablage.postkamera.sie-liegen-unter', { anzahl })}{' '}
+        {neuePostSicht ? (
+          <Knopf
+            art="link"
+            onClick={() => {
+              schliessen();
+              geheZu(`/ablage/${neuePostSicht}`);
+            }}>
+            {t('ablage.postkamera.neue-post')}
+          </Knopf>
+        ) : (
+          t('ablage.postkamera.neue-post')
+        )}
+        {t('ablage.postkamera.zuordnen-und-einordnen-geht')}
+      </p>
+      <div className="pk-knoepfe">
+        <Knopf art="haupt" className="pk-gross" autoFocus onClick={schliessen}>
+          {t('ablage.postkamera.schliessen')}
+        </Knopf>
+      </div>
+    </>
+  );
+}
+
 export function PostKamera() {
   const d = useDaten();
   const postTyp = d.typen.find((mappentyp) => mappentyp.system === 'post');
   const [phase, setPhase] = useState<Phase>('zu');
   const [ziel, setZiel] = useState<KameraZiel | null>(null);
   const [seiten, setSeiten] = useState<Seite[]>([]);
-  const [serie, setSerie] = useState<Array<{ id: string; typId: string; titel: string; seiten: number }>>([]);
+  const [serie, setSerie] = useState<Beleg[]>([]);
   const [fehler, setFehler] = useState<string>();
   const kamera = useRef<HTMLInputElement>(null);
   const galerie = useRef<HTMLInputElement>(null);
@@ -228,56 +291,9 @@ export function PostKamera() {
           aria-modal="true"
           aria-label={ziel ? t('ablage.postkamera.seite-hinzufuegen') : t('ablage.postkamera.post-fotografieren')}>
           {phase === 'gespeichert' && letzte ? (
-            <>
-              <p className="pk-titel pk-gut" role="status">
-                {tn('ablage.postkamera.post-gespeichert', { symbol: <Symbol name="haken" /> })}
-              </p>
-              <p className="leise">{t('ablage.postkamera.seiten-zuordnen-kannst-du', { anzahl: letzte.seiten, titel: letzte.titel })}</p>
-              <div className="pk-knoepfe">
-                {/* Blau ist die Hauptaktion (Leitsatz 1), Grün bleibt „+ …“ (Leitsatz 2). */}
-                <Knopf art="haupt" className="pk-gross" symbol="kamera" autoFocus onClick={naechster}>
-                  {t('ablage.postkamera.naechsten-beleg-fotografieren')}
-                </Knopf>
-                <Knopf
-                  className="pk-gross"
-                  onClick={() => {
-                    schliessen();
-                    geheZu(`/ablage/${letzte.typId}/${letzte.id}`);
-                  }}>
-                  {t('ablage.postkamera.jetzt-zuordnen')}
-                </Knopf>
-                <Knopf className="pk-gross" onClick={() => setPhase('ende')}>
-                  {t('ablage.postkamera.fertig')}
-                </Knopf>
-              </div>
-            </>
+            <Gespeichert letzte={letzte} naechster={naechster} schliessen={schliessen} ende={() => setPhase('ende')} />
           ) : phase === 'ende' ? (
-            <>
-              <p className="pk-titel pk-gut" role="status">
-                <Symbol name="haken" /> {t('ablage.postkamera.belege-erfasst', { anzahl: serie.length })}
-              </p>
-              <p>
-                {t('ablage.postkamera.sie-liegen-unter', { anzahl: serie.length })}{' '}
-                {neuePostSicht ? (
-                  <Knopf
-                    art="link"
-                    onClick={() => {
-                      schliessen();
-                      geheZu(`/ablage/${neuePostSicht}`);
-                    }}>
-                    {t('ablage.postkamera.neue-post')}
-                  </Knopf>
-                ) : (
-                  t('ablage.postkamera.neue-post')
-                )}
-                {t('ablage.postkamera.zuordnen-und-einordnen-geht')}
-              </p>
-              <div className="pk-knoepfe">
-                <Knopf art="haupt" className="pk-gross" autoFocus onClick={schliessen}>
-                  {t('ablage.postkamera.schliessen')}
-                </Knopf>
-              </div>
-            </>
+            <Ende anzahl={serie.length} neuePostSicht={neuePostSicht} schliessen={schliessen} />
           ) : (
             <>
               <p className="pk-titel">
