@@ -12,9 +12,12 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Anfrage, Route } from '../http/routen-typen';
 
 export function paketeRouten(k: RoutenKontext): Route[] {
-  const { x, pakete, paketerstellung, wer } = k;
-  // Umbau (#1041): Ob die Person „Gesamte Verwaltung“ hat, setzt der Server – nie die Anfrage.
-  const mitRecht = <T extends object>(a: Anfrage): T => ({ ...((a.body ?? {}) as T), gesamteVerwaltung: hatGesamt(a.benutzer) });
+  return [...katalogRouten(k), ...erstellenRouten(k), ...installierenRouten(k)];
+}
+
+/** Paketverwaltung (#188, #189): installierte Pakete, Katalog und Quellen (#594). */
+function katalogRouten(k: RoutenKontext): Route[] {
+  const { pakete, wer } = k;
   return [
     /* ---------- Nummernkreise (#171) ---------- */
     // Paketverwaltung (#188, #189): Kataloge nur auf Knopfdruck; weitere Quellen und Hochladen in der erweiterten Ansicht.
@@ -61,6 +64,13 @@ export function paketeRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await pakete.quelleEntfernen(String(a.query.url ?? ''), wer(a))),
     },
+  ];
+}
+
+/** Paket selbst erstellen (#374, #652). */
+function erstellenRouten(k: RoutenKontext): Route[] {
+  const { paketerstellung, wer } = k;
+  return [
     // Paket selbst erstellen (#374): Auswahl, Prüfung, Export als .zip im Format der Registry.
     { methode: 'GET', pfad: '/api/werkbank/pakete/erstellen', zugang: 'admin', handler: async () => ok(await paketerstellung.stand()) },
     {
@@ -120,6 +130,15 @@ export function paketeRouten(k: RoutenKontext): Route[] {
         return { datei: { inhalt: r.daten, name: r.name, mime: 'application/zip', anzeigen: false, groesse: r.daten.length } };
       },
     },
+  ];
+}
+
+/** Hochladen, Vorschau, Installieren, Ablauf (#405), Updates und Paket-Läufer (#338). */
+function installierenRouten(k: RoutenKontext): Route[] {
+  const { x, pakete, wer } = k;
+  // Umbau (#1041): Ob die Person „Gesamte Verwaltung“ hat, setzt der Server – nie die Anfrage.
+  const mitRecht = <T extends object>(a: Anfrage): T => ({ ...((a.body ?? {}) as T), gesamteVerwaltung: hatGesamt(a.benutzer) });
+  return [
     // Ein Paket (höchstens PAKET_MAX, #644) oder eine Sammeldatei mit mehreren Paketen (#461, höchstens SAMMEL_MAX).
     {
       methode: 'POST',
