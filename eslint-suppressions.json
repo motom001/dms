@@ -1177,17 +1177,6 @@
       "count": 1
     }
   },
-  "web/src/ablage/Dokumente.tsx": {
-    "complexity": {
-      "count": 4
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "web/src/ablage/EmailMehrere.tsx": {
     "complexity": {
       "count": 1
