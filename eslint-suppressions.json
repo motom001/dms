@@ -1330,14 +1330,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Sicherung.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Texterkennung.tsx": {
     "max-lines": {
       "count": 1

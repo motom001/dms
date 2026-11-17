@@ -199,7 +199,7 @@ describe('Alle Meldungen der Übersicht haben einen Schlüssel und stehen im Adm
     const quellen = [
       'web/src/werkbank/uebersicht/hinweise.tsx',
       'web/src/werkbank/uebersicht/hinweise-betrieb.tsx',
-      'web/src/werkbank/Sicherung.tsx',
+      'web/src/werkbank/sicherung/hinweise.tsx',
       'web/src/werkbank/Vollexport.tsx',
     ]
       .map((f) => readFileSync(join(WURZEL, f), 'utf8'))
