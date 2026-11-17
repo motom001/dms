@@ -5,6 +5,7 @@ import {
   istKernFeld,
   listen,
   type EinstellungFeld,
+  type Einstellungsbeschreibung,
   type GeheimStand,
 } from '../../../shared/src/paketeinstellungen';
 import { Fassungen, Knopf, type KnopfErgebnis } from '../bausteine';
@@ -86,7 +87,7 @@ export function PaketEinstellungen({
   const [kern, setKern] = useState<KernDaten | null>(null);
   const [werte, setWerte] = useState<Werte>({});
   const [fehler, setFehler] = useState<Record<string, string>>({});
-  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht' | 'info'; text: string }>();
+  const [meldung, setMeldung] = useState<Meldung>();
   const [laeuft, setLaeuft] = useState(false);
   // Neu aufbauen beim Verwerfen: Geheimnis-Felder merken sich „neu eingeben“ selbst.
   const [runde, setRunde] = useState(0);
@@ -133,86 +134,11 @@ export function PaketEinstellungen({
       <p className="leise">{t('werkbank.paketeinstellungen.lade')}</p>
     );
 
-  async function speichern(adresseBestaetigt = false) {
-    if (!stand || !kern) return;
-    // Feldarten des Kerns (#996): ihre Werte unter der Art statt unter dem Schlüssel des Felds.
-    const arten = kernArten(stand);
-    const nachArt = (w: Werte) => Object.fromEntries(arten.map((x) => [x.art, w[x.schluessel]]));
-    const alt = nachArt(formular(stand, kern)),
-      neu = nachArt(werte);
-    if (!adresseBestaetigt && !(await kernBestaetigen(paket, kern, alt, neu))) return;
-    setLaeuft(true);
-    setMeldung(undefined);
-    setFehler({});
-    try {
-      const s = await paketeApi.paketEinstellungenSpeichern(id, werte, adresseBestaetigt);
-      const k = await speichereKern(paket, arten, kern, alt, neu);
-      setStand(s);
-      setKern(k.daten);
-      if (Object.keys(k.fehler).length) {
-        // Was gespeichert ist, übernehmen; die Werte mit Fehler bleiben im Formular.
-        setWerte({
-          ...formular(s, k.daten),
-          ...Object.fromEntries(arten.filter((x) => k.fehler[x.schluessel]).map((x) => [x.schluessel, werte[x.schluessel]])),
-        });
-        setFehler(k.fehler);
-        setMeldung({ art: 'schlecht', text: t('werkbank.paketeinstellungen.nicht-alles-gespeichert') });
-        return;
-      }
-      setWerte(formular(s, k.daten));
-      setMeldung({ art: 'gut', text: t('werkbank.paketeinstellungen.gespeichert') });
-      gespeichert?.();
-    } catch (e) {
-      // Dienst-Adresse (#444): erst bestätigen – dorthin schickt das Paket Daten.
-      const adresse =
-        e instanceof ApiFehler && e.status === 409
-          ? (e.details as { adresse?: Array<{ feld: string; wert: string }> } | undefined)?.adresse
-          : undefined;
-      if (adresse?.length && !adresseBestaetigt) {
-        setLaeuft(false);
-        if (
-          await rueckfrage({
-            titel: t('fragen.adresse.titel'),
-            text: t('fragen.adresse.text', { adresse: adresse.map((a) => a.wert).join(', ') }),
-            ja: t('fragen.adresse.ja'),
-          })
-        )
-          await speichern(true);
-        return;
-      }
-      const ff = e instanceof ApiFehler ? (e.details as { felderFehler?: Record<string, string> } | undefined)?.felderFehler : undefined;
-      if (ff) setFehler(ff);
-      setMeldung({ art: 'schlecht', text: (e as Error).message });
-    } finally {
-      setLaeuft(false);
-    }
-  }
-  // Aktionen des Pakets, z. B. „Verbindung testen“ (#986): Ergebnis und Fehler stehen unter den Knöpfen, nicht oben.
-  async function aktion(a: { schluessel: string; name: string; bestaetigen?: boolean }): Promise<KnopfErgebnis | undefined> {
-    if (
-      a.bestaetigen &&
-      !(await rueckfrage({
-        titel: t('werkbank.paketeinstellungen.jetzt-ausfuehren', { name: a.name }),
-        ja: t('werkbank.paketeinstellungen.ausfuehren'),
-      }))
-    )
-      return;
-    const r = await paketeApi.paketAktion(id, a.schluessel);
-    return { art: r.ok ? 'gut' : 'schlecht', text: r.text };
-  }
+  const c = { id, paket, stand, kern, werte, formular, gespeichert, setLaeuft, setMeldung, setFehler, setStand, setKern, setWerte };
   const b = stand.beschreibung;
   return (
     <div className="stapel paketeinstellungen" onKeyDown={ent.tasten}>
-      {stand.fehlend.length > 0 && (
-        <div className="hinweis warn" role="status">
-          <p>
-            {tn('werkbank.paketeinstellungen.es-fehlen-erst-danach', {
-              b: <strong>{t('werkbank.paketeinstellungen.einstellungen-noetig')}</strong>,
-              fehlend: stand.fehlend.join(', '),
-            })}
-          </p>
-        </div>
-      )}
+      <Fehlend fehlend={stand.fehlend} />
       {meldung && (
         <div className={`hinweis ${meldung.art}`} role="status">
           <p>{meldung.text}</p>
@@ -234,21 +160,9 @@ export function PaketEinstellungen({
         gegenstand={t('werkbank.paketeinstellungen.einstellungen')}
         sendet={laeuft}
         speicherbar={stand.fehlend.length > 0}
-        speichern={() => void speichern()}
+        speichern={() => void speichern(c)}
       />
-      {b.aktionen.length > 0 && (
-        <section className="blatt">
-          <h2 className="h3">{t('werkbank.paketeinstellungen.aktionen')}</h2>
-          {!stand.laeufer && <p className="leise klein">{t('werkbank.paketeinstellungen.pakete-mit-code-laufen')}</p>}
-          <div className="knoepfe">
-            {b.aktionen.map((a) => (
-              <Knopf key={a.schluessel} gesperrt={laeuft} title={a.hilfe} onClick={() => aktion(a)}>
-                {a.name}
-              </Knopf>
-            ))}
-          </div>
-        </section>
-      )}
+      <Aktionen id={id} b={b} laeuft={laeuft} laeufer={stand.laeufer} />
       {/* Fassungen (#1006): wer wann welche Einstellung geändert hat; Geheimnisse nur als „geändert“. */}
       <Fassungen
         art="paketeinstellungen"
@@ -261,6 +175,126 @@ export function PaketEinstellungen({
           if (!ent.geaendert) setWerte(formular(s, kern));
         }}
       />
+    </div>
+  );
+}
+
+type Meldung = { art: 'gut' | 'schlecht' | 'info'; text: string };
+/** Was Speichern braucht: Stand, Werte und die Setter der Seite. */
+type SpeicherKontext = {
+  id: string;
+  paket: Pick<InstalliertesPaket, 'id' | 'name' | 'mappenaktionen'>;
+  stand: PaketEinstellungenStand;
+  kern: KernDaten;
+  werte: Werte;
+  formular(s: PaketEinstellungenStand, d: KernDaten): Werte;
+  gespeichert?: () => void;
+  setLaeuft(l: boolean): void;
+  setMeldung(m?: Meldung): void;
+  setFehler(f: Record<string, string>): void;
+  setStand(s: PaketEinstellungenStand): void;
+  setKern(k: KernDaten): void;
+  setWerte(w: Werte): void;
+};
+
+/** Speichern (#197, #996): Feldarten des Kerns bestätigen und mit speichern; Dienst-Adressen (#444) erst bestätigen. */
+async function speichern(c: SpeicherKontext, adresseBestaetigt = false) {
+  const { id, paket, stand, kern, werte, formular, gespeichert, setLaeuft, setMeldung, setFehler, setStand, setKern, setWerte } = c;
+  if (!stand || !kern) return;
+  // Feldarten des Kerns (#996): ihre Werte unter der Art statt unter dem Schlüssel des Felds.
+  const arten = kernArten(stand);
+  const nachArt = (w: Werte) => Object.fromEntries(arten.map((x) => [x.art, w[x.schluessel]]));
+  const alt = nachArt(formular(stand, kern)),
+    neu = nachArt(werte);
+  if (!adresseBestaetigt && !(await kernBestaetigen(paket, kern, alt, neu))) return;
+  setLaeuft(true);
+  setMeldung(undefined);
+  setFehler({});
+  try {
+    const s = await paketeApi.paketEinstellungenSpeichern(id, werte, adresseBestaetigt);
+    const k = await speichereKern(paket, arten, kern, alt, neu);
+    setStand(s);
+    setKern(k.daten);
+    if (Object.keys(k.fehler).length) {
+      // Was gespeichert ist, übernehmen; die Werte mit Fehler bleiben im Formular.
+      setWerte({
+        ...formular(s, k.daten),
+        ...Object.fromEntries(arten.filter((x) => k.fehler[x.schluessel]).map((x) => [x.schluessel, werte[x.schluessel]])),
+      });
+      setFehler(k.fehler);
+      setMeldung({ art: 'schlecht', text: t('werkbank.paketeinstellungen.nicht-alles-gespeichert') });
+      return;
+    }
+    setWerte(formular(s, k.daten));
+    setMeldung({ art: 'gut', text: t('werkbank.paketeinstellungen.gespeichert') });
+    gespeichert?.();
+  } catch (e) {
+    // Dienst-Adresse (#444): erst bestätigen – dorthin schickt das Paket Daten.
+    const adresse =
+      e instanceof ApiFehler && e.status === 409
+        ? (e.details as { adresse?: Array<{ feld: string; wert: string }> } | undefined)?.adresse
+        : undefined;
+    if (adresse?.length && !adresseBestaetigt) {
+      setLaeuft(false);
+      if (
+        await rueckfrage({
+          titel: t('fragen.adresse.titel'),
+          text: t('fragen.adresse.text', { adresse: adresse.map((a) => a.wert).join(', ') }),
+          ja: t('fragen.adresse.ja'),
+        })
+      )
+        await speichern(c, true);
+      return;
+    }
+    const ff = e instanceof ApiFehler ? (e.details as { felderFehler?: Record<string, string> } | undefined)?.felderFehler : undefined;
+    if (ff) setFehler(ff);
+    setMeldung({ art: 'schlecht', text: (e as Error).message });
+  } finally {
+    setLaeuft(false);
+  }
+}
+
+/** Aktionen des Pakets, z. B. „Verbindung testen“ (#986): Ergebnis und Fehler stehen unter den Knöpfen, nicht oben. */
+function Aktionen({ id, b, laeuft, laeufer }: { id: string; b: Einstellungsbeschreibung; laeuft: boolean; laeufer: boolean }) {
+  async function aktion(a: { schluessel: string; name: string; bestaetigen?: boolean }): Promise<KnopfErgebnis | undefined> {
+    if (
+      a.bestaetigen &&
+      !(await rueckfrage({
+        titel: t('werkbank.paketeinstellungen.jetzt-ausfuehren', { name: a.name }),
+        ja: t('werkbank.paketeinstellungen.ausfuehren'),
+      }))
+    )
+      return;
+    const r = await paketeApi.paketAktion(id, a.schluessel);
+    return { art: r.ok ? 'gut' : 'schlecht', text: r.text };
+  }
+  if (!b.aktionen.length) return null;
+  return (
+    <section className="blatt">
+      <h2 className="h3">{t('werkbank.paketeinstellungen.aktionen')}</h2>
+      {!laeufer && <p className="leise klein">{t('werkbank.paketeinstellungen.pakete-mit-code-laufen')}</p>}
+      <div className="knoepfe">
+        {b.aktionen.map((a) => (
+          <Knopf key={a.schluessel} gesperrt={laeuft} title={a.hilfe} onClick={() => aktion(a)}>
+            {a.name}
+          </Knopf>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Pflichtfelder ohne Wert: „Einstellungen nötig“ – erst danach läuft das Paket. */
+function Fehlend({ fehlend }: { fehlend: string[] }) {
+  if (!fehlend.length) return null;
+  return (
+    <div className="hinweis warn" role="status">
+      <p>
+        {tn('werkbank.paketeinstellungen.es-fehlen-erst-danach', {
+          b: <strong>{t('werkbank.paketeinstellungen.einstellungen-noetig')}</strong>,
+          fehlend: fehlend.join(', '),
+        })}
+      </p>
     </div>
   );
 }
