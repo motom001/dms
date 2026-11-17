@@ -3,15 +3,12 @@
  * Einrichtungsassistent, Anmelden, Anbieter (OIDC), Befehl dms, Zwei-Faktor, Passwort-Links und Notfallzugang.
  */
 import { Fachfehler } from '../grundlagen/fehler';
-import { pflichtRolle } from './zweifaktor';
-import { PASSKEYS_HOECHSTENS } from './passkeys';
 import { t } from '../sprache/sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { anmeldefehlerCode, type Anmeldefehler } from '../../../shared/src/anmeldefehler';
-import { eigeneVersion, standKennung } from '../system/system';
-import { SPRACHE_HOECHSTENS_MS } from '../sprache/sprachwahl';
+import { eigeneVersion } from '../system/system';
 import { zeitzone } from '../../../shared/src/region';
-import { istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
+import { istVerfuegbar, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
 import {
   L,
   SITZUNG_SEKUNDEN,
@@ -29,11 +26,9 @@ import {
 } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
-
-/** Eigene Anmeldung ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
-function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }) {
-  if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, t('anmeldung.passkey.fehler.vertretung'));
-}
+import { anmeldungOffenRouten, verwaltungsmodusRouten } from './anmeldung-konto.routen';
+import { einrichtungRouten, einrichtungPaketeRouten } from './anmeldung-einrichtung.routen';
+import { zweifaktorRouten, passkeyAnmeldenRouten, eigenePasskeysRouten, anmeldeschutzRouten } from './anmeldung-schutz.routen';
 
 /**
  * Fehler der Anmeldung über einen Anbieter (#1263) als fester Code für die Adresse – nie der Text des Fehlers (der steht
@@ -51,71 +46,27 @@ export function anbieterFehlerCode(e: unknown): Anmeldefehler {
 }
 
 export function anmeldungRouten(k: RoutenKontext): Route[] {
-  const {
-    dienst,
-    konten,
-    x,
-    log,
-    pakete,
-    einrichtungZugang,
-    betrieb,
-    spracheFuer,
-    verwaltungHinweis,
-    oidc,
-    adresse,
-    zf,
-    pk,
-    whStand,
-    nurAdminsInWartung,
-  } = k;
   return [
-    // Mit Datenbank (#1198): Ist keine Verbindung frei oder antwortet sie nicht, 503 mit „datenbank“ – Docker, Überwachung
-    // und die Leiste der Oberfläche merken den Ausfall. Ohne Sitzung: Sie bräuchte selbst die Datenbank.
-    // #1199: dazu `datenbank` (antwortet-nicht | abgewiesen) und seit wann – für „Ablago antwortet gerade nicht“. Ohne
-    // Fehlertext, Adresse oder Version: Die Antwort sieht jeder, der die Adresse kennt.
-    {
-      methode: 'GET',
-      pfad: '/api/gesundheit',
-      zugang: 'offen',
-      ohneSitzung: true,
-      handler: async () => {
-        const b = x.datenbank ? await x.datenbank.befund() : null;
-        if (b && b.datenbank !== 'ok')
-          return { status: 503, body: { ok: false, zustand: 'datenbank', ...b, stand: standKennung() }, koepfe: { 'retry-after': '10' } };
-        return ok({ ok: true, zustand: 'laeuft', stand: standKennung() });
-      },
-    },
-    // Wartungsmodus (#102): für Banner und Anmeldeseite, auch ohne Anmeldung.
-    {
-      methode: 'GET',
-      pfad: '/api/wartung',
-      zugang: 'offen',
-      handler: async () => ok(x.wartung?.oeffentlich() ?? { stufe: 'aus', text: '', ende: null, aktivAb: null, sekunden: null }),
-    },
+    ...anmeldungOffenRouten(k),
+    ...kontoStatusRouten(k),
+    ...verwaltungsmodusRouten(k),
+    ...einrichtungRouten(k),
+    ...einrichtungPaketeRouten(k),
+    ...anmeldenRouten(k),
+    ...anbieterRouten(k),
+    ...konsoleRouten(k),
+    ...zweifaktorRouten(k),
+    ...passkeyAnmeldenRouten(k),
+    ...eigenePasskeysRouten(k),
+    ...anmeldeschutzRouten(k),
+    ...abmeldenRouten(k),
+  ];
+}
 
-    // Sprache vor dem ersten Bild (#729): Die Oberfläche lädt damit ihre Texte, bevor sie etwas zeigt.
-    // #1198: Antwortet die Datenbank nicht, nach kurzer Zeit ohne Anmeldung und mit der zuletzt gelesenen Einstellung.
-    {
-      methode: 'GET',
-      pfad: '/api/sprache',
-      zugang: 'offen',
-      anmeldungHoechstensMs: SPRACHE_HOECHSTENS_MS,
-      handler: async (a) => ok(await spracheFuer(a)),
-    },
-    // Texte eines Sprachpakets (#731) für die Oberfläche – nur erlaubte Sprachen; Texte sind nichts Geheimes (auch die
-    // Anmeldeseite braucht sie). Die Oberfläche setzt sie nie als HTML.
-    {
-      methode: 'GET',
-      pfad: '/api/sprache/texte/:kennung',
-      zugang: 'offen',
-      handler: async (a) => {
-        const e = x.sprachen ? await x.sprachen.lies() : liesSpracheinstellung(null);
-        const texte = e.erlaubt.includes(a.params.kennung) ? x.sprachen?.pakete?.texte(a.params.kennung) : null;
-        if (!texte) throw new Fachfehler(404, t('meldungen.sprachpakete.keine-texte'));
-        return ok(texte);
-      },
-    },
-
+/** Konto-Status für die Oberfläche. */
+function kontoStatusRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x, spracheFuer, verwaltungHinweis, whStand } = k;
+  return [
     /* ---------- Konto ---------- */
     {
       methode: 'GET',
@@ -180,150 +131,13 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
           verwaltungsmodus: a.benutzer ? await konten.verwaltungsstand(a.benutzer, a.sitzungsDaten) : null,
         }),
     },
-    /* ---------- Verwaltungsmodus (#819) ---------- */
-    // Beginnen: ohne Angaben, wenn die Anmeldung frisch oder heute schon bestätigt ist; sonst mit Passwort und Code.
-    {
-      methode: 'POST',
-      pfad: '/api/konto/verwaltung',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await konten.beginneVerwaltung(ich(a), a.sitzung, a.sitzungsDaten, b(a), a.ip)),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/verwaltung/beenden',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        await konten.beendeVerwaltung(ich(a), a.sitzung, a.sitzungsDaten);
-        return ok(await konten.verwaltungsstand(ich(a), { ...a.sitzungsDaten!, verwaltungSeit: null, verwaltungAktiv: null }));
-      },
-    },
-    // Frische Anmeldung für eine heikle Handlung (immer mit Passwort, gilt 10 Minuten).
-    {
-      methode: 'POST',
-      pfad: '/api/konto/verwaltung/bestaetigen',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        await konten.bestaetigeFrisch(ich(a), a.sitzung, a.sitzungsDaten, b(a), a.ip);
-        return ok({ frisch: true });
-      },
-    },
-    // Laufwerk für Benutzer (#720): Adresse und Benutzername; ausgeschaltet gibt es nichts.
-    {
-      methode: 'GET',
-      pfad: '/api/konto/laufwerk',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        if (!x.webdav || !(await x.webdav.einstellung()).aktiv) throw new Fachfehler(404, t('meldungen.routen.das-laufwerk-ist-nicht'));
-        const s = await x.webdav.stand();
-        return ok({ adresse: s.adresse, https: s.https, benutzername: ich(a).email });
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/hinweise/gesehen',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        if (!a.sitzungsDaten?.vertretungId) await konten.hinweiseGesehen(ich(a).id);
-        return leer;
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/vertretung-beenden',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const r = await konten.vertretungBeenden(a.sitzung, info(a));
-        L.konto.warn('Vertretung beendet, zurück im eigenen Konto', { als: a.benutzer?.email, admin: r.benutzer?.email });
-        return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/code',
-      zugang: 'offen',
-      handler: async (a) => {
-        if (!x.einrichtung) throw new Fachfehler(404, t('meldungen.routen.kein-einrichtungsassistent'));
-        await x.einrichtung.pruefeCode(a.einrichtungscode);
-        return ok({ ok: true });
-      },
-    },
-    // Sammeln vor „Jetzt einrichten“ (#804) und Konfigurationsdatei (#806): mit Code, solange nicht eingerichtet.
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/pruefen',
-      zugang: 'offen',
-      lesend: true,
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        return ok({ probleme: x.einrichtung!.pruefePlan(b(a).plan, { passwort: b(a).passwort }) });
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/datei/lesen',
-      zugang: 'offen',
-      lesend: true,
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        return ok(x.einrichtung!.dateiLesen(b(a).text));
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/datei/schreiben',
-      zugang: 'offen',
-      lesend: true,
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        return ok(x.einrichtung!.dateiSchreiben(b(a).plan));
-      },
-    },
-    // Pakete wählen, bevor es einen Administrator gibt (#804): nur lesend und nur der offizielle Katalog.
-    {
-      methode: 'GET',
-      pfad: '/api/einrichtung/pakete',
-      zugang: 'offen',
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        return ok({ installiert: await pakete.installierte(), dms: eigeneVersion() });
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/pakete/katalog',
-      zugang: 'offen',
-      lesend: true,
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        return ok(await pakete.abrufen(false));
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/pakete/plan',
-      zugang: 'offen',
-      lesend: true,
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        const liste = (b(a) as { pakete?: unknown }).pakete;
-        return ok(
-          await pakete.ablaufPlan({
-            pakete: Array.isArray(liste) ? liste.filter((p): p is string => typeof p === 'string').slice(0, 100) : [],
-          }),
-        );
-      },
-    },
-    // E-Mail-Versand im Assistenten (#813, #804): nur die Server-Suche, nur lesend; gespeichert wird erst mit „Jetzt einrichten“.
-    {
-      methode: 'POST',
-      pfad: '/api/einrichtung/mail/finden',
-      zugang: 'offen',
-      lesend: true,
-      handler: async (a) => {
-        await einrichtungZugang(a);
-        return ok(await betrieb().findeServer(b(a)));
-      },
-    },
+  ];
+}
+
+/** Konto einrichten und anmelden (auch mit Code). */
+function anmeldenRouten(k: RoutenKontext): Route[] {
+  const { konten, x, nurAdminsInWartung } = k;
+  return [
     {
       methode: 'POST',
       pfad: '/api/konto/einrichten',
@@ -384,6 +198,13 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
         return { body: { benutzer: r.benutzer, wiederherstellung: r.wiederherstellung }, sitzungSetzen: r.schluessel };
       },
     },
+  ];
+}
+
+/** Anmeldung über einen Anbieter, OpenID Connect (#241). */
+function anbieterRouten(k: RoutenKontext): Route[] {
+  const { konten, oidc, adresse, nurAdminsInWartung } = k;
+  return [
     /* ---------- Anmeldung über einen Anbieter, OpenID Connect (#241) ---------- */
     {
       methode: 'GET',
@@ -444,6 +265,13 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
         }),
     },
     { methode: 'POST', pfad: '/api/werkbank/anbieter/pruefen', zugang: 'admin', handler: async () => ok(await oidc().pruefe()) },
+  ];
+}
+
+/** Befehl dms im Container (#244). */
+function konsoleRouten(k: RoutenKontext): Route[] {
+  const { konten } = k;
+  return [
     /* ---------- Befehl dms im Container (#244) ---------- */
     {
       methode: 'POST',
@@ -469,216 +297,13 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
       konsole: true,
       handler: async (a) => ok({ als: a.benutzer?.email ?? null, version: eigeneVersion() }),
     },
-    /* ---------- Zwei-Faktor-Anmeldung (#242) ---------- */
-    // Pflicht: nur, solange kein Passkey sie erfüllt (#811) – dann darf die Code-App auch wieder weg.
-    {
-      methode: 'GET',
-      pfad: '/api/konto/zweifaktor',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const rolle = (await zf().pflicht())[pflichtRolle(ich(a))];
-        const passkey = !!konten.passkeys && (await konten.passkeys.fuerPflicht(ich(a).id));
-        return ok({ ...(await zf().status(ich(a).id)), pflicht: rolle && !passkey, passkeyErfuellt: rolle && passkey });
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/zweifaktor/beginnen',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await zf().beginne(ich(a), (await x.designs?.marke())?.schriftzug || 'Ablago')),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/zweifaktor/bestaetigen',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        const codes = await zf().bestaetige(ich(a).id, b(a).code, ich(a).email);
-        // #819: Zwei-Faktor geändert – Verwaltungsmodus und Tagesmerker gelten nicht mehr.
-        await konten.zweifaktorGeaendert(ich(a).id);
-        return ok({ codes });
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/zweifaktor/codes',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
-        return ok({ codes: await zf().neueCodes(ich(a).id, ich(a).email) });
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/zweifaktor/entfernen',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        if ((await zf().pflicht())[pflichtRolle(ich(a))] && !(konten.passkeys && (await konten.passkeys.fuerPflicht(ich(a).id))))
-          throw new Fachfehler(409, t('meldungen.routen.fuer-dich-ist-die'));
-        await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
-        await zf().entferne(ich(a).id, ich(a).email);
-        await konten.zweifaktorGeaendert(ich(a).id);
-        return leer;
-      },
-    },
-    /* ---------- Passkeys (#811) ---------- */
-    // Anmelden: Optionen holen (ohne E-Mail-Adresse oder als zweiter Schritt), dann die Antwort des Geräts prüfen.
-    {
-      methode: 'POST',
-      pfad: '/api/konto/passkey/optionen',
-      zugang: 'offen',
-      handler: async (a) => ok(await konten.passkeyOptionen(b(a), a.ip)),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/passkey/anmelden',
-      zugang: 'offen',
-      handler: async (a) => {
-        const zweiter = b(a).zweiterSchritt !== undefined && b(a).zweiterSchritt !== null;
-        let r;
-        try {
-          r = await konten.anmeldenMitPasskey(b(a), a.ip, a.geraet);
-        } catch (e) {
-          L.konto.warn(zweiter ? 'Zweiter Faktor falsch (Passkey)' : 'Anmeldung mit Passkey fehlgeschlagen', {
-            ip: a.ip,
-            grund: (e as Error).message,
-          });
-          throw e;
-        }
-        await nurAdminsInWartung(r);
-        L.konto.info(zweiter ? 'Angemeldet (Passwort und Passkey)' : 'Angemeldet mit Passkey', {
-          email: r.benutzer.email,
-          ip: a.ip,
-          geraet: a.geraet,
-          passkey: r.passkey,
-        });
-        return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
-      },
-    },
-    // Mein Konto → Sicherheit: eigene Passkeys. Nicht in einer Vertretung – dort ändert niemand die Anmeldung eines anderen.
-    {
-      methode: 'GET',
-      pfad: '/api/konto/passkeys',
-      zugang: 'angemeldet',
-      handler: async (a) =>
-        ok({
-          liste: await pk().liste(ich(a).id),
-          moeglich: !!pk().rp(),
-          adresse: pk().rp()?.rpId ?? null,
-          pflicht: await konten.passkeyNoetig(ich(a)),
-          hoechstens: PASSKEYS_HOECHSTENS,
-        }),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/passkeys/beginnen',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        ohneVertretung(a);
-        return ok(await pk().beginneRegistrierung(ich(a)));
-      },
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/konto/passkeys',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        ohneVertretung(a);
-        return { status: 201, body: await pk().bestaetigeRegistrierung(ich(a), b(a).antwort, b(a).name) };
-      },
-    },
-    {
-      methode: 'PUT',
-      pfad: '/api/konto/passkeys/:nr',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        ohneVertretung(a);
-        return ok(await pk().benenne(ich(a), a.params.nr, b(a).name));
-      },
-    },
-    // Entfernen nur mit frischer Anmeldung (#819): Wer nur kurz an einem fremden, angemeldeten Gerät sitzt, entfernt nichts.
-    {
-      methode: 'DELETE',
-      pfad: '/api/konto/passkeys/:nr',
-      zugang: 'angemeldet',
-      handler: async (a) => {
-        ohneVertretung(a);
-        if (!konten.istFrisch(a.sitzungsDaten))
-          throw new Fachfehler(403, t('konten.verwaltung.fehler.frisch'), { frisch: true, handlung: 'passkey-entfernen' });
-        // Vorgeschrieben (wie bei der Zwei-Faktor-Anmeldung): den letzten passenden nicht entfernen.
-        const liste = await pk().liste(ich(a).id);
-        const der = liste.find((p) => p.nr === a.params.nr);
-        // Nur Passkeys für die gepflegte Adresse erfüllen eine Pflicht – nur deren letzten schützen.
-        const rp = pk().pflichtRp();
-        const zaehlt = (p: { rpId: string }) => !!rp && p.rpId === rp.rpId;
-        const noetig = der && zaehlt(der) && liste.filter(zaehlt).length === 1 ? await konten.passkeyNoetig(ich(a)) : null;
-        if (noetig)
-          throw new Fachfehler(
-            409,
-            t(noetig === 'passkey' ? 'anmeldung.passkey.fehler.letzter' : 'anmeldung.passkey.fehler.letzter.zweifaktor'),
-          );
-        return ok(await pk().entferne(ich(a), a.params.nr, ich(a).email));
-      },
-    },
-    // Erneute Anmeldung mit Passkey (Verwaltungsmodus, heikle Handlungen): Optionen nur mit den eigenen Passkeys.
-    // `{ fuer: 'dokumentpasswoerter' }`: eigene Herausforderung für „Passwörter für Dokumente“ (#827).
-    {
-      methode: 'POST',
-      pfad: '/api/konto/passkeys/bestaetigen/optionen',
-      zugang: 'angemeldet',
-      handler: async (a) => ok(await konten.passkeyBestaetigungOptionen(ich(a), a.sitzungsDaten, b(a).fuer)),
-    },
-    // Werkbank → Anmeldeschutz: Passkey je Rolle vorschreiben; Verwaltung: Passkeys einer Person zurücksetzen.
-    // `moeglich` = gepflegte HTTPS-Adresse vorhanden – nur dann lässt sich die Pflicht einschalten (Durchsicht Sicherheit).
-    {
-      methode: 'GET',
-      pfad: '/api/werkbank/passkeys',
-      zugang: 'admin',
-      handler: async () => ok({ ...(await pk().pflicht()), moeglich: !!pk().pflichtRp(), adresse: pk().pflichtRp()?.origin ?? null }),
-    },
-    {
-      methode: 'PUT',
-      pfad: '/api/werkbank/passkeys',
-      zugang: 'admin',
-      handler: async (a) =>
-        ok({ ...(await pk().setzePflicht(a.body, ich(a).email)), moeglich: !!pk().pflichtRp(), adresse: pk().pflichtRp()?.origin ?? null }),
-    },
-    {
-      methode: 'GET',
-      pfad: '/api/benutzer/:id/passkeys',
-      zugang: 'admin',
-      handler: async (a) => ok({ anzahl: await pk().anzahl(a.params.id) }),
-    },
-    {
-      methode: 'POST',
-      pfad: '/api/benutzer/:id/passkeys/zuruecksetzen',
-      zugang: 'admin',
-      handler: async (a) => {
-        await konten.pruefeKontoVon(ich(a), a.params.id);
-        const ziel = (await konten.listeBenutzer()).find((x) => x.id === a.params.id);
-        if (!ziel || !(await pk().entferneAlle(ziel.id, ziel.email, ich(a).email)))
-          throw new Fachfehler(404, t('anmeldung.passkey.fehler.keine'));
-        return leer;
-      },
-    },
-    { methode: 'GET', pfad: '/api/werkbank/zweifaktor', zugang: 'admin', handler: async () => ok(await zf().pflicht()) },
-    {
-      methode: 'PUT',
-      pfad: '/api/werkbank/zweifaktor',
-      zugang: 'admin',
-      handler: async (a) => ok(await zf().setzePflicht(a.body, ich(a).email)),
-    },
-    { methode: 'GET', pfad: '/api/benutzer/:id/zweifaktor', zugang: 'admin', handler: async (a) => ok(await zf().status(a.params.id)) },
-    {
-      methode: 'POST',
-      pfad: '/api/benutzer/:id/zweifaktor/zuruecksetzen',
-      zugang: 'admin',
-      handler: async (a) => {
-        await konten.pruefeKontoVon(ich(a), a.params.id);
-        if (!(await zf().entferne(a.params.id, ich(a).email))) throw new Fachfehler(404, t('meldungen.routen.dieser-benutzer-hat-keine'));
-        await konten.zweifaktorGeaendert(a.params.id);
-        return leer;
-      },
-    },
+  ];
+}
+
+/** Abmelden und Passwort-Links. */
+function abmeldenRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, x, log, adresse, nurAdminsInWartung } = k;
+  return [
     {
       methode: 'POST',
       pfad: '/api/konto/abmelden',
