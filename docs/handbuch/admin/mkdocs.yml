@@ -145,6 +145,7 @@ nav:
   - Schnittstelle (API): api.md
   - Hintergrund:
       - Technik: technik.md
+      - Bestandteile und Lizenzen: bestandteile.md
       - Entscheidungen: entscheidungen.md
       - Begriffe (Glossar): https://help.ablago.app/benutzer/aktuell/begriffe/
   - Weiteres:

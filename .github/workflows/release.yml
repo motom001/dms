@@ -66,10 +66,60 @@ jobs:
               git log --no-merges --format='- %s' ${vorher:+$vorher..}"$bis"
             } > notizen.md
           fi
+          echo "VORHER=$vorher" >> "$GITHUB_ENV"
+      # Bestandteile und Lizenzen (#1393): Stücklisten, Digests und Node-Version legt „Prüfen und Image bauen“ als
+      # Artefakte ab (Job image-zusammen). Nur dort, wo dieser Workflow von dort aufgerufen wird.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: inputs.tag != ''
+        continue-on-error: true
+        with:
+          path: ${{ runner.temp }}/bestandteile
+          pattern: bestandteile-*
+          merge-multiple: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+      # Übersicht im Text, die vollständige Liste als Anhänge (CSV, SPDX, CycloneDX). Verglichen wird mit der CSV
+      # am vorigen Release. Ohne neue Daten (Release von Hand, Stückliste fehlgeschlagen) bleibt ein schon
+      # vorhandener Abschnitt stehen; sonst steht ein Hinweis da. Das Release selbst hält das nie auf.
+      - name: Bestandteile und Lizenzen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUFRUF_TAG: ${{ inputs.tag }}
+        run: |
+          stand="$RUNNER_TEMP/bestandteile"
+          aus="$RUNNER_TEMP/bestandteile-aus"
+          if [ -f "$stand/stand-dms.json" ] && [ -f "$stand/stand-dms-komplett.json" ]; then
+            vorher_csv="$RUNNER_TEMP/vorher.csv"
+            if [ -n "$VORHER" ]; then
+              gh release download "$VORHER" -p ablago-bestandteile.csv -O "$vorher_csv" 2>/dev/null ||
+                echo "::notice title=Bestandteile::$VORHER hat keine Liste der Bestandteile – kein Vergleich."
+            fi
+            if node .github/werkzeuge/bestandteile.mjs --stand "$stand" --tag "$TAG" --commit "$(git rev-parse "$ZIEL")" \
+              --datum "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --aus "$aus" --vorher "$vorher_csv" --vorher-tag "$VORHER"; then
+              { echo; cat "$aus/bestandteile.md"; } >> notizen.md
+              echo "ANHAENGE=$aus" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "::warning title=Bestandteile::Übersicht ließ sich nicht erzeugen (siehe Protokoll)."
+          fi
+          bisher=$(gh release view "$TAG" --json body -q .body 2>/dev/null | awk '{sub(/\r$/, "")} /^## Bestandteile und Lizenzen$/ {an = 1} an && /^---$/ {exit} an' || true)
+          if [ -n "$bisher" ]; then
+            { echo; printf '%s\n' "$bisher"; } >> notizen.md
+          elif [ -n "$AUFRUF_TAG" ]; then
+            {
+              echo
+              echo "## Bestandteile und Lizenzen"
+              echo
+              echo "Die Übersicht ließ sich für dieses Release nicht erzeugen. Stückliste und Herkunftsnachweis hängen, soweit erzeugt, signiert am Image: [Administratorhandbuch](https://help.ablago.app/admin/aktuell/bestandteile/)."
+            } >> notizen.md
+          fi
+      - name: Fußzeile
+        run: |
           {
             echo
             echo "---"
-            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` bzw. \`ghcr.io/motom001/dms-komplett:${tag#v}\` (oder \`:latest\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://help.ablago.app/admin/aktualisieren/)."
+            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${TAG#v}\` bzw. \`ghcr.io/motom001/dms-komplett:${TAG#v}\` (oder \`:latest\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://help.ablago.app/admin/aktualisieren/)."
           } >> notizen.md
       - name: Release anlegen oder Text setzen
         run: |
@@ -77,6 +127,9 @@ jobs:
             gh release edit "$TAG" --title "Ablago ${TAG}" --notes-file notizen.md
           else
             gh release create "$TAG" --title "Ablago ${TAG}" --notes-file notizen.md --target "$ZIEL" --latest=false
+          fi
+          if [ -n "${ANHAENGE:-}" ]; then
+            gh release upload "$TAG" --clobber "$ANHAENGE"/ablago-bestandteile.csv "$ANHAENGE"/ablago-bestandteile.spdx.json "$ANHAENGE"/ablago-bestandteile.cdx.json
           fi
         env:
           GH_TOKEN: ${{ github.token }}
