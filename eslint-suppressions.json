@@ -1340,17 +1340,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Postfaecher.tsx": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
   "web/src/werkbank/Sicherung.tsx": {
     "complexity": {
       "count": 2
