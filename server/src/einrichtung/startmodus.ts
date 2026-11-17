@@ -75,10 +75,39 @@ export function startfehlerAus(e: unknown, stand: Pick<Startstand, 'schritt' | '
   return { art: 'allgemein', schritt: stand.schritt };
 }
 
+/** So lange bekommen laufende Anfragen beim Freigeben des Ports noch ihre Antwort (#1419). */
+const ENDE_GRENZE_MS = 3000;
+
+/**
+ * Port sanft freigeben (#1419), für Startseite und Einrichtungsmodus: Ruhende Keep-Alive-Verbindungen schließt
+ * `close()` sofort; laufende Anfragen bekommen noch ihre Antwort, mit „Connection: close“, damit ihre Verbindung danach
+ * endet. Nach `grenzeMs` schließt es alle übrigen. Vorher beendete `closeAllConnections()` auch laufende Anfragen – der
+ * Browser bekam statt einer Antwort ERR_CONNECTION_RESET bzw. ERR_EMPTY_RESPONSE; ohne „Connection: close“ wartete
+ * `close()` dagegen bis zum Ende des Keep-Alive (72 s). Vor `listen()` aufrufen (fügt einen Haken hinzu).
+ */
+export function sanftesEnde(app: FastifyInstance): (grenzeMs?: number) => Promise<void> {
+  let endet = false;
+  app.addHook('onSend', async (_req, reply, nutzlast) => {
+    if (endet) reply.header('connection', 'close');
+    return nutzlast;
+  });
+  return async (grenzeMs = ENDE_GRENZE_MS) => {
+    endet = true;
+    const notfalls = setTimeout(() => app.server.closeAllConnections?.(), grenzeMs);
+    notfalls.unref?.();
+    try {
+      await app.close();
+    } finally {
+      clearTimeout(notfalls);
+    }
+  };
+}
+
 const html = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 export class Startmodus {
   private app: FastifyInstance | null = null;
+  private ende: ((grenzeMs?: number) => Promise<void>) | null = null;
   private jetzt: () => number;
   private migration: string | null = null;
   readonly stand: Startstand;
@@ -257,17 +286,18 @@ ${teile.join('\n')}
       if (/\.[a-z0-9]{1,8}$/i.test(pfad)) return nichtBereit(reply);
       return reply.code(200).type('text/html; charset=utf-8').send(this.seite());
     });
+    const ende = sanftesEnde(app);
     await app.listen({ port: this.o.port, host: this.o.host });
     this.app = app;
+    this.ende = ende;
   }
 
   /** Port freigeben – für Ablago selbst (oder den Einrichtungsmodus). */
   async schliesse() {
-    const app = this.app;
+    const ende = this.ende;
     this.app = null;
-    if (!app) return;
-    // Offene Verbindungen (Keep-Alive des Browsers) sofort schließen, sonst wartet close() auf sie.
-    app.server.closeAllConnections?.();
-    await app.close();
+    this.ende = null;
+    // Ruhende Verbindungen (Keep-Alive des Browsers) sofort, laufende Anfragen nach ihrer Antwort (#1419).
+    await ende?.();
   }
 }

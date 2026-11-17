@@ -35,7 +35,14 @@ export abstract class SicherungAnlegen extends SicherungBasis {
    * Laufs erfüllt wird (für die automatische Sicherung und Tests).
    */
   async starte(art: Sicherungsart, von: string): Promise<{ lauf: Lauf; fertig: Promise<Metadaten | null> }> {
-    const schluessel = this.q.tresor.abgeleitet(ZWECK);
+    let schluessel = this.q.tresor.abgeleitet(ZWECK);
+    // Mehrere Prozesse (#1419): Hat ein anderer Prozess den Schlüssel eben erst erzeugt, kennt dieser ihn erst nach dem
+    // nächsten Abgleich (bis zu 2 s). Vor dem Ablehnen darum einmal nachlesen – sonst scheitert „Sicherung jetzt“ direkt
+    // nach „Schlüssel erzeugen“, je nachdem, welcher Prozess die Anfrage bekommt.
+    if (!schluessel && this.q.tresor.nachladen) {
+      await this.q.tresor.nachladen();
+      schluessel = this.q.tresor.abgeleitet(ZWECK);
+    }
     if (!schluessel || !this.q.tresor.fingerabdruck) throw new Fachfehler(409, t('meldungen.sicherung.ohne-schluessel-keine-sicherung'));
     const plan = await this.plan();
     await mkdir(this.ordner, { recursive: true });

@@ -7,14 +7,16 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:net';
+import { Agent, get as httpGet } from 'node:http';
+import { createServer, type AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { after, describe, it } from 'node:test';
+import Fastify from 'fastify';
 import { istAusfall } from '../../shared/src/erreichbarkeit';
 import { NeuereDatenbankFehler } from '../src/datenbank/db';
-import { startfehlerAus, Startmodus } from '../src/einrichtung/startmodus';
+import { sanftesEnde, startfehlerAus, Startmodus } from '../src/einrichtung/startmodus';
 
 const URL_DB = process.env.TEST_DATABASE_URL;
 const SERVER = new URL('..', import.meta.url).pathname;
@@ -216,6 +218,50 @@ describe('Startseite (#802)', () => {
     await s.oeffne();
     assert.equal((await fetch(`http://127.0.0.1:${s.port}/api/gesundheit`)).status, 503);
     await s.schliesse();
+  });
+
+  it('Port freigeben (#1419): eine laufende Anfrage bekommt noch ihre Antwort, danach endet ihre Verbindung', async () => {
+    const app = Fastify();
+    let drin!: () => void;
+    const angekommen = new Promise<void>((r) => (drin = r));
+    app.get('/api/konto/status', async () => {
+      drin();
+      await new Promise((r) => setTimeout(r, 200));
+      return { ok: true };
+    });
+    const ende = sanftesEnde(app);
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    const basis = `http://127.0.0.1:${(app.server.address() as AddressInfo).port}`;
+    const agent = new Agent({ keepAlive: true });
+    const hole = (pfad: string) =>
+      new Promise<{ status: number; verbindung?: string } | { fehler: string }>((ok) => {
+        httpGet(`${basis}${pfad}`, { agent }, (r) => {
+          r.resume();
+          r.on('end', () => ok({ status: r.statusCode!, verbindung: r.headers.connection }));
+        }).on('error', (e: NodeJS.ErrnoException) => ok({ fehler: e.code ?? e.message }));
+      });
+    const laufend = hole('/api/konto/status');
+    await angekommen;
+    const beginn = Date.now();
+    await ende();
+    // Vorher (closeAllConnections): ECONNRESET; ohne „Connection: close“ wartete close() bis zum Keep-Alive-Ende.
+    assert.deepEqual(await laufend, { status: 200, verbindung: 'close' });
+    assert.ok(Date.now() - beginn < 2000, `close() nach ${Date.now() - beginn} ms`);
+    // Eine Anfrage, die nie antwortet, hält den Port nicht länger als die Grenze auf.
+    const app2 = Fastify();
+    app2.get('/haengt', () => new Promise(() => {}));
+    const ende2 = sanftesEnde(app2);
+    await app2.listen({ port: 0, host: '127.0.0.1' });
+    const haengt = new Promise<string>((ok) => {
+      httpGet(`http://127.0.0.1:${(app2.server.address() as AddressInfo).port}/haengt`, { agent }, () => ok('Antwort')).on(
+        'error',
+        (e: NodeJS.ErrnoException) => ok(e.code ?? e.message),
+      );
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    await ende2(100);
+    assert.equal(await haengt, 'ECONNRESET');
+    agent.destroy();
   });
 });
 

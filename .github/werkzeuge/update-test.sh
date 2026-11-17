@@ -68,7 +68,14 @@ done
 [ -n "$mappe" ] || fehler "Datei aus dem Eingangsordner nicht übernommen"
 # Ohne Schlüssel keine Sicherung: wie im Assistenten unter Werkbank → Verschlüsselung erzeugen.
 api -X POST "$U/api/werkbank/tresor/erzeugen" -d '{}' >/dev/null || fehler "Schlüssel erzeugen"
-r=$(curl -sS -b "$jar" -H 'x-dms: 1' -H 'content-type: application/json' -X POST "$U/api/werkbank/sicherung/jetzt" -d '{}' -w '\n%{http_code}')
+# Mehrere Prozesse (#1419): Der alte Stand kennt den neuen Schlüssel im anderen Prozess erst nach dessen Abgleich (bis
+# 2 s); landet „Sicherung jetzt“ dort, kommt bis dahin 409. Seit #1419 liest Ablago selbst nach – ein 409 länger als
+# 10 s bleibt ein Fehler.
+for _ in $(seq 1 10); do
+  r=$(curl -sS -b "$jar" -H 'x-dms: 1' -H 'content-type: application/json' -X POST "$U/api/werkbank/sicherung/jetzt" -d '{}' -w '\n%{http_code}')
+  if [ "$(tail -1 <<< "$r")" != 409 ] || ! grep -q 'Schlüssel' <<< "$r"; then break; fi
+  sleep 1
+done
 [ "$(tail -1 <<< "$r")" = 200 ] || fehler "Sicherung starten: $(head -1 <<< "$r")"
 for _ in $(seq 1 90); do
   s=$(api "$U/api/werkbank/sicherung/lauf" | jq -r '.status // "keiner"')
