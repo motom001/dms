@@ -2268,13 +2268,6 @@
       "ereignisName"
     ]
   },
-  "web/src/werkbank/Pakete.tsx": {
-    "exports": [
-      "ALLE",
-      "SAMMEL",
-      "UPLOAD"
-    ]
-  },
   "web/src/werkbank/Protokoll.tsx": {
     "exports": [
       "modulName"
