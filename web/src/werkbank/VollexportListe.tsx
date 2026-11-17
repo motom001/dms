@@ -1,4 +1,4 @@
-import { Knopf, type KnopfErgebnis } from '../bausteine';
+import { Knopf, KnopfLink, type KnopfErgebnis } from '../bausteine';
 import { useEffect, useState } from 'react';
 import { betriebApi } from '../api/betrieb';
 import type { VollexportStand } from '../api/konto';
@@ -58,9 +58,9 @@ function Eintrag({
     }
   };
   const pruefsummen = (
-    <a className="knopf klein" href={betriebApi.vollexportPruefsummenUrl(e.name)} download>
+    <KnopfLink href={betriebApi.vollexportPruefsummenUrl(e.name)} download groesse="klein">
       {t('werkbank.vollexport.pruefsummen')}
-    </a>
+    </KnopfLink>
   );
   return (
     <li className={e.passwoerter ? 'mitpasswoertern' : undefined}>
@@ -120,9 +120,9 @@ function Eintrag({
           <p className="leise klein">{t('werkbank.vollexport.zip.hinweis')}</p>
           <span className="knoepfe">
             {pruefsummen}
-            <a className="knopf klein" href={betriebApi.vollexportZipUrl(e.name)} onClick={geladen}>
+            <KnopfLink href={betriebApi.vollexportZipUrl(e.name)} onClick={geladen} groesse="klein">
               {t('werkbank.vollexport.als-zip-herunterladen')}
-            </a>
+            </KnopfLink>
             {/* „Prüfen“ (#986): Ergebnis in der Zeile des Exports, nicht oben auf der Seite. */}
             <Knopf
               groesse="klein"

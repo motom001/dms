@@ -56,11 +56,7 @@ export function MappenSuche({
       {gewaehlt.map((x) => (
         <span key={x} className="chip">
           {titel[x] ?? '…'}{' '}
-          <Knopf
-            art="link"
-            groesse="klein"
-            nurSymbol={t('werkbank.sichten.entfernen-2')}
-            onClick={() => setze(gewaehlt.filter((y) => y !== x))}>
+          <Knopf groesse="klein" nurSymbol={t('werkbank.sichten.entfernen-2')} onClick={() => setze(gewaehlt.filter((y) => y !== x))}>
             <Symbol name="schliessen" />
           </Knopf>
         </span>
@@ -76,7 +72,7 @@ export function MappenSuche({
                   .map((m) => (
                     <Knopf
                       key={m.id}
-                      art="link"
+
                       onClick={() => {
                         merke(m.id, titelOder(m.titel));
                         setze([...gewaehlt, m.id]);

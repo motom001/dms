@@ -65,12 +65,10 @@ export function LoeschkonzeptBlatt({ luecken, zusammenfassung }: { luecken: Luec
         </strong>
       </p>
       <p className="knoepfe">
-        <a className="knopf primaer" href="/api/werkbank/datenschutz/loeschkonzept?format=pdf">
+        <KnopfLink href="/api/werkbank/datenschutz/loeschkonzept?format=pdf" art="haupt">
           {t('werkbank.loeschkonzept.als-pdf-erzeugen')}
-        </a>
-        <a className="knopf" href="/api/werkbank/datenschutz/loeschkonzept?format=docx">
-          {t('werkbank.loeschkonzept.als-word-datei-docx')}
-        </a>
+        </KnopfLink>
+        <KnopfLink href="/api/werkbank/datenschutz/loeschkonzept?format=docx">{t('werkbank.loeschkonzept.als-word-datei-docx')}</KnopfLink>
       </p>
       <p className="leise klein">{t('werkbank.loeschkonzept.ablago-fuellt-die-vorlage')}</p>
       <p className="leise klein">{t('werkbank.loeschkonzept.wann')}</p>

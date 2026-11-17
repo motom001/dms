@@ -305,9 +305,7 @@ export function StempelDialog({
     <div className="exportdialog blatt stempeldialog" role="dialog" aria-label={t('ablage.stempel.herunterladen-mit-stempel')}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{t('ablage.stempel.herunterladen-mit-stempel')}</h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.stempel.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.stempel.schliessen')}</Knopf>
       </div>
       <p className="leise klein">
         {d.name}

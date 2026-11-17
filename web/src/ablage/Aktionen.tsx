@@ -256,9 +256,7 @@ export function EmailMaske({
     <section className="blatt" aria-label={t('ablage.aktionen.per-e-mail-versenden-2')}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{t('ablage.aktionen.per-e-mail-versenden-2')}</h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.aktionen.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.aktionen.schliessen')}</Knopf>
       </div>
       {fertig ? (
         <>

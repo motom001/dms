@@ -56,7 +56,7 @@ export function Notizen({ mappeId, notizen, neuLaden }: { mappeId: string; notiz
               )}
               {bearbeite?.id !== n.id && (
                 <span className="zeilenaktionen">
-                  <Knopf art="link" groesse="klein" onClick={() => setBearbeite({ id: n.id, text: n.text })}>
+                  <Knopf groesse="klein" onClick={() => setBearbeite({ id: n.id, text: n.text })}>
                     {t('ablage.notizen.bearbeiten')}
                   </Knopf>
                   {/* Gefahr leise mit Symbol und Rückfrage (#1210, Leitsatz 4). */}

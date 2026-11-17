@@ -7,7 +7,7 @@ import { useKonto } from '../konto-kontext';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { rueckfrage } from '../rueckfrage';
 import { Symbol } from '../Symbol';
-import { abfangen, Feld, HakenFeld, Knopf } from '../bausteine';
+import { abfangen, Feld, HakenFeld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Zwei-Faktor-Anmeldung (#242): Einrichten mit einer Authenticator-App, Wiederherstellungscodes,
@@ -38,14 +38,13 @@ export function Wiederherstellungscodes({ codes, weiter }: { codes: string[]; we
           }}>
           {t('profil.zweifaktor.kopieren')}
         </Knopf>
-        <a
-          className="knopf"
+        <KnopfLink
           href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`}
           download="wiederherstellungscodes.txt"
           onClick={() => setGesichert(true)}>
           <Symbol name="herunterladen" />
           {t('profil.zweifaktor.als-datei-speichern')}
-        </a>
+        </KnopfLink>
         <Knopf
           onClick={() => {
             print();

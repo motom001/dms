@@ -141,7 +141,7 @@ export function VerweisFenster({
           <span className="vf-titel" id={titelId}>
             {t('ablage.fenster.titel', { typ: typName(ziel) })}
           </span>
-          <Knopf art="link" className="vf-zu" nurSymbol={t('ablage.mappeformular.schliessen')} onClick={schliessen}>
+          <Knopf className="vf-zu" nurSymbol={t('ablage.mappeformular.schliessen')} onClick={schliessen}>
             <Symbol name="schliessen" />
           </Knopf>
         </div>

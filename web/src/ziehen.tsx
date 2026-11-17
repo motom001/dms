@@ -217,7 +217,7 @@ export function Ziehgriff({
 }) {
   return (
     <Knopf
-      art="link"
+      art="eigen"
       nurSymbol={griff['aria-label']}
       title={griff.title}
       className={className ? `${griff.className} ${className}` : griff.className}

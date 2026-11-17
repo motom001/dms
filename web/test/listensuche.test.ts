@@ -234,7 +234,7 @@ describe('Baustein Suche (#978, #994)', () => {
   it('Keine Treffer: ruhiger Satz und Weg zurück als Knopf', () => {
     const html = zeichne(h(KeineTreffer, { zuruecksetzen: nichts }));
     assert.match(html, /Keine Treffer\./);
-    assert.match(html, /<button[^>]*data-knopf="link"[^>]*>.*Suche und Filter zurücksetzen/);
+    assert.match(html, /<button[^>]*data-knopf="neben"[^>]*>.*Suche und Filter zurücksetzen/);
   });
 
   it('useListenSuche: Anfangszustand – alle Einträge, Paket-Ids der Liste und ob es eigene gibt', () => {

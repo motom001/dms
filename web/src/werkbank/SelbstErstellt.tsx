@@ -66,11 +66,7 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
         <KnopfLink to={`/werkbank/pakete/${ERSTELLEN}?von=${encodeURIComponent(d.id)}`} art="haupt">
           {t('pakete.selbst.neueVersion')}
         </KnopfLink>
-        {d.versionen[0] && (
-          <a className="knopf" href={paketeApi.selbstErstelltZip(d.id, d.versionen[0].version)}>
-            {t('pakete.selbst.zip')}
-          </a>
-        )}
+        {d.versionen[0] && <KnopfLink href={paketeApi.selbstErstelltZip(d.id, d.versionen[0].version)}>{t('pakete.selbst.zip')}</KnopfLink>}
         <Knopf
           art="gefahr"
           symbol="schliessen"
@@ -146,9 +142,9 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
         <ul className="stapel">
           {d.versionen.map((v) => (
             <li key={v.version}>
-              <a className="textknopf" href={paketeApi.selbstErstelltZip(d.id, v.version)}>
+              <KnopfLink href={paketeApi.selbstErstelltZip(d.id, v.version)} art="link">
                 {t('pakete.selbst.zipVersion', { version: v.version })}
-              </a>
+              </KnopfLink>
               <small className="leise">
                 {' '}
                 · {datum(v.erstellt)}

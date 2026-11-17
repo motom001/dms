@@ -91,9 +91,7 @@ export function AusDokument({
         <h2 className="h3">
           {titel} <Hilfe ort="mappe.ausdokument" />
         </h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.ausdokument.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.ausdokument.schliessen')}</Knopf>
       </div>
       <p className="leise">{t('ablage.ausdokument.mach-ein-foto-oder')}</p>
       <div className="knoepfe ad-wahl">
@@ -135,7 +133,6 @@ export function AusDokument({
             <li key={`${f.name}-${i}`}>
               <span>{f.name}</span>
               <Knopf
-                art="link"
                 groesse="klein"
                 aria-label={t('ablage.ausdokument.entfernen', { name: f.name })}
                 onClick={() => setDateien((x) => x.filter((_, j) => j !== i))}>

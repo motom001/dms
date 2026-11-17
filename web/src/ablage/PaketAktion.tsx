@@ -85,9 +85,7 @@ export function PaketAktion({
           </p>
           <h2 className="h3">{titel}</h2>
         </div>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.aktionen.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.aktionen.schliessen')}</Knopf>
       </div>
       {fehler && (
         <div className="hinweis schlecht" role="alert">

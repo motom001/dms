@@ -169,7 +169,7 @@ export function Begleiter({
               beschriftung={t('oberflaeche.begleiter.titel')}
               anker="startseite.feld-art"
             />
-            <Knopf art="link" nurSymbol={t('oberflaeche.begleiter.schliessen')} className={s.zu} onClick={schliesse}>
+            <Knopf art="eigen" nurSymbol={t('oberflaeche.begleiter.schliessen')} className={s.zu} onClick={schliesse}>
               <Symbol name="schliessen" />
             </Knopf>
           </div>
@@ -183,7 +183,7 @@ export function Begleiter({
       <div className={s.ort} data-anker="assistent">
         <Knopf
           ref={knopf}
-          art="link"
+          art="eigen"
           className={s.knopf}
           aria-expanded={offen}
           aria-haspopup="dialog"

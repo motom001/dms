@@ -99,7 +99,7 @@ export function Tabellenfeld({
       <>
         {neu}
         {mehr > 0 && (
-          <Knopf art="link" groesse="klein" onClick={weitere}>
+          <Knopf groesse="klein" onClick={weitere}>
             {t('ablage.tabelle.weitere', {
               anzahl: Math.min(mehr, TABELLE_SEITE).toLocaleString(gebietsschema()),
               gesamt: (daten?.gesamt ?? 0).toLocaleString(gebietsschema()),

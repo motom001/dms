@@ -2,7 +2,7 @@ import { t, tn } from './sprache';
 import { useEffect, useState } from 'react';
 import { betriebApi } from './api/betrieb';
 import type { WartungOeffentlich } from './api/konto';
-import { Link } from './ort';
+import { KnopfLink } from './bausteine';
 import { istWeg, WIEDER_ERREICHBAR } from './erreichbar';
 import { gebietsschema } from '../../shared/src/sprache';
 
@@ -103,9 +103,9 @@ export function WartungsBanner({ admin, abgemeldet }: { admin: boolean; abgemeld
           {zusatz}
         </p>
         {admin && (
-          <Link to="/werkbank/wartung#wartungsmodus" className="knopf klein">
+          <KnopfLink to="/werkbank/wartung#wartungsmodus" groesse="klein">
             {t('oberflaeche.wartung.zum-wartungsmodus')}
-          </Link>
+          </KnopfLink>
         )}
       </div>
     );
@@ -119,9 +119,9 @@ export function WartungsBanner({ admin, abgemeldet }: { admin: boolean; abgemeld
         })}
       </p>
       {admin && (
-        <Link to="/werkbank/wartung#wartungsmodus" className="knopf klein">
+        <KnopfLink to="/werkbank/wartung#wartungsmodus" groesse="klein">
           {t('oberflaeche.wartung.zum-wartungsmodus')}
-        </Link>
+        </KnopfLink>
       )}
     </div>
   );

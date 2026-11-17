@@ -135,7 +135,7 @@ function FeldSumme({ p }: { p: FeldZeileProps }) {
   return (
     <div className="feldsumme">
       {p.griff}
-      <Knopf art="link" className="feldkopfknopf" aria-expanded={offen} onClick={p.umschalten}>
+      <Knopf art="eigen" className="feldkopfknopf" aria-expanded={offen} onClick={p.umschalten}>
         <span className="flabel">{f.label || t('mappentypen.editor.ohne-bezeichnung')}</span>
         <code className="fkey">{f.key}</code>
         <span className="ftyp">{feldtypName(f.typ)}</span>
@@ -151,10 +151,10 @@ function FeldSumme({ p }: { p: FeldZeileProps }) {
         )}
       </Knopf>
       <div className="feldaktionen">
-        <Knopf art="link" gesperrt={i === 0} onClick={() => p.verschiebe(-1)} nurSymbol={t('mappentypen.editor.feld-nach-oben')}>
+        <Knopf gesperrt={i === 0} onClick={() => p.verschiebe(-1)} nurSymbol={t('mappentypen.editor.feld-nach-oben')}>
           <Symbol name="sortiert-auf" />
         </Knopf>
-        <Knopf art="link" gesperrt={i === p.anzahl - 1} onClick={() => p.verschiebe(1)} nurSymbol={t('mappentypen.editor.feld-nach-unten')}>
+        <Knopf gesperrt={i === p.anzahl - 1} onClick={() => p.verschiebe(1)} nurSymbol={t('mappentypen.editor.feld-nach-unten')}>
           <Symbol name="sortiert-ab" />
         </Knopf>
       </div>
@@ -251,7 +251,7 @@ function BerechnetHinweis({ p }: { p: FeldZeileProps }) {
         <div className="hinweis info berechnetinfo">
           <p>
             {t('mappentypen.berechnet.wird-freigegeben')}{' '}
-            <Knopf art="link" groesse="klein" onClick={() => setze({ _freigeben: undefined })}>
+            <Knopf groesse="klein" onClick={() => setze({ _freigeben: undefined })}>
               {t('mappentypen.berechnet.rueckgaengig')}
             </Knopf>
           </p>

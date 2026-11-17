@@ -13,7 +13,7 @@ import { useDaten } from '../daten';
 import { pruefwert } from '../pruefwert';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Feld, Knopf, Suchfeld } from '../bausteine';
+import { abfangen, Feld, Knopf, KnopfLink, Suchfeld } from '../bausteine';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
 
@@ -168,7 +168,7 @@ function LoeschprotokollBlatt() {
       {f.vorgang && (
         <p className="klein">
           {t('werkbank.loeschprotokoll.nur-vorgang', { kurz: kurz(f.vorgang) })}{' '}
-          <Knopf art="link" groesse="klein" onClick={() => setze('vorgang', '')}>
+          <Knopf groesse="klein" onClick={() => setze('vorgang', '')}>
             {t('werkbank.loeschprotokoll.alle-vorgaenge')}
           </Knopf>
         </p>
@@ -192,12 +192,12 @@ function LoeschprotokollBlatt() {
                   })}
             </span>
             <span className="knoepfe">
-              <a className="knopf klein" href={`/api/werkbank/loeschprotokoll/datei?format=pdf${query ? `&${query}` : ''}`}>
+              <KnopfLink href={`/api/werkbank/loeschprotokoll/datei?format=pdf${query ? `&${query}` : ''}`} groesse="klein">
                 {t('werkbank.loeschprotokoll.als-pdf')}
-              </a>
-              <a className="knopf klein" href={`/api/werkbank/loeschprotokoll/datei?format=csv${query ? `&${query}` : ''}`}>
+              </KnopfLink>
+              <KnopfLink href={`/api/werkbank/loeschprotokoll/datei?format=csv${query ? `&${query}` : ''}`} groesse="klein">
                 {t('werkbank.loeschprotokoll.als-csv')}
-              </a>
+              </KnopfLink>
             </span>
           </p>
           {r.eintraege.length > 0 && (
@@ -298,7 +298,7 @@ function Zeile({ e, vorgang }: { e: LoeschEintrag; vorgang(v: string): void }) {
           <>
             {' '}
             ·{' '}
-            <Knopf art="link" groesse="klein" onClick={() => vorgang(e.vorgang!)}>
+            <Knopf groesse="klein" onClick={() => vorgang(e.vorgang!)}>
               {t('werkbank.loeschprotokoll.vorgang', { kurz: kurz(e.vorgang) })}
             </Knopf>
           </>

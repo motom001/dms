@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { AuskunftStand } from '../../../../shared/src/auskunft';
 import { t } from '../../sprache';
-import { Knopf } from '../../bausteine';
+import { Knopf, KnopfLink } from '../../bausteine';
 import { groesse, zeit } from './hilfen';
 
 const anzahl = (n: number, eins: string, viele: string) => `${n} ${n === 1 ? eins : viele}`;
@@ -36,14 +36,14 @@ export function AuskunftFertig({
           <Knopf art="haupt" onClick={() => zustellen(f.id)}>
             {t('werkbank.datenschutz.zustellen')}
           </Knopf>
-          <a className="knopf" href={`/api/werkbank/auskunft/${f.id}/zip`} onClick={() => window.setTimeout(() => void nachher(), 3000)}>
+          <KnopfLink href={`/api/werkbank/auskunft/${f.id}/zip`} onClick={() => window.setTimeout(() => void nachher(), 3000)}>
             {t('werkbank.datenschutz.herunterladen')}
-          </a>
+          </KnopfLink>
         </p>
         <p className="leise klein">{t('werkbank.datenschutz.ohne-abruf-link-wird', { zeit: zeit(f.bis) })}</p>
       </div>
       <p>
-        <Knopf art="link" groesse="klein" onClick={neu}>
+        <Knopf groesse="klein" onClick={neu}>
           {t('werkbank.datenschutz.neue-auskunft-erstellen')}
         </Knopf>
       </p>

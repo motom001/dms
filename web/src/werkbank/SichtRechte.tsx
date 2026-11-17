@@ -198,7 +198,7 @@ export function SichtBerechtigungen({
             {SICHT_RECHTE_LISTE.map((k) => (
               <Knopf
                 key={k}
-                art="link"
+                art="eigen"
                 className={`rechtknopf ${rw.grund[k] ? 'erteilen' : 'entziehen'}`}
                 nurSymbol={t('werkbank.sichtrechte.standard-4', {
                   SICHT_RECHTE: SICHT_RECHTE[k],
@@ -296,7 +296,7 @@ function SichtRegelKarte({
       <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
         <div className="regelkopf">
           {griff}
-          <Knopf art="link" className="regelsumme" aria-expanded={false} onClick={umschalten}>
+          <Knopf art="eigen" className="regelsumme" aria-expanded={false} onClick={umschalten}>
             <strong>{r.name || t('werkbank.sichtrechte.ohne-namen')}</strong>
             <span className="chip">
               {kurzSichtRegel(r.dann)}
@@ -368,7 +368,7 @@ function SichtRegelKarte({
                   setze={(ids) => setzeB(i, { ...b, benutzer: ids })}
                 />
               )}
-              <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>
+              <Knopf groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>
                 {t('werkbank.sichtrechte.bedingung-entfernen')}
               </Knopf>
             </div>
@@ -389,7 +389,7 @@ function SichtRegelKarte({
           return (
             <Knopf
               key={k}
-              art="link"
+              art="eigen"
               className={`rechtknopf ${w}`}
               nurSymbol={`${SICHT_RECHTE[k]}: ${w || 'unverändert'}`}
               title={t('werkbank.sichtrechte.klicken-zum-wechseln', { SICHT_RECHTE: SICHT_RECHTE[k] })}
@@ -411,7 +411,7 @@ function SichtRegelKarte({
       </div>
       {problem && <p className="fehlertext klein">{problem}</p>}
       <div className="knoepfe">
-        <Knopf art="link" symbol="schliessen" onClick={weg}>
+        <Knopf symbol="schliessen" onClick={weg}>
           {t('werkbank.sichtrechte.regel-entfernen')}
         </Knopf>
         <Knopf onClick={umschalten}>{t('werkbank.sichtrechte.zuklappen')}</Knopf>

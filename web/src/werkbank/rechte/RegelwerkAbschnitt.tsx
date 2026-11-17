@@ -172,7 +172,7 @@ function grundWahl(rw: Regelwerk, setRw: SetzeRw, typ: Mappentyp) {
           return (
             <Knopf
               key={k}
-              art="link"
+              art="eigen"
               className={`rechtknopf ${an ? 'erteilen' : 'entziehen'}`}
               gesperrt={fest && t('werkbank.berechtigungen.geht-bei-diesem-systemtyp', { RECHTE: RECHTE[k] })}
               nurSymbol={t('werkbank.berechtigungen.standard-2', {

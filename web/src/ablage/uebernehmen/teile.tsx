@@ -69,7 +69,7 @@ export function NeuKopf({ typ, werte, bekannt }: { typ: Mappentyp; werte: Werte;
       <div className="titelzeile">
         <h1 className={titel ? '' : 'leise'}>{titel || t('ablage.mappeformular.neue-mappe')}</h1>
         <div className="mappenkopf-knoepfe">
-          <Knopf art="link" className="stern" gesperrt nurSymbol={`${t('ablage.stern.zu-den-favoriten')} – ${spaeter}`}>
+          <Knopf art="eigen" className="stern" gesperrt nurSymbol={`${t('ablage.stern.zu-den-favoriten')} – ${spaeter}`}>
             <Symbol name="stern" />
           </Knopf>
           <Knopf groesse="klein" gesperrt={spaeter}>

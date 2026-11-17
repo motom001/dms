@@ -35,11 +35,7 @@ export function Zugang({
   if (!b.aktiv) return wiederFreigeben(b, b2, vertreter, aktion);
   if (selbst) return null;
   // „im Bereich Vertretung“ als Sprung: öffnet ihn, rollt hin und setzt den Fokus auf seinen Kopf.
-  const bereich = (
-    <Knopf art="link" onClick={() => b2.oeffne(['vertretung'], true, true)}>
-      {t('werkbank.benutzer.bereich.vertretung')}
-    </Knopf>
-  );
+  const bereich = <Knopf onClick={() => b2.oeffne(['vertretung'], true, true)}>{t('werkbank.benutzer.bereich.vertretung')}</Knopf>;
   const gruende: Array<[string, ReactNode]> = [];
   if (!vertreter) gruende.push(['vertreter', tn('werkbank.benutzer.es-ist-kein-vertreter', { bereich })]);
   if (offen > 0)

@@ -17,7 +17,7 @@ function Abschnitt({ titel, ziel, probleme, children }: { titel: string; ziel: A
     <section className={`blatt zf-abschnitt${probleme?.length ? ' mitfehler' : ''}`} aria-label={titel}>
       <div className="zf-kopf">
         <h2 className="h3">{titel}</h2>
-        <Knopf art="link" onClick={() => setzeSammlung((s) => ({ ...s, ansicht: ziel, zurZusammenfassung: true }))}>
+        <Knopf onClick={() => setzeSammlung((s) => ({ ...s, ansicht: ziel, zurZusammenfassung: true }))}>
           {t('einrichtung.zf.aendern')}
           <span className="sr"> – {titel}</span>
         </Knopf>

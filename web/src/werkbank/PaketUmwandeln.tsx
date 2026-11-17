@@ -249,7 +249,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
                   <>
                     {' '}
                     ·{' '}
-                    <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => void zurueck(v)}>
+                    <Knopf groesse="klein" gesperrt={laeuft} onClick={() => void zurueck(v)}>
                       {t('pakete.umwandeln.bisher.knopf')}
                     </Knopf>
                   </>

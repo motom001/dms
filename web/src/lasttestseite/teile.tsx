@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 import type { LasttestStand, Speicherwahl } from '../../../shared/src/lasttest';
 import { GERAET_MAX } from '../../../shared/src/lasttest';
 import { handbuchUrl } from '../../../shared/src/hilfe';
-import { Feld, Knopf } from '../bausteine';
+import { Feld, Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -238,12 +238,12 @@ export function Ergebnis({
               }}>
               {t('lasttest.herunterladen')}
             </Knopf>
-            <a className="knopf" href={FORMULAR} target="_blank" rel="noreferrer">
+            <KnopfLink href={FORMULAR} neuesFenster>
               {t('lasttest.formular')} <Symbol name="extern" />
-            </a>
-            <a className="knopf" href={SAMMEL} target="_blank" rel="noreferrer">
+            </KnopfLink>
+            <KnopfLink href={SAMMEL} neuesFenster>
               {t('lasttest.sammel')} <Symbol name="extern" />
-            </a>
+            </KnopfLink>
           </div>
           {kopiert === 'nein' && (
             <p className="klein fehlertext" role="alert">

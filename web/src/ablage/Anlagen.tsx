@@ -85,7 +85,7 @@ export function AnlageZeile({
     <li className={`${s.zeile} ${auf ? 'an' : ''} ${weg ? 'weg' : ''}`} data-anlage={a.anlageNr ?? undefined}>
       <div className={s.kopf}>
         {umschalten && !weg ? (
-          <Knopf art="link" className={s.titel} aria-expanded={auf} onClick={umschalten}>
+          <Knopf className={s.titel} aria-expanded={auf} onClick={umschalten}>
             {anlageZeilentext(a)}
           </Knopf>
         ) : (
@@ -98,7 +98,6 @@ export function AnlageZeile({
             {herunterladen}
             {bearbeitbar && !erste && (
               <Knopf
-                art="link"
                 groesse="klein"
                 title={t('ablage.anlagen.nach-oben-titel')}
                 onClick={async () => {
@@ -109,13 +108,12 @@ export function AnlageZeile({
               </Knopf>
             )}
             {bearbeitbar && name === null && (
-              <Knopf art="link" groesse="klein" onClick={() => setName(a.name)}>
+              <Knopf groesse="klein" onClick={() => setName(a.name)}>
                 {t('ablage.anlagen.umbenennen')}
               </Knopf>
             )}
             {bearbeitbar && (
               <Knopf
-                art="link"
                 groesse="klein"
                 title={t('ablage.anlagen.loesen-titel')}
                 onClick={async () => {
@@ -148,7 +146,6 @@ export function AnlageZeile({
             {t('ablage.anlagen.speichern')}
           </Knopf>
           <Knopf
-            art="link"
             groesse="klein"
             onClick={() => {
               setName(null);
@@ -206,7 +203,7 @@ export function AlsAnlage({
         }}>
         {t('ablage.anlagen.anhaengen')}
       </Knopf>
-      <Knopf art="link" groesse="klein" onClick={schliessen}>
+      <Knopf groesse="klein" onClick={schliessen}>
         {t('ablage.anlagen.abbrechen')}
       </Knopf>
     </div>

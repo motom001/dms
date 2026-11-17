@@ -63,7 +63,7 @@ export function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[
             {/* Aufklapper (#1212): 28 × 28 px, Lucide-Pfeil dreht sich; ohne Unteransichten bleibt der Platz frei. */}
             {kinder ? (
               <Knopf
-                art="link"
+                art="eigen"
                 className="aufklapper"
                 aria-expanded={offen}
                 title={

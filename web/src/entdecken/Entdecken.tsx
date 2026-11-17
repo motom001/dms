@@ -128,7 +128,7 @@ function TippEintrag({ x }: { x: TippAnzeige }) {
         <>
           {' '}
           <span className="chip">{t('entdecken.seite.ausgeblendet')}</span>{' '}
-          <Knopf art="link" title={t('entdecken.seite.einblenden.titel')} onClick={() => tippHandlung(x.schluessel, 'einblenden')}>
+          <Knopf title={t('entdecken.seite.einblenden.titel')} onClick={() => tippHandlung(x.schluessel, 'einblenden')}>
             {t('entdecken.seite.einblenden')}
           </Knopf>
         </>

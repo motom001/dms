@@ -19,7 +19,6 @@ export function Akzeptieren({ h, u }: { h: Hinweis; u: UebersichtZustand }) {
     return (
       <>
         <Knopf
-          art="link"
           groesse="klein"
           laeuft={sendet}
           onClick={() => {
@@ -38,7 +37,7 @@ export function Akzeptieren({ h, u }: { h: Hinweis; u: UebersichtZustand }) {
   if (!akzeptierbar(h.art)) return null;
   if (!offen)
     return (
-      <Knopf art="link" groesse="klein" onClick={() => setOffen(true)}>
+      <Knopf groesse="klein" onClick={() => setOffen(true)}>
         {t('werkbank.uebersicht.akzeptieren')}
       </Knopf>
     );
@@ -87,7 +86,7 @@ export function BewusstAkzeptiert({ u }: { u: UebersichtZustand }) {
   if (!liste.length) return null;
   return (
     <section className="aufklappbereich akzeptiert">
-      <Knopf art="link" className="aufklappkopf" aria-expanded={auf} aria-controls="uebersicht-akzeptiert" onClick={() => setAuf(!auf)}>
+      <Knopf art="eigen" className="aufklappkopf" aria-expanded={auf} aria-controls="uebersicht-akzeptiert" onClick={() => setAuf(!auf)}>
         <Symbol name={auf ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
         <span>{t('werkbank.uebersicht.akzeptiert.titel', { anzahl: liste.length })}</span>
         <span className="leise klein">{t('werkbank.uebersicht.akzeptiert.unter')}</span>

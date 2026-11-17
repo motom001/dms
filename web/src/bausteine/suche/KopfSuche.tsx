@@ -150,7 +150,7 @@ export function KopfSuche({
       data-anker={anker}>
       <Knopf
         ref={lupe}
-        art="link"
+        art="eigen"
         nurSymbol={t('oberflaeche.suche.kopf.oeffnen')}
         className={s.lupenknopf}
         aria-expanded={offen}
@@ -164,7 +164,7 @@ export function KopfSuche({
           <span className={s.chip}>
             <span className={s.chiptext}>{bereich.text}</span>
             <Knopf
-              art="link"
+              art="eigen"
               nurSymbol={t('oberflaeche.suche.kopf.bereich-weg')}
               className={s.chipweg}
               onClick={() => {
@@ -199,7 +199,7 @@ export function KopfSuche({
         )}
         {wert && (
           <Knopf
-            art="link"
+            art="eigen"
             nurSymbol={t('oberflaeche.suche.leeren')}
             className={s.leeren}
             onClick={() => {
@@ -211,7 +211,7 @@ export function KopfSuche({
         )}
         {suchenIn && (
           <Knopf
-            art="link"
+            art="eigen"
             className={s.suchenIn}
             aria-expanded={inOffen}
             aria-controls={inOffen ? panelId : undefined}
@@ -219,7 +219,7 @@ export function KopfSuche({
             {suchenIn.text} <Symbol name="pfeil-unten" />
           </Knopf>
         )}
-        <Knopf art="link" nurSymbol={t('oberflaeche.suche.kopf.schliessen')} className={s.zu} onClick={schliessen}>
+        <Knopf art="eigen" nurSymbol={t('oberflaeche.suche.kopf.schliessen')} className={s.zu} onClick={schliessen}>
           <Symbol name="schliessen" />
         </Knopf>
         {suchenIn && inOffen && (

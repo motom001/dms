@@ -188,7 +188,6 @@ export function UrlKarte({
                 />
               </Feld>
               <Knopf
-                art="link"
                 groesse="klein"
                 symbol="schliessen"
                 onClick={() => setze({ ...karte, parameter: karte.parameter.filter((_, j) => j !== i) })}>
@@ -362,11 +361,7 @@ export function EmailKarte({
               ) : (
                 wahl(e, (n) => setzeAn(i, n), extra)
               )}
-              <Knopf
-                art="link"
-                groesse="klein"
-                symbol="schliessen"
-                onClick={() => setze({ ...karte, an: karte.an.filter((_, j) => j !== i) })}>
+              <Knopf groesse="klein" symbol="schliessen" onClick={() => setze({ ...karte, an: karte.an.filter((_, j) => j !== i) })}>
                 {t('automatisierung.ui.entfernen')}
               </Knopf>
             </li>
@@ -564,7 +559,7 @@ export function AussenZiele({ nachher }: { nachher: () => void }) {
               </Feld>
               {z.erstellt && <p className="leise klein">{t('automatisierung.ui.ziele.seit', { zeit: zeit(z.erstellt) })}</p>}
               <div className="knoepfe">
-                <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setZiele(ziele.filter((_, j) => j !== i))}>
+                <Knopf groesse="klein" symbol="schliessen" onClick={() => setZiele(ziele.filter((_, j) => j !== i))}>
                   {t('automatisierung.ui.entfernen')}
                 </Knopf>
               </div>

@@ -176,7 +176,7 @@ function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
         ))}
       </ul>
       {sichtbar.length < treffer.length && (
-        <Knopf art="link" onClick={() => setAlle(true)}>
+        <Knopf onClick={() => setAlle(true)}>
           {t('ablage.mappeformular.alle-zeigen', { treffer: treffer.length.toLocaleString(gebietsschema()) })}
         </Knopf>
       )}

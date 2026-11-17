@@ -20,7 +20,7 @@ export function Messpanel() {
   return (
     <aside className={`messpanel ${offen ? 'offen' : ''}`} aria-label={t('oberflaeche.messpanel.zeitmessung')}>
       {/* Aufklappkopf als Baustein Knopf (#1215); Aussehen über .textknopf.messkopf. */}
-      <Knopf art="link" className="messkopf" onClick={() => setOffen(!offen)} aria-expanded={offen}>
+      <Knopf art="eigen" className="messkopf" onClick={() => setOffen(!offen)} aria-expanded={offen}>
         <span>
           <Symbol name="stoppuhr" />{' '}
           {s.bisAnzeige !== undefined

@@ -119,10 +119,10 @@ export function KartenListe({
                 runter: i < karten.length - 1 ? () => setze(umgestellt(karten, i, i + 1, 'nach')) : undefined,
               }}
             />
-            <Knopf art="link" aria-expanded={offen === karte.id} onClick={() => setOffen(offen === karte.id ? null : karte.id)}>
+            <Knopf aria-expanded={offen === karte.id} onClick={() => setOffen(offen === karte.id ? null : karte.id)}>
               <strong>{vorratName({ bereich: 'dann', art: karte.art })}</strong> <span className="leise">{kurz(karte)}</span>
             </Knopf>
-            <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze(karten.filter((x) => x.id !== karte.id))}>
+            <Knopf groesse="klein" symbol="schliessen" onClick={() => setze(karten.filter((x) => x.id !== karte.id))}>
               {t('automatisierung.ui.entfernen')}
             </Knopf>
           </div>
@@ -168,9 +168,7 @@ export function Vorrat({
               {liste.map((v) => (
                 <li key={`${v.bereich}|${v.art}`} className="vorratkarte">
                   <Ziehgriff griff={ablage.griff(`${v.bereich}|${v.art}`, vorratName(v))} tasten={{}} />
-                  <Knopf art="link" onClick={() => fuegeHinzu(v.bereich, v.art)}>
-                    {vorratName(v)}
-                  </Knopf>
+                  <Knopf onClick={() => fuegeHinzu(v.bereich, v.art)}>{vorratName(v)}</Knopf>
                 </li>
               ))}
             </ul>

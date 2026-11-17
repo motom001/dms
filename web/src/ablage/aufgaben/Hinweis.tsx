@@ -62,7 +62,7 @@ function Aktionen({ a, tu, weiter, zuNotizen }: { a: Aufgabe; tu: Tu; weiter(): 
   return (
     <div className="aufgabenaktionen">
       {zuNotizen && ausNotiz(a) && (
-        <Knopf art="link" groesse="klein" onClick={zuNotizen}>
+        <Knopf groesse="klein" onClick={zuNotizen}>
           {t('ablage.aufgaben.zur-notiz')}
         </Knopf>
       )}
@@ -122,7 +122,7 @@ function Weitergeben({ a, an, setAn, tu, abbrechen }: { a: Aufgabe; an: string; 
       <Knopf art="haupt" groesse="klein" type="submit" gesperrt={!an}>
         {t('ablage.aufgaben.weitergeben')}
       </Knopf>
-      <Knopf art="link" groesse="klein" onClick={abbrechen}>
+      <Knopf groesse="klein" onClick={abbrechen}>
         {t('ablage.aufgaben.abbrechen')}
       </Knopf>
     </form>
@@ -273,7 +273,7 @@ function Folgetermin({ f, neuLaden, fertig }: { f: Folge; neuLaden: () => Promis
         <Knopf art="haupt" groesse="klein" onClick={() => setzen()}>
           {t('ablage.aufgaben.datum-auf-setzen', { datumDe: datumDe(f.datum) })}
         </Knopf>
-        <Knopf art="link" groesse="klein" onClick={() => fertig()}>
+        <Knopf groesse="klein" onClick={() => fertig()}>
           {t('ablage.aufgaben.nein-danke')}
         </Knopf>
       </div>

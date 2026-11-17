@@ -237,9 +237,9 @@ export function SystemkontoDetail({ id }: { id: string }) {
             <strong>{t('konten.systemkonten.weitreichend')}:</strong> {t('konten.systemkonten.weitreichend.text')}
           </p>
           {k.paketId && (
-            <Link to={`/werkbank/pakete/${k.paketId}`} className="knopf klein">
+            <KnopfLink to={`/werkbank/pakete/${k.paketId}`} groesse="klein">
               {t('konten.systemkonten.zum-paket')}
-            </Link>
+            </KnopfLink>
           )}
         </div>
       )}
@@ -292,9 +292,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
         </div>
         <LinkAnzeige e={ergebnis} />
         <div className="knoepfe">
-          <Link to={`/werkbank/benutzer/${ergebnis.benutzer.id}`} className="knopf">
-            {t('werkbank.benutzer.zum-benutzer')}
-          </Link>
+          <KnopfLink to={`/werkbank/benutzer/${ergebnis.benutzer.id}`}>{t('werkbank.benutzer.zum-benutzer')}</KnopfLink>
         </div>
       </div>
     );

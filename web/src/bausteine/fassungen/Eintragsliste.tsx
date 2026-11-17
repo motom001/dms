@@ -32,12 +32,8 @@ export function Eintragsliste({ eintraege }: { eintraege: Listeneintrag[] }) {
     <>
       {aufklappbar && (
         <div className="historie-kopf">
-          <Knopf art="link" onClick={() => setAlleOffen(true)}>
-            {t('ablage.historie.alle-aufklappen')}
-          </Knopf>
-          <Knopf art="link" onClick={() => setAlleOffen(false)}>
-            {t('ablage.historie.alle-zuklappen')}
-          </Knopf>
+          <Knopf onClick={() => setAlleOffen(true)}>{t('ablage.historie.alle-aufklappen')}</Knopf>
+          <Knopf onClick={() => setAlleOffen(false)}>{t('ablage.historie.alle-zuklappen')}</Knopf>
         </div>
       )}
       <ul className="historie">

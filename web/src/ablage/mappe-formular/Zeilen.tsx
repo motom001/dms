@@ -49,9 +49,7 @@ export function LinkKopiert({ link, ok, schliessen }: { link: string; ok: boolea
       <Feld beschriftung={t('ablage.mappeformular.link-auf-diese-mappe')} beschriftungVerbergen>
         <input type="text" readOnly value={link} onFocus={(e) => e.target.select()} autoFocus={!ok} />
       </Feld>
-      <Knopf art="link" onClick={schliessen}>
-        {t('ablage.mappeformular.schliessen')}
-      </Knopf>
+      <Knopf onClick={schliessen}>{t('ablage.mappeformular.schliessen')}</Knopf>
     </div>
   );
 }
@@ -93,7 +91,7 @@ export function AusgeblendetZeile({ text, anzeigen }: { text: string; anzeigen()
       <Symbol name="auge-aus" />
       <span>{text}</span>
       <span aria-hidden="true">·</span>
-      <Knopf art="link" groesse="klein" onClick={anzeigen}>
+      <Knopf groesse="klein" onClick={anzeigen}>
         {t('ablage.anzeige.anzeigen')}
       </Knopf>
     </p>
@@ -110,7 +108,7 @@ export function KonfliktZeile({ konflikte, felder, zeige }: { konflikte: Verweis
   const knopf = (k: Verweiskonflikt) => {
     const f = felder.find((x) => x.key === k.feld);
     return (
-      <Knopf art="link" onClick={() => zeige(k.feld)}>
+      <Knopf onClick={() => zeige(k.feld)}>
         {t('ablage.konflikt.zeile', { feld: f ? feldLabel(f) : k.feld, grund: unpassendText(felder, k.eigeneFelder) })}
       </Knopf>
     );

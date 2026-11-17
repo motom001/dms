@@ -36,7 +36,7 @@ export function Schrittleiste({ schritt, setSchritt }: { schritt: number; setSch
       })}>
       {SCHRITTE.map((s, i) => (
         <li key={s} className={i < schritt ? 'erledigt' : i === schritt ? 'aktiv' : ''} aria-current={i === schritt ? 'step' : undefined}>
-          <Knopf art="link" onClick={() => setSchritt(i)}>
+          <Knopf onClick={() => setSchritt(i)}>
             <span className="nr" aria-hidden="true">
               {i < schritt ? <Symbol name="haken" /> : i + 1}
             </span>
@@ -64,9 +64,7 @@ export function NeuOderVersion({ stand, neu, version }: { stand: ErstellenStand;
       <ul className="stapel">
         {liste.map((w) => (
           <li key={w.id}>
-            <Knopf art="link" onClick={() => version(w)}>
-              {t('pakete.erstellen.frage.versionVon', { name: w.name })}
-            </Knopf>
+            <Knopf onClick={() => version(w)}>{t('pakete.erstellen.frage.versionVon', { name: w.name })}</Knopf>
             <small className="leise">
               {' '}
               {w.id} ·{' '}
@@ -112,7 +110,7 @@ export function PruefenSchritt({ z, probleme }: { z: ErstellenZustand; probleme:
                   <li key={f.id}>
                     {f.art === 'typ' ? t('werkbank.paketerstellen.mappentyp') : t('werkbank.paketerstellen.ansicht')} „{f.name}“{' '}
                     <span className="leise">({f.grund})</span>{' '}
-                    <Knopf art="link" onClick={() => umschalten(f.art === 'typ' ? 'typen' : 'sichten', f.id, true)}>
+                    <Knopf onClick={() => umschalten(f.art === 'typ' ? 'typen' : 'sichten', f.id, true)}>
                       {t('werkbank.paketerstellen.mit-aufnehmen')}
                     </Knopf>
                   </li>

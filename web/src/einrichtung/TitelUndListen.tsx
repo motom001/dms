@@ -268,7 +268,6 @@ export function TrefferlisteEditor({ e, setE, klappe }: { e: Entwurf; setE: (f: 
                 </HakenFeld>
                 <div className="feldaktionen">
                   <Knopf
-                    art="link"
                     gesperrt={e.trefferlisten.length < 2 && t('mappentypen.editor.eine-trefferliste-braucht-der')}
                     title={
                       e.trefferlisten.length < 2 ? undefined : t('mappentypen.editor.trefferliste-entfernen-2', { ERST_BEIM_SPEICHERN })
@@ -354,22 +353,16 @@ function Spaltenwahl({
                 {k.startsWith('_') && <span className="chip">{t('mappentypen.editor.system')}</span>}
               </span>
               <span className="aktionen">
-                <Knopf
-                  art="link"
-                  gesperrt={i === 0}
-                  onClick={() => schiebe(i, -1)}
-                  nurSymbol={t('mappentypen.editor.nach-vorn', { name: name(k) })}>
+                <Knopf gesperrt={i === 0} onClick={() => schiebe(i, -1)} nurSymbol={t('mappentypen.editor.nach-vorn', { name: name(k) })}>
                   <Symbol name="sortiert-auf" />
                 </Knopf>
                 <Knopf
-                  art="link"
                   gesperrt={i === liste.length - 1}
                   onClick={() => schiebe(i, 1)}
                   nurSymbol={t('mappentypen.editor.nach-hinten', { name: name(k) })}>
                   <Symbol name="sortiert-ab" />
                 </Knopf>
                 <Knopf
-                  art="link"
                   onClick={() => setze(liste.filter((x) => x !== k))}
                   nurSymbol={t('mappentypen.editor.entfernen-2', { name: name(k) })}>
                   <Symbol name="schliessen" />

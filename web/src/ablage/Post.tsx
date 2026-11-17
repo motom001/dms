@@ -176,7 +176,7 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
           </Knopf>
         )}
         {darf && stand !== POST_STAND.neu && (
-          <Knopf art="link" groesse="klein" onClick={() => setzeStand(POST_STAND.neu)}>
+          <Knopf groesse="klein" onClick={() => setzeStand(POST_STAND.neu)}>
             {t('ablage.post.wieder-neu')}
           </Knopf>
         )}
@@ -204,7 +204,6 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
               </Knopf>
             )}
             <Knopf
-              art="link"
               groesse="klein"
               aria-expanded={zusammen}
               onClick={() => setZusammen(!zusammen)}
@@ -295,9 +294,7 @@ function Zusammenlegen({
     <section className="blatt pk-zusammen" aria-label={t('ablage.post.mit-anderer-post-zusammenlegen-2')}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{t('ablage.post.mit-anderer-post-zusammenlegen-2')}</h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.post.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.post.schliessen')}</Knopf>
       </div>
       <p className="leise">{t('ablage.post.welche-post-gehoert-zu')}</p>
       {fehler && (
@@ -425,7 +422,6 @@ function Erkannt({
         <span className="leise klein">{t('ablage.post.vorschlaege-aus-dem-text')}</span>
         <span className="luecke" aria-hidden="true" />
         <Knopf
-          art="link"
           groesse="klein"
           laeuft={laeuft}
           onClick={() => {
@@ -481,7 +477,7 @@ function Erkannt({
                 {darf && auswahlText(post.werte.von) !== absender.titel && (
                   <>
                     {' '}
-                    <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => eintragen({ von: absender.titel })}>
+                    <Knopf groesse="klein" gesperrt={laeuft} onClick={() => eintragen({ von: absender.titel })}>
                       {t('ablage.post.als-absender-eintragen')}
                     </Knopf>
                   </>
@@ -515,9 +511,9 @@ function Erkannt({
                 {neuLink && darfErstellen(orgTyp) && (
                   <>
                     {' '}
-                    <Link to={neuLink} className="textknopf klein">
+                    <KnopfLink to={neuLink} art="link" groesse="klein">
                       {t('ablage.post.als-neue-anlegen', { name: orgTyp!.name })}
-                    </Link>
+                    </KnopfLink>
                   </>
                 )}
               </dd>
@@ -532,7 +528,7 @@ function Erkannt({
                 {darf && auswahlText(post.werte.datum) !== datum && (
                   <>
                     {' '}
-                    <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => eintragen({ datum })}>
+                    <Knopf groesse="klein" gesperrt={laeuft} onClick={() => eintragen({ datum })}>
                       {t('ablage.post.als-datum-der-post')}
                     </Knopf>
                   </>

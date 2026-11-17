@@ -38,7 +38,7 @@ function Gestoert({ p, aktuell, oeffne }: { p: PostfachAnsicht; aktuell: Postfac
         })}
         {s.naechsterAbruf && <> {t('werkbank.postfaecher.zustand.naechster-versuch', { zeit: zeit(s.naechsterAbruf), laenger })}</>}
       </p>
-      <Knopf art="link" onClick={() => oeffne(beheben)}>
+      <Knopf onClick={() => oeffne(beheben)}>
         {beheben === 'anbieter' ? t('werkbank.postfaecher.zustand.zur-anmeldung') : t('werkbank.postfaecher.zustand.verbindung-pruefen')}
       </Knopf>
     </div>

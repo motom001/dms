@@ -166,7 +166,7 @@ export function SammelLeiste({
         <div className="aktionsleiste sammel-leiste" role="region" aria-label={t('ablage.sammelweitergabe.auswahl')}>
           <span className="klein">
             {tn('ablage.sammelweitergabe.ausgewaehlt-2', { b: <strong>{n}</strong> })}{' '}
-            <Knopf art="link" groesse="klein" onClick={s.leeren}>
+            <Knopf groesse="klein" onClick={s.leeren}>
               {t('ablage.sammelweitergabe.auswahl-aufheben')}
             </Knopf>
           </span>
@@ -200,7 +200,7 @@ export function SammelLeiste({
               {meldung.nicht.length > 50 && <li>{t('ablage.sammelweitergabe.und-weitere', { wert: meldung.nicht.length - 50 })}</li>}
             </ul>
           )}
-          <Knopf art="link" groesse="klein" onClick={() => setMeldung(undefined)}>
+          <Knopf groesse="klein" onClick={() => setMeldung(undefined)}>
             {t('ablage.sammelweitergabe.ausblenden')}
           </Knopf>
         </div>

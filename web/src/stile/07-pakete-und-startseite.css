@@ -104,6 +104,9 @@
 .kachelleer { color: var(--gruen); font-weight: 600; }
 .einstiege { display: flex; flex-direction: column; gap: 10px; }
 .einstiege .kachel { min-height: 0; }
+/* „Erste Post ablegen“ als Sonderform des Knopfs (#1269): Kachel bleibt Kachel, die Beschriftung untereinander. */
+.einstiege .kachel.textknopf { display: flex; align-items: stretch; justify-content: flex-start; font-weight: inherit; }
+.einstiege .kachel.textknopf > span, .einstiege .kachel.textknopf > span > span:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 .zuletzt .mappenliste { margin-top: 6px; }
 .zl-kopf { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; }
 @media (pointer: coarse) { .zl-kopf .verweis { display: inline-flex; align-items: center; min-height: 44px; } }

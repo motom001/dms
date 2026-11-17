@@ -34,7 +34,7 @@ function TeilenHinweis({ k, x }: { k: Kern; x: Dokument }) {
           }}>
           {t('volltext.teilen.knopf')}
         </Knopf>
-        <Knopf art="link" groesse="klein" onClick={() => teilenAusblenden(k, x.id)}>
+        <Knopf groesse="klein" onClick={() => teilenAusblenden(k, x.id)}>
           {t('volltext.teilen.weg')}
         </Knopf>
         <Hilfe ort="dokumente.sprachen" />

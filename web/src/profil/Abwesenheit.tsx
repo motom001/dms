@@ -407,10 +407,7 @@ function MeineOffenenAufgaben({ vertreter, geaendert }: { vertreter: string | nu
               {filterAktiv(f) && (
                 <>
                   {' '}
-                  ·{' '}
-                  <Knopf art="link" onClick={() => setF({})}>
-                    {t('profil.abwesenheit.filter-zuruecksetzen')}
-                  </Knopf>
+                  · <Knopf onClick={() => setF({})}>{t('profil.abwesenheit.filter-zuruecksetzen')}</Knopf>
                 </>
               )}
             </p>

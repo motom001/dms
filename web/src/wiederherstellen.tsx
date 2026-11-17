@@ -123,9 +123,7 @@ export function WiederherstellungsAssistent({
       {abgleich && <AbgleichAnsicht w={w} abgleich={abgleich} frisch={frisch} abbrechen={abbrechen} />}
       {!abgleich && abbrechen && (
         <div className="knoepfe">
-          <Knopf art="link" onClick={abbrechen}>
-            {t('oberflaeche.wiederherstellen.zurueck-2')}
-          </Knopf>
+          <Knopf onClick={abbrechen}>{t('oberflaeche.wiederherstellen.zurueck-2')}</Knopf>
         </div>
       )}
     </div>
@@ -190,11 +188,7 @@ function AbgleichAnsicht({
             {t('oberflaeche.wiederherstellen.wiederherstellen')}
           </Knopf>
         )}
-        {abbrechen && (
-          <Knopf art="link" onClick={abbrechen}>
-            {t('oberflaeche.wiederherstellen.abbrechen')}
-          </Knopf>
-        )}
+        {abbrechen && <Knopf onClick={abbrechen}>{t('oberflaeche.wiederherstellen.abbrechen')}</Knopf>}
       </div>
     </>
   );

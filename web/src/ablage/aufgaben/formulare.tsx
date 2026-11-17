@@ -92,11 +92,7 @@ export function ErinnerungFormular({
         </div>
       )}
       <div className="knoepfe">
-        {eingebettet && (
-          <Knopf art="link" onClick={schliessen}>
-            {t('ablage.aufgaben.abbrechen')}
-          </Knopf>
-        )}
+        {eingebettet && <Knopf onClick={schliessen}>{t('ablage.aufgaben.abbrechen')}</Knopf>}
         <Knopf art="haupt" gesperrt={!datum || (mitText && !text.trim()) || (mitEmpfaenger && !an)} onClick={senden}>
           {t_.knopf}
         </Knopf>
@@ -108,9 +104,7 @@ export function ErinnerungFormular({
     <section className="blatt" aria-label={t_.name}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{t_.titel}</h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.aufgaben.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf>
       </div>
       {probe && <ProbeHinweis />}
       {inhalt}
@@ -180,9 +174,7 @@ export function NeueAufgabe({
     <section className="blatt" aria-label={titel}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{titel}</h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.aufgaben.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf>
       </div>
       {probe && <ProbeHinweis />}
       <div className="raster">
@@ -269,9 +261,7 @@ export function AblaufFormular({
     <section className="blatt" aria-label={vorlage.name}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{vorlage.name}</h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.aufgaben.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf>
       </div>
       {probe && <ProbeHinweis />}
       {vorlage.beschreibung && <p className="leise">{vorlage.beschreibung}</p>}

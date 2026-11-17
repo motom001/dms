@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
   KATALOG_LINK_REL,
   sammelSeiteMitVersion,
@@ -192,6 +192,7 @@ export function SammeldateiWahl({
 }) {
   const [fehler, setFehler] = useState<string>();
   const [laedt, setLaedt] = useState(false);
+  const wahl = useRef<HTMLInputElement>(null);
   async function hochladen(f: File | undefined) {
     if (!f) return;
     setFehler(undefined);
@@ -209,19 +210,27 @@ export function SammeldateiWahl({
   }
   return (
     <div className="stapel">
-      <label className="pd-datei">
-        <span className="knopf">{laedt ? t('werkbank.paketedazuholen.pruefe') : t('werkbank.paketedazuholen.sammeldatei-waehlen')}</span>
-        <input
-          type="file"
-          accept=".zip,application/zip"
-          disabled={laedt}
-          aria-label={t('werkbank.paketedazuholen.sammeldatei-zip-hochladen')}
-          onChange={(e) => {
-            void hochladen(e.target.files?.[0]);
-            e.target.value = '';
-          }}
-        />
-      </label>
+      <div className="knoepfe">
+        <Knopf
+          laeuft={laedt}
+          laeuftText={t('werkbank.paketedazuholen.pruefe')}
+          title={t('werkbank.paketedazuholen.sammeldatei-zip-hochladen')}
+          onClick={() => wahl.current?.click()}>
+          {t('werkbank.paketedazuholen.sammeldatei-waehlen')}
+        </Knopf>
+      </div>
+      <input
+        ref={wahl}
+        type="file"
+        accept=".zip,application/zip"
+        hidden
+        disabled={laedt}
+        aria-label={t('werkbank.paketedazuholen.sammeldatei-zip-hochladen')}
+        onChange={(e) => {
+          void hochladen(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
       {fehler && (
         <p className="fehlertext klein" role="alert">
           {fehler}

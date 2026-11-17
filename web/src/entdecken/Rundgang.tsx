@@ -216,12 +216,12 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
         <div className="rg-knoepfe">
           <div className="rg-neben">
             {vonSelbst && (
-              <Knopf art="link" onClick={() => ende('spaeter')} title={t('entdecken.fuehrung.spaeter.titel')}>
+              <Knopf onClick={() => ende('spaeter')} title={t('entdecken.fuehrung.spaeter.titel')}>
                 {t('entdecken.fuehrung.spaeter')}
               </Knopf>
             )}
             {!letzter && (
-              <Knopf art="link" onClick={() => ende('gesehen')} title={t('entdecken.fuehrung.ueberspringen.titel')}>
+              <Knopf onClick={() => ende('gesehen')} title={t('entdecken.fuehrung.ueberspringen.titel')}>
                 {t('entdecken.fuehrung.ueberspringen')}
               </Knopf>
             )}

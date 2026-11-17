@@ -210,7 +210,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
     <section className="exportdialog blatt" role="dialog" aria-label={t('ablage.emailmehrere.per-e-mail-versenden')}>
       <div className="blattkopf zeile-zwischen">
         <h2 className="h3">{tn('ablage.emailmehrere.mappen-per-e-mail', { anzahl: ids.length, hilfe: <Hilfe ort="ablage.email" /> })}</h2>
-        <Knopf art="link" onClick={() => fertig(ergebnis ? t('ablage.emailmehrere.die-e-mail-ist') : undefined)}>
+        <Knopf onClick={() => fertig(ergebnis ? t('ablage.emailmehrere.die-e-mail-ist') : undefined)}>
           {t('ablage.emailmehrere.schliessen')}
         </Knopf>
       </div>

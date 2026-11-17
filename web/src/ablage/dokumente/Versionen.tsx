@@ -8,7 +8,7 @@ import { Person } from '../../Person';
 import { Hilfe } from '../../Hilfe';
 import { Symbol } from '../../Symbol';
 import { rueckfrage } from '../../rueckfrage';
-import { Knopf } from '../../bausteine';
+import { Knopf, KnopfLink } from '../../bausteine';
 import { groesse, zeit } from './hilfen';
 
 /** Alle Versionen eines Dokuments (#194): ansehen, herunterladen, zurückholen. */
@@ -101,18 +101,15 @@ export function Versionen({
                   )}
                   {!mitnehmen ? null : mitStempel ? (
                     kannStempeln(v.mime) && (
-                      <Knopf art="link" onClick={() => mitStempel(v.nummer)}>
-                        {t('ablage.dokumente.mit-stempel-herunterladen')}
-                      </Knopf>
+                      <Knopf onClick={() => mitStempel(v.nummer)}>{t('ablage.dokumente.mit-stempel-herunterladen')}</Knopf>
                     )
                   ) : (
-                    <a className="textknopf" href={versionUrl(d.id, v.nummer, true)}>
+                    <KnopfLink href={versionUrl(d.id, v.nummer, true)} art="link">
                       {t('ablage.dokumente.herunterladen')}
-                    </a>
+                    </KnopfLink>
                   )}
                   {zurueck && (
                     <Knopf
-                      art="link"
                       onClick={async () => {
                         if (
                           await rueckfrage({

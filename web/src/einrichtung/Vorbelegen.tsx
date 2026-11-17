@@ -114,7 +114,6 @@ export function VorbelegenEditor({
               setze={(k) => aendere(i, { von: p.von, nach: k })}
             />
             <Knopf
-              art="link"
               nurSymbol={t('mappentypen.editor.vorbelegen-entfernen', { von: name(quellen, p.von), nach: name(alleFelder, p.nach) })}
               onClick={() => aendere(i, null)}>
               <Symbol name="schliessen" />
@@ -125,7 +124,7 @@ export function VorbelegenEditor({
       })}
       {paare.length < VORBELEGEN_MAX && vonAlle.some((x) => frei(x.key).length > 0) && (
         <div>
-          <Knopf art="link" groesse="klein" onClick={dazu}>
+          <Knopf groesse="klein" onClick={dazu}>
             {t('mappentypen.editor.vorbelegen-dazu')}
           </Knopf>
         </div>

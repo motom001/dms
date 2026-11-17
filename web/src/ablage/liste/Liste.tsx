@@ -49,7 +49,7 @@ function ListenZahl({ l }: { l: ListeKern }) {
         <>
           {' '}
           {t('ablage.ablage.sortiert-nach', { spaltenName: spaltenName(sortierung.spalte, p.typ), wert: '' })}{' '}
-          <Knopf art="link" groesse="klein" onClick={() => l.setzeSortierung(null)}>
+          <Knopf groesse="klein" onClick={() => l.setzeSortierung(null)}>
             {t('ablage.ablage.nach-titel-sortieren')}
           </Knopf>
         </>

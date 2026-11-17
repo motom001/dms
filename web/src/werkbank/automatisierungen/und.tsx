@@ -133,7 +133,7 @@ export function UndListe({
                 </select>
               </Feld>
             )}
-            <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze(karten.filter((_, j) => j !== i))}>
+            <Knopf groesse="klein" symbol="schliessen" onClick={() => setze(karten.filter((_, j) => j !== i))}>
               {t('automatisierung.ui.entfernen')}
             </Knopf>
           </div>

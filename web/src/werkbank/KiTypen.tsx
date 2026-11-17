@@ -74,9 +74,7 @@ export function KiTypenZeile({ paket, aendern }: { paket: string; aendern: () =>
   return (
     <p>
       {n ? t('pakete.reiter.ki-zeile', { anzahl: n }) : <strong>{t('pakete.ki.bekommt-nichts')}</strong>}{' '}
-      <Knopf art="link" onClick={aendern}>
-        {t('pakete.reiter.aendern')}
-      </Knopf>
+      <Knopf onClick={aendern}>{t('pakete.reiter.aendern')}</Knopf>
     </p>
   );
 }

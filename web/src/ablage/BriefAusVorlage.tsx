@@ -151,9 +151,7 @@ function Kopf({ aktion, schliessen }: { aktion?: VorlagenAktion; schliessen(): v
         )}
         <h2 className="h3">{aktion?.name ?? t('ablage.brief.titel')}</h2>
       </div>
-      <Knopf art="link" onClick={schliessen}>
-        {t('ablage.aktionen.schliessen')}
-      </Knopf>
+      <Knopf onClick={schliessen}>{t('ablage.aktionen.schliessen')}</Knopf>
     </div>
   );
 }
@@ -259,7 +257,7 @@ function Fehlend({ fehlend, typ, zumFeld }: { fehlend: PlatzhalterStand[]; typ: 
         {fehlend.map((p) => (
           <li key={p.name}>
             {p.feld ? (
-              <Knopf art="link" groesse="klein" onClick={() => zumFeld(p.feld!)}>
+              <Knopf groesse="klein" onClick={() => zumFeld(p.feld!)}>
                 {text(p)}
               </Knopf>
             ) : (

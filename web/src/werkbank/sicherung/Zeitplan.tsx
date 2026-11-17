@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { betriebApi, type SicherungsPlan } from '../../api/betrieb';
 import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
-import { Link } from '../../ort';
 import { Speicherleiste, useEntwurf } from '../../Speicherleiste';
 import { NOTFALLBLATT_SEITE } from '../../../../shared/src/werkbankansicht';
-import { Feld, HakenFeld, Schalter } from '../../bausteine';
+import { Feld, HakenFeld, Schalter, KnopfLink } from '../../bausteine';
 import { TAGE } from './hilfen';
 
 type SetzeP = (p: SicherungsPlan) => void;
@@ -68,9 +67,9 @@ export function Zeitplan({
         <p className="leise klein">
           {t('werkbank.sicherung.erst-wenn-verschluesselung-fertig')}{' '}
           {mitNotfallblatt ? (
-            <Link to={NOTFALLBLATT_SEITE} className="knopf klein">
+            <KnopfLink to={NOTFALLBLATT_SEITE} groesse="klein">
               {t('werkbank.sicherung.zur-verschluesselung')}
-            </Link>
+            </KnopfLink>
           ) : (
             t('werkbank.sicherung.keine-berechtigung-verschluesselung')
           )}

@@ -222,9 +222,7 @@ function VersionWahl({
           {!e.vonHand && (
             <p className="leise klein">
               {t('pakete.erstellen.version.unbekannt')}{' '}
-              <Knopf art="link" onClick={() => datei.current?.click()}>
-                {t('pakete.erstellen.version.hochladen')}
-              </Knopf>
+              <Knopf onClick={() => datei.current?.click()}>{t('pakete.erstellen.version.hochladen')}</Knopf>
               <input
                 ref={datei}
                 type="file"

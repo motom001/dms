@@ -336,7 +336,6 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   // „Prüfen“ (#986): läuft und Fehler in der Zeile; das Ergebnis steht danach in der Spalte „Geprüft“.
   const pruefKnopf = (name: string, moeglich: boolean) => (
     <Knopf
-      art="link"
       gesperrt={(laeuft && prueft !== name) || !moeglich || loescht}
       laeuft={laeuft && prueft === name}
       laeuftText={t('werkbank.sicherung.prueft')}
@@ -356,7 +355,6 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   // „Herunterladen“ (#975): heikle Handlung (frische Anmeldung), dann lädt der Browser selbst – mit Fortschritt und Abbrechen.
   const ladeKnopf = (name: string) => (
     <Knopf
-      art="link"
       onClick={async () => {
         if (await heikelLaden(betriebApi.sicherungDateiUrl(name))) setGeladen(name);
       }}>

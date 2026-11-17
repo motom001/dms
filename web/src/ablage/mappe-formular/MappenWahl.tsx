@@ -309,7 +309,7 @@ function eintraege({
       </span>
     ),
     aktionen: !mehrfach && !aendern && (
-      <Knopf art="link" groesse="klein" onClick={aendere}>
+      <Knopf groesse="klein" onClick={aendere}>
         {t('felder.verweis.aendern')}
       </Knopf>
     ),

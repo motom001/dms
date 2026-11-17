@@ -256,7 +256,7 @@ export function useBereiche<K extends string>(
           </button>
         ))}
         <span className={s.luecke} aria-hidden="true" />
-        <Knopf art="link" groesse="klein" onClick={() => setAuf(stelle(alle ? new Set() : new Set(liste.map(([k]) => k))))}>
+        <Knopf groesse="klein" onClick={() => setAuf(stelle(alle ? new Set() : new Set(liste.map(([k]) => k))))}>
           {alle ? t('oberflaeche.bereiche.alle-zuklappen') : t('oberflaeche.bereiche.alle-aufklappen')}
         </Knopf>
       </nav>

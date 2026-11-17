@@ -4,7 +4,7 @@ import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
 import { Marke } from './Marke';
 import { t } from './sprache';
 import { Symbol } from './Symbol';
-import { Feld, Knopf } from './bausteine';
+import { Feld, Knopf, KnopfLink } from './bausteine';
 import { sprache } from '../../shared/src/sprache';
 
 /**
@@ -181,7 +181,7 @@ function KontoWahl({ konten, weiter }: { konten: Konto[]; weiter: (k: Konto) => 
       <ul className="notfall-konten">
         {konten.map((k) => (
           <li key={k.id}>
-            <Knopf art="link" className="wahlkarte" onClick={() => weiter(k)}>
+            <Knopf art="eigen" className="wahlkarte" onClick={() => weiter(k)}>
               <strong>{k.name}</strong>
               <span className="leise">{k.email}</span>
             </Knopf>
@@ -255,9 +255,7 @@ function NeuesPasswort({
       <Knopf art="haupt" type="submit" laeuft={laeuft} laeuftText={t('konten.notfall.seite.setze')}>
         {t('konten.notfall.seite.setzen')}
       </Knopf>
-      <Knopf art="link" onClick={zurueck}>
-        {t('konten.notfall.seite.abbrechen')}
-      </Knopf>
+      <Knopf onClick={zurueck}>{t('konten.notfall.seite.abbrechen')}</Knopf>
     </form>
   );
 }
@@ -271,14 +269,14 @@ function NeuesBlatt({ email, blatt }: { email: string; blatt: string }) {
         <Symbol name="haken" /> {t('konten.notfall.seite.gesetzt', { email })}
       </p>
       <p>{t('konten.notfall.seite.blatt')}</p>
-      <a
-        className={`knopf${geladen ? '' : ' primaer'}`}
+      <KnopfLink
+        art={geladen ? 'neben' : 'haupt'}
         href={`/api/notfall/blatt?schluessel=${encodeURIComponent(blatt)}`}
         download
         onClick={() => setGeladen(true)}>
         <Symbol name="herunterladen" />
         {t('konten.notfall.seite.blatt.knopf')}
-      </a>
+      </KnopfLink>
       {geladen ? (
         <p className="gutertext klein">{t('konten.notfall.seite.blatt.geladen')}</p>
       ) : (

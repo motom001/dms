@@ -130,7 +130,7 @@ export function Aktionsleiste({ l, wahl }: { l: ListeKern; wahl: Auswahl }) {
         {tn('ablage.ablage.von-ausgewaehlt', { b: <strong>{zahl(wahl.gewaehlt.size)}</strong>, zahl: zahl(s.gesamt ?? 0) })}
       </span>
       {!wahl.alle && (s.gesamt ?? 0) > wahl.gewaehlt.size && (
-        <Knopf art="link" groesse="klein" onClick={() => l.alleWaehlen()}>
+        <Knopf groesse="klein" onClick={() => l.alleWaehlen()}>
           {t('ablage.ablage.alle-auswaehlen', { zahl: zahl(s.gesamt ?? 0) })}
         </Knopf>
       )}
@@ -161,7 +161,7 @@ export function Aktionsleiste({ l, wahl }: { l: ListeKern; wahl: Auswahl }) {
         onClick={(_e, anlass) => loescheAuswahl({ p, w: l.w, d: l.d, korb: l.korb, anhang, setErgebnis: l.setErgebnis }, anlass)}>
         {t('ablage.ablage.loeschen-auswahl')}
       </Knopf>
-      <Knopf art="link" groesse="klein" onClick={wahl.leeren}>
+      <Knopf groesse="klein" onClick={wahl.leeren}>
         {t('ablage.ablage.auswahl-aufheben')}
       </Knopf>
     </div>
@@ -182,7 +182,7 @@ export function ErgebnisHinweis({ ergebnis, schliessen }: { ergebnis: Ergebnis; 
           {ergebnis.liste.length > 50 && <li>{t('ablage.ablage.und-weitere', { zahl: zahl(ergebnis.liste.length - 50) })}</li>}
         </ul>
       )}
-      <Knopf art="link" groesse="klein" onClick={schliessen}>
+      <Knopf groesse="klein" onClick={schliessen}>
         {t('ablage.ablage.ausblenden')}
       </Knopf>
     </div>
@@ -270,14 +270,7 @@ function MappenEintrag({ l, m, i }: { l: ListeKern; m: Mappe; i: number }) {
 export function Rumpf({ l }: { l: ListeKern }) {
   const { p, s, wahl } = l;
   const nachladen: ReactNode =
-    !s.alle &&
-    (s.laedt ? (
-      t('ablage.ablage.lade')
-    ) : (
-      <Knopf art="link" onClick={s.mehr}>
-        {t('ablage.ablage.weitere-laden')}
-      </Knopf>
-    ));
+    !s.alle && (s.laedt ? t('ablage.ablage.lade') : <Knopf onClick={s.mehr}>{t('ablage.ablage.weitere-laden')}</Knopf>);
   const setzeEnde = (el: HTMLElement | null) => {
     l.ende.current = el;
   };

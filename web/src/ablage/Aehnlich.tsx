@@ -190,9 +190,7 @@ export function VektorStandBlock() {
           rueckfrage={{ titel: t('aehnlich.werkbank.neu.frage'), text: t('aehnlich.werkbank.neu.text'), ja: t('aehnlich.werkbank.neu') }}>
           {t('aehnlich.werkbank.neu')}
         </Knopf>
-        <Knopf art="link" onClick={laden}>
-          {t('aehnlich.werkbank.aktualisieren')}
-        </Knopf>
+        <Knopf onClick={laden}>{t('aehnlich.werkbank.aktualisieren')}</Knopf>
       </div>
     </>
   );

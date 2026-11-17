@@ -133,7 +133,6 @@ function NotfallSammeln({ liste, setze }: { liste: NotfallkontaktEingabe[]; setz
               {t('einrichtung.optional.notfall.uebernehmen')}
             </Knopf>
             <Knopf
-              art="link"
               onClick={() => {
                 setNeu(null);
                 setFehler(undefined);

@@ -122,7 +122,6 @@ function Begriffe({
                   {b} · {n ? `${n}×` : t('ablage.schwaerzen.nicht-gefunden')}
                 </span>
                 <Knopf
-                  art="link"
                   groesse="klein"
                   nurSymbol={t('ablage.schwaerzen.entfernen', { b })}
                   onClick={() => setBegriffe(begriffe.filter((x) => x !== b))}>
@@ -224,12 +223,12 @@ function Schalter({
         </HakenFeld>
       )}
       {eigene.length > 0 && (
-        <Knopf art="link" groesse="klein" onClick={() => setEigene(eigene.slice(0, -1))}>
+        <Knopf groesse="klein" onClick={() => setEigene(eigene.slice(0, -1))}>
           {t('ablage.schwaerzen.letzten-bereich-entfernen')}
         </Knopf>
       )}
       {eigene.length > 1 && (
-        <Knopf art="link" groesse="klein" onClick={() => setEigene([])}>
+        <Knopf groesse="klein" onClick={() => setEigene([])}>
           {t('ablage.schwaerzen.alle-bereiche-entfernen')}
         </Knopf>
       )}
@@ -300,9 +299,7 @@ export function Schwaerzen({ d, schliessen, fertig }: { d: Dokument; schliessen(
     return (
       <div className="hinweis schlecht pdfseiten">
         <p>{fehler}</p>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.schwaerzen.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.schwaerzen.schliessen')}</Knopf>
       </div>
     );
   if (!v)

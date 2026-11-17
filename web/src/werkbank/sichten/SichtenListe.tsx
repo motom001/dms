@@ -66,7 +66,7 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
       {o.hinweis && (
         <div className="hinweis info">
           <p>{o.hinweis}</p>
-          <Knopf art="link" groesse="klein" onClick={() => o.setHinweis(undefined)}>
+          <Knopf groesse="klein" onClick={() => o.setHinweis(undefined)}>
             {t('werkbank.sichten.ausblenden')}
           </Knopf>
         </div>

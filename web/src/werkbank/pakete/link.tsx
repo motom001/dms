@@ -97,7 +97,6 @@ function SchonInstalliert({ z, id, vorschau }: { z: PaketeZustand; id: string; v
       <p>
         {tn('werkbank.pakete.ist-schon-installiert-version', { name: vorschau.paket.name, installiert: vorschau.installiert })}{' '}
         <Knopf
-          art="link"
           onClick={() => {
             void z.abrufen(false);
             geheZu(`/werkbank/pakete/${id}`);

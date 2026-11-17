@@ -139,7 +139,6 @@ export function Feldaufteilung({
                   {/* Anzeigen, wenn … (#1033): Symbol und Satz am Abschnitt, Bearbeiten darunter. */}
                   <AnzeigeChip regel={a.anzeigen} typ={typTeil} />
                   <Knopf
-                    art="link"
                     groesse="klein"
                     aria-expanded={bedingungOffen === a._uid}
                     onClick={() => setBedingungOffen(bedingungOffen === a._uid ? null : a._uid)}>
@@ -147,21 +146,18 @@ export function Feldaufteilung({
                   </Knopf>
                   <div className="feldaktionen">
                     <Knopf
-                      art="link"
                       gesperrt={!ziel(a, -1)}
                       onClick={() => schiebe(a, -1)}
                       nurSymbol={t('mappentypen.darstellung.nach-oben', { name: name(a) })}>
                       <Symbol name="sortiert-auf" />
                     </Knopf>
                     <Knopf
-                      art="link"
                       gesperrt={!ziel(a, 1)}
                       onClick={() => schiebe(a, 1)}
                       nurSymbol={t('mappentypen.darstellung.nach-unten', { name: name(a) })}>
                       <Symbol name="sortiert-ab" />
                     </Knopf>
                     <Knopf
-                      art="link"
                       onClick={() => {
                         setze(abschnitte.filter((x) => x._uid !== a._uid));
                         ansage(t('mappentypen.darstellung.entfernt', { name: name(a) }));

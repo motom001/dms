@@ -132,7 +132,6 @@ export function MitteDokumente({
           <div key={x.id} className="ue-anlage">
             <p className="ue-anlage-kopf">
               <Knopf
-                art="link"
                 aria-expanded={offeneAnlagen.has(x.id)}
                 onClick={() =>
                   setOffeneAnlagen((o) => {

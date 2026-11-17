@@ -467,10 +467,7 @@ function ZeilenFehlerListe({ fehler, zurZeile }: { fehler: ZeilenFehler[]; zurZe
         <li key={i}>
           {f.zeile !== null && (
             <>
-              <Knopf art="link" onClick={() => zurZeile(f.zeile!)}>
-                {t('werkbank.rundgaenge.ui.zeile', { zeile: f.zeile })}
-              </Knopf>
-              :{' '}
+              <Knopf onClick={() => zurZeile(f.zeile!)}>{t('werkbank.rundgaenge.ui.zeile', { zeile: f.zeile })}</Knopf>:{' '}
             </>
           )}
           {f.text}

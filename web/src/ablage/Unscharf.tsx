@@ -9,7 +9,7 @@ import { Knopf } from '../bausteine';
  */
 export function UnscharfHinweis({ u, suchen }: { u: Unscharf; suchen(text: string): void }) {
   const vorschlag = u.vorschlag && (
-    <Knopf art="link" title={t('suche.unscharf.titel', { vorschlag: u.vorschlag })} onClick={() => suchen(u.vorschlag!)}>
+    <Knopf title={t('suche.unscharf.titel', { vorschlag: u.vorschlag })} onClick={() => suchen(u.vorschlag!)}>
       {t('suche.unscharf.meintest', { vorschlag: u.vorschlag })}
     </Knopf>
   );

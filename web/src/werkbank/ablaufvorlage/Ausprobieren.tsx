@@ -85,7 +85,6 @@ export function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
           <div className="knoepfe">
             <Knopf onClick={oeffnen}>{t('automatisierung.vorlage.ui.ausprobieren.nochmal')}</Knopf>
             <Knopf
-              art="link"
               onClick={() => {
                 const el = document.getElementById('vorlage-name');
                 el?.scrollIntoView({ block: 'center' });

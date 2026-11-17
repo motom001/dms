@@ -334,7 +334,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
       {/* Baustein Knopf (#1215) im Aussehen der Kopfzeile (.textknopf.wer); der Pfeil ist ein Symbol (D5). */}
       {/* Aufklapper (#1215): Links und Handlungen, kein ARIA-Menü – ohne role="menu", das nur Menüpunkte enthalten dürfte. */}
       <Knopf
-        art="link"
+        art="eigen"
         className={`wer ${an ? 'an' : ''}`}
         data-anker="benutzermenue"
         aria-expanded={offen}
@@ -380,7 +380,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             !vertretung &&
             (verwaltungsmodus.aktiv ? (
               <Knopf
-                art="link"
+                art="eigen"
                 id="menue-verwaltung-beenden"
                 className="menuepunkt"
                 onClick={() => {
@@ -392,7 +392,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
               </Knopf>
             ) : (
               <Knopf
-                art="link"
+                art="eigen"
                 id="menue-verwalten"
                 className="menuepunkt"
                 onClick={() => {
@@ -423,7 +423,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             {t('oberflaeche.app.fehler-melden')}
           </Link>
           <Knopf
-            art="link"
+            art="eigen"
             className="menuepunkt"
             onClick={() => {
               setOffen(false);
@@ -432,7 +432,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             <Pikto name="info" />
             {t('oberflaeche.app.ueber-ablago')}
           </Knopf>
-          <Knopf art="link" className="menuepunkt" onClick={abmelden}>
+          <Knopf art="eigen" className="menuepunkt" onClick={abmelden}>
             <Pikto name="abmelden" />
             {t('oberflaeche.app.abmelden')}
           </Knopf>

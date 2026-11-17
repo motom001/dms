@@ -210,7 +210,7 @@ export function Fassungen({ art, eintrag, klappe, stand, nachher, id = 'fassunge
         )}
         <div className="knoepfe">
           {(liste?.fassungen.length ?? 0) > 1 && (
-            <Knopf groesse="klein" art="link" aria-pressed={wahl.includes(f.nr)} onClick={() => waehle(f.nr)}>
+            <Knopf groesse="klein" aria-pressed={wahl.includes(f.nr)} onClick={() => waehle(f.nr)}>
               {wahl.includes(f.nr) ? t('oberflaeche.fassungen.abwaehlen') : t('oberflaeche.fassungen.waehlen')}
             </Knopf>
           )}
@@ -262,7 +262,7 @@ export function Fassungen({ art, eintrag, klappe, stand, nachher, id = 'fassunge
           ) : (
             <p className="leise">{t('oberflaeche.fassungen.gleich')}</p>
           )}
-          <Knopf groesse="klein" art="link" onClick={() => setWahl([])}>
+          <Knopf groesse="klein" onClick={() => setWahl([])}>
             {t('oberflaeche.fassungen.schliessen')}
           </Knopf>
         </div>
