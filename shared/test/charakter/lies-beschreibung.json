@@ -1,0 +1,735 @@
+{
+  "ohne": {
+    "beschreibung": null,
+    "fehler": []
+  },
+  "keinObjekt": {
+    "beschreibung": null,
+    "fehler": []
+  },
+  "ohneListen": {
+    "beschreibung": null,
+    "fehler": []
+  },
+  "leer": {
+    "beschreibung": {
+      "bloecke": [],
+      "aktionen": []
+    },
+    "fehler": []
+  },
+  "nurAktionen": {
+    "beschreibung": {
+      "bloecke": [],
+      "aktionen": [
+        {
+          "schluessel": "los",
+          "name": "Los",
+          "hilfe": "H",
+          "bestaetigen": true
+        },
+        {
+          "schluessel": "b",
+          "name": "b"
+        }
+      ]
+    },
+    "fehler": []
+  },
+  "aktionenFalsch": {
+    "beschreibung": {
+      "bloecke": [],
+      "aktionen": [
+        {
+          "schluessel": "a",
+          "name": "a"
+        },
+        {
+          "schluessel": "a",
+          "name": "a"
+        }
+      ]
+    },
+    "fehler": ["aktionen: ungültige Aktion.", "aktionen: ungültige Aktion.", "aktionen: Schlüssel „a“ doppelt."]
+  },
+  "aktionenKeineListe": {
+    "beschreibung": {
+      "bloecke": [],
+      "aktionen": []
+    },
+    "fehler": []
+  },
+  "alleTypen": {
+    "beschreibung": {
+      "bloecke": [
+        {
+          "art": "abschnitt",
+          "titel": "Allgemein",
+          "hilfe": "Abschnittshilfe",
+          "felder": [
+            {
+              "schluessel": "t",
+              "name": "Text",
+              "typ": "text",
+              "hilfe": "Hilfe",
+              "pflicht": true,
+              "standard": "x",
+              "laengeMin": 1,
+              "laengeMax": 20,
+              "muster": "[a-z]+",
+              "meldung": "Nur klein"
+            },
+            {
+              "schluessel": "m",
+              "name": "m",
+              "typ": "mehrzeilig",
+              "laengeMax": 100
+            },
+            {
+              "schluessel": "z",
+              "name": "z",
+              "typ": "zahl",
+              "standard": 2,
+              "min": 0,
+              "max": 10,
+              "schritt": 0.5,
+              "vorschlaege": [
+                {
+                  "wert": 2,
+                  "name": "zwei"
+                },
+                {
+                  "wert": 5,
+                  "name": "fünf"
+                }
+              ]
+            },
+            {
+              "schluessel": "j",
+              "name": "j",
+              "typ": "janein",
+              "standard": true
+            },
+            {
+              "schluessel": "d",
+              "name": "d",
+              "typ": "datum"
+            },
+            {
+              "schluessel": "a",
+              "name": "a",
+              "typ": "auswahl",
+              "optionen": ["eins", "2", ""]
+            },
+            {
+              "schluessel": "ma",
+              "name": "ma",
+              "typ": "mehrfachauswahl",
+              "optionen": ["a", "b"]
+            },
+            {
+              "schluessel": "g",
+              "name": "g",
+              "typ": "geheim"
+            },
+            {
+              "schluessel": "mt",
+              "name": "mt",
+              "typ": "mappentyp",
+              "mehrfach": true,
+              "schliesstAus": "mt2"
+            },
+            {
+              "schluessel": "mt2",
+              "name": "mt2",
+              "typ": "mappentyp",
+              "mehrfach": true
+            },
+            {
+              "schluessel": "fe",
+              "name": "fe",
+              "typ": "feld",
+              "mappentyp": "akte"
+            },
+            {
+              "schluessel": "fo",
+              "name": "fo",
+              "typ": "feld"
+            },
+            {
+              "schluessel": "be",
+              "name": "be",
+              "typ": "benutzer"
+            },
+            {
+              "schluessel": "ro",
+              "name": "ro",
+              "typ": "rolle",
+              "mehrfach": true
+            },
+            {
+              "schluessel": "si",
+              "name": "si",
+              "typ": "sicht"
+            },
+            {
+              "schluessel": "ad",
+              "name": "ad",
+              "typ": "adresse",
+              "beispiel": "http://ollama:11434/v1"
+            },
+            {
+              "schluessel": "ki",
+              "name": "ki",
+              "typ": "ki_mappentypen"
+            },
+            {
+              "schluessel": "fg",
+              "name": "fg",
+              "typ": "fragen_grenzen"
+            },
+            {
+              "schluessel": "es",
+              "name": "es",
+              "typ": "erkennung_standard"
+            },
+            {
+              "schluessel": "mak",
+              "name": "mak",
+              "typ": "mappenaktionen"
+            }
+          ]
+        },
+        {
+          "art": "liste",
+          "schluessel": "konten",
+          "name": "Konten",
+          "eintrag": "Konto",
+          "hilfe": "H",
+          "sortierbar": true,
+          "felder": [
+            {
+              "schluessel": "name",
+              "name": "name",
+              "typ": "text",
+              "pflicht": true
+            },
+            {
+              "schluessel": "pw",
+              "name": "pw",
+              "typ": "geheim"
+            }
+          ]
+        },
+        {
+          "art": "liste",
+          "schluessel": "leer",
+          "name": "leer",
+          "eintrag": "Eintrag",
+          "sortierbar": false,
+          "felder": []
+        }
+      ],
+      "aktionen": [
+        {
+          "schluessel": "pruefen",
+          "name": "Prüfen"
+        }
+      ]
+    },
+    "fehler": []
+  },
+  "feldFehler": {
+    "beschreibung": {
+      "bloecke": [
+        {
+          "art": "abschnitt",
+          "titel": "Allgemein",
+          "felder": [
+            {
+              "schluessel": "Gross",
+              "name": "Gross",
+              "typ": "text"
+            },
+            {
+              "schluessel": "",
+              "name": "",
+              "typ": "text"
+            },
+            {
+              "schluessel": "aus",
+              "name": "aus",
+              "typ": "auswahl"
+            },
+            {
+              "schluessel": "maus",
+              "name": "maus",
+              "typ": "mehrfachauswahl",
+              "optionen": []
+            },
+            {
+              "schluessel": "g",
+              "name": "g",
+              "typ": "geheim"
+            },
+            {
+              "schluessel": "ad",
+              "name": "ad",
+              "typ": "adresse",
+              "beispiel": "ftp://x"
+            },
+            {
+              "schluessel": "ad2",
+              "name": "ad2",
+              "typ": "adresse"
+            },
+            {
+              "schluessel": "s1",
+              "name": "s1",
+              "typ": "text"
+            },
+            {
+              "schluessel": "s2",
+              "name": "s2",
+              "typ": "zahl"
+            },
+            {
+              "schluessel": "s3",
+              "name": "s3",
+              "typ": "zahl"
+            },
+            {
+              "schluessel": "v1",
+              "name": "v1",
+              "typ": "text"
+            },
+            {
+              "schluessel": "v2",
+              "name": "v2",
+              "typ": "zahl"
+            },
+            {
+              "schluessel": "v3",
+              "name": "v3",
+              "typ": "zahl"
+            },
+            {
+              "schluessel": "v4",
+              "name": "v4",
+              "typ": "zahl",
+              "standard": 9,
+              "min": 0,
+              "max": 5,
+              "vorschlaege": [
+                {
+                  "wert": 7,
+                  "name": "sieben"
+                },
+                {
+                  "wert": -1,
+                  "name": "minus"
+                }
+              ]
+            },
+            {
+              "schluessel": "v5",
+              "name": "v5",
+              "typ": "zahl",
+              "standard": 3,
+              "vorschlaege": [
+                {
+                  "wert": 3,
+                  "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                }
+              ]
+            },
+            {
+              "schluessel": "mf1",
+              "name": "mf1",
+              "typ": "text"
+            },
+            {
+              "schluessel": "mf2",
+              "name": "mf2",
+              "typ": "benutzer"
+            },
+            {
+              "schluessel": "mf3",
+              "name": "mf3",
+              "typ": "feld"
+            },
+            {
+              "schluessel": "sa",
+              "name": "sa",
+              "typ": "mappentyp"
+            },
+            {
+              "schluessel": "l1",
+              "name": "l1",
+              "typ": "zahl"
+            },
+            {
+              "schluessel": "l2",
+              "name": "l2",
+              "typ": "text"
+            },
+            {
+              "schluessel": "l3",
+              "name": "l3",
+              "typ": "mehrzeilig",
+              "laengeMin": 5,
+              "laengeMax": 2
+            },
+            {
+              "schluessel": "mu1",
+              "name": "mu1",
+              "typ": "mehrzeilig"
+            },
+            {
+              "schluessel": "mu2",
+              "name": "mu2",
+              "typ": "text",
+              "muster": "("
+            },
+            {
+              "schluessel": "mu3",
+              "name": "mu3",
+              "typ": "text"
+            },
+            {
+              "schluessel": "mu4",
+              "name": "mu4",
+              "typ": "text"
+            },
+            {
+              "schluessel": "mu5",
+              "name": "mu5",
+              "typ": "text"
+            },
+            {
+              "schluessel": "me1",
+              "name": "me1",
+              "typ": "text"
+            },
+            {
+              "schluessel": "me2",
+              "name": "me2",
+              "typ": "text",
+              "muster": "a",
+              "meldung": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+            },
+            {
+              "schluessel": "me3",
+              "name": "me3",
+              "typ": "text",
+              "muster": "a"
+            },
+            {
+              "schluessel": "me4",
+              "name": "me4",
+              "typ": "text",
+              "muster": "a"
+            },
+            {
+              "schluessel": "k1",
+              "name": "k1",
+              "typ": "ki_mappentypen",
+              "standard": []
+            },
+            {
+              "schluessel": "k2",
+              "name": "k2",
+              "typ": "fragen_grenzen"
+            }
+          ]
+        }
+      ],
+      "aktionen": []
+    },
+    "fehler": [
+      "einstellungen[1].felder[1]: Feld ungültig.",
+      "einstellungen[1].felder[2]: ungültiger Schlüssel „Gross“.",
+      "einstellungen[1].felder[3]/unbekannt: unbekannter Typ „farbe“.",
+      "einstellungen[1].felder[4]: ungültiger Schlüssel „“.",
+      "einstellungen[1].felder[5]/aus: auswahl braucht optionen.",
+      "einstellungen[1].felder[6]/maus: mehrfachauswahl braucht optionen.",
+      "einstellungen[1].felder[7]/g: geheim hat keine Vorgabe.",
+      "einstellungen[1].felder[8]/ad: adresse hat keine Vorgabe (höchstens ein beispiel, das im leeren Feld steht).",
+      "einstellungen[1].felder[8]/ad: beispiel ist keine gültige Adresse.",
+      "einstellungen[1].felder[9]/ad2: beispiel ist keine gültige Adresse.",
+      "einstellungen[1].felder[10]/s1: schritt nur bei zahl, größer als 0.",
+      "einstellungen[1].felder[11]/s2: schritt nur bei zahl, größer als 0.",
+      "einstellungen[1].felder[12]/s3: schritt nur bei zahl, größer als 0.",
+      "einstellungen[1].felder[13]/v1: vorschlaege nur bei zahl, als Liste mit wert und name.",
+      "einstellungen[1].felder[14]/v2: vorschlaege nur bei zahl, als Liste mit wert und name.",
+      "einstellungen[1].felder[15]/v3: vorschlaege nur bei zahl, als Liste mit wert und name.",
+      "einstellungen[1].felder[16]/v4: vorschlaege: jeder Eintrag braucht wert (Zahl) und name.",
+      "einstellungen[1].felder[16]/v4: vorschlaege: jeder Eintrag braucht wert (Zahl) und name.",
+      "einstellungen[1].felder[16]/v4: vorschlaege: jeder Eintrag braucht wert (Zahl) und name.",
+      "einstellungen[1].felder[16]/v4: vorschlaege: jeder Eintrag braucht wert (Zahl) und name.",
+      "einstellungen[1].felder[16]/v4: Vorschlag 7 liegt nicht zwischen min und max.",
+      "einstellungen[1].felder[16]/v4: Vorschlag -1 liegt nicht zwischen min und max.",
+      "einstellungen[1].felder[16]/v4: standard muss einer der vorschlaege sein.",
+      "einstellungen[1].felder[18]/mf1: mehrfach: true gibt es nur bei mappentyp, benutzer, rolle, sicht.",
+      "einstellungen[1].felder[19]/mf2: mehrfach: true gibt es nur bei mappentyp, benutzer, rolle, sicht.",
+      "einstellungen[1].felder[20]/mf3: mehrfach: true gibt es nur bei mappentyp, benutzer, rolle, sicht.",
+      "einstellungen[1].felder[21]/sa: schliesst_aus nennt keinen gültigen Schlüssel.",
+      "einstellungen[1].felder[22]/l1: laenge_min nur bei text und mehrzeilig, als ganze Zahl ab 0.",
+      "einstellungen[1].felder[23]/l2: laenge_min nur bei text und mehrzeilig, als ganze Zahl ab 0.",
+      "einstellungen[1].felder[23]/l2: laenge_max nur bei text und mehrzeilig, als ganze Zahl ab 0.",
+      "einstellungen[1].felder[24]/l3: laenge_min ist größer als laenge_max.",
+      "einstellungen[1].felder[25]/mu1: muster nur bei text, als gültiger regulärer Ausdruck (höchstens 300 Zeichen).",
+      "einstellungen[1].felder[26]/mu2: muster nur bei text, als gültiger regulärer Ausdruck (höchstens 300 Zeichen).",
+      "einstellungen[1].felder[27]/mu3: muster nur bei text, als gültiger regulärer Ausdruck (höchstens 300 Zeichen).",
+      "einstellungen[1].felder[28]/mu4: muster nur bei text, als gültiger regulärer Ausdruck (höchstens 300 Zeichen).",
+      "einstellungen[1].felder[29]/mu5: muster nur bei text, als gültiger regulärer Ausdruck (höchstens 300 Zeichen).",
+      "einstellungen[1].felder[30]/me1: meldung nur zusammen mit muster, höchstens 200 Zeichen.",
+      "einstellungen[1].felder[31]/me2: meldung nur zusammen mit muster, höchstens 200 Zeichen.",
+      "einstellungen[1].felder[32]/me3: meldung nur zusammen mit muster, höchstens 200 Zeichen.",
+      "einstellungen[1].felder[34]/k1: ki_mappentypen hat keine Vorgabe und keine Pflicht – den Wert hält Ablago.",
+      "einstellungen[1].felder[35]/k2: fragen_grenzen hat keine Vorgabe und keine Pflicht – den Wert hält Ablago.",
+      "einstellungen: höchstens eine Einstellung vom Typ adresse je Paket."
+    ]
+  },
+  "bloecke": {
+    "beschreibung": {
+      "bloecke": [
+        {
+          "art": "abschnitt",
+          "titel": "Allgemein",
+          "felder": [
+            {
+              "schluessel": "a",
+              "name": "a",
+              "typ": "text"
+            },
+            {
+              "schluessel": "a",
+              "name": "a",
+              "typ": "zahl"
+            }
+          ]
+        },
+        {
+          "art": "liste",
+          "schluessel": "a",
+          "name": "a",
+          "eintrag": "Eintrag",
+          "sortierbar": false,
+          "felder": [
+            {
+              "schluessel": "x",
+              "name": "x",
+              "typ": "text"
+            },
+            {
+              "schluessel": "x",
+              "name": "x",
+              "typ": "zahl"
+            },
+            {
+              "schluessel": "k",
+              "name": "k",
+              "typ": "ki_mappentypen"
+            },
+            {
+              "schluessel": "ad",
+              "name": "ad",
+              "typ": "adresse"
+            }
+          ]
+        },
+        {
+          "art": "liste",
+          "schluessel": "Kaputt!",
+          "name": "Kaputt!",
+          "eintrag": "Eintrag",
+          "sortierbar": false,
+          "felder": []
+        },
+        {
+          "art": "liste",
+          "schluessel": "Kaputt!",
+          "name": "N",
+          "eintrag": "Eintrag",
+          "sortierbar": false,
+          "felder": []
+        },
+        {
+          "art": "liste",
+          "schluessel": "5",
+          "name": "5",
+          "eintrag": "Eintrag",
+          "sortierbar": false,
+          "felder": []
+        },
+        {
+          "art": "abschnitt",
+          "titel": "Allgemein",
+          "felder": [
+            {
+              "schluessel": "ad1",
+              "name": "ad1",
+              "typ": "adresse"
+            },
+            {
+              "schluessel": "ad2",
+              "name": "ad2",
+              "typ": "adresse"
+            },
+            {
+              "schluessel": "k1",
+              "name": "k1",
+              "typ": "ki_mappentypen"
+            },
+            {
+              "schluessel": "k2",
+              "name": "k2",
+              "typ": "ki_mappentypen"
+            }
+          ]
+        },
+        {
+          "art": "abschnitt",
+          "titel": "Allgemein",
+          "felder": [
+            {
+              "schluessel": "k3",
+              "name": "k3",
+              "typ": "fragen_grenzen"
+            },
+            {
+              "schluessel": "k4",
+              "name": "k4",
+              "typ": "fragen_grenzen"
+            }
+          ]
+        },
+        {
+          "art": "abschnitt",
+          "titel": "",
+          "felder": []
+        }
+      ],
+      "aktionen": [
+        {
+          "schluessel": "x",
+          "name": "x"
+        },
+        {
+          "schluessel": "x",
+          "name": "x"
+        }
+      ]
+    },
+    "fehler": [
+      "einstellungen: Schlüssel „a“ doppelt.",
+      "einstellungen: Schlüssel „a“ doppelt.",
+      "Liste a: Schlüssel „x“ doppelt.",
+      "Liste a/k: ki_mappentypen geht nur in einem Abschnitt.",
+      "Liste a/ad: adresse geht nur in einem Abschnitt, nicht in einer Liste.",
+      "einstellungen[4]: ungültiger Schlüssel der Liste.",
+      "einstellungen[5]: ungültiger Schlüssel der Liste.",
+      "einstellungen: Schlüssel „Kaputt!“ doppelt.",
+      "einstellungen[6]: ungültiger Schlüssel der Liste.",
+      "einstellungen: höchstens eine Einstellung vom Typ adresse je Paket.",
+      "einstellungen: ki_mappentypen höchstens einmal.",
+      "einstellungen: fragen_grenzen höchstens einmal.",
+      "aktionen: Schlüssel „x“ doppelt."
+    ]
+  },
+  "schliesstAus": {
+    "beschreibung": {
+      "bloecke": [
+        {
+          "art": "abschnitt",
+          "titel": "Allgemein",
+          "felder": [
+            {
+              "schluessel": "a",
+              "name": "a",
+              "typ": "benutzer",
+              "schliesstAus": "b"
+            },
+            {
+              "schluessel": "b",
+              "name": "b",
+              "typ": "benutzer",
+              "schliesstAus": "a"
+            },
+            {
+              "schluessel": "c",
+              "name": "c",
+              "typ": "rolle",
+              "schliesstAus": "a"
+            },
+            {
+              "schluessel": "d",
+              "name": "d",
+              "typ": "rolle",
+              "schliesstAus": "d"
+            },
+            {
+              "schluessel": "e",
+              "name": "e",
+              "typ": "rolle",
+              "schliesstAus": "fehlt"
+            },
+            {
+              "schluessel": "f",
+              "name": "f",
+              "typ": "feld",
+              "schliesstAus": "g"
+            },
+            {
+              "schluessel": "g",
+              "name": "g",
+              "typ": "feld"
+            },
+            {
+              "schluessel": "h",
+              "name": "h",
+              "typ": "sicht",
+              "schliesstAus": "i"
+            },
+            {
+              "schluessel": "i",
+              "name": "i",
+              "typ": "sicht",
+              "mehrfach": true,
+              "schliesstAus": "h"
+            }
+          ]
+        },
+        {
+          "art": "liste",
+          "schluessel": "l",
+          "name": "l",
+          "eintrag": "Eintrag",
+          "sortierbar": false,
+          "felder": [
+            {
+              "schluessel": "x",
+              "name": "x",
+              "typ": "benutzer",
+              "schliesstAus": "a"
+            },
+            {
+              "schluessel": "a",
+              "name": "a",
+              "typ": "benutzer"
+            }
+          ]
+        }
+      ],
+      "aktionen": []
+    },
+    "fehler": [
+      "einstellungen/c: schliesst_aus „a“ muss ein anderes Feld eines Abschnitts mit demselben Verweistyp (mappentyp, benutzer, rolle, sicht) sein.",
+      "einstellungen/d: schliesst_aus „d“ muss ein anderes Feld eines Abschnitts mit demselben Verweistyp (mappentyp, benutzer, rolle, sicht) sein.",
+      "einstellungen/e: schliesst_aus „fehlt“ muss ein anderes Feld eines Abschnitts mit demselben Verweistyp (mappentyp, benutzer, rolle, sicht) sein.",
+      "einstellungen/f: schliesst_aus „g“ muss ein anderes Feld eines Abschnitts mit demselben Verweistyp (mappentyp, benutzer, rolle, sicht) sein.",
+      "einstellungen/x: schliesst_aus „a“ muss ein anderes Feld eines Abschnitts mit demselben Verweistyp (mappentyp, benutzer, rolle, sicht) sein."
+    ]
+  }
+}

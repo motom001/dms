@@ -1,0 +1,765 @@
+{
+  "ohne": {
+    "code": null,
+    "fehler": []
+  },
+  "null": {
+    "code": null,
+    "fehler": []
+  },
+  "zuGross": {
+    "code": null,
+    "fehler": []
+  },
+  "zuGrossMitCode": {
+    "code": null,
+    "fehler": [
+      "code/: Die Dateien unter code/ sind zusammen 300,0 MB groß – erlaubt sind höchstens 128 MB je Paket (modul.wasm, daten/ und Quellcode)."
+    ]
+  },
+  "keinObjekt": {
+    "code": null,
+    "fehler": ["code: muss ein Objekt sein."]
+  },
+  "liste": {
+    "code": null,
+    "fehler": ["code: muss ein Objekt sein."]
+  },
+  "zahl": {
+    "code": null,
+    "fehler": ["code: muss ein Objekt sein."]
+  },
+  "leer": {
+    "code": null,
+    "fehler": ["code.sprache: eine von rust, go, c, assemblyscript, javascript."]
+  },
+  "minimal": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine"
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "spracheFalsch": {
+    "code": null,
+    "fehler": ["code.sprache: eine von rust, go, c, assemblyscript, javascript."]
+  },
+  "allesSprachen": {
+    "code": {
+      "sprache": "javascript",
+      "ereignisse": ["post.angelegt"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine"
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "ereignisseKeineListe": {
+    "code": null,
+    "fehler": ["code.ereignisse: Liste von Texten erwartet."]
+  },
+  "ereignisseMitZahl": {
+    "code": null,
+    "fehler": ["code.ereignisse: Liste von Texten erwartet."]
+  },
+  "ereignisUnbekannt": {
+    "code": null,
+    "fehler": [
+      "code.ereignisse: „gibt.es.nicht“ gibt es nicht. Möglich: post.angelegt, dokument.hochgeladen, texterkennung.fertig, volltext.fertig, paket.einstellungen_geaendert, datei.umwandeln, sicherung.fertig, datei.volltext, datei.archivfassung, mappe.angelegt, mappe.geaendert, mappe.geloescht, mappe.wiederhergestellt, frist.erreicht, zeitplan.ausgefuehrt."
+    ]
+  },
+  "mappenOhneTypen": {
+    "code": null,
+    "fehler": [
+      "code.ereignisse: mappe.angelegt, mappe.geaendert braucht code.mappentypen – die Mappentypen, zu denen das Paket die Ereignisse bekommt."
+    ]
+  },
+  "typenOhneMappenEreignis": {
+    "code": null,
+    "fehler": [
+      "code.mappentypen: nur mit Mappen-Ereignissen in code.ereignisse (mappe.angelegt, mappe.geaendert, mappe.geloescht, mappe.wiederhergestellt, frist.erreicht)."
+    ]
+  },
+  "mappenMitTypen": {
+    "code": null,
+    "fehler": ["code.mappentypen: „basis:person“ – das Paket muss diesen Mappentyp auch lesen dürfen (code.rechte.lesen)."]
+  },
+  "mappenTypenOhneLesen": {
+    "code": null,
+    "fehler": [
+      "code.mappentypen: „akte“ – das Paket muss diesen Mappentyp auch lesen dürfen (code.rechte.lesen).",
+      "code.mappentypen: „*“ (alle Mappentypen) geht nur mit code.rechte.lesen: [\"*\"]."
+    ]
+  },
+  "mappenAlleMitAllen": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["mappe.geloescht"],
+      "rechte": {
+        "lesen": ["*"],
+        "schreiben": [],
+        "dokumente": "keine"
+      },
+      "netz": [],
+      "mappentypen": ["*"]
+    },
+    "fehler": []
+  },
+  "mappenTypUngueltig": {
+    "code": null,
+    "fehler": [
+      "code.mappentypen: „Akte!“ – Schlüssel eines eigenen Mappentyps, Verweis wie paket:typ bzw. dms:post oder „*“ für alle, die das Paket lesen darf.",
+      "code.mappentypen: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer."
+    ]
+  },
+  "mappenUeberSchreiben": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["mappe.angelegt"],
+      "rechte": {
+        "lesen": ["akte"],
+        "schreiben": ["akte"],
+        "dokumente": "keine"
+      },
+      "netz": [],
+      "mappentypen": ["akte"]
+    },
+    "fehler": []
+  },
+  "rechteListe": {
+    "code": null,
+    "fehler": ["code.rechte: muss ein Objekt sein."]
+  },
+  "rechteText": {
+    "code": null,
+    "fehler": ["code.rechte: muss ein Objekt sein."]
+  },
+  "rechteNull": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine"
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "rechteUngueltig": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schreiben: Liste von Texten erwartet.",
+      "code.rechte: „Akte X“ ist kein gültiger Mappentyp-Verweis.",
+      "code.rechte: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer.",
+      "code.rechte: „dms:quatsch“ – diesen Mappentyp bringt Ablago nicht mit. Erlaubt sind dms:ablageort, dms:rolle, dms:post."
+    ]
+  },
+  "rechteVoll": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["akte", "dms:post", "vorgang"],
+        "schreiben": ["vorgang", "akte"],
+        "dokumente": "schreiben",
+        "schnittstellen": ["dms:erkennen"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "dokumenteFalsch": {
+    "code": null,
+    "fehler": ["code.rechte.dokumente: keine, lesen oder schreiben."]
+  },
+  "dokumenteLesen": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["akte"],
+        "schreiben": [],
+        "dokumente": "lesen"
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "schnittstelleUnbekannt": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: „dms:gibtsnicht“ gibt es nicht. Möglich: dms:vektoren, dms:antworten, dms:erkennen, dms:texterkennung, dms:umwandeln, dms:sicherung-lesen, dms:sicherung-holen, dms:volltext, dms:archivfassung, dms:uebersetzen, dms:klassifizieren, dms:hinweise, dms:leerseiten, dms:anlagen."
+    ]
+  },
+  "schnittstellenKeineListe": {
+    "code": null,
+    "fehler": ["code.rechte.schnittstellen: Liste von Texten erwartet."]
+  },
+  "vektorenOhneDokumente": {
+    "code": null,
+    "fehler": ["code.rechte.schnittstellen: dms:vektoren braucht auch code.rechte.dokumente: lesen – Vektoren gehören zu Dokumenten."]
+  },
+  "vektorenMitDokumenten": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["*"],
+        "schreiben": [],
+        "dokumente": "lesen",
+        "schnittstellen": ["dms:vektoren"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "hinweiseOhneSchreiben": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:hinweise braucht code.rechte.schreiben – Hinweise gibt es nur an Mappen, die das Paket schreiben darf."
+    ]
+  },
+  "hinweiseMitSchreiben": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["akte"],
+        "schreiben": ["akte"],
+        "dokumente": "keine",
+        "schnittstellen": ["dms:hinweise"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "leerseitenOhne": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:leerseiten braucht code.rechte.lesen mit dms:post (oder „*“) und code.rechte.dokumente – markiert wird nur in Post, die das Paket lesen darf."
+    ]
+  },
+  "leerseitenOhnePost": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:leerseiten braucht code.rechte.lesen mit dms:post (oder „*“) und code.rechte.dokumente – markiert wird nur in Post, die das Paket lesen darf."
+    ]
+  },
+  "leerseitenMitPost": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["dms:post"],
+        "schreiben": [],
+        "dokumente": "lesen",
+        "schnittstellen": ["dms:leerseiten"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "leerseitenMitAllen": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["*"],
+        "schreiben": [],
+        "dokumente": "schreiben",
+        "schnittstellen": ["dms:leerseiten"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "anlagenOhne": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:anlagen braucht code.rechte.lesen und code.rechte.schreiben mit dms:post (oder „*“) und code.rechte.dokumente: schreiben – Anlagen entstehen nur beim Teilen einer Post."
+    ]
+  },
+  "anlagenOhneSchreiben": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:anlagen braucht code.rechte.lesen und code.rechte.schreiben mit dms:post (oder „*“) und code.rechte.dokumente: schreiben – Anlagen entstehen nur beim Teilen einer Post."
+    ]
+  },
+  "anlagenMit": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:anlagen braucht code.rechte.lesen und code.rechte.schreiben mit dms:post (oder „*“) und code.rechte.dokumente: schreiben – Anlagen entstehen nur beim Teilen einer Post."
+    ]
+  },
+  "anlagenAlle": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": ["*"],
+        "schreiben": ["*"],
+        "dokumente": "schreiben",
+        "schnittstellen": ["dms:anlagen"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "umwandelnGut": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["datei.umwandeln"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "lesen",
+        "schnittstellen": ["dms:umwandeln"]
+      },
+      "netz": [],
+      "umwandeln": ["image/tiff", "application/x-cad"]
+    },
+    "fehler": []
+  },
+  "umwandelnFalsch": {
+    "code": null,
+    "fehler": ["code.umwandeln: Liste von Texten erwartet."]
+  },
+  "umwandelnTypenFalsch": {
+    "code": null,
+    "fehler": [
+      "code.umwandeln: „kein mime“ ist kein Dateityp (z. B. image/tiff).",
+      "code.umwandeln: PDF (application/pdf) liest Ablago selbst – umwandeln lassen sich nur andere Dateitypen.",
+      "code.umwandeln: braucht code.rechte.schnittstellen: [dms:umwandeln]."
+    ]
+  },
+  "umwandelnZuviele": {
+    "code": null,
+    "fehler": ["code.umwandeln: höchstens 20 Dateitypen."]
+  },
+  "umwandelnOhneSchnittstelle": {
+    "code": null,
+    "fehler": [
+      "code.umwandeln: braucht code.rechte.schnittstellen: [dms:umwandeln].",
+      "code.ereignisse: datei.umwandeln gibt es nur mit code.rechte.schnittstellen: [dms:umwandeln]."
+    ]
+  },
+  "umwandelnNurSchnittstelle": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:umwandeln braucht code.umwandeln – die Dateitypen, die das Paket umwandelt.",
+      "code.rechte.schnittstellen: dms:umwandeln braucht auch code.rechte.dokumente: lesen – das Paket liest die Originaldatei.",
+      "code.rechte.schnittstellen: dms:umwandeln braucht das Ereignis datei.umwandeln in code.ereignisse."
+    ]
+  },
+  "volltextGut": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["datei.volltext"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "schreiben",
+        "schnittstellen": ["dms:volltext"]
+      },
+      "netz": [],
+      "volltext": ["application/x-foo"]
+    },
+    "fehler": []
+  },
+  "volltextFalsch": {
+    "code": null,
+    "fehler": [
+      "code.volltext: „quatsch“ ist kein Dateityp (z. B. application/msword).",
+      "code.volltext: PDF (application/pdf) liest Ablago selbst – Volltext aus Paketen gibt es nur für andere Dateitypen (Scans erkennt dms:texterkennung).",
+      "code.volltext: braucht code.rechte.schnittstellen: [dms:volltext]."
+    ]
+  },
+  "volltextZuviele": {
+    "code": null,
+    "fehler": ["code.volltext: höchstens 40 Dateitypen."]
+  },
+  "volltextOhneSchnittstelle": {
+    "code": null,
+    "fehler": [
+      "code.volltext: braucht code.rechte.schnittstellen: [dms:volltext].",
+      "code.ereignisse: datei.volltext gibt es nur mit code.rechte.schnittstellen: [dms:volltext]."
+    ]
+  },
+  "volltextNurSchnittstelle": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:volltext braucht code.volltext – die Dateitypen, für die das Paket den Volltext liefert.",
+      "code.rechte.schnittstellen: dms:volltext braucht auch code.rechte.dokumente: lesen – das Paket liest die Datei.",
+      "code.rechte.schnittstellen: dms:volltext braucht das Ereignis datei.volltext in code.ereignisse."
+    ]
+  },
+  "volltextKeineListe": {
+    "code": null,
+    "fehler": ["code.volltext: Liste von Texten erwartet."]
+  },
+  "archivGut": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["datei.archivfassung"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "lesen",
+        "schnittstellen": ["dms:archivfassung"]
+      },
+      "netz": [],
+      "archivfassung": {
+        "typen": ["application/pdf", "image/jpeg"]
+      }
+    },
+    "fehler": []
+  },
+  "archivMitAuswahl": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["datei.archivfassung"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "lesen",
+        "schnittstellen": ["dms:archivfassung"]
+      },
+      "netz": [],
+      "archivfassung": {
+        "typen": ["application/pdf"],
+        "auswahl": {
+          "pdf_scan": "scans",
+          "emails": "mails"
+        }
+      }
+    },
+    "fehler": []
+  },
+  "archivAuswahlFalsch": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung.auswahl: „video“ gibt es nicht (nur pdf_text, pdf_scan, bilder, emails).",
+      "code.archivfassung.auswahl.pdf_text: der Schlüssel einer Einstellung vom Typ janein (Abschnitt, keine Liste) – an: diese Dokumente bekommen eine Archivfassung.",
+      "code.archivfassung.auswahl.pdf_scan: der Schlüssel einer Einstellung vom Typ janein (Abschnitt, keine Liste) – an: diese Dokumente bekommen eine Archivfassung.",
+      "code.archivfassung.auswahl.bilder: der Schlüssel einer Einstellung vom Typ janein (Abschnitt, keine Liste) – an: diese Dokumente bekommen eine Archivfassung.",
+      "code.archivfassung.auswahl.emails: der Schlüssel einer Einstellung vom Typ janein (Abschnitt, keine Liste) – an: diese Dokumente bekommen eine Archivfassung."
+    ]
+  },
+  "archivAuswahlKeinObjekt": {
+    "code": null,
+    "fehler": ["code.archivfassung.auswahl: ein Objekt mit pdf_text, pdf_scan, bilder und/oder emails erwartet."]
+  },
+  "archivAuswahlNull": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung.auswahl: ein Objekt mit pdf_text, pdf_scan, bilder und/oder emails erwartet.",
+      "code.archivfassung: braucht code.rechte.schnittstellen: [dms:archivfassung]."
+    ]
+  },
+  "archivAuswahlLeer": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["datei.archivfassung"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "lesen",
+        "schnittstellen": ["dms:archivfassung"]
+      },
+      "netz": [],
+      "archivfassung": {
+        "typen": ["application/pdf"]
+      }
+    },
+    "fehler": []
+  },
+  "archivKeinObjekt": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung: ein Objekt mit typen (Dateitypen) und optional auswahl erwartet.",
+      "code.archivfassung: braucht code.rechte.schnittstellen: [dms:archivfassung]."
+    ]
+  },
+  "archivNull": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung: ein Objekt mit typen (Dateitypen) und optional auswahl erwartet.",
+      "code.rechte.schnittstellen: dms:archivfassung braucht code.archivfassung.typen – die Dateitypen, zu denen das Paket ein PDF/A ablegt.",
+      "code.rechte.schnittstellen: dms:archivfassung braucht auch code.rechte.dokumente: lesen – das Paket liest die Datei und ihren Volltext.",
+      "code.rechte.schnittstellen: dms:archivfassung braucht das Ereignis datei.archivfassung in code.ereignisse."
+    ]
+  },
+  "archivListe": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung: ein Objekt mit typen (Dateitypen) und optional auswahl erwartet.",
+      "code.archivfassung: braucht code.rechte.schnittstellen: [dms:archivfassung]."
+    ]
+  },
+  "archivFalsch": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung.typen: „kein mime“ ist kein Dateityp (z. B. image/jpeg).",
+      "code.archivfassung: „nur_scans“ gibt es nicht (nur typen und auswahl).",
+      "code.archivfassung: braucht code.rechte.schnittstellen: [dms:archivfassung]."
+    ]
+  },
+  "archivOhneTypen": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung.typen: mindestens ein Dateityp, z. B. [application/pdf, image/jpeg, image/png].",
+      "code.rechte.schnittstellen: dms:archivfassung braucht code.archivfassung.typen – die Dateitypen, zu denen das Paket ein PDF/A ablegt.",
+      "code.rechte.schnittstellen: dms:archivfassung braucht auch code.rechte.dokumente: lesen – das Paket liest die Datei und ihren Volltext.",
+      "code.rechte.schnittstellen: dms:archivfassung braucht das Ereignis datei.archivfassung in code.ereignisse."
+    ]
+  },
+  "archivZuviele": {
+    "code": null,
+    "fehler": [
+      "code.archivfassung.typen: höchstens 40 Dateitypen.",
+      "code.archivfassung: braucht code.rechte.schnittstellen: [dms:archivfassung]."
+    ]
+  },
+  "archivNurSchnittstelle": {
+    "code": null,
+    "fehler": [
+      "code.rechte.schnittstellen: dms:archivfassung braucht code.archivfassung.typen – die Dateitypen, zu denen das Paket ein PDF/A ablegt.",
+      "code.rechte.schnittstellen: dms:archivfassung braucht auch code.rechte.dokumente: lesen – das Paket liest die Datei und ihren Volltext."
+    ]
+  },
+  "archivNurEreignis": {
+    "code": null,
+    "fehler": ["code.ereignisse: datei.archivfassung gibt es nur mit code.rechte.schnittstellen: [dms:archivfassung]."]
+  },
+  "sicherungGut": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": ["sicherung.fertig"],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine",
+        "schnittstellen": ["dms:sicherung-lesen", "dms:sicherung-holen"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "sicherungOhneEreignis": {
+    "code": null,
+    "fehler": ["code.rechte.schnittstellen: dms:sicherung-lesen braucht das Ereignis sicherung.fertig in code.ereignisse."]
+  },
+  "sicherungNurEreignis": {
+    "code": null,
+    "fehler": ["code.ereignisse: sicherung.fertig gibt es nur mit code.rechte.schnittstellen: [dms:sicherung-lesen]."]
+  },
+  "holenOhneLesen": {
+    "code": null,
+    "fehler": ["code.rechte.schnittstellen: dms:sicherung-holen gibt es nur zusammen mit dms:sicherung-lesen."]
+  },
+  "netzGut": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine"
+      },
+      "netz": ["https://api.example.org/v1", "https://example.org"]
+    },
+    "fehler": []
+  },
+  "netzFalsch": {
+    "code": null,
+    "fehler": [
+      "code.netz: „http://example.org“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).",
+      "code.netz: „https://u:p@example.org“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).",
+      "code.netz: „https://example.org/?a=1“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).",
+      "code.netz: „https://example.org/#x“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).",
+      "code.netz: „kaputt“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).",
+      "code.netz: „https://nur@example.org“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten)."
+    ]
+  },
+  "netzKeineListe": {
+    "code": null,
+    "fehler": ["code.netz: Liste von Texten erwartet."]
+  },
+  "adressen": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine"
+      },
+      "netz": [],
+      "adressen": [
+        {
+          "schluessel": "dienst",
+          "name": "Dienst"
+        },
+        {
+          "schluessel": "ohne",
+          "name": "ohne"
+        },
+        {
+          "schluessel": "",
+          "name": ""
+        }
+      ]
+    },
+    "fehler": []
+  },
+  "karten": {
+    "code": null,
+    "fehler": [
+      "code.karten: Den Schlüssel „melden“ gibt es doppelt.",
+      "code.karten[3]: schluessel (a–z, 0–9, _) und name sind Pflicht.",
+      "code.karten[4]: schluessel (a–z, 0–9, _) und name sind Pflicht.",
+      "code.karten[5]: schluessel (a–z, 0–9, _) und name sind Pflicht.",
+      "code.karten „felder“, Feld 1: schluessel, name und typ (text, zahl oder janein) sind Pflicht.",
+      "code.karten „felder“, Feld 2: schluessel, name und typ (text, zahl oder janein) sind Pflicht."
+    ]
+  },
+  "kartenOhneEreignis": {
+    "code": null,
+    "fehler": ["code.karten braucht das Ereignis zeitplan.ausgefuehrt in code.ereignisse – so ruft Ablago die Karte auf."]
+  },
+  "kartenKeineListe": {
+    "code": null,
+    "fehler": ["code.karten: Liste von Karten erwartet."]
+  },
+  "kartenZuviele": {
+    "code": null,
+    "fehler": ["code.karten: höchstens 20 Karten."]
+  },
+  "paketdaten": {
+    "code": null,
+    "fehler": [
+      "code.rechte.einrichtung: Den Bereich „gibtsnicht“ gibt es nicht (erlaubt: allgemein, belegeingang, ablage, zugang, betrieb, sicherung, unveraenderbarkeit, datenschutz, betriebspruefung).",
+      "code.rechte.nachweise: Zum Bereich „allgemein“ gibt es keine Nachweise (erlaubt: belegeingang, zugang, betrieb, sicherung, unveraenderbarkeit, datenschutz).",
+      "code.rechte.nachweise: Zum Bereich „x“ gibt es keine Nachweise (erlaubt: belegeingang, zugang, betrieb, sicherung, unveraenderbarkeit, datenschutz)."
+    ]
+  },
+  "paketdatenGut": {
+    "code": {
+      "sprache": "rust",
+      "ereignisse": [],
+      "rechte": {
+        "lesen": [],
+        "schreiben": [],
+        "dokumente": "keine",
+        "einrichtung": ["allgemein", "sicherung"],
+        "nachweise": ["zugang", "betrieb"]
+      },
+      "netz": []
+    },
+    "fehler": []
+  },
+  "paketdatenMitNetz": {
+    "code": null,
+    "fehler": [
+      "code.rechte.einrichtung und code.rechte.nachweise gibt es nur für Pakete ohne Netz (ohne code.netz und ohne Dienst-Adresse)."
+    ]
+  },
+  "paketdatenMitAdresse": {
+    "code": null,
+    "fehler": [
+      "code.rechte.einrichtung und code.rechte.nachweise gibt es nur für Pakete ohne Netz (ohne code.netz und ohne Dienst-Adresse)."
+    ]
+  },
+  "paketdatenKeineListe": {
+    "code": null,
+    "fehler": ["code.rechte.einrichtung: Liste von Texten erwartet."]
+  },
+  "allesZusammen": {
+    "code": {
+      "sprache": "go",
+      "ereignisse": [
+        "mappe.angelegt",
+        "datei.umwandeln",
+        "datei.volltext",
+        "datei.archivfassung",
+        "sicherung.fertig",
+        "zeitplan.ausgefuehrt"
+      ],
+      "rechte": {
+        "lesen": ["akte", "vorgang"],
+        "schreiben": ["vorgang"],
+        "dokumente": "schreiben",
+        "schnittstellen": [
+          "dms:umwandeln",
+          "dms:volltext",
+          "dms:archivfassung",
+          "dms:sicherung-lesen",
+          "dms:sicherung-holen",
+          "dms:vektoren"
+        ]
+      },
+      "netz": ["https://example.org/a"],
+      "adressen": [
+        {
+          "schluessel": "url",
+          "name": "url"
+        }
+      ],
+      "umwandeln": ["image/x-a"],
+      "volltext": ["text/x-b"],
+      "archivfassung": {
+        "typen": ["application/pdf"],
+        "auswahl": {
+          "pdf_text": "scans"
+        }
+      },
+      "mappentypen": ["akte"],
+      "karten": [
+        {
+          "schluessel": "k",
+          "name": "K"
+        }
+      ]
+    },
+    "fehler": []
+  },
+  "allesFalsch": {
+    "code": null,
+    "fehler": [
+      "code/: Die Dateien unter code/ sind zusammen 400,0 MB groß – erlaubt sind höchstens 128 MB je Paket (modul.wasm, daten/ und Quellcode).",
+      "code.sprache: eine von rust, go, c, assemblyscript, javascript.",
+      "code.ereignisse: „x“ gibt es nicht. Möglich: post.angelegt, dokument.hochgeladen, texterkennung.fertig, volltext.fertig, paket.einstellungen_geaendert, datei.umwandeln, sicherung.fertig, datei.volltext, datei.archivfassung, mappe.angelegt, mappe.geaendert, mappe.geloescht, mappe.wiederhergestellt, frist.erreicht, zeitplan.ausgefuehrt.",
+      "code.rechte: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer.",
+      "code.rechte.dokumente: keine, lesen oder schreiben.",
+      "code.rechte.schnittstellen: „y“ gibt es nicht. Möglich: dms:vektoren, dms:antworten, dms:erkennen, dms:texterkennung, dms:umwandeln, dms:sicherung-lesen, dms:sicherung-holen, dms:volltext, dms:archivfassung, dms:uebersetzen, dms:klassifizieren, dms:hinweise, dms:leerseiten, dms:anlagen.",
+      "code.rechte.schnittstellen: dms:hinweise braucht code.rechte.schreiben – Hinweise gibt es nur an Mappen, die das Paket schreiben darf.",
+      "code.rechte.schnittstellen: dms:leerseiten braucht code.rechte.lesen mit dms:post (oder „*“) und code.rechte.dokumente – markiert wird nur in Post, die das Paket lesen darf.",
+      "code.rechte.schnittstellen: dms:anlagen braucht code.rechte.lesen und code.rechte.schreiben mit dms:post (oder „*“) und code.rechte.dokumente: schreiben – Anlagen entstehen nur beim Teilen einer Post.",
+      "code.umwandeln: PDF (application/pdf) liest Ablago selbst – umwandeln lassen sich nur andere Dateitypen.",
+      "code.umwandeln: braucht code.rechte.schnittstellen: [dms:umwandeln].",
+      "code.ereignisse: datei.umwandeln gibt es nur mit code.rechte.schnittstellen: [dms:umwandeln].",
+      "code.volltext: PDF (application/pdf) liest Ablago selbst – Volltext aus Paketen gibt es nur für andere Dateitypen (Scans erkennt dms:texterkennung).",
+      "code.volltext: braucht code.rechte.schnittstellen: [dms:volltext].",
+      "code.ereignisse: datei.volltext gibt es nur mit code.rechte.schnittstellen: [dms:volltext].",
+      "code.archivfassung.typen: mindestens ein Dateityp, z. B. [application/pdf, image/jpeg, image/png].",
+      "code.archivfassung: braucht code.rechte.schnittstellen: [dms:archivfassung].",
+      "code.ereignisse: datei.archivfassung gibt es nur mit code.rechte.schnittstellen: [dms:archivfassung].",
+      "code.ereignisse: sicherung.fertig gibt es nur mit code.rechte.schnittstellen: [dms:sicherung-lesen].",
+      "code.netz: „ftp://x“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).",
+      "code.karten: Liste von Karten erwartet.",
+      "code.mappentypen: „*“ (alle Mappentypen) geht nur mit code.rechte.lesen: [\"*\"].",
+      "code.mappentypen: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer."
+    ]
+  }
+}

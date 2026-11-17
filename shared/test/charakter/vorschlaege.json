@@ -1,0 +1,472 @@
+{
+  "firmaBrief": {
+    "name": {
+      "wert": "Musterwerke GmbH",
+      "sicherheit": "hoch",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "strasse": {
+      "wert": "Hauptstraße",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "hausnummer": {
+      "wert": "12",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "plz": {
+      "wert": "12345",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "ort": {
+      "wert": "Musterstadt",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "email": {
+      "wert": "info@musterwerke.example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "info@musterwerke.example.org · rechnung@musterwerke.example.org"
+    },
+    "email2": {
+      "wert": "rechnung@musterwerke.example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "info@musterwerke.example.org · rechnung@musterwerke.example.org"
+    },
+    "web": {
+      "wert": "www.musterwerke.example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "www.musterwerke.example.org"
+    },
+    "iban": {
+      "wert": "DE89 3704 0044 0532 0130 00",
+      "sicherheit": "hoch",
+      "fundstelle": "IBAN DE89 3704 0044 0532 0130 00 · USt-IdNr. DE123456789"
+    },
+    "ust": {
+      "wert": "DE123456789",
+      "sicherheit": "hoch",
+      "fundstelle": "IBAN DE89 3704 0044 0532 0130 00 · USt-IdNr. DE123456789"
+    },
+    "tel": {
+      "wert": "030 1234567",
+      "sicherheit": "hoch",
+      "fundstelle": "Telefon 030 1234567 · Fax 030 1234568 · Mobil 0171 2345678"
+    },
+    "tel2": {
+      "wert": "030 7654321",
+      "sicherheit": "hoch",
+      "fundstelle": "Telefon 030 7654321"
+    },
+    "mobil": {
+      "wert": "0171 2345678",
+      "sicherheit": "hoch",
+      "fundstelle": "Telefon 030 1234567 · Fax 030 1234568 · Mobil 0171 2345678"
+    },
+    "fax": {
+      "wert": "030 1234568",
+      "sicherheit": "hoch",
+      "fundstelle": "Telefon 030 1234567 · Fax 030 1234568 · Mobil 0171 2345678"
+    },
+    "kundennummer": {
+      "wert": "4711",
+      "sicherheit": "hoch",
+      "fundstelle": "Kundennummer: 4711"
+    }
+  },
+  "firmaGutschrift": {
+    "name": {
+      "wert": "Musterwerke GmbH",
+      "sicherheit": "hoch",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "strasse": {
+      "wert": "Hauptstraße",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "hausnummer": {
+      "wert": "12",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "plz": {
+      "wert": "12345",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "ort": {
+      "wert": "Musterstadt",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    }
+  },
+  "firmaNurMail": {
+    "email": {
+      "wert": "service@beispiel.example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "Bitte schreiben Sie an service@beispiel.example.org oder an privat@gmx.de."
+    },
+    "email2": {
+      "wert": "privat@gmx.de",
+      "sicherheit": "hoch",
+      "fundstelle": "… service@beispiel.example.org oder an privat@gmx.de."
+    },
+    "web": {
+      "wert": "www.beispiel.example.org",
+      "sicherheit": "mittel",
+      "fundstelle": "Bitte schreiben Sie an service@beispiel.example.org oder an privat@gmx.de."
+    },
+    "tel": {
+      "wert": "0221 998877",
+      "sicherheit": "hoch",
+      "fundstelle": "Tel. 0221 998877"
+    }
+  },
+  "firmaOhne": {},
+  "zahlenBrief": {
+    "betrag": {
+      "wert": 1234.56,
+      "sicherheit": "hoch",
+      "fundstelle": "Gesamtbetrag 1.234,56 EUR"
+    }
+  },
+  "zahlenGutschrift": {
+    "betrag": {
+      "wert": 49.9,
+      "sicherheit": "niedrig",
+      "fundstelle": "Erstattung 49,90 EUR"
+    }
+  },
+  "personBrief": {
+    "vorname": {
+      "wert": "Max",
+      "sicherheit": "mittel",
+      "fundstelle": "Max Mustermann · Leiter Einkauf"
+    },
+    "nachname": {
+      "wert": "Mustermann",
+      "sicherheit": "mittel",
+      "fundstelle": "Max Mustermann · Leiter Einkauf"
+    },
+    "funktion": {
+      "wert": "Leiter Einkauf",
+      "sicherheit": "mittel",
+      "fundstelle": "Max Mustermann · Leiter Einkauf"
+    },
+    "mail": {
+      "wert": "max.mustermann@example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "max.mustermann@example.org"
+    }
+  },
+  "personFirma": {
+    "vorname": {
+      "wert": "Erika",
+      "sicherheit": "mittel",
+      "fundstelle": "Erika Musterfrau"
+    },
+    "nachname": {
+      "wert": "Musterfrau",
+      "sicherheit": "mittel",
+      "fundstelle": "Erika Musterfrau"
+    },
+    "mail": {
+      "wert": "info@musterwerke.example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "info@musterwerke.example.org · rechnung@musterwerke.example.org"
+    }
+  },
+  "rechnungBrief": {
+    "rechnungsnummer": {
+      "wert": "RE-2026-0042",
+      "sicherheit": "hoch",
+      "fundstelle": "Rechnungsnummer: RE-2026-0042"
+    },
+    "datum": {
+      "wert": "2026-03-15",
+      "sicherheit": "hoch",
+      "fundstelle": "Rechnungsdatum: 15.03.2026"
+    },
+    "betrag": {
+      "wert": {
+        "betrag": 1234.56,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "hoch",
+      "fundstelle": "Gesamtbetrag 1.234,56 EUR"
+    },
+    "netto": {
+      "wert": {
+        "betrag": 1234.56,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "hoch",
+      "fundstelle": "Gesamtbetrag 1.234,56 EUR"
+    },
+    "steuer": {
+      "wert": 19,
+      "sicherheit": "mittel",
+      "fundstelle": "Steuersatz 19 %, Rabatt 7,5 %"
+    },
+    "frist": {
+      "wert": {
+        "anzahl": 3,
+        "einheit": "monate"
+      },
+      "sicherheit": "mittel",
+      "fundstelle": "3 Monate zum Monatsende"
+    },
+    "art": {
+      "wert": "Lastschrift",
+      "sicherheit": "niedrig",
+      "fundstelle": "Zahlungsart: Lastschrift; auch PayPal möglich."
+    },
+    "arten": {
+      "wert": ["pp"],
+      "sicherheit": "niedrig",
+      "fundstelle": "Zahlungsart: Lastschrift; auch PayPal möglich."
+    },
+    "az": {
+      "wert": "100-2345",
+      "sicherheit": "hoch",
+      "fundstelle": "Aktenzeichen 100-2345, Code AB-12"
+    },
+    "kein": {
+      "wert": "Musterwerke GmbH",
+      "sicherheit": "hoch",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    }
+  },
+  "rechnungGutschrift": {
+    "rechnungsnummer": {
+      "wert": "GS-1",
+      "sicherheit": "hoch",
+      "fundstelle": "Rechnungsnummer: GS-1"
+    },
+    "datum": {
+      "wert": "2026-02-01",
+      "sicherheit": "hoch",
+      "fundstelle": "Datum: 01.02.2026"
+    },
+    "betrag": {
+      "wert": {
+        "betrag": -49.9,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "niedrig",
+      "fundstelle": "Erstattung 49,90 EUR",
+      "hinweis": "„Gutschrift“ auf dem Beleg – als negativer Betrag übernommen"
+    },
+    "netto": {
+      "wert": {
+        "betrag": 49.9,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "niedrig",
+      "fundstelle": "Erstattung 49,90 EUR"
+    },
+    "kein": {
+      "wert": "Musterwerke GmbH",
+      "sicherheit": "hoch",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    }
+  },
+  "rechnungOhne": {
+    "frist": {
+      "wert": {
+        "anzahl": 3,
+        "einheit": "wochen"
+      },
+      "sicherheit": "niedrig",
+      "fundstelle": "Hier steht nichts Brauchbares, nur 3 Wochen Urlaub und 120 % Einsatz und 7 Tage."
+    }
+  },
+  "rechnungLeer": {},
+  "grenzenBrief": {
+    "fax": {
+      "wert": "030 1234567",
+      "sicherheit": "hoch",
+      "fundstelle": "Telefon 030 1234567 · Fax 030 1234568 · Mobil 0171 2345678"
+    },
+    "web": {
+      "wert": "www.musterwerke.example.org",
+      "sicherheit": "hoch",
+      "fundstelle": "www.musterwerke.example.org"
+    },
+    "betrag": {
+      "wert": {
+        "betrag": 1234.56,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "hoch",
+      "fundstelle": "Gesamtbetrag 1.234,56 EUR"
+    },
+    "ort": {
+      "wert": "Musterstadt",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "strasse": {
+      "wert": "Hauptstraße 12",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "prozent": {
+      "wert": 19,
+      "sicherheit": "mittel",
+      "fundstelle": "Steuersatz 19 %, Rabatt 7,5 %"
+    },
+    "zeit": {
+      "wert": {
+        "anzahl": 24,
+        "einheit": "monate"
+      },
+      "sicherheit": "mittel",
+      "fundstelle": "Laufzeit 24 Monate"
+    }
+  },
+  "grenzenGutschrift": {
+    "betrag": {
+      "wert": {
+        "betrag": 49.9,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "niedrig",
+      "fundstelle": "Erstattung 49,90 EUR"
+    },
+    "ort": {
+      "wert": "Musterstadt",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    },
+    "strasse": {
+      "wert": "Hauptstraße 12",
+      "sicherheit": "mittel",
+      "fundstelle": "Musterwerke GmbH · Hauptstraße 12 · 12345 Musterstadt"
+    }
+  },
+  "grenzenOhne": {
+    "zeit": {
+      "wert": {
+        "anzahl": 3,
+        "einheit": "wochen"
+      },
+      "sicherheit": "niedrig",
+      "fundstelle": "Hier steht nichts Brauchbares, nur 3 Wochen Urlaub und 120 % Einsatz und 7 Tage."
+    }
+  },
+  "leererTyp": {},
+  "angabenVonHand": {
+    "name": {
+      "wert": "Firma X",
+      "sicherheit": "hoch",
+      "fundstelle": "Firma X · Weg 1a"
+    },
+    "strasse": {
+      "wert": "Weg",
+      "sicherheit": "mittel",
+      "fundstelle": "Firma X · Weg 1a"
+    },
+    "hausnummer": {
+      "wert": "1a",
+      "sicherheit": "mittel",
+      "fundstelle": "Firma X · Weg 1a"
+    },
+    "plz": {
+      "wert": "01234",
+      "sicherheit": "mittel",
+      "fundstelle": "Firma X · Weg 1a"
+    },
+    "ort": {
+      "wert": "Ort",
+      "sicherheit": "mittel",
+      "fundstelle": "Firma X · Weg 1a"
+    },
+    "email": {
+      "wert": "a@x.example.org",
+      "sicherheit": "mittel",
+      "fundstelle": "…a@x.example.org…"
+    },
+    "email2": {
+      "wert": "b@y.example.org",
+      "sicherheit": "mittel",
+      "fundstelle": "…b@y.example.org…"
+    },
+    "web": {
+      "wert": "www.x.example.org",
+      "sicherheit": "mittel",
+      "fundstelle": "…a@x.example.org…"
+    },
+    "tel": {
+      "wert": "030 1",
+      "sicherheit": "mittel",
+      "fundstelle": "…030 1…"
+    },
+    "tel2": {
+      "wert": "030 2",
+      "sicherheit": "mittel",
+      "fundstelle": "…030 2…"
+    },
+    "mobil": {
+      "wert": "0171 1",
+      "sicherheit": "mittel",
+      "fundstelle": "…0171 1…"
+    },
+    "kundennummer": {
+      "wert": "K-1",
+      "sicherheit": "mittel",
+      "fundstelle": "…K-1…"
+    }
+  },
+  "angabenOhneHausnummerFeld": {
+    "strasse": {
+      "wert": "Weg 7",
+      "sicherheit": "mittel",
+      "fundstelle": "Weg 7"
+    },
+    "plz": {
+      "wert": 1234,
+      "sicherheit": "mittel",
+      "fundstelle": "Weg 7"
+    },
+    "name": {
+      "wert": "Org GmbH",
+      "sicherheit": "mittel",
+      "fundstelle": "Weg 7"
+    },
+    "web": {
+      "wert": "www.firma.example.org",
+      "sicherheit": "mittel",
+      "fundstelle": "…a@firma.example.org…"
+    }
+  },
+  "angabenNurPerson": {
+    "name": {
+      "wert": "Org GmbH",
+      "sicherheit": "mittel",
+      "fundstelle": "Org GmbH"
+    }
+  },
+  "angabenGutschrift": {
+    "betrag": {
+      "wert": {
+        "betrag": -12.5,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "hoch",
+      "fundstelle": "12,50",
+      "hinweis": "„Erstattung“ auf dem Beleg – als negativer Betrag übernommen"
+    },
+    "netto": {
+      "wert": {
+        "betrag": 12.5,
+        "waehrung": "EUR"
+      },
+      "sicherheit": "hoch",
+      "fundstelle": "12,50"
+    }
+  }
+}
