@@ -400,14 +400,20 @@ jobs:
       - name: Lizenztexte im Image
         run: docker run --rm --entrypoint sh dms:probe -c 'for s in MIT Apache-2.0 BSD-2-Clause BSD-3-Clause MPL-2.0 LGPL-3.0-or-later GPL-3.0-or-later AGPL-3.0-or-later CC0-1.0; do test -s "/app/server/lizenzen/$s.txt" || { echo "::error::Lizenztext $s fehlt im Image"; exit 1; }; done'
       # Schriften im Image (#1329): Ein PDF mit nicht eingebetteter Helvetica und Arial muss sichtbaren Text haben
-      # (dunkle Bildpunkte gezählt). Gegenprobe mit leerer fontconfig: Dann muss die Prüfung scheitern.
+      # (dunkle Bildpunkte gezählt). Gegenprobe mit leerer fontconfig: Dann muss die Prüfung scheitern – und zwar an
+      # den fehlenden Schriften. Ihre Meldungen sind erwartet: ohne „::error::“ in einer Gruppe (#1419), sonst stünden
+      # sie als Fehler am Lauf, obwohl der Schritt grün ist.
       - name: Ersatzschriften für nicht eingebettete Schriften
         run: |
           docker run --rm -v "$PWD/.github/werkzeuge:/w:ro" --entrypoint node dms:probe /w/schriften-pruefen.mjs
           printf '<?xml version="1.0"?>\n<fontconfig><dir>/tmp/leer</dir><cachedir>/tmp/fc</cachedir></fontconfig>\n' > "$RUNNER_TEMP/leer.conf"
-          if docker run --rm -v "$PWD/.github/werkzeuge:/w:ro" -v "$RUNNER_TEMP/leer.conf:/leer.conf:ro" -e FONTCONFIG_FILE=/leer.conf --entrypoint node dms:probe /w/schriften-pruefen.mjs; then
-            echo "::error::Die Prüfung der Schriften erkennt fehlende Schriften nicht"; exit 1
+          if docker run --rm -v "$PWD/.github/werkzeuge:/w:ro" -v "$RUNNER_TEMP/leer.conf:/leer.conf:ro" -e FONTCONFIG_FILE=/leer.conf --entrypoint node dms:probe /w/schriften-pruefen.mjs > "$RUNNER_TEMP/gegenprobe.log" 2>&1; then
+            cat "$RUNNER_TEMP/gegenprobe.log"; echo "::error::Die Prüfung der Schriften erkennt fehlende Schriften nicht"; exit 1
           fi
+          echo "::group::Gegenprobe ohne Schriften – scheitert wie erwartet"
+          sed 's/::error::/erwartet: /' "$RUNNER_TEMP/gegenprobe.log"
+          echo "::endgroup::"
+          grep -q "Couldn't find a font" "$RUNNER_TEMP/gegenprobe.log" || { echo "::error::Gegenprobe scheiterte, aber nicht an fehlenden Schriften"; exit 1; }
       # Pakete prüfen im Image (#1124) – so, wie die CI von dms-registry es aufruft: Befehl statt CMD, Ordner schreibgeschützt.
       - name: Pakete prüfen im Image
         run: |
