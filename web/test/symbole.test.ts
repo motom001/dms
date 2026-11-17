@@ -32,7 +32,7 @@ export function bunteZeichen(text: string): string[] {
 const ERSATZ = /[⌕★☆✓✔✕✖✗✘➜➔]/gu;
 /** Ausdrücklich erlaubt (#507): Datei → Grund. */
 const ERSATZ_ERLAUBT: Record<string, string> = {
-  'werkbank/Berechtigungen.tsx': '✓/✗ sind die Werte der Rechte-Tabelle (erteilt/entzogen), kein Schmuck',
+  'werkbank/rechte/TestlaufBlatt.tsx': '✓/✗ sind die Werte der Rechte-Tabelle (erteilt/entzogen), kein Schmuck',
   'werkbank/SichtRechte.tsx': '✓/✗ sind die Werte der Rechte-Tabelle (erteilt/entzogen), kein Schmuck',
   'werkbank/Sichten.tsx': '✓/✗ im Meldungstext zu geerbten Rechten wie in der Rechte-Tabelle',
   'wiederherstellen.tsx': 'Statuszeichen ○ ◐ ✓ ✕ der Wiederherstellung (Textseite ohne React-Symbole)',

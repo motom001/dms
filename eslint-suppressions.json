@@ -1296,11 +1296,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Berechtigungen.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Demo.tsx": {
     "complexity": {
       "count": 1
