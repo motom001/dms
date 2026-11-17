@@ -1268,11 +1268,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Ablaufvorlagen.tsx": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Anmeldeschutz.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 3

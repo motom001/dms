@@ -69,7 +69,7 @@ describe('Baustein PaketChip (#1192)', () => {
       'werkbank/Nummernkreise.tsx',
       'werkbank/Woerter.tsx',
       'werkbank/automatisierungen/liste.tsx',
-      'werkbank/Ablaufvorlagen.tsx',
+      'werkbank/ablaufvorlage/AblaufvorlagenListe.tsx',
       'werkbank/paket-erstellen/auswahl.tsx',
     ]) {
       const q = readFileSync(new URL(datei, WEB), 'utf8');

@@ -90,7 +90,7 @@ describe('Baustein Schalter (#1188)', () => {
       'werkbank/DatenEinstellungen.tsx',
       'werkbank/SucheEinstellungen.tsx',
       'werkbank/automatisierungen/editor.tsx',
-      'werkbank/Ablaufvorlagen.tsx',
+      'werkbank/ablaufvorlage/EditorTeile.tsx',
     ]) {
       assert.match(readFileSync(new URL(datei, WEB), 'utf8'), /<Schalter\s/, datei);
     }
