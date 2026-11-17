@@ -135,6 +135,18 @@ function naheBeschriftung<T>(
   return { wert: funde[0].wert, sicherheit: 'niedrig', fundstelle: ausschnitt(text, funde[0].i, funde[0].laenge) };
 }
 
+/** Was die Vorschläge für die einzelnen Felder teilen: Text, Angaben, schon vergebene Funde und das Setzen. */
+interface VorschlagLauf {
+  text: string;
+  a: Angaben;
+  hatArt: (x: Erkennungsart) => boolean;
+  /** Ein Personentyp (Vor- oder Nachname): Dann ist „Name“ nicht die Organisation aus dem Briefkopf. */
+  personTyp: boolean;
+  /** Schon in einem Feld vorgeschlagene E-Mail-Adressen und Telefonnummern – das nächste Feld bekommt die nächste. */
+  benutzt: Set<string>;
+  setze: (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => void;
+}
+
 /**
  * Vorschläge für die Felder eines Typs aus den gefundenen Angaben (ohne Verweise – die gleicht der Server
  * mit vorhandenen Mappen ab). Werte sind schon im Format der Feldart (Datum ISO, Betrag mit Währung).
@@ -143,167 +155,184 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
   const v: Vorschlaege = {};
   const felder = fuellfelder(t);
   const hatArt = (x: Erkennungsart) => felder.some((f) => f.art === x);
-  const personTyp = hatArt('vorname') || hatArt('nachname');
   // Nur Werte, die zum Format bzw. zu den Grenzen des Felds passen (#535) – so landet z. B. keine Faxnummer mit Buchstaben im Feld.
   const passt = (f: Feld, wert: Wert) => !formatFehler(f, wert, { felder: t.felder, werte: {} });
-  const setze = (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => {
-    if (wert !== '' && wert != null && !v[f.key] && passt(f, wert))
-      v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle };
+  const lauf: VorschlagLauf = {
+    text,
+    a,
+    hatArt,
+    personTyp: hatArt('vorname') || hatArt('nachname'),
+    benutzt: new Set<string>(),
+    setze: (f, wert, fund) => {
+      if (wert !== '' && wert != null && !v[f.key] && passt(f, wert))
+        v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle };
+    },
   };
-  const benutzt = new Set<string>();
-  const erste = (l: Fund[]) => l.find((x) => !benutzt.has(x.wert)) ?? null;
   for (const { feld: f, art } of felder) {
     // Erkennungshinweis mit Muster (#391): gewinnt vor allem anderen.
-    const muster = musterAusHinweis(f.erkennung?.hinweis);
-    if (muster) {
-      const m = muster.exec(text);
-      if (m) {
-        setze(f, m[0], { sicherheit: 'hoch', fundstelle: ausschnitt(text, m.index, m[0].length) });
-        continue;
-      }
-    }
-    const bk = a.briefkopf;
-    const p = a.person;
-    const fund = (w: string | undefined, quelle: { fundstelle: string } | null, s: Sicherheit = 'mittel') =>
-      w && quelle ? setze(f, w, { sicherheit: s, fundstelle: quelle.fundstelle }) : undefined;
-    switch (art) {
-      case 'email': {
-        const e = erste(a.emails);
-        if (e) {
-          benutzt.add(e.wert);
-          setze(f, e.wert, e);
-        }
-        break;
-      }
-      case 'internet': {
-        const i =
-          erste(a.internet) ??
-          (() => {
-            const d = a.emails.map((e) => domainVon(e.wert)).find(Boolean);
-            return d ? { wert: `www.${d}`, sicherheit: 'mittel' as const, fundstelle: a.emails[0].fundstelle } : null;
-          })();
-        if (i) setze(f, i.wert, i);
-        break;
-      }
-      case 'iban': {
-        const i = a.ibans[0];
-        if (i) setze(f, i.wert, i);
-        break;
-      }
-      case 'ustid': {
-        const u = a.ustids[0];
-        if (u) setze(f, u.wert, u);
-        break;
-      }
-      case 'telefon': {
-        const x = erste(a.telefon);
-        if (x) {
-          benutzt.add(x.wert);
-          setze(f, x.wert, x);
-        }
-        break;
-      }
-      case 'mobil': {
-        const x = erste(a.mobil);
-        if (x) {
-          benutzt.add(x.wert);
-          setze(f, x.wert, x);
-        }
-        break;
-      }
-      case 'fax': {
-        const x = erste(a.fax);
-        if (x) {
-          benutzt.add(x.wert);
-          setze(f, x.wert, x);
-        }
-        break;
-      }
-      case 'datum':
-        if (a.datum) setze(f, a.datum.wert, a.datum);
-        break;
-      case 'betrag':
-        if (a.betrag) setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag);
-        break;
-      // Zeitraum und Prozent (#1035): am liebsten neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“).
-      case 'zeitraum': {
-        const z = naheBeschriftung(text, f, ZEITRAUM_IM_TEXT, (m) => leseZeitraum(`${m[1]} ${m[2]}`) ?? null);
-        if (z) setze(f, z.wert, z);
-        break;
-      }
-      case 'prozent': {
-        const x = naheBeschriftung(text, f, PROZENT_IM_TEXT, (m) => {
-          const n = leseProzent(m[1]);
-          return n != null && Number.isFinite(n) && n <= 100 ? n : null;
-        });
-        if (x) setze(f, x.wert, x);
-        break;
-      }
-      case 'vorname':
-        fund(p?.vorname, p, 'mittel');
-        break;
-      case 'nachname':
-        fund(p?.nachname, p, 'mittel');
-        break;
-      case 'funktion':
-        fund(p?.funktion, p, 'mittel');
-        break;
-      case 'name':
-        if (personTyp) break;
-        fund(bk?.name ?? p?.organisation, bk ?? p, bk?.fundstelle.includes('·') ? 'hoch' : 'mittel');
-        break;
-      case 'strasse': {
-        const mitNr = !hatArt('hausnummer') && bk?.hausnummer ? `${bk.strasse} ${bk.hausnummer}` : bk?.strasse;
-        fund(mitNr, bk);
-        break;
-      }
-      case 'hausnummer':
-        fund(bk?.hausnummer, bk);
-        break;
-      case 'plz':
-        if (bk?.plz) setze(f, f.typ === 'zahl' ? Number(bk.plz) : bk.plz, { sicherheit: 'mittel', fundstelle: bk.fundstelle });
-        break;
-      case 'ort':
-        fund(bk?.ort, bk);
-        break;
-      case 'nummer': {
-        // Passende Beschriftung: Feld „Kundennummer“ ↔ gefunden „Kundennummer“; „Rechnungs-Nr.“ ↔ „Rechnungsnummer“.
-        const stamm = (s: string) =>
-          klein(s)
-            .replace(/[^a-z]/g, '')
-            .replace(/(nummer|nr)$/, '');
-        const n = a.nummern.find((x) => {
-          const s = stamm(x.label);
-          return !!s && (s === stamm(f.label) || s === stamm(f.key));
-        });
-        if (n) setze(f, f.typ === 'zahl' ? Number(n.wert.replace(/\D/g, '')) || '' : n.wert, n);
-        break;
-      }
-      case 'auswahl': {
-        // Fester Wert oder eine seiner Beschriftungen (#728) im Text; gesetzt wird immer der feste Wert.
-        const wort = (x: string) => new RegExp(`(?<![\\wÄÖÜäöüß])${esc(x)}(?![\\wÄÖÜäöüß])`, 'i');
-        let treffer: { wert: string; text: string } | undefined;
-        for (const o of f.optionen ?? []) {
-          const x = [o, ...optionTexte(f, o)].find((y) => y.length >= 3 && wort(y).test(text));
-          if (x) {
-            treffer = { wert: o, text: x };
-            break;
-          }
-        }
-        if (treffer) {
-          const m = wort(treffer.text).exec(text)!;
-          setze(f, f.mehrfach ? [treffer.wert] : treffer.wert, {
-            sicherheit: 'niedrig',
-            fundstelle: ausschnitt(text, m.index, treffer.text.length),
-          });
-        }
-        break;
-      }
-      default:
-        break;
-    }
+    if (nachMuster(f, lauf)) continue;
+    vorschlagFuer(f, art, lauf);
   }
   return wendeGutschriftAn(t, v, a.gutschrift);
+}
+
+/** Erkennungshinweis mit Muster (#391): Trifft es, gilt der Treffer (Sicherheit hoch) und sonst nichts für das Feld. */
+function nachMuster(f: Feld, l: VorschlagLauf): boolean {
+  const muster = musterAusHinweis(f.erkennung?.hinweis);
+  const m = muster?.exec(l.text);
+  if (!m) return false;
+  l.setze(f, m[0], { sicherheit: 'hoch', fundstelle: ausschnitt(l.text, m.index, m[0].length) });
+  return true;
+}
+
+const KONTAKT_ARTEN = ['email', 'internet', 'iban', 'ustid', 'telefon', 'mobil', 'fax'] as const;
+const WERT_ARTEN = ['datum', 'betrag', 'zeitraum', 'prozent'] as const;
+const PERSON_ARTEN = ['vorname', 'nachname', 'funktion', 'name'] as const;
+const BRIEFKOPF_ARTEN = ['strasse', 'hausnummer', 'plz', 'ort'] as const;
+const unter = <T extends Erkennungsart>(liste: readonly T[], art: Erkennungsart): art is T => (liste as readonly string[]).includes(art);
+
+/** Vorschlag je Erkennungsart. */
+function vorschlagFuer(f: Feld, art: Erkennungsart, l: VorschlagLauf): void {
+  if (unter(KONTAKT_ARTEN, art)) vorschlagKontakt(f, art, l);
+  else if (unter(WERT_ARTEN, art)) vorschlagWert(f, art, l);
+  else if (unter(PERSON_ARTEN, art)) vorschlagPerson(f, art, l);
+  else if (unter(BRIEFKOPF_ARTEN, art)) vorschlagBriefkopf(f, art, l);
+  else if (art === 'nummer') vorschlagNummer(f, l);
+  else if (art === 'auswahl') vorschlagAuswahl(f, l);
+}
+
+/** E-Mail, Telefon, Mobil und Fax (je Feld die nächste noch nicht vergebene), Internetseite, IBAN, USt-Id. */
+function vorschlagKontakt(f: Feld, art: (typeof KONTAKT_ARTEN)[number], l: VorschlagLauf) {
+  const { a } = l;
+  const erste = (liste: Fund[]) => liste.find((x) => !l.benutzt.has(x.wert)) ?? null;
+  switch (art) {
+    case 'internet': {
+      const i =
+        erste(a.internet) ??
+        (() => {
+          const d = a.emails.map((e) => domainVon(e.wert)).find(Boolean);
+          return d ? { wert: `www.${d}`, sicherheit: 'mittel' as const, fundstelle: a.emails[0].fundstelle } : null;
+        })();
+      if (i) l.setze(f, i.wert, i);
+      return;
+    }
+    case 'iban': {
+      const i = a.ibans[0];
+      if (i) l.setze(f, i.wert, i);
+      return;
+    }
+    case 'ustid': {
+      const u = a.ustids[0];
+      if (u) l.setze(f, u.wert, u);
+      return;
+    }
+    default: {
+      const x = erste({ email: a.emails, telefon: a.telefon, mobil: a.mobil, fax: a.fax }[art]);
+      if (x) {
+        l.benutzt.add(x.wert);
+        l.setze(f, x.wert, x);
+      }
+    }
+  }
+}
+
+/** Datum und Betrag aus den Angaben; Zeitraum und Prozent (#1035) am liebsten neben der Bezeichnung des Felds. */
+function vorschlagWert(f: Feld, art: (typeof WERT_ARTEN)[number], l: VorschlagLauf) {
+  const { a, text } = l;
+  switch (art) {
+    case 'datum':
+      if (a.datum) l.setze(f, a.datum.wert, a.datum);
+      return;
+    case 'betrag':
+      if (a.betrag) l.setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag);
+      return;
+    // Zeitraum und Prozent (#1035): am liebsten neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“).
+    case 'zeitraum': {
+      const z = naheBeschriftung(text, f, ZEITRAUM_IM_TEXT, (m) => leseZeitraum(`${m[1]} ${m[2]}`) ?? null);
+      if (z) l.setze(f, z.wert, z);
+      return;
+    }
+    case 'prozent': {
+      const x = naheBeschriftung(text, f, PROZENT_IM_TEXT, (m) => {
+        const n = leseProzent(m[1]);
+        return n != null && Number.isFinite(n) && n <= 100 ? n : null;
+      });
+      if (x) l.setze(f, x.wert, x);
+    }
+  }
+}
+
+/** Fund aus Person oder Briefkopf übernehmen, wenn es Wert und Quelle gibt. */
+const fundAus = (l: VorschlagLauf, f: Feld, w: string | undefined, quelle: { fundstelle: string } | null, s: Sicherheit = 'mittel') =>
+  w && quelle ? l.setze(f, w, { sicherheit: s, fundstelle: quelle.fundstelle }) : undefined;
+
+/** Person (Vorname, Nachname, Funktion) und Name (Briefkopf oder Organisation der Person – nicht bei Personentypen). */
+function vorschlagPerson(f: Feld, art: (typeof PERSON_ARTEN)[number], l: VorschlagLauf) {
+  const bk = l.a.briefkopf;
+  const p = l.a.person;
+  switch (art) {
+    case 'vorname':
+      return fundAus(l, f, p?.vorname, p, 'mittel');
+    case 'nachname':
+      return fundAus(l, f, p?.nachname, p, 'mittel');
+    case 'funktion':
+      return fundAus(l, f, p?.funktion, p, 'mittel');
+    case 'name':
+      if (l.personTyp) return;
+      return fundAus(l, f, bk?.name ?? p?.organisation, bk ?? p, bk?.fundstelle.includes('·') ? 'hoch' : 'mittel');
+  }
+}
+
+/** Anschrift aus dem Briefkopf: Straße (ohne Feld für die Hausnummer mit ihr), Hausnummer, PLZ, Ort. */
+function vorschlagBriefkopf(f: Feld, art: (typeof BRIEFKOPF_ARTEN)[number], l: VorschlagLauf) {
+  const bk = l.a.briefkopf;
+  switch (art) {
+    case 'strasse': {
+      const mitNr = !l.hatArt('hausnummer') && bk?.hausnummer ? `${bk.strasse} ${bk.hausnummer}` : bk?.strasse;
+      return fundAus(l, f, mitNr, bk);
+    }
+    case 'hausnummer':
+      return fundAus(l, f, bk?.hausnummer, bk);
+    case 'plz':
+      if (bk?.plz) l.setze(f, f.typ === 'zahl' ? Number(bk.plz) : bk.plz, { sicherheit: 'mittel', fundstelle: bk.fundstelle });
+      return;
+    case 'ort':
+      return fundAus(l, f, bk?.ort, bk);
+  }
+}
+
+/** Nummer mit passender Beschriftung: Feld „Kundennummer“ ↔ gefunden „Kundennummer“; „Rechnungs-Nr.“ ↔ „Rechnungsnummer“. */
+function vorschlagNummer(f: Feld, l: VorschlagLauf) {
+  const stamm = (s: string) =>
+    klein(s)
+      .replace(/[^a-z]/g, '')
+      .replace(/(nummer|nr)$/, '');
+  const n = l.a.nummern.find((x) => {
+    const s = stamm(x.label);
+    return !!s && (s === stamm(f.label) || s === stamm(f.key));
+  });
+  if (n) l.setze(f, f.typ === 'zahl' ? Number(n.wert.replace(/\D/g, '')) || '' : n.wert, n);
+}
+
+/** Auswahl (#728): fester Wert oder eine seiner Beschriftungen im Text; gesetzt wird immer der feste Wert. */
+function vorschlagAuswahl(f: Feld, l: VorschlagLauf) {
+  const { text } = l;
+  const wort = (x: string) => new RegExp(`(?<![\\wÄÖÜäöüß])${esc(x)}(?![\\wÄÖÜäöüß])`, 'i');
+  let treffer: { wert: string; text: string } | undefined;
+  for (const o of f.optionen ?? []) {
+    const x = [o, ...optionTexte(f, o)].find((y) => y.length >= 3 && wort(y).test(text));
+    if (x) {
+      treffer = { wert: o, text: x };
+      break;
+    }
+  }
+  if (treffer) {
+    const m = wort(treffer.text).exec(text)!;
+    l.setze(f, f.mehrfach ? [treffer.wert] : treffer.wert, {
+      sicherheit: 'niedrig',
+      fundstelle: ausschnitt(text, m.index, treffer.text.length),
+    });
+  }
 }
 
 /* ---------- Eigene Organisation und Haushalt (#995, #1043) ---------- */

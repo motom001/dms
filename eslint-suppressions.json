@@ -1088,14 +1088,6 @@
       "count": 1
     }
   },
-  "shared/src/erkennung/vorschlaege.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "shared/src/erweitertesuche.ts": {
     "complexity": {
       "count": 2
