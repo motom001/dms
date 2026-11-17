@@ -10,7 +10,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 | **Datenschutz** | [Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Einstellungen](daten-einstellungen.md) |
-| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
+| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md#werkbank-aufgaben), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
 | **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartung](wartungsmodus.md), [Lasttest-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
@@ -200,7 +200,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Region](region.md) | ● | ● | ● | ● | ● |
 | [Sprachen](sprachen.md) |   | ● | ● | ● | ● |
 | [Eigene Organisation](organisation.md) |   | ● | ● | ● | ● |
-| [Aufgaben](aufgaben.md) |   | ● | ● | ● | ● |
+| [Aufgaben](aufgaben.md#werkbank-aufgaben) |   | ● | ● | ● | ● |
 | [Anmeldeschutz](anmeldeschutz.md) |   | ● | ● | ● | ● |
 | [Designs](designs.md) |   |   |   | ● | ● |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) |   |   |   |   | ● |
@@ -259,7 +259,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Region](region.md) | Land, Bundesland und Zeitzone – für Feiertage, „heute“ und Uhrzeiten von Erinnerungen und Zusammenfassungen | ab Einsteiger |
 | [Sprachen](sprachen.md) | Wenn in deiner Ablage auch Englisch oder eine weitere Sprache gesprochen wird. | ab Haushalt |
 | [Eigene Organisation](organisation.md) | Ob die Ablage auch beruflich genutzt wird, dazu Name, Anschrift und Verantwortliche des eigenen Betriebs – gepflegt an der Organisation in der Ablage | ab Haushalt |
-| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben aller Benutzer im Blick behalten | ab Haushalt |
+| [Aufgaben](aufgaben.md#werkbank-aufgaben) | Alle offenen Aufgaben aller Benutzer im Blick behalten | ab Haushalt |
 | [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | ab Haushalt |
 | [Designs](designs.md) | Logo, Farben und eigenes CSS | ab Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank | nur Alles |
