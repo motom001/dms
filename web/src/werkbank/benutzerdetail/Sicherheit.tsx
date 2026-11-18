@@ -14,6 +14,7 @@ export function Sicherheit({
   setErgebnis,
   neuLaden,
   loeschbar,
+  abgemeldet,
 }: {
   b: Benutzer;
   b2: BereicheZustand<BenutzerBereich>;
@@ -21,6 +22,8 @@ export function Sicherheit({
   setErgebnis: (e: LinkErgebnis) => void;
   neuLaden: () => Promise<void>;
   loeschbar: boolean;
+  /** Zähler: „Überall abmelden“ oben am Benutzer (#1291) – die Geräte laden neu. */
+  abgemeldet?: number;
 }) {
   return (
     <Bereich
@@ -46,7 +49,7 @@ export function Sicherheit({
       </div>
       <ZweifaktorVon b={b} />
       <PasskeysVon b={b} />
-      <Sitzungen b={b} neuLaden={neuLaden} />
+      <Sitzungen b={b} neuLaden={neuLaden} stand={abgemeldet} />
     </Bereich>
   );
 }

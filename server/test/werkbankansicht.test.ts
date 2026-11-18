@@ -27,6 +27,8 @@ import {
   handyGruppe,
   handyZurueck,
   HANDY_SCHWERPUNKT,
+  HANDY_BEQUEMER,
+  amRechnerBequemer,
   imHandySchwerpunkt,
   einDatentraeger,
 } from '../../shared/src/werkbankansicht';
@@ -242,6 +244,19 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.equal(werkbankEbene('pakete'), 'liste');
     assert.equal(werkbankEbene('pakete', undefined, true), 'mappe');
     assert.equal(werkbankEbene('systemzustand', undefined, true), 'mappe');
+  });
+
+  it('Werkbank am Handy (#1292): „Am Rechner oder Tablet bequemer“ nur auf Seiten zum Aufbauen, nie im Schwerpunkt', () => {
+    for (const p of HANDY_BEQUEMER) {
+      assert.ok(
+        BEREICHE.some((b) => b.pfad === p),
+        p,
+      );
+      assert.ok(!imHandySchwerpunkt(p), `${p} steht im Schwerpunkt und wäre am Handy „bequemer am Rechner“`);
+      assert.ok(amRechnerBequemer(p), p);
+    }
+    // Pakete installieren muss am Handy gehen (#1291), die Übersicht und Einstellungen wie die Region sind nicht mühsam.
+    for (const p of ['pakete', 'uebersicht', 'benutzer', 'region']) assert.equal(amRechnerBequemer(p), false, p);
   });
 
   it('Werkbank am Handy (#1204): Schwerpunkt vorn, Weg zurück zur Gruppe, zu den Bereichen oder zur Liste', () => {

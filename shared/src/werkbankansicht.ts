@@ -416,6 +416,26 @@ const SCHWERPUNKT: ReadonlySet<string> = new Set(HANDY_SCHWERPUNKT);
 export const imHandySchwerpunkt = (pfad: string) => SCHWERPUNKT.has(pfad);
 
 /**
+ * Am Handy mühsam (#1292, Grundsatz Thomas 15.11.2026): die Bereiche zum Aufbauen – Mappentypen, Ansichten,
+ * Automatisierungen und was darauf aufbaut, Stempel und Designs mit ihrer Vorschau. Sie bleiben am Handy erreichbar und
+ * bedienbar; oben steht nur ein ruhiger Hinweis „Am Rechner oder Tablet bequemer“ – kein Sperren, kein Umleiten. Der
+ * Handy-Schwerpunkt ist nie dabei (Pakete installieren muss am Handy gehen, #1291).
+ */
+export const HANDY_BEQUEMER = [
+  'typen',
+  'sichten',
+  'nummernkreise',
+  'automatisierungen',
+  'ablaufvorlagen',
+  'rundgaenge',
+  'tipps',
+  'stempel',
+  'designs',
+] as const satisfies ReadonlyArray<Bereichskennung>;
+const BEQUEMER: ReadonlySet<string> = new Set(HANDY_BEQUEMER);
+export const amRechnerBequemer = (pfad: string) => BEQUEMER.has(pfad) && !SCHWERPUNKT.has(pfad);
+
+/**
  * Weg zurück am Handy (#1204), oben über dem Inhalt statt der Liste aller Bereiche: aus einem Eintrag (rechts, mit Mitte)
  * zur Liste des Bereichs, sonst in die Navigation – zur Gruppe des Bereichs („‹ Ablage aufbauen“) oder, für die Bereiche
  * des Handy-Schwerpunkts und Seiten ohne Gruppe (Werkbank anpassen), zu den Bereichen oben. Auf der Übersicht `null`:

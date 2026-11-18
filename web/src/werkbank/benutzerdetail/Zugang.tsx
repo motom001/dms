@@ -27,26 +27,10 @@ export function Zugang({
   loeschbar: boolean;
   aktion: Aktion;
 }) {
-  const d = useDaten();
   const { aktualisieren } = useKonto();
-  const name = b.name || b.email;
-  const vertreter = b.abwesenheit?.vertreterId ? d.person(b.abwesenheit.vertreterId) : null;
-  const offen = b.offeneAufgaben ?? 0;
+  const { name, vertreter, gruende } = useSperrgruende(b, b2);
   if (!b.aktiv) return wiederFreigeben(b, b2, vertreter, aktion);
   if (selbst) return null;
-  // „im Bereich Vertretung“ als Sprung: öffnet ihn, rollt hin und setzt den Fokus auf seinen Kopf.
-  const bereich = <Knopf onClick={() => b2.oeffne(['vertretung'], true, true)}>{t('werkbank.benutzer.bereich.vertretung')}</Knopf>;
-  const gruende: Array<[string, ReactNode]> = [];
-  if (!vertreter) gruende.push(['vertreter', tn('werkbank.benutzer.es-ist-kein-vertreter', { bereich })]);
-  if (offen > 0)
-    gruende.push([
-      'aufgaben',
-      tn('werkbank.benutzer.hat-noch-offene-aufgaben', {
-        anzahl: offen,
-        name,
-        wert: vertreter ? tn('werkbank.benutzer.gib-sie-oben-an', { vertreter, bereich }) : '.',
-      }),
-    ]);
   // Kein Rot für den Bereich (Musterkatalog C15): Rot heißt hier „Fehler beim Speichern“; die Gefahr zeigen der rote
   // Knopf (C14) und die Rückfrage (B4).
   return (
@@ -100,16 +84,9 @@ export function Zugang({
             art="gefahr"
             symbol="verboten"
             gesperrt={gruende.length > 0}
-            rueckfrage={{
-              titel: t('werkbank.benutzer.deaktivieren', { name }),
-              text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }),
-              ja: t('werkbank.benutzer.deaktivieren-2'),
-            }}
+            rueckfrage={sperrFrage(name, vertreter)}
             onClick={() => {
-              void aktion(
-                () => kontoApi.benutzerAendern(b.id, { aktiv: false }),
-                t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet'),
-              );
+              void sperren(b, aktion);
             }}>
             {t('werkbank.benutzer.benutzer-deaktivieren')}
           </Knopf>
@@ -118,6 +95,41 @@ export function Zugang({
     </Bereich>
   );
 }
+
+/**
+ * Warum sich der Zugang noch nicht sperren lässt (#78): kein Vertreter, offene Aufgaben. „im Bereich Vertretung“ als
+ * Sprung: öffnet ihn, rollt hin und setzt den Fokus auf seinen Kopf. Auch für „Zugang sperren“ oben am Benutzer (#1291).
+ */
+export function useSperrgruende(b: Benutzer, b2: BereicheZustand<BenutzerBereich>) {
+  const d = useDaten();
+  const name = b.name || b.email;
+  const vertreter = b.abwesenheit?.vertreterId ? d.person(b.abwesenheit.vertreterId) : null;
+  const offen = b.offeneAufgaben ?? 0;
+  const bereich = <Knopf onClick={() => b2.oeffne(['vertretung'], true, true)}>{t('werkbank.benutzer.bereich.vertretung')}</Knopf>;
+  const gruende: Array<[string, ReactNode]> = [];
+  if (!vertreter) gruende.push(['vertreter', tn('werkbank.benutzer.es-ist-kein-vertreter', { bereich })]);
+  if (offen > 0)
+    gruende.push([
+      'aufgaben',
+      tn('werkbank.benutzer.hat-noch-offene-aufgaben', {
+        anzahl: offen,
+        name,
+        wert: vertreter ? tn('werkbank.benutzer.gib-sie-oben-an', { vertreter, bereich }) : '.',
+      }),
+    ]);
+  return { name, vertreter, gruende };
+}
+
+/** Rückfrage beim Sperren (B4) – unten im Bereich „Zugang“ und oben am Benutzer dieselbe. */
+export const sperrFrage = (name: string, vertreter: string | null) => ({
+  titel: t('werkbank.benutzer.deaktivieren', { name }),
+  text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }),
+  ja: t('werkbank.benutzer.deaktivieren-2'),
+});
+
+/** Zugang sperren: deaktivieren, alle Sitzungen enden (#77). */
+export const sperren = (b: Benutzer, aktion: Aktion) =>
+  aktion(() => kontoApi.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet'));
 
 /** Deaktiviert: Zugang wieder freigeben. */
 function wiederFreigeben(b: Benutzer, b2: BereicheZustand<BenutzerBereich>, vertreter: string | null, aktion: Aktion) {

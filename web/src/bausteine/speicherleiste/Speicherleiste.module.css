@@ -2,6 +2,12 @@
    Hier nur, was der Baustein selbst festlegt: der feste Platz für „… löschen“ links, auf einer Linie mit „Verwerfen“
    und dem Hauptknopf. */
 .loeschen { flex: none; }
+/* „Änderungen verwerfen“ bleibt in einer Zeile (#1291, Durchsicht Qualität) – am Handy und in einer schmalen Spalte
+   (iPad hoch). Der Hauptknopf nimmt den Rest und bricht nur zwischen Wörtern um; passt nicht einmal sein längstes Wort
+   daneben, rückt er in eine eigene Zeile darunter. */
+.leiste .knoepfe:has(> .verwerfen) { flex-wrap: wrap; }
+.leiste .knoepfe > .verwerfen:not(:where([data-knopf="link"], [data-knopf="eigen"])) { flex: none; white-space: nowrap; }
+.leiste .knoepfe:has(> .verwerfen) > [data-knopf]:not(.verwerfen):not(:where([data-knopf="link"], [data-knopf="eigen"])) { min-width: min-content; overflow-wrap: normal; hyphens: manual; }
 /* Am Handy steht alles in einer Zeile: „… löschen“ zeigt nur sein Symbol, der Name bleibt für Screenreader. */
 @media (max-width: 600px) {
   .leiste { flex-wrap: nowrap; }

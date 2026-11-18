@@ -169,6 +169,7 @@ export function Speicherleiste({
         <div className={`knoepfe ${s.knoepfe}`}>
           {weitere}
           <Knopf
+            className={s.verwerfen}
             gesperrt={!k.verwerfen.aktiv}
             title={k.verwerfen.aktiv ? k.verwerfen.titel : undefined}
             onClick={() => void ent.verwerfen()}>
