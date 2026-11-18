@@ -33,7 +33,7 @@ Welche Mappentypen es gibt und welche Angaben sie haben, richtet ein Administrat
 Oben rechts kannst du das ganze Handbuch durchsuchen. Was sich in neuen Versionen geändert hat, steht unter [Was ist neu?](https://github.com/motom001/dms/releases)
 
 !!! tip "Hilfe aus Ablago heraus"
-    In Ablago führt der Punkt **Hilfe** im Menü unter deinem Namen direkt hierher.
+    In Ablago findest du das Handbuch im [Assistenten](assistent.md) unten rechts: Er durchsucht es, und **Ganzes Handbuch öffnen** führt direkt hierher.
 
 ## Wer nutzt Ablago? { #wer-nutzt-das-dms }
 

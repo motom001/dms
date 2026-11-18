@@ -3,13 +3,13 @@
 You prefer working with Explorer, Finder or the Files app? Then connect Ablago's Library as a **network drive**. You browse through views, folders and tabs like folders, open documents with any program and put new post simply into it – by dragging or "Save as".
 
 !!! note "Have it switched on first"
-    The network drive is initially **switched off** in Ablago; your administrator switches it on in the workbench. Once it is on, you'll find everything you need yourself: click your name at the top right → **Connect as a network drive**. If it is off, this entry doesn't exist.
+    The network drive is initially **switched off** in Ablago; your administrator switches it on in the workbench. Once it is on, you'll find everything you need yourself: click your name at the top right → **My account** → **Drive**. If it is off, this area doesn't exist.
 
 ## What you need {#was-du-brauchst}
 
-Under **My account → Network drive** (click your name at the top right → **My account** → **Network drive**) everything is in one place – first the explanation, then the steps:
+Under **My account → Drive** (click your name at the top right → **My account** → **Drive**) everything is in one place – first the explanation, then the steps:
 
-![My account → Network drive](bilder/laufwerk.png){ loading=lazy }
+![My account → Drive](bilder/laufwerk.png){ loading=lazy }
 
 **At the top the explanation:** what the network drive is for and **How it works on your device**. Choose your device – **Windows**, **Mac** or **iPhone and iPad** – and its short guide appears below, the same as here. Preselected is the device you are opening the page with.
 

@@ -3,7 +3,7 @@
 Du arbeitest lieber mit dem Explorer, dem Finder oder der Dateien-App? Dann binde die Ablage von Ablago als **Laufwerk** ein. Du blätterst durch Ansichten, Mappen und Register wie durch Ordner, öffnest Dokumente mit jedem Programm und legst neue Post einfach hinein – per Ziehen oder „Sichern unter“.
 
 !!! note "Erst einschalten lassen"
-    Das Laufwerk ist in Ablago zunächst **ausgeschaltet**; dein Administrator schaltet es in der Werkbank ein. Ist es eingeschaltet, findest du alles Nötige selbst: Klick oben rechts auf deinen Namen → **Als Laufwerk einbinden**. Ist es aus, gibt es diesen Eintrag nicht.
+    Das Laufwerk ist in Ablago zunächst **ausgeschaltet**; dein Administrator schaltet es in der Werkbank ein. Ist es eingeschaltet, findest du alles Nötige selbst: Klick oben rechts auf deinen Namen → **Mein Konto** → **Laufwerk**. Ist es aus, gibt es diesen Bereich nicht.
 
 ## Was du brauchst
 
