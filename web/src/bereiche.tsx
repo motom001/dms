@@ -47,13 +47,22 @@ const TITEL_MAX = 40;
 const RESET = 'dms:bereiche-zurueckgesetzt';
 const schluessel = (ort: Ort, benutzer: string) => `dms:bereiche:${ort}:${benutzer}`;
 
+/**
+ * iPad hoch in der Werkbank (#1204, Entscheidung Thomas 18.11.2026 nach Vorschlag von Qualität): Von 768 px – ab dort ist
+ * sie dreiteilig – bis zum früheren Umbruch bei 820 px (`SCHMAL`) beginnt die Leiste eingeklappt, damit Liste und Seite
+ * Platz haben. Wer sie aufklappt, behält das wie jede gemerkte Wahl (`lies`).
+ */
+const WERKBANK_IPAD_HOCH = { von: 768, bis: SCHMAL };
+const ipadHoch = (ort?: Ort) =>
+  ort === 'werkbank' && typeof innerWidth === 'number' && innerWidth >= WERKBANK_IPAD_HOCH.von && innerWidth <= WERKBANK_IPAD_HOCH.bis;
+
 function standard(ort?: Ort): Stand {
   const mittel = typeof innerWidth === 'number' && innerWidth <= 1100;
   const l = mittel ? 180 : 220;
   // Dokument übernehmen (#934): Dokument und Mappe teilen sich den Rest etwa zur Hälfte.
   if (ort === 'uebernehmen' && typeof innerWidth === 'number')
     return { l, m: Math.max(MIN_M, Math.round((innerWidth - l) * 0.5)), linksZu: false, rechtsZu: false };
-  return { l, m: mittel ? 280 : 340, linksZu: false, rechtsZu: false };
+  return { l, m: mittel ? 280 : 340, linksZu: ipadHoch(ort), rechtsZu: false };
 }
 function lies(k: string, ort?: Ort): Stand {
   try {
@@ -184,7 +193,7 @@ export function Dreiteilung({
   return (
     <div
       ref={rahmen}
-      className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`}
+      className={`drei ${breit && s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`}
       data-ebene={ebene}
       style={style}
       onClickCapture={linkInMitte}>

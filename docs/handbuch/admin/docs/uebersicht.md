@@ -51,7 +51,7 @@ Zum **Anlegen** steht in jeder Liste oben rechts ein grüner Knopf, der den Gege
 
 ## Werkbank am Handy { #am-handy }
 
-Am Handy nutzt die Werkbank den Bildschirm für den Inhalt. Wie sie aussieht, richtet sich nach der **Breite**, nicht nach dem Gerät: Bis 767 Pixel – jedes Handy – bekommst du die Handy-Ansicht, ein **iPad hochkant** (ab 768 Pixel) und quer zeigt die volle Werkbank wie am Rechner. Drehst du das Gerät, wechselt die Ansicht mit. Eine eigene Vorlage fürs Handy gibt es nicht: Deine [Vorlage](#werkbank-anpassen) gilt auf allen Geräten.
+Am Handy nutzt die Werkbank den Bildschirm für den Inhalt. Wie sie aussieht, richtet sich nach der **Breite**, nicht nach dem Gerät: Bis 767 Pixel – jedes Handy – bekommst du die Handy-Ansicht, ein **iPad hochkant** (ab 768 Pixel) und quer zeigt die volle Werkbank wie am Rechner. Drehst du das Gerät, wechselt die Ansicht mit. Am iPad hochkant (768 bis 820 Pixel) beginnt die Leiste mit den Bereichen eingeklappt, damit Liste und Seite Platz haben; mit der schmalen Lasche links klappst du sie auf, und so bleibt sie dann. Eine eigene Vorlage fürs Handy gibt es nicht: Deine [Vorlage](#werkbank-anpassen) gilt auf allen Geräten.
 
 Du gehst in Schritten wie in den Einstellungen eines Handys:
 

@@ -51,7 +51,7 @@ To **create** something, every list has a green button at the top right that nam
 
 ## The workbench on a phone { #am-handy }
 
-On a phone the workbench uses the screen for the content. What it looks like depends on the **width**, not on the device: up to 767 pixels – any phone – you get the phone view; an **iPad in portrait** (from 768 pixels) and in landscape shows the full workbench as on a computer. Turn the device and the view changes with it. There is no separate template for the phone: your [template](#werkbank-anpassen) applies on all devices.
+On a phone the workbench uses the screen for the content. What it looks like depends on the **width**, not on the device: up to 767 pixels – any phone – you get the phone view; an **iPad in portrait** (from 768 pixels) and in landscape shows the full workbench as on a computer. Turn the device and the view changes with it. On an iPad in portrait (768 to 820 pixels) the bar with the areas starts collapsed so that the list and the page have room; the narrow tab on the left expands it, and it then stays that way. There is no separate template for the phone: your [template](#werkbank-anpassen) applies on all devices.
 
 You go in steps, as in the settings of a phone:
 

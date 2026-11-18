@@ -243,6 +243,9 @@ rauchtest(
       for (const w of ['/werkbank/ablaufvorlagen', '/werkbank/systemzustand']) {
         await s.setViewportSize({ width: breite, height: 1024 });
         await s.goto(BASIS + w);
+        // Am iPad hoch beginnt die Leiste eingeklappt (Entscheidung Thomas 18.11.): einmal aufklappen, das bleibt gemerkt.
+        await s.locator('.drei').waitFor();
+        if (await s.locator('.drei.links-zu').count()) await s.locator('.spl-lasche-links').click();
         await s.locator('nav.werkbankleiste a.sicht').nth(3).waitFor();
         const gebrochen = await s.evaluate(() =>
           [...document.querySelectorAll('nav.werkbankleiste a.sicht .nm')].flatMap((n) => {
@@ -281,5 +284,38 @@ rauchtest(
             );
       }
     assert.deepEqual(funde, [], funde.join('\n'));
+  },
+);
+
+rauchtest(
+  'iPad hoch: die Leiste der Werkbank beginnt eingeklappt, aufgeklappt bleibt sie offen (#1204, Entscheidung 18.11.)',
+  { geraet: TABLET_HOCH, als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const leiste = s.locator('nav.werkbankleiste');
+    const zu = async () => (await s.locator('.drei.links-zu').count()) > 0;
+    // Breiter als 820 px (iPad Pro hoch, quer, Rechner): offen wie bisher.
+    for (const breite of [834, 1180]) {
+      await s.setViewportSize({ width: breite, height: 1024 });
+      await s.goto(BASIS + '/werkbank/typen');
+      await s.locator('.rumpf h1:visible').first().waitFor();
+      assert.equal(await zu(), false, `${breite} px: Leiste offen`);
+    }
+    // 768 bis 820 px: eingeklappt, die Lasche öffnet sie; Liste und Seite stehen daneben.
+    for (const breite of [820, 768]) {
+      await s.setViewportSize({ width: breite, height: 1024 });
+      await s.goto(BASIS + '/werkbank/typen');
+      await s.locator('.rumpf h1:visible').first().waitFor();
+      assert.equal(await zu(), true, `${breite} px: Leiste eingeklappt`);
+      assert.equal(await leiste.isVisible(), false);
+    }
+    await s.locator('.spl-lasche-links').click();
+    await leiste.locator('a.sicht').first().waitFor();
+    // Die eigene Wahl bleibt: neu geladen weiter offen.
+    await s.reload();
+    await s.locator('.rumpf h1:visible').first().waitFor();
+    assert.equal(await zu(), false, 'aufgeklappt bleibt die Leiste offen');
+    await leiste.locator('a.sicht').first().waitFor();
   },
 );
