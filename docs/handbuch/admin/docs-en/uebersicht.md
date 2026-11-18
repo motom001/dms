@@ -51,9 +51,9 @@ To **create** something, every list has the green **+ New** button at the top ri
 
 ## Overview {#ubersicht}
 
-The workbench begins with the **overview**. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
+The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – one below the other on the phone. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
 
-Below them are the **messages**, each with a button into the matching area. **This also applies to areas that are hidden in your template.** They are sorted by severity:
+Below them, under **Notes**, are the **messages**, each exactly once and each with a button into the matching area. **This also applies to areas that are hidden in your template.** They are sorted by severity:
 
 1. **Red – critical:** something isn't working here or data is at risk. You have to deal with it.
 2. **Yellow – warning:** something is missing or set up in a risky way.

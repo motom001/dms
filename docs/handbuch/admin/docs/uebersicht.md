@@ -51,9 +51,9 @@ Zum **Anlegen** steht in jeder Liste oben rechts der grüne Knopf **+ Neu** – 
 
 ## Übersicht
 
-Die Werkbank beginnt mit der **Übersicht**. Oben stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
+Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy untereinander. Oben stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
 
-Darunter stehen die **Meldungen**, jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
+Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal und jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
 
 1. **Rot – kritisch:** Hier geht etwas nicht oder Daten sind in Gefahr. Das musst du erledigen.
 2. **Gelb – Warnung:** Etwas fehlt oder ist riskant eingerichtet.

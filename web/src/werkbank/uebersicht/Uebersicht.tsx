@@ -3,13 +3,19 @@ import { Link } from '../../ort';
 import { t, tn } from '../../sprache';
 import { useHandbuch } from '../../Hilfe';
 import { Listenkopf } from '../../Listenkopf';
-import { Etikett, etikettArt, Kachel, Kacheln, Knopf, KnopfLink } from '../../bausteine';
+import { Kachel, Kacheln, Knopf, KnopfLink } from '../../bausteine';
 import { Akzeptieren, BewusstAkzeptiert } from './Akzeptieren';
 import { bytes, datum, zahl } from './hilfen';
 import type { UebersichtZustand } from './zustand';
 
-export function UebersichtListe({ u }: { u: UebersichtZustand }) {
-  const h = u.geordnet?.offen ?? [];
+/**
+ * Übersicht der Werkbank (#68, #816), zweigeteilt wie die Startseite der Ablage (#1284): links die Navigation, rechts
+ * breit diese Seite – oben die Kacheln, darunter die Hinweise nach Schwere (rot → gelb → Hinweis), je Hinweis der Weg
+ * dorthin und „Zur Kenntnis nehmen“, ganz unten „Bewusst akzeptiert“. Jeder Hinweis steht genau einmal; vorher stand
+ * er in der Mitte als Liste und rechts noch einmal als Meldung. Am Handy dieselbe Reihenfolge untereinander.
+ */
+export function UebersichtSeite({ u }: { u: UebersichtZustand }) {
+  const s = u.stand;
   return (
     <>
       <Listenkopf
@@ -20,101 +26,79 @@ export function UebersichtListe({ u }: { u: UebersichtZustand }) {
           {t('werkbank.uebersicht.neu-laden')}
         </Knopf>
       </Listenkopf>
-      {u.fehler && (
-        <div className="hinweis schlecht">
-          <p>{u.fehler}</p>
-        </div>
-      )}
-      {/* Am Handy steht die Übersicht in der Liste: zuerst die Kacheln (#816), darunter die Meldungen. */}
-      {u.stand && (
-        <div className="nur-schmal-block">
-          <UebersichtKacheln s={u.stand} />
-        </div>
-      )}
-      {!u.stand ? (
-        <p className="leise">{t('werkbank.uebersicht.lade')}</p>
-      ) : !h.length ? (
-        <p className="leise leerliste">{t('werkbank.uebersicht.alles-eingerichtet-nichts-zu')}</p>
-      ) : (
-        <ul className="mappenliste meldungsliste">
-          {h.map((x) => (
-            <li key={x.schluessel} className={`meldung ${x.art}`}>
-              <Link to={x.ziel} className="eintrag werk">
-                <span className="titel">
-                  <Etikett art={etikettArt(x.art === 'info' ? '' : x.art)}>{t.frei(`werkbank.uebersicht.schwere.${x.art}`)}</Etikett>{' '}
-                  {x.knopf}
-                </span>
-                <span className="unter">{x.text}</span>
-              </Link>
-              <div className="meldung-akzeptieren nur-schmal-block">
-                <Akzeptieren h={x} u={u} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {u.stand && (
-        <div className="nur-schmal-block">
-          <BewusstAkzeptiert u={u} />
-        </div>
-      )}
+      <div className="listenrumpf uebersicht">
+        {u.fehler && (
+          <div className="hinweis schlecht">
+            <p>{u.fehler}</p>
+          </div>
+        )}
+        {!s ? (
+          <p className="leise">{t('werkbank.uebersicht.lade')}</p>
+        ) : (
+          <>
+            <UebersichtKacheln s={s} />
+            <Hinweise u={u} />
+            <BewusstAkzeptiert u={u} />
+          </>
+        )}
+        <Wege />
+      </div>
     </>
   );
 }
 
-export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
-  const handbuch = useHandbuch();
-  const s = u.stand;
+/** Die Hinweise nach Schwere, jeder genau einmal: Text, Weg dorthin, „Zur Kenntnis nehmen“. */
+function Hinweise({ u }: { u: UebersichtZustand }) {
   const h = u.geordnet?.offen ?? [];
   return (
-    <div className="einspaltig uebersicht">
-      <div className="mappenkopf">
-        <p className="ueber">{t('werkbank.uebersicht.werkbank')}</p>
-        <h1>{t('werkbank.uebersicht.uebersicht')}</h1>
-        <p className="leise">
-          {tn('werkbank.uebersicht.hinweise-stand-und-bestand', {
-            link: (
-              <a href={handbuch('admin')} target="_blank" rel="noreferrer" className="verweis">
-                {t('werkbank.uebersicht.administratorhandbuch')}
-              </a>
-            ),
-            link2: (
-              <Link to="/werkbank/ansicht" className="verweis">
-                {t('werkbank.uebersicht.werkbank-anpassen')}
-              </Link>
-            ),
-          })}
-        </p>
-      </div>
-      {!s ? (
-        <p className="leise">{t('werkbank.uebersicht.lade')}</p>
-      ) : (
-        <>
-          {/* Erst, was alles zu tun ist (Kacheln), darunter die konkreten Meldungen – rot, gelb, Hinweise (#816). */}
-          <UebersichtKacheln s={s} />
-          {h.length ? (
-            h.map((x) => (
-              <div key={x.schluessel} className={`hinweis ${x.art === 'info' ? '' : x.art} hinweiszeile`}>
-                <p>{x.text}</p>
-                <div className="knoepfe">
-                  <KnopfLink to={x.ziel} groesse="klein">
-                    {x.knopf}
-                  </KnopfLink>
-                </div>
-                <Akzeptieren h={x} u={u} />
-              </div>
-            ))
-          ) : (
-            <div className="hinweis gut">
+    <section className="uebersicht-hinweise" aria-labelledby="uebersicht-hinweise-titel">
+      <h2 id="uebersicht-hinweise-titel" className="h3">
+        {t('werkbank.uebersicht.hinweise-titel')}
+      </h2>
+      {h.length ? (
+        <ul className="uebersicht-hinweisliste">
+          {h.map((x) => (
+            <li key={x.schluessel} className={`hinweis ${x.art === 'info' ? '' : x.art} hinweiszeile`} data-schwere={x.art}>
               <p>
-                {tn('werkbank.uebersicht.es-gibt-gerade-nichts', { b: <strong>{t('werkbank.uebersicht.alles-eingerichtet')}</strong> })}
+                <span className="sr">{t.frei(`werkbank.uebersicht.schwere.${x.art}`)}: </span>
+                {x.text}
               </p>
-            </div>
-          )}
-          <BewusstAkzeptiert u={u} />
-        </>
+              <div className="knoepfe">
+                <KnopfLink to={x.ziel} groesse="klein">
+                  {x.knopf}
+                </KnopfLink>
+              </div>
+              <Akzeptieren h={x} u={u} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="hinweis gut">
+          <p>{tn('werkbank.uebersicht.es-gibt-gerade-nichts', { b: <strong>{t('werkbank.uebersicht.alles-eingerichtet')}</strong> })}</p>
+        </div>
       )}
-    </div>
+    </section>
+  );
+}
+
+/** Ganz unten, leise: Handbuch und „Werkbank anpassen“. */
+function Wege() {
+  const handbuch = useHandbuch();
+  return (
+    <p className="leise klein">
+      {tn('werkbank.uebersicht.hinweise-stand-und-bestand', {
+        link: (
+          <a href={handbuch('admin')} target="_blank" rel="noreferrer" className="verweis">
+            {t('werkbank.uebersicht.administratorhandbuch')}
+          </a>
+        ),
+        link2: (
+          <Link to="/werkbank/ansicht" className="verweis">
+            {t('werkbank.uebersicht.werkbank-anpassen')}
+          </Link>
+        ),
+      })}
+    </p>
   );
 }
 

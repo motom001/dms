@@ -42,7 +42,7 @@ const WEB = new URL('../../web/src/', import.meta.url).href;
 const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
 const { DatenProvider } = await lade('daten.tsx');
 const { hinweiseAus } = await lade('werkbank/Uebersicht.tsx');
-const { UebersichtPanel } = await lade('werkbank/uebersicht/Uebersicht.tsx');
+const { UebersichtSeite } = await lade('werkbank/uebersicht/Uebersicht.tsx');
 const { ordneMeldungen } = await import('../../shared/src/meldungen');
 
 interface H {
@@ -112,12 +112,12 @@ describe('Werkbank-Übersicht: fehlende eingebaute Werkzeuge (#1312)', () => {
       einblenden: async () => {},
       erledigen: async () => {},
     };
-    const html = renderToStaticMarkup(h(DatenProvider, null, h(UebersichtPanel, { u })));
+    const html = renderToStaticMarkup(h(DatenProvider, null, h(UebersichtSeite, { u })));
     assert.equal(html.split('Ein Werkzeug zum Lesen von PDFs fehlt.').length - 1, 1, html);
     assert.match(html, /href="\/werkbank\/systemzustand#werkzeuge"[^>]*>Ansehen und erneut prüfen</);
     const leer = stand({ werkzeugeFehlen: [] });
     const ohne = renderToStaticMarkup(
-      h(DatenProvider, null, h(UebersichtPanel, { u: { ...u, stand: leer, geordnet: ordneMeldungen(hinweiseAus(leer) as never, {}) } })),
+      h(DatenProvider, null, h(UebersichtSeite, { u: { ...u, stand: leer, geordnet: ordneMeldungen(hinweiseAus(leer) as never, {}) } })),
     );
     assert.ok(!ohne.includes('Werkzeug'), 'ohne fehlendes Werkzeug kein Hinweis');
   });

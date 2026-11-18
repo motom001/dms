@@ -18,7 +18,7 @@ import { DesignEditor, DesignListe } from '../Designs';
 import { ProtokollDetail, ProtokollListe } from '../Protokoll';
 import { TresorPanel } from '../Verschluesselung';
 import { AufgabenEmpfaengerBlock } from '../AufgabenEmpfaenger';
-import { UebersichtListe, UebersichtPanel } from '../Uebersicht';
+import { UebersichtSeite } from '../Uebersicht';
 import { FehlermeldungDetail, FehlermeldungenListe } from '../Fehlermeldungen';
 import type { WerkbankZustaende } from './zustaende';
 import type { PaketeZustand } from '../paketeZustand';
@@ -61,7 +61,8 @@ const waehle = (text: string) => (
 
 /** Übersicht, Fehlermeldungen, Demo, Beispiel-Ablage, Designs, Protokoll, Verschlüsselung. */
 export const pflegeSeiten = {
-  uebersicht: ({ z }) => ({ liste: <UebersichtListe u={z.uebersicht} />, rechts: <UebersichtPanel u={z.uebersicht} /> }),
+  // Zweigeteilt wie die Startseite der Ablage (#1284): die Seite steht breit in der Mitte, rechts nichts.
+  uebersicht: ({ z }) => ({ liste: <UebersichtSeite u={z.uebersicht} />, rechts: null }),
   fehlermeldungen: ({ id, z: { meldungen, uebersicht } }) => ({
     liste: <FehlermeldungenListe z={meldungen} offen={id} />,
     rechts: id ? (

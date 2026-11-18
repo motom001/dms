@@ -202,3 +202,37 @@ rauchtest('Werkbank am Handy: Gruppen als Reiter, axe hell/dunkel (#1271)', { al
   }
   assert.deepEqual(funde, [], `axe an den Reitern der Werkbank:\n${funde.join('\n')}`);
 });
+
+/* ---------- Werkbank-Übersicht zweigeteilt (#1284) ---------- */
+
+for (const handy of [false, true])
+  rauchtest(
+    `Werkbank-Übersicht zweigeteilt, jeder Hinweis genau einmal${handy ? ' (Handy)' : ''} (#1284)`,
+    { als: LENA, handy },
+    async (s) => {
+      await s.goto(BASIS + '/ablage/start');
+      await verwalten(s);
+      await s.goto(BASIS + '/werkbank');
+      const seite = s.locator('.spalte.liste .uebersicht');
+      await seite.locator('.uebersicht-hinweise').waitFor();
+      // Zweigeteilt: keine rechte Spalte, Kacheln und Hinweise in derselben Spalte.
+      assert.equal(await s.locator('.spalte.mappe').count(), 0, 'keine dritte Spalte');
+      assert.ok((await seite.locator('[data-kachel], a').count()) > 0);
+      const texte = await s
+        .locator('main')
+        .evaluate((m) => [...m.querySelectorAll('.uebersicht-hinweisliste > li > p')].map((p) => p.textContent.trim()));
+      assert.ok(texte.length > 0, 'die Testinstallation hat Hinweise');
+      for (const x of texte) {
+        const kern = x.replace(/^[^:]*: /, '').slice(0, 40);
+        assert.equal(await s.locator('main').getByText(kern, { exact: false }).count(), 1, `„${kern}“ steht mehr als einmal`);
+      }
+      // Die Zahl an „Übersicht“ in der Navigation bleibt.
+      assert.equal(await s.locator('a[data-anker="werkbank.bereich:uebersicht"] [data-zahl]').first().getAttribute('data-zahl'), 'warnung');
+      const funde = [];
+      for (const schema of ['light', 'dark']) {
+        await schemaWechseln(s, schema);
+        for (const v of await axePruefen(s, ['.spalte.sichten', '.spalte.liste'])) funde.push(`${schema}: ${v}`);
+      }
+      assert.deepEqual(funde, [], `axe auf der Übersicht:\n${funde.join('\n')}`);
+    },
+  );
