@@ -110,6 +110,6 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Versions](bausteine-fassungen.md) | Who changed what and when: list with readable changes, compare two versions, restore with a preview; deleted entries below a list |
 | [Menu](bausteine-menue.md) | A button that opens actions – “Folder ▾”, “⋯” on rows and lists: groups, icons, locked items with a reason, danger set apart at the end with a confirmation; a sheet on the phone |
 | [Selection checkbox](bausteine-wahlhaken.md) | The checkbox that selects rows of a list: no visible label, Shift for ranges, “partly” in the header |
-| [Multiple selection](bausteine-mehrfachauswahl.md) | Choose several entries: search field with suggestions, chosen entries below with “Remove” |
+| [Multiple selection](bausteine-mehrfachauswahl.md) | Choose one or several entries: search field with suggestions and “+ Create …”, chosen entries below with ✕ |
 | [Placeholders](bausteine-platzhalter.md) | A text’s placeholders as clickable buttons: understandable name, grouped by “General” and folder type, inserted at the cursor |
 | [Expander](bausteine-aufklapper.md) | Heading of a section or row of a list that expands and collapses content – arrow, `aria-expanded` and `aria-controls` built in |

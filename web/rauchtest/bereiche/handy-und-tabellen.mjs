@@ -78,7 +78,9 @@ rauchtest('Handy: Fenster „+ … anlegen“ passt auf den Bildschirm (#935)', 
   const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
   await s.goto(BASIS + `/ablage/${typen.find((x) => x.name === 'Rechnung').id}/neu`);
   const feld = s.locator('[data-anker="mappe.feld:aussteller"]');
-  await feld.getByRole('button', { name: '+ Vertragspartner anlegen' }).click();
+  // Anlegen als letzter Eintrag der Vorschlagsliste (#1288).
+  await feld.getByRole('combobox').click();
+  await feld.getByRole('option', { name: '+ Vertragspartner anlegen …' }).click();
   const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
   await fenster.getByRole('textbox', { name: 'Name', exact: true }).waitFor();
   const box = await fenster.boundingBox();

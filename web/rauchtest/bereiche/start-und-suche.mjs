@@ -214,7 +214,8 @@ rauchtest('Suchfeld oben in einer Ansicht: Chip, Filtern, „Suchen in“ (#1218
   const alle = kopf.getByRole('searchbox', { name: 'In deiner Ablage suchen' });
   await alle.waitFor();
   assert.equal(await kopf.getByText('in: Vertrag').count(), 0);
-  await liste.getByText(/^\d+ Mappen?/).waitFor();
+  // Anzahl mit Typ (#1285): „2 × Vertrag“.
+  await liste.getByText(/^\d+ × Vertrag/).waitFor();
 });
 
 // #1219: Assistent unten rechts – öffnet sich nie von selbst; Fragen nur mit Antwort-Paket (im Rauchtest nur gemeldet,

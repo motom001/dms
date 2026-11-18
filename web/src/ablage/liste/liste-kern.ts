@@ -6,6 +6,7 @@ import { useDaten } from '../../daten';
 import { useKonto } from '../../konto';
 import { useSeiten } from '../../seiten';
 import { useAuswahl } from './auswahl';
+import { einheitlicherTyp, ohneTypSpalte } from './hilfen';
 import {
   sortierungVon,
   useBreite,
@@ -32,13 +33,16 @@ export function useListe(p: ListeProps) {
   useZuerstOeffnen(p, s, anhang);
   const { mess, breite } = useBreite();
   // Feste Sichten (Eingang, Favoriten): Systemspalten.
-  const spalten = p.spalten ?? GEMISCHTE_SPALTEN;
+  // Ein Mappentyp für die ganze Liste (#1285): Dann fehlt die Spalte „Mappentyp“, und die Anzahl nennt den Typ.
+  const einTyp = einheitlicherTyp(p.typ, s.mappen, (id) => d.typ(id));
+  const spalten = ohneTypSpalte(p.spalten ?? GEMISCHTE_SPALTEN, einTyp);
   const tabelle = spalten.length > 0 && breite >= Math.max(560, spalten.length * 120);
   const ende = useNachladen(s, tabelle);
   const gesehen = useGesehen(p, s, d);
   const w = useAuswahl(s.mappen, s.gesamt, [p.sicht, suche, volltext, inNotizen, p.link ?? '']);
   const [ergebnis, setErgebnis] = useState<Ergebnis>();
-  const [exportOffen, setExportOffen] = useState(false);
+  // Exportieren (#1285): alle Treffer über „⋯“ im Kopf oder die Auswahl über die Auswahlleiste.
+  const [exportOffen, setExportOffen] = useState<false | 'alle' | 'auswahl'>(false);
   const [emailOffen, setEmailOffen] = useState(false);
   async function alleWaehlen() {
     try {
@@ -51,7 +55,7 @@ export function useListe(p: ListeProps) {
   const loesch = useLoeschProbe(p.auswahl, w);
   const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
   return {
-    ...{ p, d, favoritenBenachrichtigung, anhang, suche, ...sort, volltext, inNotizen, s, mess, spalten, tabelle, ende },
+    ...{ p, d, favoritenBenachrichtigung, anhang, suche, ...sort, volltext, inNotizen, s, mess, einTyp, spalten, tabelle, ende },
     ...{ ...gesehen, w, wahl: p.auswahl ? w : undefined, ergebnis, setErgebnis, exportOffen, setExportOffen, emailOffen },
     ...{ setEmailOffen, alleWaehlen, ...loesch, korb },
   };

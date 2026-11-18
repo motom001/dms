@@ -4,6 +4,7 @@ import type { Linkergebnis } from '../../../../shared/src/direktlink';
 import { darfErstellen, darfPostAnlegen, type Mappentyp } from '../../../../shared/src/model';
 import type { Sicht } from '../../../../shared/src/sichten';
 import { istTeiltyp } from '../../../../shared/src/teile';
+import { darfBereich } from '../../../../shared/src/verwaltungsrecht';
 import { useDaten } from '../../daten';
 import { useKonto } from '../../konto';
 import { Listenkopf } from '../../Listenkopf';
@@ -103,7 +104,7 @@ const leerTextVon = (verwaltet: Sicht | undefined, typ: Mappentyp | undefined) =
       : t('ablage.ablage.noch-keine-mappen-in');
 
 /** Liste einer verwalteten Ansicht (#38) oder aller Mappen eines Typs (#888). */
-function typMitte({ sicht, dritt, verwaltet, typ, typListe, sichtTypen, wahl }: MitteProps, exportOhne: boolean) {
+function typMitte({ sicht, dritt, verwaltet, typ, typListe, sichtTypen, wahl }: MitteProps, exportOhne: boolean, bearbeiten?: string) {
   return (
     <Liste
       key={sicht}
@@ -122,6 +123,7 @@ function typMitte({ sicht, dritt, verwaltet, typ, typListe, sichtTypen, wahl }: 
       hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'}
       auswahl
       export={verwaltet ? verwaltet.rechte?.E !== false : exportOhne}
+      bearbeiten={bearbeiten}
     />
   );
 }
@@ -135,7 +137,9 @@ export function Mitte(p: MitteProps) {
   const fest = festeMitte(p);
   if (fest !== undefined) return fest;
   if (!verwaltet && typ && istTeiltyp(typ)) return <TeilListe typ={typ} />;
-  if (verwaltet || typ) return typMitte(p, exportOhneSicht(ich.rolle === 'admin', d.sichten));
+  // „Ansicht bearbeiten“ (#1285): nur an einer Ansicht und für alle, die in der Werkbank Ansichten bearbeiten dürfen.
+  const bearbeiten = verwaltet && (ich.rolle === 'admin' || darfBereich(ich, 'sichten')) ? `/werkbank/sichten/${verwaltet.id}` : undefined;
+  if (verwaltet || typ) return typMitte(p, exportOhneSicht(ich.rolle === 'admin', d.sichten), bearbeiten);
   return sicht ? (
     <div className="leer">
       <p>{t('ablage.ablage.diese-ansicht-gibt-es')}</p>

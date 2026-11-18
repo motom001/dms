@@ -1,8 +1,8 @@
 # Multiple selection
 
-`Mehrfachauswahl` (#1211; previously in `web/src/ablage/`) chooses several entries: a search field with a magnifier and suggestions on top, the chosen entries below, each with **Remove**. That is how you choose several folders in a link field or the folder types of the advanced search.
+`Mehrfachauswahl` (#1211; previously in `web/src/ablage/`) chooses one or several entries: a search field with a magnifier and suggestions on top, the chosen entries below, each with a small ✕ button. That is how you choose folders in a link field or the folder types of the advanced search.
 
-![“Multiple selection” section of the pattern page: search field and chosen entries](bilder/muster-mehrfachauswahl.png){ loading=lazy }
+![“Multiple selection” section of the pattern page: empty, open with results, no results, set, multiple](bilder/muster-mehrfachauswahl.png){ loading=lazy }
 
 | Prop | Purpose |
 | --- | --- |
@@ -10,15 +10,17 @@
 | `platzhalter`, `eingabeLabel`, `id` | placeholder and label of the search field (or `id` for a `<label htmlFor>`) |
 | `eingabe`, `setEingabe`, `offen`, `setOffen` | text and state of the suggestion list – held by the caller, because it loads suggestions depending on them |
 | `vorschlaege` | `{ id, text, gruppe? }[]`; `null` means: still loading |
-| `leerText`, `fuss` | sentence when there are no suggestions; something below the list (e.g. “+ Create …”) |
+| `leerText`, `fuss` | quiet sentence without suggestions (e.g. “Contract “xyz” not found”); something below the suggestions (e.g. “… in total”) |
+| `anlegen`, `legeAn` | entries for creating (#1288, `{ id, text }[]`), always last in the list – also with results; `legeAn` gets their id |
 | `waehle`, `gewaehlt`, `entferne` | take a choice; the chosen entries (`{ id, inhalt, zusatz?, aktionen?, entfernenText }`); remove an entry |
-| `ohneSuche`, `darunter`, `schliessen` | without a search field; something below the chosen entries; when the suggestions close |
+| `ohneSuche`, `darunter`, `schliessen` | without a search field (single choice with a value); something below the chosen entries; when the suggestions close |
 
-- **Enter** takes the first suggestion, arrow keys move through the list.
+- **Keyboard:** arrow keys move through suggestions and create entries (focus stays in the search field, `aria-activedescendant`), **Enter** takes the highlighted one – without a highlight the first suggestion.
 - **Esc** with the list open only closes the list (#1311): focus stays in the field, the input stays, and the key press goes no further – it discards no changes of the save bar and closes no window. Only another Esc with the list closed acts as everywhere else (save bar: discard, window: close).
-- **Remove** is a small button (kind secondary), not red: the field only changes on saving (principle 5).
-- **On the phone** the search field, suggestions and “Remove” are at least 44 px high.
-- The pattern page shows the building block in the area **Multiple selection**.
+- **Creating** is in the list, not a green button below the field: green is reserved for creating on the page (principle 2).
+- **✕** is a small symbol-only button (kind secondary), not red: the field only changes on saving (principle 5). Its screen reader name is `entfernenText`, e.g. “Remove holder”. Afterwards focus is in the search field.
+- **On the phone** the search field, suggestions, create entries and ✕ are at least 44 px high.
+- The pattern page shows the building block in the area **Multiple selection**: empty, open with results, no results, set and multiple.
 
 ![“Multiple selection” section, dark](bilder/muster-mehrfachauswahl-dunkel.png){ loading=lazy }
 

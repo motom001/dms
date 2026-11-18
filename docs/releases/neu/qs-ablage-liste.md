@@ -1,0 +1,6 @@
+art: patch
+
+## Verbessert
+
+- **Listenansicht wie vereinbart** (#1285): Rechts im Kopf einer Ansicht öffnet **⋯** „Alle … exportieren …“ und – mit Recht in der Werkbank – „Ansicht bearbeiten“. Die Zahl über der Liste nennt den Mappentyp, wenn alle Mappen denselben haben („12 × Vertrag“). Sind Mappen ausgewählt, steht die Auswahlleiste an Stelle dieser Zeile statt zusätzlich darunter. Die Spalte *Mappentyp* gibt es nur noch, wenn die Liste verschiedene Mappentypen enthält.
+- **Ruhige Verweisfelder** (#1288): Neue Mappen legst du über den letzten Eintrag der Vorschlagsliste an („+ Vertrag anlegen …“, ohne Treffer mit dem Getippten als Name) statt über grüne Knöpfe unter jedem Feld. Ein gesetzter Verweis zeigt nur noch den Link und ein kleines Kreuz zum Entfernen; „Ändern“ und das Kennzeichen „Bezug“/„Zugehörigkeit“ entfallen in der Ablage. Pfeiltasten wandern durch die Vorschläge.

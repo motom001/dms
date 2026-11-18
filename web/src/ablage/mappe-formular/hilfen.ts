@@ -9,6 +9,8 @@ import {
   type Mappentyp,
   type Register,
   type Verweiskonflikt,
+  vorlageFelder,
+  wirksameVorlage,
 } from '../../../../shared/src/model';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { teileVon } from '../../../../shared/src/zusammengesetzt';
@@ -174,4 +176,16 @@ export function feldUebersetzbar(f: FeldDef, wert: string): boolean {
   if (!wert.trim()) return false;
   if (f.typ === 'langtext' || f.typ === 'formatiert') return true;
   return f.typ === 'text' && !f.format && wert.trim().split(/\s+/).length >= 4;
+}
+
+/**
+ * Feld für Bezeichnung bzw. Titel (#1288): Besteht der Titel eines Typs aus genau einem einfachen Textfeld, belegt
+ * „+ <Typ> „xyz“ anlegen …“ es mit dem Getippten vor. Sonst keins (z. B. Vorname und Nachname getrennt).
+ */
+export function titelFeld(typ: Mappentyp): string | undefined {
+  const vorlage = wirksameVorlage(typ).trim();
+  const [k, ...rest] = vorlageFelder(vorlage);
+  if (!k || rest.length || vorlage !== `{${k}}`) return undefined;
+  const f = typ.felder.find((x) => x.key === k);
+  return f && f.typ === 'text' && !f.mehrfach && !f.ausgeblendet && !f.berechnetVon ? f.key : undefined;
 }

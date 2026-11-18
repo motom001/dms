@@ -55,3 +55,4 @@ import './bereiche/erwaehnen.mjs';
 import './bereiche/werkbank-laden.mjs';
 import './bereiche/navigation.mjs';
 import './bereiche/ruhige-werkbank.mjs';
+import './bereiche/liste-und-verweise.mjs';

@@ -27,3 +27,9 @@ export function TypMarke({ typId }: { typId: string | undefined }) {
     </span>
   );
 }
+
+/** Nur das Symbol eines Mappentyps (#1288, Muster A1), z. B. vor dem Link eines gesetzten Verweises; ohne Symbol nichts. */
+export function TypSymbol({ typId }: { typId: string | undefined }) {
+  const d = useDaten();
+  return typId ? <AnsichtSymbol name={typSymbol(d.sichten, typId)} className="typsymbol" /> : null;
+}

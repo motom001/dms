@@ -149,6 +149,8 @@
 /* Mappentyp an einem gewählten Verweis (#1036): Symbol der Ansicht des Typs und sein Name, damit gleiche Titel unterscheidbar sind. */
 .typmarke { display: inline-flex; align-items: center; gap: 4px; color: var(--leise); font-size: calc(11.5px * var(--skala, 1)); margin-left: 6px; white-space: nowrap; }
 .typmarke .sym { width: 14px; height: 14px; }
+/* Symbol des Mappentyps vor einem gesetzten Verweis (#1288, Muster A1). */
+.typsymbol { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
 /* Trefferliste (#19, #22) */
 .breitenmesser { width: 100%; height: 0; margin-bottom: -12px; flex: none; }
 [data-knopf="eigen"].spaltenknopf { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }

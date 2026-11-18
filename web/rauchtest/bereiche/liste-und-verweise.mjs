@@ -1,0 +1,177 @@
+/**
+ * Rauchtests: Listenansicht nach der Vorgabe aus #1212 (#1285: „⋯“ im Kopf, Anzahl mit Typ, Auswahlleiste statt der
+ * Zeile mit der Anzahl, Spalte „Mappentyp“ nur bei verschiedenen Typen) und ruhige Verweisfelder (#1288: Anlegen in der
+ * Vorschlagsliste, ✕ statt „Ändern“/„Entfernen“, kein Chip „Bezug“).
+ * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/liste-und-verweise.mjs [fehlerordner] [musterordner]
+ */
+import assert from 'node:assert/strict';
+import '../einrichtung.mjs';
+import { ABLAGE_BEREICHE, api, BASIS, JONAS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
+import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
+
+/* ---------- #1285: Listenansicht ---------- */
+
+/**
+ * Eigene Typen und eine Ansicht über beide (im Verwaltungsmodus angelegt): zwei Gartengeräte, noch kein Gartenhaus.
+ * So enthält die Ansicht zunächst nur einen Mappentyp, obwohl sie zwei zeigen darf.
+ */
+async function listenDaten() {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const typ = async (name, schluessel) =>
+    (
+      await api('POST', '/api/typen', {
+        cookie: verwaltung,
+        body: { name, schluessel, titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] },
+      })
+    ).daten;
+  const geraet = await typ('Gartengerät', 'rauchtest_gartengeraet');
+  const haus = await typ('Gartenhaus', 'rauchtest_gartenhaus');
+  for (const name of ['Rasenmäher', 'Heckenschere'])
+    await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: geraet.id, werte: { name } } });
+  const sicht = (
+    await api('POST', '/api/sichten/definitionen', { cookie: verwaltung, body: { name: 'Rauchtest Garten', typen: [geraet.id, haus.id] } })
+  ).daten;
+  return { verwaltung, geraet, haus, sicht };
+}
+
+rauchtest('Listenansicht: „⋯“ im Kopf, Anzahl mit Typ, Auswahlleiste, Spalte „Mappentyp“ (#1285)', { als: LENA }, async (s) => {
+  const { verwaltung, geraet, haus, sicht } = await listenDaten();
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  // Liste eines Mappentyps: „2 × Gartengerät“ statt „2 Mappen“.
+  await s.goto(BASIS + `/ablage/${geraet.id}`);
+  await liste.getByText('2 × Gartengerät', { exact: true }).waitFor();
+  // Gemischte Ansicht mit nur einem Typ darin: Anzahl mit Typ, keine Spalte bzw. Zeile mit dem Typ.
+  await s.goto(BASIS + `/ablage/${sicht.id}`);
+  await liste.getByText('2 × Gartengerät', { exact: true }).waitFor();
+  assert.equal(await liste.getByRole('columnheader', { name: 'Mappentyp' }).count(), 0, 'Spalte „Mappentyp“ bei einem Typ');
+  assert.equal(await liste.locator('.unter', { hasText: /^Gartengerät$/ }).count(), 0, 'Typ unter dem Titel bei einem Typ');
+  // „⋯“: Alle exportieren (ohne Auswahl) und „Ansicht bearbeiten“ (Lena ist Admin).
+  const mehr = liste.getByRole('button', { name: 'Weitere Aktionen: Rauchtest Garten' });
+  await mehr.click();
+  await s.getByRole('menuitem', { name: 'Alle 2 exportieren …' }).click();
+  const dialog = s.getByRole('dialog', { name: 'Exportieren' });
+  await dialog.getByRole('button', { name: '2 Mappen exportieren' }).waitFor();
+  assert.equal(await dialog.getByText('Welche Mappen?').count(), 0, 'Export aller Treffer fragt nicht nach der Auswahl');
+  await dialog.getByRole('button', { name: 'Abbrechen' }).click();
+  // Auswahl: Die Leiste steht an der Stelle der Anzahl, nicht zusätzlich darunter.
+  await liste.getByRole('checkbox', { name: 'Rasenmäher auswählen' }).check();
+  const leiste = liste.getByRole('region', { name: 'Auswahl' });
+  await leiste.getByText('1 von 2 ausgewählt').waitFor();
+  assert.equal(await liste.getByText('2 × Gartengerät', { exact: true }).count(), 0, 'Anzahl neben der Auswahlleiste');
+  await leiste.getByRole('button', { name: 'Auswahl aufheben' }).click();
+  await liste.getByText('2 × Gartengerät', { exact: true }).waitFor();
+  // Ein Gartenhaus dazu: jetzt gemischt – „3 Mappen“ und der Typ je Zeile (Spalte oder klein unter dem Titel).
+  await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: haus.id, werte: { name: 'Geräteschuppen' } } });
+  await s.reload();
+  await liste.getByText('3 Mappen', { exact: true }).waitFor();
+  await liste
+    .getByRole('columnheader', { name: 'Mappentyp' })
+    .or(liste.locator('.unter', { hasText: /^Gartenhaus$/ }))
+    .first()
+    .waitFor();
+  await keineWaagerechteRolle(s);
+  // „Ansicht bearbeiten“ führt in die Werkbank.
+  await mehr.click();
+  await s.getByRole('menuitem', { name: 'Ansicht bearbeiten' }).click();
+  await s.waitForURL(new RegExp(`/werkbank/sichten/${sicht.id}$`));
+});
+
+rauchtest('Listenansicht: „Ansicht bearbeiten“ nur mit Recht in der Werkbank (#1285)', { als: JONAS }, async (s) => {
+  const cookie = await sitzung(JONAS);
+  // Ohne den ersten Rundgang – er läge beim Alleinstart über der Liste (werkbank.mjs prüft ihn).
+  await api('POST', '/api/entdecken/rundgaenge/ablago', { cookie, body: { stand: 'gesehen' } });
+  const typen = (await api('GET', '/api/typen', { cookie })).daten;
+  const vertrag = typen.find((x) => x.name === 'Vertrag');
+  await s.goto(BASIS + `/ablage/${vertrag.id}`);
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await liste.getByText(/^\d+ × Vertrag$/).waitFor();
+  const mehr = liste.getByRole('button', { name: /^Weitere Aktionen: / });
+  if (await mehr.count()) {
+    await mehr.click();
+    await s.getByRole('menuitem', { name: /^Alle \d+ exportieren …$/ }).waitFor();
+    assert.equal(await s.getByRole('menuitem', { name: 'Ansicht bearbeiten' }).count(), 0, 'Jonas sieht „Ansicht bearbeiten“');
+  }
+});
+
+/* ---------- #1288: Verweisfelder ---------- */
+
+/** Neue Rechnung: das Feld „Aussteller“ (Vertragspartner, Titel aus einem Textfeld „Name“). */
+async function neueRechnung(s) {
+  const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
+  await s.goto(BASIS + `/ablage/${typen.find((x) => x.name === 'Rechnung').id}/neu`);
+  const feld = s.locator('[data-anker="mappe.feld:aussteller"]');
+  await feld.getByRole('combobox').waitFor();
+  return feld;
+}
+
+rauchtest('Verweisfeld: anlegen über die Liste, ✕ entfernt, neu wählen (#1288)', { als: LENA }, async (s) => {
+  const feld = await neueRechnung(s);
+  // Kein grüner Knopf unter dem Feld, kein Chip „Bezug“ im Kopf.
+  assert.equal(await feld.locator('[data-knopf="anlegen"]').count(), 0, 'Grüner Knopf am Verweisfeld');
+  assert.equal(await feld.getByText(/^(Bezug|Zugehörigkeit)$/).count(), 0, 'Chip „Bezug“ am Verweisfeld');
+  // Mit Treffern: der letzte Eintrag ist „+ Vertragspartner „Stadt“ anlegen …“.
+  const suche = feld.getByRole('combobox');
+  await suche.fill('Stadt');
+  await feld.getByRole('option', { name: 'Stadtwerke Musterstadt' }).waitFor();
+  assert.equal(await feld.getByRole('option').last().textContent(), '+ Vertragspartner „Stadt“ anlegen …');
+  // Ohne Treffer: leise „nicht gefunden“, darunter Anlegen; Pfeil runter und Enter öffnen das Fenster.
+  await suche.fill('Rauchtest Neu GmbH');
+  await feld.getByText('Vertragspartner „Rauchtest Neu GmbH“ nicht gefunden').waitFor();
+  const anlegen = feld.getByRole('option', { name: '+ Vertragspartner „Rauchtest Neu GmbH“ anlegen …' });
+  await anlegen.waitFor();
+  await suche.press('ArrowDown');
+  assert.equal(await anlegen.getAttribute('aria-selected'), 'true');
+  assert.equal(await suche.getAttribute('aria-activedescendant'), await anlegen.getAttribute('id'));
+  await suche.press('Enter');
+  const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
+  const name = fenster.getByRole('textbox', { name: 'Name', exact: true });
+  await name.waitFor();
+  assert.equal(await name.inputValue(), 'Rauchtest Neu GmbH', 'Das Getippte als Name vorbelegt');
+  await fenster.getByRole('button', { name: 'Mappe speichern' }).click();
+  await fenster.waitFor({ state: 'detached' });
+  // Gesetzt: Link und ✕, kein „Ändern“; danach steht der Fokus auf dem Link.
+  const link = feld.getByRole('link', { name: 'Rauchtest Neu GmbH' });
+  await link.waitFor();
+  await s.waitForFunction(() => document.activeElement?.closest('[data-anker="mappe.feld:aussteller"]')?.contains(document.activeElement));
+  assert.equal(await feld.getByRole('button', { name: 'Ändern' }).count(), 0, '„Ändern“ am Verweis');
+  // ✕ entfernt; der Fokus springt ins leere Suchfeld, die Liste bleibt zu.
+  await feld.getByRole('button', { name: 'Aussteller entfernen' }).click();
+  await s.waitForFunction(() => document.activeElement?.matches('[data-anker="mappe.feld:aussteller"] [role="combobox"]'));
+  assert.equal(await suche.inputValue(), '');
+  assert.equal(await suche.getAttribute('aria-expanded'), 'false');
+  // Neu wählen.
+  await suche.fill('Stadtwerke');
+  await feld.getByRole('option', { name: 'Stadtwerke Musterstadt' }).click();
+  await feld.getByRole('link', { name: 'Stadtwerke Musterstadt' }).waitFor();
+});
+
+rauchtest('Verweisfeld: axe mit offener Liste, hell und dunkel (#1288)', { als: LENA }, async (s) => {
+  const feld = await neueRechnung(s);
+  await feld.getByRole('combobox').fill('Rauchtest gibt es nicht');
+  await feld.getByRole('option', { name: /^\+ Vertragspartner/ }).waitFor();
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await schemaWechseln(s, schema);
+    for (const v of await axePruefen(s, ABLAGE_BEREICHE)) funde.push(`${schema}: ${v}`);
+  }
+  await schemaWechseln(s, 'light');
+  assert.deepEqual(funde, [], 'axe meldet Verstöße am Verweisfeld');
+});
+
+/** Nur das Verweisfeld samt Vorschlagsliste: Was daneben liegt, hängt vom Zustand früherer Bereiche ab. */
+const FELD = '[data-anker="mappe.feld:aussteller"]';
+
+rauchtest('Handy: Verweisfeld mit offener Liste und ✕ (#1288)', { handy: true, als: LENA }, async (s) => {
+  const feld = await neueRechnung(s);
+  await feld.getByRole('combobox').fill('Stadt');
+  await feld.getByRole('option', { name: 'Stadtwerke Musterstadt' }).waitFor();
+  const funde = (await axePruefen(s, [FELD])).map((v) => `offen: ${v}`);
+  assert.deepEqual(await tippflaechenPruefen(s, [FELD]), [], 'Zu kleine Tippflächen (Liste)');
+  await feld.getByRole('option', { name: 'Stadtwerke Musterstadt' }).click();
+  await feld.getByRole('button', { name: 'Aussteller entfernen' }).waitFor();
+  assert.deepEqual(await tippflaechenPruefen(s, [FELD]), [], 'Zu kleine Tippflächen (gesetzt)');
+  for (const v of await axePruefen(s, [FELD])) funde.push(`gesetzt: ${v}`);
+  assert.deepEqual(funde, [], 'axe meldet Verstöße am Verweisfeld (Handy)');
+  await keineWaagerechteRolle(s);
+});

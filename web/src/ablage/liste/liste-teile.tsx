@@ -16,7 +16,7 @@ import { kopfsuche } from '../kopfsuche';
 import { Stern } from '../Stern';
 import { UnscharfHinweis } from '../Unscharf';
 import type { Auswahl } from './auswahl';
-import { kompakt, zahl } from './hilfen';
+import { kompakt, ohneTypSpalte, zahl } from './hilfen';
 import { loescheAuswahl, type Ergebnis } from './liste-hooks';
 import type { ListeKern } from './liste-kern';
 import { Tabelle } from './Tabelle';
@@ -31,8 +31,8 @@ export function Dialoge({ l }: { l: ListeKern }) {
         <ExportDialog
           sicht={p.sicht}
           link={p.link}
-          ids={wahl?.gewaehlt.size ? [...wahl.gewaehlt] : null}
-          anzahl={wahl?.gewaehlt.size ?? 0}
+          ids={l.exportOffen === 'auswahl' && wahl?.gewaehlt.size ? [...wahl.gewaehlt] : null}
+          anzahl={l.exportOffen === 'auswahl' ? (wahl?.gewaehlt.size ?? 0) : 0}
           gesamt={s.gesamt ?? 0}
           suche={l.suche}
           volltext={l.volltext}
@@ -119,7 +119,10 @@ function loeschAngaben(l: ListeKern) {
   return { loeschFrage, loeschSperre };
 }
 
-/** Leiste der Auswahl (#149): „Alle … auswählen“, Exportieren, Per E-Mail, Löschen, Auswahl aufheben. */
+/**
+ * Leiste der Auswahl (#149): „Alle … auswählen“, Exportieren, Per E-Mail, Löschen, Auswahl aufheben. Sie steht an der
+ * Stelle der Zeile mit der Anzahl (#1285), nicht zusätzlich darunter.
+ */
 export function Aktionsleiste({ l, wahl }: { l: ListeKern; wahl: Auswahl }) {
   const { p, s } = l;
   const { loeschFrage, loeschSperre } = loeschAngaben(l);
@@ -136,7 +139,7 @@ export function Aktionsleiste({ l, wahl }: { l: ListeKern; wahl: Auswahl }) {
       )}
       <span className="luecke" aria-hidden="true" />
       {p.export && (
-        <Knopf groesse="klein" symbol="herunterladen" onClick={() => l.setExportOffen(true)}>
+        <Knopf groesse="klein" symbol="herunterladen" onClick={() => l.setExportOffen('auswahl')}>
           {t('ablage.ablage.exportieren')}
         </Knopf>
       )}
@@ -239,7 +242,8 @@ function AboSchalter({ l, m }: { l: ListeKern; m: Mappe }) {
 function MappenEintrag({ l, m, i }: { l: ListeKern; m: Mappe; i: number }) {
   const { p, s, d, wahl, anhang } = l;
   const typ = d.typ(m.typId);
-  const k = kompakt(m, { liste: p.listenSpalten ?? [], einTyp: !!p.typ, typ, bezuege: s.bezuege, namen: d });
+  // Ein Typ für die ganze Liste (#1285): keine Art unter dem Titel, sonst steht sie dort klein statt in einer Spalte.
+  const k = kompakt(m, { liste: ohneTypSpalte(p.listenSpalten ?? [], l.einTyp), einTyp: !!l.einTyp, typ, bezuege: s.bezuege, namen: d });
   return (
     <li
       className={`mit-stern${wahl ? ' mit-haken' : ''}${wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}${s.geaendert.has(m.id) ? ' abo-geaendert' : ''}`}

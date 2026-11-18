@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { feldLabel, typName } from '../../../../shared/src/beschriftung';
 import { rechtsbuendig } from '../../../../shared/src/feldarten';
-import { darfErstellen, VERWEISARTEN, type Mappe, type Mappentyp } from '../../../../shared/src/model';
+import { darfErstellen, type Mappe, type Mappentyp } from '../../../../shared/src/model';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { mappenApi, type Bezuege, type Rueckverweis } from '../../api/mappen';
-import { Etikett, Knopf, KnopfLink, type KnopfSperre } from '../../bausteine';
+import { Knopf, KnopfLink, type KnopfSperre } from '../../bausteine';
 import { useDaten } from '../../daten';
 import { geheZu, Link } from '../../ort';
 import { Ehemalig } from '../../Person';
@@ -67,7 +67,9 @@ export function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: Retu
             <span>
               <strong>{typName(mappentyp)}</strong>{' '}
               <span className="leise">{t('ablage.mappeformular.ueber', { label: feldLabel(f) })}</span>{' '}
-              <Etikett>{VERWEISARTEN[f.verweisart ?? 'bezug']}</Etikett> <span className="anzahl">{treffer.length}</span>
+              {/* Keine Verweisart als Kennzeichen (#1288): Sie setzt Werkbank-Wissen voraus; was sie beim Löschen
+                  bedeutet, erklärt das ⓘ am gesperrten „Mappe löschen“. */}
+              <span className="anzahl">{treffer.length}</span>
             </span>
             {darfErstellen(mappentyp) && (
               <KnopfLink

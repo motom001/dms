@@ -73,3 +73,16 @@ export function kompakt(
   }
   return { titel: titelOder(m.titel), unter: einTyp ? (typ ? unterzeile(typ, m, bezuege) : '') : typ ? typName(typ) : '' };
 }
+
+/**
+ * Ein Mappentyp für die ganze Liste (#1285): der der Ansicht – oder, in einer Ansicht über mehrere Typen, der aller
+ * geladenen Mappen, wenn sie denselben haben. Sonst undefined (gemischte Liste).
+ */
+export function einheitlicherTyp(typ: Mappentyp | undefined, mappen: Mappe[], typVon: (id: string) => Mappentyp | undefined) {
+  if (typ) return typ;
+  const ids = new Set(mappen.filter((m) => !m.verborgen).map((m) => m.typId));
+  return ids.size === 1 ? typVon([...ids][0]) : undefined;
+}
+
+/** Spalte „Mappentyp“ nur, wenn die Liste verschiedene Typen enthält (#1285). */
+export const ohneTypSpalte = (spalten: string[], einTyp: Mappentyp | undefined) => (einTyp ? spalten.filter((k) => k !== '_typ') : spalten);

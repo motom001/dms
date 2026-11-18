@@ -35,14 +35,16 @@ Which views exist is set by an administrator. If you'd like one, let them know.
 
 The list shows the view's folders, sorted by title. It first loads 100 folders and automatically the next ones when you scroll down.
 
-With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Exporting and deleting work through the selection (see below); administrators edit the view itself in the Workbench under *Views*.
+With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Next to it, **⋯** opens **Export all …** (all folders of the view, with your search and sorting) and – if you may edit views in the Workbench – **Edit view**. Deleting and sending work through the selection (see below).
+
+Above the list it says how many folders it contains. If all have the same folder type, the number names it, e.g. “12 × Contract”; in views with different folder types it says “12 folders”.
 
 ### Compact or as a table {#kompakt-oder-als-tabelle}
 
 What the list looks like depends on its width:
 
-- **Narrow:** every folder is a compact entry – the first detail in bold, two more below it.
-- **Wide:** the list becomes a **table** with one column per detail.
+- **Narrow:** every folder is a compact entry – the first detail in bold, two more below it. If the view shows different folder types, the type is shown small below the title.
+- **Wide:** the list becomes a **table** with one column per detail. The *Folder type* column only appears if the list contains different folder types.
 
 Simply drag the list wider at the handle between list and folder, or collapse the folder with a short click on the handle. When collapsed, a narrow bar with the folder's title remains on the right; a click on it brings it back (see [Adjusting columns](erste-schritte.md#spalten-anpassen)).
 
@@ -123,7 +125,7 @@ The search form is **at the top in the middle**, the hits below it; the views st
 
 This is how the form works:
 
-- **Folder types**: you choose them in the same way as several folders in a [link field](mappen.md#auf-andere-mappen-verweisen) – type, choose a suggestion (or **Enter** for the first one). The chosen folder types appear **below** the search field, each with **Remove**; the search field stays level with *Full text* next to it. Only folder types you may read are offered. If you choose none, Ablago searches all of them – then there are only the general fields (created on/by, changed on/by). Folder types that the administrators have taken out of the general search (such as pure choice lists like “Contract type”) are then not included; they are listed below the field (“Not included: …”) and are found as soon as you choose them.
+- **Folder types**: you choose them in the same way as several folders in a [link field](mappen.md#auf-andere-mappen-verweisen) – type, choose a suggestion (or **Enter** for the first one). The chosen folder types appear **below** the search field, each with a small **cross** to remove it; the search field stays level with *Full text* next to it. Only folder types you may read are offered. If you choose none, Ablago searches all of them – then there are only the general fields (created on/by, changed on/by). Folder types that the administrators have taken out of the general search (such as pure choice lists like “Contract type”) are then not included; they are listed below the field (“Not included: …”) and are found as soon as you choose them.
 - **Conditions**: at first there is no field. With **+ Condition** you choose a field; the fields that **all chosen folder types have in common** are offered. The cross on the right removes the condition again. Each field gets the matching input:
     - **Date**: from–to in one line; either may stay empty. Under **Period …** there are "this year", "last year", "last 12 months", "this month" and "last month".
     - **Number, amount, percentage**: from–to.
@@ -159,7 +161,7 @@ If a package such as **AI local – similarity** is installed and the full text 
 In a view's list you select several folders to handle them in one step.
 
 - Tick the box in front of a folder; holding the **Shift** key, the next tick selects everything in between too. In the table, the tick in the header selects all loaded folders.
-- As soon as something is selected, an **action bar** appears above the list: "3 of 120 selected", the actions and **Clear selection**.
+- As soon as something is selected, an **action bar** appears above the list in place of the number of folders: "3 of 120 selected", the actions and **Clear selection**.
 - **Select all 120** takes all hits of the view – including those not loaded yet, and with your search.
 - The selection stays while you open folders; if you change the view or the search, it's gone.
 - **On the phone** you hold a folder briefly to start the selection; after that, tapping toggles the tick.
@@ -174,7 +176,7 @@ In a view's list you select several folders to handle them in one step.
 
 ### Export { #exportieren }
 
-**Export …** in the action bar passes the selection out of the view – with **Select all …** first, all hits (with your search and sorting):
+**Export …** in the action bar passes the selection out of the view; you export all hits (with your search and sorting) via **⋯** → **Export all …** in the header of the view:
 
 - **Excel (.xlsx)** – a table in which dates, amounts and percentages are real values: Excel can sort and calculate with them afterwards. A period is written as text ("3 months").
 - **CSV** – the same table for any spreadsheet program, in German format (semicolon, date DD.MM.YYYY, amounts with a decimal comma).

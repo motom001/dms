@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { feldHilfe, feldLabel } from '../../../../shared/src/beschriftung';
-import { formatiere, mehrereZiele, VERWEISARTEN, type Feld as FeldDef } from '../../../../shared/src/model';
+import { formatiere, mehrereZiele, type Feld as FeldDef } from '../../../../shared/src/model';
 import { Etikett, type FeldProps, NurLesenFeld } from '../../bausteine';
 import { useDaten } from '../../daten';
 import { Link } from '../../ort';
@@ -76,7 +76,8 @@ export function FeldEingabe(p: FeldEingabeProps) {
 
 /**
  * Feldrahmen (#967, #1211): Beschriftung ohne „*“, freiwillige Felder mit „(optional)“ (C4), Hilfe und „nur negativ“
- * als Hinweis, der Fehler direkt unter der Eingabe; rechts im Kopf die Art des Verweises und die Rahmen-Nummern (#934).
+ * als Hinweis, der Fehler direkt unter der Eingabe; rechts im Kopf die Rahmen-Nummern (#934). Die Art eines Verweises
+ * („Bezug“, „Zugehörigkeit“) steht nur in der Werkbank (#1288): In der Ablage setzt sie Werkbank-Wissen voraus.
  */
 function rahmenVon(f: FeldDef, fehler: string | undefined, id: string, nummern: ReactNode): Omit<FeldProps, 'children'> {
   return {
@@ -85,13 +86,7 @@ function rahmenVon(f: FeldDef, fehler: string | undefined, id: string, nummern: 
     fehler,
     optional: !f.pflicht && f.typ !== 'janein' && f.typ !== 'formatiert' && f.typ !== 'passwort',
     hinweis: [f.hilfe ? feldHilfe(f) : null, f.typ === 'betrag' && f.negativ ? t('felder.eingabe.betrag-negativ') : null],
-    kopfZusatz:
-      nummern || f.typ === 'referenz' ? (
-        <>
-          {nummern}
-          {f.typ === 'referenz' && <Etikett>{VERWEISARTEN[f.verweisart ?? 'bezug']}</Etikett>}
-        </>
-      ) : undefined,
+    kopfZusatz: nummern || undefined,
   };
 }
 

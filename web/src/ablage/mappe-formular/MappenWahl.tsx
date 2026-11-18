@@ -1,18 +1,18 @@
-import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { typName } from '../../../../shared/src/beschriftung';
 import { darfErstellen, type Feld as FeldDef, type Mappe, type Mappentyp, type Werte } from '../../../../shared/src/model';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import type { Bezuege } from '../../api/mappen';
-import { Etikett, Knopf } from '../../bausteine';
+import { Etikett } from '../../bausteine';
 import { Link } from '../../ort';
 import { Ehemalig } from '../../Person';
 import { titelOder } from '../../seiten';
 import { t } from '../../sprache';
 import { standardRoh, type Roh, type RohWerte } from '../../werte';
 import { Mehrfachauswahl } from '../Mehrfachauswahl';
-import { TypMarke } from '../TypMarke';
+import { TypMarke, TypSymbol } from '../TypMarke';
 import { VerweisFenster } from '../VerweisFenster';
-import { unpassendText } from './hilfen';
+import { titelFeld, unpassendText } from './hilfen';
 import { useAngelegt, useFehlendeTitel, useLivePruefung, useTreffer, useZuletzt, type TrefferQuelle } from './mappen-wahl-hooks';
 import { belegeVor } from './werte';
 
@@ -60,6 +60,8 @@ export interface MappenWahlProps {
   leer?: string;
   /** Fenster „+ … anlegen“ (#935): das Formular der neuen Mappe. */
   neuesFormular: NeuesFormular;
+  /** Name des Felds (#1288): Der Knopf ✕ heißt für Bildschirmleser „<Feld> entfernen“. */
+  feldName?: string;
 }
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
@@ -69,29 +71,24 @@ export function MappenWahlKern(p: MappenWahlProps) {
   const { eigeneText, gewaehlt, alle, mehrere, alleIds } = grundlage(p);
   const [offen, setOffen] = useState(false);
   const [eingabe, setEingabe] = useState('');
-  const [aendern, setAendern] = useState(false);
-  const zeigeSuche = mehrfach || !gewaehlt.length || aendern;
+  // Kein „Ändern“ (#1288): Ein gesetzter Verweis wird mit ✕ entfernt und neu gewählt.
+  const zeigeSuche = mehrfach || !gewaehlt.length;
   const zuletzt = useZuletzt(mehrere, offen);
   useFehlendeTitel(gewaehlt, bekannt, merke);
   const { treffer, gesamt } = useTreffer({ offen, eingabe, ziel, sicht, eigeneText, quelle: p.quelle, mehrere, alleIds });
   // Passen die gewählten Mappen noch zu den Werten dieser Mappe (#173, #886)? Hinweis mit Grund (#887) schon vor dem Speichern.
   const { unpassend, gruende } = useLivePruefung(p, gewaehlt.join(','), eigeneText);
 
-  // „+ … anlegen“ (#935): im verschiebbaren Fenster statt auf einer neuen Seite; danach steht die Mappe im Feld.
-  const [fenster, setFenster] = useState<Mappentyp | null>(null);
+  // Anlegen (#935, #1288): als letzter Eintrag der Vorschläge, im verschiebbaren Fenster; danach steht die Mappe im Feld.
+  const [fenster, setFenster] = useState<{ typ: Mappentyp; text: string } | null>(null);
   const [angelegt, setAngelegt] = useAngelegt();
-  const anlegenRef = useRef<HTMLButtonElement>(null);
+  const zurueck = useZurueck();
 
-  const aendere = () => {
-    setAendern(true);
-    setOffen(true);
-  };
   function waehle(m: Mappe) {
     merke(m.id, { titel: m.titel ?? '', typId: m.typId });
     setze(mehrfach ? [...gewaehlt, m.id] : m.id);
     setEingabe('');
     setOffen(false);
-    setAendern(false);
   }
   const { moeglich, auswahl } = auswahlLage({
     gleicherTyp: !!p.gleicherTyp,
@@ -103,13 +100,17 @@ export function MappenWahlKern(p: MappenWahlProps) {
     eigeneId,
     zuletzt,
   });
-  const neuTyp = fenster ?? ziel;
+  const anlegbar = p.ohneAnlegen ? [] : moeglich.filter((x) => darfErstellen(x));
+  const neuTyp = fenster?.typ ?? ziel;
   const start = useMemo(() => {
     const r = standardRoh(neuTyp);
-    belegeVor(neuTyp, r, p.vorbelegen ?? {});
+    // Das Getippte als Bezeichnung bzw. Titel (#1288), wo der Typ ein solches Feld hat.
+    const feld = fenster?.text ? titelFeld(neuTyp) : undefined;
+    belegeVor(neuTyp, r, { ...(p.vorbelegen ?? {}), ...(feld ? { [feld]: fenster!.text } : {}) });
     return r;
   }, [neuTyp, fenster]); // eslint-disable-line react-hooks/exhaustive-deps -- Startwerte neu je Fenster; vorbelegen gilt beim Öffnen
   const namen = mehrere ? alle.map((x) => typName(x)).join(', ') : typName(ziel);
+  const text = eingabe.trim();
 
   return (
     <Mehrfachauswahl
@@ -121,26 +122,25 @@ export function MappenWahlKern(p: MappenWahlProps) {
       setEingabe={setEingabe}
       offen={offen}
       setOffen={setOffen}
-      schliessen={() => setAendern(false)}
       ohneSuche={!zeigeSuche}
       vorschlaege={treffer === null ? null : vorschlaegeVon(auswahl, mehrere ? alle : null, ziel)}
-      leerText={eingabe ? t('felder.verweis.nichts') : (p.leer ?? t('felder.verweis.leer', { typ: namen }))}
+      leerText={leerVon(text, mehrere ? null : ziel, p.leer ?? t('felder.verweis.leer', { typ: namen }))}
       fuss={fussVon(gesamt, treffer)}
+      anlegen={anlegbar.map((x) => ({ id: x.id, text: anlegenText(x, text) }))}
+      legeAn={(tid) => {
+        const x = anlegbar.find((y) => y.id === tid);
+        if (x) setFenster({ typ: x, text });
+      }}
       waehle={(mid) => {
         const m = auswahl.find((x) => x.id === mid);
         if (m) waehle(m);
       }}
-      gewaehlt={eintraege({ gewaehlt, bekannt, mehrere, mehrfach, aendern, unpassend, gruende, typFelder, aendere })}
+      gewaehlt={eintraege({ gewaehlt, bekannt, mehrere, mehrfach, unpassend, gruende, typFelder, feldName: p.feldName })}
       entferne={(x) => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}
       darunter={
-        <AnlegenDarunter
-          typen={p.ohneAnlegen ? [] : moeglich}
-          fenster={fenster}
-          setFenster={setFenster}
-          anlegenRef={anlegenRef}
-          angelegt={angelegt}>
+        <AngelegtDarunter fenster={fenster?.typ ?? null} schliessen={() => setFenster(null)} zurueck={zurueck} angelegt={angelegt}>
           {fenster &&
-            p.neuesFormular(fenster, start, {
+            p.neuesFormular(fenster.typ, start, {
               gespeichert: (m) => {
                 waehle(m);
                 setAngelegt(titelOder(m.titel));
@@ -148,10 +148,40 @@ export function MappenWahlKern(p: MappenWahlProps) {
               },
               abbrechen: () => setFenster(null),
             })}
-        </AnlegenDarunter>
+        </AngelegtDarunter>
       }
     />
   );
+}
+
+/** „+ Vertrag anlegen …“ – mit dem Getippten, wenn es die neue Mappe vorbelegt: „+ Vertrag „xyz“ anlegen …“ (#1288). */
+const anlegenText = (typ: Mappentyp, text: string) =>
+  text && titelFeld(typ) ? t('felder.verweis.neu-mit', { typ: typName(typ), text }) : t('felder.verweis.neu', { typ: typName(typ) });
+
+/** Ohne Vorschläge: „Vertrag „xyz“ nicht gefunden“ – bei mehreren Zieltypen ohne Typ (#1288); ohne Eingabe `leer`. */
+const leerVon = (text: string, typ: Mappentyp | null, leer: string) =>
+  !text ? leer : typ ? t('felder.verweis.typ-nicht-gefunden', { typ: typName(typ), text }) : t('felder.verweis.nicht-gefunden', { text });
+
+/**
+ * Wohin der Fokus nach dem Fenster geht (#1288): ins Suchfeld des Verweisfelds – oder, wenn danach eine Mappe gewählt
+ * ist und es kein Suchfeld mehr gibt, auf ihren Link. Erst beim Schließen gesucht (eine Markierung im Feld findet es).
+ */
+function useZurueck() {
+  const marke = useRef<HTMLSpanElement>(null);
+  const ziel = useMemo(
+    () => ({
+      get current(): HTMLElement | null {
+        const box = marke.current?.closest('.refbox');
+        return (
+          box?.querySelector<HTMLElement>('input[role="combobox"]') ??
+          box?.querySelector<HTMLElement>('.gewaehlt a, .gewaehlt button') ??
+          null
+        );
+      },
+    }),
+    [],
+  );
+  return { marke, ziel };
 }
 
 /** Gewählte Mappen, alle Zieltypen (#1036) und die Werte dieser Mappe als Text (für den Auswahlfilter, #173). */
@@ -211,51 +241,30 @@ const vorschlaegeVon = (auswahl: Mappe[], alle: Mappentyp[] | null, ziel: Mappen
     ...(alle ? { gruppe: typName(alle.find((x) => x.id === m.typId) ?? ziel) } : {}),
   }));
 
-/**
- * Unter der Auswahl: „+ … anlegen“ (Leitsatz 2: Knopf der Art Anlegen, klein) – nur, wenn die Person im Zieltyp anlegen
- * darf, bei mehreren je Typ ein Knopf –, die Meldung „… angelegt“ und das Fenster mit dem Formular (`children`).
- */
-function AnlegenDarunter({
-  typen,
+/** Unter der Auswahl: die Meldung „… angelegt“ und das Fenster mit dem Formular der neuen Mappe (`children`). */
+function AngelegtDarunter({
   fenster,
-  setFenster,
-  anlegenRef,
+  schliessen,
+  zurueck,
   angelegt,
   children,
 }: {
-  typen: Mappentyp[];
   fenster: Mappentyp | null;
-  setFenster(x: Mappentyp | null): void;
-  anlegenRef: RefObject<HTMLButtonElement | null>;
+  schliessen(): void;
+  zurueck: ReturnType<typeof useZurueck>;
   angelegt?: string;
   children: ReactNode;
 }) {
-  const anlegbar = typen.filter((x) => darfErstellen(x));
   return (
     <>
-      {anlegbar.length > 0 && (
-        <div className="zeile">
-          {anlegbar.map((x, i) => (
-            <Knopf
-              key={x.id}
-              ref={i === 0 ? anlegenRef : undefined}
-              art="anlegen"
-              groesse="klein"
-              aria-haspopup="dialog"
-              aria-expanded={fenster?.id === x.id}
-              onClick={() => setFenster(x)}>
-              {t('ablage.mappeformular.anlegen-2', { name: typName(x) })}
-            </Knopf>
-          ))}
-        </div>
-      )}
+      <span ref={zurueck.marke} hidden />
       {angelegt && (
         <p className="hinweis gut klein vf-angelegt" role="status">
           {t('ablage.fenster.angelegt', { titel: angelegt })}
         </p>
       )}
       {fenster && (
-        <VerweisFenster ziel={fenster} zurueck={anlegenRef} schliessen={() => setFenster(null)}>
+        <VerweisFenster ziel={fenster} zurueck={zurueck.ziel} schliessen={schliessen}>
           {children}
         </VerweisFenster>
       )}
@@ -263,11 +272,15 @@ function AnlegenDarunter({
   );
 }
 
-/** Eine gewählte Mappe: Link mit Titel (bei mehreren Zieltypen mit Typ), nicht sichtbare Mappen nur mit ihrem Titel. */
+/**
+ * Eine gewählte Mappe (Muster A1): Link mit dem Symbol des Mappentyps und dem Titel (bei mehreren Zieltypen dahinter der
+ * Typ), nicht sichtbare Mappen nur mit ihrem Titel.
+ */
 function GewaehlteMappe({ id: x, bekannt, mehrere }: { id: string; bekannt: Bezuege; mehrere: boolean }) {
   return bekannt[x]?.typId && !bekannt[x].verborgen ? (
     <>
       <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">
+        {!mehrere && <TypSymbol typId={bekannt[x].typId} />}
         <Ehemalig id={x}>{titelOder(bekannt[x].titel)}</Ehemalig>
       </Link>
       {mehrere && <TypMarke typId={bekannt[x].typId} />}
@@ -277,27 +290,25 @@ function GewaehlteMappe({ id: x, bekannt, mehrere }: { id: string; bekannt: Bezu
   );
 }
 
-/** Die gewählten Mappen in der Auswahl: Titel, Hinweis „passt nicht zu …“ (#887), „Ändern“ (einzeln), Entfernen. */
+/** Die gewählten Mappen in der Auswahl: Titel, Hinweis „passt nicht zu …“ (#887) und der Name des Knopfs ✕ (#1288). */
 function eintraege({
   gewaehlt,
   bekannt,
   mehrere,
   mehrfach,
-  aendern,
   unpassend,
   gruende,
   typFelder,
-  aendere,
+  feldName,
 }: {
   gewaehlt: string[];
   bekannt: Bezuege;
   mehrere: boolean;
   mehrfach: boolean;
-  aendern: boolean;
   unpassend: string[];
   gruende: Record<string, string[]>;
   typFelder: FeldDef[];
-  aendere(): void;
+  feldName?: string;
 }) {
   return gewaehlt.map((x) => ({
     id: x,
@@ -308,11 +319,12 @@ function eintraege({
         {unpassendText(typFelder, gruende[x] ?? [])}
       </Etikett>
     ),
-    aktionen: !mehrfach && !aendern && (
-      <Knopf groesse="klein" onClick={aendere}>
-        {t('felder.verweis.aendern')}
-      </Knopf>
-    ),
-    entfernenText: bekannt[x] ? t('felder.verweis.entfernen', { titel: titelOder(bekannt[x].titel) }) : t('felder.verweis.entfernen.ohne'),
+    // „Halter entfernen“ bei einem einzelnen Verweis; bei mehreren mit dem Titel, damit jedes ✕ einen eigenen Namen hat.
+    entfernenText:
+      feldName && !mehrfach
+        ? t('felder.verweis.entfernen.feld', { feld: feldName })
+        : bekannt[x]
+          ? t('felder.verweis.entfernen', { titel: titelOder(bekannt[x].titel) })
+          : t('felder.verweis.entfernen.ohne'),
   }));
 }

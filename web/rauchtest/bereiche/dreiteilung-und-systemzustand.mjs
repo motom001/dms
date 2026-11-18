@@ -102,9 +102,9 @@ rauchtest('Werte aus der gewählten Mappe vorschlagen (#1037)', { als: LENA }, a
   // Selbst geändert: bleibt, auch wenn eine andere Tarifart kommt; die unberührte Frist wechselt.
   await notiz.getByRole('textbox').fill('Vertrag läuft über Jonas');
   await notiz.getByText('vorgeschlagen aus Tarifart Mobilfunk').waitFor({ state: 'detached' });
-  await tarifart.getByRole('button', { name: 'Ändern' }).click();
+  await tarifart.getByRole('button', { name: 'Tarifart entfernen' }).click();
   await tarifart.getByRole('combobox').fill('Strom');
-  await tarifart.getByRole('option', { name: 'Strom' }).click();
+  await tarifart.getByRole('option', { name: 'Strom', exact: true }).click();
   await frist.getByText('vorgeschlagen aus Tarifart Strom').waitFor();
   assert.equal(await notiz.getByRole('textbox').inputValue(), 'Vertrag läuft über Jonas');
   await mappe.getByRole('button', { name: 'Mappe speichern' }).click();

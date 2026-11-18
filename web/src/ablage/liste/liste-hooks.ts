@@ -43,6 +43,8 @@ export interface ListeProps {
   export?: boolean;
   /** Erweiterte Suche (#199): Chips unter dem Kopf. */
   kopf?: ReactNode;
+  /** „Ansicht bearbeiten“ im Menü „⋯“ (#1285): Weg in die Werkbank, nur mit Recht. */
+  bearbeiten?: string;
   /** Name im Chip des Suchfelds oben (#1218), wenn er nicht der Titel ist – z. B. „Vertrag“ statt „Alle Mappen: Vertrag“. */
   bereich?: string;
 }
