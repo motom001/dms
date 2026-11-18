@@ -6,6 +6,7 @@ Ergebnisse von `web/rauchtest/messen/oberflaeche.mjs` zum Vergleichen (Entwickle
 |---|---|
 | `2026-11-15-container.json`, `.md` | **Basis vor dem großen Umbau** (Ablago 0.290.2). Container mit 2 Kernen, Browser, Ablago und PostgreSQL auf demselben Rechner, andere Bauten liefen parallel – **keine NAS-Werte**, nur ein Maßstab für Läufe auf demselben Gerät. |
 | `2026-11-15-container-probe-vor-1257.md` | Probe: derselbe Lauf mit der Oberfläche vor PR #1257 (#1255) – „Neue Post zuordnen“ wird rot. |
+| `2026-11-18-container-1339-post-zuordnen.md` | „Neue Post zuordnen“ vor und nach #1339 (PR #1435): main und der Zweig auf demselben Rechner und denselben Daten, dazu der neue Ablauf „Langes Dokument“. Werte aus dem PR, ohne JSON. |
 
 ## Vergleichen
 

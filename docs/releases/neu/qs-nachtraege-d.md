@@ -1,0 +1,7 @@
+art: patch
+
+## Verbessert
+
+- **„Mappentyp bearbeiten“ in der Liste** (Nachtrag zu #1285): In der Liste eines Mappentyps ohne eigene Ansicht führt „⋯“ → **Mappentyp bearbeiten** zum Mappentyp in der Werkbank – für alle, die dort Mappentypen bearbeiten dürfen.
+- **Ruhigere Mappe einer Systemrolle** (Nachtrag zu #1288): In der Ablage entfällt das Kennzeichen „Systemrolle“; die Werkbank zeigt ihre Kennzeichen weiter.
+- **Gelöschte Person, gelöschte Reste** (Nachtrag zu #1331): Wird eine Person gelöscht, entfernt Ablago auch die Reste ihrer gelöschten Fehlermeldungen aus „Meine Meldungen“.
