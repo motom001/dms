@@ -82,7 +82,7 @@ export function openapi(version: string, serverUrl?: string): Schema {
       title: 'Ablago API',
       version,
       description:
-        'Schnittstelle von Ablago, selbst gehostet. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET, Schlüssel „nur Zähler“ nur GET /ich/zaehler (alles andere 403). Diese Beschreibung entsteht aus der installierten Version. Übergänge bis 1.0.0: Post mit von/an statt absender/fuer (#1042, siehe Werte).',
+        'Schnittstelle von Ablago, selbst gehostet. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET und die Merker gesehen/ausgeblendet unter /entdecken (#1307), Schlüssel „nur Zähler“ nur GET /ich/zaehler (alles andere 403). Diese Beschreibung entsteht aus der installierten Version. Übergänge bis 1.0.0: Post mit von/an statt absender/fuer (#1042, siehe Werte).',
       license: { name: 'Apache-2.0', url: 'https://www.apache.org/licenses/LICENSE-2.0' },
     },
     servers: [{ url: `${serverUrl?.replace(/\/$/, '') ?? ''}/api/v1` }],

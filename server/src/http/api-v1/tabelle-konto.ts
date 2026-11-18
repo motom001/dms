@@ -42,7 +42,7 @@ export const V1_KONTO: V1[] = [
     gruppe: 'Konto',
     zusammenfassung: 'Rundgänge und Tipps für die Person (Ablago entdecken)',
     beschreibung:
-      'Wie in der Oberfläche (#831, #832): nur, was die Person nutzen darf (Verwaltungsrecht, eingeschaltete Funktionen, lesbare Mappentypen, installierte Pakete), Texte in ihrer Sprache. Je Tipp Anker und Seite (bzw. Anker und Mappentyp, wenn die Stelle in einer Mappe liegt) oder Rundgang, Herkunft (ablago, paket:<id>), neu, ausgeblendet und clients – nur Tipps mit clients=true eignen sich für eine App (kein Rundgang, die Stelle gibt es dort auch). tipp ist der Tipp des Tages (höchstens einer), starten der Rundgang, der jetzt von selbst startet. Dafür genügt ein Schlüssel der Stufe „lesen“; gesehen und ausgeblendet setzen (POST, unten) braucht „schreiben“.',
+      'Wie in der Oberfläche (#831, #832): nur, was die Person nutzen darf (Verwaltungsrecht, eingeschaltete Funktionen, lesbare Mappentypen, installierte Pakete), Texte in ihrer Sprache. Je Tipp Anker und Seite (bzw. Anker und Mappentyp, wenn die Stelle in einer Mappe liegt) oder Rundgang, Herkunft (ablago, paket:<id>), neu, ausgeblendet und clients – nur Tipps mit clients=true eignen sich für eine App (kein Rundgang, die Stelle gibt es dort auch). tipp ist der Tipp des Tages (höchstens einer), starten der Rundgang, der jetzt von selbst startet. Dafür genügt ein Schlüssel der Stufe „lesen“ – auch für gesehen und ausgeblendet (POST, unten, #1307).',
     intern: { methode: 'GET', pfad: '/api/entdecken' },
     antwort: 'EntdeckenStand',
   },
@@ -52,8 +52,9 @@ export const V1_KONTO: V1[] = [
     gruppe: 'Konto',
     zusammenfassung: 'Tipp gesehen, erledigt, ausblenden oder wieder einblenden',
     beschreibung:
-      'Merker je Person (#832), damit sich Oberfläche und App nicht doppelt melden: gezeigt (gesehen), erledigt (heute kein Tipp mehr), ausblenden (wie das ×), einblenden. Bleibt in der eigenen Ablago, keine Telemetrie. In einer Vertretung wird nichts gemerkt.',
+      'Merker je Person (#832), damit sich Oberfläche und App nicht doppelt melden: gezeigt (gesehen), erledigt (heute kein Tipp mehr), ausblenden (wie das ×), einblenden. Bleibt in der eigenen Ablago, keine Telemetrie. In einer Vertretung wird nichts gemerkt. Setzt nur Merker der eigenen Person – dafür genügt ein Schlüssel der Stufe „lesen“ (#1307); „nur Zähler“ nicht.',
     intern: { methode: 'POST', pfad: '/api/entdecken/tipps/:schluessel' },
+    lesenGenuegt: true,
     parameter: [{ name: 'schluessel', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Schlüssel des Tipps aus GET /entdecken' }],
     body: 'TippHandlung',
     antwort: null,
@@ -64,8 +65,10 @@ export const V1_KONTO: V1[] = [
     pfad: '/entdecken/rundgaenge/{schluessel}',
     gruppe: 'Konto',
     zusammenfassung: 'Rundgang gesehen oder später',
-    beschreibung: 'Merker je Person (#831): gesehen (startet nicht mehr von selbst) oder spaeter (bei der nächsten Anmeldung wieder).',
+    beschreibung:
+      'Merker je Person (#831): gesehen (startet nicht mehr von selbst) oder spaeter (bei der nächsten Anmeldung wieder). Setzt nur Merker der eigenen Person – dafür genügt ein Schlüssel der Stufe „lesen“ (#1307); „nur Zähler“ nicht. In einer Vertretung wird nichts gemerkt.',
     intern: { methode: 'POST', pfad: '/api/entdecken/rundgaenge/:schluessel' },
+    lesenGenuegt: true,
     parameter: [
       { name: 'schluessel', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Schlüssel des Rundgangs aus GET /entdecken' },
     ],

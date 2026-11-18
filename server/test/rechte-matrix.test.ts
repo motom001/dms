@@ -88,6 +88,7 @@ async function aufbau() {
   };
   const lesen = (await schluessel.lege(markus, { name: 'Lesen', recht: 'lesen' })).schluessel;
   const schreiben = (await schluessel.lege(markus, { name: 'Schreiben', recht: 'schreiben' })).schluessel;
+  const zaehler = (await schluessel.lege(markus, { name: 'Zähler', recht: 'zaehler' })).schluessel;
   // Lena hat „Gesamte Verwaltung“, ist aber nicht im Verwaltungsmodus; Jonas ist im Modus, mit nur „Benutzer“.
   const cLena = await anmelden('lena@example.org');
   const cMarkus = await anmelden('markus@example.org');
@@ -154,7 +155,7 @@ async function aufbau() {
     ablauf: ablauf.id,
     markus: markus.id,
   };
-  return { d, konten, app, cLena, cMarkus, cJonas, cKatrin, cVertretung, lesen, schreiben, schluesselKatrin, fremd };
+  return { d, konten, app, cLena, cMarkus, cJonas, cKatrin, cVertretung, lesen, schreiben, zaehler, schluesselKatrin, fremd };
 }
 
 type Aufbau = Awaited<ReturnType<typeof aufbau>>;
@@ -226,11 +227,37 @@ describe('Rechte-Matrix (#1262)', () => {
     // Übergang #636 (bis 1.0.0): zwei PUT-Routen der Sicherung prüfen selbst, ob ein Paket fragt.
     const uebergang = new Set(['PUT /api/v1/sicherungen/:name/extern', 'PUT /api/v1/sicherungen/:name/holen']);
     const ab = await pruefe(
-      (r) => !!r.api && r.methode !== 'GET' && r.zugang !== 'offen' && !uebergang.has(name(r)),
+      (r) => !!r.api && r.methode !== 'GET' && r.zugang !== 'offen' && !uebergang.has(name(r)) && !r.lesenGenuegt,
       { authorization: `Bearer ${x.lesen}` },
       [403],
     );
     assert.deepEqual(ab, [], ab.join('\n'));
+  });
+
+  it('API-Schlüssel nur lesen: gesehen und ausgeblendet setzen geht (#1307), nur Zähler nicht', async () => {
+    // Genau diese beiden ändernden Routen genügen mit „lesen“: Sie setzen nur Merker der eigenen Person.
+    assert.deepEqual(alle.filter((r) => r.lesenGenuegt).map(name), [
+      'POST /api/v1/entdecken/tipps/:schluessel',
+      'POST /api/v1/entdecken/rundgaenge/:schluessel',
+    ]);
+    const kopf = (k: string) => ({ authorization: `Bearer ${k}` });
+    // Leerer Rumpf: Die Rechteprüfung lässt durch, der Handler lehnt den Rumpf ab.
+    for (const r of alle.filter((q) => q.lesenGenuegt)) assert.equal((await rufe(r, kopf(x.lesen))).statusCode, 422, name(r));
+    const stand = await x.app.inject({ method: 'GET', url: '/api/v1/entdecken', headers: kopf(x.lesen) });
+    assert.equal(stand.statusCode, 200, stand.body);
+    type Stand = { tipps: Array<{ schluessel: string; ausgeblendet: boolean }> };
+    const tipp = (stand.json() as Stand).tipps[0];
+    assert.ok(tipp, 'ein Tipp für Markus');
+    const url = `/api/v1/entdecken/tipps/${encodeURIComponent(tipp.schluessel)}`;
+    const aus = await x.app.inject({ method: 'POST', url, payload: { aktion: 'ausblenden' }, headers: kopf(x.lesen) });
+    assert.equal(aus.statusCode, 204, aus.body);
+    const danach = await x.app.inject({ method: 'GET', url: '/api/v1/entdecken', headers: kopf(x.lesen) });
+    assert.equal((danach.json() as Stand).tipps.find((y) => y.schluessel === tipp.schluessel)?.ausgeblendet, true);
+    await x.app.inject({ method: 'POST', url, payload: { aktion: 'einblenden' }, headers: kopf(x.lesen) });
+    // „Nur Zähler“ bekommt weiter nichts.
+    for (const r of alle.filter((q) => q.lesenGenuegt)) assert.equal((await rufe(r, kopf(x.zaehler))).statusCode, 403, name(r));
+    const z = await x.app.inject({ method: 'POST', url, payload: { aktion: 'ausblenden' }, headers: kopf(x.zaehler) });
+    assert.equal(z.statusCode, 403);
   });
 
   it('Vertretung: ändernde Routen unter /api/konto/ → 403, außer den begründeten (#1356)', async () => {
