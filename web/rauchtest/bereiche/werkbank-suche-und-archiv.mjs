@@ -213,6 +213,39 @@ rauchtest(
   },
 );
 
+// #1312: Fehlt ein eingebautes Werkzeug, steht es auch auf der Startseite der Werkbank – genau einmal, rot, mit Folge,
+// Abhilfe und dem Weg zum Systemzustand („Erneut prüfen“). Ist alles da, steht dort nichts.
+rauchtest(
+  'Werkbank-Übersicht: Hinweis, wenn ein eingebautes Werkzeug fehlt (#1312)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const satz = 'Ein Werkzeug zum Lesen von PDFs fehlt.';
+    await s.goto(BASIS + '/werkbank');
+    await s.getByRole('heading', { name: 'Übersicht', level: 1 }).first().waitFor();
+    assert.equal(await s.getByText(satz).count(), 0, 'alles da: kein Hinweis');
+    await ohnePoppler(s);
+    await s.route(/\/api\/werkbank\/uebersicht$/, async (r) => {
+      if (r.request().method() !== 'GET') return r.fallback();
+      const echt = await (await r.fetch()).json();
+      await r.fulfill({ json: { ...echt, werkzeugeFehlen: ['poppler'] } });
+    });
+    await s.goto(BASIS + '/werkbank');
+    const hinweis = s.locator('.hinweiszeile', { hasText: satz });
+    await hinweis.waitFor();
+    // Je Teil der Übersicht genau einmal: in der Liste der Meldungen und rechts (die Zweiteilung ordnet #1284).
+    assert.equal(await s.locator('.meldungsliste').getByText(satz).count(), 1, 'Liste: genau einmal');
+    assert.equal(await s.locator('.uebersicht').getByText(satz).count(), 1, 'rechts: genau einmal');
+    assert.match(await hinweis.getAttribute('class'), /\bschlecht\b/, 'nach Schwere: rot');
+    await hinweis.getByText(/keinen Text aus PDFs lesen/).waitFor();
+    await hinweis.getByText(/offizielle Ablago-Image bringt es mit/).waitFor();
+    await hinweis.getByRole('link', { name: 'Ansehen und erneut prüfen' }).click();
+    await s.waitForURL(/\/werkbank\/systemzustand#werkzeuge$/);
+    await s.locator('#werkzeuge').getByRole('button', { name: 'Erneut prüfen' }).waitFor();
+  },
+);
+
 // #1191: Suche als gewöhnlicher Abschnitt (keine Trennlinie, keine Überschrift mit „Wörterverzeichnis“), Wahl für
 // „Meintest du …?“ mit Hinweis auf die Dauer; ohne Tippfehler-Suche gesperrt, mit Grund.
 rauchtest('Werkbank: Suche – „Meintest du …?“ auch bei Treffern wählbar, keine Trennlinie (#1191)', { als: LENA }, async (s) => {

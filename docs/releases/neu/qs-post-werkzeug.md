@@ -1,0 +1,6 @@
+art: minor
+
+## Neu
+
+- **„Anlage ab hier“ auch bei Dokumenten mit Anlagen** (#1303): In der Seitenansicht einer Post steht „Anlage ab hier“ jetzt auch an einem Dokument, das schon Anlagen hat. Die bisherigen Anlagen wandern mit in die neue Post – in ihrer Reihenfolge, mit ihren Namen, Fassungen und ihrem Text –, die neuen folgen dahinter. Die Rückfrage nennt, wie viele mitkommen; wird zugleich geteilt, kommen sie in den ersten Teil. Die Ausgangspost behält das ganze PDF ohne Anlagen, die Historie beider Posts nennt die mitgewanderten. Höchstens 99 Anlagen zusammen, sonst eine Meldung, bevor etwas entsteht. Gleiches Verhalten über `POST /api/v1/dokumente/{id}/seiten` mit `anlagen`.
+- **Werkbank-Übersicht warnt, wenn ein eingebautes Werkzeug fehlt** (#1312): Fehlt das Werkzeug zum Lesen oder Bearbeiten von PDFs oder fehlen die Ersatzschriften, steht das jetzt auch auf der Startseite der Werkbank – je Werkzeug einmal, mit Folge und Abhilfe, nach Schwere eingeordnet (ohne PDF-Lesewerkzeug rot), mit dem Weg zum Systemzustand und „Erneut prüfen“. Die Meldung sehen alle, die den Systemzustand verwalten. Ist alles da, steht dort nichts.

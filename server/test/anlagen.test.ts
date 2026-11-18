@@ -261,7 +261,20 @@ async function aufbau(pg: boolean, name: string) {
   const haenge = (haupt: string, dokument: string, name?: string) =>
     d.dokumentAnlagen.haengeAn(haupt, { dokument, ...(name ? { name } : {}) }, lena.id);
   const neueMappe = () => d.mappen.legeMappeAn({ typId: werkstatt.id, werte: { nr: 'W-2026-0815' } }, lena.id);
+  /** Rechte an der Post (#1303): Lena darf bearbeiten, Jonas nur lesen. */
+  const berechtigungenOhneJonas = () =>
+    d.berechtigungen.setzeBerechtigungen(
+      post.typId,
+      {
+        grund: { C: true, R: true, U: false, D: false, P: true },
+        regeln: [
+          { id: 'l', name: 'Lena', wenn: [{ art: 'benutzer', benutzer: [lena.id] }], dann: { U: 'erteilen', D: 'erteilen' }, stopp: false },
+        ],
+      },
+      true,
+    );
   return {
+    berechtigungenOhneJonas,
     d,
     konten,
     lena,
@@ -642,6 +655,108 @@ for (const pg of [false, true]) {
           fehler(409, /nur in Post/),
         );
         assert.equal((await x.repo.listeDokumente(x.post.id)).length, 6, 'nichts angelegt');
+      });
+
+      it('„Anlage ab hier“ mit bisherigen Anlagen (#1303): sie wandern mit – Reihenfolge, Name, Fassungen; Historie beider Posts', async () => {
+        const x = await neu();
+        const scan = await x.lade(x.post.id, 'scan.pdf', [101, 102, 103]);
+        await x.haenge(scan.id, x.hu.id);
+        await x.haenge(scan.id, x.arbeiten.id, 'Arbeitskarte.pdf');
+        await x.d.volltexte.schreibeVolltext(
+          x.hu.id,
+          { text: 'AGB-ANLAGE Prüfplakette' },
+          { id: x.lena.id, herkunft: 'Test', paket: false },
+        );
+        const r = (await x.oberflaeche(x.lena, 'POST', '/api/dokumente/:id/seiten', {
+          params: { id: scan.id },
+          body: { seiten: [1, 2, 3].map((nr) => ({ nr })), teile: [0], anlagen: [2] },
+        })) as { body: { dokumente: Dokument[]; posten: Array<{ id: string }> } };
+        assert.equal(r.body.posten.length, 1);
+        const neuPost = r.body.posten[0].id;
+        const doks = await x.repo.listeDokumente(neuPost);
+        const haupt = doks.find((y) => !y.anlageZu)!;
+        assert.equal(doks.filter((y) => !y.anlageZu).length, 1, 'genau ein Hauptdokument');
+        assert.deepEqual(
+          anlagenVon(doks, haupt.id).map((a) => [a.name, a.anlageNr]),
+          [
+            ['HU-Protokoll.pdf', 1],
+            ['Arbeitskarte.pdf', 2],
+            ['scan – Anlage 3.pdf', 3],
+          ],
+        );
+        const hu = (await x.repo.holeDokument(x.hu.id))!;
+        assert.equal(hu.mappeId, neuPost, 'dasselbe Dokument, nicht kopiert');
+        assert.equal(hu.sha256, x.hu.sha256, 'Datei und Fassung bleiben');
+        assert.equal(hu.version ?? 1, x.hu.version ?? 1);
+        const seiten = async (y: Dokument) => breitenVon(await alsPuffer(await x.d.kern.dateien.lies(y.sha256)));
+        assert.deepEqual(await seiten(haupt), [101, 102]);
+        assert.deepEqual(await seiten(anlagenVon(doks, haupt.id)[2]), [103]);
+        // Ausgangspost: behält das ganze PDF, aber keine Anlage ohne Hauptdokument.
+        const rest = await x.repo.listeDokumente(x.post.id);
+        assert.ok(rest.some((y) => y.id === scan.id));
+        assert.equal((await x.repo.anlagenVon(scan.id)).length, 0);
+        assert.ok(
+          rest.every((y) => !y.anlageZu || rest.some((h) => h.id === y.anlageZu)),
+          'keine verwaiste Anlage',
+        );
+        for (const id of [x.post.id, neuPost]) {
+          const h = (await x.repo.historie(id, { arten: ['post_geteilt'] }))[0];
+          assert.match(String(h.daten.text), /HU-Protokoll\.pdf, Arbeitskarte\.pdf/, id);
+          assert.deepEqual(h.daten.mitgewandert, ['HU-Protokoll.pdf', 'Arbeitskarte.pdf']);
+        }
+        // Erkennung und KI lesen weiter nur das Hauptdokument.
+        assert.ok(!JSON.stringify(await x.d.erkennung.fuerPost(neuPost)).includes('Prüfplakette'));
+      });
+
+      it('mit Teilen ab hier (#1303): bisherige Anlagen beim ersten Teil; auch für Pakete mit dms:anlagen', async () => {
+        const x = await neu();
+        const scan = await x.lade(x.post.id, 'scan.pdf', [101, 102, 103, 104]);
+        await x.haenge(scan.id, x.hu.id);
+        const r = (await x.alsPaket('trennblatt', 'POST', '/dokumente/:id/seiten', {
+          params: { id: scan.id },
+          body: { seiten: [1, 2, 3, 4].map((nr) => ({ nr })), teile: [0, 2], anlagen: [1, 3] },
+        })) as { body: { posten: Array<{ id: string }> } };
+        const [a, b] = await Promise.all(r.body.posten.map((p) => x.repo.listeDokumente(p.id)));
+        const ha = a.find((y) => !y.anlageZu)!;
+        assert.deepEqual(
+          anlagenVon(a, ha.id).map((y) => [y.name, y.anlageNr]),
+          [
+            ['HU-Protokoll.pdf', 1],
+            ['scan (Teil 1) – Anlage 2.pdf', 2],
+          ],
+        );
+        const hb = b.find((y) => !y.anlageZu)!;
+        assert.deepEqual(
+          anlagenVon(b, hb.id).map((y) => [y.name, y.anlageNr]),
+          [['scan (Teil 2) – Anlage 1.pdf', 1]],
+        );
+      });
+
+      it('Grenze und Rechte (#1303): mehr als ANLAGEN_MAX zusammen → 422 ohne halbes Ergebnis; ohne Bearbeiten 403; bloßes Teilen lässt sie', async () => {
+        const x = await neu();
+        const scan = await x.lade(x.post.id, 'scan.pdf', [101, 102, 103]);
+        await x.haenge(scan.id, x.hu.id);
+        await x.berechtigungenOhneJonas();
+        const body = (anlagen: number[], teile = [0]) => ({
+          params: { id: scan.id },
+          body: { seiten: [1, 2, 3].map((nr) => ({ nr })), teile, ...(anlagen.length ? { anlagen } : {}) },
+        });
+        await assert.rejects(x.oberflaeche(x.jonas, 'POST', '/api/dokumente/:id/seiten', body([2])), fehler(403));
+        if (!pg) {
+          for (let i = 0; i < 97; i++) await x.haenge(scan.id, (await x.lade(x.post.id, `a${i}.pdf`, [300])).id);
+          const vorher = (await x.repo.listeDokumente(x.post.id)).length;
+          await assert.rejects(
+            x.oberflaeche(x.lena, 'POST', '/api/dokumente/:id/seiten', body([1, 2])),
+            fehler(422, /hat schon Anlagen, die mitkommen\. Mit den neuen wären es 100 – höchstens 99/),
+          );
+          assert.equal((await x.repo.listeDokumente(x.post.id)).length, vorher, 'nichts angelegt');
+          assert.equal((await x.repo.anlagenVon(scan.id)).length, 98, 'nichts gewandert');
+          assert.equal((await x.repo.holeMappe(x.post.id))!.werte.stand, POST_STAND.neu);
+        }
+        // Bloßes Teilen (ohne neue Anlagen) lässt die bisherigen Anlagen in der Ausgangspost am Original.
+        await x.oberflaeche(x.lena, 'POST', '/api/dokumente/:id/seiten', body([], [0, 1]));
+        assert.equal((await x.repo.holeDokument(x.hu.id))!.anlageZu, scan.id);
+        assert.equal((await x.repo.holeDokument(x.hu.id))!.mappeId, x.post.id);
       });
     },
   );

@@ -279,19 +279,7 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: `/werkbank/pakete/${TEXTERKENNUNG_PAKET}`,
       knopf: t('volltext.uebersicht.fehlt.knopf'),
     });
-  // Ersatzschriften (#1329): ohne sie fehlt der Text nicht eingebetteter Schriften in Seiten-, Vorschaubildern und Archivfassung.
-  if (u.schriftenFehlen)
-    h.push({
-      schluessel: 'schriften.fehlen',
-      art: 'warn',
-      text: (
-        <>
-          <strong>{t('werkbank.werkzeuge.schriften.fehlt')}</strong> {t('werkbank.werkzeuge.schriften.folge')}
-        </>
-      ),
-      ziel: '/werkbank/systemzustand#werkzeuge',
-      knopf: t('systemzustand.warnung.knopf'),
-    });
+  werkzeugeFehlen(u, h);
   if (u.texterkennung?.fehler)
     h.push({
       schluessel: 'texterkennung.fehler',
@@ -307,6 +295,28 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ),
       ziel: '/werkbank/texterkennung',
       knopf: t('werkbank.uebersicht.zur-texterkennung'),
+    });
+}
+
+/**
+ * Eingebaute Werkzeuge (#1189, #1312): je fehlendem Werkzeug eine Meldung mit Folge und Abhilfe – ohne Poppler kein Text
+ * und keine Seitenbilder (rot), sonst gelb. Der Knopf führt zum Hinweis im Systemzustand mit „Erneut prüfen“. Die
+ * Ersatzschriften (#1329) behalten ihren Schlüssel, damit eine Akzeptanz gilt; ältere Server melden nur `schriftenFehlen`.
+ */
+function werkzeugeFehlen(u: WerkbankUebersicht, h: Hinweis[]) {
+  const fehlt = u.werkzeugeFehlen ?? (u.schriftenFehlen ? (['schriften'] as const) : []);
+  for (const art of fehlt)
+    h.push({
+      schluessel: art === 'schriften' ? 'schriften.fehlen' : `werkzeug.fehlt:${art}`,
+      art: art === 'poppler' ? 'schlecht' : 'warn',
+      text: (
+        <>
+          <strong>{t.frei(`werkbank.werkzeuge.${art}.fehlt`)}</strong> {t.frei(`werkbank.werkzeuge.${art}.folge`)}{' '}
+          {t('werkbank.werkzeuge.abhilfe', { anzahl: 1 })}
+        </>
+      ),
+      ziel: '/werkbank/systemzustand#werkzeuge',
+      knopf: t('werkbank.werkzeuge.zur-pruefung'),
     });
 }
 

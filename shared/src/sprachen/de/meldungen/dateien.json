@@ -121,5 +121,7 @@
   "anlagen.nur-pakete-mit-recht": "Anlagen ändern darf ein Paket nur mit dem Recht dms:anlagen und nur in Post.",
   "anlagen.post-mit-anlagen_one": "Aus „{betreff}“ geteilt: Dokument mit einer Anlage",
   "anlagen.post-mit-anlagen_other": "Aus „{betreff}“ geteilt: Dokument mit {anzahl} Anlagen",
-  "anlagen.zip-name": "{name} mit Anlagen.zip"
+  "anlagen.zip-name": "{name} mit Anlagen.zip",
+  "anlagen.zu-viele-mit-bisherigen": "„{name}“ hat schon Anlagen, die mitkommen. Mit den neuen wären es {summe} – höchstens {max} Anlagen je Dokument. Bitte weniger Seiten als Anlage markieren oder vorher Anlagen zum eigenen Dokument machen.",
+  "anlagen.mitgewandert": "bisherige Anlagen mitgewandert: {namen}"
 }

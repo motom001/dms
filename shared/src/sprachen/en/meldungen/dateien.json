@@ -121,5 +121,7 @@
   "anlagen.nur-pakete-mit-recht": "A package may only change enclosures with the right dms:anlagen and only in post.",
   "anlagen.post-mit-anlagen_one": "Split from “{betreff}”: document with one enclosure",
   "anlagen.post-mit-anlagen_other": "Split from “{betreff}”: document with {anzahl} enclosures",
-  "anlagen.zip-name": "{name} with enclosures.zip"
+  "anlagen.zip-name": "{name} with enclosures.zip",
+  "anlagen.zu-viele-mit-bisherigen": "“{name}” already has enclosures that come along. With the new ones there would be {summe} – at most {max} enclosures per document. Please mark fewer pages as an enclosure or make enclosures documents of their own first.",
+  "anlagen.mitgewandert": "previous enclosures moved along: {namen}"
 }

@@ -7,7 +7,7 @@ import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, Notfa
 import { anfrage } from './anfrage';
 import type { ExportUmzug, KontaktZuordnung, VollexportStand, WartungOeffentlich } from './konto';
 import type { EinrichtungStand, MailSuche, SicherungSchlank, SicherungsMeta, Verbindung, WhLauf } from './einrichtung';
-import type { Werkzeuge } from '../../../shared/src/werkzeuge';
+import type { WerkzeugArt, Werkzeuge } from '../../../shared/src/werkzeuge';
 import type { Zaehler } from '../../../shared/src/werkbankansicht';
 import type { ExternUebersicht, ExternZeile } from './pakete';
 /** Seit #1278 (Schritt 5) bei ihrer Schnittstelle; hier weiter erreichbar. */
@@ -303,6 +303,8 @@ export interface WerkbankUebersicht {
   texterkennungPaket?: boolean;
   /** #1329: Für nicht eingebettete Schriften in PDFs fehlt der Ersatz. */
   schriftenFehlen?: boolean;
+  /** #1312: fehlende eingebaute Werkzeuge (leer, wenn alles da ist oder noch nicht geprüft wurde). */
+  werkzeugeFehlen?: WerkzeugArt[];
   aufgaben: { offen: number; ohneEmpfaenger: number };
   /** #798: offene Fälle – Aufgaben bei Personen ohne Leserecht. */
   ohneLeserecht?: number;

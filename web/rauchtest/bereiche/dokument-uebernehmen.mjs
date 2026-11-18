@@ -425,6 +425,71 @@ rauchtest(
 );
 
 rauchtest(
+  'Post: „Anlage ab hier“ an einem Dokument mit Anlage – die bisherige wandert mit, die neue wird Anlage 2 (#1303)',
+  { als: LENA, timeout: 90_000 },
+  async (s) => {
+    const { brief, cookie } = await postMitScan('Werkstatt Petra – Teilebestellung');
+    // Die bisherige Anlage: das HU-Protokoll, wie aus einer E-Mail, als Anlage 1 am Scan.
+    const hu = (
+      await api(
+        'POST',
+        `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('HU-Protokoll.pdf')}&typ=application/pdf`,
+        {
+          cookie,
+          body: beispielPdfSeiten(['HU-Protokoll', 'HU-Protokoll Seite 2']),
+          roh: true,
+        },
+      )
+    ).daten.dokument;
+    const scan = (await api('GET', `/api/mappen/${brief.id}`, { cookie })).daten.dokumente.find((x) => x.name === 'Scan Werkstatt.pdf');
+    await api('POST', `/api/dokumente/${scan.id}/anlagen`, { cookie, body: { dokument: hu.id } });
+    // An der Anlage selbst gibt es „Anlage ab hier“ nicht: Sie hat keine Seitenansicht (kein „⋯“), nur ihre eigenen Knöpfe.
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}?als=post`);
+    await s.getByRole('tab', { name: /^Dokumente/ }).click();
+    await s.getByRole('button', { name: 'Zum eigenen Dokument machen' }).waitFor();
+    assert.equal(await s.getByRole('button', { name: 'Weitere Handlungen für HU-Protokoll.pdf' }).count(), 0);
+    // Am Hauptdokument schon: die neue Anlage zählt hinter der bisherigen weiter.
+    const ansicht = await seitenansicht(s, brief);
+    const kacheln = ansicht.locator('.seitenraster .seite');
+    await kacheln.nth(3).getByRole('button', { name: 'Anlage ab hier' }).click();
+    await kacheln.nth(3).getByText('Anlage 2', { exact: true }).waitFor();
+    await ansicht.getByRole('button', { name: 'Übernehmen' }).click();
+    const frage = s.getByRole('alertdialog', { name: 'Anlage anlegen?' });
+    await frage.getByText('Die bisherige Anlage kommt mit in die (erste) neue Post und bleibt dort Anlage 1', { exact: false }).waitFor();
+    await frage.getByRole('button', { name: 'Anlegen' }).click();
+    await s.getByText('Neue Post angelegt:').waitFor();
+    const alt = (await api('GET', `/api/mappen/${brief.id}`, { cookie })).daten;
+    assert.deepEqual(
+      alt.dokumente.map((x) => [x.name, x.anlageZu ?? null]),
+      [['Scan Werkstatt.pdf', null]],
+      'die Ausgangspost behält das ganze PDF, ohne verwaiste Anlage',
+    );
+    const neuId = [].concat(alt.mappe.werte.bezug).find((x) => x !== brief.id);
+    const neu = (await api('GET', `/api/mappen/${neuId}`, { cookie })).daten;
+    const haupt = neu.dokumente.find((x) => !x.anlageZu);
+    assert.deepEqual(
+      neu.dokumente
+        .filter((x) => x.anlageZu === haupt.id)
+        .sort((a, b) => a.anlageNr - b.anlageNr)
+        .map((x) => [x.id === hu.id, x.name, x.anlageNr]),
+      [
+        [true, 'HU-Protokoll.pdf', 1],
+        [false, 'Scan Werkstatt – Anlage 2.pdf', 2],
+      ],
+    );
+    // Die Historie beider Posts nennt die mitgewanderte Anlage.
+    for (const id of [brief.id, neuId]) {
+      const h = (await api('GET', `/api/mappen/${id}/historie`, { cookie })).daten;
+      assert.ok(
+        h.some((e) => e.art === 'post_geteilt' && /mitgewandert: HU-Protokoll\.pdf/.test(String(e.daten?.text))),
+        `Historie ${id}`,
+      );
+    }
+    await api('PUT', `/api/mappen/${neuId}`, { cookie, body: { werte: { stand: 'Erledigt' } } });
+  },
+);
+
+rauchtest(
   'Handy: „Anlage ab hier“ in der Seitenansicht mit 44-px-Tippflächen (#1162)',
   { handy: true, als: LENA, timeout: 90_000 },
   async (s) => {

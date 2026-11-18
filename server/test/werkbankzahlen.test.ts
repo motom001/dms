@@ -59,4 +59,15 @@ describe('Werkbank-Zahlen (#375)', () => {
     // Jede Zahl der Liste hat einen Bereich – eine neue Zahl ohne Bereich fiele hier auf.
     for (const z of ZAEHLER) assert.equal(fuer([ZAEHLER_BEREICH[z]])![z], alle[z], z);
   });
+
+  it('Übersicht: fehlende eingebaute Werkzeuge (#1312) nur mit dem Bereich Systemzustand, dort Folge und „Erneut prüfen“', () => {
+    const fuer = (verwaltung: string[]) =>
+      nurEigeneBereiche({ id: 'p', email: 'jonas@example.org', name: 'Jonas', rolle: 'mitglied', aktiv: true, verwaltung } as Benutzer, {
+        werkzeugeFehlen: ['poppler'],
+        schriftenFehlen: true,
+      });
+    assert.deepEqual(fuer(['*']), { werkzeugeFehlen: ['poppler'], schriftenFehlen: true });
+    assert.deepEqual(fuer(['systemzustand']), { werkzeugeFehlen: ['poppler'], schriftenFehlen: true });
+    assert.deepEqual(fuer(['benutzer']), { werkzeugeFehlen: [], schriftenFehlen: false });
+  });
 });

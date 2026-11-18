@@ -24,10 +24,13 @@ interface Seite {
 /** Positionen (in den bleibenden Seiten) mit der Markierung; die erste Seite beginnt nie etwas Neues. */
 const positionen = (bleiben: Seite[], art: 'teilAb' | 'anlageAb') => bleiben.map((s, i) => (i > 0 && s[art] ? i : -1)).filter((i) => i > 0);
 
-/** Nummer der Anlage an Position `pos`: gezählt ab dem Beginn ihres Teils (Anlage 1, 2 … je Teil). */
-function anlageNr(pos: number, teile: number[], anlagen: number[]): number {
+/**
+ * Nummer der Anlage an Position `pos`: gezählt ab dem Beginn ihres Teils (Anlage 1, 2 … je Teil). Im ersten Teil
+ * kommen die bisherigen Anlagen des Dokuments davor (#1303).
+ */
+function anlageNr(pos: number, teile: number[], anlagen: number[], bisherige: number): number {
   const start = Math.max(0, ...teile.filter((x) => x < pos));
-  return anlagen.filter((x) => x > start && x <= pos).length;
+  return anlagen.filter((x) => x > start && x <= pos).length + (start === 0 ? bisherige : 0);
 }
 
 /** Zeile unter den Seiten: wie viele bleiben, gedreht, Teile bzw. neue Posts, Anlagen. */
@@ -57,17 +60,21 @@ function kachelText(s: Seite, neuerTeil: boolean, anlage: number): string {
   });
 }
 
-/** Rückfrage vor dem Teilen einer Post (neue Post je Teil; mit Anlagen auch bei nur einem Teil). */
-function postRueckfrage(name: string, anzahlTeile: number, anlagen: number) {
+/**
+ * Rückfrage vor dem Teilen einer Post (neue Post je Teil; mit Anlagen auch bei nur einem Teil). Mit neuen Anlagen nennt
+ * sie, wie viele bisherige Anlagen mitkommen (#1303).
+ */
+function postRueckfrage(name: string, anzahlTeile: number, anlagen: number, bisherige: number) {
+  const mit = anlagen && bisherige ? ` ${t('ablage.pdfseiten.bisherige-anlagen-mit', { anzahl: bisherige })}` : '';
   if (anzahlTeile > 1)
     return rueckfrage({
       titel: t('ablage.pdfseiten.in-posts-teilen', { anzahlTeile }),
-      text: t('ablage.pdfseiten.aus-dieser-post-entstehen', { anzahlTeile }),
+      text: t('ablage.pdfseiten.aus-dieser-post-entstehen', { anzahlTeile }) + mit,
       ja: t('ablage.pdfseiten.teilen'),
     });
   return rueckfrage({
     titel: t('ablage.pdfseiten.anlagen-anlegen', { anzahl: anlagen }),
-    text: t('ablage.pdfseiten.neue-post-mit-anlagen', { name, anzahl: anlagen }),
+    text: t('ablage.pdfseiten.neue-post-mit-anlagen', { name, anzahl: anlagen }) + mit,
     ja: t('ablage.pdfseiten.anlagen-anlegen-ja'),
   });
 }
@@ -82,6 +89,7 @@ function Kachel({
   info,
   letzte,
   anlagenMoeglich,
+  bisherige,
   gezogen,
   setGezogen,
   element,
@@ -98,6 +106,7 @@ function Kachel({
   info: Info;
   letzte: boolean;
   anlagenMoeglich: boolean;
+  bisherige: number;
   gezogen: number | undefined;
   setGezogen(i: number | undefined): void;
   element(el: HTMLLIElement | null): void;
@@ -107,7 +116,7 @@ function Kachel({
   verschiebe(nach: number): void;
 }) {
   const neuerTeil = !s.weg && pos > 0 && s.teilAb;
-  const anlage = anlagen.includes(pos) ? anlageNr(pos, teile, anlagen) : 0;
+  const anlage = anlagen.includes(pos) ? anlageNr(pos, teile, anlagen, bisherige) : 0;
   return (
     <li
       ref={element}
@@ -191,6 +200,7 @@ export function PdfSeiten({
   papierkorb,
   teilAb,
   anlagenMoeglich = false,
+  bisherigeAnlagen = 0,
   schliessen,
   fertig,
 }: {
@@ -198,8 +208,10 @@ export function PdfSeiten({
   post: boolean;
   versioniert: boolean;
   papierkorb: boolean;
-  /** „Anlage ab hier“ anbieten (#1162): nur in Post, bei einem Hauptdokument ohne Anlagen. */
+  /** „Anlage ab hier“ anbieten (#1162): nur in Post, nur an einem Hauptdokument (auch mit Anlagen, #1303). */
   anlagenMoeglich?: boolean;
+  /** Anlagen, die das Dokument schon hat (#1303): Sie wandern mit; die neuen zählen dahinter weiter. */
+  bisherigeAnlagen?: number;
   /** Vorschlag aus dem Hinweis „Post teilen?“ (#579): „Teilen ab hier“ an dieser Seite schon gesetzt – übernommen wird erst mit „Übernehmen“. */
   teilAb?: number;
   schliessen(): void;
@@ -304,7 +316,7 @@ export function PdfSeiten({
         return;
       bestaetigt = true;
     }
-    if (postTeilen && !(await postRueckfrage(d.name, anzahlTeile, anlagen.length))) return;
+    if (postTeilen && !(await postRueckfrage(d.name, anzahlTeile, anlagen.length, bisherigeAnlagen))) return;
     setLaeuft(true);
     setFehler(undefined);
     try {
@@ -346,6 +358,7 @@ export function PdfSeiten({
               info={info}
               letzte={i === seiten.length - 1}
               anlagenMoeglich={anlagenMoeglich}
+              bisherige={bisherigeAnlagen}
               gezogen={gezogen}
               setGezogen={setGezogen}
               element={(el) => {

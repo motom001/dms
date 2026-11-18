@@ -81,7 +81,7 @@ Die Seite ist eine **Übersicht**; Einstellungen der Erkennung gibt es hier nich
 - **Warteschlange** und **Aufträge** (siehe unten).
 - Darunter **Suche: Tippfehler** – ähnliche Schreibweisen und wann „Meintest du …?“ kommt (siehe [Suche](suche.md#tippfehler-und-meintest-du)) – und der Weg zu den gleichbedeutenden Wörtern.
 
-Fehlt ein [eingebautes Werkzeug](fehlersuche.md#werkzeuge) (z. B. das zum Lesen von PDFs), steht oben auf der Seite ein Hinweis mit Folge und Abhilfe; sind alle da, steht dazu nichts auf der Seite.
+Fehlt ein [eingebautes Werkzeug](fehlersuche.md#werkzeuge) (z. B. das zum Lesen von PDFs), steht oben auf der Seite ein Hinweis mit Folge und Abhilfe – und als Meldung auch auf der [Übersicht](uebersicht.md#meldungen) der Werkbank; sind alle da, steht dazu nichts auf der Seite.
 
 Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mappentyp](mappentypen.md#register) ein (*Volltext erzeugen*, Standard: an).
 
