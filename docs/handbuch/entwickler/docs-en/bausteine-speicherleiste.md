@@ -14,7 +14,7 @@
 
 Without changes, “Discard” and the main button are **faded** – nothing to do, no explanation (principle 6). When creating, “Discard” is called “Discard draft” and leads back to the list. While saving, the main button shows “working” with “Saving …” and keeps keyboard focus. Esc in the form discards – with a confirmation if something would be lost; the “Discard” button itself doesn't ask (its label is clear).
 
-On a phone (up to 600 px) everything stands on one line; “… delete” then only shows its icon (the name stays for screen readers), the state is left out.
+On a phone (up to 600 px) everything stands on one line; “… delete” then only shows its icon (the name stays for screen readers), the state is left out. “Discard” never wraps (#1291); the main button takes the rest and only wraps between words – if not even its longest word fits next to it (such as a long subject in the narrow column on an iPad in portrait), it moves to a line of its own below.
 
 ```tsx
 import { Speicherleiste, useEntwurf } from '../bausteine';

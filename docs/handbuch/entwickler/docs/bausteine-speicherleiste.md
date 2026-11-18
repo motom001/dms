@@ -14,7 +14,7 @@
 
 Ohne Änderung sind „Verwerfen“ und der Hauptknopf **blass** – nichts zu tun, ohne Erklärung (Leitsatz 6). Beim Anlegen heißt „Verwerfen“ „Entwurf verwerfen“ und führt zurück zur Liste. Während des Speicherns zeigt der Hauptknopf „läuft“ mit „Speichere …“ und behält den Tastaturfokus. Esc im Formular verwirft – mit Rückfrage, wenn etwas verloren ginge; der Knopf „Verwerfen“ selbst fragt nicht (er ist eindeutig beschriftet).
 
-Am Handy (bis 600 px) steht alles in einer Zeile; „… löschen“ zeigt dann nur sein Symbol (der Name bleibt für Screenreader), der Stand fällt weg.
+Am Handy (bis 600 px) steht alles in einer Zeile; „… löschen“ zeigt dann nur sein Symbol (der Name bleibt für Screenreader), der Stand fällt weg. „Verwerfen“ bricht nie um (#1291); der Hauptknopf nimmt den Rest und bricht nur zwischen Wörtern um – passt nicht einmal sein längstes Wort daneben (etwa „Automatisierung speichern“ in der schmalen Spalte am iPad hoch), rückt er in eine eigene Zeile darunter.
 
 ```tsx
 import { Speicherleiste, useEntwurf } from '../bausteine';

@@ -61,6 +61,25 @@ You go in steps, as in the settings of a phone:
 
 On a phone **nothing is locked**: every area stays reachable, also through the search field. Setting up folder types, automations or packages works on a phone too, but is easier on a computer or tablet. At the top, as on a computer, is the quiet line of [administration mode](verwalten.md#der-verwaltungsmodus).
 
+### What works on a phone { #was-am-handy-geht }
+
+What you need on the go when something is wrong is **fully usable** on a phone – every field reachable, large touch targets, nothing wider than the screen, the result right next to the button:
+
+| Task | Where |
+|---|---|
+| Check that everything is running | **Overview**; on a phone **System status** shows load and storage first, the thresholds after that |
+| React to a message | **Overview**, e.g. after “Backup failed” back up again under **Backup** |
+| Act right away | **Backup** → **Back up now**; **Mailboxes** → **Fetch now**; **Maintenance** → **Lock immediately** or **End maintenance**, on a phone right below the status |
+| Users | create; **Lock access** (for instance when a phone is lost) and **Sign out everywhere** at the top of the user; **Create password link** under *Sign-in and security* |
+| Emergency | **Encryption** with the emergency sheet; emergency access under **Sign-in protection**; confirm administration |
+| Packages | **install** from the catalogue – preview, confirm permissions, done, with the package's defaults |
+
+**Protected just as on a computer:** sensitive actions ask the same question on a phone – the focus starts on **Cancel** – and need the same fresh sign-in as on a computer, for instance when you allow emergency access from the internet. With a passkey (such as Face ID) that takes one tap; a phone is never checked less.
+
+On a phone the introduction of a page is a single line; **More** shows the whole text.
+
+Pages for building – folder types, views, number sequences, automations and their templates, tours, tips, stamps and designs – work on a phone too. At the top a quiet line then says “Easier on a computer or tablet.”; nothing is locked or redirected.
+
 ## Overview {#ubersicht}
 
 The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – on a phone the overview alone, where **Areas ›** at the top leads to the areas. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.

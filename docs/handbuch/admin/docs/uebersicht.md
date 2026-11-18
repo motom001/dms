@@ -61,6 +61,25 @@ Du gehst in Schritten wie in den Einstellungen eines Handys:
 
 Am Handy ist **nichts gesperrt**: Jeder Bereich bleibt erreichbar, auch über das Suchfeld. Mappentypen, Automatisierungen oder Pakete einstellen geht auch am Handy, am Rechner oder Tablet aber bequemer. Oben steht wie am Rechner die ruhige Zeile des [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus).
 
+### Was am Handy geht { #was-am-handy-geht }
+
+Was du unterwegs bei einer Störung brauchst, ist am Handy **voll bedienbar** – alle Felder erreichbar, große Tippflächen, nichts breiter als der Bildschirm, das Ergebnis direkt beim Knopf:
+
+| Handgriff | Wo |
+|---|---|
+| Nachsehen, ob alles läuft | **Übersicht**; der **Systemzustand** zeigt am Handy zuerst Auslastung und Speicherplatz, die Schwellen danach |
+| Auf eine Meldung reagieren | **Übersicht**, z. B. nach „Sicherung fehlgeschlagen“ unter **Sicherung** erneut sichern |
+| Sofort handeln | **Sicherung** → **Jetzt sichern**; **Postfächer** → **Jetzt abrufen**; **Wartung** → **Jetzt sofort sperren** bzw. **Wartung beenden**, am Handy gleich unter dem Stand |
+| Benutzer | anlegen; **Zugang sperren** (etwa wenn ein Handy verloren ist) und **Überall abmelden** oben am Benutzer; **Passwort-Link erzeugen** unter *Anmeldung und Sicherheit* |
+| Notfall | **Verschlüsselung** mit dem Notfallblatt; der Notfallzugang unter **Anmeldeschutz**; Verwaltung bestätigen |
+| Pakete | aus dem Katalog **installieren** – Vorschau, Rechte bestätigen, fertig, mit den Vorgaben des Pakets |
+
+**Genauso geschützt wie am Rechner:** Heikle Handlungen fragen am Handy dieselbe Rückfrage ab – der Fokus steht zuerst auf **Abbrechen** – und verlangen dieselbe frische Anmeldung wie am Rechner, z. B. wenn du den Notfallzugang aus dem Internet erlaubst. Mit einem Passkey (etwa Face ID) geht das mit einem Tippen; weniger geprüft wird am Handy nie.
+
+Die Einleitung einer Seite steht am Handy in einer Zeile; **Mehr** zeigt den ganzen Text.
+
+Seiten zum Aufbauen – Mappentypen, Ansichten, Nummernkreise, Automatisierungen und ihre Vorlagen, Rundgänge, Tipps, Stempel und Designs – gehen am Handy auch. Oben steht dann ruhig „Am Rechner oder Tablet bequemer.“; gesperrt oder umgeleitet wird nichts.
+
 ## Übersicht
 
 Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy die Übersicht allein, die Bereiche erreichst du dort über **Bereiche ›** oben. Oben stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
