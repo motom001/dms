@@ -27,9 +27,10 @@ At the top you see the areas:
 - **Filing** – this is where you work with folders. For most users it is the only area.
 - **Workbench** – for administrators only; this is where Ablago is set up.
 - **+ New** – creates new [post](post.md) from anywhere (choose files or take a photo with your phone) or a new folder of a folder type you may create.
-- **Your name** – opens a menu with *My account* (also appearance and absence), the help, *Discover Ablago*, *Report a problem* and sign-out.
+- **Your name** – opens a menu with *My account* (also appearance and absence), *Report a problem*, *About Ablago* and sign-out.
+- **The assistant at the bottom right** – in the same place on every page: tips, questions and the manual, see [Assistant](assistent.md).
 
-The first time you sign in, a short [tour](entdecken.md#rundgang) shows you these places. You can find it again at any time under your name → *Discover Ablago*.
+The first time you sign in, a short [tour](entdecken.md#rundgang) shows you these places. You can find it again at any time in the assistant under **Tips** → *All tips and tours*.
 
 The Library is divided into **three columns**, from large to small:
 

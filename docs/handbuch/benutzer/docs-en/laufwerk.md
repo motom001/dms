@@ -7,7 +7,7 @@ You prefer working with Explorer, Finder or the Files app? Then connect Ablago's
 
 ## What you need {#was-du-brauchst}
 
-Under **My account → Network drive** (click your name at the top right → **Connect as a network drive**) everything is in one place:
+Under **My account → Network drive** (click your name at the top right → **My account** → **Network drive**) everything is in one place:
 
 1. **The address** of your Ablago with `/webdav/` at the end, e.g. `https://dms.example.org/webdav/` – **Copy** takes it over.
 2. **The username:** your email address.

@@ -34,7 +34,7 @@ The **Tips** tab shows the **tip of the day** as a card – at most one new one 
 
 - **Show me** closes the window, opens the right page and briefly highlights the place (or starts a tour).
 - **Next tip** moves on to the next tip.
-- **See all tips ›** leads to [Discover Ablago](entdecken.md#tipps).
+- **All tips and tours ›** leads to [Discover Ablago](entdecken.md#seite) – the only way there: everything about help is in the assistant, the menu under your name is for your account.
 
 You switch the dot for the tip of the day on and off under [My account](profil.md#startseite) → **Appearance** with **Tip of the day**.
 

@@ -100,7 +100,7 @@ Briefly recorded so that later changes know why something is the way it is.
 - **Changelog = GitHub Releases.** The text comes from `docs/releases/<tag>.md` or, if the file doesn't exist, from the commit subjects since the previous tag.
 - **Release on a new version number (#34).** If a version is on `main` in `package.json` for which there is no tag yet, "Prüfen und Image bauen" creates the image with the version number after passed checks, then tag and release (`release.yml` as a reusable workflow). Not with every commit: that way the version number stays meaningful, and several requests can be bundled.
 - **Image tag in the same run**, because a tag created with the workflow token starts no further workflows; so no additional token is needed. Manually pushed tags and manually published releases keep working.
-- **Help link** in the user menu to the User manual, for administrators additionally to the Administrator manual.
+- **Help link** in the user menu to the User manual, for administrators additionally to the Administrator manual. Since #1331 the manual is in the assistant at the bottom right (in the Workbench the Administrator manual); the user menu is only for your own account.
 
 ## Email and address in the Workbench (#37) {#e-mail-und-adresse-in-der-werkbank-37}
 

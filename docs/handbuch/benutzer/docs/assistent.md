@@ -34,7 +34,7 @@ Der Reiter **Tipps** zeigt den **Tipp des Tages** als Karte – höchstens einen
 
 - **Zeig es mir** schließt das Fenster, öffnet die passende Seite und hebt die Stelle kurz hervor (oder startet einen Rundgang).
 - **Nächster Tipp** blättert zum nächsten Tipp.
-- **Alle Tipps ansehen ›** führt zu [Ablago entdecken](entdecken.md#tipps).
+- **Alle Tipps und Rundgänge ›** führt zu [Ablago entdecken](entdecken.md#seite) – dem einzigen Weg dorthin: Alles zur Hilfe steckt im Assistenten, das Menü unter deinem Namen ist für dein Konto.
 
 Den Punkt für den Tipp des Tages schaltest du unter [Mein Konto](profil.md#startseite) → **Darstellung** mit **Tipp des Tages** aus und ein.
 

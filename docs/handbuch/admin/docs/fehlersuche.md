@@ -8,13 +8,13 @@ Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe e
 
 ## Gemeldete Fehler
 
-Benutzer melden Fehler über **Fehler melden** in ihrem Menü – mit eigener Beschreibung, bis zu zwei Screenshots und technischen Angaben (Version, Browser, Bildschirmgröße, Sprache, Zeitzone, die letzten 25 besuchten Seiten, die letzten 10 Fehler im Browser und fehlgeschlagenen Anfragen). Passwörter, Inhalte von Mappen und Cookies gehen nicht mit. Die Meldung bleibt in deinem Ablago – sie geht nie an das Projekt. Wer daraus ein GitHub-Issue machen will, tut das selbst.
+Benutzer melden Fehler über **Fehler melden** in ihrem Menü bzw. unter *Mein Konto* – mit eigener Beschreibung, bis zu zwei Screenshots und technischen Angaben (Version, Browser, Bildschirmgröße, Sprache, Zeitzone, die letzten 25 besuchten Seiten, die letzten 10 Fehler im Browser und fehlgeschlagenen Anfragen). Passwörter, Inhalte von Mappen und Cookies gehen nicht mit. Die Meldung bleibt in deinem Ablago – sie geht nie an das Projekt. Wer daraus ein GitHub-Issue machen will, tut das selbst.
 
 Lässt sich eine Seite nicht anzeigen, weil die Oberfläche beim Zeichnen auf einen Fehler stößt, erscheint statt einer leeren Seite „Hier ist etwas schiefgegangen“ mit **Neu laden** und **Fehler melden**. Wer angemeldet ist, kommt damit zu **Fehler melden**; ohne Anmeldung (etwa im Einrichtungsassistenten) kopiert der Knopf die technischen Angaben in die Zwischenablage, die Meldung selbst steht unter „Technische Angaben“.
 
 ![Werkbank → Gemeldete Fehler](bilder/werkbank-fehlermeldung.png)
 
-Unter **Werkbank → Gemeldete Fehler** stehen die Meldungen, neueste zuerst; der Zähler in der Leiste und in der Übersicht nennt die offenen. Das Suchfeld über der Liste sucht im Text der Meldungen und nach der Person, die gemeldet hat; der Haken **Erledigte zeigen** darunter nimmt die erledigten dazu (sie tragen das Zeichen *erledigt*). In der Meldung siehst du Beschreibung, Screenshots und Angaben und kannst sie **als erledigt markieren** (und wieder öffnen) oder **löschen** – endgültig, samt Bildern. Eine Rückmeldung an den Benutzer gibt es in Ablago bewusst nicht; die erledigst du auf deinem Weg.
+Unter **Werkbank → Gemeldete Fehler** stehen die Meldungen, neueste zuerst; der Zähler in der Leiste und in der Übersicht nennt die offenen. Das Suchfeld über der Liste sucht im Text der Meldungen und nach der Person, die gemeldet hat; der Haken **Erledigte zeigen** darunter nimmt die erledigten dazu (sie tragen das Zeichen *erledigt*). In der Meldung siehst du Beschreibung, Screenshots und Angaben und kannst sie **als erledigt markieren** (und wieder öffnen) oder **löschen** – endgültig, samt Text, Bildern und Angaben. Wer gemeldet hat, sieht unter *Mein Konto → Fehler melden → Meine Meldungen* nur den Stand: **offen** oder **erledigt am …**; eine gelöschte Meldung erscheint dort als *erledigt*, nur mit Datum. Mehr Rückmeldung gibt es in Ablago bewusst nicht – keine Antworten, kein „gelesen“; Fragen klärst du auf deinem Weg.
 
 ## Protokoll
 

@@ -8,13 +8,13 @@ Everything about this is in the workbench under **Maintenance and troubleshootin
 
 ## Reported problems { #gemeldete-fehler }
 
-Users report problems via **Report a problem** in their menu – with their own description, up to two screenshots and technical details (version, browser, screen size, language, time zone, the last 25 pages visited, the last 10 errors in the browser and failed requests). Passwords, contents of folders and cookies are not sent along. The report stays in your Ablago – it never goes to the project. Whoever wants to make a GitHub issue out of it does so themselves.
+Users report problems via **Report a problem** in their menu or under *My account* – with their own description, up to two screenshots and technical details (version, browser, screen size, language, time zone, the last 25 pages visited, the last 10 errors in the browser and failed requests). Passwords, contents of folders and cookies are not sent along. The report stays in your Ablago – it never goes to the project. Whoever wants to make a GitHub issue out of it does so themselves.
 
 If a page cannot be displayed because the interface runs into an error while drawing it, you see “Something went wrong here” with **Reload** and **Report an error** instead of a blank page. When signed in, the button leads to **Report an error**; without signing in (for example in the setup assistant) it copies the technical details to the clipboard, and the message itself is under “Technical details”.
 
 ![Workbench → Reported problems](bilder/werkbank-fehlermeldung.png)
 
-Under **Workbench → Reported problems** are the reports, newest first; the counter in the sidebar and in the overview names the open ones. The search field above the list searches the text of the reports and the person who reported; the tick box **Show completed** below it adds the completed ones (they carry the mark *done*). In the report you see description, screenshots and details and can **mark it as done** (and reopen it) or **delete** it – permanently, including images. Deliberately, there is no reply to the user in Ablago; you handle that your own way.
+Under **Workbench → Reported problems** are the reports, newest first; the counter in the sidebar and in the overview names the open ones. The search field above the list searches the text of the reports and the person who reported; the tick box **Show completed** below it adds the completed ones (they carry the mark *done*). In the report you see description, screenshots and details and can **mark it as done** (and reopen it) or **delete** it – permanently, including text, images and details. Whoever reported sees only the status under *My account → Report a problem → My reports*: **open** or **done on …**; a deleted report appears there as *done*, with its date only. Deliberately, there is no further reply in Ablago – no answers, no “read”; you clarify questions your own way.
 
 ## Log { #protokoll }
 

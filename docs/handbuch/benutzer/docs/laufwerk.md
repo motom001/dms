@@ -7,7 +7,7 @@ Du arbeitest lieber mit dem Explorer, dem Finder oder der Dateien-App? Dann bind
 
 ## Was du brauchst
 
-Unter **Mein Konto → Laufwerk** (Klick oben rechts auf deinen Namen → **Als Laufwerk einbinden**) steht alles beisammen:
+Unter **Mein Konto → Laufwerk** (Klick oben rechts auf deinen Namen → **Mein Konto** → **Laufwerk**) steht alles beisammen:
 
 1. **Die Adresse** deines Ablago mit `/webdav/` am Ende, z. B. `https://dms.example.org/webdav/` – mit **Kopieren** übernimmst du sie.
 2. **Der Benutzername:** deine E-Mail-Adresse.
