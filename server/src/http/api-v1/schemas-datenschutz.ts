@@ -300,7 +300,7 @@ export const SCHEMAS_DATENSCHUTZ: Record<string, Schema> = {
         type: 'array',
         items: { type: 'integer', minimum: 1 },
         description:
-          'Anlagen (#998, nur Post): Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt; Pakete brauchen dms:anlagen',
+          'Anlagen (#998, nur Post): Positionen in seiten, an denen eine Anlage zum vorherigen Teil beginnt; Pakete brauchen dms:anlagen. Bisherige Anlagen des Dokuments wandern mit in den ersten Teil (#1303)',
       },
       bestaetigt: { type: 'boolean', description: 'Ersetzen ohne Versionierung bestätigen' },
     },

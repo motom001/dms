@@ -81,7 +81,7 @@ The page is an **overview**; recognition settings are no longer here (they are a
 - **Queue** and **jobs** (see below).
 - Below that **Search: typos** – similar spellings and when “Did you mean …?” appears (see [Search](suche.md#tippfehler-und-meintest-du)) – and the way to the synonyms.
 
-If a [built-in tool](fehlersuche.md#werkzeuge) is missing (e.g. the one for reading PDFs), a notice at the top of the page says what follows and what helps; if all are there, the page says nothing about them.
+If a [built-in tool](fehlersuche.md#werkzeuge) is missing (e.g. the one for reading PDFs), a notice at the top of the page says what follows and what helps – and a message on the workbench [Overview](uebersicht.md#meldungen) says so too; if all are there, the page says nothing about them.
 
 Whether a documents tab creates a full text at all you set on the [Folder type](mappentypen.md#register) (*Create full text*, default: on).
 
