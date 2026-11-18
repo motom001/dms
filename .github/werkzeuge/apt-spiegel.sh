@@ -9,9 +9,13 @@
 set -u
 liste=/etc/apt/apt-mirrors.txt
 [ -f "$liste" ] || exit 0
+# apt wählt nach „priority:“, nicht nach der Reihenfolge: die neuen Spiegel bekommen 1 und 2, die bisherigen
+# rücken mit ihrer Priorität + 10 dahinter.
 {
-  printf '%s\n' http://azure.archive.ubuntu.com/ubuntu/ http://archive.ubuntu.com/ubuntu/
-  grep -vE '^(http://azure\.archive\.ubuntu\.com/ubuntu/|http://archive\.ubuntu\.com/ubuntu/)' "$liste" || true
+  printf 'http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\nhttp://archive.ubuntu.com/ubuntu/\tpriority:2\n'
+  grep -vE '^(http://azure\.archive\.ubuntu\.com/ubuntu/|http://archive\.ubuntu\.com/ubuntu/)' "$liste" \
+    | awk -F'\t' '{ p = 10; for (i = 2; i <= NF; i++) if ($i ~ /^priority:/) { p = substr($i, 10) + 10; $i = "" }
+        out = $1; for (i = 2; i <= NF; i++) if ($i != "") out = out "\t" $i; print out "\tpriority:" p }' || true
 } > /tmp/apt-mirrors.txt
 sudo cp /tmp/apt-mirrors.txt "$liste"
 printf '%s\n' 'Acquire::http::Timeout "20";' 'Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/99ablago-spiegel > /dev/null
