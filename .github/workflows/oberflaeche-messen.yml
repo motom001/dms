@@ -83,7 +83,7 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           timeout 300 npx playwright install chromium || timeout 300 npx playwright install chromium
-          node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())" || timeout 480 npx playwright install-deps chromium
+          node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())" || { bash "$GITHUB_WORKSPACE/.github/werkzeuge/apt-spiegel.sh"; timeout 480 npx playwright install-deps chromium; }
       - name: Testdaten anlegen
         run: node web/rauchtest/messen/oberflaeche.mjs --einrichten --mappen 5000
       - name: Letzten Lauf holen

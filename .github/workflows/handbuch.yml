@@ -125,6 +125,7 @@ jobs:
           startet() { node -e "const p = require('playwright'); Promise.all(process.argv.slice(1).map((b) => p[b].launch().then((x) => x.close()))).then(() => process.exit(0), () => process.exit(1))" $browser; }
           if startet; then exit 0; fi
           echo "::notice::Browser starten nicht – Bibliotheken per apt nachinstallieren"
+          bash "$GITHUB_WORKSPACE/.github/werkzeuge/apt-spiegel.sh"  # langsamer Spiegel (18.11.)
           # Die Installation hängt bei GitHub gelegentlich (apt): höchstens 8 Minuten, dann ein zweiter Versuch.
           for versuch in 1 2; do
             timeout 480 npx playwright install-deps $browser && break
@@ -374,7 +375,7 @@ jobs:
           cd web/rauchtest
           npm ci --no-audit --no-fund  # feste Version mit eigenem Lockfile (#289, #1272)
           timeout 300 npx playwright install chromium || timeout 300 npx playwright install chromium
-          node -e "require('playwright').chromium.launch().then((b) => b.close())" || timeout 480 npx playwright install-deps chromium
+          node -e "require('playwright').chromium.launch().then((b) => b.close())" || { bash "$GITHUB_WORKSPACE/.github/werkzeuge/apt-spiegel.sh"; timeout 480 npx playwright install-deps chromium; }
           cd ../../docs/handbuch/screenshots
           node start-pruefen.mjs "$RUNNER_TEMP/seite" "$RUNNER_TEMP/start-bilder"
 
