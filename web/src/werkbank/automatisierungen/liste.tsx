@@ -147,7 +147,7 @@ function Auswahlleiste({ anzahl, schalte, aufheben }: { anzahl: number; schalte:
         {t('automatisierung.ui.liste.ausschalten')}
       </Knopf>
       <span className="luecke" />
-      <Knopf art="link" groesse="klein" onClick={aufheben}>
+      <Knopf groesse="klein" onClick={aufheben}>
         {t('automatisierung.ui.liste.auswahl-aufheben')}
       </Knopf>
     </div>

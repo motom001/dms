@@ -29,9 +29,7 @@ export function Ablagezone({ k }: { k: Kern }) {
       onDrop={fallen}>
       <p>
         {t('ablage.dokumente.dateien-hierher-ziehen-oder')}{' '}
-        <Knopf art="link" onClick={() => h.auswahlFeld.current?.click()}>
-          {t('ablage.dokumente.auswaehlen')}
-        </Knopf>
+        <Knopf onClick={() => h.auswahlFeld.current?.click()}>{t('ablage.dokumente.auswaehlen')}</Knopf>
       </p>
       <p className="leise klein">{t('ablage.dokumente.bis-100-mb-je')}</p>
       <input

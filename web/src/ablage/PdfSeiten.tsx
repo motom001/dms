@@ -132,7 +132,6 @@ function Kachel({
       <span className="klein">{t('ablage.pdfseiten.seite-2', { nr: s.nr })}</span>
       <div className="seitenknoepfe">
         <Knopf
-          art="link"
           groesse="klein"
           title={t('ablage.pdfseiten.nach-links-drehen')}
           nurSymbol={t('ablage.pdfseiten.seite-nach-links-drehen', { nr: s.nr })}
@@ -141,7 +140,6 @@ function Kachel({
           <Symbol name="zuruecksetzen" />
         </Knopf>
         <Knopf
-          art="link"
           groesse="klein"
           title={t('ablage.pdfseiten.nach-rechts-drehen')}
           nurSymbol={t('ablage.pdfseiten.seite-nach-rechts-drehen', { nr: s.nr })}
@@ -150,7 +148,6 @@ function Kachel({
           <Symbol name="neu-laden" />
         </Knopf>
         <Knopf
-          art="link"
           groesse="klein"
           title={t('ablage.pdfseiten.nach-vorn')}
           nurSymbol={t('ablage.pdfseiten.seite-nach-vorn', { nr: s.nr })}
@@ -159,7 +156,6 @@ function Kachel({
           <Symbol name="pfeil-links" />
         </Knopf>
         <Knopf
-          art="link"
           groesse="klein"
           title={t('ablage.pdfseiten.nach-hinten')}
           nurSymbol={t('ablage.pdfseiten.seite-nach-hinten', { nr: s.nr })}
@@ -170,16 +166,16 @@ function Kachel({
       </div>
       <div className="seitenknoepfe">
         {/* Erst mit „Übernehmen“ wirksam, bis dahin „Behalten“ (Leitsatz 5): kein roter Link. */}
-        <Knopf art="link" groesse="klein" onClick={() => aendere({ weg: !s.weg })}>
+        <Knopf groesse="klein" onClick={() => aendere({ weg: !s.weg })}>
           {s.weg ? t('ablage.pdfseiten.behalten') : t('ablage.pdfseiten.loeschen')}
         </Knopf>
         {pos > 0 && (
-          <Knopf art="link" groesse="klein" aria-pressed={s.teilAb} onClick={() => aendere({ teilAb: !s.teilAb, anlageAb: false })}>
+          <Knopf groesse="klein" aria-pressed={s.teilAb} onClick={() => aendere({ teilAb: !s.teilAb, anlageAb: false })}>
             {s.teilAb ? t('ablage.pdfseiten.nicht-teilen') : t('ablage.pdfseiten.teilen-ab-hier')}
           </Knopf>
         )}
         {pos > 0 && anlagenMoeglich && (
-          <Knopf art="link" groesse="klein" aria-pressed={s.anlageAb} onClick={() => aendere({ anlageAb: !s.anlageAb, teilAb: false })}>
+          <Knopf groesse="klein" aria-pressed={s.anlageAb} onClick={() => aendere({ anlageAb: !s.anlageAb, teilAb: false })}>
             {s.anlageAb ? t('ablage.pdfseiten.keine-anlage') : t('ablage.pdfseiten.anlage-ab-hier')}
           </Knopf>
         )}
@@ -246,9 +242,7 @@ export function PdfSeiten({
     return (
       <div className="hinweis schlecht pdfseiten">
         <p>{fehler}</p>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.pdfseiten.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.pdfseiten.schliessen')}</Knopf>
       </div>
     );
   if (!info) return <p className="leise pdfseiten">{t('ablage.pdfseiten.lade-seiten')}</p>;

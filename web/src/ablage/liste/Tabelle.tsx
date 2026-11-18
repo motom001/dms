@@ -75,7 +75,7 @@ export function Tabelle(p: {
                   {kann ? (
                     // Sortieren über die Spaltenköpfe (#1212): Klick sortiert, zweiter Klick dreht um; Pfeil an der sortierten Spalte.
                     <Knopf
-                      art="link"
+                      art="eigen"
                       className={`spaltenknopf${an ? ' sortiert' : ''}`}
                       onClick={() => p.sortiere(k)}
                       title={t('ablage.ablage.nach-sortieren', { spaltenName: spaltenName(k, p.spaltenTyp) })}>

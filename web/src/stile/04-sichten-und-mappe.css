@@ -86,7 +86,7 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
 .historie .einzeln { margin: 4px 0; }
 .historie .vergleich { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .historie .mehrzeilig { white-space: pre-wrap; }
-.historie-kopf { display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 4px; }
+.historie-kopf { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-bottom: 4px; }
 /* Am Handy (#1027): „Alle aufklappen / Alle zuklappen“ mit 44 px Tippfläche (#1006: auch in den Fassungen). */
 @media (pointer: coarse) { .historie-kopf .textknopf { min-height: 44px; display: inline-flex; align-items: center; } }
 .historie-alles { margin-bottom: 4px; }
@@ -215,6 +215,8 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .gruppentitel { margin: 4px 10px 2px; font-size: calc(11px * var(--skala, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--leise); }
 .sicht.ausgeblendet .nm { opacity: .65; font-style: italic; }
 .ausgeblendet-fuss { margin: 12px 10px 0; }
+/* „n Bereiche ausgeblendet“ ist seit #1277 ein Knopf: in der schmalen Leiste darf er umbrechen. */
+.ausgeblendet-fuss .knopf { white-space: normal; text-align: left; max-width: 100%; }
 .ausgeblendet-fuss .verweis { background: none; border: 0; padding: 0; font: inherit; color: var(--akzent); cursor: pointer; text-decoration: underline; }
 /* Solange die Stufe lädt, steht statt der Bereiche eine leise Zeile (#1418). */
 .werkbankleiste-laedt { margin: 4px 10px; }

@@ -72,11 +72,7 @@ export function SuchePanel() {
         </Feld>
         <p className="leise klein">
           {t('suche.werkbank.woerter', { anzahl: s.woerter })}{' '}
-          <Knopf
-            art="link"
-            groesse="klein"
-            laeuft={laeuft}
-            onClick={() => tu(() => sucheApi.woerterNeu(), t('suche.werkbank.woerter.fertig'))}>
+          <Knopf groesse="klein" laeuft={laeuft} onClick={() => tu(() => sucheApi.woerterNeu(), t('suche.werkbank.woerter.fertig'))}>
             {t('suche.werkbank.woerter.neu')}
           </Knopf>
         </p>

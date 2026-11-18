@@ -155,11 +155,11 @@ export function Einrichtungsassistent({ status, fertig }: { status: KontoStatus;
       datei={{}}>
       <div className="wahlkarten">
         {/* Zwei Wege als Karten (#1215: Baustein Knopf, Aussehen der Karte über .textknopf.wahlkarte). */}
-        <Knopf art="link" className="wahlkarte" onClick={() => setzeStand((x) => ({ ...x, neu: true }))}>
+        <Knopf art="eigen" className="wahlkarte" onClick={() => setzeStand((x) => ({ ...x, neu: true }))}>
           <strong>{t('einrichtung.assistent.neu-einrichten')}</strong>
           <span className="leise">{t('einrichtung.wahl.neu')}</span>
         </Knopf>
-        <Knopf art="link" className="wahlkarte" onClick={() => setSicherung(true)}>
+        <Knopf art="eigen" className="wahlkarte" onClick={() => setSicherung(true)}>
           <strong>{t('einrichtung.assistent.aus-einer-sicherung-wiederherstellen')}</strong>
           <span className="leise">{t('einrichtung.assistent.neues-nas-alte-sicherung')}</span>
         </Knopf>

@@ -154,9 +154,7 @@ export function ProtokollListe({ p, offen }: { p: ProtokollZustand; offen?: stri
       {f.anfrage && (
         <div className="hinweis info">
           <p>{tn('werkbank.protokoll.nur-anfrage', { span: <span className="mono">{f.anfrage}</span> })}</p>
-          <Knopf art="link" onClick={() => setze({ anfrage: '' })}>
-            {t('werkbank.protokoll.alle-zeigen')}
-          </Knopf>
+          <Knopf onClick={() => setze({ anfrage: '' })}>{t('werkbank.protokoll.alle-zeigen')}</Knopf>
         </div>
       )}
       {p.fehler && (
@@ -250,7 +248,7 @@ export function ProtokollDetail({ p, nr }: { p: ProtokollZustand; nr?: string })
       </div>
       {e.anfrage && (
         <p>
-          <Knopf art="link" onClick={() => p.setFilter({ stufe: 'trace', modul: '', benutzer: '', anfrage: e.anfrage!, suche: '' })}>
+          <Knopf onClick={() => p.setFilter({ stufe: 'trace', modul: '', benutzer: '', anfrage: e.anfrage!, suche: '' })}>
             {t('werkbank.protokoll.alle-eintraege-dieser-anfrage')}
           </Knopf>
         </p>

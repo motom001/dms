@@ -187,9 +187,9 @@ function zustellenBereich({
         <Knopf art={zustellen ? 'neben' : 'haupt'} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>
           {zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}
         </Knopf>
-        <a className="knopf" href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>
+        <KnopfLink href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>
           {t('werkbank.auskunft.detail.herunterladen')}
-        </a>
+        </KnopfLink>
         <Knopf
           art="gefahr"
           symbol="geloescht"

@@ -85,7 +85,6 @@ export function AusDokumentErgebnisse({
             </Knopf>
           )}
           <Knopf
-            art="link"
             groesse="klein"
             onClick={() => {
               Object.keys(z.vorschlaege).forEach(vorschlagZuruecknehmen);

@@ -179,7 +179,7 @@ export function Mehrfachauswahl({
               {x.zusatz}
               <span className="verweisaktionen">
                 {x.aktionen}
-                <Knopf art="link" groesse="klein" aria-label={x.entfernenText} title={x.entfernenText} onClick={() => entferne(x.id)}>
+                <Knopf groesse="klein" aria-label={x.entfernenText} title={x.entfernenText} onClick={() => entferne(x.id)}>
                   {t('felder.auswahl.entfernen')}
                 </Knopf>
               </span>

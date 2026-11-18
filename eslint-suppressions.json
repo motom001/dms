@@ -1171,9 +1171,6 @@
     }
   },
   "web/src/ablage/NeuePost.tsx": {
-    "ablago/bausteine": {
-      "count": 9
-    },
     "complexity": {
       "count": 1
     }
@@ -1194,9 +1191,6 @@
     }
   },
   "web/src/ablage/Startseite.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    },
     "complexity": {
       "count": 1
     }

@@ -15,7 +15,7 @@
 | `ohneSuche`, `darunter`, `schliessen` | ohne Suchfeld; etwas unter dem Gewählten; beim Schließen der Vorschläge |
 
 - **Enter** nimmt den ersten Vorschlag, Pfeiltasten wandern durch die Liste, Esc schließt sie.
-- **Entfernen** ist ein leiser Knopf (Art Link), nicht rot: Das Feld ändert sich erst beim Speichern (Leitsatz 5).
+- **Entfernen** ist ein kleiner Knopf (Art Neben), nicht rot: Das Feld ändert sich erst beim Speichern (Leitsatz 5).
 - **Am Handy** sind Suchfeld, Vorschläge und „Entfernen“ mindestens 44 px hoch.
 - Die Musterseite zeigt den Baustein im Bereich **Mehrfachauswahl**.
 

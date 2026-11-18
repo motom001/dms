@@ -38,9 +38,7 @@ export function PdfVerkleinern({
     return (
       <div className="hinweis schlecht pdfseiten">
         <p>{fehler}</p>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.pdfverkleinern.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.pdfverkleinern.schliessen')}</Knopf>
       </div>
     );
   if (!v)

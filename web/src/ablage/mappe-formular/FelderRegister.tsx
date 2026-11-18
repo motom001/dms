@@ -127,7 +127,7 @@ function AbschnittBlock({
   return (
     <section className={`feldabschnitt${offen ? ' offen' : ''}`} aria-labelledby={`${id}-kopf`}>
       <h2 className="abschnittkopf">
-        <Knopf art="link" id={`${id}-kopf`} aria-expanded={offen} aria-controls={id} onClick={() => z.umschaltenAbschnitt(r, a)}>
+        <Knopf art="eigen" id={`${id}-kopf`} aria-expanded={offen} aria-controls={id} onClick={() => z.umschaltenAbschnitt(r, a)}>
           <Symbol name="pfeil-rechts" />
           <span className="abschnitttitel">{abschnittTitel(a)}</span>
           {!offen && mitWerten.length > 0 && (

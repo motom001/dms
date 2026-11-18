@@ -4,7 +4,7 @@ import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { HakenFeld, Knopf } from '../bausteine';
+import { HakenFeld, Knopf, KnopfLink } from '../bausteine';
 import { heikelHerunterladen } from '../verwaltungsmodus';
 
 /** Profil → Meine Daten exportieren (#255): eigene Daten im Format des Vollexports. */
@@ -97,11 +97,11 @@ export function MeinExport() {
 /** Herunterladen; mit Passwörtern im Klartext (#1356) erst die erneute Bestätigung, wenn die Anmeldung nicht frisch ist. */
 function ZipLink({ passwoerter }: { passwoerter: boolean }) {
   return (
-    <a
-      className="knopf klein"
+    <KnopfLink
       href="/api/konto/export/zip"
-      onClick={passwoerter ? (e) => void heikelHerunterladen(e, '/api/konto/export/zip') : undefined}>
+      onClick={passwoerter ? (e) => void heikelHerunterladen(e, '/api/konto/export/zip') : undefined}
+      groesse="klein">
       {t('profil.meinexport.herunterladen-zip')}
-    </a>
+    </KnopfLink>
   );
 }

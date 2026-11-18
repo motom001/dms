@@ -4,7 +4,7 @@ import { Erledigt, NOTFALLBLATT_URL, meldeSicherung } from '../Sicherung';
 import { heikelHerunterladen } from '../../verwaltungsmodus';
 import { Hilfe } from '../../Hilfe';
 import { t, tn } from '../../sprache';
-import { Knopf } from '../../bausteine';
+import { Knopf, KnopfLink } from '../../bausteine';
 import type { TresorZustand } from './zustand';
 
 /** Ergebnis eines Schlüsselwechsels. */
@@ -79,8 +79,7 @@ function wechselErgebnis(wechsel: Wechsel, w: WechselZustand) {
           {blattGeladen && <Erledigt />}
           {tn('werkbank.verschluesselung.das-neue-notfallblatt-herunterladen', {
             link: (
-              <a
-                className="knopf klein"
+              <KnopfLink
                 href={NOTFALLBLATT_URL}
                 download
                 onClick={(e) =>
@@ -89,9 +88,10 @@ function wechselErgebnis(wechsel: Wechsel, w: WechselZustand) {
                     setTimeout(() => void eintrag.laden(), 1500);
                     setTimeout(meldeSicherung, 1500);
                   })
-                }>
+                }
+                groesse="klein">
                 {t('werkbank.verschluesselung.notfallblatt-herunterladen')}
-              </a>
+              </KnopfLink>
             ),
           })}
         </li>

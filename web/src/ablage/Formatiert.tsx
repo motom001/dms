@@ -446,7 +446,6 @@ export function FormatiertEingabe({
                   {WERKZEUGE.map((w) => (
                     <Knopf
                       key={w.titel}
-                      art="link"
                       nurSymbol={w.aufschrift ? `${w.aufschrift} ${w.titel}` : w.titel}
                       title={w.titel}
                       onMouseDown={(e) => e.preventDefault()}
@@ -455,11 +454,7 @@ export function FormatiertEingabe({
                     </Knopf>
                   ))}
                   {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. Das @ ist ein Zeichen (#1268). */}
-                  <Knopf
-                    art="link"
-                    nurSymbol={t('ablage.formatiert.erwaehnen')}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={erwaehnen}>
+                  <Knopf nurSymbol={t('ablage.formatiert.erwaehnen')} onMouseDown={(e) => e.preventDefault()} onClick={erwaehnen}>
                     <span aria-hidden="true">@</span>
                   </Knopf>
                 </span>

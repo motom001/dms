@@ -33,9 +33,7 @@ export function PaketDatenZeile({ paket, aendern }: { paket: string; aendern: ()
         {a.bereiche.some((b) => b.angehakt)
           ? t('pakete.daten.zeile', { einrichtung: liste('einrichtung'), nachweise: liste('nachweise') })
           : t('pakete.daten.nichts')}{' '}
-        <Knopf art="link" onClick={aendern}>
-          {t('pakete.reiter.aendern')}
-        </Knopf>
+        <Knopf onClick={aendern}>{t('pakete.reiter.aendern')}</Knopf>
       </p>
     </>
   );

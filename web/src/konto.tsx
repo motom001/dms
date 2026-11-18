@@ -25,7 +25,7 @@ import { setzeZeitzone } from '../../shared/src/region';
 import { zielNachAnmeldung } from '../../shared/src/startseite';
 import { darfVerwalten, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import { Verwaltungsanmeldung, verwaltungBeginnen } from './verwaltungsmodus';
-import { abfangen, Feld, Knopf } from './bausteine';
+import { abfangen, Feld, Knopf, KnopfLink } from './bausteine';
 
 const OHNE_MODUS: Verwaltungsstand = {
   darf: false,
@@ -201,9 +201,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
             <PasskeyHinzufuegen fertig={() => laden()} />
           </>
         )}
-        <Knopf art="link" onClick={abmelden}>
-          {t('anmeldung.abmelden')}
-        </Knopf>
+        <Knopf onClick={abmelden}>{t('anmeldung.abmelden')}</Knopf>
         {darfVerwalten(status.benutzer) && <PflichtAusschalten fertig={laden} />}
         <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => void laden()} />
       </Karte>,
@@ -213,9 +211,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
     return seite(
       <Karte titel={t('anmeldung.passkey.pflicht.titel')} unter={t('anmeldung.passkey.pflicht.text')}>
         {passkeysImBrowser() ? <PasskeyHinzufuegen fertig={() => laden()} /> : <PasskeyOhneHttps />}
-        <Knopf art="link" onClick={abmelden}>
-          {t('anmeldung.abmelden')}
-        </Knopf>
+        <Knopf onClick={abmelden}>{t('anmeldung.abmelden')}</Knopf>
         {darfVerwalten(status.benutzer) && <PflichtAusschalten art="passkey" fertig={laden} />}
         <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => void laden()} />
       </Karte>,
@@ -428,9 +424,7 @@ function CodeSchritt({
     return (
       <Karte titel={t('anmeldung.passkey.zweiter.titel')} unter={t('anmeldung.passkey.zweiter.text')}>
         {mitPasskey || <PasskeyOhneHttps />}
-        <Knopf art="link" onClick={zurueck}>
-          {t('anmeldung.zurueck')}
-        </Knopf>
+        <Knopf onClick={zurueck}>{t('anmeldung.zurueck')}</Knopf>
       </Karte>
     );
   return (
@@ -462,16 +456,13 @@ function CodeSchritt({
         </Knopf>
       </form>
       <Knopf
-        art="link"
         onClick={() => {
           setWiederherstellung(!wiederherstellung);
           setCode('');
         }}>
         {wiederherstellung ? t('anmeldung.code.wechsel.app') : t('anmeldung.code.wechsel.wiederherstellung')}
       </Knopf>
-      <Knopf art="link" onClick={zurueck}>
-        {t('anmeldung.zurueck')}
-      </Knopf>
+      <Knopf onClick={zurueck}>{t('anmeldung.zurueck')}</Knopf>
     </Karte>
   );
 }
@@ -538,7 +529,6 @@ function Anmelden({
           </form>
         )}
         <Knopf
-          art="link"
           onClick={() => {
             setVergessen(false);
             setGesendet(false);
@@ -559,18 +549,16 @@ function Anmelden({
       )}
       {anbieter && (
         <>
-          <a id="anmelden-anbieter" className="knopf primaer breit" href="/api/konto/anbieter/start" onClick={merkeZiel}>
+          <KnopfLink id="anmelden-anbieter" href="/api/konto/anbieter/start" onClick={merkeZiel} art="haupt" className="breit">
             {anbieter.knopf}
-          </a>
+          </KnopfLink>
           {anbieterFehler && (
             <p className="fehlertext" role="alert">
               {anbieterFehler}
             </p>
           )}
           {anbieter.lokalNurAdmins && !mitPasswort ? (
-            <Knopf art="link" onClick={() => setMitPasswort(true)}>
-              {t('anmeldung.anbieter.admin')}
-            </Knopf>
+            <Knopf onClick={() => setMitPasswort(true)}>{t('anmeldung.anbieter.admin')}</Knopf>
           ) : (
             <p className="trenner">{t('anmeldung.anbieter.oder')}</p>
           )}
@@ -625,9 +613,7 @@ function Anmelden({
               {t('anmeldung.knopf')}
             </Knopf>
           </form>
-          <Knopf art="link" onClick={() => setVergessen(true)}>
-            {t('anmeldung.vergessen.link')}
-          </Knopf>
+          <Knopf onClick={() => setVergessen(true)}>{t('anmeldung.vergessen.link')}</Knopf>
         </>
       )}
     </Karte>
@@ -675,9 +661,7 @@ function PasswortSetzen({ schluessel, fertig }: { schluessel: string; fertig: ()
     return (
       <Karte titel={t('anmeldung.link.ungueltig')}>
         <p>{ungueltig}</p>
-        <a className="knopf" href="/">
-          {t('anmeldung.zur-anmeldung')}
-        </a>
+        <KnopfLink href="/">{t('anmeldung.zur-anmeldung')}</KnopfLink>
       </Karte>
     );
   if (!info) return <p className="leise mittig">{t('anmeldung.link.pruefe')}</p>;

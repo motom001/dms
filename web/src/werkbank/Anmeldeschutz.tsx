@@ -458,16 +458,16 @@ function PasskeyPflichtBlatt() {
             (p.admin || p.mitglied ? (
               <div className="hinweis warn" id="passkey-pflicht-ohne-adresse">
                 <p>{t('werkbank.anmeldeschutz.passkey.ohne-adresse')}</p>
-                <Link to="/werkbank/betrieb" className="knopf klein">
+                <KnopfLink to="/werkbank/betrieb" groesse="klein">
                   {t('werkbank.anmeldeschutz.passkey.zur-adresse')}
-                </Link>
+                </KnopfLink>
               </div>
             ) : (
               <div className="hinweis info" id="passkey-pflicht-adresse">
                 <p>{t('anmeldung.passkey.fehler.pflicht-adresse')}</p>
-                <Link to="/werkbank/betrieb" className="knopf klein">
+                <KnopfLink to="/werkbank/betrieb" groesse="klein">
                   {t('werkbank.anmeldeschutz.passkey.zur-adresse')}
-                </Link>
+                </KnopfLink>
               </div>
             ))}
           {p.moeglich && p.adresse && (

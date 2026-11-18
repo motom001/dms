@@ -362,7 +362,7 @@ function MonatAnsicht({
       const punkte = liste.slice(0, 3);
       return (
         <td key={iso} className={klasse} aria-current={istHeute ? 'date' : undefined}>
-          <Knopf art="link" className="ka-tagknopf" aria-label={beschriftung} aria-pressed={gewaehlt === iso} onClick={() => setTag(iso)}>
+          <Knopf art="eigen" className="ka-tagknopf" aria-label={beschriftung} aria-pressed={gewaehlt === iso} onClick={() => setTag(iso)}>
             <span className="ka-zahl">{Number(iso.slice(8))}</span>
             <span className="ka-punkte" aria-hidden="true">
               {punkte.map((x, i) => (
@@ -381,7 +381,7 @@ function MonatAnsicht({
       <td key={iso} className={klasse} aria-current={istHeute ? 'date' : undefined}>
         <div className="ka-tagkopf">
           <Knopf
-            art="link"
+            art="eigen"
             className="ka-zahl"
             aria-label={beschriftung}
             aria-pressed={gewaehlt === iso}
@@ -398,7 +398,7 @@ function MonatAnsicht({
           <Zeile key={schluessel(x, i)} x={x} heute={heute} offen={offen} />
         ))}
         {mehr > 0 && (
-          <Knopf art="link" groesse="klein" className="ka-mehr" onClick={() => setTag(iso)}>
+          <Knopf groesse="klein" className="ka-mehr" onClick={() => setTag(iso)}>
             {t('termine.weitere', { anzahl: mehr })}
           </Knopf>
         )}
@@ -412,7 +412,7 @@ function MonatAnsicht({
       {fehler && <p className="fehlertext">{fehler}</p>}
       {ueberfaellig.length > 0 && (
         <Knopf
-          art="link"
+          art="eigen"
           className="ka-ueberzeile"
           symbol="warnung"
           aria-pressed={gewaehlt === 'ueberfaellig'}
@@ -448,7 +448,7 @@ function MonatAnsicht({
             </h2>
             {gewaehlt !== 'ueberfaellig' && feiertag(gewaehlt) && <span className="chip">{feiertag(gewaehlt)}</span>}
             {!kompakt && (
-              <Knopf art="link" groesse="klein" onClick={() => setTag(null)}>
+              <Knopf groesse="klein" onClick={() => setTag(null)}>
                 {t('termine.schliessen')}
               </Knopf>
             )}
@@ -510,7 +510,7 @@ function JahrAnsicht({ jahr, zumMonat, favoriten }: { jahr: number; zumMonat(m: 
     <div className="ka-jahr-rahmen">
       {fehler && <p className="fehlertext">{fehler}</p>}
       {ueberfaellig > 0 && (
-        <Knopf art="link" className="ka-ueberzeile" symbol="warnung" onClick={() => zumMonat(monatVon(heute), 'ueberfaellig')}>
+        <Knopf art="eigen" className="ka-ueberzeile" symbol="warnung" onClick={() => zumMonat(monatVon(heute), 'ueberfaellig')}>
           {t('termine.ueberfaellig.zahl', { anzahl: ueberfaellig })}
         </Knopf>
       )}
@@ -519,7 +519,7 @@ function JahrAnsicht({ jahr, zumMonat, favoriten }: { jahr: number; zumMonat(m: 
         {monate.map((m) => (
           <section key={m} className="ka-jm" aria-labelledby={`ka-jm-${m}`}>
             <h3 className="h3">
-              <Knopf art="link" id={`ka-jm-${m}`} className="ka-jm-titel" onClick={() => zumMonat(m, null)}>
+              <Knopf id={`ka-jm-${m}`} className="ka-jm-titel" onClick={() => zumMonat(m, null)}>
                 {monatName(m)}
               </Knopf>
             </h3>
@@ -555,7 +555,7 @@ function JahrAnsicht({ jahr, zumMonat, favoriten }: { jahr: number; zumMonat(m: 
                       return (
                         <td key={iso} className={istHeute ? 'ka-heute-tag' : undefined} aria-current={istHeute ? 'date' : undefined}>
                           <Knopf
-                            art="link"
+                            art="eigen"
                             className={`ka-mt ka-mt-knopf${nurFolge ? ' ka-folge' : ''}${ueber ? ' ka-ueber' : ''}`}
                             title={text}
                             aria-label={text}

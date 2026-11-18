@@ -98,11 +98,15 @@ export { beispielPdf, beispielPdfSeiten } from './pdf.mjs';
 /**
  * Wächter für die Leitsätze der Knöpfe (#1210), läuft in jeder Seite jedes Rauchtests (addInitScript): Nach jeder
  * Änderung im Dokument prüft er die sichtbaren Knöpfe und meldet Funde einmal je Seite an den Test (`__knopfFund`):
- *   - anlegen-ohne-plus: `data-knopf="anlegen"`, dessen Beschriftung nicht mit „+“ beginnt (Leitsatz 2);
+ *   - anlegen-ohne-plus: `data-knopf="anlegen"` oder grün über die Klasse (`.knopf.gruen`, #1269), dessen Beschriftung
+ *     nicht mit „+“ beginnt (Leitsatz 2);
  *   - gefahr-ohne-rueckfrage: `data-knopf="gefahr"`, der keine Rückfrage öffnet (`aria-haspopup="dialog"`) und nicht
  *     gesperrt ist (Leitsatz 5);
- *   - rot-ausserhalb-rueckfrage: rot gefüllt (`.knopf.gefahr`, `data-knopf="entscheidung"`) außerhalb des Fensters
- *     einer Rückfrage (Leitsatz 5).
+ *   - rot-ausserhalb-rueckfrage: rot gefüllt (`.knopf.gefahr`, `data-knopf="entscheidung"`) oder ein roter Link
+ *     (`.textknopf.gefahr`, #1269) außerhalb des Fensters einer Rückfrage (Leitsatz 5);
+ *   - link-ohne-ziel: sieht aus wie ein Link, hat aber kein Ziel (#1277: Links führen woanders hin, Aktionen sind
+ *     Knöpfe) – `data-knopf="link"` ohne `href` oder ein `<button>` mit der Klasse `textknopf` außer einer Sonderform
+ *     (`data-knopf="eigen"`).
  */
 function knopfWaechter() {
   const gemeldet = new Set();
@@ -110,14 +114,16 @@ function knopfWaechter() {
   const text = (el) => (el.textContent || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
   const pruefe = () => {
     const funde = [];
-    for (const el of document.querySelectorAll('[data-knopf="anlegen"]'))
+    for (const el of document.querySelectorAll('[data-knopf="anlegen"], .knopf.gruen'))
       if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
     for (const el of document.querySelectorAll('[data-knopf="gefahr"]')) {
       const gesperrt = el.disabled || el.getAttribute('aria-disabled') === 'true';
       if (sichtbar(el) && !gesperrt && el.getAttribute('aria-haspopup') !== 'dialog') funde.push(['gefahr-ohne-rueckfrage', el]);
     }
-    for (const el of document.querySelectorAll('.knopf.gefahr, [data-knopf="entscheidung"]'))
+    for (const el of document.querySelectorAll('.knopf.gefahr, [data-knopf="entscheidung"], .textknopf.gefahr'))
       if (sichtbar(el) && !el.closest('dialog.rueckfrage')) funde.push(['rot-ausserhalb-rueckfrage', el]);
+    for (const el of document.querySelectorAll('[data-knopf="link"]:not([href]), button.textknopf:not([data-knopf="eigen"])'))
+      if (sichtbar(el)) funde.push(['link-ohne-ziel', el]);
     for (const [art, el] of funde) {
       const f = { art, text: text(el), pfad: location.pathname };
       const schluessel = `${f.art}|${f.text}|${f.pfad}`;

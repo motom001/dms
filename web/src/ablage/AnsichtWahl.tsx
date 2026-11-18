@@ -73,7 +73,7 @@ function Zeile({
         )}
       </Link>
       <Knopf
-        art="link"
+        art="eigen"
         className={`aw-stern ${angeheftet ? 'an' : ''}`}
         aria-pressed={angeheftet}
         onClick={() => anheften(s.id)}
@@ -171,9 +171,7 @@ export function AnsichtWahl({
                 beschriftung={t('ablage.ansichtwahl.ansicht-suchen-2')}
                 platzhalter={t('ablage.ansichtwahl.ansicht-suchen')}
               />
-              <Knopf art="link" onClick={schliessen}>
-                {t('ablage.ansichtwahl.schliessen')}
-              </Knopf>
+              <Knopf onClick={schliessen}>{t('ablage.ansichtwahl.schliessen')}</Knopf>
             </div>
             {verwalten ? (
               <>
@@ -262,7 +260,7 @@ export function AnsichtWahl({
                   );
                   return (
                     <div key={g.schluessel} className="aw-gruppe">
-                      <Knopf art="link" className="aw-gruppenkopf" aria-expanded={auf} onClick={() => klappe(g.schluessel)}>
+                      <Knopf art="eigen" className="aw-gruppenkopf" aria-expanded={auf} onClick={() => klappe(g.schluessel)}>
                         <Symbol name="pfeil-rechts" className="aw-pfeil" /> {g.name}{' '}
                         <span className="leise klein">{g.eintraege.length}</span>
                       </Knopf>
@@ -283,7 +281,7 @@ export function AnsichtWahl({
                     </div>
                   );
                 })}
-                <Knopf art="link" className="aw-verwalten" onClick={() => setVerwalten(true)}>
+                <Knopf className="aw-verwalten" onClick={() => setVerwalten(true)}>
                   {tn('ablage.ansichtwahl.ansichten-ausblenden', {
                     wert: a.ausgeblendet > 0 && t('ablage.ansichtwahl.ausgeblendet', { ausgeblendet: a.ausgeblendet }),
                   })}

@@ -16,6 +16,7 @@ import { AnsichtSymbol, Symbol } from '../Symbol';
 import { darfPostAnlegen } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sichtName } from '../../../shared/src/beschriftung';
+import { Knopf } from '../bausteine';
 
 /**
  * Startseite der Ablage (#334), ruhig seit #1219: Begrüßung, vier Kacheln mit je einer Zahl und „Zuletzt geöffnet“.
@@ -187,17 +188,18 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
       <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
         {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. Nur mit Touch. */}
         {kamera && (
-          <button type="button" className="knopf gruen pk-start" onClick={() => postFotografieren()}>
+          <Knopf art="haupt" className="pk-start" onClick={() => postFotografieren()}>
             {tn('ablage.startseite.post-fotografieren', { symbol: <Symbol name="kamera" /> })}
-          </button>
+          </Knopf>
         )}
         {daten?.leer ? (
           <div className="einstiege">
             <p>{t('ablage.startseite.noch-ist-die-ablage')}</p>
-            <button type="button" className="kachel post" onClick={() => datei.current?.click()}>
+            {/* Kachel als Sonderform des Knopfs (#1269); eigener Baustein „Kachel“ folgt in #1270. */}
+            <Knopf art="eigen" className="kachel post" onClick={() => datei.current?.click()}>
               <span className="kacheltitel">{t('ablage.startseite.erste-post-ablegen')}</span>
               <span className="kachelunter">{t('ablage.startseite.brief-scannen-oder-fotografieren')}</span>
-            </button>
+            </Knopf>
             <input
               ref={datei}
               type="file"

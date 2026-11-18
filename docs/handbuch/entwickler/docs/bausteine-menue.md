@@ -8,6 +8,7 @@
 | --- | --- |
 | `beschriftung` | Text des Knopfs („Mappe“); mit `nurSymbol` der Name für Bildschirmleser („Weitere Handlungen für Rechnung.pdf“) |
 | `nurSymbol` | nur „⋯“ zeigen |
+| `art` | `neben` (Vorgabe) oder `anlegen`: grüner Anlege-Knopf ohne Pfeil für ein Menü, das nur Neues anfängt – „+ Neu“ in der Kopfzeile (#1269); die Beschriftung beginnt mit „+“ |
 | `punkte` | die Handlungen, siehe unten |
 | `groesse` | `klein` (Vorgabe) oder `normal` |
 | `links` | Liste linksbündig unter dem Knopf statt rechtsbündig |

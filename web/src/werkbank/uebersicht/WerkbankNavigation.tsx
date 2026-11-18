@@ -96,7 +96,7 @@ export function WerkbankNavigation({
         <p className="ausgeblendet-fuss leise klein">
           {ausgeblendet.length > 0 && (
             <>
-              <Knopf art="link" groesse="klein" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
+              <Knopf groesse="klein" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
                 {alleZeigen
                   ? t('werkbank.uebersicht.ausgeblendete-verbergen')
                   : t('werkbank.uebersicht.bereiche-ausgeblendet', {
@@ -171,7 +171,7 @@ function gruppenwahl({
       {gruppen.map((g) => (
         <Knopf
           key={g}
-          art="link"
+          art="eigen"
           role="tab"
           aria-selected={gewaehlt === g}
           className={`sicht ${gewaehlt === g ? 'an' : ''}`}

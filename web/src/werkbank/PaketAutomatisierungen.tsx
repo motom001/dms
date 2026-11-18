@@ -106,7 +106,6 @@ export function GeaenderteAutomatisierungen({
               {a.name}
             </Link>{' '}
             <Knopf
-              art="link"
               groesse="klein"
               aria-expanded={offen === a.schluessel}
               onClick={() => setOffen(offen === a.schluessel ? null : a.schluessel)}>

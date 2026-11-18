@@ -321,14 +321,13 @@ function RegisterKopf({
         {r.key}
       </code>
       <div className="feldaktionen">
-        <Knopf art="link" gesperrt={i === 0} onClick={() => verschiebe(-1)} nurSymbol={t('mappentypen.editor.register-nach-vorn')}>
+        <Knopf gesperrt={i === 0} onClick={() => verschiebe(-1)} nurSymbol={t('mappentypen.editor.register-nach-vorn')}>
           <Symbol name="sortiert-auf" />
         </Knopf>
-        <Knopf art="link" gesperrt={letzte} onClick={() => verschiebe(1)} nurSymbol={t('mappentypen.editor.register-nach-hinten')}>
+        <Knopf gesperrt={letzte} onClick={() => verschiebe(1)} nurSymbol={t('mappentypen.editor.register-nach-hinten')}>
           <Symbol name="sortiert-ab" />
         </Knopf>
         <Knopf
-          art="link"
           onClick={() => entferne()}
           nurSymbol={t('mappentypen.editor.register-entfernen-2', { name: r.name })}
           title={t('mappentypen.editor.register-entfernen-3', { ERST_BEIM_SPEICHERN })}>
@@ -428,7 +427,7 @@ function HistorieEinstellung({ r, setzeReg }: { r: EntwurfRegister; setzeReg: (p
           );
         })}
         {r.zeigt && (
-          <Knopf art="link" groesse="klein" symbol="zuruecksetzen" onClick={() => setzeReg({ zeigt: undefined })}>
+          <Knopf groesse="klein" symbol="zuruecksetzen" onClick={() => setzeReg({ zeigt: undefined })}>
             {t('mappentypen.editor.historie-vorauswahl')}
           </Knopf>
         )}

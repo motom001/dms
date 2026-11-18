@@ -91,7 +91,7 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
             const offenHier = auf.has(id);
             return (
               <li key={id} data-id={id} className={offenHier ? 'an' : undefined}>
-                <Knopf art="link" className="aufklappzeile" aria-expanded={offenHier} onClick={() => umschalten(id)}>
+                <Knopf art="eigen" className="aufklappzeile" aria-expanded={offenHier} onClick={() => umschalten(id)}>
                   <Symbol name={offenHier ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
                   <span className="mono klein">{zeit(l.zeit)}</span>{' '}
                   <span className={`chip ${l.dauerMs >= 5000 ? 'stufe-error' : 'stufe-warn'}`}>{dauer(l.dauerMs)}</span>{' '}

@@ -53,11 +53,11 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 - **Bereichsnamen kurz und gleich:** *Grunddaten* zuerst, dann in der Reihenfolge, in der man den Eintrag einrichtet; Ausprobieren, Stand und Verlauf ans Ende.
 - **Überschriften:** Der Bereich trägt die `h2`; Abschnitte darin nehmen `h3` (`className="h4"`), nicht noch ein `blatt` oder einen Kasten mit derselben Überschrift.
 - **Rot heißt Fehler.** Bereiche werden nicht als Gefahrenzone gefärbt – Rot bedeutet im Editor „hier ist beim Speichern etwas schiefgegangen“. Gefährliches zeigen der rote Knopf (`art="gefahr"`) und die Rückfrage.
-- **Verweise auf einen anderen Bereich** („wähle einen im Bereich *Vertretung*“) sind ein Sprung: ein `Knopf` der Art Link, der `oeffne([k], true, true)` ruft.
+- **Verweise auf einen anderen Bereich** („wähle einen im Bereich *Vertretung*“) sind ein Sprung: ein `Knopf` (Neben), der `oeffne([k], true, true)` ruft.
 
 ## Am Handy { #handy }
 
-Sprünge und der Kopf eines Bereichs sind bei `(pointer: coarse)` mindestens 44 px hoch ([Am Handy](bausteine.md#handy)); „Alle aufklappen“ ist ein `Knopf` der Art Link. Die Leiste bricht um und rollt mit.
+Sprünge und der Kopf eines Bereichs sind bei `(pointer: coarse)` mindestens 44 px hoch ([Am Handy](bausteine.md#handy)); „Alle aufklappen“ ist ein kleiner `Knopf` (Neben). Die Leiste bricht um und rollt mit.
 
 Die Musterseite zeigt den Baustein im Bereich **Bereiche**: mit Sprungleiste (ein Bereich mit Fehler), zugeklappt mit Kurzinfo und unter drei Bereichen.
 

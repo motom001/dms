@@ -36,7 +36,7 @@ export function SystemkontenGruppe({
   return (
     <section className="aufklappbereich systemkontengruppe">
       <Knopf
-        art="link"
+        art="eigen"
         className="aufklappkopf"
         aria-expanded={auf}
         aria-controls={id}

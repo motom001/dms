@@ -180,7 +180,7 @@ function filterZeile(b: Feldbedingung, i: number, k: ZeilenKontext, entfernen: (
             />
           </HakenFeld>
         )}
-        <Knopf art="link" groesse="klein" symbol="schliessen" onClick={entfernen}>
+        <Knopf groesse="klein" symbol="schliessen" onClick={entfernen}>
           {t('werkbank.sichten.entfernen')}
         </Knopf>
       </div>

@@ -9,11 +9,7 @@ export function LinkAnzeige({ e, schliessen }: { e: LinkErgebnis; schliessen?: (
     return (
       <div className="hinweis gut">
         <p>{t('werkbank.benutzer.e-mail-an-ist', { email: e.benutzer.email })}</p>
-        {schliessen && (
-          <Knopf art="link" onClick={schliessen}>
-            {t('werkbank.benutzer.schliessen')}
-          </Knopf>
-        )}
+        {schliessen && <Knopf onClick={schliessen}>{t('werkbank.benutzer.schliessen')}</Knopf>}
       </div>
     );
   return (
@@ -42,11 +38,7 @@ export function LinkAnzeige({ e, schliessen }: { e: LinkErgebnis; schliessen?: (
           {kopiert ? t('werkbank.benutzer.kopiert') : t('werkbank.benutzer.kopieren')}
         </Knopf>
       </div>
-      {schliessen && (
-        <Knopf art="link" onClick={schliessen}>
-          {t('werkbank.benutzer.schliessen')}
-        </Knopf>
-      )}
+      {schliessen && <Knopf onClick={schliessen}>{t('werkbank.benutzer.schliessen')}</Knopf>}
     </div>
   );
 }

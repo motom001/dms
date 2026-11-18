@@ -210,7 +210,7 @@ export function AnzeigeEditor({
                         ))}
                     </select>
                   )}
-                  <Knopf art="link" groesse="klein" onClick={() => setzeListe(bedingungen.filter((_, j) => j !== i))}>
+                  <Knopf groesse="klein" onClick={() => setzeListe(bedingungen.filter((_, j) => j !== i))}>
                     {t('mappentypen.anzeige.entfernen')}
                   </Knopf>
                 </div>
@@ -233,7 +233,7 @@ export function AnzeigeEditor({
           {t('mappentypen.anzeige.hinzu')}
         </Knopf>
         {bedingungen.length > 0 && (
-          <Knopf art="link" groesse="klein" onClick={() => setze(undefined)}>
+          <Knopf groesse="klein" onClick={() => setze(undefined)}>
             {t('mappentypen.anzeige.immer-zeigen')}
           </Knopf>
         )}

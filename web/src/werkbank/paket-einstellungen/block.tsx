@@ -215,14 +215,12 @@ function EintragKopf({
         {blk.sortierbar && (
           <>
             <Knopf
-              art="link"
               gesperrt={i === 0}
               nurSymbol={t('werkbank.paketeinstellungen.nach-oben', { eintrag: blk.eintrag, wert: i + 1 })}
               onClick={() => schiebe(-1)}>
               <Symbol name="sortiert-auf" />
             </Knopf>
             <Knopf
-              art="link"
               gesperrt={i === anzahl - 1}
               nurSymbol={t('werkbank.paketeinstellungen.nach-unten', { eintrag: blk.eintrag, wert: i + 1 })}
               onClick={() => schiebe(1)}>

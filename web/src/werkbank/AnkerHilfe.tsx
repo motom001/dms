@@ -94,7 +94,7 @@ export function AnkerHilfe({
 function Eintrag({ a, text, einsetzen }: { a: string; text: string; einsetzen(anker: string): void }) {
   return (
     <li>
-      <Knopf art="link" onClick={() => einsetzen(a)} title={t('werkbank.rundgaenge.hilfe.einsetzen', { anker: a })}>
+      <Knopf onClick={() => einsetzen(a)} title={t('werkbank.rundgaenge.hilfe.einsetzen', { anker: a })}>
         <code>{a}</code> <span className="leise">{text}</span>
       </Knopf>
     </li>

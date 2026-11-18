@@ -37,7 +37,7 @@ export function feldHinweise(z: Kern, w: HinweisWege) {
             {sicher}
             {v.fundstelle ? <> – „{v.fundstelle}“</> : null}
           </span>{' '}
-          <Knopf art="link" groesse="klein" onClick={() => w.vorschlagZuruecknehmen(f.key)}>
+          <Knopf groesse="klein" onClick={() => w.vorschlagZuruecknehmen(f.key)}>
             {t('ablage.mappeformular.zuruecknehmen')}
           </Knopf>
         </p>
@@ -51,10 +51,10 @@ export function feldHinweise(z: Kern, w: HinweisWege) {
         <span className="leise">
           ({sicher}){v.hinweis ? ` – ${v.hinweis}` : ''}
         </span>{' '}
-        <Knopf art="link" groesse="klein" onClick={() => w.alternativeUebernehmen(f.key)}>
+        <Knopf groesse="klein" onClick={() => w.alternativeUebernehmen(f.key)}>
           {t('ablage.mappeformular.uebernehmen')}
         </Knopf>{' '}
-        <Knopf art="link" groesse="klein" onClick={() => w.vorschlagZuruecknehmen(f.key)}>
+        <Knopf groesse="klein" onClick={() => w.vorschlagZuruecknehmen(f.key)}>
           {t('ablage.mappeformular.verwerfen')}
         </Knopf>
       </p>
@@ -79,7 +79,7 @@ export function feldHinweise(z: Kern, w: HinweisWege) {
         {vorbelegtHier && !z.nurLesen && (
           <p className="ad-hinweis vorbelegt">
             <span className="chip">{vb.text}</span>{' '}
-            <Knopf art="link" groesse="klein" onClick={() => w.vorbelegungZuruecknehmen(f.key)}>
+            <Knopf groesse="klein" onClick={() => w.vorbelegungZuruecknehmen(f.key)}>
               {t('ablage.mappeformular.zuruecknehmen')}
             </Knopf>
           </p>

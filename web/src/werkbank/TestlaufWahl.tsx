@@ -105,11 +105,7 @@ export function TestBenutzerWahl({
           <span className="chip">
             {name(sonder)} <span className="chip klein">{t.frei(`werkbank.testlauf.konto.kennzeichen.${sonder.rolle}`)}</span>
             <SystemkontoKennzeichen k={sonder} />
-            <Knopf
-              art="link"
-              groesse="klein"
-              nurSymbol={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })}
-              onClick={() => setze('')}>
+            <Knopf groesse="klein" nurSymbol={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })} onClick={() => setze('')}>
               <Symbol name="schliessen" />
             </Knopf>
           </span>

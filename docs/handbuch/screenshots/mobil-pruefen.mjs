@@ -250,7 +250,7 @@ for (const g of GROESSEN) {
     else console.log(`ok  ${ort}`);
     if (seite.name === 'start') {
       await s.evaluate(() => scrollTo(0, 0));
-      await pruefeMenue(s, `${ort} „+ Neu“`, '.neuknopf > button', '.neuknopf .menue', join(ordner, 'menue-neu.png'));
+      await pruefeMenue(s, `${ort} „+ Neu“`, '.neuknopf > button', '.neuknopf [role="menu"]', join(ordner, 'menue-neu.png'));
       await pruefeMenue(s, `${ort} Benutzermenü`, '.benutzermenue .wer', '.benutzermenue .menue', join(ordner, 'menue-benutzer.png'));
       // Ansicht wählen (#498): Blatt im Bildschirm, Tippziele mindestens 44 px hoch.
       await pruefeMenue(s, `${ort} „Ansicht ▾“`, '.aw-knopf', '.aw-blatt', join(ordner, 'menue-ansicht.png'));

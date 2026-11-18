@@ -191,7 +191,6 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
           <Knopf onClick={() => schliesse(false)}>{t('konten.verwaltung.dialog.abbrechen')}</Knopf>
           {wieder && (
             <Knopf
-              art="link"
               onClick={() =>
                 kontoApi
                   .verwaltungBeenden()

@@ -1,0 +1,7 @@
+art: patch
+
+## Verbessert
+
+- **Aktionen sind Knöpfe, Links führen woanders hin** (#1277): „Auswahl aufheben“, „Ausblenden“, „Alle aufklappen“, „Entfernen“, „Schließen“ und alle anderen Handlungen, die bisher wie ein Textlink aussahen, sind jetzt Knöpfe mit Rand. Wie ein Link sieht nur noch aus, was zu einer anderen Seite, einer Datei oder einer Adresse außerhalb führt.
+- **Downloads und Wege als Knopf** (#1269): Herunterladen im Vollexport, im Löschprotokoll, beim Notfallblatt, im Löschkonzept und an Dokumenten sowie die Wege der Werkbank kommen aus demselben Baustein wie alle Knöpfe. „Logo hochladen“ in den Designs lässt sich jetzt mit der Tastatur bedienen.
+- **„+ Neu“ in der Kopfzeile** (#1269): ein Menü wie alle anderen – mit Pfeiltasten, Esc und für Screenreader; die Mappentypen stehen direkt darin. „Post fotografieren“ auf der Startseite am Handy ist blau.

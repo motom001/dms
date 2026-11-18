@@ -4,7 +4,7 @@ import { anlagenVon } from '../../../../shared/src/anlagen';
 import { kannStempeln } from '../../../../shared/src/stempel';
 import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
-import { Feld, Knopf, knopfAussehen, Menue, Wahlhaken } from '../../bausteine';
+import { Feld, Knopf, KnopfLink, Menue, Wahlhaken } from '../../bausteine';
 import { AnlageMarke, AnlageZeile } from '../Anlagen';
 import { Uebersetzbar } from '../Uebersetzung';
 import { Vorschaubild } from '../Vorschaubild';
@@ -87,7 +87,7 @@ function DokName({ k, x, s, weg, klickbar, auf }: { k: Kern; x: Dokument; s?: Oc
   return (
     <div className="dokname">
       {klickbar ? (
-        <Knopf art="link" className="dokname-knopf" aria-expanded={auf} onClick={() => k.a.umschalten(x)}>
+        <Knopf groesse="klein" className="dokname-knopf" aria-expanded={auf} onClick={() => k.a.umschalten(x)}>
           {x.name}
         </Knopf>
       ) : (
@@ -152,9 +152,9 @@ function Zeilenaktionen({ k, x, weg, klickbar, lage }: { k: Kern; x: Dokument; w
         <>
           {klickbar &&
             (handy && sicht ? (
-              <a {...knopfAussehen({ art: 'haupt' })} href={sicht.url} aria-label={t('ablage.dokumente.oeffnen', { name: x.name })}>
+              <KnopfLink art="haupt" href={sicht.url} aria-label={t('ablage.dokumente.oeffnen', { name: x.name })}>
                 {t('ablage.dokumente.oeffnen-2')}
-              </a>
+              </KnopfLink>
             ) : (
               !handy && (
                 <Knopf groesse="klein" aria-expanded={auf} onClick={() => a.umschalten(x)}>

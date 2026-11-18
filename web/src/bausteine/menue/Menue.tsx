@@ -13,6 +13,7 @@ import s from './Menue.module.css';
  * Dokumentzeile und im Kopf einer Ansicht. Ein Aussehen und eine Bedienung für alle Menüs:
  *
  * - Der Knopf ist ein `Knopf` (Neben, klein oder normal) mit Pfeil nach unten – oder nur das Symbol „⋯“ (`nurSymbol`).
+ *   Ein Menü, das nur Neues anfängt („+ Neu“ in der Kopfzeile, #1269), ist ein Anlege-Knopf (`art="anlegen"`, ohne Pfeil).
  * - Punkte mit Symbol, in Gruppen mit Überschrift (`gruppe`), gesperrte mit Grund darunter (Leitsatz 6: kein Grund nur
  *   im Tooltip).
  * - Gefährliches steht abgesetzt am Ende, mit Symbol, in Ruhe nicht rot (Leitsatz 4) und **immer mit Rückfrage**
@@ -44,6 +45,8 @@ export interface MenueProps {
   beschriftung: string;
   /** Nur das Symbol „⋯“ zeigen. */
   nurSymbol?: boolean;
+  /** `anlegen`: grüner Anlege-Knopf ohne Pfeil (die Beschriftung beginnt mit „+“, Leitsatz 2); Vorgabe Neben. */
+  art?: 'neben' | 'anlegen';
   punkte: MenuePunkt[];
   groesse?: KnopfGroesse;
   /** Menü rechtsbündig unter dem Knopf (Vorgabe) oder linksbündig. */
@@ -68,7 +71,7 @@ function gruppen(punkte: MenuePunkt[]): Array<{ name: string | null; punkte: Men
   return aus;
 }
 
-export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', links, titel, anker, className }: MenueProps) {
+export function Menue({ beschriftung, nurSymbol, art = 'neben', punkte, groesse = 'klein', links, titel, anker, className }: MenueProps) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const knopf = useRef<HTMLButtonElement>(null);
@@ -155,6 +158,7 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
     <div className={klassen(s.menue, 'menue-baustein', className)} ref={ref}>
       <Knopf
         ref={knopf}
+        art={art}
         groesse={groesse}
         aria-haspopup="menu"
         aria-expanded={offen}
@@ -172,6 +176,8 @@ export function Menue({ beschriftung, nurSymbol, punkte, groesse = 'klein', link
         }}>
         {nurSymbol ? (
           <Symbol name="mehr" />
+        ) : art === 'anlegen' ? (
+          beschriftung
         ) : (
           <>
             {beschriftung}

@@ -25,7 +25,7 @@ All building blocks are in `web/src/bausteine/`:
 
 ## Principles for buttons { #leitsaetze }
 
-Buttons mean the same everywhere, and nothing startles without need (#1210). Whoever places a button checks it against these six sentences; the pattern page shows them at the top, the building blocks implement them.
+Buttons mean the same everywhere, and nothing startles without need (#1210). Whoever places a button checks it against these seven sentences; the pattern page shows them at the top, the building blocks implement them.
 
 1. **Blue is the main action.** Save, create after filling in, next and apply are blue (`Knopf art="haupt"`), at most one per area. Blue is also the accent colour (links, focus, selection) – this looks calm and coherent.
 2. **Green means “start something new”**, and only that: “+ New”, “+ Post”, “+ Row”, “+ Emergency contact” (`art="anlegen"`). The label begins with “+”. Otherwise green is kept for states (active, done, went well).
@@ -33,8 +33,9 @@ Buttons mean the same everywhere, and nothing startles without need (#1210). Who
 4. **Nothing on the page is red.** Dangerous buttons (delete, lock, sign out, remove a package …) look like a secondary button with an icon (`art="gefahr"`). On hover and keyboard focus text and border turn red.
 5. **Solid red only at the moment of decision:** on the confirm button of the confirmation. No danger button without a confirmation – type checking only allows `art="gefahr"` with `rueckfrage` and `symbol`. Whatever can be undone (removing a link from a field, a row from a list before saving) is a normal “Remove” or “×”, not red.
 6. **Two kinds of “not possible”.** *Nothing to do* (save or discard without changes, empty selection): `gesperrt` – faded, no explanation. *Locked for a reason* (delete with links, missing permission, archive mode): `gesperrt="<reason>"` or a `KnopfSperre` – dashed border with a padlock and a small ⓘ next to it; a click on the button or the ⓘ opens the explanation at the button (reason, affected entries, “Instead” as buttons). No long sentence in the row; for screen readers the reason is attached to the button (`aria-describedby`). Dashed means “locked for you” everywhere, like “read only” on a field (C4). No “?” – that leads to the manual (C7); ⓘ explains exactly this case.
+7. **Links take you somewhere, actions are buttons** (pattern catalogue C8, #1277). Whatever does something – “Clear selection”, “Hide”, “Expand all”, “Remove” – is a `Knopf` (mostly `neben`, small in lists and bars). Only a way looks like a link: a page in Ablago (`KnopfLink to`), a file to download or an address outside (`KnopfLink href`). There is no kind `link` on `Knopf`; special forms such as column headers, disclosure toggles, menu entries, stars, handles and tiles are `art="eigen"` with their own class (own building blocks follow in #1270).
 
-**Checked** in three places: type checking requires symbol and confirmation for `art="gefahr"` (`web/src/bausteine/knopf/typpruefung.ts`). ESLint forbids colour classes via `className` on the button (`ablago/knopf-farben`, [Style and dependencies](stil.md#regeln)). The smoke tests report, on every page they visit, create buttons without “+”, danger buttons without a confirmation and solid red outside a confirmation ([Smoke test and screenshots](#rauchtest)).
+**Checked** in three places: type checking requires symbol and confirmation for `art="gefahr"` and allows no kind `link` on `Knopf` (`web/src/bausteine/knopf/typpruefung.ts`). ESLint forbids colour classes via `className` on the button (`ablago/knopf-farben`) and elements that look like a button through the class `knopf` or `textknopf` (`ablago/bausteine`, #1269; [Style and dependencies](stil.md#regeln)). The smoke tests report, on every page they visit, create buttons without “+” (also green through the class), danger buttons without a confirmation, solid red and red links outside a confirmation, and anything that looks like a link but has no target ([Smoke test and screenshots](#rauchtest)).
 
 ![Pattern page, area “Button”: kinds, danger at rest, on hover and focus, the confirmation, disabled in two forms and the opened explanation](bilder/muster-knopf.png){ loading=lazy }
 
@@ -44,14 +45,14 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 
 | Building block | On a phone |
 | --- | --- |
-| `Knopf`, `KnopfLink` (normal, all kinds) | at least 44 px high, icon only also 44 px wide; the kind link without a visible surface, too |
+| `Knopf`, `KnopfLink` (normal, all kinds) | at least 44 px high, icon only also 44 px wide; `KnopfLink art="link"` and special forms (`art="eigen"`) without a visible surface, too |
 | `Knopf` small | stays small to the eye; an invisible pseudo-element enlarges the touch target, a margin of the same width keeps neighbours clear |
 | `Feld` | inputs and selects at least 44 px high |
 | help icon “?” in a field | stays small to the eye; invisible touch target of 44 × 44 px, header row 44 px high, space to the label |
 | `HakenFeld`, checkboxes in `FeldGruppe` | the whole row with the label is at least 44 px high; the label toggles the checkbox, too |
 | `Suchfeld`, `ListenSuche`, `KopfSuche` | input like a field; “×” as a button with only a symbol; “Package” choice and `FilterHaken` at least 44 px high; `KopfSuche` on the phone as a 44 px magnifier, opened the chip “×” and “Search in” 44 px |
 | `Umschalter` | each choice at least 44 × 44 px |
-| `Bereich`, jump bar from `useBereiche` | jumps and the head of an area at least 44 px high; “Expand all” as a button of type link |
+| `Bereich`, jump bar from `useBereiche` | jumps and the head of an area at least 44 px high; “Expand all” as a small button (secondary) |
 | ⓘ at a locked `Knopf` | stays small to the eye; touch target 44 × 44 px |
 | `Speicherleiste` | all buttons on one line; “… delete” only shows its icon (the name stays for screen readers) |
 | `Reiter` | each tab at least 44 px high; the row scrolls sideways, the page does not |
@@ -91,7 +92,7 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | Building block | Purpose |
 | --- | --- |
 | [Field](bausteine-feld.md) | Frame for every input: label, input, error, hint, help icon |
-| [Button](bausteine-knopf.md) | Every button: kinds main (blue), create (green, “+ …”), secondary, danger (with a confirmation), link; disabled in two forms, “working”, result and error at the button; plus the confirmation |
+| [Button](bausteine-knopf.md) | Every button: kinds main (blue), create (green, “+ …”), secondary, danger (with a confirmation), special form; ways as `KnopfLink` (also downloads and addresses outside); disabled in two forms, “working”, result and error at the button; plus the confirmation |
 | [Save bar](bausteine-speicherleiste.md) | At the bottom of every form: “… delete” on the left, state, “Discard” with a border and the blue main button; draft with Esc and a warning when leaving |
 | [Tabs](bausteine-reiter.md) | Tabs above some content, one active look, keyboard and `aria` following WAI-ARIA |
 | [Switch](bausteine-schalter.md) | Something is on or off (function, service, automation) – sliding switch; choices and options stay checkboxes |

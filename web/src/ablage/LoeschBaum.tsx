@@ -57,7 +57,7 @@ function knoten(c: Kontext, k: BaumKnoten): ReactNode {
       <div className={`lb-knoten ${weg ? 'lb-weg' : 'lb-bleibt'}`}>
         {kinder.length > 0 ? (
           <Knopf
-            art="link"
+            art="eigen"
             className="lb-klapp"
             aria-expanded={!zu.has(k.id)}
             nurSymbol={t('ablage.loeschbaum.darunter', {
@@ -245,9 +245,7 @@ export function LoeschBaum({
         <h2 className="h3">
           {tn('ablage.loeschbaum.mit-verknuepften-mappen-loeschen-2', { hilfe: <Hilfe ort="mappe.mitVerknuepften" /> })}
         </h2>
-        <Knopf art="link" onClick={schliessen}>
-          {t('ablage.loeschbaum.schliessen')}
-        </Knopf>
+        <Knopf onClick={schliessen}>{t('ablage.loeschbaum.schliessen')}</Knopf>
       </div>
       <p className="leise klein">{t('ablage.loeschbaum.alle-mappen-die-zu', { titelOder: titelOder(titel) })}</p>
       <ul className="lb-legende klein" aria-label={t('ablage.loeschbaum.kennzeichnungen')}>
@@ -276,11 +274,10 @@ export function LoeschBaum({
         </Feld>
         {v && v.baum.knoten.length > 1 && (
           <>
-            <Knopf art="link" groesse="klein" onClick={() => setZu(new Set())}>
+            <Knopf groesse="klein" onClick={() => setZu(new Set())}>
               {t('ablage.loeschbaum.alle-aufklappen')}
             </Knopf>
             <Knopf
-              art="link"
               groesse="klein"
               onClick={() => setZu(new Set(v.baum.knoten.filter((k) => k.ebene >= 1 && kinderVon(v.baum, k.id).length).map((k) => k.id)))}>
               {t('ablage.loeschbaum.zuklappen')}

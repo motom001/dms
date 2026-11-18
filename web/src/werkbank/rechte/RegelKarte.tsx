@@ -123,7 +123,7 @@ export function RegelKarte({
           onClick={() => setKopie((x) => !x)}>
           {t('werkbank.berechtigungen.in-andere-mappentypen-kopieren')}
         </Knopf>
-        <Knopf art="link" symbol="schliessen" onClick={weg}>
+        <Knopf symbol="schliessen" onClick={weg}>
           {t('werkbank.berechtigungen.regel-entfernen')}
         </Knopf>
         <Knopf onClick={umschalten}>{t('werkbank.berechtigungen.zuklappen')}</Knopf>
@@ -160,7 +160,7 @@ function regelZu({
     <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
       <div className="regelkopf">
         {griff}
-        <Knopf art="link" className="regelsumme" aria-expanded={false} onClick={umschalten}>
+        <Knopf art="eigen" className="regelsumme" aria-expanded={false} onClick={umschalten}>
           <strong>{r.name || t('werkbank.berechtigungen.ohne-namen')}</strong>
           <span className="chip">
             {kurz(r.dann)}
@@ -246,7 +246,7 @@ function bedingungZeile(b: RegelBedingung, i: number, z: Zeile) {
             )}
           </>
         )}
-        <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>
+        <Knopf groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>
           {t('werkbank.berechtigungen.bedingung-entfernen')}
         </Knopf>
       </div>
@@ -264,7 +264,7 @@ function wirkungWahl(r: Regel, setze: (r: Regel) => void) {
         return (
           <Knopf
             key={k}
-            art="link"
+            art="eigen"
             className={`rechtknopf ${w}`}
             nurSymbol={
               w

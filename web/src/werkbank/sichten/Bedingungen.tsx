@@ -128,7 +128,7 @@ function bedingungsZeile({
         ) : (
           b.art !== 'feld' && b.art !== 'favorit' && b.art !== 'merkmal' && zaehlVergleich(b, (n) => setze(i, n))
         )}
-        <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => weg(i)}>
+        <Knopf groesse="klein" symbol="schliessen" onClick={() => weg(i)}>
           {t('werkbank.sichten.bedingung-entfernen')}
         </Knopf>
       </div>

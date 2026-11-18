@@ -231,7 +231,7 @@ function Lasche({ seite, name, titel, oeffnen }: { seite: 'links' | 'rechts'; na
   const text = titel ? t('spalten.lasche.aufklappen.titel', { name, titel }) : t('spalten.lasche.aufklappen', { name });
   return (
     // Baustein Knopf (#1215) im Aussehen der Lasche (.textknopf.spl-lasche); Name für Screenreader der ganze Text.
-    <Knopf art="link" nurSymbol={text} className={`spl-lasche spl-lasche-${seite}`} onClick={oeffnen}>
+    <Knopf art="eigen" nurSymbol={text} className={`spl-lasche spl-lasche-${seite}`} onClick={oeffnen}>
       <Symbol name={seite === 'links' ? 'pfeil-rechts' : 'pfeil-links'} />
       <span className="spl-lasche-text">{kurz || name}</span>
     </Knopf>
@@ -283,7 +283,7 @@ function Griff(p: {
   return (
     // Baustein Knopf (#1215) im Aussehen des Griffs (.textknopf.griff).
     <Knopf
-      art="link"
+      art="eigen"
       className={`griff griff-${p.seite}`}
       style={{ left: p.x }}
       role="separator"

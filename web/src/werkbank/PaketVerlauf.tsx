@@ -125,9 +125,7 @@ export function LaeuferUebersicht({ inst, zumVerlauf }: { inst: InstalliertesPak
         <dd>
           {a?.zuletzt ? seit(a.zuletzt) : t('pakete.verlauf.nie')} ·{' '}
           {fehler7 ? <strong>{t('pakete.verlauf.fehler-7', { anzahl: fehler7 })}</strong> : t('pakete.verlauf.fehler-7', { anzahl: 0 })}{' '}
-          <Knopf art="link" onClick={zumVerlauf}>
-            {t('pakete.verlauf.ansehen')}
-          </Knopf>
+          <Knopf onClick={zumVerlauf}>{t('pakete.verlauf.ansehen')}</Knopf>
         </dd>
       </dl>
     </>
@@ -352,7 +350,6 @@ export function PaketVerlauf({ inst }: { inst: InstalliertesPaket }) {
               ? tn('pakete.verlauf.leer-filter', {
                   alle: (
                     <Knopf
-                      art="link"
                       onClick={() => {
                         setNurFehler(false);
                         setSuche('');

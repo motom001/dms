@@ -217,9 +217,7 @@ function Bearbeiten({
         <Knopf art="haupt" onClick={speichern}>
           {t('werkbank.notfallkontakte.speichern')}
         </Knopf>
-        <Knopf art="link" onClick={() => setForm(null)}>
-          {t('werkbank.notfallkontakte.abbrechen')}
-        </Knopf>
+        <Knopf onClick={() => setForm(null)}>{t('werkbank.notfallkontakte.abbrechen')}</Knopf>
       </div>
     </div>
   );

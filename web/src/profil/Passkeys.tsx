@@ -56,11 +56,7 @@ export function PasskeyHinzufuegen({
       </Feld>
       <p className="leise klein">{t('profil.passkeys.ablauf')}</p>
       <div className="knoepfe">
-        {abbrechen && (
-          <Knopf art="link" onClick={abbrechen}>
-            {t('profil.passkeys.abbrechen')}
-          </Knopf>
-        )}
+        {abbrechen && <Knopf onClick={abbrechen}>{t('profil.passkeys.abbrechen')}</Knopf>}
         <Knopf art="haupt" onClick={anlegen} laeuftText={t('profil.passkeys.warte')}>
           {t('profil.passkeys.weiter')}
         </Knopf>
@@ -88,7 +84,6 @@ function Zeile({ p, adresse, aendern }: { p: Passkey; adresse: string | null; ae
           </Feld>
           <div className="knoepfe">
             <Knopf
-              art="link"
               onClick={() => {
                 setName(p.name);
                 setUmbenennen(false);

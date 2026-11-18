@@ -66,14 +66,13 @@ export function EntfernteZeile({
           {e.holbar ? (
             <>
               <Knopf
-                art="link"
                 gesperrt={gesperrt && !holt}
                 laeuft={holt}
                 laeuftText={t('werkbank.sicherung.entfernt.holt')}
                 onClick={() => hole('laden')}>
                 {t('werkbank.sicherung.herunterladen')}
               </Knopf>
-              <Knopf art="link" gesperrt={gesperrt} onClick={() => hole('pruefen')}>
+              <Knopf gesperrt={gesperrt} onClick={() => hole('pruefen')}>
                 {t('werkbank.sicherung.pruefen')}
               </Knopf>
             </>
@@ -108,7 +107,6 @@ export function EntferntKopf({ stand, laden }: { stand: EntferntStand; laden(): 
       ))}
       <div className="knoepfe">
         <Knopf
-          art="link"
           symbol="neu-laden"
           onClick={async () => {
             await betriebApi.sicherung(true);

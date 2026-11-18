@@ -9,9 +9,8 @@ import { useErreichbarkeit } from '../erreichbar';
 import { geheZu, Link } from '../ort';
 import { wartungAktiv } from '../wartung';
 import { istTouch, postFotografieren } from './PostKamera';
-import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
-import { knopfAussehen } from '../bausteine';
+import { HakenFeld, Knopf, Menue, type MenuePunkt } from '../bausteine';
 
 /**
  * Neue Post von überall (#193): Dateien irgendwo ins Fenster ziehen oder über „+ Neu“ wählen –
@@ -104,7 +103,7 @@ function DoppeltFrage({
         {rueckfrage.doppelt.map(({ datei, f }) => (
           <li key={`${datei.name}-${datei.size}-${datei.lastModified}`}>
             <strong>{datei.name}</strong> – <Fundstellen f={f} beiKlick={() => setRueckfrage(null)} />
-            <label className="haken klein">
+            <HakenFeld beschriftung={t('ablage.neuepost.trotzdem-ablegen')} className="klein">
               <input
                 type="checkbox"
                 checked={rueckfrage.trotzdem.has(datei)}
@@ -115,8 +114,7 @@ function DoppeltFrage({
                   setRueckfrage({ ...rueckfrage, trotzdem: set });
                 }}
               />
-              <span>{t('ablage.neuepost.trotzdem-ablegen')}</span>
-            </label>
+            </HakenFeld>
           </li>
         ))}
       </ul>
@@ -126,12 +124,12 @@ function DoppeltFrage({
         </p>
       )}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer klein" onClick={weiter}>
+        <Knopf art="haupt" groesse="klein" onClick={weiter}>
           {t('ablage.neuepost.weiter')}
-        </button>
-        <button type="button" className="knopf klein" onClick={() => setRueckfrage(null)}>
+        </Knopf>
+        <Knopf groesse="klein" onClick={() => setRueckfrage(null)}>
           {t('ablage.neuepost.abbrechen')}
-        </button>
+        </Knopf>
       </div>
     </div>
   );
@@ -360,9 +358,9 @@ export function PostAblage({ werkbank = false }: { werkbank?: boolean }) {
                   <li key={x}>{x}</li>
                 ))}
               </ul>
-              <button type="button" className="knopf klein" onClick={() => setFehler([])}>
+              <Knopf groesse="klein" onClick={() => setFehler([])}>
                 {t('ablage.neuepost.schliessen')}
-              </button>
+              </Knopf>
             </>
           )}
         </div>
@@ -371,7 +369,10 @@ export function PostAblage({ werkbank = false }: { werkbank?: boolean }) {
   );
 }
 
-/** „+ Neu“ in der Kopfzeile: neue Post (Dateien, am Handy auch Kamera) oder neue Mappe eines Typs. */
+/**
+ * „+ Neu“ in der Kopfzeile: neue Post (Dateien, am Handy auch Kamera) oder neue Mappe eines Typs – als Baustein Menue
+ * (#1269): Anlege-Knopf, Tastatur und Screenreader wie bei den anderen Menüs; die Mappentypen als eigene Gruppe.
+ */
 export function NeuKnopf() {
   const d = useDaten();
   const typ = postTyp(d.typen);
@@ -380,125 +381,36 @@ export function NeuKnopf() {
   const typen = d.typen
     .filter((mappentyp) => darfErstellen(mappentyp) && !istTeiltyp(mappentyp))
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
-  const [offen, setOffen] = useState(false);
-  const [mappe, setMappe] = useState(false);
   const touch = istTouch();
   const eingabe = useRef<HTMLInputElement>(null);
-  const rahmen = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!offen) return;
-    const zu = (e: MouseEvent) => {
-      if (!rahmen.current?.contains(e.target as Node)) {
-        setOffen(false);
-        setMappe(false);
-      }
-    };
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOffen(false);
-        setMappe(false);
-      }
-    };
-    addEventListener('mousedown', zu);
-    addEventListener('keydown', esc);
-    return () => {
-      removeEventListener('mousedown', zu);
-      removeEventListener('keydown', esc);
-    };
-  }, [offen]);
   if (!post && !typen.length) return null;
+  const punkte: MenuePunkt[] = [];
+  // Handy (#490): erster Eintrag öffnet direkt die Kamera; „Datei oder Foto wählen“ bleibt für alles andere.
+  if (post && touch)
+    punkte.push({
+      key: 'kamera',
+      symbol: 'kamera',
+      inhalt: t('ablage.neuepost.post-fotografieren', { symbol: '' }).trim(),
+      tu: () => postFotografieren(),
+    });
+  if (post)
+    punkte.push({
+      key: 'post',
+      inhalt: tn('ablage.neuepost.post', {
+        span: (
+          <span className="leise klein">
+            {touch ? t('ablage.neuepost.datei-oder-foto-waehlen') : t('ablage.neuepost.dateien-auswaehlen-oder')}
+          </span>
+        ),
+      }),
+      tu: () => eingabe.current?.click(),
+    });
+  const gruppe = t('ablage.neuepost.neue-mappe-vom-mappentyp');
+  for (const mappentyp of typen)
+    punkte.push({ key: mappentyp.id, gruppe, inhalt: mappentyp.name, tu: () => geheZu(`/ablage/${mappentyp.id}/neu`) });
   return (
-    <div className="neuknopf" ref={rahmen}>
-      <button
-        type="button"
-        {...knopfAussehen({ art: 'anlegen', groesse: 'klein' })}
-        data-anker="neu"
-        aria-haspopup="menu"
-        aria-expanded={offen}
-        onClick={() => {
-          setOffen(!offen);
-          setMappe(false);
-        }}>
-        {t('ablage.neuepost.neu')}
-      </button>
-      {offen && (
-        <div
-          className="hy-schleier"
-          aria-hidden="true"
-          onClick={() => {
-            setOffen(false);
-            setMappe(false);
-          }}
-        />
-      )}
-      {offen && (
-        <div className="menue" role="menu">
-          {!mappe ? (
-            <>
-              {/* Handy (#490): erster Eintrag öffnet direkt die Kamera; „Datei oder Foto wählen“ bleibt für alles andere. */}
-              {post && touch && (
-                <button
-                  type="button"
-                  className="menuepunkt"
-                  role="menuitem"
-                  onClick={() => {
-                    setOffen(false);
-                    postFotografieren();
-                  }}>
-                  {tn('ablage.neuepost.post-fotografieren', { symbol: <Symbol name="kamera" /> })}
-                </button>
-              )}
-              {post && (
-                <button
-                  type="button"
-                  className="menuepunkt"
-                  role="menuitem"
-                  onClick={() => {
-                    setOffen(false);
-                    eingabe.current?.click();
-                  }}>
-                  {touch ? (
-                    <>
-                      {tn('ablage.neuepost.post', {
-                        span: <span className="leise klein">{t('ablage.neuepost.datei-oder-foto-waehlen')}</span>,
-                      })}
-                    </>
-                  ) : (
-                    <>
-                      {tn('ablage.neuepost.post', {
-                        span: <span className="leise klein">{t('ablage.neuepost.dateien-auswaehlen-oder')}</span>,
-                      })}
-                    </>
-                  )}
-                </button>
-              )}
-              {typen.length > 0 && (
-                <button type="button" className="menuepunkt" role="menuitem" onClick={() => setMappe(true)}>
-                  {tn('ablage.neuepost.mappe', { span: <span aria-hidden="true">›</span> })}
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="leise klein">{t('ablage.neuepost.neue-mappe-vom-mappentyp')}</p>
-              {typen.map((mappentyp) => (
-                <button
-                  key={mappentyp.id}
-                  type="button"
-                  className="menuepunkt"
-                  role="menuitem"
-                  onClick={() => {
-                    setOffen(false);
-                    setMappe(false);
-                    geheZu(`/ablage/${mappentyp.id}/neu`);
-                  }}>
-                  {mappentyp.name}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      )}
+    <>
+      <Menue art="anlegen" groesse="klein" links beschriftung={t('ablage.neuepost.neu')} anker="neu" className="neuknopf" punkte={punkte} />
       {/* Ohne „capture“: Am Handy bietet die Auswahl Kamera und Dateien an. */}
       <input
         ref={eingabe}
@@ -511,6 +423,6 @@ export function NeuKnopf() {
           neuePost(f);
         }}
       />
-    </div>
+    </>
   );
 }

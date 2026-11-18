@@ -95,7 +95,7 @@ export function KartenEditor({
       <div className="zeile-zwischen">
         <strong>{karteText(karte, typen)}</strong>
         {entfernen && (
-          <Knopf art="link" groesse="klein" symbol="schliessen" onClick={entfernen}>
+          <Knopf groesse="klein" symbol="schliessen" onClick={entfernen}>
             {t('automatisierung.ui.entfernen')}
           </Knopf>
         )}

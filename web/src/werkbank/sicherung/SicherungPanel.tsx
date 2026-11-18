@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { betriebApi, type SicherungStand } from '../../api/betrieb';
 import { t, tn } from '../../sprache';
 import { Link } from '../../ort';
-import { Knopf } from '../../bausteine';
+import { Knopf, KnopfLink } from '../../bausteine';
 import { Kopf } from '../Kopf';
 import { bytes, zeit } from '../sicherungFormat';
 import { SicherungListe } from '../SicherungListe';
@@ -96,18 +96,18 @@ function hinweisListe(s: SicherungStand, hinweise: SicherungsHinweis[]) {
               b: <strong>{t('werkbank.sicherung.ohne-schluessel-keine-sicherung')}</strong>,
             })}
           </p>
-          <Link to="/werkbank/verschluesselung" className="knopf klein">
+          <KnopfLink to="/werkbank/verschluesselung" groesse="klein">
             {t('werkbank.sicherung.zur-verschluesselung')}
-          </Link>
+          </KnopfLink>
         </div>
       )}
       {hinweise.map((h, i) => (
         <div key={i} className={`hinweis ${h.art === 'info' ? 'info' : h.art}`}>
           <p>{h.text}</p>
           {h.ziel && (
-            <Link to={h.ziel} className="knopf klein">
+            <KnopfLink to={h.ziel} groesse="klein">
               {h.knopf}
-            </Link>
+            </KnopfLink>
           )}
         </div>
       ))}

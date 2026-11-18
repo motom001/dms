@@ -119,7 +119,6 @@ function FeldKarte({
                 )}
               </Feld>
               <Knopf
-                art="link"
                 groesse="klein"
                 symbol="schliessen"
                 onClick={() => {
@@ -267,7 +266,6 @@ function AufgabeKarte({
                 setze={(n) => setze({ ...karte, empfaenger: karte.empfaenger.map((x, j) => (j === i ? (n as Empfaenger) : x)) })}
               />
               <Knopf
-                art="link"
                 groesse="klein"
                 symbol="schliessen"
                 onClick={() => setze({ ...karte, empfaenger: karte.empfaenger.filter((_, j) => j !== i) })}>

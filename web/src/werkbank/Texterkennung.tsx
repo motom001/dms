@@ -10,6 +10,7 @@ import { t as tx, t, tn } from '../sprache';
 import { PauseHinweis, Warteschlange, zahl } from './texterkennung/teile';
 import { Auftraege } from './texterkennung/Auftraege';
 import type { TexterkennungZustand } from './texterkennung/zustand';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Werkbank → Texterkennung (#45, #459): Übersicht – welches Paket die Texterkennung übernimmt, woher der Text der
@@ -93,9 +94,9 @@ function PaketBlock({ s }: { s: OcrStatus }) {
           <p>{tx('volltext.werkbank.paket.da', { paket: `${p.name} ${p.version}` })}</p>
           {wartet > 0 && <p className="leise">{tx('volltext.werkbank.paket.wartet', { anzahl: wartet })}</p>}
           <div className="knoepfe">
-            <Link to={`/werkbank/pakete/${p.id}`} className="knopf klein">
+            <KnopfLink to={`/werkbank/pakete/${p.id}`} groesse="klein">
               {tx('volltext.werkbank.paket.einstellungen')}
-            </Link>
+            </KnopfLink>
           </div>
         </>
       ) : (
@@ -104,9 +105,9 @@ function PaketBlock({ s }: { s: OcrStatus }) {
             <strong>{tx('volltext.werkbank.paket.fehlt')}</strong> {tx('volltext.werkbank.paket.fehlt.text')}
             {wartet > 0 ? ` ${tx('volltext.werkbank.paket.ohne', { anzahl: wartet })}` : ''}
           </p>
-          <Link to={`/werkbank/pakete/${TEXTERKENNUNG_PAKET}`} className="knopf primaer klein">
+          <KnopfLink to={`/werkbank/pakete/${TEXTERKENNUNG_PAKET}`} art="haupt" groesse="klein">
             {tx('volltext.werkbank.paket.installieren')}
-          </Link>
+          </KnopfLink>
         </div>
       )}
     </section>
@@ -339,9 +340,9 @@ function ErkannteSprachen({ s }: { s: OcrStatus }) {
             {tx('volltext.werkbank.sprachdaten.vorschlag', { anzahl: v.anzahl, sprache: sprachname(v.sprache), paket: v.paket })}{' '}
             <Hilfe ort="werkbank.texterkennung.sprachpakete" />
           </p>
-          <Link to={`/werkbank/pakete/${v.paket}`} className="knopf klein">
+          <KnopfLink to={`/werkbank/pakete/${v.paket}`} groesse="klein">
             {tx('volltext.werkbank.sprachdaten.paket')}
-          </Link>
+          </KnopfLink>
         </div>
       ))}
     </section>

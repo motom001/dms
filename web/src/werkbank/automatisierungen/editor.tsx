@@ -147,7 +147,7 @@ function Wenn({ x, k, z }: { x: X; k: Kontextdaten; z: AutomatisierungenZustand 
   return (
     <Bereich id="wenn" titel={t('automatisierung.ui.wenn')} klappe={klappe('wenn')} kurz={kurzWenn}>
       <div className="zeile">
-        <Knopf art="link" groesse="klein" aria-expanded={vorratOffen} onClick={() => setVorratOffen(!vorratOffen)}>
+        <Knopf groesse="klein" aria-expanded={vorratOffen} onClick={() => setVorratOffen(!vorratOffen)}>
           {t('automatisierung.ui.vorrat')}
         </Knopf>
       </div>

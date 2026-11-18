@@ -446,23 +446,17 @@ function WortZeilen({
                   placeholder={i === 0 ? t('suche.gruppen.wort.erstes') : undefined}
                   onChange={(v) => setze(x.k, v.target.value)}
                 />
-                <Knopf
-                  art="link"
-                  groesse="klein"
-                  nurSymbol={t('suche.gruppen.wort.hoch', nr)}
-                  gesperrt={i === 0}
-                  onClick={() => schiebe(i, -1)}>
+                <Knopf groesse="klein" nurSymbol={t('suche.gruppen.wort.hoch', nr)} gesperrt={i === 0} onClick={() => schiebe(i, -1)}>
                   <Symbol name="sortiert-auf" />
                 </Knopf>
                 <Knopf
-                  art="link"
                   groesse="klein"
                   nurSymbol={t('suche.gruppen.wort.runter', nr)}
                   gesperrt={i === e.length - 1}
                   onClick={() => schiebe(i, 1)}>
                   <Symbol name="sortiert-ab" />
                 </Knopf>
-                <Knopf art="link" groesse="klein" nurSymbol={t('suche.gruppen.wort.entfernen', nr)} onClick={() => entferne(i)}>
+                <Knopf groesse="klein" nurSymbol={t('suche.gruppen.wort.entfernen', nr)} onClick={() => entferne(i)}>
                   <Symbol name="schliessen" />
                 </Knopf>
               </span>
@@ -491,7 +485,7 @@ function WortZeilen({
         })}
       </ol>
       <div className="wortdazu">
-        <Knopf art="link" groesse="klein" gesperrt={e.length >= SYNONYM_MAX} onClick={dazu}>
+        <Knopf groesse="klein" gesperrt={e.length >= SYNONYM_MAX} onClick={dazu}>
           {t('suche.gruppen.wort.dazu')}
         </Knopf>
       </div>

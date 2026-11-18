@@ -19,7 +19,9 @@
 .automatisierung .einzug { margin-left: 18px; padding-left: 8px; border-left: 2px solid var(--linie); }
 .automatisierung-vorrat { border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 8px 10px; margin: 6px 0; }
 .automatisierung-vorrat .stapel { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 4px 0 8px; }
-.automatisierung-vorrat .vorratkarte { display: flex; align-items: center; gap: 2px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 999px; padding: 2px 8px 2px 2px; }
+.automatisierung-vorrat .vorratkarte { display: flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 999px; padding: 2px 8px 2px 2px; }
+/* Der Eintrag ist seit #1277 ein kleiner Knopf: lange Namen brechen um, statt aus dem Bild zu laufen (Handy). */
+.automatisierung-vorrat .vorratkarte .knopf { white-space: normal; text-align: left; min-width: 0; }
 .automatisierung-schritte { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; border-collapse: collapse; }
 .automatisierung-schritte th, .automatisierung-schritte td { padding: 4px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
 .automatisierung-schritte .laufschritt td { transition: background .3s; }

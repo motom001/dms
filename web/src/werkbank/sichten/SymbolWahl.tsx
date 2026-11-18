@@ -32,7 +32,7 @@ export function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: stri
           <Symbol name="pfeil-unten" />
         </Knopf>
         {wert && (
-          <Knopf art="link" symbol="schliessen" onClick={() => setze(null)}>
+          <Knopf symbol="schliessen" onClick={() => setze(null)}>
             {t('werkbank.sicht.symbol.entfernen')}
           </Knopf>
         )}
@@ -57,7 +57,7 @@ export function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: stri
                   {liste.map((x) => (
                     <Knopf
                       key={x.name}
-                      art="link"
+                      art="eigen"
                       className={`symbolknopf${wert === x.name ? ' an' : ''}`}
                       aria-pressed={wert === x.name}
                       nurSymbol={x.titel}

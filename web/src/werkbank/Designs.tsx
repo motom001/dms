@@ -90,6 +90,7 @@ export function DesignEditor({ id }: { id: string }) {
     : LEER;
   const [e, setE] = useState(start);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const logoWahl = useRef<HTMLInputElement>(null);
   const ent = useEntwurf(start, e, {
     neu,
     liste: '/werkbank/designs',
@@ -219,23 +220,24 @@ export function DesignEditor({ id }: { id: string }) {
           <p className="leise klein">{t('werkbank.designs.ein-logo-laesst-sich')}</p>
         ) : (
           <div className="knoepfe links">
-            <label className="knopf klein">
+            <Knopf groesse="klein" onClick={() => logoWahl.current?.click()}>
               {vorhanden?.logo ? t('werkbank.designs.anderes-logo-waehlen') : t('werkbank.designs.logo-hochladen')}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                hidden
-                onChange={(x) => {
-                  const f = x.target.files?.[0];
-                  x.target.value = '';
-                  if (f)
-                    void aktion(async () => {
-                      await werkbankApi.designLogo(id, f);
-                      await d.designsLaden();
-                    }, t('werkbank.designs.logo-gespeichert'));
-                }}
-              />
-            </label>
+            </Knopf>
+            <input
+              ref={logoWahl}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              hidden
+              onChange={(x) => {
+                const f = x.target.files?.[0];
+                x.target.value = '';
+                if (f)
+                  void aktion(async () => {
+                    await werkbankApi.designLogo(id, f);
+                    await d.designsLaden();
+                  }, t('werkbank.designs.logo-gespeichert'));
+              }}
+            />
             {vorhanden?.logo && (
               <Knopf
                 groesse="klein"

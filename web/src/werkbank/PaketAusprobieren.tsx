@@ -134,10 +134,7 @@ export function PaketAusprobieren({ inst, zuEinstellungen }: { inst: Installiert
         <p className="klein">
           {entwurf ? (
             <>
-              {t('pakete.probe.mit-entwurf')}{' '}
-              <Knopf art="link" onClick={zuEinstellungen}>
-                {t('pakete.probe.zu-einstellungen')}
-              </Knopf>
+              {t('pakete.probe.mit-entwurf')} <Knopf onClick={zuEinstellungen}>{t('pakete.probe.zu-einstellungen')}</Knopf>
             </>
           ) : inst.einstellungen ? (
             t('pakete.probe.mit-gespeicherten')

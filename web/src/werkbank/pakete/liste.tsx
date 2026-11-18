@@ -88,7 +88,7 @@ function Expertenbereich({ z }: { z: PaketeZustand }) {
   return (
     <section className="aufklappbereich">
       <Knopf
-        art="link"
+        art="eigen"
         className="aufklappkopf"
         aria-expanded={experte}
         aria-controls="pakete-experte"
@@ -335,7 +335,7 @@ function QuelleZeile({
             tx('pakete.quelle.ohne')
           )}
           {' · '}
-          <Knopf art="link" onClick={() => mitSchluessel(q.url, (fp) => paketeApi.paketQuelleSchluessel(q.url, fp))}>
+          <Knopf onClick={() => mitSchluessel(q.url, (fp) => paketeApi.paketQuelleSchluessel(q.url, fp))}>
             {tx('pakete.quelle.pruefen')}
           </Knopf>
         </p>

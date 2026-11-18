@@ -8,7 +8,7 @@ import { archivfassungUrl, dokumentUrl } from '../../api/dokumente';
 import { Person } from '../../Person';
 import { Hilfe } from '../../Hilfe';
 import { Symbol } from '../../Symbol';
-import { Knopf } from '../../bausteine';
+import { Knopf, KnopfLink } from '../../bausteine';
 import { artVon, groesse, herkunftVon, zeit } from './hilfen';
 
 /** Schmaler Bildschirm (Handy, #505) – wie die Blätter von unten in styles.css (bis 600 px). */
@@ -105,7 +105,7 @@ export function Zustand({ s, archiv, erneut }: { s?: OcrStand; archiv?: ArchivSt
         <span>
           <Symbol name="warnung" />{' '}
           {s!.info ? t('ablage.dokumente.zustand.text', { grund: s!.info }) : t('ablage.dokumente.zustand.text-ohne')}{' '}
-          <Knopf art="link" groesse="klein" onClick={erneut}>
+          <Knopf groesse="klein" onClick={erneut}>
             {t('ablage.dokumente.erneut-versuchen')}
           </Knopf>
         </span>
@@ -149,20 +149,20 @@ export function Herunterladen({ x, archiv }: { x: Dokument; archiv: boolean }) {
   const a = x.archivfassung?.stand === 'fertig' ? x.archivfassung.fassung : undefined;
   if (!a || a.imOriginal)
     return (
-      <a className="textknopf" href={dokumentUrl(x.id, true)}>
+      <KnopfLink href={dokumentUrl(x.id, true)} art="link">
         {t('ablage.dokumente.herunterladen')}
-      </a>
+      </KnopfLink>
     );
   const zuerstArchiv = archiv && !a.erechnung;
   const orig = (
-    <a key="o" className="textknopf" href={dokumentUrl(x.id, true)} title={t('volltext.archiv.laden.original.titel')}>
+    <KnopfLink key="o" href={dokumentUrl(x.id, true)} title={t('volltext.archiv.laden.original.titel')} art="link">
       {zuerstArchiv ? t('volltext.archiv.laden.original') : t('ablage.dokumente.herunterladen')}
-    </a>
+    </KnopfLink>
   );
   const arch = (
-    <a key="a" className="textknopf" href={archivfassungUrl(x.id, true)} title={t('volltext.archiv.laden.archiv.titel')}>
+    <KnopfLink key="a" href={archivfassungUrl(x.id, true)} title={t('volltext.archiv.laden.archiv.titel')} art="link">
       {zuerstArchiv ? t('ablage.dokumente.herunterladen') : t('volltext.archiv.laden.archiv')}
-    </a>
+    </KnopfLink>
   );
   return <>{zuerstArchiv ? [arch, orig] : [orig, arch]}</>;
 }

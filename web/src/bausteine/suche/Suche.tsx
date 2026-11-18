@@ -83,7 +83,7 @@ export function Suchfeld({ wert, setze, beschriftung, platzhalter, onEnter, clas
       </label>
       {wert && (
         <Knopf
-          art="link"
+          art="eigen"
           nurSymbol={t('oberflaeche.suche.leeren')}
           className={s.leeren}
           onClick={() => {
@@ -186,9 +186,7 @@ export function KeineTreffer({ zuruecksetzen, text, knopf }: { zuruecksetzen(): 
   return (
     <p className={klassen('leise leerliste', s.keine)}>
       <span>{text ?? t('oberflaeche.suche.keine')}</span>{' '}
-      <Knopf art="link" onClick={zuruecksetzen}>
-        {knopf ?? t('oberflaeche.suche.zuruecksetzen')}
-      </Knopf>
+      <Knopf onClick={zuruecksetzen}>{knopf ?? t('oberflaeche.suche.zuruecksetzen')}</Knopf>
     </p>
   );
 }

@@ -143,11 +143,7 @@ export function FragAblage({ eingabe, setEingabe, paket }: { eingabe: string; se
               {t('fragen.fragen')}
             </Knopf>
           )}
-          {runden.length > 0 && !laeuft && (
-            <Knopf art="link" onClick={() => setzeChat([])}>
-              {t('fragen.neu')}
-            </Knopf>
-          )}
+          {runden.length > 0 && !laeuft && <Knopf onClick={() => setzeChat([])}>{t('fragen.neu')}</Knopf>}
         </div>
         <p className="leise klein">
           {t('fragen.hinweis', { paket: paket ?? '' })} {t('fragen.verlauf')}

@@ -101,7 +101,7 @@ function Fortschritt({ aktiv, leiste }: { aktiv: number; leiste?: Leiste }) {
             <li key={s} className={erledigt(i) ? 'erledigt' : i === aktiv ? 'aktiv' : ''} aria-current={i === aktiv ? 'step' : undefined}>
               {klick ? (
                 <Knopf
-                  art="link"
+                  art="eigen"
                   className="schrittknopf"
                   onClick={klick}
                   title={gehe ? t('einrichtung.leiste.zu', { name: s }) : t('einrichtung.leiste.gesperrt', { name: s })}>
@@ -181,7 +181,7 @@ function DateiLaden({ ohneCode, imEinrichtungsmodus }: { ohneCode?: boolean; imE
   }
   return (
     <span className="assistent-datei klein">
-      <Knopf art="link" onClick={() => eingabe.current?.click()} title={t('einrichtung.datei.laden.titel')}>
+      <Knopf onClick={() => eingabe.current?.click()} title={t('einrichtung.datei.laden.titel')}>
         {t('einrichtung.datei.laden')}
       </Knopf>
       <input

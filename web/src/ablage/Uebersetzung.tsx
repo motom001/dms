@@ -103,7 +103,6 @@ export function Uebersetzbar({
 
   const knopf = (
     <Knopf
-      art="link"
       groesse="klein"
       className="uebersetzen-knopf"
       symbol="uebersetzen"
@@ -134,7 +133,7 @@ export function Uebersetzbar({
               ? t('ablage.uebersetzung.abschnitt', { teil: stand.teil + 1, teile: stand.teile })
               : t('ablage.uebersetzung.laeuft')}
           </span>
-          <Knopf art="link" groesse="klein" onClick={zurueck}>
+          <Knopf groesse="klein" onClick={zurueck}>
             {t('ablage.uebersetzung.abbrechen')}
           </Knopf>
         </div>
@@ -162,7 +161,7 @@ export function Uebersetzbar({
           <span className="leise klein" role="status">
             {t('ablage.uebersetzung.gleich', { sprache: sprachname(stand.nach) })}
           </span>
-          <Knopf art="link" groesse="klein" onClick={zurueck}>
+          <Knopf groesse="klein" onClick={zurueck}>
             {t('ablage.uebersetzung.ok')}
           </Knopf>
         </div>
@@ -193,10 +192,10 @@ export function Uebersetzbar({
         </div>
       )}
       <div className="uebersetzen-zeile">
-        <Knopf art="link" groesse="klein" aria-expanded={originalSichtbar} aria-controls={`${id}-o`} onClick={() => setFest((x) => !x)}>
+        <Knopf groesse="klein" aria-expanded={originalSichtbar} aria-controls={`${id}-o`} onClick={() => setFest((x) => !x)}>
           {originalSichtbar ? t('ablage.uebersetzung.original-verbergen') : t('ablage.uebersetzung.original-zeigen')}
         </Knopf>
-        <Knopf art="link" groesse="klein" onClick={zurueck}>
+        <Knopf groesse="klein" onClick={zurueck}>
           {t('ablage.uebersetzung.zurueck')}
         </Knopf>
       </div>

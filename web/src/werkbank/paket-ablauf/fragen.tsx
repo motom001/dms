@@ -295,7 +295,7 @@ function PflichtEinstellungen({ z, p, plan }: { z: Z; p: AblaufPaketV; plan: Pla
               setze={(v) => setze(f, v)}
             />
             {f.typ === 'adresse' && f.beispiel && leer(z.werte[p.id]?.[f.schluessel]) && (
-              <Knopf art="link" groesse="klein" onClick={() => setze(f, f.beispiel)}>
+              <Knopf groesse="klein" onClick={() => setze(f, f.beispiel)}>
                 {t('pakete.ablauf.einstellungen.beispiel', { beispiel: f.beispiel })}
               </Knopf>
             )}

@@ -11,6 +11,7 @@ import { NotfallkontakteAbschnitt } from './Notfallkontakte';
 import { schluesselAbschnitt } from './tresor/Schluessel';
 import { wechselAbschnitt, type Wechsel } from './tresor/Wechseln';
 import { arten, betroffen } from './tresor/Arten';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Schlüssel für verschlüsselte Zugangsdaten (#39): Status, Fingerabdruck, Erzeugen
@@ -141,8 +142,7 @@ export function Notfallblatt({
       )}
       <div className="knoepfe">
         {schluessel ? (
-          <a
-            className="knopf primaer"
+          <KnopfLink
             href={NOTFALLBLATT_URL}
             download
             onClick={(e) =>
@@ -150,9 +150,10 @@ export function Notfallblatt({
                 setTimeout(geladen, 1500);
                 setTimeout(meldeSicherung, 1500);
               })
-            }>
+            }
+            art="haupt">
             {t('werkbank.sicherung.notfallblatt-herunterladen-pdf')}
-          </a>
+          </KnopfLink>
         ) : (
           <span className="leise">{t('werkbank.sicherung.erst-moeglich-wenn-es')}</span>
         )}

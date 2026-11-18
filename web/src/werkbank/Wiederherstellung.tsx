@@ -1,9 +1,9 @@
 import { Kopf } from './Kopf';
 import { useKonto } from '../konto';
-import { Link } from '../ort';
 import { useWartung } from '../wartung';
 import { WiederherstellungsAssistent } from '../wiederherstellen';
 import { t, tn } from '../sprache';
+import { KnopfLink } from '../bausteine';
 
 /** Werkbank → Wiederherstellen (#107): nur im aktiven Wartungsmodus. */
 
@@ -27,9 +27,9 @@ export function WiederherstellungPanel({ abschnitt }: { abschnitt?: boolean } = 
             })}
           </p>
           <div>
-            <Link to="/werkbank/wartung#wartungsmodus" className="knopf klein">
+            <KnopfLink to="/werkbank/wartung#wartungsmodus" groesse="klein">
               {t('werkbank.wiederherstellung.zum-wartungsmodus')}
-            </Link>
+            </KnopfLink>
           </div>
         </div>
       ) : (

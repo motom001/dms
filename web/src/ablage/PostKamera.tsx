@@ -106,7 +106,6 @@ function Ende({ anzahl, neuePostSicht, schliessen }: { anzahl: number; neuePostS
         {t('ablage.postkamera.sie-liegen-unter', { anzahl })}{' '}
         {neuePostSicht ? (
           <Knopf
-            art="link"
             onClick={() => {
               schliessen();
               geheZu(`/ablage/${neuePostSicht}`);
@@ -313,7 +312,7 @@ export function PostKamera() {
                       <Daumen datei={s.datei} titel={t('ablage.postkamera.seite', { wert: i + 1 })} />
                       <span className="pk-nr">{s.fehler ? '!' : !s.id ? '…' : i + 1}</span>
                       <Knopf
-                        art="link"
+                        art="eigen"
                         className="pk-weg"
                         nurSymbol={t('ablage.postkamera.seite-verwerfen', { wert: i + 1 })}
                         onClick={() => seiteWeg(s.schluessel)}>
@@ -336,7 +335,7 @@ export function PostKamera() {
                   <Knopf className="pk-gross" onClick={() => galerie.current?.click()}>
                     {t('ablage.postkamera.foto-aus-der-mediathek')}
                   </Knopf>
-                  <Knopf art="link" className="pk-gross" onClick={() => abbrechen()}>
+                  <Knopf className="pk-gross" onClick={() => abbrechen()}>
                     {serie.length ? t('ablage.postkamera.fertig') : t('ablage.postkamera.abbrechen')}
                   </Knopf>
                 </div>
@@ -353,7 +352,7 @@ export function PostKamera() {
                     onClick={() => fertig()}>
                     {ziel ? t('ablage.postkamera.fertig-seiten-anhaengen') : t('ablage.postkamera.fertig-als-post-speichern')}
                   </Knopf>
-                  <Knopf art="link" className="pk-gross" gesperrt={phase === 'speichert'} onClick={() => abbrechen()}>
+                  <Knopf className="pk-gross" gesperrt={phase === 'speichert'} onClick={() => abbrechen()}>
                     {t('ablage.postkamera.abbrechen')}
                   </Knopf>
                 </div>

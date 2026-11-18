@@ -46,12 +46,12 @@ function TextWert({ x, s, textOffen, text, neu }: { x: Dokument; s?: OcrStand; t
         </>
       )}
       {s?.stand === 'fertig' && (
-        <Knopf art="link" groesse="klein" onClick={text}>
+        <Knopf groesse="klein" onClick={text}>
           {textOffen ? t('ablage.dokumente.text-ausblenden') : t('ablage.dokumente.ueber.zeigen')}
         </Knopf>
       )}
       {neu && (s?.stand === 'fertig' || s?.stand === 'paket') && (
-        <Knopf art="link" groesse="klein" title={t('volltext.dokument.neu.titel')} onClick={neu}>
+        <Knopf groesse="klein" title={t('volltext.dokument.neu.titel')} onClick={neu}>
           {t('volltext.dokument.neu')}
         </Knopf>
       )}
@@ -118,7 +118,7 @@ export function UeberDokument({
         <dd>
           {x.archivnummer ? <strong className="mono">{x.archivnummer}</strong> : t('ablage.dokumente.ueber.keine')}
           {archivnummer && (
-            <Knopf art="link" groesse="klein" title={t('ablage.dokumente.nummer-vom-aufkleber-auf')} onClick={archivnummer}>
+            <Knopf groesse="klein" title={t('ablage.dokumente.nummer-vom-aufkleber-auf')} onClick={archivnummer}>
               {x.archivnummer ? t('ablage.dokumente.ueber.aendern') : t('ablage.dokumente.ueber.vergeben')}
             </Knopf>
           )}
@@ -135,7 +135,7 @@ export function UeberDokument({
           <dt>{t('ablage.dokumente.ueber.versionen')}</dt>
           <dd>
             {t('ablage.dokumente.ueber.version', { wert: x.version ?? 1 })}
-            <Knopf art="link" groesse="klein" onClick={versionen}>
+            <Knopf groesse="klein" onClick={versionen}>
               {t('ablage.dokumente.menue.versionen')}
             </Knopf>
           </dd>

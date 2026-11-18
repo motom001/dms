@@ -105,11 +105,11 @@ export function LeerseitenLeiste({
               </figure>
               {darf &&
                 (weg ? (
-                  <Knopf art="link" groesse="klein" onClick={() => waehle(nr, false)}>
+                  <Knopf groesse="klein" onClick={() => waehle(nr, false)}>
                     {t('ablage.leerseiten.doch-behalten')}
                   </Knopf>
                 ) : (
-                  <Knopf art="link" groesse="klein" onClick={() => waehle(nr, true)}>
+                  <Knopf groesse="klein" onClick={() => waehle(nr, true)}>
                     {t('ablage.leerseiten.auch-weglassen')}
                   </Knopf>
                 ))}

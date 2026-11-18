@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
 import { RueckfrageVorschau } from '../rueckfrage/Rueckfrage';
-import { Knopf, type GefahrRueckfrage, type KnopfArt, type KnopfErgebnis, type KnopfSperre } from './Knopf';
+import { Knopf, KnopfLink, type GefahrRueckfrage, type KnopfArt, type KnopfErgebnis, type KnopfSperre } from './Knopf';
 import k from './Knopf.module.css';
 import s from '../muster.module.css';
 
@@ -23,8 +23,9 @@ function Karte({ zustand, titel, children, breit }: { zustand: string; titel: st
   );
 }
 
-const ARTEN: KnopfArt[] = ['anlegen', 'haupt', 'neben', 'gefahr', 'link'];
-const beschriftung = (a: KnopfArt) => t.frei(`oberflaeche.muster.knopf.art.${a}`);
+// Sonderformen (`eigen`) haben kein eigenes Aussehen – das bestimmt ihre Klasse.
+const ARTEN: Exclude<KnopfArt, 'eigen'>[] = ['anlegen', 'haupt', 'neben', 'gefahr'];
+const beschriftung = (a: KnopfArt | 'link') => t.frei(`oberflaeche.muster.knopf.art.${a}`);
 const warte = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Rückfrage des Gefahr-Knopfs der Musterseite: „Notiz löschen?“ */
@@ -35,7 +36,7 @@ const FRAGE: GefahrRueckfrage = {
 };
 
 /** Ein Knopf jeder Art; Gefahr mit Symbol und Rückfrage, wie es die Typprüfung verlangt. */
-function EinKnopf({ art, groesse, zusatz }: { art: KnopfArt; groesse?: 'klein'; zusatz?: string }) {
+function EinKnopf({ art, groesse, zusatz }: { art: Exclude<KnopfArt, 'eigen'>; groesse?: 'klein'; zusatz?: string }) {
   if (art === 'gefahr')
     return (
       <Knopf art="gefahr" symbol="geloescht" rueckfrage={FRAGE} groesse={groesse} className={zusatz}>
@@ -56,6 +57,29 @@ function Arten({ groesse, zusatz }: { groesse?: 'klein'; zusatz?: string }) {
       {ARTEN.map((a) => (
         <EinKnopf key={a} art={a} groesse={groesse} zusatz={zusatz} />
       ))}
+    </div>
+  );
+}
+
+/**
+ * Wege (#1269, #1277): Ein Link führt woanders hin – innerhalb von Ablago (`to`), zu einer Datei zum Herunterladen oder
+ * zu einer Adresse außerhalb (`href`). Wie ein Knopf oder mit `art="link"` wie ein Verweis; nie für eine Handlung.
+ */
+function Wege() {
+  return (
+    <div className="knoepfe">
+      <KnopfLink to="/muster" art="anlegen" groesse="klein">
+        {beschriftung('anlegen')}
+      </KnopfLink>
+      <KnopfLink href="#knopf" download groesse="klein">
+        {t('oberflaeche.muster.knopf.weg.herunterladen')}
+      </KnopfLink>
+      <KnopfLink to="/muster" art="link">
+        {beschriftung('link')}
+      </KnopfLink>
+      <KnopfLink href="https://example.org" neuesFenster art="link">
+        {t('oberflaeche.muster.knopf.weg.extern')}
+      </KnopfLink>
     </div>
   );
 }
@@ -129,6 +153,9 @@ export function KnopfMuster() {
       </Karte>
       <Karte zustand="klein" titel={t('oberflaeche.muster.knopf.zustand.klein')}>
         <Arten groesse="klein" />
+      </Karte>
+      <Karte zustand="wege" titel={t('oberflaeche.muster.knopf.zustand.wege')}>
+        <Wege />
       </Karte>
       <Karte zustand="hover" titel={t('oberflaeche.muster.zustand.hover')}>
         <Arten zusatz={k.vorschauhover} />

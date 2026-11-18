@@ -35,7 +35,7 @@ export function Stern({ mappeId, an, titel, anker }: { mappeId: string; an: bool
   return (
     // Baustein Knopf (#1211): eine Größe überall (Liste und Mappe), 24 px am Rechner, 44 px am Handy.
     <Knopf
-      art="link"
+      art="eigen"
       className={`stern ${jetzt ? 'an' : ''}`}
       data-anker={anker}
       aria-pressed={jetzt}
