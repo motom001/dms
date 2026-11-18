@@ -1159,7 +1159,7 @@ async function main() {
     .first()
     .click();
   await s.locator('.ue-rechts .mappenkopf h1').waitFor();
-  await s.locator('.ue-seite img').first().waitFor();
+  await s.locator('.ue-dokument figure[data-seite] img').first().waitFor();
   await bild(s, 'post-zuordnen');
 
   // „Vorhandene Mappe“ (#1217): ein Abschlag zum Stromvertrag – Vorschlag aus dem Brief (wo die Erkennung ihn kennt),
@@ -1173,7 +1173,7 @@ async function main() {
   );
   await geheZu(s, `/ablage/${neuePost}/${abschlag.id}`);
   await s.waitForURL(/\/uebernehmen$/);
-  await s.locator('.ue-seite img').first().waitFor();
+  await s.locator('.ue-dokument figure[data-seite] img').first().waitFor();
   await s.getByRole('radio', { name: w('Vorhandene Mappe') }).click();
   const stromChip = s.locator('.ue-chips').getByRole('button', { name: /^Stromvertrag Haus/ });
   await s.locator('.ue-chips, .ue-wahl > p.leise').first().waitFor();
@@ -1201,7 +1201,7 @@ async function main() {
   await geheZu(s, `/ablage/${neuePost}/${beidseitig.id}`);
   await s.waitForURL(/\/uebernehmen$/);
   await s.locator('[data-anker="leerseiten.leiste"] li[data-leer] img').first().waitFor();
-  await s.locator('.ue-seite img').first().waitFor();
+  await s.locator('.ue-dokument figure[data-seite] img').first().waitFor();
   await bild(s, 'post-leerseiten');
   await api('PUT', `/api/mappen/${beidseitig.id}`, { werte: { stand: 'Erledigt' } });
 
