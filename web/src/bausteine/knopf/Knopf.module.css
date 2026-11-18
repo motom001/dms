@@ -5,21 +5,22 @@
    Nur Werte aus tokens.css; hell und dunkel über die Tokens (--knopf-hover ist hell dunkler, dunkel heller).
    .vorschauhover und .vorschaufokus nutzt nur die Musterseite, um Hover und Fokus stehend zu zeigen. */
 
-/* Grundform: Neben (Rand), Haupt (blau), Anlegen (grün), Entscheidung der Rückfrage (rot gefüllt, nur dort). */
-.knopf { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
-.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
-.knopf.anlegen { background: var(--gruen); border-color: var(--gruen); color: var(--gruen-tinte, var(--akzent-tinte)); }
-.knopf:global(.klein) { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
-.knopf:disabled { opacity: 0.5; cursor: default; }
-.knopf.entscheidung { background: var(--schlecht); border-color: var(--schlecht); color: var(--schlecht-tinte); }
-.knopf.entscheidung:disabled { opacity: .45; }
+/* Grundform: Neben (Rand), Haupt (blau), Anlegen (grün), Entscheidung der Rückfrage (rot gefüllt, nur dort); Verweis
+   (nur KnopfLink) und Sonderform (eigen) ohne Fläche und Rand. Mit niedriger Spezifität (wie ein Element, :where):
+   Eine Umgebung passt einen Knopf über `[data-knopf="…"]` an, eine Sonderform legt Form und Farbe in der Datei ihres
+   Besitzers über `[data-knopf="eigen"].klasse` fest – beide gewinnen immer gegen die Grundform. */
+:is(button, a, summary):where(.knopf) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
+:is(button, a, summary):where(.knopf.haupt) { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
+:is(button, a, summary):where(.knopf.anlegen) { background: var(--gruen); border-color: var(--gruen); color: var(--gruen-tinte, var(--akzent-tinte)); }
+:is(button, a, summary):where(.knopf:global(.klein)) { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
+:is(button, a, summary):where(.knopf:disabled) { opacity: 0.5; cursor: default; }
+:is(button, a, summary):where(.knopf.entscheidung) { background: var(--schlecht); border-color: var(--schlecht); color: var(--schlecht-tinte); }
+:is(button, a, summary):where(.knopf.entscheidung:disabled) { opacity: .45; }
 /* Anmeldung über einen Anbieter (#241): Weg über die ganze Breite. */
-a.knopf:global(.breit) { display: flex; justify-content: center; text-decoration: none; }
-/* Verweis (nur KnopfLink) und Sonderform (eigen): ohne Fläche und Rand. Eine Sonderform legt Form und Farbe in der
-   Datei ihres Besitzers über `[data-knopf="eigen"].klasse` fest. */
-.verweis, .eigen { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--akzent); }
-.verweis:disabled, .eigen:disabled { color: var(--leise); cursor: not-allowed; }
-a.verweis { text-decoration: none; }
+a:where(.knopf:global(.breit)) { display: flex; justify-content: center; text-decoration: none; }
+:is(button, a):where(.verweis, .eigen) { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--akzent); }
+:is(button, a):where(.verweis:disabled, .eigen:disabled) { color: var(--leise); cursor: not-allowed; }
+a:where(.verweis) { text-decoration: none; }
 
 .baustein { transition: filter .12s, background-color .12s, border-color .12s; }
 
