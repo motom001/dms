@@ -324,7 +324,7 @@ rauchtest('Lange Post übernehmen: Tippen bleibt flüssig, während die Rahmen e
     await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
     await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
     const dokument = s.getByRole('region', { name: 'Dokument' });
-    await dokument.getByRole('img', { name: 'Seite 80' }).waitFor();
+    await dokument.getByRole('img', { name: 'Seite 1 von 80', exact: true }).waitFor();
     const mappe = s.getByRole('region', { name: 'Mappe' });
     await mappe.getByRole('combobox', { name: 'Mappentyp suchen …' }).click();
     await mappe.getByRole('option', { name: /^Vertrag Laufender Vertrag/ }).click();
@@ -336,8 +336,13 @@ rauchtest('Lange Post übernehmen: Tippen bleibt flüssig, während die Rahmen e
     const dauer = Date.now() - start;
     assert.equal(await feld.inputValue(), 'HR-2027-0815');
     assert.ok(dauer < 4000, `Tippen dauerte ${dauer} ms`);
-    // Die Rahmen erscheinen nach und nach – auch der für den Betreff auf der letzten Seite.
+    // Die Rahmen erscheinen nach und nach – auch der für den Betreff auf der letzten Seite. Sie stehen schon dort, bevor
+    // die Seite ihr Bild bekommt (#1339); „Seite 80“ eingeben und Enter springt hin.
     await dokument.getByRole('button', { name: 'Rahmen 1: Hausrat Versicherung Beispiel 2027' }).waitFor({ timeout: 30_000 });
+    const sprung = dokument.getByRole('textbox', { name: 'Seite (1 bis 80), mit Enter dorthin springen' });
+    await sprung.fill('80');
+    await sprung.press('Enter');
+    await dokument.getByRole('img', { name: 'Seite 80 von 80', exact: true }).waitFor();
   } finally {
     await api('DELETE', `/api/mappen/${brief.id}?grund=nicht_noetig`, { cookie });
   }

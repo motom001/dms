@@ -1,6 +1,7 @@
 /**
  * Die gemessenen Abläufe der Oberflächen-Messung (#1276) – die häufigsten Anwendungsfälle (W-Fälle), bedient wie eine
- * Person. Liste abgestimmt mit Thomas (15.11.2026): elf Abläufe; Ergänzungen, wenn beim Messen etwas auffällt.
+ * Person. Liste abgestimmt mit Thomas (15.11.2026): elf Abläufe; Ergänzungen, wenn beim Messen etwas auffällt (#1324: langes
+ * Dokument in der Mappe).
  *
  * Je Ablauf:
  *   id, name     – Schlüssel im Ergebnis (bleibt stabil, sonst geht der Vergleich verloren) und Name im Bericht;
@@ -71,7 +72,7 @@ export const ABLAEUFE = [
       const seiten = Array.from({ length: 6 }, (_, i) => `Messbrief ${runde} Seite ${i + 1} Beispielweg 12 Dresden`);
       await wahl.setFiles({ name: `Messbrief ${runde}.pdf`, mimeType: 'application/pdf', buffer: beispielPdfSeiten(seiten) });
       await s.waitForURL(/\/uebernehmen$/);
-      await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1', exact: true }).waitFor();
+      await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1 von 100', exact: true }).waitFor();
     },
     aufraeumen: async (s, d) => {
       const id = /\/([0-9a-f-]{36})\/uebernehmen$/.exec(new URL(s.url()).pathname)?.[1];
@@ -85,7 +86,7 @@ export const ABLAEUFE = [
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/eingang/${d.langePost}`);
       await s.waitForURL(/\/uebernehmen$/);
-      await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1', exact: true }).waitFor();
+      await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1 von 100', exact: true }).waitFor();
       await mappe(s).getByRole('combobox', { name: 'Mappentyp suchen …' }).waitFor();
     },
     schritt: async (s) => {
@@ -160,6 +161,26 @@ export const ABLAEUFE = [
       await s.waitForFunction(() => {
         const bilder = [...document.querySelectorAll('.pdfseiten img')];
         return bilder.length >= 60 && bilder.slice(0, 4).every((b) => b.complete && b.naturalWidth > 0);
+      });
+    },
+  },
+  {
+    // Seitenbetrachter (#1324, #1339): ein langes Dokument als Seiten, Seite 80 per Eingabe und Enter – die Bilder
+    // dazwischen lädt die Seite nicht.
+    id: 'langes-dokument',
+    name: 'Langes Dokument ansehen, auf Seite 80 springen (100 Seiten)',
+    vorbereiten: async (s, d) => {
+      await s.goto(d.basis + `/ablage/eingang/${d.langePost}?als=post`);
+      await mappe(s).getByRole('button', { name: 'Hausrat Bedingungen 2027.pdf', exact: true }).waitFor();
+    },
+    schritt: async (s) => {
+      await mappe(s).getByRole('button', { name: 'Hausrat Bedingungen 2027.pdf', exact: true }).click();
+      const sprung = mappe(s).getByRole('textbox', { name: 'Seite (1 bis 100), mit Enter dorthin springen' });
+      await sprung.fill('80');
+      await sprung.press('Enter');
+      await s.waitForFunction(() => {
+        const b = document.querySelector('[data-seite="80"] img');
+        return !!b && b.complete && b.naturalWidth > 0;
       });
     },
   },
