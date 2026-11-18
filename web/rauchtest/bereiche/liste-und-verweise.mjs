@@ -77,6 +77,41 @@ rauchtest('Listenansicht: „⋯“ im Kopf, Anzahl mit Typ, Auswahlleiste, Spal
   await s.waitForURL(new RegExp(`/werkbank/sichten/${sicht.id}$`));
 });
 
+// Export aller Treffer (#1335): Die Treffer kommen nur als Ids, die Mappen lädt der Export einmal – in der Datei steht
+// jede Mappe der Liste genau einmal, in der Reihenfolge der Liste.
+rauchtest('Listenansicht: „Alle exportieren“ als CSV, jede Mappe genau einmal (#1335)', { als: LENA }, async (s) => {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const typ = (
+    await api('POST', '/api/typen', {
+      cookie: verwaltung,
+      body: {
+        name: 'Rauchtest-Werkzeug',
+        schluessel: 'rauchtest_werkzeug',
+        titelVorlage: '{name}',
+        felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+      },
+    })
+  ).daten;
+  const namen = ['Bohrmaschine', 'Akkuschrauber', 'Stichsäge'];
+  for (const name of namen) await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: typ.id, werte: { name } } });
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await s.goto(BASIS + `/ablage/${typ.id}`);
+  await liste.getByText('3 × Rauchtest-Werkzeug', { exact: true }).waitFor();
+  await liste.getByRole('button', { name: /^Weitere Aktionen/ }).click();
+  await s.getByRole('menuitem', { name: 'Alle 3 exportieren …' }).click();
+  const dialog = s.getByRole('dialog', { name: 'Exportieren' });
+  await dialog.getByRole('radio', { name: /^CSV/ }).check();
+  const [download] = await Promise.all([s.waitForEvent('download'), dialog.getByRole('button', { name: '3 Mappen exportieren' }).click()]);
+  const text = await new Response(await download.createReadStream()).text();
+  const zeilen = text.split(/\r?\n/).filter((z) => namen.some((n) => z.includes(n)));
+  assert.deepEqual(
+    zeilen.map((z) => namen.find((n) => z.includes(n))),
+    [...namen].sort((a, b) => a.localeCompare(b, 'de')),
+    'jede Mappe einmal, nach Titel sortiert',
+  );
+});
+
 rauchtest('Listenansicht: „Ansicht bearbeiten“ nur mit Recht in der Werkbank (#1285)', { als: JONAS }, async (s) => {
   const cookie = await sitzung(JONAS);
   // Ohne den ersten Rundgang – er läge beim Alleinstart über der Liste (werkbank.mjs prüft ihn).
