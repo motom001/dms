@@ -176,6 +176,8 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   .index div { align-items: center; min-height: 44px; }
   .index dd a.person { display: inline-flex; align-items: center; min-height: 44px; }
   .zur-liste { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+  /* Einträge der Werkbank-Listen (#1227): auch mit nur einer Zeile 44 px hoch (Wortgruppen, Designs). */
+  .eintrag.werk { min-height: 44px; justify-content: center; }
 }
 /* Systemzustand → Auslastung (#409). Präfix az-. Kurve: eine Reihe, dünne Linie in der Akzentfarbe. */
 .az-raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 24px; margin-top: 8px; }
