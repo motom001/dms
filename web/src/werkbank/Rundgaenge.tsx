@@ -243,7 +243,10 @@ function FremderRundgang({ z, r }: { z: RundgaengeZustand; r: WerkbankRundgang }
           }
           symbol={r.herkunft === 'ablago' ? 'info' : 'paket'}
           breit>
-          <pre className="yaml-datei">{r.yaml}</pre>
+          {/* Rollt die Datei, erreicht man sie mit der Tastatur (#1290, axe scrollable-region-focusable). */}
+          <pre className="yaml-datei" tabIndex={0} role="region" aria-label={t('werkbank.rundgaenge.ui.datei')}>
+            {r.yaml}
+          </pre>
         </NurLesenFeld>
         <div className="knoepfe">
           <KnopfLink to={`${RUNDGAENGE_PFAD}/neu?kopie=${encodeURIComponent(r.schluessel)}`} art="haupt">

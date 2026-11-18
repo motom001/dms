@@ -321,7 +321,7 @@ All ways are covered: individually, several selected, with linked folders, "Rete
 
 - **Filters:** period, folder type, reason, step; a click on an operation shows all folders and documents of this operation.
 - **Search by number** (number sequence or archive number) or **checksum**.
-- **"Was this document deleted?"** Drag the file onto the field: your browser calculates the checksum, Ablago searches for it. The file itself isn't uploaded.
+- **"Was this document deleted?"** Drag the file onto the field or choose it with **Choose file …**: your browser calculates the checksum, Ablago searches for it. The file itself isn't uploaded.
 - **As PDF** (proof, with filter and date in the header) or **as CSV** – each with the chosen filter.
 
 !!! info "Checksum and data protection"
@@ -330,7 +330,7 @@ All ways are covered: individually, several selected, with linked folders, "Rete
 ### Unchangeable, its own retention { #nicht-anderbar-eigene-aufbewahrung }
 
 - Entries can be **neither changed nor deleted** – not by administrators or via the interface either; the database itself prevents it.
-- Its own **retention**: default **10 years**, configurable from 1 to 30 years below the deletion log. Older entries go automatically during the hourly tidy-up.
+- Its own **retention**: default **10 years**, configurable from 1 to 30 years below the deletion log, saved with the save bar underneath (**Save retention**). Older entries go automatically during the hourly tidy-up.
 - The deletion log is included in every [backup](sicherung.md) and in the [full export](export.md) (`daten/loeschprotokoll.csv`).
 - Section 8 "Proof" of the [deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) refers to it.
 

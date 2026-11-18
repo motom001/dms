@@ -86,7 +86,8 @@ describe('Entwurf in Werkbank-Formularen (#370)', () => {
       const ordner = TEILE[f];
       const teile = ordner ? readdirSync(join(wb, ordner)).map((d) => readFileSync(join(wb, ordner, d), 'utf8')) : [];
       const q = [readFileSync(join(wb, `${f}.tsx`), 'utf8'), ...teile].join('\n');
-      assert.match(q, /<Speicherleiste\b/, `${f}.tsx ohne <Speicherleiste>`);
+      // Seiten aus mehreren kleinen Editoren (Systemzustand, #1290) haben eine Sammelleiste – die eine Speicherleiste unten.
+      assert.match(q, /<(Speicherleiste|Sammelleiste)\b/, `${f}.tsx ohne <Speicherleiste>`);
       assert.match(q, /useEntwurf\(/, `${f}.tsx ohne useEntwurf`);
     }
     // Die Aufbewahrung des Papierkorbs steht seit #1197 auf DatenEinstellungen.

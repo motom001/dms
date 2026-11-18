@@ -64,6 +64,7 @@
   "eingangsordner.baum.dateien": "Dateien",
   "eingangsordner.baum.groesse": "Größe",
   "eingangsordner.baum.aelteste": "Älteste Datei",
+  "eingangsordner.baum.beschriftung": "Ordner im Eingangsordner",
   "eingangsordner.baum.zu-tief_one": "({anzahl} zu tief)",
   "eingangsordner.baum.zu-tief_other": "({anzahl} zu tief)",
   "eingangsordner.warnung.alt": "Dateien liegen seit über {tage} Tagen im Eingangsordner.",

@@ -64,6 +64,7 @@
   "eingangsordner.baum.dateien": "Files",
   "eingangsordner.baum.groesse": "Size",
   "eingangsordner.baum.aelteste": "Oldest file",
+  "eingangsordner.baum.beschriftung": "Folders in the inbox folder",
   "eingangsordner.baum.zu-tief_one": "({anzahl} too deep)",
   "eingangsordner.baum.zu-tief_other": "({anzahl} too deep)",
   "eingangsordner.warnung.alt": "Files have been in the intake folder for more than {tage} days.",

@@ -141,7 +141,10 @@ input.kurz { width: 7em; }
 .wahlliste button.an, .wahlliste .wahloption.an { background: var(--akzent-zart); }
 /* Deaktivierte Benutzer (#663): Name bleibt, Zustand nur in der Darstellung. */
 .person-ehemalig { font-style: italic; text-decoration: line-through; text-decoration-thickness: 1px; }
-.sicht.ausgeblendet .nm { opacity: .65; font-style: italic; }
+/* Ausgeblendeter Bereich, der gerade offen ist (#281): kursiv; leise über die Farbe statt Deckkraft – sonst zu wenig
+   Kontrast (#1290). Offen trägt er die Farbe der Auswahl. */
+.sicht.ausgeblendet .nm { font-style: italic; }
+.sicht.ausgeblendet:not(.an) .nm { color: var(--leise); }
 .hinweiszeile .akzeptieren { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .kachel { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); color: inherit; text-decoration: none; }
 .kachel:hover, .kachel:focus-visible { border-color: var(--akzent); }

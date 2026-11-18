@@ -321,7 +321,7 @@ Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen,
 
 - **Filter:** Zeitraum, Mappentyp, Grund, Schritt; ein Klick auf einen Vorgang zeigt alle Mappen und Dokumente dieses Vorgangs.
 - **Suche nach Nummer** (Nummernkreis oder Archivnummer) oder **Prüfsumme**.
-- **„Wurde dieses Dokument gelöscht?“** Zieh die Datei auf das Feld: Dein Browser rechnet die Prüfsumme, Ablago sucht sie. Die Datei selbst wird nicht hochgeladen.
+- **„Wurde dieses Dokument gelöscht?“** Zieh die Datei auf das Feld oder wähle sie mit **Datei wählen …**: Dein Browser rechnet die Prüfsumme, Ablago sucht sie. Die Datei selbst wird nicht hochgeladen.
 - **Als PDF** (Nachweis, mit Filter und Stand im Kopf) oder **als CSV** – jeweils mit dem gewählten Filter.
 
 !!! info "Prüfsumme und Datenschutz"
@@ -330,7 +330,7 @@ Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen,
 ### Nicht änderbar, eigene Aufbewahrung
 
 - Einträge lassen sich **weder ändern noch löschen** – auch nicht von Administratoren oder über die Schnittstelle; die Datenbank selbst verhindert es.
-- Eigene **Aufbewahrung**: Standard **10 Jahre**, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll. Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.
+- Eigene **Aufbewahrung**: Standard **10 Jahre**, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll, gespeichert mit der Speicherleiste darunter (**Aufbewahrung speichern**). Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.
 - Das Löschprotokoll ist in jeder [Sicherung](sicherung.md) und im [Vollexport](export.md) (`daten/loeschprotokoll.csv`) enthalten.
 - Abschnitt 8 „Nachweis“ des [Löschkonzepts](loeschkonzept.md#aus-dem-dms-erzeugen) verweist darauf.
 

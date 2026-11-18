@@ -21,6 +21,8 @@ Ganz oben auf der Seite. Beide stellst du in **GB frei** oder **% frei** ein; Pr
 
 Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme die Warnung erst danach.
 
+Die Seite hat **eine Speicherleiste** ganz unten: **Einstellungen speichern** speichert alles, was du auf ihr geändert hast – Schwellen, lange Datenbankzugriffe, automatisches Verkleinern und KI-Kosten – auf einmal; **Änderungen verwerfen** setzt alles zurück.
+
 ## Auslastung
 
 Ist Ablago langsam, siehst du hier, woran es liegt – ohne Konsole des NAS. Ablago misst **jede Minute** die Auslastung **seines Containers**; die kleinen Kurven zeigen die letzte Stunde, daneben steht der Wert **jetzt**. Die Werte stehen nur im Arbeitsspeicher, nach einem Neustart beginnen die Kurven neu.

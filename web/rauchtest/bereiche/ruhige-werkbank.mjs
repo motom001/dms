@@ -5,6 +5,7 @@
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/ruhige-werkbank.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import '../einrichtung.mjs';
 import { api, archivfassungAblegen, BASIS, beispielPdf, daten, LENA, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
@@ -337,5 +338,98 @@ rauchtest(
       }
     }
     assert.deepEqual(funde, [], funde.join('\n'));
+  },
+);
+
+/* ---------- Alle Werkbank-Seiten: axe hell/dunkel/Handy, keine Fehler in der Konsole (#1290) ---------- */
+
+/**
+ * Alle Seiten aus der Liste der Werkbank-Seiten (#1281), dazu Übersicht, „Werkbank anpassen“ und die Seiten mit Funden aus
+ * #1290: „Paket erstellen“ und ein Rundgang (YAML-Anzeige).
+ */
+const SEITEN = [
+  '',
+  'ansicht',
+  'pakete/~erstellen',
+  'rundgaenge/ablago',
+  ...[
+    ...readFileSync(new URL('../../../shared/src/werkbankansicht.ts', import.meta.url), 'utf8').matchAll(/^\s*\{ pfad: '([a-z]+)'/gm),
+  ].map((m) => m[1]),
+];
+// Die Kopfzeile prüfen eigene Rauchtests (#1218, #1219, Umbau der Navigation); hier die Seite darunter.
+const SEITE = ['.verwaltungsbalken', '.rumpf'];
+const TEILE = 3;
+
+for (const [name, optionen] of [
+  ['hell', { schema: 'light' }],
+  ['dunkel', { schema: 'dark' }],
+  ['Handy', { schema: 'light', handy: true }],
+])
+  for (let teil = 0; teil < TEILE; teil++)
+    rauchtest(
+      `Werkbank-Seiten ${teil + 1}/${TEILE} (${name}): axe ohne Verstoß, keine Fehler in der Konsole (#1290)`,
+      { als: LENA, handy: optionen.handy },
+      async (s) => {
+        await s.goto(BASIS + '/ablage/start');
+        await verwalten(s);
+        await schemaWechseln(s, optionen.schema);
+        const funde = [];
+        for (const pfad of SEITEN.filter((_, i) => i % TEILE === teil)) {
+          await s.goto(BASIS + `/werkbank${pfad ? `/${pfad}` : ''}`);
+          await s.locator('.rumpf h1:visible').first().waitFor();
+          await s.waitForLoadState('networkidle');
+          for (const v of await axePruefen(s, SEITE)) funde.push(`/werkbank/${pfad}: ${v}`);
+        }
+        assert.deepEqual(funde, [], `axe auf den Werkbank-Seiten (${name}):\n${funde.join('\n')}`);
+      },
+    );
+
+rauchtest('„Paket erstellen“ am Handy: Schritte mit Namen, Tippflächen 44 px (#1290 Fund 3)', { als: LENA, handy: true }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/pakete/~erstellen');
+  const schritte = s.locator('.assistent-schritte button');
+  await schritte.first().waitFor();
+  const namen = await schritte.evaluateAll((l) => l.map((b) => b.textContent.trim()));
+  assert.ok(namen.length > 2 && namen.every((n) => n.length > 1), `Schritte ohne Namen: ${namen.join(' | ')}`);
+  const funde = [...(await tippflaechenPruefen(s, ['.rumpf'])), ...(await axePruefen(s, ['.rumpf']))];
+  assert.deepEqual(funde, [], funde.join('\n'));
+});
+
+rauchtest(
+  'Löschprotokoll und Systemzustand: Speichern nur in der Speicherleiste, Datei über einen Knopf (#1290 Fund 6, 7)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/loeschprotokoll');
+    const blatt = s.locator('#loeschprotokoll');
+    // Fund 7: kein rohes Browser-Feld, sondern „Datei wählen …“ aus dem Baustein.
+    await blatt.getByRole('button', { name: 'Datei wählen …' }).waitFor();
+    assert.equal(await blatt.locator('input[type="file"]:visible').count(), 0, 'rohe Datei-Auswahl sichtbar');
+    // Fund 6: Aufbewahrung über die Speicherleiste.
+    const jahre = blatt.getByRole('spinbutton', { name: /^Aufbewahrung/ });
+    const vorher = await jahre.inputValue();
+    await jahre.fill('11');
+    const speichern = blatt.getByRole('button', { name: 'Aufbewahrung speichern' });
+    await speichern.click();
+    // Gespeichert und neu geladen: der Knopf ruht wieder (nichts geändert), der Wert steht.
+    await s.waitForFunction(() => {
+      const k = document.querySelector('.lp-jahre [data-knopf="haupt"]');
+      return k && k.getAttribute('aria-busy') !== 'true' && k.disabled && document.querySelector('.lp-jahre-feld input')?.value === '11';
+    });
+    await blatt.getByText('Gespeichert.', { exact: true }).first().waitFor();
+    await jahre.fill(vorher);
+    await blatt.getByRole('button', { name: 'Aufbewahrung speichern' }).click();
+    await s.waitForFunction(() => document.querySelector('.lp-jahre [data-knopf="haupt"]')?.disabled);
+    // Systemzustand: genau eine Speicherleiste auf der Seite.
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    await s.locator('#schwellen').waitFor();
+    await s.locator('#ki-kosten').waitFor();
+    assert.equal(
+      await s.locator('.rumpf [data-knopf="haupt"]', { hasText: /speichern$/ }).count(),
+      1,
+      'genau ein Speichern auf dem Systemzustand',
+    );
   },
 );

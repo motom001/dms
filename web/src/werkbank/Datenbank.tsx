@@ -3,6 +3,7 @@ import { betriebApi, type DatenbankStand } from '../api/betrieb';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { useTeilMelden, type Melde } from './sammelleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { ProzessTabelle } from './Auslastung';
@@ -38,7 +39,8 @@ export function useDatenbank(sichtbar: boolean) {
 export type DatenbankZustand = ReturnType<typeof useDatenbank>;
 
 /** Abschnitte unter der Verbindung (#407): lange Datenbankzugriffe, was gerade läuft. */
-export function DatenbankAbschnitte({ z, offen }: { z: DatenbankZustand; offen?: string }) {
+/** `melde`: Auf dem Systemzustand speichert die eine Leiste der Seite mit (#1290). */
+export function DatenbankAbschnitte({ z, offen, melde }: { z: DatenbankZustand; offen?: string; melde?: Melde }) {
   return (
     <>
       {z.fehler && (
@@ -46,7 +48,11 @@ export function DatenbankAbschnitte({ z, offen }: { z: DatenbankZustand; offen?:
           <p>{z.fehler}</p>
         </div>
       )}
-      {z.stand?.einstellungen ? <Einstellungen z={z} offen={offen} /> : !z.stand && <p className="leise">{t('werkbank.datenbank.lade')}</p>}
+      {z.stand?.einstellungen ? (
+        <Einstellungen z={z} offen={offen} melde={melde} />
+      ) : (
+        !z.stand && <p className="leise">{t('werkbank.datenbank.lade')}</p>
+      )}
       <Auslastung z={z} />
       <Laufend z={z} />
     </>
@@ -135,25 +141,24 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   );
 }
 
-function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
+function Einstellungen({ z, offen, melde }: { z: DatenbankZustand; offen?: string; melde?: Melde }) {
   const e = z.stand!.einstellungen!;
   const [schwelle, setSchwelle] = useState(String(e.schwelleMs));
   const [tage, setTage] = useState(String(e.tage));
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  const ent = useEntwurf(
-    { schwelle: String(e.schwelleMs), tage: String(e.tage) },
-    { schwelle, tage },
-    {
-      zuruecksetzen: () => {
-        setSchwelle(String(e.schwelleMs));
-        setTage(String(e.tage));
-        setMeldung(undefined);
-      },
-    },
-  );
+  const zuruecksetzen = () => {
+    setSchwelle(String(e.schwelleMs));
+    setTage(String(e.tage));
+    setMeldung(undefined);
+  };
+  const ent = useEntwurf({ schwelle: String(e.schwelleMs), tage: String(e.tage) }, { schwelle, tage }, { zuruecksetzen });
+  useTeilMelden(melde, 'lange-zugriffe', { geaendert: ent.geaendert, sendet, speichern: () => speichernJetzt(), zuruecksetzen });
   async function speichern(ev: FormEvent) {
     ev.preventDefault();
+    await speichernJetzt();
+  }
+  async function speichernJetzt() {
     setSendet(true);
     try {
       await betriebApi.datenbankEinstellen({ schwelleMs: Number(schwelle), tage: Number(tage) });
@@ -185,7 +190,7 @@ function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
       </div>
       <Langlaeufer z={z} offen={offen} />
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'}>{meldung.text}</p>}
-      <Speicherleiste ent={ent} gegenstand={t('werkbank.datenbank.einstellungen')} sendet={sendet} />
+      {!melde && <Speicherleiste ent={ent} gegenstand={t('werkbank.datenbank.einstellungen')} sendet={sendet} />}
     </form>
   );
 }

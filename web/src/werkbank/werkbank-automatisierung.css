@@ -4,15 +4,15 @@
 .lp-filter { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; align-items: end; margin: 10px 0; }
 .lp-filter .lp-suche { grid-column: span 2; }
 .lp-filter .eigenschaft { margin: 0; }
-.lp-datei { display: block; border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 10px 12px; font-size: calc(13px * var(--skala, 1)); cursor: pointer; }
-.lp-datei input { display: block; margin-bottom: 6px; max-width: 100%; }
+/* Ablagezone für die Prüfsumme (#470): ziehen oder „Datei wählen …“ (Knopf, #1290). */
+.lp-datei { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 10px 12px; font-size: calc(13px * var(--skala, 1)); }
 .lp-sha { overflow-wrap: anywhere; word-break: break-all; }
 .lp-liste { list-style: none; margin: 8px 0; padding: 0; border-top: 1px solid var(--linie); }
 .lp-eintrag { display: flex; flex-direction: column; gap: 2px; padding: 8px 0 8px 10px; border-bottom: 1px solid var(--linie); border-left: 3px solid var(--linie-stark); min-width: 0; }
 .lp-eintrag.lp-endgueltig { border-left-color: var(--schlecht); }
 .lp-eintrag.lp-wiederhergestellt { border-left-color: var(--gruen); }
 .lp-eintrag code { font-size: 0.92em; }
-.lp-jahre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.lp-jahre { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .lp-jahre .eigenschaft { margin: 0; }
 .lp-jahre-feld { display: inline-flex; align-items: center; gap: 6px; }
 .lp-jahre-feld input { width: 80px; }

@@ -39,8 +39,9 @@ function zeilen(k: EingangKnoten, tiefe = 0, aus: Array<{ k: EingangKnoten; tief
 function Baum({ u, w, e }: { u: EingangUeberblick; w: EingangWarnung[]; e: EingangEinstellung }) {
   const grenzeAlt = Date.now() - (e.warnTage ?? 180) * 86_400_000;
   const z = zeilen(u.baum);
+  // Rollt die Tabelle waagerecht, erreicht man sie mit der Tastatur (#1290, axe scrollable-region-focusable).
   return (
-    <div className="tabellenrahmen">
+    <div className="tabellenrahmen" tabIndex={0} role="region" aria-label={t('werkbank.eingangsordner.baum.beschriftung')}>
       <table className="tabelle klein eo-baum">
         <thead>
           <tr>
