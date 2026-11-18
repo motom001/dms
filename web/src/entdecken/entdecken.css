@@ -14,8 +14,10 @@ dialog.rundgang::backdrop { background: var(--schleier-stark); }
 dialog.rundgang.mit-ziel::backdrop { background: transparent; }
 .rg-licht { position: fixed; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 3px var(--akzent), 0 0 0 9999px var(--schleier-stark); }
 .rg-karte { position: relative; width: min(440px, calc(100vw - 32px)); background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 12px 40px var(--schatten-stark); padding: 16px 20px 14px; display: flex; flex-direction: column; gap: 6px; }
-dialog.rundgang.mit-ziel .rg-karte { position: fixed; }
-dialog.rundgang.schmal.mit-ziel .rg-karte { left: 16px; right: 16px; width: auto; }
+/* Fester Platz (#1301): in allen Schritten unten in der Mitte, mit Abstand zum Assistenten unten rechts; am Handy über
+   seinem Streifen. Nur die Hervorhebung wandert (Rundgang.tsx, lageDerKarte). */
+dialog.rundgang .rg-karte { position: fixed; max-height: calc(100vh - 120px); max-height: calc(100dvh - 120px); overflow-y: auto; }
+dialog.rundgang.schmal .rg-karte { left: 16px; right: 16px; width: auto; }
 .rg-kopf { margin: 0; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .rg-inhalt h2 { margin: 2px 0 6px; }
 .rg-inhalt p { margin: 0 0 8px; }
@@ -27,21 +29,16 @@ dialog.rundgang.schmal.mit-ziel .rg-karte { left: 16px; right: 16px; width: auto
   .rg-licht { transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease; }
   .anker-hervor { transition: outline-color .2s ease; }
 }
-/* Die Dreiteilung als Bild (wie auf ablago.app): links Ansichten, Mitte Liste, rechts Mappe; am Handy untereinander. */
-.rg-bild { display: grid; grid-template-columns: 0.9fr 1fr 1.1fr; border: 1px solid var(--linie); border-radius: 8px; overflow: hidden; font-size: calc(12px * var(--skala, 1)); margin: 2px 0 12px; background: var(--grund); }
-.rg-bild-spalte { padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; background: var(--flaeche); }
-.rg-bild-links { background: var(--senke); border-right: 1px solid var(--linie); }
-.rg-bild-mitte { border-right: 1px solid var(--linie); }
-.rg-bild-name { font-size: calc(10.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--akzent); margin-bottom: 2px; }
-.rg-bild-eintrag { padding: 3px 6px; border-radius: 5px; color: var(--leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rg-bild-eintrag.an { background: var(--akzent-zart); color: var(--tinte); font-weight: 600; }
-.rg-bild-zeile { padding: 4px 6px; border: 1px solid var(--linie); border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rg-bild-zeile.an { border-color: var(--akzent); }
-.rg-bild-feld { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-bottom: 1px dashed var(--linie); padding-bottom: 3px; color: var(--leise); }
-.rg-bild-strich { display: inline-block; width: 40%; height: 6px; border-radius: 3px; background: var(--linie); }
-.rg-bild-schmal { grid-template-columns: 1fr; max-width: 260px; }
-.rg-bild-schmal .rg-bild-links, .rg-bild-schmal .rg-bild-mitte { border-right: 0; }
-.rg-bild-schmal .rg-bild-links { border-bottom: 1px solid var(--linie); }
+/* Die Dreiteilung als Skizze (#1301): flach, eigener Rahmen mit Beschriftung, nur Spaltennamen und graue Balken – nichts
+   darin sieht bedienbar aus (kein Zeiger, keine Hervorhebung, keine Hover-Zustände). Am Handy zwei Spalten untereinander. */
+.rg-bild { margin: 2px 0 12px; padding: 8px 10px 10px; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); cursor: default; user-select: none; -webkit-user-select: none; }
+.rg-bild-skizze { margin: 0 0 6px; font-size: calc(11px * var(--skala, 1)); font-weight: 600; color: var(--leise); }
+.rg-bild-raster { display: grid; grid-template-columns: 0.9fr 1fr 1.1fr; gap: 8px; }
+.rg-bild-spalte { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; border-radius: 6px; background: var(--grund); }
+.rg-bild-name { font-size: calc(10.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--leise); }
+.rg-bild-balken { display: block; height: 8px; border-radius: 4px; background: var(--linie); }
+.rg-bild-schmal { max-width: 260px; }
+.rg-bild-schmal .rg-bild-raster { grid-template-columns: 1fr; }
 /* Seite „Ablago entdecken“ */
 .entdecken .mappenkopf p { margin: 4px 0 0; }
 .ent-rundgaenge, .ent-tipps { list-style: none; margin: 0; padding: 0; }

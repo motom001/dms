@@ -38,3 +38,6 @@
       ziel: [navigation.zu-erledigen, startseite.zu-erledigen]
     - schluessel: konto
       ziel: benutzermenue
+    # #1300: zum Schluss der Assistent unten rechts – dort gibt es weitere Tipps, Fragen und das Handbuch.
+    - schluessel: assistent
+      ziel: assistent

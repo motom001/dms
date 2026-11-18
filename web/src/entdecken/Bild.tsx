@@ -1,61 +1,40 @@
 import { t } from '../sprache';
-import { Symbol } from '../Symbol';
 
 /**
- * Die Dreiteilung als Bild (#831): dieselbe vereinfachte Darstellung wie auf ablago.app („Ein Blick hinein“, Projekt
- * motom001/dms-website, Apache-2.0) – links die Ansichten, in der Mitte die Liste, rechts die Mappe. Nachgebaut aus
- * HTML statt als Bilddatei: Es folgt dem Design (hell, dunkel, hoher Kontrast) und der Sprache. In der Handyfassung
- * zusammengeklappt: Ansicht oben, Liste darunter.
+ * Die Dreiteilung als Skizze (#831, #1301): links die Ansichten, in der Mitte die Liste, rechts die Mappe – am Handy
+ * zusammengeklappt (Ansicht oben, Liste darunter). Aus HTML statt als Bilddatei, damit es dem Design und der Sprache folgt.
+ *
+ * Bewusst **keine** Nachbildung der Oberfläche (Leitsatz 8: Was wie bedienbar aussieht, muss bedienbar sein): Im ersten
+ * Versuch einer neuen Benutzerin sah das frühere Bild mit echten Einträgen aus wie Ablago selbst, und sie hat darin
+ * geklickt. Jetzt flach, mit der Beschriftung „Skizze“, nur Spaltennamen und graue Balken – keine Texte, die wie
+ * Einträge wirken, keine gewählte Zeile, kein Zeiger, keine Hover-Zustände.
  */
 export function DreiteilungBild({ schmal }: { schmal: boolean }) {
-  const ansichten = [
-    t('ablage.ablage.start'),
-    t('ablage.ablage.zu-erledigen'),
-    t('ablage.ablage.favoriten'),
-    t('entdecken.bild.vertraege'),
-  ];
-  const zeilen = [t('entdecken.bild.handyvertrag'), t('entdecken.bild.kfz'), t('entdecken.bild.heizung')];
+  const balken = (breiten: number[]) => breiten.map((b, i) => <span key={i} className="rg-bild-balken" style={{ width: `${b}%` }} />);
   return (
-    <div
+    <figure
       className={`rg-bild${schmal ? ' rg-bild-schmal' : ''}`}
       role="img"
       aria-label={t(schmal ? 'entdecken.bild.titel-handy' : 'entdecken.bild.titel')}>
-      <div className="rg-bild-spalte rg-bild-links" aria-hidden="true">
-        <span className="rg-bild-name">{t('entdecken.bild.ansichten')}</span>
-        {schmal ? (
-          <span className="rg-bild-eintrag an">
-            {ansichten[3]} <Symbol name="pfeil-unten" />
-          </span>
-        ) : (
-          ansichten.map((a, i) => (
-            <span key={a} className={`rg-bild-eintrag${i === 3 ? ' an' : ''}`}>
-              {a}
-            </span>
-          ))
+      <figcaption className="rg-bild-skizze" aria-hidden="true">
+        {t('entdecken.bild.skizze')}
+      </figcaption>
+      <div className="rg-bild-raster" aria-hidden="true">
+        <div className="rg-bild-spalte">
+          <span className="rg-bild-name">{t('entdecken.bild.ansichten')}</span>
+          {balken(schmal ? [70] : [70, 55, 62, 48])}
+        </div>
+        <div className="rg-bild-spalte">
+          <span className="rg-bild-name">{t('entdecken.bild.liste')}</span>
+          {balken([85, 72, 80])}
+        </div>
+        {!schmal && (
+          <div className="rg-bild-spalte">
+            <span className="rg-bild-name">{t('entdecken.bild.mappe')}</span>
+            {balken([60, 90, 90, 75])}
+          </div>
         )}
       </div>
-      <div className="rg-bild-spalte rg-bild-mitte" aria-hidden="true">
-        <span className="rg-bild-name">{t('entdecken.bild.liste')}</span>
-        {zeilen.map((z, i) => (
-          <span key={z} className={`rg-bild-zeile${i === 0 ? ' an' : ''}`}>
-            {z}
-          </span>
-        ))}
-      </div>
-      {!schmal && (
-        <div className="rg-bild-spalte rg-bild-rechts" aria-hidden="true">
-          <span className="rg-bild-name">{t('entdecken.bild.mappe')}</span>
-          <strong>{zeilen[0]}</strong>
-          <span className="rg-bild-feld">
-            <span>{t('entdecken.bild.anbieter')}</span>
-            <span className="rg-bild-strich" />
-          </span>
-          <span className="rg-bild-feld">
-            <span>{t('entdecken.bild.kuendigen')}</span>
-            <span className="rg-bild-strich" />
-          </span>
-        </div>
-      )}
-    </div>
+    </figure>
   );
 }
