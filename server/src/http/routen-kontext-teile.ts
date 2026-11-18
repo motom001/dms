@@ -67,8 +67,9 @@ function baueEntdecken(dienst: Dienst, konten: Konten, x: RoutenExtras): Entdeck
     oeffnen: async (b, kennung, art) => {
       const z = await dienst.rechtepruefung.zugriff(b);
       const alle = await dienst.mappentypen.typenFuer(z);
-      // Ohne Kennung (#1307, Tipp an „Mappe ▾“): Mappen aller Typen, die die Person sieht.
-      const typen = kennung === null ? alle : alle.filter((x) => (x.schluessel ?? x.id) === kennung);
+      // Ohne Kennung (#1307, Tipp an „Mappe ▾“): Mappen aller eigenen Typen und Typen aus Paketen, die die Person sieht –
+      // ohne Systemtypen wie Post, die eine eigene Ansicht ohne „Mappe ▾“ haben.
+      const typen = kennung === null ? alle.filter((x) => !x.system) : alle.filter((x) => (x.schluessel ?? x.id) === kennung);
       if (!typen.length || (art === 'neu' && kennung === null)) return null;
       if (art === 'neu') return darfErstellen(typen[0]) ? `/ablage/${typen[0].id}/neu` : null;
       // Die erste Mappe, die die Person lesen darf – zuletzt geänderte zuerst.

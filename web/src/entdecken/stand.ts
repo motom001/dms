@@ -191,7 +191,8 @@ export async function zeigeZiel(x: TippAnzeige) {
     return;
   }
   if (location.pathname !== seite) geheZu(seite);
-  const z = await warteAufAnker([x.ziel.anker]);
+  // Eine Mappe lädt erst ihre Daten (#1307): dort länger auf die Stelle warten.
+  const z = await warteAufAnker([x.ziel.anker], x.ziel.seite ? undefined : 8000);
   if (!z) {
     console.debug(`Tipp „${x.schluessel}“: Anker „${x.ziel.anker}“ ist hier nicht sichtbar.`);
     return;
