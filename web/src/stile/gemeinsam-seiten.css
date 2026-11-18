@@ -1,0 +1,75 @@
+/* Gemeinsame Teile von Seiten (#1270): Kacheln, Assistenten-Schritte, Vorschläge und Hinweiszeilen, die mehrere
+   Bereiche setzen.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+.assistent-schritte { list-style: none; display: flex; gap: 4px; padding: 0; margin: 6px 0 18px; counter-reset: s; }
+.assistent-schritte li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; text-align: center; }
+.assistent-schritte li > button { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 0; text-decoration: none; }
+.assistent-schritte .nr { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: calc(12px * var(--skala, 1)); font-weight: 600; background: var(--linie); color: var(--leise); }
+.assistent-schritte .name { font-size: calc(11px * var(--skala, 1)); color: var(--leise); line-height: 1.2; overflow-wrap: anywhere; }
+.assistent-schritte li.erledigt .nr { background: var(--gruen-zart); color: var(--gruen); }
+.assistent-schritte li.aktiv .nr { background: var(--akzent); color: var(--akzent-tinte); }
+.assistent-schritte li.aktiv .name { color: var(--text, inherit); font-weight: 600; }
+@media (max-width: 640px) {
+  .assistent-schritte li:not(.aktiv) .name { display: none; }
+}
+@media (min-width: 641px) {
+  /* Zehn Schritte (#460): lange Namen am Rechner mit Trennstrich statt mitten im Wort umbrechen. */
+  .assistent-schritte .name { hyphens: auto; }
+}
+.wahlkarten { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
+.wahlkarte { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 16px; border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche, transparent); cursor: pointer; font: inherit; color: inherit; }
+.wahlkarte:hover, .wahlkarte:focus-visible { border-color: var(--akzent); }
+/* Sprache im Einrichtungsassistenten (#729): Wahlkarten als Auswahlknöpfe. */
+fieldset.wahlkarten { border: 0; padding: 0; min-width: 0; }
+label.wahlkarte { flex-direction: row; align-items: center; gap: 10px; }
+.wahlkarte.gewaehlt { border-color: var(--akzent); box-shadow: 0 0 0 1px var(--akzent); }
+.anleitung { padding-left: 1.3em; display: grid; gap: 10px; margin: 8px 0 14px; }
+.anleitung li.erledigt { color: var(--leise); }
+.verborgen-titel { color: var(--leise); font-style: italic; }
+/* Einklappbare Bereiche und Sprungleiste (#144) stehen seit #1000 im Baustein Bereiche (web/src/bausteine/bereiche). */
+/* Mappentyp- und Ansichten-Editor (#372): Abstand zwischen Kopf (z. B. „Mappentyp kopieren“), Sprungleiste und Bereichen wie auf den übrigen Werkbank-Seiten. */
+.editorform { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+/* Mehrere Mappen auswählen (#149) */
+/* Baustein Wahlhaken (#1211, #1212): Kästchen in einer Fläche; in Listen links oben in der Zeile. */
+.mit-haken > .wahlhaken-flaeche { position: absolute; left: 6px; top: 8px; z-index: 1; }
+.mit-haken > .eintrag { margin-left: 30px; padding-left: 4px; }
+.aktionsleiste { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 10px; margin: 4px 0 8px; background: var(--flaeche); border: 1px solid var(--akzent); border-radius: var(--r); box-shadow: 0 2px 6px var(--schatten-zart); }
+.aktionsleiste .luecke { flex: 1; }
+@media (pointer: coarse) {
+  .mit-haken { -webkit-touch-callout: none; user-select: none; }
+}
+/* #415, #419: Aufgaben gesammelt weitergeben; Tägliche Zusammenfassung zuklappbar. */
+.sammel-liste > li { position: relative; }
+.sammel-liste > li.mit-haken > .aufgabenzeile { padding-left: 34px; }
+.sammel-ziel { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.sammel-ziel select { width: auto; min-width: 0; max-width: 100%; flex: 0 1 220px; padding-top: 4px; padding-bottom: 4px; }
+.anmelden-passkey { display: flex; flex-direction: column; gap: 8px; }
+.einzug { margin-left: 26px; }
+
+.stufe-text { display: flex; flex-direction: column; min-width: 0; }
+.stufe-groesse { white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
+@media (max-width: 520px) {
+  .stufe-groesse { grid-column: 2; text-align: left; }
+}
+.zeile-umbruch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 6px 0 10px; }
+td.umbruch { overflow-wrap: anywhere; }
+
+/* Auch unter dem Suchfeld (#1001, Filter der Werkbank → Aufgaben): eine ganze Zeile breit. */
+.filterraster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 10px; flex: 1 1 100%; }
+.filterraster select { width: 100%; }
+.warntext { color: var(--warn); font-size: calc(12.5px * var(--skala, 1)); font-weight: 500; }
+
+.aehnl-fortschritt { width: min(12rem, 100%); vertical-align: middle; }
+
+/* Die Leiste der Auswahl steht im Fluss über der Liste – klebend läge sie am Handy über den Zeilen. */
+.aktionsleiste.auto-auswahl { position: static; }
+.vorschlag { margin-left: .45em; font-size: calc(11.5px * var(--skala, 1)); font-weight: 500; color: var(--akzent); }
+@media (pointer: coarse) {
+  .tippziel { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+  summary.tippziel { display: list-item; padding-block: 13px; }
+}
+
+/* Tipp ausblenden (×): leise wie bisher. */
+/* Schrittleiste: offene Schritte mit lesbarer Nummer (axe color-contrast, #1215). */
+.assistent-schritte li:not(.erledigt, .aktiv) .nr { background: var(--senke); box-shadow: inset 0 0 0 1px var(--linie); }

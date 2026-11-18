@@ -1,31 +1,42 @@
-/* Gestaltung der Oberfläche (#1234): Einstieg, den main.tsx als einzige Stildatei einbindet.
-   Werkbank mit Ablage-Leiste links und Blättern rechts. Akzent Ablago-Blau (wie ablago.app; #699) für Einrichtung,
-   Grün für die Arbeit mit Mappen.
+/* Gestaltung der Oberfläche (#1234, nach Besitzer geordnet in #1270): Einstieg, den main.tsx als einzige Stildatei
+   einbindet. Werkbank mit Ablage-Leiste links und Blättern rechts. Akzent Ablago-Blau (wie ablago.app; #699) für
+   Einrichtung, Grün für die Arbeit mit Mappen.
 
-   Die Reihenfolge ist Absicht und bleibt fest: Bei gleicher Spezifität gewinnt die spätere Regel. Die Teile 01–13
-   sind zusammenhängende Stücke der früheren styles.css in ihrer alten Reihenfolge. Neue Regeln kommen in den Teil
-   ihres Bereichs; wer eine Regel in einen anderen Teil verschiebt, prüft, ob eine spätere sie überschreibt.
-   Höchstens 400 Zeilen je Datei (npm run lint:farben) – wird ein Teil zu lang, an einer Abschnittsgrenze teilen
-   und hier an derselben Stelle einreihen. */
+   Jede Klasse steht auf oberster Ebene in genau einer Datei, der ihres Besitzers (npm run lint:klassen):
+   - eine Klasse, die nur ein Bereich setzt, in dessen Datei (ablage/, werkbank/, einrichtung/ …), auch ihre
+     Handy-Regeln (@media);
+   - eine Klasse, die mehrere Bereiche setzen, in stile/gemeinsam-*.css; ein Bereich passt sie in seiner Datei an
+     (`.bereich .klasse` gehört dem Bereich);
+   - eine Klasse eines Bausteins in seinem Modul (*.module.css), sonst in stile/bausteine.css;
+   - Elemente ohne Klasse in basis.css.
+   Die Reihenfolge unten ist Absicht und bleibt fest: Bei gleicher Spezifität gewinnt die spätere Regel. Höchstens
+   400 Zeilen je Datei (npm run lint:farben) – wird eine Datei zu lang, nach Thema teilen und hier einreihen. */
 
 /* Farben (nur hier: tokens.css) und Grundregeln für Elemente ohne Klasse. */
 @import '../tokens.css';
 @import '../basis.css';
 
-/* Bereiche, in der Reihenfolge der früheren styles.css. */
-@import './01-kopf-und-formulare.css';
-@import './02-rahmen-und-ablage.css';
-@import './03-werkbank-und-suche.css';
-@import './04-sichten-und-mappe.css';
-@import './05-ziehen-und-hilfe.css';
-@import './06-assistent-und-post.css';
-@import './07-pakete-und-startseite.css';
-@import './08-werkbankleiste-und-datenschutz.css';
-@import './09-handy.css';
-@import './10-protokoll-und-kalender.css';
-@import './11-automatisierung-und-entdecken.css';
-@import './12-dokument-uebernehmen.css';
-@import './13-bausteine-nachzug.css';
+/* Gemeinsame Klassen mehrerer Bereiche, Bausteine mit globalen Klassen, Rahmen. */
+@import './gemeinsam-grundformen.css';
+@import './gemeinsam-listen.css';
+@import './gemeinsam-seiten.css';
+@import './knopf.css';
+@import './bausteine.css';
+@import './rahmen.css';
+
+/* Bereiche. */
+@import '../ablage/ablage-liste.css';
+@import '../ablage/ablage-mappe.css';
+@import '../ablage/ablage-post-und-start.css';
+@import '../ablage/ablage-kalender-und-uebernehmen.css';
+@import '../werkbank/werkbank.css';
+@import '../werkbank/werkbank-pakete-und-datenschutz.css';
+@import '../werkbank/werkbank-automatisierung.css';
+@import '../einrichtung/einrichtung.css';
+@import '../profil/profil.css';
+@import '../assistent/assistent.css';
+@import '../entdecken/entdecken.css';
+@import '../lasttestseite/lasttestseite.css';
 
 /* Startbild (#1198): zuletzt, wie bisher. */
 @import '../startbild.css';

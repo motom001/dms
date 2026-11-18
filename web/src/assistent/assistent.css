@@ -1,0 +1,32 @@
+/* Einrichtungsassistent (#1270): Klassen, die nur web/src/assistent setzt.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* „Wofür nutzt du Ablago?“ (#1045): Name und ein Satz darunter. */
+.wahlkarte-text { display: grid; gap: 2px; }
+.linkliste { padding-left: 1.1em; display: grid; gap: 6px; margin: 10px 0 16px; }
+/* Sammeln, Zusammenfassung, Fortschritt (#803, #804, #806): überall gleicher Aufbau, Knöpfe unten an derselben Stelle. */
+.assistent-kopf-rechts { display: inline-flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.assistent-datei { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.zf-abschnitt { gap: 6px; padding: 12px 16px; }
+.zf-abschnitt.mitfehler { border-color: var(--schlecht); }
+.zf-abschnitt p { margin: 0; overflow-wrap: anywhere; }
+.zf-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.zf-kopf .h3 { margin: 0; }
+.zf-abschnitt .eigenschaften { margin: 0; }
+.zf-abschnitt .eigenschaften dd { overflow-wrap: anywhere; }
+.lauf-liste { list-style: none; padding: 0; margin: 8px 0 14px; display: grid; gap: 10px; }
+.lauf-liste li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.lauf-liste .lauf-zeichen { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--linie); color: var(--leise); font-weight: 700; }
+.lauf-liste .lauf-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.lauf-liste .lauf-text .knoepfe { justify-content: flex-start; }
+.lauf-liste .lauf-fertig .lauf-zeichen { background: var(--gruen-zart); color: var(--gruen); }
+.lauf-liste .lauf-laeuft .lauf-zeichen { background: var(--akzent); color: var(--akzent-tinte); }
+.lauf-liste .lauf-laeuft .lauf-text > span:first-child { font-weight: 600; }
+.lauf-liste .lauf-fehler .lauf-zeichen { background: var(--schlecht-zart, var(--warn-zart)); color: var(--schlecht); }
+.lauf-liste .lauf-wartet { color: var(--leise); }
+
+/* Einrichtungsassistent (#278): Hilfe je Schritt, gut sichtbar oben rechts */
+.assistent-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.assistent-hilfe { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--akzent); text-decoration: none; }
+.assistent-hilfe .hilfesymbol { margin-left: 0; color: var(--akzent); border-color: var(--akzent); }
+.assistent-hilfe:hover, .assistent-hilfe:focus-visible { text-decoration: underline; }

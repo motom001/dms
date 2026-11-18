@@ -1,0 +1,170 @@
+/* Ablage (#1270): Spalten, Sichten, Listen und Suche – Klassen, die nur die Ablage setzt.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* „Link kopieren“ (#98) */
+.linkkopiert { margin-top: 8px; }
+.linkkopiert input { flex: 1 1 260px; min-width: 0; font: inherit; }
+/* Abschnitte im Feldregister (#890): je Gruppe ein Raster, Abstand wie zwischen zwei Zeilen – so wirkt ein Umbruch
+   ohne Überschrift in schmaler Ansicht (ein Feld je Zeile) gar nicht. Mit Überschrift: dünne Linie und Titel. */
+.feldgruppen { display: grid; gap: 16px; }
+.feldabschnitt { border-top: 1px solid var(--linie); padding-top: 6px; }
+.abschnittkopf { margin: 0; font-size: calc(13px * var(--skala, 1)); font-weight: 600; }
+.feldabschnitt.offen .abschnittkopf { margin-bottom: 10px; }
+.abschnittkopf button { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; border: 0; background: none; padding: 4px 2px; font: inherit; color: var(--tinte); cursor: pointer; text-align: left; border-radius: 4px; }
+.abschnittkopf button:hover .abschnitttitel { color: var(--akzent); }
+.abschnittkopf button:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.abschnittkopf svg { flex: none; transition: transform .15s; }
+.feldabschnitt.offen .abschnittkopf svg { transform: rotate(90deg); }
+.abschnittkopf .leise { font-weight: 400; }
+.feldabschnitt > .formular[hidden] { display: none; }
+/* Ruhige Zeile (#1033): ausgeblendet, aber mit Werten – an der Stelle des Felds bzw. Abschnitts, über die ganze Breite. */
+.ausgeblendetzeile { grid-column: 1 / -1; margin: 0; padding: 6px 0; border-top: 1px dashed var(--linie); }
+.ausgeblendetzeile > svg { vertical-align: -2px; margin-right: 6px; }
+.ausgeblendetzeile > span[aria-hidden] { margin: 0 6px; }
+.ausgeblendetzeile svg, .anzeigehinweis svg { width: 14px; height: 14px; flex: none; }
+.anzeigehinweis { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0; }
+@media (max-width: 560px) {
+  .feldabschnitt { border-top: 0; padding-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .abschnittkopf svg { transition: none; }
+}
+.betrag { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 6px; }
+.verwaist { margin: 0; padding-left: 18px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+/* Rückverweise */
+.gruppen { display: flex; flex-direction: column; gap: 12px; }
+.gruppe { border: 1px solid var(--linie); border-radius: var(--r); overflow: hidden; }
+.gruppe header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; background: var(--senke); border-bottom: 1px solid var(--linie); font-size: calc(13px * var(--skala, 1)); }
+.gruppe ul { list-style: none; margin: 0; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+.gruppe > p { padding: 8px 12px; }
+
+/* Sichten als Baum (#38): Einrückung je Ebene, Pfeil zum Auf- und Zuklappen. */
+.sichtzeile { position: relative; display: flex; align-items: center; gap: 2px; padding-left: calc(var(--tiefe, 0) * 20px); }
+/* Ablage-Baum (#1212): je Ebene eine dünne senkrechte Linie, Einzug 20 px; oberste Ebene leicht fett. */
+.sichtzeile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--tiefe, 0) * 20px); pointer-events: none;
+  background-image: repeating-linear-gradient(to right, transparent 0 13px, var(--linie-stark) 13px 14px, transparent 14px 20px); }
+.sichtzeile .sicht.oben .nm { font-weight: 600; }
+.sichtzeile .sicht { flex: 1; min-width: 0; }
+/* Der Pfeil hängt links vor dem Namen (auf der ersten Ebene im Rand), damit die Namen bündig mit „Eingang“ stehen. */
+.aufklapper, .aufklapper-platz { flex: none; width: 28px; height: 28px; min-width: 28px; }
+.aufklapper .sym { transition: transform .12s; }
+.aufklapper[aria-expanded="true"] .sym { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) {
+  .aufklapper .sym { transition: none; }
+}
+@media (pointer: coarse) {
+  .aufklapper, .aufklapper-platz { width: 44px; height: 44px; min-width: 44px; }
+}
+.listenkopf-knoepfe { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.listenzahl-geaendert { display: inline-flex; align-items: center; gap: 4px; }
+/* Zahl einer Ansicht kommt noch (#512): gleicher Platz, blass. */
+.sz-warte { opacity: .45; min-width: 2ch; text-align: right; }
+.fehlerpunkt { font-size: calc(11px * var(--skala, 1)); font-weight: 700; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--schlecht); color: var(--flaeche); text-align: center; }
+.anzahl { font-size: calc(11px * var(--skala, 1)); font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--senke); color: var(--leise); }
+.registerinhalt { min-height: 120px; }
+/* Dokumente */
+.dokumente { display: flex; flex-direction: column; gap: 12px; }
+.ablagezone { border: 2px dashed var(--linie-stark); border-radius: var(--r); padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.ablagezone.zieht { border-color: var(--akzent); background: var(--akzent-zart); }
+.dokumentliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--linie); border-radius: var(--r); }
+.dokumentliste li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--linie); flex-wrap: wrap; }
+.dokumentliste li:last-child { border-bottom: 0; }
+.dokumentliste li.an { background: var(--akzent-zart); }
+.dokname { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dokname .textknopf, .dokname .verweis { text-align: left; overflow-wrap: anywhere; }
+.dokansicht { border: 1px solid var(--linie); border-radius: var(--r); overflow: hidden; background: var(--senke); }
+.dokansicht iframe { display: block; width: 100%; height: min(72vh, 760px); border: 0; background: var(--papier); }
+/* Dokumentliste (#1211): Kopf der Anzeige mit „PDF/A · Original“ und „In neuem Tab“, Satz statt Vorschau, „Über dieses
+   Dokument“ darunter; Infozeile und Zustand in der Zeile. */
+.dokansicht img { max-height: min(72vh, 760px); object-fit: contain; }
+.dokansicht-tab { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+.dokansicht-leer { padding: 18px 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; background: var(--flaeche); }
+.dokansicht-leer p { margin: 0; }
+.dok-ueber { margin: 0; padding: 10px 12px; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; background: var(--flaeche); border-top: 1px solid var(--linie); }
+.dok-ueber > div { display: contents; }
+.dok-ueber dt { color: var(--leise); }
+.dok-ueber dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; overflow-wrap: anywhere; }
+.dokzustand { display: flex; flex-direction: column; gap: 2px; color: var(--warn); }
+.dokzustand > span { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.dokleiste-alle { display: inline-flex; align-items: center; gap: 6px; }
+.dokzeile > .zeilenaktionen { align-items: center; }
+.dokname-knopf { text-align: left; overflow-wrap: anywhere; white-space: normal; }
+.dokansicht img { display: block; max-width: 100%; margin: 0 auto; }
+
+.dokumentliste li.neu { background: var(--gruen-zart); }
+.dokumentliste li.weg .dateiname, .dokumentliste li.weg .dokname > :first-child { text-decoration: line-through; color: var(--leise); }
+.dateiname { overflow-wrap: anywhere; }
+.gruppe header .anzahl { margin-left: 4px; }
+.suchformular { gap: 14px; }
+.suchformular fieldset.suchgruppe { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+@container suchmitte (min-width: 760px) {
+  .suchformular { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; align-items: start; }
+  .suchformular > .sg-bedingungen, .suchformular > .knoepfe { grid-column: 1 / -1; }
+  .suchformular > .sg-volltext { grid-column: 2; grid-row: 1; }
+  .sg-bedingungen .feldsuche { display: grid; grid-template-columns: minmax(12em, 18em) minmax(0, 1fr); column-gap: 14px; align-items: center; }
+  .sg-bedingungen .feldsuche > .feldsuchkopf { grid-column: 1; }
+  .sg-bedingungen .feldsuche > :not(.feldsuchkopf) { grid-column: 2; grid-row: 1; }
+}
+.bedingungneu { align-self: flex-start; }
+.suchformular .bedingungneu select { width: auto; max-width: 100%; font-weight: 600; color: var(--akzent); }
+.suchzusammenfassung { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.suchzusammenfassung > .suchchips, .suchzusammenfassung > p { flex: 1 1 16em; min-width: 0; }
+.chiptext { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.chiptext:hover, .chiptext:focus-visible { color: var(--akzent); text-decoration: underline; }
+.chipweg .sym { width: 1em; height: 1em; vertical-align: middle; }
+.feldsuchkopf .chipweg { margin-left: auto; }
+.nur-breit-inline { display: inline; }
+.suchformular legend { font-weight: 600; font-size: calc(12px * var(--skala, 1)); text-transform: uppercase; letter-spacing: .04em; color: var(--leise); margin-bottom: 4px; }
+.suchformular input[type="text"], .suchformular input[type="search"], .suchformular input[type="date"], .suchformular select { width: 100%; min-width: 0; }
+.feldsuche { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid var(--linie); }
+.feldsuche.gesetzt > .feldsuchkopf .feldsuchname { font-weight: 600; color: var(--tinte); }
+.feldsuchkopf { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.feldsuchkopf select { width: auto !important; max-width: 50%; }
+.feldsuchkopf .feldsuchname { flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; font-size: calc(12.5px * var(--skala, 1)); }
+.feldsuchleer { flex: 0 1 auto; max-width: 50%; }
+.vonbis > div:not([id]) { align-items: center; gap: 4px; flex-wrap: wrap; }
+.vonbis > div > div { flex: 1 1 9em; min-width: 0; }
+.suchformular .vonbis input { flex: 1 1 9em; }
+.suchformular .vonbis select { width: auto; flex: 0 1 12em; }
+.vonbis { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.vonbis input { flex: 1 1 110px; }
+.suchkopf { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.suchchips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.chipweg { border: 0; background: none; color: var(--leise); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+.chipweg:hover, .chipweg:focus-visible { color: var(--schlecht); }
+@media (max-width: 820px) {
+  .nur-breit-inline { display: none; }
+  .feldsuchkopf select.klein { font-size: 16px; }
+  .sichtzeile { flex: none; padding-left: 0; }
+}
+.nachladen { padding: 10px 8px 4px; text-align: center; }
+/* Mappentyp an einem gewählten Verweis (#1036): Symbol der Ansicht des Typs und sein Name, damit gleiche Titel unterscheidbar sind. */
+.typmarke { display: inline-flex; align-items: center; gap: 4px; color: var(--leise); font-size: calc(11.5px * var(--skala, 1)); margin-left: 6px; white-space: nowrap; }
+.typmarke .sym { width: 14px; height: 14px; }
+/* Trefferliste (#19, #22) */
+.breitenmesser { width: 100%; height: 0; margin-bottom: -12px; flex: none; }
+.spaltenknopf .pfeil { opacity: .45; width: .95em; height: .95em; }
+th[aria-sort] .spaltenknopf { color: var(--tinte); font-weight: 700; }
+th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
+
+.gruppe .verweistabelle { border: 0; border-radius: 0; margin: 0; max-height: none; }
+.gruppe .verweistabelle > p { padding: 6px 12px; }
+
+/* Dokumente (#85–#87): ganze Zeile anklickbar, Anzeige darunter, Auswahl und Sortierung */
+.dokumentliste li { flex-direction: column; align-items: stretch; gap: 8px; }
+.dokzeile { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dokzeile > .dokname { flex: 1; }
+/* Name nicht zu einem Streifen zerquetschen: Reichen die Aktionen nicht daneben, rutschen sie unter den Namen (#393). */
+.dokzeile > .dokname { min-width: min(13em, 100%); flex-basis: 13em; }
+.dokumentliste li.klickbar { cursor: pointer; }
+.dokumentliste li.klickbar:hover { background: var(--senke); }
+.dokumentliste li.klickbar.an, .dokumentliste li.an:hover { background: var(--akzent-zart); }
+.dokumentliste li.gewaehlt { box-shadow: inset 3px 0 0 var(--akzent); }
+.dokumentliste li .dokansicht { cursor: default; margin: 0 -4px; }
+@media (max-width: 600px) {
+  .dokansicht { display: none; }
+  .dokzeile .vorschaubild { width: 60px; height: 78px; }
+  .dokzeile > .zeilenaktionen.dk-handy { flex: 1 1 100%; display: flex; gap: 8px; flex-wrap: nowrap; white-space: normal; }
+  .dokzeile .dokname > .textknopf { min-height: 44px; text-align: left; font-size: 16px; }
+  .dokzeile .dokname a, .dokzeile .dokname button { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+}
