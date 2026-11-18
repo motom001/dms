@@ -444,7 +444,7 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#reiter'), `muster-reiter${suffix}`);
         await foto(s.locator('#schalter'), `muster-schalter${suffix}`);
         await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
-        for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl', 'platzhalter', 'etikett', 'aufklapper'])
+        for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl', 'platzhalter', 'etikett', 'zahl', 'aufklapper'])
           await foto(s.locator(`#${b}`), `muster-${b}${suffix}`);
       }
     } finally {

@@ -2,7 +2,7 @@
 
 ## Views {#ansichten}
 
-On the left are the **views**. At the very top are fixed entries, each with an icon: [Advanced search](#erweiterte-suche), [Start](startseite.md), [To do](eingang.md), [New post](post.md), your [favourites](#favoriten) and the [Bin](#papierkorb) (as long as it is on or something is in it). Below the divider – without icons – are the views an administrator has set up, for example *Contract*, *Invoice*, *Contract partner* or *Notice within the next 12 months*. The number after it says how many folders the view currently shows. The Library doesn't wait for the numbers: until they're there, "…" briefly appears in their place.
+On the left are the **views**. At the very top are fixed entries, each with an icon: [Advanced search](#erweiterte-suche), [Start](startseite.md), [To do](eingang.md), [New post](post.md), your [favourites](#favoriten) and the [Bin](#papierkorb) (as long as it is on or something is in it). Below the divider – without icons – are the views an administrator has set up, for example *Contract*, *Invoice*, *Contract partner* or *Notice within the next 12 months*. The number after it says how many folders the view currently shows. The Library doesn't wait for the numbers: until they're there, "…" briefly appears in their place. For **To do** and **New post** the number is bold while something is waiting for you; every number is shown at 0 too – quiet grey. Then the list really is empty.
 
 A click on a view shows its folders in the list. An administrator can set which views you see; a view that is hidden for you is also missing, together with its folders, from the parent view. You still find folders via the search if you may read them.
 

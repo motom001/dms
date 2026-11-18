@@ -14,8 +14,7 @@ import { Link } from '../ort';
 import { AnsichtSymbol, Symbol } from '../Symbol';
 import { ZahlWarte } from './ZahlWarte';
 import { t, tn } from '../sprache';
-import { gebietsschema } from '../../../shared/src/sprache';
-import { FeldGruppe, Knopf, Suchfeld } from '../bausteine';
+import { FeldGruppe, Knopf, Suchfeld, Zahl } from '../bausteine';
 
 /**
  * Ansicht wählen am Handy (#498): ein Knopf „<Ansicht>“ mit Pfeil statt einer Reiterleiste mit 40 Ansichten.
@@ -23,8 +22,6 @@ import { FeldGruppe, Knopf, Suchfeld } from '../bausteine';
  * (Stern), „Zuletzt benutzt“ und die Ansichten nach Gruppen, zuklappbar. Ausblenden gilt nur für einen selbst.
  * Am Rechner bleibt die Liste; darüber filtert ein kleines Suchfeld (AnsichtFilter).
  */
-
-const zahl = (n: number) => n.toLocaleString(gebietsschema());
 
 export interface FesterEintrag {
   pfad: string;
@@ -66,11 +63,7 @@ function Zeile({
           )}
           {sichtName(s)}
         </span>
-        {!d.zahlenDa ? (
-          <ZahlWarte />
-        ) : (
-          n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>
-        )}
+        {!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <Zahl wert={n} art={s.id === d.zaehler.neuePost ? 'wartet' : 'menge'} />}
       </Link>
       <Knopf
         art="eigen"
@@ -228,7 +221,7 @@ export function AnsichtWahl({
                     <li key={f.pfad} className="aw-zeile">
                       <Link to={f.pfad} className={`aw-link ${f.an ? 'an' : ''}`}>
                         <span className="aw-name">{f.name}</span>
-                        {f.warte ? <ZahlWarte /> : !!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}
+                        {f.warte ? <ZahlWarte /> : f.zahl !== undefined && <Zahl wert={f.zahl} art={f.hervor ? 'wartet' : 'menge'} />}
                       </Link>
                     </li>
                   ))}
@@ -322,9 +315,7 @@ export function AnsichtFilter({ aktiv, baum }: { aktiv?: string; baum: ReactNode
               {!d.zahlenDa ? (
                 <ZahlWarte />
               ) : (
-                d.zaehler.sichten?.[eintrag.sicht.id] !== undefined && (
-                  <span className="zahl">{zahl(d.zaehler.sichten[eintrag.sicht.id])}</span>
-                )
+                d.zaehler.sichten?.[eintrag.sicht.id] !== undefined && <Zahl wert={d.zaehler.sichten[eintrag.sicht.id]} />
               )}
             </Link>
           ))

@@ -38,6 +38,7 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 | `Speicherleiste`, `useEntwurf` | Leiste unten in Formularen (#370, #1210): „… löschen“ links (`loeschen`, Gefahr mit Rückfrage, auf Wunsch `mitGrund`), „Verwerfen“ mit Rand, Hauptknopf blau; `nurLesen` ohne Verwerfen und Speichern |
 | `Schalter` | Schiebeschalter für an/aus (#1188), `role="switch"`, Zustand auch als Wort, sofort wirksam mit Promise |
 | `Etikett`, `etikettArt` | Reines Kennzeichen ohne Rand (#1289): Arten leise, info, gut, warn, schlecht; Punkt, klein; gewählter Eintrag mit Knopf zum Entfernen |
+| `Zahl` | Zahl hinter einem Eintrag der Navigation (#1287, Leitsatz 9): Arten menge (leise), wartet (fett, mit Text für Screenreader), warnung (gelb); die 0 steht immer da |
 | `PaketChip` | Herkunft aus einem Paket (#1192): Symbol und Name, Tooltip mit Version, Link zur Paketseite; sieht aus wie ein Etikett; „Ablago“ für Mitgeliefertes |
 | `Aufklapper` | Kopf eines Abschnitts oder Zeile einer Liste zum Auf- und Zuklappen (#1270): Pfeil, `aria-expanded`, `aria-controls` |
 | `Reiter`, `ReiterFlaeche` | Register über einem Inhalt (#1210): ein aktives Aussehen, Tastatur und `aria` nach WAI-ARIA |

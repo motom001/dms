@@ -29,9 +29,8 @@
 .sicht:hover { background: var(--flaeche); }
 .sicht.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
 .sicht .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sicht .zahl, .sicht .zaehler { margin-left: auto; text-align: right; }
+.sicht .zahl { margin-left: auto; text-align: right; }
 .sicht .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; }
-.zaehler { font-size: calc(11.5px * var(--skala, 1)); font-weight: 700; min-width: 20px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--warn); color: var(--flaeche); }
 .mappenliste { list-style: none; margin: 0 -8px; padding: 0; display: flex; flex-direction: column; }
 .eintrag { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 6px; color: inherit; text-decoration: none; border-left: 3px solid transparent; }
 .eintrag:hover { background: var(--senke); }

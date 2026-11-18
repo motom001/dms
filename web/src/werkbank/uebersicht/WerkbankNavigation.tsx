@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
-import { Knopf, Suchfeld } from '../../bausteine';
+import { Knopf, Suchfeld, Zahl } from '../../bausteine';
 import { bereichPasst, GRUPPEN, type Gruppe } from '../../../../shared/src/werkbankansicht';
 
 /* ---------- Leiste mit Gruppen (#68) ---------- */
@@ -138,12 +138,11 @@ function navEintrag(e: WerkbankEintrag, bereich: string, zeigen: (pfad: string) 
       className={`sicht ${bereich === e.pfad ? 'an' : ''} ${aus ? 'ausgeblendet' : ''}`}
       title={aus ? (e.warn ? t('werkbank.uebersicht.ausgeblendet-steht-hier-wegen') : t('werkbank.uebersicht.ausgeblendet')) : undefined}>
       <span className="nm">{e.name}</span>
+      {/* Gelb nur für Warnungen; Mengen leise grau, auch die 0 (#1287, Leitsatz 9). */}
       {e.warn ? (
-        <span className="zaehler" title={e.warnTitel} aria-label={e.warnTitel ? `${e.warn} – ${e.warnTitel}` : undefined}>
-          {e.warn}
-        </span>
-      ) : e.zahl ? (
-        <span className="zahl">{e.zahl}</span>
+        <Zahl wert={e.warn} art="warnung" title={e.warnTitel} beschriftung={e.warnTitel ? `${e.warn} – ${e.warnTitel}` : undefined} />
+      ) : e.zahl !== undefined ? (
+        <Zahl wert={e.zahl} />
       ) : null}
     </Link>
   );
@@ -177,11 +176,7 @@ function gruppenwahl({
           className={`sicht ${gewaehlt === g ? 'an' : ''}`}
           onClick={() => setGewaehlt(g)}>
           <span className="nm">{GRUPPEN[g]}</span>
-          {warnIn(g) && (
-            <span className="zaehler" aria-label={t('werkbank.uebersicht.mit-hinweis')}>
-              !
-            </span>
-          )}
+          {warnIn(g) && <Zahl wert="!" art="warnung" beschriftung={t('werkbank.uebersicht.mit-hinweis')} />}
         </Knopf>
       ))}
     </div>

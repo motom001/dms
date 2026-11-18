@@ -103,7 +103,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     uz: uebersicht.stand?.zahlen,
     wartungAn,
     automatisierung: {
-      zahl: automatisierungen.stand?.automatisierungen.length || undefined,
+      zahl: automatisierungen.stand?.automatisierungen.length,
       warn: automatisierungWarnungen(automatisierungen.stand),
     },
   });

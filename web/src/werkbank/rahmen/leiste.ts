@@ -24,8 +24,11 @@ export interface LeistenKontext {
 }
 
 const n = bereichName;
-/** Zahlen links (#375): die des geladenen Bereichs, sonst die aus der Übersicht; nur > 0 anzeigen. */
-const zahl = (geladen: number | null | undefined, ersatz: number | null | undefined) => (geladen ?? ersatz) || undefined;
+/**
+ * Zahlen links (#375): die des geladenen Bereichs, sonst die aus der Übersicht. Auch die 0 steht da (#1287, Leitsatz 9);
+ * nichts steht nur, solange beides noch fehlt.
+ */
+const zahl = (geladen: number | null | undefined, ersatz: number | null | undefined) => geladen ?? ersatz ?? undefined;
 
 /** Was ein Eintrag der Leiste außer Name und Gruppe zeigt; `null` = steht gerade nicht in der Leiste. */
 type Zusatz = Pick<WerkbankEintrag, 'zahl' | 'warn' | 'warnTitel'> | null;
@@ -52,7 +55,7 @@ export function leistenEintraege(k: LeistenKontext): WerkbankEintrag[] {
 const ABLAGE: Zusaetze = {
   pakete: ({ z, uz }) => ({ zahl: zahl(z.pakete.stand?.installiert.length, uz?.pakete) }),
   typen: ({ d }) => ({ zahl: d.typen.length }),
-  sichten: ({ d }) => ({ zahl: d.sichten.length || undefined }),
+  sichten: ({ d }) => ({ zahl: d.sichten.length }),
   nummernkreise: ({ z, uz }) => ({ zahl: zahl(z.nummernkreise.liste?.length, uz?.nummernkreise) }),
   automatisierungen: ({ z, automatisierung }) => ({
     zahl: automatisierung.zahl,
@@ -60,12 +63,12 @@ const ABLAGE: Zusaetze = {
     warnTitel: t('automatisierung.ui.leiste'),
   }),
   ablaufvorlagen: ({ z: { ablaufvorlagen, uebersicht } }) => ({
-    zahl: ablaufvorlagen.stand?.vorlagen.length || undefined,
+    zahl: ablaufvorlagen.stand?.vorlagen.length,
     warn: (ablaufvorlagen.stand?.angehalten.length ?? uebersicht.stand?.ablaeufe?.angehalten.length) ? '!' : undefined,
     warnTitel: t('automatisierung.vorlage.ui.leiste'),
   }),
-  rundgaenge: ({ z }) => ({ zahl: z.rundgaenge.stand?.rundgaenge.length || undefined }),
-  tipps: ({ z }) => ({ zahl: z.tipps.stand?.tipps.length || undefined }),
+  rundgaenge: ({ z }) => ({ zahl: z.rundgaenge.stand?.rundgaenge.length }),
+  tipps: ({ z }) => ({ zahl: z.tipps.stand?.tipps.length }),
 };
 
 /** Benutzer und Sicherheit, Datenschutz (#1184: nur bei beruflicher Nutzung in der Leiste, `inLeiste` in Werkbank.tsx). */
@@ -78,8 +81,8 @@ const BENUTZER: Zusaetze = {
   }),
   // Nur mit Archivmodus an einem Mappentyp.
   aufbewahrung: ({ d, z, uz }) => (d.typen.some((x) => x.archiv) ? { zahl: zahl(z.darfWeg.liste?.length, uz?.darfWeg) } : null),
-  stempel: ({ z }) => ({ zahl: z.stempel.liste?.length || undefined }),
-  auskuenfte: ({ z }) => ({ zahl: z.datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length || undefined }),
+  stempel: ({ z }) => ({ zahl: z.stempel.liste?.length }),
+  auskuenfte: ({ z }) => ({ zahl: z.datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length }),
   loeschkonzept: ({ z }) => ({
     warn: z.datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined,
     warnTitel: t('werkbank.loeschkonzept.personendaten'),
@@ -112,7 +115,7 @@ const POST: Zusaetze = {
     warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined,
     warnTitel: t('werkbank.leiste.texterkennung'),
   }),
-  woerter: ({ z }) => ({ zahl: z.woerter.gruppen?.length || undefined }),
+  woerter: ({ z }) => ({ zahl: z.woerter.gruppen?.length }),
 };
 
 /** Daten sichern. */
@@ -150,8 +153,8 @@ const EINSTELLUNGEN: Zusaetze = {
     warn: uebersicht.stand?.ohneLeserecht ? '!' : undefined,
     warnTitel: t('werkbank.ohne-leserecht.titel'),
   }),
-  anmeldeschutz: ({ z }) => ({ zahl: z.anmeldeschutz.stand?.gesperrt.length || undefined }),
-  designs: ({ d }) => ({ zahl: d.designs.length || undefined }),
+  anmeldeschutz: ({ z }) => ({ zahl: z.anmeldeschutz.stand?.gesperrt.length }),
+  designs: ({ d }) => ({ zahl: d.designs.length }),
   anbindung: ({ z: { uebersicht } }) => ({
     warn:
       uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig)
@@ -186,7 +189,7 @@ const WARTUNG: Zusaetze = {
     warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null),
     warnTitel: wartungAn ? t('werkbank.leiste.wartung.an') : t('werkbank.leiste.wartung.angekuendigt'),
   }),
-  demo: ({ d }) => ({ zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined }),
+  demo: ({ d }) => ({ zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) }),
 };
 
 const ZUSATZ: Zusaetze = { ...ABLAGE, ...BENUTZER, ...POST, ...SICHERN, ...EINSTELLUNGEN, ...WARTUNG };

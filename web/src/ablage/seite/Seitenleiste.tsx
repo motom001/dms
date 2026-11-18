@@ -8,7 +8,7 @@ import { t, tn } from '../../sprache';
 import { Symbol, type SymbolName } from '../../Symbol';
 import { AnsichtFilter, AnsichtWahl } from '../AnsichtWahl';
 import { ZahlWarte } from '../ZahlWarte';
-import { zahl } from '../liste/hilfen';
+import { Zahl } from '../../bausteine';
 import { SichtBaum } from '../liste/SichtBaum';
 
 type Daten = ReturnType<typeof useDaten>;
@@ -167,7 +167,7 @@ export function Seitenleiste({
             <span className="nm">
               <Symbol name={f.symbol} className="fest-sym" /> {f.name}
             </span>
-            {f.warte ? <ZahlWarte /> : !!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}
+            {f.warte ? <ZahlWarte /> : f.zahl !== undefined && <Zahl wert={f.zahl} art={f.hervor ? 'wartet' : 'menge'} />}
           </Link>
         ))}
         {d.sichten.length > 0 && <hr />}
