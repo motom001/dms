@@ -9,8 +9,11 @@ import { handyGruppe } from '../../../../shared/src/werkbankansicht';
  */
 export const WERKBANK_SCHMAL = 767;
 
-/** Schmal wie die Werkbank am Handy (bis 767 px)? Folgt dem Drehen und dem Ändern der Fenstergröße. */
-function useWerkbankSchmal() {
+/**
+ * Schmal wie die Werkbank am Handy (bis 767 px)? Folgt dem Drehen und dem Ändern der Fenstergröße. Auch für Seiten, die
+ * am Handy das Wichtigste zuerst zeigen (#1291: Systemzustand, Wartung) oder ihre Einleitung kürzen (`Kopf`).
+ */
+export function useWerkbankSchmal() {
   const abfrage = `(max-width: ${WERKBANK_SCHMAL}px)`;
   const [an, setAn] = useState(() => typeof matchMedia === 'function' && matchMedia(abfrage).matches);
   useEffect(() => {

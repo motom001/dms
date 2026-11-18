@@ -51,7 +51,7 @@ Zum **Anlegen** steht in jeder Liste oben rechts ein grüner Knopf, der den Gege
 
 ## Werkbank am Handy { #am-handy }
 
-Am Handy nutzt die Werkbank den Bildschirm für den Inhalt. Wie sie aussieht, richtet sich nach der **Breite**, nicht nach dem Gerät: Bis 767 Pixel – jedes Handy – bekommst du die Handy-Ansicht, ein **iPad hochkant** (ab 768 Pixel) und quer zeigt die volle Werkbank wie am Rechner. Drehst du das Gerät, wechselt die Ansicht mit. Eine eigene Vorlage fürs Handy gibt es nicht: Deine [Vorlage](#werkbank-anpassen) gilt auf allen Geräten.
+Am Handy nutzt die Werkbank den Bildschirm für den Inhalt. Wie sie aussieht, richtet sich nach der **Breite**, nicht nach dem Gerät: Bis 767 Pixel – jedes Handy – bekommst du die Handy-Ansicht, ein **iPad hochkant** (ab 768 Pixel) und quer zeigt die volle Werkbank wie am Rechner. Drehst du das Gerät, wechselt die Ansicht mit. Am iPad hochkant (768 bis 820 Pixel) beginnt die Leiste mit den Bereichen eingeklappt, damit Liste und Seite Platz haben; mit der schmalen Lasche links klappst du sie auf, und so bleibt sie dann. Eine eigene Vorlage fürs Handy gibt es nicht: Deine [Vorlage](#werkbank-anpassen) gilt auf allen Geräten.
 
 Du gehst in Schritten wie in den Einstellungen eines Handys:
 
@@ -60,6 +60,25 @@ Du gehst in Schritten wie in den Einstellungen eines Handys:
 3. **Eintrag** – bei Sammlungen wie Mappentypen oder Benutzern; **‹ Zur Liste** führt zurück.
 
 Am Handy ist **nichts gesperrt**: Jeder Bereich bleibt erreichbar, auch über das Suchfeld. Mappentypen, Automatisierungen oder Pakete einstellen geht auch am Handy, am Rechner oder Tablet aber bequemer. Oben steht wie am Rechner die ruhige Zeile des [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus).
+
+### Was am Handy geht { #was-am-handy-geht }
+
+Was du unterwegs bei einer Störung brauchst, ist am Handy **voll bedienbar** – alle Felder erreichbar, große Tippflächen, nichts breiter als der Bildschirm, das Ergebnis direkt beim Knopf:
+
+| Handgriff | Wo |
+|---|---|
+| Nachsehen, ob alles läuft | **Übersicht**; der **Systemzustand** zeigt am Handy zuerst Auslastung und Speicherplatz, die Schwellen danach |
+| Auf eine Meldung reagieren | **Übersicht**, z. B. nach „Sicherung fehlgeschlagen“ unter **Sicherung** erneut sichern |
+| Sofort handeln | **Sicherung** → **Jetzt sichern**; **Postfächer** → **Jetzt abrufen**; **Wartung** → **Jetzt sofort sperren** bzw. **Wartung beenden**, am Handy gleich unter dem Stand |
+| Benutzer | anlegen; **Zugang sperren** (etwa wenn ein Handy verloren ist) und **Überall abmelden** oben am Benutzer; **Passwort-Link erzeugen** unter *Anmeldung und Sicherheit* |
+| Notfall | **Verschlüsselung** mit dem Notfallblatt; der Notfallzugang unter **Anmeldeschutz**; Verwaltung bestätigen |
+| Pakete | aus dem Katalog **installieren** – Vorschau, Rechte bestätigen, fertig, mit den Vorgaben des Pakets |
+
+**Genauso geschützt wie am Rechner:** Heikle Handlungen fragen am Handy dieselbe Rückfrage ab – der Fokus steht zuerst auf **Abbrechen** – und verlangen dieselbe frische Anmeldung wie am Rechner, z. B. wenn du den Notfallzugang aus dem Internet erlaubst. Mit einem Passkey (etwa Face ID) geht das mit einem Tippen; weniger geprüft wird am Handy nie.
+
+Die Einleitung einer Seite steht am Handy in einer Zeile; **Mehr** zeigt den ganzen Text.
+
+Seiten zum Aufbauen – Mappentypen, Ansichten, Nummernkreise, Automatisierungen und ihre Vorlagen, Rundgänge, Tipps, Stempel und Designs – gehen am Handy auch. Oben steht dann ruhig „Am Rechner oder Tablet bequemer.“; gesperrt oder umgeleitet wird nichts.
 
 ## Übersicht
 

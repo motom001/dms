@@ -1,0 +1,16 @@
+art: minor
+
+## Neu
+
+- **Benutzer sperren am Handy** (#1291): „Zugang sperren“ und „Überall abmelden“ stehen jetzt oben am Benutzer – für den Fall, dass ein Handy verloren ist. Es gelten dieselben Rückfragen und Prüfungen wie unten im Bereich „Zugang“.
+- **Hinweis auf Seiten zum Aufbauen** (#1292): Am Handy steht über Mappentypen, Ansichten, Nummernkreisen, Automatisierungen, Rundgängen, Tipps, Stempeln und Designs ruhig „Am Rechner oder Tablet bequemer.“ Gesperrt oder umgeleitet wird nichts.
+
+## Verbessert
+
+- **iPad hochkant** (#1204): Zwischen 768 und 820 Pixeln beginnt die Leiste der Werkbank eingeklappt, damit Liste und Seite Platz haben. Wer sie aufklappt, behält diese Wahl.
+
+- **Werkbank am Handy: das Wichtigste zuerst** (#1291): Der Systemzustand zeigt am Handy zuerst Auslastung und Speicherplatz, die Wartung zuerst „Jetzt sofort sperren“ bzw. „Wartung beenden“ samt Ergebnis. Die Einleitung einer Seite steht am Handy in einer Zeile, „Mehr“ zeigt den ganzen Text.
+- **Speicherleiste** (#1291): „Änderungen verwerfen“ bricht nicht mehr in zwei Zeilen um; der Hauptknopf bricht nur zwischen Wörtern.
+- **Leiste der Werkbank am iPad hoch** (#1271): Zwischen 768 und 1100 Pixeln bricht kein Name mehr mitten im Wort um („Automatisierun-gen“).
+- **Lange Pfade und Adressen am Handy** (#1291): Sie brechen um, statt über den Rand zu ragen.
+- **Handbuch** (#1291): neuer Abschnitt „Was am Handy geht“ unter *Werkbank und Übersicht*.

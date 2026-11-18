@@ -21,6 +21,9 @@ export const LENA = { email: 'lena@example.org', name: 'Lena Beispiel', passwort
 export const JONAS = { email: 'jonas@example.org', name: 'Jonas Beispiel', passwort: 'rauchtest-passwort-2' };
 export const DESKTOP = { viewport: { width: 1366, height: 900 } };
 const HANDY = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+/** iPad hoch und quer (#1292): Touch wie am Handy, die Breite wie am Tablet – dort zeigt die Werkbank alles wie am Rechner. */
+export const TABLET_HOCH = { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true };
+export const TABLET_QUER = { viewport: { width: 1180, height: 820 }, isMobile: true, hasTouch: true };
 
 export let browser;
 /** Ist Ablago eingerichtet und sind die Daten angelegt? Sonst sind die übrigen Tests sinnlos. */
@@ -238,6 +241,7 @@ export async function archivfassungAblegen(sha, pdf) {
  * optionen.erwartet: Antworten, die zu diesem Weg gehören – je { status, pfad: RegExp }.
  * optionen.neustart: Pfade, bei denen eine abgelehnte Verbindung erwartet ist, weil Ablago gerade neu startet.
  * optionen.timeout: eigene Zeitgrenze in ms (Vorgabe und höchstens 120 s).
+ * optionen.geraet: eigener Kontext statt Desktop oder Handy (z. B. TABLET_HOCH, #1292).
  * Nicht als Fehler zählen:
  *   - „Failed to load resource“ in der Konsole: Chromium meldet so jede Antwort ab 400 – die prüft der Test selbst
  *     (mit den erwarteten Ausnahmen);
@@ -250,7 +254,11 @@ export function rauchtest(name, optionen, ablauf) {
       t.skip('Einrichtung gescheitert');
       return;
     }
-    const k = await browser.newContext({ locale: 'de-DE', timezoneId: 'Europe/Berlin', ...(optionen.handy ? HANDY : DESKTOP) });
+    const k = await browser.newContext({
+      locale: 'de-DE',
+      timezoneId: 'Europe/Berlin',
+      ...(optionen.geraet ?? (optionen.handy ? HANDY : DESKTOP)),
+    });
     // Kürzer als die Vorgabe von Playwright (30 s): Ein kaputter Weg soll schnell auffallen.
     k.setDefaultTimeout(15_000);
     k.setDefaultNavigationTimeout(30_000);

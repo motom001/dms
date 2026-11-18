@@ -1,4 +1,4 @@
-import { GRUPPEN, handyBereicheWeg, handyZurueck } from '../../../../shared/src/werkbankansicht';
+import { amRechnerBequemer, GRUPPEN, handyBereicheWeg, handyZurueck } from '../../../../shared/src/werkbankansicht';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
 import { Symbol } from '../../Symbol';
@@ -8,6 +8,7 @@ import { Symbol } from '../../Symbol';
  * zurück („‹ Ablage aufbauen“, „‹ Bereiche“ oder „‹ Zur Liste“, `handyZurueck`), auf der Übersicht der Weg nach vorn in
  * die Bereiche. Der Inhalt beginnt gleich darunter; Suche, „Werkbank anpassen“, „Projekt unterstützen“ und das Handbuch
  * stehen in den Bereichen. `an`: nur am Handy (`useWerkbankHandy`), am Rechner und Tablet nichts.
+ * Auf Seiten zum Aufbauen (#1292, `amRechnerBequemer`) darunter ein ruhiger Hinweis „Am Rechner oder Tablet bequemer“.
  */
 export function HandyKopf({ an, bereich, ebene }: { an: boolean; bereich: string; ebene: 'liste' | 'mappe' }) {
   if (!an) return null;
@@ -30,6 +31,7 @@ export function HandyKopf({ an, bereich, ebene }: { an: boolean; bereich: string
       <Link to={zurueck.weg} className="verweis zur-liste">
         <Symbol name="pfeil-links" /> {text}
       </Link>
+      {amRechnerBequemer(bereich) && <p className="wb-bequemer leise klein">{t('werkbank.kopf.bequemer')}</p>}
     </div>
   );
 }

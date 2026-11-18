@@ -15,6 +15,7 @@ import { entwurfVon, rechteKurz, speichereBenutzer, teilweiseText, vertretungKur
 import { WeitereRollen } from './Rollen';
 import { Sicherheit } from './Sicherheit';
 import { Zugang } from './Zugang';
+import { Sofort } from './Sofort';
 import { Verwaltungsrecht } from './Verwaltungsrecht';
 import { LinkAnzeige } from './LinkAnzeige';
 
@@ -39,6 +40,8 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
   const [ergebnis, setErgebnis] = useState<LinkErgebnis>();
   const [sendet, setSendet] = useState(false);
   const [fehlerOrt, setFehlerOrt] = useState<BenutzerBereich | null>(null);
+  // Nach „Überall abmelden“ oben (#1291): Die Geräte unten laden neu.
+  const [abgemeldet, setAbgemeldet] = useState(0);
   // Reihenfolge der Haken zählt nicht als Änderung.
   const ent = useEntwurf(
     gespeichert,
@@ -96,6 +99,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
     <div className="editorform">
       {kopf(b, d)}
       {b2.leiste(hatFehler, t('werkbank.benutzer.bereiche'))}
+      <Sofort b={b} b2={b2} selbst={selbst} aktion={aktion} abgemeldet={() => setAbgemeldet((n) => n + 1)} />
       {meldung && (
         <div className={`hinweis ${meldung.art}`}>
           <p>{meldung.text}</p>
@@ -126,7 +130,15 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           klappe: b2.klappe('vertretung', hatFehler('vertretung')),
         })}
       </form>
-      <Sicherheit b={b} b2={b2} aktion={aktion} setErgebnis={setErgebnis} neuLaden={neuLaden} loeschbar={loeschbar} />
+      <Sicherheit
+        b={b}
+        b2={b2}
+        aktion={aktion}
+        setErgebnis={setErgebnis}
+        neuLaden={neuLaden}
+        loeschbar={loeschbar}
+        abgemeldet={abgemeldet}
+      />
       {(!selbst || !b.aktiv) && <Zugang b={b} b2={b2} selbst={selbst} loeschbar={loeschbar} aktion={aktion} />}
       <Speicherleiste
         ent={ent}

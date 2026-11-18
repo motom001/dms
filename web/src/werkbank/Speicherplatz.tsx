@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { betriebApi, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api/betrieb';
 import { Link } from '../ort';
 import { useEntwurf } from '../Speicherleiste';
@@ -9,6 +9,7 @@ import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
+import { useWerkbankSchmal } from './rahmen/schmal';
 import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
 
 /**
@@ -27,6 +28,8 @@ const ORDNERNAME: Record<string, string> = {
   geheim: t('werkbank.speicherplatz.schluessel'),
   sicherung: t('werkbank.speicherplatz.sicherungen'),
 };
+/** Ein Teil der Seite mit Schlüssel, damit die Reihenfolge am Handy wechseln kann, ohne ihn neu anzulegen (#1291). */
+type Teil = [string, ReactNode];
 const ZUSTAND = {
   ok: { text: t('werkbank.speicherplatz.ausreichend'), art: 'gut' },
   warnung: { text: t('werkbank.speicherplatz.knapp'), art: 'warn' },
@@ -150,10 +153,9 @@ export function SpeicherplatzPanel({
   const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !s || !e, zuruecksetzen });
   // Eine Speicherleiste für die ganze Seite (#1290): Schwellen, automatisch verkleinern und KI-Kosten melden sich an.
   const { teile, melde } = useSammelleiste();
+  const schmal = useWerkbankSchmal();
   useTeilMelden(melde, 'schwellen', { geaendert: ent.geaendert, sendet: laeuft, speichern: () => speichern(), zuruecksetzen });
   if (!s || !e) return <p className="leise">{z.fehler ?? t('werkbank.speicherplatz.lade')}</p>;
-  const gleicherTraeger = datentraeger(s.ordner);
-  const ein = einDatentraeger(s.ordner);
 
   async function speichern() {
     setLaeuft(true);
@@ -186,6 +188,42 @@ export function SpeicherplatzPanel({
     }
   }
   const minFrei = Math.min(...s.ordner.map((o) => o.frei ?? Infinity));
+
+  const schwellenTeil: Teil = [
+    'schwellen',
+    <form
+      className="blatt"
+      id="schwellen"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        void speichern();
+      }}
+      onKeyDown={ent.tasten}>
+      <h2 className="h3">{t('werkbank.speicherplatz.schwellen-fuer-den-speicherplatz')}</h2>
+      <div className="raster">
+        <SchwelleFeld
+          name={t('werkbank.speicherplatz.warnschwelle')}
+          hilfe={t('werkbank.speicherplatz.hinweis-und-mail')}
+          wert={e.warnung}
+          aendern={(w) => setE({ ...e, warnung: w })}
+        />
+        <SchwelleFeld
+          name={t('werkbank.speicherplatz.grenze')}
+          hilfe={t('werkbank.speicherplatz.hochladen-gesperrt-wartungsmodus')}
+          wert={e.grenze}
+          aendern={(g) => setE({ ...e, grenze: g })}
+        />
+      </div>
+      <p className="leise klein">{t('werkbank.speicherplatz.gilt-fuer-jeden-ordner')}</p>
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
+    </form>,
+  ];
+  const auslastungTeil: Teil = ['auslastung', auslastung];
+  const ordnerTeil: Teil = ['ordner', <OrdnerBlatt s={s} neuMessen={() => void z.laden()} />];
 
   return (
     <div className="einspaltig">
@@ -264,120 +302,11 @@ export function SpeicherplatzPanel({
           <p>{z.fehler}</p>
         </div>
       )}
-      <form
-        className="blatt"
-        id="schwellen"
-        onSubmit={(ev) => {
-          ev.preventDefault();
-          void speichern();
-        }}
-        onKeyDown={ent.tasten}>
-        <h2 className="h3">{t('werkbank.speicherplatz.schwellen-fuer-den-speicherplatz')}</h2>
-        <div className="raster">
-          <SchwelleFeld
-            name={t('werkbank.speicherplatz.warnschwelle')}
-            hilfe={t('werkbank.speicherplatz.hinweis-und-mail')}
-            wert={e.warnung}
-            aendern={(w) => setE({ ...e, warnung: w })}
-          />
-          <SchwelleFeld
-            name={t('werkbank.speicherplatz.grenze')}
-            hilfe={t('werkbank.speicherplatz.hochladen-gesperrt-wartungsmodus')}
-            wert={e.grenze}
-            aendern={(g) => setE({ ...e, grenze: g })}
-          />
-        </div>
-        <p className="leise klein">{t('werkbank.speicherplatz.gilt-fuer-jeden-ordner')}</p>
-        {meldung && (
-          <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
-            {meldung.text}
-          </p>
-        )}
-      </form>
-
-      {/* Auslastung (#409): unter den Schwellen, über den Ordnern. */}
-      {auslastung}
-
-      <section className="blatt" id="ordner">
-        <h2 className="h3">{t('werkbank.speicherplatz.ordner')}</h2>
-        <p className="leise klein">{t('werkbank.speicherplatz.die-ordner-im-container')}</p>
-        {ein ? (
-          <div className="ordnerzeile">
-            <div className="zeile-zwischen">
-              <strong>
-                {t('werkbank.speicherplatz.ein-datentraeger-fuer')}{' '}
-                {s.ordner
-                  .map((o) => ORDNERNAME[o.art] ?? o.pfad)
-                  .join(', ')
-                  .replace(/, ([^,]*)$/, ' und $1')}
-              </strong>
-              {s.ordner[0].zustand && (
-                <Etikett art={etikettArt(ZUSTAND[s.ordner[0].zustand].art)}>{ZUSTAND[s.ordner[0].zustand].text}</Etikett>
-              )}
-            </div>
-            <Balken o={s.ordner[0]} />
-            <ul className="stapel klein">
-              {s.ordner.map((o) => (
-                <li key={o.art} id={`ordner-${o.art}`}>
-                  <span className="mono">{o.pfad}</span> <span className="leise">{o.text}</span>
-                  {o.volume === false && <span className="fehlertext"> {t('werkbank.speicherplatz.kein-eigenes-volume-geht')}</span>}
-                </li>
-              ))}
-            </ul>
-            {s.ordner.some((o) => o.art === 'sicherung') && (
-              <div className="hinweis info">
-                <p>
-                  {tn('werkbank.speicherplatz.faellt-sie-aus-sind', {
-                    b: <strong>{t('werkbank.speicherplatz.die-sicherungen-liegen-auf')}</strong>,
-                  })}
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          s.ordner.map((o) => {
-            const wie = gleicherTraeger(o);
-            return (
-              <div key={o.art} id={`ordner-${o.art}`} className="ordnerzeile">
-                <div className="zeile-zwischen">
-                  <span>
-                    <span className="mono">{o.pfad}</span> <span className="leise klein">{o.text}</span>
-                  </span>
-                  {o.zustand && <Etikett art={etikettArt(ZUSTAND[o.zustand].art)}>{ZUSTAND[o.zustand].text}</Etikett>}
-                </div>
-                <Balken o={o} />
-                {o.gesamt !== null && o.frei !== null && (
-                  <p className="leise klein">
-                    {wie && wie.art !== o.art ? t('werkbank.speicherplatz.gleicher-datentraeger-wie', { pfad: wie.pfad }) : ''}
-                    {o.volume === false
-                      ? t('werkbank.speicherplatz.kein-eigenes-volume-geht-2', { wert: wie && wie.art !== o.art ? ' · ' : '' })
-                      : ''}
-                  </p>
-                )}
-              </div>
-            );
-          })
-        )}
-        {s.vorschau && s.vorschau.anzahl > 0 && (
-          <p className="leise klein">
-            {t('werkbank.speicherplatz.davon-vorschaubilder-mit-sie', {
-              zahl: s.vorschau.anzahl.toLocaleString(gebietsschema()),
-              platz: platz(s.vorschau.bytes),
-            })}
-          </p>
-        )}
-        <div className="zeile-zwischen">
-          <p className="leise klein">
-            {t('werkbank.speicherplatz.gemessen-uhr', {
-              uhrzeit: new Date(s.gemessen).toLocaleTimeString(gebietsschema(), { timeStyle: 'short' }),
-            })}
-          </p>
-          <Knopf groesse="klein" onClick={() => z.laden()}>
-            {t('werkbank.speicherplatz.neu-messen')}
-          </Knopf>
-        </div>
-      </section>
-
+      {/* Auslastung (#409): am Rechner unter den Schwellen, über den Ordnern. Am Handy (#1291) zuerst der Stand – Auslastung
+          und Ordner –, die Einstellungen danach; mit Schlüsseln, damit beim Drehen nichts neu anfängt. */}
+      {(schmal ? [auslastungTeil, ordnerTeil, schwellenTeil] : [schwellenTeil, auslastungTeil, ordnerTeil]).map(([k, x]) => (
+        <Fragment key={k}>{x}</Fragment>
+      ))}
       {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. „Neue PDFs automatisch verkleinern“ steht seit #1190
           wieder hier beim Speicherplatz (von #725 bis #1190 unter Suche und Volltext). */}
       <GrossePdfsVerkleinern />
@@ -385,5 +314,92 @@ export function SpeicherplatzPanel({
       {unten?.(melde)}
       <Sammelleiste teile={teile} gegenstand={t('werkbank.speicherplatz.einstellungen')} />
     </div>
+  );
+}
+
+/** Speicherplatz je fester Ordner (#115): belegt/frei, gleicher Datenträger nur einmal mit Balken. */
+function OrdnerBlatt({ s, neuMessen }: { s: SpeicherplatzStand; neuMessen: () => void }) {
+  const gleicherTraeger = datentraeger(s.ordner);
+  const ein = einDatentraeger(s.ordner);
+  return (
+    <section className="blatt" id="ordner">
+      <h2 className="h3">{t('werkbank.speicherplatz.ordner')}</h2>
+      <p className="leise klein">{t('werkbank.speicherplatz.die-ordner-im-container')}</p>
+      {ein ? (
+        <div className="ordnerzeile">
+          <div className="zeile-zwischen">
+            <strong>
+              {t('werkbank.speicherplatz.ein-datentraeger-fuer')}{' '}
+              {s.ordner
+                .map((o) => ORDNERNAME[o.art] ?? o.pfad)
+                .join(', ')
+                .replace(/, ([^,]*)$/, ' und $1')}
+            </strong>
+            {s.ordner[0].zustand && (
+              <Etikett art={etikettArt(ZUSTAND[s.ordner[0].zustand].art)}>{ZUSTAND[s.ordner[0].zustand].text}</Etikett>
+            )}
+          </div>
+          <Balken o={s.ordner[0]} />
+          <ul className="stapel klein">
+            {s.ordner.map((o) => (
+              <li key={o.art} id={`ordner-${o.art}`}>
+                <span className="mono">{o.pfad}</span> <span className="leise">{o.text}</span>
+                {o.volume === false && <span className="fehlertext"> {t('werkbank.speicherplatz.kein-eigenes-volume-geht')}</span>}
+              </li>
+            ))}
+          </ul>
+          {s.ordner.some((o) => o.art === 'sicherung') && (
+            <div className="hinweis info">
+              <p>
+                {tn('werkbank.speicherplatz.faellt-sie-aus-sind', {
+                  b: <strong>{t('werkbank.speicherplatz.die-sicherungen-liegen-auf')}</strong>,
+                })}
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        s.ordner.map((o) => {
+          const wie = gleicherTraeger(o);
+          return (
+            <div key={o.art} id={`ordner-${o.art}`} className="ordnerzeile">
+              <div className="zeile-zwischen">
+                <span>
+                  <span className="mono">{o.pfad}</span> <span className="leise klein">{o.text}</span>
+                </span>
+                {o.zustand && <Etikett art={etikettArt(ZUSTAND[o.zustand].art)}>{ZUSTAND[o.zustand].text}</Etikett>}
+              </div>
+              <Balken o={o} />
+              {o.gesamt !== null && o.frei !== null && (
+                <p className="leise klein">
+                  {wie && wie.art !== o.art ? t('werkbank.speicherplatz.gleicher-datentraeger-wie', { pfad: wie.pfad }) : ''}
+                  {o.volume === false
+                    ? t('werkbank.speicherplatz.kein-eigenes-volume-geht-2', { wert: wie && wie.art !== o.art ? ' · ' : '' })
+                    : ''}
+                </p>
+              )}
+            </div>
+          );
+        })
+      )}
+      {s.vorschau && s.vorschau.anzahl > 0 && (
+        <p className="leise klein">
+          {t('werkbank.speicherplatz.davon-vorschaubilder-mit-sie', {
+            zahl: s.vorschau.anzahl.toLocaleString(gebietsschema()),
+            platz: platz(s.vorschau.bytes),
+          })}
+        </p>
+      )}
+      <div className="zeile-zwischen">
+        <p className="leise klein">
+          {t('werkbank.speicherplatz.gemessen-uhr', {
+            uhrzeit: new Date(s.gemessen).toLocaleTimeString(gebietsschema(), { timeStyle: 'short' }),
+          })}
+        </p>
+        <Knopf groesse="klein" onClick={neuMessen}>
+          {t('werkbank.speicherplatz.neu-messen')}
+        </Knopf>
+      </div>
+    </section>
   );
 }

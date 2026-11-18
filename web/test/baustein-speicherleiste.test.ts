@@ -62,7 +62,7 @@ describe('Baustein Speicherleiste (#1210)', () => {
     assert.deepEqual(k.map(art), ['gefahr', 'neben', 'haupt']);
     assert.match(k[0].attr, /aria-haspopup="dialog"/);
     assert.doesNotMatch(k[0].attr, /\bklein\b|disabled/, '„… löschen“ in normaler Größe, aktiv');
-    assert.match(k[1].attr, /class="knopf baustein"/, 'Verwerfen ist ein Knopf mit Rand, kein Textlink');
+    assert.match(k[1].attr, /class="knopf baustein verwerfen"/, 'Verwerfen ist ein Knopf mit Rand, kein Textlink (#1291: bricht nicht um)');
     assert.match(k[1].attr, /disabled=""/);
     assert.match(k[2].attr, /class="knopf haupt baustein"/);
     assert.match(k[2].attr, /type="submit"[^>]*disabled=""|disabled=""[^>]*type="submit"/);

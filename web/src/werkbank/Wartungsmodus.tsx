@@ -1,5 +1,6 @@
 import { t, tn } from '../sprache';
 import { Kopf } from './Kopf';
+import { useWerkbankSchmal } from './rahmen/schmal';
 import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
 import { useCallback, useEffect, useState } from 'react';
 import { betriebApi, type WartungWerkbank } from '../api/betrieb';
@@ -129,6 +130,7 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [vorbelegt, setVorbelegt] = useState(false);
+  const schmal = useWerkbankSchmal();
   useEffect(() => {
     if (!s || vorbelegt) return;
     setText(s.text);
@@ -165,6 +167,20 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
   const eingabe = { text, ende: ende ? new Date(ende).toISOString() : null };
   const andere = s.sitzungen.filter((x) => !x.aktuell).length;
   const schiene = zeitschiene(beginn, ende);
+  const beenden = (
+    <Knopf
+      gesperrt={laeuft}
+      onClick={() => tu(() => betriebApi.wartungAus(), t('werkbank.wartungsmodus.wartungsmodus-beendet-alle-koennen'))}>
+      {t('werkbank.wartungsmodus.wartung-beenden')}
+    </Knopf>
+  );
+  const ergebnis = meldung && (
+    <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+      {meldung.text}
+    </p>
+  );
+  const sofortSperren = () =>
+    tu(() => betriebApi.wartungEin({ ...eingabe, sofort: true }), t('werkbank.wartungsmodus.sofort-gesperrt-alle-anderen'));
 
   return (
     <div className="einspaltig">
@@ -214,6 +230,14 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
             </>
           )}
         </dl>
+        {/* Am Handy (#1291) zuerst sofort an bzw. aus, darunter das Ergebnis, das Planen danach. */}
+        {schmal &&
+          (s.stufe === 'aus' ? (
+            <SofortSperren gesperrt={laeuft} sperren={sofortSperren} oben />
+          ) : (
+            <div className="wm-sofort oben">{beenden}</div>
+          ))}
+        {schmal && ergebnis}
 
         <div className="raster">
           <Feld
@@ -298,44 +322,11 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
               {t('werkbank.wartungsmodus.alle-jetzt-abmelden-2')}
             </Knopf>
           )}
-          {s.stufe !== 'aus' && (
-            <Knopf
-              gesperrt={laeuft}
-              onClick={() => tu(() => betriebApi.wartungAus(), t('werkbank.wartungsmodus.wartungsmodus-beendet-alle-koennen'))}>
-              {t('werkbank.wartungsmodus.wartung-beenden')}
-            </Knopf>
-          )}
+          {s.stufe !== 'aus' && !schmal && beenden}
         </div>
-        {/* Ergebnis unter den Knöpfen (#986): darüber verschiebt sich nichts. */}
-        {meldung && (
-          <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
-            {meldung.text}
-          </p>
-        )}
-        {s.stufe === 'aus' && (
-          <div className="wm-sofort" id="sofort">
-            <Knopf
-              art="gefahr"
-              symbol="schloss"
-              gesperrt={laeuft}
-              rueckfrage={{
-                titel: t('werkbank.wartungsmodus.jetzt-sofort-sperren'),
-                text: t('werkbank.wartungsmodus.alle-anderen-sitzungen-werden'),
-                ja: t('werkbank.wartungsmodus.jetzt-sofort-sperren-2'),
-              }}
-              onClick={async () => {
-                await tu(
-                  () => betriebApi.wartungEin({ ...eingabe, sofort: true }),
-                  t('werkbank.wartungsmodus.sofort-gesperrt-alle-anderen'),
-                );
-              }}>
-              {t('werkbank.wartungsmodus.jetzt-sofort-sperren-2')}
-            </Knopf>
-            <p className="leise klein">
-              {tn('werkbank.wartungsmodus.fuer-notfaelle-z-b', { hilfe: <Hilfe ort="wartungsmodus.sofort" /> })}
-            </p>
-          </div>
-        )}
+        {/* Ergebnis unter den Knöpfen (#986): darüber verschiebt sich nichts. Am Handy oben beim Sofort-Knopf. */}
+        {!schmal && ergebnis}
+        {s.stufe === 'aus' && !schmal && <SofortSperren gesperrt={laeuft} sperren={sofortSperren} />}
       </section>
 
       <section className="blatt" id="sitzungen">
@@ -375,6 +366,32 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/**
+ * „Jetzt sofort sperren“ (#402): für Notfälle, ohne Vorlauf. Am Rechner unter dem Planen, am Handy (#1291) gleich unter
+ * dem Stand (`oben`). Dieselbe Rückfrage (B4) und dieselbe Prüfung des Servers an beiden Stellen.
+ */
+function SofortSperren({ gesperrt, sperren, oben }: { gesperrt: boolean; sperren: () => Promise<void>; oben?: boolean }) {
+  return (
+    <div className={oben ? 'wm-sofort oben' : 'wm-sofort'} id="sofort">
+      <Knopf
+        art="gefahr"
+        symbol="schloss"
+        gesperrt={gesperrt}
+        rueckfrage={{
+          titel: t('werkbank.wartungsmodus.jetzt-sofort-sperren'),
+          text: t('werkbank.wartungsmodus.alle-anderen-sitzungen-werden'),
+          ja: t('werkbank.wartungsmodus.jetzt-sofort-sperren-2'),
+        }}
+        onClick={async () => {
+          await sperren();
+        }}>
+        {t('werkbank.wartungsmodus.jetzt-sofort-sperren-2')}
+      </Knopf>
+      <p className="leise klein">{tn('werkbank.wartungsmodus.fuer-notfaelle-z-b', { hilfe: <Hilfe ort="wartungsmodus.sofort" /> })}</p>
     </div>
   );
 }

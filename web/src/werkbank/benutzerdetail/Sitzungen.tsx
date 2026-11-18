@@ -5,8 +5,8 @@ import { t } from '../../sprache';
 import { Etikett, Knopf } from '../../bausteine';
 import { datumZeit } from './hilfen';
 
-/** Angemeldete Geräte des Benutzers; einzeln oder alle abmelden. */
-export function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void> }) {
+/** Angemeldete Geräte des Benutzers; einzeln oder alle abmelden. `stand`: ändert er sich, lädt die Liste neu (#1291). */
+export function Sitzungen({ b, neuLaden, stand }: { b: Benutzer; neuLaden: () => Promise<void>; stand?: number }) {
   const [liste, setListe] = useState<Sitzung[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
@@ -18,7 +18,7 @@ export function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promis
   }, [b.id]);
   useEffect(() => {
     void laden();
-  }, [laden]);
+  }, [laden, stand]);
   async function beende(fn: () => Promise<unknown>, eigene: boolean) {
     try {
       await fn();

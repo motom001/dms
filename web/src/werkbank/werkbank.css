@@ -64,6 +64,8 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .wm-schnell { display: flex; flex-wrap: wrap; gap: 6px; }
 .wm-sofort { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linie); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .wm-sofort p { margin: 0; }
+/* Am Handy (#1291) steht „Jetzt sofort sperren“ gleich unter dem Stand, über dem Planen. */
+.wm-sofort.oben { margin: 12px 0 0; padding: 0 0 14px; border-top: 0; border-bottom: 1px solid var(--linie); }
 /* Werkbank: Gruppen in der Leiste und Übersicht (#68) */
 .wbgruppe { display: flex; flex-direction: column; gap: 2px; }
 .wbgruppe + .wbgruppe { margin-top: 10px; }
@@ -109,9 +111,18 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .wb-alle-hinweis { font-weight: 400; letter-spacing: 0; text-transform: none; }
 .gruppenreiter { min-width: 0; max-width: 100%; margin: 2px 0 6px; }
 .wb-alle-flaeche { display: flex; flex-direction: column; gap: 2px; }
-.wb-handykopf { display: flex; align-items: center; min-width: 0; margin: -10px 0 4px; }
+.wb-handykopf { display: flex; flex-wrap: wrap; align-items: center; min-width: 0; margin: -10px 0 4px; }
 .wb-handykopf.vor { justify-content: flex-end; }
 .wb-handykopf .zur-liste { max-width: 100%; overflow-wrap: anywhere; }
+/* Seiten zum Aufbauen am Handy (#1292): ein ruhiger Hinweis unter dem Weg zurück – kein Sperren, kein Umleiten. */
+.wb-bequemer { flex: 1 1 100%; margin: 0 0 4px; }
+/* Einleitung einer Seite am Handy (#1291): eine Zeile, daneben „Mehr“; aufgeklappt der ganze Text, „Weniger“ darunter. */
+.wb-einleitung { display: flex; align-items: center; gap: 4px 8px; min-width: 0; }
+.wb-einleitung-text { flex: 1 1 auto; min-width: 0; }
+.wb-einleitung:not([data-offen]) .wb-einleitung-text > :first-child { margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; overflow: hidden; }
+.wb-einleitung:not([data-offen]) .wb-einleitung-text > :not(:first-child) { display: none; }
+.wb-einleitung[data-offen] { flex-direction: column; align-items: flex-start; }
+.wb-einleitung-mehr { flex: none; }
 @media (pointer: coarse) {
   /* Bereiche am Handy und Tablet (#1204): jeder Eintrag der Leiste, „Projekt unterstützen“ und das Handbuch mit 44 px. */
   .werkbankleiste .sicht { min-height: 44px; }
@@ -159,6 +170,16 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
   /* Lange Namen umbrechen, aber nur zwischen Wörtern (#1271: kein „Automatisierungsvorla-gen“); zu lange Namen bekommen
      in der Sprachdatei einen kürzeren Leistennamen (`werkbank.bereich.<pfad>.leiste`). */
   .werkbankleiste .sicht .nm { white-space: normal; overflow-wrap: break-word; hyphens: manual; }
+  /* Zwischen 768 und 1100 px ist die Leiste 180 px schmal (#1204, iPad hoch): Passt das längste Wort nicht neben Zahl
+     oder Plakette, rücken diese in die nächste Zeile – statt „Automatisierun|gen“ (#1271 Punkt 2). Erst ein Wort, das
+     allein breiter ist als die ganze Zeile, bricht noch. */
+  .werkbankleiste .sicht { flex-wrap: wrap; row-gap: 2px; }
+  .werkbankleiste .sicht .nm { flex: 1 1 min-content; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  /* Dort ist die Leiste 180 px schmal: etwas weniger Rand, damit auch der fett gesetzte gewählte Bereich mit seinem
+     längsten Wort („Automatisierungen“) in die Zeile passt. */
+  .werkbankleiste .sicht { padding-left: 7px; padding-right: 7px; }
 }
 @media (pointer: coarse) {
   .typwahl .haken, .ansichtwahl .haken { display: flex; align-items: center; min-height: 48px; }
