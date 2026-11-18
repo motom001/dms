@@ -69,10 +69,19 @@ export function SystemkontenGruppe({
   );
 }
 
-/** Kennzeichen eines Kontos in der Liste: Fehler und weitreichende Rechte. */
+/**
+ * Kennzeichen eines Kontos in der Liste: ausgeschaltet, Fehler und weitreichende Rechte. Ausgeschaltet (#1326) steht als
+ * Etikett, statt den Eintrag abzublenden; bei einem Fehler „deaktiviert“ sagt das schon der Fehler.
+ */
 export function SystemkontoKennzeichen({ k }: { k: Systemkonto }) {
   return (
     <>
+      {!k.aktiv && !k.fehler && (
+        <>
+          {' '}
+          <Etikett klein>{t('konten.systemkonten.aus')}</Etikett>
+        </>
+      )}
       {k.fehler && (
         <>
           {' '}

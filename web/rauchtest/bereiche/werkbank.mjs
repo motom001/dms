@@ -400,3 +400,32 @@ rauchtest(
     assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
   },
 );
+
+// Inaktive Systemkonten (#1326): nicht mehr abgeblendet, sondern mit Etikett „ausgeschaltet“ (bzw. dem Fehler) – axe hell
+// und dunkel auf der aufgeklappten Gruppe. Der Test ergänzt die Antwort um zwei ausgeschaltete Paket-Konten.
+rauchtest('Werkbank: inaktive Systemkonten gut lesbar, Etikett „ausgeschaltet“, axe hell und dunkel (#1326)', { als: LENA }, async (s) => {
+  const konto = (id, name, mehr) => ({ id, name, rolle: 'paket', aktiv: false, paketId: id, paket: name, automatisierungen: [], ...mehr });
+  const ohneCode = konto('00000000-0000-4000-8000-000000001326', 'Paket Vorlagen', { ohneCode: true });
+  const mitFehler = konto('00000000-0000-4000-8000-000000001327', 'Paket Werkzeuge', { fehler: 'deaktiviert' });
+  await s.route(/\/api\/benutzer\/systemkonten$/, async (route) => {
+    const r = await route.fetch();
+    await route.fulfill({ response: r, json: [...(await r.json()), ohneCode, mitFehler] });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  // Ist ein Systemkonto geöffnet, steht die Gruppe offen – ohne die gemerkte Wahl zu ändern.
+  await s.goto(BASIS + `/werkbank/benutzer/konto-${ohneCode.id}`);
+  const gruppe = s.locator('.systemkontengruppe');
+  const eintrag = (name) => gruppe.getByRole('link', { name: new RegExp(`^${name}`) });
+  await eintrag('Paket Vorlagen').getByText('ausgeschaltet', { exact: true }).waitFor();
+  await eintrag('Paket Werkzeuge').getByText('deaktiviert', { exact: true }).waitFor();
+  assert.equal(await eintrag('Paket Werkzeuge').getByText('ausgeschaltet', { exact: true }).count(), 0, 'der Fehler sagt es schon');
+  for (const name of ['Paket Vorlagen', 'Paket Werkzeuge'])
+    assert.equal(await eintrag(name).evaluate((a) => getComputedStyle(a).opacity), '1', `${name} nicht abgeblendet`);
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await schemaWechseln(s, schema);
+    for (const v of await axePruefen(s, ['.systemkontengruppe'])) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});

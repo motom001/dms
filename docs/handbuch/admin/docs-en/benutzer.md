@@ -1,6 +1,6 @@
 # Users and roles {#benutzer-und-rollen}
 
-Under **Workbench → Users** you decide who may sign in, with which roles – and who may manage Ablago (see [Who may manage Ablago?](verwalten.md)). There is no separate "Administrator" account. The list shows the users with their status (*active*, *invited*), who is active right now and who is absent. It hides deactivated ones; **Show deactivated** adds them (grey, at the end) – the workbench remembers the choice.
+Under **Workbench → Users** you decide who may sign in, with which roles – and who may manage Ablago (see [Who may manage Ablago?](verwalten.md)). There is no separate "Administrator" account. The list shows the users with their status (*active*, *invited*), who is active right now and who is absent. It hides deactivated ones; **Show deactivated** adds them at the end – with the name struck through and the status *deactivated* – the workbench remembers the choice.
 
 ![A user in the workbench](bilder/werkbank-benutzer.png)
 
@@ -117,7 +117,7 @@ The group is **collapsed** so that it doesn't clutter the list of people. Its he
 - **… with errors** (red): an account is deactivated although it is needed, or one of its automations is paused. The account of a removed package doesn't count – it only stays for the history. Neither does the account of a package without code (e.g. a data package with presets): it never signs in, is therefore switched off and only appears as the origin in the history. Below the header, **Go to the account with an error** leads straight to the affected account. Ablago switches the account of an installed package with code back on by itself at the next package sync (at the latest at startup) and notes this in the log; if it stays off, reinstall the package – you confirm its permissions again.
 - **… with far-reaching permissions** (yellow): a package may change all folder types, or it may read all and also go to the internet. Check at the [package](pakete.md) whether you want this.
 
-When expanded, every affected account bears the same mark; its details on the right say what is going on. The same group is in the [test run on the folder type](berechtigungen.md#systemkonten-und-pakete) when you want to check a system account there.
+When expanded, every affected account bears the same mark; its details on the right say what is going on. An account that is switched off on purpose (such as one of a package without code) bears the label **switched off** – it is not shown faded, so it stays easy to read. The same group is in the [test run on the folder type](berechtigungen.md#systemkonten-und-pakete) when you want to check a system account there.
 
 - **Automation** (system role *System account*): automations run under this account. The history then says "Automation" instead of the person who set it up – and they keep running when this person leaves or is deactivated. System accounts never get a management permission.
 - **Package …** (system role *Package*): one service account per package with code. It may only do what you confirmed when installing the package. If the package is removed, the account stays for the history.

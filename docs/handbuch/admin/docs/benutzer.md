@@ -1,6 +1,6 @@
 # Benutzer und Rollen
 
-Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf, mit welchen Rollen – und wer Ablago verwalten darf (siehe [Wer darf Ablago verwalten?](verwalten.md)). Ein eigenes Konto „Administrator“ gibt es nicht. Die Liste zeigt die Benutzer mit ihrem Stand (*aktiv*, *eingeladen*), wer gerade aktiv ist und wer abwesend ist. Deaktivierte blendet sie aus; **Deaktivierte zeigen** holt sie (grau, am Ende) dazu – die Wahl merkt sich die Werkbank.
+Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf, mit welchen Rollen – und wer Ablago verwalten darf (siehe [Wer darf Ablago verwalten?](verwalten.md)). Ein eigenes Konto „Administrator“ gibt es nicht. Die Liste zeigt die Benutzer mit ihrem Stand (*aktiv*, *eingeladen*), wer gerade aktiv ist und wer abwesend ist. Deaktivierte blendet sie aus; **Deaktivierte zeigen** holt sie am Ende dazu – mit durchgestrichenem Namen und dem Stand *deaktiviert* – die Wahl merkt sich die Werkbank.
 
 ![Ein Benutzer in der Werkbank](bilder/werkbank-benutzer.png)
 
@@ -117,7 +117,7 @@ Die Gruppe ist **eingeklappt**, damit sie die Liste der Menschen nicht zustellt.
 - **… mit Fehler** (rot): ein Konto ist deaktiviert, obwohl es gebraucht wird, oder eine seiner Automatisierungen ist angehalten. Das Konto eines entfernten Pakets zählt nicht dazu – es bleibt nur für die Historie. Ebenso das Konto eines Pakets ohne Code (z. B. eines Datenpakets mit Vorgaben): Es meldet sich nie an, ist deshalb ausgeschaltet und steht nur als Herkunft in der Historie. Unter der Kopfzeile führt **Zum Konto mit Fehler** direkt zum betroffenen Konto. Das Konto eines installierten Pakets mit Code schaltet Ablago beim nächsten Abgleich der Pakete (spätestens beim Start) selbst wieder ein und vermerkt das im Protokoll; bleibt es aus, installiere das Paket neu – dabei bestätigst du seine Rechte noch einmal.
 - **… mit weitreichenden Rechten** (gelb): ein Paket darf alle Mappentypen ändern, oder es darf alle lesen und dazu ins Internet. Prüfe beim [Paket](pakete.md), ob du das so willst.
 
-Aufgeklappt trägt jedes betroffene Konto dasselbe Kennzeichen; in seinen Angaben rechts steht, was los ist. Dieselbe Gruppe steht im [Testlauf am Mappentyp](berechtigungen.md#systemkonten-und-pakete), wenn du dort ein Systemkonto prüfen willst.
+Aufgeklappt trägt jedes betroffene Konto dasselbe Kennzeichen; in seinen Angaben rechts steht, was los ist. Ein bewusst ausgeschaltetes Konto (etwa eines Pakets ohne Code) trägt das Etikett **ausgeschaltet** – es wird nicht blass dargestellt, damit es gut lesbar bleibt. Dieselbe Gruppe steht im [Testlauf am Mappentyp](berechtigungen.md#systemkonten-und-pakete), wenn du dort ein Systemkonto prüfen willst.
 
 - **Automatisierung** (Systemrolle *Systemkonto*): Unter diesem Konto laufen Automatisierungen. In der Historie steht dann „Automatisierung“ statt der Person, die sie eingerichtet hat – und sie laufen weiter, wenn diese Person geht oder deaktiviert wird. Systemkonten bekommen nie ein Verwaltungsrecht.
 - **Paket …** (Systemrolle *Paket*): je Paket mit Code ein Dienstkonto. Es darf nur, was du bei der Installation des Pakets bestätigt hast. Wird das Paket entfernt, bleibt das Konto für die Historie stehen.
