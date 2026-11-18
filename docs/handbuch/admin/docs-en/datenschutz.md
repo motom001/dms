@@ -83,7 +83,7 @@ A family member or someone from the business who has an account in Ablago wants 
 
 ### Access for a person who isn't a user { #auskunft-an-eine-person-die-kein-benutzer-ist }
 
-A tenant, customer or contact asks for their data. **Workbench → Data protection → Access requests** takes care of this; the details are [further below](#auskunft-nach-art-15-dsgvo).
+A tenant, customer or contact asks for their data. **Workbench → Data protection → Data protection requests** takes care of this; the details are [further below](#auskunft-nach-art-15-dsgvo).
 
 1. **Set up once:** controller (at the [own organisation](organisation.md)), recipients and the folder types that concern a person, each with a purpose ([Defaults for every access request](#einstellungen)).
 2. **Choose the person** – or on their folder **Folder ▾ → Create access copy …** – and enter when the request came in. **Create deadline as a task** reminds you under "To do".
@@ -96,7 +96,7 @@ A tenant, customer or contact asks for their data. **Workbench → Data protecti
 
 Someone demands that their data be deleted (Art. 17 GDPR).
 
-1. **Find what belongs to the person:** as with the access copy – the checklist under **Workbench → Data protection → Access requests** shows all folders that belong to the person and those in which they are only named. You don't need to create anything for this.
+1. **Find what belongs to the person:** as with the access copy – the checklist under **Workbench → Data protection → Data protection requests** shows all folders that belong to the person and those in which they are only named. You don't need to create anything for this.
 2. **Check whether a retention period stands in the way** (Art. 17(3)): folders of a folder type in [archive mode](archiv.md) carry **Archive · keep until …** and can't be deleted before the end of the period anyway – not even by administrators. Also check folders without archive mode: invoices or contracts can have periods that you haven't entered (yet).
 3. **A period stands in the way → lock instead of deleting.** The folder stays until the end of the period; only use it for what you have to keep it for.
     - **Restrict access:** give the folder type a yes/no field such as *Locked* and create a rule in the [permissions](berechtigungen.md#bedingungen): if "Locked is yes", then reading and editing only for a role such as *Data protection*. Administrators still see everything.
@@ -127,15 +127,15 @@ For landlords, the self-employed and businesses: decide once how long which data
 7. **Lock on request** as described under [Deletion on request](#loschen-auf-verlangen).
 8. **Document it:** create the deletion concept under **Workbench → Data protection → Deletion concept** (PDF or Word), complete the [square brackets] and store it as a folder in Ablago. If folder types or periods change, create it again.
 
-## Giving access: Workbench → Data protection → Access requests { #auskunft-erteilen }
+## Giving access: Workbench → Data protection → Data protection requests { #auskunft-erteilen }
 
-Whoever manages data of customers, tenants or contacts must be able to say on request what they have stored about them – and in a form the person can take along. Under **Workbench → Data protection → Access requests**, Ablago does this in a few minutes.
+Whoever manages data of customers, tenants or contacts must be able to say on request what they have stored about them – and in a form the person can take along. Under **Workbench → Data protection → Data protection requests**, Ablago does this in a few minutes.
 
 --8<-- "ausgeblendet-organisation.md"
 
-![Workbench → Data protection → Access requests](bilder/werkbank-datenschutz.png)
+![Workbench → Data protection → Data protection requests](bilder/werkbank-datenschutz.png)
 
-Data protection is a small group of its own in the Workbench, **Data protection**, with three entries (#1184): **Access requests** (everything about requests under Art. 15), **[Deletion concept](loeschkonzept.md)** (close gaps, create the document, [personal data in folder types](#einstellungen)) and **[Deletion log](#loschprotokoll)** (view and export the evidence). The group is only in the sidebar if the Library is [also used for work](organisation.md#nutzung) – in a purely private Library it is missing (later the Workbench level per person takes this over); the pages stay reachable through their addresses. The old address `/werkbank/datenschutz` leads to the access requests, `/werkbank/loeschkonzept#loeschprotokoll` to the deletion log.
+Data protection is a small group of its own in the Workbench, **Data protection**, with three entries (#1184): **Data protection requests** (everything about requests under Art. 15), **[Deletion concept](loeschkonzept.md)** (close gaps, create the document, [personal data in folder types](#einstellungen)) and **[Deletion log](#loschprotokoll)** (view and export the evidence). The group is only in the sidebar if the Library is [also used for work](organisation.md#nutzung) – in a purely private Library it is missing (later the Workbench level per person takes this over); the pages stay reachable through their addresses. Why the group is missing is said by a sentence on [Own organisation](organisation.md#nutzung) below the tick – and by the same sentence at the top of each of these pages when you open it in a private Library. The old address `/werkbank/datenschutz` leads to the access requests, `/werkbank/loeschkonzept#loeschprotokoll` to the deletion log.
 
 ### The list of access copies { #liste }
 

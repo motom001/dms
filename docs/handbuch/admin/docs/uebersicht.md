@@ -7,7 +7,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 | --- | --- |
 | **Ablage aufbauen** | [Pakete](pakete.md), [Beispiel-Ablage](beispielablage.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md), [Tipps](tipps.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
-| **Datenschutz** | [Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
+| **Datenschutz** | [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Daten sichern → Einstellungen](daten-einstellungen.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md#werkbank-aufgaben), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
@@ -186,7 +186,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Verschlüsselung](verschluesselung.md) | ● | ● | ● | ● | ● |
 | [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) |   |   | ● | ● | ● |
 | [Stempel](stempel.md) |   | ● | ● | ● | ● |
-| [Auskünfte](datenschutz.md#auskunft-erteilen) |   |   | ● | ● | ● |
+| [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen) |   |   | ● | ● | ● |
 | [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) |   |   | ● | ● | ● |
 | [Löschprotokoll](datenschutz.md#loschprotokoll) |   |   | ● | ● | ● |
 | [Postfächer](postfaecher.md) |   | ● | ● | ● | ● |
@@ -245,7 +245,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | ab Einsteiger |
 | [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Mappen, deren Aufbewahrungsfrist abgelaufen ist, prüfen und löschen (nur mit Archivmodus) | ab Selbständig |
 | [Stempel](stempel.md) | Vorlagen für Stempel und Wasserzeichen beim Weitergeben | ab Haushalt |
-| [Auskünfte](datenschutz.md#auskunft-erteilen) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte: anfragen, erzeugen, zustellen, Nachweis | ab Selbständig |
+| [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte: anfragen, erzeugen, zustellen, Nachweis | ab Selbständig |
 | [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) | Löschkonzept erzeugen: Lücken schließen und festlegen, welche Mappentypen Personendaten enthalten | ab Selbständig |
 | [Löschprotokoll](datenschutz.md#loschprotokoll) | Nachweis, was wann gelöscht wurde – ansehen, filtern, als PDF oder CSV ausgeben | ab Selbständig |
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | ab Haushalt |

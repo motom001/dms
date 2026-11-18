@@ -6,7 +6,7 @@
 
 | | |
 | --- | --- |
-| Verantwortlicher | [Name, Anschrift – wie unter Werkbank → Datenschutz-Auskünfte-Auskünfte → Einstellungen] |
+| Verantwortlicher | [Name, Anschrift – wie unter Werkbank → Einstellungen → Eigene Organisation] |
 | Ansprechpartner für Datenschutz | [Name, E-Mail – ggf. Datenschutzbeauftragter] |
 | Verantwortlich für Löschungen | [Name] |
 | Vertretung | [Name] |

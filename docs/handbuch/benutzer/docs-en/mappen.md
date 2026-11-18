@@ -123,7 +123,7 @@ Passwords never appear in the title, in lists or in the search. If the field say
 
 ### Linking to other folders { #auf-andere-mappen-verweisen }
 
-A **link** connects two folders – the invoice with its contract, the contract with the contract partner. Type a few letters of the title into the field and choose the matching folder from the suggestions. With the keyboard, **Enter** takes the first suggestion, **Esc** closes the list.
+A **link** connects two folders – the invoice with its contract, the contract with the contract partner. Type a few letters of the title into the field and choose the matching folder from the suggestions. With the keyboard, **Enter** takes the first suggestion, **Esc** closes the list – only the list: your input and your changes to the folder stay; only a second Esc discards as usual.
 
 For fields that allow **several links** (e.g. *For invoices* on a payment), you repeat this. The search field stays at the top directly below the label; the chosen folders appear **below it**, each with **Remove**. This is how you choose several entries from a list everywhere, including the folder types in the [advanced search](ablage.md#erweiterte-suche).
 

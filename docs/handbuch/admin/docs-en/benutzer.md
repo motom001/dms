@@ -16,7 +16,7 @@ On the right, a user is organised like a [folder type](mappentypen.md#aufbau-des
 ## Inviting users {#benutzer-einladen}
 
 1. **+ User**
-2. Under *Basic details* enter email address and name, under *Roles and rights* tick **Roles** if needed. You give a management permission afterwards on the person (only with "Full administration").
+2. Under *Basic details* enter email address and name, under *Roles and rights* choose **Roles** if needed – in the field with suggestions as on [Own organisation](organisation.md): type, choose a role, take it out again with **Remove**; **Esc** only closes the suggestions. You give a management permission afterwards on the person (only with "Full administration").
 3. **Create and invite user** – without email sending the button is called **Create user**. **Discard draft** cancels.
 
 ![Creating a new user](bilder/werkbank-benutzer-neu.png)
@@ -98,7 +98,7 @@ Every user has a folder of the [system folder type](mappentypen.md#systemmappent
 Besides the **system role** *Member*, which everyone has, a user can have any number of **roles** – areas of responsibility such as "Tax and finance".
 
 - **Creating, renaming, deleting roles** happens in the Library in the view *Role* – who may do this is governed by the [permissions](berechtigungen.md) on the folder type *Role* (without rules: every user). Role names are unique.
-- **Assigning** only works here in user management (ticks under *Roles* in the area *Roles and rights*, saved with **Save user**). A role's folder shows in the tab *Users* who has it.
+- **Assigning** only works here in user management (field *Roles* in the area *Roles and rights*, below it the note that everyone has the system role *Member* anyway; saved with **Save user**). A role's folder shows in the tab *Users* who has it.
 - **Member** is a **system role**: it appears as a role folder, every user has it, and it can neither be renamed nor deleted. The former system role *Administrator* has been an ordinary role without members since this version – rules that name it stay valid; if you don't need it, delete it.
 - **Deleting a role** that users have: allowed – the assignment goes. If a field still links to the role (e.g. "responsible role"), this link must go first.
 - Roles can't be nested.

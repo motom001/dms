@@ -1,10 +1,11 @@
 /**
- * Rauchtests: Eigene Organisation mit der Nutzung (#1170, #1182, #1183) und die Gruppe Datenschutz (#1184).
+ * Rauchtests: Eigene Organisation mit der Nutzung (#1170, #1182, #1183), die Gruppe Datenschutz (#1184) und #1311: Name
+ * „Datenschutz-Auskünfte“, Rollen überall als Mehrfachauswahl, Hinweis bei privater Nutzung, Esc in der Mehrfachauswahl.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/organisation-und-datenschutz.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, LENA, rauchtest, verwalten } from '../hilfen.mjs';
+import { api, BASIS, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
 
 /** Haken „beruflich“ setzen und mit der Speicherleiste der Seite speichern (#1182: eine Leiste für alles). */
 async function beruflich(s, an) {
@@ -114,7 +115,7 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   // über ihre Adresse erreichbar. (Welche Bereiche sonst zu sehen sind, bestimmt die Vorlage; die Suche zeigt alle.)
   await s.goto(BASIS + '/werkbank/organisation');
   await bereiche.getByRole('link', { name: /^Eigene Organisation/ }).waitFor();
-  for (const name of [/^Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/])
+  for (const name of [/^Datenschutz-Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/])
     assert.equal(await bereiche.getByRole('link', { name }).count(), 0, String(name));
   const suche = bereiche.getByRole('searchbox', { name: 'Bereiche der Werkbank durchsuchen' });
   await suche.fill('Löschprotokoll');
@@ -143,7 +144,7 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   await s.goto(BASIS + '/werkbank/organisation');
   await beruflich(s, true);
   for (const [wort, name] of [
-    ['Auskünfte', /^Auskünfte/],
+    ['Auskünfte', /^Datenschutz-Auskünfte/],
     ['Löschkonzept', /^Löschkonzept/],
     ['Löschprotokoll', /^Löschprotokoll/],
   ]) {
@@ -153,4 +154,116 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   await beruflich(s, false);
   await suche.fill('Löschprotokoll');
   await bereiche.getByRole('link', { name: /^Löschprotokoll/ }).waitFor({ state: 'detached' });
+});
+
+/* ---------- #1311: Name, Rollen als Mehrfachauswahl, Hinweis bei privater Nutzung, Esc ---------- */
+
+rauchtest(
+  'Datenschutz bei privater Nutzung: Satz auf „Eigene Organisation“ und oben auf den drei Seiten (#1311)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    const satz =
+      /^Weil die Ablage nicht beruflich genutzt wird, steht die Gruppe „Datenschutz“ \(Datenschutz-Auskünfte, Löschkonzept, Löschprotokoll\)/;
+    await s.goto(BASIS + '/werkbank/organisation');
+    await s.locator('#nutzung').getByText(satz).waitFor();
+    // Über die Adresse geöffnet: derselbe Satz oben, mit dem Weg zur Nutzung.
+    for (const [weg, titel] of [
+      ['/werkbank/auskuenfte', 'Datenschutz-Auskünfte'],
+      ['/werkbank/loeschkonzept', 'Löschkonzept'],
+      ['/werkbank/loeschprotokoll', 'Löschprotokoll'],
+    ]) {
+      await s.goto(BASIS + weg);
+      await s
+        .getByRole('heading', { name: titel, level: 1 })
+        .or(s.getByRole('heading', { name: titel, level: 2 }))
+        .first()
+        .waitFor();
+      await s.getByText(satz).waitFor();
+    }
+    await s.getByRole('link', { name: 'Zur Nutzung' }).click();
+    await s.waitForURL(/\/werkbank\/organisation#nutzung$/);
+    // Beruflich: kein Satz mehr, weder auf der Seite noch auf „Eigene Organisation“.
+    await beruflich(s, true);
+    await s.locator('#nutzung').getByText(satz).waitFor({ state: 'detached' });
+    await s.goto(BASIS + '/werkbank/loeschprotokoll');
+    await bearbeitung.getByRole('heading', { name: 'Löschprotokoll', level: 1 }).waitFor();
+    assert.equal(await s.getByText(satz).count(), 0);
+    await s.goto(BASIS + '/werkbank/organisation');
+    await beruflich(s, false);
+  },
+);
+
+rauchtest(
+  'Rollen überall als Mehrfachauswahl: am Benutzer und an der Karte „Favoriten-Änderungen melden“ (#1311)',
+  { als: LENA },
+  async (s) => {
+    const cookie = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
+    const auto = (
+      await api('POST', '/api/werkbank/automatisierungen', {
+        cookie,
+        body: {
+          name: 'Rauchtest Favoriten nach Rollen',
+          aktiv: false,
+          wenn: { art: 'favorit.geaendert', typ: null },
+          dann: [{ id: 'f', art: 'favoriten' }],
+        },
+      })
+    ).daten;
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    // Am neuen Benutzer: Feld mit Vorschlägen statt Haken, darunter, wer ohnehin dazugehört.
+    await s.goto(BASIS + '/werkbank/benutzer/neu');
+    const rollen = bearbeitung.getByRole('combobox', { name: 'Rollen' });
+    await rollen.waitFor();
+    await bearbeitung.getByText('Die Rolle „Mitglied“ hat jeder ohnehin.').waitFor();
+    assert.equal(await bearbeitung.locator('#rechte input[type="checkbox"]').count(), 0, 'keine Haken-Liste mehr');
+    await rollen.click();
+    await bearbeitung.getByRole('listbox', { name: 'Rollen' }).waitFor();
+    // An der Dann-Karte: dasselbe Feld, ohne Wahl an alle.
+    await s.goto(BASIS + `/werkbank/automatisierungen/${auto.id}`);
+    await bearbeitung.getByRole('button', { name: /^Favoriten-Änderungen melden/ }).click();
+    const feld = bearbeitung.getByRole('combobox', { name: 'Nur an Mitglieder dieser Rollen' });
+    await feld.waitFor();
+    await bearbeitung.getByText(/^Keine Rolle gewählt: an alle\./).waitFor();
+    await feld.click();
+    await feld.press('Enter');
+    await bearbeitung.locator('.mehrfachauswahl .gewaehlt li').first().waitFor();
+    await api('DELETE', `/api/werkbank/automatisierungen/${auto.id}`, { cookie });
+  },
+);
+
+// Esc in der Mehrfachauswahl (#1311): bei offener Liste schließt es nur sie – im Formular mit Speicherleiste.
+rauchtest('Mehrfachauswahl: Esc schließt nur die Liste, erst das zweite Esc verwirft (#1311)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/organisation');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  const feld = bearbeitung.getByRole('combobox', { name: 'Welche Rollen „eigene Organisation“ setzen dürfen' });
+  const liste = bearbeitung.getByRole('listbox', { name: 'Welche Rollen „eigene Organisation“ setzen dürfen' });
+  const speichern = bearbeitung.getByRole('button', { name: 'Eigene Organisation speichern' });
+  const entfernen = s.locator('#organisation-einstellungen').getByRole('button', { name: 'Entfernen' });
+  // Eine Änderung, dann wieder tippen: Die Liste ist offen.
+  await feld.click();
+  await feld.press('Enter');
+  await entfernen.first().waitFor();
+  await feld.fill('zz');
+  await liste.waitFor();
+  // Erstes Esc: nur die Liste zu; Fokus, Eingabe und Änderung bleiben, keine Rückfrage.
+  await feld.press('Escape');
+  await liste.waitFor({ state: 'detached' });
+  assert.equal(await feld.evaluate((x) => x === document.activeElement), true, 'Fokus bleibt im Feld');
+  assert.equal(await feld.inputValue(), 'zz', 'Eingabe bleibt');
+  assert.equal(await speichern.isDisabled(), false, 'Änderung nicht verworfen');
+  assert.equal(await s.getByRole('dialog').count(), 0, 'keine Rückfrage');
+  // Zweites Esc bei geschlossener Liste: wie überall – Rückfrage „Änderungen verwerfen?“.
+  await feld.press('Escape');
+  const frage = s.getByRole('dialog', { name: 'Änderungen verwerfen?' });
+  await frage.getByRole('button', { name: 'Verwerfen' }).click();
+  await speichern.and(s.locator(':disabled')).waitFor();
+  assert.equal(await entfernen.count(), 0);
 });

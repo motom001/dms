@@ -16,7 +16,7 @@ Ein Benutzer ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) g
 ## Benutzer einladen
 
 1. **+ Benutzer**
-2. Unter *Grunddaten* E-Mail-Adresse und Name eintragen, unter *Rollen und Rechte* bei Bedarf **Rollen** anhaken. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
+2. Unter *Grunddaten* E-Mail-Adresse und Name eintragen, unter *Rollen und Rechte* bei Bedarf **Rollen** wählen – im Feld mit Vorschlägen wie auf [Eigene Organisation](organisation.md): tippen, Rolle wählen, mit **Entfernen** wieder herausnehmen; **Esc** schließt nur die Vorschläge. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
 3. **Benutzer anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Benutzer anlegen**. **Entwurf verwerfen** bricht ab.
 
 ![Neuen Benutzer anlegen](bilder/werkbank-benutzer-neu.png)
@@ -98,7 +98,7 @@ Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappen
 Neben der **Systemrolle** *Mitglied*, die jeder hat, kann ein Benutzer beliebig viele **Rollen** haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.
 
 - **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Ansicht *Rolle* – wer das darf, regeln die [Berechtigungen](berechtigungen.md) am Mappentyp *Rolle* (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.
-- **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Rollen* im Bereich *Rollen und Rechte*, gespeichert mit **Benutzer speichern**). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
+- **Zuordnen** geht nur hier in der Benutzerverwaltung (Feld *Rollen* im Bereich *Rollen und Rechte*, darunter der Hinweis, dass jeder die Systemrolle *Mitglied* ohnehin hat; gespeichert mit **Benutzer speichern**). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
 - **Mitglied** ist eine **Systemrolle**: Sie erscheint als Rollen-Mappe, jeder Benutzer hat sie, und sie lässt sich weder umbenennen noch löschen. Die frühere Systemrolle *Administrator* ist seit dieser Version eine gewöhnliche Rolle ohne Mitglieder – Regeln, die sie nennen, bleiben gültig; brauchst du sie nicht, lösch sie.
 - **Rolle löschen**, die Benutzer haben: erlaubt – die Zuordnung fällt weg. Verweist noch ein Feld auf die Rolle (z. B. „verantwortliche Rolle“), muss dieser Verweis zuerst weg.
 - Rollen lassen sich nicht verschachteln.

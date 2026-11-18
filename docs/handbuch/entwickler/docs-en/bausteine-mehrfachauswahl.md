@@ -14,7 +14,8 @@
 | `waehle`, `gewaehlt`, `entferne` | take a choice; the chosen entries (`{ id, inhalt, zusatz?, aktionen?, entfernenText }`); remove an entry |
 | `ohneSuche`, `darunter`, `schliessen` | without a search field; something below the chosen entries; when the suggestions close |
 
-- **Enter** takes the first suggestion, arrow keys move through the list, Esc closes it.
+- **Enter** takes the first suggestion, arrow keys move through the list.
+- **Esc** with the list open only closes the list (#1311): focus stays in the field, the input stays, and the key press goes no further – it discards no changes of the save bar and closes no window. Only another Esc with the list closed acts as everywhere else (save bar: discard, window: close).
 - **Remove** is a small button (kind secondary), not red: the field only changes on saving (principle 5).
 - **On the phone** the search field, suggestions and “Remove” are at least 44 px high.
 - The pattern page shows the building block in the area **Multiple selection**.

@@ -7,7 +7,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | --- | --- |
 | **Build the Library** | [Packages](pakete.md), [Example Library](beispielablage.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
-| **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
+| **Data protection** | [Data protection requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Back up data → Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md#werkbank-aufgaben), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
@@ -186,7 +186,7 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | [Encryption](verschluesselung.md) | ● | ● | ● | ● | ● |
 | [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) |   |   | ● | ● | ● |
 | [Stamps](stempel.md) |   | ● | ● | ● | ● |
-| [Access requests](datenschutz.md#auskunft-erteilen) |   |   | ● | ● | ● |
+| [Data protection requests](datenschutz.md#auskunft-erteilen) |   |   | ● | ● | ● |
 | [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) |   |   | ● | ● | ● |
 | [Deletion log](datenschutz.md#loschprotokoll) |   |   | ● | ● | ● |
 | [Mailboxes](postfaecher.md) |   | ● | ● | ● | ● |
@@ -245,7 +245,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Encryption](verschluesselung.md) | The key for passwords and backups | from Beginner |
 | [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Check and delete folders whose retention period has expired (only with archive mode) | from Self-employed |
 | [Stamps](stempel.md) | Templates for stamps and watermarks when passing on | from Household |
-| [Access requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | from Self-employed |
+| [Data protection requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | from Self-employed |
 | [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) | Create a deletion concept: close gaps and set which folder types contain personal data | from Self-employed |
 | [Deletion log](datenschutz.md#loschprotokoll) | Evidence of what was deleted when – view, filter, export as PDF or CSV | from Self-employed |
 | [Mailboxes](postfaecher.md) | Fetch post from an email account | from Household |

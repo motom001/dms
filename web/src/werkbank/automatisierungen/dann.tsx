@@ -11,9 +11,10 @@ import {
 } from '../../../../shared/src/automatisierung';
 import type { KontextPaket, PaketKarte as PaketKarteBeschreibung } from '../../../../shared/src/automatisierung';
 import type { Mappentyp } from '../../../../shared/src/model';
-import { Feld, FeldGruppe, HakenFeld, Knopf, Platzhalter, usePlatzhalterEinsetzen } from '../../bausteine';
+import { Feld, HakenFeld, Knopf, Platzhalter, usePlatzhalterEinsetzen } from '../../bausteine';
 import { t } from '../../sprache';
 import { EmailKarte, platzhalterGruppen, UrlKarte } from '../AutomatisierungAussen';
+import { RollenWahl } from '../RollenWahl';
 import { grundArt, neueId, ohneMappeWenn, PAKET_KARTE } from './hilfen';
 import { EmpfaengerWahl, empfaengerName } from './und';
 
@@ -168,23 +169,14 @@ function FavoritenKarte({
   return (
     <div className="karte offen">
       <p className="leise klein">{t('automatisierung.ui.karte.dann.favoriten.text')}</p>
-      <FeldGruppe
+      {/* Rollen als Mehrfachauswahl wie überall (#1311); ohne Wahl an alle. */}
+      <RollenWahl
         beschriftung={t('automatisierung.ui.karte.dann.favoriten.rollen')}
-        hinweis={t('automatisierung.ui.karte.dann.favoriten.rollen.hilfe')}>
-        {k.rollen.map((r) => (
-          <label key={r.id} className="haken">
-            <input
-              type="checkbox"
-              checked={!!karte.rollen?.includes(r.id)}
-              onChange={(x) => {
-                const neu = x.target.checked ? [...(karte.rollen ?? []), r.id] : (karte.rollen ?? []).filter((y) => y !== r.id);
-                setze({ ...karte, rollen: neu.length ? neu : undefined });
-              }}
-            />
-            <span>{r.name}</span>
-          </label>
-        ))}
-      </FeldGruppe>
+        rollen={k.rollen}
+        gewaehlt={karte.rollen ?? []}
+        setze={(neu) => setze({ ...karte, rollen: neu.length ? neu : undefined })}
+        hinweis={t('automatisierung.ui.karte.dann.favoriten.rollen.hilfe')}
+      />
       <HakenFeld
         beschriftung={t('automatisierung.ui.karte.dann.favoriten.vorgabe')}
         hinweis={t('automatisierung.ui.karte.dann.favoriten.vorgabe.hilfe')}>
