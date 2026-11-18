@@ -360,7 +360,7 @@ rauchtest('Pakete: ein Knopf, Rückmeldung mit Uhrzeit, Merker nach dem Update w
   assert.doesNotMatch(
     await elemente
       .getByRole('link', { name: /^Basis/ })
-      .locator('.chip')
+      .locator('[data-etikett]')
       .allInnerTexts()
       .then((x) => x.join(' ')),
     /1\.7\.0/,
