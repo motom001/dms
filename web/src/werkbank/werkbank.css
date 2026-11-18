@@ -115,7 +115,7 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .wb-handykopf.vor { justify-content: flex-end; }
 .wb-handykopf .zur-liste { max-width: 100%; overflow-wrap: anywhere; }
 /* Seiten zum Aufbauen am Handy (#1292): ein ruhiger Hinweis unter dem Weg zurück – kein Sperren, kein Umleiten. */
-.wb-bequemer { flex: 1 1 100%; margin: -4px 0 4px; }
+.wb-bequemer { flex: 1 1 100%; margin: 0 0 4px; }
 /* Einleitung einer Seite am Handy (#1291): eine Zeile, daneben „Mehr“; aufgeklappt der ganze Text, „Weniger“ darunter. */
 .wb-einleitung { display: flex; align-items: center; gap: 4px 8px; min-width: 0; }
 .wb-einleitung-text { flex: 1 1 auto; min-width: 0; }
