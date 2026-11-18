@@ -38,20 +38,13 @@ g.document = {
   createElement: () => ({ style: {} }),
 };
 g.React = React;
-const WEB = new URL('../../web/src/', import.meta.url).href;
 
-type Eintrag = { name: string; bytes: number; meta?: { beginn: string } | null; pruefung?: { ok: boolean } | null };
-const { gewaehlteSicherungen, sammelFrage } = (await import(WEB + 'werkbank/SicherungListe.tsx')) as {
-  gewaehlteSicherungen: (liste: Eintrag[], auswahl: ReadonlySet<string>) => Eintrag[];
-  sammelFrage: (auswahl: Eintrag[], alle: boolean) => { titel: string; text: string; ja: string };
-};
+const { gewaehlteSicherungen, sammelFrage } = await import('../src/werkbank/SicherungListe');
+type Eintrag = Parameters<typeof gewaehlteSicherungen>[0][number];
 
-const sicherung = (name: string, beginn: string, geprueft = false): Eintrag => ({
-  name,
-  bytes: 1024 * 1024,
-  meta: { beginn },
-  pruefung: geprueft ? { ok: true } : null,
-});
+// Nur, was Auswahl und Rückfrage lesen: Name, Größe, Beginn, Prüfung.
+const sicherung = (name: string, beginn: string, geprueft = false) =>
+  ({ name, bytes: 1024 * 1024, meta: { beginn }, pruefung: geprueft ? { ok: true } : null }) as unknown as Eintrag;
 // Neueste zuerst, die neueste geprüft – früher war sie geschützt (#1169).
 const liste = [
   sicherung('2026-11-03_0200-automatisch', '2026-11-03T01:00:00Z', true),

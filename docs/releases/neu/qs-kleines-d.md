@@ -1,0 +1,8 @@
+art: patch
+
+## Geändert
+
+- **Daten sichern → Einstellungen** (#1310): Der Bereich mit Aufbewahrung im Papierkorb und eigenem Export der Benutzer heißt außerhalb der Leiste jetzt immer mit dem ganzen Weg „Daten sichern → Einstellungen“ – in der Überschrift, in den Verweisen aus Vollexport und Papierkorb und im Handbuch. So verwechselt ihn niemand mehr mit der Gruppe „Einstellungen“. In der Leiste steht er unter „Daten sichern“ weiter kurz als „Einstellungen“.
+- **Keine Sicherung mehr mit Sonderschutz** (#1310): In der Liste der Sicherungen lässt sich jetzt auch die neueste wählen; „Alle auswählen“ wählt wirklich alle, und „Ausgewählte löschen“ löscht alle gewählten. Schutz ist die Rückfrage mit Anzahl, Zeitraum und frei werdendem Platz – sind alle gewählt, sagt sie zusätzlich, dass danach lokal keine Sicherung mehr da ist. Gelöscht werden genau die gewählten; eine Sicherung, die währenddessen entsteht, ist nie dabei.
+- **Tabelle: Hinweis an der Bezeichnung** (#1305): Im Mappentyp-Editor steht bei der Feldart Tabelle an der Bezeichnung ein leiser Hinweis, dass sie im Satz „Du siehst 3 von 7 …“ erscheint und darum am besten in der Mehrzahl steht. Das Wort im Satz ist immer die Bezeichnung der Tabelle, nie ein allgemeines „Einträge“.
+- **Kaputten Link melden aus dem Paketkatalog** (#1306): Kommt ein kaputter Link aus dem Paketkatalog (catalog.ablago.app), ist die Herkunft in der Meldung schon eingetragen – wie bisher bei help.ablago.app und ablago.app. Jede andere Herkunft, auch die eigene Installation, wird nie übernommen.

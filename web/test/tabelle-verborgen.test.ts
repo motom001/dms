@@ -37,14 +37,8 @@ g.document = {
   createElement: () => ({ style: {} }),
 };
 g.React = React;
-const WEB = new URL('../../web/src/', import.meta.url).href;
 const SHARED = new URL('../../shared/src/', import.meta.url).href;
-const { verborgenHinweis } = (await import(WEB + 'ablage/Tabellenfeld.tsx')) as {
-  verborgenHinweis: (
-    daten: { gesamt: number; verborgen: number },
-    f: { label: string; key: string; beschriftungen?: Record<string, { label?: string }> },
-  ) => ReactNode;
-};
+const { verborgenHinweis } = await import('../src/ablage/Tabellenfeld');
 const { setzeSprache } = (await import(SHARED + 'sprache.ts')) as { setzeSprache: (s: string) => void };
 const { registriereEnglisch } = (await import(SHARED + 'englisch.ts')) as { registriereEnglisch: () => void };
 registriereEnglisch();
