@@ -230,3 +230,38 @@ rauchtest('Handy: die Prüfung kennt jeden Bereich, den die Navigation anbietet 
   const fehlt = [...alle].filter((b) => !BEREICHE.includes(b));
   assert.deepEqual(fehlt, [], `Bereiche ohne Rauchtest am Handy (in BEREICHE ergänzen): ${fehlt.join(', ')}`);
 });
+
+rauchtest(
+  'Tablet: kein Wort der Werkbank-Leiste bricht mitten im Wort um, 768 bis 1100 px (#1271, #1204)',
+  { geraet: TABLET_HOCH, als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const funde = [];
+    // Auf einer Seite mit langem, fett gesetztem Namen (gewählt) und einer mit Plakette daneben (Systemzustand).
+    for (const breite of [768, 820, 900, 1024, 1100])
+      for (const w of ['/werkbank/ablaufvorlagen', '/werkbank/systemzustand']) {
+        await s.setViewportSize({ width: breite, height: 1024 });
+        await s.goto(BASIS + w);
+        await s.locator('nav.werkbankleiste a.sicht').nth(3).waitFor();
+        const gebrochen = await s.evaluate(() =>
+          [...document.querySelectorAll('nav.werkbankleiste a.sicht .nm')].flatMap((n) => {
+            const t = n.firstChild;
+            if (!t || t.nodeType !== 3) return [];
+            let i = 0;
+            const aus = [];
+            for (const wort of t.textContent.split(' ')) {
+              const r = document.createRange();
+              r.setStart(t, i);
+              r.setEnd(t, i + wort.length);
+              if (new Set([...r.getClientRects()].map((q) => Math.round(q.top))).size > 1) aus.push(wort);
+              i += wort.length + 1;
+            }
+            return aus;
+          }),
+        );
+        for (const wort of gebrochen) funde.push(`${breite} px, ${w}: „${wort}“ bricht um`);
+      }
+    assert.deepEqual(funde, [], funde.join('\n'));
+  },
+);
