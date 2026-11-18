@@ -7,6 +7,8 @@ art: minor
 
 ## Verbessert
 
+- **iPad hochkant** (#1204): Zwischen 768 und 820 Pixeln beginnt die Leiste der Werkbank eingeklappt, damit Liste und Seite Platz haben. Wer sie aufklappt, behält diese Wahl.
+
 - **Werkbank am Handy: das Wichtigste zuerst** (#1291): Der Systemzustand zeigt am Handy zuerst Auslastung und Speicherplatz, die Wartung zuerst „Jetzt sofort sperren“ bzw. „Wartung beenden“ samt Ergebnis. Die Einleitung einer Seite steht am Handy in einer Zeile, „Mehr“ zeigt den ganzen Text.
 - **Speicherleiste** (#1291): „Änderungen verwerfen“ bricht nicht mehr in zwei Zeilen um; der Hauptknopf bricht nur zwischen Wörtern.
 - **Leiste der Werkbank am iPad hoch** (#1271): Zwischen 768 und 1100 Pixeln bricht kein Name mehr mitten im Wort um („Automatisierun-gen“).
