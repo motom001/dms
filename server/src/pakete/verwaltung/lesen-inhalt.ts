@@ -16,7 +16,7 @@ import {
 import type { PaketAblaufvorlage } from '../../aufgaben';
 import { SCHLUESSEL, TYPVERWEIS } from '../../../../shared/src/kennungen';
 import { t } from '../../sprache/sprache';
-import { KB, VORLAGE_MAX } from '../../grundlagen/grenzen';
+import { KB, PAKET_TEXTE_MAX, VORLAGE_MAX } from '../../grundlagen/grenzen';
 import { anzeigeVorgaben, liesVorgaben, vorgabeVerweisFehler } from '../index';
 import { liesUmbau } from '../index';
 import { pruefeRundgaenge, pruefeTipps, type Texte } from '../../../../shared/src/entdecken';
@@ -48,9 +48,6 @@ import {
 } from './format';
 import { eingeschaltetVon, postUndRollenFehler, pruefeZeitplanKarten, werkbankKartenFehler } from './inhalt-pruefen';
 import { liste, type LeseLauf } from './lesen-lauf';
-
-/** So groß höchstens ist die Sprachdatei der Rundgänge und Tipps eines Pakets (#1307). */
-const PAKET_TEXTE_GROESSE = 64 * KB;
 
 /** Beispiele mit ihren Dokumenten; danach Dokumentenregister und Verweise zwischen den Beispielen. */
 export function liesBeispiele(l: LeseLauf, typen: PaketTyp[]) {
@@ -337,8 +334,8 @@ function liesPaketTexte(l: LeseLauf): PaketTexte {
   if (dateien.length > PAKET_SPRACHEN_MAX) l.fehler.push(t('meldungen.pakete.entdecken.texte-sprachen', { max: PAKET_SPRACHEN_MAX }));
   for (const datei of dateien.slice(0, PAKET_SPRACHEN_MAX)) {
     const d = l.dateien.get(datei)!;
-    if (d.length > PAKET_TEXTE_GROESSE) {
-      l.fehler.push(t('meldungen.pakete.entdecken.texte-gross', { datei, kb: PAKET_TEXTE_GROESSE / KB }));
+    if (d.length > PAKET_TEXTE_MAX) {
+      l.fehler.push(t('meldungen.pakete.entdecken.texte-gross', { datei, kb: PAKET_TEXTE_MAX / KB }));
       continue;
     }
     let j: unknown;
