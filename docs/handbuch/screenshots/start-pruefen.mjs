@@ -122,6 +122,29 @@ try {
   pruefe(!melden.href.includes('127.0.0.1'), 'Meldelink enthält die eigene Adresse');
   await s.context().close();
 
+  // Herkunft (#1306): nur von help.ablago.app, ablago.app und catalog.ablago.app vorausgefüllt – ohne Abfrage und
+  // Anker; jede andere Herkunft nie (eigene Installation, weitere Unterdomain, Teilstring, http). Die Herkunft setzt
+  // ein Skript vor dem Laden, weil der Browser sie zwischen zwei fremden Adressen nicht verlässlich mitgibt.
+  for (const [herkunft, erwartet] of [
+    ['https://catalog.ablago.app/pakete/rechnungen/?q=x#version', 'https://catalog.ablago.app/pakete/rechnungen/'],
+    ['https://help.ablago.app/admin/aktuell/pakete/', 'https://help.ablago.app/admin/aktuell/pakete/'],
+    ['https://ablago.app/funktionen/', 'https://ablago.app/funktionen/'],
+    ['https://dms.example.org/hilfe/admin/sicherung/', null],
+    ['https://neu.catalog.ablago.app/pakete/', null],
+    ['https://catalog.ablago.app.example.org/pakete/', null],
+    ['https://notcatalog.ablago.app/', null],
+    ['http://catalog.ablago.app/pakete/', null],
+    ['https://catalog.ablago.app:8443/pakete/', null],
+  ]) {
+    s = await seite();
+    await s.addInitScript((r) => Object.defineProperty(Document.prototype, 'referrer', { get: () => r }), herkunft);
+    await s.goto(`${BASIS}/gibt-es-nicht/`);
+    const link = new URL(await s.getByRole('link', { name: 'Kaputten Link melden' }).getAttribute('href'));
+    pruefe(link.searchParams.get('herkunft_genau') === erwartet, `Herkunft ${herkunft}: ${link.searchParams.get('herkunft_genau')}`);
+    pruefe(!link.searchParams.has('herkunft'), `Herkunft ${herkunft}: Auswahl „herkunft“ gesetzt`);
+    await s.context().close();
+  }
+
   // axe hell und dunkel: frisch geladen, Maus nicht über Knöpfen.
   for (const schema of ['light', 'dark']) {
     for (const weg of ['/gibt-es-nicht/', '/en/gibt-es-nicht/', '/', '/en/']) {

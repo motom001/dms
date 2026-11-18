@@ -46,7 +46,7 @@ body:
     id: herkunft_genau
     attributes:
       label: Wo genau? · Where exactly?
-      description: Optional, z. B. die Seite, auf der der Link stand. Kam er von help.ablago.app oder ablago.app, ist sie schon eingetragen. · Optional, e.g. the page the link was on. Already filled in if it came from help.ablago.app or ablago.app.
+      description: Optional, z. B. die Seite, auf der der Link stand. Kam er von help.ablago.app, ablago.app oder catalog.ablago.app, ist sie schon eingetragen. · Optional, e.g. the page the link was on. Already filled in if it came from help.ablago.app, ablago.app or catalog.ablago.app.
     validations:
       required: false
   - type: input
