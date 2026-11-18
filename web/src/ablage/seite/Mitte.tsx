@@ -15,6 +15,7 @@ import { ErledigenUmschalter, MeineAufgabenWeitergeben, TermineSicht, type useEr
 import { ZuletztListe } from '../Zuletzt';
 import { exportOhneSicht } from '../liste/hilfen';
 import { Liste } from '../liste/Liste';
+import type { ListeProps } from '../liste/liste-hooks';
 import { LinkListe, SuchListe, TeilListe } from '../liste/Listen';
 
 export interface MitteProps {
@@ -104,7 +105,11 @@ const leerTextVon = (verwaltet: Sicht | undefined, typ: Mappentyp | undefined) =
       : t('ablage.ablage.noch-keine-mappen-in');
 
 /** Liste einer verwalteten Ansicht (#38) oder aller Mappen eines Typs (#888). */
-function typMitte({ sicht, dritt, verwaltet, typ, typListe, sichtTypen, wahl }: MitteProps, exportOhne: boolean, bearbeiten?: string) {
+function typMitte(
+  { sicht, dritt, verwaltet, typ, typListe, sichtTypen, wahl }: MitteProps,
+  exportOhne: boolean,
+  bearbeiten?: ListeProps['bearbeiten'],
+) {
   return (
     <Liste
       key={sicht}
@@ -128,6 +133,20 @@ function typMitte({ sicht, dritt, verwaltet, typ, typListe, sichtTypen, wahl }: 
   );
 }
 
+/**
+ * „Ansicht bearbeiten“ (#1285): an einer Ansicht für alle, die in der Werkbank Ansichten bearbeiten dürfen. In der Liste
+ * eines Mappentyps ohne eigene Ansicht „Mappentyp bearbeiten“ (Nachtrag 18.11.) für alle, die Mappentypen bearbeiten dürfen.
+ */
+function bearbeitenVon(
+  ich: ReturnType<typeof useKonto>['ich'],
+  verwaltet: MitteProps['verwaltet'],
+  typ: MitteProps['typ'],
+): ListeProps['bearbeiten'] {
+  const darf = (bereich: 'sichten' | 'typen') => ich.rolle === 'admin' || darfBereich(ich, bereich);
+  if (verwaltet) return darf('sichten') ? { ziel: `/werkbank/sichten/${verwaltet.id}`, art: 'ansicht' } : undefined;
+  return typ && darf('typen') ? { ziel: `/werkbank/typen/${typ.id}`, art: 'mappentyp' } : undefined;
+}
+
 export function Mitte(p: MitteProps) {
   const d = useDaten();
   const { ich } = useKonto();
@@ -137,8 +156,7 @@ export function Mitte(p: MitteProps) {
   const fest = festeMitte(p);
   if (fest !== undefined) return fest;
   if (!verwaltet && typ && istTeiltyp(typ)) return <TeilListe typ={typ} />;
-  // „Ansicht bearbeiten“ (#1285): nur an einer Ansicht und für alle, die in der Werkbank Ansichten bearbeiten dürfen.
-  const bearbeiten = verwaltet && (ich.rolle === 'admin' || darfBereich(ich, 'sichten')) ? `/werkbank/sichten/${verwaltet.id}` : undefined;
+  const bearbeiten = bearbeitenVon(ich, verwaltet, typ);
   if (verwaltet || typ) return typMitte(p, exportOhneSicht(ich.rolle === 'admin', d.sichten), bearbeiten);
   return sicht ? (
     <div className="leer">

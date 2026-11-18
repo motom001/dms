@@ -1,7 +1,8 @@
 /**
  * Rauchtests: Listenansicht nach der Vorgabe aus #1212 (#1285: „⋯“ im Kopf, Anzahl mit Typ, Auswahlleiste statt der
  * Zeile mit der Anzahl, Spalte „Mappentyp“ nur bei verschiedenen Typen) und ruhige Verweisfelder (#1288: Anlegen in der
- * Vorschlagsliste, ✕ statt „Ändern“/„Entfernen“, kein Chip „Bezug“).
+ * Vorschlagsliste, ✕ statt „Ändern“/„Entfernen“, kein Chip „Bezug“). Nachträge vom 18.11.: „Mappentyp bearbeiten“ in der
+ * Liste eines Mappentyps, kein Kennzeichen „Systemrolle“ an Mappen in der Ablage.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/liste-und-verweise.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -77,6 +78,37 @@ rauchtest('Listenansicht: „⋯“ im Kopf, Anzahl mit Typ, Auswahlleiste, Spal
   await s.waitForURL(new RegExp(`/werkbank/sichten/${sicht.id}$`));
 });
 
+// Nachtrag 18.11. zu #1285: In der Liste eines Mappentyps ohne eigene Ansicht heißt der Eintrag „Mappentyp bearbeiten“
+// und führt zum Mappentyp in der Werkbank.
+rauchtest('Listenansicht: „Mappentyp bearbeiten“ in der Liste eines Mappentyps (Nachtrag zu #1285)', { als: LENA }, async (s) => {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const typ = (
+    await api('POST', '/api/typen', {
+      cookie: verwaltung,
+      body: {
+        name: 'Rauchtest-Fahrrad',
+        schluessel: 'rauchtest_fahrrad',
+        titelVorlage: '{name}',
+        felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+      },
+    })
+  ).daten;
+  await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: typ.id, werte: { name: 'Lastenrad' } } });
+  // Ohne eigene Ansicht: Die Ansicht des Mappentyps (gleiche Id) entfernen – die Liste heißt dann „Alle Mappen: …“ (#888).
+  await api('DELETE', `/api/sichten/definitionen/${typ.id}`, { cookie: verwaltung });
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await s.goto(BASIS + `/ablage/${typ.id}`);
+  await liste.getByRole('heading', { name: /^Alle Mappen: Rauchtest-Fahrrad/, level: 1 }).waitFor();
+  await liste.getByText('1 Rauchtest-Fahrrad', { exact: true }).waitFor();
+  await liste.getByRole('button', { name: /^Weitere Aktionen/ }).click();
+  const eintrag = s.getByRole('menuitem', { name: 'Mappentyp bearbeiten' });
+  await eintrag.waitFor();
+  assert.equal(await s.getByRole('menuitem', { name: 'Ansicht bearbeiten' }).count(), 0, '„Ansicht bearbeiten“ ohne Ansicht');
+  await eintrag.click();
+  await s.waitForURL(new RegExp(`/werkbank/typen/${typ.id}$`));
+});
+
 // Export aller Treffer (#1335): Die Treffer kommen nur als Ids, die Mappen lädt der Export einmal – in der Datei steht
 // jede Mappe der Liste genau einmal, in der Reihenfolge der Liste.
 rauchtest('Listenansicht: „Alle exportieren“ als CSV, jede Mappe genau einmal (#1335)', { als: LENA }, async (s) => {
@@ -127,6 +159,32 @@ rauchtest('Listenansicht: „Ansicht bearbeiten“ nur mit Recht in der Werkbank
     await s.getByRole('menuitem', { name: /^Alle \d+ exportieren …$/ }).waitFor();
     assert.equal(await s.getByRole('menuitem', { name: 'Ansicht bearbeiten' }).count(), 0, 'Jonas sieht „Ansicht bearbeiten“');
   }
+  // Nachtrag zu #1285: ebenso kein „Mappentyp bearbeiten“ in der Liste eines Mappentyps ohne eigene Ansicht (den Typ legt
+  // der Fall „Mappentyp bearbeiten“ oben an).
+  const fahrrad = typen.find((x) => x.name === 'Rauchtest-Fahrrad');
+  assert.ok(fahrrad, 'Mappentyp „Rauchtest-Fahrrad“ fehlt');
+  await s.goto(BASIS + `/ablage/${fahrrad.id}`);
+  await liste.getByRole('heading', { name: /^Alle Mappen: Rauchtest-Fahrrad/, level: 1 }).waitFor();
+  await liste.getByText('1 Rauchtest-Fahrrad', { exact: true }).waitFor();
+  if (await mehr.count()) {
+    await mehr.click();
+    await s.getByRole('menu').waitFor();
+    assert.equal(await s.getByRole('menuitem', { name: 'Mappentyp bearbeiten' }).count(), 0, 'Jonas sieht „Mappentyp bearbeiten“');
+  }
+});
+
+// Nachtrag 18.11. zu #1288: Die Mappe der Systemrolle „Mitglied“ trägt in der Ablage kein Kennzeichen „Systemrolle“
+// (setzt Werkbank-Wissen voraus); der Hinweis darunter bleibt.
+rauchtest('Mappe der Rolle „Mitglied“: kein Kennzeichen „Systemrolle“ in der Ablage (Nachtrag zu #1288)', { als: LENA }, async (s) => {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const mitglied = (await api('GET', '/api/rollen', { cookie: verwaltung })).daten.find((r) => r.system && r.name === 'Mitglied');
+  assert.ok(mitglied, 'Systemrolle „Mitglied“ fehlt');
+  const rolle = (await api('GET', '/api/typen', { cookie: verwaltung })).daten.find((x) => x.system === 'rolle');
+  await s.goto(BASIS + `/ablage/${rolle.id}/${mitglied.id}`);
+  const kopf = s.locator('.mappenkopf');
+  await kopf.getByText('Die Systemrolle „Mitglied“ hat jede Person.').waitFor();
+  assert.equal(await kopf.getByText('Systemrolle', { exact: true }).count(), 0, 'Kennzeichen „Systemrolle“ in der Ablage');
 });
 
 /* ---------- #1288: Verweisfelder ---------- */

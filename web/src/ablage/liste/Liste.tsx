@@ -11,7 +11,10 @@ import type { ListeProps } from './liste-hooks';
 import { useListe, type ListeKern } from './liste-kern';
 import { Aktionsleiste, Dialoge, ErgebnisHinweis, Rumpf, Unscharf } from './liste-teile';
 
-/** „⋯“ im Kopf der Ansicht (#1212, #1285): „Alle n exportieren …“ und „Ansicht bearbeiten“ (Weg in die Werkbank, nur mit Recht). */
+/**
+ * „⋯“ im Kopf der Ansicht (#1212, #1285): „Alle n exportieren …“ und „Ansicht bearbeiten“ bzw. in der Liste eines
+ * Mappentyps „Mappentyp bearbeiten“ (Weg in die Werkbank, nur mit Recht).
+ */
 function MehrMenue({ l }: { l: ListeKern }) {
   const { p, s } = l;
   const punkte: MenuePunkt[] = [];
@@ -26,8 +29,9 @@ function MehrMenue({ l }: { l: ListeKern }) {
       },
     });
   if (p.bearbeiten) {
-    const ziel = p.bearbeiten;
-    punkte.push({ key: 'bearbeiten', inhalt: t('ablage.liste.ansicht-bearbeiten'), tu: () => geheZu(ziel) });
+    const { ziel, art } = p.bearbeiten;
+    const inhalt = art === 'mappentyp' ? t('ablage.liste.mappentyp-bearbeiten') : t('ablage.liste.ansicht-bearbeiten');
+    punkte.push({ key: 'bearbeiten', inhalt, tu: () => geheZu(ziel) });
   }
   if (!punkte.length) return null;
   return <Menue nurSymbol beschriftung={t('ablage.liste.mehr', { titel: p.titel })} punkte={punkte} />;

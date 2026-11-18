@@ -35,7 +35,7 @@ Which views exist is set by an administrator. If you'd like one, let them know.
 
 The list shows the view's folders, sorted by title. It first loads 100 folders and automatically the next ones when you scroll down.
 
-With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Next to it, **⋯** opens **Export all …** (all folders of the view, with your search and sorting) and – if you may edit views in the Workbench – **Edit view**. Deleting and sending work through the selection (see below).
+With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Next to it, **⋯** opens **Export all …** (all folders of the view, with your search and sorting) and – if you may edit views in the Workbench – **Edit view**. In the list of a folder type without a view of its own it says **Edit folder type**: it takes you to the folder type in the Workbench if you may edit folder types. Deleting and sending work through the selection (see below).
 
 Above the list it says how many folders it contains. If all have the same folder type, the number names it, e.g. “12 × Contract”; in views with different folder types it says “12 folders”.
 

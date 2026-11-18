@@ -200,7 +200,8 @@ function MappeKopf({
       )}
       {mappe.systemKennung && (
         <p className="leise klein">
-          <Etikett>{t('ablage.mappeformular.systemrolle')}</Etikett> {t('mappen.systemrolle.hinweis')}
+          {/* Ohne Kennzeichen „Systemrolle“ (Nachtrag zu #1288, 18.11.): setzt Werkbank-Wissen voraus. Die Werkbank behält ihre Kennzeichen „System“. */}
+          {t('mappen.systemrolle.hinweis')}
         </p>
       )}
       {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
