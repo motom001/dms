@@ -156,15 +156,15 @@ rauchtest(
     const fav = s.locator('[data-kachel="wahl"]');
     await fav.waitFor();
     if (await fav.locator('[data-leer]').count()) assert.equal(await fav.locator('[data-leer]').getAttribute('data-leer'), 'leise');
-    // Suchfeld „Ansicht suchen …“: leer ohne Platz für das „×“, der Platzhalter passt ganz hinein.
+    // Suchfeld „Ansicht suchen …“: leer ohne Platz für das „×“ (das war der Grund für „..“); reicht der Platz bei breiter
+    // Schrift trotzdem nicht, kürzt der Browser mit einem echten „…“. Die Breite der Schrift hängt vom System ab.
     const feld = s.getByRole('complementary', { name: 'Ansichten' }).getByPlaceholder('Ansicht suchen …');
-    const passt = await feld.evaluate((el) => {
+    const stil = await feld.evaluate((el) => {
       const st = getComputedStyle(el);
-      const c = document.createElement('canvas').getContext('2d');
-      c.font = `${st.fontSize} ${st.fontFamily}`;
-      return c.measureText(el.placeholder).width <= el.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
+      return { rechts: parseFloat(st.paddingRight), kuerzen: st.textOverflow };
     });
-    assert.ok(passt, 'Platzhalter „Ansicht suchen …“ wird abgeschnitten');
+    assert.ok(stil.rechts <= 12, `leeres Suchfeld hält ${stil.rechts} px rechts frei`);
+    assert.equal(stil.kuerzen, 'ellipsis');
     // Ablage: Ansicht ohne gewählte Mappe – ruhige Fläche ohne Strichrand.
     await s.goto(BASIS + '/ablage/favoriten');
     const leer = s.locator('.spalte.mappe .platzhalter');
