@@ -57,3 +57,4 @@ import './bereiche/navigation.mjs';
 import './bereiche/ruhige-werkbank.mjs';
 import './bereiche/liste-und-verweise.mjs';
 import './bereiche/lasttest-seite.mjs';
+import './bereiche/werkbank-handy.mjs';
