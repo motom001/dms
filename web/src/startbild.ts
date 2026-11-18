@@ -162,7 +162,8 @@ export function zeigeKeineAntwort(wurzel: HTMLElement, befund: Gesundheit | null
   bild.append(absatz('startbild-text startbild-zwischentitel', t('oberflaeche.startbild.was-du-tun-kannst')), schritte);
   const knopf = document.createElement('button');
   knopf.type = 'button';
-  knopf.className = 'knopf primaer';
+  // Ohne React kein Baustein Knopf: eigene Klasse im Aussehen des Hauptknopfs (startbild.css, #1270).
+  knopf.className = 'startbild-knopf';
   knopf.textContent = t('oberflaeche.startbild.erneut');
   knopf.addEventListener('click', () => neuLadenOhneAntwort());
   bild.append(knopf);
