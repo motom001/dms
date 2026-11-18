@@ -249,6 +249,18 @@ export abstract class KontenBenutzer extends KontenNotfall {
     }
     if (this.spiegel) await this.spiegel.entferne(id);
     await this.repo.loescheBenutzer(id);
+    await this.nachLoeschen(id);
+  }
+
+  /** Was nach dem Löschen einer Person mit weg muss (Nachtrag zu #1331: Reste ihrer gelöschten Fehlermeldungen). */
+  private beimLoeschen: ((id: string) => Promise<void>)[] = [];
+  verbindeLoeschen(f: (id: string) => Promise<void>) {
+    this.beimLoeschen.push(f);
+  }
+  /** Das Konto ist schon weg: Scheitert das Aufräumen, steht es nur im Protokoll (in Postgres holt es das nächste Löschen nach). */
+  private async nachLoeschen(id: string) {
+    for (const f of this.beimLoeschen)
+      await f(id).catch((x: Error) => log.warn('Aufräumen nach dem Löschen einer Person gescheitert', { fehler: x.message }));
   }
 
   /** Für den Papierkorb (#43): Konto einer Benutzer-Mappe löschen bzw. wieder aktivieren. */
@@ -257,7 +269,10 @@ export abstract class KontenBenutzer extends KontenNotfall {
       endgueltig: async (id: string) => {
         const b = await this.person(id);
         // Nur Einladungen, die nie angenommen wurden (wie beim Löschen); sonst bleibt das Konto deaktiviert.
-        if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) await this.repo.loescheBenutzer(id);
+        if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) {
+          await this.repo.loescheBenutzer(id);
+          await this.nachLoeschen(id);
+        }
       },
       benutzer: () => this.repo.listeBenutzer(),
       // Eine Person ohne die Liste aller (#1256): Vertretung und Alltags-Empfänger je Anfrage.

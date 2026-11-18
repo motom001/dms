@@ -57,7 +57,9 @@ describe('Fehlermeldungen (#70)', () => {
     const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
     const jonas = (await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id)).benutzer;
     const dateien = speicherDateien();
-    return { f: new Fehlermeldungen(repo, dateien), dateien, lena: lena.id, jonas: jonas.id };
+    const f = new Fehlermeldungen(repo, dateien);
+    konten.verbindeLoeschen((id) => f.vergissPerson(id));
+    return { f, dateien, lena: lena.id, jonas: jonas.id, konten, ich: lena, repo };
   }
 
   for (const pg of [false, true])
@@ -100,6 +102,37 @@ describe('Fehlermeldungen (#70)', () => {
           assert.equal(x.anfang, null);
           assert.ok(x.erledigt);
           assert.deepEqual(Object.keys(x).sort(), ['anfang', 'erledigt', 'erstellt', 'id']);
+        }
+      },
+    );
+
+  for (const pg of [false, true])
+    it(
+      `Person gelöscht (Nachtrag zu #1331): Reste ihrer gelöschten Meldungen mit weg, fremde bleiben${pg ? ' (Postgres)' : ''}`,
+      {
+        skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL',
+      },
+      async () => {
+        const { f, lena, jonas, konten, ich, repo } = await aufbauMeine(pg);
+        const weg = await f.melde(jonas, { text: 'Wird gelöscht' });
+        const bleibt = await f.melde(jonas, { text: 'Bleibt für die Verwaltung' });
+        const fremd = await f.melde(lena, { text: 'Von Lena' });
+        await f.loesche(weg.id);
+        await f.loesche(fremd.id);
+        assert.equal((await f.meine(jonas)).length, 2, 'vorher: Rest und offene Meldung');
+        // Jonas hat sich nie angemeldet (Einladung) – nur so lässt sich eine Person löschen statt deaktivieren (#26).
+        await konten.loescheBenutzer(ich, jonas);
+        assert.deepEqual(await f.meine(jonas), [], 'kein Rest mehr für die gelöschte Person');
+        assert.equal((await f.meine(lena)).length, 1, 'Rest von Lena bleibt');
+        const da = await f.hole(bleibt.id);
+        assert.equal(da.text, 'Bleibt für die Verwaltung', 'eine Meldung, die noch da ist, bleibt');
+        assert.equal(da.benutzerId, null, 'ohne Melder');
+        // Nichts mehr zum Aufräumen: auch ein zweiter Lauf entfernt nichts weiter.
+        assert.equal(await repo.loescheResteVon(jonas), 0);
+        if (pg) {
+          const { sql } = offen.at(-1)!;
+          const [r] = await sql`SELECT count(*)::int AS n FROM fehlermeldungen WHERE geloescht IS NOT NULL`;
+          assert.equal(r.n, 1, 'in der Tabelle nur noch der Rest von Lena');
         }
       },
     );

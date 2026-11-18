@@ -283,6 +283,8 @@ const { systemlast, fehlermeldungen, systemwerkbank } = verbindePakete({
   cfg,
   ordner,
 });
+// Person gelöscht (Nachtrag zu #1331): Reste ihrer gelöschten Fehlermeldungen mit weg.
+konten.verbindeLoeschen((id) => fehlermeldungen.vergissPerson(id));
 const { automatisierungen } = richteAutomatisierungenEin({
   messung,
   sql,

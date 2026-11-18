@@ -51,6 +51,12 @@ export interface FehlerRepo {
   setzeErledigt(id: string, von: string | null): Promise<void>;
   /** Löschen (#1331): Inhalt entfernen; hat die Meldung einen Melder, bleibt ein Rest mit Datum und „erledigt“. */
   loesche(id: string): Promise<void>;
+  /**
+   * Person gelöscht (Entscheidung Thomas 18.11., Nachtrag zu #1331): ihre Reste gelöschter Meldungen mit weg. In Postgres
+   * hat `ON DELETE SET NULL` den Melder dann schon geleert – darum zählen dort auch Reste ohne Melder (die es sonst nicht
+   * gibt, denn eine Meldung ohne Melder wird beim Löschen ganz entfernt). Meldungen, die noch da sind, bleiben.
+   */
+  loescheResteVon(benutzerId: string): Promise<number>;
   zaehleOffen(): Promise<number>;
   shaInGebrauch(sha: string): Promise<boolean>;
 }
@@ -165,6 +171,12 @@ export class Fehlermeldungen {
     for (const b of m.bilder) if (!(await this.repo.shaInGebrauch(b.sha256))) await this.dateien.loesche(b.sha256);
     log.info('Fehlermeldung gelöscht', { id });
   }
+
+  /** Nach dem Löschen einer Person (Nachtrag zu #1331): Reste ihrer gelöschten Meldungen entfernen. */
+  async vergissPerson(benutzerId: string) {
+    const n = await this.repo.loescheResteVon(benutzerId);
+    if (n) log.info('Reste gelöschter Fehlermeldungen einer gelöschten Person entfernt', { anzahl: n });
+  }
 }
 
 /* ---------- Speicher ---------- */
@@ -213,6 +225,11 @@ export function pgFehlerRepo(sql: postgres.Sql, haushaltId: string): FehlerRepo 
       await sql`DELETE FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id} AND benutzer_id IS NULL`;
       await sql`UPDATE fehlermeldungen SET text = '', angaben = '{}'::jsonb, bilder = '[]'::jsonb, erledigt = COALESCE(erledigt, now()),
         erledigt_von = NULL, geloescht = now() WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async loescheResteVon(benutzerId) {
+      const r = await sql`DELETE FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND geloescht IS NOT NULL
+        AND (benutzer_id = ${benutzerId} OR benutzer_id IS NULL)`;
+      return r.count;
     },
     async zaehleOffen() {
       const [r] =
@@ -270,6 +287,13 @@ export function speicherFehlerRepo(): FehlerRepo {
           erledigt: x.erledigt ?? new Date().toISOString(),
         });
       m.delete(id);
+    },
+    async loescheResteVon(benutzerId) {
+      let n = 0;
+      for (const [k, x] of reste) if (x.benutzerId === benutzerId && reste.delete(k)) n++;
+      // Wie `ON DELETE SET NULL` in Postgres: Meldungen, die noch da sind, verlieren nur ihren Melder.
+      for (const [k, x] of m) if (x.benutzerId === benutzerId) m.set(k, { ...x, benutzerId: null });
+      return n;
     },
     async zaehleOffen() {
       return [...m.values()].filter((x) => !x.erledigt).length;
