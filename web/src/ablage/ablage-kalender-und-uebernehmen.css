@@ -133,7 +133,8 @@
 .ue-meldung { min-height: 1.3em; margin: -4px 0 0; color: var(--leise); }
 .ue-meldung.gut { color: var(--gruen); }
 .ue-meldung.warn { color: var(--warn); }
-/* Dokument wie in der Mappe (#1211, #1217): Kopf mit „PDF/A · Original“ und „In neuem Tab“, darunter der Betrachter. */
+/* Dokument wie in der Mappe (#1211, #1217): Kopf mit „PDF/A · Original“ und „In neuem Tab“, darunter die Seiten. Sie
+   rollen mit der Spalte, ohne eigenen Scrollbalken (#1323); Seiten und klebender Kopf: Seitenbetrachter.module.css. */
 /* Ohne overflow: hidden – am Handy ragen die 44-px-Tippflächen der Verweise im Kopf über seinen Rand. */
 .ue-dokument { border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
 .ue-dokkopf { gap: 4px 10px; color: var(--leise); border-radius: var(--r) var(--r) 0 0; }
@@ -141,14 +142,6 @@
 .ue-betrachter { padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--senke); border-radius: 0 0 var(--r) var(--r); }
 .ue-betrachter:focus-visible { outline: 2px solid var(--akzent); outline-offset: -2px; }
 .ue-betrachter-text { margin: 0; padding: 10px; }
-@media (min-width: 821px) {
-  /* Am Rechner mit fester Höhe wie in der Mappe; am Handy (eine Spalte) fließt das Dokument mit der Seite. */
-  .ue-betrachter { max-height: min(72vh, 760px); overflow-y: auto; }
-}
-.ue-seite { margin: 0; display: flex; flex-direction: column; gap: 4px; }
-.ue-flaeche { position: relative; width: 100%; background: var(--papier); box-shadow: 0 1px 3px var(--schatten); user-select: none; -webkit-user-select: none; }
-.ue-flaeche img { display: block; width: 100%; height: auto; pointer-events: none; }
-.ue-flaeche.mass img { position: absolute; inset: 0; height: 100%; }
 .ue-wort { position: absolute; cursor: text; border-radius: 2px; }
 .ue-wort.an { background: var(--papier-auswahl); }
 .ue-rahmen { position: absolute; box-sizing: content-box; margin: -2px; border: 2px solid var(--ue-f); border-radius: 3px; cursor: grab; background: transparent; }

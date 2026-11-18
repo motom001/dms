@@ -14,12 +14,13 @@
 .marke { color: var(--warn); font-weight: 600; }
 .weg .bild img, .weg .ohneBild { opacity: .4; border-style: dashed; border-color: var(--warn); }
 
-/* Neben dem Dokument (Seite „Dokument übernehmen“): senkrecht, schmal; am Handy wieder waagerecht. */
-.senkrecht .seiten { flex-direction: column; overflow-x: visible; overflow-y: auto; max-height: 80vh; padding: 2px 6px 2px 2px; }
+/* Neben dem Dokument (Seite „Dokument übernehmen“): senkrecht, schmal; am Handy wieder waagerecht. Ohne eigenen
+   Scrollbalken (#1323): Die Leiste rollt mit der Spalte wie die Seiten daneben. */
+.senkrecht .seiten { flex-direction: column; overflow-x: visible; padding: 2px 6px 2px 2px; }
 .senkrecht .seite { width: 100%; }
 .senkrecht .bild img, .senkrecht .ohneBild { width: 88px; margin: 0 auto; }
 @media (max-width: 720px) {
-  .senkrecht .seiten { flex-direction: row; overflow-x: auto; overflow-y: visible; max-height: none; }
+  .senkrecht .seiten { flex-direction: row; overflow-x: auto; }
   .senkrecht .seite { width: 96px; }
   .senkrecht .bild img, .senkrecht .ohneBild { width: 100%; }
 }
@@ -30,8 +31,7 @@
 
 /* Dokument mit Leiste: links die Leiste, rechts die Seiten; am Handy untereinander. */
 .mitLeiste { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 10px; align-items: start; }
-.mitLeiste > .leiste { position: sticky; top: 0; }
+.mitLeiste > div:last-child { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 @media (max-width: 720px) {
   .mitLeiste { grid-template-columns: minmax(0, 1fr); }
-  .mitLeiste > .leiste { position: static; }
 }
