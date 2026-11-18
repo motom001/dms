@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { t } from '../../sprache';
 import { Feld } from '../feld/Feld';
-import { Mehrfachauswahl, type Vorschlag } from './Mehrfachauswahl';
+import { Mehrfachauswahl, type GewaehlterEintrag, type Vorschlag } from './Mehrfachauswahl';
 import s from '../muster.module.css';
 
 /**
@@ -10,6 +10,8 @@ import s from '../muster.module.css';
  */
 const ALLE = ['Lena Beispiel', 'Jonas Beispiel', 'Markus Beispiel', 'Petra Beispiel'];
 const nichts = () => {};
+/** Was im Zustand „ohne Treffer“ getippt ist. */
+const GETIPPT = 'Kim Beispiel';
 
 /** Ein Zustand als Karte; `offen` hält die Vorschläge stehend offen (mit Platz darunter). */
 function Zustand(p: {
@@ -42,7 +44,7 @@ function Zustand(p: {
           legeAn={nichts}
           waehle={nichts}
           ohneSuche={!!p.gewaehlt?.length}
-          gewaehlt={(p.gewaehlt ?? []).map((x) => ({ id: x, inhalt: x, entfernenText: p.entfernenText ?? x }))}
+          gewaehlt={(p.gewaehlt ?? []).map((x): GewaehlterEintrag => ({ id: x, inhalt: x, entfernenText: p.entfernenText ?? x }))}
           entferne={nichts}
         />
       </Feld>
@@ -108,9 +110,9 @@ export function MehrfachauswahlMuster() {
         zustand={zustand('ohne')}
         beschriftung={halter}
         offen
-        eingabe="Kim Beispiel"
-        leerText={t('oberflaeche.muster.mehrfachauswahl.nicht-gefunden', { text: 'Kim Beispiel' })}
-        anlegen={[{ id: 'neu', text: t('oberflaeche.muster.mehrfachauswahl.anlegen-mit', { text: 'Kim Beispiel' }) }]}
+        eingabe={GETIPPT}
+        leerText={t('oberflaeche.muster.mehrfachauswahl.nicht-gefunden', { text: GETIPPT })}
+        anlegen={[{ id: 'neu', text: t('oberflaeche.muster.mehrfachauswahl.anlegen-mit', { text: GETIPPT }) }]}
       />
       <Zustand
         id="gesetzt"
