@@ -232,7 +232,7 @@ rauchtest('Handy: die Prüfung kennt jeden Bereich, den die Navigation anbietet 
 });
 
 rauchtest(
-  'Tablet: kein Wort der Werkbank-Leiste bricht mitten im Wort um, 768 bis 1100 px (#1271, #1204)',
+  'Tablet: kein vermeidbarer Wortbruch in der Werkbank-Leiste, 768 bis 1100 px (#1271, #1204)',
   { geraet: TABLET_HOCH, als: LENA },
   async (s) => {
     await s.goto(BASIS + '/ablage/start');
@@ -254,13 +254,31 @@ rauchtest(
               const r = document.createRange();
               r.setStart(t, i);
               r.setEnd(t, i + wort.length);
-              if (new Set([...r.getClientRects()].map((q) => Math.round(q.top))).size > 1) aus.push(wort);
+              if (new Set([...r.getClientRects()].map((q) => Math.round(q.top))).size > 1) {
+                // Vermeidbar ist der Bruch, wenn das Wort allein in die ganze Zeile des Eintrags passt (Zahl oder
+                // Plakette rücken dann darunter). Ist es selbst breiter – je nach Schrift des Systems –, bricht es
+                // als letzter Ausweg; das meldet der Test nur als Hinweis.
+                const a = n.closest('a');
+                const st = getComputedStyle(a);
+                const zeile = a.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
+                const probe = Object.assign(document.createElement('span'), { textContent: wort });
+                probe.style.cssText = `position:absolute;white-space:nowrap;font:${getComputedStyle(n).font}`;
+                document.body.append(probe);
+                const breit = probe.getBoundingClientRect().width;
+                probe.remove();
+                aus.push({ wort, vermeidbar: breit <= zeile, breit: Math.round(breit), zeile: Math.round(zeile) });
+              }
               i += wort.length + 1;
             }
             return aus;
           }),
         );
-        for (const wort of gebrochen) funde.push(`${breite} px, ${w}: „${wort}“ bricht um`);
+        for (const g of gebrochen)
+          if (g.vermeidbar) funde.push(`${breite} px, ${w}: „${g.wort}“ bricht um, obwohl es in die Zeile passt`);
+          else
+            console.log(
+              `# Hinweis: ${breite} px, ${w}: „${g.wort}“ (${g.breit} px) ist in dieser Schrift breiter als die Zeile (${g.zeile} px)`,
+            );
       }
     assert.deepEqual(funde, [], funde.join('\n'));
   },
