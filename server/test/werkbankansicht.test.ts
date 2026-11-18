@@ -23,7 +23,11 @@ import {
   wartungsPlakette,
   werkbankEbene,
   werkbankUmleitung,
-  werkbankZurueck,
+  handyBereicheWeg,
+  handyGruppe,
+  handyZurueck,
+  HANDY_SCHWERPUNKT,
+  imHandySchwerpunkt,
   einDatentraeger,
 } from '../../shared/src/werkbankansicht';
 import { speicherDateien } from '../src/dateien/dateispeicher';
@@ -230,21 +234,48 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
 
   it('am Handy keine leere Zwischenstufe', () => {
     assert.equal(werkbankEbene('systemzustand'), 'mappe');
-    assert.equal(werkbankZurueck('systemzustand'), '/werkbank');
+    assert.equal(handyZurueck('systemzustand', 'mappe')?.weg, '/werkbank?bereiche');
     assert.equal(werkbankEbene('typen'), 'liste');
     assert.equal(werkbankEbene('typen', 'x'), 'mappe');
-    assert.equal(werkbankZurueck('typen'), '/werkbank/typen');
+    assert.deepEqual(handyZurueck('typen', 'mappe'), { weg: '/werkbank/typen', liste: true });
     // Pakete: ohne Auswahl die Liste (Katalog abrufen, installierte Pakete), mit Installations-Link rechts.
     assert.equal(werkbankEbene('pakete'), 'liste');
     assert.equal(werkbankEbene('pakete', undefined, true), 'mappe');
     assert.equal(werkbankEbene('systemzustand', undefined, true), 'mappe');
   });
 
+  it('Werkbank am Handy (#1204): Schwerpunkt vorn, Weg zurück zur Gruppe, zu den Bereichen oder zur Liste', () => {
+    // Die Handgriffe aus #1291 – alle sind Bereiche der Leiste (oder die Übersicht), keiner doppelt.
+    assert.equal(HANDY_SCHWERPUNKT[0], 'uebersicht');
+    assert.equal(new Set(HANDY_SCHWERPUNKT).size, HANDY_SCHWERPUNKT.length);
+    for (const p of HANDY_SCHWERPUNKT.slice(1))
+      assert.ok(
+        BEREICHE.some((b) => b.pfad === p),
+        p,
+      );
+    assert.ok(imHandySchwerpunkt('sicherung') && !imHandySchwerpunkt('typen'));
+    // Übersicht: kein Weg zurück (dort geht es nach vorn in die Bereiche).
+    assert.equal(handyZurueck('uebersicht', 'liste'), null);
+    // Schwerpunkt: zu den Bereichen oben – als Liste (Benutzer) und als Seite (Sicherung).
+    assert.deepEqual(handyZurueck('benutzer', 'liste'), { weg: '/werkbank?bereiche' });
+    assert.deepEqual(handyZurueck('sicherung', 'mappe'), { weg: '/werkbank?bereiche' });
+    // Übrige Bereiche: zu ihrer Gruppe, als Liste (Mappentypen) und als Seite (Region).
+    assert.deepEqual(handyZurueck('typen', 'liste'), { weg: '/werkbank?bereiche=ablage', gruppe: 'ablage' });
+    assert.deepEqual(handyZurueck('region', 'mappe'), { weg: '/werkbank?bereiche=einstellungen', gruppe: 'einstellungen' });
+    // Ein Eintrag (rechts) zur Liste, auch im Schwerpunkt; Seiten ohne Gruppe (Werkbank anpassen) zu den Bereichen.
+    assert.deepEqual(handyZurueck('benutzer', 'mappe'), { weg: '/werkbank/benutzer', liste: true });
+    assert.deepEqual(handyZurueck('ansicht', 'mappe'), { weg: '/werkbank?bereiche' });
+    assert.equal(handyBereicheWeg('post'), '/werkbank?bereiche=post');
+    assert.equal(handyGruppe('post'), 'post');
+    assert.equal(handyGruppe(''), null);
+    assert.equal(handyGruppe('gibtsnicht'), null);
+  });
+
   it('Stempel (#990): Vorlagen in der Mitte, alte Links führen auf die Vorlage rechts', () => {
     assert.ok(hatMitte('stempel'));
     assert.equal(werkbankEbene('stempel'), 'liste');
     assert.equal(werkbankEbene('stempel', 'kopie'), 'mappe');
-    assert.equal(werkbankZurueck('stempel'), '/werkbank/stempel');
+    assert.deepEqual(handyZurueck('stempel', 'mappe'), { weg: '/werkbank/stempel', liste: true });
     // Früher klappte ?offen=… die Vorlage rechts auf; jetzt steht sie unter /werkbank/stempel/:id.
     assert.equal(werkbankUmleitung('stempel', undefined, '?offen=kopie'), '/werkbank/stempel/kopie');
     assert.equal(werkbankUmleitung('stempel', undefined, '?offen=a%20b'), '/werkbank/stempel/a%20b');

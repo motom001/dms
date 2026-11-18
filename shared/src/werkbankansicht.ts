@@ -392,8 +392,48 @@ export function werkbankEbene(bereich: string, id?: string, rechtsOhneAuswahl = 
 /** Wo das Notfallblatt in der Werkbank steht (#993): nur unter Verschlüsselung, Abschnitt „Notfallblatt“. */
 export const NOTFALLBLATT_SEITE = '/werkbank/verschluesselung#notfallblatt';
 
-/** Ziel von „← Zurück“ am Handy: ohne Mitte gleich zu den Bereichen, sonst zur Liste des Bereichs. */
-export const werkbankZurueck = (bereich: string) => (hatMitte(bereich) ? `/werkbank/${bereich}` : '/werkbank');
+/* ---------- Werkbank am Handy (#1204) ---------- */
+
+/**
+ * Handy-Schwerpunkt (#1204): was ein Admin unterwegs am Handy wirklich tut – die Handgriffe aus #1291, festgelegt von
+ * Thomas mit Qualität am 15.11.2026: nachsehen (Übersicht, Systemzustand), Sicherung, Postfach abrufen, Wartungsmodus,
+ * Benutzer, Notfall und Pakete installieren. „Notfall“ ist die Verschlüsselung mit Notfallblatt, Notfallcode und
+ * Notfallkontakten; der Notfallzugang meldet sich auf der Übersicht. Auf schmalen Bildschirmen stehen diese Bereiche in
+ * dieser Reihenfolge oben in der Navigation, alle übrigen darunter unter „Alle Bereiche“. Ein Schwerpunkt, keine Sperre:
+ * Jede Seite bleibt am Handy erreichbar, und was die Stufe (#987) ausblendet, bleibt auch hier ausgeblendet.
+ */
+export const HANDY_SCHWERPUNKT = [
+  'uebersicht',
+  'systemzustand',
+  'sicherung',
+  'postfaecher',
+  'wartung',
+  'benutzer',
+  'verschluesselung',
+  'pakete',
+] as const satisfies ReadonlyArray<'uebersicht' | Bereichskennung>;
+const SCHWERPUNKT: ReadonlySet<string> = new Set(HANDY_SCHWERPUNKT);
+export const imHandySchwerpunkt = (pfad: string) => SCHWERPUNKT.has(pfad);
+
+/**
+ * Weg zurück am Handy (#1204), oben über dem Inhalt statt der Liste aller Bereiche: aus einem Eintrag (rechts, mit Mitte)
+ * zur Liste des Bereichs, sonst in die Navigation – zur Gruppe des Bereichs („‹ Ablage aufbauen“) oder, für die Bereiche
+ * des Handy-Schwerpunkts und Seiten ohne Gruppe (Werkbank anpassen), zu den Bereichen oben. Auf der Übersicht `null`:
+ * Dort führt der Weg nach vorn in die Bereiche.
+ */
+export function handyZurueck(bereich: string, ebene: 'liste' | 'mappe'): { weg: string; liste?: true; gruppe?: Gruppe } | null {
+  if (ebene === 'mappe' && hatMitte(bereich)) return { weg: `/werkbank/${bereich}`, liste: true };
+  if (bereich === 'uebersicht') return null;
+  const gruppe = imHandySchwerpunkt(bereich) ? undefined : EINTRAEGE.find((e) => e.pfad === bereich)?.gruppe;
+  return gruppe ? { weg: handyBereicheWeg(gruppe), gruppe } : { weg: handyBereicheWeg() };
+}
+
+/** Die Navigation am Handy (#1204) als eigener Schritt: `/werkbank?bereiche`, mit Gruppe `?bereiche=<gruppe>` (Reiter gewählt). */
+export const handyBereicheWeg = (gruppe?: Gruppe) => `/werkbank?bereiche${gruppe ? `=${gruppe}` : ''}`;
+
+/** Gewählte Gruppe aus `?bereiche=<gruppe>`; unbekannt oder leer = keine. */
+export const handyGruppe = (wert: string | null): Gruppe | null =>
+  wert && (GRUPPENFOLGE as readonly string[]).includes(wert) ? (wert as Gruppe) : null;
 
 /** Früher ohne Mitte mit ?offen=<id>, jetzt mit Mitte und /<id> (#990). */
 const OFFEN_ALS_PFAD: ReadonlySet<string> = new Set(['stempel']);

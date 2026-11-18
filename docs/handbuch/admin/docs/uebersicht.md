@@ -18,7 +18,7 @@ Jede Einstellung hat genau einen Ort. Die Adressen der Bereiche (`/werkbank/sich
 
 Beim Aufräumen der Werkbank sind einige Bereiche zusammengezogen: **Wiederherstellen** steht als Abschnitt unter *Sicherung*, **Technik** als *Version und Updates* und die langen Datenbankzugriffe unter *Systemzustand*, **Wartungsmodus** und **Wartungsoperationen** zusammen unter *Wartung*, **Suche** unter *Suche und Volltext*, und „Darf weg“ heißt jetzt **Aufbewahrung abgelaufen**. Alte Adressen wie `/werkbank/darfweg`, `/werkbank/technik` oder `/werkbank/wartungsmodus` führen an die neue Stelle. Das Suchfeld oben in der Leiste findet einen Bereich auch unter seinem alten Namen.
 
-Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone gehst du in Schritten: oben die Gruppe wählen, darunter den Bereich, bei großen Sammlungen dann den Eintrag – mit **← Bereiche** bzw. **← Zur Liste** kommst du zurück. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
+Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch. Am Handy gehst du in Schritten, siehe [Werkbank am Handy](#am-handy).
 
 Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der Mappentypen, Nummernkreise, installierten Pakete, aktiven Benutzer oder offenen Aufgaben. Die Zahlen stehen sofort da, wenn du die Werkbank öffnest, und ändern sich, sobald du im Bereich etwas anlegst oder löschst. Ist nichts eingerichtet, steht keine Zahl da.
 
@@ -36,7 +36,7 @@ Wo Einträge aus [Paketen](pakete.md) kommen, gibt es den Filter **Paket**: *All
 
 Das **Suchfeld oben in der Kopfzeile** der Ablage gibt es in der Werkbank nicht – hier suchst du in den Listen der Mitte. Der **Assistent** steht auch hier unten rechts, an derselben Stelle wie in der Ablage – am Handy ebenso, mit eigenem Streifen unten: Unter **Handbuch** sucht er in der Werkbank im **Admin-Handbuch** (in der Ablage im Benutzerhandbuch), ohne Internet im Handbuch, das deine Installation mitbringt; dazu **Tipps** und, mit einem Antwort-Paket, **Fragen** ([Benutzerhandbuch: Assistent](https://help.ablago.app/benutzer/aktuell/assistent/)).
 
-Alle anderen Bereiche sind **zweiteilig**: links die Bereiche, rechts die ganze Seite. Kleine oder nur lesende Listen – etwa die langen Datenbankzugriffe, die gesperrten Adressen, die vorhandenen Exporte oder die letzten Zugriffe auf das WebDAV-Laufwerk – stehen dort als eigener Abschnitt mit fester Höhe, in dem du scrollst. Am Smartphone führt **← Bereiche** von einer solchen Seite direkt zurück zur Auswahl der Bereiche.
+Alle anderen Bereiche sind **zweiteilig**: links die Bereiche, rechts die ganze Seite. Kleine oder nur lesende Listen – etwa die langen Datenbankzugriffe, die gesperrten Adressen, die vorhandenen Exporte oder die letzten Zugriffe auf das WebDAV-Laufwerk – stehen dort als eigener Abschnitt mit fester Höhe, in dem du scrollst.
 
 Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar bleibt: rechts der Hauptknopf mit dem Gegenstand im Namen – etwa **Nummernkreis anlegen** oder **Postfach speichern** –, links daneben **Verwerfen**:
 
@@ -49,9 +49,21 @@ Knöpfe wie **Verbindung testen** oder **Jetzt prüfen** stehen darüber im Form
 
 Zum **Anlegen** steht in jeder Liste oben rechts ein grüner Knopf, der den Gegenstand nennt – in der Werkbank **+ Mappentyp**, **+ Nummernkreis**, **+ Vorlage** …, in der Ablage etwa **+ Vertrag**.
 
+## Werkbank am Handy { #am-handy }
+
+Am Handy nutzt die Werkbank den Bildschirm für den Inhalt. Wie sie aussieht, richtet sich nach der **Breite**, nicht nach dem Gerät: Bis 767 Pixel – jedes Handy – bekommst du die Handy-Ansicht, ein **iPad hochkant** (ab 768 Pixel) und quer zeigt die volle Werkbank wie am Rechner. Drehst du das Gerät, wechselt die Ansicht mit. Eine eigene Vorlage fürs Handy gibt es nicht: Deine [Vorlage](#werkbank-anpassen) gilt auf allen Geräten.
+
+Du gehst in Schritten wie in den Einstellungen eines Handys:
+
+1. **Bereiche** – auf der Übersicht oben über **Bereiche ›**. Unter dem Suchfeld stehen zuerst die Bereiche **für unterwegs**: Übersicht, Systemzustand, Sicherung, Postfächer, Wartung, Benutzer, Verschlüsselung (mit dem Notfallblatt) und Pakete – was du brauchst, wenn unterwegs etwas klemmt. Darunter stehen unter **Alle Bereiche** die übrigen, nach Gruppen: Tippe auf eine Gruppe, etwa *Ablage aufbauen*, und darunter erscheinen ihre Bereiche. Ganz unten stehen ausgeblendete Bereiche zum Aufklappen, *Werkbank anpassen*, *Projekt unterstützen* und der Link zu diesem Handbuch.
+2. **Liste oder Seite** – ohne die Bereiche darüber, der Inhalt beginnt oben. Darüber steht nur der Weg zurück: **‹ Ablage aufbauen** führt zu den Bereichen mit dieser Gruppe, bei den Bereichen für unterwegs **‹ Bereiche**.
+3. **Eintrag** – bei Sammlungen wie Mappentypen oder Benutzern; **‹ Zur Liste** führt zurück.
+
+Am Handy ist **nichts gesperrt**: Jeder Bereich bleibt erreichbar, auch über das Suchfeld. Mappentypen, Automatisierungen oder Pakete einstellen geht auch am Handy, am Rechner oder Tablet aber bequemer. Oben steht wie am Rechner die ruhige Zeile des [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus).
+
 ## Übersicht
 
-Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy untereinander. Oben stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
+Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy die Übersicht allein, die Bereiche erreichst du dort über **Bereiche ›** oben. Oben stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
 
 Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal und jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
 

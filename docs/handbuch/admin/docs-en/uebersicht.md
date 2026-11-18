@@ -18,7 +18,7 @@ Every setting has exactly one place. The areas' addresses (`/werkbank/sicherung`
 
 When the workbench was tidied up, some areas were merged: **Restore** is a section under *Backup*, **Technology** is *Version and updates* and the long database accesses are under *System health*, **Maintenance mode** and **Maintenance operations** together under *Maintenance*, **Search** under *Search and full text*, and "Can go" is now called **Retention expired**. Old addresses such as `/werkbank/darfweg`, `/werkbank/technik` or `/werkbank/wartungsmodus` lead to the new place. The search field at the top of the bar also finds an area by its old name.
 
-Which areas are there you decide under [Customise workbench](#werkbank-anpassen). On a smartphone you go in steps: choose the group at the top, below it the area, with large collections then the entry – with **← Areas** or **← To the list** you go back. At the very bottom of the bar are *Support the project* and the link to this manual.
+Which areas are there you decide under [Customise workbench](#werkbank-anpassen). At the very bottom of the bar are *Support the project* and the link to this manual. On a phone you go in steps, see [The workbench on a phone](#am-handy).
 
 Next to the areas it says how much is set up there – for instance the number of folder types, number sequences, installed packages, active users or open tasks. The numbers are there immediately when you open the workbench and change as soon as you create or delete something in the area. If nothing is set up, no number is shown.
 
@@ -36,7 +36,7 @@ Where entries come from [packages](pakete.md), there is the filter **Package**: 
 
 The Library's **search box at the top, in the header** does not exist in the Workbench – here you search in the lists in the middle. The **assistant** is here too, at the bottom right in the same place as in the library – on a phone as well, with its own strip at the bottom: under **Manual** it searches the **admin manual** in the Workbench (the user manual in the Library), without the internet, in the manual your installation brings along; plus **Tips** and, with an answering package, **Ask** ([User manual: Assistant](https://help.ablago.app/benutzer/aktuell/en/assistent/)).
 
-All other areas have **two parts**: the areas on the left, the whole page on the right. Small or read-only lists – for instance the long database accesses, the blocked addresses, the existing exports or the latest accesses to the WebDAV drive – are there as a section of their own with a fixed height that you scroll. On a smartphone, **← Areas** leads from such a page directly back to the choice of areas.
+All other areas have **two parts**: the areas on the left, the whole page on the right. Small or read-only lists – for instance the long database accesses, the blocked addresses, the existing exports or the latest accesses to the WebDAV drive – are there as a section of their own with a fixed height that you scroll.
 
 Every form ends with the same bar, which stays visible at the bottom when scrolling: on the right the main button with the subject in its name – for instance **Create number sequence** or **Save mailbox** –, to its left **Discard**:
 
@@ -49,9 +49,21 @@ Buttons such as **Test connection** or **Check now** are above it in the form; o
 
 To **create** something, every list has a green button at the top right that names the item – in the Workbench **+ Folder type**, **+ Number sequence**, **+ Template** …, in the Library for example **+ Contract**.
 
+## The workbench on a phone { #am-handy }
+
+On a phone the workbench uses the screen for the content. What it looks like depends on the **width**, not on the device: up to 767 pixels – any phone – you get the phone view; an **iPad in portrait** (from 768 pixels) and in landscape shows the full workbench as on a computer. Turn the device and the view changes with it. There is no separate template for the phone: your [template](#werkbank-anpassen) applies on all devices.
+
+You go in steps, as in the settings of a phone:
+
+1. **Areas** – on the overview via **Areas ›** at the top. Below the search field come the areas **on the go** first: overview, system status, backup, mailboxes, maintenance, users, encryption (with the emergency sheet) and packages – what you need when something is stuck while you are out. Below that, **All areas** holds the rest, by group: tap a group, for instance *Build the Library*, and its areas appear below. At the very bottom are hidden areas to expand, *Customise workbench*, *Support the project* and the link to this manual.
+2. **List or page** – without the areas above it, the content starts at the top. Above it there is only the way back: **‹ Build the Library** leads to the areas with this group, for the areas on the go **‹ Areas**.
+3. **Entry** – in collections such as folder types or users; **‹ To the list** leads back.
+
+On a phone **nothing is locked**: every area stays reachable, also through the search field. Setting up folder types, automations or packages works on a phone too, but is easier on a computer or tablet. At the top, as on a computer, is the quiet line of [administration mode](verwalten.md#der-verwaltungsmodus).
+
 ## Overview {#ubersicht}
 
-The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – one below the other on the phone. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
+The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – on a phone the overview alone, where **Areas ›** at the top leads to the areas. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
 
 Below them, under **Notes**, are the **messages**, each exactly once and each with a button into the matching area. **This also applies to areas that are hidden in your template.** They are sorted by severity:
 
