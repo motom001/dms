@@ -388,7 +388,7 @@ The load test measures the server, the smoke tests check *whether* something wor
 cd web/rauchtest && npm ci && npx playwright install chromium && cd ../..
 DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --einrichten
 DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --geraet "Laptop against NAS" \
-  --vorher docs/messungen/oberflaeche/2026-11-15-container.json --json neu.json --bericht neu.md
+  --vorher docs/messungen/oberflaeche/2026-11-18-container.json --json neu.json --bericht neu.md
 ```
 
 After a new build of the interface, restart Ablago: it keeps the (pre-compressed) start page in memory while the new build refers to other files – otherwise the run only measures 404s and timeouts. More options: `--runden 5`, `--drossel 1,4`, `--nur post-zuordnen,suche`, `--frist 60000` (ms per step; a step exceeding it counts with the deadline and makes the run red), `--mappen 5000` (when setting up), `--grenzen` (exit code 1 when red). On real hardware: set up a separate test installation on the NAS (own database) and measure from the laptop with `DMS_URL` – browser and server should not share the same CPU. That is also why the measurement is not in the image and not in the load-test mode (Thomas in #1276).
@@ -397,7 +397,7 @@ After a new build of the interface, restart Ablago: it keeps the (pre-compressed
 
 **CI:** workflow “Oberfläche messen” (`.github/workflows/oberflaeche-messen.yml`), weekly and by hand, separate from the load test. It builds Ablago, creates the test data, measures with `--grenzen` against the last green, complete run from the cache and attaches report, JSON and log as the artifact `oberflaeche-messen`. Fixed limits per flow (`CI_GRENZEN` in `oberflaeche.mjs`) only come after the first run on GitHub: first run + 20 %, after that only stricter (as for the load test, #563). Results from real hardware go into a collecting issue like #576.
 
-**Baseline before the big rework:** `docs/messungen/oberflaeche/` keeps the first result (container, 15 Nov 2026, Ablago 0.290.2) – as JSON for comparing and as a report. The values come from a container with 2 cores on which browser, Ablago, PostgreSQL and other builds ran at the same time: **no NAS values**, only a yardstick on the same device. To compare, start the same run with `--vorher docs/messungen/oberflaeche/<file>.json`; put a new baseline next to it as a new file (date and device in the name), do not overwrite old ones.
+**Baseline before the big rework:** `docs/messungen/oberflaeche/` keeps the first result (container, 15 Nov 2026, Ablago 0.290.2) – as JSON for comparing and as a report. The values come from a container with 2 cores on which browser, Ablago, PostgreSQL and other builds ran at the same time: **no NAS values**, only a yardstick on the same device. To compare, start the same run with `--vorher docs/messungen/oberflaeche/<file>.json`; put a new baseline next to it as a new file (date and device in the name), do not overwrite old ones. **Baseline after phase D** (18 Nov 2026, Ablago 0.297.1, same kind of container): `2026-11-18-container.json` – the yardstick for further runs; which file is what is listed in `docs/messungen/oberflaeche/README.md`.
 
 ## History with large amounts (#800) { #historie }
 
