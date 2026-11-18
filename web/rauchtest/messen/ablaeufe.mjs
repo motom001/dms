@@ -171,6 +171,9 @@ export const ABLAEUFE = [
     name: 'Langes Dokument ansehen, auf Seite 80 springen (100 Seiten)',
     vorbereiten: async (s, d) => {
       await s.goto(d.basis + `/ablage/eingang/${d.langePost}?als=post`);
+      await mappe(s)
+        .getByRole('tab', { name: /^Dokumente/ })
+        .click();
       await mappe(s).getByRole('button', { name: 'Hausrat Bedingungen 2027.pdf', exact: true }).waitFor();
     },
     schritt: async (s) => {
