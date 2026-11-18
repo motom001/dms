@@ -150,13 +150,13 @@ In der Mitte stehen alle Auskünfte mit Person, Datum und **Zustand**:
 | *abgerufen* | Die Person hat die Auskunft über den Abruf-Link geholt. |
 | *gelöscht* | Die Datei ist weg (heruntergeladen, abgelaufen oder gelöscht). Der Eintrag bleibt als **Nachweis** – ohne Datei. |
 
-Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Über der Liste steht das Suchfeld (Person und Zustand, [wie überall in der Werkbank](uebersicht.md#suchen-und-filtern)), darunter der Haken **Nur offene zeigen** – er ist vorgegeben. Nimmst du ihn weg, siehst du auch Zugestelltes und Gelöschtes. Blendet der Haken etwas aus und die Liste ist leer, sagt Ablago das: „Keine offenen Auskünfte. **Alle zeigen**“. Oben rechts steht **+ Neu**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
+Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Über der Liste steht das Suchfeld (Person und Zustand, [wie überall in der Werkbank](uebersicht.md#suchen-und-filtern)), darunter der Haken **Nur offene zeigen** – er ist vorgegeben. Nimmst du ihn weg, siehst du auch Zugestelltes und Gelöschtes. Blendet der Haken etwas aus und die Liste ist leer, sagt Ablago das: „Keine offenen Auskünfte. **Alle zeigen**“. Oben rechts steht **+ Auskunft**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
 
 Wählst du eine Auskunft, steht rechts alles an einer Stelle – gegliedert wie ein [Mappentyp](mappentypen.md#aufbau-des-editors), mit **Sprungleiste** und **Alle aufklappen / Alle zuklappen**: **Angaben** (Person, Erstellt, Antwortfrist, Inhalt), **Zustellen** (solange die Datei bereitliegt: **Zustellen …**, **Herunterladen** und **Löschen** – der Nachweis bleibt), die **Abruf-Links** mit Zustand und **Zurückziehen** (sobald es welche gibt) und der **Verlauf** – erstellt, zugestellt, abgerufen, falscher Code. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „Liegt bereit bis …“ oder „2 Links“; zu Beginn sind alle Bereiche offen; was du zuklappst, merkt sich dein Gerät je Auskunft. Gibt es weniger als drei Bereiche (etwa bei einer Anfrage), stehen sie ohne Sprungleiste offen da. Alles hier wirkt sofort – zu speichern gibt es nichts. Der Verlauf kommt aus der Historie der Person und enthält nur Zahlen, keine Inhalte.
 
 ### Vorgaben für jede Auskunft { #einstellungen }
 
-Einmal einrichten – seit #1183 zusammen mit der eigenen Organisation: Anrede, Rechte der Person und Empfänger stehen unter **Werkbank → Einstellungen → [Eigene Organisation](organisation.md) → Datenschutz-Auskünfte** und werden mit der Speicherleiste dieser Seite gespeichert. Die Auskünfte-Seite zeigt rechts, solange keine Auskunft gewählt ist, **Vorgaben öffnen**; der Assistent (**+ Neu**) verweist im Kopf darauf – am Handy der Weg dorthin. Die alte Adresse `/werkbank/auskuenfte/einstellungen` führt ebenfalls dorthin. Welche Mappentypen eine Person betreffen, steht beim **[Löschkonzept](loeschkonzept.md) → Personendaten in Mappentypen**, weil das Löschkonzept daraus entsteht:
+Einmal einrichten – seit #1183 zusammen mit der eigenen Organisation: Anrede, Rechte der Person und Empfänger stehen unter **Werkbank → Einstellungen → [Eigene Organisation](organisation.md) → Datenschutz-Auskünfte** und werden mit der Speicherleiste dieser Seite gespeichert. Die Auskünfte-Seite zeigt rechts, solange keine Auskunft gewählt ist, **Vorgaben öffnen**; der Assistent (**+ Auskunft**) verweist im Kopf darauf – am Handy der Weg dorthin. Die alte Adresse `/werkbank/auskuenfte/einstellungen` führt ebenfalls dorthin. Welche Mappentypen eine Person betreffen, steht beim **[Löschkonzept](loeschkonzept.md) → Personendaten in Mappentypen**, weil das Löschkonzept daraus entsteht:
 
 - **Verantwortlicher:** Name und Anschrift kommen seit #995 von der [eigenen Organisation](organisation.md) (dazu E-Mail, Telefon und – falls es einen gibt – der Datenschutzbeauftragte) und stehen als Absender auf dem Deckblatt und in der E-Mail an die Person. Gibt es noch keine eigene Organisation (oder wird die Ablage nicht [beruflich genutzt](organisation.md#nutzung)), gilt die bisherige Angabe; die Werkbank bietet an, sie als eigene Organisation zu übernehmen.
 - **Anrede in Unterlagen für Dritte** steht **zuerst**: du oder Sie, siehe [unten](#anrede).
@@ -321,7 +321,7 @@ Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen,
 
 - **Filter:** Zeitraum, Mappentyp, Grund, Schritt; ein Klick auf einen Vorgang zeigt alle Mappen und Dokumente dieses Vorgangs.
 - **Suche nach Nummer** (Nummernkreis oder Archivnummer) oder **Prüfsumme**.
-- **„Wurde dieses Dokument gelöscht?“** Zieh die Datei auf das Feld: Dein Browser rechnet die Prüfsumme, Ablago sucht sie. Die Datei selbst wird nicht hochgeladen.
+- **„Wurde dieses Dokument gelöscht?“** Zieh die Datei auf das Feld oder wähle sie mit **Datei wählen …**: Dein Browser rechnet die Prüfsumme, Ablago sucht sie. Die Datei selbst wird nicht hochgeladen.
 - **Als PDF** (Nachweis, mit Filter und Stand im Kopf) oder **als CSV** – jeweils mit dem gewählten Filter.
 
 !!! info "Prüfsumme und Datenschutz"
@@ -330,7 +330,7 @@ Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen,
 ### Nicht änderbar, eigene Aufbewahrung
 
 - Einträge lassen sich **weder ändern noch löschen** – auch nicht von Administratoren oder über die Schnittstelle; die Datenbank selbst verhindert es.
-- Eigene **Aufbewahrung**: Standard **10 Jahre**, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll. Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.
+- Eigene **Aufbewahrung**: Standard **10 Jahre**, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll, gespeichert mit der Speicherleiste darunter (**Aufbewahrung speichern**). Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.
 - Das Löschprotokoll ist in jeder [Sicherung](sicherung.md) und im [Vollexport](export.md) (`daten/loeschprotokoll.csv`) enthalten.
 - Abschnitt 8 „Nachweis“ des [Löschkonzepts](loeschkonzept.md#aus-dem-dms-erzeugen) verweist darauf.
 

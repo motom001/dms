@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { betriebApi, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api/betrieb';
 import { Link } from '../ort';
-import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { useEntwurf } from '../Speicherleiste';
+import { Sammelleiste, useSammelleiste, useTeilMelden, type Melde } from './sammelleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
 import { einDatentraeger } from '../../../shared/src/werkbankansicht';
 import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
@@ -132,7 +133,8 @@ export function SpeicherplatzPanel({
   nachAenderung?: () => void;
   hinweise?: ReactNode;
   auslastung?: ReactNode;
-  unten?: ReactNode;
+  /** Weitere Abschnitte unten; `melde` meldet einen Editor bei der einen Speicherleiste der Seite an (#1290). */
+  unten?: (melde: Melde) => ReactNode;
 }) {
   const s = z.stand;
   const [e, setE] = useState<SpeicherplatzEinstellung | null>(null);
@@ -141,13 +143,14 @@ export function SpeicherplatzPanel({
   useEffect(() => {
     if (s && !e) setE(s.einstellung);
   }, [s, e]);
-  const ent = useEntwurf(s?.einstellung ?? null, e, {
-    aus: !s || !e,
-    zuruecksetzen: () => {
-      if (s) setE(s.einstellung);
-      setMeldung(undefined);
-    },
-  });
+  const zuruecksetzen = () => {
+    if (s) setE(s.einstellung);
+    setMeldung(undefined);
+  };
+  const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !s || !e, zuruecksetzen });
+  // Eine Speicherleiste für die ganze Seite (#1290): Schwellen, automatisch verkleinern und KI-Kosten melden sich an.
+  const { teile, melde } = useSammelleiste();
+  useTeilMelden(melde, 'schwellen', { geaendert: ent.geaendert, sendet: laeuft, speichern: () => speichern(), zuruecksetzen });
   if (!s || !e) return <p className="leise">{z.fehler ?? t('werkbank.speicherplatz.lade')}</p>;
   const gleicherTraeger = datentraeger(s.ordner);
   const ein = einDatentraeger(s.ordner);
@@ -290,7 +293,6 @@ export function SpeicherplatzPanel({
             {meldung.text}
           </p>
         )}
-        <Speicherleiste ent={ent} gegenstand={t('werkbank.speicherplatz.schwellen')} sendet={laeuft} />
       </form>
 
       {/* Auslastung (#409): unter den Schwellen, über den Ordnern. */}
@@ -379,8 +381,9 @@ export function SpeicherplatzPanel({
       {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. „Neue PDFs automatisch verkleinern“ steht seit #1190
           wieder hier beim Speicherplatz (von #725 bis #1190 unter Suche und Volltext). */}
       <GrossePdfsVerkleinern />
-      <AutomatischVerkleinern />
-      {unten}
+      <AutomatischVerkleinern melde={melde} />
+      {unten?.(melde)}
+      <Sammelleiste teile={teile} gegenstand={t('werkbank.speicherplatz.einstellungen')} />
     </div>
   );
 }

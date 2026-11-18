@@ -1,6 +1,7 @@
 /**
  * Bausteine Etikett (#1289, Leitsatz 8: Rand heißt Knopf) und Aufklapper (#1270): Etiketten ohne Rand und ohne Klick,
  * gewählter Eintrag mit Knopf ✕ darin; Aufklapper mit Pfeil, aria-expanded und aria-controls. Keine globale .chip-Klasse.
+ * Zahl (#1287, Leitsatz 9): Gelb nur für Warnungen, „wartet“ mit Text für Screenreader, die 0 als leise Menge.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -38,7 +39,7 @@ g.document ??= {
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
-const { Etikett, etikettArt, Aufklapper } = await import(WEB + 'bausteine/index.ts');
+const { Etikett, etikettArt, Aufklapper, Zahl, Kachel } = await import(WEB + 'bausteine/index.ts');
 
 const zeichne = (el: React.ReactElement) => renderToStaticMarkup(el);
 const nichts = () => {};
@@ -92,5 +93,46 @@ describe('Baustein Aufklapper (#1270)', () => {
     const html = zeichne(h(Aufklapper, { form: 'zeile', offen: true, umschalten: nichts }, 'Zeile'));
     assert.match(html, /class="eigen baustein zeile"/);
     assert.match(html, /aria-expanded="true"/);
+  });
+});
+
+describe('Baustein Zahl (#1287)', () => {
+  it('Arten: Menge als Vorgabe, Warnung, wartet mit Text für Screenreader', () => {
+    assert.equal(zeichne(h(Zahl, { wert: 14 })), '<span class="zahl menge" data-zahl="menge">14</span>');
+    assert.match(zeichne(h(Zahl, { wert: '!', art: 'warnung' })), /class="zahl warnung" data-zahl="warnung">!</);
+    const wartet = zeichne(h(Zahl, { wert: 2, art: 'wartet' }));
+    assert.match(wartet, /data-zahl="wartet"><span aria-hidden="true">2<\/span><span class="sr">2 warten auf dich<\/span>/);
+  });
+
+  it('0 wartet nicht: leise Menge, ohne Zusatztext', () => {
+    assert.equal(zeichne(h(Zahl, { wert: 0, art: 'wartet' })), '<span class="zahl menge" data-zahl="menge">0</span>');
+  });
+
+  it('keine gelbe Klasse .zaehler mehr in der Gestaltung', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const wurzel = new URL('../../web/src/', import.meta.url);
+    const css = readdirSync(wurzel, { recursive: true, withFileTypes: true })
+      .filter((d) => d.isFile() && d.name.endsWith('.css') && !d.name.endsWith('.module.css'))
+      .map((d) => readFileSync(`${d.parentPath}/${d.name}`, 'utf8'))
+      .join('\n');
+    assert.doesNotMatch(css, /\.zaehler\b/);
+  });
+});
+
+describe('Baustein Kachel (#1271)', () => {
+  const k = (p: Record<string, unknown>) => zeichne(h(Kachel, { to: '/ablage/eingang', titel: 'Zu erledigen', ...p }));
+  it('Zahl in der Akzentfarbe, Schlüssel und Anker', () => {
+    const html = k({ wert: 1234, name: 'eingang', anker: 'startseite.zu-erledigen', unter: 'Aufgaben' });
+    assert.match(html, /data-kachel="eingang" data-anker="startseite.zu-erledigen"/);
+    assert.match(html, /<span class="wert">1.234<\/span><span class="unter">Aufgaben<\/span>/);
+  });
+  it('leer: grün mit Haken nur mit leerGut, sonst leise ohne Haken (#1271)', () => {
+    assert.match(k({ wert: 0, leer: 'Nichts zu erledigen', leerGut: true, unter: 'x' }), /data-leer="gut"><svg/);
+    const leise = k({ wert: 0, leer: 'Noch keine' });
+    assert.match(leise, /data-leer="leise">Noch keine</);
+    assert.doesNotMatch(leise, /<svg/);
+  });
+  it('lädt: „…“', () => {
+    assert.match(k({ wert: null }), /class="wert laedt">…</);
   });
 });

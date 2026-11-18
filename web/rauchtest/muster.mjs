@@ -46,7 +46,8 @@ export const ANSICHTEN = [
 
 /**
  * axe-core in der Seite ausführen; Rückgabe: Verstöße als kurze Zeilen (leer = alles gut). `bereich` (CSS-Selektoren,
- * optional): nur diese Teile der Seite prüfen (#1211, #1212: die Ablage ohne die Kopfzeile, die #1218/#1219 neu bauen).
+ * optional): nur diese Teile der Seite prüfen (#1211, #1212: z. B. die Spalten der Ablage ohne die Kopfzeile, die seit
+ * #1218/#1219 eigene Rauchtests hat; #1271).
  */
 export async function axePruefen(seite, bereich) {
   // Maus weg und warten, bis die Seite ruhig ist (#1266): Sonst misst axe den Kontrast eines Knopfs unter der Maus oder
@@ -444,7 +445,7 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#reiter'), `muster-reiter${suffix}`);
         await foto(s.locator('#schalter'), `muster-schalter${suffix}`);
         await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
-        for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl', 'platzhalter', 'etikett', 'aufklapper'])
+        for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl', 'platzhalter', 'etikett', 'zahl', 'kachel', 'aufklapper'])
           await foto(s.locator(`#${b}`), `muster-${b}${suffix}`);
       }
     } finally {

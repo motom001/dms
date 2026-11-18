@@ -31,7 +31,6 @@
 .ka-umschalter { width: auto; }
 .ka-liste { margin: 4px 0 8px; justify-content: space-between; }
 .ka-favoriten { margin: 0; }
-.ka-kachel-datum { font-size: 1.6em; }
 .ka-blaettern { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .ka-pfeil { padding: 4px 6px; }
 .ka-pfeil .sym { width: 18px; height: 18px; }

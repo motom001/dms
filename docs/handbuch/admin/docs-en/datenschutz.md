@@ -150,13 +150,13 @@ In the middle are all access copies with person, date and **status**:
 | *retrieved* | The person has fetched the access copy via the retrieval link. |
 | *deleted* | The file is gone (downloaded, expired or deleted). The entry stays as **proof** – without the file. |
 
-As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). Above the list is the search field (person and status, [as everywhere in the Workbench](uebersicht.md#suchen-und-filtern)), below it the tick box **Only show open ones** – it is ticked by default. Untick it to see delivered and deleted ones too. If the tick box hides something and the list is empty, Ablago says so: “No open access requests. **Show all**”. At the top right is **+ New**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
+As long as an access copy is open (requested, in progress, ready), the **response deadline** is shown with it ("12 days left", overdue in red). Above the list is the search field (person and status, [as everywhere in the Workbench](uebersicht.md#suchen-und-filtern)), below it the tick box **Only show open ones** – it is ticked by default. Untick it to see delivered and deleted ones too. If the tick box hides something and the list is empty, Ablago says so: “No open access requests. **Show all**”. At the top right is **+ Access request**: the assistant opens on the right (see [below](#auskunft-nach-art-15-dsgvo)).
 
 If you choose an access copy, everything is in one place on the right – organised like a [folder type](mappentypen.md#aufbau-des-editors), with a **jump bar** and **Expand all / Collapse all**: **Details** (person, created, response deadline, content), **Deliver** (as long as the file is available: **Deliver …**, **Download** and **Delete** – the proof stays), the **retrieval links** with status and **Withdraw** (once there are any), and the **history** – created, delivered, retrieved, wrong code. Collapsed, each area shows a summary, such as "Available until …" or "2 links"; at first all areas are expanded; your device remembers what you collapse per access copy. With fewer than three areas (for instance for a request) they are open without a jump bar. Everything here takes effect immediately – there is nothing to save. The history comes from the person's history and only contains numbers, no content.
 
 ### Defaults for every access request { #einstellungen }
 
-Set up once – since #1183 together with your own organisation: form of address, the person’s rights and recipients are under **Workbench → Settings → [Own organisation](organisation.md) → Data protection requests** and are saved with that page’s save bar. As long as no access copy is chosen, the requests page shows **Open defaults** on the right; the assistant (**+ New**) points there in its header – on a phone that is the way there. The old address `/werkbank/auskuenfte/einstellungen` leads there too. Which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
+Set up once – since #1183 together with your own organisation: form of address, the person’s rights and recipients are under **Workbench → Settings → [Own organisation](organisation.md) → Data protection requests** and are saved with that page’s save bar. As long as no access copy is chosen, the requests page shows **Open defaults** on the right; the assistant (**+ Access request**) points there in its header – on a phone that is the way there. The old address `/werkbank/auskuenfte/einstellungen` leads there too. Which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
 
 - **Controller:** since #995 name and address come from the [own organisation](organisation.md) (plus email, phone and – if there is one – the data protection officer) and appear as sender on the cover sheet and in the email to the person. If there is no own organisation yet (or the Library is not [used for work](organisation.md#nutzung)), the previous entry applies; the Workbench offers to take it over as own organisation.
 - **Form of address in documents for third parties** comes **first**: du or Sie, see [below](#anrede).
@@ -321,7 +321,7 @@ All ways are covered: individually, several selected, with linked folders, "Rete
 
 - **Filters:** period, folder type, reason, step; a click on an operation shows all folders and documents of this operation.
 - **Search by number** (number sequence or archive number) or **checksum**.
-- **"Was this document deleted?"** Drag the file onto the field: your browser calculates the checksum, Ablago searches for it. The file itself isn't uploaded.
+- **"Was this document deleted?"** Drag the file onto the field or choose it with **Choose file …**: your browser calculates the checksum, Ablago searches for it. The file itself isn't uploaded.
 - **As PDF** (proof, with filter and date in the header) or **as CSV** – each with the chosen filter.
 
 !!! info "Checksum and data protection"
@@ -330,7 +330,7 @@ All ways are covered: individually, several selected, with linked folders, "Rete
 ### Unchangeable, its own retention { #nicht-anderbar-eigene-aufbewahrung }
 
 - Entries can be **neither changed nor deleted** – not by administrators or via the interface either; the database itself prevents it.
-- Its own **retention**: default **10 years**, configurable from 1 to 30 years below the deletion log. Older entries go automatically during the hourly tidy-up.
+- Its own **retention**: default **10 years**, configurable from 1 to 30 years below the deletion log, saved with the save bar underneath (**Save retention**). Older entries go automatically during the hourly tidy-up.
 - The deletion log is included in every [backup](sicherung.md) and in the [full export](export.md) (`daten/loeschprotokoll.csv`).
 - Section 8 "Proof" of the [deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) refers to it.
 

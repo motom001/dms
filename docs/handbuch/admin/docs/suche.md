@@ -31,7 +31,7 @@ Eine **Gruppe** gleichbedeutender Wörter, z. B. *Kfz, Auto, PKW* oder *Nebenkos
 
 ![Werkbank → Gleichbedeutende Wörter](bilder/werkbank-woerter.png)
 
-- **In der Mitte** steht je Gruppe eine Zeile: das erste Wort fett, dahinter die übrigen leise (**Rechnung** · Beleg · Faktura), darunter die Herkunft – *Eigene* oder der Name des Pakets. Das **Suchfeld** darüber findet jedes Wort einer Gruppe, nicht nur das erste, und markiert es; mit **Herkunft** zeigst du nur eigene Gruppen oder die eines Pakets. Mit **+ Neu** legst du eine Gruppe an.
+- **In der Mitte** steht je Gruppe eine Zeile: das erste Wort fett, dahinter die übrigen leise (**Rechnung** · Beleg · Faktura), darunter die Herkunft – *Eigene* oder der Name des Pakets. Das **Suchfeld** darüber findet jedes Wort einer Gruppe, nicht nur das erste, und markiert es; mit **Herkunft** zeigst du nur eigene Gruppen oder die eines Pakets. Mit **+ Wortgruppe** legst du eine Gruppe an.
 - **Rechts** stehen die Wörter der gewählten Gruppe einzeln untereinander. Du kannst Wörter ändern, mit **+ Wort** dazunehmen, mit **×** entfernen und mit **↑**/**↓** die Reihenfolge ändern – unter dem ersten Wort steht die Gruppe in der Liste. Steht ein Wort schon in einer anderen Gruppe, siehst du das darunter mit einem Link dorthin; das ist erlaubt, die Suche nimmt dann die Wörter beider Gruppen.
 - **Speichern** prüft: mindestens zwei und höchstens 20 Wörter, je 2 bis 60 Zeichen, kein Wort doppelt (Groß- und Kleinschreibung und Umlaute zählen dabei nicht: *Kfz* und *KFZ* sind dasselbe Wort).
 - **Entfernen** fragt vorher nach.

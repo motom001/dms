@@ -21,6 +21,8 @@ At the very top of the page. You set both in **GB free** or **% free**; percenta
 
 The warning threshold must require more free space than the limit – otherwise the warning would only come afterwards.
 
+The page has **one save bar** at the very bottom: **Save settings** saves everything you changed on it – thresholds, long database queries, automatic shrinking and AI costs – at once; **Discard changes** resets everything.
+
 ## Load {#auslastung}
 
 If Ablago is slow, you see here what the cause is – without the NAS's console. Ablago measures the load of **its container** **every minute**; the small curves show the last hour, next to them is the value **now**. The values are only in memory; after a restart the curves begin anew.

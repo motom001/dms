@@ -21,7 +21,7 @@ What you trigger by hand on **one** folder – “Assign task”, “Remind”, 
 
 Petra is to get a task 30 days before the notice period of a contract runs out – but only if someone is entered as responsible in the contract.
 
-1. **+ New**, name "Check cancellation".
+1. **+ Automation**, name "Check cancellation".
 2. **If:** **Date reached**, folder type *Contract*, date field *Cancel by*, **advance notice** 30 *days*, time 07:00.
 3. **And:** **+ Card → Field condition**, field *Responsible* "is not empty".
 4. **Then:** **+ Card → Task / notification**, as *Task*, recipient *Person in the field "Responsible"*, text `Please check {titel} – can be cancelled until {kuendigung_bis}.`
@@ -35,7 +35,7 @@ You **expand** a card with a click on its name (settings) and **collapse** it ag
 
 The administration is to learn when a document is added anywhere – bundled, not for every single file.
 
-1. **+ New**, name "Report new documents".
+1. **+ Automation**, name "Report new documents".
 2. **If:** **Document uploaded**. Without a folder type it applies to all; with a folder type (e.g. *Invoice*) or a field condition under **And** you narrow it down.
 3. **Then:** **+ Card → Task / notification**, as *Notification*, recipient the role *Administrator* (or a role of your own such as *Office*), text `New document on {titel}.`
 4. **Save**.

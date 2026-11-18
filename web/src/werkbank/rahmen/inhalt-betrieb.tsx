@@ -132,17 +132,17 @@ export const systemSeiten = {
             <AuslastungAbschnitt z={systemlast} />
           </>
         }
-        unten={
+        unten={(melde) => (
           <>
             <div id="datenbank">
-              <DatenbankAbschnitte z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} />
+              <DatenbankAbschnitte z={datenbank} melde={melde} offen={new URLSearchParams(location.search).get('offen') ?? undefined} />
             </div>
             {/* Externe Dienste und KI-Kosten (#565). */}
             <ExterneDiensteAbschnitt z={externeDienste} />
-            <KiKostenAbschnitt sichtbar nachAenderung={() => void externeDienste.laden()} />
+            <KiKostenAbschnitt sichtbar melde={melde} nachAenderung={() => void externeDienste.laden()} />
             <TechnikPanel t={technik} abschnitt />
           </>
-        }
+        )}
       />
     ),
   }),

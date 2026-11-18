@@ -339,11 +339,14 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
       </section>
 
       <section className="blatt" id="sitzungen">
-        <h2 className="h3">{t('werkbank.wartungsmodus.angemeldete-sitzungen')}</h2>
+        <h2 className="h3" id="sitzungen-titel">
+          {t('werkbank.wartungsmodus.angemeldete-sitzungen')}
+        </h2>
         {!s.sitzungen.length ? (
           <p className="leise">{t('werkbank.wartungsmodus.niemand-ist-angemeldet')}</p>
         ) : (
-          <div className="trefferliste">
+          // Rollt die Tabelle, erreicht man sie mit der Tastatur (#1290).
+          <div className="trefferliste" tabIndex={0} role="region" aria-labelledby="sitzungen-titel">
             <table>
               <thead>
                 <tr>

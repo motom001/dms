@@ -2,7 +2,7 @@
 
 A **folder type** decides which kind of folder exists – *Contract*, *Invoice*, *Insurance*, *Appliance* … – and what goes in it. A new folder type gets a view of its own in the Library; this can be deselected when creating it (see [Basics](#grunddaten)).
 
-You maintain folder types under **Workbench → Folder types**. With **+ New** you create one; a click on an existing one opens it for editing.
+You maintain folder types under **Workbench → Folder types**. With **+ Folder type** you create one; a click on an existing one opens it for editing.
 
 ### Searching folder types { #suchen }
 

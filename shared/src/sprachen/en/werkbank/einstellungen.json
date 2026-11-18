@@ -200,7 +200,7 @@
   "datenbank.prozess": "{zustand} · process {pid}{wert}",
   "designs.designs": "Themes",
   "designs.farben-und-eigenes-css": "Colours and custom CSS of the interface. Each user chooses their theme under My account.",
-  "designs.neu": "+ New",
+  "designs.neu": "+ Theme",
   "designs.neues-design": "New theme",
   "designs.noch-nicht-gespeichert": "not saved yet",
   "designs.standard": "Default",

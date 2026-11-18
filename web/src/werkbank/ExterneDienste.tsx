@@ -7,6 +7,7 @@ import { paketeApi, type ExternUebersicht } from '../api/pakete';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { useTeilMelden, type Melde } from './sammelleiste';
 import { t } from '../sprache';
 
 /**
@@ -250,7 +251,16 @@ const alsEingabe = (e: KostenEinstellung, pakete: Array<{ id: string }>): Eingab
 const zahlAus = (x: string) => (x.trim() === '' ? 0 : Number(x.replace(',', '.')));
 
 /** Werkbank → Systemzustand → KI-Kosten und Budget. */
-export function KiKostenAbschnitt({ sichtbar, nachAenderung }: { sichtbar: boolean; nachAenderung?: () => void }) {
+export function KiKostenAbschnitt({
+  sichtbar,
+  nachAenderung,
+  melde,
+}: {
+  sichtbar: boolean;
+  nachAenderung?: () => void;
+  /** Auf dem Systemzustand: bei der einen Speicherleiste der Seite anmelden (#1290). */
+  melde?: Melde;
+}) {
   const [monat, setMonat] = useState<string>();
   const [k, setK] = useState<ExternKosten | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -331,6 +341,7 @@ export function KiKostenAbschnitt({ sichtbar, nachAenderung }: { sichtbar: boole
       <Teuerste k={k} name={name} />
       <KostenEinstellungen
         k={k}
+        melde={melde}
         gespeichert={(x) => {
           setK(x);
           nachAenderung?.();
@@ -450,19 +461,19 @@ function Teuerste({ k, name }: { k: ExternKosten; name: { paket: (x: string | nu
 }
 
 /** Preise je 1 Mio. Token je KI-Paket, Währung, Monatsbudget, harte Grenze. */
-function KostenEinstellungen({ k, gespeichert }: { k: ExternKosten; gespeichert: (x: ExternKosten) => void }) {
+function KostenEinstellungen({ k, gespeichert, melde }: { k: ExternKosten; gespeichert: (x: ExternKosten) => void; melde?: Melde }) {
   const basis = alsEingabe(k.einstellung, k.kiPakete);
   const [e, setE] = useState<Eingabe>(basis);
   const [felder, setFelder] = useState<Record<string, string>>({});
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  const ent = useEntwurf(basis, e, {
-    zuruecksetzen: () => {
-      setE(basis);
-      setFelder({});
-      setMeldung(undefined);
-    },
-  });
+  const zuruecksetzen = () => {
+    setE(basis);
+    setFelder({});
+    setMeldung(undefined);
+  };
+  const ent = useEntwurf(basis, e, { zuruecksetzen });
+  useTeilMelden(melde, 'ki-kosten', { geaendert: ent.geaendert, sendet, speichern: () => speichern(), zuruecksetzen });
   async function speichern() {
     setSendet(true);
     setFelder({});
@@ -569,7 +580,7 @@ function KostenEinstellungen({ k, gespeichert }: { k: ExternKosten; gespeichert:
           {meldung.text}
         </p>
       )}
-      <Speicherleiste ent={ent} gegenstand={t('systemzustand.extern.kosten.einstellungen')} sendet={sendet} />
+      {!melde && <Speicherleiste ent={ent} gegenstand={t('systemzustand.extern.kosten.einstellungen')} sendet={sendet} />}
     </form>
   );
 }

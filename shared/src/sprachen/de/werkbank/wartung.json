@@ -213,7 +213,7 @@
   "speicherplatz.hinweis-und-mail": "Hinweis und Mail",
   "speicherplatz.hochladen-gesperrt-wartungsmodus": "Hochladen gesperrt, Wartungsmodus",
   "speicherplatz.gilt-fuer-jeden-ordner": "Gilt für jeden Ordner einzeln; Prozent beziehen sich auf die Größe seines Datenträgers. Standard: Warnung unter 10 % frei, Grenze unter 2 GB frei.",
-  "speicherplatz.schwellen": "Schwellen",
+  "speicherplatz.einstellungen": "Einstellungen",
   "speicherplatz.ordner": "Ordner",
   "speicherplatz.die-ordner-im-container": "Die Ordner im Container sind fest; auf welchen Ordner des NAS sie zeigen, bestimmen die Volumes der Compose-Datei. Die Datenbank liegt in ihrem eigenen Container und lässt sich von hier nicht messen – liegt alles auf derselben Platte (üblich auf dem NAS), genügt diese Messung.",
   "speicherplatz.ein-datentraeger-fuer": "Ein Datenträger für",

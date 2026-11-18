@@ -81,7 +81,7 @@
   "benutzer.teilweise-gespeichert": "Saved: {gespeichert}. Not saved: {fehlt} – {fehler}",
   "benutzer.nicht-gespeichert": "Not saved: {fehlt} – {fehler}",
   "benutzer.gerade-aktiv-in-den": "{wert} {aktiv} active right now (in the last {AKTIV_MINUTEN} minutes).",
-  "benutzer.neu": "+ New",
+  "benutzer.neu": "+ User",
   "benutzer.deaktivierte-zeigen": "Show deactivated ({deaktiviert})",
   "benutzer.neuer-benutzer": "New user",
   "benutzer.noch-nicht-angelegt": "not created yet",

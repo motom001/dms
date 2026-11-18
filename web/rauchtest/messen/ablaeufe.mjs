@@ -193,7 +193,7 @@ export const ABLAEUFE = [
     verwaltung: true,
     schritt: async (s, d) => {
       await s.goto(d.basis + '/werkbank');
-      await s.locator('.uebersicht .kacheln').waitFor();
+      await s.locator('.uebersicht .uebersicht-hinweise').waitFor();
     },
   },
   {

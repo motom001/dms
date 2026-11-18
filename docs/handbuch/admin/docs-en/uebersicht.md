@@ -24,7 +24,7 @@ Next to the areas it says how much is set up there – for instance the number o
 
 ## How you work in the workbench {#so-arbeitest-du-in-der-werkbank}
 
-Areas in which you create and edit something – whether there are many entries or few: folder types, views, number sequences, automations, packages, users, data protection requests, stamps, tasks, designs, mailboxes – and lists you look through – bin, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; with **+ New** you create one.
+Areas in which you create and edit something – whether there are many entries or few: folder types, views, number sequences, automations, packages, users, data protection requests, stamps, tasks, designs, mailboxes – and lists you look through – bin, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; the green button at the top of the list creates one – it names what you create (**+ Folder type**, **+ View**, **+ User** …).
 
 ### Searching and filtering in the middle { #suchen-und-filtern }
 
@@ -47,13 +47,13 @@ Every form ends with the same bar, which stays visible at the bottom when scroll
 
 Buttons such as **Test connection** or **Check now** are above it in the form; on the left of the bar, where it exists, is **Delete** or **Remove**. While such a button is working it shows “Working …”; the result appears right below it, not at the top of the page.
 
-To **create** something, every list has the green **+ New** button at the top right – in the Workbench as in the Library.
+To **create** something, every list has a green button at the top right that names the item – in the Workbench **+ Folder type**, **+ Number sequence**, **+ Template** …, in the Library for example **+ Contract**.
 
 ## Overview {#ubersicht}
 
-The workbench begins with the **overview**. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
+The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – one below the other on the phone. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
 
-Below them are the **messages**, each with a button into the matching area. **This also applies to areas that are hidden in your template.** They are sorted by severity:
+Below them, under **Notes**, are the **messages**, each exactly once and each with a button into the matching area. **This also applies to areas that are hidden in your template.** They are sorted by severity:
 
 1. **Red – critical:** something isn't working here or data is at risk. You have to deal with it.
 2. **Yellow – warning:** something is missing or set up in a risky way.

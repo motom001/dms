@@ -73,7 +73,7 @@ rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter d
   await offene.uncheck();
   await elemente.getByText('Noch keine Auskunft.').waitFor();
   // Der Assistent verweist auf die Vorgaben (am Handy der Weg dorthin).
-  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await elemente.getByRole('link', { name: '+ Auskunft' }).click();
   await bearbeitung.getByRole('link', { name: 'Vorgaben für jede Auskunft' }).click();
   await s.waitForURL(/\/werkbank\/organisation#auskunft-vorgaben$/);
   await bearbeitung.getByRole('heading', { name: 'Datenschutz-Auskünfte', level: 2 }).waitFor();
@@ -104,7 +104,7 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await s.waitForURL(/\/werkbank\/woerter$/);
   const elemente = s.getByRole('region', { name: 'Elemente' });
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await elemente.getByRole('link', { name: '+ Wortgruppe' }).click();
   await s.waitForURL(/\/werkbank\/woerter\/neu$/);
   await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).fill('Beleg');
   await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('beleg');
@@ -120,7 +120,7 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await s.waitForURL(/\/werkbank\/woerter\/[0-9a-f-]{36}$/);
   await bearbeitung.getByRole('heading', { name: 'Rechnung', level: 1 }).waitFor();
   // Zweite Gruppe mit „Beleg“: Hinweis mit Link auf die erste.
-  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await elemente.getByRole('link', { name: '+ Wortgruppe' }).click();
   await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).fill('Quittung');
   await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('Beleg');
   await bearbeitung.getByText('Steht auch in:').getByRole('link', { name: 'Rechnung' }).waitFor();
@@ -234,9 +234,8 @@ rauchtest(
     await s.goto(BASIS + '/werkbank');
     const hinweis = s.locator('.hinweiszeile', { hasText: satz });
     await hinweis.waitFor();
-    // Je Teil der Übersicht genau einmal: in der Liste der Meldungen und rechts (die Zweiteilung ordnet #1284).
-    assert.equal(await s.locator('.meldungsliste').getByText(satz).count(), 1, 'Liste: genau einmal');
-    assert.equal(await s.locator('.uebersicht').getByText(satz).count(), 1, 'rechts: genau einmal');
+    // Zweigeteilt (#1284): auf der ganzen Seite genau einmal.
+    assert.equal(await s.locator('main').getByText(satz).count(), 1, 'genau einmal');
     assert.match(await hinweis.getAttribute('class'), /\bschlecht\b/, 'nach Schwere: rot');
     await hinweis.getByText(/keinen Text aus PDFs lesen/).waitFor();
     await hinweis.getByText(/offizielle Ablago-Image bringt es mit/).waitFor();

@@ -17,6 +17,8 @@ import { ReiterMuster } from './reiter/muster';
 import { SchalterMuster } from './schalter/muster';
 import { PaketChipMuster } from './paketchip/muster';
 import { EtikettMuster } from './etikett/muster';
+import { ZahlMuster } from './zahl/muster';
+import { KachelMuster } from './kachel/muster';
 import { AufklapperMuster } from './aufklapper/muster';
 import { WahlhakenMuster } from './wahlhaken/muster';
 import { MehrfachauswahlMuster } from './mehrfachauswahl/muster';
@@ -67,6 +69,13 @@ const BAUSTEINE: Musterbereich[] = [
     text: () => t('oberflaeche.muster.etikett.text'),
     Muster: EtikettMuster,
   },
+  {
+    id: 'kachel',
+    titel: () => t('oberflaeche.muster.kachel.titel'),
+    text: () => t('oberflaeche.muster.kachel.text'),
+    Muster: KachelMuster,
+  },
+  { id: 'zahl', titel: () => t('oberflaeche.muster.zahl.titel'), text: () => t('oberflaeche.muster.zahl.text'), Muster: ZahlMuster },
   {
     id: 'paketchip',
     titel: () => t('oberflaeche.muster.paketchip.titel'),
@@ -132,7 +141,7 @@ const BAUSTEINE: Musterbereich[] = [
 ];
 
 /** Leitsätze für Knöpfe (#1210; 8: Rand heißt Knopf, #1289), ausführlich im Entwicklerhandbuch unter „Gestaltung und Bausteine“. */
-const LEITSAETZE = [1, 2, 3, 4, 5, 6, 7, 8];
+const LEITSAETZE = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 const DARSTELLUNGEN = Object.keys(GRUNDLAGEN) as Grundlage[];
 

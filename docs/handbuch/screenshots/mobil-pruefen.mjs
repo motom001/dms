@@ -238,7 +238,9 @@ for (const g of GROESSEN) {
     if (seite.pfad.startsWith('/ablage') && !neuDa) raus.push('„+ Neu“ fehlt in der Ablage');
     if (seite.kacheln) {
       const spalten = await s.evaluate(
-        () => new Set([...document.querySelectorAll('.start-raster .kachel')].map((k) => Math.round(k.getBoundingClientRect().left))).size,
+        () =>
+          new Set([...document.querySelectorAll('.start-raster [data-kachel] > a')].map((k) => Math.round(k.getBoundingClientRect().left)))
+            .size,
       );
       if (spalten > 1) raus.push(`Kacheln ${spalten}-spaltig statt einspaltig`);
     }

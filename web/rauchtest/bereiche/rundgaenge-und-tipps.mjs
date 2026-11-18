@@ -32,7 +32,7 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await bearbeitung.getByRole('switch', { name: 'Rundgang für alle' }).waitFor();
   await bearbeitung.getByRole('link', { name: 'Als eigenen kopieren' }).waitFor();
   // Neuer Rundgang: Fehler mit Zeile, dann speichern.
-  await liste.getByRole('link', { name: '+ Neuer Rundgang' }).click();
+  await liste.getByRole('link', { name: '+ Rundgang' }).click();
   const datei = bearbeitung.getByRole('textbox', { name: 'Datei (YAML)' });
   await datei.waitFor();
   await datei.fill(EIGENER.replace('startseite.suche', 'gibt.es.nicht'));

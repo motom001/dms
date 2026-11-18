@@ -25,7 +25,7 @@ import { leistenEintraege } from './rahmen/leiste';
  * der Server prüft dasselbe je Schnittstelle (verwaltungsbereiche.ts):
  *   Bereiche  →  Elemente des Bereichs  →  Bearbeitung
  *
- * /werkbank                        Übersicht: was zu tun ist (#68)
+ * /werkbank                        Übersicht: was zu tun ist (#68), zweigeteilt wie die Startseite der Ablage (#1284)
  * /werkbank/typen[/:id|/neu]
  * /werkbank/benutzer[/:id|/neu]
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
@@ -103,7 +103,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     uz: uebersicht.stand?.zahlen,
     wartungAn,
     automatisierung: {
-      zahl: automatisierungen.stand?.automatisierungen.length || undefined,
+      zahl: automatisierungen.stand?.automatisierungen.length,
       warn: automatisierungWarnungen(automatisierungen.stand),
     },
   });
@@ -123,7 +123,12 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const eigene = eintraege.filter((e) => darf(e.pfad) && inLeiste(e.gruppe, d.zaehler.merkmale));
 
   return (
-    <Dreiteilung ort="werkbank" ebene={werkbankEbene(bereich, id, !!installieren)} mitte={hatMitte(bereich)} offen={id}>
+    <Dreiteilung
+      ort="werkbank"
+      ebene={werkbankEbene(bereich, id, !!installieren)}
+      mitte={hatMitte(bereich)}
+      rechts={bereich !== 'uebersicht'}
+      offen={id}>
       <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')}>
         <WerkbankNavigation
           bereich={bereich}

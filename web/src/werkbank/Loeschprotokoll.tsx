@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   AUSLOESER,
   LOESCHGRUENDE,
@@ -13,7 +13,7 @@ import { useDaten } from '../daten';
 import { pruefwert } from '../pruefwert';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Feld, Knopf, KnopfLink, Suchfeld } from '../bausteine';
+import { Feld, Knopf, KnopfLink, Speicherleiste, Suchfeld, useEntwurf } from '../bausteine';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
 
@@ -52,7 +52,11 @@ function LoeschprotokollBlatt() {
   const [fehler, setFehler] = useState<string>();
   const [datei, setDatei] = useState<string>();
   const [jahre, setJahre] = useState('');
-  const [meldung, setMeldung] = useState<string>();
+  const [meldung, setMeldung] = useState<{ art: string; text: string }>();
+  const [sendet, setSendet] = useState(false);
+  const dateiFeld = useRef<HTMLInputElement>(null);
+  // Aufbewahrung mit der Speicherleiste wie jeder Editor (#1290, Musterkatalog C5/C15) statt eines einzelnen Knopfs.
+  const ent = useEntwurf(String(r?.jahre ?? ''), jahre, { zuruecksetzen: () => setJahre(String(r?.jahre ?? '')) });
   const laden = useCallback(async (x: Filter) => {
     try {
       const n = await datenschutzApi.loeschprotokoll(ohneLeere(x));
@@ -144,7 +148,9 @@ function LoeschprotokollBlatt() {
           {t('werkbank.loeschprotokoll.suchen')}
         </Knopf>
       </form>
-      <label
+      {/* „Wurde dieses Dokument gelöscht?“: Ziehen oder ein Knopf aus dem Baustein statt des rohen Browser-Felds (#1290 –
+          dort stand im englischen Browser „Choose File“). */}
+      <div
         className="lp-datei"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -152,18 +158,23 @@ function LoeschprotokollBlatt() {
           void pruefe(e.dataTransfer.files[0]);
         }}>
         <input
+          ref={dateiFeld}
           type="file"
+          hidden
           onChange={(e) => {
             void pruefe(e.target.files?.[0]);
             e.target.value = '';
           }}
         />
+        <Knopf groesse="klein" symbol="dokument" onClick={() => dateiFeld.current?.click()}>
+          {t('werkbank.loeschprotokoll.datei-waehlen')}
+        </Knopf>
         <span>
           {tn('werkbank.loeschprotokoll.datei-hierher-ziehen-oder', {
             b: <strong>{t('werkbank.loeschprotokoll.wurde-dieses-dokument-geloescht')}</strong>,
           })}
         </span>
-      </label>
+      </div>
       {datei && <p className="leise klein lp-sha">{datei}</p>}
       {f.vorgang && (
         <p className="klein">
@@ -209,13 +220,20 @@ function LoeschprotokollBlatt() {
           )}
           <form
             className="lp-jahre"
-            onSubmit={abfangen(async (x: FormEvent) => {
+            onKeyDown={ent.tasten}
+            onSubmit={(x: FormEvent) => {
               x.preventDefault();
               setMeldung(undefined);
-              await datenschutzApi.loeschprotokollJahre(Number(jahre));
-              setMeldung(t('werkbank.loeschprotokoll.gespeichert'));
-              await laden(f);
-            }, setMeldung)}>
+              setSendet(true);
+              datenschutzApi
+                .loeschprotokollJahre(Number(jahre))
+                .then(() => laden(f))
+                .then(
+                  () => setMeldung({ art: 'gut', text: t('werkbank.loeschprotokoll.gespeichert') }),
+                  (e: unknown) => setMeldung({ art: 'schlecht', text: (e as Error).message }),
+                )
+                .finally(() => setSendet(false));
+            }}>
             <Feld
               beschriftung={t('werkbank.loeschprotokoll.aufbewahrung')}
               hinweis={t('werkbank.loeschprotokoll.danach-fallen-alte-eintraege')}>
@@ -233,14 +251,7 @@ function LoeschprotokollBlatt() {
                 </span>
               )}
             </Feld>
-            <Knopf art="haupt" type="submit" gesperrt={jahre === String(r.jahre)}>
-              {t('werkbank.loeschprotokoll.speichern')}
-            </Knopf>
-            {meldung && (
-              <span className="leise klein" role="status">
-                {meldung}
-              </span>
-            )}
+            <Speicherleiste ent={ent} gegenstand={t('werkbank.loeschprotokoll.aufbewahrung')} sendet={sendet} meldung={meldung} />
           </form>
         </>
       )}

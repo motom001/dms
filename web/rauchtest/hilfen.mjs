@@ -100,6 +100,7 @@ export { beispielPdf, beispielPdfSeiten } from './pdf.mjs';
  * Änderung im Dokument prüft er die sichtbaren Knöpfe und meldet Funde einmal je Seite an den Test (`__knopfFund`):
  *   - anlegen-ohne-plus: `data-knopf="anlegen"`, dessen Beschriftung nicht mit „+“ beginnt (Leitsatz 2; globale
  *     Knopf-Klassen wie `.knopf.gruen` gibt es seit #1270 nicht mehr);
+ *   - anlegen-ohne-gegenstand (#1296): in der Werkbank ein Anlegen-Knopf „+ Neu …“ statt „+ <Gegenstand>“;
  *   - gefahr-ohne-rueckfrage: `data-knopf="gefahr"`, der keine Rückfrage öffnet (`aria-haspopup="dialog"`) und nicht
  *     gesperrt ist (Leitsatz 5);
  *   - rot-ausserhalb-rueckfrage: rot gefüllt (`data-knopf="entscheidung"`) außerhalb des Fensters einer Rückfrage
@@ -116,8 +117,12 @@ function knopfWaechter() {
   const text = (el) => (el.textContent || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
   const pruefe = () => {
     const funde = [];
-    for (const el of document.querySelectorAll('[data-knopf="anlegen"]'))
+    for (const el of document.querySelectorAll('[data-knopf="anlegen"]')) {
       if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
+      // #1296: In der Werkbank nennt jeder Anlegen-Knopf den Gegenstand („+ Mappentyp“), nie nur „+ Neu“.
+      else if (sichtbar(el) && location.pathname.startsWith('/werkbank') && /^\+ (Neu|New)/.test(text(el)))
+        funde.push(['anlegen-ohne-gegenstand', el]);
+    }
     for (const el of document.querySelectorAll('[data-knopf="gefahr"]')) {
       const gesperrt = el.disabled || el.getAttribute('aria-disabled') === 'true';
       if (sichtbar(el) && !gesperrt && el.getAttribute('aria-haspopup') !== 'dialog') funde.push(['gefahr-ohne-rueckfrage', el]);
@@ -361,10 +366,13 @@ export async function keineWaagerechteRolle(s) {
   assert.ok(breit <= sicht, `Die Seite ist am Handy breiter als der Bildschirm (${breit} > ${sicht} px)`);
 }
 
-/** Bereiche der Ablage, die #1211/#1212 umgestellt haben – ohne die Kopfzeile (#1218, #1219 bauen sie neu). */
+/**
+ * Bereiche der Ablage, die #1211/#1212 umgestellt haben – ohne die Kopfzeile: Die ist seit #1218/#1219 neu und hat eigene
+ * Rauchtests (Suchfeld oben, Assistent); hier prüft axe nur die drei Spalten (#1271).
+ */
 export const ABLAGE_BEREICHE = ['.spalte.sichten', '.spalte.liste', '.spalte.mappe'];
 
-/** Mitte und rechte Spalte der Werkbank – ohne Kopfzeile und Bereichsliste (andere Issues). */
+/** Mitte und rechte Spalte der Werkbank – ohne Kopfzeile (eigene Rauchtests seit #1218/#1219) und ohne Bereichsliste (prüft „Navigation: Zahlen ruhig“). */
 export const WERKBANK_BEREICHE = ['.spalte.liste', '.spalte.mappe'];
 
 /** Werkbank → Ablaufvorlage → Ausprobieren (#1176): Mappe „Bohrhammer“ wählen und den Dialog als Probe öffnen. */

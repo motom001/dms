@@ -31,7 +31,7 @@ A **group** of synonyms, e.g. *car, auto, vehicle* or *service charges, operatin
 
 ![Workbench → Synonyms](bilder/werkbank-woerter.png)
 
-- **In the middle** each group has a line: the first word in bold, the others quieter behind it (**Invoice** · Receipt · Bill), below it the source – *Your own* or the package's name. The **search field** above finds every word of a group, not just the first, and highlights it; with **Source** you show only your own groups or those of one package. **+ New** adds a group.
+- **In the middle** each group has a line: the first word in bold, the others quieter behind it (**Invoice** · Receipt · Bill), below it the source – *Your own* or the package's name. The **search field** above finds every word of a group, not just the first, and highlights it; with **Source** you show only your own groups or those of one package. **+ Word group** adds a group.
 - **On the right** the words of the chosen group are listed one below the other. You can change words, add one with **+ Word**, remove one with **×** and change the order with **↑**/**↓** – the group is listed under its first word. If a word is already in another group, you see that below it with a link there; that is allowed, the search then takes the words of both groups.
 - **Saving** checks: at least two and at most 20 words, each 2 to 60 characters, no word twice (upper/lower case and umlauts don't count: *car* and *CAR* are the same word).
 - **Remove** asks first.

@@ -1520,7 +1520,7 @@ async function main() {
   await bild(s, 'eingang');
   // Startseite (#334): Kacheln, solange „Zu erledigen“ etwas enthält.
   await geheZu(s, '/ablage/start');
-  await s.locator('.kacheln').waitFor();
+  await s.locator('[data-kachel]').first().waitFor();
   await bild(s, 'startseite');
   // Startseite über Mitte und rechts (#429); eine zuletzt geöffnete Mappe öffnet wieder die Dreiteilung.
   await s.locator('.zuletzt .eintrag').first().click();
@@ -1728,7 +1728,7 @@ async function main() {
 
   // Werkbank: Übersicht (#68) und Fehlermeldungen (#70)
   await geheZu(s, '/werkbank');
-  await s.locator('.uebersicht .kacheln').waitFor();
+  await s.locator('.uebersicht .uebersicht-hinweise').waitFor();
   await bild(s, 'werkbank-uebersicht');
   // Werkbank anpassen (#281) mit der Stufe Einsteiger (#987), danach wieder alles.
   await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'einsteiger', ein: [], aus: [] } });

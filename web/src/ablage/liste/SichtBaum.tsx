@@ -8,9 +8,8 @@ import { useKonto } from '../../konto';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
 import { AnsichtSymbol, Symbol } from '../../Symbol';
-import { Knopf } from '../../bausteine';
+import { Knopf, Zahl } from '../../bausteine';
 import { ZahlWarte } from '../ZahlWarte';
-import { zahl } from './hilfen';
 
 /**
  * Verwaltete Sichten als Baum (#38). Untersichten lassen sich zuklappen; gemerkt je Gerät
@@ -88,11 +87,7 @@ export function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[
                 )}
                 {sichtName(s)}
               </span>
-              {!d.zahlenDa ? (
-                <ZahlWarte />
-              ) : (
-                n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>
-              )}
+              {!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <Zahl wert={n} art={s.id === d.zaehler.neuePost ? 'wartet' : 'menge'} />}
             </Link>
           </div>
         );

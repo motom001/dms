@@ -193,13 +193,6 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
   }
   .aktionsmenue .menue button { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 }
-@media (max-width: 420px) {
-  /* Startseite unter ca. 420 px: Kacheln einspaltig als Zeile – Titel links, Zahl rechts. */
-  .start-raster { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .start-raster .kachel { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; min-height: 0; padding: 12px 14px; }
-  .start-raster .kacheltitel, .start-raster .kachelunter, .start-raster .kachelleer { grid-column: 1; }
-  .start-raster .kachelzahl { grid-column: 2; grid-row: 1 / span 2; font-size: 1.6rem; }
-}
 /* Post fotografieren (#490): Blatt von unten mit großen Knöpfen, Seiten als Vorschaubilder. Präfix pk-. */
 .pk-schleier { position: fixed; inset: 0; z-index: calc(var(--ebene-panel) + 20); background: var(--schleier); }
 .pk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: calc(var(--ebene-panel) + 21); margin: 0 auto; max-width: 520px; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;

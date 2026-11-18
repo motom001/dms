@@ -10,6 +10,7 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { useTeilMelden, type Melde } from './sammelleiste';
 import { t } from '../sprache';
 
 /**
@@ -263,7 +264,8 @@ export function GrossePdfsVerkleinern() {
 }
 
 /** Neue PDFs von außen (Hochladen, Eingangsordner, Postfach, API, WebDAV) ab einer Größe automatisch verkleinern. */
-export function AutomatischVerkleinern() {
+/** `melde`: Auf dem Systemzustand speichert die eine Leiste der Seite mit (#1290); ohne steht eine eigene darunter. */
+export function AutomatischVerkleinern({ melde }: { melde?: Melde } = {}) {
   const [gespeichert, setGespeichert] = useState<VerkleinernEinstellung | null>(null);
   const [e, setE] = useState<VerkleinernEinstellung | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -277,13 +279,12 @@ export function AutomatischVerkleinern() {
       (x: Error) => setMeldung({ art: 'schlecht', text: x.message }),
     );
   }, []);
-  const ent = useEntwurf(gespeichert, e, {
-    aus: !e,
-    zuruecksetzen: () => {
-      setE(gespeichert);
-      setMeldung(undefined);
-    },
-  });
+  const zuruecksetzen = () => {
+    setE(gespeichert);
+    setMeldung(undefined);
+  };
+  const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen });
+  useTeilMelden(melde, 'verkleinern', { geaendert: ent.geaendert, sendet: laeuft, speichern: () => speichern(), zuruecksetzen });
   if (!e)
     return (
       <section className="blatt">
@@ -351,7 +352,7 @@ export function AutomatischVerkleinern() {
           {meldung.text}
         </p>
       )}
-      <Speicherleiste ent={ent} gegenstand={t('werkbank.verkleinern.einstellung')} sendet={laeuft} />
+      {!melde && <Speicherleiste ent={ent} gegenstand={t('werkbank.verkleinern.einstellung')} sendet={laeuft} />}
     </form>
   );
 }

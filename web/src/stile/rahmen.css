@@ -36,9 +36,11 @@
 @media (max-width: 820px) {
   .rahmen .rumpf.rumpf { padding-bottom: 76px; }
 }
-.listenkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.listenkopf h1 { font-size: calc(19px * var(--skala, 1)); }
-.listenkopf > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* Passt der Titel neben den Knöpfen nicht ganz hinein, rücken die Knöpfe unter ihn – nie wird der Titel abgeschnitten
+   (#1290, #1296: „Automatisierungsvor…“). Das „?“ hängt fest am letzten Wort (Listenkopf.tsx). */
+.listenkopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 10px; }
+.listenkopf h1 { font-size: calc(19px * var(--skala, 1)); overflow-wrap: break-word; }
+.listenkopf > div { display: flex; flex-direction: column; gap: 4px; flex: 1 1 12em; min-width: min(100%, min-content); }
 .listenkopf > .listenkopf-knoepfe { flex-direction: row; flex: none; }
 
 .rahmen.profil .rumpf { padding-top: 24px; }
@@ -70,8 +72,14 @@
 /* Verwaltungsmodus (#819): roter Balken in Werkbank und Ablage, solange der Modus läuft. */
 .verwaltungsbalken { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-left)); font-size: calc(13.5px * var(--skala, 1)); background: var(--verwaltung); color: var(--verwaltung-tinte); }
 .verwaltungsbalken p { margin: 0; flex: 1 1 280px; }
-.verwaltungsbalken [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { background: var(--verwaltung-tinte); color: var(--verwaltung); border-color: var(--verwaltung-tinte); }
-.verwaltungsbalken [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])):focus-visible { outline: 2px solid var(--verwaltung-tinte); outline-offset: 2px; }
+.verwaltungsbalken:not(.ruhig) [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { background: var(--verwaltung-tinte); color: var(--verwaltung); border-color: var(--verwaltung-tinte); }
+.verwaltungsbalken:not(.ruhig) [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])):focus-visible { outline: 2px solid var(--verwaltung-tinte); outline-offset: 2px; }
+/* Werkbank und Mein Konto (#1252): schmale, ruhige Zeile ohne Rot. Die leere Statusmeldung bleibt im Baum (sonst läse der
+   Screenreader den roten Balken beim Wechsel in die Ablage nicht vor), nimmt aber keinen Platz. */
+.verwaltungsbalken.ruhig { padding-top: 4px; padding-bottom: 4px; gap: 4px 12px; background: var(--flaeche); color: var(--leise); border-bottom: 1px solid var(--linie); font-size: calc(12.5px * var(--skala, 1)); }
+.verwaltungsbalken .vb-satz:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); flex: none; }
+.verwaltungsbalken.ruhig .vb-zeile { flex: 1 1 auto; }
+.vb-rest { font-variant-numeric: tabular-nums; display: inline-block; min-width: 12ch; }
 .hinweisbanner { background: var(--warn-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); }
 .vertretungsbanner p, .hinweisbanner p { margin: 0; }
 .hinweisbanner ul { margin: 4px 0 0; padding-left: 18px; }

@@ -203,7 +203,7 @@ If you may administer Ablago, you still work like everyone else day to day – w
 
 1. Menu under your name → **Administer Ablago**.
 2. **Sign in again** (password, plus the code if you have set up two-factor sign-in). If you have only just signed in, this is skipped.
-3. At the top there is now a **red bar**: "You are currently administering Ablago." As long as it is there, you see all folders in the Library, including locked ones – if you open one you would otherwise not be allowed to see, that is recorded in its history.
+3. In the workbench there is a quiet line "Administration · … min left" at the top, in the Library a **red bar**: "You are administering Ablago." As long as the mode runs, you see all folders in the Library, including locked ones – if you open one you would otherwise not be allowed to see, that is recorded in its history.
 
 With **End administration** (in the bar or in the menu) you are back to everyday work. After 15 minutes without input, the mode ends by itself; what you are editing is kept – Ablago only asks for the sign-in again. On the same day, you can then continue with one click (**Administer again**). For particularly sensitive actions – such as downloading the emergency sheet – Ablago always asks for the password once more.
 

@@ -134,12 +134,15 @@ rauchtest(
     await kosten.getByRole('heading', { name: 'KI-Kosten und Budget' }).waitFor();
     await kosten.getByLabel(/^Monatsbudget/).fill('20');
     await kosten.getByLabel(/^Harte Grenze/).check();
-    await kosten.getByRole('button', { name: /speichern$/ }).click();
+    // Eine Speicherleiste für die ganze Seite (#1290): unten „Einstellungen speichern“.
+    const leiste = s.getByRole('button', { name: 'Einstellungen speichern' });
+    assert.equal(await leiste.count(), 1, 'genau eine Speicherleiste auf dem Systemzustand');
+    await leiste.click();
     await kosten.getByText('Gespeichert.', { exact: true }).first().waitFor();
     assert.equal(await kosten.getByLabel(/^Monatsbudget/).inputValue(), '20');
     assert.ok(await kosten.getByLabel(/^Harte Grenze/).isChecked());
     await kosten.getByLabel(/^Monatsbudget/).fill('');
-    await kosten.getByRole('button', { name: /speichern$/ }).click();
+    await leiste.click();
     await s.waitForFunction(
       () => document.querySelector('#ki-kosten-budget')?.value === '' && !document.querySelector('#ki-kosten-hart')?.checked,
     );

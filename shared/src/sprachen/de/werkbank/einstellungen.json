@@ -200,7 +200,7 @@
   "datenbank.prozess": "{zustand} · Prozess {pid}{wert}",
   "designs.designs": "Designs",
   "designs.farben-und-eigenes-css": "Farben und eigenes CSS der Oberfläche. Jeder Benutzer wählt sein Design unter Mein Konto.",
-  "designs.neu": "+ Neu",
+  "designs.neu": "+ Design",
   "designs.neues-design": "Neues Design",
   "designs.noch-nicht-gespeichert": "noch nicht gespeichert",
   "designs.standard": "Standard",
