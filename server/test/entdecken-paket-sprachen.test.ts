@@ -11,8 +11,7 @@ import { inSprache } from '../../shared/src/sprache';
 import { ankerListe, paketRundgaenge, paketTipps } from '../src/entdecken/entdecken';
 import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket } from '../src/pakete/verwaltung/index';
-import { inhaltsHinweise } from '../src/pakete/verwaltung/planen-lauf';
-import { mitkommtVon } from '../src/pakete/mitkommt';
+import { mitkommtVon } from '../src/pakete/index';
 
 const MANIFEST =
   'schema: 1\nid: vertraege\nname: Verträge\nversion: 2.2.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.291.0"\n' +
@@ -162,19 +161,24 @@ describe('Rundgänge und Tipps aus Paketen: mehrsprachig (#1307)', () => {
     assert.deepEqual(b.ueberzaehlig, []);
     assert.deepEqual(b.fehlt, [{ sprache: 'en', schluessel: ['rundgang.kennenlernen.ersatz'] }]);
     assert.equal(b.inDatei, 0);
-    const hinweise = (p: ReturnType<typeof lies>) => {
-      const l = { paket: p, m: { id: 'vertraege' }, installierte: [], hinweise: [] as string[] };
-      inhaltsHinweise(l as unknown as Parameters<typeof inhaltsHinweise>[0]);
-      return l.hinweise;
-    };
-    assert.deepEqual(hinweise(lies()), ['Rundgänge und Tipps auf en: Ein Text fehlt, dort erscheint der deutsche.']);
-    const alt = lies({ rundgaenge: RUNDGANG, dateien: { 'texte/de/entdecken.json': json(DE) } });
-    assert.deepEqual(hinweise(alt), []);
-    const inDatei = lies({
-      tipps: `${TIPPS}  text: Trag die Frist ein.\n`,
-      dateien: { 'texte/de/entdecken.json': json({ ...DE, 'tipp.frist': undefined }) },
-    });
-    assert.match(hinweise(inDatei).join(), /nur in einer Sprache/);
+    assert.equal(b.nurEineSprache, false);
+    // Hinweise der Vorschau (planen-lauf.ts, inhaltsHinweise) aus dem Befund.
+    const befund = (p: ReturnType<typeof lies>) => pruefePaketTexte(p.entdecken?.texte, p.entdecken?.rundgaenge, p.entdecken?.tipps);
+    const nurDeutsch = befund(lies({ dateien: { 'texte/de/entdecken.json': json(DE) } }));
+    assert.deepEqual([nurDeutsch.fehlt, nurDeutsch.nurEineSprache], [[], false]);
+    // Text direkt in der Datei, keine Übersetzung: nur eine Sprache.
+    const tipps = `${TIPPS}  text: Trag die Frist ein.\n`;
+    const inDatei = befund(lies({ tipps, dateien: { 'texte/de/entdecken.json': json({ ...DE, 'tipp.frist': undefined }) } }));
+    assert.deepEqual([inDatei.inDatei, inDatei.nurEineSprache], [1, true]);
+    // Mit Übersetzung: kein Hinweis auf eine Sprache, aber auf den fehlenden Tipp in Englisch.
+    const gemischt = befund(
+      lies({
+        tipps,
+        dateien: { 'texte/de/entdecken.json': json(DE), 'texte/en/entdecken.json': json({ ...EN, 'tipp.frist': undefined }) },
+      }),
+    );
+    assert.equal(gemischt.nurEineSprache, false);
+    assert.deepEqual(gemischt.fehlt, [{ sprache: 'en', schluessel: ['rundgang.kennenlernen.ersatz', 'tipp.frist'] }]);
     // Alle Stellen eines Rundgangs mit Pflicht und Herkunft.
     assert.deepEqual(
       paketTextstellen([{ schluessel: 'a', titel: 'T', schritte: [{ schluessel: 'b_c' }] }], [])

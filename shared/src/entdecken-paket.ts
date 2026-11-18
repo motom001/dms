@@ -85,8 +85,10 @@ export interface PaketTexteBefund {
   ueberzaehlig: Array<{ sprache: string; schluessel: string[] }>;
   /** Texte, die in der Grundsprache da sind, in einer Übersetzung aber fehlen – je Sprache (ein Hinweis). */
   fehlt: Array<{ sprache: string; schluessel: string[] }>;
-  /** Texte direkt in der YAML-Datei (ein Hinweis: nur in einer Sprache). */
+  /** Texte direkt in der YAML-Datei. */
   inDatei: number;
+  /** Texte direkt in der YAML-Datei und keine Übersetzung: Es gibt sie nur in einer Sprache (ein Hinweis). */
+  nurEineSprache: boolean;
 }
 
 /** Schlüssel der Sprachdateien gegen die Rundgänge und Tipps des Pakets prüfen. */
@@ -96,7 +98,9 @@ export function pruefePaketTexte(texte: PaketTexte | undefined, rundgaenge: unkn
   const grund = texte?.[PAKET_GRUNDSPRACHE] ?? {};
   // Was es in der Grundsprache gibt: in der Sprachdatei oder direkt in der YAML-Datei.
   const da = stellen.filter((s) => s.inDatei || grund[s.schluessel] !== undefined).map((s) => s.schluessel);
-  const befund: PaketTexteBefund = { ueberzaehlig: [], fehlt: [], inDatei: stellen.filter((s) => s.inDatei).length };
+  const inDatei = stellen.filter((s) => s.inDatei).length;
+  const uebersetzt = Object.keys(texte ?? {}).some((x) => x !== PAKET_GRUNDSPRACHE);
+  const befund: PaketTexteBefund = { ueberzaehlig: [], fehlt: [], inDatei, nurEineSprache: inDatei > 0 && !uebersetzt };
   for (const [sprache, d] of Object.entries(texte ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
     const zuviel = Object.keys(d).filter((k) => !bekannt.has(k));
     if (zuviel.length) befund.ueberzaehlig.push({ sprache, schluessel: zuviel });
