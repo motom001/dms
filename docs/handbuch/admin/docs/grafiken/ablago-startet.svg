@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420" role="img" aria-label="Browser mit der Seite „Ablago startet …“: Datenbank wird auf den neuen Stand gebracht – Schritt 3 von 5, Fortschrittsbalken, läuft seit 65 s, Hinweis „Du hast nichts falsch gemacht“" style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-<title>Browser mit der Seite „Ablago startet …“: Datenbank wird auf den neuen Stand gebracht – Schritt 3 von 5, Fortschrittsbalken, läuft seit 65 s, Hinweis „Du hast nichts falsch gemacht“</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420" role="img" aria-label="Browser mit der Seite „Ablago startet …“: Datenbank wird aktualisiert – Migration 3 von 5, Fortschrittsbalken, läuft seit 65 s, Hinweis „Du hast nichts falsch gemacht“" style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Browser mit der Seite „Ablago startet …“: Datenbank wird aktualisiert – Migration 3 von 5, Fortschrittsbalken, läuft seit 65 s, Hinweis „Du hast nichts falsch gemacht“</title>
 <rect x="0.5" y="0.5" width="799" height="419" rx="14" fill="#f5f7f8" stroke="#dde2e6"/>
 <rect x="0.5" y="0.5" width="799" height="44" rx="14" fill="#e9edf0" stroke="#dde2e6"/>
 <rect x="1" y="30" width="798" height="15" fill="#e9edf0"/>
@@ -8,14 +8,14 @@
 <text x="106" y="27" font-size="13" fill="#5b6670">http://nas:8080</text>
 <rect x="140" y="72" width="520" height="320" rx="14" fill="#ffffff" stroke="#dde2e6"/>
 <text x="168" y="114" font-size="22" font-weight="700" fill="#1c2328">Ablago startet …</text>
-<text x="168" y="148" font-size="15" font-weight="600" fill="#1c2328">Datenbank wird auf den neuen Stand gebracht –</text>
-<text x="168" y="168" font-size="15" font-weight="600" fill="#1c2328">Schritt 3 von 5</text>
+<text x="168" y="148" font-size="15" font-weight="600" fill="#1c2328">Datenbank wird aktualisiert –</text>
+<text x="168" y="168" font-size="15" font-weight="600" fill="#1c2328">Migration 3 von 5</text>
 <rect x="168" y="184" width="464" height="10" rx="5" fill="#e0e5e8"/>
 <rect x="168" y="184" width="186" height="10" rx="5" fill="#00796b"/>
 <text x="168" y="220" font-size="14" fill="#5b6670">Läuft seit 65 s.</text>
-<text x="168" y="252" font-size="15" fill="#1c2328">Du hast nichts falsch gemacht. Das kann bei großen</text>
-<text x="168" y="272" font-size="15" fill="#1c2328">Ablagen einige Minuten dauern. Diese Seite lädt sich</text>
-<text x="168" y="292" font-size="15" fill="#1c2328">von selbst neu.</text>
+<text x="168" y="252" font-size="15" fill="#1c2328">Du hast nichts falsch gemacht. Beim ersten Start und</text>
+<text x="168" y="272" font-size="15" fill="#1c2328">bei großen Ablagen kann das einige Minuten dauern.</text>
+<text x="168" y="292" font-size="15" fill="#1c2328">Diese Seite lädt sich von selbst neu.</text>
 <text x="168" y="326" font-size="14" fill="#5b6670">Sobald Ablago bereit ist, geht es hier von selbst weiter –</text>
-<text x="168" y="346" font-size="14" fill="#5b6670">zur Anmeldung oder zum Einrichtungsassistenten.</text>
+<text x="168" y="346" font-size="14" fill="#5b6670">zur Anmeldung, zur Einrichtung oder zum Lasttest.</text>
 </svg>

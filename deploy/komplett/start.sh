@@ -7,6 +7,10 @@
 #   von außen nicht erreichbar.
 # - Stopp (docker stop): erst Ablago, dann PostgreSQL sauber („fast“) herunterfahren.
 # - Endet einer der beiden Prozesse, endet der Container; Docker startet ihn neu.
+# - Startseite sofort (#1250): Vom ersten Augenblick an zeigt der Vorstart (server/dist/vorstart.js) unter dem Port die
+#   Seite „Ablago startet …“ mit dem Schritt (Datenbank wird angelegt, startet, Ablago startet) – auch bei einem Fehler
+#   vor Ablago, dann mit Grund und Ausweg. Ablago übernimmt den Port von ihm (DMS_VORSTART_PID).
+# - Alles läuft auch ohne root (#1354): Die Datei mit dem Schritt liegt in /tmp, der Port ist über 1024.
 set -eu
 
 # Für die Probe ohne Container lassen sich Ordner und Startbefehl umstellen.
@@ -16,6 +20,39 @@ SOCKET=${DMS_PG_SOCKET:-/run/postgresql}
 LISTE="Wachsen und umziehen: https://help.ablago.app/admin/aktuell/wachsen/"
 HILFE_START="Hilfe: https://help.ablago.app/installieren/aktuell/komplett/#container-startet-nicht"
 log() { echo "[dms-komplett] $*"; }
+
+# Vorstart (#1250): Schritt für die Seite in eine Datei (eine Zeile), der Vorstart liest sie. Für die Probe ohne
+# Container lässt er sich abschalten (DMS_VORSTART=true) oder umstellen.
+VORSTART_DATEI=${DMS_VORSTART_DATEI:-/tmp/ablago-vorstart}
+# Nach einem Fehler vor Ablago so lange die Seite mit dem Grund zeigen, dann endet der Container (Docker startet ihn neu).
+FEHLER_WARTEN_S=${DMS_START_FEHLER_WARTEN_S:-300}
+VS=""
+stand() { { printf '%s\n' "$1" > "$VORSTART_DATEI.neu" && mv -f "$VORSTART_DATEI.neu" "$VORSTART_DATEI"; } 2>/dev/null || true; }
+vorstart() {
+  if [ -n "$VS" ] && kill -0 "$VS" 2>/dev/null; then return 0; fi
+  DMS_VORSTART_DATEI="$VORSTART_DATEI" ${DMS_VORSTART:-node /app/server/dist/vorstart.js} &
+  VS=$!
+}
+vorstart_ende() {
+  if [ -n "$VS" ]; then kill -TERM "$VS" 2>/dev/null || true; wait "$VS" 2>/dev/null || true; fi
+  VS=""
+}
+# Grund auf der Seite zeigen, eine Weile warten, dann zurück (der Aufrufer beendet mit exit 1).
+fehlerseite() {
+  stand "fehler $1"
+  vorstart
+  if [ "$FEHLER_WARTEN_S" -gt 0 ] 2>/dev/null; then
+    log "Die Seite unter dem Port nennt den Grund. Der Container endet in $FEHLER_WARTEN_S s und startet dann neu."
+    trap 'vorstart_ende; exit 1' TERM INT
+    sleep "$FEHLER_WARTEN_S" & wait $! || true
+    trap - TERM INT
+  fi
+  vorstart_ende
+}
+DMS_VORSTART_SEIT=$(date +%s)
+export DMS_VORSTART_SEIT
+stand pg-start
+vorstart
 
 SOLL=$(postgres --version | sed -n 's/.* \([0-9][0-9]*\)\..*/\1/p')
 mkdir -p "$SOCKET"
@@ -35,6 +72,7 @@ if ! su-exec postgres sh -c ': > "$1" && rm -f "$1"' probe "$PROBE" 2>/dev/null;
   log "FEHLER: PostgreSQL (Benutzer $(id -u postgres)) kann nicht in $PGDATA schreiben. Bitte die Rechte des Ordners auf dem NAS prüfen (ls -la, ACLs mit getfacl) oder ein benanntes Docker-Volume nutzen."
   log "$HILFE_START"
   rm -f "$PROBE" 2>/dev/null || true
+  fehlerseite rechte
   exit 1
 fi
 
@@ -43,16 +81,24 @@ if [ -s "$PGDATA/PG_VERSION" ]; then
   if [ "$IST" != "$SOLL" ]; then
     log "FEHLER: Die Datenbank in /data/postgres stammt von PostgreSQL $IST, dieses Image bringt PostgreSQL $SOLL mit."
     log "Der Container startet nicht, damit nichts kaputtgeht. Umstieg über Sicherung und Wiederherstellung – $LISTE"
+    fehlerseite pg-version
     exit 1
   fi
 else
   if [ -n "$(ls -A "$PGDATA")" ]; then
     log "FEHLER: /data/postgres/daten ist nicht leer, enthält aber keine Datenbank. Bitte prüfen. $LISTE"
+    fehlerseite nicht-leer
     exit 1
   fi
   log "Erster Start: lege die Datenbank an (PostgreSQL $SOLL)."
-  su-exec postgres initdb -D "$PGDATA" -U postgres -E UTF8 --locale=C --auth-local=trust --auth-host=trust >/dev/null
+  stand pg-anlegen
+  if ! su-exec postgres initdb -D "$PGDATA" -U postgres -E UTF8 --locale=C --auth-local=trust --auth-host=trust >/dev/null; then
+    log "FEHLER: Die Datenbank ließ sich nicht anlegen (siehe oben). Häufige Gründe: Speicher voll, Rechte des Ordners. $HILFE_START"
+    fehlerseite pg-anlegen
+    exit 1
+  fi
 fi
+stand pg-start
 
 # pg_stat_statements (#894): zählt je Abfrage Anzahl und Rechenzeit – der Lasttest nennt damit die teuersten Abfragen.
 # Über die Befehlszeile, damit es auch für schon bestehende Datenbanken in /data/postgres gilt (ohne postgresql.conf
@@ -61,7 +107,7 @@ su-exec postgres postgres -D "$PGDATA" -c listen_addresses=127.0.0.1 -c unix_soc
   -c shared_preload_libraries=pg_stat_statements &
 PG=$!
 until su-exec postgres pg_isready -q -h 127.0.0.1; do
-  kill -0 "$PG" 2>/dev/null || { log "FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben)."; exit 1; }
+  kill -0 "$PG" 2>/dev/null || { log "FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben)."; fehlerseite pg-beendet; exit 1; }
   sleep 0.5
 done
 
@@ -82,6 +128,9 @@ su-exec postgres psql -h 127.0.0.1 -U postgres -d dms -qtA -v ON_ERROR_STOP=1 \
 if [ -z "${DATABASE_URL:-}" ]; then export DMS_DATENBANK_VOM_IMAGE=1; else unset DMS_DATENBANK_VOM_IMAGE; fi
 export DATABASE_URL="postgres://dms@127.0.0.1:5432/dms"
 # ende-datenbank-variable
+# Ablago übernimmt den Port vom Vorstart (#1250): Es bittet ihn mit SIGTERM um Freigabe, sobald es selbst lauschen will.
+stand ablago
+if [ -n "$VS" ] && kill -0 "$VS" 2>/dev/null; then export DMS_VORSTART_PID="$VS"; else unset DMS_VORSTART_PID; fi
 ${DMS_START:-node --enable-source-maps /app/server/dist/index.js} &
 DMS=$!
 
@@ -98,6 +147,7 @@ stopp() {
   log "Stopp: beende Ablago."
   kill -TERM "$DMS" 2>/dev/null || true
   wait "$DMS" 2>/dev/null || true
+  vorstart_ende
   pg_stopp
   log "Beendet."
   exit 0
@@ -114,11 +164,14 @@ if kill -0 "$DMS" 2>/dev/null; then
   log "FEHLER: PostgreSQL wurde beendet – beende auch Ablago."
   kill -TERM "$DMS" 2>/dev/null || true
   wait "$DMS" 2>/dev/null || true
+  # Häufig: Speicher voll (#1250). Statt einer toten Adresse nennt die Seite den Grund, bis der Container neu startet.
+  fehlerseite pg-beendet
   exit 1
 fi
 set +e
 wait "$DMS"; CODE=$?
 set -e
 log "Ablago wurde beendet (Code $CODE)."
+vorstart_ende
 pg_stopp
 exit "$CODE"

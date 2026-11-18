@@ -57,6 +57,7 @@
   "index.unbehandelter-fehler": "Unbehandelter Fehler",
   "index.unerwarteter-fehler": "Unerwarteter Fehler – der Prozess beendet sich und startet neu",
   "index.datenbank-ohne-volume": "Die Datenbank liegt nur im Container und geht beim nächsten Update verloren. Trage /data/postgres in der Compose-Datei ein. Vorher die Daten retten (docker compose stop, nicht down, dann docker cp): {link}",
+  "index.datenbank-ohne-volume-lasttest": "Lasttest: Die Datenbank liegt bewusst nur im Container – nach dem Test ist sie weg, das ist so gewollt.",
   "index.exporte-aus-dem-sicherungsordner": "Exporte aus dem Sicherungsordner in den Export-Ordner verschoben (unverschlüsselt, nicht für die Kopie der Sicherung)",
   "index.wiederherstellung-laeuft": "Wiederherstellung läuft",
   "index.das-skript-des-lasttests": "Das Skript des Lasttests (dms-lasttest) fehlt in diesem Image.",

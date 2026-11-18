@@ -71,6 +71,7 @@ const { ohneDatenbankVolume, ABSTURZ_MS, start, beimStartfehler } = await oeffne
   ordner,
   cfg,
   verbund,
+  lasttest,
 });
 const { einrichtungscode, umgebung } = liesUmgebung({ ordner, env, log });
 const { db, datenbankUrl } = await bindeDatenbankAn({ ordner, log, umgebung, env, verbund, start, einrichtungscode, cfg });

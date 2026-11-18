@@ -13,17 +13,22 @@ import { NeuereDatenbankFehler } from '../datenbank/db';
 import type { vorbereiten } from './vorbereiten';
 
 /** Was oeffneStartseite von früher braucht. */
-type Bisher = Pick<Awaited<ReturnType<typeof vorbereiten>>, 'leiter' | 'log' | 'ordnerPruefung' | 'ordner' | 'cfg' | 'verbund'> & {
+type Bisher = Pick<
+  Awaited<ReturnType<typeof vorbereiten>>,
+  'leiter' | 'log' | 'ordnerPruefung' | 'ordner' | 'cfg' | 'verbund' | 'lasttest'
+> & {
   env: NodeJS.ProcessEnv;
 };
 
 /** Prüfungen, Ordner und Startseite. */
 export async function oeffneStartseite(bisher: Bisher) {
-  const { env, leiter, log, ordnerPruefung, ordner, cfg, verbund } = bisher;
+  const { env, leiter, log, ordnerPruefung, ordner, cfg, verbund, lasttest } = bisher;
   // dms-komplett (#943): /data/postgres nicht eingebunden – die Datenbank ginge beim nächsten Update verloren.
   // Einmal beim Start geprüft (Einhängepunkte ändern sich zur Laufzeit nicht); Übersicht und Anbindung zeigen es rot.
+  // Im Lasttest-Modus (#1251) ist das gewollt: nur ein Hinweis, keine Schreckmeldung.
   const ohneDatenbankVolume = datenbankOhneVolume(env);
-  if (ohneDatenbankVolume && leiter) log.error(tDe('meldungen.index.datenbank-ohne-volume', { link: DATENBANK_RETTEN }));
+  if (ohneDatenbankVolume && leiter && lasttest.wahl) log.info(tDe('meldungen.index.datenbank-ohne-volume-lasttest'));
+  else if (ohneDatenbankVolume && leiter) log.error(tDe('meldungen.index.datenbank-ohne-volume', { link: DATENBANK_RETTEN }));
 
   // Unerwartete Fehler außerhalb von Anfragen nicht verschlucken.
   process.on('unhandledRejection', (e) =>
@@ -52,7 +57,20 @@ export async function oeffneStartseite(bisher: Bisher) {
   /** Nach einem unerwarteten Fehler (#877): so lange dürfen offene Anfragen noch zu Ende laufen. */
   const ABSTURZ_MS = 3000;
   // Mehrere Prozesse (#745): nur beim ersten Start des Leiters – danach beantworten die anderen Prozesse schon Anfragen.
-  const start = new Startmodus({ port: cfg.port, host: cfg.host, webDir: cfg.web, proxy: cfg.proxy.trust, einbetten: cfg.einbetten });
+  // dms-komplett (#1250): Bis hierher zeigte der Vorstart (vorstart.ts) die Seite, schon während PostgreSQL angelegt
+  // wurde. Startmodus übernimmt den Port von ihm (DMS_VORSTART_PID) und zählt „Läuft seit“ weiter (DMS_VORSTART_SEIT).
+  const vorgaenger = Number(env.DMS_VORSTART_PID) || null;
+  const start = new Startmodus({
+    port: cfg.port,
+    host: cfg.host,
+    webDir: cfg.web,
+    proxy: cfg.proxy.trust,
+    einbetten: cfg.einbetten,
+    komplett: env.DMS_VARIANTE === 'komplett',
+    vorgaenger,
+    // Sekunden seit 1970 (date +%s in start.sh).
+    seit: Number(env.DMS_VORSTART_SEIT) * 1000 || undefined,
+  });
   if (verbund.erster) await start.oeffne();
   let fehlerNeustart: NodeJS.Timeout | null = null;
   const beimStartfehler = (e: unknown) => {

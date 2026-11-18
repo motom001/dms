@@ -2,14 +2,21 @@ import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { existsSync, statSync } from 'node:fs';
 import { join, normalize, sep } from 'node:path';
-import { HILFE, hilfeUrl } from '../../../shared/src/hilfe';
-import { NeuereDatenbankFehler } from '../datenbank/db';
 import { hilfeAntwort, hilfeSenden } from '../oberflaeche/hilfe';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
 import { statischeDateien } from '../oberflaeche/oberflaeche';
 import { protokoll } from '../protokoll/protokoll';
 import type { ProxyVertrauen } from '../http/proxy';
-import { t } from '../sprache/sprache';
+import { mitSprache, t } from '../sprache/sprache';
+import {
+  startfehlerAus,
+  startseiteHtml,
+  startseitenSprache,
+  type Startfehler,
+  type Startschritt,
+  type Startstand,
+  type VorstartGrund,
+} from './startfehler';
 import { standKennung } from '../system/system';
 import { MODUS_KOERPER_MAX } from '../grundlagen/grenzen';
 
@@ -31,24 +38,8 @@ import { MODUS_KOERPER_MAX } from '../grundlagen/grenzen';
 
 const log = protokoll.modul('system');
 
-export type Startschritt =
-  'datenbank' | 'migration' | 'schluessel' | 'suchindex' | 'ordner' | 'titel' | 'benutzer' | 'typen' | 'dienste' | 'lasttest';
-
-export type Startfehler =
-  | { art: 'neuere-datenbank'; unbekannt: string[] }
-  | { art: 'migration'; nr: number; von: number; datei: string; code: string }
-  | { art: 'allgemein'; schritt: Startschritt };
-
-export interface Startstand {
-  zustand: 'startet' | 'fehler';
-  schritt: Startschritt;
-  nr: number | null;
-  von: number | null;
-  menge: { fertig: number; gesamt: number } | null;
-  /** Beginn des Starts (ms). */
-  seit: number;
-  fehler: Startfehler | null;
-}
+export type { Startschritt, Startfehler, Startstand } from './startfehler';
+export { startfehlerAus } from './startfehler';
 
 export interface StartmodusOptionen {
   port: number;
@@ -59,21 +50,23 @@ export interface StartmodusOptionen {
   jetzt?: () => number;
   /** Sekunden bis zum Neuladen der Seite (Vorgabe 3, im Fehlerfall 30). */
   neuLadenS?: number;
+  /** Beginn des Starts (ms), z. B. vom Vorstart in dms-komplett (#1250) – „Läuft seit“ zählt dann weiter. */
+  seit?: number;
+  /**
+   * Vorstart (#1250): Prozess, der den Port bis jetzt hält (dms-komplett, deploy/komplett/start.sh). Ist der Port belegt,
+   * bekommt er SIGTERM und gibt ihn frei; der Startmodus versucht es so lange erneut (höchstens UEBERGABE_MS).
+   */
+  vorgaenger?: number | null;
+  /** dms-komplett: Auswege ohne eigenen Datenbank-Container. */
+  komplett?: boolean;
+  /** Vorstart (#1250): Port mit SO_REUSEPORT öffnen, damit Ablago ihn ohne Lücke übernehmen kann. */
+  teilen?: boolean;
+  /** Vorstart (#1250): ohne Kennung des Stands in /api/gesundheit (er kennt den Zufallswert der Installation nicht). */
+  ohneStand?: boolean;
 }
 
-/** Nur diese Kennungen gehen nach außen; Dateinamen der Migrationen sind Teil des Programms, keine Daten. */
-const MIGRATION = /^[\w.-]{1,120}$/;
-const CODE = /^[0-9A-Z]{5}$/;
-
-/** Fehler beim Start → was die Seite zeigen darf (keine Meldungstexte, nur Art, Schritt, Datei und Fehlercode). */
-export function startfehlerAus(e: unknown, stand: Pick<Startstand, 'schritt' | 'nr' | 'von'>, migration: string | null): Startfehler {
-  if (e instanceof NeuereDatenbankFehler) return { art: 'neuere-datenbank', unbekannt: e.unbekannt.filter((n) => MIGRATION.test(n)) };
-  if (stand.schritt === 'migration' && migration && MIGRATION.test(migration)) {
-    const code = String((e as { code?: unknown } | null)?.code ?? '');
-    return { art: 'migration', nr: stand.nr ?? 0, von: stand.von ?? 0, datei: migration, code: CODE.test(code) ? code : '–' };
-  }
-  return { art: 'allgemein', schritt: stand.schritt };
-}
+/** So lange wartet der Startmodus höchstens, bis der Vorstart den Port freigibt (#1250). */
+const UEBERGABE_MS = 10_000;
 
 /** So lange bekommen laufende Anfragen beim Freigeben des Ports noch ihre Antwort (#1419). */
 const ENDE_GRENZE_MS = 3000;
@@ -103,8 +96,6 @@ export function sanftesEnde(app: FastifyInstance): (grenzeMs?: number) => Promis
   };
 }
 
-const html = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-
 export class Startmodus {
   private app: FastifyInstance | null = null;
   private ende: ((grenzeMs?: number) => Promise<void>) | null = null;
@@ -114,7 +105,8 @@ export class Startmodus {
 
   constructor(private o: StartmodusOptionen) {
     this.jetzt = o.jetzt ?? Date.now;
-    this.stand = { zustand: 'startet', schritt: 'datenbank', nr: null, von: null, menge: null, seit: this.jetzt(), fehler: null };
+    const seit = o.seit && Number.isFinite(o.seit) && o.seit <= this.jetzt() ? o.seit : this.jetzt();
+    this.stand = { zustand: 'startet', schritt: 'datenbank', nr: null, von: null, menge: null, seit, fehler: null };
   }
 
   get offen() {
@@ -148,7 +140,7 @@ export class Startmodus {
 
   /** Kurzform für /api/gesundheit. */
   gesundheit() {
-    return { ok: false, zustand: this.stand.zustand, startet: true, stand: standKennung() };
+    return { ok: false, zustand: this.stand.zustand, startet: true, ...(this.o.ohneStand ? {} : { stand: standKennung() }) };
   }
 
   private dauer(): string {
@@ -156,61 +148,22 @@ export class Startmodus {
     return s < 120 ? t('start.sekunden', { anzahl: s }) : t('start.minuten', { anzahl: Math.floor(s / 60) });
   }
 
-  private schrittText(s: Pick<Startstand, 'schritt' | 'nr' | 'von'>) {
-    return t.frei(`start.schritt.${s.schritt}`, { nr: s.nr ?? '', von: s.von ?? '' });
+  /** Die Seite selbst (startfehler.ts) in der Sprache der Anfrage (#1250). */
+  seite(sprache: 'de' | 'en' = 'de'): string {
+    return mitSprache(sprache, () =>
+      startseiteHtml(this.stand, {
+        dauer: this.dauer(),
+        neuLadenS: this.o.neuLadenS ?? 3,
+        komplett: !!this.o.komplett,
+        sprache,
+      }),
+    );
   }
 
-  /** Die Seite selbst: schlicht, ohne Skript (Neuladen per meta refresh), Stil inline (CSP erlaubt nur das). */
-  seite(): string {
-    const s = this.stand;
-    const neu = s.zustand === 'fehler' ? 30 : (this.o.neuLadenS ?? 3);
-    const teile: string[] = [];
-    if (s.zustand === 'startet') {
-      const anteil = s.menge && s.menge.gesamt > 0 ? s.menge.fertig / s.menge.gesamt : s.nr && s.von ? (s.nr - 1) / s.von : null;
-      teile.push(
-        `<h1>${html(t('start.titel'))}</h1>`,
-        `<p class="schritt" role="status">${html(this.schrittText(s))}${s.menge ? ` – ${html(t('start.menge', { fertig: s.menge.fertig.toLocaleString('de-DE'), gesamt: s.menge.gesamt.toLocaleString('de-DE') }))}` : ''}</p>`,
-        anteil === null ? '<progress></progress>' : `<progress max="100" value="${Math.round(anteil * 100)}"></progress>`,
-        `<p class="leise">${html(t('start.seit', { dauer: this.dauer() }))}</p>`,
-        `<p>${html(t('start.beruhigung'))}</p>`,
-        `<p class="leise">${html(t('start.weiter'))}</p>`,
-      );
-    } else {
-      const f = s.fehler!;
-      const grund =
-        f.art === 'neuere-datenbank'
-          ? t('start.fehler.neuere-datenbank', { anzahl: f.unbekannt.length, letzte: f.unbekannt[f.unbekannt.length - 1] ?? '–' })
-          : f.art === 'migration'
-            ? t('start.fehler.migration', { nr: f.nr, von: f.von, datei: f.datei, code: f.code })
-            : t('start.fehler.allgemein', { schritt: this.schrittText({ schritt: f.schritt, nr: null, von: null }) });
-      teile.push(
-        `<h1>${html(t('start.fehler.titel'))}</h1>`,
-        `<p class="schritt" role="alert">${html(grund)}</p>`,
-        ...(f.art === 'neuere-datenbank' ? [`<p>${html(t('start.fehler.neuere-datenbank.tun'))}</p>`] : []),
-        `<p>${html(t('start.fehler.tun'))}</p>`,
-        ...(f.art === 'neuere-datenbank' ? [] : [`<p class="leise">${html(t('start.fehler.neustart'))}</p>`]),
-        `<p><a href="${html(hilfeUrl(HILFE['start.fehler'], null))}">${html(t('start.fehler.hilfe'))}</a></p>`,
-      );
-    }
-    return `<!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="${neu}"><meta name="robots" content="noindex">
-<title>${html(s.zustand === 'fehler' ? t('start.fehler.titel') : t('start.titel'))}</title>
-<style>
-:root{color-scheme:light dark;--grund:#f5f7f8;--karte:#fff;--text:#1c2328;--leise:#5b6670;--akzent:#00796b;--rand:#dde2e6;--fehler:#b3261e}
-@media (prefers-color-scheme:dark){:root{--grund:#101417;--karte:#1a2025;--text:#e6eaed;--leise:#9aa5ae;--akzent:#4db6ac;--rand:#2c343a;--fehler:#f2b8b5}}
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--grund);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-main{box-sizing:border-box;width:min(560px,100% - 32px);background:var(--karte);border:1px solid var(--rand);border-radius:14px;padding:28px}
-h1{margin:0 0 12px;font-size:1.4rem}
-.schritt{font-weight:600}${s.zustand === 'fehler' ? '.schritt{color:var(--fehler)}' : ''}
-.leise{color:var(--leise);font-size:.93rem}
-progress{width:100%;height:10px;accent-color:var(--akzent)}
-a{color:var(--akzent)}
-</style></head>
-<body><main>
-${teile.join('\n')}
-</main></body></html>
-`;
+  /** Fehler des Vorstarts (#1250): Grund aus start.sh, vor Ablago selbst. */
+  vorstartFehler(grund: VorstartGrund) {
+    if (this.stand.fehler) return;
+    Object.assign(this.stand, { zustand: 'fehler', fehler: { art: 'vorstart', grund } });
   }
 
   /** Port öffnen. Mehrfach möglich (nach dem Einrichtungsmodus, der den Port zwischendurch braucht). */
@@ -284,12 +237,47 @@ ${teile.join('\n')}
       // Dateien der Oberfläche (/assets/…, favicon) gibt es erst mit Ablago selbst.
       if (req.method !== 'GET' && req.method !== 'HEAD') return nichtBereit(reply);
       if (/\.[a-z0-9]{1,8}$/i.test(pfad)) return nichtBereit(reply);
-      return reply.code(200).type('text/html; charset=utf-8').send(this.seite());
+      return reply
+        .code(200)
+        .type('text/html; charset=utf-8')
+        .header('vary', 'accept-language')
+        .send(this.seite(startseitenSprache(req.headers['accept-language'])));
     });
     const ende = sanftesEnde(app);
-    await app.listen({ port: this.o.port, host: this.o.host });
+    await this.lausche(app);
     this.app = app;
     this.ende = ende;
+  }
+
+  /**
+   * Port öffnen und – kommt Ablago nach dem Vorstart (#1250) – ihn danach um Freigabe bitten. Beide lauschen mit
+   * SO_REUSEPORT (Linux), also kurz gleichzeitig: Beim Wechsel bleibt die Adresse ohne Lücke erreichbar. Ist der Port
+   * trotzdem belegt (Vorstart ohne reusePort), erst bitten, dann bis UEBERGABE_MS erneut versuchen.
+   */
+  private async lausche(app: FastifyInstance) {
+    const pid = this.o.vorgaenger;
+    const teilen = !!pid || !!this.o.teilen;
+    const bis = Date.now() + UEBERGABE_MS;
+    const bitte = () => {
+      try {
+        if (pid) process.kill(pid, 'SIGTERM');
+      } catch {
+        /* schon beendet */
+      }
+    };
+    let gebeten = false;
+    for (;;) {
+      try {
+        await app.listen({ port: this.o.port, host: this.o.host, ...(teilen ? { reusePort: true } : {}) });
+        if (!gebeten) bitte();
+        return;
+      } catch (e) {
+        if ((e as { code?: string }).code !== 'EADDRINUSE' || !pid || Date.now() > bis) throw e;
+        if (!gebeten) bitte();
+        gebeten = true;
+        await new Promise((r) => setTimeout(r, 20));
+      }
+    }
   }
 
   /** Port freigeben – für Ablago selbst (oder den Einrichtungsmodus). */

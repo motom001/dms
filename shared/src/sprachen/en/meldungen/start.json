@@ -57,6 +57,7 @@
   "index.unbehandelter-fehler": "Unbehandelter Fehler",
   "index.unerwarteter-fehler": "Unexpected error – the process exits and restarts",
   "index.datenbank-ohne-volume": "The database is only stored inside the container and will be lost with the next update. Add /data/postgres to the Compose file. Rescue the data first (docker compose stop, not down, then docker cp): {link}",
+  "index.datenbank-ohne-volume-lasttest": "Load test: the database deliberately lives only inside the container – it is gone after the test, as intended.",
   "index.exporte-aus-dem-sicherungsordner": "Exports moved from the backup folder to the export folder (unencrypted, not for the backup copy)",
   "index.wiederherstellung-laeuft": "Restore running",
   "index.das-skript-des-lasttests": "The load test script (dms-lasttest) is missing in this image.",

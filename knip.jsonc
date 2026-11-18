@@ -25,7 +25,7 @@
     },
     "server": {
       "entry": [
-        "src/{index,ablago,dms,pakete-pruefen}.ts",
+        "src/{index,ablago,dms,pakete-pruefen,vorstart}.ts",
         "src/laeufer/{prozess,arbeiter}.ts",
         "src/arbeit/arbeitsfaden.ts",
         "werkzeuge/*.ts",

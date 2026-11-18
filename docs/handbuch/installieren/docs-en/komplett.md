@@ -74,16 +74,21 @@ The database lives in the folder you enter for `/data/postgres`. It doesn't have
     A named volume survives `docker compose down` and updates. It is only deleted with `docker compose down -v` or `docker volume rm`.
 - **Don't forget it:** if the line for `/data/postgres` is missing, the database is only stored inside the container. Ablago shows this in red under **Workbench → Overview** and **Database connection** and writes it to the log on start. How to rescue the data is described [below](#datenbank-retten).
 
+## What you see at start-up {#beim-start}
+
+From the first second after the start, the address answers with the page **"Ablago is starting …"**, even if PostgreSQL isn't running yet. It shows the step: **Creating the database (first start only)**, **Starting the database**, **Starting Ablago**, after an update **Updating the database – migration n of m**. On the first start this can take a few minutes on a NAS. The page reloads itself and moves on by itself to the setup assistant, the sign-in or the load test page. All steps are in the [Administrator manual](https://help.ablago.app/admin/aktuell/en/aktualisieren/#nach-dem-start).
+
 ## The container doesn't start {#container-startet-nicht}
 
-The container's log tells you what is wrong (`docker compose logs dms` or "Log" in your NAS interface). The lines start with `[dms-komplett]`. The messages are in German:
+If the start fails, the page at the address gives the reason and the way out (without paths and versions) and stays for about 5 minutes. Then the container exits and Docker restarts it. The details are in the container's log (`docker compose logs dms` or "Log" in your NAS interface). The lines start with `[dms-komplett]`. The messages are in German:
 
 | Message | What to do |
 | --- | --- |
 | `FEHLER: PostgreSQL (Benutzer 70) kann nicht in /data/postgres/daten schreiben. …` (PostgreSQL, user 70, cannot write to /data/postgres/daten) | The container couldn't fix the permissions itself, usually because of a network share (NFS with `root_squash`, SMB) or ACLs that override the normal permissions. Check the folder on the NAS with `ls -la` and `getfacl`. User 70 needs read, write and enter (`rwx`) on the folder and on `daten`. Easier: use a local folder on the NAS or a [named volume](#datenbank-auf-der-ssd). |
 | `FEHLER: Die Datenbank in /data/postgres stammt von PostgreSQL …` (database from another PostgreSQL version) | The database comes from another major version. Switch via backup and restore, see [Growing and moving](https://help.ablago.app/admin/aktuell/en/wachsen/#neue-hauptversion-von-postgresql). |
 | `FEHLER: /data/postgres/daten ist nicht leer, enthält aber keine Datenbank.` (not empty, but no database) | The `daten` folder contains something other than a database, e.g. leftovers from an aborted first start. If nothing has been set up yet, empty the folder and start again. |
-| `FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben).` (PostgreSQL stopped during start) | The lines above give the reason. If the container was previously killed, PostgreSQL usually cleans up by itself on the next start – see `stop_grace_period` below. |
+| `FEHLER: Die Datenbank ließ sich nicht anlegen (siehe oben).` (database could not be created) | `initdb` failed. The lines above give the reason; usually the storage is full or the folder isn't writable. |
+| `FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben).` (PostgreSQL stopped during start) or `FEHLER: PostgreSQL wurde beendet` (PostgreSQL stopped) | The lines above give the reason. If the container was previously killed, PostgreSQL usually cleans up by itself on the next start – see `stop_grace_period` below. |
 
 **Don't leave out `stop_grace_period: 60s`.** When stopping, the container first shuts down Ablago and then PostgreSQL cleanly. Without this line Docker only waits 10 seconds and then kills the container. PostgreSQL then has to clean up on the next start, and in the worst case it doesn't start. The template contains the line; with `docker run` it is `--stop-timeout 60`. In a NAS interface without this setting, stop the container through the interface (not "Force") and wait until it is off.
 

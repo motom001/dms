@@ -106,6 +106,20 @@ Außerdem steht jedes fehlende Werkzeug als Meldung auf der Startseite der Werkb
 
 **Abhilfe:** Mit dem offiziellen Image (`ghcr.io/motom001/dms` bzw. `dms-komplett`) fehlt nichts. Fehlen kann ein Werkzeug praktisch nur bei einem eigenen, unvollständigen Image oder einer Installation ohne Container. Dann gehören die Programme dazu: unter Alpine `apk add poppler-utils qpdf fontconfig font-liberation font-dejavu`, unter Debian und Ubuntu `apt install poppler-utils qpdf fonts-liberation fonts-dejavu-core`. Danach Ablago neu starten oder **Erneut prüfen** drücken.
 
+## Startseite: „Ablago konnte nicht starten“ { #start-datenbank }
+
+Scheitert der Start, nennt die Seite unter der Adresse von Ablago den Grund in Klartext und darunter, was du tun kannst. Die genaue Meldung steht im [Container-Log](#container-logs). Danach beendet sich der Container nach etwa 5 Minuten, und Docker startet ihn neu (`restart: unless-stopped`) – ein vorübergehendes Problem löst sich so von selbst.
+
+| Grund auf der Seite | Was du tun kannst |
+| --- | --- |
+| Die Datenbank ist nicht erreichbar oder nimmt keine Verbindung an. | Mit eigenem Datenbank-Container: prüfen, ob er läuft, ihn neu starten, danach den Container von Ablago. Bei dms-komplett: den Container neu starten. |
+| Die Datenbank ist blockiert: Eine Sperre hat zu lange gedauert. | Läuft eine zweite Ablago an derselben Datenbank, z. B. ein alter Container? Beenden, dann neu starten. |
+| Die Datenbank kann nicht mehr schreiben: Der Speicher ist voll. | Platz schaffen auf dem Speicher der Datenbank (alte Sicherungen oder Exporte), dann neu starten. |
+| Die Datenbank nimmt keine weiteren Verbindungen an. | Andere Programme an derselben Datenbank beenden oder in PostgreSQL `max_connections` erhöhen, dann neu starten. |
+| Die Datenbank kann nicht in ihren Ordner schreiben (nur dms-komplett). | Rechte des Datenbank-Ordners auf dem NAS prüfen oder ein benanntes Volume nehmen, siehe [Der Container startet nicht](https://help.ablago.app/installieren/aktuell/komplett/#container-startet-nicht). |
+| Die Datenbank stammt von einer anderen Hauptversion von PostgreSQL (nur dms-komplett). | Image auf die Version zurückstellen, mit der die Datenbank angelegt wurde; Umstieg über Sicherung und Wiederherstellung. |
+| Die Datenbank ließ sich nicht anlegen bzw. wurde beendet (nur dms-komplett). | Meist ist der Speicher voll oder der Container hat zu wenig Arbeitsspeicher. Platz schaffen und neu starten; die Zeilen im Container-Log nennen den Grund. |
+
 ## Typische Probleme
 
 ??? question "Nach dem Update startet der Container nicht."

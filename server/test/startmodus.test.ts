@@ -56,7 +56,7 @@ describe('Startseite (#802)', () => {
         assert.equal(r.headers.get('cache-control'), 'no-store');
         const text = await r.text();
         assert.match(text, /Ablago startet …/);
-        assert.match(text, /Datenbank wird auf den neuen Stand gebracht – Schritt 3 von 5/);
+        assert.match(text, /Datenbank wird aktualisiert – Migration 3 von 5/);
         assert.match(text, /<meta http-equiv="refresh" content="3">/);
         assert.match(text, /Du hast nichts falsch gemacht/);
         assert.match(text, /Läuft seit 65 s/);
@@ -363,7 +363,7 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
     await warte(
       async () => {
         const text = await (await fetch(x.basis)).text();
-        gesehen ||= /Datenbank wird auf den neuen Stand gebracht – Schritt \d+ von \d+/.test(text);
+        gesehen ||= /Datenbank wird aktualisiert – Migration \d+ von \d+/.test(text);
         const g = await fetch(`${x.basis}/api/gesundheit`);
         return g.status === 200;
       },

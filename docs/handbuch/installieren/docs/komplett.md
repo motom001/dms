@@ -74,16 +74,21 @@ Die Datenbank liegt im Ordner, den du für `/data/postgres` einträgst. Er brauc
     Ein benanntes Volume bleibt bei `docker compose down` und bei Updates erhalten. Gelöscht wird es nur mit `docker compose down -v` oder `docker volume rm`.
 - **Nicht vergessen:** Fehlt die Zeile für `/data/postgres`, liegt die Datenbank nur im Container. Ablago zeigt das rot in **Werkbank → Übersicht** und unter **Datenbank-Anbindung** und schreibt es beim Start ins Protokoll. Wie du die Daten dann rettest, steht [unten](#datenbank-retten).
 
+## Was du beim Start siehst { #beim-start }
+
+Schon in der ersten Sekunde nach dem Start antwortet die Adresse mit der Seite **„Ablago startet …“**, auch wenn PostgreSQL noch gar nicht läuft. Sie zeigt den Schritt: **Datenbank wird angelegt (nur beim ersten Start)**, **Datenbank startet**, **Ablago startet**, nach einem Update **Datenbank wird aktualisiert – Migration n von m**. Beim ersten Start kann das auf einem NAS einige Minuten dauern. Die Seite lädt sich selbst neu und geht von allein weiter zum Einrichtungsassistenten, zur Anmeldung oder zur Lasttest-Seite. Alle Schritte stehen im [Administratorhandbuch](https://help.ablago.app/admin/aktuell/aktualisieren/#nach-dem-start).
+
 ## Der Container startet nicht { #container-startet-nicht }
 
-Was los ist, steht im Protokoll des Containers (`docker compose logs dms` bzw. „Protokoll“ in der Oberfläche des NAS). Die Zeilen beginnen mit `[dms-komplett]`.
+Scheitert der Start, nennt die Seite unter der Adresse den Grund und den Ausweg (ohne Pfade und Versionen) und bleibt etwa 5 Minuten stehen. Danach endet der Container, und Docker startet ihn neu. Die Einzelheiten stehen im Protokoll des Containers (`docker compose logs dms` bzw. „Protokoll“ in der Oberfläche des NAS). Die Zeilen beginnen mit `[dms-komplett]`.
 
 | Meldung | Was zu tun ist |
 | --- | --- |
 | `FEHLER: PostgreSQL (Benutzer 70) kann nicht in /data/postgres/daten schreiben. Bitte die Rechte des Ordners auf dem NAS prüfen (ls -la, ACLs mit getfacl) oder ein benanntes Docker-Volume nutzen.` | Der Container konnte die Rechte nicht selbst richten, meist wegen einer Netzwerkfreigabe (NFS mit `root_squash`, SMB) oder ACLs, die stärker sind als die normalen Rechte. Prüfe den Ordner auf dem NAS mit `ls -la` und `getfacl`. Benutzer 70 braucht Lesen, Schreiben und Betreten (`rwx`) für den Ordner und für `daten`. Einfacher: einen lokalen Ordner auf dem NAS oder ein [benanntes Volume](#datenbank-auf-der-ssd) nehmen. |
 | `FEHLER: Die Datenbank in /data/postgres stammt von PostgreSQL …` | Die Datenbank stammt von einer anderen Hauptversion. Umstieg über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://help.ablago.app/admin/aktuell/wachsen/#neue-hauptversion-von-postgresql). |
 | `FEHLER: /data/postgres/daten ist nicht leer, enthält aber keine Datenbank.` | Im Ordner `daten` liegt etwas anderes als eine Datenbank, z. B. Reste eines abgebrochenen ersten Starts. Ist noch nichts eingerichtet, leere den Ordner und starte neu. |
-| `FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben).` | Die Zeilen darüber nennen den Grund. Wurde der Container zuvor hart beendet, räumt PostgreSQL beim nächsten Start meist selbst auf – siehe `stop_grace_period` unten. |
+| `FEHLER: Die Datenbank ließ sich nicht anlegen (siehe oben).` | `initdb` ist gescheitert. Die Zeilen darüber nennen den Grund, meist ist der Speicher voll oder der Ordner nicht beschreibbar. |
+| `FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben).` bzw. `FEHLER: PostgreSQL wurde beendet` | Die Zeilen darüber nennen den Grund. Wurde der Container zuvor hart beendet, räumt PostgreSQL beim nächsten Start meist selbst auf – siehe `stop_grace_period` unten. |
 
 **`stop_grace_period: 60s` nicht weglassen.** Beim Stoppen fährt der Container erst Ablago und dann PostgreSQL sauber herunter. Docker wartet ohne diese Zeile nur 10 Sekunden und beendet den Container danach hart. PostgreSQL muss dann beim nächsten Start erst aufräumen, im schlimmsten Fall startet es nicht. Die Vorlage enthält die Zeile, mit `docker run` heißt sie `--stop-timeout 60`. In der Oberfläche eines NAS ohne diese Einstellung stoppe den Container über die Oberfläche (nicht „Erzwingen“) und warte, bis er aus ist.
 

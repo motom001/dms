@@ -6,7 +6,7 @@ import { proxyVertrauen } from '../http/proxy';
 import { einbettenAus } from '../http/koepfe';
 import { protokoll } from '../protokoll/protokoll';
 import { pruefeOrdner } from '../dateien/ordner';
-import { setzeStandSalz } from '../system/system';
+import { eigeneVersion, setzeStandSalz } from '../system/system';
 import { prozesseAus, verbundFuerProzess, PROZESSE_MAX } from '../prozesse/prozesse';
 import { teileZwischenspeicher } from '../zwischenspeicher/zwischenspeicher';
 import { MB } from '../grundlagen/grenzen';
@@ -46,7 +46,9 @@ export async function vorbereiten(bisher: Bisher) {
   // Zwischenspeicher (#874): mit mehreren Prozessen bekommt jeder seinen Anteil, zusammen wie mit einem.
   teileZwischenspeicher(verbund.anzahl);
   if (leiter)
-    log.info(`Ablago startet (Version ${version})`, {
+    // Im Protokoll dieselbe Version wie auf der Lasttest-Seite und in der Werkbank (#1251, Nachtrag): DMS_VERSION, sonst
+    // package.json – das Image setzt DMS_VERSION nicht, dort stand bisher „Entwicklung“.
+    log.info(`Ablago startet (Version ${eigeneVersion()})`, {
       node: process.version,
       port: cfg.port,
       protokoll: protokoll.stufe,

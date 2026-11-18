@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Probe für dms-komplett (#208), läuft in der CI auf amd64 und arm64 (image.yml):
-#   1. starten → Ablago antwortet, Assistent beginnt beim Konto (Datenbank angebunden, kein Passwort)
+#   1. starten → Startseite sofort (#1250), Ablago antwortet, Assistent beginnt beim Konto (Datenbank angebunden, kein Passwort)
 #   2. einrichten (mit dem Code aus geheim/), neu starten → eingerichtet, Anmeldung klappt
 #   3. docker stop → PostgreSQL sauber heruntergefahren, Exit-Code 0
 #   4. Prozess abschießen → Container endet
-#   5. Ordner einer anderen PostgreSQL-Hauptversion → Container startet nicht
+#   5. Ordner einer anderen PostgreSQL-Hauptversion → Startseite nennt den Grund (Port antwortet ohne PostgreSQL, #1250),
+#      Container startet nicht
 #  5b. Rechte (#943): eingebundener Ordner mit 000 → startet; nicht beschreibbar → klare Meldung
 #   6. Eigener PORT → Healthcheck gesund
 #   7. Lasttest-Modus ohne Ordner (#612) → Seite, Ergebnis, „Test beenden“ → Container weg
@@ -38,8 +39,23 @@ warte() {
   fehler "Ablago antwortet nicht"
 }
 
+# Startseite (#1250): HTML mit dem Schritt bzw. Grund; leer, solange der Port nicht antwortet.
+seite() { command curl -fsS --connect-timeout 2 --max-time 5 -H 'accept-language: de' "http://127.0.0.1:$PORT/" 2>/dev/null || true; }
+schritt() { grep -oE 'class="schritt"[^>]*>[^<]*' <<< "$1" | sed 's/.*>//' || true; }
+
 echo "::group::1. Erster Start"
-starte; warte
+starte
+# Vom Containerstart an die Seite „Ablago startet …“ (#1250) – zuerst vom Vorstart, noch während PostgreSQL angelegt
+# wird. Gezeigt wird nur der Schritt, keine Version und keine Pfade.
+s=""
+for _ in $(seq 1 100); do s=$(seite); grep -q "Ablago startet" <<< "$s" && break; sleep 0.2; done
+grep -q "Ablago startet" <<< "$s" || fehler "keine Startseite in den ersten 20 s nach dem Start (#1250)"
+echo "::notice::Startseite sofort: $(schritt "$s")"
+grep -qE "Datenbank wird angelegt|Datenbank startet|Ablago startet|Datenbank wird aktualisiert|Verbindung zur Datenbank" <<< "$(schritt "$s")" \
+  || fehler "Startseite ohne bekannten Schritt: $(schritt "$s")"
+grep -qE "/data/|PostgreSQL [0-9]|$(docker exec "$NAME" sh -c 'cat /etc/hostname' 2>/dev/null || echo kein-rechnername)" <<< "$s" \
+  && fehler "Startseite verrät Pfad, Version oder Rechnernamen"
+warte
 s=$(curl -fsS "http://127.0.0.1:$PORT/api/konto/status"); echo "$s" | jq -c '{einrichtungNoetig, einrichtung}'
 [ "$(echo "$s" | jq -r '.einrichtung.phase')" = konto ] || fehler "Assistent beginnt nicht beim Mandanten (Datenbank nicht angebunden?)"
 sudo test -s "$arbeit/postgres/daten/PG_VERSION" || fehler "keine Datenbank unter /data/postgres/daten"
@@ -119,8 +135,18 @@ echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 echo "::group::5. Andere PostgreSQL-Hauptversion"
 # Das Protokoll liegt außerhalb des Ordners: den übernimmt der Container für postgres (nicht mehr lesbar).
 alt=$(mktemp -d); altlog=$(mktemp); mkdir -p "$alt/daten"; echo 15 > "$alt/daten/PG_VERSION"
+# PostgreSQL startet hier nie – trotzdem antwortet der Port mit dem Grund (#1250), DMS_START_FEHLER_WARTEN_S lang.
+docker run -d --name "$NAME-alt" -p "$PORT:3000" -e DMS_START_FEHLER_WARTEN_S=20 -v "$alt:/data/postgres" "$IMAGE" >/dev/null
+s=""
+for _ in $(seq 1 60); do s=$(seite); grep -q "anderen Hauptversion von PostgreSQL" <<< "$s" && break; sleep 0.5; done
+grep -q "anderen Hauptversion von PostgreSQL" <<< "$s" || { docker logs "$NAME-alt" 2>&1 | sed 's/^/::error::/'; fehler "keine Startseite mit dem Grund, solange PostgreSQL nicht läuft (#1250)"; }
+grep -qE "PostgreSQL 1[0-9]|/data/" <<< "$s" && fehler "Startseite nennt Version oder Pfad"
+[ "$(command curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/gesundheit")" = 503 ] || fehler "Gesundheit nicht 503 bei Startfehler"
+echo "::notice::Startseite ohne PostgreSQL: $(schritt "$s")"
 # Läuft der Container wider Erwarten weiter, beendet ihn timeout (#1369); aufraeumen entfernt ihn.
-code=0; timeout 120 docker run --name "$NAME-alt" -v "$alt:/data/postgres" "$IMAGE" > "$altlog" 2>&1 || code=$?
+code=0; code=$(timeout 120 docker wait "$NAME-alt") || code=124
+docker logs "$NAME-alt" > "$altlog" 2>&1 || true
+docker rm -f "$NAME-alt" >/dev/null 2>&1 || true
 [ "$code" = 124 ] && fehler "läuft trotz anderer Hauptversion nach 120 s noch"
 [ "$code" = 0 ] && fehler "startet trotz anderer Hauptversion"
 grep -q "stammt von PostgreSQL 15" "$altlog" || { sed 's/^/::error::/' "$altlog"; fehler "keine klare Meldung bei anderer Hauptversion"; }
@@ -135,7 +161,7 @@ timeout 180 docker run --rm --name "$NAME-rechte" -e DMS_START=true -v "$rechte:
 sudo test -s "$rechte/daten/PG_VERSION" || fehler "keine Datenbank bei Rechten 000"
 # Nicht beschreibbar (hier: schreibgeschützt eingebunden) → Abbruch vor initdb mit verständlicher Meldung.
 sudo rm -rf "$rechte"; rechte=$(mktemp -d)
-code=0; timeout 120 docker run --rm --name "$NAME-rechte" -v "$rechte:/data/postgres:ro" "$IMAGE" > "$rechtelog" 2>&1 || code=$?
+code=0; timeout 120 docker run --rm --name "$NAME-rechte" -e DMS_START_FEHLER_WARTEN_S=0 -v "$rechte:/data/postgres:ro" "$IMAGE" > "$rechtelog" 2>&1 || code=$?
 [ "$code" = 124 ] && fehler "läuft trotz nicht beschreibbarem Ordner nach 120 s noch"
 [ "$code" = 0 ] && fehler "startet trotz nicht beschreibbarem Ordner"
 grep -q "FEHLER: PostgreSQL (Benutzer 70) kann nicht in /data/postgres/daten schreiben. Bitte die Rechte des Ordners auf dem NAS prüfen" "$rechtelog" \

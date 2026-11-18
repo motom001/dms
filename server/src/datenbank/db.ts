@@ -424,17 +424,24 @@ export class NeuereDatenbankFehler extends Error {
  * Namensreihenfolge aus. Alles läuft in einer Transaktion: scheitert eine
  * Migration, bleibt die Datenbank unverändert. Die Transaktionssperre
  * verhindert, dass zwei Instanzen gleichzeitig migrieren. `fortschritt` (#802) bekommt vor jeder offenen
- * Migration Schritt, Anzahl und Datei – für die Startseite „Ablago startet …“.
+ * Migration Schritt, Anzahl und Datei – für die Startseite „Ablago startet …“; `wartet` (#1250), wenn eine andere
+ * Instanz die Sperre hält.
  */
 export async function migriere(
   sql: postgres.Sql,
   verzeichnis: string,
   log: (m: string) => void = console.log,
   fortschritt: (nr: number, von: number, datei: string) => void = () => {},
+  wartet: () => void = () => {},
 ) {
   const dateien = (await readdir(verzeichnis)).filter((f) => f.endsWith('.sql')).sort();
   await sql.begin(async (tx) => {
-    await tx`SELECT pg_advisory_xact_lock(4711001)`;
+    // Hält eine andere Ablago die Sperre (#1250), sagt die Startseite, worauf sie wartet – statt stumm zu hängen.
+    const [{ frei }] = await tx`SELECT pg_try_advisory_xact_lock(4711001) AS frei`;
+    if (!frei) {
+      wartet();
+      await tx`SELECT pg_advisory_xact_lock(4711001)`;
+    }
     await tx`
       CREATE TABLE IF NOT EXISTS schema_migrationen (
         name text PRIMARY KEY,
