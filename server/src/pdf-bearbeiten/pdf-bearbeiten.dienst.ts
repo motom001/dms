@@ -293,8 +293,10 @@ export class PdfBearbeiten {
     if (gleich) throw new Fachfehler(422, t('meldungen.dienst.es-hat-sich-nichts'));
     const was = pdfWas(d.name, seiten, info.anzahl, starts, anlagen);
 
-    if (typ.system === 'post' && (starts.length > 1 || anlagen.length))
-      return this.teilePost(m, typ, reg, d, await teilplan(inhalt, seiten, starts, anlagen), von, z, was);
+    if (typ.system === 'post' && (starts.length > 1 || anlagen.length)) {
+      const plan = await teilplan(inhalt, seiten, starts, anlagen);
+      return this.teilePost(m, typ, reg, d, plan, von, z, was, await this.bisherigeAnlagen(d, plan, anlagen.length));
+    }
     const teileBuf = await teile(inhalt, seiten, starts);
 
     const korb = (await this.papierkorbTage()) > 0;
@@ -338,10 +340,24 @@ export class PdfBearbeiten {
   }
 
   /**
+   * „Anlage ab hier“ an einem Dokument, das schon Anlagen hat (#1303): Die bisherigen wandern mit in den ersten Teil
+   * (die neue Post mit Seite 1) – vor den neuen Anlagen, in ihrer Reihenfolge. ANLAGEN_MAX gilt für beide zusammen;
+   * darüber 422, bevor etwas entsteht. Nur, wenn dabei neue Anlagen entstehen – bloßes Teilen lässt sie, wo sie sind.
+   */
+  private async bisherigeAnlagen(d: Dokument, plan: Array<{ anlagen: Buffer[] }>, neue: number): Promise<Dokument[]> {
+    if (!neue) return [];
+    const bisherige = await this.repo.anlagenVon(d.id);
+    const summe = bisherige.length + plan[0].anlagen.length;
+    if (summe > ANLAGEN_MAX)
+      throw new Fachfehler(422, t('meldungen.anlagen.zu-viele-mit-bisherigen', { name: d.name, summe, max: ANLAGEN_MAX }));
+    return bisherige;
+  }
+
+  /**
    * Teilen bei Post: je Teil eine neue Post mit ihrem Dokument – und seinen Anlagen (#998, Trennblatt mit zweitem
    * Barcode): Die Anlagen eines Teils entstehen nur in dessen neuer Post, als Anlage 1, 2 … an seinem Dokument. Ein
    * einziger Teil mit Anlagen behält den Betreff; die Ausgangspost behält ihr Dokument, ist erledigt und verweist auf
-   * die neuen.
+   * die neuen. Bisherige Anlagen (#1303) wandern in den ersten Teil – mit Datei, Fassungen, Volltext und Namen.
    */
   private async teilePost(
     post: Mappe,
@@ -352,14 +368,23 @@ export class PdfBearbeiten {
     von: string | null,
     z: Zugriff | undefined,
     was: Record<string, unknown>,
+    bisherige: Dokument[] = [],
   ) {
     pruefeEmailTeilen(post, z);
+    const mit = bisherige.length
+      ? {
+          mitgewandert: bisherige.map((a) => a.name),
+          zusatz: `; ${t('meldungen.anlagen.mitgewandert', { namen: bisherige.map((a) => a.name).join(', ') })}`,
+        }
+      : undefined;
     const betreff = auswahlText(post.werte.betreff) || t('meldungen.dienst.post');
     const posten: Mappe[] = [];
     const dokumente: Dokument[] = [];
     const einer = plan.length === 1;
     for (const [i, x] of plan.entries()) {
       // Je Teil: neue Post mit ihrem Dokument und beiden Ereignissen (post.angelegt, dokument.hochgeladen) ganz oder gar nicht (#404).
+      const wandern = i === 0 ? bisherige : [];
+      const anzahl = x.anlagen.length + wandern.length;
       await this.inTransaktion(async () => {
         const neu = await this.legePostAn(
           {
@@ -377,12 +402,15 @@ export class PdfBearbeiten {
           post.werte,
         );
         await this.notiere(neu.id, von, 'post_geteilt', {
-          text: einer
-            ? t('meldungen.anlagen.post-mit-anlagen', { betreff, anzahl: x.anlagen.length })
-            : t('meldungen.dienst.teil-von-aus', { wert: i + 1, teileBuf: plan.length, betreff }),
+          text:
+            (einer
+              ? t('meldungen.anlagen.post-mit-anlagen', { betreff, anzahl })
+              : t('meldungen.dienst.teil-von-aus', { wert: i + 1, teileBuf: plan.length, betreff })) +
+            (wandern.length && mit ? mit.zusatz : ''),
           post: post.id,
           postTyp: typ.id,
-          ...(x.anlagen.length ? { anlagen: x.anlagen.length } : {}),
+          ...(anzahl ? { anlagen: anzahl } : {}),
+          ...(wandern.length && mit ? { mitgewandert: mit.mitgewandert } : {}),
         });
         const haupt = (
           await this.ladeHoch(
@@ -393,19 +421,29 @@ export class PdfBearbeiten {
           )
         ).dokument;
         dokumente.push(haupt);
+        // Bisherige Anlagen (#1303) zuerst: in die neue Post (dasselbe Register), dann als Anlage 1 … n am neuen Dokument.
+        for (const [j, a] of wandern.entries()) {
+          await this.repo.verschiebeDokument(a.id, neu.id, reg.key);
+          await this.repo.setzeAnlage(a.id, haupt.id, j + 1);
+        }
         const neue: Dokument[] = [];
         for (const [j, b] of x.anlagen.entries())
           neue.push(
             (
               await this.ladeHoch(
                 neu.id,
-                { register: reg.key, name: anlageName(haupt.name, j + 1, 'anlage.pdf'), typ: 'application/pdf', herkunft: 'bearbeitet' },
+                {
+                  register: reg.key,
+                  name: anlageName(haupt.name, wandern.length + j + 1, 'anlage.pdf'),
+                  typ: 'application/pdf',
+                  herkunft: 'bearbeitet',
+                },
                 b,
                 von,
               )
             ).dokument,
           );
-        if (neue.length) dokumente.push(...(await this.teile.anlagen.alsAnlagen(haupt, neue)));
+        if (neue.length || wandern.length) dokumente.push(...(await this.teile.anlagen.alsAnlagen(haupt, neue)));
         posten.push((await this.repo.holeMappe(neu.id))!);
       });
     }
@@ -413,12 +451,13 @@ export class PdfBearbeiten {
     await this.schreibeSystemMappe(typ, post.id, { bezug, stand: POST_STAND.erledigt }, von);
     await this.notiere(post.id, von, 'post_geteilt', {
       ...was,
-      text: t('meldungen.dienst.in-posts-geteilt', { name: d.name, posten: posten.length }),
+      text: t('meldungen.dienst.in-posts-geteilt', { name: d.name, posten: posten.length }) + (mit?.zusatz ?? ''),
       posten: posten.map((p) => p.id),
       postTyp: typ.id,
+      ...(mit ? { mitgewandert: mit.mitgewandert } : {}),
     });
     await this.postAufgaben(post.id, von);
-    protokoll.modul('ablage').info('Post geteilt', { post: post.id, teile: posten.length });
+    protokoll.modul('ablage').info('Post geteilt', { post: post.id, teile: posten.length, mitgewandert: bisherige.length || undefined });
     return { dokumente, posten };
   }
 

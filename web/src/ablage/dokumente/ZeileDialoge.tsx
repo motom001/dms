@@ -70,7 +70,8 @@ function Seiten({ k, x, anlagen }: { k: Kern; x: Dokument; anlagen: Dokument[] }
       versioniert={k.versioniert}
       papierkorb={!!k.d.zaehler.papierkorbTage}
       teilAb={o.teilVorschlag?.id === x.id ? o.teilVorschlag.ab : undefined}
-      anlagenMoeglich={!!p.post && !anlagen.length}
+      anlagenMoeglich={!!p.post && !x.anlageZu}
+      bisherigeAnlagen={anlagen.length}
       schliessen={() => {
         o.setSeitenOffen(undefined);
         o.setTeilVorschlag(undefined);

@@ -957,6 +957,8 @@
   "pdfseiten.anlagen-anlegen-ja": "Anlegen",
   "pdfseiten.anlagen-neue-post": "Die Seiten ab „Anlage ab hier“ werden Anlagen des Dokuments. Beim Übernehmen entsteht dafür eine neue Post; diese Post behält das ganze PDF, wird erledigt und verweist auf die neue.",
   "pdfseiten.anlagen-je-teil": "Die Seiten ab „Anlage ab hier“ werden Anlagen des Teils davor.",
+  "pdfseiten.bisherige-anlagen-mit_one": "Die bisherige Anlage kommt mit in die (erste) neue Post und bleibt dort Anlage 1; die neuen folgen dahinter.",
+  "pdfseiten.bisherige-anlagen-mit_other": "Die {anzahl} bisherigen Anlagen kommen in ihrer Reihenfolge mit in die (erste) neue Post; die neuen folgen dahinter.",
   "pdfseiten.als-neue-version": " als neue Version",
   "pdfseiten.teil-1-ersetzt-die": "Teil 1 ersetzt „{name}“{wert}, die weiteren Teile werden eigene Dokumente in diesem Register.",
   "pdfseiten.wird-uebernommen": "Wird übernommen …",

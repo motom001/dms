@@ -957,6 +957,8 @@
   "pdfseiten.anlagen-anlegen-ja": "Create",
   "pdfseiten.anlagen-neue-post": "The pages from “Enclosure from here” become enclosures of the document. When applying, a new post is created for this; this post keeps the whole PDF, is marked done and links to the new one.",
   "pdfseiten.anlagen-je-teil": "The pages from “Enclosure from here” become enclosures of the part before them.",
+  "pdfseiten.bisherige-anlagen-mit_one": "The existing enclosure comes along into the (first) new post and stays enclosure 1 there; the new ones follow behind it.",
+  "pdfseiten.bisherige-anlagen-mit_other": "The {anzahl} existing enclosures come along in their order into the (first) new post; the new ones follow behind them.",
   "pdfseiten.als-neue-version": " as a new version",
   "pdfseiten.teil-1-ersetzt-die": "Part 1 replaces “{name}”{wert}; the other parts become separate documents on this tab.",
   "pdfseiten.wird-uebernommen": "Applying …",
