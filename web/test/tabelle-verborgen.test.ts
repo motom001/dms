@@ -44,12 +44,12 @@ const { registriereEnglisch } = (await import(SHARED + 'englisch.ts')) as { regi
 registriereEnglisch();
 after(() => setzeSprache('de'));
 
-/** Sichtbarer Text des Hinweises, ohne Markup und Symbol. */
-const text = (x: ReactNode) =>
-  renderToStaticMarkup(React.createElement(React.Fragment, null, x))
-    .replace(/<svg[\s\S]*?<\/svg>/g, '')
-    .replace(/<[^>]+>/g, '')
-    .trim();
+/** Text des Hinweises: was im Absatz hinter dem Schloss-Symbol steht (Markup wird nicht umgebaut, nur ausgeschnitten). */
+function text(x: ReactNode) {
+  const html = renderToStaticMarkup(React.createElement(React.Fragment, null, x));
+  assert.ok(html.startsWith('<p class="leise klein" data-anker="mappe.tabelle-verborgen">') && html.endsWith('</p>'), html);
+  return html.slice(html.lastIndexOf('</svg>') + '</svg>'.length, -'</p>'.length).trim();
+}
 
 const positionen = { label: 'Positionen', key: 'positionen', beschriftungen: { en: { label: 'Items' } } };
 

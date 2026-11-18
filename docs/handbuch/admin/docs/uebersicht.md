@@ -9,7 +9,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
 | **Datenschutz** | [Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
-| **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Einstellungen](daten-einstellungen.md) |
+| **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Daten sichern → Einstellungen](daten-einstellungen.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md#werkbank-aufgaben), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
 | **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartung](wartungsmodus.md), [Lasttest-Daten](demo.md) |
 <!-- /bereiche:gruppen -->

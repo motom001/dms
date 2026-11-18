@@ -9,7 +9,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
-| **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Settings](daten-einstellungen.md) |
+| **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Back up data → Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md#werkbank-aufgaben), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Load test data](demo.md) |
 <!-- /bereiche:gruppen -->
