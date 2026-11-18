@@ -286,7 +286,8 @@ rauchtest('Verwaltungsmodus betreten, Werkbank und Pakete', { als: LENA }, async
   await verwalten(s);
   await s.waitForURL(/\/werkbank/);
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
-  await bereiche.getByRole('link', { name: 'Pakete', exact: true }).click();
+  // Die Zahl der Pakete gehört zum Namen des Links, sobald die Übersicht geladen ist („Pakete 0“, seit #1287 auch die 0).
+  await bereiche.getByRole('link', { name: /^Pakete\s*\d*$/ }).click();
   const elemente = s.getByRole('region', { name: 'Elemente' });
   await elemente
     .getByRole('heading', { name: /^Pakete/, level: 1 })
