@@ -35,20 +35,56 @@ const bezuege = {
   [VERBORGEN]: { titel: 'nicht sichtbare Mappe', typId: '', verborgen: true },
   [OHNE]: { titel: '', typId: 't' },
 };
-const person = () => '';
+const namen = { person: () => '', personen: [] };
 
 describe('Zelle eines formatierten Felds mit Erwähnungen (#1333)', () => {
   it('Titel nach den Rechten aus bezuege; nie der gespeicherte', () => {
     const text = `**Siehe** @[](mappe:${LESBAR}), @[Abmahnung](mappe:${VERBORGEN}), @[Alt](mappe:${WEG}) und @[](mappe:${OHNE})`;
     assert.equal(
-      zelle('text', mappe(text), typ, bezuege, person),
+      zelle('text', mappe(text), typ, bezuege, namen),
       'Siehe @Gemeinsamer Vertrag, @Mappe (nicht sichtbar), @gelöschte Mappe und @Ohne Titel',
     );
   });
 
   it('leer bleibt leer; lange Texte gekürzt', () => {
-    assert.equal(zelle('text', mappe(''), typ, bezuege, person), '');
-    const lang = zelle('text', mappe(`${'a '.repeat(100)}@[](mappe:${LESBAR})`), typ, bezuege, person);
+    assert.equal(zelle('text', mappe(''), typ, bezuege, namen), '');
+    const lang = zelle('text', mappe(`${'a '.repeat(100)}@[](mappe:${LESBAR})`), typ, bezuege, namen);
     assert.ok(lang.length <= 140 && lang.endsWith(' …'), lang);
+  });
+});
+
+/**
+ * Erwähnte Personen (#1333): dieselbe Quelle und Regel wie die Mappe (`Formatiert.tsx`, `Person`) – der Name aus der
+ * Personenliste (`/api/personen`: lesbare Benutzer-Mappen, dazu Dienst- und Systemkonten), nicht der Titel der
+ * Benutzer-Mappe. Fehlt die Person dort, gilt wie in der Mappe: neue Schreibweise als Mappe, alte (`benutzer:`) als Person.
+ */
+describe('Zelle eines formatierten Felds mit erwähnten Personen (#1333)', () => {
+  const LENA = '00000000-0000-4000-8000-0000000000a1';
+  const DEAKTIVIERT = '00000000-0000-4000-8000-0000000000a2';
+  const SYSTEM = '00000000-0000-4000-8000-0000000000a3';
+  const JONAS = '00000000-0000-4000-8000-0000000000a4';
+  const personen = [
+    { id: LENA, name: 'Lena Beispiel' },
+    { id: DEAKTIVIERT, name: 'Paul Muster', aktiv: false },
+    { id: SYSTEM, name: 'Automatisierung', aktiv: false, art: 'system' as const },
+  ];
+  const mit = { person: () => '', personen };
+  // Die Benutzer-Mappe trägt einen anderen Titel – maßgeblich ist wie in der Mappe der Name aus der Personenliste.
+  const bezuegeP = {
+    ...bezuege,
+    [LENA]: { titel: 'Titel der Benutzer-Mappe', typId: 'b' },
+    [JONAS]: { titel: '', typId: '', verborgen: true },
+  };
+
+  it('Name aus der Personenliste – auch deaktiviert und Systemkonto (ohne Benutzer-Mappe)', () => {
+    const text = `@[](mappe:${LENA}), @[](benutzer:${DEAKTIVIERT}) und @[Alt](mappe:${SYSTEM})`;
+    assert.equal(zelle('text', mappe(text), typ, bezuegeP, mit), '@Lena Beispiel, @Paul Muster und @Automatisierung');
+  });
+
+  it('nicht in der Personenliste: wie in der Mappe, nie der gespeicherte Name', () => {
+    const neu = `@[Jonas](mappe:${JONAS}) @[Weg](mappe:${WEG})`;
+    assert.equal(zelle('text', mappe(neu), typ, bezuegeP, mit), '@Mappe (nicht sichtbar) @gelöschte Mappe');
+    const alt = `@[Jonas](benutzer:${JONAS}) @[Weg](benutzer:${WEG}) @[x](benutzer:${LESBAR})`;
+    assert.equal(zelle('text', mappe(alt), typ, bezuegeP, mit), '@Benutzer (nicht sichtbar) @gelöschter Benutzer @Benutzer');
   });
 });

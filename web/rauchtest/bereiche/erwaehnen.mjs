@@ -1,7 +1,8 @@
 /**
  * Rauchtests: Erwähnen mit @ – alle Mappen (#889), ohne Pause weitertippen (#1267), Werkzeugleiste mit axe (#1268). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
  * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
- * Trefferliste (#1333): Titel der erwähnten Mappe in der Spalte, nach den Rechten der lesenden Person (Lena und Jonas).
+ * Trefferliste (#1333): Titel der erwähnten Mappe in der Spalte, nach den Rechten der lesenden Person (Lena und Jonas);
+ * erwähnte Personen mit demselben Namen wie in der Mappe (Personenliste), auch ein Systemkonto ohne Benutzer-Mappe.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -138,7 +139,13 @@ function listeMitErwaehnungen() {
     const privat = await neu({ objekt: 'Kellerschlüssel', privat: true });
     const offen = await neu({ objekt: 'Kellerplan' });
     await neu({ objekt: 'Kellerübersicht', text: `**Siehe** @[](mappe:${privat.id}) und @[](mappe:${offen.id})` });
-    return typ;
+    // Erwähnte Personen: Jonas (Benutzer-Mappe) und ein Systemkonto wie „Automatisierung“ (ohne Benutzer-Mappe).
+    const personen = (await api('GET', '/api/personen', { cookie })).daten;
+    const jonas = personen.find((x) => x.name === JONAS.name);
+    const system = personen.find((x) => x.art === 'system');
+    assert.ok(jonas && system, JSON.stringify(personen));
+    const dienst = await neu({ objekt: 'Kellerdienst', text: `Dienst: @[](mappe:${jonas.id}) und @[Alt](mappe:${system.id})` });
+    return { ...typ, dienst, namen: `Dienst: @${JONAS.name} und @${system.name}` };
   })();
   return kellernotiz;
 }
@@ -160,4 +167,22 @@ for (const [person, erwartet] of [
     // Jonas sieht die private Mappe weder als Zeile noch ihren Titel in der Erwähnung.
     if (person === JONAS) assert.equal(await liste.getByText('Kellerschlüssel').count(), 0);
     assert.equal(await liste.getByText(/@Erwähnung/).count(), 0);
+  });
+
+for (const person of [LENA, JONAS])
+  rauchtest(`Trefferliste: erwähnte Personen wie in der Mappe – ${person.name} (#1333)`, { als: person }, async (s) => {
+    const typ = await listeMitErwaehnungen();
+    const cookie = await sitzung(person);
+    const { starten } = (await api('GET', '/api/entdecken', { cookie })).daten;
+    if (starten) await api('POST', `/api/entdecken/rundgaenge/${starten}`, { cookie, body: { stand: 'gesehen' } });
+    // In der Mappe: Namen aus der Personenliste.
+    await s.goto(BASIS + `/ablage/${typ.id}/${typ.dienst.id}`);
+    const mappe = s.locator('.formatiert').filter({ hasText: 'Dienst:' }).first();
+    await mappe.waitFor();
+    assert.equal((await mappe.innerText()).trim(), typ.namen);
+    // In der Liste derselbe Text – nicht „gelöschte Mappe“ für das Systemkonto und kein gespeicherter Name.
+    await s.goto(BASIS + `/ablage/${typ.id}`);
+    const liste = s.getByRole('region', { name: 'Mappen' });
+    await liste.getByText(typ.namen, { exact: true }).waitFor();
+    assert.equal(await liste.getByText(/gelöschte Mappe|@Alt/).count(), 0);
   });

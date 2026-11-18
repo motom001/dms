@@ -191,7 +191,7 @@ function Zeilen({
     key: m.id,
     ziel: `/ablage/${typ.id}/${m.id}`,
     ersatz: titelOder(m.titel),
-    zellen: Object.fromEntries(daten.spalten.map((k) => [k, zelle(k, m, typ, daten.bezuege, d.person)])),
+    zellen: Object.fromEntries(daten.spalten.map((k) => [k, zelle(k, m, typ, daten.bezuege, d)])),
   }));
   // Sind alle Zeilen verborgen, ersetzt der Hinweis „Noch keine …“ – beides zugleich widerspräche sich.
   if (!zeilen.length && hinweis)
