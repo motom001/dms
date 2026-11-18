@@ -91,6 +91,7 @@ export const OHNE_FOLGEN = new Set<string>([
   'quellenVon',
   'bezuege',
   'seite',
+  'trefferIds',
   'gibtTreffer',
   'zaehler',
   'alleFavoriten',

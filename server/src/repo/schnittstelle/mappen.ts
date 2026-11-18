@@ -113,6 +113,11 @@ export interface RepoMappen {
   bezuege(ids: string[]): Promise<Map<string, MappenBezug>>;
   /** Eine Seite einer Sicht, sortiert nach Titel. */
   seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt>; verborgen?: number }>;
+  /**
+   * Nur die Ids einer Seite (#1335) – gleiche Treffer, gleiche Reihenfolge und gleiche Gesamtzahl wie `seite`, aber ohne
+   * Werte, Fundstellen und Bezüge. Für „alle Treffer“ (Export, Auswahl): Die Mappen holt danach `holeMappen` genau einmal.
+   */
+  trefferIds(o: SeitenAnfrage): Promise<{ gesamt: number; ids: string[] }>;
   /** Ob die Anfrage mindestens eine Mappe findet (#740, „Meintest du …?“) – ohne zu zählen und ohne Seite. */
   gibtTreffer(o: SeitenAnfrage): Promise<boolean>;
   /** Zähler für die Sichten. `lesen` gilt für typen und favoriten; eingang zählt immer ohne Lesefilter (#127: auch Aufgaben zu nicht lesbaren Mappen, #477: eigene schnelle Abfrage). */

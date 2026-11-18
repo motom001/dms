@@ -272,6 +272,35 @@ export function pgSeite(k: PgKontext) {
   } satisfies RepoTeil;
 }
 
+/**
+ * Nur die Ids einer Seite (#1335): dieselben Bedingungen, dieselbe Reihenfolge wie `seite`, aber nur `id` verlässt die
+ * Datenbank. Gezählt wird nur, wenn das Blatt voll ist (sonst ist die Zahl die Länge, `von` ist dabei 0).
+ */
+export function pgTrefferIds(k: PgKontext) {
+  const { sql, haushaltId, MAP } = k;
+  const seitenTeile = seitenTeileVon(k);
+  return {
+    async trefferIds(o) {
+      const { wo, treffer, ausdruck, richtung } = await seitenTeile(o);
+      const r = treffer
+        ? await sql<{ id: string; dms_gesamt: string }[]>`
+          SELECT mappen.id, count(*) OVER () AS dms_gesamt FROM (SELECT ${MAP} FROM mappen WHERE haushalt_id = ${haushaltId}
+            AND id IN (SELECT id FROM (${treffer}) AS t(id)) ${wo} OFFSET 0) AS mappen
+          ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`
+        : await sql<{ id: string }[]>`
+          SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} ${wo}
+          ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
+      const ids = r.map((z) => z.id);
+      if (treffer && r.length) return { gesamt: Number((r[0] as { dms_gesamt: string }).dms_gesamt), ids };
+      if (o.von === 0 && r.length < o.anzahl) return { gesamt: r.length, ids };
+      const [{ n }] = treffer
+        ? await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND id IN (SELECT id FROM (${treffer}) AS t(id)) ${wo}`
+        : await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${wo}`;
+      return { gesamt: Number(n), ids };
+    },
+  } satisfies RepoTeil;
+}
+
 /** Zahlen für die Navigation (#625, #928): Bestand und Persönliches. */
 export function pgZaehler(k: PgKontext) {
   const { sql, haushaltId } = k;
