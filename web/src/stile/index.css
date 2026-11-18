@@ -17,10 +17,10 @@
 @import '../basis.css';
 
 /* Gemeinsame Klassen mehrerer Bereiche, Bausteine mit globalen Klassen, Rahmen. */
+@import './knopf.css';
 @import './gemeinsam-grundformen.css';
 @import './gemeinsam-listen.css';
 @import './gemeinsam-seiten.css';
-@import './knopf.css';
 @import './bausteine.css';
 @import './rahmen.css';
 
