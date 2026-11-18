@@ -105,7 +105,7 @@ done
 
 abfrage() { su-exec postgres psql -h "$SOCKET" -U postgres -tAc "$1"; }
 [ "$(abfrage "SELECT 1 FROM pg_roles WHERE rolname = 'dms'")" = 1 ] || { abfrage "CREATE ROLE dms LOGIN" >/dev/null; log "Rolle dms angelegt."; }
-# Kein Superuser mehr (#1354): Bis 0.296 war die Rolle Superuser. Ablago braucht nur die eigene Datenbank; pg_trgm und
+# Kein Superuser mehr (#1354): Früher war die Rolle Superuser. Ablago braucht nur die eigene Datenbank; pg_trgm und
 # unaccent darf ihr Eigentümer selbst anlegen.
 if [ "$(abfrage "SELECT rolsuper FROM pg_roles WHERE rolname = 'dms'")" = t ]; then
   abfrage "ALTER ROLE dms NOSUPERUSER" >/dev/null
