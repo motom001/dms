@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung } from '../../../../shared/src/paketerstellung';
-import { FeldGruppe, HakenFeld, PaketChip, Suchfeld } from '../../bausteine';
+import { Etikett, FeldGruppe, HakenFeld, PaketChip, Suchfeld } from '../../bausteine';
 import { t } from '../../sprache';
 import type { Liste } from './zustand';
 
@@ -45,7 +45,7 @@ function Typen({
                       (eintrag.unterschiede ? (
                         <details className="unterschiede">
                           <summary>
-                            <span className="chip warn">{t('werkbank.paketerstellen.geaendert', { kurz: eintrag.unterschiede.kurz })}</span>
+                            <Etikett art="warn">{t('werkbank.paketerstellen.geaendert', { kurz: eintrag.unterschiede.kurz })}</Etikett>
                           </summary>
                           <ul className="klein">
                             {eintrag.unterschiede.liste.map((x) => (
@@ -56,9 +56,9 @@ function Typen({
                       ) : (
                         <>
                           {' '}
-                          <span className="chip warn" title={t('werkbank.paketerstellen.nach-der-installation-des')}>
+                          <Etikett art="warn" title={t('werkbank.paketerstellen.nach-der-installation-des')}>
                             {t('werkbank.paketerstellen.geaendert-2')}
-                          </span>
+                          </Etikett>
                         </>
                       ))}
                     {eintrag.beschreibung && <small className="leise">{eintrag.beschreibung}</small>}
@@ -341,7 +341,7 @@ function Beispiele({
                           {m.demo && (
                             <>
                               {' '}
-                              <span className="chip gut">{t('werkbank.paketerstellen.demo')}</span>
+                              <Etikett art="gut">{t('werkbank.paketerstellen.demo')}</Etikett>
                             </>
                           )}
                         </span>

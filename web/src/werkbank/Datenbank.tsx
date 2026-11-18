@@ -3,11 +3,10 @@ import { betriebApi, type DatenbankStand } from '../api/betrieb';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { ProzessTabelle } from './Auslastung';
-import { abfangen, Feld, Knopf } from '../bausteine';
+import { abfangen, Aufklapper, Etikett, Feld } from '../bausteine';
 
 /**
  * Lange Datenbankzugriffe (#12) und was gerade in der Datenbank läuft – seit #407 unter
@@ -91,12 +90,11 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
             const offenHier = auf.has(id);
             return (
               <li key={id} data-id={id} className={offenHier ? 'an' : undefined}>
-                <Knopf art="eigen" className="aufklappzeile" aria-expanded={offenHier} onClick={() => umschalten(id)}>
-                  <Symbol name={offenHier ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
+                <Aufklapper form="zeile" offen={offenHier} umschalten={() => umschalten(id)}>
                   <span className="mono klein">{zeit(l.zeit)}</span>{' '}
-                  <span className={`chip ${l.dauerMs >= 5000 ? 'stufe-error' : 'stufe-warn'}`}>{dauer(l.dauerMs)}</span>{' '}
+                  <Etikett art={l.dauerMs >= 5000 ? 'schlecht' : 'warn'}>{dauer(l.dauerMs)}</Etikett>{' '}
                   <span className="mono">{l.zugriff}</span>
-                </Knopf>
+                </Aufklapper>
                 {offenHier && (
                   <dl className="eigenschaften klein">
                     {l.zugriff.startsWith('Anfrage: ') ? (

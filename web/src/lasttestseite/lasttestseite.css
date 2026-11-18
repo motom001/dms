@@ -1,0 +1,18 @@
+/* Lasttest-Seite (#1270): Klassen, die nur web/src/lasttestseite setzt.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+.lasttest-stand { display: flex; flex-direction: column; gap: 6px; }
+.lasttest-stand p { margin: 0; }
+.lasttest-stand progress { width: 100%; }
+.lasttest-rest { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.lasttest-durchgaenge { margin: 4px 0 0; padding-left: 18px; }
+.lasttest-ergebnis { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
+.lasttest-ergebnis p { margin: 0; }
+.lasttest-block { font-size: calc(12px * var(--skala, 1)); white-space: pre; overflow-x: auto; resize: vertical; line-height: 1.45; }
+.lasttest-bericht { font-family: var(--mono); font-size: calc(11.5px * var(--skala, 1)); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; background: var(--senke); padding: 10px; border-radius: 6px; }
+.lasttest-ergebnis .knoepfe, .lasttest-ende { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lasttest-ende { justify-content: space-between; border-top: 1px solid var(--linie); padding-top: 14px; }
+.lasttest-auto { margin: 0; }
+@media (max-width: 560px) {
+  .lasttest-ergebnis .knoepfe [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])), .lasttest-ende [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { width: 100%; white-space: normal; }
+}

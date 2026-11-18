@@ -8,7 +8,7 @@ import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
 
 /**
  * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
@@ -310,7 +310,7 @@ export function SpeicherplatzPanel({
                   .replace(/, ([^,]*)$/, ' und $1')}
               </strong>
               {s.ordner[0].zustand && (
-                <span className={`chip ${ZUSTAND[s.ordner[0].zustand].art}`}>{ZUSTAND[s.ordner[0].zustand].text}</span>
+                <Etikett art={etikettArt(ZUSTAND[s.ordner[0].zustand].art)}>{ZUSTAND[s.ordner[0].zustand].text}</Etikett>
               )}
             </div>
             <Balken o={s.ordner[0]} />
@@ -341,7 +341,7 @@ export function SpeicherplatzPanel({
                   <span>
                     <span className="mono">{o.pfad}</span> <span className="leise klein">{o.text}</span>
                   </span>
-                  {o.zustand && <span className={`chip ${ZUSTAND[o.zustand].art}`}>{ZUSTAND[o.zustand].text}</span>}
+                  {o.zustand && <Etikett art={etikettArt(ZUSTAND[o.zustand].art)}>{ZUSTAND[o.zustand].text}</Etikett>}
                 </div>
                 <Balken o={o} />
                 {o.gesamt !== null && o.frei !== null && (

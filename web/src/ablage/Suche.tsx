@@ -31,7 +31,7 @@ import { Symbol } from '../Symbol';
 import { titelOder } from '../seiten';
 import { MappenWahl } from './MappeFormular';
 import { Mehrfachauswahl } from './Mehrfachauswahl';
-import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 
 /**
  * Erweiterte Suche (#199, #426): oben in der Mitte das Formular, darunter die Treffer mit den Bedingungen als
@@ -563,25 +563,23 @@ export function Suchchips({ suche, offen, aendern }: { suche: URLSearchParams; o
   return (
     <ul className="suchchips" aria-label={t('suche.zusammenfassung')}>
       {chips.map((c) => (
-        <li key={c.key} className="chip suchchip">
-          {aendern ? (
-            <Knopf
-              art="eigen"
-              className="chiptext"
-              title={t('suche.zusammenfassung.aendern', { text: c.text })}
-              onClick={() => aendern(c.key)}>
-              {c.text}
-            </Knopf>
-          ) : (
-            c.text
-          )}
-          <Knopf
-            art="eigen"
-            className="chipweg"
-            nurSymbol={t('suche.chip.entfernen', { text: c.text })}
-            onClick={() => geheZu(`${SUCHE_PFAD}${offen ? `/${offen}` : ''}?${alsParameter(ohneChip(f, c.key)).toString()}`)}>
-            <Symbol name="schliessen" />
-          </Knopf>
+        <li key={c.key}>
+          <Etikett
+            className="suchchip"
+            entfernen={() => geheZu(`${SUCHE_PFAD}${offen ? `/${offen}` : ''}?${alsParameter(ohneChip(f, c.key)).toString()}`)}
+            entfernenText={t('suche.chip.entfernen', { text: c.text })}>
+            {aendern ? (
+              <Knopf
+                art="eigen"
+                className="chiptext"
+                title={t('suche.zusammenfassung.aendern', { text: c.text })}
+                onClick={() => aendern(c.key)}>
+                {c.text}
+              </Knopf>
+            ) : (
+              c.text
+            )}
+          </Etikett>
         </li>
       ))}
     </ul>

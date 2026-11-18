@@ -1,3 +1,4 @@
+import { Etikett, etikettArt } from '../bausteine';
 import { Fragment, useEffect, useState } from 'react';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { AnzeigeWert } from '../../../shared/src/paketreiter';
@@ -26,7 +27,7 @@ function Wert({ w }: { w: AnzeigeWert | null }) {
   }[w.zustand];
   return (
     <>
-      <span className={`chip ${chip}`}>{name}</span>
+      <Etikett art={etikettArt(chip)}>{name}</Etikett>
       {w.text ? ` ${w.text}` : ''}
     </>
   );

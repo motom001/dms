@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SelbstErstelltDetail } from '../../../shared/src/paketerstellung';
 import { paketeApi } from '../api/pakete';
 import { geheZu } from '../ort';
-import { Knopf, KnopfLink } from '../bausteine';
+import { Etikett, Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
 import { ERSTELLEN } from './PaketErstellen';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -49,10 +49,7 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
       <div className="mappenkopf">
         <p className="ueber">{t('pakete.selbst.ueber')}</p>
         <h1>
-          {d.name}{' '}
-          <span className="chip" title={t('pakete.selbst.chipTitel')}>
-            {t('pakete.selbst.chip')}
-          </span>
+          {d.name} <Etikett title={t('pakete.selbst.chipTitel')}>{t('pakete.selbst.chip')}</Etikett>
         </h1>
         <p className="leise">{d.beschreibung}</p>
         <p className="leise klein">{t('pakete.selbst.text')}</p>
@@ -92,7 +89,7 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
                     {x.geaendert && (
                       <>
                         {' '}
-                        <span className="chip warn">{t('pakete.selbst.geaendert')}</span>
+                        <Etikett art="warn">{t('pakete.selbst.geaendert')}</Etikett>
                       </>
                     )}
                   </span>

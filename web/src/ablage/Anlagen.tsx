@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { anlageText } from '../../../shared/src/anlagen';
 import type { Dokument } from '../../../shared/src/model';
 import { dokumenteApi } from '../api/dokumente';
-import { Feld, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../bausteine';
 import { t } from '../sprache';
 import s from './Anlagen.module.css';
 
@@ -18,18 +18,9 @@ import s from './Anlagen.module.css';
  * „Original-E-Mail“, als Anlage wie als Hauptdokument (E-Mail ohne Anhänge).
  */
 export function AnlageMarke({ d }: { d: Pick<Dokument, 'anlageZu' | 'originalEmail'> }) {
-  if (d.originalEmail)
-    return (
-      <span className="chip" title={t('ablage.anlagen.original-email-titel')}>
-        {t('ablage.anlagen.original-email')}
-      </span>
-    );
+  if (d.originalEmail) return <Etikett title={t('ablage.anlagen.original-email-titel')}>{t('ablage.anlagen.original-email')}</Etikett>;
   if (!d.anlageZu) return null;
-  return (
-    <span className="chip" title={t('ablage.anlagen.marke-titel')}>
-      {t('ablage.anlagen.marke')}
-    </span>
-  );
+  return <Etikett title={t('ablage.anlagen.marke-titel')}>{t('ablage.anlagen.marke')}</Etikett>;
 }
 
 /**

@@ -3,7 +3,7 @@ import { abwesenheitWirkt } from '../../shared/src/model';
 import { heuteIn } from '../../shared/src/sichten';
 import { leseSchrift, setzeSchrift } from './design';
 import { kontoApi } from './api/konto';
-import { Knopf, KnopfLink } from './bausteine';
+import { Etikett, Knopf, KnopfLink } from './bausteine';
 import { Symbol } from './Symbol';
 import { Ablage } from './ablage/Ablage';
 import { useDaten } from './daten';
@@ -357,15 +357,15 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
                 ? ` · ${t(verwaltungsmodus.aktiv ? 'konten.verwaltung.menue.aktiv' : 'konten.verwaltung.menue.darf')}`
                 : ''}
             </span>
-            {vertretung && <span className="chip warn">{t('oberflaeche.app.als-angemeldet', { wert: ich.name || ich.email })}</span>}
+            {vertretung && <Etikett art="warn">{t('oberflaeche.app.als-angemeldet', { wert: ich.name || ich.email })}</Etikett>}
             {abwesend && (
-              <Link to="/profil/abwesenheit" className="chip warn">
+              <KnopfLink to="/profil/abwesenheit" art="link" groesse="klein" className="abwesend-hinweis">
                 {t('oberflaeche.app.du-bist-abwesend-2', {
                   wert: ich.abwesenheit?.bis
                     ? t('oberflaeche.app.bis-2', { reverse: ich.abwesenheit.bis.split('-').reverse().join('.') })
                     : '',
                 })}
-              </Link>
+              </KnopfLink>
             )}
           </div>
           {/* #418: Kein „Zurück zum eigenen Konto“ hier – der Rückweg ist nur der gelbe Banner. In Vertretung zeigt

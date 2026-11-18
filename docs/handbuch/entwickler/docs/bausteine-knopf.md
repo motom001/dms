@@ -12,7 +12,7 @@
 | `anlegen` | grün gefüllt | **nur** etwas Neues anfangen; die Beschriftung beginnt mit **„+“** | „+ Neu“, „+ Post“, „+ Zeile“, „+ Notfallkontakt“ |
 | `neben` | Fläche mit Rand | alles Übrige (Vorgabe), auch „Verwerfen“ und „Abbrechen“ | „Verbindung testen“, „Änderungen verwerfen“ |
 | `gefahr` | **wie Neben, mit Symbol**; Schrift und Rand erst bei Maus und Tastaturfokus rot | etwas, bei dem Gespeichertes verloren geht oder jemand ausgesperrt wird – **immer mit Rückfrage**, die der Knopf selbst stellt | „Löschen“, „Jetzt sofort sperren“, „Alle abmelden“ |
-| `eigen` | Sonderform: das Aussehen kommt ganz aus `className`, nie wie ein Verweis | Spaltenköpfe, Aufklapper, Menüpunkte, Sterne, Griffe, Kacheln, Kalendertage – bis #1270 ihnen eigene Bausteine gibt | Spaltenkopf „Name ↕“, Stern, Kachel „Erste Post ablegen“ |
+| `eigen` | Sonderform: ohne Fläche und Rand; Form und Farbe legt die Klasse ihres Besitzers fest (`[data-knopf="eigen"].stern` in der Datei des Bereichs, #1270), nie wie ein Verweis | Spaltenköpfe, Menüpunkte, Sterne, Griffe, Kacheln, Kalendertage, Rechte-Knöpfe; Bausteine mit eigener Form wie [Aufklapper](bausteine-aufklapper.md) und der ✕ im [Etikett](bausteine-etikett.md) nutzen sie innen | Spaltenkopf „Name ↕“, Stern, Kachel „Erste Post ablegen“ |
 
 **Links führen woanders hin, Aktionen sind Knöpfe** (Leitsatz 7, Musterkatalog C8, #1277): Eine Art `link` gibt es am `Knopf` nicht – die Typprüfung lässt sie nicht zu. Was etwas tut („Auswahl aufheben“, „Ausblenden“, „Alle aufklappen“, „Entfernen“), ist ein Knopf der Art `neben`, in Listenköpfen, Zeilen, Leisten und Meldungen klein. Ein Weg, der wie ein Verweis aussehen soll („Zur Liste“, „Herunterladen“ in einer Zeile), ist ein `KnopfLink art="link"`.
 
@@ -184,7 +184,7 @@ Hover und Fokus sind für alle Arten hell und dunkel sichtbar; die Musterseite z
 
 ## Code { #code }
 
-- Baustein: `web/src/bausteine/knopf/Knopf.tsx`, Erklärung bei gesperrt: `Erklaerung.tsx`, Aussehen: `Knopf.module.css` (Grundform und Farben je Art aus `.knopf` in `web/src/stile/01-kopf-und-formulare.css`)
+- Baustein: `web/src/bausteine/knopf/Knopf.tsx`, Erklärung bei gesperrt: `Erklaerung.tsx`, Aussehen: `Knopf.module.css` (Grundform, Farben und Zustände je Art; globale Knopf-Klassen wie `.knopf`, `.primaer` oder `.textknopf` gibt es seit #1270 nicht mehr – eine Umgebung passt einen Knopf über `[data-knopf="…"]` an)
 - Rückfrage: `web/src/bausteine/rueckfrage/Rueckfrage.tsx` (Fenster, Vorschau der Musterseite), Warteschlange `web/src/rueckfrage.tsx`
 - Musterseite: `web/src/bausteine/knopf/muster.tsx`; Typprüfung: `web/src/bausteine/knopf/typpruefung.ts`
 - Lint: `ablago/knopf-farben` und `ablago/bausteine` (auch `knopf`/`textknopf` an `<a>`, `<Link>`, `<label>`, `<span>`, #1269) in `.github/werkzeuge/eslint-ablago.mjs` (Test `eslint-ablago.test.mjs`)

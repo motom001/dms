@@ -4,7 +4,7 @@ import { rechtsbuendig } from '../../../../shared/src/feldarten';
 import { darfErstellen, VERWEISARTEN, type Mappe, type Mappentyp } from '../../../../shared/src/model';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { mappenApi, type Bezuege, type Rueckverweis } from '../../api/mappen';
-import { Knopf, KnopfLink, type KnopfSperre } from '../../bausteine';
+import { Etikett, Knopf, KnopfLink, type KnopfSperre } from '../../bausteine';
 import { useDaten } from '../../daten';
 import { geheZu, Link } from '../../ort';
 import { Ehemalig } from '../../Person';
@@ -67,7 +67,7 @@ export function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: Retu
             <span>
               <strong>{typName(mappentyp)}</strong>{' '}
               <span className="leise">{t('ablage.mappeformular.ueber', { label: feldLabel(f) })}</span>{' '}
-              <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span> <span className="anzahl">{treffer.length}</span>
+              <Etikett>{VERWEISARTEN[f.verweisart ?? 'bezug']}</Etikett> <span className="anzahl">{treffer.length}</span>
             </span>
             {darfErstellen(mappentyp) && (
               <KnopfLink

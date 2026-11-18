@@ -1,6 +1,6 @@
 import { t, tn } from '../sprache';
 import { Kopf } from './Kopf';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
 import { useCallback, useEffect, useState } from 'react';
 import { betriebApi, type WartungWerkbank } from '../api/betrieb';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
@@ -183,7 +183,7 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
         <dl className="eigenschaften">
           <dt>{t('werkbank.wartungsmodus.wartungsmodus')}</dt>
           <dd>
-            <span className={`chip ${s.stufe === 'aus' ? '' : s.stufe === 'aktiv' ? 'schlecht' : 'warn'}`}>{STUFE[s.stufe]}</span>
+            <Etikett art={etikettArt(s.stufe === 'aus' ? '' : s.stufe === 'aktiv' ? 'schlecht' : 'warn')}>{STUFE[s.stufe]}</Etikett>
           </dd>
           {s.stufe === 'angekuendigt' && s.aktivAb && (
             <>
@@ -357,8 +357,8 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
                   <tr key={x.id}>
                     <td>
                       {x.name || x.email}
-                      {x.rolle === 'admin' && <span className="chip">{t('konten.verwaltung.menue.darf')}</span>}
-                      {x.aktuell && <span className="chip gut">{t('werkbank.wartungsmodus.dieses-geraet')}</span>}
+                      {x.rolle === 'admin' && <Etikett>{t('konten.verwaltung.menue.darf')}</Etikett>}
+                      {x.aktuell && <Etikett art="gut">{t('werkbank.wartungsmodus.dieses-geraet')}</Etikett>}
                     </td>
                     <td title={x.geraet}>
                       {geraetKurz(x.geraet)}

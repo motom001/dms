@@ -1,7 +1,7 @@
 import { feldLabel } from '../../../shared/src/beschriftung';
 import type { Feld as FeldDef } from '../../../shared/src/model';
 import { moeglicheNach, moeglicheVon, VORBELEGEN_MAX, type Vorbelegung } from '../../../shared/src/vorbelegen';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, Feld, Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
 
@@ -118,7 +118,7 @@ export function VorbelegenEditor({
               onClick={() => aendere(i, null)}>
               <Symbol name="schliessen" />
             </Knopf>
-            {!passt && <small className="chip warn">{t('mappentypen.editor.vorbelegen-passt-nicht')}</small>}
+            {!passt && <Etikett art="warn">{t('mappentypen.editor.vorbelegen-passt-nicht')}</Etikett>}
           </div>
         );
       })}

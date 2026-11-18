@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from '../ort';
 import type { Systemkonto } from '../api/konto';
-import { Knopf } from '../bausteine';
+import { Aufklapper, Etikett } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
 import { systemkontenKopf } from '../../../shared/src/systemkonten';
@@ -35,27 +35,24 @@ export function SystemkontenGruppe({
   ];
   return (
     <section className="aufklappbereich systemkontengruppe">
-      <Knopf
-        art="eigen"
-        className="aufklappkopf"
-        aria-expanded={auf}
-        aria-controls={id}
-        onClick={() => setzeAuf(!auf)}
+      <Aufklapper
+        offen={auf}
+        steuert={id}
+        umschalten={() => setzeAuf(!auf)}
         title={auf ? t('konten.systemkonten.gruppe.auf') : t('konten.systemkonten.gruppe.zu')}>
-        <Symbol name={auf ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
         <span>{t('konten.systemkonten.gruppe', { anzahl: k.anzahl })}</span>
         {teile.length > 0 && <span className="leise klein">· {teile.join(' · ')}</span>}
         {k.fehler > 0 && (
-          <span className="chip schlecht klein">
+          <Etikett art="schlecht" klein>
             <Symbol name="warnung" /> {t('konten.systemkonten.gruppe.fehler', { anzahl: k.fehler })}
-          </span>
+          </Etikett>
         )}
         {k.weitreichend > 0 && (
-          <span className="chip warn klein">
+          <Etikett art="warn" klein>
             <Symbol name="schloss" /> {t('konten.systemkonten.gruppe.weitreichend', { anzahl: k.weitreichend })}
-          </span>
+          </Etikett>
         )}
-      </Knopf>
+      </Aufklapper>
       {zumFehler && mitFehler && (
         <p className="klein systemkonten-zumfehler">
           <Link to={zumFehler(mitFehler)} className="verweis">
@@ -79,17 +76,17 @@ export function SystemkontoKennzeichen({ k }: { k: Systemkonto }) {
       {k.fehler && (
         <>
           {' '}
-          <span className="chip schlecht klein">
+          <Etikett art="schlecht" klein>
             <Symbol name="warnung" /> {t.frei(`konten.systemkonten.fehler.${k.fehler}`)}
-          </span>
+          </Etikett>
         </>
       )}
       {k.weitreichend && (
         <>
           {' '}
-          <span className="chip warn klein">
+          <Etikett art="warn" klein>
             <Symbol name="schloss" /> {t('konten.systemkonten.weitreichend')}
-          </span>
+          </Etikett>
         </>
       )}
     </>

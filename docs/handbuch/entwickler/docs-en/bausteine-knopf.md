@@ -12,7 +12,7 @@
 | `anlegen` | solid green | **only** starting something new; the label begins with **“+”** | “+ New”, “+ Post”, “+ Row”, “+ Emergency contact” |
 | `neben` | surface with a border | everything else (default), also “Discard” and “Cancel” | “Test connection”, “Discard changes” |
 | `gefahr` | **like secondary, with an icon**; text and border turn red only on hover and keyboard focus | something where saved data is lost or someone is locked out – **always with a confirmation**, which the button asks itself | “Delete”, “Lock immediately”, “Sign everyone out” |
-| `eigen` | special form: the look comes entirely from `className`, never like a link | column headers, disclosure toggles, menu entries, stars, handles, tiles, calendar days – until #1270 gives them their own building blocks | column header “Name ↕”, star, tile “File your first post” |
+| `eigen` | special form: no background and no border; shape and colour come from the class of its owner (`[data-knopf="eigen"].stern` in the file of the area, #1270), never like a link | column headers, menu entries, stars, handles, tiles, calendar days, permission buttons; components with their own shape such as the [expander](bausteine-aufklapper.md) and the ✕ in the [tag](bausteine-etikett.md) use it inside | column header “Name ↕”, star, tile “File your first post” |
 
 **Links take you somewhere, actions are buttons** (principle 7, pattern catalogue C8, #1277): there is no kind `link` on `Knopf` – type checking does not allow it. Whatever does something (“Clear selection”, “Hide”, “Expand all”, “Remove”) is a button of kind `neben`, small in list headers, rows, bars and messages. A way that should look like a link (“Back to the list”, “Download” in a row) is a `KnopfLink art="link"`.
 
@@ -179,7 +179,7 @@ Hover and focus are visible for all kinds in light and dark mode; the pattern pa
 
 ## Code { #code }
 
-- Building block: `web/src/bausteine/knopf/Knopf.tsx`, explanation when locked: `Erklaerung.tsx`, look: `Knopf.module.css` (basic shape and colours per kind from `.knopf` in `web/src/stile/01-kopf-und-formulare.css`)
+- Building block: `web/src/bausteine/knopf/Knopf.tsx`, explanation when locked: `Erklaerung.tsx`, look: `Knopf.module.css` (basic shape, colours and states per kind; global button classes such as `.knopf`, `.primaer` or `.textknopf` no longer exist since #1270 – surroundings adjust a button via `[data-knopf="…"]`)
 - Confirmation: `web/src/bausteine/rueckfrage/Rueckfrage.tsx` (window, preview for the pattern page), queue `web/src/rueckfrage.tsx`
 - Pattern page: `web/src/bausteine/knopf/muster.tsx`; type check: `web/src/bausteine/knopf/typpruefung.ts`
 - Lint: `ablago/knopf-farben` and `ablago/bausteine` (also `knopf`/`textknopf` on `<a>`, `<Link>`, `<label>`, `<span>`, #1269) in `.github/werkzeuge/eslint-ablago.mjs` (test `eslint-ablago.test.mjs`)

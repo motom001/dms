@@ -61,7 +61,8 @@ const nichts = () => {};
 
 describe('Baustein Knopf (#968)', () => {
   it('Arten: feste Klassen und data-knopf; Vorgabe ist „neben“, type="button"', () => {
-    const erwartet = { anlegen: 'knopf gruen', haupt: 'knopf primaer', neben: 'knopf', eigen: 'textknopf' } as const;
+    // Klassen aus Knopf.module.css (#1270); im Test ist `s.name` einfach „name“.
+    const erwartet = { anlegen: 'knopf anlegen', haupt: 'knopf haupt', neben: 'knopf', eigen: 'eigen' } as const;
     for (const [art, klasse] of Object.entries(erwartet)) {
       const html = zeichne(h(Knopf, { art }, 'Los'));
       assert.equal(attr(html, KNOPF, 'data-knopf'), art);
@@ -141,14 +142,14 @@ describe('Baustein Knopf (#968)', () => {
   it('rot gefüllt nur in der Rückfrage (Leitsatz 5): Bestätigungsknopf „entscheidung“, „Abbrechen“ als Neben', () => {
     assert.match(
       zeichne(h(BestaetigenKnopf, { gefahr: true }, 'Löschen')),
-      /^<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/,
+      /^<button type="submit" class="knopf entscheidung baustein" data-knopf="entscheidung">/,
     );
-    assert.match(zeichne(h(BestaetigenKnopf, {}, 'Weiter')), /^<button type="submit" class="knopf primaer baustein" data-knopf="haupt">/);
+    assert.match(zeichne(h(BestaetigenKnopf, {}, 'Weiter')), /^<button type="submit" class="knopf haupt baustein" data-knopf="haupt">/);
     const vorschau = zeichne(h(RueckfrageVorschau, { r: { ...FRAGE, gefahr: true } }));
     assert.match(vorschau, /class="rueckfrage gefahr vorschau"/);
     assert.match(
       vorschau,
-      /<button[^>]*data-knopf="neben"[^>]*>.*Abbrechen.*<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/,
+      /<button[^>]*data-knopf="neben"[^>]*>.*Abbrechen.*<button type="submit" class="knopf entscheidung baustein" data-knopf="entscheidung">/,
     );
   });
 
@@ -187,9 +188,9 @@ describe('Baustein Knopf (#968)', () => {
     const html = zeichne(h(KnopfLink, { to: '/werkbank/benutzer/neu', art: 'anlegen', groesse: 'klein' }, '+ Neu'));
     assert.match(
       html,
-      /^<a href="\/werkbank\/benutzer\/neu"[^>]*class="knopf gruen klein baustein"[^>]*data-knopf="anlegen"[^>]*>\+ Neu<\/a>$/,
+      /^<a href="\/werkbank\/benutzer\/neu"[^>]*class="knopf anlegen klein baustein"[^>]*data-knopf="anlegen"[^>]*>\+ Neu<\/a>$/,
     );
-    assert.deepEqual(knopfAussehen({ art: 'anlegen' }), { className: 'knopf gruen baustein', 'data-knopf': 'anlegen' });
+    assert.deepEqual(knopfAussehen({ art: 'anlegen' }), { className: 'knopf anlegen baustein', 'data-knopf': 'anlegen' });
     assert.match(html, />\+ /, 'Anlegen beginnt mit „+“ (Leitsatz 2)');
   });
 
@@ -199,7 +200,7 @@ describe('Baustein Knopf (#968)', () => {
     const aussen = zeichne(h(KnopfLink, { href: 'https://example.org', neuesFenster: true, art: 'link' }, 'example.org'));
     assert.match(aussen, /target="_blank"/);
     assert.match(aussen, /rel="noreferrer"/);
-    assert.match(aussen, /class="textknopf baustein"[^>]*data-knopf="link"/);
+    assert.match(aussen, /class="verweis baustein"[^>]*data-knopf="link"/);
     assert.doesNotMatch(aussen, /download/);
   });
 

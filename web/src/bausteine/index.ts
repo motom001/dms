@@ -45,6 +45,8 @@ export {
   type SpeicherleisteProps,
 } from './speicherleiste/Speicherleiste';
 export { Schalter, type SchalterProps } from './schalter/Schalter';
+export { Aufklapper } from './aufklapper/Aufklapper';
+export { Etikett, etikettArt, type EtikettArt } from './etikett/Etikett';
 export { PaketChip, type PaketChipProps, type PaketHerkunft } from './paketchip/PaketChip';
 export { flaecheId, Reiter, ReiterFlaeche, reiterId, type ReiterProps, type ReiterWahl } from './reiter/Reiter';
 export { Mehrfachauswahl, type GewaehlterEintrag, type Vorschlag } from './mehrfachauswahl/Mehrfachauswahl';

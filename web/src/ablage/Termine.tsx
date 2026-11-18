@@ -28,7 +28,7 @@ import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { Symbol, type SymbolName } from '../Symbol';
-import { HakenFeld, Knopf, Umschalter } from '../bausteine';
+import { Etikett, HakenFeld, Knopf, Umschalter } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -446,7 +446,7 @@ function MonatAnsicht({
             <h2 className="h3" id="ka-tl">
               {gewaehlt === 'ueberfaellig' ? t('termine.gruppe.ueberfaellig') : tagLang(gewaehlt)}
             </h2>
-            {gewaehlt !== 'ueberfaellig' && feiertag(gewaehlt) && <span className="chip">{feiertag(gewaehlt)}</span>}
+            {gewaehlt !== 'ueberfaellig' && feiertag(gewaehlt) && <Etikett>{feiertag(gewaehlt)}</Etikett>}
             {!kompakt && (
               <Knopf groesse="klein" onClick={() => setTag(null)}>
                 {t('termine.schliessen')}

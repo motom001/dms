@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { textFehler, zahlFehler, type EinstellungFeld, type FeldVerweis } from '../../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../../ablage/Mehrfachauswahl';
-import { Feld, FeldGruppe, HakenFeld, Knopf, type FeldProps } from '../../bausteine';
+import { Etikett, Feld, FeldGruppe, type FeldProps, HakenFeld, Knopf } from '../../bausteine';
 import type { PaketEinstellungenStand } from '../../api/pakete';
 import { t } from '../../sprache';
 
@@ -126,7 +126,7 @@ export function Eingabe({
   if (f.typ === 'geheim' && !!wert && typeof wert === 'object' && !geheimNeu)
     return (
       <FeldGruppe beschriftung={name} optional={optional} hinweis={f.hilfe} fehler={meldung}>
-        <span className="chip gut">{t('werkbank.paketeinstellungen.gesetzt')}</span>
+        <Etikett art="gut">{t('werkbank.paketeinstellungen.gesetzt')}</Etikett>
         <Knopf groesse="klein" onClick={() => setGeheimNeu(true)}>
           {t('werkbank.paketeinstellungen.aendern')}
         </Knopf>

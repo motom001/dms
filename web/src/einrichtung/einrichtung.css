@@ -1,0 +1,137 @@
+/* Einrichtung (#1270): Mappentyp-Editor und Felder der Einrichtung – Klassen, die nur web/src/einrichtung setzt.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Beschriftung samt Hilfesymbol in einer Zeile (#801); die Beschreibung (small) steht darunter. */
+.haken-titel { display: flex; align-items: baseline; }
+.haken-titel > .hilfesymbol { flex: none; }
+.feldliste { display: flex; flex-direction: column; gap: 8px; }
+.feldzeile { border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
+.feldzeile.offen { border-color: var(--akzent); box-shadow: 0 0 0 1px var(--akzent); }
+.feldzeile.fehlerhaft { border-color: var(--schlecht); }
+.feldsumme { display: flex; align-items: stretch; min-width: 0; }
+.feldkopfknopf { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 110px; gap: 4px 14px; align-items: center; text-align: left; background: none; border: 0; padding: 10px 12px; cursor: pointer; border-radius: var(--r); }
+.flabel { font-weight: 600; overflow-wrap: anywhere; }
+.fkey { color: var(--leise); overflow-wrap: anywhere; }
+.ftyp { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.chips { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.feldaktionen { display: flex; align-items: center; gap: 2px; padding-right: 6px; }
+.feldeditor { border-top: 1px dashed var(--linie); padding: 16px 12px 14px; display: flex; flex-direction: column; gap: 16px; }
+/* Gruppe ohne eigenen Rahmen, z. B. um die festen Eigenschaften eines Systemfelds gemeinsam zu sperren. */
+.ohnerahmen { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.ohnerahmen:disabled { opacity: .65; }
+.feldfuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+.filterhilfe { margin: 6px 0 10px; }
+.filterhilfe summary { cursor: pointer; color: var(--leise); }
+.filtertabelle { border-collapse: collapse; margin-top: 6px; }
+.filtertabelle td { padding: 3px 12px 3px 0; vertical-align: top; }
+.vorschautitel { font-size: calc(16px * var(--skala, 1)); }
+.registerliste { display: flex; flex-direction: column; gap: 8px; }
+.registerzeile { border: 1px solid var(--linie); border-left: 4px solid var(--linie-stark); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.registerzeile.art-felder { border-left-color: var(--gruen); }
+.registerzeile.art-dokumente { border-left-color: var(--akzent); }
+.registerzeile.art-verknuepfungen { border-left-color: var(--warn); }
+.registerkopf { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.registerkopf [data-etikett] { justify-content: center; }
+.registerkopf > .registername { min-width: 0; }
+.registerchip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+/* Ausgeblendet (#655): im Editor leiser, aber lesbar. */
+.feldzeile.ausgeblendet .flabel, .registerzeile.ausgeblendet .registerkopf input { color: var(--leise); }
+.feldzeile.ausgeblendet { border-style: dashed; }
+/* Abschnitte im Feldregister (#890) */
+.feldaufteilung { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.feldaufteilung > p { margin: 0; }
+.aufteilung { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; width: 100%; }
+.aufteilungsfeld { padding: 3px 8px; border-left: 2px solid var(--linie-stark); font-size: calc(13px * var(--skala, 1)); display: flex; align-items: center; gap: 6px; }
+.aufteilungsfeld.ausgeblendet { color: var(--leise); }
+.abschnittzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 2px; padding: 4px 6px; border: 1px dashed var(--linie-stark); border-radius: var(--r); background: var(--senke); }
+.abschnittzeile.mit-titel { border-style: solid; }
+.abschnittzeile .sprachtext { flex: 1 1 220px; }
+.abschnittzeile .haken { margin: 0; }
+.abschnittzeile .feldaktionen { margin-left: auto; padding-right: 0; }
+/* Anzeigen, wenn … (#1033): Bedingung am Abschnitt im Editor, Symbol und Satz „nur bei …“ als Chip. */
+.abschnittanzeige { list-style: none; margin: 2px 0 8px; padding: 8px 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
+.anzeigechip { gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anzeigechip svg { width: 12px; height: 12px; flex: none; }
+.anzeigeeditor .bedingungen { margin: 4px 0; }
+.anzeigeeditor .anzeigemodus { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 820px) {
+  .feldkopfknopf { grid-template-columns: minmax(0, 1fr); }
+  .registerkopf { grid-template-columns: minmax(0, 1fr) auto; }
+  /* Griff und Art des Registers, der Name (mit Sprachumschalter) und die Pfeile je in eigener Zeile (#1213: sonst lag
+     der Griff über dem Namen, und für den Namen blieben 20 px). */
+  .registerkopf > .registerchip, .registerkopf > .registername { grid-column: 1 / -1; }
+  .registerkopf .fkey { display: none; }
+}
+.zieltypen-offen { margin: 4px 0 0; }
+.spaltenliste { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.spaltenliste li { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
+.spaltenliste li.kompakt { border-left: 3px solid var(--akzent); }
+.spaltenliste .nr { width: 1.5em; color: var(--leise); font-variant-numeric: tabular-nums; }
+.spaltenliste .nm { flex: 1; display: flex; gap: 6px; align-items: center; }
+.spaltenliste .aktionen { display: flex; gap: 2px; }
+/* Beschriftungen je Sprache (#728): Eingabe mit kleinem Sprachumschalter, Beschriftung der Auswahlwerte. */
+.sprachtext { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sprachtext > input { flex: 1; min-width: 0; }
+.sprachwahl { flex: none; }
+@media (pointer: coarse) {
+  /* Am Handy (D6): „DE“ und „EN“ sind kurz – als Pille wäre die 44-px-Fläche an den runden Enden angeschnitten. */
+  .sprachwahl, .sprachwahl [role="radio"] { border-radius: 8px; }
+}
+/* Sprache ohne Beschriftung: Punkt hinter dem Kürzel (Umschalter, #1213). */
+.sprachwahl-luecke { display: inline-block; width: 5px; height: 5px; margin-left: 3px; vertical-align: super; border-radius: 50%; background: var(--warn); }
+.optionsbeschriftung { border: 1px solid var(--linie); border-radius: var(--r); padding: 8px 12px 12px; margin: 10px 0 0; }
+.optionsbeschriftung .optionszeilen { flex: 1 1 100%; }
+.optionszeilen { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.optionszeile { display: contents; }
+.optionszeile > code { overflow-wrap: anywhere; }
+
+/* Mehrere Trefferlisten (#75) */
+.trefferlisten { display: flex; flex-direction: column; gap: 8px; }
+.trefferlistenblock { border: 1px solid var(--linie); border-left: 4px solid var(--linie-stark); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.trefferlistenblock.standard { border-left-color: var(--gruen); }
+.trefferlistenblock .registerkopf .haken { flex: none; }
+/* Verknüpfungsregister (#372): feste Zeilenhöhe – die Trefferliste ist kompakt und steht auch ohne Haken (unsichtbar) da. */
+.quellzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-height: 30px; }
+.quellzeile .haken { align-items: center; }
+.quellzeile .haken input { margin: 0; }
+.quellzeile select { max-width: 100%; width: auto; padding: 3px 8px; line-height: 1.3; }
+.quellzeile select.platzhalter { visibility: hidden; }
+.trefferlistenblock .registerkopf { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+@media (max-width: 820px) {
+  .trefferlistenblock .registerkopf { grid-template-columns: minmax(0, 1fr) auto auto; }
+}
+
+.registerchip { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.registerchip [data-etikett] { min-width: 0; }
+.feldsumme > .ziehgriff { align-self: center; }
+.spaltenliste li > .ziehgriff { margin-right: -4px; }
+
+/* Fristen und Erinnerungen (#129–#132) */
+.fristeditor { display: flex; flex-direction: column; gap: 10px; }
+.fristeditor .wertgruppe { display: flex; gap: 6px; align-items: center; }
+.verwendetliste { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+
+.ff-hinweis { grid-column: 1 / -1; margin: 0; }
+
+/* Beim Auswählen übernehmen (#1037): Paare „Feld dort → Feld hier“ im Feld-Editor; am Handy untereinander. Die
+   Kennzeichnung in der Mappe ist ein Chip wie im Einrichtungsassistenten und darf umbrechen. */
+.vorbelegen { display: flex; flex-direction: column; gap: 8px; }
+.vorbelegen-paar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 10px; }
+.vorbelegen-paar .vorbelegen-wahl { flex: 1 1 200px; min-width: 0; }
+.vorbelegen-paar .pfeil { padding-bottom: 10px; color: var(--leise); }
+.vorbelegen-paar > [data-etikett] { white-space: normal; }
+@media (max-width: 600px) {
+  .vorbelegen-paar .pfeil { display: none; }
+}
+/* Werkbank „Ablage aufbauen“ aus den Bausteinen (#1213): Tippflächen am Handy (D6) – Pfeile, Griffe, Rechte und Haken
+   in Listen mindestens 44 × 44 px (mit etwas Luft, damit runde Ecken die Fläche nicht anschneiden). */
+.feldaktionen { flex: none; }
+/* Knöpfe mit eigenem Raster bzw. Umbruch (Feldzeile, Regel, Aufklapper): die Hüllen des Bausteins Knopf (Stapel, Text)
+   sollen das Raster nicht brechen – ihre Kinder stehen direkt im Raster des Knopfs. */
+:is(.feldkopfknopf, .regelsumme) > span, :is(.feldkopfknopf, .regelsumme) > span > span:not([aria-hidden]) { display: contents; }
+@media (pointer: coarse) {
+  /* Spezifischer als die Regel des Bausteins (.baustein.symbol:not(.klein)), die sonst genau 44 px setzt. */
+  :is(.feldaktionen, .spaltenliste .aktionen) [data-knopf="eigen"][data-knopf]:not(.klein) { min-width: 48px; min-height: 48px; }
+  .quellzeile > .haken { display: flex; align-items: center; min-height: 48px; }
+}

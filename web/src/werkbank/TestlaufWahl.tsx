@@ -4,7 +4,7 @@ import { passendesErgebnis, type TestlaufErgebnis } from '../../../shared/src/te
 import { kontoApi, type Systemkonto } from '../api/konto';
 import type { Bezuege } from '../api/mappen';
 import { t } from '../sprache';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, Feld, Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
@@ -102,13 +102,13 @@ export function TestBenutzerWahl({
       )}
       {sonder ? (
         <div className="mehrfach-gewaehlt">
-          <span className="chip">
-            {name(sonder)} <span className="chip klein">{t.frei(`werkbank.testlauf.konto.kennzeichen.${sonder.rolle}`)}</span>
+          <Etikett>
+            {name(sonder)} <Etikett klein>{t.frei(`werkbank.testlauf.konto.kennzeichen.${sonder.rolle}`)}</Etikett>
             <SystemkontoKennzeichen k={sonder} />
             <Knopf groesse="klein" nurSymbol={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })} onClick={() => setze('')}>
               <Symbol name="schliessen" />
             </Knopf>
-          </span>
+          </Etikett>
         </div>
       ) : (
         // Platzhalter ohne „Benutzer“ (#1213): die Beschriftung steht schon über dem Feld.
@@ -124,7 +124,7 @@ export function TestBenutzerWahl({
           setze={(v) => setze(typeof v === 'string' ? v : '')}
         />
       )}
-      {konto && !konto.aktiv && <span className="chip klein">{t('werkbank.testlaufwahl.deaktiviert')}</span>}
+      {konto && !konto.aktiv && <Etikett klein>{t('werkbank.testlaufwahl.deaktiviert')}</Etikett>}
     </div>
   );
 }

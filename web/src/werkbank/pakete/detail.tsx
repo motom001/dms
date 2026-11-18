@@ -1,4 +1,4 @@
-import { Feld, HakenFeld, Knopf } from '../../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../../bausteine';
 import {
   hatNetz,
   hatSchnittstelle,
@@ -483,7 +483,7 @@ function PaketKopf({ x }: { x: DetailZustand }) {
         {!offiziell && (
           <>
             {' '}
-            · <span className="chip warn">{t('werkbank.pakete.nicht-vom-ablago-projekt')}</span>
+            · <Etikett art="warn">{t('werkbank.pakete.nicht-vom-ablago-projekt')}</Etikett>
           </>
         )}
       </p>

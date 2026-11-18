@@ -33,7 +33,7 @@
 
 /* Am Handy (#1027, D6): Suchregion bleibt oben stehen; Auswahl mit Tippfläche von 44 px Höhe. */
 @media (max-width: 600px) {
-  .listensuche { position: sticky; top: -18px; z-index: 2; padding: 6px 0; background: var(--flaeche); }
+  .listensuche { position: sticky; top: -18px; z-index: var(--ebene-klebend); padding: 6px 0; background: var(--flaeche); }
 }
 @media (pointer: coarse) {
   .feld input { min-height: 44px; padding-right: 48px; }

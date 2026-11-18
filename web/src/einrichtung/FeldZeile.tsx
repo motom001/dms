@@ -5,7 +5,7 @@ import { ERKENNUNG_FELDTYPEN, WIEDERFINDEN_FELDTYPEN } from '../../../shared/src
 import { Hilfe } from '../Hilfe';
 import { Symbol } from '../Symbol';
 import { t, t as tx } from '../sprache';
-import { Feld, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../bausteine';
 import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
 import { OptionenBeschriftung, SprachText } from './Beschriftung';
 import { ErkennungEditor, WiederfindenEditor } from './FeldEigenschaften';
@@ -142,9 +142,7 @@ function FeldSumme({ p }: { p: FeldZeileProps }) {
         {(chips.length > 0 || f.anzeigen) && (
           <span className="chips">
             {chips.map((c) => (
-              <span key={c} className="chip">
-                {c}
-              </span>
+              <Etikett key={c}>{c}</Etikett>
             ))}
             <AnzeigeChip regel={f.anzeigen} typ={{ felder: p.alleFelder }} />
           </span>

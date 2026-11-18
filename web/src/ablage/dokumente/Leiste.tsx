@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import { registerName } from '../../../../shared/src/beschriftung';
 import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
-import { Feld, HakenFeld, Knopf, Wahlhaken } from '../../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf, Wahlhaken } from '../../bausteine';
 import { Fundstellen } from '../Doppelt';
 import { alleHerunterladen, auswahlLoeschen, fuegeZusammen } from './aktionen';
 import { DOKUMENT_SORTIERUNGEN, groesse, mitZaehler, type NeueDatei } from './hilfen';
@@ -159,7 +159,7 @@ export function NeueZeile({ k, n }: { k: Kern; n: NeueDatei }) {
       <div className="dokzeile">
         <div className="dokname">
           <span>
-            {n.datei.name} <span className="chip gut">{t('ablage.dokumente.neu')}</span>
+            {n.datei.name} <Etikett art="gut">{t('ablage.dokumente.neu')}</Etikett>
           </span>
           <span className="leise klein">{t('ablage.dokumente.wird-beim-speichern-hochgeladen', { groesse: groesse(n.datei.size) })}</span>
           {doppelt[n.uid] && (

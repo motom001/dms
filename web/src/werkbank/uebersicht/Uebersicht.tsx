@@ -3,7 +3,7 @@ import { Link } from '../../ort';
 import { t, tn } from '../../sprache';
 import { useHandbuch } from '../../Hilfe';
 import { Listenkopf } from '../../Listenkopf';
-import { Knopf, KnopfLink } from '../../bausteine';
+import { Etikett, etikettArt, Knopf, KnopfLink } from '../../bausteine';
 import { Akzeptieren, BewusstAkzeptiert } from './Akzeptieren';
 import { bytes, datum, zahl } from './hilfen';
 import type { UebersichtZustand } from './zustand';
@@ -41,7 +41,7 @@ export function UebersichtListe({ u }: { u: UebersichtZustand }) {
             <li key={x.schluessel} className={`meldung ${x.art}`}>
               <Link to={x.ziel} className="eintrag werk">
                 <span className="titel">
-                  <span className={`chip ${x.art === 'info' ? '' : x.art}`}>{t.frei(`werkbank.uebersicht.schwere.${x.art}`)}</span>{' '}
+                  <Etikett art={etikettArt(x.art === 'info' ? '' : x.art)}>{t.frei(`werkbank.uebersicht.schwere.${x.art}`)}</Etikett>{' '}
                   {x.knopf}
                 </span>
                 <span className="unter">{x.text}</span>

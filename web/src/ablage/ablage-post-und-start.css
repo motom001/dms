@@ -1,0 +1,201 @@
+/* Ablage (#1270): Neue Post, Startseite, PDF-Seiten und Schwärzen.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+.erinnerungen ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.erinnerungen li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.erinnerungformular { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.folgetermin .knoepfe { margin-top: 6px; }
+/* Export (#153) */
+.exportdialog { margin: 4px 0 10px; border-color: var(--akzent); }
+.exportdialog fieldset.wahl { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.exportdialog .wahl[role="group"] > div:not([id]) { flex-direction: column; align-items: flex-start; gap: 4px; }
+/* Post (#192): Leiste an der Post-Mappe, „+ Post“, Zuordnen */
+.postleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; padding: 8px 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); }
+.postleiste .luecke { flex: 1; }
+.postknopf { align-items: flex-end; }
+/* Erkennung (#336): „Erkannt“ an der Post und Vorschläge beim Zuordnen; eigenes Präfix er- */
+.er-blatt { margin: 0 0 10px; padding: 8px 10px; border: 1px dashed var(--linie); border-radius: var(--r); }
+.er-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.er-kopf .luecke { flex: 1; }
+.er-liste { margin: 6px 0 0; display: grid; gap: 4px; }
+.er-paar { display: grid; grid-template-columns: minmax(90px, 140px) 1fr; gap: 2px 10px; align-items: baseline; }
+.er-paar dt { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); }
+.er-paar dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.er-weitere { display: block; }
+.er-auto { margin: 6px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .er-paar { grid-template-columns: 1fr; }
+}
+/* Aus Dokument ausfüllen (#391); eigenes Präfix ad- */
+.ad-leiste { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.ad-blatt { margin-bottom: 10px; }
+.ad-wahl { flex-wrap: wrap; }
+.ad-dateien { list-style: none; margin: 6px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ad-dateien li { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; min-width: 0; }
+.ad-dateien li span { overflow-wrap: anywhere; min-width: 0; }
+.ad-ergebnis .knoepfe { margin-top: 6px; flex-wrap: wrap; }
+.ad-hinweis { margin: 4px 0 0; font-size: calc(12.5px * var(--skala, 1)); overflow-wrap: anywhere; }
+/* Gleichzeitig bearbeiten (#609): Rückfrage je Feld, unter dem Registerinhalt; eigenes Präfix mk- */
+.mappenkonflikt { flex-direction: column; align-items: stretch; margin: 12px 0; border: 1px solid var(--warn); }
+.mappenkonflikt:focus { outline: 2px solid var(--warn); outline-offset: 2px; }
+.mappenkonflikt h2 { margin: 0; display: flex; gap: 6px; align-items: center; color: var(--warn); }
+.mappenkonflikt p { margin: 0; overflow-wrap: anywhere; }
+.mk-feld { border: 0; border-top: 1px solid var(--linie); padding: 8px 0 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.mk-feld legend { font-weight: 600; padding: 0; float: left; width: 100%; margin-bottom: 4px; }
+.mk-wahl { display: flex; flex-direction: column; gap: 4px; clear: both; }
+.mk-wahl .haken span { overflow-wrap: anywhere; }
+.mappenkonflikt .knoepfe { justify-content: flex-end; flex-wrap: wrap; }
+/* Neue Post von überall (#193): Fläche beim Ziehen von Dateien, Status, „+ Neu“ */
+.neuknopf { position: relative; margin-left: auto; }
+.neuknopf + .konto { margin-left: 0; }
+.neuknopf .menue { left: 0; right: auto; }
+.sammel-kopf { margin-top: 4px; }
+/* #422: Favorit = Abo – geänderte Favoriten und eigene Mappen hervorheben, Schalter je Favorit. */
+.abo-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--akzent); margin-right: 6px; vertical-align: 1px; flex: none; }
+.abo-schalter { padding: 0 12px 8px 10px; }
+.ablageflaeche { position: fixed; inset: 0; z-index: calc(var(--ebene-panel) + 10); display: grid; gap: 16px; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background: color-mix(in srgb, var(--flaeche) 82%, transparent); backdrop-filter: blur(2px); }
+.ablageflaeche.zwei { grid-template-columns: 1fr 1fr; }
+.ablageziel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border: 3px dashed var(--akzent); border-radius: calc(var(--r) * 2); background: var(--akzent-zart); color: var(--tinte); font-size: calc(18px * var(--skala, 1)); padding: 16px; }
+.ablageziel span { font-size: calc(14px * var(--skala, 1)); color: var(--leise); }
+.ablageziel.drauf { border-style: solid; filter: brightness(.97); }
+.ablagestatus { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: calc(var(--ebene-panel) + 5); max-width: min(420px, calc(100vw - 32px)); background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 10px 30px var(--schatten); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ablagestatus ul { margin: 0; padding-left: 18px; }
+@media (max-width: 700px) {
+  .ablageflaeche.zwei { grid-template-columns: 1fr; }
+}
+/* Versionierung (#194) */
+.versionen { margin-top: 8px; overflow-x: auto; }
+.versionen table { width: 100%; }
+.gleichername { margin-top: 4px; }
+.versionen table { border-collapse: collapse; }
+.versionen th, .versionen td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--linie); vertical-align: top; white-space: nowrap; }
+.versionen th { font-weight: 600; color: var(--leise); }
+
+/* Ausprobieren einer Ablaufvorlage (#1176): die Vorschau je Empfänger wie eine Aufgabe an der Mappe. */
+.probe-hinweis p { display: flex; align-items: center; gap: 6px; }
+/* Doppelte Dateien (#333) */
+.doppelthinweis { display: block; margin: 4px 0 0; padding: 6px 8px; font-size: .9em; }
+.doppeltfrage ul { margin: 6px 0; padding-left: 18px; }
+.doppeltfrage li { margin-bottom: 6px; }
+.doppeltfrage .haken { margin-top: 2px; }
+/* Papierkorb: einzelne Dokumente (#344) */
+.korbdokumente { margin-top: 18px; }
+.korbdokument { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Schmale Mitte (#366): erst umbrechen, dann die Knöpfe unter den Eintrag statt den Namen zu zerquetschen. */
+.korbdokument .eintrag { flex: 1 1 16em; min-width: 0; overflow-wrap: anywhere; }
+.korbdokument .knoepfe { flex: none; }
+/* Papierkorb mit Auswahl (#1197): Haken vor jedem Eintrag, Filter und Auswahlleiste über der Liste. */
+.korbzeile { display: flex; align-items: center; gap: 6px; }
+.korbzeile > a.eintrag { flex: 1 1 auto; min-width: 0; }
+.korbmappen + .korbdokumente { margin-top: 18px; }
+.papierkorb-filter { gap: 8px 12px; }
+.papierkorb-auswahl { align-items: center; gap: 8px 12px; margin: 6px 0; }
+.papierkorb-alle { display: inline-flex; align-items: center; gap: 6px; }
+/* Startseite (#334): wenige Kacheln, je eine Zahl und eine Handlung */
+.startseite { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+.kacheltitel { font-weight: 600; }
+/* #1219: Kacheln einheitlich neutral (Fläche, Rand), nur die Zahl in der Akzentfarbe – Grün heißt „gut/erledigt“. */
+.kachelzahl { font-size: 2rem; font-weight: 700; line-height: 1.1; color: var(--akzent); }
+.kachelleer { color: var(--gruen); font-weight: 600; }
+.einstiege { display: flex; flex-direction: column; gap: 10px; }
+.einstiege .kachel { min-height: 0; }
+/* „Erste Post ablegen“ als Sonderform des Knopfs (#1269): Kachel bleibt Kachel, die Beschriftung untereinander. */
+.einstiege .kachel:is([data-knopf="link"], [data-knopf="eigen"]) { display: flex; align-items: stretch; justify-content: flex-start; font-weight: inherit; }
+.einstiege .kachel:is([data-knopf="link"], [data-knopf="eigen"]) > span, .einstiege .kachel:is([data-knopf="link"], [data-knopf="eigen"]) > span > span:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.zuletzt .mappenliste { margin-top: 6px; }
+.zl-kopf { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; }
+@media (pointer: coarse) {
+  .zl-kopf .verweis { display: inline-flex; align-items: center; min-height: 44px; }
+}
+.zl-zurueck { display: inline-block; margin: 0 0 4px; }
+/* Startseite über Mitte und rechts (#429): Raster aus Kacheln mit festem Schlüssel (data-kachel), Grundlage für #421. */
+.start-feld { display: grid; }
+@media (min-width: 821px) {
+  .startseite.start-breit { gap: 24px; }
+  .startseite.start-breit .start-raster { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .startseite.start-breit .kachel { min-height: 120px; padding: 18px 20px; }
+  .startseite.start-breit .zuletzt .mappenliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 16px; }
+}
+/* PDF bearbeiten (#335) */
+.pdfseiten { margin: 8px 0 4px; padding: 10px; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); }
+.pdfseiten-kopf, .pdfseiten-fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.pdfseiten-fuss { margin-top: 8px; }
+.pdfseiten-fuss > span:first-child { margin-right: auto; }
+/* Schwärzen (#392): Seiten in voller Breite, Kästen relativ zur Seite; am Handy blättert der Finger, bis „Aufziehen“ an ist. */
+.schwarz-werkzeuge { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.schwarz-suche { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.schwarz-suche .eigenschaft { display: flex; flex-direction: column; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.schwarz-suche input { width: 100%; }
+.schwarz-begriffe { display: flex; flex-wrap: wrap; gap: 6px; }
+.schwarz-begriffe [data-etikett] { white-space: normal; max-width: 100%; gap: 4px; }
+.schwarz-begriffe [data-etikett] > span { overflow-wrap: anywhere; min-width: 0; }
+.schwarz-begriffe :is([data-knopf="link"], [data-knopf="eigen"]) { padding: 0 2px; }
+.schwarz-vorschlaege summary { cursor: pointer; }
+.schwarz-art { border: 0; margin: 6px 0 0; padding: 0 0 0 4px; display: flex; flex-direction: column; gap: 2px; }
+.schwarz-art .haken { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.schwarz-art .umbruch { overflow-wrap: anywhere; }
+.schwarz-schalter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.schwarz-seiten { display: flex; flex-direction: column; align-items: center; gap: 12px; max-height: 75vh; overflow-y: auto; overflow-x: hidden; padding: 4px; }
+.schwarz-seite { margin: 0; width: 100%; max-width: 820px; }
+.schwarz-flaeche { position: relative; width: 100%; background: var(--papier); box-shadow: 0 0 0 1px var(--linie); user-select: none; -webkit-user-select: none; cursor: crosshair; overflow: hidden; }
+.schwarz-flaeche.zeichnet { touch-action: none; }
+.schwarz-flaeche img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.schwarz-kasten, .schwarz-wort { position: absolute; pointer-events: none; }
+.schwarz-kasten { background: color-mix(in srgb, var(--schwaerzung) 72%, transparent); outline: 1px solid var(--schlecht); }
+.schwarz-kasten.zieht { background: color-mix(in srgb, var(--schwaerzung) 35%, transparent); outline: 1px dashed var(--schlecht); }
+.schwarz-wort { outline: 1px dotted var(--papier-wort); }
+.schwarz-seiten.vorschau .schwarz-kasten { background: var(--schwaerzung); outline: 0; }
+.schwarz-seiten.vorschau .schwarz-flaeche { cursor: default; }
+.schwarz-ziel { border: 0; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.schwarz-ziel .haken { display: flex; align-items: baseline; gap: 6px; overflow-wrap: anywhere; }
+/* PDF verkleinern (#393): Stufen als Zeilen mit geschätzter Größe rechts. */
+.stufenwahl { border: 0; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.stufenwahl > div { flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+.stufenwahl .stufe { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; padding: 8px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); cursor: pointer; }
+.stufenwahl .stufe.gewaehlt { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); }
+@media (max-width: 520px) {
+  .stufenwahl .stufe { grid-template-columns: auto 1fr; }
+}
+.verkleinertwahl { display: flex; flex-direction: column; gap: 10px; margin: 6px 0; }
+.seitenraster { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.seitenraster .seite { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 6px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); cursor: grab; }
+.seitenraster .seite:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.seitenraster .seite.zieht { opacity: .5; }
+.seitenraster .seite.weg { opacity: .45; }
+.seitenraster .seite.weg .seitenbild { filter: grayscale(1); }
+.seitenraster .seite.teilab { box-shadow: inset 4px 0 0 var(--akzent); }
+.seitenraster .teilmarke { position: absolute; top: -9px; left: 6px; padding: 0 6px; border-radius: 8px; background: var(--akzent); color: var(--akzent-tinte); font-size: 11px; font-weight: 600; }
+/* „Anlage ab hier“ (#1162): gestrichelt statt voll – die Seiten bleiben beim Dokument, als Anlage. */
+.seitenraster .seite.anlageab { border-left: 3px dashed var(--akzent); }
+.seitenraster .anlagemarke { background: var(--flaeche); color: var(--akzent); border: 1px solid var(--akzent); }
+.seitenbild { width: 100px; height: 130px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.seitenbild img { max-width: 100px; max-height: 100px; border: 1px solid var(--linie); background: var(--papier); transition: transform .15s; }
+.seitenknoepfe { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; }
+/* Tippfläche mindestens 24 px (WCAG 2.5.8, #1162): die kleinen Knöpfe je Seite wachsen in der Höhe, die Kachel bleibt schmal. */
+.seitenknoepfe > button { min-height: 24px; }
+@media (pointer: coarse) {
+  /* Am Handy (#1162): zwischen der Zeile mit „?“ und dem Hinweis Platz für dessen 44-px-Tippfläche. */
+  .pdfseiten-kopf { row-gap: 14px; }
+}
+.zusammenfuegen { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px; margin: 6px 0; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); }
+.emailmappen { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+.emailmappen ul { list-style: none; padding-left: 12px; margin: 2px 0; }
+.emailmappen li.eingerueckt { margin-left: 20px; } /* Anlagen (#998) */
+/* Archivnummer (#345) */
+.asnform { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
+.asnform input { width: 12em; }
+
+/* „+ Neu“ öffnet am rechten Rand des Knopfs, nie breiter als der Bildschirm. */
+.neuknopf .menue { left: auto; right: 0; max-width: calc(100vw - 32px); }
+@media (max-width: 600px) {
+  .neuknopf .menue {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: calc(var(--ebene-blatt) + 1); min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
+    border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .neuknopf .menuepunkt { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* Haupt-Einstieg „+ Neu“ gut erkennbar. */
+  .neuknopf > [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { padding: 8px 14px; font-size: 15px; box-shadow: 0 1px 3px var(--schatten-stark); }
+}
+
+.ad-hinweis.folgt [data-etikett] { background: var(--akzent-zart); color: var(--akzent); }
+.ad-hinweis.vorbelegt [data-etikett] { white-space: normal; text-align: left; }

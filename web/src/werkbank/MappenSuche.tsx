@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Mappe } from '../../../shared/src/model';
 import { mappenApi } from '../api/mappen';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, Feld, Knopf } from '../bausteine';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
-import { Symbol } from '../Symbol';
 
 /**
  * Mappen suchen und wählen (Vergleichswert „bestimmte Mappe“ in Bedingungen und Regeln): gewählte Mappen als Chips,
@@ -54,12 +53,9 @@ export function MappenSuche({
   return (
     <span className="mappensuche">
       {gewaehlt.map((x) => (
-        <span key={x} className="chip">
-          {titel[x] ?? '…'}{' '}
-          <Knopf groesse="klein" nurSymbol={t('werkbank.sichten.entfernen-2')} onClick={() => setze(gewaehlt.filter((y) => y !== x))}>
-            <Symbol name="schliessen" />
-          </Knopf>
-        </span>
+        <Etikett key={x} entfernen={() => setze(gewaehlt.filter((y) => y !== x))} entfernenText={t('werkbank.sichten.entfernen-2')}>
+          {titel[x] ?? '…'}
+        </Etikett>
       ))}
       <Feld beschriftung={t('werkbank.sichten.mappe-suchen')} beschriftungVerbergen className="wahl">
         {(v) => (

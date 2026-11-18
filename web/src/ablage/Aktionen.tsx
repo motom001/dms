@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatiere, standardRegister, type Dokument, type Feld as FeldDefinition, type Mappentyp } from '../../../shared/src/model';
 import { gruppiere } from '../../../shared/src/anlagen';
-import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Menue, type GefahrRueckfrage, type MenuePunkt } from '../bausteine';
+import { Etikett, Feld, FeldGruppe, type GefahrRueckfrage, HakenFeld, Knopf, KnopfLink, Menue, type MenuePunkt } from '../bausteine';
 import { AnlageMarke } from './Anlagen';
 import { ausgeblendeteFelder, sichtbareRegister } from '../../../shared/src/darstellung';
 import { eingaengeApi } from '../api/eingaenge';
@@ -139,7 +139,7 @@ export function Aktionsmenue({
       gruppe: t('ablage.aktionen.pakete'),
       inhalt: (
         <>
-          {p.name} <span className="chip klein">{p.paket}</span>
+          {p.name} <Etikett klein>{p.paket}</Etikett>
         </>
       ),
     })),

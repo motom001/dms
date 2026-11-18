@@ -1,9 +1,8 @@
-/* Reiter (#1210): ein aktives Aussehen – Fläche wie der Inhalt, Rand, oben 3 px Akzentfarbe. Nur Werte aus tokens.css.
-   .vorschauhover und .vorschaufokus nutzt nur die Musterseite. */
+/* Reiter (#1210): ein aktives Aussehen – Fläche wie der Inhalt, Rand, oben 3 px Akzentfarbe. Nur Werte aus tokens.css. */
 .reihe { display: flex; gap: 2px; padding: 0 2px; box-shadow: inset 0 -1px 0 var(--linie); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .reiter { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; color: var(--leise); font: inherit; font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; }
-.reiter:is(:hover, .vorschauhover):not(.an) { color: var(--tinte); background: var(--senke); }
-.reiter:is(:focus-visible, .vorschaufokus) { outline: 2px solid var(--akzent); outline-offset: -2px; }
+.reiter:hover:not(.an) { color: var(--tinte); background: var(--senke); }
+.reiter:focus-visible { outline: 2px solid var(--akzent); outline-offset: -2px; }
 .an { color: var(--tinte); background: var(--flaeche); border-color: var(--linie); box-shadow: inset 0 3px 0 var(--akzent); }
 .anzahl { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--senke); color: var(--leise); font-size: calc(11.5px * var(--skala, 1)); text-align: center; }
 .an .anzahl { background: var(--akzent-zart); color: var(--tinte); }

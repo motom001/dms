@@ -1,3 +1,4 @@
+import { Etikett } from '../../bausteine';
 import type { TresorStatus } from '../../api/betrieb';
 import { Hilfe } from '../../Hilfe';
 import { t } from '../../sprache';
@@ -27,9 +28,9 @@ export function arten(s: TresorStatus) {
                 {a.unlesbar > 0 && (
                   <>
                     {' '}
-                    <span className="chip schlecht" title={t('werkbank.verschluesselung.mit-dem-vorhandenen-schluessel')}>
+                    <Etikett art="schlecht" title={t('werkbank.verschluesselung.mit-dem-vorhandenen-schluessel')}>
                       {t('werkbank.verschluesselung.nicht-lesbar', { unlesbar: a.unlesbar })}
-                    </span>
+                    </Etikett>
                   </>
                 )}
               </td>

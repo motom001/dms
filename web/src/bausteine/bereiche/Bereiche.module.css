@@ -18,7 +18,7 @@
 .text { font-size: calc(12.5px * var(--skala, 1)); max-width: 75ch; margin: 0; }
 
 /* Sprungleiste: bleibt am Desktop unter dem Kopf der Seite stehen, am Handy rollt sie mit. */
-.leiste { position: sticky; top: 52px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
+.leiste { position: sticky; top: 52px; z-index: calc(var(--ebene-leiste) + 1); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
 .sprung { background: var(--senke); border: 1px solid var(--linie); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: calc(12.5px * var(--skala, 1)); color: var(--tinte); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .sprung:hover { border-color: var(--linie-stark); }
 .sprung:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }

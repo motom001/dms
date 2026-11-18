@@ -1,0 +1,14 @@
+/* Aufklapper (#1270): Kopf oder Zeile, die einen Abschnitt auf- und zuklappt – früher die Sonderformen .aufklappkopf
+   und .aufklappzeile am Knopf. Pfeil nach rechts (zu) bzw. unten (auf), Beschriftung links bündig und umbrechend.
+   Nur Werte aus tokens.css. Hover als Fläche, Fokus wie jeder Knopf (Knopf.module.css). */
+.kopf { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-start; gap: 2px 8px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-weight: 600; color: var(--tinte); text-align: left; cursor: pointer; }
+.kopf:hover { background: var(--senke); }
+/* Die Hüllen des Knopfs (Breite bei „läuft“) fallen weg: Pfeil, Titel und Zusatz stehen direkt in der Zeile. */
+.kopf > span, .kopf > span > span:not([aria-hidden]) { display: contents; }
+.kopf .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
+.kopf :global(.leise) { font-weight: 400; }
+
+.zeile { display: block; width: 100%; padding: 7px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.zeile:hover { background: var(--senke); }
+.zeile > span, .zeile > span > span:first-child { display: block; text-align: left; }
+.zeile .zeichen { color: var(--leise); vertical-align: -2px; margin-right: 4px; }

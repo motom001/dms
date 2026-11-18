@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { t } from '../../sprache';
-import { Feld, Knopf, KnopfLink } from '../../bausteine';
-import { Symbol } from '../../Symbol';
+import { Aufklapper, Feld, Knopf, KnopfLink } from '../../bausteine';
 import { akzeptierbar, GRUND_MAX } from '../../../../shared/src/meldungen';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import type { Hinweis } from './hinweise';
@@ -86,11 +85,10 @@ export function BewusstAkzeptiert({ u }: { u: UebersichtZustand }) {
   if (!liste.length) return null;
   return (
     <section className="aufklappbereich akzeptiert">
-      <Knopf art="eigen" className="aufklappkopf" aria-expanded={auf} aria-controls="uebersicht-akzeptiert" onClick={() => setAuf(!auf)}>
-        <Symbol name={auf ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
+      <Aufklapper offen={auf} steuert="uebersicht-akzeptiert" umschalten={() => setAuf(!auf)}>
         <span>{t('werkbank.uebersicht.akzeptiert.titel', { anzahl: liste.length })}</span>
         <span className="leise klein">{t('werkbank.uebersicht.akzeptiert.unter')}</span>
-      </Knopf>
+      </Aufklapper>
       {auf && (
         <ul id="uebersicht-akzeptiert" className="aufklappinhalt akzeptiertliste">
           {liste.map((x) => (

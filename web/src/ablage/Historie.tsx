@@ -13,7 +13,7 @@ import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { Person } from '../Person';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Eintragsliste, HakenFeld, Knopf, type Listeneintrag } from '../bausteine';
+import { Eintragsliste, Etikett, HakenFeld, Knopf, type Listeneintrag } from '../bausteine';
 import { einzelheiten } from './historie/einzelheiten';
 import { beschrifte } from './historie/hilfen';
 
@@ -117,11 +117,7 @@ export function Historie({
       // Aus einer aufgelösten Post übernommen (#936): Eingang, Herkunft, Änderungen … der Post stehen jetzt hier.
       ...(typeof e.daten.ausPost === 'string'
         ? {
-            zustand: (
-              <span className="chip" title={t('ablage.historie.aus-der-post-titel')}>
-                {t('ablage.historie.aus-der-post')}
-              </span>
-            ),
+            zustand: <Etikett title={t('ablage.historie.aus-der-post-titel')}>{t('ablage.historie.aus-der-post')}</Etikett>,
           }
         : {}),
       was: (

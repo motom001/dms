@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BeispielAblageStand } from '../../../shared/src/beispielablage';
 import { werkbankApi } from '../api/werkbank';
-import { Knopf, type KnopfErgebnis } from '../bausteine';
+import { Etikett, etikettArt, Knopf, type KnopfErgebnis } from '../bausteine';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
@@ -79,9 +79,9 @@ export function BeispielAblagePanel() {
               {stand.noetig.map((p) => (
                 <li key={p.id}>
                   {name(p)}{' '}
-                  <span className={`chip ${p.installiert ? 'gut' : 'warn'}`}>
+                  <Etikett art={etikettArt(p.installiert ? 'gut' : 'warn')}>
                     {p.installiert ? t('werkbank.beispielablage.installiert') : t('werkbank.beispielablage.fehlt')}
-                  </span>
+                  </Etikett>
                 </li>
               ))}
             </ul>
@@ -108,7 +108,7 @@ export function BeispielAblagePanel() {
           {stand.angelegt > 0 && (
             <section className="blatt stapel" aria-labelledby="beispielablage-da">
               <h2 className="h3" id="beispielablage-da">
-                {t('werkbank.beispielablage.da.titel')} <span className="chip">{t('werkbank.beispielablage.chip')}</span>
+                {t('werkbank.beispielablage.da.titel')} <Etikett>{t('werkbank.beispielablage.chip')}</Etikett>
               </h2>
               <p>{t('werkbank.beispielablage.da.text', { anzahl: stand.angelegt })}</p>
               <ul className="stapel">

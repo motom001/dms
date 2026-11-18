@@ -1,0 +1,141 @@
+/* Werkbank (#1270): Automatisierungen, Protokoll, Ablaufvorlagen und Postfächer.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+.lp-filter { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; align-items: end; margin: 10px 0; }
+.lp-filter .lp-suche { grid-column: span 2; }
+.lp-filter .eigenschaft { margin: 0; }
+.lp-datei { display: block; border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 10px 12px; font-size: calc(13px * var(--skala, 1)); cursor: pointer; }
+.lp-datei input { display: block; margin-bottom: 6px; max-width: 100%; }
+.lp-sha { overflow-wrap: anywhere; word-break: break-all; }
+.lp-liste { list-style: none; margin: 8px 0; padding: 0; border-top: 1px solid var(--linie); }
+.lp-eintrag { display: flex; flex-direction: column; gap: 2px; padding: 8px 0 8px 10px; border-bottom: 1px solid var(--linie); border-left: 3px solid var(--linie-stark); min-width: 0; }
+.lp-eintrag.lp-endgueltig { border-left-color: var(--schlecht); }
+.lp-eintrag.lp-wiederhergestellt { border-left-color: var(--gruen); }
+.lp-eintrag code { font-size: 0.92em; }
+.lp-jahre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.lp-jahre .eigenschaft { margin: 0; }
+.lp-jahre-feld { display: inline-flex; align-items: center; gap: 6px; }
+.lp-jahre-feld input { width: 80px; }
+@media (max-width: 600px) {
+  .lp-filter .lp-suche { grid-column: 1 / -1; }
+}
+/* Paket-Update: Text in Verweis umwandeln (#534) */
+.umw-felder { list-style: none; margin: 0; padding: 0; }
+.umw-feld { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.umw-feld > span { min-width: 0; overflow-wrap: anywhere; }
+.umw-vorschau { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--linie); }
+.umw-zeilen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.umw-wahl { width: 100%; max-width: 22rem; min-width: 0; }
+.ff-typ { display: flex; flex-direction: column; gap: 6px; }
+.ff-feld > summary { cursor: pointer; padding: 8px 10px; font-weight: 600; }
+.ff-wert { overflow-wrap: anywhere; font-family: var(--mono, monospace); }
+.frag-grenzen { display: grid; gap: 0.6rem; max-width: 28rem; }
+
+/* Automatisierungen (#675): Wenn · Und · Dann untereinander, Karten auf- und zuklappbar, Schritte leuchten im Lauf auf. */
+/* Ablagestelle in „Wenn“, „Und“ und „Dann“: ohne eigenen Kasten, der Bereich ist das Blatt (#1000). */
+.automatisierung-bereich { border-radius: var(--r); margin: 4px 0; }
+.automatisierung-bereich > .zeile { justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.automatisierung-bereich .h3 { margin: 0; }
+/* Aufruf von außen (#679): Beispiel mit curl umbrechen statt die Seite zu verbreitern (Handy). */
+.automatisierung-bereich.aufruf pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: calc(12px * var(--skala, 1)); background: var(--senke); padding: 8px 10px; border-radius: 6px; margin: 6px 0 0; }
+.automatisierung-pfeil { text-align: center; color: var(--leise); font-size: 1.2rem; line-height: 1; }
+.automatisierung-karten { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
+.automatisierung-karten > li, .automatisierung .karte { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 6px; padding: 6px 8px; }
+.automatisierung .karte.offen { border-color: var(--linie-stark); }
+.automatisierung .karte-kopf { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.automatisierung .karte-kopf > :is([data-knopf="link"], [data-knopf="eigen"]):not(.gefahr) { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.automatisierung .bedingungen { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
+.automatisierung .bedingungszeile { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.automatisierung .einzug { margin-left: 18px; padding-left: 8px; border-left: 2px solid var(--linie); }
+.automatisierung-vorrat { border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 8px 10px; margin: 6px 0; }
+.automatisierung-vorrat .stapel { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 4px 0 8px; }
+.automatisierung-vorrat .vorratkarte { display: flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 999px; padding: 2px 8px 2px 2px; }
+/* Der Eintrag ist seit #1277 ein kleiner Knopf: lange Namen brechen um, statt aus dem Bild zu laufen (Handy). */
+.automatisierung-vorrat .vorratkarte [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { white-space: normal; text-align: left; min-width: 0; }
+.automatisierung-schritte { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; border-collapse: collapse; }
+.automatisierung-schritte th, .automatisierung-schritte td { padding: 4px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
+.automatisierung-schritte .laufschritt td { transition: background .3s; }
+.automatisierung-schritte .laufschritt.fehler td { background: var(--schlecht-zart); }
+.automatisierung-schritte .laufschritt.laeuft td { background: var(--akzent-zart); }
+.automatisierung-gruppe .h3 { margin: 10px 0 4px; }
+/* Liste der Automatisierungen (#1172): je Eintrag höchstens zwei Zeilen – Zeichen, Name und Paket, darunter die Kurzform.
+   Wahlhaken und Ziehgriff stehen im Fluss vor dem Verweis, damit sich Tippflächen am Handy nicht überdecken. */
+.auto-liste > li { display: flex; align-items: center; gap: 2px; }
+.auto-liste > li > .eintrag { flex: 1; min-width: 0; }
+.auto-liste > li.gewaehlt > .eintrag { background: var(--akzent-zart); }
+.auto-liste .eintrag .titel { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.auto-liste .eintrag .titel .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-liste .eintrag .titel [data-etikett], .auto-liste .eintrag .titel [data-paket] { margin-left: 0; flex: none; }
+.auto-liste .eintrag .unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-zustand { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 14px; height: 14px; }
+.auto-zustand .punkt { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--rand-eingabe); box-sizing: border-box; }
+.auto-zustand.an .punkt { background: var(--gruen); border-color: var(--gruen); }
+.auto-zustand.angehalten { color: var(--warn); }
+.auto-zustand.angehalten svg { width: 14px; height: 14px; }
+.auto-werkzeuge { flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 6px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .automatisierung-schritte .laufschritt td { transition: none; }
+}
+@media (max-width: 600px) {
+  .automatisierung .einzug { margin-left: 6px; }
+}
+/* Schalter an/aus (#706): seit #1188 der Baustein Schalter (web/src/bausteine/schalter/). */
+.handlungen { align-items: center; gap: 8px 12px; }
+/* Symbol je Ansicht (#428): Auswahl als Raster in der Werkbank. */
+.symbolwahl .knoepfe { margin-top: 4px; }
+.symbolraster-rahmen > .suche { flex: none; max-width: none; }
+.symbolraster-rahmen { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; max-height: 360px; overflow: auto; padding: 8px; border: 1px solid var(--linie); border-radius: 8px; }
+.symbolgruppe { border: 0; margin: 0; padding: 0; min-width: 0; }
+.symbolraster { display: flex; flex-wrap: wrap; gap: 4px; }
+/* Datenschutz-Auskünfte (#668): Frist, Verlauf. Suche und Filter über der Liste: Baustein Suche (#994). */
+.frist-ueber { color: var(--schlecht); font-weight: 600; }
+.frist-bald { color: var(--warn); }
+.auskunft-verlauf { list-style: none; padding-left: 0; }
+.loeschkonzept-luecken { list-style: none; padding-left: 0; }
+.loeschkonzept-luecken > li { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: baseline; justify-content: space-between; }
+.loeschkonzept-luecken .knoepfe { margin: 0; }
+.weitere-typen > summary { cursor: pointer; margin: .5rem 0; }
+.auskunft-verlauf li { padding: 4px 0; border-bottom: 1px solid var(--linie); }
+details.erweitert { margin: 12px 0; }
+details.erweitert > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+details.erweitert[open] > summary { margin-bottom: 10px; }
+/* Werkbank → Rundgänge (#941) und Tipps (#942): Datei mit fester Zeichenbreite, daneben die Ankerhilfe. */
+.yaml-datei { font-family: var(--mono); font-size: calc(13px * var(--skala, 1)); line-height: 1.5; tab-size: 2; white-space: pre; overflow: auto; }
+textarea.yaml-datei { width: 100%; min-height: 24em; resize: vertical; }
+pre.yaml-datei { margin: 0; padding: 8px 10px; background: var(--senke); border-radius: 6px; max-height: 32em; }
+.rundgang-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 16px; align-items: start; }
+.rundgang-editor > .speicherleiste, .rundgang-editor > :last-child { grid-column: 1 / -1; }
+@media (max-width: 1100px) {
+  .rundgang-editor { grid-template-columns: minmax(0, 1fr); }
+}
+.anker-hilfe { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anker-hilfe h2, .anker-hilfe h3 { margin: 4px 0 0; }
+.anker-liste { list-style: none; margin: 0; padding: 0; max-height: 16em; overflow: auto; }
+.anker-liste li { margin: 0 0 2px; }
+.anker-liste button { display: block; width: 100%; text-align: left; white-space: normal; height: auto; padding-top: 4px; padding-bottom: 4px; }
+.anker-liste code { display: block; font-family: var(--mono); font-size: .9em; }
+.zeilenfehler { margin: 0; padding-left: 18px; }
+.tipp-vorschau { display: flex; flex-direction: column; gap: 6px; }
+.tipp-vorschau-karte { border: 1px solid var(--linie); border-radius: 10px; padding: 12px 14px; background: var(--flaeche); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 420px; }
+.tipp-vorschau-karte p { margin: 0; }
+.tipp-vorschau-kopf { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+/* Gleichbedeutende Wörter (#992): Wörter einer Gruppe einzeln untereinander, mit Knöpfen zum Ordnen und Entfernen. */
+.wortgruppe { overflow-wrap: anywhere; }
+.wortliste { margin: 0; padding-left: 1.4em; }
+.wortzeilen { flex: 1 1 100%; max-width: 36rem; margin: 0 0 8px; padding-left: 1.6em; display: flex; flex-direction: column; gap: 6px; }
+.wortzeilen > li { display: flex; flex-direction: column; gap: 2px; }
+.wortzeilen .zeile { flex-wrap: nowrap; gap: 4px; align-items: center; }
+.wortzeilen .zeile input { flex: 1 1 auto; min-width: 0; }
+.wortzeilen > li:first-child input { font-weight: 600; }
+.wortdazu { flex: 1 1 100%; padding-left: 1.6em; }
+@media (pointer: coarse) {
+  .liste-ohne .haken { display: flex; align-items: center; min-height: 48px; }
+}
+
+/* Was mitkommt (#1047): je Eintrag der Name, darunter eine ruhige Zeile; Abschnitte untereinander wie im Katalog. */
+.mitkommt-zeile { display: block; }
+.mitkommt .h4 { margin: 0 0 4px; }
+.mitkommt ul, .mitkommt ol { margin: 0; padding-left: 18px; }
+.mitkommt-auf > summary { cursor: pointer; padding-block: 4px; }
+.mitkommt-auf[open] > summary { margin-bottom: 8px; }

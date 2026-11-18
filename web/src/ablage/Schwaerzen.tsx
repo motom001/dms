@@ -15,8 +15,7 @@ import {
 } from '../../../shared/src/schwaerzen';
 import { dokumenteApi, schwaerzBildUrl, type SchwaerzenVorschau } from '../api/dokumente';
 import { Hilfe } from '../Hilfe';
-import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
-import { Symbol } from '../Symbol';
+import { Etikett, Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { t } from '../sprache';
 
 /**
@@ -117,16 +116,13 @@ function Begriffe({
           {begriffe.map((b, i) => {
             const n = begriffFunde[i]?.length ?? 0;
             return (
-              <span key={b} role="listitem" className={`chip ${n ? '' : 'warn'}`}>
-                <span>
+              <span key={b} role="listitem">
+                <Etikett
+                  art={n ? 'leise' : 'warn'}
+                  entfernen={() => setBegriffe(begriffe.filter((x) => x !== b))}
+                  entfernenText={t('ablage.schwaerzen.entfernen', { b })}>
                   {b} · {n ? `${n}×` : t('ablage.schwaerzen.nicht-gefunden')}
-                </span>
-                <Knopf
-                  groesse="klein"
-                  nurSymbol={t('ablage.schwaerzen.entfernen', { b })}
-                  onClick={() => setBegriffe(begriffe.filter((x) => x !== b))}>
-                  <Symbol name="schliessen" />
-                </Knopf>
+                </Etikett>
               </span>
             );
           })}

@@ -5,7 +5,7 @@ import { Link } from '../ort';
 import { useKonto } from '../konto';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Feld, HakenFeld, Knopf, knopfAussehen } from '../bausteine';
+import { abfangen, Etikett, etikettArt, Feld, HakenFeld, Knopf, knopfAussehen } from '../bausteine';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) =>
@@ -108,19 +108,19 @@ export function ApiSchluesselBlatt() {
               <li key={s.id}>
                 <div>
                   <strong>{s.name}</strong> <span className="mono klein">{s.praefix}</span>{' '}
-                  <span className={`chip ${s.recht === 'schreiben' ? 'warn' : ''}`}>{stufe(s.recht)}</span>
+                  <Etikett art={etikettArt(s.recht === 'schreiben' ? 'warn' : '')}>{stufe(s.recht)}</Etikett>
                   {s.passwoerter && (
                     <>
                       {' '}
-                      <span className="chip warn" title={t('profil.apischluessel.darf-mit-passwoerter-anzeigen')}>
+                      <Etikett art="warn" title={t('profil.apischluessel.darf-mit-passwoerter-anzeigen')}>
                         {t('profil.apischluessel.passwoerter-lesen')}
-                      </span>
+                      </Etikett>
                     </>
                   )}
                   {s.ablauf && Date.parse(s.ablauf) < Date.now() && (
                     <>
                       {' '}
-                      <span className="chip stufe-error">{t('profil.apischluessel.abgelaufen')}</span>
+                      <Etikett art="schlecht">{t('profil.apischluessel.abgelaufen')}</Etikett>
                     </>
                   )}
                   <span className="leise klein blockzeile">

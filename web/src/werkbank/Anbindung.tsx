@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ErgebnisBlock, Knopf } from '../bausteine';
+import { ErgebnisBlock, Etikett, Knopf } from '../bausteine';
 import { ApiFehler } from '../api/anfrage';
 import { einrichtungApi, type AnbindungEingabe, type AnbindungPruefung, type AnbindungStand } from '../api/einrichtung';
 import { kontoApi } from '../api/konto';
@@ -178,9 +178,9 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
               </span>
             ),
             wert: s.neustartNoetig ? (
-              <span className="chip warn">{t('werkbank.anbindung.geaendert-gilt-nach-dem')}</span>
+              <Etikett art="warn">{t('werkbank.anbindung.geaendert-gilt-nach-dem')}</Etikett>
             ) : (
-              <span className="chip gut">{t('werkbank.anbindung.in-betrieb')}</span>
+              <Etikett art="gut">{t('werkbank.anbindung.in-betrieb')}</Etikett>
             ),
           })}
         </p>

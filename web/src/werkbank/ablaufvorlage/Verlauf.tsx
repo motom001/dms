@@ -5,7 +5,7 @@ import { automatisierungApi } from '../../api/automatisierung';
 import { useDaten } from '../../daten';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
-import { Eintragsliste, Knopf, type Listeneintrag } from '../../bausteine';
+import { Eintragsliste, Etikett, etikettArt, Knopf, type Listeneintrag } from '../../bausteine';
 import { zeit } from './zustand';
 
 /** „Gerade benutzt bei“: offene Abläufe mit Link zur Mappe; angehaltene mit Grund und „Fortsetzen“. */
@@ -45,7 +45,9 @@ export function GeradeBenutzt({ v, nachher }: { v: AblaufvorlageAnsicht; nachher
                 {a.angehalten && (
                   <>
                     {' '}
-                    <span className="chip schlecht klein">{t('ablage.aufgaben.angehalten')}</span>{' '}
+                    <Etikett art="schlecht" klein>
+                      {t('ablage.aufgaben.angehalten')}
+                    </Etikett>{' '}
                     <span className="problem">{a.angehalten.text}</span>
                   </>
                 )}
@@ -86,9 +88,9 @@ export function Verlauf({ v }: { v: AblaufvorlageAnsicht }) {
     wer: x.personId ? d.person(x.personId) : '–',
     was: <>{x.text}</>,
     zustand: (
-      <span className={`chip ${x.art === 'angehalten' ? 'schlecht' : x.art === 'gelaufen' || x.art === 'angewendet' ? 'gut' : ''}`}>
+      <Etikett art={etikettArt(x.art === 'angehalten' ? 'schlecht' : x.art === 'gelaufen' || x.art === 'angewendet' ? 'gut' : '')}>
         {t.frei(`automatisierung.vorlage.ui.verlauf.${x.art}`)}
-      </span>
+      </Etikett>
     ),
   }));
   return (

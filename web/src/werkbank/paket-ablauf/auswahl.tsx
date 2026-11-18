@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FeldGruppe, Knopf } from '../../bausteine';
+import { Etikett, etikettArt, FeldGruppe, Knopf } from '../../bausteine';
 import {
   auswahlMitAbhaengigkeiten,
   dmsPasst,
@@ -288,7 +288,7 @@ function Chip({ art, children }: { art?: string; children: ReactNode }) {
   return (
     <>
       {' '}
-      <span className={art ? `chip ${art}` : 'chip'}>{children}</span>
+      <Etikett art={etikettArt(art)}>{children}</Etikett>
     </>
   );
 }
@@ -407,7 +407,7 @@ export function Auswahl({
         {b.installierteBasen.map((x) => (
           <li key={`da-${x}`}>
             <span>
-              <strong>{name(x)}</strong> <span className="chip">{t('pakete.ablauf.installiert')}</span>
+              <strong>{name(x)}</strong> <Etikett>{t('pakete.ablauf.installiert')}</Etikett>
             </span>
             <ErgaenzungenWahl erg={b.ergaenzungen(x)} offen wahl={wahl} imPlan={imPlan} schalten={schalten} />
           </li>

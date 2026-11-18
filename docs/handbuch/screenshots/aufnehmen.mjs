@@ -2303,7 +2303,7 @@ async function main() {
   await bild(s, 'werkbank-sicherung-zeitplan');
   // Probe-Wiederherstellung (#109)
   await s.getByRole('button', { name: w('Jetzt probeweise wiederherstellen') }).click();
-  await s.locator('#probe .chip.gut').first().waitFor({ timeout: 120_000 });
+  await s.locator('#probe [data-etikett="gut"]').first().waitFor({ timeout: 120_000 });
   await s.locator('#probe').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-sicherung-probe');
 

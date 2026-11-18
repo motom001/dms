@@ -4,7 +4,7 @@ import type { Mappentyp } from '../../../../shared/src/model';
 import { MappenWahl } from '../../ablage/MappeFormular';
 import { automatisierungApi } from '../../api/automatisierung';
 import type { Bezuege } from '../../api/mappen';
-import { Bereich, Eintragsliste, HakenFeld, Knopf, type Klappe, type Listeneintrag } from '../../bausteine';
+import { Bereich, Eintragsliste, Etikett, etikettArt, HakenFeld, type Klappe, Knopf, type Listeneintrag } from '../../bausteine';
 import { useDaten } from '../../daten';
 import { t } from '../../sprache';
 import { AufrufParameterZeile } from '../AutomatisierungAufruf';
@@ -36,7 +36,7 @@ function Schritte({ l, a }: { l: Lauf; a: AutomatisierungAnsicht }) {
             <tr key={i} className={`laufschritt ${x.zustand}`}>
               <td>{name(x)}</td>
               <td>
-                <span className={`chip ${SCHRITT_ART[x.zustand] ?? ''}`}>{t.frei(`automatisierung.ui.schritt.${x.zustand}`)}</span>
+                <Etikett art={etikettArt(SCHRITT_ART[x.zustand] ?? '')}>{t.frei(`automatisierung.ui.schritt.${x.zustand}`)}</Etikett>
               </td>
               <td className={x.text ? '' : 'leise'}>{x.text || '–'}</td>
             </tr>
@@ -192,7 +192,7 @@ export function Verlauf({ a, klappe }: { a: AutomatisierungAnsicht; k: Kontextda
           )}
         </>
       ),
-      zustand: <span className={`chip ${ZUSTAND_ART[l.zustand] ?? ''}`}>{t.frei(`automatisierung.ui.zustand.${l.zustand}`)}</span>,
+      zustand: <Etikett art={etikettArt(ZUSTAND_ART[l.zustand] ?? '')}>{t.frei(`automatisierung.ui.zustand.${l.zustand}`)}</Etikett>,
       mehr: t('automatisierung.ui.verlauf.karten', { anzahl: l.schritte.length }),
       label: t('automatisierung.ui.verlauf.eintrag', {
         zeit: zeit(l.gestartet),

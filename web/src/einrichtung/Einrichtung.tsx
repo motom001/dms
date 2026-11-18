@@ -7,7 +7,7 @@ import { Speicherleiste } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Bereich, Fassungen, Knopf, KnopfLink } from '../bausteine';
+import { Bereich, Etikett, Fassungen, Knopf, KnopfLink } from '../bausteine';
 import { feldKurz, ohneAnker, type Entwurf, type EntwurfFeld } from './entwurf';
 import { useFeldAktionen, useTypSpeichern, useTypZustand, type FeldAktionen, type TypZustand } from './useTypEditor';
 import { FeldZeile } from './FeldZeile';
@@ -143,7 +143,7 @@ function TypKopf({ z, vorlage }: { z: TypZustand; vorlage?: Mappentyp }) {
         <p className="ueber">{t('mappentypen.editor.mappentyp')}</p>
         <h1>
           {e.name || (neu ? t('mappentypen.editor.neuer-mappentyp') : t('mappentypen.editor.ohne-namen'))}
-          {system && <span className="chip">{t('mappentypen.editor.system')}</span>}
+          {system && <Etikett>{t('mappentypen.editor.system')}</Etikett>}
         </h1>
         {gespeichert && d.zahlenDa && (
           <p className="leise">

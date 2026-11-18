@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { aufbewahrenBis, datumText, gesperrt, stichtagName } from '../../../../shared/src/archiv';
 import type { Mappe } from '../../../../shared/src/model';
 import type { GefahrRueckfrage } from '../../bausteine';
-import { Knopf, Schalter } from '../../bausteine';
+import { Etikett, Knopf, Schalter } from '../../bausteine';
 import { mappenApi } from '../../api/mappen';
 import { geheZu, Link } from '../../ort';
 import { Ehemalig } from '../../Person';
@@ -196,15 +196,16 @@ function ArchivChip({ l, m }: { l: ListeKern; m: Mappe }) {
   return (
     <>
       {' '}
-      <span
-        className="chip archiv klein"
+      <Etikett
+        art="warn"
+        klein
         title={
           aufbewahrenBis(typ.archiv, m)
             ? t('ablage.ablage.archiv-aufbewahren-bis', { datumText: datumText(aufbewahrenBis(typ.archiv, m)!) })
             : t('ablage.ablage.archiv-frist-beginnt-mit', { feld: stichtagName(typ) })
         }>
         {t('ablage.ablage.archiv')}
-      </span>
+      </Etikett>
     </>
   );
 }

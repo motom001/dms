@@ -70,16 +70,16 @@ export type GefahrRueckfrage = Omit<Rueckfrage, 'gefahr'> & { mitGrund?: Loeschg
 export type KnopfGesperrt = boolean | string | KnopfSperre | null | undefined;
 
 // Gefahr sieht auf der Seite aus wie Neben (Leitsatz 4); rot gefüllt nur die Entscheidung in der Rückfrage.
+// Klassen aus Knopf.module.css (#1270): Es gibt keine globalen Knopf-Klassen mehr.
 const KLASSEN: Record<Aussehen, string> = {
-  anlegen: 'knopf gruen',
-  haupt: 'knopf primaer',
-  neben: 'knopf',
-  gefahr: 'knopf',
-  entscheidung: 'knopf gefahr',
-  link: 'textknopf',
-  // Sonderformen bauen bis #1270 auf der Grundform des Verweises auf (.textknopf.spaltenknopf, .textknopf.griff …);
-  // ihre Klasse legt Farbe und Form fest.
-  eigen: 'textknopf',
+  anlegen: `${s.knopf} ${s.anlegen}`,
+  haupt: `${s.knopf} ${s.haupt}`,
+  neben: s.knopf,
+  gefahr: s.knopf,
+  entscheidung: `${s.knopf} ${s.entscheidung}`,
+  link: s.verweis,
+  // Sonderform: ohne Fläche und Rand; Form und Farbe legt die Klasse ihres Besitzers fest (`[data-knopf="eigen"].x`).
+  eigen: s.eigen,
 };
 
 const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boolean).join(' ');

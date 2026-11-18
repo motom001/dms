@@ -11,7 +11,7 @@ import { useKonto } from '../../konto';
 import { Person } from '../../Person';
 import { rueckfrage } from '../../rueckfrage';
 import { t, tn } from '../../sprache';
-import { Knopf } from '../../bausteine';
+import { Etikett, etikettArt, Knopf } from '../../bausteine';
 import { BenutzerWahl, trotzdemZuweisen } from './gemeinsam';
 
 /** Aufgaben an einer Mappe (#54): offene als Hinweis über der Mappe; eigene erledigen oder weitergeben. */
@@ -37,9 +37,9 @@ function AufgabenText({ a, meine }: { a: Aufgabe; meine: boolean }) {
       </strong>{' '}
       {a.text}
       {a.art === 'frist' && a.datum && (
-        <span className={`chip ${a.datum <= heuteIn() ? 'schlecht' : 'warn'}`} title={t('ablage.aufgaben.frist')}>
+        <Etikett art={etikettArt(a.datum <= heuteIn() ? 'schlecht' : 'warn')} title={t('ablage.aufgaben.frist')}>
           {noch(a.datum)}
-        </span>
+        </Etikett>
       )}
       <span className="leise klein">
         {' '}

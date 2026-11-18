@@ -64,9 +64,9 @@ describe('Baustein Speicherleiste (#1210)', () => {
     assert.doesNotMatch(k[0].attr, /\bklein\b|disabled/, '„… löschen“ in normaler Größe, aktiv');
     assert.match(k[1].attr, /class="knopf baustein"/, 'Verwerfen ist ein Knopf mit Rand, kein Textlink');
     assert.match(k[1].attr, /disabled=""/);
-    assert.match(k[2].attr, /class="knopf primaer baustein"/);
+    assert.match(k[2].attr, /class="knopf haupt baustein"/);
     assert.match(k[2].attr, /type="submit"[^>]*disabled=""|disabled=""[^>]*type="submit"/);
-    assert.doesNotMatch(html, /textknopf|gruen|gefahr-rand/);
+    assert.doesNotMatch(html, /verweis|anlegen|gefahr-rand/);
   });
 
   it('geändert: beide aktiv, Status „Ungespeicherte Änderungen“; Verwerfen ohne Symbol', () => {

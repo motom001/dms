@@ -1,3 +1,4 @@
+import { Etikett } from '../etikett/Etikett';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { t } from '../../sprache';
 import { Knopf } from '../knopf/Knopf';
@@ -60,7 +61,7 @@ export function Bereich({
   children: ReactNode;
 }) {
   const { offen, umschalten, fehler, fest } = klappe;
-  const zeichen = fehler && <span className="chip schlecht">{t('oberflaeche.bereiche.fehler')}</span>;
+  const zeichen = fehler && <Etikett art="schlecht">{t('oberflaeche.bereiche.fehler')}</Etikett>;
   return (
     <section
       className={klassen('blatt', s.bereich, !offen && s.zu, fehler && s.mitfehler, className)}

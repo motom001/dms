@@ -7,7 +7,7 @@ import { useKonto } from '../../konto';
 import { Person } from '../../Person';
 import { Symbol } from '../../Symbol';
 import { t, tn } from '../../sprache';
-import { Knopf } from '../../bausteine';
+import { Etikett, Knopf } from '../../bausteine';
 import { ErinnerungFormular } from './formulare';
 
 /**
@@ -65,15 +65,15 @@ export function Geplant({
                 {e.vorlage !== 'erinnern' && (
                   <>
                     {' '}
-                    <span className="chip klein">{e.vorlageName ?? e.vorlage}</span>
+                    <Etikett klein>{e.vorlageName ?? e.vorlage}</Etikett>
                   </>
                 )}
                 {e.angehalten && (
                   <>
                     {' '}
-                    <span className="chip schlecht klein" title={e.angehalten.text}>
+                    <Etikett art="schlecht" klein title={e.angehalten.text}>
                       {t('ablage.aufgaben.angehalten')}
-                    </span>
+                    </Etikett>
                   </>
                 )}
               </div>

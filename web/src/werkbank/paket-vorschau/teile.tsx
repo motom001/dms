@@ -1,4 +1,4 @@
-import { Feld, HakenFeld, Knopf } from '../../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../../bausteine';
 import { inMB, legtEtwasAn } from '../../../../shared/src/pakete';
 import { istKernVorlage, kernVorlage } from '../../../../shared/src/ablaufvorlagen';
 import type { PaketVorschau } from '../../api/pakete';
@@ -307,7 +307,9 @@ export function Ablaufvorlagen({ v }: { v: PaketVorschau }) {
             {v.update && (a.neu || a.geaendert) && (
               <>
                 {' '}
-                <span className="chip warn klein">{a.neu ? tx('pakete.ablauf.vorlagen.neu') : tx('pakete.ablauf.vorlagen.geaendert')}</span>
+                <Etikett art="warn" klein>
+                  {a.neu ? tx('pakete.ablauf.vorlagen.neu') : tx('pakete.ablauf.vorlagen.geaendert')}
+                </Etikett>
               </>
             )}
           </li>

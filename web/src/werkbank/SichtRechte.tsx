@@ -1,4 +1,4 @@
-import { Bereich, Feld, HakenFeld, Knopf, type Klappe } from '../bausteine';
+import { Bereich, Etikett, Feld, HakenFeld, type Klappe, Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -157,9 +157,7 @@ export function SichtBerechtigungen({
                       {s.name}
                     </Link>
                   </strong>
-                  {i === 0 && (
-                    <> {tn('werkbank.sichtrechte.standard-2', { span: <span className="chip">{kurzSicht({ ...x.grund })}</span> })}</>
-                  )}
+                  {i === 0 && <> {tn('werkbank.sichtrechte.standard-2', { span: <Etikett>{kurzSicht({ ...x.grund })}</Etikett> })}</>}
                   {!x.regeln.length && <span className="leise"> {t('werkbank.sichtrechte.keine-regeln')}</span>}
                 </p>
                 {x.regeln.length > 0 && (
@@ -170,10 +168,10 @@ export function SichtBerechtigungen({
                           <div className="regelkopf">
                             <span className="regelsumme">
                               <strong>{r.name}</strong>
-                              <span className="chip">
+                              <Etikett>
                                 {kurzSichtRegel(r.dann)}
                                 {r.stopp ? t('werkbank.sichtrechte.stopp') : ''}
-                              </span>
+                              </Etikett>
                               <span className="leise klein">
                                 {t('werkbank.sichtrechte.wenn')} {r.wenn.map(namen.text).join(' und ')}
                               </span>
@@ -298,10 +296,10 @@ function SichtRegelKarte({
           {griff}
           <Knopf art="eigen" className="regelsumme" aria-expanded={false} onClick={umschalten}>
             <strong>{r.name || t('werkbank.sichtrechte.ohne-namen')}</strong>
-            <span className="chip">
+            <Etikett>
               {kurzSichtRegel(r.dann)}
               {r.stopp ? t('werkbank.sichtrechte.stopp') : ''}
-            </span>
+            </Etikett>
             <span className="leise klein">
               {t('werkbank.sichtrechte.wenn')} {r.wenn.map(namen.text).join(' und ') || '…'}
             </span>
@@ -322,10 +320,10 @@ function SichtRegelKarte({
             onChange={(x) => setze({ ...r, name: x.target.value })}
           />
         </Feld>
-        <span className="chip">
+        <Etikett>
           {kurzSichtRegel(r.dann)}
           {r.stopp ? t('werkbank.sichtrechte.stopp') : ''}
-        </span>
+        </Etikett>
       </div>
       <p className="ueber klein">{t('werkbank.sichtrechte.wenn-2')}</p>
       <ul className="bedingungen">

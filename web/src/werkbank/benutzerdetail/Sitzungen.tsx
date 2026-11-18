@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { geraetText, istGeradeAktiv, type Benutzer, type Sitzung } from '../../../../shared/src/model';
 import { kontoApi } from '../../api/konto';
 import { t } from '../../sprache';
-import { Knopf } from '../../bausteine';
+import { Etikett, Knopf } from '../../bausteine';
 import { datumZeit } from './hilfen';
 
 /** Angemeldete Geräte des Benutzers; einzeln oder alle abmelden. */
@@ -50,19 +50,21 @@ export function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promis
                 {s.aktuell && (
                   <>
                     {' '}
-                    <span className="chip">{t('werkbank.benutzer.diese-sitzung')}</span>
+                    <Etikett>{t('werkbank.benutzer.diese-sitzung')}</Etikett>
                   </>
                 )}
                 {s.vertretungId && (
                   <>
                     {' '}
-                    <span className="chip warn">{t('werkbank.verwaltungsrecht.vertretung')}</span>
+                    <Etikett art="warn">{t('werkbank.verwaltungsrecht.vertretung')}</Etikett>
                   </>
                 )}
                 {istGeradeAktiv(s.zuletztAktiv) && (
                   <>
                     {' '}
-                    <span className="chip gut punkt">{t('werkbank.benutzer.gerade-aktiv')}</span>
+                    <Etikett art="gut" punkt>
+                      {t('werkbank.benutzer.gerade-aktiv')}
+                    </Etikett>
                   </>
                 )}
                 <span className="leise klein blockzeile">

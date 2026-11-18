@@ -7,7 +7,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { logoUrl, Marke } from '../Marke';
 import { Listenkopf } from '../Listenkopf';
 import { t, tn } from '../sprache';
-import { Feld, Knopf, KnopfLink } from '../bausteine';
+import { Etikett, Feld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -40,7 +40,7 @@ export function DesignListe({ offen }: { offen?: string }) {
             <Link to={`/werkbank/designs/${x.id}`} className={`eintrag werk ${offen === x.id ? 'an' : ''}`}>
               <span className="titel">
                 {x.name}
-                {x.id === d.standardDesign && <span className="chip">{t('werkbank.designs.standard')}</span>}
+                {x.id === d.standardDesign && <Etikett>{t('werkbank.designs.standard')}</Etikett>}
               </span>
               <span className="unter">
                 <Farbfelder d={x} /> {GRUNDLAGEN[x.grundlage]}
@@ -151,7 +151,7 @@ export function DesignEditor({ id }: { id: string }) {
         <p className="ueber">{t('werkbank.designs.design')}</p>
         <h1>
           {e.name || (neu ? t('werkbank.designs.neues-design') : t('werkbank.designs.ohne-namen'))}
-          {standard && <span className="chip">{t('werkbank.designs.standard')}</span>}
+          {standard && <Etikett>{t('werkbank.designs.standard')}</Etikett>}
         </h1>
         <p className="leise">
           {t('werkbank.designs.die-vorschau-gilt-schon', {
@@ -261,7 +261,7 @@ export function DesignEditor({ id }: { id: string }) {
           <a className="verweis tippziel" href="#vorschau" onClick={(x) => x.preventDefault()}>
             {t('werkbank.designs.ein-verweis')}
           </a>
-          <span className="chip gut">{t('werkbank.designs.bezahlt')}</span>
+          <Etikett art="gut">{t('werkbank.designs.bezahlt')}</Etikett>
           <Knopf art="haupt" groesse="klein">
             {t('werkbank.designs.hauptknopf')}
           </Knopf>

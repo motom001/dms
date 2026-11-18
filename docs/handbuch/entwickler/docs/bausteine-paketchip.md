@@ -1,6 +1,6 @@
 # PaketChip
 
-`PaketChip` zeigt, **woher ein Eintrag stammt** – überall gleich (#1192): Paket-Symbol und Paketname als kleiner Chip direkt hinter dem Namen, Tooltip „aus dem Paket Basis, Version 1.4.0“, Klick führt zur Paketseite. Selbst angelegte Einträge haben **keinen** Chip; was Ablago selbst mitbringt, trägt **„Ablago“**. Für die Herkunft gibt es **keine eigene Zeile**.
+`PaketChip` zeigt, **woher ein Eintrag stammt** – überall gleich (#1192): Paket-Symbol und Paketname als kleiner Chip direkt hinter dem Namen, Tooltip „aus dem Paket Basis, Version 1.4.0“, Klick führt zur Paketseite. Er sieht aus wie ein [Etikett](bausteine-etikett.md) – ohne Rand, eckig (#1289, Leitsatz 8: Rand heißt Knopf); als Link wird er beim Darüberfahren blau und unterstrichen. Selbst angelegte Einträge haben **keinen** Chip; was Ablago selbst mitbringt, trägt **„Ablago“**. Für die Herkunft gibt es **keine eigene Zeile**.
 
 ![Bereich „PaketChip“ der Musterseite: mit Link, in einer Listenzeile, von Ablago, selbst angelegt](bilder/muster-paketchip.png){ loading=lazy }
 

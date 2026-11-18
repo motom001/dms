@@ -23,7 +23,18 @@ import {
 import type { Mappentyp } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { automatisierungApi, type AussenZustellung } from '../api/automatisierung';
-import { Bereich, Feld, HakenFeld, Knopf, Platzhalter, usePlatzhalterEinsetzen, type Klappe, type PlatzhalterGruppe } from '../bausteine';
+import {
+  Bereich,
+  Etikett,
+  etikettArt,
+  Feld,
+  HakenFeld,
+  type Klappe,
+  Knopf,
+  Platzhalter,
+  type PlatzhalterGruppe,
+  usePlatzhalterEinsetzen,
+} from '../bausteine';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
@@ -455,7 +466,7 @@ export function Zustellungen({ a, klappe }: { a: AutomatisierungAnsicht; klappe:
                 <td>{zeit(z.erstellt)}</td>
                 <td className="mono">{z.ziel}</td>
                 <td>
-                  <span className={`chip ${ZUSTAND_ART[z.zustand] ?? ''}`}>{t.frei(`automatisierung.ui.zustellungen.${z.zustand}`)}</span>
+                  <Etikett art={etikettArt(ZUSTAND_ART[z.zustand] ?? '')}>{t.frei(`automatisierung.ui.zustellungen.${z.zustand}`)}</Etikett>
                 </td>
                 <td className={z.fehler || z.status ? '' : 'leise'}>
                   {[

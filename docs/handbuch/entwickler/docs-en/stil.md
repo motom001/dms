@@ -14,6 +14,7 @@ Two tools check the code before it reaches `main` (#899): **ESLint** for typical
 | `npm run lint:zaehlen` | count the lists of existing violations against `main` – exactly the CI check |
 | `npm run lint:umtragen` | after a move: rewrite the lists, drop orphaned entries, then count |
 | `npm run lint:farben` | [no fixed colours](#farben) outside `tokens.css` |
+| `npm run lint:klassen` | [every class once and with its owner](#klassen), no unused classes, `z-index` only as a layer |
 | `npm run lint:tot` | [dead code](#toter-code): unused files, exports and dependencies (knip, a few seconds) |
 | `node .github/werkzeuge/fachordner-pruefen.mjs` | every subject folder with a `*.dienst.ts` has `index.ts` and `README.md` (#1072) |
 | `npm run abhaengigkeitsbild` | regenerate the [dependency graph](#abhaengigkeitsbild) |
@@ -107,6 +108,14 @@ A new token always gets a light **and** a dark value (or deliberately the same o
 **Check:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) looks in `web/src/**/*.css` except `tokens.css` for hex values, `rgb()`/`hsl()` and the like, and named colours such as `white`; in `*.ts(x)` for colour values in strings. CI runs it in the job **stil**; every finding is an error. Exceptions need a reason on the same line – `/* farbe-erlaubt: printing is always black on white */` – or, for whole files, an entry with a reason in `AUSNAHMEN` in the script (today: `design.ts` with the values for high contrast, the sample documents of the stamp preview).
 
 **Building blocks:** How fields, buttons and other parts of the interface look and behave is defined by the building blocks in `web/src/bausteine/` – pages put them together instead of writing spacing, colours or `aria` attributes themselves. More under [Design and building blocks](bausteine.md).
+
+## Every class once and with its owner { #klassen }
+
+Every class of the styles stands **at top level in exactly one file**, that of its owner (#1270): a class that only one area sets is in that area’s file (`web/src/ablage/ablage-*.css`, `web/src/werkbank/werkbank*.css`, `web/src/einrichtung/einrichtung.css` …), together with its mobile rules; a class that several areas set is in `web/src/stile/gemeinsam-*.css`; a class of a component is in its module. “At top level” means: it is the first class of a selector – `.kachel:hover` belongs to `.kachel`, `.blatt .kachel` belongs to `.blatt`. That way nobody overrides a rule elsewhere without noticing. Global button classes no longer exist: surroundings adjust a button via `[data-knopf="…"]`, a tag via `[data-etikett]`.
+
+`z-index` has **layers** in `tokens.css` (`--ebene-innen`, `--ebene-leiste`, `--ebene-kopf`, `--ebene-menue`, `--ebene-blatt`, `--ebene-panel` …); a part that must lie above its own layer writes `calc(var(--ebene-blatt) + 1)`.
+
+**Check:** `npm run lint:klassen` (`.github/werkzeuge/klassen-pruefen.mjs`) reports a class in more than one file, a class the interface never sets (no word in a string under `web/src`, for modules no `s.name`), and every `z-index` except a layer, `0`, `-1` and `auto`. CI runs it in the **stil** job.
 
 ## Dead code (knip) { #toter-code }
 

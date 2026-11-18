@@ -3,7 +3,7 @@ import { useZiehen, Ziehgriff } from '../ziehen';
 import { ABSCHNITT_TITEL_MAX, type Abschnitt, type Feld as FeldDef, type Mappentyp } from '../../../shared/src/model';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
-import { HakenFeld, Knopf } from '../bausteine';
+import { Etikett, HakenFeld, Knopf } from '../bausteine';
 import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
 import { SprachText } from './Beschriftung';
 import { neueId, type EntwurfAbschnitt, type EntwurfFeld, type EntwurfRegister } from './entwurf';
@@ -181,7 +181,7 @@ export function Feldaufteilung({
               )}
               <li {...ze} className={`aufteilungsfeld ${f.ausgeblendet ? 'ausgeblendet' : ''} ${ze.className}`}>
                 {feldName(f)}
-                {f.ausgeblendet && <span className="chip">{t('mappentypen.darstellung.chip.ausgeblendet')}</span>}
+                {f.ausgeblendet && <Etikett>{t('mappentypen.darstellung.chip.ausgeblendet')}</Etikett>}
               </li>
             </Fragment>
           );

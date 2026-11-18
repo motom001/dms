@@ -7,7 +7,7 @@ import { useKonto } from '../konto-kontext';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { rueckfrage } from '../rueckfrage';
 import { Symbol } from '../Symbol';
-import { abfangen, Feld, HakenFeld, Knopf, KnopfLink } from '../bausteine';
+import { abfangen, Etikett, Feld, HakenFeld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Zwei-Faktor-Anmeldung (#242): Einrichten mit einer Authenticator-App, Wiederherstellungscodes,
@@ -229,7 +229,9 @@ function ZweifaktorVerwalten() {
       ) : stand.aktiv ? (
         <>
           <p>
-            <span className="chip gut punkt">{t('profil.zweifaktor.eingerichtet')}</span>
+            <Etikett art="gut" punkt>
+              {t('profil.zweifaktor.eingerichtet')}
+            </Etikett>
             {stand.seit && <> {t('profil.zweifaktor.seit', { datum: datum(stand.seit) })}</>}{' '}
             {t('profil.zweifaktor.von-10-wiederherstellungscodes', { codesUebrig: stand.codesUebrig })}
           </p>

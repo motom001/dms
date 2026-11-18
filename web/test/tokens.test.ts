@@ -50,11 +50,12 @@ test('jede benutzte Farb-Variable ist ein Token, kommt aus dem Design oder ist l
   const ausDesign = new Set(['akzent-stark', 'gruen-tinte']);
   // Lokal gesetzt: Skala und Tiefe, Feldfarbe beim Übernehmen, Messpanel; Rückfall auf etwas anderes.
   const lokal = /^(skala|tiefe|ue-f|m-[\w-]+|text|auswahl)$/;
-  // Gestaltung seit #1234 in web/src/stile/ (Teile in fester Reihenfolge).
-  const stile = readdirSync(join(WEB, 'stile'))
-    .filter((d) => d.endsWith('.css'))
-    .map((d) => join('stile', d));
-  const css = ['basis.css', ...stile].map((d) => readFileSync(join(WEB, d), 'utf8')).join('\n');
+  // Gestaltung seit #1270 je Besitzer: stile/, die Bereiche (ablage/, werkbank/ …) und basis.css – alle globalen
+  // Stildateien außer tokens.css.
+  const stile = readdirSync(WEB, { recursive: true, withFileTypes: true })
+    .filter((d) => d.isFile() && d.name.endsWith('.css') && !d.name.endsWith('.module.css') && d.name !== 'tokens.css')
+    .map((d) => join(d.parentPath, d.name));
+  const css = stile.map((d) => readFileSync(d, 'utf8')).join('\n');
   const fehlend = [...new Set([...css.matchAll(/var\(--([\w-]+)/g)].map((m) => m[1]))].filter(
     (n) => !(n in hell) && !ausDesign.has(n) && !lokal.test(n),
   );

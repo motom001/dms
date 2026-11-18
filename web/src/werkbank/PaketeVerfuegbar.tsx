@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, Umschalter, useListenSuche } from '../bausteine';
+import { Etikett, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, Umschalter, useListenSuche } from '../bausteine';
 import { empfehlungen, paketArt, type KatalogPaket, type PaketArt } from '../../../shared/src/pakete';
 import type { Fundquelle } from '../../../shared/src/listensuche';
 import { useDaten } from '../daten';
@@ -161,21 +161,21 @@ function Zeile({
           {!e.offiziell && (
             <>
               {' '}
-              <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url: e.url })}>
+              <Etikett art="warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url: e.url })}>
                 {host(e.url)}
-              </span>
+              </Etikett>
             </>
           )}
           {e.art === 'sprache' && (
             <>
               {' '}
-              <span className="chip">{t('werkbank.pakete.dazu.sprache')}</span>
+              <Etikett>{t('werkbank.pakete.dazu.sprache')}</Etikett>
             </>
           )}
           {e.art === 'ergaenzung' && e.haupt && (
             <>
               {' '}
-              <span className="chip">{t('werkbank.pakete.dazu.ergaenzt', { name: hauptName(e.haupt) })}</span>
+              <Etikett>{t('werkbank.pakete.dazu.ergaenzt', { name: hauptName(e.haupt) })}</Etikett>
             </>
           )}
         </span>

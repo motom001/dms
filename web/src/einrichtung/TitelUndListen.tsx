@@ -24,7 +24,7 @@ import { Hilfe } from '../Hilfe';
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { rueckfrage } from '../rueckfrage';
-import { Bereich, Feld, HakenFeld, Knopf, Platzhalter, usePlatzhalterEinsetzen, type Klappe } from '../bausteine';
+import { Bereich, Etikett, Feld, HakenFeld, type Klappe, Knopf, Platzhalter, usePlatzhalterEinsetzen } from '../bausteine';
 import { SprachText } from './Beschriftung';
 import { beispielWerte, ERST_BEIM_SPEICHERN, neueId, type Entwurf, type EntwurfListe } from './entwurf';
 
@@ -350,7 +350,7 @@ function Spaltenwahl({
               <span className="nr">{i + 1}</span>
               <span className="nm">
                 {name(k)}
-                {k.startsWith('_') && <span className="chip">{t('mappentypen.editor.system')}</span>}
+                {k.startsWith('_') && <Etikett>{t('mappentypen.editor.system')}</Etikett>}
               </span>
               <span className="aktionen">
                 <Knopf gesperrt={i === 0} onClick={() => schiebe(i, -1)} nurSymbol={t('mappentypen.editor.nach-vorn', { name: name(k) })}>

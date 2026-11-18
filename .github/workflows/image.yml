@@ -275,6 +275,12 @@ jobs:
         run: |
           node --test .github/werkzeuge/farben-pruefen.test.mjs
           node .github/werkzeuge/farben-pruefen.mjs
+      # Jede Klasse der Gestaltung steht auf oberster Ebene in genau einer Datei, der ihres Besitzers; keine ungenutzten
+      # Klassen; z-index nur als Stufe aus tokens.css (#1270). Jeder Fund erscheint als Anmerkung an der Datei.
+      - name: Klassen einmal und beim Besitzer
+        run: |
+          node --test .github/werkzeuge/klassen-pruefen.test.mjs
+          node .github/werkzeuge/klassen-pruefen.mjs
       # Jeder Fachordner mit *.dienst.ts hat index.ts und README.md (#1072); was darin steht, prüft niemand.
       - name: Fachordner mit Tür und README
         run: |

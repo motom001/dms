@@ -3,7 +3,7 @@ import { bereichName } from '../../../../shared/src/werkbankansicht';
 import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
 import { Symbol } from '../../Symbol';
-import { FeldGruppe, HakenFeld } from '../../bausteine';
+import { Etikett, FeldGruppe, HakenFeld } from '../../bausteine';
 
 /**
  * Verwaltungsrecht an der Person (#818): Haken „Darf Ablago verwalten“, darunter der Baum der Werkbank-Bereiche aus
@@ -69,9 +69,9 @@ export function Verwaltungsrecht({
                         {x.heikel && (
                           <>
                             {' '}
-                            <span className="chip warn klein" title={t('werkbank.verwaltungsrecht.heikel.titel')}>
+                            <Etikett art="warn" klein title={t('werkbank.verwaltungsrecht.heikel.titel')}>
                               <Symbol name="warnung" /> {t('werkbank.verwaltungsrecht.heikel')}
-                            </span>
+                            </Etikett>
                           </>
                         )}
                       </span>

@@ -20,7 +20,7 @@ import { Hilfe } from '../Hilfe';
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { hinweis, rueckfrage } from '../rueckfrage';
-import { Bereich, Feld, FeldGruppe, HakenFeld, Knopf, type Klappe } from '../bausteine';
+import { Bereich, Etikett, Feld, FeldGruppe, HakenFeld, type Klappe, Knopf } from '../bausteine';
 import { SprachText } from './Beschriftung';
 import { Feldaufteilung } from './Feldaufteilung';
 import { ERST_BEIM_SPEICHERN, neueId, type Entwurf, type EntwurfRegister } from './entwurf';
@@ -304,8 +304,8 @@ function RegisterKopf({
               : undefined,
           }}
         />
-        <span className="chip">{REGISTERARTEN[r.art]}</span>
-        {r.ausgeblendet && <span className="chip warn">{t('mappentypen.darstellung.chip.ausgeblendet')}</span>}
+        <Etikett>{REGISTERARTEN[r.art]}</Etikett>
+        {r.ausgeblendet && <Etikett art="warn">{t('mappentypen.darstellung.chip.ausgeblendet')}</Etikett>}
       </span>
       <SprachText
         beschriftungVerbergen

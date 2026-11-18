@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Benutzer } from '../../../shared/src/model';
 import { kontoApi } from '../api/konto';
-import { Knopf } from '../bausteine';
+import { Etikett, Knopf } from '../bausteine';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -83,7 +83,9 @@ export function ZweifaktorVon({ b }: { b: Benutzer }) {
       ) : stand.aktiv ? (
         <>
           <p>
-            <span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>
+            <Etikett art="gut" punkt>
+              {t('werkbank.benutzer.eingerichtet')}
+            </Etikett>
             {stand.seit && <> {t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>}{' '}
             {t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}
           </p>

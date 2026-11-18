@@ -1,0 +1,220 @@
+/* Werkbank (#1270): Pakete, Übersicht, Datenschutz und Auskunft, Stempel.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+.nfb-haken { color: var(--gruen); font-weight: 700; } /* #414: erledigter Schritt */
+.vs-arten .vs-zahl { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } /* #410: Geheimnisse je Art */
+/* Berechtigungen (#123–#127) */
+.regeln { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.regeln > li { border-radius: var(--r); }
+.regel { border: 1px solid var(--linie); border-radius: var(--r); padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--flaeche); }
+.regel.fehlerhaft { border-color: var(--schlecht); }
+.regel .bedingungen > li { background: var(--senke); }
+.regelkopf { display: flex; align-items: center; gap: 8px; }
+.regelkopf input { flex: 1; min-width: 0; font-weight: 600; }
+.regelkopf .regelname { flex: 1; }
+.recht .sym { width: .85em; height: .85em; vertical-align: -1px; }
+.rechtewahl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.rechtknopf { display: inline-flex; align-items: center; gap: 4px; min-width: 52px; justify-content: center; padding: 5px 8px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); color: var(--leise); font: inherit; font-weight: 600; cursor: pointer; }
+.rechtknopf .buchstabe { font-family: ui-monospace, monospace; }
+.rechtknopf.erteilen { background: var(--gruen-zart); color: var(--gruen); border-color: transparent; }
+.rechtknopf.entziehen { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
+.rechtknopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.rechtezeile { display: inline-flex; gap: 4px; flex-wrap: wrap; vertical-align: middle; }
+.recht { font-family: ui-monospace, monospace; font-size: calc(12px * var(--skala, 1)); font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+.recht.ja { background: var(--gruen-zart); color: var(--gruen); }
+.recht.nein { background: var(--senke); color: var(--leise); }
+.testlauf { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-x: auto; }
+.testlauf tr.traf td:first-child { font-weight: 600; }
+/* Regeln zuklappen (#146) */
+.regel.zu { padding-block: 8px; }
+.regelsumme { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; background: none; border: 0; padding: 4px 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.regelsumme:hover strong { color: var(--akzent); }
+.rechtknopf:disabled { opacity: .45; cursor: not-allowed; }
+/* Berechtigungen an Sichten (#148): geerbte Regeln schreibgeschützt */
+.geerbt { display: flex; flex-direction: column; gap: 6px; }
+.regeln.geerbt .regel { background: var(--senke); }
+.regel.gesperrt .regelsumme { cursor: default; }
+.testlauf tr.summe td { font-weight: 600; border-top: 1px solid var(--linie-stark); }
+.sammel-rechts { flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+
+/* Pakete dazuholen (#460, #461): Auswahl mit Abhängigkeiten, danach Paket für Paket. */
+.pd-liste { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.pd-liste > li { border: 1px solid var(--linie); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.pd-liste > li.an { border-color: var(--akzent); }
+.pd-liste [data-etikett] { white-space: normal; }
+/* Paketauswahl wie im Katalog (#645): Kacheln mit Symbol, Filter nach Kategorie. */
+.pd-kategorien { display: flex; flex-wrap: wrap; gap: 6px; }
+.pd-kategorien [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { min-height: 44px; }
+.pd-kategorien [data-knopf][aria-pressed="true"] { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); font-weight: 600; }
+.pd-symbol { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--akzent-zart); color: var(--akzent); flex: none; }
+.pd-symbol svg { width: 24px; height: 24px; }
+.pd-symbol-buchstabe { font-weight: 700; font-size: 1.1rem; }
+.pd-symbol-kuerzel { position: absolute; right: -4px; bottom: -4px; font-size: .65rem; font-weight: 700; line-height: 1; padding: 2px 3px; border-radius: 4px; background: var(--akzent); color: var(--akzent-tinte); }
+@media (min-width: 720px) {
+  .pd-liste { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+}
+@media (max-width: 719px) {
+  .pd-liste .pd-darf, .pd-liste .pd-ergaenzungen { margin-left: 0; }
+}
+.pd-darf { margin: 4px 0 0 76px; overflow-wrap: anywhere; }
+.pd-pruefwert { overflow-wrap: anywhere; word-break: break-all; }
+/* Mehrere Pakete in einem Ablauf (#405): Ergänzungen als Häkchen unter ihrem Paket, Fragen je Abschnitt. */
+.pd-ergaenzungen { margin: 8px 0 0 76px; padding: 6px 10px 8px; border: 1px dashed var(--linie); border-radius: 8px; min-width: 0; }
+.pd-ergaenzungen legend { padding: 0 4px; }
+.pd-ergaenzungsliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; }
+.pd-ergaenzungsliste .haken > span { font-weight: normal; overflow-wrap: anywhere; }
+.pa-rechte h3 { margin: 8px 0 2px; }
+.pa-rechte ul { margin: 2px 0; padding-left: 18px; }
+.pa-einstellungen { border: 1px solid var(--linie); border-radius: 10px; padding: 8px 12px 12px; margin: 0; min-width: 0; }
+/* Mitgelieferte Automatisierungen beim Installieren (#1174): je eine mit Schalter untereinander; Update: selbst geänderte. */
+/* Ablaufvorlage, Wann (#1175): Anzahl und Einheit direkt hinter „In“, blass (nicht gesperrt), solange „In“ nicht gewählt
+   ist. Bricht die Reihe um, füllt der Umschalter die erste Zeile, und die Felder stehen rechts darunter – unter „In“. */
+.wann-reihe { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 8px; max-width: 100%; }
+.wann-reihe > [role="radiogroup"] { flex: 1 1 auto; }
+@media (max-width: 600px) {
+  /* Am Handy stehen die Wahlen untereinander (Umschalter `schmalUntereinander`), die Felder rechts darunter – unter „In“. */
+  .wann-reihe { display: flex; flex-direction: column; align-items: flex-end; }
+  .wann-reihe > [role="radiogroup"] { align-self: stretch; }
+}
+.wann-in.blass input, .wann-in.blass select { color: var(--leise); background: var(--senke); border-color: var(--linie-stark); }
+.probe-karten { list-style: none; margin: 0; padding: 0; }
+.probe-karte { border: 1px solid var(--linie); border-left: 3px solid var(--akzent); border-radius: var(--r); background: var(--flaeche); padding: 8px 12px; }
+.probe-karte p { margin: 2px 0; }
+.probe-karte .probe-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.probe-karte .probe-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.probe-karte .warnung { color: var(--warn); }
+.paket-automatisierungen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paket-automatisierungen-geaendert { list-style: none; margin: 0; padding: 0; }
+.paket-automatisierungen-geaendert .hinweis { margin-top: 4px; }
+.pa-einstellungen legend { padding: 0 4px; }
+.pa-reihe { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.pa-reihe ul { margin: 2px 0; padding-left: 18px; }
+.pa-je-paket { margin-left: 26px; display: grid; gap: 4px; }
+/* Herkunft eines Pakets (#594): Zeile in der Vorschau, Fingerabdrücke umbrechen statt die Seite zu verbreitern */
+.herkunft { margin: 0 0 12px; overflow-wrap: anywhere; }
+.herkunft p { margin: 2px 0; }
+.herkunft.gut .sym { color: var(--gruen); }
+.fingerabdruck { font-family: var(--mono, ui-monospace, monospace); overflow-wrap: anywhere; word-break: break-all; }
+.umbrechen { overflow-wrap: anywhere; }
+/* Eingangsordner → Überwachung (#915): Ursache einer Warnung im Baum hervorheben. */
+.eo-baum .eo-hervor td { background: var(--warn-zart); color: var(--warn); }
+.eo-baum .eo-hervor-text { color: var(--warn); font-weight: 600; }
+.grosse-pdfs .nur-schmal { display: none; }
+@media (max-width: 600px) {
+  /* Am Handy (#393): Spalte „Mappe“ weg, die Mappe steht unter dem Dokument – sonst passt die Tabelle nicht. */
+  .grosse-pdfs th:nth-child(3), .grosse-pdfs td:nth-child(3) { display: none; }
+  .grosse-pdfs .nur-schmal { display: block; }
+}
+.symbolknopf { min-width: 26px; min-height: 26px; padding: 0 4px; border: 1px solid var(--linie); border-radius: 4px; background: var(--flaeche); color: var(--tinte); cursor: pointer; font-size: 14px; line-height: 1; }
+.symbolknopf:disabled { opacity: .4; cursor: default; }
+
+/* Werkbank ohne Mitte (#366): kleine oder nur lesende Listen stehen rechts, mit fester Höhe (etwa zehn Einträge). */
+.festhoehe { max-height: 27em; overflow-y: auto; }
+.festhoehe thead th { position: sticky; top: 0; z-index: var(--ebene-innen); }
+.festhoehe tfoot th { position: sticky; bottom: 0; background: var(--senke); }
+th.zahlzelle, td.zahlzelle { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.aufklappliste { list-style: none; margin: 0; padding: 0; border: 1px solid var(--linie); border-radius: var(--r); }
+.aufklappliste li { border-top: 1px solid var(--linie); }
+.aufklappliste li:first-child { border-top: 0; }
+.aufklappliste li.an { background: var(--senke); }
+.aufklappliste dl { margin: 0; padding: 0 12px 10px; }
+.standzeile { margin: 0; color: var(--leise); }
+/* Liste der Sicherungen (#1169): Haken je Zeile und Auswahlleiste. Die Knöpfe der Zeile stehen mit Abstand statt mit
+   „ · “ dazwischen: Am Handy wachsen ihre Tippflächen (auch „Löschen“ mit 8 px über und unter dem Knopf), und
+   umgebrochen berührten sie sich sonst bei breiteren Schriften. */
+.sicherung-auswahl { align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+td.sicherung-wahl { width: 1%; }
+.sicherung-aktionen { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.mitpasswoertern { border-left: 3px solid var(--schlecht); padding-left: 10px; }
+.stempeltext { overflow-wrap: anywhere; }
+/* Werkbank → Stempel (#990): Vorlage rechts in der Dreiteilung, Liste in der Mitte. */
+.stempeleditor { display: flex; flex-direction: column; gap: 10px; }
+/* Liste der Stempel (#1185): zwei Zeilen, keine farbige Schrift; die Stempelfarbe zeigt ein Punkt hinter dem Namen. */
+.stempelvorlagen .eintrag .unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stempelpunkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-left: .45em; vertical-align: .05em; box-shadow: 0 0 0 1px var(--linie); flex: none; }
+.zeile-mit-zahl { display: flex; gap: 8px; align-items: center; }
+.zeile-mit-zahl input[type="range"] { flex: 1 1 auto; min-width: 0; }
+.zeile-mit-zahl input[type="number"] { width: 5.5em; flex: 0 0 auto; }
+/* Werkbank → Datenschutz: Auskunft nach Art. 15 DSGVO (#396). Eigene Klassen – nichts Globales umdefinieren. */
+.auskunft-baum { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 1px solid var(--linie); }
+.auskunft-baum.wurzel { padding-left: 0; border-left: 0; margin: 8px 0; }
+.auskunft-baum > li { margin: 4px 0; min-width: 0; }
+.auskunft-mappe { min-width: 0; overflow-wrap: anywhere; }
+.auskunft-mappe .haken > span, .auskunft-baum .haken > span { display: block; font-weight: normal; }
+.auskunft-mappe > .haken > span > .verweis { font-weight: 600; }
+.auskunft-mappe.aus > .haken > span { color: var(--leise); text-decoration: line-through; }
+.auskunft-mappe [data-etikett] { margin-left: 6px; }
+.auskunft-inhalt { margin: 2px 0 6px 26px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.auskunft-inhalt .haken { align-items: flex-start; }
+.auskunft-dritte { color: var(--warn); margin: 0; }
+.auskunft-typen .eigenschaft input { width: 100%; }
+@media (max-width: 820px) {
+  .auskunft-baum { padding-left: 10px; }
+  .auskunft-inhalt { margin-left: 18px; }
+}
+.auskunft-ganz { margin-left: 26px; }
+@media (max-width: 820px) {
+  .auskunft-ganz { margin-left: 18px; }
+}
+.auskunft-zustellen { margin-top: 10px; padding: 12px; border: 1px solid var(--linie); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.auskunft-wege { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+.auskunft-weg { display: flex; gap: 8px; align-items: flex-start; padding: 10px; border: 1px solid var(--linie); border-radius: 8px; cursor: pointer; min-width: 0; }
+.auskunft-weg.gewaehlt { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); }
+.auskunft-weg.aus { opacity: .6; cursor: not-allowed; }
+.auskunft-weg > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.auskunft-weg small { color: var(--leise); font-weight: normal; }
+.auskunft-weg-titel { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.auskunft-weg-inhalt { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.auskunft-codewahl { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.auskunft-codewahl legend { font-weight: 600; padding: 0; margin-bottom: 2px; }
+.auskunft-codewahl input:not([type]) { max-width: 320px; }
+/* Anrede in Unterlagen für Dritte (#474): du oder Sie, je mit Beispielsatz */
+.anrede-dritte { border: 0; margin: 14px 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anrede-dritte legend { font-weight: 600; padding: 0; margin-bottom: 2px; }
+.anrede-dritte p { margin: 0; }
+.anrede-dritte-wahl { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+.anrede-dritte-form { display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid var(--linie); border-radius: 8px; cursor: pointer; min-width: 0; }
+.anrede-dritte-form.gewaehlt { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); }
+.anrede-dritte-kopf { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.anrede-dritte-form q { color: var(--leise); overflow-wrap: anywhere; }
+.auskunft-neu-inhalt { display: flex; flex-direction: column; gap: 10px; flex: 1 1 100%; min-width: 0; }
+.auskunft-neu p { margin: 0; }
+.auskunft-neu .zeile-umbruch { margin: 0; }
+.auskunft-neu .eigenschaft { color: var(--tinte); }
+.auskunft-neu .auskunft-url { flex: 1 1 260px; min-width: 0; }
+.auskunft-code-zeile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.auskunft-code { font-size: 1.4em; letter-spacing: .08em; }
+.auskunft-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.auskunft-link { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
+/* Eigene Organisation ohne berufliche Nutzung (#1170): sichtbar, aber blass – nicht ausgeblendet. */
+.organisation-blass { color: var(--leise); }
+.organisation-blass .blatt { background: var(--senke); border-style: dashed; }
+/* „Wo Ablago diese Angaben verwendet“ (#1182): Links untereinander mit Abstand – Tippfläche (axe), am Handy 44 px. */
+.organisation-verwendungen > li + li { margin-top: 6px; }
+.organisation-verwendungen a { display: inline-block; padding-block: 4px; }
+@media (pointer: coarse) {
+  /* Am Handy wie „Gerade benutzt bei“ (#1180): jede Zeile so hoch, dass die gewachsenen Flächen sich nicht überdecken. */
+  .organisation-verwendungen > li { min-height: 48px; display: flex; align-items: center; }
+}
+/* Postfach → Stand (#1186): Zustand in einem Satz, frühere Störungen leise und zugeklappt. */
+.zustandssatz { margin: 0; }
+.fruehere-stoerungen { margin-top: 10px; }
+.fruehere-stoerungen summary { cursor: pointer; }
+.fruehere-stoerungen ul { margin: 6px 0 0; padding-left: 18px; }
+/* Eingangsordner (#1187): kurze Zeile unter dem Haken „Ordner für neue Benutzer …“, nur wenn jemandem ein Ordner fehlt. */
+.hakenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 2px 0 6px; font-size: calc(13px * var(--skala, 1)); }
+
+.symbolknopf { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche, transparent); color: inherit; cursor: pointer; }
+.symbolknopf .sym { width: 20px; height: 20px; }
+.symbolknopf.an { border-color: var(--akzent); box-shadow: 0 0 0 2px var(--akzent) inset; }
+@media (max-width: 820px) {
+  .symbolknopf { width: 44px; height: 44px; }
+}
+.auskunft-typen { list-style: none; padding-left: 0; }
+@media (pointer: coarse) {
+  .stempeleditor input[type="range"] { min-height: 48px; }
+}
+
+@media (pointer: coarse) {
+  [data-knopf="eigen"].rechtknopf[data-knopf]:not(.klein) { min-height: 48px; }
+}

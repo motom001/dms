@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { werkbankApi, type WerkbankAnsichtStand } from '../api/werkbank';
 import { Link } from '../ort';
-import { FeldGruppe } from '../bausteine';
+import { Etikett, FeldGruppe } from '../bausteine';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
   ansichtAus,
@@ -181,7 +181,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
                   {v === vorgabe && (
                     <>
                       {' '}
-                      <small className="chip">{t('werkbank.ansicht.vorgabe-nutzung')}</small>
+                      <Etikett>{t('werkbank.ansicht.vorgabe-nutzung')}</Etikett>
                     </>
                   )}
                 </span>
@@ -220,11 +220,11 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
                     <span className="ansichtname">
                       <strong>{b.name}</strong> <span className="leise klein">{b.wann}</span>
                       {benutzt ? (
-                        <span className="chip warn" title={t('werkbank.ansicht.bleibt-aktiv-nur-die')}>
+                        <Etikett art="warn" title={t('werkbank.ansicht.bleibt-aktiv-nur-die')}>
                           {t('werkbank.ansicht.aber-ausgeblendet', {
                             wert: zst.warn ? t('werkbank.ansicht.mit-hinweis') : t('werkbank.ansicht.eingerichtet'),
                           })}
-                        </span>
+                        </Etikett>
                       ) : null}
                     </span>
                     <FeldGruppe className="ansichtwahl" beschriftung={b.name} beschriftungVerbergen>

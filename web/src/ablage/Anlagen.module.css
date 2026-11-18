@@ -6,9 +6,6 @@
 .aktionen { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-left: auto; }
 .form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 10px; margin: 6px 0; }
 .form > :first-child { flex: 1 1 220px; min-width: 0; }
-.mitAnlagen { display: inline-flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
-.uebersicht { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
-.uebersicht li { margin-left: 18px; color: var(--leise); }
 @media (max-width: 600px) {
   .zeile { margin-left: 12px; }
   .aktionen { margin-left: 0; }

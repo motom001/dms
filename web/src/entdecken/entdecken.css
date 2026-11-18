@@ -1,0 +1,60 @@
+/* Entdecken und Rundgänge (#1270): Klassen, die nur web/src/entdecken setzt.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* ---------- Ablago entdecken (#831, #832): Rundgang, Tipp-Zeile, Seite ---------- */
+/* Tipp des Tages: leise Zeile in normaler Textfarbe, ohne Symbol, ohne Rahmen, ohne Bewegung; der Satz ist der Link. */
+.tipp-satz { color: inherit; text-decoration: underline; text-decoration-color: var(--linie-stark); text-underline-offset: 3px; }
+.tipp-satz:hover { text-decoration-color: currentColor; }
+/* Ziel eines Tipps: kurz ein Rahmen, keine Bewegung. */
+.anker-hervor { outline: 3px solid var(--akzent); outline-offset: 3px; border-radius: 6px; }
+/* Rundgang: modaler Dialog über die ganze Seite; das Ziel bekommt ein Licht, der Rest wird abgedunkelt. */
+dialog.rundgang { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 16px; border: 0; background: transparent; color: var(--tinte); overflow: auto; }
+dialog.rundgang[open] { display: flex; align-items: center; justify-content: center; }
+dialog.rundgang::backdrop { background: var(--schleier-stark); }
+dialog.rundgang.mit-ziel::backdrop { background: transparent; }
+.rg-licht { position: fixed; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 3px var(--akzent), 0 0 0 9999px var(--schleier-stark); }
+.rg-karte { position: relative; width: min(440px, calc(100vw - 32px)); background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 12px 40px var(--schatten-stark); padding: 16px 20px 14px; display: flex; flex-direction: column; gap: 6px; }
+dialog.rundgang.mit-ziel .rg-karte { position: fixed; }
+dialog.rundgang.schmal.mit-ziel .rg-karte { left: 16px; right: 16px; width: auto; }
+.rg-kopf { margin: 0; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rg-inhalt h2 { margin: 2px 0 6px; }
+.rg-inhalt p { margin: 0 0 8px; }
+.rg-ende { border-top: 1px solid var(--linie); padding-top: 10px; }
+.rg-knoepfe { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 4px; }
+.rg-neben, .rg-haupt { display: flex; gap: 8px; align-items: center; }
+.rg-haupt { margin-left: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .rg-licht { transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease; }
+  .anker-hervor { transition: outline-color .2s ease; }
+}
+/* Die Dreiteilung als Bild (wie auf ablago.app): links Ansichten, Mitte Liste, rechts Mappe; am Handy untereinander. */
+.rg-bild { display: grid; grid-template-columns: 0.9fr 1fr 1.1fr; border: 1px solid var(--linie); border-radius: 8px; overflow: hidden; font-size: calc(12px * var(--skala, 1)); margin: 2px 0 12px; background: var(--grund); }
+.rg-bild-spalte { padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; background: var(--flaeche); }
+.rg-bild-links { background: var(--senke); border-right: 1px solid var(--linie); }
+.rg-bild-mitte { border-right: 1px solid var(--linie); }
+.rg-bild-name { font-size: calc(10.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--akzent); margin-bottom: 2px; }
+.rg-bild-eintrag { padding: 3px 6px; border-radius: 5px; color: var(--leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-bild-eintrag.an { background: var(--akzent-zart); color: var(--tinte); font-weight: 600; }
+.rg-bild-zeile { padding: 4px 6px; border: 1px solid var(--linie); border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-bild-zeile.an { border-color: var(--akzent); }
+.rg-bild-feld { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-bottom: 1px dashed var(--linie); padding-bottom: 3px; color: var(--leise); }
+.rg-bild-strich { display: inline-block; width: 40%; height: 6px; border-radius: 3px; background: var(--linie); }
+.rg-bild-schmal { grid-template-columns: 1fr; max-width: 260px; }
+.rg-bild-schmal .rg-bild-links, .rg-bild-schmal .rg-bild-mitte { border-right: 0; }
+.rg-bild-schmal .rg-bild-links { border-bottom: 1px solid var(--linie); }
+/* Seite „Ablago entdecken“ */
+.entdecken .mappenkopf p { margin: 4px 0 0; }
+.ent-rundgaenge, .ent-tipps { list-style: none; margin: 0; padding: 0; }
+.ent-rundgaenge li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ent-tipps li { padding: 7px 0; border-bottom: 1px solid var(--linie); }
+.ent-tipps li:last-child { border-bottom: 0; }
+.ent-aus .tipp-satz { color: var(--leise); }
+.ent-gruppe h3 { margin: 6px 0 2px; }
+.ent-suche input { width: 100%; }
+/* „Ziel zeigen“: Rahmen um die Stelle unter dem Zeiger, Leiste unten. */
+.ziel-wahl-rahmen { position: fixed; pointer-events: none; z-index: var(--ebene-rundgang); border-radius: 6px; box-shadow: 0 0 0 3px var(--akzent); }
+.ziel-wahl-leiste { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: calc(var(--ebene-rundgang) + 1); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 8px 24px var(--schatten-stark); }
+.ziel-wahl-leiste code { font-family: var(--mono); }
+@media (pointer: coarse) {
+  .ent-tipps .tipp-satz { display: block; padding-block: 4px; }
+}

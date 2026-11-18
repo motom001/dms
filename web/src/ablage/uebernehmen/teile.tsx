@@ -3,7 +3,7 @@ import { feldLabel, typName } from '../../../../shared/src/beschriftung';
 import type { Abgleichtreffer } from '../../../../shared/src/erkennung';
 import { titelAus, type Feld as FeldDef, type Mappentyp, type Werte } from '../../../../shared/src/model';
 import type { Bezuege } from '../../api/mappen';
-import { Knopf, KnopfLink } from '../../bausteine';
+import { Etikett, Knopf, KnopfLink } from '../../bausteine';
 import { Hilfe } from '../../Hilfe';
 import { Link } from '../../ort';
 import { titelOder } from '../../seiten';
@@ -144,7 +144,7 @@ export function VerweisBelege({
         {erster.unsicher && (
           <>
             {' '}
-            <span className="chip warn">{t('ablage.post.unsicher').trim()}</span>
+            <Etikett art="warn">{t('ablage.post.unsicher').trim()}</Etikett>
           </>
         )}
       </p>
