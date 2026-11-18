@@ -13,7 +13,7 @@ import { EventEmitter } from 'node:events';
 import { connect, type Socket } from 'node:net';
 import { PassThrough, Writable } from 'node:stream';
 import type { ExecFileOptions, StdioOptions } from 'node:child_process';
-import { AUSGABE_VORGABE, BLOECKE_JE_MB, KB_JE_MB } from '../grundlagen/grenzen';
+import { AUSGABE_KLEIN, BLOECKE_JE_MB, KB_JE_MB } from '../grundlagen/grenzen';
 import { speicherFehlerVon } from './werkzeuggrenzen';
 import { RAHMEN, rahmen, RahmenLeser, STAND_AUFTRAG, type Auftrag } from './werkzeugprotokoll';
 
@@ -186,7 +186,8 @@ export function werkzeugExecFile(
   const nice = o.nice;
   const text = o.encoding !== 'buffer' && o.encoding !== null;
   const kodierung = (text ? (o.encoding ?? 'utf8') : 'utf8') as BufferEncoding;
-  const max = o.maxBuffer ?? AUSGABE_VORGABE;
+  // Ohne maxBuffer wie node:child_process: 1 MB.
+  const max = o.maxBuffer ?? AUSGABE_KLEIN;
   const k = werkzeugSpawn(socketPfad, befehl, args, { stdio: ['ignore', 'pipe', 'pipe'], zeitMs: o.timeout || undefined, nice });
   const teile: Record<'aus' | 'err', Buffer[]> = { aus: [], err: [] };
   const laenge = { aus: 0, err: 0 };

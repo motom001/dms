@@ -82,7 +82,7 @@ const STARTER = [
 ];
 let starter: string | null | undefined;
 /** Pfad des Startprogramms; null, wenn es fehlt (dann ohne Grenzen, einmal ein Hinweis vom Aufrufer). */
-export function grenzenStarter(): string | null {
+function grenzenStarter(): string | null {
   if (starter === undefined) starter = STARTER.find((p) => findeProgramm(p) !== null) ?? null;
   return starter;
 }

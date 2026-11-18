@@ -219,8 +219,6 @@ export const KB_JE_MB = MB / KB;
 export const BLOECKE_JE_MB = MB / 512;
 /** Längste Zeile eines Auftrags an den Werkzeugdienst (Argumente sind Pfade und Schalter). */
 export const WERKZEUG_AUFTRAG_MAX = 256 * KB;
-/** Vorgabe von node:child_process für `maxBuffer`, wenn der Aufrufer keine setzt. */
-export const AUSGABE_VORGABE = MB;
 
 /* ---------- Sicherung und Platz ---------- */
 
