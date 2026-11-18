@@ -119,7 +119,7 @@
   "postfaecher.anmeldung-beim-anbieter": "Sign-in with the provider failed. {wert}",
   "postfaecher.postfaecher": "Mailboxes",
   "postfaecher.mails-abholen-jede-mail": "Fetch mail – every mail becomes new post.",
-  "postfaecher.neu": "+ New",
+  "postfaecher.neu": "+ Mailbox",
   "postfaecher.lade": "Loading …",
   "postfaecher.noch-kein-postfach": "No mailbox yet.",
   "postfaecher.zuletzt": "last {zeit}",

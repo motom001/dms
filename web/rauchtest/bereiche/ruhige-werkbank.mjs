@@ -291,3 +291,51 @@ for (const handy of [false, true])
       assert.deepEqual(funde, [], `axe am Verwaltungsmodus:\n${funde.join('\n')}`);
     },
   );
+
+/* ---------- Anlegen-Knöpfe nennen den Gegenstand, kein Titel abgeschnitten (#1296, #1290 Fund 1) ---------- */
+
+/** Listen der Werkbank mit Anlegen-Knopf und der erwarteten Beschriftung. */
+const ANLEGEN = {
+  typen: '+ Mappentyp',
+  sichten: '+ Ansicht',
+  nummernkreise: '+ Nummernkreis',
+  automatisierungen: '+ Automatisierung',
+  ablaufvorlagen: '+ Vorlage',
+  rundgaenge: '+ Rundgang',
+  tipps: '+ Tipp',
+  benutzer: '+ Benutzer',
+  stempel: '+ Stempel',
+  auskuenfte: '+ Auskunft',
+  postfaecher: '+ Postfach',
+  woerter: '+ Wortgruppe',
+  designs: '+ Design',
+};
+
+rauchtest(
+  'Werkbank: Anlegen-Knöpfe nennen den Gegenstand, kein Listentitel abgeschnitten (PC und iPad) (#1296)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const funde = [];
+    for (const breite of [1366, 1180, 820]) {
+      await s.setViewportSize({ width: breite, height: 900 });
+      for (const [bereich, text] of Object.entries(ANLEGEN)) {
+        await s.goto(BASIS + `/werkbank/${bereich}`);
+        const kopf = s.locator('.spalte.liste .listenkopf').first();
+        await kopf.waitFor();
+        const knopf = kopf.locator('[data-knopf="anlegen"]');
+        const beschriftung = (await knopf.count()) ? ((await knopf.first().textContent()) ?? '').trim() : '(kein Knopf)';
+        if (beschriftung !== text) funde.push(`${breite} px ${bereich}: „${beschriftung}“ statt „${text}“`);
+        // Titel ganz zu sehen und das „?“ in seiner Zeile: nichts ragt über den Rand der Überschrift.
+        const ab = await kopf.locator('h1').evaluate((h) => {
+          const r = h.getBoundingClientRect();
+          const spalte = h.closest('.spalte').getBoundingClientRect();
+          return h.scrollWidth > h.clientWidth + 1 || r.right > spalte.right + 1;
+        });
+        if (ab) funde.push(`${breite} px ${bereich}: Titel abgeschnitten`);
+      }
+    }
+    assert.deepEqual(funde, [], funde.join('\n'));
+  },
+);

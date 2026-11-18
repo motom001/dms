@@ -1,6 +1,6 @@
 {
   "auskunft.liste.beschreibung": "Who has asked for their data and how far the answer is.",
-  "auskunft.liste.neu": "+ New",
+  "auskunft.liste.neu": "+ Access request",
   "auskunft.liste.suche": "Find person",
   "auskunft.liste.leer.offen": "No open access requests.",
   "auskunft.liste.leer.alle": "No access request yet.",
@@ -18,7 +18,7 @@
   "auskunft.frist.ueber_one": "{anzahl} day overdue",
   "auskunft.frist.ueber_other": "{anzahl} days overdue",
   "auskunft.frist.bis": "Answer by {datum}",
-  "auskunft.rechts.waehlen": "Choose an access request in the list or create a new one with “+ New”.",
+  "auskunft.rechts.waehlen": "Choose an access request in the list or create a new one with “+ Access request”.",
   "auskunft.rechts.fehlt": "This access request doesn’t exist (any more).",
   "auskunft.detail.ueber": "Data protection request",
   "auskunft.detail.angaben": "Details",

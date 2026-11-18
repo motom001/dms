@@ -12,7 +12,7 @@ Ein **Design** bestimmt die Farben der Oberfläche. Unter **Werkbank → Designs
 
 ## Eigenes Design
 
-1. **+ Neu**
+1. **+ Design**
 2. **Grundlage** wählen (automatisch, hell, dunkel, hoher Kontrast).
 3. **Primär-** und **Sekundärfarbe** festlegen.
 4. Die Vorschau zeigt sofort, wie Knöpfe, Listen und Hinweise aussehen.

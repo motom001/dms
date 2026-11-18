@@ -24,7 +24,7 @@ Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der 
 
 ## So arbeitest du in der Werkbank
 
-Bereiche, in denen du etwas anlegst und bearbeitest – egal ob viele oder wenige Einträge: Mappentypen, Ansichten, Nummernkreise, Automatisierungen, Pakete, Benutzer, Datenschutz-Auskünfte, Stempel, Aufgaben, Designs, Postfächer –, und Listen, die du durchsiehst – Papierkorb, Protokoll und Gemeldete Fehler –, sind **dreiteilig**: Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
+Bereiche, in denen du etwas anlegst und bearbeitest – egal ob viele oder wenige Einträge: Mappentypen, Ansichten, Nummernkreise, Automatisierungen, Pakete, Benutzer, Datenschutz-Auskünfte, Stempel, Aufgaben, Designs, Postfächer –, und Listen, die du durchsiehst – Papierkorb, Protokoll und Gemeldete Fehler –, sind **dreiteilig**: Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit dem grünen Knopf oben in der Liste legst du einen an – er nennt, was entsteht (**+ Mappentyp**, **+ Ansicht**, **+ Benutzer** …).
 
 ### Suchen und filtern in der Mitte { #suchen-und-filtern }
 
@@ -47,7 +47,7 @@ Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar blei
 
 Knöpfe wie **Verbindung testen** oder **Jetzt prüfen** stehen darüber im Formular; links in der Leiste steht, wo es das gibt, **Löschen** bzw. **Entfernen**. Solange so ein Knopf arbeitet, zeigt er „Läuft …“; das Ergebnis steht direkt darunter, nicht oben auf der Seite.
 
-Zum **Anlegen** steht in jeder Liste oben rechts der grüne Knopf **+ Neu** – in der Werkbank wie in der Ablage.
+Zum **Anlegen** steht in jeder Liste oben rechts ein grüner Knopf, der den Gegenstand nennt – in der Werkbank **+ Mappentyp**, **+ Nummernkreis**, **+ Vorlage** …, in der Ablage etwa **+ Vertrag**.
 
 ## Übersicht
 

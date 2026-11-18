@@ -60,7 +60,7 @@ rauchtest('Werkbank: Stempel-Vorlage aus der Mitte öffnen (#990)', { als: LENA 
     .getByRole('link', { name: /^Stempel/ })
     .click();
   const elemente = s.getByRole('region', { name: 'Elemente' });
-  await elemente.getByRole('link', { name: '+ Neu' }).waitFor();
+  await elemente.getByRole('link', { name: '+ Stempel' }).waitFor();
   await elemente.getByRole('link', { name: /^Kopie für/ }).click();
   await s.waitForURL(/\/werkbank\/stempel\/kopie$/);
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });

@@ -21,7 +21,7 @@ Was man an **einer** Mappe von Hand anstößt – „Aufgabe vergeben“, „Eri
 
 Petra soll 30 Tage vor Ablauf der Kündigungsfrist eines Vertrags eine Aufgabe bekommen – aber nur, wenn im Vertrag jemand als verantwortlich eingetragen ist.
 
-1. **+ Neu**, Name „Kündigung prüfen“.
+1. **+ Automatisierung**, Name „Kündigung prüfen“.
 2. **Wenn:** **Datum erreicht**, Mappentyp *Vertrag*, Datumsfeld *Kündigung bis*, **Vorlauf** 30 *Tage*, Uhrzeit 07:00.
 3. **Und:** **+ Karte → Feld-Bedingung**, Feld *Verantwortlich* „ist nicht leer“.
 4. **Dann:** **+ Karte → Aufgabe / Benachrichtigung**, Als *Aufgabe*, Empfänger *Person im Feld „Verantwortlich“*, Text `Bitte {titel} prüfen – kündbar bis {kuendigung_bis}.`
@@ -35,7 +35,7 @@ Eine Karte klappst du mit einem Klick auf ihren Namen **auf** (Einstellungen) un
 
 Die Verwaltung soll erfahren, wenn irgendwo ein Dokument dazukommt – gebündelt, nicht für jede Datei einzeln.
 
-1. **+ Neu**, Name „Neue Dokumente melden“.
+1. **+ Automatisierung**, Name „Neue Dokumente melden“.
 2. **Wenn:** **Dokument hochgeladen**. Ohne Mappentyp gilt sie für alle; mit einem Mappentyp (z. B. *Rechnung*) oder einer Feld-Bedingung unter **Und** grenzt du sie ein.
 3. **Dann:** **+ Karte → Aufgabe / Benachrichtigung**, Als *Benachrichtigung*, Empfänger die Rolle *Administrator* (oder eine eigene Rolle wie *Verwaltung*), Text `Neues Dokument an {titel}.`
 4. **Speichern**.

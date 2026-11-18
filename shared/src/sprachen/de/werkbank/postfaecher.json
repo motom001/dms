@@ -119,7 +119,7 @@
   "postfaecher.anmeldung-beim-anbieter": "Anmeldung beim Anbieter fehlgeschlagen. {wert}",
   "postfaecher.postfaecher": "Postfächer",
   "postfaecher.mails-abholen-jede-mail": "Mails abholen – jede Mail wird neue Post.",
-  "postfaecher.neu": "+ Neu",
+  "postfaecher.neu": "+ Postfach",
   "postfaecher.lade": "Lade …",
   "postfaecher.noch-kein-postfach": "Noch kein Postfach.",
   "postfaecher.zuletzt": "zuletzt {zeit}",

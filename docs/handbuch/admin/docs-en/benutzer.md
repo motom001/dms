@@ -15,7 +15,7 @@ On the right, a user is organised like a [folder type](mappentypen.md#aufbau-des
 
 ## Inviting users {#benutzer-einladen}
 
-1. **+ New**
+1. **+ User**
 2. Under *Basic details* enter email address and name, under *Roles and rights* tick **Roles** if needed. You give a management permission afterwards on the person (only with "Full administration").
 3. **Create and invite user** – without email sending the button is called **Create user**. **Discard draft** cancels.
 

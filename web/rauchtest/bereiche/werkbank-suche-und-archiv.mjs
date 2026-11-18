@@ -73,7 +73,7 @@ rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter d
   await offene.uncheck();
   await elemente.getByText('Noch keine Auskunft.').waitFor();
   // Der Assistent verweist auf die Vorgaben (am Handy der Weg dorthin).
-  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await elemente.getByRole('link', { name: '+ Auskunft' }).click();
   await bearbeitung.getByRole('link', { name: 'Vorgaben für jede Auskunft' }).click();
   await s.waitForURL(/\/werkbank\/organisation#auskunft-vorgaben$/);
   await bearbeitung.getByRole('heading', { name: 'Datenschutz-Auskünfte', level: 2 }).waitFor();
@@ -104,7 +104,7 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await s.waitForURL(/\/werkbank\/woerter$/);
   const elemente = s.getByRole('region', { name: 'Elemente' });
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await elemente.getByRole('link', { name: '+ Wortgruppe' }).click();
   await s.waitForURL(/\/werkbank\/woerter\/neu$/);
   await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).fill('Beleg');
   await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('beleg');
@@ -120,7 +120,7 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await s.waitForURL(/\/werkbank\/woerter\/[0-9a-f-]{36}$/);
   await bearbeitung.getByRole('heading', { name: 'Rechnung', level: 1 }).waitFor();
   // Zweite Gruppe mit „Beleg“: Hinweis mit Link auf die erste.
-  await elemente.getByRole('link', { name: '+ Neu' }).click();
+  await elemente.getByRole('link', { name: '+ Wortgruppe' }).click();
   await bearbeitung.getByRole('textbox', { name: 'Wort 1' }).fill('Quittung');
   await bearbeitung.getByRole('textbox', { name: 'Wort 2' }).fill('Beleg');
   await bearbeitung.getByText('Steht auch in:').getByRole('link', { name: 'Rechnung' }).waitFor();

@@ -100,6 +100,7 @@ export { beispielPdf, beispielPdfSeiten } from './pdf.mjs';
  * Änderung im Dokument prüft er die sichtbaren Knöpfe und meldet Funde einmal je Seite an den Test (`__knopfFund`):
  *   - anlegen-ohne-plus: `data-knopf="anlegen"`, dessen Beschriftung nicht mit „+“ beginnt (Leitsatz 2; globale
  *     Knopf-Klassen wie `.knopf.gruen` gibt es seit #1270 nicht mehr);
+ *   - anlegen-ohne-gegenstand (#1296): in der Werkbank ein Anlegen-Knopf „+ Neu …“ statt „+ <Gegenstand>“;
  *   - gefahr-ohne-rueckfrage: `data-knopf="gefahr"`, der keine Rückfrage öffnet (`aria-haspopup="dialog"`) und nicht
  *     gesperrt ist (Leitsatz 5);
  *   - rot-ausserhalb-rueckfrage: rot gefüllt (`data-knopf="entscheidung"`) außerhalb des Fensters einer Rückfrage
@@ -116,8 +117,12 @@ function knopfWaechter() {
   const text = (el) => (el.textContent || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
   const pruefe = () => {
     const funde = [];
-    for (const el of document.querySelectorAll('[data-knopf="anlegen"]'))
+    for (const el of document.querySelectorAll('[data-knopf="anlegen"]')) {
       if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
+      // #1296: In der Werkbank nennt jeder Anlegen-Knopf den Gegenstand („+ Mappentyp“), nie nur „+ Neu“.
+      else if (sichtbar(el) && location.pathname.startsWith('/werkbank') && /^\+ (Neu|New)/.test(text(el)))
+        funde.push(['anlegen-ohne-gegenstand', el]);
+    }
     for (const el of document.querySelectorAll('[data-knopf="gefahr"]')) {
       const gesperrt = el.disabled || el.getAttribute('aria-disabled') === 'true';
       if (sichtbar(el) && !gesperrt && el.getAttribute('aria-haspopup') !== 'dialog') funde.push(['gefahr-ohne-rueckfrage', el]);

@@ -12,7 +12,7 @@ A **design** determines the colours of the interface. You maintain the designs u
 
 ## Your own design {#eigenes-design}
 
-1. **+ New**
+1. **+ Theme**
 2. Choose a **basis** (automatic, light, dark, high contrast).
 3. Set the **primary** and **secondary colour**.
 4. The preview shows immediately what buttons, lists and notices look like.

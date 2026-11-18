@@ -22,7 +22,7 @@ Rundgänge und Tipps aus Paketen erscheinen in der Sprache jeder Person, wenn da
 
 ## Eigene Rundgänge schreiben { #schreiben }
 
-**+ Neuer Rundgang** öffnet eine Vorlage. Ein Rundgang ist eine kleine Datei im YAML-Format – genau das Format, in dem auch Ablago und die Pakete ihre Rundgänge mitbringen ([Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#paket-rundgaenge)). Die Texte schreibst du direkt hinein:
+**+ Rundgang** öffnet eine Vorlage. Ein Rundgang ist eine kleine Datei im YAML-Format – genau das Format, in dem auch Ablago und die Pakete ihre Rundgänge mitbringen ([Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#paket-rundgaenge)). Die Texte schreibst du direkt hinein:
 
 ```yaml
 schluessel: urlaub_beantragen

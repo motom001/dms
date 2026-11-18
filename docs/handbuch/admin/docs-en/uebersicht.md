@@ -24,7 +24,7 @@ Next to the areas it says how much is set up there – for instance the number o
 
 ## How you work in the workbench {#so-arbeitest-du-in-der-werkbank}
 
-Areas in which you create and edit something – whether there are many entries or few: folder types, views, number sequences, automations, packages, users, data protection requests, stamps, tasks, designs, mailboxes – and lists you look through – bin, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; with **+ New** you create one.
+Areas in which you create and edit something – whether there are many entries or few: folder types, views, number sequences, automations, packages, users, data protection requests, stamps, tasks, designs, mailboxes – and lists you look through – bin, log and reported errors – have **three parts**: if you choose an area on the left, its list is in the middle and the form of the chosen entry on the right; the green button at the top of the list creates one – it names what you create (**+ Folder type**, **+ View**, **+ User** …).
 
 ### Searching and filtering in the middle { #suchen-und-filtern }
 
@@ -47,7 +47,7 @@ Every form ends with the same bar, which stays visible at the bottom when scroll
 
 Buttons such as **Test connection** or **Check now** are above it in the form; on the left of the bar, where it exists, is **Delete** or **Remove**. While such a button is working it shows “Working …”; the result appears right below it, not at the top of the page.
 
-To **create** something, every list has the green **+ New** button at the top right – in the Workbench as in the Library.
+To **create** something, every list has a green button at the top right that names the item – in the Workbench **+ Folder type**, **+ Number sequence**, **+ Template** …, in the Library for example **+ Contract**.
 
 ## Overview {#ubersicht}
 

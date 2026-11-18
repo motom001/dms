@@ -2,7 +2,7 @@
 
 Ein **Mappentyp** legt fest, welche Art von Mappe es gibt – *Vertrag*, *Rechnung*, *Versicherung*, *Gerät* … – und was darin steht. Ein neuer Mappentyp bekommt in der Ablage eine eigene Ansicht; das lässt sich beim Anlegen abwählen (siehe [Grunddaten](#grunddaten)).
 
-Mappentypen pflegst du unter **Werkbank → Mappentypen**. Mit **+ Neu** legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.
+Mappentypen pflegst du unter **Werkbank → Mappentypen**. Mit **+ Mappentyp** legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.
 
 ### Mappentypen suchen { #suchen }
 

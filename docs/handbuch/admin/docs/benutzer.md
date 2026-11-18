@@ -15,7 +15,7 @@ Ein Benutzer ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) g
 
 ## Benutzer einladen
 
-1. **+ Neu**
+1. **+ Benutzer**
 2. Unter *Grunddaten* E-Mail-Adresse und Name eintragen, unter *Rollen und Rechte* bei Bedarf **Rollen** anhaken. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
 3. **Benutzer anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Benutzer anlegen**. **Entwurf verwerfen** bricht ab.
 

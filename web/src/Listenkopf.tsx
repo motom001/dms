@@ -28,7 +28,8 @@ export function Listenkopf({
           {titel}
           {hilfe && (
             <>
-              {' '}
+              {/* Geschütztes Leerzeichen: Das „?“ rutscht nie allein in die nächste Zeile (#1290). */}
+              {'\u00a0'}
               <Hilfe ort={hilfe} />
             </>
           )}
