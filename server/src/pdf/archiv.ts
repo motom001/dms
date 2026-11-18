@@ -16,7 +16,6 @@ import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFObject, PDFRa
 import type { SchwaerzSeite } from '../../../shared/src/schwaerzen';
 import { ERECHNUNG_DATEINAME } from '../../../shared/src/erechnung';
 import { liesBbox, popplerDrehungen } from './schwaerzen';
-import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
 import { t } from '../sprache/sprache';
 import { AUSGABE_ARCHIV } from '../grundlagen/grenzen';

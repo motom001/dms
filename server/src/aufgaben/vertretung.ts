@@ -218,7 +218,6 @@ export class AufgabenVertretung implements VertretungTeil {
     const { benutzer: typ } = await this.kern.system();
     const m = await this.repo.holeMappe(b.id);
     if (!m || m.typId !== typ.id) return;
-    const name = b.name || b.email;
     const datum = (t: string) => t.split('-').reverse().join('.');
     const zeitraum = (a: Abwesenheit) =>
       a.von && a.bis

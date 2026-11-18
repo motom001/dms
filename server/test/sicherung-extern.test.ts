@@ -20,7 +20,6 @@ import { mailText } from '../src/mail/mail';
 import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/protokoll/nachweisjournal';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
-const TAG = 24 * 3600_000;
 const ordnerListe: string[] = [];
 after(async () => { for (const o of ordnerListe) await rm(o, { recursive: true, force: true }); });
 

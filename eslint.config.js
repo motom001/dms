@@ -64,6 +64,9 @@ export default defineConfig([
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
+      // Ungenutztes fällt auf (#1273). Absichtlich ungenutzt beginnt mit „_“: ein Parameter, der zur Signatur gehört,
+      // oder ein Feld, das beim Auspacken mit „...rest“ wegfallen soll; „_“ allein für eine Schleife, die nur leert.
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_$', ignoreRestSiblings: true }],
       // Ausnahmen im Code nur mit Begründung („-- Grund“), und nur, wo sie auch etwas abschalten.
       '@eslint-community/eslint-comments/require-description': ['error', { ignore: ['eslint-enable'] }],
       '@eslint-community/eslint-comments/no-unused-disable': 'error',

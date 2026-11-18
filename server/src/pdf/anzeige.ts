@@ -8,8 +8,7 @@
  * Nur für die Anzeige: Das gespeicherte Original bleibt unverändert; Herunterladen und Weitergeben liefern es.
  * Verschlüsselte oder unlesbare PDFs lassen sich nicht bereinigen – dann gibt es sie nur zum Herunterladen.
  */
-import { PDFArray, PDFDict, PDFDocument, PDFName, PDFObject, PDFRef, PDFStream } from 'pdf-lib';
-import { eigenerPuffer } from './puffer';
+import { PDFArray, PDFDict, PDFName, PDFObject, PDFRef, PDFStream } from 'pdf-lib';
 import { ladePdf } from './laden';
 import { t } from '../sprache/sprache';
 
