@@ -217,8 +217,13 @@ export const WERKZEUG_SPEICHER_MB_VORGABE = 1024;
 /** Einheiten für ulimit: -v zählt KB, -f Blöcke zu 512 Byte. */
 export const KB_JE_MB = MB / KB;
 export const BLOECKE_JE_MB = MB / 512;
+/** Größte Datei, die ein Werkzeug schreiben darf (ulimit -f) und die Ablago aus dem Arbeitsordner liest. */
+export const WERKZEUG_DATEI_MB = 2048;
+export const WERKZEUG_DATEI_MAX = WERKZEUG_DATEI_MB * MB;
 /** Längste Zeile eines Auftrags an den Werkzeugdienst (Argumente sind Pfade und Schalter). */
 export const WERKZEUG_AUFTRAG_MAX = 256 * KB;
+/** Größter Rahmen vom Werkzeugdienst (Stücke einer Pipe sind höchstens 64 KB). */
+export const WERKZEUG_RAHMEN_MAX = 4 * MB;
 
 /* ---------- Sicherung und Platz ---------- */
 

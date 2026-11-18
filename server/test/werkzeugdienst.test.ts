@@ -4,12 +4,33 @@
  * Ende ganzer Prozessgruppen prüfen. Den eigenen Benutzer im Image prüft die Probe in der CI (komplett-probe.sh).
  */
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  linkSync,
+  lstatSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+  mkdirSync,
+} from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import type { Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { execFile, spawn, werkzeugAbschirmung, werkzeugOrdner } from '../src/prozesse/hintergrund';
+import {
+  execFile,
+  liesWerkzeugDatei,
+  schreibeWerkzeugDatei,
+  spawn,
+  werkzeugAbschirmung,
+  werkzeugDateien,
+  werkzeugOrdner,
+} from '../src/prozesse/hintergrund';
 import { starteWerkzeugdienst } from '../src/prozesse/werkzeugdienst';
 import { WERKZEUG_SPEICHER_MB_VORGABE } from '../src/grundlagen/grenzen';
 import { werkzeugGrenzenAus } from '../src/prozesse/werkzeuggrenzen';
@@ -32,6 +53,8 @@ skript('qpdf', 'read -r zeile; echo "${#zeile}" >&2');
 skript('pdffonts', 'exec /bin/dd if=/dev/zero of=/dev/null bs=300M count=1');
 // pdftocairo: wie poppler, wenn eine Speicheranforderung scheitert – Meldung, aber Exit-Code 0.
 skript('pdftocairo', 'echo "Syntax Warning: egal" >&2; echo "Out of memory" >&2; exit 0');
+// pdfimages: wie ein übernommenes Werkzeug – legt statt seiner Ausgabe einen Symlink auf die Datei $1 als $2 an.
+skript('pdfimages', '/bin/ln -s "$1" "$2"');
 // pdftotext: 3 MB Ausgabe.
 skript('pdftotext', '/usr/bin/head -c 3000000 /dev/zero');
 
@@ -119,7 +142,7 @@ describe('Werkzeugdienst (#1354)', () => {
   });
 
   it('fehlendes Werkzeug: ENOENT; anderes Programm: abgelehnt', async () => {
-    assert.equal((await lauf('pdfimages', [])).e?.code, 'ENOENT');
+    assert.equal((await lauf('pdfdetach', [])).e?.code, 'ENOENT');
     const r = await lauf('sleep', ['1']);
     assert.equal(r.e?.code, 'EACCES');
     assert.match(r.e!.message, /gehört nicht zu den Dokumentwerkzeugen/);
@@ -177,6 +200,8 @@ describe('Werkzeugdienst (#1354)', () => {
     const r = await lauf('pdftocairo', []);
     assert.equal(r.e?.code, 'EWERKZEUGSPEICHER');
     assert.match(r.e!.message, /pdftocairo: Out of memory – das PDF braucht mehr Arbeitsspeicher/);
+    assert.match(r.e!.message, /DMS_WERKZEUG_SPEICHER_MB/, 'nennt den Schalter');
+    assert.match(r.err, /DMS_WERKZEUG_SPEICHER_MB/, 'auch in der Fehlerausgabe, die viele Aufrufer zeigen');
   });
 
   it('Stand: Benutzer und Grenzen, gemessen im Dienst', async () => {
@@ -203,6 +228,48 @@ describe('Werkzeugdienst (#1354)', () => {
     } finally {
       delete process.env.DMS_WERKZEUG_ARBEIT;
     }
+  });
+});
+
+describe('Arbeitsordner ohne Symlinks (#1354)', () => {
+  const draussen = join(tmp, 'draussen.txt');
+  let dir: string;
+  before(async () => {
+    writeFileSync(draussen, 'geheim');
+    dir = await werkzeugOrdner('dms-probe-links-');
+  });
+  after(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('Lesen: Symlink eines Werkzeugs auf eine Datei außerhalb → Fehler, die Datei bleibt unberührt', async () => {
+    // Über den Dienst: das Werkzeug legt den Symlink selbst an.
+    const r = await lauf('pdfimages', [draussen, join(dir, 'bild.jpg')]);
+    assert.equal(r.e, null);
+    assert.ok(lstatSync(join(dir, 'bild.jpg')).isSymbolicLink());
+    await assert.rejects(liesWerkzeugDatei(join(dir, 'bild.jpg')), (e: NodeJS.ErrnoException) => e.code === 'ELOOP');
+    assert.deepEqual(await werkzeugDateien(dir), [], 'Liste ohne Symlinks');
+    assert.equal(readFileSync(draussen, 'utf8'), 'geheim');
+  });
+
+  it('Lesen: Hardlink und FIFO gelten nicht als Ausgabe; eine echte Datei geht', async () => {
+    linkSync(draussen, join(dir, 'hart.jpg'));
+    await assert.rejects(liesWerkzeugDatei(join(dir, 'hart.jpg')), (e: NodeJS.ErrnoException) => e.code === 'EWERKZEUGDATEI');
+    execFileSync('mkfifo', [join(dir, 'rohr.jpg')]);
+    await assert.rejects(liesWerkzeugDatei(join(dir, 'rohr.jpg')), (e: NodeJS.ErrnoException) => e.code === 'EWERKZEUGDATEI');
+    writeFileSync(join(dir, 'echt.jpg'), 'bild');
+    assert.equal((await liesWerkzeugDatei(join(dir, 'echt.jpg'))).toString(), 'bild');
+    assert.deepEqual((await werkzeugDateien(dir)).sort(), ['echt.jpg', 'hart.jpg'], 'nur reguläre Dateien');
+    await assert.rejects(liesWerkzeugDatei(join(dir, 'echt.jpg'), 2), (e: NodeJS.ErrnoException) => e.code === 'EWERKZEUGDATEI', 'Größe');
+  });
+
+  it('Schreiben über einen vorab gelegten Symlink: die Datei außerhalb bleibt unberührt', async () => {
+    symlinkSync(draussen, join(dir, 'ein.pdf'));
+    await schreibeWerkzeugDatei(join(dir, 'ein.pdf'), 'neu');
+    assert.equal(readFileSync(draussen, 'utf8'), 'geheim');
+    assert.ok(lstatSync(join(dir, 'ein.pdf')).isFile());
+    assert.equal(readFileSync(join(dir, 'ein.pdf'), 'utf8'), 'neu');
+    // Derselbe Name noch einmal (Schleife): wieder eine neue Datei.
+    await schreibeWerkzeugDatei(join(dir, 'ein.pdf'), 'zweiter');
+    assert.equal(readFileSync(join(dir, 'ein.pdf'), 'utf8'), 'zweiter');
   });
 });
 

@@ -62,6 +62,7 @@
     "pdftotext",
     "qpdf",
     "sha256sum",
+    "mkfifo",
     // Mermaid-CLI: optional, nur wenn lokal vorhanden (abhaengigkeitsbild.mjs prüft das selbst).
     "mmdc",
   ],

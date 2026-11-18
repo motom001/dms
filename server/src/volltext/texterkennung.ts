@@ -1,5 +1,5 @@
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
-import { rm, writeFile } from 'node:fs/promises';
+import { execFile, werkzeugOrdner, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { OCR_STAENDE, type Dokument, type OcrStandArt } from '../../../shared/src/model';
@@ -564,7 +564,7 @@ export class Texterkennung {
     const dir = await werkzeugOrdner('dms-ocr-');
     try {
       const pfad = join(dir, 'datei');
-      await writeFile(pfad, fassung ? fassung.inhalt : await alsBuffer(await this.dateien.lies(d.sha256)));
+      await schreibeWerkzeugDatei(pfad, fassung ? fassung.inhalt : await alsBuffer(await this.dateien.lies(d.sha256)));
       if (signal?.aborted) throw new Error('abgebrochen');
       const r = await this.engine(pfad, d.mime, { maxSeiten: MAX_SEITEN, werkzeuge: await this.werkzeugeLaden(), signal });
       // Erkannte Sprache am Ende des Hinweises (#395) – für Anzeige und Statistik.
@@ -654,7 +654,7 @@ export class Texterkennung {
     const dir = await werkzeugOrdner('dms-sofort-');
     try {
       const pfad = join(dir, 'datei');
-      await writeFile(pfad, inhalt);
+      await schreibeWerkzeugDatei(pfad, inhalt);
       const r = await this.engine(pfad, mime, { maxSeiten: 5, werkzeuge: await this.werkzeugeLaden() });
       return { text: r.text, info: r.info };
     } finally {

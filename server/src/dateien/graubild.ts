@@ -12,8 +12,8 @@
  * pdftoppm -gray liefert dieses Format; tesseract liest es direkt. So braucht das Image kein
  * zusätzliches Bildwerkzeug, um eine auf dem Kopf stehende oder quer liegende Seite aufzurichten.
  */
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { execFile, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Fachfehler } from '../grundlagen/fehler';
 import { merkeSchriftfehler } from './ersatzschriften';
@@ -32,7 +32,7 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
     throw new Fachfehler(422, t('meldungen.graubild.dpi-zwischen-und', { DPI_MIN, DPI_MAX }));
   const dir = await werkzeugOrdner('dms-scan-');
   try {
-    await writeFile(join(dir, 'q.pdf'), pdf);
+    await schreibeWerkzeugDatei(join(dir, 'q.pdf'), pdf);
     await new Promise<void>((ok, fehler) => {
       execFile(
         'pdftoppm',
@@ -66,7 +66,7 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
         },
       );
     });
-    const bild = await readFile(join(dir, farbe ? 's.ppm' : 's.pgm')).catch(() => {
+    const bild = await liesWerkzeugDatei(join(dir, farbe ? 's.ppm' : 's.pgm')).catch(() => {
       throw new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr }));
     });
     if (bild.length > PUNKTE_MAX * (farbe ? 3 : 1) + 64) throw new Fachfehler(422, t('meldungen.graubild.die-seite-ist-bei', { dpi }));

@@ -9,7 +9,7 @@
  *   Programm samt allem, was es gestartet hat.
  */
 
-import { WERKZEUG_AUFTRAG_MAX } from '../grundlagen/grenzen';
+import { WERKZEUG_AUFTRAG_MAX, WERKZEUG_RAHMEN_MAX } from '../grundlagen/grenzen';
 
 export interface Auftrag {
   befehl: string;
@@ -41,15 +41,32 @@ export function rahmen(art: RahmenArt, inhalt: Buffer | string): Buffer {
   return Buffer.concat([kopf, b]);
 }
 
-/** Liest Rahmen aus einem Strom von Stücken. */
+/**
+ * Größter Rahmen. Der Dienst schickt die Ausgabe in Stücken einer Pipe (höchstens 64 KB); was größer ist, kommt nicht
+ * vom Dienst – Ablago behandelt alles von dort als nicht vertrauenswürdig (#1354).
+ */
+const RAHMEN_MAX = WERKZEUG_RAHMEN_MAX;
+
+/** Liest Rahmen aus einem Strom von Stücken; ein zu großer Rahmen beendet das Lesen mit `fehler`. */
 export class RahmenLeser {
   private rest: Buffer = Buffer.alloc(0);
-  constructor(private weiter: (art: number, inhalt: Buffer) => void) {}
+  private kaputt = false;
+  constructor(
+    private weiter: (art: number, inhalt: Buffer) => void,
+    private fehler: (meldung: string) => void = () => {},
+  ) {}
 
   nimm(stueck: Buffer) {
+    if (this.kaputt) return;
     this.rest = this.rest.length ? Buffer.concat([this.rest, stueck]) : stueck;
     while (this.rest.length >= 5) {
       const laenge = this.rest.readUInt32BE(1);
+      if (laenge > RAHMEN_MAX) {
+        this.kaputt = true;
+        this.rest = Buffer.alloc(0);
+        this.fehler(`Rahmen zu groß (${laenge} Byte)`);
+        return;
+      }
       if (this.rest.length < 5 + laenge) return;
       const art = this.rest[0];
       const inhalt = this.rest.subarray(5, 5 + laenge);

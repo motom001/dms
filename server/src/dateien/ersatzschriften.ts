@@ -10,8 +10,8 @@
  * - `nichtEingebettet()`: Hat ein PDF Schriften, die es nicht einbettet? (`pdffonts`) – für die einmalige Reparatur
  *   des Bestands nach dem Update (`DokumentArchivfassung.schriftNachlauf` in `dokumente/archivfassung.ts`).
  */
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
-import { rm, writeFile } from 'node:fs/promises';
+import { execFile, werkzeugOrdner, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { protokoll } from '../protokoll/protokoll';
 import { AUSGABE_KLEIN } from '../grundlagen/grenzen';
@@ -90,7 +90,7 @@ export const schriftfehlerGesehen = () => gesehen !== null;
 export async function pruefeSchriften(): Promise<boolean | undefined> {
   const dir = await werkzeugOrdner('dms-schriften-');
   try {
-    await writeFile(join(dir, 'probe.pdf'), probePdf());
+    await schreibeWerkzeugDatei(join(dir, 'probe.pdf'), probePdf());
     const stderr = await new Promise<string | null>((ok) => {
       execFile(
         'pdftoppm',
@@ -116,7 +116,7 @@ export async function pruefeSchriften(): Promise<boolean | undefined> {
 export async function nichtEingebettet(pdf: Buffer): Promise<string[] | null> {
   const dir = await werkzeugOrdner('dms-pdffonts-');
   try {
-    await writeFile(join(dir, 'datei.pdf'), pdf);
+    await schreibeWerkzeugDatei(join(dir, 'datei.pdf'), pdf);
     const aus = await new Promise<string | null>((ok) => {
       execFile('pdffonts', [join(dir, 'datei.pdf')], { timeout: 30_000, maxBuffer: AUSGABE_KLEIN }, (e, out) => ok(e ? null : String(out)));
     });

@@ -19,9 +19,9 @@
  *   nur nach erneuter Bestätigung (`BESTAETIGUNG_MS`, je Sitzung). Kommt neue Post für diese Person („Für“), probiert
  *   Ablago die gemerkten Passwörter still durch – jedes als eigener qpdf-Prozess mit Zeitgrenze.
  */
-import { spawn, werkzeugOrdner } from '../prozesse/hintergrund';
+import { spawn, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
 import { createHash, randomUUID } from 'node:crypto';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { FassungInfo } from '../../../shared/src/dateiumwandlung';
 import {
@@ -107,7 +107,7 @@ async function mitDatei<T>(pdf: Buffer, f: (ein: string, dir: string) => Promise
   const dir = await werkzeugOrdner('dms-entsperren-');
   try {
     const ein = join(dir, 'ein.pdf');
-    await writeFile(ein, pdf);
+    await schreibeWerkzeugDatei(ein, pdf);
     return await f(ein, dir);
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -144,7 +144,7 @@ export async function entsperrePdf(pdf: Buffer, passwort: string | null, ms = QP
     const r = await qpdf([...(passwort !== null ? ['--password-file=-'] : []), '--decrypt', '--warning-exit-0', ein, aus], passwort, ms);
     if (r.code === 2 && /invalid password/i.test(r.stderr)) throw new FalschesPasswort();
     if (r.code !== 0) throw new Fachfehler(422, t('mappen.entsperren.kaputt'));
-    const b = await readFile(aus);
+    const b = await liesWerkzeugDatei(aus);
     if (b.subarray(0, 5).toString('latin1') !== '%PDF-') throw new Fachfehler(422, t('mappen.entsperren.kaputt'));
     return b;
   });

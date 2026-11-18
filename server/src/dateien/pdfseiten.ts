@@ -1,5 +1,5 @@
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
-import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { execFile, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei, werkzeugDateien } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Fachfehler } from '../grundlagen/fehler';
 import { merkeSchriftfehler } from './ersatzschriften';
@@ -118,7 +118,7 @@ export async function popplerSeiten(inhalt: Buffer): Promise<Buffer[]> {
   const dir = await werkzeugOrdner('dms-seiten-');
   try {
     const pdf = join(dir, 'datei.pdf');
-    await writeFile(pdf, inhalt);
+    await schreibeWerkzeugDatei(pdf, inhalt);
     await starte(
       'pdftoppm',
       [
@@ -137,10 +137,10 @@ export async function popplerSeiten(inhalt: Buffer): Promise<Buffer[]> {
       300_000,
     );
     // pdftoppm nummeriert mit führenden Nullen je nach Seitenzahl (s-1.jpg, s-01.jpg …).
-    const namen = (await readdir(dir))
+    const namen = (await werkzeugDateien(dir))
       .filter((n) => /^s-\d+\.jpg$/.test(n))
       .sort((a, b) => Number(a.slice(2, -4)) - Number(b.slice(2, -4)));
-    return await Promise.all(namen.map((n) => readFile(join(dir, n))));
+    return await Promise.all(namen.map((n) => liesWerkzeugDatei(join(dir, n))));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

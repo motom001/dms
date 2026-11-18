@@ -1,4 +1,4 @@
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { execFile, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
@@ -165,13 +165,13 @@ export const popplerErzeuger: Erzeuger = async (inhalt, mime) => {
   const dir = await werkzeugOrdner('dms-vorschau-');
   try {
     const pdf = join(dir, 'datei.pdf');
-    await writeFile(pdf, mime === 'application/pdf' ? inhalt : await bildSeitePdf(inhalt, mime));
+    await schreibeWerkzeugDatei(pdf, mime === 'application/pdf' ? inhalt : await bildSeitePdf(inhalt, mime));
     await starte(
       'pdftoppm',
       ['-f', '1', '-l', '1', '-singlefile', '-scale-to', String(VORSCHAU_PX), '-jpeg', '-jpegopt', 'quality=80', pdf, join(dir, 'bild')],
       60_000,
     );
-    return await readFile(join(dir, 'bild.jpg'));
+    return await liesWerkzeugDatei(join(dir, 'bild.jpg'));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

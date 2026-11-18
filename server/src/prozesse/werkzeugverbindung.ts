@@ -36,6 +36,33 @@ function rohre(stdio: StdioOptions | undefined): [boolean, boolean, boolean] {
   return [istRohr(stdio[0]), istRohr(stdio[1]), istRohr(stdio[2])];
 }
 
+/** JSON aus einem Rahmen; null, wenn es keins ist. */
+function jsonVon(b: Buffer): Record<string, unknown> | null {
+  try {
+    const x: unknown = JSON.parse(b.toString('utf8'));
+    return x && typeof x === 'object' ? (x as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ende eines Programms aus einem Rahmen: Code als ganze Zahl oder Signal mit üblichem Namen, sonst null. */
+function endeAus(b: Buffer): { code: number | null; signal: NodeJS.Signals | null } | null {
+  const e = jsonVon(b);
+  const code = typeof e?.code === 'number' && Number.isInteger(e.code) ? e.code : null;
+  const signal = typeof e?.signal === 'string' && /^SIG[A-Z0-9]{1,10}$/.test(e.signal) ? (e.signal as NodeJS.Signals) : null;
+  return code === null && signal === null ? null : { code, signal };
+}
+
+/** Startfehler aus einem Rahmen: Code nur in der Form ENOENT/EACCES …, Meldung gekürzt. */
+function fehlerAus(b: Buffer): { code: string; meldung: string } {
+  const e = jsonVon(b);
+  return {
+    code: typeof e?.code === 'string' && /^E[A-Z]{2,20}$/.test(e.code) ? e.code : 'EWERKZEUGDIENST',
+    meldung: typeof e?.meldung === 'string' ? e.meldung.slice(0, 500) : 'Werkzeug nicht gestartet',
+  };
+}
+
 /** Ein Programm im Werkzeugdienst – mit den Teilen von ChildProcess, die Ablago benutzt. */
 export class WerkzeugKind extends EventEmitter {
   /** Die Prozess-Id kennt nur der Dienst (anderer Benutzer); Ablago braucht sie nicht. */
@@ -95,7 +122,10 @@ export class WerkzeugKind extends EventEmitter {
     if (this.beendet) return;
     const s = connect({ path: this.socketPfad });
     this.sock = s;
-    const leser = new RahmenLeser((art, inhalt) => this.rahmen(art, inhalt));
+    const leser = new RahmenLeser(
+      (art, inhalt) => this.rahmen(art, inhalt),
+      (m) => this.scheitere('EWERKZEUGDIENST', `Antwort des Werkzeugdienstes ungültig: ${m}`),
+    );
     s.once('connect', () => {
       this.verbunden = true;
       s.write(kopf);
@@ -118,17 +148,22 @@ export class WerkzeugKind extends EventEmitter {
     });
   }
 
+  /**
+   * Ein Rahmen vom Dienst (#1354): nicht vertrauenswürdig – Ende und Startfehler nur in der erwarteten Form, sonst ein
+   * Fehler. Ausgabe und Fehlerausgabe gehen nur als Daten weiter (Länge begrenzen die Aufrufer mit maxBuffer).
+   */
   private rahmen(art: number, inhalt: Buffer) {
     if (this.beendet) return;
     if (art === RAHMEN.aus) this.stdout?.write(inhalt);
     else if (art === RAHMEN.err) this.stderr?.write(inhalt);
     else if (art === RAHMEN.ende) {
-      const e = JSON.parse(inhalt.toString('utf8')) as { code: number | null; signal: NodeJS.Signals | null };
-      this.ende(e.code, e.signal);
+      const e = endeAus(inhalt);
+      if (e) this.ende(e.code, e.signal);
+      else this.scheitere('EWERKZEUGDIENST', 'Antwort des Werkzeugdienstes ungültig');
     } else if (art === RAHMEN.fehler) {
-      const e = JSON.parse(inhalt.toString('utf8')) as { code: string; meldung: string };
+      const e = fehlerAus(inhalt);
       this.scheitere(e.code, e.meldung);
-    }
+    } else this.scheitere('EWERKZEUGDIENST', 'Antwort des Werkzeugdienstes ungültig');
   }
 
   /** Wie ein Startfehler von spawn: erst `error`, dann `close`. */
@@ -203,7 +238,20 @@ export function werkzeugExecFile(
     gemeldet = true;
     clearTimeout(uhr);
     o.signal?.removeEventListener('abort', abbruch);
-    rueckruf?.(e, ergebnis('aus'), ergebnis('err'));
+    // An der Speichergrenze (#1354): Fehler mit Hinweis auf DMS_WERKZEUG_SPEICHER_MB, auch in der Fehlerausgabe – viele
+    // Aufrufer zeigen die statt der Meldung.
+    const err = ergebnis('err');
+    const speicher = speicherFehlerVon(befehl, err.toString());
+    if (speicher) {
+      const f = Object.assign(new Error(speicher), { code: 'EWERKZEUGSPEICHER', killed: false, signal: null });
+      rueckruf?.(
+        f,
+        ergebnis('aus'),
+        text ? `${err.toString()}\n${speicher}` : Buffer.concat([err as Buffer, Buffer.from(`\n${speicher}`)]),
+      );
+      return;
+    }
+    rueckruf?.(e, ergebnis('aus'), err);
   };
   const sammle = (w: 'aus' | 'err', name: string) => (d: Buffer) => {
     laenge[w] += d.length;
@@ -232,8 +280,6 @@ export function werkzeugExecFile(
   k.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
     if (gemeldet) return;
     if (fehler) return melde(fehler);
-    const speicher = code === 0 && !signal ? speicherFehlerVon(befehl, ergebnis('err').toString()) : null;
-    if (speicher) return melde(Object.assign(new Error(speicher), { code: 'EWERKZEUGSPEICHER', killed: false, signal: null }));
     if (code === 0 && !signal) return melde(null);
     const befehlszeile = [befehl, ...args].join(' ');
     const e = Object.assign(new Error(`Command failed: ${befehlszeile}\n${ergebnis('err').toString()}`), {

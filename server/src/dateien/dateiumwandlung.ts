@@ -16,7 +16,7 @@
  * - Mit der Fassung entstehen Vorschaubild (vorschau.ts) und Volltext (texterkennung.ts: Textebene bzw. Paket
  *   Texterkennung) wie bei einem PDF oder Foto.
  */
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { execFile, werkzeugOrdner, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
 import { createHash } from 'node:crypto';
 import { mkdir, readdir, readFile, rename, rm, rmdir, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -207,7 +207,7 @@ export function bildGroesse(b: Buffer, mime: string): { breite: number; hoehe: n
 async function pdfSeiten(inhalt: Buffer): Promise<number | null> {
   const dir = await werkzeugOrdner('dms-fassung-');
   try {
-    await writeFile(join(dir, 'f.pdf'), inhalt);
+    await schreibeWerkzeugDatei(join(dir, 'f.pdf'), inhalt);
     return await new Promise<number | null>((ok, fehler) => {
       execFile('pdfinfo', [join(dir, 'f.pdf')], { timeout: 30_000, maxBuffer: AUSGABE_KLEIN }, (e, out, err) => {
         if (e && (e as NodeJS.ErrnoException).code === 'ENOENT') {

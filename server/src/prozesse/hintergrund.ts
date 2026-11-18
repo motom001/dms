@@ -22,11 +22,13 @@
  */
 import * as kp from 'node:child_process';
 import { readdirSync } from 'node:fs';
-import { chmod, mkdtemp } from 'node:fs/promises';
+import { chmod, mkdtemp, open, readdir, rm, writeFile } from 'node:fs/promises';
+import { constants as fsKonstanten } from 'node:fs';
 import { getPriority, setPriority, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { protokoll } from '../protokoll/protokoll';
 import { tDe } from '../sprache/sprache';
+import { WERKZEUG_DATEI_MAX } from '../grundlagen/grenzen';
 import { findeProgramm, istWerkzeug, mitGrenzen, speicherFehlerVon, werkzeugGrenzenAus } from './werkzeuggrenzen';
 import { STAND_SKRIPT } from './werkzeugprotokoll';
 import {
@@ -209,6 +211,40 @@ export async function werkzeugOrdner(vorsilbe: string): Promise<string> {
   return d;
 }
 
+/**
+ * Ein- und Ausgaben in einem Arbeitsordner der Werkzeuge (#1354). Die Werkzeuge dürfen in den Ordner schreiben – ein
+ * Werkzeug, das ein präpariertes PDF übernommen hat, könnte dort statt einer Ausgabe einen Symlink (z. B. auf
+ * /data/geheim/…), eine FIFO oder einen Hardlink anlegen. Darum liest und schreibt Ablago dort nur über diese drei:
+ *
+ * - `liesWerkzeugDatei`: öffnet ohne Symlinks zu folgen (`O_NOFOLLOW`) und ohne zu warten (`O_NONBLOCK`, für FIFOs),
+ *   prüft am geöffneten Handle: reguläre Datei, nur ein Link, nicht größer als `max`.
+ * - `schreibeWerkzeugDatei`: entfernt einen vorhandenen Eintrag (`rm` folgt keinem Symlink) und legt die Datei nur
+ *   neu an (`wx`, also `O_CREAT|O_EXCL`: scheitert an jedem Eintrag mit dem Namen, auch an einem Symlink).
+ * - `werkzeugDateien`: nur reguläre Dateien (`withFileTypes`), keine Symlinks, Ordner oder FIFOs.
+ *
+ * Ohne Werkzeugdienst gilt dasselbe; in einem frischen Ordner ändert es nichts am Ergebnis.
+ */
+export async function liesWerkzeugDatei(pfad: string, max = WERKZEUG_DATEI_MAX) {
+  const fh = await open(pfad, fsKonstanten.O_RDONLY | fsKonstanten.O_NOFOLLOW | fsKonstanten.O_NONBLOCK);
+  try {
+    const st = await fh.stat();
+    if (!st.isFile() || st.nlink !== 1 || st.size > max)
+      throw Object.assign(new Error(`Ausgabe des Werkzeugs ist keine einfache Datei: ${pfad}`), { code: 'EWERKZEUGDATEI' });
+    return await fh.readFile();
+  } finally {
+    await fh.close();
+  }
+}
+
+export async function schreibeWerkzeugDatei(pfad: string, inhalt: string | Uint8Array): Promise<void> {
+  await rm(pfad, { force: true });
+  await writeFile(pfad, inhalt, { flag: 'wx' });
+}
+
+export async function werkzeugDateien(ordner: string): Promise<string[]> {
+  return (await readdir(ordner, { withFileTypes: true })).filter((e) => e.isFile()).map((e) => e.name);
+}
+
 /** Direkt (ohne Dienst): ein Werkzeug mit Grenzen – fehlt es, bleibt der Aufruf unverändert (ENOENT wie gewohnt). */
 function direkt(befehl: unknown, args: unknown): { befehl: unknown; args: unknown } {
   if (typeof befehl !== 'string' || !istWerkzeug(befehl)) return { befehl, args };
@@ -238,13 +274,15 @@ export const execFile = ((...a: unknown[]) => {
   const befehl = String(a[0]);
   const d = direkt(a[0], Array.isArray(a[1]) ? a[1] : undefined);
   if (d.befehl !== a[0]) a = [d.befehl, d.args, ...a.slice(Array.isArray(a[1]) ? 2 : 1)];
-  // Wie mit dem Dienst: poppler ohne Speicher gilt als Fehler, auch mit Exit-Code 0.
+  // Wie mit dem Dienst: An der Speichergrenze gilt es als Fehler (auch mit Exit-Code 0), mit Hinweis auf den Schalter.
   const r = a.findIndex((x) => typeof x === 'function');
   if (r > 0) {
     const weiter = a[r] as (e: unknown, aus: unknown, err: unknown) => void;
     a[r] = (e: unknown, aus: unknown, err: unknown) => {
-      const speicher = e ? null : speicherFehlerVon(befehl, String(err ?? ''));
-      weiter(speicher ? Object.assign(new Error(speicher), { code: 'EWERKZEUGSPEICHER', killed: false, signal: null }) : e, aus, err);
+      const speicher = speicherFehlerVon(befehl, String(err ?? ''));
+      if (!speicher) return weiter(e, aus, err);
+      const f = Object.assign(new Error(speicher), { code: 'EWERKZEUGSPEICHER', killed: false, signal: null });
+      weiter(f, aus, Buffer.isBuffer(err) ? Buffer.concat([err, Buffer.from(`\n${speicher}`)]) : `${String(err ?? '')}\n${speicher}`);
     };
   }
   return niedrig((kp.execFile as (...x: unknown[]) => kp.ChildProcess)(...a));

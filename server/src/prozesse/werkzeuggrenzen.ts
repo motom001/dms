@@ -14,7 +14,7 @@
 import { accessSync, constants } from 'node:fs';
 import { delimiter, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BLOECKE_JE_MB, KB_JE_MB, WERKZEUG_SPEICHER_MB_VORGABE } from '../grundlagen/grenzen';
+import { BLOECKE_JE_MB, KB_JE_MB, WERKZEUG_DATEI_MB, WERKZEUG_SPEICHER_MB_VORGABE } from '../grundlagen/grenzen';
 
 /** Programme, die der Werkzeugdienst startet. Andere lehnt er ab. */
 const WERKZEUG_NAMEN = [
@@ -41,8 +41,6 @@ const WERKZEUG_SPEICHER_MB_MIN = 128;
 const WERKZEUG_SPEICHER_MB_MAX = 65_536;
 /** Rechenzeit je Aufruf (s) – nur als Rückhalt; die Aufrufer setzen eigene, kürzere Zeitgrenzen (Wanduhr). */
 const WERKZEUG_CPU_S = 900;
-/** Größte Datei, die ein Werkzeug schreiben darf (MB), z. B. ein Rasterbild einer riesigen Seite. */
-const WERKZEUG_DATEI_MB = 2048;
 /** Längste Laufzeit eines Aufrufs ohne eigene Zeitgrenze (ms). */
 export const WERKZEUG_ZEIT_MAX_MS = 15 * 60_000;
 
@@ -131,9 +129,10 @@ export const istWerkzeug = (befehl: string) => werkzeugName(befehl) !== null;
  */
 export function speicherFehlerVon(befehl: string, stderr: string): string | null {
   const name = befehl.slice(befehl.lastIndexOf('/') + 1);
-  if (!name.startsWith('pdf')) return null;
-  const m = /^(Out of memory|Bogus memory allocation size)\b.*$/m.exec(stderr);
-  return m
-    ? `${name}: ${m[0]} – das PDF braucht mehr Arbeitsspeicher, als ein Dokumentwerkzeug haben darf (DMS_WERKZEUG_SPEICHER_MB).`
-    : null;
+  if (!name.startsWith('pdf') && name !== 'qpdf') return null;
+  const m = /^.{0,40}(Out of memory|Bogus memory allocation size|std::bad_alloc|cannot allocate memory)\b.*$/im.exec(stderr);
+  return m ? `${name}: ${m[0].slice(0, 200)} – ${SPEICHER_HINWEIS}` : null;
 }
+
+/** Hinweis, wenn ein Werkzeug an die Speichergrenze stößt (#1354): nennt den Schalter, der hilft. */
+const SPEICHER_HINWEIS = `das PDF braucht mehr Arbeitsspeicher, als ein Dokumentwerkzeug haben darf. Abhilfe: DMS_WERKZEUG_SPEICHER_MB in der Compose-Datei erhöhen (Vorgabe ${WERKZEUG_SPEICHER_MB_VORGABE} MB).`;

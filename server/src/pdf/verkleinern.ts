@@ -19,9 +19,9 @@
  * Farbschlüssel-Maske (/Mask), Sonderfarben (Separation, DeviceN) und Bilder, deren Platzierung sich nicht
  * ermitteln lässt (z. B. nur in Mustern oder Anmerkungen).
  */
-import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { execFile, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei, werkzeugDateien } from '../prozesse/hintergrund';
 import { createHash } from 'node:crypto';
-import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
@@ -449,7 +449,7 @@ async function rechne(doc: PDFDocument, plaene: Plan[], grau: boolean, qualitaet
     );
   }
   const ein = join(dir, `${tag}.pdf`);
-  await writeFile(ein, await mini.save());
+  await schreibeWerkzeugDatei(ein, await mini.save());
   try {
     await starte('pdftoppm', [
       '-r',
@@ -467,11 +467,11 @@ async function rechne(doc: PDFDocument, plaene: Plan[], grau: boolean, qualitaet
     if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new Fachfehler(503, t('meldungen.verkleinern.pdftoppm-fehlt-pdfs-lassen'));
     throw new Fachfehler(422, t('meldungen.verkleinern.die-bilder-liessen-sich', { message: (e as Error).message }));
   }
-  const dateien = (await readdir(dir))
+  const dateien = (await werkzeugDateien(dir))
     .filter((n) => n.startsWith(`${tag}-`) && n.endsWith('.jpg'))
     .sort((a, b) => Number(a.slice(tag.length + 1, -4)) - Number(b.slice(tag.length + 1, -4)));
   if (dateien.length !== plaene.length) throw new Fachfehler(422, t('meldungen.verkleinern.die-bilder-liessen-sich-2'));
-  return Promise.all(dateien.map((n) => readFile(join(dir, n))));
+  return Promise.all(dateien.map((n) => liesWerkzeugDatei(join(dir, n))));
 }
 
 /** Alle Verweise in einem Objekt ersetzen (doppelte Ströme). */
@@ -641,7 +641,7 @@ export async function verkleinere(inhalt: Buffer, stufe: Stufe = STANDARD_STUFE)
     let erg = Buffer.from(await doc.save({ useObjectStreams: true, updateFieldAppearances: false }));
     if (await hatQpdf()) {
       try {
-        await writeFile(join(dir, 'ein.pdf'), erg);
+        await schreibeWerkzeugDatei(join(dir, 'ein.pdf'), erg);
         await starte('qpdf', [
           '--object-streams=generate',
           '--compress-streams=y',
@@ -651,7 +651,7 @@ export async function verkleinere(inhalt: Buffer, stufe: Stufe = STANDARD_STUFE)
           join(dir, 'ein.pdf'),
           join(dir, 'aus.pdf'),
         ]);
-        const q = await readFile(join(dir, 'aus.pdf'));
+        const q = await liesWerkzeugDatei(join(dir, 'aus.pdf'));
         if (q.length < erg.length) erg = q;
       } catch (e) {
         hinweise.push({ text: t('meldungen.verkleinern.pdf-verkleinern-qpdf-uebersprungen'), fehler: (e as Error).message });
