@@ -2,7 +2,7 @@
 
 A **tour** shows places on the real interface step by step – Ablago's own one the first time someone signs in, tours from packages (such as “Contracts at a glance”) and your own, which you write here. Everyone finds the tours they may use under [Discover Ablago](https://help.ablago.app/benutzer/aktuell/en/entdecken/).
 
-You find them under **Workbench → Build the Library → Tours**. The area is in the bar from the level **Household** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)). Whoever administers the area may edit.
+You find them under **Workbench → Build the Library → Tours**. The area is in the bar from the level **Business** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)); at smaller levels you show it via “Customise workbench”. If you have already written your own tours or switched off an included one, it stays shown after the update. The tours themselves work at every level – this is only about the area in the workbench. Whoever administers the area may edit.
 
 ![Workbench → Tours: list and editor](bilder/werkbank-rundgaenge.png)
 
@@ -17,6 +17,8 @@ The switch is at the top right of the selected tour. It applies **to everyone** 
 ## Viewing tours from Ablago and from packages
 
 A click shows the tour's file (with the texts in your language). You cannot change it; **Copy as own** creates a copy to edit. **Try it** starts the tour in a new window, only for you.
+
+Tours and tips from packages appear in each person's language if the package brings it, otherwise in German. If they exist in one language only or a translation is missing texts, the preview says so as a hint when installing.
 
 ## Writing your own tours { #schreiben }
 

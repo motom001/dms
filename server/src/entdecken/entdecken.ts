@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import {
   ANGEBOT_TAGE,
+  anJederMappe,
   istNeu,
   oeffneTyp,
   pruefeAnker,
@@ -42,6 +43,7 @@ import {
   type TypInfo,
 } from '../../../shared/src/entdecken';
 import { ausSchluessel } from '../../../shared/src/entdecken-werkbank';
+import { paketGrundtexte, paketUebersetzung, type PaketTexte } from '../../../shared/src/entdecken-paket';
 import { sprache } from '../../../shared/src/sprache';
 import type { Benutzer } from '../../../shared/src/model';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
@@ -108,13 +110,27 @@ export function paketTyp(paket: string, roh: string, typen: (kennung: string) =>
   return typen(kennung) ?? null;
 }
 
+/**
+ * Texte eines Pakets in der Sprache der Anfrage (#1307): Übersetzung vor dem Text in der Datei, danach die Grundsprache
+ * des Pakets.
+ */
+const paketTexteIn = (texte: PaketTexte | undefined) => ({
+  uebersetzung: paketUebersetzung(texte, sprache()),
+  texte: paketGrundtexte(texte),
+});
+
 /** Rundgänge eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets. */
 export function paketRundgaenge(
   p: Pick<InstalliertesPaket, 'id'>,
   roh: unknown,
-  o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined },
+  o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined; texte?: PaketTexte },
 ): { rundgaenge: Rundgang[]; fehler: string[] } {
-  const r = pruefeRundgaenge(roh, { herkunft: `paket:${p.id}`, anker: o.anker, typ: (x) => paketTyp(p.id, x, o.typen) });
+  const r = pruefeRundgaenge(roh, {
+    herkunft: `paket:${p.id}`,
+    anker: o.anker,
+    ...paketTexteIn(o.texte),
+    typ: (x) => paketTyp(p.id, x, o.typen),
+  });
   return {
     rundgaenge: r.rundgaenge.map((x) => ({ ...x, schluessel: `${p.id}:${x.schluessel}` })),
     fehler: r.fehler.map((f) => `${p.id}: ${f}`),
@@ -128,12 +144,13 @@ export function paketRundgaenge(
 export function paketTipps(
   p: Pick<InstalliertesPaket, 'id'>,
   roh: unknown,
-  o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined },
+  o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined; texte?: PaketTexte },
 ): { tipps: Tipp[]; fehler: string[] } {
   const x = pruefeTipps(roh, {
     herkunft: `paket:${p.id}`,
     anker: o.anker,
     rundgaenge: o.rundgaenge,
+    ...paketTexteIn(o.texte),
     typ: (k) => paketTyp(p.id, k, o.typen),
   });
   return {
@@ -187,9 +204,10 @@ export interface EntdeckenOptionen {
   lesbareTypen?(b: Benutzer): Promise<ReadonlySet<string>>;
   /**
    * Was ein Rundgang öffnet (`oeffne.mappe`/`oeffne.neu`): Pfad der ersten Mappe dieses Typs, die die Person lesen
-   * darf, bzw. des leeren Formulars, wenn sie den Typ anlegen darf – sonst null (dann gilt der Ersatztext).
+   * darf, bzw. des leeren Formulars, wenn sie den Typ anlegen darf – sonst null (dann gilt der Ersatztext). `typ` null
+   * (#1307, Tipp an jeder Mappe): die zuletzt geänderte Mappe irgendeines Typs, die sie lesen darf.
    */
-  oeffnen?(b: Benutzer, typ: string, art: 'mappe' | 'neu'): Promise<string | null>;
+  oeffnen?(b: Benutzer, typ: string | null, art: 'mappe' | 'neu'): Promise<string | null>;
   /** Was die Werkbank gespeichert hat (#941, #942): eigene Rundgänge, ausgeschaltete Einträge. */
   werkbank?(): Promise<unknown>;
   /** Jetzt (Tests). */
@@ -303,9 +321,15 @@ export class Entdecken {
     jetzt: number,
   ): { rundgaenge: Rundgang[]; tipps: Array<[Tipp, boolean]> } {
     if (!p.entdecken) return { rundgaenge: [], tipps: [] };
-    const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen });
+    const texte = p.entdecken.texte;
+    const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen, texte });
     this.melde(p, 'Rundgänge', r.fehler);
-    const x = paketTipps(p, p.entdecken.tipps, { anker, rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)), typen });
+    const x = paketTipps(p, p.entdecken.tipps, {
+      anker,
+      rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)),
+      typen,
+      texte,
+    });
     this.melde(p, 'Tipps', x.fehler);
     const tipps: Array<[Tipp, boolean]> = x.tipps.map((y) => [
       y,
@@ -369,7 +393,13 @@ export class Entdecken {
           herkunft: x.herkunft,
           bereich: x.bereich,
           text: x.text,
-          ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : x.ziel && x.typ ? { ziel: { anker: x.ziel, typ: x.typ } } : {}),
+          ...(a?.seite
+            ? { ziel: { anker: a.anker, seite: a.seite } }
+            : x.ziel && x.typ
+              ? { ziel: { anker: x.ziel, typ: x.typ } }
+              : x.ziel && anJederMappe(x.ziel)
+                ? { ziel: { anker: x.ziel } }
+                : {}),
           ...(x.rundgang ? { rundgang: x.rundgang } : {}),
           neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt),
           ausgeblendet: aus.has(x.schluessel),
@@ -419,8 +449,8 @@ export class Entdecken {
     this.o.log?.debug(`Rundgang „${schluessel}“: ${stand}`);
   }
 
-  /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs, die die Person lesen darf, sonst null. */
-  async mappeVonTyp(b: Benutzer, typ: string): Promise<string | null> {
+  /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs (null: irgendeines Typs, #1307), die die Person lesen darf, sonst null. */
+  async mappeVonTyp(b: Benutzer, typ: string | null): Promise<string | null> {
     return (await this.o.oeffnen?.(b, typ, 'mappe')) ?? null;
   }
 
@@ -447,7 +477,8 @@ export class Entdecken {
     if (art === 'tipp') {
       const x = s.tipps.find((y) => y.schluessel === schluessel);
       if (!x) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
-      return { pfad: x.ziel?.typ ? ((await this.o.oeffnen?.(b, x.ziel.typ, 'mappe')) ?? null) : (x.ziel?.seite ?? null) };
+      if (!x.ziel || x.ziel.seite) return { pfad: x.ziel?.seite ?? null };
+      return { pfad: (await this.o.oeffnen?.(b, x.ziel.typ ?? null, 'mappe')) ?? null };
     }
     const r = s.rundgaenge.find((x) => x.schluessel === schluessel);
     if (!r) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));

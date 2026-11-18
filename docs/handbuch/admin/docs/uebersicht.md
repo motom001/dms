@@ -164,7 +164,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 - **Einsteiger**: nur das Nötigste zum Einrichten und Sichern. Vorgabe bei rein privater Nutzung.
 - **Haushalt**: dazu, was ein Haushalt selbst einrichtet – Mappentypen, Ansichten, Automatisierungen, Post und Eingänge, Suche, Protokoll und Wartung.
 - **Selbständig**: dazu Nummernkreise, Aufbewahrung abgelaufen und Datenschutz – für Selbständige und Vermieter. Vorgabe bei beruflicher Nutzung.
-- **Betrieb**: dazu Designs – für Betriebe mit mehreren Leuten.
+- **Betrieb**: dazu Designs und Rundgänge – für Betriebe mit mehreren Leuten. Wer schon eigene Rundgänge geschrieben oder einen mitgelieferten ausgeschaltet hat, behält „Rundgänge“ auch in einer kleineren Stufe in der Leiste.
 - **Alles**: jeder Bereich, auch Datenbank-Anbindung und Daten für Messungen. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
 Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und später hier. Bestehende Installationen behalten ihre Vorlage (Haushalt, Betrieb oder Alles).
@@ -180,7 +180,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Nummernkreise](nummernkreise.md) |   |   | ● | ● | ● |
 | [Automatisierungen](automatisierungen.md) |   | ● | ● | ● | ● |
 | [Automatisierungsvorlagen](automatisierungsvorlagen.md) |   | ● | ● | ● | ● |
-| [Rundgänge](rundgaenge.md) |   | ● | ● | ● | ● |
+| [Rundgänge](rundgaenge.md) |   |   |   | ● | ● |
 | [Tipps](tipps.md) |   | ● | ● | ● | ● |
 | [Benutzer](benutzer.md) | ● | ● | ● | ● | ● |
 | [Verschlüsselung](verschluesselung.md) | ● | ● | ● | ● | ● |
@@ -211,7 +211,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
 | [Wartung](wartungsmodus.md) |   | ● | ● | ● | ● |
 | [Lasttest-Daten](demo.md) |   |   |   |   | ● |
-| **Anzahl** | **10** | **31** | **36** | **37** | **39** |
+| **Anzahl** | **10** | **30** | **35** | **37** | **39** |
 <!-- /bereiche:stufen -->
 
 Die Datenschutz-Bereiche stehen außerdem nur bei beruflicher Nutzung in der Leiste.
@@ -239,7 +239,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | ab Selbständig |
 | [Automatisierungen](automatisierungen.md) | Abläufe nach dem Muster Wenn – Und – Dann einrichten: bei einem Ereignis oder Datum Felder setzen oder jemandem eine Aufgabe geben | ab Haushalt |
 | [Automatisierungsvorlagen](automatisierungsvorlagen.md) | Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird | ab Haushalt |
-| [Rundgänge](rundgaenge.md) | Wenn du Rundgänge sehen, ein- und ausschalten oder eigene schreiben willst – kurze Führungen an der echten Oberfläche. | ab Haushalt |
+| [Rundgänge](rundgaenge.md) | Wenn ihr im Betrieb eigene Rundgänge schreiben oder Rundgänge ein- und ausschalten wollt – kurze Führungen an der echten Oberfläche. | ab Betrieb |
 | [Tipps](tipps.md) | Wenn du Tipps an eure Arbeitsweise anpassen, eigene schreiben oder einzelne ausschalten willst. | ab Haushalt |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | ab Einsteiger |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | ab Einsteiger |

@@ -36,4 +36,9 @@ export interface V1 {
   konflikt?: string;
   /** ETag und 304 bei If-None-Match (#625). */
   nichtGeaendert?: boolean;
+  /**
+   * Ändernd, aber ein Schlüssel der Stufe „lesen“ genügt (#1307): setzt nur Merker der eigenen Person (gesehen,
+   * ausgeblendet), sonst nichts.
+   */
+  lesenGenuegt?: true;
 }

@@ -68,7 +68,7 @@ describe('Werkbank-Ansicht: Regeln', () => {
     );
     assert.deepEqual(
       b.filter((p) => !s.includes(p)),
-      ['designs'],
+      ['rundgaenge', 'designs'],
     );
     assert.deepEqual(
       BEREICHE.filter((x) => !inVorlage('organisation', x.pfad)).map((x) => x.pfad),
@@ -76,7 +76,7 @@ describe('Werkbank-Ansicht: Regeln', () => {
     );
     assert.equal(BEREICHE.filter((x) => inVorlage('alles', x.pfad)).length, BEREICHE.length);
     // Anzahl der Einträge in der Leiste samt Übersicht – so im Handbuch und im Rauchtest.
-    assert.deepEqual(STUFEN.map(anzahlInVorlage), [10, 31, 36, 37, 39]);
+    assert.deepEqual(STUFEN.map(anzahlInVorlage), [10, 30, 35, 37, 39]);
     assert.deepEqual(BEREICHE.find((x) => x.pfad === 'stempel')?.in, ['haushalt', 'selbstaendig', 'organisation']);
   });
 
@@ -360,7 +360,6 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
         'postfaecher',
         'protokoll',
         'region',
-        'rundgaenge',
         'sicherung',
         'sichten',
         'sprachen',

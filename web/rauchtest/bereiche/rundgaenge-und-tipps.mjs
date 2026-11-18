@@ -138,3 +138,11 @@ rauchtest('Handy: Werkbank → Tipps, Tippflächen (#942)', { handy: true, als: 
   const zuKlein = await tippflaechenPruefen(s, ['.spalte.liste']);
   assert.deepEqual(zuKlein, [], `Zu kleine Tippflächen:\n${zuKlein.join('\n')}`);
 });
+
+rauchtest('Tipp „Erinnern“: öffnet eine lesbare Mappe und hebt „Mappe ▾“ hervor (#1307)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/entdecken');
+  await s.getByRole('link', { name: /„Mappe ▾“ → „Erinnern“/ }).click();
+  // Die zuletzt geänderte Mappe, die Lena lesen darf; die Stelle ist kurz hervorgehoben.
+  await s.waitForURL(/\/ablage\/[^/]+\/[^/]+$/);
+  await s.locator('[data-anker="mappe.aktionen"].anker-hervor').first().waitFor();
+});

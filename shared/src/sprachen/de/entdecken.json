@@ -37,6 +37,8 @@
   "fuehrung.spaeter.titel": "Jetzt schließen und bei der nächsten Anmeldung wieder anbieten",
   "fuehrung.handbuch": "Mehr dazu im Handbuch",
   "fuehrung.ersatz": "Dazu gibt es hier noch nichts zu zeigen.",
+  "fuehrung.ohne-mappe.titel": "Noch keine Mappe",
+  "fuehrung.ohne-mappe.text": "Sobald es eine Mappe gibt, die du öffnen darfst, zeigt dir Ablago dort die Stelle.",
   "angebot": "{titel} – kurzer Rundgang",
   "bild.titel": "Vereinfachte Darstellung von Ablago: links die Ansichten, in der Mitte die Liste, rechts die geöffnete Mappe.",
   "bild.titel-handy": "Vereinfachte Darstellung von Ablago auf dem Handy: oben die Ansicht, darunter die Liste.",

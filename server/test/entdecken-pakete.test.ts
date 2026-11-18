@@ -3,8 +3,9 @@
  * Angebot als Tipp nach der Installation, „oeffne“ mit Ersatztext.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { HANDBUCH_VERWEIS, pruefeRundgaenge, rundgangFuer } from '../../shared/src/entdecken';
+import { HANDBUCH_VERWEIS, pruefeRundgaenge, pruefeTipps, rundgangFuer } from '../../shared/src/entdecken';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { ankerListe, Entdecken } from '../src/entdecken/entdecken';
 import { Fachfehler } from '../src/grundlagen/fehler';
@@ -307,5 +308,54 @@ describe('Tipps aus Paketen (#832)', () => {
     assert.ok(!sj.tipps.some((x) => x.herkunft === 'paket:vertraege'), 'ohne Leserecht auf Verträge keine Tipps dazu');
     await e.tipp(lena, 'vertraege:kuendigen', 'ausblenden');
     assert.ok((await e.stand(lena)).tipps.find((x) => x.schluessel === 'vertraege:kuendigen')?.ausgeblendet);
+  });
+  it('Tipp an „Mappe ▾“ (#1307): Anker an jeder Mappe, ohne Typ die erste lesbare Mappe überhaupt, sonst kein Pfad', async () => {
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas');
+    const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
+    const gefragt: Array<string | null> = [];
+    let pfad: string | null = '/ablage/t1/m1';
+    const e = new Entdecken({
+      einstellungen: (b) => konten.einstellungen(b),
+      setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
+      version: () => '0.260.0',
+      heute: () => '2026-11-15',
+      funktionen: async () => new Set(),
+      oeffnen: async (_b, typ) => {
+        gefragt.push(typ);
+        return pfad;
+      },
+    });
+    const s = await e.stand(lena);
+    assert.deepEqual(s.tipps.find((x) => x.schluessel === 'erinnern')?.ziel, { anker: 'mappe.aktionen' });
+    assert.deepEqual(await e.oeffnen(lena, 'erinnern', 'tipp'), { pfad: '/ablage/t1/m1' });
+    pfad = null;
+    assert.deepEqual(await e.oeffnen(lena, 'erinnern', 'tipp'), { pfad: null }, 'keine lesbare Mappe: die Oberfläche zeigt den Ersatztext');
+    assert.deepEqual(gefragt, [null, null]);
+    // Jeder Tipp von Ablago, der „Mappe ▾“ nennt, zeigt auf diesen Anker.
+    const de = JSON.parse(readFileSync(new URL('../../shared/src/sprachen/de/entdecken.json', import.meta.url), 'utf8')) as Record<
+      string,
+      string
+    >;
+    const nennen = Object.keys(de).filter((k) => k.startsWith('tipp.') && de[k].includes('„Mappe ▾“'));
+    assert.ok(nennen.length);
+    for (const k of nennen) {
+      const x = s.tipps.find((y) => `tipp.${y.schluessel.replace(/_/g, '-')}` === k);
+      assert.equal(x?.ziel?.anker, 'mappe.aktionen', k);
+    }
+    // Pakete dürfen den Anker auch nennen – ohne oder mit Typ.
+    const ohne = pruefeTipps([{ schluessel: 'x', text: 'Über „Mappe ▾“ gibst du eine Aufgabe ab.', ziel: 'mappe.aktionen' }], {
+      herkunft: 'paket:p',
+      anker: ankerListe(),
+      rundgaenge: [],
+      typ: () => null,
+    });
+    assert.deepEqual(ohne.fehler, []);
+    // Muster an einer Mappe brauchen weiter einen Typ.
+    const feld = pruefeTipps([{ schluessel: 'x', text: 'Ein Satz.', ziel: 'mappe.feld:frist' }], {
+      herkunft: 'paket:p',
+      anker: ankerListe(),
+      rundgaenge: [],
+    });
+    assert.match(feld.fehler.join(), /geht er nur mit „typ“/);
   });
 });

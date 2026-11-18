@@ -7148,7 +7148,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 12671,
+        "gesamt": 12679,
         "prozent": 0
       },
       "uebergangen": 0,
@@ -7230,7 +7230,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 12671,
+        "gesamt": 12679,
         "prozent": 0
       },
       "uebergangen": 1,
@@ -7313,7 +7313,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 12671,
+        "gesamt": 12679,
         "prozent": 0
       },
       "uebergangen": 0,

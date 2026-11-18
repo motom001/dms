@@ -9,6 +9,9 @@ import type { MappenAktion } from '../../../shared/src/paketaktionen';
 import type { Einstellungsbeschreibung } from '../../../shared/src/paketeinstellungen';
 import { hatNetz, type PaketCode } from '../../../shared/src/pakete';
 import type { VorgabePlan } from '../../../shared/src/vorgaben';
+import { textSchluesselRundgang } from '../../../shared/src/entdecken';
+import { paketGrundtexte, paketUebersetzung, type PaketTexte } from '../../../shared/src/entdecken-paket';
+import { sprache } from '../../../shared/src/sprache';
 
 /** Was aus dem gelesenen Paket gebraucht wird (Paket in verwaltung/format.ts). */
 interface PaketAutomatisierung {
@@ -31,7 +34,7 @@ interface PaketTeile {
   einstellungen: Einstellungsbeschreibung | null;
   code: { info: PaketCode } | null;
   sprache?: unknown;
-  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[] };
+  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; texte?: PaketTexte };
 }
 /** Was aus der Vorschau gebraucht wird (Vorschau in verwaltung/plan.ts). */
 interface PlanTeile {
@@ -53,6 +56,12 @@ export interface MitkommtNamen {
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
+
+/** Titel bzw. Beschreibung eines Rundgangs: Übersetzung, Text in der Datei, Grundsprache des Pakets (#1307). */
+const rundgangText = (texte: PaketTexte | undefined, r: Record<string, unknown>) => (feld: 'titel' | 'beschreibung') => {
+  const k = textSchluesselRundgang(text(r.schluessel), feld);
+  return paketUebersetzung(texte, sprache())?.(k) || text(r[feld]) || paketGrundtexte(texte)?.(k) || '';
+};
 
 function wennAus(a: PaketAutomatisierung, n: MitkommtNamen): MitkommtWenn {
   const w = bereinigeAutomatisierung({ name: a.name, wenn: a.wenn, dann: [] }).wenn;
@@ -175,12 +184,15 @@ export function mitkommtVon(paket: PaketTeile, plan: PlanTeile, n: MitkommtNamen
       rechte: [...a.rechte],
       ...neu(!!plan.aktionen?.find((x) => x.schluessel === a.schluessel)?.neu),
     })),
-    // Rundgänge (#831): Titel und Beschreibung wie im Paket (die Texte stehen direkt in der Datei).
-    rundgaenge: (paket.entdecken?.rundgaenge ?? []).filter(istObjekt).map((r) => ({
-      schluessel: text(r.schluessel),
-      name: text(r.titel) || text(r.schluessel),
-      ...(text(r.beschreibung) ? { beschreibung: text(r.beschreibung) } : {}),
-    })),
+    // Rundgänge (#831): Titel und Beschreibung in der Sprache der Person (#1307), sonst wie in der Datei bzw. Deutsch.
+    rundgaenge: (paket.entdecken?.rundgaenge ?? []).filter(istObjekt).map((r) => {
+      const t = rundgangText(paket.entdecken?.texte, r);
+      return {
+        schluessel: text(r.schluessel),
+        name: t('titel') || text(r.schluessel),
+        ...(t('beschreibung') ? { beschreibung: t('beschreibung') } : {}),
+      };
+    }),
     tipps: paket.entdecken?.tipps?.length ?? 0,
     einstellungen: (paket.einstellungen?.bloecke ?? []).map((b) => {
       const titel = b.art === 'abschnitt' ? b.titel : b.name;

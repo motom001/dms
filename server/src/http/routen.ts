@@ -267,7 +267,8 @@ export async function pruefeZugang(
     // Stand in der Antwort auf das Ereignis. Ältere Fassungen dürfen noch per PUT melden (die Route prüft, ob ein Paket
     // mit dms:sicherung-lesen fragt). Entfällt mit 1.0.0 (uebergaenge.ts, #902).
     const uebergang = r.methode === 'PUT' && (r.pfad === SICHERUNG_EXTERN_PFAD || r.pfad === SICHERUNG_HOLEN_PFAD);
-    if (r.methode !== 'GET' && s.recht === 'lesen' && !uebergang)
+    // Gesehen und ausgeblendet (#1307): nur Merker der eigenen Person – dafür genügt „lesen“.
+    if (r.methode !== 'GET' && s.recht === 'lesen' && !uebergang && !r.lesenGenuegt)
       throw new Fachfehler(403, t('meldungen.routen.dieser-api-schluessel-darf'));
     // #818 (Frage 9 von Sicherheit): API-Schlüssel bekommen nie Verwaltungsrechte – auch nicht von Verwaltenden.
     a.benutzer = { ...b, rolle: 'mitglied' };

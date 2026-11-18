@@ -99,6 +99,8 @@ export interface Route {
    * dann nur auf Stufe „debug“ im Protokoll, wie bei GET (#373).
    */
   lesend?: boolean;
+  /** Öffentliche API (#1307): Ändernd, aber ein Schlüssel der Stufe „lesen“ genügt – nur Merker der eigenen Person. */
+  lesenGenuegt?: boolean;
   /** Öffentliche API (#818): Bereich der Werkbank wie bei dieser internen Route. */
   bereichVon?: { methode: string; pfad: string };
   /** Keine automatische HEAD-Route (z. B. Einmal-Download: ein HEAD würde das Ticket verbrauchen). */

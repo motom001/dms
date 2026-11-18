@@ -54,6 +54,7 @@ export function v1Routen(intern: Route[], uebergang?: V1Uebergang): Route[] {
       roh: basis?.roh,
       strom: basis?.strom,
       api: true,
+      ...(e.lesenGenuegt ? { lesenGenuegt: true } : {}),
       handler: mitAlten(handler),
     } satisfies Route;
   });

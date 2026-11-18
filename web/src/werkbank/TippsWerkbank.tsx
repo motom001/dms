@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { TIPP_BEREICHE, TIPP_TEXT_MAX } from '../../../shared/src/entdecken';
+import { anJederMappe, TIPP_BEREICHE, TIPP_TEXT_MAX } from '../../../shared/src/entdecken';
 import { EIGEN, type FeldFehler, type TippDaten, type WerkbankTipp, type WerkbankTippsStand } from '../../../shared/src/entdecken-werkbank';
 import type { Fundquelle } from '../../../shared/src/listensuche';
 import { tippsApi } from '../api/rundgaenge';
@@ -403,8 +403,8 @@ function FuerWen({
 async function probieren(x: TippDaten, stand: WerkbankTippsStand): Promise<string | undefined> {
   let ok = true;
   if (x.rundgang) ok = tippProbe({ rundgang: x.rundgang });
-  else if (x.ziel && x.typ && /^mappe\./.test(x.ziel)) {
-    const p = (await tippsApi.mappe(x.typ)).pfad;
+  else if (x.ziel && /^mappe\./.test(x.ziel) && (x.typ || anJederMappe(x.ziel))) {
+    const p = (await tippsApi.mappe(x.typ ?? '*')).pfad;
     if (!p) return t('werkbank.tipps.ui.ausprobieren.keine-mappe');
     ok = tippProbe({ pfad: p, anker: x.ziel });
   } else if (x.ziel) ok = tippProbe({ pfad: stand.anker.find((a) => a.anker === x.ziel)?.seite ?? '/ablage/start', anker: x.ziel });

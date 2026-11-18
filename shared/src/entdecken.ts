@@ -12,8 +12,10 @@
  * vorkommt, damit Umbauten Rundgänge nicht still zerbrechen.
  *
  * Texte: Ablagos eigene stehen in den Sprachdateien (`entdecken.json`, Deutsch und Englisch) unter festen Schlüsseln
- * (`textSchluessel…`). Pakete schreiben sie später direkt in die YAML-Datei (`titel`, `text` …); fehlt ein Text
- * dort, gilt der aus der Sprachdatei. Fehlt beides, ist der Eintrag fehlerhaft.
+ * (`textSchluessel…`). Pakete bringen dieselben Schlüssel in `texte/<sprache>/entdecken.json` mit (#1307,
+ * `entdecken-paket.ts`); ältere schreiben sie direkt in die YAML-Datei (`titel`, `text` …). Reihenfolge: Übersetzung in
+ * der Sprache der Person, Text in der Datei, Sprachdatei (Ablago) bzw. Grundsprache des Pakets. Fehlt alles, ist der
+ * Eintrag fehlerhaft.
  */
 import { vergleicheVersion } from './pakete';
 
@@ -160,7 +162,8 @@ export interface TippAnzeige {
   text: string;
   /**
    * Anker und seine Seite: Der Satz öffnet die Seite und hebt die Stelle hervor. Ohne `seite` liegt die Stelle in einer
-   * Mappe des Typs `typ` – die Oberfläche öffnet zuerst die erste, die die Person lesen darf (…/oeffnen).
+   * Mappe des Typs `typ` – die Oberfläche öffnet zuerst die erste, die die Person lesen darf (…/oeffnen). Ohne `seite`
+   * und `typ` (#1307) liegt sie an jeder Mappe (`anJederMappe`): dann die erste Mappe überhaupt, die sie lesen darf.
    */
   ziel?: { anker: string; seite?: string; typ?: string };
   rundgang?: string;
@@ -254,19 +257,30 @@ function fehlerliste() {
   return { fehler, orte, bei };
 }
 
-/** Text eines Feldes: direkt in der Quelle oder aus der Sprachdatei; prüft Länge und Zeichen. */
+/**
+ * Woher die Texte kommen: `vor` gilt vor dem Text in der Datei (Übersetzung eines Pakets in der Sprache der Person,
+ * #1307), `nach` danach (Ablagos Sprachdatei bzw. die Grundsprache des Pakets).
+ */
+interface TextQuellen {
+  vor?: Texte;
+  nach?: Texte;
+}
+const quellen = (o: { texte?: Texte; uebersetzung?: Texte }): TextQuellen => ({ vor: o.uebersetzung, nach: o.texte });
+
+/** Text eines Feldes: Übersetzung, direkt in der Quelle oder aus der Sprachdatei; prüft Länge und Zeichen. */
 function textVon(
   roh: Record<string, unknown>,
   feld: string,
   schluessel: string,
-  texte: Texte | undefined,
+  texte: TextQuellen,
   max: number,
   ort: string,
   melde: Melde,
   pflicht = true,
 ): string | undefined {
   const direkt = roh[feld];
-  const text = typeof direkt === 'string' ? direkt.trim() : texte?.(schluessel);
+  const uebersetzt = texte.vor?.(schluessel)?.trim();
+  const text = uebersetzt || (typeof direkt === 'string' ? direkt.trim() : texte.nach?.(schluessel));
   if (direkt !== undefined && typeof direkt !== 'string') {
     melde(`${ort}: „${feld}“ ist kein Text.`, feld);
     return undefined;
@@ -305,6 +319,8 @@ export interface RundgangPruefung {
   herkunft: Herkunft;
   anker: readonly Anker[];
   texte?: Texte;
+  /** Übersetzung eines Pakets in der Sprache der Person (#1307): gilt vor dem Text in der Datei. */
+  uebersetzung?: Texte;
   /**
    * Mappentyp zu `oeffne.mappe`/`oeffne.neu` auflösen: null = gibt es nicht. Ohne diese Funktion (Ablagos eigene
    * Rundgänge) lässt sich kein Mappentyp öffnen.
@@ -371,7 +387,7 @@ function pruefeSchritt(
   pruefeZiele(ziel, o, k.typ, os, ms);
   if (s.bild !== undefined && !BILDER.includes(s.bild as Bild)) ms(`${os}: unbekanntes Bild „${String(s.bild)}“.`, 'bild');
   const t = (feld: 'titel' | 'text' | 'text-handy' | 'text-verwalten' | 'ort' | 'sonst-verwalten', pflicht: boolean, max: number) =>
-    textVon(s, feld.replace('-', '_'), textSchluesselSchritt(k.rundgang, sk, feld), o.texte, max, os, ms, pflicht);
+    textVon(s, feld.replace('-', '_'), textSchluesselSchritt(k.rundgang, sk, feld), quellen(o), max, os, ms, pflicht);
   const st = t('titel', true, TITEL_MAX),
     tx = t('text', true, RUNDGANG_TEXT_MAX);
   const th = t('text-handy', false, RUNDGANG_TEXT_MAX),
@@ -455,7 +471,7 @@ export function pruefeRundgaenge(roh: unknown, o: RundgangPruefung): { rundgaeng
     const fuer = fuerVon(r.fuer, o2, m);
     const { oeffne, typ } = r.oeffne === undefined ? { typ: null } : liesOeffne(r.oeffne, o, o2, m);
     const text = (feld: 'titel' | 'beschreibung' | 'ende' | 'ersatz', max: number, pflicht: boolean) =>
-      textVon(r, feld, textSchluesselRundgang(schluessel, feld), o.texte, max, o2, m, pflicht);
+      textVon(r, feld, textSchluesselRundgang(schluessel, feld), quellen(o), max, o2, m, pflicht);
     const titel = text('titel', TITEL_MAX, true),
       beschreibung = text('beschreibung', RUNDGANG_TEXT_MAX, true);
     const schluss = text('ende', RUNDGANG_TEXT_MAX, false),
@@ -497,16 +513,26 @@ export interface TippPruefung {
   /** Schlüssel der Rundgänge, die ein Tipp starten darf. */
   rundgaenge: readonly string[];
   texte?: Texte;
+  /** Übersetzung eines Pakets in der Sprache der Person (#1307): gilt vor dem Text in der Datei. */
+  uebersetzung?: Texte;
   /** Mappentyp zu `typ` auflösen (Pakete, eigene Tipps): null = gibt es nicht. Ohne diese Funktion gibt es kein `typ`. */
   typ?: (roh: string) => TypInfo | null;
 }
 
-/** Ziel eines Tipps: Anker mit fester Seite – oder mit `typ` auch ein Feld oder Register einer Mappe dieses Typs. */
+/**
+ * Anker an jeder geöffneten Mappe (`mappe.aktionen`, `mappe.stern` …, #1307): Als Ziel eines Tipps öffnet die
+ * Oberfläche die erste Mappe, die die Person lesen darf (mit `typ`: die erste dieses Typs). Muster wie `mappe.feld:<key>`
+ * gehören zu einem Mappentyp und brauchen `typ`.
+ */
+export const anJederMappe = (anker: string) => anker.startsWith('mappe.') && !anker.includes(':');
+
+/** Ziel eines Tipps: Anker mit fester Seite, an jeder Mappe – oder mit `typ` auch ein Feld oder Register einer Mappe dieses Typs. */
 function pruefeTippZiel(ziel: unknown, typ: TypInfo | null, o: TippPruefung, o2: string, m: Melde) {
   if (typeof ziel !== 'string' || !ankerBekannt(ziel, o.anker)) {
     m(`${o2}: unbekannter Anker „${String(ziel)}“.`, 'ziel');
     return;
   }
+  if (anJederMappe(ziel)) return;
   const teil = mappenTeil(ziel);
   if (teil && typ) {
     const liste = teil.art === 'feld' ? typ.felder : typ.register;
@@ -550,7 +576,7 @@ function pruefeTipp(
   const bereich = (x.bereich ?? (o.herkunft === 'ablago' ? undefined : 'mappen')) as TippBereich;
   if (!TIPP_BEREICHE.includes(bereich))
     m(`${o2}: „bereich“ muss einer von ${TIPP_BEREICHE.join(', ')} sein.`, x.bereich === undefined ? undefined : 'bereich');
-  const text = textVon(x, 'text', textSchluesselTipp(schluessel), o.texte, TIPP_TEXT_MAX, o2, m);
+  const text = textVon(x, 'text', textSchluesselTipp(schluessel), quellen(o), TIPP_TEXT_MAX, o2, m);
   if (text && (text.match(/[.!?](\s|$)/g)?.length ?? 0) > 2) m(`${o2}: höchstens zwei Sätze.`, 'text');
   const fuer = fuerVon(x.fuer, o2, m);
   const typ = tippTyp(x.typ, o, o2, m);

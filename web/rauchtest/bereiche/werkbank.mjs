@@ -205,7 +205,6 @@ const STUFE_NEU = {
     'sichten',
     'automatisierungen',
     'ablaufvorlagen',
-    'rundgaenge',
     'tipps',
     'stempel',
     'postfaecher',
@@ -224,7 +223,8 @@ const STUFE_NEU = {
     'wartung',
   ],
   selbstaendig: ['nummernkreise', 'aufbewahrung', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll'],
-  organisation: ['designs'],
+  // Rundgänge ab Betrieb (#1298).
+  organisation: ['rundgaenge', 'designs'],
   alles: ['anbindung', 'demo'],
 };
 // Stehen nur unter einer Bedingung in der Leiste (Archivmodus, eingebundener Ordner, berufliche Nutzung).

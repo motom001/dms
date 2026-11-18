@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import type { EntdeckenStand, Rundgang, TippAnzeige } from '../../../shared/src/entdecken';
 import { kontoApi } from '../api/konto';
 import { geheZu } from '../ort';
+import { t } from '../sprache';
 
 /**
  * Ablago entdecken (#831, #832) in der Oberfläche: ein gemeinsamer Stand für Startseite, Seite „Ablago entdecken“ und
@@ -172,10 +173,26 @@ export async function zeigeZiel(x: TippAnzeige) {
     ));
   if (!seite) {
     console.debug(`Tipp „${x.schluessel}“: keine Mappe vom Typ „${x.ziel.typ ?? ''}“ zum Zeigen.`);
+    // Kein Sprung ins Leere (#1307): ein Satz im Fenster des Rundgangs, gemerkt wird nichts.
+    probiereRundgang(
+      {
+        schluessel: x.schluessel,
+        herkunft: x.herkunft,
+        titel: t('entdecken.fuehrung.ohne-mappe.titel'),
+        beschreibung: '',
+        start: 'manuell',
+        fuer: 'lesen',
+        oeffne: { mappe: x.ziel.typ ?? '*' },
+        ersatz: t('entdecken.fuehrung.ohne-mappe.text'),
+        schritte: [],
+      },
+      null,
+    );
     return;
   }
   if (location.pathname !== seite) geheZu(seite);
-  const z = await warteAufAnker([x.ziel.anker]);
+  // Eine Mappe lädt erst ihre Daten (#1307): dort länger auf die Stelle warten.
+  const z = await warteAufAnker([x.ziel.anker], x.ziel.seite ? undefined : 8000);
   if (!z) {
     console.debug(`Tipp „${x.schluessel}“: Anker „${x.ziel.anker}“ ist hier nicht sichtbar.`);
     return;

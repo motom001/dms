@@ -45,7 +45,8 @@ Dann ausfüllen:
 | `inhalt/wortlisten.yaml` | optional (ab Ablago 0.127.0): Gruppen gleichbedeutender Wörter für die Suche |
 | `inhalt/automatisierungen.yaml` | optional (ab Ablago 0.177.0): vorgefertigte Automatisierungen, immer mit angelegt; nach der Installation aus – außer denen, deren Schalter im Installationsdialog an steht (seit 0.233.0 mit `eingeschaltet: true` vorbelegt) |
 | `inhalt/ablaufvorlagen.yaml` | optional (ab Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [Automatisierungsvorlagen](#automatisierungsvorlagen) für das Menü „Mappe“ – nur Aufgaben und Benachrichtigungen |
-| `inhalt/rundgaenge.yaml` | optional (dms #831): [Rundgänge](aufbau.md#paket-rundgaenge) durch eine Aufgabe, Texte direkt in der Datei |
+| `inhalt/rundgaenge.yaml` | optional (dms #831): [Rundgänge](aufbau.md#paket-rundgaenge) durch eine Aufgabe |
+| `texte/<sprache>/entdecken.json` | optional (dms #1307): Texte der Rundgänge und Tipps je Sprache, Deutsch als Grundsprache ([Sprachen](aufbau.md#paket-rundgaenge-sprachen)); ältere Pakete schreiben sie direkt in die YAML-Dateien |
 | `inhalt/tipps.yaml` | optional (dms #832): [Tipps](aufbau.md#paket-tipps), höchstens 20, auch „Neu in Version …“ |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
