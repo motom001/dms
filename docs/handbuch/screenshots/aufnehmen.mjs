@@ -1715,6 +1715,12 @@ async function main() {
   await geheZu(s, '/profil/benachrichtigungen');
   await s.getByRole('heading', { name: w(/Aufgaben/) }).waitFor();
   await bild(s, 'profil-benachrichtigungen', { fullPage: true });
+  // Laufwerk (#720, #1332): erst die Erklärung mit der Wahl des Geräts, darunter die Schritte. Nur für das Bild eingeschaltet.
+  await api('PUT', '/api/werkbank/webdav', { aktiv: true, stempel: null, nurLesend: false });
+  await geheZu(s, '/profil/laufwerk');
+  await s.getByRole('radiogroup', { name: w('Dein Gerät') }).waitFor();
+  await bild(s, 'laufwerk', { fullPage: true });
+  await api('PUT', '/api/werkbank/webdav', { aktiv: false, stempel: null, nurLesend: false });
   await geheZu(s, '/profil/fehler-melden');
   await s
     .getByPlaceholder(w(/^z\. B\. Beim Speichern/))

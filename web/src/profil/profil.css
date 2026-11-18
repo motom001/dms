@@ -93,3 +93,10 @@ ol.codes code { user-select: all; letter-spacing: .04em; }
   .tagewahl label.haken { min-width: 44px; min-height: 44px; align-items: center; }
   .profil summary { padding-block: 12px; min-height: 44px; box-sizing: border-box; }
 }
+/* Laufwerk (#1332): oben die Anleitung des gewählten Geräts, darunter die nummerierten Schritte des Ablaufs. */
+.laufwerk-anleitung { margin-top: 10px; }
+.laufwerk-anleitung ol { margin: 0 0 6px; }
+.laufwerk-schritte { margin: 0; padding-left: 1.4em; }
+.laufwerk-schritte > li + li { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--linie); }
+.laufwerk-schritte > li::marker { font-weight: 700; }
+.laufwerk-schritte h3 { margin: 0 0 6px; }

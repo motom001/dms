@@ -7,13 +7,17 @@ You prefer working with Explorer, Finder or the Files app? Then connect Ablago's
 
 ## What you need {#was-du-brauchst}
 
-Under **My account → Network drive** (click your name at the top right → **My account** → **Network drive**) everything is in one place:
+Under **My account → Network drive** (click your name at the top right → **My account** → **Network drive**) everything is in one place – first the explanation, then the steps:
 
-1. **The address** of your Ablago with `/webdav/` at the end, e.g. `https://dms.example.org/webdav/` – **Copy** takes it over.
-2. **The username:** your email address.
-3. **A key:** **Create key for the network drive** generates an API key that may read and write. Copy it straight away – it is only shown in full now. It then also appears under **My account → Security → API keys**. When connecting, it is the **password** (begins with `dms_`); your normal password deliberately doesn't work here.
+![My account → Network drive](bilder/laufwerk.png){ loading=lazy }
 
-Below that, there is a short guide to expand for Windows, Mac and iPhone/iPad – the same as here.
+**At the top the explanation:** what the network drive is for and **How it works on your device**. Choose your device – **Windows**, **Mac** or **iPhone and iPad** – and its short guide appears below, the same as here. Preselected is the device you are opening the page with.
+
+**Below that, step by step**, in the order you need it:
+
+1. **Create a key:** **Create key for the network drive** generates an API key that may read and write. Copy it straight away – it is only shown in full now. It then also appears under **My account → Security → API keys**. When connecting, it is the **password** (begins with `dms_`); your normal password deliberately doesn't work here.
+2. **Copy address and user name:** the address of your Ablago with `/webdav/` at the end, e.g. `https://dms.example.org/webdav/`, and your email address as the user name – **Copy** takes over each.
+3. **Enter it on your device:** enter address, user name and key as described in the guide for your device above; **To the instructions** jumps there.
 
 !!! tip "One key per device"
     Create a separate key for every device. If a device is lost, you only delete its key – all others keep working.
