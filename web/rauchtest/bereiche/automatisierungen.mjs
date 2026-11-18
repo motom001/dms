@@ -95,7 +95,7 @@ rauchtest(
     await verwalten(s);
     await s.goto(BASIS + `/werkbank/ablaufvorlagen/${encodeURIComponent(vorlage.kennung)}`);
     const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-    // Mappentypen wie ein Verweisfeld (#1175): der gewählte Typ darunter mit „Entfernen“.
+    // Mappentypen wie ein Verweisfeld (#1175): der gewählte Typ darunter mit ✕ (#1288).
     await bearbeitung.getByRole('combobox', { name: 'Im Menü „Mappe“ bei' }).waitFor();
     await bearbeitung.getByRole('list', { name: 'Im Menü „Mappe“ bei' }).getByText('Werkzeug').waitFor();
     // Ausprobieren (#1176): Dialog wie an der Mappe, dann die Vorschau – angelegt wird nichts.

@@ -21,6 +21,8 @@
    Erklärung (sie öffnet sich über dem Knopf und läge sonst über der Karte davor), Zustände nebeneinander. */
 .breit { grid-column: 1 / -1; }
 .platz { padding-top: 230px; }
+/* #1288: Platz unter einer stehend offenen Vorschlagsliste (Mehrfachauswahl), damit sie nicht über der nächsten Karte liegt. */
+.platzunten { padding-bottom: 200px; }
 .zustaende { display: flex; flex-wrap: wrap; gap: 12px 18px; }
 .zustandsspalte { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .spalte { display: flex; flex-direction: column; gap: 14px; }

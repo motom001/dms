@@ -34,6 +34,9 @@ import { BrueckeKontext, useBruecke, type Bruecke, type FormularAnschluss, type 
  *   den Komponentenbaum nach oben – Absenden, Tasten, Ziehen und Fokus enden deshalb am Fenster, sonst speicherte etwa
  *   „Mappe speichern“ im Fenster auch die Mappe dahinter.
  */
+/** Fokus zurück ans Verweisfeld – gelesen erst jetzt, nicht beim Öffnen (#1288). */
+const fokusZurueck = (r: RefObject<HTMLElement | null>) => r.current?.focus();
+
 export function VerweisFenster({
   ziel,
   zurueck,
@@ -41,7 +44,7 @@ export function VerweisFenster({
   children,
 }: {
   ziel: Mappentyp;
-  /** Wohin der Fokus nach dem Schließen geht (der Eintrag „+ … anlegen“ am Verweisfeld). */
+  /** Wohin der Fokus nach dem Schließen geht (das Verweisfeld); gelesen erst beim Schließen. */
   zurueck: RefObject<HTMLElement | null>;
   schliessen(): void;
   children: ReactNode;
@@ -59,9 +62,9 @@ export function VerweisFenster({
       '.registerinhalt input:not([type="hidden"]):not([disabled]), .registerinhalt select, .registerinhalt textarea',
     );
     (el ?? ref.current)?.focus();
-    const z = zurueck.current;
+    // Erst nach dem Schließen nachsehen (#1288): Nach dem Speichern steht dort statt des Suchfelds die gewählte Mappe.
     return () => {
-      window.setTimeout(() => z?.focus(), 0);
+      window.setTimeout(() => fokusZurueck(zurueck), 0);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Fokus nur beim Öffnen setzen und beim Schließen zurückgeben
 

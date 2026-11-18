@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { optionText } from '../../../../shared/src/beschriftung';
+import { feldLabel, optionText } from '../../../../shared/src/beschriftung';
 import { eingabemodus, formatFehler } from '../../../../shared/src/feldformate';
 import { zieleVon, type Feld as FeldDef, type Mappentyp, type Wert, type Werte } from '../../../../shared/src/model';
 import type { Bezuege } from '../../api/mappen';
@@ -256,6 +256,7 @@ function verweisEingabe(p: FeldEingabeProps, { rahmen, unter, typ }: Rahmen) {
             eigene={p.eigene}
             typFelder={typFelder}
             neuesFormular={p.neuesFormular}
+            feldName={feldLabel(f)}
           />
           {unter}
         </>

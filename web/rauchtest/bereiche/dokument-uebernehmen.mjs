@@ -520,8 +520,14 @@ rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument 
   await mappe.getByText(/^Vorschlag, weil „Rechnung“ im Dokument steht/).waitFor();
   await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
   const aussteller = mappe.locator('[data-anker="mappe.feld:aussteller"]');
-  const anlegen = aussteller.getByRole('button', { name: '+ Vertragspartner anlegen' });
-  // Abbrechen und Esc schließen ohne Änderung; danach steht der Fokus wieder am Verweisfeld.
+  // Anlegen steht als letzter Eintrag in der Vorschlagsliste (#1288).
+  const anlegen = {
+    click: async () => {
+      await aussteller.getByRole('combobox').click();
+      await aussteller.getByRole('option', { name: '+ Vertragspartner anlegen …' }).click();
+    },
+  };
+  // Abbrechen und Esc schließen ohne Änderung; danach steht der Fokus wieder im Suchfeld des Verweisfelds.
   await anlegen.click();
   const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
   await fenster.getByRole('button', { name: 'Entwurf verwerfen' }).click();
@@ -531,7 +537,7 @@ rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument 
   await s.waitForFunction(() => document.activeElement?.closest('[role="dialog"]'));
   await s.keyboard.press('Escape');
   await fenster.waitFor({ state: 'detached' });
-  await s.waitForFunction(() => document.activeElement?.textContent === '+ Vertragspartner anlegen');
+  await s.waitForFunction(() => document.activeElement?.matches('[data-anker="mappe.feld:aussteller"] [role="combobox"]'));
   // Wie die rechte Spalte einer Mappe: Kopf, Register, Felder, Speicherleiste – vorausgefüllt mit dem Briefkopf.
   await anlegen.click();
   await fenster
@@ -607,7 +613,8 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
   await aussteller.getByRole('link', { name: 'Heizungsbau Beispiel GmbH' }).waitFor();
   await aussteller.getByText('aus Vertrag').waitFor();
   // Von Hand etwas anderes: keine Sperre, aber die Frage, ob der Vertrag geleert werden soll – „Behalten“.
-  await aussteller.getByRole('button', { name: 'Ändern' }).click();
+  // Kein „Ändern“ (#1288): ✕ entfernt, dann neu wählen.
+  await aussteller.getByRole('button', { name: 'Aussteller entfernen' }).click();
   await aussteller.getByRole('combobox').fill('Stadtwerke');
   await aussteller.getByRole('option', { name: 'Stadtwerke Musterstadt' }).click();
   const frage = s.getByRole('alertdialog', { name: 'Vertrag leeren?' });

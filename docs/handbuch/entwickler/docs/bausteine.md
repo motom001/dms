@@ -110,6 +110,6 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Fassungen](bausteine-fassungen.md) | Wer hat wann was geändert: Liste mit lesbaren Änderungen, zwei Fassungen vergleichen, wiederherstellen mit Vorschau; gelöschte Einträge unter einer Liste |
 | [Menü](bausteine-menue.md) | Ein Knopf, der Handlungen öffnet – „Mappe ▾“, „⋯“ an Zeilen und Listen: Gruppen, Symbole, gesperrte Punkte mit Grund, Gefahr abgesetzt am Ende mit Rückfrage; am Handy als Blatt |
 | [Wahlhaken](bausteine-wahlhaken.md) | Der Haken, mit dem man Zeilen einer Liste auswählt: ohne sichtbare Beschriftung, Umschalttaste für Bereiche, „teilweise“ im Kopf |
-| [Mehrfachauswahl](bausteine-mehrfachauswahl.md) | Mehrere Einträge wählen: Suchfeld mit Vorschlägen, Gewähltes darunter mit „Entfernen“ |
+| [Mehrfachauswahl](bausteine-mehrfachauswahl.md) | Einen oder mehrere Einträge wählen: Suchfeld mit Vorschlägen und „+ … anlegen“, Gewähltes darunter mit ✕ |
 | [Platzhalter](bausteine-platzhalter.md) | Platzhalter eines Texts zum Anklicken: verständlicher Name, gruppiert nach „Allgemein“ und Mappentyp, Einsetzen an der Schreibmarke |
 | [Aufklapper](bausteine-aufklapper.md) | Kopf eines Abschnitts oder Zeile einer Liste, die einen Inhalt auf- und zuklappt – Pfeil, `aria-expanded` und `aria-controls` eingebaut |
