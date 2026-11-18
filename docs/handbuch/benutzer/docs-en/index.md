@@ -33,7 +33,7 @@ An administrator sets up which folder types exist and which details they have. Y
 At the top right you can search the whole manual. What has changed in new versions is listed under [What's new?](https://github.com/motom001/dms/releases)
 
 !!! tip "Help from within Ablago"
-    In Ablago, the item **Help** in the menu under your name leads directly here.
+    In Ablago you find the manual in the [assistant](assistent.md) at the bottom right: it searches it, and **Open the whole manual** leads directly here.
 
 ## Who uses Ablago? { #wer-nutzt-das-dms }
 

@@ -11,6 +11,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t } from '../sprache';
 import type { DatenschutzZustand } from './Datenschutz';
 import { Kopf } from './Kopf';
+import { DatenschutzPrivatHinweis } from './DatenschutzPrivat';
 
 /** „über „Inhaber“ auf Person“, mehrere mit „und“ (#664). */
 export function verweiseText(v: Personenverweis[]) {
@@ -151,6 +152,7 @@ export function LoeschkonzeptPanel({ z }: { z: DatenschutzZustand }) {
           </Link>
         </p>
       </Kopf>
+      <DatenschutzPrivatHinweis />
       <LoeschkonzeptBlatt luecken={luecken} zusammenfassung={zusammenfassung} />
       <PersonendatenTypen z={z} luecken={luecken} />
     </div>

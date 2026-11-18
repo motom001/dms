@@ -154,7 +154,9 @@ input.kurz { width: 7em; }
 .trefferliste tr:hover td.sternspalte .stern { opacity: 1; }
 select.fehlerhaft { border-color: var(--schlecht); }
 
-.eintrag.werk.grau { opacity: .6; }
+/* Inaktive Konten (#1326): nicht abblenden (axe verlangt 4,5 : 1, auch für Etiketten darin) – der Name steht leise, das
+   Etikett „ausgeschaltet“ bzw. der Status sagt den Zustand. */
+.eintrag.werk.grau .titel { color: var(--leise); }
 /* Kontextbezogene Hilfe (#110): dezentes ? am Ende eines Untertitels oder einer Überschrift */
 /* ?-Symbol der kontextbezogenen Hilfe (#110); .hilfe ist der Kleintext unter Feldern (#134) */
 .hilfesymbol { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; margin-left: .35em; border: 1px solid var(--linie-stark); border-radius: 50%; font-size: .8em; font-weight: 700; line-height: 1; color: var(--leise); text-decoration: none; vertical-align: .1em; }

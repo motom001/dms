@@ -92,6 +92,8 @@
   "loeschkonzept.zweck": "Zweck",
   "loeschkonzept.zweckBeispiel": "z. B. Durchführung des Mietverhältnisses",
   "datenschutz.lade": "Lade …",
+  "datenschutz.privat": "Weil die Ablage nicht beruflich genutzt wird, steht die Gruppe „{gruppe}“ ({eintraege}) nicht in der Leiste der Werkbank – mit dem Haken „{haken}“ erscheint sie.",
+  "datenschutz.privat.weg": "Zur Nutzung",
   "datenschutz.fragt-ein-kunde-mieter": "Fragt ein Kunde, Mieter oder Kontakt nach seinen Daten (Auskunft nach Art. 15 DSGVO), sammelt Ablago alles, was mit ihm verknüpft ist. Du prüfst die Liste und bekommst eine ZIP-Datei mit Deckblatt, Übersicht, Dokumenten und maschinenlesbaren Daten.",
   "datenschutz.person": "Person",
   "datenschutz.suchen": "{map} suchen …",

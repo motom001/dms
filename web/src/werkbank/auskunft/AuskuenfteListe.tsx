@@ -9,6 +9,7 @@ import { titelOder } from '../../seiten';
 import { Etikett, etikettArt, FilterHaken, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, useListenSuche } from '../../bausteine';
 import { heute, zeit, ZUSTAND_CHIP } from './hilfen';
 import type { DatenschutzZustand } from './zustand';
+import { DatenschutzPrivatHinweis } from '../DatenschutzPrivat';
 
 /* ---------- Datenschutz-Auskünfte (#668): Liste in der Mitte, rechts eine Auskunft, der Assistent oder die Einstellungen ---------- */
 
@@ -52,6 +53,8 @@ export function AuskuenfteListe({ z, offen }: { z: DatenschutzZustand; offen?: s
           {t('werkbank.auskunft.liste.neu')}
         </KnopfLink>
       </Listenkopf>
+      {/* Private Ablage (#1311): warum die Gruppe nicht in der Leiste steht. */}
+      <DatenschutzPrivatHinweis />
       <ListenSuche
         wert={such.eingabe}
         setze={such.setEingabe}

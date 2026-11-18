@@ -3,17 +3,21 @@
 Du arbeitest lieber mit dem Explorer, dem Finder oder der Dateien-App? Dann binde die Ablage von Ablago als **Laufwerk** ein. Du blätterst durch Ansichten, Mappen und Register wie durch Ordner, öffnest Dokumente mit jedem Programm und legst neue Post einfach hinein – per Ziehen oder „Sichern unter“.
 
 !!! note "Erst einschalten lassen"
-    Das Laufwerk ist in Ablago zunächst **ausgeschaltet**; dein Administrator schaltet es in der Werkbank ein. Ist es eingeschaltet, findest du alles Nötige selbst: Klick oben rechts auf deinen Namen → **Als Laufwerk einbinden**. Ist es aus, gibt es diesen Eintrag nicht.
+    Das Laufwerk ist in Ablago zunächst **ausgeschaltet**; dein Administrator schaltet es in der Werkbank ein. Ist es eingeschaltet, findest du alles Nötige selbst: Klick oben rechts auf deinen Namen → **Mein Konto** → **Laufwerk**. Ist es aus, gibt es diesen Bereich nicht.
 
 ## Was du brauchst
 
-Unter **Mein Konto → Laufwerk** (Klick oben rechts auf deinen Namen → **Mein Konto** → **Laufwerk**) steht alles beisammen:
+Unter **Mein Konto → Laufwerk** (Klick oben rechts auf deinen Namen → **Mein Konto** → **Laufwerk**) steht alles beisammen – erst die Erklärung, dann die Schritte:
 
-1. **Die Adresse** deines Ablago mit `/webdav/` am Ende, z. B. `https://dms.example.org/webdav/` – mit **Kopieren** übernimmst du sie.
-2. **Der Benutzername:** deine E-Mail-Adresse.
-3. **Ein Schlüssel:** **Schlüssel für das Laufwerk anlegen** erzeugt einen API-Schlüssel, der lesen und schreiben darf. Kopiere ihn gleich – er ist nur jetzt ganz zu sehen. Er erscheint danach auch unter **Mein Konto → Sicherheit → API-Schlüssel**. Beim Verbinden ist er das **Passwort** (beginnt mit `dms_`); dein normales Passwort funktioniert hier absichtlich nicht.
+![Mein Konto → Laufwerk](bilder/laufwerk.png){ loading=lazy }
 
-Darunter steht für Windows, Mac und iPhone/iPad eine kurze Anleitung zum Aufklappen – dieselbe wie hier.
+**Oben die Erklärung:** wozu das Laufwerk da ist und **So geht es auf deinem Gerät**. Wähle dein Gerät – **Windows**, **Mac** oder **iPhone und iPad** –, darunter steht seine kurze Anleitung, dieselbe wie hier. Vorgewählt ist das Gerät, mit dem du die Seite gerade öffnest.
+
+**Darunter der Reihe nach**, in der Reihenfolge, in der du es brauchst:
+
+1. **Schlüssel anlegen:** **Schlüssel für das Laufwerk anlegen** erzeugt einen API-Schlüssel, der lesen und schreiben darf. Kopiere ihn gleich – er ist nur jetzt ganz zu sehen. Er erscheint danach auch unter **Mein Konto → Sicherheit → API-Schlüssel**. Beim Verbinden ist er das **Passwort** (beginnt mit `dms_`); dein normales Passwort funktioniert hier absichtlich nicht.
+2. **Adresse und Benutzername kopieren:** die Adresse deines Ablago mit `/webdav/` am Ende, z. B. `https://dms.example.org/webdav/`, und als Benutzernamen deine E-Mail-Adresse – mit **Kopieren** übernimmst du beides.
+3. **Im Gerät eintragen:** Adresse, Benutzername und Schlüssel trägst du so ein, wie es oben in der Anleitung für dein Gerät steht; **Zur Anleitung** springt dorthin.
 
 !!! tip "Ein Schlüssel je Gerät"
     Erzeuge für jedes Gerät einen eigenen Schlüssel. Geht ein Gerät verloren, löschst du nur dessen Schlüssel – alle anderen arbeiten weiter.

@@ -36,7 +36,8 @@ function gruppiert(v: Vorschlag[]): Array<{ name: string | null; eintraege: Vors
  * (`TypWahl`) und in der Werkbank. Die Beschriftung setzt der Aufrufer (`Feld` mit `id`, sonst `eingabeLabel`).
  *
  * - Suchfeld als Combobox mit Vorschlagsliste; Enter übernimmt den ersten Vorschlag, Escape schließt die Liste,
- *   Klick oder Pfeil nach unten öffnet sie wieder.
+ *   Klick oder Pfeil nach unten öffnet sie wieder. Esc bei offener Liste schließt nur sie (#1311): Fokus und Eingabe bleiben,
+ *   der Tastendruck geht nicht weiter an Speicherleiste oder Fenster; erst bei geschlossener Liste wirkt Esc wie überall.
  * - Die gewählten Einträge stehen **unter** dem Suchfeld, je mit „Entfernen“. So bleibt das Suchfeld direkt unter
  *   der Beschriftung und auf einer Höhe mit Nachbarfeldern; die Auswahl schiebt nur, was darunter kommt.
  * - Vorschläge mit `gruppe` (#1036, z. B. je Mappentyp) stehen unter einer Überschrift; die Liste nennt keine Anzahl.
@@ -126,7 +127,13 @@ export function Mehrfachauswahl({
               setOffen(true);
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') zu();
+              // Esc (#1311): Ist die Liste offen, schließt es nur sie – Fokus und Eingabe bleiben, und der Tastendruck
+              // erreicht weder die Speicherleiste („Verwerfen“) noch ein Fenster. Erst bei geschlossener Liste wirkt Esc wie überall.
+              if (e.key === 'Escape' && offen && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                e.stopPropagation();
+                zu();
+              }
               if (e.key === 'ArrowDown' && !offen) {
                 e.preventDefault();
                 setOffen(true);

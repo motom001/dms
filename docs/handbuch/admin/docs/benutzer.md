@@ -1,6 +1,6 @@
 # Benutzer und Rollen
 
-Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf, mit welchen Rollen – und wer Ablago verwalten darf (siehe [Wer darf Ablago verwalten?](verwalten.md)). Ein eigenes Konto „Administrator“ gibt es nicht. Die Liste zeigt die Benutzer mit ihrem Stand (*aktiv*, *eingeladen*), wer gerade aktiv ist und wer abwesend ist. Deaktivierte blendet sie aus; **Deaktivierte zeigen** holt sie (grau, am Ende) dazu – die Wahl merkt sich die Werkbank.
+Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf, mit welchen Rollen – und wer Ablago verwalten darf (siehe [Wer darf Ablago verwalten?](verwalten.md)). Ein eigenes Konto „Administrator“ gibt es nicht. Die Liste zeigt die Benutzer mit ihrem Stand (*aktiv*, *eingeladen*), wer gerade aktiv ist und wer abwesend ist. Deaktivierte blendet sie aus; **Deaktivierte zeigen** holt sie am Ende dazu – mit durchgestrichenem Namen und dem Stand *deaktiviert* – die Wahl merkt sich die Werkbank.
 
 ![Ein Benutzer in der Werkbank](bilder/werkbank-benutzer.png)
 
@@ -16,7 +16,7 @@ Ein Benutzer ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) g
 ## Benutzer einladen
 
 1. **+ Benutzer**
-2. Unter *Grunddaten* E-Mail-Adresse und Name eintragen, unter *Rollen und Rechte* bei Bedarf **Rollen** anhaken. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
+2. Unter *Grunddaten* E-Mail-Adresse und Name eintragen, unter *Rollen und Rechte* bei Bedarf **Rollen** wählen – im Feld mit Vorschlägen wie auf [Eigene Organisation](organisation.md): tippen, Rolle wählen, mit **Entfernen** wieder herausnehmen; **Esc** schließt nur die Vorschläge. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
 3. **Benutzer anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Benutzer anlegen**. **Entwurf verwerfen** bricht ab.
 
 ![Neuen Benutzer anlegen](bilder/werkbank-benutzer-neu.png)
@@ -98,7 +98,7 @@ Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappen
 Neben der **Systemrolle** *Mitglied*, die jeder hat, kann ein Benutzer beliebig viele **Rollen** haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.
 
 - **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Ansicht *Rolle* – wer das darf, regeln die [Berechtigungen](berechtigungen.md) am Mappentyp *Rolle* (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.
-- **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Rollen* im Bereich *Rollen und Rechte*, gespeichert mit **Benutzer speichern**). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
+- **Zuordnen** geht nur hier in der Benutzerverwaltung (Feld *Rollen* im Bereich *Rollen und Rechte*, darunter der Hinweis, dass jeder die Systemrolle *Mitglied* ohnehin hat; gespeichert mit **Benutzer speichern**). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
 - **Mitglied** ist eine **Systemrolle**: Sie erscheint als Rollen-Mappe, jeder Benutzer hat sie, und sie lässt sich weder umbenennen noch löschen. Die frühere Systemrolle *Administrator* ist seit dieser Version eine gewöhnliche Rolle ohne Mitglieder – Regeln, die sie nennen, bleiben gültig; brauchst du sie nicht, lösch sie.
 - **Rolle löschen**, die Benutzer haben: erlaubt – die Zuordnung fällt weg. Verweist noch ein Feld auf die Rolle (z. B. „verantwortliche Rolle“), muss dieser Verweis zuerst weg.
 - Rollen lassen sich nicht verschachteln.
@@ -117,7 +117,7 @@ Die Gruppe ist **eingeklappt**, damit sie die Liste der Menschen nicht zustellt.
 - **… mit Fehler** (rot): ein Konto ist deaktiviert, obwohl es gebraucht wird, oder eine seiner Automatisierungen ist angehalten. Das Konto eines entfernten Pakets zählt nicht dazu – es bleibt nur für die Historie. Ebenso das Konto eines Pakets ohne Code (z. B. eines Datenpakets mit Vorgaben): Es meldet sich nie an, ist deshalb ausgeschaltet und steht nur als Herkunft in der Historie. Unter der Kopfzeile führt **Zum Konto mit Fehler** direkt zum betroffenen Konto. Das Konto eines installierten Pakets mit Code schaltet Ablago beim nächsten Abgleich der Pakete (spätestens beim Start) selbst wieder ein und vermerkt das im Protokoll; bleibt es aus, installiere das Paket neu – dabei bestätigst du seine Rechte noch einmal.
 - **… mit weitreichenden Rechten** (gelb): ein Paket darf alle Mappentypen ändern, oder es darf alle lesen und dazu ins Internet. Prüfe beim [Paket](pakete.md), ob du das so willst.
 
-Aufgeklappt trägt jedes betroffene Konto dasselbe Kennzeichen; in seinen Angaben rechts steht, was los ist. Dieselbe Gruppe steht im [Testlauf am Mappentyp](berechtigungen.md#systemkonten-und-pakete), wenn du dort ein Systemkonto prüfen willst.
+Aufgeklappt trägt jedes betroffene Konto dasselbe Kennzeichen; in seinen Angaben rechts steht, was los ist. Ein bewusst ausgeschaltetes Konto (etwa eines Pakets ohne Code) trägt das Etikett **ausgeschaltet** – es wird nicht blass dargestellt, damit es gut lesbar bleibt. Dieselbe Gruppe steht im [Testlauf am Mappentyp](berechtigungen.md#systemkonten-und-pakete), wenn du dort ein Systemkonto prüfen willst.
 
 - **Automatisierung** (Systemrolle *Systemkonto*): Unter diesem Konto laufen Automatisierungen. In der Historie steht dann „Automatisierung“ statt der Person, die sie eingerichtet hat – und sie laufen weiter, wenn diese Person geht oder deaktiviert wird. Systemkonten bekommen nie ein Verwaltungsrecht.
 - **Paket …** (Systemrolle *Paket*): je Paket mit Code ein Dienstkonto. Es darf nur, was du bei der Installation des Pakets bestätigt hast. Wird das Paket entfernt, bleibt das Konto für die Historie stehen.

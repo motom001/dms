@@ -16,6 +16,7 @@ import { gebietsschema } from '../../../shared/src/sprache';
 import { Feld, Knopf, KnopfLink, Speicherleiste, Suchfeld, useEntwurf } from '../bausteine';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
+import { DatenschutzPrivatHinweis } from './DatenschutzPrivat';
 
 /**
  * Werkbank → Datenschutz → Löschprotokoll (#470, eigener Bereich seit #1184): Nachweis gelöschter Mappen und Dokumente – ohne Titel,
@@ -39,6 +40,7 @@ export function LoeschprotokollPanel() {
       <Kopf titel={bereichName('loeschprotokoll')} ueber={t('werkbank.gruppe.datenschutz')} hilfe="werkbank.loeschprotokoll">
         <p className="leise">{t('werkbank.loeschprotokoll.text')}</p>
       </Kopf>
+      <DatenschutzPrivatHinweis />
       <LoeschprotokollBlatt />
     </div>
   );

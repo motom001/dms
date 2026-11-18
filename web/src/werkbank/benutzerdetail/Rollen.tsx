@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { kontoApi } from '../../api/konto';
 import { t } from '../../sprache';
 import { useDaten } from '../../daten';
-import { Link } from '../../ort';
-import { FeldGruppe } from '../../bausteine';
+import { RollenWahl } from '../RollenWahl';
 
 type RolleEintrag = { id: string; name: string; system: boolean };
 
@@ -17,40 +16,24 @@ function useRollen() {
       .then(setRollen)
       .catch(() => setRollen([]));
   }, [d.stand]);
-  return {
-    weitere: (rollen ?? []).filter((r) => !r.system),
-    geladen: rollen !== null,
-    typ: d.typen.find((mappentyp) => mappentyp.system === 'rolle'),
-  };
+  return { weitere: (rollen ?? []).filter((r) => !r.system), geladen: rollen !== null };
 }
 
-/** Rollen als Haken; die Systemrolle Mitglied hat jeder. Verwalten ist keine Rolle (#818), sondern ein Recht. */
-export function WeitereRollen({ gewaehlt, setze, sperre }: { gewaehlt: string[]; setze: (ids: string[]) => void; sperre?: boolean }) {
+/**
+ * Weitere Rollen am Benutzer (#1311: Mehrfachauswahl wie auf „Eigene Organisation“ statt Haken). Die Systemrolle Mitglied
+ * hat jeder und steht nicht zur Wahl; Verwalten ist keine Rolle (#818), sondern ein Recht.
+ */
+export function WeitereRollen({ gewaehlt, setze }: { gewaehlt: string[]; setze: (ids: string[]) => void }) {
   const r = useRollen();
   return (
-    <FeldGruppe
+    <RollenWahl
+      id="benutzer-rollen"
       beschriftung={t('werkbank.benutzer.rollen')}
+      rollen={r.geladen ? r.weitere : null}
+      gewaehlt={gewaehlt}
+      setze={setze}
       hinweis={t('werkbank.benutzer.z-b-als-verantwortliche')}
-      className="rollenwahl">
-      <div className="haken-untereinander">
-        {r.geladen && !r.weitere.length && <p className="leise klein">{t('werkbank.benutzer.noch-keine-rollen-angelegt')}</p>}
-        {r.weitere.map((x) => (
-          <label key={x.id} className="haken">
-            <input
-              type="checkbox"
-              disabled={sperre}
-              checked={gewaehlt.includes(x.id)}
-              onChange={(e) => setze(e.target.checked ? [...gewaehlt, x.id] : gewaehlt.filter((y) => y !== x.id))}
-            />
-            <span>{x.name}</span>
-          </label>
-        ))}
-        {r.typ && (
-          <Link to={`/ablage/${r.typ.id}`} className="verweis klein">
-            {t('werkbank.benutzer.rollen-in-der-ablage')}
-          </Link>
-        )}
-      </div>
-    </FeldGruppe>
+      immer={t('werkbank.benutzer.rollen.immer')}
+    />
   );
 }

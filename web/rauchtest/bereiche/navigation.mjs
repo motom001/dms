@@ -1,7 +1,7 @@
 /**
  * Rauchtests: Navigation – Assistent immer an derselben Stelle (#1283), schlankes Benutzermenü und „Meine Meldungen“
  * (#1331), erster Rundgang mit sechstem Schritt und Karte an festem Platz (#1300, #1301), Weg zurück aus „Mein Konto“
- * (#1302).
+ * (#1302), Laufwerk „erst erklären, dann tun“ (#1332).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/navigation.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -234,3 +234,68 @@ for (const handy of [false, true])
       await rundgang.waitFor({ state: 'detached' });
     },
   );
+
+/* ---------- #1332: Laufwerk – erst erklären, dann tun ---------- */
+
+/** Laufwerk für die Dauer eines Tests einschalten (Lena im Verwaltungsmodus über die Schnittstelle), danach wieder aus. */
+async function mitLaufwerk(ablauf) {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const setze = (aktiv) => api('PUT', '/api/werkbank/webdav', { cookie: verwaltung, body: { aktiv, stempel: null, nurLesend: false } });
+  await setze(true);
+  try {
+    await ablauf();
+  } finally {
+    await setze(false);
+  }
+}
+
+rauchtest('Mein Konto → Laufwerk: oben Erklärung und Gerätewahl, darunter die Schritte der Reihe nach (#1332)', { als: LENA }, async (s) =>
+  mitLaufwerk(async () => {
+    await s.goto(BASIS + '/profil/laufwerk');
+    const geraet = s.getByRole('radiogroup', { name: 'Dein Gerät' });
+    await geraet.waitFor();
+    // Reihenfolge: Erklärung, Gerät, dann die drei Schritte.
+    const titel = (await s.locator('main h2, main h3').allTextContents()).map((x) => x.trim());
+    const stelle = (t) => titel.findIndex((x) => x.startsWith(t));
+    const folge = [
+      'Als Laufwerk einbinden',
+      'So geht es auf deinem Gerät',
+      'Der Reihe nach',
+      'Schlüssel anlegen',
+      'Adresse und Benutzername kopieren',
+      'Im Gerät eintragen',
+    ].map(stelle);
+    assert.ok(
+      folge.every((x, i) => x >= 0 && (i === 0 || x > folge[i - 1])),
+      `Reihenfolge der Überschriften: ${titel.join(' | ')}`,
+    );
+    // Die Schritte sind eine nummerierte Liste; der Knopf für den Schlüssel steht im ersten Schritt.
+    const schritte = s.locator('ol.laufwerk-schritte > li');
+    assert.equal(await schritte.count(), 3);
+    await schritte.nth(0).getByRole('button', { name: 'Schlüssel für das Laufwerk anlegen' }).waitFor();
+    await schritte.nth(1).getByRole('textbox', { name: 'Adresse' }).waitFor();
+    // Gerät wechseln: Anleitung und Verweis im dritten Schritt folgen der Wahl.
+    await geraet.getByRole('radio', { name: 'Mac' }).click();
+    await s
+      .locator('#laufwerk-anleitung')
+      .getByText(/^Im Finder im Menü/)
+      .waitFor();
+    await schritte
+      .nth(2)
+      .getByText(/Anleitung für Mac \(Finder\)/)
+      .waitFor();
+    await schritte.nth(2).getByRole('link', { name: 'Zur Anleitung' }).click();
+    await s.waitForURL(/#laufwerk-geraete$/);
+  }),
+);
+
+rauchtest('Handy: Laufwerk ohne waagerechtes Rollen, Gerätewahl mit 44-px-Tippflächen (#1332)', { handy: true, als: LENA }, async (s) =>
+  mitLaufwerk(async () => {
+    await s.goto(BASIS + '/profil/laufwerk');
+    await s.getByRole('radiogroup', { name: 'Dein Gerät' }).waitFor();
+    await keineWaagerechteRolle(s);
+    const funde = await tippflaechenPruefen(s, ['main']);
+    assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+  }),
+);

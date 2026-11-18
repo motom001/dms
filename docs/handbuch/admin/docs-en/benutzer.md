@@ -1,6 +1,6 @@
 # Users and roles {#benutzer-und-rollen}
 
-Under **Workbench → Users** you decide who may sign in, with which roles – and who may manage Ablago (see [Who may manage Ablago?](verwalten.md)). There is no separate "Administrator" account. The list shows the users with their status (*active*, *invited*), who is active right now and who is absent. It hides deactivated ones; **Show deactivated** adds them (grey, at the end) – the workbench remembers the choice.
+Under **Workbench → Users** you decide who may sign in, with which roles – and who may manage Ablago (see [Who may manage Ablago?](verwalten.md)). There is no separate "Administrator" account. The list shows the users with their status (*active*, *invited*), who is active right now and who is absent. It hides deactivated ones; **Show deactivated** adds them at the end – with the name struck through and the status *deactivated* – the workbench remembers the choice.
 
 ![A user in the workbench](bilder/werkbank-benutzer.png)
 
@@ -16,7 +16,7 @@ On the right, a user is organised like a [folder type](mappentypen.md#aufbau-des
 ## Inviting users {#benutzer-einladen}
 
 1. **+ User**
-2. Under *Basic details* enter email address and name, under *Roles and rights* tick **Roles** if needed. You give a management permission afterwards on the person (only with "Full administration").
+2. Under *Basic details* enter email address and name, under *Roles and rights* choose **Roles** if needed – in the field with suggestions as on [Own organisation](organisation.md): type, choose a role, take it out again with **Remove**; **Esc** only closes the suggestions. You give a management permission afterwards on the person (only with "Full administration").
 3. **Create and invite user** – without email sending the button is called **Create user**. **Discard draft** cancels.
 
 ![Creating a new user](bilder/werkbank-benutzer-neu.png)
@@ -98,7 +98,7 @@ Every user has a folder of the [system folder type](mappentypen.md#systemmappent
 Besides the **system role** *Member*, which everyone has, a user can have any number of **roles** – areas of responsibility such as "Tax and finance".
 
 - **Creating, renaming, deleting roles** happens in the Library in the view *Role* – who may do this is governed by the [permissions](berechtigungen.md) on the folder type *Role* (without rules: every user). Role names are unique.
-- **Assigning** only works here in user management (ticks under *Roles* in the area *Roles and rights*, saved with **Save user**). A role's folder shows in the tab *Users* who has it.
+- **Assigning** only works here in user management (field *Roles* in the area *Roles and rights*, below it the note that everyone has the system role *Member* anyway; saved with **Save user**). A role's folder shows in the tab *Users* who has it.
 - **Member** is a **system role**: it appears as a role folder, every user has it, and it can neither be renamed nor deleted. The former system role *Administrator* has been an ordinary role without members since this version – rules that name it stay valid; if you don't need it, delete it.
 - **Deleting a role** that users have: allowed – the assignment goes. If a field still links to the role (e.g. "responsible role"), this link must go first.
 - Roles can't be nested.
@@ -117,7 +117,7 @@ The group is **collapsed** so that it doesn't clutter the list of people. Its he
 - **… with errors** (red): an account is deactivated although it is needed, or one of its automations is paused. The account of a removed package doesn't count – it only stays for the history. Neither does the account of a package without code (e.g. a data package with presets): it never signs in, is therefore switched off and only appears as the origin in the history. Below the header, **Go to the account with an error** leads straight to the affected account. Ablago switches the account of an installed package with code back on by itself at the next package sync (at the latest at startup) and notes this in the log; if it stays off, reinstall the package – you confirm its permissions again.
 - **… with far-reaching permissions** (yellow): a package may change all folder types, or it may read all and also go to the internet. Check at the [package](pakete.md) whether you want this.
 
-When expanded, every affected account bears the same mark; its details on the right say what is going on. The same group is in the [test run on the folder type](berechtigungen.md#systemkonten-und-pakete) when you want to check a system account there.
+When expanded, every affected account bears the same mark; its details on the right say what is going on. An account that is switched off on purpose (such as one of a package without code) bears the label **switched off** – it is not shown faded, so it stays easy to read. The same group is in the [test run on the folder type](berechtigungen.md#systemkonten-und-pakete) when you want to check a system account there.
 
 - **Automation** (system role *System account*): automations run under this account. The history then says "Automation" instead of the person who set it up – and they keep running when this person leaves or is deactivated. System accounts never get a management permission.
 - **Package …** (system role *Package*): one service account per package with code. It may only do what you confirmed when installing the package. If the package is removed, the account stays for the history.

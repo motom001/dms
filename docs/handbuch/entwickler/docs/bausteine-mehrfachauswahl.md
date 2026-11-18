@@ -14,7 +14,8 @@
 | `waehle`, `gewaehlt`, `entferne` | Wahl übernehmen; die gewählten Einträge (`{ id, inhalt, zusatz?, aktionen?, entfernenText }`); Eintrag entfernen |
 | `ohneSuche`, `darunter`, `schliessen` | ohne Suchfeld; etwas unter dem Gewählten; beim Schließen der Vorschläge |
 
-- **Enter** nimmt den ersten Vorschlag, Pfeiltasten wandern durch die Liste, Esc schließt sie.
+- **Enter** nimmt den ersten Vorschlag, Pfeiltasten wandern durch die Liste.
+- **Esc** bei offener Liste schließt nur die Liste (#1311): Der Fokus bleibt im Feld, die Eingabe bleibt, und der Tastendruck geht nicht weiter – er verwirft keine Änderungen der Speicherleiste und schließt kein Fenster. Erst ein weiteres Esc bei geschlossener Liste wirkt wie überall (Speicherleiste: Verwerfen, Fenster: schließen).
 - **Entfernen** ist ein kleiner Knopf (Art Neben), nicht rot: Das Feld ändert sich erst beim Speichern (Leitsatz 5).
 - **Am Handy** sind Suchfeld, Vorschläge und „Entfernen“ mindestens 44 px hoch.
 - Die Musterseite zeigt den Baustein im Bereich **Mehrfachauswahl**.

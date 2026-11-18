@@ -1,0 +1,13 @@
+art: patch
+
+## Verbessert
+
+- **Laufwerk: erst erklären, dann tun** (#1332): Mein Konto → Laufwerk beginnt mit der Erklärung und der Wahl deines Geräts (Windows, Mac, iPhone und iPad) samt Anleitung. Darunter stehen die Schritte in der Reihenfolge, in der du sie brauchst: Schlüssel anlegen, Adresse und Benutzername kopieren, im Gerät eintragen.
+- **Datenschutz-Auskünfte** (#1311): Der Eintrag „Auskünfte“ in der Werkbank heißt jetzt „Datenschutz-Auskünfte“ – in der Leiste, im Seitentitel und in der Suche. Die Adresse bleibt.
+- **Rollen überall gleich wählen** (#1311): Am Benutzer und an der Karte „Favoriten-Änderungen melden“ wählst du Rollen wie auf „Eigene Organisation“ in einem Feld mit Vorschlägen statt mit Haken; darunter steht, wer ohnehin dazugehört.
+- **Warum die Gruppe Datenschutz fehlt** (#1311): Wird die Ablage nur privat genutzt, sagt „Eigene Organisation“ in einem Satz, warum die Gruppe „Datenschutz“ nicht in der Leiste steht. Derselbe Satz steht oben auf ihren Seiten, wenn du sie über die Adresse öffnest.
+- **Esc in Feldern mit Vorschlägen** (#1311): Esc schließt nur die offene Vorschlagsliste – deine Eingabe und deine Änderungen bleiben. Erst ein zweites Esc verwirft wie gewohnt.
+
+## Behoben
+
+- **Inaktive Systemkonten gut lesbar** (#1326): Ausgeschaltete Konten in Werkbank → Benutzer sind nicht mehr blass dargestellt, sondern tragen das Etikett „ausgeschaltet“ und erreichen so auch im dunklen Modus genug Kontrast.

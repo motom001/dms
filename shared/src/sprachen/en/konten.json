@@ -34,6 +34,7 @@
   "systemkonten.fehler.deaktiviert.text": "The package is installed, but its account is switched off. Ablago switches it back on by itself at the next package sync (at the latest at startup). If it stays off, reinstall the package – you will see and confirm its permissions again.",
   "systemkonten.ohne-code": "This package contains no code. Its account never signs in and is therefore switched off; it only appears as the origin in the history, e.g. for the presets of the package.",
   "systemkonten.gruppe.zum-fehler": "Go to the account with an error: {name}",
+  "systemkonten.aus": "switched off",
   "systemkonten.weitreichend": "far-reaching permissions",
   "systemkonten.weitreichend.text": "This package may change all folder types or read all of them and access the network as well. Check on the package whether that’s what you want.",
   "systemkonten.zum-paket": "Go to package",

@@ -92,6 +92,8 @@
   "loeschkonzept.zweck": "Purpose",
   "loeschkonzept.zweckBeispiel": "e.g. carrying out the tenancy",
   "datenschutz.lade": "Loading …",
+  "datenschutz.privat": "Because the Library is not used for work, the group “{gruppe}” ({eintraege}) is not in the Workbench sidebar – it appears with the tick “{haken}”.",
+  "datenschutz.privat.weg": "To the usage",
   "datenschutz.fragt-ein-kunde-mieter": "If a customer, tenant or contact asks for their data (access request under Art. 15 GDPR), Ablago collects everything linked to them. You check the list and get a ZIP file with a cover sheet, overview, documents and machine-readable data.",
   "datenschutz.person": "Person",
   "datenschutz.suchen": "Find {map} …",

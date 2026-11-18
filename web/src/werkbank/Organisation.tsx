@@ -13,7 +13,7 @@ import {
 } from '../../../shared/src/organisation';
 import { zeitText } from '../../../shared/src/region';
 import { werkbankApi } from '../api/werkbank';
-import { Etikett, Feld, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf, KnopfLink } from '../bausteine';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
@@ -24,6 +24,8 @@ import { AuskunftVorgaben, vorgabenAus, type Vorgaben } from './AuskunftVorgaben
 import type { DatenschutzZustand } from './Datenschutz';
 import { t } from '../sprache';
 import { Kopf } from './Kopf';
+import { RollenWahl } from './RollenWahl';
+import { DatenschutzPrivatSatz } from './DatenschutzPrivat';
 
 /**
  * Werkbank → Einstellungen → Eigene Organisation (#995, seit #1170 unter Einstellungen): oben die Nutzung der Ablage
@@ -76,10 +78,13 @@ export type NutzungZustand = ReturnType<typeof useNutzung>;
 /** Nutzung (#1032, seit #1170 oben auf dieser Seite): der Haken „auch beruflich genutzt“. Ändern nur mit Gesamter Verwaltung. */
 function NutzungAbschnitt({
   beruflich,
+  gespeichert,
   setze,
   organisationen,
 }: {
   beruflich: boolean;
+  /** Gespeichertes Merkmal: Danach richtet sich die Leiste (#1184) und der Satz zur Gruppe Datenschutz (#1311). */
+  gespeichert: boolean;
   setze(an: boolean): void;
   organisationen: EigeneOrganisation[];
 }) {
@@ -98,6 +103,7 @@ function NutzungAbschnitt({
         <input id="nutzung-beruflich" type="checkbox" checked={beruflich} disabled={!gesamt} onChange={(x) => setze(x.target.checked)} />
       </HakenFeld>
       <p className="leise klein">{t('werkbank.nutzung.vorlage', { vorlage: VORLAGEN[vorlageFuer({ beruflich })].name })}</p>
+      {!gespeichert && <DatenschutzPrivatSatz />}
       {/* Beim Ausschalten (#1170): nichts wird gelöscht, die eigene Organisation bleibt gespeichert. */}
       {!beruflich && organisationen.length > 0 && (
         <p className="hinweis warn klein" role="status">
@@ -253,65 +259,6 @@ const entwurfAus = (s: OrganisationStand, m: Merkmale, ds: Datenschutz | null): 
   vorgaben: ds ? vorgabenAus(ds) : null,
 });
 
-/**
- * Rollen, die das Merkmal setzen dürfen (#1182): Verweisfeld mit Mehrfachauswahl wie in den Mappen statt Haken; darunter,
- * wer es ohnehin darf, und der Weg zu den Rollen.
- */
-function RollenWahl({ rollen, gewaehlt, setze }: { rollen: OrganisationStand['rollen']; gewaehlt: string[]; setze(ids: string[]): void }) {
-  const d = useDaten();
-  const [eingabe, setEingabe] = useState('');
-  const [offen, setOffen] = useState(false);
-  const q = eingabe.trim().toLocaleLowerCase('de');
-  const name = (id: string) => rollen.find((r) => r.id === id)?.name ?? id;
-  const rollenTyp = d.typen.find((x) => x.system === 'rolle');
-  return (
-    <Feld
-      beschriftung={t('werkbank.organisation.rollen.titel')}
-      id="organisation-rollen"
-      anker="organisation.rollen"
-      hinweis={[
-        t('werkbank.organisation.rollen.text'),
-        <>
-          {t('werkbank.organisation.rollen.immer')}
-          {rollenTyp && (
-            <>
-              {' '}
-              <Link to={`/ablage/${rollenTyp.id}`} className="verweis">
-                {t('werkbank.organisation.rollen.verwalten')}
-              </Link>
-            </>
-          )}
-        </>,
-      ]}>
-      {(v) => (
-        <Mehrfachauswahl
-          id={v.id}
-          name={t('werkbank.organisation.rollen.titel')}
-          platzhalter={t('werkbank.organisation.rollen.suchen')}
-          eingabe={eingabe}
-          setEingabe={setEingabe}
-          offen={offen}
-          setOffen={setOffen}
-          vorschlaege={rollen
-            .filter((r) => !gewaehlt.includes(r.id) && (!q || r.name.toLocaleLowerCase('de').includes(q)))
-            .map((r) => ({ id: r.id, text: r.name }))}
-          leerText={rollen.length ? t('werkbank.organisation.rollen.alle') : t('werkbank.organisation.rollen.keine')}
-          waehle={(id) => {
-            setze([...gewaehlt, id].sort());
-            setEingabe('');
-          }}
-          gewaehlt={gewaehlt.map((id) => ({
-            id,
-            inhalt: name(id),
-            entfernenText: t('werkbank.organisation.rollen.entfernen', { name: name(id) }),
-          }))}
-          entferne={(id) => setze(gewaehlt.filter((x) => x !== id))}
-        />
-      )}
-    </Feld>
-  );
-}
-
 /** „Wo Ablago diese Angaben verwendet“ (#1182): jede Stelle mit Bereich in der Werkbank als Link dorthin. */
 function verwendungZiel(v: Verwendung): string | null {
   if (v.art === 'anzeige') return `/werkbank/typen/${v.typId}`;
@@ -338,7 +285,17 @@ function WahlUndRollen({ s, e, setE }: { s: OrganisationStand; e: Entwurf; setE(
           </select>
         </Feld>
       )}
-      <RollenWahl rollen={s.rollen} gewaehlt={e.rollen} setze={(rollen) => setE({ ...e, rollen })} />
+      {/* Rollen, die das Merkmal setzen dürfen (#1182): Mehrfachauswahl, darunter, wer es ohnehin darf. */}
+      <RollenWahl
+        id="organisation-rollen"
+        anker="organisation.rollen"
+        beschriftung={t('werkbank.organisation.rollen.titel')}
+        rollen={s.rollen}
+        gewaehlt={e.rollen}
+        setze={(rollen) => setE({ ...e, rollen })}
+        hinweis={t('werkbank.organisation.rollen.text')}
+        immer={t('werkbank.organisation.rollen.immer')}
+      />
     </section>
   );
 }
@@ -496,7 +453,12 @@ export function OrganisationPanel({
           void speichern();
         }}
         onKeyDown={ent.tasten}>
-        <NutzungAbschnitt beruflich={e.beruflich} setze={(an) => setE({ ...e, beruflich: an })} organisationen={s.organisationen} />
+        <NutzungAbschnitt
+          beruflich={e.beruflich}
+          gespeichert={beruflich}
+          setze={(an) => setE({ ...e, beruflich: an })}
+          organisationen={s.organisationen}
+        />
         {/* Ohne „beruflich“ sichtbar, aber blass (#1170) – nicht aus- und eingeblendet. */}
         <div className={`stapel${beruflich ? '' : ' organisation-blass'}`} id="eigene-organisation">
           {!beruflich && <p className="leise">{t('werkbank.organisation.nur-beruflich')}</p>}
