@@ -8,11 +8,6 @@
 .regler output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
 fieldset.mischung { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px 12px; margin: 0; min-width: 0; }
 fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
-.aufklappkopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-weight: 600; color: var(--tinte); text-align: left; cursor: pointer; }
-.aufklappkopf:hover { background: var(--senke); }
-.aufklappkopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
-.aufklappkopf .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
-.aufklappkopf .leise { font-weight: 400; }
 /* „Zum Konto mit Fehler“ unter der Kopfzeile der Systemkonten (#1181): eingerückt wie der Text im Kopf. */
 .systemkonten-zumfehler { margin: 0; padding: 0 10px 4px calc(10px + 1em + 8px); }
 .systemkonten-zumfehler > a { display: inline-flex; align-items: center; min-height: 24px; }
@@ -42,7 +37,7 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 /* Ein Ast als FeldGruppe (#1214): Name als Beschriftung, Bereiche eingerückt im Raster darunter. */
 .verwaltungsgruppe { margin-top: 4px; }
 .verwaltungsast { flex: 1 1 100%; padding: 0 0 0 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 2px 16px; }
-.verwaltungsast .chip svg { width: 12px; height: 12px; vertical-align: -1px; }
+.verwaltungsast [data-etikett] svg { width: 12px; height: 12px; vertical-align: -1px; }
 /* Protokoll */
 .protokollfilter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .protokollfilter select { max-width: 100%; }
@@ -83,7 +78,7 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .gruppentitel { margin: 4px 10px 2px; font-size: calc(11px * var(--skala, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--leise); }
 .ausgeblendet-fuss { margin: 12px 10px 0; }
 /* „n Bereiche ausgeblendet“ ist seit #1277 ein Knopf: in der schmalen Leiste darf er umbrechen. */
-.ausgeblendet-fuss .knopf { white-space: normal; text-align: left; max-width: 100%; }
+.ausgeblendet-fuss [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { white-space: normal; text-align: left; max-width: 100%; }
 .ausgeblendet-fuss .verweis { background: none; border: 0; padding: 0; font: inherit; color: var(--akzent); cursor: pointer; text-decoration: underline; }
 /* Solange die Stufe lädt, steht statt der Bereiche eine leise Zeile (#1418). */
 .werkbankleiste-laedt { margin: 4px 10px; }

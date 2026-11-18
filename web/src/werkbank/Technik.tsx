@@ -1,4 +1,4 @@
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
 import { werkzeugZeilen } from './Werkzeuge';
 import { version as reactVersion } from 'react';
@@ -349,7 +349,7 @@ export function TechnikPanel({ t: eintrag, abschnitt }: { t: TechnikZustand; abs
                                 <td className="mono">{v.installiert ?? '–'}</td>
                                 <td className="mono">{v.aktuell ?? '–'}</td>
                                 <td>
-                                  <span className={`chip ${s.art}`}>{s.text}</span>
+                                  <Etikett art={etikettArt(s.art)}>{s.text}</Etikett>
                                 </td>
                               </tr>
                             );

@@ -8,7 +8,7 @@
 /* Stand der Texterkennung am Dokument */
 .ocrstand { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 /* Mehrere Sprachen (#579) machen den Stand länger: am Handy umbrechen statt abschneiden. */
-.ocrstand > .chip { white-space: normal; }
+.ocrstand > [data-etikett] { white-space: normal; }
 .teilenhinweis p { flex: 1 1 16em; }
 .volltext { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: calc(12px * var(--skala, 1)); background: var(--senke); border: 1px solid var(--linie); border-radius: 6px; padding: 8px 10px; margin: 6px 0 0; }
 /* Formatierter Text (#53) */
@@ -58,7 +58,7 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
 .aufgabenaktionen, .weitergeben { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 /* Aktionen an der Mappe (#58) */
 .aktionsmenue { position: relative; }
-.aktionsmenue .menue { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px var(--schatten-zart); }
+.aktionsmenue .menue { position: absolute; right: 0; top: calc(100% + 4px); z-index: var(--ebene-menue); min-width: 220px; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px var(--schatten-zart); }
 .aktionsmenue .menue button { text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .aktionsmenue .menue button:hover, .aktionsmenue .menue button:focus-visible { background: var(--senke); }
 /* Paket-Aktionen (#1039): gesperrt mit sichtbarem Grund; Dialog eines Pakets sieht anders aus als Ablagos Rückfragen. */
@@ -96,7 +96,7 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
 .titelzeile { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
 .titelzeile h1 { min-width: 0; overflow-wrap: anywhere; }
 .mit-stern { position: relative; }
-.mit-stern > .stern { position: absolute; right: 4px; top: 6px; z-index: 1; }
+.mit-stern > .stern { position: absolute; right: 4px; top: 6px; z-index: var(--ebene-innen); }
 .mit-stern > .eintrag { padding-right: 34px; }
 .mit-stern > .stern:not(.an) { opacity: .45; }
 .mit-stern:hover > .stern, .mit-stern > .stern:focus-visible { opacity: 1; }
@@ -119,7 +119,7 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
   .ka-weitergeben { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
 }
 
-.aufgabentext .chip { margin-left: 6px; vertical-align: 1px; }
+.aufgabentext [data-etikett] { margin-left: 6px; vertical-align: 1px; }
 
 /* Stempel beim Weitergeben (#394) */
 .stempelwahl { border: 0; padding: 0; margin: 8px 0; min-width: 0; }
@@ -188,7 +188,7 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
 }
 @media (max-width: 600px) {
   .aktionsmenue .menue {
-    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 41; min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: calc(var(--ebene-blatt) + 1); min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
     border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
   .aktionsmenue .menue button { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -201,8 +201,8 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
   .start-raster .kachelzahl { grid-column: 2; grid-row: 1 / span 2; font-size: 1.6rem; }
 }
 /* Post fotografieren (#490): Blatt von unten mit großen Knöpfen, Seiten als Vorschaubilder. Präfix pk-. */
-.pk-schleier { position: fixed; inset: 0; z-index: 70; background: var(--schleier); }
-.pk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; margin: 0 auto; max-width: 520px; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+.pk-schleier { position: fixed; inset: 0; z-index: calc(var(--ebene-panel) + 20); background: var(--schleier); }
+.pk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: calc(var(--ebene-panel) + 21); margin: 0 auto; max-width: 520px; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
   background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px var(--schatten-stark);
   padding: 18px max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 .pk-titel { font-size: calc(18px * var(--skala, 1)); font-weight: 700; display: flex; align-items: center; gap: 8px; }
@@ -218,7 +218,7 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
 .pk-start { width: 100%; min-height: 52px; font-size: 17px; padding: 12px 16px; }
 .pk-postzeile { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex-basis: 100%; }
 .pk-postliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.pk-postliste .knopf { width: 100%; justify-content: space-between; white-space: normal; text-align: left; min-height: 44px; }
+.pk-postliste [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { width: 100%; justify-content: space-between; white-space: normal; text-align: left; min-height: 44px; }
 .pk-postname { overflow-wrap: anywhere; }
 /* „Mehr Filter …“ unter „Suchen in ▾“ am Suchfeld oben (#1218). */
 .sucheoben-mehr { align-self: flex-start; margin-top: 2px; }
@@ -234,13 +234,13 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
   .aw { display: block; }
   .aw-knopf { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px 14px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); font: inherit; cursor: pointer; text-align: left; }
   .aw-aktuell { flex: 1; min-width: 0; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .aw-schleier { position: fixed; inset: 0; z-index: 40; background: var(--schleier); }
-  .aw-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  .aw-schleier { position: fixed; inset: 0; z-index: var(--ebene-blatt); background: var(--schleier); }
+  .aw-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: calc(var(--ebene-blatt) + 1); max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
     background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px var(--schatten-stark);
     padding: 12px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
-  .aw-kopf { position: sticky; top: -12px; z-index: 1; display: flex; gap: 10px; align-items: center; padding: 4px 0 6px; background: var(--flaeche); }
+  .aw-kopf { position: sticky; top: -12px; z-index: var(--ebene-innen); display: flex; gap: 10px; align-items: center; padding: 4px 0 6px; background: var(--flaeche); }
   .aw-suche { flex: 1; min-width: 0; min-height: 44px; }
-  .aw-kopf .textknopf { min-height: 44px; padding: 0 6px; }
+  .aw-kopf :is([data-knopf="link"], [data-knopf="eigen"]) { min-height: 44px; padding: 0 6px; }
   .aw-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .aw-zeile { display: flex; align-items: center; gap: 4px; min-width: 0; }
   .aw-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 8px 10px; border-radius: 8px; color: var(--tinte); text-decoration: none; font-size: 16px; }
@@ -260,7 +260,12 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
   .aw-filter { display: none; }
 }
 @media (max-width: 600px) {
-  .dk-handy > .knopf.primaer { flex: 1; }
+  .dk-handy > [data-knopf="haupt"] { flex: 1; }
 }
 
 .frag-feld { width: 100%; resize: vertical; min-height: 2.6rem; padding-left: 14px; padding-right: 14px; }
+
+/* Favoriten (#62): Stern in Mappenkopf, Listen und Tabellen. */
+[data-knopf="eigen"].stern { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; background: none; border: 0; padding: 2px; margin: 0; cursor: pointer; color: var(--leise); font-size: calc(18px * var(--skala, 1)); line-height: 1; border-radius: 6px; flex: none; text-decoration: none; }
+[data-knopf="eigen"].stern:hover { color: var(--warn); background: var(--senke); text-decoration: none; }
+[data-knopf="eigen"].stern.an { color: var(--warn); }

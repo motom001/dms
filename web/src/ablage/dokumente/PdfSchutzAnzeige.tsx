@@ -7,7 +7,7 @@ import { dokumenteApi } from '../../api/dokumente';
 import { useKonto } from '../../konto';
 import { Hilfe } from '../../Hilfe';
 import { Symbol } from '../../Symbol';
-import { Feld, HakenFeld, Knopf } from '../../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../../bausteine';
 
 /**
  * Geschütztes PDF (#827): Hinweis mit Passwortfeld, solange es gesperrt ist; danach ein kurzer Vermerk. Mit
@@ -25,7 +25,7 @@ export function PdfSchutzAnzeige({ x, betreff, fertig }: { x: Dokument; betreff:
   if (s.entsperrt)
     return (
       <span className="ocrstand klein">
-        <span className="chip">{t.frei(`mappen.entsperren.chip.${s.art}`)}</span>
+        <Etikett>{t.frei(`mappen.entsperren.chip.${s.art}`)}</Etikett>
         <span className="leise">
           {s.art === 'rechte'
             ? t('mappen.entsperren.rechte')

@@ -2,7 +2,7 @@ import type { AblaufvorlageAnsicht } from '../../../../shared/src/ablaufvorlagen
 import { Listenkopf } from '../../Listenkopf';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
-import { GeloeschteEintraege, KnopfLink, PaketChip } from '../../bausteine';
+import { Etikett, etikettArt, GeloeschteEintraege, KnopfLink, PaketChip } from '../../bausteine';
 import type { InstalliertesPaket } from '../../../../shared/src/pakete';
 import { paketHerkunft } from '../listensuche';
 import { pfad, type AblaufvorlagenZustand } from './zustand';
@@ -65,9 +65,9 @@ export function AblaufvorlagenListe({
               <Link to={pfad(v.kennung)} className={`eintrag werk ${offen === v.kennung ? 'an' : ''}`}>
                 <span className="titel">
                   {v.name}{' '}
-                  <span className={`chip ${v.aktiv ? 'gut' : ''}`}>
+                  <Etikett art={etikettArt(v.aktiv ? 'gut' : '')}>
                     {v.aktiv ? t('automatisierung.ui.an') : t('automatisierung.ui.aus')}
-                  </span>{' '}
+                  </Etikett>{' '}
                   <Herkunft v={v} pakete={pakete} />
                 </span>
                 <span className="unter">{v.kurz}</span>
@@ -77,9 +77,9 @@ export function AblaufvorlagenListe({
                     <>
                       {' '}
                       ·{' '}
-                      <span className="chip schlecht klein">
+                      <Etikett art="schlecht" klein>
                         {t('automatisierung.vorlage.ui.davon-angehalten', { anzahl: v.angehalten })}
-                      </span>
+                      </Etikett>
                     </>
                   )}
                 </span>

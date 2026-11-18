@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Feld, HakenFeld, Schalter } from '../bausteine';
+import { Etikett, etikettArt, Feld, HakenFeld, Schalter } from '../bausteine';
 import { eingaengeApi, type WebdavEinstellung, type WebdavStand } from '../api/eingaenge';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
@@ -156,7 +156,7 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
           {s.zugriffe.length > 0 && (
             <>
               {' '}
-              <span className="chip">{s.zugriffe.length}</span>
+              <Etikett>{s.zugriffe.length}</Etikett>
             </>
           )}
         </h2>
@@ -173,9 +173,9 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
                     – {zeit(z.zeit)} · {z.benutzer}
                   </span>
                 </span>
-                <span className={`chip ${z.status >= 400 ? 'schlecht' : ''}`} title={t('werkbank.webdav.http-status')}>
+                <Etikett art={etikettArt(z.status >= 400 ? 'schlecht' : '')} title={t('werkbank.webdav.http-status')}>
                   {z.status}
-                </span>
+                </Etikett>
               </li>
             ))}
           </ul>

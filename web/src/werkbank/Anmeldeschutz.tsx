@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Feld, HakenFeld, Knopf, KnopfLink, Schalter, type KnopfErgebnis } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf, type KnopfErgebnis, KnopfLink, Schalter } from '../bausteine';
 import {
   kontoApi,
   type AnbieterEingabe,
@@ -174,7 +174,7 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
           {s.gesperrt.length > 0 && (
             <>
               {' '}
-              <span className="chip">{s.gesperrt.length}</span>
+              <Etikett>{s.gesperrt.length}</Etikett>
             </>
           )}
         </h2>

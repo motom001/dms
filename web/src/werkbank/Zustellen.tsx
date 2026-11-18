@@ -21,7 +21,7 @@ import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 
 /**
  * Auskunft zustellen (#455) – an einer bereitliegenden Auskunft:
@@ -58,7 +58,7 @@ export function Zustellen({ a, s, nachher }: { a: AuskunftStand; s: DatenschutzS
             <span>
               <span className="auskunft-weg-titel">
                 <strong>{t('werkbank.zustellen.abruf-link-mit-abrufcode')}</strong>
-                {s.oeffentlich && <span className="chip gut">{t('werkbank.zustellen.empfohlen')}</span>}
+                {s.oeffentlich && <Etikett art="gut">{t('werkbank.zustellen.empfohlen')}</Etikett>}
               </span>
               <small>{t('werkbank.zustellen.die-person-laedt-die')}</small>
             </span>
@@ -74,7 +74,7 @@ export function Zustellen({ a, s, nachher }: { a: AuskunftStand; s: DatenschutzS
             <span>
               <span className="auskunft-weg-titel">
                 <strong>{t('werkbank.zustellen.zip-per-e-mail')}</strong>
-                {!s.oeffentlich && mailGeht && <span className="chip gut">{t('werkbank.zustellen.empfohlen')}</span>}
+                {!s.oeffentlich && mailGeht && <Etikett art="gut">{t('werkbank.zustellen.empfohlen')}</Etikett>}
               </span>
               <small>
                 {a.verschluesselt ? t('werkbank.zustellen.als-anhang-verschluesselt-das') : t('werkbank.zustellen.nur-fuer-auskuenfte-mit')}
@@ -364,7 +364,7 @@ export function LinkZeile({ l, nachher, mitTitel }: { l: AuskunftLink; nachher()
             <strong>{titelOder(l.titel)}</strong> ·{' '}
           </>
         )}
-        <span className={`chip auskunft-status-${st}`}>{LINK_STATUS[st]}</span>{' '}
+        <Etikett art={st === 'aktiv' ? 'gut' : st === 'gesperrt' ? 'schlecht' : 'leise'}>{LINK_STATUS[st]}</Etikett>{' '}
         <span className="leise klein">
           {t('werkbank.zustellen.erstellt-gueltig-bis-von', {
             zeit: zeit(l.erstellt),

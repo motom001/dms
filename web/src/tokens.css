@@ -32,6 +32,19 @@
   --r: 8px;
   --marke-hell: block; --marke-dunkel: none;
   color-scheme: light;
+  /* Ebenen (#1270): jeder z-index ist eine dieser Stufen, nie eine freie Zahl (npm run lint:klassen). Werte wie bisher;
+     ein Abstand (calc … + n) nur für Teile, die über ihrer eigenen Stufe liegen müssen. Gleich in hell und dunkel. */
+  --ebene-innen: 1; /* über den Nachbarn im selben Baustein: Stern, Haken, Lupe, Kopf einer Festhöhe-Tabelle */
+  --ebene-klebend: 2; /* klebende Tabellenköpfe und Listensuche */
+  --ebene-leiste: 3; /* klebende Leisten: Listenkopf, Speicherleiste, Aktionsleiste; Sprungleiste + 1 */
+  --ebene-kopf: 5; /* Kopfzeile der Seite */
+  --ebene-griff: 15; /* Griffe und Laschen zwischen den Spalten */
+  --ebene-aufklapper: 20; /* Listen unter Feldern, offene Kopfsuche, Erreichbarkeit */
+  --ebene-menue: 30; /* Menüs und Erklärungen am Knopf */
+  --ebene-begleiter: 35; /* Begleiter am Rand (+ 1: sein Fenster) */
+  --ebene-blatt: 40; /* Schleier am Handy, Blatt darüber + 1, Begleiter am Handy + 2, Verweisfenster + 5 */
+  --ebene-panel: 50; /* Messpanel; Ablegen: Stand + 5, Fläche + 10; Kamera: Schleier + 20, Blatt + 21 */
+  --ebene-rundgang: 1000; /* Zielwahl der Rundgänge über allem (+ 1: ihre Leiste) */
 }
 @media (prefers-color-scheme: dark) {
   :root {

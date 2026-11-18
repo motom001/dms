@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { EINGEBAUTE_AKTIONEN, type AktionenEinstellung, type AktionRecht, type EingebauteAktion } from '../../../shared/src/paketaktionen';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketeApi, type PaketVorschau } from '../api/pakete';
-import { HakenFeld, fehlerText } from '../bausteine';
+import { Etikett, fehlerText, HakenFeld } from '../bausteine';
 import { Link } from '../ort';
 import { t } from '../sprache';
 
@@ -132,7 +132,7 @@ export function AktionenVorschau({ aktionen, update }: { aktionen?: PaketVorscha
             {update && a.neu && (
               <>
                 {' '}
-                <span className="chip warn">{t('werkbank.paketaktionen.neu')}</span>
+                <Etikett art="warn">{t('werkbank.paketaktionen.neu')}</Etikett>
               </>
             )}
           </li>

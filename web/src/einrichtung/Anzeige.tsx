@@ -12,7 +12,7 @@ import { feldLabel } from '../../../shared/src/beschriftung';
 import { merkmalName } from '../../../shared/src/merkmale';
 import { jedeMappe, zielErlaubt, zieleVon, type Feld, type Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, OPERATOREN_JE_ART } from '../../../shared/src/sichten';
-import { FeldGruppe, Knopf } from '../bausteine';
+import { Etikett, FeldGruppe, Knopf } from '../bausteine';
 import { useDaten } from '../daten';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
@@ -48,9 +48,9 @@ export function AnzeigeChip({ regel, typ }: { regel?: Anzeigeregel; typ: TypTeil
   if (!regel?.bedingungen.length) return null;
   const text = beschreibeAnzeige(regel, typ, { typ: typNameAus(d.typen), mappe: (id) => d.person(id) });
   return (
-    <span className="chip anzeigechip" title={text}>
+    <Etikett className="anzeigechip" title={text}>
       <Symbol name="auge" /> {text}
-    </span>
+    </Etikett>
   );
 }
 

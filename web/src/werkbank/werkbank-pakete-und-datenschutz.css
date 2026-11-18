@@ -41,11 +41,11 @@
 .pd-liste { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
 .pd-liste > li { border: 1px solid var(--linie); border-radius: 10px; padding: 10px 12px; min-width: 0; }
 .pd-liste > li.an { border-color: var(--akzent); }
-.pd-liste .chip { white-space: normal; }
+.pd-liste [data-etikett] { white-space: normal; }
 /* Paketauswahl wie im Katalog (#645): Kacheln mit Symbol, Filter nach Kategorie. */
 .pd-kategorien { display: flex; flex-wrap: wrap; gap: 6px; }
-.pd-kategorien .knopf { min-height: 44px; }
-.pd-kategorien .knopf[aria-pressed="true"] { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); font-weight: 600; }
+.pd-kategorien [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { min-height: 44px; }
+.pd-kategorien [data-knopf][aria-pressed="true"] { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); font-weight: 600; }
 .pd-symbol { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--akzent-zart); color: var(--akzent); flex: none; }
 .pd-symbol svg { width: 24px; height: 24px; }
 .pd-symbol-buchstabe { font-weight: 700; font-size: 1.1rem; }
@@ -110,7 +110,7 @@
 
 /* Werkbank ohne Mitte (#366): kleine oder nur lesende Listen stehen rechts, mit fester Höhe (etwa zehn Einträge). */
 .festhoehe { max-height: 27em; overflow-y: auto; }
-.festhoehe thead th { position: sticky; top: 0; z-index: 1; }
+.festhoehe thead th { position: sticky; top: 0; z-index: var(--ebene-innen); }
 .festhoehe tfoot th { position: sticky; bottom: 0; background: var(--senke); }
 th.zahlzelle, td.zahlzelle { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .aufklappliste { list-style: none; margin: 0; padding: 0; border: 1px solid var(--linie); border-radius: var(--r); }
@@ -118,9 +118,6 @@ th.zahlzelle, td.zahlzelle { text-align: right; font-variant-numeric: tabular-nu
 .aufklappliste li:first-child { border-top: 0; }
 .aufklappliste li.an { background: var(--senke); }
 .aufklappliste dl { margin: 0; padding: 0 12px 10px; }
-.aufklappzeile { display: block; width: 100%; text-align: left; padding: 7px 12px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
-.aufklappzeile:hover { background: var(--senke); }
-.aufklappzeile .zeichen { color: var(--leise); vertical-align: -2px; margin-right: 4px; }
 .standzeile { margin: 0; color: var(--leise); }
 /* Liste der Sicherungen (#1169): Haken je Zeile und Auswahlleiste. Die Knöpfe der Zeile stehen mit Abstand statt mit
    „ · “ dazwischen: Am Handy wachsen ihre Tippflächen (auch „Löschen“ mit 8 px über und unter dem Knopf), und
@@ -146,7 +143,7 @@ td.sicherung-wahl { width: 1%; }
 .auskunft-mappe .haken > span, .auskunft-baum .haken > span { display: block; font-weight: normal; }
 .auskunft-mappe > .haken > span > .verweis { font-weight: 600; }
 .auskunft-mappe.aus > .haken > span { color: var(--leise); text-decoration: line-through; }
-.auskunft-mappe .chip { margin-left: 6px; }
+.auskunft-mappe [data-etikett] { margin-left: 6px; }
 .auskunft-inhalt { margin: 2px 0 6px 26px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .auskunft-inhalt .haken { align-items: flex-start; }
 .auskunft-dritte { color: var(--warn); margin: 0; }
@@ -189,8 +186,6 @@ td.sicherung-wahl { width: 1%; }
 .auskunft-code { font-size: 1.4em; letter-spacing: .08em; }
 .auskunft-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .auskunft-link { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
-.auskunft-status-aktiv { color: var(--gruen); }
-.auskunft-status-gesperrt { color: var(--schlecht); }
 /* Eigene Organisation ohne berufliche Nutzung (#1170): sichtbar, aber blass – nicht ausgeblendet. */
 .organisation-blass { color: var(--leise); }
 .organisation-blass .blatt { background: var(--senke); border-style: dashed; }
@@ -218,4 +213,8 @@ td.sicherung-wahl { width: 1%; }
 .auskunft-typen { list-style: none; padding-left: 0; }
 @media (pointer: coarse) {
   .stempeleditor input[type="range"] { min-height: 48px; }
+}
+
+@media (pointer: coarse) {
+  [data-knopf="eigen"].rechtknopf[data-knopf]:not(.klein) { min-height: 48px; }
 }

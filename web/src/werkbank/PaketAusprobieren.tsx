@@ -10,7 +10,7 @@ import { dateiartPasst, type ProbeAntwort } from '../../../shared/src/paketreite
 import { gebietsschema } from '../../../shared/src/sprache';
 import { ApiFehler } from '../api/anfrage';
 import { paketeApi } from '../api/pakete';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, Feld, Knopf } from '../bausteine';
 import { useUngespeichert } from '../ort';
 import { t } from '../sprache';
 import { paketEntwurf } from './PaketEinstellungen';
@@ -43,11 +43,7 @@ function Ergebnis({ e }: { e: ProbeAntwort }) {
         {t('pakete.probe.ergebnis')}
       </h2>
       <p>
-        {e.ok ? (
-          <span className="chip gut">{t('pakete.probe.ok')}</span>
-        ) : (
-          <span className="chip schlecht">{t('pakete.probe.fehler')}</span>
-        )}{' '}
+        {e.ok ? <Etikett art="gut">{t('pakete.probe.ok')}</Etikett> : <Etikett art="schlecht">{t('pakete.probe.fehler')}</Etikett>}{' '}
         <span className="leise klein">{t('pakete.probe.messung', { sekunden: s, mb: e.speicherMB })}</span>
       </p>
       {e.fehler && (

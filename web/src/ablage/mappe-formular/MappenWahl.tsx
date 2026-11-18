@@ -3,7 +3,7 @@ import { typName } from '../../../../shared/src/beschriftung';
 import { darfErstellen, type Feld as FeldDef, type Mappe, type Mappentyp, type Werte } from '../../../../shared/src/model';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import type { Bezuege } from '../../api/mappen';
-import { Knopf } from '../../bausteine';
+import { Etikett, Knopf } from '../../bausteine';
 import { Link } from '../../ort';
 import { Ehemalig } from '../../Person';
 import { titelOder } from '../../seiten';
@@ -304,9 +304,9 @@ function eintraege({
     // Mehrere Zieltypen (#1036): mit Typ-Symbol und -Name; nicht sichtbare Mappen nur als „(nicht sichtbar)“, ohne Typ.
     inhalt: <GewaehlteMappe id={x} bekannt={bekannt} mehrere={mehrere} />,
     zusatz: unpassend.includes(x) && (
-      <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>
+      <Etikett art="warn" title={t('felder.verweis.unpassend.titel')}>
         {unpassendText(typFelder, gruende[x] ?? [])}
-      </span>
+      </Etikett>
     ),
     aktionen: !mehrfach && !aendern && (
       <Knopf groesse="klein" onClick={aendere}>

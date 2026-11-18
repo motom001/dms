@@ -5,7 +5,7 @@ import { kinderVon, type BaumKnoten } from '../../../../shared/src/baum';
 import { datumText } from '../../../../shared/src/archiv';
 import { t, tn } from '../../sprache';
 import { titelOder } from '../../seiten';
-import { HakenFeld } from '../../bausteine';
+import { Etikett, HakenFeld } from '../../bausteine';
 import type { ErteilenZustand } from './erteilen-zustand';
 import type { erteilenAktionen } from './erteilen-zustand';
 import { MappeEintrag } from './MappeEintrag';
@@ -25,9 +25,7 @@ export function zeigeKnoten(k: BaumKnoten, x: ErteilenZustand, a: ReturnType<typ
           beschriftung={
             <>
               {erwaehnungText({ typ: k.typ, titel: titelOder(k.titel), feld: k.ueber.feld, richtung: k.ueber.richtung })}{' '}
-              <span className="chip" title={t('werkbank.datenschutz.nur-ueber-einen-verweis')}>
-                {t('werkbank.datenschutz.bezug')}
-              </span>
+              <Etikett title={t('werkbank.datenschutz.nur-ueber-einen-verweis')}>{t('werkbank.datenschutz.bezug')}</Etikett>
             </>
           }
           hinweis={
@@ -85,21 +83,17 @@ export function zeigeKnoten(k: BaumKnoten, x: ErteilenZustand, a: ReturnType<typ
                   : t('werkbank.datenschutz.ueber', { feld: k.ueber.feld })}
               </span>
             )}
-            {k.auchUeber.length > 0 && (
-              <span className="chip" title={t('werkbank.datenschutz.diese-mappe-ist-auf')}>
-                ↻ {k.auchUeber.length}
-              </span>
-            )}
+            {k.auchUeber.length > 0 && <Etikett title={t('werkbank.datenschutz.diese-mappe-ist-auf')}>↻ {k.auchUeber.length}</Etikett>}
             {k.gesperrt && k.aufbewahrenBis && (
-              <span className="chip" title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>
+              <Etikett title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>
                 {tn('werkbank.datenschutz.bis', { symbol: <Symbol name="schloss" />, datumText: datumText(k.aufbewahrenBis) })}
-              </span>
+              </Etikett>
             )}
             {/* Die Frist läuft noch nicht (#1051): gesperrt ohne Datum. */}
             {k.gesperrt && !k.aufbewahrenBis && (
-              <span className="chip" title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>
+              <Etikett title={t('werkbank.datenschutz.archivmodus-aufbewahrungsfrist')}>
                 {tn('werkbank.datenschutz.frist-offen', { symbol: <Symbol name="schloss" /> })}
-              </span>
+              </Etikett>
             )}
           </>
         }

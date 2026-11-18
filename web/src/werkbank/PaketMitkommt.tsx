@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Knopf } from '../bausteine';
+import { Etikett, Knopf } from '../bausteine';
 import { ereignisSchluessel, istKatalogArt } from '../../../shared/src/ereignisse';
 import {
   automatisierungKlartext,
@@ -28,7 +28,7 @@ const Neu = ({ e }: { e: { neu?: boolean } }) =>
   e.neu ? (
     <>
       {' '}
-      <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span>
+      <Etikett>{t('werkbank.pakete.mitkommt.neu')}</Etikett>
     </>
   ) : null;
 
@@ -122,7 +122,7 @@ export function MitkommtInhalt({ m, rechte }: { m: Mitkommt; rechte?: string[] }
                     {v.neu?.includes(n) && (
                       <>
                         {' '}
-                        <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span>
+                        <Etikett>{t('werkbank.pakete.mitkommt.neu')}</Etikett>
                       </>
                     )}
                   </span>

@@ -9,7 +9,7 @@ import { DokumentPasswoerter } from './DokumentPasswoerter';
 import { useKonto } from '../konto';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Feld, Knopf, Schalter } from '../bausteine';
+import { Etikett, Feld, Knopf, Schalter } from '../bausteine';
 import type { ProfilZustand } from './useProfil';
 
 /** Profil → Sicherheit (#1279 aus Profil.tsx gezogen): Passwort, Passkeys, Zwei-Faktor, Geräte, API-Schlüssel, Papierkorb. */
@@ -136,19 +136,21 @@ function MeineGeraete() {
                 {s.aktuell && (
                   <>
                     {' '}
-                    <span className="chip">{t('profil.profil.dieses-geraet')}</span>
+                    <Etikett>{t('profil.profil.dieses-geraet')}</Etikett>
                   </>
                 )}
                 {s.vertretungId && (
                   <>
                     {' '}
-                    <span className="chip warn">{t('konten.verwaltende.vertretung.chip')}</span>
+                    <Etikett art="warn">{t('konten.verwaltende.vertretung.chip')}</Etikett>
                   </>
                 )}
                 {istGeradeAktiv(s.zuletztAktiv) && (
                   <>
                     {' '}
-                    <span className="chip gut punkt">{t('profil.profil.gerade-aktiv')}</span>
+                    <Etikett art="gut" punkt>
+                      {t('profil.profil.gerade-aktiv')}
+                    </Etikett>
                   </>
                 )}
                 <span className="leise klein blockzeile">

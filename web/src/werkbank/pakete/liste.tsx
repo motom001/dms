@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Feld, Knopf, KnopfLink, Schalter, type KnopfErgebnis } from '../../bausteine';
+import { Aufklapper, Etikett, Feld, Knopf, type KnopfErgebnis, KnopfLink, Schalter } from '../../bausteine';
 import {
   herkunftText,
   KATALOG_LINK_REL,
@@ -87,16 +87,10 @@ function Expertenbereich({ z }: { z: PaketeZustand }) {
   }
   return (
     <section className="aufklappbereich">
-      <Knopf
-        art="eigen"
-        className="aufklappkopf"
-        aria-expanded={experte}
-        aria-controls="pakete-experte"
-        onClick={() => setExperte(!experte)}>
-        <Symbol name={experte ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
+      <Aufklapper offen={experte} steuert="pakete-experte" umschalten={() => setExperte(!experte)}>
         <span>{t('werkbank.pakete.expertenmodus')}</span>
         <span className="leise klein">{t('werkbank.pakete.weitere-quellen-paket-oder')}</span>
-      </Knopf>
+      </Aufklapper>
       {experte && (
         <div id="pakete-experte" className="aufklappinhalt">
           <div className="hinweis warn klein">
@@ -135,16 +129,13 @@ function Installiert({ z, offen }: { z: PaketeZustand; offen?: string }) {
         <li key={`selbst|${p.id}`}>
           <Link to={`/werkbank/pakete/${SELBST}${p.id}`} className={`eintrag werk ${offen === `${SELBST}${p.id}` ? 'an' : ''}`}>
             <span className="titel">
-              {p.name}{' '}
-              <span className="chip" title={tx('pakete.selbst.chipTitel')}>
-                {tx('pakete.selbst.chip')}
-              </span>
+              {p.name} <Etikett title={tx('pakete.selbst.chipTitel')}>{tx('pakete.selbst.chip')}</Etikett>
               {z.konflikt(p.id) && (
                 <>
                   {' '}
-                  <span className="chip warn" title={tx('pakete.selbst.konflikt', { id: p.id })}>
+                  <Etikett art="warn" title={tx('pakete.selbst.konflikt', { id: p.id })}>
                     {tx('pakete.selbst.konfliktChip')}
-                  </span>
+                  </Etikett>
                 </>
               )}
             </span>
@@ -161,16 +152,16 @@ function Installiert({ z, offen }: { z: PaketeZustand; offen?: string }) {
               {p.name}
               <Herausgeber wer={p.herausgeber} geprueft={p.herausgeberGeprueft} />{' '}
               {neuer(p.id) && (
-                <span className="chip warn" title={t('werkbank.pakete.neuere-version-in-der')}>
+                <Etikett art="warn" title={t('werkbank.pakete.neuere-version-in-der')}>
                   {neuer(p.id)!.neu}
-                </span>
+                </Etikett>
               )}
               {p.einstellungenNoetig && (
                 <>
                   {' '}
-                  <span className="chip warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>
+                  <Etikett art="warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>
                     {t('werkbank.pakete.einstellungen-noetig')}
-                  </span>
+                  </Etikett>
                 </>
               )}
             </span>

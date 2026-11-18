@@ -59,7 +59,7 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
     const html = zeichne(h(StempelListe, { z: stempelZ(liste), offen: 'kopie' }));
     // Baustein KnopfLink mit Knopfart „Anlegen“ (#989): grün, data-knopf="anlegen".
     const neu = /<a[^>]*href="\/werkbank\/stempel\/neu"[^>]*>\+ Neu<\/a>/.exec(html)?.[0] ?? '';
-    assert.match(neu, /class="knopf gruen klein[^"]*"/);
+    assert.match(neu, /class="knopf anlegen klein[^"]*"/);
     assert.match(neu, /data-knopf="anlegen"/);
     for (const v of liste) assert.ok(html.includes(`href="/werkbank/stempel/${v.id}"`), v.id);
     assert.equal(html.match(/eintrag werk an/g)?.length, 1, 'nur die offene Vorlage ist markiert');

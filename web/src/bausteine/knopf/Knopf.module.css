@@ -1,9 +1,26 @@
-/* Knopf (#968, #1210): Zustände des Bausteins. Grundform und Farben je Art kommen aus styles.css (.knopf, .primaer,
-   .gruen, .textknopf; .gefahr nur für den Bestätigungsknopf der Rückfrage) – so gelten Designs und Stellen wie „Knopf in
-   einer Karte“ weiter. Hier steht, was der Baustein selbst festlegt: Hover und Fokus für jede Art, Gefahr (auf der Seite
-   wie Neben, Leitsatz 4), gesperrt in zwei Formen (Leitsatz 6), „läuft“ und das Ergebnis am Knopf.
+/* Knopf (#968, #1210, #1270): Grundform je Art und Zustände des Bausteins – alles hier, keine globalen Knopf-Klassen
+   mehr (früher .knopf, .primaer, .gruen, .gefahr, .textknopf in styles.css). Hover und Fokus für jede Art, Gefahr
+   (auf der Seite wie Neben, Leitsatz 4), gesperrt in zwei Formen (Leitsatz 6), „läuft“ und das Ergebnis am Knopf.
+   Ein Bereich passt einen Knopf in seiner eigenen Datei über `[data-knopf="…"]` an, nie über eine Klasse des Bausteins.
    Nur Werte aus tokens.css; hell und dunkel über die Tokens (--knopf-hover ist hell dunkler, dunkel heller).
    .vorschauhover und .vorschaufokus nutzt nur die Musterseite, um Hover und Fokus stehend zu zeigen. */
+
+/* Grundform: Neben (Rand), Haupt (blau), Anlegen (grün), Entscheidung der Rückfrage (rot gefüllt, nur dort). */
+.knopf { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
+.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
+.knopf.anlegen { background: var(--gruen); border-color: var(--gruen); color: var(--gruen-tinte, var(--akzent-tinte)); }
+.knopf:global(.klein) { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
+.knopf:disabled { opacity: 0.5; cursor: default; }
+.knopf.entscheidung { background: var(--schlecht); border-color: var(--schlecht); color: var(--schlecht-tinte); }
+.knopf.entscheidung:disabled { opacity: .45; }
+/* Anmeldung über einen Anbieter (#241): Weg über die ganze Breite. */
+a.knopf:global(.breit) { display: flex; justify-content: center; text-decoration: none; }
+/* Verweis (nur KnopfLink) und Sonderform (eigen): ohne Fläche und Rand. Eine Sonderform legt Form und Farbe in der
+   Datei ihres Besitzers über `[data-knopf="eigen"].klasse` fest. */
+.verweis, .eigen { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--akzent); }
+.verweis:disabled, .eigen:disabled { color: var(--leise); cursor: not-allowed; }
+a.verweis { text-decoration: none; }
+
 .baustein { transition: filter .12s, background-color .12s, border-color .12s; }
 
 /* Hover: sichtbar für alle Arten, hell und dunkel – nie bei gesperrt oder „läuft“. */
@@ -30,7 +47,7 @@
 .warum { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--leise); cursor: pointer; font: inherit; }
 .warum:hover, .warum[aria-expanded="true"] { color: var(--akzent); }
 .warum:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
-.erklaerung { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; width: min(380px, calc(100vw - 32px)); padding: 10px 12px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 6px 20px var(--schatten); font-size: calc(13px * var(--skala, 1)); font-weight: 400; line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.erklaerung { position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--ebene-menue); width: min(380px, calc(100vw - 32px)); padding: 10px 12px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 6px 20px var(--schatten); font-size: calc(13px * var(--skala, 1)); font-weight: 400; line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere; }
 .erklaerung.oben { top: auto; bottom: calc(100% + 6px); }
 .erklaerung p { margin: 0; }
 .erklaerung ul { margin: 6px 0 0; padding-left: 18px; }

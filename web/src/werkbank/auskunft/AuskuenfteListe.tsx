@@ -6,7 +6,7 @@ import { Listenkopf } from '../../Listenkopf';
 import { t } from '../../sprache';
 import { bereichName } from '../../../../shared/src/werkbankansicht';
 import { titelOder } from '../../seiten';
-import { FilterHaken, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, useListenSuche } from '../../bausteine';
+import { Etikett, etikettArt, FilterHaken, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, useListenSuche } from '../../bausteine';
 import { heute, zeit, ZUSTAND_CHIP } from './hilfen';
 import type { DatenschutzZustand } from './zustand';
 
@@ -96,7 +96,7 @@ export function AuskuenfteListe({ z, offen }: { z: DatenschutzZustand; offen?: s
                   <Hervorgehoben teile={titel} text={titelOder(e.titel)} />
                 </span>
                 <span className="unter">
-                  <span className={`chip ${ZUSTAND_CHIP[e.zustand]}`}>{t(`werkbank.auskunft.zustand.${e.zustand}`)}</span> {zeit(e.zeit)}
+                  <Etikett art={etikettArt(ZUSTAND_CHIP[e.zustand])}>{t(`werkbank.auskunft.zustand.${e.zustand}`)}</Etikett> {zeit(e.zeit)}
                   {e.mappen !== undefined ? ` · ${t('werkbank.auskunft.liste.mappen', { anzahl: e.mappen })}` : ''}
                   {e.frist && istOffen(e.zustand) && (
                     <>

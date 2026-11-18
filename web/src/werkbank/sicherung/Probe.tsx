@@ -4,7 +4,7 @@ import { t } from '../../sprache';
 import { Schritte } from '../../wiederherstellen';
 import { Hilfe } from '../../Hilfe';
 import { Speicherleiste, useEntwurf } from '../../Speicherleiste';
-import { Feld, Knopf, Schalter } from '../../bausteine';
+import { Etikett, etikettArt, Feld, Knopf, Schalter } from '../../bausteine';
 import { zeit } from '../sicherungFormat';
 import { AMPEL, TAGE } from './hilfen';
 
@@ -60,7 +60,7 @@ export function Probe({
         <dt>{t('werkbank.sicherung.ampel')}</dt>
         <dd>
           {stand.ampel ? (
-            <span className={`chip ${AMPEL[stand.ampel][0]}`}>{AMPEL[stand.ampel][1]}</span>
+            <Etikett art={etikettArt(AMPEL[stand.ampel][0])}>{AMPEL[stand.ampel][1]}</Etikett>
           ) : (
             <span className="leise">{t('werkbank.sicherung.noch-keine-sicherung')}</span>
           )}

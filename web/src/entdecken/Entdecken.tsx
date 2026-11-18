@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { TIPP_BEREICHE, type TippAnzeige } from '../../../shared/src/entdecken';
 import { useDaten } from '../daten';
 import { t } from '../sprache';
-import { Knopf, Suchfeld } from '../bausteine';
+import { Etikett, Knopf, Suchfeld } from '../bausteine';
 import { starteRundgang, tippHandlung, useEntdecken, zeigeZiel } from './stand';
 
 /**
@@ -127,7 +127,7 @@ function TippEintrag({ x }: { x: TippAnzeige }) {
       {x.ausgeblendet && (
         <>
           {' '}
-          <span className="chip">{t('entdecken.seite.ausgeblendet')}</span>{' '}
+          <Etikett>{t('entdecken.seite.ausgeblendet')}</Etikett>{' '}
           <Knopf title={t('entdecken.seite.einblenden.titel')} onClick={() => tippHandlung(x.schluessel, 'einblenden')}>
             {t('entdecken.seite.einblenden')}
           </Knopf>

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { feldLabel } from '../../../../shared/src/beschriftung';
 import { enthaeltId } from '../../../../shared/src/folgtaus';
 import { formatiere, istLeer, verweisAusText, type Feld as FeldDef } from '../../../../shared/src/model';
-import { Knopf } from '../../bausteine';
+import { Etikett, Knopf } from '../../bausteine';
 import { titelOder } from '../../seiten';
 import { t } from '../../sprache';
 import { ausRoh, zuRoh } from '../../werte';
@@ -27,7 +27,7 @@ export function feldHinweise(z: Kern, w: HinweisWege) {
       if (JSON.stringify(z.roh[f.key]) !== JSON.stringify(zuRoh(f, v.wert))) return null;
       return (
         <p className="ad-hinweis">
-          <span className="chip">{t('ablage.mappeformular.vorschlag')}</span>{' '}
+          <Etikett>{t('ablage.mappeformular.vorschlag')}</Etikett>{' '}
           {v.hinweis && (
             <>
               <strong>{v.hinweis}</strong>{' '}
@@ -47,7 +47,7 @@ export function feldHinweise(z: Kern, w: HinweisWege) {
       f.typ === 'referenz' ? titelOder(z.bekannt[String(Array.isArray(v.wert) ? v.wert[0] : v.wert)]?.titel) : formatiere(f, v.wert);
     return (
       <p className="ad-hinweis">
-        <span className="chip">{t('ablage.mappeformular.im-dokument')}</span> <strong>{text}</strong>{' '}
+        <Etikett>{t('ablage.mappeformular.im-dokument')}</Etikett> <strong>{text}</strong>{' '}
         <span className="leise">
           ({sicher}){v.hinweis ? ` – ${v.hinweis}` : ''}
         </span>{' '}
@@ -73,12 +73,12 @@ export function feldHinweise(z: Kern, w: HinweisWege) {
         {vorschlagAm(f)}
         {q && (
           <p className="ad-hinweis folgt">
-            <span className="chip">{t('ablage.folgen.aus', { feld: feldLabel(q) })}</span>
+            <Etikett>{t('ablage.folgen.aus', { feld: feldLabel(q) })}</Etikett>
           </p>
         )}
         {vorbelegtHier && !z.nurLesen && (
           <p className="ad-hinweis vorbelegt">
-            <span className="chip">{vb.text}</span>{' '}
+            <Etikett>{vb.text}</Etikett>{' '}
             <Knopf groesse="klein" onClick={() => w.vorbelegungZuruecknehmen(f.key)}>
               {t('ablage.mappeformular.zuruecknehmen')}
             </Knopf>

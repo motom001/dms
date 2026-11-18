@@ -1,4 +1,4 @@
-import { Feld, FeldGruppe, HakenFeld, Knopf } from '../../bausteine';
+import { Etikett, Feld, FeldGruppe, HakenFeld, Knopf } from '../../bausteine';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Mappentyp } from '../../../../shared/src/model';
 import {
@@ -162,10 +162,10 @@ function regelZu({
         {griff}
         <Knopf art="eigen" className="regelsumme" aria-expanded={false} onClick={umschalten}>
           <strong>{r.name || t('werkbank.berechtigungen.ohne-namen')}</strong>
-          <span className="chip">
+          <Etikett>
             {kurz(r.dann)}
             {r.stopp ? t('werkbank.berechtigungen.stopp') : ''}
-          </span>
+          </Etikett>
           <span className="leise klein">
             {t('werkbank.berechtigungen.wenn')} {r.wenn.map(bedText).join(` ${t('werkbank.berechtigungen.und')} `) || '…'}
           </span>
@@ -357,10 +357,10 @@ function regelKopf(r: Regel, griff: ReactNode, setze: (r: Regel) => void) {
           onChange={(x) => setze({ ...r, name: x.target.value })}
         />
       </Feld>
-      <span className="chip" title={t('werkbank.berechtigungen.kurzform-der-wirkung')}>
+      <Etikett title={t('werkbank.berechtigungen.kurzform-der-wirkung')}>
         {kurz(r.dann)}
         {r.stopp ? t('werkbank.berechtigungen.stopp') : ''}
-      </span>
+      </Etikett>
     </div>
   );
 }

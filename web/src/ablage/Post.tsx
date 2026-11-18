@@ -27,7 +27,11 @@ import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { typName } from '../../../shared/src/beschriftung';
-import { Knopf, KnopfLink } from '../bausteine';
+import { Etikett, Knopf, KnopfLink, type EtikettArt } from '../bausteine';
+
+/** Stand einer Post als Etikett (#1289): neu gelb, zugeordnet grün. */
+const STAND_ETIKETT: Record<string, EtikettArt> = { neu: 'warn', zugeordnet: 'gut' };
+const standEtikett = (stand: string): EtikettArt => STAND_ETIKETT[stand.toLowerCase()] ?? 'leise';
 
 /**
  * Post (#192): „+ Post“ in den Sichten mit Post und die Leiste an einer Post-Mappe (Stand, Zuordnen, Erledigt).
@@ -143,7 +147,7 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
     <>
       <AufloesungHinweis postId={m.id} />
       <div className="postleiste">
-        <span className={`chip stand-${stand.toLowerCase()}`}>{stand}</span>
+        <Etikett art={standEtikett(stand)}>{stand}</Etikett>
         {zugeordnet.length > 0 && (
           <span className="klein">
             {t('ablage.post.zugeordnet-zu')}{' '}
@@ -450,7 +454,7 @@ function Erkannt({
       )}
       {e.ausgehend && (
         <p className="klein er-auto">
-          <span className="chip warn">{t('ablage.post.ausgehend')}</span>{' '}
+          <Etikett art="warn">{t('ablage.post.ausgehend')}</Etikett>{' '}
           {e.ausgehend.titel ? t('ablage.post.ausgehend-text', { titel: e.ausgehend.titel }) : t('ablage.post.ausgehend-text-ohne')}
           {e.ausgehend.fundstelle && <span className="leise"> – „{e.ausgehend.fundstelle}“</span>}
         </p>
@@ -463,7 +467,7 @@ function Erkannt({
             <div className="er-paar">
               <dt>{t('ablage.post.absender')}</dt>
               <dd>
-                <span className="chip">{t('ablage.post.vorschlag')}</span>{' '}
+                <Etikett>{t('ablage.post.vorschlag')}</Etikett>{' '}
                 <Link to={`/ablage/${absender.typId}/${absender.mappeId}`} className="verweis">
                   {titelOder(absender.titel)}
                 </Link>
@@ -503,7 +507,7 @@ function Erkannt({
             <div className="er-paar">
               <dt>{t('ablage.post.absender')}</dt>
               <dd>
-                <span className="chip">{t('ablage.post.neu')}</span> {Object.values(e.neuerAbsender.werte).join(', ')}
+                <Etikett>{t('ablage.post.neu')}</Etikett> {Object.values(e.neuerAbsender.werte).join(', ')}
                 <span className="leise klein">
                   {' '}
                   {t('ablage.post.aus-dem-briefkopf-noch', { wert: orgTyp?.name ?? t('ablage.post.mappe') })}

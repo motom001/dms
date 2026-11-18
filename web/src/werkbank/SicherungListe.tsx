@@ -1,4 +1,4 @@
-import { HakenFeld, Knopf, Wahlhaken } from '../bausteine';
+import { Etikett, etikettArt, HakenFeld, Knopf, Wahlhaken } from '../bausteine';
 import { useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { betriebApi, type SicherungEintrag, type SicherungsPlan, type SicherungStand } from '../api/betrieb';
@@ -194,9 +194,9 @@ function Zeile({
         {fehlschlag && (
           <>
             {' '}
-            <span className="chip schlecht" title={fehlschlag.grund}>
+            <Etikett art="schlecht" title={fehlschlag.grund}>
               {t('werkbank.sicherung.liste.nicht-geloescht')}
-            </span>
+            </Etikett>
           </>
         )}
       </td>
@@ -211,11 +211,11 @@ function Zeile({
         {x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck && (
           <>
             {' '}
-            <span
-              className="chip warn"
+            <Etikett
+              art="warn"
               title={t('werkbank.sicherung.schluessel-braucht-das-notfallblatt', { fingerabdruck: x.meta.verschluesselung.fingerabdruck })}>
               {t('werkbank.sicherung.frueherer-schluessel')}
-            </span>
+            </Etikett>
           </>
         )}
       </td>
@@ -236,20 +236,20 @@ function Zeile({
       )}
       <td>
         {x.pruefung ? (
-          <span
-            className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`}
+          <Etikett
+            art={etikettArt(x.pruefung.ok ? 'gut' : 'schlecht')}
             title={t('werkbank.sicherung.geprueft', { zeit: zeit(x.pruefung.am) })}>
             {x.pruefung.ok ? t('werkbank.sicherung.unveraendert') : t('werkbank.sicherung.weicht-ab')}
-          </span>
+          </Etikett>
         ) : (
           <span className="leise">–</span>
         )}
       </td>
       <td>
         {x.probe ? (
-          <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>
+          <Etikett art={etikettArt(x.probe.ok ? 'gut' : 'schlecht')} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>
             {x.probe.ok ? t('werkbank.sicherung.in-ordnung') : t('werkbank.sicherung.fehler')}
-          </span>
+          </Etikett>
         ) : (
           <span className="leise">–</span>
         )}

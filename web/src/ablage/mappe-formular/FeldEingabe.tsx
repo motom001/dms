@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { feldHilfe, feldLabel } from '../../../../shared/src/beschriftung';
 import { formatiere, mehrereZiele, VERWEISARTEN, type Feld as FeldDef } from '../../../../shared/src/model';
-import { NurLesenFeld, type FeldProps } from '../../bausteine';
+import { Etikett, type FeldProps, NurLesenFeld } from '../../bausteine';
 import { useDaten } from '../../daten';
 import { Link } from '../../ort';
 import { Ehemalig } from '../../Person';
@@ -89,7 +89,7 @@ function rahmenVon(f: FeldDef, fehler: string | undefined, id: string, nummern: 
       nummern || f.typ === 'referenz' ? (
         <>
           {nummern}
-          {f.typ === 'referenz' && <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span>}
+          {f.typ === 'referenz' && <Etikett>{VERWEISARTEN[f.verweisart ?? 'bezug']}</Etikett>}
         </>
       ) : undefined,
   };
@@ -117,9 +117,9 @@ function nurLesenWert({ feld: f, roh, bekannt, unpassend, gruende, typFelder = [
             {unpassend?.includes(x) && (
               <>
                 {' '}
-                <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>
+                <Etikett art="warn" title={t('felder.verweis.unpassend.titel')}>
                   {unpassendText(typFelder, gruende?.[x] ?? [])}
-                </span>
+                </Etikett>
               </>
             )}
           </li>

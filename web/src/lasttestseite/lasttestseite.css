@@ -14,5 +14,5 @@
 .lasttest-ende { justify-content: space-between; border-top: 1px solid var(--linie); padding-top: 14px; }
 .lasttest-auto { margin: 0; }
 @media (max-width: 560px) {
-  .lasttest-ergebnis .knoepfe .knopf, .lasttest-ende .knopf { width: 100%; white-space: normal; }
+  .lasttest-ergebnis .knoepfe [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])), .lasttest-ende [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { width: 100%; white-space: normal; }
 }

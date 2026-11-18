@@ -17,7 +17,7 @@ import { Symbol } from '../Symbol';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
-import { Feld, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../bausteine';
 import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 import { hinweis } from '../rueckfrage';
 import { titelOder } from '../seiten';
@@ -83,9 +83,9 @@ function knoten(c: Kontext, k: BaumKnoten): ReactNode {
                 {k.dokumente ? t('ablage.loeschbaum.dokumente', { anzahl: k.dokumente }) : ''}
               </span>
               {k.auchUeber.length > 0 && (
-                <span className="chip lb-chip" title={t('ablage.loeschbaum.auf-mehreren-wegen-erreichbar')}>
+                <Etikett className="lb-chip" title={t('ablage.loeschbaum.auf-mehreren-wegen-erreichbar')}>
                   <Symbol name="neu-laden" /> {k.auchUeber.length}
-                </span>
+                </Etikett>
               )}
             </>
           }>

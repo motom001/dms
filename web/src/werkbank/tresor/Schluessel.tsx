@@ -3,7 +3,7 @@ import { Hilfe } from '../../Hilfe';
 import { rueckfrage } from '../../rueckfrage';
 import { t, tn } from '../../sprache';
 import { gebietsschema } from '../../../../shared/src/sprache';
-import { Knopf } from '../../bausteine';
+import { Etikett, etikettArt, Knopf } from '../../bausteine';
 
 type Meldung = { art: 'gut' | 'schlecht'; text: string };
 
@@ -35,7 +35,7 @@ export function schluesselAbschnitt({
       <dl className="eigenschaften">
         <dt>{t('werkbank.verschluesselung.zustand')}</dt>
         <dd>
-          <span className={`chip ${s.zustand === 'vorhanden' ? 'gut' : 'schlecht'}`}>{TEXT[s.zustand]}</span>
+          <Etikett art={etikettArt(s.zustand === 'vorhanden' ? 'gut' : 'schlecht')}>{TEXT[s.zustand]}</Etikett>
         </dd>
         <dt>{t('werkbank.verschluesselung.fingerabdruck')}</dt>
         <dd className="mono">{s.fingerabdruck ?? '–'}</dd>

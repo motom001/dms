@@ -3,7 +3,7 @@
 
 /* Hülle ohne eigene Fläche: Knopf und Fenster liegen fest am Rand. */
 .begleiter { display: contents; }
-.ort { position: fixed; z-index: 35; right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); }
+.ort { position: fixed; z-index: var(--ebene-begleiter); right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); }
 
 .ort .knopf { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; min-width: 56px; min-height: 56px; padding: 0; border: 1px solid var(--linie-stark); border-radius: 50%; background: var(--flaeche); color: var(--akzent); text-decoration: none; box-shadow: 0 6px 18px var(--schatten); }
 .ort .knopf:hover { background: var(--flaeche); text-decoration: none; filter: none; }
@@ -28,7 +28,7 @@
 }
 
 /* Fenster über dem Knopf. */
-.fenster { position: fixed; z-index: 36; right: max(24px, env(safe-area-inset-right)); bottom: calc(max(24px, env(safe-area-inset-bottom)) + 72px); width: 400px; height: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px); max-height: calc(100dvh - 120px); display: flex; flex-direction: column; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 12px; box-shadow: 0 16px 40px var(--schatten-stark); overflow: hidden; }
+.fenster { position: fixed; z-index: calc(var(--ebene-begleiter) + 1); right: max(24px, env(safe-area-inset-right)); bottom: calc(max(24px, env(safe-area-inset-bottom)) + 72px); width: 400px; height: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px); max-height: calc(100dvh - 120px); display: flex; flex-direction: column; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 12px; box-shadow: 0 16px 40px var(--schatten-stark); overflow: hidden; }
 .fenster:focus { outline: none; }
 .fenster:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 /* Eigener Streifen unten (styles.css, .rumpf): schmal immer, breit mit Speicherleiste – dann steht der Knopf darin, unter
@@ -78,7 +78,7 @@
 @media (max-width: 600px) {
   /* Offen liegt das Blatt über dem Knopf; geschlossen wird mit „×“ im Blatt. */
   .offen .ort { display: none; }
-  .fenster { left: 0; right: 0; bottom: 0; width: auto; max-width: none; height: auto; max-height: 85vh; max-height: 85dvh; min-height: 60vh; border-radius: 14px 14px 0 0; border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); z-index: 42; }
+  .fenster { left: 0; right: 0; bottom: 0; width: auto; max-width: none; height: auto; max-height: 85vh; max-height: 85dvh; min-height: 60vh; border-radius: 14px 14px 0 0; border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); z-index: calc(var(--ebene-blatt) + 2); }
 }
 @media (pointer: coarse) {
   .kopf .zu { min-width: 44px; min-height: 44px; }

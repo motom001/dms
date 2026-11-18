@@ -1,3 +1,4 @@
+import { Etikett, etikettArt } from '../bausteine';
 import { useEffect, useState } from 'react';
 import { betriebApi } from '../api/betrieb';
 import { Link } from '../ort';
@@ -47,7 +48,7 @@ export function ApiDoku() {
           })}
         </p>
         <h1>
-          {doc.info.title} <span className="chip">{tn('profil.apidoku.version', { version: doc.info.version })}</span>
+          {doc.info.title} <Etikett>{tn('profil.apidoku.version', { version: doc.info.version })}</Etikett>
         </h1>
         <p className="leise">{doc.info.description}</p>
         <p className="klein">
@@ -96,7 +97,7 @@ export function ApiDoku() {
                             {p.required && (
                               <>
                                 {' '}
-                                <span className="chip">{t('profil.apidoku.pflicht')}</span>
+                                <Etikett>{t('profil.apidoku.pflicht')}</Etikett>
                               </>
                             )}
                           </td>
@@ -118,7 +119,7 @@ export function ApiDoku() {
                 <ul className="antworten">
                   {Object.entries(op.responses as J).map(([code, r]) => (
                     <li key={code}>
-                      <span className={`chip ${code.startsWith('2') ? 'gut' : 'warn'}`}>{code}</span> {(r as J).description}
+                      <Etikett art={etikettArt(code.startsWith('2') ? 'gut' : 'warn')}>{code}</Etikett> {(r as J).description}
                       {code.startsWith('2') && (r as J).content && <Schema s={inhaltSchema(r as J)} doc={doc} />}
                     </li>
                   ))}
@@ -175,7 +176,7 @@ function Schema({ s, doc, tiefe = 0 }: { s: J; doc: J; tiefe?: number }) {
             {s.required?.includes(k) && (
               <>
                 {' '}
-                <span className="chip">{t('profil.apidoku.pflicht')}</span>
+                <Etikett>{t('profil.apidoku.pflicht')}</Etikett>
               </>
             )}{' '}
             <span className="leise klein">{typText(v as J)}</span>

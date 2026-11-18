@@ -71,7 +71,7 @@
 .ka-mehr { display: block; margin: 2px 4px 0; font-size: calc(12px * var(--skala, 1)); }
 .ka-tagesliste { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--linie); padding-top: 10px; }
 .ka-tl-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
-.ka-tl-kopf .textknopf { margin-left: auto; }
+.ka-tl-kopf :is([data-knopf="link"], [data-knopf="eigen"]) { margin-left: auto; }
 /* Kompakt (Handy, schmale Spalte neben einer Mappe): Punkte je Tag, darunter die Einträge des gewählten Tags. */
 .ka-kompakt .ka-raster th { text-align: center; }
 .ka-kompakt .ka-raster td { height: auto; border: 0; padding: 0; background: none; text-align: center; }
@@ -197,7 +197,7 @@
   .ue-ansicht iframe { height: 60vh; }
 }
 /* Fenster „+ … anlegen“ (#935): klein, verschiebbar, über der Seite; darin die Mappe wie rechts in der Ablage. */
-.verweisfenster { position: fixed; z-index: 45; right: max(24px, env(safe-area-inset-right)); top: 72px; width: min(560px, calc(100vw - 16px)); max-height: calc(100vh - 96px); max-height: calc(100dvh - 96px); display: flex; flex-direction: column; background: var(--grund); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 16px 48px var(--schatten-stark); overflow: hidden; }
+.verweisfenster { position: fixed; z-index: calc(var(--ebene-blatt) + 5); right: max(24px, env(safe-area-inset-right)); top: 72px; width: min(560px, calc(100vw - 16px)); max-height: calc(100vh - 96px); max-height: calc(100dvh - 96px); display: flex; flex-direction: column; background: var(--grund); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 16px 48px var(--schatten-stark); overflow: hidden; }
 .verweisfenster.verschoben { right: auto; }
 .verweisfenster:focus { outline: none; }
 .vf-griff { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; background: var(--flaeche); border-bottom: 1px solid var(--linie); cursor: move; touch-action: none; user-select: none; }
@@ -215,9 +215,13 @@
 .konfliktzeile > .sym { flex: none; margin-top: 2px; }
 .konfliktzeile p, .konfliktzeile ul { margin: 0; }
 .konfliktzeile ul { padding-left: 1.1em; display: flex; flex-direction: column; gap: 2px; }
-.konfliktzeile .textknopf { color: inherit; text-align: left; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
 /* Hinweise von Paketen (#1034): gelb wie „passt nicht“ (#887), nie rot; vor jedem Hinweis das Paket als Marke mit
    Symbol, damit er nie wie eine Meldung von Ablago aussieht. */
 .pakethinweise p, .pakethinweise li { overflow-wrap: anywhere; }
 .paketmarke { display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border: 1px solid currentColor; border-radius: 999px; font-size: .85em; font-weight: 600; white-space: nowrap; vertical-align: baseline; }
 .pakettext { font-style: normal; }
+
+[data-knopf].ue-chip { border-radius: 999px; font-weight: 400; white-space: normal; text-align: left; }
+[data-knopf].ue-chip[aria-pressed="true"] { background: var(--akzent-zart); border-color: var(--akzent); font-weight: 600; }
+[data-knopf].ue-ablage-knopf { width: 100%; padding: 18px 12px; border: 2px dashed var(--linie-stark); border-radius: var(--r); background: transparent; color: var(--leise); font-weight: 400; white-space: normal; }
+[data-knopf].ue-ablage-knopf:hover, [data-knopf].ue-ablage-knopf:focus-visible { border-color: var(--akzent); color: var(--akzent); background: transparent; }

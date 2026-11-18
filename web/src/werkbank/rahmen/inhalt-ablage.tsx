@@ -10,8 +10,9 @@ import { t, tn } from '../../sprache';
 import { Listenkopf } from '../../Listenkopf';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import {
-  GeloeschteEintraege,
+  Etikett,
   Fundstellen,
+  GeloeschteEintraege,
   Hervorgehoben,
   KeineTreffer,
   KnopfLink,
@@ -143,9 +144,7 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
                   <span className="titel">
                     <Hervorgehoben teile={titel} text={mappentyp.name} />
                     {mappentyp.system && (
-                      <span className="chip" title={t('werkbank.werkbank.systemmappentyp-laesst-sich')}>
-                        {t('werkbank.werkbank.system')}
-                      </span>
+                      <Etikett title={t('werkbank.werkbank.systemmappentyp-laesst-sich')}>{t('werkbank.werkbank.system')}</Etikett>
                     )}
                     <PaketChip paket={paketHerkunft(paketVonTyp(mappentyp, pakete), pakete)} inLink />
                   </span>

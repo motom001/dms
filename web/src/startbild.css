@@ -8,7 +8,6 @@
 .startbild-text { margin: 0; max-width: 32em; }
 .startbild-titel { margin: 0; font-weight: 600; font-size: 17px; }
 .startbild-hinweis { margin: 0; max-width: 32em; color: var(--warn); }
-.startbild .knopf { margin-top: 8px; min-height: 44px; } /* am Handy gemessen (#1199): Tippfläche ≥ 44 px */
 /* Hilfe zur Selbsthilfe (#1199): Schritte linksbündig (lesbar), Uhrzeit und Version leise darunter. */
 .startbild-zwischentitel { font-weight: 600; margin-top: 6px; }
 .startbild-schritte { box-sizing: border-box; width: 100%; max-width: 32em; margin: 0; padding-left: 1.4em; text-align: left; }

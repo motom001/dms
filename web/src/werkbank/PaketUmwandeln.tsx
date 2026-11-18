@@ -8,7 +8,7 @@ import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { alsMeldung, MeldungBox, type Meldung } from './PaketVorschau';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Feld, Knopf } from '../bausteine';
+import { Etikett, Feld, Knopf } from '../bausteine';
 
 /**
  * Werkbank → Pakete → Paket (#534): Nach einem Update, das ein Textfeld durch einen Verweis ersetzt (`aus_text`),
@@ -177,7 +177,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
                         {z.passend.length > 1 && (
                           <>
                             {' '}
-                            <span className="chip warn">{t('pakete.umwandeln.vorschau.mehrere', { anzahl: z.passend.length })}</span>
+                            <Etikett art="warn">{t('pakete.umwandeln.vorschau.mehrere', { anzahl: z.passend.length })}</Etikett>
                           </>
                         )}
                       </>

@@ -17,12 +17,12 @@
 .karte h1 { font-size: calc(22px * var(--skala, 1)); }
 /* Fehlergrenze (#881): Meldung statt leerer Seite. */
 .karte.fehlergrenze { max-width: 520px; }
-.karte.fehlergrenze .knopf.primaer { width: auto; padding: 7px 13px; }
+.karte.fehlergrenze [data-knopf="haupt"] { width: auto; padding: 7px 13px; }
 /* Wiederherstellen (#107) */
 .karte.breit { max-width: 760px; }
-.karte .wiederherstellen .knopf.primaer { width: auto; }
-.karte .knopf.primaer { width: 100%; padding: 10px; }
-.karte .textknopf { align-self: flex-start; font-size: calc(13px * var(--skala, 1)); }
+.karte .wiederherstellen [data-knopf="haupt"] { width: auto; }
+.karte [data-knopf="haupt"] { width: 100%; padding: 10px; }
+.karte :is([data-knopf="link"], [data-knopf="eigen"]) { align-self: flex-start; font-size: calc(13px * var(--skala, 1)); }
 .sichtliste { display: flex; flex-direction: column; gap: 2px; }
 .sichtliste hr { border: 0; border-top: 1px solid var(--linie); margin: 8px 4px; width: auto; }
 .sicht { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: inherit; text-decoration: none; }
@@ -57,7 +57,7 @@
 
 /* Werkbank, Profil, vorgemerkte Dokumente */
 .eintrag.werk.an { background: var(--akzent-zart); border-left-color: var(--akzent); }
-.eintrag .chip { margin-left: 6px; }
+.eintrag [data-etikett] { margin-left: 6px; }
 .einspaltig.schmal { max-width: 760px; margin: 0 auto; width: 100%; }
 .gutertext { color: var(--gruen); font-size: calc(13px * var(--skala, 1)); }
 @media (max-width: 820px) {
@@ -68,7 +68,7 @@
 }
 /* Seitenweise Liste */
 .listenzahl { margin: -4px 0 0; }
-.wahlliste { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 8px 24px var(--schatten); padding: 4px; display: flex; flex-direction: column; }
+.wahlliste { position: absolute; z-index: var(--ebene-aufklapper); top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 8px 24px var(--schatten); padding: 4px; display: flex; flex-direction: column; }
 .wahlliste button, .wahlliste .wahloption { text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
 .wahlliste button:hover, .wahlliste button:focus-visible, .wahlliste .wahloption:hover { background: var(--akzent-zart); outline: none; }
 .wahlliste p { margin: 6px 10px; }
@@ -90,7 +90,7 @@
 .tabelle th.rechts, .tabelle td.rechts { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .trefferliste { margin: 0 -16px; overflow-x: auto; flex: none; }
 .trefferliste table { font-size: calc(13px * var(--skala, 1)); }
-.trefferliste thead th { position: sticky; top: -18px; z-index: 2; padding: 6px 10px; }
+.trefferliste thead th { position: sticky; top: -18px; z-index: var(--ebene-klebend); padding: 6px 10px; }
 .trefferliste th.rechts, .trefferliste td.rechts { text-align: right; font-variant-numeric: tabular-nums; }
 .trefferliste td { padding: 7px 10px; line-height: 1.35; }
 .trefferliste td.rechts, .trefferliste td.kurz { white-space: nowrap; }
@@ -111,7 +111,7 @@
 .bedingungen > li.fehlerhaft { border-color: var(--schlecht); }
 .bedingungszeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .bedingungszeile select, .bedingungszeile input { width: auto; max-width: 100%; }
-.bedingungszeile > .textknopf { margin-left: auto; }
+.bedingungszeile > :is([data-knopf="link"], [data-knopf="eigen"]) { margin-left: auto; }
 .wertgruppe { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .wertgruppe.umbruch { flex-basis: 100%; }
 input.kurz { width: 7em; }
@@ -179,7 +179,7 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 
 /* Einrichtungsassistent (#119) */
 .karte.assistent { max-width: 760px; }
-.karte.assistent .knoepfe .knopf.primaer { width: auto; }
+.karte.assistent .knoepfe [data-knopf="haupt"] { width: auto; }
 .karte.assistent .knoepfe { justify-content: flex-end; }
 .karte.assistent details.blatt > summary { cursor: pointer; }
 .karte.assistent .knoepfe.links { justify-content: flex-start; }
@@ -206,7 +206,7 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 
 /* Lasttest-Modus (#612): Seite mit Fortschritt und Ergebnis. */
 .karte.lasttest h2 { font-size: calc(16px * var(--skala, 1)); margin: 0 0 6px; }
-.karte.lasttest .lasttest-ergebnis .knopf.primaer { width: auto; padding: 7px 13px; }
+.karte.lasttest .lasttest-ergebnis [data-knopf="haupt"] { width: auto; padding: 7px 13px; }
 
 .mappenliste .eintrag .problem { display: block; color: var(--schlecht); font-size: .85em; }
 /* Ohne den negativen Rand links: Der Haken bliebe sonst unter dem Griff zum Einklappen der Spalte. */

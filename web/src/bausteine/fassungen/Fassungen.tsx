@@ -1,3 +1,4 @@
+import { Etikett } from '../etikett/Etikett';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ZUSAMMENFASSEN_MIN,
@@ -188,11 +189,11 @@ export function Fassungen({ art, eintrag, klappe, stand, nachher, id = 'fassunge
       </>
     ),
     zustand: f.aktuell ? (
-      <span className="chip gut">{t('oberflaeche.fassungen.aktuell')}</span>
+      <Etikett art="gut">{t('oberflaeche.fassungen.aktuell')}</Etikett>
     ) : f.geloescht ? (
-      <span className="chip schlecht">{t('oberflaeche.fassungen.geloescht')}</span>
+      <Etikett art="schlecht">{t('oberflaeche.fassungen.geloescht')}</Etikett>
     ) : f.wiederhergestellt ? (
-      <span className="chip">{t('oberflaeche.fassungen.aus', { nr: f.wiederhergestellt })}</span>
+      <Etikett>{t('oberflaeche.fassungen.aus', { nr: f.wiederhergestellt })}</Etikett>
     ) : undefined,
     mehr: f.aenderungen.length > 1 ? t('oberflaeche.fassungen.aenderungen', { anzahl: f.aenderungen.length }) : undefined,
     inhalt: (

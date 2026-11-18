@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { PAKETE_JE_NUTZUNG } from '../../../shared/src/einrichtungsplan';
 import { erreichbar, NOTFALLKONTAKTE_MAX, pruefeNotfallkontakt, type NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
-import { Feld, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf } from '../bausteine';
 import { einrichtungApi } from '../api/einrichtung';
 import { t } from '../sprache';
 import { PaketApiKontext, type PaketApi, type PaketWahl } from '../werkbank/PaketAblauf';
@@ -187,7 +187,7 @@ export function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: 
           <p className="leise klein">{t('einrichtung.optional.adresse.text')}</p>
           <Feld
             beschriftung={t('einrichtung.optional.adresse')}
-            kopfZusatz={o.adresse && o.adresse === vorschlag && <small className="chip">{t('einrichtung.vorgeschlagen')}</small>}
+            kopfZusatz={o.adresse && o.adresse === vorschlag && <Etikett>{t('einrichtung.vorgeschlagen')}</Etikett>}
             hinweis={o.adresse ? t('einrichtung.optional.adresse.hinweis') : t('einrichtung.optional.adresse.leer')}>
             <input
               value={o.adresse}

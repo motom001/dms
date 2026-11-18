@@ -12,12 +12,11 @@
    Die Reihenfolge unten ist Absicht und bleibt fest: Bei gleicher Spezifität gewinnt die spätere Regel. Höchstens
    400 Zeilen je Datei (npm run lint:farben) – wird eine Datei zu lang, nach Thema teilen und hier einreihen. */
 
-/* Farben (nur hier: tokens.css) und Grundregeln für Elemente ohne Klasse. */
+/* Farben und Ebenen (nur hier: tokens.css) und Grundregeln für Elemente ohne Klasse. */
 @import '../tokens.css';
 @import '../basis.css';
 
 /* Gemeinsame Klassen mehrerer Bereiche, Bausteine mit globalen Klassen, Rahmen. */
-@import './knopf.css';
 @import './gemeinsam-grundformen.css';
 @import './gemeinsam-listen.css';
 @import './gemeinsam-seiten.css';

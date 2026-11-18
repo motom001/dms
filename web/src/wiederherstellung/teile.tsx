@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { einrichtungApi, type SicherungSchlank, type SicherungsMeta, type WhAbgleich } from '../api/einrichtung';
 import { t, tn } from '../sprache';
-import { FeldGruppe, Feld, Knopf } from '../bausteine';
+import { Etikett, etikettArt, Feld, FeldGruppe, Knopf } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -180,7 +180,7 @@ export function AbgleichTabelle({ abgleich }: { abgleich: WhAbgleich }) {
               <td className="mono">{v.damals}</td>
               <td className="mono">{v.heute}</td>
               <td>
-                <span className={`chip ${v.urteil === 'fehler' ? 'schlecht' : v.urteil === 'hinweis' ? 'warn' : 'gut'}`}>
+                <Etikett art={etikettArt(v.urteil === 'fehler' ? 'schlecht' : v.urteil === 'hinweis' ? 'warn' : 'gut')}>
                   {v.urteil === 'gleich'
                     ? t('oberflaeche.wiederherstellen.gleich')
                     : v.urteil === 'ok'
@@ -188,7 +188,7 @@ export function AbgleichTabelle({ abgleich }: { abgleich: WhAbgleich }) {
                       : v.urteil === 'hinweis'
                         ? t('oberflaeche.wiederherstellen.hinweis')
                         : t('oberflaeche.wiederherstellen.geht-nicht')}
-                </span>
+                </Etikett>
                 {v.info && <span className="leise klein"> {v.info}</span>}
               </td>
             </tr>

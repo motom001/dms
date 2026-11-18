@@ -24,10 +24,6 @@
 .historie .vergleich { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .historie .mehrzeilig { white-space: pre-wrap; }
 .historie-kopf { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-bottom: 4px; }
-@media (pointer: coarse) {
-  /* Am Handy (#1027): „Alle aufklappen / Alle zuklappen“ mit 44 px Tippfläche (#1006: auch in den Fassungen). */
-  .historie-kopf .textknopf { min-height: 44px; display: inline-flex; align-items: center; }
-}
 .historie .wann { color: var(--leise); font-variant-numeric: tabular-nums; font-size: calc(12.5px * var(--skala, 1)); min-width: 8.5em; }
 .historie .wer { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); min-width: 8em; }
 .historie .was { flex: 1 1 14em; min-width: 0; overflow-wrap: anywhere; }
@@ -47,7 +43,7 @@ dialog.rueckfrage .eigenschaft { display: flex; flex-direction: column; gap: 4px
 @media (max-width: 600px) {
   dialog.rueckfrage { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 14px 14px 0 0; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
   .rueckfrage-knoepfe { flex-direction: column-reverse; }
-  .rueckfrage-knoepfe .knopf { width: 100%; padding: 12px; font-size: 16px; }
+  .rueckfrage-knoepfe [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { width: 100%; padding: 12px; font-size: 16px; }
 }
 
 /* Löschprotokoll (#470) */

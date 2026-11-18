@@ -23,10 +23,6 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .verweis { color: var(--akzent); font-weight: 600; text-decoration: none; }
 .verweis:hover { text-decoration: underline; text-underline-offset: 3px; }
 .verweis.klein { font-size: calc(12.5px * var(--skala, 1)); }
-.chip { display: inline-flex; align-items: center; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; border-radius: 999px; padding: 2px 8px; background: var(--senke); color: var(--leise); border: 1px solid var(--linie); white-space: nowrap; }
-.chip.warn { background: var(--warn-zart); color: var(--warn); border-color: transparent; }
-.chip.gut { background: var(--gruen-zart); color: var(--gruen); border-color: transparent; }
-.chip.schlecht { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
 .hinweis { border-radius: var(--r); padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: calc(13px * var(--skala, 1)); }
 .hinweis ul { margin: 0; padding-left: 18px; }
 .hinweis.warn { background: var(--warn-zart); color: var(--warn); }
@@ -58,7 +54,7 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .auswahlliste { display: flex; flex-direction: column; gap: 6px; max-height: 190px; overflow: auto; border: 1px solid var(--linie); border-radius: 6px; padding: 8px; }
 .refbox { display: flex; flex-direction: column; gap: 6px; }
 .zeile { display: flex; gap: 14px; flex-wrap: wrap; }
-.speicherleiste { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
+.speicherleiste { position: sticky; bottom: 0; z-index: var(--ebene-leiste); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
 /* Knopfgruppe steht rechts; in einer schmalen Mappen-Spalte füllt sie eine eigene Zeile (#32). */
 .speicherleiste .knoepfe { margin-left: auto; }
 .spalte.mappe { container: mappe / inline-size; }
@@ -135,7 +131,6 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .spalte.liste.suchmitte.sm-formular { overflow-y: auto; padding-bottom: 32px; }
 .spalte.liste.suchmitte.sm-formular > .listenrumpf { flex: none; min-height: auto; overflow: visible; padding-bottom: 0; }
 .zeile.umbruch { flex-wrap: wrap; }
-.chip.suchchip { gap: 4px; white-space: normal; color: var(--tinte); }
 @media (max-width: 820px) {
   .spalte.liste.sm-formular > :not(.listenkopf):not(.suchkopf):not(.breitenmesser) { display: none; }
   .spalte.sichten { border-right: 0; border-bottom: 1px solid var(--linie); overflow: visible; padding-bottom: 12px; }
@@ -149,17 +144,13 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .refbox .gewaehlt li > :first-child { flex: 1 1 10em; min-width: min(10em, 100%); overflow-wrap: break-word; }
 .wahl { position: relative; }
 .wahl > input { width: 100%; } /* nur das Suchfeld der Verweiswahl, nicht Haken/Optionen in fieldset.wahl (#51) */
-.chip.punkt::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 5px; vertical-align: 1px; }
-.chip.stufe-warn { background: var(--warn-zart); color: var(--warn); border-color: transparent; }
-.chip.stufe-error, .chip.stufe-fatal { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
-.chip.stufe-info { background: var(--akzent-zart); color: var(--akzent); border-color: transparent; }
 .eigenschaft.schmal { max-width: 320px; }
 
 .raster > .haken.breit { grid-column: 1 / -1; }
 /* Fester Listenkopf (#50): Kopf, Suche und Trefferzahl stehen, nur der Listenrumpf rollt. */
 .spalte.liste:has(> .listenrumpf) { overflow: hidden; padding-bottom: 0; }
 /* Listen der Werkbank: Kopf mit „+ Neu“ bleibt oben stehen. */
-.spalte.liste > .listenkopf { position: sticky; top: -18px; z-index: 3; background: var(--flaeche); margin: -18px -16px 0; padding: 18px 16px 8px; }
+.spalte.liste > .listenkopf { position: sticky; top: -18px; z-index: var(--ebene-leiste); background: var(--flaeche); margin: -18px -16px 0; padding: 18px 16px 8px; }
 @media (max-width: 820px) {
   /* Am Handy (#1213) steht die Liste unter den Bereichen und hat oft nur wenig Höhe: ein haftender Kopf deckte dort
    das Suchfeld und die Filter zu. Schmal rollt der Kopf deshalb mit. */
@@ -184,7 +175,6 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
    Haken mit Beschriftung und jede Aufklappzeile mit 44 px Tippfläche. Verweise wachsen unsichtbar nach oben und unten
    (Innenabstand, ausgeglichen durch negativen Außenabstand), die Zeile bleibt so hoch wie vorher. */
   :is(.spalte.liste, .spalte.mappe) a.verweis:not(.zur-liste, .ka-weitergeben) { display: inline-block; padding-block: 14px; margin-block: -14px; min-width: 44px; }
-  :is(.spalte.liste, .spalte.mappe) a.knopf:not([data-knopf]) { min-height: 44px; }
   :is(.spalte.liste, .spalte.mappe) .haken-untereinander > label.haken { min-height: 44px; align-items: center; }
   :is(.spalte.liste, .spalte.mappe) .haken-untereinander > a.verweis { margin-block: 0; padding-block: 14px; }
   :is(.spalte.liste, .spalte.mappe) summary { padding-block: 8px; min-height: 44px; box-sizing: border-box; }
@@ -193,14 +183,10 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 }
 .leise a.person { text-decoration: underline; text-underline-offset: 2px; }
 
-.chip.stand-neu { background: var(--warn-zart); color: var(--warn); border-color: transparent; }
-.chip.stand-zugeordnet { background: var(--gruen-zart); color: var(--gruen); border-color: transparent; }
 fieldset.eigenschaft { border: 0; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 4px; }
 fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; color: var(--leise); margin-bottom: 4px; }
 /* Versionsabgleich in zwei Gruppen (#216) */
 .ueber.abstand-oben { margin: 14px 0 6px; }
-/* Archivmodus (#212) */
-.chip.archiv { background: var(--warn-zart); color: var(--warn); }
 
 .haken.pd-kachel { display: grid; grid-template-columns: auto auto 1fr; align-items: start; gap: 10px; min-height: 44px; }
 .haken.pd-kachel > span:last-child { display: grid; gap: 2px; min-width: 0; }
@@ -231,7 +217,6 @@ fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-we
 
 .hinweis.unscharf { margin: 4px 0; }
 
-.chip.aus { opacity: .7; }
 /* E-Mail-Versand einrichten (#813): Vorschläge des Assistenten sichtbar gekennzeichnet, „Erweitert“ eingeklappt. */
 .hinweis.mail-vorschlag { flex-direction: column; align-items: flex-start; gap: 4px; }
 .hinweis.mail-vorschlag p { margin: 0; }

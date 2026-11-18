@@ -12,7 +12,7 @@ import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { SystemkontenGruppe, SystemkontoKennzeichen } from './Systemkonten';
 import { SYSTEMKONTEN_AUF } from '../../../shared/src/systemkonten';
-import { abfangen, Bereich, Feld, HakenFeld, KnopfLink, useBereiche } from '../bausteine';
+import { abfangen, Bereich, Etikett, etikettArt, Feld, HakenFeld, KnopfLink, useBereiche } from '../bausteine';
 import { benutzerBereiche, datumZeit, LinkAnzeige, status, WeitereRollen } from './BenutzerEditor';
 
 export { BenutzerDetail } from './BenutzerEditor';
@@ -79,11 +79,11 @@ export function BenutzerListe({ liste: alle, offen, alltag }: { liste: Benutzer[
               <Link to={`/werkbank/benutzer/${b.id}`} className={`eintrag werk ${offen === b.id ? 'an' : ''} ${b.aktiv ? '' : 'grau'}`}>
                 <span className="titel">
                   {b.aktiv ? b.name || b.email : <span className="person-ehemalig">{b.name || b.email}</span>}
-                  {b.id === ich.id && <span className="chip">{t('werkbank.benutzer.du')}</span>}
+                  {b.id === ich.id && <Etikett>{t('werkbank.benutzer.du')}</Etikett>}
                 </span>
                 {b.id === alltag && (
                   <span className="unter">
-                    <span className="chip info">{t('werkbank.aufgabenempfaenger.chip')}</span>
+                    <Etikett art="info">{t('werkbank.aufgabenempfaenger.chip')}</Etikett>
                   </span>
                 )}
                 <span className="unter">
@@ -92,30 +92,32 @@ export function BenutzerListe({ liste: alle, offen, alltag }: { liste: Benutzer[
                     <>
                       {' '}
                       ·{' '}
-                      <span className="chip">
+                      <Etikett>
                         {hatGesamt(b) ? t('werkbank.verwaltungsrecht.chip.gesamt') : t('werkbank.verwaltungsrecht.chip.teil')}
-                      </span>
+                      </Etikett>
                     </>
                   )}
                 </span>
                 <span className="unter">{t('werkbank.benutzer.letzte-anmeldung', { datumZeit: datumZeit(b.letzteAnmeldung) })}</span>
                 <span>
-                  <span className={`chip ${s.art}`}>{s.text}</span>
+                  <Etikett art={etikettArt(s.art)}>{s.text}</Etikett>
                   {istGeradeAktiv(b.zuletztAktiv) && (
                     <>
                       {' '}
-                      <span className="chip gut punkt">{t('werkbank.benutzer.gerade-aktiv')}</span>
+                      <Etikett art="gut" punkt>
+                        {t('werkbank.benutzer.gerade-aktiv')}
+                      </Etikett>
                     </>
                   )}
                   {b.aktiv && b.abwesenheit?.an && (
                     <>
                       {' '}
-                      <span className="chip warn">
+                      <Etikett art="warn">
                         {abwesenheitWirkt(b.abwesenheit, heute)
                           ? t('werkbank.benutzer.abwesend')
                           : t('werkbank.benutzer.demnaechst-abwesend')}
                         {b.abwesenheit.bis ? t('werkbank.benutzer.bis', { reverse: b.abwesenheit.bis.split('-').reverse().join('.') }) : ''}
-                      </span>
+                      </Etikett>
                     </>
                   )}
                 </span>
@@ -209,7 +211,7 @@ export function SystemkontoDetail({ id }: { id: string }) {
   return (
     <div className="blatt">
       <h2 className="h3">
-        {k.name} <span className="chip">{rolle}</span>
+        {k.name} <Etikett>{rolle}</Etikett>
       </h2>
       <p className="leise">{t('konten.systemkonten.beschreibung')}</p>
       {k.rolle === 'paket' && (

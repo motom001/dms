@@ -5,7 +5,7 @@ import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Listenkopf } from '../Listenkopf';
-import { Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, ListenSuche, useListenSuche, Wahlhaken } from '../bausteine';
+import { Etikett, Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, ListenSuche, useListenSuche, Wahlhaken } from '../bausteine';
 import { t, tn } from '../sprache';
 import { typName } from '../../../shared/src/beschriftung';
 import { AnlageMarke } from './Anlagen';
@@ -445,9 +445,9 @@ function MappenImKorb({
   const vorgangChip = (e: PapierkorbEintrag) => {
     const n = e.vorgang ? (imVorgang.get(e.vorgang) ?? 0) : 0;
     return n > 1 ? (
-      <span className="chip lb-chip" title={t('ablage.papierkorb.zusammen-mit-weiteren-mappen', { wert: n - 1 })}>
+      <Etikett className="lb-chip" title={t('ablage.papierkorb.zusammen-mit-weiteren-mappen', { wert: n - 1 })}>
         {e.id === e.vorgang ? t('ablage.papierkorb.mit-verknuepften', { wert: n - 1 }) : t('ablage.papierkorb.verknuepft')}
-      </span>
+      </Etikett>
     ) : null;
   };
   // Aufgelöste Post (#936): in welche Mappe – in der Tabelle mit Link, in der kompakten Liste nur als Text.
@@ -652,9 +652,7 @@ function DokumenteImKorb({ treffer, werkbank, a }: { treffer: Treffer; werkbank:
               />
               <div className="eintrag">
                 <span className="titel">
-                  <span className="chip" title={t('ablage.papierkorb.art')}>
-                    {t('ablage.papierkorb.dokument')}
-                  </span>{' '}
+                  <Etikett title={t('ablage.papierkorb.art')}>{t('ablage.papierkorb.dokument')}</Etikett>{' '}
                   {titel ? <Hervorgehoben teile={titel} text={x.name} /> : x.name} <AnlageMarke d={x} />
                 </span>
                 <span className="unter">

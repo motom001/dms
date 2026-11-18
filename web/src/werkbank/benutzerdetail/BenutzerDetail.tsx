@@ -8,7 +8,7 @@ import { useKonto } from '../../konto';
 import { Link } from '../../ort';
 import { Speicherleiste, useEntwurf } from '../../Speicherleiste';
 import { Hilfe } from '../../Hilfe';
-import { Bereich, Feld, useBereiche, type BereicheZustand } from '../../bausteine';
+import { Bereich, type BereicheZustand, Etikett, etikettArt, Feld, useBereiche } from '../../bausteine';
 import { WasSiehtBlatt } from '../Berechtigungen';
 import { benutzerBereiche, datumZeit, status, type Aktion, type BenutzerBereich } from './hilfen';
 import { entwurfVon, rechteKurz, speichereBenutzer, teilweiseText, vertretungKurz, type Entwurf, type Teil } from './entwurf';
@@ -151,7 +151,7 @@ function kopf(b: Benutzer, d: Daten) {
         <div>
           <dt>{t('werkbank.benutzer.status')}</dt>
           <dd>
-            <span className={`chip ${s.art}`}>{s.text}</span>
+            <Etikett art={etikettArt(s.art)}>{s.text}</Etikett>
           </dd>
         </div>
         <div>
@@ -169,7 +169,9 @@ function kopf(b: Benutzer, d: Daten) {
             {istGeradeAktiv(b.zuletztAktiv) && (
               <>
                 {' '}
-                <span className="chip gut punkt">{t('werkbank.benutzer.gerade-aktiv')}</span>
+                <Etikett art="gut" punkt>
+                  {t('werkbank.benutzer.gerade-aktiv')}
+                </Etikett>
               </>
             )}
           </dd>

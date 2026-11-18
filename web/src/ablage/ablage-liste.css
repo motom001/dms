@@ -45,6 +45,8 @@
   background-image: repeating-linear-gradient(to right, transparent 0 13px, var(--linie-stark) 13px 14px, transparent 14px 20px); }
 .sichtzeile .sicht.oben .nm { font-weight: 600; }
 .sichtzeile .sicht { flex: 1; min-width: 0; }
+[data-knopf="eigen"].aufklapper { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; border-radius: 6px; text-decoration: none; }
+[data-knopf="eigen"].aufklapper:hover { background: var(--flaeche); color: var(--tinte); text-decoration: none; }
 /* Der Pfeil hängt links vor dem Namen (auf der ersten Ebene im Rand), damit die Namen bündig mit „Eingang“ stehen. */
 .aufklapper, .aufklapper-platz { flex: none; width: 28px; height: 28px; min-width: 28px; }
 .aufklapper .sym { transition: transform .12s; }
@@ -71,7 +73,7 @@
 .dokumentliste li:last-child { border-bottom: 0; }
 .dokumentliste li.an { background: var(--akzent-zart); }
 .dokname { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.dokname .textknopf, .dokname .verweis { text-align: left; overflow-wrap: anywhere; }
+.dokname :is([data-knopf="link"], [data-knopf="eigen"]), .dokname .verweis { text-align: left; overflow-wrap: anywhere; }
 .dokansicht { border: 1px solid var(--linie); border-radius: var(--r); overflow: hidden; background: var(--senke); }
 .dokansicht iframe { display: block; width: 100%; height: min(72vh, 760px); border: 0; background: var(--papier); }
 /* Dokumentliste (#1211): Kopf der Anzeige mit „PDF/A · Original“ und „In neuem Tab“, Satz statt Vorschau, „Über dieses
@@ -130,6 +132,7 @@
 .vonbis input { flex: 1 1 110px; }
 .suchkopf { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .suchchips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.suchchips .suchchip { white-space: normal; color: var(--tinte); }
 .chipweg { border: 0; background: none; color: var(--leise); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
 .chipweg:hover, .chipweg:focus-visible { color: var(--schlecht); }
 @media (max-width: 820px) {
@@ -143,6 +146,7 @@
 .typmarke .sym { width: 14px; height: 14px; }
 /* Trefferliste (#19, #22) */
 .breitenmesser { width: 100%; height: 0; margin-bottom: -12px; flex: none; }
+[data-knopf="eigen"].spaltenknopf { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
 .spaltenknopf .pfeil { opacity: .45; width: .95em; height: .95em; }
 th[aria-sort] .spaltenknopf { color: var(--tinte); font-weight: 700; }
 th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
@@ -165,6 +169,6 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
   .dokansicht { display: none; }
   .dokzeile .vorschaubild { width: 60px; height: 78px; }
   .dokzeile > .zeilenaktionen.dk-handy { flex: 1 1 100%; display: flex; gap: 8px; flex-wrap: nowrap; white-space: normal; }
-  .dokzeile .dokname > .textknopf { min-height: 44px; text-align: left; font-size: 16px; }
+  .dokzeile .dokname > :is([data-knopf="link"], [data-knopf="eigen"]) { min-height: 44px; text-align: left; font-size: 16px; }
   .dokzeile .dokname a, .dokzeile .dokname button { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
 }

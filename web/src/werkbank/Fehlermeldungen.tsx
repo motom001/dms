@@ -6,7 +6,7 @@ import { Listenkopf } from '../Listenkopf';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { useDaten } from '../daten';
-import { FilterHaken, Fundstellen, Knopf, Hervorgehoben, KeineTreffer, ListenSuche, useListenSuche } from '../bausteine';
+import { Etikett, FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, ListenSuche, useListenSuche } from '../bausteine';
 
 /** Werkbank → Wartung und Fehlersuche → Fehlermeldungen (#70). */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
@@ -104,7 +104,7 @@ export function FehlermeldungenListe({ z, offen }: { z: FehlermeldungenZustand; 
                   {m.erledigt && (
                     <>
                       {' '}
-                      <span className="chip">{t('werkbank.listensuche.meldung.erledigt')}</span>
+                      <Etikett>{t('werkbank.listensuche.meldung.erledigt')}</Etikett>
                     </>
                   )}
                 </span>

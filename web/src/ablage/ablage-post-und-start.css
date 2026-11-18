@@ -53,12 +53,12 @@
 /* #422: Favorit = Abo – geänderte Favoriten und eigene Mappen hervorheben, Schalter je Favorit. */
 .abo-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--akzent); margin-right: 6px; vertical-align: 1px; flex: none; }
 .abo-schalter { padding: 0 12px 8px 10px; }
-.ablageflaeche { position: fixed; inset: 0; z-index: 60; display: grid; gap: 16px; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background: color-mix(in srgb, var(--flaeche) 82%, transparent); backdrop-filter: blur(2px); }
+.ablageflaeche { position: fixed; inset: 0; z-index: calc(var(--ebene-panel) + 10); display: grid; gap: 16px; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background: color-mix(in srgb, var(--flaeche) 82%, transparent); backdrop-filter: blur(2px); }
 .ablageflaeche.zwei { grid-template-columns: 1fr 1fr; }
 .ablageziel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border: 3px dashed var(--akzent); border-radius: calc(var(--r) * 2); background: var(--akzent-zart); color: var(--tinte); font-size: calc(18px * var(--skala, 1)); padding: 16px; }
 .ablageziel span { font-size: calc(14px * var(--skala, 1)); color: var(--leise); }
 .ablageziel.drauf { border-style: solid; filter: brightness(.97); }
-.ablagestatus { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 55; max-width: min(420px, calc(100vw - 32px)); background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 10px 30px var(--schatten); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ablagestatus { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: calc(var(--ebene-panel) + 5); max-width: min(420px, calc(100vw - 32px)); background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 10px 30px var(--schatten); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .ablagestatus ul { margin: 0; padding-left: 18px; }
 @media (max-width: 700px) {
   .ablageflaeche.zwei { grid-template-columns: 1fr; }
@@ -100,8 +100,8 @@
 .einstiege { display: flex; flex-direction: column; gap: 10px; }
 .einstiege .kachel { min-height: 0; }
 /* „Erste Post ablegen“ als Sonderform des Knopfs (#1269): Kachel bleibt Kachel, die Beschriftung untereinander. */
-.einstiege .kachel.textknopf { display: flex; align-items: stretch; justify-content: flex-start; font-weight: inherit; }
-.einstiege .kachel.textknopf > span, .einstiege .kachel.textknopf > span > span:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.einstiege .kachel:is([data-knopf="link"], [data-knopf="eigen"]) { display: flex; align-items: stretch; justify-content: flex-start; font-weight: inherit; }
+.einstiege .kachel:is([data-knopf="link"], [data-knopf="eigen"]) > span, .einstiege .kachel:is([data-knopf="link"], [data-knopf="eigen"]) > span > span:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 .zuletzt .mappenliste { margin-top: 6px; }
 .zl-kopf { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; }
 @media (pointer: coarse) {
@@ -127,9 +127,9 @@
 .schwarz-suche .eigenschaft { display: flex; flex-direction: column; gap: 2px; flex: 1 1 220px; min-width: 0; }
 .schwarz-suche input { width: 100%; }
 .schwarz-begriffe { display: flex; flex-wrap: wrap; gap: 6px; }
-.schwarz-begriffe .chip { white-space: normal; max-width: 100%; gap: 4px; }
-.schwarz-begriffe .chip > span { overflow-wrap: anywhere; min-width: 0; }
-.schwarz-begriffe .textknopf { padding: 0 2px; }
+.schwarz-begriffe [data-etikett] { white-space: normal; max-width: 100%; gap: 4px; }
+.schwarz-begriffe [data-etikett] > span { overflow-wrap: anywhere; min-width: 0; }
+.schwarz-begriffe :is([data-knopf="link"], [data-knopf="eigen"]) { padding: 0 2px; }
 .schwarz-vorschlaege summary { cursor: pointer; }
 .schwarz-art { border: 0; margin: 6px 0 0; padding: 0 0 0 4px; display: flex; flex-direction: column; gap: 2px; }
 .schwarz-art .haken { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
@@ -189,13 +189,13 @@
 .neuknopf .menue { left: auto; right: 0; max-width: calc(100vw - 32px); }
 @media (max-width: 600px) {
   .neuknopf .menue {
-    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 41; min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: calc(var(--ebene-blatt) + 1); min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
     border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
   .neuknopf .menuepunkt { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* Haupt-Einstieg „+ Neu“ gut erkennbar. */
-  .neuknopf > .knopf { padding: 8px 14px; font-size: 15px; box-shadow: 0 1px 3px var(--schatten-stark); }
+  .neuknopf > [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { padding: 8px 14px; font-size: 15px; box-shadow: 0 1px 3px var(--schatten-stark); }
 }
 
-.ad-hinweis.folgt .chip { background: var(--akzent-zart); color: var(--akzent); }
-.ad-hinweis.vorbelegt .chip { white-space: normal; text-align: left; }
+.ad-hinweis.folgt [data-etikett] { background: var(--akzent-zart); color: var(--akzent); }
+.ad-hinweis.vorbelegt [data-etikett] { white-space: normal; text-align: left; }

@@ -1,3 +1,4 @@
+import { Etikett } from '../etikett/Etikett';
 import { useState, type ReactNode } from 'react';
 import { t } from '../../sprache';
 import { Knopf } from '../knopf/Knopf';
@@ -49,7 +50,7 @@ export function Eintragsliste({ eintraege }: { eintraege: Listeneintrag[] }) {
               <span className="wer">{x.wer}</span>
               <span className="was">{x.was}</span>
               {x.zustand}
-              {x.mehr && <span className="mehr chip">{x.mehr}</span>}
+              {x.mehr && <Etikett className="mehr">{x.mehr}</Etikett>}
             </>
           );
           return (

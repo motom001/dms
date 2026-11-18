@@ -4,7 +4,7 @@ import { kontoApi, type ModusEintrag } from '../api/konto';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Listenkopf } from '../Listenkopf';
-import { Feld, HakenFeld, Knopf, KnopfLink, Suchfeld } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf, KnopfLink, Suchfeld, type EtikettArt } from '../bausteine';
 import { istWeg } from '../erreichbar';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -30,6 +30,8 @@ const STUFENNAME: Record<Stufe, string> = {
   error: t('werkbank.protokoll.fehler'),
   fatal: t('werkbank.protokoll.fatal'),
 };
+/** Stufe als Etikett (#1289): Info blau, Warnung gelb, Fehler rot, der Rest leise. */
+const STUFE_ETIKETT: Partial<Record<Stufe, EtikettArt>> = { info: 'info', warn: 'warn', error: 'schlecht', fatal: 'schlecht' };
 const uhr = (iso: string) => new Date(iso).toLocaleTimeString(gebietsschema(), { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const datumUhr = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'medium' });
 
@@ -174,7 +176,8 @@ export function ProtokollListe({ p, offen }: { p: ProtokollZustand; offen?: stri
             <li key={e.nr}>
               <Link to={`/werkbank/protokoll/${e.nr}`} className={`eintrag werk stufe-${e.stufe} ${offen === String(e.nr) ? 'an' : ''}`}>
                 <span className="zeile1">
-                  <span className="mono klein">{uhr(e.zeit)}</span> <span className={`chip stufe-${e.stufe}`}>{STUFENNAME[e.stufe]}</span>{' '}
+                  <span className="mono klein">{uhr(e.zeit)}</span>{' '}
+                  <Etikett art={STUFE_ETIKETT[e.stufe] ?? 'leise'}>{STUFENNAME[e.stufe]}</Etikett>{' '}
                   <span className="leise klein" title={e.modul}>
                     {modulName(e.modul)}
                   </span>
@@ -223,7 +226,7 @@ export function ProtokollDetail({ p, nr }: { p: ProtokollZustand; nr?: string })
           <div>
             <dt>{t('werkbank.protokoll.stufe')}</dt>
             <dd>
-              <span className={`chip stufe-${e.stufe}`}>{STUFENNAME[e.stufe]}</span>
+              <Etikett art={STUFE_ETIKETT[e.stufe] ?? 'leise'}>{STUFENNAME[e.stufe]}</Etikett>
             </dd>
           </div>
           <div>

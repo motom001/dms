@@ -52,8 +52,8 @@ dialog.rundgang.schmal.mit-ziel .rg-karte { left: 16px; right: 16px; width: auto
 .ent-gruppe h3 { margin: 6px 0 2px; }
 .ent-suche input { width: 100%; }
 /* „Ziel zeigen“: Rahmen um die Stelle unter dem Zeiger, Leiste unten. */
-.ziel-wahl-rahmen { position: fixed; pointer-events: none; z-index: 1000; border-radius: 6px; box-shadow: 0 0 0 3px var(--akzent); }
-.ziel-wahl-leiste { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 1001; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 8px 24px var(--schatten-stark); }
+.ziel-wahl-rahmen { position: fixed; pointer-events: none; z-index: var(--ebene-rundgang); border-radius: 6px; box-shadow: 0 0 0 3px var(--akzent); }
+.ziel-wahl-leiste { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: calc(var(--ebene-rundgang) + 1); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 8px 24px var(--schatten-stark); }
 .ziel-wahl-leiste code { font-family: var(--mono); }
 @media (pointer: coarse) {
   .ent-tipps .tipp-satz { display: block; padding-block: 4px; }

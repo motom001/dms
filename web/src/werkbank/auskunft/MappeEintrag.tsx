@@ -3,7 +3,7 @@ import { Symbol } from '../../Symbol';
 import type { AuskunftMappe } from '../../../../shared/src/auskunft';
 import { t, tn } from '../../sprache';
 import { titelOder } from '../../seiten';
-import { Feld, HakenFeld } from '../../bausteine';
+import { Etikett, Feld, HakenFeld } from '../../bausteine';
 import { groesse, zeit } from './hilfen';
 import type { WahlArt } from './erteilen-zustand';
 import type { Wahl } from './wahl';
@@ -96,7 +96,7 @@ function dokumentHaken(
           <span className="leise">
             {x.register} · {groesse(x.groesse)}
           </span>
-          {x.geschwaerzt && <span className="chip">{t('werkbank.datenschutz.geschwaerzt')}</span>}
+          {x.geschwaerzt && <Etikett>{t('werkbank.datenschutz.geschwaerzt')}</Etikett>}
           {x.geschwaerzteFassung && <span className="leise"> {t('werkbank.datenschutz.geschwaerzte-fassung-vorhanden')}</span>}
         </>
       }

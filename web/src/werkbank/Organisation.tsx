@@ -13,7 +13,7 @@ import {
 } from '../../../shared/src/organisation';
 import { zeitText } from '../../../shared/src/region';
 import { werkbankApi } from '../api/werkbank';
-import { Feld, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl } from '../bausteine';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
@@ -146,7 +146,7 @@ function Karte({ o, mehrere, geltend }: { o: EigeneOrganisation; mehrere: boolea
       </p>
       {mehrere && geltend && (
         <p>
-          <span className="chip gut">{t('werkbank.organisation.gilt')}</span>
+          <Etikett art="gut">{t('werkbank.organisation.gilt')}</Etikett>
         </p>
       )}
       <dl className="eigenschaften">

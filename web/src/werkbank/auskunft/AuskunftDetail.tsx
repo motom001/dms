@@ -9,7 +9,7 @@ import { Hilfe } from '../../Hilfe';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
 import { titelOder } from '../../seiten';
-import { Bereich, Knopf, KnopfLink, useBereiche, type BereichListe } from '../../bausteine';
+import { Bereich, type BereichListe, Etikett, etikettArt, Knopf, KnopfLink, useBereiche } from '../../bausteine';
 import { FristText } from './AuskuenfteListe';
 import { groesse, zeit, ZUSTAND_CHIP } from './hilfen';
 import type { DatenschutzZustand } from './zustand';
@@ -46,7 +46,7 @@ export function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZus
         <p className="ueber">{t('werkbank.auskunft.detail.ueber')}</p>
         <h1>{titelOder(e.titel)}</h1>
         <p>
-          <span className={`chip ${ZUSTAND_CHIP[e.zustand]}`}>{t(`werkbank.auskunft.zustand.${e.zustand}`)}</span>
+          <Etikett art={etikettArt(ZUSTAND_CHIP[e.zustand])}>{t(`werkbank.auskunft.zustand.${e.zustand}`)}</Etikett>
           {e.frist && istOffen(e.zustand) && (
             <>
               {' '}

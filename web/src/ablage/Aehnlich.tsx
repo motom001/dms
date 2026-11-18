@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { mappenApi, type AehnlicheMappe } from '../api/mappen';
 import { sucheApi, type VektorStand } from '../api/suche';
 import { Hilfe } from '../Hilfe';
-import { Knopf, Schalter } from '../bausteine';
+import { Etikett, Knopf, Schalter } from '../bausteine';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
@@ -18,11 +18,9 @@ const prozent = (a: number) => Math.round(Math.max(0, a) * 100);
 /** Kennzeichen „ähnlich“ an einem Treffer ohne Wort-Treffer. */
 export function AehnlichChip({ a }: { a: AehnlicheMappe }) {
   return (
-    <span
-      className="chip aehnl-chip klein"
-      title={t('aehnlich.chip.titel', { dokument: a.dokument.name, prozent: prozent(a.aehnlichkeit) })}>
+    <Etikett klein className="aehnl-chip" title={t('aehnlich.chip.titel', { dokument: a.dokument.name, prozent: prozent(a.aehnlichkeit) })}>
       {t('aehnlich.chip')}
-    </span>
+    </Etikett>
   );
 }
 

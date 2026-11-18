@@ -9,7 +9,7 @@ import { hatNetz, laeuferZustandText, type InstalliertesPaket } from '../../../s
 import { ampelVon, summeVon, type Ampel, type Auslastung, type VerlaufEintrag } from '../../../shared/src/paketreiter';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { paketeApi, type PaketlaeuferStand } from '../api/pakete';
-import { Feld, HakenFeld, Knopf, Suchfeld } from '../bausteine';
+import { Etikett, etikettArt, Feld, HakenFeld, Knopf, Suchfeld } from '../bausteine';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
 import { Symbol } from '../Symbol';
@@ -163,7 +163,7 @@ function AuslastungBlock({ a, s, paket }: { a: Auslastung; s: PaketlaeuferStand 
         </Feld>
       </div>
       <p>
-        {AMPEL_CHIP[ampel] ? <span className={`chip ${AMPEL_CHIP[ampel]}`}>{at.name}</span> : <span className="leise">{at.name}</span>}{' '}
+        {AMPEL_CHIP[ampel] ? <Etikett art={etikettArt(AMPEL_CHIP[ampel])}>{at.name}</Etikett> : <span className="leise">{at.name}</span>}{' '}
         {at.tun}
       </p>
       <dl className="eigenschaften">
@@ -242,15 +242,15 @@ function wasText(e: VerlaufEintrag): string {
 /** Ergebnis als Chip. */
 function ErgebnisChip({ e }: { e: VerlaufEintrag }) {
   return e.ergebnis === 'ok' ? (
-    <span className="chip gut">{t('pakete.verlauf.ergebnis.ok')}</span>
+    <Etikett art="gut">{t('pakete.verlauf.ergebnis.ok')}</Etikett>
   ) : e.ergebnis === 'zeit' ? (
-    <span className="chip schlecht">{t('pakete.verlauf.ergebnis.zeit')}</span>
+    <Etikett art="schlecht">{t('pakete.verlauf.ergebnis.zeit')}</Etikett>
   ) : e.ergebnis === 'speicher' ? (
-    <span className="chip schlecht">{t('pakete.verlauf.ergebnis.speicher')}</span>
+    <Etikett art="schlecht">{t('pakete.verlauf.ergebnis.speicher')}</Etikett>
   ) : e.ergebnis === 'fehler' ? (
-    <span className="chip schlecht">{t('pakete.verlauf.ergebnis.fehler')}</span>
+    <Etikett art="schlecht">{t('pakete.verlauf.ergebnis.fehler')}</Etikett>
   ) : e.ergebnis === 'warnung' ? (
-    <span className="chip warn">{t('pakete.verlauf.ergebnis.warnung')}</span>
+    <Etikett art="warn">{t('pakete.verlauf.ergebnis.warnung')}</Etikett>
   ) : null;
 }
 

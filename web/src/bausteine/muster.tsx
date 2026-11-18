@@ -16,6 +16,8 @@ import { SpeicherleisteMuster } from './speicherleiste/muster';
 import { ReiterMuster } from './reiter/muster';
 import { SchalterMuster } from './schalter/muster';
 import { PaketChipMuster } from './paketchip/muster';
+import { EtikettMuster } from './etikett/muster';
+import { AufklapperMuster } from './aufklapper/muster';
 import { WahlhakenMuster } from './wahlhaken/muster';
 import { MehrfachauswahlMuster } from './mehrfachauswahl/muster';
 import { MenueMuster } from './menue/muster';
@@ -58,6 +60,12 @@ const BAUSTEINE: Musterbereich[] = [
     titel: () => t('oberflaeche.muster.schalter.titel'),
     text: () => t('oberflaeche.muster.schalter.text'),
     Muster: SchalterMuster,
+  },
+  {
+    id: 'etikett',
+    titel: () => t('oberflaeche.muster.etikett.titel'),
+    text: () => t('oberflaeche.muster.etikett.text'),
+    Muster: EtikettMuster,
   },
   {
     id: 'paketchip',
@@ -110,6 +118,12 @@ const BAUSTEINE: Musterbereich[] = [
     Muster: FassungenMuster,
   },
   {
+    id: 'aufklapper',
+    titel: () => t('oberflaeche.muster.aufklapper.titel'),
+    text: () => t('oberflaeche.muster.aufklapper.text'),
+    Muster: AufklapperMuster,
+  },
+  {
     id: 'platzhalter',
     titel: () => t('oberflaeche.muster.platzhalter.titel'),
     text: () => t('oberflaeche.muster.platzhalter.text'),
@@ -117,8 +131,8 @@ const BAUSTEINE: Musterbereich[] = [
   },
 ];
 
-/** Leitsätze für Knöpfe (#1210), ausführlich im Entwicklerhandbuch unter „Gestaltung und Bausteine“. */
-const LEITSAETZE = [1, 2, 3, 4, 5, 6, 7];
+/** Leitsätze für Knöpfe (#1210; 8: Rand heißt Knopf, #1289), ausführlich im Entwicklerhandbuch unter „Gestaltung und Bausteine“. */
+const LEITSAETZE = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const DARSTELLUNGEN = Object.keys(GRUNDLAGEN) as Grundlage[];
 

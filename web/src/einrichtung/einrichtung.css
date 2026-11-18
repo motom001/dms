@@ -32,7 +32,7 @@
 .registerzeile.art-dokumente { border-left-color: var(--akzent); }
 .registerzeile.art-verknuepfungen { border-left-color: var(--warn); }
 .registerkopf { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
-.registerkopf .chip { justify-content: center; }
+.registerkopf [data-etikett] { justify-content: center; }
 .registerkopf > .registername { min-width: 0; }
 .registerchip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 /* Ausgeblendet (#655): im Editor leiser, aber lesbar. */
@@ -103,7 +103,7 @@
 }
 
 .registerchip { display: flex; align-items: center; gap: 2px; min-width: 0; }
-.registerchip .chip { min-width: 0; }
+.registerchip [data-etikett] { min-width: 0; }
 .feldsumme > .ziehgriff { align-self: center; }
 .spaltenliste li > .ziehgriff { margin-right: -4px; }
 
@@ -120,7 +120,7 @@
 .vorbelegen-paar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 10px; }
 .vorbelegen-paar .vorbelegen-wahl { flex: 1 1 200px; min-width: 0; }
 .vorbelegen-paar .pfeil { padding-bottom: 10px; color: var(--leise); }
-.vorbelegen-paar > .chip { white-space: normal; }
+.vorbelegen-paar > [data-etikett] { white-space: normal; }
 @media (max-width: 600px) {
   .vorbelegen-paar .pfeil { display: none; }
 }
@@ -129,9 +129,9 @@
 .feldaktionen { flex: none; }
 /* Knöpfe mit eigenem Raster bzw. Umbruch (Feldzeile, Regel, Aufklapper): die Hüllen des Bausteins Knopf (Stapel, Text)
    sollen das Raster nicht brechen – ihre Kinder stehen direkt im Raster des Knopfs. */
-:is(.feldkopfknopf, .regelsumme, .aufklappkopf) > span, :is(.feldkopfknopf, .regelsumme, .aufklappkopf) > span > span:not([aria-hidden]) { display: contents; }
+:is(.feldkopfknopf, .regelsumme) > span, :is(.feldkopfknopf, .regelsumme) > span > span:not([aria-hidden]) { display: contents; }
 @media (pointer: coarse) {
   /* Spezifischer als die Regel des Bausteins (.baustein.symbol:not(.klein)), die sonst genau 44 px setzt. */
-  :is(.feldaktionen, .spaltenliste .aktionen) .textknopf[data-knopf]:not(.klein) { min-width: 48px; min-height: 48px; }
+  :is(.feldaktionen, .spaltenliste .aktionen) [data-knopf="eigen"][data-knopf]:not(.klein) { min-width: 48px; min-height: 48px; }
   .quellzeile > .haken { display: flex; align-items: center; min-height: 48px; }
 }

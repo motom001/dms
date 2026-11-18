@@ -129,7 +129,7 @@ describe('Baustein Bereiche (#1000)', () => {
     assert.match(html, /title="Verbindung: Fehler"/);
     assert.ok(html.includes('aria-label="mit Fehler"'));
     assert.match(html, /<section[^>]*id="verbindung"/);
-    assert.ok(/chip schlecht">Fehler</.test(html));
+    assert.ok(/class="etikett schlecht" data-etikett="schlecht">Fehler</.test(html));
   });
 
   it('fehlerBereiche: nur bekannte Orte aus details.orte, sonst der Ersatz', () => {

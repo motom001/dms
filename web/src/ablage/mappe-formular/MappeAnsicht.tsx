@@ -1,3 +1,4 @@
+import { Etikett } from '../../bausteine';
 import { useCallback, useEffect, useState } from 'react';
 import { typName } from '../../../../shared/src/beschriftung';
 import { datumText, inFrist } from '../../../../shared/src/archiv';
@@ -199,7 +200,7 @@ function MappeKopf({
       )}
       {mappe.systemKennung && (
         <p className="leise klein">
-          <span className="chip">{t('ablage.mappeformular.systemrolle')}</span> {t('mappen.systemrolle.hinweis')}
+          <Etikett>{t('ablage.mappeformular.systemrolle')}</Etikett> {t('mappen.systemrolle.hinweis')}
         </p>
       )}
       {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
@@ -305,9 +306,9 @@ function Index({ details }: { details: MappeDetails }) {
       {details.fristBeginntMit !== undefined && (
         <div>
           <dt>
-            <span className="chip archiv" title={t('ablage.mappeformular.archivmodus-vor-fristende-nicht')}>
+            <Etikett art="warn" title={t('ablage.mappeformular.archivmodus-vor-fristende-nicht')}>
               {t('ablage.mappeformular.archiv')}
-            </span>
+            </Etikett>
           </dt>
           <dd>{t('ablage.mappeformular.aufbewahren-frist-beginnt-mit', { feld: details.fristBeginntMit })}</dd>
         </div>
@@ -315,9 +316,9 @@ function Index({ details }: { details: MappeDetails }) {
       {details.aufbewahrenBis && (
         <div>
           <dt>
-            <span className="chip archiv" title={t('ablage.mappeformular.archivmodus-vor-fristende-nicht')}>
+            <Etikett art="warn" title={t('ablage.mappeformular.archivmodus-vor-fristende-nicht')}>
               {t('ablage.mappeformular.archiv')}
-            </span>
+            </Etikett>
           </dt>
           <dd>
             {inFrist(details.aufbewahrenBis) ? t('ablage.mappeformular.aufbewahren-bis') : t('ablage.mappeformular.frist-abgelaufen-am')}{' '}
