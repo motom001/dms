@@ -42,7 +42,7 @@ In the container this also works without a browser with the [command `dms`](kons
 
 To tidy up, tick the backups you want to remove in the list, or **Select all**. **Delete selected (n)** asks once for all of them and states the number, the period and the space that will be freed. Ablago then deletes them one after the other and shows the progress. Anything that could not be deleted stays selected and is listed with the reason above the list.
 
-The **newest checked** backup (checksum "unchanged" or test restore fine) is protected: it is marked "protected" and can't be deleted together with others, only on its own with its own **Delete**. If none has been checked yet, this applies to the newest one. That way one backup always remains when you tidy up.
+No backup has special protection, not even the newest one: **Select all** really selects all of them, and **Delete selected** deletes all selected ones. The protection is the confirmation – if all are selected, it also says that afterwards there is no local backup left. Exactly the selected ones are deleted: a backup created in the meantime is not among them. Copies [off-site](sicherung-ausser-haus.md) stay at the destination and remain in the list. If you want to be sure to keep a backup, [download](#sicherung-herunterladen) it first.
 
 Above the list it says what [retention](#zeitplan-und-aufbewahrung) clears away by itself, with the link **Change retention**. So you don't need to delete older automatic backups by hand.
 

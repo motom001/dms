@@ -11,9 +11,11 @@ import { EntfernteZeile, EntferntKopf, mitEntfernten, useHolen } from './Sicheru
 
 /**
  * Liste der Sicherungen (#103, #975, #986) mit Mehrfachauswahl (#1169): Haken je Sicherung, „Alle auswählen“ und
- * „Ausgewählte löschen (n)“ mit einer Rückfrage für alle (Anzahl, Zeitraum, frei werdender Platz). Die neueste geprüfte
- * Sicherung ist geschützt. Gelöscht wird nacheinander mit Fortschritt; was scheitert, bleibt gewählt und steht mit
- * Grund über der Liste. Darüber ein Hinweis, was die Aufbewahrung von selbst wegräumt.
+ * „Ausgewählte löschen (n)“ mit einer Rückfrage für alle (Anzahl, Zeitraum, frei werdender Platz). Keine Sicherung hat
+ * einen Sonderschutz (#1310): „Alle auswählen“ wählt wirklich alle, die Rückfrage ist der Schutz – sind alle gewählt,
+ * sagt sie, dass danach lokal keine mehr da ist. Gelöscht werden genau die gewählten (nach Namen; eine später
+ * hinzugekommene ist nie dabei), nacheinander mit Fortschritt; was scheitert, bleibt gewählt und steht mit Grund über der
+ * Liste. Darüber ein Hinweis, was die Aufbewahrung von selbst wegräumt.
  */
 
 const ART = {
@@ -24,16 +26,8 @@ const ART = {
 
 const beginnVon = (x: SicherungEintrag) => x.meta?.beginn ?? x.schlank?.beginn ?? null;
 
-/**
- * Geschützt (#1169): die neueste geprüfte Sicherung (Prüfsumme unverändert oder Probe in Ordnung). Ist noch keine
- * geprüft, die neueste überhaupt – so bleibt beim Aufräumen immer eine stehen.
- */
-export function geschuetzteSicherung(liste: SicherungEintrag[]): { name: string; geprueft: boolean } | null {
-  const mitZeit = liste.filter((x) => beginnVon(x)).sort((a, b) => beginnVon(b)!.localeCompare(beginnVon(a)!));
-  const geprueft = mitZeit.find((x) => x.pruefung?.ok || x.probe?.ok);
-  if (geprueft) return { name: geprueft.name, geprueft: true };
-  return mitZeit[0] ? { name: mitZeit[0].name, geprueft: false } : null;
-}
+/** Gewählt (#1169, #1310): die Sicherungen der Liste, deren Name in der Auswahl steht – keine darüber hinaus. */
+export const gewaehlteSicherungen = (liste: SicherungEintrag[], auswahl: ReadonlySet<string>) => liste.filter((x) => auswahl.has(x.name));
 
 /** Hinweis auf die Aufbewahrung (#1169): was Ablago von selbst wegräumt, mit Link zur Einstellung darunter. */
 function Aufbewahrung({ plan, nurNeueste }: { plan: SicherungsPlan; nurNeueste: boolean }) {
@@ -146,8 +140,11 @@ function Heruntergeladen({ e, schliessen }: { e: SicherungEintrag; schliessen():
   );
 }
 
-/** Rückfrage für die Auswahl (#1169): Anzahl, Zeitraum und frei werdender Platz. */
-function sammelFrage(auswahl: SicherungEintrag[]) {
+/**
+ * Rückfrage für die Auswahl (#1169): Anzahl, Zeitraum und frei werdender Platz; sind alle lokalen Sicherungen gewählt
+ * (`alle`), dazu, dass danach lokal keine mehr da ist (#1310).
+ */
+export function sammelFrage(auswahl: SicherungEintrag[], alle: boolean) {
   const zeiten = auswahl
     .map(beginnVon)
     .filter((x): x is string => !!x)
@@ -160,7 +157,7 @@ function sammelFrage(auswahl: SicherungEintrag[]) {
       : t('werkbank.sicherung.liste.frage.zeitraum', { von: zeit(zeiten[0]), bis: zeit(zeiten.at(-1)!) });
   return {
     titel: t('werkbank.sicherung.liste.frage.titel', { anzahl: auswahl.length }),
-    text: `${zeitraum}${t('werkbank.sicherung.liste.frage.text', { platz })}`,
+    text: `${zeitraum}${t('werkbank.sicherung.liste.frage.text', { platz })}${alle ? ` ${t('werkbank.sicherung.liste.frage.alle')}` : ''}`,
     ja: t('werkbank.sicherung.endgueltig-loeschen'),
   };
 }
@@ -174,7 +171,6 @@ function Zeile({
   ortSpalte,
   an,
   waehle,
-  geschuetzt,
   fehlschlag,
   aktionen,
 }: {
@@ -183,7 +179,6 @@ function Zeile({
   ortSpalte: boolean;
   an: boolean;
   waehle(an: boolean): void;
-  geschuetzt: boolean;
   fehlschlag?: Fehlschlag;
   aktionen: ReactNode;
 }) {
@@ -192,18 +187,10 @@ function Zeile({
   return (
     <tr className={an ? 'an' : undefined}>
       <td className="sicherung-wahl">
-        <Wahlhaken an={an} gesperrt={geschuetzt} setze={waehle} beschriftung={t('werkbank.sicherung.liste.waehlen', { zeit: wann })} />
+        <Wahlhaken an={an} setze={waehle} beschriftung={t('werkbank.sicherung.liste.waehlen', { zeit: wann })} />
       </td>
       <td className="kurz" title={x.name}>
         {wann}
-        {geschuetzt && (
-          <>
-            {' '}
-            <span className="chip gut" title={t('werkbank.sicherung.liste.geschuetzt.titel')}>
-              {t('werkbank.sicherung.liste.geschuetzt')}
-            </span>
-          </>
-        )}
         {fehlschlag && (
           <>
             {' '}
@@ -289,9 +276,9 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   // Entfernte Sicherungen (#976): mit in der Liste, nach Zeitpunkt einsortiert; Spalte „Wo“ auch für sie.
   const { zeilen, nurEntfernt, ortSpalte } = mitEntfernten(s);
   const { holt, hole } = useHolen(s, laden, (text) => setMeldung({ art: 'schlecht', text }), setGeladen);
-  const schutz = geschuetzteSicherung(s.liste);
-  const waehlbar = s.liste.filter((x) => x.name !== schutz?.name).map((x) => x.name);
-  const gewaehlt = s.liste.filter((x) => auswahl.has(x.name) && x.name !== schutz?.name);
+  // Kein Sonderschutz (#1310): wählbar ist jede lokale Sicherung.
+  const waehlbar = s.liste.map((x) => x.name);
+  const gewaehlt = gewaehlteSicherungen(s.liste, auswahl);
   const loescht = fortschritt !== null;
   const waehle = (name: string, an: boolean) =>
     setAuswahl((x) => {
@@ -416,7 +403,7 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
                 art="gefahr"
                 symbol="geloescht"
                 gesperrt={laeuft || loescht}
-                rueckfrage={sammelFrage(gewaehlt)}
+                rueckfrage={sammelFrage(gewaehlt, gewaehlt.length === s.liste.length)}
                 onClick={() => {
                   void sammelLoeschen();
                 }}>
@@ -424,11 +411,6 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
               </Knopf>
             )}
           </div>
-          {schutz && (
-            <p className="leise klein">
-              {t(schutz.geprueft ? 'werkbank.sicherung.liste.schutz' : 'werkbank.sicherung.liste.schutz.neueste')}
-            </p>
-          )}
           {fortschritt && (
             <div className="stapel" role="status">
               <p>{t('werkbank.sicherung.liste.fortschritt', { fertig: fortschritt.fertig + 1, gesamt: fortschritt.gesamt })}</p>
@@ -494,7 +476,6 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
                         ortSpalte={ortSpalte}
                         an={auswahl.has(x.name) || geladen === x.name}
                         waehle={(an) => waehle(x.name, an)}
-                        geschuetzt={x.name === schutz?.name}
                         fehlschlag={fehlschlaege.find((f) => f.name === x.name)}
                         aktionen={
                           <>

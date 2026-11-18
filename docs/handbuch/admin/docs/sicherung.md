@@ -42,7 +42,7 @@ Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrie
 
 Zum Aufräumen setzt du in der Liste die Haken vor den Sicherungen, die weg sollen, oder **Alle auswählen**. **Ausgewählte löschen (n)** fragt einmal für alle nach und nennt dabei Anzahl, Zeitraum und den Platz, der frei wird. Ablago löscht dann eine nach der anderen und zeigt den Fortschritt. Was sich nicht löschen ließ, bleibt ausgewählt und steht mit dem Grund über der Liste.
 
-Die **neueste geprüfte** Sicherung (Prüfsumme „unverändert“ oder Probe in Ordnung) ist geschützt: Sie trägt „geschützt“ und lässt sich nicht zusammen mit anderen löschen, nur einzeln mit ihrem eigenen **Löschen**. Ist noch keine geprüft, gilt das für die neueste. So bleibt beim Aufräumen immer eine Sicherung stehen.
+Keine Sicherung hat einen Sonderschutz, auch nicht die neueste: **Alle auswählen** wählt wirklich alle, und **Ausgewählte löschen** löscht alle gewählten. Der Schutz ist die Rückfrage – sind alle gewählt, sagt sie zusätzlich, dass danach lokal keine Sicherung mehr da ist. Gelöscht werden genau die gewählten: Entsteht währenddessen eine neue Sicherung, ist sie nicht dabei. Kopien [außer Haus](sicherung-ausser-haus.md) bleiben am Ziel und stehen weiter in der Liste. Willst du eine Sicherung sicher behalten, lade sie vorher [herunter](#sicherung-herunterladen).
 
 Über der Liste steht, was die [Aufbewahrung](#zeitplan-und-aufbewahrung) von selbst wegräumt, mit dem Link **Aufbewahrung ändern**. Ältere automatische Sicherungen musst du also nicht von Hand löschen.
 

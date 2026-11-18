@@ -197,7 +197,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Sicherung](sicherung.md) | ● | ● | ● | ● | ● |
 | [Vollexport](export.md) |   | ● | ● | ● | ● |
 | [Papierkorb](papierkorb.md) | ● | ● | ● | ● | ● |
-| [Einstellungen](daten-einstellungen.md) |   | ● | ● | ● | ● |
+| [Daten sichern → Einstellungen](daten-einstellungen.md) |   | ● | ● | ● | ● |
 | [E-Mail und Adresse](installation.md#e-mail-und-adresse) | ● | ● | ● | ● | ● |
 | [Region](region.md) | ● | ● | ● | ● | ● |
 | [Sprachen](sprachen.md) |   | ● | ● | ● | ● |
@@ -256,7 +256,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Sicherung](sicherung.md) | Sicherungen einrichten, prüfen und zurückspielen | ab Einsteiger |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | ab Haushalt |
 | [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | ab Einsteiger |
-| [Einstellungen](daten-einstellungen.md) | Wie lange Gelöschtes im Papierkorb bleibt und ob Benutzer ihre eigenen Daten exportieren dürfen | ab Haushalt |
+| [Daten sichern → Einstellungen](daten-einstellungen.md) | Wie lange Gelöschtes im Papierkorb bleibt und ob Benutzer ihre eigenen Daten exportieren dürfen | ab Haushalt |
 | [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse von Ablago | ab Einsteiger |
 | [Region](region.md) | Land, Bundesland und Zeitzone – für Feiertage, „heute“ und Uhrzeiten von Erinnerungen und Zusammenfassungen | ab Einsteiger |
 | [Sprachen](sprachen.md) | Wenn in deiner Ablage auch Englisch oder eine weitere Sprache gesprochen wird. | ab Haushalt |

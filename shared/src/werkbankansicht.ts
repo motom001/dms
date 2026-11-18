@@ -186,8 +186,17 @@ export const BEREICHE: Bereich[] = EINTRAEGE.map((e) => ({
   wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
 }));
 
-/** Name eines Bereichs (auch der Übersicht) für Leiste, Überschriften und Verweise. */
+/** Name eines Bereichs (auch der Übersicht) für Überschriften, Verweise, Suche und Handbuch. */
 export const bereichName = (pfad: string) => t.frei(`werkbank.bereich.${pfad}.name`);
+
+/**
+ * Name in der Leiste: dort steht die Gruppe schon darüber. Ein Bereich, dessen Name sonst den ganzen Weg trägt
+ * („Daten sichern → Einstellungen“, #1310), hat dafür `werkbank.bereich.<pfad>.leiste` („Einstellungen“).
+ */
+export const bereichLeistenName = (pfad: string) => {
+  const k = `werkbank.bereich.${pfad}.leiste`;
+  return t.hat(k) ? t.frei(k) : bereichName(pfad);
+};
 
 /** Weitere Namen, unter denen die Werkbank-Suche einen Bereich findet (#725: auch alte Namen wie „Darf weg“). */
 export const bereichAuch = (pfad: string): string[] => {

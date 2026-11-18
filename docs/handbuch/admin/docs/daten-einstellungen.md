@@ -1,6 +1,6 @@
-# Einstellungen zum Sichern
+# Daten sichern → Einstellungen
 
-**Werkbank → Daten sichern → Einstellungen** sammelt dauerhafte Einstellungen, die für die ganze Ablage gelten. Sie standen früher mitten in den Abläufen – dort bleiben nur die Abläufe selbst: einen [Vollexport](export.md) starten und herunterladen, im [Papierkorb](papierkorb.md) wiederherstellen und leeren.
+**Werkbank → Daten sichern → Einstellungen** sammelt dauerhafte Einstellungen, die für die ganze Ablage gelten. In der Leiste steht der Bereich in der Gruppe *Daten sichern* kurz als *Einstellungen*; überall sonst – Überschrift, Hinweise, Suche der Werkbank, dieses Handbuch – heißt er mit dem ganzen Weg **Daten sichern → Einstellungen**, damit du ihn nicht mit der Gruppe **Einstellungen** (Region, Sprachen, Eigene Organisation …) verwechselst. Sie standen früher mitten in den Abläufen – dort bleiben nur die Abläufe selbst: einen [Vollexport](export.md) starten und herunterladen, im [Papierkorb](papierkorb.md) wiederherstellen und leeren.
 
 ## Papierkorb { #papierkorb }
 
