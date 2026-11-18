@@ -72,7 +72,11 @@ export const ABLAEUFE = [
       const seiten = Array.from({ length: 6 }, (_, i) => `Messbrief ${runde} Seite ${i + 1} Beispielweg 12 Dresden`);
       await wahl.setFiles({ name: `Messbrief ${runde}.pdf`, mimeType: 'application/pdf', buffer: beispielPdfSeiten(seiten) });
       await s.waitForURL(/\/uebernehmen$/);
-      await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1 von 100', exact: true }).waitFor();
+      // Der Messbrief hat sechs Seiten (seit #1339 heißen die Seitenbilder „Seite n von N“).
+      await s
+        .getByRole('region', { name: 'Dokument' })
+        .getByRole('img', { name: `Seite 1 von ${seiten.length}`, exact: true })
+        .waitFor();
     },
     aufraeumen: async (s, d) => {
       const id = /\/([0-9a-f-]{36})\/uebernehmen$/.exec(new URL(s.url()).pathname)?.[1];
