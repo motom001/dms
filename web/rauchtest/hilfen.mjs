@@ -108,7 +108,7 @@ export { beispielPdf, beispielPdfSeiten } from './pdf.mjs';
  *     Knöpfe) – `data-knopf="link"` ohne `href`;
  *   - rand-ohne-knopf (#1289, Leitsatz 8: Rand heißt Knopf): ein kleines Element mit Rand ringsum und runden Ecken,
  *     das weder Knopf noch Link noch Feld ist und auch keins enthält – so sahen die alten Chips aus. Kennzeichen sind
- *     Etiketten ohne Rand (Baustein Etikett).
+ *     Etiketten ohne Rand (Baustein Etikett). Skizzen mit aria-hidden (Bild im Rundgang) zählen nicht.
  */
 function knopfWaechter() {
   const gemeldet = new Set();
@@ -127,7 +127,8 @@ function knopfWaechter() {
     for (const el of document.querySelectorAll('[data-knopf="link"]:not([href])')) if (sichtbar(el)) funde.push(['link-ohne-ziel', el]);
     const BEDIEN = 'a[href], button, input, select, textarea, summary, label, [role="button"], [role="link"], [tabindex]';
     for (const el of document.querySelectorAll('span, small, li, em, strong, b, code')) {
-      if (!sichtbar(el) || el.matches(BEDIEN) || el.closest(BEDIEN) || el.querySelector(BEDIEN)) continue;
+      // Bilder aus Teilen der Oberfläche (aria-hidden, z. B. die Skizze im Rundgang) sind keine Bedienelemente.
+      if (!sichtbar(el) || el.matches(BEDIEN) || el.closest(`${BEDIEN}, [aria-hidden="true"]`) || el.querySelector(BEDIEN)) continue;
       const r = el.getBoundingClientRect();
       if (r.height > 34 || r.width > 320 || !text(el)) continue;
       const cs = getComputedStyle(el);
