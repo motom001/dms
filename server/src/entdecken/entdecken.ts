@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import {
   ANGEBOT_TAGE,
+  anJederMappe,
   istNeu,
   oeffneTyp,
   pruefeAnker,
@@ -187,9 +188,10 @@ export interface EntdeckenOptionen {
   lesbareTypen?(b: Benutzer): Promise<ReadonlySet<string>>;
   /**
    * Was ein Rundgang öffnet (`oeffne.mappe`/`oeffne.neu`): Pfad der ersten Mappe dieses Typs, die die Person lesen
-   * darf, bzw. des leeren Formulars, wenn sie den Typ anlegen darf – sonst null (dann gilt der Ersatztext).
+   * darf, bzw. des leeren Formulars, wenn sie den Typ anlegen darf – sonst null (dann gilt der Ersatztext). `typ` null
+   * (#1307, Tipp an jeder Mappe): die zuletzt geänderte Mappe irgendeines Typs, die sie lesen darf.
    */
-  oeffnen?(b: Benutzer, typ: string, art: 'mappe' | 'neu'): Promise<string | null>;
+  oeffnen?(b: Benutzer, typ: string | null, art: 'mappe' | 'neu'): Promise<string | null>;
   /** Was die Werkbank gespeichert hat (#941, #942): eigene Rundgänge, ausgeschaltete Einträge. */
   werkbank?(): Promise<unknown>;
   /** Jetzt (Tests). */
@@ -369,7 +371,13 @@ export class Entdecken {
           herkunft: x.herkunft,
           bereich: x.bereich,
           text: x.text,
-          ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : x.ziel && x.typ ? { ziel: { anker: x.ziel, typ: x.typ } } : {}),
+          ...(a?.seite
+            ? { ziel: { anker: a.anker, seite: a.seite } }
+            : x.ziel && x.typ
+              ? { ziel: { anker: x.ziel, typ: x.typ } }
+              : x.ziel && anJederMappe(x.ziel)
+                ? { ziel: { anker: x.ziel } }
+                : {}),
           ...(x.rundgang ? { rundgang: x.rundgang } : {}),
           neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt),
           ausgeblendet: aus.has(x.schluessel),
@@ -419,8 +427,8 @@ export class Entdecken {
     this.o.log?.debug(`Rundgang „${schluessel}“: ${stand}`);
   }
 
-  /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs, die die Person lesen darf, sonst null. */
-  async mappeVonTyp(b: Benutzer, typ: string): Promise<string | null> {
+  /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs (null: irgendeines Typs, #1307), die die Person lesen darf, sonst null. */
+  async mappeVonTyp(b: Benutzer, typ: string | null): Promise<string | null> {
     return (await this.o.oeffnen?.(b, typ, 'mappe')) ?? null;
   }
 
@@ -447,7 +455,8 @@ export class Entdecken {
     if (art === 'tipp') {
       const x = s.tipps.find((y) => y.schluessel === schluessel);
       if (!x) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
-      return { pfad: x.ziel?.typ ? ((await this.o.oeffnen?.(b, x.ziel.typ, 'mappe')) ?? null) : (x.ziel?.seite ?? null) };
+      if (!x.ziel || x.ziel.seite) return { pfad: x.ziel?.seite ?? null };
+      return { pfad: (await this.o.oeffnen?.(b, x.ziel.typ ?? null, 'mappe')) ?? null };
     }
     const r = s.rundgaenge.find((x) => x.schluessel === schluessel);
     if (!r) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));

@@ -47,7 +47,8 @@
   ab_version: 0.254.0
 - schluessel: erinnern
   bereich: fristen
-  ziel: navigation.zu-erledigen
+  # „Mappe ▾“ (#1307): Ablago öffnet die erste Mappe, die die Person lesen darf; gibt es keine, steht ein Ersatztext da.
+  ziel: mappe.aktionen
 - schluessel: abwesenheit
   bereich: fristen
   ziel: konto.abwesenheit

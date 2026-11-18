@@ -37,6 +37,8 @@
   "fuehrung.spaeter.titel": "Close now and offer it again the next time you sign in",
   "fuehrung.handbuch": "More in the manual",
   "fuehrung.ersatz": "There is nothing to show here yet.",
+  "fuehrung.ohne-mappe.titel": "No folder yet",
+  "fuehrung.ohne-mappe.text": "As soon as there is a folder you may open, Ablago shows you the spot there.",
   "angebot": "{titel} – a short tour",
   "bild.titel": "Simplified picture of Ablago: views on the left, the list in the middle, the open folder on the right.",
   "bild.titel-handy": "Simplified picture of Ablago on a phone: the view at the top, the list below it.",

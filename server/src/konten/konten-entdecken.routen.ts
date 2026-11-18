@@ -210,12 +210,13 @@ export function tippsRouten(k: RoutenKontext): Route[] {
         return leer;
       },
     },
-    // „Ausprobieren“ eines Tipps mit Ziel in einer Mappe: erste Mappe dieses Typs, die ich lesen darf.
+    // „Ausprobieren“ eines Tipps mit Ziel in einer Mappe: erste Mappe dieses Typs, die ich lesen darf; `*` (#1307):
+    // irgendeines Typs – für Anker an jeder Mappe wie „Mappe ▾“.
     {
       methode: 'GET',
       pfad: '/api/werkbank/tipps/mappe/:typ',
       zugang: 'admin',
-      handler: async (a) => ok({ pfad: await entdecken.mappeVonTyp(ich(a), a.params.typ) }),
+      handler: async (a) => ok({ pfad: await entdecken.mappeVonTyp(ich(a), a.params.typ === '*' ? null : a.params.typ) }),
     },
   ];
 }

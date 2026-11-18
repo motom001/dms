@@ -66,17 +66,21 @@ function baueEntdecken(dienst: Dienst, konten: Konten, x: RoutenExtras): Entdeck
     },
     oeffnen: async (b, kennung, art) => {
       const z = await dienst.rechtepruefung.zugriff(b);
-      const typ = (await dienst.mappentypen.typenFuer(z)).find((x) => (x.schluessel ?? x.id) === kennung);
-      if (!typ) return null;
-      if (art === 'neu') return darfErstellen(typ) ? `/ablage/${typ.id}/neu` : null;
-      // Die erste Mappe des Typs, die die Person lesen darf – zuletzt geänderte zuerst.
-      const mappen = (await dienst.kern.repo.listeMappen(typ.id)).sort((a, b2) => b2.geaendert.localeCompare(a.geaendert));
+      const alle = await dienst.mappentypen.typenFuer(z);
+      // Ohne Kennung (#1307, Tipp an „Mappe ▾“): Mappen aller Typen, die die Person sieht.
+      const typen = kennung === null ? alle : alle.filter((x) => (x.schluessel ?? x.id) === kennung);
+      if (!typen.length || (art === 'neu' && kennung === null)) return null;
+      if (art === 'neu') return darfErstellen(typen[0]) ? `/ablage/${typen[0].id}/neu` : null;
+      // Die erste Mappe, die die Person lesen darf – zuletzt geänderte zuerst.
+      const mappen = (await Promise.all(typen.map((t) => dienst.kern.repo.listeMappen(t.id))))
+        .flat()
+        .sort((a, b2) => b2.geaendert.localeCompare(a.geaendert));
       const lesbar = await dienst.rechtepruefung.lesbare(
         z,
         mappen.slice(0, 500).map((m) => m.id),
       );
       const m = mappen.find((x) => lesbar.has(x.id));
-      return m ? `/ablage/${typ.id}/${m.id}` : null;
+      return m ? `/ablage/${m.typId}/${m.id}` : null;
     },
     werkbank: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
     log: L.konto,

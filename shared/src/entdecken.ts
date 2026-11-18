@@ -160,7 +160,8 @@ export interface TippAnzeige {
   text: string;
   /**
    * Anker und seine Seite: Der Satz öffnet die Seite und hebt die Stelle hervor. Ohne `seite` liegt die Stelle in einer
-   * Mappe des Typs `typ` – die Oberfläche öffnet zuerst die erste, die die Person lesen darf (…/oeffnen).
+   * Mappe des Typs `typ` – die Oberfläche öffnet zuerst die erste, die die Person lesen darf (…/oeffnen). Ohne `seite`
+   * und `typ` (#1307) liegt sie an jeder Mappe (`anJederMappe`): dann die erste Mappe überhaupt, die sie lesen darf.
    */
   ziel?: { anker: string; seite?: string; typ?: string };
   rundgang?: string;
@@ -501,12 +502,20 @@ export interface TippPruefung {
   typ?: (roh: string) => TypInfo | null;
 }
 
-/** Ziel eines Tipps: Anker mit fester Seite – oder mit `typ` auch ein Feld oder Register einer Mappe dieses Typs. */
+/**
+ * Anker an jeder geöffneten Mappe (`mappe.aktionen`, `mappe.stern` …, #1307): Als Ziel eines Tipps öffnet die
+ * Oberfläche die erste Mappe, die die Person lesen darf (mit `typ`: die erste dieses Typs). Muster wie `mappe.feld:<key>`
+ * gehören zu einem Mappentyp und brauchen `typ`.
+ */
+export const anJederMappe = (anker: string) => anker.startsWith('mappe.') && !anker.includes(':');
+
+/** Ziel eines Tipps: Anker mit fester Seite, an jeder Mappe – oder mit `typ` auch ein Feld oder Register einer Mappe dieses Typs. */
 function pruefeTippZiel(ziel: unknown, typ: TypInfo | null, o: TippPruefung, o2: string, m: Melde) {
   if (typeof ziel !== 'string' || !ankerBekannt(ziel, o.anker)) {
     m(`${o2}: unbekannter Anker „${String(ziel)}“.`, 'ziel');
     return;
   }
+  if (anJederMappe(ziel)) return;
   const teil = mappenTeil(ziel);
   if (teil && typ) {
     const liste = teil.art === 'feld' ? typ.felder : typ.register;
