@@ -74,4 +74,4 @@
     **Forgot your password?** below the sign-in. If Ablago doesn't send emails, an administrator creates a link for you.
 
 ??? question "I've found a bug or have a wish."
-    In the menu under your name → **Report a problem** (see [My account and settings](profil.md#fehler-melden)). Wishes are also welcome directly as an [issue on GitHub](https://github.com/motom001/dms/issues/new?template=wunsch.md).
+    In the menu under your name → **Report a problem** (see [My account and settings](profil.md#fehler-melden)); under *My reports* you also see what became of it. Wishes are also welcome directly as an [issue on GitHub](https://github.com/motom001/dms/issues/new?template=wunsch.md).

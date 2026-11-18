@@ -171,6 +171,13 @@ function fehlermeldungRouten(k: RoutenKontext): Route[] {
       roh: FEHLERMELDUNG_KOERPER_MAX,
       handler: async (a) => ok(await meldungen().melde(ich(a).id, b(a)), 201),
     },
+    // „Meine Meldungen“ (#1331): nur die eigenen – Datum, Anfang des Textes, offen oder erledigt; gelöschte als erledigt.
+    {
+      methode: 'GET',
+      pfad: '/api/konto/fehlermeldungen',
+      zugang: 'angemeldet',
+      handler: async (a) => ok(await meldungen().meine(ich(a).id)),
+    },
     {
       methode: 'GET',
       pfad: '/api/werkbank/fehlermeldungen',

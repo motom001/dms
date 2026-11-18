@@ -1,0 +1,13 @@
+art: minor
+
+## Neu
+
+- **Meine Meldungen** (#1331): Unter *Mein Konto → Fehler melden* siehst du deine eigenen Meldungen mit Datum, Anfang des Textes und **offen** oder **erledigt am …**. Löscht die Verwaltung eine Meldung, steht sie dort als erledigt, nur mit Datum – Text, Bilder und Angaben sind wirklich gelöscht. Bewusst kein Ticketsystem: keine Antworten, kein „gelesen“, keine Benachrichtigung.
+- **Zurück zur Ablage** (#1302): Oben in *Mein Konto* führt **‹ Zurück zur Ablage** auf jeder Seite dorthin, wo du in der Ablage zuletzt warst.
+
+## Verbessert
+
+- **Assistent immer an derselben Stelle** (#1283): unten rechts in Ablage, Werkbank und Konto – am Handy auch in der Werkbank mit eigenem Streifen statt in der Kopfzeile. Nach dem Rollen ans Ende verdeckt er nichts; über einem Menü-Blatt am Handy liegt er nicht mehr.
+- **Kürzeres Benutzermenü** (#1331): Mein Konto, Verwalten, Fehler melden, Über Ablago, Abmelden. Handbuch, Tipps und „Ablago entdecken“ stecken im Assistenten (Link „Alle Tipps und Rundgänge“), das Laufwerk ist ein Bereich unter *Mein Konto*. „Fehler melden“ steht jetzt auch in der Leiste von *Mein Konto*.
+- **Erster Rundgang in sechs Schritten** (#1300, #1301): Der letzte Schritt zeigt den Assistenten. Der erste Schritt zeigt eine deutlich als Skizze gekennzeichnete Grafik, die nicht mehr wie die echte Oberfläche aussieht. Die Karte mit dem Text steht in allen Schritten am selben Platz, nur die Hervorhebung wandert. „Dein Konto“ nennt Schriftgröße, Benachrichtigungen und Sicherheit und den Weg zurück.
+- **Bereiche in der Kopfzeile als Weg erkennbar** (#1302): „Ablage“ und „Werkbank“ haben auch nicht gewählt die Form eines Reiters.

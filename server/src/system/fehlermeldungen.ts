@@ -10,8 +10,11 @@ import { FEHLER_BILD_BYTES, MB } from '../grundlagen/grenzen';
 
 /**
  * Fehlermeldungen von Benutzern an die Administratoren (#70): eigene Beschreibung, bis zu zwei
- * Screenshots und die technischen Angaben von Server und Gerät. Nur Administratoren sehen sie;
- * eine Rückmeldung an den Benutzer gibt es im DMS bewusst nicht.
+ * Screenshots und die technischen Angaben von Server und Gerät. Nur Administratoren sehen sie ganz.
+ *
+ * „Meine Meldungen“ (#1331): Der Melder sieht nur seine eigenen – Datum, Anfang des Textes und „offen“ oder „erledigt“.
+ * Bewusst kein Ticketsystem: keine Antworten, kein „gelesen“, keine Benachrichtigung. Löscht die Verwaltung eine
+ * Meldung, sind Text, Angaben und Bilder wirklich weg; für den Melder bleibt nur ein Rest mit Datum und „erledigt“.
  */
 export interface FehlerBild {
   nr: number;
@@ -31,17 +34,34 @@ export interface Fehlermeldung {
   erledigtVon: string | null;
 }
 
+/** Eine eigene Meldung in „Meine Meldungen“ (#1331): bei einer gelöschten ohne Text (`anfang: null`). */
+export interface MeineFehlermeldung {
+  id: string;
+  erstellt: string;
+  anfang: string | null;
+  erledigt: string | null;
+}
+
 export interface FehlerRepo {
   lege(m: Fehlermeldung): Promise<void>;
+  /** Nur die Meldungen dieser Person, neueste zuerst – auch die gelöschten (als erledigt, ohne Inhalt). */
+  meine(benutzerId: string): Promise<MeineFehlermeldung[]>;
   liste(erledigt: boolean): Promise<Fehlermeldung[]>;
   hole(id: string): Promise<Fehlermeldung | undefined>;
   setzeErledigt(id: string, von: string | null): Promise<void>;
+  /** Löschen (#1331): Inhalt entfernen; hat die Meldung einen Melder, bleibt ein Rest mit Datum und „erledigt“. */
   loesche(id: string): Promise<void>;
   zaehleOffen(): Promise<number>;
   shaInGebrauch(sha: string): Promise<boolean>;
 }
 
 export const FEHLER_TEXT_MAX = 5000;
+/** So viel vom Text zeigt „Meine Meldungen“ (#1331). */
+const FEHLER_ANFANG_MAX = 120;
+const anfangVon = (text: string) => {
+  const t = text.replace(/\s+/g, ' ').trim();
+  return t.length > FEHLER_ANFANG_MAX ? `${t.slice(0, FEHLER_ANFANG_MAX - 1).trimEnd()}…` : t;
+};
 export const FEHLER_BILDER_MAX = 2;
 export { FEHLER_BILD_BYTES };
 const BILDTYPEN = new Set(['image/png', 'image/jpeg', 'image/webp']);
@@ -110,6 +130,11 @@ export class Fehlermeldungen {
   liste(erledigt = false) {
     return this.repo.liste(erledigt);
   }
+  /** „Meine Meldungen“ (#1331): nur die eigenen. Ohne Person (z. B. Konsole) gibt es keine. */
+  async meine(benutzerId: string | null): Promise<MeineFehlermeldung[]> {
+    if (!benutzerId) return [];
+    return (await this.repo.meine(benutzerId)).map((m) => ({ ...m, anfang: m.anfang === null ? null : anfangVon(m.anfang) }));
+  }
   offen() {
     return this.repo.zaehleOffen();
   }
@@ -161,23 +186,37 @@ export function pgFehlerRepo(sql: postgres.Sql, haushaltId: string): FehlerRepo 
       await sql`INSERT INTO fehlermeldungen (id, haushalt_id, benutzer_id, text, angaben, bilder)
         VALUES (${m.id}, ${haushaltId}, ${m.benutzerId}, ${m.text}, ${sql.json(m.angaben as postgres.JSONValue)}, ${sql.json(m.bilder as unknown as postgres.JSONValue)})`;
     },
+    async meine(benutzerId) {
+      // Nur der Anfang verlässt die Datenbank; der Rest einer gelöschten Meldung hat keinen Text mehr.
+      const r = await sql`SELECT id, erstellt, erledigt, CASE WHEN geloescht IS NULL THEN left(text, ${FEHLER_ANFANG_MAX * 2}) END AS anfang
+        FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND benutzer_id = ${benutzerId} ORDER BY erstellt DESC LIMIT 100`;
+      return r.map((x) => ({
+        id: x.id as string,
+        erstellt: new Date(x.erstellt as string).toISOString(),
+        anfang: (x.anfang as string | null) ?? null,
+        erledigt: x.erledigt ? new Date(x.erledigt as string).toISOString() : null,
+      }));
+    },
     async liste(erledigt) {
       const r =
-        await sql`SELECT * FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND (erledigt IS NOT NULL) = ${erledigt} ORDER BY erstellt DESC LIMIT 200`;
+        await sql`SELECT * FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND geloescht IS NULL AND (erledigt IS NOT NULL) = ${erledigt} ORDER BY erstellt DESC LIMIT 200`;
       return r.map(alsMeldung);
     },
     async hole(id) {
-      const [r] = await sql`SELECT * FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      const [r] = await sql`SELECT * FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id} AND geloescht IS NULL`;
       return r ? alsMeldung(r) : undefined;
     },
     async setzeErledigt(id, von) {
       await sql`UPDATE fehlermeldungen SET erledigt = ${von === null ? null : sql`now()`}, erledigt_von = ${von} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async loesche(id) {
-      await sql`DELETE FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      await sql`DELETE FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND id = ${id} AND benutzer_id IS NULL`;
+      await sql`UPDATE fehlermeldungen SET text = '', angaben = '{}'::jsonb, bilder = '[]'::jsonb, erledigt = COALESCE(erledigt, now()),
+        erledigt_von = NULL, geloescht = now() WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async zaehleOffen() {
-      const [r] = await sql`SELECT count(*)::int AS n FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND erledigt IS NULL`;
+      const [r] =
+        await sql`SELECT count(*)::int AS n FROM fehlermeldungen WHERE haushalt_id = ${haushaltId} AND erledigt IS NULL AND geloescht IS NULL`;
       return r.n as number;
     },
     async shaInGebrauch(sha) {
@@ -190,10 +229,21 @@ export function pgFehlerRepo(sql: postgres.Sql, haushaltId: string): FehlerRepo 
 
 export function speicherFehlerRepo(): FehlerRepo {
   const m = new Map<string, Fehlermeldung>();
+  /** Reste gelöschter Meldungen (#1331): nur, was der Melder noch sieht. */
+  const reste = new Map<string, MeineFehlermeldung & { benutzerId: string }>();
   const kopie = <T>(x: T): T => structuredClone(x);
   return {
     async lege(x) {
       m.set(x.id, kopie(x));
+    },
+    async meine(benutzerId) {
+      const da = [...m.values()]
+        .filter((x) => x.benutzerId === benutzerId)
+        .map((x) => ({ id: x.id, erstellt: x.erstellt, anfang: x.text, erledigt: x.erledigt }));
+      const weg = [...reste.values()]
+        .filter((x) => x.benutzerId === benutzerId)
+        .map((x) => ({ id: x.id, erstellt: x.erstellt, anfang: x.anfang, erledigt: x.erledigt }));
+      return [...da, ...weg].sort((a, b) => b.erstellt.localeCompare(a.erstellt));
     },
     async liste(erledigt) {
       return [...m.values()]
@@ -210,6 +260,15 @@ export function speicherFehlerRepo(): FehlerRepo {
       if (x) m.set(id, { ...x, erledigt: von === null ? null : new Date().toISOString(), erledigtVon: von });
     },
     async loesche(id) {
+      const x = m.get(id);
+      if (x?.benutzerId)
+        reste.set(id, {
+          id,
+          benutzerId: x.benutzerId,
+          erstellt: x.erstellt,
+          anfang: null,
+          erledigt: x.erledigt ?? new Date().toISOString(),
+        });
       m.delete(id);
     },
     async zaehleOffen() {

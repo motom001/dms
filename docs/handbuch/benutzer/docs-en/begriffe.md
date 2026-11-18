@@ -56,7 +56,7 @@ A view's filter on field values, counts, deadlines, personal things or the Libra
 The prefilled value of a field when creating a folder, also with placeholders such as a number sequence.
 
 <a id="ablago-entdecken"></a>**Discover Ablago** (*Ablago entdecken*) · ✓ everyday word · everyone  
-Page in the user menu (next to Help) with everything else Ablago can do – what is new since the last visit, tours and all tips by area. Hidden tips stay visible there.  
+Page with everything else Ablago can do (in the assistant under “Tips” → “All tips and tours”) – what is new since the last visit, tours and all tips by area. Hidden tips stay visible there.  
 See also: [Tour](#rundgang), [Tip](#tipp).
 
 <a id="dokument"></a>**Document** (*Dokument*) · ✓ everyday word · everyone  

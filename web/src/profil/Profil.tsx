@@ -1,6 +1,8 @@
 import { darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Link } from '../ort';
+import { Symbol } from '../Symbol';
+import { letzteAblage } from './rueckweg';
 import { FehlerMelden } from './FehlerMelden';
 import { MeineAbwesenheit } from './Abwesenheit';
 import { LaufwerkBereich } from './Laufwerk';
@@ -30,36 +32,48 @@ export function Profil({ teile = [] }: { teile?: string[] }) {
       : 'konto'
   ) as Bereich;
   return (
-    <div className="zweispaltig profil">
-      <aside className="leiste" aria-label={t('profil.profil.bereiche-des-profils')}>
-        <nav className="typliste">
-          {(Object.keys(BEREICHE) as Array<keyof typeof BEREICHE>).map((k) => (
-            <Link key={k} to={`/profil/${k}`} className={`typeintrag ${b === k ? 'an' : ''}`}>
-              <span className="nm">{BEREICHE[k]}</span>
+    <>
+      {/* #1302: von jeder Seite in „Mein Konto“ ein sichtbarer Weg zurück – zur zuletzt besuchten Seite der Ablage. */}
+      <p className="zurueck-ablage">
+        <Link to={letzteAblage()} className="verweis">
+          <Symbol name="pfeil-links" /> {t('profil.profil.zurueck-zur-ablage')}
+        </Link>
+      </p>
+      <div className="zweispaltig profil">
+        <aside className="leiste" aria-label={t('profil.profil.bereiche-des-profils')}>
+          <nav className="typliste">
+            {(Object.keys(BEREICHE) as Array<keyof typeof BEREICHE>).map((k) => (
+              <Link key={k} to={`/profil/${k}`} className={`typeintrag ${b === k ? 'an' : ''}`}>
+                <span className="nm">{BEREICHE[k]}</span>
+              </Link>
+            ))}
+            <Link to="/profil/abwesenheit" anker="konto.abwesenheit" className={`typeintrag ${b === 'abwesenheit' ? 'an' : ''}`}>
+              <span className="nm">{t('profil.profil.abwesenheit')}</span>
             </Link>
-          ))}
-          <Link to="/profil/abwesenheit" anker="konto.abwesenheit" className={`typeintrag ${b === 'abwesenheit' ? 'an' : ''}`}>
-            <span className="nm">{t('profil.profil.abwesenheit')}</span>
-          </Link>
-          {laufwerk && (
-            <Link to="/profil/laufwerk" className={`typeintrag ${b === 'laufwerk' ? 'an' : ''}`}>
-              <span className="nm">{t('profil.laufwerk.bereich')}</span>
+            {laufwerk && (
+              <Link to="/profil/laufwerk" className={`typeintrag ${b === 'laufwerk' ? 'an' : ''}`}>
+                <span className="nm">{t('profil.laufwerk.bereich')}</span>
+              </Link>
+            )}
+            {/* #1331: eigener Bereich, hervorgehoben wie die übrigen; dorthin führen Benutzermenü und Fehlerseite. */}
+            <Link to="/profil/fehler-melden" className={`typeintrag ${b === 'fehler-melden' ? 'an' : ''}`}>
+              <span className="nm">{t('oberflaeche.app.fehler-melden')}</span>
             </Link>
+          </nav>
+        </aside>
+        <div className="inhalt">
+          {b === 'fehler-melden' ? (
+            <FehlerMelden />
+          ) : b === 'abwesenheit' ? (
+            <MeineAbwesenheit />
+          ) : b === 'laufwerk' ? (
+            <LaufwerkBereich />
+          ) : (
+            <ProfilBereich bereich={b} />
           )}
-        </nav>
-      </aside>
-      <div className="inhalt">
-        {b === 'fehler-melden' ? (
-          <FehlerMelden />
-        ) : b === 'abwesenheit' ? (
-          <MeineAbwesenheit />
-        ) : b === 'laufwerk' ? (
-          <LaufwerkBereich />
-        ) : (
-          <ProfilBereich bereich={b} />
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

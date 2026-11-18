@@ -241,7 +241,7 @@ rauchtest('Assistent: Fragen · Tipps · Handbuch, Tastatur (#1219)', { als: LEN
   await fenster.getByRole('textbox', { name: 'Frag deine Ablage' }).waitFor();
   await fenster.getByText(/KI-Dienst des Pakets „KI-Assistent“/).waitFor();
   await reiter.getByRole('radio', { name: /^Tipps/ }).click();
-  await fenster.getByRole('link', { name: 'Alle Tipps ansehen ›' }).waitFor();
+  await fenster.getByRole('link', { name: 'Alle Tipps und Rundgänge ›' }).waitFor();
   await reiter.getByRole('radio', { name: 'Handbuch' }).click();
   await fenster.getByText('Benutzerhandbuch – weil du in der Ablage bist').waitFor();
   await fenster.getByRole('searchbox', { name: 'Im Handbuch suchen' }).fill('übernehmen');

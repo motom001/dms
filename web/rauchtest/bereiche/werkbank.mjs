@@ -331,21 +331,23 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   await s.getByLabel('Passwort', { exact: true }).fill(JONAS.passwort);
   await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const rundgang = s.getByRole('dialog');
-  await rundgang.getByText('Schritt 1 von 5').waitFor();
-  for (let i = 2; i <= 5; i++) {
+  // #1300: sechs Schritte, der letzte zeigt auf den Assistenten.
+  await rundgang.getByText('Schritt 1 von 6').waitFor();
+  for (let i = 2; i <= 6; i++) {
     await rundgang.getByRole('button', { name: 'Weiter' }).click();
-    await rundgang.getByText(`Schritt ${i} von 5`).waitFor();
+    await rundgang.getByText(`Schritt ${i} von 6`).waitFor();
   }
   await rundgang.getByRole('button', { name: 'Fertig' }).click();
   await rundgang.waitFor({ state: 'detached' });
   await s.getByRole('heading', { name: 'Guten Tag, Jonas', level: 1 }).waitFor();
-  // „Ablago entdecken“ im Benutzermenü: Tipps und der Rundgang zum Wiederholen.
-  const menue = await benutzermenue(s, JONAS);
-  await menue.getByRole('link', { name: 'Ablago entdecken' }).click();
+  // „Ablago entdecken“ über den Assistenten (#1331): Tipps und der Rundgang zum Wiederholen.
+  await s.getByRole('button', { name: /^Assistent öffnen/ }).click();
+  await s.getByRole('radio', { name: /^Tipps/ }).click();
+  await s.getByRole('dialog', { name: 'Assistent' }).getByRole('link', { name: 'Alle Tipps und Rundgänge ›' }).click();
   await s.getByRole('heading', { name: 'Ablago entdecken', level: 1 }).waitFor();
   await s.getByRole('region', { name: 'Tipps' }).getByRole('link').first().waitFor();
   await s.getByRole('region', { name: 'Rundgänge' }).getByRole('button', { name: 'Rundgang starten' }).click();
-  await rundgang.getByText('Schritt 1 von 5').waitFor();
+  await rundgang.getByText('Schritt 1 von 6').waitFor();
   await rundgang.getByRole('button', { name: 'Überspringen' }).click();
   await rundgang.waitFor({ state: 'detached' });
 });

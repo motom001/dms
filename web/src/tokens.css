@@ -45,6 +45,9 @@
   --ebene-blatt: 40; /* Schleier am Handy, Blatt darüber + 1, Begleiter am Handy + 2, Verweisfenster + 5 */
   --ebene-panel: 50; /* Messpanel; Ablegen: Stand + 5, Fläche + 10; Kamera: Schleier + 20, Blatt + 21 */
   --ebene-rundgang: 1000; /* Zielwahl der Rundgänge über allem (+ 1: ihre Leiste) */
+  /* Platz unter dem letzten Inhalt jeder rollbaren Fläche (#1283), damit der Assistent unten rechts am Rechner nach dem
+     Rollen ans Ende nichts verdeckt: 10 px Rand + 56 px Knopf + 30 px Luft. */
+  --platz-begleiter: 96px;
 }
 @media (prefers-color-scheme: dark) {
   :root {

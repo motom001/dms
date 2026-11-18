@@ -50,6 +50,7 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
   const [schritte, setSchritte] = useState<Ziel[] | null>(null);
   const [nr, setNr] = useState(0);
   const [rechteck, setRechteck] = useState<DOMRect | null>(null);
+  const karteRef = useRef<HTMLDivElement>(null);
   // Leeres Formular (`oeffne.neu`): danach zurück, wo die Person war – angelegt wird nichts.
   const zurueckNach = useRef<string | null>(null);
 
@@ -134,7 +135,7 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
   }, [aktuell]);
   useLayoutEffect(() => {
     const el = aktuell?.anker ? findeAnker(aktuell.anker) : null;
-    el?.scrollIntoView({ block: 'center', behavior: wenigBewegung() ? 'auto' : 'smooth' });
+    if (el) zielInDenBlick(el, istSchmal(), karteRef.current?.offsetHeight ?? 240);
     messen();
     let rahmen = 0;
     const neu = () => {
@@ -183,7 +184,7 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
   const licht: CSSProperties | undefined = rechteck
     ? { left: rechteck.left - rand, top: rechteck.top - rand, width: rechteck.width + rand * 2, height: rechteck.height + rand * 2 }
     : undefined;
-  const karte = lageDerKarte(rechteck, schmal);
+  const karte = lageDerKarte(rechteck, schmal, karteRef.current?.offsetHeight ?? 240);
 
   return (
     <dialog
@@ -197,7 +198,7 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
       }}
       onKeyDown={taste}>
       {licht && <div className="rg-licht" style={licht} aria-hidden="true" />}
-      <div className="rg-karte" style={karte}>
+      <div ref={karteRef} className="rg-karte" style={karte}>
         <p className="ueber rg-kopf">
           <span>{t('entdecken.fuehrung.titel', { titel: rundgang.titel })}</span>
           <span>{t('entdecken.fuehrung.schritt', { nr: nr + 1, anzahl: schritte.length })}</span>
@@ -266,20 +267,32 @@ async function oeffneVorher(rundgang: Rundgang, probe?: { pfad: string | null })
   return zurueck;
 }
 
-/** Wo die Karte steht: unter dem Ziel, sonst darüber, sonst daneben; ohne Ziel in der Mitte. Am Handy unten oder oben. */
-function lageDerKarte(r: DOMRect | null, schmal: boolean): CSSProperties | undefined {
-  if (!r) return undefined;
-  const abstand = 14;
-  const hoehe = innerHeight;
-  if (schmal) return r.top + r.height / 2 > hoehe / 2 ? { top: 16 } : { bottom: 16 };
+/** Abstand der Karte zum unteren Rand: am Rechner 24 px; am Handy über dem Streifen des Assistenten (10 + 56 + 14 px). */
+const KARTE_UNTEN = 24;
+const KARTE_UNTEN_SCHMAL = 80;
+
+/**
+ * Wo die Karte steht (#1301): an einem festen Platz – am Rechner unten in der Mitte, am Handy unten über dem Assistenten,
+ * in allen Schritten gleich; nur die Hervorhebung wandert. Liegt das Ziel trotzdem unter der Karte (es ließ sich nicht
+ * weit genug rollen, z. B. eine feste Leiste unten), steht sie ausnahmsweise oben am selben waagrechten Platz.
+ */
+function lageDerKarte(r: DOMRect | null, schmal: boolean, kartenHoehe: number): CSSProperties {
+  const unten = schmal ? KARTE_UNTEN_SCHMAL : KARTE_UNTEN;
   const breite = Math.min(440, innerWidth - 32);
-  const links = Math.max(16, Math.min(r.left, innerWidth - breite - 16));
-  if (hoehe - r.bottom > 260) return { top: r.bottom + abstand, left: links };
-  if (r.top > 260) return { bottom: hoehe - r.top + abstand, left: links };
-  // Hohes Ziel (z. B. eine ganze Spalte): daneben.
-  return r.right + abstand + breite < innerWidth
-    ? { top: Math.max(16, r.top), left: r.right + abstand }
-    : { top: Math.max(16, r.top), left: Math.max(16, r.left - abstand - breite) };
+  const waagrecht: CSSProperties = schmal ? {} : { left: Math.max(16, (innerWidth - breite) / 2) };
+  const oben = innerHeight - unten - kartenHoehe - 8;
+  const verdeckt = !!r && r.top < innerHeight - unten && r.bottom > oben && (schmal || ueberlappt(r, waagrecht.left as number, breite));
+  return verdeckt ? { ...waagrecht, top: 16 } : { ...waagrecht, bottom: unten };
+}
+const ueberlappt = (r: DOMRect, links: number, breite: number) => r.right > links && r.left < links + breite;
+
+/** Ziel so rollen, dass es über der Karte steht (#1301): erst mittig, ragt es dann unter die Karte, an den Anfang. */
+function zielInDenBlick(el: Element, schmal: boolean, kartenHoehe: number) {
+  const behavior = wenigBewegung() ? 'auto' : 'smooth';
+  el.scrollIntoView({ block: 'center', behavior: 'auto' });
+  const unten = innerHeight - (schmal ? KARTE_UNTEN_SCHMAL : KARTE_UNTEN);
+  const r = el.getBoundingClientRect();
+  if (r.bottom > unten - kartenHoehe - 8 && r.top < unten) el.scrollIntoView({ block: 'start', behavior });
 }
 
 /** Unter dem Text eines Schritts: Satz für Personen ohne Verwaltungsrecht, Ort für Screenreader, Verweis ins Handbuch. */

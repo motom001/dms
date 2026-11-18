@@ -20,6 +20,7 @@ import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Route } from '../src/http/routen';
 import { bereicheDerRoute, JEDER } from '../src/werkbank/verwaltungsbereiche';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
+import { Fehlermeldungen, speicherFehlerRepo } from '../src/system/fehlermeldungen';
 import { imModus } from './hilfen';
 
 const PW = 'ein-langes-passwort';
@@ -80,7 +81,9 @@ async function aufbau() {
   const { baueApp } = await import('../src/http/http');
   const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
   const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
-  const app = await baueApp(d, konten, { apiSchluessel: schluessel });
+  // „Meine Meldungen“ (#1331): mit Fehlermeldungen, damit die Route nicht schon mangels Dienst mit 404 antwortet.
+  const fehler = new Fehlermeldungen(speicherFehlerRepo(), speicherDateien());
+  const app = await baueApp(d, konten, { apiSchluessel: schluessel, fehlermeldungen: fehler });
   const anmelden = async (email: string) => {
     const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email, passwort: PW }, headers: { 'x-dms': '1' } });
     assert.equal(r.statusCode, 200, r.body);
@@ -155,7 +158,7 @@ async function aufbau() {
     ablauf: ablauf.id,
     markus: markus.id,
   };
-  return { d, konten, app, cLena, cMarkus, cJonas, cKatrin, cVertretung, lesen, schreiben, zaehler, schluesselKatrin, fremd };
+  return { d, konten, app, fehler, cLena, cMarkus, cJonas, cKatrin, cVertretung, lesen, schreiben, zaehler, schluesselKatrin, fremd };
 }
 
 type Aufbau = Awaited<ReturnType<typeof aufbau>>;
@@ -295,6 +298,53 @@ describe('Rechte-Matrix (#1262)', () => {
     const api = alle.find((q) => q.api && q.methode === 'GET' && q.zugang === 'angemeldet' && !q.pfad.includes(':'))!;
     const a = await rufe(api, { authorization: `Bearer ${x.lesen}` });
     assert.ok(![401, 403].includes(a.statusCode), `${name(api)} → ${a.statusCode}`);
+  });
+
+  it('Meine Meldungen (#1331): jede Person sieht nur ihre eigenen Fehlermeldungen, nie fremde', async () => {
+    const melde = async (cookie: string, text: string) => {
+      const r = await x.app.inject({
+        method: 'POST',
+        url: '/api/konto/fehlermeldung',
+        payload: { text },
+        headers: { 'x-dms': '1', cookie },
+      });
+      assert.equal(r.statusCode, 201, r.body);
+      return (r.json() as { id: string }).id;
+    };
+    type Meine = Array<{ id: string; anfang: string | null; erledigt: string | null }>;
+    const meine = async (kopf: Record<string, string>) => {
+      const r = await x.app.inject({ method: 'GET', url: '/api/konto/fehlermeldungen', headers: kopf });
+      assert.equal(r.statusCode, 200, r.body);
+      return r.json() as Meine;
+    };
+    const vonMarkus = await melde(x.cMarkus, 'Markus: Knopf geht nicht');
+    const vonKatrin = await melde(x.cKatrin, 'Katrin: Liste leer');
+    assert.deepEqual(
+      (await meine({ cookie: x.cMarkus })).map((m) => m.id),
+      [vonMarkus],
+    );
+    assert.deepEqual(
+      (await meine({ cookie: x.cKatrin })).map((m) => m.id),
+      [vonKatrin],
+    );
+    // Jonas (Verwaltung im Modus) sieht hier auch nur seine eigenen – die ganze Liste steht nur in der Werkbank.
+    assert.deepEqual(await meine({ cookie: x.cJonas }), []);
+    // In der Vertretung die Meldungen der vertretenen Person (Markus), keine von Lena oder Katrin.
+    assert.deepEqual(
+      (await meine({ cookie: x.cVertretung })).map((m) => m.id),
+      [vonMarkus],
+    );
+    // Gelöscht: für Markus erledigt ohne Inhalt, für Katrin weiter unsichtbar.
+    await x.fehler.loesche(vonMarkus);
+    const danach = await meine({ cookie: x.cMarkus });
+    assert.equal(danach.length, 1);
+    assert.equal(danach[0].anfang, null);
+    assert.ok(danach[0].erledigt);
+    assert.ok(!JSON.stringify(await meine({ cookie: x.cKatrin })).includes(vonMarkus));
+    // Ohne Anmeldung und mit API-Schlüssel nichts.
+    assert.equal((await x.app.inject({ method: 'GET', url: '/api/konto/fehlermeldungen', headers: { 'x-dms': '1' } })).statusCode, 401);
+    const s = await x.app.inject({ method: 'GET', url: '/api/konto/fehlermeldungen', headers: { authorization: `Bearer ${x.lesen}` } });
+    assert.ok([401, 403].includes(s.statusCode), String(s.statusCode));
   });
 
   it('API-Schlüssel schreiben: Routen der Verwaltung → 403', async () => {

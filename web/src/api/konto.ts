@@ -257,6 +257,14 @@ export interface VollexportStand {
   /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? */
   persoenlich: boolean;
 }
+/** Eine eigene Fehlermeldung (#1331): `anfang` fehlt bei einer gelöschten, die dann als erledigt gilt. */
+export interface MeineFehlermeldung {
+  id: string;
+  erstellt: string;
+  anfang: string | null;
+  erledigt: string | null;
+}
+
 export interface Diagnose {
   dms: { version: string; commit: string | null; gebaut: string | null };
   serverzeit: string;
@@ -446,6 +454,8 @@ export const kontoApi = {
   diagnose: () => anfrage<Diagnose>('GET', '/api/konto/diagnose'),
   fehlerMelden: (e: { text: string; angaben: Record<string, unknown>; bilder: Array<{ name: string; daten: string }> }) =>
     anfrage<{ id: string }>('POST', '/api/konto/fehlermeldung', e),
+  /** „Meine Meldungen“ (#1331): nur die eigenen, neueste zuerst. */
+  meineFehlermeldungen: () => anfrage<MeineFehlermeldung[]>('GET', '/api/konto/fehlermeldungen'),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
   entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
   /** Eigene Sprache (#729); null = wie die Installation. */

@@ -57,7 +57,8 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
       assert.equal(x.rundgaenge.length, 1);
       assert.deepEqual(
         x.rundgaenge[0].schritte.map((s) => s.schluessel),
-        ['dreiteilung', 'neu', 'suche', 'erledigen', 'konto'],
+        // #1300: zum Schluss der Assistent.
+        ['dreiteilung', 'neu', 'suche', 'erledigen', 'konto', 'assistent'],
       );
       assert.ok(x.tipps.length >= 15, `${spr}: rund 15 Tipps, sind ${x.tipps.length}`);
       for (const t of x.tipps) assert.ok(t.text.length <= TIPP_TEXT_MAX, `${spr} ${t.schluessel}: ${t.text.length} Zeichen`);
@@ -191,10 +192,10 @@ describe('Für die Person (#831, #832)', () => {
       ],
     };
     const fuerJonas = rundgangFuer(mitWerkbank, jonas)!;
-    assert.equal(fuerJonas.schritte.length, 5);
-    assert.doesNotMatch(fuerJonas.schritte.at(-1)!.text, /Ablago verwalten/);
+    assert.equal(fuerJonas.schritte.length, 6);
+    assert.doesNotMatch(fuerJonas.schritte[4].text, /Ablago verwalten/);
     const fuerLena = rundgangFuer(mitWerkbank, lena)!;
-    assert.equal(fuerLena.schritte.length, 6);
+    assert.equal(fuerLena.schritte.length, 7);
     assert.match(fuerLena.schritte[4].text, /„Ablago verwalten“/);
     assert.ok(!ablago.tipps.filter((x) => tippPasst(x, jonas)).some((x) => x.bereich === 'verwalten' || x.funktion));
     assert.ok(ablago.tipps.filter((x) => tippPasst(x, lena)).some((x) => x.bereich === 'verwalten'));

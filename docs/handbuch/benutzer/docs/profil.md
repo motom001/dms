@@ -10,13 +10,13 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 - **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Startseite, geänderte Mappen hervorheben, Spaltenbreiten), Benachrichtigungen, [Abwesenheit](#abwesenheit).
 - **Ablago verwalten** – nur, wenn du verwalten darfst: wechselt in den [Verwaltungsmodus](#ablago-verwalten). Im Modus steht hier **Verwaltung beenden**.
 - Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.
-- **Hilfe** – öffnet dieses Handbuch.
-- **Ablago entdecken** – Rundgang und Tipps zum Stöbern, siehe [Ablago entdecken](entdecken.md).
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
 - **Über Ablago** – siehe [Über Ablago](#uber-das-dms).
 - **Abmelden**.
 
-Jeder Eintrag hat vorn ein kleines Piktogramm, damit du ihn schneller findest.
+Jeder Eintrag hat vorn ein kleines Piktogramm, damit du ihn schneller findest. Jeder Weg steht nur einmal: Das **Handbuch**, die Tipps und **Ablago entdecken** findest du im [Assistenten](assistent.md) unten rechts, das **Laufwerk** als Bereich unter *Mein Konto*.
+
+Oben in *Mein Konto* führt **‹ Zurück zur Ablage** auf jeder Seite dorthin zurück, wo du in der Ablage zuletzt warst – zum Beispiel, nachdem du die Schrift vergrößert hast.
 
 ### Über Ablago { #uber-das-dms }
 
@@ -184,7 +184,7 @@ Weitergeben geht nur an Personen, die die jeweilige Mappe lesen dürfen; was nic
 
 ## Fehler melden
 
-Funktioniert etwas nicht, wähle im Menü **Fehler melden**:
+Funktioniert etwas nicht, wähle im Menü **Fehler melden** – es ist auch ein Bereich in der Leiste von *Mein Konto*:
 
 ![Fehler melden](bilder/fehler-melden.png)
 
@@ -194,6 +194,8 @@ Funktioniert etwas nicht, wähle im Menü **Fehler melden**:
 4. **Meldung senden** (geht an alle, die Ablago verwalten) – oder **In die Zwischenablage kopieren**, um es z. B. per E-Mail zu schicken.
 
 Wer Ablago verwaltet, sieht deine Meldung in der Werkbank und meldet sich, falls es Fragen gibt.
+
+Unter dem Formular stehen **Meine Meldungen** – nur deine eigenen, neueste zuerst: Datum, Anfang des Textes und **offen** oder **erledigt am …**. *Erledigt* heißt, die Verwaltung hat sich darum gekümmert. Löscht sie eine Meldung, siehst du sie weiter als *erledigt*, aber nur mit Datum – Text, Bilder und technische Angaben sind dann wirklich gelöscht. Mehr gibt es bewusst nicht: keine Antworten, kein „gelesen“, keine Benachrichtigung.
 
 ## Ablago verwalten { #ablago-verwalten }
 

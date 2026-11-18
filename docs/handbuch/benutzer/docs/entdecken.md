@@ -1,20 +1,21 @@
 # Ablago entdecken
 
-Ablago kann mehr, als man auf den ersten Blick sieht. Damit du nichts suchen musst, gibt es drei ruhige Hilfen: einen **Rundgang** bei der ersten Anmeldung, ab und zu einen **Tipp** auf der Startseite und die Seite **Ablago entdecken**, auf der du alles in Ruhe nachlesen kannst.
+Ablago kann mehr, als man auf den ersten Blick sieht. Damit du nichts suchen musst, gibt es drei ruhige Hilfen: einen **Rundgang** bei der ersten Anmeldung, ab und zu einen **Tipp** im Assistenten unten rechts und die Seite **Ablago entdecken**, auf der du alles in Ruhe nachlesen kannst.
 
 ## Der Rundgang { #rundgang }
 
-Meldest du dich zum ersten Mal an, zeigt dir Ablago in fünf Schritten die wichtigsten Stellen – direkt an der echten Oberfläche:
+Meldest du dich zum ersten Mal an, zeigt dir Ablago in sechs Schritten die wichtigsten Stellen – direkt an der echten Oberfläche:
 
-1. **So ist Ablago aufgebaut:** links die Ansichten, in der Mitte die Liste, rechts die geöffnete Mappe.
+1. **So ist Ablago aufgebaut:** eine Skizze – links die Ansichten, in der Mitte die Liste, rechts die geöffnete Mappe. Sie ist nur ein Bild; die echten Stellen zeigen die nächsten Schritte.
 2. **Etwas Neues ablegen:** über **+ Neu** legst du Post ab; sie wartet unter *Neue Post*, bis du sie einer Mappe zuordnest.
 3. **Finden:** das Suchfeld oben in der Kopfzeile – Enter zeigt alle Treffer; Fragen stellst du, falls eingerichtet, mit [Frag deine Ablage](assistent.md#frag-deine-ablage) im Assistenten unten rechts.
 4. **Zu erledigen und Fristen:** was ansteht – Aufgaben, Erinnerungen und Fristen.
-5. **Dein Konto:** das Menü unter deinem Namen mit *Mein Konto* und *Ablago entdecken*. Wer Ablago verwalten darf, sieht hier auch *Ablago verwalten*.
+5. **Dein Konto:** das Menü unter deinem Namen mit *Mein Konto* – Schriftgröße und Darstellung, Benachrichtigungen, Sicherheit; zurück geht es dort oben mit **‹ Zurück zur Ablage**. Wer Ablago verwalten darf, sieht hier auch *Ablago verwalten*.
+6. **Hilfe ist immer da:** der [Assistent](assistent.md) unten rechts – auf jeder Seite, mit weiteren Tipps, Fragen und dem Handbuch. Dort unter **Tipps** findest du auch diesen und weitere Rundgänge.
 
 ![Erster Schritt des Rundgangs](bilder/rundgang.png)
 
-Jeder Schritt hebt die Stelle hervor, um die es geht; der Rest der Seite ist so lange abgedunkelt. Du kannst dabei nichts versehentlich ändern.
+Jeder Schritt hebt die Stelle hervor, um die es geht; der Rest der Seite ist so lange abgedunkelt. Du kannst dabei nichts versehentlich ändern. Die Karte mit dem Text steht immer am selben Platz – am Rechner unten in der Mitte, am Handy unten über dem Assistenten –, nur die Hervorhebung wandert.
 
 - **Weiter** und **Zurück** blättern, **Fertig** im letzten Schritt schließt den Rundgang.
 - **Überspringen** beendet ihn – er erscheint dann nicht wieder von selbst.
@@ -45,7 +46,7 @@ Den Punkt für den Tipp des Tages schaltest du jederzeit unter [Mein Konto](prof
 
 ## Die Seite „Ablago entdecken“ { #seite }
 
-Du erreichst sie über das Menü unter deinem Namen → **Ablago entdecken**. Sie beginnt mit dem Satz „Was Ablago noch kann, kurz erklärt.“ und hat diese Abschnitte – jeweils nur mit dem, was du nutzen darfst:
+Du erreichst sie über den [Assistenten](assistent.md#tipps) unten rechts → **Tipps** → **Alle Tipps und Rundgänge ›**. Sie beginnt mit dem Satz „Was Ablago noch kann, kurz erklärt.“ und hat diese Abschnitte – jeweils nur mit dem, was du nutzen darfst:
 
 - **Neu seit deinem letzten Besuch** – nur, wenn nach einem Update etwas Neues dazugekommen ist.
 - **Rundgänge** – Ablagos eigener und die der installierten Pakete; mit **Rundgang starten** siehst du einen (noch einmal).

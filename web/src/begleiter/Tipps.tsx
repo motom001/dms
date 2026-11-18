@@ -10,7 +10,8 @@ import s from './Begleiter.module.css';
 
 /**
  * Reiter „Tipps“ im Assistenten (#1219): der Tipp des Tages (#832) als Karte mit „Zeig es mir“ und „Nächster Tipp“,
- * darunter „Alle Tipps ansehen ›“ (Ablago entdecken). Früher stand der Tipp als leise Zeile auf der Startseite.
+ * darunter „Alle Tipps und Rundgänge ›“ (Ablago entdecken) – seit #1331 der einzige Weg dorthin, das Benutzermenü
+ * führt ihn nicht mehr. Früher stand der Tipp als leise Zeile auf der Startseite.
  *
  * Sobald die Karte den Tipp des Tages zeigt, meldet sie ihn als gezeigt – damit verschwindet der Punkt am Knopf.
  * „Nächster Tipp“ blättert durch die übrigen Tipps, die nicht ausgeblendet sind; „Zeig es mir“ schließt das Fenster,

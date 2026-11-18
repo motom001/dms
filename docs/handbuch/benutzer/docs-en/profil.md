@@ -10,13 +10,13 @@ A click on your name at the top right opens a menu:
 - **My account** – your [profile](#profil) with all areas: account, security, appearance (design, font size, home page, highlighting changed folders, column widths), notifications, [absence](#abwesenheit).
 - **Administer Ablago** – only if you may administer: switches into [administration mode](#ablago-verwalten). In the mode, it says **End administration** here.
 - While an absence is in effect, "You are absent" appears at the top of the menu – a click on it leads straight there –, and there is a dot next to your name.
-- **Help** – opens this manual.
-- **Discover Ablago** – the tour and tips to browse, see [Discover Ablago](entdecken.md).
 - **Report a problem** – see [Report a problem](#fehler-melden).
 - **About Ablago** – see [About Ablago](#uber-das-dms).
 - **Sign out**.
 
-Every entry has a small icon in front, so you find it faster.
+Every entry has a small icon in front, so you find it faster. Every path appears only once: the **manual**, the tips and **Discover Ablago** are in the [assistant](assistent.md) at the bottom right, the **network drive** is an area under *My account*.
+
+At the top of *My account*, **‹ Back to the library** takes you back on every page to where you last were in the library – for example after enlarging the font.
 
 ### About Ablago { #uber-das-dms }
 
@@ -184,7 +184,7 @@ Passing on only works to people who may read the respective folder; what doesn't
 
 ## Report a problem { #fehler-melden }
 
-If something doesn't work, choose **Report a problem** in the menu:
+If something doesn't work, choose **Report a problem** in the menu – it is also an area in the sidebar of *My account*:
 
 ![Report a problem](bilder/fehler-melden.png)
 
@@ -194,6 +194,8 @@ If something doesn't work, choose **Report a problem** in the menu:
 4. **Send report** (goes to everyone who administers Ablago) – or **Copy to clipboard**, to send it e.g. by e-mail.
 
 Whoever administers Ablago sees your report in the workbench and gets in touch if there are questions.
+
+Below the form are **My reports** – only your own, newest first: date, the beginning of the text and **open** or **done on …**. *Done* means the administrators have taken care of it. If they delete a report, you still see it as *done*, but only with its date – text, images and technical details are then really deleted. There is deliberately nothing more: no replies, no “read”, no notifications.
 
 ## Administering Ablago { #ablago-verwalten }
 

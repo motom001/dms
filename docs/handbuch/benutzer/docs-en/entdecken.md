@@ -1,20 +1,21 @@
 # Discover Ablago
 
-Ablago can do more than you see at first glance. So that you don't have to search, there are three quiet helpers: a **tour** the first time you sign in, a **tip** on the start page now and then, and the page **Discover Ablago**, where you can read everything at your own pace.
+Ablago can do more than you see at first glance. So that you don't have to search, there are three quiet helpers: a **tour** the first time you sign in, a **tip** in the assistant at the bottom right now and then, and the page **Discover Ablago**, where you can read everything at your own pace.
 
 ## The tour { #rundgang }
 
-The first time you sign in, Ablago shows you the most important places in five steps – right on the real interface:
+The first time you sign in, Ablago shows you the most important places in six steps – right on the real interface:
 
-1. **How Ablago is laid out:** views on the left, the list in the middle, the open folder on the right.
+1. **How Ablago is laid out:** a sketch – views on the left, the list in the middle, the open folder on the right. It is only a picture; the next steps show the real places.
 2. **Filing something new:** with **+ New** you file post; it waits in *New post* until you assign it to a folder.
 3. **Finding things:** the search box at the top, in the header – Enter shows all hits; if set up, you ask questions with [Ask your library](assistent.md#frag-deine-ablage) in the assistant at the bottom right.
 4. **To do and deadlines:** what is coming up – tasks, reminders and deadlines.
-5. **Your account:** the menu under your name with *My account* and *Discover Ablago*. Anyone who may administer Ablago also sees *Administer Ablago* there.
+5. **Your account:** the menu under your name with *My account* – font size and appearance, notifications, security; at the top there, **‹ Back to the library** takes you back. Anyone who may administer Ablago also sees *Administer Ablago* there.
+6. **Help is always there:** the [assistant](assistent.md) at the bottom right – on every page, with more tips, questions and the manual. Under **Tips** there you also find this and other tours.
 
 ![First step of the tour](bilder/rundgang.png)
 
-Each step highlights the place it is about; the rest of the page is dimmed meanwhile. You cannot change anything by accident.
+Each step highlights the place it is about; the rest of the page is dimmed meanwhile. You cannot change anything by accident. The card with the text always stays in the same place – at the bottom centre on a computer, at the bottom above the assistant on a phone –, only the highlight moves.
 
 - **Next** and **Back** move through the steps; **Done** in the last step closes the tour.
 - **Skip** ends it – it will not appear again by itself.
@@ -45,7 +46,7 @@ You can switch the dot for the tip of the day on and off at any time under [My a
 
 ## The page “Discover Ablago” { #seite }
 
-You reach it via the menu under your name → **Discover Ablago**. It begins with the sentence “What else Ablago can do, explained briefly.” and has these sections – each only with what you may use:
+You reach it via the [assistant](assistent.md#tipps) at the bottom right → **Tips** → **All tips and tours ›**. It begins with the sentence “What else Ablago can do, explained briefly.” and has these sections – each only with what you may use:
 
 - **New since your last visit** – only if something new has arrived with an update.
 - **Tours** – Ablago's own and those of the installed packages; with **Start tour** you see one (again).

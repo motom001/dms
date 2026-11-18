@@ -74,4 +74,4 @@
     **Passwort vergessen?** unter der Anmeldung. Verschickt Ablago keine E-Mails, erzeugt dir ein Administrator einen Link.
 
 ??? question "Ich habe einen Fehler gefunden oder einen Wunsch."
-    Im Menü unter deinem Namen → **Fehler melden** (siehe [Mein Konto und Einstellungen](profil.md#fehler-melden)). Wünsche gern auch direkt als [Issue auf GitHub](https://github.com/motom001/dms/issues/new?template=wunsch.md).
+    Im Menü unter deinem Namen → **Fehler melden** (siehe [Mein Konto und Einstellungen](profil.md#fehler-melden)); dort siehst du unter *Meine Meldungen* auch, was daraus geworden ist. Wünsche gern auch direkt als [Issue auf GitHub](https://github.com/motom001/dms/issues/new?template=wunsch.md).

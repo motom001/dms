@@ -5,9 +5,10 @@
 /* Kopf */
 .kopf { position: sticky; top: 0; z-index: var(--ebene-kopf); display: flex; align-items: center; gap: 24px; padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); background: var(--flaeche); border-bottom: 1px solid var(--linie); }
 .bereiche { display: flex; gap: 4px; }
-.bereiche a { padding: 6px 12px; border-radius: 6px; color: var(--leise); text-decoration: none; font-weight: 600; }
+/* #1302: Auch nicht gewählt als Weg erkennbar – dieselbe Reiter-Form mit Rand, nur ohne Fläche. */
+.bereiche a { padding: 5px 11px; border: 1px solid var(--linie-stark); border-radius: 6px; color: var(--tinte); text-decoration: none; font-weight: 600; }
 .bereiche a:hover { background: var(--senke); color: var(--tinte); }
-.bereiche a.an { background: var(--akzent-zart); color: var(--akzent); }
+.bereiche a.an { background: var(--akzent-zart); border-color: var(--akzent-zart); color: var(--akzent); }
 .rumpf { max-width: 1240px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 14px; }
 
 /* ---------- Rahmen und Konto ---------- */
@@ -26,11 +27,14 @@
 .rahmen.ablage, .rahmen.werkbank { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
 .rahmen.ablage .rumpf, .rahmen.werkbank .rumpf { flex: 1; min-height: 0; max-width: none; width: 100%; padding-top: 0; padding-bottom: 0; }
 .drei { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 220px minmax(260px, 360px) minmax(0, 1fr); gap: 0; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 0 calc(-1 * max(16px, env(safe-area-inset-left))); }
+/* Assistent unten rechts (#1219, #1283): am Handy überall – auch in der Werkbank – ein eigener Streifen unten, am Rechner
+   mit Speicherleiste ebenso; sonst Platz unter dem letzten Inhalt (Konto, Ablago entdecken; Spalten: .spalte). */
 @media (min-width: 821px) {
   .rahmen:has(.speicherleiste) .rumpf.rumpf { padding-bottom: 76px; }
+  .rahmen:not(.ablage):not(.werkbank):not(:has(.speicherleiste)) .rumpf.rumpf { padding-bottom: var(--platz-begleiter); }
 }
 @media (max-width: 820px) {
-  .rahmen:not(.werkbank) .rumpf.rumpf { padding-bottom: 76px; }
+  .rahmen .rumpf.rumpf { padding-bottom: 76px; }
 }
 .listenkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .listenkopf h1 { font-size: calc(19px * var(--skala, 1)); }
@@ -242,11 +246,13 @@ dialog.ueber-dms::backdrop { background: var(--schleier); }
     border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
   .benutzermenue .menuepunkt { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* Einträge aus dem Baustein Knopf (Verwaltung, Über Ablago, Abmelden) bündig wie die Links – sonst mittig (#1331). */
+  .benutzermenue .menuepunkt.menuepunkt { justify-content: flex-start; }
   /* Kompakter Kopf (#498): Kopfzeile in einer Zeile, Liste mit mindestens zwei Dritteln für Treffer. */
   .kopf { flex-wrap: nowrap; gap: 8px; }
   .kopf .marke > span:not(.sr) { display: none; }
   .kopf .quelle { display: none; }
-  .kopf .bereiche a { padding: 6px 8px; }
+  .kopf .bereiche a { padding: 5px 7px; }
   .kopf .konto { gap: 8px; }
   .kopf .konto .wer { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
@@ -255,7 +261,7 @@ dialog.ueber-dms::backdrop { background: var(--schleier); }
    der Name im Benutzermenü kürzer (mit „…“), damit nichts über den Rand ragt (WebKit setzt Schrift etwas breiter). */
   .kopf { gap: 4px; }
   .kopf .bereiche { gap: 2px; }
-  .kopf .bereiche a { padding: 6px; }
+  .kopf .bereiche a { padding: 5px; }
   .kopf .konto { gap: 4px; flex: 0 1 auto; }
   .benutzermenue [data-knopf="eigen"].wer { padding-inline: 4px; }
   .benutzermenue [data-knopf="eigen"].wer .wer-name.wer-name { display: inline-block; max-width: 4.5ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
@@ -292,7 +298,6 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
 .benutzermenue [data-knopf="eigen"].wer.wer:hover { text-decoration: none; color: var(--tinte); }
 .benutzermenue [data-knopf="eigen"].wer.an { color: var(--akzent); }
 .wer-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.menuepunkt-extern { width: 14px; height: 14px; vertical-align: -2px; margin-left: 2px; color: var(--leise); }
 
 @media (pointer: coarse) {
   /* Spezifischer als die Regel des Bausteins (.baustein.symbol:not(.klein)), die sonst genau 44 px setzt. */

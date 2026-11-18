@@ -100,7 +100,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Changelog = GitHub Releases.** Der Text kommt aus `docs/releases/<tag>.md` oder, falls es die Datei nicht gibt, aus den Commit-Überschriften seit dem vorigen Tag.
 - **Release bei neuer Versionsnummer (#34).** Steht auf `main` eine Version in `package.json`, zu der es noch keinen Tag gibt, legt „Prüfen und Image bauen“ nach bestandenen Prüfungen das Image mit Versionsnummer und danach Tag und Release an (`release.yml` als wiederverwendbarer Workflow). Nicht bei jedem Commit: So bleibt die Versionsnummer aussagekräftig, und mehrere Wünsche lassen sich bündeln.
 - **Image-Tag im selben Lauf**, weil ein mit dem Workflow-Token angelegter Tag keine weiteren Workflows startet; so braucht es kein zusätzliches Token. Von Hand gepushte Tags und von Hand veröffentlichte Releases funktionieren weiter.
-- **Hilfe-Link** im Benutzermenü auf das Benutzerhandbuch, für Administratoren zusätzlich auf das Administratorhandbuch.
+- **Hilfe-Link** im Benutzermenü auf das Benutzerhandbuch, für Administratoren zusätzlich auf das Administratorhandbuch. Seit #1331 steht das Handbuch im Assistenten unten rechts (in der Werkbank das Admin-Handbuch); das Benutzermenü ist nur noch für das eigene Konto.
 
 ## E-Mail und Adresse in der Werkbank (#37)
 
