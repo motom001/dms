@@ -94,6 +94,7 @@ als_ablago_exec() {
 
 # Schreibprobe als Ablago in einem Ordner.
 schreibbar() {
+  # shellcheck disable=SC2016 # $1 und $$ gehören der inneren Shell
   als_ablago sh -c 'f="$1/.ablago-schreibprobe.$$"; : > "$f" && rm -f "$f"' probe "$1" 2>/dev/null
 }
 

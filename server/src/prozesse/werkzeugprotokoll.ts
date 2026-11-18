@@ -9,6 +9,8 @@
  *   Programm samt allem, was es gestartet hat.
  */
 
+import { WERKZEUG_AUFTRAG_MAX } from '../grundlagen/grenzen';
+
 export interface Auftrag {
   befehl: string;
   args: string[];
@@ -29,7 +31,7 @@ export const RAHMEN = { aus: 1, err: 2, ende: 3, fehler: 4, ein: 5, einEnde: 6 }
 export type RahmenArt = (typeof RAHMEN)[keyof typeof RAHMEN];
 
 /** Längste Zeile des Auftrags (Argumente sind Pfade und Schalter). */
-export const AUFTRAG_MAX = 256 * 1024;
+export const AUFTRAG_MAX = WERKZEUG_AUFTRAG_MAX;
 
 export function rahmen(art: RahmenArt, inhalt: Buffer | string): Buffer {
   const b = typeof inhalt === 'string' ? Buffer.from(inhalt) : inhalt;

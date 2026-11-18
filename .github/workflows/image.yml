@@ -555,7 +555,7 @@ jobs:
       # Einrichtungsskript für den Raspberry Pi (#578); shellcheck ist auf den GitHub-Rechnern vorinstalliert.
       - name: Einrichtungsskript prüfen
         if: matrix.plattform == 'linux/amd64'
-        run: shellcheck deploy/image/einstieg.sh deploy/image/start-hilfen.sh deploy/image/ablago-als.sh deploy/raspberry-pi/einrichten.sh .github/werkzeuge/update-test.sh .github/werkzeuge/stabil-pruefen.sh .github/werkzeuge/stabil-pruefen.test.sh .github/werkzeuge/stabil-bisher.sh .github/werkzeuge/stabil-auswahl.sh .github/werkzeuge/pr-labels.sh .github/werkzeuge/apk-versionen-vergleichen.sh .github/werkzeuge/apk-versionen-vergleichen.test.sh
+        run: shellcheck deploy/image/einstieg.sh deploy/image/start-hilfen.sh deploy/image/ablago-als.sh deploy/image/werkzeug-grenzen.sh deploy/raspberry-pi/einrichten.sh .github/werkzeuge/update-test.sh .github/werkzeuge/stabil-pruefen.sh .github/werkzeuge/stabil-pruefen.test.sh .github/werkzeuge/stabil-bisher.sh .github/werkzeuge/stabil-auswahl.sh .github/werkzeuge/pr-labels.sh .github/werkzeuge/apk-versionen-vergleichen.sh .github/werkzeuge/apk-versionen-vergleichen.test.sh
       # dms-komplett (#208): Ablago und PostgreSQL in einem Container – auf beiden Architekturen.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

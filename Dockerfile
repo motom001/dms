@@ -85,14 +85,17 @@ COPY server/lizenzen server/lizenzen
 COPY shared/entdecken shared/entdecken
 COPY --from=bau /app/web/dist web/dist
 COPY --from=hilfe /hilfe web/dist/hilfe
-# Ohne root (#1354): Start-Hilfen beider Images, Einstieg von dms, Befehle als Benutzer von Ablago (ablago-als).
+# Ohne root (#1354): Start-Hilfen beider Images, Einstieg von dms, Befehle als Benutzer von Ablago (ablago-als),
+# Startprogramm mit den Grenzen der Dokumentwerkzeuge (werkzeug-grenzen).
 COPY deploy/image/start-hilfen.sh /usr/local/lib/ablago/start-hilfen.sh
 COPY deploy/image/einstieg.sh /usr/local/bin/ablago-einstieg
 COPY deploy/image/ablago-als.sh /usr/local/bin/ablago-als
+COPY deploy/image/werkzeug-grenzen.sh /usr/local/lib/ablago/werkzeug-grenzen
 # Benutzer (#1354): ablago (1000, statt node aus dem Basis-Image) für Ablago, ablago-werkzeug (61000) für die
 # Dokumentwerkzeuge; ablago gehört zusätzlich dessen Gruppe an (gemeinsamer Arbeitsordner). /data gehört ablago – so
 # übernimmt ein neues benanntes Docker-Volume die Rechte schon beim Anlegen.
-RUN chmod 644 /usr/local/lib/ablago/start-hilfen.sh && chmod 755 /usr/local/bin/ablago-einstieg /usr/local/bin/ablago-als \
+RUN chmod 644 /usr/local/lib/ablago/start-hilfen.sh \
+  && chmod 755 /usr/local/bin/ablago-einstieg /usr/local/bin/ablago-als /usr/local/lib/ablago/werkzeug-grenzen \
   && { deluser --remove-home node 2>/dev/null || true; } && { delgroup node 2>/dev/null || true; } \
   && addgroup -S -g 1000 ablago && adduser -S -D -H -u 1000 -G ablago -h /tmp -s /sbin/nologin ablago \
   && addgroup -S -g 61000 ablago-werkzeug \

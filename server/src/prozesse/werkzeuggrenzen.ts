@@ -3,15 +3,18 @@
  * anderen Programme, die Ablago für PDFs startet. Gemeinsam für den Werkzeugdienst (werkzeugdienst.ts, eigener Benutzer
  * im Image) und den Aufruf ohne ihn (Entwicklung, Container mit `--user`).
  *
- * - Jedes Programm startet über `sh -c 'ulimit …; exec "$@"'`: Grenzen für Arbeitsspeicher (Adressraum), Rechenzeit
- *   und Größe einer geschriebenen Datei. `ulimit` setzt weiche und harte Grenze; das Programm kann sie nicht anheben.
- *   Das braucht keine Rechte und kein zusätzliches Paket (busybox, dash und bash kennen dieselben Schalter).
+ * - Jedes Programm startet über das Startprogramm `werkzeug-grenzen` (`ulimit …; exec "$@"`): Grenzen für
+ *   Arbeitsspeicher (Adressraum), Rechenzeit und Größe einer geschriebenen Datei. `ulimit` setzt weiche und harte
+ *   Grenze; das Programm kann sie nicht anheben. Das braucht keine Rechte und kein zusätzliches Paket (busybox, dash
+ *   und bash kennen dieselben Schalter).
  * - Wird eine Grenze erreicht, endet nur dieses Programm (Speicher: die Anforderung scheitert; Rechenzeit: SIGXCPU,
  *   dann SIGKILL; Dateigröße: SIGXFSZ). Der Aufrufer bekommt einen gewöhnlichen Fehler wie bei einem kaputten PDF.
  * - Lässt sich eine Grenze nicht setzen, weil schon eine strengere gilt, bleibt die strengere.
  */
 import { accessSync, constants } from 'node:fs';
 import { delimiter, isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { BLOECKE_JE_MB, KB_JE_MB, WERKZEUG_SPEICHER_MB_VORGABE } from '../grundlagen/grenzen';
 
 /** Programme, die der Werkzeugdienst startet. Andere lehnt er ab. */
 const WERKZEUGE: ReadonlySet<string> = new Set([
@@ -32,8 +35,6 @@ const WERKZEUGE: ReadonlySet<string> = new Set([
   'tesseract',
 ]);
 
-/** Vorgabe für den Arbeitsspeicher eines Werkzeugs (MB); `DMS_WERKZEUG_SPEICHER_MB`. */
-export const WERKZEUG_SPEICHER_MB_VORGABE = 1024;
 const WERKZEUG_SPEICHER_MB_MIN = 128;
 const WERKZEUG_SPEICHER_MB_MAX = 65_536;
 /** Rechenzeit je Aufruf (s) – nur als Rückhalt; die Aufrufer setzen eigene, kürzere Zeitgrenzen (Wanduhr). */
@@ -69,16 +70,29 @@ export function werkzeugGrenzenAus(env: Record<string, string | undefined>): Wer
 }
 
 /**
- * Das Skript vor dem Programm: Grenzen setzen, dann das Programm an seine Stelle (`exec`, gleiche PID).
- * $1 Speicher in KB (leer = ohne), $2 Rechenzeit in s, $3 Dateigröße in Blöcken zu 512 Byte, danach das Programm.
+ * Das Startprogramm vor dem Werkzeug (deploy/image/werkzeug-grenzen.sh, im Image unter /usr/local/lib/ablago): setzt
+ * die Grenzen und ersetzt sich dann durch das Werkzeug (`exec`, gleiche PID). Ein festes Programm statt `sh -c`: Die
+ * Argumente des Werkzeugs gehen unverändert über "$@" weiter.
  */
-const SKRIPT =
-  'if [ -n "$1" ]; then ulimit -v "$1" 2>/dev/null || :; fi; ulimit -t "$2" 2>/dev/null || :; ulimit -f "$3" 2>/dev/null || :; shift 3; exec "$@"';
+const STARTER = [
+  '/usr/local/lib/ablago/werkzeug-grenzen',
+  // Entwicklung und Tests: im Repository, von server/src/prozesse bzw. server/dist aus.
+  fileURLToPath(new URL('../../../deploy/image/werkzeug-grenzen.sh', import.meta.url)),
+  fileURLToPath(new URL('../../deploy/image/werkzeug-grenzen.sh', import.meta.url)),
+];
+let starter: string | null | undefined;
+/** Pfad des Startprogramms; null, wenn es fehlt (dann ohne Grenzen, einmal ein Hinweis vom Aufrufer). */
+export function grenzenStarter(): string | null {
+  if (starter === undefined) starter = STARTER.find((p) => findeProgramm(p) !== null) ?? null;
+  return starter;
+}
 
-/** Aufruf mit Grenzen: `sh` mit dem Skript, danach das Programm (mit vollem Pfad) und seine Argumente. */
+/** Aufruf mit Grenzen: das Startprogramm, die drei Grenzen, dann das Werkzeug (mit vollem Pfad) und seine Argumente. */
 export function mitGrenzen(programm: string, args: readonly string[], g: WerkzeugGrenzen): { befehl: string; args: string[] } {
-  const kb = g.speicherMb === null ? '' : String(g.speicherMb * 1024);
-  return { befehl: '/bin/sh', args: ['-c', SKRIPT, 'werkzeug', kb, String(g.cpuS), String(g.dateiMb * 2048), programm, ...args] };
+  const s = grenzenStarter();
+  if (!s) return { befehl: programm, args: [...args] };
+  const kb = g.speicherMb === null ? '' : String(g.speicherMb * KB_JE_MB);
+  return { befehl: s, args: [kb, String(g.cpuS), String(g.dateiMb * BLOECKE_JE_MB), programm, ...args] };
 }
 
 /** Programm im Suchpfad finden (wie `spawn`); null, wenn es fehlt. So bleibt „fehlt“ ein ENOENT wie ohne Grenzen. */

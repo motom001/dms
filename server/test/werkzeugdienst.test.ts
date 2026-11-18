@@ -11,7 +11,8 @@ import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { execFile, spawn, werkzeugAbschirmung, werkzeugOrdner } from '../src/prozesse/hintergrund';
 import { starteWerkzeugdienst } from '../src/prozesse/werkzeugdienst';
-import { werkzeugGrenzenAus, WERKZEUG_SPEICHER_MB_VORGABE } from '../src/prozesse/werkzeuggrenzen';
+import { WERKZEUG_SPEICHER_MB_VORGABE } from '../src/grundlagen/grenzen';
+import { werkzeugGrenzenAus } from '../src/prozesse/werkzeuggrenzen';
 import { abschirmungText } from '../src/prozesse/werkzeugverbindung';
 
 const tmp = mkdtempSync(join(tmpdir(), 'dms-b-werkzeuge-'));

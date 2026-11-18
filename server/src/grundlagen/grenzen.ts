@@ -210,6 +210,18 @@ export const AUSGABE_GROSS = 64 * MB;
 /** PDF/A aus Ghostscript (Ausgabe geht über stdout). */
 export const AUSGABE_ARCHIV = 256 * MB;
 
+/* ---------- Dokumentwerkzeuge (#1354, prozesse/werkzeuggrenzen.ts) ---------- */
+
+/** Arbeitsspeicher je Aufruf eines Dokumentwerkzeugs (MB), wenn DMS_WERKZEUG_SPEICHER_MB fehlt. */
+export const WERKZEUG_SPEICHER_MB_VORGABE = 1024;
+/** Einheiten für ulimit: -v zählt KB, -f Blöcke zu 512 Byte. */
+export const KB_JE_MB = MB / KB;
+export const BLOECKE_JE_MB = MB / 512;
+/** Längste Zeile eines Auftrags an den Werkzeugdienst (Argumente sind Pfade und Schalter). */
+export const WERKZEUG_AUFTRAG_MAX = 256 * KB;
+/** Vorgabe von node:child_process für `maxBuffer`, wenn der Aufrufer keine setzt. */
+export const AUSGABE_VORGABE = MB;
+
 /* ---------- Sicherung und Platz ---------- */
 
 /** Stücke beim Hochladen einer Sicherung außer Haus (#585). */

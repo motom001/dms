@@ -7,7 +7,7 @@
  * Ablago noch dessen Daten: Der Benutzer darf nur in seinen Arbeitsordner schreiben, `/data` gehört Ablago, und
  * Signale an Ablago oder ein Blick in dessen Umgebung gehen unter einem anderen Benutzer nicht.
  *
- * - Nur Programme aus `WERKZEUGE`, mit vollem Pfad aus dem Suchpfad; die Umgebung ist knapp (Suchpfad, Sprache,
+ * - Nur Programme aus `WERKZEUGE`, mit vollem Pfad aus dem Suchpfad, über das Startprogramm mit den Grenzen; die Umgebung ist knapp (Suchpfad, Sprache,
  *   Zeitzone, fontconfig) – keine Variablen von Ablago.
  * - Jedes Programm in einer eigenen Prozessgruppe: Zeitgrenze erreicht oder Verbindung weg → SIGKILL an die Gruppe.
  * - umask 007: Ausgaben sind für die Gruppe lesbar (Ablago gehört ihr an), für andere nicht.
@@ -133,7 +133,9 @@ function starte(d: Dienst, v: Verbindung, a: Auftrag, rest: Buffer) {
       /* ohne niedrigere Priorität weiter */
     }
   }
-  const zeit = setTimeout(() => beende(k), Math.min(a.zeitMs ?? WERKZEUG_ZEIT_MAX_MS, WERKZEUG_ZEIT_MAX_MS) + NACHLAUF_MS);
+  // Zeitgrenze des Aufrufers, höchstens WERKZEUG_ZEIT_MAX_MS.
+  const grenze = a.zeitMs !== undefined && a.zeitMs > 0 && a.zeitMs < WERKZEUG_ZEIT_MAX_MS ? a.zeitMs : WERKZEUG_ZEIT_MAX_MS;
+  const zeit = setTimeout(() => beende(k), grenze + NACHLAUF_MS);
   k.stdout!.on('data', (b: Buffer) => v.sende(rahmen(RAHMEN.aus, b)));
   k.stderr!.on('data', (b: Buffer) => v.sende(rahmen(RAHMEN.err, b)));
   leiteEingabe(k, v.s, rest);
