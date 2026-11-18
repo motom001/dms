@@ -30,8 +30,9 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 /* Haken für weitere Rollen in der Benutzerverwaltung: nicht wie das Suchfeld der Verweiswahl auf volle Breite ziehen. */
 .rollenwahl input { width: auto; }
 .rollenwahl .haken { align-self: flex-start; }
-/* Werkbank (#921): wer gerade auch im Verwaltungsmodus ist – ruhig, eine Zeile unter dem Balken, ohne Aufforderung. */
-.gerade-im-modus { margin: 0; padding: 6px max(16px, env(safe-area-inset-left)); background: var(--schlecht-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); overflow-wrap: anywhere; }
+/* Werkbank (#921): wer gerade auch im Verwaltungsmodus ist – ruhig, eine Zeile unter der Zeile des Modus, ohne Aufforderung;
+   seit #1252 ohne Rot wie diese. */
+.gerade-im-modus { margin: 0; padding: 6px max(16px, env(safe-area-inset-left)); background: var(--senke); color: var(--tinte); border-bottom: 1px solid var(--linie); overflow-wrap: anywhere; }
 /* Verwaltungsrecht an der Person (#818): Baum der Werkbank-Bereiche unter „Gesamte Verwaltung“. */
 .verwaltungsbaum { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0 26px; }
 /* Ein Ast als FeldGruppe (#1214): Name als Beschriftung, Bereiche eingerückt im Raster darunter. */

@@ -16,6 +16,7 @@ import { Profil } from './profil/Profil';
 import { merkeAblage } from './profil/rueckweg';
 import { Werkbank } from './werkbank/Werkbank';
 import { GeradeImModus } from './werkbank/GeradeImModus';
+import { Verwaltungsbalken } from './verwaltungsbalken';
 import { WartungsBanner } from './wartung';
 import { NeuKnopf, PostAblage } from './ablage/NeuePost';
 import { SucheOben } from './ablage/SucheOben';
@@ -172,16 +173,9 @@ export function App() {
         }}
       />
       <WartungsBanner admin={admin} abgemeldet={() => void aktualisieren()} />
-      {/* Verwaltungsmodus (#819): roter Balken in Werkbank und Ablage, vorgelesen beim Erscheinen. */}
+      {/* Verwaltungsmodus (#819, #1252): in Werkbank und Mein Konto eine ruhige Zeile, in der Ablage der rote Balken. */}
       {admin && !vertretung && (
-        <section className="verwaltungsbalken" aria-labelledby="verwaltungsbalken-titel">
-          <p role="status">
-            <strong id="verwaltungsbalken-titel">{t('konten.verwaltung.balken.titel')}</strong> {t('konten.verwaltung.balken.text')}
-          </p>
-          <Knopf id="verwaltung-beenden" groesse="klein" onClick={verwaltungBeenden}>
-            {t('konten.verwaltung.beenden')}
-          </Knopf>
-        </section>
+        <Verwaltungsbalken ruhig={bereich !== 'ablage' || entdeckenSeite} stand={verwaltungsmodus} beenden={verwaltungBeenden} />
       )}
       {/* #921: nur in der Werkbank und nur im Modus – wer außer mir gerade auch verwaltet. */}
       {admin && !vertretung && bereich === 'werkbank' && <GeradeImModus />}

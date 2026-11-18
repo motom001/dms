@@ -61,7 +61,7 @@ At least one active person who can sign in always keeps **"Full administration"*
     A person with "Full administration" created via [emergency access](notfall.md) is in the list as **"Emergency admin ‹date›"**. The Workbench overview shows a red notice until you have renamed or deactivated them. If that wasn't you, deactivate them immediately.
 
 !!! warning "You don't work in administration mode every day"
-    Whoever manages works in everyday life with the same account – without management permissions. Only "Administer Ablago" in the user menu unlocks them; then there is a red bar at the top, and you see all folders, including locked ones. More under [Who may manage Ablago?](verwalten.md)
+    Whoever manages works in everyday life with the same account – without management permissions. Only "Administer Ablago" in the user menu unlocks them; then there is a quiet line with the time left at the top of the workbench and a red bar in the Library, and you see all folders, including locked ones. More under [Who may manage Ablago?](verwalten.md)
 
 ## Sessions {#sitzungen}
 

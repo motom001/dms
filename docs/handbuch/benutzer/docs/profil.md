@@ -203,7 +203,7 @@ Darfst du Ablago verwalten, arbeitest du im Alltag trotzdem wie alle anderen –
 
 1. Menü unter deinem Namen → **Ablago verwalten**.
 2. Melde dich **erneut an** (Passwort, dazu der Code, falls du die Zwei-Faktor-Anmeldung eingerichtet hast). Hast du dich gerade erst angemeldet, entfällt das.
-3. Oben steht jetzt ein **roter Balken**: „Du verwaltest gerade Ablago.“ Solange er da ist, siehst du in der Ablage alle Mappen, auch gesperrte – öffnest du eine, die du sonst nicht sehen dürftest, steht das in ihrer Historie.
+3. In der Werkbank steht oben eine ruhige Zeile „Verwaltung · noch … Min.“, in der Ablage ein **roter Balken**: „Du verwaltest gerade Ablago.“ Solange der Modus läuft, siehst du in der Ablage alle Mappen, auch gesperrte – öffnest du eine, die du sonst nicht sehen dürftest, steht das in ihrer Historie.
 
 Mit **Verwaltung beenden** (im Balken oder im Menü) bist du zurück im Alltag. Nach 15 Minuten ohne Eingabe endet der Modus von selbst; was du gerade bearbeitest, bleibt erhalten – Ablago fragt nur erneut nach der Anmeldung. Am selben Tag geht es dann mit einem Klick weiter (**Wieder verwalten**). Für besonders heikle Handlungen – etwa das Notfallblatt herunterladen – fragt Ablago das Passwort immer noch einmal ab.
 

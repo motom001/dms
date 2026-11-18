@@ -61,7 +61,7 @@ Mindestens eine aktive Person, die sich anmelden kann, behält immer **„Gesamt
     Eine über den [Notfallzugang](notfall.md) angelegte Person mit „Gesamte Verwaltung“ steht in der Liste als **„Notfall-Admin ‹Datum›“**. Die Übersicht der Werkbank zeigt einen roten Hinweis, bis du ihn umbenannt oder deaktiviert hast. Warst du das nicht, deaktiviere ihn sofort.
 
 !!! warning "Im Verwaltungsmodus arbeitet man nicht täglich"
-    Wer verwaltet, arbeitet im Alltag mit demselben Konto – ohne Verwaltungsrechte. Erst „Ablago verwalten“ im Benutzermenü schaltet sie frei; dann steht oben ein roter Balken, und man sieht alle Mappen, auch gesperrte. Mehr unter [Wer darf Ablago verwalten?](verwalten.md)
+    Wer verwaltet, arbeitet im Alltag mit demselben Konto – ohne Verwaltungsrechte. Erst „Ablago verwalten“ im Benutzermenü schaltet sie frei; dann steht oben in der Werkbank eine ruhige Zeile mit der Restzeit, in der Ablage ein roter Balken, und man sieht alle Mappen, auch gesperrte. Mehr unter [Wer darf Ablago verwalten?](verwalten.md)
 
 ## Sitzungen
 

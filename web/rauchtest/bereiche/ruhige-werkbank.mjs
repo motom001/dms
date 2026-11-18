@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
 import { api, archivfassungAblegen, BASIS, beispielPdf, daten, LENA, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
-import { axePruefen } from '../muster.mjs';
+import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /** Zähler der Ablage (`GET /api/sichten`) umschreiben – z. B. leere Neue Post, ohne die Daten der anderen Tests zu ändern. */
 async function zaehlerSetzen(s, aendern) {
@@ -234,5 +234,60 @@ for (const handy of [false, true])
         for (const v of await axePruefen(s, ['.spalte.sichten', '.spalte.liste'])) funde.push(`${schema}: ${v}`);
       }
       assert.deepEqual(funde, [], `axe auf der Übersicht:\n${funde.join('\n')}`);
+    },
+  );
+
+/* ---------- Verwaltungsmodus: ruhige Zeile in der Werkbank, rot in der Ablage (#1252) ---------- */
+
+for (const handy of [false, true])
+  rauchtest(
+    `Verwaltungsmodus: Werkbank ruhig mit Restzeit, Ablage rot${handy ? ' (Handy)' : ''} (#1252)`,
+    { als: LENA, handy },
+    async (s) => {
+      await s.goto(BASIS + '/ablage/start');
+      await verwalten(s);
+      await s.goto(BASIS + '/werkbank/typen');
+      const oben = s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' });
+      await oben.locator('.vb-zeile').waitFor();
+      // Werkbank: ruhige Zeile mit Restzeit, nichts Rotes, kein Satz in der Statusmeldung.
+      assert.match((await oben.locator('.vb-zeile').textContent()) ?? '', /^Verwaltung · noch 1[45] Min\.$/);
+      assert.equal(((await oben.locator('.vb-satz').textContent()) ?? '').trim(), '', 'kein Satz zum Vorlesen in der Werkbank');
+      const farbe = await oben.evaluate((el) => getComputedStyle(el).backgroundColor);
+      const flaeche = await s.evaluate(() => {
+        const p = document.createElement('div');
+        p.style.background = 'var(--flaeche)';
+        document.body.append(p);
+        const f = getComputedStyle(p).backgroundColor;
+        p.remove();
+        return f;
+      });
+      assert.equal(farbe, flaeche, 'Zeile ohne rote Fläche');
+      const beenden = oben.getByRole('button', { name: 'Verwaltung beenden' });
+      assert.equal(await beenden.getAttribute('data-knopf'), 'neben');
+      if (handy) {
+        // Tippfläche 44 px (unsichtbar über und unter dem kleinen Knopf, #1027) – gemessen wie auf der Musterseite.
+        assert.deepEqual(await tippflaechenPruefen(s, ['.verwaltungsbalken']), [], 'Tippflächen der Zeile');
+        const { breit, sicht } = await s.evaluate(() => ({ breit: document.documentElement.scrollWidth, sicht: innerWidth }));
+        assert.ok(breit <= sicht, 'breiter als der Bildschirm');
+      }
+      const funde = [];
+      for (const schema of ['light', 'dark']) {
+        await schemaWechseln(s, schema);
+        for (const v of await axePruefen(s, ['.verwaltungsbalken'])) funde.push(`Werkbank ${schema}: ${v}`);
+      }
+      await schemaWechseln(s, 'light');
+      // Ablage: der rote Balken mit dem Grund – derselbe Statusbereich bekommt jetzt den Satz (einmal vorgelesen).
+      await s.getByRole('banner').getByRole('link', { name: 'Ablage', exact: true }).click();
+      await oben.getByText('Du siehst auch gesperrte Mappen, und was du öffnest, steht in deren Historie.').waitFor();
+      assert.equal(await oben.locator('.vb-zeile').count(), 0);
+      assert.match((await oben.locator('.vb-satz').textContent()) ?? '', /Du verwaltest gerade Ablago\./);
+      for (const schema of ['light', 'dark']) {
+        await schemaWechseln(s, schema);
+        for (const v of await axePruefen(s, ['.verwaltungsbalken'])) funde.push(`Ablage ${schema}: ${v}`);
+      }
+      // Mein Konto zählt wie die Werkbank.
+      await s.goto(BASIS + '/profil');
+      await oben.locator('.vb-zeile').waitFor();
+      assert.deepEqual(funde, [], `axe am Verwaltungsmodus:\n${funde.join('\n')}`);
     },
   );

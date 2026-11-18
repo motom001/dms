@@ -93,6 +93,23 @@ if (typeof window !== 'undefined')
     );
 const aktiv = () => Date.now() - letzteEingabe < 60_000;
 /**
+ * Restzeit des Verwaltungsmodus (#1252): Wann ging zuletzt eine Anfrage mit Kennzeichen „aktiv“ erfolgreich hinaus? Der
+ * Server verlängert den Modus damit (15 Minuten ab der letzten Aktivität); die ruhige Zeile oben in der Werkbank zählt von
+ * hier aus weiter, ohne den Stand neu zu laden. Vorsichtig gerechnet: Ändernde Anfragen ohne Eingabe zählt sie nicht mit.
+ */
+let aktivGesendet = 0;
+const aktivHoerer = new Set<() => void>();
+export const zuletztAktiv = () => aktivGesendet;
+export function beiAktivitaet(f: () => void): () => void {
+  aktivHoerer.add(f);
+  return () => void aktivHoerer.delete(f);
+}
+function aktivMerken(url: string) {
+  if (/^\/api\/konto\/verwaltung/.test(url)) return;
+  aktivGesendet = Date.now();
+  for (const f of aktivHoerer) f();
+}
+/**
  * Endet der Verwaltungsmodus während der Arbeit oder braucht eine heikle Handlung eine frische Anmeldung (#819), fragt
  * die Oberfläche nur erneut nach der Anmeldung und schickt dieselbe Anfrage danach noch einmal – nichts geht verloren.
  * `true` = bestätigt, noch einmal versuchen.
@@ -172,6 +189,7 @@ export async function heikleDatei(url: string, ersatzname: string, rueckfragen =
 export const stilleAnfrage = <T>(url: string) => anfrageEinmal<T>('GET', url, undefined, true);
 async function anfrageEinmal<T>(methode: string, url: string, body?: unknown, still = false): Promise<T> {
   let r: Response;
+  const gesendetAktiv = aktiv() && !still;
   const start = performance.now();
   const seite = messung.seite;
   try {
@@ -184,7 +202,7 @@ async function anfrageEinmal<T>(methode: string, url: string, body?: unknown, st
         'x-sprache': sprache(),
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         ...(einrichtungscode ? { 'x-einrichtungscode': einrichtungscode } : {}),
-        ...(aktiv() && !still ? { 'x-dms-aktiv': '1' } : {}),
+        ...(gesendetAktiv ? { 'x-dms-aktiv': '1' } : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -208,6 +226,7 @@ async function anfrageEinmal<T>(methode: string, url: string, body?: unknown, st
     merkeAnfrage(methode, url, r.status, daten?.fehler ?? t('oberflaeche.api.fehler', { status: r.status }));
     throw new ApiFehler(r.status, daten?.fehler ?? t('oberflaeche.api.fehler', { status: r.status }), daten?.details);
   }
+  if (gesendetAktiv) aktivMerken(url);
   return daten as T;
 }
 export async function sendeDatei(url: string, datei: Blob): Promise<unknown> {
