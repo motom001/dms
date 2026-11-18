@@ -117,7 +117,7 @@ Ablago no longer runs as administrator (root) inside the container but as its ow
 
 **More settings:**
 
-- `DMS_WERKZEUG_SPEICHER_MB`: memory per call of a document tool in MB (128–65536, default `1024`, `0` = no limit). Raise it only for unusually large pages such as building plans or posters.
+- `DMS_WERKZEUG_SPEICHER_MB`: memory per call of a document tool in MB (128–65536, default `1024`, `0` = no limit). Raise it only for unusually large pages such as building plans, posters or very large scans; when the limit hits, the message names the setting.
 - `docker run --user …` or `user:` in the compose file still works. The container then takes over no folders, and the document tools run as the same user as Ablago (with the same limits).
 - The templates also contain `security_opt: [no-new-privileges:true]`: no process in the container can regain rights afterwards. For an existing compose file the line is optional.
 

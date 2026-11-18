@@ -117,7 +117,7 @@ Ablago läuft im Container nicht mehr als Administrator (root), sondern als eige
 
 **Weitere Einstellungen:**
 
-- `DMS_WERKZEUG_SPEICHER_MB`: Arbeitsspeicher je Aufruf eines Dokumentwerkzeugs in MB (128–65536, Vorgabe `1024`, `0` = ohne Grenze). Größer nur für außergewöhnlich große Seiten wie Baupläne oder Plakate.
+- `DMS_WERKZEUG_SPEICHER_MB`: Arbeitsspeicher je Aufruf eines Dokumentwerkzeugs in MB (128–65536, Vorgabe `1024`, `0` = ohne Grenze). Größer nur für außergewöhnlich große Seiten wie Baupläne, Plakate oder sehr große Scans; greift die Grenze, nennt die Meldung den Schalter.
 - `docker run --user …` bzw. `user:` in der Compose-Datei geht weiterhin. Dann übernimmt der Container keine Ordner, und die Dokumentwerkzeuge laufen unter demselben Benutzer wie Ablago (mit denselben Grenzen).
 - In den Vorlagen steht zusätzlich `security_opt: [no-new-privileges:true]`: Kein Prozess im Container kann danach Rechte zurückgewinnen. Für eine bestehende Compose-Datei ist die Zeile freiwillig.
 
