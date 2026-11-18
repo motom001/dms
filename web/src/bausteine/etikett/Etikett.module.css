@@ -7,6 +7,7 @@
 .gut { background: var(--gruen-zart); color: var(--gruen); }
 .warn { background: var(--warn-zart); color: var(--warn); }
 .schlecht { background: var(--schlecht-zart); color: var(--schlecht); }
+.etikett:global(.klein) { padding: 1px 6px; font-size: calc(11px * var(--skala, 1)); }
 .punkt::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 1px; }
 .text { min-width: 0; overflow-wrap: anywhere; }
 /* Gewählter Eintrag (A1): nur der ✕ ist ein Knopf. */
