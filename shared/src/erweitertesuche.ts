@@ -18,6 +18,7 @@ import { typImLink } from './direktlink';
 import type { Mappentyp } from './model';
 import { bedingungsfelder, bedingungsProblem, OPERATOREN_JE_ART, verschiebe, type Bedingung, type Bedingungsfeld } from './sichten';
 import { t } from './texte';
+import { zahlformat } from './region';
 import { gebietsschema } from './sprache';
 import { leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumIso, zeitraumTage, zeitraumText } from './feldarten';
 
@@ -436,7 +437,7 @@ function zeitraumBedingung(key: string, label: string, e: Feldeingabe, fehler: s
 
 const zahlText = (s: string, betrag: boolean) => {
   const n = zahlAus(s);
-  return n === null ? s : n.toLocaleString(gebietsschema(), betrag ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {});
+  return n === null ? s : zahlformat(gebietsschema(), betrag ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {}).format(n);
 };
 const datumText = (s: string) => {
   const d = datumAus(s);

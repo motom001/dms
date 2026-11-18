@@ -21,6 +21,12 @@
  *   `gruen`, `primaer` an `Knopf`, `KnopfLink` und `knopfAussehen({ className })`. Die Farbe kommt aus der Art: `haupt`
  *   (blau), `anlegen` (grün, „+ …“), `gefahr` (mit Rückfrage). Geprüft werden alle festen Texte im Wert (auch in
  *   Bedingungen und Vorlagen-Texten). Der Bestand beim Einführen steht in `eslint-suppressions.json`.
+ * - `ablago/gemerkte-formate`: auf dem Server und im gemeinsamen Code kein `toLocaleString(…, {…})` (auch
+ *   `toLocaleDateString`, `toLocaleTimeString`) mit Optionen und kein `new Intl.DateTimeFormat`/`Intl.NumberFormat` (#1335).
+ *   Jeder solche Aufruf baut ein neues Format; in Schleifen (Export, Titel, Auskunft) wächst so Speicher außerhalb der
+ *   Halde (#970). Dafür gibt es die gemerkten Formate aus `shared/src/region.ts` (`datumsformat`, `zahlformat`,
+ *   `zeitText`, `tagIn`). Ohne Optionen merkt sich V8 das Format selbst – das bleibt erlaubt. Der Bestand beim
+ *   Einführen steht in `eslint-suppressions.json`; begründete Ausnahmen im Code wie sonst.
  */
 import { builtinRules } from 'eslint/use-at-your-own-risk';
 
@@ -174,6 +180,46 @@ const knopfFarben = {
   },
 };
 
+const TO_LOCALE = new Set(['toLocaleString', 'toLocaleDateString', 'toLocaleTimeString']);
+const INTL_FORMATE = new Set(['DateTimeFormat', 'NumberFormat']);
+/** Eigenschaftsname eines Zugriffs `a.b` bzw. `a['b']`, sonst null. */
+const eigenschaft = (m) =>
+  m?.type === 'MemberExpression'
+    ? m.computed
+      ? m.property.type === 'Literal'
+        ? String(m.property.value)
+        : null
+      : m.property.name
+    : null;
+
+const gemerkteFormate = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'Formate für Datum und Zahl gemerkt statt je Aufruf neu (#1335, #970)' },
+    schema: [],
+    messages: {
+      toLocale:
+        '{{name}} mit Optionen baut je Aufruf ein neues Format (Speicher außerhalb der Halde, #970). Bitte datumsformat, zahlformat oder zeitText aus shared/src/region.ts nehmen.',
+      intl: 'new Intl.{{name}} baut ein neues Format. Bitte datumsformat bzw. zahlformat aus shared/src/region.ts nehmen (gemerkt, #1335).',
+    },
+  },
+  create(context) {
+    return {
+      CallExpression(knoten) {
+        const name = eigenschaft(knoten.callee);
+        if (name && TO_LOCALE.has(name) && knoten.arguments.length >= 2)
+          context.report({ node: knoten, messageId: 'toLocale', data: { name } });
+      },
+      NewExpression(knoten) {
+        const c = knoten.callee;
+        const name = eigenschaft(c);
+        if (name && INTL_FORMATE.has(name) && c.object.type === 'Identifier' && c.object.name === 'Intl')
+          context.report({ node: knoten, messageId: 'intl', data: { name } });
+      },
+    };
+  },
+};
+
 export default {
   meta: { name: 'ablago' },
   rules: {
@@ -181,5 +227,6 @@ export default {
     'handler-laenge': handlerLaenge,
     bausteine,
     'knopf-farben': knopfFarben,
+    'gemerkte-formate': gemerkteFormate,
   },
 };

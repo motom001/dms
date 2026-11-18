@@ -1,4 +1,4 @@
-import { zeitzone } from '../../../shared/src/region';
+import { datumsformat, zeitzone } from '../../../shared/src/region';
 import { verschiebe } from '../../../shared/src/sichten';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 
@@ -91,15 +91,11 @@ export function zeitpunktIn(tag: string, uhrzeit: string, zone = zeitzone()): st
   const [j, m, d] = tag.split('-').map(Number);
   const [h, min] = uhrzeit.split(':').map(Number);
   const wunsch = Date.UTC(j, m - 1, d, h, min);
-  const teile = new Intl.DateTimeFormat('en-US', {
-    timeZone: zone,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const teile = datumsformat(
+    'en-US',
+    { hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' },
+    zone,
+  );
   // Abstand der Ortszeit zu UTC an einem Zeitpunkt (in ms).
   const versatz = (ms: number) => {
     const x = Object.fromEntries(teile.formatToParts(new Date(ms)).map((p) => [p.type, p.value]));

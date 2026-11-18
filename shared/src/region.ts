@@ -124,6 +124,29 @@ export function zahlformat(sprache: string, optionen: Intl.NumberFormatOptions =
 }
 /** Kalendertag JJJJ-MM-TT in der eingestellten Zeitzone. */
 export const tagIn = (d: Date = new Date()) => datumsformat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-/** Wie `Date.toLocaleString` usw., aber in der eingestellten Zeitzone. */
+/** Teile, die ein Datumsformat festlegen; fehlen alle, ergänzt `Date.toLocaleString` Datum und Uhrzeit (ECMA-402). */
+const DATUM_ZEIT_TEILE = [
+  'weekday',
+  'year',
+  'month',
+  'day',
+  'dayPeriod',
+  'hour',
+  'minute',
+  'second',
+  'fractionalSecondDigits',
+  'dateStyle',
+  'timeStyle',
+] as const;
+/**
+ * Wie `Date.toLocaleString(sprache, optionen)`, aber in der eingestellten Zeitzone und mit dem gemerkten Format
+ * ({@link datumsformat}, #1335) statt einem neuen je Aufruf. Ohne Angabe zu Datum oder Uhrzeit wie dort beides in
+ * Ziffern; `zeitText(d, {}, 'sv-SE')` ergibt so „2026-11-18 14:03:05“.
+ */
 export const zeitText = (d: Date, optionen: Intl.DateTimeFormatOptions, sprache = gebietsschema()) =>
-  d.toLocaleString(sprache, { ...optionen, timeZone: aktuell });
+  datumsformat(
+    sprache,
+    DATUM_ZEIT_TEILE.some((k) => optionen[k] !== undefined)
+      ? optionen
+      : { ...optionen, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' },
+  ).format(d);

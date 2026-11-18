@@ -3,7 +3,7 @@
  * Datum und Beträge sind echte Werte (sortier- und rechenbar), Beträge mit ihrer Währung als Format.
  */
 import { zipPuffer } from './zip';
-import { zeitzone } from '../../../shared/src/region';
+import { zeitText } from '../../../shared/src/region';
 
 /** Eine Zelle: Text, Zahl, Ja/Nein, Datum (JJJJ-MM-TT), Zeitpunkt (ISO), Betrag oder Prozent (19 für 19 %, #1035). */
 export type Zelle =
@@ -32,7 +32,7 @@ export function seriell(iso: string, mitZeit = false): number | null {
   const d = mitZeit ? new Date(iso) : new Date(`${iso.slice(0, 10)}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return null;
   // Zeitpunkte in Berliner Zeit, wie in der Oberfläche.
-  const lokal = mitZeit ? new Date(d.toLocaleString('sv-SE', { timeZone: zeitzone() }).replace(' ', 'T') + 'Z') : d;
+  const lokal = mitZeit ? new Date(zeitText(d, {}, 'sv-SE').replace(' ', 'T') + 'Z') : d;
   return (lokal.getTime() - Date.UTC(1899, 11, 30)) / 86400000;
 }
 

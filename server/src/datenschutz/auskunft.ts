@@ -35,7 +35,7 @@ import { planer, textdokumentPdf } from '../pdf';
 import { istUuid } from '../repo';
 import { csv, exportDateien, vollexport, type ExportQuelle } from '../export/vollexport';
 import { ZIP_MAX, zipGroesse, zipStrom, type ZipEintrag } from '../formate/zip';
-import { zeitzone } from '../../../shared/src/region';
+import { datumsformat, zahlformat, zeitText } from '../../../shared/src/region';
 import { mitSprache, t } from '../sprache/sprache';
 import { gebietsschema, sprache } from '../../../shared/src/sprache';
 import { KB, MB } from '../grundlagen/grenzen';
@@ -84,8 +84,8 @@ export const AUSKUNFT_PHASEN = [
 export const auskunftOrdner = (exportOrdner?: string | null) =>
   exportOrdner ? join(exportOrdner, 'auskunft') : join(tmpdir(), 'dms-auskunft');
 
-const zeit = (d: Date) => d.toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'long', timeStyle: 'short' });
-const tag = (d: Date) => new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(d);
+const zeit = (d: Date) => zeitText(d, { dateStyle: 'long', timeStyle: 'short' });
+const tag = (d: Date) => datumsformat('sv-SE').format(d);
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 /** Umfang als ganzer Satzteil aus der Sprachdatei (#729): „3 Einträge“, „1 Dokument“. */
 const eintraege = (anzahl: number) => t('meldungen.auskunft.eintraege', { anzahl });
@@ -250,8 +250,8 @@ function uebersichtHtmlRoh(
   const link = (p: string) => p.split('/').map(encodeURIComponent).join('/');
   const kb = (b: number) =>
     b < MB
-      ? `${Math.max(1, Math.round(b / KB)).toLocaleString(gebietsschema())} KB`
-      : `${(b / MB).toLocaleString(gebietsschema(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
+      ? `${zahlformat(gebietsschema()).format(Math.max(1, Math.round(b / KB)))} KB`
+      : `${zahlformat(gebietsschema(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(b / MB)} MB`;
   const abschnitte = d.typen
     .map((mappentyp) => {
       const ms = d.mappen.filter((m) => m.typId === mappentyp.id);

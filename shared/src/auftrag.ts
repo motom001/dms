@@ -1,4 +1,5 @@
 import { t } from './texte';
+import { zahlformat } from './region';
 import { gebietsschema } from './sprache';
 /**
  * Hintergrundaufträge (#364): Stand mit Phase und Einheit, damit die Oberfläche
@@ -96,7 +97,7 @@ export function schliessePhasen(a: Pick<Auftrag, 'phase' | 'phasen'>): void {
   a.phase = undefined;
 }
 
-const zahl = (n: number) => n.toLocaleString(gebietsschema());
+const zahl = (n: number) => zahlformat(gebietsschema()).format(n);
 
 /** Ein Teil der Anzeige je Phase: „Dokumente erzeugen: 1.326 von 1.907“. */
 export function phasenText(p: AuftragPhase): string {

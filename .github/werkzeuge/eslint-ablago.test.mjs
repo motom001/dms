@@ -73,3 +73,28 @@ test('ablago/bausteine: Links und andere Elemente mit Knopf-Klasse (#1269)', () 
     ],
   });
 });
+
+test('ablago/gemerkte-formate: Formate gemerkt statt je Aufruf neu (#1335)', () => {
+  pruefer.run('gemerkte-formate', ablago.rules['gemerkte-formate'], {
+    valid: [
+      // Ohne Optionen merkt sich V8 das Format selbst.
+      'n.toLocaleString(gebietsschema())',
+      'd.toLocaleDateString("de-DE")',
+      'zahlformat("de-DE", { minimumFractionDigits: 2 }).format(n)',
+      'datumsformat("sv-SE").format(d)',
+      's.toLocaleUpperCase("de-DE")',
+      'new Intl.ListFormat("de", { type: "unit" })',
+      'Intl.DateTimeFormat.supportedLocalesOf(["de"])',
+    ],
+    invalid: [
+      {
+        code: 'n.toLocaleString("de-DE", { minimumFractionDigits: 2 })',
+        errors: [{ messageId: 'toLocale', data: { name: 'toLocaleString' } }],
+      },
+      { code: 'd.toLocaleDateString(l, o)', errors: [{ messageId: 'toLocale', data: { name: 'toLocaleDateString' } }] },
+      { code: 'd["toLocaleTimeString"]("de", {})', errors: [{ messageId: 'toLocale', data: { name: 'toLocaleTimeString' } }] },
+      { code: 'new Intl.DateTimeFormat("sv-SE", { timeZone: z })', errors: [{ messageId: 'intl', data: { name: 'DateTimeFormat' } }] },
+      { code: 'new Intl.NumberFormat("de", { style: "percent" })', errors: [{ messageId: 'intl', data: { name: 'NumberFormat' } }] },
+    ],
+  });
+});

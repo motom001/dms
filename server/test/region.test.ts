@@ -10,6 +10,7 @@ import {
   setzeZeitzone,
   tagIn,
   zahlformat,
+  zeitText,
   zeitzone,
 } from '../../shared/src/region';
 import { heuteIn } from '../../shared/src/sichten';
@@ -105,5 +106,32 @@ describe('Region (#726)', () => {
       formatiere(feld({ typ: 'betrag' }), { betrag: 12.5, waehrung: 'EUR' }),
       (12.5).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }),
     );
+  });
+
+  it('zeitText (#1335): wie Date.toLocaleString in der eingestellten Zone, aber mit gemerktem Format', () => {
+    const zeiten = [new Date('2026-11-15T23:30:05Z'), new Date('2026-03-29T00:59:59Z'), new Date('2026-07-01T12:00:00.250Z')];
+    const faelle: Array<[string, Intl.DateTimeFormatOptions]> = [
+      ['sv-SE', {}],
+      ['de-DE', {}],
+      ['en-GB', {}],
+      ['de-DE', { dateStyle: 'short', timeStyle: 'short' }],
+      ['de-DE', { dateStyle: 'long', timeStyle: 'short' }],
+      ['de-DE', { weekday: 'long' }],
+      ['de-DE', { hour: '2-digit', minute: '2-digit' }],
+      // Zeitzonenname und Ära legen kein Datum fest: wie toLocaleString mit Datum und Uhrzeit.
+      ['de-DE', { timeZoneName: 'short' }],
+      ['en-US', { era: 'short' }],
+    ];
+    for (const zone of ['Europe/Berlin', 'America/New_York']) {
+      setzeZeitzone(zone);
+      for (const d of zeiten)
+        for (const [sprache, o] of faelle)
+          assert.equal(
+            zeitText(d, o, sprache),
+            d.toLocaleString(sprache, { ...o, timeZone: zone }),
+            `${zone} ${sprache} ${JSON.stringify(o)}`,
+          );
+    }
+    assert.equal(zeitText(zeiten[0], {}, 'de-DE'), zeitText(zeiten[0], {}, 'de-DE'));
   });
 });
