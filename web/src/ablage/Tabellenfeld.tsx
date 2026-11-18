@@ -126,7 +126,7 @@ export function Tabellenfeld({
       daten={daten}
       titel={titel}
       fuss={fuss(daten.gesamt - daten.mappen.length)}
-      hinweis={verborgenHinweis(daten, titel)}
+      hinweis={verborgenHinweis(daten, f)}
     />
   );
   return (
@@ -153,14 +153,21 @@ export function Tabellenfeld({
   );
 }
 
-/** „Du siehst 3 von 7 Positionen …“ (#1208), wenn es Zeilen ohne Leserecht gibt; sonst nichts. */
-function verborgenHinweis(daten: { gesamt: number; verborgen: number }, titel: string): ReactNode {
+/**
+ * „Du siehst 3 von 7 Positionen …“ (#1208), wenn es Zeilen ohne Leserecht gibt; sonst nichts. Das Wort ist immer die
+ * Beschriftung der Tabelle in der gewählten Sprache (#1305), nie ein allgemeines „Einträge“ – die Schnittstelle liefert
+ * nur die Zahl (`verborgen`), den Satz baut die Oberfläche.
+ */
+export function verborgenHinweis(
+  daten: { gesamt: number; verborgen: number },
+  f: Pick<Feld, 'label' | 'key' | 'beschriftungen'>,
+): ReactNode {
   if (!(daten.verborgen > 0)) return null;
   const zahl = (n: number) => n.toLocaleString(gebietsschema());
   return (
     <p className="leise klein" data-anker="mappe.tabelle-verborgen">
       <Symbol name="schloss" />{' '}
-      {t('ablage.tabelle.verborgen', { sichtbar: zahl(daten.gesamt), alle: zahl(daten.gesamt + daten.verborgen), name: titel })}
+      {t('ablage.tabelle.verborgen', { sichtbar: zahl(daten.gesamt), alle: zahl(daten.gesamt + daten.verborgen), name: feldLabel(f) })}
     </p>
   );
 }

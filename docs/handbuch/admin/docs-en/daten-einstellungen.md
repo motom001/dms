@@ -1,6 +1,6 @@
-# Settings for backing up
+# Back up data → Settings
 
-**Workbench → Back up data → Settings** gathers lasting settings that apply to the whole library. They used to sit in the middle of the workflows – only the workflows themselves stay there: starting and downloading a [full export](export.md), restoring and emptying in the [bin](papierkorb.md).
+**Workbench → Back up data → Settings** gathers lasting settings that apply to the whole library. In the sidebar the area sits in the group *Back up data* simply as *Settings*; everywhere else – heading, notes, the Workbench search, this manual – it is called by its full path **Back up data → Settings**, so you don't confuse it with the group **Settings** (Region, Languages, Own organisation …). They used to sit in the middle of the workflows – only the workflows themselves stay there: starting and downloading a [full export](export.md), restoring and emptying in the [bin](papierkorb.md).
 
 ## Bin { #papierkorb }
 

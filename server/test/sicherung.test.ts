@@ -182,6 +182,41 @@ describe('Sicherung (#103–#105)', () => {
     assert.equal(sp.hochrechnung.stueck, 2);
   });
 
+  it('alle löschen ohne Sonderschutz (#1310): alle weg, danach räumt die Aufbewahrung nichts Unerwartetes weg', async () => {
+    let jetzt = new Date('2026-11-01T01:00:00Z');
+    const { s } = await aufbau({ jetzt: () => jetzt });
+    const sichere = async (art: 'manuell' | 'automatisch', wann: string) => {
+      jetzt = new Date(wann);
+      assert.ok(await (await s.starte(art, art === 'manuell' ? 'admin@example.org' : 'zeitplan')).fertig, wann);
+    };
+    const neuesteZuerst = async () => (await s.liste()).sort((a, b) => b.meta!.beginn.localeCompare(a.meta!.beginn));
+    await sichere('automatisch', '2026-11-01T01:00:00Z');
+    await sichere('automatisch', '2026-11-02T01:00:00Z');
+    await sichere('manuell', '2026-11-02T09:00:00Z');
+    // Die neueste geprüfte – früher geschützt (#1169) – lässt sich wie jede andere löschen; die Liste ist danach leer.
+    s.pruefe((await neuesteZuerst())[0].name, 'admin');
+    while (s.laeuft()) await new Promise((r) => setTimeout(r, 10));
+    assert.equal((await neuesteZuerst())[0].pruefung?.ok, true);
+    const alle = (await s.liste()).map((x) => x.name);
+    assert.equal(alle.length, 3);
+    for (const name of alle) await s.loesche(name, 'admin@example.org');
+    assert.deepEqual(await s.liste(), []);
+    assert.deepEqual((await readdir(s.ordner)).filter((n) => n.endsWith('.dms-sicherung') || n.endsWith('.json')), []);
+    // Danach: eine neue automatische und eine von Hand. Die Aufbewahrung behält beide – nichts verschwindet nebenbei.
+    await sichere('automatisch', '2026-11-03T01:00:00Z');
+    await sichere('manuell', '2026-11-03T09:00:00Z');
+    assert.deepEqual(await s.raeumeAuf(), []);
+    assert.equal((await s.liste()).length, 2);
+    // Nur die neueste löschen: die ältere bleibt, auch beim nächsten Aufräumen.
+    const [erste, zweite] = await neuesteZuerst();
+    await s.loesche(erste.name, 'admin@example.org');
+    assert.deepEqual(await s.raeumeAuf(), []);
+    assert.deepEqual(
+      (await s.liste()).map((x) => x.name),
+      [zweite.name],
+    );
+  });
+
   it('meldet eine fehlgeschlagene Sicherung einmal', async () => {
     const kaputt: Datenquelle = { ...falscheDaten(), async imSchnappschuss() { throw new Error('Datenbank weg'); } };
     const { s, mails } = await aufbau({ daten: kaputt });

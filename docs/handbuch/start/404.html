@@ -162,8 +162,12 @@
     starteSuche(document.getElementById('suche'), { ordner, sprache: en ? 'en' : 'de', fokus: true });
 
     // Kaputten Link melden: Adresse, Herkunft und Version vorausgefüllt – nie die Adresse der eigenen Installation.
-    // Online (help.ablago.app) die ganze Adresse, sonst nur der Pfad (/hilfe/…). Die Herkunft nur, wenn sie von
-    // help.ablago.app oder ablago.app stammt. Gesendet wird nichts: Erst GitHub zeigt das Formular.
+    // Online (help.ablago.app) die ganze Adresse, sonst nur der Pfad (/hilfe/…). Die Herkunft nur, wenn sie von einer
+    // der HERKUENFTE stammt (#1306): genau dieser Rechnername über https, kein Teilstring, keine weitere Unterdomain.
+    // Jede andere Herkunft – vor allem die eigene Installation – bleibt draußen. Die Auswahl „herkunft“ belegt GitHub
+    // über die Adresse nicht vor (nur Textfelder), sie bleibt deshalb leer. Gesendet wird nichts: Erst GitHub zeigt
+    // das Formular.
+    const HERKUENFTE = ['help.ablago.app', 'ablago.app', 'catalog.ablago.app'];
     const kurz = (s, n = 300) => s.slice(0, n);
     const online = location.hostname === 'help.ablago.app';
     const adresse = kurz(online ? location.origin + location.pathname : location.pathname);
@@ -171,7 +175,7 @@
     const p = new URLSearchParams({ template: 'kaputter-link.yml', title: kurz(`${en ? 'Broken link' : 'Kaputter Link'}: ${location.pathname}`, 200), adresse });
     try {
       const r = document.referrer ? new URL(document.referrer) : null;
-      if (r && (r.hostname === 'help.ablago.app' || r.hostname === 'ablago.app')) p.set('herkunft_genau', kurz(r.origin + r.pathname));
+      if (r && r.protocol === 'https:' && !r.port && HERKUENFTE.includes(r.hostname)) p.set('herkunft_genau', kurz(r.origin + r.pathname));
     } catch { /* keine lesbare Herkunft */ }
     if (version) p.set('version', kurz(version, 40));
     document.getElementById('melden').href = `https://github.com/motom001/dms/issues/new?${p}`;

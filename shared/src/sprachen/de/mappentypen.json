@@ -400,6 +400,7 @@
   "tabelle.waehlen": "Bitte wählen …",
   "tabelle.neu": "Beschriftung von „+ Neu“",
   "tabelle.neu-hilfe": "Steht unter der Tabelle, zum Beispiel „+ Position“. Nur wer den anderen Typ anlegen darf, sieht den Knopf.",
+  "tabelle.beschriftung-hilfe": "Steht auch im Hinweis „Du siehst 3 von 7 …“, wenn jemand nicht alle Zeilen sehen darf – darum am besten in der Mehrzahl: „Positionen“, nicht „Position“.",
   "tabelle.ohne-wert": "Eine Tabelle hat keinen eigenen Wert: Sie zeigt die Mappen nur an – nicht im Export, nicht in Bedingungen, ohne Summen.",
   "tabelle.keine-quelle": "Noch verweist kein Feld auf diesen Typ. Lege erst beim anderen Mappentyp ein Verweisfeld auf diesen an (zum Beispiel „Rechnung“ an der Rechnungsposition).",
   "tabelle.verwendet": "Tabelle {link}",

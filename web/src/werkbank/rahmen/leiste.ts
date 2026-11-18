@@ -1,5 +1,12 @@
 import { t } from '../../sprache';
-import { BEREICHE, bereichName, wartungsPlakette, type Bereichskennung, type Zaehler } from '../../../../shared/src/werkbankansicht';
+import {
+  BEREICHE,
+  bereichLeistenName,
+  bereichName,
+  wartungsPlakette,
+  type Bereichskennung,
+  type Zaehler,
+} from '../../../../shared/src/werkbankansicht';
 import { istOffen } from '../../../../shared/src/auskunft';
 import type { useDaten } from '../../daten';
 import type { WerkbankEintrag } from '../Uebersicht';
@@ -35,7 +42,8 @@ export function leistenEintraege(k: LeistenKontext): WerkbankEintrag[] {
     ...BEREICHE.flatMap((b) => {
       const f = ZUSATZ[b.pfad as Bereichskennung];
       const x = f ? f(k) : {};
-      return x === null ? [] : [{ pfad: b.pfad, name: n(b.pfad), gruppe: b.gruppe, ...x }];
+      // In der Leiste steht die Gruppe darüber: dort der kurze Name (#1310), sonst überall der ganze Weg.
+      return x === null ? [] : [{ pfad: b.pfad, name: bereichLeistenName(b.pfad), gruppe: b.gruppe, ...x }];
     }),
   ];
 }

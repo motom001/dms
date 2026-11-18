@@ -22,6 +22,8 @@ Most integrations only need **numbers**, no content:
 
 More than numbers (filing post, reading folders) works via the other endpoints of API v1 with a key "read only" or "read and write".
 
+The client builds sentences itself; the API returns numbers: for a table (`GET /api/v1/mappen/{id}/tabelle/{feld}`), `verborgen` only says how many rows the key may not read. If a client shows this, it does so like the interface, with the field's label (`label` or `beschriftungen.<language>.label`): "You can see 3 of 7 Items", never a general "entries" (#1305).
+
 ## The same in all clients { #gleich-in-allen-clients }
 
 A client should look and work like Ablago itself: name **Ablago**, terms from the [glossary](https://help.ablago.app/benutzer/aktuell/en/begriffe/) addressing the user as "you", paths the way you click ("Click your name at the top right → My account → Security → API keys"), icons from [Lucide](https://lucide.dev) in the same shapes as the interface, logo and colours only from the folder `marke/` of [dms-website](https://github.com/motom001/dms-website). The exact names of the numbers and triggers are in the CONTRIBUTING of `dms-clients`.
