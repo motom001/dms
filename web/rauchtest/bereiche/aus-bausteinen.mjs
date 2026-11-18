@@ -309,7 +309,7 @@ rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hel
 
 /* ---------- Mein Konto, Entdecken und Systemseiten aus Bausteinen: axe und Tippflächen (#1215) ---------- */
 
-/** Inhalt der Seite und das Benutzermenü – ohne die Kopfzeile selbst (#1218, #1219 bauen sie neu). */
+/** Inhalt der Seite und das Benutzermenü – ohne die Kopfzeile selbst (seit #1218/#1219 mit eigenen Rauchtests, #1271). */
 const KONTO_BEREICHE = ['main.rumpf', '.benutzermenue .menue'];
 
 /** Seiten, die #1215 auf Bausteine umgestellt hat: je Name, Weg, worauf gewartet wird und welcher Bereich zählt. */

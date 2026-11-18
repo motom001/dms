@@ -5,6 +5,8 @@
 .feld { position: relative; display: flex; align-items: center; flex: 1; min-width: 0; }
 .lupe { position: absolute; left: 10px; color: var(--leise); pointer-events: none; }
 .feld input { padding-left: 32px; padding-right: 34px; }
+/* Leer steht kein „×“ da: Platz für den ganzen Platzhalter – sonst schnitt die schmale Leiste „…“ zu „..“ ab (#1271). */
+.feld input:placeholder-shown { padding-right: 10px; }
 .feld input::-webkit-search-cancel-button { appearance: none; }
 .feld input:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 .suchfeld .leeren { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; padding: 0; color: var(--leise); text-decoration: none; }

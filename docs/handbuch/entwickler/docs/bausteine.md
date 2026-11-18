@@ -100,6 +100,7 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Schalter](bausteine-schalter.md) | Etwas ist an oder aus (Funktion, Dienst, Automatisierung) – Schiebeschalter; für Auswahl und Optionen bleibt der Haken |
 | [Etikett](bausteine-etikett.md) | Reines Kennzeichen ohne Rand und ohne Klick (Leitsatz 8): Arten leise, info, gut, warn, schlecht; gewählter Eintrag mit ✕ |
 | [Zahl](bausteine-zahl.md) | Zahl hinter einem Eintrag der Navigation (Leitsatz 9): Menge leise grau, „wartet“ fett, Warnung gelb; die 0 steht immer da |
+| [Kachel](bausteine-kachel.md) | Ein Weg mit einer Zahl, gleich auf Startseite und Werkbank-Übersicht; grün mit Haken nur, wenn leer „erledigt“ heißt |
 | [PaketChip](bausteine-paketchip.md) | Herkunft aus einem Paket: Symbol und Name hinter dem Namen, Tooltip mit Version, Link zur Paketseite |
 | [Eingaben mit Einheit](bausteine-einheit.md) | Zeitraum (Zahl und Einheit, Einzahl/Mehrzahl) und Prozent (Zahl mit „%“) für die Feldarten Zeitraum und Prozent |
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |

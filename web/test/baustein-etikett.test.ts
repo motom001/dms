@@ -39,7 +39,7 @@ g.document ??= {
 g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
-const { Etikett, etikettArt, Aufklapper, Zahl } = await import(WEB + 'bausteine/index.ts');
+const { Etikett, etikettArt, Aufklapper, Zahl, Kachel } = await import(WEB + 'bausteine/index.ts');
 
 const zeichne = (el: React.ReactElement) => renderToStaticMarkup(el);
 const nichts = () => {};
@@ -116,5 +116,23 @@ describe('Baustein Zahl (#1287)', () => {
       .map((d) => readFileSync(`${d.parentPath}/${d.name}`, 'utf8'))
       .join('\n');
     assert.doesNotMatch(css, /\.zaehler\b/);
+  });
+});
+
+describe('Baustein Kachel (#1271)', () => {
+  const k = (p: Record<string, unknown>) => zeichne(h(Kachel, { to: '/ablage/eingang', titel: 'Zu erledigen', ...p }));
+  it('Zahl in der Akzentfarbe, Schlüssel und Anker', () => {
+    const html = k({ wert: 1234, name: 'eingang', anker: 'startseite.zu-erledigen', unter: 'Aufgaben' });
+    assert.match(html, /data-kachel="eingang" data-anker="startseite.zu-erledigen"/);
+    assert.match(html, /<span class="wert">1.234<\/span><span class="unter">Aufgaben<\/span>/);
+  });
+  it('leer: grün mit Haken nur mit leerGut, sonst leise ohne Haken (#1271)', () => {
+    assert.match(k({ wert: 0, leer: 'Nichts zu erledigen', leerGut: true, unter: 'x' }), /data-leer="gut"><svg/);
+    const leise = k({ wert: 0, leer: 'Noch keine' });
+    assert.match(leise, /data-leer="leise">Noch keine</);
+    assert.doesNotMatch(leise, /<svg/);
+  });
+  it('lädt: „…“', () => {
+    assert.match(k({ wert: null }), /class="wert laedt">…</);
   });
 });

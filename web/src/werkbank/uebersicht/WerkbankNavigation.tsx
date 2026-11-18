@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { Link } from '../../ort';
 import { t } from '../../sprache';
-import { Knopf, Suchfeld, Zahl } from '../../bausteine';
+import { Knopf, Reiter, ReiterFlaeche, Suchfeld, Zahl } from '../../bausteine';
 import { bereichPasst, GRUPPEN, type Gruppe } from '../../../../shared/src/werkbankansicht';
 
 /* ---------- Leiste mit Gruppen (#68) ---------- */
@@ -45,74 +45,105 @@ export function WerkbankNavigation({
   const liste = inDerLeiste(eintraege, laedt, sichtbar);
   const gruppen = (Object.keys(GRUPPEN) as Gruppe[]).filter((g) => liste.some((e) => e.gruppe === g));
   const aktiv = liste.find((e) => e.pfad === bereich)?.gruppe ?? null;
-  // Am Handy: erst die Gruppe, dann ihre Einträge; vorausgewählt ist die Gruppe des offenen Bereichs.
+  // Am Handy: erst die Gruppe, dann ihre Einträge; vorausgewählt ist die Gruppe des offenen Bereichs, auf der Übersicht
+  // die erste (ein Reiter ist immer gewählt, #1271).
   const [gewaehlt, setGewaehlt] = useState<Gruppe | null>(aktiv);
   useEffect(() => {
     setGewaehlt(aktiv);
   }, [aktiv]);
+  const schmal = useSchmal();
+  const reiter = gewaehlt && gruppen.includes(gewaehlt) ? gewaehlt : (gruppen[0] ?? null);
   const eintrag = (e: WerkbankEintrag) => navEintrag(e, bereich, zeigen);
-  const warnIn = (g: Gruppe) => liste.some((e) => e.gruppe === g && e.warn);
+  const warnIn = (g: Gruppe) => liste.filter((e) => e.gruppe === g && e.warn).length;
   const benutzt = ausgeblendet.filter((e) => eingerichtet.includes(e.pfad)).length;
   return (
     <>
-      {gruppenwahl({ liste, gruppen, gewaehlt, setGewaehlt, eintrag, warnIn })}
-      <nav className="sichtliste werkbankleiste" aria-busy={laedt || undefined}>
-        <Suchfeld
-          className="werkbanksuche"
-          wert={suche}
-          setze={setSuche}
-          platzhalter={t('werkbank.suche.platzhalter')}
-          beschriftung={t('werkbank.suche.label')}
-        />
-        {treffer &&
-          (treffer.length ? (
-            <div className="wbgruppe gewaehlt">
-              {treffer.map((e) => (
-                <span key={e.pfad} className="wbtreffer">
+      {schmal && gruppenwahl({ liste, gruppen, gewaehlt: reiter, setGewaehlt, eintrag, warnIn })}
+      <Flaeche gruppe={schmal ? reiter : null}>
+        <nav className="sichtliste werkbankleiste" aria-busy={laedt || undefined}>
+          <Suchfeld
+            className="werkbanksuche"
+            wert={suche}
+            setze={setSuche}
+            platzhalter={t('werkbank.suche.platzhalter')}
+            beschriftung={t('werkbank.suche.label')}
+          />
+          {treffer &&
+            (treffer.length ? (
+              <div className="wbgruppe gewaehlt">
+                {treffer.map((e) => (
+                  <span key={e.pfad} className="wbtreffer">
+                    {eintrag(e)}
+                    {e.gruppe && <span className="leise klein">{GRUPPEN[e.gruppe]}</span>}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="leise klein">{t('werkbank.suche.nichts')}</p>
+            ))}
+          {!treffer &&
+            liste
+              .filter((e) => !e.gruppe)
+              .map((e) => (
+                <div key={e.pfad} className="wbgruppe ohne">
                   {eintrag(e)}
-                  {e.gruppe && <span className="leise klein">{GRUPPEN[e.gruppe]}</span>}
-                </span>
+                </div>
               ))}
-            </div>
-          ) : (
-            <p className="leise klein">{t('werkbank.suche.nichts')}</p>
-          ))}
-        {!treffer &&
-          liste
-            .filter((e) => !e.gruppe)
-            .map((e) => (
-              <div key={e.pfad} className="wbgruppe ohne">
-                {eintrag(e)}
+          {ladezeile(laedt, treffer)}
+          {!treffer &&
+            gruppen.map((g) => (
+              <div key={g} className={`wbgruppe ${reiter === g ? 'gewaehlt' : ''}`}>
+                <h3 className="gruppentitel">{GRUPPEN[g]}</h3>
+                {liste.filter((e) => e.gruppe === g).map(eintrag)}
               </div>
             ))}
-        {ladezeile(laedt, treffer)}
-        {!treffer &&
-          gruppen.map((g) => (
-            <div key={g} className={`wbgruppe ${gewaehlt === g ? 'gewaehlt' : ''}`}>
-              <h3 className="gruppentitel">{GRUPPEN[g]}</h3>
-              {liste.filter((e) => e.gruppe === g).map(eintrag)}
-            </div>
-          ))}
-        <p className="ausgeblendet-fuss leise klein">
-          {ausgeblendet.length > 0 && (
-            <>
-              <Knopf groesse="klein" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
-                {alleZeigen
-                  ? t('werkbank.uebersicht.ausgeblendete-verbergen')
-                  : t('werkbank.uebersicht.bereiche-ausgeblendet', {
-                      anzahl: ausgeblendet.length,
-                      wert: benutzt ? t('werkbank.uebersicht.davon-eingerichtet', { benutzt }) : '',
-                    })}
-              </Knopf>
-              {' · '}
-            </>
-          )}
-          <Link to="/werkbank/ansicht" className="verweis">
-            {t('werkbank.uebersicht.werkbank-anpassen')}
-          </Link>
-        </p>
-      </nav>
+          <p className="ausgeblendet-fuss leise klein">
+            {ausgeblendet.length > 0 && (
+              <>
+                <Knopf groesse="klein" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
+                  {alleZeigen
+                    ? t('werkbank.uebersicht.ausgeblendete-verbergen')
+                    : t('werkbank.uebersicht.bereiche-ausgeblendet', {
+                        anzahl: ausgeblendet.length,
+                        wert: benutzt ? t('werkbank.uebersicht.davon-eingerichtet', { benutzt }) : '',
+                      })}
+                </Knopf>
+                {' · '}
+              </>
+            )}
+            <Link to="/werkbank/ansicht" className="verweis">
+              {t('werkbank.uebersicht.werkbank-anpassen')}
+            </Link>
+          </p>
+        </nav>
+      </Flaeche>
     </>
+  );
+}
+
+/** Schmal wie die Handy-Ansicht der Werkbank (bis 820 px): dann Reiter für die Gruppen. */
+function useSchmal() {
+  const abfrage = '(max-width: 820px)';
+  const [an, setAn] = useState(() => typeof matchMedia === 'function' && matchMedia(abfrage).matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const m = matchMedia(abfrage);
+    const f = () => setAn(m.matches);
+    m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, []);
+  return an;
+}
+
+const REITER_ID = 'werkbank-gruppen';
+
+/** Am Handy steht die Leiste als Fläche des gewählten Reiters (#1271); breit ist sie einfach die Leiste. */
+function Flaeche({ gruppe, children }: { gruppe: Gruppe | null; children: ReactNode }) {
+  if (!gruppe) return children;
+  return (
+    <ReiterFlaeche id={REITER_ID} wert={gruppe}>
+      {children}
+    </ReiterFlaeche>
   );
 }
 
@@ -148,7 +179,11 @@ function navEintrag(e: WerkbankEintrag, bereich: string, zeigen: (pfad: string) 
   );
 }
 
-/** Am Handy: erst die Gruppe, dann ihre Einträge (Reiter). */
+/**
+ * Am Handy: erst die Gruppe, dann ihre Einträge – Gruppen als Baustein Reiter (#1271, vorher eine eigene Reiterleiste aus
+ * Knöpfen und Links). Einträge ohne Gruppe (Übersicht) stehen als Link davor, nicht in der Registerliste. Hinweise in einer
+ * Gruppe zeigt der Reiter als gelbe Zahl mit Text für Screenreader („2 mit Hinweis“).
+ */
 function gruppenwahl({
   liste,
   gruppen,
@@ -162,23 +197,32 @@ function gruppenwahl({
   gewaehlt: Gruppe | null;
   setGewaehlt: (g: Gruppe) => void;
   eintrag: (e: WerkbankEintrag) => ReactElement;
-  warnIn: (g: Gruppe) => boolean;
+  warnIn: (g: Gruppe) => number;
 }) {
   return (
-    <div className="gruppenwahl" role="tablist" aria-label={t('werkbank.uebersicht.bereiche-der-werkbank')}>
+    <div className="gruppenwahl">
       {liste.filter((e) => !e.gruppe).map(eintrag)}
-      {gruppen.map((g) => (
-        <Knopf
-          key={g}
-          art="eigen"
-          role="tab"
-          aria-selected={gewaehlt === g}
-          className={`sicht ${gewaehlt === g ? 'an' : ''}`}
-          onClick={() => setGewaehlt(g)}>
-          <span className="nm">{GRUPPEN[g]}</span>
-          {warnIn(g) && <Zahl wert="!" art="warnung" beschriftung={t('werkbank.uebersicht.mit-hinweis')} />}
-        </Knopf>
-      ))}
+      {gewaehlt && (
+        <Reiter
+          id={REITER_ID}
+          wert={gewaehlt}
+          setze={setGewaehlt}
+          beschriftung={t('werkbank.uebersicht.bereiche-der-werkbank')}
+          className="gruppenreiter"
+          wahlen={gruppen.map((g) => {
+            const n = warnIn(g);
+            return {
+              wert: g,
+              text: (
+                <>
+                  {GRUPPEN[g]}
+                  {n > 0 && <Zahl wert={n} art="warnung" beschriftung={t('werkbank.uebersicht.mit-hinweis-zahl', { anzahl: n })} />}
+                </>
+              ),
+            };
+          })}
+        />
+      )}
     </div>
   );
 }

@@ -361,10 +361,13 @@ export async function keineWaagerechteRolle(s) {
   assert.ok(breit <= sicht, `Die Seite ist am Handy breiter als der Bildschirm (${breit} > ${sicht} px)`);
 }
 
-/** Bereiche der Ablage, die #1211/#1212 umgestellt haben – ohne die Kopfzeile (#1218, #1219 bauen sie neu). */
+/**
+ * Bereiche der Ablage, die #1211/#1212 umgestellt haben – ohne die Kopfzeile: Die ist seit #1218/#1219 neu und hat eigene
+ * Rauchtests (Suchfeld oben, Assistent); hier prüft axe nur die drei Spalten (#1271).
+ */
 export const ABLAGE_BEREICHE = ['.spalte.sichten', '.spalte.liste', '.spalte.mappe'];
 
-/** Mitte und rechte Spalte der Werkbank – ohne Kopfzeile und Bereichsliste (andere Issues). */
+/** Mitte und rechte Spalte der Werkbank – ohne Kopfzeile (eigene Rauchtests seit #1218/#1219) und ohne Bereichsliste (prüft „Navigation: Zahlen ruhig“). */
 export const WERKBANK_BEREICHE = ['.spalte.liste', '.spalte.mappe'];
 
 /** Werkbank → Ablaufvorlage → Ausprobieren (#1176): Mappe „Bohrhammer“ wählen und den Dialog als Probe öffnen. */

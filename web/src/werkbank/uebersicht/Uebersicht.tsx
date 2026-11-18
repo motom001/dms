@@ -3,7 +3,7 @@ import { Link } from '../../ort';
 import { t, tn } from '../../sprache';
 import { useHandbuch } from '../../Hilfe';
 import { Listenkopf } from '../../Listenkopf';
-import { Etikett, etikettArt, Knopf, KnopfLink } from '../../bausteine';
+import { Etikett, etikettArt, Kachel, Kacheln, Knopf, KnopfLink } from '../../bausteine';
 import { Akzeptieren, BewusstAkzeptiert } from './Akzeptieren';
 import { bytes, datum, zahl } from './hilfen';
 import type { UebersichtZustand } from './zustand';
@@ -28,7 +28,7 @@ export function UebersichtListe({ u }: { u: UebersichtZustand }) {
       {/* Am Handy steht die Übersicht in der Liste: zuerst die Kacheln (#816), darunter die Meldungen. */}
       {u.stand && (
         <div className="nur-schmal-block">
-          <Kacheln s={u.stand} />
+          <UebersichtKacheln s={u.stand} />
         </div>
       )}
       {!u.stand ? (
@@ -91,7 +91,7 @@ export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
       ) : (
         <>
           {/* Erst, was alles zu tun ist (Kacheln), darunter die konkreten Meldungen – rot, gelb, Hinweise (#816). */}
-          <Kacheln s={s} />
+          <UebersichtKacheln s={s} />
           {h.length ? (
             h.map((x) => (
               <div key={x.schluessel} className={`hinweis ${x.art === 'info' ? '' : x.art} hinweiszeile`}>
@@ -118,19 +118,20 @@ export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
   );
 }
 
-function Kacheln({ s }: { s: WerkbankUebersicht }) {
+/** Kacheln der Übersicht (#816) – derselbe Baustein wie auf der Startseite der Ablage (#1271, #1284). */
+function UebersichtKacheln({ s }: { s: WerkbankUebersicht }) {
   return (
-    <div className="kacheln">
+    <Kacheln>
       <Kachel
         titel={t('werkbank.uebersicht.aufgaben-2')}
-        ziel="/werkbank/aufgaben"
-        wert={zahl(s.aufgaben.offen)}
+        to="/werkbank/aufgaben"
+        wert={s.aufgaben.offen}
         unter={t('werkbank.uebersicht.offen')}
       />
       <Kachel
         titel={t('werkbank.uebersicht.texterkennung')}
-        ziel="/werkbank/texterkennung"
-        wert={s.texterkennung ? zahl(s.texterkennung.wartet + s.texterkennung.laeuft) : '–'}
+        to="/werkbank/texterkennung"
+        wert={s.texterkennung ? s.texterkennung.wartet + s.texterkennung.laeuft : '–'}
         unter={
           s.texterkennung
             ? t('werkbank.uebersicht.in-der-warteschlange-mit', { zahl: zahl(s.texterkennung.fehler) })
@@ -139,8 +140,8 @@ function Kacheln({ s }: { s: WerkbankUebersicht }) {
       />
       <Kachel
         titel={t('werkbank.uebersicht.papierkorb')}
-        ziel="/werkbank/papierkorb"
-        wert={zahl(s.papierkorb.anzahl)}
+        to="/werkbank/papierkorb"
+        wert={s.papierkorb.anzahl}
         unter={
           s.papierkorb.tage
             ? s.papierkorb.aeltester
@@ -151,15 +152,15 @@ function Kacheln({ s }: { s: WerkbankUebersicht }) {
       />
       <Kachel
         titel={t('werkbank.uebersicht.gemeldete-fehler-2')}
-        ziel="/werkbank/fehlermeldungen"
-        wert={s.fehlermeldungen === null ? '–' : zahl(s.fehlermeldungen)}
+        to="/werkbank/fehlermeldungen"
+        wert={s.fehlermeldungen === null ? '–' : s.fehlermeldungen}
         unter={t('werkbank.uebersicht.offen')}
       />
       {s.bestand && (
         <Kachel
           titel={t('werkbank.uebersicht.bestand')}
-          ziel="/werkbank/anbindung"
-          wert={zahl(s.bestand.mappen)}
+          to="/werkbank/anbindung"
+          wert={s.bestand.mappen}
           unter={t('werkbank.uebersicht.mappen-dokumente-benutzer', {
             zahl: zahl(s.bestand.dokumente),
             bytes: bytes(s.bestand.dokumenteBytes),
@@ -169,7 +170,7 @@ function Kacheln({ s }: { s: WerkbankUebersicht }) {
       )}
       <Kachel
         titel={t('werkbank.uebersicht.version')}
-        ziel="/werkbank/systemzustand#version"
+        to="/werkbank/systemzustand#version"
         wert={s.version.version}
         unter={
           s.version.commit
@@ -177,16 +178,6 @@ function Kacheln({ s }: { s: WerkbankUebersicht }) {
             : t('werkbank.uebersicht.unter-systemzustand-auf-updates')
         }
       />
-    </div>
-  );
-}
-
-function Kachel({ titel, wert, unter, ziel }: { titel: string; wert: string; unter: string; ziel: string }) {
-  return (
-    <Link to={ziel} className="kachel">
-      <span className="ueber">{titel}</span>
-      <span className="wert">{wert}</span>
-      <span className="leise klein">{unter}</span>
-    </Link>
+    </Kacheln>
   );
 }

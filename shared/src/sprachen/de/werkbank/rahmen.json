@@ -250,6 +250,7 @@
   "listensuche.auskunft.alle-zeigen": "Alle zeigen",
   "bereich.ablaufvorlagen.name": "Automatisierungsvorlagen",
   "bereich.ablaufvorlagen.wann": "Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird",
+  "bereich.ablaufvorlagen.leiste": "Vorlagen für Automatisierungen",
   "bereich.rundgaenge.name": "Rundgänge",
   "bereich.rundgaenge.wann": "Wenn ihr im Betrieb eigene Rundgänge schreiben oder Rundgänge ein- und ausschalten wollt – kurze Führungen an der echten Oberfläche.",
   "bereich.tipps.name": "Tipps",

@@ -82,6 +82,7 @@ nav:
       - Switch: bausteine-schalter.md
       - Tag: bausteine-etikett.md
       - Number: bausteine-zahl.md
+      - Tile: bausteine-kachel.md
       - Package chip: bausteine-paketchip.md
       - Inputs with a unit: bausteine-einheit.md
       - Table: bausteine-tabelle.md

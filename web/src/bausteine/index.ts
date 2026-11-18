@@ -47,6 +47,7 @@ export {
 export { Schalter, type SchalterProps } from './schalter/Schalter';
 export { Aufklapper } from './aufklapper/Aufklapper';
 export { Etikett, etikettArt, type EtikettArt } from './etikett/Etikett';
+export { Kachel, Kacheln, type KachelProps } from './kachel/Kachel';
 export { Zahl, type ZahlArt, type ZahlProps } from './zahl/Zahl';
 export { PaketChip, type PaketChipProps, type PaketHerkunft } from './paketchip/PaketChip';
 export { flaecheId, Reiter, ReiterFlaeche, reiterId, type ReiterProps, type ReiterWahl } from './reiter/Reiter';

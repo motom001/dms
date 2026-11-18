@@ -94,9 +94,6 @@
 /* Startseite (#334): wenige Kacheln, je eine Zahl und eine Handlung */
 .startseite { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
 .kacheltitel { font-weight: 600; }
-/* #1219: Kacheln einheitlich neutral (Fläche, Rand), nur die Zahl in der Akzentfarbe – Grün heißt „gut/erledigt“. */
-.kachelzahl { font-size: 2rem; font-weight: 700; line-height: 1.1; color: var(--akzent); }
-.kachelleer { color: var(--gruen); font-weight: 600; }
 .einstiege { display: flex; flex-direction: column; gap: 10px; }
 .einstiege .kachel { min-height: 0; }
 /* „Erste Post ablegen“ als Sonderform des Knopfs (#1269): Kachel bleibt Kachel, die Beschriftung untereinander. */
@@ -108,11 +105,9 @@
   .zl-kopf .verweis { display: inline-flex; align-items: center; min-height: 44px; }
 }
 .zl-zurueck { display: inline-block; margin: 0 0 4px; }
-/* Startseite über Mitte und rechts (#429): Raster aus Kacheln mit festem Schlüssel (data-kachel), Grundlage für #421. */
-.start-feld { display: grid; }
+/* Startseite über Mitte und rechts (#429): Raster aus Kacheln (Baustein Kachel) mit festem Schlüssel (data-kachel), Grundlage für #421. */
 @media (min-width: 821px) {
   .startseite.start-breit { gap: 24px; }
-  .startseite.start-breit .start-raster { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
   .startseite.start-breit .kachel { min-height: 120px; padding: 18px 20px; }
   .startseite.start-breit .zuletzt .mappenliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 16px; }
 }

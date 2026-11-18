@@ -100,6 +100,7 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Switch](bausteine-schalter.md) | Something is on or off (function, service, automation) – sliding switch; choices and options stay checkboxes |
 | [Tag](bausteine-etikett.md) | Plain label without border and without click (principle 8): kinds quiet, info, good, warn, bad; chosen entry with ✕ |
 | [Number](bausteine-zahl.md) | Number after an entry of the navigation (principle 9): amount quiet grey, “waiting” bold, warning yellow; 0 is always shown |
+| [Tile](bausteine-kachel.md) | A way with a number, the same on start page and workbench overview; green with a tick only when empty means “done” |
 | [Package chip](bausteine-paketchip.md) | Origin from a package: icon and name after the name, tooltip with version, link to the package page |
 | [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |

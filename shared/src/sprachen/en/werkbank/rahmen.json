@@ -250,6 +250,7 @@
   "listensuche.auskunft.alle-zeigen": "Show all",
   "bereich.ablaufvorlagen.name": "Automation templates",
   "bereich.ablaufvorlagen.wann": "Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them",
+  "bereich.ablaufvorlagen.leiste": "Automation templates",
   "bereich.rundgaenge.name": "Tours",
   "bereich.rundgaenge.wann": "When your business wants to write its own tours or switch tours on or off – short guided tours of the real interface.",
   "bereich.tipps.name": "Tips",

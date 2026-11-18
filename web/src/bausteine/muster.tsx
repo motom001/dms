@@ -18,6 +18,7 @@ import { SchalterMuster } from './schalter/muster';
 import { PaketChipMuster } from './paketchip/muster';
 import { EtikettMuster } from './etikett/muster';
 import { ZahlMuster } from './zahl/muster';
+import { KachelMuster } from './kachel/muster';
 import { AufklapperMuster } from './aufklapper/muster';
 import { WahlhakenMuster } from './wahlhaken/muster';
 import { MehrfachauswahlMuster } from './mehrfachauswahl/muster';
@@ -67,6 +68,12 @@ const BAUSTEINE: Musterbereich[] = [
     titel: () => t('oberflaeche.muster.etikett.titel'),
     text: () => t('oberflaeche.muster.etikett.text'),
     Muster: EtikettMuster,
+  },
+  {
+    id: 'kachel',
+    titel: () => t('oberflaeche.muster.kachel.titel'),
+    text: () => t('oberflaeche.muster.kachel.text'),
+    Muster: KachelMuster,
   },
   { id: 'zahl', titel: () => t('oberflaeche.muster.zahl.titel'), text: () => t('oberflaeche.muster.zahl.text'), Muster: ZahlMuster },
   {

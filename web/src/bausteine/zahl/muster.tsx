@@ -26,7 +26,7 @@ export function ZahlMuster() {
   return (
     <div className={s.raster}>
       <Karte zustand="navigation" titel={t('oberflaeche.muster.zahl.navigation')}>
-        <div className="sichtliste">
+        <div className={s.spalte}>
           {ZEILEN.map((z) => (
             <div key={z.name} className="sicht">
               <span className="nm">{t.frei(`oberflaeche.muster.zahl.${z.name}`)}</span>

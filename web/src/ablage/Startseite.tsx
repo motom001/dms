@@ -16,12 +16,13 @@ import { AnsichtSymbol, Symbol } from '../Symbol';
 import { darfPostAnlegen } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sichtName } from '../../../shared/src/beschriftung';
-import { Knopf } from '../bausteine';
+import { Kachel, Kacheln, Knopf } from '../bausteine';
 
 /**
  * Startseite der Ablage (#334), ruhig seit #1219: Begrüßung, vier Kacheln mit je einer Zahl und „Zuletzt geöffnet“.
  * Gesucht wird im Feld oben in der Kopfzeile (#1218); Fragen, Tipp des Tages und Handbuch stehen im Assistenten unten
- * rechts (#1219). Die Kacheln sind einheitlich neutral, nur die Zahl steht in der Akzentfarbe (Grün heißt „gut“).
+ * rechts (#1219). Die Kacheln (Baustein Kachel, #1271) sind einheitlich neutral, nur die Zahl steht in der Akzentfarbe;
+ * grün mit Haken nur, wenn leer „erledigt“ heißt – „Noch keine Favoriten“ steht leise (#1271).
  * Zu erledigen, Neue Post, Nächster Termin (#725, öffnet den Monat), eine wählbare Kachel (Favoriten oder eine Ansicht) und
  * „Zuletzt geöffnet“ (daneben „Alle anzeigen ›“ öffnet die Liste der letzten 25, #940). In einer leeren
  * Installation stattdessen drei Einstiege.
@@ -31,54 +32,7 @@ import { Knopf } from '../bausteine';
  * in dem jede Kachel einen festen Schlüssel (`data-kachel`) hat – Grundlage dafür, sie später
  * frei anzuordnen (#421). Mit geöffneter Mappe steht sie wie jede Liste in der Mitte.
  */
-const zahl = (n: number) => n.toLocaleString(gebietsschema());
 type Startdaten = { zuletzt: Array<{ id: string; typId: string; titel: string; am: string | null }>; leer: boolean };
-
-function Kachel({
-  name,
-  to,
-  titel,
-  anzahl,
-  leer,
-  unter,
-  symbol,
-  anker,
-}: {
-  name: string;
-  to: string;
-  titel: string;
-  anzahl: number | null;
-  leer: string;
-  unter?: string;
-  symbol?: string | null;
-  anker?: string;
-}) {
-  const nichts = anzahl === 0;
-  return (
-    <div className="start-feld" data-kachel={name} data-anker={anker}>
-      <Link to={to} className={`kachel ruhig ${nichts ? 'erledigt' : ''}`}>
-        <span className="kacheltitel">
-          {symbol && (
-            <>
-              <AnsichtSymbol name={symbol} />{' '}
-            </>
-          )}
-          {titel}
-        </span>
-        {anzahl === null ? (
-          <span className="kachelzahl leise">…</span>
-        ) : nichts ? (
-          <span className="kachelleer">
-            <Symbol name="haken" /> {leer}
-          </span>
-        ) : (
-          <span className="kachelzahl">{zahl(anzahl)}</span>
-        )}
-        {unter && !nichts && <span className="kachelunter leise klein">{unter}</span>}
-      </Link>
-    </div>
-  );
-}
 
 /** Kachel „Nächster Termin“ (#725): Datum und Mappe des nächsten Termins; öffnet den Monat in „Zu erledigen“. */
 function TerminKachel({ z }: { z: { termin: Termin | null; ueberfaellig: number } | null }) {
@@ -89,28 +43,18 @@ function TerminKachel({ z }: { z: { termin: Termin | null; ueberfaellig: number 
   };
   const x = z?.termin;
   return (
-    <div className="start-feld" data-kachel="termin" data-anker="startseite.termin" onClickCapture={zumMonat}>
-      <Link to="/ablage/eingang" className={`kachel ruhig ${z && !x ? 'erledigt' : ''}`}>
-        <span className="kacheltitel">{t('termine.kachel')}</span>
-        {!z ? (
-          <span className="kachelzahl leise">…</span>
-        ) : !x ? (
-          <span className="kachelleer">
-            <Symbol name="haken" /> {t('termine.kachel.leer')}
-          </span>
-        ) : (
-          <span className="kachelzahl ka-kachel-datum">{datumDe(x.datum)}</span>
-        )}
-        {x && (
-          <span className="kachelunter leise klein">
-            {t.frei(`termine.art.${x.art}`)}: {titelOder(x.mappeTitel)}
-          </span>
-        )}
-        {!!z?.ueberfaellig && (
-          <span className="kachelunter problem klein">{t('termine.kachel.ueberfaellig', { anzahl: z.ueberfaellig })}</span>
-        )}
-      </Link>
-    </div>
+    <Kachel
+      name="termin"
+      anker="startseite.termin"
+      vorher={zumMonat}
+      to="/ablage/eingang"
+      titel={t('termine.kachel')}
+      wert={!z ? null : x ? datumDe(x.datum) : 0}
+      leer={t('termine.kachel.leer')}
+      leerGut
+      unter={x && `${t.frei(`termine.art.${x.art}`)}: ${titelOder(x.mappeTitel)}`}
+      zusatz={!!z?.ueberfaellig && t('termine.kachel.ueberfaellig', { anzahl: z.ueberfaellig })}
+    />
   );
 }
 
@@ -224,14 +168,15 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
             </a>
           </div>
         ) : (
-          <div className="kacheln start-raster">
+          <Kacheln className="start-raster">
             <Kachel
               name="eingang"
               anker="startseite.zu-erledigen"
               to="/ablage/eingang"
               titel={t('ablage.startseite.zu-erledigen')}
-              anzahl={z(d.zaehler.eingang)}
+              wert={z(d.zaehler.eingang)}
               leer={t('ablage.startseite.nichts-zu-erledigen')}
+              leerGut
               unter={t('ablage.startseite.aufgaben-und-mappen-an')}
             />
             {postSicht && (
@@ -240,8 +185,9 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
                 anker="startseite.neue-post"
                 to={`/ablage/${postSicht.id}`}
                 titel={sichtName(postSicht)}
-                anzahl={z(d.zaehler.sichten?.[postSicht.id] ?? 0)}
+                wert={z(d.zaehler.sichten?.[postSicht.id] ?? 0)}
                 leer={t('ablage.startseite.keine-neue-post')}
+                leerGut
                 unter={t('ablage.startseite.noch-nicht-zugeordnet')}
               />
             )}
@@ -250,9 +196,16 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
               <Kachel
                 name="wahl"
                 to={`/ablage/${lieblings.id}`}
-                titel={lieblings.name}
-                symbol={lieblings.symbol}
-                anzahl={z(d.zaehler.sichten?.[lieblings.id] ?? 0)}
+                titel={
+                  lieblings.symbol ? (
+                    <>
+                      <AnsichtSymbol name={lieblings.symbol} /> {lieblings.name}
+                    </>
+                  ) : (
+                    lieblings.name
+                  )
+                }
+                wert={z(d.zaehler.sichten?.[lieblings.id] ?? 0)}
                 leer={t('ablage.startseite.leer')}
               />
             ) : (
@@ -260,11 +213,11 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
                 name="wahl"
                 to="/ablage/favoriten"
                 titel={t('ablage.startseite.favoriten')}
-                anzahl={z(d.zaehler.favoriten ?? 0)}
+                wert={z(d.zaehler.favoriten ?? 0)}
                 leer={t('ablage.startseite.noch-keine-der-stern')}
               />
             )}
-          </div>
+          </Kacheln>
         )}
         {daten && daten.zuletzt.length > 0 && (
           <section
