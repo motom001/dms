@@ -74,7 +74,7 @@ describe('Datenbank nicht erreichbar oder blockiert (#1250)', () => {
       assert.match(text, /Container der Datenbank läuft/);
       assert.match(text, /Protokoll des Containers/);
       assert.match(text, /href="\/hilfe\/admin\/fehlersuche\/#container-logs"/);
-      assert.ok(!text.includes('example.org') && !text.includes('5432'), 'kein Rechnername, keine Adresse');
+      assert.doesNotMatch(text, /example\.org|5432/, 'kein Rechnername, keine Adresse');
     } finally {
       await s.schliesse();
     }
