@@ -134,8 +134,11 @@ export function zerlege(md: string): Block[] {
   return bloecke;
 }
 
-/** Name einer Erwähnung im reinen Text; Vorgabe: der eingesetzte Titel, sonst „Erwähnung“ (#1293). */
-export type ErwaehnungsName = (id: string, gespeichert: string) => string;
+/**
+ * Name einer Erwähnung im reinen Text; Vorgabe: der eingesetzte Titel, sonst „Erwähnung“ (#1293). `benutzer`: alte
+ * Schreibweise `benutzer:` (#56) – die Mappe zeigt sie als Person.
+ */
+export type ErwaehnungsName = (id: string, gespeichert: string, benutzer: boolean) => string;
 
 /** Ersatz, wenn kein Titel eingesetzt ist (#1293): neutral – nennt nichts, was die lesende Person nicht sehen darf. */
 export const erwaehnungsErsatz = (name: string) => name || t('gemeinsam.markdown.erwaehnung');
@@ -148,7 +151,7 @@ const textVon = (teile: Inline[], name: ErwaehnungsName): string =>
         case 'code':
           return t.text;
         case 'erwaehnung':
-          return `@${name(t.id, t.name)}`;
+          return `@${name(t.id, t.name, t.benutzer)}`;
         default:
           return textVon(t.kinder, name);
       }

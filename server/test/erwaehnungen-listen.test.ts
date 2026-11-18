@@ -82,7 +82,7 @@ async function aufbau() {
       rufe(b, 'GET', '/api/mappen/:id/tabelle/:feld', { params: { id: a.id, feld: 'vorgaenge' } }),
       rufe(b, 'GET', '/api/mappen/:id/verweisende', { params: { id: a.id }, query: { typ: vorgang.id, feld: 'akte' } }),
     ]);
-  return { d, markus, lena, geheim, offen, weg, liste, listen, rufe, vorgang };
+  return { d, markus, lena, geheim, offen, weg, liste, listen, rufe, vorgang, route, ich };
 }
 
 describe('Trefferlisten: Titel erwähnter Mappen nach Rechten (#1333)', () => {
@@ -132,6 +132,57 @@ describe('Trefferlisten: Titel erwähnter Mappen nach Rechten (#1333)', () => {
       assert.ok(aufrufe[0].includes(offen.id));
     } finally {
       repo.bezuege = echt;
+    }
+  });
+
+  it('erwähnte Personen: Personenliste und Bezüge folgen demselben Leserecht an der Benutzer-Mappe', async () => {
+    // Die Mappe zeigt eine erwähnte Person mit dem Namen aus /api/personen, die Liste (web: zelle) ebenso; fehlt sie dort,
+    // zeigen beide „Mappe (nicht sichtbar)“ aus der Sichtbarkeit bzw. den maskierten Bezügen. Lena darf hier nur ihre
+    // eigene Benutzer-Mappe lesen – die von Markus nicht.
+    const { d, markus, lena, vorgang, rufe, route, ich } = await aufbau();
+    const benutzerTyp = (await d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
+    await d.berechtigungen.setzeBerechtigungen(
+      benutzerTyp.id,
+      {
+        grund: ALLES,
+        regeln: [
+          {
+            id: 'lena',
+            name: 'Lena nur die eigene',
+            wenn: [
+              { art: 'benutzer', benutzer: [lena.id] },
+              { art: 'eigeneMappe', nicht: true },
+            ],
+            dann: { R: 'entziehen' },
+            stopp: true,
+          },
+        ],
+      },
+      true,
+    );
+    const text = `Mit ${erwaehnung('', markus.id)} und ${erwaehnung('', lena.id)}`;
+    const quelle = await d.mappen.legeMappeAn({ typId: vorgang.id, werte: { name: 'Besprechung', text } }, markus.id);
+    const personen = async (b: { id: string }) =>
+      (await route('GET', '/api/personen').handler({ body: {}, params: {}, query: {}, ip: '1', benutzer: await ich(b.id) })).body as Array<{
+        id: string;
+        name: string;
+      }>;
+    for (const [b, sichtbar] of [
+      [markus, { [markus.id]: 'Markus', [lena.id]: 'Lena' }],
+      [lena, { [lena.id]: 'Lena' }],
+    ] as const) {
+      const namen = Object.fromEntries(
+        (await personen(b)).filter((p) => p.id === markus.id || p.id === lena.id).map((p) => [p.id, p.name]),
+      );
+      assert.deepEqual(namen, sichtbar, `Personenliste für ${b.id}`);
+      const l = await rufe(b, 'GET', '/api/mappen', { query: { sicht: `typ:${vorgang.id}` } });
+      assert.ok(l.mappen.some((m) => m.id === quelle.id));
+      // Gleiche Regel: in der Personenliste ⇔ Benutzer-Mappe in den Bezügen lesbar; sonst maskiert, ohne Namen.
+      for (const id of [markus.id, lena.id]) assert.equal(!l.bezuege[id]?.verborgen, id in namen, `${b.id}: ${id}`);
+      if (b === lena) {
+        assert.deepEqual({ ...l.bezuege[markus.id], titel: '' }, { titel: '', typId: '', verborgen: true });
+        assert.ok(!JSON.stringify(l.bezuege).includes('Markus'));
+      }
     }
   });
 });

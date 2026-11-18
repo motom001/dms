@@ -136,7 +136,7 @@ function VerweisTabelle({
                   if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel);
                 }}>
                 {spalten.map((k, i) => {
-                  const text = zelle(k, m, typ, daten.bezuege, d.person);
+                  const text = zelle(k, m, typ, daten.bezuege, d);
                   return (
                     <td key={k} className={rechts(k) ? 'rechts' : ''}>
                       {i === 0 ? <Link to={ziel}>{text || titelOder(m.titel)}</Link> : text}

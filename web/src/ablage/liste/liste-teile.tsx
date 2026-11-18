@@ -238,7 +238,7 @@ function AboSchalter({ l, m }: { l: ListeKern; m: Mappe }) {
 function MappenEintrag({ l, m, i }: { l: ListeKern; m: Mappe; i: number }) {
   const { p, s, d, wahl, anhang } = l;
   const typ = d.typ(m.typId);
-  const k = kompakt(m, { liste: p.listenSpalten ?? [], einTyp: !!p.typ, typ, bezuege: s.bezuege, person: d.person });
+  const k = kompakt(m, { liste: p.listenSpalten ?? [], einTyp: !!p.typ, typ, bezuege: s.bezuege, namen: d });
   return (
     <li
       className={`mit-stern${wahl ? ' mit-haken' : ''}${wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}${s.geaendert.has(m.id) ? ' abo-geaendert' : ''}`}

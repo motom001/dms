@@ -15,7 +15,7 @@ import { gebietsschema } from '../../../../shared/src/sprache';
 import type { Bezuege } from '../../api/mappen';
 import { titelOder } from '../../seiten';
 import { t } from '../../sprache';
-import { zelle } from '../spalten';
+import { zelle, type Namen } from '../spalten';
 
 export const zahl = (n: number) => n.toLocaleString(gebietsschema());
 
@@ -63,16 +63,10 @@ export const absenderFehlt = (typ: Mappentyp | undefined, m: Mappe) =>
 /** Kompakter Eintrag: mit Trefferliste Spalte 1 fett, 2 und 3 darunter; sonst Titel und zwei Nebenfelder (bzw. der Typ). */
 export function kompakt(
   m: Mappe,
-  {
-    liste,
-    einTyp,
-    typ,
-    bezuege,
-    person,
-  }: { liste: string[]; einTyp: boolean; typ: Mappentyp | undefined; bezuege: Bezuege; person: (id: string | null) => string },
+  { liste, einTyp, typ, bezuege, namen }: { liste: string[]; einTyp: boolean; typ: Mappentyp | undefined; bezuege: Bezuege; namen: Namen },
 ) {
   if (liste.length) {
-    const [a, ...rest] = liste.slice(0, 3).map((k) => zelle(k, m, typ, bezuege, person));
+    const [a, ...rest] = liste.slice(0, 3).map((k) => zelle(k, m, typ, bezuege, namen));
     // Post ohne „von“ (#494): Hinweis zum Ergänzen beim Zuordnen, auch wenn die Spalte nicht unter den ersten drei ist.
     if (absenderFehlt(typ, m) && liste.includes('von')) rest.push(t('ablage.ablage.absender-fehlt'));
     return { titel: a || titelOder(m.titel), unter: rest.filter(Boolean).join(' · ') };

@@ -118,7 +118,7 @@ export function Tabelle(p: {
                   <Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} />
                 </td>
                 {p.spalten.map((k, i) => {
-                  const text = zelle(k, m, typ, p.bezuege, d.person);
+                  const text = zelle(k, m, typ, p.bezuege, d);
                   // Post ohne Absender (#494): „–“ als Hinweis zum Ergänzen beim Zuordnen.
                   const fehlt = i > 0 && k === 'von' && absenderFehlt(typ, m);
                   return (
