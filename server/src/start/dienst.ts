@@ -7,7 +7,7 @@ import { pgRepo } from '../repo/pg';
 import { mitPruefung, ordnerSpeicher, beiFehlenderDatei } from '../dateien/dateispeicher';
 import { pgBetriebSpeicher } from '../einstellungen/betrieb';
 import { pgEinstellungen } from '../einstellungen/einstellungen';
-import { pgJournal, setzeNachweisjournal, Nachweisjournal, merkeVersion } from '../protokoll/nachweisjournal';
+import { pgJournal, setzeNachweisjournal, Nachweisjournal, merkeVersion, SAMMELN_MS } from '../protokoll/nachweisjournal';
 import { eigeneVersion } from '../system/system';
 import { Konten } from '../konten';
 import { pgKontoRepo } from '../konten/konto-repo';
@@ -36,11 +36,12 @@ export async function baueDienst(bisher: Bisher) {
     },
   );
   // Nachweis-Journal (#1053): Fehlanmeldungen, Rechteänderungen, Updates, Paket-Verlauf, Wartung … je Monat für Pakete.
-  // Seit #1253 in eigenen Tabellen; das alte Format aus den Einstellungen übernimmt es gleich beim Start.
+  // Seit #1253 in eigenen Tabellen; das alte Format aus den Einstellungen übernimmt es gleich beim Start. Fehlanmeldungen
+  // gesammelt (#1415): je Prozess höchstens alle SAMMELN_MS eine Anweisung statt einer je Versuch auf dieselbe Zeile.
   const nachweisEinstellungen = pgEinstellungen(sql, cfg.haushalt);
   const nachweisSpeicher = pgJournal(sql, cfg.haushalt);
   void nachweisSpeicher.uebernimm();
-  setzeNachweisjournal(new Nachweisjournal(nachweisSpeicher));
+  setzeNachweisjournal(new Nachweisjournal(nachweisSpeicher, undefined, SAMMELN_MS));
   void merkeVersion(nachweisEinstellungen, eigeneVersion()).catch((e) =>
     log.warn('Version für die Nachweise nicht gemerkt', { fehler: (e as Error).message }),
   );

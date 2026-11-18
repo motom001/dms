@@ -13,6 +13,16 @@
  * weg. Was sich wiederholen kann (fehlgeschlagene Sicherungen, #1308), steht als **ein** Eintrag je Tag und Merkmalen
  * mit Anzahl ({@link Nachweisjournal.vermerkeJeTag}): Ein Zeitplan, der jede Nacht scheitert, flutet das Journal nicht. Nie Geheimnisse, nie volle IP-Adressen (Ergänzung Sicherheit: IPv4 /24, IPv6 /48 und „Heimnetz/außen“;
  * unbekannte Konten nur als Anzahl).
+ *
+ * Fehlanmeldungen gesammelt (#1415): Jede Fehlanmeldung zählte eine Zeile je Monat hoch (Versuche bzw. unbekannte
+ * Konten). Bei vielen gleichzeitigen Versuchen warteten alle auf diese eine Zeile und belegten dabei Verbindungen, die
+ * den übrigen Anfragen fehlten (auf dem NAS fast die ganze Rechenzeit der Datenbank). Im Betrieb sammelt jeder Prozess
+ * Fehlanmeldungen darum bis zu `SAMMELN_MS` (oder bis `SAMMELN_HOECHSTENS`) und schreibt sie in **einer** Anweisung:
+ * Zähler um die Anzahl hochzählen, Einträge einfügen, solange der Monat unter der Grenze bleibt. Neu ist nur diese
+ * Verzögerung: Andere Prozesse sehen eine Fehlanmeldung bis zu `SAMMELN_MS` später, der eigene beim Lesen sofort
+ * (`monat` schreibt vorher, was gesammelt ist). Beim Beenden schreibt `leeren` den Rest; nur ein Absturz verliert die
+ * Fehlanmeldungen der letzten Sekunden dieses Prozesses (vorher die gerade laufenden Anweisungen). Mehrere Prozesse
+ * zählen zusammen richtig – jede Anweisung zählt atomar um ihre Anzahl hoch.
  */
 import type postgres from 'postgres';
 import { kuerzeIp, istPrivat } from '../datenschutz/abruf';
@@ -49,6 +59,10 @@ export interface JournalMonat {
 }
 
 export const JE_MONAT = 2000;
+/** Fehlanmeldungen so lange sammeln, bevor dieser Prozess sie schreibt (#1415; im Betrieb, siehe `start/dienst.ts`). */
+export const SAMMELN_MS = 2000;
+/** Spätestens bei so vielen gesammelten Fehlanmeldungen gleich schreiben – begrenzt Speicher und Größe der Anweisung. */
+export const SAMMELN_HOECHSTENS = 500;
 export const MONATE = 25;
 export const monatVon = (d: Date) => d.toISOString().slice(0, 7);
 function monatMinus(monat: string, n: number): string {
@@ -66,6 +80,12 @@ export interface JournalSpeicher {
   /** Eintrag anfügen; ab `grenze` Einträgen im Monat nur noch „weitere“ hochzählen. */
   trageEin(monat: string, e: JournalEintrag, grenze: number): Promise<void>;
   zaehle(monat: string, art: JournalZaehler): Promise<void>;
+  /**
+   * Gesammelte Fehlanmeldungen eines Monats (#1415) in einer Änderung: wie `trageEin` je Eintrag (in dieser Reihenfolge)
+   * und `zaehle` je Zähler, nur auf einmal. Der Zähler der Versuche steigt um alle Einträge, eingefügt wird nur, was
+   * unter `grenze` bleibt.
+   */
+  sammle(monat: string, eintraege: JournalEintrag[], zaehler: Partial<Record<JournalZaehler, number>>, grenze: number): Promise<void>;
   /**
    * Eintrag je Tag (#1308): Gibt es im Monat schon einen Eintrag derselben Art, dessen Daten `gleich` enthalten, zählt
    * er dort `anzahl` hoch und setzt `letzte` auf die Zeit von `e` – ohne neuen Eintrag und ohne den Zähler des Monats.
@@ -98,6 +118,11 @@ export function speicherJournal(): JournalSpeicher {
     async zaehle(k, art) {
       const x = hol(k);
       x.zaehler[art] = (x.zaehler[art] ?? 0) + 1;
+    },
+    async sammle(k, eintraege, zaehler, grenze) {
+      const x = hol(k);
+      for (const e of eintraege) if (++x.versuche <= grenze) x.eintraege.push(structuredClone(e));
+      for (const [art, n] of Object.entries(zaehler) as [JournalZaehler, number][]) x.zaehler[art] = (x.zaehler[art] ?? 0) + n;
     },
     async vermerke(k, e, gleich, grenze) {
       const x = hol(k);
@@ -165,6 +190,34 @@ function fuegeEin(sql: postgres.Sql | postgres.TransactionSql, haushaltId: strin
 }
 
 /**
+ * Gesammelte Fehlanmeldungen (#1415) in einer Anweisung: alle Zähler des Monats um ihre Anzahl hochzählen (Versuche um
+ * die Zahl der Einträge) und die Einträge in ihrer Reihenfolge einfügen, solange der Monat unter der Grenze bleibt – der
+ * neue Stand der Versuche minus die eigenen ergibt, wie viele es vorher waren.
+ */
+function sammleIn(
+  sql: postgres.Sql,
+  haushaltId: string,
+  monat: string,
+  x: { eintraege: JournalEintrag[]; zaehler: Partial<Record<JournalZaehler, number>>; grenze: number },
+) {
+  const { eintraege, zaehler, grenze } = x;
+  const zeilen = [...(eintraege.length ? [[VERSUCHE, eintraege.length] as const] : []), ...Object.entries(zaehler)]
+    .filter(([, n]) => !!n)
+    .map(([art, n]) => ({ haushalt_id: haushaltId, monat, art, anzahl: n }));
+  if (!zeilen.length) return Promise.resolve();
+  return sql`
+    WITH z AS (
+      INSERT INTO nachweis_zaehler ${sql(zeilen, 'haushalt_id', 'monat', 'art', 'anzahl')}
+      ON CONFLICT (haushalt_id, monat, art) DO UPDATE SET anzahl = nachweis_zaehler.anzahl + EXCLUDED.anzahl RETURNING art, anzahl
+    )
+    INSERT INTO nachweis_journal (haushalt_id, monat, art, zeit, daten)
+    SELECT ${haushaltId}::uuid, ${monat}, x.e->>'art', (x.e->>'zeit')::timestamptz, coalesce(x.e->'daten', '{}'::jsonb)
+    FROM z CROSS JOIN LATERAL jsonb_array_elements(${sql.json(eintraege as unknown as postgres.JSONValue)}::jsonb) WITH ORDINALITY AS x(e, i)
+    WHERE z.art = ${VERSUCHE} AND z.anzahl - ${eintraege.length}::bigint + x.i <= ${grenze}::bigint
+    ORDER BY x.i`;
+}
+
+/**
  * In PostgreSQL. Vor dem ersten Zugriff übernimmt es die alten Monatswerte `nachweise:JJJJ-MM` aus den Einstellungen
  * (nach dem Update und nach dem Einspielen einer älteren Sicherung) – in einer Anweisung: Löschen und Einfügen
  * gelingen zusammen oder gar nicht. Starten mehrere Prozesse zugleich, findet der zweite nichts mehr vor.
@@ -223,6 +276,10 @@ export function pgJournal(sql: postgres.Sql, haushaltId: string): JournalSpeiche
       await sql`INSERT INTO nachweis_zaehler (haushalt_id, monat, art, anzahl) VALUES (${haushaltId}, ${monat}, ${art}, 1)
         ON CONFLICT (haushalt_id, monat, art) DO UPDATE SET anzahl = nachweis_zaehler.anzahl + 1`;
     },
+    async sammle(monat, eintraege, zaehler, grenze) {
+      await vorher();
+      await sammleIn(sql, haushaltId, monat, { eintraege, zaehler, grenze });
+    },
     async raeume(bis) {
       await vorher();
       await sql`DELETE FROM nachweis_journal WHERE haushalt_id = ${haushaltId} AND monat <= ${bis}`;
@@ -231,17 +288,84 @@ export function pgJournal(sql: postgres.Sql, haushaltId: string): JournalSpeiche
   };
 }
 
+/** Gesammelte Fehlanmeldungen eines Monats (#1415) und wer darauf wartet. */
+interface Sammlung {
+  eintraege: JournalEintrag[];
+  zaehler: Partial<Record<JournalZaehler, number>>;
+  warten: Array<{ ja: () => void; nein: (e: Error) => void }>;
+}
+
 export class Nachweisjournal {
   /** Monat, den dieser Prozess schon geräumt hat (einmal je Monat, wie früher beim ersten Eintrag). */
   private geraeumt: string | null = null;
+  /** Gesammelte Fehlanmeldungen je Monat (#1415), ihre Zahl und die Uhr bis zum Schreiben. */
+  private sammlung = new Map<string, Sammlung>();
+  private gesammelt = 0;
+  private uhr: ReturnType<typeof setTimeout> | null = null;
+  /** Gerade laufendes Schreiben – `leeren` wartet auch darauf. */
+  private laufend = new Set<Promise<void>>();
+  /**
+   * `sammelnMs` (#1415): Fehlanmeldungen so lange sammeln und dann gesammelt schreiben; 0 (Vorgabe, Tests) schreibt
+   * jede sofort wie bisher.
+   */
   constructor(
     private readonly speicher: JournalSpeicher,
     private readonly jetzt: () => Date = () => new Date(),
+    private readonly sammelnMs = 0,
   ) {}
 
-  /** Monat lesen (`JJJJ-MM`). */
+  /** Monat lesen (`JJJJ-MM`) – vorher schreiben, was dieser Prozess gesammelt hat. */
   async monat(monat: string): Promise<JournalMonat> {
+    await this.leeren();
     return this.speicher.monat(monat);
+  }
+
+  /** Fehlanmeldung (#1415): gesammelt oder – ohne `sammelnMs` – sofort. Konto nur, wenn es das Konto gibt. */
+  fehlanmeldung(email: string, ip: string, bekannt: boolean): Promise<void> {
+    if (!this.sammelnMs) {
+      return bekannt
+        ? this.schreibe('zugang.fehlanmeldung', { konto: email, netz: kuerzeIp(ip), heimnetz: istPrivat(ip) })
+        : this.zaehle('zugang.fehlanmeldung_unbekannt');
+    }
+    const jetzt = this.jetzt();
+    const monat = monatVon(jetzt);
+    let s = this.sammlung.get(monat);
+    if (!s) this.sammlung.set(monat, (s = { eintraege: [], zaehler: {}, warten: [] }));
+    if (bekannt) {
+      const daten = ohneGeheimnisse({ konto: email, netz: kuerzeIp(ip), heimnetz: istPrivat(ip) });
+      s.eintraege.push({ art: 'zugang.fehlanmeldung', zeit: jetzt.toISOString(), daten });
+    } else s.zaehler['zugang.fehlanmeldung_unbekannt'] = (s.zaehler['zugang.fehlanmeldung_unbekannt'] ?? 0) + 1;
+    const fertig = new Promise<void>((ja, nein) => s.warten.push({ ja, nein }));
+    if (++this.gesammelt >= SAMMELN_HOECHSTENS) void this.leeren();
+    // Die Uhr hält den Prozess bewusst wach (kein unref): Was gesammelt ist, wird auch ohne `leeren` noch geschrieben.
+    else this.uhr ??= setTimeout(() => void this.leeren(), this.sammelnMs);
+    return fertig;
+  }
+
+  /**
+   * Alles Gesammelte jetzt schreiben und auf laufendes Schreiben warten (#1415; beim Beenden und vor dem Lesen).
+   * Scheitert nie; wer auf eine Fehlanmeldung wartet, erfährt den Fehler.
+   */
+  async leeren(): Promise<void> {
+    if (this.uhr) clearTimeout(this.uhr);
+    this.uhr = null;
+    const alle = [...this.sammlung];
+    this.sammlung = new Map();
+    this.gesammelt = 0;
+    for (const [monat, s] of alle) {
+      const p = this.speicher.sammle(monat, s.eintraege, s.zaehler, JE_MONAT).then(
+        () => {
+          for (const w of s.warten) w.ja();
+          this.raeume(monat);
+        },
+        (e: Error) => {
+          for (const w of s.warten) w.nein(e);
+        },
+      );
+      this.laufend.add(p);
+      void p.finally(() => this.laufend.delete(p));
+    }
+    await Promise.all([...this.laufend]);
   }
 
   /** Den Monat räumen, der jetzt zu alt ist – einmal je Monat und Prozess, nebenher. */
@@ -302,14 +426,14 @@ export function nachweisJeTag(art: JournalArt, merkmale: Record<string, Paketdat
   return aktiv.vermerkeJeTag(art, merkmale).catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art, fehler: e.message }));
 }
 
-/** Fehlanmeldung: Konto nur, wenn es das Konto gibt; Adresse gekürzt, dazu Heimnetz oder außen. */
+/**
+ * Fehlanmeldung: Konto nur, wenn es das Konto gibt; Adresse gekürzt, dazu Heimnetz oder außen. Im Betrieb gesammelt
+ * geschrieben (#1415, `SAMMELN_MS`); das Versprechen erfüllt sich, sobald sie geschrieben ist.
+ */
 export function fehlanmeldung(email: string, ip: string, bekannt: boolean): Promise<void> {
   if (!aktiv) return Promise.resolve();
-  if (!bekannt)
-    return aktiv
-      .zaehle('zugang.fehlanmeldung_unbekannt')
-      .catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art: 'zugang.fehlanmeldung_unbekannt', fehler: e.message }));
-  return nachweis('zugang.fehlanmeldung', { konto: email, netz: kuerzeIp(ip), heimnetz: istPrivat(ip) });
+  const art = bekannt ? 'zugang.fehlanmeldung' : 'zugang.fehlanmeldung_unbekannt';
+  return aktiv.fehlanmeldung(email, ip, bekannt).catch((e: Error) => log.warn('Nachweis nicht eingetragen', { art, fehler: e.message }));
 }
 
 /**
