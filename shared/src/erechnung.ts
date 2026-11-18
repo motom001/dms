@@ -14,6 +14,7 @@
 import { artVon, type Vorschlaege } from './erkennung';
 import { vonAussenFuellbar } from './berechnet';
 import type { Betrag, Feld, Mappentyp, Wert } from './model';
+import { zahlformat } from './region';
 import { t } from './texte';
 
 /** Dateinamen eingebetteter E-Rechnungen im PDF (ZUGFeRD, Factur-X, XRechnung im PDF, Order-X). */
@@ -106,7 +107,7 @@ const EINHEITEN: Record<string, string> = {
 };
 export const einheitText = (code: string | undefined): string | undefined => (code ? (EINHEITEN[code.toUpperCase()] ?? code) : undefined);
 
-const zahl = (n: number) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const zahl = (n: number) => zahlformat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 const datum = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
 
 /**

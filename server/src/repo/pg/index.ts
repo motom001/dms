@@ -23,7 +23,7 @@ import { pgNotizen } from './notizen';
 import { pgNummern } from './nummern';
 import { pgPakete, pgPaketVerlauf } from './pakete';
 import { pgDokumentPapierkorb, pgLoeschprotokoll, pgPapierkorb } from './papierkorb';
-import { pgKlauseln, pgSeite, pgZaehler } from './seite';
+import { pgKlauseln, pgSeite, pgTrefferIds, pgZaehler } from './seite';
 import { pgSichten } from './sichten';
 import { pgTexterkennung, pgVolltext } from './texterkennung';
 import { pgPassung, pgTypen } from './typen';
@@ -67,6 +67,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     ...pgSystemmappen(k),
     ...pgVerweise(k),
     ...pgSeite(k),
+    ...pgTrefferIds(k),
     ...pgZaehler(k),
     ...pgKlauseln(k),
     ...pgPakete(k),

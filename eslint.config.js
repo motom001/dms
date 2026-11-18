@@ -85,6 +85,14 @@ export default defineConfig([
   // Keine Farbklassen über className am Knopf (#1210): Die Farbe kommt aus der Art. Bestand beim Einführen in
   // eslint-suppressions.json (Regel ablago/knopf-farben), abgebaut in #1211–#1215.
   { files: ['web/src/**/*.tsx'], rules: { 'ablago/knopf-farben': 'error' } },
+  // Gemerkte Formate (#1335): auf dem Server und im gemeinsamen Code kein toLocaleString(…, {…}) und kein
+  // new Intl.DateTimeFormat/NumberFormat – dafür datumsformat, zahlformat, zeitText aus shared/src/region.ts (die
+  // Datei selbst baut sie). Bestand beim Einführen in eslint-suppressions.json (Regel ablago/gemerkte-formate).
+  {
+    files: ['server/src/**/*.ts', 'shared/src/**/*.ts'],
+    ignores: ['shared/src/region.ts'],
+    rules: { 'ablago/gemerkte-formate': 'error' },
+  },
   // Komponenten sind länger als Funktionen im Server: 260 Zeilen je Funktion.
   { files: ['web/src/**/*.tsx'], rules: { 'max-lines-per-function': ['error', { max: 260, ...ZEILEN }] } },
   // Routendateien (#960): 105 Zeilen je Handler, die äußere Registrierfunktion ist ausgenommen.

@@ -26,8 +26,7 @@ import {
   LOESCHWEGE,
 } from '../../../shared/src/loeschprotokoll';
 import type { Mappe } from '../../../shared/src/model';
-import { zeitzone } from '../../../shared/src/region';
-import { gebietsschema } from '../../../shared/src/sprache';
+import { datumsformat, zeitText } from '../../../shared/src/region';
 import type { AusgangDienst } from '../ausgang';
 
 /** Die Teile, die das Löschprotokoll ruft (#1278, Schritt 5b: Auszug aus `LoeschenTeile`). */
@@ -116,13 +115,12 @@ export class LoeschprotokollVerwaltung {
   async loeschprotokollAusgabe(q: Record<string, unknown>, format: 'csv' | 'pdf', x: { von: string; mandant: string; version: string }) {
     const f = { ...liesFilter(q), max: LOESCH_MAX * 10 };
     const { eintraege, gesamt } = await this.repo.loeschprotokoll(f);
-    const tag = new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date());
+    const tag = datumsformat('sv-SE').format(new Date());
     if (format === 'csv') {
       const b = csvAus(LOESCH_SPALTEN, eintraege.map(alsZeile));
       return { name: t('meldungen.dienst.loeschprotokoll-csv', { tag }), mime: 'text/csv; charset=utf-8', inhalt: b };
     }
-    const zeit = (iso: string) =>
-      new Date(iso).toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'short', timeStyle: 'short' });
+    const zeit = (iso: string) => zeitText(new Date(iso), { dateStyle: 'short', timeStyle: 'short' });
     const filter = [
       f.von && `ab ${datumText(f.von)}`,
       f.bis && `bis ${datumText(f.bis)}`,

@@ -1,4 +1,5 @@
 import { t } from './texte';
+import { zahlformat } from './region';
 import { gebietsschema } from './sprache';
 /**
  * Filter für Platzhalter in der Titel-Vorlage (#170): `{feld|filter|filter:argument}`.
@@ -113,7 +114,7 @@ export function wendeFilterAn(text: string, roh: unknown, art: string | undefine
       case 'ohne_waehrung': {
         const b = roh as { betrag?: unknown } | null;
         if (s && art === 'betrag' && b && typeof b.betrag === 'number')
-          s = b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          s = zahlformat(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(b.betrag);
         break;
       }
       case 'gross':

@@ -6,7 +6,7 @@
  */
 import { kreisVon } from './nummernkreis';
 import type { Mappentyp, Werte } from './model';
-import { zeitzone } from './region';
+import { datumsformat } from './region';
 import { t } from './texte';
 
 export const LOESCHGRUENDE = {
@@ -174,7 +174,7 @@ export function liesFilter(q: Record<string, unknown>): LoeschFilter {
 
 /** Filter auf eine Liste (Arbeitsspeicher; PostgreSQL filtert selbst gleich). Tage in der Zeitzone der Region. */
 export function passt(e: LoeschEintrag, f: LoeschFilter): boolean {
-  const tag = new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).format(new Date(e.zeit));
+  const tag = datumsformat('sv-SE').format(new Date(e.zeit));
   if (f.von && tag < f.von) return false;
   if (f.bis && tag > f.bis) return false;
   if (f.typId && e.typId !== f.typId) return false;

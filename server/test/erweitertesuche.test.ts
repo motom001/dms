@@ -246,6 +246,33 @@ function faelle(pg: boolean) {
         await assert.rejects(d.sichten.seite(ICH, { sicht: 'suche', link: 'typ=rechnung&rechnungsdatum.von=gestern' }), /kein Datum/);
       });
 
+      it('alle Treffer (#1335): nur die Ids, dieselben Treffer, Reihenfolge und Zahl wie die Seite', async () => {
+        const { d, rechnung } = await aufbau(await repo(pg));
+        const anfragen = [
+          { sicht: 'suche', link: 'typ=rechnung&volltext=Backofen' },
+          { sicht: 'suche', link: 'volltext=Backofen&in=dokumente' },
+          { sicht: `typ:${rechnung.id}`, sortierung: 'rechnungsdatum', absteigend: 'true' },
+          { sicht: `typ:${rechnung.id}`, suche: 'R-' },
+          { sicht: 'suche', link: 'typ=rechnung&nr=gibtsnicht' },
+        ];
+        for (const q of anfragen) {
+          const s = await d.sichten.seite(ICH, { ...q, anzahl: 5000 }, undefined, 5000);
+          const ids = await d.sichten.trefferIds(ICH, q);
+          assert.deepEqual(ids, { ids: s.mappen.map((m) => m.id), gesamt: s.gesamt }, JSON.stringify(q));
+        }
+        // Im Repo: Zahl auch bei vollem Blatt (dann eigens gezählt) und hinter dem ersten Blatt.
+        const r = d.kern.repo;
+        for (const o of [
+          { typId: rechnung.id, von: 0, anzahl: 2 },
+          { typId: rechnung.id, von: 3, anzahl: 2 },
+          { typId: rechnung.id, suche: 'R-', von: 0, anzahl: 2 },
+          { typId: rechnung.id, suche: 'R-', von: 4, anzahl: 2 },
+        ]) {
+          const s = await r.seite(o);
+          assert.deepEqual(await r.trefferIds(o), { ids: s.mappen.map((m) => m.id), gesamt: s.gesamt }, JSON.stringify(o));
+        }
+      });
+
       it('Volltext nur in Notizen, nur in Dokumenten, in beiden', async () => {
         const { d } = await aufbau(await repo(pg));
         assert.deepEqual(await treffer(d, 'typ=rechnung&volltext=Backofen&in=notizen'), ['R-5']);

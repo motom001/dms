@@ -5,7 +5,7 @@ import { protokoll } from '../protokoll/protokoll';
 import type { Zaehler, Datenquelle } from './datenbankabzug';
 import { t } from '../sprache/sprache';
 import type { Einstellungen } from '../einstellungen/einstellungen';
-import { zeitzone } from '../../../shared/src/region';
+import { datumsformat } from '../../../shared/src/region';
 import { Fachfehler } from '../grundlagen/fehler';
 import { nachweisJeTag } from '../protokoll/nachweisjournal';
 
@@ -266,8 +266,7 @@ export interface SicherungsQuellen {
 
 const teileIn = (d: Date) =>
   Object.fromEntries(
-    new Intl.DateTimeFormat('de-DE', {
-      timeZone: zeitzone(),
+    datumsformat('de-DE', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

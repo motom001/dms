@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type postgres from 'postgres';
 import { t } from '../sprache/sprache';
+import { datumsformat } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -346,7 +347,7 @@ async function mainStand(abruf: Abruf, commit: string | null) {
 
 /** Tag in der Sprache der Anfrage (#729), z. B. 05.11.2026 bzw. 05/11/2026. */
 const datumDe = (iso: string) =>
-  new Intl.DateTimeFormat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(
+  datumsformat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric' }, 'UTC').format(
     new Date(`${iso.slice(0, 10)}T00:00:00Z`),
   );
 

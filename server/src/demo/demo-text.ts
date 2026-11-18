@@ -1,3 +1,4 @@
+import { zahlformat } from '../../../shared/src/region';
 import type { Zufall } from './zufall';
 
 /**
@@ -175,4 +176,4 @@ export const ueberschrift = (z: Zufall) =>
 export const position = (z: Zufall) => `${z.eins(LEISTUNGEN)} ${z.eins(GEGENSTAENDE)}`;
 export const person = (z: Zufall) => `${z.eins(VORNAMEN)} ${z.eins(NACHNAMEN)}`;
 export const anschrift = (z: Zufall) => `${z.eins(STRASSEN)} ${z.von(1, 120)}, 0${z.von(1000, 9999)} ${z.eins(ORTE)}`;
-export const euro = (x: number) => `${x.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+export const euro = (x: number) => `${zahlformat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(x)} €`;

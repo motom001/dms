@@ -15,8 +15,10 @@ import {
   Nachweisjournal,
   nachweis,
   pgJournal,
+  SAMMELN_HOECHSTENS,
   setzeNachweisjournal,
   speicherJournal,
+  type JournalEintrag,
   type JournalSpeicher,
 } from '../src/protokoll/nachweisjournal';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
@@ -398,6 +400,49 @@ function journalPruefungen(speicher: () => Promise<JournalSpeicher>) {
     assert.equal(m.zaehler['zugang.fehlanmeldung_unbekannt'], 10);
   });
 
+  it('gesammelte Fehlanmeldungen (#1415): viele gleichzeitig an der Grenze – Einträge in Reihenfolge, Zahlen richtig', async () => {
+    const sp = await speicher();
+    await sp.sammle('2026-11', vorrat(JE_MONAT - 30), {}, JE_MONAT);
+    const j = new Nachweisjournal(sp, () => new Date('2026-11-01T00:00:00Z'), 20);
+    const bekannt = (i: number) => i % 2 === 0;
+    await Promise.all(
+      Array.from({ length: 100 }, (_, i) =>
+        j.fehlanmeldung(bekannt(i) ? 'lena@example.org' : `niemand-${i}@example.org`, `203.0.${i}.9`, bekannt(i)),
+      ),
+    );
+    const m = await j.monat('2026-11');
+    assert.equal(m.eintraege.length, JE_MONAT, 'die Grenze gilt auch gesammelt');
+    assert.equal(m.eintraege.length + m.weitere, JE_MONAT - 30 + 50, 'jede Fehlanmeldung mit Konto zählt als Versuch');
+    assert.equal(m.zaehler['zugang.fehlanmeldung_unbekannt'], 50);
+    assert.deepEqual(
+      m.eintraege.slice(JE_MONAT - 30).map((e) => e.daten),
+      Array.from({ length: 30 }, (_, k) => ({ konto: 'lena@example.org', netz: `203.0.${2 * k}.0`, heimnetz: false })),
+      'die ersten 30 Versuche in ihrer Reihenfolge',
+    );
+  });
+
+  it('gesammelt (#1415): schreibt nach der Frist, bei SAMMELN_HOECHSTENS sofort; leeren und monat schreiben den Rest', async () => {
+    const sp = await speicher();
+    const j = new Nachweisjournal(sp, () => new Date('2026-11-01T00:00:00Z'), 600_000);
+    const erste = j.fehlanmeldung('niemand@example.org', '198.51.100.1', false);
+    assert.deepEqual((await sp.monat('2026-11')).zaehler, {}, 'noch gesammelt');
+    await j.leeren();
+    await erste;
+    assert.equal((await sp.monat('2026-11')).zaehler['zugang.fehlanmeldung_unbekannt'], 1);
+    await Promise.all(Array.from({ length: SAMMELN_HOECHSTENS }, () => j.fehlanmeldung('niemand@example.org', '198.51.100.1', false)));
+    assert.equal(
+      (await sp.monat('2026-11')).zaehler['zugang.fehlanmeldung_unbekannt'],
+      1 + SAMMELN_HOECHSTENS,
+      'ohne die Frist abzuwarten',
+    );
+    void j.fehlanmeldung('lena@example.org', '192.168.1.20', true);
+    assert.deepEqual(
+      (await j.monat('2026-11')).eintraege.map((e) => e.daten),
+      [{ konto: 'lena@example.org', netz: '192.168.1.0', heimnetz: true }],
+      'der eigene Prozess sieht seine Fehlanmeldungen sofort',
+    );
+  });
+
   it('je Tag und Merkmalen ein Eintrag mit Anzahl (#1308): Wiederholungen – auch gleichzeitig – zählen nur hoch', async () => {
     const sp = await speicher();
     let jetzt = new Date('2026-11-03T01:00:00Z');
@@ -446,6 +491,10 @@ function journalPruefungen(speicher: () => Promise<JournalSpeicher>) {
     assert.equal(m.weitere, 5, 'ohne Eintrag gibt es nichts hochzuzählen – nichts geht unbemerkt verloren');
   });
 }
+
+/** So viele Fehlanmeldungen mit Konto als Vorrat im Monat (#1415). */
+const vorrat = (n: number): JournalEintrag[] =>
+  Array.from({ length: n }, (_, i) => ({ art: 'zugang.fehlanmeldung', zeit: '2026-11-01T00:00:00.000Z', daten: { nr: i } }));
 
 /** Fehlgeschlagene Sicherung (#1308) – Merkmale ohne Tag; den setzt das Journal. */
 const PLATZ = { art: 'automatisch', ort: 'lokal', ziel: null, grund: 'platz' };
@@ -530,6 +579,31 @@ describe(
       );
       await new Nachweisjournal(a, () => new Date('2026-10-20T00:00:00Z')).zaehle('zugang.fehlanmeldung_unbekannt');
       assert.equal((await a.monat('2026-10')).zaehler['zugang.fehlanmeldung_unbekannt'], 8);
+    });
+
+    it('zwei Prozesse sammeln Fehlanmeldungen zugleich (#1415): zusammen richtig gezählt, Grenze eingehalten', async () => {
+      const sp = await leer();
+      await sp.sammle('2026-11', vorrat(JE_MONAT - 40), {}, JE_MONAT);
+      const zweiter = verbinde(url, 4);
+      try {
+        const jetzt = () => new Date('2026-11-03T01:00:00Z');
+        const [a, b] = [
+          new Nachweisjournal(pgJournal(sql, haushalt), jetzt, 5),
+          new Nachweisjournal(pgJournal(zweiter, haushalt), jetzt, 5),
+        ];
+        const bekannt = (i: number) => i % 4 < 2;
+        await Promise.all(
+          Array.from({ length: 400 }, (_, i) =>
+            (i % 2 ? a : b).fehlanmeldung(bekannt(i) ? 'lena@example.org' : `niemand-${i}@example.org`, '203.0.113.7', bekannt(i)),
+          ),
+        );
+        const m = await a.monat('2026-11');
+        assert.equal(m.eintraege.length, JE_MONAT);
+        assert.equal(m.eintraege.length + m.weitere, JE_MONAT - 40 + 200);
+        assert.equal(m.zaehler['zugang.fehlanmeldung_unbekannt'], 200);
+      } finally {
+        await zweiter.end({ timeout: 5 });
+      }
     });
 
     it('zwei Prozesse an einer Datenbank vermerken zugleich (#1308): ein Eintrag, keine Zählung verloren', async () => {

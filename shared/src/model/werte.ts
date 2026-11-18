@@ -212,7 +212,7 @@ export function formatiere(
       try {
         return zahlformat(gebietsschema(), { style: 'currency', currency: b.waehrung || 'EUR' }).format(b.betrag);
       } catch {
-        return `${b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2 })} ${b.waehrung}`;
+        return `${zahlformat(gebietsschema(), { minimumFractionDigits: 2 }).format(b.betrag)} ${b.waehrung}`;
       }
     }
     case 'datum': {

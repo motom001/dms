@@ -22,7 +22,7 @@ Die meisten Anbindungen brauchen nur **Zahlen**, keine Inhalte:
 
 Mehr als Zahlen (Post ablegen, Mappen lesen) geht über die übrigen Endpunkte der API v1 mit einem Schlüssel „nur lesen“ bzw. „lesen und schreiben“.
 
-Sätze baut der Client selbst, die Schnittstelle liefert Zahlen: Bei einer Tabelle (`GET /api/v1/mappen/{id}/tabelle/{feld}`) steht in `verborgen` nur, wie viele Zeilen der Schlüssel nicht lesen darf. Zeigt ein Client das, dann wie die Oberfläche mit der Beschriftung des Felds (`label` bzw. `beschriftungen.<sprache>.label`): „Du siehst 3 von 7 Positionen“, nie ein allgemeines „Einträge“ (#1305).
+Sätze baut der Client selbst, die Schnittstelle liefert Zahlen: Bei einer Tabelle (`GET /api/v1/mappen/{id}/tabelle/{feld}`) steht in `verborgen` nur, wie viele Zeilen der Schlüssel nicht lesen darf. Zeigt ein Client das, dann wie die Oberfläche mit der Beschriftung des Felds (`label` bzw. `beschriftungen.<sprache>.label`): „Du siehst 3 von 7 Positionen“, nie ein allgemeines „Einträge“ (#1305). Beim Blättern (`von`) zählt jedes Blatt selbst; `gesamt` mitzugeben braucht es dort seit #1265 nicht mehr, ein mitgegebener Wert wird nicht beachtet.
 
 ## Gleich in allen Clients
 

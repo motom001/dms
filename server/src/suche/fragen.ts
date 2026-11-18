@@ -36,6 +36,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { extern, externDerAnfrage } from '../system/externmessung';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
+import { zahlformat } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 const log = protokoll.modul('ablage');
@@ -223,7 +224,7 @@ export class FragenAnDieAblage {
       case 'betrag': {
         const b = v as { betrag?: unknown; waehrung?: unknown };
         return typeof b?.betrag === 'number'
-          ? `${b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${String(b.waehrung ?? 'EUR')}`
+          ? `${zahlformat(gebietsschema(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(b.betrag)} ${String(b.waehrung ?? 'EUR')}`
           : '';
       }
       case 'auswahl':

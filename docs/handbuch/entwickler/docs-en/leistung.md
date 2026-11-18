@@ -246,6 +246,22 @@ On the server (handler, median): creating a task 304 → 204 ms with 31 → 22 a
 
 Without failed sign-ins: "open folder" p95 8–13 ms. The failed sign-in itself mostly costs the deliberately slow password check; the journal now needs one statement per attempt (`INSERT … SELECT` behind the increment in `nachweis_zaehler`) instead of reading, copying and compare-and-swap of up to 300 KB.
 
+**Failed sign-ins collected (#1415):** On the NAS, in the load test "klein + Anmeldeschutz" almost all of the database's computing time went into incrementing the counters in the evidence journal: all failed sign-ins of a month increment the same row (household, month, kind), wait for each other and hold connections that the other requests lack. Since #1415 each process collects failed sign-ins for up to 2 s or 500 of them (`SAMMELN_MS`, `SAMMELN_HOECHSTENS` in `server/src/protokoll/nachweisjournal.ts`) and writes them in **one** statement: increment the counters by the number, insert the entries in their order as long as the month stays below 2,000. The only new thing is the delay: other processes see a failed sign-in up to 2 s later, the own process at once (`monat` writes first). On shutdown `leeren` writes the rest; a crash loses at most the failed sign-ins of the last 2 s of that process. Several processes count correctly together (test in `server/test/paketdaten.test.ts`). Sign-in protection, locks, counting and scrypt are unchanged.
+
+Measured in the container (2 cores with other load, PostgreSQL 16 local, month full beforehand; per process 10 attackers with a 5 ms pause instead of the password check – this creates the congestion that the slow disk creates on the NAS – and 25 people with a small read query, pool of 10 connections, 20 s; **no NAS values**):
+
+| | before, 1 process | after, 1 process | before, 2 processes | after, 2 processes |
+| --- | --- | --- | --- | --- |
+| failed sign-ins (20 s) | 36,652 | 25,930 | 74,973 | 32,326 |
+| statements to the journal | 36,652 | 52 | 74,973 | 66 |
+| time per statement, mean / p99 | 15 / 47 ms | 17 / 43 ms | 1,281 / 2,088 ms | 29 / 73 ms |
+| total time in the journal | 551 s | 0.9 s | 96,004 s | 1.9 s |
+| sessions waiting for a lock (max / mean) | 9 / 6.2 | 0 / 0 | 19 / 14.3 | 1 / 0 |
+| read query p50 / p95 / p99 | 4.6 / 20.5 / 31.6 ms | 6.8 / 13.1 / 17.9 ms | 685 / 1,851 / 2,046 ms | 14 / 27 / 35 ms |
+| numbers in the journal correct | yes | yes | yes | yes |
+
+Without failed sign-ins: read query p99 17.9 ms. With a 20 ms pause (1 process): 9,320 → 18 statements, read query p99 35.4 → 20.7 ms. With the real password check (scrypt, about 3 attempts per s in this container): 57 → 9 statements, read query unchanged (p99 24.8 / 27.2 ms). The number of failed sign-ins per run varies with the container's load; it doesn't depend on the journal (the attackers don't wait for it).
+
 ## Load test { #lasttest }
 
 `server/test/lasttest.mjs` (#544, #563) sends many **simultaneous HTTP requests** to a running Ablago – the counterpart to the measuring script, which measures individual database accesses. Without dependencies, only with Node.js's `fetch`. In the image it is the command `dms-lasttest` (operators: Administrator manual → [Running the load test yourself](https://help.ablago.app/admin/aktuell/en/lasttest/)).
@@ -330,6 +346,20 @@ Individual queries (`EXPLAIN ANALYZE`): page over all types by title 49 → 0.6 
 **Measurement for #542** (worker pool, measured alternately before/after): with 10 simultaneous requests with export, p95 fell from 2,172 to 786 ms and the event loop delay (p99) from 1,373 to 135 ms; details in the release notes of #542.
 
 **Export and native memory (#970):** On the maintainer's NAS one process rose to 1,742 MB at mittel (heap 473 MB), at gross without export to at most 1,095 MB. Measured in a container (glibc, 2 cores with other load, 50,007 folders, `DMS_PROZESSE=1`) with `process.memoryUsage()` and the workers' heap every half second: a ZIP export of the largest view (20,835 folders) barely grew the heap, but memory **outside** the heap, workers and buffers grew by 100–130 MB per export – measured between the export's steps almost entirely while preparing the rows. There `toLocaleString` with options (timestamps created/changed, numbers, amounts, date fields) built a new ICU format outside the heap for every cell, freed only by garbage collection; the allocator keeps the memory afterwards (glibc: six CSV exports in a row 402 → 1,299 MB; with jemalloc instead of glibc it kept growing). Since #970 the formats are cached (`datumsformat`, `zahlformat` in `shared/src/region.ts`): the same six exports 402 → 539 MB, in 10 instead of 18 s. In the load test mittel (60 s, container) the process peak fell from 1,099 to 725 MB, for “mittel + Pakete und Tabellen” from 1,298 to 1,138 MB. New code that formats with options in a loop uses these two as well.
+
+**Export without loading twice, remembered formats everywhere (#1335):** The export fetched the hits via the full list page – up to 5,000 folders with values, references, tasks and favourites – only to get the ids, and then loaded the same folders a second time with `holeMappen`. Now `Repo.trefferIds` fetches only the ids, with the same conditions and the same order (checked in `server/test/erweitertesuche.test.ts`); the export loads the folders exactly once. In addition, the remaining places that format in loops use remembered formats (`zeitText` like `Date.toLocaleString`, `datumsformat`, `zahlformat`): Excel timestamps, amounts in titles and e-invoices, stamps, information requests, deletion log, chips of the advanced search, job progress. So that no new ones appear, ESLint reports `toLocaleString(…, {…})` and `new Intl.DateTimeFormat`/`NumberFormat` on the server and in shared code (`ablago/gemerkte-formate`, [Style](stil.md#regeln)).
+
+Measured in the container (2 cores with other load, PostgreSQL 16 local, 20,550 folders, 20,500 of them of one type with text, date, amount, link and yes/no; export of this type's list as administration, i.e. 5,000 folders; per format 3 runs after one warm-up, three rounds alternating before/after):
+
+| | before (0.295.3) | after |
+| --- | --- | --- |
+| export xlsx, median | 865–965 ms | 253–284 ms |
+| export csv, median | 212–216 ms | 160–173 ms |
+| hit ids alone ("all hits") | 49–71 ms | 7–10 ms |
+| peak heap during one export | 22–24 MB | 19–20 MB |
+| peak outside the heap (external + buffers) | 2–3 MB | 1 MB |
+
+xlsx gains mostly from the remembered format of timestamps (one `toLocaleString` per "created"/"changed" cell), csv and "all hits" from the lean ids.
 
 **Table field (#1265):** A page of the table field (#1030) fetched its rows via `EXISTS (… verweise …)` for every folder of the other type and counted the hidden rows (#1208) with `zaehleKlauseln` over **all** folders of the household – five queries per page, also when paging. On the NAS at gross: rows 599 ms on average, counting 706 ms. Now “points to” starts from the targets (`mappen.id IN (SELECT quelle_id FROM verweise WHERE ziel_id = ANY(…))`, index `verweise_ziel_idx`), and `seite` with `mitVerborgenen` returns the page, the readable and all rows in **one** query (window function, “readable” per folder inside, only readable rows leave the database). 3 instead of 5 queries per page (folder, page, references; test in `tabelle.test.ts`). Measured in a container (50,007 folders, issuer with 12 invoices among 20,835, with read filter): old 170–600 ms per page (of which counting over all folders 145–570 ms), new 1–3 ms. Load test klein + Pakete und Tabellen (40 s, container with other load): table p95 566 → 268 ms, median 189 → 128 ms; mittel (60 s): p95 2,709 → 1,612 ms, median 1,542 → 653 ms.
 

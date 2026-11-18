@@ -198,23 +198,7 @@ export class SichtenDienst {
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
   async seite(ich: { id: string; rolle: string }, q: SeitenQuery, z?: Zugriff, grenze = 500) {
-    // Berechtigungen (#124): nur lesbare Mappen; der Eingang zeigt Aufgaben auch zu nicht lesbaren – ohne Inhalt.
-    const lesen = z?.lesen ?? null;
-    const p = seitenParameter(q, grenze);
-    // Mappentypen und Auflösung (Rollen, heute) hat der Zugriff schon gelesen (#615); ein Dienstkonto kennt nur seine Typen.
-    const typen = z?.typen && !z.paket ? z.typen : new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const aufloesung = () => (z?.a && z.ich?.id === ich.id ? Promise.resolve(z.a) : this.aufloesung(ich.id));
-    const sichten = await this.repo.listeSichten();
-    const ziel = seitenZiel(q, typen, sichten, () => this.verborgeneSichten(sichten, z));
-    // Unscharfe Suche (#356): Varianten (gleichbedeutende Wörter, ohne Bindestrich) für Suche und Volltextfilter.
-    const textfilter = ziel.erweitert?.volltext ?? undefined;
-    const varianten = await this.suchVarianten([p.suche, textfilter?.text]);
-    const anfrage = await seitenAnfrage(
-      q,
-      ziel,
-      { ...p, lesen, sortierung: ziel.sortierung },
-      { ich, typen, sichten, aufloesung, siehtOhneEmpfaenger: () => this.siehtOhneEmpfaenger(ich) },
-    );
+    const { lesen, p, typen, ziel, textfilter, varianten, anfrage } = await this.seitenAnfrageFuer(ich, q, z, grenze);
     const { r, unscharf } = await this.treffer(anfrage, typen, varianten, bekanntesGesamt(q, p, textfilter), p.von === 0);
     if (q.sicht === 'eingang' && lesen) r.mappen = await this.ohneLeserecht(r.mappen, lesen);
     // Verweise und Erwähnungen in formatierten Feldern (#1333): Titel aller Zeilen der Seite in einer Abfrage, maskiert.
@@ -239,6 +223,28 @@ export class SichtenDienst {
         q.sicht === 'favoriten' || !!ziel.sicht?.bedingungen.some((x) => x.art === 'favorit'),
       )),
     };
+  }
+
+  /** Was `seite` und `trefferIds` (#1335) gleich brauchen: Parameter, Typen, Ziel, Varianten und die Anfrage ans Repo. */
+  private async seitenAnfrageFuer(ich: { id: string; rolle: string }, q: SeitenQuery, z: Zugriff | undefined, grenze: number) {
+    // Berechtigungen (#124): nur lesbare Mappen; der Eingang zeigt Aufgaben auch zu nicht lesbaren – ohne Inhalt.
+    const lesen = z?.lesen ?? null;
+    const p = seitenParameter(q, grenze);
+    // Mappentypen und Auflösung (Rollen, heute) hat der Zugriff schon gelesen (#615); ein Dienstkonto kennt nur seine Typen.
+    const typen = z?.typen && !z.paket ? z.typen : new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const aufloesung = () => (z?.a && z.ich?.id === ich.id ? Promise.resolve(z.a) : this.aufloesung(ich.id));
+    const sichten = await this.repo.listeSichten();
+    const ziel = seitenZiel(q, typen, sichten, () => this.verborgeneSichten(sichten, z));
+    // Unscharfe Suche (#356): Varianten (gleichbedeutende Wörter, ohne Bindestrich) für Suche und Volltextfilter.
+    const textfilter = ziel.erweitert?.volltext ?? undefined;
+    const varianten = await this.suchVarianten([p.suche, textfilter?.text]);
+    const anfrage = await seitenAnfrage(
+      q,
+      ziel,
+      { ...p, lesen, sortierung: ziel.sortierung },
+      { ich, typen, sichten, aufloesung, siehtOhneEmpfaenger: () => this.siehtOhneEmpfaenger(ich) },
+    );
+    return { lesen, p, typen, ziel, textfilter, varianten, anfrage };
   }
 
   /**
@@ -657,14 +663,36 @@ export class SichtenDienst {
     }
   }
 
-  /** Alle Treffer einer Sicht mit Suche (#149): nur die Ids der lesbaren Mappen, höchstens MAX_AUSWAHL. */
+  /**
+   * Alle Treffer einer Sicht mit Suche (#149): nur die Ids der lesbaren Mappen, höchstens MAX_AUSWAHL. Dieselben Treffer
+   * wie `seite` – Teile (#1031), ohne genauen Treffer mit ähnlichen Wörtern (#356), im Eingang nur lesbare –, aber seit
+   * #1335 nur die Ids aus der Datenbank: keine Werte, Bezüge, Aufgaben oder Favoriten. Der Export holt die Mappen danach
+   * genau einmal (`holeMappen`); vorher lud er sie hier über die volle Seite schon ein erstes Mal.
+   */
   async trefferIds(
     ich: { id: string; rolle: string },
     q: Parameters<SichtenDienst['seite']>[1],
     z?: Zugriff,
   ): Promise<{ ids: string[]; gesamt: number }> {
-    const s = await this.seite(ich, { ...q, von: 0, anzahl: MAX_AUSWAHL }, z, MAX_AUSWAHL);
-    return { ids: s.mappen.filter((m) => !m.verborgen).map((m) => m.id), gesamt: s.gesamt };
+    const { lesen, typen, varianten, anfrage } = await this.seitenAnfrageFuer(ich, { ...q, von: 0, anzahl: MAX_AUSWAHL }, z, MAX_AUSWAHL);
+    const funde = await this.teilFunde(anfrage, typen, varianten);
+    if (funde) anfrage.auchIds = [...funde.keys()];
+    let r = await this.repo.trefferIds({ ...anfrage, varianten });
+    const gesucht = anfrage.suche ?? anfrage.textfilter?.text;
+    if (r.gesamt === 0 && gesucht && (await this.unscharfAn())) {
+      // Wie `unscharfeSuche`, nur ohne Vorschlag „Meintest du …?“.
+      const begriffe = suchbegriffe(gesucht);
+      const aehnlich = begriffe ? await this.teile.suche.aehnlicheWoerter(begriffe, 5) : {};
+      if (Object.keys(aehnlich).length) {
+        const f = await this.teilFunde(anfrage, typen, varianten, aehnlich);
+        const u = await this.repo.trefferIds({ ...anfrage, varianten, aehnlich, ...(f ? { auchIds: [...f.keys()] } : {}) });
+        if (u.gesamt > 0) r = u;
+      }
+    }
+    // Eingang (#124): Aufgaben auch an nicht lesbaren Mappen – deren Ids gehören nicht zu den Treffern.
+    if (q.sicht !== 'eingang' || !lesen) return r;
+    const ok = await this.repo.lesbare(r.ids, lesen);
+    return { ids: r.ids.filter((id) => ok.has(id)), gesamt: r.gesamt };
   }
 }
 

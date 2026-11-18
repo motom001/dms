@@ -246,6 +246,22 @@ Auf dem Server (Handler, Median): Aufgabe anlegen 304 → 204 ms bei 31 → 22 Z
 
 Ohne Fehlanmeldungen: „Mappe öffnen“ p95 8–13 ms. Die Fehlanmeldung selbst kostet vor allem das absichtlich langsame Prüfen des Passworts; das Journal braucht je Versuch nur noch eine Anweisung (`INSERT … SELECT` hinter dem Hochzählen in `nachweis_zaehler`) statt Lesen, Kopieren und Vergleichen-und-Tauschen von bis zu 300 KB.
 
+**Fehlanmeldungen gesammelt (#1415):** Auf dem NAS entfiel im Lasttest „klein + Anmeldeschutz“ fast die ganze Rechenzeit der Datenbank auf das Hochzählen der Zähler im Nachweis-Journal: Alle Fehlanmeldungen eines Monats zählen dieselbe Zeile hoch (Haushalt, Monat, Art), warten aufeinander und belegen dabei Verbindungen, die den übrigen Anfragen fehlen. Seit #1415 sammelt jeder Prozess Fehlanmeldungen bis zu 2 s oder 500 Stück (`SAMMELN_MS`, `SAMMELN_HOECHSTENS` in `server/src/protokoll/nachweisjournal.ts`) und schreibt sie in **einer** Anweisung: Zähler um die Anzahl hochzählen, Einträge in ihrer Reihenfolge einfügen, solange der Monat unter 2.000 bleibt. Neu ist nur die Verzögerung: Andere Prozesse sehen eine Fehlanmeldung bis zu 2 s später, der eigene sofort (`monat` schreibt vorher). Beim Beenden schreibt `leeren` den Rest; ein Absturz verliert höchstens die Fehlanmeldungen der letzten 2 s dieses Prozesses. Mehrere Prozesse zählen zusammen richtig (Test in `server/test/paketdaten.test.ts`). Anmeldeschutz, Sperren, Zählung und scrypt bleiben unverändert.
+
+Gemessen im Container (2 Kerne mit fremder Last, PostgreSQL 16 lokal, Monat vorher voll; je Prozess 10 Angreifer mit 5 ms Pause statt der Passwortprüfung – so entsteht der Stau, den auf dem NAS die langsame Platte erzeugt – und 25 Personen mit einer kleinen Leseabfrage, Pool 10 Verbindungen, 20 s; **keine NAS-Werte**):
+
+| | vorher, 1 Prozess | nachher, 1 Prozess | vorher, 2 Prozesse | nachher, 2 Prozesse |
+| --- | --- | --- | --- | --- |
+| Fehlanmeldungen (20 s) | 36.652 | 25.930 | 74.973 | 32.326 |
+| Anweisungen ans Journal | 36.652 | 52 | 74.973 | 66 |
+| Zeit je Anweisung, Mittel / p99 | 15 / 47 ms | 17 / 43 ms | 1.281 / 2.088 ms | 29 / 73 ms |
+| Zeit im Journal gesamt | 551 s | 0,9 s | 96.004 s | 1,9 s |
+| Sitzungen, die auf eine Sperre warten (höchstens / Mittel) | 9 / 6,2 | 0 / 0 | 19 / 14,3 | 1 / 0 |
+| Leseabfrage p50 / p95 / p99 | 4,6 / 20,5 / 31,6 ms | 6,8 / 13,1 / 17,9 ms | 685 / 1.851 / 2.046 ms | 14 / 27 / 35 ms |
+| Zahlen im Journal richtig | ja | ja | ja | ja |
+
+Ohne Fehlanmeldungen: Leseabfrage p99 17,9 ms. Mit 20 ms Pause (1 Prozess): 9.320 → 18 Anweisungen, Leseabfrage p99 35,4 → 20,7 ms. Mit echter Passwortprüfung (scrypt, rund 3 Versuche je s in diesem Container): 57 → 9 Anweisungen, Leseabfrage unverändert (p99 24,8 / 27,2 ms). Die Zahl der Fehlanmeldungen je Lauf schwankt mit der Last des Containers; sie hängt nicht vom Journal ab (die Angreifer warten nicht darauf).
+
 ## Lasttest { #lasttest }
 
 `server/test/lasttest.mjs` (#544, #563) schickt viele **gleichzeitige HTTP-Anfragen** an ein laufendes Ablago – das Gegenstück zum Mess-Skript, das einzelne Datenbankzugriffe misst. Ohne Abhängigkeiten, nur mit `fetch` von Node.js. Im Image steckt es als Befehl `dms-lasttest` (Betreiber: Administratorhandbuch → [Lasttest selbst durchführen](https://help.ablago.app/admin/aktuell/lasttest/)).
@@ -330,6 +346,20 @@ Einzelne Abfragen (`EXPLAIN ANALYZE`): Seite über alle Typen nach Titel 49 → 
 **Messung zu #542** (Arbeiter-Pool, vorher/nachher abwechselnd gemessen): Bei 10 gleichzeitigen Anfragen mit Export sank p95 von 2.172 auf 786 ms und die Verzögerung der Ereignisschleife (p99) von 1.373 auf 135 ms; Einzelheiten in den Release-Notes von #542.
 
 **Export und nativer Speicher (#970):** Auf dem NAS des Maintainers stieg bei mittel ein Prozess auf 1.742 MB (Halde 473 MB), bei groß ohne Export höchstens auf 1.095 MB. Gemessen im Container (glibc, 2 Kerne mit fremder Last, 50.007 Mappen, `DMS_PROZESSE=1`) mit `process.memoryUsage()` und der Halde der Arbeiter je halbe Sekunde: Ein ZIP-Export der größten Ansicht (20.835 Mappen) ließ die Halde kaum wachsen, den Speicher **außerhalb** von Halde, Arbeitern und Puffern aber um 100–130 MB je Export – gemessen zwischen den Schritten des Exports fast ganz beim Aufbereiten der Zeilen. Dort baute `toLocaleString` mit Optionen (Zeitpunkte „Erstellt“/„Geändert“, Zahlen, Beträge, Datumsfelder) je Zelle ein neues ICU-Format außerhalb der Halde, das erst die Speicherbereinigung freigibt; der Allokator behält den Speicher danach (glibc: sechs CSV-Exporte nacheinander 402 → 1.299 MB; mit jemalloc statt glibc wuchs er sogar weiter). Seit #970 sind die Formate gemerkt (`datumsformat`, `zahlformat` in `shared/src/region.ts`): dieselben sechs Exporte 402 → 539 MB, in 10 statt 18 s. Im Lasttest mittel (60 s, Container) sank die Spitze des Prozesses von 1.099 auf 725 MB, bei „mittel + Pakete und Tabellen“ von 1.298 auf 1.138 MB. Neuer Code, der in einer Schleife mit Optionen formatiert, nimmt ebenfalls diese beiden.
+
+**Export ohne doppeltes Laden, gemerkte Formate überall (#1335):** Der Export holte die Treffer über die volle Listenseite – bis zu 5.000 Mappen samt Werten, Bezügen, Aufgaben und Favoriten –, nur um die Ids zu bekommen, und lud dieselben Mappen danach mit `holeMappen` ein zweites Mal. Jetzt holt `Repo.trefferIds` mit denselben Bedingungen und derselben Reihenfolge nur die Ids (dieselbe Prüfung in `server/test/erweitertesuche.test.ts`); die Mappen lädt der Export genau einmal. Dazu formatieren die verbliebenen Stellen in Schleifen mit gemerkten Formaten (`zeitText` wie `Date.toLocaleString`, `datumsformat`, `zahlformat`): Excel-Zeitpunkte, Beträge in Titeln und E-Rechnungen, Stempel, Auskunft, Löschprotokoll, Chips der erweiterten Suche, Auftragsfortschritt. Damit keine neuen hinzukommen, meldet ESLint `toLocaleString(…, {…})` und `new Intl.DateTimeFormat`/`NumberFormat` auf dem Server und im gemeinsamen Code (`ablago/gemerkte-formate`, [Stil](stil.md#regeln)).
+
+Gemessen im Container (2 Kerne mit fremder Last, PostgreSQL 16 lokal, 20.550 Mappen, davon 20.500 eines Typs mit Text, Datum, Betrag, Verweis und Ja/Nein; Export der Liste dieses Typs als Verwaltung, also 5.000 Mappen; je Format 3 Läufe nach einem zum Aufwärmen, drei Durchgänge abwechselnd vorher/nachher):
+
+| | vorher (0.295.3) | nachher |
+| --- | --- | --- |
+| Export xlsx, Median | 865–965 ms | 253–284 ms |
+| Export csv, Median | 212–216 ms | 160–173 ms |
+| Treffer-Ids allein („alle Treffer“) | 49–71 ms | 7–10 ms |
+| Spitze der Halde während eines Exports | 22–24 MB | 19–20 MB |
+| Spitze außerhalb der Halde (extern + Puffer) | 2–3 MB | 1 MB |
+
+xlsx gewinnt vor allem durch das gemerkte Format der Zeitpunkte (je Zelle „Erstellt“/„Geändert“ ein `toLocaleString`), csv und die Auswahl „alle Treffer“ durch die schlanken Ids.
 
 **Tabellenfeld (#1265):** Eine Seite des Tabellenfelds (#1030) holte die Zeilen über `EXISTS (… verweise …)` je Mappe des anderen Typs und zählte die verborgenen Zeilen (#1208) mit `zaehleKlauseln` über **alle** Mappen des Haushalts – je Seite fünf Abfragen, beim Blättern ebenso. Auf dem NAS bei groß: Zeilen im Mittel 599 ms, Zählung 706 ms. Jetzt geht „zeigt auf“ von den Zielen aus (`mappen.id IN (SELECT quelle_id FROM verweise WHERE ziel_id = ANY(…))`, Index `verweise_ziel_idx`), und `seite` mit `mitVerborgenen` liefert Seite, lesbare und alle Zeilen in **einer** Abfrage (Fensterfunktion, innen „lesbar“ je Mappe, nur lesbare Zeilen verlassen die Datenbank). Je Seite 3 statt 5 Abfragen (Mappe, Seite, Bezüge; Test in `tabelle.test.ts`). Gemessen im Container (50.007 Mappen, Aussteller mit 12 Rechnungen unter 20.835, mit Lesefilter): alt 170–600 ms je Seite (davon die Zählung über alle Mappen 145–570 ms), neu 1–3 ms. Lasttest klein + Pakete und Tabellen (40 s, Container mit fremder Last): Tabelle p95 566 → 268 ms, Median 189 → 128 ms; mittel (60 s): p95 2.709 → 1.612 ms, Median 1.542 → 653 ms.
 

@@ -17,6 +17,7 @@ import { baueApp } from './http/http';
 import { extern } from './system/externmessung';
 import { pgSystemQuelle } from './system/system';
 import { beendeGeordnet } from './prozesse/beenden';
+import { nachweisjournal } from './protokoll/nachweisjournal';
 import { pgBetriebSpeicher } from './einstellungen/betrieb';
 import { mandantNamen } from './datenbank/mandant';
 import { Paketlaeufer } from './laeufer/verwaltung';
@@ -648,6 +649,8 @@ const beenden = async () => {
       { name: 'speicherplatz.stop', f: () => speicherplatz.stop() },
       { name: 'Konsole', f: () => leiter && konsole.entferne() },
       { name: 'app.close', f: () => app.close() },
+      // Gesammelte Fehlanmeldungen (#1415) noch ins Nachweis-Journal, solange die Datenbank da ist.
+      { name: 'nachweisjournal.leeren', f: () => nachweisjournal()?.leeren() },
       // Zusammenfassungen der letzten Minute (#920) noch ins Protokoll.
       { name: 'messung.leeren', f: () => messung.leeren() },
       { name: 'extern.schreibe', f: () => extern.schreibe() },

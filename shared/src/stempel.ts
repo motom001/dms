@@ -1,4 +1,4 @@
-import { zeitzone } from './region';
+import { datumsformat } from './region';
 import { t } from './texte';
 /**
  * Stempel und Wasserzeichen beim Weitergeben (#394, #799).
@@ -144,8 +144,7 @@ export interface StempelWerte {
 }
 
 /** Datum wie in Deutschland üblich, in der Zeitzone der Region (#726). */
-export const stempelDatum = (d = new Date()) =>
-  d.toLocaleDateString('de-DE', { timeZone: zeitzone(), day: '2-digit', month: '2-digit', year: 'numeric' });
+export const stempelDatum = (d = new Date()) => datumsformat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
 
 /** Welche Platzhalter ein Text nutzt (bekannte, normiert). */
 export function platzhalterIn(text: string): string[] {
