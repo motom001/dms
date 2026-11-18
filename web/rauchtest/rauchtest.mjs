@@ -58,3 +58,5 @@ import './bereiche/ruhige-werkbank.mjs';
 import './bereiche/liste-und-verweise.mjs';
 import './bereiche/lasttest-seite.mjs';
 import './bereiche/werkbank-handy.mjs';
+import './bereiche/werkbank-handy-handgriffe.mjs';
+import './bereiche/werkbank-handy-seiten.mjs';
