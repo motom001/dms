@@ -226,7 +226,9 @@ rauchtest(
     await bearbeitung.getByRole('listbox', { name: 'Rollen' }).waitFor();
     // An der Dann-Karte: dasselbe Feld, ohne Wahl an alle.
     await s.goto(BASIS + `/werkbank/automatisierungen/${auto.id}`);
-    await bearbeitung.getByRole('button', { name: /^Favoriten-Änderungen melden/ }).click();
+    // Editor mit Bereichen (#1000): alles aufklappen, dann die Karte öffnen.
+    await bearbeitung.locator('[data-sprungleiste]').getByRole('button', { name: 'Alle aufklappen' }).click();
+    await bearbeitung.getByRole('button', { name: 'Favoriten-Änderungen melden', exact: true }).click();
     const feld = bearbeitung.getByRole('combobox', { name: 'Nur an Mitglieder dieser Rollen' });
     await feld.waitFor();
     await bearbeitung.getByText(/^Keine Rolle gewählt: an alle\./).waitFor();
@@ -259,11 +261,12 @@ rauchtest('Mehrfachauswahl: Esc schließt nur die Liste, erst das zweite Esc ver
   assert.equal(await feld.evaluate((x) => x === document.activeElement), true, 'Fokus bleibt im Feld');
   assert.equal(await feld.inputValue(), 'zz', 'Eingabe bleibt');
   assert.equal(await speichern.isDisabled(), false, 'Änderung nicht verworfen');
-  assert.equal(await s.getByRole('dialog').count(), 0, 'keine Rückfrage');
+  assert.equal(await s.locator('dialog[open]').count(), 0, 'keine Rückfrage');
   // Zweites Esc bei geschlossener Liste: wie überall – Rückfrage „Änderungen verwerfen?“.
   await feld.press('Escape');
-  const frage = s.getByRole('dialog', { name: 'Änderungen verwerfen?' });
-  await frage.getByRole('button', { name: 'Verwerfen' }).click();
+  const frage = s.locator('dialog[open]');
+  await frage.getByText('Änderungen verwerfen?').waitFor();
+  await frage.getByRole('button', { name: 'Verwerfen', exact: true }).click();
   await speichern.and(s.locator(':disabled')).waitFor();
   assert.equal(await entfernen.count(), 0);
 });

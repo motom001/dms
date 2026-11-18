@@ -100,3 +100,7 @@ ol.codes code { user-select: all; letter-spacing: .04em; }
 .laufwerk-schritte > li + li { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--linie); }
 .laufwerk-schritte > li::marker { font-weight: 700; }
 .laufwerk-schritte h3 { margin: 0 0 6px; }
+@media (pointer: coarse) {
+  /* Am Handy (#1332): „Mehr im Handbuch“ mit 44 px Tippfläche, die Zeile bleibt ruhig. */
+  .laufwerk-anleitung p a { display: inline-flex; align-items: center; min-height: 44px; }
+}
