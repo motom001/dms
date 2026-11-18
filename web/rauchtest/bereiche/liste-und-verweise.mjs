@@ -159,16 +159,19 @@ rauchtest('Verweisfeld: axe mit offener Liste, hell und dunkel (#1288)', { als: 
   assert.deepEqual(funde, [], 'axe meldet Verstöße am Verweisfeld');
 });
 
+/** Nur das Verweisfeld samt Vorschlagsliste: Was daneben liegt, hängt vom Zustand früherer Bereiche ab. */
+const FELD = '[data-anker="mappe.feld:aussteller"]';
+
 rauchtest('Handy: Verweisfeld mit offener Liste und ✕ (#1288)', { handy: true, als: LENA }, async (s) => {
   const feld = await neueRechnung(s);
   await feld.getByRole('combobox').fill('Stadt');
   await feld.getByRole('option', { name: 'Stadtwerke Musterstadt' }).waitFor();
-  const funde = (await axePruefen(s, ['.spalte.mappe'])).map((v) => `offen: ${v}`);
-  assert.deepEqual(await tippflaechenPruefen(s, ['[data-anker="mappe.feld:aussteller"]']), [], 'Zu kleine Tippflächen (Liste)');
+  const funde = (await axePruefen(s, [FELD])).map((v) => `offen: ${v}`);
+  assert.deepEqual(await tippflaechenPruefen(s, [FELD]), [], 'Zu kleine Tippflächen (Liste)');
   await feld.getByRole('option', { name: 'Stadtwerke Musterstadt' }).click();
   await feld.getByRole('button', { name: 'Aussteller entfernen' }).waitFor();
-  assert.deepEqual(await tippflaechenPruefen(s, ['[data-anker="mappe.feld:aussteller"]']), [], 'Zu kleine Tippflächen (gesetzt)');
-  for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`gesetzt: ${v}`);
+  assert.deepEqual(await tippflaechenPruefen(s, [FELD]), [], 'Zu kleine Tippflächen (gesetzt)');
+  for (const v of await axePruefen(s, [FELD])) funde.push(`gesetzt: ${v}`);
   assert.deepEqual(funde, [], 'axe meldet Verstöße am Verweisfeld (Handy)');
   await keineWaagerechteRolle(s);
 });
