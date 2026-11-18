@@ -17,13 +17,29 @@
 
 ### What you see after the start { #nach-dem-start }
 
-A few seconds after the container starts, the address can be reached. As long as Ablago is still running migrations or getting ready, it shows the page **"Ablago is starting …"** with the current step, e.g. "Bringing the database up to date – step 3 of 5". You haven't done anything wrong: with large libraries this takes a few minutes. The page reloads by itself and then shows the sign-in (or the setup assistant).
+Right after the container starts, the address can be reached. As long as Ablago is still running migrations or getting ready, it shows the page **"Ablago is starting …"** with the current step, e.g. "Updating the database – migration 3 of 5". You haven't done anything wrong: on the first start and with large libraries this takes a few minutes. The page reloads by itself and then shows the sign-in, the setup assistant or – in load test mode – the load test page.
 
 ![The page "Ablago is starting …" with the migration step, a progress bar and the note that you haven't done anything wrong](grafiken/ablago-startet.en.svg){ .grafik }
 
-- The page only shows steps and numbers, no data from the Library. Until then, sign-in, API and WebDAV answer with `503` and `Retry-After`; programs and packages simply wait.
+The steps in the order in which they come:
+
+| Step on the page | What happens |
+| --- | --- |
+| Creating the database (first start only) | dms-komplett only: PostgreSQL creates its database in the folder `/data/postgres`. On a NAS this can take a minute. |
+| Starting the database | dms-komplett only: PostgreSQL inside the container starts. |
+| Starting Ablago | dms-komplett only: the database is running, Ablago itself starts. |
+| Connecting to the database | Ablago connects to the database. |
+| The database is not reachable yet – new attempt n of 30 | The database doesn't answer yet, e.g. because its own container is still starting. Ablago tries every 2 seconds for about a minute; after that the setup assistant shows the reason. |
+| The database is locked … | A second Ablago on the same database is updating it right now. Ablago waits until it is done. |
+| Updating the database – migration n of m | The migrations after an update, with a progress bar. |
+| Loading keys …, search index …, folders …, titles …, users …, folder types …, background work … | Ablago gets ready, partly with a count ("120 of 200"). |
+
+In dms-komplett a small pre-start shows the page from the very first moment, even before PostgreSQL is created or started. As soon as Ablago itself runs, it takes over the port without interruption.
+
+- The page only shows steps and numbers, no data from the Library – and before sign-in no version, no paths and no host names either. It loads nothing from other servers and appears in German or English, depending on the browser's language. Until then, sign-in, API and WebDAV answer with `503` and `Retry-After`; programs and packages simply wait.
 - `/api/gesundheit` reports `503` with `"zustand": "startet"` until the end, then `200` with `"zustand": "laeuft"`. The image's health check, a NAS or a reverse proxy thus only see the container as ready when Ablago is. Since #1198 it also checks the database: if it doesn't answer or no connection is free, it reports `503` with `"zustand": "datenbank"` (see [Ablago doesn't load or stays black](was-ist-passiert.md#laedt-nicht)).
-- **If something goes wrong at start-up**, the same page says "Ablago could not start" with the reason in plain language, e.g. which migration step failed, and the pointer to the container log and [Troubleshooting](fehlersuche.md#container-logs). `/api/gesundheit` then reports `"zustand": "fehler"`. After a few minutes Ablago exits so that Docker restarts the container and tries again.
+- **If something goes wrong at start-up**, the same page says "Ablago could not start" with the reason in plain language, e.g. which migration step failed, below it **What you can do** and the pointer to the container log and [Troubleshooting](fehlersuche.md#start-datenbank). `/api/gesundheit` then reports `"zustand": "fehler"`. After a few minutes Ablago exits so that Docker restarts the container and tries again.
+- **If the database is unreachable or blocked** (connection refused, lock, storage full, too many connections), the page says exactly that and the way out, e.g. restarting the container or the database's container. In dms-komplett this also applies to errors before Ablago itself runs: permissions of the database folder, another major version of PostgreSQL, the database can't be created or was stopped. The overview is under [Troubleshooting](fehlersuche.md#start-datenbank).
 - **If the database comes from a newer version** (lock against going back), the page says so too and stays there – a restart doesn't help. Set the image back to the newer version.
 - Ablago only does the first reconciliation of deadlines in the background after the start; the address doesn't wait for it.
 

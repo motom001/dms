@@ -106,6 +106,20 @@ In addition, each missing tool appears as a message on the start page of the wor
 
 **Remedy:** with the official image (`ghcr.io/motom001/dms` or `dms-komplett`) nothing is missing. A tool can practically only be missing with your own, incomplete image or an installation without a container. Then the programs belong in it: on Alpine `apk add poppler-utils qpdf fontconfig font-liberation font-dejavu`, on Debian and Ubuntu `apt install poppler-utils qpdf fonts-liberation fonts-dejavu-core`. Then restart Ablago or press **Check again**.
 
+## Start page: "Ablago could not start" { #start-datenbank }
+
+If the start fails, the page at Ablago's address gives the reason in plain language and below it what you can do. The exact message is in the [container log](#container-logs). After about 5 minutes the container exits and Docker restarts it (`restart: unless-stopped`) – a temporary problem thus resolves itself.
+
+| Reason on the page | What you can do |
+| --- | --- |
+| The database cannot be reached or does not accept connections. | With your own database container: check that it is running, restart it, then Ablago's container. With dms-komplett: restart the container. |
+| The database is blocked: a lock took too long. | Is a second Ablago running on the same database, e.g. an old container? Stop it, then restart. |
+| The database can no longer write: the storage is full. | Free up space on the database's storage (old backups or exports), then restart. |
+| The database does not accept any more connections. | Stop other programs on the same database or raise `max_connections` in PostgreSQL, then restart. |
+| The database cannot write to its folder (dms-komplett only). | Check the permissions of the database folder on the NAS or use a named volume, see [The container doesn't start](https://help.ablago.app/installieren/aktuell/en/komplett/#container-startet-nicht). |
+| The database comes from another major version of PostgreSQL (dms-komplett only). | Set the image back to the version the database was created with; switch via backup and restore. |
+| The database could not be created or was stopped (dms-komplett only). | Usually the storage is full or the container has too little memory. Free up space and restart; the lines in the container log give the reason. |
+
 ## Typical problems {#typische-probleme}
 
 ??? question "After the update the container doesn't start."

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { LasttestStand, Speicherwahl } from '../../../shared/src/lasttest';
+import type { Speicherwahl } from '../../../shared/src/lasttest';
+import type { LasttestStandMitAblauf } from '../../../shared/src/lasttestablauf';
 import { einrichtungApi } from '../api/einrichtung';
 
 /** Stand der Lasttest-Seite (#1279 aus `LasttestSeite` gezogen): abfragen alle 2 s, solange er läuft, und Eingaben. */
 export function useLasttest() {
-  const [stand, setStand] = useState<LasttestStand | null>(null);
+  const [stand, setStand] = useState<LasttestStandMitAblauf | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [geraet, setGeraet] = useState<string | null>(null);
   const [speicher, setSpeicher] = useState<Speicherwahl | null | undefined>(undefined);

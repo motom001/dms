@@ -56,6 +56,7 @@ export async function verbindeDatenbank(bisher: Bisher) {
       cfg.migrationen,
       (m) => protokoll.modul('datenbank').info(m),
       (nr, von, datei) => start.schritt('migration', { nr, von, datei }),
+      () => start.schritt('sperre'),
     );
   start.schritt('schluessel');
   const [{ server_version: pgVersion }] = await sql`SHOW server_version`;

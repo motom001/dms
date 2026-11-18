@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420" role="img" aria-label="Browser with the page “Ablago is starting …”: bringing the database up to date – step 3 of 5, progress bar, running for 65 s, note “You haven’t done anything wrong”" style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-<title>Browser with the page “Ablago is starting …”: bringing the database up to date – step 3 of 5, progress bar, running for 65 s, note “You haven’t done anything wrong”</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420" role="img" aria-label="Browser with the page “Ablago is starting …”: updating the database – migration 3 of 5, progress bar, running for 65 s, note “You haven’t done anything wrong”" style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Browser with the page “Ablago is starting …”: updating the database – migration 3 of 5, progress bar, running for 65 s, note “You haven’t done anything wrong”</title>
 <rect x="0.5" y="0.5" width="799" height="419" rx="14" fill="#f5f7f8" stroke="#dde2e6"/>
 <rect x="0.5" y="0.5" width="799" height="44" rx="14" fill="#e9edf0" stroke="#dde2e6"/>
 <rect x="1" y="30" width="798" height="15" fill="#e9edf0"/>
@@ -8,14 +8,14 @@
 <text x="106" y="27" font-size="13" fill="#5b6670">http://nas:8080</text>
 <rect x="140" y="72" width="520" height="320" rx="14" fill="#ffffff" stroke="#dde2e6"/>
 <text x="168" y="114" font-size="22" font-weight="700" fill="#1c2328">Ablago is starting …</text>
-<text x="168" y="148" font-size="15" font-weight="600" fill="#1c2328">Bringing the database up to date –</text>
-<text x="168" y="168" font-size="15" font-weight="600" fill="#1c2328">step 3 of 5</text>
+<text x="168" y="148" font-size="15" font-weight="600" fill="#1c2328">Updating the database –</text>
+<text x="168" y="168" font-size="15" font-weight="600" fill="#1c2328">migration 3 of 5</text>
 <rect x="168" y="184" width="464" height="10" rx="5" fill="#e0e5e8"/>
 <rect x="168" y="184" width="186" height="10" rx="5" fill="#00796b"/>
 <text x="168" y="220" font-size="14" fill="#5b6670">Running for 65 s.</text>
-<text x="168" y="252" font-size="15" fill="#1c2328">You haven't done anything wrong. With large filing</text>
-<text x="168" y="272" font-size="15" fill="#1c2328">systems this can take a few minutes. This page reloads</text>
-<text x="168" y="292" font-size="15" fill="#1c2328">by itself.</text>
+<text x="168" y="252" font-size="15" fill="#1c2328">You haven't done anything wrong. On the first start</text>
+<text x="168" y="272" font-size="15" fill="#1c2328">and with large libraries this can take a few minutes.</text>
+<text x="168" y="292" font-size="15" fill="#1c2328">This page reloads by itself.</text>
 <text x="168" y="326" font-size="14" fill="#5b6670">As soon as Ablago is ready, it continues by itself –</text>
-<text x="168" y="346" font-size="14" fill="#5b6670">to the sign-in or to the setup wizard.</text>
+<text x="168" y="346" font-size="14" fill="#5b6670">to the sign-in, the setup or the load test.</text>
 </svg>

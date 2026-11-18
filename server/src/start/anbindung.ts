@@ -22,6 +22,33 @@ type Bisher = Pick<Awaited<ReturnType<typeof vorbereiten>>, 'ordner' | 'log' | '
   Pick<Awaited<ReturnType<typeof liesUmgebung>>, 'umgebung' | 'einrichtungscode'> &
   Pick<Awaited<ReturnType<typeof oeffneStartseite>>, 'start'> & { env: NodeJS.ProcessEnv };
 
+/** So oft und in diesem Abstand versucht Ablago, eine nicht erreichbare Datenbank zu erreichen (zusammen etwa 1 Minute). */
+const VERSUCHE = 30;
+const ABSTAND_MS = 2000;
+
+/**
+ * Datenbank erreichen: Der Datenbank-Container braucht nach dem Start manchmal einen Moment – auf einem NAS beim ersten
+ * Start (initdb) auch eine Minute. Solange zeigt die Startseite „Datenbank ist noch nicht erreichbar – neuer Versuch n
+ * von m“ (#1250); erst danach kommt der Einrichtungsassistent mit dem Grund. Andere Fehler (Passwort, Datenbank fehlt)
+ * gehen gleich dorthin.
+ */
+async function warteAufDatenbank(kandidat: Anbindung, start: Bisher['start'], log: Bisher['log']) {
+  let startfehler: string | null = null;
+  start.schritt('datenbank');
+  for (let versuch = 1; versuch <= VERSUCHE; versuch++) {
+    const p = await pruefeAnbindung(kandidat);
+    if (p.ok) return { verbunden: true, startfehler };
+    startfehler = p.text;
+    // Ins Protokoll der erste und dann jeder fünfte Versuch – sonst stünden dort 30 gleiche Zeilen.
+    if (versuch === 1 || versuch % 5 === 0 || versuch === VERSUCHE || p.art !== 'nicht_erreichbar')
+      log.warn(`Datenbank nicht verbunden (Versuch ${versuch}/${VERSUCHE}): ${p.text}`, { technisch: p.technisch });
+    if (p.art !== 'nicht_erreichbar' || versuch === VERSUCHE) break;
+    start.schritt('datenbank-warten', { nr: versuch + 1, von: VERSUCHE });
+    await new Promise((r) => setTimeout(r, ABSTAND_MS));
+  }
+  return { verbunden: false, startfehler };
+}
+
 /** Anbindung an die Datenbank. */
 export async function bindeDatenbankAn(bisher: Bisher) {
   const { ordner, log, umgebung, env, verbund, start, einrichtungscode, cfg } = bisher;
@@ -33,22 +60,7 @@ export async function bindeDatenbankAn(bisher: Bisher) {
   }
   const quelle = anbindung ? ('datei' as const) : umgebung ? ('umgebung' as const) : null;
   const kandidat = anbindung ?? umgebung;
-  let verbunden = false;
-  let startfehler: string | null = null;
-  if (kandidat) {
-    // Der Datenbank-Container braucht nach dem Start manchmal einen Moment.
-    for (let versuch = 1; versuch <= 5; versuch++) {
-      const p = await pruefeAnbindung(kandidat);
-      if (p.ok) {
-        verbunden = true;
-        break;
-      }
-      startfehler = p.text;
-      log.warn(`Datenbank nicht verbunden (Versuch ${versuch}/5): ${p.text}`, { technisch: p.technisch });
-      if (p.art !== 'nicht_erreichbar') break;
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  }
+  const { verbunden, startfehler } = kandidat ? await warteAufDatenbank(kandidat, start, log) : { verbunden: false, startfehler: null };
   if (verbunden && !anbindung && umgebung) {
     await schreibeAnbindung(ordner.geheim, umgebung);
     anbindung = umgebung;
@@ -80,6 +92,7 @@ export async function bindeDatenbankAn(bisher: Bisher) {
       einbetten: cfg.einbetten,
       wiederholenMs: kandidat ? 10_000 : undefined,
     });
+    start.schritt('datenbank');
     await start.oeffne();
   }
   const db = anbindung!;

@@ -20,6 +20,8 @@
 .karte.fehlergrenze [data-knopf="haupt"] { width: auto; padding: 7px 13px; }
 /* Wiederherstellen (#107) */
 .karte.breit { max-width: 760px; }
+/* Lasttest-Seite (#1251): der Ablauf hat zehn Spalten – diese Karte darf breiter sein. */
+.karte.breit.lasttest { max-width: 1040px; }
 .karte .wiederherstellen [data-knopf="haupt"] { width: auto; }
 .karte [data-knopf="haupt"] { width: 100%; padding: 10px; }
 .karte :is([data-knopf="link"], [data-knopf="eigen"]) { align-self: flex-start; font-size: calc(13px * var(--skala, 1)); }

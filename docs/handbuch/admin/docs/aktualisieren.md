@@ -17,13 +17,29 @@
 
 ### Was du nach dem Start siehst { #nach-dem-start }
 
-Wenige Sekunden nach dem Start des Containers ist die Adresse erreichbar. Solange Ablago noch Migrationen ausführt oder sich vorbereitet, zeigt sie die Seite **„Ablago startet …“** mit dem aktuellen Schritt, z. B. „Datenbank wird auf den neuen Stand gebracht – Schritt 3 von 5“. Du hast dann nichts falsch gemacht: Bei großen Ablagen dauert das einige Minuten. Die Seite lädt sich von selbst neu und zeigt danach die Anmeldung (bzw. den Einrichtungsassistenten).
+Gleich nach dem Start des Containers ist die Adresse erreichbar. Solange Ablago noch Migrationen ausführt oder sich vorbereitet, zeigt sie die Seite **„Ablago startet …“** mit dem aktuellen Schritt, z. B. „Datenbank wird aktualisiert – Migration 3 von 5“. Du hast dann nichts falsch gemacht: Beim ersten Start und bei großen Ablagen dauert das einige Minuten. Die Seite lädt sich von selbst neu und zeigt danach die Anmeldung, den Einrichtungsassistenten oder – im Lasttest-Modus – die Lasttest-Seite.
 
 ![Die Seite „Ablago startet …“ mit dem Schritt der Migration, einem Fortschrittsbalken und dem Hinweis, dass man nichts falsch gemacht hat](grafiken/ablago-startet.svg){ .grafik }
 
-- Die Seite zeigt nur Schritte und Zahlen, keine Daten aus der Ablage. Anmeldung, API und WebDAV antworten bis dahin mit `503` und `Retry-After`; Programme und Pakete warten also einfach.
+Die Schritte in der Reihenfolge, in der sie kommen:
+
+| Schritt auf der Seite | Was passiert |
+| --- | --- |
+| Datenbank wird angelegt (nur beim ersten Start) | Nur dms-komplett: PostgreSQL legt seine Datenbank im Ordner `/data/postgres` an. Auf einem NAS kann das eine Minute dauern. |
+| Datenbank startet | Nur dms-komplett: PostgreSQL im Container startet. |
+| Ablago startet | Nur dms-komplett: Die Datenbank läuft, Ablago selbst startet. |
+| Verbindung zur Datenbank wird hergestellt | Ablago verbindet sich mit der Datenbank. |
+| Datenbank ist noch nicht erreichbar – neuer Versuch n von 30 | Die Datenbank antwortet noch nicht, z. B. weil ihr eigener Container noch startet. Ablago versucht es etwa eine Minute lang alle 2 Sekunden, danach zeigt der Einrichtungsassistent den Grund. |
+| Datenbank ist gesperrt … | Eine zweite Ablago an derselben Datenbank bringt sie gerade auf den neuen Stand. Ablago wartet, bis sie fertig ist. |
+| Datenbank wird aktualisiert – Migration n von m | Die Migrationen nach einem Update, mit Fortschrittsbalken. |
+| Schlüssel …, Suchindex …, Ordner …, Titel …, Benutzer …, Mappentypen …, Arbeiten im Hintergrund … | Ablago bereitet sich vor, teils mit Mengenangabe („120 von 200“). |
+
+In dms-komplett zeigt die Seite vom ersten Augenblick an ein kleiner Vorstart, noch bevor PostgreSQL angelegt oder gestartet ist. Sobald Ablago selbst läuft, übernimmt es den Port ohne Unterbrechung.
+
+- Die Seite zeigt nur Schritte und Zahlen, keine Daten aus der Ablage – vor der Anmeldung auch keine Version, keine Pfade und keine Rechnernamen. Sie lädt nichts von anderen Servern und erscheint auf Deutsch oder Englisch, je nach Sprache des Browsers. Anmeldung, API und WebDAV antworten bis dahin mit `503` und `Retry-After`; Programme und Pakete warten also einfach.
 - `/api/gesundheit` meldet bis zum Ende `503` mit `"zustand": "startet"`, danach `200` mit `"zustand": "laeuft"`. Der Healthcheck im Image, eine NAS oder ein Reverse-Proxy sehen den Container so erst als bereit, wenn Ablago es ist. Seit #1198 prüft sie auch die Datenbank: Antwortet sie nicht oder ist keine Verbindung frei, meldet sie `503` mit `"zustand": "datenbank"` (siehe [Ablago lädt nicht oder bleibt schwarz](was-ist-passiert.md#laedt-nicht)).
-- **Geht beim Start etwas schief**, steht auf derselben Seite „Ablago konnte nicht starten“ mit dem Grund in Klartext, z. B. welcher Schritt der Migration scheiterte, und der Hinweis auf das Container-Log und die [Fehlersuche](fehlersuche.md#container-logs). `/api/gesundheit` meldet dann `"zustand": "fehler"`. Nach einigen Minuten beendet sich Ablago, damit Docker den Container neu startet und es noch einmal versucht.
+- **Geht beim Start etwas schief**, steht auf derselben Seite „Ablago konnte nicht starten“ mit dem Grund in Klartext, z. B. welcher Schritt der Migration scheiterte, darunter **Was du tun kannst** und der Hinweis auf das Container-Log und die [Fehlersuche](fehlersuche.md#start-datenbank). `/api/gesundheit` meldet dann `"zustand": "fehler"`. Nach einigen Minuten beendet sich Ablago, damit Docker den Container neu startet und es noch einmal versucht.
+- **Ist die Datenbank nicht erreichbar oder blockiert** (Verbindung abgelehnt, Sperre, Speicher voll, zu viele Verbindungen), nennt die Seite genau das und den Ausweg, etwa den Container bzw. den Container der Datenbank neu zu starten. In dms-komplett gilt das auch für Fehler, bevor Ablago selbst läuft: Rechte des Datenbank-Ordners, andere Hauptversion von PostgreSQL, Datenbank lässt sich nicht anlegen oder wurde beendet. Die Übersicht steht unter [Fehlersuche](fehlersuche.md#start-datenbank).
 - **Stammt die Datenbank von einer neueren Version** (Sperre gegen ein Zurückgehen), nennt die Seite das ebenfalls und bleibt stehen – ein Neustart hilft da nicht. Stell das Image wieder auf die neuere Version.
 - Den ersten Abgleich der Fristen macht Ablago erst nach dem Start im Hintergrund; die Adresse wartet nicht darauf.
 

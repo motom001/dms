@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 import type { LasttestStand, Speicherwahl } from '../../../shared/src/lasttest';
 import { GERAET_MAX } from '../../../shared/src/lasttest';
 import { handbuchUrl } from '../../../shared/src/hilfe';
@@ -17,7 +17,10 @@ const SAMMEL = 'https://github.com/motom001/dms/issues/576';
 export const zahl = (n: number) => n.toLocaleString(gebietsschema());
 const prozent = (q: number) => `${(q * 100).toFixed(2).replace('.', ',')} %`;
 
-/** Kopieren auch ohne HTTPS (NAS im Heimnetz): Zwischenablage, sonst markieren und execCommand. */
+/**
+ * Kopieren auch ohne HTTPS (NAS im Heimnetz, `http://`): Zwischenablage, sonst markieren und execCommand – im
+ * sichtbaren Feld oder (#1251, ganzer Bericht) in einem kurz angelegten, unsichtbaren Feld.
+ */
 async function kopiere(text: string, feld: HTMLTextAreaElement | null): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -27,13 +30,22 @@ async function kopiere(text: string, feld: HTMLTextAreaElement | null): Promise<
   } catch {
     /* weiter */
   }
-  if (!feld) return false;
-  feld.focus();
-  feld.select();
+  const behelf = feld ? null : document.createElement('textarea');
+  const ziel = feld ?? behelf!;
+  if (behelf) {
+    behelf.value = text;
+    behelf.readOnly = true;
+    behelf.className = 'lasttest-behelf';
+    document.body.appendChild(behelf);
+  }
+  ziel.focus();
+  ziel.select();
   try {
     return document.execCommand('copy');
   } catch {
     return false;
+  } finally {
+    behelf?.remove();
   }
 }
 
@@ -50,27 +62,31 @@ function herunterladen(name: string, text: string) {
 
 type Zustand = LasttestStand['zustand'];
 
-/** Stand: Stufe, Schritt, Demo-Mappen, Durchgang, Restdauer; Warnung ohne Datei, fertig, Abbruch, fertige Durchgänge. */
+/**
+ * Stand: Schritt, Demo-Mappen, Durchgang, Restdauer; Warnung ohne Datei, fertig, Abbruch. Mit Ablauf (#1251) stehen
+ * Stufe und fertige Durchgänge in dessen Tabelle; ohne (älteres Skript) die Liste wie bisher.
+ */
 export function LaufStand({
   stand,
   zustand,
   jetzt,
   rest,
+  mitAblauf,
 }: {
   stand: LasttestStand;
   zustand: Zustand;
   jetzt: number;
   rest: [number, number] | null;
+  mitAblauf: boolean;
 }) {
   return (
     <div className="lasttest-stand" role="status" aria-live="polite">
       {zustand === 'laeuft' && (
         <>
-          {stand.stufe && <p className="klein leise">{t('lasttest.stufe', { nr: stand.nr, von: stand.von })}</p>}
           <p>
             <strong>{t.frei(`lasttest.schritt.${stand.schritt}`)}</strong>
           </p>
-          {stand.demo && (
+          {stand.demo && !mitAblauf && (
             <>
               <progress max={stand.demo.gesamt || 1} value={stand.demo.fertig} />
               <p className="klein leise">{t('lasttest.demo', { fertig: zahl(stand.demo.fertig), gesamt: zahl(stand.demo.gesamt) })}</p>
@@ -119,7 +135,7 @@ export function LaufStand({
           </p>
         </div>
       )}
-      {!!stand.durchgaenge.length && (
+      {!mitAblauf && !!stand.durchgaenge.length && (
         <ul className="klein leise lasttest-durchgaenge">
           {stand.durchgaenge.map((d, i) => (
             <li key={i}>{t('lasttest.durchgang.fertig', { name: d.name, p95: d.p95 ?? '–', fehler: prozent(d.fehlerquote) })}</li>
@@ -209,6 +225,12 @@ export function Ergebnis({
   textDatei: string;
   setGesichert: (g: boolean) => void;
 }) {
+  // Ganzer Bericht (#1251): eigenes Ergebnis am Knopf, damit „Kopiert“ beim richtigen Knopf steht (B2).
+  const [berichtKopiert, setBerichtKopiert] = useState<'ja' | 'nein' | null>(null);
+  const datei = () => {
+    herunterladen(`lasttest-${stand.wahl}.md`, textDatei);
+    setGesichert(true);
+  };
   return (
     <section className="lasttest-ergebnis" aria-labelledby="lasttest-ergebnis">
       <h2 id="lasttest-ergebnis">{t('lasttest.ergebnis')}</h2>
@@ -230,12 +252,7 @@ export function Ergebnis({
               onClick={() => kopiere(block, feld.current).then((ok) => setKopiert(ok ? 'ja' : 'nein'))}>
               {kopiert === 'ja' ? t('lasttest.kopiert') : t('lasttest.kopieren')}
             </Knopf>
-            <Knopf
-              symbol="herunterladen"
-              onClick={() => {
-                herunterladen(`lasttest-${stand.wahl}.md`, textDatei);
-                setGesichert(true);
-              }}>
+            <Knopf symbol="herunterladen" onClick={datei}>
               {t('lasttest.herunterladen')}
             </Knopf>
             <KnopfLink href={FORMULAR} neuesFenster>
@@ -253,6 +270,27 @@ export function Ergebnis({
           {stand.datei && <p className="klein leise">{t('lasttest.datei', { datei: stand.datei })}</p>}
           <details>
             <summary>{t('lasttest.bericht')}</summary>
+            <p className="klein leise">{t('lasttest.bericht.text')}</p>
+            <div className="knoepfe">
+              <Knopf
+                symbol={berichtKopiert === 'ja' ? 'haken' : undefined}
+                onClick={() =>
+                  kopiere(textDatei, null).then((ok) => {
+                    setBerichtKopiert(ok ? 'ja' : 'nein');
+                    if (ok) setGesichert(true);
+                  })
+                }>
+                {berichtKopiert === 'ja' ? t('lasttest.kopiert') : t('lasttest.bericht.kopieren')}
+              </Knopf>
+              <Knopf symbol="herunterladen" onClick={datei}>
+                {t('lasttest.herunterladen')}
+              </Knopf>
+            </div>
+            {berichtKopiert === 'nein' && (
+              <p className="klein fehlertext" role="alert">
+                {t('lasttest.kopieren.geht-nicht')}
+              </p>
+            )}
             <pre className="lasttest-bericht">{stand.ergebnis.bericht}</pre>
           </details>
         </>

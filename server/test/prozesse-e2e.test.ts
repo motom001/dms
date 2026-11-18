@@ -96,7 +96,7 @@ describe('Mehrere Prozesse, ganzes Ablago (#745)', { skip: !URL_DB && 'TEST_DATA
     let gesehen = false;
     await warte(
       async () => {
-        gesehen ||= /Datenbank wird auf den neuen Stand gebracht/.test(await (await fetch(x.basis)).text());
+        gesehen ||= /Datenbank wird aktualisiert/.test(await (await fetch(x.basis)).text());
         return (await fetch(`${x.basis}/api/gesundheit`)).status === 200;
       },
       'bereit',

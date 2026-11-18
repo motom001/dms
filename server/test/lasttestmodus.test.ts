@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { after, describe, it } from 'node:test';
 import { bereinigeGeraet, fuelleErgebnis, PLATZHALTER, restMinuten, stufenVon, type LasttestStand } from '../../shared/src/lasttest';
+import type { LasttestStandMitAblauf } from '../../shared/src/lasttestablauf';
 import { Lasttestmodus, lasttestAus } from '../src/lasttest/lasttestmodus';
 import { erkenneSpeicherart, geraeteNummer } from '../src/lasttest/speicherart';
 
@@ -135,6 +136,7 @@ describe('Lasttest-Modus (#612): Speicherart erkennen', () => {
 
 /** Ergebnisblock aus dem Skript (dieselbe Funktion wie auf der Konsole) mit den Platzhaltern des Lasttest-Modus. */
 interface Skript {
+  ablaufPlan(stufen: string[], o?: { dauer?: number; speichern?: boolean; zusatz?: boolean }): unknown;
   PLATZHALTER: typeof PLATZHALTER;
   ergebnisblock(e: unknown[], x: unknown, u: unknown, a?: { geraet?: string; speicher?: string }): string;
   bericht(e: unknown[], x: unknown): string;
@@ -509,6 +511,8 @@ describe('Lasttest-Modus (#612): Seite', () => {
       assert.equal(s.version, '0.244.0', '#1117: Version des Containers von Anfang an');
       assert.equal(s.speicherErkannt, 'SSD');
       assert.equal(s.angaben.speicher, 'SSD');
+      // #1251: Plan zuerst – alle Zeilen offen, dann füllt sich die Tabelle mit denselben Meldungen.
+      kind!.sende({ art: 'plan', stufen: skript.ablaufPlan(['klein'], { dauer: 5, speichern: false, zusatz: false }) });
       kind!.sende({ art: 'stufe', stufe: 'klein', nr: 1, von: 1 });
       kind!.sende({ art: 'schritt', schritt: 'demo', anzahl: 5000, mappen: 5000 });
       kind!.sende({ art: 'demo', fertig: 1200, gesamt: 5000 });
@@ -561,6 +565,20 @@ describe('Lasttest-Modus (#612): Seite', () => {
       s = await stand();
       assert.equal(s.zustand, 'fertig');
       assert.deepEqual(s.fertigeStufen, ['klein']);
+      const ablauf = (s as LasttestStandMitAblauf).ablauf!;
+      assert.deepEqual(
+        ablauf.stufen[0].zeilen.map((z) => `${z.art === 'schritt' ? z.schritt : z.name}:${z.zustand}`),
+        [
+          'pruefen:nicht-noetig',
+          'einrichten:nicht-noetig',
+          'demo:erledigt',
+          'hintergrund:nicht-noetig',
+          'vorbereiten:nicht-noetig',
+          'klein:erledigt',
+          'auswerten:erledigt',
+        ],
+      );
+      assert.equal(ablauf.stufen[0].zeilen[5].werte?.p95, 90);
       assert.equal(s.durchgaenge[0].p95, 90);
       assert.equal(s.angaben.geraet, 'Beispiel-NAS 16 GB');
       const text = JSON.stringify(s);

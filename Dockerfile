@@ -114,7 +114,8 @@ CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 
 # dms-komplett (#208): Ablago und PostgreSQL 17 in einem Container. PostgreSQL ist nur innerhalb des
 # Containers erreichbar (127.0.0.1, „trust“) – kein Passwort, das jemand kennen muss. tini startet das
-# Skript, das erst PostgreSQL, dann Ablago startet und beim Stoppen beide sauber beendet.
+# Skript, das erst PostgreSQL, dann Ablago startet und beim Stoppen beide sauber beendet. Vom ersten Augenblick an zeigt
+# dabei der Vorstart (server/dist/vorstart.js, #1250) die Seite „Ablago startet …“; er braucht kein root.
 FROM laufzeit AS komplett
 # Ohne eigenes „apk upgrade“ (#1397): laufzeit endet mit einer frischen Paketschicht aus demselben Bau. Ein zweites
 # Upgrade hier könnte Pakete heben, die dms nicht bekommt. „apk add“ holt die neuesten PostgreSQL-Pakete und hebt nur,
