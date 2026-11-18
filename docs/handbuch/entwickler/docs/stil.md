@@ -14,6 +14,7 @@ Zwei Werkzeuge prüfen den Code, bevor er nach `main` kommt (#899): **ESLint** f
 | `npm run lint:zaehlen` | Bestandslisten gegen `main` zählen – genau die Prüfung der CI |
 | `npm run lint:umtragen` | nach einem Umzug: Bestand neu schreiben, Verwaistes streichen, dann zählen |
 | `npm run lint:farben` | [keine festen Farben](#farben) außerhalb von `tokens.css` |
+| `npm run lint:klassen` | [jede Klasse einmal und beim Besitzer](#klassen), keine ungenutzten Klassen, `z-index` nur als Stufe |
 | `npm run lint:tot` | [toter Code](#toter-code): ungenutzte Dateien, Exporte und Abhängigkeiten (knip, wenige Sekunden) |
 | `node .github/werkzeuge/fachordner-pruefen.mjs` | jeder Fachordner mit `*.dienst.ts` hat `index.ts` und `README.md` (#1072) |
 | `npm run abhaengigkeitsbild` | [Abhängigkeitsbild](#abhaengigkeitsbild) neu erzeugen |
@@ -107,6 +108,14 @@ Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewu
 **Prüfung:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) sucht in `web/src/**/*.css` außer `tokens.css` nach Hex-Werten, `rgb()`/`hsl()` & Co. und benannten Farben wie `white`, in `*.ts(x)` nach Farbwerten in Zeichenketten. Die CI führt sie im Job **stil** aus; jeder Fund ist ein Fehler. Ausnahmen brauchen einen Grund in derselben Zeile – `/* farbe-erlaubt: Druck ist immer schwarz auf weiß */` – oder, für ganze Dateien, einen Eintrag mit Grund in `AUSNAHMEN` im Skript (heute: `design.ts` mit den Werten für hohen Kontrast, die Beispielbelege der Stempel-Vorschau).
 
 **Bausteine:** Wie Felder, Knöpfe und andere Teile der Oberfläche aussehen und sich verhalten, legen die Bausteine unter `web/src/bausteine/` fest – Seiten setzen sie zusammen, statt Abstände, Farben oder `aria`-Attribute selbst zu schreiben. Mehr unter [Gestaltung und Bausteine](bausteine.md).
+
+## Klassen einmal und beim Besitzer { #klassen }
+
+Jede Klasse der Gestaltung steht **auf oberster Ebene in genau einer Datei**, der ihres Besitzers (#1270): Eine Klasse, die nur ein Bereich setzt, steht in dessen Datei (`web/src/ablage/ablage-*.css`, `web/src/werkbank/werkbank*.css`, `web/src/einrichtung/einrichtung.css` …), samt ihrer Handy-Regeln; eine Klasse, die mehrere Bereiche setzen, in `web/src/stile/gemeinsam-*.css`; eine Klasse eines Bausteins in seinem Modul. „Auf oberster Ebene“ heißt: Sie ist die erste Klasse eines Selektors – `.kachel:hover` gehört `.kachel`, `.blatt .kachel` gehört `.blatt`. So überschreibt niemand unbemerkt eine Regel an anderer Stelle. Globale Knopf-Klassen gibt es nicht mehr: Eine Umgebung passt einen Knopf über `[data-knopf="…"]` an, ein Etikett über `[data-etikett]`.
+
+`z-index` hat **Stufen** in `tokens.css` (`--ebene-innen`, `--ebene-leiste`, `--ebene-kopf`, `--ebene-menue`, `--ebene-blatt`, `--ebene-panel` …); ein Teil, das über seiner eigenen Stufe liegen muss, schreibt `calc(var(--ebene-blatt) + 1)`.
+
+**Prüfung:** `npm run lint:klassen` (`.github/werkzeuge/klassen-pruefen.mjs`) meldet eine Klasse in mehr als einer Datei, eine Klasse, die die Oberfläche nirgends setzt (kein Wort in einer Zeichenkette unter `web/src`, bei Modulen kein `s.name`), und jeden `z-index` außer einer Stufe, `0`, `-1` und `auto`. Die CI führt sie im Job **stil** aus.
 
 ## Toter Code (knip) { #toter-code }
 

@@ -80,6 +80,7 @@ nav:
       - Save bar: bausteine-speicherleiste.md
       - Tabs: bausteine-reiter.md
       - Switch: bausteine-schalter.md
+      - Tag: bausteine-etikett.md
       - Package chip: bausteine-paketchip.md
       - Inputs with a unit: bausteine-einheit.md
       - Table: bausteine-tabelle.md
@@ -91,6 +92,7 @@ nav:
       - Selection checkbox: bausteine-wahlhaken.md
       - Multiple selection: bausteine-mehrfachauswahl.md
       - Placeholders: bausteine-platzhalter.md
+      - Expander: bausteine-aufklapper.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

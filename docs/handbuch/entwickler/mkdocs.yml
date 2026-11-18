@@ -85,6 +85,7 @@ nav:
       - Speicherleiste: bausteine-speicherleiste.md
       - Reiter: bausteine-reiter.md
       - Schalter: bausteine-schalter.md
+      - Etikett: bausteine-etikett.md
       - PaketChip: bausteine-paketchip.md
       - Eingaben mit Einheit: bausteine-einheit.md
       - Tabelle: bausteine-tabelle.md
@@ -96,6 +97,7 @@ nav:
       - Wahlhaken: bausteine-wahlhaken.md
       - Mehrfachauswahl: bausteine-mehrfachauswahl.md
       - Platzhalter: bausteine-platzhalter.md
+      - Aufklapper: bausteine-aufklapper.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md

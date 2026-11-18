@@ -98,15 +98,17 @@ export { beispielPdf, beispielPdfSeiten } from './pdf.mjs';
 /**
  * Wächter für die Leitsätze der Knöpfe (#1210), läuft in jeder Seite jedes Rauchtests (addInitScript): Nach jeder
  * Änderung im Dokument prüft er die sichtbaren Knöpfe und meldet Funde einmal je Seite an den Test (`__knopfFund`):
- *   - anlegen-ohne-plus: `data-knopf="anlegen"` oder grün über die Klasse (`.knopf.gruen`, #1269), dessen Beschriftung
- *     nicht mit „+“ beginnt (Leitsatz 2);
+ *   - anlegen-ohne-plus: `data-knopf="anlegen"`, dessen Beschriftung nicht mit „+“ beginnt (Leitsatz 2; globale
+ *     Knopf-Klassen wie `.knopf.gruen` gibt es seit #1270 nicht mehr);
  *   - gefahr-ohne-rueckfrage: `data-knopf="gefahr"`, der keine Rückfrage öffnet (`aria-haspopup="dialog"`) und nicht
  *     gesperrt ist (Leitsatz 5);
- *   - rot-ausserhalb-rueckfrage: rot gefüllt (`.knopf.gefahr`, `data-knopf="entscheidung"`) oder ein roter Link
- *     (`.textknopf.gefahr`, #1269) außerhalb des Fensters einer Rückfrage (Leitsatz 5);
+ *   - rot-ausserhalb-rueckfrage: rot gefüllt (`data-knopf="entscheidung"`) außerhalb des Fensters einer Rückfrage
+ *     (Leitsatz 5);
  *   - link-ohne-ziel: sieht aus wie ein Link, hat aber kein Ziel (#1277: Links führen woanders hin, Aktionen sind
- *     Knöpfe) – `data-knopf="link"` ohne `href` oder ein `<button>` mit der Klasse `textknopf` außer einer Sonderform
- *     (`data-knopf="eigen"`).
+ *     Knöpfe) – `data-knopf="link"` ohne `href`;
+ *   - rand-ohne-knopf (#1289, Leitsatz 8: Rand heißt Knopf): ein kleines Element mit Rand ringsum und runden Ecken,
+ *     das weder Knopf noch Link noch Feld ist und auch keins enthält – so sahen die alten Chips aus. Kennzeichen sind
+ *     Etiketten ohne Rand (Baustein Etikett).
  */
 function knopfWaechter() {
   const gemeldet = new Set();
@@ -114,16 +116,26 @@ function knopfWaechter() {
   const text = (el) => (el.textContent || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
   const pruefe = () => {
     const funde = [];
-    for (const el of document.querySelectorAll('[data-knopf="anlegen"], .knopf.gruen'))
+    for (const el of document.querySelectorAll('[data-knopf="anlegen"]'))
       if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
     for (const el of document.querySelectorAll('[data-knopf="gefahr"]')) {
       const gesperrt = el.disabled || el.getAttribute('aria-disabled') === 'true';
       if (sichtbar(el) && !gesperrt && el.getAttribute('aria-haspopup') !== 'dialog') funde.push(['gefahr-ohne-rueckfrage', el]);
     }
-    for (const el of document.querySelectorAll('.knopf.gefahr, [data-knopf="entscheidung"], .textknopf.gefahr'))
+    for (const el of document.querySelectorAll('[data-knopf="entscheidung"]'))
       if (sichtbar(el) && !el.closest('dialog.rueckfrage')) funde.push(['rot-ausserhalb-rueckfrage', el]);
-    for (const el of document.querySelectorAll('[data-knopf="link"]:not([href]), button.textknopf:not([data-knopf="eigen"])'))
-      if (sichtbar(el)) funde.push(['link-ohne-ziel', el]);
+    for (const el of document.querySelectorAll('[data-knopf="link"]:not([href])')) if (sichtbar(el)) funde.push(['link-ohne-ziel', el]);
+    const BEDIEN = 'a[href], button, input, select, textarea, summary, label, [role="button"], [role="link"], [tabindex]';
+    for (const el of document.querySelectorAll('span, small, li, em, strong, b, code')) {
+      if (!sichtbar(el) || el.matches(BEDIEN) || el.closest(BEDIEN) || el.querySelector(BEDIEN)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > 34 || r.width > 320 || !text(el)) continue;
+      const cs = getComputedStyle(el);
+      const rand = ['Top', 'Right', 'Bottom', 'Left'].every(
+        (k) => parseFloat(cs[`border${k}Width`]) > 0 && cs[`border${k}Style`] !== 'none' && cs[`border${k}Color`] !== 'rgba(0, 0, 0, 0)',
+      );
+      if (rand && parseFloat(cs.borderTopLeftRadius) >= 4) funde.push(['rand-ohne-knopf', el]);
+    }
     for (const [art, el] of funde) {
       const f = { art, text: text(el), pfad: location.pathname };
       const schluessel = `${f.art}|${f.text}|${f.pfad}`;

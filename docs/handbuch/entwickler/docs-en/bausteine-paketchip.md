@@ -1,6 +1,6 @@
 # Package chip
 
-`PaketChip` shows **where an entry comes from** – the same everywhere (#1192): package icon and package name as a small chip right after the name, tooltip “from the package Basis, version 1.4.0”, a click leads to the package page. Entries you created yourself have **no** chip; what Ablago brings itself carries **“Ablago”**. There is **no separate line** for the origin.
+`PaketChip` shows **where an entry comes from** – the same everywhere (#1192): package icon and package name as a small chip right after the name, tooltip “from the package Basis, version 1.4.0”, a click leads to the package page. It looks like a [tag](bausteine-etikett.md) – no border, square corners (#1289, principle 8: a border means button); as a link it turns blue and underlined on hover. Entries you created yourself have **no** chip; what Ablago brings itself carries **“Ablago”**. There is **no separate line** for the origin.
 
 ![“Package chip” section of the pattern page: with link, in a list row, from Ablago, created yourself](bilder/muster-paketchip.png){ loading=lazy }
 

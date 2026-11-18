@@ -73,7 +73,7 @@ test('Baustein Knopf: Gefahr mit Rückfrage, gesperrt mit Erklärung (#1210)', {
     const loeschen = karte.getByRole('button', { name: 'Löschen' });
     assert.equal(await loeschen.getAttribute('aria-haspopup'), 'dialog');
     assert.equal(
-      await s.locator('.knopf.gefahr, [data-knopf="entscheidung"]').filter({ visible: true }).count(),
+      await s.locator('[data-knopf="entscheidung"]').filter({ visible: true }).count(),
       1,
       'rot gefüllt nur die stehende Rückfrage der Musterseite',
     );
