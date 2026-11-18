@@ -16,6 +16,7 @@ import { BeispielAblage } from '../beispiele/beispielablage';
 import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from './meldungen';
 import { ueberfluessigeVariablen } from '../../../shared/src/umgebungsvariablen';
 import { zeitzone } from '../../../shared/src/region';
+import { fehlendeWerkzeuge } from '../../../shared/src/werkzeuge';
 import { KOERPER_SPIELRAUM, LOGO_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, ich, grenzenUndEngpaesse, ZWEITE_ABGELEHNT, nurEigeneBereiche } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
@@ -330,6 +331,8 @@ function uebersichtRouten(k: RoutenKontext): Route[] {
         const aufgaben = await dienst.ohneLeserecht.alleAufgaben(false);
         const korb = await dienst.papierkorbVerwaltung.papierkorb(ich(a), true);
         const sys = await uebersicht(system, x.betrieb?.kurz());
+        // Eingebaute Werkzeuge (#1189, #1312): einmal lesen (zwischengespeichert; „Erneut prüfen“ im Systemzustand prüft neu).
+        const werkzeuge = x.texterkennung ? await sicher(() => x.texterkennung!.werkzeugeLaden()) : null;
         return ok(
           nurEigeneBereiche(ich(a), {
             tresor: ts ? { zustand: ts.zustand, eingebunden: ts.eingebunden, betroffen: ts.betroffen.length } : null,
@@ -339,7 +342,9 @@ function uebersichtRouten(k: RoutenKontext): Route[] {
             // #459: Ist ein Paket für die Texterkennung installiert? Sonst Hinweis „Texterkennung ist jetzt ein Paket“.
             texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
             // #1329: poppler findet für nicht eingebettete Schriften keinen Ersatz – Seiten-, Vorschaubilder und Archivfassung ohne Text.
-            schriftenFehlen: x.texterkennung ? (await sicher(() => x.texterkennung!.werkzeugeLaden()))?.schriften === false : false,
+            schriftenFehlen: werkzeuge?.schriften === false,
+            // #1312: welche eingebauten Werkzeuge fehlen (poppler, qpdf, schriften) – auch auf der Startseite der Werkbank.
+            werkzeugeFehlen: fehlendeWerkzeuge(werkzeuge),
             aufgaben: { offen: aufgaben.length, ohneEmpfaenger: aufgaben.filter((y) => !y.empfaengerId).length },
             // #798: Aufgaben bei Personen ohne Leserecht (offene Fälle, abgeglichen alle fünf Minuten und beim Öffnen).
             ohneLeserecht: (await sicher(async () => (await dienst.ohneLeserecht.offeneFaelle()).length)) ?? 0,

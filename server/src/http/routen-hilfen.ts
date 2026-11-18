@@ -346,6 +346,9 @@ const UEBERSICHT_BEREICHE: Record<string, { bereich: Bereichskennung | typeof NU
   auslastung: { bereich: 'systemzustand', leer: [] },
   engpaesse: { bereich: 'systemzustand', leer: [] },
   erweiterungen: { bereich: 'systemzustand', leer: [] },
+  // Eingebaute Werkzeuge (#1189, #1312): Folge, Abhilfe und „Erneut prüfen“ stehen im Systemzustand.
+  werkzeugeFehlen: { bereich: 'systemzustand', leer: [] },
+  schriftenFehlen: { bereich: 'systemzustand', leer: false },
   variablen: { bereich: 'systemzustand', leer: [] },
   bestand: { bereich: 'systemzustand', leer: null },
   lasttestAbbruch: { bereich: 'systemzustand', leer: null },
