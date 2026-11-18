@@ -1,0 +1,6 @@
+art: patch
+
+## Verbessert
+
+- **Viele Fehlanmeldungen bremsen nicht mehr** (#1415): Fehlanmeldungen schreibt Ablago gesammelt ins Nachweis-Journal, je Prozess höchstens alle 2 Sekunden in einer Anweisung, statt bei jedem Versuch dieselbe Zeile hochzuzählen. Probiert jemand Passwörter durch, bleiben die übrigen Anfragen flüssig. Anmeldeschutz, Sperren und Zählung bleiben, wie sie sind; im Journal erscheint eine Fehlanmeldung höchstens 2 Sekunden später.
+- **Schlankerer Export** (#1335): Für „Alle … exportieren“ und „Alle Treffer auswählen“ holt Ablago von den Treffern nur noch die Kennungen und lädt die Mappen genau einmal. Datum und Zahlen in Export, Titeln, Stempeln und Auskünften nutzen gemerkte Formate.

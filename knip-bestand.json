@@ -953,9 +953,6 @@
     "exports": [
       "MONATE",
       "monatVon"
-    ],
-    "types": [
-      "JournalEintrag"
     ]
   },
   "server/src/protokoll/protokoll.ts": {

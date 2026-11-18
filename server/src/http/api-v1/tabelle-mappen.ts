@@ -120,13 +120,18 @@ export const V1_MAPPEN: V1[] = [
     gruppe: 'Ablage',
     zusammenfassung: 'Zeilen einer Tabelle an einer Mappe',
     beschreibung:
-      'Feldart Tabelle (#1030): die Mappen des anderen Typs, die über das Verweisfeld der Quelle auf diese Mappe verweisen – je 50 (von blättert; gesamt vom ersten Blatt mitgeben), sortiert wie eine Trefferliste (sortierung: Spalte, absteigend: true; ohne nach Titel). Lesen an der Mappe nötig. Nur Mappen, die der Aufrufer lesen darf – auch gesamt zählt nur sie. Dazu verborgen (#1208): nur die Zahl der Zeilen ohne Leserecht, damit eine Oberfläche „3 von 7“ zeigen kann. Je Mappe nur die Werte der Spalten (spalten, ohne Passwortfelder); Verweise und Erwähnungen (#1333) auf nicht lesbare Mappen in bezuege ohne Titel (verborgen). Neue Zeilen legt POST /mappen an (Verweisfeld auf diese Mappe gesetzt); der Server prüft dabei das Anlegerecht am anderen Typ und das Leserecht auf diese Mappe.',
+      'Feldart Tabelle (#1030): die Mappen des anderen Typs, die über das Verweisfeld der Quelle auf diese Mappe verweisen – je 50 (von blättert; jedes Blatt zählt selbst, gesamt braucht es seit #1265 nicht mehr), sortiert wie eine Trefferliste (sortierung: Spalte, absteigend: true; ohne nach Titel). Lesen an der Mappe nötig. Nur Mappen, die der Aufrufer lesen darf – auch gesamt zählt nur sie. Dazu verborgen (#1208): nur die Zahl der Zeilen ohne Leserecht, damit eine Oberfläche „3 von 7“ zeigen kann. Je Mappe nur die Werte der Spalten (spalten, ohne Passwortfelder); Verweise und Erwähnungen (#1333) auf nicht lesbare Mappen in bezuege ohne Titel (verborgen). Neue Zeilen legt POST /mappen an (Verweisfeld auf diese Mappe gesetzt); der Server prüft dabei das Anlegerecht am anderen Typ und das Leserecht auf diese Mappe.',
     intern: { methode: 'GET', pfad: '/api/mappen/:id/tabelle/:feld' },
     parameter: [
       id('der Mappe'),
       { name: 'feld', wo: 'path', typ: 'string', beschreibung: 'Kennung des Tabellenfelds' },
       { name: 'von', wo: 'query', typ: 'integer', beschreibung: 'Ab der wievielten Zeile (0 = erste)' },
-      { name: 'gesamt', wo: 'query', typ: 'integer', beschreibung: 'Beim Blättern: gesamt vom ersten Blatt' },
+      {
+        name: 'gesamt',
+        wo: 'query',
+        typ: 'integer',
+        beschreibung: 'Nicht mehr nötig (#1265, #1335): Jedes Blatt zählt selbst, ein mitgegebener Wert wird nicht beachtet',
+      },
       { name: 'sortierung', wo: 'query', typ: 'string', beschreibung: 'Spalte (Feldkennung oder _titel, _erstellt …)' },
       { name: 'absteigend', wo: 'query', typ: 'boolean', beschreibung: 'Absteigend sortieren' },
     ],

@@ -22,7 +22,7 @@ Most integrations only need **numbers**, no content:
 
 More than numbers (filing post, reading folders) works via the other endpoints of API v1 with a key "read only" or "read and write".
 
-The client builds sentences itself; the API returns numbers: for a table (`GET /api/v1/mappen/{id}/tabelle/{feld}`), `verborgen` only says how many rows the key may not read. If a client shows this, it does so like the interface, with the field's label (`label` or `beschriftungen.<language>.label`): "You can see 3 of 7 Items", never a general "entries" (#1305).
+The client builds sentences itself; the API returns numbers: for a table (`GET /api/v1/mappen/{id}/tabelle/{feld}`), `verborgen` only says how many rows the key may not read. If a client shows this, it does so like the interface, with the field's label (`label` or `beschriftungen.<language>.label`): "You can see 3 of 7 Items", never a general "entries" (#1305). When paging (`von`) every page counts by itself; since #1265 there is no need to pass `gesamt` there, a value passed is ignored.
 
 ## The same in all clients { #gleich-in-allen-clients }
 
