@@ -3,6 +3,7 @@
  * Aufrufs, was in der Ablage ist, und was die Schritte sammeln (Probleme, Fehlercodes, Hinweise) – dazu die Schritte, die
  * ohne die Paketverwaltung auskommen: Sprachpaket, Hinweise, Namen, Ansichten.
  */
+import { PAKET_GRUNDSPRACHE, pruefePaketTexte } from '../../../../shared/src/entdecken-paket';
 import { type Mappentyp } from '../../../../shared/src/model';
 import { VERSION, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogVersion } from '../../../../shared/src/pakete';
 import { type Sicht } from '../../../../shared/src/sichten';
@@ -86,6 +87,15 @@ export function inhaltsHinweise(l: PlanLauf) {
     const da = l.installierte.find((x) => x.id === p);
     if (da && !Object.keys(da.beispiele ?? {}).length)
       l.hinweise.push(t('meldungen.pakete.einige-beispiele-zeigen-auf', { name: da.name }));
+  }
+  // Rundgänge und Tipps (#1307): nur in einer Sprache (Text direkt in der Datei, keine Übersetzung) oder Lücken in einer Übersetzung.
+  const e = paket.entdecken;
+  if (e) {
+    const b = pruefePaketTexte(e.texte, e.rundgaenge, e.tipps);
+    if (b.inDatei && !Object.keys(e.texte ?? {}).some((x) => x !== PAKET_GRUNDSPRACHE))
+      l.hinweise.push(t('meldungen.pakete.entdecken.texte-in-datei'));
+    for (const f of b.fehlt)
+      l.hinweise.push(t('meldungen.pakete.entdecken.uebersetzung-fehlt', { sprache: f.sprache, anzahl: f.schluessel.length }));
   }
 }
 

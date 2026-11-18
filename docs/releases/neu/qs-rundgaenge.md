@@ -1,0 +1,8 @@
+art: patch
+
+## Geändert
+
+- **Werkbank: „Rundgänge“ erst ab der Stufe Betrieb** (#1298): In Einsteiger, Haushalt und Selbständig steht der Bereich nicht mehr in der Leiste, in Betrieb und Alles schon. Wer schon eigene Rundgänge geschrieben oder einen mitgelieferten ausgeschaltet hat, behält ihn nach dem Update eingeblendet; über „Werkbank anpassen“ lässt er sich in jeder Stufe einblenden. Die Rundgänge selbst laufen für alle weiter.
+- **Tipps und Rundgänge mit Leseschlüssel als gesehen merken** (#1307): `POST /api/v1/entdecken/tipps/{schluessel}` und `…/rundgaenge/{schluessel}` gehen jetzt auch mit einem API-Schlüssel „nur lesen“. Sie setzen nur Merker der eigenen Person; „nur Zähler“ bekommt weiter nichts, in einer Vertretung wird nichts gemerkt. So kommt ein Tipp, den du in einer App weggeklickt hast, im Browser nicht wieder.
+- **Rundgänge und Tipps aus Paketen in mehreren Sprachen** (#1307): Pakete können die Texte ihrer Rundgänge und Tipps als `texte/<sprache>/entdecken.json` mitbringen; angezeigt wird die Sprache der Person, sonst Deutsch. Die Prüfung beim Installieren meldet überzählige Schlüssel als Fehler und fehlende Übersetzungen als Hinweis. Pakete mit Texten direkt in der YAML-Datei laufen weiter, mit Hinweis.
+- **Tipp zum Erinnern zeigt auf „Mappe ▾“** (#1307): „Zeig es mir“ öffnet die zuletzt geänderte Mappe, die du lesen darfst, und hebt „Mappe ▾“ hervor; gibt es noch keine, steht ein kurzer Satz statt eines Sprungs ins Leere. Anker-Namen werden nie umbenannt, nur neue hinzugefügt – ein Test prüft das gegen eine gespeicherte Liste.

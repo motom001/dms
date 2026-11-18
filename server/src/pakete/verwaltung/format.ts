@@ -10,6 +10,7 @@ import type { PaketAblaufvorlage } from '../../aufgaben';
 import { typKennung } from '../../../../shared/src/kennungen';
 import { type Einstellungsbeschreibung } from '../../../../shared/src/paketeinstellungen';
 import { type Sprachangabe, type SprachBeschriftung, type Sprachtexte } from '../../../../shared/src/sprachpaket';
+import type { PaketTexte } from '../../../../shared/src/entdecken-paket';
 import { type PaketErgaenzung, type PaketVorgabe } from '../index';
 import type { UmbauSchritt } from '../../../../shared/src/umbau';
 
@@ -194,8 +195,8 @@ export interface Paket {
   ablaufvorlagen?: PaketAblaufvorlage[];
   /** Kurzanleitung „So nutzt du es“ (#1047, Manifest `kurzanleitung`) je Sprache. */
   kurzanleitung?: Record<string, string[]>;
-  /** Rundgänge und Tipps (#831, #832; `inhalt.rundgaenge`, `inhalt.tipps`), roh und geprüft. */
-  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[] };
+  /** Rundgänge und Tipps (#831, #832; `inhalt.rundgaenge`, `inhalt.tipps`), roh und geprüft; Texte je Sprache (#1307). */
+  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; texte?: PaketTexte };
 }
 
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */

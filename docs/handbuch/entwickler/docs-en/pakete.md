@@ -45,7 +45,8 @@ Then fill in:
 | `inhalt/wortlisten.yaml` | optional (from Ablago 0.127.0): groups of synonyms for the search |
 | `inhalt/automatisierungen.yaml` | optional (from Ablago 0.177.0): ready-made automations, always created; off after installation – except those whose switch is on in the installation dialog (since 0.233.0 preset with `eingeschaltet: true`) |
 | `inhalt/ablaufvorlagen.yaml` | optional (from Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [automation templates](#automatisierungsvorlagen) for the “Folder” menu – only tasks and notifications |
-| `inhalt/rundgaenge.yaml` | optional (dms #831): [tours](aufbau.md#paket-rundgaenge) through a task, texts directly in the file |
+| `inhalt/rundgaenge.yaml` | optional (dms #831): [tours](aufbau.md#paket-rundgaenge) through a task |
+| `texte/<sprache>/entdecken.json` | optional (dms #1307): texts of the tours and tips per language, German as the base language ([Languages](aufbau.md#paket-rundgaenge-sprachen)); older packages write them directly into the YAML files |
 | `inhalt/tipps.yaml` | optional (dms #832): [tips](aufbau.md#paket-tipps), at most 20, also “new in version …” |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | description, licence text, changes per version |
 | `tests/erwartung.yaml` | what must be there after installation |

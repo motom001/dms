@@ -908,13 +908,13 @@ Der Server liest die YAML-Dateien zur Laufzeit (im Image unter `/app/shared/entd
       fuer: lesen               # verwalten: Schritt nur für Verwaltende (z. B. Werkbank)
 ```
 
-Texte: Titel, Beschreibung und Schlusssatz unter `rundgang.<rundgang>.titel | .beschreibung | .ende`, je Schritt `rundgang.<rundgang>.<schritt>.titel | .text | .text-handy | .text-verwalten | .ort` (Unterstriche im Schlüssel werden in der Sprachdatei zu Bindestrichen). `text-handy` gilt in der Handyfassung, `text-verwalten` für Personen mit Verwaltungsrecht, `ort` sagt Screenreadern, wo das hervorgehobene Element steht – zu jedem `ziel` ist es Pflicht. Pakete schreiben die Texte später direkt in die Datei (`titel`, `text`, `text_handy`, `text_verwalten`, `ort`). Grenzen: Titel 60, Texte 200 Zeichen.
+Texte: Titel, Beschreibung und Schlusssatz unter `rundgang.<rundgang>.titel | .beschreibung | .ende`, je Schritt `rundgang.<rundgang>.<schritt>.titel | .text | .text-handy | .text-verwalten | .ort` (Unterstriche im Schlüssel werden in der Sprachdatei zu Bindestrichen). `text-handy` gilt in der Handyfassung, `text-verwalten` für Personen mit Verwaltungsrecht, `ort` sagt Screenreadern, wo das hervorgehobene Element steht – zu jedem `ziel` ist es Pflicht. Pakete bringen dieselben Schlüssel in ihren eigenen Sprachdateien mit ([Sprachen](#paket-rundgaenge-sprachen)); ältere schreiben die Texte direkt in die Datei (`titel`, `text`, `text_handy`, `text_verwalten`, `ort`). Grenzen: Titel 60, Texte 200 Zeichen.
 
 Zur Laufzeit fällt ein Schritt still weg, wenn keiner seiner Anker sichtbar ist (z. B. am Handy) – mit einem Vermerk in der Konsole (`console.debug`), ohne Meldung für die Person.
 
 #### Rundgänge aus Paketen { #paket-rundgaenge }
 
-Ein Paket nennt im Manifest `inhalt.rundgaenge: inhalt/rundgaenge.yaml`. Die Texte stehen direkt in der Datei; Rundgänge heißen in Ablago `<paket>:<schluessel>`. Rundgänge sollen durch eine Aufgabe führen und tragen einen aufgabenbezogenen Titel („Eingangsrechnung anlegen“) – er steht in „Was mitkommt“.
+Ein Paket nennt im Manifest `inhalt.rundgaenge: inhalt/rundgaenge.yaml`. Die Texte stehen in den [Sprachdateien des Pakets](#paket-rundgaenge-sprachen) oder (nur Deutsch) direkt in der Datei; Rundgänge heißen in Ablago `<paket>:<schluessel>`. Rundgänge sollen durch eine Aufgabe führen und tragen einen aufgabenbezogenen Titel („Eingangsrechnung anlegen“) – er steht in „Was mitkommt“.
 
 ```yaml
 # inhalt/rundgaenge.yaml
@@ -939,9 +939,36 @@ Ein Paket nennt im Manifest `inhalt.rundgaenge: inhalt/rundgaenge.yaml`. Die Tex
 - **Prüfung beim Installieren** (wie die Paketprüfung, dms-registry #132): unbekannte Felder und Anker, Felder und Register, die es im eigenen Mappentyp nicht gibt (`mappe.feld:<key>`, `mappe.register:<key>` gegen `oeffne`), Mappentypen, die weder zum Paket noch zu einer Abhängigkeit gehören, mehr als 8 Schritte, Texte über 200 (Titel 60) Zeichen, `nach_installation` mehr als einmal je Paket, `erste_anmeldung`. Ein Fehler macht das Paket ungültig.
 - **Zur Laufzeit** prüft Ablago noch einmal gegen die eigenen Anker und die installierten Mappentypen (ein Paket für eine neuere Version kann Anker nennen, die es hier noch nicht gibt): Fehlerhafte Rundgänge fallen weg, einmal im Protokoll; fehlt ein Ziel, fällt der Schritt still weg.
 - **`oeffne`:** `mappe` öffnet die zuletzt geänderte Mappe des Typs, die die Person lesen darf; `neu` ein leeres Formular, nur wenn sie den Typ anlegen darf – gespeichert wird nichts, am Ende geht es zurück. Sonst steht `ersatz` (bzw. ein allgemeiner Satz) statt der Schritte. Den Pfad liefert `GET /api/entdecken/rundgaenge/:schluessel/oeffnen`.
-- **Ruhig:** Rundgänge aus Paketen starten nie von selbst. Mit `nach_installation` bzw. `nach_update` bietet Ablago sie 30 Tage nach Installation bzw. Update als Tipp an („Verträge im Überblick – kurzer Rundgang“, `angebot:<rundgang>`, „neu“); es gilt die Regel des Tipps des Tages (höchstens einer am Tag). Alle stehen unter „Ablago entdecken“.
+- **Ruhig:** Rundgänge aus Paketen starten nie von selbst. Mit `nach_installation` bzw. `nach_update` bietet Ablago sie 30 Tage nach Installation bzw. Update als Tipp an (`ANGEBOT_TAGE` in `shared/src/entdecken.ts`) („Verträge im Überblick – kurzer Rundgang“, `angebot:<rundgang>`, „neu“); es gilt die Regel des Tipps des Tages (höchstens einer am Tag). Alle stehen unter „Ablago entdecken“.
 - **Eigene Rundgänge** (#941) schreibt die Verwaltung unter Werkbank → Rundgänge im selben Format (ein Rundgang je Datei, `start` immer `manuell`, Schlüssel `eigen:<schluessel>`); sie stehen mit dem An/aus aller Rundgänge in der Einstellung `entdecken_werkbank` (`server/src/entdecken/entdecken-werkbank.ts`) und kommen mit „Paket erstellen“ als `inhalt/rundgaenge.yaml` ins Paket. Die Prüfung meldet je Fehler den Ort (`orte` von `pruefeRundgaenge`), die Werkbank macht daraus die Zeile.
-- **Sprachen:** Bis Paket-Sprachdateien für Rundgänge kommen, schreibt das Paket die Texte in seiner Sprache (meist Deutsch) direkt in die Datei.
+
+#### Sprachen { #paket-rundgaenge-sprachen }
+
+Texte von Rundgängen und Tipps eines Pakets (#1307) stehen wie Ablagos eigene in Sprachdateien: `texte/<sprache>/entdecken.json` im Paket, flach, mit denselben Schlüsseln wie `shared/src/sprachen/<sprache>/entdecken.json` – ohne den Bereich davor, Unterstriche werden zu Bindestrichen. Die YAML-Datei enthält dann nur den Aufbau. Regeln in `shared/src/entdecken-paket.ts`.
+
+```text
+inhalt/rundgaenge.yaml       Aufbau: schluessel, start, oeffne, schritte mit ziel …
+inhalt/tipps.yaml            Aufbau: schluessel, typ, ziel bzw. rundgang …
+texte/de/entdecken.json      Deutsch – die Grundsprache des Pakets
+texte/en/entdecken.json      weitere Sprachen, z. B. Englisch, pt-BR …
+```
+
+```json
+{
+  "rundgang.vertraege-kennenlernen.titel": "Verträge im Überblick",
+  "rundgang.vertraege-kennenlernen.beschreibung": "Wo Fristen und Unterlagen eines Vertrags stehen.",
+  "rundgang.vertraege-kennenlernen.ersatz": "Sobald du einen Vertrag angelegt hast, zeigt dir Ablago hier, wie es geht.",
+  "rundgang.vertraege-kennenlernen.frist.titel": "Kündigen bis",
+  "rundgang.vertraege-kennenlernen.frist.text": "Hier steht, bis wann du kündigen musst. Ablago erinnert dich rechtzeitig.",
+  "rundgang.vertraege-kennenlernen.frist.ort": "Rechts in der Mappe",
+  "tipp.kuendigen": "Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist."
+}
+```
+
+- **Angezeigt** wird die Sprache der Person (`pt-BR` nimmt sonst `pt`). Fehlt dort ein Text, gilt der Text direkt in der YAML-Datei und danach Deutsch (`texte/de/entdecken.json`) – wie bei den Beschriftungen ist Deutsch die Grundsprache. Deutsch darf also auch direkt in der YAML-Datei stehen und nur die Übersetzungen in `texte/`.
+- **Prüfung beim Installieren:** jede Sprache wie Deutsch (Längen, keine spitzen Klammern, zwei Sätze je Tipp). Schlüssel, die zu keinem Rundgang, Schritt oder Tipp gehören, sind ein Fehler (Tippfehler fallen so auf); fehlende Übersetzungen nennt die Vorschau als Hinweis („auf en: 2 Texte fehlen, dort erscheinen die deutschen“). Höchstens 30 Sprachen, je Datei 64 KB, nur Texte.
+- **Abwärtskompatibel:** Pakete mit Texten nur direkt in der YAML-Datei laufen weiter; die Vorschau weist darauf hin, dass es sie nur in einer Sprache gibt. Ältere Ablago-Versionen lesen `texte/<sprache>/` nicht – ein Paket, das die Texte nur dort hat, verlangt darum die Version mit #1307 (`dms: ">=…"`).
+- Gespeichert werden die Texte am installierten Paket (`entdecken.texte`); „Was mitkommt“ nennt Rundgänge in der Sprache der Person.
 
 ### Tipp
 
@@ -959,7 +986,7 @@ Text unter `tipp.<schluessel>`: höchstens 160 Zeichen und zwei Sätze, Du-Form,
 
 #### Tipps aus Paketen { #paket-tipps }
 
-Ein Paket nennt `inhalt.tipps: inhalt/tipps.yaml`; der Text steht direkt in der Datei, Tipps heißen in Ablago `<paket>:<schluessel>`.
+Ein Paket nennt `inhalt.tipps: inhalt/tipps.yaml`; der Text steht unter `tipp.<schluessel>` in den [Sprachdateien des Pakets](#paket-rundgaenge-sprachen) oder (nur Deutsch) direkt in der Datei, Tipps heißen in Ablago `<paket>:<schluessel>`.
 
 ```yaml
 # inhalt/tipps.yaml
@@ -977,7 +1004,7 @@ Ein Paket nennt `inhalt.tipps: inhalt/tipps.yaml`; der Text steht direkt in der 
 
 **Werkbank → Tipps** (#942): Eigene Tipps (`eigen:tipp_<n>`) und Anpassungen an Tipps von Ablago und aus Paketen stehen in der Einstellung `entdecken_werkbank` – Anpassungen je vollem Schlüssel mit den neuen Angaben und dem Original von damals (so erkennt die Werkbank, dass sich das Original seit der Anpassung geändert hat). Eine Anpassung, die nicht mehr besteht (z. B. Rundgang gelöscht), gilt nicht; dann wieder das Original. „Paket erstellen“ schreibt eigene Tipps nach `inhalt/tipps.yaml`; Anpassungen fremder Tipps gehen erst mit #654 als Nachtrag mit.
 
-`bereich` ist in Paketen freiwillig (Vorgabe `mappen`). Ein Ziel in einer Mappe (`mappe.feld:`, `mappe.register:`) geht nur mit `typ`; die Oberfläche öffnet dann die erste Mappe dieses Typs, die die Person lesen darf (`GET /api/entdecken/tipps/:schluessel/oeffnen`). „Neu seit deinem letzten Besuch“ gilt 30 Tage nach dem Update des Pakets auf eine Version ab `ab_version` (Ablago merkt sich die Version davor am installierten Paket). Geprüft wird beim Installieren wie bei Rundgängen: Schema, bekannte Anker, Felder und Register, Rundgänge des Pakets, höchstens 20 Tipps und 160 Zeichen, zwei Sätze.
+`bereich` ist in Paketen freiwillig (Vorgabe `mappen`). Ein Ziel in einer Mappe (`mappe.feld:`, `mappe.register:`) geht nur mit `typ`; die Oberfläche öffnet dann die erste Mappe dieses Typs, die die Person lesen darf (`GET /api/entdecken/tipps/:schluessel/oeffnen`). Anker an jeder Mappe wie `mappe.aktionen` („Mappe ▾“, #1307) gehen auch ohne `typ` – auch in Ablagos eigenen Tipps (`erinnern`): Dann öffnet sie die zuletzt geänderte Mappe irgendeines Typs, die die Person lesen darf; gibt es keine, zeigt sie einen Ersatztext im Fenster des Rundgangs statt eines Sprungs ins Leere. „Neu seit deinem letzten Besuch“ gilt 30 Tage nach dem Update des Pakets auf eine Version ab `ab_version` (Ablago merkt sich die Version davor am installierten Paket). Geprüft wird beim Installieren wie bei Rundgängen: Schema, bekannte Anker, Felder und Register, Rundgänge des Pakets, höchstens 20 Tipps und 160 Zeichen, zwei Sätze.
 
 ### Ankerpunkte { #anker }
 
@@ -985,7 +1012,7 @@ Ziele sind feste Ankerpunkte, keine HTML-Ids: Das Element trägt `data-anker="<a
 
 `neu`, `benutzermenue`, `navigation.ansichten`, `navigation.ansicht-waehlen`, `navigation.erweiterte-suche`, `navigation.zu-erledigen`, `navigation.neue-post`, `navigation.favoriten`, `liste`, `mappe`, `startseite.suche`, `startseite.fragen`, `startseite.feld-art`, `startseite.tipp`, `assistent`, `startseite.zu-erledigen`, `startseite.neue-post`, `startseite.termin`, `startseite.zuletzt`, `zu-erledigen.ansicht`, `mappe.aktionen`, `mappe.stern`, `mappe.register:<key>`, `mappe.feld:<key>`, `konto.abwesenheit`, `konto.schrift`, `konto.startseite`, `konto.tipps`, `konto.zusammenfassung`, `entdecken.rundgaenge`, `werkbank.bereich:<route>`, `werkbank.typen.suche`, `werkbank.sichten.suche`, `werkbank.nummernkreise.suche`, `werkbank.auskuenfte.suche`, `werkbank.auskuenfte.nur-offene`, `werkbank.fehlermeldungen.suche`.
 
-`server/test/entdecken.test.ts` prüft beim Bauen: jeder Anker kommt im Quelltext der Oberfläche vor, Format, Ziele und Rundgänge existieren, Längen stimmen, und jeder Text steht in Deutsch und Englisch. Wer ein Element umbaut, behält das Attribut; neue Anker kommen dazu, vorhandene werden nicht umbenannt.
+`server/test/entdecken.test.ts` prüft beim Bauen: jeder Anker kommt im Quelltext der Oberfläche vor, Format, Ziele und Rundgänge existieren, Längen stimmen, und jeder Text steht in Deutsch und Englisch. Wer ein Element umbaut, behält das Attribut; neue Anker kommen dazu, vorhandene werden **nie umbenannt oder entfernt** (#1307) – Rundgänge aus Paketen und eigene verlassen sich darauf, die Registry vergleicht ihre Kopie der Liste. `server/test/entdecken-anker.test.ts` prüft gegen die gespeicherte Liste `server/test/charakter/anker.json`: Ein neuer Anker kommt im selben PR ans Ende dieser Liste.
 
 **Hinter einem Umschalter (#1002):** Ist ein Anker noch nicht sichtbar, meldet `warteAufAnker` (`web/src/entdecken/stand.ts`) ihn mit `ankerGesucht`. Eine Seite, die die Stelle erst nach dem Umschalten zeigt, hört mit `beiAnkerGesucht` darauf und schaltet um – nur für den Moment, gemerkt wird nichts. So öffnet sich der Assistent unten rechts (#1219) für `startseite.fragen` bei „Fragen“, für `startseite.tipp` bei „Tipps“ und für `startseite.feld-art` mit seinem Umschalter – nur, weil die Person einen Tipp oder Rundgang angeklickt hat. Die Namen `startseite.*` stammen aus der Zeit vor #1218/#1219; Anker werden nicht umbenannt, `startseite.suche` ist seither das Suchfeld oben in der Kopfzeile.
 

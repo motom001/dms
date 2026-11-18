@@ -299,8 +299,9 @@ export interface InstalliertesPaket {
   /**
    * Rundgänge und Tipps (#831, #832, `inhalt.rundgaenge`/`inhalt.tipps`) roh wie im Paket – Ablago prüft sie bei jeder
    * Anzeige gegen die Anker dieser Version. `vorher`: Version vor dem letzten Update (für „Neu seit deinem letzten Besuch“).
+   * `texte`: Sprachdateien des Pakets je Sprache (#1307, `entdecken-paket.ts`).
    */
-  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; vorher?: string | null };
+  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; texte?: Record<string, Record<string, string>>; vorher?: string | null };
 }
 
 /**

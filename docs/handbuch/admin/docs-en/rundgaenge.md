@@ -18,6 +18,8 @@ The switch is at the top right of the selected tour. It applies **to everyone** 
 
 A click shows the tour's file (with the texts in your language). You cannot change it; **Copy as own** creates a copy to edit. **Try it** starts the tour in a new window, only for you.
 
+Tours and tips from packages appear in each person's language if the package brings it, otherwise in German. If they exist in one language only or a translation is missing texts, the preview says so as a hint when installing.
+
 ## Writing your own tours { #schreiben }
 
 **+ New tour** opens a template. A tour is a small file in YAML format – exactly the format in which Ablago and the packages bring their tours ([developer manual](https://help.ablago.app/entwickler/aktuell/en/aufbau/#paket-rundgaenge)). You write the texts directly into it:

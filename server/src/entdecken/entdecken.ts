@@ -43,6 +43,7 @@ import {
   type TypInfo,
 } from '../../../shared/src/entdecken';
 import { ausSchluessel } from '../../../shared/src/entdecken-werkbank';
+import { paketGrundtexte, paketUebersetzung, type PaketTexte } from '../../../shared/src/entdecken-paket';
 import { sprache } from '../../../shared/src/sprache';
 import type { Benutzer } from '../../../shared/src/model';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
@@ -109,13 +110,27 @@ export function paketTyp(paket: string, roh: string, typen: (kennung: string) =>
   return typen(kennung) ?? null;
 }
 
+/**
+ * Texte eines Pakets in der Sprache der Anfrage (#1307): Übersetzung vor dem Text in der Datei, danach die Grundsprache
+ * des Pakets.
+ */
+const paketTexteIn = (texte: PaketTexte | undefined) => ({
+  uebersetzung: paketUebersetzung(texte, sprache()),
+  texte: paketGrundtexte(texte),
+});
+
 /** Rundgänge eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets. */
 export function paketRundgaenge(
   p: Pick<InstalliertesPaket, 'id'>,
   roh: unknown,
-  o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined },
+  o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined; texte?: PaketTexte },
 ): { rundgaenge: Rundgang[]; fehler: string[] } {
-  const r = pruefeRundgaenge(roh, { herkunft: `paket:${p.id}`, anker: o.anker, typ: (x) => paketTyp(p.id, x, o.typen) });
+  const r = pruefeRundgaenge(roh, {
+    herkunft: `paket:${p.id}`,
+    anker: o.anker,
+    ...paketTexteIn(o.texte),
+    typ: (x) => paketTyp(p.id, x, o.typen),
+  });
   return {
     rundgaenge: r.rundgaenge.map((x) => ({ ...x, schluessel: `${p.id}:${x.schluessel}` })),
     fehler: r.fehler.map((f) => `${p.id}: ${f}`),
@@ -129,12 +144,13 @@ export function paketRundgaenge(
 export function paketTipps(
   p: Pick<InstalliertesPaket, 'id'>,
   roh: unknown,
-  o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined },
+  o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined; texte?: PaketTexte },
 ): { tipps: Tipp[]; fehler: string[] } {
   const x = pruefeTipps(roh, {
     herkunft: `paket:${p.id}`,
     anker: o.anker,
     rundgaenge: o.rundgaenge,
+    ...paketTexteIn(o.texte),
     typ: (k) => paketTyp(p.id, k, o.typen),
   });
   return {
@@ -305,9 +321,15 @@ export class Entdecken {
     jetzt: number,
   ): { rundgaenge: Rundgang[]; tipps: Array<[Tipp, boolean]> } {
     if (!p.entdecken) return { rundgaenge: [], tipps: [] };
-    const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen });
+    const texte = p.entdecken.texte;
+    const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen, texte });
     this.melde(p, 'Rundgänge', r.fehler);
-    const x = paketTipps(p, p.entdecken.tipps, { anker, rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)), typen });
+    const x = paketTipps(p, p.entdecken.tipps, {
+      anker,
+      rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)),
+      typen,
+      texte,
+    });
     this.melde(p, 'Tipps', x.fehler);
     const tipps: Array<[Tipp, boolean]> = x.tipps.map((y) => [
       y,

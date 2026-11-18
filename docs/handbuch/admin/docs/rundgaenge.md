@@ -18,6 +18,8 @@ Rechts oben am gewählten Rundgang steht der Schalter. Er gilt **für alle** und
 
 Ein Klick zeigt die Datei des Rundgangs (mit den Texten in deiner Sprache). Ändern kannst du sie nicht; mit **Als eigenen kopieren** entsteht eine Kopie zum Bearbeiten. **Ausprobieren** startet den Rundgang in einem neuen Fenster, nur für dich.
 
+Rundgänge und Tipps aus Paketen erscheinen in der Sprache jeder Person, wenn das Paket sie mitbringt, sonst auf Deutsch. Gibt es sie nur in einer Sprache oder fehlen in einer Übersetzung Texte, sagt es die Vorschau beim Installieren als Hinweis.
+
 ## Eigene Rundgänge schreiben { #schreiben }
 
 **+ Neuer Rundgang** öffnet eine Vorlage. Ein Rundgang ist eine kleine Datei im YAML-Format – genau das Format, in dem auch Ablago und die Pakete ihre Rundgänge mitbringen ([Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#paket-rundgaenge)). Die Texte schreibst du direkt hinein:

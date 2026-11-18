@@ -19,7 +19,16 @@ import { t } from '../../sprache/sprache';
 import { KB, VORLAGE_MAX } from '../../grundlagen/grenzen';
 import { anzeigeVorgaben, liesVorgaben, vorgabeVerweisFehler } from '../index';
 import { liesUmbau } from '../index';
-import { pruefeRundgaenge, pruefeTipps } from '../../../../shared/src/entdecken';
+import { pruefeRundgaenge, pruefeTipps, type Texte } from '../../../../shared/src/entdecken';
+import {
+  PAKET_GRUNDSPRACHE,
+  PAKET_SPRACHEN_MAX,
+  PAKET_TEXTE_DATEI,
+  paketGrundtexte,
+  paketUebersetzung,
+  pruefePaketTexte,
+  type PaketTexte,
+} from '../../../../shared/src/entdecken-paket';
 import { ankerListe, paketTyp } from '../../entdecken/entdecken';
 import { vorgabeWerte } from '../../../../shared/src/vorgaben';
 import { beispielVerweise, eigeneVerweise, liesBeispielDokumente, ordneBeispiele } from './beispiele';
@@ -39,6 +48,9 @@ import {
 } from './format';
 import { eingeschaltetVon, postUndRollenFehler, pruefeZeitplanKarten, werkbankKartenFehler } from './inhalt-pruefen';
 import { liste, type LeseLauf } from './lesen-lauf';
+
+/** So groß höchstens ist die Sprachdatei der Rundgänge und Tipps eines Pakets (#1307). */
+const PAKET_TEXTE_GROESSE = 64 * KB;
 
 /** Beispiele mit ihren Dokumenten; danach Dokumentenregister und Verweise zwischen den Beispielen. */
 export function liesBeispiele(l: LeseLauf, typen: PaketTyp[]) {
@@ -261,26 +273,87 @@ export function liesEntdecken(l: LeseLauf, typen: PaketTyp[]): NonNullable<Paket
     }
     return pk in abh ? { kennung: k } : null;
   };
+  // Texte je Sprache (#1307): texte/<sprache>/entdecken.json; geprüft wird jede Sprache wie die Grundsprache.
+  const texte = inhalt.rundgaenge || inhalt.tipps ? liesPaketTexte(l) : {};
+  const sprachen = [null, ...Object.keys(texte).filter((x) => x !== PAKET_GRUNDSPRACHE)];
+  const pruefe = (art: 'rundgaenge' | 'tipps', f: (uebersetzung: Texte | undefined) => string[]) => {
+    const gesehen = new Set<string>();
+    for (const spr of sprachen)
+      for (const x of f(spr ? paketUebersetzung(texte, spr) : undefined)) {
+        if (gesehen.has(x)) continue;
+        gesehen.add(x);
+        fehler.push(`${spr ? `texte/${spr}/entdecken.json` : str(inhalt[art])}: ${x}`);
+      }
+  };
+  const grund = paketGrundtexte(texte);
   if (inhalt.rundgaenge) {
     const roh = liste(l, 'rundgaenge');
-    const r = pruefeRundgaenge(roh, { herkunft: `paket:${l.id}`, anker: ankerListe(), typ: (x) => paketTyp(l.id, x, typInfo) });
-    fehler.push(...r.fehler.map((f) => `${str(inhalt.rundgaenge)}: ${f}`));
+    pruefe(
+      'rundgaenge',
+      (uebersetzung) =>
+        pruefeRundgaenge(roh, {
+          herkunft: `paket:${l.id}`,
+          anker: ankerListe(),
+          texte: grund,
+          uebersetzung,
+          typ: (x) => paketTyp(l.id, x, typInfo),
+        }).fehler,
+    );
     if (roh.length) entdecken.rundgaenge = roh;
   }
   // Tipps (#832): höchstens 20, 160 Zeichen; Ziele wie bei Rundgängen, `rundgang` nennt einen Rundgang des Pakets.
   if (inhalt.tipps) {
     const roh = liste(l, 'tipps');
     const eigeneRundgaenge = (entdecken.rundgaenge ?? []).map((x) => str((x as Record<string, unknown>).schluessel));
-    const x = pruefeTipps(roh, {
-      herkunft: `paket:${l.id}`,
-      anker: ankerListe(),
-      rundgaenge: eigeneRundgaenge,
-      typ: (y) => paketTyp(l.id, y, typInfo),
-    });
-    fehler.push(...x.fehler.map((f) => `${str(inhalt.tipps)}: ${f}`));
+    pruefe(
+      'tipps',
+      (uebersetzung) =>
+        pruefeTipps(roh, {
+          herkunft: `paket:${l.id}`,
+          anker: ankerListe(),
+          rundgaenge: eigeneRundgaenge,
+          texte: grund,
+          uebersetzung,
+          typ: (y) => paketTyp(l.id, y, typInfo),
+        }).fehler,
+    );
     if (roh.length) entdecken.tipps = roh;
   }
+  for (const u of pruefePaketTexte(texte, entdecken.rundgaenge, entdecken.tipps).ueberzaehlig)
+    fehler.push(
+      t('meldungen.pakete.entdecken.texte-ueberzaehlig', {
+        datei: `texte/${u.sprache}/entdecken.json`,
+        schluessel: u.schluessel.join(', '),
+      }),
+    );
+  if (Object.keys(texte).length) entdecken.texte = texte;
   return entdecken;
+}
+
+/** Sprachdateien der Rundgänge und Tipps (#1307): flache JSON-Objekte mit Texten, höchstens 64 KB und 30 Sprachen. */
+function liesPaketTexte(l: LeseLauf): PaketTexte {
+  const texte: PaketTexte = {};
+  const dateien = [...l.dateien.keys()].filter((n) => PAKET_TEXTE_DATEI.test(n)).sort();
+  if (dateien.length > PAKET_SPRACHEN_MAX) l.fehler.push(t('meldungen.pakete.entdecken.texte-sprachen', { max: PAKET_SPRACHEN_MAX }));
+  for (const datei of dateien.slice(0, PAKET_SPRACHEN_MAX)) {
+    const d = l.dateien.get(datei)!;
+    if (d.length > PAKET_TEXTE_GROESSE) {
+      l.fehler.push(t('meldungen.pakete.entdecken.texte-gross', { datei, kb: PAKET_TEXTE_GROESSE / KB }));
+      continue;
+    }
+    let j: unknown;
+    try {
+      j = JSON.parse(d.toString('utf8'));
+    } catch {
+      j = null;
+    }
+    if (!istObjekt(j) || Object.values(j).some((v) => typeof v !== 'string')) {
+      l.fehler.push(t('meldungen.pakete.entdecken.texte-format', { datei }));
+      continue;
+    }
+    texte[PAKET_TEXTE_DATEI.exec(datei)![1]] = j as Record<string, string>;
+  }
+  return texte;
 }
 
 /** Doppelte Kennungen von Typen und Ansichten; Verweise auf Mappentypen des DMS (dms:…), die es nicht gibt. */
