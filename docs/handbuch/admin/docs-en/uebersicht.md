@@ -164,7 +164,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 - **Beginner**: only the essentials for setting up and backing up. Default for purely private use.
 - **Household**: adds what a household sets up itself – folder types, views, automations, post and intake, search, log and maintenance.
 - **Self-employed**: adds number sequences, retention expired and data protection – for the self-employed and landlords. Default for use at work.
-- **Business**: adds themes – for businesses with several people.
+- **Business**: adds themes and tours – for businesses with several people. If you have already written your own tours or switched off an included one, “Tours” stays in the bar at a smaller level too.
 - **Everything**: every area, including the database connection and data for measurements. It stays like this for installations set up before version 0.70 until you choose something else.
 
 You choose the level in the setup wizard in the step “Use” and later here. Existing installations keep their template (Household, Business or Everything).
@@ -180,7 +180,7 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | [Number sequences](nummernkreise.md) |   |   | ● | ● | ● |
 | [Automations](automatisierungen.md) |   | ● | ● | ● | ● |
 | [Automation templates](automatisierungsvorlagen.md) |   | ● | ● | ● | ● |
-| [Tours](rundgaenge.md) |   | ● | ● | ● | ● |
+| [Tours](rundgaenge.md) |   |   |   | ● | ● |
 | [Tips](tipps.md) |   | ● | ● | ● | ● |
 | [Users](benutzer.md) | ● | ● | ● | ● | ● |
 | [Encryption](verschluesselung.md) | ● | ● | ● | ● | ● |
@@ -211,7 +211,7 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | [Reported errors](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
 | [Maintenance](wartungsmodus.md) |   | ● | ● | ● | ● |
 | [Load test data](demo.md) |   |   |   |   | ● |
-| **Number** | **10** | **31** | **36** | **37** | **39** |
+| **Number** | **10** | **30** | **35** | **37** | **39** |
 <!-- /bereiche:stufen -->
 
 The data protection areas are also only in the bar when Ablago is used for work.
@@ -239,7 +239,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | from Self-employed |
 | [Automations](automatisierungen.md) | Set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task | from Household |
 | [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | from Household |
-| [Tours](rundgaenge.md) | When you want to see tours, switch them on or off or write your own – short guided tours of the real interface. | from Household |
+| [Tours](rundgaenge.md) | When your business wants to write its own tours or switch tours on or off – short guided tours of the real interface. | from Business |
 | [Tips](tipps.md) | When you want to adapt tips to the way you work, write your own or switch some off. | from Household |
 | [Users](benutzer.md) | Create users and roles | from Beginner |
 | [Encryption](verschluesselung.md) | The key for passwords and backups | from Beginner |

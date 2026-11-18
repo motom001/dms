@@ -96,8 +96,10 @@ const EINTRAEGE = [
   { pfad: 'automatisierungen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.automatisierungen', mitte: true },
   // Automatisierungsvorlagen (#1044): daneben, gleich sichtbar – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage …
   { pfad: 'ablaufvorlagen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.ablaufvorlagen', mitte: true },
-  // Rundgänge (#941): alle sehen, an/aus, eigene schreiben – zum Schluss, weil sie auf allem anderen aufbauen.
-  { pfad: 'rundgaenge', gruppe: 'ablage', ab: H, hilfe: 'werkbank.rundgaenge', mitte: true },
+  // Rundgänge (#941): alle sehen, an/aus, eigene schreiben – zum Schluss, weil sie auf allem anderen aufbauen. Ab Betrieb
+  // (#1298): Eigene Rundgänge legen eher Betriebe mit 10 bis 20 Mitarbeitern an; wer sie schon eingerichtet hat, behält
+  // den Bereich als Einblendung (Migration 120). Die Rundgänge selbst laufen für alle weiter.
+  { pfad: 'rundgaenge', gruppe: 'ablage', ab: B, hilfe: 'werkbank.rundgaenge', mitte: true },
   // Tipps (#942): daneben – Tipps können Rundgänge starten.
   { pfad: 'tipps', gruppe: 'ablage', ab: H, hilfe: 'werkbank.tipps', mitte: true },
   { pfad: 'benutzer', gruppe: 'benutzer', ab: E, hilfe: 'werkbank.benutzer', mitte: true, zaehler: 'benutzer' },

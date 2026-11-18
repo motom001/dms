@@ -251,7 +251,7 @@
   "bereich.ablaufvorlagen.name": "Automation templates",
   "bereich.ablaufvorlagen.wann": "Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them",
   "bereich.rundgaenge.name": "Tours",
-  "bereich.rundgaenge.wann": "When you want to see tours, switch them on or off or write your own – short guided tours of the real interface.",
+  "bereich.rundgaenge.wann": "When your business wants to write its own tours or switch tours on or off – short guided tours of the real interface.",
   "bereich.tipps.name": "Tips",
   "bereich.tipps.wann": "When you want to adapt tips to the way you work, write your own or switch some off."
 }
