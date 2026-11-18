@@ -65,8 +65,9 @@
 @media (max-width: 820px) {
   .sichtliste { flex-direction: row; overflow-x: auto; min-width: 0; max-width: 100%; }
   .sichtliste hr { display: none; }
-  .sicht { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
-  .nur-schmal { display: inline; }
+  /* Nicht in der Werkbank: Sie bricht erst bei 767 px um (#1204, rahmen.css). */
+  .sicht:where(:not(.rahmen.werkbank *)) { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
+  .nur-schmal:where(:not(.rahmen.werkbank *)) { display: inline; }
 }
 /* Seitenweise Liste */
 .listenzahl { margin: -4px 0 0; }
@@ -175,6 +176,8 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   .index div { align-items: center; min-height: 44px; }
   .index dd a.person { display: inline-flex; align-items: center; min-height: 44px; }
   .zur-liste { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+  /* Einträge der Werkbank-Listen (#1227): auch mit nur einer Zeile 44 px hoch (Wortgruppen, Designs). */
+  .eintrag.werk { min-height: 44px; justify-content: center; }
 }
 /* Systemzustand → Auslastung (#409). Präfix az-. Kurve: eine Reihe, dünne Linie in der Akzentfarbe. */
 .az-raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 24px; margin-top: 8px; }

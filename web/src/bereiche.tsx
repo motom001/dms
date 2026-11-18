@@ -83,6 +83,7 @@ export function Dreiteilung({
   offen,
   mitte = true,
   rechts = true,
+  schmalBis = SCHMAL,
   children,
 }: {
   ort: Ort;
@@ -96,12 +97,17 @@ export function Dreiteilung({
    * restliche Breite – gleiche Regel wie #366, nur von der anderen Seite. Am Handy unverändert.
    */
   rechts?: boolean;
+  /**
+   * Bis zu dieser Breite (px) die Einzelansicht ohne Griffe; die Werkbank schon ab 768 px dreiteilig (#1204: iPad hoch
+   * wie der Rechner), sonst bis 820 px.
+   */
+  schmalBis?: number;
   children: [ReactNode, ReactNode, ReactNode];
 }) {
   const { ich } = useKonto();
   const k = schluessel(ort, ich.id);
   const [s, setS] = useState<Stand>(() => lies(k, ort));
-  const [breit, setBreit] = useState(() => innerWidth > SCHMAL);
+  const [breit, setBreit] = useState(() => innerWidth > schmalBis);
   const rahmen = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -113,10 +119,11 @@ export function Dreiteilung({
     return () => removeEventListener(RESET, f);
   }, [k]);
   useEffect(() => {
-    const f = () => setBreit(innerWidth > SCHMAL);
+    const f = () => setBreit(innerWidth > schmalBis);
+    f();
     addEventListener('resize', f);
     return () => removeEventListener('resize', f);
-  }, []);
+  }, [schmalBis]);
 
   const merke = useCallback(
     (n: Stand) => {

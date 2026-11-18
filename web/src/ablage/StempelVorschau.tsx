@@ -24,6 +24,8 @@ import { Feld, Knopf } from '../bausteine';
 /** A4 hoch in pt, wie die meisten Belege. */
 const W = 595.28,
   H = 841.89;
+/** Kleinste Tippfläche des Stempels in Punkten des Belegs (#1227): ein Fünftel der Breite, am Handy etwa 70 px. */
+const ZIEL = 120;
 export const BEISPIELE = ['rechnung', 'tabelle', 'formular', 'bon'] as const;
 export type Beispiel = (typeof BEISPIELE)[number];
 
@@ -313,6 +315,10 @@ export function StempelVorschau({
   const breite = (L.rahmen?.b ?? Math.max(...L.zeilen.map((z) => z.breite), 40)) + 16;
   const hoehe = (L.rahmen?.h ?? (L.zeilen.length ? L.zeilen[L.zeilen.length - 1].y - L.zeilen[0].y + L.groesse * 1.2 : 40)) + 16;
   const griffY = -hoehe / 2 - 46;
+  // Am Handy (#1227, D6): unsichtbare Tippfläche um den Stempel, mindestens ZIEL Punkte je Seite – bei der Breite des
+  // Belegs am Handy gut 44 px, auch wenn der Stempel selbst klein ist (er wächst mit dem Beleg).
+  const zielB = Math.max(breite, ZIEL),
+    zielH = Math.max(hoehe, ZIEL);
 
   const punkt = (e: ZeigerEreignis<SVGElement>) => {
     const svg = (e.currentTarget as SVGGraphicsElement).ownerSVGElement;
@@ -441,6 +447,7 @@ export function StempelVorschau({
                 </g>
                 {setze && (
                   <>
+                    <rect className="stempelziel" x={-zielB / 2} y={-zielH / 2} width={zielB} height={zielH} />
                     <rect className="stempelflaeche" x={-breite / 2} y={-hoehe / 2} width={breite} height={hoehe} rx={6} />
                     {drehbar && (
                       <g className="drehgriff" onPointerDown={anfassen('drehen')}>

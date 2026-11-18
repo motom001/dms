@@ -5,8 +5,7 @@ import type { ReactNode } from 'react';
 import { useKonto } from '../konto';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
-import { Link } from '../ort';
-import { darfSeite, hatMitte, inLeiste, wartungsPlakette, werkbankEbene, werkbankZurueck } from '../../../shared/src/werkbankansicht';
+import { darfSeite, hatMitte, inLeiste, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { AnsichtPanel, type BereichZustand } from './Ansicht';
@@ -15,6 +14,8 @@ import { useWerkbankSprung, useWerkbankZustaende1, useWerkbankZustaende2, useWer
 import type { Kontext } from './rahmen/inhalt';
 import { seiteVon } from './rahmen/seiten';
 import { leistenEintraege } from './rahmen/leiste';
+import { HandyKopf } from './rahmen/handykopf';
+import { useWerkbankHandy, WERKBANK_SCHMAL } from './rahmen/schmal';
 
 /**
  * Umgezogen (#717, #725): /werkbank/darfweg → aufbewahrung, /werkbank/suche → texterkennung#suche,
@@ -63,6 +64,11 @@ import { leistenEintraege } from './rahmen/leiste';
  *
  * Die Mitte bekommt jede Sammlung, in der man etwas anlegt und bearbeitet (#366, seit #990 auch kleine; `hatMitte`);
  * alle anderen Bereiche sind zweiteilig: links die Bereiche, rechts die ganze Seite.
+ *
+ * Am Handy (#1204, bis 767 px – das iPad hoch und quer zeigt die volle Werkbank) steht immer genau eine Spalte da,
+ * Schritt für Schritt wie in den Einstellungen eines Handys:
+ *   /werkbank?bereiche[=<gruppe>]   die Bereiche: oben der Handy-Schwerpunkt, darunter „Alle Bereiche“ mit den Gruppen
+ *   Liste oder Seite                ohne die Bereiche darüber, oben nur der Weg zurück (`HandyKopf`)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -89,6 +95,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const z = { ...z1, automatisierungen, ...z2, pakete, ...z3 };
   const { uebersicht, wartungsmodus, ansicht } = z;
   useWiederLaden(bereich, z);
+  // Am Handy die Bereiche als eigener Schritt (#1204): /werkbank?bereiche, mit Gruppe ?bereiche=ablage.
+  const h = useWerkbankHandy(bereich);
+  const ebene = werkbankEbene(bereich, id, !!installieren);
   const umleitung = useWerkbankSprung(bereich, id, z.benutzer);
   // Hintergrundarbeit ruht nur im aktiven Wartungsmodus (#366: Hinweis bei Texterkennung und Volltext).
   const wartungAn = wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null) === 'an';
@@ -125,10 +134,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
   return (
     <Dreiteilung
       ort="werkbank"
-      ebene={werkbankEbene(bereich, id, !!installieren)}
+      ebene={h.bereiche ? 'bereiche' : ebene}
       mitte={hatMitte(bereich)}
       rechts={bereich !== 'uebersicht'}
-      offen={id}>
+      offen={id}
+      schmalBis={WERKBANK_SCHMAL}>
       <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')}>
         <WerkbankNavigation
           bereich={bereich}
@@ -136,6 +146,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           zeigen={ansicht.zeigen}
           benutzt={ansicht.stand?.benutzt}
           laedt={ansicht.laedt}
+          handy={h.handy}
         />
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
@@ -149,12 +160,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
         </a>
       </aside>
       <section className="spalte liste" aria-label={t('werkbank.werkbank.elemente')}>
+        <HandyKopf an={h.schmal} bereich={bereich} ebene="liste" />
         {liste}
       </section>
       <section className="spalte mappe" aria-label={t('werkbank.werkbank.bearbeitung')}>
-        <Link to={werkbankZurueck(bereich)} className="verweis nur-schmal zur-liste">
-          <Symbol name="pfeil-links" /> {hatMitte(bereich) ? t('werkbank.werkbank.zur-liste') : t('werkbank.werkbank.bereiche-2')}
-        </Link>
+        <HandyKopf an={h.schmal} bereich={bereich} ebene="mappe" />
         {rechts}
       </section>
     </Dreiteilung>

@@ -220,8 +220,16 @@ export async function tippflaechenPruefen(seite, bereich) {
       };
       // Nur in den Bereichen (#1211, #1212), wenn angegeben.
       const drin = (el) => !bereich || bereich.some((b) => el.closest(b));
+      // Unsichtbar (visibility: hidden) heißt: kein Tippziel – der Finger trifft, was darunter liegt (#1227: die Auswahl
+      // der Trefferliste steht unsichtbar und gesperrt da, bis die Quelle angehakt ist, damit keine Zeile springt).
+      const unsichtbar = (el) => getComputedStyle(el).visibility !== 'visible';
       const sichtbar = [...document.querySelectorAll(AUSWAHL)].filter(
-        (el) => el.getClientRects().length > 0 && !verborgen(el) && drin(el) && !Object.keys(ausnahmen).some((a) => el.matches(a)),
+        (el) =>
+          el.getClientRects().length > 0 &&
+          !verborgen(el) &&
+          !unsichtbar(el) &&
+          drin(el) &&
+          !Object.keys(ausnahmen).some((a) => el.matches(a)),
       );
       // Lange Listen (z. B. das Protokoll, das mit jedem Rauchtest wächst) bestehen aus vielen gleichen Zeilen: Von
       // gleich gebauten und gleich großen Elementen genügen drei – sonst läuft die Prüfung in die Zeitgrenze.

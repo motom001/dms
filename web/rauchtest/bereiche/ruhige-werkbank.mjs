@@ -185,17 +185,18 @@ rauchtest(
 rauchtest('Werkbank am Handy: Gruppen als Reiter, axe hell/dunkel (#1271)', { als: LENA, handy: true }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
-  await s.goto(BASIS + '/werkbank');
+  // Seit #1204 stehen die Bereiche am Handy als eigener Schritt (/werkbank?bereiche), die Gruppen unter „Alle Bereiche“.
+  await s.goto(BASIS + '/werkbank?bereiche');
   const reihe = s.getByRole('tablist', { name: 'Bereiche der Werkbank' });
   await reihe.waitFor();
-  // Nur Reiter in der Registerliste – die Übersicht steht als Link davor.
+  // Nur Reiter in der Registerliste – die Übersicht steht oben im Handy-Schwerpunkt.
   assert.equal(await reihe.getByRole('link').count(), 0, 'Links in der Registerliste');
   const reiter = reihe.getByRole('tab');
   assert.ok((await reiter.count()) > 2);
   await reiter.nth(1).click();
   assert.equal(await reiter.nth(1).getAttribute('aria-selected'), 'true');
   const flaeche = s.getByRole('tabpanel');
-  await flaeche.locator('nav.werkbankleiste .wbgruppe.gewaehlt a.sicht').first().waitFor();
+  await flaeche.locator('a.sicht').first().waitFor();
   const funde = [];
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);

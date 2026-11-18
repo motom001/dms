@@ -158,6 +158,11 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
 @media (hover: none) {
   .stempelgriff .drehgriff { opacity: 1; }
 }
+/* Unsichtbare Tippfläche um einen kleinen Stempel (#1227): nur bei grobem Zeiger, mit der Maus zählt der Stempel selbst. */
+.stempelgriff .stempelziel { display: none; fill: transparent; }
+@media (pointer: coarse) {
+  .stempelgriff .stempelziel { display: inline; }
+}
 .stempelvorschau-text { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); }
 /* Mit verknüpften Mappen löschen (#424): Vorschau als Baum. Eigene Klassen mit Präfix lb-. */
 .lb-legende { list-style: none; margin: 6px 0 10px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--leise); }

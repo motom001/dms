@@ -136,6 +136,8 @@ const HANDY = [
   // Zu erledigen (#528, #725): am Handy erst die Liste, dann der Monat kompakt mit Punkten.
   { name: 'zu-erledigen-kalender', pfad: '/ablage/eingang', kalender: true },
   { name: 'werkbank', pfad: '/werkbank/uebersicht' },
+  // Werkbank am Handy (#1204): die Bereiche als eigener Schritt – Schwerpunkt oben, „Alle Bereiche“ mit Reitern darunter.
+  { name: 'werkbank-bereiche', pfad: '/werkbank?bereiche' },
   // Notfallzugang (#815): ohne Anmeldung, zuerst fürs Handy – Codefeld mit mindestens 16 px, nichts zu breit.
   { name: 'notfall', pfad: '/notfall' },
 ];
