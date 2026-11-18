@@ -13,6 +13,7 @@ import { Messpanel } from './Messpanel';
 import { logoUrl, Marke, schriftzugVon } from './Marke';
 import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
+import { merkeAblage } from './profil/rueckweg';
 import { Werkbank } from './werkbank/Werkbank';
 import { GeradeImModus } from './werkbank/GeradeImModus';
 import { WartungsBanner } from './wartung';
@@ -21,7 +22,6 @@ import { SucheOben } from './ablage/SucheOben';
 import { Begleiter } from './begleiter/Begleiter';
 import { PostKamera } from './ablage/PostKamera';
 import { ErreichbarkeitsBanner, useBeiWiederErreichbar } from './erreichbar';
-import { useHandbuch } from './Hilfe';
 import { Pikto } from './piktogramme';
 import { UeberDms } from './UeberDms';
 import { ADMIN_START, startseiteVon } from '../../shared/src/startseite';
@@ -79,6 +79,10 @@ export function App() {
     rundgangGestartet.current = true;
     starteRundgang(entdecken.starten, true);
   }, [entdecken, vertretung, d.geladen, bereich, entdeckenSeite]);
+  // Rückweg aus „Mein Konto“ (#1302): die zuletzt besuchte Seite der Ablage.
+  useEffect(() => {
+    if (bereich === 'ablage' && !entdeckenSeite && teile[0] === 'ablage') merkeAblage(pfad + suche);
+  }, [pfad, suche, bereich, entdeckenSeite]); // eslint-disable-line react-hooks/exhaustive-deps -- teile folgt aus pfad
   // Schriftgröße dieses Geräts (#69: gewählt in Profil → Darstellung).
   useEffect(() => {
     setzeSchrift(ich.id, leseSchrift(ich.id));
@@ -205,9 +209,6 @@ export function App() {
         {(bereich !== 'werkbank' || SUCHE_OBEN_IN_DER_WERKBANK) && d.geladen && <SucheOben />}
         {/* #649: „+ Neu“ nur in der Ablage – in der Werkbank wird eingerichtet, nicht abgelegt. */}
         {bereich === 'ablage' && <NeuKnopf />}
-        {/* #1219: In der Werkbank steht der Assistent in der Kopfzeile – am Handy als Knopf darin (die Listen der Werkbank
-            sind dort nur wenige Zeilen hoch, ein Knopf unten verdeckte sie), breit wie überall unten rechts. */}
-        {d.geladen && bereich === 'werkbank' && <Begleiter werkbank imKopf />}
         <div className="konto">
           {/* Quellcode, Version und Lizenz stehen unter Benutzermenü → „Über Ablago“ (#430). */}
           <Benutzermenue an={bereich === 'profil'} abmelden={abmelden} />
@@ -228,8 +229,9 @@ export function App() {
       <PostKamera />
       <RundgangAnzeige />
       <EntdeckenWerkzeuge />
-      {/* #1219: Assistent unten rechts auf jeder Seite – Fragen, Tipps, Handbuch; öffnet sich nie von selbst. */}
-      {d.geladen && bereich !== 'werkbank' && <Begleiter werkbank={false} />}
+      {/* #1219, #1283: Assistent unten rechts auf jeder Seite – in Ablage, Werkbank und Konto an derselben Stelle, am Handy
+          mit eigenem Streifen; Fragen, Tipps, Handbuch; öffnet sich nie von selbst. */}
+      {d.geladen && <Begleiter werkbank={bereich === 'werkbank'} />}
       {ich.entwicklermodus && <Messpanel />}
     </div>
   );
@@ -302,10 +304,12 @@ function Hinweise() {
   );
 }
 
-/** Menü unter dem eigenen Namen (#69): Konto, Einstellungen, Hilfe, Fehler melden, Über das DMS (#430), Abmelden. */
+/**
+ * Menü unter dem eigenen Namen (#69, #1331): Mein Konto, Verwalten, Fehler melden, Über Ablago (#430), Abmelden.
+ * Leitsatz: Alles zur Hilfe steckt im Assistenten (Handbuch, Tipps, „Ablago entdecken“), das Menü ist für dein Konto.
+ */
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
-  const { ich, vertretung, laufwerk, verwaltungsmodus, verwalten, verwaltungBeenden } = useKonto();
-  const handbuch = useHandbuch();
+  const { ich, vertretung, verwaltungsmodus, verwalten, verwaltungBeenden } = useKonto();
   const [offen, setOffen] = useState(false);
   const [ueber, setUeber] = useState(false);
   const abwesend = abwesenheitWirkt(ich.abwesenheit, heuteIn());
@@ -370,7 +374,8 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
           </div>
           {/* #418: Kein „Zurück zum eigenen Konto“ hier – der Rückweg ist nur der gelbe Banner. In Vertretung zeigt
               „Mein Konto“ das Konto des vertretenen Benutzers; damit es nicht verwechselt wird, heißt es dann so. */}
-          {/* Jeder Weg nur einmal (#175): Darstellung, Abwesenheit usw. sind Reiter unter „Mein Konto“. */}
+          {/* Jeder Weg nur einmal (#175, #1331): Darstellung, Abwesenheit, Laufwerk usw. sind Bereiche unter „Mein Konto“;
+              Handbuch und „Ablago entdecken“ stehen im Assistenten unten rechts. */}
           <Link to="/profil/konto" className="menuepunkt">
             <Pikto name="person" />
             {vertretung ? t('oberflaeche.app.konto-von', { wert: ich.name || ich.email }) : t('oberflaeche.app.mein-konto')}
@@ -403,21 +408,6 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
                 {t('konten.verwaltung.menue.verwalten')}
               </Knopf>
             ))}
-          {laufwerk && (
-            <Link to="/profil/laufwerk" className="menuepunkt">
-              <Pikto name="laufwerk" />
-              {t('profil.laufwerk.menue')}
-            </Link>
-          )}
-          <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>
-            <Pikto name="hilfe" />
-            {tn('oberflaeche.app.hilfe', { span: <Symbol name="extern" className="menuepunkt-extern" /> })}
-          </a>
-          {/* #832: Rundgänge und Tipps zum Stöbern – bei der Hilfe, ohne eigenen Menüpunkt „Rundgang starten“. */}
-          <Link to="/entdecken" className="menuepunkt">
-            <Pikto name="entdecken" />
-            {t('entdecken.menue')}
-          </Link>
           <Link to="/profil/fehler-melden" className="menuepunkt">
             <Pikto name="fehler" />
             {t('oberflaeche.app.fehler-melden')}

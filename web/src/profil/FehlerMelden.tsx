@@ -6,10 +6,12 @@ import { geraeteAngaben } from '../diagnose';
 import { leseSchrift, SCHRIFTEN } from '../design';
 import { useKonto } from '../konto';
 import { Feld, FeldGruppe, Knopf } from '../bausteine';
+import { MeineMeldungen } from './MeineMeldungen';
 
 /**
  * Fehler melden (#70): eigene Beschreibung, bis zu zwei Screenshots und technische Angaben
  * von Server und Gerät – vor dem Absenden sichtbar; senden an die Administratoren oder kopieren.
+ * Ein Bereich von „Mein Konto“ (#1331); darunter „Meine Meldungen“ mit offen/erledigt.
  */
 const MAX_BILDER = 2;
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -53,6 +55,8 @@ export function FehlerMelden() {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const [gesendet, setGesendet] = useState(false);
+  // Nach dem Absenden „Meine Meldungen“ neu laden.
+  const [stand, setStand] = useState(0);
   useEffect(() => {
     kontoApi.diagnose().then(setServer, (e: Error) => setServer({ fehler: e.message }));
   }, []);
@@ -100,6 +104,7 @@ export function FehlerMelden() {
     try {
       await kontoApi.fehlerMelden({ text, angaben, bilder: bilder.map((b) => ({ name: b.name, daten: b.daten })) });
       setGesendet(true);
+      setStand((n) => n + 1);
     } catch (e) {
       setMeldung({ art: 'schlecht', text: (e as Error).message });
     } finally {
@@ -119,7 +124,7 @@ export function FehlerMelden() {
     return (
       <div className="einspaltig schmal">
         <div className="mappenkopf">
-          <p className="ueber">{t('profil.fehlermelden.hilfe')}</p>
+          <p className="ueber">{t('profil.profil.mein-konto', { BEREICHE: t('profil.fehlermelden.fehler-melden') })}</p>
           <h1>{t('profil.fehlermelden.fehler-melden')}</h1>
         </div>
         <div className="hinweis gut">
@@ -137,13 +142,14 @@ export function FehlerMelden() {
             {t('profil.fehlermelden.noch-eine-meldung')}
           </Knopf>
         </div>
+        <MeineMeldungen stand={stand} />
       </div>
     );
 
   return (
     <div className="einspaltig schmal">
       <div className="mappenkopf">
-        <p className="ueber">{t('profil.fehlermelden.hilfe')}</p>
+        <p className="ueber">{t('profil.profil.mein-konto', { BEREICHE: t('profil.fehlermelden.fehler-melden') })}</p>
         <h1>{t('profil.fehlermelden.fehler-melden')}</h1>
         <p className="leise">{t('profil.fehlermelden.beschreibe-kurz-was-passiert')}</p>
       </div>
@@ -221,6 +227,7 @@ export function FehlerMelden() {
           {t('profil.fehlermelden.meldung-senden')}
         </Knopf>
       </div>
+      <MeineMeldungen stand={stand} />
     </div>
   );
 }

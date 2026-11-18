@@ -117,10 +117,10 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .spalte.sichten { border-right: 1px solid var(--linie); padding-left: max(16px, env(safe-area-inset-left)); }
 .spalte.liste { border-right: 1px solid var(--linie); background: var(--flaeche); }
 @media (min-width: 821px) {
-  /* Platz für den Assistenten unten rechts (#1219), damit der runde Knopf nichts verdeckt: Schmal (Handy, Tablet) und
-   überall, wo eine Speicherleiste steht, hat er unten einen eigenen Streifen – die Leiste endet darüber. Sonst lässt sich
-   in den Spalten über ihn hinaus rollen. In der Werkbank steht er schmal in der Kopfzeile (Begleiter.module.css). */
-  .spalte:not(.sichten):not(:has(.speicherleiste)) { padding-bottom: 96px; }
+  /* Platz für den Assistenten unten rechts (#1219, #1283), damit der runde Knopf nichts verdeckt: Schmal (Handy, Tablet)
+   und überall, wo eine Speicherleiste steht, hat er unten einen eigenen Streifen – die Leiste endet darüber. Sonst lässt
+   sich in den Spalten über ihn hinaus rollen; dasselbe Maß gilt für Seiten ohne Spalten (rahmen.css, .rumpf). */
+  .spalte:not(.sichten):not(:has(.speicherleiste)) { padding-bottom: var(--platz-begleiter); }
 }
 .spalte.mappe { padding-right: max(20px, env(safe-area-inset-right)); padding-left: 24px; }
 /* ---------- Register an der Mappe (Trennblätter) ---------- */

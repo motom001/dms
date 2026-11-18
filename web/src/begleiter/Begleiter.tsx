@@ -24,8 +24,10 @@ import s from './Begleiter.module.css';
  * - Tastatur: Der Knopf ist erreichbar; beim Öffnen geht der Fokus ins Fenster, mit „×“ oder Esc zurück zum Knopf.
  * - Sucht ein Tipp oder Rundgang eine Stelle im Fenster (`startseite.fragen`, `startseite.tipp`,
  *   `startseite.feld-art`), öffnet es sich dafür – nur, weil die Person den Tipp angeklickt hat.
- * - Am Handy liegt das Fenster als Blatt unten über die volle Breite; der Knopf hat schmal einen eigenen Streifen unten
- *   (verdeckt weder Inhalt noch die Speicherleiste), breit ebenso, sobald eine Speicherleiste da ist.
+ * - Immer an derselben Stelle (#1283): unten rechts – in Ablage, Werkbank und Konto. Am Handy liegt das Fenster als
+ *   Blatt unten über die volle Breite; der Knopf hat schmal überall einen eigenen Streifen unten (verdeckt weder Inhalt
+ *   noch die Speicherleiste), breit ebenso, sobald eine Speicherleiste da ist. Ohne Speicherleiste lässt sich breit in
+ *   jeder rollbaren Fläche über ihn hinaus rollen (Platz `--platz-begleiter`).
  */
 type Reiter = 'fragen' | 'tipps' | 'handbuch';
 
@@ -69,13 +71,7 @@ const reiterFuerAnker = (anker: readonly string[]): Reiter | null | undefined =>
         ? null
         : undefined;
 
-export function Begleiter({
-  werkbank,
-  imKopf = false,
-}: {
-  werkbank: boolean;
-  /** In der Kopfzeile (Werkbank): am Handy ein Knopf darin. */ imKopf?: boolean;
-}) {
+export function Begleiter({ werkbank }: { werkbank: boolean }) {
   const fragen = useFragen();
   const neuerTipp = useNeuerTipp();
   const [offen, setOffen] = useState(false);
@@ -144,7 +140,7 @@ export function Begleiter({
       : t('oberflaeche.begleiter.oeffnen');
 
   return (
-    <div className={[s.begleiter, offen && s.offen, imKopf && s.imKopf].filter(Boolean).join(' ')} data-begleiter="">
+    <div className={[s.begleiter, offen && s.offen].filter(Boolean).join(' ')} data-begleiter="">
       {offen && (
         <div
           ref={fenster}

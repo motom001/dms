@@ -1,6 +1,18 @@
 /* Mein Konto (#1270): Klassen, die nur web/src/profil setzt.
    Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
 
+/* Weg zurück zur Ablage (#1302): oben über Leiste und Inhalt, am Handy mit 44 px Tippfläche. */
+.zurueck-ablage { margin: 0; }
+.zurueck-ablage a { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+/* „Meine Meldungen“ (#1331): Datum, Anfang des Textes, Status – eine Zeile je Meldung, am Handy umbrechend. */
+.meldungsliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.meldungsliste li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--linie); }
+.meldungsliste li:first-child { border-top: 0; }
+.meldungsanfang { flex: 1 1 16em; min-width: 0; overflow-wrap: anywhere; }
+.meldungsliste [data-etikett] { margin-left: auto; }
+@media (pointer: coarse) {
+  .zurueck-ablage a { min-height: 44px; }
+}
 .zweispaltig { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 20px; align-items: start; }
 .leiste { position: sticky; top: 72px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .typliste { display: flex; flex-direction: column; gap: 4px; }
