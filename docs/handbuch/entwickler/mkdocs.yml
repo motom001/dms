@@ -76,6 +76,8 @@ nav:
   - Mitmachen: index.md
   - Für wen wir bauen: personas.md
   - Loslegen: loslegen.md
+  - Unsere Repositories: repositories.md
+  - Neues einbauen: checklisten.md
   - Beitrag einreichen: beitrag.md
   - Stil und Abhängigkeiten: stil.md
   - Gestaltung und Bausteine:
@@ -103,8 +105,22 @@ nav:
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md
+      - "Server: Ordner und Muster": server.md
+      - Fachbereiche des Servers: fachbereiche.md
+      - PDFs: pdf.md
+      - Texte und Sprachen: texte.md
+      - Rundgänge und Tipps: entdecken.md
+      - Ereignisse und Automatisierungen: ereignisse.md
+      - Daten nach draußen: nach-draussen.md
+      - Abhängigkeiten: abhaengigkeiten.md
       - Leistung: leistung.md
       - Einrichtungsdatei: einrichtungsdatei.md
+  - Entscheidungen:
+      - Überblick: entscheidungen/index.md
+      - "PDF-Bibliothek: pdf-lib bleibt": entscheidungen/pdf-bibliothek.md
+      - Eingebettete Schriften: entscheidungen/eingebettete-schriften.md
+      - Texte ohne i18next: entscheidungen/eigene-sprachbibliothek.md
+      - Kein VOLUME in dms-komplett: entscheidungen/kein-volume.md
   - Pakete:
       - Pakete entwickeln: pakete.md
       - Pakete mit Code: pakete-code.md

@@ -27,4 +27,4 @@
   Transaktion schreibt, auch in dieser Transaktion.
 - Neuer Code hier ohne Ausnahmen in `eslint-suppressions.json`.
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Kern*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Kern*.

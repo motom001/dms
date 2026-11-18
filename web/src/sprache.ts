@@ -1,7 +1,7 @@
 /**
  * Texte der Weboberfläche aus den Sprachdateien (#473). Neue oder geänderte Texte kommen in
  * `shared/src/sprachen/de/<bereich>.json` und werden mit `t('<bereich>.<schluessel>', { platzhalter })`
- * abgerufen; ein neuer Bereich wird unten ergänzt. Anleitung: Entwicklerhandbuch → Aufbau → Texte.
+ * abgerufen; ein neuer Bereich wird unten ergänzt. Anleitung: Entwicklerhandbuch → Texte und Sprachen.
  */
 import { createElement, Fragment, type ReactNode } from 'react';
 import {

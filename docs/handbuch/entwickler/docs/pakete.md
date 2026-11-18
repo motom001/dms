@@ -45,9 +45,9 @@ Dann ausfüllen:
 | `inhalt/wortlisten.yaml` | optional (ab Ablago 0.127.0): Gruppen gleichbedeutender Wörter für die Suche |
 | `inhalt/automatisierungen.yaml` | optional (ab Ablago 0.177.0): vorgefertigte Automatisierungen, immer mit angelegt; nach der Installation aus – außer denen, deren Schalter im Installationsdialog an steht (seit 0.233.0 mit `eingeschaltet: true` vorbelegt) |
 | `inhalt/ablaufvorlagen.yaml` | optional (ab Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [Automatisierungsvorlagen](#automatisierungsvorlagen) für das Menü „Mappe“ – nur Aufgaben und Benachrichtigungen |
-| `inhalt/rundgaenge.yaml` | optional (dms #831): [Rundgänge](aufbau.md#paket-rundgaenge) durch eine Aufgabe |
-| `texte/<sprache>/entdecken.json` | optional (dms #1307): Texte der Rundgänge und Tipps je Sprache, Deutsch als Grundsprache ([Sprachen](aufbau.md#paket-rundgaenge-sprachen)); ältere Pakete schreiben sie direkt in die YAML-Dateien |
-| `inhalt/tipps.yaml` | optional (dms #832): [Tipps](aufbau.md#paket-tipps), höchstens 20, auch „Neu in Version …“ |
+| `inhalt/rundgaenge.yaml` | optional (dms #831): [Rundgänge](entdecken.md#paket-rundgaenge) durch eine Aufgabe |
+| `texte/<sprache>/entdecken.json` | optional (dms #1307): Texte der Rundgänge und Tipps je Sprache, Deutsch als Grundsprache ([Sprachen](entdecken.md#paket-rundgaenge-sprachen)); ältere Pakete schreiben sie direkt in die YAML-Dateien |
+| `inhalt/tipps.yaml` | optional (dms #832): [Tipps](entdecken.md#paket-tipps), höchstens 20, auch „Neu in Version …“ |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
 
@@ -645,5 +645,5 @@ Mehrere Pakete testest du auch als eigenen Katalog: `python3 werkzeuge/katalog.p
 
 ## Ausblick
 
-- **Rundgänge und Tipps aus Paketen** (#831, #832): `inhalt.rundgaenge` und `inhalt.tipps` liest Ablago – siehe [Rundgänge](aufbau.md#paket-rundgaenge) und [Tipps aus Paketen](aufbau.md#paket-tipps); die Prüfung in der Registry kommt mit [dms-registry #132](https://github.com/motom001/dms-registry/issues/132).
+- **Rundgänge und Tipps aus Paketen** (#831, #832): `inhalt.rundgaenge` und `inhalt.tipps` liest Ablago – siehe [Rundgänge](entdecken.md#paket-rundgaenge) und [Tipps aus Paketen](entdecken.md#paket-tipps); die Prüfung in der Registry kommt mit [dms-registry #132](https://github.com/motom001/dms-registry/issues/132).
 - **Pakete mit Code** gibt es seit 0.88.0: WebAssembly-Module, die auf Ereignisse reagieren und mit bestätigten Rechten über die API arbeiten – siehe [Pakete mit Code](pakete-code.md), mit der Übersicht der [Schnittstellen des Kerns](pakete-code.md#schnittstellen) (Vektoren, Antworten, Erkennung, Texterkennung, [Dateien umwandeln](pakete-code.md#dateien-umwandeln), [Volltext liefern](pakete-code.md#volltext-liefern)).

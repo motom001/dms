@@ -9,7 +9,7 @@
  * - eine Sprache, die anders teilt als Deutsch,
  * - Texte, die der Code anders bekommt, als sie in den Dateien stehen (z. B. eine Teildatei fehlt in `index.ts`).
  *
- * Regel für neue Texte: Entwicklerhandbuch → Aufbau → Texte und Sprachdateien.
+ * Regel für neue Texte: Entwicklerhandbuch → Texte und Sprachen → Texte und Sprachdateien.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';

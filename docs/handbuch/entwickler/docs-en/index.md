@@ -24,12 +24,21 @@ Great that you want to contribute! Ablago is a small project with one maintainer
 
 These guard rails come from Ablago's mission and apply to core, packages and clients alike:
 
-- **Nothing leaves the device without explicit consent.** Every way outside is switched off until a person triggers it or an administrator switches it on – and the manual says what goes out and where (see [Ways outside](aufbau.md#wege-nach-draussen)).
+- **Nothing leaves the device without explicit consent.** Every way outside is switched off until a person triggers it or an administrator switches it on – and the manual says what goes out and where (see [Ways outside](nach-draussen.md#wege-nach-draussen)).
 - **No telemetry,** not even anonymous, no crash reports, nothing from outside servers in interface and manual.
 - **Open formats:** what comes in must come out again in open formats (full export, archive version).
 - **Updates change nothing secretly:** every change has a version and release notes; data is only restructured with a migration and traceably.
 - **Thinks along, on your device:** recognising, reminding and searching run locally; an outside service only if someone sets it up explicitly.
 - **Simple first:** something new mustn't make things more complicated for Lena, Jonas and Markus.
+
+## Where to start { #wo-anfangen }
+
+1. [Getting started](loslegen.md): fetch, start and check the project.
+2. [Architecture](aufbau.md): the map – what lives where and which way a request takes.
+3. [Adding something new](checklisten.md): checklists for a new page in the workbench and a new route.
+4. [Submitting a contribution](beitrag.md): what a pull request brings along.
+
+Which repository is there for what is under [Our repositories](repositories.md).
 
 ## Where you can help {#wo-du-helfen-kannst}
 

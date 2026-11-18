@@ -6,7 +6,7 @@
  * - Texte in Attributen, die man sieht (`title="…"`, `aria-label="…"`, `placeholder="…"`, eigene wie `titel="…"`),
  * - Texte als Wert in geschweiften Klammern (`{offen ? 'Zu' : 'Auf'}`) und in Vorlagen dort (`` {`${n} Mappen`} ``).
  *
- * Statt des Textes gehört dort `t('bereich.schluessel')` bzw. `tn(…)` hin (Anleitung: Entwicklerhandbuch → Aufbau →
+ * Statt des Textes gehört dort `t('bereich.schluessel')` bzw. `tn(…)` hin (Anleitung: Entwicklerhandbuch → Texte und Sprachen →
  * Texte und Sprachdateien). Was in jeder Sprache gleich bleibt (Namen, Formate, Beispiele), steht mit Grund in
  * `AUSNAHMEN` unten.
  */

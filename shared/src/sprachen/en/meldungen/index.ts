@@ -1,7 +1,7 @@
 /**
  * Bereich `meldungen` der Sprachdateien (#1279): je Fachordner des Servers eine Datei, hier zu einem Bereich
  * zusammengeführt. Die Schlüssel im Code bleiben `meldungen.<schluessel>`. In welche Datei ein neuer Schlüssel gehört,
- * steht im Entwicklerhandbuch (Aufbau → Texte und Sprachdateien); doppelte Schlüssel meldet
+ * steht im Entwicklerhandbuch (Texte und Sprachen → Texte und Sprachdateien); doppelte Schlüssel meldet
  * shared/test/sprachdateien-teile.test.ts.
  */
 import ablage from './ablage.json';

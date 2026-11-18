@@ -71,6 +71,8 @@ nav:
   - Contributing: index.md
   - Who we build for: personas.md
   - Getting started: loslegen.md
+  - Our repositories: repositories.md
+  - Adding something new: checklisten.md
   - Submitting a contribution: beitrag.md
   - Style and dependencies: stil.md
   - Design and building blocks:
@@ -98,8 +100,22 @@ nav:
   - Release: release.md
   - Core:
       - Architecture: aufbau.md
+      - "Server: folders and patterns": server.md
+      - Subject areas of the server: fachbereiche.md
+      - PDFs: pdf.md
+      - Texts and languages: texte.md
+      - Tours and tips: entdecken.md
+      - Events and automations: ereignisse.md
+      - Data to the outside: nach-draussen.md
+      - Dependencies: abhaengigkeiten.md
       - Performance: leistung.md
       - Setup file: einrichtungsdatei.md
+  - Decisions:
+      - Overview: entscheidungen/index.md
+      - "PDF library: pdf-lib stays": entscheidungen/pdf-bibliothek.md
+      - Embedded fonts: entscheidungen/eingebettete-schriften.md
+      - Texts without i18next: entscheidungen/eigene-sprachbibliothek.md
+      - No VOLUME in dms-komplett: entscheidungen/kein-volume.md
   - Packages:
       - Developing packages: pakete.md
       - Packages with code: pakete-code.md

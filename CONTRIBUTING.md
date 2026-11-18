@@ -2,7 +2,7 @@
 
 **Deutsch** · [English](CONTRIBUTING.en.md)
 
-Danke für dein Interesse an Ablago! **Issues und Pull Requests sind auf Deutsch oder Englisch willkommen.** Wie Mitarbeit hier läuft, steht ausführlich im **[Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/)**. Das Wichtigste in Kürze:
+Danke für dein Interesse an Ablago! **Issues und Pull Requests sind auf Deutsch oder Englisch willkommen.** Wie Mitarbeit hier läuft, steht ausführlich im **[Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/)**. Ablago besteht aus mehreren öffentlichen Repositories – welches wofür da ist und wo du anfängst, steht unter **[Unsere Repositories](https://help.ablago.app/entwickler/aktuell/repositories/)**. Das Wichtigste in Kürze:
 
 1. **Erst ein Issue**, als User Story („Als … möchte ich …, damit …“) mit Akzeptanzkriterien. Das gilt für Wünsche wie für Fehler.
 2. **Diskussion im Issue**, bis klar ist, was gebaut wird.
@@ -19,7 +19,7 @@ Ablago kommt mit sehr wenig fremdem Code aus – das schützt vor Angriffen übe
 - **Pflegezustand** – letzte Version, Zahl der Betreuer?
 - **Eigene Abhängigkeiten** – was kommt mit ihr ins Image?
 
-Die Vorlage für Pull Requests fragt danach; die Prüfung „Abhängigkeiten“ weist im PR auf neue Abhängigkeiten hin. Die heutige Liste mit Zweck steht im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/aufbau/#abhaengigkeiten).
+Die Vorlage für Pull Requests fragt danach; die Prüfung „Abhängigkeiten“ weist im PR auf neue Abhängigkeiten hin. Die heutige Liste mit Zweck steht im [Entwicklerhandbuch](https://help.ablago.app/entwickler/aktuell/abhaengigkeiten/#abhaengigkeiten).
 
 ## Stil und Abhängigkeiten prüfen
 

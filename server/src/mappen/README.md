@@ -43,7 +43,7 @@ Rechteprüfung, neben `mappentypen/` und `dokumente/`.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: zwei `complexity` in `mappen.dienst.ts`,
   ein `max-params` in `eingaben.ts`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Mappen*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Mappen*.
 
 **Ohne Tür** (#1278, Schritt 4a): `aufkleber.ts`, `erwaehnungen.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
 eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

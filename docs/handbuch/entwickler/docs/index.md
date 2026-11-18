@@ -24,12 +24,21 @@ Schön, dass du mitmachen möchtest! Ablago ist ein kleines Projekt mit einem Ma
 
 Diese Leitplanken kommen aus der Mission von Ablago und gelten für Kern, Pakete und Clients gleichermaßen:
 
-- **Nichts verlässt das Gerät ohne ausdrückliche Zustimmung.** Jeder Weg nach draußen ist abgeschaltet, bis ein Mensch ihn auslöst oder ein Administrator ihn einschaltet – und das Handbuch sagt, was hinausgeht und wohin (siehe [Wege nach draußen](aufbau.md#wege-nach-draussen)).
+- **Nichts verlässt das Gerät ohne ausdrückliche Zustimmung.** Jeder Weg nach draußen ist abgeschaltet, bis ein Mensch ihn auslöst oder ein Administrator ihn einschaltet – und das Handbuch sagt, was hinausgeht und wohin (siehe [Wege nach draußen](nach-draussen.md#wege-nach-draussen)).
 - **Keine Telemetrie,** auch nicht anonym, keine Absturzberichte, nichts von fremden Servern in Oberfläche und Handbuch.
 - **Offene Formate:** Was hineinkommt, muss in offenen Formaten wieder herauskommen (Vollexport, Archivfassung).
 - **Updates ändern nichts heimlich:** Jede Änderung hat eine Version und Release-Notizen; Daten werden nur mit Migration und nachvollziehbar umgebaut.
 - **Denkt mit, auf deinem Gerät:** Erkennen, Erinnern und Suchen laufen lokal; ein fremder Dienst nur, wenn jemand ihn ausdrücklich einrichtet.
 - **Einfach zuerst:** Neues darf Lena, Jonas und Markus nicht komplizierter machen.
+
+## Wo anfangen { #wo-anfangen }
+
+1. [Loslegen](loslegen.md): Projekt holen, starten und prüfen.
+2. [Aufbau](aufbau.md): die Karte – wo was liegt und welchen Weg eine Anfrage nimmt.
+3. [Neues einbauen](checklisten.md): Checklisten für eine neue Seite in der Werkbank und eine neue Route.
+4. [Beitrag einreichen](beitrag.md): was ein Pull Request mitbringt.
+
+Welches Repository wofür da ist, steht unter [Unsere Repositories](repositories.md).
 
 ## Wo du helfen kannst
 

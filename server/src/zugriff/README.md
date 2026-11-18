@@ -32,4 +32,4 @@ Schicht 1 der Zielaufteilung: direkt über dem Kern, unter allen anderen Fachord
   #1076 in `berechtigungen/`. `paketSiehtNicht` (#686) liegt seit #1073 in `mappentypen/pakete-am-typ.ts`.
 - Neuer Code hier ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity` von `rechteAnEine`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Rechte prüfen*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Rechte prüfen*.
