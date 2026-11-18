@@ -18,6 +18,7 @@ import {
   type LiveGruppenArt,
   type Speicherwahl,
 } from '../../../shared/src/lasttest';
+import { ablaufAusPlan, ablaufMelden, type AblaufMeldung, type LasttestStandMitAblauf } from '../../../shared/src/lasttestablauf';
 import { Fachfehler } from '../grundlagen/fehler';
 import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
@@ -161,7 +162,11 @@ type Meldung =
   | { art: 'schritt'; schritt: LasttestStand['schritt'] }
   | { art: 'demo'; fertig: number; gesamt: number }
   | { art: 'durchgang'; name: string; n: number; dauer: number; zeit: number }
-  | { art: 'durchgang-fertig'; name: string; n: number; p95: number | null; fehlerquote: number }
+  | { art: 'durchgang-fertig'; name: string; n: number; p95: number | null; fehlerquote: number; p50?: number | null; jeSekunde?: number }
+  /** Ablauf als Tabelle (#1251): Plan zu Beginn, Ziel je Durchgang, Grenze erreicht (groß). */
+  | { art: 'plan'; stufen: unknown }
+  | { art: 'ziel'; name: string; erreicht: boolean }
+  | { art: 'grenze'; stufe: LasttestStufe }
   | { art: 'ergebnis'; bericht: string; vorlage: string; verfehlt: boolean }
   | { art: 'abbruch' | 'fehler'; text: string }
   | { art: 'warnung'; ohneDatei: number }
@@ -246,7 +251,7 @@ const BEENDET_DATEI = 'beendet';
 export class Lasttestmodus {
   private app?: FastifyInstance;
   private kind?: ChildProcess;
-  private stand: LasttestStand;
+  private stand: LasttestStandMitAblauf;
   private fehlerText = '';
   private jetzt: () => number;
   /** Version des laufenden Containers (#1117) – steht von Anfang an im Kopf der Seite. */
@@ -282,7 +287,7 @@ export class Lasttestmodus {
   }
 
   /** Stand für die Seite: nie mit Zugangsdaten, Einrichtungscode oder der internen Adresse. */
-  ansicht(): LasttestStand {
+  ansicht(): LasttestStandMitAblauf {
     return { ...this.stand, jetzt: this.jetzt() };
   }
 
@@ -318,6 +323,7 @@ export class Lasttestmodus {
 
   private melde(m: Meldung): void {
     const s = this.stand;
+    this.ablauf(m);
     switch (m.art) {
       case 'stufe':
         if (s.stufe && s.stufe !== m.stufe) s.fertigeStufen.push(s.stufe);
@@ -363,6 +369,39 @@ export class Lasttestmodus {
         break;
       }
     }
+  }
+
+  /** Ablauf als Tabelle (#1251) nachführen – dieselben Meldungen, die auch den übrigen Stand ändern. */
+  private ablauf(m: Meldung): void {
+    const s = this.stand;
+    if (m.art === 'plan') {
+      s.ablauf = ablaufAusPlan(m.stufen);
+      return;
+    }
+    if (!s.ablauf) return;
+    const jetzt = this.jetzt();
+    const weiter: AblaufMeldung | null =
+      m.art === 'stufe' || m.art === 'schritt'
+        ? m
+        : m.art === 'durchgang'
+          ? { art: 'durchgang', name: m.name, n: m.n }
+          : m.art === 'durchgang-fertig'
+            ? {
+                art: 'durchgang-fertig',
+                name: m.name,
+                p50: m.p50 ?? null,
+                p95: m.p95,
+                jeSekunde: m.jeSekunde ?? null,
+                fehlerquote: m.fehlerquote,
+              }
+            : m.art === 'ziel'
+              ? m
+              : m.art === 'grenze'
+                ? { art: 'grenze' }
+                : m.art === 'ergebnis'
+                  ? { art: 'schritt', schritt: 'auswerten' }
+                  : null;
+    if (weiter) ablaufMelden(s.ablauf, weiter, jetzt);
   }
 
   /** Seite unter dem Port des Containers öffnen und – falls noch nicht beendet – das Skript starten. */
@@ -425,6 +464,7 @@ export class Lasttestmodus {
           s.meldung ??= this.fehlerText.trim().split('\n').filter(Boolean).slice(-1)[0] ?? `Code ${code}`;
         }
       }
+      if (s.ablauf) ablaufMelden(s.ablauf, { art: 'ende', fertig: s.zustand === 'fertig' }, this.jetzt());
       log.warn(
         `Lasttest-Modus: ${s.zustand === 'fertig' ? 'fertig' : s.zustand === 'abbruch' ? `abgebrochen – ${s.meldung}` : `Fehler – ${s.meldung}`}. Ergebnis im Browser (Port ${this.o.port})${s.datei ? ` und in ${s.datei}` : ''}.`,
       );

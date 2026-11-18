@@ -712,7 +712,53 @@ function lasttestStand(fertig) {
     angaben: { geraet: '', speicher: 'SSD' },
     speicherErkannt: 'SSD',
     datei: fertig ? '/data/ergebnis/lasttest-klein.md' : null,
+    ablauf: lasttestAblauf(fertig, jetzt),
   };
+}
+
+/** Ablauf als Tabelle (#1251) für die Bilder: klein, beim Anlegen der Lasttest-Mappen bzw. fertig. */
+function lasttestAblauf(fertig, jetzt) {
+  const vor = (min) => jetzt - min * 60_000;
+  const z = (x, zustand, von = null, bis = null, mehr = {}) => ({
+    ...x,
+    zustand,
+    beginn: von === null ? null : vor(von),
+    ende: bis === null ? null : vor(bis),
+    ...mehr,
+  });
+  const s = (schritt, optional) => ({ art: 'schritt', schritt, ...(optional ? { optional: true } : {}) });
+  const d = (name, modus, o = {}) => ({ art: 'durchgang', name, n: 25, modus, ziel: false, dauerS: 120, ...o });
+  const werte = (p50, p95, jeSekunde) => ({ werte: { p50, p95, jeSekunde, fehlerquote: 0 } });
+  const zeilen = fertig
+    ? [
+        z(s('pruefen'), 'erledigt', 15, 14.9),
+        z(s('einrichten', true), 'erledigt', 14.9, 14),
+        z(s('demo', true), 'erledigt', 14, 10),
+        z(s('hintergrund', true), 'erledigt', 10, 9),
+        z(s('vorbereiten'), 'erledigt', 9, 8.5),
+        z(d('klein', 'lesen', { ziel: true }), 'erledigt', 8.5, 6.5, { ...werte(48, 131, 210), erreicht: true }),
+        z(d('klein + Speichern', 'speichern'), 'erledigt', 6.4, 4.4, werte(70, 240, 150)),
+        z(s('aufraeumen'), 'erledigt', 4.4, 4.2),
+        z(s('vorbereiten'), 'erledigt', 4.2, 4),
+        z(d('klein + Pakete und Tabellen', 'pakete'), 'erledigt', 4, 2, werte(62, 190, 180)),
+        z(s('aufraeumen'), 'erledigt', 2, 1.9),
+        z(s('vorbereiten', true), 'erledigt', 1.9, 1.1),
+        z(d('klein + Anmeldeschutz', 'anmeldeschutz', { dauerS: 60 }), 'erledigt', 1.1, 0.1, werte(55, 160, 190)),
+        z(s('auswerten'), 'erledigt', 0.1, 0),
+      ]
+    : [
+        z(s('pruefen'), 'erledigt', 1.5, 1.4),
+        z(s('einrichten', true), 'erledigt', 1.4, 0.6),
+        z(s('demo', true), 'laeuft', 0.6),
+        ...[
+          s('hintergrund', true),
+          s('vorbereiten'),
+          d('klein', 'lesen', { ziel: true }),
+          d('klein + Speichern', 'speichern'),
+          s('aufraeumen'),
+        ].map((x) => z(x, 'offen')),
+      ];
+  return { stufen: [{ stufe: 'klein', zeilen }], aktuell: 0 };
 }
 
 /** Lasttest-Seite (#612) mit nachgestellten Antworten des Lasttest-Modus fotografieren. */

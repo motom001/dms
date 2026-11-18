@@ -2227,6 +2227,7 @@ async function festeStufe(v, name, dauer, lauf) {
   const s = STUFEN[name];
   const mitExport = s.export && !hat('--ohne-export');
   const e = pruefeFesteStufe(name, await lauf({ name, n: s.gleichzeitig, dauer, mitExport }));
+  melde({ art: 'ziel', name, erreicht: !e.verfehlt.length && !e.zielVerfehlt.length });
   // #739: danach derselbe Durchgang mit Schreibanteil – zählt nicht für Ziel, CI-Grenze und Exit-Code.
   if (v.speichern) Object.assign(e, await mitSpeichern(v, lauf, { name: `${name} + Speichern`, n: s.gleichzeitig, dauer, mitExport }));
   // #1254: danach Pakete und Tabellen, Anmeldeschutz mit vollem Journal – eigene Zeilen, ohne Ziel.
@@ -2259,16 +2260,7 @@ const urteil = (e) =>
  */
 async function grosseStufe(v, lauf, dauer, stufe = 'gross') {
   const s = STUFEN[stufe];
-  // Namen der Durchgänge wie bisher („groß 25“, „Überlast 1000“); extrem mit eigenem Namen.
-  const kurz = stufe === 'gross' ? 'groß' : stufe;
-  const schrittDauer = Number(arg('--schritt-dauer', s.schrittSekunden));
-  const bis = Number(arg('--bis', s.hoechstens));
-  const start = Number(arg('--start', s.start));
-  const schritt = Number(arg('--schritt', s.schritt));
-  // Vorgabe 5, 10, dann ab 25 in 25er-Schritten – damit auch eine Grenze unter 25 eine echte Zahl ist (#563).
-  // Mit --start beginnt die Steigerung genau dort.
-  const stufenfolge = [...(hat('--start') ? [] : s.vorstufen.filter((n) => n < start && n <= bis))];
-  for (let n = start; n <= bis; n += schritt) stufenfolge.push(n);
+  const { kurz, schrittDauer, bis, start, stufenfolge, ueberlastName } = grenzFolge(stufe);
   const schritte = [];
   let grenze = null;
   let grund = null;
@@ -2285,13 +2277,17 @@ async function grosseStufe(v, lauf, dauer, stufe = 'gross') {
             : e.p95 !== null && e.p95 > s.abbruch.p95Ms
               ? `p95 ${e.p95} ms > 3 s`
               : null;
+    // Ablauf auf der Seite (#1251): ✓ unter der Abbruchgrenze, ✗ beim Schritt, an dem sie erreicht ist.
+    melde({ art: 'ziel', name: e.name, erreicht: !grund });
     if (grund) break;
     grenze = e;
   }
+  // Die übrigen Schritte sind nicht nötig (#1251).
+  melde({ art: 'grenze', stufe });
   if (!grund) grund = `höchste geprüfte Last (${bis} gleichzeitig) ohne Abbruch`;
   const schutz = anmeldeschutz();
   const ueberlast = await lauf({
-    name: `Überlast ${s.ueberlast}${stufe === 'gross' ? '' : ` (${kurz})`}`,
+    name: ueberlastName,
     n: s.ueberlast,
     dauer: Math.min(dauer, 60),
     mitExport: false,
@@ -2770,6 +2766,72 @@ export function containerZeile(laeufe) {
   return `Arbeitsspeicher Container höchstens: ${c.mb} MB${klammer ? ` (${klammer})` : ''}`;
 }
 
+/**
+ * Folge der gleichzeitigen Anfragen beim Suchen der Grenze (gross, extrem): Vorgabe 5, 10, dann ab 25 in 25er-Schritten
+ * – damit auch eine Grenze unter 25 eine echte Zahl ist (#563). Mit --start beginnt die Steigerung genau dort. Namen der
+ * Durchgänge wie bisher („groß 25“, „Überlast 1000“); extrem mit eigenem Namen. Für grosseStufe und ablaufPlan (#1251).
+ */
+export function grenzFolge(stufe) {
+  const s = STUFEN[stufe];
+  const kurz = stufe === 'gross' ? 'groß' : stufe;
+  const bis = Number(arg('--bis', s.hoechstens));
+  const start = Number(arg('--start', s.start));
+  const schritt = Number(arg('--schritt', s.schritt));
+  const stufenfolge = [...(hat('--start') ? [] : s.vorstufen.filter((n) => n < start && n <= bis))];
+  for (let n = start; n <= bis; n += schritt) stufenfolge.push(n);
+  return {
+    kurz,
+    schrittDauer: Number(arg('--schritt-dauer', s.schrittSekunden)),
+    bis,
+    start,
+    schritt,
+    stufenfolge,
+    ueberlastName: `Überlast ${s.ueberlast}${stufe === 'gross' ? '' : ` (${kurz})`}`,
+  };
+}
+
+/**
+ * Plan des Laufs für die Seite des Lasttest-Modus (#1251): je Stufe die Schritte und Durchgänge in der Reihenfolge, in
+ * der messen() sie ausführt – mit denselben Namen, damit die Meldungen „durchgang“ und „schritt“ sie wiederfinden.
+ * Einrichten, Mappen anlegen, Warten auf den Hintergrund und das zweite Vorbereiten (Journal füllen) laufen nicht
+ * immer (`optional`); die Schritte beim Suchen der Grenze (`grenze`) enden, sobald sie erreicht ist.
+ */
+export function ablaufPlan(stufen, { dauer = 120, speichern = true, zusatz = true } = {}) {
+  const schritt = (x, optional = false) => ({ art: 'schritt', schritt: x, ...(optional ? { optional: true } : {}) });
+  const d = (name, n, modus, dauerS, o = {}) => ({ art: 'durchgang', name, n, modus, ziel: false, dauerS, ...o });
+  return stufen.map((st, i) => {
+    const zeilen = [
+      schritt('pruefen'),
+      schritt('einrichten', true),
+      schritt('demo', true),
+      schritt('hintergrund', true),
+      schritt('vorbereiten'),
+    ];
+    let name = st;
+    let n = STUFEN[st]?.gleichzeitig ?? 0;
+    let messDauer = dauer;
+    if (GRENZSTUFEN.has(st)) {
+      const g = grenzFolge(st);
+      for (const x of g.stufenfolge) zeilen.push(d(`${g.kurz} ${x}`, x, 'lesen', g.schrittDauer, { ziel: true, grenze: true }));
+      zeilen.push(d(g.ueberlastName, STUFEN[st].ueberlast, 'ueberlast', Math.min(dauer, 60)));
+      name = g.kurz;
+      n = g.stufenfolge[0] ?? g.start;
+      messDauer = g.schrittDauer;
+    } else zeilen.push(d(st, n, 'lesen', dauer, { ziel: true }));
+    if (speichern) zeilen.push(d(`${name} + Speichern`, n, 'speichern', messDauer), schritt('aufraeumen'));
+    if (zusatz)
+      zeilen.push(
+        schritt('vorbereiten'),
+        d(`${name} + Pakete und Tabellen`, n, 'pakete', messDauer),
+        schritt('aufraeumen'),
+        schritt('vorbereiten', true),
+        d(`${name} + Anmeldeschutz`, n, 'anmeldeschutz', Math.min(messDauer, 60)),
+      );
+    if (i === stufen.length - 1) zeilen.push(schritt('auswerten'));
+    return { stufe: st, zeilen };
+  });
+}
+
 /* ---------- Ablauf ---------- */
 
 /** Ganze Durchgänge stehen schon unter `laeufe` – in `stufen` des JSON nur der Rest (#1254: auch die Zusatz-Durchgänge). */
@@ -2778,12 +2840,22 @@ const OHNE_JSON = ['durchgang', 'schritte', 'ueberlast', 'speichern', 'pakete', 
 async function messen(stufen) {
   const dauer = Number(arg('--dauer', 120));
   const laeufe = [];
+  // Ablauf als Tabelle (#1251): alle geplanten Schritte und Durchgänge von Anfang an.
+  melde({ art: 'plan', stufen: ablaufPlan(stufen, { dauer, speichern: !hat('--ohne-speichern'), zusatz: !hat('--ohne-zusatz') }) });
   const lauf = async (o) => {
     console.log(`Durchgang „${o.name}“: ${o.n} gleichzeitig, ${o.dauer} s …`);
     melde({ art: 'durchgang', name: o.name, n: o.n, dauer: o.dauer });
     const e = await durchgang(v, o);
     console.log(`  p95 ${e.p95} ms, Fehlerquote ${prozent(e.fehlerquote)}, abgewiesen ${e.abgewiesen}, ohne Antwort ${e.ohneAntwort}`);
-    melde({ art: 'durchgang-fertig', name: o.name, n: o.n, p95: e.p95, fehlerquote: e.fehlerquote });
+    melde({
+      art: 'durchgang-fertig',
+      name: o.name,
+      n: o.n,
+      p95: e.p95,
+      fehlerquote: e.fehlerquote,
+      p50: e.median,
+      jeSekunde: e.jeSekunde,
+    });
     laeufe.push(e);
     await warte(5000);
     return e;

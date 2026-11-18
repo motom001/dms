@@ -1,5 +1,6 @@
 /** Schnittstelle (#1234): Einrichtung und Anbindung: Assistent, Datenbank, Neustart, Lasttest, Beispieldaten, Wiederherstellen. */
 import type { LasttestStand } from '../../../shared/src/lasttest';
+import type { LasttestStandMitAblauf } from '../../../shared/src/lasttestablauf';
 import type { AblaufEingabe, AblaufPlan, InstalliertesPaket, Katalog } from '../../../shared/src/pakete';
 import type { DateiFehler, Einrichtungsplan, Planprobleme } from '../../../shared/src/einrichtungsplan';
 import type { Auftrag } from '../../../shared/src/auftrag';
@@ -160,7 +161,7 @@ export interface MailSuche {
 
 export const einrichtungApi = {
   /* Lasttest-Modus (#612) */
-  lasttest: () => anfrage<LasttestStand>('GET', '/api/lasttest'),
+  lasttest: () => anfrage<LasttestStandMitAblauf>('GET', '/api/lasttest'),
   lasttestAngaben: (angaben: Partial<LasttestStand['angaben']>) => anfrage<LasttestStand>('POST', '/api/lasttest/angaben', angaben),
   lasttestBeenden: () => anfrage<{ ok: true }>('POST', '/api/lasttest/beenden', {}),
   /* Einrichtungsassistent (#119) */

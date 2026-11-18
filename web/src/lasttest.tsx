@@ -7,6 +7,7 @@ import { CpuKachel, SpeicherKachel } from './werkbank/Auslastung';
 import { platz } from './werkbank/Speicherplatz';
 import { useLasttest } from './lasttestseite/useLasttest';
 import { Angaben, Ende, Ergebnis, LaufStand, zahl } from './lasttestseite/teile';
+import { Ablauf } from './lasttestseite/ablauf';
 
 /**
  * Lasttest-Modus (#612): die einzige Seite, die ein mit DMS_LASTTEST gestartetes DMS zeigt. Fortschritt und Restdauer,
@@ -164,6 +165,28 @@ function Version({ wert }: { wert?: string }) {
   return wert ? <p className="klein leise">{t('lasttest.version', { version: wert })}</p> : null;
 }
 
+/** Überschrift nennt die Auswahl (#1251), die laufende Stufe steht eindeutig benannt darunter. */
+function Kopf({ stand, laeuft }: { stand: LasttestStand; laeuft: boolean }) {
+  return (
+    <>
+      <h1>
+        {stand.wahl === 'alle'
+          ? t('lasttest.titel.alle')
+          : t('lasttest.titel.eine', { stufe: t.frei(`lasttest.stufe.name.${stand.wahl}`) })}
+      </h1>
+      <Version wert={stand.version} />
+      {laeuft && stand.stufe && (
+        <p className="lasttest-laufend">
+          <strong>
+            {t('lasttest.stufe.laufend', { name: t.frei(`lasttest.stufe.name.${stand.stufe}`), nr: stand.nr, von: stand.von })}
+          </strong>{' '}
+          – {t.frei(`lasttest.stufe.zweck.${stand.stufe}`)}
+        </p>
+      )}
+    </>
+  );
+}
+
 export function LasttestSeite() {
   const l = useLasttest();
   const { stand, fehler, geraet, speicher, kopiert, beendet, gesichert, senden, geholt } = l;
@@ -216,36 +239,42 @@ export function LasttestSeite() {
         ? t('lasttest.beenden.ungesichert')
         : t('lasttest.beenden.frage.fertig');
 
+  // Reihenfolge (#1251): Solange der Test läuft, steht „Beschreibe dein Gerät“ gleich unter der Überschrift – das ist das
+  // Erste, was man tun soll; danach rückt das Ergebnis nach oben. Darunter Stand und Ablauf als Tabelle, solange er läuft
+  // dann der Platz für das Ergebnis und die Live-Werte.
+  const laeuft = zustand === 'laeuft';
+  const angabenTeil = (
+    <Angaben stand={stand} angaben={angaben} zustand={zustand} setGeraet={l.setGeraet} setSpeicher={l.setSpeicher} merke={merke} />
+  );
+  const ergebnisTeil = (
+    <Ergebnis
+      stand={stand}
+      block={block}
+      zeile={zeile}
+      kopiert={kopiert}
+      setKopiert={l.setKopiert}
+      feld={l.feld}
+      textDatei={textDatei}
+      setGesichert={l.setGesichert}
+    />
+  );
   return (
     <div className="kartenseite">
       <div className="karte breit lasttest">
-        <h1>
-          {t('lasttest.titel')}
-          {stand.stufe ? ` – ${t.frei(`lasttest.stufe.${stand.stufe}`)}` : ''}
-        </h1>
-        <Version wert={stand.version} />
+        <Kopf stand={stand} laeuft={laeuft} />
+        {laeuft ? angabenTeil : ergebnisTeil}
         <p className="leise">{t('lasttest.unter')}</p>
 
-        <LaufStand stand={stand} zustand={zustand} jetzt={jetzt} rest={rest} />
-        {zustand === 'laeuft' && stand.live && <Live l={stand.live} stufe={stand.stufe} schritt={stand.schritt} />}
+        <LaufStand stand={stand} zustand={zustand} jetzt={jetzt} rest={rest} mitAblauf={!!stand.ablauf} />
         {fehler && (
           <div className="hinweis schlecht">
             <p>{fehler}</p>
           </div>
         )}
-
-        <Angaben stand={stand} angaben={angaben} zustand={zustand} setGeraet={l.setGeraet} setSpeicher={l.setSpeicher} merke={merke} />
-
-        <Ergebnis
-          stand={stand}
-          block={block}
-          zeile={zeile}
-          kopiert={kopiert}
-          setKopiert={l.setKopiert}
-          feld={l.feld}
-          textDatei={textDatei}
-          setGesichert={l.setGesichert}
-        />
+        {!laeuft && angabenTeil}
+        {stand.ablauf && <Ablauf ablauf={stand.ablauf} stand={stand} jetzt={jetzt} />}
+        {laeuft && ergebnisTeil}
+        {laeuft && stand.live && <Live l={stand.live} stufe={stand.stufe} schritt={stand.schritt} />}
 
         {/* Ergebnis an Stelle des Knopfs (#697): nach der Rückfrage der Abschluss – er bleibt stehen, auch wenn der Server
             nicht mehr antwortet (das Herunterfahren ist ja gewollt; es wird nichts mehr abgefragt). */}

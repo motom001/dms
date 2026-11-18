@@ -115,7 +115,7 @@ export function startseitenSprache(kopf: string | string[] | undefined): 'de' | 
   return !erste || erste === '*' || erste === 'de' || erste.startsWith('de-') ? 'de' : 'en';
 }
 
-export const schrittText = (s: Pick<Startstand, 'schritt' | 'nr' | 'von'>) =>
+const schrittText = (s: Pick<Startstand, 'schritt' | 'nr' | 'von'>) =>
   t.frei(`start.schritt.${s.schritt}`, { nr: s.nr ?? '', von: s.von ?? '' });
 
 /** Was du tun kannst (#1250, B3/B6): Schlüssel der Schritte je Fehler; das Protokoll kommt immer dazu. */

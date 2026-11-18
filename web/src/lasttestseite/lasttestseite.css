@@ -16,3 +16,37 @@
 @media (max-width: 560px) {
   .lasttest-ergebnis .knoepfe [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])), .lasttest-ende [data-knopf]:not(:where([data-knopf="link"], [data-knopf="eigen"])) { width: 100%; white-space: normal; }
 }
+
+/* Ablauf als Tabelle (#1251): je Stufe eine Gruppe mit Aufklapper, darin die Schritte und Durchgänge. Am Handy scrollt
+   die Tabelle in ihrem Rahmen (width 0 / min-width 100 %: der Rahmen dehnt die Karte nicht), die Seite nie waagerecht. */
+.lasttest-laufend { margin: 0; }
+.lasttest-ablauf { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
+.lasttest-ablauf > p { margin: 0; }
+.lasttest-gruppe { display: flex; flex-direction: column; gap: 6px; }
+.lasttest-gruppe .tabellenrahmen { width: 0; min-width: 100%; }
+.lasttest-gruppe-titel { display: block; }
+.lasttest-gruppe-titel .lasttest-zustand { margin-right: 8px; vertical-align: middle; }
+.lasttest-tabelle td { vertical-align: top; }
+.lasttest-tabelle td:nth-child(2) { min-width: 13em; }
+.lasttest-tabelle th { white-space: normal; }
+.lasttest-tabelle progress { width: 100%; min-width: 6em; display: block; }
+.lasttest-was { display: block; font-weight: 600; }
+.lasttest-wofuer { display: block; }
+.lasttest-zeile[data-zustand="offen"] td, .lasttest-zeile[data-zustand="nicht-noetig"] td { color: var(--leise); }
+.lasttest-zeile[data-zustand="offen"] .lasttest-was, .lasttest-zeile[data-zustand="nicht-noetig"] .lasttest-was { font-weight: 400; }
+.lasttest-zeile[data-zustand="laeuft"] td { background: var(--akzent-zart); }
+.lasttest-zustand { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.lasttest-zustand[data-zustand="erledigt"] { color: var(--akzent); font-weight: 600; }
+.lasttest-zustand[data-zustand="laeuft"] { font-weight: 600; }
+.lasttest-zustand[data-zustand="offen"], .lasttest-zustand[data-zustand="nicht-noetig"] { color: var(--leise); }
+.lasttest-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--akzent); flex: none; }
+.lasttest-ziel { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.lasttest-ziel[data-erreicht="ja"] { color: var(--akzent); }
+.lasttest-ziel[data-erreicht="nein"] { color: var(--schlecht); }
+/* Ausweichweg beim Kopieren ohne Zwischenablage (http:// im Heimnetz): kurz angelegt, nie sichtbar. */
+.lasttest-behelf { position: fixed; top: 0; left: -9999px; opacity: 0; }
+/* Am Handy (D6): der Verweis ins Handbuch und „Ganzer Bericht“ mit 44 px Tippfläche, die Zeile bleibt so hoch wie vorher. */
+@media (pointer: coarse) {
+  .lasttest-ende a.verweis { display: inline-block; padding-block: 18px; margin-block: -18px; }
+  .lasttest-ergebnis summary { display: flex; align-items: center; min-height: 44px; }
+}

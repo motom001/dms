@@ -42,7 +42,7 @@ const OHNE_TUER = {
   datenschutz: 'abruf|auskunft',
   demo: 'demo|demo-dokumente|demo-text|zufall',
   dienst: 'dienst|bauteile',
-  einrichtung: 'einrichtung|einrichtungscode|einrichtungsdatei|einrichtungsmodus|startmodus',
+  einrichtung: 'einrichtung|einrichtungscode|einrichtungsdatei|einrichtungsmodus|startmodus|startfehler',
   einstellungen: 'einstellungen|region|betrieb',
   entdecken: 'entdecken|entdecken-werkbank',
   ereignisse: 'ereignisse',
