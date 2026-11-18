@@ -268,6 +268,7 @@ function FeldNamen({ p, id }: { p: FeldZeileProps; id: (x: string) => string }) 
     <div className="raster">
       <SprachText
         beschriftung={t('mappentypen.editor.bezeichnung')}
+        hinweis={f.typ === 'tabelle' ? t('mappentypen.tabelle.beschriftung-hilfe') : undefined}
         id={id('label')}
         wert={f.label}
         placeholder={t('mappentypen.editor.z-b-kuendigung-bis')}

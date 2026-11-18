@@ -22,6 +22,8 @@ Die meisten Anbindungen brauchen nur **Zahlen**, keine Inhalte:
 
 Mehr als Zahlen (Post ablegen, Mappen lesen) geht über die übrigen Endpunkte der API v1 mit einem Schlüssel „nur lesen“ bzw. „lesen und schreiben“.
 
+Sätze baut der Client selbst, die Schnittstelle liefert Zahlen: Bei einer Tabelle (`GET /api/v1/mappen/{id}/tabelle/{feld}`) steht in `verborgen` nur, wie viele Zeilen der Schlüssel nicht lesen darf. Zeigt ein Client das, dann wie die Oberfläche mit der Beschriftung des Felds (`label` bzw. `beschriftungen.<sprache>.label`): „Du siehst 3 von 7 Positionen“, nie ein allgemeines „Einträge“ (#1305).
+
 ## Gleich in allen Clients
 
 Ein Client soll aussehen und sich bedienen wie Ablago selbst: Name **Ablago**, Begriffe aus dem [Glossar](https://help.ablago.app/benutzer/aktuell/begriffe/) in Du-Form, Wege so, wie man klickt („Klick oben rechts auf deinen Namen → Mein Konto → Sicherheit → API-Schlüssel“), Symbole aus [Lucide](https://lucide.dev) in denselben Formen wie die Oberfläche, Logo und Farben nur aus dem Ordner `marke/` von [dms-website](https://github.com/motom001/dms-website). Die genauen Namen der Zahlen und Auslöser stehen im CONTRIBUTING von `dms-clients`.

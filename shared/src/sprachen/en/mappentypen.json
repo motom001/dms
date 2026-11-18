@@ -400,6 +400,7 @@
   "tabelle.waehlen": "Please choose …",
   "tabelle.neu": "Label of “+ New”",
   "tabelle.neu-hilfe": "Shown below the table, for example “+ Item”. Only people who may create the other type see the button.",
+  "tabelle.beschriftung-hilfe": "Also appears in the note “You can see 3 of 7 …” when someone may not see all rows – so best in the plural: “Items”, not “Item”.",
   "tabelle.ohne-wert": "A table has no value of its own: it only shows the folders – not in exports, not in conditions, without totals.",
   "tabelle.keine-quelle": "No field links to this type yet. First add a link field pointing to this type in the other folder type (for example “Invoice” on the invoice item).",
   "tabelle.verwendet": "Table {link}",
