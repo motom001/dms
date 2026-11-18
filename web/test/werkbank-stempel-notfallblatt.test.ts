@@ -1,6 +1,6 @@
 /**
  * Werkbank (#990, #993), gezeichnet mit react-dom/server, ohne Browser:
- *   - Stempel: Vorlagen in der Mitte mit „+ Neu“ (grün), Klick führt auf /werkbank/stempel/:id, rechts die Vorlage
+ *   - Stempel: Vorlagen in der Mitte mit „+ Stempel“ (grün, #1296), Klick führt auf /werkbank/stempel/:id, rechts die Vorlage
  *     mit Live-Vorschau und Speicherleiste („Vorlage löschen“ als Gefahr-Knopf links, #1210).
  *   - Notfallblatt nur unter Verschlüsselung: Sicherung ohne eigenen Abschnitt, nur Hinweis und Link „Zum Notfallblatt“;
  *     auch die Übersicht führt mit diesem Hinweis zur Verschlüsselung.
@@ -55,10 +55,10 @@ const stempelZ = (liste: unknown[] | null) => ({ liste, fehler: undefined, laden
 
 describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
   const liste = STANDARD_VORLAGEN;
-  it('Mitte: „+ Neu“ grün oben, je Vorlage Name, Text und Lage als Link auf die Vorlage', () => {
+  it('Mitte: „+ Stempel“ grün oben, je Vorlage Name, Text und Lage als Link auf die Vorlage', () => {
     const html = zeichne(h(StempelListe, { z: stempelZ(liste), offen: 'kopie' }));
     // Baustein KnopfLink mit Knopfart „Anlegen“ (#989): grün, data-knopf="anlegen".
-    const neu = /<a[^>]*href="\/werkbank\/stempel\/neu"[^>]*>\+ Neu<\/a>/.exec(html)?.[0] ?? '';
+    const neu = /<a[^>]*href="\/werkbank\/stempel\/neu"[^>]*>\+ Stempel<\/a>/.exec(html)?.[0] ?? '';
     assert.match(neu, /class="knopf anlegen klein[^"]*"/);
     assert.match(neu, /data-knopf="anlegen"/);
     for (const v of liste) assert.ok(html.includes(`href="/werkbank/stempel/${v.id}"`), v.id);
