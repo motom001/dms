@@ -16,7 +16,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { chmodSync, rmSync } from 'node:fs';
 import { createServer, type Server, type Socket } from 'node:net';
 import { getPriority, setPriority } from 'node:os';
-import { findeProgramm, istWerkzeug, mitGrenzen, werkzeugGrenzenAus, WERKZEUG_ZEIT_MAX_MS, type WerkzeugGrenzen } from './werkzeuggrenzen';
+import { findeProgramm, mitGrenzen, werkzeugName, werkzeugGrenzenAus, WERKZEUG_ZEIT_MAX_MS, type WerkzeugGrenzen } from './werkzeuggrenzen';
 import { AUFTRAG_MAX, RAHMEN, rahmen, RahmenLeser, STAND_AUFTRAG, STAND_SKRIPT, type Auftrag } from './werkzeugprotokoll';
 
 /** Höchstens so viele Programme gleichzeitig; mehr lehnt der Dienst ab (EAGAIN), statt den Rechner zu überladen. */
@@ -90,9 +90,11 @@ class Verbindung {
 /** Programm und Argumente eines Auftrags, mit Grenzen; null, wenn es nicht erlaubt ist oder fehlt (Antwort ist dann raus). */
 function aufrufFuer(d: Dienst, v: Verbindung, a: Auftrag): { befehl: string; args: string[] } | null {
   const stand = a.befehl === STAND_AUFTRAG;
-  if (!stand && !istWerkzeug(a.befehl)) return (v.fehler('EACCES', `${a.befehl} gehört nicht zu den Dokumentwerkzeugen`), null);
+  const name = stand ? null : werkzeugName(a.befehl);
+  if (!stand && !name) return (v.fehler('EACCES', `${a.befehl} gehört nicht zu den Dokumentwerkzeugen`), null);
   if (d.laufend.size >= GLEICHZEITIG_MAX) return (v.fehler('EAGAIN', 'zu viele Werkzeuge gleichzeitig'), null);
-  const pfad = stand ? '/bin/sh' : findeProgramm(a.befehl, d.umgebung.PATH);
+  // Gestartet wird der Name aus der Liste (im Suchpfad des Dienstes), nicht der Text aus dem Auftrag.
+  const pfad = stand ? '/bin/sh' : findeProgramm(name!, d.umgebung.PATH);
   if (!pfad) return (v.fehler('ENOENT', `spawn ${a.befehl} ENOENT`), null);
   return mitGrenzen(pfad, stand ? ['-c', `PATH="$PATH:/usr/bin:/bin"; ${STAND_SKRIPT}`] : a.args, d.grenzen);
 }

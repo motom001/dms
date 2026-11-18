@@ -37,8 +37,11 @@ for v in "${VORLAGEN[@]}"; do
     # Datenbank vorbelegt: der Assistent beginnt beim Konto (Mandant), nicht bei der Datenbank.
     phase=$(echo "$s" | jq -r '.einrichtung.phase // empty')
     if [ "$phase" != konto ]; then echo "::error::$v: Assistent beginnt bei „$phase“ statt beim Mandanten"; fehler=1; fi
-    test -s "$arbeit/geheim/EINRICHTUNGSCODE" || { echo "::error::$v: kein Einrichtungscode in geheim/"; fehler=1; }
-    test -s "$arbeit/geheim/datenbank.json" || { echo "::error::$v: Anbindung nicht übernommen"; fehler=1; }
+    # Seit #1354 gehören die Ordner Ablago (1000, ohne Rechte für andere) – lesen darum mit sudo.
+    sudo test -s "$arbeit/geheim/EINRICHTUNGSCODE" || { echo "::error::$v: kein Einrichtungscode in geheim/"; fehler=1; }
+    sudo test -s "$arbeit/geheim/datenbank.json" || { echo "::error::$v: Anbindung nicht übernommen"; fehler=1; }
+    # Ohne root (#1354): Ablago läuft als 1000, die Ordner gehören ihm.
+    [ "$(sudo stat -c %u "$arbeit/geheim")" = 1000 ] || { echo "::error::$v: /data/geheim gehört nicht dem Benutzer von Ablago"; fehler=1; }
   fi
   docker compose -p "$projekt" -f "$arbeit/docker-compose.yml" down -v >/dev/null 2>&1 || true
   sudo rm -rf "$arbeit" 2>/dev/null || rm -rf "$arbeit" || true

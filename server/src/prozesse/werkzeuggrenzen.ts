@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { BLOECKE_JE_MB, KB_JE_MB, WERKZEUG_SPEICHER_MB_VORGABE } from '../grundlagen/grenzen';
 
 /** Programme, die der Werkzeugdienst startet. Andere lehnt er ab. */
-const WERKZEUGE: ReadonlySet<string> = new Set([
+const WERKZEUG_NAMEN = [
   'pdftoppm',
   'pdftotext',
   'pdfinfo',
@@ -33,7 +33,9 @@ const WERKZEUGE: ReadonlySet<string> = new Set([
   'qpdf',
   'gs',
   'tesseract',
-]);
+] as const;
+/** Name → derselbe Name: So stammt der Name, den der Dienst startet, aus dieser Liste, nie aus dem Auftrag. */
+const WERKZEUGE: Readonly<Record<string, string>> = Object.fromEntries(WERKZEUG_NAMEN.map((n) => [n, n]));
 
 const WERKZEUG_SPEICHER_MB_MIN = 128;
 const WERKZEUG_SPEICHER_MB_MAX = 65_536;
@@ -115,7 +117,12 @@ export function findeProgramm(name: string, pfad = process.env.PATH ?? ''): stri
 }
 
 /** Ein Werkzeug nach seinem Namen (auch mit Pfad, z. B. /usr/bin/qpdf). */
-export const istWerkzeug = (befehl: string) => WERKZEUGE.has(befehl.slice(befehl.lastIndexOf('/') + 1));
+/** Name des Werkzeugs aus der Liste (auch für einen Aufruf mit Pfad, z. B. /usr/bin/qpdf); null, wenn es keins ist. */
+export function werkzeugName(befehl: string): string | null {
+  const name = befehl.slice(befehl.lastIndexOf('/') + 1);
+  return Object.hasOwn(WERKZEUGE, name) ? WERKZEUGE[name] : null;
+}
+export const istWerkzeug = (befehl: string) => werkzeugName(befehl) !== null;
 
 /**
  * poppler meldet eine gescheiterte Speicheranforderung nur auf der Fehlerausgabe („Out of memory“, „Bogus memory
