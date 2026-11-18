@@ -1,6 +1,5 @@
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { OCR_STAENDE, type Dokument, type OcrStandArt } from '../../../shared/src/model';
@@ -562,7 +561,7 @@ export class Texterkennung {
 
   /** Datei lesen: Textebene (poppler). Mit `fassung` (#577) deren Inhalt statt der Datei des Dokuments. */
   private async lese(d: Dokument, signal?: AbortSignal, fassung?: Lesefassung): Promise<OcrErgebnis & { ohneText?: number[] }> {
-    const dir = await mkdtemp(join(tmpdir(), 'dms-ocr-'));
+    const dir = await werkzeugOrdner('dms-ocr-');
     try {
       const pfad = join(dir, 'datei');
       await writeFile(pfad, fassung ? fassung.inhalt : await alsBuffer(await this.dateien.lies(d.sha256)));
@@ -652,7 +651,7 @@ export class Texterkennung {
    */
   async erkenneSofort(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> {
     if (mime !== 'application/pdf') throw new Fachfehler(422, t('meldungen.texterkennung.fotos-und-bilder-liest'));
-    const dir = await mkdtemp(join(tmpdir(), 'dms-sofort-'));
+    const dir = await werkzeugOrdner('dms-sofort-');
     try {
       const pfad = join(dir, 'datei');
       await writeFile(pfad, inhalt);

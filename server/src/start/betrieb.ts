@@ -9,7 +9,7 @@ import { SCHLUESSELDATEI } from '../dateien/ordner';
 import { Messung, pgMessSpeicher } from '../datenbank/messung';
 import { extern, pgExternSpeicher } from '../system/externmessung';
 import { pgEinstellungen } from '../einstellungen/einstellungen';
-import { richteHintergrundEin } from '../prozesse/hintergrund';
+import { meldeBenutzer, richteHintergrundEin } from '../prozesse/hintergrund';
 import { tDe } from '../sprache/sprache';
 import { richteZwischenspeicherEin } from '../zwischenspeicher/zaehlerspeicher';
 import { richteArbeiterEin } from '../arbeit';
@@ -50,6 +50,8 @@ export async function richteBetriebEin(bisher: Bisher) {
   if (hintergrund.fehler && leiter) log.warn(hintergrund.fehler);
   if (leiter)
     log.info(hintergrund.wert ? tDe('meldungen.hintergrund.start', { wert: hintergrund.wert }) : tDe('meldungen.hintergrund.aus'));
+  // Ohne root (#1354): Benutzer von Ablago und, gemessen, Benutzer und Grenzen der Dokumentwerkzeuge ins Protokoll.
+  meldeBenutzer(log, env, leiter);
   // Zwischenspeicher der Zahlen, Trefferzahlen und Termine (#918): DMS_ZWISCHENSPEICHER=aus nur zur Fehlersuche.
   if (!richteZwischenspeicherEin(env) && leiter) log.warn(tDe('meldungen.zwischenspeicher.aus'));
   // Arbeiter für PDF und große Exporte (#542): ein kleiner Pool von Fäden neben dem Hauptfaden.

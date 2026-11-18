@@ -43,6 +43,9 @@ export interface Uebersicht {
     alpine: string | null;
     zeitzone: string;
     laeuftSeit: string;
+    /** Benutzer und Gruppe des Prozesses (#1354: im Image nicht root). */
+    benutzer: number | null;
+    gruppe: number | null;
   };
   datenbank: Datenbankdaten | { fehler: string };
   bibliotheken: Record<string, string | null>;
@@ -140,6 +143,9 @@ function lies(p: string) {
   }
 }
 
+/** Benutzer und Gruppe des Prozesses (#1354); null ohne POSIX. */
+const kennungen = () => ({ benutzer: process.getuid?.() ?? null, gruppe: process.getgid?.() ?? null });
+
 export async function uebersicht(
   quelle: SystemQuelle | undefined,
   betrieb: { mail: string; adresse: string } | undefined,
@@ -165,6 +171,7 @@ export async function uebersicht(
       alpine: lies('/etc/alpine-release'),
       zeitzone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       laeuftSeit: start.toISOString(),
+      ...kennungen(),
     },
     datenbank,
     bibliotheken: Object.fromEntries(BIBLIOTHEKEN.map((b) => [b, installierteVersion(b)])),

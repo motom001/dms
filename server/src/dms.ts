@@ -4,6 +4,7 @@
  * der Datenbank. Jede Aktion steht im Protokoll des DMS mit dem Vermerk „Konsole“.
  */
 import { readFile } from 'node:fs/promises';
+import { abschirmungText, type WerkzeugAbschirmung } from './prozesse/werkzeugverbindung';
 import { ALS_KOPF, KONSOLE_KOPF, konsolenDatei, lokaleUrl, type KonsolenDatei } from './system/konsole';
 import { t } from './sprache/sprache';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -364,8 +365,9 @@ async function befehlAbmelden(rest: string[], { v, ein, opt, zeige }: Lauf): Pro
 async function befehlStatus(rest: string[], { v, zeige }: Lauf): Promise<void> {
   const s = await v.anfrage<{
     dms: { version: string; variante: string; commit: string | null };
-    laufzeit: { node: string; laeuftSeit: string; zeitzone: string };
+    laufzeit: { node: string; laeuftSeit: string; zeitzone: string; benutzer?: number | null };
     datenbank: Record<string, unknown>;
+    abschirmung?: WerkzeugAbschirmung | null;
   }>('GET', '/api/werkbank/system');
   const db = s.datenbank;
   return zeige(s, () => [
@@ -379,6 +381,10 @@ async function befehlStatus(rest: string[], { v, zeige }: Lauf): Promise<void> {
             .map(([k, x]) => `${k} ${String(x)}`)
             .join(' · ')
     }`,
+    // Ohne root (#1354): Benutzer von Ablago und der Dokumentwerkzeuge (ältere Server nennen sie nicht).
+    ...(s.laufzeit.benutzer == null
+      ? []
+      : [`Benutzer: ${s.laufzeit.benutzer}${s.abschirmung ? ` · ${abschirmungText(s.abschirmung)}` : ''}`]),
   ]);
 }
 

@@ -19,10 +19,9 @@
  * Farbschlüssel-Maske (/Mask), Sonderfarben (Separation, DeviceN) und Bilder, deren Platzierung sich nicht
  * ermitteln lässt (z. B. nur in Mustern oder Anmerkungen).
  */
-import { execFile } from '../prozesse/hintergrund';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
@@ -607,7 +606,7 @@ export async function verkleinere(inhalt: Buffer, stufe: Stufe = STANDARD_STUFE)
   } catch (e) {
     hinweise.push({ text: t('meldungen.verkleinern.pdf-verkleinern-bilder-nicht'), fehler: (e as Error).message });
   }
-  const dir = await mkdtemp(join(tmpdir(), 'dms-klein-'));
+  const dir = await werkzeugOrdner('dms-klein-');
   let neu = 0;
   try {
     for (const grau of [true, false]) {

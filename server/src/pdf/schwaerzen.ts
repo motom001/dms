@@ -18,9 +18,8 @@
  * Bilder (JPEG, PNG) werden genauso behandelt (Ausrichtung laut EXIF beachtet) und bleiben Bilder desselben
  * Typs – ohne EXIF-Daten.
  */
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
@@ -220,7 +219,7 @@ const ohneText = (s: SchwaerzSeite) => !s.woerter.length;
 export async function analysiere(inhalt: Buffer, mime: string): Promise<Analyse> {
   const pdf = await arbeitsPdf(inhalt, mime);
   const lage = await seitenlage(pdf);
-  const dir = await mkdtemp(join(tmpdir(), 'dms-schwarz-'));
+  const dir = await werkzeugOrdner('dms-schwarz-');
   try {
     const ein = join(dir, 'ein.pdf');
     await writeFile(ein, pdf);
@@ -244,7 +243,7 @@ export async function analysiere(inhalt: Buffer, mime: string): Promise<Analyse>
 /** Eine Seite als JPEG für den Dialog (längste Seite `px`). */
 export async function seitenbild(inhalt: Buffer, mime: string, nr: number, px = ANSICHT_PX): Promise<Buffer | null> {
   const pdf = await arbeitsPdf(inhalt, mime);
-  const dir = await mkdtemp(join(tmpdir(), 'dms-schwarz-'));
+  const dir = await werkzeugOrdner('dms-schwarz-');
   try {
     const ein = join(dir, 'ein.pdf');
     await writeFile(ein, pdf);
@@ -448,7 +447,7 @@ export async function schwaerze(
   if (analyse.seiten.length !== n) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-des-dokuments'));
   const bild = mime !== 'application/pdf';
   const bleiben = verbleibende(analyse.seiten, bereiche);
-  const dir = await mkdtemp(join(tmpdir(), 'dms-schwarz-'));
+  const dir = await werkzeugOrdner('dms-schwarz-');
   try {
     const ein = join(dir, 'ein.pdf');
     await writeFile(ein, pdf);

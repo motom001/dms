@@ -1,6 +1,5 @@
-import { execFile } from '../prozesse/hintergrund';
-import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import type { Dokument } from '../../../shared/src/model';
@@ -163,7 +162,7 @@ function starte(cmd: string, args: string[], ms: number): Promise<void> {
 /** Erste Seite mit pdftoppm als JPEG, längste Seite VORSCHAU_PX. */
 export const popplerErzeuger: Erzeuger = async (inhalt, mime) => {
   if (!hatVorschau(mime)) return null;
-  const dir = await mkdtemp(join(tmpdir(), 'dms-vorschau-'));
+  const dir = await werkzeugOrdner('dms-vorschau-');
   try {
     const pdf = join(dir, 'datei.pdf');
     await writeFile(pdf, mime === 'application/pdf' ? inhalt : await bildSeitePdf(inhalt, mime));

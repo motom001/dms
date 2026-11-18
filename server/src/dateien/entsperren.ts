@@ -19,10 +19,9 @@
  *   nur nach erneuter Bestätigung (`BESTAETIGUNG_MS`, je Sitzung). Kommt neue Post für diese Person („Für“), probiert
  *   Ablago die gemerkten Passwörter still durch – jedes als eigener qpdf-Prozess mit Zeitgrenze.
  */
-import { spawn } from '../prozesse/hintergrund';
+import { spawn, werkzeugOrdner } from '../prozesse/hintergrund';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { FassungInfo } from '../../../shared/src/dateiumwandlung';
 import {
@@ -105,7 +104,7 @@ function qpdf(args: string[], eingabe: string | null, ms = QPDF_MS): Promise<Lau
 }
 
 async function mitDatei<T>(pdf: Buffer, f: (ein: string, dir: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), 'dms-entsperren-'));
+  const dir = await werkzeugOrdner('dms-entsperren-');
   try {
     const ein = join(dir, 'ein.pdf');
     await writeFile(ein, pdf);

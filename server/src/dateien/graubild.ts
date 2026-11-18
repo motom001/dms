@@ -12,9 +12,8 @@
  * pdftoppm -gray liefert dieses Format; tesseract liest es direkt. So braucht das Image kein
  * zusätzliches Bildwerkzeug, um eine auf dem Kopf stehende oder quer liegende Seite aufzurichten.
  */
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Fachfehler } from '../grundlagen/fehler';
 import { merkeSchriftfehler } from './ersatzschriften';
@@ -31,7 +30,7 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
   if (!Number.isInteger(nr) || nr < 1) throw new Fachfehler(422, t('meldungen.graubild.seite-eine-ganze-zahl'));
   if (!Number.isInteger(dpi) || dpi < DPI_MIN || dpi > DPI_MAX)
     throw new Fachfehler(422, t('meldungen.graubild.dpi-zwischen-und', { DPI_MIN, DPI_MAX }));
-  const dir = await mkdtemp(join(tmpdir(), 'dms-scan-'));
+  const dir = await werkzeugOrdner('dms-scan-');
   try {
     await writeFile(join(dir, 'q.pdf'), pdf);
     await new Promise<void>((ok, fehler) => {

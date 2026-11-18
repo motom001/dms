@@ -10,6 +10,7 @@ import { umzugHinweis } from '../export/exportordner';
 import { t } from '../sprache/sprache';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { uebersicht } from '../system/system';
+import { werkzeugAbschirmung } from '../prozesse/hintergrund';
 import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll/protokoll';
 import { werkbankZahlen } from './werkbankzahlen';
 import { BeispielAblage } from '../beispiele/beispielablage';
@@ -564,11 +565,14 @@ function systemuebersichtRouten(k: RoutenKontext): Route[] {
         const sp = x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null;
         // Eingebaute Werkzeuge (#1189): `?neu` prüft erneut (Knopf „Erneut prüfen“ im Systemzustand).
         const werkzeuge = await sicher(() => ocr().werkzeugeLaden(a.query.neu !== undefined));
+        // Dokumentwerkzeuge getrennt und begrenzt (#1354): Benutzer und Grenzen, gemessen (dms status, Probe im Image).
+        const abschirmung = await sicher(() => werkzeugAbschirmung());
         return ok({
           ...(await uebersicht(system, x.betrieb?.kurz())),
           ordner: sp?.ordner ?? null,
           variablen: x.ordner?.ueberfluessig ?? [],
           werkzeuge,
+          abschirmung,
         });
       },
     },

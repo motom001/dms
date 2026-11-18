@@ -1,6 +1,5 @@
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Fachfehler } from '../grundlagen/fehler';
 import { merkeSchriftfehler } from './ersatzschriften';
@@ -116,7 +115,7 @@ function starte(cmd: string, args: string[], ms: number): Promise<void> {
 
 /** pdftoppm: Seiten 1…SEITENBILDER_MAX als JPEG. */
 export async function popplerSeiten(inhalt: Buffer): Promise<Buffer[]> {
-  const dir = await mkdtemp(join(tmpdir(), 'dms-seiten-'));
+  const dir = await werkzeugOrdner('dms-seiten-');
   try {
     const pdf = join(dir, 'datei.pdf');
     await writeFile(pdf, inhalt);

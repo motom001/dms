@@ -16,10 +16,9 @@
  * - Mit der Fassung entstehen Vorschaubild (vorschau.ts) und Volltext (texterkennung.ts: Textebene bzw. Paket
  *   Texterkennung) wie bei einem PDF oder Foto.
  */
-import { execFile } from '../prozesse/hintergrund';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readdir, readFile, rename, rm, rmdir, stat, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, readdir, readFile, rename, rm, rmdir, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   BILDPUNKTE_MAX,
@@ -206,7 +205,7 @@ export function bildGroesse(b: Buffer, mime: string): { breite: number; hoehe: n
 
 /** Seitenzahl eines PDFs mit pdfinfo (poppler, im Image); null, wenn pdfinfo fehlt. Wirft bei einem kaputten PDF. */
 async function pdfSeiten(inhalt: Buffer): Promise<number | null> {
-  const dir = await mkdtemp(join(tmpdir(), 'dms-fassung-'));
+  const dir = await werkzeugOrdner('dms-fassung-');
   try {
     await writeFile(join(dir, 'f.pdf'), inhalt);
     return await new Promise<number | null>((ok, fehler) => {

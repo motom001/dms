@@ -1,6 +1,5 @@
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner } from '../prozesse/hintergrund';
+import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { crc32, deflate, deflateSync } from 'node:zlib';
 import { promisify } from 'node:util';
@@ -306,7 +305,7 @@ async function rastere(
   pdf: Buffer,
   o: { format: 'jpeg' | 'png'; dpi?: number; breite?: number; grau?: boolean; qualitaet?: number },
 ): Promise<Buffer[]> {
-  const dir = await mkdtemp(join(tmpdir(), 'dms-demo-'));
+  const dir = await werkzeugOrdner('dms-demo-');
   try {
     await writeFile(join(dir, 'q.pdf'), pdf);
     const args = [`-${o.format}`];
