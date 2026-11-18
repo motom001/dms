@@ -6,6 +6,8 @@
 #   4. Prozess abschießen → Container endet
 #   5. Ordner einer anderen PostgreSQL-Hauptversion → Startseite nennt den Grund (Port antwortet ohne PostgreSQL, #1250),
 #      Container startet nicht
+#  2d. Ohne root (#1354): Ablago, Vorstart und Werkzeuge nicht als root, Werkzeuge getrennt und begrenzt (auch mit einem
+#      riesigen PDF), Datenbank nur für Ablago, Rolle dms kein Superuser
 #  5b. Rechte (#943): eingebundener Ordner mit 000 → startet; nicht beschreibbar → klare Meldung
 #   6. Eigener PORT → Healthcheck gesund
 #   7. Lasttest-Modus ohne Ordner (#612) → Seite, Ergebnis, „Test beenden“ → Container weg
@@ -13,6 +15,7 @@
 #   deploy/komplett-probe.sh <image>      z. B. deploy/komplett-probe.sh dms-komplett:probe
 set -euo pipefail
 IMAGE="${1:?Image angeben, z. B. dms-komplett:probe}"
+WERKZEUGE_PRUEFEN="$(cd "$(dirname "$0")/.." && pwd)/.github/werkzeuge/werkzeuge-pruefen.mjs"
 PORT=18090
 arbeit=$(mktemp -d)
 NAME=probe-komplett
@@ -77,9 +80,10 @@ curl -fsS -X POST "http://127.0.0.1:$PORT/api/konto/anmelden" -H 'x-dms: 1' -H '
   -d '{"email":"admin@probe.invalid","passwort":"ein-langes-probe-passwort"}' >/dev/null || fehler "Anmeldung nach dem Neustart scheitert"
 docker exec "$NAME" pg_isready -q -h 127.0.0.1 -U dms -d dms || fehler "pg_isready im Container"
 # pg_stat_statements (#894): geladen und in der Datenbank von Ablago angelegt – auch nach dem Neustart mit bestehender Datenbank.
-docker exec "$NAME" psql -h 127.0.0.1 -U dms -d dms -tAc "SHOW shared_preload_libraries" | grep -q pg_stat_statements || fehler "pg_stat_statements nicht geladen"
-[ "$(docker exec "$NAME" psql -h 127.0.0.1 -U dms -d dms -tAc "SELECT count(*) FROM pg_extension WHERE extname = 'pg_stat_statements'")" = 1 ] || fehler "Erweiterung pg_stat_statements fehlt"
-docker exec "$NAME" psql -h 127.0.0.1 -U dms -d dms -tAc "SELECT count(*) FROM erweiterungen_dms.pg_stat_statements" >/dev/null || fehler "pg_stat_statements nicht lesbar"
+# Über den Socket (#1354: nur postgres und root; über 127.0.0.1 braucht dms das Passwort, das nur Ablago kennt).
+docker exec "$NAME" psql -h /run/postgresql -U dms -d dms -tAc "SHOW shared_preload_libraries" | grep -q pg_stat_statements || fehler "pg_stat_statements nicht geladen"
+[ "$(docker exec "$NAME" psql -h /run/postgresql -U dms -d dms -tAc "SELECT count(*) FROM pg_extension WHERE extname = 'pg_stat_statements'")" = 1 ] || fehler "Erweiterung pg_stat_statements fehlt"
+docker exec "$NAME" psql -h /run/postgresql -U dms -d dms -tAc "SELECT count(*) FROM erweiterungen_dms.pg_stat_statements" >/dev/null || fehler "pg_stat_statements nicht lesbar"
 # Von außen ist PostgreSQL nicht erreichbar: kein Port 5432 am Container.
 [ -z "$(docker port "$NAME" 5432 2>/dev/null)" ] || fehler "Port 5432 ist nach außen offen"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
@@ -113,6 +117,36 @@ curl -fsS -X POST "http://127.0.0.1:$PORT/api/konto/anmelden" -H 'x-dms: 1' -H '
 schluessel=$(docker exec "$NAME" cat /tmp/dms-konsole.json | jq -r .schluessel)
 [ "$(curl -s -o /dev/null -w '%{http_code}' -H "x-dms-konsole: $schluessel" "http://127.0.0.1:$PORT/api/benutzer")" = 401 ] || fehler "Konsolenschlüssel von außen angenommen"
 echo "::endgroup::"; echo "::notice::dms-komplett: Befehl dms funktioniert"
+
+echo "::group::2d. Ohne root, Dokumentwerkzeuge getrennt und begrenzt (#1354)"
+# Benutzer der Prozesse aus /proc: Ablago und Vorstart als ablago (1000), Werkzeugdienst als ablago-werkzeug (61000).
+uid_von() { docker exec "$NAME" sh -c 'for p in $(pgrep -f "^node .*$1"); do awk "/^Uid:/ {print \$2}" /proc/$p/status; done | sort -u' uid "$1"; }
+[ "$(uid_von server/dist/index.js)" = 1000 ] || fehler "Ablago läuft nicht (nur) als Benutzer 1000: $(uid_von server/dist/index.js | tr '\n' ' ')"
+[ "$(uid_von server/dist/werkzeugdienst.js)" = 61000 ] || fehler "Werkzeugdienst läuft nicht als Benutzer 61000"
+status=$(docker exec "$NAME" dms status --json)
+[ "$(jq -r '.laufzeit.benutzer' <<< "$status")" = 1000 ] || fehler "dms status: Ablago läuft als $(jq -r '.laufzeit.benutzer' <<< "$status")"
+jq -e '.abschirmung.getrennt == true and .abschirmung.benutzer == 61000 and .abschirmung.speicherMb == 1024 and .abschirmung.cpuS > 0' <<< "$status" >/dev/null \
+  || fehler "Dokumentwerkzeuge nicht getrennt oder ohne Grenze: $(jq -c '.abschirmung' <<< "$status")"
+echo "::notice::$(docker exec "$NAME" dms status | grep '^Benutzer')"
+# Ein riesiges PDF endet nur im Werkzeug; Ablago antwortet weiter (.github/werkzeuge/werkzeuge-pruefen.mjs).
+docker cp "$WERKZEUGE_PRUEFEN" "$NAME:/tmp/werkzeuge-pruefen.mjs"
+ergebnis=$(docker exec "$NAME" ablago-als node /tmp/werkzeuge-pruefen.mjs) || { echo "$ergebnis"; fehler "Prüfung der Dokumentwerkzeuge"; }
+echo "::notice::Dokumentwerkzeuge: $ergebnis"
+curl -fsS "http://127.0.0.1:$PORT/api/gesundheit" >/dev/null || fehler "Ablago antwortet nach dem riesigen PDF nicht mehr"
+# Als Benutzer der Werkzeuge: kein Zugriff auf /data, die Umgebung von Ablago und die Datenbank.
+als_werkzeug() { docker exec -u 61000:61000 "$NAME" sh -c "$1" >/dev/null 2>&1; }
+als_werkzeug 'ls /data/files' && fehler "Werkzeug-Benutzer liest /data/files"
+als_werkzeug 'cat /data/geheim/EINRICHTUNGSCODE /data/geheim/datenbank.json' && fehler "Werkzeug-Benutzer liest /data/geheim"
+als_werkzeug ': > /data/files/x' && fehler "Werkzeug-Benutzer schreibt in /data/files"
+als_werkzeug "cat /proc/$(docker exec "$NAME" pgrep -f '^node .*server/dist/index.js' | head -1)/environ" && fehler "Werkzeug-Benutzer liest die Umgebung von Ablago"
+als_werkzeug 'psql -w -h 127.0.0.1 -U dms -d dms -c "SELECT 1"' && fehler "Werkzeug-Benutzer erreicht die Datenbank über 127.0.0.1"
+als_werkzeug 'psql -w -h /run/postgresql -U postgres -d dms -c "SELECT 1"' && fehler "Werkzeug-Benutzer erreicht die Datenbank über den Socket"
+[ "$(docker exec "$NAME" psql -h /run/postgresql -U postgres -tAc "SELECT rolsuper FROM pg_roles WHERE rolname = 'dms'")" = f ] || fehler "Rolle dms ist noch Superuser"
+# Ordner gehören Ablago.
+for o in files geheim sicherung; do
+  [ "$(docker exec "$NAME" stat -c %u:%g "/data/$o")" = 1000:1000 ] || fehler "/data/$o gehört nicht 1000:1000"
+done
+echo "::endgroup::"; echo "::notice::dms-komplett: ohne root, Werkzeuge getrennt und begrenzt"
 
 echo "::group::3. Sauber stoppen"
 docker stop "$NAME" >/dev/null

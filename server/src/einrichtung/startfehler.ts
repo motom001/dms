@@ -12,6 +12,8 @@ export type Startschritt =
   /** Vorstart in dms-komplett (#1250): PostgreSQL anlegen, starten, dann Ablago starten. */
   | 'pg-anlegen'
   | 'pg-start'
+  /** Ohne root (#1354): einmal nach dem Update die Ordner unter /data für den Benutzer von Ablago übernehmen. */
+  | 'rechte'
   | 'ablago'
   | 'datenbank'
   /** Datenbank noch nicht erreichbar (#1250): neuer Versuch nr von von. */
@@ -31,8 +33,15 @@ export type Startschritt =
 /** Datenbank nach dem Start nicht erreichbar oder blockiert (#1250). */
 export type DatenbankGrund = 'abgewiesen' | 'sperre' | 'platte' | 'verbindungen';
 /** Fehler des Vorstarts in dms-komplett, bevor Ablago selbst läuft (#1250; Meldungen von deploy/komplett/start.sh). */
-export type VorstartGrund = 'rechte' | 'pg-version' | 'nicht-leer' | 'pg-anlegen' | 'pg-beendet';
-export const VORSTART_GRUENDE: readonly VorstartGrund[] = ['rechte', 'pg-version', 'nicht-leer', 'pg-anlegen', 'pg-beendet'];
+export type VorstartGrund = 'rechte' | 'pg-version' | 'nicht-leer' | 'pg-anlegen' | 'pg-beendet' | 'daten-rechte';
+export const VORSTART_GRUENDE: readonly VorstartGrund[] = [
+  'rechte',
+  'pg-version',
+  'nicht-leer',
+  'pg-anlegen',
+  'pg-beendet',
+  'daten-rechte',
+];
 
 export type Startfehler =
   | { art: 'neuere-datenbank'; unbekannt: string[] }
@@ -135,6 +144,7 @@ function auswege(f: Startfehler, komplett: boolean): string[] {
       'nicht-leer': ['start.fehler.tun.nicht-leer'],
       'pg-anlegen': ['start.fehler.tun.speicher', 'start.fehler.tun.rechte'],
       'pg-beendet': ['start.fehler.tun.speicher', 'start.fehler.tun.neustart.komplett'],
+      'daten-rechte': ['start.fehler.tun.daten-rechte'],
     }[f.grund];
   if (f.art === 'neuere-datenbank') return ['start.fehler.neuere-datenbank.tun'];
   return [];

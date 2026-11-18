@@ -1,6 +1,7 @@
 /**
  * Vorstart in dms-komplett (#1250): zeigt die Startseite „Ablago startet …“ (#802) schon in der ersten Sekunde nach dem
  * Containerstart – während deploy/komplett/start.sh PostgreSQL anlegt und startet, also noch bevor Ablago selbst läuft.
+ * Seit #1354 auch im Image dms, solange das Start-Skript die Ordner für den Benutzer von Ablago übernimmt.
  * Eigener kleiner Bündel (dist/vorstart.js), ohne Datenbank und ohne Ablage: nur Port, Schritt und Handbücher.
  *
  * - Den Schritt schreibt start.sh in eine Datei (DMS_VORSTART_DATEI): eine Zeile wie `pg-anlegen`, `pg-start`, `ablago`
@@ -21,7 +22,7 @@ import { proxyVertrauen } from './http/proxy';
 
 const env = process.env;
 const DATEI = env.DMS_VORSTART_DATEI ?? '/tmp/ablago-vorstart';
-const SCHRITTE: readonly Startschritt[] = ['pg-anlegen', 'pg-start', 'ablago'];
+const SCHRITTE: readonly Startschritt[] = ['pg-anlegen', 'pg-start', 'rechte', 'ablago'];
 
 const start = new Startmodus({
   port: Number(env.PORT ?? 3000),
@@ -30,7 +31,8 @@ const start = new Startmodus({
   proxy: proxyVertrauen(env.TRUST_PROXY).trust,
   einbetten: einbettenAus(env.DMS_EINBETTEN),
   seit: Number(env.DMS_VORSTART_SEIT) * 1000 || undefined,
-  komplett: true,
+  // Auch im Image dms (#1354), solange das Start-Skript die Ordner übernimmt oder dabei scheitert.
+  komplett: env.DMS_VARIANTE === 'komplett',
   ohneStand: true,
   teilen: true,
 });

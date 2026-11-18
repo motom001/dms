@@ -5,7 +5,14 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ueberfluessigeVariablen, variablenHinweis, VARIABLEN_GRUND } from '../../shared/src/umgebungsvariablen';
-import { AnbindungVerwaltung, ausUrl, datenbankVomImage, umgebungAusCompose } from '../src/datenbank/anbindung';
+import {
+  AnbindungVerwaltung,
+  alsUrl,
+  ausUrl,
+  datenbankVomImage,
+  passwortZumVerbinden,
+  umgebungAusCompose,
+} from '../src/datenbank/anbindung';
 
 describe('Überflüssige Umgebungsvariablen (#478)', () => {
   it('nichts zu tun: kein Hinweis', () => {
@@ -140,5 +147,47 @@ describe('DATABASE_URL vom Image oder aus der Compose-Datei (#805)', () => {
     assert.equal(datenbankVomImage({ DATABASE_URL: url, DMS_DATENBANK_VOM_IMAGE: '1' }), false);
     assert.deepEqual((await hinweis({ DATABASE_URL: url, DMS_DATENBANK_VOM_IMAGE: '1' }, ausUrl(url)!)).variablen, ['DATABASE_URL']);
     assert.deepEqual(await hinweis({}, ausUrl(url)!), { umgebung: 'fehlt', variablen: [] });
+  });
+});
+
+/**
+ * #1354: In dms-komplett meldet sich die Rolle dms über 127.0.0.1 mit einem Passwort an, das start.sh bei jedem Start
+ * neu setzt (DMS_DB_KOMPLETT_PASSWORT). Es gehört nur in die Verbindung, nie in die Datei der Anbindung oder in
+ * DATABASE_URL – sonst stünde es in der Werkbank und jeder Neustart meldete „weicht ab“.
+ */
+describe('Passwort der Datenbank im Container (#1354)', () => {
+  const INTERN = ausUrl('postgres://dms@127.0.0.1:5432/dms')!;
+  const KOMPLETT = { DMS_VARIANTE: 'komplett', DMS_DB_KOMPLETT_PASSWORT: 'zufall123' };
+
+  it('nur für die Datenbank im Container, nur ohne eigenes Passwort, nur in dms-komplett', () => {
+    assert.equal(passwortZumVerbinden(INTERN, KOMPLETT), 'zufall123');
+    assert.equal(passwortZumVerbinden({ ...INTERN, host: 'localhost' }, KOMPLETT), 'zufall123');
+    assert.equal(passwortZumVerbinden({ ...INTERN, host: 'db' }, KOMPLETT), '', 'andere Datenbank');
+    assert.equal(passwortZumVerbinden({ ...INTERN, benutzer: 'anders' }, KOMPLETT), '');
+    assert.equal(passwortZumVerbinden({ ...INTERN, passwort: 'eigenes' }, KOMPLETT), 'eigenes');
+    assert.equal(passwortZumVerbinden(INTERN, { DMS_DB_KOMPLETT_PASSWORT: 'zufall123' }), '', 'Image dms');
+    assert.equal(passwortZumVerbinden(INTERN, { DMS_VARIANTE: 'komplett' }), '');
+  });
+
+  it('alsUrl verbindet mit dem Passwort; DATABASE_URL aus start.sh bleibt ohne', () => {
+    const vorher = { v: process.env.DMS_VARIANTE, p: process.env.DMS_DB_KOMPLETT_PASSWORT };
+    Object.assign(process.env, KOMPLETT);
+    try {
+      assert.equal(alsUrl(INTERN), 'postgres://dms:zufall123@127.0.0.1:5432/dms');
+      assert.equal(alsUrl(INTERN, 'postgres'), 'postgres://dms:zufall123@127.0.0.1:5432/postgres');
+    } finally {
+      for (const [k, v] of [
+        ['DMS_VARIANTE', vorher.v],
+        ['DMS_DB_KOMPLETT_PASSWORT', vorher.p],
+      ] as const)
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+    }
+    const skript = readFileSync(join(import.meta.dirname, '../../deploy/komplett/start.sh'), 'utf8');
+    const abschnitt = skript.slice(skript.indexOf('# anfang-datenbank-variable'), skript.indexOf('# ende-datenbank-variable'));
+    assert.doesNotMatch(abschnitt, /DMS_DB_KOMPLETT_PASSWORT/);
+    assert.match(skript, /^export DMS_DB_KOMPLETT_PASSWORT$/m);
+    // Das Passwort geht über die Standardeingabe an psql, nie in eine Befehlszeile.
+    assert.match(skript, /printf "ALTER ROLE dms WITH LOGIN PASSWORD '%s';\\n" "\$DMS_DB_KOMPLETT_PASSWORT" \| su-exec postgres psql/);
   });
 });

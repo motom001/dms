@@ -3,7 +3,8 @@
 #   1. altes Image (dms-komplett) starten, einrichten, ein Dokument über den Eingangsordner ablegen,
 #      eine Sicherung anlegen
 #   2. Container entfernen, neues Image mit denselben Ordnern starten → alle Migrationen laufen durch
-#   3. weiter eingerichtet, Anmeldung klappt, das Dokument ist da
+#   3. weiter eingerichtet, Anmeldung klappt, das Dokument ist da; ab #1354: die Ordner des alten Stands (von root
+#      geschrieben) gehören jetzt Ablago, mit Meldung im Protokoll, und Ablago läuft nicht als root
 #   4. Probe-Wiederherstellung der alten Sicherung mit der neuen Version gelingt
 #
 #   .github/werkzeuge/update-test.sh <altes Image> <neues Image>
@@ -94,6 +95,11 @@ neu=$(version); echo "Neue Version: $neu"
 [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach dem Update wieder uneingerichtet"
 anmelden "neuer Stand"
 [ "$(api "$U/api/mappen/$mappe" | jq '.dokumente | length')" = 1 ] || fehler "Dokument nach dem Update nicht mehr da"
+# Ohne root (#1354): Was der alte Stand als root geschrieben hat, gehört jetzt dem Benutzer von Ablago (1000).
+fremd=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" ! -uid 1000 | head -5)
+[ -z "$fremd" ] || fehler "nach dem Update gehört noch nicht alles Ablago: $fremd"
+grep -q "übernehme /data/files für Benutzer 1000" <<< "$(docker logs "$NAME" 2>&1)" || fehler "keine Meldung zur Übernahme der Ordner"
+[ "$(docker exec "$NAME" dms status --json | jq -r '.laufzeit.benutzer')" = 1000 ] || fehler "Ablago läuft nach dem Update nicht als Benutzer 1000"
 echo "::endgroup::"
 
 echo "::group::3. Probe-Wiederherstellung der alten Sicherung"

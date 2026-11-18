@@ -55,7 +55,10 @@ ARG APK_TAG=""
 # aus Druckstraßen), rendert poppler mit Ersatz aus dem System; ohne eine einzige Schrift fehlte der Text in Seiten-,
 # Vorschaubildern und Archivfassung. font-liberation (SIL OFL 1.1): metrisch passend für Helvetica/Arial, Times und
 # Courier; font-dejavu (Bitstream-Vera-Lizenz, frei): weitere Zeichen. fontconfig kommt mit poppler. Zusammen etwa 14 MB.
-RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache && apk add --no-cache poppler-utils qpdf fontconfig font-liberation font-dejavu
+# Ohne root (#1354): tini (PID 1, gibt Signale weiter), setpriv (Benutzerwechsel mit Zusatzgruppe und no_new_privs, aus
+# util-linux) und su-exec (für PostgreSQL in dms-komplett) – zusammen unter 100 KB.
+RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache \
+  && apk add --no-cache poppler-utils qpdf fontconfig font-liberation font-dejavu tini setpriv su-exec
 # Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""
@@ -82,18 +85,32 @@ COPY server/lizenzen server/lizenzen
 COPY shared/entdecken shared/entdecken
 COPY --from=bau /app/web/dist web/dist
 COPY --from=hilfe /hilfe web/dist/hilfe
-# Befehl dms in der Konsole des Containers (#244): docker exec -it <container> dms hilfe
-RUN printf '#!/bin/sh\nexec node /app/server/dist/dms.js "$@"\n' > /usr/local/bin/dms && chmod 755 /usr/local/bin/dms
+# Ohne root (#1354): Start-Hilfen beider Images, Einstieg von dms, Befehle als Benutzer von Ablago (ablago-als).
+COPY deploy/image/start-hilfen.sh /usr/local/lib/ablago/start-hilfen.sh
+COPY deploy/image/einstieg.sh /usr/local/bin/ablago-einstieg
+COPY deploy/image/ablago-als.sh /usr/local/bin/ablago-als
+# Benutzer (#1354): ablago (1000, statt node aus dem Basis-Image) für Ablago, ablago-werkzeug (61000) für die
+# Dokumentwerkzeuge; ablago gehört zusätzlich dessen Gruppe an (gemeinsamer Arbeitsordner). /data gehört ablago – so
+# übernimmt ein neues benanntes Docker-Volume die Rechte schon beim Anlegen.
+RUN chmod 644 /usr/local/lib/ablago/start-hilfen.sh && chmod 755 /usr/local/bin/ablago-einstieg /usr/local/bin/ablago-als \
+  && { deluser --remove-home node 2>/dev/null || true; } && { delgroup node 2>/dev/null || true; } \
+  && addgroup -S -g 1000 ablago && adduser -S -D -H -u 1000 -G ablago -h /tmp -s /sbin/nologin ablago \
+  && addgroup -S -g 61000 ablago-werkzeug \
+  && adduser -S -D -H -u 61000 -G ablago-werkzeug -h /run/ablago-werkzeuge/heim -s /sbin/nologin ablago-werkzeug \
+  && addgroup ablago ablago-werkzeug \
+  && mkdir -p /data/files /data/geheim /data/sicherung /data/export && chown -R ablago:ablago /data && chmod 750 /data/*
+# Befehl dms in der Konsole des Containers (#244): docker exec -it <container> dms hilfe – als Benutzer von Ablago (#1354).
+RUN printf '#!/bin/sh\nexec ablago-als node /app/server/dist/dms.js "$@"\n' > /usr/local/bin/dms && chmod 755 /usr/local/bin/dms
 # Lasttest selbst durchführen (#563): docker exec -it <Test-Container> dms-lasttest klein – nur gegen eine eigene
 # Test-Installation; das Skript prüft das selbst. Ohne Abhängigkeiten, nur node.
 # Ohne Konsole (#612): DMS_LASTTEST=klein|mittel|gross|extrem|alle – Ablago startet dieses Skript selbst und zeigt
 # Fortschritt und Ergebnis unter seinem Port (server/src/lasttest/lasttestmodus.ts).
 COPY server/test/lasttest.mjs /app/lasttest/lasttest.mjs
-RUN printf '#!/bin/sh\nexec node /app/lasttest/lasttest.mjs "$@"\n' > /usr/local/bin/dms-lasttest && chmod 755 /usr/local/bin/dms-lasttest
+RUN printf '#!/bin/sh\nexec ablago-als node /app/lasttest/lasttest.mjs "$@"\n' > /usr/local/bin/dms-lasttest && chmod 755 /usr/local/bin/dms-lasttest
 # Pakete mit dem Installer dieser Version prüfen (#1124), ohne Datenbank-Server und ohne Netz – für die CI von
 # dms-registry: docker run --rm -v "$PWD/pakete:/pakete:ro" ghcr.io/motom001/dms:<version> pakete-pruefen /pakete/basis …
-# Der Befehl ersetzt CMD; das Entrypoint-Skript von node (bzw. tini in dms-komplett) startet ihn direkt.
-RUN printf '#!/bin/sh\nexec node --enable-source-maps /app/server/dist/pakete-pruefen.js "$@"\n' > /usr/local/bin/pakete-pruefen && chmod 755 /usr/local/bin/pakete-pruefen
+# Der Befehl ersetzt CMD; der Einstieg (bzw. tini in dms-komplett) startet ihn als Benutzer von Ablago (#1354).
+RUN printf '#!/bin/sh\nexec ablago-als node --enable-source-maps /app/server/dist/pakete-pruefen.js "$@"\n' > /usr/local/bin/pakete-pruefen && chmod 755 /usr/local/bin/pakete-pruefen
 # Alpine-Pakete bei jedem Bau frisch (#1397): Die Schicht mit „apk add“ oben bleibt mit APK_TAG bis zu einen Tag im
 # Cache, weil sie vor den COPY-Schritten liegt (dort gehört sie hin, sonst käme poppler bei jedem Bau neu ins Image).
 # Diese Schicht liegt bewusst hinter DMS_GEBAUT und allen COPY-Schritten: Beim Bau in GitHub Actions kommt sie nie aus
@@ -110,19 +127,25 @@ EXPOSE 3000
 # Port wie der Server (PORT, Standard 3000) – sonst wäre ein Container mit eigener PORT-Einstellung „unhealthy“ (#321).
 HEALTHCHECK --interval=30s --timeout=8s --start-period=20s \
   CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/api/gesundheit" >/dev/null || exit 1
+# Ohne root (#1354): Der Einstieg läuft als root, übernimmt die Ordner, startet die Dokumentwerkzeuge als eigenen
+# Benutzer und dann den Befehl als PUID:PGID (Vorgabe 1000:1000). Bewusst kein USER: Sonst ginge das Übernehmen der
+# Ordner bestehender Installationen nicht; „docker run --user“ geht weiterhin (dann ohne eigenen Werkzeug-Benutzer).
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/ablago-einstieg"]
 CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 
 # dms-komplett (#208): Ablago und PostgreSQL 17 in einem Container. PostgreSQL ist nur innerhalb des
 # Containers erreichbar (127.0.0.1, „trust“) – kein Passwort, das jemand kennen muss. tini startet das
 # Skript, das erst PostgreSQL, dann Ablago startet und beim Stoppen beide sauber beendet. Vom ersten Augenblick an zeigt
-# dabei der Vorstart (server/dist/vorstart.js, #1250) die Seite „Ablago startet …“; er braucht kein root.
+# dabei der Vorstart (server/dist/vorstart.js, #1250) die Seite „Ablago startet …“; er läuft wie Ablago ohne root (#1354).
 FROM laufzeit AS komplett
 # Ohne eigenes „apk upgrade“ (#1397): laufzeit endet mit einer frischen Paketschicht aus demselben Bau. Ein zweites
 # Upgrade hier könnte Pakete heben, die dms nicht bekommt. „apk add“ holt die neuesten PostgreSQL-Pakete und hebt nur,
 # was sie zwingend brauchen.
-RUN apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
+RUN apk add --no-cache postgresql17 postgresql17-contrib
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
-RUN chmod 755 /usr/local/bin/dms-komplett
+# Eigene pg_hba.conf (#1354): Socket nur für postgres, über 127.0.0.1 nur mit Passwort.
+COPY deploy/komplett/pg_hba.conf /usr/local/share/ablago/pg_hba.conf
+RUN chmod 755 /usr/local/bin/dms-komplett && chmod 644 /usr/local/share/ablago/pg_hba.conf
 ENV DMS_VARIANTE=komplett
 HEALTHCHECK --interval=30s --timeout=8s --start-period=40s \
   CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/api/gesundheit" >/dev/null && pg_isready -q -h 127.0.0.1 -U dms -d dms || exit 1

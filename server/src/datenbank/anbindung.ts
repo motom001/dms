@@ -92,10 +92,23 @@ export function ausVariablen(env: Record<string, string | undefined>): Anbindung
   return { ...STANDARD_ANBINDUNG, host: env.DMS_DB_HOST || STANDARD_ANBINDUNG.host, port, passwort: env.DMS_DB_PASSWORT };
 }
 
+/**
+ * Datenbank im Container (dms-komplett, #1354): Die Rolle `dms` meldet sich über 127.0.0.1 mit einem Passwort an, das
+ * das Start-Skript bei jedem Start neu setzt und nur Ablago mitgibt (DMS_DB_KOMPLETT_PASSWORT). So erreichen andere
+ * Benutzer im Container – etwa die Dokumentwerkzeuge – die Datenbank nicht. In der Datei der Anbindung steht es nie;
+ * dort bleibt die Anbindung ohne Passwort wie bisher.
+ */
+export function passwortZumVerbinden(a: Anbindung, env: Record<string, string | undefined> = process.env): string {
+  if (a.passwort || env.DMS_VARIANTE !== 'komplett' || !env.DMS_DB_KOMPLETT_PASSWORT) return a.passwort;
+  const imContainer = (a.host === '127.0.0.1' || a.host === 'localhost') && a.port === 5432 && a.benutzer === 'dms';
+  return imContainer ? env.DMS_DB_KOMPLETT_PASSWORT : a.passwort;
+}
+
 export function alsUrl(a: Anbindung, datenbank = a.datenbank): string {
   const e = encodeURIComponent;
   const host = a.host.includes(':') && !a.host.startsWith('[') ? `[${a.host}]` : a.host;
-  return `postgres://${e(a.benutzer)}${a.passwort ? `:${e(a.passwort)}` : ''}@${host}:${a.port}/${e(datenbank)}`;
+  const passwort = passwortZumVerbinden(a);
+  return `postgres://${e(a.benutzer)}${passwort ? `:${e(passwort)}` : ''}@${host}:${a.port}/${e(datenbank)}`;
 }
 
 export const ansicht = (a: Anbindung | null): AnbindungAnsicht | null =>
