@@ -187,6 +187,7 @@ jobs:
           timeout 300 npx playwright install chromium || { echo "::warning::Download von Chromium hing oder scheiterte – zweiter Versuch"; timeout 300 npx playwright install chromium; }
           if node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())"; then exit 0; fi
           echo "::notice::Chromium startet nicht – Bibliotheken per apt nachinstallieren"
+          bash "$GITHUB_WORKSPACE/.github/werkzeuge/apt-spiegel.sh"  # langsamer Spiegel (18.11.)
           for versuch in 1 2; do
             timeout 300 npx playwright install-deps chromium && exit 0
             [ "$versuch" = 2 ] && exit 1
