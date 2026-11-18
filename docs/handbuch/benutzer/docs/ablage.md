@@ -35,14 +35,16 @@ Welche Ansichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sa
 
 Die Liste zeigt die Mappen der Ansicht, nach Titel sortiert. Sie lädt zunächst 100 Mappen und beim Herunterscrollen automatisch die nächsten.
 
-Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Exportieren und Löschen gehen über die Auswahl (siehe unten); die Ansicht selbst bearbeiten Administratoren in der Werkbank unter *Ansichten*.
+Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Daneben öffnet **⋯** **Alle … exportieren …** (alle Mappen der Ansicht, mit deiner Suche und Sortierung) und – wenn du in der Werkbank Ansichten bearbeiten darfst – **Ansicht bearbeiten**. Löschen und Versenden gehen über die Auswahl (siehe unten).
+
+Über der Liste steht, wie viele Mappen sie enthält. Haben alle denselben Mappentyp, nennt die Zahl ihn, etwa „12 × Vertrag“; in Ansichten mit verschiedenen Mappentypen heißt es „12 Mappen“.
 
 ### Kompakt oder als Tabelle
 
 Wie die Liste aussieht, hängt von ihrer Breite ab:
 
-- **Schmal:** Jede Mappe ist ein kompakter Eintrag – die erste Angabe fett, zwei weitere darunter.
-- **Breit:** Die Liste wird zur **Tabelle** mit einer Spalte je Angabe.
+- **Schmal:** Jede Mappe ist ein kompakter Eintrag – die erste Angabe fett, zwei weitere darunter. Zeigt die Ansicht verschiedene Mappentypen, steht der Typ klein unter dem Titel.
+- **Breit:** Die Liste wird zur **Tabelle** mit einer Spalte je Angabe. Die Spalte *Mappentyp* gibt es nur, wenn die Liste verschiedene Mappentypen enthält.
 
 Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die Mappe mit einem kurzen Klick auf den Griff ein. Eingeklappt bleibt rechts eine schmale Leiste mit dem Titel der Mappe; ein Klick darauf holt sie zurück (siehe [Spalten anpassen](erste-schritte.md#spalten-anpassen)).
 
@@ -123,7 +125,7 @@ Das Suchformular steht **oben in der Mitte**, die Treffer darunter; links bleibe
 
 So funktioniert das Formular:
 
-- **Mappentypen**: Du wählst sie genauso wie mehrere Mappen in einem [Verweisfeld](mappen.md#auf-andere-mappen-verweisen) – tippen, Vorschlag wählen (oder **Enter** für den ersten). Die gewählten Mappentypen stehen **unter** dem Suchfeld, jeder mit **Entfernen**; das Suchfeld bleibt dabei auf einer Höhe mit *Volltext* daneben. Angeboten werden nur Mappentypen, die du lesen darfst. Wählst du keinen, sucht Ablago in allen – dann gibt es nur die allgemeinen Felder (angelegt am/von, geändert am/von). Mappentypen, die die Verwaltung aus der allgemeinen Suche genommen hat (etwa reine Auswahllisten wie „Vertragsart“), sind dann nicht dabei; sie stehen unter dem Feld („Nicht dabei: …“) und werden gefunden, sobald du sie wählst.
+- **Mappentypen**: Du wählst sie genauso wie mehrere Mappen in einem [Verweisfeld](mappen.md#auf-andere-mappen-verweisen) – tippen, Vorschlag wählen (oder **Enter** für den ersten). Die gewählten Mappentypen stehen **unter** dem Suchfeld, jeder mit einem kleinen **Kreuz** zum Entfernen; das Suchfeld bleibt dabei auf einer Höhe mit *Volltext* daneben. Angeboten werden nur Mappentypen, die du lesen darfst. Wählst du keinen, sucht Ablago in allen – dann gibt es nur die allgemeinen Felder (angelegt am/von, geändert am/von). Mappentypen, die die Verwaltung aus der allgemeinen Suche genommen hat (etwa reine Auswahllisten wie „Vertragsart“), sind dann nicht dabei; sie stehen unter dem Feld („Nicht dabei: …“) und werden gefunden, sobald du sie wählst.
 - **Bedingungen**: Anfangs steht kein Feld da. Mit **+ Bedingung** wählst du ein Feld; angeboten werden die Felder, die **alle gewählten Mappentypen gemeinsam** haben. Das Kreuz rechts entfernt die Bedingung wieder. Jedes Feld bekommt die passende Eingabe:
     - **Datum**: von–bis in einer Zeile; eins von beiden darf leer bleiben. Unter **Zeitraum …** gibt es „dieses Jahr“, „letztes Jahr“, „letzte 12 Monate“, „dieser Monat“ und „letzter Monat“.
     - **Zahl, Betrag, Prozent**: von–bis.
@@ -159,7 +161,7 @@ Ist ein Paket wie **KI lokal – Ähnlichkeit** installiert und gilt der Volltex
 In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schritt zu bearbeiten.
 
 - **Haken** vor einer Mappe setzen; mit gedrückter **Shift**-Taste wählt der nächste Haken alles dazwischen mit. In der Tabelle wählt der Haken im Kopf alle geladenen Mappen.
-- Sobald etwas gewählt ist, steht über der Liste eine **Aktionsleiste**: „3 von 120 ausgewählt“, die Aktionen und **Auswahl aufheben**.
+- Sobald etwas gewählt ist, steht über der Liste statt der Zahl der Mappen eine **Aktionsleiste**: „3 von 120 ausgewählt“, die Aktionen und **Auswahl aufheben**.
 - **Alle 120 auswählen** nimmt alle Treffer der Ansicht – auch die, die noch nicht geladen sind, und mit deiner Suche.
 - Die Auswahl bleibt, während du Mappen öffnest; wechselst du die Ansicht oder die Suche, ist sie weg.
 - **Am Handy** hält man eine Mappe kurz gedrückt, um die Auswahl zu beginnen; danach schaltet Tippen den Haken um.
@@ -174,7 +176,7 @@ In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schrit
 
 ### Exportieren
 
-**Exportieren …** in der Aktionsleiste gibt die Auswahl aus der Ansicht heraus – mit **Alle … auswählen** vorher alle Treffer (mit deiner Suche und Sortierung):
+**Exportieren …** in der Aktionsleiste gibt die Auswahl aus der Ansicht heraus; alle Treffer (mit deiner Suche und Sortierung) exportierst du über **⋯** → **Alle … exportieren …** im Kopf der Ansicht:
 
 - **Excel (.xlsx)** – eine Tabelle, in der Datum, Beträge und Prozent echte Werte sind: Excel kann danach sortieren und rechnen. Ein Zeitraum steht als Text („3 Monate“).
 - **CSV** – dieselbe Tabelle für jede Tabellenkalkulation, im deutschen Format (Semikolon, Datum TT.MM.JJJJ, Beträge mit Komma).

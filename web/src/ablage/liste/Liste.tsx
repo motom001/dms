@@ -2,7 +2,8 @@
 import { typName } from '../../../../shared/src/beschriftung';
 import { t } from '../../sprache';
 import { Listenkopf } from '../../Listenkopf';
-import { Knopf, KnopfLink } from '../../bausteine';
+import { Knopf, KnopfLink, Menue, type MenuePunkt } from '../../bausteine';
+import { geheZu } from '../../ort';
 import { PostKnopf } from '../Post';
 import { spaltenName } from '../spalten';
 import { zahl } from './hilfen';
@@ -10,8 +11,31 @@ import type { ListeProps } from './liste-hooks';
 import { useListe, type ListeKern } from './liste-kern';
 import { Aktionsleiste, Dialoge, ErgebnisHinweis, Rumpf, Unscharf } from './liste-teile';
 
-/** Kopf der Ansicht (#1212): Titel und „+ <Typ>“ (Anlegen). Exportieren und Löschen gehen über die Auswahl, die Ansicht bearbeitet man in der Werkbank. */
-function Kopf({ p }: { p: ListeProps }) {
+/** „⋯“ im Kopf der Ansicht (#1212, #1285): „Alle n exportieren …“ und „Ansicht bearbeiten“ (Weg in die Werkbank, nur mit Recht). */
+function MehrMenue({ l }: { l: ListeKern }) {
+  const { p, s } = l;
+  const punkte: MenuePunkt[] = [];
+  if (p.export && (s.gesamt ?? 0) > 0)
+    punkte.push({
+      key: 'export',
+      symbol: 'herunterladen',
+      inhalt: t('ablage.liste.alle-exportieren', { anzahl: s.gesamt ?? 0, zahl: zahl(s.gesamt ?? 0) }),
+      tu: () => {
+        l.setEmailOffen(false);
+        l.setExportOffen('alle');
+      },
+    });
+  if (p.bearbeiten) {
+    const ziel = p.bearbeiten;
+    punkte.push({ key: 'bearbeiten', inhalt: t('ablage.liste.ansicht-bearbeiten'), tu: () => geheZu(ziel) });
+  }
+  if (!punkte.length) return null;
+  return <Menue nurSymbol beschriftung={t('ablage.liste.mehr', { titel: p.titel })} punkte={punkte} />;
+}
+
+/** Kopf der Ansicht (#1212): Titel, „+ <Typ>“ (Anlegen) und rechts „⋯“ (#1285). */
+function Kopf({ l }: { l: ListeKern }) {
+  const { p } = l;
   return (
     <Listenkopf titel={p.titel} hilfe={p.hilfe} beschreibung={p.beschreibung}>
       <div className="listenkopf-knoepfe">
@@ -25,20 +49,26 @@ function Kopf({ p }: { p: ListeProps }) {
             <PostKnopf />
           </div>
         )}
+        <MehrMenue l={l} />
       </div>
     </Listenkopf>
   );
 }
 
+/** „12 Mappen“ – oder mit dem Typ, wenn die ganze Liste einen hat (#1285); in der Suche „12 Treffer“. */
+function anzahlVon({ p, s, suche, einTyp }: ListeKern) {
+  if (s.gesamt === null) return '';
+  if (suche || p.sicht === 'suche') return t('ablage.ablage.treffer', { zahl: zahl(s.gesamt) });
+  const typ = p.typ ?? (s.alle ? einTyp : undefined);
+  return typ
+    ? t('ablage.liste.anzahl-typ', { anzahl: s.gesamt, zahl: zahl(s.gesamt), typ: typName(typ) })
+    : t('ablage.ablage.mappen-2', { anzahl: s.gesamt, zahl: zahl(s.gesamt) });
+}
+
 /** Anzahl, Sortierung (#1212) und geänderte Favoriten (#422). */
 function ListenZahl({ l }: { l: ListeKern }) {
-  const { p, s, suche, sortierung } = l;
-  const anzahlText =
-    s.gesamt === null
-      ? ''
-      : suche || p.sicht === 'suche'
-        ? t('ablage.ablage.treffer', { zahl: zahl(s.gesamt) })
-        : t('ablage.ablage.mappen-2', { anzahl: s.gesamt, zahl: zahl(s.gesamt) });
+  const { p, s, sortierung } = l;
+  const anzahlText = anzahlVon(l);
   if (!anzahlText) return null;
   return (
     <p className="listenzahl leise klein" aria-live="polite">
@@ -72,9 +102,10 @@ export function Liste(p: ListeProps) {
   return (
     <>
       <div ref={l.mess} className="breitenmesser" aria-hidden="true" />
-      <Kopf p={p} />
+      <Kopf l={l} />
       {p.kopf}
-      <ListenZahl l={l} />
+      {/* Die Auswahlleiste ersetzt die Zeile mit der Anzahl (#1285). */}
+      {l.wahl && l.wahl.gewaehlt.size > 0 ? <Aktionsleiste l={l} wahl={l.wahl} /> : <ListenZahl l={l} />}
       <Dialoge l={l} />
       {l.s.fehler && (
         <div className="hinweis schlecht">
@@ -82,7 +113,6 @@ export function Liste(p: ListeProps) {
         </div>
       )}
       <Unscharf l={l} />
-      {l.wahl && l.wahl.gewaehlt.size > 0 && <Aktionsleiste l={l} wahl={l.wahl} />}
       {l.ergebnis && <ErgebnisHinweis ergebnis={l.ergebnis} schliessen={() => l.setErgebnis(undefined)} />}
       <Rumpf l={l} />
     </>
