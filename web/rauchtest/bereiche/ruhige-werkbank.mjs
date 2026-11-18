@@ -123,7 +123,7 @@ rauchtest(
     await zeile.getByRole('button', { name: 'Ansehen' }).click();
     const fassung = s.getByRole('radiogroup', { name: 'Fassung' });
     assert.ok(await fassung.getByRole('radio', { name: 'PDF/A' }).isChecked(), 'PDF/A ist gewählt');
-    await s.locator('.dokansicht iframe').waitFor();
+    await s.locator('.dokansicht figure[data-seite], .dokansicht iframe').first().waitFor(); // Seitenbetrachter (#1324) oder Betrachter des Browsers
     const funde = [];
     for (const schema of ['light', 'dark']) {
       await schemaWechseln(s, schema);
@@ -134,11 +134,11 @@ rauchtest(
     await fassung.getByRole('radio', { name: 'Original' }).click();
     await s.getByText('Ein Original im Format .eml kann Ablago nicht direkt anzeigen.').waitFor();
     await s.locator('.dokansicht').getByRole('button', { name: 'Original herunterladen' }).waitFor();
-    assert.equal(await s.locator('.dokansicht iframe').count(), 0, 'kein Betrachter für das Original');
+    assert.equal(await s.locator('.dokansicht figure[data-seite], .dokansicht iframe').count(), 0, 'kein Betrachter für das Original');
     for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`Original: ${v}`);
     // Zurück auf PDF/A und schließen.
     await fassung.getByRole('radio', { name: 'PDF/A' }).click();
-    await s.locator('.dokansicht iframe').waitFor();
+    await s.locator('.dokansicht figure[data-seite], .dokansicht iframe').first().waitFor(); // Seitenbetrachter (#1324) oder Betrachter des Browsers
     await zeile.getByRole('button', { name: 'Schließen' }).click();
     await s.locator('.dokansicht').waitFor({ state: 'detached' });
     assert.deepEqual(funde, [], `axe in der Dokumentliste:\n${funde.join('\n')}`);
