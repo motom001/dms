@@ -7,7 +7,9 @@ import { join } from 'node:path';
 import { besitzer, klassenIn, pruefe, regeln, teile, woerterInTs } from './klassen-pruefen.mjs';
 
 test('Regeln samt @media, Selektorlisten und Besitzer', () => {
-  const r = regeln('/* x { } */\n.a, .b > .c { color: red; }\n@media (max-width: 600px) {\n  .a:hover { z-index: 3; }\n}\n@keyframes k { to { opacity: 1; } }');
+  const r = regeln(
+    '/* x { } */\n.a, .b > .c { color: red; }\n@media (max-width: 600px) {\n  .a:hover { z-index: 3; }\n}\n@keyframes k { to { opacity: 1; } }',
+  );
   assert.deepEqual(
     r.map((x) => [x.selektor, x.kontext]),
     [
@@ -34,10 +36,16 @@ test('Wörter aus Zeichenketten, auch in verschachtelten Vorlagen, und Vorsilben
 test('findet doppelte, ungenutzte Klassen und freie z-index-Werte', () => {
   const wurzel = mkdtempSync(join(tmpdir(), 'klassen-'));
   mkdirSync(join(wurzel, 'a'));
-  writeFileSync(join(wurzel, 'a', 'eins.css'), '.kachel { z-index: 30; }\n.tot { color: var(--x); }\n.blatt .kachel { z-index: var(--ebene-menue); }');
+  writeFileSync(
+    join(wurzel, 'a', 'eins.css'),
+    '.kachel { z-index: 30; }\n.tot { color: var(--x); }\n.blatt .kachel { z-index: var(--ebene-menue); }',
+  );
   writeFileSync(join(wurzel, 'zwei.css'), '.kachel:hover { z-index: calc(var(--ebene-blatt) + 1); }');
   writeFileSync(join(wurzel, 'x.module.css'), '.genutzt { } .ungenutzt { }');
-  writeFileSync(join(wurzel, 'a', 'Seite.tsx'), "import s from '../x.module.css';\nexport const A = () => <p className={`kachel blatt ${s.genutzt}`} />;");
+  writeFileSync(
+    join(wurzel, 'a', 'Seite.tsx'),
+    "import s from '../x.module.css';\nexport const A = () => <p className={`kachel blatt ${s.genutzt}`} />;",
+  );
   const { doppelt, tot, zIndex } = pruefe(wurzel, {}, []);
   assert.deepEqual(
     doppelt.map((d) => d.klasse),

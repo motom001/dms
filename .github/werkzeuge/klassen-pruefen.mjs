@@ -239,7 +239,8 @@ export function pruefe(wurzel = 'web/src', ausnahmen = AUSNAHMEN, weitere = WEIT
       regelzahl++;
       for (const z of r.koerper.matchAll(/(?:^|;)\s*z-index\s*:\s*([^;!]+)/g)) {
         const wert = z[1].trim();
-        if (!Z_ERLAUBT.has(wert) && !/^(?:var\(--ebene-[\w-]+\)|calc\(var\(--ebene-[\w-]+\) \+ \d+\))$/.test(wert)) zIndex.push({ datei, zeile: r.zeile, wert });
+        if (!Z_ERLAUBT.has(wert) && !/^(?:var\(--ebene-[\w-]+\)|calc\(var\(--ebene-[\w-]+\) \+ \d+\))$/.test(wert))
+          zIndex.push({ datei, zeile: r.zeile, wert });
       }
       for (const teil of teile(r.selektor)) {
         // In Modulen: lokale Klassen; was in :global(...) steht, gehört nicht dem Modul.
@@ -279,10 +280,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     );
   }
   for (const f of tot) {
-    console.log(`::error file=${f.datei},line=${f.zeile},title=Klasse ungenutzt::.${f.klasse} setzt die Oberfläche nirgends – entfernen (#1270)`);
+    console.log(
+      `::error file=${f.datei},line=${f.zeile},title=Klasse ungenutzt::.${f.klasse} setzt die Oberfläche nirgends – entfernen (#1270)`,
+    );
   }
   for (const f of zIndex) {
-    console.log(`::error file=${f.datei},line=${f.zeile},title=z-index ohne Stufe::z-index: ${f.wert} – eine Stufe aus tokens.css nehmen (var(--ebene-…))`);
+    console.log(
+      `::error file=${f.datei},line=${f.zeile},title=z-index ohne Stufe::z-index: ${f.wert} – eine Stufe aus tokens.css nehmen (var(--ebene-…))`,
+    );
   }
   console.log(
     `${regelzahl} Regeln, ${klassen} Klassen: ${doppelt.length} doppelt, ${tot.length} ungenutzt, ${zIndex.length} z-index ohne Stufe.`,
