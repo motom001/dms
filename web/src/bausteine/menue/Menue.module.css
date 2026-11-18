@@ -25,4 +25,6 @@
   .schleier { display: block; position: fixed; inset: 0; z-index: 40; background: var(--schleier); }
   .liste { position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 41; min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto; border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
   .punkt { font-size: 16px; }
+  /* Auch linksbündige Menüs („+ Neu“ in der Kopfzeile, #1269) sind am Handy ein Blatt über die volle Breite. */
+  .liste.links { right: 0; }
 }
