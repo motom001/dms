@@ -9,7 +9,6 @@ import {
   type ProzessZeile,
 } from '../../../shared/src/systemlast';
 import { betriebApi, type ErweiterungStand, type Schleifenverzoegerung, type SystemlastAntwort } from '../api/betrieb';
-import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
 import { platz } from './Speicherplatz';

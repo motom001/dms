@@ -224,7 +224,7 @@ function faelle() {
   });
 
   it('Stand, der kein Zeitpunkt ist: 422', async () => {
-    const { d, m, LENA, JONAS } = await aufbau();
+    const { d, m, LENA } = await aufbau();
     await assert.rejects(
       d.mappen.aendereMappe(m.id, { werte: { notiz: 'x' }, stand: 'gestern' }, LENA),
       (e) => e instanceof Fachfehler && e.status === 422,

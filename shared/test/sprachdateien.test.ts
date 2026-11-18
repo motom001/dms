@@ -2,7 +2,7 @@
  * Sprachdateien (#473) – diese Prüfung läuft in der CI (wie die Sperre gegen `confirm()` und die
  * Symbol-Prüfung): fehlende Schlüssel, ungenutzte Schlüssel, Platzhalter zwischen den Sprachen.
  * Schlägt sie fehl, steht in der Meldung Datei und Schlüssel. Anleitung im Entwicklerhandbuch,
- * „Aufbau → Texte und Sprachdateien“.
+ * „Texte und Sprachen → Texte und Sprachdateien“.
  */
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';

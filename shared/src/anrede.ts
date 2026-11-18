@@ -5,7 +5,7 @@
  * Alle Texte stehen gebündelt im Bereich `dritte` der Sprachdateien (#473), je Anrede unter demselben
  * Schlüssel, Platzhalter als {name}: `du` in „de“, `sie` in „de-formal“ (#357: „Deutsch“ und „Deutsch
  * (förmlich)“). Neue Texte für Dritte kommen dorthin, nicht als Bedingung in den Code (Liste der
- * Ausgaben im Entwicklerhandbuch, „Aufbau → Unterlagen für Dritte“).
+ * Ausgaben im Entwicklerhandbuch, „Texte und Sprachen → Unterlagen für Dritte“).
  */
 import du from './sprachen/de/dritte.json';
 import sie from './sprachen/de-formal/dritte.json';

@@ -91,7 +91,7 @@ code:
 
 ## Events { #ereignisse }
 
-Since #724 all events come from the core's one event catalogue and outbox ([Architecture](aufbau.md#ereigniskatalog)). They additionally carry `ereignis` (id in the outbox; the same on a repetition) and – for folders and documents – `typ` (folder type). Jobs for exactly one package (`datei.*`, `paket.einstellungen_geaendert`, `zeitplan.ausgefuehrt`) come directly.
+Since #724 all events come from the core's one event catalogue and outbox ([Architecture](ereignisse.md#ereigniskatalog)). They additionally carry `ereignis` (id in the outbox; the same on a repetition) and – for folders and documents – `typ` (folder type). Jobs for exactly one package (`datei.*`, `paket.einstellungen_geaendert`, `zeitplan.ausgefuehrt`) come directly.
 
 | Event | Trigger | `daten` |
 |---|---|---|
@@ -108,7 +108,7 @@ Since #724 all events come from the core's one event catalogue and outbox ([Arch
 | `frist.erreicht` | Since 0.153.0, only for types from `code.mappentypen`: a date field with a deadline reaches the reminder time (`zeitpunkt: vorlauf`) or the day itself (`faellig`) – exactly once per folder, field, date and time | `mappe`, `typ`, `feld`, `datum`, `zeitpunkt`, `empfaenger`, `ereignis` |
 | `zeitplan.ausgefuehrt` | Since 0.233.0: an automation with the Then card **Run package on schedule** has run at its time – see [Calculating on schedule](#nach-zeitplan). Only to the card's package, exactly once per automation, card and day (same id on a repetition). Without content of the library. | `automatisierung` (id), `aufgabe` (key or `null`), `zeitpunkt` (planned, ISO in UTC), `datum` (day in the library's time zone, YYYY-MM-DD) |
 
-**Event id (since 0.153.0):** the events about folders and deadlines come from the [event catalogue](aufbau.md#ereigniskatalog). They are delivered **at least once**; `daten.ereignis` is the id in the catalogue – if the same id comes again, it was a repetition. What the package changes itself isn't reported to it.
+**Event id (since 0.153.0):** the events about folders and deadlines come from the [event catalogue](ereignisse.md#ereigniskatalog). They are delivered **at least once**; `daten.ereignis` is the id in the catalogue – if the same id comes again, it was a repetition. What the package changes itself isn't reported to it.
 
 ### Full text ready (`volltext.fertig`) { #volltext-fertig }
 

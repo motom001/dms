@@ -62,7 +62,7 @@ async function aufbau() {
 
 describe('Dann-Karte „Feld ändern“ (#676)', () => {
   it('setzt nur die gewählten Felder mit Platzhaltern und heute; Historie „durch Automatisierung“; löst sich nicht selbst aus', async () => {
-    const { d, admin, vertrag, motor, ereignis } = await aufbau();
+    const { d, admin, vertrag, motor } = await aufbau();
     const m = await d.mappen.legeMappeAn(
       { typId: vertrag.id, werte: { name: 'Strom', status: 'offen', kuendbar_bis: '2031-09-30' } },
       admin.id,

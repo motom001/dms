@@ -46,4 +46,4 @@ Passung der Mappen und Pakete am Typ. Schicht 2 der Zielaufteilung – über Ker
   `no-unused-vars` in `eingabe.ts`, ein `no-unused-vars` in `mappentypen.dienst.ts`, ein `max-lines-per-function` in
   `systemtypen.ts`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Mappentypen*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Mappentypen*.

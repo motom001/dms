@@ -12,7 +12,9 @@ import { speicherDateien } from '../src/dateien/dateispeicher';
 import { speicherRepo } from '../src/repo/speicher';
 import { Anlaesse, Anschlusspunkt } from '../src/kern';
 
-const HANDBUCH = ['docs', 'docs-en'].map((d) => fileURLToPath(new URL(`../../docs/handbuch/entwickler/${d}/aufbau.md`, import.meta.url)));
+const HANDBUCH = ['docs', 'docs-en'].map((d) =>
+  fileURLToPath(new URL(`../../docs/handbuch/entwickler/${d}/fachbereiche.md`, import.meta.url)),
+);
 const ANFANG = '<!-- anlaesse:anfang (erzeugt von server/test/anlaesse.test.ts) -->';
 const ENDE = '<!-- anlaesse:ende -->';
 

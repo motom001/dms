@@ -17,8 +17,8 @@ Die Regeln im Einzelnen stehen im [CONTRIBUTING von dms-clients](https://github.
 
 Die meisten Anbindungen brauchen nur **Zahlen**, keine Inhalte:
 
-- **Zähler-Endpunkt** `GET /api/v1/ich/zaehler` mit der Schlüssel-Stufe „nur Zähler“ – liefert die Zahlen, die auch die Oberfläche zeigt, ohne Titel, Absender oder Dokumente. Siehe [Zähler-Endpunkt und Schlüssel-Stufen](aufbau.md#zaehler-endpunkt).
-- **Nach außen melden** – Ablago meldet nicht von sich aus; Clients fragen den Zähler ab. Einen eigenen Webhook gibt es seit #991 nicht mehr, künftig meldet eine Automatisierung (siehe [Nach außen melden](aufbau.md#nach-aussen-melden)).
+- **Zähler-Endpunkt** `GET /api/v1/ich/zaehler` mit der Schlüssel-Stufe „nur Zähler“ – liefert die Zahlen, die auch die Oberfläche zeigt, ohne Titel, Absender oder Dokumente. Siehe [Zähler-Endpunkt und Schlüssel-Stufen](nach-draussen.md#zaehler-endpunkt).
+- **Nach außen melden** – Ablago meldet nicht von sich aus; Clients fragen den Zähler ab. Einen eigenen Webhook gibt es seit #991 nicht mehr, künftig meldet eine Automatisierung (siehe [Nach außen melden](nach-draussen.md#nach-aussen-melden)).
 
 Mehr als Zahlen (Post ablegen, Mappen lesen) geht über die übrigen Endpunkte der API v1 mit einem Schlüssel „nur lesen“ bzw. „lesen und schreiben“.
 

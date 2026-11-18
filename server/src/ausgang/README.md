@@ -35,7 +35,7 @@ Export (Tabelle, ZIP, PDF) und das WebDAV-Laufwerk. Schicht 3 der Zielaufteilung
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity` und `max-params` in
   `email.ts`, `complexity` und `max-lines-per-function` in `export.ts`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Ausgang*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Ausgang*.
 
 **Ohne Tür** (#1278, Schritt 4a): `ausgabe.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
 eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

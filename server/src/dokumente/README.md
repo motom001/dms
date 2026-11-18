@@ -53,4 +53,4 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
   `dokumente.dienst.ts` und `umwandeln.ts`, ein `max-lines-per-function` in `dokumente.dienst.ts`, ein `max-params`
   und ein `no-unused-vars` in `versionen.ts`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Dokumente*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Dokumente*.

@@ -22,7 +22,7 @@ Tours and tips from packages appear in each person's language if the package bri
 
 ## Writing your own tours { #schreiben }
 
-**+ Tour** opens a template. A tour is a small file in YAML format – exactly the format in which Ablago and the packages bring their tours ([developer manual](https://help.ablago.app/entwickler/aktuell/en/aufbau/#paket-rundgaenge)). You write the texts directly into it:
+**+ Tour** opens a template. A tour is a small file in YAML format – exactly the format in which Ablago and the packages bring their tours ([developer manual](https://help.ablago.app/entwickler/aktuell/en/entdecken/#paket-rundgaenge)). You write the texts directly into it:
 
 ```yaml
 schluessel: urlaub_beantragen

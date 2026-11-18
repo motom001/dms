@@ -301,8 +301,11 @@ jobs:
       - name: Handbücher bauen
         run: |
           pip install --quiet --require-hashes -r docs/handbuch/requirements.txt  # feste Versionen mit Hashes (#289)
-          # Seite „Begriffe“ aus dem Glossar (#276).
+          # Seite „Begriffe“ aus dem Glossar (#276). Sie ist eingecheckt, damit das Handbuch auch lokal vollständig ist –
+          # darum muss sie zum Glossar passen (#1273): neu erzeugen und mit dem eingecheckten Stand vergleichen.
           python3 docs/handbuch/werkzeuge/glossar.py
+          git diff --exit-code -- docs/handbuch/benutzer/docs/begriffe.md docs/handbuch/benutzer/docs-en/begriffe.md \
+            || { echo "::error title=Begriffe::begriffe.md passt nicht zu docs/glossar.yml – python3 docs/handbuch/werkzeuge/glossar.py ausführen und das Ergebnis committen"; exit 1; }
           # Tabellen der Werkbank-Bereiche aus shared/src/werkbankansicht.ts (#296).
           python3 docs/handbuch/werkzeuge/werkbank_bereiche.py --pruefen
           # Vorlagen Verfahrensdokumentation (#213) und Löschkonzept (#389) als Word und LibreOffice zum Herunterladen.

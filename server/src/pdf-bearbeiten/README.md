@@ -33,4 +33,4 @@ aufgeweicht und einen Kreis über `pdf/index.ts` gebaut.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity` in allen drei Diensten,
   `max-params` in `pdf-bearbeiten.dienst.ts`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → PDF bearbeiten*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → PDF bearbeiten*.

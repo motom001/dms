@@ -36,7 +36,7 @@ Paketen. Schicht 3 der Zielaufteilung.
   Transaktion) und kommen mit ihr zurück; ohne Recht an einem Teil lehnt Ablago ab und nennt die Anzahl.
 - Umgetragen aus `dienst.ts`: zwei `complexity`, ein `max-lines-per-function`.
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Löschen*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Löschen*.
 
 **Ohne Tür** (#1278, Schritt 4a): `baum.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
 eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

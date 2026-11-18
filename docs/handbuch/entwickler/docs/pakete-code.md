@@ -91,7 +91,7 @@ code:
 
 ## Ereignisse
 
-Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb des Kerns ([Aufbau](aufbau.md#ereigniskatalog)). Sie tragen zusätzlich `ereignis` (Id im Ausgangskorb; gleich bei einer Wiederholung) und – zu Mappen und Dokumenten – `typ` (Mappentyp). Aufträge an genau ein Paket (`datei.*`, `paket.einstellungen_geaendert`, `zeitplan.ausgefuehrt`) kommen direkt.
+Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb des Kerns ([Aufbau](ereignisse.md#ereigniskatalog)). Sie tragen zusätzlich `ereignis` (Id im Ausgangskorb; gleich bei einer Wiederholung) und – zu Mappen und Dokumenten – `typ` (Mappentyp). Aufträge an genau ein Paket (`datei.*`, `paket.einstellungen_geaendert`, `zeitplan.ausgefuehrt`) kommen direkt.
 
 | Ereignis | Auslöser | `daten` |
 |---|---|---|
@@ -108,7 +108,7 @@ Seit #724 kommen alle Ereignisse aus dem einen Ereigniskatalog und Ausgangskorb 
 | `frist.erreicht` | Seit 0.153.0, nur zu Typen aus `code.mappentypen`: Ein Datumsfeld mit Frist erreicht den Erinnerungszeitpunkt (`zeitpunkt: vorlauf`) bzw. den Tag selbst (`faellig`) – je Mappe, Feld, Datum und Zeitpunkt genau einmal | `mappe`, `typ`, `feld`, `datum`, `zeitpunkt`, `empfaenger`, `ereignis` |
 | `zeitplan.ausgefuehrt` | Seit 0.233.0: Eine Automatisierung mit der Dann-Karte **Paket nach Zeitplan ausführen** ist zu ihrem Zeitpunkt gelaufen – siehe [Nach Zeitplan rechnen](#nach-zeitplan). Nur an das Paket der Karte, je Automatisierung, Karte und Tag genau einmal (gleiche Id bei Wiederholung). Ohne Inhalte der Ablage. | `automatisierung` (Id), `aufgabe` (Kennung oder `null`), `zeitpunkt` (geplant, ISO in UTC), `datum` (Tag in der Zeitzone der Ablage, JJJJ-MM-TT) |
 
-**Ereignis-Id (seit 0.153.0):** Die Ereignisse zu Mappen und Fristen kommen aus dem [Ereigniskatalog](aufbau.md#ereigniskatalog). Sie werden **mindestens einmal** zugestellt; `daten.ereignis` ist die Id im Katalog – kommt dieselbe Id noch einmal, war es eine Wiederholung. Was das Paket selbst ändert, bekommt es nicht gemeldet.
+**Ereignis-Id (seit 0.153.0):** Die Ereignisse zu Mappen und Fristen kommen aus dem [Ereigniskatalog](ereignisse.md#ereigniskatalog). Sie werden **mindestens einmal** zugestellt; `daten.ereignis` ist die Id im Katalog – kommt dieselbe Id noch einmal, war es eine Wiederholung. Was das Paket selbst ändert, bekommt es nicht gemeldet.
 
 ### Volltext fertig (`volltext.fertig`) { #volltext-fertig }
 

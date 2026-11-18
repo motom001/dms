@@ -6,7 +6,7 @@
  * Tinte oder Blau auf Weiß, Bernstein nur als Zierde. Schrift: Noto Sans (Überschriften, Text; eingebettet als Teilmenge,
  * #826) und Courier fett für Schlüssel, Codes und Ablage-Id – die bestehen nur aus ASCII, dafür reicht die Standardschrift.
  */
-import { PDFDocument, PDFName, PDFString, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
+import { PDFDocument, PDFString, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
 import { angabe, pdfText, schriften } from './schrift';
 import { gebietsschema } from '../../../shared/src/sprache';
 

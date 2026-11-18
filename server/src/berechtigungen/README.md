@@ -28,4 +28,4 @@ WebDAV-Laufwerk. Was jemand darf, rechnet weiter die Rechteprüfung in `zugriff/
   hier nur, was Werkbank und Speichern brauchen.
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json` (umgetragen: `complexity` von `testlauf`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Berechtigungen*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Berechtigungen*.

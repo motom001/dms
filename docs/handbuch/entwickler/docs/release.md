@@ -33,7 +33,7 @@ art: minor
 - **Im Übergang** geht noch die alte Art (Nummer und `docs/releases/v<version>.md` im Pull Request) – mit Warnung. Beides zusammen lehnt die CI ab.
 - **Labels** `sofort-stabil`/`nicht-stabil` bleiben am Pull Request: Der Versions-Commit nennt ihn mit `Pull-Request: #…`, `.github/werkzeuge/pr-labels.sh` liest die Labels von dort.
 - **Schreibrecht:** Nur der Job in `version.yml` schreibt ohne Pull Request auf `main` – mit dem Token der GitHub-App *Ablago Version* (nur „Contents: lesen und schreiben“, nur in diesem Repository installiert). Ihr Schlüssel liegt als `VERSION_APP_SCHLUESSEL` in der Umgebung `versionieren`, die nur von `main` aus nutzbar ist; die App-Id als Variable `VERSION_APP_ID`. Im Ruleset von `main` darf allein diese App vorbei. Das Werkzeug selbst (`.github/werkzeuge/version.mjs`, Tests in `version.test.mjs`) läuft ohne das Token.
-- **Migrationen** werden weiter in der Reservierungsliste der Chats vergeben; Versionen reserviert niemand mehr.
+- **Migrationen** bekommen die nächste freie Nummer in `server/migrations/`. Haben zwei offene Pull Requests dieselbe Nummer gewählt, nimmt der später gemergte beim Rebase die nächste freie. Versionen reserviert niemand.
 
 ## Image-Tags
 

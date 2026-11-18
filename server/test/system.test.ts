@@ -144,7 +144,7 @@ describe('Mappentyp Benutzer (#26)', () => {
   });
 
   it('Sicherheit: Systemfelder sind in der Ablage nur lesbar, eigene Felder nicht', async () => {
-    const { dienst, konten, admin, benutzerTyp, sys } = await aufbau();
+    const { dienst, konten, admin, benutzerTyp } = await aufbau();
     const r = await konten.legeBenutzerAn({ email: 'mitglied@example.org', name: 'Mia' }, admin.id);
     const { benutzer: mia } = await konten.passwortSetzen({ schluessel: linkSchluessel(r.link!), passwort: 'passwort-von-mia' });
     const m = (await dienst.mappen.holeMappe(admin.id)).mappe;

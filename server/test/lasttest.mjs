@@ -2583,9 +2583,7 @@ export async function umgebung(cookie) {
     ramBegrenzt: l ? !l.speicher.ohneGrenze : null,
     zwischenspeicher: l?.zwischenspeicher ?? null,
     grenzen: l?.grenzen
-      ? Object.fromEntries(
-          Object.entries(l.grenzen).map(([k, g]) => [g.variable, `${g.wert}${g.quelle === 'umgebung' ? ' (gesetzt)' : ''}`]),
-        )
+      ? Object.fromEntries(Object.values(l.grenzen).map((g) => [g.variable, `${g.wert}${g.quelle === 'umgebung' ? ' (gesetzt)' : ''}`]))
       : null,
   };
 }

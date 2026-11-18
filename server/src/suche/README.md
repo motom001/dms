@@ -26,7 +26,7 @@
 - `vektorNachlauf` liegt seit #1078 in `ereignisse/`. Noch im Dienst, weil sie andere Fachbereiche braucht:
   die Suche in der Mappenliste (`listeMappen`: Varianten, Vorschlag, ähnliche Treffer).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Suche*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Suche*.
 
 **Ohne Tür** (#1278, Schritt 4a): `fragen.ts`, `vektoren.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
 eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

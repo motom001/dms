@@ -9,11 +9,6 @@
       "count": 1
     }
   },
-  "server/src/anmeldung/apischluessel.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/src/anmeldung/oidc.ts": {
     "complexity": {
       "count": 3
@@ -44,9 +39,6 @@
     }
   },
   "server/src/aufgaben/vertretung.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
@@ -124,9 +116,6 @@
     }
   },
   "server/src/datenschutz/datenschutz.dienst.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
     "complexity": {
       "count": 1
     },
@@ -135,11 +124,6 @@
     },
     "max-params": {
       "count": 1
-    }
-  },
-  "server/src/datenschutz/zustellen.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
     }
   },
   "server/src/demo/demo.ts": {
@@ -174,9 +158,6 @@
     }
   },
   "server/src/dokumente/versionen.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     }
@@ -187,9 +168,6 @@
     }
   },
   "server/src/einstellungen/betrieb.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 2
     },
@@ -277,9 +255,6 @@
     }
   },
   "server/src/http/routen.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     },
@@ -299,11 +274,6 @@
   },
   "server/src/konten/notfall.ts": {
     "ablago/gemerkte-formate": {
-      "count": 1
-    }
-  },
-  "server/src/konten/sitzungen.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -364,16 +334,8 @@
     }
   },
   "server/src/mappentypen/eingabe.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 3
-    }
-  },
-  "server/src/mappentypen/mappentypen.dienst.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "server/src/mappentypen/systemtypen.ts": {
@@ -396,16 +358,6 @@
       "count": 1
     }
   },
-  "server/src/pakete/erstellung/bau-typen.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/src/pakete/erstellung/paketerstellung.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/src/pakete/umwandlung.ts": {
     "complexity": {
       "count": 2
@@ -414,16 +366,6 @@
   "server/src/pakete/verwaltung/abruf.ts": {
     "max-depth": {
       "count": 1
-    }
-  },
-  "server/src/pakete/verwaltung/anlegen-schritte.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/src/pakete/verwaltung/beispiel-mappen.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
     }
   },
   "server/src/pakete/verwaltung/beispiele.ts": {
@@ -440,9 +382,6 @@
     }
   },
   "server/src/pakete/verwaltung/entfernen.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     },
@@ -514,15 +453,7 @@
       "count": 1
     }
   },
-  "server/src/pdf/anzeige.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "server/src/pdf/archiv.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
@@ -551,15 +482,7 @@
     }
   },
   "server/src/pdf/notfallblatt.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "max-params": {
-      "count": 1
-    }
-  },
-  "server/src/pdf/schreiber.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -642,11 +565,6 @@
       "count": 1
     }
   },
-  "server/src/repo/speicher/dokumente.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "server/src/repo/speicher/historie.ts": {
     "max-params": {
       "count": 1
@@ -664,11 +582,6 @@
   },
   "server/src/repo/speicher/seite.ts": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "server/src/sicherung/datenbankabzug.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -691,9 +604,6 @@
     }
   },
   "server/src/sicherung/sicherungsformat.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "preserve-caught-error": {
       "count": 1
     }
@@ -706,15 +616,7 @@
       "count": 1
     }
   },
-  "server/src/sichten/sichten.dienst.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 5
-    }
-  },
   "server/src/sichten/verwalten.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
@@ -793,11 +695,6 @@
       "count": 1
     }
   },
-  "server/src/webdav/webdav-methoden.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/src/webdav/webdav.ts": {
     "complexity": {
       "count": 1
@@ -838,24 +735,9 @@
       "count": 1
     }
   },
-  "server/test/automatisierung-karten.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/test/darstellung.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "server/test/dateiumwandlung.test.ts": {
     "max-params": {
       "count": 1
-    }
-  },
-  "server/test/dokument-uebernehmen.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
     }
   },
   "server/test/einrichtungsdatei.test.ts": {
@@ -868,24 +750,9 @@
       "count": 1
     }
   },
-  "server/test/exportordner.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/test/gleichzeitig.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/test/laeufer.test.ts": {
     "max-params": {
       "count": 1
-    }
-  },
-  "server/test/lasttest-grenzen.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
     }
   },
   "server/test/lasttest-protokoll-cpu.test.ts": {
@@ -893,15 +760,7 @@
       "count": 2
     }
   },
-  "server/test/lasttest.mjs": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/test/lasttestmodus-e2e.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    },
     "no-regex-spaces": {
       "count": 3
     }
@@ -936,49 +795,14 @@
       "count": 1
     }
   },
-  "server/test/prozesse-e2e.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/test/prozesse.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/test/sicherung-extern.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/test/sichtrechte.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/test/sprachpakete.test.ts": {
     "complexity": {
       "count": 1
     }
   },
-  "server/test/startmodus.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/test/system.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 5
-    }
-  },
   "server/test/vollexport.test.ts": {
     "no-irregular-whitespace": {
       "count": 2
-    }
-  },
-  "server/test/wiederherstellung.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "server/test/zwischenspeicher-termine.test.ts": {
@@ -1267,11 +1091,6 @@
       "count": 1
     }
   },
-  "web/src/ablage/Stempel.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Suche.tsx": {
     "complexity": {
       "count": 1
@@ -1306,11 +1125,6 @@
       "count": 1
     }
   },
-  "web/src/einrichtung/entwurf.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 13
-    }
-  },
   "web/src/konto.tsx": {
     "complexity": {
       "count": 1
@@ -1318,11 +1132,6 @@
   },
   "web/src/messung.ts": {
     "max-params": {
-      "count": 1
-    }
-  },
-  "web/src/profil/DokumentPasswoerter.tsx": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -1335,20 +1144,12 @@
     }
   },
   "web/src/werkbank/Anmeldeschutz.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
   "web/src/werkbank/Aufgaben.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Auslastung.tsx": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },

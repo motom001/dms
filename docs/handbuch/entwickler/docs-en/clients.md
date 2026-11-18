@@ -17,8 +17,8 @@ The rules in detail are in the [CONTRIBUTING of dms-clients](https://github.com/
 
 Most integrations only need **numbers**, no content:
 
-- **Counter endpoint** `GET /api/v1/ich/zaehler` with the key level "counters only" – returns the numbers the interface shows too, without titles, senders or documents. See [Counter endpoint and key levels](aufbau.md#zaehler-endpunkt).
-- **Reporting to the outside** – Ablago does not report on its own; clients query the counter. There has been no separate webhook since #991; in future an automation reports (see [Reporting to the outside](aufbau.md#nach-aussen-melden)).
+- **Counter endpoint** `GET /api/v1/ich/zaehler` with the key level "counters only" – returns the numbers the interface shows too, without titles, senders or documents. See [Counter endpoint and key levels](nach-draussen.md#zaehler-endpunkt).
+- **Reporting to the outside** – Ablago does not report on its own; clients query the counter. There has been no separate webhook since #991; in future an automation reports (see [Reporting to the outside](nach-draussen.md#nach-aussen-melden)).
 
 More than numbers (filing post, reading folders) works via the other endpoints of API v1 with a key "read only" or "read and write".
 

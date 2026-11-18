@@ -2,7 +2,7 @@
 
 [Deutsch](CONTRIBUTING.md) · **English**
 
-Thank you for your interest in Ablago! **Issues and pull requests are welcome in German or English.** How contributing works here is described in detail in the **[developer manual](https://help.ablago.app/entwickler/aktuell/en/)**. The essentials in brief:
+Thank you for your interest in Ablago! **Issues and pull requests are welcome in German or English.** How contributing works here is described in detail in the **[developer manual](https://help.ablago.app/entwickler/aktuell/en/)**. Ablago consists of several public repositories – which one is there for what and where you start is under **[Our repositories](https://help.ablago.app/entwickler/aktuell/en/repositories/)**. The essentials in brief:
 
 1. **Start with an issue**, written as a user story ("As a … I want …, so that …") with acceptance criteria. This applies to feature requests and bugs alike.
 2. **Discussion happens in the issue** until it is clear what will be built.
@@ -19,7 +19,7 @@ Ablago gets by with very little third-party code – this protects against suppl
 - **Maintenance** – latest release, number of maintainers?
 - **Its own dependencies** – what else does it bring into the image?
 
-The pull request template asks for this; the "Abhängigkeiten" (dependencies) check points out new dependencies in the PR. The current list with the purpose of each is in the [developer manual](https://help.ablago.app/entwickler/aktuell/en/aufbau/#abhaengigkeiten).
+The pull request template asks for this; the "Abhängigkeiten" (dependencies) check points out new dependencies in the PR. The current list with the purpose of each is in the [developer manual](https://help.ablago.app/entwickler/aktuell/en/abhaengigkeiten/#abhaengigkeiten).
 
 ## Checking style and dependencies
 

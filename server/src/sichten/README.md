@@ -40,4 +40,4 @@ und die mitgelieferten Ansichten. Schicht 3 der Zielaufteilung – über Mappen,
   `max-depth` und fünf `no-unused-vars` in `sichten.dienst.ts`; `complexity` und ein `no-unused-vars` in
   `verwalten.ts`).
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Sichten*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Sichten*.

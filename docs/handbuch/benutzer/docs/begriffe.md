@@ -27,7 +27,7 @@ Der Name des Programms – eine Dokumentenablage für zu Hause und kleine Betrie
 Siehe auch: [Ablage](#ablage), [Werkbank](#werkbank).
 
 <a id="ablago-entdecken"></a>**Ablago entdecken** · ✓ Alltagswort · alle  
-Seite mit allem, was Ablago noch kann (im Assistenten unter „Tipps“ → „Alle Tipps und Rundgänge“) – Neues seit dem letzten Besuch, Rundgänge und alle Tipps nach Bereich. Ausgeblendete Tipps bleiben dort sichtbar.  
+Seite im Benutzermenü (bei der Hilfe) mit allem, was Ablago noch kann – Neues seit dem letzten Besuch, Rundgänge und alle Tipps nach Bereich. Ausgeblendete Tipps bleiben dort sichtbar.  
 Siehe auch: [Rundgang](#rundgang), [Tipp](#tipp).
 
 <a id="anlage"></a>**Anlage** · ✓ Alltagswort · alle  

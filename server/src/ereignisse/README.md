@@ -33,4 +33,4 @@ Anschluss. So können tiefere Ordner sie künftig direkt nutzen, ohne Umweg übe
 - Den Abnehmer `pakete` meldet der Dienst beim Verteiler an (`ereignisse.abonniere('pakete', …)`).
 - Umgetragen aus `dienst.ts`: ein `complexity`.
 
-Mehr im Entwicklerhandbuch unter *Aufbau → Ereignisse*.
+Mehr im Entwicklerhandbuch unter *Fachbereiche des Servers → Ereignisse*.

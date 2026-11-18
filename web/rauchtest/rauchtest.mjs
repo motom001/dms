@@ -20,7 +20,7 @@
  * Braucht Playwright mit Chromium: `npm ci` im Ordner web/rauchtest (feste Version mit eigenem Lockfile, #1272).
  * Gewartet wird immer auf Elemente oder Ereignisse, nie eine feste Zeit – sonst wackeln die Tests.
  * Neue Abläufe bekommen ihren Rauchtest im selben PR: einen Block `rauchtest(…)` in der Datei ihres Bereichs unter
- * bereiche/ ergänzen (Entwicklerhandbuch, Seite „Tests“).
+ * bereiche/ ergänzen (Entwicklerhandbuch, Seite „Loslegen“, Abschnitt Rauchtests).
  *
  * Aufbau (#1234): Diese Datei startet alle Bereiche nacheinander in fester Reihenfolge – sie teilen sich ein Ablago
  * und eine Datenbank, spätere Bereiche bauen auf dem Zustand der früheren auf. Gemeinsame Hilfen (Anmelden, Rahmen
@@ -28,7 +28,7 @@
  * Einrichtung in einrichtung.mjs. Jeder Bereich bindet einrichtung.mjs zuerst ein und lässt sich gegen ein frisch
  * gestartetes Ablago auch allein starten, z. B. `node web/rauchtest/bereiche/pakete.mjs [fehlerordner]`. Nicht
  * `node --test` über den Ordner: Das startet die Dateien parallel gegen dasselbe Ablago.
- * Höchstens 400 Zeilen je Datei (ESLint max-lines) – ein wachsender Bereich wird geteilt und hier eingereiht.
+ * Höchstens 700 Zeilen je Datei (ESLint max-lines) – ein wachsender Bereich wird geteilt und hier eingereiht.
  */
 
 // Die Einrichtung zuerst, dann die Bereiche in der Reihenfolge, in der sie aufeinander aufbauen.
