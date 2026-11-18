@@ -213,7 +213,6 @@
   "speicherplatz.hinweis-und-mail": "Notice and mail",
   "speicherplatz.hochladen-gesperrt-wartungsmodus": "Uploading blocked, maintenance mode",
   "speicherplatz.gilt-fuer-jeden-ordner": "Applies to each folder separately; percentages refer to the size of its drive. Default: warning below 10 % free, limit below 2 GB free.",
-  "speicherplatz.schwellen": "Thresholds",
   "speicherplatz.einstellungen": "Settings",
   "speicherplatz.ordner": "Folders",
   "speicherplatz.die-ordner-im-container": "The folders in the container are fixed; which NAS folder they point to is set by the volumes of the Compose file. The database lives in its own container and can’t be measured from here – if everything is on the same disk (usual on a NAS), this measurement is enough.",
