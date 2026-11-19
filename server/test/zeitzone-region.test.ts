@@ -15,7 +15,7 @@ import { Dienst } from '../src/dienst/dienst';
 import { fuehreAus, zerlege, type Verbindung } from '../src/dms';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Fachfehler } from '../src/grundlagen/fehler';
-import { zeitText } from '../src/pakete/verwaltung/hilfen';
+import { zeitText } from '../src/pakete/verwaltung/index';
 import { Postfaecher, type GeleseneMail, type ImapSitzung } from '../src/post/postfach';
 import { speicherRepo } from '../src/repo/speicher';
 import { Externmessung, speicherExternSpeicher } from '../src/system/externmessung';
