@@ -41,7 +41,7 @@ Jeder **Mappentyp** in Ablago ist eine Datenart. Die Liste der Mappentypen steht
 
 - [Wer] geht [jährlich, z. B. im Januar] **Werkbank → Aufbewahrung abgelaufen** und die Ansichten aus Abschnitt 2 durch und löscht, was weg darf. [Wer] hält fest, wann das geschah (Abschnitt 8).
 - Gelöschte Mappen und Dokumente kommen in den **Papierkorb** (Werkbank → Papierkorb, Aufbewahrung [z. B. 30 Tage]). Danach löscht Ablago sie mit ihren Dateien und dem Volltext endgültig. [Oder: Der Papierkorb wird nach dem Löschen sofort geleert.]
-- Die **Historie endgültig gelöschter Mappen** bleibt [z. B. 365 Tage] (Werkbank → Papierkorb), damit sich nachvollziehen lässt, was mit ihnen geschah. Die Historie lebender Mappen und von Mappen im Archivmodus bleibt immer – mit allen Arten von Einträgen, auch den Abrufen (Herunterladen, Schnittstelle, Laufwerk); keine Art wird früher gelöscht. Einträge „im Verwaltungsmodus“ bleiben auch nach dieser Frist.
+- Die **Historie endgültig gelöschter Mappen** bleibt [z. B. 365 Tage] (Werkbank → Daten sichern → Einstellungen), damit sich nachvollziehen lässt, was mit ihnen geschah. Die Historie lebender Mappen und von Mappen im Archivmodus bleibt immer – mit allen Arten von Einträgen, auch den Abrufen (Herunterladen, Schnittstelle, Laufwerk); keine Art wird früher gelöscht. Einträge „im Verwaltungsmodus“ bleiben auch nach dieser Frist.
 
 ## 4. Sperren auf Verlangen
 
