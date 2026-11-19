@@ -185,7 +185,7 @@ export interface NotfallzugangStand {
   am: string | null;
   code: { vorhanden: boolean; erstellt: string | null };
   heimnetz: boolean;
-  /** #885: nur bei heimnetz: false */ grund?: 'oeffentlich' | 'proxy';
+  /** #885: nur bei heimnetz: false; #1355: `gateway` = Adresse nicht bestimmbar */ grund?: 'oeffentlich' | 'proxy' | 'gateway';
 }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person {

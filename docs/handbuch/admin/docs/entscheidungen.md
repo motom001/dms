@@ -182,6 +182,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 - **Standard „private Netze“** statt `false`: Fastify bekommt `trustProxy: ['loopback', 'linklocal', 'uniquelocal']`. Ohne Einstellung stimmten IP-Adressen und die Sperre nach Fehlversuchen (je E-Mail und IP) hinter einem Proxy nicht – und kaum jemand setzte die Variable, weil sonst alles ging.
 - **Restrisiko bewusst in Kauf genommen:** Ein Gerät im Heimnetz, das Ablago direkt erreicht, könnte eine IP vortäuschen. Wer das ausschließen will, setzt `false` oder eine Liste. Aus dem Internet geht es nicht, solange keine Portfreigabe mit verschleierter Absenderadresse (z. B. Docker-Userland-Proxy) dazwischen ist.
+- **Gateway-Adresse erkennen (#1355):** Kommt eine Anfrage mit der Gateway-Adresse des eigenen Netzes an (aus der Routing-Tabelle), gilt sie nicht als Heimnetz, und die Werkbank nennt die Abhilfe ([Heimnetz nicht bestimmbar](anmeldeschutz.md#heimnetz-nicht-bestimmbar)). Die Erkennung macht die Prüfung nur strenger: Sie stuft nie eine Anfrage als Heimnetz ein, die vorher keines war.
 - **Falsche Werte** führen nicht zum Startabbruch: Es gilt `auto`, mit Warnung im Protokoll.
 
 ## Werkbank anpassen (#281)

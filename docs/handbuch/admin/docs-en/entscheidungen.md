@@ -182,6 +182,7 @@ Briefly recorded so that later changes know why something is the way it is.
 
 - **Default "private networks"** instead of `false`: Fastify gets `trustProxy: ['loopback', 'linklocal', 'uniquelocal']`. Without a setting, IP addresses and the block after failed attempts (per email and IP) were wrong behind a proxy – and hardly anyone set the variable because everything else worked.
 - **Residual risk deliberately accepted:** a device in the home network that reaches Ablago directly could fake an IP. Whoever wants to rule that out sets `false` or a list. From the internet it doesn't work as long as there is no port forwarding with a disguised sender address (e.g. Docker userland proxy) in between.
+- **Recognising the gateway address (#1355):** if a request arrives with the gateway address of its own network (from the routing table), it doesn't count as the home network, and the Workbench names the remedy ([Home network can't be determined](anmeldeschutz.md#heimnetz-nicht-bestimmbar)). The recognition only makes the check stricter: it never classes a request as the home network that wasn't one before.
 - **Wrong values** don't stop the start: `auto` applies, with a warning in the log.
 
 ## Customising the Workbench (#281) {#werkbank-anpassen-281}

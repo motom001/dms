@@ -11,6 +11,7 @@ export type { Hinweis } from './hilfen';
 export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hinweis[] {
   const h: Hinweis[] = [];
   notfallUndSpeicher(u, h);
+  heimnetzGateway(u, h);
   automatisierungen(u, h);
   lastUndWartung(u, h);
   tresorUndPostfaecher(u, h);
@@ -94,6 +95,24 @@ function notfallUndSpeicher(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/systemzustand',
       knopf: t('werkbank.uebersicht.zum-systemzustand'),
     });
+}
+
+/** Heimnetz nicht bestimmbar (#1355): Anfragen kommen mit der Gateway-Adresse des Docker-Netzes an. */
+function heimnetzGateway(u: WerkbankUebersicht, h: Hinweis[]) {
+  const g = u.heimnetzGateway;
+  if (!g) return;
+  h.push({
+    schluessel: 'heimnetz.gateway',
+    art: 'warn',
+    text: (
+      <>
+        <strong>{t('werkbank.uebersicht.heimnetz-gateway')}</strong>{' '}
+        {t('werkbank.uebersicht.heimnetz-gateway.text', { adresse: g.adresse, datum: datum(g.zuletzt) })}
+      </>
+    ),
+    ziel: '/werkbank/anmeldeschutz#notfallzugang',
+    knopf: t('werkbank.uebersicht.heimnetz-gateway.knopf'),
+  });
 }
 
 /** Automatisierungen (#675) und Mappen-Abläufe (#1044). */

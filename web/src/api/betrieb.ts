@@ -340,6 +340,8 @@ export interface WerkbankUebersicht {
   notfallzugaenge?: Array<{ id: string; name: string; erstellt: string }>;
   /** Notfallcode benutzt (#815), bis jemand den Hinweis als gelesen markiert. */
   notfallcodeBenutzt?: Array<{ id: string; benutzerId: string; name: string; am: string }>;
+  /** #1355: Anfragen mit der Gateway-Adresse des eigenen Netzes (Heimnetz nicht bestimmbar), zuletzt in 24 Stunden. */
+  heimnetzGateway?: { adresse: string; zuletzt: string } | null;
   /** Eine zweite Person mit Verwaltungsrecht empfehlen (#821). */
   zweitePerson?: boolean;
   /** Wartungsmodus (#102). */

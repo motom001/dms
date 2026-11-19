@@ -69,13 +69,28 @@ Wer sich ausgesperrt hat, kommt mit dem **Notfallcode** vom [Notfallblatt](versc
 !!! info "Hinter einem Reverse Proxy"
     Ob eine Anfrage aus dem Heimnetz kommt, entscheidet Ablago nach der echten Adresse des Browsers. Dafür muss der Proxy `X-Forwarded-For` setzen (das tun alle üblichen) und Ablago ihm vertrauen ([Was der Proxy Ablago mitteilt](installation.md#was-der-proxy-dem-dms-mitteilt)). Kommt eine solche Angabe an, obwohl `TRUST_PROXY=false` gilt, oder steht `TRUST_PROXY=true` (dann könnte jeder die Angabe fälschen), gilt die Anfrage als „nicht aus dem Heimnetz“. Ein Proxy, der gar keine Adresse weitergibt, lässt alle Anfragen wie aus dem Heimnetz aussehen – richte ihn so ein, dass er `X-Forwarded-For` setzt.
 
-Meint Ablago, du seist nicht im Heimnetz, steht unter dem Hinweis in der Werkbank, welche Adresse es sieht und warum: Entweder ist es eine **öffentliche Adresse** (siehe unten), oder **dein Proxy gibt die Adresse so weiter, dass Ablago ihr nicht trauen kann** – dann `TRUST_PROXY` und die Köpfe des Proxys prüfen wie unter [Was der Proxy Ablago mitteilt](installation.md#was-der-proxy-dem-dms-mitteilt).
+Meint Ablago, du seist nicht im Heimnetz, steht unter dem Hinweis in der Werkbank, welche Adresse es sieht und warum: Entweder ist es eine **öffentliche Adresse** (siehe unten), oder **dein Proxy gibt die Adresse so weiter, dass Ablago ihr nicht trauen kann** – dann `TRUST_PROXY` und die Köpfe des Proxys prüfen wie unter [Was der Proxy Ablago mitteilt](installation.md#was-der-proxy-dem-dms-mitteilt), oder die Adresse ist die **Gateway-Adresse des eigenen Netzes** (siehe [Heimnetz nicht bestimmbar](#heimnetz-nicht-bestimmbar)).
 
 ### Zu Hause über den öffentlichen Namen { #zu-hause-uber-den-offentlichen-namen }
 
 Rufst du Ablago zu Hause über seinen öffentlichen Namen auf (z. B. `ablage.example.org`), zeigt dieser Name auf die öffentliche Adresse deines Anschlusses. Die Anfrage geht dann vom Router nach außen und gleich wieder herein (Hairpin-NAT); der Proxy sieht und meldet die öffentliche Adresse, z. B. `203.0.113.7`. Ablago hat dann recht: Diese Anfrage kam über das Internet.
 
 Abhilfe ist ein **lokaler DNS-Eintrag** (Split-DNS): Im Heimnetz zeigt derselbe Name direkt auf den Proxy, z. B. `ablage.example.org → 192.168.1.10`. Den Eintrag legst du im Router oder in deinem DNS-Server im Heimnetz an (oft „lokaler DNS“, „DNS-Rebind-Schutz – Ausnahmen“ oder „Host-Overrides“ genannt). Danach ein paar Minuten warten oder den Browser neu starten; in der Werkbank steht dann eine Adresse aus dem Heimnetz. Das Zertifikat bleibt gültig, weil der Name gleich bleibt.
+
+### Heimnetz nicht bestimmbar { #heimnetz-nicht-bestimmbar }
+
+In manchen Docker-Aufbauten sieht Ablago nicht die Adresse des Geräts, sondern die **Gateway-Adresse des Docker-Netzes** (z. B. `172.17.0.1`) – für Anfragen aus dem Heimnetz genauso wie für Anfragen aus dem Internet. Das kommt vor mit dem Userland-Proxy von Docker (oft bei IPv6 auf einem NAS), mit Docker Desktop und mit Rootless Docker. Ablago liest die Gateways aus der eigenen Routing-Tabelle und erkennt solche Anfragen:
+
+- Sie gelten **nicht als Heimnetz** – für den Notfallzugang, für die Einrichtung ohne Einrichtungscode und für die Angabe „Heimnetz“ in den Nachweisen der Fehlanmeldungen. Mit dem Haken **Notfallzugang aus dem Internet erlauben** geht der Notfallzugang trotzdem.
+- Unter **Anmeldeschutz → Notfallzugang** steht, welche Adresse Ablago sieht. Die [Übersicht](uebersicht.md#meldungen) meldet es gelb, solange in den letzten 24 Stunden solche Anfragen ankamen; im **Systemzustand** unter **Version und Updates** steht dann die Zeile **Heimnetz**.
+
+Damit Ablago die echte Adresse sieht, gibt es drei Wege:
+
+1. **Portfreigabe ohne Userland-Proxy:** Docker leitet dann über die Firewall-Regeln weiter und behält die Absenderadresse. Für IPv6 braucht Docker dafür IPv6 im Docker-Netz (`"ipv6": true` und `"ip6tables": true` in der `daemon.json`); `"userland-proxy": false` schaltet den Userland-Proxy ganz ab.
+2. **Reverse-Proxy davor**, der `X-Forwarded-For` setzt (siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy)). Trage ihn am besten ausdrücklich in `TRUST_PROXY` ein, z. B. `TRUST_PROXY: "172.18.0.5"`.
+3. **Eine eigene Adresse für den Container** im Heimnetz (Docker-Netz vom Typ `macvlan`). Ablago sieht dann die Adressen der Geräte direkt.
+
+Danach steht unter **Anmeldeschutz → Notfallzugang** keine Gateway-Adresse mehr; die Meldung der Übersicht verschwindet 24 Stunden nach der letzten solchen Anfrage (oder nach einem Neustart).
 
 ## Zwei-Faktor-Anmeldung
 
