@@ -94,26 +94,42 @@ Bei zwei Containern bleibt `postgres:17` für Sicherheits-Updates der Reihe 17 o
 
 ### Ohne Administratorrechte (root) { #ohne-root }
 
-Ablago läuft im Container nicht mehr als Administrator (root), sondern als eigener Benutzer `ablago` (Kennung 1000, Gruppe 1000). Die Programme, mit denen Ablago PDFs liest und rastert (poppler und qpdf), laufen noch einmal getrennt davon als Benutzer `ablago-werkzeug` (61000) – mit einer Grenze für den Arbeitsspeicher (Vorgabe 1024 MB je Aufruf), die Rechenzeit und die Größe einer Datei. Sie dürfen nur in ihren eigenen Arbeitsordner schreiben und kommen weder an die Ordner unter `/data` noch an die Datenbank. Braucht ein PDF mehr, scheitert nur dieser eine Schritt mit einer Meldung (z. B. beim Schwärzen); Ablago läuft weiter. Das Image braucht dafür keine zusätzlichen Rechte von Docker.
+Ablago läuft im Container nicht mehr als Administrator (root), sondern als eigener Benutzer: wie der Besitzer deiner Ordner, sonst `ablago` (Kennung 1000, Gruppe 1000). Die Programme, mit denen Ablago PDFs liest und rastert (poppler und qpdf), laufen noch einmal getrennt davon als Benutzer `ablago-werkzeug` (61000) – mit einer Grenze für den Arbeitsspeicher (Vorgabe 1024 MB je Aufruf), die Rechenzeit und die Größe einer Datei. Sie dürfen nur in ihren eigenen Arbeitsordner schreiben und kommen weder an die Dateien, die Ablago unter `/data` anlegt (nur für Ablago lesbar), noch an die Datenbank. Braucht ein PDF mehr, scheitert nur dieser eine Schritt mit einer Meldung (z. B. beim Schwärzen); Ablago läuft weiter. Das Image braucht dafür keine zusätzlichen Rechte von Docker.
 
-**Was beim ersten Start nach dem Update passiert:** Das Start-Skript übernimmt einmal alles unter `/data/files`, `/data/geheim`, `/data/sicherung` und `/data/export`, was noch root (oder einem anderen Benutzer) gehört, für den Benutzer von Ablago – auf dem Datenträger des NAS. Im Protokoll steht dann je Ordner `Ohne root (#1354): übernehme /data/files für Benutzer 1000 und Gruppe 1000 – einmalig …`, und die Startseite zeigt **„Ordner werden für Ablago eingerichtet (einmalig)“**. Bei vielen Dateien dauert das einige Minuten, danach startet Ablago wie gewohnt. Mit benannten Docker-Volumes und den Ordnern der Vorlagen musst du nichts tun.
+**Unter welchem Benutzer Ablago läuft:** Ablago richtet sich nach dem Besitzer deiner Ordner. Gehören die eingebundenen Ordner (`/data/files`, `/data/geheim`, `/data/sicherung`, gegebenenfalls `/data/export` oder `/data` selbst) einem Benutzer deines NAS, etwa `1026` und Gruppe `100` auf einer Synology, läuft Ablago als genau dieser Benutzer. Du kommst dann über die Dateifreigabe weiter an Sicherungen und Exporte, ohne etwas einzutragen. Gehören die Ordner root (etwa ein frisches Docker-Volume oder Ordner, die Docker selbst angelegt hat), gilt die Vorgabe `1000:1000`. Root (0) und die Kennung der Dokumentwerkzeuge (61000) nimmt Ablago dabei nie, auch nicht als Gruppe. Das Protokoll sagt es in einem Satz, z. B. `Ablago läuft als Benutzer 1026 und Gruppe 100 – wie der Besitzer des Datenordners (/data/files).` Dasselbe steht auf der Startseite und unter **Werkbank → Systemzustand → Laufzeit** („Benutzer von Ablago“, „Gruppe von Ablago“, jeweils mit Herkunft).
 
-- Andere Benutzer **im Container** verlieren das Recht auf diese vier Ordner (`o-rwx`); Besitzer und Gruppe behalten ihre Rechte.
-- **Eigener Benutzer des NAS:** Sollen die Ordner einem Benutzer des NAS gehören (etwa damit du Sicherungen über die Dateifreigabe kopieren kannst), setze in der Compose-Datei `PUID` und `PGID` auf dessen Kennungen. Die Zahlen zeigt `id <benutzer>` auf der Kommandozeile des NAS, auf einer Synology oft `1026` und `100` (Gruppe `users`):
+**Was beim Start geändert wird – so wenig wie möglich:**
+
+- Was dem Benutzer von Ablago schon gehört, bleibt, wie es ist: Besitzer, Gruppe und die Rechte anderer.
+- Was noch **root** gehört (von Docker oder einer Version vor 0.299.0 angelegt), übernimmt das Skript einmal für den Benutzer von Ablago. Im Protokoll steht dann je Ordner `Ohne root (#1354): übernehme /data/files für Benutzer 1000 und Gruppe 1000 (was root gehört) – einmalig …`, und die Startseite zeigt **„Ordner werden für Ablago eingerichtet (einmalig)“**. Bei vielen Dateien dauert das einige Minuten.
+- Einen der vier Ordner, den das Skript dabei neu anlegt oder übernimmt, schließt es für andere Benutzer im Container (`o-rwx`). Ordner deines NAS-Benutzers bleiben unberührt.
+- In `/data/geheim` liegen die Schlüssel. Kann die Gruppe oder jeder andere eine Datei dort lesen, ist sie danach nur noch für Ablago lesbar (`go-rwx`). Ablago legt sie selbst ohnehin so an.
+- Einträge, die einem anderen Benutzer gehören, lässt das Skript stehen und nennt sie im Protokoll.
+- Ordner, die nur im Container liegen (ohne eigenes Volume, z. B. `/data/export` in den Vorlagen), gehören danach dem Benutzer von Ablago. Auf dem NAS ändert sich dadurch nichts.
+
+Jede Änderung auf deinen Ordnern steht im Protokoll, auf der Startseite (solange Ablago startet) und im Systemzustand unter „Geändert am …“. Der Container merkt sich die Wahl: Ein Neustart ändert nichts mehr und sucht nicht noch einmal.
+
+- **`PUID` und `PGID` nur als Ausnahme:** Soll Ablago ausdrücklich als ein anderer Benutzer laufen, als dem die Ordner gehören, setze beide in der Compose-Datei. Gesetzte Werte gehen immer vor. Das Skript übernimmt dann wie bisher alles, was nicht genau diesem Benutzer und dieser Gruppe gehört. Fehlt einer der beiden Werte, gilt für ihn `1000`.
   ```yaml
       environment:
         PUID: "1026"
         PGID: "100"
   ```
-  Beim nächsten Start übernimmt das Skript die Ordner für diese Kennungen.
-- **Eingangsordner:** Was der Scanner in `/eingang` ablegt, gehört meist einem Benutzer des NAS. Ablago übernimmt dort nur, was root gehört. Kann es im Ordner nichts verschieben, steht im Protokoll eine Warnung – dann `PUID`/`PGID` auf den Besitzer des Ordners setzen oder Ablago Schreibrechte geben.
-- **Befehl `dms`:** `docker exec <container> dms …` läuft von selbst als Benutzer von Ablago.
-- **Zurück auf die vorige Version** geht ohne Zutun: Ältere Versionen laufen als root und lesen die übernommenen Ordner weiter.
+- **Eingangsordner:** Was der Scanner in `/eingang` ablegt, gehört meist einem Benutzer des NAS. Ablago übernimmt dort nur, was root gehört. Kann es im Ordner nichts verschieben, steht im Protokoll eine Warnung mit dem Besitzer des Ordners.
+- **Befehl `dms`:** `docker exec <container> dms …` läuft von selbst als derselbe Benutzer wie Ablago, auch ohne `PUID` in der Compose-Datei.
+- **Zurück auf die vorige Version:** Ältere Versionen vor 0.299.0 laufen als root und lesen die Ordner weiter. 0.299.0 selbst kennt die Wahl nach dem Besitzer noch nicht: Ohne `PUID`/`PGID` übernimmt es die Ordner für `1000:1000`.
 
-**Wenn der Container nicht startet:** Steht im Protokoll `FEHLER: Ablago (Benutzer 1000, Gruppe 1000) kann nicht in /data/sicherung schreiben, und die Rechte ließen sich nicht übernehmen`, konnte das Skript die Rechte nicht ändern – meist bei einer Netzwerkfreigabe (NFS mit `root_squash`), bei schreibgeschützt eingebundenen Ordnern oder ACLs. Die Startseite nennt den Grund, nach einigen Minuten endet der Container. Abhilfe, eins von beiden:
+**Schon mit 0.299.0 aktualisiert?** Dann gehören deine Ordner jetzt `1000:1000`, und Ablago bleibt dabei. Gibt es nichts umzuschreiben, ändert sich nichts. Sollen die Ordner wieder deinem NAS-Benutzer gehören, damit du über die Dateifreigabe herankommst: auf dem NAS einmal `sudo chown -R 1026:100 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung` ausführen (Zahlen und Pfade an dein NAS angepasst) und den Container neu starten. Ablago läuft danach von selbst als dieser Benutzer.
 
-1. `PUID` und `PGID` auf den Besitzer der Ordner setzen (`ls -ln` auf dem NAS zeigt die Zahlen), oder
-2. auf dem NAS einmal die Ordner Ablago geben, z. B. `sudo chown -R 1000:1000 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung`.
+**Wenn der Container nicht startet:** Kann Ablago in einen seiner Ordner nicht schreiben, zeigt die Startseite, was Ablago gesehen hat, und die Abhilfe als fertige Zeilen zum Einfügen. Beispiel: `/data/files` gehört `1026:100`, `/data/geheim` aber `1027:101`. Dann steht dort, welcher Ordner wem gehört, und darunter:
+
+```yaml
+    environment:
+      PUID: "1027"
+      PGID: "101"
+```
+
+Oder die Gegenrichtung für den NAS: `sudo chown -R 1026:100 <Ordner auf dem NAS, eingebunden als /data/geheim>`. Ist ein Ordner schreibgeschützt eingebunden (`:ro`), nennt die Seite das und den Ausweg. Bei einer Netzwerkfreigabe mit `root_squash` darf root im Container die Rechte nicht ändern; dann hilft nur der `chown` auf dem NAS bzw. Server. Dieselben Zeilen stehen im Protokoll (`FEHLER: Ablago (Benutzer …) kann nicht in /data/… schreiben. Der Ordner gehört …`). Nach einigen Minuten endet der Container.
 
 **Weitere Einstellungen:**
 

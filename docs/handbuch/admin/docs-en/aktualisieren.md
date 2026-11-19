@@ -94,26 +94,42 @@ With two containers, `postgres:17` stays open for security updates of the 17 ser
 
 ### Without administrator rights (root) { #ohne-root }
 
-Ablago no longer runs as administrator (root) inside the container but as its own user `ablago` (ID 1000, group 1000). The programs Ablago uses to read and rasterise PDFs (poppler and qpdf) run separately again, as user `ablago-werkzeug` (61000) – with a limit for memory (default 1024 MB per call), CPU time and file size. They may only write to their own working folder and can reach neither the folders under `/data` nor the database. If a PDF needs more, only that one step fails with a message (for example when redacting); Ablago keeps running. The image needs no additional rights from Docker for this.
+Ablago no longer runs as administrator (root) inside the container but as its own user: like the owner of your folders, otherwise `ablago` (ID 1000, group 1000). The programs Ablago uses to read and rasterise PDFs (poppler and qpdf) run separately again, as user `ablago-werkzeug` (61000) – with a limit for memory (default 1024 MB per call), CPU time and file size. They may only write to their own working folder and can reach neither the files Ablago creates under `/data` (readable only by Ablago) nor the database. If a PDF needs more, only that one step fails with a message (for example when redacting); Ablago keeps running. The image needs no additional rights from Docker for this.
 
-**What happens on the first start after the update:** The start script takes over, once, everything under `/data/files`, `/data/geheim`, `/data/sicherung` and `/data/export` that still belongs to root (or another user), for the Ablago user – on your NAS's disk. The log then shows for each folder `Ohne root (#1354): übernehme /data/files für Benutzer 1000 und Gruppe 1000 – einmalig …`, and the start page shows **"Setting up folders for Ablago (once)"**. With many files this takes a few minutes; Ablago then starts as usual. With named Docker volumes and the folders of the templates there is nothing to do.
+**Which user Ablago runs as:** Ablago follows the owner of your folders. If the mounted folders (`/data/files`, `/data/geheim`, `/data/sicherung`, where present `/data/export` or `/data` itself) belong to a user of your NAS, for example `1026` with group `100` on a Synology, Ablago runs as exactly that user. You can then keep reaching backups and exports through the file share without entering anything. If the folders belong to root (for example a fresh Docker volume or folders Docker created itself), the default `1000:1000` applies. Ablago never takes root (0) or the ID of the document tools (61000), not even as a group. The log says so in one sentence, e.g. `Ablago läuft als Benutzer 1026 und Gruppe 100 – wie der Besitzer des Datenordners (/data/files).` The start page and **Workbench → System status → Runtime** ("Ablago’s user", "Ablago’s group", each with its origin) show the same.
 
-- Other users **inside the container** lose access to these four folders (`o-rwx`); owner and group keep their rights.
-- **Your own NAS user:** If the folders should belong to a user of your NAS (for example so you can copy backups through the file share), set `PUID` and `PGID` in the compose file to that user's IDs. `id <user>` on the NAS command line shows them; on a Synology often `1026` and `100` (group `users`):
+**What the start changes – as little as possible:**
+
+- Whatever already belongs to Ablago’s user stays as it is: owner, group and the permissions of others.
+- Whatever still belongs to **root** (created by Docker or by a version before 0.299.0) the script takes over once for Ablago’s user. The log then shows for each folder `Ohne root (#1354): übernehme /data/files für Benutzer 1000 und Gruppe 1000 (was root gehört) – einmalig …`, and the start page shows **"Setting up folders for Ablago (once)"**. With many files this takes a few minutes.
+- Any of the four folders that the script creates or takes over in the process is closed to other users in the container (`o-rwx`). Folders of your NAS user stay untouched.
+- `/data/geheim` holds the keys. If the group or anyone else can read a file there, it can only be read by Ablago afterwards (`go-rwx`). Ablago creates them that way anyway.
+- Entries that belong to another user stay as they are; the log names them.
+- Folders that only live inside the container (without a volume of their own, e.g. `/data/export` in the templates) belong to Ablago’s user afterwards. Nothing changes on your NAS because of this.
+
+Every change to your folders appears in the log, on the start page (while Ablago starts) and in the system status under "Changed on …". The container remembers the choice: a restart changes nothing more and does not search again.
+
+- **`PUID` and `PGID` only as an exception:** If Ablago should explicitly run as a different user than the one owning the folders, set both in the compose file. Values you set always take precedence. The script then takes over, as before, everything that does not belong to exactly this user and group. If one of the two is missing, `1000` applies to it.
   ```yaml
       environment:
         PUID: "1026"
         PGID: "100"
   ```
-  On the next start the script takes over the folders for these IDs.
-- **Inbox folder:** What the scanner puts into `/eingang` usually belongs to a NAS user. Ablago only takes over what belongs to root there. If it cannot move anything in that folder, the log shows a warning – then set `PUID`/`PGID` to the owner of the folder or give Ablago write access.
-- **`dms` command:** `docker exec <container> dms …` runs as the Ablago user by itself.
-- **Going back to the previous version** works without extra steps: older versions run as root and keep reading the taken-over folders.
+- **Inbox folder:** What the scanner puts into `/eingang` usually belongs to a NAS user. Ablago only takes over what belongs to root there. If it cannot move anything in the folder, the log shows a warning with the folder’s owner.
+- **`dms` command:** `docker exec <container> dms …` runs as the same user as Ablago by itself, even without `PUID` in the compose file.
+- **Back to the previous version:** Versions before 0.299.0 run as root and keep reading the folders. 0.299.0 itself does not yet follow the owner: without `PUID`/`PGID` it takes the folders over for `1000:1000`.
 
-**If the container does not start:** If the log says `FEHLER: Ablago (Benutzer 1000, Gruppe 1000) kann nicht in /data/sicherung schreiben, und die Rechte ließen sich nicht übernehmen`, the script could not change the permissions – usually with a network share (NFS with `root_squash`), folders mounted read-only, or ACLs. The start page names the reason; after a few minutes the container stops. Fix it in one of two ways:
+**Already updated to 0.299.0?** Then your folders now belong to `1000:1000`, and Ablago stays with that. If there is nothing to rewrite, nothing changes. If the folders should belong to your NAS user again so that you can reach them through the file share: run `sudo chown -R 1026:100 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung` once on the NAS (numbers and paths adapted to your NAS) and restart the container. Ablago then runs as that user by itself.
 
-1. set `PUID` and `PGID` to the owner of the folders (`ls -ln` on the NAS shows the numbers), or
-2. give the folders to Ablago once on the NAS, e.g. `sudo chown -R 1000:1000 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung`.
+**If the container does not start:** If Ablago cannot write to one of its folders, the start page shows what Ablago saw and the fix as ready-made lines to paste. Example: `/data/files` belongs to `1026:100`, but `/data/geheim` to `1027:101`. The page then says which folder belongs to whom, followed by:
+
+```yaml
+    environment:
+      PUID: "1027"
+      PGID: "101"
+```
+
+Or the other way round on the NAS: `sudo chown -R 1026:100 <folder on your NAS, mounted as /data/geheim>`. If a folder is mounted read-only (`:ro`), the page says so and how to fix it. With a network share using `root_squash`, root in the container may not change permissions; then only the `chown` on the NAS or server helps. The log has the same lines (`FEHLER: Ablago (Benutzer …) kann nicht in /data/… schreiben. Der Ordner gehört …`). After a few minutes the container stops.
 
 **More settings:**
 
