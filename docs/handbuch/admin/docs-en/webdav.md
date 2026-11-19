@@ -93,7 +93,7 @@ Ablage/
     If an API key expires or you delete it, Explorer and Finder don't notice: they keep trying in the background with the old key. Every attempt is a failed attempt in [sign-in protection](anmeldeschutz.md) – after a while first the account from this IP address and then the **whole IP address** is blocked. If all devices at home or in the office come via the same public address (NAT, router), nobody can then sign in **with a password** in the browser for a while either.
 
     - Before a key expires or you delete it: disconnect the drive on the device (Windows: *Disconnect network drive*; Mac: *Eject*) and reconnect with a new key.
-    - If it has already happened: disconnect the device or connect with a new key, then **unblock** the address under **Workbench → Sign-in protection** (see [Blocked addresses](anmeldeschutz.md#gesperrte-adressen)). For the home network an [exception](anmeldeschutz.md#ausnahmen) can be entered there – but it only works for addresses that Ablago sees directly, not for a shared public address from outside.
+    - If it has already happened: disconnect the device or connect with a new key, then **unblock** the address under **Workbench → Sign-in protection** (see [Locked sign-ins](anmeldeschutz.md#gesperrte-adressen)). For the home network an [exception](anmeldeschutz.md#ausnahmen) can be entered there – but it only works for addresses that Ablago sees directly, not for a shared public address from outside.
 
 !!! tip "Rather not on the internet?"
     If you only need the drive at home, you can restrict `/webdav/` to the home network in the reverse proxy (e.g. in Nginx Proxy Manager with an access list).

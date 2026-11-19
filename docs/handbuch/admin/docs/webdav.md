@@ -93,7 +93,7 @@ Ablage/
     Läuft ein API-Schlüssel ab oder löschst du ihn, merken Explorer und Finder das nicht: Sie versuchen es im Hintergrund immer wieder mit dem alten Schlüssel. Jeder Versuch ist ein Fehlversuch im [Anmeldeschutz](anmeldeschutz.md) – nach einer Weile ist erst das Konto von dieser IP-Adresse und dann die **ganze IP-Adresse** gesperrt. Kommen alle Geräte zu Hause oder im Büro über dieselbe öffentliche Adresse (NAT, Router), kann sich dann eine Zeit lang auch niemand mehr **mit Passwort** im Browser anmelden.
 
     - Bevor ein Schlüssel abläuft oder du ihn löschst: das Laufwerk auf dem Gerät trennen (Windows: *Netzlaufwerk trennen*; Mac: *Auswerfen*) und mit einem neuen Schlüssel neu verbinden.
-    - Ist es schon passiert: Gerät trennen bzw. mit neuem Schlüssel verbinden, dann unter **Werkbank → Anmeldeschutz** die Adresse **entsperren** (siehe [Gesperrte Adressen](anmeldeschutz.md#gesperrte-adressen)). Für das Heimnetz lässt sich dort eine [Ausnahme](anmeldeschutz.md#ausnahmen) eintragen – sie wirkt aber nur auf Adressen, die Ablago direkt sieht, nicht auf eine gemeinsame öffentliche Adresse von außen.
+    - Ist es schon passiert: Gerät trennen bzw. mit neuem Schlüssel verbinden, dann unter **Werkbank → Anmeldeschutz** die Adresse **entsperren** (siehe [Gesperrte Anmeldungen](anmeldeschutz.md#gesperrte-adressen)). Für das Heimnetz lässt sich dort eine [Ausnahme](anmeldeschutz.md#ausnahmen) eintragen – sie wirkt aber nur auf Adressen, die Ablago direkt sieht, nicht auf eine gemeinsame öffentliche Adresse von außen.
 
 !!! tip "Lieber nicht im Internet?"
     Wer das Laufwerk nur zu Hause braucht, kann im Reverse-Proxy `/webdav/` auf das Heimnetz beschränken (z. B. in Nginx Proxy Manager mit einer Access List).

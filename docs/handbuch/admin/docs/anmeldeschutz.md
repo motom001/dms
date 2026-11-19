@@ -12,7 +12,7 @@ Nach zu vielen falschen Passwörtern sperrt Ablago die Anmeldung. Unter **Werkba
 | **Je IP-Adresse**, über alle E-Mail-Adressen | 30 Fehlversuche → 60 Minuten | jemand probiert von einer Adresse aus viele Konten durch |
 | **Je Konto**, über alle IP-Adressen (fest) | 30 Fehlversuche in 60 Minuten → bis zum Ende der Stunde | jemand probiert von vielen Adressen aus Passwörter für ein Konto durch |
 
-Bei **IPv6** zählt Ablago je /64-Netz, nicht je einzelne Adresse: Ein Anschluss bekommt meist ein ganzes /64 und könnte sonst für jeden Versuch eine neue Adresse nehmen. In der Liste der gesperrten Adressen steht dann das Netz, z. B. `2001:db8:1:2::/64`.
+Bei **IPv6** zählt Ablago je /64-Netz, nicht je einzelne Adresse: Ein Anschluss bekommt meist ein ganzes /64 und könnte sonst für jeden Versuch eine neue Adresse nehmen. In der Liste der gesperrten Anmeldungen steht dann das Netz, z. B. `2001:db8:1:2::/64`.
 
 Die **Sperre je Konto** ist eine Bremse: Ist sie erreicht, nimmt Ablago für dieses Konto bis zum Ende der Stunde kein Passwort mehr an, von keiner Adresse (außer aus den [Ausnahmen](#ausnahmen)). Andere Konten, API-Schlüssel und das [Laufwerk](webdav.md) mit API-Schlüssel sind nicht betroffen. Sie gilt für jede E-Mail-Adresse, auch für eine, die es nicht gibt – so verrät die Antwort nichts. Weil damit auch ein Fremder ein Konto für eine Stunde bremsen kann, lohnt es sich, das eigene Heimnetz als Ausnahme einzutragen.
 
@@ -22,7 +22,7 @@ Fehlversuche und Sperren stehen in der Datenbank: Sie überstehen einen Neustart
 
 ## Mail an die Verwaltenden { #mail-an-die-administratoren }
 
-Ist Ablago aus dem Internet erreichbar, probieren Fremde ständig Passwörter durch. Das ist normal, und die Sperren passieren automatisch. Darum schickt Ablago im Standard **keine Mail**, wenn es sperrt. Was gesperrt ist, siehst du jederzeit unter **Werkbank → Anmeldeschutz** und im Protokoll.
+Ist Ablago aus dem Internet erreichbar, probieren Fremde ständig Passwörter durch. Das ist normal, und die Sperren passieren automatisch. Darum schickt Ablago im Standard **keine Mail**, wenn es sperrt. Was gesperrt ist, siehst du jederzeit unter **Werkbank → Anmeldeschutz → [Gesperrte Anmeldungen](#gesperrte-adressen)** und im Protokoll.
 
 Wer trotzdem Bescheid wissen will, schaltet unter **Werkbank → Ablage aufbauen → [Automatisierungen](automatisierungen.md#benachrichtigungen)** eine oder beide Automatisierungen ein (das Paket **Benachrichtigungen** bringt sie ausgeschaltet mit; nach dem Update stehen sie so da, wie die früheren Haken hier gesetzt waren):
 
@@ -36,9 +36,24 @@ Die Mails gehen an alle aktiven Personen mit Verwaltungsrecht für *Anmeldeschut
 !!! note "Bis Version 0.84.7"
     Früher kam im Standard bei jeder gesperrten IP sofort eine Mail. Mit 0.84.8 ist die Mail im Standard aus – auch in bestehenden Installationen, in denen niemand den Haken selbst umgelegt hat. Wer ihn seit 0.84.8 einschaltet, bekommt die tägliche Sammelmeldung statt einer Mail je Sperre.
 
-## Gesperrte Adressen
+## Gesperrte Anmeldungen { #gesperrte-adressen }
 
-Ganz unten auf der Seite zeigt der Abschnitt **Gesperrte Adressen** jede gesperrte IP mit Grund, Beginn und Ende – bei vielen Sperren in einer Liste mit fester Höhe, in der du scrollst. **Freigeben** hebt die Sperre sofort auf. Oben auf der Seite steht deine eigene Adresse, wie Ablago sie sieht.
+Ganz unten auf der Seite zeigt der Abschnitt **Gesperrte Anmeldungen** alle Sperren, die gerade gelten – von allen drei [Sperren](#zwei-sperren), bei vielen in einer Liste mit fester Höhe, in der du scrollst. Je Eintrag steht:
+
+| Angabe | Bedeutung |
+| --- | --- |
+| **Art** | *Konto* (je Konto über alle Adressen), *E-Mail-Adresse und IP* oder *IP-Adresse* |
+| **Wer** | die E-Mail-Adresse, die Adresse bzw. das /64-Netz oder beides; gehört die E-Mail-Adresse zu einer Person, führt ihr Name zu ihr unter **Werkbank → Benutzer** |
+| **Grund** | die Zahl der Fehlversuche |
+| **Seit, bis** | Beginn und Ende der Sperre, bei einer dauerhaften IP-Sperre „bis entsperrt“ |
+
+**Entsperren** hebt die Sperre sofort auf. Bei einem Konto fallen dabei auch seine Sperren je E-Mail-Adresse und IP weg. Erst wenn keine der drei Sperren gilt, steht dort „Gerade ist keine Anmeldung gesperrt.“ Oben auf der Seite steht deine eigene Adresse, wie Ablago sie sieht.
+
+Die Liste liest Ablago aus der Datenbank: Sie ist dieselbe, egal welcher Prozess die Seite ausliefert. Sie lädt sich alle 30 Sekunden neu.
+
+Eine Sperre des Kontos siehst du auch an der Person unter **Werkbank → Benutzer → Person → Anmeldung und Sicherheit** im Block **Gesperrte Anmeldung**, ebenfalls mit **Entsperren**. Den Block sehen nur Personen mit Verwaltungsrecht für *Anmeldeschutz* (oder „Gesamte Verwaltung“) – die Liste nennt E-Mail-Adressen und Adressen.
+
+Anzeigen und Entsperren gehen mit dem Verwaltungsrecht für *Anmeldeschutz* im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus). Jedes Entsperren steht im [Protokoll](fehlersuche.md#protokoll) mit der Person, die entsperrt hat, und im Nachweis *Zugang* (`zugang.entsperrt`: Art, Konto, gekürzte Adresse und wer entsperrt hat; eine E-Mail-Adresse ohne Konto steht dort nicht).
 
 !!! warning "Hinter einem Reverse-Proxy"
     Damit die Sperre je IP die richtige Adresse trifft, muss Ablago die Angaben des Proxys glauben. Sitzt der Proxy auf demselben Rechner oder in einem privaten Netz, erkennt Ablago das von selbst (`TRUST_PROXY` nicht gesetzt oder `auto`). Prüfe oben auf der Seite: Steht dort bei deiner Adresse die Adresse des Proxys statt die deines Geräts, sieht Ablago für alle Anmeldungen dieselbe Adresse und sperrt im Ernstfall alle aus. Siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy).
@@ -51,7 +66,7 @@ Unter **Nie sperren** stehen Adressen oder Netze, die nie gesperrt werden, z. B.
 
 Bist du selbst gesperrt und niemand sonst, der verwaltet, kann dich freigeben, hilft der [Befehl `dms`](konsole.md) im Container:
 
-- `dms gesperrt` zeigt die gesperrten Adressen,
+- `dms gesperrt` zeigt die gesperrten IP-Adressen,
 - `dms entsperren <ip>` gibt eine Adresse sofort frei.
 
 Ohne Zugriff auf den Container warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Kommt niemand mit Verwaltungsrecht mehr hinein, hilft der [Notfallcode vom Notfallblatt](was-ist-passiert.md#notfallcode) oder die [RESCUE-Datei](notfall.md).
