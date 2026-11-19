@@ -1,65 +1,283 @@
 {
-  "_hinweis": "Wozu die Systemprogramme im Image stecken (#1393). Quelle für die Übersicht „Bestandteile und Lizenzen“ im Release-Text. Jedes Paket aus einer Zeile „apk add“ im Dockerfile braucht hier einen Eintrag (Test in bestandteile.test.mjs). Die Begründungen stehen außerdem als Kommentar im Dockerfile; ändert sich dort etwas, hier nachziehen.",
+  "_hinweis": "Wozu die Bestandteile da sind (#1393, #1412). „pakete“: Systemprogramme im Image – jedes Paket aus einer Zeile „apk add“ im Dockerfile braucht einen Eintrag; die Begründungen stehen außerdem als Kommentar im Dockerfile. „npm“: jedes direkt eingebundene npm-Paket (dependencies und devDependencies aller package.json, auch web/rauchtest) braucht einen Eintrag mit Einsatz (Betrieb, Entwicklung, Test), Teil und Zweck auf Deutsch (wozu) und Englisch (en). Prüft bestandteile.test.mjs im Job „stil“.",
   "pakete": {
     "node": {
       "wozu": "Laufzeit für Server und Werkzeuge von Ablago; aus dem offiziellen Image „node“ für Alpine (npm, Yarn und Corepack werden entfernt).",
       "issues": [220, 1272],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Runtime for the Ablago server and tools; from the official “node” image for Alpine (npm, Yarn and Corepack are removed)."
     },
     "busybox": {
       "wozu": "Grundprogramme von Alpine (Shell, wget für die Gesundheitsprüfung des Containers); kommt mit dem Basis-Image.",
       "issues": [321],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Alpine base programs (shell, wget for the container health check); comes with the base image."
     },
     "poppler-utils": {
       "wozu": "Textebene von PDFs (pdftotext), Vorschau- und Seitenbilder, Schwärzen, Verkleinern (pdftoppm).",
       "issues": [45, 393],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Text layer of PDFs (pdftotext), preview and page images, redaction, shrinking (pdftoppm)."
     },
     "qpdf": {
       "wozu": "PDF verkleinern: optimiert die Struktur der Datei (bewusst kein Ghostscript).",
       "issues": [393],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Shrinking PDFs: optimises the file structure (deliberately no Ghostscript)."
     },
     "fontconfig": {
       "wozu": "Findet die Ersatzschriften für PDFs, die ihre Schriften nicht einbetten.",
       "issues": [1329],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Finds the substitute fonts for PDFs that do not embed their fonts."
     },
     "font-liberation": {
       "wozu": "Ersatzschriften, metrisch passend für Helvetica/Arial, Times und Courier (Seiten- und Vorschaubilder, Archivfassung).",
       "issues": [1329],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Substitute fonts, metrically matching Helvetica/Arial, Times and Courier (page and preview images, archive version)."
     },
     "font-dejavu": {
       "wozu": "Ersatzschrift für weitere Zeichen.",
       "issues": [1329],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Substitute font for further characters."
     },
     "postgresql17": {
       "wozu": "Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar).",
       "issues": [208],
-      "varianten": ["dms-komplett"]
+      "varianten": ["dms-komplett"],
+      "en": "Database inside the container, only in dms-komplett (reachable only within the container)."
     },
     "postgresql17-contrib": {
       "wozu": "Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen.",
       "issues": [208],
-      "varianten": ["dms-komplett"]
+      "varianten": ["dms-komplett"],
+      "en": "Extensions pg_trgm and unaccent for fuzzy search and searching within words."
     },
     "tini": {
       "wozu": "Erster Prozess im Container: gibt Signale weiter und beendet Ablago (und in dms-komplett PostgreSQL) sauber.",
       "issues": [208, 1354],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "First process in the container: passes on signals and shuts down Ablago (and PostgreSQL in dms-komplett) cleanly."
     },
     "su-exec": {
       "wozu": "Startet PostgreSQL unter einem eigenen Benutzer statt als root (dms-komplett).",
       "issues": [208, 1354],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Starts PostgreSQL as its own user instead of root (dms-komplett)."
     },
     "setpriv": {
       "wozu": "Startet Ablago und die Dokumentwerkzeuge als eigene Benutzer statt als root, mit „no new privileges“ (aus util-linux).",
       "issues": [1354],
-      "varianten": ["dms", "dms-komplett"]
+      "varianten": ["dms", "dms-komplett"],
+      "en": "Starts Ablago and the document tools as their own users instead of root, with “no new privileges” (from util-linux)."
+    }
+  },
+  "npm": {
+    "fastify": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "HTTP-Server: Routen, Prüfung der Anfragen, Antworten.",
+      "en": "HTTP server: routes, request validation, responses."
+    },
+    "@fastify/static": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Liefert die Weboberfläche und das Offline-Handbuch als Dateien aus.",
+      "en": "Serves the web interface and the offline manual as files."
+    },
+    "postgres": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Zugriff auf PostgreSQL (postgres.js).",
+      "en": "Access to PostgreSQL (postgres.js)."
+    },
+    "pdf-lib": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "PDFs zusammenstellen, verkleinern, schwärzen und stempeln (nur über die PDF-Stelle).",
+      "en": "Assembling, shrinking, redacting and stamping PDFs (only via the PDF module)."
+    },
+    "@pdf-lib/fontkit": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Eigene Schriften (Noto Sans) als Teilmenge in PDFs einbetten.",
+      "en": "Embedding own fonts (Noto Sans) as a subset in PDFs."
+    },
+    "imapflow": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Post aus Postfächern über IMAP abholen.",
+      "en": "Fetching mail from mailboxes via IMAP."
+    },
+    "mailparser": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Abgeholte E-Mails in Text und Anhänge zerlegen.",
+      "en": "Splitting fetched e-mails into text and attachments."
+    },
+    "nodemailer": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "E-Mails über SMTP senden (Einladungen, Hinweise, Mappen versenden).",
+      "en": "Sending e-mails via SMTP (invitations, notices, sending folders)."
+    },
+    "@simplewebauthn/server": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Passkeys prüfen (WebAuthn: CBOR, COSE-Schlüssel, Signaturen, Zähler).",
+      "en": "Verifying passkeys (WebAuthn: CBOR, COSE keys, signatures, counters)."
+    },
+    "yaml": {
+      "einsatz": "Betrieb",
+      "teil": "Server",
+      "wozu": "Pakete, Rundgänge und Einrichtungsdateien im YAML-Format lesen und schreiben.",
+      "en": "Reading and writing packages, tours and setup files in YAML."
+    },
+    "react": {
+      "einsatz": "Betrieb",
+      "teil": "Oberfläche",
+      "wozu": "Grundlage der Weboberfläche.",
+      "en": "Foundation of the web interface."
+    },
+    "react-dom": {
+      "einsatz": "Betrieb",
+      "teil": "Oberfläche",
+      "wozu": "Zeichnet die React-Oberfläche im Browser.",
+      "en": "Renders the React interface in the browser."
+    },
+    "qrcode": {
+      "einsatz": "Betrieb",
+      "teil": "Oberfläche",
+      "wozu": "QR-Codes, z. B. für die Zwei-Faktor-Anmeldung und das Notfallblatt.",
+      "en": "QR codes, e.g. for two-factor sign-in and the emergency sheet."
+    },
+    "typescript": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Typprüfung für Server, Oberfläche und shared.",
+      "en": "Type checking for server, web interface and shared."
+    },
+    "tsx": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "TypeScript direkt ausführen: Entwicklungsserver, Tests, Werkzeuge.",
+      "en": "Running TypeScript directly: development server, tests, tools."
+    },
+    "esbuild": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Bündelt den Server für das Image.",
+      "en": "Bundles the server for the image."
+    },
+    "vite": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Baut und bündelt die Weboberfläche; Entwicklungsserver.",
+      "en": "Builds and bundles the web interface; development server."
+    },
+    "@vitejs/plugin-react": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "React-Unterstützung für Vite.",
+      "en": "React support for Vite."
+    },
+    "@types/node": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Typen für Node.js.",
+      "en": "Types for Node.js."
+    },
+    "@types/nodemailer": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Typen für nodemailer.",
+      "en": "Types for nodemailer."
+    },
+    "@types/qrcode": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Typen für qrcode.",
+      "en": "Types for qrcode."
+    },
+    "@types/react": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Typen für React.",
+      "en": "Types for React."
+    },
+    "@types/react-dom": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Typen für react-dom.",
+      "en": "Types for react-dom."
+    },
+    "eslint": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Prüft Stil und Regeln im Code.",
+      "en": "Checks style and rules in the code."
+    },
+    "@eslint/js": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Grundregeln für ESLint.",
+      "en": "Base rules for ESLint."
+    },
+    "typescript-eslint": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "ESLint für TypeScript.",
+      "en": "ESLint for TypeScript."
+    },
+    "eslint-plugin-react-hooks": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Regeln für React-Hooks.",
+      "en": "Rules for React hooks."
+    },
+    "@eslint-community/eslint-plugin-eslint-comments": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Regeln für Ausnahmen per Kommentar (mit Begründung).",
+      "en": "Rules for exceptions via comment (with a reason)."
+    },
+    "globals": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Bekannte globale Namen für ESLint (Browser, Node).",
+      "en": "Known global names for ESLint (browser, Node)."
+    },
+    "dependency-cruiser": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Prüft Grenzen und Kreise zwischen den Ordnern; Abhängigkeitsbild.",
+      "en": "Checks boundaries and cycles between folders; dependency diagram."
+    },
+    "prettier": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Formatiert den Code einheitlich.",
+      "en": "Formats the code consistently."
+    },
+    "knip": {
+      "einsatz": "Entwicklung",
+      "teil": "Werkzeug",
+      "wozu": "Findet ungenutzte Dateien, Exporte und Abhängigkeiten.",
+      "en": "Finds unused files, exports and dependencies."
+    },
+    "axe-core": {
+      "einsatz": "Test",
+      "teil": "Werkzeug",
+      "wozu": "Prüft die Barrierefreiheit in den Rauchtests.",
+      "en": "Checks accessibility in the smoke tests."
+    },
+    "playwright": {
+      "einsatz": "Test",
+      "teil": "Werkzeug",
+      "wozu": "Steuert den Browser in den Rauchtests (eigenes Lockfile in web/rauchtest).",
+      "en": "Drives the browser in the smoke tests (own lockfile in web/rauchtest)."
     }
   }
 }

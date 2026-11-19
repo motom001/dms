@@ -108,6 +108,7 @@ nav:
       - Events and automations: ereignisse.md
       - Data to the outside: nach-draussen.md
       - Dependencies: abhaengigkeiten.md
+      - Composition from components: bestandteile-aufbau.md
       - Performance: leistung.md
       - Setup file: einrichtungsdatei.md
   - Decisions:

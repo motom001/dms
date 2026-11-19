@@ -11,8 +11,9 @@ Ablago isn't only its own code: the image contains Alpine Linux with a few syste
 
 - **Stand (state):** version, date, commit and the digests of both images (`dms` and `dms-komplett`), per architecture (amd64, arm64) and for the shared index.
 - **Changed compared with the previous version:** first components with a **changed licence**, then new ones, removed ones and those with a new version.
-- **Licences:** how many components carry which licence. Listed individually are those with **special obligations** (copyleft, e.g. GPL, LGPL, MPL) – with a link to the source code – and those **without a recognised licence**.
-- **System programs:** the packages Ablago adds to the image itself, and what they are for.
+- **Licences:** how many components carry which licence, per licence expandable with the names (directly included ones in bold). Listed individually are those with **special obligations** (copyleft, e.g. GPL, LGPL, MPL) – with the package they come through and a link to the source code – and those **without a recognised licence**.
+- **Directly included libraries and system programs:** what each is for and how many packages it brings along.
+- Only what is **in the image** is counted. Tools for development and test are only in the attachments.
 
 **As attachments** to the release you get the complete list, every component with its source:
 
@@ -24,7 +25,14 @@ Ablago isn't only its own code: the image contains Alpine Linux with a few syste
 
 The links in the table always lead to the **stable version** (`:stabil`) – on GitHub that is the release marked *Latest*. For a specific version, replace `latest/download` with `download/v<version>`, e.g. `…/releases/download/v0.291.0/ablago-bestandteile.csv`. Releases from before this feature have no attachments; until the first version with a list is stable, the links lead nowhere.
 
-The CSV columns (German headings): *Art* (kind), *Name*, *Version*, *Lizenz* (licence), *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (for Alpine the source package it was built from) and *Quelle* (source).
+The CSV columns (German headings): *Art* (kind), *Name*, *Version*, *Lizenz* (licence), *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (for Alpine the source package it was built from), *Quelle* (source) and, since #1412, the tree:
+
+- *Ebene* (level): 0 = Ablago itself, 1 = directly included, 2 and more = brought along.
+- *Eingebracht durch* (brought in by): the level-1 packages through which a transitive package comes, e.g. `poppler-utils` or `fastify`. Alpine packages that none of the specially installed programs needs come with the *Basis-Image (node, Alpine)* (base image).
+- *Einsatz* (use): **Betrieb** (operation) = in the image; **Entwicklung** (development) and **Test** = only for building and checking, **not in the image** (then *Varianten* and *Architekturen* are empty).
+- *Zweck* (purpose): for level 1, what the package is for.
+
+In SPDX the dependencies are `DEPENDS_ON` relationships (level-1 tools as `DEV_DEPENDENCY_OF` or `TEST_DEPENDENCY_OF`), in CycloneDX under `dependencies`, tools with `scope: excluded`. This way a tool such as Dependency-Track shows through which package a vulnerability comes in. How Ablago is built, package by package: [Composition from components](https://help.ablago.app/entwickler/aktuell/en/bestandteile-aufbau/) in the developer manual.
 
 ## What it contains {#was-drinsteht}
 
@@ -37,6 +45,7 @@ The CSV columns (German headings): *Art* (kind), *Name*, *Version*, *Lizenz* (li
 | npm (Oberfläche) (web interface) | `package-lock.json` | React, qrcode – bundled into one file in the image, so invisible to Trivy |
 | Schrift, Oberfläche (fonts, interface) | Repository | Noto Sans and Noto Sans Mono (Ablago's own PDFs), Lucide (icons) |
 | Handbuch (manual) | Repository | Texts and images of the offline manual, Material for MkDocs |
+| npm (Werkzeug) (tool) | `package-lock.json`, `web/rauchtest/package-lock.json` | TypeScript, Vite, ESLint, Playwright – development and test only, not in the image |
 
 Two limits:
 
@@ -49,10 +58,11 @@ With every new version, after both images have been built and merged:
 
 1. **Bill of materials per image and architecture:** Trivy reads the finished images from the registry (`dms` and `dms-komplett`, each amd64 and arm64); the digests and the Node version come from the image as well.
 2. **Additions:** what Trivy can't see – the web interface libraries, fonts, the offline manual and Ablago itself.
-3. **Merge and compare:** identical components from all variants and architectures become one row; the comparison is with the CSV attached to the previous release.
-4. **Release:** the overview goes into the release text, the three files become attachments.
+3. **Tree:** level and origin for npm from the lockfiles, for Alpine from the package database in the image (relationships in Trivy's bill of materials); the purpose of the directly included packages from `bestandteile-wozu.json`.
+4. **Merge and compare:** identical components from all variants and architectures become one row; the comparison is with the CSV attached to the previous release, only for what is in the image.
+5. **Release:** the overview goes into the release text, the three files become attachments.
 
-The tool for this is in the repository at [`.github/werkzeuge/bestandteile.mjs`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile.mjs), what the system programs are for at [`bestandteile-wozu.json`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile-wozu.json). If the list can't be generated once, the release still appears – with a note in place of the overview.
+The tool for this is in the repository at [`.github/werkzeuge/bestandteile.mjs`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile.mjs), what the system programs and the directly included libraries are for at [`bestandteile-wozu.json`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile-wozu.json). If the list can't be generated once, the release still appears – with a note in place of the overview.
 
 ## Verifying {#nachprufen}
 

@@ -395,9 +395,13 @@ jobs:
           node --test .github/werkzeuge/fachordner-pruefen.test.mjs
           node .github/werkzeuge/fachordner-pruefen.mjs
       # Werkzeug für „Bestandteile und Lizenzen“ im Release-Text (#1393); prüft auch, dass jedes Paket aus „apk add“
-      # im Dockerfile in bestandteile-wozu.json steht.
+      # im Dockerfile und jedes direkt eingebundene npm-Paket einen Zweck in bestandteile-wozu.json hat (#1412), und
+      # dass die erzeugte Seite „Aufbau aus Bestandteilen“ im Entwicklerhandbuch aktuell ist (Fehler bei Ebene 1,
+      # Zweck oder Einsatz; nur Hinweis, wenn sich bloß Mitgebrachtes geändert hat, etwa durch Dependabot).
       - name: Bestandteile und Lizenzen (Werkzeug)
-        run: node --test .github/werkzeuge/bestandteile.test.mjs
+        run: |
+          node --test .github/werkzeuge/bestandteile.test.mjs
+          node .github/werkzeuge/bestandteile.mjs --handbuch-pruefen
       - run: npm ci --no-audit --no-fund
       # Formatierung (#1280): Prettier in fester Version aus npm ci; Einstellungen in .prettierrc.json, Ausnahmen in
       # .prettierignore. Rot, wenn eine Datei nicht so aussieht, wie Prettier sie schreibt (`npm run format` behebt das).
