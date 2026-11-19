@@ -368,7 +368,7 @@ async function postMitScan(betreff) {
 async function seitenansicht(s, brief) {
   await s.goto(BASIS + `/ablage/eingang/${brief.id}?als=post`);
   await s.getByRole('tab', { name: /^Dokumente/ }).click();
-  const zeile = s.locator('.dokumentliste li', { hasText: 'Scan Werkstatt.pdf' });
+  const zeile = s.locator('.dokumentliste li:not(.anlagezeile)', { hasText: 'Scan Werkstatt.pdf' });
   await zeile.getByRole('button', { name: /^Weitere Handlungen für/ }).click();
   await s.getByRole('menuitem', { name: 'Seiten …' }).click();
   const ansicht = s.getByRole('region', { name: /^Seiten von/ });
