@@ -235,6 +235,7 @@ Only someone with **Full administration** can confirm, after signing in again. *
 - Reference fields, views, permission rules and automations point to the new folder type, direct links to folders keep working (folders keep their ID).
 - [Archive mode](archiv.md) and deadlines stay. If the conversion would make archive mode less strict, the preview refuses it – then turn it on for the new folder type first, at least as strictly.
 - If folders of the old type are in the bin, it stays as your own folder type.
+- Fields that the new package calculates ("calculated by …") are calculated by the new package afterwards – even if the taken-over folder type had them from its old package before (#1476). A documents tab whose documents moved to another tab disappears if it is empty afterwards and the new package doesn't bring it.
 
 Update several packages with conversions **one by one**, each with its own preview – Ablago refuses them in a combined flow.
 
