@@ -14,7 +14,8 @@ import { werkzeugAbschirmung } from '../prozesse/hintergrund';
 import { gatewayBeobachtung, gegenstellenBeobachtung } from '../http/gateway';
 import { proxyNetzHinweis } from '../http/proxy';
 import { kennungHinweisJetzt } from '../einrichtung/dienstbenutzer';
-import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll/protokoll';
+import { MODULE, STUFEN, type Stufe } from '../protokoll/protokoll';
+import { protokollStand, setzeDebugAlle } from '../protokoll/alleprozesse';
 import { werkbankZahlen } from './werkbankzahlen';
 import { BeispielAblage } from '../beispiele/beispielablage';
 import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from './meldungen';
@@ -32,7 +33,7 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
 
 /** Beispiel-Ablage (#988), Protokoll und Debug-Modus. */
 function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
-  const { dienst, pakete, wer } = k;
+  const { dienst, pakete, wer, x } = k;
   const beispielAblage = () => new BeispielAblage(pakete, () => dienst.kern.repo.listePakete());
   return [
     /* ---------- Beispiel-Ablage (#988) ---------- */
@@ -57,22 +58,26 @@ function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
       handler: async (a) => {
         const q = a.query;
         const stufe = (STUFEN as readonly string[]).includes(q.stufe ?? '') ? (q.stufe as Stufe) : undefined;
-        const eintraege = protokoll.eintraege({
-          seit: Number(q.seit) || undefined,
-          stufe,
-          modul: q.modul || undefined,
-          benutzer: q.benutzer || undefined,
-          anfrage: q.anfrage || undefined,
-          suche: q.suche?.slice(0, 200) || undefined,
-          max: Math.min(2000, Number(q.max) || 500),
-        });
+        // Alle Prozesse (#1490): mit mehreren nach Zeit gemischt, jeder Eintrag mit seinem Prozess.
+        const s = await protokollStand(
+          x.verbund,
+          {
+            stufe,
+            modul: q.modul || undefined,
+            benutzer: q.benutzer || undefined,
+            anfrage: q.anfrage || undefined,
+            suche: q.suche?.slice(0, 200) || undefined,
+            max: Math.min(2000, Number(q.max) || 500),
+          },
+          q.seit?.slice(0, 2000) || undefined,
+        );
         return ok({
-          eintraege,
-          letzte: protokoll.letzteNr,
-          gespeichert: protokoll.anzahl,
-          debug: protokoll.debugStand,
+          eintraege: s.eintraege,
+          letzte: s.letzte,
+          gespeichert: s.gespeichert,
+          debug: s.debug,
           module: MODULE,
-          jeModul: protokoll.jeModul(),
+          jeModul: s.jeModul,
         });
       },
     },
@@ -82,7 +87,8 @@ function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => {
         const an = !!b(a).an;
-        const r = protokoll.setzeDebug(an);
+        // Für alle Prozesse (#1490).
+        const r = await setzeDebugAlle(x.verbund, an);
         L.system.warn(
           an
             ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: zeitzone() })}`

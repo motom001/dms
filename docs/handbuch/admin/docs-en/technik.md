@@ -148,6 +148,7 @@ The filter of **Workbench → Log** lists all modules with their name – includ
 | Backup | `sicherung` | Backup, emergency sheet, restore and test |
 | Events | `ereignisse` | Distributing events to packages and automations |
 | Automations | `automatisierung` | Runs of the automations |
+| Packages | `pakete` | Package runner and package code: output, errors, crashes, abandoned events |
 
 Sign-in and sign-in protection deliberately stay in one module: a block results from failed sign-in attempts – whoever looks for a block sees both together.
 

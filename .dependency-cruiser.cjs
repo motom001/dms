@@ -62,7 +62,7 @@ const OHNE_TUER = {
   oberflaeche: 'oberflaeche|designs|hilfe',
   pakete: 'katalogsignatur|projektschluessel|lizenztexte|paketpruefung|umwandlung',
   post: 'postfach|postfach-typen|postfach-anhaenge|postfach-oauth|imap|eingangsordner|fotostapel',
-  protokoll: 'protokoll|nachweisjournal',
+  protokoll: 'protokoll|nachweisjournal|alleprozesse',
   prozesse: 'prozesse|aufteilung|auftrag|beenden|hintergrund|werkzeugdienst|werkzeugverbindung|werkzeuggrenzen|werkzeugprotokoll',
   sicherung:
     'sicherung|sicherung-entfernt|sicherungsformat|datenbankabzug|wiederherstellung|sicherung-hilfen|sicherung-basis|sicherung-anlegen|sicherung-extern|wiederherstellung-hilfen|wiederherstellung-basis|wiederherstellung-ausfuehren|wiederherstellung-einspielen',

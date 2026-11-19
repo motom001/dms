@@ -193,7 +193,8 @@ export type Bediener = (args: unknown[], teil: (wert: unknown) => void) => unkno
  * Verbindung zu den anderen Prozessen. Mit einem Prozess ({@link einzeln}) bleibt alles im eigenen.
  * - `rufe`: Aufruf beim Leiter mit Ergebnis (Fehler kommen als Fachfehler mit Status zurück).
  * - `melde`: Meldung ohne Antwort an den Leiter, an alle (auch an sich selbst) oder an alle anderen.
- * - `frageAlle`: denselben Aufruf in jedem Prozess (z. B. Arbeitsspeicher und Wartezeit für den Systemzustand).
+ * - `frageAlle`: denselben Aufruf in jedem Prozess (z. B. Arbeitsspeicher und Wartezeit für den Systemzustand), auf
+ *   Wunsch mit Argumenten (z. B. Filter des Protokolls, #1490).
  */
 export interface Verbund {
   /** Mehr als ein Prozess (mit Hauptprozess)? */
@@ -211,7 +212,7 @@ export interface Verbund {
   rufe<T>(name: string, args?: unknown[], o?: { teil?: (wert: unknown) => void; ms?: number }): Promise<T>;
   melde(name: string, daten?: unknown, an?: 'leiter' | 'alle' | 'andere'): void;
   hoere(name: string, f: (daten: unknown) => void): void;
-  frageAlle<T>(name: string, ms?: number): Promise<Array<ProzessInfo & { wert: T | null }>>;
+  frageAlle<T>(name: string, ms?: number, args?: unknown[]): Promise<Array<ProzessInfo & { wert: T | null }>>;
   prozesse(): ProzessInfo[];
   /** Neustarts abgestürzter Prozesse seit dem Start (#874); mit der Art der Ausnahme, wenn der Prozess sie meldete (#895). */
   neustarts(): Neustarts;
@@ -304,8 +305,8 @@ class Einzeln extends Grund implements Verbund {
   melde(name: string, daten?: unknown, an: 'leiter' | 'alle' | 'andere' = 'leiter') {
     if (an !== 'andere') queueMicrotask(() => this.verteile(name, daten));
   }
-  async frageAlle<T>(name: string): Promise<Array<ProzessInfo & { wert: T | null }>> {
-    const wert = this.bediener.has(name) ? ((await this.lokal(name, [], () => {}).catch(() => null)) as T) : null;
+  async frageAlle<T>(name: string, _ms?: number, args: unknown[] = []): Promise<Array<ProzessInfo & { wert: T | null }>> {
+    const wert = this.bediener.has(name) ? ((await this.lokal(name, args, () => {}).catch(() => null)) as T) : null;
     return [{ nr: 1, pid: process.pid, leiter: true, wert }];
   }
   prozesse(): ProzessInfo[] {
@@ -446,8 +447,8 @@ class Teil extends Grund implements Verbund {
     this.sende({ art: 'melde', an, name, daten });
   }
 
-  frageAlle<T>(name: string, ms = 2000): Promise<Array<ProzessInfo & { wert: T | null }>> {
-    return this.warte({ art: 'frageAlle', name, ms }, ms + 1000);
+  frageAlle<T>(name: string, ms = 2000, args: unknown[] = []): Promise<Array<ProzessInfo & { wert: T | null }>> {
+    return this.warte({ art: 'frageAlle', name, ms, args }, ms + 1000);
   }
 
   prozesse() {
@@ -702,7 +703,7 @@ class Leitung {
       const k = this.naechste++;
       this.fragen.set(k, { s, info: i });
       s.offen.add(k);
-      this.sende(x.w, { art: 'rufe', id: k, name: m.name, args: [] });
+      this.sende(x.w, { art: 'rufe', id: k, name: m.name, args: Array.isArray(m.args) ? m.args : [] });
     }
     this.sammlungFertig(s);
   }

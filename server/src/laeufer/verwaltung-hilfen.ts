@@ -19,7 +19,8 @@ export interface AktionsZugang {
   dateien: AktionsDatei[];
 }
 
-export const log = protokoll.modul('werkbank');
+/** Meldungen des Paket-Läufers und des Paket-Codes im Modul „pakete“ (#1490). */
+export const log = protokoll.modul('pakete');
 
 export const STANDARD_GRENZEN: Grenzen = { speicherMB: 256, sekunden: 120, parallel: 2 };
 /** Wiederholungen nach Fehlschlag: 1, 5, 30 Minuten, 2, 6 Stunden – danach aufgegeben. */
