@@ -1,18 +1,7 @@
 /** Paket selbst erstellen (#374): Auswahl, Prüfung, Export – und zurück in ein frisches DMS. */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import {
-  copyFileSync,
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
@@ -791,12 +780,14 @@ describe('Paket selbst erstellen (#374)', () => {
         }),
         ICH,
       );
-      // pruefen.py prüft nur Ordner innerhalb seiner Registry: Kopie von Werkzeug und Schemas, Paket unter pakete/<id>.
+      // pruefen.py prüft nur Ordner innerhalb seiner Registry: Kopie der ganzen Ordner `werkzeuge` und `schema` – so
+      // bricht der Test nicht, wenn pruefen.py neue Hilfsdateien bekommt (#1386) –, Paket unter pakete/<id>. Ein neues
+      // Paket trägt seine Id in werkzeuge/ids.txt ein (Registry #173); hier nur in der Kopie.
       const wurzel = mkdtempSync(join(tmpdir(), 'dms-registry-'));
       try {
-        mkdirSync(join(wurzel, 'werkzeuge'));
-        copyFileSync(join(REGISTRY, 'werkzeuge/pruefen.py'), join(wurzel, 'werkzeuge/pruefen.py'));
-        cpSync(join(REGISTRY, 'schema'), join(wurzel, 'schema'), { recursive: true });
+        for (const ordner of ['werkzeuge', 'schema']) cpSync(join(REGISTRY, ordner), join(wurzel, ordner), { recursive: true });
+        const ids = join(wurzel, 'werkzeuge/ids.txt');
+        if (existsSync(ids)) writeFileSync(ids, `${readFileSync(ids, 'utf8').trimEnd()}\nfamilie_vertraege\n`);
         for (const [name, daten] of liesZip(z.daten)) {
           const ziel = join(wurzel, 'pakete', name);
           mkdirSync(dirname(ziel), { recursive: true });
