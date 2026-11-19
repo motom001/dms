@@ -8,6 +8,11 @@ services:
   dms:
     image: ghcr.io/motom001/dms-komplett:stabil
     restart: unless-stopped
+    # Ohne Administratorrechte (#1354): Ablago läuft als eigener Benutzer (Vorgabe 1000:1000) und kann keine Rechte
+    # zurückgewinnen. Sollen die Ordner einem Benutzer des NAS gehören, PUID und PGID unter environment setzen
+    # (die Zahlen zeigt „id <benutzer>“), z. B. PUID: "1026" und PGID: "100".
+    security_opt:
+      - no-new-privileges:true
     # Beim Stoppen fährt der Container erst Ablago, dann die Datenbank sauber herunter. Nicht entfernen:
     # Ohne diese Zeile beendet Docker PostgreSQL nach 10 Sekunden hart (#943).
     stop_grace_period: 60s

@@ -92,6 +92,37 @@ With two containers, `postgres:17` stays open for security updates of the 17 ser
 
     Before every release, CI also checks the images for known security vulnerabilities. More in the [security policy](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
+### Without administrator rights (root) { #ohne-root }
+
+Ablago no longer runs as administrator (root) inside the container but as its own user `ablago` (ID 1000, group 1000). The programs Ablago uses to read and rasterise PDFs (poppler and qpdf) run separately again, as user `ablago-werkzeug` (61000) – with a limit for memory (default 1024 MB per call), CPU time and file size. They may only write to their own working folder and can reach neither the folders under `/data` nor the database. If a PDF needs more, only that one step fails with a message (for example when redacting); Ablago keeps running. The image needs no additional rights from Docker for this.
+
+**What happens on the first start after the update:** The start script takes over, once, everything under `/data/files`, `/data/geheim`, `/data/sicherung` and `/data/export` that still belongs to root (or another user), for the Ablago user – on your NAS's disk. The log then shows for each folder `Ohne root (#1354): übernehme /data/files für Benutzer 1000 und Gruppe 1000 – einmalig …`, and the start page shows **"Setting up folders for Ablago (once)"**. With many files this takes a few minutes; Ablago then starts as usual. With named Docker volumes and the folders of the templates there is nothing to do.
+
+- Other users **inside the container** lose access to these four folders (`o-rwx`); owner and group keep their rights.
+- **Your own NAS user:** If the folders should belong to a user of your NAS (for example so you can copy backups through the file share), set `PUID` and `PGID` in the compose file to that user's IDs. `id <user>` on the NAS command line shows them; on a Synology often `1026` and `100` (group `users`):
+  ```yaml
+      environment:
+        PUID: "1026"
+        PGID: "100"
+  ```
+  On the next start the script takes over the folders for these IDs.
+- **Inbox folder:** What the scanner puts into `/eingang` usually belongs to a NAS user. Ablago only takes over what belongs to root there. If it cannot move anything in that folder, the log shows a warning – then set `PUID`/`PGID` to the owner of the folder or give Ablago write access.
+- **`dms` command:** `docker exec <container> dms …` runs as the Ablago user by itself.
+- **Going back to the previous version** works without extra steps: older versions run as root and keep reading the taken-over folders.
+
+**If the container does not start:** If the log says `FEHLER: Ablago (Benutzer 1000, Gruppe 1000) kann nicht in /data/sicherung schreiben, und die Rechte ließen sich nicht übernehmen`, the script could not change the permissions – usually with a network share (NFS with `root_squash`), folders mounted read-only, or ACLs. The start page names the reason; after a few minutes the container stops. Fix it in one of two ways:
+
+1. set `PUID` and `PGID` to the owner of the folders (`ls -ln` on the NAS shows the numbers), or
+2. give the folders to Ablago once on the NAS, e.g. `sudo chown -R 1000:1000 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung`.
+
+**More settings:**
+
+- `DMS_WERKZEUG_SPEICHER_MB`: memory per call of a document tool in MB (128–65536, default `1024`, `0` = no limit). Raise it only for unusually large pages such as building plans, posters or very large scans; when the limit hits, the message names the setting.
+- `docker run --user …` or `user:` in the compose file still works. The container then takes over no folders, and the document tools run as the same user as Ablago (with the same limits).
+- The templates also contain `security_opt: [no-new-privileges:true]`: no process in the container can regain rights afterwards. For an existing compose file the line is optional.
+
+**dms-komplett:** The `dms` role of the database inside the container is no longer a superuser. Over `127.0.0.1` it signs in with a password that the container sets anew on every start and hands only to Ablago – there is nothing to enter. To get in by hand, use the socket as root: `docker exec -it <container> psql -h /run/postgresql -U dms -d dms`.
+
 ### Text recognition as a package (from 0.134) { #texterkennung-als-paket-ab-0134 }
 
 Text recognition (Tesseract) is no longer in the image; this makes the image smaller (when it was added in 0.11, about 50 MB came on top). Scans and photos are now recognised by the package **Text recognition (German and English)** (identifier `texterkennung`) from the catalogue:

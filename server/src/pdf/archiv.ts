@@ -8,9 +8,8 @@
  * „nie nachladen“: kein JavaScript, keine Aktionen, keine Verweise auf externe Inhalte. Die volle Konformität prüft
  * das Paket in seiner CI (veraPDF).
  */
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner, schreibeWerkzeugDatei } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFObject, PDFRawStream, PDFRef, PDFStream, PDFString } from 'pdf-lib';
 import type { SchwaerzSeite } from '../../../shared/src/schwaerzen';
@@ -174,10 +173,10 @@ export async function textebeneWoerter(inhalt: Uint8Array): Promise<SchwaerzSeit
   } catch {
     return null;
   }
-  const dir = await mkdtemp(join(tmpdir(), 'dms-archiv-'));
+  const dir = await werkzeugOrdner('dms-archiv-');
   try {
     const ein = join(dir, 'ein.pdf');
-    await writeFile(ein, inhalt);
+    await schreibeWerkzeugDatei(ein, inhalt);
     const d = await popplerDrehungen(ein, drehungen);
     const html = await starte('pdftotext', ['-bbox', '-cropbox', '-enc', 'UTF-8', ein, '-']).catch(() => null);
     if (html === null) return null;

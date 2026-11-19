@@ -210,6 +210,21 @@ export const AUSGABE_GROSS = 64 * MB;
 /** PDF/A aus Ghostscript (Ausgabe geht über stdout). */
 export const AUSGABE_ARCHIV = 256 * MB;
 
+/* ---------- Dokumentwerkzeuge (#1354, prozesse/werkzeuggrenzen.ts) ---------- */
+
+/** Arbeitsspeicher je Aufruf eines Dokumentwerkzeugs (MB), wenn DMS_WERKZEUG_SPEICHER_MB fehlt. */
+export const WERKZEUG_SPEICHER_MB_VORGABE = 1024;
+/** Einheiten für ulimit: -v zählt KB, -f Blöcke zu 512 Byte. */
+export const KB_JE_MB = MB / KB;
+export const BLOECKE_JE_MB = MB / 512;
+/** Größte Datei, die ein Werkzeug schreiben darf (ulimit -f) und die Ablago aus dem Arbeitsordner liest. */
+export const WERKZEUG_DATEI_MB = 2048;
+export const WERKZEUG_DATEI_MAX = WERKZEUG_DATEI_MB * MB;
+/** Längste Zeile eines Auftrags an den Werkzeugdienst (Argumente sind Pfade und Schalter). */
+export const WERKZEUG_AUFTRAG_MAX = 256 * KB;
+/** Größter Rahmen vom Werkzeugdienst (Stücke einer Pipe sind höchstens 64 KB). */
+export const WERKZEUG_RAHMEN_MAX = 4 * MB;
+
 /* ---------- Sicherung und Platz ---------- */
 
 /** Stücke beim Hochladen einer Sicherung außer Haus (#585). */

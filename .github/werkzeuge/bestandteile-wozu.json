@@ -47,14 +47,19 @@
       "varianten": ["dms-komplett"]
     },
     "tini": {
-      "wozu": "Startet PostgreSQL und Ablago und beendet beide sauber.",
-      "issues": [208],
-      "varianten": ["dms-komplett"]
+      "wozu": "Erster Prozess im Container: gibt Signale weiter und beendet Ablago (und in dms-komplett PostgreSQL) sauber.",
+      "issues": [208, 1354],
+      "varianten": ["dms", "dms-komplett"]
     },
     "su-exec": {
-      "wozu": "Startet PostgreSQL unter einem eigenen Benutzer statt als root.",
-      "issues": [208],
-      "varianten": ["dms-komplett"]
+      "wozu": "Startet PostgreSQL unter einem eigenen Benutzer statt als root (dms-komplett).",
+      "issues": [208, 1354],
+      "varianten": ["dms", "dms-komplett"]
+    },
+    "setpriv": {
+      "wozu": "Startet Ablago und die Dokumentwerkzeuge als eigene Benutzer statt als root, mit „no new privileges“ (aus util-linux).",
+      "issues": [1354],
+      "varianten": ["dms", "dms-komplett"]
     }
   }
 }

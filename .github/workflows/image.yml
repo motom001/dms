@@ -535,10 +535,27 @@ jobs:
         run: |
           docker run --rm -v "$PWD/server/test/pakete:/pakete:ro" dms:probe pakete-pruefen /pakete/basis
           if docker run --rm dms:probe pakete-pruefen; then echo "::error::pakete-pruefen ohne Ordner muss scheitern"; exit 1; fi
+      # Ohne root (#1354), auf beiden Architekturen: Ablago läuft als ablago (1000), die Dokumentwerkzeuge im Werkzeugdienst
+      # als ablago-werkzeug (61000) mit Speichergrenze, und ein riesiges PDF endet nur im Werkzeug
+      # (.github/werkzeuge/werkzeuge-pruefen.mjs). Ohne Datenbank startet Ablago im Einrichtungsmodus – das genügt dafür.
+      # setpriv muss das aus util-linux sein: busybox bringt ein gleichnamiges ohne --reuid mit.
+      - name: Ohne root, Dokumentwerkzeuge getrennt und begrenzt
+        run: |
+          docker run --rm --entrypoint setpriv dms:probe --version | grep -q util-linux || { echo "::error::setpriv im Image ist nicht das aus util-linux"; exit 1; }
+          docker run -d --name ohne-root -p 18091:3000 dms:probe >/dev/null
+          for _ in $(seq 1 60); do curl -fsS --connect-timeout 5 --max-time 10 http://127.0.0.1:18091/api/konto/status >/dev/null 2>&1 && break; sleep 1; done
+          uid() { docker exec ohne-root sh -c 'for p in $(pgrep -f "^node .*$1"); do awk "/^Uid:/ {print \$2}" /proc/$p/status; done | sort -u' uid "$1"; }
+          [ "$(uid server/dist/index.js)" = 1000 ] || { echo "::error::Ablago läuft nicht als Benutzer 1000: $(uid server/dist/index.js | tr '\n' ' ')"; docker logs --tail 40 ohne-root; exit 1; }
+          [ "$(uid server/dist/werkzeugdienst.js)" = 61000 ] || { echo "::error::Werkzeugdienst läuft nicht als Benutzer 61000"; docker logs --tail 40 ohne-root; exit 1; }
+          docker cp .github/werkzeuge/werkzeuge-pruefen.mjs ohne-root:/tmp/werkzeuge-pruefen.mjs
+          ergebnis=$(docker exec ohne-root ablago-als node /tmp/werkzeuge-pruefen.mjs) || { echo "$ergebnis"; docker logs --tail 40 ohne-root; exit 1; }
+          echo "::notice title=Dokumentwerkzeuge ${{ matrix.plattform }}::$ergebnis"
+          curl -fsS --max-time 10 http://127.0.0.1:18091/api/konto/status >/dev/null || { echo "::error::Ablago antwortet nach dem riesigen PDF nicht mehr"; exit 1; }
+          docker rm -f ohne-root >/dev/null
       # Einrichtungsskript für den Raspberry Pi (#578); shellcheck ist auf den GitHub-Rechnern vorinstalliert.
       - name: Einrichtungsskript prüfen
         if: matrix.plattform == 'linux/amd64'
-        run: shellcheck deploy/raspberry-pi/einrichten.sh .github/werkzeuge/update-test.sh .github/werkzeuge/stabil-pruefen.sh .github/werkzeuge/stabil-pruefen.test.sh .github/werkzeuge/stabil-bisher.sh .github/werkzeuge/stabil-auswahl.sh .github/werkzeuge/pr-labels.sh .github/werkzeuge/apk-versionen-vergleichen.sh .github/werkzeuge/apk-versionen-vergleichen.test.sh
+        run: shellcheck deploy/image/einstieg.sh deploy/image/start-hilfen.sh deploy/image/ablago-als.sh deploy/image/werkzeug-grenzen.sh deploy/raspberry-pi/einrichten.sh .github/werkzeuge/update-test.sh .github/werkzeuge/stabil-pruefen.sh .github/werkzeuge/stabil-pruefen.test.sh .github/werkzeuge/stabil-bisher.sh .github/werkzeuge/stabil-auswahl.sh .github/werkzeuge/pr-labels.sh .github/werkzeuge/apk-versionen-vergleichen.sh .github/werkzeuge/apk-versionen-vergleichen.test.sh
       # dms-komplett (#208): Ablago und PostgreSQL in einem Container – auf beiden Architekturen.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

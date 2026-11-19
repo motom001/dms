@@ -25,7 +25,7 @@
     },
     "server": {
       "entry": [
-        "src/{index,ablago,dms,pakete-pruefen,vorstart}.ts",
+        "src/{index,ablago,dms,pakete-pruefen,vorstart,werkzeugdienst}.ts",
         "src/laeufer/{prozess,arbeiter}.ts",
         "src/arbeit/arbeitsfaden.ts",
         "werkzeuge/*.ts",
@@ -62,6 +62,7 @@
     "pdftotext",
     "qpdf",
     "sha256sum",
+    "mkfifo",
     // Mermaid-CLI: optional, nur wenn lokal vorhanden (abhaengigkeitsbild.mjs prüft das selbst).
     "mmdc",
   ],

@@ -18,9 +18,8 @@
  * Bilder (JPEG, PNG) werden genauso behandelt (Ausrichtung laut EXIF beachtet) und bleiben Bilder desselben
  * Typs – ohne EXIF-Daten.
  */
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei, werkzeugDateien } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import {
@@ -220,10 +219,10 @@ const ohneText = (s: SchwaerzSeite) => !s.woerter.length;
 export async function analysiere(inhalt: Buffer, mime: string): Promise<Analyse> {
   const pdf = await arbeitsPdf(inhalt, mime);
   const lage = await seitenlage(pdf);
-  const dir = await mkdtemp(join(tmpdir(), 'dms-schwarz-'));
+  const dir = await werkzeugOrdner('dms-schwarz-');
   try {
     const ein = join(dir, 'ein.pdf');
-    await writeFile(ein, pdf);
+    await schreibeWerkzeugDatei(ein, pdf);
     const drehungen = await popplerDrehungen(ein, lage);
     let html: string;
     try {
@@ -244,10 +243,10 @@ export async function analysiere(inhalt: Buffer, mime: string): Promise<Analyse>
 /** Eine Seite als JPEG für den Dialog (längste Seite `px`). */
 export async function seitenbild(inhalt: Buffer, mime: string, nr: number, px = ANSICHT_PX): Promise<Buffer | null> {
   const pdf = await arbeitsPdf(inhalt, mime);
-  const dir = await mkdtemp(join(tmpdir(), 'dms-schwarz-'));
+  const dir = await werkzeugOrdner('dms-schwarz-');
   try {
     const ein = join(dir, 'ein.pdf');
-    await writeFile(ein, pdf);
+    await schreibeWerkzeugDatei(ein, pdf);
     try {
       await starte('pdftoppm', [
         '-cropbox',
@@ -266,8 +265,8 @@ export async function seitenbild(inhalt: Buffer, mime: string, nr: number, px = 
     } catch (e) {
       popplerFehler(e, t('meldungen.schwaerzen.die-seite-liess-sich'));
     }
-    const datei = (await readdir(dir)).find((n) => n.startsWith('s-') && n.endsWith('.jpg'));
-    return datei ? await readFile(join(dir, datei)) : null;
+    const datei = (await werkzeugDateien(dir)).find((n) => n.startsWith('s-') && n.endsWith('.jpg'));
+    return datei ? await liesWerkzeugDatei(join(dir, datei)) : null;
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -336,7 +335,7 @@ async function kodiere(bilder: Roh[], format: 'jpeg' | 'png', grau: boolean, dir
     );
   }
   const ein = join(dir, `${tag}.pdf`);
-  await writeFile(ein, await mini.save());
+  await schreibeWerkzeugDatei(ein, await mini.save());
   const endung = format === 'jpeg' ? '.jpg' : '.png';
   try {
     await starte('pdftoppm', [
@@ -352,11 +351,11 @@ async function kodiere(bilder: Roh[], format: 'jpeg' | 'png', grau: boolean, dir
   } catch (e) {
     popplerFehler(e, t('meldungen.schwaerzen.die-seiten-liessen-sich'));
   }
-  const namen = (await readdir(dir))
+  const namen = (await werkzeugDateien(dir))
     .filter((n) => n.startsWith(`${tag}-`) && n.endsWith(endung))
     .sort((a, b) => Number(a.slice(tag.length + 1, -endung.length)) - Number(b.slice(tag.length + 1, -endung.length)));
   if (namen.length !== bilder.length) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-liessen-sich-2'));
-  const r = await Promise.all(namen.map((n) => readFile(join(dir, n))));
+  const r = await Promise.all(namen.map((n) => liesWerkzeugDatei(join(dir, n))));
   await Promise.all(namen.map((n) => rm(join(dir, n), { force: true })));
   await rm(ein, { force: true });
   return r;
@@ -448,10 +447,10 @@ export async function schwaerze(
   if (analyse.seiten.length !== n) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-des-dokuments'));
   const bild = mime !== 'application/pdf';
   const bleiben = verbleibende(analyse.seiten, bereiche);
-  const dir = await mkdtemp(join(tmpdir(), 'dms-schwarz-'));
+  const dir = await werkzeugOrdner('dms-schwarz-');
   try {
     const ein = join(dir, 'ein.pdf');
-    await writeFile(ein, pdf);
+    await schreibeWerkzeugDatei(ein, pdf);
     // Bilder in Originalgröße (72 dpi auf der 1-pt-=-1-px-Seite), PDFs in der Ergebnis-Auflösung.
     const groessenArgs = bild
       ? analyse.seiten[0].breite > BILD_MAX_PX || analyse.seiten[0].hoehe > BILD_MAX_PX
@@ -466,13 +465,13 @@ export async function schwaerze(
       } catch (x) {
         popplerFehler(x, t('meldungen.schwaerzen.die-seiten-liessen-sich-3'));
       }
-      const namen = (await readdir(dir))
+      const namen = (await werkzeugDateien(dir))
         .filter((x) => /^r-\d+\.ppm$/.test(x))
         .sort((p, q) => Number(p.slice(2, -4)) - Number(q.slice(2, -4)));
       if (namen.length !== e - a + 1) throw new Fachfehler(422, t('meldungen.schwaerzen.die-seiten-liessen-sich-4'));
       const roh: Roh[] = [];
       for (const [j, name] of namen.entries()) {
-        const px = await readFile(join(dir, name));
+        const px = await liesWerkzeugDatei(join(dir, name));
         await rm(join(dir, name), { force: true });
         const k = pnmKopf(px);
         const nr = a + j;

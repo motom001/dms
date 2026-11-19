@@ -1,6 +1,5 @@
-import { execFile } from '../prozesse/hintergrund';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile, werkzeugOrdner, liesWerkzeugDatei, schreibeWerkzeugDatei, werkzeugDateien } from '../prozesse/hintergrund';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { crc32, deflate, deflateSync } from 'node:zlib';
 import { promisify } from 'node:util';
@@ -306,17 +305,17 @@ async function rastere(
   pdf: Buffer,
   o: { format: 'jpeg' | 'png'; dpi?: number; breite?: number; grau?: boolean; qualitaet?: number },
 ): Promise<Buffer[]> {
-  const dir = await mkdtemp(join(tmpdir(), 'dms-demo-'));
+  const dir = await werkzeugOrdner('dms-demo-');
   try {
-    await writeFile(join(dir, 'q.pdf'), pdf);
+    await schreibeWerkzeugDatei(join(dir, 'q.pdf'), pdf);
     const args = [`-${o.format}`];
     if (o.grau) args.push('-gray');
     if (o.breite) args.push('-scale-to-x', String(o.breite), '-scale-to-y', '-1');
     else args.push('-r', String(o.dpi ?? 150));
     if (o.format === 'jpeg') args.push('-jpegopt', `quality=${o.qualitaet ?? 85}`);
     await starte('pdftoppm', [...args, join(dir, 'q.pdf'), join(dir, 's')]);
-    const dateien = (await readdir(dir)).filter((f) => f.startsWith('s')).sort();
-    return await Promise.all(dateien.map((f) => readFile(join(dir, f))));
+    const dateien = (await werkzeugDateien(dir)).filter((f) => f.startsWith('s')).sort();
+    return await Promise.all(dateien.map((f) => liesWerkzeugDatei(join(dir, f))));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

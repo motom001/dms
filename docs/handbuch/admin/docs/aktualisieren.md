@@ -92,6 +92,37 @@ Bei zwei Containern bleibt `postgres:17` für Sicherheits-Updates der Reihe 17 o
 
     Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Mehr dazu in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
+### Ohne Administratorrechte (root) { #ohne-root }
+
+Ablago läuft im Container nicht mehr als Administrator (root), sondern als eigener Benutzer `ablago` (Kennung 1000, Gruppe 1000). Die Programme, mit denen Ablago PDFs liest und rastert (poppler und qpdf), laufen noch einmal getrennt davon als Benutzer `ablago-werkzeug` (61000) – mit einer Grenze für den Arbeitsspeicher (Vorgabe 1024 MB je Aufruf), die Rechenzeit und die Größe einer Datei. Sie dürfen nur in ihren eigenen Arbeitsordner schreiben und kommen weder an die Ordner unter `/data` noch an die Datenbank. Braucht ein PDF mehr, scheitert nur dieser eine Schritt mit einer Meldung (z. B. beim Schwärzen); Ablago läuft weiter. Das Image braucht dafür keine zusätzlichen Rechte von Docker.
+
+**Was beim ersten Start nach dem Update passiert:** Das Start-Skript übernimmt einmal alles unter `/data/files`, `/data/geheim`, `/data/sicherung` und `/data/export`, was noch root (oder einem anderen Benutzer) gehört, für den Benutzer von Ablago – auf dem Datenträger des NAS. Im Protokoll steht dann je Ordner `Ohne root (#1354): übernehme /data/files für Benutzer 1000 und Gruppe 1000 – einmalig …`, und die Startseite zeigt **„Ordner werden für Ablago eingerichtet (einmalig)“**. Bei vielen Dateien dauert das einige Minuten, danach startet Ablago wie gewohnt. Mit benannten Docker-Volumes und den Ordnern der Vorlagen musst du nichts tun.
+
+- Andere Benutzer **im Container** verlieren das Recht auf diese vier Ordner (`o-rwx`); Besitzer und Gruppe behalten ihre Rechte.
+- **Eigener Benutzer des NAS:** Sollen die Ordner einem Benutzer des NAS gehören (etwa damit du Sicherungen über die Dateifreigabe kopieren kannst), setze in der Compose-Datei `PUID` und `PGID` auf dessen Kennungen. Die Zahlen zeigt `id <benutzer>` auf der Kommandozeile des NAS, auf einer Synology oft `1026` und `100` (Gruppe `users`):
+  ```yaml
+      environment:
+        PUID: "1026"
+        PGID: "100"
+  ```
+  Beim nächsten Start übernimmt das Skript die Ordner für diese Kennungen.
+- **Eingangsordner:** Was der Scanner in `/eingang` ablegt, gehört meist einem Benutzer des NAS. Ablago übernimmt dort nur, was root gehört. Kann es im Ordner nichts verschieben, steht im Protokoll eine Warnung – dann `PUID`/`PGID` auf den Besitzer des Ordners setzen oder Ablago Schreibrechte geben.
+- **Befehl `dms`:** `docker exec <container> dms …` läuft von selbst als Benutzer von Ablago.
+- **Zurück auf die vorige Version** geht ohne Zutun: Ältere Versionen laufen als root und lesen die übernommenen Ordner weiter.
+
+**Wenn der Container nicht startet:** Steht im Protokoll `FEHLER: Ablago (Benutzer 1000, Gruppe 1000) kann nicht in /data/sicherung schreiben, und die Rechte ließen sich nicht übernehmen`, konnte das Skript die Rechte nicht ändern – meist bei einer Netzwerkfreigabe (NFS mit `root_squash`), bei schreibgeschützt eingebundenen Ordnern oder ACLs. Die Startseite nennt den Grund, nach einigen Minuten endet der Container. Abhilfe, eins von beiden:
+
+1. `PUID` und `PGID` auf den Besitzer der Ordner setzen (`ls -ln` auf dem NAS zeigt die Zahlen), oder
+2. auf dem NAS einmal die Ordner Ablago geben, z. B. `sudo chown -R 1000:1000 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung`.
+
+**Weitere Einstellungen:**
+
+- `DMS_WERKZEUG_SPEICHER_MB`: Arbeitsspeicher je Aufruf eines Dokumentwerkzeugs in MB (128–65536, Vorgabe `1024`, `0` = ohne Grenze). Größer nur für außergewöhnlich große Seiten wie Baupläne, Plakate oder sehr große Scans; greift die Grenze, nennt die Meldung den Schalter.
+- `docker run --user …` bzw. `user:` in der Compose-Datei geht weiterhin. Dann übernimmt der Container keine Ordner, und die Dokumentwerkzeuge laufen unter demselben Benutzer wie Ablago (mit denselben Grenzen).
+- In den Vorlagen steht zusätzlich `security_opt: [no-new-privileges:true]`: Kein Prozess im Container kann danach Rechte zurückgewinnen. Für eine bestehende Compose-Datei ist die Zeile freiwillig.
+
+**dms-komplett:** Die Rolle `dms` der Datenbank im Container ist kein Superuser mehr. Über `127.0.0.1` meldet sie sich mit einem Passwort an, das der Container bei jedem Start neu setzt und nur Ablago mitgibt – eintragen musst du nichts. Von Hand kommst du als root über den Socket hinein: `docker exec -it <container> psql -h /run/postgresql -U dms -d dms`.
+
 ### Texterkennung als Paket (ab 0.134)
 
 Die Texterkennung (Tesseract) steckt nicht mehr im Image; das Image ist dadurch kleiner (beim Einbau in 0.11 kamen rund 50 MB dazu). Scans und Fotos erkennt jetzt das Paket **Texterkennung (Deutsch und Englisch)** (Kennung `texterkennung`) aus dem Katalog:

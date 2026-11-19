@@ -3,56 +3,44 @@
 #
 # - Ordner /data/postgres und /data/postgres/daten für postgres richten und als postgres probeschreiben (#943).
 # - Erster Start: Datenbank in /data/postgres/daten anlegen (UTF-8, Locale C).
-# - PostgreSQL lauscht nur innerhalb des Containers (127.0.0.1) mit „trust“: kein Passwort,
-#   von außen nicht erreichbar.
+# - PostgreSQL lauscht nur innerhalb des Containers (127.0.0.1), von außen nicht erreichbar. Kein Passwort, das jemand
+#   kennen muss: Das für Ablago setzt dieses Skript selbst (#1354, siehe unten).
 # - Stopp (docker stop): erst Ablago, dann PostgreSQL sauber („fast“) herunterfahren.
 # - Endet einer der beiden Prozesse, endet der Container; Docker startet ihn neu.
 # - Startseite sofort (#1250): Vom ersten Augenblick an zeigt der Vorstart (server/dist/vorstart.js) unter dem Port die
 #   Seite „Ablago startet …“ mit dem Schritt (Datenbank wird angelegt, startet, Ablago startet) – auch bei einem Fehler
 #   vor Ablago, dann mit Grund und Ausweg. Ablago übernimmt den Port von ihm (DMS_VORSTART_PID).
-# - Alles läuft auch ohne root (#1354): Die Datei mit dem Schritt liegt in /tmp, der Port ist über 1024.
+# - Ohne root (#1354): Das Skript läuft als root, Ablago, der Vorstart und die Dokumentwerkzeuge laufen als eigene
+#   Benutzer (deploy/image/start-hilfen.sh), PostgreSQL wie bisher als postgres. Die Rolle dms ist kein Superuser mehr
+#   und meldet sich über 127.0.0.1 mit einem Passwort an, das dieses Skript bei jedem Start neu setzt und nur Ablago
+#   mitgibt; über den Socket kommen nur postgres und root hinein. So erreicht kein anderer Benutzer im Container die
+#   Datenbank.
 set -eu
 
 # Für die Probe ohne Container lassen sich Ordner und Startbefehl umstellen.
 WURZEL=${DMS_PG_WURZEL:-/data/postgres}
 PGDATA="$WURZEL/daten"
 SOCKET=${DMS_PG_SOCKET:-/run/postgresql}
+HBA=${DMS_PG_HBA:-/usr/local/share/ablago/pg_hba.conf}
 LISTE="Wachsen und umziehen: https://help.ablago.app/admin/aktuell/wachsen/"
 HILFE_START="Hilfe: https://help.ablago.app/installieren/aktuell/komplett/#container-startet-nicht"
 log() { echo "[dms-komplett] $*"; }
-
-# Vorstart (#1250): Schritt für die Seite in eine Datei (eine Zeile), der Vorstart liest sie. Für die Probe ohne
-# Container lässt er sich abschalten (DMS_VORSTART=true) oder umstellen.
-VORSTART_DATEI=${DMS_VORSTART_DATEI:-/tmp/ablago-vorstart}
-# Nach einem Fehler vor Ablago so lange die Seite mit dem Grund zeigen, dann endet der Container (Docker startet ihn neu).
-FEHLER_WARTEN_S=${DMS_START_FEHLER_WARTEN_S:-300}
-VS=""
-stand() { { printf '%s\n' "$1" > "$VORSTART_DATEI.neu" && mv -f "$VORSTART_DATEI.neu" "$VORSTART_DATEI"; } 2>/dev/null || true; }
-vorstart() {
-  if [ -n "$VS" ] && kill -0 "$VS" 2>/dev/null; then return 0; fi
-  DMS_VORSTART_DATEI="$VORSTART_DATEI" ${DMS_VORSTART:-node /app/server/dist/vorstart.js} &
-  VS=$!
-}
-vorstart_ende() {
-  if [ -n "$VS" ]; then kill -TERM "$VS" 2>/dev/null || true; wait "$VS" 2>/dev/null || true; fi
-  VS=""
-}
-# Grund auf der Seite zeigen, eine Weile warten, dann zurück (der Aufrufer beendet mit exit 1).
-fehlerseite() {
-  stand "fehler $1"
-  vorstart
-  if [ "$FEHLER_WARTEN_S" -gt 0 ] 2>/dev/null; then
-    log "Die Seite unter dem Port nennt den Grund. Der Container endet in $FEHLER_WARTEN_S s und startet dann neu."
-    trap 'vorstart_ende; exit 1' TERM INT
-    sleep "$FEHLER_WARTEN_S" & wait $! || true
-    trap - TERM INT
-  fi
-  vorstart_ende
-}
+# Vorstart (#1250), Benutzer von Ablago und Werkzeugdienst (#1354).
+# shellcheck source=deploy/image/start-hilfen.sh disable=SC1091
+. "${DMS_START_HILFEN:-/usr/local/lib/ablago/start-hilfen.sh}"
+benutzer_pruefen || { fehlerseite daten-rechte; exit 1; }
 DMS_VORSTART_SEIT=$(date +%s)
 export DMS_VORSTART_SEIT
 stand pg-start
 vorstart
+# Ordner unter /data für Ablago übernehmen (#1354), Eingangsordner prüfen, Werkzeugdienst starten.
+if ! ordner_uebernehmen; then
+  fehlerseite daten-rechte
+  exit 1
+fi
+eingang_pruefen
+werkzeuge_starten
+stand pg-start
 
 SOLL=$(postgres --version | sed -n 's/.* \([0-9][0-9]*\)\..*/\1/p')
 mkdir -p "$SOCKET"
@@ -64,6 +52,8 @@ mkdir -p "$PGDATA" 2>/dev/null || true
 [ "$(stat -c %U "$PGDATA" 2>/dev/null)" = postgres ] || chown -R postgres:postgres "$WURZEL" 2>/dev/null || true
 chown postgres:postgres "$WURZEL" "$SOCKET" 2>/dev/null || true
 chmod 700 "$WURZEL" "$PGDATA" 2>/dev/null || true
+# Socket nur für postgres (und root, #1354): Dort gilt „trust“, andere Benutzer im Container kommen nicht hinein.
+chmod 700 "$SOCKET" 2>/dev/null || true
 
 # Schreibprobe als postgres (#943), bevor initdb oder PostgreSQL startet: sonst sähe man nur „Permission denied“
 # von initdb und fände den Grund erst mit ls -la im Ordner.
@@ -103,22 +93,44 @@ stand pg-start
 # pg_stat_statements (#894): zählt je Abfrage Anzahl und Rechenzeit – der Lasttest nennt damit die teuersten Abfragen.
 # Über die Befehlszeile, damit es auch für schon bestehende Datenbanken in /data/postgres gilt (ohne postgresql.conf
 # anzufassen). Kostet wenig (rund 1–2 % Rechenzeit je Abfrage, wenige MB Speicher); Ablago liest die Werte nur im Lasttest.
+# Eigene pg_hba.conf (#1354), auch für schon bestehende Datenbanken: Socket „trust“ (nur postgres und root), über
+# 127.0.0.1 nur mit Passwort.
 su-exec postgres postgres -D "$PGDATA" -c listen_addresses=127.0.0.1 -c unix_socket_directories="$SOCKET" \
-  -c shared_preload_libraries=pg_stat_statements &
+  -c shared_preload_libraries=pg_stat_statements -c hba_file="$HBA" &
 PG=$!
 until su-exec postgres pg_isready -q -h 127.0.0.1; do
   kill -0 "$PG" 2>/dev/null || { log "FEHLER: PostgreSQL ist beim Start beendet worden (siehe oben)."; fehlerseite pg-beendet; exit 1; }
   sleep 0.5
 done
 
-abfrage() { su-exec postgres psql -h 127.0.0.1 -U postgres -tAc "$1"; }
-[ "$(abfrage "SELECT 1 FROM pg_roles WHERE rolname = 'dms'")" = 1 ] || { abfrage "CREATE ROLE dms LOGIN SUPERUSER" >/dev/null; log "Rolle dms angelegt."; }
+abfrage() { su-exec postgres psql -h "$SOCKET" -U postgres -tAc "$1"; }
+[ "$(abfrage "SELECT 1 FROM pg_roles WHERE rolname = 'dms'")" = 1 ] || { abfrage "CREATE ROLE dms LOGIN" >/dev/null; log "Rolle dms angelegt."; }
+# Kein Superuser mehr (#1354): Früher war die Rolle Superuser. Ablago braucht nur die eigene Datenbank; pg_trgm und
+# unaccent darf ihr Eigentümer selbst anlegen.
+if [ "$(abfrage "SELECT rolsuper FROM pg_roles WHERE rolname = 'dms'")" = t ]; then
+  abfrage "ALTER ROLE dms NOSUPERUSER" >/dev/null
+  log "Rolle dms ist kein Superuser mehr (#1354)."
+fi
 [ "$(abfrage "SELECT 1 FROM pg_database WHERE datname = 'dms'")" = 1 ] || { abfrage "CREATE DATABASE dms OWNER dms" >/dev/null; log "Datenbank dms angelegt."; }
+# Passwort für die Anmeldung über 127.0.0.1, bei jedem Start neu. Über die Standardeingabe, damit es in keiner
+# Befehlszeile steht (die sähen andere Benutzer im Container).
+DMS_DB_KOMPLETT_PASSWORT=$(head -c 32 /dev/urandom | base64 | tr -d '+/=\n' | cut -c 1-40)
+printf "ALTER ROLE dms WITH LOGIN PASSWORD '%s';\n" "$DMS_DB_KOMPLETT_PASSWORT" | su-exec postgres psql -h "$SOCKET" -U postgres -qtA -v ON_ERROR_STOP=1 >/dev/null
 # Erweiterung in der Datenbank von Ablago (#894), im eigenen Schema wie pg_trgm und unaccent (übersteht das
 # Wiederherstellen). Gelingt es nicht, startet Ablago trotzdem; der Lasttest nennt dann den Grund.
-su-exec postgres psql -h 127.0.0.1 -U postgres -d dms -qtA -v ON_ERROR_STOP=1 \
+# Ohne Superuser (#1354) darf dms die Werte lesen und zurücksetzen (pg_read_all_stats, pg_read_all_settings für
+# shared_preload_libraries, Ausführen von pg_stat_statements_reset).
+# Ohne Superuser (#1354) legt dms Erweiterungen nicht mehr selbst ins eigene Schema (bzw. zieht sie nicht um): pg_trgm
+# und unaccent darum hier anlegen, bevor die Migrationen laufen – wie nach einer Wiederherstellung. Vorhandene bleiben.
+su-exec postgres psql -h "$SOCKET" -U postgres -d dms -qtA -v ON_ERROR_STOP=1 \
   -c "CREATE SCHEMA IF NOT EXISTS erweiterungen_dms AUTHORIZATION dms" \
-  -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements SCHEMA erweiterungen_dms" >/dev/null 2>&1 \
+  -c "CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA erweiterungen_dms" \
+  -c "CREATE EXTENSION IF NOT EXISTS unaccent SCHEMA erweiterungen_dms" >/dev/null 2>&1 \
+  || log "Hinweis: Erweiterungen pg_trgm und unaccent nicht angelegt – Ablago versucht es selbst."
+su-exec postgres psql -h "$SOCKET" -U postgres -d dms -qtA -v ON_ERROR_STOP=1 \
+  -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements SCHEMA erweiterungen_dms" \
+  -c "GRANT pg_read_all_stats, pg_read_all_settings TO dms" \
+  -c "GRANT EXECUTE ON FUNCTION erweiterungen_dms.pg_stat_statements_reset(oid, oid, bigint, boolean) TO dms" >/dev/null 2>&1 \
   || log "Hinweis: Erweiterung pg_stat_statements nicht angelegt – der Lasttest nennt die teuersten Abfragen dann nicht."
 
 # Anbindung für Ablago: nur im Container, ohne Passwort. Der Einrichtungsassistent überspringt damit den Datenbank-Schritt.
@@ -128,10 +140,13 @@ su-exec postgres psql -h 127.0.0.1 -U postgres -d dms -qtA -v ON_ERROR_STOP=1 \
 if [ -z "${DATABASE_URL:-}" ]; then export DMS_DATENBANK_VOM_IMAGE=1; else unset DMS_DATENBANK_VOM_IMAGE; fi
 export DATABASE_URL="postgres://dms@127.0.0.1:5432/dms"
 # ende-datenbank-variable
+export DMS_DB_KOMPLETT_PASSWORT
 # Ablago übernimmt den Port vom Vorstart (#1250): Es bittet ihn mit SIGTERM um Freigabe, sobald es selbst lauschen will.
 stand ablago
 if [ -n "$VS" ] && kill -0 "$VS" 2>/dev/null; then export DMS_VORSTART_PID="$VS"; else unset DMS_VORSTART_PID; fi
-${DMS_START:-node --enable-source-maps /app/server/dist/index.js} &
+# In einer Unter-Shell mit exec: $DMS ist die PID von Ablago selbst (Stopp und Warten unten).
+# shellcheck disable=SC2086 # DMS_START ist ein Befehl mit Argumenten
+(als_ablago_exec ${DMS_START:-node --enable-source-maps /app/server/dist/index.js}) &
 DMS=$!
 
 pg_stopp() {
@@ -149,6 +164,7 @@ stopp() {
   wait "$DMS" 2>/dev/null || true
   vorstart_ende
   pg_stopp
+  [ -z "${WERKZEUGE_PID:-}" ] || kill -TERM "$WERKZEUGE_PID" 2>/dev/null || true
   log "Beendet."
   exit 0
 }

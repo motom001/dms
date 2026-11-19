@@ -11,3 +11,6 @@ docs
 !docs/handbuch
 !docs/releases
 !deploy/komplett/start.sh
+!deploy/komplett/pg_hba.conf
+# Start ohne root (#1354)
+!deploy/image

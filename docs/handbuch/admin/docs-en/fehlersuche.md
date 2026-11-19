@@ -117,6 +117,7 @@ If the start fails, the page at Ablago's address gives the reason in plain langu
 | The database can no longer write: the storage is full. | Free up space on the database's storage (old backups or exports), then restart. |
 | The database does not accept any more connections. | Stop other programs on the same database or raise `max_connections` in PostgreSQL, then restart. |
 | The database cannot write to its folder (dms-komplett only). | Check the permissions of the database folder on the NAS or use a named volume, see [The container doesn't start](https://help.ablago.app/installieren/aktuell/en/komplett/#container-startet-nicht). |
+| Ablago cannot write to one of its folders. | Since Ablago runs without administrator rights, its user must be allowed to write to `/data`. The container log names the folder and the command; usually it is enough to set `PUID`/`PGID` to the owner of the folders, see [Without administrator rights](aktualisieren.md#ohne-root). |
 | The database comes from another major version of PostgreSQL (dms-komplett only). | Set the image back to the version the database was created with; switch via backup and restore. |
 | The database could not be created or was stopped (dms-komplett only). | Usually the storage is full or the container has too little memory. Free up space and restart; the lines in the container log give the reason. |
 
