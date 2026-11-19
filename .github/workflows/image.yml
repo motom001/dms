@@ -587,7 +587,9 @@ jobs:
           for _ in $(seq 1 60); do curl -fsS --connect-timeout 5 --max-time 10 http://127.0.0.1:18097/api/konto/status >/dev/null 2>&1 && break; sleep 1; done
           ist=$(docker exec kennung sh -c 'p=$(pgrep -f "^node .*server/dist/index.js" | head -1); awk "/^Uid:/ {u = \$2} /^Gid:/ {g = \$2} END {print u \":\" g}" /proc/$p/status')
           [ "$ist" = 1026:100 ] || { echo "::error::Ablago läuft als $ist statt 1026:100 (Bind-Mount ohne PUID)"; docker logs --tail 40 kennung; exit 1; }
-          docker logs kennung 2>&1 | grep -q "wie der Besitzer des Datenordners" || { echo "::error::kein Satz zum Benutzer im Protokoll"; docker logs --tail 40 kennung; exit 1; }
+          # Protokoll erst ganz lesen (wie in komplett-probe.sh): Mit pipefail scheiterte „docker logs | grep -q“, sobald grep
+          # beim ersten Treffer endet und docker logs noch schreibt (SIGPIPE, 19.11.2026).
+          grep -q "wie der Besitzer des Datenordners" <<< "$(docker logs kennung 2>&1)" || { echo "::error::kein Satz zum Benutzer im Protokoll"; docker logs --tail 40 kennung; exit 1; }
           weg=$(awk -F'|' 'NR == FNR { v[$1] = $2; next } ($1 in v) && v[$1] != $2 { print $1 ": " v[$1] " → " $2 }' <(echo "$vorher") <(liste) | head -5)
           [ -z "$weg" ] || { echo "::error::Dateien des NAS-Benutzers umgeschrieben: $weg"; exit 1; }
           fremd=$(sudo find "$k/files" "$k/geheim" "$k/sicherung" ! -uid 1026 | head -5)
@@ -600,7 +602,7 @@ jobs:
           s=""
           for _ in $(seq 1 60); do s=$(curl -fsS --connect-timeout 2 --max-time 5 -H 'accept-language: de' http://127.0.0.1:18097/ 2>/dev/null || true); grep -q "Ablago konnte nicht starten" <<< "$s" && break; sleep 1; done
           grep -q "schreibgeschützt eingebunden" <<< "$s" || { echo "::error::Fehlerseite nennt den schreibgeschützten Ordner nicht"; echo "$s"; docker logs --tail 40 kennung-ro; exit 1; }
-          docker logs kennung-ro 2>&1 | grep -q "die Angabe :ro entfernen" || { echo "::error::Protokoll ohne Abhilfe für :ro"; docker logs --tail 40 kennung-ro; exit 1; }
+          grep -q "die Angabe :ro entfernen" <<< "$(docker logs kennung-ro 2>&1)" || { echo "::error::Protokoll ohne Abhilfe für :ro"; docker logs --tail 40 kennung-ro; exit 1; }
           docker rm -f kennung-ro >/dev/null
       # Einrichtungsskript für den Raspberry Pi (#578); shellcheck ist auf den GitHub-Rechnern vorinstalliert.
       - name: Einrichtungsskript prüfen
