@@ -41,6 +41,8 @@ const heimnetzAngabe = (ip: string) => istPrivat(ip) && !eigeneGateways.ist(ip);
 export type JournalArt =
   | 'zugang.fehlanmeldung'
   | 'zugang.rechte'
+  /** Sperre des Anmeldeschutzes aufgehoben (#1481): Art, Konto (nur bekannte), Adresse gekürzt, von wem. */
+  | 'zugang.entsperrt'
   | 'betrieb.update'
   | 'betrieb.paket'
   | 'betrieb.wartung'

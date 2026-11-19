@@ -60,6 +60,8 @@
   "routen.bitte-den-wechsel-bestaetigen": "Bitte den Wechsel bestätigen.",
   "routen.gerade-laeuft-eine-sicherung": "Gerade läuft eine Sicherung. Bitte warten, bis sie fertig ist.",
   "routen.diese-adresse-ist-nicht": "Diese Adresse ist nicht gesperrt.",
+  "routen.diese-sperre-ist-nicht": "Diese Sperre besteht nicht mehr.",
+  "routen.unbekannte-sperre": "Unbekannte Art der Sperre.",
   "routen.das-webdav-laufwerk-ist": "Das WebDAV-Laufwerk ist nicht eingerichtet.",
   "routen.es-ist-kein-eingangsordner": "Es ist kein Eingangsordner eingebunden.",
   "routen.die-messung-der-auslastung": "Die Messung der Auslastung ist nicht eingerichtet.",

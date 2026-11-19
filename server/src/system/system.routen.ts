@@ -264,19 +264,29 @@ export function systemRouten(k: RoutenKontext): Route[] {
       },
     },
     /* ---------- Speicherplatz (#116) ---------- */
-    // Anmeldeschutz (#240): Fehlversuche, gesperrte IPs, Ausnahmen.
+    // Anmeldeschutz (#240): Fehlversuche, gesperrte IPs, Ausnahmen; seit #1481 alle aktiven Sperren (`sperren`).
+    // `gesperrt` (nur IPs) bleibt für `dms gesperrt`.
     {
       methode: 'GET',
       pfad: '/api/werkbank/anmeldeschutz',
       zugang: 'admin',
-      handler: async (a) => ok({ einstellung: await konten.sperre.einstellung(), gesperrt: await konten.sperre.gesperrt(), deineIp: a.ip }),
+      handler: async (a) => ok(await anmeldeschutzStand(konten, a.ip)),
     },
     {
       methode: 'PUT',
       pfad: '/api/werkbank/anmeldeschutz',
       zugang: 'admin',
-      handler: async (a) =>
-        ok({ einstellung: await konten.sperre.speichere(a.body, ich(a).email), gesperrt: await konten.sperre.gesperrt(), deineIp: a.ip }),
+      handler: async (a) => {
+        await konten.sperre.speichere(a.body, ich(a).email);
+        return ok(await anmeldeschutzStand(konten, a.ip));
+      },
+    },
+    // Aktive Sperren (#1481), wahlweise nur die eines Kontos (Werkbank → Benutzer → Person).
+    {
+      methode: 'GET',
+      pfad: '/api/werkbank/anmeldeschutz/sperren',
+      zugang: 'admin',
+      handler: async (a) => ok({ sperren: await aktiveSperren(konten, a.query.email) }),
     },
     // Notfallzugang (#815): Vorgabe „nur Heimnetz“; „aus dem Internet erlauben“ ist eine heikle Handlung (frische Anmeldung).
     {
@@ -301,13 +311,52 @@ export function systemRouten(k: RoutenKontext): Route[] {
       methode: 'POST',
       pfad: '/api/werkbank/anmeldeschutz/entsperren',
       zugang: 'admin',
+      // Ohne `art` wie bisher eine IP (auch `dms entsperren`); mit `art` eine Sperre je Konto bzw. je Konto und IP (#1481).
       handler: async (a) => {
-        const ip = String((b(a) as { ip?: unknown }).ip ?? '');
-        if (!(await konten.sperre.entsperre(ip, ich(a).email))) throw new Fachfehler(404, t('meldungen.routen.diese-adresse-ist-nicht'));
-        return ok({ einstellung: await konten.sperre.einstellung(), gesperrt: await konten.sperre.gesperrt(), deineIp: a.ip });
+        if (!(await entsperre(konten, b(a), ich(a).email)))
+          throw new Fachfehler(
+            404,
+            t(b(a).art && b(a).art !== 'ip' ? 'meldungen.routen.diese-sperre-ist-nicht' : 'meldungen.routen.diese-adresse-ist-nicht'),
+          );
+        return ok(await anmeldeschutzStand(konten, a.ip));
       },
     },
   ];
+}
+
+type Konten = RoutenKontext['konten'];
+
+/** Aktive Sperren (#1481) mit Person, falls die E-Mail-Adresse zu einem Konto gehört; `email` = nur dieses Konto. */
+async function aktiveSperren(konten: Konten, email?: string) {
+  const nur = email?.trim().toLowerCase();
+  const alle = (await konten.sperre.aktiveSperren()).filter((s) => !nur || s.email === nur);
+  const personen = new Map((await konten.listeBenutzer()).map((p) => [p.email.toLowerCase(), p]));
+  return alle.map((s) => {
+    const p = s.email ? personen.get(s.email) : undefined;
+    return { ...s, person: p ? { id: p.id, name: p.name || p.email } : null };
+  });
+}
+
+async function anmeldeschutzStand(konten: Konten, deineIp: string) {
+  return {
+    einstellung: await konten.sperre.einstellung(),
+    gesperrt: await konten.sperre.gesperrt(),
+    sperren: await aktiveSperren(konten),
+    deineIp,
+  };
+}
+
+/** Eine Sperre aufheben (#1481): `art` fehlt oder „ip“ = IP-Adresse, „konto“ = Konto, „konto-ip“ = Konto und IP. */
+async function entsperre(konten: Konten, rumpf: Record<string, unknown>, von: string): Promise<boolean> {
+  const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  const ip = text(rumpf.ip);
+  const email = text(rumpf.email).toLowerCase();
+  const art = rumpf.art ?? 'ip';
+  const bekannt = async () => !!email && !!(await konten.personMitEmail(email));
+  if (art === 'ip') return konten.sperre.entsperre(ip, von);
+  if (art === 'konto') return konten.sperre.entsperreKonto(email, von, await bekannt());
+  if (art === 'konto-ip') return konten.sperre.entsperreKontoIp(email, ip, von, await bekannt());
+  throw new Fachfehler(422, t('meldungen.routen.unbekannte-sperre'));
 }
 
 export function systemzustandRouten(k: RoutenKontext): Route[] {

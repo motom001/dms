@@ -60,6 +60,8 @@
   "routen.bitte-den-wechsel-bestaetigen": "Please confirm the change.",
   "routen.gerade-laeuft-eine-sicherung": "A backup is running right now. Please wait until it has finished.",
   "routen.diese-adresse-ist-nicht": "This address isn’t locked.",
+  "routen.diese-sperre-ist-nicht": "This lock no longer exists.",
+  "routen.unbekannte-sperre": "Unknown kind of lock.",
   "routen.das-webdav-laufwerk-ist": "The WebDAV drive is not set up.",
   "routen.es-ist-kein-eingangsordner": "No intake folder is mounted.",
   "routen.die-messung-der-auslastung": "Load measurement is not set up.",

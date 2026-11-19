@@ -6,7 +6,8 @@ import { speicherEinstellungen } from '../einstellungen/einstellungen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { speicherKurzzustand, type Kurzzustand } from '../zwischenspeicher/kurzzustand';
 import { protokoll } from '../protokoll/protokoll';
-import { fehlanmeldung } from '../protokoll/nachweisjournal';
+import { fehlanmeldung, nachweis } from '../protokoll/nachweisjournal';
+import { kuerzeIp } from '../datenschutz/abruf';
 import { t } from '../sprache/sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -131,8 +132,31 @@ export interface IpSperre {
   grund: string;
 }
 
+/**
+ * Aktive Sperre für die Werkbank (#1481): je Konto über alle Adressen (#1295), je E-Mail-Adresse und IP, je IP. Nur für
+ * Personen mit Verwaltungsrecht Anmeldeschutz – sie enthält E-Mail-Adressen und Adressen.
+ */
+export type SperrArt = 'konto' | 'konto-ip' | 'ip';
+export interface AktiveSperre {
+  art: SperrArt;
+  /** E-Mail-Adresse, wie sie gezählt wird (konto, konto-ip). */
+  email: string | null;
+  /** Adresse bzw. /64-Netz (konto-ip, ip). */
+  ip: string | null;
+  /** Zahl der Fehlversuche; null bei IP-Sperren von vor #1481 (dann steht sie im Grund). */
+  versuche: number | null;
+  seit: string | null;
+  /** null = bis entsperrt (nur IP). */
+  bis: string | null;
+  /** Nur IP: Grund wie bisher. */
+  grund?: string;
+}
+
 const log = protokoll.modul('konto');
 const MIN = 60_000;
+
+/** Adresse bzw. /64-Netz für den Nachweis gekürzt (IPv4 /24, IPv6 /48), wie bei Fehlanmeldungen. */
+const netzKurz = (a: string) => kuerzeIp(a.replace(/\/\d+$/, ''));
 
 /** IPv4 in IPv6 (::ffff:1.2.3.4) wie IPv4 behandeln. */
 const ohneMapping = (ip: string) => ip.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').trim();
@@ -222,6 +246,8 @@ const IP_SPERRE = 'anmeldung-ip-sperre';
 const MELDUNG = 'anmeldung-meldung';
 const SAMMEL = 'anmeldung-sammelmeldung';
 const SOFORT = 'anmeldung-sofortmeldung';
+/** Beginn der Sperre je Konto (#1481), nur für die Anzeige; das Fenster selbst sagt nur, wann es endet. */
+const KONTO_GESAMT_SEIT = 'anmeldung-konto-gesamt-seit';
 /** Vorgemerkte Sperren für die Sammelmeldung: so lange, falls die Automatisierung länger nicht meldet. */
 const MELDUNG_TAGE = 14;
 /** Einstellung höchstens so lange gemerkt – Änderungen aus einem anderen Prozess gelten danach auch hier. */
@@ -310,8 +336,94 @@ export class Anmeldesperre {
     const war = (await this.zustand.loesche(IP_SPERRE, a)) > 0;
     await this.zustand.loesche(IP_ZAEHLER, a);
     await this.zustand.loesche(KONTO, `${a}|`, { praefix: true });
-    if (war) log.info('IP-Adresse entsperrt', { ip: a, von });
+    if (war) {
+      log.info('IP-Adresse entsperrt', { ip: a, von });
+      void nachweis('zugang.entsperrt', { art: 'ip', netz: netzKurz(a), von });
+    }
     return war;
+  }
+
+  /**
+   * Alle aktiven Sperren der drei Ebenen (#1481), aus dem Kurzzustand – also für alle Prozesse gleich. Eine Sperre je
+   * E-Mail-Adresse und IP ist ein Zähler, der die Grenze erreicht hat; ihr Beginn ist der letzte gezählte Fehlversuch
+   * (danach zählt nichts mehr, bis sie endet).
+   */
+  async aktiveSperren(): Promise<AktiveSperre[]> {
+    await this.lade();
+    const iso = (ms: number | null) => (ms === null ? null : new Date(ms).toISOString());
+    const konto: AktiveSperre[] = [];
+    const seit = new Map((await this.zustand.liste(KONTO_GESAMT_SEIT)).map((x) => [x.schluessel, (x.wert as { seit?: string })?.seit]));
+    for (const x of await this.zustand.liste(KONTO_GESAMT_ART))
+      if (x.anzahl >= KONTO_GESAMT.versuche)
+        konto.push({
+          art: 'konto',
+          email: x.schluessel,
+          ip: null,
+          versuche: x.anzahl,
+          seit: seit.get(x.schluessel) ?? null,
+          bis: iso(x.bis),
+        });
+    const kontoIp: AktiveSperre[] = [];
+    for (const x of await this.zustand.liste(KONTO)) {
+      if (x.anzahl < this.e.konto.versuche || x.bis === null) continue;
+      const i = x.schluessel.indexOf('|');
+      kontoIp.push({
+        art: 'konto-ip',
+        email: x.schluessel.slice(i + 1),
+        ip: x.schluessel.slice(0, i),
+        versuche: x.anzahl,
+        seit: iso(x.bis - this.e.konto.minuten * MIN),
+        bis: iso(x.bis),
+      });
+    }
+    const ip: AktiveSperre[] = (await this.zustand.liste(IP_SPERRE)).map((x) => {
+      const w = (x.wert ?? {}) as { seit?: string; grund?: string; versuche?: number };
+      return {
+        art: 'ip',
+        email: null,
+        ip: x.schluessel,
+        versuche: typeof w.versuche === 'number' ? w.versuche : null,
+        seit: w.seit ?? null,
+        bis: iso(x.bis),
+        grund: w.grund ?? '',
+      };
+    });
+    const nachSeit = (a: AktiveSperre, b: AktiveSperre) => (a.seit ?? '').localeCompare(b.seit ?? '');
+    return [...konto.sort(nachSeit), ...kontoIp.sort(nachSeit), ...ip.sort(nachSeit)];
+  }
+
+  /**
+   * Sperren eines Kontos aufheben (#1481): die Sperre je Konto und alle Sperren je E-Mail-Adresse und IP dieser Adresse.
+   * `bekannt`: Die Adresse gehört zu einem Konto – nur dann steht sie im Nachweis (wie bei Fehlanmeldungen).
+   */
+  async entsperreKonto(email: string, von: string, bekannt: boolean): Promise<boolean> {
+    if (!email) return false;
+    let n = (await this.zustand.loesche(KONTO_GESAMT_ART, email)) > 0 ? 1 : 0;
+    await this.zustand.loesche(KONTO_GESAMT_SEIT, email);
+    for (const x of await this.zustand.liste(KONTO))
+      if (x.schluessel.slice(x.schluessel.indexOf('|') + 1) === email) n += await this.zustand.loesche(KONTO, x.schluessel);
+    if (n) this.entsperrtVermerken('konto', email, null, von, bekannt);
+    return n > 0;
+  }
+
+  /** Eine Sperre je E-Mail-Adresse und IP aufheben (#1481). */
+  async entsperreKontoIp(email: string, ip: string, von: string, bekannt: boolean): Promise<boolean> {
+    const a = norm(ip);
+    if (!email || !a) return false;
+    const war = (await this.zustand.loesche(KONTO, `${a}|${email}`)) > 0;
+    if (war) this.entsperrtVermerken('konto-ip', email, a, von, bekannt);
+    return war;
+  }
+
+  /** Protokoll und Nachweis (#1481): wer was entsperrt hat; im Nachweis die Adresse gekürzt, ein unbekanntes Konto nicht. */
+  private entsperrtVermerken(art: SperrArt, email: string, ip: string | null, von: string, bekannt: boolean) {
+    log.info(art === 'konto' ? 'Konto entsperrt' : 'Anmeldung entsperrt (Konto und IP)', { email, ...(ip ? { ip } : {}), von });
+    void nachweis('zugang.entsperrt', {
+      art,
+      ...(bekannt ? { konto: email } : {}),
+      ...(ip ? { netz: netzKurz(ip) } : {}),
+      von,
+    });
   }
 
   /** Vor der Anmeldung: wirft 429, wenn IP oder Konto gesperrt sind. */
@@ -449,6 +561,7 @@ export class Anmeldesperre {
       !(await this.zustand.belege(IP_SPERRE, a, this.e.ip.minuten ? this.e.ip.minuten * MIN : null, {
         seit: new Date(zahl).toISOString(),
         grund,
+        versuche: m,
       }))
     )
       return;
@@ -466,6 +579,13 @@ export class Anmeldesperre {
     if (!email) return;
     const g = v ? (v.gesamt ?? 0) : (await this.zustand.zaehle(KONTO_GESAMT_ART, email, KONTO_GESAMT.minuten * MIN)).anzahl;
     if (g !== KONTO_GESAMT.versuche) return;
+    // Nur für die Anzeige (#1481): wann die Sperre begann. Das Fenster endet spätestens eine Stunde danach.
+    await this.zustand.setze(
+      KONTO_GESAMT_SEIT,
+      email,
+      { seit: new Date(this.jetzt()).toISOString() },
+      this.jetzt() + KONTO_GESAMT.minuten * MIN,
+    );
     log.warn('Anmeldung für ein Konto gebremst (Fehlversuche von mehreren Adressen)', {
       email,
       versuche: g,
