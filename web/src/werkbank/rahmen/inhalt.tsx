@@ -92,9 +92,10 @@ export const pflegeSeiten = {
 /**
  * Schlüssel eines Editors, der seinen Stand aus der Liste nimmt: Ein bestehender Eintrag baut sich neu auf, sobald die
  * Liste da ist; ein neuer nicht – sonst gingen Eingaben verloren, die vor dem Laden der Liste kamen (#1418, wie das
- * Postfach in #1409).
+ * Postfach in #1409). Ein Wechsel des Eintrags baut den Editor ebenso neu auf. Genutzt von Nummernkreisen, Stempeln und
+ * Postfächern (inhalt-betrieb.tsx).
  */
-const editorSchluessel = (id: string, listeDa: boolean) => (id === 'neu' ? id : `${id}-${listeDa ? 1 : 0}`);
+export const editorSchluessel = (id: string, listeDa: boolean) => (id === 'neu' ? id : `${id}-${listeDa ? 1 : 0}`);
 
 /** Ansichten, Nummernkreise, Stempel. */
 export const listenSeiten = {
