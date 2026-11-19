@@ -145,6 +145,8 @@ benutzer_pruefen() {
     return 1
   fi
   [ "$PUID" = 0 ] && log "WARNUNG: PUID=0 – Ablago läuft als root. Das ist nur als Notbehelf gedacht."
+  # Gruppe 0 nur, wenn sie ausdrücklich gesetzt ist (daten_kennung nimmt sie nie).
+  [ "$PGID" != 0 ] || log "WARNUNG: PGID=0 – Ablago läuft mit der Gruppe root. Das ist nur als Notbehelf gedacht."
   # Gleiche Kennung wie beim letzten Start dieses Containers, aber jetzt „wie der Datenordner“: Den hat dann dieses
   # Skript selbst für die Vorgabe übernommen – die Herkunft bleibt „Vorgabe“, kein Hin und Her in der Anzeige.
   mkdir -p "$MERKER" 2>/dev/null || true
