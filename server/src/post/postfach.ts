@@ -12,7 +12,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { imapGemessen } from '../system/externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
 import { t } from '../sprache/sprache';
-import { gebietsschema } from '../../../shared/src/sprache';
+import { zeitText } from '../../../shared/src/region';
 import type { Verschluesselung, Zugang, ImapSitzung, ImapVerbinder, GeleseneMail, MailLeser } from './postfach-typen';
 
 /**
@@ -613,9 +613,7 @@ export class Postfaecher {
         text: t('meldungen.postfach.aus-postfach-uebernommen-mail', {
           name: p.name,
           wert: absender || t('meldungen.postfach.unbekannt'),
-          wert2: datum
-            ? t('meldungen.postfach.vom', { datum: datum.toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) })
-            : '',
+          wert2: datum ? t('meldungen.postfach.vom', { datum: zeitText(datum, { dateStyle: 'short', timeStyle: 'short' }) }) : '',
         }),
         postfach: p.name,
       },

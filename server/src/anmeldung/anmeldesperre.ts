@@ -9,7 +9,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { fehlanmeldung, nachweis } from '../protokoll/nachweisjournal';
 import { kuerzeIp } from '../datenschutz/abruf';
 import { t } from '../sprache/sprache';
-import { gebietsschema } from '../../../shared/src/sprache';
+import { zeitText } from '../../../shared/src/region';
 
 /**
  * Anmeldeschutz (#240): nach zu vielen Fehlversuchen sperren – je E-Mail-Adresse und IP (wie bisher)
@@ -438,7 +438,7 @@ export class Anmeldesperre {
         429,
         s.bis !== null
           ? t('meldungen.anmeldesperre.von-dieser-adresse-kamen', {
-              wert: new Date(s.bis).toLocaleString(gebietsschema(), { timeStyle: 'short', dateStyle: 'short' }),
+              wert: zeitText(new Date(s.bis), { timeStyle: 'short', dateStyle: 'short' }),
             })
           : t('meldungen.anmeldesperre.von-dieser-adresse-kamen-2'),
       );

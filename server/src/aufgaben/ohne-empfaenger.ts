@@ -12,8 +12,7 @@ import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { Benutzer } from '../../../shared/src/model';
-import { zeitzone } from '../../../shared/src/region';
-import { gebietsschema } from '../../../shared/src/sprache';
+import { zeitText } from '../../../shared/src/region';
 import type { AufgabenAnschluss } from './anschluss';
 import type { VertretungTeil } from './vertretung-teil';
 
@@ -219,11 +218,7 @@ export class OhneEmpfaenger {
               : liste.length > 1
                 ? `${liste.slice(0, -1).join(', ')} und ${liste.at(-1)}`
                 : liste[0];
-          const tag = new Date(bisher?.erstellt || Date.now()).toLocaleDateString(gebietsschema(), {
-            day: '2-digit',
-            month: '2-digit',
-            timeZone: zeitzone(),
-          });
+          const tag = zeitText(new Date(bisher?.erstellt || Date.now()), { day: '2-digit', month: '2-digit' });
           return t('meldungen.dienst.aenderungen-von-seit', { anzahl: n, wer, tag });
         },
       });

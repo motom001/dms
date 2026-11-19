@@ -25,7 +25,7 @@ import type { ImapSitzung, ImapVerbinder } from '../post/postfach-typen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { kontext, protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
-import { gebietsschema } from '../../../shared/src/sprache';
+import { zeitText } from '../../../shared/src/region';
 
 /**
  * Messpunkt für externe Dienste (#565): KI-Dienst (Pakete mit Inhalten und Netz), Postfach-Abruf (IMAP), Versand
@@ -310,7 +310,7 @@ export class Externmessung {
       throw new Fachfehler(
         429,
         t('meldungen.extern.pausiert', {
-          datum: new Date(bis).toLocaleDateString(gebietsschema(), { day: 'numeric', month: 'long', year: 'numeric' }),
+          datum: zeitText(new Date(bis), { day: 'numeric', month: 'long', year: 'numeric' }),
         }),
         { pausiertBis: bis },
       );
