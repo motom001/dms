@@ -74,7 +74,7 @@ export function FelderRegister({ z, r, w }: { z: Kern; r: Register; w: FelderWeg
           return (
             <AusgeblendetZeile
               key={a.vor}
-              text={t('ablage.anzeige.abschnitt', { name: abschnittName(a, typ), anzahl: n })}
+              text={t(z.p.mappe ? 'ablage.anzeige.abschnitt' : 'ablage.anzeige.abschnitt-neu', { name: abschnittName(a, typ), anzahl: n })}
               anzeigen={() => z.decke(`a:${r.key}.${a.vor}`)}
             />
           );
@@ -224,7 +224,11 @@ function feldEingaben(z: Kern, w: FelderWege) {
     f.typ === 'tabelle' && !versteckt(f) ? (
       tabelle(f, ueber, ebene)
     ) : versteckt(f) ? (
-      <AusgeblendetZeile key={f.key} text={t('ablage.anzeige.feld', { feld: feldLabel(f) })} anzeigen={() => z.decke(`f:${f.key}`)} />
+      <AusgeblendetZeile
+        key={f.key}
+        text={t(mappe ? 'ablage.anzeige.feld' : 'ablage.anzeige.feld-neu', { feld: feldLabel(f) })}
+        anzeigen={() => z.decke(`f:${f.key}`)}
+      />
     ) : (
       feldEingabe(
         f,

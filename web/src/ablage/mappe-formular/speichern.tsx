@@ -11,6 +11,7 @@ import { hinweis, rueckfrage } from '../../rueckfrage';
 import { titelOder } from '../../seiten';
 import { t, tn } from '../../sprache';
 import { werteAusRoh, zuRoh, type Roh, type RohWerte } from '../../werte';
+import { beimAnlegenVerborgen } from '../anzeige';
 import type { NeueDatei } from '../Dokumente';
 import { merkeAufloesung } from '../Post';
 import { naechstePost } from './hilfen';
@@ -71,17 +72,19 @@ export function speichernWege(z: Kern) {
     let gespeichert: Gespeichert = mappe;
     try {
       // Berechnete (#1034) und zusammengesetzte Felder (#1050) schickt die Oberfläche nie – auch nicht leer oder mit einem Standardwert.
-      if (!mappe)
+      // Was beim Anlegen nicht zu sehen ist (#1492), auch nicht: kein Vorgabewert, kein Vorschlag der Erkennung.
+      if (!mappe) {
+        const verborgen = beimAnlegenVerborgen(z.ausgeblendet, z.anz, z.aufgedeckt);
         gespeichert = await mappenApi.mappeAnlegen({
           typId: typ.id,
           werte: Object.fromEntries(
             Object.entries(werte).filter(([k]) => {
               const f = typ.felder.find((x) => x.key === k);
-              return !f?.berechnetVon && f?.typ !== 'zusammengesetzt';
+              return !f?.berechnetVon && f?.typ !== 'zusammengesetzt' && !verborgen.has(k);
             }),
           ),
         });
-      else if (geaenderteFelder.length) {
+      } else if (geaenderteFelder.length) {
         const zuSenden = Object.fromEntries(geaenderteFelder.map((k) => [k, werte[k] ?? null]));
         gespeichert = await mappenApi.mappeAendern(mappe.id, { werte: zuSenden, stand: neuerStand ?? z.stand });
       }
