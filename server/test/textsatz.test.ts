@@ -40,7 +40,7 @@ after(async () => {
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konten/konto-repo');
-  const { sql } = await eigeneDatenbank(name);
+  const { sql } = await eigeneDatenbank(name, { jeTest: true });
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };

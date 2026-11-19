@@ -8,9 +8,13 @@
  * Test der Datei geschieht das von selbst (Hook auf oberster Ebene). Die Verbindungen sind bewusst wenige (Vorgabe 4),
  * damit viele parallele Dateien unter `max_connections` (Vorgabe 100) bleiben.
  *
+ * `jeTest: true` (QS-Runde 11/2026): Legt eine Datei je Test eine frische Datenbank an, schließt `afterEach` sie gleich nach
+ * dem Test – sonst bleiben bis zum Ende der Datei je Test bis zu `max` Verbindungen offen (bei 20 Tests 80), und mehrere
+ * Dateien gleichzeitig stoßen an `max_connections` („too many clients“). Nur für Datenbanken, die kein späterer Test braucht.
+ *
  * Auf der gemeinsamen Datenbank selbst schreibt kein Test – eigene-datenbank.test.ts prüft das.
  */
-import { after } from 'node:test';
+import { after, afterEach } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import type postgres from 'postgres';
 import { alsUrl, ausUrl } from '../src/datenbank/anbindung';
@@ -30,7 +34,14 @@ export interface EigeneDatenbank {
 }
 
 const offen = new Set<EigeneDatenbank>();
+/** Datenbanken mit `jeTest`: nach jedem Test löschen. */
+const jeTest = new Set<EigeneDatenbank>();
 let zaehler = 0;
+
+/** Nach jedem Test: die Datenbanken mit `jeTest` löschen. */
+afterEach(async () => {
+  for (const d of [...jeTest]) await d.ende();
+});
 
 /** Nach dem letzten Test der Datei: alles löschen, was noch offen ist. */
 after(async () => {
@@ -49,7 +60,10 @@ async function mitVerwaltung<T>(f: (s: postgres.Sql) => Promise<T>): Promise<T> 
   }
 }
 
-export async function eigeneDatenbank(kurz: string, o: { migrieren?: boolean; max?: number } = {}): Promise<EigeneDatenbank> {
+export async function eigeneDatenbank(
+  kurz: string,
+  o: { migrieren?: boolean; max?: number; jeTest?: boolean } = {},
+): Promise<EigeneDatenbank> {
   const basis = ausUrl(process.env.TEST_DATABASE_URL);
   if (!basis) throw new Error('TEST_DATABASE_URL fehlt');
   const name = `dms_test_${kurz.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${process.pid}_${++zaehler}`.slice(0, 63);
@@ -68,12 +82,14 @@ export async function eigeneDatenbank(kurz: string, o: { migrieren?: boolean; ma
       if (beendet) return;
       beendet = true;
       offen.delete(d);
+      jeTest.delete(d);
       await sql.end({ timeout: 5 }).catch(() => {});
       // WITH (FORCE): auch Verbindungen, die ein Test offen ließ (eigener Pool, Server), stehen dem Löschen nicht im Weg.
       await mitVerwaltung((s) => s.unsafe(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`)).catch(() => {});
     },
   };
   offen.add(d);
+  if (o.jeTest) jeTest.add(d);
   if (o.migrieren !== false) await migriere(sql, MIGRATIONEN, () => {});
   return d;
 }

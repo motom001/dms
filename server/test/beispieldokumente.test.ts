@@ -158,7 +158,7 @@ describe('Beispiel-Dokumente lesen und prüfen (#878)', () => {
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { pgRepo } = await import('../src/repo/pg');
-  const sql = (await eigeneDatenbank('bspdok')).sql;
+  const sql = (await eigeneDatenbank('bspdok', { jeTest: true })).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, '00000000-0000-4000-8000-000000000001', ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;
   return pgRepo(sql, '00000000-0000-4000-8000-000000000001') as never;

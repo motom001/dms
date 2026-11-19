@@ -34,7 +34,7 @@ const datumDe = (iso: string) => iso.split('-').reverse().join('.');
 
 /** Eine frische Datenbank je Test – so wie der Server zusammengebaut (ohne HTTP und Dateien). */
 async function aufbau() {
-  const db = await eigeneDatenbank('ablaeufe');
+  const db = await eigeneDatenbank('ablaeufe', { jeTest: true });
   const sql: postgres.Sql = db.sql;
   const { Dienst } = await import('../src/dienst/dienst');
   const { pgRepo } = await import('../src/repo/pg');

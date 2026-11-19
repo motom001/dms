@@ -41,7 +41,7 @@ const offen: Array<{ end(): Promise<void> }> = [];
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { pgRepo } = await import('../src/repo/pg');
-  const sql = (await eigeneDatenbank('uebernehmen')).sql;
+  const sql = (await eigeneDatenbank('uebernehmen', { jeTest: true })).sql;
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${LENA}, ${HAUSHALT}, 'lena@example.org', 'Lena', 'admin')`;

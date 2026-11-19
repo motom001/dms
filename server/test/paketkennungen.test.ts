@@ -127,7 +127,7 @@ function katalog(eintraege: Array<{ dateien: Record<string, string>; herausgeber
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { pgRepo } = await import('../src/repo/pg');
-  const sql = (await eigeneDatenbank('pkk')).sql;
+  const sql = (await eigeneDatenbank('pkk', { jeTest: true })).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
   return pgRepo(sql, HAUSHALT) as never;
 }

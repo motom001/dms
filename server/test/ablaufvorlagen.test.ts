@@ -57,7 +57,7 @@ after(async () => {
 async function pgRepos(kurz: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konten/konto-repo');
-  const sql = (await eigeneDatenbank(kurz)).sql;
+  const sql = (await eigeneDatenbank(kurz, { jeTest: true })).sql;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };
 }
 

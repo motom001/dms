@@ -4,7 +4,7 @@
  * Mischdokument mit erfundenen Inhalten: deutscher Begleitbrief, dahinter das französische Schreiben einer Botschaft.
  */
 import assert from 'node:assert/strict';
-import { after, describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import { TREFFER_ANFANG } from '../../shared/src/model';
 import {
   alsSeitensprachen,
@@ -315,6 +315,7 @@ describe('Textebene: Sprache je Seite im Kern (#579)', () => {
   });
 });
 
-after(async () => {
-  for (const f of offen) await f();
+// Je Test schließen (QS-Runde 11/2026): Jeder Test legt eine eigene Datenbank an.
+afterEach(async () => {
+  for (const f of offen.splice(0)) await f();
 });

@@ -5,7 +5,7 @@
  */
 import { imModus } from './hilfen';
 import assert from 'node:assert/strict';
-import { after, describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import type postgres from 'postgres';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
@@ -21,8 +21,9 @@ import { routen, type Anfrage } from '../src/http/routen';
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin', email: 'lena@example.org' };
 const offen: Array<() => Promise<void>> = [];
-after(async () => {
-  for (const f of offen) await f();
+// Je Test schließen (QS-Runde 11/2026): Jeder Test legt eine eigene Datenbank an.
+afterEach(async () => {
+  for (const f of offen.splice(0)) await f();
 });
 
 async function datenbank(): Promise<postgres.Sql> {

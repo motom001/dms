@@ -30,7 +30,7 @@ async function repos(pg: boolean) {
   const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konten/konto-repo');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
-  const sql = (await eigeneDatenbank('sicht', { migrieren: false })).sql;
+  const sql = (await eigeneDatenbank('sicht', { migrieren: false, jeTest: true })).sql;
   offen.push(sql);
   await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
   const H = '00000000-0000-4000-8000-000000000001';
