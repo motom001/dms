@@ -8,6 +8,7 @@ Ergebnisse von `web/rauchtest/messen/oberflaeche.mjs` zum Vergleichen (Entwickle
 | `2026-11-15-container-probe-vor-1257.md` | Probe: derselbe Lauf mit der Oberfläche vor PR #1257 (#1255) – „Neue Post zuordnen“ wird rot. |
 | `2026-11-18-container.json`, `.md` | **Basis nach Phase D** (Ablago 0.297.1). Gleicher Container-Typ wie die Basis vom 15.11., frisch eingerichtet, ein zweiter Bau lief parallel – **keine NAS-Werte**. Alle Abläufe gleich oder besser; „Neue Post zuordnen“ ungedrosselt 384 ms bis bedienbar, INP 80 ms. Mit dem neuen Ablauf „Langes Dokument“. |
 | `2026-11-18-container-1339-post-zuordnen.md` | „Neue Post zuordnen“ vor und nach #1339 (PR #1435): main und der Zweig auf demselben Rechner und denselben Daten, dazu der neue Ablauf „Langes Dokument“. Werte aus dem PR, ohne JSON. |
+| `2026-11-20-container-1445-seitengroessen.md` | Seitenbetrachter der Mappe vor und nach #1445: Arbeit des Servers für ein Dokument mit 120 Seiten – Wortpositionen gegen Seitengrößen. Keine NAS-Werte, ohne JSON. |
 
 ## Vergleichen
 

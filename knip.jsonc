@@ -58,6 +58,7 @@
   "ignoreBinaries": [
     // Systemprogramme aus apt bzw. dem Image (poppler-utils, qpdf, coreutils), keine npm-Pakete.
     "pdffonts",
+    "pdfinfo",
     "pdftoppm",
     "pdftotext",
     "qpdf",

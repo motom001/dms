@@ -231,6 +231,11 @@ const mitText = (s: { woerter: Wort[] } | undefined | null) =>
     .map((w) => w[0])
     .join('')
     .replace(/\s/g, '').length >= 20;
+/** Eine Seite für den Seitenbetrachter der Mappe (#1445): Nummer und, wenn bekannt, Größe. */
+type Seitenmass = { seite: number; breite?: number; hoehe?: number };
+const masse = (g: { breite: number; hoehe: number } | null | undefined) =>
+  g && g.breite > 1 && g.hoehe > 1 ? { breite: g.breite, hoehe: g.hoehe } : {};
+
 /** Je Seite die Wörter: aus der Textebene, sonst aus der Texterkennung, sonst keine – mit Maßen der Seite bzw. des Bilds. */
 function wortSeiten(
   anzahl: number,
@@ -316,6 +321,8 @@ export interface ArchivAnbindung {
   datei(sha: string): Promise<Buffer>;
   /** Wörter mit Lage aus der Textebene eines PDFs (null ohne poppler / unlesbar). */
   textebene(pdf: Buffer): Promise<SchwaerzSeite[] | null>;
+  /** Seitengrößen eines PDFs ohne Wörter (#1445; null ohne poppler / unlesbar). Ohne Angabe: aus der Textebene. */
+  seitengroessen?(pdf: Buffer): Promise<Array<{ breite: number; hoehe: number }> | null>;
   liesPdfA(pdf: Buffer): Promise<PdfaBefund>;
   /** Eintrag in der Historie der Mappe (als Dienstkonto des Pakets). */
   notiere(d: Dokument, paket: string, daten: { dokument: string; text: string } & Record<string, unknown>): Promise<void>;
@@ -775,6 +782,34 @@ export class Archivfassung {
       vollstaendig: seiten.every((s) => s.quelle !== 'keine'),
       seiten,
     };
+  }
+
+  /**
+   * Nur Seitenzahl und Seitengrößen (#1445, GET /api/dokumente/{id}/seitenmasse) – für den Seitenbetrachter der Mappe.
+   * Dieselbe Quelle und dieselbe Seitenzahl wie `wortpositionen`, aber ohne Wörter: Die Größen kommen aus `pdfinfo`
+   * statt aus der Textebene, die Wörter der Texterkennung werden nicht gelesen, wenn das PDF die Seitenzahl nennt.
+   */
+  async seitenmasse(
+    d: Dokument,
+    o: { fassung?: 'archiv' } = {},
+  ): Promise<{ dokument: string; sha256: string; quelle: 'original' | 'lesefassung' | 'archiv'; mime: string; seiten: Seitenmass[] }> {
+    const q = o.fassung === 'archiv' ? await this.archivQuelle(d) : await this.quelle(d);
+    if (!q) throw new Fachfehler(404, t('pakete.archiv.keine-quelle', { typ: dateitypName(d.mime) }));
+    const inhalt = await q.inhalt();
+    const seiten =
+      q.mime === 'application/pdf'
+        ? await this.pdfSeitenmasse(d, inhalt, 'seiten' in q ? q.seiten : null)
+        : [{ seite: 1, ...masse(bildGroesse(inhalt, q.mime)) }];
+    return { dokument: d.id, sha256: d.sha256, quelle: q.art, mime: q.mime, seiten };
+  }
+
+  /** Seiten eines PDFs mit Größe aus pdfinfo; ohne poppler die Anzahl wie bei den Wortpositionen (Archiv bzw. Texterkennung). */
+  private async pdfSeitenmasse(d: Dokument, inhalt: Buffer, archivSeiten: number | null): Promise<Seitenmass[]> {
+    const g = await (this.o.seitengroessen ?? this.o.textebene)(inhalt).catch(() => null);
+    if (g?.length) return g.map((x, i) => ({ seite: i + 1, ...masse(x) }));
+    const w = archivSeiten === null ? await this.o.ablage.woerter(d.sha256).catch(() => null) : null;
+    const anzahl = archivSeiten ?? Math.max(d.ocr?.seiten ?? 0, w?.seiten.length ?? 0, 1);
+    return Array.from({ length: anzahl }, (_, i) => ({ seite: i + 1 }));
   }
 
   /**

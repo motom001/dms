@@ -136,6 +136,98 @@ rauchtest('Mappe: PDF als Seiten wie beim Übernehmen, ohne Browser-Betrachter, 
   }
 });
 
+/** Liegt das Seitenbild genau auf seiner Fläche (gleiche Größe, Seitenverhältnis wie das Bild)? */
+const bildFuelltFlaeche = (bild) =>
+  bild.evaluate((img) => {
+    const b = img.getBoundingClientRect(),
+      f = img.parentElement.getBoundingClientRect();
+    return {
+      breite: Math.round(b.width),
+      flaeche: Math.round(f.width),
+      passt: Math.abs(b.width - f.width) < 2 && Math.abs(b.height - f.height) < 2,
+      verhaeltnis: Math.abs(b.width / b.height - img.naturalWidth / img.naturalHeight) < 0.02,
+    };
+  });
+
+/**
+ * Bildschirmfoto der Seite (#1486): Wo beginnt links der erste dunkle Bildpunkt (Text), in Prozent der Breite? Bei
+ * einer A4-Seite mit Rand um 7 %; war das Bild wie „auf A3“ in der Mitte geschrumpft, läge er bei über 20 %.
+ */
+async function textBeginntBei(s, flaeche) {
+  const png = (await flaeche.screenshot()).toString('base64');
+  return s.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = Object.assign(document.createElement('canvas'), { width: img.width, height: img.height });
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const { data } = g.getImageData(0, 0, img.width, Math.round(img.height / 3));
+    let links = img.width;
+    for (let i = 0; i < data.length; i += 4) if (data[i] + data[i + 1] + data[i + 2] < 300) links = Math.min(links, (i / 4) % img.width);
+    return Math.round((links / img.width) * 100);
+  }, png);
+}
+
+rauchtest(
+  'Breite Spalte: Die Seite füllt ihre Fläche wie A4, nicht „wie A3“; Mappe lädt nur Seitengrößen (#1486, #1445)',
+  { als: LENA },
+  async (s) => {
+    await s.setViewportSize({ width: 2400, height: 1300 });
+    const cookie = await sitzung(LENA);
+    const typ = daten.bausteine;
+    const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Heizungsraum breit' } } })).daten;
+    await hochladen(cookie, mappe.id, 'Wartungsheft breit.pdf', seitenPdf('Wartungsheft', 3));
+    const anfragen = [];
+    s.on('request', (r) => anfragen.push(new URL(r.url()).pathname));
+    try {
+      await s.goto(BASIS + `/ablage/${typ.id}/${mappe.id}`);
+      const bereich = s.getByRole('region', { name: 'Mappe' });
+      await bereich.getByRole('tab', { name: /^Dokumente/ }).click();
+      await bereich.getByRole('button', { name: 'Wartungsheft breit.pdf', exact: true }).click();
+      const bild = s.locator('.dokansicht').getByRole('img', { name: 'Seite 1 von 3', exact: true });
+      await bild.waitFor();
+      await s.waitForFunction((img) => img.complete && img.naturalWidth > 0, await bild.elementHandle());
+      const lage = await bildFuelltFlaeche(bild);
+      assert.ok(lage.breite > 760, `Die Spalte ist nicht breit genug für den Test (${lage.breite} px)`);
+      assert.ok(lage.passt && lage.verhaeltnis, `Seitenbild füllt seine Fläche nicht: ${JSON.stringify(lage)}`);
+      const links = await textBeginntBei(s, bild.locator('xpath=..'));
+      assert.ok(links < 15, `Der Text beginnt erst bei ${links} % der Breite – die Seite ist geschrumpft`);
+      // #1445: nur Seitengrößen, nicht die Wörter des ganzen Dokuments.
+      assert.ok(
+        anfragen.some((p) => /\/api\/dokumente\/[^/]+\/seitenmasse$/.test(p)),
+        'Seitengrößen geladen',
+      );
+      assert.ok(!anfragen.some((p) => p.endsWith('/wortpositionen')), 'Mappe lädt keine Wortpositionen');
+    } finally {
+      await api('DELETE', `/api/mappen/${mappe.id}?grund=nicht_noetig`, { cookie });
+    }
+    // Übernehmen in breiter Spalte: Seite füllt ihre Fläche, die Wörter zum Markieren liegen auf dem Bild.
+    const brief = (await api('POST', '/api/post', { cookie, body: { betreff: 'Prospekt breit' } })).daten;
+    await hochladen(cookie, brief.id, 'Prospekt breit.pdf', seitenPdf('Prospekt', 2));
+    try {
+      await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+      await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+      const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Prospekt breit.pdf' });
+      const bild = blatt.getByRole('img', { name: 'Seite 1 von 2', exact: true });
+      await bild.waitFor();
+      await s.waitForFunction((img) => img.complete && img.naturalWidth > 0, await bild.elementHandle());
+      const lage = await bildFuelltFlaeche(bild);
+      assert.ok(lage.passt && lage.verhaeltnis, `Übernehmen: Seitenbild füllt seine Fläche nicht: ${JSON.stringify(lage)}`);
+      await blatt.locator('figure[data-seite="1"] .ue-wort').first().waitFor();
+      const aussen = await blatt.locator('figure[data-seite="1"]').evaluate((fig) => {
+        const b = fig.querySelector('img').getBoundingClientRect();
+        return [...fig.querySelectorAll('.ue-wort')]
+          .map((w) => w.getBoundingClientRect())
+          .filter((r) => r.left < b.left - 1 || r.right > b.right + 1 || r.top < b.top - 1 || r.bottom > b.bottom + 1).length;
+      });
+      assert.equal(aussen, 0, 'Wörter zum Markieren liegen außerhalb des Seitenbilds');
+    } finally {
+      await api('DELETE', `/api/mappen/${brief.id}?grund=nicht_noetig`, { cookie });
+    }
+  },
+);
+
 rauchtest(
   'Handy: Übernehmen mit Seitenzahl im Kopf – Seiten fließen mit der Seite, 44-px-Tippflächen (#1323)',
   { handy: true, als: LENA },

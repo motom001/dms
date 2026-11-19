@@ -216,8 +216,8 @@ export function Seitenbilder({ lage, seiten, bild }: { lage: Seitenlage; seiten:
 }
 
 /**
- * Maße der Seiten für die Mappe: bei Archivfassung und PDF aus den Wortpositionen wie beim Übernehmen (bei E-Mails die
- * der Archivfassung). null: lädt noch; 'keine': nicht als Seiten zeigen (Bild, Lesefassung, entsperrtes PDF, zu viele
+ * Maße der Seiten für die Mappe: bei Archivfassung und PDF nur Seitenzahl und Seitengrößen (#1445, ohne die Wörter, die
+ * nur „Übernehmen“ braucht; bei E-Mails die der Archivfassung). null: lädt noch; 'keine': nicht als Seiten zeigen (Bild, Lesefassung, entsperrtes PDF, zu viele
  * Seiten) – dann bleibt die Anzeige des Browsers.
  */
 export function useSeitenmasse(x: Dokument, art: 'archiv' | 'original' | null): Seitenmass[] | null | 'keine' {
@@ -227,7 +227,7 @@ export function useSeitenmasse(x: Dokument, art: 'archiv' | 'original' | null): 
   useEffect(() => {
     if (!passt) return;
     let aktuell = true;
-    dokumenteApi.wortpositionen(x.id, art === 'archiv' && !kannSchwaerzen(x.mime)).then(
+    dokumenteApi.seitenmasse(x.id, art === 'archiv' && !kannSchwaerzen(x.mime)).then(
       (r) => {
         const seiten = r.seiten.map((w) => ({ breite: w.breite ?? 1, hoehe: w.hoehe ?? 1 }));
         if (aktuell) setMasse({ schluessel, seiten: seiten.length && seiten.length <= SCHWAERZEN_MAX_SEITEN ? seiten : 'keine' });

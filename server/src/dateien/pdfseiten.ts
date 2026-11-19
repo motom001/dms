@@ -122,6 +122,7 @@ export async function popplerSeiten(inhalt: Buffer): Promise<Buffer[]> {
     await starte(
       'pdftoppm',
       [
+        '-cropbox',
         '-f',
         '1',
         '-l',
