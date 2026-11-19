@@ -388,7 +388,7 @@ Der Lasttest misst den Server, die Rauchtests prüfen, *ob* etwas geht. Wie schn
 cd web/rauchtest && npm ci && npx playwright install chromium && cd ../..
 DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --einrichten
 DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --geraet "Laptop gegen NAS" \
-  --vorher docs/messungen/oberflaeche/2026-11-15-container.json --json neu.json --bericht neu.md
+  --vorher docs/messungen/oberflaeche/2026-11-18-container.json --json neu.json --bericht neu.md
 ```
 
 Nach einem neuen Bau der Oberfläche Ablago neu starten: Es hält die (vorkomprimierte) Startseite im Speicher, die neue verweist auf andere Dateien – sonst misst der Lauf nur 404 und Zeitüberschreitungen. Weitere Schalter: `--runden 5`, `--drossel 1,4`, `--nur post-zuordnen,suche`, `--frist 60000` (ms je Schritt; wer sie überschreitet, zählt mit der Frist und macht den Lauf rot), `--mappen 5000` (beim Einrichten), `--grenzen` (Exit-Code 1, wenn rot). Auf echter Hardware: eine eigene Test-Installation auf dem NAS (eigene Datenbank) einrichten und vom Laptop aus mit `DMS_URL` messen – Browser und Server sollen sich nicht dieselbe CPU teilen. Darum steckt die Messung auch nicht im Image und nicht im Lasttest-Modus (Thomas in #1276).
@@ -397,7 +397,7 @@ Nach einem neuen Bau der Oberfläche Ablago neu starten: Es hält die (vorkompri
 
 **CI:** Workflow „Oberfläche messen“ (`.github/workflows/oberflaeche-messen.yml`), wöchentlich und von Hand, getrennt vom Lasttest. Er baut Ablago, legt die Testdaten an, misst mit `--grenzen` gegen den letzten grünen, vollständigen Lauf aus dem Cache und hängt Bericht, JSON und Protokoll als Artefakt `oberflaeche-messen` an. Feste Grenzen je Ablauf (`CI_GRENZEN` in `oberflaeche.mjs`) kommen erst nach dem ersten Lauf auf GitHub: erster Lauf + 20 %, danach nur strenger (wie beim Lasttest, #563). Ergebnisse von echter Hardware gehören in ein Sammel-Issue wie #576.
 
-**Basis vor dem großen Umbau:** `docs/messungen/oberflaeche/` hält das erste Ergebnis fest (Container, 15.11.2026, Ablago 0.290.2) – als JSON zum Vergleichen und als Bericht. Die Werte stammen aus einem Container mit 2 Kernen, auf dem Browser, Ablago, PostgreSQL und andere Bauten gleichzeitig liefen: **keine NAS-Werte**, nur als Maßstab auf demselben Gerät. Vergleichen: denselben Lauf mit `--vorher docs/messungen/oberflaeche/<datei>.json` starten; eine neue Basis als neue Datei daneben legen (Datum und Gerät im Namen), alte nicht überschreiben.
+**Basis vor dem großen Umbau:** `docs/messungen/oberflaeche/` hält das erste Ergebnis fest (Container, 15.11.2026, Ablago 0.290.2) – als JSON zum Vergleichen und als Bericht. Die Werte stammen aus einem Container mit 2 Kernen, auf dem Browser, Ablago, PostgreSQL und andere Bauten gleichzeitig liefen: **keine NAS-Werte**, nur als Maßstab auf demselben Gerät. Vergleichen: denselben Lauf mit `--vorher docs/messungen/oberflaeche/<datei>.json` starten; eine neue Basis als neue Datei daneben legen (Datum und Gerät im Namen), alte nicht überschreiben. **Basis nach Phase D** (18.11.2026, Ablago 0.297.1, derselbe Container-Typ): `2026-11-18-container.json` – der Maßstab für weitere Läufe; welche Datei was ist, steht in `docs/messungen/oberflaeche/README.md`.
 
 ## Historie bei großen Mengen (#800) { #historie }
 

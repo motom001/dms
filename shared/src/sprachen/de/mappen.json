@@ -84,5 +84,7 @@
   "historie.verwaltungsmodus.exportiert": "exportiert",
   "historie.verwaltungsmodus.versendet": "per E-Mail versendet",
   "verwaltungsmodus.hinweis": "Du siehst diese Mappe nur im Verwaltungsmodus. Das wird in ihrer Historie vermerkt.",
-  "systemrolle.hinweis": "Die Systemrolle „Mitglied“ hat jede Person."
+  "systemrolle.hinweis": "Die Systemrolle „Mitglied“ hat jede Person.",
+  "systemrolle.hinweis-systemkonto": "Diese Rolle haben die Konten, unter denen Ablago selbst arbeitet, etwa für Automatisierungen. Eine Person bekommt sie nie.",
+  "systemrolle.hinweis-paket": "Diese Rolle haben die Dienstkonten der Pakete mit Code. Eine Person bekommt sie nie."
 }

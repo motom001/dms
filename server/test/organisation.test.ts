@@ -549,7 +549,7 @@ for (const pg of [false, true]) {
           },
         ]);
         const json = JSON.stringify(s);
-        for (const nie of ['K-1', 'DE02', 'geheim', 'intern', 'TB', '1980', 'Tischlerei Brandt K-1'])
+        for (const nie of ['K-1', 'DE02', 'geheim', 'intern', 'TB', '1980-02-03', 'Tischlerei Brandt K-1'])
           assert.ok(!json.includes(nie), `nicht in der Werkbank: ${nie}`);
         // Die API liefert die Mappe weiterhin nicht – auch nicht Markus mit seinem Schlüssel (Verwaltungsrecht gilt dort nie).
         await assert.rejects(

@@ -43,8 +43,11 @@ export interface ListeProps {
   export?: boolean;
   /** Erweiterte Suche (#199): Chips unter dem Kopf. */
   kopf?: ReactNode;
-  /** „Ansicht bearbeiten“ im Menü „⋯“ (#1285): Weg in die Werkbank, nur mit Recht. */
-  bearbeiten?: string;
+  /**
+   * „Ansicht bearbeiten“ im Menü „⋯“ (#1285): Weg in die Werkbank, nur mit Recht. In der Liste eines Mappentyps ohne
+   * eigene Ansicht „Mappentyp bearbeiten“ (Nachtrag 18.11.).
+   */
+  bearbeiten?: { ziel: string; art: 'ansicht' | 'mappentyp' };
   /** Name im Chip des Suchfelds oben (#1218), wenn er nicht der Titel ist – z. B. „Vertrag“ statt „Alle Mappen: Vertrag“. */
   bereich?: string;
 }
