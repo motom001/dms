@@ -64,7 +64,7 @@ const NV = () => (
  * Kleine Kurve (eine Reihe, daher ohne Legende – die Überschrift nennt sie). Lücken bei fehlenden Werten;
  * jede Minute ist ein Ziel für den Tooltip mit Uhrzeit und Wert.
  */
-function Kurve({
+function Kurve<P extends { zeit: string }>({
   titel,
   punkte,
   wert,
@@ -73,8 +73,8 @@ function Kurve({
   art = 'minuten',
 }: {
   titel: string;
-  punkte: Messpunkt[];
-  wert: (p: Messpunkt) => number | null;
+  punkte: P[];
+  wert: (p: P) => number | null;
   format: (x: number) => string;
   max?: number;
   art?: KurvenArt;
@@ -134,52 +134,46 @@ function Kurve({
 }
 
 /**
- * CPU und Arbeitsspeicher als Kachel mit Kurve (#409) – auch auf der Lasttest-Seite (#895), dort mit den Werten der
- * laufenden Messung. `jetzt` in Prozent; darunter, was die Seite dazu sagt.
+ * Anteil in Prozent als Kachel mit Kurve (#409): Überschrift mit dem Wert jetzt, Kurve bis 100 %, darunter, was die
+ * Seite dazu sagt. CPU und Arbeitsspeicher; auf der Lasttest-Seite (#1452) auch die Datenbank-Verbindungen.
  */
-export function CpuKachel({
+export function AnteilKachel<P extends { zeit: string }>({
+  titel,
   jetzt,
   verlauf,
+  wert,
   art,
   children,
 }: {
+  titel: string;
   jetzt: number | null;
-  verlauf: Messpunkt[];
+  verlauf: P[];
+  wert: (p: P) => number | null;
   art?: KurvenArt;
   children?: ReactNode;
 }) {
   return (
     <div className="az-wert">
       <h3 className="az-titel">
-        {t('systemzustand.cpu.titel')}{' '}
-        <span className="az-jetzt">{jetzt === null ? <NV /> : t('systemzustand.auslastung.jetzt', { wert: prozent(jetzt) })}</span>
+        {titel} <span className="az-jetzt">{jetzt === null ? <NV /> : t('systemzustand.auslastung.jetzt', { wert: prozent(jetzt) })}</span>
       </h3>
-      <Kurve titel={t('systemzustand.cpu.titel')} punkte={verlauf} wert={(p) => p.cpu} format={prozent} max={100} art={art} />
+      <Kurve titel={titel} punkte={verlauf} wert={wert} format={prozent} max={100} art={art} />
       {children}
     </div>
   );
 }
-export function SpeicherKachel({
-  jetzt,
-  verlauf,
-  art,
-  children,
-}: {
-  jetzt: number | null;
-  verlauf: Messpunkt[];
-  art?: KurvenArt;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="az-wert">
-      <h3 className="az-titel">
-        {t('systemzustand.speicher.titel')}{' '}
-        <span className="az-jetzt">{jetzt === null ? <NV /> : t('systemzustand.auslastung.jetzt', { wert: prozent(jetzt) })}</span>
-      </h3>
-      <Kurve titel={t('systemzustand.speicher.titel')} punkte={verlauf} wert={(p) => p.speicher} format={prozent} max={100} art={art} />
-      {children}
-    </div>
-  );
+
+type KachelProps = { jetzt: number | null; verlauf: Messpunkt[]; art?: KurvenArt; children?: ReactNode };
+
+/**
+ * CPU und Arbeitsspeicher als Kachel mit Kurve (#409) – auch auf der Lasttest-Seite (#895), dort mit den Werten der
+ * laufenden Messung. `jetzt` in Prozent; darunter, was die Seite dazu sagt.
+ */
+export function CpuKachel(p: KachelProps) {
+  return <AnteilKachel titel={t('systemzustand.cpu.titel')} wert={(m) => m.cpu} {...p} />;
+}
+export function SpeicherKachel(p: KachelProps) {
+  return <AnteilKachel titel={t('systemzustand.speicher.titel')} wert={(m) => m.speicher} {...p} />;
 }
 
 /** Arbeiter für PDF und große Exporte (#542): wie viele es gibt, was sie gerade tun, was schiefging. */

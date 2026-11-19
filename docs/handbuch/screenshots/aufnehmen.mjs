@@ -659,6 +659,8 @@ function lasttestStand(fertig) {
     zeit: new Date(jetzt - (30 - i) * 2000).toISOString(),
     cpu: 30 + Math.round(25 * Math.abs(Math.sin(i / 4))),
     speicher: 18 + Math.round(i / 3),
+    // #1452: belegte Datenbank-Verbindungen in % der erlaubten (dritte Kurve).
+    db: 20 + 10 * (i % 4),
   }));
   const live = {
     jetzt: {

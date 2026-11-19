@@ -8,9 +8,11 @@ import {
   bereinigeGeraet,
   EXTREM_MAPPEN,
   fuelleErgebnis,
+  ganzesErgebnis,
   LASTTEST_WAHL,
   LIVE_VERLAUF,
   stufenVon,
+  verbindungenProzent,
   type LasttestLive,
   type LasttestStand,
   type LasttestStufe,
@@ -295,7 +297,7 @@ export class Lasttestmodus {
     return join(this.o.ergebnisOrdner, `lasttest-${this.o.wahl}.md`);
   }
 
-  /** Bericht und Block (mit Gerät und Speicher) als Datei; dazu der Stand für einen Neustart nach „Beenden“. */
+  /** Das eine Ergebnis (#1452: Block oben, Bericht darunter) als Datei; dazu der Stand für einen Neustart nach „Beenden“. */
   /** Merker im Ergebnisordner: nach einem Neustart misst der Container nicht noch einmal. */
   private async merkeBeendet(): Promise<void> {
     await writeFile(join(this.o.ergebnisOrdner, BEENDET_DATEI), `${new Date(this.jetzt()).toISOString()}\n`).catch(() => {});
@@ -307,7 +309,8 @@ export class Lasttestmodus {
       if (this.stand.ergebnis) {
         await writeFile(
           this.dateiName,
-          `${this.stand.ergebnis.bericht}\n\n### Ergebnis zum Kopieren\n\nOhne Namen und Adressen – zum Einfügen in das Formular „Messergebnis Lasttest“.\n\n${this.block()}\n`,
+          // #1452: dasselbe eine Ergebnis wie auf der Seite – Block oben, Bericht darunter.
+          ganzesErgebnis(this.block(), this.stand.ergebnis.bericht),
         );
       }
       await writeFile(join(this.o.ergebnisOrdner, STAND_DATEI), JSON.stringify(this.stand));
@@ -364,7 +367,9 @@ export class Lasttestmodus {
         // #895: Werte der ohnehin laufenden Messung – die Seite fragt nichts zusätzlich.
         const l = liveAus(m);
         const zeit = new Date(this.jetzt()).toISOString();
-        const verlauf = [...(s.live?.verlauf ?? []), { zeit, cpu: l.cpu, speicher: l.speicher }].slice(-LIVE_VERLAUF);
+        // #1452: Datenbank-Verbindungen als dritte Kurve – aus denselben Werten, nichts wird zusätzlich abgefragt.
+        const db = verbindungenProzent(l.belegt, l.verbindungen);
+        const verlauf = [...(s.live?.verlauf ?? []), { zeit, cpu: l.cpu, speicher: l.speicher, db }].slice(-LIVE_VERLAUF);
         s.live = { jetzt: { ...l, zeit }, verlauf };
         break;
       }

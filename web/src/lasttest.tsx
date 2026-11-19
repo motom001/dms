@@ -1,17 +1,25 @@
-import { fuelleErgebnis, PLATZHALTER, restMinuten, type LasttestLiveStand, type LasttestStand } from '../../shared/src/lasttest';
+import {
+  fuelleErgebnis,
+  ganzesErgebnis,
+  PLATZHALTER,
+  restMinuten,
+  verbindungenProzent,
+  type LasttestLiveStand,
+  type LasttestStand,
+} from '../../shared/src/lasttest';
 import type { Messpunkt } from '../../shared/src/systemlast';
 import { einrichtungApi } from './api/einrichtung';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
-import { CpuKachel, SpeicherKachel } from './werkbank/Auslastung';
+import { AnteilKachel, CpuKachel, SpeicherKachel } from './werkbank/Auslastung';
 import { platz } from './werkbank/Speicherplatz';
 import { useLasttest } from './lasttestseite/useLasttest';
-import { Angaben, Ende, Ergebnis, LaufStand, zahl } from './lasttestseite/teile';
+import { Angaben, Ende, Ergebnis, ergaenzenAus, LaufStand, zahl } from './lasttestseite/teile';
 import { Ablauf } from './lasttestseite/ablauf';
 
 /**
  * Lasttest-Modus (#612): die einzige Seite, die ein mit DMS_LASTTEST gestartetes DMS zeigt. Fortschritt und Restdauer,
- * Gerät und Speicher (gehen sofort in den Ergebnisblock), am Ende Bericht und Block zum Kopieren oder Herunterladen,
+ * Gerät und Speicher (gehen sofort in den Ergebnisblock), am Ende ein Ergebnis (#1452) zum Kopieren oder Herunterladen,
  * Links zum Formular und zum Sammel-Issue und der Knopf zum Herunterfahren. Keine Zugangsdaten, keine Adressen.
  * Seit #1279 in Teilen: Stand (lasttestseite/useLasttest.ts) und Abschnitte (lasttestseite/teile.tsx).
  */
@@ -32,21 +40,17 @@ const mitDauer = (text: string, d?: { max: number; mittel: number }) =>
 const MB = 1024 ** 2;
 const uhr = (iso: string) => new Date(iso).toLocaleTimeString(gebietsschema(), { timeStyle: 'medium' });
 
-/** Durchgang mit Gleichzeitigkeit; vor den Durchgängen (#1117) „–“ mit dem laufenden Schritt. */
-const durchgangText = (j: LasttestLiveStand['jetzt'], schritt: LasttestStand['schritt']) =>
-  j.name === null
-    ? t('lasttest.live.durchgang.keiner', { schritt: t.frei(`lasttest.schritt.${schritt}`) })
-    : t('lasttest.live.durchgang.wert', { name: j.name, n: zahl(j.n ?? 0) });
-
 /**
  * Live während des Laufs (#895): CPU und Arbeitsspeicher wie Werkbank → Systemzustand → Auslastung (dieselben Kacheln),
- * dazu Durchgang, Gleichzeitigkeit, p95 der letzten Sekunden, Warteschlange an der Datenbank, CPU je Gruppe und die
- * neuesten Warnungen und Fehler. Alles aus der Messung, die der Test ohnehin alle 2 Sekunden macht – seit #1117 schon
- * ab dem Einrichten; vor den Durchgängen steht statt des Durchgangs der Schritt, p95 bleibt „–“.
+ * seit #1452 als dritte Kurve die belegten Datenbank-Verbindungen mit den wartenden Abfragen darunter; dazu p95 der
+ * letzten Sekunden, CPU je Gruppe und die neuesten Warnungen und Fehler. Stufe und Durchgang stehen im Ablauf. Alles aus
+ * der Messung, die der Test ohnehin alle 2 Sekunden macht – seit #1117 schon ab dem Einrichten; vor den Durchgängen
+ * bleibt p95 „–“.
  */
-function Live({ l, stufe, schritt }: { l: LasttestLiveStand; stufe: LasttestStand['stufe']; schritt: LasttestStand['schritt'] }) {
+function Live({ l }: { l: LasttestLiveStand }) {
   const j = l.jetzt;
   const vorDemDurchgang = j.name === null;
+  const db = verbindungenProzent(j.belegt, j.verbindungen);
   const verlauf: Messpunkt[] = l.verlauf.map((p) => ({ zeit: p.zeit, cpu: p.cpu, speicher: p.speicher, rx: null, tx: null }));
   const nv = t('systemzustand.auslastung.nicht-verfuegbar');
   const gruppe = (g: NonNullable<typeof j.gruppen>[number]) =>
@@ -80,30 +84,27 @@ function Live({ l, stufe, schritt }: { l: LasttestLiveStand; stufe: LasttestStan
                 : t('systemzustand.speicher.belegt', { belegt: platz(j.speicherMb * MB), grenze: platz(j.grenzeMb * MB) })}
           </p>
         </SpeicherKachel>
+        <AnteilKachel titel={t('lasttest.live.datenbank')} jetzt={db} verlauf={l.verlauf} wert={(p) => p.db ?? null} art="live">
+          <p className="leise klein">
+            {j.warteschlange === null
+              ? nv
+              : t('lasttest.live.warteschlange.wert', {
+                  wartend: zahl(j.warteschlange),
+                  belegt: zahl(j.belegt ?? 0),
+                  von: zahl(j.verbindungen ?? 0),
+                })}
+          </p>
+        </AnteilKachel>
+        {/* p95 der letzten Sekunden (#1452 geprüft): zeigt, wie schnell Ablago gerade antwortet – im Ablauf steht p95
+            erst, wenn der Durchgang fertig ist. */}
         <div className="az-wert">
-          <h3 className="az-titel">{t('lasttest.live.messung')}</h3>
-          <dl className="eigenschaften klein">
-            {stufe && (
-              <>
-                <dt>{t('lasttest.live.stufe')}</dt>
-                <dd>{t.frei(`lasttest.stufe.${stufe}`)}</dd>
-              </>
-            )}
-            <dt>{t('lasttest.live.durchgang')}</dt>
-            <dd>{durchgangText(j, schritt)}</dd>
-            <dt>{t('lasttest.live.p95')}</dt>
-            <dd>{j.p95 === null ? '–' : t('lasttest.live.p95.wert', { ms: zahl(j.p95), anfragen: zahl(j.anfragen) })}</dd>
-            <dt>{t('lasttest.live.warteschlange')}</dt>
-            <dd>
-              {j.warteschlange === null
-                ? nv
-                : t('lasttest.live.warteschlange.wert', {
-                    wartend: zahl(j.warteschlange),
-                    belegt: zahl(j.belegt ?? 0),
-                    von: zahl(j.verbindungen ?? 0),
-                  })}
-            </dd>
-          </dl>
+          <h3 className="az-titel">
+            {t('lasttest.live.p95')}{' '}
+            <span className="az-jetzt">
+              {j.p95 === null ? '–' : t('lasttest.live.p95.wert', { ms: zahl(j.p95), anfragen: zahl(j.anfragen) })}
+            </span>
+          </h3>
+          <p className="leise klein">{t('lasttest.live.p95.wofuer')}</p>
         </div>
       </div>
       <h3 className="az-titel">{t('lasttest.live.gruppen')}</h3>
@@ -165,8 +166,8 @@ function Version({ wert }: { wert?: string }) {
   return wert ? <p className="klein leise">{t('lasttest.version', { version: wert })}</p> : null;
 }
 
-/** Überschrift nennt die Auswahl (#1251), die laufende Stufe steht eindeutig benannt darunter. */
-function Kopf({ stand, laeuft }: { stand: LasttestStand; laeuft: boolean }) {
+/** Überschrift nennt die Auswahl (#1251); darunter nur die Version (#1452: die laufende Stufe zeigt der Ablauf). */
+function Kopf({ stand }: { stand: LasttestStand }) {
   return (
     <>
       <h1>
@@ -175,14 +176,6 @@ function Kopf({ stand, laeuft }: { stand: LasttestStand; laeuft: boolean }) {
           : t('lasttest.titel.eine', { stufe: t.frei(`lasttest.stufe.name.${stand.wahl}`) })}
       </h1>
       <Version wert={stand.version} />
-      {laeuft && stand.stufe && (
-        <p className="lasttest-laufend">
-          <strong>
-            {t('lasttest.stufe.laufend', { name: t.frei(`lasttest.stufe.name.${stand.stufe}`), nr: stand.nr, von: stand.von })}
-          </strong>{' '}
-          – {t.frei(`lasttest.stufe.zweck.${stand.stufe}`)}
-        </p>
-      )}
     </>
   );
 }
@@ -220,7 +213,8 @@ export function LasttestSeite() {
   const jetzt = stand.jetzt + (Date.now() - geholt.current);
   const rest = restMinuten({ ...stand, jetzt });
   const zustand = beendet ? 'beendet' : stand.zustand;
-  const textDatei = stand.ergebnis ? `${stand.ergebnis.bericht}\n\n### ${t('lasttest.ergebnis')}\n\n${block}\n` : '';
+  // Ein Ergebnis (#1452): Block oben, Bericht darunter – so wird es gezeigt, kopiert und heruntergeladen.
+  const text = stand.ergebnis ? ganzesErgebnis(block, stand.ergebnis.bericht) : '';
   async function herunterfahren() {
     try {
       await einrichtungApi.lasttestBeenden();
@@ -239,42 +233,32 @@ export function LasttestSeite() {
         ? t('lasttest.beenden.ungesichert')
         : t('lasttest.beenden.frage.fertig');
 
-  // Reihenfolge (#1251): Solange der Test läuft, steht „Beschreibe dein Gerät“ gleich unter der Überschrift – das ist das
-  // Erste, was man tun soll; danach rückt das Ergebnis nach oben. Darunter Stand und Ablauf als Tabelle, solange er läuft
-  // dann der Platz für das Ergebnis und die Live-Werte.
+  // Feste Reihenfolge (#1452), die sich beim Wechsel von „läuft“ auf „fertig“ nicht umbaut: Kopf → Stand → Gerät und
+  // Speicher → Ergebnis (der Platz ist von Anfang an da, solange es läuft mit Hinweis) → Ablauf → Jetzt gemessen.
   const laeuft = zustand === 'laeuft';
-  const angabenTeil = (
-    <Angaben stand={stand} angaben={angaben} zustand={zustand} setGeraet={l.setGeraet} setSpeicher={l.setSpeicher} merke={merke} />
-  );
-  const ergebnisTeil = (
-    <Ergebnis
-      stand={stand}
-      block={block}
-      zeile={zeile}
-      kopiert={kopiert}
-      setKopiert={l.setKopiert}
-      feld={l.feld}
-      textDatei={textDatei}
-      setGesichert={l.setGesichert}
-    />
-  );
   return (
     <div className="kartenseite">
       <div className="karte breit lasttest">
-        <Kopf stand={stand} laeuft={laeuft} />
-        {laeuft ? angabenTeil : ergebnisTeil}
-        <p className="leise">{t('lasttest.unter')}</p>
-
+        <Kopf stand={stand} />
         <LaufStand stand={stand} zustand={zustand} jetzt={jetzt} rest={rest} mitAblauf={!!stand.ablauf} />
         {fehler && (
           <div className="hinweis schlecht">
             <p>{fehler}</p>
           </div>
         )}
-        {!laeuft && angabenTeil}
+        <Angaben stand={stand} angaben={angaben} zustand={zustand} setGeraet={l.setGeraet} setSpeicher={l.setSpeicher} merke={merke} />
+        <Ergebnis
+          stand={stand}
+          text={text}
+          zeile={zeile}
+          ergaenzen={ergaenzenAus(angaben)}
+          kopiert={kopiert}
+          setKopiert={l.setKopiert}
+          setGesichert={l.setGesichert}
+        />
         {stand.ablauf && <Ablauf ablauf={stand.ablauf} stand={stand} jetzt={jetzt} />}
-        {laeuft && ergebnisTeil}
-        {laeuft && stand.live && <Live l={stand.live} stufe={stand.stufe} schritt={stand.schritt} />}
+        {laeuft && stand.live && <Live l={stand.live} />}
+        <p className="leise">{t('lasttest.unter')}</p>
 
         {/* Ergebnis an Stelle des Knopfs (#697): nach der Rückfrage der Abschluss – er bleibt stehen, auch wenn der Server
             nicht mehr antwortet (das Herunterfahren ist ja gewollt; es wird nichts mehr abgefragt). */}

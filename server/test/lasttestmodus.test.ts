@@ -546,6 +546,8 @@ describe('Lasttest-Modus (#612): Seite', () => {
         [s.live?.jetzt.name, s.live?.jetzt.n, s.live?.jetzt.p95, s.live?.jetzt.cpu, s.live?.jetzt.kerne, s.live?.jetzt.speicherMb],
         [null, null, null, 35, 4, 800],
       );
+      // #1452: Datenbank-Verbindungen als dritte Kurve, aus derselben Messung (2 von 10 belegt).
+      assert.deepEqual(s.live?.verlauf.at(-1)?.db, 20);
       assert.deepEqual(
         s.live?.jetzt.gruppen?.map((g) => g.art),
         ['postgres'],
@@ -589,6 +591,9 @@ describe('Lasttest-Modus (#612): Seite', () => {
       const datei = readFileSync(join(ordner, 'lasttest-klein.md'), 'utf8');
       assert.match(datei, /Gerät\/Modell: Beispiel-NAS 16 GB/);
       assert.match(datei, /Speicher: HDD\n/);
+      // #1452: ein Ergebnis wie auf der Seite – Block oben, Bericht darunter.
+      assert.ok(datei.startsWith('```text\nMessergebnis Lasttest'), 'Block steht oben');
+      assert.ok(datei.endsWith('```\n\n## Lasttest\n'), 'Bericht darunter');
       assert.equal(s.datei, join(ordner, 'lasttest-klein.md'));
 
       // Herunterfahren nur mit Kennung; danach Merker, Stand und beenden().
