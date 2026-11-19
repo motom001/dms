@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { mitGrund } from '../rueckfrage/Loeschgrund';
 import { rueckfrage as stelleRueckfrage } from '../../rueckfrage';
 import { Symbol, type SymbolName } from '../../Symbol';
@@ -6,6 +6,7 @@ import { Knopf, fehlerText, type GefahrRueckfrage, type KnopfGroesse } from '../
 import { hinweis } from '../../rueckfrage';
 import { t } from '../../sprache';
 import type { LoeschAnlass } from '../../../../shared/src/loeschprotokoll';
+import { legeFest } from './lage';
 import s from './Menue.module.css';
 
 /**
@@ -21,6 +22,8 @@ import s from './Menue.module.css';
  * - Tastatur nach WAI-ARIA (Menü-Knopf): Enter/Leertaste/Pfeil runter öffnen und setzen den Fokus auf den ersten Punkt,
  *   Pfeiltasten, Pos1/Ende wandern, Esc schließt und gibt den Fokus an den Knopf zurück; Klick daneben schließt.
  * - Am Handy (`pointer: coarse`) sind Punkte mindestens 48 px hoch.
+ * - Lage (#1488): unter dem Knopf, wenn unten Platz ist – der Platz des Assistenten zählt nicht mit –, sonst darüber; die
+ *   Liste liegt fest im Fenster und erzeugt keine Rollleiste der Seite (lage.ts). Schmal ein Blatt von unten.
  */
 export interface MenuePunkt {
   key: string;
@@ -91,6 +94,8 @@ export function Menue({ beschriftung, nurSymbol, art = 'neben', punkte, groesse 
     menue.current?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])')?.focus();
     return () => document.removeEventListener('mousedown', klick);
   }, [offen]);
+
+  useMenueLage(offen, menue, knopf, links);
 
   const eintraege = () => [...(menue.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
   function taste(e: KeyboardEvent<HTMLDivElement>) {
@@ -207,4 +212,33 @@ export function Menue({ beschriftung, nurSymbol, art = 'neben', punkte, groesse 
       )}
     </div>
   );
+}
+
+/** Lage der offenen Liste (#1488): beim Öffnen und solange sie offen ist, bei jedem Rollen und jeder neuen Größe. */
+function useMenueLage(
+  offen: boolean,
+  menue: RefObject<HTMLDivElement | null>,
+  knopf: RefObject<HTMLButtonElement | null>,
+  links?: boolean,
+) {
+  useLayoutEffect(() => {
+    if (!offen) return;
+    const setze = () => {
+      const liste = menue.current;
+      if (!liste || !knopf.current) return;
+      // Schmal liegt die Liste als Blatt unten (Menue.module.css) – dann keine eigene Lage.
+      if (matchMedia('(max-width: 600px)').matches) {
+        liste.removeAttribute('style');
+        return;
+      }
+      legeFest(liste, knopf.current, links);
+    };
+    setze();
+    addEventListener('resize', setze);
+    document.addEventListener('scroll', setze, true);
+    return () => {
+      removeEventListener('resize', setze);
+      document.removeEventListener('scroll', setze, true);
+    };
+  }, [offen, links]); // eslint-disable-line react-hooks/exhaustive-deps -- Refs sind fest
 }

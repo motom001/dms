@@ -28,9 +28,12 @@
 .rahmen.ablage .rumpf, .rahmen.werkbank .rumpf { flex: 1; min-height: 0; max-width: none; width: 100%; padding-top: 0; padding-bottom: 0; }
 .drei { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 220px minmax(260px, 360px) minmax(0, 1fr); gap: 0; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 0 calc(-1 * max(16px, env(safe-area-inset-left))); }
 /* Assistent unten rechts (#1219, #1283): am Handy überall – auch in der Werkbank – ein eigener Streifen unten, am Rechner
-   mit Speicherleiste ebenso; sonst Platz unter dem letzten Inhalt (Konto, Ablago entdecken; Spalten: .spalte). */
+   mit Speicherleiste ebenso; sonst Platz unter dem letzten Inhalt (Konto, Ablago entdecken; Spalten: .spalte).
+   In Ablage und Werkbank (#1488, Entscheidung Thomas) liegt die freie Zeile nur unter dem Inhalt, nicht unter der
+   Navigation links: Die Spalten rechts der Navigation enden über dem Assistenten. */
 @media (min-width: 821px) {
-  .rahmen:has(.speicherleiste) .rumpf.rumpf { padding-bottom: 76px; }
+  .rahmen:not(.ablage):not(.werkbank):has(.speicherleiste) .rumpf.rumpf { padding-bottom: 76px; }
+  .rahmen:is(.ablage, .werkbank):has(.speicherleiste) .drei > .spalte:not(.sichten) { margin-bottom: 76px; }
   .rahmen:not(.ablage):not(.werkbank):not(:has(.speicherleiste)) .rumpf.rumpf { padding-bottom: var(--platz-begleiter); }
 }
 @media (max-width: 820px) {
