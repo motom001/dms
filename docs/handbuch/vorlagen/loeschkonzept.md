@@ -40,7 +40,7 @@ Jeder **Mappentyp** in Ablago ist eine Datenart. Die Liste der Mappentypen steht
 ## 3. Regelmäßiges Löschen
 
 - [Wer] geht [jährlich, z. B. im Januar] **Werkbank → Aufbewahrung abgelaufen** und die Ansichten aus Abschnitt 2 durch und löscht, was weg darf. [Wer] hält fest, wann das geschah (Abschnitt 8).
-- Gelöschte Mappen und Dokumente kommen in den **Papierkorb** (Werkbank → Papierkorb, Aufbewahrung [z. B. 30 Tage]). Danach löscht Ablago sie mit ihren Dateien und dem Volltext endgültig. [Oder: Der Papierkorb wird nach dem Löschen sofort geleert.]
+- Gelöschte Mappen und Dokumente kommen in den **Papierkorb** (Werkbank → Papierkorb; Aufbewahrung [z. B. 30 Tage], eingestellt unter Werkbank → Daten sichern → Einstellungen). Danach löscht Ablago sie mit ihren Dateien und dem Volltext endgültig. [Oder: Der Papierkorb wird nach dem Löschen sofort geleert.]
 - Die **Historie endgültig gelöschter Mappen** bleibt [z. B. 365 Tage] (Werkbank → Daten sichern → Einstellungen), damit sich nachvollziehen lässt, was mit ihnen geschah. Die Historie lebender Mappen und von Mappen im Archivmodus bleibt immer – mit allen Arten von Einträgen, auch den Abrufen (Herunterladen, Schnittstelle, Laufwerk); keine Art wird früher gelöscht. Einträge „im Verwaltungsmodus“ bleiben auch nach dieser Frist.
 
 ## 4. Sperren auf Verlangen
@@ -80,7 +80,7 @@ Gelöschte Daten können noch an diesen Stellen liegen; sie fallen so weg:
 
 ## 8. Nachweis
 
-- Ablago führt ein **Löschprotokoll** (Werkbank → Löschkonzept → Löschprotokoll): je gelöschter Mappe Mappentyp, Id und Nummer, wann, von wem, warum und in welchem Vorgang; je gelöschtem Dokument die Prüfsumme (SHA-256), Größe, Dateityp und Seitenzahl – **ohne** Titel, Feldwerte und Dateinamen. Es lässt sich nicht ändern und bleibt [10] Jahre.
+- Ablago führt ein **Löschprotokoll** (Werkbank → Löschprotokoll): je gelöschter Mappe Mappentyp, Id und Nummer, wann, von wem, warum und in welchem Vorgang; je gelöschtem Dokument die Prüfsumme (SHA-256), Größe, Dateityp und Seitenzahl – **ohne** Titel, Feldwerte und Dateinamen. Es lässt sich nicht ändern und bleibt [10] Jahre.
 - Bei Löschungen auf Verlangen wählt, wer löscht, den Grund „Auf Verlangen der betroffenen Person“. [Wer] gibt das Löschprotokoll bei Bedarf als PDF aus.
 - Auskünfte nach Art. 15 DSGVO stehen mit Nachweis in der Historie der Person (Werkbank → Datenschutz-Auskünfte).
 
