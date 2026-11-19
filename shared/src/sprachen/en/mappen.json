@@ -84,5 +84,7 @@
   "historie.verwaltungsmodus.exportiert": "exported",
   "historie.verwaltungsmodus.versendet": "sent by email",
   "verwaltungsmodus.hinweis": "You only see this folder in administration mode. This is noted in its history.",
-  "systemrolle.hinweis": "Every person has the system role “Member”."
+  "systemrolle.hinweis": "Every person has the system role “Member”.",
+  "systemrolle.hinweis-systemkonto": "This role belongs to the accounts Ablago itself works under, for example for automations. A person never gets it.",
+  "systemrolle.hinweis-paket": "This role belongs to the service accounts of packages with code. A person never gets it."
 }

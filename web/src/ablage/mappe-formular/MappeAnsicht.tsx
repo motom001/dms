@@ -198,15 +198,19 @@ function MappeKopf({
           </Link>
         </p>
       )}
-      {mappe.systemKennung && (
-        <p className="leise klein">
-          {/* Ohne Kennzeichen „Systemrolle“ (Nachtrag zu #1288, 18.11.): setzt Werkbank-Wissen voraus. Die Werkbank behält ihre Kennzeichen „System“. */}
-          {t('mappen.systemrolle.hinweis')}
-        </p>
-      )}
+      {/* Ohne Kennzeichen „Systemrolle“ (Nachtrag zu #1288, 18.11.): setzt Werkbank-Wissen voraus. Die Werkbank behält ihre Kennzeichen „System“. */}
+      {systemrollenHinweis(mappe.systemKennung) && <p className="leise klein">{systemrollenHinweis(mappe.systemKennung)}</p>}
       {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
     </div>
   );
+}
+
+/** Hinweis an der Mappe einer Systemrolle (Nachtrag zu #1288): je Rolle ein eigener Satz; ohne passenden keiner. */
+function systemrollenHinweis(kennung: string | null | undefined): string | null {
+  if (kennung === 'rolle:mitglied') return t('mappen.systemrolle.hinweis');
+  if (kennung === 'rolle:systemkonto') return t('mappen.systemrolle.hinweis-systemkonto');
+  if (kennung === 'rolle:paket') return t('mappen.systemrolle.hinweis-paket');
+  return null;
 }
 
 /** Menü „Mappe ▾“: Paket-Aktionen, Aufgabe, Erinnern, Vorlagen, E-Mail, Drucken, Brief, Link, Auskunft, Löschwege. */

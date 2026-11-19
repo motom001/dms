@@ -173,19 +173,40 @@ rauchtest('Listenansicht: „Ansicht bearbeiten“ nur mit Recht in der Werkbank
   }
 });
 
-// Nachtrag 18.11. zu #1288: Die Mappe der Systemrolle „Mitglied“ trägt in der Ablage kein Kennzeichen „Systemrolle“
-// (setzt Werkbank-Wissen voraus); der Hinweis darunter bleibt.
-rauchtest('Mappe der Rolle „Mitglied“: kein Kennzeichen „Systemrolle“ in der Ablage (Nachtrag zu #1288)', { als: LENA }, async (s) => {
-  const verwaltung = await sitzung(LENA);
-  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
-  const mitglied = (await api('GET', '/api/rollen', { cookie: verwaltung })).daten.find((r) => r.system && r.name === 'Mitglied');
-  assert.ok(mitglied, 'Systemrolle „Mitglied“ fehlt');
-  const rolle = (await api('GET', '/api/typen', { cookie: verwaltung })).daten.find((x) => x.system === 'rolle');
-  await s.goto(BASIS + `/ablage/${rolle.id}/${mitglied.id}`);
-  const kopf = s.locator('.mappenkopf');
-  await kopf.getByText('Die Systemrolle „Mitglied“ hat jede Person.').waitFor();
-  assert.equal(await kopf.getByText('Systemrolle', { exact: true }).count(), 0, 'Kennzeichen „Systemrolle“ in der Ablage');
-});
+// Nachtrag 18.11. zu #1288: Mappen der Systemrollen tragen in der Ablage kein Kennzeichen „Systemrolle“ (setzt
+// Werkbank-Wissen voraus); darunter steht je Rolle ein passender Hinweis.
+rauchtest(
+  'Mappen der Systemrollen: kein Kennzeichen „Systemrolle“, je Rolle ein passender Hinweis (Nachtrag zu #1288)',
+  { als: LENA },
+  async (s) => {
+    const verwaltung = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+    const mitglied = (await api('GET', '/api/rollen', { cookie: verwaltung })).daten.find((r) => r.system && r.name === 'Mitglied');
+    assert.ok(mitglied, 'Systemrolle „Mitglied“ fehlt');
+    const rolle = (await api('GET', '/api/typen', { cookie: verwaltung })).daten.find((x) => x.system === 'rolle');
+    await s.goto(BASIS + `/ablage/${rolle.id}/${mitglied.id}`);
+    const kopf = s.locator('.mappenkopf');
+    await kopf.getByText('Die Systemrolle „Mitglied“ hat jede Person.').waitFor();
+    assert.equal(await kopf.getByText('Systemrolle', { exact: true }).count(), 0, 'Kennzeichen „Systemrolle“ in der Ablage');
+    // Je Systemrolle ein eigener Satz: „Systemkonto“ und „Paket“ nennen nicht „Mitglied“.
+    const alle = (
+      await api('GET', `/api/mappen?${new URLSearchParams({ sicht: rolle.id, von: '0', anzahl: '50' })}`, { cookie: verwaltung })
+    ).daten.mappen;
+    for (const [kennung, satz] of [
+      [
+        'rolle:systemkonto',
+        'Diese Rolle haben die Konten, unter denen Ablago selbst arbeitet, etwa für Automatisierungen. Eine Person bekommt sie nie.',
+      ],
+      ['rolle:paket', 'Diese Rolle haben die Dienstkonten der Pakete mit Code. Eine Person bekommt sie nie.'],
+    ]) {
+      const m = alle.find((x) => x.systemKennung === kennung);
+      assert.ok(m, `Mappe der Systemrolle ${kennung} fehlt`);
+      await s.goto(BASIS + `/ablage/${rolle.id}/${m.id}`);
+      await kopf.getByText(satz).waitFor();
+      assert.equal(await kopf.getByText(/„Mitglied“/).count(), 0, `${kennung} nennt „Mitglied“`);
+    }
+  },
+);
 
 /* ---------- #1288: Verweisfelder ---------- */
 
