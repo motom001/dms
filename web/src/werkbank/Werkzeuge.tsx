@@ -1,6 +1,7 @@
 import { Knopf, type KnopfErgebnis } from '../bausteine';
 import { HilfeVerweis } from '../Hilfe';
 import { t } from '../sprache';
+import type { WerkzeugAbschirmung } from '../api/betrieb';
 import { fehlendeProgramme, fehlendeWerkzeuge, type WerkzeugArt, type Werkzeuge } from '../../../shared/src/werkzeuge';
 
 /**
@@ -55,4 +56,31 @@ export function werkzeugZeilen(w: Werkzeuge | null | undefined): Array<[string, 
       t.frei(`werkbank.werkzeuge.${art}.name`),
       fehlt.includes(art) ? t('werkbank.werkzeuge.fehlt') : t('werkbank.werkzeuge.vorhanden'),
     ]);
+}
+
+/** Zeile „Dokumentwerkzeuge“ im Systemzustand (#1449): getrennt oder ohne eigenen Benutzer, mit Speichergrenze. */
+export function abschirmungZeile(a: WerkzeugAbschirmung | null | undefined): Array<[string, string]> {
+  if (!a) return [];
+  const art = a.getrennt ? t('systemzustand.werkzeuge.getrennt') : t('systemzustand.werkzeuge.gemeinsam');
+  const grenze =
+    a.speicherMb === null ? t('systemzustand.werkzeuge.ohne-grenze') : t('systemzustand.werkzeuge.grenze', { mb: a.speicherMb });
+  return [[t('systemzustand.werkzeuge'), `${art}, ${grenze}`]];
+}
+
+/**
+ * Dokumentwerkzeuge ohne eigenen Benutzer (#1449): nur im Container – dort trennt das Image sie sonst immer. Außerhalb
+ * (Entwicklung) laufen sie ohnehin unter dem eigenen Benutzer.
+ */
+export function AbschirmungHinweis({ a, container }: { a: WerkzeugAbschirmung | null | undefined; container: boolean | undefined }) {
+  if (!a || a.getrennt || !container) return null;
+  return (
+    <div className="hinweis warn" role="status" id="werkzeuge-getrennt">
+      <p>
+        <strong>{t('systemzustand.werkzeuge.gemeinsam.titel')}</strong> {t('systemzustand.werkzeuge.gemeinsam.text')}
+      </p>
+      <div className="knoepfe">
+        <HilfeVerweis ort="werkbank.ohne-root">{t('systemzustand.werkzeuge.gemeinsam.mehr')}</HilfeVerweis>
+      </div>
+    </div>
+  );
 }

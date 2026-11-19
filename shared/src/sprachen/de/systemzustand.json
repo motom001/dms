@@ -212,5 +212,15 @@
   "kennung.benutzer": "Benutzer von Ablago",
   "kennung.gruppe": "Gruppe von Ablago",
   "kennung.wert": "{kennung} – {herkunft}",
-  "kennung.geaendert": "Geändert am {zeit}"
+  "kennung.geaendert": "Geändert am {zeit}",
+  "werkzeuge": "Dokumentwerkzeuge",
+  "werkzeuge.getrennt": "getrennt",
+  "werkzeuge.gemeinsam": "ohne eigenen Benutzer",
+  "werkzeuge.grenze": "Speichergrenze {mb} MB",
+  "werkzeuge.ohne-grenze": "ohne Speichergrenze",
+  "werkzeuge.gemeinsam.titel": "Die Dokumentwerkzeuge laufen ohne eigenen Benutzer.",
+  "werkzeuge.gemeinsam.text": "Die Programme, mit denen Ablago PDFs liest und rastert, laufen unter dem Benutzer von Ablago – meist, weil der Container mit „docker run --user“ oder „user:“ in der Compose-Datei startet. Die Grenzen gelten weiter, die Trennung nicht: Ein präpariertes PDF käme dann an die Dateien von Ablago. Ohne „--user“ bzw. „user:“ startet das Image die Werkzeuge getrennt; den Benutzer von Ablago bestimmen dann der Besitzer der Ordner oder PUID und PGID.",
+  "werkzeuge.gemeinsam.mehr": "Mehr dazu",
+  "kennung.hinweis": "PUID und PGID fehlen – deine Datenordner gehören jetzt {benutzer}:{gruppe}.",
+  "kennung.hinweis.text": "Sie liegen in Ordnern deines NAS ({ordner}). Ohne PUID und PGID hat Ablago die Vorgabe genommen, weil die Ordner root oder einem Systembenutzer gehörten, und sie dafür übernommen. Über die Dateifreigabe des NAS kommst du dann womöglich nicht mehr an Sicherungen und Exporte. Trage Benutzer und Gruppe deines NAS-Benutzers als PUID und PGID in die Compose-Datei ein oder gib ihm die Ordner auf dem NAS zurück (chown).{hilfe}"
 }

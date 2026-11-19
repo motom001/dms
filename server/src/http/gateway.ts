@@ -117,6 +117,11 @@ export const eigeneGateways = new Gateways();
 
 /** Art im Kurzzustand (#744): Schlüssel ist die Gateway-Adresse, Wert der Zeitpunkt der letzten Anfrage. */
 const ART = 'heimnetz-gateway';
+/**
+ * Dasselbe für die direkte Gegenstelle (#1465): Anfragen, die über ein Gateway ankommen – auch wenn `TRUST_PROXY` das
+ * Gateway als Proxy glaubt und die Adresse der Anfrage darum eine andere ist. Nur für den Hinweis „ganzes Netz“.
+ */
+const ART_GEGENSTELLE = 'gateway-gegenstelle';
 /** Jeder Prozess meldet höchstens so oft in den Kurzzustand (keine Last je Anfrage). */
 export const GATEWAY_MELDEN_MS = 60_000;
 
@@ -137,6 +142,7 @@ export class GatewayBeobachtung {
   constructor(
     private readonly gateways: Gateways = eigeneGateways,
     private readonly jetzt: () => number = Date.now,
+    private readonly art: string = ART,
   ) {}
 
   /** Eine Anfrage mit dieser Adresse ist angekommen; mit `zustand` höchstens einmal je Minute dorthin gemeldet. */
@@ -146,7 +152,7 @@ export class GatewayBeobachtung {
     this.letzte = { adresse: normaleAdresse(ip), am };
     if (!zustand || am - this.gemeldet < GATEWAY_MELDEN_MS) return;
     this.gemeldet = am;
-    void zustand.setze(ART, this.letzte.adresse, am, am + GATEWAY_HINWEIS_MS).catch(() => {
+    void zustand.setze(this.art, this.letzte.adresse, am, am + GATEWAY_HINWEIS_MS).catch(() => {
       // Nur ein Hinweis: Scheitert das Schreiben, versucht es die nächste Anfrage nach einer Minute wieder.
     });
   }
@@ -157,7 +163,7 @@ export class GatewayBeobachtung {
     const kandidaten: Array<{ adresse: string; am: number }> = this.letzte ? [this.letzte] : [];
     if (zustand) {
       try {
-        for (const e of await zustand.liste(ART, '', 20))
+        for (const e of await zustand.liste(this.art, '', 20))
           if (typeof e.wert === 'number') kandidaten.push({ adresse: e.schluessel, am: e.wert });
       } catch {
         // Datenbank nicht erreichbar: dann nur, was dieser Prozess selbst gesehen hat.
@@ -170,3 +176,8 @@ export class GatewayBeobachtung {
 
 /** Die Beobachtung dieses Prozesses. */
 export const gatewayBeobachtung = new GatewayBeobachtung();
+
+/** Gateway als direkte Gegenstelle (#1465): die Beobachtung dieses Prozesses. */
+export const gegenstellenBeobachtung = new GatewayBeobachtung(eigeneGateways, Date.now, ART_GEGENSTELLE);
+/** Dasselbe mit festen Gateways (Tests); der Stand liegt im selben Kurzzustand. */
+export const gegenstellenMit = (gateways: Gateways) => new GatewayBeobachtung(gateways, Date.now, ART_GEGENSTELLE);

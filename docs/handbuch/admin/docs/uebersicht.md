@@ -119,6 +119,8 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Notfallzugang ist aktiv (RESCUE-Datei) | rot | `notfallzugang` |
 | Der Notfallzugang wurde mit dem Notfallcode benutzt – bis „Gelesen“ | rot | `notfallzugang.benutzt` |
 | Ablago kann Heimnetz und Internet nicht unterscheiden: Anfragen kommen mit der Gateway-Adresse des Docker-Netzes an ([Heimnetz nicht bestimmbar](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | gelb | `heimnetz.gateway` |
+| TRUST_PROXY nennt ein ganzes Netz statt der Adresse deines Proxys: Anfragen kommen direkt vom Gateway, und das Netz deckt es ab ([Heimnetz nicht bestimmbar](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | gelb | `proxy.netz` |
+| PUID und PGID fehlen – Datenordner auf einem Ordner des NAS gehören jetzt der Vorgabe 1000:1000 ([Ohne Administratorrechte](aktualisieren.md#ohne-root)) | gelb | `kennung.puid` |
 | Speicherplatzlimit erreicht | rot | `speicherplatz.grenze` |
 | Der Speicherplatz wird knapp | gelb | `speicherplatz.knapp` |
 | Wieder genug Platz – Wartung beenden? | gelb | `speicherplatz.wartung-beenden` |

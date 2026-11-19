@@ -186,6 +186,8 @@ export interface NotfallzugangStand {
   code: { vorhanden: boolean; erstellt: string | null };
   heimnetz: boolean;
   /** #885: nur bei heimnetz: false; #1355: `gateway` = Adresse nicht bestimmbar */ grund?: 'oeffentlich' | 'proxy' | 'gateway';
+  /** #1465: TRUST_PROXY nennt ein Netz, das das Gateway abdeckt – ältere Server ohne. */
+  proxyNetz?: { netz: string; adresse: string; zuletzt: string } | null;
 }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person {

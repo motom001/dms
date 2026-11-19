@@ -167,6 +167,27 @@ rauchtest(
   },
 );
 
+// Dokumentwerkzeuge (#1449): Der Systemzustand nennt unter „Laufzeit“, ob sie getrennt laufen und mit welcher
+// Speichergrenze. Außerhalb eines Containers (wie hier) laufen sie unter dem Benutzer von Ablago – ohne Warnung, die
+// gilt nur im Container.
+rauchtest(
+  'Systemzustand: Dokumentwerkzeuge getrennt oder nicht, mit Speichergrenze (#1449)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    const installiert = s.locator('#installiert');
+    await installiert.getByText('Dokumentwerkzeuge', { exact: true }).waitFor();
+    const wert = await installiert.locator('dt', { hasText: 'Dokumentwerkzeuge' }).locator('xpath=following-sibling::dd[1]').innerText();
+    assert.match(wert, /^(getrennt|ohne eigenen Benutzer), (Speichergrenze \d+ MB|ohne Speichergrenze)$/, wert);
+    const container = await s.evaluate(() =>
+      fetch('/api/werkbank/system', { headers: { 'x-dms': '1' } }).then(async (r) => (await r.json()).laufzeit.container),
+    );
+    assert.equal(await s.locator('#werkzeuge-getrennt').count(), container && /^ohne/.test(wert) ? 1 : 0, 'Warnung nur im Container');
+  },
+);
+
 // #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand; der alte Link führt dorthin.
 rauchtest(
   'Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter Link leitet um (#1190)',

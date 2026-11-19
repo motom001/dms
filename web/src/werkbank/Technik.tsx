@@ -1,6 +1,6 @@
 import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
-import { werkzeugZeilen } from './Werkzeuge';
+import { abschirmungZeile, werkzeugZeilen } from './Werkzeuge';
 import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { geraetText } from '../../../shared/src/model';
@@ -79,6 +79,7 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
         [t('werkbank.technik.zeitzone'), u.laufzeit.zeitzone],
         [t('werkbank.technik.laeuft-seit'), zeit(u.laufzeit.laeuftSeit)],
         ...kennungZeilen(u.laufzeit),
+        ...abschirmungZeile(u.abschirmung),
       ],
     ],
     [

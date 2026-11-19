@@ -54,6 +54,50 @@ export function ausdruecklichVertraut(vertrauen: ProxyVertrauen | undefined, adr
   return liste.check(a, f === 6 ? 'ipv6' : 'ipv4');
 }
 
+/** Benannte Netze, wie Fastify (proxy-addr) sie auflöst. */
+const BENANNT: Readonly<Record<string, readonly string[]>> = {
+  loopback: ['127.0.0.1/8', '::1/128'],
+  linklocal: ['169.254.0.0/16', 'fe80::/10'],
+  uniquelocal: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', 'fc00::/7'],
+};
+
+/**
+ * Ein ganzes Netz statt der Adresse des Proxys (#1465): der erste Eintrag in einer Liste `TRUST_PROXY`, der die Adresse
+ * als **Netz** abdeckt – mit kürzerer Maske als eine einzelne Adresse oder als benanntes Netz (`uniquelocal` …). Eine
+ * einzeln eingetragene Adresse (auch `/32` bzw. `/128`) zählt nicht. null: kein solcher Eintrag. Nur für den Hinweis;
+ * wem Ablago glaubt, bestimmt allein `proxyVertrauen`.
+ */
+export function netzStattAdresse(vertrauen: ProxyVertrauen | undefined, adresse: string | undefined): string | null {
+  if (!Array.isArray(vertrauen) || !adresse) return null;
+  const a = adresse.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').replace(/%.*$/, '');
+  const f = isIP(a);
+  if (!f) return null;
+  for (const eintrag of vertrauen) {
+    const liste = new BlockList();
+    for (const x of BENANNT[eintrag] ?? [eintrag]) {
+      const [ip, m] = x.split('/');
+      const g = isIP(ip);
+      if (!g || m === undefined || Number(m) >= (g === 6 ? 128 : 32)) continue;
+      liste.addSubnet(ip, Number(m), g === 6 ? 'ipv6' : 'ipv4');
+    }
+    if (liste.check(a, f === 6 ? 'ipv6' : 'ipv4')) return eintrag;
+  }
+  return null;
+}
+
+/**
+ * Hinweis „Trage nur die Adresse deines Proxys ein“ (#1465): Kam in den letzten 24 Stunden eine Anfrage direkt vom
+ * Gateway (`stand`), und deckt ein Netz in `TRUST_PROXY` das Gateway ab, glaubt Ablago auch Anfragen, die nur über das
+ * Gateway kommen (Userland-Proxy). Ohne solche Anfragen oder mit der einzelnen Adresse: null.
+ */
+export function proxyNetzHinweis(
+  vertrauen: ProxyVertrauen | undefined,
+  stand: { adresse: string; zuletzt: string } | null,
+): { netz: string; adresse: string; zuletzt: string } | null {
+  const netz = stand ? netzStattAdresse(vertrauen, stand.adresse) : null;
+  return stand && netz ? { netz, adresse: stand.adresse, zuletzt: stand.zuletzt } : null;
+}
+
 export function proxyVertrauen(
   wert: string | undefined,
   gateways: Gateways = eigeneGateways,

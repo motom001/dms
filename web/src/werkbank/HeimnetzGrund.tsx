@@ -38,3 +38,22 @@ export function HeimnetzGrund({ n, deineIp }: { n: NotfallzugangStand; deineIp: 
     </>
   );
 }
+
+/**
+ * Ganzes Netz in TRUST_PROXY statt der Adresse des Proxys (#1465): steht unabhängig vom Heimnetz, solange Anfragen
+ * direkt vom Gateway kommen und ein Netz es abdeckt.
+ */
+export function ProxyNetzHinweis({ n }: { n: NotfallzugangStand }) {
+  if (!n.proxyNetz) return null;
+  return (
+    <div className="hinweis warn" id="notfall-proxy-netz">
+      <p>
+        {tn('werkbank.notfallzugang.proxy-netz', {
+          netz: n.proxyNetz.netz,
+          code: <code>{n.proxyNetz.adresse}</code>,
+          hilfe: <Hilfe ort="werkbank.notfallzugang.gateway" />,
+        })}
+      </p>
+    </div>
+  );
+}

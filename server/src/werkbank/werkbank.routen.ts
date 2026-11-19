@@ -11,7 +11,9 @@ import { t } from '../sprache/sprache';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { uebersicht } from '../system/system';
 import { werkzeugAbschirmung } from '../prozesse/hintergrund';
-import { gatewayBeobachtung } from '../http/gateway';
+import { gatewayBeobachtung, gegenstellenBeobachtung } from '../http/gateway';
+import { proxyNetzHinweis } from '../http/proxy';
+import { kennungHinweisJetzt } from '../einrichtung/dienstbenutzer';
 import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll/protokoll';
 import { werkbankZahlen } from './werkbankzahlen';
 import { BeispielAblage } from '../beispiele/beispielablage';
@@ -394,6 +396,10 @@ async function uebersichtHinweise(k: RoutenKontext, sicher: Sicher) {
     // Notfallcode benutzt (#815): bis jemand mit „Gesamte Verwaltung“ den Hinweis als gelesen markiert.
     // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes in den letzten 24 Stunden.
     heimnetzGateway: await gatewayBeobachtung.stand(dienst.kurzzustand),
+    // Ganzes Netz in TRUST_PROXY statt der Adresse des Proxys (#1465): Anfragen direkt vom Gateway, das ein Netz abdeckt.
+    trustProxyNetz: proxyNetzHinweis(x.proxy, await gegenstellenBeobachtung.stand(dienst.kurzzustand)),
+    // PUID/PGID fehlen, Datenordner auf einem Bind-Mount (#1449): die Ordner gehören jetzt der Vorgabe 1000:1000.
+    kennungHinweis: kennungHinweisJetzt(),
     notfallcodeBenutzt: x.notfallcode
       ? ((await sicher(() => x.notfallcode!.offen()))?.map((n) => ({
           id: n.id,

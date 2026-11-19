@@ -10,6 +10,8 @@ import type { Prozessstand } from '../prozesse/aufteilung';
 import { arbeiterStand } from '../arbeit';
 import { VERSAND_OAUTH_ID } from '../post/postfach-oauth';
 import { heimnetzStand } from '../notfall/notfallcode';
+import { gegenstellenBeobachtung } from '../http/gateway';
+import { proxyNetzHinweis } from '../http/proxy';
 import { FEHLERMELDUNG_KOERPER_MAX, MB } from '../grundlagen/grenzen';
 import {
   L,
@@ -219,6 +221,8 @@ function fehlermeldungRouten(k: RoutenKontext): Route[] {
 
 export function systemRouten(k: RoutenKontext): Route[] {
   const { konten, x, nf, anbindung } = k;
+  // Ganzes Netz in TRUST_PROXY statt der Adresse des Proxys (#1465): Hinweis beim Notfallzugang.
+  const proxyNetz = async () => proxyNetzHinweis(x.proxy, await gegenstellenBeobachtung.stand(k.dienst.kurzzustand));
   return [
     /* ---------- Einrichtungsassistent (#119) ---------- */
     {
@@ -294,7 +298,12 @@ export function systemRouten(k: RoutenKontext): Route[] {
       pfad: '/api/werkbank/anmeldeschutz/notfallzugang',
       zugang: 'admin',
       handler: async (a) =>
-        ok({ ...(await nf().einstellung()), code: await konten.notfallcodeStand(), ...heimnetzStand(a, x.proxy, x.gateways) }),
+        ok({
+          ...(await nf().einstellung()),
+          code: await konten.notfallcodeStand(),
+          ...heimnetzStand(a, x.proxy, x.gateways),
+          proxyNetz: await proxyNetz(),
+        }),
     },
     {
       methode: 'PUT',
@@ -305,6 +314,7 @@ export function systemRouten(k: RoutenKontext): Route[] {
           ...(await nf().setzeEinstellung(b(a), ich(a).email)),
           code: await konten.notfallcodeStand(),
           ...heimnetzStand(a, x.proxy, x.gateways),
+          proxyNetz: await proxyNetz(),
         }),
     },
     {
