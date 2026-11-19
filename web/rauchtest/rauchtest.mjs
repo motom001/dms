@@ -53,6 +53,7 @@ import './bereiche/werkbank-post.mjs';
 import './bereiche/rundgaenge-und-tipps.mjs';
 import './bereiche/erwaehnen.mjs';
 import './bereiche/werkbank-laden.mjs';
+import './bereiche/anmeldeschutz.mjs';
 import './bereiche/navigation.mjs';
 import './bereiche/ruhige-werkbank.mjs';
 import './bereiche/liste-und-verweise.mjs';
