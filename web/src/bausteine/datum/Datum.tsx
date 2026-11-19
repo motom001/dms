@@ -64,31 +64,33 @@ export function DatumEingabe({ wert, setze, id, min, max, disabled, className, o
   }
   return (
     <span className={klassen(s.datum, className)} ref={rahmen}>
-      <input
-        ref={eingabe}
-        id={id}
-        type="date"
-        value={wert}
-        min={min}
-        max={max}
-        disabled={disabled}
-        {...aria}
-        onChange={(e) => setze(e.target.value)}
-        onPointerDown={(e) => {
-          if (e.pointerType === 'mouse' && !disabled && !offen) setOffen('zeigen');
-        }}
-        onKeyDown={taste}
-      />
-      <Knopf
-        art="eigen"
-        className={s.knopf}
-        nurSymbol={t('oberflaeche.datum.kalender-oeffnen')}
-        aria-haspopup="dialog"
-        aria-expanded={!!offen}
-        gesperrt={disabled}
-        onClick={() => setOffen(offen === 'fokus' ? false : 'fokus')}>
-        <Symbol name="kalender" />
-      </Knopf>
+      <span className={s.eingabe}>
+        <input
+          ref={eingabe}
+          id={id}
+          type="date"
+          value={wert}
+          min={min}
+          max={max}
+          disabled={disabled}
+          {...aria}
+          onChange={(e) => setze(e.target.value)}
+          onPointerDown={(e) => {
+            if (e.pointerType === 'mouse' && !disabled && !offen) setOffen('zeigen');
+          }}
+          onKeyDown={taste}
+        />
+        <Knopf
+          art="eigen"
+          className={s.knopf}
+          nurSymbol={t('oberflaeche.datum.kalender-oeffnen')}
+          aria-haspopup="dialog"
+          aria-expanded={!!offen}
+          gesperrt={disabled}
+          onClick={() => setOffen(offen === 'fokus' ? false : 'fokus')}>
+          <Symbol name="kalender" />
+        </Knopf>
+      </span>
       {offen && (
         <Kalender
           wert={wert}

@@ -19,6 +19,7 @@ export function DatumMuster() {
   const [leer, setLeer] = useState('');
   const [frist, setFrist] = useState('2026-12-11');
   const [offen, setOffen] = useState('2026-12-11');
+  const breit = typeof matchMedia !== 'function' || !matchMedia('(max-width: 600px)').matches;
   return (
     <div className={s.raster}>
       <Karte zustand="datum-leer" titel={t('oberflaeche.muster.zustand.leer')}>
@@ -31,11 +32,14 @@ export function DatumMuster() {
           {(v) => <DatumEingabe {...v} wert={frist} setze={setFrist} />}
         </Feld>
       </Karte>
-      <Karte zustand="datum-kalender" titel={t('oberflaeche.muster.datum.kalender')}>
-        <Feld beschriftung={t('oberflaeche.muster.beschriftung.faellig')}>
-          {(v) => <DatumEingabe {...v} wert={offen} setze={setOffen} offenZeigen />}
-        </Feld>
-      </Karte>
+      {/* Am Handy ist der Kalender ein Blatt über die volle Breite – in einer Karte hätte er dafür keinen Platz. */}
+      {breit && (
+        <Karte zustand="datum-kalender" titel={t('oberflaeche.muster.datum.kalender')}>
+          <Feld beschriftung={t('oberflaeche.muster.beschriftung.faellig')}>
+            {(v) => <DatumEingabe {...v} wert={offen} setze={setOffen} offenZeigen />}
+          </Feld>
+        </Karte>
+      )}
       <Karte zustand="datum-gesperrt" titel={t('oberflaeche.muster.zustand.gesperrt')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.faellig')}>
           {(v) => <DatumEingabe {...v} wert="2026-11-30" setze={() => {}} disabled />}

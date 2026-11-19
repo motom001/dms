@@ -1,20 +1,21 @@
 /* Datum (#1496): Datumsfeld mit eigenem Kalender samt Kalenderwochen. Nur Werte aus tokens.css; das Feld selbst kommt
    aus basis.css (Hover, Fokus und Fehler aus dem Feldrahmen, wenn es in einem steht). */
-.datum { position: relative; display: flex; align-items: center; width: 100%; min-width: 0; }
-.datum > input { padding-right: 34px; min-width: 0; }
+.datum { position: relative; display: flex; flex-direction: column; width: 100%; min-width: 0; }
+/* Feld und Knopf: der Knopf liegt rechts im Feld. */
+.eingabe { position: relative; display: flex; align-items: center; width: 100%; min-width: 0; }
+.eingabe > input { padding-right: 34px; min-width: 0; }
 /* Das Symbol des Browsers weicht dem eigenen Knopf (Chromium, Safari); Firefox zeichnet keins in dieser Form. */
-.datum > input::-webkit-calendar-picker-indicator { display: none; }
+.eingabe > input::-webkit-calendar-picker-indicator { display: none; }
 [data-knopf="eigen"].knopf { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; color: var(--leise); }
 [data-knopf="eigen"].knopf:hover { background: var(--senke); color: var(--tinte); }
 
 .kalender { position: absolute; left: 0; top: calc(100% + 4px); z-index: var(--ebene-menue); width: max-content; padding: 8px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px var(--schatten-zart); }
 .kalender.oben { top: auto; bottom: calc(100% + 4px); }
 /* Musterseite: der Kalender im Fluss, unter dem Feld. */
-.datum:has(.fest) { flex-wrap: wrap; }
 .kalender.fest { position: static; margin-top: 4px; box-shadow: none; }
 .kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
 .monat { font-weight: 600; }
-[data-knopf="eigen"].blaettern { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; color: var(--tinte); }
+[data-knopf="eigen"].blaettern { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; color: var(--tinte); }
 [data-knopf="eigen"].blaettern:hover { background: var(--senke); }
 
 .raster { width: auto; border-collapse: separate; border-spacing: 2px; font-size: inherit; }
@@ -36,14 +37,14 @@
 
 /* Am Handy (#1027): Tage und Knöpfe mindestens 44 px. */
 @media (pointer: coarse) {
-  .datum > input { min-height: 44px; }
+  .eingabe > input { min-height: 44px; }
   [data-knopf="eigen"].knopf { width: 44px; height: 44px; right: 0; }
   [data-knopf="eigen"].blaettern { width: 44px; height: 44px; }
   .tag { width: 44px; height: 44px; }
-  .datum > input { padding-right: 46px; }
+  .eingabe > input { padding-right: 46px; }
 }
 /* Schmal: der Kalender als Blatt von unten über die volle Breite, wie das Menü. */
 @media (max-width: 600px) {
-  .kalender, .kalender.oben { position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: calc(var(--ebene-blatt) + 1); width: auto; border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .kalender:not(.fest), .kalender.oben:not(.fest) { position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: calc(var(--ebene-blatt) + 1); width: auto; border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
   .raster { margin: 0 auto; }
 }
