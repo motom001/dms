@@ -193,6 +193,17 @@ export function teileErgebnis(text: string): { kurz: string; rest: string } {
   return { kurz: zeilen.slice(0, n).join('\n'), rest: zeilen.slice(n).join('\n') };
 }
 
+/**
+ * Der kurze Block fürs Formular „Messergebnis Lasttest“ (#1452): vom Anfang bis einschließlich der schließenden
+ * ```-Zeile, ohne den Bericht darunter. Ein Formularfeld bei GitHub fasst höchstens 65.536 Zeichen, ein ganzer Lauf
+ * mit `alle` hat etwa 121.000. Fehlt die schließende Zeile, das ganze Ergebnis.
+ */
+export function formularBlock(text: string): string {
+  const zeilen = text.split('\n');
+  const ende = zeilen.findIndex((z, i) => i > 0 && z.trim() === '```');
+  return ende < 0 ? text : zeilen.slice(0, ende + 1).join('\n');
+}
+
 /** Restdauer in Minuten (von–bis); null: gleich fertig. */
 export function restMinuten(
   s: Pick<LasttestStand, 'wahl' | 'stufe' | 'fertigeStufen' | 'stufeBegonnen' | 'jetzt' | 'durchgang' | 'zustand'> & {

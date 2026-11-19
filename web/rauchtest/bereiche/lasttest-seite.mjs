@@ -1,8 +1,8 @@
 /**
  * Rauchtests: Lasttest-Seite (#1251, #1452) – Überschrift mit der Auswahl, feste Reihenfolge (Kopf, Stand, Gerät,
  * Ergebnis, Ablauf, Jetzt gemessen), die sich beim Ende nicht umbaut, Ablauf als Tabelle (Gruppen je Stufe, Grenzsuche
- * gekürzt), Datenbank-Verbindungen als Kurve, am Ende ein Ergebnis (kurz, aufklappbar, ganz kopiert); axe hell/dunkel,
- * Tippflächen und kein waagerechtes Scrollen am Handy. Die Antworten des Lasttest-Modus sind nachgestellt (wie die
+ * gekürzt), Datenbank-Verbindungen als Kurve, am Ende ein Ergebnis (kurz, aufklappbar, ganz kopiert; fürs Formular nur
+ * der Block); axe hell/dunkel, Tippflächen und kein waagerechtes Scrollen am Handy. Die Antworten des Lasttest-Modus sind nachgestellt (wie die
  * Bilder im Handbuch).
  * Allein starten (gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/lasttest-seite.mjs [fehlerordner]
  */
@@ -240,6 +240,42 @@ rauchtest('Lasttest-Seite fertig: ein Ergebnis, kurz und ganz kopiert, Hinweis z
   await ablauf.getByText('groß 75 bis groß 150: nicht nötig, die Grenze ist erreicht').waitFor();
   await keineWaagerechteRolle(s);
   await barrierefrei(s, true);
+});
+
+// Formular (#1452): Ein Feld bei GitHub fasst höchstens 65.536 Zeichen, ein ganzer Lauf mit `alle` etwa 121.000 – der
+// Knopf zum Formular kopiert vor dem Öffnen nur den Block bis zur schließenden ```-Zeile; „Kopieren“ nimmt weiter alles.
+rauchtest('Lasttest-Seite fertig: Knopf zum Formular kopiert nur den Block (#1452)', {}, async (s, k) => {
+  await zeige(s, k, true);
+  // Das Formular öffnet in einem neuen Fenster – hier ohne GitHub, nur eine leere Seite.
+  await k.route('https://github.com/**', (r) => r.fulfill({ contentType: 'text/html', body: '<title>Formular</title>' }));
+  const ergebnis = s.getByRole('region', { name: 'Messergebnis Lasttest' });
+  await ergebnis.waitFor();
+  await s.evaluate(() => {
+    window.__kopie = null;
+    if (navigator.clipboard) navigator.clipboard.writeText = async (t) => void (window.__kopie = t);
+  });
+  const [fenster] = await Promise.all([
+    s.waitForEvent('popup'),
+    ergebnis.getByRole('link', { name: 'Formular „Messergebnis Lasttest“' }).click(),
+  ]);
+  assert.match(fenster.url(), /^https:\/\/github\.com\/motom001\/dms\/issues\/new\?template=messergebnis-lasttest\.yml/);
+  await fenster.close();
+  await ergebnis.getByRole('status').getByText('Block kopiert – im Formular einfügen', { exact: true }).waitFor();
+  assert.equal(await s.locator('.lasttest-behelf').count(), 0, 'Ausweichfeld wieder weg');
+  const kopie = await s.evaluate(() => window.__kopie);
+  if (kopie !== null) {
+    const zeilen = VORLAGE.split('\n');
+    assert.equal(kopie.split('\n').length, zeilen.length, 'nur der Block');
+    assert.ok(kopie.startsWith('```text\nMessergebnis Lasttest (#563)\n'), 'Block oben');
+    assert.ok(kopie.includes('Gerät/Modell: bitte ergänzen\n'), 'mit Gerät');
+    assert.ok(kopie.endsWith('Ziel erreicht\n```'), 'bis einschließlich der schließenden Zeile');
+    assert.ok(!kopie.includes('## Lasttest'), 'ohne Bericht');
+  } else assert.equal(await s.evaluate(() => !!navigator.clipboard && window.isSecureContext), false, 'über die Zwischenablage kopiert');
+  // „Kopieren“ nimmt weiter alles.
+  await ergebnis.getByRole('button', { name: 'Kopieren', exact: true }).click();
+  await ergebnis.getByRole('button', { name: 'Kopiert' }).waitFor();
+  const alles = await s.evaluate(() => window.__kopie);
+  if (alles !== null) assert.ok(alles.includes('## Lasttest (2026-11-18 10:15 UTC)'), 'Kopieren mit Bericht');
 });
 
 for (const handy of [false, true])

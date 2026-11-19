@@ -68,8 +68,9 @@ body:
     id: ergebnis
     attributes:
       label: Ergebnisblock · Result block
-      # Ohne „render: text“ (#1452): Der Block bringt seinen eigenen ```text-Rahmen mit, der Bericht darunter ist Markdown.
-      description: Das Ergebnis von der Lasttest-Seite, unverändert („Kopieren“) – oben der Block „Messergebnis Lasttest“ (mit den Zeilen „… + Speichern“, „… + Pakete und Tabellen“, „Paketaufrufe …“ und „… + Anmeldeschutz“, falls vorhanden), darunter der Bericht. Ist es zu lang, genügt der Block bis einschließlich der Zeile mit ```. · The result from the load test page, unchanged ("Copy") – at the top the block "Messergebnis Lasttest" (including the lines "… + Speichern", "… + Pakete und Tabellen", "Paketaufrufe …" and "… + Anmeldeschutz", if present), below it the report. If it is too long, the block up to and including the line with ``` is enough.
+      # Ohne „render: text“ (#1452): Der Block bringt seinen eigenen ```text-Rahmen mit. Nur der Block: Ein Feld fasst höchstens
+      # 65.536 Zeichen, ein ganzer Lauf mit `alle` hat etwa 121.000.
+      description: Der Block „Messergebnis Lasttest“ von der Lasttest-Seite, unverändert (mit den Zeilen „… + Speichern“, „… + Pakete und Tabellen“, „Paketaufrufe …“ und „… + Anmeldeschutz“, falls vorhanden) – bis einschließlich der Zeile mit ```. Der Knopf zum Formular auf der Seite hat ihn schon kopiert, du musst ihn nur einfügen. Der ganze Bericht passt nicht in dieses Feld (höchstens 65.536 Zeichen); ihn nimmt „Kopieren“ für einen Kommentar im Sammel-Issue mit. · The block "Messergebnis Lasttest" from the load test page, unchanged (including the lines "… + Speichern", "… + Pakete und Tabellen", "Paketaufrufe …" and "… + Anmeldeschutz", if present) – up to and including the line with ```. The form button on the page has already copied it, you only need to paste it. The whole report doesn't fit into this field (at most 65,536 characters); "Copy" takes it along for a comment on the collective issue.
     validations:
       required: true
   - type: textarea

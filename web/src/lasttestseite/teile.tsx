@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { LasttestStand, Speicherwahl } from '../../../shared/src/lasttest';
-import { bereinigeGeraet, GERAET_MAX, teileErgebnis } from '../../../shared/src/lasttest';
+import { bereinigeGeraet, formularBlock, GERAET_MAX, teileErgebnis } from '../../../shared/src/lasttest';
 import { handbuchUrl } from '../../../shared/src/hilfe';
 import { Aufklapper, Feld, Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
@@ -219,7 +219,9 @@ export function ergaenzenAus(a: LasttestStand['angaben']): Ergaenzen {
 /**
  * Ergebnis (#1452): ein Ergebnis, der Platz dafür ist von Anfang an da. Solange es fehlt, der Hinweis und die Vorschau
  * von Gerät und Speicher; dann oben der kurze Block für die Gerätemeldung (bis „RAM …“), darunter zum Aufklappen der
- * Rest mit dem ganzen Bericht. Kopieren und Herunterladen nehmen immer alles. Dazu Formular und Sammel-Issue.
+ * Rest mit dem ganzen Bericht. Kopieren und Herunterladen nehmen immer alles. Dazu Formular und Sammel-Issue; der Link
+ * zum Formular kopiert vorher nur den kurzen Block bis zur schließenden ```-Zeile (ein Formularfeld bei GitHub fasst
+ * höchstens 65.536 Zeichen, ein ganzer Lauf mit `alle` etwa 121.000) und sagt das in einer kurzen Rückmeldung.
  */
 export function Ergebnis({
   stand,
@@ -240,6 +242,8 @@ export function Ergebnis({
   setGesichert: (g: boolean) => void;
 }) {
   const [ganz, setGanz] = useState(false);
+  /** Block fürs Formular kopiert (#1452): `nein` – Zwischenablage und Ausweichweg gingen nicht. */
+  const [block, setBlock] = useState<'ja' | 'nein' | null>(null);
   const datei = () => {
     herunterladen(`lasttest-${stand.wahl}.md`, text);
     setGesichert(true);
@@ -292,16 +296,24 @@ export function Ergebnis({
             <Knopf symbol="herunterladen" onClick={datei}>
               {t('lasttest.herunterladen')}
             </Knopf>
-            <KnopfLink href={FORMULAR} neuesFenster>
+            <KnopfLink
+              href={FORMULAR}
+              neuesFenster
+              onClick={() => void kopiere(formularBlock(text)).then((ok) => setBlock(ok ? 'ja' : 'nein'))}>
               {t('lasttest.formular')} <Symbol name="extern" />
             </KnopfLink>
             <KnopfLink href={SAMMEL} neuesFenster>
               {t('lasttest.sammel')} <Symbol name="extern" />
             </KnopfLink>
           </div>
-          {kopiert === 'nein' && (
+          {(kopiert === 'nein' || block === 'nein') && (
             <p className="klein fehlertext" role="alert">
               {t('lasttest.kopieren.geht-nicht')}
+            </p>
+          )}
+          {block === 'ja' && (
+            <p className="klein leise" role="status">
+              {t('lasttest.formular.kopiert')}
             </p>
           )}
           {stand.datei && <p className="klein leise">{t('lasttest.datei', { datei: stand.datei })}</p>}
