@@ -490,6 +490,8 @@
   "verlauf.alle-zeigen": "Alle zeigen",
   "verlauf.aeltere": "Ältere Einträge",
   "verlauf.mappe": "Mappe",
+  "verlauf.ergebnistext": "Ergebnis",
+  "verlauf.netz": "Netzaufrufe",
   "verlauf.messung": "{sekunden} s, {mb} MB",
   "verlauf.art.protokoll": "Protokoll des Pakets",
   "verlauf.art.installiert": "Installiert (Version {version})",

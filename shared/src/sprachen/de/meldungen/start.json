@@ -77,6 +77,8 @@
   "verwaltung.einstellungen-geprueft": "Einstellungen geprüft",
   "verwaltung.ausprobiert": "Ausprobiert",
   "verwaltung.verlauf-zeilen-max": "Mehr als {anzahl} Zeilen in dieser Stunde – weitere stehen nur im Protokoll von Ablago.",
+  "verwaltung.verlauf-schreiben-gescheitert": "Schreiben abgelehnt: {liste}",
+  "verwaltung.verlauf-zeichen": "{anzahl} Zeichen",
   "verwaltung.felder-erkannt": "Felder erkannt",
   "verwaltung.typ-vorgeschlagen": "Mappentyp vorgeschlagen",
   "verwaltung.der-paket-laeufer-wurde": "Der Paket-Läufer wurde beendet.",

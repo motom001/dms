@@ -254,37 +254,47 @@ function ErgebnisChip({ e }: { e: VerlaufEintrag }) {
   ) : null;
 }
 
-/** Was in einem Eintrag steht: Art, Bezug, Ergebnis, Dauer, Speicher, Text, Netzaufrufe. */
+/** Was in einem Eintrag steht: Art, Ergebnis, Dauer, Speicher – aufgeklappt (#1491) Mappe, Ergebnistext und Netzaufrufe. */
 function Eintrag({ e }: { e: VerlaufEintrag }) {
+  const kopf = (
+    <span className="zeile1">
+      <span className="mono klein">{datum(e.zeit)}</span> <strong>{wasText(e)}</strong> <ErgebnisChip e={e} />
+      {e.ms !== null && (
+        <span className="leise klein"> · {t('pakete.verlauf.messung', { sekunden: sekunden(e.ms), mb: e.speicherMB ?? 0 })}</span>
+      )}
+      {e.wer && <span className="leise klein"> · {e.wer}</span>}
+    </span>
+  );
+  if (!e.bezug && !e.text && !e.netz.length) return <li>{kopf}</li>;
   return (
     <li>
-      <span className="zeile1">
-        <span className="mono klein">{datum(e.zeit)}</span> <strong>{wasText(e)}</strong> <ErgebnisChip e={e} />
-        {e.ms !== null && (
-          <span className="leise klein"> · {t('pakete.verlauf.messung', { sekunden: sekunden(e.ms), mb: e.speicherMB ?? 0 })}</span>
-        )}
-        {e.wer && <span className="leise klein"> · {e.wer}</span>}
-      </span>
-      {e.bezug && (
-        <>
-          <br />
-          <Link to={`/ablage/mappe/${e.bezug.mappe}`} className="verweis klein">
-            {e.bezug.titel || t('pakete.verlauf.mappe')}
-          </Link>
-        </>
-      )}
-      {e.text && (
-        <>
-          <br />
-          <span className={`klein${e.ergebnis && e.ergebnis !== 'ok' ? ' fehlertext' : ''}`}>{e.text}</span>
-        </>
-      )}
-      {e.netz.length > 0 && (
-        <>
-          <br />
-          <span className="leise klein">{e.netz.join(' · ')}</span>
-        </>
-      )}
+      <details>
+        <summary>{kopf}</summary>
+        <dl className="eigenschaften klein">
+          {e.bezug && (
+            <>
+              <dt>{t('pakete.verlauf.mappe')}</dt>
+              <dd>
+                <Link to={`/ablage/mappe/${e.bezug.mappe}`} className="verweis">
+                  {e.bezug.titel || t('pakete.verlauf.mappe')}
+                </Link>
+              </dd>
+            </>
+          )}
+          {e.text && (
+            <>
+              <dt>{t('pakete.verlauf.ergebnistext')}</dt>
+              <dd className={e.ergebnis && e.ergebnis !== 'ok' ? 'fehlertext' : undefined}>{e.text}</dd>
+            </>
+          )}
+          {e.netz.length > 0 && (
+            <>
+              <dt>{t('pakete.verlauf.netz')}</dt>
+              <dd className="leise">{e.netz.join(' · ')}</dd>
+            </>
+          )}
+        </dl>
+      </details>
     </li>
   );
 }

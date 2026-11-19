@@ -375,11 +375,11 @@ Die Rechenzeit (CPU) je Paket zeigt Ablago nicht: Alle Pakete laufen im selben L
 
 **Liste** darunter, neueste zuerst, mit Suchfeld und dem Haken **Nur Fehler zeigen**:
 
-- jedes **zugestellte Ereignis** (Art, die Mappe bzw. Post als Link – nur, wenn du sie lesen darfst) und jeder andere **Aufruf** (Aktion, Frage, Erkennung, Prüfung der Einstellungen …) mit **Ergebnis** – *ok*, *Fehler*, *Zeitgrenze* oder *Speichergrenze* –, Dauer, Speicher, Fehlermeldung und den [Netzaufrufen](#netzaufrufe) dieses Aufrufs
+- jedes **zugestellte Ereignis** (Art, die Mappe bzw. Post als Link – nur, wenn du sie lesen darfst) und jeder andere **Aufruf** (Aktion, Frage, Erkennung, Prüfung der Einstellungen …) mit **Ergebnis** – *ok*, *Warnung*, *Fehler*, *Zeitgrenze* oder *Speichergrenze* – sowie Dauer und Speicher. **Aufgeklappt** zeigt der Eintrag die Mappe (als Link), den **Ergebnistext** des Laufs (z. B. „Rechnung: Status neu“, höchstens 300 Zeichen, wie unter *Zuletzt*) bzw. die Fehlermeldung und die [Netzaufrufe](#netzaufrufe) dieses Aufrufs. Lehnt Ablago einen Schreibversuch des Pakets ab (z. B. 409 „geändert“, 404, 400), steht der Lauf als *Warnung* da, mit Methode, Pfad, Status und Meldung – nicht als *ok*
 - die **Protokollzeilen** des Pakets (höchstens 60 je Stunde; weitere nur im Protokoll von Ablago)
 - **Installiert**, **Aktualisiert** und **Einstellungen geändert** – wer, wann und welche Einstellungen (nie Werte)
 
-Im Verlauf stehen **nie Inhalte** aus Dokumenten oder Antworten des Pakets. Einträge bleiben **30 Tage** (höchstens 5000 je Paket), damit die Auslastung einen Monat zeigen kann – länger als das [Protokoll](fehlersuche.md#protokoll) von Ablago, das nur einen Tag zurückreicht. Entfernst du das Paket, verschwindet sein Verlauf mit.
+Im Verlauf stehen **nie Inhalte** aus Dokumenten. Von den Antworten des Pakets steht nur der kurze Ergebnistext eines Laufs dort; Antworten von KI-Funktionen und Mappen-Aktionen nur als Länge („120 Zeichen“). Einträge bleiben **30 Tage** (höchstens 5000 je Paket), damit die Auslastung einen Monat zeigen kann – länger als das [Protokoll](fehlersuche.md#protokoll) von Ablago, das nur einen Tag zurückreicht. Entfernst du das Paket, verschwindet sein Verlauf mit.
 
 ![Reiter „Verlauf“ eines Pakets: Auslastung mit Ampel, darunter die Liste mit „Nur Fehler zeigen“](bilder/werkbank-paket-verlauf.png)
 

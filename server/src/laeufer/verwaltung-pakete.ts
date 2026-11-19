@@ -235,11 +235,11 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
    */
   private async beantworte(paket: string, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage'], aufruf?: number): Promise<Hostantwort> {
     const zugang = aufruf === undefined ? undefined : this.zugaenge.get(aufruf);
-    return (zugang ? await this.aktionsFrage(paket, zugang, q) : null) ?? this.mitDienstkonto(paket, q);
+    return (zugang ? await this.aktionsFrage(paket, zugang, q) : null) ?? this.mitDienstkonto(paket, q, aufruf);
   }
 
   /** Speicher und API mit dem Schlüssel des Dienstkontos (alles außer Paket-Aktionen). */
-  private async mitDienstkonto(paket: string, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage']): Promise<Hostantwort> {
+  private async mitDienstkonto(paket: string, q: Extract<VomLaeufer, { art: 'frage' }>['anfrage'], aufruf?: number): Promise<Hostantwort> {
     const t = (status: number, s: string): Hostantwort => ({ status, body: new TextEncoder().encode(s) });
     if (q.art === 'speicher_lesen' || q.art === 'speicher_schreiben') {
       const werte = await this.o.speicher.lies(paket);
@@ -269,7 +269,16 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
       ...(body ? { 'content-type': q.body ? String(a.typ ?? 'application/octet-stream') : 'application/json' } : {}),
     };
     const r = await this.o.api({ methode, pfad: `/api/v1${pfad}`, kopf, body });
+    this.merkeSchreibfehler(aufruf, methode, pfad, r);
     return { status: r.status, body: new Uint8Array(r.body) };
+  }
+
+  /** Schreibversuch abgelehnt (#1491): für den Verlauf merken – nur Methode, Pfad (Ids), Status und Meldung, nie Inhalte. */
+  private merkeSchreibfehler(aufruf: number | undefined, methode: string, pfad: string, r: { status: number; body: Buffer }) {
+    if (aufruf === undefined || !this.aufrufe.has(aufruf) || methode === 'GET' || r.status < 400 || r.status >= 500) return;
+    const liste = this.schreibfehler.get(aufruf) ?? [];
+    if (liste.length < 10) liste.push(`${methode} ${pfad.split('?')[0]} → ${r.status}${meldungAus(r.body)}`);
+    this.schreibfehler.set(aufruf, liste);
   }
 
   /**
@@ -305,5 +314,15 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
       (sha) => this.o.dienst.kern.liesGanz(sha),
     );
     return { status: r.status, body: new Uint8Array(r.body) };
+  }
+}
+
+/** Meldung einer abgelehnten Anfrage (`{ fehler: … }`), kurz; sonst nichts. */
+function meldungAus(body: Buffer): string {
+  try {
+    const f = (JSON.parse(body.toString('utf8')) as { fehler?: unknown }).fehler;
+    return typeof f === 'string' && f ? ` (${f.slice(0, 120)})` : '';
+  } catch {
+    return '';
   }
 }

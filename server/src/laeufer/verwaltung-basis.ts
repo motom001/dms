@@ -51,6 +51,15 @@ export abstract class PaketlaeuferBasis {
   protected nachlaufLaeuft = false;
   /** Laufende Aufrufe von Paket-Aktionen (#1039): Aufruf-Nummer → Paket, eingeschränkter Zugriff, abgelegte Dateien. */
   protected zugaenge = new Map<number, AktionsZugang>();
+  /** Gescheiterte Schreibversuche eines Aufrufs an die API (#1491): Aufruf-Nummer → „PUT /mappen/… → 409 …“. */
+  protected schreibfehler = new Map<number, string[]>();
+
+  /** Gescheiterte Schreibversuche eines Aufrufs (#1491) für den Verlauf – danach vergessen. */
+  protected nimmSchreibfehler(nr: number): string[] {
+    const l = this.schreibfehler.get(nr) ?? [];
+    this.schreibfehler.delete(nr);
+    return l;
+  }
 
   /** Offene Aufrufe beenden – sonst warten Zustellung oder Aktion für immer. */
   protected beendeAufrufe(r: Ergebnis) {
@@ -65,13 +74,15 @@ export abstract class PaketlaeuferBasis {
 
   /**
    * Verlauf (#1003): je Aufruf ein Eintrag – Art, Ergebnis (Grenze erreicht: zeit/speicher), Dauer, Speicher, Mappe des
-   * Ereignisses und Netzaufrufe als Text; nie das Ergebnis selbst (es kann Inhalte tragen), bei Fehlern die Meldung.
+   * Ereignisses und Netzaufrufe als Text; bei Fehlern die Meldung. Seit #1491 auch der Ergebnistext des Laufs (wie unter
+   * „Zuletzt“, höchstens 300 Zeichen; mit `ohneInhalt` nur seine Länge). Scheiterte ein Schreibversuch des Pakets an der
+   * API (400, 404, 409 …), ist der Lauf eine Warnung, nicht „ok“ – mit den gescheiterten Anfragen.
    */
   protected verlauf(
     paket: string,
     art: 'ereignis' | 'aktion',
     eingang: Record<string, unknown>,
-    opt: { bezeichnung?: string; ohneVerlauf?: boolean },
+    opt: { bezeichnung?: string; ohneVerlauf?: boolean; ohneInhalt?: boolean; schreibfehler?: string[] },
     r: Ergebnis,
   ) {
     if (opt.ohneVerlauf) return;
@@ -79,7 +90,9 @@ export abstract class PaketlaeuferBasis {
     const daten =
       art === 'ereignis' && eingang.daten && typeof eingang.daten === 'object' ? (eingang.daten as Record<string, unknown>) : {};
     const ergebnis = r.ok
-      ? 'ok'
+      ? opt.schreibfehler?.length
+        ? 'warnung'
+        : 'ok'
       : r.ms >= this.grenzen.sekunden * 1000 || /zeitgrenze|time limit/i.test(r.fehler ?? '')
         ? 'zeit'
         : /speichergrenze|memory limit/i.test(r.fehler ?? '')
@@ -94,7 +107,7 @@ export abstract class PaketlaeuferBasis {
           ergebnis,
           ms: r.ms,
           speicherMB: r.speicherMB,
-          text: r.ok ? '' : (r.fehler ?? '').slice(0, 300),
+          text: verlaufText(r, opt),
           bezug: typeof daten.mappe === 'string' ? { mappe: daten.mappe } : null,
           netz: (r.netz ?? []).map(netzText),
         },
@@ -143,4 +156,17 @@ export abstract class PaketlaeuferBasis {
   protected laeuft() {
     return !!this.kind && this.bereit && !this.aus && !this.o.pausiert?.();
   }
+}
+
+/**
+ * Text eines Verlaufseintrags (#1491): bei Erfolg der Ergebnistext (mit `ohneInhalt` nur seine Länge), davor die
+ * gescheiterten Schreibversuche; bei einem Fehler die Meldung. Höchstens 300 Zeichen.
+ */
+function verlaufText(r: Ergebnis, opt: { ohneInhalt?: boolean; schreibfehler?: string[] }): string {
+  if (!r.ok) return (r.fehler ?? '').slice(0, 300);
+  const fehler = opt.schreibfehler?.length
+    ? t('meldungen.verwaltung.verlauf-schreiben-gescheitert', { liste: opt.schreibfehler.slice(0, 3).join('; ') })
+    : '';
+  const text = opt.ohneInhalt ? t('meldungen.verwaltung.verlauf-zeichen', { anzahl: r.text.length }) : r.text;
+  return [fehler, text].filter(Boolean).join(' – ').slice(0, 300);
 }

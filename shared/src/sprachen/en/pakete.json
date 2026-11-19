@@ -490,6 +490,8 @@
   "verlauf.alle-zeigen": "Show all",
   "verlauf.aeltere": "Older entries",
   "verlauf.mappe": "Folder",
+  "verlauf.ergebnistext": "Result",
+  "verlauf.netz": "Network calls",
   "verlauf.messung": "{sekunden} s, {mb} MB",
   "verlauf.art.protokoll": "Package log",
   "verlauf.art.installiert": "Installed (version {version})",
