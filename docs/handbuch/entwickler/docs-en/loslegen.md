@@ -72,6 +72,10 @@ const leer = await eigeneDatenbank('old', { migrieren: false }); // empty, e.g. 
 
 The database is created next to the one from `TEST_DATABASE_URL` and dropped with `ende()`, at the latest after the file's last test. No test writes to the shared database itself; `test/eigene-datenbank.test.ts` fails CI as soon as a test file empties a schema again. Pools stay small so that many files at once stay below `max_connections` (default 100). If a file creates a fresh database per test, add `{ jeTest: true }`: then `afterEach` closes it right after the test – otherwise a file holds four connections per test until it ends (QA round 11/2026: up to 74 in one file, “too many clients”).
 
+### Unread file streams (Node 26) { #ungelesene-datei-strome-node-26 }
+
+If nobody reads a file stream to the end and nobody closes it (`destroy()`), the file stays open until garbage collection cleans up the FileHandle. Under Node 24 that is only a warning (DEP0137) and a small leak, under Node 26 an error (“A FileHandle object was closed during garbage collection”, #1456). So that this shows up before the switch, `npm run test:dateien -w server` loads the test files that read real files with `server/test/offene-dateien.ts` and `--expose-gc`: the script remembers the place in the code for every `open()`, runs garbage collection regularly and fails the run as soon as Node has to close a FileHandle that way – with the file and the place it was opened in the log. In CI this runs as its own step in `tests (1/3)`. When it finds something, close the stream where it is left lying, including error paths; don't rebuild `oeffneStrom`. To check a single file, run `node --expose-gc --import tsx --import ./test/schnell.ts --import ./test/offene-dateien.ts --test test/<file>.test.ts` in the `server` folder.
+
 ### Quarantine for flaky tests { #quarantane-fur-wackelnde-tests }
 
 A test that is sometimes red and sometimes green without any change goes into `server/test/quarantaene.json` with an issue and a due date:

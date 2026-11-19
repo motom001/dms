@@ -72,6 +72,10 @@ const leer = await eigeneDatenbank('alt', { migrieren: false }); // leer, z. B. 
 
 Die Datenbank entsteht neben der aus `TEST_DATABASE_URL` und wird mit `ende()` gelöscht, spätestens nach dem letzten Test der Datei von selbst. Auf der gemeinsamen Datenbank selbst schreibt kein Test; `test/eigene-datenbank.test.ts` lässt die CI scheitern, sobald eine Testdatei wieder ein Schema leert. Die Pools bleiben klein, damit viele Dateien gleichzeitig unter `max_connections` (Vorgabe 100) bleiben. Legt eine Datei je Test eine frische Datenbank an, gehört `{ jeTest: true }` dazu: Dann schließt `afterEach` sie gleich nach dem Test – sonst hält eine Datei bis zu ihrem Ende je Test vier Verbindungen (QS-Runde 11/2026: bis zu 74 in einer Datei, „too many clients“).
 
+### Ungelesene Datei-Ströme (Node 26)
+
+Liest niemand einen Datei-Strom zu Ende und schließt ihn auch niemand (`destroy()`), bleibt die Datei offen, bis die Speicherbereinigung den FileHandle aufräumt. Unter Node 24 ist das nur eine Warnung (DEP0137) und ein kleines Leck, unter Node 26 ein Fehler („A FileHandle object was closed during garbage collection“, #1456). Damit das schon vor dem Umstieg auffällt, lädt `npm run test:dateien -w server` die Testdateien, die echte Dateien lesen, mit `server/test/offene-dateien.ts` und `--expose-gc`: Das Skript merkt sich zu jedem `open()` den Ort im Code, ruft regelmäßig die Speicherbereinigung auf und macht den Lauf rot, sobald Node einen FileHandle dabei schließen muss – mit Datei und Ort des Öffnens im Protokoll. In der CI läuft das als eigener Schritt in `tests (1/3)`. Bei einem Fund den Strom dort schließen, wo er liegen bleibt, auch in Fehlerpfaden, nicht `oeffneStrom` umbauen. Eine einzelne Datei prüfst du mit `node --expose-gc --import tsx --import ./test/schnell.ts --import ./test/offene-dateien.ts --test test/<datei>.test.ts` im Ordner `server`.
+
 ### Quarantäne für wackelnde Tests
 
 Ein Test, der ohne Änderung mal rot, mal grün ist, kommt mit Issue und Fälligkeit in `server/test/quarantaene.json`:

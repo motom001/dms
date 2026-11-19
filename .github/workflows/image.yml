@@ -73,6 +73,21 @@ jobs:
         env:
           TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
           TEST_TEIL: ${{ matrix.teil }}/3
+      # Ungelesene Datei-Ströme (#1456, Vorbereitung auf Node 26): die Testdateien, die echte Dateien lesen, noch einmal
+      # mit regelmäßiger Speicherbereinigung (server/test/offene-dateien.ts). Nur in Teil 1 – etwa 2 Minuten, und die
+      # Teile sind lange vor den Rauchtests fertig, die Dauer der CI bleibt also gleich.
+      - name: Ungelesene Datei-Ströme (Node 26)
+        if: matrix.teil == 1
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:dateien -w server 2>&1 | tee dateien.log || {
+            grep -n -A12 "Ungelesener Datei-Strom\|^ *not ok" dateien.log | head -80 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=Ungelesene Datei-Ströme::/'
+            echo
+            exit 1
+          }
+        env:
+          TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
 
   # Alles außer den Server-Tests (#1056): Release-Notiz, Sicherheitslücken, Typen, Tests von Oberfläche und Gemeinsamem (#1282), Bau, Rauchtests – parallel zu „tests“.
   # Die Rauchtests legen ihre Datenbank im PostgreSQL dieses Jobs an.

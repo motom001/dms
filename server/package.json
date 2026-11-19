@@ -11,7 +11,8 @@
     "typecheck": "tsc -p .",
     "test": "node --import tsx --import ./test/schnell.ts --test --test-reporter=tap test/*.test.ts",
     "test:teil": "node --import tsx --import ./test/schnell.ts --test --test-reporter=tap --test-shard=$TEST_TEIL test/*.test.ts",
-    "test:datei": "node --import tsx --import ./test/schnell.ts --test --test-reporter=spec"
+    "test:datei": "node --import tsx --import ./test/schnell.ts --test --test-reporter=spec",
+    "test:dateien": "node --expose-gc --import tsx --import ./test/schnell.ts --import ./test/offene-dateien.ts --test --test-reporter=tap test/auskunft-zustellen.test.ts test/auskunft.test.ts test/aufgaben-zaehler.test.ts test/datei-fehlt.test.ts test/dokument-uebernehmen.test.ts test/exportordner.test.ts test/geheimnis-sperre.test.ts test/geheimnisse.test.ts test/pg.test.ts test/routen-liste.test.ts test/sicherung.test.ts test/sicherung-extern.test.ts test/sicherung-herunterladen.test.ts test/strom.test.ts test/zwischenspeicher.test.ts"
   },
   "dependencies": {
     "@fastify/static": "^10.1.10",
