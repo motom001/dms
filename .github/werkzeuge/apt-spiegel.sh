@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# apt-spiegel.sh – vor `playwright install-deps` auf den Rechnern von GitHub aufrufen.
+# apt-spiegel.sh – vor `playwright install-deps` auf den Rechnern von GitHub aufrufen; apt-pakete.sh ruft es ab dem
+# zweiten Versuch selbst auf.
 #
 # Die Rechner holen Pakete über eine Spiegelliste (/etc/apt/apt-mirrors.txt, Methode mirror+file). Steht dort ein
 # langsamer Spiegel vorn (18.11.2026: us-east-2.ec2.archive.ubuntu.com, unter 3 Pakete je Minute), hängt die
@@ -18,5 +19,12 @@ liste=/etc/apt/apt-mirrors.txt
         out = $1; for (i = 2; i <= NF; i++) if ($i != "") out = out "\t" $i; print out "\tpriority:" p }' || true
 } > /tmp/apt-mirrors.txt
 sudo cp /tmp/apt-mirrors.txt "$liste"
+# security.ubuntu.com steht nicht in der Spiegelliste, sondern direkt in den Quellen – am 19.11.2026 kamen poppler und
+# qpdf von dort und scheiterten („Could not wait for server fd“). Dieselben Spiegel führen auch die Suite „-security“:
+# auf die Spiegelliste umstellen, die Paketlisten holt das nächste „apt-get update“.
+for q in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+  [ -f "$q" ] && grep -q 'security\.ubuntu\.com' "$q" \
+    && sudo sed -i -E "s#https?://security\.ubuntu\.com/ubuntu/?#mirror+file:$liste#g" "$q"
+done
 printf '%s\n' 'Acquire::http::Timeout "20";' 'Acquire::Retries "3";' | sudo tee /etc/apt/apt.conf.d/99ablago-spiegel > /dev/null
 echo "apt-Spiegel: $(head -n 2 "$liste" | tr '\n' ' ')"

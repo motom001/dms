@@ -55,9 +55,10 @@ jobs:
         with:
           node-version-file: package.json
       - run: npm ci --no-audit --no-fund
-      # Dieselben Werkzeuge wie im Image (Text der PDFs, Seitenbilder). Erst ohne „apt-get update“ (#905).
+      # Dieselben Werkzeuge wie im Image (Text der PDFs, Seitenbilder).
+      # Höchstens drei Versuche: erst ohne „apt-get update“ (#905), ab dem zweiten mit verlässlichen Spiegeln (apt-pakete.sh).
       - name: Werkzeuge installieren
-        run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
+        run: bash "$GITHUB_WORKSPACE/.github/werkzeuge/apt-pakete.sh" poppler-utils qpdf
       # Produktivbau (ohne Musterseite), wie im Image.
       - name: Ablago bauen
         run: npm run build
