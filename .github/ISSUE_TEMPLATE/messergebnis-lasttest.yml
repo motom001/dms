@@ -68,8 +68,8 @@ body:
     id: ergebnis
     attributes:
       label: Ergebnisblock · Result block
-      description: Der Block „Messergebnis Lasttest“ aus der Ausgabe des Lasttests, unverändert – mit den Zeilen „… + Speichern“, „… + Pakete und Tabellen“, „Paketaufrufe …“ und „… + Anmeldeschutz“ (#1254), falls vorhanden. · The block "Messergebnis Lasttest" from the output of the load test, unchanged – including the lines "… + Speichern" (with saving), "… + Pakete und Tabellen" (packages and tables), "Paketaufrufe …" (package calls) and "… + Anmeldeschutz" (sign-in protection, #1254), if present.
-      render: text
+      # Ohne „render: text“ (#1452): Der Block bringt seinen eigenen ```text-Rahmen mit, der Bericht darunter ist Markdown.
+      description: Das Ergebnis von der Lasttest-Seite, unverändert („Kopieren“) – oben der Block „Messergebnis Lasttest“ (mit den Zeilen „… + Speichern“, „… + Pakete und Tabellen“, „Paketaufrufe …“ und „… + Anmeldeschutz“, falls vorhanden), darunter der Bericht. Ist es zu lang, genügt der Block bis einschließlich der Zeile mit ```. · The result from the load test page, unchanged ("Copy") – at the top the block "Messergebnis Lasttest" (including the lines "… + Speichern", "… + Pakete und Tabellen", "Paketaufrufe …" and "… + Anmeldeschutz", if present), below it the report. If it is too long, the block up to and including the line with ``` is enough.
     validations:
       required: true
   - type: textarea

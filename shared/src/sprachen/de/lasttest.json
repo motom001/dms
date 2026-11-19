@@ -131,7 +131,6 @@
   "live.p95": "p95 der letzten 10 Sekunden",
   "live.p95.wert": "{ms} ms ({anfragen} Antworten)",
   "live.p95.wofuer": "Wie schnell Ablago gerade antwortet – im Ablauf steht p95 erst, wenn der Durchgang fertig ist.",
-  "live.warteschlange": "Warteschlange an der Datenbank",
   "live.warteschlange.wert": "bis {wartend} wartende Abfragen · {belegt} von {von} Verbindungen belegt",
   "live.datenbank": "Datenbank-Verbindungen",
   "live.gruppen": "Wer belegt die CPU",

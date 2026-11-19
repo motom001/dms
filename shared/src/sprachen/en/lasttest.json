@@ -131,7 +131,6 @@
   "live.p95": "p95 of the last 10 seconds",
   "live.p95.wert": "{ms} ms ({anfragen} responses)",
   "live.p95.wofuer": "How fast Ablago is answering right now – the run table shows p95 only once the run is finished.",
-  "live.warteschlange": "Queue at the database",
   "live.warteschlange.wert": "up to {wartend} waiting queries · {belegt} of {von} connections in use",
   "live.datenbank": "Database connections",
   "live.gruppen": "What is using the CPU",

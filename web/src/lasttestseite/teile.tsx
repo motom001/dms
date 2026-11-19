@@ -264,6 +264,19 @@ export function Ergebnis({
               {t('lasttest.ergebnis.ganz')}
             </Aufklapper>
           )}
+          {/* Am Knopf „Kopieren“ (#1452): fehlt noch Gerät oder Speicher, ein Satz mit Sprung zum Feld – gesperrt wird nichts. */}
+          {ergaenzen && (
+            <div className="hinweis warn">
+              <p>
+                <Symbol name="warnung" /> {t.frei(`lasttest.ergebnis.ergaenzen.${ergaenzen}`)}{' '}
+                <Knopf
+                  groesse="klein"
+                  onClick={() => document.getElementById(FELD_ID[ergaenzen === 'speicher' ? 'speicher' : 'geraet'])?.focus()}>
+                  {t('lasttest.ergebnis.zum-feld')}
+                </Knopf>
+              </p>
+            </div>
+          )}
           <div className="knoepfe">
             <Knopf
               art="haupt"
@@ -286,16 +299,6 @@ export function Ergebnis({
               {t('lasttest.sammel')} <Symbol name="extern" />
             </KnopfLink>
           </div>
-          {ergaenzen && (
-            <p className="klein lasttest-ergaenzen">
-              <Symbol name="warnung" /> {t.frei(`lasttest.ergebnis.ergaenzen.${ergaenzen}`)}{' '}
-              <Knopf
-                groesse="klein"
-                onClick={() => document.getElementById(FELD_ID[ergaenzen === 'speicher' ? 'speicher' : 'geraet'])?.focus()}>
-                {t('lasttest.ergebnis.zum-feld')}
-              </Knopf>
-            </p>
-          )}
           {kopiert === 'nein' && (
             <p className="klein fehlertext" role="alert">
               {t('lasttest.kopieren.geht-nicht')}

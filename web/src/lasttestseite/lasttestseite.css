@@ -1,7 +1,8 @@
 /* Lasttest-Seite (#1270): Klassen, die nur web/src/lasttestseite setzt.
    Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
 
-.lasttest-stand { display: flex; flex-direction: column; gap: 6px; }
+/* Stand (#1452): mindestens so hoch wie „läuft“ (Schritt und Restdauer), damit beim Ende nichts darunter springt. */
+.lasttest-stand { display: flex; flex-direction: column; gap: 6px; min-height: calc(2lh + 6px); }
 .lasttest-stand p { margin: 0; }
 .lasttest-stand progress { width: 100%; }
 .lasttest-rest { display: flex; align-items: center; gap: 6px; font-weight: 600; }
@@ -9,8 +10,6 @@
 .lasttest-ergebnis { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
 .lasttest-ergebnis p { margin: 0; }
 .lasttest-block { margin: 0; font-family: var(--mono); font-size: calc(12px * var(--skala, 1)); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--senke); padding: 10px; border-radius: 6px; }
-/* Hinweis am Knopf „Kopieren“ (#1452), wenn im Ergebnis noch „bitte ergänzen“ steht. */
-.lasttest-ergaenzen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .lasttest-ergebnis .knoepfe, .lasttest-ende { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .lasttest-ende { justify-content: space-between; border-top: 1px solid var(--linie); padding-top: 14px; }
 .lasttest-auto { margin: 0; }

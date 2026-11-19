@@ -1,7 +1,9 @@
 /**
- * Rauchtests: Lasttest-Seite (#1251) – Überschrift mit der Auswahl, Gerät oben, Ablauf als Tabelle (Gruppen je Stufe,
- * Grenzsuche gekürzt), am Ende das Ergebnis oben und der ganze Bericht mit Kopieren; axe hell/dunkel, Tippflächen und
- * kein waagerechtes Scrollen am Handy. Die Antworten des Lasttest-Modus sind nachgestellt (wie die Bilder im Handbuch).
+ * Rauchtests: Lasttest-Seite (#1251, #1452) – Überschrift mit der Auswahl, feste Reihenfolge (Kopf, Stand, Gerät,
+ * Ergebnis, Ablauf, Jetzt gemessen), die sich beim Ende nicht umbaut, Ablauf als Tabelle (Gruppen je Stufe, Grenzsuche
+ * gekürzt), Datenbank-Verbindungen als Kurve, am Ende ein Ergebnis (kurz, aufklappbar, ganz kopiert); axe hell/dunkel,
+ * Tippflächen und kein waagerechtes Scrollen am Handy. Die Antworten des Lasttest-Modus sind nachgestellt (wie die
+ * Bilder im Handbuch).
  * Allein starten (gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/lasttest-seite.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
@@ -12,6 +14,37 @@ import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 const zeile = (z, zustand, x = {}) => ({ ...z, zustand, beginn: null, ende: null, ...x });
 const schritt = (s, optional = false) => ({ art: 'schritt', schritt: s, ...(optional ? { optional: true } : {}) });
 const durchgang = (name, n, modus, o = {}) => ({ art: 'durchgang', name, n, modus, ziel: false, dauerS: 120, ...o });
+
+/** Werte der laufenden Messung (#895), dazu die Kurven – seit #1452 mit den Datenbank-Verbindungen. */
+function live(jetzt) {
+  const verlauf = Array.from({ length: 20 }, (_, i) => ({
+    zeit: new Date(jetzt - (20 - i) * 2000).toISOString(),
+    cpu: 40 + (i % 5) * 8,
+    speicher: 30 + i,
+    db: 25 + (i % 4) * 15,
+  }));
+  return {
+    jetzt: {
+      ...{ name: 'mittel', n: 100, p95: 420, anfragen: 380, cpu: 72, speicher: 49, speicherMb: 1960, grenzeMb: 4000 },
+      ...{ ohneGrenze: false, kerne: 4, kerneBegrenzt: false, warteschlange: 3, belegt: 12, verbindungen: 16 },
+      ...{ gruppen: null, postgresExtern: false, meldungen: [], zeit: new Date(jetzt).toISOString() },
+    },
+    verlauf,
+  };
+}
+
+const VORLAGE = [
+  '```text',
+  'Messergebnis Lasttest (#563)',
+  'Ablago-Version: 0.296.0 · Image: dms-komplett · Datenbank: PostgreSQL 17',
+  'Gerät/Modell: {{geraet}}',
+  'CPU: Beispiel-CPU · 4 Kerne für Ablago, Rechner 4 · x64',
+  'RAM: 8 GB · Speicher: {{speicher}}',
+  'Bestand: 200013 Mappen, 400 Dokumente (PDF)',
+  'klein    25 gleichzeitig: p50 48 ms, p95 131 ms, p99 180 ms, Fehler 0,00 % – Ziel erreicht',
+  '```',
+].join('\n');
+const BERICHT = '## Lasttest (2026-11-18 10:15 UTC)\n\nBestand: 200013 Mappen …';
 
 /** Stand bei `alle`: klein fertig, mittel misst gerade, groß offen; `fertig`: alles durch, Ergebnis da. */
 function stand(fertig) {
@@ -73,8 +106,8 @@ function stand(fertig) {
     fertigeStufen: fertig ? ['klein', 'mittel', 'gross'] : ['klein'],
     ergebnis: fertig
       ? {
-          bericht: '## Lasttest (2026-11-18 10:15 UTC)\n\nBestand: 200013 Mappen …',
-          vorlage: '```text\nMessergebnis Lasttest (#563)\nGerät/Modell: {{geraet}}\nSpeicher: {{speicher}}\n```',
+          bericht: BERICHT,
+          vorlage: VORLAGE,
           verfehlt: false,
         }
       : null,
@@ -82,7 +115,7 @@ function stand(fertig) {
     angaben: { geraet: '', speicher: 'SSD' },
     speicherErkannt: 'SSD',
     datei: fertig ? '/data/ergebnis/lasttest-alle.md' : null,
-    live: null,
+    live: fertig ? null : live(jetzt),
     ablauf: {
       stufen: [
         { stufe: 'klein', zeilen: klein },
@@ -120,14 +153,26 @@ async function barrierefrei(s, handy) {
 for (const handy of [false, true])
   rauchtest(`Lasttest-Seite${handy ? ' am Handy' : ''}: Auswahl, Gerät oben, Ablauf als Tabelle (#1251)`, { handy }, async (s, k) => {
     await zeige(s, k, false);
-    await s.getByText('Stufe mittel, 2 von 3', { exact: false }).waitFor();
-    // Gerät als Erstes unter der Überschrift, vor Stand und Ablauf – ohne zu scrollen sichtbar.
+    // #1452: Kopf nur mit Titel und Version; Stufe und Durchgang stehen im Ablauf, nicht noch einmal darüber.
+    await s.getByText('Ablago 0.296.0', { exact: true }).waitFor();
+    assert.equal(await s.getByText('Stufe mittel, 2 von 3', { exact: false }).count(), 0);
+    assert.equal(await s.getByText('Durchgang „mittel“', { exact: false }).count(), 0);
+    // Gerät vor Ergebnis und Ablauf – ohne zu scrollen sichtbar; der Platz fürs Ergebnis ist schon da.
     const geraet = s.getByLabel('Beschreibe dein Gerät');
     await geraet.waitFor();
+    const ergebnis = s.getByRole('region', { name: 'Messergebnis Lasttest' });
+    await ergebnis.getByText('Das Ergebnis erscheint hier, sobald der Test fertig ist.').waitFor();
     const ablauf = s.getByRole('region', { name: 'Ablauf' });
-    const [g, a] = [await geraet.boundingBox(), await ablauf.boundingBox()];
-    assert.ok(g && a && g.y < a.y, 'Gerät steht über dem Ablauf');
+    const live = s.getByRole('region', { name: 'Jetzt gemessen' });
+    const [g, e, a, l] = await Promise.all([geraet, ergebnis, ablauf, live].map((x) => x.boundingBox()));
+    assert.ok(g && e && a && l && g.y < e.y && e.y < a.y && a.y < l.y, 'Gerät, Ergebnis, Ablauf, Jetzt gemessen');
     assert.ok(g.y + g.height <= (s.viewportSize()?.height ?? 0), 'Gerät ist ohne Scrollen sichtbar');
+    // Jetzt gemessen (#1452): drei Kurven, die dritte mit den wartenden Abfragen; Stufe und Durchgang entfallen.
+    assert.equal(await live.locator('svg.az-kurve').count(), 3);
+    await live.getByRole('heading', { name: /^Datenbank-Verbindungen .*75 %/ }).waitFor();
+    await live.getByText('bis 3 wartende Abfragen · 12 von 16 Verbindungen belegt').waitFor();
+    await live.getByText('im Ablauf steht p95 erst, wenn der Durchgang fertig ist', { exact: false }).waitFor();
+    assert.equal(await live.locator('dt').count(), 0, 'keine Liste mit Stufe und Durchgang mehr');
     await s.getByText('keine Namen, Adressen oder Rechnernamen', { exact: false }).waitFor();
     // Drei Gruppen, die laufende (mittel) aufgeklappt.
     const gruppen = ablauf.locator('.lasttest-gruppe');
@@ -152,22 +197,97 @@ for (const handy of [false, true])
     await barrierefrei(s, handy);
   });
 
-rauchtest('Lasttest-Seite fertig: Ergebnis oben, ganzen Bericht kopieren, nicht nötige Schritte (#1251)', { handy: true }, async (s, k) => {
+rauchtest('Lasttest-Seite fertig: ein Ergebnis, kurz und ganz kopiert, Hinweis zum Gerät (#1251, #1452)', { handy: true }, async (s, k) => {
   await zeige(s, k, true);
   const ergebnis = s.getByRole('region', { name: 'Messergebnis Lasttest' });
   await ergebnis.waitFor();
+  // Feste Reihenfolge (#1452): Gerät vor dem Ergebnis, auch nach dem Ende.
   const [e, g] = [await ergebnis.boundingBox(), await s.getByLabel('Beschreibe dein Gerät').boundingBox()];
-  assert.ok(e && g && e.y < g.y, 'Ergebnis rückt nach oben');
-  await ergebnis.getByText('Ganzer Bericht').click();
-  const knopf = ergebnis.getByRole('button', { name: 'Ganzen Bericht kopieren' });
-  await knopf.click();
+  assert.ok(e && g && g.y < e.y, 'Gerät steht über dem Ergebnis');
+  // Kurz bis „RAM …“, der Rest zum Aufklappen.
+  const block = ergebnis.locator('pre.lasttest-block');
+  assert.match(await block.innerText(), /RAM: 8 GB · Speicher: SSD \(erkannt\)$/);
+  assert.ok(!(await block.innerText()).includes('Bestand:'), 'Rest erst aufgeklappt');
+  await ergebnis.getByRole('button', { name: 'Ganzes Ergebnis zeigen' }).click();
+  await block.getByText('## Lasttest (2026-11-18 10:15 UTC)', { exact: false }).waitFor();
+  // Kopieren nimmt alles: Block oben, Bericht darunter.
+  await s.evaluate(() => {
+    window.__kopie = null;
+    if (navigator.clipboard) navigator.clipboard.writeText = async (t) => void (window.__kopie = t);
+  });
+  await ergebnis.getByRole('button', { name: 'Kopieren', exact: true }).click();
   // Ergebnis am Knopf (B2) – mit Zwischenablage oder über den Ausweichweg (http:// im Heimnetz).
   await ergebnis.getByRole('button', { name: 'Kopiert' }).waitFor();
   assert.equal(await s.locator('.lasttest-behelf').count(), 0, 'Ausweichfeld wieder weg');
-  await ergebnis.getByRole('button', { name: 'Als Datei herunterladen' }).first().waitFor();
+  const kopie = await s.evaluate(() => window.__kopie);
+  const mitZwischenablage = await s.evaluate(() => !!navigator.clipboard && window.isSecureContext);
+  assert.ok(kopie !== null || !mitZwischenablage, 'über die Zwischenablage kopiert');
+  if (kopie !== null) {
+    assert.ok(kopie.startsWith('```text\nMessergebnis Lasttest (#563)\n'), 'Block oben');
+    assert.ok(kopie.includes('Gerät/Modell: bitte ergänzen\n'), 'Block mit Gerät');
+    assert.ok(kopie.endsWith('```\n\n## Lasttest (2026-11-18 10:15 UTC)\n\nBestand: 200013 Mappen …\n'), 'Bericht darunter');
+  }
+  await ergebnis.getByRole('button', { name: 'Als Datei herunterladen' }).waitFor();
+  // Gerät fehlt noch: Satz am Knopf mit Sprung zum Feld, gesperrt wird nichts.
+  await ergebnis.getByText('Im Ergebnis steht beim Gerät noch „bitte ergänzen“.').waitFor();
+  await ergebnis.getByRole('button', { name: 'Zum Feld' }).click();
+  await s.waitForFunction(() => document.activeElement?.id === 'lasttest-geraet');
+  await s.getByLabel('Beschreibe dein Gerät').fill('Beispiel-NAS, 8 GB RAM');
+  await block.getByText('Gerät/Modell: Beispiel-NAS, 8 GB RAM', { exact: false }).waitFor();
+  assert.equal(await ergebnis.getByText('bitte ergänzen', { exact: false }).count(), 0, 'Hinweis weg');
   const ablauf = s.getByRole('region', { name: 'Ablauf' });
   await ablauf.locator('.lasttest-gruppe').nth(2).getByRole('button').click();
   await ablauf.getByText('groß 75 bis groß 150: nicht nötig, die Grenze ist erreicht').waitFor();
   await keineWaagerechteRolle(s);
   await barrierefrei(s, true);
 });
+
+for (const handy of [false, true])
+  rauchtest(`Lasttest-Seite${handy ? ' am Handy' : ''}: nichts springt beim Ende, Stufen klappen mit (#1452)`, { handy }, async (s, k) => {
+    // Läuft: mittel aufgeklappt. Dann klappt man klein selbst auf und mittel zu …
+    let x = stand(false);
+    await k.route('**/api/konto/status', (r) =>
+      r.fulfill({ json: { einrichtungNoetig: false, mail: false, benutzer: null, marke: null, wartung: null, lasttest: true } }),
+    );
+    await k.route('**/api/lasttest', (r) => r.fulfill({ json: { ...x, jetzt: Date.now() } }));
+    await s.goto(BASIS + '/');
+    const ergebnis = s.getByRole('region', { name: 'Messergebnis Lasttest' });
+    await ergebnis.getByText('Das Ergebnis erscheint hier, sobald der Test fertig ist.').waitFor();
+    const ablauf = s.getByRole('region', { name: 'Ablauf' });
+    const offen = () =>
+      ablauf.locator('.lasttest-gruppe [aria-expanded]').evaluateAll((e) => e.map((y) => y.getAttribute('aria-expanded')));
+    assert.deepEqual(await offen(), ['false', 'true', 'false']);
+    // Lage auf der Seite (nicht im Fenster): Scrollen zählt nicht als Springen.
+    const oben = (l) => l.evaluate((e) => Math.round(e.getBoundingClientRect().top + window.scrollY));
+    const lage = async () => ({ geraet: await oben(s.getByLabel('Beschreibe dein Gerät')), ergebnis: await oben(ergebnis) });
+    const vorher = await lage();
+    // … mittel ist durch, groß beginnt: mittel klappt zu, groß auf; klein bleibt so, wie man es gestellt hat.
+    await ablauf.locator('.lasttest-gruppe').nth(0).getByRole('button').click();
+    const st = x.ablauf.stufen;
+    x = {
+      ...x,
+      stufe: 'gross',
+      nr: 3,
+      fertigeStufen: ['klein', 'mittel'],
+      durchgang: null,
+      schritt: 'demo',
+      ablauf: {
+        aktuell: 2,
+        stufen: [
+          st[0],
+          { stufe: 'mittel', zeilen: st[1].zeilen.map((z) => ({ ...z, zustand: z.zustand === 'nicht-noetig' ? z.zustand : 'erledigt' })) },
+          {
+            stufe: 'gross',
+            zeilen: st[2].zeilen.map((z, i) => (i === 0 ? { ...z, zustand: 'erledigt' } : i === 1 ? { ...z, zustand: 'laeuft' } : z)),
+          },
+        ],
+      },
+    };
+    await ablauf.locator('.lasttest-gruppe').nth(2).locator('[aria-expanded="true"]').waitFor();
+    assert.deepEqual(await offen(), ['true', 'false', 'true']);
+    // Ende: Gerät und Ergebnis bleiben, wo sie waren.
+    x = stand(true);
+    await s.getByText('Der Test ist fertig.').waitFor();
+    await ergebnis.getByRole('button', { name: 'Kopieren', exact: true }).waitFor();
+    assert.deepEqual(await lage(), vorher, 'Gerätefeld und Ergebnis an derselben Stelle');
+  });
