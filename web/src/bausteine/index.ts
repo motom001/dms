@@ -15,6 +15,7 @@ export {
   type FeldVerknuepfung,
   type NurLesenFeldProps,
 } from './feld/Feld';
+export { DatumEingabe } from './datum/Datum';
 export { ProzentEingabe, ZeitraumEingabe, type ProzentEingabeProps, type ZeitraumEingabeProps, type ZeitraumRoh } from './einheit/Einheit';
 export {
   abfangen,

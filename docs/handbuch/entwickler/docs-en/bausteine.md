@@ -103,6 +103,7 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Tile](bausteine-kachel.md) | A way with a number, the same on start page and workbench overview; green with a tick only when empty means “done” |
 | [Package chip](bausteine-paketchip.md) | Origin from a package: icon and name after the name, tooltip with version, link to the package page |
 | [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |
+| [Date](bausteine-datum.md) | Date field for typing with a calendar of its own including week numbers (ISO 8601); a click into the field opens it, the keyboard stays direct |
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |
 | [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Tips · Manual” in the assistant |

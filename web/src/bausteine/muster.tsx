@@ -7,6 +7,7 @@ import { Feld } from './feld/Feld';
 import { FeldMuster } from './feld/muster';
 import { KnopfMuster } from './knopf/muster';
 import { EinheitMuster } from './einheit/muster';
+import { DatumMuster } from './datum/muster';
 import { TabelleMuster } from './tabelle/muster';
 import { SucheMuster } from './suche/muster';
 import { UmschalterMuster } from './umschalter/muster';
@@ -101,6 +102,7 @@ const BAUSTEINE: Musterbereich[] = [
     text: () => t('oberflaeche.muster.einheit.text'),
     Muster: EinheitMuster,
   },
+  { id: 'datum', titel: () => t('oberflaeche.muster.datum.titel'), text: () => t('oberflaeche.muster.datum.text'), Muster: DatumMuster },
   {
     id: 'tabelle',
     titel: () => t('oberflaeche.muster.tabelle.titel'),
