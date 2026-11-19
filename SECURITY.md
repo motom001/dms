@@ -23,10 +23,28 @@ Die Vorlagen nutzen das Image-Tag **`:stabil`** (#714). Es wandert nur auf ein R
 | Unser Code (TypeScript, Workflows) | CodeQL | jeder Pull Request, jeder Push auf `main` |
 | Bibliotheken | Dependabot (Warnungen und Updates), `npm audit` ab Stufe „hoch“ | jeder Pull Request, wöchentlich |
 | Images `dms` und `dms-komplett` | Trivy: kritische Lücken mit Korrektur blockieren den Pull Request | jeder Pull Request, jede Veröffentlichung, wöchentlicher Neubau |
+| Ausgelieferte Images `:stabil` und `:latest` (beide Varianten) | Grype als zweite, von Trivy unabhängige Datenbank; dazu ein direkter Abgleich der Versionen von poppler, qpdf, Node.js und PostgreSQL mit [NVD](https://nvd.nist.gov/), auch wenn Alpine den Fall noch nicht führt | wöchentlich (mittwochs), Workflow *Sicherheitsabgleich* |
 | Geheimnisse (Tokens, Passwörter) | Secret Scanning mit Push-Schutz | jeder Push |
 | Arbeitsweise des Projekts | [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/motom001/dms) | wöchentlich, jeder Push auf `main` |
 
-Die Funde stehen unter **Security** in diesem Repository. Bewusst hingenommene Funde der Image-Prüfung stehen mit Begründung in [`.trivyignore`](.trivyignore).
+Die Funde stehen unter **Security** in diesem Repository; diese Liste sehen nur Personen mit Schreibrecht. Bewusst hingenommene Funde der Image-Prüfung stehen mit Begründung in [`.trivyignore`](.trivyignore), die übrigen schließt der Maintainer im Sicherheits-Reiter mit Begründung.
+
+## Zuständigkeit und Reaktionszeiten
+
+**Zuständig** ist der Maintainer (Thomas Meissner). Er sieht die Funde im Sicherheits-Reiter nach jedem wöchentlichen Abgleich durch und bestätigt vertrauliche Meldungen innerhalb von **3 Tagen**.
+
+Jeder Fund wird zuerst **für Ablago** bewertet: Die Schwere eines Bestandteils ist der Ausgangspunkt, entscheidend ist, wie Ablago ihn nutzt – etwa ob ein Programm Dateien von außen verarbeitet. Danach gelten diese Zielzeiten (Kalendertage):
+
+| Schwere für Ablago | Bewertet nach | Korrektur oder Eindämmung nach |
+| --- | --- | --- |
+| kritisch | 1 Tag | 3 Tagen, mit `sofort-stabil` |
+| hoch | 3 Tagen | 14 Tagen, mit `sofort-stabil`, wenn die Lücke in Ablago ausnutzbar ist |
+| mittel | 7 Tagen | mit dem nächsten `:stabil`, spätestens nach 30 Tagen |
+| niedrig | 14 Tagen | spätestens nach 90 Tagen, oder bewusst hingenommen mit Begründung |
+
+Ablago wird von einer Person gepflegt. Die Zeiten sind deshalb ein Ziel, keine Zusage: Bei Urlaub oder Krankheit kann es länger dauern. Kritische Fälle haben immer Vorrang.
+
+Gibt es bei Alpine oder beim Hersteller noch keine Korrektur, schränkt Ablago das betroffene Programm ein oder baut es selbst mit der Korrektur. Einzelheiten zu einer offenen Lücke werden erst mit der Korrektur öffentlich; die Release-Notes nennen dann die CVE-Nummer.
 
 ## Herkunft der Images prüfen
 

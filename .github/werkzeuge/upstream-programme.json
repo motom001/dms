@@ -1,0 +1,35 @@
+{
+  "$kommentar": "Programme, deren ausgelieferte Versionen der Sicherheitsabgleich (#1417) direkt bei NVD nachschlägt – unabhängig davon, ob Alpine den Fall schon führt. pakete: Namen der Alpine-Pakete (regulärer Ausdruck, ganzer Name); binaer: Name eines Programms, das Grype als Binärdatei erkennt; cpe: Hersteller und Produkt bei NVD; muster/ohne: woran eine noch nicht eingeordnete Meldung in ihrer Beschreibung erkennbar ist.",
+  "programme": [
+    {
+      "name": "poppler",
+      "pakete": "poppler|poppler-utils|poppler-glib",
+      "cpe": "cpe:2.3:a:freedesktop:poppler",
+      "suchwort": "poppler",
+      "muster": "\\bpoppler\\b"
+    },
+    {
+      "name": "qpdf",
+      "pakete": "qpdf|qpdf-libs",
+      "cpe": "cpe:2.3:a:qpdf_project:qpdf",
+      "suchwort": "qpdf",
+      "muster": "\\bqpdf\\b"
+    },
+    {
+      "name": "Node.js",
+      "binaer": "node",
+      "cpe": "cpe:2.3:a:nodejs:node.js",
+      "suchwort": "Node.js",
+      "muster": "\\b(in|of) Node\\.js\\b|\\bNode\\.js (core|runtime|versions?|before|through|\\d)",
+      "ohne": "\\b(npm|package|module|library|plugin|extension)\\b"
+    },
+    {
+      "name": "PostgreSQL",
+      "pakete": "postgresql\\d+",
+      "cpe": "cpe:2.3:a:postgresql:postgresql",
+      "suchwort": "PostgreSQL",
+      "muster": "\\b(in|of) PostgreSQL\\b|\\bPostgreSQL (server|versions?|before|through|\\d)",
+      "ohne": "\\b(JDBC|driver|pgAdmin|plugin|extension|connector|ORM)\\b"
+    }
+  ]
+}

@@ -90,7 +90,7 @@ With two containers, `postgres:17` stays open for security updates of the 17 ser
     gh attestation verify oci://ghcr.io/motom001/dms:stabil -R motom001/dms
     ```
 
-    Before every release, CI also checks the images for known security vulnerabilities. More in the [security policy](https://github.com/motom001/dms/blob/main/SECURITY.md).
+    Before every release, CI also checks the images for known security vulnerabilities. In addition, the project checks the delivered images `:stabil` and `:latest` against new security reports once a week, with a second database and, for important programs such as poppler, also directly against the public NVD database – even if Alpine does not list a case yet. How quickly a fix arrives depends on the severity; the target times are in the [security policy](https://github.com/motom001/dms/blob/main/SECURITY.en.md#responsibility-and-response-times). You get the fix like any update: through `:stabil`, in urgent cases without waiting for the week.
 
 ### Without administrator rights (root) { #ohne-root }
 
