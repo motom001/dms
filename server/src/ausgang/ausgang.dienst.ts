@@ -105,6 +105,16 @@ export class AusgangDienst {
   private versionInhalt(id: string, nummer: number) {
     return this.teile.versionen.versionInhalt(id, nummer);
   }
+
+  /**
+   * Nur die Angaben einer Version: `versionInhalt` öffnet dazu die Datei, gelesen wird sie hier nicht – den Strom gleich
+   * schließen, sonst bleibt sie bis zur Speicherbereinigung offen (unter Node 26 ein Fehler, #1456).
+   */
+  private async versionsangaben(id: string, nummer: number) {
+    const { version, inhalt } = await this.versionInhalt(id, nummer);
+    if (!Buffer.isBuffer(inhalt)) inhalt.destroy();
+    return version;
+  }
   private fassungVon(id: string) {
     return this.teile.umwandlung.fassungVon(id);
   }
@@ -327,7 +337,7 @@ export class AusgangDienst {
   ) {
     const dokument = await this.repo.holeDokument(id);
     if (!dokument) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    const datei = o.version != null ? (await this.versionInhalt(id, o.version)).version : await this.ausgabeQuelle(dokument, o.fassung);
+    const datei = o.version != null ? await this.versionsangaben(id, o.version) : await this.ausgabeQuelle(dokument, o.fassung);
     const m = await this.repo.holeMappe(dokument.mappeId);
     const plan = m ? await this.stempelPlan(m.typId, wunschAus(o.stempel), empfaengerAus(o.stempel)) : null;
     // Verkleinert herunterladen (#393): nur PDFs; das gespeicherte Dokument bleibt, wie es ist.

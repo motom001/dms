@@ -456,7 +456,11 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       // Eigenes Herunterladen löscht sie nicht, solange der Link gilt.
       await zip((await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei!.inhalt);
       await new Promise((x) => setTimeout(x, 30));
-      assert.ok((await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei);
+      // Nur prüfen, dass es die Datei noch gibt – den ungelesenen Strom schließen (#1456, sonst schließt Node 26 ihn
+      // bei der Speicherbereinigung mit einem Fehler).
+      const nochDa = (await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei;
+      assert.ok(nochDa);
+      (nochDa.inhalt as { destroy(): void }).destroy();
 
       // Öffentlich: falscher Code und unbekannter Link sehen gleich aus.
       const falsch = await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: 'AAAAAAAA' } }).catch((e) => e as Fachfehler);
