@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Benutzer } from '../../../shared/src/model';
-import { kontoApi } from '../api/konto';
+import { kontoApi, type AktiveSperre } from '../api/konto';
 import { Etikett, Knopf } from '../bausteine';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { darfBereich } from '../../../shared/src/verwaltungsrecht';
+import { useKonto } from '../konto';
+import { SperrListe } from './GesperrteAnmeldungen';
 
-/** Anmeldemittel einer Person in Werkbank → Benutzer: Zwei-Faktor-Anmeldung (#242) und Passkeys (#811) – seit #1000 im Bereich „Anmeldung und Sicherheit“. */
+/** Anmeldemittel einer Person in Werkbank → Benutzer: Zwei-Faktor-Anmeldung (#242), Passkeys (#811) und Sperren des Anmeldeschutzes (#1481) – seit #1000 im Bereich „Anmeldung und Sicherheit“. */
 
 /** Passkeys der Person (#811): wie viele, und alle zurücksetzen (z. B. Handy verloren, neue Adresse). */
 export function PasskeysVon({ b }: { b: Benutzer }) {
@@ -113,6 +116,52 @@ export function ZweifaktorVon({ b }: { b: Benutzer }) {
         </>
       ) : (
         <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>
+      )}
+      {meldung && (
+        <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
+          {meldung.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Aktive Sperren des Kontos (#1481): je Konto und je E-Mail-Adresse und IP, mit „Entsperren“. Nur mit Verwaltungsrecht
+ * Anmeldeschutz – sonst steht hier nichts (die Einträge nennen Adressen).
+ */
+export function AnmeldesperreVon({ b }: { b: Benutzer }) {
+  const { ich } = useKonto();
+  const darf = darfBereich(ich, 'anmeldeschutz');
+  const [sperren, setSperren] = useState<AktiveSperre[] | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const laden = useCallback(async () => {
+    try {
+      setSperren((await kontoApi.sperrenVon(b.email)).sperren);
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
+  }, [b.email]);
+  useEffect(() => {
+    if (darf) void laden();
+  }, [darf, laden]);
+  if (!darf) return null;
+  const entsperren = async (s: AktiveSperre) => {
+    try {
+      await kontoApi.entsperren(s);
+      setMeldung({ art: 'gut', text: t('werkbank.benutzer.anmeldesperre.aufgehoben') });
+      await laden();
+    } catch (e) {
+      setMeldung({ art: 'schlecht', text: (e as Error).message });
+    }
+  };
+  return (
+    <div id="anmeldesperre-von">
+      <h3 className="h4">{t('werkbank.benutzer.anmeldesperre')}</h3>
+      {sperren === null ? (
+        !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p>
+      ) : (
+        <SperrListe sperren={sperren} entsperren={entsperren} leer={t('werkbank.benutzer.anmeldesperre.keine')} mitPerson={false} />
       )}
       {meldung && (
         <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
