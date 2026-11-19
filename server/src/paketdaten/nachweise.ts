@@ -44,7 +44,7 @@ const imMonat = (zeit: string | null | undefined, g: { von: string; bis: string 
 
 /** Welche Journal-Arten zu welchem Bereich gehören. */
 const JOURNAL: Partial<Record<PaketdatenBereich, JournalArt[]>> = {
-  zugang: ['zugang.rechte', 'zugang.fehlanmeldung'],
+  zugang: ['zugang.rechte', 'zugang.fehlanmeldung', 'zugang.entsperrt'],
   betrieb: ['betrieb.update', 'betrieb.paket', 'betrieb.wartung'],
   sicherung: ['sicherung.fehlgeschlagen'],
   unveraenderbarkeit: ['unveraenderbarkeit.pruefung'],

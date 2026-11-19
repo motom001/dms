@@ -2,11 +2,11 @@ import type { Benutzer } from '../../../../shared/src/model';
 import { kontoApi, type LinkErgebnis } from '../../api/konto';
 import { t } from '../../sprache';
 import { Bereich, Knopf, type BereicheZustand } from '../../bausteine';
-import { PasskeysVon, ZweifaktorVon } from '../AnmeldemittelVon';
+import { AnmeldesperreVon, PasskeysVon, ZweifaktorVon } from '../AnmeldemittelVon';
 import { datumZeit, type Aktion, type BenutzerBereich } from './hilfen';
 import { Sitzungen } from './Sitzungen';
 
-/** Anmeldung und Sicherheit (#1000): Passwort-Link bzw. Einladung, Zwei-Faktor, Passkeys und Geräte – alles Sofortaktionen. */
+/** Anmeldung und Sicherheit (#1000): Passwort-Link bzw. Einladung, Zwei-Faktor, Passkeys, Sperren des Anmeldeschutzes (#1481) und Geräte – alles Sofortaktionen. */
 export function Sicherheit({
   b,
   b2,
@@ -49,6 +49,7 @@ export function Sicherheit({
       </div>
       <ZweifaktorVon b={b} />
       <PasskeysVon b={b} />
+      <AnmeldesperreVon b={b} />
       <Sitzungen b={b} neuLaden={neuLaden} stand={abgemeldet} />
     </Bereich>
   );

@@ -309,9 +309,23 @@ export interface IpSperre {
   bis: string | null;
   grund: string;
 }
+/** Aktive Sperre (#1481): je Konto, je E-Mail-Adresse und IP oder je IP. */
+export interface AktiveSperre {
+  art: 'konto' | 'konto-ip' | 'ip';
+  email: string | null;
+  ip: string | null;
+  versuche: number | null;
+  seit: string | null;
+  bis: string | null;
+  grund?: string;
+  /** Person zur E-Mail-Adresse, falls es das Konto gibt. */
+  person: { id: string; name: string } | null;
+}
 export interface AnmeldeschutzStand {
   einstellung: SperrEinstellung;
+  /** Nur IP-Sperren (wie bis #1481, für `dms gesperrt`); die Werkbank zeigt `sperren`. */
   gesperrt: IpSperre[];
+  sperren: AktiveSperre[];
   deineIp: string;
 }
 
@@ -449,7 +463,12 @@ export const kontoApi = {
   anmeldeschutzSetzen: (e: Partial<SperrEinstellung>) => anfrage<AnmeldeschutzStand>('PUT', '/api/werkbank/anmeldeschutz', e),
   notfallzugang: () => anfrage<NotfallzugangStand>('GET', '/api/werkbank/anmeldeschutz/notfallzugang'),
   notfallzugangSetzen: (internet: boolean) => anfrage<NotfallzugangStand>('PUT', '/api/werkbank/anmeldeschutz/notfallzugang', { internet }),
-  entsperren: (ip: string) => anfrage<AnmeldeschutzStand>('POST', '/api/werkbank/anmeldeschutz/entsperren', { ip }),
+  /** Eine Sperre aufheben (#1481): IP-Adresse, Konto oder Konto und IP. */
+  entsperren: (s: Pick<AktiveSperre, 'art' | 'email' | 'ip'>) =>
+    anfrage<AnmeldeschutzStand>('POST', '/api/werkbank/anmeldeschutz/entsperren', { art: s.art, email: s.email, ip: s.ip }),
+  /** Aktive Sperren eines Kontos (#1481), für Werkbank → Benutzer → Person. */
+  sperrenVon: (email: string) =>
+    anfrage<{ sperren: AktiveSperre[] }>('GET', `/api/werkbank/anmeldeschutz/sperren?email=${encodeURIComponent(email)}`),
   // Fehler melden (#70)
   diagnose: () => anfrage<Diagnose>('GET', '/api/konto/diagnose'),
   fehlerMelden: (e: { text: string; angaben: Record<string, unknown>; bilder: Array<{ name: string; daten: string }> }) =>

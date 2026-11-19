@@ -12,7 +12,7 @@ After too many wrong passwords, Ablago blocks sign-in. Under **Workbench → Set
 | **Per IP address**, across all email addresses | 30 failed attempts → 60 minutes | someone tries out many accounts from one address |
 | **Per account**, across all IP addresses (fixed) | 30 failed attempts in 60 minutes → until the end of the hour | someone tries out passwords for one account from many addresses |
 
-For **IPv6**, Ablago counts per /64 network, not per single address: a connection usually gets a whole /64 and could otherwise use a new address for every attempt. The list of blocked addresses then shows the network, e.g. `2001:db8:1:2::/64`.
+For **IPv6**, Ablago counts per /64 network, not per single address: a connection usually gets a whole /64 and could otherwise use a new address for every attempt. The list of locked sign-ins then shows the network, e.g. `2001:db8:1:2::/64`.
 
 The **per-account block** is a brake: once reached, Ablago accepts no password for this account until the end of the hour, from any address (except the [exceptions](#ausnahmen)). Other accounts, API keys and the [drive](webdav.md) with an API key are not affected. It applies to every email address, including ones that do not exist – so the answer reveals nothing. Since this also lets a stranger slow down an account for an hour, it is worth entering your own home network as an exception.
 
@@ -22,7 +22,7 @@ Failed attempts and blocks are stored in the database: they survive a restart an
 
 ## Email to the administrators { #mail-an-die-administratoren }
 
-If Ablago can be reached from the internet, strangers constantly try out passwords. That is normal, and the blocks happen automatically. So by default Ablago sends **no email** when it blocks. What is blocked you can see at any time under **Workbench → Sign-in protection** and in the log.
+If Ablago can be reached from the internet, strangers constantly try out passwords. That is normal, and the blocks happen automatically. So by default Ablago sends **no email** when it blocks. What is blocked you can see at any time under **Workbench → Sign-in protection → [Locked sign-ins](#gesperrte-adressen)** and in the log.
 
 If you want to know anyway, switch on one or both automations under **Workbench → Build the Library → [Automations](automatisierungen.md#benachrichtigungen)** (the package **Notifications** brings them switched off; after the update they are set as the earlier ticks here were):
 
@@ -36,9 +36,24 @@ The emails go to all active people with the management permission for *Sign-in p
 !!! note "Up to version 0.84.7"
     Previously, by default an email came immediately for every blocked IP. With 0.84.8 the email is off by default – also in existing installations in which nobody changed the tick themselves. Whoever switches it on since 0.84.8 gets the daily summary instead of one email per block.
 
-## Blocked addresses {#gesperrte-adressen}
+## Locked sign-ins {#gesperrte-adressen}
 
-At the very bottom of the page, the section **Blocked addresses** shows every blocked IP with reason, start and end – with many blocks in a list of fixed height that you scroll. **Release** lifts the block immediately. At the top of the page is your own address as Ablago sees it.
+At the very bottom of the page, the section **Locked sign-ins** shows every block that applies right now – from all three [blocks](#zwei-sperren), with many in a list of fixed height that you scroll. Each entry shows:
+
+| Detail | Meaning |
+| --- | --- |
+| **Kind** | *Account* (per account across all addresses), *Email address and IP* or *IP address* |
+| **Who** | the email address, the address or /64 network, or both; if the email address belongs to a person, their name leads to them under **Workbench → Users** |
+| **Reason** | the number of failed attempts |
+| **Since, until** | start and end of the block, for a permanent IP block "until unlocked" |
+
+**Unlock** lifts the block immediately. For an account, its blocks per email address and IP go as well. Only when none of the three blocks applies does it say "No sign-in is locked right now." At the top of the page is your own address as Ablago sees it.
+
+Ablago reads the list from the database: it is the same whichever process serves the page. It reloads every 30 seconds.
+
+You also see a block of the account at the person under **Workbench → Users → person → Sign-in and security** in the block **Locked sign-in**, also with **Unlock**. Only people with the management permission for *Sign-in protection* (or "Full administration") see this block – the list names email addresses and addresses.
+
+Showing and unlocking need the management permission for *Sign-in protection* in [management mode](verwalten.md#der-verwaltungsmodus). Every unlock is in the [log](fehlersuche.md#protokoll) with the person who unlocked, and in the *Access* evidence (`zugang.entsperrt`: kind, account, shortened address and who unlocked; an email address without an account does not appear there).
 
 !!! warning "Behind a reverse proxy"
     For the block per IP to hit the right address, Ablago must believe the proxy's information. If the proxy sits on the same computer or in a private network, Ablago recognises this by itself (`TRUST_PROXY` not set or `auto`). Check at the top of the page: if your address shows the proxy's address instead of your device's, Ablago sees the same address for all sign-ins and, in the worst case, locks everyone out. See [Behind a reverse proxy](installation.md#hinter-einem-reverse-proxy).
@@ -51,7 +66,7 @@ Under **Never block** are addresses or networks that are never blocked, e.g. you
 
 If you yourself are blocked and nobody else who manages can release you, the [command `dms`](konsole.md) in the container helps:
 
-- `dms gesperrt` shows the blocked addresses,
+- `dms gesperrt` shows the blocked IP addresses,
 - `dms entsperren <ip>` releases an address immediately.
 
 Without access to the container, wait out the block duration or sign in from another device or network. If nobody with management permission can get in any more, the [emergency code from the emergency sheet](was-ist-passiert.md#notfallcode) or the [RESCUE file](notfall.md) helps.

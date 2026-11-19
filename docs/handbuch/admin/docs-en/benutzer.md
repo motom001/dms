@@ -67,7 +67,7 @@ At least one active person who can sign in always keeps **"Full administration"*
 
 The area *Sign-in and security* shows on which devices the user is signed in – with device, browser and last activity. You end individual sessions with **Sign out**, for instance when a device got lost. If they are signed in on several devices, **Sign out everywhere** ends all sessions at once. Both buttons ask first.
 
-Above it, it says whether they have set up [two-factor sign-in](anmeldeschutz.md#zwei-faktor-anmeldung). **Reset** removes it, e.g. after a lost phone. Below it, it says how many [passkeys](anmeldeschutz.md#passkeys) they have; **Reset** in the block **Passkeys** removes all of them.
+Above it, it says whether they have set up [two-factor sign-in](anmeldeschutz.md#zwei-faktor-anmeldung). **Reset** removes it, e.g. after a lost phone. Below it, it says how many [passkeys](anmeldeschutz.md#passkeys) they have; **Reset** in the block **Passkeys** removes all of them. If their sign-in is locked right now, the block **Locked sign-in** shows it; **Unlock** lifts the lock (only with the management permission for *Sign-in protection*, see [Locked sign-ins](anmeldeschutz.md#gesperrte-adressen)).
 
 ## What does a user see? {#was-sieht-ein-benutzer}
 

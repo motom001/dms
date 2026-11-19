@@ -347,6 +347,45 @@ describe('Rechte-Matrix (#1262)', () => {
     assert.ok([401, 403].includes(s.statusCode), String(s.statusCode));
   });
 
+  it('Gesperrte Anmeldungen (#1481): nur mit Verwaltungsrecht Anmeldeschutz im Modus – anzeigen und entsperren', async () => {
+    for (let i = 0; i < 5; i++) await x.konten.sperre.fehlschlag('katrin@example.org', '203.0.113.81', true);
+    const rufeUrl = (methode: Methode, url: string, cookie: string, payload?: object) =>
+      x.app.inject({ method: methode, url, ...(payload ? { payload } : {}), headers: { 'x-dms': '1', cookie } });
+    const wege: Array<[Methode, string, object?]> = [
+      ['GET', '/api/werkbank/anmeldeschutz'],
+      ['GET', '/api/werkbank/anmeldeschutz/sperren?email=katrin%40example.org'],
+      ['POST', '/api/werkbank/anmeldeschutz/entsperren', { art: 'konto-ip', email: 'katrin@example.org', ip: '203.0.113.81' }],
+      ['POST', '/api/werkbank/anmeldeschutz/entsperren', { art: 'konto', email: 'katrin@example.org' }],
+    ];
+    // Ohne Recht, nur „Benutzer“, ohne Modus, in der Vertretung: nichts – auch keine E-Mail-Adressen oder Kennungen.
+    for (const cookie of [x.cMarkus, x.cJonas, x.cLena, x.cVertretung])
+      for (const [m, url, payload] of wege) {
+        const r = await rufeUrl(m, url, cookie, payload);
+        assert.equal(r.statusCode, 403, `${m} ${url}`);
+        assert.ok(!r.body.includes('katrin@example.org') && !r.body.includes('203.0.113'), `${m} ${url}: verrät nichts`);
+      }
+    // Mit „Gesamte Verwaltung“ im Modus: sichtbar, mit Person, und zu entsperren.
+    const an = await x.app.inject({
+      method: 'POST',
+      url: '/api/konto/anmelden',
+      payload: { email: 'lena@example.org', passwort: PW },
+      headers: { 'x-dms': '1' },
+    });
+    const cookie = ([] as string[]).concat(an.headers['set-cookie'] as string | string[])[0].split(';')[0];
+    assert.equal((await rufeUrl('POST', '/api/konto/verwaltung', cookie, {})).statusCode, 200);
+    const liste = await rufeUrl('GET', '/api/werkbank/anmeldeschutz/sperren?email=katrin%40example.org', cookie);
+    assert.equal(liste.statusCode, 200, liste.body);
+    const [s] = (liste.json() as { sperren: Array<{ art: string; ip: string; person: { name: string } | null }> }).sperren;
+    assert.equal(s.art, 'konto-ip');
+    assert.equal(s.ip, '203.0.113.81');
+    assert.equal(s.person?.name, 'Katrin');
+    const weg = await rufeUrl('POST', '/api/werkbank/anmeldeschutz/entsperren', cookie, wege[2][2]);
+    assert.equal(weg.statusCode, 200, weg.body);
+    assert.deepEqual((weg.json() as { sperren: unknown[] }).sperren, []);
+    assert.equal((await rufeUrl('POST', '/api/werkbank/anmeldeschutz/entsperren', cookie, wege[2][2])).statusCode, 404, 'schon aufgehoben');
+    assert.equal((await rufeUrl('POST', '/api/werkbank/anmeldeschutz/entsperren', cookie, { art: 'sonst' })).statusCode, 422);
+  });
+
   it('API-Schlüssel schreiben: Routen der Verwaltung → 403', async () => {
     const ab = await pruefe((r) => !!r.api && r.zugang === 'admin', { authorization: `Bearer ${x.schreiben}` }, [403]);
     assert.deepEqual(ab, [], ab.join('\n'));

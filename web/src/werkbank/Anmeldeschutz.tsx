@@ -4,6 +4,7 @@ import {
   kontoApi,
   type AnbieterEingabe,
   type AnbieterStand,
+  type AktiveSperre,
   type AnmeldeschutzStand,
   type NotfallzugangStand,
   type PasskeyPflicht,
@@ -20,8 +21,9 @@ import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
 import { HeimnetzGrund } from './HeimnetzGrund';
+import { SperrListe, sperrWer } from './GesperrteAnmeldungen';
 
-/** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
+/** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte Anmeldungen (#1481), Ausnahmen. */
 
 type SperrFormular = Omit<SperrEinstellung, 'ausnahmen'> & { ausnahmen: string };
 const sperrFormular = (s: SperrEinstellung): SperrFormular => ({ ...s, ausnahmen: s.ausnahmen.join(', ') });
@@ -81,10 +83,10 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
       setSendet(false);
     }
   }
-  async function entsperren(ip: string) {
+  async function entsperren(g: AktiveSperre) {
     try {
-      z.setStand(await kontoApi.entsperren(ip));
-      setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.freigegeben', { ip }) });
+      z.setStand(await kontoApi.entsperren(g));
+      setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.entsperrt', { wer: sperrWer(g) }) });
     } catch (x) {
       setMeldung({ art: 'schlecht', text: (x as Error).message });
     }
@@ -168,40 +170,20 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
       <PasskeyPflichtBlatt />
       <AnbieterBlatt />
       <NotfallzugangBlatt deineIp={s.deineIp} />
-      {/* #366: früher die mittlere Spalte; ganz unten, mit fester Höhe – bei Dauerangriffen kommen viele zusammen. */}
+      {/* #366: früher die mittlere Spalte; ganz unten, mit fester Höhe – bei Dauerangriffen kommen viele zusammen.
+          #1481: alle drei Ebenen, nicht nur die IP-Adressen. */}
       <div className="blatt" id="gesperrt">
         <h2 className="h3">
-          {t('werkbank.anmeldeschutz.gesperrte-adressen')}
-          {s.gesperrt.length > 0 && (
+          {t('werkbank.anmeldeschutz.gesperrte-anmeldungen')}
+          {s.sperren.length > 0 && (
             <>
               {' '}
-              <Etikett>{s.gesperrt.length}</Etikett>
+              <Etikett>{s.sperren.length}</Etikett>
             </>
           )}
         </h2>
-        {!s.gesperrt.length ? (
-          <p className="leise">{t('werkbank.anmeldeschutz.gerade-ist-keine-adresse')}</p>
-        ) : (
-          <ul className="sitzungsliste festhoehe">
-            {s.gesperrt.map((g) => (
-              <li key={g.ip}>
-                <span>
-                  <strong className="mono">{g.ip}</strong>{' '}
-                  <span className="leise klein">
-                    {t('werkbank.anmeldeschutz.seit', {
-                      grund: g.grund,
-                      zeit: zeit(g.seit),
-                      wert: g.bis ? t('werkbank.anmeldeschutz.bis', { zeit: zeit(g.bis) }) : t('werkbank.anmeldeschutz.bis-entsperrt'),
-                    })}
-                  </span>
-                </span>
-                <Knopf groesse="klein" onClick={() => entsperren(g.ip)}>
-                  {t('werkbank.anmeldeschutz.freigeben')}
-                </Knopf>
-              </li>
-            ))}
-          </ul>
-        )}
+        <p className="leise klein">{t('werkbank.anmeldeschutz.gesperrte-anmeldungen.text')}</p>
+        <SperrListe sperren={s.sperren} entsperren={entsperren} leer={t('werkbank.anmeldeschutz.gerade-ist-keine-anmeldung')} />
       </div>
     </div>
   );
