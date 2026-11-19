@@ -18,3 +18,5 @@ Die Prüfung **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) melde
 - `poppler-utils` und `setpriv` (beide GPL-2.0-or-later) ruft Ablago als eigene Programme auf; eingebunden werden sie nicht. `tini`, `su-exec` und `setpriv` sorgen dafür, dass Ablago, Vorstart und Werkzeugdienst [ohne root](server.md#ohne-root) laufen.
 - Die Ersatzschriften `font-liberation` und `font-dejavu` (mit `fontconfig`, etwa 14 MB) prüft `.github/werkzeuge/schriften-pruefen.mjs` im Image-Workflow ([#1329](https://github.com/motom001/dms/issues/1329)); ohne sie rendert `pdftoppm` PDFs mit nicht eingebetteten Schriften ohne Text.
 - Auch bei Werkzeugen gilt: lieber Bordmittel – die Tests laufen mit dem Testläufer von Node.js (`node --test`), ohne eigenes Test-Framework.
+
+**Updates:** Dependabot (`.github/dependabot.yml`) öffnet wöchentlich Pull Requests, Sicherheitsupdates sofort. Die Mail-Pakete `nodemailer`, `imapflow` und `mailparser` verarbeiten fremde E-Mails und kommen deshalb als eigener PR (Gruppe `mail`, auch Hauptversionen), der zügig gemergt wird ([#1413](https://github.com/motom001/dms/issues/1413)); die übrigen kleinen Updates sammelt die Gruppe `klein`.
