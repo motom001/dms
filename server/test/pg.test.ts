@@ -535,7 +535,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 
   it('zeigt Technik und Versionen und gleicht sie auf Knopfdruck ab', async () => {
     const u = (await anfrage('GET', '/api/werkbank/system')).body;
-    assert.match(u.datenbank.version, /^17/);
+    assert.match(u.datenbank.version, /^18/);
     assert.ok(u.datenbank.mappen >= 1);
     assert.equal(u.bibliotheken.fastify?.split('.')[0], '5');
     assert.ok(!JSON.stringify(u).includes('dms:dms'), 'keine Zugangsdaten');
