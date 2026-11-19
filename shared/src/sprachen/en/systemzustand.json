@@ -197,5 +197,20 @@
   "extern.kosten.hart": "Hard limit: pause AI features when reached",
   "extern.kosten.hart.hinweis": "Paid AI features (packages with a price) pause until the start of next month. Anyone using them sees “AI features paused until …”. Events wait and are delivered afterwards. A higher budget lifts the pause at once.",
   "extern.kosten.gespeichert": "Saved.",
-  "extern.kosten.datenschutz": "Only metadata, never content. Individual calls are kept for {tage} days, then only monthly totals; monthly totals for {monate} months. If an account is deleted, its figures remain without the person."
+  "extern.kosten.datenschutz": "Only metadata, never content. Individual calls are kept for {tage} days, then only monthly totals; monthly totals for {monate} months. If an account is deleted, its figures remain without the person.",
+  "kennung.gleich": "Ablago runs as user {benutzer} and group {gruppe} – {herkunft}.",
+  "kennung.getrennt": "Ablago runs as user {benutzer} ({herkunft}) and group {gruppe} ({herkunft2}).",
+  "kennung.herkunft.daten": "like the owner of the data folder",
+  "kennung.herkunft.vorgabe.root": "default, because the data folder belongs to root",
+  "kennung.herkunft.vorgabe.system": "default, because the data folder belongs to a system user of the container",
+  "kennung.herkunft.vorgabe.ohne": "default, because no data folder of its own is mounted",
+  "kennung.herkunft.gesetzt": "from PUID/PGID in the compose file",
+  "kennung.aenderung.besitzer-root": "Changed: {anzahl} entries in “{ordner}” belonged to root and now belong to {nach}.",
+  "kennung.aenderung.besitzer": "Changed: {anzahl} entries in “{ordner}” now belong to {nach}, as requested with PUID/PGID.",
+  "kennung.aenderung.rechte": "Changed: other users in the container can no longer access “{ordner}” (o-rwx), because the folder now belongs to Ablago.",
+  "kennung.aenderung.geheim": "Changed: {anzahl} files with keys in “{ordner}” can now only be read by Ablago (go-rwx).",
+  "kennung.benutzer": "Ablago’s user",
+  "kennung.gruppe": "Ablago’s group",
+  "kennung.wert": "{kennung} – {herkunft}",
+  "kennung.geaendert": "Changed on {zeit}"
 }

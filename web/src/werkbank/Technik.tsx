@@ -10,6 +10,7 @@ import { useHandbuch } from '../Hilfe';
 import { useKonto } from '../konto';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { aenderungText, herkunftKurz, type Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
 
 /**
  * Technik und Versionen (#15): installierte Komponenten, als Text für ein
@@ -31,6 +32,27 @@ const STATUS: Record<Vergleich['status'], { text: string; art: string }> = {
 };
 
 type Zeilen = Array<[string, Array<[string, string]>]>;
+
+/**
+ * Benutzer und Gruppe von Ablago mit Herkunft (#1466) und was das Start-Skript dafür geändert hat – leer bei älteren
+ * Servern und außerhalb des Images.
+ */
+function kennungZeilen(u: Systemuebersicht['laufzeit']): Array<[string, string]> {
+  const k: Dienstbenutzer | undefined = u.dienstbenutzer;
+  if (u.benutzer == null || u.gruppe == null) return [];
+  const wert = (kennung: number, wer: 'benutzer' | 'gruppe') => {
+    const h = k ? herkunftKurz(k, wer, t.frei) : null;
+    return h ? t('systemzustand.kennung.wert', { kennung, herkunft: h }) : String(kennung);
+  };
+  return [
+    [t('systemzustand.kennung.benutzer'), wert(u.benutzer, 'benutzer')],
+    [t('systemzustand.kennung.gruppe'), wert(u.gruppe, 'gruppe')],
+    ...(k?.aenderungen ?? []).map((a): [string, string] => [
+      t('systemzustand.kennung.geaendert', { zeit: zeit(a.zeit) }),
+      aenderungText(a, t.frei),
+    ]),
+  ];
+}
 
 function zeilenAus(u: Systemuebersicht): Zeilen {
   const db = 'version' in u.datenbank ? u.datenbank : null;
@@ -56,6 +78,7 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
         [t('werkbank.technik.container'), u.laufzeit.container ? t('werkbank.technik.ja') : t('werkbank.technik.nein')],
         [t('werkbank.technik.zeitzone'), u.laufzeit.zeitzone],
         [t('werkbank.technik.laeuft-seit'), zeit(u.laufzeit.laeuftSeit)],
+        ...kennungZeilen(u.laufzeit),
       ],
     ],
     [

@@ -8,6 +8,8 @@
 #      Container startet nicht
 #  2d. Ohne root (#1354): Ablago, Vorstart und Werkzeuge nicht als root, Werkzeuge getrennt und begrenzt (auch mit einem
 #      riesigen PDF), Datenbank nur für Ablago, Rolle dms kein Superuser
+#  2e. Benutzer aus dem Datenordner (#1466): Bind-Mounts von 1026:100 ohne PUID → läuft als 1026:100, nichts auf dem
+#      „NAS“ umgeschrieben; PUID gesetzt → wie bisher; Schreibprobe scheitert → Startseite mit den gesehenen Kennungen
 #  5b. Rechte (#943): eingebundener Ordner mit 000 → startet; nicht beschreibbar → klare Meldung
 #   6. Eigener PORT → Healthcheck gesund
 #   7. Lasttest-Modus ohne Ordner (#612) → Seite, Ergebnis, „Test beenden“ → Container weg
@@ -19,7 +21,7 @@ WERKZEUGE_PRUEFEN="$(cd "$(dirname "$0")/.." && pwd)/.github/werkzeuge/werkzeuge
 PORT=18090
 arbeit=$(mktemp -d)
 NAME=probe-komplett
-aufraeumen() { docker rm -f "$NAME" "$NAME-alt" "$NAME-rechte" >/dev/null 2>&1 || true; sudo rm -rf "$arbeit" 2>/dev/null || rm -rf "$arbeit" || true; }
+aufraeumen() { docker rm -f "$NAME" "$NAME-alt" "$NAME-rechte" "$NAME-kennung" >/dev/null 2>&1 || true; sudo rm -rf "$arbeit" 2>/dev/null || rm -rf "$arbeit" || true; }
 trap aufraeumen EXIT
 # Job-Logs sind nicht überall lesbar: jeden unerwarteten Fehler als Anmerkung melden.
 set -E
@@ -147,6 +149,84 @@ for o in files geheim sicherung; do
   [ "$(docker exec "$NAME" stat -c %u:%g "/data/$o")" = 1000:1000 ] || fehler "/data/$o gehört nicht 1000:1000"
 done
 echo "::endgroup::"; echo "::notice::dms-komplett: ohne root, Werkzeuge getrennt und begrenzt"
+
+echo "::group::2e. Benutzer aus dem Datenordner (#1466)"
+# Frisches Volume (Docker legt die Ordner als root an, Schritt 1): Vorgabe 1000:1000, mit Grund.
+k=$(docker exec "$NAME" dms status --json | jq -c '.laufzeit.dienstbenutzer | {herkunft, grund}')
+[ "$k" = '{"herkunft":{"benutzer":"vorgabe","gruppe":"vorgabe"},"grund":"root"}' ] || fehler "frisches Volume: Herkunft $k statt Vorgabe (root)"
+grep -q "Ablago läuft als Benutzer 1000 und Gruppe 1000 – Vorgabe, weil der Datenordner (/data/files) root gehört" <<< "$(docker logs "$NAME" 2>&1)" \
+  || fehler "frisches Volume: kein Satz zum Benutzer im Protokoll"
+# Bind-Mounts eines NAS-Benutzers (1026:100), ohne PUID/PGID: Ablago läuft als 1026:100 und schreibt nichts um.
+KPORT=18096
+kenn="$arbeit/kennung"
+sudo mkdir -p "$kenn/files/2025" "$kenn/geheim" "$kenn/sicherung" "$kenn/postgres"
+printf 'vom NAS\n' | sudo tee "$kenn/files/2025/vom-nas.txt" "$kenn/sicherung/kopie.txt" >/dev/null
+sudo chmod 755 "$kenn/files" "$kenn/files/2025" "$kenn/geheim" "$kenn/sicherung"
+sudo chmod 644 "$kenn/files/2025/vom-nas.txt" "$kenn/sicherung/kopie.txt"
+sudo chown -R 1026:100 "$kenn/files" "$kenn/geheim" "$kenn/sicherung"
+vorher=$(sudo find "$kenn/files" "$kenn/geheim" "$kenn/sicherung" -printf '%P %u:%g %m\n' | sort)
+kennung_start() {
+  docker rm -f "$NAME-kennung" >/dev/null 2>&1 || true
+  docker run -d --name "$NAME-kennung" -p "$KPORT:3000" -e DMS_START_FEHLER_WARTEN_S=120 "$@" \
+    -v "$kenn/files:/data/files" -v "$kenn/geheim:/data/geheim" -v "$kenn/sicherung:/data/sicherung" -v "$kenn/postgres:/data/postgres" \
+    "$IMAGE" >/dev/null
+}
+kennung_warte() {
+  for _ in $(seq 1 90); do
+    curl -fsS "http://127.0.0.1:$KPORT/api/konto/status" >/dev/null 2>&1 && return 0
+    [ "$(docker inspect -f '{{.State.Running}}' "$NAME-kennung")" = true ] || { docker logs --tail 40 "$NAME-kennung" 2>&1; fehler "2e: Container läuft nicht mehr"; }
+    sleep 2
+  done
+  docker logs --tail 40 "$NAME-kennung" 2>&1; fehler "2e: Ablago antwortet nicht"
+}
+kennung_von() { docker exec "$NAME-kennung" sh -c 'p=$(pgrep -f "^node .*server/dist/index.js" | head -1); awk "/^Uid:/ {u = \$2} /^Gid:/ {g = \$2} END {print u \":\" g}" /proc/$p/status'; }
+kennung_start
+kennung_warte
+[ "$(kennung_von)" = 1026:100 ] || fehler "2e: Ablago läuft als $(kennung_von) statt 1026:100"
+grep -q "Ablago läuft als Benutzer 1026 und Gruppe 100 – wie der Besitzer des Datenordners" <<< "$(docker logs "$NAME-kennung" 2>&1)" \
+  || { docker logs --tail 40 "$NAME-kennung" 2>&1; fehler "2e: kein Satz zum Benutzer im Protokoll"; }
+grep -q "übernehme" <<< "$(docker logs "$NAME-kennung" 2>&1)" && fehler "2e: Ordner des NAS-Benutzers übernommen"
+# Was vorher da war, ist unverändert (Besitzer, Gruppe, Rechte); was Ablago neu anlegt, gehört 1026.
+nachher=$(sudo find "$kenn/files" "$kenn/geheim" "$kenn/sicherung" -printf '%P %u:%g %m\n' | sort)
+weg=$(comm -23 <(echo "$vorher") <(echo "$nachher"))
+[ -z "$weg" ] || fehler "2e: umgeschrieben: $weg"
+fremd=$(sudo find "$kenn/files" "$kenn/geheim" "$kenn/sicherung" ! -uid 1026 | head -5)
+[ -z "$fremd" ] || fehler "2e: gehört nicht 1026: $fremd"
+# docker exec … dms läuft als derselbe Benutzer (ablago-als liest die Wahl aus dem Merker) und nennt die Herkunft.
+# dms braucht eine eingerichtete Ablago: mit dem Code aus geheim/ (gehört 1026, Ablago hat ihn dort angelegt).
+code=$(sudo cat "$kenn/geheim/EINRICHTUNGSCODE")
+curl -fsS -X POST "http://127.0.0.1:$KPORT/api/konto/einrichten" -H 'x-dms: 1' -H "x-einrichtungscode: $code" -H 'content-type: application/json' \
+  -d '{"mandant":"Familie Probe","name":"Admin","email":"admin@probe.invalid","passwort":"ein-langes-probe-passwort"}' >/dev/null || fehler "2e: Einrichten scheitert"
+k=$(docker exec "$NAME-kennung" dms status --json | jq -c '{b: .laufzeit.benutzer, h: .laufzeit.dienstbenutzer.herkunft, a: (.laufzeit.dienstbenutzer.aenderungen | length)}')
+[ "$k" = '{"b":1026,"h":{"benutzer":"daten","gruppe":"daten"},"a":0}' ] || fehler "2e: dms status: $k"
+# Die Werkzeuge kommen nicht an Dateien, die Ablago anlegt (0600), auch wenn der Ordner des NAS-Benutzers offen ist.
+docker exec -u 61000:61000 "$NAME-kennung" cat /data/geheim/EINRICHTUNGSCODE >/dev/null 2>&1 && fehler "2e: Werkzeug-Benutzer liest /data/geheim/EINRICHTUNGSCODE"
+echo "::notice::dms-komplett: Bind-Mount 1026:100 ohne PUID → läuft als 1026:100, nichts umgeschrieben"
+# PUID/PGID gesetzt: wie bisher – alles für 1027:1027, gemeldet.
+kennung_start -e PUID=1027 -e PGID=1027
+kennung_warte
+[ "$(kennung_von)" = 1027:1027 ] || fehler "2e: mit PUID=1027 läuft Ablago als $(kennung_von)"
+fremd=$(sudo find "$kenn/files" "$kenn/geheim" "$kenn/sicherung" ! -uid 1027 | head -5)
+[ -z "$fremd" ] || fehler "2e: mit PUID=1027 gehört nicht alles 1027: $fremd"
+grep -q "aus PUID/PGID in der Compose-Datei" <<< "$(docker logs "$NAME-kennung" 2>&1)" || fehler "2e: kein Satz zu PUID im Protokoll"
+# Schreibprobe scheitert: files gehört 1026:100, geheim 1027:101 (0700) – Ablago (1026) kann nicht hinein und ändert
+# nichts daran. Die Startseite nennt die gesehenen Kennungen und die fertigen Zeilen.
+sudo chown -R 1026:100 "$kenn/files" "$kenn/sicherung"
+sudo chown -R 1027:101 "$kenn/geheim"; sudo chmod 700 "$kenn/geheim"
+kennung_start
+s=""
+for _ in $(seq 1 60); do
+  s=$(command curl -fsS --connect-timeout 2 --max-time 5 -H 'accept-language: de' "http://127.0.0.1:$KPORT/" 2>/dev/null || true)
+  grep -q "Ablago konnte nicht starten" <<< "$s" && break; sleep 1
+done
+grep -q "Ablago konnte nicht starten" <<< "$s" || { docker logs --tail 40 "$NAME-kennung" 2>&1; fehler "2e: keine Fehlerseite, obwohl Ablago nicht schreiben kann"; }
+for erwartet in 'Ordner „geheim“: gehört 1027:101 (Rechte 700)' 'PUID: &quot;1027&quot;' 'PGID: &quot;101&quot;' 'sudo chown -R 1026:100'; do
+  grep -qF "$erwartet" <<< "$s" || { echo "$s"; fehler "2e: Fehlerseite ohne „$erwartet“"; }
+done
+grep -qF 'PUID: "1027"' <<< "$(docker logs "$NAME-kennung" 2>&1)" || fehler "2e: Protokoll ohne fertige Zeile PUID"
+[ "$(sudo stat -c %u:%g "$kenn/geheim")" = 1027:101 ] || fehler "2e: geheim trotz Fehler umgeschrieben"
+docker rm -f "$NAME-kennung" >/dev/null
+echo "::endgroup::"; echo "::notice::dms-komplett: Benutzer aus dem Datenordner, PUID, Fehlerseite mit Kennungen"
 
 echo "::group::3. Sauber stoppen"
 docker stop "$NAME" >/dev/null

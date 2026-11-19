@@ -19,6 +19,7 @@ import { Startmodus } from './einrichtung/startmodus';
 import { VORSTART_GRUENDE, type Startschritt, type VorstartGrund } from './einrichtung/startfehler';
 import { einbettenAus } from './http/koepfe';
 import { proxyVertrauen } from './http/proxy';
+import { startseitenKennung } from './einrichtung/dienstbenutzer';
 
 const env = process.env;
 const DATEI = env.DMS_VORSTART_DATEI ?? '/tmp/ablago-vorstart';
@@ -35,6 +36,8 @@ const start = new Startmodus({
   komplett: env.DMS_VARIANTE === 'komplett',
   ohneStand: true,
   teilen: true,
+  // Benutzer von Ablago und was das Start-Skript dafür geändert hat (#1466).
+  kennung: () => startseitenKennung(env),
 });
 start.schritt('pg-start');
 

@@ -7,6 +7,8 @@
  */
 import { HILFE, hilfeUrl } from '../../../shared/src/hilfe';
 import { t } from '../sprache/sprache';
+import { aenderungText, kennungSatz } from '../../../shared/src/dienstbenutzer';
+import type { StartseitenKennung } from './dienstbenutzer';
 
 export type Startschritt =
   /** Vorstart in dms-komplett (#1250): PostgreSQL anlegen, starten, dann Ablago starten. */
@@ -159,7 +161,54 @@ function grundText(f: Startfehler): string {
   return t('start.fehler.allgemein', { schritt: schrittText({ schritt: f.schritt, nr: null, von: null }) });
 }
 
-function laeuftTeile(s: Startstand, dauer: string): string[] {
+/**
+ * Benutzer von Ablago (#1466): ein Satz, welcher Benutzer und warum, und was das Start-Skript bei diesem Start
+ * geändert hat – nur Kennungen und Ordnernamen, keine Pfade.
+ */
+function kennungTeile(s: Startstand, k: StartseitenKennung | null | undefined): string[] {
+  const satz = k ? kennungSatz(k.stand, t.frei) : null;
+  if (!k || !satz) return [];
+  const neu = k.stand.aenderungen.filter((a) => Date.parse(a.zeit) >= s.seit - 2000);
+  return [
+    `<p class="leise">${html(satz)}</p>`,
+    ...(neu.length ? [`<ul class="leise">${neu.map((a) => `<li>${html(aenderungText(a, t.frei))}</li>`).join('')}</ul>`] : []),
+  ];
+}
+
+/**
+ * Ablago kann nicht schreiben (#1466): was das Start-Skript gesehen hat und die Abhilfe als fertige Zeilen – mit den
+ * Kennungen der Ordner. Pfade nur die festen im Container (/data/…), wie in der Compose-Datei.
+ */
+function rechteTeile(k: StartseitenKennung | null | undefined): string[] {
+  if (!k?.fehler.length) return [];
+  const jetzt = `${k.stand.benutzer ?? 1000}:${k.stand.gruppe ?? 1000}`;
+  const gesehen = k.fehler.map((f) =>
+    f.schreibgeschuetzt
+      ? t('start.rechte.schreibgeschuetzt', { ordner: f.ordner })
+      : t('start.rechte.gesehen', { ordner: f.ordner, besitzer: f.besitzer, rechte: f.rechte, jetzt }),
+  );
+  const ro = k.fehler.filter((f) => f.schreibgeschuetzt);
+  const andere = k.fehler.filter((f) => !f.schreibgeschuetzt);
+  const pre = (z: string) => `<pre>${html(z)}</pre>`;
+  return [
+    `<ul>${gesehen.map((g) => `<li>${html(g)}</li>`).join('')}</ul>`,
+    ...(ro.length ? [`<p>${html(t('start.rechte.ro'))}</p>`, pre(ro.map((f) => `- …:/data/${f.ordner}`).join('\n'))] : []),
+    ...(k.vorschlag
+      ? [
+          `<p>${html(t('start.rechte.puid'))}</p>`,
+          pre(`    environment:\n      PUID: "${k.vorschlag.puid}"\n      PGID: "${k.vorschlag.pgid}"`),
+        ]
+      : []),
+    ...(andere.length
+      ? [
+          `<p>${html(k.vorschlag ? t('start.rechte.chown.oder') : t('start.rechte.chown'))}</p>`,
+          pre(andere.map((f) => `sudo chown -R ${jetzt} <${t('start.rechte.nas-ordner', { ordner: f.ordner })}>`).join('\n')),
+        ]
+      : []),
+  ];
+}
+
+function laeuftTeile(s: Startstand, dauer: string, k?: StartseitenKennung | null): string[] {
   const anteil = s.menge && s.menge.gesamt > 0 ? s.menge.fertig / s.menge.gesamt : s.nr && s.von ? (s.nr - 1) / s.von : null;
   const menge = s.menge
     ? ` – ${html(t('start.menge', { fertig: s.menge.fertig.toLocaleString('de-DE'), gesamt: s.menge.gesamt.toLocaleString('de-DE') }))}`
@@ -171,16 +220,18 @@ function laeuftTeile(s: Startstand, dauer: string): string[] {
     `<p class="schritt" role="status">${html(schrittText(s))}${menge}</p>`,
     balken === null ? '<progress></progress>' : `<progress max="100" value="${Math.round(balken * 100)}"></progress>`,
     `<p class="leise">${html(t('start.seit', { dauer }))}</p>`,
+    ...kennungTeile(s, k),
     `<p>${html(t('start.beruhigung'))}</p>`,
     `<p class="leise">${html(t('start.weiter'))}</p>`,
   ];
 }
 
-function fehlerTeile(f: Startfehler, komplett: boolean, sprache: 'de' | 'en'): string[] {
+function fehlerTeile(f: Startfehler, komplett: boolean, sprache: 'de' | 'en', k?: StartseitenKennung | null): string[] {
   const wege = auswege(f, komplett);
   return [
     `<h1>${html(t('start.fehler.titel'))}</h1>`,
     `<p class="schritt" role="alert">${html(grundText(f))}</p>`,
+    ...(f.art === 'vorstart' && f.grund === 'daten-rechte' ? rechteTeile(k) : []),
     ...(wege.length
       ? [
           `<p class="zwischen">${html(t('start.fehler.was-tun'))}</p>`,
@@ -194,9 +245,12 @@ function fehlerTeile(f: Startfehler, komplett: boolean, sprache: 'de' | 'en'): s
 }
 
 /** Die Seite selbst: schlicht, ohne Skript (Neuladen per meta refresh), Stil inline (CSP erlaubt nur das), nichts von Dritten. */
-export function startseiteHtml(s: Startstand, o: { dauer: string; neuLadenS: number; komplett: boolean; sprache: 'de' | 'en' }): string {
+export function startseiteHtml(
+  s: Startstand,
+  o: { dauer: string; neuLadenS: number; komplett: boolean; sprache: 'de' | 'en'; kennung?: StartseitenKennung | null },
+): string {
   const fehler = s.zustand === 'fehler' && s.fehler;
-  const teile = fehler ? fehlerTeile(fehler, o.komplett, o.sprache) : laeuftTeile(s, o.dauer);
+  const teile = fehler ? fehlerTeile(fehler, o.komplett, o.sprache, o.kennung) : laeuftTeile(s, o.dauer, o.kennung);
   return `<!doctype html>
 <html lang="${o.sprache}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="${fehler ? 30 : o.neuLadenS}"><meta name="robots" content="noindex">
@@ -209,7 +263,8 @@ main{box-sizing:border-box;width:min(560px,100% - 32px);background:var(--karte);
 h1{margin:0 0 12px;font-size:1.4rem}
 .schritt{font-weight:600}${fehler ? '.schritt{color:var(--fehler)}' : ''}
 .zwischen{font-weight:600;margin-bottom:4px}
-ol{margin-top:0;padding-left:22px}
+ol,ul{margin-top:0;padding-left:22px}
+pre{background:var(--grund);border:1px solid var(--rand);border-radius:8px;padding:8px 12px;overflow-x:auto;font-size:.9rem}
 .leise{color:var(--leise);font-size:.93rem}
 progress{width:100%;height:10px;accent-color:var(--akzent)}
 a{color:var(--akzent)}

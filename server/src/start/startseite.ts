@@ -9,6 +9,7 @@ import { VARIABLEN_GRUND } from '../../../shared/src/umgebungsvariablen';
 import { mkdir } from 'node:fs/promises';
 import { exportOrdnerVon } from '../export/exportordner';
 import { Startmodus } from '../einrichtung/startmodus';
+import { startseitenKennung } from '../einrichtung/dienstbenutzer';
 import { NeuereDatenbankFehler } from '../datenbank/db';
 import type { vorbereiten } from './vorbereiten';
 
@@ -70,6 +71,8 @@ export async function oeffneStartseite(bisher: Bisher) {
     vorgaenger,
     // Sekunden seit 1970 (date +%s in start.sh).
     seit: Number(env.DMS_VORSTART_SEIT) * 1000 || undefined,
+    // Benutzer von Ablago und was das Start-Skript dafür geändert hat (#1466).
+    kennung: () => startseitenKennung(env),
   });
   if (verbund.erster) await start.oeffne();
   let fehlerNeustart: NodeJS.Timeout | null = null;

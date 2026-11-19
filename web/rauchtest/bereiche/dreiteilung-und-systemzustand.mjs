@@ -149,6 +149,24 @@ rauchtest(
   },
 );
 
+// Benutzer von Ablago (#1466): Der Systemzustand nennt Benutzer und Gruppe unter „Laufzeit“; die Herkunft („wie der
+// Datenordner“, „Vorgabe“, „aus PUID/PGID“) und Änderungen kommen nur aus dem Start-Skript des Images – hier ohne.
+rauchtest(
+  'Systemzustand: Benutzer und Gruppe von Ablago unter Laufzeit (#1466)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    const installiert = s.locator('#installiert');
+    await installiert.getByText('Benutzer von Ablago', { exact: true }).waitFor();
+    for (const name of ['Benutzer von Ablago', 'Gruppe von Ablago']) {
+      const wert = await installiert.locator('dt', { hasText: name }).locator('xpath=following-sibling::dd[1]').innerText();
+      assert.match(wert, /^\d+$/, `${name}: Zahl ohne Herkunft außerhalb des Images (${wert})`);
+    }
+  },
+);
+
 // #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand; der alte Link führt dorthin.
 rauchtest(
   'Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter Link leitet um (#1190)',
