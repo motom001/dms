@@ -3,6 +3,7 @@
  * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
  * Trefferliste (#1333): Titel der erwähnten Mappe in der Spalte, nach den Rechten der lesenden Person (Lena und Jonas);
  * erwähnte Personen mit demselben Namen wie in der Mappe (Personenliste), auch ein Systemkonto ohne Benutzer-Mappe.
+ * Eine erwähnte Person, die es nicht mehr gibt: „@gelöschter Benutzer“ statt nur „@“ (QS-Runde 11/2026).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -92,6 +93,8 @@ rauchtest('Handy: Erwähnen mit 44-px-Tippflächen (#889)', { handy: true, als: 
  * Lena legt eine private und eine offene Mappe an und eine dritte, die beide erwähnt. Einmal angelegt, für beide Tests.
  */
 let kellernotiz;
+/** Eine Benutzer-Id, die es nie gab – für den Server dasselbe wie eine gelöschte Person. */
+const WEG_PERSON = '00000000-0000-4000-8000-00000000dead';
 function listeMitErwaehnungen() {
   kellernotiz ??= (async () => {
     const verwaltung = await sitzung(LENA);
@@ -186,3 +189,18 @@ for (const person of [LENA, JONAS])
     await liste.getByText(typ.namen, { exact: true }).waitFor();
     assert.equal(await liste.getByText(/gelöschte Mappe|@Alt/).count(), 0);
   });
+
+// Eine Notiz zeigt den Text nur an (wie Historie und Ansicht ohne Bearbeiten) – dort stand für eine gelöschte Person
+// in der alten Schreibweise `benutzer:` nur „@“, weil die Erwähnung seit #1293 keinen Namen mehr speichert.
+rauchtest('Erwähnung einer gelöschten Person zeigt „@gelöschter Benutzer“ statt nur „@“', { als: LENA }, async (s) => {
+  const { quelle, cookie } = await zweiMappen('Ehemals');
+  await api('POST', `/api/mappen/${quelle.id}/notizen`, { cookie, body: { text: `Früher: @[](benutzer:${WEG_PERSON})` } });
+  await notizen(s, quelle);
+  const notiz = s.locator('.notizliste .formatiert').filter({ hasText: 'Früher:' }).first();
+  await notiz.waitFor();
+  // Bis der Server antwortet, steht neutral „@Benutzer“ da; gelöscht trägt den Hinweis „gibt es nicht mehr“.
+  const weg = notiz.locator('.erwaehnung.weg[title="Diesen Benutzer gibt es nicht mehr"]');
+  await weg.waitFor();
+  assert.equal((await weg.innerText()).trim(), '@gelöschter Benutzer');
+  assert.equal((await notiz.innerText()).trim(), 'Früher: @gelöschter Benutzer');
+});
