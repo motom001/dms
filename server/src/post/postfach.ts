@@ -636,7 +636,7 @@ export class Postfaecher {
 
   /** Anhänge (und wahlweise die Original-E-Mail) als Dokumente der Post (#999, postfach-anhaenge.ts). */
   private ladeAnhaenge(p: Postfach, postId: string, mail: GeleseneMail, quelle: Buffer, abgelehnt: string[] = []): Promise<number> {
-    return legeAnhaengeAb(this.d.dienst, { postId, mail, quelle, original: p.original, von: SYSTEMNAME }, abgelehnt);
+    return legeAnhaengeAb(this.d.dienst, { postId, mail, quelle, original: p.original, von: SYSTEMNAME, fuer: p.fuer }, abgelehnt);
   }
 
   /** Nach einem Absturz: Gibt es die Post schon, die Mail nur noch wegräumen und merken. */

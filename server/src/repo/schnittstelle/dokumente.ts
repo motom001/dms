@@ -47,7 +47,7 @@ export interface RepoDokumente {
    * E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (`nr`, null = keiner) und Kennzeichen
    * „Original-E-Mail“ setzen – was fehlt, bleibt. Auch beim Ersetzen ohne Versionierung (das neue Dokument übernimmt es).
    */
-  setzeEingang(id: string, x: { nr?: number | null; originalEmail?: boolean }): Promise<void>;
+  setzeEingang(id: string, x: { nr?: number | null; originalEmail?: boolean; fuer?: string | null }): Promise<void>;
   /** Andere Dokumente mit derselben Datei (gleicher Inhalt). */
   dokumenteMitSha(sha256: string): Promise<Dokument[]>;
   /** Dateien umwandeln (#577): lebende Dokumente dieser Dateitypen, ältere zuerst. */

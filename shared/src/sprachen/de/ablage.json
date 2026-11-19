@@ -344,6 +344,7 @@
   "dokumente.info.seiten_one": "{anzahl} Seite",
   "dokumente.info.seiten_other": "{anzahl} Seiten",
   "dokumente.herkunft.eingang": "über einen Eingang gekommen",
+  "dokumente.info.fuer": "für",
   "dokumente.zustand.text": "Text nicht lesbar – {grund}",
   "dokumente.zustand.text-ohne": "Text nicht lesbar.",
   "dokumente.zustand.archiv": "Keine Archivfassung – {grund}",

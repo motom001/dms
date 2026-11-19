@@ -905,6 +905,8 @@
   "model.bereits-vergeben": "Already taken.",
   "model.ueber-die-schnittstelle": "via the interface for programs",
   "model.ueber-webdav": "via WebDAV",
+  "model.per-e-mail": "by email",
+  "model.aus-dem-eingangsordner": "from the intake folder",
   "model.von-einem-paket": "by a package",
   "model.in-ablago-bearbeitet": "edited in Ablago",
   "model.in-ablago-geschwaerzt": "redacted in Ablago",

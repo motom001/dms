@@ -27,7 +27,7 @@ interface Volltextuebernahme {
   info: string | null;
 }
 /** Neue Dateien von außen, die automatisch verkleinert werden dürfen – nicht im DMS Bearbeitetes oder Zurückgeholtes. */
-const AUTOMATISCH_VERKLEINERN: ReadonlySet<Herkunft> = new Set<Herkunft>(['hochgeladen', 'api', 'webdav', 'eingang']);
+const AUTOMATISCH_VERKLEINERN: ReadonlySet<Herkunft> = new Set<Herkunft>(['hochgeladen', 'api', 'webdav', 'eingang', 'email', 'ordner']);
 
 /** Die Teile der Dokumente, die der Dokumente-Dienst ruft (eigene Klassen in diesem Ordner). */
 export interface DokumenteTeile {
@@ -214,9 +214,14 @@ export class DokumenteDienst {
       herkunft?: Herkunft;
       volltext?: Volltextuebernahme;
       /** Nur intern (#878: Beispiel-Dokumente mit Datum). */ erstellt?: string;
-      /** Nur intern (E-Mail-Postfach, #999): Platz in der Eingangsreihenfolge und Kennzeichen „Original-E-Mail“. */ eingang?: {
+      /**
+       * Nur intern (E-Mail-Postfach, #999): Platz in der Eingangsreihenfolge und Kennzeichen „Original-E-Mail“; dazu für
+       * wen es kam (#1489, Postfach und Eingangsordner).
+       */
+      eingang?: {
         nr?: number;
         originalEmail?: boolean;
+        fuer?: string | null;
       };
     },
     inhalt: unknown,
@@ -309,6 +314,7 @@ export class DokumenteDienst {
         await this.repo.setzeEingang(dokument.id, eingang);
         if (eingang.nr) dokument.eingangNr = eingang.nr;
         if (eingang.originalEmail) dokument.originalEmail = true;
+        if (eingang.fuer) dokument.eingangFuer = eingang.fuer;
       }
       // Anlagen (#998) des ersetzten Dokuments hängen am neuen.
       await this.uebertrageAnlagen(anlagen, dokument);
@@ -454,7 +460,11 @@ export class DokumenteDienst {
 }
 
 /** E-Mail-Postfach (#999): was ein ersetztes Dokument an Eingangsreihenfolge und Kennzeichen weitergibt – oder nichts. */
-function eingangVon(d: Dokument): { nr?: number; originalEmail?: boolean } | undefined {
-  if (!d.eingangNr && !d.originalEmail) return undefined;
-  return { ...(d.eingangNr ? { nr: d.eingangNr } : {}), ...(d.originalEmail ? { originalEmail: true } : {}) };
+function eingangVon(d: Dokument): { nr?: number; originalEmail?: boolean; fuer?: string } | undefined {
+  if (!d.eingangNr && !d.originalEmail && !d.eingangFuer) return undefined;
+  return {
+    ...(d.eingangNr ? { nr: d.eingangNr } : {}),
+    ...(d.originalEmail ? { originalEmail: true } : {}),
+    ...(d.eingangFuer ? { fuer: d.eingangFuer } : {}),
+  };
 }

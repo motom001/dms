@@ -251,6 +251,12 @@ export const SCHEMAS_MAPPEN: Record<string, Schema> = {
         description:
           'E-Mail-Postfach (#999): die abgeholte E-Mail selbst („Original-E-Mail“, .eml) – letzte Anlage am letzten Anhang oder, ohne Anhänge, das Hauptdokument; Erkennung und KI lassen sie weg. Fehlt sonst.',
       },
+      eingangFuer: {
+        ...uuid,
+        nullable: true,
+        description:
+          'Eingangskanäle (#1489): für wen das Dokument kam – beim E-Mail-Abruf „für“ des Postfachs, beim Eingangsordner die Person des Unterordners (Id der Benutzer-Mappe); fehlt sonst',
+      },
     },
   },
   Anlagen: {

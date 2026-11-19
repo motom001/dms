@@ -359,6 +359,31 @@ for (const pg of [false, true]) {
   let nr = 0;
   const neu = (o?: Record<string, unknown>) => aufbau(pg, `dmstest_x999_${++nr}`, o);
   describe(`E-Mail-Postfach (#999)${wo}`, { skip: pg && !url ? 'TEST_DATABASE_URL nicht gesetzt' : false }, () => {
+    it('Herkunft (#1489): „per E-Mail“, für wen laut Postfach – auch nach dem Übernehmen; ohne „für“ niemand', async () => {
+      const ohne = await neu();
+      const a = await ohne.hole(await DREI());
+      assert.deepEqual([...new Set(a.dokumente.map((dok) => dok.herkunft))], ['email']);
+      assert.ok(
+        a.dokumente.every((dok) => dok.eingangFuer === undefined && dok.erstelltVon === null),
+        'ohne „für“: keine Person',
+      );
+      const x = await neu();
+      await x.pf.speichere({ fuer: x.lena.id }, (await x.pf.liste())[0].id, 'test');
+      const { post, dokumente } = await x.hole(await DREI());
+      assert.equal(post.werte.an, x.lena.id);
+      assert.deepEqual(
+        dokumente.map((dok) => [dok.herkunft, dok.eingangFuer, dok.erstelltVon]),
+        dokumente.map(() => ['email', x.lena.id, null]),
+      );
+      // Das Dokument verlässt die Post (in eine Mappe gelegt): Herkunft und „für“ gehen mit.
+      const ziel = await x.neueMappe();
+      const [erstes] = wieInDerPost(dokumente);
+      await x.d.kern.repo.verschiebeDokument(erstes.id, ziel, 'belege');
+      const dort = (await x.d.mappen.holeMappe(ziel)).dokumente.find((dok) => dok.id === erstes.id)!;
+      assert.equal(dort.herkunft, 'email');
+      assert.equal(dort.eingangFuer, x.lena.id);
+    });
+
     it('eine Post, jeder Anhang ein Dokument in der Reihenfolge der E-Mail, ganz hinten die Original-E-Mail', async () => {
       const x = await neu();
       const { post, dokumente } = await x.hole(await DREI());
