@@ -65,6 +65,8 @@
   "system.keine-datenbank-angebunden": "keine Datenbank angebunden",
   "system.nicht-gepflegt": "(nicht gepflegt)",
   "system.nicht-gesetzt": "nicht gesetzt",
+  "system.heimnetz": "Heimnetz",
+  "system.heimnetz-gateway": "nicht bestimmbar – Anfragen kommen mit der Gateway-Adresse {adresse} an",
   "system.fastify-webserver": "fastify (Webserver)",
   "system.postgres-js-datenbank-treiber": "postgres.js (Datenbank-Treiber)",
   "system.nodemailer-e-mail-versand": "nodemailer (E-Mail-Versand)",

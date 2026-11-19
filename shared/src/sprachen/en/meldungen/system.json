@@ -65,6 +65,8 @@
   "system.keine-datenbank-angebunden": "no database connected",
   "system.nicht-gepflegt": "(not maintained)",
   "system.nicht-gesetzt": "not set",
+  "system.heimnetz": "Home network",
+  "system.heimnetz-gateway": "can’t be determined – requests arrive with the gateway address {adresse}",
   "system.fastify-webserver": "fastify (web server)",
   "system.postgres-js-datenbank-treiber": "postgres.js (database driver)",
   "system.nodemailer-e-mail-versand": "nodemailer (email sending)",

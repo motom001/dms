@@ -11,6 +11,7 @@ import { t } from '../sprache/sprache';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { uebersicht } from '../system/system';
 import { werkzeugAbschirmung } from '../prozesse/hintergrund';
+import { gatewayBeobachtung } from '../http/gateway';
 import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll/protokoll';
 import { werkbankZahlen } from './werkbankzahlen';
 import { BeispielAblage } from '../beispiele/beispielablage';
@@ -391,6 +392,8 @@ async function uebersichtHinweise(k: RoutenKontext, sicher: Sicher) {
     // Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind.
     notfallzugaenge: x.notfall ? ((await sicher(() => x.notfall!.offen())) ?? []) : [],
     // Notfallcode benutzt (#815): bis jemand mit „Gesamte Verwaltung“ den Hinweis als gelesen markiert.
+    // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes in den letzten 24 Stunden.
+    heimnetzGateway: gatewayBeobachtung.stand(),
     notfallcodeBenutzt: x.notfallcode
       ? ((await sicher(() => x.notfallcode!.offen()))?.map((n) => ({
           id: n.id,

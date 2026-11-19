@@ -12,6 +12,7 @@ import type { Mailer } from '../mail/mail';
 import { mailtexte } from '../mail/mail';
 import { protokoll } from '../protokoll/protokoll';
 import type { ProxyVertrauen } from '../http/proxy';
+import { eigeneGateways, type Gateways } from '../http/gateway';
 import { mitSpracheVon, t } from '../sprache/sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -65,21 +66,27 @@ const WEITERGELEITET = ['x-forwarded-for', 'forwarded', 'x-real-ip'];
  * - Kommt eine Proxy-Angabe an, obwohl kein Proxy vertrauenswürdig ist (`TRUST_PROXY=false`), gilt die Anfrage als
  *   „nicht Heimnetz“; ebenso mit `TRUST_PROXY=true` (die Angabe könnte jeder setzen) und mit Köpfen, die Ablago nicht
  *   auswertet (Forwarded, X-Real-IP ohne X-Forwarded-For).
+ * - Ist die Adresse ein Gateway eines eigenen Netzes (#1355, z. B. das Docker-Netz), lässt sich nicht sagen, woher die
+ *   Anfrage kommt: nicht Heimnetz. Diese Regel macht die Prüfung nur strenger, nie weiter.
  */
 export function istHeimnetz(
   a: { ip: string; kopf?: (name: string) => string | undefined },
   vertrauen: ProxyVertrauen | undefined,
+  gateways: Gateways = eigeneGateways,
 ): boolean {
   const weiter = WEITERGELEITET.filter((k) => !!a.kopf?.(k)?.trim());
   if (weiter.length) {
     if (vertrauen === false || vertrauen === undefined || vertrauen === true) return false;
     if (!weiter.includes('x-forwarded-for')) return false;
   }
-  return istPrivat(a.ip);
+  return istPrivat(a.ip) && !gateways.ist(a.ip);
 }
 
-/** Warum „nicht aus dem Heimnetz“ (#885): die Proxy-Angabe wird nicht geglaubt, oder Ablago sieht eine öffentliche Adresse. */
-export type HeimnetzGrund = 'oeffentlich' | 'proxy';
+/**
+ * Warum „nicht aus dem Heimnetz“ (#885): die Proxy-Angabe wird nicht geglaubt, Ablago sieht eine öffentliche Adresse,
+ * oder die Adresse ist ein Gateway des eigenen Netzes und damit nicht bestimmbar (#1355).
+ */
+export type HeimnetzGrund = 'oeffentlich' | 'proxy' | 'gateway';
 
 /**
  * Für die Werkbank (#885): `istHeimnetz` plus Grund, wenn nicht. Die Prüfung selbst bleibt `istHeimnetz`; hier wird nur
@@ -88,11 +95,13 @@ export type HeimnetzGrund = 'oeffentlich' | 'proxy';
 export function heimnetzStand(
   a: { ip: string; kopf?: (name: string) => string | undefined },
   vertrauen: ProxyVertrauen | undefined,
+  gateways: Gateways = eigeneGateways,
 ): { heimnetz: true } | { heimnetz: false; grund: HeimnetzGrund } {
-  if (istHeimnetz(a, vertrauen)) return { heimnetz: true };
+  if (istHeimnetz(a, vertrauen, gateways)) return { heimnetz: true };
   const weiter = WEITERGELEITET.filter((k) => !!a.kopf?.(k)?.trim());
   const geglaubt = !weiter.length || (Array.isArray(vertrauen) && weiter.includes('x-forwarded-for'));
-  return { heimnetz: false, grund: geglaubt ? 'oeffentlich' : 'proxy' };
+  if (!geglaubt) return { heimnetz: false, grund: 'proxy' };
+  return { heimnetz: false, grund: gateways.ist(a.ip) ? 'gateway' : 'oeffentlich' };
 }
 
 /* ---------- Sperre je Adressbereich ---------- */

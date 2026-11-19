@@ -20,6 +20,7 @@ import { wer } from './api-v1';
 import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { istHeimnetz } from '../notfall/notfallcode';
+import { gatewayBeobachtung } from './gateway';
 import { kontext, protokoll, type Kontext } from '../protokoll/protokoll';
 import type { Betrieb } from '../einstellungen/betrieb';
 import type { Tresor } from '../geheimnisse/tresor';
@@ -211,6 +212,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
 
   setzeFehlerbehandlung(app);
   haengeZeitmessungEin(app, opt);
+  // Heimnetz nicht bestimmbar (#1355): merken, ob Anfragen mit der Gateway-Adresse des eigenen Netzes ankommen.
+  app.addHook('onRequest', async (req) => gatewayBeobachtung.notiere(req.ip));
   // Arbeit nach der Antwort (#741).
   const nachlauf = opt.nachlauf ?? new Nachlauf();
   haengeAntwortHooksEin(app, opt);

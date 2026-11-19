@@ -89,6 +89,7 @@
   "notfallzugang.nicht-heimnetz": "You aren’t opening Ablago from the home network right now. The emergency access wouldn’t work from here.",
   "notfallzugang.grund.oeffentlich": "Ablago sees your address as {code}. If you open Ablago at home via its public name, the request goes via the internet. A local DNS entry that points the name straight to the proxy at home helps.{hilfe}",
   "notfallzugang.grund.proxy": "Ablago sees your address as {code}. Your proxy passes the address on in a way Ablago can’t trust. More under “What the proxy tells Ablago”.{hilfe}",
+  "notfallzugang.grund.gateway": "Ablago sees your address as {code}. That is the gateway address of its own network, with Docker the one of the Docker network. With it, Ablago can’t tell the home network from the internet, so the request counts as not from the home network. Remedy: a port mapping without the userland proxy, a reverse proxy with X-Forwarded-For, or an address of its own for the container (macvlan).{hilfe}",
   "notfallzugang.frage": "Allow emergency access from the internet?",
   "notfallzugang.frage.text": "Then anyone with your emergency sheet gets into your library from anywhere, not only from the home network. Everyone who administers gets an email each time it is used.",
   "notfallzugang.frage.ja": "Allow from the internet",

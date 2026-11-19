@@ -1,5 +1,6 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { proxyVertrauen } from '../http/proxy';
+import { gatewayBeobachtung } from '../http/gateway';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { arch, release, type } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -181,8 +182,15 @@ export async function uebersicht(
       'E-Mail': betrieb?.mail ?? 'aus',
       TRUST_PROXY: `${env.TRUST_PROXY || t('meldungen.system.nicht-gesetzt')} → ${proxyVertrauen(env.TRUST_PROXY).text}`,
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
+      ...heimnetzZeile(),
     },
   };
+}
+
+/** Heimnetz nicht bestimmbar (#1355): nur, wenn in den letzten 24 Stunden Anfragen mit einer Gateway-Adresse ankamen. */
+function heimnetzZeile(): Record<string, string> {
+  const g = gatewayBeobachtung.stand();
+  return g ? { [t('meldungen.system.heimnetz')]: t('meldungen.system.heimnetz-gateway', { adresse: g.adresse }) } : {};
 }
 
 export function pgSystemQuelle(sql: postgres.Sql, haushaltId: string): SystemQuelle {
