@@ -148,7 +148,9 @@ function listeMitErwaehnungen() {
     const system = personen.find((x) => x.art === 'system');
     assert.ok(jonas && system, JSON.stringify(personen));
     const dienst = await neu({ objekt: 'Kellerdienst', text: `Dienst: @[](mappe:${jonas.id}) und @[Alt](mappe:${system.id})` });
-    return { ...typ, dienst, namen: `Dienst: @${JONAS.name} und @${system.name}` };
+    // Alte Schreibweise `benutzer:` mit einer Person, die es nicht (mehr) gibt (QS-Runde 11/2026).
+    const ehemals = await neu({ objekt: 'Kellerehemals', text: `Früher: @[](benutzer:${WEG_PERSON})` });
+    return { ...typ, dienst, ehemals, namen: `Dienst: @${JONAS.name} und @${system.name}` };
   })();
   return kellernotiz;
 }
@@ -203,4 +205,18 @@ rauchtest('Erwähnung einer gelöschten Person zeigt „@gelöschter Benutzer“
   await weg.waitFor();
   assert.equal((await weg.innerText()).trim(), '@gelöschter Benutzer');
   assert.equal((await notiz.innerText()).trim(), 'Früher: @gelöschter Benutzer');
+});
+
+// Bearbeitbares Feld (QS-Runde 11/2026): Die Vorschau setzt den Titel ein – für eine Person in der alten Schreibweise
+// „gelöschter Benutzer“, nicht „gelöschte Mappe“.
+rauchtest('Vorschau im bearbeitbaren Feld: gelöschte Person heißt „@gelöschter Benutzer“', { als: LENA }, async (s) => {
+  const typ = await listeMitErwaehnungen();
+  await s.goto(BASIS + `/ablage/${typ.id}/${typ.ehemals.id}`);
+  const vorschau = s.locator('.formatiert').filter({ hasText: 'Früher:' }).first();
+  await vorschau.locator('.erwaehnung.weg[title="Diesen Benutzer gibt es nicht mehr"]').waitFor();
+  await s.waitForFunction(() =>
+    [...document.querySelectorAll('.formatiert')].some((e) => e.textContent?.trim() === 'Früher: @gelöschter Benutzer'),
+  );
+  assert.equal((await vorschau.innerText()).trim(), 'Früher: @gelöschter Benutzer');
+  assert.equal(await s.getByText('gelöschte Mappe').count(), 0);
 });

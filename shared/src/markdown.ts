@@ -202,11 +202,12 @@ export function ohneTitel(md: string): string {
 /**
  * Titel in die Erwähnungen einsetzen (#1293), z. B. für Ausgaben, die den Text weiterverarbeiten (Export, Auskunft,
  * Textsatz). `name` entscheidet nach den Rechten der lesenden Person (aktueller Titel oder „Mappe (nicht sichtbar)“);
- * `gespeichert` ist, was in den Klammern steht (nur für die Eingabe der Oberfläche, solange der Titel noch aussteht).
+ * `gespeichert` ist, was in den Klammern steht (nur für die Eingabe der Oberfläche, solange der Titel noch aussteht);
+ * `benutzer`: alte Schreibweise `benutzer:` (#56) – die Erwähnung meint sicher eine Person (QS-Runde 11/2026).
  */
-export function mitTiteln(md: string, name: (id: string, gespeichert: string) => string): string {
-  return String(md ?? '').replace(
-    ERWAEHNUNG_SCHREIBWEISE,
-    (_m, n: string, art: string, id: string) => `@[${titelTeil(name(id.toLowerCase(), n))}](${art.toLowerCase()}:${id.toLowerCase()})`,
-  );
+export function mitTiteln(md: string, name: (id: string, gespeichert: string, benutzer: boolean) => string): string {
+  return String(md ?? '').replace(ERWAEHNUNG_SCHREIBWEISE, (_m, n: string, art: string, id: string) => {
+    const a = art.toLowerCase();
+    return `@[${titelTeil(name(id.toLowerCase(), n, a === 'benutzer'))}](${a}:${id.toLowerCase()})`;
+  });
 }
