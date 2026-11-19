@@ -12,7 +12,7 @@ import { type Paket, type PaketTyp, str } from './format';
 import { meldungen } from './hilfen';
 import { log } from './optionen';
 import { type LegeAuftrag } from './plan';
-import { beschriftungenNeu } from './update-neu';
+import { berechnetUebernommen, beschriftungenNeu } from './update-neu';
 import { PaketBeispiele } from './beispiel-mappen';
 
 /** Ergänzungen beim Anlegen. */
@@ -176,6 +176,22 @@ export abstract class PaketErgaenzen extends PaketBeispiele {
     if (v?.schluessel && v.schluessel !== kennung) {
       await this.d.kern.repo.setzeTypKennung(id, kennung);
       r.kennungZurueck.set(id, v.schluessel);
+    }
+    // Berechnete Felder (#1476): Was das Paket selbst berechnet, gehört ihm ab jetzt – auch wenn es bisher das abgebende
+    // Paket berechnet hat. Erst im Repo umstellen; das Ändern des Typs behält danach die neue Angabe.
+    const jetzt = v ? await this.d.kern.repo.holeTyp(id) : undefined;
+    const berechnet = jetzt ? berechnetUebernommen(daten, jetzt, paketId) : [];
+    if (jetzt && berechnet.length) {
+      await this.d.kern.repo.aendereTyp(id, {
+        ...jetzt,
+        felder: jetzt.felder.map((f) => (berechnet.includes(f.key) ? { ...f, berechnetVon: paketId } : f)),
+      });
+      log.info('Paket-Umbau: berechnete Felder übernommen', {
+        paket: paketId,
+        typ: jetzt.name,
+        felder: berechnet.join(', '),
+        vorher: [...new Set(jetzt.felder.filter((f) => berechnet.includes(f.key)).map((f) => f.berechnetVon))].join(', '),
+      });
     }
     await this.d.mappentypen.aendereTyp(id, daten, paketId);
   }

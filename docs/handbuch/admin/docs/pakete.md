@@ -234,6 +234,7 @@ Bestätigen darf nur, wer **Gesamte Verwaltung** hat, mit einer erneuten Anmeldu
 - Verweisfelder, Ansichten, Rechte-Regeln und Automatisierungen zeigen auf den neuen Mappentyp, Direktlinks auf Mappen funktionieren weiter (die Mappen behalten ihre Id).
 - [Archivmodus](archiv.md) und Fristen bleiben. Würde der Archivmodus durch den Umbau lockerer, lehnt die Vorschau ihn ab – schalte ihn dann vorher am neuen Mappentyp mindestens genauso streng ein.
 - Liegen Mappen des alten Typs im Papierkorb, bleibt er als eigener Mappentyp stehen.
+- Felder, die das neue Paket berechnet („berechnet von …“), berechnet danach das neue Paket – auch wenn der übernommene Mappentyp sie vorher von seinem alten Paket hatte (#1476). Ein Dokumentregister, dessen Dokumente in ein anderes Register umgezogen sind, verschwindet, wenn es danach leer ist und das neue Paket es nicht mitbringt.
 
 Mehrere Pakete mit Umbau aktualisierst du **einzeln**, jedes mit seiner eigenen Vorschau – im gemeinsamen Ablauf lehnt Ablago sie ab.
 
