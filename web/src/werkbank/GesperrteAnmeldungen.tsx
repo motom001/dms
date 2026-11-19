@@ -38,15 +38,7 @@ function Zeitraum({ s }: { s: AktiveSperre }) {
 }
 
 /** Ein Eintrag: Art, betroffenes Konto bzw. Adresse, Fehlversuche, seit und bis, „Entsperren“. */
-function SperrEintrag({
-  s,
-  entsperren,
-  mitPerson = true,
-}: {
-  s: AktiveSperre;
-  entsperren: () => Promise<unknown>;
-  mitPerson?: boolean;
-}) {
+function SperrEintrag({ s, entsperren, mitPerson = true }: { s: AktiveSperre; entsperren: () => Promise<unknown>; mitPerson?: boolean }) {
   const email = s.email === NOTFALL ? t('werkbank.anmeldeschutz.notfallzugang') : s.email;
   return (
     <li data-sperre={s.art}>
