@@ -11,7 +11,7 @@ import { pruefePasswortRegeln, type Konten } from '../konten';
 import type { Mailer } from '../mail/mail';
 import { mailtexte } from '../mail/mail';
 import { protokoll } from '../protokoll/protokoll';
-import type { ProxyVertrauen } from '../http/proxy';
+import { ausdruecklichVertraut, type ProxyVertrauen } from '../http/proxy';
 import { eigeneGateways, type Gateways } from '../http/gateway';
 import { mitSpracheVon, t } from '../sprache/sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -67,10 +67,12 @@ const WEITERGELEITET = ['x-forwarded-for', 'forwarded', 'x-real-ip'];
  *   „nicht Heimnetz“; ebenso mit `TRUST_PROXY=true` (die Angabe könnte jeder setzen) und mit Köpfen, die Ablago nicht
  *   auswertet (Forwarded, X-Real-IP ohne X-Forwarded-For).
  * - Ist die Adresse ein Gateway eines eigenen Netzes (#1355, z. B. das Docker-Netz), lässt sich nicht sagen, woher die
- *   Anfrage kommt: nicht Heimnetz. Diese Regel macht die Prüfung nur strenger, nie weiter.
+ *   Anfrage kommt: nicht Heimnetz. Ebenso, wenn die **direkte Gegenstelle** (`peer`) ein Gateway ist und nicht
+ *   ausdrücklich in `TRUST_PROXY` steht – dann könnte die Proxy-Angabe von jedem stammen. Beides macht die Prüfung nur
+ *   strenger, nie weiter.
  */
 export function istHeimnetz(
-  a: { ip: string; kopf?: (name: string) => string | undefined },
+  a: { ip: string; peer?: string; kopf?: (name: string) => string | undefined },
   vertrauen: ProxyVertrauen | undefined,
   gateways: Gateways = eigeneGateways,
 ): boolean {
@@ -79,8 +81,13 @@ export function istHeimnetz(
     if (vertrauen === false || vertrauen === undefined || vertrauen === true) return false;
     if (!weiter.includes('x-forwarded-for')) return false;
   }
+  if (gatewayGegenstelle(a.peer, vertrauen, gateways)) return false;
   return istPrivat(a.ip) && !gateways.ist(a.ip);
 }
+
+/** Direkte Gegenstelle ist ein Gateway, das nicht ausdrücklich in `TRUST_PROXY` steht (#1355)? */
+const gatewayGegenstelle = (peer: string | undefined, vertrauen: ProxyVertrauen | undefined, gateways: Gateways) =>
+  !!peer && gateways.ist(peer) && !ausdruecklichVertraut(vertrauen, peer);
 
 /**
  * Warum „nicht aus dem Heimnetz“ (#885): die Proxy-Angabe wird nicht geglaubt, Ablago sieht eine öffentliche Adresse,
@@ -93,15 +100,17 @@ export type HeimnetzGrund = 'oeffentlich' | 'proxy' | 'gateway';
  * nachträglich unterschieden, damit Markus sieht, was er beheben kann (lokaler DNS-Eintrag oder Proxy-Einstellung).
  */
 export function heimnetzStand(
-  a: { ip: string; kopf?: (name: string) => string | undefined },
+  a: { ip: string; peer?: string; kopf?: (name: string) => string | undefined },
   vertrauen: ProxyVertrauen | undefined,
   gateways: Gateways = eigeneGateways,
 ): { heimnetz: true } | { heimnetz: false; grund: HeimnetzGrund } {
   if (istHeimnetz(a, vertrauen, gateways)) return { heimnetz: true };
   const weiter = WEITERGELEITET.filter((k) => !!a.kopf?.(k)?.trim());
-  const geglaubt = !weiter.length || (Array.isArray(vertrauen) && weiter.includes('x-forwarded-for'));
+  const glaubt = Array.isArray(vertrauen) || typeof vertrauen === 'function';
+  const geglaubt = !weiter.length || (glaubt && weiter.includes('x-forwarded-for'));
   if (!geglaubt) return { heimnetz: false, grund: 'proxy' };
-  return { heimnetz: false, grund: gateways.ist(a.ip) ? 'gateway' : 'oeffentlich' };
+  if (gatewayGegenstelle(a.peer, vertrauen, gateways) || gateways.ist(a.ip)) return { heimnetz: false, grund: 'gateway' };
+  return { heimnetz: false, grund: 'oeffentlich' };
 }
 
 /* ---------- Sperre je Adressbereich ---------- */
@@ -147,6 +156,8 @@ export class NotfallSperre {
 
 export interface NotfallAnfrage {
   ip: string;
+  /** Direkte Gegenstelle (#1355): ein Gateway gilt nur als Proxy, wenn es ausdrücklich in `TRUST_PROXY` steht. */
+  peer?: string;
   kopf?: (name: string) => string | undefined;
 }
 export interface NotfallEinstellung {

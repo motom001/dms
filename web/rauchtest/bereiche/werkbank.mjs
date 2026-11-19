@@ -453,7 +453,7 @@ rauchtest('Werkbank: Heimnetz nicht bestimmbar – Hinweis auf Übersicht und be
   await s.waitForURL(/\/werkbank\/anmeldeschutz/);
   const hinweis = s.locator('#notfall-gateway');
   await hinweis.getByText('Gateway-Adresse des eigenen Netzes').waitFor();
-  assert.match(await hinweis.innerText(), /macvlan/);
+  assert.match(await hinweis.innerText(), /TRUST_PROXY auf die Gateway-Adresse.*macvlan/s);
   assert.equal(await s.locator('#notfall-grund').count(), 0, 'kein zweiter Grund');
   const funde = [];
   for (const schema of ['light', 'dark']) {

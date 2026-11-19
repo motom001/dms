@@ -10,7 +10,7 @@
   "http.vertreten-von": " (vertreten von {wer})",
   "http.diese-schnittstelle-gibt-es": "Diese Schnittstelle gibt es nicht.",
   "http.diese-datei-gibt-es": "Diese Datei gibt es nicht. Gehört die geöffnete Seite zu einer anderen Version von Ablago, lade sie neu.",
-  "proxy.automatisch-eigener-rechner-und": "automatisch (eigener Rechner und private Netze)",
+  "proxy.automatisch-eigener-rechner-und": "automatisch (eigener Rechner und private Netze, ohne Gateway)",
   "proxy.aus": "aus",
   "proxy.alle-absender": "alle Absender",
   "proxy.trust-proxy-ist-keine": "TRUST_PROXY: „{wert}“ ist keine Adresse und kein Netz – es gilt „aus“ (niemandem glauben).",

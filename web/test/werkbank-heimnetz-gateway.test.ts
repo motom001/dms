@@ -73,7 +73,7 @@ describe('Werkbank-Übersicht: Heimnetz nicht bestimmbar (#1355)', () => {
     const p = text(w[0]);
     assert.ok(p.includes('<strong>Ablago kann Heimnetz und Internet nicht unterscheiden.</strong>'), p);
     assert.ok(p.includes('172.17.0.1'), 'Adresse');
-    assert.ok(p.includes('Userland-Proxy') && p.includes('X-Forwarded-For') && p.includes('macvlan'), 'Abhilfe');
+    assert.ok(p.includes('Userland-Proxy') && p.includes('TRUST_PROXY auf 172.17.0.1') && p.includes('macvlan'), 'Abhilfe');
   });
 
   it('ohne Anfragen vom Gateway (oder von einem älteren Server) kein Hinweis', () => {

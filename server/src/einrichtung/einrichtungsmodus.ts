@@ -159,9 +159,9 @@ const kopf = (req: { headers: Record<string, unknown> }, n: string) =>
 function richteRoutenEin(app: FastifyInstance, o: EinrichtungsmodusOptionen, z: Zustand, pruefe: Pruefe, uebernehmen: Uebernehmen) {
   const anlegen = o.anlegen ?? legeDatenbankAn;
   /** Einrichtungscode und Herkunft (#1359): ohne Code nur aus dem Heimnetz, wie beim Notfallzugang mit TRUST_PROXY. */
-  const angabe = (req: { ip: string; headers: Record<string, unknown> }): EinrichtungsAngabe => ({
+  const angabe = (req: { ip: string; socket?: { remoteAddress?: string }; headers: Record<string, unknown> }): EinrichtungsAngabe => ({
     ...(kopf(req, 'x-einrichtungscode') !== undefined ? { code: kopf(req, 'x-einrichtungscode') } : {}),
-    heimnetz: istHeimnetz({ ip: req.ip, kopf: (n) => kopf(req, n) }, o.proxy),
+    heimnetz: istHeimnetz({ ip: req.ip, peer: req.socket?.remoteAddress, kopf: (n) => kopf(req, n) }, o.proxy),
   });
   /** Jede Änderung: Kennung der Oberfläche und Einrichtungscode. */
   const schutz = (req: { ip: string; headers: Record<string, unknown> }) => {

@@ -8,6 +8,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { GATEWAY_HINWEIS_MS, GATEWAY_MELDEN_MS, GatewayBeobachtung, Gateways, gatewaysIpv4, gatewaysIpv6 } from '../src/http/gateway';
+import Fastify from 'fastify';
+import { Anmeldesperre } from '../src/anmeldung/anmeldesperre';
+import { proxyVertrauen } from '../src/http/proxy';
 import { heimnetzStand, istHeimnetz } from '../src/notfall/notfallcode';
 import { pgKurzzustand, speicherKurzzustand, type Kurzzustand } from '../src/zwischenspeicher/kurzzustand';
 
@@ -95,22 +98,103 @@ describe('Heimnetz nicht bestimmbar (#1355): Anfragen vom Gateway gelten nicht a
       { 'x-real-ip': '192.168.1.20' },
       { forwarded: 'for=192.0.2.9' },
     ];
-    const vertrauen = [AUTO, false, true, undefined, ['172.17.0.1']] as const;
+    const vertrauen = [AUTO, false, true, undefined, ['172.17.0.1'], proxyVertrauen(undefined, DOCKER).trust] as const;
     const gatewaylisten = [DOCKER, fest('192.168.1.20'), fest('203.0.113.7', '::1'), fest('kein gateway')];
+    // Direkte Gegenstelle: keine Angabe (älterer Aufruf), Gateway, Proxy-Container, Gerät im Heimnetz, Internet.
+    const gegenstellen = [undefined, '172.17.0.1', 'fe80::1', '172.18.0.5', '192.168.1.20', '203.0.113.7'];
+    const kombinationen = adressen.flatMap((ip) =>
+      koepfe.flatMap((k) => vertrauen.flatMap((v) => gegenstellen.map((peer) => ({ ip, k, v, peer })))),
+    );
     let faelle = 0;
-    for (const ip of adressen)
-      for (const k of koepfe)
-        for (const v of vertrauen) {
-          const a = { ip, kopf: kopf(k) };
-          const vorher = istHeimnetz(a, v as never, KEINE);
-          for (const g of gatewaylisten) {
-            const nachher = istHeimnetz(a, v as never, g);
-            assert.ok(!nachher || vorher, `lockerer: ${ip} ${JSON.stringify(k)} ${JSON.stringify(v)}`);
-            assert.equal(heimnetzStand(a, v as never, g).heimnetz, nachher, 'heimnetzStand folgt istHeimnetz');
-            faelle++;
-          }
-        }
-    assert.ok(faelle > 500);
+    for (const { ip, k, v, peer } of kombinationen) {
+      const a = { ip, peer, kopf: kopf(k) };
+      // Vorher: ohne Gateways und ohne die Gegenstelle – so wie vor #1355.
+      const vorher = istHeimnetz({ ip, kopf: kopf(k) }, v as never, KEINE);
+      for (const g of gatewaylisten) {
+        const nachher = istHeimnetz(a, v as never, g);
+        assert.ok(!nachher || vorher, `lockerer: ${ip} ${peer} ${JSON.stringify(k)} ${String(v)}`);
+        assert.equal(heimnetzStand(a, v as never, g).heimnetz, nachher, 'heimnetzStand folgt istHeimnetz');
+        faelle++;
+      }
+    }
+    assert.ok(faelle > 5000);
+  });
+});
+
+describe('Gateway gilt nicht automatisch als Proxy (#1355)', () => {
+  /** Ablago mit TRUST_PROXY=auto und festen Gateways: Was sieht es als Adresse, und ist es Heimnetz? */
+  async function app() {
+    const trust = proxyVertrauen(undefined, DOCKER).trust;
+    const sperre = new Anmeldesperre();
+    const a = Fastify({ trustProxy: trust });
+    a.get('/', async (req) => {
+      const anfrage = { ip: req.ip, peer: req.socket.remoteAddress, kopf: (n: string) => req.headers[n] as string | undefined };
+      return { ip: req.ip, heimnetz: istHeimnetz(anfrage, trust, DOCKER), stand: heimnetzStand(anfrage, trust, DOCKER) };
+    });
+    a.post('/anmelden', async (req) => {
+      try {
+        // Je Versuch ein anderes Konto: Es zählt nur die Sperre je IP.
+        const konto = String((req.body as { konto?: string } | null)?.konto);
+        const v = await sperre.versuch(konto, req.ip);
+        await sperre.fehlschlag(konto, req.ip, false, v);
+        return { status: 401 };
+      } catch (e) {
+        return { status: (e as { status?: number }).status ?? 500 };
+      }
+    });
+    return { a, sperre };
+  }
+
+  it('auto, Gegenstelle Gateway, X-Forwarded-For privat: Adresse ist das Gateway, nicht Heimnetz', async () => {
+    const { a } = await app();
+    for (const [gw, privat] of [
+      ['172.17.0.1', '192.168.1.5'],
+      ['fe80::1', 'fd00::5'],
+    ]) {
+      const r = (await a.inject({ url: '/', remoteAddress: gw, headers: { 'x-forwarded-for': privat } })).json();
+      assert.equal(r.ip, gw, 'req.ip ist das Gateway');
+      assert.equal(r.heimnetz, false);
+      assert.deepEqual(r.stand, { heimnetz: false, grund: 'gateway' });
+    }
+    // Ein Proxy auf einem anderen Rechner im Heimnetz bleibt vertraut – mit der echten Adresse dahinter.
+    const lan = (await a.inject({ url: '/', remoteAddress: '192.168.1.10', headers: { 'x-forwarded-for': '192.168.1.5' } })).json();
+    assert.deepEqual([lan.ip, lan.heimnetz], ['192.168.1.5', true]);
+    const aussen = (await a.inject({ url: '/', remoteAddress: '192.168.1.10', headers: { 'x-forwarded-for': '203.0.113.7' } })).json();
+    assert.deepEqual([aussen.ip, aussen.heimnetz], ['203.0.113.7', false]);
+    await a.close();
+  });
+
+  it('auch wenn die App einer Liste glaubt: Gegenstelle Gateway, nicht ausdrücklich eingetragen – nicht Heimnetz', () => {
+    // Fastify glaubte (alte Vorgabe) allen privaten Netzen und hat a.ip schon aus X-Forwarded-For bestimmt.
+    const a = { ip: '192.168.1.5', peer: '172.17.0.1', kopf: kopf({ 'x-forwarded-for': '192.168.1.5' }) };
+    assert.deepEqual(heimnetzStand(a, AUTO, DOCKER), { heimnetz: false, grund: 'gateway' });
+    // Ausdrücklich eingetragen: Ablago glaubt dem Proxy auf dem Rechner.
+    assert.deepEqual(heimnetzStand(a, ['172.17.0.1'], DOCKER), { heimnetz: true });
+    assert.deepEqual(heimnetzStand(a, ['172.16.0.0/12'], DOCKER), { heimnetz: true });
+  });
+
+  it('Sperre je IP: wechselndes X-Forwarded-For über die Gateway-Gegenstelle zählt auf dieselbe IP', async () => {
+    const { a, sperre } = await app();
+    const status: number[] = [];
+    for (let i = 0; i < 35; i++)
+      status.push(
+        (
+          await a.inject({
+            method: 'POST',
+            url: '/anmelden',
+            remoteAddress: '172.17.0.1',
+            headers: { 'x-forwarded-for': `10.0.${i}.7` },
+            payload: { konto: `person${i}@example.org` },
+          })
+        ).json().status,
+      );
+    assert.ok(status.includes(429), 'nach den erlaubten Versuchen gesperrt');
+    assert.deepEqual(
+      (await sperre.gesperrt()).map((s) => s.ip),
+      ['172.17.0.1'],
+      'gesperrt ist die Gateway-Adresse, nicht die vorgetäuschten',
+    );
+    await a.close();
   });
 });
 

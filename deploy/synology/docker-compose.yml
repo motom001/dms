@@ -35,6 +35,9 @@ services:
     environment:
       # Dasselbe Passwort für Ablago – der Einrichtungsassistent überspringt dann den Datenbankschritt.
       DMS_DB_PASSWORT: *passwort
+      # Reverse-Proxy von DSM (läuft auf dem NAS selbst, kommt über das Gateway des Docker-Netzes): nach der
+      # Einrichtung die Adresse eintragen, die die Werkbank nennt, und die Raute entfernen (#1355).
+      # TRUST_PROXY: "172.18.0.1"
     volumes:
       # Hochgeladene Dateien
       - /volume1/docker/dms/files:/data/files

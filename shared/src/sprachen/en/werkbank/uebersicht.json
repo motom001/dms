@@ -27,7 +27,7 @@
   "uebersicht.notfallcode.knopf": "Go to account",
   "uebersicht.notfallcode.gelesen": "Read",
   "uebersicht.heimnetz-gateway": "Ablago can’t tell the home network from the internet.",
-  "uebersicht.heimnetz-gateway.text": "Requests arrive with the address {adresse}, the gateway address of its own network, with Docker the one of the Docker network (last on {datum}). They don’t count as the home network, not for the emergency access either, nor for setup without a code. Remedy: a port mapping without the userland proxy, a reverse proxy with X-Forwarded-For, or an address of its own for the container (macvlan).",
+  "uebersicht.heimnetz-gateway.text": "Requests arrive with the address {adresse}, the gateway address of its own network, with Docker the one of the Docker network (last on {datum}). Ablago doesn’t believe proxy information from there; the requests don’t count as the home network, not for the emergency access either, nor for setup without a code, and they share one address for sign-in protection. If your reverse proxy runs on the same computer, set TRUST_PROXY to {adresse}. Otherwise: a port mapping without the userland proxy or an address of its own for the container (macvlan).",
   "uebersicht.heimnetz-gateway.knopf": "To emergency access",
   "uebersicht.genug-platz": "enough space",
   "uebersicht.notfallzugang-ist-aktiv": "Emergency access “{name}” is active.",

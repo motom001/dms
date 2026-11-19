@@ -379,6 +379,7 @@ function anfrageAus(req: FastifyRequest, opt: Optionen): Anfrage {
       heimnetz: istHeimnetz(
         {
           ip: req.ip,
+          peer: req.socket.remoteAddress,
           kopf: (n) => {
             const v = req.headers[n];
             return Array.isArray(v) ? v.join(', ') : v;

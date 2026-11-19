@@ -81,16 +81,21 @@ The remedy is a **local DNS entry** (split DNS): in the home network the same na
 
 In some Docker setups Ablago doesn't see the device's address but the **gateway address of the Docker network** (e.g. `172.17.0.1`) – for requests from the home network just as for requests from the internet. This happens with Docker's userland proxy (often with IPv6 on a NAS), with Docker Desktop and with rootless Docker. Ablago reads the gateways from its own routing table and recognises such requests:
 
-- They **don't count as the home network** – for the emergency access, for setup without a setup code and for the "home network" detail in the records of failed sign-ins. With the box **Allow emergency access from the internet** ticked, the emergency access still works.
-- Under **Sign-in protection → Emergency access** the Workbench shows which address Ablago sees. The [overview](uebersicht.md#meldungen) reports it in yellow as long as such requests arrived in the last 24 hours; under **System health → Version and updates** the row **Home network** then appears.
+- The **gateway doesn't count as a proxy by itself**: with `TRUST_PROXY` not set or `auto`, Ablago believes proxy information (`X-Forwarded-For`, `X-Forwarded-Proto`) from private addresses, but not from the gateway – a request from the internet could come that way too. If the gateway is entered explicitly in `TRUST_PROXY` (as an address or network), it counts as a proxy.
+- Such requests **don't count as the home network** – for the emergency access, for setup without a setup code and for the "home network" detail in the records of failed sign-ins. With the box **Allow emergency access from the internet** ticked, the emergency access still works.
+- Under **Sign-in protection → Emergency access** the Workbench shows which address Ablago sees. The [overview](uebersicht.md#meldungen) reports it in yellow as long as such requests arrived in the last 24 hours – whichever process served them; under **System health → Version and updates** the row **Home network** then appears.
 
-There are three ways for Ablago to see the real address:
+!!! warning "Side effect: one address for everyone in sign-in protection"
+    Without an explicit `TRUST_PROXY`, all requests in these setups share one address – the gateway's. The [block per IP](#zwei-sperren) then hits everyone: many failed attempts from outside can also slow down sign-in at home. The block per account still protects against guessing passwords. Remedy as below.
 
-1. **Port mapping without the userland proxy:** Docker then forwards via firewall rules and keeps the sender address. For IPv6, Docker needs IPv6 in the Docker network (`"ipv6": true` and `"ip6tables": true` in `daemon.json`); `"userland-proxy": false` switches the userland proxy off entirely.
-2. **A reverse proxy in front** that sets `X-Forwarded-For` (see [Behind a reverse proxy](installation.md#hinter-einem-reverse-proxy)). Ideally enter it explicitly in `TRUST_PROXY`, e.g. `TRUST_PROXY: "172.18.0.5"`.
-3. **An address of its own for the container** in the home network (Docker network of type `macvlan`). Ablago then sees the devices' addresses directly.
+There are four ways for Ablago to see the real address:
 
-Afterwards **Sign-in protection → Emergency access** no longer shows a gateway address; the overview's message disappears 24 hours after the last such request (or after a restart).
+1. **A reverse proxy on the same computer** (e.g. the NAS's reverse proxy): it talks to the container via the gateway. Enter the gateway address explicitly, e.g. `TRUST_PROXY: "172.17.0.1"` – the Workbench note shows which one it is. Without this entry Ablago sees all requests with the gateway address and doesn't recognise HTTPS from the proxy.
+2. **Port mapping without the userland proxy:** Docker then forwards via firewall rules and keeps the sender address. For IPv6, Docker needs IPv6 in the Docker network (`"ipv6": true` and `"ip6tables": true` in `daemon.json`); `"userland-proxy": false` switches the userland proxy off entirely.
+3. **A reverse proxy as a container** in the same Docker network or on another computer in the home network that sets `X-Forwarded-For` (see [Behind a reverse proxy](installation.md#hinter-einem-reverse-proxy)). Ablago believes it by itself; entering it explicitly works too, e.g. `TRUST_PROXY: "172.18.0.5"`.
+4. **An address of its own for the container** in the home network (Docker network of type `macvlan`). Ablago then sees the devices' addresses directly.
+
+Afterwards **Sign-in protection → Emergency access** no longer shows a gateway address; the overview's message disappears 24 hours after the last such request.
 
 ## Two-factor sign-in {#zwei-faktor-anmeldung}
 

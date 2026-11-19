@@ -81,16 +81,21 @@ Abhilfe ist ein **lokaler DNS-Eintrag** (Split-DNS): Im Heimnetz zeigt derselbe 
 
 In manchen Docker-Aufbauten sieht Ablago nicht die Adresse des Geräts, sondern die **Gateway-Adresse des Docker-Netzes** (z. B. `172.17.0.1`) – für Anfragen aus dem Heimnetz genauso wie für Anfragen aus dem Internet. Das kommt vor mit dem Userland-Proxy von Docker (oft bei IPv6 auf einem NAS), mit Docker Desktop und mit Rootless Docker. Ablago liest die Gateways aus der eigenen Routing-Tabelle und erkennt solche Anfragen:
 
-- Sie gelten **nicht als Heimnetz** – für den Notfallzugang, für die Einrichtung ohne Einrichtungscode und für die Angabe „Heimnetz“ in den Nachweisen der Fehlanmeldungen. Mit dem Haken **Notfallzugang aus dem Internet erlauben** geht der Notfallzugang trotzdem.
-- Unter **Anmeldeschutz → Notfallzugang** steht, welche Adresse Ablago sieht. Die [Übersicht](uebersicht.md#meldungen) meldet es gelb, solange in den letzten 24 Stunden solche Anfragen ankamen; im **Systemzustand** unter **Version und Updates** steht dann die Zeile **Heimnetz**.
+- Das **Gateway gilt nicht von selbst als Proxy**: Bei `TRUST_PROXY` nicht gesetzt oder `auto` glaubt Ablago Proxy-Angaben (`X-Forwarded-For`, `X-Forwarded-Proto`) von privaten Adressen, aber nicht vom Gateway – darüber könnte auch eine Anfrage aus dem Internet kommen. Steht das Gateway ausdrücklich in `TRUST_PROXY` (als Adresse oder Netz), gilt es als Proxy.
+- Solche Anfragen gelten **nicht als Heimnetz** – für den Notfallzugang, für die Einrichtung ohne Einrichtungscode und für die Angabe „Heimnetz“ in den Nachweisen der Fehlanmeldungen. Mit dem Haken **Notfallzugang aus dem Internet erlauben** geht der Notfallzugang trotzdem.
+- Unter **Anmeldeschutz → Notfallzugang** steht, welche Adresse Ablago sieht. Die [Übersicht](uebersicht.md#meldungen) meldet es gelb, solange in den letzten 24 Stunden solche Anfragen ankamen – gleich, welcher Prozess sie bedient hat; im **Systemzustand** unter **Version und Updates** steht dann die Zeile **Heimnetz**.
 
-Damit Ablago die echte Adresse sieht, gibt es drei Wege:
+!!! warning "Nebenwirkung: eine Adresse für alle beim Anmeldeschutz"
+    Ohne ausdrückliches `TRUST_PROXY` teilen sich in diesen Aufbauten alle Anfragen eine Adresse – die des Gateways. Die [Sperre je IP](#zwei-sperren) trifft dann alle: Viele Fehlversuche von außen können auch die Anmeldung zu Hause bremsen. Gegen das Raten von Passwörtern schützt weiter die Sperre je Konto. Abhilfe wie unten.
 
-1. **Portfreigabe ohne Userland-Proxy:** Docker leitet dann über die Firewall-Regeln weiter und behält die Absenderadresse. Für IPv6 braucht Docker dafür IPv6 im Docker-Netz (`"ipv6": true` und `"ip6tables": true` in der `daemon.json`); `"userland-proxy": false` schaltet den Userland-Proxy ganz ab.
-2. **Reverse-Proxy davor**, der `X-Forwarded-For` setzt (siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy)). Trage ihn am besten ausdrücklich in `TRUST_PROXY` ein, z. B. `TRUST_PROXY: "172.18.0.5"`.
-3. **Eine eigene Adresse für den Container** im Heimnetz (Docker-Netz vom Typ `macvlan`). Ablago sieht dann die Adressen der Geräte direkt.
+Damit Ablago die echte Adresse sieht, gibt es vier Wege:
 
-Danach steht unter **Anmeldeschutz → Notfallzugang** keine Gateway-Adresse mehr; die Meldung der Übersicht verschwindet 24 Stunden nach der letzten solchen Anfrage (oder nach einem Neustart).
+1. **Reverse-Proxy auf demselben Rechner** (z. B. der Reverse-Proxy des NAS): Er spricht über das Gateway mit dem Container. Trage die Gateway-Adresse ausdrücklich ein, z. B. `TRUST_PROXY: "172.17.0.1"` – welche es ist, steht im Hinweis der Werkbank. Ohne diesen Eintrag sieht Ablago alle Anfragen mit der Gateway-Adresse und erkennt HTTPS nicht am Proxy.
+2. **Portfreigabe ohne Userland-Proxy:** Docker leitet dann über die Firewall-Regeln weiter und behält die Absenderadresse. Für IPv6 braucht Docker dafür IPv6 im Docker-Netz (`"ipv6": true` und `"ip6tables": true` in der `daemon.json`); `"userland-proxy": false` schaltet den Userland-Proxy ganz ab.
+3. **Reverse-Proxy als Container** im selben Docker-Netz oder auf einem anderen Rechner im Heimnetz, der `X-Forwarded-For` setzt (siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy)). Ihm glaubt Ablago von selbst; ausdrücklich eintragen geht auch, z. B. `TRUST_PROXY: "172.18.0.5"`.
+4. **Eine eigene Adresse für den Container** im Heimnetz (Docker-Netz vom Typ `macvlan`). Ablago sieht dann die Adressen der Geräte direkt.
+
+Danach steht unter **Anmeldeschutz → Notfallzugang** keine Gateway-Adresse mehr; die Meldung der Übersicht verschwindet 24 Stunden nach der letzten solchen Anfrage.
 
 ## Zwei-Faktor-Anmeldung
 
