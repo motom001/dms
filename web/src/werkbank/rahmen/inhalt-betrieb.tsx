@@ -21,7 +21,7 @@ import { SicherungPanel } from '../Sicherung';
 import { WiederherstellungPanel } from '../Wiederherstellung';
 import { AnbindungPanel } from '../Anbindung';
 import { SpeicherplatzPanel } from '../Speicherplatz';
-import { WerkzeugeHinweis } from '../Werkzeuge';
+import { AbschirmungHinweis, WerkzeugeHinweis } from '../Werkzeuge';
 import { AuslastungAbschnitt, ErweiterungenHinweis } from '../Auslastung';
 import { PapierkorbDetail, PapierkorbListe } from '../../ablage/Papierkorb';
 import { editorSchluessel, type Seiten } from './inhalt';
@@ -126,7 +126,12 @@ export const systemSeiten = {
           void uebersicht.laden();
           void wartungsmodus.laden();
         }}
-        hinweise={<WerkzeugeHinweis werkzeuge={technik.u?.werkzeuge} pruefen={() => technik.laden(true)} />}
+        hinweise={
+          <>
+            <WerkzeugeHinweis werkzeuge={technik.u?.werkzeuge} pruefen={() => technik.laden(true)} />
+            <AbschirmungHinweis a={technik.u?.abschirmung} container={technik.u?.laufzeit.container} />
+          </>
+        }
         auslastung={
           <>
             <ErweiterungenHinweis liste={systemlast.stand?.erweiterungen} />

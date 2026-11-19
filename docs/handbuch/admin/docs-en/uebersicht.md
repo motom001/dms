@@ -119,6 +119,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | Emergency access is active (RESCUE file) | red | `notfallzugang` |
 | Emergency access was used with the emergency code – until "Read" | red | `notfallzugang.benutzt` |
 | Ablago can't tell the home network from the internet: requests arrive with the gateway address of the Docker network ([Home network can't be determined](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | yellow | `heimnetz.gateway` |
+| TRUST_PROXY names a whole network instead of your proxy's address: requests come directly from the gateway, and the network covers it ([Home network can't be determined](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | yellow | `proxy.netz` |
+| PUID and PGID are missing – data folders on a NAS folder now belong to the default 1000:1000 ([Without administrator rights](aktualisieren.md#ohne-root)) | yellow | `kennung.puid` |
 | Storage limit reached | red | `speicherplatz.grenze` |
 | Storage space is getting tight | yellow | `speicherplatz.knapp` |
 | Enough space again – end maintenance? | yellow | `speicherplatz.wartung-beenden` |

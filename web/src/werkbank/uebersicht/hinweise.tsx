@@ -1,4 +1,5 @@
 import { t, tn } from '../../sprache';
+import { Hilfe } from '../../Hilfe';
 import type { WerkbankUebersicht } from '../../api/betrieb';
 import { ENGPASS_VARIABLE } from '../../../../shared/src/systemlast';
 import { AufrufeUebersicht } from '../AutomatisierungAufruf';
@@ -12,6 +13,8 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
   const h: Hinweis[] = [];
   notfallUndSpeicher(u, h);
   heimnetzGateway(u, h);
+  proxyNetz(u, h);
+  kennung(u, h);
   automatisierungen(u, h);
   lastUndWartung(u, h);
   tresorUndPostfaecher(u, h);
@@ -112,6 +115,42 @@ function heimnetzGateway(u: WerkbankUebersicht, h: Hinweis[]) {
     ),
     ziel: '/werkbank/anmeldeschutz#notfallzugang',
     knopf: t('werkbank.uebersicht.heimnetz-gateway.knopf'),
+  });
+}
+
+/** Ganzes Netz in TRUST_PROXY statt der Adresse des Proxys (#1465): das Netz deckt das Gateway ab. */
+function proxyNetz(u: WerkbankUebersicht, h: Hinweis[]) {
+  const p = u.trustProxyNetz;
+  if (!p) return;
+  h.push({
+    schluessel: 'proxy.netz',
+    art: 'warn',
+    text: (
+      <>
+        <strong>{t('werkbank.uebersicht.proxy-netz', { netz: p.netz })}</strong>{' '}
+        {t('werkbank.uebersicht.proxy-netz.text', { adresse: p.adresse, datum: datum(p.zuletzt) })}
+      </>
+    ),
+    ziel: '/werkbank/anmeldeschutz#notfallzugang',
+    knopf: t('werkbank.uebersicht.heimnetz-gateway.knopf'),
+  });
+}
+
+/** PUID/PGID fehlen und Datenordner liegen auf einem Bind-Mount (#1449): Zugriff über die Dateifreigabe des NAS. */
+function kennung(u: WerkbankUebersicht, h: Hinweis[]) {
+  const k = u.kennungHinweis;
+  if (!k) return;
+  h.push({
+    schluessel: 'kennung.puid',
+    art: 'warn',
+    text: (
+      <>
+        <strong>{t('systemzustand.kennung.hinweis', { benutzer: k.benutzer, gruppe: k.gruppe })}</strong>{' '}
+        {tn('systemzustand.kennung.hinweis.text', { ordner: k.ordner.join(', '), hilfe: <Hilfe ort="werkbank.ohne-root" /> })}
+      </>
+    ),
+    ziel: '/werkbank/systemzustand#version',
+    knopf: t('werkbank.uebersicht.zum-systemzustand'),
   });
 }
 

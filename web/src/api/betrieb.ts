@@ -343,6 +343,10 @@ export interface WerkbankUebersicht {
   notfallcodeBenutzt?: Array<{ id: string; benutzerId: string; name: string; am: string }>;
   /** #1355: Anfragen mit der Gateway-Adresse des eigenen Netzes (Heimnetz nicht bestimmbar), zuletzt in 24 Stunden. */
   heimnetzGateway?: { adresse: string; zuletzt: string } | null;
+  /** #1465: TRUST_PROXY nennt ein Netz, das das Gateway abdeckt, und Anfragen kamen direkt vom Gateway. */
+  trustProxyNetz?: { netz: string; adresse: string; zuletzt: string } | null;
+  /** #1449: PUID/PGID fehlen, Datenordner auf einem Bind-Mount gehören jetzt der Vorgabe. */
+  kennungHinweis?: { ordner: string[]; benutzer: number; gruppe: number } | null;
   /** Eine zweite Person mit Verwaltungsrecht empfehlen (#821). */
   zweitePerson?: boolean;
   /** Wartungsmodus (#102). */
@@ -450,6 +454,17 @@ export interface Systemuebersicht {
   variablen?: string[];
   /** Eingebaute Werkzeuge (#1189); null, wenn die Prüfung nicht ging. */
   werkzeuge?: Werkzeuge | null;
+  /** Dokumentwerkzeuge getrennt und begrenzt (#1354, #1449); null, wenn nicht feststellbar – ältere Server ohne. */
+  abschirmung?: WerkzeugAbschirmung | null;
+}
+/** Unter welchem Benutzer und mit welchen Grenzen die Dokumentwerkzeuge laufen (#1354); null = ohne Grenze. */
+export interface WerkzeugAbschirmung {
+  getrennt: boolean;
+  benutzer: number | null;
+  gruppe: number | null;
+  speicherMb: number | null;
+  cpuS: number | null;
+  dateiMb: number | null;
 }
 export interface Vergleich {
   komponente: string;

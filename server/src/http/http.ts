@@ -20,7 +20,7 @@ import { wer } from './api-v1';
 import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { istHeimnetz } from '../notfall/notfallcode';
-import { GatewayBeobachtung, gatewayBeobachtung, type Gateways } from './gateway';
+import { GatewayBeobachtung, gatewayBeobachtung, gegenstellenBeobachtung, gegenstellenMit, type Gateways } from './gateway';
 import { kontext, protokoll, type Kontext } from '../protokoll/protokoll';
 import type { Betrieb } from '../einstellungen/betrieb';
 import type { Tresor } from '../geheimnisse/tresor';
@@ -216,8 +216,13 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   setzeFehlerbehandlung(app);
   haengeZeitmessungEin(app, opt);
   // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes merken (Kurzzustand, je Minute).
+  // Dazu das Gateway als direkte Gegenstelle (#1465), auch wenn TRUST_PROXY es glaubt: für den Hinweis „ganzes Netz“.
   const beobachtung = opt.gateways ? new GatewayBeobachtung(opt.gateways) : gatewayBeobachtung;
-  app.addHook('onRequest', async (req) => beobachtung.notiere(req.ip, dienst.kurzzustand));
+  const gegenstelle = opt.gateways ? gegenstellenMit(opt.gateways) : gegenstellenBeobachtung;
+  app.addHook('onRequest', async (req) => {
+    beobachtung.notiere(req.ip, dienst.kurzzustand);
+    gegenstelle.notiere(req.socket?.remoteAddress, dienst.kurzzustand);
+  });
   // Arbeit nach der Antwort (#741).
   const nachlauf = opt.nachlauf ?? new Nachlauf();
   haengeAntwortHooksEin(app, opt);
