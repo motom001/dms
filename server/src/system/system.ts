@@ -1,6 +1,5 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { proxyVertrauen } from '../http/proxy';
-import { gatewayBeobachtung } from '../http/gateway';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { arch, release, type } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -150,6 +149,8 @@ const kennungen = () => ({ benutzer: process.getuid?.() ?? null, gruppe: process
 export async function uebersicht(
   quelle: SystemQuelle | undefined,
   betrieb: { mail: string; adresse: string } | undefined,
+  /** Heimnetz nicht bestimmbar (#1355): Gateway-Adresse der letzten 24 Stunden, nur für den Systemzustand. */
+  gateway?: { adresse: string } | null,
 ): Promise<Uebersicht> {
   let datenbank: Uebersicht['datenbank'];
   try {
@@ -182,14 +183,13 @@ export async function uebersicht(
       'E-Mail': betrieb?.mail ?? 'aus',
       TRUST_PROXY: `${env.TRUST_PROXY || t('meldungen.system.nicht-gesetzt')} → ${proxyVertrauen(env.TRUST_PROXY).text}`,
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
-      ...heimnetzZeile(),
+      ...heimnetzZeile(gateway),
     },
   };
 }
 
 /** Heimnetz nicht bestimmbar (#1355): nur, wenn in den letzten 24 Stunden Anfragen mit einer Gateway-Adresse ankamen. */
-function heimnetzZeile(): Record<string, string> {
-  const g = gatewayBeobachtung.stand();
+function heimnetzZeile(g: { adresse: string } | null | undefined): Record<string, string> {
   return g ? { [t('meldungen.system.heimnetz')]: t('meldungen.system.heimnetz-gateway', { adresse: g.adresse }) } : {};
 }
 

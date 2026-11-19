@@ -212,8 +212,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
 
   setzeFehlerbehandlung(app);
   haengeZeitmessungEin(app, opt);
-  // Heimnetz nicht bestimmbar (#1355): merken, ob Anfragen mit der Gateway-Adresse des eigenen Netzes ankommen.
-  app.addHook('onRequest', async (req) => gatewayBeobachtung.notiere(req.ip));
+  // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes merken (Kurzzustand, je Minute).
+  app.addHook('onRequest', async (req) => gatewayBeobachtung.notiere(req.ip, dienst.kurzzustand));
   // Arbeit nach der Antwort (#741).
   const nachlauf = opt.nachlauf ?? new Nachlauf();
   haengeAntwortHooksEin(app, opt);

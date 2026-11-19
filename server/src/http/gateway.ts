@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { BlockList, isIP } from 'node:net';
+import type { Kurzzustand } from '../zwischenspeicher/kurzzustand';
 
 /**
  * Gateway-Adressen der eigenen Netze (#1355). In manchen Docker-Aufbauten kommen Anfragen mit der Gateway-Adresse des
@@ -10,7 +11,7 @@ import { BlockList, isIP } from 'node:net';
  *   `/proc/net/ipv6_route`). Ohne diese Dateien (kein Linux) gibt es keine Gateways – dann ändert sich nichts.
  * - Die Erkennung macht Ablago nur strenger: Eine Anfrage von einem Gateway gilt nie als Heimnetz (`istHeimnetz`). Sie
  *   macht nie eine Anfrage zum Heimnetz, die es vorher nicht war.
- * - Für den Hinweis in der Werkbank merkt sich jeder Prozess, wann er zuletzt eine solche Anfrage gesehen hat.
+ * - Für den Hinweis in der Werkbank meldet jeder Prozess die letzte solche Anfrage in den Kurzzustand (alle Prozesse).
  */
 
 /** Routen über ein Gateway (RTF_GATEWAY). */
@@ -114,29 +115,56 @@ function liesRoutingTabelle(): string[] {
 /** Die Gateways dieses Prozesses. */
 export const eigeneGateways = new Gateways();
 
+/** Art im Kurzzustand (#744): Schlüssel ist die Gateway-Adresse, Wert der Zeitpunkt der letzten Anfrage. */
+const ART = 'heimnetz-gateway';
+/** Jeder Prozess meldet höchstens so oft in den Kurzzustand (keine Last je Anfrage). */
+export const GATEWAY_MELDEN_MS = 60_000;
+
+type Stand = { adresse: string; zuletzt: string } | null;
+
 /**
- * Wann dieser Prozess zuletzt eine Anfrage gesehen hat, deren Adresse ein Gateway ist (nach `TRUST_PROXY`, also die
- * Adresse, mit der Ablago auch „Heimnetz“ prüft). Nur für den Hinweis in der Werkbank; die Prüfung je Anfrage ist
- * davon unabhängig.
+ * Anfragen, deren Adresse (nach `TRUST_PROXY`, also die, mit der Ablago auch „Heimnetz“ prüft) ein Gateway ist – nur für
+ * den Hinweis in der Werkbank; die Prüfung je Anfrage ist davon unabhängig und bleibt lokal.
+ *
+ * Mit mehreren Prozessen (`DMS_PROZESSE`) bedient irgendein Prozess die Werkbank. Darum meldet jeder Prozess Adresse und
+ * Zeitpunkt in den Kurzzustand (#744, in der Datenbank für alle Prozesse) – höchstens einmal je Minute, ohne auf die
+ * Datenbank zu warten. Die Werkbank liest dort und nimmt den eigenen, noch nicht gemeldeten Stand dazu.
  */
 export class GatewayBeobachtung {
   private letzte: { adresse: string; am: number } | null = null;
+  private gemeldet = -Infinity;
 
   constructor(
     private readonly gateways: Gateways = eigeneGateways,
     private readonly jetzt: () => number = Date.now,
   ) {}
 
-  /** Eine Anfrage mit dieser Adresse ist angekommen. */
-  notiere(ip: string | undefined) {
-    if (this.gateways.ist(ip)) this.letzte = { adresse: normaleAdresse(ip), am: this.jetzt() };
+  /** Eine Anfrage mit dieser Adresse ist angekommen; mit `zustand` höchstens einmal je Minute dorthin gemeldet. */
+  notiere(ip: string | undefined, zustand?: Kurzzustand) {
+    if (!this.gateways.ist(ip)) return;
+    const am = this.jetzt();
+    this.letzte = { adresse: normaleAdresse(ip), am };
+    if (!zustand || am - this.gemeldet < GATEWAY_MELDEN_MS) return;
+    this.gemeldet = am;
+    void zustand.setze(ART, this.letzte.adresse, am, am + GATEWAY_HINWEIS_MS).catch(() => {
+      // Nur ein Hinweis: Scheitert das Schreiben, versucht es die nächste Anfrage nach einer Minute wieder.
+    });
   }
 
-  /** Für die Werkbank: die Gateway-Adresse und wann zuletzt – oder null, wenn in den letzten 24 Stunden keine kam. */
-  stand(): { adresse: string; zuletzt: string } | null {
-    const l = this.letzte;
-    if (!l || this.jetzt() - l.am > GATEWAY_HINWEIS_MS) return null;
-    return { adresse: l.adresse, zuletzt: new Date(l.am).toISOString() };
+  /** Für die Werkbank: die zuletzt gesehene Gateway-Adresse aller Prozesse – oder null, wenn in 24 Stunden keine kam. */
+  async stand(zustand?: Kurzzustand): Promise<Stand> {
+    const t = this.jetzt();
+    const kandidaten: Array<{ adresse: string; am: number }> = this.letzte ? [this.letzte] : [];
+    if (zustand) {
+      try {
+        for (const e of await zustand.liste(ART, '', 20))
+          if (typeof e.wert === 'number') kandidaten.push({ adresse: e.schluessel, am: e.wert });
+      } catch {
+        // Datenbank nicht erreichbar: dann nur, was dieser Prozess selbst gesehen hat.
+      }
+    }
+    const l = kandidaten.filter((k) => t - k.am <= GATEWAY_HINWEIS_MS).sort((a, b) => b.am - a.am)[0];
+    return l ? { adresse: l.adresse, zuletzt: new Date(l.am).toISOString() } : null;
   }
 }
 

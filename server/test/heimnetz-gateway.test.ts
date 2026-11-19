@@ -6,8 +6,10 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { GATEWAY_HINWEIS_MS, GatewayBeobachtung, Gateways, gatewaysIpv4, gatewaysIpv6 } from '../src/http/gateway';
+import { randomUUID } from 'node:crypto';
+import { GATEWAY_HINWEIS_MS, GATEWAY_MELDEN_MS, GatewayBeobachtung, Gateways, gatewaysIpv4, gatewaysIpv6 } from '../src/http/gateway';
 import { heimnetzStand, istHeimnetz } from '../src/notfall/notfallcode';
+import { pgKurzzustand, speicherKurzzustand, type Kurzzustand } from '../src/zwischenspeicher/kurzzustand';
 
 const kopf = (k: Record<string, string>) => (n: string) => k[n];
 const AUTO = ['loopback', 'linklocal', 'uniquelocal'];
@@ -113,19 +115,80 @@ describe('Heimnetz nicht bestimmbar (#1355): Anfragen vom Gateway gelten nicht a
 });
 
 describe('Heimnetz nicht bestimmbar (#1355): Hinweis in der Werkbank', () => {
-  it('merkt sich die letzte Anfrage vom Gateway für 24 Stunden; andere Adressen ändern nichts', () => {
+  it('merkt sich die letzte Anfrage vom Gateway für 24 Stunden; andere Adressen ändern nichts', async () => {
     let jetzt = Date.parse('2026-11-19T10:00:00Z');
     const b = new GatewayBeobachtung(DOCKER, () => jetzt);
-    assert.equal(b.stand(), null);
+    assert.equal(await b.stand(), null);
     b.notiere('192.168.1.20');
     b.notiere('127.0.0.1');
-    assert.equal(b.stand(), null);
+    assert.equal(await b.stand(), null);
     b.notiere('::ffff:172.17.0.1');
-    assert.deepEqual(b.stand(), { adresse: '172.17.0.1', zuletzt: '2026-11-19T10:00:00.000Z' });
+    assert.deepEqual(await b.stand(), { adresse: '172.17.0.1', zuletzt: '2026-11-19T10:00:00.000Z' });
     jetzt += GATEWAY_HINWEIS_MS;
     b.notiere('192.168.1.20');
-    assert.deepEqual(b.stand()?.adresse, '172.17.0.1', 'genau 24 Stunden: noch da');
+    assert.deepEqual((await b.stand())?.adresse, '172.17.0.1', 'genau 24 Stunden: noch da');
     jetzt += 1;
-    assert.equal(b.stand(), null, 'danach weg');
+    assert.equal(await b.stand(), null, 'danach weg');
+  });
+
+  it('meldet höchstens einmal je Minute in den Kurzzustand, nur Anfragen vom Gateway, ohne auf die Datenbank zu warten', async () => {
+    let jetzt = Date.parse('2026-11-19T10:00:00Z');
+    const echt = speicherKurzzustand(() => jetzt);
+    const geschrieben: unknown[] = [];
+    const zustand: Kurzzustand = {
+      ...echt,
+      setze: async (...x) => {
+        geschrieben.push(x);
+        await echt.setze(...x);
+      },
+    };
+    const b = new GatewayBeobachtung(DOCKER, () => jetzt);
+    for (let i = 0; i < 100; i++) b.notiere(i % 2 ? '172.17.0.1' : '192.168.1.20', zustand);
+    assert.equal(geschrieben.length, 1, '100 Anfragen in derselben Sekunde: eine Meldung');
+    jetzt += GATEWAY_MELDEN_MS - 1;
+    b.notiere('172.17.0.1', zustand);
+    assert.equal(geschrieben.length, 1);
+    jetzt += 1;
+    b.notiere('172.17.0.1', zustand);
+    assert.equal(geschrieben.length, 2, 'nach einer Minute die nächste');
+    // Schreiben scheitert: die Anfrage merkt nichts davon.
+    jetzt += GATEWAY_MELDEN_MS;
+    b.notiere('172.17.0.1', { ...zustand, setze: async () => Promise.reject(new Error('Datenbank weg')) });
+    await new Promise((ok) => setImmediate(ok));
+    // Lesen scheitert: der eigene Stand bleibt.
+    assert.equal((await b.stand({ ...zustand, liste: async () => Promise.reject(new Error('weg')) }))?.adresse, '172.17.0.1');
   });
 });
+
+describe(
+  'Heimnetz nicht bestimmbar (#1355): zwei Prozesse an derselben Datenbank',
+  { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
+  () => {
+    it('sieht ein Prozess Anfragen vom Gateway, zeigt die Werkbank sie auch beim anderen', async () => {
+      const { eigeneDatenbank } = await import('./hilfe-db');
+      const db = await eigeneDatenbank('heimnetz_gateway');
+      const H = randomUUID();
+      await db.sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Test')`;
+      // Zwei Prozesse: je eigene Beobachtung und eigener Kurzzustand, dieselbe Datenbank.
+      const [za, zb] = [pgKurzzustand(db.sql, H), pgKurzzustand(db.sql, H)];
+      const [a, b] = [new GatewayBeobachtung(DOCKER), new GatewayBeobachtung(DOCKER)];
+      assert.equal(await b.stand(zb), null);
+      a.notiere('192.168.1.20', za);
+      assert.equal(await b.stand(zb), null, 'Heimnetz-Adresse: nichts gemeldet');
+      a.notiere('172.17.0.1', za);
+      // Die Meldung läuft ohne Warten; kurz nachsehen, bis sie in der Datenbank steht.
+      let s = null;
+      for (let i = 0; i < 50 && !s; i++) {
+        s = await b.stand(zb);
+        if (!s) await new Promise((ok) => setTimeout(ok, 20));
+      }
+      assert.equal(s?.adresse, '172.17.0.1', 'Prozess B sieht, was Prozess A gesehen hat');
+      // Ein anderer Haushalt sieht es nicht.
+      assert.equal(await new GatewayBeobachtung(DOCKER).stand(pgKurzzustand(db.sql, randomUUID())), null);
+      // Beide melden: die jüngste Anfrage zählt.
+      await zb.setze('heimnetz-gateway', 'fe80::1', Date.now() + 1000, Date.now() + GATEWAY_HINWEIS_MS);
+      assert.equal((await a.stand(za))?.adresse, 'fe80::1');
+      await db.ende();
+    });
+  },
+);

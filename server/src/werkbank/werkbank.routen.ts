@@ -393,7 +393,7 @@ async function uebersichtHinweise(k: RoutenKontext, sicher: Sicher) {
     notfallzugaenge: x.notfall ? ((await sicher(() => x.notfall!.offen())) ?? []) : [],
     // Notfallcode benutzt (#815): bis jemand mit „Gesamte Verwaltung“ den Hinweis als gelesen markiert.
     // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes in den letzten 24 Stunden.
-    heimnetzGateway: gatewayBeobachtung.stand(),
+    heimnetzGateway: await gatewayBeobachtung.stand(dienst.kurzzustand),
     notfallcodeBenutzt: x.notfallcode
       ? ((await sicher(() => x.notfallcode!.offen()))?.map((n) => ({
           id: n.id,
@@ -571,7 +571,7 @@ function systemuebersichtRouten(k: RoutenKontext): Route[] {
         // Dokumentwerkzeuge getrennt und begrenzt (#1354): Benutzer und Grenzen, gemessen (dms status, Probe im Image).
         const abschirmung = await sicher(() => werkzeugAbschirmung());
         return ok({
-          ...(await uebersicht(system, x.betrieb?.kurz())),
+          ...(await uebersicht(system, x.betrieb?.kurz(), await gatewayBeobachtung.stand(k.dienst.kurzzustand))),
           ordner: sp?.ordner ?? null,
           variablen: x.ordner?.ueberfluessig ?? [],
           werkzeuge,
