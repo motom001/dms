@@ -5,6 +5,21 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  alpineEbenen,
+  AUFBAU,
+  aufbauDaten,
+  aufbauKern,
+  aufbauPruefen,
+  aufbauSeite,
+  BASIS,
+  EINSATZ,
+  ergaenzungen,
+  imBetrieb,
+  kanten,
+  lockBaum,
+  serverWurzeln,
+  werkzeuge,
+  zweckEintragen,
   apkPakete,
   ausCsv,
   ausSpdx,
@@ -222,6 +237,10 @@ test('CSV: Hin und zurück, auch mit Komma und Anführungszeichen', () => {
       architekturen: ['amd64', 'arm64'],
       herkunft: '',
       quelle: 'https://lucide.dev',
+      ebene: 1,
+      durch: [],
+      einsatz: ['Betrieb'],
+      zweck: 'Symbole, „übernommen“',
     },
     {
       art: 'npm (Server)',
@@ -232,11 +251,20 @@ test('CSV: Hin und zurück, auch mit Komma und Anführungszeichen', () => {
       architekturen: ['arm64'],
       herkunft: '',
       quelle: 'x',
+      ebene: 3,
+      durch: ['Basis-Image (node, Alpine)', 'fastify'],
+      einsatz: ['Entwicklung', 'Test'],
+      zweck: '',
     },
   ];
   const zurueck = ausCsv(csv(liste));
   assert.deepEqual(zurueck, liste);
   assert.equal(ausCsv('Name,Version\nx,1\n'), null);
+  // Anhang aus #1393 (ohne Baum): lesbar, alles gilt als Betrieb.
+  const alt = ausCsv(
+    'Art,Name,Version,Lizenz,Varianten,Architekturen,Herkunftspaket,Quelle\nAlpine-Paket,qpdf,12,Apache-2.0,dms,amd64,qpdf,x\n',
+  );
+  assert.deepEqual([alt[0].name, alt[0].einsatz, alt[0].durch], ['qpdf', ['Betrieb'], []]);
 });
 
 const STAND = [
@@ -289,7 +317,7 @@ test('Release-Text: Stand, Änderungen, Lizenzen, Hinweise auf Attest und „kei
     /- busybox-binsh 1\.37\.0-r31 \(nur dms\) – GPL-2\.0-only – \[Quelltext\]\(https:\/\/pkgs\.alpinelinux\.org\/packages\?name=busybox&branch=v3\.24\)/,
   );
   assert.match(text, /\*\*Ohne erkannte Lizenz \(1\):\*\* transport 0\.0\.1/);
-  assert.match(text, /\| Public Domain \| 1 \|/);
+  assert.match(text, /<details><summary>Public Domain – 1<\/summary>\n\nxz-libs 5\.8\.4-r0\n\n<\/details>/);
   const erstes = markdown({ ...daten, aenderungen: null, vorherTag: 'v1.2.2' });
   assert.ok(erstes.includes('Kein Vergleich: v1.2.2 hat keine Liste der Bestandteile als Anhang.'));
 });
@@ -383,4 +411,298 @@ test('Gesamtlauf: aus dem Ordner der Stücklisten entstehen Text und drei Anhän
   assert.equal(zeilen.find((b) => b.name === 'node').version, '24.11.1');
   assert.equal(JSON.parse(readFileSync(join(aus, DATEIEN.spdx), 'utf8')).spdxVersion, 'SPDX-2.3');
   assert.equal(JSON.parse(readFileSync(join(aus, DATEIEN.cdx), 'utf8')).specVersion, '1.5');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Baum der Bestandteile (#1412)
+
+const LOCK = {
+  packages: {
+    '': { devDependencies: { typescript: '^5', tsx: '^4' } },
+    server: { dependencies: { fastify: '^5', 'pdf-lib': '^1' }, devDependencies: { tsx: '^4' } },
+    web: { dependencies: { react: '^19' } },
+    'node_modules/@dms/server': { resolved: 'server', link: true },
+    'node_modules/fastify': { version: '5.0.0', license: 'MIT', dependencies: { pino: '^9', 'fast-json': '^1' } },
+    'node_modules/pino': { version: '9.0.0', license: 'MIT', dependencies: { 'fast-json': '^1' } },
+    'node_modules/fast-json': { version: '1.0.0', license: 'MIT' },
+    'node_modules/pdf-lib': { version: '1.17.1', license: 'MIT', dependencies: { pako: '^1', tslib: '^1' } },
+    'node_modules/pdf-lib/node_modules/tslib': { version: '1.14.1', license: '0BSD' },
+    'node_modules/tslib': { version: '2.8.1', license: '0BSD' },
+    'node_modules/pako': { version: '1.0.11', license: '(MIT AND Zlib)' },
+    'node_modules/react': { version: '19.3.1', license: 'MIT' },
+    'node_modules/typescript': { version: '5.9.3', license: 'Apache-2.0', dev: true },
+    'node_modules/tsx': {
+      version: '4.0.0',
+      license: 'MIT',
+      dev: true,
+      dependencies: { esbuild: '^0.25', 'fast-json': '^1' },
+      optionalDependencies: { fsevents: '^2' },
+    },
+    'node_modules/esbuild': { version: '0.25.0', license: 'MIT', dev: true },
+  },
+};
+const RAUCH = {
+  packages: {
+    '': { devDependencies: { playwright: '1.64.1' } },
+    'node_modules/playwright': { version: '1.64.1', license: 'Apache-2.0', dependencies: { 'playwright-core': '1.64.1' } },
+    'node_modules/playwright-core': { version: '1.64.1', license: 'Apache-2.0' },
+  },
+};
+const WOZU = {
+  pakete: { 'poppler-utils': { wozu: 'PDF-Text', en: 'PDF text', issues: [45], varianten: ['dms'] } },
+  npm: {
+    fastify: { einsatz: 'Betrieb', teil: 'Server', wozu: 'HTTP-Server', en: 'HTTP server' },
+    'pdf-lib': { einsatz: 'Betrieb', teil: 'Server', wozu: 'PDFs bauen', en: 'Building PDFs' },
+    react: { einsatz: 'Betrieb', teil: 'Oberfläche', wozu: 'Oberfläche', en: 'Interface' },
+    typescript: { einsatz: 'Entwicklung', teil: 'Werkzeug', wozu: 'Typen prüfen', en: 'Type checking' },
+    tsx: { einsatz: 'Entwicklung', teil: 'Werkzeug', wozu: 'TypeScript ausführen', en: 'Running TypeScript' },
+    playwright: { einsatz: 'Test', teil: 'Werkzeug', wozu: 'Browser steuern', en: 'Driving the browser' },
+  },
+};
+
+test('Baum aus dem Lockfile: Ebene, Herkunft über Ebene 1, Abhängigkeiten, verschachtelt aufgelöst', () => {
+  const baum = lockBaum(LOCK, serverWurzeln(LOCK));
+  assert.deepEqual([...baum.keys()].sort(), [
+    'fast-json@1.0.0',
+    'fastify@5.0.0',
+    'pako@1.0.11',
+    'pdf-lib@1.17.1',
+    'pino@9.0.0',
+    'tslib@1.14.1',
+  ]);
+  const k = (id) => baum.get(id);
+  assert.deepEqual([k('fastify@5.0.0').ebene, [...k('fastify@5.0.0').durch]], [1, []]);
+  assert.deepEqual([k('pino@9.0.0').ebene, [...k('pino@9.0.0').durch]], [2, ['fastify']]);
+  assert.equal(k('fast-json@1.0.0').ebene, 2, 'kleinste Ebene zählt');
+  assert.deepEqual([...k('pdf-lib@1.17.1').braucht].sort(), ['pako@1.0.11', 'tslib@1.14.1']);
+  assert.equal(k('pako@1.0.11').lizenz, '(MIT AND Zlib)');
+});
+
+test('Werkzeuge: Entwicklung und Test getrennt, nicht im Image, ohne Pakete, die auch im Betrieb stecken', () => {
+  const betrieb = new Set([...lockBaum(LOCK, serverWurzeln(LOCK)).keys(), 'react@19.3.1']);
+  const liste = werkzeuge({ lock: LOCK, rauchLock: RAUCH, npmWozu: WOZU.npm, betrieb });
+  const nach = Object.fromEntries(liste.map((b) => [b.name, b]));
+  assert.deepEqual(Object.keys(nach).sort(), ['esbuild', 'playwright', 'playwright-core', 'tsx', 'typescript']);
+  assert.deepEqual([nach.esbuild.ebene, nach.esbuild.durch, nach.esbuild.einsatz], [2, ['tsx'], ['Entwicklung']]);
+  assert.deepEqual([nach.playwright.ebene, nach['playwright-core'].einsatz], [1, ['Test']]);
+  assert.ok(liste.every((b) => b.art === 'npm (Werkzeug)' && !b.varianten.length && !imBetrieb(b)));
+});
+
+/** Kleine Stückliste mit Beziehungen DEPENDS_ON, wie Trivy sie für Alpine schreibt. */
+function alpineStueckliste() {
+  const pkg = (name, version, lizenz) => ({
+    name,
+    SPDXID: `SPDXRef-Package-${name}`,
+    versionInfo: version,
+    licenseDeclared: lizenz,
+    sourceInfo: `built package from: ${name} ${version}`,
+    externalRefs: [{ referenceType: 'purl', referenceLocator: `pkg:apk/alpine/${name}@${version}?distro=3.24.4` }],
+    annotations: anm('PkgType: alpine'),
+  });
+  const dep = (a, b) => ({
+    spdxElementId: `SPDXRef-Package-${a}`,
+    relationshipType: 'DEPENDS_ON',
+    relatedSpdxElement: `SPDXRef-Package-${b}`,
+  });
+  return {
+    packages: [
+      pkg('poppler-utils', '25.12.0-r1', 'GPL-2.0-or-later'),
+      pkg('poppler', '25.12.0-r1', 'GPL-2.0-or-later'),
+      pkg('libpng', '1.6.50-r0', 'Libpng'),
+      pkg('musl', '1.2.6-r3', 'MIT'),
+      pkg('alpine-baselayout', '3.7.2-r1', 'GPL-2.0-only'),
+      pkg('alpine-baselayout-data', '3.7.2-r1', 'GPL-2.0-only'),
+    ],
+    relationships: [
+      dep('poppler-utils', 'poppler'),
+      dep('poppler-utils', 'musl'),
+      dep('poppler', 'libpng'),
+      dep('libpng', 'musl'),
+      dep('alpine-baselayout', 'alpine-baselayout-data'),
+      dep('alpine-baselayout', 'musl'),
+    ],
+  };
+}
+
+test('Alpine: Ebene aus DEPENDS_ON, eigens Installiertes ist Ebene 1, der Rest kommt mit dem Basis-Image', () => {
+  const liste = alpineEbenen(ausSpdx(alpineStueckliste(), { variante: 'dms', arch: 'amd64' }), ['poppler-utils']);
+  const nach = Object.fromEntries(liste.map((b) => [b.name, [b.ebene, b.durch]]));
+  assert.deepEqual(nach, {
+    'poppler-utils': [1, []],
+    poppler: [2, ['poppler-utils']],
+    libpng: [3, ['poppler-utils']],
+    musl: [2, ['poppler-utils']],
+    'alpine-baselayout': [2, [BASIS]],
+    'alpine-baselayout-data': [3, [BASIS]],
+  });
+  assert.deepEqual(liste.find((b) => b.name === 'poppler-utils').braucht, ['musl@1.2.6-r3', 'poppler@25.12.0-r1']);
+});
+
+/** Bestandteile wie im Gesamtlauf: Alpine, Server, Ergänzungen, Werkzeuge. */
+function baumBestandteile() {
+  const alpine = alpineEbenen(ausSpdx(alpineStueckliste(), { variante: 'dms', arch: 'amd64' }), ['poppler-utils']);
+  const extra = ergaenzungen({ commit: 'abc', version: '1.2.3', node: '24.11.1', schriften: [], material: '9.8.1' });
+  const betrieb = new Set([...lockBaum(LOCK, serverWurzeln(LOCK)).keys()]);
+  const dazu = werkzeuge({ lock: LOCK, rauchLock: RAUCH, npmWozu: WOZU.npm, betrieb });
+  return zweckEintragen(zusammenfuehren([alpine, extra, dazu]), WOZU);
+}
+
+test('Zweck: Ebene 1 aus bestandteile-wozu.json, Mitgebrachtes ohne', () => {
+  const nach = Object.fromEntries(baumBestandteile().map((b) => [b.name, b.zweck ?? '']));
+  assert.equal(nach['poppler-utils'], 'PDF-Text');
+  assert.equal(nach.typescript, 'Typen prüfen');
+  assert.equal(nach.poppler, '');
+  assert.equal(nach.esbuild, '');
+  assert.match(nach.Ablago, /Ablago selbst/);
+});
+
+test('SPDX und CycloneDX: Abhängigkeiten als Beziehungen, Werkzeuge als Entwicklung bzw. Test, nicht im Image', () => {
+  const bestandteile = baumBestandteile();
+  const daten = { tag: 'v1.2.3', commit: 'abc', datum: '2026-11-19T10:00:00Z', stand: STAND, bestandteile, trivy: '0.76.1' };
+  const spdx = spdxDokument(daten);
+  const name = Object.fromEntries(spdx.packages.map((p) => [p.SPDXID, p.name]));
+  const bez = spdx.relationships.map(
+    (r) => `${name[r.spdxElementId] ?? r.spdxElementId} ${r.relationshipType} ${name[r.relatedSpdxElement]}`,
+  );
+  for (const muss of [
+    'poppler-utils DEPENDS_ON poppler',
+    'poppler DEPENDS_ON libpng',
+    'Ablago DEPENDS_ON poppler-utils',
+    'Ablago DEPENDS_ON node',
+    'tsx DEPENDS_ON esbuild',
+    'typescript DEV_DEPENDENCY_OF Ablago',
+    'playwright TEST_DEPENDENCY_OF Ablago',
+    'SPDXRef-DOCUMENT DESCRIBES poppler',
+  ])
+    assert.ok(bez.includes(muss), `fehlt: ${muss}`);
+  assert.ok(!bez.includes('SPDXRef-DOCUMENT DESCRIBES typescript'), 'Werkzeuge beschreibt das Dokument nicht als Teil des Images');
+  assert.ok(!bez.includes('Ablago DEPENDS_ON poppler'), 'nur Ebene 1 hängt an Ablago');
+  assert.match(
+    spdx.packages.find((p) => p.name === 'esbuild').comment,
+    /Einsatz: Entwicklung; nicht im Image; Ebene: 2; Eingebracht durch: tsx/,
+  );
+  const ids = spdx.packages.map((p) => p.SPDXID);
+  assert.ok(spdx.relationships.every((r) => r.spdxElementId === 'SPDXRef-DOCUMENT' || ids.includes(r.spdxElementId)));
+
+  const cdx = cyclonedx(daten);
+  const ref = Object.fromEntries(cdx.components.map((c) => [c.name, c['bom-ref']]));
+  const dep = Object.fromEntries(cdx.dependencies.map((d) => [d.ref, d.dependsOn]));
+  assert.deepEqual(dep['ablago-image'], [ref.Ablago]);
+  assert.ok(dep[ref['poppler-utils']].includes(ref.poppler));
+  assert.ok(dep[ref.Ablago].includes(ref['poppler-utils']));
+  assert.equal(cdx.components.find((c) => c.name === 'typescript').scope, 'excluded');
+  assert.equal(cdx.components.find((c) => c.name === 'poppler').scope, 'required');
+  const prop = (n, k) => cdx.components.find((c) => c.name === n).properties.find((p) => p.name === k)?.value;
+  assert.deepEqual([prop('libpng', 'ablago:ebene'), prop('libpng', 'ablago:eingebracht-durch')], ['3', 'poppler-utils']);
+  assert.equal(new Set(cdx.components.map((c) => c['bom-ref'])).size, cdx.components.length);
+});
+
+test('Vergleich und Release-Text zählen nur, was im Image steckt; Copyleft mit Herkunft, Namen je Lizenz', () => {
+  const bestandteile = baumBestandteile();
+  const ohneWerkzeuge = bestandteile.filter(imBetrieb);
+  const v = vergleiche(ohneWerkzeuge, bestandteile);
+  assert.equal(v.neu.length + v.entfernt.length + v.version.length + v.lizenz.length, 0);
+  const text = markdown({
+    tag: 'v1.2.3',
+    commit: 'abcdef1234567890',
+    datum: '2026-11-19T10:00:00Z',
+    stand: STAND,
+    bestandteile,
+    aenderungen: v,
+    vorherTag: 'v1.2.2',
+    wozu: WOZU,
+    trivy: '0.76.1',
+  });
+  assert.match(text, new RegExp(`### Lizenzen \\(${ohneWerkzeuge.length} Bestandteile\\)`));
+  assert.match(text, /- poppler 25\.12\.0-r1 \(nur dms\) – GPL-2\.0-or-later – über poppler-utils – \[Quelltext\]/);
+  assert.match(text, /- alpine-baselayout 3\.7\.2-r1 \(nur dms\) – GPL-2\.0-only – über Basis-Image \(node, Alpine\)/);
+  assert.match(text, /<details><summary>GPL-2\.0-or-later – 2<\/summary>\n\npoppler 25\.12\.0-r1 · \*\*poppler-utils\*\* 25\.12\.0-r1\n/);
+  assert.match(text, /Nicht im Image und hier nicht gezählt: 5 Pakete für Entwicklung und Test/);
+  assert.match(text, /\| poppler-utils \| 25\.12\.0-r1 \| GPL-2\.0-or-later \| PDF-Text \| 3 \|/);
+  assert.ok(!/typescript/.test(text), 'Werkzeuge stehen nicht im Release-Text');
+});
+
+test('Zweck: jedes direkt eingebundene npm-Paket hat Einsatz, Teil und Zweck auf Deutsch und Englisch', () => {
+  const wozu = JSON.parse(readFileSync('.github/werkzeuge/bestandteile-wozu.json', 'utf8'));
+  const dateien = ['package.json', 'server/package.json', 'web/package.json', 'shared/package.json', 'web/rauchtest/package.json'];
+  const direkt = new Map();
+  for (const d of dateien) {
+    const p = JSON.parse(readFileSync(d, 'utf8'));
+    for (const n of Object.keys({ ...p.dependencies, ...p.optionalDependencies })) direkt.set(n, 'Betrieb');
+    for (const n of Object.keys(p.devDependencies ?? {})) if (!direkt.has(n)) direkt.set(n, 'Werkzeug');
+  }
+  const fehlt = [...direkt.keys()].filter((n) => !wozu.npm[n]);
+  assert.deepEqual(fehlt, [], `Bitte in .github/werkzeuge/bestandteile-wozu.json unter „npm“ eintragen: ${fehlt.join(', ')}`);
+  assert.deepEqual(
+    Object.keys(wozu.npm).filter((n) => !direkt.has(n)),
+    [],
+    'Einträge ohne Paket bitte entfernen',
+  );
+  for (const [name, w] of Object.entries(wozu.npm)) {
+    assert.ok(EINSATZ.includes(w.einsatz), `${name}: Einsatz ${w.einsatz}`);
+    assert.equal(w.einsatz === 'Betrieb', direkt.get(name) === 'Betrieb', `${name}: Betrieb genau für dependencies`);
+    assert.ok(w.wozu && w.en && w.teil, `${name}: wozu, en und teil nötig`);
+    assert.ok(!/[<>|]/.test(w.wozu + w.en), `${name}: keine spitzen Klammern oder senkrechten Striche`);
+  }
+  for (const [name, w] of Object.entries(wozu.pakete)) assert.ok(w.en && !/[<>|]/.test(w.en), `${name}: englischer Zweck nötig`);
+});
+
+test('Handbuchseite: Kern ohne Mitgebrachtes; geänderter Zweck ist ein Fehler, nur Mitgebrachtes ein Hinweis', () => {
+  const daten = aufbauDaten({ lock: LOCK, rauchLock: RAUCH, wozu: WOZU });
+  assert.deepEqual(
+    daten.server.map((w) => [w.name, w.mit]),
+    [
+      ['fastify', ['fast-json', 'pino']],
+      ['pdf-lib', ['pako', 'tslib']],
+    ],
+  );
+  assert.deepEqual([daten.werkzeugZahl, daten.werkzeuge.map((w) => w.name)], [5, ['playwright', 'tsx', 'typescript']]);
+  const de = aufbauSeite(daten, 'de');
+  assert.match(de, /\| `fastify` \| HTTP-Server \| MIT \| 2 \|/);
+  assert.match(de, /\?\?\? note "fastify bringt 2 Pakete mit"\n {4}fast-json, pino/);
+  assert.match(de, /\| `playwright` \| Test \| Browser steuern \| Apache-2\.0 \| 1 \|/);
+  assert.match(aufbauSeite(daten, 'en'), /\| `fastify` \| HTTP server \| MIT \| 2 \|/);
+  const seiten = (d) => Object.fromEntries(Object.entries(AUFBAU).map(([sp, pfad]) => [pfad, aufbauSeite(d, sp)]));
+  const ist = seiten(daten);
+  assert.equal(
+    aufbauPruefen(daten, (p) => ist[p]),
+    'gleich',
+  );
+  const mehr = structuredClone(LOCK);
+  mehr.packages['node_modules/pino'].dependencies.sonic = '^1';
+  mehr.packages['node_modules/sonic'] = { version: '1.0.0', license: 'MIT' };
+  assert.equal(aufbauKern(aufbauSeite(aufbauDaten({ lock: mehr, rauchLock: RAUCH, wozu: WOZU }), 'de')), aufbauKern(de));
+  assert.equal(
+    aufbauPruefen(aufbauDaten({ lock: mehr, rauchLock: RAUCH, wozu: WOZU }), (p) => ist[p]),
+    'mitgebracht',
+  );
+  const anders = structuredClone(WOZU);
+  anders.npm.fastify.wozu = 'Webserver';
+  assert.equal(
+    aufbauPruefen(aufbauDaten({ lock: LOCK, rauchLock: RAUCH, wozu: anders }), (p) => ist[p]),
+    'kern',
+  );
+  assert.equal(
+    aufbauPruefen(daten, () => null),
+    'kern',
+  );
+});
+
+test('Handbuchseite „Aufbau aus Bestandteilen“ im Repository passt zu Lockfiles und Zweck', () => {
+  const lies = (p) => JSON.parse(readFileSync(p, 'utf8'));
+  const daten = aufbauDaten({
+    lock: lies('package-lock.json'),
+    rauchLock: lies('web/rauchtest/package-lock.json'),
+    wozu: lies('.github/werkzeuge/bestandteile-wozu.json'),
+  });
+  const ergebnis = aufbauPruefen(daten, (p) => readFileSync(p, 'utf8'));
+  assert.notEqual(ergebnis, 'kern', 'Bitte „node .github/werkzeuge/bestandteile.mjs --handbuch“ ausführen und die Seiten einchecken.');
+});
+
+test('Kanten nur zwischen vorhandenen Bestandteilen derselben Gruppe', () => {
+  const bestandteile = baumBestandteile();
+  for (const [von, zu] of kanten(bestandteile)) {
+    assert.ok(bestandteile.includes(von) && bestandteile.includes(zu));
+    assert.ok(von.art === 'Ablago selbst' || von.art.split(' ')[0] === zu.art.split(' ')[0] || zu.art === 'Schrift (Alpine)');
+  }
 });

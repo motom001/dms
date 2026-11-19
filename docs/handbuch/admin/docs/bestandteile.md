@@ -11,8 +11,9 @@ Ablago besteht nicht nur aus eigenem Code: Im Image stecken Alpine Linux mit ein
 
 - **Stand:** Version, Datum, Commit und die Digests beider Images (`dms` und `dms-komplett`), je Architektur (amd64, arm64) und für den gemeinsamen Index.
 - **Geändert gegenüber der Vorversion:** zuerst Bestandteile mit **geänderter Lizenz**, dann neue, entfernte und solche mit neuer Version.
-- **Lizenzen:** wie viele Bestandteile welche Lizenz tragen. Einzeln aufgeführt sind die mit **besonderen Pflichten** (Copyleft, z. B. GPL, LGPL, MPL) – mit Verweis auf den Quelltext – und die **ohne erkannte Lizenz**.
-- **Systemprogramme:** die Pakete, die Ablago eigens ins Image holt, und wozu sie da sind.
+- **Lizenzen:** wie viele Bestandteile welche Lizenz tragen, je Lizenz zum Aufklappen mit den Namen (direkt eingebundene fett). Einzeln aufgeführt sind die mit **besonderen Pflichten** (Copyleft, z. B. GPL, LGPL, MPL) – mit dem Paket, über das sie kommen, und dem Verweis auf den Quelltext – und die **ohne erkannte Lizenz**.
+- **Direkt eingebundene Bibliotheken und Systemprogramme:** wozu jede da ist und wie viele Pakete sie mitbringt.
+- Gezählt wird nur, was **im Image** steckt. Werkzeuge für Entwicklung und Test stehen nur in den Anhängen.
 
 **Als Anhänge** am Release liegt die vollständige Liste, jeder Bestandteil mit Quelle:
 
@@ -24,7 +25,14 @@ Ablago besteht nicht nur aus eigenem Code: Im Image stecken Alpine Linux mit ein
 
 Die Links in der Tabelle führen immer zur **stabilen Version** (`:stabil`) – bei GitHub ist das das Release mit der Markierung *Latest*. Für eine bestimmte Version ersetzt du `latest/download` durch `download/v<Version>`, z. B. `…/releases/download/v0.291.0/ablago-bestandteile.csv`. Releases von vor dieser Funktion haben keine Anhänge; bis die erste Version mit Liste stabil ist, führen die Links ins Leere.
 
-Die Spalten der CSV: *Art*, *Name*, *Version*, *Lizenz*, *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (bei Alpine das Quellpaket, aus dem das Paket gebaut ist) und *Quelle*.
+Die Spalten der CSV: *Art*, *Name*, *Version*, *Lizenz*, *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (bei Alpine das Quellpaket, aus dem das Paket gebaut ist), *Quelle* und, seit #1412, der Baum:
+
+- *Ebene:* 0 = Ablago selbst, 1 = direkt eingebunden, 2 und mehr = mitgebracht.
+- *Eingebracht durch:* die Pakete der Ebene 1, über die ein mitgebrachtes Paket kommt, z. B. `poppler-utils` oder `fastify`. Alpine-Pakete, die keins der eigens installierten Programme braucht, kommen mit dem *Basis-Image (node, Alpine)*.
+- *Einsatz:* **Betrieb** = im Image; **Entwicklung** und **Test** = nur zum Bauen und Prüfen, **nicht im Image** (dann sind *Varianten* und *Architekturen* leer).
+- *Zweck:* bei Ebene 1, wozu das Paket da ist.
+
+In SPDX stehen die Abhängigkeiten als Beziehungen `DEPENDS_ON` (Werkzeuge der Ebene 1 als `DEV_DEPENDENCY_OF` bzw. `TEST_DEPENDENCY_OF`), in CycloneDX unter `dependencies`, Werkzeuge mit `scope: excluded`. So zeigt ein Prüfwerkzeug wie Dependency-Track, über welches Paket eine Sicherheitslücke hereinkommt. Wie Ablago aufgebaut ist, Paket für Paket: [Aufbau aus Bestandteilen](https://help.ablago.app/entwickler/aktuell/bestandteile-aufbau/) im Entwicklerhandbuch.
 
 ## Was drinsteht
 
@@ -37,6 +45,7 @@ Die Spalten der CSV: *Art*, *Name*, *Version*, *Lizenz*, *Varianten* (`dms`, `dm
 | npm (Oberfläche) | `package-lock.json` | React, qrcode – im Image zu einer Datei gebündelt, daher für Trivy unsichtbar |
 | Schrift, Oberfläche | Repository | Noto Sans und Noto Sans Mono (eigene PDFs), Lucide (Symbole) |
 | Handbuch | Repository | Texte und Bilder des Offline-Handbuchs, Material for MkDocs |
+| npm (Werkzeug) | `package-lock.json`, `web/rauchtest/package-lock.json` | TypeScript, Vite, ESLint, Playwright – nur Entwicklung und Test, nicht im Image |
 
 Zwei Grenzen:
 
@@ -49,10 +58,11 @@ Bei jeder neuen Version, nachdem beide Images gebaut und zusammengeführt sind:
 
 1. **Stückliste je Image und Architektur:** Trivy liest die fertigen Images aus der Registry (`dms` und `dms-komplett`, je amd64 und arm64), dazu kommen die Digests und die Node-Version aus dem Image.
 2. **Ergänzungen:** was Trivy nicht sehen kann – die Bibliotheken der Oberfläche, Schriften, das Offline-Handbuch und Ablago selbst.
-3. **Zusammenführen und vergleichen:** Gleiche Bestandteile aus allen Varianten und Architekturen werden zu einer Zeile; verglichen wird mit der CSV am vorigen Release.
-4. **Release:** Die Übersicht kommt in den Release-Text, die drei Dateien als Anhänge.
+3. **Baum:** Ebene und Herkunft für npm aus den Lockfiles, für Alpine aus der Paketdatenbank im Image (Beziehungen in der Stückliste von Trivy); der Zweck der direkt eingebundenen Pakete aus `bestandteile-wozu.json`.
+4. **Zusammenführen und vergleichen:** Gleiche Bestandteile aus allen Varianten und Architekturen werden zu einer Zeile; verglichen wird mit der CSV am vorigen Release, nur was im Image steckt.
+5. **Release:** Die Übersicht kommt in den Release-Text, die drei Dateien als Anhänge.
 
-Das Werkzeug dafür liegt im Repository unter [`.github/werkzeuge/bestandteile.mjs`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile.mjs), wozu die Systemprogramme da sind unter [`bestandteile-wozu.json`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile-wozu.json). Lässt sich die Liste einmal nicht erzeugen, erscheint das Release trotzdem – mit einem Hinweis an der Stelle der Übersicht.
+Das Werkzeug dafür liegt im Repository unter [`.github/werkzeuge/bestandteile.mjs`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile.mjs), wozu die Systemprogramme und die direkt eingebundenen Bibliotheken da sind unter [`bestandteile-wozu.json`](https://github.com/motom001/dms/blob/main/.github/werkzeuge/bestandteile-wozu.json). Lässt sich die Liste einmal nicht erzeugen, erscheint das Release trotzdem – mit einem Hinweis an der Stelle der Übersicht.
 
 ## Nachprüfen
 
