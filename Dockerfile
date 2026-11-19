@@ -7,7 +7,7 @@
 # Node steht genau einmal hier (#1272): Bau und Laufzeit bauen auf node-basis auf. Als Stufe statt als ARG, weil
 # Dependabot und Scorecard nur FROM-Zeilen lesen. Die Hauptversion passt zu `engines` in package.json (die Workflows
 # lesen sie mit node-version-file); ein Wechsel ändert beide Stellen.
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS node-basis
+FROM node:26-alpine AS node-basis
 
 FROM node-basis AS bau
 WORKDIR /app
@@ -120,7 +120,7 @@ FROM laufzeit AS komplett
 # Ohne eigenes „apk upgrade“ (#1397): laufzeit endet mit einer frischen Paketschicht aus demselben Bau. Ein zweites
 # Upgrade hier könnte Pakete heben, die dms nicht bekommt. „apk add“ holt die neuesten PostgreSQL-Pakete und hebt nur,
 # was sie zwingend brauchen.
-RUN apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
+RUN apk add --no-cache postgresql18 postgresql18-contrib tini su-exec
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett
