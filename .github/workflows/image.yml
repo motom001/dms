@@ -78,7 +78,9 @@ jobs:
   # Die Rauchtests legen ihre Datenbank im PostgreSQL dieses Jobs an.
   rauchtests:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 40 statt 30 Minuten (QS-Runde 11/2026): Der volle Lauf dauerte zuletzt 23 bis 27 Minuten mit Bau und Einrichtung;
+    # mit 30 blieb kaum Luft für einen langsamen Runner oder neue Bereiche. Ein hängender Lauf bricht trotzdem ab.
+    timeout-minutes: 40
     services:
       postgres:
         image: postgres:17
