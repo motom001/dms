@@ -36,12 +36,12 @@
       "issues": [1329],
       "varianten": ["dms", "dms-komplett"]
     },
-    "postgresql17": {
+    "postgresql18": {
       "wozu": "Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar).",
       "issues": [208],
       "varianten": ["dms-komplett"]
     },
-    "postgresql17-contrib": {
+    "postgresql18-contrib": {
       "wozu": "Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen.",
       "issues": [208],
       "varianten": ["dms-komplett"]
