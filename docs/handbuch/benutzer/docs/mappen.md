@@ -80,7 +80,7 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 | Betrag | Zahl und Währung, z. B. `98,00 EUR`; eine Gutschrift oder Erstattung mit Minus (`-25,00`) – das geht, wo unter dem Feld „Mit Minus eintragen“ steht |
 | Zeitraum | Zahl und Einheit, z. B. `3` und *Monate* für eine Kündigungsfrist |
 | Prozent | die Zahl, z. B. `19` oder `7,5` – „19 %“ geht auch |
-| Datum | über den Kalender oder als Datum |
+| Datum | tippen (Tag, Monat, Jahr) oder im Kalender wählen – ein Klick ins Feld oder auf das Kalendersymbol öffnet ihn, vor jeder Woche steht die Kalenderwoche |
 | Ja/Nein | Haken setzen |
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |
@@ -89,7 +89,7 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 
 Manche Textfelder haben ein **Format**: E-Mail, Telefon, Internetseite, IBAN oder PLZ. Am Handy erscheint dann die passende Tastatur, und offensichtlich falsche Angaben – etwa Buchstaben in einer Telefonnummer – lehnt Ablago mit einem Hinweis ab, was zu tun ist. Neben einer E-Mail-Adresse, Telefonnummer oder Internetseite steht ein Knopf, mit dem du gleich schreibst, anrufst oder die Seite öffnest. Eine IBAN steht in Vierergruppen; eine deutsche PLZ hat genau 5 Ziffern, für andere Länder trägst du das Land ein. Manche Datumsfelder haben Grenzen, ein Geburtstag darf zum Beispiel nicht in der Zukunft liegen. Was schon gespeichert ist, bleibt, bis du das Feld änderst.
 
-**Felder, die mitwachsen:** Manche Felder und Abschnitte erscheinen erst, wenn sie passen – wählst du etwa die Vertragsart *Miete*, erscheint gleich der Abschnitt *Miete*. Wählst du später etwas anderes, verschwindet er wieder, die eingetragenen Werte aber nicht: An seiner Stelle steht „Abschnitt Miete ist ausgeblendet – 3 Werte bleiben gespeichert · **anzeigen**“. Ein Klick auf *anzeigen* holt ihn zurück. Ausgeblendete Felder sind nicht Pflicht. Das ist nur Ordnung im Formular: Export und Auskunft enthalten alle Werte. Was wann zu sehen ist, stellt die Verwaltung am Mappentyp ein.
+**Felder, die mitwachsen:** Manche Felder und Abschnitte erscheinen erst, wenn sie passen – wählst du etwa die Vertragsart *Miete*, erscheint gleich der Abschnitt *Miete*. Wählst du später etwas anderes, verschwindet er wieder, die eingetragenen Werte aber nicht: An seiner Stelle steht „Abschnitt Miete ist ausgeblendet – 3 Werte bleiben gespeichert · **anzeigen**“. Ein Klick auf *anzeigen* holt ihn zurück. Ausgeblendete Felder sind nicht Pflicht. Beim **Anlegen** bekommt ein ausgeblendetes Feld keinen Wert – auch keinen Vorschlag und keine Vorgabe; erkannte Werte darin werden nur gespeichert, wenn du es mit *anzeigen* aufdeckst. Ein Ja/Nein-Feld, das auf „Nein“ steht, zählt in der Historie nicht als eingetragen. Das ist nur Ordnung im Formular: Export und Auskunft enthalten alle Werte. Was wann zu sehen ist, stellt die Verwaltung am Mappentyp ein.
 
 **Ausgerechnete Felder:** Manche Werte rechnet ein Paket selbst aus, etwa *Kündigen bis* oder den *Status* eines Vertrags. Solche Felder kannst du nicht ändern; darunter steht „berechnet von Verträge“. Ändere stattdessen die Angaben, aus denen sie entstehen (Beginn, Laufzeit, Kündigungsfrist …) – das Paket rechnet dann neu. Steht „nicht mehr berechnet“ da, rechnet das Paket nicht mehr; der Wert bleibt, bis die Verwaltung das Feld freigibt.
 
