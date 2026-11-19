@@ -36,7 +36,7 @@ after(async () => {
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { pgRepo } = await import('../src/repo/pg');
-  const { sql } = await eigeneDatenbank('reihenfolge');
+  const { sql } = await eigeneDatenbank('reihenfolge', { jeTest: true });
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
   return pgRepo(sql, HAUSHALT) as never;

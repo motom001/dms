@@ -230,7 +230,7 @@ describe('Ansichten, Zeitraum und Zuordnung im Paketformat (#1125)', () => {
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { pgRepo } = await import('../src/repo/pg');
-  const sql = (await eigeneDatenbank('umbauansichten')).sql;
+  const sql = (await eigeneDatenbank('umbauansichten', { jeTest: true })).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT_ID}, 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT_ID}, ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;
   return pgRepo(sql, HAUSHALT_ID) as never;

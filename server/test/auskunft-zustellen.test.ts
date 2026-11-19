@@ -222,7 +222,7 @@ async function repos(pg: boolean): Promise<{ repo: Repo; konto: ReturnType<typeo
   const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konten/konto-repo');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
-  const sql = (await eigeneDatenbank('zust', { migrieren: false })).sql;
+  const sql = (await eigeneDatenbank('zust', { migrieren: false, jeTest: true })).sql;
   offen.push(sql);
   await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
   return { repo: pgRepo(sql, H) as never, konto: pgKontoRepo(sql, H) as never };
@@ -286,11 +286,12 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
   const ordner = await mkdtemp(join(tmpdir(), 'dms-zust-sich-'));
   const betrieb = { mailer: () => (o.mail === false ? null : mailer), adresseFuerLinks: () => o.adresse ?? 'https://dms.example.org' };
   // Export-Ordner (#797): Auskünfte unter export/auskunft/.
-  const tabelle = routen(d, konten, {
+  const optionen = {
     betrieb: betrieb as never,
     sicherung: { ordner } as never,
     exporte: { pfad: join(ordner, 'export'), imSicherungsordner: false, volume: null },
-  });
+  };
+  const tabelle = routen(d, konten, optionen);
   const route = (m: string, p: string) => tabelle.find((x) => x.methode === m && x.pfad === p)!;
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
   const rufe = async (b: { id: string } | null, m: string, p: string, x: Partial<Anfrage> = {}) =>
@@ -309,7 +310,7 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
     for await (const c of inhalt as AsyncIterable<Buffer>) t.push(c);
     return Buffer.concat(t);
   };
-  return { d, r, konten, admin, anna, max, gesendet, ordner, rufe, auskunft, zip, route };
+  return { d, r, konten, admin, anna, max, gesendet, ordner, rufe, auskunft, zip, route, optionen };
 }
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
@@ -454,9 +455,15 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       // Die ZIP bleibt so lange wie der Link (statt 7 Tagen).
       assert.equal((await auskuenfteIn(join(ordner, 'export', 'auskunft'), new Date(Date.now() + 8 * 24 * 3600 * 1000))).length, 1);
       // Eigenes Herunterladen löscht sie nicht, solange der Link gilt.
-      await zip((await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei!.inhalt);
+      const eigen = (await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei!;
+      await zip(eigen.inhalt);
+      eigen.ausgeliefert?.();
       await new Promise((x) => setTimeout(x, 30));
-      assert.ok((await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei);
+      // Nur prüfen, dass es die Datei noch gibt – den ungelesenen Strom schließen (#1456, sonst schließt Node 26 ihn
+      // bei der Speicherbereinigung mit einem Fehler).
+      const nochDa = (await rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: a.id } })).datei;
+      assert.ok(nochDa);
+      (nochDa.inhalt as { destroy(): void }).destroy();
 
       // Öffentlich: falscher Code und unbekannter Link sehen gleich aus.
       const falsch = await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code: 'AAAAAAAA' } }).catch((e) => e as Fachfehler);
@@ -700,6 +707,44 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       );
       // Ohne ZIP kein Link
       await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: {} }), status(404));
+    });
+
+    // QS-Runde 11/2026: HEAD öffnet die Datei nicht und löscht nichts; erst ein ganz ausgelieferter GET zählt.
+    it('Herunterladen über HTTP: HEAD nur Köpfe, ohne Lesen und Löschen; erst der ausgelieferte GET löscht', async () => {
+      const { d, konten, admin, max, ordner, auskunft, optionen } = await aufbau(pg);
+      const a = await auskunft();
+      const { baueApp } = await import('../src/http/http');
+      const app = await baueApp(d, konten, optionen);
+      try {
+        const anmelden = await app.inject({
+          method: 'POST',
+          url: '/api/konto/anmelden',
+          headers: { 'x-dms': '1' },
+          payload: { email: admin.email, passwort: 'ein-langes-passwort' },
+        });
+        const cookie = String([anmelden.headers['set-cookie']].flat()[0]).split(';')[0];
+        const kopf = { 'x-dms': '1', cookie };
+        assert.equal((await app.inject({ method: 'POST', url: '/api/konto/verwaltung', headers: kopf, payload: {} })).statusCode, 200);
+        const url = `/api/werkbank/auskunft/${a.id}/zip`;
+        const da = async () => (await auskuenfteIn(join(ordner, 'export', 'auskunft'))).some((x) => x.id === a.id);
+        const heruntergeladen = async () =>
+          (await d.mappenHistorie.historie(max.id)).filter((x) => x.art === 'auskunft' && x.daten.zustellung === 'download').length;
+        const head = await app.inject({ method: 'HEAD', url, headers: kopf });
+        assert.equal(head.statusCode, 200, head.body);
+        assert.equal(head.body, '');
+        assert.equal(head.headers['content-length'], String(a.bytes));
+        await new Promise((x) => setTimeout(x, 50));
+        assert.ok(await da(), 'HEAD löscht nichts');
+        assert.equal(await heruntergeladen(), 0, 'HEAD gilt nicht als heruntergeladen');
+        const get = await app.inject({ method: 'GET', url, headers: kopf });
+        assert.equal(get.statusCode, 200);
+        assert.equal(get.rawPayload.length, a.bytes);
+        await new Promise((x) => setTimeout(x, 50));
+        assert.equal(await da(), false, 'nach dem ausgelieferten GET gelöscht');
+        assert.equal(await heruntergeladen(), 1);
+      } finally {
+        await app.close();
+      }
     });
 
     it('Abbruch: ein nicht zu Ende gelesener Download zählt, steht aber als abgebrochen in der Historie', async () => {

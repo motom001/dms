@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { after, describe, it } from 'node:test';
+import { after, afterEach, describe, it } from 'node:test';
 import { liesAnlass, liesFilter, nummerVon, passt, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
@@ -154,8 +154,11 @@ describe('Löschprotokoll: Hilfsfunktionen (#470)', () => {
 
 for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
   describe(`Löschprotokoll (#470, ${pg ? 'PostgreSQL' : 'Arbeitsspeicher'})`, () => {
-    after(async () => {
+    // Je Test schließen (QS-Runde 11/2026); die Datenbanken löscht `after` am Schluss.
+    afterEach(async () => {
       for (const s of offen.splice(0)) await s.end();
+    });
+    after(async () => {
       if (pg && datenbanken.length) {
         const { ausUrl, alsUrl } = await import('../src/datenbank/anbindung');
         const { verbinde } = await import('../src/datenbank/db');

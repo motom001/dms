@@ -3,7 +3,7 @@
  * Tippfehler mit „Meintest du …?“ – im Arbeitsspeicher und (mit TEST_DATABASE_URL) in PostgreSQL.
  */
 import assert from 'node:assert/strict';
-import { after, describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import { aehnlichkeit, falte, liesWortgruppe, normal, suchbegriffe, variantenVon, vorschlagAus } from '../../shared/src/suche';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
@@ -354,6 +354,7 @@ function faelle(pg: boolean) {
 
 faelle(false);
 faelle(true);
-after(async () => {
-  for (const f of offen) await f();
+// Je Test schließen (QS-Runde 11/2026): Jeder Test legt eine eigene Datenbank an.
+afterEach(async () => {
+  for (const f of offen.splice(0)) await f();
 });

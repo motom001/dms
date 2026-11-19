@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { after, describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { auswahlMitAbhaengigkeiten, ergaenzungenVon, liesErgaenzt, liesKatalog, type Katalog } from '../../shared/src/pakete';
 import { speicherDateien } from '../src/dateien/dateispeicher';
@@ -27,8 +27,9 @@ const BASIS = fileURLToPath(new URL('./pakete/basis', import.meta.url));
 const WASM = '\0asm\u0001\0\0\0';
 
 const offen: Array<{ end(): Promise<void> }> = [];
-after(async () => {
-  for (const s of offen) await s.end();
+// Je Test schließen (QS-Runde 11/2026): Jeder Test legt eine eigene Datenbank an.
+afterEach(async () => {
+  for (const s of offen.splice(0)) await s.end();
 });
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();

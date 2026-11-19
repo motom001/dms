@@ -24,7 +24,7 @@ import { SpeicherplatzPanel } from '../Speicherplatz';
 import { WerkzeugeHinweis } from '../Werkzeuge';
 import { AuslastungAbschnitt, ErweiterungenHinweis } from '../Auslastung';
 import { PapierkorbDetail, PapierkorbListe } from '../../ablage/Papierkorb';
-import type { Seiten } from './inhalt';
+import { editorSchluessel, type Seiten } from './inhalt';
 
 /* Inhalte der Bereiche, zweiter Teil (#819, Tabelle seit #1281): Einstellungen, Post, Wartung, Sichern, Systemzustand. */
 
@@ -91,9 +91,10 @@ export const postUndWartungSeiten = {
   postfaecher: ({ id, z: { postfaecher } }) => ({
     liste: <PostfaecherListe z={postfaecher} offen={id} />,
     // Ein bestehendes Postfach baut sich neu auf, sobald die Liste da ist (Stand aus der Liste); ein neues nicht –
-    // sonst gingen Eingaben und Fehler verloren, die vor dem Laden der Liste kamen (#1409).
+    // sonst gingen Eingaben und Fehler verloren, die vor dem Laden der Liste kamen (#1409). Schlüssel wie die übrigen
+    // Editoren der Werkbank (editorSchluessel).
     rechts: id ? (
-      <PostfachEditor key={id === 'neu' ? id : `${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} />
+      <PostfachEditor key={editorSchluessel(id, !!postfaecher.liste)} z={postfaecher} id={id} />
     ) : (
       <div className="platzhalter">
         <p>{t('werkbank.werkbank.waehle-links-ein-postfach')}</p>

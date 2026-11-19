@@ -250,12 +250,19 @@ function cursorPosition(el: HTMLTextAreaElement, pos: number): { top: number; le
 }
 
 /** Titel einer Erwähnung in der Eingabe (#1293): wie in der Anzeige; solange die Antwort aussteht, leer. */
-function erwaehnungsTitel(d: ReturnType<typeof useDaten>, id: string, v: ReturnType<ReturnType<typeof useVerweise>>): string {
+function erwaehnungsTitel(
+  d: ReturnType<typeof useDaten>,
+  id: string,
+  v: ReturnType<ReturnType<typeof useVerweise>>,
+  benutzer = false,
+): string {
   const person = d.personen.find((p) => p.id === id);
   if (person) return person.name;
   if (!v) return '';
-  if (v.sichtbarkeit === 'geloescht') return t('ablage.formatiert.erwaehnung.geloescht');
-  if (v.sichtbarkeit !== 'sichtbar') return t('ablage.formatiert.erwaehnung.verborgen');
+  // Alte Schreibweise `benutzer:` (QS-Runde 11/2026): eine Person – Texte wie bei `Person`, nicht „gelöschte Mappe“.
+  if (v.sichtbarkeit === 'geloescht')
+    return benutzer ? t('oberflaeche.person.geloeschter-benutzer') : t('ablage.formatiert.erwaehnung.geloescht');
+  if (v.sichtbarkeit !== 'sichtbar') return benutzer ? t('oberflaeche.person.nicht-sichtbar') : t('ablage.formatiert.erwaehnung.verborgen');
   return v.titel || t('ablage.formatiert.erwaehnung.ohne-titel');
 }
 
@@ -311,7 +318,7 @@ export function FormatiertEingabe({
   // Erwähnungen (#1293): gespeichert ist nur die Kennung; zum Schreiben stehen die aktuellen Titel im Text (nach den
   // Rechten der Person). Der Server nimmt sie beim Speichern wieder heraus.
   const verweis = useVerweise(useMemo(() => erwaehnungen(gespeichert), [gespeichert]));
-  const wert = mitTiteln(gespeichert, (x, bisher) => erwaehnungsTitel(d, x, verweis(x)) || bisher);
+  const wert = mitTiteln(gespeichert, (x, bisher, benutzer) => erwaehnungsTitel(d, x, verweis(x), benutzer) || bisher);
   const feld = useRef<HTMLTextAreaElement>(null);
   const [vorschau, setVorschau] = useState(!!wert);
   const [suche, setSuche] = useState<{ start: number; text: string } | null>(null);

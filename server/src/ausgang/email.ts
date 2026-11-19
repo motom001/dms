@@ -80,6 +80,15 @@ export interface EmailAnschluss {
   entsperrtZu(inhalt: Buffer): Promise<Buffer | null>;
 }
 
+/**
+ * Anhänge, die als Strom aus dem Dateispeicher kommen, nach dem Versand schließen (#1456): Scheitert der Versand oder
+ * liest der Mailer einen Anhang nicht, bliebe die Datei sonst bis zur Speicherbereinigung offen – unter Node 26 ein
+ * Fehler („A FileHandle object was closed during garbage collection“). Nach vollständigem Lesen schadet es nicht.
+ */
+function schliesseAnhaenge(anhaenge: ReadonlyArray<{ inhalt: Buffer | Readable }>) {
+  for (const a of anhaenge) if (!Buffer.isBuffer(a.inhalt)) a.inhalt.destroy();
+}
+
 export class AusgangEmail {
   constructor(
     private readonly kern: Kern,
@@ -214,6 +223,8 @@ export class AusgangEmail {
       await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
     } catch (x) {
       throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
+    } finally {
+      schliesseAnhaenge(anhaenge);
     }
     const { post: typ } = await this.kern.system();
     const id = randomUUID();
@@ -385,7 +396,14 @@ export class AusgangEmail {
   private async versandAnhaenge(je: Versandteil[]) {
     const teile = je.flatMap((x) => [...(x.angaben ? [x.angaben] : []), ...x.dokumente]);
     const namen = eindeutig(teile.map((x) => sichererName(x.name, 120)));
-    const anhaenge = await Promise.all(teile.map(async (x, i) => ({ name: namen[i], mime: x.mime, inhalt: await x.inhalt() })));
+    const offen = await Promise.allSettled(teile.map(async (x, i) => ({ name: namen[i], mime: x.mime, inhalt: await x.inhalt() })));
+    const anhaenge = offen.flatMap((x) => (x.status === 'fulfilled' ? [x.value] : []));
+    // Scheitert ein Anhang, sind die übrigen schon offen: schließen, bevor der Fehler weitergeht (#1456).
+    const fehler = offen.find((x) => x.status === 'rejected');
+    if (fehler) {
+      schliesseAnhaenge(anhaenge);
+      throw fehler.reason;
+    }
     return { namen, anhaenge };
   }
 
@@ -496,6 +514,8 @@ export class AusgangEmail {
       await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
     } catch (x) {
       throw new Fachfehler(502, t('meldungen.dienst.die-e-mail-wurde', { message: (x as Error).message }));
+    } finally {
+      schliesseAnhaenge(anhaenge);
     }
     const { post: typ } = await this.kern.system();
     const id = randomUUID();

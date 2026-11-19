@@ -44,6 +44,8 @@ export interface Anfrage {
   verwaltungsmodus?: boolean;
   /** Weitere Köpfe der Anfrage (klein geschrieben), z. B. If-None-Match beim Zähler-Endpunkt (#625). */
   kopf?: (name: string) => string | undefined;
+  /** HEAD statt GET (QS-Runde 11/2026): Nur die Köpfe gehen hinaus – eine Route kann sich das Öffnen der Datei sparen. */
+  nurKoepfe?: boolean;
 }
 export interface Datei {
   inhalt: Readable | Buffer;
@@ -54,6 +56,11 @@ export interface Datei {
   groesse: number;
   /** Zusätzliche Kopfzeilen, z. B. ausgelassene Mappen beim Export (#294). */
   koepfe?: Record<string, string>;
+  /**
+   * Erst, wenn die Datei ganz beim Empfänger ist (QS-Runde 11/2026): nach dem letzten Byte einer GET-Antwort, nicht bei
+   * HEAD und nicht, wenn die Verbindung vorher abbricht. Für „heruntergeladen“-Folgen wie das Löschen einer Auskunft.
+   */
+  ausgeliefert?: () => void;
 }
 export interface Antwort {
   status?: number;

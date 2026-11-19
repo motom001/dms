@@ -369,6 +369,7 @@ function anfrageAus(req: FastifyRequest, opt: Optionen): Anfrage {
     ip: req.ip,
     peer: req.socket.remoteAddress,
     geraet: String(req.headers['user-agent'] ?? ''),
+    ...(req.method === 'HEAD' ? { nurKoepfe: true } : {}),
     // Einrichtung ohne Code nur aus dem Heimnetz (#1359): dieselbe Prüfung wie beim Notfallzugang.
     einrichtungscode: {
       ...(typeof req.headers['x-einrichtungscode'] === 'string' ? { code: req.headers['x-einrichtungscode'] } : {}),
@@ -503,6 +504,9 @@ function sendeAntwort(reply: FastifyReply, antwort: RoutenAntwort, k: Kontext, z
   }
   if (antwort.datei) {
     for (const [k, v] of Object.entries({ ...dateiKoepfe(antwort.datei), ...antwort.datei.koepfe })) reply.header(k, v);
+    // Ganz ausgeliefert (QS-Runde 11/2026): „finish“ kommt erst nach dem letzten Byte, bei einem Abbruch nur „close“.
+    const ausgeliefert = antwort.datei.ausgeliefert;
+    if (ausgeliefert && reply.request.method === 'GET') reply.raw.once('finish', ausgeliefert);
     return reply.code(antwort.status ?? 200).send(antwort.datei.inhalt); // 206: Teil einer Datei (#975)
   }
   // Stück für Stück (#444): ohne Länge, nicht zwischenspeichern (auch nicht in nginx: X-Accel-Buffering).

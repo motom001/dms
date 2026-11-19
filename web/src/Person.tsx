@@ -43,7 +43,8 @@ export function Ehemalig({ id, children }: { id: string | null | undefined; chil
 /**
  * Ein Benutzer, der nicht unter den lesbaren ist (#888): Ablago fragt nach. Nicht sichtbar oder (noch) ohne Antwort:
  * kein Name – auch nicht der aus der Erwähnung; die Antwort ändert dann nur den Zusatz. Gelöscht (oder im Papierkorb):
- * der Name aus der Erwähnung grau mit Hinweis, sonst „gelöschter Benutzer“.
+ * der Name aus der Erwähnung grau mit Hinweis, sonst „gelöschter Benutzer“ – auch bei einem leeren Namen, wie ihn eine
+ * Erwähnung seit #1293 speichert (sonst stünde nur „@“ da).
  */
 function NichtLesbar({ id, ersatz, vor, className }: { id: string; ersatz?: string; vor: string; className?: string }) {
   const d = useDaten();
@@ -52,7 +53,7 @@ function NichtLesbar({ id, ersatz, vor, className }: { id: string; ersatz?: stri
     return (
       <span className={`person weg ${className ?? ''}`} title={t('oberflaeche.person.diesen-benutzer-gibt-es')}>
         {vor}
-        {ersatz ?? t('oberflaeche.person.geloeschter-benutzer')}
+        {ersatz || t('oberflaeche.person.geloeschter-benutzer')}
       </span>
     );
   const verborgen = sichtbarkeit === 'verborgen';

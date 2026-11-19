@@ -11,7 +11,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { after, describe, it } from 'node:test';
-import { bereinigeGeraet, fuelleErgebnis, PLATZHALTER, restMinuten, stufenVon, type LasttestStand } from '../../shared/src/lasttest';
+import {
+  bereinigeGeraet,
+  formularBlock,
+  fuelleErgebnis,
+  ganzesErgebnis,
+  PLATZHALTER,
+  restMinuten,
+  stufenVon,
+  type LasttestStand,
+} from '../../shared/src/lasttest';
 import type { LasttestStandMitAblauf } from '../../shared/src/lasttestablauf';
 import { Lasttestmodus, lasttestAus } from '../src/lasttest/lasttestmodus';
 import { erkenneSpeicherart, geraeteNummer } from '../src/lasttest/speicherart';
@@ -410,6 +419,15 @@ describe('Lasttest-Modus (#612): Ergebnisblock', () => {
       ohne,
       /p95 –, höchstens 45 ms · Verbindungen belegt bis 12 von 12 · Sperren: keine · CPU \(% eines Kerns\): PostgreSQL –, Ablago 150 %, Container 200 % · Neustarts von Prozessen: 0 · Speicher je Prozess: –$/,
     );
+  });
+
+  it('Block fürs Formular (#1452): bis einschließlich der schließenden ```-Zeile, ohne Bericht', () => {
+    const block = '```text\nMessergebnis Lasttest (#563)\nRAM: 8 GB · Speicher: SSD\n```';
+    const ganz = ganzesErgebnis(block, `## Lasttest\n\n${'x'.repeat(120_000)}\n\n\`\`\`\ncode im Bericht\n\`\`\``);
+    assert.equal(formularBlock(ganz), block);
+    assert.ok(formularBlock(ganz).length < 65_536);
+    // Ohne schließende Zeile: alles, nichts geht verloren.
+    assert.equal(formularBlock('```text\nnur Anfang'), '```text\nnur Anfang');
   });
 
   it('Gerät: eine Zeile, ohne Backticks, höchstens 120 Zeichen', () => {

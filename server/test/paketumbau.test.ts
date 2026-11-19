@@ -269,7 +269,7 @@ describe('Umbau im Paketformat (#1041)', () => {
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { pgRepo } = await import('../src/repo/pg');
-  const sql = (await eigeneDatenbank('umbau')).sql;
+  const sql = (await eigeneDatenbank('umbau', { jeTest: true })).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT_ID}, 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT_ID}, ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;
   return pgRepo(sql, HAUSHALT_ID) as never;
