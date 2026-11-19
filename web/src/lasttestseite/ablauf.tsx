@@ -163,16 +163,19 @@ function stufenDauer(stufe: LasttestStufe, zeilen: AblaufZeile[], stand: Lasttes
 }
 
 export function Ablauf({ ablauf, stand, jetzt }: { ablauf: LasttestAblauf; stand: LasttestStand; jetzt: number }) {
-  // Aufgeklappt: die laufende Stufe (bei nur einer Stufe immer); was man selbst umschaltet, bleibt so.
+  // Der laufende Durchgang steht nur in seiner Zeile (#1452): Fortschritt und „noch …“ in der Spalte Dauer.
+  // Aufgeklappt (#1452): die Stufe, an der der Test gerade ist (bei nur einer Stufe immer) – beginnt eine neue, klappt die
+  // fertige zu und die neue auf. Was man selbst umschaltet, bleibt so.
   const [gewaehlt, setGewaehlt] = useState<Partial<Record<LasttestStufe, boolean>>>({});
   const eine = ablauf.stufen.length === 1;
+  const aktuell = stand.zustand === 'laeuft' ? ablauf.aktuell : -1;
   return (
     <section className="lasttest-ablauf" aria-labelledby="lasttest-ablauf">
       <h2 id="lasttest-ablauf">{t('lasttest.ablauf')}</h2>
       <p className="klein leise">{t('lasttest.ablauf.text')}</p>
-      {ablauf.stufen.map(({ stufe, zeilen }) => {
+      {ablauf.stufen.map(({ stufe, zeilen }, i) => {
         const zustand = stufenZustand(zeilen);
-        const offen = gewaehlt[stufe] ?? (eine || zustand === 'laeuft');
+        const offen = gewaehlt[stufe] ?? (eine || (aktuell >= 0 ? i === aktuell : zustand === 'laeuft'));
         const id = `lasttest-ablauf-${stufe}`;
         return (
           <div key={stufe} className="lasttest-gruppe" data-zustand={zustand}>

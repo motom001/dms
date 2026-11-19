@@ -1,8 +1,8 @@
-import { useState, type RefObject } from 'react';
+import { useState } from 'react';
 import type { LasttestStand, Speicherwahl } from '../../../shared/src/lasttest';
-import { GERAET_MAX } from '../../../shared/src/lasttest';
+import { bereinigeGeraet, GERAET_MAX, teileErgebnis } from '../../../shared/src/lasttest';
 import { handbuchUrl } from '../../../shared/src/hilfe';
-import { Feld, Knopf, KnopfLink } from '../bausteine';
+import { Aufklapper, Feld, Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -17,11 +17,14 @@ const SAMMEL = 'https://github.com/motom001/dms/issues/576';
 export const zahl = (n: number) => n.toLocaleString(gebietsschema());
 const prozent = (q: number) => `${(q * 100).toFixed(2).replace('.', ',')} %`;
 
+/** Felder für Gerät und Speicher (#1452: der Hinweis am Knopf „Kopieren“ springt dorthin). */
+const FELD_ID = { geraet: 'lasttest-geraet', speicher: 'lasttest-speicher' } as const;
+
 /**
- * Kopieren auch ohne HTTPS (NAS im Heimnetz, `http://`): Zwischenablage, sonst markieren und execCommand – im
- * sichtbaren Feld oder (#1251, ganzer Bericht) in einem kurz angelegten, unsichtbaren Feld.
+ * Kopieren auch ohne HTTPS (NAS im Heimnetz, `http://`): Zwischenablage, sonst markieren und execCommand in einem kurz
+ * angelegten, unsichtbaren Feld (#1251). Der Fokus geht danach zurück an den Knopf.
  */
-async function kopiere(text: string, feld: HTMLTextAreaElement | null): Promise<boolean> {
+async function kopiere(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
@@ -30,22 +33,21 @@ async function kopiere(text: string, feld: HTMLTextAreaElement | null): Promise<
   } catch {
     /* weiter */
   }
-  const behelf = feld ? null : document.createElement('textarea');
-  const ziel = feld ?? behelf!;
-  if (behelf) {
-    behelf.value = text;
-    behelf.readOnly = true;
-    behelf.className = 'lasttest-behelf';
-    document.body.appendChild(behelf);
-  }
-  ziel.focus();
-  ziel.select();
+  const zurueck = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const behelf = document.createElement('textarea');
+  behelf.value = text;
+  behelf.readOnly = true;
+  behelf.className = 'lasttest-behelf';
+  document.body.appendChild(behelf);
+  behelf.focus();
+  behelf.select();
   try {
     return document.execCommand('copy');
   } catch {
     return false;
   } finally {
-    behelf?.remove();
+    behelf.remove();
+    zurueck?.focus();
   }
 }
 
@@ -64,7 +66,7 @@ type Zustand = LasttestStand['zustand'];
 
 /**
  * Stand: Schritt, Demo-Mappen, Durchgang, Restdauer; Warnung ohne Datei, fertig, Abbruch. Mit Ablauf (#1251) stehen
- * Stufe und fertige Durchgänge in dessen Tabelle; ohne (älteres Skript) die Liste wie bisher.
+ * Stufe, laufender Durchgang (#1452) und fertige Durchgänge in dessen Abschnitt; ohne (älteres Skript) wie bisher hier.
  */
 export function LaufStand({
   stand,
@@ -92,7 +94,7 @@ export function LaufStand({
               <p className="klein leise">{t('lasttest.demo', { fertig: zahl(stand.demo.fertig), gesamt: zahl(stand.demo.gesamt) })}</p>
             </>
           )}
-          {stand.durchgang && (
+          {stand.durchgang && !mitAblauf && (
             <p className="klein">
               {t('lasttest.durchgang', {
                 name: stand.durchgang.name,
@@ -164,7 +166,7 @@ export function Angaben({
 }) {
   return (
     <div className="formular">
-      <Feld className="breit" beschriftung={t('lasttest.geraet')} hinweis={t('lasttest.geraet.hinweis')}>
+      <Feld id={FELD_ID.geraet} className="breit" beschriftung={t('lasttest.geraet')} hinweis={t('lasttest.geraet.hinweis')}>
         <input
           value={angaben.geraet}
           maxLength={GERAET_MAX}
@@ -177,6 +179,7 @@ export function Angaben({
         />
       </Feld>
       <Feld
+        id={FELD_ID.speicher}
         beschriftung={t('lasttest.speicher')}
         hinweis={
           stand.speicherErkannt
@@ -205,32 +208,43 @@ export function Angaben({
   );
 }
 
-/** Ergebnis: Vorschau, solange es fehlt; dann Block, Kopieren, Herunterladen, Formular, Sammel-Issue und Bericht. */
+/** Was im Ergebnis noch „bitte ergänzen“ heißt (#1452) – nur ein Hinweis, gesperrt wird nichts. */
+type Ergaenzen = 'geraet' | 'speicher' | 'beide' | null;
+export function ergaenzenAus(a: LasttestStand['angaben']): Ergaenzen {
+  const geraet = !bereinigeGeraet(a.geraet);
+  if (geraet) return a.speicher ? 'geraet' : 'beide';
+  return a.speicher ? null : 'speicher';
+}
+
+/**
+ * Ergebnis (#1452): ein Ergebnis, der Platz dafür ist von Anfang an da. Solange es fehlt, der Hinweis und die Vorschau
+ * von Gerät und Speicher; dann oben der kurze Block für die Gerätemeldung (bis „RAM …“), darunter zum Aufklappen der
+ * Rest mit dem ganzen Bericht. Kopieren und Herunterladen nehmen immer alles. Dazu Formular und Sammel-Issue.
+ */
 export function Ergebnis({
   stand,
-  block,
+  text,
   zeile,
+  ergaenzen,
   kopiert,
   setKopiert,
-  feld,
-  textDatei,
   setGesichert,
 }: {
   stand: LasttestStand;
-  block: string;
+  /** Das ganze Ergebnis (`ganzesErgebnis`); leer, solange der Test läuft. */
+  text: string;
   zeile: string[];
+  ergaenzen: Ergaenzen;
   kopiert: 'ja' | 'nein' | null;
   setKopiert: (k: 'ja' | 'nein') => void;
-  feld: RefObject<HTMLTextAreaElement | null>;
-  textDatei: string;
   setGesichert: (g: boolean) => void;
 }) {
-  // Ganzer Bericht (#1251): eigenes Ergebnis am Knopf, damit „Kopiert“ beim richtigen Knopf steht (B2).
-  const [berichtKopiert, setBerichtKopiert] = useState<'ja' | 'nein' | null>(null);
+  const [ganz, setGanz] = useState(false);
   const datei = () => {
-    herunterladen(`lasttest-${stand.wahl}.md`, textDatei);
+    herunterladen(`lasttest-${stand.wahl}.md`, text);
     setGesichert(true);
   };
+  const { kurz, rest } = teileErgebnis(text);
   return (
     <section className="lasttest-ergebnis" aria-labelledby="lasttest-ergebnis">
       <h2 id="lasttest-ergebnis">{t('lasttest.ergebnis')}</h2>
@@ -242,14 +256,24 @@ export function Ergebnis({
       ) : (
         <>
           <p className="klein leise">{t('lasttest.ergebnis.text')}</p>
-          <Feld beschriftung={t('lasttest.ergebnis')} beschriftungVerbergen>
-            <textarea ref={feld} className="mono lasttest-block" readOnly value={block} rows={block.split('\n').length} />
-          </Feld>
+          <pre className="lasttest-block" id="lasttest-ergebnis-text">
+            {ganz ? text.replace(/\n$/, '') : kurz}
+          </pre>
+          {!!rest.trim() && (
+            <Aufklapper form="zeile" offen={ganz} steuert="lasttest-ergebnis-text" umschalten={() => setGanz(!ganz)}>
+              {t('lasttest.ergebnis.ganz')}
+            </Aufklapper>
+          )}
           <div className="knoepfe">
             <Knopf
               art="haupt"
               symbol={kopiert === 'ja' ? 'haken' : undefined}
-              onClick={() => kopiere(block, feld.current).then((ok) => setKopiert(ok ? 'ja' : 'nein'))}>
+              onClick={() =>
+                kopiere(text).then((ok) => {
+                  setKopiert(ok ? 'ja' : 'nein');
+                  if (ok) setGesichert(true);
+                })
+              }>
               {kopiert === 'ja' ? t('lasttest.kopiert') : t('lasttest.kopieren')}
             </Knopf>
             <Knopf symbol="herunterladen" onClick={datei}>
@@ -262,37 +286,22 @@ export function Ergebnis({
               {t('lasttest.sammel')} <Symbol name="extern" />
             </KnopfLink>
           </div>
+          {ergaenzen && (
+            <p className="klein lasttest-ergaenzen">
+              <Symbol name="warnung" /> {t.frei(`lasttest.ergebnis.ergaenzen.${ergaenzen}`)}{' '}
+              <Knopf
+                groesse="klein"
+                onClick={() => document.getElementById(FELD_ID[ergaenzen === 'speicher' ? 'speicher' : 'geraet'])?.focus()}>
+                {t('lasttest.ergebnis.zum-feld')}
+              </Knopf>
+            </p>
+          )}
           {kopiert === 'nein' && (
             <p className="klein fehlertext" role="alert">
               {t('lasttest.kopieren.geht-nicht')}
             </p>
           )}
           {stand.datei && <p className="klein leise">{t('lasttest.datei', { datei: stand.datei })}</p>}
-          <details>
-            <summary>{t('lasttest.bericht')}</summary>
-            <p className="klein leise">{t('lasttest.bericht.text')}</p>
-            <div className="knoepfe">
-              <Knopf
-                symbol={berichtKopiert === 'ja' ? 'haken' : undefined}
-                onClick={() =>
-                  kopiere(textDatei, null).then((ok) => {
-                    setBerichtKopiert(ok ? 'ja' : 'nein');
-                    if (ok) setGesichert(true);
-                  })
-                }>
-                {berichtKopiert === 'ja' ? t('lasttest.kopiert') : t('lasttest.bericht.kopieren')}
-              </Knopf>
-              <Knopf symbol="herunterladen" onClick={datei}>
-                {t('lasttest.herunterladen')}
-              </Knopf>
-            </div>
-            {berichtKopiert === 'nein' && (
-              <p className="klein fehlertext" role="alert">
-                {t('lasttest.kopieren.geht-nicht')}
-              </p>
-            )}
-            <pre className="lasttest-bericht">{stand.ergebnis.bericht}</pre>
-          </details>
         </>
       )}
     </section>

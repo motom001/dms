@@ -8,8 +8,9 @@
 .lasttest-durchgaenge { margin: 4px 0 0; padding-left: 18px; }
 .lasttest-ergebnis { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
 .lasttest-ergebnis p { margin: 0; }
-.lasttest-block { font-size: calc(12px * var(--skala, 1)); white-space: pre; overflow-x: auto; resize: vertical; line-height: 1.45; }
-.lasttest-bericht { font-family: var(--mono); font-size: calc(11.5px * var(--skala, 1)); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; background: var(--senke); padding: 10px; border-radius: 6px; }
+.lasttest-block { margin: 0; font-family: var(--mono); font-size: calc(12px * var(--skala, 1)); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--senke); padding: 10px; border-radius: 6px; }
+/* Hinweis am Knopf „Kopieren“ (#1452), wenn im Ergebnis noch „bitte ergänzen“ steht. */
+.lasttest-ergaenzen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .lasttest-ergebnis .knoepfe, .lasttest-ende { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .lasttest-ende { justify-content: space-between; border-top: 1px solid var(--linie); padding-top: 14px; }
 .lasttest-auto { margin: 0; }
@@ -19,7 +20,6 @@
 
 /* Ablauf als Tabelle (#1251): je Stufe eine Gruppe mit Aufklapper, darin die Schritte und Durchgänge. Am Handy scrollt
    die Tabelle in ihrem Rahmen (width 0 / min-width 100 %: der Rahmen dehnt die Karte nicht), die Seite nie waagerecht. */
-.lasttest-laufend { margin: 0; }
 .lasttest-ablauf { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
 .lasttest-ablauf > p { margin: 0; }
 .lasttest-gruppe { display: flex; flex-direction: column; gap: 6px; }
@@ -45,8 +45,7 @@
 .lasttest-ziel[data-erreicht="nein"] { color: var(--schlecht); }
 /* Ausweichweg beim Kopieren ohne Zwischenablage (http:// im Heimnetz): kurz angelegt, nie sichtbar. */
 .lasttest-behelf { position: fixed; top: 0; left: -9999px; opacity: 0; }
-/* Am Handy (D6): der Verweis ins Handbuch und „Ganzer Bericht“ mit 44 px Tippfläche, die Zeile bleibt so hoch wie vorher. */
+/* Am Handy (D6): der Verweis ins Handbuch mit 44 px Tippfläche, die Zeile bleibt so hoch wie vorher. */
 @media (pointer: coarse) {
   .lasttest-ende a.verweis { display: inline-block; padding-block: 18px; margin-block: -18px; }
-  .lasttest-ergebnis summary { display: flex; align-items: center; min-height: 44px; }
 }

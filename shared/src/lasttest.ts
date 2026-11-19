@@ -132,8 +132,11 @@ export interface LasttestLive {
 
 export interface LasttestLiveStand {
   jetzt: LasttestLive & { zeit: string };
-  /** CPU und Speicher der letzten Minuten (für die Kurven). */
-  verlauf: Array<{ zeit: string; cpu: number | null; speicher: number | null }>;
+  /**
+   * CPU, Speicher und (#1452) belegte Datenbank-Verbindungen in % der erlaubten der letzten Minuten (für die Kurven) –
+   * alles aus derselben 2-s-Messung. `db` fehlt in Ständen älterer Versionen.
+   */
+  verlauf: Array<{ zeit: string; cpu: number | null; speicher: number | null; db?: number | null }>;
 }
 /** So viele Werte behält die Lasttest-Seite für die Kurven (alle 2 s: 3 Minuten). */
 export const LIVE_VERLAUF = 90;
@@ -166,6 +169,28 @@ export function fuelleErgebnis(vorlage: string, a: LasttestStand['angaben'], erk
         ? `${a.speicher} (erkannt)`
         : a.speicher;
   return vorlage.split(PLATZHALTER.geraet).join(geraet).split(PLATZHALTER.speicher).join(speicher);
+}
+
+/** Belegte Datenbank-Verbindungen in % der erlaubten (#1452); null, wenn es keine Werte gibt. */
+export const verbindungenProzent = (belegt: number | null, verbindungen: number | null): number | null =>
+  belegt === null || !verbindungen ? null : Math.min(100, Math.round((belegt / verbindungen) * 1000) / 10);
+
+/**
+ * Das eine Ergebnis (#1452): oben der kurze Block für die Gerätemeldung, darunter der ganze Bericht. So steht es auf
+ * der Seite, so wird es kopiert und heruntergeladen und so liegt es unter /data/ergebnis – Block und Bericht selbst
+ * bleiben im bisherigen Format, damit alte und neue Ergebnisse vergleichbar sind.
+ */
+export const ganzesErgebnis = (block: string, bericht: string): string => `${block}\n\n${bericht}\n`;
+
+/**
+ * Zeilen des Ergebnisses, die zuerst zu sehen sind (#1452): bis einschließlich „RAM …“ (Überschrift, Version und
+ * Image, Gerät, CPU, RAM). Fehlt die Zeile, die ersten sechs. Der Rest steht unter „Ganzes Ergebnis zeigen“.
+ */
+export function teileErgebnis(text: string): { kurz: string; rest: string } {
+  const zeilen = text.split('\n');
+  const ram = zeilen.findIndex((z) => z.startsWith('RAM:'));
+  const n = ram >= 0 ? ram + 1 : Math.min(6, zeilen.length);
+  return { kurz: zeilen.slice(0, n).join('\n'), rest: zeilen.slice(n).join('\n') };
 }
 
 /** Restdauer in Minuten (von–bis); null: gleich fertig. */

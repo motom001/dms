@@ -13,7 +13,6 @@ export function useLasttest() {
   const [beendet, setBeendet] = useState(false);
   /** Heruntergeladen (#697): gilt wie kopiert – dann sagt die Rückfrage beim Herunterfahren nichts vom Ergebnis. */
   const [gesichert, setGesichert] = useState(false);
-  const feld = useRef<HTMLTextAreaElement>(null);
   const senden = useRef<ReturnType<typeof setTimeout>>(undefined);
   /** Wann der Stand kam (Uhr des Browsers): Die Restdauer rechnet mit der Uhr des Servers weiter. */
   const geholt = useRef(0);
@@ -45,6 +44,6 @@ export function useLasttest() {
   }, []);
   return {
     ...{ stand, fehler, setFehler, geraet, setGeraet, speicher, setSpeicher, kopiert, setKopiert },
-    ...{ beendet, setBeendet, gesichert, setGesichert, feld, senden, geholt },
+    ...{ beendet, setBeendet, gesichert, setGesichert, senden, geholt },
   };
 }
