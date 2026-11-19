@@ -108,7 +108,7 @@ The first subject area with its own business logic in its subject folder (trial 
 | `versionen.ts` | `DokumentVersionen` (`dienst.dokumentVersionen`) | `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion`, `versionen`, `versionInhalt`, `beruehre` |
 | `anlagen.ts` | `DokumentAnlagen` (`dienst.dokumentAnlagen`) | Enclosures (#998): `liste`, `haengeAn` (“As enclosure to …”), `loese` (“Make it a document of its own”), `sortiere`, `benenne`, `alsAnlagen` (when splitting a post); going along is done by the repo (`verschiebeDokument`), `loescheDokument` and the bin |
 | `umwandeln.ts` | `DokumentUmwandlung` (`dienst.dokumentUmwandlung`) | converting files (#577): `nachFassung`, `umwandelPaketDa`, `setzeFassung`, `fassungVon`, `umwandlungStand` |
-| `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | archive version (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `archivStand` |
+| `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | archive version (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `seitenmasse` (#1445), `archivStand` |
 | `geschuetzte-pdf.ts` | `GeschuetztePdfs` (`dienst.geschuetztePdfs`) | protected PDFs (#827): `entsperreDokument`, `nachEntsperren`, `mitPdfSchutz` |
 | `fehlende-dateien.ts` | `FehlendeDateien` (`dienst.dateienFehlen`) | missing files (#877): `merkeFehlendeDatei`, `fehlendeDateien`, `dokumenteOhneDatei`, `pruefeVorhanden` |
 

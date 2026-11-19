@@ -452,6 +452,7 @@ async function rechne(doc: PDFDocument, plaene: Plan[], grau: boolean, qualitaet
   await schreibeWerkzeugDatei(ein, await mini.save());
   try {
     await starte('pdftoppm', [
+      '-cropbox',
       '-r',
       '72',
       '-jpeg',

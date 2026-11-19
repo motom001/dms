@@ -8,7 +8,7 @@ import { vorgaben } from '../../../shared/src/paketeinstellungen';
 import type { ArchivAblage, ArchivAnbindung, Archivfassung } from '../dateien/archivfassung';
 import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import { liesPdfA, textebeneWoerter } from '../pdf';
+import { liesPdfA, seitenGroessen, textebeneWoerter } from '../pdf';
 import { nichtEingebettet, pruefeSchriften } from '../dateien/ersatzschriften';
 import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
@@ -199,6 +199,7 @@ export class DokumentArchivfassung {
       lesefassung: async (sha) => (await this.umwandlung?.lies(sha)) ?? null,
       datei: (sha) => this.kern.liesGanz(sha),
       textebene: (pdf) => textebeneWoerter(pdf),
+      seitengroessen: (pdf) => seitenGroessen(pdf),
       liesPdfA: (pdf) => liesPdfA(pdf),
       notiere: async (d, paket, daten) => {
         const konto = [...this.paketKonten.entries()].find(([, p]) => p === paket)?.[0] ?? null;
@@ -265,6 +266,14 @@ export class DokumentArchivfassung {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     return this.archiv.wortpositionen(d, o);
+  }
+
+  /** Seitenzahl und Seitengrößen ohne Wörter (#1445, GET /api/dokumente/{id}/seitenmasse) – für die Mappe. */
+  async seitenmasse(id: string, o: { fassung?: 'archiv' } = {}) {
+    if (!this.archiv) throw new Fachfehler(404, t('pakete.archiv.aus'));
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
+    return this.archiv.seitenmasse(d, o);
   }
 
   /** Werkbank → Texterkennung → Archivfassung (#631). */

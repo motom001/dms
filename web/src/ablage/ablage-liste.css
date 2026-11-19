@@ -79,7 +79,8 @@
 .dokansicht iframe { display: block; width: 100%; height: min(72vh, 760px); border: 0; background: var(--papier); }
 /* Dokumentliste (#1211): Kopf der Anzeige mit „PDF/A · Original“ und „In neuem Tab“, Satz statt Vorschau, „Über dieses
    Dokument“ darunter; Infozeile und Zustand in der Zeile. */
-.dokansicht img { max-height: min(72vh, 760px); object-fit: contain; }
+/* Nur Bilder, die der Browser direkt zeigt – nicht die Seiten des Seitenbetrachters (#1486). */
+.dokansicht > img { max-height: min(72vh, 760px); object-fit: contain; }
 .dokansicht-tab { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
 .dokansicht-leer { padding: 18px 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; background: var(--flaeche); }
 .dokansicht-leer p { margin: 0; }
@@ -96,7 +97,7 @@
 .dokleiste-alle { display: inline-flex; align-items: center; gap: 6px; }
 .dokzeile > .zeilenaktionen { align-items: center; }
 .dokname-knopf { text-align: left; overflow-wrap: anywhere; white-space: normal; }
-.dokansicht img { display: block; max-width: 100%; margin: 0 auto; }
+.dokansicht > img { display: block; max-width: 100%; margin: 0 auto; }
 
 .dokumentliste li.neu { background: var(--gruen-zart); }
 .dokumentliste li.weg .dateiname, .dokumentliste li.weg .dokname > :first-child { text-decoration: line-through; color: var(--leise); }

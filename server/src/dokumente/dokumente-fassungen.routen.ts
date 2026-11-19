@@ -136,5 +136,15 @@ export function dokumenteFassungenRouten(k: RoutenKontext): Route[] {
         return ok(await dienst.dokumentArchiv.wortpositionen(a.params.id, a.query.fassung === 'archiv' ? { fassung: 'archiv' } : {}));
       },
     },
+    // Seitenbetrachter der Mappe (#1445): nur Seitenzahl und Seitengrößen, ohne Wörter – Rechte wie die Wortpositionen.
+    {
+      methode: 'GET',
+      pfad: '/api/dokumente/:id/seitenmasse',
+      zugang: 'angemeldet',
+      handler: async (a) => {
+        await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
+        return ok(await dienst.dokumentArchiv.seitenmasse(a.params.id, a.query.fassung === 'archiv' ? { fassung: 'archiv' } : {}));
+      },
+    },
   ];
 }

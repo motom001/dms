@@ -126,6 +126,13 @@ export const dokumenteApi = {
       'GET',
       `/api/dokumente/${id}/wortpositionen${archiv ? '?fassung=archiv' : ''}`,
     ),
+  /** Nur Seitenzahl und Seitengrößen (#1445) – für den Seitenbetrachter der Mappe, ohne die Wörter. */
+  seitenmasse: (id: string, archiv = false) =>
+    anfrage<{
+      quelle: 'original' | 'lesefassung' | 'archiv';
+      mime: string;
+      seiten: Array<{ seite: number; breite?: number; hoehe?: number }>;
+    }>('GET', `/api/dokumente/${id}/seitenmasse${archiv ? '?fassung=archiv' : ''}`),
   /** Mehrere Mappen per E-Mail (#151). */
   /* Stempel beim Weitergeben (#394) */
   stempelVorlagen: () => anfrage<StempelVorlage[]>('GET', '/api/stempel/vorlagen'),
