@@ -13,6 +13,7 @@ import { DOKS_MAX } from './hilfen';
 import { MitteDokumente, MitteKopf } from './Mitte';
 import { usePostWege } from './post-wege';
 import { Rechts } from './Rechts';
+import { GelesenVorschau, NeuesDokument, QuellenWahl, useVerknuepfteDokumente, type NurGelesen } from './quellen';
 import { NeuKopf } from './teile';
 import { useFolge, useReihe, useWohin } from './wohin';
 
@@ -43,6 +44,10 @@ export function Uebernehmen({
   const [dokId, setDokId] = useState(
     () => dokumentWunsch ?? [...mitText].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0]?.id ?? details.dokumente[0]?.id,
   );
+  // „Aus Dokument ausfüllen“ an einer Mappe (#1494): auch Dokumente verknüpfter Mappen, oder eine neue Datei nur gelesen.
+  const fremde = useVerknuepfteDokumente(details, typ, !post);
+  const [gelesen, setGelesen] = useState<NurGelesen | null>(null);
+  const alleDoks = useMemo(() => [...details.dokumente, ...fremde.flatMap((q) => q.dokumente)], [details.dokumente, fremde]);
   // Post: in der Reihenfolge, in der sie abgelegt wurden (Seite 1 zuerst) – „Ab hier abtrennen“ meint die folgenden.
   // Anlagen (#998) stehen eingeklappt hinter ihrem Hauptdokument; Erkennung, Klassifizieren und KI lesen sie nie.
   // Eingangsreihenfolge (#999): bei einer E-Mail so, wie die Anhänge in ihr stehen.
@@ -51,8 +56,10 @@ export function Uebernehmen({
     () =>
       post
         ? gruppiere(eingangsreihenfolge(details.dokumente)).flatMap((g) => [g.haupt, ...g.anlagen])
-        : details.dokumente.filter((x) => x.id === dokId),
-    [post, details.dokumente, dokId],
+        : gelesen
+          ? []
+          : alleDoks.filter((x) => x.id === dokId),
+    [post, details.dokumente, alleDoks, dokId, gelesen],
   );
   const erkennDoks = nurHauptdokumente(doks)
     .filter((x) => x.ocr?.stand === 'fertig')
@@ -70,7 +77,12 @@ export function Uebernehmen({
   const ziele = useMemo(() => d.typen.filter((x) => kannAusPost(x) && darfErstellen(x)), [d.typen]);
   const { klass, zielId, setZielId, setGewaehlt } = useKlassifizierung(post, typ, erkennKey, ziele);
   const zielTyp = zielId ? d.typ(zielId) : undefined;
-  const erkannt = useErkannt(zielTyp, erkennKey, post, m.id);
+  const erkanntDok = useErkannt(zielTyp, erkennKey, post, m.id);
+  // Nur gelesen (#1494): Die Vorschläge der Datei stehen rechts, ohne Rahmen im Dokument.
+  const erkannt = useMemo(
+    () => (gelesen ? { typId: typ.id, vorschlaege: gelesen.r, abgleich: null } : erkanntDok),
+    [gelesen, erkanntDok, typ.id],
+  );
   const { woerter, dokKey } = useWoerter(doks);
   const vorschlagStart = useVorschlagStart(zielTyp, erkannt, post, m.werte);
   const marken = useMarken(zielTyp, vorschlagStart, erkannt, woerter, doks);
@@ -103,7 +115,28 @@ export function Uebernehmen({
       <Dreiteilung ort="uebernehmen" ebene="uebernehmen" offen={m.id}>
         {links}
         <section className="spalte liste ue-mitte" aria-label={t('ablage.uebernehmen.dokument')} data-anker="uebernehmen.dokument">
-          <MitteKopf post={post} m={m} sicht={sicht} reihe={reihe} mitText={mitText} dokId={dokId} setDokId={setDokId} />
+          <MitteKopf
+            post={post}
+            m={m}
+            sicht={sicht}
+            reihe={reihe}
+            wahl={
+              <>
+                <QuellenWahl
+                  eigene={mitText}
+                  fremde={fremde}
+                  dokId={gelesen ? undefined : dokId}
+                  setDokId={(id) => {
+                    setGelesen(null);
+                    setDokId(id);
+                  }}
+                />
+                <NeuesDokument details={details} typ={typ} neuLaden={neuLaden} gespeichert={setDokId} gelesen={setGelesen} />
+              </>
+            }
+          />
+          {gelesen && <GelesenVorschau x={gelesen} />}
+          {!post && !gelesen && !doks.length && <p className="leise">{t('ablage.uebernehmen.quelle-hinweis')}</p>}
           <MitteDokumente
             post={post}
             doks={doks}

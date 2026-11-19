@@ -85,12 +85,22 @@ function laden(k: Kern, x: Dokument, g: Gruppen): Punkt[] {
       },
     ];
   if (k.stempelPflicht) return [];
+  // Verständlich beschriftet (#1487): „Als PDF“ und das Original mit seiner Art – „Original-E-Mail (.eml)“.
   if (a && !a.imOriginal)
     return [
-      punkt('pdfa', t('ablage.dokumente.laden.pdfa'), archivfassungUrl(x.id, true), t('volltext.archiv.laden.archiv.titel')),
-      punkt('original', t('ablage.dokumente.laden.original'), dokumentUrl(x.id, true), t('volltext.archiv.laden.original.titel')),
+      punkt('pdfa', t('ablage.dokumente.laden.als-pdf'), archivfassungUrl(x.id, true), t('volltext.archiv.laden.archiv.titel')),
+      punkt('original', originalText(x), dokumentUrl(x.id, true), t('volltext.archiv.laden.original.titel')),
     ];
   return [punkt('original', t('ablage.dokumente.herunterladen'), dokumentUrl(x.id, true))];
+}
+
+/** „Original-E-Mail (.eml)“ bzw. „Original (.docx)“ – ohne Endung nur „Original“. */
+function originalText(x: Dokument): string {
+  if (x.originalEmail) return t('ablage.dokumente.laden.original-email');
+  const endung = /\.([a-z0-9]{1,8})$/i.exec(x.name)?.[1];
+  return endung
+    ? t('ablage.dokumente.laden.original-endung', { endung: `.${endung.toLowerCase()}` })
+    : t('ablage.dokumente.laden.original');
 }
 
 function mitnehmen(k: Kern, x: Dokument, z: Zeilenlage, g: Gruppen): Punkt[] {

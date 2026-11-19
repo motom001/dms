@@ -168,6 +168,10 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 .dokzeile > .dokname { flex: 1; }
 /* Name nicht zu einem Streifen zerquetschen: Reichen die Aktionen nicht daneben, rutschen sie unter den Namen (#393). */
 .dokzeile > .dokname { min-width: min(13em, 100%); flex-basis: 13em; }
+/* Anlage (#1487): wie ein Dokument, ohne Einrückung; statt des Wahlhakens ein gleich breiter Platz, darüber „Anlage zu …“. */
+.dokzeile > .wahlplatz { flex: none; width: 24px; }
+@media (pointer: coarse) { .dokzeile > .wahlplatz { width: 44px; } }
+.dokumentliste li.anlagezeile { gap: 2px; }
 .dokumentliste li.klickbar { cursor: pointer; }
 .dokumentliste li.klickbar:hover { background: var(--senke); }
 .dokumentliste li.klickbar.an, .dokumentliste li.an:hover { background: var(--akzent-zart); }

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { typName } from '../../../../shared/src/beschriftung';
 import type { Dokument, Mappe } from '../../../../shared/src/model';
 import type { Leerseiten } from '../../../../shared/src/leerseiten';
-import { Feld, Knopf } from '../../bausteine';
+import { Knopf } from '../../bausteine';
 import { useDaten } from '../../daten';
 import { Hilfe } from '../../Hilfe';
 import { geheZu, Link } from '../../ort';
@@ -28,23 +28,22 @@ export interface BlattLage {
   herunterladen: boolean;
 }
 
-/** Kopf der Mitte: bei Post Titel und Blättern, an einer Mappe „Zurück zur Mappe“ und die Wahl des Dokuments. */
+/**
+ * Kopf der Mitte: bei Post Titel und Blättern, an einer Mappe „Zurück zur Mappe“ und die Wahl des Dokuments – aus
+ * dieser Mappe, aus verknüpften Mappen oder neu hochgeladen (#1494, quellen.tsx).
+ */
 export function MitteKopf({
   post,
   m,
   sicht,
   reihe,
-  mitText,
-  dokId,
-  setDokId,
+  wahl,
 }: {
   post: boolean;
   m: Mappe;
   sicht: string;
   reihe: ReturnType<typeof useReihe>;
-  mitText: Dokument[];
-  dokId: string | undefined;
-  setDokId(id: string): void;
+  wahl: ReactNode;
 }) {
   const { pos, np } = reihe;
   const blaettern = (nach: number) => (reihe.reihe && np ? () => geheZu(`/ablage/${np}/${reihe.reihe![nach]}/uebernehmen`) : undefined);
@@ -64,19 +63,7 @@ export function MitteKopf({
           <Link to={`/ablage/${sicht}/${m.id}`} className="verweis ue-zurueck">
             <Symbol name="pfeil-links" /> {t('ablage.uebernehmen.zurueck-zur-mappe')}
           </Link>
-          {mitText.length > 1 && (
-            <div className="klein ue-dokwahl">
-              <Feld beschriftung={t('ablage.uebernehmen.dokument')} beschriftungVerbergen>
-                <select value={dokId} onChange={(e) => setDokId(e.target.value)}>
-                  {mitText.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </Feld>
-            </div>
-          )}
+          {wahl}
           <Hilfe ort="post.zuordnen" />
         </>
       )}
@@ -125,7 +112,7 @@ export function MitteDokumente({
       <p className={`ue-meldung klein ${meldung?.art ?? ''}`} role="status" aria-live="polite">
         {meldung?.text ?? ''}
       </p>
-      {!doks.length && <p className="leise">{t('ablage.uebernehmen.keine-dokumente')}</p>}
+      {!doks.length && post && <p className="leise">{t('ablage.uebernehmen.keine-dokumente')}</p>}
       {doks.map((x, i) =>
         x.anlageZu ? (
           // Anlage (#998): eingeklappt „Anlage 1 · HU/AU-Protokoll · 2 Seiten“; ein Klick zeigt sie.

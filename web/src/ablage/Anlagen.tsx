@@ -1,15 +1,15 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { anlageText } from '../../../shared/src/anlagen';
 import type { Dokument } from '../../../shared/src/model';
 import { dokumenteApi } from '../api/dokumente';
-import { Etikett, Feld, HakenFeld, Knopf } from '../bausteine';
+import { Etikett, Feld, HakenFeld, Knopf, type MenuePunkt } from '../bausteine';
 import { t } from '../sprache';
 import s from './Anlagen.module.css';
 
 /**
- * Anlagen (#998) in der Liste der Dokumente: das Kennzeichen „Anlage“, die eingeklappte Zeile unter dem Hauptdokument
- * („Anlage 1 · HU/AU-Protokoll · 2 Seiten“, ein Klick zeigt sie in der Vorschau), „Als Anlage an … hängen“,
- * „Zum eigenen Dokument machen“, umbenennen, nach oben – und „mit Anlagen?“ beim Herunterladen (Vorgabe ja).
+ * Anlagen (#998) in der Liste der Dokumente: das Kennzeichen „Anlage“, die Zeile „Anlage zu …“ unter dem Hauptdokument
+ * (#1487), „Als Anlage an … hängen“, „Zum eigenen Dokument machen“, umbenennen, nach oben – und „mit Anlagen?“ beim
+ * Herunterladen (Vorgabe ja).
  * Rechte wie beim Hauptdokument: Wer die Mappe bearbeiten darf, ändert Anlagen; herunterladen braucht das Exportrecht.
  */
 
@@ -33,121 +33,99 @@ export function anlageZeilentext(a: Dokument): string {
 }
 
 /**
- * Eingeklappte Zeile einer Anlage unter ihrem Hauptdokument. `auf` und `umschalten` teilen sich die Vorschau mit den
- * übrigen Dokumenten (eine offen); `vorschau` ist die Anzeige darunter, `herunterladen` der Weg zum Mitnehmen.
+ * Anlage am Dokument (#1487): Die Zeile steht wie ein Dokument in der Liste, darüber „Anlage zu „…““ – so wirkt sie nicht
+ * wie ein Darstellungsfehler. Was nur eine Anlage kann (nach oben, umbenennen, zum eigenen Dokument machen), steht im
+ * Menü „⋯“ unter „Ordnen“, neben allem, was auch das Dokument kann (dokumente/Zeile.tsx).
  */
-export function AnlageZeile({
+export function AnlageZu({ haupt }: { haupt: Pick<Dokument, 'name'> }) {
+  return <p className={`${s.zu} leise klein`}>{t('ablage.anlagen.anlage-zu', { name: haupt.name })}</p>;
+}
+
+/** Die Punkte, die nur eine Anlage hat (#1487): nach oben, umbenennen, zum eigenen Dokument machen. */
+export function anlagePunkte(
+  a: Dokument,
+  haupt: Dokument,
+  o: { bearbeitbar: boolean; erste: boolean; gruppe: string; umbenennen(): void; fertig(meldung?: string): void | Promise<void> },
+): MenuePunkt[] {
+  if (!o.bearbeitbar) return [];
+  return [
+    ...(!o.erste
+      ? [
+          {
+            key: 'anlage-oben',
+            gruppe: o.gruppe,
+            symbol: 'sortiert-auf' as const,
+            inhalt: t('ablage.anlagen.nach-oben'),
+            titel: t('ablage.anlagen.nach-oben-titel'),
+            tu: async () => {
+              await dokumenteApi.anlagenSortieren(haupt.id, nachOben(await dokumenteApi.anlagen(haupt.id), a.id));
+              await o.fertig();
+            },
+          },
+        ]
+      : []),
+    { key: 'anlage-name', gruppe: o.gruppe, symbol: 'notiz', inhalt: t('ablage.anlagen.umbenennen'), tu: o.umbenennen },
+    {
+      key: 'anlage-loesen',
+      gruppe: o.gruppe,
+      symbol: 'bezug',
+      inhalt: t('ablage.anlagen.loesen'),
+      titel: t('ablage.anlagen.loesen-titel'),
+      tu: async () => {
+        await dokumenteApi.anlageLoesen(haupt.id, a.id);
+        await o.fertig(t('ablage.anlagen.geloest', { name: a.name }));
+      },
+    },
+  ];
+}
+
+/** Anlage umbenennen (#998): Name im Feld, Speichern und Abbrechen. */
+export function AnlageUmbenennen({
   a,
   haupt,
-  auf,
-  umschalten,
-  vorschau,
-  herunterladen,
-  bearbeitbar,
-  weg,
-  erste,
+  schliessen,
   fertig,
 }: {
   a: Dokument;
   haupt: Dokument;
-  auf: boolean;
-  umschalten?: () => void;
-  vorschau?: ReactNode;
-  herunterladen?: ReactNode;
-  bearbeitbar: boolean;
-  weg: boolean;
-  erste: boolean;
+  schliessen(): void;
   fertig(meldung?: string): void | Promise<void>;
 }) {
-  const [name, setName] = useState<string | null>(null);
+  const [name, setName] = useState(a.name);
   const [fehler, setFehler] = useState<string>();
   async function benenne() {
-    if (name === null) return;
     setFehler(undefined);
     try {
       await dokumenteApi.anlageUmbenennen(haupt.id, a.id, name);
-      setName(null);
+      schliessen();
       await fertig();
     } catch (x) {
       setFehler((x as Error).message);
     }
   }
   return (
-    <li className={`${s.zeile} ${auf ? 'an' : ''} ${weg ? 'weg' : ''}`} data-anlage={a.anlageNr ?? undefined}>
-      <div className={s.kopf}>
-        {umschalten && !weg ? (
-          <Knopf className={s.titel} aria-expanded={auf} onClick={umschalten}>
-            {anlageZeilentext(a)}
-          </Knopf>
-        ) : (
-          <span className={s.titel}>{anlageZeilentext(a)}</span>
-        )}
-        <AnlageMarke d={a} />
-        {weg && <span className="leise klein">{t('ablage.anlagen.geht-mit')}</span>}
-        {!weg && (
-          <span className={`${s.aktionen} klein`}>
-            {herunterladen}
-            {bearbeitbar && !erste && (
-              <Knopf
-                groesse="klein"
-                title={t('ablage.anlagen.nach-oben-titel')}
-                onClick={async () => {
-                  await dokumenteApi.anlagenSortieren(haupt.id, nachOben(await dokumenteApi.anlagen(haupt.id), a.id));
-                  await fertig();
-                }}>
-                {t('ablage.anlagen.nach-oben')}
-              </Knopf>
-            )}
-            {bearbeitbar && name === null && (
-              <Knopf groesse="klein" onClick={() => setName(a.name)}>
-                {t('ablage.anlagen.umbenennen')}
-              </Knopf>
-            )}
-            {bearbeitbar && (
-              <Knopf
-                groesse="klein"
-                title={t('ablage.anlagen.loesen-titel')}
-                onClick={async () => {
-                  await dokumenteApi.anlageLoesen(haupt.id, a.id);
-                  await fertig(t('ablage.anlagen.geloest', { name: a.name }));
-                }}>
-                {t('ablage.anlagen.loesen')}
-              </Knopf>
-            )}
-          </span>
-        )}
-      </div>
-      {name !== null && (
-        <div className={s.form}>
-          <Feld beschriftung={t('ablage.anlagen.name')} fehler={fehler}>
-            <input
-              value={name}
-              maxLength={200}
-              autoFocus
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void benenne();
-                }
-              }}
-            />
-          </Feld>
-          <Knopf art="haupt" groesse="klein" gesperrt={!name.trim()} onClick={benenne}>
-            {t('ablage.anlagen.speichern')}
-          </Knopf>
-          <Knopf
-            groesse="klein"
-            onClick={() => {
-              setName(null);
-              setFehler(undefined);
-            }}>
-            {t('ablage.anlagen.abbrechen')}
-          </Knopf>
-        </div>
-      )}
-      {auf && vorschau}
-    </li>
+    <div className={s.form}>
+      <Feld beschriftung={t('ablage.anlagen.name')} fehler={fehler}>
+        <input
+          value={name}
+          maxLength={200}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void benenne();
+            }
+          }}
+        />
+      </Feld>
+      <Knopf art="haupt" groesse="klein" gesperrt={!name.trim()} onClick={benenne}>
+        {t('ablage.anlagen.speichern')}
+      </Knopf>
+      <Knopf groesse="klein" onClick={schliessen}>
+        {t('ablage.anlagen.abbrechen')}
+      </Knopf>
+    </div>
   );
 }
 
