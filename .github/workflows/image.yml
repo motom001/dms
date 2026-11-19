@@ -235,20 +235,110 @@ jobs:
           retention-days: 7
 
 
+  # Rauchtests mit zwei Prozessen (QS-Runde 11/2026): Seit #1309 nimmt Ablago ohne DMS_PROZESSE ab 4 Kernen und 8 GB
+  # zwei Prozesse – im Alltag also oft zwei, im vollen Lauf oben bleibt es für vergleichbare Ergebnisse bei einem. Hier
+  # läuft eine schnelle Teilmenge (web/rauchtest/zwei-prozesse.mjs: Einrichtung, Start und Suche, Werkbank, Post,
+  # Erwähnen; etwa eine Minute) gegen ein Ablago mit DMS_PROZESSE=2. Eigener Job parallel zu „rauchtests“, damit die
+  # Dauer der CI gleich bleibt: Er braucht mit Bau etwa 5 Minuten, der volle Lauf über 20.
+  rauchtests-zwei-prozesse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dms
+          POSTGRES_PASSWORD: dms
+          POSTGRES_DB: dms_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dms -d dms_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+      - run: npm ci --no-audit --no-fund
+      # Wie im Job „rauchtests“: erst ohne „apt-get update“ (#905).
+      - name: poppler und qpdf installieren
+        run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
+      - name: Bauen
+        run: npm run build
+        env:
+          VITE_MUSTER: '1'
+      - name: Ablago mit zwei Prozessen starten
+        run: |
+          mkdir -p "$RUNNER_TEMP/rauchtest-eingang"
+          nohup node server/dist/index.js > "$RUNNER_TEMP/rauchtest-dms.log" 2>&1 &
+        env:
+          DMS_DATENWURZEL: ${{ runner.temp }}/rauchtest-daten
+          DMS_EINGANG: ${{ runner.temp }}/rauchtest-eingang
+          PORT: '3000'
+          DMS_VERSION: rauchtest
+          DMS_PROZESSE: '2'
+      - name: Browser aus dem Zwischenspeicher
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('web/rauchtest/package-lock.json') }}-${{ runner.os }}-${{ runner.arch }}-chromium
+      - name: Playwright für die Rauchtests installieren
+        working-directory: web/rauchtest
+        shell: bash
+        run: |
+          npm ci --no-audit --no-fund
+          timeout 300 npx playwright install chromium || { echo "::warning::Download von Chromium hing oder scheiterte – zweiter Versuch"; timeout 300 npx playwright install chromium; }
+          if node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())"; then exit 0; fi
+          echo "::notice::Chromium startet nicht – Bibliotheken per apt nachinstallieren"
+          bash "$GITHUB_WORKSPACE/.github/werkzeuge/apt-spiegel.sh"
+          for versuch in 1 2; do
+            timeout 300 npx playwright install-deps chromium && exit 0
+            [ "$versuch" = 2 ] && exit 1
+            echo "::warning::Installation der Bibliotheken hing oder scheiterte – zweiter Versuch"
+            sudo pkill -x apt-get || true; sudo pkill -x dpkg || true; sleep 5
+            sudo dpkg --configure -a || true
+          done
+      - name: Rauchtests mit zwei Prozessen
+        shell: bash
+        run: |
+          set -o pipefail
+          node web/rauchtest/zwei-prozesse.mjs "$RUNNER_TEMP/rauchtest-fehler" 2>&1 | tee "$RUNNER_TEMP/rauchtest.log"
+        env:
+          DMS_URL: http://localhost:3000
+          DMS_DATENWURZEL: ${{ runner.temp }}/rauchtest-daten
+          DB_HOST: localhost
+          DB_PASSWORT: dms
+          DB_NAME: dms_rauchtest
+      - name: Fehler der Rauchtests melden
+        if: failure()
+        shell: bash
+        run: |
+          grep -n -A12 "^not ok" "$RUNNER_TEMP/rauchtest.log" 2>/dev/null | head -80 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=Rauchtests (zwei Prozesse)::/'; echo
+          grep -E "ERROR|WARN" "$RUNNER_TEMP/rauchtest-dms.log" 2>/dev/null | tail -n 30 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=Ablago-Protokoll (zwei Prozesse)::/'; echo
+      - name: Bilder der Rauchtests hochladen
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rauchtest-fehler-zwei-prozesse
+          path: ${{ runner.temp }}/rauchtest-fehler
+          if-no-files-found: ignore
+          retention-days: 7
+
   # Sammel-Job (#1056): Der Name „pruefen“ ist Pflichtprüfung im Ruleset „main schützen“, und „version“/„image“ warten
-  # auf ihn. Grün nur, wenn alle Teile der Tests und die Rauchtests grün sind.
+  # auf ihn. Grün nur, wenn alle Teile der Tests und die Rauchtests (auch mit zwei Prozessen) grün sind.
   pruefen:
     runs-on: ubuntu-latest
-    needs: [tests, rauchtests]
+    needs: [tests, rauchtests, rauchtests-zwei-prozesse]
     if: always()
     steps:
       - name: Alle Teile grün?
         env:
           TESTS: ${{ needs.tests.result }}
           RAUCHTESTS: ${{ needs.rauchtests.result }}
+          ZWEI: ${{ needs.rauchtests-zwei-prozesse.result }}
         run: |
-          echo "tests: $TESTS · rauchtests: $RAUCHTESTS"
-          [ "$TESTS" = success ] && [ "$RAUCHTESTS" = success ]
+          echo "tests: $TESTS · rauchtests: $RAUCHTESTS · zwei Prozesse: $ZWEI"
+          [ "$TESTS" = success ] && [ "$RAUCHTESTS" = success ] && [ "$ZWEI" = success ]
 
   # Stil und Abhängigkeiten (#899), parallel zu „pruefen“: Prettier (#1280), ESLint (mit Typinformation) und dependency-cruiser.
   # Bestand steht in eslint-suppressions.json bzw. .dependency-cruiser-known-violations.json und meldet sich nicht;
