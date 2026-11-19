@@ -509,6 +509,28 @@ Gesamtbetrag 1.190,00 €`;
     assert.equal(e.vorschlaege.von.wert, x.garten.id);
   });
 
+  it('Rechnung eines Shops mit Kundenname und Lieferadresse: „an“ bleibt leer, nie der Rechnungssteller (#1485)', async () => {
+    const x = await aufbau();
+    // Der Shop ist eben erst angelegt worden (aus dem Feld „von“ heraus).
+    const shop = await x.d.mappen.legeMappeAn({ typId: x.org.id, werte: { name: 'Elektro Blitz GmbH' } }, x.lena.id);
+    const kopf = 'Elektro Blitz GmbH · Hauptstraße 7 · 12345 Musterstadt';
+    const anschrift = 'Lena Muster\nLindenweg 4\n01234 Beispielort';
+    const rest = 'Rechnung Nr. EB-2026-1234\nRechnungsdatum 12.11.2026\nGesamtbetrag 89,90 €';
+    for (const [was, text] of [
+      ['Lieferadresse unter dem Kopf', `${kopf}\n${anschrift}\nLieferadresse: Lena Muster · Lindenweg 4 · 01234 Beispielort\n${rest}`],
+      ['Lieferadresse ganz oben', `Lieferadresse: Lena Muster · Lindenweg 4 · 01234 Beispielort\n${kopf}\n${anschrift}\n${rest}`],
+      [
+        'Rechnungs- und Lieferanschrift',
+        `Rechnungsanschrift Lena Muster | Lindenweg 4 | 01234 Beispielort\nLieferanschrift: Lena Muster - Lindenweg 4 - 01234 Beispielort\n${kopf}\n${rest}`,
+      ],
+    ]) {
+      const r = await x.d.erkennung.fuerTyp(x.rechnung.id, { text }, await x.z());
+      assert.equal(r.vorschlaege.von?.wert, shop.id, was);
+      assert.equal(r.vorschlaege.von?.hinweis, undefined, `${was}: nicht ausgehend`);
+      assert.equal(r.vorschlaege.an, undefined, `${was}: „an“ bleibt leer`);
+    }
+  });
+
   it('Post: eigene Organisation nie Absender; ausgehend nur als Hinweis, nie automatisch zugeordnet', async () => {
     const x = await aufbau();
     await x.d.eingangskanaele.postTyp();

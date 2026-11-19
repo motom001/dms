@@ -144,9 +144,11 @@ function useAusDokument() {
   // Nach dem Speichern (#1043): Positionen der E-Rechnung anlegen, Mappen, die dazugehören, verknüpfen – abwählbar.
   const [adPositionen, setAdPositionen] = useState<(NonNullable<TypVorschlaege['positionen']> & { an: boolean }) | null>(null);
   const [adDazu, setAdDazu] = useState<Array<NonNullable<TypVorschlaege['dazu']>[number] & { an: boolean }>>([]);
+  // Hier angelegte Mappen (#1485): Id → Feld, aus dem heraus sie angelegt wurde; spätere Vorschläge nur für dieses Feld.
+  const angelegtAus = useRef(new Map<string, string>());
   return {
     ...{ adOffen, setAdOffen, vorschlaege, setVorschlaege, adNeu, setAdNeu, adMeldung, setAdMeldung },
-    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu },
+    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu, angelegtAus },
   };
 }
 

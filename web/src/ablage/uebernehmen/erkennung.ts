@@ -148,12 +148,16 @@ function ausErkennung(erkannt: Erkannt): TypVorschlaege {
   };
 }
 
-/** Verweise aus dem Abgleich, wo die Erkennung nichts vorschlägt: der beste sichere Treffer, statt „neu anlegen“. */
+/**
+ * Verweise aus dem Abgleich, wo die Erkennung nichts vorschlägt: der beste sichere Treffer, statt „neu anlegen“. Nicht
+ * für „an“ (#1485): Bei einem eingehenden Beleg bleibt es leer („leer heißt wir“), bei einem ausgehenden schlägt es die
+ * Erkennung selbst vor. Der Abgleich kennt die Richtung nicht und fände in „an“ den Absender, der im Text steht.
+ */
 function verweiseDazu(r: TypVorschlaege, zielTyp: Mappentyp, abgleich: Erkannt['abgleich']) {
   for (const [k, liste] of Object.entries(abgleich?.verweise ?? {})) {
     const f = zielTyp.felder.find((x) => x.key === k);
     const best = liste[0];
-    if (!f || r.vorschlaege[k] || !best || best.unsicher) continue;
+    if (!f || k === 'an' || r.vorschlaege[k] || !best || best.unsicher) continue;
     r.vorschlaege[k] = {
       wert: f.mehrfach ? [best.mappeId] : best.mappeId,
       sicherheit: best.sicherheit,

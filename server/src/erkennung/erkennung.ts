@@ -248,6 +248,12 @@ export class Erkennung extends ErkennungPost {
         bezuege[v.mappe.id] = { titel: v.mappe.titel ?? '', typId: v.mappe.typId };
       } else if (v?.neu) neu[f.key] = v.neu;
     }
+    // „an“ nie dieselbe Mappe wie „von“ (#1485) – auch nicht aus einem Paket: Der Empfänger ist nie der Aussteller.
+    const gleich = (x: unknown) => JSON.stringify([(x as Vorschlag | undefined)?.wert].flat());
+    if (roh.an && roh.von && gleich(roh.an) === gleich(roh.von)) {
+      delete roh.an;
+      hinweise.delete('an');
+    }
     if (aussteller && !roh.von) hinweis = [hinweis, t('meldungen.erkennung.ausgehend-allgemein')].filter(Boolean).join(' ');
     // Jede Antwort – eingebaut oder vom Paket – geht durch die Prüfung gegen die Feldtypen; verworfen wird mit Grund protokolliert (ohne Werte).
     const { vorschlaege, verworfen } = pruefeVorschlaege(typ, roh, erlaubt);
