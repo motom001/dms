@@ -448,11 +448,13 @@ rauchtest(
     ).daten.dokument;
     const scan = (await api('GET', `/api/mappen/${brief.id}`, { cookie })).daten.dokumente.find((x) => x.name === 'Scan Werkstatt.pdf');
     await api('POST', `/api/dokumente/${scan.id}/anlagen`, { cookie, body: { dokument: hu.id } });
-    // An der Anlage selbst gibt es „Anlage ab hier“ nicht: Sie hat keine Seitenansicht (kein „⋯“), nur ihre eigenen Knöpfe.
+    // Die Anlage hat seit #1487 dasselbe Menü „⋯“ wie ein Dokument, mit „Zum eigenen Dokument machen“ – „Anlage ab hier“
+    // gibt es an ihr nicht (nur am Hauptdokument der Post).
     await s.goto(BASIS + `/ablage/eingang/${brief.id}?als=post`);
     await s.getByRole('tab', { name: /^Dokumente/ }).click();
-    await s.getByRole('button', { name: 'Zum eigenen Dokument machen' }).waitFor();
-    assert.equal(await s.getByRole('button', { name: 'Weitere Handlungen für HU-Protokoll.pdf' }).count(), 0);
+    await s.getByRole('button', { name: 'Weitere Handlungen für HU-Protokoll.pdf' }).click();
+    await s.getByRole('menuitem', { name: 'Zum eigenen Dokument machen' }).waitFor();
+    await s.keyboard.press('Escape');
     // Am Hauptdokument schon: die neue Anlage zählt hinter der bisherigen weiter.
     const ansicht = await seitenansicht(s, brief);
     const kacheln = ansicht.locator('.seitenraster .seite');

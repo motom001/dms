@@ -8,7 +8,7 @@ Unten rechts steht auf jeder Seite ein runder Knopf mit einer kleinen **Mappe mi
 - Ein kleiner **Punkt** am Knopf zeigt, dass ein neuer [Tipp des Tages](#tipps) da ist. Sobald du die Tipps angesehen hast, ist er weg.
 - Fährst du mit der Maus über den Knopf (oder steht der Tastaturfokus darauf), klappt die Lasche der Mappe kurz nach hinten und sie zwinkert – nur dann, ohne Ton. Ist auf deinem Gerät **Bewegung reduzieren** eingeschaltet, bewegt sich nichts.
 - **×** oben rechts oder **Esc** schließt das Fenster. Mit der Tastatur erreichst du den Knopf wie jeden anderen; beim Öffnen springt der Fokus ins Fenster, beim Schließen zurück auf den Knopf.
-- Am Handy öffnet sich das Fenster als **Blatt von unten** über die ganze Breite. Der Knopf hat dort unten einen eigenen Streifen und verdeckt weder Inhalt noch die Leiste mit **Speichern** – am großen Bildschirm ebenso, sobald eine solche Leiste da ist. In der Werkbank steht der Knopf am Handy oben in der Kopfzeile.
+- Am Handy öffnet sich das Fenster als **Blatt von unten** über die ganze Breite. Der Knopf hat dort unten einen eigenen Streifen und verdeckt weder Inhalt noch die Leiste mit **Speichern**. Am großen Bildschirm bleibt er fest unten rechts, die Seite rollt darunter vorbei; unter dem Inhalt ist Platz frei – nur rechts neben der Navigation, nicht unter ihr. Menüs klappen nach oben auf, wenn unten (samt dem Platz des Assistenten) kein Raum ist. In der Werkbank steht der Knopf am Handy oben in der Kopfzeile.
 
 ## Fragen: Frag deine Ablage { #frag-deine-ablage }
 
