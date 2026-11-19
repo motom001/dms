@@ -100,34 +100,43 @@ async function runde(kontext, ablauf, d, { nr, drossel, frist }) {
   let zeitueberschritten = false,
     dauer = frist,
     roh = { lange: [[0, frist]], ereignisse: [] };
+  // Aufräumen auch nach überschrittener Frist (Nachtrag zu #1339): Sonst bleibt z. B. ein Messbrief in „Neue Post“, und
+  // ein späterer Lauf auf derselben Datenbank lädt denselben Brief erneut hoch – Ablago erkennt die Dublette, der
+  // Schritt kommt nie an und läuft wieder in die Frist.
   try {
-    if (ablauf.vorbereiten) await mitFrist(ablauf.vorbereiten(s, d, nr), frist);
-    // Erst messen, wenn die Seite nach dem Vorbereiten ein Bild gemalt hat und frei ist (eine leere Seite malt nicht).
-    if (s.url() !== 'about:blank') {
+    try {
+      if (ablauf.vorbereiten) await mitFrist(ablauf.vorbereiten(s, d, nr), frist);
+      // Erst messen, wenn die Seite nach dem Vorbereiten ein Bild gemalt hat und frei ist (eine leere Seite malt nicht).
+      if (s.url() !== 'about:blank') {
+        await mitFrist(
+          s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))),
+          frist,
+        );
+        await s.evaluate(() => window.__messung?.leeren());
+      }
+      s.on('response', hoerer);
+      const t0 = performance.now();
+      await mitFrist(ablauf.schritt(s, d, nr), frist);
+      // Bedienbar: Das Ergebnis ist zu sehen, ein Bild ist gemalt und die Seite nimmt wieder Eingaben an.
       await mitFrist(
         s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))),
         frist,
       );
-      await s.evaluate(() => window.__messung?.leeren());
+      dauer = performance.now() - t0;
+      roh = await s.evaluate(() => window.__messung?.holen() ?? { lange: [], ereignisse: [] });
+    } catch (e) {
+      if (!(e instanceof Frist) && e?.name !== 'TimeoutError') throw e;
+      if (process.env.DEBUG_Q4) console.log(e);
+      zeitueberschritten = true;
     }
-    s.on('response', hoerer);
-    const t0 = performance.now();
-    await mitFrist(ablauf.schritt(s, d, nr), frist);
-    // Bedienbar: Das Ergebnis ist zu sehen, ein Bild ist gemalt und die Seite nimmt wieder Eingaben an.
-    await mitFrist(
-      s.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)))),
-      frist,
-    );
-    dauer = performance.now() - t0;
-    roh = await s.evaluate(() => window.__messung?.holen() ?? { lange: [], ereignisse: [] });
-  } catch (e) {
-    if (!(e instanceof Frist) && e?.name !== 'TimeoutError') throw e;
-    if (process.env.DEBUG_Q4) console.log(e);
-    zeitueberschritten = true;
+  } finally {
+    s.off('response', hoerer);
+    if (ablauf.aufraeumen)
+      await mitFrist(ablauf.aufraeumen(s, d, nr), frist).catch((e) =>
+        console.warn(`Aufräumen nach „${ablauf.name}“ gescheitert: ${e?.message ?? e}`),
+      );
   }
-  s.off('response', hoerer);
   const zeiten = await Promise.all(antworten);
-  if (!zeitueberschritten && ablauf.aufraeumen) await ablauf.aufraeumen(s, d, nr);
   await s.close().catch(() => {});
   return {
     ...rundeAuswerten({ dauer, ...roh }),
