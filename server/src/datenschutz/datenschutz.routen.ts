@@ -357,6 +357,9 @@ export function abrufRouten(k: RoutenKontext): Route[] {
         const ziel = auskunftZiel();
         const datei = await auskunftDatei(ziel, link.auskunftId).catch(() => null);
         if (!datei) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
+        // Bewusst schon beim Lesen gezählt, nicht erst nach der vollständigen Auslieferung: Sonst könnte jemand kurz vor
+        // dem Ende abbrechen und die Datei fast ganz beliebig oft holen, ohne dass das Limit greift. Gegenstück zu
+        // `Datei.ausgeliefert` bei der Auskunft-ZIP oben (#1461), die erst nach dem letzten Byte gelöscht wird.
         const nr = await dienst.auskunftZustellen.auskunftAbrufZaehlen(link.id);
         if (nr === null) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
         const { stand, pfad, groesse } = datei;

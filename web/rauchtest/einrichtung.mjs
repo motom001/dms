@@ -36,87 +36,115 @@ rauchtest(
     neustart: [/^\/api\/konto\/status$/, /^\/api\/gesundheit$/],
   },
   async (s, k) => {
-    await warteAufAblago();
-    await s.goto(BASIS + '/');
-    await s.getByRole('heading', { name: 'Sprache' }).waitFor();
-    await s.getByRole('button', { name: 'Weiter' }).click();
-    await s.getByLabel('Einrichtungscode').fill(await einrichtungscode());
-    await s.getByRole('button', { name: 'Weiter' }).click();
-    await s.getByRole('heading', { name: 'Datenbank', exact: true }).waitFor();
-    await s.getByRole('textbox', { name: /^Server/ }).fill(process.env.DB_HOST ?? 'localhost');
-    await s.getByRole('textbox', { name: /^Datenbank/ }).fill(process.env.DB_NAME ?? 'dms_rauchtest');
-    await s.getByRole('textbox', { name: /^Benutzer/ }).fill(process.env.DB_BENUTZER ?? 'dms');
-    await s.getByLabel(/^Passwort/).fill(process.env.DB_PASSWORT ?? 'dms');
-    await s.getByRole('button', { name: 'Verbindung prüfen' }).click();
-    // Eine leere Datenbank legt der Assistent auf Wunsch selbst an.
-    const anlegen = s.getByRole('button', { name: /^Datenbank „.*“ anlegen$/ });
-    const weiter = s.getByRole('button', { name: 'Übernehmen und weiter' });
-    await anlegen.or(weiter).first().waitFor();
-    if (await anlegen.isVisible()) await anlegen.click();
-    await weiter.click();
-    await s.getByRole('heading', { name: 'Neu einrichten oder wiederherstellen?' }).waitFor({ timeout: 90_000 });
-    await s.getByRole('button', { name: /^Neu einrichten/ }).click();
-    await s.getByLabel(/Name deiner Ablage/).fill('Familie Beispiel');
-    await s.getByRole('button', { name: 'Weiter' }).click();
-    await s.getByRole('heading', { name: 'Dein Konto' }).waitFor();
-    await s.getByLabel('Name', { exact: true }).fill(LENA.name);
-    await s.getByLabel(/E-Mail-Adresse/).fill(LENA.email);
-    await s.getByLabel('Passwort', { exact: true }).fill(LENA.passwort);
-    await s.getByLabel('Passwort wiederholen').fill(LENA.passwort);
-    await assistentAxe(s, 'Dein Konto');
-    await s.getByRole('button', { name: 'Weiter' }).click();
-    // Wofür nutzt du Ablago? (#1045) – Lena: zu Hause. Vorgewählt ist dann die Stufe Einsteiger (#987); die Rauchtests
-    // nehmen Haushalt, damit Mappentypen, Automatisierungen & Co. in der Leiste stehen.
-    await s.getByRole('heading', { name: 'Wofür nutzt du Ablago?' }).waitFor();
-    await s.getByRole('radio', { name: /^Für zu Hause/ }).check();
-    const stufen = s.getByRole('group', { name: 'Wie viel soll die Werkbank zeigen?' });
-    assert.ok(await stufen.getByRole('radio', { name: /^Einsteiger/ }).isChecked(), 'Vorgabe zu Hause: Einsteiger');
-    await stufen.getByRole('radio', { name: /^Haushalt/ }).check();
-    await assistentAxe(s, 'Nutzung');
-    await s.getByRole('button', { name: 'Weiter' }).click();
-    // Pakete: ohne Internet nur ein Hinweis – die Rauchtests brauchen keine Pakete.
-    await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
-    await s.getByRole('button', { name: 'Überspringen' }).click({ timeout: 30_000 });
-    await s.getByRole('heading', { name: 'Optionales' }).waitFor();
-    // Notfallkontakt (#1215): „+ Notfallkontakt“ klein, Entfernen leise mit Rückfrage – danach ist die Liste wieder leer.
-    const nk = s.locator('#notfallkontakte');
-    await nk.getByRole('button', { name: '+ Notfallkontakt' }).click();
-    await nk.getByLabel('Name', { exact: true }).fill('Markus Beispiel');
-    await nk.getByLabel('E-Mail', { exact: true }).fill('markus@example.org');
-    await nk.getByRole('button', { name: 'Übernehmen' }).click();
-    await nk.getByText('markus@example.org').waitFor();
-    await assistentAxe(s, 'Optionales');
-    await nk.getByRole('button', { name: 'Entfernen' }).click();
-    await s.getByRole('alertdialog').getByRole('button', { name: 'Entfernen' }).click();
-    await nk.getByText('markus@example.org').waitFor({ state: 'detached' });
-    await s.getByRole('button', { name: 'Weiter' }).click();
-    await s.getByRole('heading', { name: 'Zusammenfassung' }).waitFor();
-    await assistentAxe(s, 'Zusammenfassung');
-    await s.getByRole('button', { name: 'Jetzt einrichten' }).click();
-    await s.getByRole('heading', { name: /ist eingerichtet/ }).waitFor({ timeout: 60_000 });
-    const download = s.waitForEvent('download');
-    await s.getByRole('button', { name: 'Notfallblatt herunterladen' }).click();
-    await (await download).cancel().catch(() => {});
-    await s.getByText(/Notfallblatt heruntergeladen/).waitFor();
-    // Auf localhost bietet der Assistent auch den Passkey an (#811) – beides „Später“, hier die Zwei-Faktor-Anmeldung.
-    await s
-      .getByRole('region', { name: /Zwei-Faktor/ })
-      .getByRole('button', { name: 'Später' })
-      .click();
-    await s
-      .getByRole('region', { name: /Passkey/ })
-      .getByRole('button', { name: 'Jetzt hinzufügen' })
-      .waitFor();
-    await assistentAxe(s, 'Abschluss');
-    await s.getByRole('button', { name: 'Einrichtung abschließen' }).click();
-    await s.waitForURL(/\/werkbank/);
-    const sitzungscookie = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
-    assert.ok(sitzungscookie, 'Nach der Einrichtung keine Sitzung im Browser');
-    await vorbereiten(`${sitzungscookie.name}=${sitzungscookie.value}`);
-    bereitMelden();
-    assert.deepEqual(ASSISTENT_FUNDE, [], `axe meldet Verstöße im Assistenten (#1215):\n${ASSISTENT_FUNDE.join('\n')}`);
+    const verlauf = mitschreiben(s);
+    try {
+      await warteAufAblago();
+      await s.goto(BASIS + '/');
+      await s.getByRole('heading', { name: 'Sprache' }).waitFor();
+      await s.getByRole('button', { name: 'Weiter' }).click();
+      await s.getByLabel('Einrichtungscode').fill(await einrichtungscode());
+      await s.getByRole('button', { name: 'Weiter' }).click();
+      await s.getByRole('heading', { name: 'Datenbank', exact: true }).waitFor();
+      await s.getByRole('textbox', { name: /^Server/ }).fill(process.env.DB_HOST ?? 'localhost');
+      await s.getByRole('textbox', { name: /^Datenbank/ }).fill(process.env.DB_NAME ?? 'dms_rauchtest');
+      await s.getByRole('textbox', { name: /^Benutzer/ }).fill(process.env.DB_BENUTZER ?? 'dms');
+      await s.getByLabel(/^Passwort/).fill(process.env.DB_PASSWORT ?? 'dms');
+      await s.getByRole('button', { name: 'Verbindung prüfen' }).click();
+      // Eine leere Datenbank legt der Assistent auf Wunsch selbst an.
+      const anlegen = s.getByRole('button', { name: /^Datenbank „.*“ anlegen$/ });
+      const weiter = s.getByRole('button', { name: 'Übernehmen und weiter' });
+      await anlegen.or(weiter).first().waitFor();
+      if (await anlegen.isVisible()) await anlegen.click();
+      await weiter.click();
+      await s.getByRole('heading', { name: 'Neu einrichten oder wiederherstellen?' }).waitFor({ timeout: 90_000 });
+      await s.getByRole('button', { name: /^Neu einrichten/ }).click();
+      await s.getByLabel(/Name deiner Ablage/).fill('Familie Beispiel');
+      await s.getByRole('button', { name: 'Weiter' }).click();
+      await s.getByRole('heading', { name: 'Dein Konto' }).waitFor();
+      await s.getByLabel('Name', { exact: true }).fill(LENA.name);
+      await s.getByLabel(/E-Mail-Adresse/).fill(LENA.email);
+      await s.getByLabel('Passwort', { exact: true }).fill(LENA.passwort);
+      await s.getByLabel('Passwort wiederholen').fill(LENA.passwort);
+      await assistentAxe(s, 'Dein Konto');
+      await s.getByRole('button', { name: 'Weiter' }).click();
+      // Wofür nutzt du Ablago? (#1045) – Lena: zu Hause. Vorgewählt ist dann die Stufe Einsteiger (#987); die Rauchtests
+      // nehmen Haushalt, damit Mappentypen, Automatisierungen & Co. in der Leiste stehen.
+      await s.getByRole('heading', { name: 'Wofür nutzt du Ablago?' }).waitFor();
+      await s.getByRole('radio', { name: /^Für zu Hause/ }).check();
+      const stufen = s.getByRole('group', { name: 'Wie viel soll die Werkbank zeigen?' });
+      assert.ok(await stufen.getByRole('radio', { name: /^Einsteiger/ }).isChecked(), 'Vorgabe zu Hause: Einsteiger');
+      await stufen.getByRole('radio', { name: /^Haushalt/ }).check();
+      await assistentAxe(s, 'Nutzung');
+      await s.getByRole('button', { name: 'Weiter' }).click();
+      // Pakete: ohne Internet nur ein Hinweis – die Rauchtests brauchen keine Pakete.
+      await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
+      await s.getByRole('button', { name: 'Überspringen' }).click({ timeout: 30_000 });
+      await s.getByRole('heading', { name: 'Optionales' }).waitFor();
+      // Notfallkontakt (#1215): „+ Notfallkontakt“ klein, Entfernen leise mit Rückfrage – danach ist die Liste wieder leer.
+      const nk = s.locator('#notfallkontakte');
+      await nk.getByRole('button', { name: '+ Notfallkontakt' }).click();
+      await nk.getByLabel('Name', { exact: true }).fill('Markus Beispiel');
+      await nk.getByLabel('E-Mail', { exact: true }).fill('markus@example.org');
+      await nk.getByRole('button', { name: 'Übernehmen' }).click();
+      await nk.getByText('markus@example.org').waitFor();
+      await assistentAxe(s, 'Optionales');
+      await nk.getByRole('button', { name: 'Entfernen' }).click();
+      await s.getByRole('alertdialog').getByRole('button', { name: 'Entfernen' }).click();
+      await nk.getByText('markus@example.org').waitFor({ state: 'detached' });
+      await s.getByRole('button', { name: 'Weiter' }).click();
+      await s.getByRole('heading', { name: 'Zusammenfassung' }).waitFor();
+      await assistentAxe(s, 'Zusammenfassung');
+      await s.getByRole('button', { name: 'Jetzt einrichten' }).click();
+      await s.getByRole('heading', { name: /ist eingerichtet/ }).waitFor({ timeout: 60_000 });
+      const download = s.waitForEvent('download');
+      await s.getByRole('button', { name: 'Notfallblatt herunterladen' }).click();
+      await (await download).cancel().catch(() => {});
+      await s.getByText(/Notfallblatt heruntergeladen/).waitFor();
+      // Auf localhost bietet der Assistent auch den Passkey an (#811) – beides „Später“, hier die Zwei-Faktor-Anmeldung.
+      await s
+        .getByRole('region', { name: /Zwei-Faktor/ })
+        .getByRole('button', { name: 'Später' })
+        .click();
+      await s
+        .getByRole('region', { name: /Passkey/ })
+        .getByRole('button', { name: 'Jetzt hinzufügen' })
+        .waitFor();
+      await assistentAxe(s, 'Abschluss');
+      await s.getByRole('button', { name: 'Einrichtung abschließen' }).click();
+      await s.waitForURL(/\/werkbank/);
+      const sitzungscookie = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
+      assert.ok(sitzungscookie, 'Nach der Einrichtung keine Sitzung im Browser');
+      await vorbereiten(`${sitzungscookie.name}=${sitzungscookie.value}`);
+      bereitMelden();
+      assert.deepEqual(ASSISTENT_FUNDE, [], `axe meldet Verstöße im Assistenten (#1215):\n${ASSISTENT_FUNDE.join('\n')}`);
+    } catch (e) {
+      e.message += `\nVerlauf im Browser (QS-Runde 11/2026):\n${verlauf.join('\n')}`;
+      throw e;
+    }
   },
 );
+
+/**
+ * Verlauf im Browser für die Fehlermeldung (QS-Runde 11/2026): Seitenwechsel und Neuladen, Antworten der Schnittstelle
+ * (Stand und Zustand aus Gesundheit und Status gekürzt), Konsole. Nur bei einem Fehlschlag ausgegeben – der Fall
+ * scheiterte in der CI mit zwei Prozessen, lokal nicht.
+ */
+function mitschreiben(s) {
+  const t0 = Date.now();
+  const verlauf = [];
+  const merke = (text) => verlauf.push(`  ${String(Date.now() - t0).padStart(6)} ms ${text}`);
+  s.on('framenavigated', (f) => {
+    if (f === s.mainFrame()) merke(`Seite ${f.url()}`);
+  });
+  s.on('console', (m) => merke(`Konsole ${m.type()}: ${m.text().slice(0, 160)}`));
+  s.on('response', async (r) => {
+    const pfad = new URL(r.url()).pathname;
+    if (!pfad.startsWith('/api/') || pfad === '/api/sprache') return;
+    const kurz = /^\/api\/(gesundheit|konto\/status)$/.test(pfad) ? ` ${(await r.text().catch(() => '')).slice(0, 200)}` : '';
+    merke(`${r.status()} ${r.request().method()} ${pfad}${kurz}`);
+  });
+  return verlauf;
+}
 
 /**
  * Assistent aus Bausteinen (#1215): axe auf der Karte des Assistenten, hell und dunkel. Die Funde sammelt der Test und
