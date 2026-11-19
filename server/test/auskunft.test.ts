@@ -773,6 +773,11 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const deck = innen.find((x) => x.name.endsWith('/Deckblatt.pdf'))!;
       assert.equal(deck.daten.subarray(0, 5).toString(), '%PDF-');
       assert.ok(innen.some((x) => x.name.endsWith('/Mietvertrag.pdf')));
+      // Gelesen allein zählt nicht als heruntergeladen (QS-Runde 11/2026): erst, wenn der HTTP-Teil die Datei ganz
+      // ausgeliefert hat – hier ohne HTTP von Hand.
+      await new Promise((r) => setTimeout(r, 50));
+      assert.ok((await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body, 'noch da');
+      dl.datei!.ausgeliefert?.();
       await new Promise((r) => setTimeout(r, 50));
       await assert.rejects(
         rufe(admin, 'GET', '/api/werkbank/auskunft/:id/zip', { params: { id: stand.id } }),

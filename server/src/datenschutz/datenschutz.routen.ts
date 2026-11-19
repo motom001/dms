@@ -5,6 +5,7 @@
 import { Fachfehler } from '../grundlagen/fehler';
 import { oeffneStrom } from '../dateien/dateispeicher';
 import { mkdir } from 'node:fs/promises';
+import { Readable } from 'node:stream';
 import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
 import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../../shared/src/auskunft';
 import { loeschkonzept, luecken } from '../../../shared/src/loeschkonzept';
@@ -193,29 +194,31 @@ function auskunftRouten(k: RoutenKontext): Route[] {
       handler: async (a) => {
         const ziel = auskunftZiel();
         const { stand, pfad, groesse } = await auskunftDatei(ziel, a.params.id);
-        // Nach dem Herunterladen gelöscht (#396): erst, wenn die Datei ganz gelesen ist – außer, ein Abruf-Link
-        // gilt noch (#455): Dann bleibt sie, bis die Person sie abgerufen hat oder der Link abläuft.
-        const halten = await dienst.auskunftZustellen.auskunftLinkAktiv(stand.id);
-        const strom = await oeffneStrom(pfad);
-        strom.on('end', () => void dienst.datenschutzDienst.auskunftNotiz(stand, ich(a).id, 'download').catch(() => {}));
-        strom.on('end', () =>
-          halten
-            ? L.datenschutz.info('Auskunft heruntergeladen (bleibt für den Abruf-Link)', { mappeId: stand.mappeId, von: ich(a).email })
-            : void loescheAuskunft(ziel, stand.id).then(() =>
-                L.datenschutz.info('Auskunft heruntergeladen und gelöscht', { mappeId: stand.mappeId, von: ich(a).email }),
-              ),
-        );
-        // Personenbezogene Daten: nicht im Cache des Browsers ablegen (fremder oder gemeinsam genutzter Rechner).
-        return {
-          datei: {
-            inhalt: strom,
-            name: `${stand.name}.zip`,
-            mime: 'application/zip',
-            anzeigen: false,
-            groesse,
-            koepfe: { 'cache-control': 'no-store' },
-          },
+        // HEAD (QS-Runde 11/2026): nur die Köpfe – die Datei bleibt zu, nichts gilt als heruntergeladen.
+        const koepfe = {
+          name: `${stand.name}.zip`,
+          mime: 'application/zip',
+          anzeigen: false,
+          groesse,
+          koepfe: { 'cache-control': 'no-store' },
         };
+        if (a.nurKoepfe) return { datei: { ...koepfe, inhalt: Readable.from([]) } };
+        // Nach dem Herunterladen gelöscht (#396): erst, wenn die Datei ganz ausgeliefert ist (nicht schon, wenn sie
+        // gelesen ist, und nie bei einem Abbruch) – außer, ein Abruf-Link gilt noch (#455): Dann bleibt sie, bis die
+        // Person sie abgerufen hat oder der Link abläuft.
+        const halten = await dienst.auskunftZustellen.auskunftLinkAktiv(stand.id);
+        const ausgeliefert = () => {
+          void dienst.datenschutzDienst.auskunftNotiz(stand, ich(a).id, 'download').catch(() => {});
+          if (halten)
+            L.datenschutz.info('Auskunft heruntergeladen (bleibt für den Abruf-Link)', { mappeId: stand.mappeId, von: ich(a).email });
+          else
+            void loescheAuskunft(ziel, stand.id).then(
+              () => L.datenschutz.info('Auskunft heruntergeladen und gelöscht', { mappeId: stand.mappeId, von: ich(a).email }),
+              (e: unknown) => L.datenschutz.error('Auskunft nach dem Herunterladen nicht gelöscht', { fehler: (e as Error).message }),
+            );
+        };
+        // Personenbezogene Daten: nicht im Cache des Browsers ablegen (fremder oder gemeinsam genutzter Rechner).
+        return { datei: { ...koepfe, inhalt: await oeffneStrom(pfad), ausgeliefert } };
       },
     },
   ];
