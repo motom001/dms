@@ -23,10 +23,26 @@ The templates use the image tag **`:stabil`** (“stable”, #714). It only move
 | Our code (TypeScript, workflows) | CodeQL | every pull request, every push to `main` |
 | Libraries | Dependabot (alerts and updates), `npm audit` from severity "high" | every pull request, weekly |
 | Images `dms` and `dms-komplett` | Trivy: critical vulnerabilities with an available fix block the pull request | every pull request, every release, weekly rebuild |
+| Delivered images `:stabil` and `:latest` (both variants) | Grype as a second database independent of Trivy; plus a direct check of the versions of poppler, qpdf, Node.js and PostgreSQL against [NVD](https://nvd.nist.gov/), even if Alpine does not list the case yet | weekly (Wednesdays), workflow *Sicherheitsabgleich* |
 | Secrets (tokens, passwords) | Secret scanning with push protection | every push |
 | How the project works | [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/motom001/dms) | weekly, every push to `main` |
 
-Findings are listed under **Security** in this repository. Findings of the image scan that are knowingly accepted are listed with a reason in [`.trivyignore`](.trivyignore).
+Findings are listed under **Security** in this repository; only people with write access can see this list. Findings of the image scan that are knowingly accepted are listed with a reason in [`.trivyignore`](.trivyignore); the maintainer closes all others in the Security tab with a reason.
+
+## Responsibility and response times
+
+The **maintainer** (Thomas Meissner) is responsible. He reviews the findings in the Security tab after every weekly check and acknowledges confidential reports within **3 days**.
+
+Every finding is first assessed **for Ablago**: the severity of a component is the starting point, what matters is how Ablago uses it – for example whether a program processes files from outside. Then these deadlines apply (calendar days):
+
+| Severity for Ablago | Assessed within | Fix or mitigation within |
+| --- | --- | --- |
+| critical | 1 day | 3 days, with `sofort-stabil` |
+| high | 3 days | 14 days, with `sofort-stabil` if the vulnerability can be exploited in Ablago |
+| medium | 7 days | with the next `:stabil`, at the latest after 30 days |
+| low | 14 days | at the latest after 90 days, or knowingly accepted with a reason |
+
+If Alpine or the vendor has no fix yet, Ablago restricts the affected program or builds it itself with the fix. Details of an open vulnerability only become public with the fix; the release notes then name the CVE number.
 
 ## Verifying the origin of the images
 

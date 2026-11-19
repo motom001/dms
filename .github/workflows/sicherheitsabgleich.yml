@@ -1,0 +1,111 @@
+name: Sicherheitsabgleich
+
+# Ausgelieferte Images regelmäßig mit neuen Sicherheitsmeldungen abgleichen (#1417).
+#
+# Trivy prüft jedes Image beim Bau (image.yml). Hier kommt hinzu:
+#  1. die Images, die Betreiber wirklich bekommen – :stabil und :latest, beide Varianten –, auch zwischen zwei Bauten,
+#  2. eine zweite, von Trivy unabhängige Datenbank: Grype auf der Stückliste von Syft (dazu die in die Oberfläche
+#     gebündelten Bibliotheken aus der Stückliste des Releases),
+#  3. für poppler, qpdf, Node.js und PostgreSQL ein direkter Abgleich der Versionen mit NVD
+#     (upstream-abgleich.mjs) – auch dann, wenn die Alpine-Sicherheitsdatenbank den Fall noch nicht führt.
+#
+# Funde gehen nur in den Sicherheits-Reiter (Code scanning); den sehen nur Personen mit Schreibrecht. Das Protokoll
+# des Laufs ist öffentlich, deshalb nennt es keine Funde und es gibt keine Artefakte. Zuständigkeit und
+# Reaktionszeiten: SECURITY.md. Ein Lauf ist nur rot, wenn der Abgleich selbst nicht ging (Netz, Probe).
+
+on:
+  schedule:
+    # Mittwoch 05:41 UTC – einen Tag nach „:stabil befördern“ (dienstags), nicht zur vollen Stunde.
+    - cron: '41 5 * * 3'
+  workflow_dispatch:
+  # Änderungen am Abgleich selbst: nur Test, Bau und Probe – keine Images, kein Upload (Funde stünden sonst am PR).
+  pull_request:
+    paths:
+      - .github/workflows/sicherheitsabgleich.yml
+      - .github/werkzeuge/upstream-*
+      - .github/werkzeuge/anchore-installieren.sh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sicherheitsabgleich-${{ github.event_name }}
+
+jobs:
+  abgleich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      # Ergebnisse in den Sicherheits-Reiter
+      security-events: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      # runner.temp gibt es erst in den Schritten, nicht im env des Jobs.
+      - name: Ordner
+        run: |
+          echo "INVENTAR=$RUNNER_TEMP/inventar" >> "$GITHUB_ENV"
+          echo "SARIF=$RUNNER_TEMP/sarif" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+      - name: Werkzeug testen
+        run: node --test .github/werkzeuge/upstream-abgleich.test.mjs
+      - name: Syft und Grype bauen
+        run: .github/werkzeuge/anchore-installieren.sh
+      # Bewusst eingebaute Testfälle (#1417): Bekannte Lücken in festgehaltenen Versionen müssen anschlagen, sonst
+      # ist der Lauf rot. Beide Fälle sind alt und öffentlich, deshalb dürfen sie im Protokoll stehen.
+      - name: Probe mit bekannten Lücken
+        run: |
+          set -euo pipefail
+          node .github/werkzeuge/upstream-abgleich.mjs --probe
+          cat > "$RUNNER_TEMP/probe.cdx.json" <<'JSON'
+          {"bomFormat":"CycloneDX","specVersion":"1.5","version":1,
+           "components":[{"type":"library","name":"lodash","version":"4.17.15","purl":"pkg:npm/lodash@4.17.15"}]}
+          JSON
+          grype "sbom:$RUNNER_TEMP/probe.cdx.json" -q -o json > "$RUNNER_TEMP/probe.json"
+          jq -e '[.matches[] | .vulnerability.id, (.relatedVulnerabilities[]?.id)] | index("CVE-2020-8203")' "$RUNNER_TEMP/probe.json" > /dev/null ||
+            { echo "::error title=Probe::Grype findet CVE-2020-8203 in lodash 4.17.15 nicht – der Abgleich schlägt nicht an."; exit 1; }
+          echo "Probe in Ordnung: Grype findet CVE-2020-8203 in lodash 4.17.15."
+      - name: Ausgelieferte Images prüfen
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p "$INVENTAR" "$SARIF"
+          for tag in stabil latest; do
+            for v in dms dms-komplett; do
+              ort="$tag-$v"
+              syft "registry:ghcr.io/motom001/$v:$tag" --platform linux/amd64 -q -o "syft-json=$INVENTAR/$ort.syft.json"
+              grype "sbom:$INVENTAR/$ort.syft.json" -q -o "sarif=$SARIF/grype-$ort.sarif"
+              # Eigene Kategorie je Image; sonst ersetzt jeder Upload den vorigen.
+              jq --arg id "grype/$ort/" '.runs[].automationDetails = {id: $id}' "$SARIF/grype-$ort.sarif" > "$SARIF/x" && mv "$SARIF/x" "$SARIF/grype-$ort.sarif"
+            done
+            # In die Oberfläche gebündelte Bibliotheken: stehen nicht als Paket im Image, nur in der Stückliste des
+            # Releases (seit #1393). Ältere Releases haben keine; dann bleibt es bei der Prüfung beim Bau.
+            version=$(jq -r '.source.metadata.labels["org.opencontainers.image.version"] // empty' "$INVENTAR/$tag-dms.syft.json")
+            id=""
+            if [[ "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              id=$(gh api "repos/$REPO/releases/tags/v${version#v}" -q '.assets[] | select(.name == "ablago-bestandteile.cdx.json") | .id' 2>/dev/null || true)
+            fi
+            if [ -n "$id" ]; then
+              gh api -H "Accept: application/octet-stream" "repos/$REPO/releases/assets/$id" |
+                jq '.components |= map(select(any(.properties[]?; .name == "ablago:art" and .value == "npm (Oberfläche)")))' > "$INVENTAR/$tag-oberflaeche.cdx.json"
+              grype "sbom:$INVENTAR/$tag-oberflaeche.cdx.json" -q -o "sarif=$SARIF/grype-$tag-oberflaeche.sarif"
+              jq --arg id "grype/$tag-oberflaeche/" '.runs[].automationDetails = {id: $id}' "$SARIF/grype-$tag-oberflaeche.sarif" > "$SARIF/x" && mv "$SARIF/x" "$SARIF/grype-$tag-oberflaeche.sarif"
+            else
+              echo "::notice title=Oberfläche:::$tag ohne Stückliste der Oberfläche im Release – die Bibliotheken der Oberfläche prüft hier nur der Bau."
+            fi
+          done
+          echo "Images geprüft. Ergebnis im Sicherheits-Reiter."
+      - name: Abgleich mit NVD
+        if: github.event_name != 'pull_request'
+        run: node .github/werkzeuge/upstream-abgleich.mjs --inventar "$INVENTAR" --sarif "$SARIF/upstream.sarif"
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: github.event_name != 'pull_request'
+        with:
+          sarif_file: ${{ env.SARIF }}

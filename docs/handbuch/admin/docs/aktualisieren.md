@@ -90,7 +90,7 @@ Bei zwei Containern bleibt `postgres:17` für Sicherheits-Updates der Reihe 17 o
     gh attestation verify oci://ghcr.io/motom001/dms:stabil -R motom001/dms
     ```
 
-    Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Mehr dazu in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md).
+    Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Einmal pro Woche gleicht das Projekt zusätzlich die ausgelieferten Images `:stabil` und `:latest` mit neuen Sicherheitsmeldungen ab, mit einer zweiten Datenbank und für wichtige Programme wie poppler zusätzlich direkt mit der öffentlichen Datenbank NVD – auch wenn Alpine einen Fall noch nicht führt. Wie schnell eine Korrektur kommt, hängt von der Schwere ab; die Fristen stehen in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md#zuständigkeit-und-reaktionszeiten). Du bekommst die Korrektur wie jedes Update: über `:stabil`, bei dringenden Fällen ohne die Woche abzuwarten.
 
 ### Ohne Administratorrechte (root) { #ohne-root }
 
