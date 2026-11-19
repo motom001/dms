@@ -320,7 +320,7 @@ test('SPDX und CycloneDX: gültiger Aufbau, eindeutige Kennungen, Images mit Dig
 
 test('Jedes Paket aus „apk add“ im Dockerfile hat einen Eintrag „Wozu“', () => {
   const pakete = apkPakete(readFileSync('Dockerfile', 'utf8'));
-  assert.ok(pakete.includes('poppler-utils') && pakete.includes('postgresql17'), 'apk add im Dockerfile nicht gefunden');
+  assert.ok(pakete.includes('poppler-utils') && pakete.includes('postgresql18'), 'apk add im Dockerfile nicht gefunden');
   const wozu = JSON.parse(readFileSync('.github/werkzeuge/bestandteile-wozu.json', 'utf8')).pakete;
   assert.deepEqual(
     pakete.filter((p) => !wozu[p]),
