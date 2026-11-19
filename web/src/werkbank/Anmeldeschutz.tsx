@@ -19,6 +19,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
+import { HeimnetzGrund } from './HeimnetzGrund';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
 
@@ -278,23 +279,7 @@ function NotfallzugangBlatt({ deineIp }: { deineIp: string }) {
           {n.internet && n.von && n.am && (
             <p className="leise klein">{t('werkbank.notfallzugang.internet.von', { von: n.von, am: zeit(n.am) })}</p>
           )}
-          {!n.heimnetz && !n.internet && (
-            <>
-              <p className="leise klein">{t('werkbank.notfallzugang.nicht-heimnetz')}</p>
-              {/* #885: welche Adresse Ablago sieht und warum es „nicht Heimnetz“ meint – mit Weg zur Abhilfe. */}
-              <p className="leise klein" id="notfall-grund">
-                {n.grund === 'proxy'
-                  ? tn('werkbank.notfallzugang.grund.proxy', {
-                      code: <code>{deineIp}</code>,
-                      hilfe: <Hilfe ort="werkbank.notfallzugang.proxy" />,
-                    })
-                  : tn('werkbank.notfallzugang.grund.oeffentlich', {
-                      code: <code>{deineIp}</code>,
-                      hilfe: <Hilfe ort="werkbank.notfallzugang.oeffentlich" />,
-                    })}
-              </p>
-            </>
-          )}
+          <HeimnetzGrund n={n} deineIp={deineIp} />
         </>
       )}
       {meldung && (

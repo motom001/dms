@@ -149,6 +149,8 @@ const kennungen = () => ({ benutzer: process.getuid?.() ?? null, gruppe: process
 export async function uebersicht(
   quelle: SystemQuelle | undefined,
   betrieb: { mail: string; adresse: string } | undefined,
+  /** Heimnetz nicht bestimmbar (#1355): Gateway-Adresse der letzten 24 Stunden, nur für den Systemzustand. */
+  gateway?: { adresse: string } | null,
 ): Promise<Uebersicht> {
   let datenbank: Uebersicht['datenbank'];
   try {
@@ -181,8 +183,14 @@ export async function uebersicht(
       'E-Mail': betrieb?.mail ?? 'aus',
       TRUST_PROXY: `${env.TRUST_PROXY || t('meldungen.system.nicht-gesetzt')} → ${proxyVertrauen(env.TRUST_PROXY).text}`,
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
+      ...heimnetzZeile(gateway),
     },
   };
+}
+
+/** Heimnetz nicht bestimmbar (#1355): nur, wenn in den letzten 24 Stunden Anfragen mit einer Gateway-Adresse ankamen. */
+function heimnetzZeile(g: { adresse: string } | null | undefined): Record<string, string> {
+  return g ? { [t('meldungen.system.heimnetz')]: t('meldungen.system.heimnetz-gateway', { adresse: g.adresse }) } : {};
 }
 
 export function pgSystemQuelle(sql: postgres.Sql, haushaltId: string): SystemQuelle {

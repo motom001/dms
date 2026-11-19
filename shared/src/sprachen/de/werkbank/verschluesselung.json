@@ -89,6 +89,7 @@
   "notfallzugang.nicht-heimnetz": "Du rufst Ablago gerade nicht aus dem Heimnetz auf. Von hier aus ginge der Notfallzugang nicht.",
   "notfallzugang.grund.oeffentlich": "Ablago sieht deine Adresse als {code}. Rufst du Ablago zu Hause über den öffentlichen Namen auf, läuft die Anfrage über das Internet. Ein lokaler DNS-Eintrag, der den Namen zu Hause direkt auf den Proxy zeigen lässt, hilft.{hilfe}",
   "notfallzugang.grund.proxy": "Ablago sieht deine Adresse als {code}. Dein Proxy gibt die Adresse so weiter, dass Ablago ihr nicht trauen kann. Mehr unter „Was der Proxy Ablago mitteilt“.{hilfe}",
+  "notfallzugang.grund.gateway": "Ablago sieht deine Anfrage von {code}, der Gateway-Adresse des eigenen Netzes (bei Docker die des Docker-Netzes). Darüber können auch Anfragen aus dem Internet kommen; deshalb glaubt Ablago Proxy-Angaben von dort nicht und zählt die Anfrage nicht als Heimnetz. Läuft dein Reverse-Proxy auf demselben Rechner, trage seine Adresse ausdrücklich ein: TRUST_PROXY auf die Gateway-Adresse setzen. Sonst hilft eine Portfreigabe ohne Userland-Proxy oder eine eigene Adresse für den Container (macvlan).{hilfe}",
   "notfallzugang.frage": "Notfallzugang aus dem Internet erlauben?",
   "notfallzugang.frage.text": "Dann kommt jeder mit deinem Notfallblatt von überall in deine Ablage, nicht nur aus dem Heimnetz. Alle, die verwalten, bekommen bei jeder Benutzung eine E-Mail.",
   "notfallzugang.frage.ja": "Aus dem Internet erlauben",

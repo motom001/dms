@@ -1,6 +1,6 @@
 {
   "wurzel": {
-    "onRequest": 2,
+    "onRequest": 3,
     "preParsing": 0,
     "preValidation": 0,
     "preSerialization": 0,
@@ -19,61 +19,61 @@
   "parser": ["application/json", "text/plain", "application/octet-stream"],
   "routen": {
     "GET /api/gesundheit": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "preParsing": ["preParsing()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "HEAD /api/gesundheit": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "preParsing": ["preParsing()"],
       "onSend": ["anonymous()", "anonymous()", "headRouteOnSendHandler()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "POST /api/typen": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "preParsing": ["preParsing()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "POST /api/fotostapel": {
-      "onRequest": ["anonymous()", "anonymous()", "onRequest()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()", "onRequest()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "POST /api/aufruf/:kennung": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "POST /api/mappen/:id/dokumente": {
-      "onRequest": ["anonymous()", "anonymous()", "onRequest()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()", "onRequest()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()", "aufraeumen()"],
       "onRequestAbort": ["aufraeumen()"]
     },
     "PROPFIND /webdav*": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "OPTIONS /webdav": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "GET /": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "OPTIONS /": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
     "GET /assets/a.js": {
-      "onRequest": ["anonymous()", "anonymous()"],
+      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     }

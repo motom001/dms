@@ -238,6 +238,8 @@ export const HILFE = {
     'zu-hause-uber-den-offentlichen-namen',
   ),
   'werkbank.notfallzugang.proxy': admin('installation/', 'Was der Proxy Ablago mitteilt', 'was-der-proxy-dem-dms-mitteilt'),
+  // #1355: Anfragen kommen mit der Gateway-Adresse des Docker-Netzes an.
+  'werkbank.notfallzugang.gateway': admin('anmeldeschutz/', 'Heimnetz nicht bestimmbar', 'heimnetz-nicht-bestimmbar'),
   'sicherung.extern': admin('sicherung-ausser-haus/', 'Sicherung außer Haus'),
   'sicherung.probe': admin('wiederherstellen/', 'Probe-Wiederherstellung', 'probe-wiederherstellung'),
   // Ablage und Profil: Benutzerhandbuch

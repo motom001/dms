@@ -32,8 +32,12 @@ services:
     # Die Verbindung zur Datenbank fragt der Einrichtungsassistent im Browser ab (Server „db“,
     # Benutzer und Datenbank „dms“, Passwort aus der .env) und speichert sie in /data/geheim.
     # E-Mail-Versand und die Adresse von Ablago stellst du in der Werkbank ein.
-    # Hinter einem Reverse-Proxy (nginx …) ist nichts einzustellen: Ablago glaubt Proxys im
-    # eigenen Rechner und in privaten Netzen von selbst. Abschalten mit TRUST_PROXY: "false".
+    # Hinter einem Reverse-Proxy (nginx …) als Container oder auf einem anderen Rechner im Heimnetz ist
+    # nichts einzustellen: Ablago glaubt Proxys in privaten Netzen von selbst. Abschalten mit TRUST_PROXY: "false".
+    # Läuft der Proxy auf dem NAS selbst (Reverse-Proxy des NAS), kommt er über das Gateway des Docker-Netzes –
+    # dem glaubt Ablago nicht von selbst. Dann die Gateway-Adresse eintragen (die Werkbank nennt sie), z. B.:
+    #   environment:
+    #     TRUST_PROXY: "172.17.0.1"
     # Die Ordner im Container sind fest; wohin sie auf dem NAS zeigen, bestimmst du nur hier.
     volumes:
       # Hochgeladene Dateien, Logos, Fehlerbilder.

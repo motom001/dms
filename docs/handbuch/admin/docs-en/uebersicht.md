@@ -118,6 +118,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | --- | --- | --- |
 | Emergency access is active (RESCUE file) | red | `notfallzugang` |
 | Emergency access was used with the emergency code – until "Read" | red | `notfallzugang.benutzt` |
+| Ablago can't tell the home network from the internet: requests arrive with the gateway address of the Docker network ([Home network can't be determined](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | yellow | `heimnetz.gateway` |
 | Storage limit reached | red | `speicherplatz.grenze` |
 | Storage space is getting tight | yellow | `speicherplatz.knapp` |
 | Enough space again – end maintenance? | yellow | `speicherplatz.wartung-beenden` |

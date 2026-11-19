@@ -25,7 +25,7 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
 import { protokoll } from '../protokoll/protokoll';
-import type { ProxyVertrauen } from '../http/proxy';
+import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
 import type { Speicherart } from './speicherart';
 import { eigeneVersion, standKennung } from '../system/system';
 import { MODUS_KOERPER_MAX } from '../grundlagen/grenzen';
@@ -496,7 +496,7 @@ export class Lasttestmodus {
         sicherheitsKoepfe(
           {
             pfad: req.url.split('?')[0],
-            https: req.protocol === 'https',
+            https: ursprungAus(req, this.o.proxy).https,
             html: typ.startsWith('text/html'),
             csp: reply.hasHeader('content-security-policy'),
           },

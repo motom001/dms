@@ -780,11 +780,11 @@
     "GET /api/v1/openapi.json offen {\"api\":true}"
   ],
   "hookArten": [
-    "{\"onRequest\":[\"anonymous()\",\"anonymous()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
-    "{\"onRequest\":[\"anonymous()\",\"anonymous()\"],\"preParsing\":[\"preParsing()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
-    "{\"onRequest\":[\"anonymous()\",\"anonymous()\"],\"preParsing\":[\"preParsing()\"],\"onSend\":[\"anonymous()\",\"anonymous()\",\"headRouteOnSendHandler()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
-    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"onRequest()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
-    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"onRequest()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\",\"aufraeumen()\"],\"onRequestAbort\":[\"aufraeumen()\"]}"
+    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"anonymous()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
+    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"anonymous()\"],\"preParsing\":[\"preParsing()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
+    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"anonymous()\"],\"preParsing\":[\"preParsing()\"],\"onSend\":[\"anonymous()\",\"anonymous()\",\"headRouteOnSendHandler()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
+    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"anonymous()\",\"onRequest()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\"]}",
+    "{\"onRequest\":[\"anonymous()\",\"anonymous()\",\"anonymous()\",\"onRequest()\"],\"onSend\":[\"anonymous()\",\"anonymous()\"],\"onResponse\":[\"anonymous()\",\"anonymous()\",\"aufraeumen()\"],\"onRequestAbort\":[\"aufraeumen()\"]}"
   ],
   "hooks": {
     "OPTIONS /": 0,

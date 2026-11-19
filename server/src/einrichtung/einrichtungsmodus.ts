@@ -1,5 +1,5 @@
 import fastifyStatic from '@fastify/static';
-import type { ProxyVertrauen } from '../http/proxy';
+import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { existsSync } from 'node:fs';
 import {
@@ -139,7 +139,7 @@ function richteGrundlagenEin(app: FastifyInstance, o: EinrichtungsmodusOptionen)
       sicherheitsKoepfe(
         {
           pfad: req.url.split('?')[0],
-          https: req.protocol === 'https',
+          https: ursprungAus(req, o.proxy).https,
           html: typ.startsWith('text/html'),
           csp: reply.hasHeader('content-security-policy'),
         },
@@ -159,9 +159,9 @@ const kopf = (req: { headers: Record<string, unknown> }, n: string) =>
 function richteRoutenEin(app: FastifyInstance, o: EinrichtungsmodusOptionen, z: Zustand, pruefe: Pruefe, uebernehmen: Uebernehmen) {
   const anlegen = o.anlegen ?? legeDatenbankAn;
   /** Einrichtungscode und Herkunft (#1359): ohne Code nur aus dem Heimnetz, wie beim Notfallzugang mit TRUST_PROXY. */
-  const angabe = (req: { ip: string; headers: Record<string, unknown> }): EinrichtungsAngabe => ({
+  const angabe = (req: { ip: string; socket?: { remoteAddress?: string }; headers: Record<string, unknown> }): EinrichtungsAngabe => ({
     ...(kopf(req, 'x-einrichtungscode') !== undefined ? { code: kopf(req, 'x-einrichtungscode') } : {}),
-    heimnetz: istHeimnetz({ ip: req.ip, kopf: (n) => kopf(req, n) }, o.proxy),
+    heimnetz: istHeimnetz({ ip: req.ip, peer: req.socket?.remoteAddress, kopf: (n) => kopf(req, n) }, o.proxy),
   });
   /** Jede Änderung: Kennung der Oberfläche und Einrichtungscode. */
   const schutz = (req: { ip: string; headers: Record<string, unknown> }) => {

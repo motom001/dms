@@ -26,12 +26,16 @@
  */
 import type postgres from 'postgres';
 import { kuerzeIp, istPrivat } from '../datenschutz/abruf';
+import { eigeneGateways } from '../http/gateway';
 import { ohneGeheimnisse } from '../geheimnisse/geheimnis-sperre';
 import { protokoll } from './protokoll';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import type { PaketdatenWert } from '../../../shared/src/paketdaten';
 
 const log = protokoll.modul('system');
+
+/** „Heimnetz“ im Nachweis (#1053): private Adresse, aber kein Gateway des eigenen Netzes (#1355, nicht bestimmbar). */
+const heimnetzAngabe = (ip: string) => istPrivat(ip) && !eigeneGateways.ist(ip);
 
 /** Arten im Journal – die Kennung ist zugleich die Kennung des Nachweises. */
 export type JournalArt =
@@ -324,7 +328,7 @@ export class Nachweisjournal {
   fehlanmeldung(email: string, ip: string, bekannt: boolean): Promise<void> {
     if (!this.sammelnMs) {
       return bekannt
-        ? this.schreibe('zugang.fehlanmeldung', { konto: email, netz: kuerzeIp(ip), heimnetz: istPrivat(ip) })
+        ? this.schreibe('zugang.fehlanmeldung', { konto: email, netz: kuerzeIp(ip), heimnetz: heimnetzAngabe(ip) })
         : this.zaehle('zugang.fehlanmeldung_unbekannt');
     }
     const jetzt = this.jetzt();
@@ -332,7 +336,7 @@ export class Nachweisjournal {
     let s = this.sammlung.get(monat);
     if (!s) this.sammlung.set(monat, (s = { eintraege: [], zaehler: {}, warten: [] }));
     if (bekannt) {
-      const daten = ohneGeheimnisse({ konto: email, netz: kuerzeIp(ip), heimnetz: istPrivat(ip) });
+      const daten = ohneGeheimnisse({ konto: email, netz: kuerzeIp(ip), heimnetz: heimnetzAngabe(ip) });
       s.eintraege.push({ art: 'zugang.fehlanmeldung', zeit: jetzt.toISOString(), daten });
     } else s.zaehler['zugang.fehlanmeldung_unbekannt'] = (s.zaehler['zugang.fehlanmeldung_unbekannt'] ?? 0) + 1;
     const fertig = new Promise<void>((ja, nein) => s.warten.push({ ja, nein }));

@@ -429,3 +429,36 @@ rauchtest('Werkbank: inaktive Systemkonten gut lesbar, Etikett „ausgeschaltet�
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
+
+// Heimnetz nicht bestimmbar (#1355): Kommen Anfragen mit der Gateway-Adresse an, nennt die Übersicht es gelb mit dem Weg
+// zum Notfallzugang; dort steht die gesehene Adresse samt Abhilfe – auch mit „aus dem Internet erlauben“. Der Test
+// ergänzt die Antworten (im Testaufbau kommt keine Anfrage vom Gateway). axe hell und dunkel auf dem Hinweis.
+rauchtest('Werkbank: Heimnetz nicht bestimmbar – Hinweis auf Übersicht und beim Notfallzugang, axe (#1355)', { als: LENA }, async (s) => {
+  const gateway = { adresse: '172.17.0.1', zuletzt: new Date().toISOString() };
+  await s.route(/\/api\/werkbank\/uebersicht$/, async (route) => {
+    const r = await route.fetch();
+    await route.fulfill({ response: r, json: { ...(await r.json()), heimnetzGateway: gateway } });
+  });
+  await s.route(/\/api\/werkbank\/anmeldeschutz\/notfallzugang$/, async (route) => {
+    const r = await route.fetch();
+    await route.fulfill({ response: r, json: { ...(await r.json()), heimnetz: false, grund: 'gateway', internet: true } });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank');
+  const meldung = s.locator('li, .hinweis').filter({ hasText: 'Ablago kann Heimnetz und Internet nicht unterscheiden.' }).last();
+  await meldung.waitFor();
+  assert.match(await meldung.innerText(), /172\.17\.0\.1/);
+  await meldung.getByRole('link', { name: 'Zum Notfallzugang' }).click();
+  await s.waitForURL(/\/werkbank\/anmeldeschutz/);
+  const hinweis = s.locator('#notfall-gateway');
+  await hinweis.getByText('Gateway-Adresse des eigenen Netzes').waitFor();
+  assert.match(await hinweis.innerText(), /TRUST_PROXY auf die Gateway-Adresse.*macvlan/s);
+  assert.equal(await s.locator('#notfall-grund').count(), 0, 'kein zweiter Grund');
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await schemaWechseln(s, schema);
+    for (const v of await axePruefen(s, ['#notfall-gateway'])) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});

@@ -10,7 +10,7 @@
   "http.vertreten-von": " (vertreten von {wer})",
   "http.diese-schnittstelle-gibt-es": "This interface doesn’t exist.",
   "http.diese-datei-gibt-es": "This file doesn’t exist. If the open page belongs to a different version of Ablago, reload it.",
-  "proxy.automatisch-eigener-rechner-und": "automatic (own computer and private networks)",
+  "proxy.automatisch-eigener-rechner-und": "automatic (own computer and private networks, without gateway)",
   "proxy.aus": "off",
   "proxy.alle-absender": "all senders",
   "proxy.trust-proxy-ist-keine": "TRUST_PROXY: “{wert}” is neither an address nor a network – “off” applies (believe nobody).",

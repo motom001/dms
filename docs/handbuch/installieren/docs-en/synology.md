@@ -62,7 +62,9 @@ Ablago backs itself up into the `sicherung` folder (**Workbench → Backup**). W
 
 ## Reachable on the go {#von-unterwegs-erreichbar}
 
-Only **after** the setup: in DSM under **Control Panel → Login Portal → Advanced → Reverse Proxy**, create an entry from `https://dms.<your-domain>` to `http://localhost:8080`. You get a certificate under **Security → Certificate**. Then, in Ablago under **Workbench → email and address**, enter the public address. Background: [Behind a reverse proxy](https://help.ablago.app/admin/aktuell/en/installation/#hinter-einem-reverse-proxy).
+Only **after** the setup: in DSM under **Control Panel → Login Portal → Advanced → Reverse Proxy**, create an entry from `https://dms.<your-domain>` to `http://localhost:8080`. You get a certificate under **Security → Certificate**. Then, in Ablago under **Workbench → email and address**, enter the public address.
+
+DSM's reverse proxy runs on the NAS itself and reaches Ablago via the gateway of the Docker network. Ablago doesn't believe it by itself; the Workbench then reports "Ablago can't tell the home network from the internet" and names the address. Enter it in the template under `environment`, e.g. `TRUST_PROXY: "172.18.0.1"`, and rebuild the project. Signing in works before that too; only afterwards, though, does Ablago see the devices' real addresses, for example for sign-in protection. Background: [Behind a reverse proxy](https://help.ablago.app/admin/aktuell/en/installation/#hinter-einem-reverse-proxy).
 
 !!! info "Pictures to follow"
     This guide has no screenshots yet. The menu items correspond to DSM 7.2. If something looks different for you, feel free to write it in an [issue](https://github.com/motom001/dms/issues).

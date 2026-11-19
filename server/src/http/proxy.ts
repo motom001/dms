@@ -1,18 +1,23 @@
-import { isIP } from 'node:net';
+import { BlockList, isIP } from 'node:net';
 import { t } from '../sprache/sprache';
+import { istPrivat } from '../datenschutz/abruf';
+import { eigeneGateways, type Gateways } from './gateway';
 
 /**
  * Wem das DMS die Angaben eines Reverse-Proxys glaubt (X-Forwarded-For/-Proto/-Host; #234).
  *
  * - nicht gesetzt oder `auto`: dem eigenen Rechner und privaten Netzen (Loopback, Link-Local,
- *   10/8, 172.16/12, 192.168/16, fc00::/7). Dort sitzen Proxy-Container und NAS-Proxys praktisch immer;
- *   Anfragen direkt aus dem Internet können so weder IP noch HTTPS vortäuschen.
+ *   10/8, 172.16/12, 192.168/16, fc00::/7) – **außer den Gateways der eigenen Netze** (#1355). Über das Gateway
+ *   des Docker-Netzes können in manchen Aufbauten (Userland-Proxy, Docker Desktop, Rootless Docker) auch Anfragen
+ *   aus dem Internet ankommen; ein Gateway gilt deshalb nie von selbst als Proxy. Ein Reverse-Proxy auf dem Rechner
+ *   selbst (er spricht über das Gateway mit dem Container) wird ausdrücklich eingetragen, z. B. `172.17.0.1`.
  * - `false`: niemandem, `true`: allen.
  * - sonst eine Liste von Adressen oder Netzen, durch Komma getrennt (z. B. `172.18.0.0/16`).
  */
-export type ProxyVertrauen = boolean | string[];
+export type ProxyVertrauen = boolean | string[] | ((adresse: string, hop: number) => boolean);
 
-export const PRIVATE_NETZE = ['loopback', 'linklocal', 'uniquelocal'];
+/** Benannte Netze, die TRUST_PROXY als Liste annimmt (Fastify, proxy-addr). */
+const PRIVATE_NETZE = ['loopback', 'linklocal', 'uniquelocal'];
 
 const gueltig = (x: string) => {
   if (PRIVATE_NETZE.includes(x)) return true;
@@ -23,9 +28,39 @@ const gueltig = (x: string) => {
   return /^\d{1,3}$/.test(maske) && Number(maske) <= max;
 };
 
-export function proxyVertrauen(wert: string | undefined): { trust: ProxyVertrauen; text: string; fehler?: string } {
+/** `auto` (#1355): private Gegenstellen, aber kein Gateway eines eigenen Netzes. Für Fastify (`trustProxy`). */
+function automatischesVertrauen(gateways: Gateways = eigeneGateways): (adresse: string) => boolean {
+  return (adresse) => istPrivat(adresse) && !gateways.ist(adresse);
+}
+
+/**
+ * Steht die Adresse in einer ausdrücklich gesetzten Liste `TRUST_PROXY` – als Adresse oder Netz (#1355)? Nur dann
+ * gilt eine Anfrage, deren Gegenstelle ein Gateway ist, überhaupt als möglicherweise aus dem Heimnetz. Benannte Netze
+ * (`uniquelocal` …) zählen nicht: Sie nennen das Gateway nicht ausdrücklich.
+ */
+export function ausdruecklichVertraut(vertrauen: ProxyVertrauen | undefined, adresse: string | undefined): boolean {
+  if (!Array.isArray(vertrauen) || !adresse) return false;
+  const a = adresse.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').replace(/%.*$/, '');
+  const f = isIP(a);
+  if (!f) return false;
+  const liste = new BlockList();
+  for (const x of vertrauen) {
+    const [ip, m] = x.split('/');
+    const g = isIP(ip);
+    if (!g) continue;
+    if (m === undefined) liste.addAddress(ip, g === 6 ? 'ipv6' : 'ipv4');
+    else liste.addSubnet(ip, Number(m), g === 6 ? 'ipv6' : 'ipv4');
+  }
+  return liste.check(a, f === 6 ? 'ipv6' : 'ipv4');
+}
+
+export function proxyVertrauen(
+  wert: string | undefined,
+  gateways: Gateways = eigeneGateways,
+): { trust: ProxyVertrauen; text: string; fehler?: string } {
   const w = (wert ?? '').trim();
-  if (!w || w.toLowerCase() === 'auto') return { trust: PRIVATE_NETZE, text: t('meldungen.proxy.automatisch-eigener-rechner-und') };
+  if (!w || w.toLowerCase() === 'auto')
+    return { trust: automatischesVertrauen(gateways), text: t('meldungen.proxy.automatisch-eigener-rechner-und') };
   // „aus“ in den üblichen Schreibweisen (#1350).
   if (['false', '0', 'no', 'off', 'nein'].includes(w.toLowerCase())) return { trust: false, text: t('meldungen.proxy.aus') };
   if (w.toLowerCase() === 'true') return { trust: true, text: t('meldungen.proxy.alle-absender') };
@@ -43,4 +78,37 @@ export function proxyVertrauen(wert: string | undefined): { trust: ProxyVertraue
     };
   }
   return { trust: liste, text: liste.join(', ') };
+}
+
+type Koepfe = Record<string, string | string[] | undefined>;
+const ersterWert = (k: Koepfe, n: string) => {
+  const v = k[n];
+  return (Array.isArray(v) ? v[0] : v)?.split(',')[0]?.trim() || undefined;
+};
+
+/**
+ * Schema und Host, mit denen Ablago Links baut, Cookies als `Secure` markiert, HSTS sendet und – ohne gepflegte Adresse –
+ * OIDC-Rückleitung und Passkey-RP bestimmt (#1355).
+ *
+ * Bei `auto` glaubt Fastify dem Gateway nicht (`req.ip`, Heimnetz und die Sperre je IP hängen daran). Ein Reverse-Proxy
+ * auf demselben Rechner kommt aber genau über das Gateway; ohne `X-Forwarded-Proto` sähe Ablago dann `http` und bräche
+ * die Anmeldung über einen Anbieter oder mit Passkey, bevor jemand den Hinweis in der Werkbank liest. Darum zählen hier –
+ * und nur hier – `X-Forwarded-Proto` und `X-Forwarded-Host` einer Gateway-Gegenstelle, wie vor #1355. Das gibt keinem
+ * Absender mehr, als er über den Kopf `Host` ohnehin bestimmt; über Herkunft und Heimnetz entscheidet es nichts.
+ * Mit `TRUST_PROXY=false` oder einer Liste gilt allein, was Fastify bestimmt hat.
+ */
+export function ursprungAus(
+  req: { protocol: string; host: string; socket?: { remoteAddress?: string }; headers: Koepfe },
+  vertrauen: ProxyVertrauen | undefined,
+  gateways: Gateways = eigeneGateways,
+): { https: boolean; ursprung: string } {
+  let protokoll = req.protocol;
+  let host = req.host;
+  if (typeof vertrauen === 'function' && gateways.ist(req.socket?.remoteAddress)) {
+    const p = ersterWert(req.headers, 'x-forwarded-proto')?.toLowerCase();
+    if (p === 'https' || p === 'http') protokoll = p;
+    const h = ersterWert(req.headers, 'x-forwarded-host');
+    if (h && /^[a-z0-9.-]+(:\d{1,5})?$|^\[[0-9a-f:.]+\](:\d{1,5})?$/i.test(h)) host = h;
+  }
+  return { https: protokoll === 'https', ursprung: `${protokoll}://${host}` };
 }
