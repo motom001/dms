@@ -99,7 +99,8 @@ describe('Uhrzeiten in der Zone der Region bei abweichender Prozesszone (#1451)'
         { zeile: (z) => zeilen.push(z), json: () => {} },
       );
       assert.deepEqual(anfragen, ['GET /api/werkbank/anmeldeschutz', 'GET /api/region']);
-      assert.match(zeilen.join('\n'), new RegExp(`203\\.0\\.113\\.7\\s+${erwartet.replace(/\./g, '\\.')}`), zone);
+      const zeile = zeilen.find((z) => z.startsWith('203.0.113.7 '));
+      assert.equal(zeile?.slice('203.0.113.7'.length).trim().startsWith(erwartet), true, `${zone}: ${zeilen.join(' | ')}`);
     }
     // Antwortet der Server ohne Region, bleibt die Vorgabe Europe/Berlin.
     setzeZeitzone(STANDARD_ZEITZONE);
