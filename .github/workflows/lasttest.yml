@@ -49,7 +49,7 @@ jobs:
     timeout-minutes: ${{ inputs.stufe == 'extrem' && 350 || 180 }}
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms

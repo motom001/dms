@@ -120,7 +120,7 @@ FROM laufzeit AS komplett
 # Ohne eigenes „apk upgrade“ (#1397): laufzeit endet mit einer frischen Paketschicht aus demselben Bau. Ein zweites
 # Upgrade hier könnte Pakete heben, die dms nicht bekommt. „apk add“ holt die neuesten PostgreSQL-Pakete und hebt nur,
 # was sie zwingend brauchen.
-RUN apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
+RUN apk add --no-cache postgresql18 postgresql18-contrib tini su-exec
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett
