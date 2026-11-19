@@ -449,10 +449,9 @@ const EMPFAENGER_ZEILE =
   /^\s*(liefer(ungs)?adresse|liefer(ungs)?anschrift|rechnungsadresse|rechnungsanschrift|versandadresse|versandanschrift|lieferung an|versand an|empfänger(in)?|kunde|kundin|shipping address|billing address|ship to|bill to|deliver to)\b\s*:?/i;
 
 function findeBriefkopf(zeilen: string[]): Briefkopf | null {
-  for (const z of zeilen.slice(0, 40)) {
-    // Anschrift der Empfängerin in einer Zeile (#1485), z. B. „Lieferadresse: Lena Muster · Lindenweg 4 · …“ auf der
-    // Rechnung eines Shops: Das ist nicht die Absenderzeile – sonst gälte der Beleg als ausgehend.
-    if (EMPFAENGER_ZEILE.test(z)) continue;
+  // Anschrift der Empfängerin in einer Zeile (#1485), z. B. „Lieferadresse: Lena Muster · Lindenweg 4 · …“ auf der
+  // Rechnung eines Shops: Das ist nicht die Absenderzeile – sonst gälte der Beleg als ausgehend.
+  for (const z of zeilen.slice(0, 40).filter((x) => !EMPFAENGER_ZEILE.test(x))) {
     const teile = z
       .split(/\s+[·•|–]\s+|\s+-\s+|\s*·\s*|\s*\|\s*/)
       .map((s) => s.trim())
