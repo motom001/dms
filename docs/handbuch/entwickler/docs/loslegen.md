@@ -70,7 +70,7 @@ const leer = await eigeneDatenbank('alt', { migrieren: false }); // leer, z. B. 
 // db.sql (höchstens 4 Verbindungen), db.url, db.ende()
 ```
 
-Die Datenbank entsteht neben der aus `TEST_DATABASE_URL` und wird mit `ende()` gelöscht, spätestens nach dem letzten Test der Datei von selbst. Auf der gemeinsamen Datenbank selbst schreibt kein Test; `test/eigene-datenbank.test.ts` lässt die CI scheitern, sobald eine Testdatei wieder ein Schema leert. Die Pools bleiben klein, damit viele Dateien gleichzeitig unter `max_connections` (Vorgabe 100) bleiben.
+Die Datenbank entsteht neben der aus `TEST_DATABASE_URL` und wird mit `ende()` gelöscht, spätestens nach dem letzten Test der Datei von selbst. Auf der gemeinsamen Datenbank selbst schreibt kein Test; `test/eigene-datenbank.test.ts` lässt die CI scheitern, sobald eine Testdatei wieder ein Schema leert. Die Pools bleiben klein, damit viele Dateien gleichzeitig unter `max_connections` (Vorgabe 100) bleiben. Legt eine Datei je Test eine frische Datenbank an, gehört `{ jeTest: true }` dazu: Dann schließt `afterEach` sie gleich nach dem Test – sonst hält eine Datei bis zu ihrem Ende je Test vier Verbindungen (QS-Runde 11/2026: bis zu 74 in einer Datei, „too many clients“).
 
 ### Quarantäne für wackelnde Tests
 

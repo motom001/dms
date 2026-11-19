@@ -70,7 +70,7 @@ const leer = await eigeneDatenbank('old', { migrieren: false }); // empty, e.g. 
 // db.sql (at most 4 connections), db.url, db.ende()
 ```
 
-The database is created next to the one from `TEST_DATABASE_URL` and dropped with `ende()`, at the latest after the file's last test. No test writes to the shared database itself; `test/eigene-datenbank.test.ts` fails CI as soon as a test file empties a schema again. Pools stay small so that many files at once stay below `max_connections` (default 100).
+The database is created next to the one from `TEST_DATABASE_URL` and dropped with `ende()`, at the latest after the file's last test. No test writes to the shared database itself; `test/eigene-datenbank.test.ts` fails CI as soon as a test file empties a schema again. Pools stay small so that many files at once stay below `max_connections` (default 100). If a file creates a fresh database per test, add `{ jeTest: true }`: then `afterEach` closes it right after the test – otherwise a file holds four connections per test until it ends (QA round 11/2026: up to 74 in one file, “too many clients”).
 
 ### Quarantine for flaky tests { #quarantane-fur-wackelnde-tests }
 
