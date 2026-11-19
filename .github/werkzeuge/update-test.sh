@@ -4,7 +4,8 @@
 #      eine Sicherung anlegen
 #   2. Container entfernen, neues Image mit denselben Ordnern starten → alle Migrationen laufen durch
 #   3. weiter eingerichtet, Anmeldung klappt, das Dokument ist da; ab #1354: die Ordner des alten Stands (von root
-#      geschrieben) gehören jetzt Ablago, mit Meldung im Protokoll, und Ablago läuft nicht als root
+#      geschrieben) gehören jetzt Ablago, mit Meldung im Protokoll, und Ablago läuft nicht als root; ab #1466: Kam der
+#      alte Stand schon ohne root (0.299.0), bleibt alles, wie es war
 #   4. Probe-Wiederherstellung der alten Sicherung mit der neuen Version gelingt
 #
 #   .github/werkzeuge/update-test.sh <altes Image> <neues Image>
@@ -90,6 +91,10 @@ docker stop "$NAME" >/dev/null
 echo "::endgroup::"
 
 echo "::group::2. Neuer Stand: $NEU"
+# Lief der alte Stand als root (vor 0.299.0), gehört ihm noch etwas; seit 0.299.0 gehört schon alles 1000 (#1466).
+vorher_root=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" -uid 0 | head -1)
+liste() { sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" -printf '%p|%u:%g %m\n'; }
+vorher=$(liste)
 starte "$NEU"; warte
 neu=$(version); echo "Neue Version: $neu"
 [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach dem Update wieder uneingerichtet"
@@ -98,8 +103,17 @@ anmelden "neuer Stand"
 # Ohne root (#1354): Was der alte Stand als root geschrieben hat, gehört jetzt dem Benutzer von Ablago (1000).
 fremd=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" ! -uid 1000 | head -5)
 [ -z "$fremd" ] || fehler "nach dem Update gehört noch nicht alles Ablago: $fremd"
-grep -q "übernehme /data/files für Benutzer 1000" <<< "$(docker logs "$NAME" 2>&1)" || fehler "keine Meldung zur Übernahme der Ordner"
+if [ -n "$vorher_root" ]; then
+  grep -q "übernehme /data/files für Benutzer 1000" <<< "$(docker logs "$NAME" 2>&1)" || fehler "keine Meldung zur Übernahme der Ordner"
+else
+  # Bestand aus 0.299.0 (#1466): Ordner gehören schon 1000 – nichts übernommen, nichts umgeschrieben, kein Hin und Her.
+  grep -q "übernehme" <<< "$(docker logs "$NAME" 2>&1)" && fehler "Bestand aus 0.299.0: Ordner erneut übernommen"
+  # Nur, was es vorher und nachher gibt: Besitzer, Gruppe und Rechte gleich (Ablago darf Dateien anlegen und löschen).
+  weg=$(awk -F'|' 'NR == FNR { v[$1] = $2; next } ($1 in v) && v[$1] != $2 { print $1 ": " v[$1] " → " $2 }' <(echo "$vorher") <(liste) | head -5)
+  [ -z "$weg" ] || fehler "Bestand aus 0.299.0: umgeschrieben: $weg"
+fi
 [ "$(docker exec "$NAME" dms status --json | jq -r '.laufzeit.benutzer')" = 1000 ] || fehler "Ablago läuft nach dem Update nicht als Benutzer 1000"
+echo "Benutzer: $(docker exec "$NAME" dms status --json | jq -c '.laufzeit.dienstbenutzer | {herkunft, grund, aenderungen: (.aenderungen | length)}')"
 echo "::endgroup::"
 
 echo "::group::3. Probe-Wiederherstellung der alten Sicherung"

@@ -63,6 +63,9 @@
     "qpdf",
     "sha256sum",
     "mkfifo",
+    // Start-Skript des Images im Test (#1466): dash wie /bin/sh, setpriv aus util-linux für die Schreibprobe.
+    "dash",
+    "setpriv",
     // Mermaid-CLI: optional, nur wenn lokal vorhanden (abhaengigkeitsbild.mjs prüft das selbst).
     "mmdc",
   ],

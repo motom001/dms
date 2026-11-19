@@ -197,5 +197,20 @@
   "extern.kosten.hart": "Harte Grenze: beim Erreichen KI-Funktionen pausieren",
   "extern.kosten.hart.hinweis": "Kostenpflichtige KI-Funktionen (Pakete mit Preis) pausieren bis zum nächsten Monatsanfang. Wer sie nutzt, sieht „KI-Funktionen pausiert bis …“. Ereignisse warten und kommen danach an. Ein höheres Budget hebt die Pause sofort auf.",
   "extern.kosten.gespeichert": "Gespeichert.",
-  "extern.kosten.datenschutz": "Nur Metadaten, nie Inhalte. Einzelne Aufrufe bleiben {tage} Tage gespeichert, danach nur Monatssummen; Monatssummen {monate} Monate. Wird ein Konto gelöscht, bleiben seine Werte ohne Person."
+  "extern.kosten.datenschutz": "Nur Metadaten, nie Inhalte. Einzelne Aufrufe bleiben {tage} Tage gespeichert, danach nur Monatssummen; Monatssummen {monate} Monate. Wird ein Konto gelöscht, bleiben seine Werte ohne Person.",
+  "kennung.gleich": "Ablago läuft als Benutzer {benutzer} und Gruppe {gruppe} – {herkunft}.",
+  "kennung.getrennt": "Ablago läuft als Benutzer {benutzer} ({herkunft}) und Gruppe {gruppe} ({herkunft2}).",
+  "kennung.herkunft.daten": "wie der Besitzer des Datenordners",
+  "kennung.herkunft.vorgabe.root": "Vorgabe, weil der Datenordner root gehört",
+  "kennung.herkunft.vorgabe.system": "Vorgabe, weil der Datenordner einem Systembenutzer des Containers gehört",
+  "kennung.herkunft.vorgabe.ohne": "Vorgabe, weil kein eigener Datenordner eingebunden ist",
+  "kennung.herkunft.gesetzt": "aus PUID/PGID in der Compose-Datei",
+  "kennung.aenderung.besitzer-root": "Geändert: {anzahl} Einträge in „{ordner}“ gehörten root und gehören jetzt {nach}.",
+  "kennung.aenderung.besitzer": "Geändert: {anzahl} Einträge in „{ordner}“ gehören jetzt {nach}, wie mit PUID/PGID verlangt.",
+  "kennung.aenderung.rechte": "Geändert: Andere Benutzer im Container kommen nicht mehr in „{ordner}“ (o-rwx), weil der Ordner jetzt Ablago gehört.",
+  "kennung.aenderung.geheim": "Geändert: {anzahl} Dateien mit Schlüsseln in „{ordner}“ sind nur noch für Ablago lesbar (go-rwx).",
+  "kennung.benutzer": "Benutzer von Ablago",
+  "kennung.gruppe": "Gruppe von Ablago",
+  "kennung.wert": "{kennung} – {herkunft}",
+  "kennung.geaendert": "Geändert am {zeit}"
 }

@@ -8,6 +8,7 @@ import { abschirmungText, type WerkzeugAbschirmung } from './prozesse/werkzeugve
 import { ALS_KOPF, KONSOLE_KOPF, konsolenDatei, lokaleUrl, type KonsolenDatei } from './system/konsole';
 import { t } from './sprache/sprache';
 import { gebietsschema } from '../../shared/src/sprache';
+import { aenderungText, kennungSatz, type Dienstbenutzer } from '../../shared/src/dienstbenutzer';
 import { MB } from './grundlagen/grenzen';
 
 export class KonsolenFehler extends Error {
@@ -361,11 +362,17 @@ async function befehlAbmelden(rest: string[], { v, ein, opt, zeige }: Lauf): Pro
   return zeige(r, () => `${u.email}: ${r.beendet} Sitzungen beendet.`);
 }
 
+function kennungZeilen(k: Dienstbenutzer | undefined): string[] {
+  const satz = k ? kennungSatz(k, t.frei) : null;
+  if (!k || !satz) return [];
+  return [satz, ...k.aenderungen.map((a) => `${zeit(a.zeit)}: ${aenderungText(a, t.frei)}`)];
+}
+
 /** `dms status`: Version, Datenbank, Laufzeit. */
 async function befehlStatus(rest: string[], { v, zeige }: Lauf): Promise<void> {
   const s = await v.anfrage<{
     dms: { version: string; variante: string; commit: string | null };
-    laufzeit: { node: string; laeuftSeit: string; zeitzone: string; benutzer?: number | null };
+    laufzeit: { node: string; laeuftSeit: string; zeitzone: string; benutzer?: number | null; dienstbenutzer?: Dienstbenutzer };
     datenbank: Record<string, unknown>;
     abschirmung?: WerkzeugAbschirmung | null;
   }>('GET', '/api/werkbank/system');
@@ -385,6 +392,8 @@ async function befehlStatus(rest: string[], { v, zeige }: Lauf): Promise<void> {
     ...(s.laufzeit.benutzer == null
       ? []
       : [`Benutzer: ${s.laufzeit.benutzer}${s.abschirmung ? ` · ${abschirmungText(s.abschirmung)}` : ''}`]),
+    // Woher Benutzer und Gruppe kommen und was das Start-Skript geändert hat (#1466).
+    ...kennungZeilen(s.laufzeit.dienstbenutzer),
   ]);
 }
 

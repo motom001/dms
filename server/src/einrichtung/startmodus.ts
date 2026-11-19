@@ -18,6 +18,7 @@ import {
   type VorstartGrund,
 } from './startfehler';
 import { standKennung } from '../system/system';
+import type { StartseitenKennung } from './dienstbenutzer';
 import { MODUS_KOERPER_MAX } from '../grundlagen/grenzen';
 
 /**
@@ -63,6 +64,8 @@ export interface StartmodusOptionen {
   teilen?: boolean;
   /** Vorstart (#1250): ohne Kennung des Stands in /api/gesundheit (er kennt den Zufallswert der Installation nicht). */
   ohneStand?: boolean;
+  /** Benutzer von Ablago (#1466): Wahl des Start-Skripts, Änderungen und Schreibfehler – bei jeder Seite neu gelesen. */
+  kennung?: () => StartseitenKennung | null;
 }
 
 /** So lange wartet der Startmodus höchstens, bis der Vorstart den Port freigibt (#1250). */
@@ -156,8 +159,17 @@ export class Startmodus {
         neuLadenS: this.o.neuLadenS ?? 3,
         komplett: !!this.o.komplett,
         sprache,
+        kennung: this.kennung(),
       }),
     );
+  }
+
+  private kennung(): StartseitenKennung | null {
+    try {
+      return this.o.kennung?.() ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /** Fehler des Vorstarts (#1250): Grund aus start.sh, vor Ablago selbst. */

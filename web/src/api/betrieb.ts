@@ -1,4 +1,5 @@
 /** Schnittstelle (#1234): Betrieb in der Werkbank: Wartung, Sicherung, Systemzustand, Protokoll, Fehlermeldungen, Übersicht, Export, Tresor, Notfallkontakte. */
+import type { Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
 import type { UeberfluessigeVariable } from '../../../shared/src/umgebungsvariablen';
 import type { Akzeptiert, Schwere } from '../../../shared/src/meldungen';
 import type { Auftrag } from '../../../shared/src/auftrag';
@@ -433,6 +434,11 @@ export interface Systemuebersicht {
     alpine: string | null;
     zeitzone: string;
     laeuftSeit: string;
+    /** Benutzer und Gruppe von Ablago (#1354) – ältere Server ohne. */
+    benutzer?: number | null;
+    gruppe?: number | null;
+    /** Herkunft und Änderungen des Start-Skripts (#1466) – ältere Server ohne. */
+    dienstbenutzer?: Dienstbenutzer;
   };
   datenbank:
     | { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number }

@@ -8,6 +8,8 @@ import type postgres from 'postgres';
 import { t } from '../sprache/sprache';
 import { datumsformat } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
+import type { Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
+import { dienstbenutzer } from '../einrichtung/dienstbenutzer';
 
 /**
  * Technik- und Versionsübersicht (#15): was ist installiert, und – nur auf
@@ -46,6 +48,8 @@ export interface Uebersicht {
     /** Benutzer und Gruppe des Prozesses (#1354: im Image nicht root). */
     benutzer: number | null;
     gruppe: number | null;
+    /** Woher Benutzer und Gruppe kommen und was das Start-Skript dafür geändert hat (#1466). */
+    dienstbenutzer: Dienstbenutzer;
   };
   datenbank: Datenbankdaten | { fehler: string };
   bibliotheken: Record<string, string | null>;
@@ -143,8 +147,8 @@ function lies(p: string) {
   }
 }
 
-/** Benutzer und Gruppe des Prozesses (#1354); null ohne POSIX. */
-const kennungen = () => ({ benutzer: process.getuid?.() ?? null, gruppe: process.getgid?.() ?? null });
+/** Benutzer und Gruppe des Prozesses (#1354); null ohne POSIX. Dazu Herkunft und Änderungen (#1466). */
+const kennungen = () => ({ benutzer: process.getuid?.() ?? null, gruppe: process.getgid?.() ?? null, dienstbenutzer: dienstbenutzer() });
 
 export async function uebersicht(
   quelle: SystemQuelle | undefined,
