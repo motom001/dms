@@ -1,4 +1,5 @@
-import { chmod, copyFile, mkdir, open, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { createReadStream, open as oeffneFd } from 'node:fs';
+import { chmod, copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -75,8 +76,11 @@ export function vergissFehlendeDateien() {
  * pipeline, Fastify), bekommt den Fehler trotzdem; liest ihn niemand, steht er nur im Protokoll.
  */
 export async function oeffneStrom(pfad: string, o: { start?: number; end?: number } = {}): Promise<Readable> {
-  const h = await open(pfad, 'r');
-  const s = h.createReadStream({ ...o, autoClose: true });
+  // Versuch #1456: Node 26 wertet einen FileHandle, den erst die Speicherbereinigung schließt, als Fehler. Ein Strom,
+  // den der Aufrufer nie liest, hielt bisher so einen FileHandle. Mit einem einfachen Dateideskriptor bleibt das
+  // Verhalten wie unter Node 24; die ungelesenen Ströme selbst sind ein eigener Fund (siehe #1456).
+  const fd = await new Promise<number>((ok, nein) => oeffneFd(pfad, 'r', (e, f) => (e ? nein(e) : ok(f))));
+  const s = createReadStream('', { ...o, fd, autoClose: true });
   s.on('error', (e) => log.warn('Datei: Lesefehler', { pfad, fehler: (e as Error).message }));
   return s;
 }
