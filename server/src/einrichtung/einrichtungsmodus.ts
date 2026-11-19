@@ -1,5 +1,5 @@
 import fastifyStatic from '@fastify/static';
-import type { ProxyVertrauen } from '../http/proxy';
+import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { existsSync } from 'node:fs';
 import {
@@ -139,7 +139,7 @@ function richteGrundlagenEin(app: FastifyInstance, o: EinrichtungsmodusOptionen)
       sicherheitsKoepfe(
         {
           pfad: req.url.split('?')[0],
-          https: req.protocol === 'https',
+          https: ursprungAus(req, o.proxy).https,
           html: typ.startsWith('text/html'),
           csp: reply.hasHeader('content-security-policy'),
         },

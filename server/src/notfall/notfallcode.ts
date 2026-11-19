@@ -181,6 +181,8 @@ export interface NotfallDeps {
   mailer: () => Mailer | null;
   /** TRUST_PROXY (#234): wem Ablago die Proxy-Angaben glaubt. */
   proxy?: ProxyVertrauen;
+  /** Gateways der eigenen Netze (#1355); ohne Angabe aus der Routing-Tabelle. */
+  gateways?: Gateways;
   /** Zahl der API-Schlüssel einer Person – die Meldung nennt sie (sie bleiben gültig). */
   apiSchluessel?: (benutzerId: string) => Promise<number>;
   /** Nach dem Einlösen: Das Notfallblatt gilt nicht mehr (Hinweis in der Werkbank, bis ein neues da ist). */
@@ -229,7 +231,7 @@ export class Notfallcode {
 
   /** Stand für die Seite /notfall: geht es von hier, und wie lange ist die Eingabe noch gesperrt? Verrät sonst nichts. */
   async stand(a: NotfallAnfrage): Promise<{ erlaubt: boolean; warten: number }> {
-    const heimnetz = istHeimnetz(a, this.d.proxy);
+    const heimnetz = istHeimnetz(a, this.d.proxy, this.d.gateways);
     return { erlaubt: heimnetz || (await this.einstellung()).internet, warten: await this.sperre.rest(ipBereich(a.ip)) };
   }
 

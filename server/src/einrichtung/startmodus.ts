@@ -6,7 +6,7 @@ import { hilfeAntwort, hilfeSenden } from '../oberflaeche/hilfe';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
 import { statischeDateien } from '../oberflaeche/oberflaeche';
 import { protokoll } from '../protokoll/protokoll';
-import type { ProxyVertrauen } from '../http/proxy';
+import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
 import { mitSprache, t } from '../sprache/sprache';
 import {
   startfehlerAus,
@@ -192,7 +192,7 @@ export class Startmodus {
         sicherheitsKoepfe(
           {
             pfad: req.url.split('?')[0],
-            https: req.protocol === 'https',
+            https: ursprungAus(req, this.o.proxy).https,
             html: typ.startsWith('text/html'),
             csp: reply.hasHeader('content-security-policy'),
           },

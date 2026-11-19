@@ -79,3 +79,36 @@ export function proxyVertrauen(
   }
   return { trust: liste, text: liste.join(', ') };
 }
+
+type Koepfe = Record<string, string | string[] | undefined>;
+const ersterWert = (k: Koepfe, n: string) => {
+  const v = k[n];
+  return (Array.isArray(v) ? v[0] : v)?.split(',')[0]?.trim() || undefined;
+};
+
+/**
+ * Schema und Host, mit denen Ablago Links baut, Cookies als `Secure` markiert, HSTS sendet und – ohne gepflegte Adresse –
+ * OIDC-Rückleitung und Passkey-RP bestimmt (#1355).
+ *
+ * Bei `auto` glaubt Fastify dem Gateway nicht (`req.ip`, Heimnetz und die Sperre je IP hängen daran). Ein Reverse-Proxy
+ * auf demselben Rechner kommt aber genau über das Gateway; ohne `X-Forwarded-Proto` sähe Ablago dann `http` und bräche
+ * die Anmeldung über einen Anbieter oder mit Passkey, bevor jemand den Hinweis in der Werkbank liest. Darum zählen hier –
+ * und nur hier – `X-Forwarded-Proto` und `X-Forwarded-Host` einer Gateway-Gegenstelle, wie vor #1355. Das gibt keinem
+ * Absender mehr, als er über den Kopf `Host` ohnehin bestimmt; über Herkunft und Heimnetz entscheidet es nichts.
+ * Mit `TRUST_PROXY=false` oder einer Liste gilt allein, was Fastify bestimmt hat.
+ */
+export function ursprungAus(
+  req: { protocol: string; host: string; socket?: { remoteAddress?: string }; headers: Koepfe },
+  vertrauen: ProxyVertrauen | undefined,
+  gateways: Gateways = eigeneGateways,
+): { https: boolean; ursprung: string } {
+  let protokoll = req.protocol;
+  let host = req.host;
+  if (typeof vertrauen === 'function' && gateways.ist(req.socket?.remoteAddress)) {
+    const p = ersterWert(req.headers, 'x-forwarded-proto')?.toLowerCase();
+    if (p === 'https' || p === 'http') protokoll = p;
+    const h = ersterWert(req.headers, 'x-forwarded-host');
+    if (h && /^[a-z0-9.-]+(:\d{1,5})?$|^\[[0-9a-f:.]+\](:\d{1,5})?$/i.test(h)) host = h;
+  }
+  return { https: protokoll === 'https', ursprung: `${protokoll}://${host}` };
+}

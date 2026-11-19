@@ -283,14 +283,19 @@ export function systemRouten(k: RoutenKontext): Route[] {
       methode: 'GET',
       pfad: '/api/werkbank/anmeldeschutz/notfallzugang',
       zugang: 'admin',
-      handler: async (a) => ok({ ...(await nf().einstellung()), code: await konten.notfallcodeStand(), ...heimnetzStand(a, x.proxy) }),
+      handler: async (a) =>
+        ok({ ...(await nf().einstellung()), code: await konten.notfallcodeStand(), ...heimnetzStand(a, x.proxy, x.gateways) }),
     },
     {
       methode: 'PUT',
       pfad: '/api/werkbank/anmeldeschutz/notfallzugang',
       zugang: 'admin',
       handler: async (a) =>
-        ok({ ...(await nf().setzeEinstellung(b(a), ich(a).email)), code: await konten.notfallcodeStand(), ...heimnetzStand(a, x.proxy) }),
+        ok({
+          ...(await nf().setzeEinstellung(b(a), ich(a).email)),
+          code: await konten.notfallcodeStand(),
+          ...heimnetzStand(a, x.proxy, x.gateways),
+        }),
     },
     {
       methode: 'POST',

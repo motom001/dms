@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 import type { Speicherplatz } from '../dateien/speicherplatz';
-import type { ProxyVertrauen } from './proxy';
+import { ursprungAus, type ProxyVertrauen } from './proxy';
 import type { Einrichtung } from '../einrichtung/einrichtung';
 import type { AnbindungVerwaltung } from '../datenbank/anbindung';
 import type { OrdnerPruefung } from '../dateien/ordner';
@@ -20,7 +20,7 @@ import { wer } from './api-v1';
 import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { istHeimnetz } from '../notfall/notfallcode';
-import { gatewayBeobachtung } from './gateway';
+import { GatewayBeobachtung, gatewayBeobachtung, type Gateways } from './gateway';
 import { kontext, protokoll, type Kontext } from '../protokoll/protokoll';
 import type { Betrieb } from '../einstellungen/betrieb';
 import type { Tresor } from '../geheimnisse/tresor';
@@ -107,6 +107,8 @@ interface Optionen {
   sicher?: boolean | (() => boolean);
   /** Wem X-Forwarded-* geglaubt wird (#234), siehe proxy.ts. */
   proxy?: ProxyVertrauen;
+  /** Gateways der eigenen Netze (#1355); ohne Angabe aus der Routing-Tabelle. Für Tests fest. */
+  gateways?: Gateways;
   /** Messung der Datenbankzugriffe (lange Zugriffe, Server-Timing). */
   messung?: Messung;
   system?: SystemQuelle;
@@ -213,7 +215,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   setzeFehlerbehandlung(app);
   haengeZeitmessungEin(app, opt);
   // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes merken (Kurzzustand, je Minute).
-  app.addHook('onRequest', async (req) => gatewayBeobachtung.notiere(req.ip, dienst.kurzzustand));
+  const beobachtung = opt.gateways ? new GatewayBeobachtung(opt.gateways) : gatewayBeobachtung;
+  app.addHook('onRequest', async (req) => beobachtung.notiere(req.ip, dienst.kurzzustand));
   // Arbeit nach der Antwort (#741).
   const nachlauf = opt.nachlauf ?? new Nachlauf();
   haengeAntwortHooksEin(app, opt);
@@ -228,7 +231,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
 
   // WebDAV-Laufwerk (#346): eigene Methoden (PROPFIND, LOCK …) und rohe Körper beliebigen Typs.
   // Eigener Plugin-Bereich, damit der Parser für „alles“ nur hier gilt.
-  if (opt.webdav) await registriereWebdav(app, opt.webdav);
+  if (opt.webdav) await registriereWebdav(app, opt.webdav, opt);
 
   if (opt.webDir && existsSync(opt.webDir)) {
     await app.register(fastifyStatic, { root: opt.webDir, wildcard: false, ...statischeDateien(opt.webDir) });
@@ -336,7 +339,7 @@ function haengeAntwortHooksEin(app: FastifyInstance, opt: Optionen) {
       sicherheitsKoepfe(
         {
           pfad: req.url.split('?')[0],
-          https: req.protocol === 'https',
+          https: ursprungAus(req, opt.proxy, opt.gateways).https,
           html: typ.startsWith('text/html'),
           csp: reply.hasHeader('content-security-policy'),
         },
@@ -386,6 +389,7 @@ function anfrageAus(req: FastifyRequest, opt: Optionen): Anfrage {
           },
         },
         opt.proxy,
+        opt.gateways,
       ),
     },
     kopf: (n) => {
@@ -436,7 +440,7 @@ function definiereRoute(ziel: FastifyInstance, r: Route, u: RoutenUmgebung) {
         pfad: `${req.method} ${req.url.split('?')[0]}`,
         muster: `${req.method} ${r.pfad}`,
         db: { anzahl: 0, ms: 0 },
-        ursprung: `${req.protocol}://${req.host}`,
+        ursprung: ursprungAus(req, opt.proxy, opt.gateways).ursprung,
         nachAntwort: [],
       };
       (req as MitKontext).dms = k;
@@ -561,13 +565,13 @@ async function registriereKoerperBereiche(app: FastifyInstance, alle: Route[], d
 }
 
 /** WebDAV-Laufwerk (#346): eigene Methoden und ein Bereich, in dem jeder Körper als Strom durchgeht. */
-async function registriereWebdav(app: FastifyInstance, wd: Webdav) {
+async function registriereWebdav(app: FastifyInstance, wd: Webdav, opt: Pick<Optionen, 'proxy' | 'gateways'> = {}) {
   const bekannt = new Set<string>((app.supportedMethods as string[] | undefined) ?? []);
   for (const [m, koerper] of WEBDAV_ZUSATZMETHODEN) if (!bekannt.has(m)) app.addHttpMethod(m, { hasBody: koerper });
   await app.register(async (bereich) => {
     bereich.removeAllContentTypeParsers();
     bereich.addContentTypeParser('*', (_req, nutzlast, fertig) => fertig(null, nutzlast));
-    const handler = webdavHandler(wd);
+    const handler = webdavHandler(wd, opt);
     // Der Parser reicht den Körper als Strom durch – dafür wirkt `bodyLimit` nicht (Fastify zählt nur, was es
     // selbst liest). Begrenzt wird in webdav/webdav-hilfen.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
     // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
@@ -588,13 +592,13 @@ async function registriereWebdav(app: FastifyInstance, wd: Webdav) {
 }
 
 /** Handler der WebDAV-Routen: Anfrage im eigenen Kontext an das Laufwerk, Antwort ohne Zwischenspeichern. */
-function webdavHandler(wd: Webdav) {
+function webdavHandler(wd: Webdav, opt: Pick<Optionen, 'proxy' | 'gateways'>) {
   return async (req: FastifyRequest, reply: WebdavAntwort) => {
     const k: Kontext = {
       anfrage: req.id,
       pfad: `${req.method} ${req.url.split('?')[0]}`,
       db: { anzahl: 0, ms: 0 },
-      ursprung: `${req.protocol}://${req.host}`,
+      ursprung: ursprungAus(req, opt.proxy, opt.gateways).ursprung,
     };
     (req as MitKontext).dms = k;
     const koerper: Readable = req.body && typeof (req.body as { pipe?: unknown }).pipe === 'function' ? (req.body as Readable) : req.raw;

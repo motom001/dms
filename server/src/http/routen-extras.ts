@@ -108,6 +108,8 @@ export interface RoutenExtras {
   notfallcode?: Notfallcode;
   /** Wem Ablago die Angaben eines Reverse Proxys glaubt (#234) – für „nur aus dem Heimnetz“ (#815). */
   proxy?: import('./proxy').ProxyVertrauen;
+  /** Gateways der eigenen Netze (#1355); ohne Angabe aus der Routing-Tabelle. Für Tests fest. */
+  gateways?: import('./gateway').Gateways;
   /** Sicherungen (#103–#105). */
   sicherung?: Sicherung;
   /** Export-Ordner (#797): Vollexport, persönliche Exporte, Auskünfte – nie im Sicherungsordner. */
