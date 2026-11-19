@@ -33,7 +33,7 @@ Die Funde stehen unter **Security** in diesem Repository; diese Liste sehen nur 
 
 **Zuständig** ist der Maintainer (Thomas Meissner). Er sieht die Funde im Sicherheits-Reiter nach jedem wöchentlichen Abgleich durch und bestätigt vertrauliche Meldungen innerhalb von **3 Tagen**.
 
-Jeder Fund wird zuerst **für Ablago** bewertet: Die Schwere eines Bestandteils ist der Ausgangspunkt, entscheidend ist, wie Ablago ihn nutzt – etwa ob ein Programm Dateien von außen verarbeitet. Danach gelten diese Fristen (Kalendertage):
+Jeder Fund wird zuerst **für Ablago** bewertet: Die Schwere eines Bestandteils ist der Ausgangspunkt, entscheidend ist, wie Ablago ihn nutzt – etwa ob ein Programm Dateien von außen verarbeitet. Danach gelten diese Zielzeiten (Kalendertage):
 
 | Schwere für Ablago | Bewertet nach | Korrektur oder Eindämmung nach |
 | --- | --- | --- |
@@ -41,6 +41,8 @@ Jeder Fund wird zuerst **für Ablago** bewertet: Die Schwere eines Bestandteils 
 | hoch | 3 Tagen | 14 Tagen, mit `sofort-stabil`, wenn die Lücke in Ablago ausnutzbar ist |
 | mittel | 7 Tagen | mit dem nächsten `:stabil`, spätestens nach 30 Tagen |
 | niedrig | 14 Tagen | spätestens nach 90 Tagen, oder bewusst hingenommen mit Begründung |
+
+Ablago wird von einer Person gepflegt. Die Zeiten sind deshalb ein Ziel, keine Zusage: Bei Urlaub oder Krankheit kann es länger dauern. Kritische Fälle haben immer Vorrang.
 
 Gibt es bei Alpine oder beim Hersteller noch keine Korrektur, schränkt Ablago das betroffene Programm ein oder baut es selbst mit der Korrektur. Einzelheiten zu einer offenen Lücke werden erst mit der Korrektur öffentlich; die Release-Notes nennen dann die CVE-Nummer.
 

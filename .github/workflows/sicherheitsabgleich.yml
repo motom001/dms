@@ -42,6 +42,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
+      # Freiwillig: Mit einem Schlüssel erlaubt NVD mehr Abfragen, der Lauf wird schneller. Ohne Secret bleibt er leer.
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
       # runner.temp gibt es erst in den Schritten, nicht im env des Jobs.
       - name: Ordner

@@ -33,7 +33,7 @@ Findings are listed under **Security** in this repository; only people with writ
 
 The **maintainer** (Thomas Meissner) is responsible. He reviews the findings in the Security tab after every weekly check and acknowledges confidential reports within **3 days**.
 
-Every finding is first assessed **for Ablago**: the severity of a component is the starting point, what matters is how Ablago uses it – for example whether a program processes files from outside. Then these deadlines apply (calendar days):
+Every finding is first assessed **for Ablago**: the severity of a component is the starting point, what matters is how Ablago uses it – for example whether a program processes files from outside. Then these target times apply (calendar days):
 
 | Severity for Ablago | Assessed within | Fix or mitigation within |
 | --- | --- | --- |
@@ -41,6 +41,8 @@ Every finding is first assessed **for Ablago**: the severity of a component is t
 | high | 3 days | 14 days, with `sofort-stabil` if the vulnerability can be exploited in Ablago |
 | medium | 7 days | with the next `:stabil`, at the latest after 30 days |
 | low | 14 days | at the latest after 90 days, or knowingly accepted with a reason |
+
+Ablago is maintained by one person. The times are therefore a target, not a promise: during holidays or illness it can take longer. Critical cases always come first.
 
 If Alpine or the vendor has no fix yet, Ablago restricts the affected program or builds it itself with the fix. Details of an open vulnerability only become public with the fix; the release notes then name the CVE number.
 
