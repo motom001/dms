@@ -7,7 +7,7 @@ import type { OrdnerPruefung } from '../dateien/ordner';
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
 import { randomBytes } from 'node:crypto';
-import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
+import Fastify, { LogController, type FastifyBaseLogger, type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { Hochgeladen, nimmAuf } from '../dateien/hochladen';
 import type { Dienst } from '../dienst/dienst';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -202,8 +202,9 @@ async function personImProtokoll(k: Kontext, a: Anfrage, konten: Konten) {
 export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
   const app = Fastify({
     loggerInstance: protokoll.fuerFastify() as unknown as FastifyBaseLogger,
-    // Eine Zeile je Anfrage schreiben wir selbst (onResponse), mit Benutzer und Modul.
-    disableRequestLogging: true,
+    // Eine Zeile je Anfrage schreiben wir selbst (onResponse), mit Benutzer und Modul. Über `logController` statt der
+    // veralteten Option `disableRequestLogging` (FSTDEP023, fällt mit fastify@6 weg; QS-Runde 11/2026).
+    logController: new LogController({ disableRequestLogging: true }),
     genReqId: () => randomBytes(4).toString('hex'),
     bodyLimit: JSON_KOERPER_MAX,
     trustProxy: opt.proxy ?? false,
