@@ -184,9 +184,10 @@ export async function attrappe(s) {
       ergebnis: 'ok',
       ms: 9_000,
       speicherMB: 31,
-      text: '',
+      // #1491: Ergebnistext des Laufs und die Mappe – aufgeklappt zu sehen.
+      text: 'Rechnung: Status neu',
       wer: null,
-      bezug: null,
+      bezug: { mappe: '00000000-0000-4000-8000-00000000a491', titel: 'Rechnung R-2026-17' },
       netz: [],
     },
     {
@@ -264,8 +265,14 @@ rauchtest('Paketseite: Verlauf mit Auslastung, Ampel und „Nur Fehler zeigen“
   const liste = s.getByRole('list', { name: 'Verlauf' });
   await liste.getByText('Einstellungen geändert: Modell').waitFor();
   assert.equal(await liste.locator('li').count(), 3);
+  // #1491: Einträge mit Ergebnis, Mappe oder Netzaufrufen lassen sich aufklappen; ohne bleibt es eine Zeile.
+  assert.equal(await liste.locator('details').count(), 2);
+  await liste.locator('details').nth(1).locator('summary').click();
+  await liste.getByText('Rechnung: Status neu').waitFor();
+  await liste.getByRole('link', { name: 'Rechnung R-2026-17' }).waitFor();
   await s.getByLabel('Nur Fehler zeigen').check();
   await liste.getByText('Einstellungen geändert: Modell').waitFor({ state: 'detached' });
+  await liste.locator('details').first().locator('summary').click();
   await liste.getByText('Zeitgrenze erreicht (120 s) – abgebrochen.').waitFor();
   assert.equal(await liste.locator('li').count(), 1);
   assert.deepEqual(z.verlauf, [false, true]);
