@@ -212,7 +212,14 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
     st.ok();
     // Erst merken, dann melden (#1381, wie #1378): Der Lauf wechselt genau einmal von „läuft“ auf „fertig“ oder
     // „fehler“. Scheitert das Merken, endet er wie bisher über den catch mit „fehler“ – nie „fertig“ → „fehler“.
-    await this.merkeProbe(lauf.sicherung, true, lauf.schritte.map((s) => `${s.name}: ${s.info ?? s.status}`).join('; '));
+    try {
+      await this.merkeProbe(lauf.sicherung, true, lauf.schritte.map((s) => `${s.name}: ${s.info ?? s.status}`).join('; '));
+    } catch (e) {
+      // Aufgeräumt ist richtig, gescheitert ist nur das Speichern des Ergebnisses (#1383): kein Schritt als fehlgeschlagen.
+      st.aktuell = null;
+      lauf.ergebnisNichtGespeichert = true;
+      throw e;
+    }
     log.info('Probe-Wiederherstellung erfolgreich', { sicherung: lauf.sicherung, mappen: ist.mappen, dateien });
     lauf.beendet = this.jetzt().toISOString();
     lauf.status = 'fertig';

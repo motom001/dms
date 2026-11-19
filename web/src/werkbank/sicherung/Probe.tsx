@@ -76,6 +76,7 @@ export function Probe({
         )}
       </dl>
       {lauf?.art === 'probe' && (laeuft || lauf.status === 'fehler') && <Schritte schritte={lauf.schritte} />}
+      <NichtGespeichert lauf={lauf} />
       <div className="raster">
         <Schalter
           an={plan.aktiv}
@@ -112,5 +113,15 @@ export function Probe({
       )}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.sicherung.probe-zeitplan')} sendet={sendet} />
     </form>
+  );
+}
+
+/** Probe (#1383): alle Schritte erledigt, nur das Ergebnis ließ sich nicht speichern – das eigens sagen. */
+function NichtGespeichert({ lauf }: { lauf: WhLauf | null }) {
+  if (lauf?.art !== 'probe' || lauf.status !== 'fehler' || !lauf.ergebnisNichtGespeichert) return null;
+  return (
+    <p className="fehlertext" role="alert">
+      {t('werkbank.sicherung.probe-ergebnis-nicht-gespeichert', { fehler: lauf.fehler ?? '' })}
+    </p>
   );
 }

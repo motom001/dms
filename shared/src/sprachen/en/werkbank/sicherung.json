@@ -244,6 +244,7 @@
   "sicherung.noch-keine-sicherung": "no backup yet",
   "sicherung.letzte-probe": "Last test",
   "sicherung.woechentlich-automatisch": "Weekly, automatically",
+  "sicherung.probe-ergebnis-nicht-gespeichert": "The test restore completed, but its result could not be saved: {fehler}",
   "sicherung.probe-laeuft": "Test running …",
   "sicherung.jetzt-probeweise-wiederherstellen": "Test-restore now",
   "sicherung.probe-zeitplan": "Test schedule",

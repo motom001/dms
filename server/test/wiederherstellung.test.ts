@@ -388,7 +388,13 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       } else {
         // Bisheriges Endergebnis bleibt: „fehler“ mit dem Grund, an dem das Merken scheiterte.
         assert.equal(lauf.fehler, 'Datenbank weg', scheitert);
+        // #1383: Aufgeräumt ist richtig, gescheitert ist nur das Speichern – kein Schritt steht auf „fehler“, der Lauf
+        // sagt es eigens (die Werkbank zeigt dazu einen Hinweis).
+        assert.equal(lauf.schritte.find((x) => x.name === 'Aufräumen')?.status, 'ok', `${scheitert}: ${JSON.stringify(lauf.schritte)}`);
+        assert.deepEqual(lauf.schritte.filter((x) => x.status !== 'ok' && x.status !== 'hinweis'), [], scheitert);
+        assert.equal(lauf.ergebnisNichtGespeichert, true, scheitert);
       }
+      if (scheitert === 'nie') assert.equal(lauf.ergebnisNichtGespeichert, undefined);
       if (scheitert === 'beim Erfolg') assert.equal((await q.sicherung.liste()).find((x) => x.name === sicherungsName)?.probe?.ok, false);
       assert.equal((await q.sql`SELECT nspname FROM pg_namespace WHERE nspname LIKE 'dms_wh_%'`).length, 0, `${scheitert}: aufgeräumt`);
     }
@@ -401,6 +407,9 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       assert.equal(ergebnis, false);
       assert.equal(q.w.laeuft(), false);
       assert.match(lauf.fehler ?? '', /Schlüssel/, String(scheitert));
+      // #1383: Hier scheitert ein Schritt selbst, nicht nur das Speichern.
+      assert.equal(lauf.ergebnisNichtGespeichert, undefined, String(scheitert));
+      assert.ok(lauf.schritte.some((x) => x.status === 'fehler'), String(scheitert));
     }
   });
 
