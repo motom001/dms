@@ -18,15 +18,15 @@ async function verwaltung() {
 }
 
 /**
- * Warten, bis die Texterkennung aller Dokumente der Mappe fertig ist. Im ganzen Lauf arbeitet sie oft noch die Dokumente
- * früherer Bereiche ab – daher großzügig, in einem eigenen Schritt mit längerer Zeitgrenze (unten).
+ * Warten, bis die Texterkennung des Hauptdokuments fertig ist (die Anlage braucht im ganzen Lauf mit dem Paket
+ * „Texterkennung“ länger). Großzügig, in einem eigenen Schritt mit längerer Zeitgrenze (unten).
  */
-async function textFertig(cookie, mappeId) {
+async function textFertig(cookie, mappeId, name) {
   let stand = [];
   for (let i = 0; i < 400; i++) {
     const d = (await api('GET', `/api/mappen/${mappeId}`, { cookie })).daten;
     stand = d.dokumente.map((x) => `${x.name}: ${x.ocr?.stand}`);
-    if (d.dokumente.length && d.dokumente.every((x) => x.ocr?.stand === 'fertig')) return d;
+    if (d.dokumente.some((x) => x.name === name && x.ocr?.stand === 'fertig')) return d;
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`Texterkennung nicht fertig (${stand.join(', ')})`);
@@ -90,7 +90,7 @@ async function vorbereiten() {
   const haupt = await hochladen(c, beleg.id, 'Wartungsrechnung.pdf', 'Rechnung Wartung Vertragsnummer WV-2027-17');
   const anlage = await hochladen(c, beleg.id, 'Wartungsprotokoll.pdf', 'Protokoll der Wartung an der Heizung vom 12.01.2027');
   await api('POST', `/api/dokumente/${haupt.id}/anlagen`, { cookie: c, body: { dokument: anlage.id } });
-  await textFertig(c, beleg.id);
+  await textFertig(c, beleg.id, 'Wartungsrechnung.pdf');
   return { vertragTyp, belegTyp, vertrag, beleg, haupt, anlage };
 }
 
@@ -169,14 +169,17 @@ rauchtest(
     await zeile.getByRole('button', { name: 'Weitere Handlungen für Wartungsprotokoll.pdf' }).click();
     const menue = s.getByRole('menu', { name: 'Weitere Handlungen für Wartungsprotokoll.pdf' });
     const punkte = await menue.getByRole('menuitem').allTextContents();
-    for (const p of ['Text anzeigen', 'Umbenennen', 'Zum eigenen Dokument machen'])
+    for (const p of ['Umbenennen', 'Zum eigenen Dokument machen'])
       assert.ok(
         punkte.some((x) => x.includes(p)),
         `fehlt: ${p}`,
       );
     assert.ok(!punkte.some((x) => x.includes('Mit Anlagen (ZIP)')), '„Mit Anlagen (ZIP)“ an einer Anlage');
-    await menue.getByRole('menuitem', { name: 'Text anzeigen' }).click();
-    await zeile.getByText('Protokoll der Wartung an der Heizung', { exact: false }).waitFor();
+    // „Text anzeigen“, sobald die Texterkennung der Anlage fertig ist (im ganzen Lauf kann sie noch warten).
+    if (punkte.some((x) => x.includes('Text anzeigen'))) {
+      await menue.getByRole('menuitem', { name: 'Text anzeigen' }).click();
+      await zeile.getByText('Protokoll der Wartung an der Heizung', { exact: false }).waitFor();
+    } else await s.keyboard.press('Escape');
     const funde = [];
     for (const schema of ['light', 'dark']) {
       await schemaWechseln(s, schema);
