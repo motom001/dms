@@ -506,6 +506,39 @@ const PAKETE_ALLES = {
   vorschau: { ...PAKETE_RUNDE.vorschau, ...PAKETE_MITKOMMT.vorschau },
 };
 
+/** Rollt die Spalte, in der `el` steht: ihr Abstand nach oben (#1508). */
+const gerollt = (link) =>
+  link.evaluate((el) => {
+    for (let x = el.parentElement; x; x = x.parentElement)
+      if (x.scrollHeight > x.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(x).overflowY)) return x.scrollTop;
+    return document.scrollingElement.scrollTop;
+  });
+
+rauchtest('Pakete: Die Liste bleibt stehen, wenn man unten ein Paket wählt (#1508)', { als: LENA }, async (s) => {
+  const viele = Array.from({ length: 40 }, (_, i) => katalogPaket(`paket${i + 1}`, `Paket ${String(i + 1).padStart(2, '0')}`, ['1.0.0']));
+  await paketeAttrappe(s, { ...PAKETE_DREI, katalog: [...PAKETE_DREI.katalog, ...viele] });
+  const elemente = await zuDenPaketen(s);
+  await elemente.getByRole('button', { name: 'Nach neuen Versionen suchen' }).click();
+  for (const name of ['Paket 38', 'Paket 39', 'Basis', 'Paket 40']) {
+    const link = elemente.getByRole('link', { name: new RegExp(`^${name}`) });
+    await link.scrollIntoViewIfNeeded();
+    const vorher = await gerollt(link);
+    await link.click();
+    await s.waitForURL(/\/werkbank\/pakete\/\w+/);
+    await s.waitForLoadState('networkidle');
+    await link.and(s.locator('.an')).waitFor();
+    const nachher = await gerollt(link);
+    assert.ok(Math.abs(nachher - vorher) < 2, `${name}: Liste von ${vorher} auf ${nachher} gesprungen`);
+    assert.ok(
+      await link.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top >= 0 && r.bottom <= innerHeight;
+      }),
+      `${name} sichtbar`,
+    );
+  }
+});
+
 rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168, #1047, #1048)', { als: LENA }, async (s) => {
   await paketeAttrappe(s, PAKETE_ALLES);
   const funde = [];

@@ -198,13 +198,29 @@ export function anzeigeBedingungProblem(
     !b.bedingung.wert.wert.length
   )
     return t('gemeinsam.anzeige.wert-waehlen', { feld: feldLabel(f) });
-  return bedingungsProblem(b.bedingung, [alsTyp(typ)]);
+  return bedingungsProblem(ohneVerloreneZiele(b.bedingung, f, existiertTyp), [alsTyp(typ)]);
+}
+
+/**
+ * Optionales Ziel, dessen Typ es nicht mehr gibt (#1521): Wurde das Paket entfernt, bevor Ablago die Bedingung auf die
+ * Kennung umstellen konnte, steht dort noch die Id. Wie bei der Kennung ruht die Bedingung dann – kein Fehler, der jedes
+ * Speichern des Typs verhindert. Nur an Feldern mit `zielOptional` und nur, wenn bekannt ist, welche Typen es gibt.
+ */
+function ohneVerloreneZiele(b: Feldbedingung, f: Feld, existiertTyp?: (id: string) => boolean): Feldbedingung {
+  const w = b.wert;
+  if (b.op !== 'zeigtAufTyp' || !f.zielOptional?.length || !existiertTyp || w?.art !== 'fest' || !Array.isArray(w.wert)) return b;
+  const da = w.wert.filter((x) => typeof x !== 'string' || x.includes(':') || existiertTyp(x));
+  if (da.length === w.wert.length) return b;
+  // Nur verlorene Ziele: wie eine Kennung, die auf ihr Paket wartet.
+  return { ...b, wert: { ...w, wert: da.length ? da : [f.zielOptional[0]] } };
 }
 
 function verweistypProblem(b: { typ: string }, f: Feld, existiertTyp?: (id: string) => boolean): string | null {
   if (f.typ !== 'referenz') return t('gemeinsam.anzeige.kein-verweis', { feld: feldLabel(f) });
   // Optionales Ziel (#1122), dessen Paket fehlt: kein Problem – die Bedingung trifft nie zu, bis es den Typ gibt.
   if (wartetAufPaket(f, b.typ)) return null;
+  // Optionales Ziel, dessen Typ mit seinem Paket verschwand (#1521): ruht ebenso.
+  if (f.zielOptional?.length && existiertTyp && !existiertTyp(b.typ)) return null;
   // Mehrere Zieltypen (#1036): „zeigt auf Mappe vom Typ …“ für jeden davon; bei genau einem Typ ist die Bedingung fest.
   if (!jedeMappe(f) && !zielErlaubt(f, b.typ)) return t('gemeinsam.anzeige.anderer-typ', { feld: feldLabel(f) });
   if (existiertTyp && !existiertTyp(b.typ)) return t('gemeinsam.anzeige.typ-fehlt');
