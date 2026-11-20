@@ -7,9 +7,9 @@ import { pdfaName } from '../../../../shared/src/archivfassung';
 import { herkunftText } from '../../volltext';
 import { t } from '../../sprache';
 import { fassungUrl } from '../../api/dokumente';
-import { Person } from '../../Person';
 import { Knopf } from '../../bausteine';
-import { herkunftVon, sprachenAnzeige, zeit } from './hilfen';
+import { sprachenAnzeige, zeit } from './hilfen';
+import { HerkunftUndPerson } from './teile';
 
 /** „Wartet auf Paket“ statt Texterkennung (#614), sonst der Stand der Texterkennung. */
 function standText(s?: OcrStand) {
@@ -127,7 +127,7 @@ export function UeberDokument({
       <div>
         <dt>{t('ablage.dokumente.ueber.eingang')}</dt>
         <dd>
-          {zeit(x.erstellt)} · {herkunftVon(x.herkunft)} · <Person id={x.erstelltVon} />
+          {zeit(x.erstellt)} · <HerkunftUndPerson x={x} />
         </dd>
       </div>
       {(versioniert || (x.version ?? 1) > 1) && (

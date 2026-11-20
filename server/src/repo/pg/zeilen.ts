@@ -136,9 +136,10 @@ export const alsMappe = (r: Zeile): Mappe => ({
   ...(r.vorgabe ? { vorgabe: r.vorgabe as string } : {}),
 });
 /** E-Mail-Postfach (#999): Eingangsreihenfolge und Kennzeichen „Original-E-Mail“ – nur, wo gesetzt. */
-const eingangsfelder = (r: Zeile): Pick<Dokument, 'eingangNr' | 'originalEmail'> => ({
+const eingangsfelder = (r: Zeile): Pick<Dokument, 'eingangNr' | 'originalEmail' | 'eingangFuer'> => ({
   ...(r.eingang_nr ? { eingangNr: r.eingang_nr as number } : {}),
   ...(r.original_email ? { originalEmail: true } : {}),
+  ...(r.eingang_fuer ? { eingangFuer: r.eingang_fuer as string } : {}),
 });
 export const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,

@@ -69,6 +69,29 @@ export function DokTeilen({ d }: { d: Dokument }) {
   );
 }
 
+/**
+ * Herkunft und Person (#1489): „per E-Mail · für Lena“ bei Eingangskanälen, sonst wer hochgeladen hat. Ohne Person
+ * (z. B. ein Postfach ohne „für“) fällt der Teil weg – kein „unbekannt“.
+ */
+export function HerkunftUndPerson({ x }: { x: Dokument }) {
+  return (
+    <>
+      {herkunftVon(x.herkunft)}
+      {x.eingangFuer ? (
+        <>
+          {' · '}
+          {t('ablage.dokumente.info.fuer')} <Person id={x.eingangFuer} />
+        </>
+      ) : x.erstelltVon ? (
+        <>
+          {' · '}
+          <Person id={x.erstelltVon} />
+        </>
+      ) : null}
+    </>
+  );
+}
+
 /** Eine Infozeile (#1211): Art · Seiten · Größe · Datum · Herkunft · Version und Archivnummer, wenn vorhanden. */
 export function Infozeile({ x, s }: { x: Dokument; s?: OcrStand }) {
   const teile: ReactNode[] = [
@@ -76,9 +99,7 @@ export function Infozeile({ x, s }: { x: Dokument; s?: OcrStand }) {
     s?.stand === 'fertig' && s.seiten ? t('ablage.dokumente.info.seiten', { anzahl: s.seiten }) : null,
     groesse(x.groesse),
     zeit(x.erstellt),
-    <>
-      {herkunftVon(x.herkunft)} · <Person id={x.erstelltVon} />
-    </>,
+    <HerkunftUndPerson x={x} />,
     (x.version ?? 1) > 1 ? t('ablage.dokumente.version-2', { wert: x.version ?? 1 }) : null,
     x.archivnummer ? tn('ablage.dokumente.archivnummer-2', { b: <strong className="mono">{x.archivnummer}</strong> }) : null,
   ].filter((v) => v !== null && v !== '');

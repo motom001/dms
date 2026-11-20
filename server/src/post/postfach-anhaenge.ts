@@ -41,7 +41,7 @@ export interface AnhaengeDienst {
  */
 export async function legeAnhaengeAb(
   dienst: AnhaengeDienst,
-  x: { postId: string; mail: GeleseneMail; quelle: Buffer; original: boolean; von: string },
+  x: { postId: string; mail: GeleseneMail; quelle: Buffer; original: boolean; von: string; fuer?: string | null },
   abgelehnt: string[] = [],
 ): Promise<number> {
   const { postId, mail, von } = x;
@@ -65,7 +65,14 @@ export async function legeAnhaengeAb(
       // Platz in der Eingangsreihenfolge: 1, 2, 3 … wie in der E-Mail; die Original-E-Mail zuletzt.
       const r = await dienst.dokumente.ladeHoch(
         postId,
-        { register, name: a.name, typ: a.mime, eingang: { nr: n + 1, ...(a.original ? { originalEmail: true } : {}) } },
+        {
+          register,
+          name: a.name,
+          typ: a.mime,
+          // Herkunft (#1489): „per E-Mail“, für wen laut Postfach.
+          herkunft: 'email',
+          eingang: { nr: n + 1, ...(a.original ? { originalEmail: true } : {}), ...(x.fuer ? { fuer: x.fuer } : {}) },
+        },
         a.inhalt,
         null,
       );

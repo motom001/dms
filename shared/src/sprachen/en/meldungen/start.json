@@ -77,6 +77,8 @@
   "verwaltung.einstellungen-geprueft": "Settings checked",
   "verwaltung.ausprobiert": "Tried out",
   "verwaltung.verlauf-zeilen-max": "More than {anzahl} lines this hour – further ones are only in the Ablago log.",
+  "verwaltung.verlauf-schreiben-gescheitert": "Write rejected: {liste}",
+  "verwaltung.verlauf-zeichen": "{anzahl} characters",
   "verwaltung.felder-erkannt": "Fields recognised",
   "verwaltung.typ-vorgeschlagen": "Folder type suggested",
   "verwaltung.der-paket-laeufer-wurde": "The package runner has been stopped.",

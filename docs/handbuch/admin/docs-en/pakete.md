@@ -374,11 +374,11 @@ Ablago does not show computing time (CPU) per package: all packages run in the s
 
 **List** below, newest first, with a search field and the tick **Show errors only**:
 
-- every **delivered event** (type, the folder or post as a link – only if you may read it) and every other **call** (action, question, recognition, settings check …) with its **result** – *ok*, *Error*, *Time limit* or *Memory limit* –, duration, memory, error message and the [network calls](#netzaufrufe) of that call
+- every **delivered event** (type, the folder or post as a link – only if you may read it) and every other **call** (action, question, recognition, settings check …) with its **result** – *ok*, *Warning*, *Error*, *Time limit* or *Memory limit* – and duration and memory. **Expanded**, the entry shows the folder (as a link), the **result text** of the run (e.g. “Invoice: status new”, at most 300 characters, as under *Last*) or the error message, and the [network calls](#netzaufrufe) of that call. If Ablago rejects a write attempt of the package (e.g. 409 “changed”, 404, 400), the run is shown as a *Warning* with method, path, status and message – not as *ok*
 - the package's **log lines** (at most 60 per hour; further ones only in Ablago's log)
 - **Installed**, **Updated** and **Settings changed** – who, when and which settings (never values)
 
-The activity **never contains content** from documents or answers of the package. Entries are kept for **30 days** (at most 5000 per package) so that the load can show a month – longer than Ablago's [log](fehlersuche.md#protokoll), which only goes back one day. If you remove the package, its activity goes with it.
+The activity **never contains content** from documents. Of the package's answers, only the short result text of a run is shown; answers of AI functions and folder actions only as their length (“120 characters”). Entries are kept for **30 days** (at most 5000 per package) so that the load can show a month – longer than Ablago's [log](fehlersuche.md#protokoll), which only goes back one day. If you remove the package, its activity goes with it.
 
 ![The “Activity” tab of a package: load with traffic light, below the list with “Show errors only”](bilder/werkbank-paket-verlauf.png)
 

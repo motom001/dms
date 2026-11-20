@@ -113,6 +113,12 @@ describe('Eingangsordner (#195)', () => {
     await e.pruefe();
     assert.equal(await e.pruefe(), 2);
     for (const p of await posten()) assert.equal(p.m.werte.an, anna.id);
+    // Herkunft (#1489): „aus dem Eingangsordner“, für die Person des Ordners – nicht „hochgeladen · unbekannt“.
+    for (const p of await posten())
+      assert.deepEqual(
+        p.docs.map((x) => [x.herkunft, x.eingangFuer, x.erstelltVon]),
+        [['ordner', anna.id, null]],
+      );
     assert.ok(existsSync(join(ordner, 'anna@example.org', 'erledigt', '2026', '11', 'scan.pdf')), 'erledigt/ der Person');
     assert.ok(existsSync(join(ordner, 'nas', 'anna@example.org', 'erledigt', 'b.pdf')));
     assert.ok(!existsSync(join(ordner, 'erledigt')), 'kein gemeinsames erledigt/');

@@ -32,6 +32,7 @@ export const DOKUMENT_SPALTEN = [
   'anlage_nr',
   'eingang_nr',
   'original_email',
+  'eingang_fuer',
 ] as const;
 /**
  * Spalten einer Mappe ohne `suchtext` (#615): Der gefaltete Suchtext (Migration 055) ist nur für die Suche da und

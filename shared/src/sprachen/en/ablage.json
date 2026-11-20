@@ -344,6 +344,7 @@
   "dokumente.info.seiten_one": "{anzahl} page",
   "dokumente.info.seiten_other": "{anzahl} pages",
   "dokumente.herkunft.eingang": "came in through an inbox",
+  "dokumente.info.fuer": "for",
   "dokumente.zustand.text": "Text not readable – {grund}",
   "dokumente.zustand.text-ohne": "Text not readable.",
   "dokumente.zustand.archiv": "No archive version – {grund}",
