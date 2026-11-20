@@ -82,6 +82,9 @@ export default defineConfig([
       'react-hooks/exhaustive-deps': 'error',
     },
   },
+  // Erzeugte Daten (#1519): die Formen der 259 Ansichtssymbole aus lucide-static (.github/werkzeuge/ansichtsymbole-formen.mjs)
+  // – eine Tabelle ohne Logik, die nie von Hand geändert wird; aufgeteilt wäre sie nur schwerer neu zu erzeugen.
+  { files: ['web/src/ansichtsymbol-formen.ts'], rules: { 'max-lines': 'off' } },
   // Bausteinregeln (#968, „Neues streng“): rohe Knöpfe und Eingaben nur in den Bausteinen selbst. Der Bestand beim
   // Einführen steht in eslint-suppressions.json (Regel ablago/bausteine).
   { files: ['web/src/**/*.tsx'], ignores: ['web/src/bausteine/**'], rules: { 'ablago/bausteine': 'error' } },
