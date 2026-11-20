@@ -4,7 +4,7 @@
 
 - die **Feiertage** im Kalender und bei der [Täglichen Zusammenfassung](aufgaben.md#tagliche-zusammenfassung),
 - „**heute**“ – bei Fristen, Vorlaufzeiten, Filtern wie „angelegt heute“, Nummernkreisen mit Jahr und Aufbewahrungsfristen,
-- alle **Uhrzeiten**: Tägliche Zusammenfassung, Automatisierungen mit „Datum erreicht“ und Zeitplänen, Sicherungen, Datumsangaben in E-Mails, Auskünften, Stempeln und Exporten.
+- alle **Uhrzeiten**: Tägliche Zusammenfassung, Automatisierungen mit „Datum erreicht“ und Zeitplänen, Sicherungen, Datumsangaben in E-Mails, Auskünften, Stempeln und Exporten – und das Datum neuer Post aus dem Postfach (eine Mail um 00:30 gehört zu diesem Tag, nicht zum Vortag).
 
 ## Einstellungen
 

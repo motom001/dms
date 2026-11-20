@@ -12,7 +12,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { imapGemessen } from '../system/externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
 import { t } from '../sprache/sprache';
-import { zeitText } from '../../../shared/src/region';
+import { tagIn, zeitText } from '../../../shared/src/region';
 import type { Verschluesselung, Zugang, ImapSitzung, ImapVerbinder, GeleseneMail, MailLeser } from './postfach-typen';
 
 /**
@@ -602,7 +602,8 @@ export class Postfaecher {
       {
         betreff: mail.betreff || t('meldungen.postfach.ohne-betreff'),
         von: absender,
-        ...(datum ? { datum: datum.toISOString().slice(0, 10) } : {}),
+        // Kalendertag in der Zone der Region (#1526): Eine Mail um 00:30 Ortszeit gehört zu diesem Tag, nicht zum Vortag (UTC).
+        ...(datum ? { datum: tagIn(datum) } : {}),
         ...(p.fuer ? { an: p.fuer } : {}),
         nachricht: mail.text.slice(0, NOTIZ_MAX),
       },
