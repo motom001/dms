@@ -1,8 +1,8 @@
 /**
  * Formen der Ansichtssymbole (#428, #1519), erzeugt aus lucide-static 1.76.0 (ISC-Lizenz, Copyright Lucide
  * Contributors; Hinweis in Symbol.tsx und NOTICE) – nicht von Hand ändern. Neues Symbol: in shared/src/ansichtsymbole.ts
- * eintragen und die Formen mit derselben Version von lucide-static neu erzeugen (Skript im Entwicklerhandbuch,
- * „Pakete → Symbole“); web/test/ansichtsymbol.test.ts prüft, dass jeder Name eine Form hat.
+ * eintragen und die Formen mit .github/werkzeuge/ansichtsymbole-formen.mjs aus derselben Version neu erzeugen;
+ * web/test/ansichtsymbol.test.ts prüft, dass jeder Name eine Form hat.
  */
 export type FormTeil = ['path' | 'circle' | 'rect' | 'line' | 'polyline' | 'polygon' | 'ellipse', Record<string, string>];
 
