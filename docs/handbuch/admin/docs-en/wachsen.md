@@ -40,6 +40,8 @@ A database of an older major version (e.g. 17) can't simply be started with a ne
   4. Once everything works, delete the old folder.
 - **Your own database:** the same. Start a new, empty PostgreSQL container in the new version, point Ablago to it, restore the backup.
 
+A snapshot of the server doesn't help here: it contains the database in the format of the old major version (see [Backing up with snapshots](snapshots.md#snapshot-oder-sicherung)).
+
 ## When it grows {#wenn-es-mehr-wird}
 
 - **Many documents:** the `files` folder grows with the documents, the database much more slowly. Put `files` and `sicherung` where there is space. The folders can be moved individually, as long as the volume afterwards points to the same folder in the container again. **Workbench → system health** shows what takes up how much.

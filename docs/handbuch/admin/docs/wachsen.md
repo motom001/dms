@@ -40,6 +40,8 @@ Eine Datenbank einer älteren Hauptversion (z. B. 17) lässt sich nicht einfach 
   4. Läuft alles, den alten Ordner löschen.
 - **Eigene Datenbank:** genauso. Neuen, leeren PostgreSQL-Container in der neuen Version starten, Ablago darauf zeigen lassen, Sicherung einspielen.
 
+Ein Snapshot des Servers hilft hier nicht: Er enthält die Datenbank im Format der alten Hauptversion (siehe [Sichern mit Snapshots](snapshots.md#snapshot-oder-sicherung)).
+
 ## Wenn es mehr wird
 
 - **Viele Dokumente:** Der Ordner `files` wächst mit den Dokumenten, die Datenbank viel langsamer. Lege `files` und `sicherung` dorthin, wo Platz ist. Die Ordner lassen sich einzeln verschieben, solange das Volume danach wieder auf denselben Ordner im Container zeigt. **Werkbank → Systemzustand** zeigt, was wie viel belegt.
