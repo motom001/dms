@@ -88,6 +88,28 @@ So liest du sie: Stimmt der Satz noch? Wenn nicht, korrigieren. Ist er gewollt (
 - **Node-Version an zwei Stellen** (#1272): `engines` in `package.json` (alle Workflows lesen sie mit `node-version-file`) und das Basis-Image einmal im `Dockerfile` (Stufe `node-basis`, auf der Bau und Laufzeit aufbauen). Ein Wechsel der Hauptversion ändert beide.
 - **Sicherheitskorrektur = Patch-Release** mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
+### Wechsel der Node-Hauptversion { #node-wechsel }
+
+Ablago läuft auf **Node.js 24**. Node 24 ist seit 20.10.2026 in der Wartungsphase und bekommt Sicherheitsupdates bis **30.04.2028**; **Node 26** ist seit Oktober 2026 aktives LTS. Ab 2027 erscheint nur noch eine Node-Version im Jahr. Wir wechseln deshalb früh und ohne Zeitdruck ([#1473](https://github.com/motom001/dms/issues/1473), Folgeschritt aus dem Risikosteckbrief [#1413](https://github.com/motom001/dms/issues/1413)):
+
+| Wann | Was |
+| --- | --- |
+| Januar 2027 | Branch mit Node 26 anlegen, Prüfliste unten abarbeiten, auffällige Pakete notieren |
+| Februar 2027 | Umstellung mergen, Release mit Hinweis für Betreiber |
+| **spätestens 31.03.2027** | Node 26 in allen Images und Workflows |
+| bis 30.04.2028 | Node 24 nur noch als Rückfall für ein älteres Image; danach keine Sicherheitsupdates mehr |
+
+**Prüfliste für den Wechsel** (gilt sinngemäß für jeden Wechsel der Hauptversion):
+
+1. **Version an beiden Stellen** (#1272): `engines` in `package.json` und das Basis-Image `node:26-alpine` in der Stufe `node-basis` des `Dockerfile`. Dazu `@types/node` auf die neue Hauptversion (kommt bewusst nicht über Dependabot).
+2. **Basis-Image:** Ob das Image dabei per Digest festgehalten wird, entscheidet der PR. Bisher gilt bewusst „ohne festen Prüfwert“ (Abschnitt [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)); #1473 nennt den Digest – die Abwägung steht im PR.
+3. **CI:** alle Workflows grün – Tests (alle drei Teile), Rauchtests mit einem und zwei Prozessen, `image-probe` für beide Architekturen, Bilder des Handbuchs.
+4. **Läufer und Werkzeugdienst:** WebAssembly-Pakete (WASI), Worker und das Berechtigungsmodell von Node (`--permission`) gegen den Läufer testen – Änderungen am Berechtigungsmodell zwischen den Hauptversionen gezielt im Änderungsprotokoll von Node nachlesen. Ebenso den Werkzeugdienst (`DMS_WERKZEUG_DIENST`) und die Pakete mit Code ([Pakete mit Code](pakete-code.md)).
+5. **Pakete mit Bezug zur Laufzeit** gegen Node 26 prüfen, mindestens `@simplewebauthn/server` (Passkeys, Rauchtest „Passkey“), `postgres` (Datenbank, Server-Tests mit PostgreSQL), die Mail-Pakete (`nodemailer`, `imapflow`, `mailparser`) und alles mit nativen Teilen oder `node:`-Modulen, die sich geändert haben.
+6. **Sicherheitsabgleich:** Der Abgleich bei NVD liest die Node-Version aus dem Image (`binaer: node` in `.github/werkzeuge/upstream-programme.json`) – einzutragen ist nichts; nach dem ersten Lauf prüfen, dass er Node 26 meldet.
+7. **Release-Notiz** mit „Beim Update beachten“, wenn sich für Betreiber etwas ändert (z. B. eigene Images, die auf `node:24` aufbauen, oder eine neue Mindestversion für Entwickler). Sonst `art: minor` mit einem Satz unter „Geändert“.
+8. **Entwicklerhandbuch:** „Loslegen“ (Node-Version für Entwickler) und diese Seite nachziehen.
+
 ### Images prüfen, Herkunftsnachweis und Stückliste
 
 - **Trivy** prüft beide Images auf bekannte Lücken in den Systempaketen (Alpine, poppler, PostgreSQL in `dms-komplett`) und in den Node-Bibliotheken im Image.
