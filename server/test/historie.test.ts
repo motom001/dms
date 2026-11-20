@@ -59,4 +59,30 @@ describe('Historie (#57)', () => {
     assert.equal((await repo.historie(m.id)).length, 0);
     await assert.rejects(d.mappenHistorie.setzeHistorieTage(-1), /ganze Zahl/);
   });
+
+  it('zählt beim Anlegen nur Felder mit Wert – ein unberührtes Ja/Nein-Feld („nein“) nicht (#1492)', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const t = await d.mappentypen.legeTypAn({
+      name: 'Rechnung',
+      felder: [
+        { key: 'nr', label: 'Nummer', typ: 'text' },
+        { key: 'umlage', label: 'Umlagefähig', typ: 'janein' },
+        { key: 'bezahlt', label: 'Bezahlt', typ: 'janein' },
+      ],
+    });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: 'R-1', bezahlt: true } }, ich.id);
+    assert.equal(m.werte.umlage, false, 'gespeichert bleibt „nein“ wie bisher');
+    const angelegt = (await d.mappenHistorie.historie(m.id)).find((e) => e.art === 'angelegt')!;
+    assert.deepEqual(
+      (angelegt.daten.aenderungen as Array<{ feld: string }>).map((a) => a.feld),
+      ['nr', 'bezahlt'],
+    );
+    // „Ja“ → „Nein“ ist eine echte Änderung und steht weiter in der Historie.
+    await d.mappen.aendereMappe(m.id, { werte: { bezahlt: false } }, ich.id);
+    const g = (await d.mappenHistorie.historie(m.id)).find((e) => e.art === 'geaendert')!;
+    assert.deepEqual(
+      (g.daten.aenderungen as Array<{ feld: string; alt: string; neu: string }>).map((a) => [a.feld, a.alt, a.neu]),
+      [['bezahlt', 'Ja', 'Nein']],
+    );
+  });
 });

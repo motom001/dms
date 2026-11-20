@@ -33,3 +33,15 @@ export function anzahlWerte(typ: Mappentyp, keys: string[], roh: RohWerte): numb
     return !!f && hatWert(f, roh);
   }).length;
 }
+
+/**
+ * Felder, die beim Anlegen keinen Wert bekommen (#1492): ausgeblendete Felder und Register (#655) und, was eine
+ * Anzeige-Bedingung gerade ausblendet (#1033) – außer, die Person hat das Feld oder seinen Abschnitt mit „anzeigen“
+ * aufgedeckt. So entstehen keine Angaben, die nie zu sehen waren: kein Vorgabewert, kein Vorschlag der Erkennung.
+ */
+export function beimAnlegenVerborgen(ausgeblendet: Set<string>, anz: Anzeigestand, aufgedeckt: Set<string>): Set<string> {
+  const aus = new Set(ausgeblendet);
+  for (const k of anz.felder) if (!aufgedeckt.has(`f:${k}`)) aus.add(k);
+  for (const a of anz.abschnitte) if (!aufgedeckt.has(`a:${a.register}.${a.abschnitt.vor}`)) for (const k of a.felder) aus.add(k);
+  return aus;
+}

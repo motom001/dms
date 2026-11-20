@@ -3,7 +3,7 @@ import type { AktionsDialog, AktionsErgebnis, AktionsSchritt, AngeboteneAktion, 
 import { ApiFehler } from '../api/anfrage';
 import { mappenApi, type MappeDetails } from '../api/mappen';
 import { paketeApi } from '../api/pakete';
-import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, fehlerText } from '../bausteine';
+import { DatumEingabe, Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, fehlerText } from '../bausteine';
 import { Link } from '../ort';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
@@ -199,7 +199,7 @@ function Eingabe({ f, wert, setze, fehler }: { f: DialogFeld; wert: unknown; set
             ))}
           </select>
         ) : f.art === 'datum' ? (
-          <input {...v} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />
+          <DatumEingabe {...v} wert={String(wert ?? '')} setze={setze} />
         ) : (
           <input {...v} type="text" autoComplete="off" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />
         )

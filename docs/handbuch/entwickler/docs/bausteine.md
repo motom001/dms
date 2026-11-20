@@ -103,6 +103,7 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Kachel](bausteine-kachel.md) | Ein Weg mit einer Zahl, gleich auf Startseite und Werkbank-Übersicht; grün mit Haken nur, wenn leer „erledigt“ heißt |
 | [PaketChip](bausteine-paketchip.md) | Herkunft aus einem Paket: Symbol und Name hinter dem Namen, Tooltip mit Version, Link zur Paketseite |
 | [Eingaben mit Einheit](bausteine-einheit.md) | Zeitraum (Zahl und Einheit, Einzahl/Mehrzahl) und Prozent (Zahl mit „%“) für die Feldarten Zeitraum und Prozent |
+| [Datum](bausteine-datum.md) | Datumsfeld zum Tippen mit eigenem Kalender samt Kalenderwochen (ISO 8601); Klick ins Feld öffnet ihn, die Tastatur bleibt direkt |
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |
 | [Suche](bausteine-suche.md) | Das Suchfeld aller Listen, das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter, und das Suchfeld der Kopfzeile (`KopfSuche`) |
 | [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Tipps · Handbuch“ im Assistenten |

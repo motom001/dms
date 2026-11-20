@@ -9,7 +9,7 @@ import { useDaten } from '../../daten';
 import { useKonto } from '../../konto';
 import { Hilfe } from '../../Hilfe';
 import { t, tn } from '../../sprache';
-import { Feld, Knopf } from '../../bausteine';
+import { DatumEingabe, Feld, Knopf } from '../../bausteine';
 import { BenutzerWahl, ProbeHinweis, trotzdemZuweisen, type Probe } from './gemeinsam';
 
 /**
@@ -67,7 +67,7 @@ export function ErinnerungFormular({
     <>
       <div className="raster">
         <Feld beschriftung={t('ablage.aufgaben.am')}>
-          <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
+          <DatumEingabe wert={datum} setze={setDatum} />
         </Feld>
         {mitEmpfaenger && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}
         {mitText && (
@@ -274,7 +274,7 @@ export function AblaufFormular({
                 ? t('ablage.aufgaben.vorschlag', { datum: datumDe(vorschlagDatum(vorlage.wann, heuteIn())) })
                 : undefined
             }>
-            <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
+            <DatumEingabe wert={datum} setze={setDatum} />
           </Feld>
         )}
         {f.includes('empfaenger') && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}

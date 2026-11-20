@@ -4,7 +4,7 @@ import { eingabemodus, formatFehler } from '../../../../shared/src/feldformate';
 import { zieleVon, type Feld as FeldDef, type Mappentyp, type Wert, type Werte } from '../../../../shared/src/model';
 import type { Bezuege } from '../../api/mappen';
 import { vorbelegungAus } from '../../../../shared/src/sichten';
-import { Feld, FeldGruppe, ProzentEingabe, ZeitraumEingabe, type FeldProps } from '../../bausteine';
+import { DatumEingabe, Feld, FeldGruppe, ProzentEingabe, ZeitraumEingabe, type FeldProps } from '../../bausteine';
 import { t } from '../../sprache';
 import { leeresPasswort, type Roh, type RohBetrag, type RohPasswort, type RohZeitraum } from '../../werte';
 import { FormatiertEingabe } from '../Formatiert';
@@ -125,7 +125,8 @@ function einfacheEingabe({ feld: f, roh, setze }: FeldEingabeProps, { rahmen, un
               aria-invalid={v['aria-invalid']}
             />
           )}
-          {f.typ === 'datum' && <input {...v} type="date" value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />}
+          {/* Datum (#1496): Kalender mit Kalenderwochen, Tippen bleibt direkt. */}
+          {f.typ === 'datum' && <DatumEingabe {...v} wert={String(roh ?? '')} setze={setze} />}
           {f.typ === 'janein' && (
             <label className="haken">
               <input {...v} type="checkbox" checked={!!roh} onChange={(e) => setze(e.target.checked)} />
@@ -139,7 +140,7 @@ function einfacheEingabe({ feld: f, roh, setze }: FeldEingabeProps, { rahmen, un
   );
 }
 
-function betragEingabe({ feld: f, roh, setze }: FeldEingabeProps, { rahmen, unter }: Rahmen) {
+function betragEingabe({ roh, setze }: FeldEingabeProps, { rahmen, unter }: Rahmen) {
   const b = (roh ?? { betrag: '', waehrung: 'EUR' }) as RohBetrag;
   return (
     <Feld {...rahmen}>
@@ -149,7 +150,8 @@ function betragEingabe({ feld: f, roh, setze }: FeldEingabeProps, { rahmen, unte
             <input
               {...v}
               inputMode="decimal"
-              placeholder={f.negativ ? '-0,00' : '0,00'}
+              // Leer (#1493): immer „0,00“ – ein Minus sähe aus wie ein schon eingetragener Wert; „nur negativ“ sagt der Hinweis.
+              placeholder="0,00"
               value={b.betrag}
               onChange={(e) => setze({ ...b, betrag: e.target.value })}
             />

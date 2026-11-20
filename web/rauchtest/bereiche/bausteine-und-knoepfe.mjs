@@ -14,7 +14,7 @@ import { musterAufnehmen } from '../muster.mjs';
 // Musterseite (nur im Testbau, VITE_MUSTER=1): hell und dunkel, Desktop und Handy fotografieren, mit axe-core prüfen –
 // ohne Verstoß, ohne Fehler im Browser. Braucht keine Einrichtung und keine Daten.
 // Seit #1210 mehr Bausteine und Zustände: Die Messung der Tippflächen am Handy braucht länger.
-test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 300_000 }, async () => {
+test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 420_000 }, async () => {
   await warteAufAblago();
   await mkdir(MUSTERORDNER, { recursive: true });
   const fehler = [];
@@ -25,7 +25,7 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 3
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 38, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.equal(bilder.length, 40, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });

@@ -91,8 +91,11 @@ export class MappenHistorie {
     const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
     // Zusammengesetzt (#1050) nicht: Es folgt aus seinen Teilen, deren Änderung hier steht – und so steht kein Titel einer
     // verwiesenen Mappe zusätzlich in der Historie.
+    // Ja/Nein (#1492): „nein“ ist die Vorgabe, kein eingetragener Wert – leer → „nein“ ist keine Änderung. Sonst stünde
+    // beim Anlegen jedes Ja/Nein-Feld in der Historie, auch eines in einem ausgeblendeten Abschnitt.
+    const leer = (f: Feld, v: unknown) => istLeer(v) || (f.typ === 'janein' && v === false);
     const felder = typ.felder.filter(
-      (f) => f.typ !== 'zusammengesetzt' && !gleich(alt[f.key], neu[f.key]) && !(istLeer(alt[f.key]) && istLeer(neu[f.key])),
+      (f) => f.typ !== 'zusammengesetzt' && !gleich(alt[f.key], neu[f.key]) && !(leer(f, alt[f.key]) && leer(f, neu[f.key])),
     );
     if (!felder.length) return [];
     const ids = felder

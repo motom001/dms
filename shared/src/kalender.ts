@@ -35,6 +35,29 @@ export const wochentag = (iso: string) => ((new Date(utc(iso)).getUTCDay() + 6) 
 /** Montag der Woche, in der der Tag liegt. */
 export const montag = (iso: string) => verschiebe(iso, 1 - wochentag(iso));
 
+/**
+ * Kalenderwoche nach ISO 8601 (#1496): Wochen beginnen am Montag, Woche 1 enthält den ersten Donnerstag des Jahres. Der
+ * Donnerstag der Woche bestimmt das Jahr – der 29.12.2025 liegt in KW 1 (2026), der 01.01.2027 in KW 53 (2026).
+ */
+export function kalenderwoche(iso: string): number {
+  const donnerstag = verschiebe(montag(iso), 3);
+  return Math.floor(tageZwischen(`${donnerstag.slice(0, 4)}-01-01`, donnerstag) / 7) + 1;
+}
+
+/**
+ * Tag nach einer Taste im Kalender eines Datumsfelds (#1496): Pfeile (Tag, Woche), Pos1/Ende (Anfang und Ende der
+ * Woche), Bild auf/ab (Monat, mit Umschalt Jahr). Andere Tasten: null.
+ */
+export function tagNachTaste(taste: string, tag: string, umschalt = false): string | null {
+  const schritt: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+  if (taste in schritt) return verschiebe(tag, schritt[taste]);
+  if (taste === 'Home') return montag(tag);
+  if (taste === 'End') return verschiebe(montag(tag), 6);
+  if (taste === 'PageUp') return verschiebe(tag, umschalt ? -12 : -1, 'monate');
+  if (taste === 'PageDown') return verschiebe(tag, umschalt ? 12 : 1, 'monate');
+  return null;
+}
+
 /** Monat als JJJJ-MM. */
 export const monatVon = (iso: string) => iso.slice(0, 7);
 /** Monat ± n. */

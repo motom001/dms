@@ -46,6 +46,7 @@ import './bereiche/bausteine-und-knoepfe.mjs';
 import './bereiche/dreiteilung-und-systemzustand.mjs';
 import './bereiche/werkbank-suche-und-archiv.mjs';
 import './bereiche/aus-bausteinen.mjs';
+import './bereiche/formularfelder.mjs';
 import './bereiche/startbild-und-vorschlaege.mjs';
 import './bereiche/automatisierungen.mjs';
 import './bereiche/organisation-und-datenschutz.mjs';
