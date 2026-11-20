@@ -55,6 +55,53 @@ rauchtest('Werkbank: Mappentypen und Ansichten durchsuchen, Fundstellen, keine T
   await elemente.getByText('Keine Treffer.').waitFor();
 });
 
+// #1519: 259 Symbole – Gruppen eingeklappt mit Anzahl, offen die Gruppe des gewählten Symbols, Suche öffnet die Treffer;
+// die eingebaute Ansicht „Post“ hat ihr Symbol (in der Werkbank und in der Ablage).
+rauchtest('Werkbank: Symbol einer Ansicht aus 16 Gruppen wählen, eingebaute Ansichten mit Symbol (#1519)', { als: LENA }, async (s) => {
+  const cookie = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
+  const typen = (await api('GET', '/api/typen', { cookie })).daten;
+  const post = typen.find((x) => x.system === 'post');
+  const sichten = (await api('GET', '/api/sichten/definitionen', { cookie })).daten;
+  const symbole = Object.fromEntries(sichten.filter((x) => x.elternId === post.id || x.id === post.id).map((x) => [x.name, x.symbol]));
+  assert.deepEqual(symbole, { [post.name]: 'mail', Eingegangen: 'mailbox', Versendet: 'send' });
+  // Ablage: „Post“ steht mit Symbol im Baum.
+  await s.goto(BASIS + '/ablage/start');
+  const baum = s.getByRole('complementary', { name: 'Ansichten' });
+  await baum
+    .getByRole('link', { name: new RegExp(`^${post.name}`) })
+    .first()
+    .locator('svg.ansicht-sym')
+    .waitFor();
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/sichten/${post.id}`);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('button', { name: /Grunddaten/, expanded: false }).click();
+  await bearbeitung.getByRole('button', { name: /^Symbol .*Post, E-Mail/ }).click();
+  // 16 Gruppen, eingeklappt mit Anzahl; offen nur „Post und Kommunikation“ mit dem gewählten Symbol.
+  const gruppen = bearbeitung.locator('.symbolgruppe');
+  assert.equal(await gruppen.count(), 16);
+  const offen = bearbeitung.locator('.symbolgruppe [aria-expanded="true"]');
+  assert.equal(await offen.count(), 1);
+  assert.match(await offen.innerText(), /^Post und Kommunikation\s*10$/);
+  await bearbeitung.getByRole('button', { name: 'Post, E-Mail', pressed: true }).waitFor();
+  const funde = [];
+  for (const v of await axePruefen(s, ['.symbolraster-rahmen'])) funde.push(v);
+  // Suche: „wallbox“ findet die Ladestation in „Energie und Versorgung“ – offen, auch wenn sie zugeklappt war.
+  await bearbeitung.getByRole('searchbox', { name: 'Symbol suchen …' }).fill('wallbox');
+  assert.equal(await gruppen.count(), 1);
+  await bearbeitung.getByRole('group', { name: 'Energie und Versorgung' }).getByRole('button', { name: 'Ladestation, Wallbox' }).click();
+  await bearbeitung.getByRole('button', { name: /^Symbol .*Ladestation, Wallbox/ }).waitFor();
+  // Gruppe von Hand aufklappen; nichts gefunden: der Weg zurück.
+  await bearbeitung.getByRole('button', { name: /^Symbol .*Ladestation/ }).click();
+  await bearbeitung.getByRole('searchbox', { name: 'Symbol suchen …' }).fill('');
+  await bearbeitung.getByRole('button', { name: /^Geld und Bank/ }).click();
+  await bearbeitung.getByRole('group', { name: 'Geld und Bank' }).getByRole('button', { name: 'Quittung' }).waitFor();
+  await bearbeitung.getByRole('searchbox', { name: 'Symbol suchen …' }).fill('xylofonunterricht');
+  await bearbeitung.getByText('Keine Treffer.').waitFor();
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
 // #994: Auskünfte – Haken „Nur offene zeigen“ statt „offen · alle“, die Vorgaben rechts statt „Einstellungen“ in der Liste;
 // gemeldete Fehler mit Suchfeld und „Erledigte zeigen“ darunter.
 rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter darunter (#994, #1183)', { als: LENA }, async (s) => {
