@@ -6,6 +6,8 @@ Unter **Werkbank → Sicherung** legt Ablago Sicherungen selbst an: die ganze Da
 
 Eine Sicherung spielst du mit Ablago wieder ein. Möchtest du deine Unterlagen zusätzlich so haben, dass du sie **auch ohne Ablago** lesen kannst – etwa zum Mitnehmen in ein anderes Programm –, nimm den [Vollexport](export.md) in offenen Formaten.
 
+Sicherst du deinen Server ohnehin per Snapshot (NAS, virtuelle Maschine), steht unter [Sichern mit Snapshots](snapshots.md), was dabei zusammengehört und wie du den Schlüssel behandelst.
+
 ![Sicherung in der Werkbank](bilder/werkbank-sicherung.png)
 
 ## Was eine Sicherung enthält

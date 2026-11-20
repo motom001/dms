@@ -63,6 +63,28 @@ How to read it: is the sentence still true? If not, correct it. If it is intende
 - **Node version in two places** (#1272): `engines` in `package.json` (all workflows read it via `node-version-file`) and the base image once in the `Dockerfile` (stage `node-basis`, on which build and runtime are based). Changing the major version changes both.
 - **Security fix = patch release** with the note "Security update – please update" in the release notes. Reports from outside are handled confidentially, see [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
+### Changing the Node major version { #node-wechsel }
+
+Ablago runs on **Node.js 24**. Node 24 has been in maintenance since 20 Oct 2026 and gets security updates until **30 Apr 2028**; **Node 26** has been active LTS since October 2026. From 2027 there is only one Node release per year. So we change early and without time pressure ([#1473](https://github.com/motom001/dms/issues/1473), follow-up from the risk profile [#1413](https://github.com/motom001/dms/issues/1413)):
+
+| When | What |
+| --- | --- |
+| January 2027 | Branch with Node 26, work through the checklist below, note conspicuous packages |
+| February 2027 | Merge the change, release with a note for operators |
+| **31 Mar 2027 at the latest** | Node 26 in all images and workflows |
+| until 30 Apr 2028 | Node 24 only as a fallback for an older image; no security updates after that |
+
+**Checklist for the change** (applies likewise to every change of the major version):
+
+1. **Version in both places** (#1272): `engines` in `package.json` and the base image `node:26-alpine` in the stage `node-basis` of the `Dockerfile`. Plus `@types/node` at the new major version (deliberately not via Dependabot).
+2. **Base image:** whether the image is pinned by digest is decided in the PR. So far the rule is deliberately "without a fixed checksum" (section [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)); #1473 mentions the digest – the trade-off is written down in the PR.
+3. **CI:** all workflows green – tests (all three parts), smoke tests with one and two processes, `image-probe` for both architectures, manual screenshots.
+4. **Runner and tool service:** test WebAssembly packages (WASI), workers and Node's permission model (`--permission`) against the runner – read Node's changelog specifically for changes to the permission model between major versions. Likewise the tool service (`DMS_WERKZEUG_DIENST`) and packages with code ([Packages with code](pakete-code.md)).
+5. **Packages related to the runtime** checked against Node 26, at least `@simplewebauthn/server` (passkeys, smoke test "Passkey"), `postgres` (database, server tests with PostgreSQL), the mail packages (`nodemailer`, `imapflow`, `mailparser`) and everything with native parts or `node:` modules that changed.
+6. **Security comparison:** the NVD comparison reads the Node version from the image (`binaer: node` in `.github/werkzeuge/upstream-programme.json`) – nothing to enter; after the first run check that it reports Node 26.
+7. **Release note** with "Note when updating" if something changes for operators (e.g. own images based on `node:24`, or a new minimum version for developers). Otherwise `art: minor` with one sentence under "Changed".
+8. **Developer manual:** update "Getting started" (Node version for developers) and this page.
+
 ### Checking images, provenance and bill of materials { #images-prufen-herkunftsnachweis-und-stuckliste }
 
 - **Trivy** checks both images for known vulnerabilities in the system packages (Alpine, poppler, PostgreSQL in `dms-komplett`) and in the Node libraries in the image.

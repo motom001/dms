@@ -6,6 +6,8 @@ Under **Workbench → Backup**, Ablago creates backups itself: the whole databas
 
 You restore a backup with Ablago. If you additionally want your paperwork in a form you can read **even without Ablago** – for instance to take it into another program –, use the [full export](export.md) in open formats.
 
+If you already back up your server with snapshots (NAS, virtual machine), [Backing up with snapshots](snapshots.md) describes what belongs together and how to handle the key.
+
 ![Backup in the workbench](bilder/werkbank-sicherung.png)
 
 ## What a backup contains { #was-eine-sicherung-enthalt }

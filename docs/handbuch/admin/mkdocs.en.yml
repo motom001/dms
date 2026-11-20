@@ -116,6 +116,7 @@ nav:
       - Protecting your data:
           - Backup: sicherung.md
           - Off-site backup: sicherung-ausser-haus.md
+          - Backing up with snapshots: snapshots.md
           - Restoring: wiederherstellen.md
           - Exporting data: export.md
           - Bin: papierkorb.md
