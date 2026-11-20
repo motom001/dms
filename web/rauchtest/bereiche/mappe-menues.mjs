@@ -5,6 +5,7 @@
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/mappe-menues.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 import '../einrichtung.mjs';
 import { api, BASIS, beispielPdf, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
 import { axePruefen } from '../muster.mjs';
@@ -16,14 +17,19 @@ async function verwaltung() {
   return c;
 }
 
-/** Warten, bis die Texterkennung aller Dokumente der Mappe fertig ist. */
+/**
+ * Warten, bis die Texterkennung aller Dokumente der Mappe fertig ist. Im ganzen Lauf arbeitet sie oft noch die Dokumente
+ * früherer Bereiche ab – daher großzügig, in einem eigenen Schritt mit längerer Zeitgrenze (unten).
+ */
 async function textFertig(cookie, mappeId) {
-  for (let i = 0; i < 120; i++) {
+  let stand = [];
+  for (let i = 0; i < 400; i++) {
     const d = (await api('GET', `/api/mappen/${mappeId}`, { cookie })).daten;
-    if (d.dokumente.length && d.dokumente.every((x) => ['fertig', 'fehler', 'paket'].includes(x.ocr?.stand))) return d;
+    stand = d.dokumente.map((x) => `${x.name}: ${x.ocr?.stand}`);
+    if (d.dokumente.length && d.dokumente.every((x) => x.ocr?.stand === 'fertig')) return d;
     await new Promise((r) => setTimeout(r, 500));
   }
-  throw new Error('Texterkennung nicht fertig');
+  throw new Error(`Texterkennung nicht fertig (${stand.join(', ')})`);
 }
 
 async function hochladen(cookie, mappeId, name, text) {
@@ -37,9 +43,9 @@ async function hochladen(cookie, mappeId, name, text) {
 }
 
 /** „Wartungsvertrag“ ohne Dokument und „Wartungsbeleg“ mit PDF, der auf ihn verweist; dazu eine Anlage am Beleg. */
-let daten;
-async function vertragUndBeleg() {
-  if (daten) return daten;
+let vorbereitung;
+const vertragUndBeleg = () => (vorbereitung ??= vorbereiten());
+async function vorbereiten() {
   const v = await verwaltung();
   const register = (felder) => [
     { key: 'allgemein', name: 'Allgemein', art: 'felder', felder },
@@ -85,9 +91,13 @@ async function vertragUndBeleg() {
   const anlage = await hochladen(c, beleg.id, 'Wartungsprotokoll.pdf', 'Protokoll der Wartung an der Heizung vom 12.01.2027');
   await api('POST', `/api/dokumente/${haupt.id}/anlagen`, { cookie: c, body: { dokument: anlage.id } });
   await textFertig(c, beleg.id);
-  daten = { vertragTyp, belegTyp, vertrag, beleg, haupt, anlage };
-  return daten;
+  return { vertragTyp, belegTyp, vertrag, beleg, haupt, anlage };
 }
+
+// Daten in einem eigenen Schritt (bis 4 Minuten): Die Texterkennung braucht im ganzen Lauf länger, als ein Rauchtest darf.
+test('Mappe – Menüs, Anlagen: Daten vorbereiten (#1494, #1487)', { timeout: 240_000 }, async () => {
+  await vertragUndBeleg();
+});
 
 rauchtest(
   'Menü „Mappe“: „Aus Dokument ausfüllen“ immer, Prüfansicht mit verknüpften Mappen und Upload (#1494)',
@@ -226,6 +236,16 @@ rauchtest('Navigation: Pfeil klappt einen Bereich zu, auch wenn darin eine Sicht
   const kind = (await api('POST', '/api/sichten/definitionen', { cookie: v, body: { name: 'Rauchtest Konten', typen: [kellerraum.id] } }))
     .daten;
   await api('POST', `/api/sichten/definitionen/${kind.id}/verschieben`, { cookie: v, body: { elternId: eltern.id } });
+  try {
+    await pfeilKlappt(s, kind);
+  } finally {
+    // Wieder weg: Spätere Bereiche zählen die Ansichten am Mappentyp „Kellerraum“ (Werkbank am Handy).
+    await api('DELETE', `/api/sichten/definitionen/${kind.id}`, { cookie: v });
+    await api('DELETE', `/api/sichten/definitionen/${eltern.id}`, { cookie: v });
+  }
+});
+
+async function pfeilKlappt(s, kind) {
   await s.goto(BASIS + `/ablage/${kind.id}`);
   const baum = s.getByRole('complementary', { name: 'Ansichten' });
   const kindLink = baum.getByRole('link', { name: /^Rauchtest Konten/ });
@@ -238,4 +258,4 @@ rauchtest('Navigation: Pfeil klappt einen Bereich zu, auch wenn darin eine Sicht
   await baum.getByRole('button', { name: 'Rauchtest Haushalt aufklappen' }).click();
   await kindLink.waitFor();
   assert.doesNotMatch((await baum.getByRole('link', { name: /^Rauchtest Haushalt/ }).getAttribute('class')) ?? '', /\ban\b/);
-});
+}
