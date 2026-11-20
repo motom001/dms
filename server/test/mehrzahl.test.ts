@@ -2,7 +2,7 @@
  * Mehrzahl eines Mappentyps (#1446): optional, Deutsch als Ausgangstext und weitere Sprachen unter
  * `beschriftungen.<sprache>.mehrzahl`, in der Werkbank pflegbar (bleibt ohne Angabe), aus Paketen beim Installieren und –
  * nur, wenn der Typ noch keine hat – beim Update; Benutzer, Rollen und die Beispiel-Mappentypen haben ihre. Mit Speicher
- * und – mit TEST_DATABASE_URL – PostgreSQL (eigene Spalte, Migration 122).
+ * und – mit TEST_DATABASE_URL – PostgreSQL (eigene Spalte, Migration 123).
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
