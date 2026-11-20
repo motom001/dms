@@ -273,6 +273,10 @@ Für Paket-Autoren steht das Format (`aus_text`) in den [Regeln der Registry](ht
 
 Sonst nennt Ablago die Gründe – auch jedes Beispiel, das du geändert hast; das löschst du vorher selbst, wenn du es nicht mehr brauchst. Geänderte Beispiele in Mappentypen anderer Pakete (etwa eine „Organisation“ aus *Basis*) bleiben stehen; Ablago nennt sie nach dem Entfernen.
 
+**Ganz oder gar nicht:** Ablago entfernt ein Paket in einem Zug. Bricht das Entfernen ab, meldet Ablago „… wurde nicht entfernt, es ist nichts verändert.“ mit dem Grund – Mappentypen, Ansichten, Beispiele und das Paket stehen dann wie vorher da, und du kannst es nach dem Beheben noch einmal versuchen. Mappentypen, die **Teil einer anderen Mappe** sind (etwa *Rechnungsposition* und *Steuerzeile* zur *Rechnung*), und [Tabellen](mappentypen.md#tabelle) darauf löst Ablago dabei selbst auf. Hing ein Paket noch von einem früheren Versuch halb entfernt fest, gelingt das Entfernen jetzt.
+
+Entfernst du ein Paket, dessen Mappentypen ein anderes Paket nur **optional** als Ziel kennt (etwa *Fahrzeuge* für „Betrifft“ an der *Rechnung*), bleiben Bedingungen wie „Anzeigen, wenn Betrifft auf ein Fahrzeug zeigt“ stehen und warten auf das Paket: Sie treffen nie zu, der Mappentyp lässt sich weiter speichern, und installierst du das Paket wieder, wirken sie wie vorher.
+
 Ein **Sprachpaket** hat keine Mappentypen. Hat jemand seine Sprache gewählt oder ist sie die Sprache der Installation, fragt Ablago nach, bevor es entfernt – siehe [Sprachen → Sprachpakete](sprachen.md#sprachpakete).
 
 Liefert das Paket Volltext oder wandelt es Dateien um (z. B. **Office und E-Mail**, **Bildformate**), warten danach keine Dokumente mehr darauf: Ohne Text steht am Dokument wieder, dass es für diesen Dateityp kein Paket gibt; hatte es schon Text, bleibt der Text stehen.

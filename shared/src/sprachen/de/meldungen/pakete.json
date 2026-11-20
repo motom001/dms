@@ -248,6 +248,7 @@
   "pakete.das-paket-braucht": "Das Paket „{name}“ braucht „{name2}“.",
   "pakete.laesst-sich-noch-nicht": "„{name}“ lässt sich noch nicht entfernen.",
   "pakete.laesst-sich-nicht-ganz": "„{name}“ lässt sich nicht ganz entfernen.",
+  "pakete.entfernen-abgebrochen": "„{name}“ wurde nicht entfernt, es ist nichts verändert.",
   "sprachpakete.kein-code": "Ein Sprachpaket enthält nur Texte – manifest.yaml: code gibt es darin nicht.",
   "sprachpakete.kein-inhalt": "Ein Sprachpaket enthält nur Texte – manifest.yaml: inhalt bleibt leer (keine Mappentypen, Ansichten, Beispiele, Wortlisten oder Automatisierungen).",
   "sprachpakete.keine-abhaengigkeiten": "Ein Sprachpaket hängt von keinem anderen Paket ab und ergänzt keins (abhaengigkeiten, ergaenzt).",

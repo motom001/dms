@@ -274,6 +274,10 @@ For package authors, the format (`aus_text`) is in the [registry's rules](https:
 
 Otherwise Ablago names the reasons – including every example you have changed; delete it yourself beforehand if you no longer need it. Changed examples in folder types of other packages (such as an "Organisation" from *Basis*) stay; Ablago names them after removing.
 
+**All or nothing:** Ablago removes a package in one go. If removing stops, Ablago reports "… was not removed, nothing has changed." with the reason – folder types, views, examples and the package are then as before, and you can try again once the cause is fixed. Folder types that are **part of another folder** (such as *Invoice item* and *Tax line* of the *Invoice*), and [tables](mappentypen.md#tabelle) showing them, are resolved by Ablago itself. A package stuck half removed from an earlier attempt can now be removed.
+
+If you remove a package whose folder types another package knows only as an **optional** target (such as *Vehicles* for "Concerns" on the *Invoice*), conditions like "Show if Concerns points to a vehicle" stay and wait for the package: they never apply, the folder type can still be saved, and if you install the package again they work as before.
+
 If the package supplies full text or converts files (e.g. **Office and email**, **Image formats**), no documents wait for it any more afterwards: without text, the document again says that there is no package for this file type; if it already had text, the text stays.
 
 ## Settings { #einstellungen }

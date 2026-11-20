@@ -56,6 +56,7 @@ import {
   liesStand,
   mitSystemBeschriftung,
 } from './eingabe';
+import { optionalesZielWieder } from './optionale-ziele';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappentypenAnschluss {
@@ -517,7 +518,9 @@ export class MappentypenDienst {
       const felder = mt.felder.map((f) =>
         f.typ === 'referenz' && zieleVon(f).includes(id) ? { ...f, zielTypen: zieleVon(f).filter((z) => z !== id) } : f,
       );
-      await this.repo.aendereTyp(mt.id, { ...mt, felder });
+      // Bedingungen auf ein optionales Ziel (#1521) warten danach auf sein Paket, statt den Typ ungültig zu machen.
+      const wieder = optionalesZielWieder({ ...mt, felder }, id, eintrag.schluessel);
+      await this.repo.aendereTyp(mt.id, { ...mt, ...wieder });
     }
     await this.repo.loescheTyp(id);
     // Aus den Sichten entfernen; Sichten, die nur diesen Typ hatten und keine Kinder, verschwinden mit.
