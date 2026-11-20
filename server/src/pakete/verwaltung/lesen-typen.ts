@@ -3,7 +3,7 @@
  * und Register mit allen Prüfungen, danach die Ansichten. Fehler sammelt der Lauf.
  */
 import { ansichtSymbol } from '../../../../shared/src/ansichtsymbole';
-import { FELDTYPEN, type Feld } from '../../../../shared/src/model';
+import { FELDTYPEN, MEHRZAHL_MAX, type Feld } from '../../../../shared/src/model';
 import { FELDMERKMALE, istFeldmerkmal, istSchreibschutz, SCHREIBSCHUTZ } from '../../../../shared/src/organisation';
 import { type Beschriftungen, type TypTeile } from '../../../../shared/src/beschriftung';
 import { paketArchivFehler, type PaketArchiv } from '../../../../shared/src/archiv';
@@ -71,6 +71,7 @@ function typAus(t: Record<string, unknown>, felder: PaketFeld[], register: Paket
     ...(istObjekt(t.beschriftungen) ? { beschriftungen: t.beschriftungen as Beschriftungen<TypTeile> } : {}),
     ...(typeof t.ausPost === 'boolean' ? { ausPost: t.ausPost } : {}),
     ...(typeof t.erkennbarAn === 'string' && t.erkennbarAn.trim() ? { erkennbarAn: t.erkennbarAn.trim() } : {}),
+    ...(typeof t.mehrzahl === 'string' && t.mehrzahl.trim() ? { mehrzahl: t.mehrzahl.trim().slice(0, MEHRZAHL_MAX) } : {}),
     ...(t.gehoertZu !== undefined && t.gehoertZu !== null ? { gehoertZu: str(t.gehoertZu) } : {}),
     ...(typeof t.inSuche === 'boolean' ? { inSuche: t.inSuche } : {}),
     ...(archiv ? { archiv } : {}),

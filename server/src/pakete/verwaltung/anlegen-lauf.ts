@@ -239,6 +239,7 @@ export function typEingabe(l: AnlegeLauf, t: PaketTyp, nurAngelegt: boolean) {
       ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}),
       ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}),
       ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
+      ...(t.mehrzahl ? { mehrzahl: t.mehrzahl } : {}),
       ...(t.inSuche !== undefined ? { inSuche: t.inSuche } : {}),
       // Ist Teil einer anderen Mappe (#1031): erst, wenn das Feld dabei ist (sonst im zweiten Durchgang).
       teilVon: t.gehoertZu && !offen.has(t.gehoertZu) ? t.gehoertZu : null,

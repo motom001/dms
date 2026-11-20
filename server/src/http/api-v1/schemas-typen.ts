@@ -301,6 +301,7 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
         name: { type: 'string' },
         beschreibung: { type: 'string' },
         erkennbarAn: { type: 'string', maxLength: 300 },
+        mehrzahl: { type: 'string', maxLength: 80 },
       }),
       ausPost: {
         type: 'boolean',
@@ -316,6 +317,13 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
           'Woran man ihn erkennt (#937): kurzer Text für die Klassifizierung von Dokumenten; Übersetzungen unter beschriftungen.<sprache>.erkennbarAn. Bei Systemtypen immer leer. Ohne die Angabe bleibt beim Speichern der bisherige Text.',
       },
       name: { type: 'string' },
+      mehrzahl: {
+        type: 'string',
+        maxLength: 80,
+        example: 'Verträge',
+        description:
+          'Mehrzahl (#1446): Listen zeigen damit „12 Verträge“ statt „12 × Vertrag“; leer = keine. Übersetzungen unter beschriftungen.<sprache>.mehrzahl. Ohne die Angabe bleibt beim Speichern die bisherige.',
+      },
       schluessel: {
         type: 'string',
         example: 'rechnung',

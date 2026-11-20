@@ -37,7 +37,7 @@ Die Liste zeigt die Mappen der Ansicht, nach Titel sortiert. Sie lädt zunächst
 
 Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Daneben öffnet **⋯** **Alle … exportieren …** (alle Mappen der Ansicht, mit deiner Suche und Sortierung) und – wenn du in der Werkbank Ansichten bearbeiten darfst – **Ansicht bearbeiten**. In der Liste eines Mappentyps ohne eigene Ansicht steht dort **Mappentyp bearbeiten**: Es führt zum Mappentyp in der Werkbank, wenn du Mappentypen bearbeiten darfst. Löschen und Versenden gehen über die Auswahl (siehe unten).
 
-Über der Liste steht, wie viele Mappen sie enthält. Haben alle denselben Mappentyp, nennt die Zahl ihn, etwa „12 × Vertrag“; in Ansichten mit verschiedenen Mappentypen heißt es „12 Mappen“.
+Über der Liste steht, wie viele Mappen sie enthält. Haben alle denselben Mappentyp, nennt die Zahl ihn, etwa „12 Verträge“ – oder „12 × Vertrag“, wenn für den Mappentyp keine Mehrzahl eingetragen ist; in Ansichten mit verschiedenen Mappentypen heißt es „12 Mappen“.
 
 ### Kompakt oder als Tabelle
 

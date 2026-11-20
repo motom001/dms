@@ -99,6 +99,8 @@ export interface PaketTyp {
   ausPost?: boolean;
   /** „Woran man ihn erkennt“ (#937), Übersetzungen unter beschriftungen.<sprache>.erkennbarAn. */
   erkennbarAn?: string;
+  /** Mehrzahl (#1446), z. B. „Verträge“; Übersetzungen unter beschriftungen.<sprache>.mehrzahl. Ältere Ablago ignorieren sie. */
+  mehrzahl?: string;
   /**
    * „Ist Teil einer anderen Mappe“ (#1031, Entwurf Rechnungen: `gehoertZu: rechnung`): Kennung des Verweisfelds dieses
    * Typs, über das jede Mappe zu ihrer übergeordneten gehört – ein Verweis (ziel genau ein Typ, ohne zielOptional), eine

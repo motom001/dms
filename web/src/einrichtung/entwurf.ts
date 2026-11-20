@@ -111,6 +111,8 @@ export interface Entwurf {
   ausPost: boolean | null;
   /** Woran man ihn erkennt (#937). */
   erkennbarAn: string;
+  /** Mehrzahl (#1446), z. B. „Verträge“; leer = keine. */
+  mehrzahl: string;
   /** Name, Beschreibung und „Woran man ihn erkennt“ je Sprache (#728, #937). */
   beschriftungen?: Beschriftungen<TypTeile>;
   /** Ist Teil einer anderen Mappe (#1031): `_uid` des Verweisfelds, '' = noch keins gewählt, null = aus. */
@@ -149,6 +151,9 @@ const entwurfAbschnitte = (r: Register, felder: EntwurfFeld[]): EntwurfAbschnitt
             ]
           : [];
       });
+
+/** Mehrzahl (#1446) für den Entwurf; ältere Server ohne. */
+const mehrzahlAus = (t: { mehrzahl?: string }) => t.mehrzahl ?? '';
 
 /**
  * Ein FeldDef verlässt sein Register (entfernt oder umgezogen, #890): Ein Abschnitt, der mit ihm begann, beginnt jetzt mit
@@ -196,6 +201,7 @@ export function entwurfAus(eintrag?: Mappentyp): Entwurf {
       autoZuordnen: false,
       ausPost: null,
       erkennbarAn: '',
+      mehrzahl: '',
       _teilVon: null,
       inSuche: null,
     };
@@ -214,6 +220,7 @@ export function entwurfAus(eintrag?: Mappentyp): Entwurf {
     ausPost: eintrag.ausPost ?? null,
     inSuche: eintrag.inSuche ?? null,
     erkennbarAn: eintrag.erkennbarAn ?? '',
+    mehrzahl: mehrzahlAus(eintrag),
     beschriftungen: eintrag.beschriftungen,
     register: [],
     felder: eintrag.felder.map(

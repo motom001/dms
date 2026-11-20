@@ -24,10 +24,10 @@ export function pgTypen(k: PgKontext) {
     async legeTypAn(id, d: MappentypDaten, system) {
       const k = d.schluessel ? teileKennung(d.schluessel) : { paket: null, schluessel: null };
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an, teil_von, in_suche)
+        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an, teil_von, in_suche, mehrzahl)
         VALUES (${id}, ${haushaltId}, ${d.name}, ${k.paket}, ${k.schluessel}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
           ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null}, ${d.archiv ? json(sql, d.archiv) : null}, ${d.beschriftungen ? json(sql, d.beschriftungen) : null},
-          ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''}, ${d.teilVon || null}, ${typeof d.inSuche === 'boolean' ? d.inSuche : null})
+          ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''}, ${d.teilVon || null}, ${typeof d.inSuche === 'boolean' ? d.inSuche : null}, ${d.mehrzahl ?? ''})
         RETURNING *`;
       return alsTyp(r);
     },
@@ -45,7 +45,7 @@ export function pgTypen(k: PgKontext) {
             felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
             erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, archiv = ${d.archiv ? json(sql, d.archiv) : null},
             beschriftungen = ${d.beschriftungen ? json(sql, d.beschriftungen) : null}, aus_post = ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, erkennbar_an = ${d.erkennbarAn ?? ''},
-            teil_von = ${d.teilVon || null}, in_suche = ${typeof d.inSuche === 'boolean' ? d.inSuche : null}, geaendert = ${STAND_WEITER}
+            teil_von = ${d.teilVon || null}, in_suche = ${typeof d.inSuche === 'boolean' ? d.inSuche : null}, mehrzahl = ${d.mehrzahl ?? ''}, geaendert = ${STAND_WEITER}
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);

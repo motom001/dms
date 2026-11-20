@@ -91,6 +91,8 @@ export const alsTyp = (r: Zeile): Mappentyp => ({
   // Dokument übernehmen (#937, Migration 089): null = Vorgabe.
   ausPost: (r.aus_post as boolean | null) ?? null,
   erkennbarAn: (r.erkennbar_an as string | null) ?? '',
+  // Mehrzahl (#1446, Migration 122): nur, wenn eingetragen.
+  ...(r.mehrzahl ? { mehrzahl: r.mehrzahl as string } : {}),
   // Ist Teil einer anderen Mappe (#1031, Migration 097): nur, wenn eingestellt.
   ...(r.teil_von ? { teilVon: r.teil_von as string } : {}),
   // In der allgemeinen Suche zeigen (#1220, Migration 116): nur, wenn eingestellt.

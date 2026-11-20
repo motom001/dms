@@ -47,6 +47,7 @@
   "ablage.mappen-2_other": "{zahl} Mappen",
   "liste.anzahl-typ_one": "{zahl} {typ}",
   "liste.anzahl-typ_other": "{zahl} × {typ}",
+  "liste.anzahl-mehrzahl": "{zahl} {mehrzahl}",
   "liste.alle-exportieren_one": "{zahl} Mappe exportieren …",
   "liste.alle-exportieren_other": "Alle {zahl} exportieren …",
   "liste.ansicht-bearbeiten": "Ansicht bearbeiten",

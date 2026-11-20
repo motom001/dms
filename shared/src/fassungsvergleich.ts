@@ -282,6 +282,8 @@ function angabenSaetze(alt: TypStand, neu: TypStand): string[] {
       t('gemeinsam.fassungen.titel', { alt: wert(alt.titelVorlage), neu: wert(neu.titelVorlage) }),
     () => !gleich(alt.beschriftungen, neu.beschriftungen) && t('gemeinsam.typvergleich.beschriftungen-geaendert'),
     () => text(alt.erkennbarAn) !== text(neu.erkennbarAn) && t('gemeinsam.fassungen.erkennbar-an'),
+    () =>
+      text(alt.mehrzahl) !== text(neu.mehrzahl) && t('gemeinsam.fassungen.mehrzahl', { alt: wert(alt.mehrzahl), neu: wert(neu.mehrzahl) }),
     // Wirksam vergleichen (#937): ohne Angabe gilt „mit Dokumentenregister“; Systemtypen nie.
     () => kannAusPost(alt) !== kannAusPost(neu) && t('gemeinsam.fassungen.aus-post', { wert: anAus(kannAusPost(neu)) }),
     () => !gleich(alt.teilVon, neu.teilVon) && teil(),

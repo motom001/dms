@@ -201,6 +201,7 @@ export abstract class PaketAnlegenSchritte extends PaketErgaenzen {
           felder,
           register,
           beschriftungen: besch.typ.beschriftungen ?? null,
+          ...(besch.typ.mehrzahl ? { mehrzahl: besch.typ.mehrzahl } : {}),
         },
         m.id,
       );
