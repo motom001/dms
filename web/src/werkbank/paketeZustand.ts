@@ -3,7 +3,7 @@
  * 5; vorher in Pakete.tsx). Eigene Datei, weil auch die Teile der Seite (PaketeAlle.tsx, PaketeVerfuegbar.tsx) ihn
  * bekommen und Pakete.tsx diese Teile zeigt.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { neueVersionen, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import type { SelbstErstellt } from '../../../shared/src/paketerstellung';
 import { paketeApi, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api/pakete';
@@ -49,7 +49,8 @@ export function usePakete(offen: boolean) {
   }, []);
   // Neuere Versionen (#1167): aus den abgerufenen Katalogen und dem Stand der Installation abgeleitet, nicht gemerkt –
   // nach einem Update stimmt der Merker sofort, ohne erneut zu prüfen.
-  const updates = neueVersionen(stand?.installiert ?? [], kataloge?.liste ?? []);
+  // Gemerkt, solange sich beides nicht ändert (#1508): Das Ergebnis am Knopf „Nach neuen Versionen suchen“ hängt daran.
+  const updates = useMemo(() => neueVersionen(stand?.installiert ?? [], kataloge?.liste ?? []), [stand, kataloge]);
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
     const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));

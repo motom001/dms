@@ -185,7 +185,9 @@ function useInsBild(ref: { current: HTMLElement | null }, anlass: unknown) {
  */
 export function Ergebnis({ wert, id, className }: { wert?: KnopfErgebnis | null; id?: string; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  useInsBild(ref, wert);
+  // Neu ist ein anderes Ergebnis, nicht dasselbe als neues Objekt (#1508): Eine Liste, die ihr Ergebnis bei jedem
+  // Zeichnen neu bildet (Werkbank → Pakete, „Abgerufen um …“), rollte sonst bei jedem Klick in der Liste zurück zum Knopf.
+  useInsBild(ref, wert && typeof wert.text === 'string' ? `${wert.art}|${wert.text}` : wert);
   return (
     <span
       ref={ref}
