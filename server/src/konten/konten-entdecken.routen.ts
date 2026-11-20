@@ -91,12 +91,13 @@ export function rundgaengeRouten(k: RoutenKontext): Route[] {
       },
     },
     // Prüfen wie beim Installieren eines Pakets; ohne Fehler der Rundgang für „Ausprobieren“ (nur für mich).
+    // `herkunft` (#1533): Rundgang von Ablago oder aus einem Paket mit seiner Herkunft prüfen.
     {
       methode: 'POST',
       pfad: '/api/werkbank/rundgaenge/pruefen',
       zugang: 'admin',
       handler: async (a) => {
-        const p = await rundgaengeWerkbank.pruefe(b(a).yaml);
+        const p = await rundgaengeWerkbank.pruefe(b(a).yaml, b(a).herkunft);
         const probe = p.rundgang
           ? await entdecken.probe(ich(a), { ...p.rundgang, schluessel: `${EIGEN}:${p.rundgang.schluessel}` })
           : { rundgang: null, pfad: null };

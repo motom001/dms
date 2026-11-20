@@ -30,7 +30,25 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await ablago.click();
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
   await bearbeitung.getByRole('switch', { name: 'Rundgang für alle' }).waitFor();
-  await bearbeitung.getByRole('link', { name: 'Als eigenen kopieren' }).waitFor();
+  // Ausprobieren (#1533): Ablagos Rundgang startet „nur für mich“ im eigenen Fenster, ohne Fehler wegen „erste_anmeldung“.
+  // Am Ende schließt sich das Fenster wieder („Fertig – zurück zum Entwurf“).
+  const [probe] = await Promise.all([s.waitForEvent('popup'), bearbeitung.getByRole('button', { name: 'Ausprobieren' }).click()]);
+  const karte = probe.getByRole('dialog');
+  await karte.waitFor();
+  const fertig = karte.getByRole('button', { name: 'Fertig – zurück zum Entwurf' });
+  for (let i = 0; i < 9 && !(await fertig.isVisible()); i++) await karte.getByRole('button', { name: 'Weiter' }).click();
+  await Promise.all([probe.waitForEvent('close'), fertig.click()]);
+  assert.equal(await bearbeitung.locator('.hinweis.schlecht').count(), 0, 'Ausprobieren ohne Fehlermeldung');
+  // Knöpfe (#1533): Hauptknopf unten rechts, gleich hoch wie „Ausprobieren“.
+  const kopieren = bearbeitung.getByRole('button', { name: 'Als eigenen kopieren' });
+  const hoehen = await Promise.all([kopieren, bearbeitung.getByRole('button', { name: 'Ausprobieren' })].map((k) => k.boundingBox()));
+  assert.equal(Math.round(hoehen[0].height), Math.round(hoehen[1].height), 'Haupt- und Nebenknopf gleich hoch');
+  assert.ok(hoehen[0].x > hoehen[1].x, 'Hauptknopf rechts');
+  // „Als eigenen kopieren“ legt die Kopie gleich an: ausgeschaltet, eigener Editor.
+  await kopieren.click();
+  await s.waitForURL(/\/werkbank\/rundgaenge\/eigen%3Aablago$/);
+  await bearbeitung.locator('[role="switch"][aria-checked="false"]').waitFor();
+  assert.match(await bearbeitung.getByRole('textbox', { name: 'Datei (YAML)' }).inputValue(), /^start: manuell$/m);
   // Neuer Rundgang: Fehler mit Zeile, dann speichern.
   await liste.getByRole('link', { name: '+ Rundgang' }).click();
   const datei = bearbeitung.getByRole('textbox', { name: 'Datei (YAML)' });

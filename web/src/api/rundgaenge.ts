@@ -12,7 +12,9 @@ const pfad = (schluessel: string) => `/api/werkbank/rundgaenge/${encodeURICompon
 
 export const rundgaengeApi = {
   stand: () => anfrage<WerkbankRundgaengeStand>('GET', '/api/werkbank/rundgaenge'),
-  pruefen: (yaml: string) => anfrage<RundgangPruefergebnis>('POST', '/api/werkbank/rundgaenge/pruefen', { yaml }),
+  /** `herkunft` (#1533): Rundgang von Ablago oder aus einem Paket mit seiner Herkunft prüfen (nur fürs Ausprobieren). */
+  pruefen: (yaml: string, herkunft?: string) =>
+    anfrage<RundgangPruefergebnis>('POST', '/api/werkbank/rundgaenge/pruefen', { yaml, ...(herkunft ? { herkunft } : {}) }),
   neu: (yaml: string) => anfrage<Gespeichert>('POST', '/api/werkbank/rundgaenge', { yaml }),
   /** `schluessel` ohne „eigen:“; `stand` = geaendert, wie gelesen (#917). */
   aendern: (schluessel: string, yaml: string, stand?: string) =>

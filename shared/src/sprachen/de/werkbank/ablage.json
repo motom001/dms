@@ -124,6 +124,7 @@
   "rundgaenge.ui.fenster.blockiert": "Das neue Fenster wurde blockiert – erlaube Ablago, Fenster zu öffnen.",
   "rundgaenge.ui.gegenstand": "Rundgang",
   "rundgaenge.ui.gespeichert": "Gespeichert.",
+  "rundgaenge.ui.entwurf-zurueck": "Dein Entwurf vom Ausprobieren ist wieder da. Gespeichert ist er noch nicht.",
   "rundgaenge.ui.loeschen": "Rundgang löschen",
   "rundgaenge.ui.loeschen.frage": "Diesen eigenen Rundgang löschen?",
   "rundgaenge.ui.vorlage": "schluessel: mein_rundgang\ntitel: Mein Rundgang\nbeschreibung: Was dieser Rundgang zeigt.\nfuer: lesen\nschritte:\n  - schluessel: neu\n    ziel: neu\n    ort: Oben in der Kopfzeile\n    titel: Etwas ablegen\n    text: Über „+ Neu“ legst du Post ab oder legst eine Mappe an.\n",

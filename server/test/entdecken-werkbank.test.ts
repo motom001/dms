@@ -57,6 +57,23 @@ describe('Werkbank → Rundgänge: Prüfen (#941)', () => {
     );
   });
 
+  it('Ausprobieren (#1533): Rundgang aus einem Paket bzw. von Ablago wird mit seiner Herkunft geprüft, gespeichert nur als eigener', async () => {
+    const e = speicherEinstellungen();
+    const speicher = { lies: () => e.lies(WERKBANK_EINSTELLUNG), schreibe: (x: unknown) => e.schreibe(WERKBANK_EINSTELLUNG, x) };
+    const w = new RundgaengeWerkbank({ speicher, pruefung });
+    const paket = GUT.replace('schritte:', 'start: nach_installation\nschritte:');
+    assert.match((await w.pruefe(paket)).fehler[0].text, /nur für Rundgänge aus Paketen/, 'ohne Herkunft wie bisher');
+    assert.deepEqual((await w.pruefe(paket, 'paket:haushalt')).fehler, [], 'Paket-Rundgang lässt sich ausprobieren');
+    const ablago = GUT.replace('schritte:', 'start: erste_anmeldung\nschritte:');
+    assert.deepEqual((await w.pruefe(ablago, 'ablago')).fehler, [], 'Ablagos Rundgang lässt sich ausprobieren');
+    assert.equal((await w.pruefe(paket, 'paket:../x')).fehler.length, 1, 'unbekannte Herkunft gilt als eigen');
+    await assert.rejects(
+      w.speichere(null, { yaml: paket, herkunft: 'paket:haushalt' }, 'lena@example.org'),
+      (x: unknown) => x instanceof Fachfehler && x.status === 422,
+      'gespeichert wird immer als eigener',
+    );
+  });
+
   it('Datei eines Rundgangs zum Ansehen und Kopieren lässt sich wieder prüfen', async () => {
     const o = await pruefung();
     const r = pruefeRundgangDatei(GUT, o).rundgang!;
