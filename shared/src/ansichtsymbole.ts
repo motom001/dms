@@ -356,7 +356,7 @@ export const ANSICHT_SYMBOLE: AnsichtSymbolGruppe[] = [
 /**
  * Symbole der eingebauten Ansichten (#1519): die Ansicht je Systemtyp (Benutzer, Rolle, Post) und unter „Post“
  * „Eingegangen“ und „Versendet“. „Neue Post“ (`inbox`) und „Favoriten“ (`star`) hatten schon eins. Bestehende
- * Installationen bekommen sie mit Migration 123 – nur, wo noch kein Symbol steht.
+ * Installationen bekommen sie mit Migration 124 – nur, wo noch kein Symbol steht.
  */
 export const SYSTEM_SYMBOLE = {
   benutzer: 'users',

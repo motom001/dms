@@ -73,7 +73,7 @@ describe('Symbol je Ansicht (#428)', () => {
   });
 
   it(
-    'Migration 123: bestehende eingebaute Ansichten bekommen ihr Symbol, ein selbst gesetztes bleibt (#1519)',
+    'Migration 124: bestehende eingebaute Ansichten bekommen ihr Symbol, ein selbst gesetztes bleibt (#1519)',
     { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
     async () => {
       const { pgRepo } = await import('../src/repo/pg');
@@ -88,12 +88,12 @@ describe('Symbol je Ansicht (#428)', () => {
       const rolle = typen.find((x) => x.system === 'rolle')!.id;
       await sql`UPDATE sichten SET symbol = NULL WHERE symbol IN ('users', 'id-card-lanyard', 'mail', 'mailbox', 'send')`;
       await sql`UPDATE sichten SET symbol = 'star' WHERE id = ${rolle}`;
-      await sql`DELETE FROM schema_migrationen WHERE name = '123_eingebaute_ansichten_symbol.sql'`;
+      await sql`DELETE FROM schema_migrationen WHERE name = '124_eingebaute_ansichten_symbol.sql'`;
       await migriere(sql, MIGRATIONEN, () => {});
       assert.deepEqual(eingebaute(await d.kern.repo.listeSichten(), typen), { ...ERWARTET, rolle: 'star' });
       // Eigene Ansichten ohne Symbol bleiben ohne.
       const eigen = await d.sichtenVerwaltung.legeSichtAn({ name: 'Eigene', typen: [], bedingungen: [] });
-      await sql`DELETE FROM schema_migrationen WHERE name = '123_eingebaute_ansichten_symbol.sql'`;
+      await sql`DELETE FROM schema_migrationen WHERE name = '124_eingebaute_ansichten_symbol.sql'`;
       await migriere(sql, MIGRATIONEN, () => {});
       assert.equal((await d.kern.repo.listeSichten()).find((x) => x.id === eigen.id)?.symbol, null);
     },
