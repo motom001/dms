@@ -16,7 +16,7 @@ Rechts oben am gewählten Rundgang steht der Schalter. Er gilt **für alle** und
 
 ## Rundgänge von Ablago und aus Paketen ansehen
 
-Ein Klick zeigt die Datei des Rundgangs (mit den Texten in deiner Sprache). Ändern kannst du sie nicht; mit **Als eigenen kopieren** entsteht eine Kopie zum Bearbeiten. **Ausprobieren** startet den Rundgang in einem neuen Fenster, nur für dich.
+Ein Klick zeigt die Datei des Rundgangs (mit den Texten in deiner Sprache). Ändern kannst du sie nicht; **Als eigenen kopieren** legt gleich eine Kopie an – ausgeschaltet und mit `start: manuell` – und öffnet sie zum Bearbeiten. **Ausprobieren** startet den Rundgang in einem neuen Fenster, nur für dich; **Fertig – zurück zum Entwurf** schließt es am Ende wieder.
 
 Rundgänge und Tipps aus Paketen erscheinen in der Sprache jeder Person, wenn das Paket sie mitbringt, sonst auf Deutsch. Gibt es sie nur in einer Sprache oder fehlen in einer Übersetzung Texte, sagt es die Vorschau beim Installieren als Hinweis.
 
