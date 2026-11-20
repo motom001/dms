@@ -65,6 +65,14 @@ export const typBeschreibung = (t: Pick<MappentypDaten, 'beschreibung' | 'beschr
 /** „Woran man ihn erkennt“ (#937) in einer Sprache. */
 export const typErkennbarAn = (t: Pick<MappentypDaten, 'erkennbarAn' | 'beschriftungen'>, spr = sprache()) =>
   t.erkennbarAn ? inSprache(t.erkennbarAn, t.beschriftungen, 'erkennbarAn', spr) : '';
+/**
+ * Mehrzahl eines Mappentyps (#1446) in einer Sprache; '' = keine. In einer anderen Sprache gilt die deutsche nur, wenn
+ * auch der Name dort keine eigene Beschriftung hat – sonst stünde „12 Verträge“ neben „Contract“.
+ */
+export function typMehrzahl(t: Pick<MappentypDaten, 'mehrzahl' | 'beschriftungen'>, spr = sprache()): string {
+  if (spr === AUSGANGSSPRACHE) return t.mehrzahl?.trim() ?? '';
+  return teil(t.beschriftungen, spr, 'mehrzahl') ?? (teil(t.beschriftungen, spr, 'name') ? '' : (t.mehrzahl?.trim() ?? ''));
+}
 export const registerName = (r: Pick<Register, 'name' | 'key' | 'beschriftungen'>, spr = sprache()) =>
   inSprache(r.name || r.key, r.beschriftungen, 'name', spr);
 /** Überschrift eines Abschnitts (#890) in einer Sprache; ohne Überschrift leer. */

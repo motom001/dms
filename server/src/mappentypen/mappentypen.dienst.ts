@@ -49,6 +49,7 @@ import {
   behalteDarstellung,
   behalteErkennung,
   behalteInSuche,
+  behalteMehrzahl,
   behalteOrganisation,
   behalteTeil,
   bereinigeTyp,
@@ -361,6 +362,8 @@ export class MappentypenDienst {
       ),
       alt,
     );
+    // Mehrzahl (#1446): ohne Angabe bleibt die bisherige.
+    d = behalteMehrzahl(eingabe, d, alt);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
     festigeDarstellung(d);

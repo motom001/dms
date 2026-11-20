@@ -1411,8 +1411,7 @@
       "beschreibePaketEinstellungen",
       "beschreibePostfach",
       "beschreibeSicht",
-      "beschreibeStempel",
-      "beschreibeTyp"
+      "beschreibeStempel"
     ],
     "types": [
       "AblaufvorlageStand",

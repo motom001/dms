@@ -6,6 +6,7 @@ import {
   BELIEBIGER_TYP,
   einzigesZiel,
   ERKENNBAR_AN_MAX,
+  MEHRZAHL_MAX,
   FELDTYPEN,
   istHistoriengruppe,
   istSystemspalte,
@@ -59,7 +60,7 @@ const FELD_TEILE = ['label', 'hilfe', 'optionen', 'neu'] as const satisfies Read
 const NAMENS_TEILE = ['name'] as const satisfies ReadonlyArray<keyof NamensTeile>;
 export const TYP_TEILE = ['name', 'beschreibung'] as const satisfies ReadonlyArray<keyof TypTeile>;
 /** Am Mappentyp zusätzlich „Woran man ihn erkennt“ (#937); Ansichten haben das nicht. */
-const MAPPENTYP_TEILE = [...TYP_TEILE, 'erkennbarAn'] as const satisfies ReadonlyArray<keyof TypTeile>;
+const MAPPENTYP_TEILE = [...TYP_TEILE, 'erkennbarAn', 'mehrzahl'] as const satisfies ReadonlyArray<keyof TypTeile>;
 /** Beschriftungen oder nichts – leere Angaben werden nicht gespeichert. */
 export const mitBeschriftungen = <T extends object>(b: T | undefined): { beschriftungen?: T } => (b ? { beschriftungen: b } : {});
 /**
@@ -372,6 +373,8 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     ausPost: typeof t.ausPost === 'boolean' ? t.ausPost : null,
     // Woran man ihn erkennt (#937): kurz, für die Klassifizierung.
     erkennbarAn: ausgangAus(t.beschriftungen, 'erkennbarAn', text(t.erkennbarAn)).replace(/\s+/g, ' ').trim().slice(0, ERKENNBAR_AN_MAX),
+    // Mehrzahl (#1446): „12 Verträge“ in Listen; fehlt = „12 × Vertrag“.
+    ...mehrzahlAus(t),
     // Altes Format: titelFeld → Vorlage {feld}
     titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
     felder,
@@ -392,6 +395,21 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
 export function behalteTeil(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'teilVon'>): MappentypDaten {
   const r = (roh ?? {}) as Record<string, unknown>;
   return 'teilVon' in r ? d : { ...d, teilVon: alt.teilVon ?? null };
+}
+
+/** Mehrzahl (#1446) aus der Eingabe, gekürzt; leer = keine Angabe (die Datenbank speichert ''). */
+function mehrzahlAus(t: Record<string, unknown>): { mehrzahl?: string } {
+  const m = ausgangAus(t.beschriftungen, 'mehrzahl', text(t.mehrzahl)).replace(/\s+/g, ' ').trim().slice(0, MEHRZAHL_MAX);
+  return m ? { mehrzahl: m } : {};
+}
+
+/** Mehrzahl (#1446): Eine Eingabe ohne `mehrzahl` (z. B. ein älteres Programm) behält die bisherige. */
+export function behalteMehrzahl(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'mehrzahl'>): MappentypDaten {
+  const r = (roh ?? {}) as Record<string, unknown>;
+  const de = (r.beschriftungen as Record<string, Record<string, unknown> | undefined> | undefined)?.de;
+  // Ausdrücklich leer: entfernen (auch im Speicher, der die bisherige sonst behielte).
+  if ('mehrzahl' in r || (de && 'mehrzahl' in de)) return d.mehrzahl ? d : { ...d, mehrzahl: '' };
+  return alt.mehrzahl ? { ...d, mehrzahl: alt.mehrzahl } : d;
 }
 
 /** In der allgemeinen Suche zeigen (#1220): Eine Eingabe ohne `inSuche` (z. B. ein älteres Programm) behält die Einstellung. */

@@ -47,6 +47,7 @@
   "ablage.mappen-2_other": "{zahl} folders",
   "liste.anzahl-typ_one": "{zahl} {typ}",
   "liste.anzahl-typ_other": "{zahl} × {typ}",
+  "liste.anzahl-mehrzahl": "{zahl} {mehrzahl}",
   "liste.alle-exportieren_one": "Export {zahl} folder …",
   "liste.alle-exportieren_other": "Export all {zahl} …",
   "liste.ansicht-bearbeiten": "Edit view",

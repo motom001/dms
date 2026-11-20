@@ -1,5 +1,5 @@
 /** Mappenliste einer Ansicht, eines Mappentyps, eines Links oder der Suche (#1279: Hooks und Teile). */
-import { typName } from '../../../../shared/src/beschriftung';
+import { typMehrzahl, typName } from '../../../../shared/src/beschriftung';
 import { t } from '../../sprache';
 import { Listenkopf } from '../../Listenkopf';
 import { Knopf, KnopfLink, Menue, type MenuePunkt } from '../../bausteine';
@@ -59,11 +59,16 @@ function Kopf({ l }: { l: ListeKern }) {
   );
 }
 
-/** „12 Mappen“ – oder mit dem Typ, wenn die ganze Liste einen hat (#1285); in der Suche „12 Treffer“. */
+/**
+ * „12 Mappen“ – oder mit dem Typ, wenn die ganze Liste einen hat (#1285): „12 Verträge“ mit der Mehrzahl des Typs
+ * (#1446), sonst „12 × Vertrag“; in der Suche „12 Treffer“.
+ */
 function anzahlVon({ p, s, suche, einTyp }: ListeKern) {
   if (s.gesamt === null) return '';
   if (suche || p.sicht === 'suche') return t('ablage.ablage.treffer', { zahl: zahl(s.gesamt) });
   const typ = p.typ ?? (s.alle ? einTyp : undefined);
+  const mehrzahl = typ && s.gesamt !== 1 ? typMehrzahl(typ) : '';
+  if (mehrzahl) return t('ablage.liste.anzahl-mehrzahl', { zahl: zahl(s.gesamt), mehrzahl });
   return typ
     ? t('ablage.liste.anzahl-typ', { anzahl: s.gesamt, zahl: zahl(s.gesamt), typ: typName(typ) })
     : t('ablage.ablage.mappen-2', { anzahl: s.gesamt, zahl: zahl(s.gesamt) });

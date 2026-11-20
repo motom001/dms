@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import {
   REGISTERNAMEN,
   SYSTEMTYPEN,
+  SYSTEMTYP_MEHRZAHL,
   ROLLEN,
   FRUEHERE_ADMINROLLE,
   type Modusspur,
@@ -266,8 +267,11 @@ export class Systemtypen {
       benutzer: 'meldungen.dienst.die-benutzer-dieser-installation',
       post: 'meldungen.dienst.alles-was-in-ablago',
     };
+    // Mehrzahl (#1446): „12 Benutzer“, „3 Rollen“ – nur beim Standardnamen; Post bleibt „n × Post“.
+    const mehrzahl = typ.name === SYSTEMTYPEN[system] && SYSTEMTYP_MEHRZAHL[system] ? `gemeinsam.model.systemtyp.${system}-mehrzahl` : null;
     const tb = systemBeschriftung<TypTeile>({
       ...(typ.name === SYSTEMTYPEN[system] ? { name: `gemeinsam.model.systemtyp.${system}` } : {}),
+      ...(mehrzahl ? { mehrzahl } : {}),
       ...(typ.beschreibung === inSprache('de', () => t.frei(BESCHREIBUNG[system])) ? { beschreibung: BESCHREIBUNG[system] } : {}),
     });
     const REG: Record<string, keyof typeof REGISTERNAMEN> = {
@@ -283,7 +287,13 @@ export class Systemtypen {
       return b ? { ...r, ...mitBeschriftungen(ergaenzeBeschriftungen(r.beschriftungen, b)) } : r;
     });
     const beschriftungen = ergaenzeBeschriftungen(typ.beschriftungen, tb);
-    const neu = { ...typ, felder, register, ...mitBeschriftungen(beschriftungen) };
+    const neu = {
+      ...typ,
+      felder,
+      register,
+      ...mitBeschriftungen(beschriftungen),
+      ...(mehrzahl && !typ.mehrzahl ? { mehrzahl: SYSTEMTYP_MEHRZAHL[system] } : {}),
+    };
     if (JSON.stringify(neu) === JSON.stringify(typ)) return typ;
     return this.repo.aendereTyp(typ.id, { ...neu, trefferlisten: trefferlistenVon(neu), trefferliste: undefined });
   }
