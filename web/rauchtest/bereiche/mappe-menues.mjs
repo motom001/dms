@@ -179,7 +179,14 @@ rauchtest(
     if (punkte.some((x) => x.includes('Text anzeigen'))) {
       await menue.getByRole('menuitem', { name: 'Text anzeigen' }).click();
       await zeile.getByText('Protokoll der Wartung an der Heizung', { exact: false }).waitFor();
-    } else await s.keyboard.press('Escape');
+    } else {
+      await s.keyboard.press('Escape');
+      // Offen (Bericht KW47): Im ganzen Lauf blieb die Anlage auf „wartet“ stehen. Stand und Warteschlange ins Protokoll.
+      const v = await verwaltung();
+      const stand = (await api('GET', `/api/mappen/${beleg.id}`, { cookie: v })).daten.dokumente.map((x) => [x.name, x.ocr]);
+      const schlange = (await api('GET', '/api/werkbank/texterkennung', { cookie: v })).daten;
+      console.log(`# Hinweis #1487: Anlage ohne fertigen Text – ${JSON.stringify(stand)} ${JSON.stringify(schlange).slice(0, 1500)}`);
+    }
     const funde = [];
     for (const schema of ['light', 'dark']) {
       await schemaWechseln(s, schema);
