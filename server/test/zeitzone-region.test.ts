@@ -1,5 +1,5 @@
 /**
- * Uhrzeiten in der Zone der Region (#1451): Anmeldesperre, Postfach, Pakete-Hilfen, Externmessung, `dms` und Aufgaben
+ * Uhrzeiten in der Zone der Region (#1451): Anmeldesperre, Postfach (auch das Datum der Post, #1526), Pakete-Hilfen, Externmessung, `dms` und Aufgaben
  * ohne Empfänger formatieren mit den gemerkten Formaten aus shared/src/region.ts – also in der eingestellten Zone, nicht
  * in der des Server-Prozesses. Der Prozess läuft hier absichtlich in UTC, die Region in Europe/Berlin: 22:45 UTC am
  * 2. Januar ist dort schon der 3. Januar.
@@ -122,53 +122,67 @@ describe('Uhrzeiten in der Zone der Region bei abweichender Prozesszone (#1451)'
 
   it('Postfach: „Mail von … vom …“ in der Historie der Post in der Zone der Region', async () => {
     setzeZeitzone('Europe/Berlin');
-    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const mails = new Map<number, Buffer>([
-      [
-        1,
-        Buffer.from(
-          JSON.stringify({
-            messageId: '<spaet@example.org>',
-            betreff: 'Rechnung',
-            absenderAdresse: 'shop@example.org',
-            datum: '2026-01-02T23:30:00Z',
-            text: 'Anbei.',
-          }),
-        ),
-      ],
-    ]);
-    const sitzung: ImapSitzung = {
-      uidValidity: '1',
-      anzahl: mails.size,
-      neue: async (ab) => [...mails.keys()].filter((u) => u >= ab).map((uid) => ({ uid, messageId: '<spaet@example.org>' })),
-      quelle: async (uid) => mails.get(uid)!,
-      verschiebe: async (uid) => void mails.delete(uid),
-      gelesen: async () => {},
-      loesche: async (uid) => void mails.delete(uid),
-      ordnerListe: async () => ['INBOX'],
-      schliessen: async () => {},
-    };
-    const lies = async (q: Buffer): Promise<GeleseneMail> => {
-      const m = JSON.parse(q.toString()) as Omit<GeleseneMail, 'datum' | 'anhaenge'> & { datum: string };
-      return { ...m, datum: new Date(m.datum), anhaenge: [] };
-    };
-    const pf = new Postfaecher({
-      dienst: d,
-      einstellungen: speicherEinstellungen(),
-      verbinde: async () => sitzung,
-      lies,
-      verschluessele: (k) => `v1:${k}`,
-      entschluessele: (w) => w.slice(3),
-    });
-    const [p] = await pf.speichere(
-      { name: 'Rechnungen', server: 'imap.example.org', port: 993, benutzer: 'ablage@example.org', passwort: 'app-passwort' },
-      null,
-      'test',
-    );
-    assert.equal(await pf.abrufen(p.id), 1);
-    const postTyp = await d.eingangskanaele.postTyp();
-    const [post] = await d.mappen.listeMappen(postTyp.id);
+    const { d, post } = await postAusMail('2026-01-02T23:30:00Z');
     const h = (await d.mappenHistorie.historie(post.id)).find((x) => x.art === 'uebernommen');
     assert.match(String(h?.daten.text), /Mail von shop@example\.org vom 03\.01\.26, 00:30/, JSON.stringify(h));
   });
+
+  it('Postfach: Datum der Post ist der Kalendertag in der Zone der Region (#1526)', async () => {
+    setzeZeitzone('Europe/Berlin');
+    // 23:30 UTC am 2. Januar = 00:30 Ortszeit am 3. Januar: nicht der Vortag.
+    assert.equal((await postAusMail('2026-01-02T23:30:00Z')).post.werte.datum, '2026-01-03');
+    // Mitten am Tag ändert sich nichts.
+    assert.equal((await postAusMail('2026-01-02T12:00:00Z')).post.werte.datum, '2026-01-02');
+  });
 });
+
+/** Eine Mail über das Postfach abrufen (Prozess in UTC); liefert Kern und die neue Post. */
+async function postAusMail(datum: string) {
+  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+  const mails = new Map<number, Buffer>([
+    [
+      1,
+      Buffer.from(
+        JSON.stringify({
+          messageId: '<spaet@example.org>',
+          betreff: 'Rechnung',
+          absenderAdresse: 'shop@example.org',
+          datum,
+          text: 'Anbei.',
+        }),
+      ),
+    ],
+  ]);
+  const sitzung: ImapSitzung = {
+    uidValidity: '1',
+    anzahl: mails.size,
+    neue: async (ab) => [...mails.keys()].filter((u) => u >= ab).map((uid) => ({ uid, messageId: '<spaet@example.org>' })),
+    quelle: async (uid) => mails.get(uid)!,
+    verschiebe: async (uid) => void mails.delete(uid),
+    gelesen: async () => {},
+    loesche: async (uid) => void mails.delete(uid),
+    ordnerListe: async () => ['INBOX'],
+    schliessen: async () => {},
+  };
+  const lies = async (q: Buffer): Promise<GeleseneMail> => {
+    const m = JSON.parse(q.toString()) as Omit<GeleseneMail, 'datum' | 'anhaenge'> & { datum: string };
+    return { ...m, datum: new Date(m.datum), anhaenge: [] };
+  };
+  const pf = new Postfaecher({
+    dienst: d,
+    einstellungen: speicherEinstellungen(),
+    verbinde: async () => sitzung,
+    lies,
+    verschluessele: (k) => `v1:${k}`,
+    entschluessele: (w) => w.slice(3),
+  });
+  const [p] = await pf.speichere(
+    { name: 'Rechnungen', server: 'imap.example.org', port: 993, benutzer: 'ablage@example.org', passwort: 'app-passwort' },
+    null,
+    'test',
+  );
+  assert.equal(await pf.abrufen(p.id), 1);
+  const postTyp = await d.eingangskanaele.postTyp();
+  const [post] = await d.mappen.listeMappen(postTyp.id);
+  return { d, post };
+}

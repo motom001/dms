@@ -91,6 +91,8 @@ async function vorbereiten() {
   const anlage = await hochladen(c, beleg.id, 'Wartungsprotokoll.pdf', 'Protokoll der Wartung an der Heizung vom 12.01.2027');
   await api('POST', `/api/dokumente/${haupt.id}/anlagen`, { cookie: c, body: { dokument: anlage.id } });
   await textFertig(c, beleg.id, 'Wartungsrechnung.pdf');
+  // Die Anlage auch (#1525): Ein verlorenes Wecksignal holt das regelmäßige Nachsehen der Texterkennung nach.
+  await textFertig(c, beleg.id, 'Wartungsprotokoll.pdf');
   return { vertragTyp, belegTyp, vertrag, beleg, haupt, anlage };
 }
 
@@ -175,18 +177,13 @@ rauchtest(
         `fehlt: ${p}`,
       );
     assert.ok(!punkte.some((x) => x.includes('Mit Anlagen (ZIP)')), '„Mit Anlagen (ZIP)“ an einer Anlage');
-    // „Text anzeigen“, sobald die Texterkennung der Anlage fertig ist (im ganzen Lauf kann sie noch warten).
-    if (punkte.some((x) => x.includes('Text anzeigen'))) {
-      await menue.getByRole('menuitem', { name: 'Text anzeigen' }).click();
-      await zeile.getByText('Protokoll der Wartung an der Heizung', { exact: false }).waitFor();
-    } else {
-      await s.keyboard.press('Escape');
-      // Offen (Bericht KW47): Im ganzen Lauf blieb die Anlage auf „wartet“ stehen. Stand und Warteschlange ins Protokoll.
-      const v = await verwaltung();
-      const stand = (await api('GET', `/api/mappen/${beleg.id}`, { cookie: v })).daten.dokumente.map((x) => [x.name, x.ocr]);
-      const schlange = (await api('GET', '/api/werkbank/texterkennung', { cookie: v })).daten;
-      console.log(`# Hinweis #1487: Anlage ohne fertigen Text – ${JSON.stringify(stand)} ${JSON.stringify(schlange).slice(0, 1500)}`);
-    }
+    // „Text anzeigen“: Die Texterkennung der Anlage ist fertig (in der Vorbereitung abgewartet, #1525).
+    assert.ok(
+      punkte.some((x) => x.includes('Text anzeigen')),
+      'fehlt: Text anzeigen',
+    );
+    await menue.getByRole('menuitem', { name: 'Text anzeigen' }).click();
+    await zeile.getByText('Protokoll der Wartung an der Heizung', { exact: false }).waitFor();
     const funde = [];
     for (const schema of ['light', 'dark']) {
       await schemaWechseln(s, schema);

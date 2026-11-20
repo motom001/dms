@@ -85,7 +85,7 @@ Fehlt ein [eingebautes Werkzeug](fehlersuche.md#werkzeuge) (z. B. das zum Lesen 
 
 Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mappentyp](mappentypen.md#register) ein (*Volltext erzeugen*, Standard: an).
 
-Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei *Volltext neu erzeugen* warum: **ausgeschaltet** (mit **Einschalten**) oder **pausiert, solange der Wartungsmodus an ist** (mit **Wartungsmodus beenden**). Ein nur angekündigter Wartungsmodus hält die Warteschlange nicht an.
+Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei *Volltext neu erzeugen* warum: **ausgeschaltet** (mit **Einschalten**) oder **pausiert, solange der Wartungsmodus an ist** (mit **Wartungsmodus beenden**). Ein nur angekündigter Wartungsmodus hält die Warteschlange nicht an. Zusätzlich sieht Ablago alle 30 Sekunden nach, ob noch Dokumente auf die Texterkennung warten – so bleibt keines dauerhaft auf *wartet* stehen, auch wenn der Anstoß nach dem Hochladen einmal ins Leere ging (z. B. weil das Dokument im selben Moment als Anlage angehängt wurde).
 
 ## Sprache automatisch erkennen
 

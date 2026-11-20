@@ -18,6 +18,7 @@ import { t } from '../sprache/sprache';
 import { AUSGABE_GROSS, MB, TEXTERKENNUNG_MAX_MB as MAX_MB } from '../grundlagen/grenzen';
 import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import { pruefeSchriften, schriftfehlerGesehen } from '../dateien/ersatzschriften';
+import { wiederkehrend } from '../zeitplan/streuung';
 
 /**
  * Volltext (#45, #458, #459).
@@ -258,6 +259,14 @@ export class Texterkennung {
   private laeufe = new Map<string, AbortController>();
   private werkzeuge?: Promise<Werkzeuge>;
   private aus = false;
+  /** Regelmäßiges Nachsehen anhalten (#1525). */
+  private nachsehenAus: (() => void) | null = null;
+  /**
+   * Abstand des regelmäßigen Nachsehens (#1525). Ein Wecksignal kann verloren gehen: `ocrNaechster` überspringt mit
+   * SKIP LOCKED ein Dokument, das gerade eine andere Transaktion sperrt (z. B. „Als Anlage anhängen“ direkt nach dem
+   * Hochladen), oder es kam im Wartungsmodus an. Ohne Nachsehen bliebe es bis zum nächsten Start auf „wartet“.
+   */
+  nachsehenMs = 30_000;
   /** Dokumente in der Warteschlange, die ausdrücklich neu erkannt werden sollen (#458; nur im Speicher). */
   private neuMarken = new Set<string>();
   /** Nach jedem Ergebnis (#338, #458: Ereignis für Pakete – auch ohne Text). */
@@ -319,11 +328,14 @@ export class Texterkennung {
         : 'Volltext bereit: Textebene von PDFs – kein Paket für die Texterkennung installiert, Scans und Bilder bleiben ohne Text (Werkbank → Pakete → Texterkennung).',
     );
     this.anstossen();
+    this.nachsehenAus ??= wiederkehrend('texterkennung-nachsehen', this.nachsehenMs, () => this.anstossen());
   }
 
   /** Beenden: keine neuen Aufträge mehr annehmen. */
   stop() {
     this.aus = true;
+    this.nachsehenAus?.();
+    this.nachsehenAus = null;
   }
 
   /** Freie Aufträge mit wartenden Dokumenten füllen. */

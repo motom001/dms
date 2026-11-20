@@ -733,15 +733,17 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
         assert.equal(head.statusCode, 200, head.body);
         assert.equal(head.body, '');
         assert.equal(head.headers['content-length'], String(a.bytes));
-        await new Promise((x) => setTimeout(x, 50));
+        // Ohne feste Wartezeit (#1527): Auf HEAD läuft nichts nach. Dass es nichts löscht, zeigt auch der GET danach (ganze
+        // Datei); dass es nicht als heruntergeladen zählt, die Historie mit genau einem Eintrag nach dem GET.
         assert.ok(await da(), 'HEAD löscht nichts');
         assert.equal(await heruntergeladen(), 0, 'HEAD gilt nicht als heruntergeladen');
         const get = await app.inject({ method: 'GET', url, headers: kopf });
         assert.equal(get.statusCode, 200);
-        assert.equal(get.rawPayload.length, a.bytes);
-        await new Promise((x) => setTimeout(x, 50));
+        assert.equal(get.rawPayload.length, a.bytes, 'HEAD hat die Datei nicht gelöscht');
+        // Löschen und Notiz kommen nach dem letzten Byte („finish“) – auf diesen Stand warten.
+        await bis(async () => !(await da()) && (await heruntergeladen()) > 0);
         assert.equal(await da(), false, 'nach dem ausgelieferten GET gelöscht');
-        assert.equal(await heruntergeladen(), 1);
+        assert.equal(await heruntergeladen(), 1, 'nur der GET zählt, nicht der HEAD');
       } finally {
         await app.close();
       }
