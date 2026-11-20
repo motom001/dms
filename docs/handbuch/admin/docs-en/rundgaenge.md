@@ -16,7 +16,7 @@ The switch is at the top right of the selected tour. It applies **to everyone** 
 
 ## Viewing tours from Ablago and from packages
 
-A click shows the tour's file (with the texts in your language). You cannot change it; **Copy as own** creates a copy to edit. **Try it** starts the tour in a new window, only for you.
+A click shows the tour's file (with the texts in your language). You cannot change it; **Copy as own** creates a copy right away – switched off and with `start: manuell` – and opens it for editing. **Try it** starts the tour in a new window, only for you; **Done – back to the draft** closes it again at the end.
 
 Tours and tips from packages appear in each person's language if the package brings it, otherwise in German. If they exist in one language only or a translation is missing texts, the preview says so as a hint when installing.
 

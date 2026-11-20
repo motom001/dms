@@ -157,9 +157,10 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
   const letzter = nr === schritte.length - 1;
   const s = aktuell.schritt;
   const text = schmal && s.textHandy ? s.textHandy : s.text;
+  const zumEntwurf = probeImEigenenFenster(probe);
   const ende = (stand: 'gesehen' | 'spaeter') => {
     beendeRundgang(stand);
-    if (zurueckNach.current) geheZu(zurueckNach.current);
+    nachDemEnde(zumEntwurf, zurueckNach.current);
   };
   const weiter = () => (letzter ? ende('gesehen') : setNr(nr + 1));
   const zurueck = () => setNr(Math.max(0, nr - 1));
@@ -234,7 +235,7 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
               </Knopf>
             )}
             <Knopf ref={weiterKnopf} art="haupt" onClick={weiter}>
-              {letzter ? t('entdecken.fuehrung.fertig') : t('entdecken.fuehrung.weiter')}
+              {hauptText(letzter, zumEntwurf)}
             </Knopf>
           </div>
         </div>
@@ -242,6 +243,21 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
     </dialog>
   );
 }
+
+/**
+ * Ausprobieren (#941) läuft in einem eigenen Fenster neben dem Editor. Am Ende schließt es sich, damit der
+ * ungespeicherte Entwurf im Fenster des Editors wieder vorn ist (#1533) – nur, wenn der Editor es geöffnet hat.
+ */
+const probeImEigenenFenster = (probe?: { pfad: string | null }) =>
+  !!probe && typeof window !== 'undefined' && !!window.opener && !window.opener.closed;
+
+function nachDemEnde(zumEntwurf: boolean, ziel: string | null) {
+  if (zumEntwurf) window.close();
+  else if (ziel) geheZu(ziel);
+}
+
+const hauptText = (letzter: boolean, zumEntwurf: boolean) =>
+  !letzter ? t('entdecken.fuehrung.weiter') : zumEntwurf ? t('entdecken.fuehrung.fertig-probe') : t('entdecken.fuehrung.fertig');
 
 /**
  * Vor dem ersten Schritt öffnen, was der Rundgang nennt: eine Seite, die erste lesbare Mappe eines Typs oder ein leeres

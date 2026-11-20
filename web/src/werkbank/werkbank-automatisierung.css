@@ -114,7 +114,12 @@ pre.yaml-datei { margin: 0; padding: 8px 10px; background: var(--senke); border-
 .anker-liste li { margin: 0 0 2px; }
 .anker-liste button { display: block; width: 100%; text-align: left; white-space: normal; height: auto; padding-top: 4px; padding-bottom: 4px; }
 .anker-liste code { display: block; font-family: var(--mono); font-size: .9em; }
-.zeilenfehler { margin: 0; padding-left: 18px; }
+/* Fehler der Prüfung (#1533): je Fehler eine Zeile, „Zeile 4“ und Text nebeneinander, der Text bricht darunter um. */
+.zeilenfehler { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-self: flex-start; }
+.zeilenfehler > span { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 8px; }
+.zeilenfehler > span > :only-child { grid-column: 1 / -1; }
+/* Das Warnsymbol des Feldrahmens steht mittig; bei mehreren Fehlern gehört es zur ersten Zeile. */
+:has(> .zeilenfehler) > svg { align-self: flex-start; margin-top: 7px; }
 .tipp-vorschau { display: flex; flex-direction: column; gap: 6px; }
 .tipp-vorschau-karte { border: 1px solid var(--linie); border-radius: 10px; padding: 12px 14px; background: var(--flaeche); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 420px; }
 .tipp-vorschau-karte p { margin: 0; }

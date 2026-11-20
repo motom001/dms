@@ -124,6 +124,7 @@
   "rundgaenge.ui.fenster.blockiert": "The new window was blocked – allow Ablago to open windows.",
   "rundgaenge.ui.gegenstand": "tour",
   "rundgaenge.ui.gespeichert": "Saved.",
+  "rundgaenge.ui.entwurf-zurueck": "Your draft from trying it out is back. It is not saved yet.",
   "rundgaenge.ui.loeschen": "Delete tour",
   "rundgaenge.ui.loeschen.frage": "Delete this own tour?",
   "rundgaenge.ui.vorlage": "schluessel: my_tour\ntitel: My tour\nbeschreibung: What this tour shows.\nfuer: lesen\nschritte:\n  - schluessel: neu\n    ziel: neu\n    ort: At the top in the header\n    titel: Filing something\n    text: With “+ New” you file post or create a folder.\n",
