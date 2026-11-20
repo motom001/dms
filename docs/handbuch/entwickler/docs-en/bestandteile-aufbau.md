@@ -49,7 +49,7 @@ Ablago includes only a few packages **directly** (**level 1**). What they need c
 
 ### Web interface { #weboberflaeche }
 
-Vite bundles the web interface libraries into one file at build time; they are not separate packages in the image. The list therefore comes from `package-lock.json` and may contain a little more than ends up in the bundle.
+Vite bundles the web interface libraries into one file at build time; they are not separate packages in the image. This page shows the tree from `package-lock.json` and may therefore contain more than ends up in the bundle (e.g. the command line of `qrcode`). The list attached to a release only takes what is actually in the bundle.
 
 | Package | Purpose | Licence | Brings along |
 | --- | --- | --- | ---: |
