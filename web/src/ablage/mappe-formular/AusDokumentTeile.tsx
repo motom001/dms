@@ -1,15 +1,17 @@
 import { feldLabel, typName } from '../../../../shared/src/beschriftung';
 import { darfErstellen } from '../../../../shared/src/model';
 import { HakenFeld, Knopf } from '../../bausteine';
-import { geheZu } from '../../ort';
 import { titelOder } from '../../seiten';
 import { t } from '../../sprache';
 import { AusDokument, type AusDokumentErgebnis } from '../AusDokument';
 import type { Kern } from './kern';
 
-/** „Aus Dokument ausfüllen“ (#391): der Knopf über dem Formular – bzw. der Dialog, solange er offen ist. */
+/**
+ * „Aus Dokument ausfüllen“ (#391) an einer neuen Mappe: der Knopf über dem Formular – bzw. der Dialog (Foto, Datei),
+ * solange er offen ist. An einer gespeicherten Mappe steht es fest im Menü „Mappe“ und öffnet die Prüfansicht (#1494).
+ */
 export function AusDokumentLeiste({ z, titel, fertig }: { z: Kern; titel: string; fertig(e: AusDokumentErgebnis): void }) {
-  const { typ, mappe, details, sicht } = z.p;
+  const { typ, mappe, details } = z.p;
   if (z.adOffen)
     return (
       <AusDokument
@@ -23,18 +25,9 @@ export function AusDokumentLeiste({ z, titel, fertig }: { z: Kern; titel: string
     );
   return (
     <div className="ad-leiste">
-      <Knopf
-        groesse="klein"
-        symbol="kamera"
-        onClick={() => (mappe && z.mitText.length ? geheZu(`/ablage/${sicht}/${mappe.id}/uebernehmen`) : z.setAdOffen(true))}>
+      <Knopf groesse="klein" symbol="kamera" onClick={() => z.setAdOffen(true)}>
         {titel}
       </Knopf>
-      {/* „Foto oder Datei …“ ist eine Handlung, kein Weg: ein Knopf (C8, #1211). */}
-      {mappe && z.mitText.length > 0 && (
-        <Knopf groesse="klein" onClick={() => z.setAdOffen(true)}>
-          {t('ablage.uebernehmen.foto-oder-datei')}
-        </Knopf>
-      )}
     </div>
   );
 }

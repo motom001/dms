@@ -24,7 +24,7 @@ On the phone, instead of the list there is a button with the current view, e.g. 
 
 The list is also more compact on the phone: the header fits in one line; you search with the magnifier at the top of the header ([Search](#suchen)).
 
-- **Views can have sub-views.** An arrow ▸ in front shows this; a click on it expands or collapses them. Your device remembers what is collapsed.
+- **Views can have sub-views.** An arrow ▸ in front shows this; a click on it expands or collapses them – also when a view inside is currently selected; the collapsed view is then marked as selected. Opening a sub-view expands its group. Your device remembers what is collapsed.
 - **A view with sub-views shows everything together:** *Finances*, for example, shows all open invoices *and* this year's payments.
 - **Some views filter:** *Open invoices* only shows invoices that are not yet paid. Ablago recalculates values like "today" or "yourself" every time it is opened – so a view *Notice within the next 12 months* is always up to date.
 - **If a view shows several folder types**, *Title* and *Folder type* are in front, and there is no button for creating. You then create new folders in the view of the individual folder type.

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { typName } from '../../../../shared/src/beschriftung';
 import { datumText, inFrist } from '../../../../shared/src/archiv';
 import { linkZuMappe } from '../../../../shared/src/direktlink';
+import { ausDokumentKnopf } from '../../../../shared/src/erkennung';
 import { NOTIZEN_REGISTER } from '../../../../shared/src/mappenansicht';
 import { darfLoeschen, istLeer, type Mappe, type Mappentyp } from '../../../../shared/src/model';
 import type { AktionenAnMappe, AngeboteneAktion } from '../../../../shared/src/paketaktionen';
@@ -107,7 +108,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
       : undefined;
   return (
     <>
-      <MappeKopf typ={typ} details={details} dl={dl} paketAktionen={paketAktionen} mitVerknuepften={mitVerknuepften} />
+      <MappeKopf typ={typ} details={details} sicht={sicht} dl={dl} paketAktionen={paketAktionen} mitVerknuepften={mitVerknuepften} />
       <TeilVon typ={typ} details={details} />
       {details.nurImVerwaltungsmodus && <NurImModus mappeId={mappe.id} />}
       {typ.system === 'post' && <PostLeiste typ={typ} details={details} neuLaden={neuLaden} />}
@@ -160,16 +161,26 @@ const vorlagenVon = (details: MappeDetails) => {
   return { vorlagen, kern, weitere };
 };
 
+/** „Aus Dokument ausfüllen“ (#1494): fest im Menü „Mappe“, öffnet die Prüfansicht – mit oder ohne Dokument in der Mappe. */
+function ausDokumentPunkt(typ: Mappentyp, details: MappeDetails, sicht: string) {
+  const titel = ausDokumentKnopf(typ);
+  if (!titel) return undefined;
+  const gesperrt = details.rechte?.U === false ? t('ablage.aktionen.aus-dokument-gesperrt') : undefined;
+  return { titel, gesperrt, tu: () => geheZu(`/ablage/${sicht}/${details.mappe.id}/uebernehmen`) };
+}
+
 /** Kopf der Mappe: Typ, Titel mit Stern und Menü „Mappe ▾“ (#427), angelegt/geändert, Archivmodus (#212, #1051). */
 function MappeKopf({
   typ,
   details,
+  sicht,
   dl,
   paketAktionen,
   mitVerknuepften,
 }: {
   typ: Mappentyp;
   details: MappeDetails;
+  sicht: string;
   dl: Dialoge;
   paketAktionen: AktionenAnMappe | null;
   mitVerknuepften?: () => void;
@@ -187,7 +198,15 @@ function MappeKopf({
         </h1>
         <div className="mappenkopf-knoepfe">
           <Stern mappeId={mappe.id} an={!!details.favorit} anker="mappe.stern" />
-          <Menue typ={typ} details={details} dl={dl} paketAktionen={paketAktionen} mitVerknuepften={mitVerknuepften} kopiert={setKopiert} />
+          <Menue
+            typ={typ}
+            details={details}
+            sicht={sicht}
+            dl={dl}
+            paketAktionen={paketAktionen}
+            mitVerknuepften={mitVerknuepften}
+            kopiert={setKopiert}
+          />
         </div>
       </div>
       <Index details={details} />
@@ -217,6 +236,7 @@ function systemrollenHinweis(kennung: string | null | undefined): string | null 
 function Menue({
   typ,
   details,
+  sicht,
   dl,
   paketAktionen,
   mitVerknuepften,
@@ -224,6 +244,7 @@ function Menue({
 }: {
   typ: Mappentyp;
   details: MappeDetails;
+  sicht: string;
   dl: Dialoge;
   paketAktionen: AktionenAnMappe | null;
   mitVerknuepften?: () => void;
@@ -239,6 +260,7 @@ function Menue({
   const direktlink = linkZuMappe(typ, mappe);
   return (
     <Aktionsmenue
+      ausDokument={ausDokumentPunkt(typ, details, sicht)}
       aus={paketAktionen?.eingebautAus}
       pakete={(paketAktionen?.aktionen ?? []).map((x) => ({
         key: `${x.paket.id}:${x.schluessel}`,

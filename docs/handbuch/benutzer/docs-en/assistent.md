@@ -8,7 +8,7 @@ At the bottom right of every page there is a round button with a small **folder 
 - A small **dot** on the button shows that there is a new [tip of the day](#tipps). As soon as you have looked at the tips, it is gone.
 - When you move the mouse over the button (or the keyboard focus is on it), the folder's flap folds back briefly and it winks – only then, without sound. If **reduce motion** is switched on on your device, nothing moves.
 - **×** at the top right or **Esc** closes the window. With the keyboard you reach the button like any other; when it opens, the focus moves into the window, and when it closes, back to the button.
-- On a phone the window opens as a **sheet from the bottom** across the full width. The button has its own strip at the bottom there and covers neither content nor the bar with **Save** – on a large screen too, as soon as there is such a bar. In the Workbench on a phone the button is at the top, in the header.
+- On a phone the window opens as a **sheet from the bottom** across the full width. The button has its own strip at the bottom there and covers neither content nor the bar with **Save**. On a large screen it stays fixed at the bottom right and the page scrolls past below it; below the content there is free space – only to the right of the navigation, not below it. Menus open upwards when there is no room below (counting the assistant's space). In the Workbench on a phone the button is at the top, in the header.
 
 ## Ask: Ask your Library {#frag-deine-ablage}
 

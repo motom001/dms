@@ -43,7 +43,8 @@ export function Formular(p: FormularProps) {
   return (
     <>
       {kopf?.(werteAusRoh(typ, z.roh), z.bekannt)}
-      {z.knopf && <AusDokumentLeiste z={z} titel={z.knopf} fertig={ad.uebernimmVorschlaege} />}
+      {/* Gespeicherte Mappe (#1494): „Aus Dokument ausfüllen“ steht im Menü „Mappe“, keine eigene Zeile darüber. */}
+      {z.knopf && !mappe && <AusDokumentLeiste z={z} titel={z.knopf} fertig={ad.uebernimmVorschlaege} />}
       <AusDokumentErgebnisse
         z={z}
         neuAnlegen={ad.neuAnlegen}
@@ -204,13 +205,13 @@ function verwerfen(z: Kern, runde: ReturnType<typeof useVorschlagStart>) {
   if (z.p.vorschlagStart) runde((n) => n + 1);
 }
 
-/** Zahl am Register: Notizen, Dokumente (mit neuen, ohne entfernte) und verknüpfte Mappen. */
+/** Zahl am Register: Notizen, Dokumente (mit neuen, ohne entfernte, ohne Anlagen – #1487) und verknüpfte Mappen. */
 function anzahl(z: Kern, r: AnsichtsRegister): number | undefined {
   const { mappe, details, typ } = z.p;
   if (r.art === 'notizen') return mappe ? (details?.notizen?.length ?? 0) : undefined;
   if (r.art === 'dokumente')
     return (
-      (details?.dokumente ?? []).filter((x) => x.registerKey === r.key).filter((x) => !z.entfernt.includes(x.id)).length +
+      (details?.dokumente ?? []).filter((x) => x.registerKey === r.key && !x.anlageZu).filter((x) => !z.entfernt.includes(x.id)).length +
       z.neueDateien.filter((n) => n.register === r.key).length
     );
   if (r.art === 'verknuepfungen') return verknuepfungsGruppen(z.d, mappe, typ.id, r, details).reduce((a, g) => a + g.treffer.length, 0);

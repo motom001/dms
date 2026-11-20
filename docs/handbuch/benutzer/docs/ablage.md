@@ -24,7 +24,7 @@ Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansi
 
 Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile; gesucht wird über die Lupe oben in der Kopfzeile ([Suchen](#suchen)).
 
-- **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
+- **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu – auch, wenn darin gerade eine Ansicht gewählt ist; dann ist die zugeklappte Ansicht als gewählt markiert. Öffnest du eine Unteransicht, klappt ihr Bereich auf. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
 - **Manche Ansichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet Ablago bei jedem Öffnen neu – eine Ansicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
 - **Zeigt eine Ansicht mehrere Mappentypen**, stehen *Titel* und *Mappentyp* vorn, und es gibt keinen Knopf zum Anlegen. Neue Mappen legst du dann in der Ansicht des einzelnen Mappentyps an.

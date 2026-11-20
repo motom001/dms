@@ -53,6 +53,7 @@ export interface PaketEintrag {
  * #424), als Gefahr mit Rückfrage. „Mappe löschen“ selbst steht in der Speicherleiste – auch am Handy (#1211).
  */
 export function Aktionsmenue({
+  ausDokument,
   aufgabe,
   erinnern,
   vorlagen = [],
@@ -65,6 +66,10 @@ export function Aktionsmenue({
   aus = [],
   pakete = [],
 }: {
+  /**
+   * „Aus Dokument ausfüllen“ (#1494): immer zuerst, für jeden Mappentyp, unabhängig vom Zustand der Mappe – öffnet die
+   * Prüfansicht. Gesperrt mit Grund, wer die Mappe nicht bearbeiten darf.
+   */ ausDokument?: { titel: string; gesperrt?: string; tu(): void };
   aufgabe?: () => void;
   erinnern?: () => void;
   /** Weitere Automatisierungsvorlagen (#1044), z. B. „Wiedervorlage“. */ vorlagen?: Array<{
@@ -86,6 +91,15 @@ export function Aktionsmenue({
   // Paket-Aktionen (#1039) reihen sich nach den eingebauten ein – gekennzeichnet mit dem Paket; ausgeblendete fehlen.
   const eintraege = (
     [
+      ausDokument && {
+        key: 'aus-dokument',
+        tu: ausDokument.tu,
+        symbol: 'kamera',
+        titel: t('ablage.aktionen.aus-dokument-titel'),
+        inhalt: ausDokument.titel,
+        ...(ausDokument.gesperrt ? { gesperrt: ausDokument.gesperrt } : {}),
+        anker: 'mappe.aus-dokument',
+      },
       aufgabe && { key: 'aufgabe', tu: aufgabe, symbol: 'aufgabe', inhalt: t('ablage.aktionen.aufgabe-vergeben') },
       erinnern && {
         key: 'erinnern',

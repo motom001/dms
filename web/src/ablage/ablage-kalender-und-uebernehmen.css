@@ -129,6 +129,11 @@
 .ue-zurueck { display: inline-flex; align-items: center; gap: 4px; }
 .ue-dokwahl { margin-left: auto; max-width: 100%; }
 .ue-dokwahl select { max-width: 100%; }
+/* „Aus Dokument ausfüllen“ an einer Mappe (#1494): neu hochladen neben der Wahl; eine nur gelesene Datei als Vorschau. */
+.ue-neu { flex-wrap: wrap; }
+.ue-gelesen { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ue-gelesen-bild { max-width: 100%; height: auto; border: 1px solid var(--linie); border-radius: var(--r); }
+.ue-gelesen-pdf { width: 100%; min-height: 70vh; border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
 .ue-meldung { min-height: 1.3em; margin: -4px 0 0; color: var(--leise); }
 .ue-meldung.gut { color: var(--gruen); }
 .ue-meldung.warn { color: var(--warn); }
