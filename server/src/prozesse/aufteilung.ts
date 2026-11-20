@@ -29,6 +29,7 @@ import type { Oidc } from '../anmeldung/oidc';
 import type { Poolmessung, PoolStand } from '../datenbank/poolmessung';
 import type { Postfaecher } from '../post/postfach';
 import { protokoll } from '../protokoll/protokoll';
+import { bedieneProtokoll } from '../protokoll/alleprozesse';
 import type { Verbund } from './prozesse';
 import type { Lauf, Sicherung } from '../sicherung/sicherung';
 import type { Texterkennung } from '../volltext/texterkennung';
@@ -315,6 +316,8 @@ function spiegelVomLeiter(v: Verbund, o: TeilungsDeps): () => Promise<void> {
 export function teileArbeit(v: Verbund, o: TeilungsDeps): Teilung {
   const uhren: NodeJS.Timeout[] = [];
   v.bediene('prozess.stand', () => prozessstand(o));
+  // Protokoll der Werkbank und Debug-Modus für alle Prozesse (#1490).
+  bedieneProtokoll(v);
   // Lasttest (#874): schaltet die Messung der Wartezeit auf Verbindungen ein (für einige Minuten) und liefert sie mit.
   v.bediene('prozess.last', () => {
     o.pool?.an();

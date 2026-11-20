@@ -32,6 +32,8 @@ export interface Wiederherstellungslauf {
   gestartet: string;
   beendet?: string;
   fehler?: string;
+  /** Probe (#1383): alle Schritte erledigt, nur das Ergebnis ließ sich nicht speichern (Grund in `fehler`). */
+  ergebnisNichtGespeichert?: boolean;
 }
 
 /** Was nach dem Neustart als Abschlussmeldung erscheint. */

@@ -26,9 +26,11 @@ Every entry belongs to a **module**, such as *User accounts and sign-in* (`konto
 
 You can filter by level, module, user and text; **Live** updates the list every two seconds. A click on an entry shows all its data, including user and request id.
 
+If Ablago runs with [several processes](technik.md#mehrere-prozesse) (`DMS_PROZESSE`), each process has its own log. The workbench fetches the entries of all processes and merges them by time; each entry then names its process (*Process 1*, *Process 2*). The “stored” count adds them all up. Output and errors of the package runner and of package code are in the module *Packages* (`pakete`).
+
 ### Debug mode {#debug-modus}
 
-Switches on additional, detailed messages for **one hour** – such as every single database query. After that (or after a restart) it switches off by itself. The basic level is set by `LOG_LEVEL` (see [Installation](installation.md#einstellungen)).
+Switches on additional, detailed messages for **one hour** – such as every single database query –, with several processes in all of them. After that (or after a restart) it switches off by itself. The basic level is set by `LOG_LEVEL` (see [Installation](installation.md#einstellungen)).
 
 ### Container logs { #container-logs }
 

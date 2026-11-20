@@ -1,9 +1,4 @@
 {
-  "server/src/anmeldung/anmeldesperre.ts": {
-    "ablago/gemerkte-formate": {
-      "count": 1
-    }
-  },
   "server/src/anmeldung/anmeldung.routen.ts": {
     "complexity": {
       "count": 1
@@ -22,11 +17,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "server/src/aufgaben/ohne-empfaenger.ts": {
-    "ablago/gemerkte-formate": {
       "count": 1
     }
   },
@@ -137,9 +127,6 @@
     }
   },
   "server/src/dms.ts": {
-    "ablago/gemerkte-formate": {
-      "count": 1
-    },
     "no-useless-assignment": {
       "count": 1
     }
@@ -394,11 +381,6 @@
       "count": 1
     }
   },
-  "server/src/pakete/verwaltung/hilfen.ts": {
-    "ablago/gemerkte-formate": {
-      "count": 1
-    }
-  },
   "server/src/pakete/verwaltung/hochladen.ts": {
     "complexity": {
       "count": 1
@@ -524,9 +506,6 @@
     }
   },
   "server/src/post/postfach.ts": {
-    "ablago/gemerkte-formate": {
-      "count": 1
-    },
     "complexity": {
       "count": 3
     },
@@ -636,11 +615,6 @@
   },
   "server/src/suche/suche.dienst.ts": {
     "max-params": {
-      "count": 1
-    }
-  },
-  "server/src/system/externmessung.ts": {
-    "ablago/gemerkte-formate": {
       "count": 1
     }
   },

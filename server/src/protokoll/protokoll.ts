@@ -37,6 +37,13 @@ export interface Eintrag {
   daten?: Record<string, unknown>;
 }
 
+/** Stand des Debug-Modus (#1490: für alle Prozesse zusammengefasst in alleprozesse.ts). */
+export interface DebugStand {
+  an: boolean;
+  bis: string | null;
+  grundstufe: Stufe;
+}
+
 /** Was zur laufenden Anfrage gehört (Benutzer, Anfrage-Id, Messwerte der Datenbank). */
 export interface Kontext {
   anfrage: string;
@@ -115,7 +122,7 @@ export class Protokoll {
   get debugAn() {
     return this.debugBis > Date.now();
   }
-  get debugStand() {
+  get debugStand(): DebugStand {
     return { an: this.debugAn, bis: this.debugAn ? new Date(this.debugBis).toISOString() : null, grundstufe: this.grund };
   }
   setzeGrundstufe(s: string | undefined) {

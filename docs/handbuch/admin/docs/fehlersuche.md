@@ -26,9 +26,11 @@ Jeder Eintrag gehört zu einem **Modul**, etwa *Benutzerkonten und Anmeldung* (`
 
 Filtern lässt sich nach Stufe, Modul, Benutzer und Text; **Live** aktualisiert die Liste alle zwei Sekunden. Ein Klick auf einen Eintrag zeigt alle Daten dazu, auch Benutzer und Anfrage-Kennung.
 
+Läuft Ablago mit [mehreren Prozessen](technik.md#mehrere-prozesse) (`DMS_PROZESSE`), hat jeder Prozess sein eigenes Protokoll. Die Werkbank holt die Einträge aller Prozesse und mischt sie nach Zeit; jeder Eintrag nennt dann seinen Prozess (*Prozess 1*, *Prozess 2*). Die Zahl „gespeichert“ zählt alle zusammen. Ausgaben und Fehler des Paket-Läufers und des Codes von Paketen stehen im Modul *Pakete* (`pakete`).
+
 ### Debug-Modus
 
-Schaltet für **eine Stunde** zusätzliche, ausführliche Meldungen ein – etwa jede einzelne Datenbankabfrage. Danach (oder nach einem Neustart) ist er von selbst wieder aus. Die Grundstufe stellt `LOG_LEVEL` ein (siehe [Installation](installation.md#einstellungen)).
+Schaltet für **eine Stunde** zusätzliche, ausführliche Meldungen ein – etwa jede einzelne Datenbankabfrage –, mit mehreren Prozessen in allen. Danach (oder nach einem Neustart) ist er von selbst wieder aus. Die Grundstufe stellt `LOG_LEVEL` ein (siehe [Installation](installation.md#einstellungen)).
 
 ### Container-Logs
 

@@ -213,6 +213,8 @@ export interface Protokolleintrag {
   benutzer?: string;
   anfrage?: string;
   daten?: Record<string, unknown>;
+  /** Mit mehreren Prozessen (#1490): aus welchem Prozess der Eintrag stammt. */
+  prozess?: number;
 }
 export interface DebugStand {
   an: boolean;
@@ -221,7 +223,8 @@ export interface DebugStand {
 }
 export interface ProtokollAntwort {
   eintraege: Protokolleintrag[];
-  letzte: number;
+  /** Für das nächste `seit`: Nummer (ein Prozess) oder `pid:nr,…` (mehrere Prozesse, #1490). */
+  letzte: number | string;
   gespeichert: number;
   debug: DebugStand;
   module: string[];

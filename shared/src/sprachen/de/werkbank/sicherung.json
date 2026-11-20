@@ -244,6 +244,7 @@
   "sicherung.noch-keine-sicherung": "noch keine Sicherung",
   "sicherung.letzte-probe": "Letzte Probe",
   "sicherung.woechentlich-automatisch": "Wöchentlich automatisch",
+  "sicherung.probe-ergebnis-nicht-gespeichert": "Die Probe ist durchgelaufen, aber ihr Ergebnis konnte nicht gespeichert werden: {fehler}",
   "sicherung.probe-laeuft": "Probe läuft …",
   "sicherung.jetzt-probeweise-wiederherstellen": "Jetzt probeweise wiederherstellen",
   "sicherung.probe-zeitplan": "Probe-Zeitplan",

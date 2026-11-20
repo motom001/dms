@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { abschirmungText, type WerkzeugAbschirmung } from './prozesse/werkzeugverbindung';
 import { ALS_KOPF, KONSOLE_KOPF, konsolenDatei, lokaleUrl, type KonsolenDatei } from './system/konsole';
 import { t } from './sprache/sprache';
-import { gebietsschema } from '../../shared/src/sprache';
+import { setzeZeitzone, zeitText } from '../../shared/src/region';
 import { aenderungText, kennungSatz, type Dienstbenutzer } from '../../shared/src/dienstbenutzer';
 import { MB } from './grundlagen/grenzen';
 
@@ -195,8 +195,16 @@ export interface Aus {
   json(daten: unknown): void;
 }
 
-const zeit = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) : '–';
+/** Zeitpunkt in der Zone der Region (#1451); die holt {@link mitRegion} vor der Ausgabe vom Server. */
+const zeit = (iso: string | null | undefined) => (iso ? zeitText(new Date(iso), { dateStyle: 'short', timeStyle: 'short' }) : '–');
+/**
+ * Zone der Region (#1451): Der Befehl läuft in einem eigenen Prozess, dessen Zone (`TZ`) nicht die der Region sein muss.
+ * Vor einer Ausgabe mit Uhrzeiten einmal vom Server holen; ohne Antwort bleibt die Vorgabe (Europe/Berlin).
+ */
+async function mitRegion(v: Verbindung) {
+  const r = await v.anfrage<{ zeitzone?: unknown } | null>('GET', '/api/region').catch(() => null);
+  setzeZeitzone(r?.zeitzone);
+}
 const tabelle = (zeilen: string[][]) => {
   const breite = zeilen[0]?.map((_, i) => Math.max(...zeilen.map((z) => (z[i] ?? '').length))) ?? [];
   return zeilen.map((z) =>
@@ -309,6 +317,7 @@ async function befehlGesperrt(rest: string[], { v, zeige }: Lauf): Promise<void>
     'GET',
     '/api/werkbank/anmeldeschutz',
   );
+  await mitRegion(v);
   return zeige(s.gesperrt, () =>
     s.gesperrt.length
       ? tabelle([
@@ -337,6 +346,7 @@ async function befehlWartung(rest: string[], { v, zeige }: Lauf): Promise<void> 
     'GET',
     '/api/werkbank/wartung',
   );
+  await mitRegion(v);
   return zeige(w, () =>
     w.stufe && w.stufe !== 'aus'
       ? t('meldungen.dms.wartungsmodus', {
@@ -376,6 +386,7 @@ async function befehlStatus(rest: string[], { v, zeige }: Lauf): Promise<void> {
     datenbank: Record<string, unknown>;
     abschirmung?: WerkzeugAbschirmung | null;
   }>('GET', '/api/werkbank/system');
+  await mitRegion(v);
   const db = s.datenbank;
   return zeige(s, () => [
     `Ablago ${s.dms.version} (${s.dms.variante})${s.dms.commit ? `, Commit ${s.dms.commit.slice(0, 7)}` : ''}`,
@@ -426,6 +437,7 @@ async function befehlBenutzer(rest: string[], { v, ein, opt, zeige }: Lauf): Pro
   const [unter, email, ...name] = rest;
   if (!unter) {
     const liste = await v.anfrage<BenutzerZeile[]>('GET', '/api/benutzer');
+    await mitRegion(v);
     return zeige(liste, () =>
       tabelle([
         ['E-Mail', 'Name', 'Verwaltung', 'Status', t('meldungen.dms.letzte-anmeldung')],

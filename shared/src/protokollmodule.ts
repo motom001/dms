@@ -21,5 +21,7 @@ export const MODULE = [
   'sicherung',
   'ereignisse',
   'automatisierung',
+  // #1490: Paket-Läufer und Paket-Code (Ausgaben, Fehler, Abstürze).
+  'pakete',
 ] as const;
 export type Modul = (typeof MODULE)[number];

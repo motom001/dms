@@ -148,6 +148,7 @@ Im Filter von **Werkbank → Protokoll** stehen alle Module mit ihrem Namen – 
 | Sicherung | `sicherung` | Sicherung, Notfallblatt, Wiederherstellung und Probe |
 | Ereignisse | `ereignisse` | Verteilen von Ereignissen an Pakete und Automatisierungen |
 | Automatisierungen | `automatisierung` | Läufe der Automatisierungen |
+| Pakete | `pakete` | Paket-Läufer und Code der Pakete: Ausgaben, Fehler, Abstürze, aufgegebene Ereignisse |
 
 Anmeldung und Anmeldeschutz bleiben bewusst in einem Modul: Eine Sperre ergibt sich aus Fehlversuchen bei der Anmeldung – wer nach einer Sperre sucht, sieht beides zusammen.
 
