@@ -353,6 +353,19 @@ export const ANSICHT_SYMBOLE: AnsichtSymbolGruppe[] = [
   },
 ];
 
+/**
+ * Symbole der eingebauten Ansichten (#1519): die Ansicht je Systemtyp (Benutzer, Rolle, Post) und unter „Post“
+ * „Eingegangen“ und „Versendet“. „Neue Post“ (`inbox`) und „Favoriten“ (`star`) hatten schon eins. Bestehende
+ * Installationen bekommen sie mit Migration 123 – nur, wo noch kein Symbol steht.
+ */
+export const SYSTEM_SYMBOLE = {
+  benutzer: 'users',
+  rolle: 'id-card-lanyard',
+  post: 'mail',
+  eingegangen: 'mailbox',
+  versendet: 'send',
+} as const;
+
 export const ANSICHT_SYMBOL_NAMEN: ReadonlySet<string> = new Set(ANSICHT_SYMBOLE.flatMap((g) => g.symbole.map((s) => s.name)));
 
 /** Gültiger Name oder null (unbekannt, leer, kein Text). */
