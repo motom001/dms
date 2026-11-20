@@ -58,8 +58,54 @@ function vorkomprimieren(): Plugin {
   };
 }
 
+/**
+ * Bestandteile der Oberfläche (#1470): welche npm-Pakete wirklich im Bündel landen. Rollup kennt je Teil die Module
+ * samt der Länge, die nach dem Tree-Shaking übrig bleibt; Module mit Länge 0 sind weggefallen. Ein Paket zählt, wenn
+ * mindestens ein Modul von ihm Code beiträgt. Geschrieben wird neben `dist` (nicht hinein, damit es nicht
+ * ausgeliefert wird): `web/bestandteile-buendel.json` mit Name und Version je Paket. Die CI legt die Datei aus dem
+ * Produktivbau als Artefakt ab, `.github/werkzeuge/bestandteile.mjs` liest sie fürs Release.
+ */
+const BUENDEL_DATEI = 'bestandteile-buendel.json';
+function bestandteileDesBuendels(): Plugin {
+  let wurzel = '';
+  const pakete = new Map<string, { name: string; version: string }>();
+  /** „…/node_modules/@a/b/lib/x.js?commonjs“ → Ordner und Name des Pakets, das die Datei enthält. */
+  const paketVon = (id: string) => {
+    const pfad = id.replace(/^\0/, '').replace(/\?.*$/, '').replace(/\\/g, '/');
+    const i = pfad.lastIndexOf('/node_modules/');
+    if (i < 0) return null;
+    const teile = pfad.slice(i + '/node_modules/'.length).split('/');
+    const name = teile[0].startsWith('@') ? `${teile[0]}/${teile[1]}` : teile[0];
+    return { ordner: `${pfad.slice(0, i)}/node_modules/${name}`, name };
+  };
+  return {
+    name: 'ablago-bestandteile-buendel',
+    apply: 'build',
+    configResolved: (c) => {
+      wurzel = c.root;
+    },
+    generateBundle(_, bundle) {
+      for (const teil of Object.values(bundle)) {
+        if (teil.type !== 'chunk') continue;
+        for (const [id, m] of Object.entries(teil.modules)) {
+          const p = m.renderedLength > 0 ? paketVon(id) : null;
+          if (!p || pakete.has(p.ordner)) continue;
+          const pj = JSON.parse(readFileSync(join(p.ordner, 'package.json'), 'utf8')) as { name?: string; version?: string };
+          pakete.set(p.ordner, { name: pj.name ?? p.name, version: pj.version ?? '' });
+        }
+      }
+    },
+    closeBundle() {
+      const liste = [...new Map([...pakete.values()].map((p) => [`${p.name}@${p.version}`, p])).values()];
+      liste.sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version));
+      writeFileSync(resolve(wurzel, BUENDEL_DATEI), `${JSON.stringify({ quelle: 'vite', pakete: liste }, null, 1)}\n`);
+      this.info(`Bestandteile im Bündel: ${liste.length} npm-Pakete -> ${BUENDEL_DATEI}`);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), startbild(), vorkomprimieren()],
+  plugins: [react(), startbild(), vorkomprimieren(), bestandteileDesBuendels()],
   server: {
     port: 5173,
     // Gemeinsamer Code liegt in ../shared

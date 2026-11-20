@@ -71,7 +71,8 @@ jobs:
           fi
           echo "VORHER=$vorher" >> "$GITHUB_ENV"
       # Bestandteile und Lizenzen (#1393): Stücklisten, Digests und Node-Version legt „Prüfen und Image bauen“ als
-      # Artefakte ab (Job image-zusammen). Nur dort, wo dieser Workflow von dort aufgerufen wird.
+      # Artefakte ab (Job image-zusammen), die Pakete im Bündel der Oberfläche der Job rauchtests (#1470). Nur dort,
+      # wo dieser Workflow von dort aufgerufen wird.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: inputs.tag != ''
         continue-on-error: true

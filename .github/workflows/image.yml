@@ -168,6 +168,20 @@ jobs:
           if ls web/dist/assets | grep -q '^muster' || grep -alq '/muster' web/dist/assets/*.js; then
             echo "::error title=Musterseite::Die Musterseite steckt im Produktivbau (web/src/start.tsx, VITE_MUSTER)"; exit 1
           fi
+          # Bestandteile der Oberfläche (#1470): welche npm-Pakete wirklich im Bündel stecken. Gleicher Bau wie im Image;
+          # release.yml liest die Datei mit den Stücklisten (Artefakte „bestandteile-*“). qrcode bringt seine
+          # Kommandozeile (yargs) nicht ins Bündel.
+          jq -e '[.pakete[].name] | (index("react") != null and index("qrcode") != null and index("yargs") == null)' \
+            web/bestandteile-buendel.json >/dev/null ||
+            { echo "::error title=Bestandteile::web/bestandteile-buendel.json unvollständig (vite.config.ts, #1470)"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/bestandteile-oberflaeche"
+          cp web/bestandteile-buendel.json "$RUNNER_TEMP/bestandteile-oberflaeche/"
+      - name: Bestandteile der Oberfläche ablegen
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bestandteile-oberflaeche
+          path: ${{ runner.temp }}/bestandteile-oberflaeche
+          retention-days: 7
       # Testbau (#967): mit Musterseite unter /muster für die Rauchtests. Das Image baut das Dockerfile, ohne Musterseite.
       - name: Bauen
         run: npm run build

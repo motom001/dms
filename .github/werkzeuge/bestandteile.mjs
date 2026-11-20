@@ -11,7 +11,7 @@
  * Die Dateinamen tragen keine Versionsnummer: So führt …/releases/latest/download/<name> immer zur stabilen Version.
  *
  * Ergänzt wird, was ein Scanner im Image nicht als Paket erkennt: Node.js selbst, die in die Weboberfläche gebündelten
- * Bibliotheken (aus package-lock.json), die Schriften für Ablagos eigene PDFs, die Inhalte des Offline-Handbuchs und
+ * Bibliotheken (aus dem Produktivbau, #1470; ohne ihn aus package-lock.json), die Schriften für Ablagos eigene PDFs, die Inhalte des Offline-Handbuchs und
  * Ablago selbst. „Wozu“ der Systemprogramme steht in bestandteile-wozu.json.
  *
  * Baum der Bestandteile (#1412): Jeder Bestandteil trägt seine Ebene (0 = Ablago selbst, 1 = direkt eingebunden,
@@ -23,7 +23,8 @@
  * Aufruf (release.yml):
  *   node .github/werkzeuge/bestandteile.mjs --stand <ordner> --tag v1.2.3 --commit <sha> --datum <ISO>
  *        --aus <ordner> [--vorher <csv> --vorher-tag v1.2.2]
- * <ordner> enthält je Variante stand-<variante>.json und <variante>-<arch>.spdx.json (Job image-zusammen).
+ * <ordner> enthält je Variante stand-<variante>.json und <variante>-<arch>.spdx.json (Job image-zusammen), dazu
+ * bestandteile-buendel.json aus dem Produktivbau der Oberfläche (Job rauchtests, #1470).
  *
  * Handbuchseite „Aufbau aus Bestandteilen“ (Entwicklerhandbuch, de und en), aus Lockfiles und bestandteile-wozu.json:
  *   node .github/werkzeuge/bestandteile.mjs --handbuch            schreibt die beiden Seiten
@@ -57,6 +58,11 @@ export const AUFBAU = {
   en: 'docs/handbuch/entwickler/docs-en/bestandteile-aufbau.md',
 };
 const RAUCHTEST_LOCK = 'web/rauchtest/package-lock.json';
+/** Bibliotheken der Oberfläche, die Vite wirklich ins Bündel packt (#1470): Datei aus dem Produktivbau, in der CI als
+ * Artefakt neben den Stücklisten (`<stand>/bestandteile-buendel.json`). */
+export const BUENDEL = 'bestandteile-buendel.json';
+/** Spalte „Herkunftspaket“ bei Bibliotheken der Oberfläche, die aus dem Bündel stammen. */
+export const IM_BUENDEL = 'im Bündel';
 
 /** Lizenzen mit besonderen Pflichten (Copyleft): werden im Text einzeln genannt. */
 const PFLICHTEN = /\b(A?GPL|LGPL|MPL|EPL|EUPL|CDDL|OSL|CPL|CC-BY-SA)-/;
@@ -342,25 +348,52 @@ function aufloesen(pakete, von, name) {
   }
 }
 
-/** Bibliotheken der Weboberfläche (Abhängigkeiten von web/package.json mit allem, was sie brauchen). */
-export function webBibliotheken(lock, webPaket) {
+/**
+ * Bibliotheken der Weboberfläche: Abhängigkeiten von web/package.json mit allem, was sie brauchen (Baum aus dem
+ * Lockfile). Mit `buendel` (#1470, aus dem Produktivbau: `web/bestandteile-buendel.json`) bleiben nur die Pakete, die
+ * wirklich Code ins Bündel bringen – `qrcode` bringt im Lockfile seine Kommandozeile mit (`yargs` und Zubehör), im
+ * Bündel steckt davon nichts. Ebene und Herkunft kommen weiter aus dem Baum, „Eingebracht durch“ und „braucht“ nur
+ * innerhalb des Bündels. Ohne Bündel (Release von Hand) bleibt es beim Lockfile.
+ */
+export function webBibliotheken(lock, webPaket, buendel = null) {
   const baum = lockBaum(
     lock,
     Object.keys(webPaket.dependencies ?? {}).map((name) => ({ von: 'web', name })),
   );
-  return [...baum.values()].map((k) => ({
+  const drin = buendel ? new Set(buendel.pakete.map((p) => `${p.name}@${p.version}`)) : null;
+  const knoten = [...baum.entries()].filter(([id]) => !drin || drin.has(id)).map(([, k]) => k);
+  if (drin) {
+    const imBaum = new Set(knoten.map((k) => `${k.name}@${k.version}`));
+    const lizenzen = new Map(
+      Object.entries(lock.packages ?? {})
+        .filter(([ort]) => ort.includes('node_modules/'))
+        .map(([ort, e]) => [`${lockName(ort, e)}@${e.version}`, lizenzText(typeof e.license === 'string' ? e.license : '')]),
+    );
+    for (const p of buendel.pakete)
+      if (!imBaum.has(`${p.name}@${p.version}`))
+        knoten.push({
+          name: p.name,
+          version: p.version,
+          lizenz: lizenzen.get(`${p.name}@${p.version}`) ?? '',
+          ebene: null,
+          durch: new Set(),
+          braucht: new Set(),
+        });
+  }
+  const wurzeln = new Set(knoten.filter((k) => k.ebene === 1).map((k) => k.name));
+  return knoten.map((k) => ({
     name: k.name,
     version: k.version,
     lizenz: k.lizenz,
     art: 'npm (Oberfläche)',
-    herkunft: '',
+    herkunft: drin ? IM_BUENDEL : '',
     quelle: npmQuelle(k.name, k.version),
     varianten: VARIANTEN,
     architekturen: ARCHITEKTUREN,
     einsatz: ['Betrieb'],
     ebene: k.ebene,
-    durch: sortiert(k.durch),
-    braucht: sortiert(k.braucht),
+    durch: sortiert([...k.durch].filter((n) => !drin || wurzeln.has(n))),
+    braucht: sortiert([...k.braucht].filter((id) => !drin || drin.has(id))),
   }));
 }
 
@@ -660,6 +693,7 @@ function kommentar(b) {
   const teile = [`Art: ${b.art}`, `Einsatz: ${(b.einsatz ?? []).join(', ')}`];
   if (imBetrieb(b)) teile.push(`Varianten: ${b.varianten.join(' ')}`, `Architekturen: ${b.architekturen.join(' ')}`);
   else teile.push('nicht im Image');
+  if (b.art === 'npm (Oberfläche)' && b.herkunft) teile.push(b.herkunft);
   if (b.ebene != null) teile.push(`Ebene: ${b.ebene}`);
   if (b.durch?.length) teile.push(`Eingebracht durch: ${b.durch.join(', ')}`);
   if (b.zweck) teile.push(`Zweck: ${b.zweck}`);
@@ -1013,7 +1047,7 @@ const SEITE = {
     server: ['Server', 'server'],
     web: ['Weboberfläche', 'weboberflaeche'],
     webHinweis:
-      'Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Image stehen sie nicht als eigene Pakete. Die Liste kommt deshalb aus `package-lock.json` und kann etwas mehr enthalten, als im Bündel landet.',
+      'Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Image stehen sie nicht als eigene Pakete. Diese Seite zeigt den Baum aus `package-lock.json` und kann deshalb mehr enthalten, als im Bündel landet (z. B. die Kommandozeile von `qrcode`). Die Liste am Release nimmt nur, was wirklich im Bündel steckt.',
     system: ['Systemprogramme (Alpine)', 'systemprogramme-alpine'],
     systemHinweis:
       'Was die Systemprogramme ihrerseits mitbringen, zeigt erst das fertige Image: in der CSV am Release die Spalten *Ebene* und *Eingebracht durch*; Pakete, die keins dieser Programme braucht, kommen mit dem Basis-Image (`node` für Alpine).',
@@ -1045,7 +1079,7 @@ const SEITE = {
     server: ['Server', 'server'],
     web: ['Web interface', 'weboberflaeche'],
     webHinweis:
-      'Vite bundles the web interface libraries into one file at build time; they are not separate packages in the image. The list therefore comes from `package-lock.json` and may contain a little more than ends up in the bundle.',
+      'Vite bundles the web interface libraries into one file at build time; they are not separate packages in the image. This page shows the tree from `package-lock.json` and may therefore contain more than ends up in the bundle (e.g. the command line of `qrcode`). The list attached to a release only takes what is actually in the bundle.',
     system: ['System programs (Alpine)', 'systemprogramme-alpine'],
     systemHinweis:
       'What the system programs bring along in turn is only visible in the finished image: in the CSV attached to the release, columns *Ebene* and *Eingebracht durch*; packages that none of these programs needs come with the base image (`node` for Alpine).',
@@ -1262,7 +1296,13 @@ export function main(argv) {
     material: pipVersion(readFileSync('docs/handbuch/requirements.txt', 'utf8'), 'mkdocs-material'),
   });
   const lock = jsonLesen('package-lock.json');
-  const web = webBibliotheken(lock, jsonLesen('web/package.json'));
+  const buendelDatei = join(a.stand, BUENDEL);
+  const buendel = existsSync(buendelDatei) ? jsonLesen(buendelDatei) : null;
+  if (!buendel)
+    console.log(
+      `::warning title=Bestandteile::${BUENDEL} fehlt – Bibliotheken der Oberfläche aus package-lock.json (etwas mehr als im Bündel).`,
+    );
+  const web = webBibliotheken(lock, jsonLesen('web/package.json'), buendel);
   const betrieb = zusammenfuehren([...listen.map((l) => serverBaum(nurInstalliert(l, lock), lock)), extra, web]);
   const imImage = new Set(betrieb.filter((b) => b.art.startsWith('npm')).map((b) => `${b.name}@${b.version}`));
   const dazu = werkzeuge({ lock, rauchLock: rauchLockLesen(), npmWozu: wozu.npm ?? {}, betrieb: imImage });

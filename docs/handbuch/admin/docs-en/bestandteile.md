@@ -25,7 +25,7 @@ Ablago isn't only its own code: the image contains Alpine Linux with a few syste
 
 The links in the table always lead to the **stable version** (`:stabil`) – on GitHub that is the release marked *Latest*. For a specific version, replace `latest/download` with `download/v<version>`, e.g. `…/releases/download/v0.291.0/ablago-bestandteile.csv`. Releases from before this feature have no attachments; until the first version with a list is stable, the links lead nowhere.
 
-The CSV columns (German headings): *Art* (kind), *Name*, *Version*, *Lizenz* (licence), *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (for Alpine the source package it was built from), *Quelle* (source) and, since #1412, the tree:
+The CSV columns (German headings): *Art* (kind), *Name*, *Version*, *Lizenz* (licence), *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (for Alpine the source package it was built from; for the web interface „im Bündel“, in the bundle), *Quelle* (source) and, since #1412, the tree:
 
 - *Ebene* (level): 0 = Ablago itself, 1 = directly included, 2 and more = brought along.
 - *Eingebracht durch* (brought in by): the level-1 packages through which a transitive package comes, e.g. `poppler-utils` or `fastify`. Alpine packages that none of the specially installed programs needs come with the *Basis-Image (node, Alpine)* (base image).
@@ -42,14 +42,14 @@ In SPDX the dependencies are `DEPENDS_ON` relationships (level-1 tools as `DEV_D
 | npm (Server) | Bill of materials of the finished image (Trivy) | Fastify, nodemailer, pdf-lib |
 | Ablago selbst (Ablago itself) | Bill of materials and repository | Server, web interface, the release's commit |
 | Laufzeit (runtime) | Node version from the image | Node.js |
-| npm (Oberfläche) (web interface) | `package-lock.json` | React, qrcode – bundled into one file in the image, so invisible to Trivy |
+| npm (Oberfläche) (web interface) | Build of the web interface (Vite) | React, qrcode – bundled into one file in the image, so invisible to Trivy |
 | Schrift, Oberfläche (fonts, interface) | Repository | Noto Sans and Noto Sans Mono (Ablago's own PDFs), Lucide (icons) |
 | Handbuch (manual) | Repository | Texts and images of the offline manual, Material for MkDocs |
 | npm (Werkzeug) (tool) | `package-lock.json`, `web/rauchtest/package-lock.json` | TypeScript, Vite, ESLint, Playwright – development and test only, not in the image |
 
 Two limits:
 
-- **Web interface libraries** come from `package-lock.json`, not from the finished bundle. The list may therefore contain a little too much (e.g. parts of a library only needed on the command line), but leaves out nothing that is included.
+- **Web interface libraries** come from the build of the web interface: every npm package that contributes code to the finished bundle counts, with version and licence from `package-lock.json`. What a package only brings along for its command line (e.g. `yargs` with `qrcode`) is not in the list.
 - **Licences** are taken as the packages declare them. Where a package declares none, it says *ohne erkannte Lizenz* (without a recognised licence). You find the source of an Alpine package via the link to pkgs.alpinelinux.org (source package and Alpine branch); from there a link leads to the build script in aports.
 
 ## How the list is made {#wie-die-liste-entsteht}
@@ -57,7 +57,7 @@ Two limits:
 With every new version, after both images have been built and merged:
 
 1. **Bill of materials per image and architecture:** Trivy reads the finished images from the registry (`dms` and `dms-komplett`, each amd64 and arm64); the digests and the Node version come from the image as well.
-2. **Additions:** what Trivy can't see – the web interface libraries, fonts, the offline manual and Ablago itself.
+2. **Additions:** what Trivy can't see – the web interface libraries (from the build of the web interface in the same run, the same production build as in the image), fonts, the offline manual and Ablago itself.
 3. **Tree:** level and origin for npm from the lockfiles, for Alpine from the package database in the image (relationships in Trivy's bill of materials); the purpose of the directly included packages from `bestandteile-wozu.json`.
 4. **Merge and compare:** identical components from all variants and architectures become one row; the comparison is with the CSV attached to the previous release, only for what is in the image.
 5. **Release:** the overview goes into the release text, the three files become attachments.

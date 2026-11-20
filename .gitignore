@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Bestandteile der Oberfläche aus dem Bau (#1470)
+/web/bestandteile-buendel.json
 .env
 *.log
 .DS_Store

@@ -49,7 +49,7 @@ Ablago bindet nur wenige Pakete **direkt** ein (**Ebene 1**). Was diese brauchen
 
 ### Weboberfläche { #weboberflaeche }
 
-Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Image stehen sie nicht als eigene Pakete. Die Liste kommt deshalb aus `package-lock.json` und kann etwas mehr enthalten, als im Bündel landet.
+Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Image stehen sie nicht als eigene Pakete. Diese Seite zeigt den Baum aus `package-lock.json` und kann deshalb mehr enthalten, als im Bündel landet (z. B. die Kommandozeile von `qrcode`). Die Liste am Release nimmt nur, was wirklich im Bündel steckt.
 
 | Paket | Wozu | Lizenz | Bringt mit |
 | --- | --- | --- | ---: |
