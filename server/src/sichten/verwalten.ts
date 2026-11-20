@@ -4,7 +4,7 @@
  * Schicht 3.
  */
 import { randomUUID } from 'node:crypto';
-import { ansichtSymbol } from '../../../shared/src/ansichtsymbole';
+import { ansichtSymbol, SYSTEM_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { ausgangAus, bereinigeBeschriftungen, type TypTeile } from '../../../shared/src/beschriftung';
 import type { Benutzer, Mappentyp } from '../../../shared/src/model';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
@@ -274,6 +274,8 @@ export class SichtenVerwaltung {
       position,
       typen: [t.id],
       bedingungen: [],
+      // Eingebaute Ansichten (#1519): Benutzer, Rolle und Post mit Symbol.
+      ...(t.system ? { symbol: SYSTEM_SYMBOLE[t.system] } : {}),
     });
   }
 
