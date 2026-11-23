@@ -37,12 +37,20 @@ export const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 export const FUER = ['lesen', 'verwalten'] as const;
 export type Fuer = (typeof FUER)[number];
 /**
- * Wann ein Rundgang von selbst startet. `erste_anmeldung` gibt es nur für Ablagos eigenen Rundgang. Pakete kommen mit
- * `nach_installation` und `nach_update` (Stufe 2) – sie starten nie von selbst, sondern Ablago bietet sie eine Zeit
- * lang als Tipp an („Neu: … – kurzer Rundgang“, {@link ANGEBOT_TAGE}).
+ * Wann ein Rundgang von selbst startet. `erste_anmeldung` und `erster_besuch` gibt es nur für Ablagos eigene
+ * Rundgänge: `erster_besuch` startet beim ersten Besuch einer Seite ({@link BESUCH_SEITEN}, #1512/#1522/#1523) – mit
+ * `leise: true` nur als stiller Hinweis auf der Seite. Pakete kommen mit `nach_installation` und `nach_update`
+ * (Stufe 2) – sie starten nie von selbst, sondern Ablago bietet sie eine Zeit lang als Tipp an („Neu: … – kurzer
+ * Rundgang“, {@link ANGEBOT_TAGE}).
  */
-export const RUNDGANG_START = ['manuell', 'erste_anmeldung', 'nach_installation', 'nach_update'] as const;
+export const RUNDGANG_START = ['manuell', 'erste_anmeldung', 'erster_besuch', 'nach_installation', 'nach_update'] as const;
 export type RundgangStart = (typeof RUNDGANG_START)[number];
+/**
+ * Seiten für `start: erster_besuch`: die Ablage (jede Seite darin), eine geöffnete Mappe, die Werkbank und Mein Konto.
+ * Eine geöffnete Mappe gehört auch zur Ablage – dort kommt zuerst der Rundgang der Ablage.
+ */
+const BESUCH_SEITEN = ['ablage', 'mappe', 'werkbank', 'konto'] as const;
+export type BesuchSeite = (typeof BESUCH_SEITEN)[number];
 /** Bereiche, nach denen „Ablago entdecken“ die Tipps gruppiert (Reihenfolge der Seite). */
 export const TIPP_BEREICHE = ['suche', 'post', 'fristen', 'mappen', 'konto', 'verwalten'] as const;
 export type TippBereich = (typeof TIPP_BEREICHE)[number];
@@ -50,7 +58,7 @@ export type TippBereich = (typeof TIPP_BEREICHE)[number];
 export const FUNKTIONEN = ['fragen', 'laufwerk', 'mail'] as const;
 export type Funktion = (typeof FUNKTIONEN)[number];
 /** Seiten, die ein Rundgang vor dem ersten Schritt öffnen kann (`oeffne: { seite }`). */
-export const OEFFNE_SEITEN = { start: '/ablage/start' } as const;
+export const OEFFNE_SEITEN = { start: '/ablage/start', werkbank: '/werkbank', konto: '/profil', mappe: '/ablage/start' } as const;
 export type OeffneSeite = keyof typeof OEFFNE_SEITEN;
 /**
  * Was ein Rundgang vor dem ersten Schritt öffnet: eine Seite, die erste Mappe eines Mappentyps, die die Person lesen
@@ -59,6 +67,11 @@ export type OeffneSeite = keyof typeof OEFFNE_SEITEN;
  * mit ihrer Kennung (`vertraege:vertrag`, eigene ohne Präfix).
  */
 export type Oeffne = { seite: OeffneSeite } | { mappe: string } | { neu: string };
+/**
+ * `oeffne: { seite: mappe }` (#1523): Ist gerade eine Mappe offen, bleibt sie; sonst öffnet
+ * die Oberfläche die zuletzt geöffnete Mappe. Gibt es keine, erscheint der Text `ersatz`.
+ */
+export const OEFFNE_LETZTE_MAPPE: OeffneSeite = 'mappe';
 /** Mappentyp, den ein Rundgang öffnet (`oeffne.mappe` bzw. `oeffne.neu`), sonst undefined. */
 export const oeffneTyp = (o: Oeffne | undefined) => (o && 'mappe' in o ? o.mappe : o && 'neu' in o ? o.neu : undefined);
 /**
@@ -125,6 +138,10 @@ export interface Rundgang {
   schluessel: string;
   herkunft: Herkunft;
   start: RundgangStart;
+  /** Bei `start: erster_besuch`: auf welcher Seite. */
+  seite?: BesuchSeite;
+  /** Bei `start: erster_besuch`: nicht starten, nur ein stiller Hinweis auf der Seite (Mein Konto, #1523). */
+  leise?: boolean;
   fuer: Fuer;
   oeffne?: Oeffne;
   /** Text, wenn es nichts zu öffnen gibt (keine Mappe des Typs bzw. kein Recht zum Anlegen). */
@@ -188,6 +205,11 @@ export interface EntdeckenStand {
   tippsAn: boolean;
   /** Rundgang, der jetzt von selbst startet (erste Anmeldung bzw. nach „Später“). */
   starten: string | null;
+  /**
+   * Rundgänge mit `start: erster_besuch`, die noch ausstehen (nie gesehen bzw. „Später“ und seitdem neu angemeldet):
+   * Die Oberfläche startet sie auf ihrer Seite bzw. zeigt dort den stillen Hinweis (`leise`).
+   */
+  beimBesuch: Array<{ schluessel: string; seite: BesuchSeite; leise: boolean }>;
 }
 
 /** Text aus der Sprachdatei (`entdecken.<schluessel>`); `undefined`, wenn es ihn nicht gibt. */
@@ -208,7 +230,19 @@ export const textSchluesselTipp = (t: string) => `entdecken.tipp.${teil(t)}`;
 
 /* ---------- Prüfen ---------- */
 
-const FELDER_RUNDGANG = new Set(['schluessel', 'start', 'fuer', 'oeffne', 'ersatz', 'titel', 'beschreibung', 'ende', 'schritte']);
+const FELDER_RUNDGANG = new Set([
+  'schluessel',
+  'start',
+  'seite',
+  'leise',
+  'fuer',
+  'oeffne',
+  'ersatz',
+  'titel',
+  'beschreibung',
+  'ende',
+  'schritte',
+]);
 const FELDER_SCHRITT = new Set([
   'schluessel',
   'ziel',
@@ -331,8 +365,9 @@ export interface RundgangPruefung {
 /** `oeffne` eines Rundgangs lesen; `typ`: der aufgelöste Mappentyp (für Felder und Register der Schritte). */
 function liesOeffne(x: unknown, o: RundgangPruefung, o2: string, m: Melde): { oeffne?: Oeffne; typ: TypInfo | null } {
   const art = istObjekt(x) && Object.keys(x).length === 1 ? Object.keys(x)[0] : '';
-  if (art === 'seite' && istObjekt(x) && Object.hasOwn(OEFFNE_SEITEN, String(x.seite)))
+  if (art === 'seite' && istObjekt(x) && Object.hasOwn(OEFFNE_SEITEN, String(x.seite))) {
     return { oeffne: { seite: x.seite as OeffneSeite }, typ: null };
+  }
   const innen = istObjekt(x) && (art === 'mappe' || art === 'neu') ? x[art] : undefined;
   if (!istObjekt(innen) || Object.keys(innen).join() !== 'typ' || typeof innen.typ !== 'string') {
     m(`${o2}: „oeffne“ kennt seite: ${Object.keys(OEFFNE_SEITEN).join(', ')}, mappe: { typ: … } oder neu: { typ: … }.`, 'oeffne');
@@ -426,13 +461,28 @@ const ohneLeere = <T extends Record<string, unknown>>(x: T): Partial<T> =>
 function startVon(x: unknown, o: RundgangPruefung, o2: string, m: Melde, zaehler: { nachInstallation: number }): RundgangStart {
   const start = (x ?? 'manuell') as RundgangStart;
   if (!RUNDGANG_START.includes(start)) m(`${o2}: „start“ muss ${RUNDGANG_START.join(', ')} sein.`, 'start');
-  else if (start === 'erste_anmeldung' && o.herkunft !== 'ablago')
-    m(`${o2}: „erste_anmeldung“ gibt es nur für Ablagos eigenen Rundgang.`, 'start');
+  else if ((start === 'erste_anmeldung' || start === 'erster_besuch') && o.herkunft !== 'ablago')
+    m(`${o2}: „${start}“ gibt es nur für Ablagos eigene Rundgänge.`, 'start');
   else if ((start === 'nach_installation' || start === 'nach_update') && !o.herkunft.startsWith('paket:'))
     m(`${o2}: „${start}“ gibt es nur für Rundgänge aus Paketen.`, 'start');
   else if (start === 'nach_installation' && ++zaehler.nachInstallation > 1)
     m(`${o2}: „nach_installation“ darf es nur einmal je Paket geben.`, 'start');
   return start;
+}
+
+/** `seite` und `leise` gehören zu `start: erster_besuch` – dort ist `seite` Pflicht, sonst gibt es beide nicht. */
+function besuchVon(r: Record<string, unknown>, start: RundgangStart, o2: string, m: Melde): { seite?: BesuchSeite; leise?: boolean } {
+  if (start !== 'erster_besuch') {
+    if (r.seite !== undefined) m(`${o2}: „seite“ gibt es nur mit „start: erster_besuch“.`, 'seite');
+    if (r.leise !== undefined) m(`${o2}: „leise“ gibt es nur mit „start: erster_besuch“.`, 'leise');
+    return {};
+  }
+  if (!BESUCH_SEITEN.includes(r.seite as BesuchSeite)) {
+    m(`${o2}: „seite“ muss ${BESUCH_SEITEN.join(', ')} sein.`, r.seite === undefined ? undefined : 'seite');
+    return {};
+  }
+  if (r.leise !== undefined && typeof r.leise !== 'boolean') m(`${o2}: „leise“ muss true oder false sein.`, 'leise');
+  return { seite: r.seite as BesuchSeite, ...(r.leise === true ? { leise: true } : {}) };
 }
 
 /**
@@ -468,6 +518,7 @@ export function pruefeRundgaenge(roh: unknown, o: RundgangPruefung): { rundgaeng
     gesehen.add(schluessel);
     const o2 = `Rundgang „${schluessel || i + 1}“`;
     const start = startVon(r.start, o, o2, m, zaehler);
+    const besuch = besuchVon(r, start, o2, m);
     const fuer = fuerVon(r.fuer, o2, m);
     const { oeffne, typ } = r.oeffne === undefined ? { typ: null } : liesOeffne(r.oeffne, o, o2, m);
     const text = (feld: 'titel' | 'beschreibung' | 'ende' | 'ersatz', max: number, pflicht: boolean) =>
@@ -476,7 +527,8 @@ export function pruefeRundgaenge(roh: unknown, o: RundgangPruefung): { rundgaeng
       beschreibung = text('beschreibung', RUNDGANG_TEXT_MAX, true);
     const schluss = text('ende', RUNDGANG_TEXT_MAX, false),
       ersatz = text('ersatz', RUNDGANG_TEXT_MAX, false);
-    if (r.ersatz !== undefined && !oeffneTyp(oeffne)) m(`${o2}: „ersatz“ gibt es nur mit „oeffne: mappe“ oder „oeffne: neu“.`, 'ersatz');
+    if (r.ersatz !== undefined && !oeffneTyp(oeffne) && !(oeffne && 'seite' in oeffne && oeffne.seite === OEFFNE_LETZTE_MAPPE))
+      m(`${o2}: „ersatz“ gibt es nur mit „oeffne: mappe“ oder „oeffne: neu“.`, 'ersatz');
     const schritte: RundgangSchritt[] = [];
     if (!Array.isArray(r.schritte) || r.schritte.length === 0)
       m(`${o2}: „schritte“ fehlt oder ist leer.`, r.schritte === undefined ? undefined : 'schritte');
@@ -494,6 +546,7 @@ export function pruefeRundgaenge(roh: unknown, o: RundgangPruefung): { rundgaeng
       schluessel,
       herkunft: o.herkunft,
       start,
+      ...besuch,
       fuer,
       ...(oeffne ? { oeffne } : {}),
       ...(ersatz ? { ersatz } : {}),
@@ -797,6 +850,20 @@ export const rundgangMerkerAus = (x: unknown): RundgangMerker => {
  */
 export function startetVonSelbst(r: Rundgang, merker: RundgangMerker, letzteAnmeldung: string | null): boolean {
   if (r.start !== 'erste_anmeldung') return false;
+  return steht(r, merker, letzteAnmeldung);
+}
+
+/**
+ * Rundgänge mit `start: erster_besuch` (#1512/#1522/#1523), die noch ausstehen – nach derselben Regel wie die erste
+ * Anmeldung: nie gesehen, oder „Später“ und seitdem neu angemeldet. Die Oberfläche startet sie auf ihrer Seite.
+ */
+export function beimBesuch(rundgaenge: readonly Rundgang[], merker: RundgangMerker, letzteAnmeldung: string | null) {
+  return rundgaenge
+    .filter((r) => r.start === 'erster_besuch' && r.seite && steht(r, merker, letzteAnmeldung))
+    .map((r) => ({ schluessel: r.schluessel, seite: r.seite!, leise: !!r.leise }));
+}
+
+function steht(r: Rundgang, merker: RundgangMerker, letzteAnmeldung: string | null): boolean {
   const m = merker[r.schluessel];
   if (!m) return true;
   if (m.stand === 'gesehen') return false;

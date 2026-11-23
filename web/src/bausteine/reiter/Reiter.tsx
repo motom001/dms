@@ -39,13 +39,15 @@ export interface ReiterProps<T extends string> {
   /** Name der Reihe für Screenreader, z. B. „Register der Mappe“. */
   beschriftung: string;
   className?: string;
+  /** Sprungziel der ganzen Reihe für Rundgänge (`data-anker`, z. B. `mappe.reiter`). */
+  anker?: string;
 }
 
 /** `id` eines Reiters und der Fläche – für `ReiterFlaeche` und Sprünge. */
 export const reiterId = (id: string, wert: string) => `${id}-reiter-${wert}`;
 export const flaecheId = (id: string) => `${id}-flaeche`;
 
-export function Reiter<T extends string>({ id, wert, setze, wahlen, beschriftung, className }: ReiterProps<T>) {
+export function Reiter<T extends string>({ id, wert, setze, wahlen, beschriftung, className, anker }: ReiterProps<T>) {
   const knoepfe = useRef<Array<HTMLButtonElement | null>>([]);
   const jetzt = Math.max(
     0,
@@ -61,7 +63,7 @@ export function Reiter<T extends string>({ id, wert, setze, wahlen, beschriftung
   };
 
   return (
-    <div role="tablist" aria-label={beschriftung} className={klassen(s.reihe, className)} onKeyDown={taste}>
+    <div role="tablist" aria-label={beschriftung} className={klassen(s.reihe, className)} onKeyDown={taste} data-anker={anker}>
       {wahlen.map((w, i) => {
         const an = w.wert === wert;
         return (

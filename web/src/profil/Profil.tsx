@@ -2,6 +2,7 @@ import { darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Link } from '../ort';
 import { Symbol } from '../Symbol';
+import { StillerRundgangHinweis } from '../entdecken/besuch';
 import { letzteAblage } from './rueckweg';
 import { FehlerMelden } from './FehlerMelden';
 import { MeineAbwesenheit } from './Abwesenheit';
@@ -35,15 +36,17 @@ export function Profil({ teile = [] }: { teile?: string[] }) {
     <>
       {/* #1302: von jeder Seite in „Mein Konto“ ein sichtbarer Weg zurück – zur zuletzt besuchten Seite der Ablage. */}
       <p className="zurueck-ablage">
-        <Link to={letzteAblage()} className="verweis">
+        <Link to={letzteAblage()} className="verweis" anker="konto.zurueck">
           <Symbol name="pfeil-links" /> {t('profil.profil.zurueck-zur-ablage')}
         </Link>
       </p>
+      {/* #1523: stiller Hinweis auf den Rundgang „Mein Konto“ beim ersten Besuch – startet nicht von selbst. */}
+      <StillerRundgangHinweis seite="konto" />
       <div className="zweispaltig profil">
         <aside className="leiste" aria-label={t('profil.profil.bereiche-des-profils')}>
           <nav className="typliste">
             {(Object.keys(BEREICHE) as Array<keyof typeof BEREICHE>).map((k) => (
-              <Link key={k} to={`/profil/${k}`} className={`typeintrag ${b === k ? 'an' : ''}`}>
+              <Link key={k} to={`/profil/${k}`} className={`typeintrag ${b === k ? 'an' : ''}`} anker={`konto.bereich:${k}`}>
                 <span className="nm">{BEREICHE[k]}</span>
               </Link>
             ))}
@@ -56,7 +59,7 @@ export function Profil({ teile = [] }: { teile?: string[] }) {
               </Link>
             )}
             {/* #1331: eigener Bereich, hervorgehoben wie die übrigen; dorthin führen Benutzermenü und Fehlerseite. */}
-            <Link to="/profil/fehler-melden" className={`typeintrag ${b === 'fehler-melden' ? 'an' : ''}`}>
+            <Link to="/profil/fehler-melden" className={`typeintrag ${b === 'fehler-melden' ? 'an' : ''}`} anker="konto.bereich:fehler-melden">
               <span className="nm">{t('oberflaeche.app.fehler-melden')}</span>
             </Link>
           </nav>

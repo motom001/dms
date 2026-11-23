@@ -125,6 +125,8 @@ export interface SpeicherleisteProps {
   formular?: string;
   /** Nur lesen (#1211, Mappe ohne Recht zum Bearbeiten): nur „… löschen“ und der Status, kein Verwerfen und Speichern. */
   nurLesen?: boolean;
+  /** Sprungziel für Rundgänge (`data-anker`, z. B. `mappe.speicherleiste`). */
+  anker?: string;
 }
 
 /**
@@ -145,12 +147,13 @@ export function Speicherleiste({
   haupttext,
   formular,
   nurLesen,
+  anker,
 }: SpeicherleisteProps) {
   const k = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, sendet, ungueltig, speicherbar }, gegenstand);
   // Beschriftung ohne „Speichere …“: Während des Sendens zeigt der Knopf „läuft“ mit diesem Text darüber.
   const ruhig = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, ungueltig, speicherbar }, gegenstand);
   return (
-    <div className={`speicherleiste ${s.leiste}`}>
+    <div className={`speicherleiste ${s.leiste}`} data-anker={anker}>
       {loeschen && (
         <Knopf
           art="gefahr"

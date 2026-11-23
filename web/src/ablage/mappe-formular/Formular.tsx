@@ -66,6 +66,7 @@ export function Formular(p: FormularProps) {
           setze={z.setAktiv}
           beschriftung={t('ablage.mappeformular.register')}
           className="mappenreiter"
+          anker="mappe.reiter"
           wahlen={z.register.map((r) => ({
             wert: r.key,
             text: registerName(r),
@@ -110,6 +111,7 @@ export function Formular(p: FormularProps) {
           // Neue Post (#1217): „Mappe anlegen“ – passend zur Wahl „Neue Mappe“ unter „Wohin gehört das?“.
           haupttext={!mappe && p.zuordnen ? t('ablage.mappeformular.mappe-anlegen') : t('ablage.mappeformular.mappe-speichern')}
           nurLesen={z.nurLesen}
+          anker="mappe.speicherleiste"
           meldung={speicherMeldung(z)}
           loeschen={
             z.loeschenZeigen

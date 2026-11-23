@@ -42,5 +42,15 @@
   "werkbank.fehlermeldungen.suche",
   "werkbank.aufgaben.suche",
   "werkbank.aufgaben.erledigte",
-  "werkbank.aufgaben.automatisierungen"
+  "werkbank.aufgaben.automatisierungen",
+  "kopf.logo",
+  "kopf.bereiche",
+  "mappe.kopf",
+  "mappe.reiter",
+  "mappe.speicherleiste",
+  "konto.zurueck",
+  "konto.bereich:<seite>",
+  "werkbank.navigation",
+  "werkbank.mitte",
+  "werkbank.anpassen"
 ]

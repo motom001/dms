@@ -29,6 +29,7 @@ import {
   rundgangFuer,
   rundgangMerkerAus,
   startetVonSelbst,
+  beimBesuch,
   tippDesTages,
   tippHandlung,
   tippPasst,
@@ -410,6 +411,7 @@ export class Entdecken {
     const heute = tippsAn ? tippDesTages(tipps, stand, this.o.heute()) : null;
     const merker = rundgangMerkerAus(e[EINSTELLUNG.rundgaenge]);
     const starten = o.vertretung ? null : (rundgaenge.find((r) => startetVonSelbst(r, merker, b.letzteAnmeldung))?.schluessel ?? null);
+    const besuch = o.vertretung ? [] : beimBesuch(rundgaenge, merker, b.letzteAnmeldung);
     return {
       rundgaenge,
       tipps,
@@ -418,6 +420,7 @@ export class Entdecken {
         : null,
       tippsAn,
       starten,
+      beimBesuch: besuch,
     };
   }
 

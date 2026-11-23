@@ -108,7 +108,7 @@ export function WerkbankNavigation({
               {' · '}
             </>
           )}
-          <Link to="/werkbank/ansicht" className="verweis">
+          <Link to="/werkbank/ansicht" className="verweis" anker="werkbank.anpassen">
             {t('werkbank.uebersicht.werkbank-anpassen')}
           </Link>
         </p>

@@ -12,7 +12,9 @@ import {
   keineWaagerechteRolle,
   LENA,
   rauchtest,
+  rundgaengeGesehen,
   schemaWechseln,
+  sitzung,
   verwalten,
   WERKBANK_BEREICHE,
 } from '../hilfen.mjs';
@@ -331,12 +333,15 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   await s.getByLabel('Passwort', { exact: true }).fill(JONAS.passwort);
   await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const rundgang = s.getByRole('dialog');
-  // #1300: sechs Schritte, der letzte zeigt auf den Assistenten.
-  await rundgang.getByText('Schritt 1 von 6').waitFor();
-  for (let i = 2; i <= 6; i++) {
+  // #1300, #1522: sieben Schritte in Leserichtung, der erste zeigt auf das Logo oben links, der letzte auf den Assistenten.
+  await rundgang.getByText(/Deine Ablage im Überblick/).waitFor();
+  await rundgang.getByRole('heading', { name: 'Zurück zum Anfang' }).waitFor();
+  await rundgang.getByText('Schritt 1 von 7').waitFor();
+  for (let i = 2; i <= 7; i++) {
     await rundgang.getByRole('button', { name: 'Weiter' }).click();
-    await rundgang.getByText(`Schritt ${i} von 6`).waitFor();
+    await rundgang.getByText(`Schritt ${i} von 7`).waitFor();
   }
+  await rundgang.getByRole('heading', { name: 'Hilfe ist immer da' }).waitFor();
   await rundgang.getByRole('button', { name: 'Fertig' }).click();
   await rundgang.waitFor({ state: 'detached' });
   await s.getByRole('heading', { name: 'Guten Tag, Jonas', level: 1 }).waitFor();
@@ -346,10 +351,19 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   await s.getByRole('dialog', { name: 'Assistent' }).getByRole('link', { name: 'Alle Tipps und Rundgänge ›' }).click();
   await s.getByRole('heading', { name: 'Ablago entdecken', level: 1 }).waitFor();
   await s.getByRole('region', { name: 'Tipps' }).getByRole('link').first().waitFor();
-  await s.getByRole('region', { name: 'Rundgänge' }).getByRole('button', { name: 'Rundgang starten' }).click();
-  await rundgang.getByText('Schritt 1 von 6').waitFor();
+  const rundgaenge = s.getByRole('region', { name: 'Rundgänge' });
+  // Die Werkbank hat ihren Rundgang nur für Verwaltende (#1512).
+  assert.equal(await rundgaenge.getByText('Die Werkbank im Überblick').count(), 0);
+  await rundgaenge
+    .getByRole('listitem')
+    .filter({ hasText: 'Deine Ablage im Überblick' })
+    .getByRole('button', { name: 'Rundgang starten' })
+    .click();
+  await rundgang.getByText('Schritt 1 von 7').waitFor();
   await rundgang.getByRole('button', { name: 'Überspringen' }).click();
   await rundgang.waitFor({ state: 'detached' });
+  // Die Rundgänge der Mappe und von Mein Konto prüft rundgaenge-und-tipps.mjs; über Jonas' weiteren Tests liegen sie nicht.
+  await rundgaengeGesehen(await sitzung(JONAS));
 });
 
 rauchtest('Abmelden', { als: LENA }, async (s) => {

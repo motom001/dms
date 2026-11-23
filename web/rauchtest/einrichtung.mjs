@@ -13,6 +13,7 @@ import {
   JONAS,
   LENA,
   rauchtest,
+  rundgaengeGesehen,
   schemaWechseln,
   warteAufAblago,
 } from './hilfen.mjs';
@@ -112,6 +113,12 @@ rauchtest(
       await assistentAxe(s, 'Abschluss');
       await s.getByRole('button', { name: 'Einrichtung abschließen' }).click();
       await s.waitForURL(/\/werkbank/);
+      // #1512: Nach der Einrichtung landet Lena in der Werkbank – dort startet zuerst deren Rundgang, nicht der der Ablage.
+      const rundgang = s.getByRole('dialog');
+      await rundgang.getByText(/Die Werkbank im Überblick/).waitFor();
+      await rundgang.getByText('Schritt 1 von 8').waitFor();
+      await rundgang.getByRole('button', { name: 'Später' }).click();
+      await rundgang.waitFor({ state: 'detached' });
       const sitzungscookie = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
       assert.ok(sitzungscookie, 'Nach der Einrichtung keine Sitzung im Browser');
       await vorbereiten(`${sitzungscookie.name}=${sitzungscookie.value}`);
@@ -161,8 +168,8 @@ async function assistentAxe(s, schritt) {
 
 /** Daten für die Tests über die Schnittstelle – mit der Sitzung aus dem Assistenten (im Verwaltungsmodus). */
 async function vorbereiten(cookie) {
-  // Lena kennt Ablago schon: kein Rundgang über ihren Tests. Den zeigt der Test mit dem neuen Konto.
-  await api('POST', '/api/entdecken/rundgaenge/ablago', { cookie, body: { stand: 'gesehen' } });
+  // Lena kennt Ablago schon: keine Rundgänge über ihren Tests. Die zeigen die Tests mit den neuen Konten.
+  await rundgaengeGesehen(cookie);
   await api('POST', '/api/beispiele', { cookie });
   for (const [schluessel, betreff] of [
     ['brief', 'Preisanpassung Strom 2027'],

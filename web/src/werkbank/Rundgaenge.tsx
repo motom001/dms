@@ -331,8 +331,8 @@ const entwurf = {
   },
 };
 
-/** Kopie eines fremden Rundgangs: eigene starten nie von selbst. */
-const alsKopie = (yaml: string) => yaml.replace(/^start: .*$/m, 'start: manuell');
+/** Kopie eines fremden Rundgangs: eigene starten nie von selbst – `seite` und `leise` (zu `start: erster_besuch`) fallen weg. */
+const alsKopie = (yaml: string) => yaml.replace(/^start: .*$/m, 'start: manuell').replace(/^(seite|leise): .*\n/gm, '');
 
 /** Beim Öffnen des Editors: ein gemerkter Entwurf vom Ausprobieren (sonst der Ausgangstext); gelesen wird einmal. */
 function useGemerkterEntwurf(rundgang: WerkbankRundgang | undefined, kopieVon: WerkbankRundgang | undefined, start: string) {

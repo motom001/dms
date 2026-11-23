@@ -274,6 +274,8 @@ export function rundgangAlsYaml(r: Rundgang): string {
     titel: r.titel,
     beschreibung: r.beschreibung,
     start: r.start,
+    ...(r.seite ? { seite: r.seite } : {}),
+    ...(r.leise ? { leise: true } : {}),
     fuer: r.fuer,
     ...(oeffne ? { oeffne } : {}),
     ...(r.ersatz ? { ersatz: r.ersatz } : {}),

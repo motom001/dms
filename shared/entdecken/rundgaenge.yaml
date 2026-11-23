@@ -9,9 +9,13 @@
 # Je Rundgang:
 #   schluessel  Name (klein, Ziffern, _)
 #   start       manuell | erste_anmeldung (nur Ablago: bei der ersten Anmeldung neuer Konten)
+#               | erster_besuch (nur Ablago: beim ersten Besuch der Seite `seite`, #1512/#1522/#1523)
 #               | nach_installation, nach_update (nur Pakete: eine Zeit lang als Tipp angeboten, nie von selbst)
+#   seite       bei erster_besuch: ablage | mappe (eine geöffnete Mappe) | werkbank | konto (Mein Konto)
+#   leise       bei erster_besuch: true = nicht starten, nur ein stiller Hinweis auf der Seite
 #   fuer        lesen (alle, Vorgabe) | verwalten (nur Personen mit Verwaltungsrecht)
-#   oeffne      { seite: start } – diese Seite vor dem ersten Schritt öffnen; Pakete und eigene Rundgänge auch
+#   oeffne      { seite: start | werkbank | konto } – diese Seite vor dem ersten Schritt öffnen; { seite: mappe } –
+#               die offene bzw. zuletzt geöffnete Mappe (sonst Text „ersatz“); Pakete und eigene Rundgänge auch
 #               { mappe: { typ } } (erste lesbare Mappe) oder { neu: { typ } } (leeres Formular), sonst Text „ersatz“
 #   schritte    höchstens 8; je Schritt:
 #     schluessel  Name
@@ -22,22 +26,97 @@
 #     handbuch    Seite im Handbuch, z. B. admin/pakete/#so-nutzt-du-es
 #     (Texte zusätzlich: sonst_verwalten – Satz für Personen, die es nicht selbst einstellen dürfen)
 # Grenzen: Titel 60, Texte 200 Zeichen. Zu einem ziel gehört der Text „ort“ für Screenreader.
+#
+# Reihenfolge der Schritte (Thomas, 20. und 23.11.2026): ruhig in Leserichtung – von links oben nach rechts oben, dann
+# die Spalten von links nach rechts, zuletzt unten (der Assistent unten rechts). Hängt etwas im Ablauf zusammen, folgt
+# der Rundgang dem Ablauf. Doppelt ist erlaubt, wo ein Rundgang für sich verständlich sein muss (die Werkbank ist für
+# Administratoren der erste).
 
 - schluessel: ablago
-  start: erste_anmeldung
+  start: erster_besuch
+  seite: ablage
   fuer: lesen
   oeffne: { seite: start }
   schritte:
-    - schluessel: dreiteilung
-      bild: dreiteilung
-    - schluessel: neu
-      ziel: neu
+    # Oben von links nach rechts (#1522) …
+    - schluessel: logo
+      ziel: kopf.logo
     - schluessel: suche
       ziel: startseite.suche
-    - schluessel: erledigen
-      ziel: [navigation.zu-erledigen, startseite.zu-erledigen]
+    - schluessel: neu
+      ziel: neu
     - schluessel: konto
       ziel: benutzermenue
-    # #1300: zum Schluss der Assistent unten rechts – dort gibt es weitere Tipps, Fragen und das Handbuch.
+    # … dann die drei Spalten am echten Bildschirm, links nach rechts (statt des Bilds, #1301) …
+    - schluessel: ansichten
+      ziel: [navigation.ansichten, startseite.zu-erledigen]
+    - schluessel: liste
+      ziel: liste
+    # … zum Schluss der Assistent unten rechts (#1300).
     - schluessel: assistent
       ziel: assistent
+
+# Werkbank (#1512): für Administratoren der erste Rundgang – nach der Einrichtung landen sie hier, nicht in der Ablage.
+- schluessel: werkbank
+  start: erster_besuch
+  seite: werkbank
+  fuer: verwalten
+  oeffne: { seite: werkbank }
+  schritte:
+    - schluessel: logo
+      ziel: kopf.logo
+    - schluessel: bereiche
+      ziel: kopf.bereiche
+    - schluessel: menue
+      ziel: benutzermenue
+    - schluessel: navigation
+      ziel: werkbank.navigation
+    - schluessel: benutzer
+      ziel: werkbank.bereich:benutzer
+    - schluessel: uebersicht
+      ziel: werkbank.mitte
+    - schluessel: anpassen
+      ziel: werkbank.anpassen
+    - schluessel: assistent
+      ziel: assistent
+
+# Eine Mappe (#1523): beim ersten Öffnen einer Mappe; von Hand gestartet die zuletzt geöffnete.
+- schluessel: mappe
+  start: erster_besuch
+  seite: mappe
+  fuer: lesen
+  oeffne: { seite: mappe }
+  schritte:
+    - schluessel: kopf
+      ziel: mappe.kopf
+    - schluessel: stern
+      ziel: mappe.stern
+    - schluessel: menue
+      ziel: mappe.aktionen
+    - schluessel: register
+      ziel: mappe.reiter
+    - schluessel: speichern
+      ziel: mappe.speicherleiste
+
+# Mein Konto (#1523): startet nicht von selbst – beim ersten Besuch nur ein stiller Hinweis (Thomas, 20.11.2026).
+- schluessel: konto
+  start: erster_besuch
+  seite: konto
+  leise: true
+  fuer: lesen
+  oeffne: { seite: konto }
+  schritte:
+    - schluessel: zurueck
+      ziel: konto.zurueck
+    - schluessel: konto
+      ziel: konto.bereich:konto
+    - schluessel: sicherheit
+      ziel: konto.bereich:sicherheit
+    - schluessel: darstellung
+      ziel: konto.bereich:darstellung
+    - schluessel: benachrichtigungen
+      ziel: konto.bereich:benachrichtigungen
+    - schluessel: abwesenheit
+      ziel: konto.abwesenheit
+    - schluessel: fehler
+      ziel: konto.bereich:fehler-melden
