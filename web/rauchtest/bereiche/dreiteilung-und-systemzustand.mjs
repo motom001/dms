@@ -31,7 +31,8 @@ rauchtest(
   'Ablage und Werkbank: Die Seite rollt nicht unter der Dreiteilung, versteckte Beschriftungen bleiben lesbar (#1063)',
   { als: LENA },
   async (s) => {
-    await s.setViewportSize({ width: 1366, height: 640 });
+    // 560 statt 640 px (#1590): Die Spalten reichen jetzt bis unten (76 px mehr Platz) – die Mappe soll weiter länger sein.
+    await s.setViewportSize({ width: 1366, height: 560 });
     const mappeOeffnen = async () => {
       await s.goto(BASIS + '/ablage/start');
       await s
