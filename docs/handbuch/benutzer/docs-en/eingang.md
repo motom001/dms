@@ -2,6 +2,8 @@
 
 **To do** is the top view in the Library. It shows the folders where **you should do something** – each of them has an open **task** for you. The number next to it says how many there are.
 
+<span id="im-tab"></span>**Also in a background tab:** if there is something to do or new post, the number is shown at the front of the browser tab's title, e.g. "(3) Ablago – Library", and the tab's icon carries a dot. Ablago only shows the number there, never what it is about – and only while the tab is open; in the background Ablago checks once a minute.
+
 At the top you switch between **List**, **Month** and **Year**: the list shows what needs to be done now; [Month and Year](#monat-und-jahr) show your dates in a calendar. There is no "coming up" preview – reminders of deadlines come into the list via [automations](https://help.ablago.app/admin/aktuell/en/automatisierungen/) exactly when it's time.
 
 ![To do with a task](bilder/eingang.png)
