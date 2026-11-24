@@ -31,7 +31,6 @@ The editor is built in the order in which you create a folder type: **Basics →
 - **Plural** – optional, e.g. "Verträge". The list then says "12 Verträge" instead of "12 × Vertrag" (with one folder still "1 Vertrag"). If it is empty, it stays "12 × Vertrag". Like the name, it can be given in [other languages](#beschriftungen-je-sprache), e.g. "Contracts"; if it is missing there, the other language shows "12 × Contract". Users and roles already have their plural, as do the example folder types; a [package](pakete.md) can bring it along (#1446).
 - **Description** – is shown above the list and helps with classification.
 - **Can be created from post** – then the folder type can be chosen when someone takes over a document from the post and is asked: *Where does this belong?* More under [Taking over documents](#dokument-ubernehmen).
-- **How to recognise it** – a short sentence, at most 300 characters. More under [Taking over documents](#dokument-ubernehmen).
 - **Is part of another folder** – folders of this type always belong to another folder, e.g. invoice items to their invoice, and only appear there. More under [Is part of another folder](#ist-teil-einer-anderen-mappe).
 - **Show in the general search** – default: on. Untick it for lists that only supply values for a choice field. More under [Show in the general search](#in-der-allgemeinen-suche-zeigen).
 
@@ -41,7 +40,7 @@ Who may create or delete folders is governed by the [permissions](berechtigungen
 
 ### Taking over documents {#dokument-ubernehmen}
 
-Post first lands under *Post*. From there, a document is taken over into a folder. Two entries in the basics tell Ablago which folder types are possible for this:
+Post first lands under *Post*. From there, a document is taken over into a folder. Two entries tell Ablago which folder types are possible for this – the first is in the basics, the second since version 0.319 in the [Recognition](#erkennung) section:
 
 - **Can be created from post** – only folder types with this tick can be chosen under *Where does this belong?*, and only for people who may create folders there ([permissions](berechtigungen.md), permission C). Default: on for folder types with a documents tab, otherwise off. Remove the tick if post never belongs to this type, e.g. for *Storage location*.
 - **How to recognise it** – a short sentence that helps to assign a document to the right folder type, e.g. for *Invoice*: "Contains invoice number, amount and payment deadline; the sender is a contract partner". The description is meant for people; this sentence is for recognition and may be brief. A package that suggests the folder type (such as the *AI assistant*) gets it together with the name and short description – only for folder types that may go to [services on the network](pakete.md#ki-dienste) (see [Where does this belong? by packages](pakete.md#wohin-gehoert-das)). Like name and description, it can be given in [further languages](#beschriftungen-je-sprache).
@@ -249,6 +248,10 @@ If a folder type has no field with this tick at all, it fills all fields whose k
 
 Suitable are text, long text, number, amount, date, choice list, link, period and percentage – password fields never. Recognition looks for a period next to the field's label first ("Notice period: 3 months"), otherwise it takes the first one in the text (with low confidence); the same for a percentage ("19% VAT"). If the tick is on, you optionally choose **What is in the field?** (name or company, number, IBAN, email address, phone, street, postcode, town …). Without an entry, Ablago infers it from field kind, key and label ("Kundennummer" → number, "E-Mail" → email address); what it recognised is shown in the selection after *automatic*. The **recognition hint** is a free text, e.g. "Customer number at the top right, pattern 100-####" – a pattern after the word *pattern* (`#` = digit, `A` = capital letter) is searched for specifically by recognition.
 
+Recognition finds **numbers** by their label ("Invoice number: 2026/0815", "Rechnungs-Nr. R-42") and since version 0.319 also directly after the field's word: "Rechnung R-2026-1120", "Rechnung Nr. 4711", "Invoice INV-123". The word comes from the field's label, key and translations ("Invoice number" → "Invoice") and from the [words with the same meaning](suche.md) – if "Rechnung" is in a group with "Beleg", "Beleg-Nr. B-77" counts too. The number must be on the same line; a date, an IBAN or an amount never counts as a number.
+
+**Periods:** if the document shows a period made of two dates – "vom 01.07.2012 – 31.07.2012", "01.01.2026 bis 28.02.2026", "1 January 2026 to 31 March 2026", also across a line break –, the date field for the start gets the first date and the one for the end the second (since version 0.319; before, both got the same). Ablago infers which date fields form a pair from key and label: *Start*/*End*, *From*/*To*, *Beginn*/*Ende*, *Von*/*Bis*, *Rent start*/*Rent end*. If that doesn't fit, choose the start field on the end field under **End of the period starting at**; the selection shows after *automatic* what Ablago would assume otherwise. In packages the entry is `erkennung: { endeVon: beginn }`.
+
 The registry's packages (e.g. *Basis*) set the tick themselves. On an update, Ablago only takes it over on fields where you haven't set anything yet; the preview names them under "Fill from document".
 
 **What recognition takes into account by itself** (#1043):
@@ -338,6 +341,16 @@ Some links follow from another one: a branch belongs to exactly one organisation
 - **The same everywhere:** in the interface, via the [API](api.md) (Ablago fills in on saving if the request doesn't name the field itself) and with **Fill in from document** – if Ablago recognises the branch, the organisation comes along as a suggestion.
 - When saving the folder type Ablago checks: both fields exist, the source is a link field with **one** folder, the value points to the same folder type as this field, and no field follows from another in a circle. Chains work (contact → organisation, contract → contact).
 - In [packages](pakete.md) the property is called `folgtAus: { feld: niederlassung, zielFeld: organisation }` (from Ablago 0.225).
+
+#### Derive from a date { #aus-datum }
+
+Some links follow from a date: a bank statement from July 2012 belongs to *Tax year 2012*, a service charge statement to its billing year. Under **Derive from a date** you choose a date field of this folder (such as *To*) and below it the field of the folders there that holds the year (**The year is in**, such as *Year*). Only for link fields with exactly one target folder type; the field there is text or number ("2012") or a date (the same year counts).
+
+- **Exactly one fitting folder:** Ablago enters it as a **Suggestion** – with "from “To”: year 2012" and **Take back** like other suggestions.
+- **No fitting folder:** Ablago offers "Create “Tax year” with these details". It is only created after the click and the confirmation; then the new folder is in the field. If several fit, Ablago suggests none.
+- **When:** when creating from post (*Fill in from document*, also on the *Take over document* page) and whenever the date changes – as long as the link field is empty or still shows the suggestion. Anything you chose by hand stays.
+- **Only what you may read**, and "create" only for people who may create folders of the target type. Saving never fills anything by itself, not via the [API](api.md) either.
+- In [packages](pakete.md) the property is called `ausDatum: { datumFeld: ende, zielFeld: jahr }` (from Ablago 0.319).
 
 #### Copy when selected { #vorbelegen }
 
@@ -429,7 +442,7 @@ After a vertical bar `|` you can **format** a placeholder without creating an ad
 
 `jahr`, `monat` and `datum` work with date fields and with `{angelegt}` and `{geaendert}`, `ohne_waehrung` only with amounts. The filter names are the same in every language.
 
-**Empty parts are dropped.** If a field is empty, it disappears together with its separator (` – `, ` · `, ` | `, ` / `, `, `, ` › `). With a missing contract number, `{bezeichnung} – {vertragsnummer} – {beginn|jahr}` becomes "Electricity – 2026" instead of "Electricity –  – 2026".
+**Empty parts are dropped.** If a field is empty, it disappears together with its separator (` – `, ` · `, ` | `, ` / `, `, `, ` › `). With a missing contract number, `{bezeichnung} – {vertragsnummer} – {beginn|jahr}` becomes "Electricity – 2026" instead of "Electricity –  – 2026". Since version 0.319 also before a punctuation mark: without an invoice number, `{von} {rechnungsnummer}: {datum}` becomes "Garage: 20.11.2026" instead of "Garage : 20.11.2026", and if *von* is missing too, the title doesn't start with ":".
 
 Deliberately there are **no** conditions, loops or calculations in the title. The editor immediately reports unknown filters or a filter on the wrong field; the preview shows the result.
 
@@ -541,6 +554,7 @@ The folder type **Storage location** comes with the **Basis** package (from Basi
 
 Under **Recognition** (not for system folder types) you set up the button **Fill in from document** that users see at the top of every folder of this type:
 
+- **How to recognise it** – a short sentence for *Where does this belong?*, at most 300 characters (not for parts of other folders). Up to version 0.318 it was in the basics. More under [Taking over documents](#dokument-ubernehmen).
 - **Show button** (default: on) – deselecting hides it, e.g. for folder types without paper.
 - **Label** – e.g. "Scan business card" for the folder type *Person* or "Photograph receipt"; empty it is called "Fill in from document".
 - **Recognition** – only if a package with the permission [Suggest fields from documents](pakete.md#recht-erkennen) is installed: **Default from the Workbench** (default), **built in (without AI)** or a **package**, for instance an AI assistant. A package that may go to the network is listed with "sends text over the network"; if you choose it, Ablago asks, and you confirm the data outflow. More under [Recognition by a package](pakete.md#erkennung-durch-ein-paket).

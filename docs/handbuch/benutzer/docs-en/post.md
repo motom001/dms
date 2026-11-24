@@ -117,6 +117,8 @@ You can also use the toggle with the keyboard: Tab jumps to the chosen option, t
 - With an **AI package** that your administrator has set up: a reason and a quote from the document.
 - With **Local AI – similarity**: which folder types similar documents you may read are in.
 
+Below it, open **How sure is Ablago?**: it lists the best folder types – and the one you chose, if it isn't among them – as *sure*, *likely* or *unsure*; with **Show as a number** also in per cent, for instance "48 % – below the threshold of 60 %". Below the threshold Ablago doesn't preselect a type. For each type it says what spoke for it and what was missing, for instance "“Bank statement” is not a heading in the document", "No known “Account” found in the document (looked for IBAN)" or "Hardly fits “How to recognise it”". So you see why a type is missing – and your administrator sees what to add to the folder type. This information is only shown here, never in a log.
+
 If none of the suggestions fits, search for the folder type in the search box. Only folder types that can be created from post and in which you may create folders are offered – never users, roles or post. Choosing another type replaces the folder below.
 
 ![“Existing folder”: the electricity contract as a suggestion, the short view below](bilder/post-vorhanden.png)
@@ -127,7 +129,7 @@ If none of the suggestions fits, search for the folder type in the search box. O
 
 ### Taking values from the document { #werte-ubernehmen }
 
-The folder is already filled in: dates, amounts, numbers and links (e.g. the issuer) that Ablago found in the text, plus the post's date. Ablago only suggests the post's subject for the first field of the title, and only if free text belongs there (e.g. *Description* for a contract) – never for a number such as the invoice number. Each value is marked as a **Suggestion** at the field, with how certain it is and where it was found; **Take back** empties the field again. If a link follows from another one (such as the issuer from the contract), it comes along with "from Contract".
+The folder is already filled in: dates, amounts, numbers and links (e.g. the issuer) that Ablago found in the text, plus the post's date. Ablago only suggests the post's subject for the first field of the title, and only if free text belongs there (e.g. *Description* for a contract) – never for a number such as the invoice number. Each value is marked as a **Suggestion** at the field, with how certain it is and where it was found; **Take back** empties the field again. If a link follows from another one (such as the issuer from the contract), it comes along with "from Contract". If it follows from a date (such as the tax year from *To*), it says "from “To”: year 2012"; if that tax year doesn't exist yet, Ablago offers to create it. If the document shows a period ("01.07.2012 – 31.07.2012"), *From* gets the first and *To* the second date.
 
 - **Frames:** where a recognised value appears in the document, it has a coloured, numbered frame; the same number appears at the field. When you move the mouse over a frame, the field lights up – and the other way round. Clicking the number at the field (or pressing Enter) scrolls to where the value was found, even on a later page, and the frame lights up briefly; if that place is not on page 1, the page is shown at the field ("Page 3"). If several fields come from the same place (such as *From* and *To*), all their numbers appear there side by side ("2 3").
 - **Drag:** you can drag a frame into any field, including a link field.

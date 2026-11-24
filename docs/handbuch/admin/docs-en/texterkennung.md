@@ -132,6 +132,10 @@ If a job runs longer, Ablago cancels it:
 
 If a package reads the texts, the limits of the [package runner](pakete.md) apply in addition.
 
+## Expert mode: threshold for the folder type { #schwelle }
+
+At the very bottom of the page, **Expert mode** opens the **Threshold for the suggestion**: from this certainty on, Ablago preselects a folder type under *Where does this belong?* (default 30 %, allowed 5 to 95 %). Below it, Ablago only lists the best types to choose from. **Back to the default** restores 30 %. How sure Ablago was for a document is shown there under **How sure is Ablago?** ([Post](https://help.ablago.app/benutzer/aktuell/en/post/)). Usually a better sentence under *How to recognise it* on the folder type helps more than another threshold.
+
 ## Jobs {#auftrage}
 
 Under **Jobs** you see, in a list of fixed height, the documents per status (*error*, *waiting*, *running*, *waiting for text recognition*, *skipped*, *ready*) – with folder (as a link), size, time and the **reason** for errors or skipped documents.
