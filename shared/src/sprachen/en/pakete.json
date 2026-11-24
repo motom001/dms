@@ -531,7 +531,6 @@
   "ki.hinweis": "New: exclude folder types from AI services.",
   "ki.hinweis.text": "Your existing folder types still go to AI packages ({namen}). You can now block sensitive ones such as health; new folder types only go to AI services once you allow them.",
   "ki.hinweis.knopf": "Check folder types",
-  "ki.hinweis.verstanden": "Got it",
   "volltext.ki-gesperrt": "Not sent to “{paket}”: the folder type is not allowed for AI services.",
   "fassung.ki-gesperrt": "Not sent to “{paket}” for conversion: the folder type is not allowed for AI services.",
   "archiv.ki-gesperrt": "Not sent to “{paket}”: the folder type is not allowed for AI services.",

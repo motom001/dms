@@ -151,5 +151,15 @@
   "uebersicht.davon-eingerichtet": ", {benutzt} of them set up",
   "uebersicht.bereiche-ausgeblendet_one": "One area hidden{wert}",
   "uebersicht.bereiche-ausgeblendet_other": "{anzahl} areas hidden{wert}",
-  "uebersicht.offen": "open"
+  "uebersicht.offen": "open",
+  "uebersicht.empfohlen": "Recommended packages.",
+  "uebersicht.empfohlen.text": "Most installations need these packages:",
+  "uebersicht.empfohlen.texterkennung": "Text recognition",
+  "uebersicht.empfohlen.texterkennung.satz": "so scans become searchable.",
+  "uebersicht.empfohlen.benachrichtigungen": "Notifications",
+  "uebersicht.empfohlen.benachrichtigungen.satz": "daily summary, post for you.",
+  "uebersicht.empfohlen.installieren": "Install",
+  "uebersicht.empfohlen.installieren.name": "Install: {name}",
+  "uebersicht.empfohlen.alle": "View all packages",
+  "uebersicht.neu-laden.titel": "Reload notes and status"
 }

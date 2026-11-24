@@ -5,6 +5,7 @@ import { useHandbuch } from '../../Hilfe';
 import { Listenkopf } from '../../Listenkopf';
 import { Kachel, Kacheln, Knopf, KnopfLink } from '../../bausteine';
 import { Akzeptieren, BewusstAkzeptiert } from './Akzeptieren';
+import { WasAblagoDarf } from './WasAblagoDarf';
 import { bytes, datum, zahl } from './hilfen';
 import type { UebersichtZustand } from './zustand';
 
@@ -22,7 +23,8 @@ export function UebersichtSeite({ u }: { u: UebersichtZustand }) {
         titel={t('werkbank.uebersicht.uebersicht')}
         hilfe="werkbank.uebersicht"
         beschreibung={t('werkbank.uebersicht.was-in-dieser-installation')}>
-        <Knopf groesse="klein" symbol="neu-laden" onClick={() => u.laden()}>
+        {/* Die Hinweise laden sich beim Zurückkommen selbst neu (#1513); der Knopf bleibt für Ungeduldige. */}
+        <Knopf groesse="klein" symbol="neu-laden" title={t('werkbank.uebersicht.neu-laden.titel')} onClick={() => u.laden()}>
           {t('werkbank.uebersicht.neu-laden')}
         </Knopf>
       </Listenkopf>
@@ -36,6 +38,7 @@ export function UebersichtSeite({ u }: { u: UebersichtZustand }) {
           <p className="leise">{t('werkbank.uebersicht.lade')}</p>
         ) : (
           <>
+            <WasAblagoDarf u={u} />
             <UebersichtKacheln s={s} />
             <Hinweise u={u} />
             <BewusstAkzeptiert u={u} />
@@ -47,7 +50,10 @@ export function UebersichtSeite({ u }: { u: UebersichtZustand }) {
   );
 }
 
-/** Die Hinweise nach Schwere, jeder genau einmal: Text, Weg dorthin, „Zur Kenntnis nehmen“. */
+/**
+ * Die Hinweise nach Schwere, jeder genau einmal – ein Muster für alle (#1511): Titel und ein bis zwei Sätze, darunter
+ * der Hauptknopf mit der Handlung und daneben „Zur Kenntnis nehmen“ (bzw. „Nein, danke“ bei einer echten Frage).
+ */
 function Hinweise({ u }: { u: UebersichtZustand }) {
   const h = u.geordnet?.offen ?? [];
   return (
@@ -64,11 +70,13 @@ function Hinweise({ u }: { u: UebersichtZustand }) {
                 {x.text}
               </p>
               <div className="knoepfe">
-                <KnopfLink to={x.ziel} groesse="klein">
-                  {x.knopf}
-                </KnopfLink>
+                {!x.eigeneKnoepfe && (
+                  <KnopfLink to={x.ziel} groesse="klein" art="haupt">
+                    {x.knopf}
+                  </KnopfLink>
+                )}
+                <Akzeptieren h={x} u={u} />
               </div>
-              <Akzeptieren h={x} u={u} />
             </li>
           ))}
         </ul>
