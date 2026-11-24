@@ -234,3 +234,43 @@ for (const handy of [false, true])
       assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
     },
   );
+
+// „Wer macht das?“ erscheint erst, wenn eine Tätigkeit mehr als einer kann. Pakete, die Tätigkeiten anbieten, kommen mit
+// #1572 – bis dahin spielt der Test ein zweites für „Text lesen“ über die Antwort des Servers vor.
+rauchtest('Pakete: „Wer macht das?“ nur mit mehr als einem je Tätigkeit, Wahl speichert (#1570)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const gesendet = [];
+  const mitPaket = (stand, gewaehlt = null) => ({
+    ...stand,
+    taetigkeiten: stand.taetigkeiten.map((x) =>
+      x.leistung === 'dokument.lesen.text@1'
+        ? { ...x, gewaehlt, macher: [...x.macher, { id: 'texterkennung', art: 'paket', name: 'Texterkennung', an: true }] }
+        : x,
+    ),
+  });
+  await s.route(/\/api\/werkbank\/leistungen\/(anbieter|wahl)$/, async (r) => {
+    const echt = await (await r.fetch({ method: 'GET', url: BASIS + '/api/werkbank/leistungen/anbieter' })).json();
+    if (r.request().method() === 'PUT') {
+      const b = r.request().postDataJSON();
+      gesendet.push(b);
+      return r.fulfill({ json: mitPaket(echt, b.anbieter) });
+    }
+    return r.fulfill({ json: mitPaket(echt) });
+  });
+  await s.goto(BASIS + '/werkbank/pakete');
+  const abschnitt = s.locator('#wer-macht-das');
+  await abschnitt.getByRole('heading', { name: 'Wer macht das?' }).waitFor();
+  assert.deepEqual(await abschnitt.locator('th').allTextContents(), ['Tätigkeit', 'macht', 'Dateitypen']);
+  assert.equal(await abschnitt.locator('tbody tr').count(), 1, 'nur die Tätigkeit mit mehr als einem');
+  const wahl = abschnitt.getByLabel('Wer macht „Text lesen“?');
+  assert.equal(await wahl.locator('option:checked').textContent(), 'Ablago (Vorgabe)');
+  const funde = await axeHellDunkel(s, ['#wer-macht-das'], 'Wer macht das?');
+  await wahl.selectOption('texterkennung');
+  await abschnitt.getByText('„Text lesen“ macht jetzt Texterkennung.').waitFor();
+  assert.deepEqual(gesendet, [{ leistung: 'dokument.lesen.text@1', anbieter: 'texterkennung' }]);
+  await wahl.selectOption('');
+  await abschnitt.getByText('„Text lesen“ macht jetzt Ablago.').waitFor();
+  assert.deepEqual(gesendet.at(-1), { leistung: 'dokument.lesen.text@1', anbieter: null });
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
