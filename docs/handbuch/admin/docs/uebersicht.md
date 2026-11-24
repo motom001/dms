@@ -170,7 +170,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Paket braucht noch Einstellungen | gelb | `paket-einstellungen` |
 | Pakete angehalten – je mit Grund in Worten ([Anhalten](pakete.md#anhalten)) | gelb | `pakete.angehalten` |
 | Pakete nicht vollständig – Lösungen am Paket ([Beschädigtes Paket](pakete.md#beschaedigt)) | gelb | `pakete.beschaedigt` |
-| Bisher gehen nur diese Bereiche an Dienste im Netz – alle erlauben? (einmal, bei bestehenden Installationen mit „Auch Helfer mit Internet“ und ihrer bisherigen Liste, #1635; „Ausblenden“) | Hinweis | `ki.typen` |
+| Bisher gehen nur diese Bereiche an Dienste im Netz – alle erlauben? (einmal, bei bestehenden Installationen mit „Auch Helfer, die Dienste im Netz nutzen“ und ihrer bisherigen Liste, #1635; „Ausblenden“) | Hinweis | `ki.typen` |
 | Neu: Was Ablago darf – bitte einmal ansehen (einmal nach dem Update; „Ausblenden“) | Hinweis | `darf.neu` |
 | Aus der Einrichtung übersprungen (Adresse und E-Mail-Versand; Pakete stehen unter „Empfohlene Pakete“) | Hinweis | `einrichtung` |
 | Gut, wenn noch jemand verwalten kann – nur eine Person darf verwalten | Hinweis | `verwaltung.zweite-person` |

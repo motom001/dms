@@ -21,7 +21,7 @@ Ablago reads from the package itself where it belongs: without code of its own i
 
 ## Fine-tuning: areas for services on the network { #feinabstimmung }
 
-“Also helpers with internet” is **one decision**: packages with network access such as the AI assistant receive content from **all areas** – including post and health, including folder types added later. If you want to keep individual areas in Ablago, exclude them here:
+“Also helpers that use services on the network” is **one decision**: packages with network access such as the AI assistant receive content from **all areas** – including post and health, including folder types added later. If you want to keep individual areas in Ablago, exclude them here:
 
 1. Workbench → Overview → card **What Ablago may do** → open **Fine-tuning: areas for services on the network**.
 2. Remove the tick for the areas that should stay in Ablago – for example *Health* and *Post*. This takes effect immediately for all packages with network access.

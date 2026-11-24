@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { KiUebersicht } from '../../../../shared/src/pakete';
 import { sucheApi } from '../../api/suche';
-import { Aufklapper, Knopf } from '../../bausteine';
+import { Aufklapper, FeldGruppe, Knopf } from '../../bausteine';
 import { Hilfe } from '../../Hilfe';
 import { t } from '../../sprache';
 
@@ -85,28 +85,30 @@ export function Feinabstimmung() {
             </div>
           )}
           {k && (
-            <ul className="auswahlliste">
-              {k.typen.map((x) => (
-                <li key={x.id}>
-                  <label className="haken">
-                    <input
-                      type="checkbox"
-                      checked={x.zugelassen}
-                      disabled={!!sendet}
-                      onChange={(ev) => {
-                        const ja = ev.target.checked;
-                        void tu(
-                          x.id,
-                          () => sucheApi.setzeKiTyp(x.id, ja),
-                          t(ja ? 'werkbank.darf.fein.gespeichert.an' : 'werkbank.darf.fein.gespeichert.aus', { name: x.name }),
-                        );
-                      }}
-                    />
-                    <span>{x.name}</span>
-                  </label>
-                </li>
-              ))}
-            </ul>
+            <FeldGruppe beschriftung={t('werkbank.darf.fein.liste')}>
+              <ul className="auswahlliste">
+                {k.typen.map((x) => (
+                  <li key={x.id}>
+                    <label className="haken">
+                      <input
+                        type="checkbox"
+                        checked={x.zugelassen}
+                        disabled={!!sendet}
+                        onChange={(ev) => {
+                          const ja = ev.target.checked;
+                          void tu(
+                            x.id,
+                            () => sucheApi.setzeKiTyp(x.id, ja),
+                            t(ja ? 'werkbank.darf.fein.gespeichert.an' : 'werkbank.darf.fein.gespeichert.aus', { name: x.name }),
+                          );
+                        }}
+                      />
+                      <span>{x.name}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </FeldGruppe>
           )}
           {k && (
             <p className="leise klein">

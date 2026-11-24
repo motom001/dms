@@ -21,7 +21,7 @@ Woran Ablago erkennt, wozu ein Paket gehört, steht im Paket selbst: ohne eigene
 
 ## Feinabstimmung: Bereiche für Dienste im Netz { #feinabstimmung }
 
-„Auch Helfer mit Internet“ ist **eine Entscheidung**: Pakete mit Netz wie der KI-Assistent bekommen Inhalte aus **allen Bereichen** – auch Post und Gesundheit, auch Mappentypen, die später dazukommen. Wer einzelne Bereiche in Ablago lassen will, nimmt sie hier aus:
+„Auch Helfer, die Dienste im Netz nutzen“ ist **eine Entscheidung**: Pakete mit Netz wie der KI-Assistent bekommen Inhalte aus **allen Bereichen** – auch Post und Gesundheit, auch Mappentypen, die später dazukommen. Wer einzelne Bereiche in Ablago lassen will, nimmt sie hier aus:
 
 1. Werkbank → Übersicht → Karte **Was Ablago darf** → **Feinabstimmung: Bereiche für Dienste im Netz** aufklappen.
 2. Bei den Bereichen, die in Ablago bleiben sollen – zum Beispiel *Gesundheit* und *Post* –, den Haken wegnehmen. Das wirkt sofort für alle Pakete mit Netz.

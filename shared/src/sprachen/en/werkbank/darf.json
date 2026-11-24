@@ -83,5 +83,6 @@
   "darf.fein.hinweis": "So far only these areas go to services on the network – allow all?",
   "darf.fein.hinweis.text": "Allowed out: {namen}. “Also helpers that use services on the network” now means all areas; you exclude individual ones in the fine-tuning. Your previous list stays until you change it.",
   "darf.fein.hinweis.keine": "So far no area goes to services on the network. “Also helpers that use services on the network” now means all areas; you exclude individual ones in the fine-tuning. Your previous list stays until you change it.",
-  "darf.fein.hinweis.knopf": "View fine-tuning"
+  "darf.fein.hinweis.knopf": "View fine-tuning",
+  "darf.fein.liste": "May go to services on the network"
 }

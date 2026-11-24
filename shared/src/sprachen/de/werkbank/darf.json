@@ -83,5 +83,6 @@
   "darf.fein.hinweis": "Bisher gehen nur diese Bereiche an Dienste im Netz – alle erlauben?",
   "darf.fein.hinweis.text": "Hinaus dürfen: {namen}. „Auch Helfer, die Dienste im Netz nutzen“ heißt jetzt alle Bereiche; einzelne nehmt ihr in der Feinabstimmung aus. Eure bisherige Liste bleibt, bis ihr es ändert.",
   "darf.fein.hinweis.keine": "Bisher geht kein Bereich an Dienste im Netz. „Auch Helfer, die Dienste im Netz nutzen“ heißt jetzt alle Bereiche; einzelne nehmt ihr in der Feinabstimmung aus. Eure bisherige Liste bleibt, bis ihr es ändert.",
-  "darf.fein.hinweis.knopf": "Feinabstimmung ansehen"
+  "darf.fein.hinweis.knopf": "Feinabstimmung ansehen",
+  "darf.fein.liste": "Dürfen an Dienste im Netz gehen"
 }

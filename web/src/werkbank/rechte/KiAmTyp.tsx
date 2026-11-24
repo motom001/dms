@@ -28,9 +28,7 @@ export function KiAmTyp({ neben }: { neben: TypNeben }) {
         </p>
       )}
       {k && (
-        <HakenFeld
-          beschriftung={t('pakete.ki.typ.darf')}
-          hinweis={stand.netz ? t('pakete.ki.typ.an.hilfe') : t('pakete.ki.typ.aus.hilfe')}>
+        <HakenFeld beschriftung={t('pakete.ki.typ.darf')} hinweis={stand.netz ? t('pakete.ki.typ.an.hilfe') : t('pakete.ki.typ.aus.hilfe')}>
           <input type="checkbox" checked={stand.netz} onChange={(ev) => neben.setzeNetz(ev.target.checked)} />
         </HakenFeld>
       )}
