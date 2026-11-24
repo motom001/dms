@@ -31,7 +31,11 @@ const OHNE: Record<string, string[]> = {
   ereignisse: ['verteilt', 'gesperrt_bis', 'versuche', 'fehler'],
 };
 /** Zeilen, die die Wiederherstellung anlegt: die Abschlussmeldung für nach dem Neustart. */
-const WO: Record<string, string> = { einstellungen: `WHERE schluessel <> 'wiederherstellung_abschluss'` };
+// Ohne die Abschlussmeldung und die Betriebsangaben der Sicherung (#1531): Die übernimmt die Wiederherstellung bewusst
+// aus dem jetzigen Stand (Merker der Zeitpläne, Proben, Prüfungen), sie gehören nicht zum Datenstand der Sicherung.
+const WO: Record<string, string> = {
+  einstellungen: `WHERE schluessel <> 'wiederherstellung_abschluss' AND schluessel NOT LIKE 'sicherung\\_%'`,
+};
 
 describe('Umzug PostgreSQL 17 → 18 über die Sicherung', { skip: ZIEL && QUELLE ? false : 'TEST_DATABASE_URL_PG17 nicht gesetzt' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sql aus dynamisch geladenem Modul; Typ im Test ohne Belang
