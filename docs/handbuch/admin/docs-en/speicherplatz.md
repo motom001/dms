@@ -4,7 +4,7 @@ How is the server doing right now? That is shown by **Workbench → Maintenance 
 
 Since the workbench was tidied up, the same page also shows the **long database accesses** and what is running in the database right now (formerly under *Database connection*), the [external services](#externe-dienste) with the [AI costs](#ki-kosten) as well as **Version and updates** (formerly an area of its own, *Technology*, see [Troubleshooting](fehlersuche.md#technik)).
 
-So that nothing ever gets lost when saving and uploading, Ablago measures itself how much space is free, warns in good time and stops itself at the limit. At the top of the page are the **thresholds**, below them the [load](#auslastung), then the **folders** with their usage, after that **Shrinking large PDFs** and **Shrink new PDFs automatically**.
+So that nothing ever gets lost when saving and uploading, Ablago measures itself how much space is free, warns in good time and stops itself at the limit. At the top of the page are the **thresholds**, below them the [load](#auslastung), then the **folders** with their usage, after that **Shrinking large PDFs**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -150,9 +150,9 @@ Every shrunk document has the entry "PDF edited: shrunk from … to …" in its 
 
 ### Shrinking new PDFs automatically {#neue-pdfs-automatisch-verkleinern}
 
-Below it – next to the storage space, where you would look for it – is the switch **Shrink new PDFs automatically** above a size (default 5 MB) at a level. **The default is off.** Switched on, it applies to new PDFs from outside – uploading, [Intake folder](eingangsordner.md), [mailboxes](postfaecher.md), interface and [WebDAV](webdav.md) –, not to PDFs edited in Ablago. Then **only the shrunk PDF** is stored; the original doesn't go into Ablago. If it brings less than 10 % or the file can't be read, it is filed as it came. The entry "Document uploaded" in the history then says "Shrunk: automatically from … to …".
+Since version 0.315 the switch **Shrink new PDFs automatically** is under **Workbench → Packages → Included with Ablago → Edit PDF** – it is a setting of "Edit PDF" (see [Included with Ablago](pakete.md#von-ablago-mitgeliefert)); *Shrinking large PDFs* stays here next to the storage space. It shrinks new PDFs above a size (default 5 MB) at a level. **The default is off.** Switched on, it applies to new PDFs from outside – uploading, [Intake folder](eingangsordner.md), [mailboxes](postfaecher.md), interface and [WebDAV](webdav.md) –, not to PDFs edited in Ablago. Then **only the shrunk PDF** is stored; the original doesn't go into Ablago. If it brings less than 10 % or the file can't be read, it is filed as it came. The entry "Document uploaded" in the history then says "Shrunk: automatically from … to …".
 
-Until the change with #1190, the switch was under *Search and full text*; old links there lead here.
+Until the change with #1190, the switch was under *Search and full text*, after that up to version 0.314 here in System health; old links to either place lead to *Edit PDF*. If *Edit PDF* is switched off and no other package does "Shrink PDF", new PDFs are filed as they come (the [log](fehlersuche.md#protokoll) says "Automatisch verkleinern übersprungen").
 
 !!! note "Technology: no Ghostscript"
     Ablago shrinks without Ghostscript (whose licence is AGPL). The images are recalculated by **pdftoppm** from poppler (in the image anyway for text recognition and thumbnails), the PDF's structure is optimised by **qpdf** (Apache-2.0, in the image since version 0.93.0). Whoever builds their own image includes `apk add qpdf` – without qpdf shrinking also works, the files just get a little less small.

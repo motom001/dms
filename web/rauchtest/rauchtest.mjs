@@ -47,6 +47,7 @@ import './bereiche/seitenbetrachter.mjs';
 import './bereiche/bausteine-und-knoepfe.mjs';
 import './bereiche/dreiteilung-und-systemzustand.mjs';
 import './bereiche/werkbank-suche-und-archiv.mjs';
+import './bereiche/werkbank-mitgeliefert.mjs';
 import './bereiche/aus-bausteinen.mjs';
 import './bereiche/formularfelder.mjs';
 import './bereiche/startbild-und-vorschlaege.mjs';

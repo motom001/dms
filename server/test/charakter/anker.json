@@ -53,5 +53,7 @@
   "werkbank.navigation",
   "werkbank.mitte",
   "werkbank.anpassen",
-  "konto.tab-neues"
+  "konto.tab-neues",
+  "werkbank.pakete.mitgeliefert",
+  "werkbank.pakete.mitgeliefert.schalter"
 ]

@@ -39,6 +39,8 @@ import { filterAusAdresse } from '../../../../shared/src/aufgabenfilter';
 import { useBeiWiederErreichbar } from '../../erreichbar';
 import { geheZu } from '../../ort';
 import { abschnittUmleitung, werkbankUmleitung } from '../../../../shared/src/werkbankansicht';
+import { brauchtTexterkennung } from '../mitgeliefert/einstellungen';
+import { useMitgeliefert } from '../mitgeliefert/zustand';
 
 /*
  * Zustände der Werkbank (#819), in drei Hooks in der Reihenfolge von früher – dazwischen ruft Werkbank.tsx
@@ -46,7 +48,7 @@ import { abschnittUmleitung, werkbankUmleitung } from '../../../../shared/src/we
  */
 
 /** Benutzer bis WebDAV. */
-export function useWerkbankZustaende1(bereich: string, darf: (pfad: string) => boolean) {
+export function useWerkbankZustaende1(bereich: string, darf: (pfad: string) => boolean, id?: string) {
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
   const datenbank = useDatenbank(bereich === 'systemzustand');
@@ -58,7 +60,8 @@ export function useWerkbankZustaende1(bereich: string, darf: (pfad: string) => b
   const aufgabenFilter = filterAusAdresse(new URLSearchParams(location.search));
   const aufgaben = useAufgaben(bereich === 'aufgaben', !!aufgabenFilter.erledigt);
   const aufgabenEmpfaenger = useAufgabenEmpfaenger(bereich === 'benutzer');
-  const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
+  // Seit #1570 auch auf den Seiten der mitgelieferten Anbieter unter Pakete (Text, Archivfassung, andere Dateitypen).
+  const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung' || (bereich === 'pakete' && brauchtTexterkennung(id)));
   const woerter = useWoerter(bereich === 'woerter');
   const uebersicht = useUebersicht(bereich === 'uebersicht');
   const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
@@ -121,7 +124,9 @@ export function useWerkbankZustaende3(bereich: string) {
   const sprachen = useSprachen(bereich === 'sprachen');
   const anbindung = useAnbindung(bereich === 'anbindung');
   const ansicht = useWerkbankAnsicht();
-  return { anmeldeschutz, region, daten, nutzung, organisation, sprachen, anbindung, ansicht };
+  // Von Ablago mitgeliefert (#1570): Liste, Seiten, „Wer macht das?“ und der Reiter „Bietet an“ unter Pakete.
+  const mitgeliefert = useMitgeliefert(bereich === 'pakete');
+  return { anmeldeschutz, region, daten, nutzung, organisation, sprachen, anbindung, ansicht, mitgeliefert };
 }
 
 export type WerkbankZustaende = ReturnType<typeof useWerkbankZustaende1> &
@@ -178,14 +183,15 @@ export function useWerkbankSprung(bereich: string, id: string | undefined, benut
   useEffect(() => {
     if (bereich === 'benutzer') void benutzer.laden();
   }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps -- neu laden nur beim Wechsel von Bereich oder Eintrag
+  // Umgezogene Abschnitte (#1184): /werkbank/loeschkonzept#loeschprotokoll → /werkbank/loeschprotokoll. Sie gehen vor:
+  // Ein Abschnitt eines umgezogenen Bereichs kann woanders stehen als der Bereich (#1570, /werkbank/texterkennung#archivfassung).
+  const abschnittNeu = abschnittUmleitung(bereich, location.hash.slice(1));
   // Alte Direktlinks (#366): in Bereiche ohne Mitte → Seite, Eintrag aufgeklappt; /werkbank/stempel?offen=:id → /werkbank/stempel/:id (#990);
-  // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle.
-  const umleitung = werkbankUmleitung(bereich, id, location.search);
+  // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle, samt Sprungmarke (#1570).
+  const umleitung = abschnittNeu ? null : werkbankUmleitung(bereich, id, location.search, location.hash.slice(1));
   useEffect(() => {
     if (umleitung) geheZu(umleitung, true);
   }, [umleitung]);
-  // Umgezogene Abschnitte (#1184): /werkbank/loeschkonzept#loeschprotokoll → /werkbank/loeschprotokoll.
-  const abschnittNeu = abschnittUmleitung(bereich, location.hash.slice(1));
   useEffect(() => {
     if (abschnittNeu) geheZu(abschnittNeu, true);
   }, [abschnittNeu]);
@@ -204,5 +210,5 @@ export function useWerkbankSprung(bereich: string, id: string | undefined, benut
     }, 150);
     return () => clearInterval(iv);
   }, [bereich, marke]);
-  return umleitung;
+  return umleitung ?? abschnittNeu;
 }

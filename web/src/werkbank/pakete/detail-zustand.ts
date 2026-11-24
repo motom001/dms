@@ -28,11 +28,11 @@ function useHerkunft(z: PaketeZustand, id: string, quelle: string | undefined) {
   return { inst, eigeneQuelle, aus, kp, offiziell, katalog };
 }
 
-export function usePaketDetail(z: PaketeZustand, id: string, quelle?: string) {
+export function usePaketDetail(z: PaketeZustand, id: string, quelle?: string, bietet = false) {
   const d = useDaten();
   const h = useHerkunft(z, id, quelle);
   const { inst, eigeneQuelle, kp, offiziell } = h;
-  const r = usePaketReiter(inst);
+  const r = usePaketReiter(inst, bietet);
   const [version, setVersion] = useState<string>('');
   const [vorschau, setVorschau] = useState<PaketVorschau | null>(null);
   const [laeuft, setLaeuft] = useState(false);

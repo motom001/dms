@@ -149,6 +149,29 @@ On an **update**, everything that comes with the new version is marked **new in 
 
 If a package brings a **quick guide** (three to five short steps), Ablago shows it **once right after the installation** at the top of the package page – with **Close**. After that it is under **What comes with it** at **How to use it**, to expand. Ablago shows it in your language, otherwise in German. Big topics are not explained in the guide but in a tour.
 
+## Included with Ablago { #von-ablago-mitgeliefert }
+
+What Ablago itself does with documents is under **Workbench → Packages** in its own section **Included with Ablago** – below the installed packages, in the same row as a package and with the label **Ablago**:
+
+| Name | Does | Settings on the page |
+| --- | --- | --- |
+| Text from PDF and text recognition | Read text (text layer of PDFs) | [Text recognition](texterkennung.md#werkbank-suche-und-volltext) and [search](suche.md#tippfehler-und-meintest-du) (formerly *Search and full text*) |
+| Archive version (PDF/A) | Convert to PDF/A (takes originals that already are PDF/A) | Status of the [archive version](texterkennung.md#archivfassung-pdfa) |
+| Convert | Convert to PDF (JPEG, PNG) | [Other file types](texterkennung.md#andere-dateitypen) |
+| Edit PDF | Rotate and arrange pages, merge PDFs, shrink PDF, redact | [Shrink new PDFs automatically](speicherplatz.md#neue-pdfs-automatisch-verkleinern) (formerly in System health) |
+| Letter layout | Create letter from text, create letter from template | – |
+| Read e-invoice | Read e-invoice (XRechnung, ZUGFeRD) | – |
+
+The page of an entry shows a **switch** at the top, below it what it does (for which file types) and its settings; the technical names are under *For experts* when expanded. None of it can be removed. After an update everything is switched on and the settings are the same as before – they are just in a different place. Old addresses (`/werkbank/texterkennung`, also with an anchor such as `#archivfassung`) lead to the new page, and the search field of the bar also finds them under their old names. After the update, a tip under “New since your last visit” says once where *Search and full text* and *Shrink new PDFs automatically* have moved to.
+
+**Switching off:** before switching off, Ablago says what will be missing and whether another installed package takes over, e.g. "Without “Text from PDF and text recognition”, Ablago no longer reads the text of new PDFs … No other package for this is installed." – with **Search the catalogue …**. When switched off, the row stays in the list with the label **off**. Where Ablago then needs the task, instead of an error it says "nobody does this here at the moment" with the address in the catalogue; text recognition skips new PDFs with this reason.
+
+Whoever manages packages can switch these on and off. Whoever may only manage *Text from PDF and text recognition* (formerly *Search and full text*) can still open its page and those of the archive version, *Convert* and *Edit PDF*, but only sees the switch.
+
+### Who does this? { #wer-macht-das }
+
+If more than one can do a task – Ablago and an installed package –, the section **Who does this?** is on the right of **Workbench → Packages**: per task, who does it and for which file types. The default is **Ablago**. If there is no choice for any task, the section is missing. On the page of a package that can take on tasks, the tab **Offers** shows which ones and who does them at the moment, with the way here.
+
 ## Examples { #beispiele }
 
 Many packages bring **sample folders** with invented data so that you can see what belongs in a folder. Since Ablago 0.223.0 they can also bring **example documents** – for instance a maintenance contract and two invoices for the folder "Heating". Both are only created if you set the tick **Sample folders** when installing; an update creates no examples.

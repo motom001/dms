@@ -490,7 +490,8 @@ Ein Abruf eines Postfachs schlägt gerade fehl – rot im Bereich „Stand“ mi
 Siehe auch: [Postfach](#postfach).
 
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
-Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. „Neue PDFs automatisch verkleinern“ steht seit
+Früherer Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. Seit Version 0.315 heißt die Seite „Text aus PDF und Texterkennung“ und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten. Fasste die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.  
+Siehe auch: [Von Ablago mitgeliefert](#von-ablago-mitgeliefert).
 
 <a id="systemrolle"></a>**Systemrolle** · ~ mit Erklärung · Administratoren  
 Ob ein Benutzer Administrator oder Mitglied ist. Nur Administratoren kommen in die Werkbank.  
@@ -513,6 +514,10 @@ Siehe auch: [Paket](#paket), [Herausgeber](#herausgeber).
 <a id="verlauf"></a>**Verlauf** · ~ mit Erklärung · Administratoren  
 Reiter auf der Seite eines Pakets mit Code (Werkbank → Pakete → Paket → Verlauf), den Ablago selbst pflegt – was Ablago dem Paket zugestellt hat, wie es lief (ok, Fehler, Zeit- oder Speichergrenze erreicht), Dauer, Speicher, Netzaufrufe, die Protokollzeilen des Pakets sowie Installieren, Aktualisieren, geänderte Einstellungen und Ausprobieren. Oben die Auslastung der letzten 7 bzw. 30 Tage mit einer Ampel („läuft unauffällig“, „stößt oft an seine Grenzen“, „scheitert häufig“). Nie Inhalte aus Dokumenten; Einträge bleiben 30 Tage. Die Geschichte einer Mappe heißt dagegen „Historie“.  
 Siehe auch: [Paket-Läufer](#paket-laufer), [Historie](#historie), [Protokoll](#protokoll).
+
+<a id="von-ablago-mitgeliefert"></a>**Von Ablago mitgeliefert** · ~ mit Erklärung · Administratoren  
+Abschnitt unter Werkbank → Pakete für das, was Ablago selbst mit Dokumenten macht – Text aus PDF und Texterkennung, Archivfassung (PDF/A), Umwandeln, PDF bearbeiten, Briefsatz, E-Rechnung lesen. Jedes steht wie ein Paket da, mit Schalter an/aus und seinen Einstellungen; entfernen lässt es sich nicht. Kann eine Tätigkeit auch ein Paket, wählt man unter „Wer macht das?“, wer sie macht.  
+Siehe auch: [Paket](#paket).
 
 <a id="vorgabe"></a>**Vorgabe** · ~ mit Erklärung · Administratoren  
 Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „Strom“ oder „Miete“ aus dem Paket Verträge, oft mit Vorlagen. Kommt immer mit, trägt die Kennzeichnung „Vorgabe aus dem Paket …“ und ist sonst eine gewöhnliche Mappe. Updates bringen neue Fassungen nur, solange niemand sie geändert hat; Gelöschtes bleibt gelöscht. Anders als ein Beispiel (erfundene Daten zum Ausprobieren, auf Wunsch, entfernbar).  
@@ -569,7 +574,7 @@ Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B
 Ein ausführlicheres technisches Protokoll für die Fehlersuche.
 
 <a id="eingebautes-werkzeug"></a>**Eingebautes Werkzeug** · ~ mit Erklärung · Administratoren  
-Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).  
+Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Text aus PDF und Texterkennung, Systemzustand).  
 Siehe auch: [Systemzustand](#systemzustand).
 
 <a id="einrichtungsassistent"></a>**Einrichtungsassistent** · ✓ Alltagswort · Administratoren  
@@ -836,6 +841,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Verweis | Referenz, Link, Relation | `referenz, Feld.zielTypen` |
 | Verweisart | – | `Verweisart, VERWEISARTEN` |
 | Von (Post) | Absender (als Feldname) | `von` |
+| Von Ablago mitgeliefert | Anbieter, Leistung, eingebauter Anbieter | – |
 | Vorgabe | Stammdaten, Standardmappe, Voreinstellung | `vorgabe (Mappe), inhalt.vorgaben` |
 | Vorlage | – | `inhalt/vorlagen/*.md` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |

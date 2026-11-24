@@ -51,7 +51,7 @@ const SEITEN = [
   '/werkbank/sicherung',
   '/werkbank/wartung',
   '/werkbank/sichten',
-  '/werkbank/texterkennung',
+  '/werkbank/pakete/ablago.text',
 ];
 const GROESSEN = [
   { name: 'iPhone SE', breite: 375, hoehe: 667 },

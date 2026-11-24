@@ -26,6 +26,9 @@ import { herkunftTyp, paketHerkunft, paketVonTyp, paketWahl, quellenTyp } from '
 import { uebergeordneterTyp } from '../../../../shared/src/teile';
 import { typName } from '../../../../shared/src/beschriftung';
 import type { Seiten } from './inhalt';
+import { MitgeliefertSeite } from '../mitgeliefert/seite';
+import { mitgeliefertEinstellungen } from '../mitgeliefert/einstellungen';
+import { istMitgeliefert } from '../mitgeliefert/zustand';
 
 /* Inhalte der Bereiche, Ablage aufbauen (#819, Tabelle seit #1281): Mappentypen samt ihrer Liste, Pakete, Automatisierungen. */
 
@@ -68,10 +71,19 @@ export const ablageSeiten = {
     }
     return { liste, rechts };
   },
-  // Pakete: Installation über einen Link (?installieren=…) steht rechts, auch ohne gewähltes Paket.
-  pakete: ({ id, installieren, z: { pakete } }) => ({
-    liste: <PaketeListe z={pakete} offen={id} />,
-    rechts: installieren ? <PaketLink key={installieren} z={pakete} wert={installieren} /> : <PaketePanel z={pakete} id={id} />,
+  // Pakete: Installation über einen Link (?installieren=…) steht rechts, auch ohne gewähltes Paket. Von Ablago
+  // mitgeliefert (#1570) mit eigener Seite; die öffnet auch das Recht der umgezogenen Bereiche – dann ohne Liste.
+  pakete: ({ id, installieren, wartungAn, darf, z: { pakete, mitgeliefert, ocr } }) => ({
+    liste: darf('pakete') ? <PaketeListe z={pakete} offen={id} mitgeliefert={mitgeliefert} /> : null,
+    rechts: installieren ? (
+      <PaketLink key={installieren} z={pakete} wert={installieren} />
+    ) : id && istMitgeliefert(id) ? (
+      <MitgeliefertSeite z={mitgeliefert} id={id} darfSchalten={darf('pakete')}>
+        {mitgeliefertEinstellungen(id, ocr, wartungAn)}
+      </MitgeliefertSeite>
+    ) : (
+      <PaketePanel z={pakete} id={id} mitgeliefert={mitgeliefert} />
+    ),
   }),
   // Automatisierungen mit den Zielen nach außen (#671): eigene Seite rechts, neben der Liste.
   automatisierungen: ({ id, z: { automatisierungen, pakete } }) => ({

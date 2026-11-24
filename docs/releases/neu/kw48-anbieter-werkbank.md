@@ -1,0 +1,9 @@
+art: minor
+
+## Neu
+
+- **Von Ablago mitgeliefert** (#1570): Unter Werkbank → Pakete steht unter den installierten Paketen ein eigener Abschnitt mit dem, was Ablago selbst mit Dokumenten macht – Text aus PDF und Texterkennung, Archivfassung (PDF/A), Umwandeln, PDF bearbeiten, Briefsatz, E-Rechnung lesen. Jedes hat eine Seite mit Schalter an/aus und seinen Einstellungen. Vor dem Ausschalten sagt Ablago, was dann fehlt und ob ein anderes Paket es übernimmt, mit dem Weg in den Katalog; ausgeschaltet steht „aus“ an der Zeile, und neue PDFs bekommen „ausgelassen“ mit Grund statt eines Fehlers. „Wer macht das?“ erscheint, sobald eine Tätigkeit mehr als einer kann; an einem solchen Paket zeigt der Reiter „Bietet an“, was es übernehmen kann.
+
+## Geändert
+
+- **Suche und Volltext** heißt jetzt **Text aus PDF und Texterkennung** und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten, „Neue PDFs automatisch verkleinern“ steht bei „PDF bearbeiten“ (vorher Systemzustand). Alle Einstellungen bleiben, wie sie sind; alte Adressen und Lesezeichen führen an die neue Stelle, die Suche der Leiste findet die alten Namen, und ein Tipp sagt es nach dem Update einmal.

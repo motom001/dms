@@ -7,6 +7,8 @@ import { SelbstErstelltAnsicht } from './SelbstErstellt';
 import { PaketDetail } from './pakete/detail';
 import { ALLE, SAMMEL, UPLOAD } from './pakete/pfade';
 import { SammelDetail, UploadDetail } from './pakete/teile';
+import { WerMachtDas } from './mitgeliefert/wer-macht';
+import type { MitgeliefertZustand } from './mitgeliefert/zustand';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -18,7 +20,7 @@ import { SammelDetail, UploadDetail } from './pakete/teile';
 export { PaketeListe } from './pakete/liste';
 export { PaketLink } from './pakete/link';
 
-export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
+export function PaketePanel({ z, id, mitgeliefert }: { z: PaketeZustand; id?: string; mitgeliefert: MitgeliefertZustand }) {
   if (!id)
     return (
       <div className="einspaltig">
@@ -31,6 +33,8 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
         </div>
         {/* Menü „Mappe“ (#1039): eingebaute Aktionen an einer Stelle, Aktionen der Pakete im Überblick. */}
         {z.stand && <MappenMenueBlock pakete={z.stand.installiert} />}
+        {/* „Wer macht das?“ (#1570): nur, wenn eine Tätigkeit mehr als einen hat, der sie kann. */}
+        <WerMachtDas z={mitgeliefert} />
       </div>
     );
   if (id === UPLOAD) return <UploadDetail z={z} />;
@@ -46,5 +50,5 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
       />
     );
   const quelle = new URLSearchParams(location.search).get('quelle') ?? undefined;
-  return <PaketDetail key={`${id}|${quelle ?? ''}`} z={z} id={id} quelle={quelle} />;
+  return <PaketDetail key={`${id}|${quelle ?? ''}`} z={z} id={id} quelle={quelle} mitgeliefert={mitgeliefert} />;
 }

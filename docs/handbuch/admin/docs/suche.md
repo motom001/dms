@@ -1,6 +1,6 @@
 # Suche
 
-Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Suche und Volltext → Suche** ein, die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (beide in der Gruppe *Post und Eingänge*; ab der Stufe [*Haushalt*](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
+Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Pakete → Von Ablago mitgeliefert → Text aus PDF und Texterkennung → Suche** ein (bis Version 0.314 *Suche und Volltext*), die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (in der Gruppe *Post und Eingänge*; ab der Stufe [*Haushalt*](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
 
 ## Was immer gilt
 
@@ -14,7 +14,7 @@ Ohne Einstellung gleicht die Suche aus:
 
 Findet die Suche **nichts**, sucht sie mit ähnlichen Wörtern aus deiner Ablage weiter (Ähnlichkeit über Buchstabengruppen, pg_trgm) und sagt das über den Treffern: „Keine genauen Treffer für ‚Waschmaschiene‘. Gezeigt werden ähnliche Schreibweisen.“ Dazu schlägt sie **„Meintest du ‚waschmaschine‘?“** vor; ein Klick sucht genau dieses Wort. Gibt es genaue Treffer, bleibt es bei ihnen – genaue Treffer gehen immer vor.
 
-![Werkbank → Suche und Volltext → Suche: Tippfehler](bilder/werkbank-suche.png)
+![Werkbank → Pakete → Text aus PDF und Texterkennung → Suche: Tippfehler](bilder/werkbank-suche.png)
 
 Unter **„Meintest du …?“ vorschlagen** wählst du, wann der Vorschlag kommt (seit #1191):
 
@@ -27,7 +27,7 @@ Die ähnlichen Wörter kommen aus dem **Wörterverzeichnis**: allen Wörtern ab 
 
 ## Gleichbedeutende Wörter
 
-Eine **Gruppe** gleichbedeutender Wörter, z. B. *Kfz, Auto, PKW* oder *Nebenkosten, Betriebskosten*, sorgt dafür, dass die Suche nach einem der Wörter auch die anderen findet. Die Gruppen haben einen eigenen Bereich: **Werkbank → Post und Eingänge → Gleichbedeutende Wörter**, direkt unter *Suche und Volltext* (seit #992; vorher standen sie unten auf der Seite *Suche und Volltext*, dort steht jetzt ein Link). Aufgebaut ist er wie die anderen Sammlungen der Werkbank:
+Eine **Gruppe** gleichbedeutender Wörter, z. B. *Kfz, Auto, PKW* oder *Nebenkosten, Betriebskosten*, sorgt dafür, dass die Suche nach einem der Wörter auch die anderen findet. Die Gruppen haben einen eigenen Bereich: **Werkbank → Post und Eingänge → Gleichbedeutende Wörter** (seit #992; vorher standen sie unten auf der Seite *Suche und Volltext*, dort steht jetzt ein Link). Aufgebaut ist er wie die anderen Sammlungen der Werkbank:
 
 ![Werkbank → Gleichbedeutende Wörter](bilder/werkbank-woerter.png)
 

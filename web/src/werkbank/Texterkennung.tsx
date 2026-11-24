@@ -1,4 +1,3 @@
-import { Kopf } from './Kopf';
 import { WerkzeugeHinweis } from './Werkzeuge';
 import { OCR_STAENDE } from '../../../shared/src/model';
 import type { OcrStatus } from '../api/suche';
@@ -16,6 +15,8 @@ import { KnopfLink } from '../bausteine';
 /**
  * Werkbank → Texterkennung (#45, #459): Übersicht – welches Paket die Texterkennung übernimmt, woher der Text der
  * Dokumente kommt, erkannte Sprachen, Warteschlange und Aufträge. Einstellungen der Erkennung stehen beim Paket.
+ * Seit #1570 auf den Seiten der mitgelieferten Anbieter unter Pakete → Von Ablago mitgeliefert: „Text aus PDF und
+ * Texterkennung“ (Teil `text`), „Archivfassung (PDF/A)“ (`archiv`) und „Umwandeln“ (`umwandeln`, andere Dateitypen).
  * Eingebaute Werkzeuge (Poppler, qpdf) erscheinen nur, wenn eins fehlt (#1189).
  * Werkbank → Wartungsoperationen: Volltext neu erzeugen (#458), alle Dateien prüfen (#212),
  * Nummern nachträglich vergeben. Sicherung, Wiederherstellung und Export sind eigene Bereiche.
@@ -25,7 +26,16 @@ import { KnopfLink } from '../bausteine';
 export { useTexterkennung, type TexterkennungZustand } from './texterkennung/zustand';
 export { WartungPanel } from './texterkennung/Wartung';
 
-export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wartungAn?: boolean }) {
+export function TexterkennungPanel({
+  t: eintrag,
+  wartungAn,
+  teil = 'text',
+}: {
+  t: TexterkennungZustand;
+  wartungAn?: boolean;
+  /** Teil auf der Seite des mitgelieferten Anbieters (#1570): Text, Archivfassung oder andere Dateitypen. */
+  teil?: 'text' | 'archiv' | 'umwandeln';
+}) {
   if (eintrag.fehler)
     return (
       <div className="hinweis schlecht">
@@ -34,11 +44,16 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
     );
   if (!eintrag.stand) return <p className="leise">{t('werkbank.texterkennung.lade')}</p>;
   const s = eintrag.stand;
+  if (teil === 'archiv') return <ArchivBlock s={s} />;
+  if (teil === 'umwandeln') return <UmwandlungBlock s={s} />;
   return (
-    <div className="einspaltig">
-      <Kopf titel={tx('volltext.werkbank.titel')} ueber={t('werkbank.texterkennung.werkbank')} hilfe="werkbank.texterkennung">
+    <>
+      <section className="blatt" id="volltext-einleitung">
+        <h2 className="h3">
+          {tx('volltext.werkbank.titel')} <Hilfe ort="werkbank.texterkennung" />
+        </h2>
         <p className="leise">{tx('volltext.werkbank.einleitung')}</p>
-      </Kopf>
+      </section>
       <PauseHinweis t={eintrag} wartungAn={wartungAn} />
       {/* Eingebaute Werkzeuge (#1189): nur, wenn eins fehlt – oben, mit Folge und Abhilfe. */}
       <WerkzeugeHinweis werkzeuge={s.werkzeuge} pruefen={() => eintrag.laden(true)} />
@@ -46,10 +61,6 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
       <PaketBlock s={s} />
 
       <HerkunftBlock s={s} />
-
-      <UmwandlungBlock s={s} />
-
-      <ArchivBlock s={s} />
 
       <ErkannteSprachen s={s} />
 
@@ -78,7 +89,7 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
       <Zeitgrenze t={eintrag} />
 
       <Auftraege t={eintrag} />
-    </div>
+    </>
   );
 }
 

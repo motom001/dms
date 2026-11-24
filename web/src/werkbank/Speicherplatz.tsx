@@ -5,7 +5,7 @@ import { useEntwurf } from '../Speicherleiste';
 import { Sammelleiste, useSammelleiste, useTeilMelden, type Melde } from './sammelleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
 import { einDatentraeger } from '../../../shared/src/werkbankansicht';
-import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
+import { GrossePdfsVerkleinern } from './Verkleinern';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
@@ -16,7 +16,7 @@ import { Etikett, etikettArt, Feld, Knopf } from '../bausteine';
  * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
  * oben Warnschwelle und Grenze, darunter belegt/frei je fester Ordner (#115). An der Grenze startet
  * der Wartungsmodus von selbst; beenden muss ihn ein Administrator. Darunter die Auslastung (#409, `Auslastung.tsx`),
- * unten große PDFs verkleinern und neue PDFs automatisch verkleinern (#393, #1190).
+ * unten große PDFs verkleinern (#393; „Neue PDFs automatisch verkleinern“ seit #1570 bei „PDF bearbeiten“).
  */
 
 const GB = 1024 ** 3;
@@ -151,7 +151,7 @@ export function SpeicherplatzPanel({
     setMeldung(undefined);
   };
   const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !s || !e, zuruecksetzen });
-  // Eine Speicherleiste für die ganze Seite (#1290): Schwellen, automatisch verkleinern und KI-Kosten melden sich an.
+  // Eine Speicherleiste für die ganze Seite (#1290): Schwellen und KI-Kosten melden sich an.
   const { teile, melde } = useSammelleiste();
   const schmal = useWerkbankSchmal();
   useTeilMelden(melde, 'schwellen', { geaendert: ent.geaendert, sendet: laeuft, speichern: () => speichern(), zuruecksetzen });
@@ -307,10 +307,9 @@ export function SpeicherplatzPanel({
       {(schmal ? [auslastungTeil, ordnerTeil, schwellenTeil] : [schwellenTeil, auslastungTeil, ordnerTeil]).map(([k, x]) => (
         <Fragment key={k}>{x}</Fragment>
       ))}
-      {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. „Neue PDFs automatisch verkleinern“ steht seit #1190
-          wieder hier beim Speicherplatz (von #725 bis #1190 unter Suche und Volltext). */}
+      {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. „Neue PDFs automatisch verkleinern“ ist eine Einstellung
+          von „PDF bearbeiten“ und steht seit #1570 dort (Pakete → Von Ablago mitgeliefert; von #1190 bis #1570 hier). */}
       <GrossePdfsVerkleinern />
-      <AutomatischVerkleinern melde={melde} />
       {unten?.(melde)}
       <Sammelleiste teile={teile} gegenstand={t('werkbank.speicherplatz.einstellungen')} />
     </div>

@@ -78,6 +78,9 @@ def lies(sp=SPRACHEN['de']):
     liste = re.search(r'const EINTRAEGE = \[(.*?)\] as const', ts, re.S).group(1)
     for pfad, felder in re.findall(r"\{\s*pfad: '(\w+)',([^}]*)\}", liste):
         f = dict(re.findall(r"(\w+): '?([\w.]+)'?", felder))
+        # Umgezogen auf die Seite eines mitgelieferten Anbieters (#1570): kein Eintrag der Leiste mehr.
+        if 'anbieter' in f:
+            continue
         bereiche.append({'pfad': pfad, 'gruppe': f.get('gruppe'), 'name': texte[f'bereich.{pfad}.name'], 'ab': KUERZEL[f['ab']],
                          'wann': texte[f'bereich.{pfad}.wann'], 'seite': hilfe.get(f.get('hilfe'))})
     if not bereiche or any(not b['seite'] for b in bereiche) or any(b['gruppe'] not in gruppen for b in bereiche):

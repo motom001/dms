@@ -14,6 +14,10 @@ export interface WerkbankEintrag {
   zahl?: number;
   warn?: string | number;
   warnTitel?: string;
+  /** Nur für die Werkbank-Suche (#1570): umgezogen, steht nicht mehr in der Leiste. */
+  nurSuche?: true;
+  /** Wohin der Eintrag führt, wenn nicht nach /werkbank/<pfad> (#1570: Seite eines mitgelieferten Anbieters). */
+  weg?: string;
 }
 
 /**
@@ -45,9 +49,10 @@ export function WerkbankNavigation({
   // Werkbank-Suche (#725): findet Bereiche unter neuem und altem Namen, auch ausgeblendete.
   const [suche, setSuche] = useState('');
   const treffer = suche.trim() ? eintraege.filter((e) => bereichPasst(e.pfad, suche)) : null;
-  const ausgeblendet = eintraege.filter((e) => e.pfad !== 'uebersicht' && !zeigen(e.pfad));
+  const leiste = eintraege.filter((e) => !e.nurSuche);
+  const ausgeblendet = leiste.filter((e) => e.pfad !== 'uebersicht' && !zeigen(e.pfad));
   const sichtbar = (e: WerkbankEintrag) => alleZeigen || zeigen(e.pfad) || e.pfad === bereich || !!e.warn;
-  const liste = inDerLeiste(eintraege, laedt, sichtbar);
+  const liste = inDerLeiste(leiste, laedt, sichtbar);
   const gruppen = (Object.keys(GRUPPEN) as Gruppe[]).filter((g) => liste.some((e) => e.gruppe === g));
   const eintrag = (e: WerkbankEintrag) => navEintrag(e, bereich, zeigen);
   const benutzt = ausgeblendet.filter((e) => eingerichtet.includes(e.pfad)).length;
@@ -130,12 +135,12 @@ function ladezeile(laedt: boolean, treffer: WerkbankEintrag[] | null) {
 
 /** Ein Bereich in der Leiste: Name, Hinweis oder Zahl; ausgeblendete mit Titel. */
 function navEintrag(e: WerkbankEintrag, bereich: string, zeigen: (pfad: string) => boolean) {
-  const aus = !zeigen(e.pfad);
+  const aus = !e.nurSuche && !zeigen(e.pfad);
   return (
     <Link
       key={e.pfad}
       anker={`werkbank.bereich:${e.pfad}`}
-      to={e.pfad === 'uebersicht' ? '/werkbank' : `/werkbank/${e.pfad}`}
+      to={e.weg ?? (e.pfad === 'uebersicht' ? '/werkbank' : `/werkbank/${e.pfad}`)}
       className={`sicht ${bereich === e.pfad ? 'an' : ''} ${aus ? 'ausgeblendet' : ''}`}
       title={aus ? (e.warn ? t('werkbank.uebersicht.ausgeblendet-steht-hier-wegen') : t('werkbank.uebersicht.ausgeblendet')) : undefined}>
       <span className="nm">{e.name}</span>

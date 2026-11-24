@@ -1,4 +1,3 @@
-import { SuchePanel } from '../SucheEinstellungen';
 import { WoerterListe, WoerterRechts } from '../Woerter';
 import { AnmeldeschutzPanel } from '../Anmeldeschutz';
 import { RegionPanel } from '../Region';
@@ -15,7 +14,7 @@ import { DatenbankAbschnitte, Md5Hinweis } from '../Datenbank';
 import { ExterneDiensteAbschnitt, KiKostenAbschnitt } from '../ExterneDienste';
 import { TechnikPanel } from '../Technik';
 import { AufgabenListe, AufgabenPanel } from '../Aufgaben';
-import { TexterkennungPanel, WartungPanel } from '../Texterkennung';
+import { WartungPanel } from '../Texterkennung';
 import { WartungsmodusPanel } from '../Wartungsmodus';
 import { SicherungPanel } from '../Sicherung';
 import { WiederherstellungPanel } from '../Wiederherstellung';
@@ -56,18 +55,11 @@ export const einstellungenSeiten = {
   vollexport: ({ z }) => ({ rechts: <VollexportPanel z={z.vollexport} /> }),
 } satisfies Seiten;
 
-/** Texterkennung, Wörter, Wartung, Sicherung, Postfächer, Eingangsordner, WebDAV, Papierkorb. */
+/** Wörter, Wartung, Sicherung, Postfächer, Eingangsordner, WebDAV, Papierkorb (Texterkennung leitet um, #1570). */
 export const postUndWartungSeiten = {
-  // Suche und Volltext (#725): Texterkennung, Tippfehler und gleichbedeutende Wörter. „Neue PDFs automatisch
-  // verkleinern“ steht seit #1190 im Systemzustand beim Speicherplatz.
-  texterkennung: ({ z, wartungAn }) => ({
-    rechts: (
-      <>
-        <TexterkennungPanel t={z.ocr} wartungAn={wartungAn} />
-        <SuchePanel />
-      </>
-    ),
-  }),
+  // Suche und Volltext (#725) steht seit #1570 als „Text aus PDF und Texterkennung“ unter Pakete → Von Ablago
+  // mitgeliefert; die alte Adresse leitet dorthin (werkbankUmleitung), bis dahin bleibt die Seite leer.
+  texterkennung: () => ({ rechts: null }),
   // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
   woerter: ({ id, z: { woerter } }) => ({ liste: <WoerterListe z={woerter} offen={id} />, rechts: <WoerterRechts z={woerter} id={id} /> }),
   // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.

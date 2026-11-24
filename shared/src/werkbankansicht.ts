@@ -46,6 +46,8 @@ export interface Bereich {
   in: Array<Exclude<Vorlage, 'alles'>>;
   /** Für das Handbuch und den Dialog: wann man ihn braucht. */
   wann: string;
+  /** Steht in der Leiste (#1570: umgezogene Bereiche nicht mehr, ihre Kennung bleibt als Verwaltungsrecht). */
+  leiste: boolean;
 }
 
 // Stufen (#987): ab Einsteiger, Haushalt, Selbständig, Betrieb bzw. nur in Alles.
@@ -91,7 +93,19 @@ interface Eintrag {
   readonly auchMit?: readonly string[];
   /** Zahl links aus der Übersicht, bis der Bereich selbst geladen ist (#375). */
   readonly zaehler?: Zaehlername;
+  /**
+   * Umgezogen auf die Seite eines mitgelieferten Anbieters (#1570, Werkbank → Pakete → Von Ablago mitgeliefert): kein
+   * Eintrag mehr in der Leiste, die alte Adresse leitet dorthin, die Werkbank-Suche findet ihn weiter. Die Kennung bleibt
+   * als Verwaltungsrecht (gespeichert an Personen) und gilt für diese Seite.
+   */
+  readonly anbieter?: MitgelieferteKennung;
 }
+
+/**
+ * Kennung eines mitgelieferten Anbieters (`EINGEBAUTE_ANBIETER` in shared/src/leistungen) – hier nur als Muster, damit
+ * die Liste der Werkbank-Seiten nicht über die Leistungen an den Paketen hängt (kein Kreis).
+ */
+type MitgelieferteKennung = `ablago.${string}`;
 
 /**
  * Die Liste der Werkbank-Seiten (#1281): alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der
@@ -132,8 +146,9 @@ const EINTRAEGE = [
   { pfad: 'postfaecher', gruppe: 'post', ab: H, hilfe: 'werkbank.postfaecher', mitte: true, zaehler: 'postfaecher' },
   { pfad: 'eingangsordner', gruppe: 'post', ab: H, hilfe: 'werkbank.eingangsordner' },
   { pfad: 'webdav', gruppe: 'post', ab: H, hilfe: 'werkbank.webdav' },
-  // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“).
-  { pfad: 'texterkennung', gruppe: 'post', ab: H, hilfe: 'werkbank.texterkennung' },
+  // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“). Seit
+  // #1570 die Seite „Text aus PDF und Texterkennung“ unter Pakete → Von Ablago mitgeliefert; Kennung und Recht bleiben.
+  { pfad: 'texterkennung', gruppe: 'post', ab: H, hilfe: 'werkbank.texterkennung', anbieter: 'ablago.text' },
   // Gleichbedeutende Wörter (#992): eigener Bereich mit Mitte direkt darunter, sichtbar wie „Suche und Volltext“.
   { pfad: 'woerter', gruppe: 'post', ab: H, hilfe: 'werkbank.woerter', mitte: true, zaehler: 'woerter' },
   // Sicherung mit Wiederherstellen als Abschnitt (#725).
@@ -203,7 +218,38 @@ export const BEREICHE: Bereich[] = EINTRAEGE.map((e) => ({
   in: STUFEN.filter((v): v is Exclude<Vorlage, 'alles'> => v !== 'alles' && stufeNr(v) >= stufeNr(e.ab)),
   name: t.frei(`werkbank.bereich.${e.pfad}.name`),
   wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
+  leiste: !('anbieter' in e),
 }));
+
+/** Die Bereiche der Leiste (#1570): ohne die auf die Seite eines mitgelieferten Anbieters umgezogenen. */
+export const LEISTEN_BEREICHE: readonly Bereich[] = BEREICHE.filter((b) => b.leiste);
+
+/**
+ * Seiten der mitgelieferten Anbieter (#1570) unter Werkbank → Pakete: Welches Verwaltungsrecht öffnet sie außer „Pakete“?
+ * Das der Bereiche, deren Einstellungen dorthin umgezogen sind – „Suche und Volltext“ mit Archivfassung, anderen
+ * Dateitypen und „Neue PDFs automatisch verkleinern“ (dessen Schnittstelle hing schon an `texterkennung`).
+ */
+export const ANBIETER_RECHT: Readonly<Partial<Record<MitgelieferteKennung, Bereichskennung>>> = {
+  'ablago.text': 'texterkennung',
+  'ablago.archiv': 'texterkennung',
+  'ablago.umwandeln': 'texterkennung',
+  'ablago.pdf': 'texterkennung',
+};
+/** Adresse der Seite eines mitgelieferten Anbieters (#1570). */
+export const anbieterSeite = (id: string) => `/werkbank/pakete/${id}`;
+/** Wohin der Eintrag eines Bereichs führt: seine Seite oder, umgezogen (#1570), die des mitgelieferten Anbieters. */
+export function bereichWeg(pfad: string): string {
+  const e = EINTRAEGE.find((x) => x.pfad === pfad);
+  return e && 'anbieter' in e ? anbieterSeite(e.anbieter) : pfad === 'uebersicht' ? '/werkbank' : `/werkbank/${pfad}`;
+}
+/** Darf eine Person die Seite eines Pakets bzw. mitgelieferten Anbieters öffnen (#818, #1570)? */
+export const darfPaketseite = (bereiche: readonly string[] | null, id: string | undefined): boolean => {
+  const recht = id ? ANBIETER_RECHT[id as MitgelieferteKennung] : undefined;
+  return darfSeite(bereiche, 'pakete') || (!!recht && darfSeite(bereiche, recht));
+};
+/** Darf eine Person die offene Seite der Werkbank sehen (#818)? Unter Pakete je Paket bzw. mitgeliefertem Anbieter (#1570). */
+export const darfOffeneSeite = (bereiche: readonly string[] | null, bereich: string, id: string | undefined): boolean =>
+  bereich === 'pakete' ? darfPaketseite(bereiche, id) : darfSeite(bereiche, bereich);
 
 /** Name eines Bereichs (auch der Übersicht) für Überschriften, Verweise, Suche und Handbuch. */
 export const bereichName = (pfad: string) => t.frei(`werkbank.bereich.${pfad}.name`);
@@ -276,12 +322,16 @@ export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
 
 /**
  * Umgezogene Abschnitte (#1184): alte Adresse samt Sprungmarke → neue Seite. Das Löschprotokoll war ein Abschnitt des
- * Löschkonzepts und ist jetzt ein eigener Bereich. „Neue PDFs automatisch verkleinern“ steht seit #1190 beim
- * Speicherplatz im Systemzustand statt unter Suche und Volltext.
+ * Löschkonzepts und ist jetzt ein eigener Bereich. „Neue PDFs automatisch verkleinern“ stand von #1190 bis #1570 beim
+ * Speicherplatz im Systemzustand, seitdem bei „PDF bearbeiten“ unter Pakete → Von Ablago mitgeliefert.
  */
 const ABSCHNITT_UMGEZOGEN: Readonly<Record<string, string>> = {
   'loeschkonzept#loeschprotokoll': '/werkbank/loeschprotokoll',
-  'texterkennung#automatisch-verkleinern': '/werkbank/systemzustand#automatisch-verkleinern',
+  // #1570: Einstellungen der mitgelieferten Anbieter stehen auf deren Seite unter Pakete → Von Ablago mitgeliefert.
+  'texterkennung#automatisch-verkleinern': `${anbieterSeite('ablago.pdf')}#automatisch-verkleinern`,
+  'systemzustand#automatisch-verkleinern': `${anbieterSeite('ablago.pdf')}#automatisch-verkleinern`,
+  'texterkennung#archivfassung': `${anbieterSeite('ablago.archiv')}#archivfassung`,
+  'texterkennung#umwandlung': `${anbieterSeite('ablago.umwandeln')}#umwandlung`,
 };
 export const abschnittUmleitung = (bereich: string, marke: string): string | null => ABSCHNITT_UMGEZOGEN[`${bereich}#${marke}`] ?? null;
 
@@ -347,7 +397,7 @@ export const inVorlage = (vorlage: Vorlage, pfad: string) => {
 };
 
 /** Anzahl der Einträge in der Leiste einer Vorlage, die Übersicht mitgezählt (#987, Handbuch und Rauchtest). */
-export const anzahlInVorlage = (vorlage: Vorlage) => 1 + BEREICHE.filter((b) => inVorlage(vorlage, b.pfad)).length;
+export const anzahlInVorlage = (vorlage: Vorlage) => 1 + LEISTEN_BEREICHE.filter((b) => inVorlage(vorlage, b.pfad)).length;
 
 /** Für alle sichtbar (Installation). */
 export function fuerAlle(a: WerkbankAnsicht, pfad: string): boolean {
@@ -368,8 +418,8 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
   const an = new Set(sichtbareBereiche);
   return {
     vorlage,
-    ein: BEREICHE.filter((b) => an.has(b.pfad) && !inVorlage(vorlage, b.pfad)).map((b) => b.pfad),
-    aus: BEREICHE.filter((b) => !an.has(b.pfad) && inVorlage(vorlage, b.pfad)).map((b) => b.pfad),
+    ein: LEISTEN_BEREICHE.filter((b) => an.has(b.pfad) && !inVorlage(vorlage, b.pfad)).map((b) => b.pfad),
+    aus: LEISTEN_BEREICHE.filter((b) => !an.has(b.pfad) && inVorlage(vorlage, b.pfad)).map((b) => b.pfad),
   };
 }
 
@@ -472,7 +522,9 @@ const OFFEN_ALS_PFAD: ReadonlySet<string> = new Set(['stempel']);
  * #990: /werkbank/stempel?offen=kopie), führen auf den Eintrag rechts (/werkbank/stempel/kopie).
  * Umgezogene Bereiche (`UMGEZOGEN`) leiten samt Suche (`?offen=…`) auf die neue Stelle. `null` = nichts umzuleiten.
  */
-export function werkbankUmleitung(bereich: string, id?: string, suche = ''): string | null {
+export function werkbankUmleitung(bereich: string, id?: string, suche = '', marke?: string): string | null {
+  const zumAnbieter = anbieterUmleitung(bereich, suche, marke);
+  if (zumAnbieter) return zumAnbieter;
   const neu = UMGEZOGEN[bereich];
   if (neu)
     return id
@@ -488,6 +540,14 @@ export function werkbankUmleitung(bereich: string, id?: string, suche = ''): str
   // Lange Datenbankzugriffe stehen seit #725 im Systemzustand (Auslastung).
   if (bereich === 'anbindung') return `/werkbank/systemzustand?offen=${encodeURIComponent(id)}#datenbank`;
   return `/werkbank/${bereich}`;
+}
+
+/** Auf die Seite eines mitgelieferten Anbieters umgezogen (#1570): samt Suche und Sprungmarke, auch von früheren Namen. */
+function anbieterUmleitung(bereich: string, suche: string, marke: string | undefined): string | null {
+  const ziel = EINTRAEGE.find((e) => e.pfad === (UMGEZOGEN[bereich] ?? bereich));
+  if (!ziel || !('anbieter' in ziel)) return null;
+  const m = marke || UMGEZOGEN_ABSCHNITT[bereich] || '';
+  return `${anbieterSeite(ziel.anbieter)}${suche}${m ? `#${m}` : ''}`;
 }
 
 /** Plakette links für den Wartungsmodus (#366): „angekündigt“, solange er noch nicht wirkt, „an“ erst danach. */

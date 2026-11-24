@@ -85,7 +85,6 @@
   "texterkennung.pausiert-solange-der-wartungsmodus": "Paused while maintenance mode is on.",
   "texterkennung.wartungsmodus-beenden-2": "End maintenance mode",
   "texterkennung.lade": "Loading …",
-  "texterkennung.werkbank": "Workbench",
   "texterkennung.warteschlange": "Queue",
   "texterkennung.zeitgrenze": "Time limit per job",
   "texterkennung.zeitgrenze.text": "If a job runs longer than the base value plus the time per page, Ablago cancels it: the document then shows \"failed – time limit\" (with \"Try again\"), and the next job starts. If a package reads the texts, the limits of the package runner also apply.",

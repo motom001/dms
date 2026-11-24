@@ -26,6 +26,7 @@ import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVors
 import type { ExternAufruf, ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
 import type { Abdeckung, Sprachangabe } from '../../../shared/src/sprachpaket';
 import type { PaketdatenAnsicht } from '../../../shared/src/paketdaten';
+import type { MitgeliefertStand } from '../../../shared/src/leistungen';
 import { anfrage, sendeDatei, speichereDatei } from './anfrage';
 
 /** Externe Dienste (#565): ein Aufruf mit Zeit und Kosten – nur Metadaten (#1278, Schritt 5: vorher in betrieb.ts). */
@@ -275,6 +276,12 @@ export const paketeApi = {
   paketQuelleSchluessel: (url: string, fingerabdruck?: string) =>
     anfrage<PaketQuelle[]>('POST', '/api/werkbank/pakete/quellen/schluessel', { url, fingerabdruck }),
   paketQuelleSchalten: (url: string, aktiv: boolean) => anfrage<PaketQuelle[]>('PUT', '/api/werkbank/pakete/quellen', { url, aktiv }),
+  /** Von Ablago mitgeliefert (#1570): Schalter je mitgeliefertem Anbieter und „Wer macht das?“. */
+  mitgeliefert: () => anfrage<MitgeliefertStand>('GET', '/api/werkbank/leistungen/anbieter'),
+  mitgeliefertSchalten: (id: string, an: boolean) =>
+    anfrage<MitgeliefertStand>('PUT', `/api/werkbank/leistungen/anbieter/${encodeURIComponent(id)}`, { an }),
+  werMacht: (leistung: string, anbieter: string | null) =>
+    anfrage<MitgeliefertStand>('PUT', '/api/werkbank/leistungen/wahl', { leistung, anbieter }),
   paketQuelleEntfernen: (url: string) => anfrage<PaketQuelle[]>('DELETE', `/api/werkbank/pakete/quellen?${new URLSearchParams({ url })}`),
   /** Ein Paket oder eine Sammeldatei mit mehreren Paketen (#461) – das DMS erkennt es am Inhalt. */
   paketHochladen: (datei: File) =>

@@ -24,6 +24,8 @@ import { PaketeVerfuegbar } from '../PaketeVerfuegbar';
 import type { PaketeZustand } from '../paketeZustand';
 import { Herausgeber } from '../PaketVorschau';
 import { ALLE, datum, SAMMEL, UPLOAD } from './pfade';
+import { MitgeliefertListe } from '../mitgeliefert/liste';
+import type { MitgeliefertZustand } from '../mitgeliefert/zustand';
 
 /**
  * Werkbank → Pakete, die Liste (#188; #1279 aus Pakete.tsx gezogen): Abruf, Paket erstellen, ohne Internet,
@@ -183,7 +185,7 @@ function Installiert({ z, offen }: { z: PaketeZustand; offen?: string }) {
   );
 }
 
-export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) {
+export function PaketeListe({ z, offen, mitgeliefert }: { z: PaketeZustand; offen?: string; mitgeliefert: MitgeliefertZustand }) {
   const installiert: InstalliertesPaket[] = z.stand?.installiert ?? [];
   const abrufErgebnis = useMemo(
     () => ergebnisDesAbrufs(z.kataloge, z.updates, installiert.length > 0),
@@ -228,6 +230,8 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         )}
       </div>
       <Installiert z={z} offen={offen} />
+      {/* Von Ablago mitgeliefert (#1570): eigener Abschnitt unter den installierten Paketen. */}
+      <MitgeliefertListe z={mitgeliefert} offen={offen} />
       <h2 className="ueber">{t('werkbank.pakete.verfuegbar')}</h2>
       <KatalogAnsehen z={z} />
       {z.kataloge?.liste

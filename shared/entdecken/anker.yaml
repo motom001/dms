@@ -257,13 +257,23 @@
   handy: true
   clients: false
 - anker: werkbank.suche.woerter
-  seite: /werkbank/texterkennung
+  seite: /werkbank/pakete/ablago.text
   beschreibung: Link von „Suche und Volltext“ auf den Bereich „Gleichbedeutende Wörter“ (#992)
   handy: true
   clients: false
 - anker: werkbank.suche.meintest
-  seite: /werkbank/texterkennung
+  seite: /werkbank/pakete/ablago.text
   beschreibung: Auswahl „„Meintest du …?“ vorschlagen“ (nur ohne Treffer oder auch bei mehr Treffern) unter Suche und Volltext (#1191)
+  handy: true
+  clients: false
+- anker: werkbank.pakete.mitgeliefert
+  seite: /werkbank/pakete
+  beschreibung: Abschnitt „Von Ablago mitgeliefert“ unter den installierten Paketen – was Ablago selbst mit Dokumenten macht (#1570)
+  handy: true
+  clients: false
+- anker: werkbank.pakete.mitgeliefert.schalter
+  seite: /werkbank/pakete/ablago.text
+  beschreibung: Schalter an/aus auf der Seite eines von Ablago mitgelieferten Teils, z. B. „Text aus PDF und Texterkennung“ (#1570)
   handy: true
   clients: false
 - anker: werkbank.auskuenfte.suche

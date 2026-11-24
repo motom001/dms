@@ -91,3 +91,9 @@
   bereich: suche
   ziel: werkbank.suche.meintest
   fuer: verwalten
+# Umzug (#1570): einmal nach dem Update – „Suche und Volltext“ und „Neue PDFs automatisch verkleinern“ stehen unter Pakete.
+- schluessel: mitgeliefert_umzug
+  bereich: verwalten
+  ziel: werkbank.pakete.mitgeliefert
+  fuer: verwalten
+  ab_version: 0.315.0

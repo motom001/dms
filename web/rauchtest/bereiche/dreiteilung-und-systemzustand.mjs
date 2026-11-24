@@ -212,37 +212,28 @@ rauchtest(
   },
 );
 
-// #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand; der alte Link führt dorthin.
+// #1190, #1570: „Neue PDFs automatisch verkleinern“ stand beim Speicherplatz im Systemzustand und steht seit #1570 bei
+// „PDF bearbeiten“ unter Pakete → Von Ablago mitgeliefert; alte Links auf beide Stellen führen dorthin.
 rauchtest(
-  'Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter Link leitet um (#1190)',
+  'Werkbank: Neue PDFs automatisch verkleinern bei „PDF bearbeiten“, alte Links leiten um (#1190, #1570)',
   { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
   async (s) => {
     await s.goto(BASIS + '/ablage/start');
     await verwalten(s);
-    await s.goto(BASIS + '/werkbank/texterkennung');
-    await s.getByRole('heading', { name: 'Warteschlange', exact: true }).waitFor();
-    assert.equal(
-      await s.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).count(),
-      0,
-      'nicht mehr unter Suche und Volltext',
-    );
-    await s.goto(BASIS + '/werkbank/texterkennung#automatisch-verkleinern');
-    await s.waitForURL(/\/werkbank\/systemzustand#automatisch-verkleinern$/);
-    const form = s.locator('#automatisch-verkleinern');
-    await form.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).waitFor();
-    await form
-      .getByRole('switch', { name: /verkleinern/i })
-      .first()
-      .waitFor();
-    // Unter „Große PDFs verkleinern“, auf derselben Seite.
-    assert.ok(
-      await s.evaluate(() => {
-        const gross = document.getElementById('verkleinern');
-        const auto = document.getElementById('automatisch-verkleinern');
-        return !!gross && !!auto && !!(gross.compareDocumentPosition(auto) & Node.DOCUMENT_POSITION_FOLLOWING);
-      }),
-      'unter „Große PDFs verkleinern“',
-    );
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    await s.locator('#verkleinern').waitFor();
+    assert.equal(await s.locator('#automatisch-verkleinern').count(), 0, 'nicht mehr im Systemzustand');
+    for (const alt of ['/werkbank/texterkennung#automatisch-verkleinern', '/werkbank/systemzustand#automatisch-verkleinern']) {
+      await s.goto(BASIS + alt);
+      await s.waitForURL(/\/werkbank\/pakete\/ablago\.pdf#automatisch-verkleinern$/);
+      const form = s.locator('#automatisch-verkleinern');
+      await form.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).waitFor();
+      await form
+        .getByRole('switch', { name: /verkleinern/i })
+        .first()
+        .waitFor();
+    }
+    await s.getByRole('heading', { name: /^PDF bearbeiten/, level: 1 }).waitFor();
   },
 );
 

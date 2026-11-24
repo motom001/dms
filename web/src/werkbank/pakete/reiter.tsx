@@ -16,7 +16,7 @@ import { PaketVerlauf } from '../PaketVerlauf';
  * Register des Pakets (#1214, Baustein Reiter): Übersicht liest, Einstellungen ändern (#996); ein Warnsymbol, wenn
  * Einstellungen fehlen. Gleich aufgebaut bei allen Paketen – welche Reiter es gibt, ergibt sich aus dem Manifest.
  */
-type PaketReiterArt = 'uebersicht' | 'einstellungen' | 'verlauf' | 'ausprobieren';
+type PaketReiterArt = 'uebersicht' | 'einstellungen' | 'verlauf' | 'ausprobieren' | 'bietetan';
 function PaketReiter({
   reiter,
   setze,
@@ -44,6 +44,8 @@ function PaketReiter({
       t('pakete.verlauf.reiter')
     ) : r === 'ausprobieren' ? (
       t('pakete.probe.reiter')
+    ) : r === 'bietetan' ? (
+      t('werkbank.pakete.bietet-an.reiter')
     ) : (
       t('werkbank.pakete.uebersicht')
     );
@@ -59,18 +61,20 @@ function PaketReiter({
 }
 /**
  * Reiter eines installierten Pakets (#996): Übersicht immer, Einstellungen bei Feldern im Manifest oder Feldarten des
- * Kerns, Ausprobieren bei `code.ausprobieren` (#1004), Verlauf bei Paketen mit Läufer (#1003).
+ * Kerns, Ausprobieren bei `code.ausprobieren` (#1004), Verlauf bei Paketen mit Läufer (#1003), „Bietet an“, wenn das
+ * Paket Tätigkeiten für Ablago übernehmen kann (#1570).
  */
-function reiterVon(inst: InstalliertesPaket | null): PaketReiterArt[] {
+function reiterVon(inst: InstalliertesPaket | null, bietet: boolean): PaketReiterArt[] {
   if (!inst) return [];
   return [
     'uebersicht',
     ...(hatEinstellungen(inst) || (!!inst.laeufer && fragtPaketdatenAn(inst.laeufer)) ? ['einstellungen' as const] : []),
     ...(inst.laeufer?.reiter?.ausprobieren ? ['ausprobieren' as const] : []),
     ...(inst.laeufer ? ['verlauf' as const] : []),
+    ...(bietet ? ['bietetan' as const] : []),
   ];
 }
-const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen', 'ausprobieren', 'verlauf'];
+const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen', 'ausprobieren', 'verlauf', 'bietetan'];
 /** Zwischen Einstellungen und Ausprobieren bleibt der Entwurf (#1004) – kein „Verlassen ohne Speichern?“. */
 const mitEntwurf = (r: PaketReiterArt) => r === 'einstellungen' || r === 'ausprobieren';
 
@@ -78,11 +82,11 @@ const mitEntwurf = (r: PaketReiterArt) => r === 'einstellungen' || r === 'auspro
  * Welcher Reiter offen ist (`?reiter=` beim Öffnen), welche es gibt, Wechsel mit „Verlassen ohne Speichern?“ aus den
  * Einstellungen; `zu` springt in einen Reiter und dort zu einem Anker (z. B. „Ändern“ in der Übersicht).
  */
-export function usePaketReiter(inst: InstalliertesPaket | null) {
+export function usePaketReiter(inst: InstalliertesPaket | null, bietet = false) {
   const [reiter, setReiter] = useState<PaketReiterArt>(
     () => REITER.find((r) => r === new URLSearchParams(location.search).get('reiter')) ?? 'uebersicht',
   );
-  const liste = reiterVon(inst);
+  const liste = reiterVon(inst, bietet);
   const aktiv = liste.includes(reiter) ? reiter : 'uebersicht';
   const wechsel = (r: PaketReiterArt) => {
     if (mitEntwurf(aktiv) && mitEntwurf(r)) {
@@ -107,10 +111,13 @@ export function PaketReiterBlock({
   r,
   inst,
   z,
+  bietetAn,
 }: {
   r: ReturnType<typeof usePaketReiter>;
   inst: InstalliertesPaket | null;
   z: PaketeZustand;
+  /** Inhalt des Reiters „Bietet an“ (#1570). */
+  bietetAn?: ReactNode;
 }) {
   if (!inst || r.liste.length < 2) return null;
   return (
@@ -126,6 +133,11 @@ export function PaketReiterBlock({
       {r.reiter === 'verlauf' && (
         <ReiterFlaeche id="paket" wert={r.reiter}>
           <PaketVerlauf inst={inst} />
+        </ReiterFlaeche>
+      )}
+      {r.reiter === 'bietetan' && (
+        <ReiterFlaeche id="paket" wert={r.reiter}>
+          {bietetAn}
         </ReiterFlaeche>
       )}
       {r.reiter === 'ausprobieren' && (

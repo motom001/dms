@@ -237,7 +237,9 @@ rauchtest(
       'postfaecher',
       'eingangsordner',
       'webdav',
-      'texterkennung',
+      // „Suche und Volltext“ steht seit #1570 unter Pakete → Von Ablago mitgeliefert.
+      'pakete/ablago.text',
+      'pakete/ablago.pdf',
       'sicherung',
       'vollexport',
       'papierkorb',
