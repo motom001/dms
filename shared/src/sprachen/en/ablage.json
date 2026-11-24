@@ -1313,6 +1313,7 @@
   "uebernehmen.rahmen-titel": "{text} – drag it into a field, or choose a field on the right and click here",
   "uebernehmen.uebernommen": "“{text}” is now in “{feld}”.",
   "uebernehmen.passt-nicht": "“{text}” doesn’t fit the field “{feld}”.",
+  "uebernehmen.muster-passt-nicht": "“{text}” is now in “{feld}” – but it doesn’t match the field’s pattern. Please check.",
   "uebernehmen.verweis-nur-rahmen": "Only a frame with a folder goes into “{feld}” – or choose it in the field.",
   "uebernehmen.erst-feld-waehlen": "Choose a field on the right first, then it takes “{text}”.",
   "uebernehmen.weitere-hierher": "Drag more documents here",

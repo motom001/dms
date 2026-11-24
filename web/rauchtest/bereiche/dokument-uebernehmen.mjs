@@ -65,6 +65,22 @@ rauchtest('Dokument übernehmen: Typ erkannt, Folgedokument abtrennen (#934)', {
   await dokument.getByText('„Werkstatt Beispiel“ steht jetzt in „Rechnungsnummer“.').waitFor();
 });
 
+rauchtest('Übernahme aus Markierung: Komma am Ende fällt weg (#1606)', { als: LENA }, async (s) => {
+  const brief = await eigenePost('Werkstatt Komma', ['Rechnung Nr. 4711, Werkstatt Beispiel 2027']);
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  const dokument = s.getByRole('region', { name: 'Dokument' });
+  await mappe.getByRole('textbox', { name: 'Rechnungsnummer', exact: true }).click();
+  // Das Wort „4711,“ markieren: ins Feld kommt „4711“.
+  const wort = dokument.locator('.ue-wort').nth(2);
+  await wort.hover();
+  await s.mouse.down();
+  await s.mouse.up();
+  await s.waitForFunction(() => document.querySelector('#feld-rechnungsnummer')?.value === '4711');
+  await dokument.getByText('„4711“ steht jetzt in „Rechnungsnummer“.').waitFor();
+});
+
 rauchtest('Neue Post: Mappentyp wählen, ausfüllen, speichern – die Post wird zur Mappe (#936, #934)', { als: LENA }, async (s) => {
   const betreff = 'Schornsteinfeger 2027';
   const brief = await eigenePost(betreff);

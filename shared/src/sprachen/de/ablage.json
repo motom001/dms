@@ -1313,6 +1313,7 @@
   "uebernehmen.rahmen-titel": "{text} – ins Feld ziehen oder rechts ein Feld wählen und hier klicken",
   "uebernehmen.uebernommen": "„{text}“ steht jetzt in „{feld}“.",
   "uebernehmen.passt-nicht": "„{text}“ passt nicht in das Feld „{feld}“.",
+  "uebernehmen.muster-passt-nicht": "„{text}“ steht jetzt in „{feld}“ – passt aber nicht zum Muster des Felds. Bitte prüfen.",
   "uebernehmen.verweis-nur-rahmen": "In „{feld}“ geht nur ein Rahmen mit einer Mappe – oder wähle sie im Feld.",
   "uebernehmen.erst-feld-waehlen": "Wähle rechts zuerst ein Feld, dann übernimmt es „{text}“.",
   "uebernehmen.weitere-hierher": "Weitere Dokumente hierher ziehen",

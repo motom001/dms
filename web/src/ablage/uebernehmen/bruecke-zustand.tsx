@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { feldLabel } from '../../../../shared/src/beschriftung';
 import { zielErlaubt, type Feld as FeldDef, type Mappentyp, type Wert } from '../../../../shared/src/model';
-import { wertAusText } from '../../../../shared/src/uebernehmen';
+import { musterTeil, wertAusText } from '../../../../shared/src/uebernehmen';
 import { t } from '../../sprache';
 import type { Bruecke, FormularAnschluss, Marke, Nutzlast } from '../bruecke';
 import type { Erkannt } from './erkennung';
@@ -46,7 +46,18 @@ export function useBrueckeZustand(zielTyp: Mappentyp | undefined, erkannt: Erkan
       return;
     }
     a.setze(f.key, wert, bezug);
-    setMeldung({ art: 'gut', text: t('ablage.uebernehmen.uebernommen', { text: kurz(n.text), feld: feldLabel(f) }) });
+    // Feldmuster (#1607): passt kein Teil, steht der Text trotzdem im Feld – mit Hinweis statt stiller Übernahme.
+    if (f.typ === 'text' && f.muster && typeof wert === 'string' && musterTeil(f.muster, wert) !== wert) {
+      setMeldung({ art: 'warn', text: t('ablage.uebernehmen.muster-passt-nicht', { text: kurz(wert), feld: feldLabel(f) }) });
+      return;
+    }
+    setMeldung({
+      art: 'gut',
+      text: t('ablage.uebernehmen.uebernommen', {
+        text: kurz(f.typ === 'text' && typeof wert === 'string' ? wert : n.text),
+        feld: feldLabel(f),
+      }),
+    });
   }, []);
   // Fenster „+ … anlegen“ (#935): Solange es offen ist, gehen Rahmen und markierter Text dorthin.
   const fensterZiel = useRef<((n: Nutzlast) => boolean) | null>(null);
