@@ -11,7 +11,7 @@ import { EingangsordnerPanel } from '../Eingangsordner';
 import { WebdavPanel } from '../Webdav';
 import { t } from '../../sprache';
 import { BetriebPanel } from '../Betrieb';
-import { DatenbankAbschnitte } from '../Datenbank';
+import { DatenbankAbschnitte, Md5Hinweis } from '../Datenbank';
 import { ExterneDiensteAbschnitt, KiKostenAbschnitt } from '../ExterneDienste';
 import { TechnikPanel } from '../Technik';
 import { AufgabenListe, AufgabenPanel } from '../Aufgaben';
@@ -130,6 +130,7 @@ export const systemSeiten = {
           <>
             <WerkzeugeHinweis werkzeuge={technik.u?.werkzeuge} pruefen={() => technik.laden(true)} />
             <AbschirmungHinweis a={technik.u?.abschirmung} container={technik.u?.laufzeit.container} />
+            <Md5Hinweis md5={uebersicht.stand?.anbindung?.md5} />
           </>
         }
         auslastung={

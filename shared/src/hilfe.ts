@@ -212,6 +212,8 @@ export const HILFE = {
   'werkbank.erweiterungen': admin('suche/', 'Erweiterungen der Datenbank', 'erweiterungen-der-datenbank'),
   'werkbank.verkleinern': admin('speicherplatz/', 'Große PDFs verkleinern', 'grosse-pdfs-verkleinern'),
   'werkbank.anbindung': admin('installation/', 'der Datenbank-Anbindung', 'datenbank-anbindung'),
+  // Anmeldung mit SCRAM statt MD5 (#1612).
+  'werkbank.scram': admin('installation/', 'der Anmeldung mit SCRAM', 'scram'),
   // Werkbank: Zwischenüberschriften langer Seiten
   'mappentyp.felder': admin('mappentypen/', 'Feldern', 'felder'),
   'mappentyp.register': admin('mappentypen/', 'Registern', 'register'),
