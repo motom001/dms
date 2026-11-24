@@ -206,6 +206,7 @@ function Seite({
       .filter((b) => b.seite === nr)
       .map((b, i) => ({ m, b, erster: i === 0 && m.bereiche.findIndex((y) => y.seite === nr) === m.bereiche.indexOf(b) })),
   );
+  const nummern = gemeinsameNummern(hier);
   const gewaehlt = wahl ? [Math.min(wahl.von, wahl.bis), Math.max(wahl.von, wahl.bis)] : null;
   function fertig() {
     if (!wahl || !gewaehlt) return;
@@ -256,6 +257,7 @@ function Seite({
           key={`r${k}`}
           className={`ue-rahmen ${farbeVon(m.nr)}${hervor === m.feldKey ? ' an' : ''}${m.beleg !== undefined ? ' beleg' : ''}`}
           style={prozent(b as Bereich)}
+          data-marke={m.nr}
           draggable
           role="button"
           tabIndex={erster ? 0 : -1}
@@ -274,9 +276,42 @@ function Seite({
               insAktive(m.nutzlast, m.feldKey);
             }
           }}>
-          {erster && <span className="ue-rahmen-nr">{m.nr}</span>}
+          {nummern[k].length === 1 && <span className="ue-rahmen-nr">{m.nr}</span>}
         </span>
       ))}
+      {/* Mehrere Nummern einer Stelle (#1647) über allen Rahmen; die Namen der Rahmen nennen sie schon. */}
+      {hier.map(({ b }, k) =>
+        nummern[k].length > 1 ? (
+          <span key={`n${k}`} className="ue-rahmen-nrn" style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%` }} aria-hidden="true">
+            {nummern[k].map((nr) => (
+              <span key={nr} className={`ue-nr ${farbeVon(nr)}`}>
+                {nr}
+              </span>
+            ))}
+          </span>
+        ) : null,
+      )}
     </SeiteFigur>
   );
+}
+
+/** Abstand (Anteil der Seite), unter dem zwei Nummern als „an derselben Stelle“ gelten – sie lägen übereinander. */
+const GLEICHE_STELLE = 0.01;
+
+/**
+ * Nummern je Rahmen (#1647): Teilen sich mehrere Felder eine Stelle, lägen ihre Nummern übereinander und nur die oberste
+ * wäre zu sehen. Darum stehen alle zusammen („2 3“) an der Stelle des letzten Rahmens, die Rahmen selbst ohne Nummer.
+ */
+function gemeinsameNummern(hier: Array<{ m: Marke; b: Bereich; erster: boolean }>): number[][] {
+  const liste = hier.map((): number[] => []);
+  hier.forEach(({ m, b, erster }, i) => {
+    if (!erster) return;
+    let ziel = i;
+    for (let k = i + 1; k < hier.length; k++) {
+      const x = hier[k];
+      if (x.erster && Math.abs(x.b.x - b.x) < GLEICHE_STELLE && Math.abs(x.b.y - b.y) < GLEICHE_STELLE) ziel = k;
+    }
+    liste[ziel].push(m.nr);
+  });
+  return liste;
 }

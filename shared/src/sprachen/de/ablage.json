@@ -1317,6 +1317,7 @@
   "uebernehmen.ohne-text": "Dieses Dokument hat keinen Text mit Lage: Rahmen und Markieren gehen hier nicht, Vorschläge stehen trotzdem rechts.",
   "uebernehmen.rahmen": "Rahmen {nr}: {text}",
   "uebernehmen.rahmen-nr": "Rahmen {nr} am Dokument",
+  "uebernehmen.fundstelle-zeigen": "{nr}: Fundstelle von „{feld}“ zeigen",
   "uebernehmen.rahmen-titel": "{text} – ins Feld ziehen oder rechts ein Feld wählen und hier klicken",
   "uebernehmen.uebernommen": "„{text}“ steht jetzt in „{feld}“.",
   "uebernehmen.passt-nicht": "„{text}“ passt nicht in das Feld „{feld}“.",

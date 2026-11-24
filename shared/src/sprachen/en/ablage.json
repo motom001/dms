@@ -1317,6 +1317,7 @@
   "uebernehmen.ohne-text": "This document has no text with positions: frames and selecting don’t work here, but the suggestions are still on the right.",
   "uebernehmen.rahmen": "Frame {nr}: {text}",
   "uebernehmen.rahmen-nr": "Frame {nr} on the document",
+  "uebernehmen.fundstelle-zeigen": "{nr}: Show where “{feld}” was found",
   "uebernehmen.rahmen-titel": "{text} – drag it into a field, or choose a field on the right and click here",
   "uebernehmen.uebernommen": "“{text}” is now in “{feld}”.",
   "uebernehmen.passt-nicht": "“{text}” doesn’t fit the field “{feld}”.",

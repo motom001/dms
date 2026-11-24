@@ -251,3 +251,129 @@ rauchtest(
     }
   },
 );
+
+/* ---------- Nummer am Feld führt zur Fundstelle (#1647) ---------- */
+
+/** Ein Mappentyp mit „Von“ und „Bis“ (beide Datum): Die Erkennung nimmt für beide dasselbe Datum, also dieselbe Stelle. */
+let zeitraumTyp = null;
+async function zeitraumPost(betreff) {
+  const cookie = await sitzung(LENA);
+  if (!zeitraumTyp) {
+    const verwaltung = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+    zeitraumTyp = (
+      await api('POST', '/api/typen', {
+        cookie: verwaltung,
+        body: {
+          name: 'Abrechnungszeitraum',
+          schluessel: 'abrechnungszeitraum',
+          titelVorlage: '{bezeichnung}',
+          felder: [
+            { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true },
+            { key: 'von', label: 'Von', typ: 'datum' },
+            { key: 'bis', label: 'Bis', typ: 'datum' },
+          ],
+        },
+      })
+    ).daten;
+  }
+  const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
+  // Fünf Seiten mit Text (wie seitenPdf), das einzige Datum steht auf Seite 3 – in der Ortszeile, also das Datum des Schreibens.
+  const seiten = Array.from({ length: 5 }, (_, i) => `${betreff} Seite ${i + 1}\nAbschnitt ${i + 1} Beispielweg 12 Dresden`);
+  seiten[2] = `Dresden, 15.11.2027\n${seiten[2]}`;
+  await hochladen(cookie, brief.id, `${betreff}.pdf`, beispielPdfSeiten(seiten));
+  return { cookie, brief };
+}
+
+/** Übernehmen öffnen, den Typ wählen und warten, bis „Von“ und „Bis“ ihre Nummern haben; gibt die beiden Nummern. */
+async function fundstellenOeffnen(s, brief) {
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  await mappe.getByRole('combobox', { name: 'Mappentyp suchen …' }).click();
+  await mappe.getByRole('option', { name: /^Abrechnungszeitraum/ }).click();
+  const von = mappe.getByRole('button', { name: 'Fundstelle von „Von“ zeigen' });
+  const bis = mappe.getByRole('button', { name: 'Fundstelle von „Bis“ zeigen' });
+  await von.waitFor({ timeout: 30_000 });
+  await bis.waitFor();
+  return { mappe, von, bis, nrVon: (await von.textContent()).trim(), nrBis: (await bis.textContent()).trim() };
+}
+
+rauchtest('Neue Post: Nummer am Feld führt zur Fundstelle, mehrere Felder an einer Stelle (#1647)', { als: LENA }, async (s) => {
+  const { cookie, brief } = await zeitraumPost('Kontoauszug November');
+  try {
+    const { mappe, von, nrVon, nrBis } = await fundstellenOeffnen(s, brief);
+    // Am Feld steht die Seite dabei, wenn es nicht Seite 1 ist.
+    assert.equal(
+      await mappe
+        .locator('.ue-nummern')
+        .filter({ has: s.getByRole('button', { name: 'Fundstelle von „Von“ zeigen' }) })
+        .getByText('Seite 3', { exact: true })
+        .count(),
+      1,
+    );
+    // An der gemeinsamen Stelle stehen beide Nummern, nicht nur die oberste; der Name nennt die Nummer.
+    assert.match(await von.getAttribute('aria-label'), new RegExp(`^${nrVon}: `));
+    const dokument = s.getByRole('region', { name: 'Dokument' });
+    const gemeinsam = dokument.locator('figure[data-seite="3"] .ue-rahmen-nrn');
+    assert.equal(await gemeinsam.count(), 1, 'Die Nummern der gemeinsamen Stelle stehen zusammen');
+    assert.equal((await gemeinsam.textContent()).replace(/\s/g, ''), `${nrVon}${nrBis}`);
+    assert.equal(await dokument.locator('figure[data-seite="3"] .ue-rahmen-nr').count(), 0, 'Keine einzelne Nummer verdeckt');
+    // Klick auf die Nummer: Seite 3 kommt ins Bild, der Rahmen hat den Fokus und leuchtet mit dem Feld.
+    await von.click();
+    await s.waitForFunction((nr) => document.activeElement?.dataset?.marke === nr, nrVon);
+    await dokument.getByRole('img', { name: 'Seite 3 von 5', exact: true }).waitFor();
+    await s.waitForFunction(() => {
+      const r = document.activeElement.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= innerHeight;
+    });
+    await dokument.locator(`.ue-rahmen.an[data-marke="${nrVon}"]`).waitFor();
+    // Tastatur: Enter auf der Nummer zeigt ebenso die Stelle.
+    await von.focus();
+    await s.keyboard.press('Enter');
+    await s.waitForFunction((nr) => document.activeElement?.dataset?.marke === nr, nrVon);
+    await s.waitForLoadState('networkidle');
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) if (!nurUeberdeckteRahmen(v)) funde.push(`${schema}: ${v}`);
+    }
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  } finally {
+    await api('DELETE', `/api/mappen/${brief.id}?grund=nicht_noetig`, { cookie });
+  }
+});
+
+/**
+ * Zwei Rahmen an genau derselben Stelle (der Fall von #1647) überdecken sich: axe misst für sie keinen Abstand
+ * (target-size). So war es schon vor #1647; ob solche Rahmen zu einem Ziel werden, ist eine offene Frage im PR.
+ * Nur dieser Fund fällt weg – jeder andere bleibt.
+ */
+const nurUeberdeckteRahmen = (v) =>
+  v.startsWith('target-size ') &&
+  v
+    .slice(v.indexOf('): ') + 3)
+    .split(' | ')
+    .every((stelle) => stelle.startsWith('span[data-marke="'));
+
+rauchtest('Handy: Nummer am Feld führt zur Fundstelle, 44-px-Tippflächen (#1647)', { handy: true, als: LENA }, async (s) => {
+  const { cookie, brief } = await zeitraumPost('Kontoauszug Dezember');
+  try {
+    const { bis, nrBis } = await fundstellenOeffnen(s, brief);
+    await bis.scrollIntoViewIfNeeded();
+    await bis.click();
+    await s.waitForFunction((nr) => document.activeElement?.dataset?.marke === nr, nrBis);
+    await s.waitForFunction(() => {
+      const r = document.activeElement.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= innerHeight;
+    });
+    await bis.scrollIntoViewIfNeeded();
+    await s.waitForLoadState('networkidle');
+    assert.deepEqual(await tippflaechenPruefen(s, ['.ue-nummern']), [], 'Zu kleine Tippflächen am Handy');
+    const funde = (await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])).filter((v) => !nurUeberdeckteRahmen(v));
+    assert.deepEqual(funde, [], 'axe meldet Verstöße');
+    await keineWaagerechteRolle(s);
+  } finally {
+    await api('DELETE', `/api/mappen/${brief.id}?grund=nicht_noetig`, { cookie });
+  }
+});
