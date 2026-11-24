@@ -6,4 +6,5 @@ export { ARCHIV_KREIS, Nummernkreise, type NummernkreiseAnschluss } from './numm
 export { MODUSSPUR_MINUTEN, Systemtypen, type Benutzerspiegel, type SystemtypenAnschluss } from './systemtypen';
 export { TypPakete, type TypPaketeAnschluss } from './pakete-am-typ';
 export { KI_ALLE, KiTypen, kiErlaubt, kiWert, liesKiStand, setzeKi, type KiStand } from './ki-typen';
+export { ZUORDNEN_ALLE, ZUORDNEN_EINSTELLUNG } from './zuordnen-typen';
 export { protokolliereKennungsUmzug, UMZUG_SCHLUESSEL } from './kennungen-umzug';

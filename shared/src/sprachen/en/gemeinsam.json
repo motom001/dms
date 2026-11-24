@@ -1433,6 +1433,8 @@
   "fassungen.stempel-am-typ": "Stamp when passing on changed",
   "fassungen.aus-dokument": "“Fill in from document” changed",
   "fassungen.auto-zuordnen": "Assign post automatically: {wert}",
+  "fassungen.auto-zuordnen.darf": "as in “What Ablago may do”",
+  "fassungen.auto-zuordnen.nie": "never here",
   "fassungen.haken": "“Create new folders” or “Allow deleting” changed",
   "fassungen.rechte": "Permissions: {was}",
   "fassungen.rechte-offen": "everything allowed",

@@ -288,7 +288,7 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
       autoZuordnen: {
         type: 'boolean',
         description:
-          'Post automatisch zuordnen, wenn die Erkennung sicher ist (#337): Absender eindeutig (z. B. Kundennummer, IBAN) und genau eine passende Mappe dieses Typs. Standard false; bei Archivmodus wirkungslos. Der Empfänger bekommt eine Aufgabe „Automatisch zugeordnet – bitte prüfen“ mit Rückgängig.',
+          'Post automatisch zuordnen (#337, #1639): Ob Ablago Post von sich aus zuordnet, entscheidet „Was Ablago darf“ für alle Mappentypen (nur bei „Alles erledigen, ich prüfe danach“). true = wie dort, false = „Hier nie automatisch zuordnen“. Zugeordnet wird nur, wenn die Erkennung sicher ist: Absender eindeutig (z. B. Kundennummer, IBAN) und genau eine passende Mappe dieses Typs; bei Archivmodus wirkungslos. Der Empfänger bekommt eine Aufgabe „Automatisch zugeordnet – bitte prüfen“ mit Rückgängig. Bestehende Installationen: false, solange der Schalter bisher aus war und niemand „Alle angleichen“ gewählt hat.',
       },
       ausDokument: {
         type: 'object',

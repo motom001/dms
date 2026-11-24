@@ -31,8 +31,9 @@ export interface AutoZuordnung {
 
 /**
  * Ist die Erkennung „sicher“ (#337)? Absender eindeutig an einem starken Merkmal (Kundennummer, IBAN …) und genau
- * eine passende Zielmappe unter den Mappentypen mit „automatisch zuordnen“ – bei mehreren gewinnt die eine,
- * die direkt im Text steht (z. B. über ihre Vertragsnummer). Liefert Ziel und Begründung oder den Grund dagegen.
+ * eine passende Zielmappe unter den Mappentypen, die automatisch zuordnen dürfen – bei mehreren gewinnt die eine,
+ * die direkt im Text steht (z. B. über ihre Vertragsnummer), sonst die eine, die auf den Absender verweist (#1639).
+ * Liefert Ziel und Begründung oder den Grund dagegen.
  */
 export function sichereZuordnung(
   e: Pick<PostErkennung, 'absender' | 'eindeutig' | 'ziele' | 'ausgehend'>,
@@ -44,7 +45,11 @@ export function sichereZuordnung(
   if (!abs || !abs.stark) return { ziel: null, grund: t('meldungen.erkennung.absender-nicht-eindeutig-erkannt') };
   const kandidaten = e.ziele.filter((z) => autoTypen.has(z.typId));
   const direkt = kandidaten.filter((z) => z.direkt);
-  const ziel = direkt.length === 1 ? direkt[0] : !direkt.length && kandidaten.length === 1 ? kandidaten[0] : null;
+  // #1639: Seit alle Mappentypen „Was Ablago darf“ folgen, ist der Absender selbst fast immer Kandidat. Verweist genau
+  // eine andere Mappe auf ihn (z. B. der Vertrag), ist sie das genauere Ziel; der Absender nur, wenn sonst keine passt.
+  const genauer = kandidaten.filter((z) => z.mappeId !== e.eindeutig);
+  const einzig = genauer.length === 1 ? genauer[0] : !genauer.length && kandidaten.length === 1 ? kandidaten[0] : null;
+  const ziel = direkt.length === 1 ? direkt[0] : !direkt.length ? einzig : null;
   if (!ziel)
     return {
       ziel: null,

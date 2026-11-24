@@ -293,7 +293,12 @@ function angabenSaetze(alt: TypStand, neu: TypStand): string[] {
     () => !gleich(alt.archiv, neu.archiv) && archiv(),
     () => !gleich(alt.stempel, neu.stempel) && t('gemeinsam.fassungen.stempel-am-typ'),
     () => !gleich(alt.ausDokument, neu.ausDokument) && t('gemeinsam.fassungen.aus-dokument'),
-    () => !alt.autoZuordnen !== !neu.autoZuordnen && t('gemeinsam.fassungen.auto-zuordnen', { wert: anAus(neu.autoZuordnen) }),
+    // #1639: autoZuordnen heißt „wie in ‚Was Ablago darf‘“, sonst „Hier nie automatisch zuordnen“.
+    () =>
+      !alt.autoZuordnen !== !neu.autoZuordnen &&
+      t('gemeinsam.fassungen.auto-zuordnen', {
+        wert: neu.autoZuordnen ? t('gemeinsam.fassungen.auto-zuordnen.darf') : t('gemeinsam.fassungen.auto-zuordnen.nie'),
+      }),
     () =>
       (!alt.erstellenErlaubt !== !neu.erstellenErlaubt || !alt.loeschenErlaubt !== !neu.loeschenErlaubt) && t('gemeinsam.fassungen.haken'),
   ]);

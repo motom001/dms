@@ -333,6 +333,13 @@ export function berechtigungenRouten(k: RoutenKontext): Route[] {
         return ok(await dienst.ki.kiAlleErlauben(Array.isArray(aus) ? aus.map(String) : [], ich(a).email));
       },
     },
+    // #1639: Post automatisch zuordnen – alle Mappentypen wie in „Was Ablago darf“ (Ausnahmen aufheben).
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/zuordnen-angleichen',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.mappentypen.zuordnenAngleichen(ich(a).email)),
+    },
     {
       methode: 'POST',
       pfad: '/api/werkbank/berechtigungen/:typId/kopieren',

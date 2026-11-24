@@ -575,10 +575,16 @@ describe('Aus Dokument ausfüllen: Texterkennung sofort (#391)', () => {
   });
 });
 
+/** „Was Ablago darf“, Frage 2 (#1562): Seit #1639 entscheidet sie, ob Ablago Post von sich aus zuordnet. */
+const selbst = (d: Dienst, wert: 'nichts' | 'vorschlag' | 'alles') =>
+  d.kern.einstellungen!.schreibe('darf', { pakete: 'lokal', selbst: wert, hoechstens: {}, herkunft: 'neu' });
+
 describe('Erkannte Post automatisch zuordnen (#337)', () => {
   it('Standard aus; an je Mappentyp: sicher = Absender eindeutig und genau eine Zielmappe; Aufgabe mit Rückgängig', async () => {
     const { d, konten, A, B, anna, ben, vertrag, strom, post } = await aufbau();
     const { verteile } = await postFuerDich(d, konten);
+    // Bestehende Installation (#1639): Der Schalter je Mappentyp bleibt die Ausnahme; zugeordnet wird bei „Alles erledigen“.
+    await selbst(d, 'alles');
     const aus = await post(BRIEF, 'Ohne Einstellung');
     assert.equal((await d.mappen.holeMappe(aus.id)).mappe.werte.stand, 'Neu', 'Standard: aus');
     const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
@@ -651,6 +657,7 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
 
   it('nicht sicher → nicht automatisch; eine direkt gefundene Nummer gewinnt; Empfänger ohne Leserecht, Archivmodus nie', async () => {
     const { d, A, anna, ben, vertrag, gas, sw, post } = await aufbau();
+    await selbst(d, 'alles');
     const typ = (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === vertrag.id)!;
     await d.mappentypen.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
     // Zweiter Vertrag mit dem Absender: zwei Kandidaten → nicht eindeutig.
@@ -696,5 +703,60 @@ describe('Erkannte Post automatisch zuordnen (#337)', () => {
     await d.mappentypen.aendereTyp(vertrag.id, { ...t2, archiv: { jahre: 10, stichtag: null } });
     const p4 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Archiv');
     assert.equal((await d.mappen.holeMappe(p4.id)).mappe.werte.stand, 'Neu');
+  });
+});
+
+describe('Post automatisch zuordnen: eine Entscheidung in „Was Ablago darf“ (#1639)', () => {
+  const typVon = async (d: Dienst, A: { id: string; rolle: string }, id: string) =>
+    (await d.mappentypen.typenFuer(await d.rechtepruefung.zugriff(A))).find((t) => t.id === id)!;
+
+  it('neue Installation: „Alles erledigen“ wirkt ohne Einschalten je Mappentyp; „Hier nie“ als Ausnahme', async () => {
+    const { d, A, vertrag, strom, sw, post } = await aufbau();
+    // Wie nach der Einrichtung: alle Mappentypen folgen „Was Ablago darf“.
+    await d.kern.einstellungen!.schreibe('zuordnen_typen', { ausgenommen: [] });
+    assert.equal((await typVon(d, A, vertrag.id)).autoZuordnen, true, 'Standard: wie in „Was Ablago darf“');
+    await selbst(d, 'vorschlag');
+    const p1 = await post(BRIEF, 'Erkennen und vorlegen');
+    assert.equal((await d.mappen.holeMappe(p1.id)).mappe.werte.stand, 'Neu', 'nur Vorschlag');
+    assert.deepEqual(await d.post.automatischZuordnen(p1.id, (await d.erkennung.ergebnis(p1.id))!), {
+      nicht: '„Was Ablago darf“ steht nicht auf „Alles erledigen, ich prüfe danach“',
+    });
+    await selbst(d, 'nichts');
+    assert.equal((await d.mappen.holeMappe((await post(BRIEF, 'Nichts')).id)).mappe.werte.stand, 'Neu');
+    await selbst(d, 'alles');
+    const p2 = await post(BRIEF, 'Alles erledigen');
+    assert.deepEqual((await d.mappen.holeMappe(p2.id)).mappe.werte.bezug, [strom.id], 'ohne Einschalten am Mappentyp');
+    // Ausnahme am Mappentyp: „Hier nie automatisch zuordnen“.
+    await d.mappentypen.aendereTyp(vertrag.id, { ...(await typVon(d, A, vertrag.id)), autoZuordnen: false });
+    assert.deepEqual(await d.kern.einstellungen!.lies('zuordnen_typen'), { ausgenommen: [vertrag.id] });
+    assert.equal((await typVon(d, A, vertrag.id)).autoZuordnen, false);
+    // Der Vertrag ist ausgenommen – übrig bleibt der Absender selbst (Organisation folgt „Was Ablago darf“).
+    assert.deepEqual((await d.mappen.holeMappe((await post(BRIEF, 'Ausnahme')).id)).mappe.werte.bezug, [sw.id]);
+    assert.deepEqual((await d.mappentypen.zuordnenAusnahmen()).nie, ['Vertrag']);
+    assert.equal((await d.mappentypen.zuordnenAusnahmen()).hinweis, false, 'neue Form: kein Hinweis');
+    // Zurück auf „Wie in ‚Was Ablago darf‘“.
+    await d.mappentypen.aendereTyp(vertrag.id, { ...(await typVon(d, A, vertrag.id)), autoZuordnen: true });
+    assert.deepEqual(await d.kern.einstellungen!.lies('zuordnen_typen'), { ausgenommen: [] });
+  });
+
+  it('bestehende Installation: ausgeschaltete Mappentypen werden nicht still automatisch; Hinweis, „Alle angleichen“, „Ausblenden“', async () => {
+    const { d, A, vertrag, strom, post } = await aufbau();
+    await selbst(d, 'alles');
+    // Ohne Einstellung (bisherige Form): Schalter überall aus → überall „Hier nie“.
+    assert.equal((await typVon(d, A, vertrag.id)).autoZuordnen, false);
+    assert.equal((await d.mappen.holeMappe((await post(BRIEF, 'Bisher aus')).id)).mappe.werte.stand, 'Neu', 'nicht still automatisch');
+    const z = await d.mappentypen.zuordnenAusnahmen();
+    assert.deepEqual(z, { nie: ['Organisation', 'Vertrag'], bisherAn: [], hinweis: true });
+    // „Ausblenden“: der Hinweis verschwindet, die Ausnahmen bleiben.
+    await d.mappentypen.zuordnenHinweisGelesen();
+    assert.deepEqual(await d.mappentypen.zuordnenAusnahmen(), { nie: ['Organisation', 'Vertrag'], bisherAn: [], hinweis: false });
+    // Einzeln einschalten geht weiter über den bisherigen Schalter.
+    await d.mappentypen.aendereTyp(vertrag.id, { ...(await typVon(d, A, vertrag.id)), autoZuordnen: true });
+    assert.deepEqual((await d.mappentypen.zuordnenAusnahmen()).bisherAn, ['Vertrag']);
+    // „Alle angleichen“: alle folgen „Was Ablago darf“, kein Hinweis mehr.
+    assert.deepEqual(await d.mappentypen.zuordnenAngleichen('anna@example.org'), { nie: [], bisherAn: [], hinweis: false });
+    assert.deepEqual(await d.kern.einstellungen!.lies('zuordnen_typen'), { ausgenommen: [] });
+    assert.equal((await typVon(d, A, vertrag.id)).autoZuordnen, true);
+    assert.deepEqual((await d.mappen.holeMappe((await post(BRIEF, 'Angeglichen')).id)).mappe.werte.bezug, [strom.id]);
   });
 });

@@ -1,0 +1,7 @@
+art: minor
+
+## Geändert
+
+- **Post automatisch zuordnen: eine Entscheidung in „Was Ablago darf“** (#1639): Bei „Alles erledigen, ich prüfe danach“ ordnet Ablago sicher erkannte Post jetzt für alle Mappentypen zu – ohne Schalter je Mappentyp. Am Mappentyp steht nur noch die Ausnahme „Hier nie automatisch zuordnen“ (etwa für Verträge); die Ausnahmen stehen in der Karte „Was Ablago darf“ mit „Alle angleichen“. Verweist genau eine Mappe auf den Absender (etwa sein Vertrag), geht die Post dorthin statt zum Absender selbst.
+- Bestehende Installationen: Wo der bisherige Schalter aus war, gilt „Hier nie automatisch zuordnen“ – nichts wird still automatisch; wo er an war, ordnet Ablago nur noch bei „Alles erledigen“ zu. Die Übersicht sagt das einmal.
+- Schnittstelle: `autoZuordnen` am Mappentyp heißt jetzt „wie in ‚Was Ablago darf‘“ (true) bzw. „Hier nie“ (false); neu `POST /api/werkbank/zuordnen-angleichen`.

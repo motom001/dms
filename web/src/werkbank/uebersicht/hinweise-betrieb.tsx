@@ -186,6 +186,7 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       // Einheitlich (#1511): kommt nur einmal – „Ausblenden“ schließt ihn ab (#1587: reiner Hinweis).
       erledigen: t('werkbank.uebersicht.ausblenden'),
     });
+  zuordnenHinweis(u, h);
   // Im Einrichtungsassistenten übersprungen (#119): hier nachholen.
   const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
     optional: {
@@ -492,4 +493,32 @@ export function aufgabenUndMappen(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/typen',
       knopf: t('werkbank.uebersicht.zu-den-mappentypen'),
     });
+}
+
+/**
+ * Post automatisch zuordnen (#1639): Bestehende Installationen behalten ihre Schalter je Mappentyp – wo er aus war, gilt
+ * „Hier nie automatisch zuordnen“ (nichts wird still automatisch). Einmal sagen, was sich ändert; „alle angleichen“ steht
+ * bei den Ausnahmen in der Karte „Was Ablago darf“.
+ */
+function zuordnenHinweis(u: WerkbankUebersicht, h: Hinweis[]) {
+  const z = u.zuordnen;
+  if (!z?.hinweis) return;
+  const an = z.bisherAn.length > 0 && u.darf?.selbst !== 'alles';
+  if (!z.nie.length && !an) return;
+  h.push({
+    schluessel: 'post.zuordnen',
+    art: 'info',
+    text: (
+      <>
+        <strong>{t('werkbank.darf.zuordnen.hinweis')}</strong>{' '}
+        {z.nie.length ? t('werkbank.darf.zuordnen.hinweis.nie', { namen: z.nie.join(', ') }) : ''}
+        {z.nie.length > 0 && an ? ' ' : ''}
+        {an ? t('werkbank.darf.zuordnen.hinweis.an', { namen: z.bisherAn.join(', ') }) : ''}
+      </>
+    ),
+    ziel: z.nie.length ? '/werkbank#post-zuordnen' : '/werkbank#was-ablago-darf',
+    knopf: z.nie.length ? t('werkbank.darf.zuordnen.hinweis.knopf') : t('werkbank.darf.hinweis.neu.knopf'),
+    // Kommt nur einmal (#1511) – „Ausblenden“ lässt die Ausnahmen, wie sie sind.
+    erledigen: t('werkbank.uebersicht.ausblenden'),
+  });
 }

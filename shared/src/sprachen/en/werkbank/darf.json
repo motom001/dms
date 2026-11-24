@@ -35,7 +35,7 @@
   "darf.selbst.alles": "Do everything, I check afterwards",
   "darf.selbst.alles.text": "Ablago files what it recognises right away. Afterwards you see what happened and can undo it.",
   "darf.selbst.alles.satz": "On its own, Ablago does everything and you check afterwards.",
-  "darf.selbst.heisst": "Takes effect once Ablago recognises post and documents on its own; until then nothing changes.",
+  "darf.selbst.heisst": "Ablago assigns post on its own only with “Do everything, I check afterwards”, when recognition is certain. The rest takes effect once Ablago recognises documents on its own; until then everything stays as it is.",
   "darf.senken.titel": "These packages would no longer fit",
   "darf.grund.vorlagen": "“{name}” is a package – you decided that Ablago uses no packages.",
   "darf.grund.lokal": "“{name}” brings code of its own – you have not allowed that.",
@@ -84,5 +84,13 @@
   "darf.fein.hinweis.text": "Allowed out: {namen}. “Also helpers that use services on the network” now means all areas; you exclude individual ones in the fine-tuning. Your previous list stays until you change it.",
   "darf.fein.hinweis.keine": "So far no area goes to services on the network. “Also helpers that use services on the network” now means all areas; you exclude individual ones in the fine-tuning. Your previous list stays until you change it.",
   "darf.fein.hinweis.knopf": "View fine-tuning",
-  "darf.fein.liste": "May go to services on the network"
+  "darf.fein.liste": "May go to services on the network",
+  "darf.zuordnen.titel": "Assign post automatically: exceptions",
+  "darf.zuordnen.text": "For these folder types Ablago never assigns post automatically, not even with “Do everything, I check afterwards”: {namen}. You can change this one by one on the folder type in the section “Recognition”.",
+  "darf.zuordnen.angleichen": "Align all",
+  "darf.zuordnen.angeglichen": "All folder types now follow “What Ablago may do”.",
+  "darf.zuordnen.hinweis": "Assigning post automatically now follows “What Ablago may do”.",
+  "darf.zuordnen.hinweis.nie": "Until now it was off for {namen} – Ablago still never assigns post there automatically until you align them.",
+  "darf.zuordnen.hinweis.an": "It was on for {namen} – Ablago now assigns post there automatically only with “Do everything, I check afterwards”.",
+  "darf.zuordnen.hinweis.knopf": "View exceptions"
 }

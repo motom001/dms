@@ -77,7 +77,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 - **Tür:** `mappentypen/index.ts`; die Routen (`mappentypen.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, `TypPakete` und `Systemtypen` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Stempel, Erkennung und Berechtigungen am Typ, Aufgaben, Titel, Aufträge, Systemmappen schreiben).
-- `ausPostZiele` (#937) liegt seit #1078 in `mappentypen.dienst.ts`, die KI-Freigabe der Mappentypen (#796) in `ki-typen.ts` (`KiTypen`, `dienst.ki`). Den Stempel am Typ (`mitStempel`) rechnet seit #1077 der [Ausgang](#ausgang), Prüfen und Speichern die Stempel-Vorlagen in [PDF bearbeiten](#pdf-bearbeiten) – beides über den Anschluss. `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
+- `ausPostZiele` (#937) liegt seit #1078 in `mappentypen.dienst.ts`, die KI-Freigabe der Mappentypen (#796) in `ki-typen.ts` (`KiTypen`, `dienst.ki`), die Ausnahmen „Hier nie automatisch zuordnen“ (#1639) in `zuordnen-typen.ts`. Den Stempel am Typ (`mitStempel`) rechnet seit #1077 der [Ausgang](#ausgang), Prüfen und Speichern die Stempel-Vorlagen in [PDF bearbeiten](#pdf-bearbeiten) – beides über den Anschluss. `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
 
 ## Mappen (#1074) { #mappen }
 

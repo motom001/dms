@@ -101,7 +101,10 @@ export interface MappentypDaten {
   stempel?: import('../stempel').StempelTyp | null;
   /** „Aus Dokument ausfüllen“ (#391): eigene Beschriftung oder ausgeblendet; wie der Stempel in den Einstellungen. */
   ausDokument?: import('./angaben').AusDokument | null;
-  /** Erkannte Post automatisch zuordnen (#337), Standard aus; wie der Stempel in den Einstellungen. */
+  /**
+   * Erkannte Post automatisch zuordnen (#337). Seit #1639 entscheidet „Was Ablago darf“ für alle Mappentypen; hier nur die
+   * Ausnahme: true = wie in „Was Ablago darf“ (Standard), false = „Hier nie automatisch zuordnen“. In den Einstellungen.
+   */
   autoZuordnen?: boolean;
   /**
    * „Kann aus Post angelegt werden“ (#937): Der Typ steht bei „Wohin gehört das?“ zur Wahl. Fehlt bzw. null = Vorgabe:

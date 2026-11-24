@@ -41,6 +41,8 @@ export const GEMERKTE_EINSTELLUNGEN: ReadonlySet<string> = new Set([
   'datenschutz',
   'paket_verwehrt',
   'ki_typen',
+  // Post automatisch zuordnen (#1639): Ausnahmen am Mappentyp.
+  'zuordnen_typen',
   'suche',
   'vektoren',
   'historie',

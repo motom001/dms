@@ -176,6 +176,11 @@ describe('Einrichtungscode (#119)', () => {
     );
     assert.deepEqual(r.benutzer.verwaltung, ['*']);
     assert.deepEqual(await einst.lies('ki_typen'), { ausgenommen: [] }, 'Dienste im Netz (#1635): neue Installation – alle Bereiche');
+    assert.deepEqual(
+      await einst.lies('zuordnen_typen'),
+      { ausgenommen: [] },
+      'Post automatisch zuordnen (#1639): wie in „Was Ablago darf“',
+    );
     await assert.rejects(
       e.einrichten({ mandant: 'X', name: 'B', email: 'b@example.org', passwort: 'ein-langes-passwort' }, heim, { ip: '1', geraet: '' }),
       /bereits abgeschlossen/,

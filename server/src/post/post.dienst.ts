@@ -38,6 +38,7 @@ import {
 } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { postWerteNeu } from '../../../shared/src/postfelder';
+import { DARF_EINSTELLUNG, liesDarf } from '../../../shared/src/darf';
 import type { PostAufloesen } from './aufloesen';
 import { entfernteSeiten, type LeerseitenPlan, type PostLeerseiten } from './leerseiten';
 import type { KontenAnschluss, PostSystemmappen } from './systemmappen';
@@ -143,9 +144,6 @@ export class PostDienst {
   }
   private sichtbarFuer(benutzerId: string, ids: string[]) {
     return this.teile.rechte.sichtbarFuer(benutzerId, ids);
-  }
-  private typErkennungen() {
-    return this.teile.mappentypen.typErkennungen();
   }
   private notiere(...a: Parameters<MappenHistorie['notiere']>) {
     return this.teile.historie.notiere(...a);
@@ -472,21 +470,29 @@ export class PostDienst {
     return neu;
   }
 
-  /** Mappentypen mit „Post automatisch zuordnen“ (#337); Archivmodus- und Systemtypen nie (dort nur mit Bestätigung). */
+  /**
+   * Mappentypen, denen Ablago Post automatisch zuordnen darf (#337). Seit #1639 entscheidet „Was Ablago darf“ (nur bei
+   * „Alles erledigen, ich prüfe danach“): alle außer denen mit „Hier nie automatisch zuordnen“; Archivmodus- und
+   * Systemtypen nie (dort nur mit Bestätigung).
+   */
   private async autoTypen(): Promise<Set<string>> {
-    const e = await this.typErkennungen();
-    return new Set((await this.repo.listeTypen()).filter((t) => e[t.id]?.auto && !t.archiv && !t.system).map((t) => t.id));
+    const folgt = await this.teile.mappentypen.zuordnenFolgt();
+    return new Set((await this.repo.listeTypen()).filter((t) => folgt(t.id) && !t.archiv && !t.system).map((t) => t.id));
+  }
+  private async allesErledigen() {
+    return liesDarf(await this.kern.einstellungen?.lies(DARF_EINSTELLUNG))?.selbst === 'alles';
   }
 
   /**
-   * Erkannte Post automatisch zuordnen (#337), wenn die Erkennung sicher ist (siehe sichereZuordnung) und der
-   * Zieltyp das erlaubt (Standard aus). Nie: neue Mappen anlegen, Post ohne Leserecht des Empfängers zuordnen,
+   * Erkannte Post automatisch zuordnen (#337), wenn „Was Ablago darf“ auf „Alles erledigen, ich prüfe danach“ steht
+   * (#1639), die Erkennung sicher ist (siehe sichereZuordnung) und der Zieltyp keine Ausnahme ist. Nie: neue Mappen anlegen, Post ohne Leserecht des Empfängers zuordnen,
    * Archivmodus-Typen. Danach eine Aufgabe „Automatisch zugeordnet – bitte prüfen“ an den Empfänger (Feld „Für“,
    * sonst wer die Post ins DMS gebracht hat), mit Rückgängig. Je Post höchstens einmal.
    */
   async automatischZuordnen(postId: string, e: PostErkennung): Promise<{ ziel: string } | { nicht: string }> {
     const log = protokoll.modul('ablage');
     if (e.auto) return { nicht: t('meldungen.dienst.schon-einmal-automatisch-zugeordnet') };
+    if (!(await this.allesErledigen())) return { nicht: t('meldungen.dienst.zuordnen-nur-bei-alles') };
     const autoTypen = await this.autoTypen();
     if (!autoTypen.size) return { nicht: t('meldungen.dienst.bei-keinem-mappentyp-eingeschaltet') };
     const post = await this.repo.holeMappe(postId);

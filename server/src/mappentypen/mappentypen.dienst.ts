@@ -57,6 +57,7 @@ import {
   mitSystemBeschriftung,
 } from './eingabe';
 import { optionalesZielWieder } from './optionale-ziele';
+import { folgtDarf, liesZuordnenStand, ZUORDNEN_ALLE, ZUORDNEN_EINSTELLUNG, zuordnenWert } from './zuordnen-typen';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappentypenAnschluss {
@@ -257,9 +258,9 @@ export class MappentypenDienst {
     const t = await f(eingabe);
     if (hat) await this.setzeStempelTyp(t.id, st ?? null);
     if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
-    // Post automatisch zuordnen (#337), Standard aus.
+    // Post automatisch zuordnen (#337): seit #1639 nur noch die Ausnahme – false heißt „Hier nie automatisch zuordnen“.
     if (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe)
-      await this.setzeTypErkennung(t.id, { auto: (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system });
+      await this.setzeZuordnen(t.id, (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system);
     // Fassungen (#1006): Stempel und Erkennung liegen in den Einstellungen – den Typ danach noch einmal festhalten
     // (dieselbe Anfrage, dieselbe Fassung).
     if (hat || hatAd || (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe))
@@ -290,6 +291,57 @@ export class MappentypenDienst {
     else delete alle[typId];
     await this.einstellungen.schreibe('erkennung_typen', Object.keys(alle).length ? alle : null);
     protokoll.modul('werkbank').info('Erkennung am Mappentyp eingestellt', { typ: typId, ...teil });
+  }
+
+  /**
+   * Post automatisch zuordnen (#1639): Folgt der Mappentyp „Was Ablago darf“ (true) oder gilt dort „Hier nie automatisch
+   * zuordnen“ (false)? Formen der Einstellung: zuordnen-typen.ts.
+   */
+  async zuordnenFolgt(): Promise<(typId: string) => boolean> {
+    const s = liesZuordnenStand(await this.einstellungen?.lies(ZUORDNEN_EINSTELLUNG));
+    const erk = s.alle ? {} : await this.typErkennungen();
+    return (typId) => folgtDarf(s, erk, typId);
+  }
+  private async setzeZuordnen(typId: string, folgt: boolean) {
+    const s = liesZuordnenStand(await this.einstellungen?.lies(ZUORDNEN_EINSTELLUNG));
+    // Bisherige Form: wie bisher über den Schalter je Mappentyp (nichts anderes ändert sich still).
+    if (!s.alle) return this.setzeTypErkennung(typId, { auto: folgt });
+    if (folgt === !s.ausgenommen.has(typId) || !this.einstellungen) return;
+    const ausgenommen = new Set(s.ausgenommen);
+    if (folgt) ausgenommen.delete(typId);
+    else ausgenommen.add(typId);
+    await this.einstellungen.schreibe(ZUORDNEN_EINSTELLUNG, zuordnenWert({ ...s, ausgenommen }));
+    protokoll.modul('werkbank').info('Post automatisch zuordnen am Mappentyp eingestellt', { typ: typId, nie: !folgt });
+  }
+
+  /**
+   * Für die Übersicht (#1639): Mappentypen mit „Hier nie automatisch zuordnen“ und – nur in der bisherigen Form – die,
+   * bei denen der Schalter an war; `hinweis`: einmal „alle angleichen?“ fragen. Archivmodus und Systemtypen zählen nicht.
+   */
+  async zuordnenAusnahmen(): Promise<{ nie: string[]; bisherAn: string[]; hinweis: boolean }> {
+    const s = liesZuordnenStand(await this.einstellungen?.lies(ZUORDNEN_EINSTELLUNG));
+    const folgt = await this.zuordnenFolgt();
+    const typen = (await this.repo.listeTypen()).filter((x) => !x.system && !x.archiv).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    const nie = typen.filter((x) => !folgt(x.id)).map((x) => x.name);
+    return {
+      nie,
+      bisherAn: s.alle ? [] : typen.filter((x) => folgt(x.id)).map((x) => x.name),
+      hinweis: !s.alle && !s.gefragt && !!typen.length,
+    };
+  }
+
+  /** „Alle angleichen“ (#1639): Alle Mappentypen folgen „Was Ablago darf“ – nur auf ausdrücklichen Wunsch. */
+  async zuordnenAngleichen(von: string | null) {
+    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
+    await this.einstellungen.schreibe(ZUORDNEN_EINSTELLUNG, ZUORDNEN_ALLE);
+    protokoll.modul('werkbank').info('Post automatisch zuordnen: alle Mappentypen wie in „Was Ablago darf“', { von });
+    return this.zuordnenAusnahmen();
+  }
+
+  /** Den Hinweis „alle angleichen?“ (#1639) nicht mehr zeigen; die bisherige Form bleibt. */
+  async zuordnenHinweisGelesen() {
+    const s = liesZuordnenStand(await this.einstellungen?.lies(ZUORDNEN_EINSTELLUNG));
+    if (!s.alle && !s.gefragt) await this.einstellungen?.schreibe(ZUORDNEN_EINSTELLUNG, zuordnenWert({ ...s, gefragt: true }));
   }
 
   /** Kennungen mit Paket (`paket:schluessel`, #1084) vergibt nur die Paketverwaltung – sonst könnte ein eigener Typ einem Paket die Kennung wegnehmen. */
