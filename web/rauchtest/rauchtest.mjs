@@ -64,3 +64,5 @@ import './bereiche/lasttest-seite.mjs';
 import './bereiche/werkbank-handy.mjs';
 import './bereiche/werkbank-handy-handgriffe.mjs';
 import './bereiche/werkbank-handy-seiten.mjs';
+import './bereiche/spalten-und-leisten.mjs';
+import './bereiche/datum-und-hinweise.mjs';

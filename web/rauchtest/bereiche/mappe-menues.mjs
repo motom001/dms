@@ -1,7 +1,7 @@
 /**
  * Rauchtests: Mappe – Menüs, Anlagen, Navigation (KW47): „Aus Dokument ausfüllen“ fest im Menü „Mappe“ mit Prüfansicht
  * (#1494), Anlage „Anlage zu …“ mit dem Menü des Dokuments (#1487), Menüs ohne Überdecken und ohne Rollleiste der Seite,
- * freie Zeile nur unter dem Inhalt (#1488), Pfeil klappt einen Bereich auch über der gewählten Sicht zu (#1495).
+ * Spalten bis unten, Freiraum am Ende der Spalte (#1488, #1590), Pfeil klappt einen Bereich auch über der gewählten Sicht zu (#1495).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/mappe-menues.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
@@ -194,7 +194,7 @@ rauchtest(
 );
 
 rauchtest(
-  'Langes Menü nahe dem Assistenten: klappt nach oben, keine Rollleiste, freie Zeile nur unter dem Inhalt (#1488)',
+  'Langes Menü nahe dem Assistenten: klappt nach oben, keine Rollleiste, Spalten bis unten (#1488, #1590)',
   { als: LENA },
   async (s) => {
     const { belegTyp, beleg } = await vertragUndBeleg();
@@ -222,14 +222,15 @@ rauchtest(
     const nachher = await spalte.evaluate((el) => ({ hoehe: el.scrollHeight, seite: document.documentElement.scrollHeight }));
     assert.deepEqual(nachher, vorher, 'Das offene Menü verlängert weder Spalte noch Seite');
     await s.keyboard.press('Escape');
-    // Freie Zeile nur im Inhaltsbereich: Navigation links bis unten, die Mappe endet über dem Streifen des Assistenten.
+    // Seit #1590: Alle Spalten reichen bis unten, der Assistent schwebt; der Freiraum liegt am Ende der Spalte
+    // (Prüfung im Einzelnen: spalten-und-leisten.mjs).
     const unten = await s.evaluate(() => ({
       navigation: Math.round(document.querySelector('.spalte.sichten').getBoundingClientRect().bottom),
       mappe: Math.round(document.querySelector('.spalte.mappe').getBoundingClientRect().bottom),
       hoehe: innerHeight,
     }));
     assert.equal(unten.navigation, unten.hoehe, 'Navigation reicht bis unten');
-    assert.ok(unten.mappe <= unten.hoehe - 70, `Mappe endet über der freien Zeile (${unten.mappe} von ${unten.hoehe})`);
+    assert.equal(unten.mappe, unten.hoehe, 'Mappe reicht bis unten (#1590)');
   },
 );
 
