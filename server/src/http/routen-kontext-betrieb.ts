@@ -20,7 +20,7 @@ import { erreichbar } from '../../../shared/src/notfallkontakte';
 import { eigeneVersion } from '../system/system';
 import { notfallblatt } from '../notfall/notfallblatt';
 import { MAIL_STANDARD, STANDARD_TAGE, wirksameZeit, type MailZeit } from '../aufgaben/aufgabenmail';
-import { LAENDER, ZEITZONEN, zeitzone, type Region } from '../../../shared/src/region';
+import { LAENDER, tagIn, ZEITZONEN, zeitzone, type Region } from '../../../shared/src/region';
 import { istMaschinell, liesSpracheinstellung, spracheAusKopf, wirksameSprache } from '../../../shared/src/sprachwahl';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { RegionDienst } from '../einstellungen/region';
@@ -176,7 +176,7 @@ export function notfallHilfen(dienst: Dienst, konten: Konten, x: RoutenExtras, t
     return {
       datei: {
         inhalt,
-        name: `Ablago-Notfallblatt-${new Date().toISOString().slice(0, 10)}.pdf`,
+        name: `Ablago-Notfallblatt-${tagIn(new Date())}.pdf`,
         mime: 'application/pdf',
         anzeigen: false,
         groesse: inhalt.length,

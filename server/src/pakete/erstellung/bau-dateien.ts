@@ -2,6 +2,7 @@
  * Benutzte Funktionen und die Dateien des Pakets (#1278, Schritt 6a; vorher Teil von `baue`): Manifest, Inhalt,
  * README, CHANGELOG, LICENSE und die Erwartung für die Tests der Registry.
  */
+import { tagIn } from '../../../../shared/src/region';
 import { stringify } from 'yaml';
 import { vergleicheVersion } from '../../../../shared/src/pakete';
 import { type PaketErstellenEingabe } from '../../../../shared/src/paketerstellung';
@@ -237,7 +238,8 @@ export function dateienVon(x: BauTeile): Datei[] {
       ...(automatisierungen.length ? { automatisierungen: 'inhalt/automatisierungen.yaml' } : {}),
     },
   };
-  const datum = d.jetzt.toISOString().slice(0, 10);
+  // Tag in der Zone der Region (#1552), wie in den übrigen Dateinamen und Datumsangaben.
+  const datum = tagIn(d.jetzt);
   const changelog = changelogVon(x);
   const readme = readmeVon(x, datum);
   const jahr = String(d.jetzt.getFullYear());

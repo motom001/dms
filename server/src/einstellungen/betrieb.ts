@@ -231,6 +231,11 @@ export class Betrieb {
   private adresse = '';
   private aktuellerMailer: Mailer | null = null;
   private oauth?: PostfachOAuth;
+  /**
+   * Wartungsmodus (#1549): Solange er aktiv ist, geht keine E-Mail hinaus – auch nicht über einen anderen Weg als die
+   * Automatisierungen. Ausgelassen und protokolliert, nicht nachgeholt; der Aufrufer bekommt einen Fehler (503).
+   */
+  ruht: () => boolean = () => false;
 
   private suche: SucheDeps;
   private baue: typeof transport;
@@ -404,8 +409,13 @@ export class Betrieb {
     const fest = m.anmeldung === 'oauth' ? null : this.baue(m, this.klartext(m.passwort));
     // OAuth (#813): je Versand ein gültiges Zugriffstoken holen (erneuert vor Ablauf).
     const holeTransport = async () => fest ?? this.baue(m, '', await this.zugriff(m));
+    const ruht = () => this.ruht();
     this.aktuellerMailer = {
       async sende(an, betreff, text, o) {
+        if (ruht()) {
+          log.info(t('meldungen.system.wartung.mail-ausgelassen-protokoll'), { an: o?.anImProtokoll ?? an, betreff });
+          throw new Fachfehler(503, t('meldungen.system.wartung.mail-ausgelassen'));
+        }
         const start = Date.now();
         try {
           const tr = await holeTransport();

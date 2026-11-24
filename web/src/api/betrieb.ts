@@ -248,6 +248,10 @@ export interface DebugStand {
   an: boolean;
   bis: string | null;
   grundstufe: string;
+  /** #1528: woher – LOG_LEVEL=debug (Variable) oder der Schalter der Werkbank. */
+  quelle?: 'variable' | 'werkbank' | null;
+  /** #1528: LOG_LEVEL=debug lief 24 Stunden und ist seit dann aus. */
+  variableBeendet?: string | null;
 }
 export interface ProtokollAntwort {
   eintraege: Protokolleintrag[];
@@ -333,6 +337,8 @@ export interface WerkbankUebersicht {
   texterkennung: Record<'keiner' | 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'ausgelassen' | 'paket', number> | null;
   /** #459: Ein Paket übernimmt die Texterkennung. */
   texterkennungPaket?: boolean;
+  /** #1550: Abbrüche der Texterkennung wegen der Zeitgrenze in den letzten 24 Stunden – nur, wenn sie sich häufen (sonst 0). */
+  texterkennungZeitgrenze?: number;
   /** #1329: Für nicht eingebettete Schriften in PDFs fehlt der Ersatz. */
   schriftenFehlen?: boolean;
   /** #1312: fehlende eingebaute Werkzeuge (leer, wenn alles da ist oder noch nicht geprüft wurde). */

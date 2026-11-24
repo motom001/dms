@@ -1,6 +1,6 @@
 /**
  * Rauchtests: Suche in Werkbank-Listen (#978, #994), gleichbedeutende Wörter (#992), Suche und Volltext aufgeräumt (#1189,
- * #1190, #1191), Vorschaubild der Archivfassung (#1216).
+ * #1190, #1191), Vorschaubild der Archivfassung (#1216), Zeitgrenze der Texterkennung (#1550).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/werkbank-suche-und-archiv.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -323,6 +323,36 @@ rauchtest('Werkbank: Suche – „Meintest du …?“ auch bei Treffern wählbar
     async () => (await (await fetch('/api/werkbank/suche', { headers: { 'x-dms': '1' } })).json()).meintest === 'ohne-treffer',
   );
   assert.equal((await stand()).unscharf, true);
+});
+
+// #1550: Zeitgrenze je Auftrag – Grundwert plus je Seite, gespeichert und nach dem Neuladen noch da.
+rauchtest('Werkbank: Texterkennung – Zeitgrenze je Auftrag einstellen (#1550)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/texterkennung');
+  const form = s.locator('#zeitgrenze');
+  await form.getByRole('heading', { name: 'Zeitgrenze je Auftrag' }).waitFor();
+  const minuten = form.getByLabel('Grundwert (Minuten)');
+  const jeSeite = form.getByLabel('Dazu je Seite (Sekunden)');
+  assert.deepEqual([await minuten.inputValue(), await jeSeite.inputValue()], ['5', '30'], 'Vorgabe 5 Minuten plus 30 s je Seite');
+  const stand = () =>
+    s.evaluate(
+      async () => (await (await fetch('/api/werkbank/texterkennung', { headers: { 'x-dms': '1' } })).json()).einstellungen.zeitgrenze,
+    );
+  await minuten.fill('7');
+  await jeSeite.fill('20');
+  await form.getByRole('button', { name: 'Zeitgrenze speichern' }).click();
+  await form.getByText('Gespeichert.', { exact: true }).waitFor();
+  assert.deepEqual(await stand(), { minuten: 7, jeSeiteSekunden: 20 });
+  await s.reload();
+  await s.locator('#zeitgrenze').getByLabel('Grundwert (Minuten)').waitFor();
+  assert.equal(await s.locator('#zeitgrenze').getByLabel('Grundwert (Minuten)').inputValue(), '7', 'bleibt nach dem Neuladen');
+  // Zurück auf die Vorgabe, damit spätere Bereiche mit ihr laufen.
+  await s.locator('#zeitgrenze').getByLabel('Grundwert (Minuten)').fill('5');
+  await s.locator('#zeitgrenze').getByLabel('Dazu je Seite (Sekunden)').fill('30');
+  await s.locator('#zeitgrenze').getByRole('button', { name: 'Zeitgrenze speichern' }).click();
+  await s.locator('#zeitgrenze').getByText('Gespeichert.', { exact: true }).waitFor();
+  assert.deepEqual(await stand(), { minuten: 5, jeSeiteSekunden: 30 });
 });
 
 /* ---------- Vorschaubild aus der Archivfassung (#1216) ---------- */

@@ -45,7 +45,7 @@ Ein Snapshot passt zu der **Version von Ablago**, mit der er entstand – und zu
 
 Übe die Wiederherstellung regelmäßig auf einem **Testsystem** – nicht auf dem laufenden System:
 
-1. **Testsystem ohne Netz nach draußen starten.** Sonst holt es echte Post aus den Postfächern ab, verschickt Erinnerungen und ruft Pakete auf. Einen eigenen Schalter dafür hat Ablago nicht; starte den Container in einem Docker-Netz ohne Internet (`internal: true`) und schalte nach dem Anmelden den [Wartungsmodus](wartungsmodus.md) ein – er hält Postfach-Abruf, Automatisierungen und Fristen an.
+1. **Testsystem ohne Netz nach draußen starten.** Sonst holt es echte Post aus den Postfächern ab, verschickt Erinnerungen und ruft Pakete auf. Starte den Container am besten in einem Docker-Netz ohne Internet (`internal: true`). War im Snapshot der [Wartungsmodus](wartungsmodus.md#nichts-geht-rein-oder-raus) an, bleibt das Testsystem von selbst ruhig: Er überdauert den Neustart, und solange er an ist, geht nichts rein oder raus – kein Postfach-Abruf, kein Eingangsordner, keine E-Mails, keine Webhooks, keine Aufrufe von Paketen, keine geplanten Automatisierungen. Sonst schalte ihn nach dem Anmelden ein. Ziehst du den Snapshot dafür eigens, schalte ihn vorher im echten System ein.
 2. **`datenbank.json` anpassen**, wenn `geheim` im Snapshot war: Sie zeigt sonst auf die **echte Datenbank** – das Testsystem würde in die laufende Ablage schreiben. Datenbank (und Host) auf die zurückgespielte Kopie ändern.
 3. **Dieselbe Version starten**, anmelden und prüfen:
     - Mappen und Dokumente öffnen, ein Dokument herunterladen;

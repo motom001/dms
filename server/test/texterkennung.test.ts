@@ -112,7 +112,8 @@ describe('Texterkennung (#45)', () => {
     await warte(async () => (await repo.holeDokument(spaeter))?.ocr?.stand === 'fertig');
 
     assert.throws(() => bereinigeOcr({ auftraege: 9 }), /Aufträge/);
-    // Gespeicherte Einstellungen der früheren eingebauten Texterkennung (#459): übrig bleiben aktiv und Aufträge.
+    // Gespeicherte Einstellungen der früheren eingebauten Texterkennung (#459): übrig bleiben aktiv und Aufträge, dazu
+    // die Vorgabe der Zeitgrenze (#1550).
     assert.deepEqual(
       ocrAusGespeichert({
         aktiv: false,
@@ -122,9 +123,9 @@ describe('Texterkennung (#45)', () => {
         automatisch: true,
         typen: { 'image/png': 'aus' },
       }),
-      { aktiv: false, auftraege: 2 },
+      { aktiv: false, auftraege: 2, zeitgrenze: { minuten: 5, jeSeiteSekunden: 30 } },
     );
-    assert.deepEqual(ocrAusGespeichert({ auftraege: 99 }), { aktiv: true, auftraege: 1 });
+    assert.deepEqual(ocrAusGespeichert({ auftraege: 99 }), { aktiv: true, auftraege: 1, zeitgrenze: { minuten: 5, jeSeiteSekunden: 30 } });
   });
 
   it('holt Volltext für vorhandene Dokumente nach – nur in Registern mit Volltext', async () => {

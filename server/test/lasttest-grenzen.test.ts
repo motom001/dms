@@ -344,3 +344,89 @@ describe('Lasttest (#1254): Pakete, Tabellenfeld, Anmeldeschutz mit vollem Journ
     assert.deepEqual(z.zusatzZeilen({}), [], 'ohne Zusatz-Durchgänge (ältere Läufe, --ohne-zusatz) keine Zeile');
   });
 });
+
+describe('Lasttest: Ziele für jeden Durchgang (#1453)', () => {
+  type Ziel = { p95Ms: number; ciP95Ms: number; fehlerquote: number };
+  type Urteil = { verfehlt: string[]; zielVerfehlt: string[] } | null;
+  interface Ziele {
+    ZIELE: Record<'klein' | 'mittel', Record<'lesen' | 'speichern' | 'pakete' | 'anmeldeschutz', Ziel>> & {
+      gross: Record<'speichern' | 'pakete' | 'anmeldeschutz', Ziel> & { grenze: { mindestens: number; ciMindestens: number } };
+    };
+    zielVon(stufe: string, art: string): Ziel | null;
+    pruefeDurchgang(stufe: string, art: string, d: Record<string, unknown>): Urteil;
+    pruefeGrenze(stufe: string, n: number): Urteil;
+    speichernZeile(d: Record<string, unknown>): string;
+  }
+  const z = lt as unknown as Ziele;
+  const d = (name: string, p95: number, x: Record<string, unknown> = {}) => ({ name, n: 25, ...lauf(p95), ...x });
+
+  it('eine Stelle: STUFEN übernimmt das Ziel des Lesens aus ZIELE; CI-Grenze nie unter dem Ziel', () => {
+    assert.equal(lt.STUFEN.klein.ziel.p95Ms, z.ZIELE.klein.lesen.p95Ms);
+    assert.equal(lt.STUFEN.mittel.ciGrenze.p95Ms, z.ZIELE.mittel.lesen.ciP95Ms);
+    for (const stufe of ['klein', 'mittel', 'gross'] as const)
+      for (const art of ['speichern', 'pakete', 'anmeldeschutz'] as const) {
+        const ziel = z.zielVon(stufe, art)!;
+        assert.ok(ziel, `${stufe} ${art} hat ein Ziel`);
+        assert.ok(ziel.ciP95Ms >= ziel.p95Ms, `${stufe} ${art}: CI-Grenze ≥ Ziel`);
+      }
+    assert.equal(z.zielVon('extrem', 'speichern'), null, 'extrem bleibt eine Messung ohne Ziel');
+    assert.ok(z.ZIELE.gross.grenze.ciMindestens <= z.ZIELE.gross.grenze.mindestens);
+  });
+
+  it('Zusatz-Durchgang: unter dem Ziel eingehalten, darüber Ziel verfehlt, ab der CI-Grenze verfehlt', () => {
+    const ziel = z.zielVon('klein', 'pakete')!;
+    assert.deepEqual(z.pruefeDurchgang('klein', 'pakete', d('klein + Pakete und Tabellen', ziel.p95Ms - 1)), {
+      ...ziel,
+      verfehlt: [],
+      zielVerfehlt: [],
+    });
+    const ci = z.pruefeDurchgang('klein', 'pakete', d('klein + Pakete und Tabellen', ziel.ciP95Ms))!;
+    assert.match(ci.verfehlt[0], /^klein \+ Pakete und Tabellen: p95 400 ms ≥ CI-Grenze 400 ms/);
+    assert.equal(z.pruefeDurchgang('extrem', 'pakete', d('extrem + Pakete und Tabellen', 99_999)), null);
+  });
+
+  it('Fehler, 503 (nur bei klein und mittel), Anfragen ohne Antwort und verlorene Nachweise', () => {
+    assert.equal(z.pruefeDurchgang('klein', 'speichern', d('klein + Speichern', 100, { fehler: 1 }))!.verfehlt.length, 1);
+    assert.equal(z.pruefeDurchgang('mittel', 'speichern', d('mittel + Speichern', 100, { abgewiesen: 2 }))!.verfehlt.length, 1);
+    assert.deepEqual(z.pruefeDurchgang('gross', 'speichern', d('groß + Speichern', 3000, { abgewiesen: 40 }))!.verfehlt, []);
+    assert.equal(z.pruefeDurchgang('gross', 'pakete', d('groß + Pakete und Tabellen', 3000, { ohneAntwort: 1 }))!.verfehlt.length, 1);
+    assert.equal(z.pruefeDurchgang('gross', 'pakete', d('groß + Pakete und Tabellen', 3000, { fehlerquote: 0.02 }))!.verfehlt.length, 1);
+    const verloren = z.pruefeDurchgang('klein', 'anmeldeschutz', d('klein + Anmeldeschutz', 100, { anmeldung: { verloren: 3 } }))!;
+    assert.deepEqual(verloren.verfehlt, ['klein + Anmeldeschutz: 3 Nachweis-Einträge verloren']);
+  });
+
+  it('Grenze von groß: Ziel mindestens 200 gleichzeitig; extrem ohne', () => {
+    assert.deepEqual(z.pruefeGrenze('gross', 250)!.verfehlt, []);
+    assert.equal(z.pruefeGrenze('gross', 175)!.verfehlt.length, 1);
+    assert.equal(z.pruefeGrenze('extrem', 0), null);
+  });
+
+  it('Zeile im Ergebnisblock: mit Ziel das Urteil, ohne (ältere Läufe) wie bisher', () => {
+    const mit = d('klein + Speichern', 120);
+    const ohne = { ...mit };
+    Object.assign(mit, { ziel: z.pruefeDurchgang('klein', 'speichern', mit) });
+    assert.match(z.speichernZeile(mit), / – Ziel eingehalten \(Ziel < 300 ms, CI-Grenze 300 ms\) \(Speichern/);
+    assert.match(z.speichernZeile(ohne), / – Messung ohne Ziel \(Speichern/);
+  });
+
+  it('Handbuch („Die Stufen“) nennt dieselben Ziele, deutsch und englisch', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const ms = (x: number) => `${x / 1000} s`;
+    for (const [sprache, komma, kopf] of [
+      ['docs', ',', '| Ziele (p95) |'],
+      ['docs-en', '.', '| Targets (p95) |'],
+    ] as const) {
+      const text = await readFile(new URL(`../../docs/handbuch/admin/${sprache}/lasttest.md`, import.meta.url), 'utf8');
+      assert.ok(text.includes(kopf), `${sprache}: Tabelle der Ziele`);
+      const tabelle = text.slice(text.indexOf(kopf));
+      const zeile = (stufe: string) => tabelle.split('\n').find((l) => l.startsWith(`| \`${stufe}\``)) ?? '';
+      for (const stufe of ['klein', 'mittel', 'gross'] as const) {
+        const z0 = zeile(stufe);
+        assert.ok(z0, `${sprache}: Zeile ${stufe}`);
+        for (const art of ['speichern', 'pakete', 'anmeldeschutz'] as const)
+          assert.ok(z0.includes(ms(z.zielVon(stufe, art)!.p95Ms).replace('.', komma)), `${sprache} ${stufe} ${art}`);
+      }
+      assert.ok(zeile('gross').includes(String(z.ZIELE.gross.grenze.mindestens)), `${sprache}: Grenze`);
+    }
+  });
+});

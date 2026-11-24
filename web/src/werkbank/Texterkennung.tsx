@@ -9,6 +9,7 @@ import { TEXTERKENNUNG_PAKET } from '../../../shared/src/volltext';
 import { t as tx, t, tn } from '../sprache';
 import { PauseHinweis, Warteschlange, zahl } from './texterkennung/teile';
 import { Auftraege } from './texterkennung/Auftraege';
+import { Zeitgrenze } from './texterkennung/Zeitgrenze';
 import type { TexterkennungZustand } from './texterkennung/zustand';
 import { KnopfLink } from '../bausteine';
 
@@ -73,6 +74,8 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
           </Link>
         </p>
       </section>
+
+      <Zeitgrenze t={eintrag} />
 
       <Auftraege t={eintrag} />
     </div>

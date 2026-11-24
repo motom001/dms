@@ -328,6 +328,8 @@ const UEBERSICHT_BEREICHE: Record<string, { bereich: Bereichskennung | typeof NU
   adresse: { bereich: 'betrieb', leer: true },
   texterkennung: { bereich: 'texterkennung', leer: null },
   texterkennungPaket: { bereich: 'texterkennung', leer: true },
+  // Häufige Abbrüche der Texterkennung wegen der Zeitgrenze (#1550).
+  texterkennungZeitgrenze: { bereich: 'texterkennung', leer: 0 },
   // Fehlende Dateien (#877): Der Knopf führt zu „Alle Dateien prüfen“ unter Texterkennung.
   dateienFehlen: { bereich: 'texterkennung', leer: 0 },
   // Befund von „Alle Dateien prüfen“ (#1316).

@@ -1,6 +1,6 @@
 /**
  * Rauchtests: Dreiteilung fest im Fenster (#1063), Werte vorschlagen, Systemzustand (mit automatisch verkleinern, #1190),
- * Passkey, API-Schlüssel nach neuem Passwort, Ansichten-Baum.
+ * Passkey, API-Schlüssel nach neuem Passwort, Ansichten-Baum, Debug- und Wartungsmodus im Systemzustand (#1528, #1549).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/dreiteilung-und-systemzustand.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -164,6 +164,28 @@ rauchtest(
       const wert = await installiert.locator('dt', { hasText: name }).locator('xpath=following-sibling::dd[1]').innerText();
       assert.match(wert, /^\d+$/, `${name}: Zahl ohne Herkunft außerhalb des Images (${wert})`);
     }
+  },
+);
+
+// Debug-Modus (#1528) und Wartungsmodus (#1549): Der Schalter in der Werkbank gilt 24 Stunden; der Systemzustand nennt
+// unter den Einstellungen, ob Debug aktiv ist, woher und bis wann, und die Zeile zum Wartungsmodus.
+rauchtest(
+  'Systemzustand: Debug-Modus mit Quelle und Ende, Zeile zum Wartungsmodus (#1528, #1549)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/protokoll');
+    await s.getByRole('button', { name: 'Für 24 Stunden einschalten' }).click();
+    await s.getByText('Eingeschaltet hier in der Werkbank – gilt für alle Prozesse, auch nach einem Neustart.').waitFor();
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    const wert = (name) => s.locator('dt', { hasText: name }).first().locator('xpath=following-sibling::dd[1]');
+    await wert('Debug-Modus').waitFor();
+    assert.match(await wert('Debug-Modus').innerText(), /^aktiv bis .+ \(Schalter in der Werkbank\)$/);
+    assert.equal(await wert('Wartungsmodus').innerText(), 'aus');
+    await s.goto(BASIS + '/werkbank/protokoll');
+    await s.getByRole('button', { name: 'Ausschalten', exact: true }).click();
+    await s.getByRole('button', { name: 'Für 24 Stunden einschalten' }).waitFor();
   },
 );
 

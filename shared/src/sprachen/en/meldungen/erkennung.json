@@ -43,6 +43,8 @@
   "texterkennung.aus-der-entsperrten-fassung": "from the unlocked version",
   "texterkennung.die-texterkennung-ist-nicht": "Text recognition is not set up.",
   "texterkennung.vom-administrator-abgebrochen": "Cancelled by the administrator.",
+  "texterkennung.zeitgrenze": "Failed – time limit: the job ran longer than {minuten} minutes and was cancelled. \"Try again\" queues it again.",
+  "texterkennung.zeitgrenze-ungueltig": "Please give the time limit as a whole number between {min} and {max}.",
   "texterkennung.groesser-als-mb": "Larger than {MAX_MB} MB.",
   "texterkennung.uebernommen-gleicher-inhalt": "taken over (same content): {wert}",
   "texterkennung.fotos-und-bilder-liest": "Ablago doesn’t read photos and images immediately – the Text recognition package recognises their text after saving.",

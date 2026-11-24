@@ -49,6 +49,7 @@
   "uebersicht.angekuendigt": "angekündigt",
   "uebersicht.der-wartungsmodus-ist": "Der Wartungsmodus ist {wert}.",
   "uebersicht.nur-administratoren-koennen-arbeiten": "Nur Administratoren können arbeiten.",
+  "uebersicht.nichts-geht-rein-oder-raus": "Wartungsmodus: nichts geht rein oder raus – Postfächer, Eingangsordner, Zustellungen und Pakete ruhen, E-Mails werden ausgelassen.",
   "uebersicht.bald-werden-alle-anderen": "Bald werden alle anderen abgemeldet.",
   "uebersicht.zum-wartungsmodus": "Zum Wartungsmodus",
   "uebersicht.es-gibt-noch-keinen": "Es gibt noch keinen Schlüssel für Passwörter.",

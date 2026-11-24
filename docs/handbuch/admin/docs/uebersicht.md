@@ -138,7 +138,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | CPU oder Arbeitsspeicher seit 5 Minuten über 90 % | gelb | `auslastung` |
 | Engpass (Wartezeit, Verbindungen, Arbeiter, Überlast) | gelb | `engpass` |
 | Erweiterungen der Suche fehlen oder liegen falsch | gelb | `erweiterungen` |
-| Wartungsmodus angekündigt oder aktiv | gelb | `wartung` |
+| Wartungsmodus angekündigt oder aktiv; aktiv mit „Wartungsmodus: nichts geht rein oder raus“ ([was ruht](wartungsmodus.md#nichts-geht-rein-oder-raus)) | gelb | `wartung` |
 | Noch kein Schlüssel für Passwörter | gelb | `tresor.fehlt` |
 | Der Schlüssel für Passwörter fehlt | rot | `tresor.verloren` |
 | Die Schlüsseldatei passt nicht | rot | `tresor.falsch` |
@@ -185,6 +185,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Eingangsordner: Personenordner ließ sich nach geänderter E-Mail-Adresse nicht umbenennen | gelb | `eingangsordner.umbenennen` |
 | Texterkennung ist jetzt ein Paket (nur nach einem Update von einer älteren Version) | Hinweis (gelb, sobald Scans warten) | `texterkennung.paket` |
 | Dokumente mit Fehler in der Texterkennung | gelb | `texterkennung.fehler` |
+| Mindestens 3 Aufträge der Texterkennung in 24 Stunden wegen der [Zeitgrenze](texterkennung.md#zeitgrenze) abgebrochen | gelb | `texterkennung.zeitgrenze` |
 | Ein Werkzeug zum Lesen von PDFs fehlt: kein Text aus PDFs, keine Seitenbilder ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge); Knopf **Ansehen und erneut prüfen**) | rot | `werkzeug.fehlt:poppler` |
 | Ein Werkzeug zum Bearbeiten von PDFs fehlt: geschützte PDFs lassen sich nicht entsperren, Verkleinern wirkt schwächer ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)) | gelb | `werkzeug.fehlt:qpdf` |
 | Schriften für PDFs fehlen: PDFs ohne eingebettete Schriften zeigen in Seiten-, Vorschaubildern und Archivfassung keinen Text ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)) | gelb | `schriften.fehlen` |

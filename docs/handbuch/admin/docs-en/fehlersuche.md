@@ -30,7 +30,12 @@ If Ablago runs with [several processes](technik.md#mehrere-prozesse) (`DMS_PROZE
 
 ### Debug mode {#debug-modus}
 
-Switches on additional, detailed messages for **one hour** – such as every single database query –, with several processes in all of them. After that (or after a restart) it switches off by itself. The basic level is set by `LOG_LEVEL` (see [Installation](installation.md#einstellungen)).
+Switches on additional, detailed messages for **24 hours** – such as every single database query –, with several processes in all of them. There are two ways:
+
+- **Switch in the workbench** under **Workbench → Log**: applies immediately to all processes, also to one that restarts in between. **Switch off** ends it immediately.
+- **`LOG_LEVEL=debug`** in the Compose file (see [Installation](installation.md#einstellungen)): Ablago then writes in detail from the very first line of the start, in all processes – useful when an error occurs during start. After 24 hours Ablago switches back to the normal level by itself and writes a note to the log that you should remove the variable again. If you remove it and set it again later, the 24 hours start over.
+
+Whether debug mode is running, where it comes from (variable or workbench) and until when is shown under **Workbench → Log** above the entries and in [System health](speicherplatz.md) under **Settings**, with date and time. A long debug mode fills the log quickly and costs computing time; that is why it always ends by itself.
 
 ### Container logs { #container-logs }
 

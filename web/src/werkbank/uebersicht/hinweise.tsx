@@ -337,7 +337,7 @@ function lastUndWartung(u: WerkbankUebersicht, h: Hinweis[]) {
             })}
           </strong>{' '}
           {u.wartung.stufe === 'aktiv'
-            ? t('werkbank.uebersicht.nur-administratoren-koennen-arbeiten')
+            ? `${t('werkbank.uebersicht.nur-administratoren-koennen-arbeiten')} ${t('werkbank.uebersicht.nichts-geht-rein-oder-raus')}`
             : t('werkbank.uebersicht.bald-werden-alle-anderen')}
         </>
       ),

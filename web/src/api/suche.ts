@@ -94,6 +94,8 @@ export interface VektorStand {
 export interface OcrEinstellungen {
   aktiv: boolean;
   auftraege: number;
+  /** Zeitgrenze je Auftrag (#1550): Grundwert in Minuten plus Sekunden je Seite. */
+  zeitgrenze?: { minuten: number; jeSeiteSekunden: number };
 }
 export interface OcrStatus {
   zaehler: Record<OcrStandArt, number>;

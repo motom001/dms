@@ -24,7 +24,8 @@ export { MODULE, type Modul };
 
 export const AUFBEWAHRUNG_MS = 24 * 60 * 60 * 1000;
 export const MAX_EINTRAEGE = 10_000;
-export const DEBUG_DAUER_MS = 60 * 60 * 1000;
+/** Wie lange der Debug-Modus läuft – vom Schalter der Werkbank wie aus `LOG_LEVEL=debug` (#1528, vorher eine Stunde). */
+export const DEBUG_DAUER_MS = 24 * 60 * 60 * 1000;
 
 export interface Eintrag {
   nr: number;
@@ -42,6 +43,10 @@ export interface DebugStand {
   an: boolean;
   bis: string | null;
   grundstufe: Stufe;
+  /** Woher (#1528): `LOG_LEVEL=debug` (Variable) oder der Schalter der Werkbank; null = aus. */
+  quelle?: 'variable' | 'werkbank' | null;
+  /** `LOG_LEVEL=debug` lief 24 Stunden und ist seit diesem Zeitpunkt aus – die Variable steht noch in der Compose-Datei. */
+  variableBeendet?: string | null;
 }
 
 /** Was zur laufenden Anfrage gehört (Benutzer, Anfrage-Id, Messwerte der Datenbank). */
@@ -106,6 +111,8 @@ export class Protokoll {
   private puffer: Eintrag[] = [];
   private nr = 0;
   private debugBis = 0;
+  /** Aus der Datenbank (#1528, debugmodus.ts): bis wann `LOG_LEVEL=debug` gilt, und ob er schon abgelaufen ist. */
+  private variable: { bis: number; beendet: string | null } | null = null;
   private abschalten?: ReturnType<typeof setTimeout>;
   /** Wer Warnungen und Fehler mitbekommt (#895, Sammlung für den Lasttest). */
   private beobachter: Array<(e: Eintrag) => void> = [];
@@ -123,7 +130,27 @@ export class Protokoll {
     return this.debugBis > Date.now();
   }
   get debugStand(): DebugStand {
-    return { an: this.debugAn, bis: this.debugAn ? new Date(this.debugBis).toISOString() : null, grundstufe: this.grund };
+    const variable = !!this.variable && this.grund === 'debug' && this.variable.bis > Date.now();
+    const bis = Math.max(this.debugAn ? this.debugBis : 0, variable ? this.variable!.bis : 0);
+    return {
+      an: this.debugAn || variable,
+      bis: bis ? new Date(bis).toISOString() : null,
+      grundstufe: this.grund,
+      quelle: variable ? 'variable' : this.debugAn ? 'werkbank' : null,
+      variableBeendet: this.variable?.beendet ?? null,
+    };
+  }
+  /**
+   * Stand aus der Datenbank anwenden (#1528, jede Minute in jedem Prozess): Grundstufe (nach Ablauf von
+   * `LOG_LEVEL=debug` wieder „info“), Ende des Schalters der Werkbank und die Angaben zur Variable.
+   */
+  wendeDebugAn(z: { grund: Stufe; werkbankBis: number; variable: { bis: number; beendet: string | null } | null }) {
+    this.grund = z.grund;
+    this.variable = z.variable;
+    if (z.werkbankBis !== this.debugBis) {
+      clearTimeout(this.abschalten);
+      this.debugBis = z.werkbankBis;
+    }
   }
   setzeGrundstufe(s: string | undefined) {
     if (s && (STUFEN as readonly string[]).includes(s)) this.grund = s as Stufe;

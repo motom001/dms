@@ -118,6 +118,19 @@ Under **Workbench → Search and full text → Recognised languages** you see ho
 
 After installing an additional language, **Regenerate full text → For all documents** (see below) re-recognises the existing documents – or you restart individual ones under **Jobs → ready**.
 
+## Time limit per job { #zeitgrenze }
+
+A text recognition job must not run forever – otherwise the whole queue waits for a single hanging document. Under **Time limit per job** you set how long one may take at most: a **base value** in minutes (default 5, allowed 1 to 240) and **plus per page** seconds (default 30, allowed 0 to 600). With the defaults a document with 20 pages may therefore take 5 minutes + 20 × 30 s = 15 minutes. If Ablago doesn't know the number of pages, the base value applies.
+
+If a job runs longer, Ablago cancels it:
+
+- The document shows *error* with the reason "Failed – time limit: the job ran longer than … minutes and was cancelled." On the document it can be **tried again**, here with **Restart**.
+- The next job starts immediately.
+- The [log](fehlersuche.md#protokoll) contains a warning (module `texterkennung`).
+- If cancellations pile up – from 3 in 24 hours –, the [overview](uebersicht.md) shows a notice. If very large documents are the reason, increase the time limit; if a package hangs, look at its history.
+
+If a package reads the texts, the limits of the [package runner](pakete.md) apply in addition.
+
 ## Jobs {#auftrage}
 
 Under **Jobs** you see, in a list of fixed height, the documents per status (*error*, *waiting*, *running*, *waiting for text recognition*, *skipped*, *ready*) – with folder (as a link), size, time and the **reason** for errors or skipped documents.
