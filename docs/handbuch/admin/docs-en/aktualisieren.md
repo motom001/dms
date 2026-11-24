@@ -60,6 +60,8 @@ The templates use **`:stabil`**. That way, when updating you only get versions w
 
 Without a tag (e.g. `docker pull ghcr.io/motom001/dms`), Docker uses `:latest`. Many NAS interfaces do the same if you don't enter a tag. You then get the newest version, not the tested one: enter `:stabil` if you want the version tested once a week.
 
+**Stable versions only, as an image of their own:** `ghcr.io/motom001/ablago:<version>` is the same image as `ghcr.io/motom001/dms:<version>` (same digest, amd64 and arm64, same provenance) but only carries versions that were promoted to `:stabil` – without `:latest` and without `:stabil`. It is meant for app catalogues that look for the newest version tag themselves (such as TrueNAS with Renovate). If `:stabil` is reset, nothing disappears there; the catalogue gets a newer version again with the next promotion. For your own Compose file, `ghcr.io/motom001/dms:stabil` remains the recommendation.
+
 !!! note "Two different “Latest”"
     - The **image tag `:latest`** points to the **most recently released** version. It moves with every release.
     - The **“Latest” marker on the [releases on GitHub](https://github.com/motom001/dms/releases)** is on the **stable** version, the same as `:stabil`. The notice about a new version in the workbench follows it.
