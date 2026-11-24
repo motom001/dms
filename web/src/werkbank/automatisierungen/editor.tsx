@@ -2,6 +2,7 @@ import {
   AUTOMATISIERUNG_GRENZEN,
   aussenKarten,
   istAufruf,
+  istVerwaist,
   kontextTyp,
   REIHENFOLGE,
   type Kontextdaten,
@@ -272,7 +273,8 @@ function Leiste({ x, k }: { x: X; k: Kontextdaten }) {
                 }, t('automatisierung.ui.geloescht'));
               },
               // Mitgeliefert (#1174): nicht löschbar – das Paket legte sie wieder an. Statt eines fehlenden Knopfs die Erklärung.
-              gesperrt: a.herkunft === 'eigen' ? null : mitgeliefertSperre(a, k),
+              // Verwaist (#1586: Paket weg oder Stand ungültig) lässt sie sich löschen – sonst eine Sackgasse.
+              gesperrt: a.herkunft === 'eigen' || istVerwaist(a, a.probleme, k.pakete) ? null : mitgeliefertSperre(a, k),
             }
           : undefined
       }

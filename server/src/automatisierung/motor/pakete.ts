@@ -8,8 +8,10 @@ import {
   type Angehalten,
   DMS_POST,
   bereinigeAutomatisierung,
+  automatisierungsProbleme,
   REIHENFOLGE,
   type Automatisierung,
+  type AutomatisierungDaten,
 } from '../../../../shared/src/automatisierung';
 import { log, t } from './gemeinsam';
 import type { InstalliertesPaket } from '../../../../shared/src/pakete';
@@ -145,7 +147,9 @@ export abstract class AutomatisierungPakete extends AutomatisierungAussen {
       const da = vorhanden.find((a) => a.id === id);
       if (da) {
         if (da.geaendertVon === null) await this.d.repo.speichere(id, { ...d, aktiv: da.aktiv }, null, da.version);
+        else await this.verknuepfeNeu(da, d);
         if (halt) await this.d.repo.setze(id, { angehalten: halt });
+        else await this.wiederGueltig(id);
         continue;
       }
       let aktiv = ein.includes(x.schluessel);
@@ -190,12 +194,46 @@ export abstract class AutomatisierungPakete extends AutomatisierungAussen {
         /* ein anderer Server war schneller */
       }
     }
-    // Nicht mehr mitgeliefert: weg, wenn aus und unverändert – übernommene Erinnerungen am Feld bleiben.
-    const uebernommen = (a: Automatisierung) =>
-      UMZUG_IDS.has(a.id) || (a.wenn.art === 'datum' && a.id === uuidAus(`frist|${a.wenn.typ}|${a.wenn.feld}`));
-    for (const a of vorhanden)
-      if (!ids.has(a.id) && !a.aktiv && a.geaendertVon === null && !uebernommen(a)) await this.d.repo.loesche(a.id);
+    await this.nichtMehrMitgeliefert(p, vorhanden, ids);
     if (neu) log.info('Automatisierungen aus Paket angelegt (aus)', { paket: p.id, anzahl: neu });
     return neu;
+  }
+
+  /**
+   * Nicht mehr mitgeliefert: weg, wenn aus und unverändert – übernommene Erinnerungen am Feld bleiben. Paket entfernt
+   * (#1586): Unveränderte, die ohne das Paket nicht mehr passen (Mappentyp weg), gehen auch eingeschaltet mit.
+   */
+  private async nichtMehrMitgeliefert(p: Pick<InstalliertesPaket, 'id'>, vorhanden: Automatisierung[], ids: Set<string>) {
+    const uebernommen = (a: Automatisierung) =>
+      UMZUG_IDS.has(a.id) || (a.wenn.art === 'datum' && a.id === uuidAus(`frist|${a.wenn.typ}|${a.wenn.feld}`));
+    const entfernt = !(await this.d.dienst.kern.repo.listePakete()).some((x) => x.id === p.id);
+    const k = entfernt ? await this.kontext() : null;
+    for (const a of vorhanden) {
+      if (ids.has(a.id) || a.geaendertVon !== null || uebernommen(a)) continue;
+      if (!a.aktiv || (k && automatisierungsProbleme(a, k).length)) await this.d.repo.loesche(a.id);
+    }
+  }
+
+  /**
+   * Neu installiert (#1586): Eine geänderte mitgelieferte Automatisierung bleibt, wie sie ist – zeigt ihre Wenn-Karte
+   * aber auf einen Mappentyp, den es nicht mehr gibt (Paket entfernt, Typ mit neuer Id angelegt), zeigt sie danach auf
+   * den neuen Typ des Pakets. Gilt weiter als geändert.
+   */
+  private async verknuepfeNeu(da: Automatisierung, d: AutomatisierungDaten) {
+    const alt = (da.wenn as { typ?: unknown }).typ;
+    const neu = (d.wenn as { typ?: unknown }).typ;
+    if (typeof alt !== 'string' || !alt || typeof neu !== 'string' || !neu || alt === neu) return;
+    if ((await this.d.dienst.mappentypen.listeTypen()).some((x) => x.id === alt)) return;
+    const roh = { wenn: da.wenn, und: da.und, dann: da.dann, sonst: da.sonst };
+    const x = JSON.parse(JSON.stringify(roh).split(alt).join(neu)) as typeof roh;
+    if (await this.d.repo.speichere(da.id, { ...da, ...x }, da.geaendertVon, da.version))
+      log.info('Mitgelieferte Automatisierung mit dem neuen Mappentyp verknüpft', { id: da.id, name: da.name, typ: neu });
+  }
+
+  /** Nach dem Installieren gültig: „angehalten, passt nicht mehr“ ist behoben (#1586) – wie beim Speichern im Editor. */
+  private async wiederGueltig(id: string) {
+    const a = await this.d.repo.hole(id);
+    if (a?.angehalten?.grund !== 'fehlerhaft' || automatisierungsProbleme(a, await this.kontext()).length) return;
+    await this.d.repo.setze(id, { angehalten: null });
   }
 }

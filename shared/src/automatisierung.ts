@@ -539,6 +539,14 @@ export function automatisierungsProbleme(a: AutomatisierungDaten, k: Kontextdate
   return [...new Set(automatisierungsProblemOrte(a, k).map((x) => x.text))];
 }
 
+/**
+ * Verwaist (#1586): mitgeliefert, aber ihr Paket ist nicht (mehr) installiert oder sie passt nicht mehr (etwa fehlt der
+ * Mappentyp der Wenn-Karte). Eine verwaiste lässt sich wie eine eigene löschen – sonst bliebe sie eine Sackgasse.
+ */
+export function istVerwaist(a: Pick<Automatisierung, 'herkunft' | 'paketId'>, probleme: readonly string[], pakete?: Array<{ id: string }>) {
+  return a.herkunft === 'paket' && (probleme.length > 0 || (!!pakete && !pakete.some((p) => p.id === a.paketId)));
+}
+
 /** Probleme samt Bereich im Editor (#1000) – so öffnet ein Fehler seinen Bereich. */
 export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextdaten): Array<{ ort: AutomatisierungOrt; text: string }> {
   const erg: Array<{ ort: AutomatisierungOrt; text: string }> = [];
