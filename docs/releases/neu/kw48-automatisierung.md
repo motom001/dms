@@ -1,0 +1,13 @@
+art: minor
+
+## Neu
+
+- **„Zur Kenntnis nehmen“ wirkt sofort** (#1587): Ein Klick genügt – kein Formular mehr. Einige Sekunden lang steht oben „Rückgängig“; eine Begründung lässt sich danach ergänzen, gleich oder später unter „Bewusst akzeptiert“. Reine Hinweise heißen am Knopf „Ausblenden“.
+- **Übernahme aus Markierung säubert den Rand** (#1606): Leerzeichen, Zeilenumbrüche, Komma, Semikolon, Doppelpunkt sowie Klammern und Anführungszeichen ohne Gegenstück am Anfang und Ende fallen weg – aus „12,“ wird „12“. Ein Punkt am Ende bleibt bei Text („Hauptstr.“) und fällt nur bei Zahl, Datum, Betrag, PLZ und IBAN weg.
+- **Feldmuster schneidet den passenden Teil heraus** (#1607): Hat ein Feld ein Muster, übernimmt Ablago aus der Markierung den ersten passenden Teil („Nr. 12a,“ → „12a“). Passt nichts, steht der Text wie bisher im Feld, mit Hinweis auf das Muster.
+
+## Behoben
+
+- **Automatisierung bleibt aus, wenn man sie im Editor ausschaltet** (#1601): Speichern schaltete eine im Editor ausgeschaltete Automatisierung wieder ein. Der Schalter wirkt sofort, und Speichern ändert an/aus nicht mehr.
+- **Keine verwaisten Automatisierungen nach Entfernen und Neuinstallieren eines Pakets** (#1586): Entfernen räumt mitgelieferte Automatisierungen auf, die ohne das Paket nicht mehr passen. Geänderte bleiben; eine Neuinstallation verknüpft sie mit dem neuen Mappentyp, ohne Dublette. Verwaiste lassen sich immer ausschalten und löschen.
+- **KI-Assistent und andere Pakete mit Netz: kein „fetch failed“ mehr ohne Grund** (#1588): Seit Node 25 sperrte das Berechtigungsmodell des Paket-Läufers jeden Netzabruf. Der Läufer darf wieder ins Netz (welche Adressen, prüft er weiter selbst). Scheitert ein Abruf, nennt die Meldung die Ursache, z. B. „Keine Verbindung zu 2001:db8::1 – Netz ohne IPv6?“. „URL aufrufen“ versucht IPv4 zuerst und probiert alle Adressen eines Namens; jede wird weiter gegen private Adressen geprüft.
