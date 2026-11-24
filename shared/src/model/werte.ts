@@ -253,6 +253,27 @@ export function formatiere(
 }
 
 /** Zahl aus deutscher oder technischer Schreibweise lesen. null = leer, NaN = ungültig. */
+/** Nachkommastellen einer Währung (#1608): EUR 2, JPY 0 – aus `Intl.NumberFormat`; unbekannte Währung 2. */
+export function waehrungsstellen(waehrung: string | undefined): number {
+  try {
+    return zahlformat('en', { style: 'currency', currency: waehrung || 'EUR' }).resolvedOptions().minimumFractionDigits ?? 2;
+  } catch {
+    return 2;
+  }
+}
+
+/**
+ * Betrag als Zahl zum Bearbeiten (#1608): in der Sprache des Benutzers mit den Nachkommastellen der Währung, ohne
+ * Tausendertrennung und Währungszeichen – „12,50“ statt „12,5“; `leseZahl` liest es wieder. Mehr Stellen, als die
+ * Währung hat, bleiben stehen. Angezeigt (mit Währung) wird ein Betrag über `formatiere`.
+ */
+export function betragZahl(betrag: number, waehrung: string | undefined, sprache = gebietsschema()): string {
+  const stellen = waehrungsstellen(waehrung);
+  return zahlformat(sprache, { minimumFractionDigits: stellen, maximumFractionDigits: Math.max(stellen, 10), useGrouping: false }).format(
+    betrag,
+  );
+}
+
 export function leseZahl(s: unknown): number | null {
   if (s == null) return null;
   if (typeof s === 'number') return s;

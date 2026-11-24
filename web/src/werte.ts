@@ -1,7 +1,16 @@
 import { kreisVon } from '../../shared/src/nummernkreis';
 import { wertfelder } from '../../shared/src/tabelle';
 import { setzeZusammengesetzte } from '../../shared/src/zusammengesetzt';
-import { istPasswortWert, leseZahl, type Betrag, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
+import {
+  betragZahl,
+  istPasswortWert,
+  leseZahl,
+  type Betrag,
+  type Feld,
+  type Mappentyp,
+  type Wert,
+  type Werte,
+} from '../../shared/src/model';
 import {} from './sprache';
 import { istZeitraum, leseProzent, leseZeitraum, type Zeitraum, type Zeitraumeinheit } from '../../shared/src/feldarten';
 
@@ -35,7 +44,9 @@ export function zuRoh(f: Feld, v: Wert | undefined): Roh {
       return istZeitraum(v) ? { anzahl: String(v.anzahl), einheit: v.einheit } : zeitraumRoh(v);
     case 'betrag': {
       const b = v as Betrag | null | undefined;
-      return { betrag: b && typeof b.betrag === 'number' ? mitKomma(b.betrag) : '', waehrung: b?.waehrung || f.waehrung || 'EUR' };
+      const waehrung = b?.waehrung || f.waehrung || 'EUR';
+      // Mit den Nachkommastellen der Währung (#1608): „12,50“, nicht „12,5“.
+      return { betrag: b && typeof b.betrag === 'number' ? betragZahl(b.betrag, waehrung) : '', waehrung };
     }
     case 'janein':
       return !!v;
@@ -105,8 +116,10 @@ export function standardRoh(mappentyp: Mappentyp): RohWerte {
     else if (f.typ === 'prozent') {
       const n = leseProzent(s);
       r[f.key] = n != null && Number.isFinite(n) ? mitKomma(n) : '';
-    } else if (f.typ === 'betrag') r[f.key] = { betrag: s == null ? '' : String(s), waehrung: f.waehrung || 'EUR' };
-    else if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) r[f.key] = [];
+    } else if (f.typ === 'betrag') {
+      const n = leseZahl(s);
+      r[f.key] = { betrag: n != null && Number.isFinite(n) ? betragZahl(n, f.waehrung) : '', waehrung: f.waehrung || 'EUR' };
+    } else if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) r[f.key] = [];
     // Nummernkreis (#171): vergibt der Server beim Speichern.
     else r[f.key] = f.typ === 'referenz' || s == null || kreisVon(f) ? '' : String(s);
   }
