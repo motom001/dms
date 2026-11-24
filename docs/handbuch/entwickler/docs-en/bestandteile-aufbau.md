@@ -78,8 +78,8 @@ Vite bundles the web interface libraries into one file at build time; they are n
 | `fontconfig` | Finds the substitute fonts for PDFs that do not embed their fonts. | `dms`, `dms-komplett` |
 | `font-liberation` | Substitute fonts, metrically matching Helvetica/Arial, Times and Courier (page and preview images, archive version). | `dms`, `dms-komplett` |
 | `font-dejavu` | Substitute font for further characters. | `dms`, `dms-komplett` |
-| `postgresql17` | Database inside the container, only in dms-komplett (reachable only within the container). | `dms-komplett` |
-| `postgresql17-contrib` | Extensions pg_trgm and unaccent for fuzzy search and searching within words. | `dms-komplett` |
+| `postgresql18` | Database inside the container, only in dms-komplett (reachable only within the container). | `dms-komplett` |
+| `postgresql18-contrib` | Extensions pg_trgm and unaccent for fuzzy search and searching within words. | `dms-komplett` |
 | `tini` | First process in the container: passes on signals and shuts down Ablago (and PostgreSQL in dms-komplett) cleanly. | `dms`, `dms-komplett` |
 | `su-exec` | Starts PostgreSQL as its own user instead of root (dms-komplett). | `dms`, `dms-komplett` |
 | `setpriv` | Starts Ablago and the document tools as their own users instead of root, with “no new privileges” (from util-linux). | `dms`, `dms-komplett` |

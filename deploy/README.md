@@ -2,7 +2,7 @@
 
 Welche Datei wofür – Anleitungen unter **[Wie komme ich an ein DMS?](https://help.ablago.app/installieren/aktuell/)**.
 
-**Empfohlen sind zwei Container** (Ablago `ghcr.io/motom001/dms` + PostgreSQL `postgres:17`): PostgreSQL bekommt Sicherheits-Updates unabhängig von Ablago, beide lassen sich einzeln betreiben. `dms-komplett` ist die Alternative zum Ausprobieren und für Umgebungen, die nur einen Container zulassen ([Ein oder zwei Container?](https://help.ablago.app/installieren/aktuell/#ein-oder-zwei-container)).
+**Empfohlen sind zwei Container** (Ablago `ghcr.io/motom001/dms` + PostgreSQL `postgres:18`): PostgreSQL bekommt Sicherheits-Updates unabhängig von Ablago, beide lassen sich einzeln betreiben. `dms-komplett` ist die Alternative zum Ausprobieren und für Umgebungen, die nur einen Container zulassen ([Ein oder zwei Container?](https://help.ablago.app/installieren/aktuell/#ein-oder-zwei-container)).
 
 | Ordner | Variante | Für | Was du einträgst |
 | --- | --- | --- | --- |

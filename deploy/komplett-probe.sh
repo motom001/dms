@@ -266,6 +266,26 @@ docker rm -f "$NAME-alt" >/dev/null 2>&1 || true
 grep -q "stammt von PostgreSQL 15" "$altlog" || { sed 's/^/::error::/' "$altlog"; fehler "keine klare Meldung bei anderer Hauptversion"; }
 sudo rm -rf "$alt" "$altlog"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
+echo "::group::5a. Datenbank-Ordner von PostgreSQL 17 (#1464)"
+# Umzug 17 → 18: Die Startseite nennt die letzte Version mit 17 für die Sicherung; der Ordner bleibt unangetastet.
+letzte=$(sed -n 's/^LETZTE_PG17=//p' "$(dirname "$0")/komplett/start.sh")
+alt=$(mktemp -d); altlog=$(mktemp); mkdir -p "$alt/daten"; echo 17 > "$alt/daten/PG_VERSION"; echo bleibt > "$alt/daten/merker"
+docker run -d --name "$NAME-alt" -p "$PORT:3000" -e DMS_START_FEHLER_WARTEN_S=20 -v "$alt:/data/postgres" "$IMAGE" >/dev/null
+s=""
+for _ in $(seq 1 60); do s=$(seite); grep -q "letzte Version mit PostgreSQL 17" <<< "$s" && break; sleep 0.5; done
+grep -q "Ziehe mit Ablago $letzte (letzte Version mit PostgreSQL 17) eine Sicherung" <<< "$s" || { docker logs "$NAME-alt" 2>&1 | sed 's/^/::error::/'; fehler "keine Startseite mit Grund und Weg für den Ordner von PostgreSQL 17"; }
+grep -q "dms-komplett:$letzte" <<< "$s" || fehler "Startseite nennt das Image dms-komplett:$letzte nicht"
+grep -q "/data/" <<< "$s" && fehler "Startseite nennt einen Pfad"
+code=0; code=$(timeout 120 docker wait "$NAME-alt") || code=124
+docker logs "$NAME-alt" > "$altlog" 2>&1 || true
+docker rm -f "$NAME-alt" >/dev/null 2>&1 || true
+[ "$code" = 124 ] && fehler "läuft trotz Datenbank von PostgreSQL 17 nach 120 s noch"
+[ "$code" = 0 ] && fehler "startet trotz Datenbank von PostgreSQL 17"
+grep -q "Umzug: mit Ablago $letzte" "$altlog" || { sed 's/^/::error::/' "$altlog"; fehler "kein Weg für den Umzug im Protokoll"; }
+if [ "$(sudo cat "$alt/daten/PG_VERSION")" != 17 ] || [ "$(sudo cat "$alt/daten/merker")" != bleibt ]; then fehler "Ordner von PostgreSQL 17 verändert"; fi
+echo "::notice::Ordner von PostgreSQL 17: $(schritt "$s")"
+sudo rm -rf "$alt" "$altlog"
+echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 echo "::group::5b. Rechte am Datenbank-Ordner (#943)"
 # Wie auf dem UGREEN-NAS: Der Ordner für /data/postgres hat 000. Ablago selbst startet nicht (DMS_START=true),
 # es genügt, dass initdb und PostgreSQL als Benutzer postgres durchlaufen.
