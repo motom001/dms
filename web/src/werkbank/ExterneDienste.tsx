@@ -88,7 +88,8 @@ function Zeitraum({ stunden, setze }: { stunden: number; setze: (h: number) => v
 export function Kennzahlen({ u, pakete }: { u: ExternUebersicht; pakete?: Record<string, string> }) {
   if (!u.dienste.length) return <p className="leise">{t('systemzustand.extern.keine', { anzahl: u.stunden })}</p>;
   return (
-    <div className="tabellenrahmen">
+    // Rollt die Tabelle am Handy waagerecht, erreicht man sie mit der Tastatur (#1290, axe scrollable-region-focusable).
+    <div className="tabellenrahmen" tabIndex={0} role="region" aria-label={t('systemzustand.extern.titel')}>
       <table className="tabelle klein">
         <thead>
           <tr>

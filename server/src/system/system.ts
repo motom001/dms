@@ -409,6 +409,10 @@ const datumDe = (iso: string) =>
     new Date(`${iso.slice(0, 10)}T00:00:00Z`),
   );
 
+/** Installierte Version mit Commit; ein Bau von :main nennt ihn schon in der Version (#1613) – dann nicht noch einmal. */
+const installiertMitCommit = (d: { version: string; commit: string | null }) =>
+  d.commit && !d.version.includes('+') ? `${d.version} (${d.commit.slice(0, 7)})` : d.version;
+
 /**
  * Das DMS selbst (#206): mit dem neuesten Release auf GitHub vergleichen (Versionsnummer). Seit #907 ist „Latest“
  * die stabile Version (`:stabil`, im Wochentakt) – Releases dazwischen sind nicht „Latest“. So heißt es nur bei
@@ -416,10 +420,6 @@ const datumDe = (iso: string) =>
  * Nummer), bekommt wie bisher den Hinweis auf neuere Stände auf main. Ohne Release-Abfrage wie bisher der
  * Vergleich mit main.
  */
-/** Installierte Version mit Commit; ein Bau von :main nennt ihn schon in der Version (#1613) – dann nicht noch einmal. */
-const installiertMitCommit = (d: { version: string; commit: string | null }) =>
-  d.commit && !d.version.includes('+') ? `${d.version} (${d.commit.slice(0, 7)})` : d.version;
-
 async function dmsSelbst(abruf: Abruf, u: Uebersicht): Promise<Vergleich> {
   const installiert = installiertMitCommit(u.dms);
   type Release = { tag_name?: string; published_at?: string; html_url?: string; target_commitish?: string };
