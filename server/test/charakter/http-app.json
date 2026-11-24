@@ -219,7 +219,6 @@
     "Oberfläche": {
       "status": 200,
       "koepfe": [
-        "accept-ranges",
         "cache-control: no-cache",
         "connection",
         "content-security-policy",
@@ -234,7 +233,6 @@
     "Datei der Oberfläche": {
       "status": 200,
       "koepfe": [
-        "accept-ranges",
         "cache-control: public, max-age=31536000, immutable",
         "connection",
         "content-security-policy",

@@ -1,6 +1,6 @@
 # Abhängigkeiten { #abhaengigkeiten }
 
-Ablago kommt mit **wenig fremdem Code** aus: 10 npm-Pakete im Server, 3 in der Oberfläche, dazu eine Handvoll Alpine-Pakete im Image. Das ist der beste Schutz gegen Angriffe über die Lieferkette und hält Sicherheitsupdates selten und überschaubar – und einer der Hauptgründe, warum Node.js hier gut passt. So soll es bleiben.
+Ablago kommt mit **wenig fremdem Code** aus: 9 npm-Pakete im Server, 3 in der Oberfläche, dazu eine Handvoll Alpine-Pakete im Image. Das ist der beste Schutz gegen Angriffe über die Lieferkette und hält Sicherheitsupdates selten und überschaubar – und einer der Hauptgründe, warum Node.js hier gut passt. So soll es bleiben.
 
 **Regel (#543):** Eine neue **Laufzeit-Abhängigkeit** – npm unter `dependencies` oder ein Alpine-Paket per `apk add` im `Dockerfile` – kommt nur mit Begründung im Pull Request (Abschnitt „Neue Abhängigkeiten“ der Vorlage):
 
@@ -17,6 +17,7 @@ Die Prüfung **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) melde
 - `@pdf-lib/fontkit` (einzige Abhängigkeit `pako`, die pdf-lib schon mitbringt) und `@simplewebauthn/server` stehen auf fester Version.
 - `poppler-utils` und `setpriv` (beide GPL-2.0-or-later) ruft Ablago als eigene Programme auf; eingebunden werden sie nicht. `tini`, `su-exec` und `setpriv` sorgen dafür, dass Ablago, Vorstart und Werkzeugdienst [ohne root](server.md#ohne-root) laufen.
 - Die Ersatzschriften `font-liberation` und `font-dejavu` (mit `fontconfig`, etwa 14 MB) prüft `.github/werkzeuge/schriften-pruefen.mjs` im Image-Workflow ([#1329](https://github.com/motom001/dms/issues/1329)); ohne sie rendert `pdftoppm` PDFs mit nicht eingebetteten Schriften ohne Text.
+- **Wo wir selbst bauen und wo nicht:** Die Oberfläche liefert seit [#1468](https://github.com/motom001/dms/issues/1468) ein kleiner eigener Auslieferer aus (`server/src/oberflaeche/auslieferer.ts`, rund 200 Zeilen) statt `@fastify/static`, das 25 Pakete mitbrachte, häufig Hauptversionen wechselte und mehrere Sicherheitsmeldungen hatte. Das lohnt sich dort, weil die Eingabe unsere eigene, beim Bau erzeugte Dateiliste ist: kein Pfad aus der URL erreicht das Dateisystem. **Nicht** selbst gebaut werden Kryptografie, Protokolle und Parser für fremde Eingaben (E-Mails, PDFs, Anmeldung) – dort bleiben gepflegte Bibliotheken.
 - Auch bei Werkzeugen gilt: lieber Bordmittel – die Tests laufen mit dem Testläufer von Node.js (`node --test`), ohne eigenes Test-Framework.
 
 **Updates:** Dependabot (`.github/dependabot.yml`) öffnet wöchentlich Pull Requests, Sicherheitsupdates sofort. Die Mail-Pakete `nodemailer`, `imapflow` und `mailparser` verarbeiten fremde E-Mails und kommen deshalb als eigener PR (Gruppe `mail`, auch Hauptversionen), der zügig gemergt wird ([#1413](https://github.com/motom001/dms/issues/1413)); die übrigen kleinen Updates sammelt die Gruppe `klein`.

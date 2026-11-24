@@ -96,7 +96,7 @@ Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens
 
 ### Vorkomprimiert (#1236) { #vorkomprimiert }
 
-Das Vite-Plugin `vorkomprimieren` (`web/vite.config.ts`) legt nach dem Bau neben jede Datei in `web/dist` ab 1 KB mit Text-Endung (js, css, html, svg, json, webmanifest, wasm, txt, xml, ttf, otf) eine `.br`- (Brotli, höchste Stufe) und eine `.gz`-Fassung (gzip 9), nur mit `zlib` aus Node. `statischeDateien()` (`server/src/oberflaeche/oberflaeche.ts`) schaltet bei `@fastify/static` `preCompressed` ein: passend zu `Accept-Encoding` die beste Fassung, sonst die Datei selbst, immer mit `Vary: Accept-Encoding`; `globIgnore` gibt den Fassungen keine eigenen Adressen. `index.html` ändert sich zur Laufzeit nicht und kommt deshalb ebenfalls vorkomprimiert. Der Test steht in `server/test/oberflaeche-dateien.test.ts`.
+Das Vite-Plugin `vorkomprimieren` (`web/vite.config.ts`) legt nach dem Bau neben jede Datei in `web/dist` ab 1 KB mit Text-Endung (js, css, html, svg, json, webmanifest, wasm, txt, xml, ttf, otf) eine `.br`- (Brotli, höchste Stufe) und eine `.gz`-Fassung (gzip 9), nur mit `zlib` aus Node. Der Auslieferer (`server/src/oberflaeche/auslieferer.ts`, #1468) wählt passend zu `Accept-Encoding` die beste Fassung (Brotli vor gzip, Gewichte beachtet), sonst die Datei selbst, immer mit `Vary: Accept-Encoding`; die Fassungen bekommen keine eigenen Adressen. `index.html` ändert sich zur Laufzeit nicht und kommt deshalb ebenfalls vorkomprimiert. Der Test steht in `server/test/oberflaeche-dateien.test.ts`.
 
 | Datei (Stand #1236) | roh | Brotli | gzip |
 |---|---:|---:|---:|

@@ -1,5 +1,5 @@
 /**
- * Auslieferung der Oberfläche (#215, @fastify/static): Dateien aus web/dist, Browser-Routen bekommen
+ * Auslieferung der Oberfläche (#215, eigener Auslieferer seit #1468): Dateien aus web/dist, Browser-Routen bekommen
  * index.html, nichts außerhalb des Ordners ist erreichbar – auch nicht mit Pfad-Tricks.
  * Braucht das echte Fastify; läuft in der CI (lokal ohne installierte Pakete übersprungen).
  */

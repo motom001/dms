@@ -1,4 +1,3 @@
-import fastifyStatic from '@fastify/static';
 import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { existsSync } from 'node:fs';
@@ -17,7 +16,8 @@ import { liesEinrichtungsdatei } from './einrichtungsdatei';
 import { Fachfehler } from '../grundlagen/fehler';
 import { protokoll } from '../protokoll/protokoll';
 import { standKennung } from '../system/system';
-import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
+import { oberflaecheSenden } from '../oberflaeche/oberflaeche';
+import { richteOberflaecheEin } from '../oberflaeche/auslieferer';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
 import { t } from '../sprache/sprache';
 import { EINGEBAUTE_SPRACHEN, setzeSprache } from '../../../shared/src/sprache';
@@ -84,7 +84,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
   richteRoutenEin(app, o, z, pruefe, uebernehmen);
 
   if (o.webDir && existsSync(o.webDir)) {
-    await app.register(fastifyStatic, { root: o.webDir, wildcard: false, ...statischeDateien(o.webDir) });
+    richteOberflaecheEin(app, o.webDir, { routen: true });
     app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, o.webDir));
   }
 

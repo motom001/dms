@@ -25,7 +25,7 @@ const MINDESTGROESSE = 1024;
 
 /**
  * Vorkomprimieren (#1236): legt nach dem Bau neben jede passende Datei in dist eine `.br`- und eine `.gz`-Fassung.
- * Der Server liefert sie über @fastify/static (`preCompressed`) passend zu Accept-Encoding aus und komprimiert selbst
+ * Der Server liefert sie über den eigenen Auslieferer (`server/src/oberflaeche/auslieferer.ts`, #1468) passend zu Accept-Encoding aus und komprimiert selbst
  * nichts. Nur zlib aus Node, keine weitere Abhängigkeit. Eine Fassung, die nicht kleiner wird, entfällt.
  */
 function vorkomprimieren(): Plugin {

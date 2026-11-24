@@ -1,4 +1,3 @@
-import { relative, sep } from 'node:path';
 import { hilfeAntwort, hilfeSenden } from './hilfe';
 import { t } from '../sprache/sprache';
 
@@ -58,31 +57,9 @@ export function oberflaecheSenden(url: string, reply: Antwort, webDir: string | 
   return reply.sendFile('index.html');
 }
 
-/** Ein Jahr: Dateien unter /assets/ tragen ihren Inhalt im Namen (Vite) und ändern sich nie. */
+/**
+ * Zwischenspeichern (#1198), gleich in allen Betriebsarten – gesetzt vom Auslieferer (`auslieferer.ts`, #1468).
+ * Ein Jahr: Dateien unter /assets/ tragen ihren Inhalt im Namen (Vite) und ändern sich nie. */
 export const ASSETS_CACHE = 'public, max-age=31536000, immutable';
 /** Alles andere (index.html, Symbole, Manifest): jedes Mal beim Server nachfragen (ETag), nie ungefragt aus dem Cache. */
 export const SEITE_CACHE = 'no-cache';
-
-/**
- * Optionen für @fastify/static (#1198), gleich in allen Betriebsarten: `index.html` mit `Cache-Control: no-cache` – ein
- * Browser verwendet sie nie, ohne nachzufragen, und findet so immer die Dateien der laufenden Version –, Dateien unter
- * `/assets/` lange. Vorher setzte @fastify/static `public, max-age=0` für alles.
- *
- * Komprimiert (#1236): Der Web-Build legt `.br`- und `.gz`-Fassungen neben die Dateien. `preCompressed` wählt passend zu
- * `Accept-Encoding` die beste Fassung (sonst die unkomprimierte) und setzt `Vary: Accept-Encoding`; zur Laufzeit wird nichts
- * komprimiert. `index.html` wird nie zur Laufzeit verändert und darf deshalb vorkomprimiert kommen. Die Fassungen
- * selbst bekommen keine eigenen Adressen (`globIgnore`).
- */
-export function statischeDateien(root: string) {
-  return {
-    preCompressed: true,
-    globIgnore: ['**/*.br', '**/*.gz'],
-    cacheControl: false,
-    setHeaders: (res: { setHeader(n: string, v: string): unknown } | { header(n: string, v: string): unknown }, pfad: string) => {
-      const rel = relative(root, pfad);
-      const wert = rel === 'assets' || rel.startsWith(`assets${sep}`) ? ASSETS_CACHE : SEITE_CACHE;
-      if ('header' in res) res.header('cache-control', wert);
-      else res.setHeader('cache-control', wert);
-    },
-  };
-}

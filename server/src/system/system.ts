@@ -31,7 +31,7 @@ function debugText(): string {
 
 export const REPO = 'motom001/dms';
 /** Bibliotheken des Servers, deren Version für den Support zählt. */
-export const BIBLIOTHEKEN = ['fastify', '@fastify/static', 'postgres', 'nodemailer', 'imapflow', 'mailparser'] as const;
+export const BIBLIOTHEKEN = ['fastify', 'postgres', 'nodemailer', 'imapflow', 'mailparser'] as const;
 
 export interface Datenbankdaten {
   version: string;
@@ -283,7 +283,6 @@ export interface Vergleich {
 /** #216: Wofür die Bibliotheken da sind – „postgres“ ist der Treiber, nicht die Datenbank. */
 export const BEZEICHNUNGEN: Record<string, string> = {
   fastify: t('meldungen.system.fastify-webserver'),
-  '@fastify/static': '@fastify/static (Auslieferung der Oberfläche)',
   postgres: t('meldungen.system.postgres-js-datenbank-treiber'),
   nodemailer: t('meldungen.system.nodemailer-e-mail-versand'),
   imapflow: t('meldungen.system.imapflow-postfaecher-abrufen'),
