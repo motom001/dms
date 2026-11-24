@@ -105,21 +105,22 @@ rauchtest('Eigene Organisation: Vorgaben der Auskünfte, Anrede zuerst, Text fol
   assert.equal(await s.getByRole('button', { name: 'Eigene Organisation speichern' }).isDisabled(), true);
 });
 
-// #1184: Gruppe „Datenschutz“ nur bei beruflicher Nutzung; Löschprotokoll eigener Bereich; Löschkonzept aufgeräumt.
+// #1184: Gruppe „Datenschutz“, Löschprotokoll eigener Bereich, Löschkonzept aufgeräumt. Seit #1319 entscheidet nur die
+// Stufe, ob die Gruppe in der Leiste steht – nicht mehr der Haken „beruflich“.
 rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Löschkonzept aufgeräumt (#1184)', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  // Privat: keine Gruppe Datenschutz in der Leiste, auch die Suche der Werkbank findet sie nicht – die Seiten bleiben
-  // über ihre Adresse erreichbar. (Welche Bereiche sonst zu sehen sind, bestimmt die Vorlage; die Suche zeigt alle.)
+  // Stufe Haushalt (aus der Einrichtung): keine Gruppe Datenschutz in der Leiste – die Suche der Werkbank findet sie wie
+  // jeden ausgeblendeten Bereich, die Seiten bleiben über ihre Adresse erreichbar.
   await s.goto(BASIS + '/werkbank/organisation');
   await bereiche.getByRole('link', { name: /^Eigene Organisation/ }).waitFor();
   for (const name of [/^Datenschutz-Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/])
     assert.equal(await bereiche.getByRole('link', { name }).count(), 0, String(name));
   const suche = bereiche.getByRole('searchbox', { name: 'Bereiche der Werkbank durchsuchen' });
   await suche.fill('Löschprotokoll');
-  assert.equal(await bereiche.getByRole('link', { name: /^Löschprotokoll/ }).count(), 0);
+  await bereiche.getByRole('link', { name: /^Löschprotokoll/ }).waitFor();
   await suche.fill('');
   // Alte Adresse des Abschnitts führt auf den eigenen Bereich.
   await s.goto(BASIS + '/werkbank/loeschkonzept#loeschprotokoll');
@@ -140,20 +141,14 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   await s.locator('#personendaten-ohne[open]').waitFor();
   await s.locator('#personendaten-ohne summary').click();
   assert.equal(await s.locator('#personendaten-ohne').evaluate((d) => d.open), false);
-  // Beruflich: die Werkbank-Suche findet die drei Einträge der Gruppe; danach wieder privat.
+  // #1319: Beruflich ändert die Leiste nicht – die Stufe entscheidet; danach wieder privat. (Das Löschkonzept kann mit
+  // Lücken als Warnung dastehen, wie jeder ausgeblendete Bereich mit Warnung – das gibt es nur bei beruflicher Nutzung.)
   await s.goto(BASIS + '/werkbank/organisation');
   await beruflich(s, true);
-  for (const [wort, name] of [
-    ['Auskünfte', /^Datenschutz-Auskünfte/],
-    ['Löschkonzept', /^Löschkonzept/],
-    ['Löschprotokoll', /^Löschprotokoll/],
-  ]) {
-    await suche.fill(wort);
-    await bereiche.getByRole('link', { name }).waitFor();
-  }
+  await bereiche.getByRole('link', { name: /^Eigene Organisation/ }).waitFor();
+  for (const name of [/^Datenschutz-Auskünfte/, /^Löschprotokoll/])
+    assert.equal(await bereiche.getByRole('link', { name }).count(), 0, `beruflich, Stufe Haushalt: ${name}`);
   await beruflich(s, false);
-  await suche.fill('Löschprotokoll');
-  await bereiche.getByRole('link', { name: /^Löschprotokoll/ }).waitFor({ state: 'detached' });
 });
 
 /* ---------- #1311: Name, Rollen als Mehrfachauswahl, Hinweis bei privater Nutzung, Esc ---------- */
@@ -166,7 +161,7 @@ rauchtest(
     await verwalten(s);
     const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
     const satz =
-      /^Weil die Ablage nicht beruflich genutzt wird, steht die Gruppe „Datenschutz“ \(Datenschutz-Auskünfte, Löschkonzept, Löschprotokoll\)/;
+      /^Die Ablage wird nicht beruflich genutzt – Auskünfte nennen deshalb keine eigene Organisation\. Die Gruppe „Datenschutz“ \(Datenschutz-Auskünfte, Löschkonzept, Löschprotokoll\) steht ab der Stufe „Selbständig“/;
     await s.goto(BASIS + '/werkbank/organisation');
     await s.locator('#nutzung').getByText(satz).waitFor();
     // Über die Adresse geöffnet: derselbe Satz oben, mit dem Weg zur Nutzung.

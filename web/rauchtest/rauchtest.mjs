@@ -33,6 +33,7 @@
 
 // Die Einrichtung zuerst, dann die Bereiche in der Reihenfolge, in der sie aufeinander aufbauen.
 import './einrichtung.mjs';
+import './bereiche/werkbank-uebersicht.mjs';
 import './bereiche/start-und-suche.mjs';
 import './bereiche/pakete.mjs';
 import './bereiche/paket-reiter.mjs';

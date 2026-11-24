@@ -229,8 +229,9 @@ const STUFE_NEU = {
   organisation: ['rundgaenge', 'designs'],
   alles: ['anbindung', 'demo'],
 };
-// Stehen nur unter einer Bedingung in der Leiste (Archivmodus, eingebundener Ordner, berufliche Nutzung).
-const BEDINGT = ['aufbewahrung', 'eingangsordner', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll'];
+// Stehen nur unter einer Bedingung in der Leiste (Archivmodus, eingebundener Ordner). Die Gruppe Datenschutz hängt seit
+// #1319 nur an der Stufe – auch in dieser privat genutzten Testinstallation steht sie ab Selbständig da.
+const BEDINGT = ['aufbewahrung', 'eingangsordner'];
 const ansichtSetzen = (s, data) => s.request.put(BASIS + '/api/werkbank/ansicht', { headers: { 'x-dms': '1' }, data });
 
 /** Was die Leiste regulär zeigt (ohne Bereiche, die nur wegen eines Hinweises dastehen), als Pfade. */
