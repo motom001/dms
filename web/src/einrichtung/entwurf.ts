@@ -198,7 +198,8 @@ export function entwurfAus(eintrag?: Mappentyp): Entwurf {
       archiv: null,
       stempel: null,
       ausDokument: null,
-      autoZuordnen: false,
+      // #1639: Standard „Wie in ‚Was Ablago darf‘“ – kein zusätzliches Einschalten je Mappentyp.
+      autoZuordnen: true,
       ausPost: null,
       erkennbarAn: '',
       mehrzahl: '',

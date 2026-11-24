@@ -442,6 +442,13 @@ export interface WerkbankUebersicht {
   angehalten?: Array<{ id: string; name: string; grund: string }>;
   /** Beschädigte Pakete (#1551): eigene Teile fehlen. */
   beschaedigt?: Array<{ id: string; name: string }>;
+  /** Post automatisch zuordnen (#1639): Mappentypen mit „Hier nie“, bisher eingeschaltete und ob einmal „alle angleichen?“ steht. */
+  zuordnen?: ZuordnenAusnahmen | null;
+}
+export interface ZuordnenAusnahmen {
+  nie: string[];
+  bisherAn: string[];
+  hinweis: boolean;
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
@@ -713,6 +720,10 @@ export const betriebApi = {
   /** Was Ablago darf (#1562): ändern; Senken mit betroffenen Paketen erst mit `bestaetigt` (sonst 409 mit `betroffen`). */
   darfSetzen: (e: Partial<Darf> & { bestaetigt?: boolean; hoechstens?: Partial<Darf> }) =>
     anfrage<DarfStand>('PUT', '/api/werkbank/darf', e),
+  /** Was Ablago darf (#1562) lesen – im Mappentyp-Editor für „Wie in ‚Was Ablago darf‘“ (#1639). */
+  darf: () => anfrage<DarfStand>('GET', '/api/werkbank/darf'),
+  /** Post automatisch zuordnen (#1639): alle Mappentypen wie in „Was Ablago darf“. */
+  zuordnenAngleichen: () => anfrage<ZuordnenAusnahmen>('POST', '/api/werkbank/zuordnen-angleichen'),
   meldungErledigt: (schluessel: string) => anfrage<null>('POST', '/api/werkbank/uebersicht/erledigt', { schluessel }),
   fehlermeldungen: (erledigt = false) => anfrage<Fehlermeldung[]>('GET', `/api/werkbank/fehlermeldungen${erledigt ? '?erledigt' : ''}`),
   fehlermeldung: (id: string) => anfrage<Fehlermeldung>('GET', `/api/werkbank/fehlermeldungen/${id}`),

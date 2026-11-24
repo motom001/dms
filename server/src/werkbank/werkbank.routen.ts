@@ -531,6 +531,8 @@ async function uebersichtBetrieb(k: RoutenKontext, sicher: Sicher, anb: Anbindun
           ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })), bisher: k.typen.filter((x) => x.zugelassen).map((x) => x.name) }
           : null;
       })) ?? null,
+    // Post automatisch zuordnen (#1639): Ausnahmen am Mappentyp (Karte „Was Ablago darf“) und einmal „alle angleichen?“.
+    zuordnen: (await sicher(() => dienst.mappentypen.zuordnenAusnahmen())) ?? null,
     // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
     zahlen: await werkbankZahlen({
       nummernkreise: () => dienst.nummernkreise.listeNummernkreise(),
@@ -606,6 +608,15 @@ function meldungenRouten(k: RoutenKontext): Route[] {
           if (!darfBereich(ich(a), 'pakete')) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
           await dienst.ki.kiHinweisGelesen();
           L.werkbank.info('Hinweis „Bisher gehen nur diese Bereiche hinaus“ ausgeblendet', { von: ich(a).email });
+          return leer;
+        }
+        // Post automatisch zuordnen (#1639): „Ausblenden“ – die bisherigen Ausnahmen bleiben.
+        if (k === 'post.zuordnen') {
+          if (!darfBereich(ich(a), 'typen')) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
+          await dienst.mappentypen.zuordnenHinweisGelesen();
+          L.werkbank.info('Hinweis „Post automatisch zuordnen richtet sich jetzt nach Was Ablago darf“ ausgeblendet', {
+            von: ich(a).email,
+          });
           return leer;
         }
         // Aufruf von außen (#679): „Alle abschalten“ – die genannten Automatisierungen aus (ein Klick), für alle, die sie verwalten.

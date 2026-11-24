@@ -1433,6 +1433,8 @@
   "fassungen.stempel-am-typ": "Stempel beim Weitergeben geändert",
   "fassungen.aus-dokument": "„Aus Dokument ausfüllen“ geändert",
   "fassungen.auto-zuordnen": "Post automatisch zuordnen: {wert}",
+  "fassungen.auto-zuordnen.darf": "wie in „Was Ablago darf“",
+  "fassungen.auto-zuordnen.nie": "hier nie",
   "fassungen.haken": "„Neue Mappen anlegen“ bzw. „Löschen erlauben“ geändert",
   "fassungen.rechte": "Rechte: {was}",
   "fassungen.rechte-offen": "alles erlaubt",

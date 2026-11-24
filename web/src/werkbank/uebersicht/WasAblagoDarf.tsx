@@ -4,11 +4,12 @@ import { Knopf } from '../../bausteine';
 import { betriebApi } from '../../api/betrieb';
 import { ApiFehler } from '../../api/anfrage';
 import { useKonto } from '../../konto';
-import { hatGesamt } from '../../../../shared/src/verwaltungsrecht';
+import { darfBereich, hatGesamt } from '../../../../shared/src/verwaltungsrecht';
 import { DARF_VORGABE, PAKETE_GRENZEN, SELBST_STUFEN, ueberHoechstwert, type Darf, type DarfStand } from '../../../../shared/src/darf';
 import type { UebersichtZustand } from './zustand';
 import { DarfFrage } from './DarfFrage';
 import { Feinabstimmung } from './Feinabstimmung';
+import { ZuordnenAusnahmen } from './ZuordnenAusnahmen';
 
 /** Paket über der neuen Grenze, wie der Server es beim Senken nennt (#1562, #1563). */
 interface Betroffen {
@@ -22,7 +23,8 @@ interface Betroffen {
  * „Ändern …“ mit denselben zwei Fragen. Je Frage eine Optionsgruppe, eine Zeile je Antwort; der erklärende Satz steht
  * nur unter der gewählten, darunter „Das heißt für euch“. Antworten über dem Höchstwert des Anbieters sind gesperrt.
  * Keine Stufennummern – nur Antworten in Worten. Bei „Auch Helfer, die Dienste im Netz nutzen“ darunter aufklappbar die
- * Feinabstimmung (#1635): welche Bereiche nicht an Dienste im Netz gehen.
+ * Feinabstimmung (#1635): welche Bereiche nicht an Dienste im Netz gehen. Gibt es Mappentypen mit „Hier nie automatisch
+ * zuordnen“, stehen sie darunter mit „Alle angleichen“ (#1639).
  */
 export function WasAblagoDarf({ u }: { u: UebersichtZustand }) {
   const d = u.stand?.darf;
@@ -52,6 +54,7 @@ function DarfKarte({ d, u }: { d: DarfStand; u: UebersichtZustand }) {
               </Knopf>
             </div>
           )}
+          {darfBereich(ich, 'typen') && <ZuordnenAusnahmen u={u} />}
           {d.pakete === 'netz' && hatGesamt(ich) && <Feinabstimmung />}
         </>
       )}

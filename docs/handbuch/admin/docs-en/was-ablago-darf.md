@@ -39,7 +39,15 @@ The tour **Keep areas away from services on the network** (assistant → Tips) s
 - **Recognise and propose** (recommended, default)
 - **Do everything, I check afterwards**
 
-Ablago already remembers the answer. It takes effect once Ablago recognises post and documents on its own; until then it changes nothing.
+Ablago already remembers the answer. For post it already takes effect: only with **Do everything, I check afterwards** does Ablago assign recognised post on its own – see below. The rest takes effect once Ablago recognises documents on its own; until then it changes nothing.
+
+### Assign post automatically { #post-zuordnen }
+
+The answer applies to **all folder types** – you do not have to switch on “Do everything” again per folder type. Ablago assigns post when recognition is certain (sender unambiguous, exactly one fitting folder); the recipient gets the task **Assigned automatically – please check** with **Undo**. If exactly one folder links to the sender – such as their contract – the post goes there, otherwise to the sender itself. With **Nothing on its own** and **Recognise and propose**, Ablago does not assign by itself but proposes in **Where does this belong?**.
+
+On the folder type only the **exception** remains: in the section *Recognition*, **Never assign automatically here**, e.g. for contracts (see [Folder types](mappentypen.md#erkennung)). If there are such exceptions, they are listed in the card under **Assign post automatically: exceptions**; **Align all** removes them.
+
+**Existing installations:** Where the former switch “Assign post automatically” was off, “Never assign automatically here” applies – nothing is switched to automatic silently. Where it was on, Ablago now only assigns with “Do everything, I check afterwards”. The overview says so once; **View exceptions** leads to the card, **Hide** leaves everything as it is.
 
 ## What always stays a decision of its own { #immer }
 

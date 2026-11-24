@@ -174,7 +174,9 @@ export class AusgangDienst {
   async mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> {
     const { typen: s } = await this.stempelDaten();
     const e = await this.typErkennungen();
-    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null, autoZuordnen: !!e[t.id]?.auto }));
+    // #1639: autoZuordnen false = „Hier nie automatisch zuordnen“ (sonst wie in „Was Ablago darf“).
+    const folgt = await this.teile.mappentypen.zuordnenFolgt();
+    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null, autoZuordnen: folgt(t.id) }));
   }
 
   /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */

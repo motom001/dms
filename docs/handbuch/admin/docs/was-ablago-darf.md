@@ -39,7 +39,15 @@ Den Weg zeigt auch der Rundgang **Bereiche nicht an Dienste im Netz geben** (Ass
 - **Erkennen und vorlegen** (empfohlen, Vorgabe)
 - **Alles erledigen, ich prüfe danach**
 
-Ablago merkt sich die Antwort schon jetzt. Wirken wird sie, sobald Ablago Post und Dokumente von sich aus erkennt; bis dahin ändert sie nichts.
+Ablago merkt sich die Antwort schon jetzt. Für Post wirkt sie bereits: Nur bei **Alles erledigen, ich prüfe danach** ordnet Ablago erkannte Post von sich aus zu – siehe unten. Das Übrige wirkt, sobald Ablago Dokumente von sich aus erkennt; bis dahin ändert es nichts.
+
+### Post automatisch zuordnen { #post-zuordnen }
+
+Die Antwort gilt für **alle Mappentypen** – ihr müsst „Alles erledigen“ nicht je Mappentyp noch einmal einschalten. Ablago ordnet Post zu, wenn die Erkennung sicher ist (Absender eindeutig, genau eine passende Mappe); der Empfänger bekommt die Aufgabe **Automatisch zugeordnet – bitte prüfen** mit **Rückgängig**. Verweist genau eine Mappe auf den Absender – etwa sein Vertrag –, geht die Post dorthin, sonst zum Absender selbst. Bei **Nichts von sich aus** und **Erkennen und vorlegen** ordnet Ablago nicht selbst zu, sondern schlägt in **Wohin gehört das?** vor.
+
+Am Mappentyp steht nur noch die **Ausnahme**: im Abschnitt *Erkennung* **Hier nie automatisch zuordnen**, etwa für Verträge (siehe [Mappentypen](mappentypen.md#erkennung)). Gibt es solche Ausnahmen, stehen sie in der Karte unter **Post automatisch zuordnen: Ausnahmen**; **Alle angleichen** hebt sie auf.
+
+**Bestehende Installationen:** Wo der frühere Schalter „Post automatisch zuordnen“ aus war, gilt „Hier nie automatisch zuordnen“ – nichts wird still auf automatisch gestellt. Wo er an war, ordnet Ablago jetzt nur noch bei „Alles erledigen, ich prüfe danach“ zu. Die Übersicht sagt das einmal; **Ausnahmen ansehen** führt zur Karte, **Ausblenden** lässt alles, wie es ist.
 
 ## Was immer eine eigene Entscheidung bleibt { #immer }
 

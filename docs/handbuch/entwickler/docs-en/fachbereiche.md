@@ -78,7 +78,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 - **Door:** `mappentypen/index.ts`; only `routen.ts` loads the routes (`mappentypen.routen.ts`) directly.
 - **Gets the core**, `TypPakete` and `Systemtypen` also the [permission check](#zugriff), and per class a connector for what is still in the service (stamp, recognition and permissions on the type, tasks, titles, jobs, writing system folders).
-- Since #1078 `ausPostZiele` (#937) lives in `mappentypen.dienst.ts`, the AI approval of folder types (#796) in `ki-typen.ts` (`KiTypen`, `dienst.ki`). Since #1077 the stamp on the type (`mitStempel`) is worked out by [outgoing](#ausgang), checking and saving it by the stamp templates in [editing PDFs](#pdf-bearbeiten) – both through the connector. Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
+- Since #1078 `ausPostZiele` (#937) lives in `mappentypen.dienst.ts`, the AI approval of folder types (#796) in `ki-typen.ts` (`KiTypen`, `dienst.ki`), the exceptions “Never assign automatically here” (#1639) in `zuordnen-typen.ts`. Since #1077 the stamp on the type (`mitStempel`) is worked out by [outgoing](#ausgang), checking and saving it by the stamp templates in [editing PDFs](#pdf-bearbeiten) – both through the connector. Since #1076 `berechtigungenAusEingabe` lives in [permissions](#berechtigungen) and still comes through the connector. Since #1074 `titel` lives with the [folders](#mappen) (`titel.ts`).
 
 ## Folders (#1074) { #mappen }
 

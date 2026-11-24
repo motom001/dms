@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
 import {
+  api,
   BASIS,
   benutzermenue,
   JONAS,
@@ -110,6 +111,50 @@ rauchtest(
       await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
       assert.equal(await haken.isChecked(), wert);
     }
+  },
+);
+
+rauchtest(
+  'Werkbank: Mappentyp – Post automatisch zuordnen nur als Ausnahme, Ausnahmen in „Was Ablago darf“, Alle angleichen, axe (#1639)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s
+      .getByRole('complementary', { name: 'Bereiche' })
+      .getByRole('link', { name: /^Mappentypen/ })
+      .click();
+    await s.getByRole('link', { name: /^Vertrag \d+ Felder/ }).click();
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    await bearbeitung.getByRole('heading', { name: 'Vertrag', level: 1 }).waitFor();
+    const erkennung = bearbeitung.getByRole('region', { name: 'Erkennung' });
+    await erkennung.getByRole('button', { name: 'Erkennung' }).click();
+    // Neue Installation: Standard „Wie in ‚Was Ablago darf‘“ mit der aktuellen Antwort in Worten, kein Schalter mehr.
+    const wieDarf = erkennung.getByRole('radio', { name: /^Wie in „Was Ablago darf“/ });
+    const nie = erkennung.getByRole('radio', { name: /^Hier nie automatisch zuordnen/ });
+    assert.ok(await wieDarf.isChecked());
+    await erkennung.getByText('Zurzeit: „Erkennen und vorlegen“.', { exact: false }).waitFor();
+    await erkennung.getByRole('link', { name: '„Was Ablago darf“ in der Werkbank-Übersicht' }).waitFor();
+    assert.equal(await erkennung.getByRole('checkbox', { name: /Post automatisch zuordnen/ }).count(), 0, 'kein Schalter mehr');
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      assert.deepEqual(await axePruefen(s, ['#erkennung']), [], `axe ${schema}`);
+    }
+    await schemaWechseln(s, 'light');
+    // Ausnahme setzen und speichern.
+    await nie.check();
+    await bearbeitung.getByRole('button', { name: 'Mappentyp speichern' }).click();
+    await bearbeitung.getByText('Mappentyp gespeichert.').waitFor();
+    // Die Karte „Was Ablago darf“ nennt die Ausnahme; „Alle angleichen“ hebt sie auf.
+    await s.goto(BASIS + '/werkbank#post-zuordnen');
+    const karte = s.getByRole('region', { name: 'Was Ablago darf' });
+    await karte.getByText('Post automatisch zuordnen: Ausnahmen').waitFor();
+    await karte.getByText(/nie automatisch zu, auch nicht bei .*: Vertrag\./).waitFor();
+    await karte.getByRole('button', { name: 'Alle angleichen' }).click();
+    await karte.getByText('Alle Mappentypen richten sich jetzt nach „Was Ablago darf“.').waitFor();
+    await karte.getByText('Post automatisch zuordnen: Ausnahmen').waitFor({ state: 'detached' });
+    const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
+    assert.equal(typen.find((x) => x.name === 'Vertrag').autoZuordnen, true);
   },
 );
 

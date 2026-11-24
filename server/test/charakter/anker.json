@@ -57,5 +57,6 @@
   "werkbank.pakete.mitgeliefert",
   "werkbank.pakete.mitgeliefert.schalter",
   "werkbank.darf",
-  "werkbank.darf.feinabstimmung"
+  "werkbank.darf.feinabstimmung",
+  "werkbank.darf.zuordnen"
 ]

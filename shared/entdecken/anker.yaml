@@ -241,6 +241,11 @@
   beschreibung: Feinabstimmung „Dienste im Netz“ in der Karte „Was Ablago darf“ (nur bei „Auch Helfer, die Dienste im Netz nutzen“) – Bereiche ausnehmen (#1635)
   handy: true
   clients: false
+- anker: werkbank.darf.zuordnen
+  seite: /werkbank
+  beschreibung: Ausnahmen „Post automatisch zuordnen“ in der Karte „Was Ablago darf“ (nur wenn Mappentypen „Hier nie automatisch zuordnen“ haben) – mit „Alle angleichen“ (#1639)
+  handy: true
+  clients: false
 - anker: werkbank.typen.suche
   seite: /werkbank/typen
   beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Mappentypen

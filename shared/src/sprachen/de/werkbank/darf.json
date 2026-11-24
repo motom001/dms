@@ -35,7 +35,7 @@
   "darf.selbst.alles": "Alles erledigen, ich prüfe danach",
   "darf.selbst.alles.text": "Ablago legt Erkanntes gleich ab. Ihr seht danach, was passiert ist, und könnt es zurücknehmen.",
   "darf.selbst.alles.satz": "Von sich aus erledigt Ablago alles, ihr prüft danach.",
-  "darf.selbst.heisst": "Wirkt, sobald Ablago Post und Dokumente von sich aus erkennt; bis dahin bleibt alles, wie es ist.",
+  "darf.selbst.heisst": "Post ordnet Ablago nur bei „Alles erledigen, ich prüfe danach“ von sich aus zu, wenn die Erkennung sicher ist. Das Übrige wirkt, sobald Ablago Dokumente von sich aus erkennt; bis dahin bleibt es, wie es ist.",
   "darf.senken.titel": "Diese Pakete passen dann nicht mehr dazu",
   "darf.grund.vorlagen": "„{name}“ ist ein Paket – ihr habt festgelegt, dass Ablago keine Pakete nutzt.",
   "darf.grund.lokal": "„{name}“ bringt eigenen Code mit – das habt ihr nicht erlaubt.",
@@ -84,5 +84,13 @@
   "darf.fein.hinweis.text": "Hinaus dürfen: {namen}. „Auch Helfer, die Dienste im Netz nutzen“ heißt jetzt alle Bereiche; einzelne nehmt ihr in der Feinabstimmung aus. Eure bisherige Liste bleibt, bis ihr es ändert.",
   "darf.fein.hinweis.keine": "Bisher geht kein Bereich an Dienste im Netz. „Auch Helfer, die Dienste im Netz nutzen“ heißt jetzt alle Bereiche; einzelne nehmt ihr in der Feinabstimmung aus. Eure bisherige Liste bleibt, bis ihr es ändert.",
   "darf.fein.hinweis.knopf": "Feinabstimmung ansehen",
-  "darf.fein.liste": "Dürfen an Dienste im Netz gehen"
+  "darf.fein.liste": "Dürfen an Dienste im Netz gehen",
+  "darf.zuordnen.titel": "Post automatisch zuordnen: Ausnahmen",
+  "darf.zuordnen.text": "Bei diesen Mappentypen ordnet Ablago Post nie automatisch zu, auch nicht bei „Alles erledigen, ich prüfe danach“: {namen}. Einzeln ändern lässt es sich am Mappentyp im Abschnitt „Erkennung“.",
+  "darf.zuordnen.angleichen": "Alle angleichen",
+  "darf.zuordnen.angeglichen": "Alle Mappentypen richten sich jetzt nach „Was Ablago darf“.",
+  "darf.zuordnen.hinweis": "Post automatisch zuordnen richtet sich jetzt nach „Was Ablago darf“.",
+  "darf.zuordnen.hinweis.nie": "Bisher war es bei {namen} aus – dort ordnet Ablago Post weiter nie automatisch zu, bis ihr angleicht.",
+  "darf.zuordnen.hinweis.an": "Bei {namen} war es an – dort ordnet Ablago Post jetzt nur bei „Alles erledigen, ich prüfe danach“ automatisch zu.",
+  "darf.zuordnen.hinweis.knopf": "Ausnahmen ansehen"
 }

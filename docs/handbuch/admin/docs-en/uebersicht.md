@@ -171,6 +171,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Packages paused – each with the reason in words ([Pausing](pakete.md#anhalten)) | yellow | `pakete.angehalten` |
 | Packages not complete – solutions on the package ([Damaged package](pakete.md#beschaedigt)) | yellow | `pakete.beschaedigt` |
 | So far only these areas go to services on the network – allow all? (once, for existing installations with “Also helpers that use services on the network” and their previous list, #1635; “Hide”) | notice | `ki.typen` |
+| Assigning post automatically now follows “What Ablago may do” (once, for existing installations with folder types whose switch was off, #1639; “View exceptions”, “Hide”) | notice | `post.zuordnen` |
 | New: What Ablago may do – please take a look once (once after the update; “Hide”) | notice | `darf.neu` |
 | Skipped during setup (address and email sending; packages are under "Recommended packages") | notice | `einrichtung` |
 | Good if someone else can manage – only one person may manage | notice | `verwaltung.zweite-person` |

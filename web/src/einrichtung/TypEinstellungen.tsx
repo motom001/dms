@@ -17,7 +17,9 @@ import {
   WIEDERFINDEN_FELDTYPEN,
   type AusDokument,
 } from '../../../shared/src/erkennung';
-import { abfangen, Bereich, Feld, HakenFeld, type Klappe } from '../bausteine';
+import { abfangen, Bereich, Feld, FeldGruppe, HakenFeld, type Klappe } from '../bausteine';
+import { betriebApi } from '../api/betrieb';
+import type { SelbstStufe } from '../../../shared/src/darf';
 import { ArchivLeer, mitStichtag } from './ArchivLeer';
 import type { Entwurf } from './entwurf';
 
@@ -81,7 +83,7 @@ export function ErkennungBereich({ e, setE, klappe }: Teil) {
         e.ausDokument?.aus ? t('mappentypen.editor.knopf-aus') : `„${e.ausDokument?.beschriftung || AUS_DOKUMENT_STANDARD}“`,
         t('mappentypen.editor.felder-markiert', { zahl: e.felder.filter((f) => f.erkennung).length }),
         t('mappentypen.editor.felder-wiederfinden', { zahl: e.felder.filter((f) => f.wiederfinden).length }),
-        ...(e.autoZuordnen && !e.archiv ? [t('mappentypen.editor.post-automatisch-zuordnen')] : []),
+        ...(!e.autoZuordnen && !e.archiv ? [t('mappentypen.editor.zuordnen.kurz-nie')] : []),
       ].join(' · ')}>
       <ErkennungTyp
         ad={e.ausDokument}
@@ -89,29 +91,65 @@ export function ErkennungBereich({ e, setE, klappe }: Teil) {
         wiederfinden={e.felder.filter((f) => f.wiederfinden && WIEDERFINDEN_FELDTYPEN.includes(f.typ)).map((f) => f.label || f.key)}
         felder={e.felder.filter((f) => f.erkennung).map((f) => f.label || f.key)}
       />
-      <div className="raster">
-        <div className="eigenschaft unten">
-          <HakenFeld
-            beschriftung={t('mappentypen.editor.post-automatisch-zuordnen-wenn')}
-            hinweis={
-              e.archiv ? (
-                <>
-                  <Symbol name="schloss" /> {t('mappentypen.editor.im-archivmodus-nicht-moeglich')}
-                </>
-              ) : (
-                t('mappentypen.editor.sicher-heisst-absender-eindeutig')
-              )
-            }>
-            <input
-              type="checkbox"
-              checked={e.autoZuordnen && !e.archiv}
-              disabled={!!e.archiv}
-              onChange={(ev) => setE((x) => ({ ...x, autoZuordnen: ev.target.checked }))}
-            />
-          </HakenFeld>
-        </div>
-      </div>
+      <ZuordnenWahl e={e} setE={setE} />
     </Bereich>
+  );
+}
+
+/**
+ * Post automatisch zuordnen (#337) – seit #1639 nur die Ausnahme: Ob Ablago von sich aus zuordnet, entscheidet „Was
+ * Ablago darf“ für alle Mappentypen. „Wie in ‚Was Ablago darf‘“ (Standard) nennt die aktuelle Wahl in Worten; „Hier nie
+ * automatisch zuordnen“ etwa für Verträge. Im Archivmodus nie (unverändert).
+ */
+function ZuordnenWahl({ e, setE }: Pick<Teil, 'e' | 'setE'>) {
+  const [selbst, setSelbst] = useState<SelbstStufe | null>(null);
+  useEffect(() => {
+    betriebApi.darf().then(
+      (d) => setSelbst(d.selbst),
+      () => setSelbst(null),
+    );
+  }, []);
+  const folgt = e.autoZuordnen && !e.archiv;
+  const setze = (autoZuordnen: boolean) => setE((x) => ({ ...x, autoZuordnen }));
+  return (
+    <FeldGruppe beschriftung={t('mappentypen.editor.post-automatisch-zuordnen')}>
+      <div className="feldstapel">
+        <label className="haken">
+          <input type="radio" name="post-zuordnen" checked={folgt} disabled={!!e.archiv} onChange={() => setze(true)} />
+          <span>
+            <span className="haken-titel">{t('mappentypen.editor.zuordnen.wie-darf')}</span>
+            {selbst && (
+              <small className="hilfe">
+                {t('mappentypen.editor.zuordnen.zurzeit', { antwort: tx.frei(`werkbank.darf.selbst.${selbst}`) })}{' '}
+                {selbst === 'alles' ? t('mappentypen.editor.zuordnen.alles') : t('mappentypen.editor.zuordnen.sonst')}
+              </small>
+            )}
+          </span>
+        </label>
+        <label className="haken">
+          <input type="radio" name="post-zuordnen" checked={!folgt} disabled={!!e.archiv} onChange={() => setze(false)} />
+          <span>
+            <span className="haken-titel">{t('mappentypen.editor.zuordnen.nie')}</span>
+            <small className="hilfe">{t('mappentypen.editor.zuordnen.nie.text')}</small>
+          </span>
+        </label>
+      </div>
+      <p className="hilfe klein">
+        {e.archiv ? (
+          <>
+            <Symbol name="schloss" /> {t('mappentypen.editor.im-archivmodus-nicht-moeglich')}
+          </>
+        ) : (
+          <>
+            {t('mappentypen.editor.zuordnen.hilfe')}{' '}
+            <Link to="/werkbank#was-ablago-darf" className="verweis">
+              {t('mappentypen.editor.zuordnen.zu-darf')}
+            </Link>
+            . {t('mappentypen.editor.sicher-heisst-absender-eindeutig')}
+          </>
+        )}
+      </p>
+    </FeldGruppe>
   );
 }
 

@@ -157,7 +157,8 @@ export abstract class DienstBauteile {
         return {
           stempel: (await this.stempelvorlagen.stempelDaten()).typen[id] ?? null,
           ausDokument: erk?.ausDokument ?? null,
-          autoZuordnen: !!erk?.auto,
+          // #1639: false = „Hier nie automatisch zuordnen“ (sonst wie in „Was Ablago darf“).
+          autoZuordnen: (await this.mappentypen.zuordnenFolgt())(id),
         };
       },
       aendereTyp: (id: string, e: Record<string, unknown>) => this.mappentypen.aendereTyp(id, e),
