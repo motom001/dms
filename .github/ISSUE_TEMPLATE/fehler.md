@@ -20,6 +20,16 @@ labels: bug
 <!-- Schritte zum Nachstellen, was du erwartet hast, was stattdessen passiert ist, Meldung oder Bildschirmfoto.
      Steps to reproduce, what you expected, what happened instead, message or screenshot. -->
 
+### Installationsart · Installation type
+<!-- Eine davon stehen lassen · Keep one of them:
+     TrueNAS-Katalog (Port 30607, Ordner keys/backups) · TrueNAS catalogue (port 30607, folders keys/backups)
+     TrueNAS Custom App
+     Docker Compose (Vorlage für Synology, UGREEN, QNAP, Unraid, Raspberry Pi … · template)
+     dms-komplett
+     Umbrel/ZimaOS/CasaOS
+     anderes · other: … -->
+Installationsart · Installation type: 
+
 ### Systemangaben · System information
 <!-- Am einfachsten: Werkbank → Technik → „Übersicht für GitHub kopieren“ und hier einfügen.
      Easiest: Werkbank → Technik → "Übersicht für GitHub kopieren" (copy overview for GitHub) and paste it here. -->

@@ -95,7 +95,8 @@ Where the database password is depends on the template:
 | Template | Database password |
 | --- | --- |
 | general template (`deploy/nas`) | in the file `.env` next to the Compose file (`DB_PASSWORD`) |
-| Synology, UGREEN, QNAP, TrueNAS, Unraid | at the top of the Compose file (`x-passwort`) |
+| Synology, UGREEN, QNAP, TrueNAS (Custom App), Unraid | at the top of the Compose file (`x-passwort`) |
+| TrueNAS (app catalogue) | in the app's settings (**Apps → Ablago → Edit**, database password) |
 | dms-komplett | none – the database can only be reached inside the container |
 
 It isn't on the emergency sheet. For a new system a new password is enough anyway.

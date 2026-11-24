@@ -15,6 +15,8 @@ Der Eingangsordner ist ein eigener Ordner im Container: **`/eingang`**. Die Vorl
 
 Fehlt die Zeile, gibt es keinen Eingangsordner und die Werkbank zeigt ihn nicht an – bestehende Installationen laufen unverändert weiter. Nach dem Hinzufügen das Projekt neu erstellen.
 
+Die App aus dem [TrueNAS-Katalog](https://help.ablago.app/installieren/aktuell/truenas/#aus-dem-app-katalog) bindet keinen Eingangsordner ein. Dort ergänzt du ihn unter **Apps → Ablago → Edit** als zusätzlichen Speicher (*Additional Storage*) mit dem Pfad `/eingang` im Container.
+
 Den Ordner `eingang` gibst du im NAS für den Scanner frei (SMB), z. B. als Unterordner einer vorhandenen Freigabe. Im Scanner trägst du diese Freigabe als Ziel für „Scan to Folder“ ein.
 
 !!! warning "Geändert in dieser Version: nur noch die vollständige E-Mail-Adresse"

@@ -95,7 +95,8 @@ Wo das Datenbank-Passwort steht, hängt von der Vorlage ab:
 | Vorlage | Datenbank-Passwort |
 | --- | --- |
 | allgemeine Vorlage (`deploy/nas`) | in der Datei `.env` neben der Compose-Datei (`DB_PASSWORD`) |
-| Synology, UGREEN, QNAP, TrueNAS, Unraid | oben in der Compose-Datei (`x-passwort`) |
+| Synology, UGREEN, QNAP, TrueNAS (Custom App), Unraid | oben in der Compose-Datei (`x-passwort`) |
+| TrueNAS (App-Katalog) | in den Einstellungen der App (**Apps → Ablago → Edit**, Datenbank-Passwort) |
 | dms-komplett | keins – die Datenbank ist nur im Container erreichbar |
 
 Auf dem Notfallblatt steht es nicht. Für ein neues System genügt ohnehin ein neues Passwort.

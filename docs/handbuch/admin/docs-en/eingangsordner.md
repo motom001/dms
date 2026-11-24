@@ -15,6 +15,8 @@ The intake folder is a separate folder in the container: **`/eingang`**. The tem
 
 If the line is missing, there is no intake folder and the workbench doesn't show it – existing installations keep running unchanged. After adding it, recreate the project.
 
+The app from the [TrueNAS catalogue](https://help.ablago.app/installieren/aktuell/en/truenas/#aus-dem-app-katalog) does not mount an intake folder. There you add it under **Apps → Ablago → Edit** as additional storage (*Additional Storage*) with the path `/eingang` in the container.
+
 You share the folder `eingang` on the NAS for the scanner (SMB), e.g. as a subfolder of an existing share. In the scanner you enter this share as the target for "Scan to Folder".
 
 !!! warning "Changed in this version: only the full e-mail address"
