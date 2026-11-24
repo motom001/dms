@@ -46,6 +46,8 @@ Ablago gibt es in zwei Varianten. **Wir empfehlen zwei Container** – so laufen
 
 **Wann ein Container?** Wenn es schnell gehen soll (ausprobieren, testen) oder die Umgebung nur einen Container zulässt. Ein Wechsel zwischen beiden Varianten geht jederzeit über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://help.ablago.app/admin/aktuell/wachsen/).
 
+**Welches Image?** Die Vorlagen nutzen `ghcr.io/motom001/dms` (zwei Container) bzw. `ghcr.io/motom001/dms-komplett` (ein Container), jeweils mit dem Tag `:stabil`. Für App-Kataloge, die selbst nach neuen Versionen suchen und immer den neuesten Versions-Tag nehmen (etwa TrueNAS), gibt es `ghcr.io/motom001/ablago`: dasselbe Image wie `dms`, aber nur mit den Versionen, die zu `:stabil` befördert wurden. Mehr unter [Welches Image-Tag?](https://help.ablago.app/admin/aktuell/aktualisieren/#image-tag).
+
 ## Was du in jedem Fall bekommst
 
 - Ablago und eine PostgreSQL-Datenbank – in zwei Containern oder mit [dms-komplett](komplett.md) in einem.

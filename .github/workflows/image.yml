@@ -537,12 +537,16 @@ jobs:
       # Dieselbe Tageskennung der Paketschicht wie beim Bau auf main (#1397): So kommt sie wie dort aus dem Cache, und
       # der Vergleich der Paketlisten unten sieht, was ein Release sähe.
       - id: zeit
-        run: echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          # Release-Version für DMS_VERSION im Image (#1447), wie beim Bau auf main.
+          echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           build-args: |
             APK_TAG=${{ steps.zeit.outputs.tag }}
+            DMS_VERSION=${{ steps.zeit.outputs.version }}
           platforms: ${{ matrix.plattform }}
           load: true
           push: false
@@ -554,6 +558,9 @@ jobs:
           docker run --rm --entrypoint sh dms:probe -c 'uname -m && pdftotext -v 2>&1 | head -1 && qpdf --version | head -1'
           if docker run --rm --entrypoint sh dms:probe -c 'command -v tesseract'; then echo "::error::tesseract steckt wieder im Image (#459)"; exit 1; fi
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
+          # Version im Image (#1447): DMS_VERSION wie package.json.
+          v=$(docker run --rm --entrypoint printenv dms:probe DMS_VERSION)
+          [ "$v" = "${{ steps.zeit.outputs.version }}" ] || { echo "::error::DMS_VERSION im Image ist „$v“ statt ${{ steps.zeit.outputs.version }}"; exit 1; }
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
       # Lizenztexte im Image (#1278): Datendateien in server/lizenzen/, die server/src/pakete/lizenztexte.ts beim Start liest.
@@ -645,6 +652,7 @@ jobs:
           push: false
           build-args: |
             APK_TAG=${{ steps.zeit.outputs.tag }}
+            DMS_VERSION=${{ steps.zeit.outputs.version }}
           tags: dms-komplett:probe
           cache-from: type=gha,scope=${{ matrix.plattform }}
       # Gleiche Alpine-Pakete in beiden Varianten (#1397): gemeinsame Pakete müssen dieselbe Version haben, je
@@ -796,6 +804,8 @@ jobs:
         run: |
           echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          # Release-Version aus package.json (#1447): das Image setzt DMS_VERSION selbst.
+          echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
       - id: bau
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -803,6 +813,7 @@ jobs:
           build-args: |
             DMS_COMMIT=${{ github.sha }}
             DMS_GEBAUT=${{ steps.zeit.outputs.jetzt }}
+            DMS_VERSION=${{ steps.zeit.outputs.version }}
             APK_TAG=${{ steps.zeit.outputs.tag }}
           target: ${{ matrix.variante }}
           platforms: ${{ matrix.plattform }}

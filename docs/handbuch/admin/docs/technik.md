@@ -13,7 +13,7 @@ Browser ── HTTP ──▶ Ablago-Container (Node.js) ──▶ PostgreSQL-Co
 | Baustein | Technik | Wozu |
 | --- | --- | --- |
 | Oberfläche | React 19, gebaut mit Vite | Ablage, Werkbank, Mein Konto – alles im Browser |
-| Server | Node.js 24, Fastify 5, TypeScript (mit esbuild gebündelt) | Schnittstelle unter `/api`, liefert auch die Oberfläche aus |
+| Server | Node.js 26, Fastify 5, TypeScript (mit esbuild gebündelt) | Schnittstelle unter `/api`, liefert auch die Oberfläche aus |
 | Datenbank | PostgreSQL 18 (mindestens 16), Zugriff mit postgres.js, SQL-Migrationen in `server/migrations` | Alle Daten außer den Dateien |
 | Dateien | Feste Ordner `/data/files`, `/data/geheim`, `/data/sicherung` (Volumes, siehe [Installation](installation.md#ordner-und-volumes)); je Datei ihr SHA-256 als Name; optional der [Eingangsordner](eingangsordner.md) `/eingang` | Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen; Scans zum Abholen |
 | E-Mail | nodemailer über SMTP zum Versenden; imapflow und mailparser über IMAP zum Abholen (beides optional, eingestellt in der Werkbank) | Einladungen, Passwort-Links, Hinweise, Mappen versenden; Mails aus [Postfächern](postfaecher.md) als Post abholen |
@@ -25,7 +25,7 @@ Browser ── HTTP ──▶ Ablago-Container (Node.js) ──▶ PostgreSQL-Co
 | Arbeiter | `node:worker_threads`, ohne zusätzliche Bibliothek: ein kleiner Pool neben dem Hauptfaden (#542), siehe [Systemzustand](speicherplatz.md#arbeiter-fur-pdf-und-exporte) | PDF-Arbeiten und große Exporte, ohne dass andere Benutzer warten |
 | Verschlüsselung | AES-256-GCM (Node.js crypto), Schlüssel als Datei unter `/data/geheim` | Gespeicherte Passwörter (#39, #46) |
 | Passkeys | WebAuthn; geprüft mit `@simplewebauthn/server` (MIT), im Browser die eingebaute Schnittstelle; nur öffentliche Schlüssel in der Datenbank | Anmelden ohne Passwort, zweiter Faktor, erneute Anmeldung ([Passkeys](anmeldeschutz.md#passkeys), #811) |
-| Image | `node:24-alpine`, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt | Läuft auf dem NAS neben dem PostgreSQL-Image |
+| Image | `node:26-alpine`, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt | Läuft auf dem NAS neben dem PostgreSQL-Image |
 | dms-komplett | Dasselbe Image mit PostgreSQL 18 (Alpine-Paket) im selben Container; Datenbank im Ordner `/data/postgres` | Ablago und Datenbank in einem Container |
 | Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main`, jeder Pull Request, jedes Versions-Tag und einmal pro Woche |
 

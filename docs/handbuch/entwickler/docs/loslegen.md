@@ -2,7 +2,7 @@
 
 ## Voraussetzungen
 
-- **Node.js 24** (LTS) und npm
+- **Node.js 26** (LTS) und npm
 - **Docker** (für PostgreSQL 18; oder eine eigene PostgreSQL-Installation)
 - optional **poppler-utils** für die Textebene von PDFs, Vorschaubilder und Schwärzen (die Texterkennung ist ein Paket, siehe [Pakete mit Code](pakete-code.md#texterkennung))
 - optional **Python 3** mit `mkdocs-material` für die Handbücher

@@ -109,6 +109,8 @@ curl -fsS -X POST "$U/api/konto/einrichten" -H 'x-dms: 1' -H "x-einrichtungscode
   -d "{\"mandant\":\"Familie Probe\",\"name\":\"Admin\",\"email\":\"$EMAIL\",\"passwort\":\"$PASS\"}" >/dev/null || fehler "Einrichten scheitert"
 anmelden "alter Stand"
 alt=$(version); echo "Alte Version: $alt"
+# Mappentypen vor dem Update (#1447): danach dieselben, keiner doppelt oder verloren.
+typen_vorher=$(api "$U/api/typen" | jq -c '[.[].id] | sort')
 api -X PUT "$U/api/werkbank/eingangsordner" -d '{"abstand":5}' >/dev/null || fehler "Eingangsordner einstellen"
 printf '%%PDF-1.4\n%% Update-Test\n' | sudo tee "$arbeit/eingang/Update Probe.pdf" >/dev/null
 mappe=""
@@ -150,6 +152,27 @@ neu=$(version); echo "Neue Version: $neu"
 [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach dem Update wieder uneingerichtet"
 anmelden "neuer Stand"
 [ "$(api "$U/api/mappen/$mappe" | jq '.dokumente | length')" = 1 ] || fehler "Dokument nach dem Update nicht mehr da"
+# Abgleich beim Start (#1447): Das Image setzt DMS_VERSION; dieselben Mappentypen, keiner doppelt, je Typ höchstens
+# eine Fassung „Update auf Ablago <neue Version>“ – auch nach einem weiteren Neustart.
+typen_nachher=$(api "$U/api/typen" | jq -c '[.[].id] | sort')
+[ "$typen_nachher" = "$typen_vorher" ] || fehler "Mappentypen nach dem Update anders: vorher $typen_vorher, nachher $typen_nachher"
+[ "$(api "$U/api/typen" | jq '[.[].name] | (length == (unique | length))')" = true ] || fehler "Mappentyp doppelt nach dem Update"
+dms_version=$(docker exec "$NAME" printenv DMS_VERSION || true)
+update_fassungen() {
+  local n=0 id
+  for id in $(jq -r '.[]' <<< "$typen_nachher"); do
+    n=$((n + $(api "$U/api/typen/$id/fassungen" | jq --arg v "$dms_version" '[.fassungen[] | select(.urheber.art == "update" and .urheber.version == $v)] | length')))
+  done
+  echo "$n"
+}
+if [ -n "$dms_version" ]; then
+  [ "$dms_version" = "$neu" ] || fehler "DMS_VERSION im Image ($dms_version) passt nicht zur Version ($neu)"
+  vor_neustart=$(update_fassungen)
+  [ "$vor_neustart" -le "$(jq length <<< "$typen_nachher")" ] || fehler "mehr als eine Update-Fassung je Mappentyp ($vor_neustart)"
+  docker restart "$NAME" >/dev/null; warte; anmelden "nach Neustart"
+  [ "$(update_fassungen)" = "$vor_neustart" ] || fehler "Abgleich lief nach dem Neustart erneut"
+  echo "Abgleich der Fassungen: $vor_neustart Fassungen (Update auf Ablago $dms_version), nach dem Neustart unverändert"
+fi
 # Ohne root (#1354): Was der alte Stand als root geschrieben hat, gehört jetzt dem Benutzer von Ablago (1000).
 fremd=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" ! -uid 1000 | head -5)
 [ -z "$fremd" ] || fehler "nach dem Update gehört noch nicht alles Ablago: $fremd"

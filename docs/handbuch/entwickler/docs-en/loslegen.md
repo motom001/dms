@@ -2,7 +2,7 @@
 
 ## Prerequisites { #voraussetzungen }
 
-- **Node.js 24** (LTS) and npm
+- **Node.js 26** (LTS) and npm
 - **Docker** (for PostgreSQL 18; or your own PostgreSQL installation)
 - optionally **poppler-utils** for the text layer of PDFs, thumbnails and redacting (text recognition is a package, see [Packages with code](pakete-code.md#texterkennung))
 - optionally **Python 3** with `mkdocs-material` for the manuals

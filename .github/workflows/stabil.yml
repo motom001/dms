@@ -12,6 +12,7 @@ name: ":stabil befördern"
 #  - „Prüfen und Image bauen“ nach einem Release mit dem Label „sofort-stabil“ am Pull Request
 #    (dringende Fehlerbehebung): genau diese Version, ohne 24 Stunden Wartezeit.
 # Zurückrollen in beide Richtungen bleibt beim Workflow „:stabil zurücksetzen“.
+# Dazu bekommt das Image ghcr.io/<owner>/ablago (#1480) den Versions-Tag – nur hier, nie beim Zurücksetzen.
 
 on:
   schedule:
@@ -86,11 +87,16 @@ jobs:
               done > liste.tsv
           fi
           if ! v=$(.github/werkzeuge/stabil-auswahl.sh "$bisher" < liste.tsv); then
+            # Nichts zu befördern: ablago (#1480) bekommt trotzdem den Tag der jetzigen stabilen Version (erster Handstart).
+            [ -z "$bisher" ] || echo "ablago=$bisher" >> "$GITHUB_OUTPUT"
             echo "::notice title=:stabil::bleibt auf ${bisher:-?} – nichts zu tun"; exit 0
           fi
           # Ist es schon :stabil (z. B. nach einem Handstart), nichts tun.
           d() { docker buildx imagetools inspect "ghcr.io/$OWNER/dms:$1" --format '{{json .Manifest}}' 2>/dev/null | jq -r .digest; }
           neu=$(d "$v") || { echo "::error::ghcr.io/$OWNER/dms:$v fehlt"; exit 1; }
+          # Das Image ablago (#1480) bekommt den Tag auch dann, wenn :stabil schon darauf zeigt – so legt ein Handstart
+          # den ersten Tag an, ohne auf die nächste Beförderung zu warten.
+          echo "ablago=$v" >> "$GITHUB_OUTPUT"
           if [ "$neu" = "$(d stabil || true)" ]; then echo "::notice title=:stabil::zeigt schon auf $v"; exit 0; fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo ":stabil wandert von ${bisher:-?} auf $v"
@@ -149,3 +155,22 @@ jobs:
           } >> notizen.md
           gh release edit "v$VERSION" -R "$REPO" --latest --notes-file notizen.md
           echo "::notice title=Release::v$VERSION ist jetzt „Latest“ ($(wc -l < versionen.md) Versionen seit ${BISHER:-?})"
+      # Image nur mit stabilen Versionen (#1480): ghcr.io/<owner>/ablago:<version> zeigt auf genau denselben Digest wie
+      # dms:<version> (kein neuer Bau, beide Architekturen, derselbe Herkunftsnachweis). App-Kataloge mit eigener
+      # Aktualisierung (Renovate bei TrueNAS) sehen dort nur beförderte Versionen. Bewusst ohne :latest und :stabil; beim
+      # Zurücksetzen von :stabil entsteht hier kein Tag (stabil-zuruecksetzen.yml), ein schon veröffentlichter bleibt.
+      - name: Stabiles Image ablago:<version>
+        if: steps.auswahl.outputs.ablago
+        env:
+          VERSION: ${{ steps.auswahl.outputs.ablago }}
+        run: |
+          set -o pipefail
+          quelle="ghcr.io/$OWNER/dms:$VERSION"
+          ziel="ghcr.io/$OWNER/ablago:$VERSION"
+          d() { docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' | jq -r .digest; }
+          docker buildx imagetools create -t "$ziel" "$quelle"
+          [ "$(d "$ziel")" = "$(d "$quelle")" ] || { echo "::error::$ziel hat nicht denselben Digest wie $quelle"; exit 1; }
+          docker buildx imagetools inspect --raw "$ziel" | jq -e '[.manifests[].platform.architecture] | (index("amd64") != null and index("arm64") != null)' >/dev/null \
+            || { echo "::error::$ziel hat nicht beide Architekturen"; exit 1; }
+          gh attestation verify "oci://$ziel" -R "$REPO" >/dev/null || { echo "::error::$ziel: Herkunftsnachweis nicht prüfbar"; exit 1; }
+          echo "::notice title=Stabiles Image::ablago:$VERSION – derselbe Digest wie dms:$VERSION ($(d "$ziel"))"

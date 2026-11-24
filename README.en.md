@@ -135,7 +135,7 @@ You use Ablago? **[Tell us how](https://github.com/motom001/dms/issues/new?templ
 
 ## Development
 
-Requirements: Node.js 24 (LTS), Docker.
+Requirements: Node.js 26 (LTS), Docker.
 
 ```sh
 npm install

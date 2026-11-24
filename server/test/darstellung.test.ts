@@ -379,7 +379,7 @@ describe('Felder und Register ausblenden (#655)', () => {
     );
     assert.ok(
       u && u.liste.some((x) => /BIC/.test(x) && /ausgeblendet/.test(x)) && u.liste.some((x) => /Abschnitte/.test(x)),
-      u?.liste.join(' | '),
+      String(u?.liste.join(' | ')),
     );
     assert.equal(typUnterschiede(typBild(t), typBild(t)), null);
   });

@@ -7,7 +7,7 @@
 # Node steht genau einmal hier (#1272): Bau und Laufzeit bauen auf node-basis auf. Als Stufe statt als ARG, weil
 # Dependabot und Scorecard nur FROM-Zeilen lesen. Die Hauptversion passt zu `engines` in package.json (die Workflows
 # lesen sie mit node-version-file); ein Wechsel ändert beide Stellen.
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS node-basis
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS node-basis
 
 FROM node-basis AS bau
 WORKDIR /app
@@ -59,12 +59,16 @@ ARG APK_TAG=""
 # util-linux) und su-exec (für PostgreSQL in dms-komplett) – zusammen unter 100 KB.
 RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache \
   && apk add --no-cache poppler-utils qpdf fontconfig font-liberation font-dejavu tini setpriv su-exec
-# Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
+# Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions). DMS_VERSION (#1447): die
+# Release-Version aus package.json – Protokoll, Werkbank und der Abgleich der Fassungen beim Start nennen dieselbe.
+# Ohne Angabe (eigener Bau) bleibt sie leer, und Ablago verhält sich wie in der Entwicklung.
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""
+ARG DMS_VERSION=""
 ENV NODE_ENV=production \
     DMS_COMMIT=$DMS_COMMIT \
-    DMS_GEBAUT=$DMS_GEBAUT
+    DMS_GEBAUT=$DMS_GEBAUT \
+    DMS_VERSION=$DMS_VERSION
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
