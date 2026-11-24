@@ -1,7 +1,7 @@
 {
   "name": "@dms/web",
   "private": true,
-  "version": "0.313.3",
+  "version": "0.314.0",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
