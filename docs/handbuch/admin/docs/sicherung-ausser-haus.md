@@ -53,6 +53,15 @@ Räumt Ablago eine Sicherung lokal weg (Aufbewahrung, *Lokal nur die neueste beh
 
 Das Paket bekommt dabei nie den Schlüssel und liefert nur, was Ablago bei ihm anfordert. Platz brauchst du im Sicherungsordner so viel, wie die Sicherung groß ist.
 
+### Aus der Liste nehmen { #aus-der-liste-nehmen }
+
+Brauchst du eine Sicherung, die nur noch außer Haus liegt, nicht mehr, nimmst du sie aus der Liste – an der Zeile mit **Aus der Liste nehmen** oder für mehrere zugleich: Haken setzen und **Aus der Liste nehmen (n)** über der Liste. Der Knopf ist nur aktiv, wenn alle gewählten nur außer Haus liegen; lokale Sicherungen löschst du wie gewohnt.
+
+- Am Ziel wird **nichts gelöscht**. Die Rückfrage sagt das und nennt, wo die Dateien weiter liegen. Aufräumen am Ziel machst du dort selbst (oder du behältst sie).
+- Ablago merkt sich die Sicherung mit Name und Prüfsumme. Meldet das Ziel sie beim nächsten Abgleich wieder, bleibt sie aus der Liste. Liegt dort später eine andere Datei gleichen Namens (andere Prüfsumme), erscheint sie.
+- Unter der Liste steht eingeklappt **Ausgeblendete (n)**: je Sicherung, wer sie wann aus der Liste genommen hat, und **Wieder zeigen**.
+- Das [Protokoll](fehlersuche.md#protokoll) (Modul *sicherung*) vermerkt, wer welche Sicherung aus der Liste genommen und wer sie wieder gezeigt hat.
+
 ## Einrichten mit „Sicherungsziel WebDAV“
 
 1. **Werkbank → Pakete**, *Sicherungsziel WebDAV* installieren. Die Vorschau zeigt die Rechte: *Die verschlüsselte Sicherung lesen, um sie außer Haus zu kopieren – kann sie nicht öffnen* und *Reagiert auf: Eine Sicherung ist fertig*.

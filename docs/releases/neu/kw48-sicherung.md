@@ -1,0 +1,13 @@
+art: minor
+
+## Neu
+
+- **Nach der Einrichtung sichert Ablago von selbst** (#1509): Mit „Einrichtung abschließen“ ist die automatische Sicherung an (jede Nacht um 02:00, Aufbewahrung 7 / 4 / 3), und Ablago legt gleich die erste Sicherung an und stellt sie probeweise wieder her. Werkbank → Sicherung zeigt „Erste Sicherung und Probe erfolgreich“, die Übersicht nur den nächsten Schritt „Kopie außer Haus einrichten“. Unter der Aufbewahrung steht der geschätzte Speicherbedarf und rechnet beim Ändern mit. Reicht der Platz für die nächste Sicherung voraussichtlich nicht, lässt Ablago sie aus und meldet das. Bestehende Installationen ändern sich nicht.
+- **Sicherung von Hand mit „Wozu?“** (#1529): Ein kurzer Name wie „Vor dem Entfernen von Rechnungen“ steht in der Liste, beim Zurückholen und im Protokoll, lässt sich ändern und geht mit der Sicherung mit.
+- **Wiederherstellen: Sicherung vorher sichtbar und abwählbar** (#1530): „Vorher den jetzigen Stand sichern (empfohlen)“ steht als Haken im Ablauf, mit Größe. Abwählen fragt einmal nach; reicht der Platz nicht, ist der Haken aus. Scheitert die Sicherung davor, zeigt Ablago den Fehler und fragt „Trotzdem ohne Sicherung wiederherstellen?“.
+- **„Aus der Liste nehmen“ für Sicherungen, die nur noch außer Haus liegen** (#1320): einzeln oder für mehrere gewählte; am Ziel wird nichts gelöscht. „Ausgeblendete (n)“ unter der Liste holt sie zurück.
+- **Zeitplan für „Alle Dateien prüfen“** (#1316): monatlich oder wöchentlich, nicht gleichzeitig mit der Sicherung, gedrosselt, abbrechbar, setzt nach einem Neustart fort. Mit Befund ein Hinweis in der Übersicht und in der täglichen Zusammenfassung.
+
+## Behoben
+
+- **Nach dem Wiederherstellen springen die Angaben zur Sicherung nicht mehr zurück** (#1531): Zuletzt automatisch gesichert, Proben, Prüfungen und Kopien außer Haus bleiben beim Zurückholen erhalten; direkt danach holt Ablago keine Sicherung nach. Gab es in der letzten Stunde schon eine Sicherung, entfällt das Nachholen; eine nachgeholte heißt „automatisch · nachgeholt“, und die Meldung unter „Jetzt sichern“ nennt die Sicherung, die gerade fertig wurde.

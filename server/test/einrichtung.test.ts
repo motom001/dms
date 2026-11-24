@@ -286,6 +286,33 @@ describe('Mandant und „Dein Konto“ mit Code (#119, #821)', () => {
   });
 });
 
+describe('Nach der Einrichtung: erste Sicherung (#1509)', () => {
+  it('erst mit „Einrichtung abschließen“ (also mit Notfallblatt), nur einmal; Assistent nicht fertig → keine automatische Sicherung', async () => {
+    const aufrufe: string[] = [];
+    let blatt = false;
+    const einstellungen = speicherEinstellungen();
+    const e = new Einrichtung({
+      konten: new Konten(speicherKontoRepo(), null, 'http://dms'),
+      code: null,
+      einstellungen,
+      mandant: { name: async () => 'Familie Muster', umbenennen: async () => {} },
+      notfallblattAktuell: async () => blatt,
+      nachAbschluss: async (von) => {
+        aufrufe.push(von);
+      },
+    });
+    await einstellungen.schreibe('einrichtung', { offen: true, erledigt: [], uebersprungen: [] });
+    await e.merke('schluessel', false, 'lena@example.org');
+    await e.merke('optional', true, 'lena@example.org');
+    await assert.rejects(e.merke('fertig', false, 'lena@example.org'), /Notfallblatt herunterladen/);
+    assert.deepEqual(aufrufe, [], 'ohne Abschluss keine Sicherung');
+    blatt = true;
+    await e.merke('fertig', false, 'lena@example.org');
+    await e.merke('fertig', false, 'lena@example.org');
+    assert.deepEqual(aufrufe, ['lena@example.org'], 'genau einmal, beim Abschluss');
+  });
+});
+
 describe('Anbindung und Mandant gegen PostgreSQL (#119)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('fehlende Datenbank erkennen, anlegen, migrieren; Mandant bestimmen und merken', async () => {
     const { pruefeAnbindung, legeDatenbankAn } = await import('../src/datenbank/anbindung');
