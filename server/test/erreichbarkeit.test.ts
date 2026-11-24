@@ -180,6 +180,17 @@ test('standKennung (#1067): mit Zufallswert der Installation – von außen nich
     // Andere Installation, gleiche Version: andere Kennung.
     setzeStandSalz(b);
     assert.notEqual(standKennung(), erste);
+    // Erster Start (#1473): Der Ordner fehlt noch, wenn der Leiter den Zufallswert setzt; Prozess 2 legt die Datei
+    // später an. Danach muss der Leiter dieselbe Kennung liefern wie Prozess 2.
+    const c = join(b, 'spaeter');
+    setzeStandSalz(c);
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(c);
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(join(c, 'stand-salz'), 'a'.repeat(32));
+    const leiter = standKennung();
+    setzeStandSalz(c);
+    assert.equal(standKennung(), leiter, 'Leiter und Prozess 2 mit derselben Kennung');
   } finally {
     await rm(a, { recursive: true, force: true });
     await rm(b, { recursive: true, force: true });

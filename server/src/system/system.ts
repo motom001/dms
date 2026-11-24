@@ -97,6 +97,8 @@ export function eigeneVersion(): string {
 
 /** Zufallswert dieser Installation für {@link standKennung} (#1067); leer, solange er nicht gesetzt ist. */
 let standSalz = '';
+/** Ordner, aus dem der Zufallswert kommt – für den zweiten Versuch in {@link standKennung}. */
+let standSalzOrdner = '';
 const STAND_SALZ = 'stand-salz';
 
 /**
@@ -104,6 +106,7 @@ const STAND_SALZ = 'stand-salz';
  * den Ordner und damit den Wert; legen zwei gleichzeitig an, gilt der erste (`wx`), der andere liest ihn.
  */
 export function setzeStandSalz(geheim: string): void {
+  standSalzOrdner = geheim;
   const datei = join(geheim, STAND_SALZ);
   const lesen = () => {
     try {
@@ -133,6 +136,10 @@ export function setzeStandSalz(geheim: string): void {
  * öffentliche Image nachrechnen und verriete über /api/gesundheit (ohne Anmeldung) doch die Version.
  */
 export function standKennung(): string {
+  // Beim allerersten Start gibt es den Ordner geheim noch nicht, wenn der Leiter den Zufallswert setzt (#1473: mit
+  // Node 26 in den Rauchtests mit zwei Prozessen aufgefallen). Dann bliebe er leer, während Prozess 2 die Datei später
+  // anlegt – zwei Kennungen hinter einem Port, und die Oberfläche lädt ständig neu. Darum: fehlt er, noch einmal versuchen.
+  if (!standSalz && standSalzOrdner) setzeStandSalz(standSalzOrdner);
   return createHmac('sha256', standSalz)
     .update(`${eigeneVersion()}|${env.DMS_COMMIT ?? ''}|${env.DMS_GEBAUT ?? ''}`)
     .digest('hex')
