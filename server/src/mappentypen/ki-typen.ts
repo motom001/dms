@@ -54,6 +54,7 @@ export class KiTypen {
   /**
    * Für ein Paket: Ist dieser Mappentyp für es gesperrt, weil es ein KI-Paket ist und der Typ nicht zugelassen ist?
    * Für Pakete ohne Netz (oder ohne Zugriff auf Inhalte) immer nein. Je Aufruf neu gelesen – Änderungen wirken sofort.
+   * Die eine Regel für alle Wege (#1635): Lesen, Ereignisse, Aufträge, Antworten, Erkennen, Klassifizieren, Übersetzen.
    */
   async kiSperre(p: Pick<InstalliertesPaket, 'laeufer'> | null | undefined): Promise<(typId: string) => boolean> {
     if (!p || !istKiPaket(p.laeufer)) return () => false;

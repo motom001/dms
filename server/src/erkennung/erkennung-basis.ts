@@ -47,7 +47,7 @@ export interface ErkennungDienst {
   readonly mappentypen: Pick<MappentypenDienst, 'ausDokumentVon' | 'ausPostZiele'>;
   readonly mappenEingaben: Pick<MappenEingaben, 'vorbelegenVorschlaege' | 'folgeVorschlaege'>;
   readonly post: Pick<PostDienst, 'automatischZuordnen'>;
-  readonly ki: Pick<KiTypen, 'kiSperreFuer' | 'kiTypen'>;
+  readonly ki: Pick<KiTypen, 'kiSperreFuer'>;
   readonly dokumente: Pick<DokumenteDienst, 'textAusDatei'>;
   readonly dokumentArchiv: Pick<DokumentArchivfassung, 'wortpositionen'>;
   readonly suche: Pick<SucheDienst, 'aehnlicheTypen'>;

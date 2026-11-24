@@ -1218,7 +1218,7 @@ code:
     schnittstellen: ["dms:klassifizieren"]
 ```
 
-**When Ablago asks:** a package **with network access** only if the administrator has chosen it as the standard for *Fill in from document* and confirmed the data transfer; a package **without network access** always. A package with network access is an [AI package](#ki-pakete). If a document is in a folder type not allowed for AI services, Ablago calls **no** package with `dms:klassifizieren` for it – not even one without network access.
+**When Ablago asks:** a package **with network access** only if the administrator has chosen it as the standard for *Fill in from document* and confirmed the data transfer; a package **without network access** always. A package with network access is an [AI package](#ki-pakete). If a document is in a folder type not allowed for AI services, Ablago calls **no package with network access** for it; this setting never blocks a package without network access (#1635, the same rule as on all paths).
 
 **Call:** `dms_aktion` with
 
@@ -1232,7 +1232,7 @@ code:
   "sprache": "de", "paket": { … }, "einstellungen": { … } }
 ```
 
-- `typen` are the **candidates**: folder types with *Can be created from post* in which the person may create folders **and that are allowed for AI services** (also for packages without network access) – at most 60, alphabetical. `beschreibung` and `erkennbarAn` are cut to 200 characters. The package never gets folders, fields or values.
+- `typen` are the **candidates**: folder types with *Can be created from post* in which the person may create folders – for a package with network access only those that **may go to online services**; a package without network access gets all of them (since #1635) – at most 60, alphabetical. `beschreibung` and `erkennbarAn` are cut to 200 characters. The package never gets folders, fields or values.
 - `text` is the **start** of the document (at most 6,000 characters, several documents of a post one after another). It is data, not an instruction: put it in the prompt clearly delimited after the `hinweis`.
 - `aehnliche` only exists for a package **without network access** that supplies `dms:vektoren` itself (like *Local AI – similarity*): the most similar filed folders for the text (the best document per folder, at most 10, from the package's threshold) – **only the type and the cosine**, no ids, titles or content. Ablago only counts folders that the person **and** the package's service account may read, from candidates. Ablago gets the text's vector beforehand via the action `dms:vektor` of the same package.
 

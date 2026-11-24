@@ -9,9 +9,10 @@
  * - Kern-Erkennung: der Name eines Typs als Überschrift im Text (#934).
  * - Abgleich über „Zum Wiederfinden nutzen“ (#938): wiedergefundene Mappen stärken Typen, deren Verweisfelder auf sie zeigen.
  *
- * Kandidaten für Pakete: Typen mit „Kann aus Post angelegt werden“, in denen die Person anlegen darf (#937) – und die für
- * KI-Dienste zugelassen sind (#796), für jedes Paket. Ist ein Quelldokument aus einem nicht zugelassenen Typ, geht an kein
- * Paket etwas – auch nicht an eines ohne Netz. Jede Antwort wird streng geprüft (Schema, nur angebotene Typen, Zitat im Dokument); Ungültiges
+ * Kandidaten für Pakete: Typen mit „Kann aus Post angelegt werden“, in denen die Person anlegen darf (#937). Für Pakete mit
+ * Netz gilt dieselbe Sperre wie auf allen anderen Wegen (`kiSperre`, #796/#1635): nur Typen, die an Dienste im Netz gehen
+ * dürfen, und nichts, wenn ein Quelldokument aus einem anderen Typ stammt. Lokale Pakete sperrt sie nie (#1635). Jede
+ * Antwort wird streng geprüft (Schema, nur angebotene Typen, Zitat im Dokument); Ungültiges
  * fällt mit Hinweis weg. Es wird nichts gespeichert und nichts geschrieben: Das Ergebnis ist ein Vorschlag.
  * Netzaufrufe der Pakete protokolliert der Paket-Läufer (#807).
  */
@@ -131,9 +132,9 @@ export class Klassifizierung {
   }
 
   /**
-   * Pakete mit dms:klassifizieren fragen (gleichzeitig, mit Zeitgrenze). Kandidaten nur aus zugelassenen Typen; Text nur
-   * der Anfang. Ein Paket mit Netz nur, wenn es als Standard für „Aus Dokument ausfüllen“ gewählt und der Datenabfluss
-   * bestätigt ist. Jedes Paket (mit oder ohne Netz) nur, wenn alle Quelldokumente aus zugelassenen Typen stammen.
+   * Pakete mit dms:klassifizieren fragen (gleichzeitig, mit Zeitgrenze). Text nur der Anfang. Ein Paket mit Netz nur, wenn
+   * es als Standard für „Aus Dokument ausfüllen“ gewählt und der Datenabfluss bestätigt ist. Gesperrte Typen je Paket nach
+   * der gemeinsamen Regel `kiSperre` (#1635): weder als Kandidat noch als Quelle – für lokale Pakete ist nichts gesperrt.
    */
   private async perPaketen(
     text: string,
@@ -143,13 +144,6 @@ export class Klassifizierung {
   ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
     const pakete = this.anbieter?.pakete() ?? [];
     if (!pakete.length) return { belege: [], wege: [] };
-    const { zugelassen } = await this.d.ki.kiTypen();
-    // Kandidaten: auch für Pakete ohne Netz nur zugelassene Typen – keine Namen oder Felder gesperrter Typen gehen hinaus.
-    const kandidaten: Kandidat[] = ziele
-      .filter((x) => zugelassen.has(x.id))
-      .slice(0, KANDIDATEN_MAX)
-      .map((x) => ({ id: x.id, name: x.name, beschreibung: kurzText(x.beschreibung), erkennbarAn: kurzText(x.erkennbarAn) }));
-    const ids = new Set(kandidaten.map((x) => x.id));
     const anfang = text.slice(0, KLASSIFIZIEREN_TEXT_MAX);
     const wahl = await this.erkennung.standard();
     const wege: Wegstand[] = [];
@@ -162,12 +156,20 @@ export class Klassifizierung {
           wege.push({ weg, paket, stand: 'aus' });
           return;
         }
+        // Eine Regel für alle Wege (#1635): `kiSperre` – für Pakete ohne Netz nie gesperrt. Kandidaten nur aus nicht
+        // gesperrten Typen – keine Namen oder Felder gesperrter Typen gehen hinaus.
+        const gesperrt = await this.d.ki.kiSperreFuer(p.id);
+        const kandidaten: Kandidat[] = ziele
+          .filter((x) => !gesperrt(x.id))
+          .slice(0, KANDIDATEN_MAX)
+          .map((x) => ({ id: x.id, name: x.name, beschreibung: kurzText(x.beschreibung), erkennbarAn: kurzText(x.erkennbarAn) }));
+        const ids = new Set(kandidaten.map((x) => x.id));
         if (!kandidaten.length) {
           wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.keine-zugelassenen', { name: p.name }) });
           return;
         }
-        // Quelle aus einem nicht zugelassenen Mappentyp: nichts an das Paket – für alle Pakete, auch ohne Netz (wie die Kandidaten).
-        if ([...quellTypen].some((x) => !zugelassen.has(x))) {
+        // Quelle aus einem für dieses Paket gesperrten Mappentyp: nichts an das Paket (wie die Kandidaten).
+        if ([...quellTypen].some(gesperrt)) {
           log.info('Klassifizieren nicht an Paket gegeben (Quelle nicht für KI-Dienste zugelassen)', { paket: p.id });
           wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name }) });
           return;

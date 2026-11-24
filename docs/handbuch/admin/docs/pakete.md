@@ -496,7 +496,7 @@ Will ein Update andere Adressen, fragt Ablago erneut.
 
 #### Mappentyp vorschlagen { #recht-klassifizieren }
 
-**„Mappentyp vorschlagen („Wohin gehört das?“) – nur aus dem Anfang des Dokuments und der Liste der Mappentypen, die Ablago mitgibt (dms:klassifizieren)“** – Das Paket schlägt auf der Seite *Dokument übernehmen* vor, zu welchem Mappentyp neue Post gehört (siehe [Wohin gehört das? durch Pakete](#wohin-gehoert-das)). Es bekommt nur den Anfang des Dokuments und Name, Kurzbeschreibung und „Woran man ihn erkennt“ der Mappentypen, die in Frage kommen und für KI-Dienste zugelassen sind – keine Mappen. Was es liefert, prüft Ablago und zeigt es nur als Vorschlag.
+**„Mappentyp vorschlagen („Wohin gehört das?“) – nur aus dem Anfang des Dokuments und der Liste der Mappentypen, die Ablago mitgibt (dms:klassifizieren)“** – Das Paket schlägt auf der Seite *Dokument übernehmen* vor, zu welchem Mappentyp neue Post gehört (siehe [Wohin gehört das? durch Pakete](#wohin-gehoert-das)). Es bekommt nur den Anfang des Dokuments und Name, Kurzbeschreibung und „Woran man ihn erkennt“ der Mappentypen, die in Frage kommen (bei einem Paket mit Netz nur solche, die an Dienste im Netz gehen dürfen) – keine Mappen. Was es liefert, prüft Ablago und zeigt es nur als Vorschlag.
 
 #### Hinweise an Mappen setzen { #recht-hinweise }
 
@@ -636,7 +636,7 @@ Auf der Seite *Dokument übernehmen* schlägt Ablago unter **Wohin gehört das?*
 | **Überschrift** | eingebaut: Der Name eines Mappentyps steht als Überschrift im Text („Rechnung“) | nichts |
 | **Abgleich** | eingebaut: Eine vorhandene Mappe findet sich über [Zum Wiederfinden nutzen](mappentypen.md#zum-wiederfinden-nutzen) im Text, und ein Verweisfeld des Mappentyps zeigt auf ihren Typ (eine *Rechnung* zum *Vertrag* WV-1043) | nichts |
 
-**Die Liste der Mappentypen** für Pakete enthält nur Mappentypen mit [Kann aus Post angelegt werden](mappentypen.md#dokument-ubernehmen), in denen die Person Mappen anlegen darf, **und die an [Dienste im Netz](#ki-dienste) gehen dürfen** – je Mappentyp Kennung, Name, die ersten 200 Zeichen der Beschreibung und von „Woran man ihn erkennt“. Mappen, Felder oder Werte gehen nie mit.
+**Die Liste der Mappentypen** für Pakete enthält nur Mappentypen mit [Kann aus Post angelegt werden](mappentypen.md#dokument-ubernehmen), in denen die Person Mappen anlegen darf; für ein Paket **mit Netz** nur die, die an [Dienste im Netz](#ki-dienste) gehen dürfen. Ein Paket **ohne Netz** (wie *KI lokal – Ähnlichkeit*) bekommt alle – Pakete ohne Netz sperrt diese Einstellung nie, auf keinem Weg. Je Mappentyp Kennung, Name, die ersten 200 Zeichen der Beschreibung und von „Woran man ihn erkennt“. Mappen, Felder oder Werte gehen nie mit.
 
 **Was Ablago mit der Antwort macht:** Die Antwort hat ein festes Format (JSON Schema): höchstens drei Mappentypen mit Sicherheit (0–1), einer kurzen Begründung und einem Zitat. Ablago prüft sie streng – ein Mappentyp, der nicht in der Liste stand, wird abgelehnt; ein Zitat, das nicht im Dokument steht, fällt weg. Ist die Antwort ungültig oder bleibt nichts übrig, steht unter dem Vorschlag „*Paket* hat nichts Brauchbares geliefert“; antwortet ein Paket nicht (45 Sekunden), „*Paket* hat nicht geantwortet“. In beiden Fällen gelten die übrigen Wege. Abgelehntes steht im [Protokoll](fehlersuche.md#protokoll) mit Grund, ohne Werte; die Netzaufrufe des Pakets im [Protokoll des Pakets](#netzaufrufe).
 

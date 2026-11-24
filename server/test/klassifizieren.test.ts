@@ -312,24 +312,27 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.equal(r.wege.find((w) => w.weg === 'kern')?.stand, 'ok');
   });
 
-  it('gesperrter Typ geht nicht hinaus: weder als Kandidat noch im Schema, an kein Paket; Text nur der Anfang, keine Mappen', async () => {
+  it('gesperrter Typ geht nicht an ein Paket mit Netz (weder als Kandidat noch im Schema), ein lokales bekommt alle (#1635); Text nur der Anfang, keine Mappen', async () => {
     const x = await aufbau();
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.equal(x.eingaenge.length, 2);
     for (const { paket, e } of x.eingaenge) {
       const json = JSON.stringify(e);
-      assert.ok(
-        !json.includes(x.gesundheit.id) && !json.includes('Gesundheit') && !json.includes('Befunde'),
-        `${paket}: nichts vom gesperrten Typ`,
-      );
+      const netz = paket === 'ki_assistent';
+      if (netz)
+        assert.ok(
+          !json.includes(x.gesundheit.id) && !json.includes('Gesundheit') && !json.includes('Befunde'),
+          `${paket}: nichts vom gesperrten Typ`,
+        );
       assert.ok(!json.includes(x.ablageort.id), `${paket}: kein Typ ohne „Kann aus Post angelegt werden“`);
       assert.ok(!json.includes('Befund Knie') && !json.includes(x.wartung.id) && !json.includes('WV-1043"'), `${paket}: keine Mappen`);
-      assert.deepEqual((e.typen as Kandidat[]).map((t) => t.name).sort(), ['Rechnung', 'Vertrag']);
+      const erwartet = netz ? [x.rechnung, x.vertrag] : [x.gesundheit, x.rechnung, x.vertrag];
+      assert.deepEqual((e.typen as Kandidat[]).map((t) => t.name).sort(), erwartet.map((t) => t.name).sort());
       assert.deepEqual(
         (
           e.schema as { properties: { typen: { items: { properties: { typ: { enum: string[] } } } } } }
         ).properties.typen.items.properties.typ.enum.sort(),
-        [x.rechnung.id, x.vertrag.id].sort(),
+        erwartet.map((t) => t.id).sort(),
       );
       assert.equal(e.text, BRIEF.slice(0, KLASSIFIZIEREN_TEXT_MAX));
       assert.ok(!String(e.text).includes('GEHEIMES ENDE'));
@@ -338,24 +341,36 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.ok(!('aehnliche' in x.eingaenge.find((e) => e.paket === 'ki_assistent')!.e), 'das Sprachmodell bekommt keine Ähnlichkeit');
   });
 
-  it('Paket ohne Netz: Dokument aus gesperrtem Mappentyp geht nicht hinaus (Quelle geprüft wie bei Paketen mit Netz)', async () => {
+  it('Paket ohne Netz (#1635): nie gesperrt – auch bei nicht zugelassener Post und bei Gesundheit', async () => {
     const x = await aufbau();
     await x.d.erkennung.setzeStandard({ paket: null });
     await x.d.ki.setzeKiTyp(x.postTyp.id, false, null);
-    const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
-    assert.equal(x.eingaenge.length, 0, 'KI lokal – Ähnlichkeit bekommt weder Text noch ähnliche Typen');
-    const w = r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!;
-    assert.equal(w.stand, 'gesperrt');
-    assert.match(String(w.hinweis), /KI lokal – Ähnlichkeit.*nicht an Dienste im Netz gehen/);
+    let r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
+    assert.deepEqual(
+      x.eingaenge.map((e) => e.paket),
+      ['ki_aehnlich'],
+      'KI lokal – Ähnlichkeit bekommt den Anfang der Post',
+    );
+    assert.notEqual(r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!.stand, 'gesperrt');
+    // Gar nichts zugelassen, Quelle aus Gesundheit: das lokale Paket bekommt trotzdem alle Kandidaten.
+    for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.ki.setzeKiTyp(t, false, null);
+    x.eingaenge.length = 0;
+    r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.dokBefund] }, x.A);
+    assert.deepEqual(
+      x.eingaenge.map((e) => e.paket),
+      ['ki_aehnlich'],
+    );
+    assert.deepEqual((x.eingaenge[0].e.typen as Kandidat[]).map((t) => t.name).sort(), ['Gesundheit', 'Rechnung', 'Vertrag']);
+    assert.notEqual(r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!.stand, 'gesperrt');
   });
 
-  it('Ähnlichkeit: nur Typ und Maß, nur Mappen, die Person und Paket lesen dürfen, aus zugelassenen Typen', async () => {
+  it('Ähnlichkeit: nur Typ und Maß, nur Mappen, die Person und Paket lesen dürfen, aus den Kandidaten (lokal: alle, #1635)', async () => {
     const x = await aufbau();
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     const a = x.eingaenge.find((e) => e.paket === 'ki_aehnlich')!.e.aehnliche as Array<Record<string, unknown>>;
-    assert.equal(a.length, 2, 'Vertrag und alte Rechnung – der Befund (gesperrt) und die Post selbst nicht');
+    assert.equal(a.length, 3, 'Vertrag, alte Rechnung und Befund (Paket ohne Netz) – die Post selbst nicht');
     for (const t of a) assert.deepEqual(Object.keys(t).sort(), ['aehnlichkeit', 'typ']);
-    assert.deepEqual(new Set(a.map((t) => t.typ)), new Set([x.vertrag.id, x.rechnung.id]));
+    assert.deepEqual(new Set(a.map((t) => t.typ)), new Set([x.vertrag.id, x.rechnung.id, x.gesundheit.id]));
     // Jonas darf Rechnungen anlegen, aber keine Verträge lesen: deren Mappe zählt für ihn nicht.
     await x.d.berechtigungen.setzeBerechtigungen(x.vertrag.id, { grund: { ...NICHTS, C: true }, regeln: [] } as Regelwerk, true);
     await x.d.berechtigungen.setzeBerechtigungen(
@@ -367,10 +382,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     x.eingaenge.length = 0;
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
     const b = x.eingaenge.find((e) => e.paket === 'ki_aehnlich')!.e.aehnliche as Array<{ typ: string }>;
-    assert.deepEqual(
-      b.map((t) => t.typ),
-      [x.rechnung.id],
-    );
+    assert.deepEqual(new Set(b.map((t) => t.typ)), new Set([x.rechnung.id, x.gesundheit.id]), 'ohne Vertrag');
   });
 
   it('Kandidaten nur aus Typen, in denen die Person anlegen darf', async () => {
@@ -383,10 +395,11 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     );
     const J = await x.d.rechtepruefung.zugriff({ id: x.jonas.id, rolle: 'mitglied' });
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, J);
-    for (const { e } of x.eingaenge)
+    for (const { paket, e } of x.eingaenge)
       assert.deepEqual(
         (e.typen as Kandidat[]).map((t) => t.name),
-        ['Rechnung'],
+        paket === 'ki_assistent' ? ['Rechnung'] : ['Gesundheit', 'Rechnung'],
+        paket,
       );
   });
 
@@ -419,7 +432,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
         ],
       });
     const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
-    assert.ok(!r.typen.some((t) => t.typId === x.gesundheit.id));
+    assert.ok(!r.typen.some((t) => t.typId === x.gesundheit.id && t.belege.some((b) => b.weg === 'ki')));
     const w = r.wege.find((y) => y.paket?.id === 'ki_assistent')!;
     assert.equal(w.verworfen, 2);
     assert.match(String(w.hinweis), /nichts Brauchbares/);
@@ -456,7 +469,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.deepEqual(new Set(r.vorschlag!.belege.map((b) => b.weg)), new Set(['kern', 'abgleich']));
   });
 
-  it('Paket mit Netz nur als gewählter Standard mit bestätigtem Abfluss; Dokument aus gesperrtem Typ geht an kein Paket, auch ohne Netz', async () => {
+  it('Paket mit Netz nur als gewählter Standard mit bestätigtem Abfluss; Dokument aus gesperrtem Typ geht an kein Paket mit Netz, an ein lokales schon', async () => {
     const x = await aufbau();
     await x.d.erkennung.setzeStandard({ paket: null });
     let r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
@@ -467,27 +480,30 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     );
     assert.equal(r.wege.find((w) => w.paket?.id === 'ki_assistent')!.stand, 'aus');
     await x.d.erkennung.setzeStandard({ paket: 'ki_assistent', abfluss: true });
-    // Die Post ist nicht mehr für KI-Dienste zugelassen: an kein Paket geht etwas – auch nicht an das ohne Netz.
+    // Die Post ist nicht mehr für Dienste im Netz zugelassen: nichts an das Paket mit Netz – das lokale bekommt sie (#1635).
     await x.d.ki.setzeKiTyp(x.postTyp.id, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.deepEqual(
       x.eingaenge.map((e) => e.paket),
-      [],
-      'weder das Paket mit Netz noch KI lokal – Ähnlichkeit',
+      ['ki_aehnlich'],
+      'nur KI lokal – Ähnlichkeit',
     );
-    for (const id of ['ki_assistent', 'ki_aehnlich']) {
-      const w = r.wege.find((y) => y.paket?.id === id)!;
-      assert.equal(w.stand, 'gesperrt', id);
-      assert.match(String(w.hinweis), /nicht an Dienste im Netz gehen/);
-    }
-    assert.equal(r.vorschlag?.typId, x.rechnung.id, 'Überschrift und Abgleich tragen weiter');
-    // Kein Kandidat zugelassen: kein Paket wird gefragt; Überschrift und Abgleich bleiben.
+    const w = r.wege.find((y) => y.paket?.id === 'ki_assistent')!;
+    assert.equal(w.stand, 'gesperrt');
+    assert.match(String(w.hinweis), /KI-Assistent.*nicht an Dienste im Netz gehen/);
+    assert.notEqual(r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!.stand, 'gesperrt');
+    assert.equal(r.vorschlag?.typId, x.rechnung.id, 'Überschrift, Abgleich und Ähnlichkeit tragen weiter');
+    // Kein Kandidat zugelassen: das Paket mit Netz wird nicht gefragt, das lokale schon; Überschrift und Abgleich bleiben.
     await x.d.ki.setzeKiTyp(x.postTyp.id, true, null);
     for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.ki.setzeKiTyp(t, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
-    assert.equal(x.eingaenge.length, 0);
+    assert.deepEqual(
+      x.eingaenge.map((e) => e.paket),
+      ['ki_aehnlich'],
+    );
+    assert.equal(r.wege.find((y) => y.paket?.id === 'ki_assistent')!.stand, 'gesperrt');
     assert.equal(r.vorschlag?.typId, x.rechnung.id);
   });
 
