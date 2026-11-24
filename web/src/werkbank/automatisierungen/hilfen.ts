@@ -117,6 +117,8 @@ const VORRAT: Array<{ bereich: 'wenn' | 'und' | 'dann'; art: string }> = [
   { bereich: 'und', art: 'merkmal' },
   { bereich: 'und', art: 'gruppe' },
   { bereich: 'dann', art: 'feld' },
+  // #1557: Felder der Mappe, auf die ein Verweisfeld zeigt.
+  { bereich: 'dann', art: 'feld_verknuepft' },
   { bereich: 'dann', art: 'aufgabe' },
   // #678: Benachrichtigungen – passen nur zu ihrer Wenn-Karte (Zeitplan je Benutzer, Favorit geändert, Zeitplan bzw. Kontosperre).
   { bereich: 'dann', art: 'zusammenfassung' },
@@ -155,11 +157,15 @@ export const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten
   passtArt({ art: grundArt(v.art) }, typ, k, w);
 /** Karten aus Paketen (#680) passen wie „Paket nach Zeitplan ausführen“. */
 export const grundArt = (art: string) => (PAKET_KARTE.test(art) ? 'paket' : art);
+/** „Feld ändern“ braucht einen Mappentyp, „Feld in verknüpfter Mappe setzen“ (#1557) dazu ein Verweisfeld. */
+const MIT_TYP = new Set(['feld', 'feld_verknuepft']);
+const passtMitTyp = (art: string, typ: Mappentyp | null) =>
+  art === 'feld_verknuepft' ? !!typ?.felder.some((f) => f.typ === 'referenz') : !!typ;
 const passtArt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: WennKarte) =>
   w && ohneMappeWenn(w) && ['bedingung', 'ansicht', 'favorit', 'gruppe'].includes(v.art)
     ? false
-    : v.art === 'feld'
-      ? !!typ
+    : MIT_TYP.has(v.art)
+      ? passtMitTyp(v.art, typ)
       : v.art === 'ansicht'
         ? sichtenFuer(k, typ).length > 0
         : v.art === 'zusammenfassung'

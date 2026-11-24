@@ -10,6 +10,8 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 // Karten nach außen (#671): „URL aufrufen“ und „E-Mail senden“ melden sich mit an.
 import './automatisierung-aussen';
+// Feld in verknüpfter Mappe setzen (#1557).
+import './automatisierung-verknuepft';
 
 /**
  * Dann-Karten der Automatisierungen, Stufe 1 (#676).

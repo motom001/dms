@@ -41,6 +41,17 @@ export interface DannUrl {
   inhalt: Inhaltsstufe;
   bestaetigt?: boolean;
 }
+/** Wann „Feld in verknüpfter Mappe setzen“ überschreibt (#1557): immer, nur leer, nur später bzw. früher (Datum, Zahl). */
+export const NUR_WENN = ['immer', 'leer', 'spaeter', 'frueher'] as const;
+export type NurWenn = (typeof NUR_WENN)[number];
+/** Dann-Karte „Feld in verknüpfter Mappe setzen“ (#1557). */
+export interface DannVerknuepft {
+  id: string;
+  art: 'feld_verknuepft';
+  ueber: string;
+  werte: Record<string, unknown>;
+  nurWenn?: NurWenn;
+}
 /** „An“ der E-Mail: wie bei Aufgaben, dazu beliebige Adressen; `feld` auch ein Textfeld mit Format E-Mail. */
 export type MailEmpfaenger = Empfaenger | { art: 'adresse'; adresse: string };
 /** Dann-Karte „E-Mail senden“ (nur Text). */
@@ -122,6 +133,11 @@ export type DannKarte =
   | { id: string; art: 'stopp' }
   /** Felder der Mappe setzen: je Feld ein fester Wert oder Text mit Platzhaltern (#676). */
   | { id: string; art: 'feld'; werte: Record<string, unknown> }
+  /**
+   * Felder einer verknüpften Mappe setzen (#1557): `ueber` ist ein Verweisfeld der auslösenden Mappe, `werte` Felder des
+   * Zieltyps (fest oder mit Platzhaltern wie bei `feld`), `nurWenn` wann überschrieben wird (automatisierung-verknuepft.ts).
+   */
+  | DannVerknuepft
   /** Aufgabe (mit Fälligkeit in Tagen) oder Benachrichtigung an Personen, Rollen oder ein Feld (#676). */
   | { id: string; art: 'aufgabe'; empfaenger: Empfaenger[]; text: string; als: 'aufgabe' | 'benachrichtigung'; faellig?: number | null }
   /** Tägliche Zusammenfassung der offenen Aufgaben an den Benutzer des Laufs senden (#678; Zeitplan „für jeden Benutzer“). */

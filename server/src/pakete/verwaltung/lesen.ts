@@ -37,7 +37,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   const sichten = liesSichten(l);
   const { beispiele, beispielDateien } = liesBeispiele(l, typen);
   const { vt, umbau } = liesVorgabenUndUmbau(l, typen, beispiele);
-  const { automatisierungen, zeitplanKarten } = liesAutomatisierungen(l);
+  const { automatisierungen, zeitplanKarten } = liesAutomatisierungen(l, typen);
   const ablaufvorlagen = liesAblaufvorlagen(l, typen);
   const wortlisten = liesWortlisten(l);
   pruefeTabellen(l, typen);

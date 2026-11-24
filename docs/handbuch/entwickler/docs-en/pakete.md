@@ -264,6 +264,23 @@ The format is described by the JSON schemas in the registry: [`schema/manifest.s
     ```
 
     On the date field only `frist` remains ("is a deadline": appears under *To do*, in the calendar and triggers *Date reached*). Since 0.177.0 the field **no longer creates tasks itself**; `frist.vorlauf`, `einheit`, `wiederholung` and `text` only serve as defaults – a supplied automation with the same advance notice is meant to remind.
+
+    **Set field in linked folder** (dms #1557, Then card `feld_verknuepft`): sets fields of the folder a reference field of the triggering folder points to – with `mehrfach` in each. `ueber` is the reference field, `werte` are fields of the target type (fixed or with placeholders as with `feld`; a placeholder on its own such as `"{naechste_hu}"` takes over the value unchanged, which requires the same field kind), `nur_wenn` is `immer` (default), `leer`, `spaeter` or `frueher` (the last two for dates and numbers only). Ablago writes with the rights of the system account "Automation"; if it may not change the target folder, the folder stays unchanged and the run notes it. `pakete-pruefen` checks the reference field and the target fields (field exists, kind matches, not calculated) when trigger and target are types of the package; target types of other packages are only checked on installation (the automation then shows a problem). Packages using it require `dms: ">=<version>"` – the changelog names the version under #1557; older Ablago drop the unknown card (without another Then card the automation does not run there). Example (dms-registry #227):
+
+    ```yaml
+    # inhalt/automatisierungen.yaml in the package fahrzeuge
+    - schluessel: hu_ans_fahrzeug
+      name: Nächste HU ans Fahrzeug übernehmen
+      beschreibung: Aus dem Prüfbericht kommt „Nächste HU“ als „HU fällig“ ans Fahrzeug – nur, wenn das Datum später ist.
+      eingeschaltet: true
+      wenn: { art: mappe.geaendert, typ: hauptuntersuchung, felder: [naechste_hu], angelegt: true }
+      dann:
+        - art: feld_verknuepft
+          ueber: fahrzeug
+          werte: { hu_faellig: "{naechste_hu}" }
+          nur_wenn: spaeter
+    ```
+
 - **Dependencies** (`abhaengigkeiten: { <package>: "<range>" }`): packages that must be installed beforehand. When installing, missing dependencies come along in the same process – since Ablago 0.151.0 (#405) also those **with code**: the administrator sees the permissions of all packages on one page and confirms them once; every package keeps its own service account and its own permissions. An update that changes the permissions needs a new confirmation as before.
 - **Add-ons** (`ergaenzt`, dms #405, from 0.151.0): a package that extends another – for instance an additional language for text recognition – says so with `ergaenzt`. The extended package must also be under `abhaengigkeiten`. The installation shows add-ons as **ticks below the extended package** (on first installation, in the setup assistant, from a bundle file and later on the installed package), grouped by `gruppe` – without a group under "Add-ons". The group is a short question without a question mark (at most 40 characters); Ablago adds "?". Every add-on stays a package of its own with its own version and its own update. Older Ablago ignore the field; a package doesn't need a higher `dms` for it. Without `ergaenzt` a dependent package only appears as a normal package in the list.
 

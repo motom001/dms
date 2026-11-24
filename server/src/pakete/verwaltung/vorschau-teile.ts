@@ -159,6 +159,13 @@ export abstract class PaketVorschauTeile extends PaketUploads {
         const id = installierte.find((x) => x.id === p)?.typen[s];
         return typen.find((x) => x.id === id)?.felder.find((f) => f.key === key)?.label ?? key;
       },
+      // Feld in verknüpfter Mappe (#1557): nur Verweisfelder eigener Typen – deren Ziel steht als Verweis im Paket.
+      ziel: (vw, key) => {
+        const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
+        if (p !== paket.manifest.id) return undefined;
+        const z = paket.typen.find((x) => x.schluessel === s)?.felder.find((f) => f.key === key)?.ziel;
+        return (Array.isArray(z) ? z[0] : z) || undefined;
+      },
     };
   }
 

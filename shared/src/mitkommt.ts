@@ -39,6 +39,8 @@ export type MitkommtEmpfaenger =
 export type MitkommtDann =
   | { art: 'aufgabe'; benachrichtigung: boolean; empfaenger: MitkommtEmpfaenger[] }
   | { art: 'feld'; felder: string[] }
+  /** Felder in der verknüpften Mappe setzen (#1557): über das Verweisfeld `ueber`. */
+  | { art: 'feld_verknuepft'; ueber: string; felder: string[] }
   | { art: 'zusammenfassung' | 'favoriten' | 'sammelmeldung' | 'kontosperre' | 'paket' | 'stopp' | 'sonst' };
 export interface MitkommtAutomatisierung extends MitkommtEintrag {
   wenn: MitkommtWenn;
@@ -104,6 +106,11 @@ function dannText(d: MitkommtDann): string {
   if (d.art === 'aufgabe')
     return t(d.benachrichtigung ? 'gemeinsam.mitkommt.benachrichtigung-an' : 'gemeinsam.mitkommt.aufgabe-an', {
       wer: d.empfaenger.map(empfaengerText).join(', ') || '?',
+    });
+  if (d.art === 'feld_verknuepft')
+    return t('gemeinsam.mitkommt.felder-verknuepft-setzen', {
+      felder: d.felder.map((f) => t('gemeinsam.mitkommt.feld', { feld: f })).join(', '),
+      ueber: t('gemeinsam.mitkommt.feld', { feld: d.ueber }),
     });
   if (d.art === 'feld')
     return t('gemeinsam.mitkommt.felder-setzen', { felder: d.felder.map((f) => t('gemeinsam.mitkommt.feld', { feld: f })).join(', ') });

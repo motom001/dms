@@ -47,6 +47,7 @@ import {
   typverweise,
 } from './format';
 import { eingeschaltetVon, postUndRollenFehler, pruefeZeitplanKarten, werkbankKartenFehler } from './inhalt-pruefen';
+import { verknuepftFehler } from './automatisierungen';
 import { liste, type LeseLauf } from './lesen-lauf';
 
 /** Beispiele mit ihren Dokumenten; danach Dokumentenregister und Verweise zwischen den Beispielen. */
@@ -139,7 +140,7 @@ export function liesVorgabenUndUmbau(l: LeseLauf, typen: PaketTyp[], beispiele: 
  * Mitgelieferte Automatisierungen (#712): Schlüssel, Name, genau eine Wenn-Karte; Typen als eigener Schlüssel oder
  * paket:typ. `zeitplanKarten`: wo die Karte „Paket nach Zeitplan ausführen“ steht (braucht das Ereignis im Code).
  */
-export function liesAutomatisierungen(l: LeseLauf) {
+export function liesAutomatisierungen(l: LeseLauf, typen: PaketTyp[]) {
   const { fehler } = l;
   const zeitplanKarten: string[] = [];
   const automatisierungen = liste(l, 'automatisierungen').map((a, i): PaketAutomatisierung => {
@@ -160,6 +161,7 @@ export function liesAutomatisierungen(l: LeseLauf) {
     if (empf.some((e) => e.art === 'person' || e.art === 'rolle'))
       fehler.push(`${wo}: feste Personen und Rollen gibt es in Paketen nicht – Empfänger aus einem Feld oder der Ersteller der Mappe.`);
     fehler.push(...werkbankKartenFehler(a, wo));
+    fehler.push(...verknuepftFehler(a, typen, l.id, wo));
     if (pruefeZeitplanKarten(a, wo, l.id, fehler)) zeitplanKarten.push(wo);
     // Und-Teil (#1108): falsch geschriebene Bedingungen sind ein Fehler – sonst liefe die Automatisierung öfter als gedacht.
     for (const grund of undEingabeFehler(a.und)) fehler.push(`${wo} „${str(a.schluessel)}“: ${grund}`);
