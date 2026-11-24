@@ -118,7 +118,7 @@ export const HILFE = {
   'pakete.recht.sicherung': admin('pakete/', 'dem Recht „Sicherung lesen“', 'recht-sicherung-lesen'),
   'pakete.erkennung': admin('pakete/', 'der Erkennung durch ein Paket', 'erkennung-durch-ein-paket'),
   'pakete.recht.adresse': admin('pakete/', 'der Dienst-Adresse eines Pakets', 'dienst-adresse'),
-  'pakete.ki': admin('pakete/', 'KI-Diensten und Mappentypen', 'ki-dienste'),
+  'pakete.ki': admin('pakete/', 'Diensten im Netz und Mappentypen', 'ki-dienste'),
   'pakete.netzprotokoll': admin('pakete/', 'dem Protokoll der Netzaufrufe', 'netzaufrufe'),
   'pakete.fragen': admin('pakete/', '„Frag deine Ablage“ (Höchstmenge je Frage)', 'frag-deine-ablage'),
   'pakete.ereignisse': admin('pakete/', 'den Ereignissen für Pakete', 'ereignisse'),

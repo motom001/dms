@@ -375,7 +375,7 @@ code:
 
 | Typ | Abschnitt in Ablago | Wer ihn bekommt, auch ohne Angabe |
 |---|---|---|
-| `ki_mappentypen` | Was die KI lesen darf (neue Mappentypen gesperrt; gilt für alle KI-Pakete) | KI-Pakete (siehe [KI-Pakete](pakete-code.md#ki-pakete)) |
+| `ki_mappentypen` | Was an Dienste im Netz gehen darf (neue Mappentypen gesperrt; gilt für alle KI-Pakete, in der Oberfläche „Pakete mit Netz“) | KI-Pakete (siehe [KI-Pakete](pakete-code.md#ki-pakete)) |
 | `fragen_grenzen` | Frag deine Ablage: Höchstmenge je Frage | Pakete mit `dms:antworten` |
 | `erkennung_standard` | Aus Dokument ausfüllen: als Standard nutzen | Pakete mit `dms:erkennen` |
 | `mappenaktionen` | Aktionen im Menü „Mappe“ an oder aus | Pakete mit `mappenaktionen` |

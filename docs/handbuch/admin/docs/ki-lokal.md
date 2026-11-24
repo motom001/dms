@@ -12,7 +12,7 @@ Für den Dienst gibt es ein fertiges Beispiel mit **[Ollama](https://ollama.com)
 - **Frag deine Ablage:** die Frage, der bisherige Chat und **wenige Ausschnitte**, die Ablago selbst herausgesucht hat – nur aus Mappen, die der Fragende lesen darf, höchstens so viele, wie unter [Höchstmenge je Frage](pakete.md#frag-deine-ablage) eingestellt (Standard 8 Ausschnitte, zusammen 6 000 Zeichen).
 - **Aus Dokument ausfüllen:** der Text des Dokuments (höchstens 50 000 Zeichen), der Name des Mappentyps und eine Beschreibung der Felder – nie Passwortfelder, nie Felder, die der Benutzer nicht bearbeiten darf.
 - **Nie:** der ganze Bestand, Dateien oder Bilder, Benutzer, Passwörter.
-- **Nur aus zugelassenen Mappentypen:** Der KI-Assistent ist ein KI-Paket – er bekommt nur Inhalte aus Mappentypen, die für KI-Dienste zugelassen sind; neue erst, wenn du sie zulässt (siehe [KI-Dienste und Mappentypen](pakete.md#ki-dienste)). Was er wann wohin geschickt hat, steht in seinen [Netzaufrufen](pakete.md#netzaufrufe).
+- **Nur aus zugelassenen Mappentypen:** Der KI-Assistent ist ein Paket mit Netz – er bekommt nur Inhalte aus Mappentypen, die an Dienste im Netz gehen dürfen; neue erst, wenn du sie zulässt (siehe [Dienste im Netz und Mappentypen](pakete.md#ki-dienste)). Was er wann wohin geschickt hat, steht in seinen [Netzaufrufen](pakete.md#netzaufrufe).
 
 Läuft Ollama bei dir, bleibt all das im Haus. Das Beispiel schaltet die Cloud-Funktionen von Ollama ab (`OLLAMA_NO_CLOUD=1`, kein Rechnen bei Ollama im Internet). Ins Internet geht Ollama nur, um das Modell herunterzuladen. Inhalte schreibt Ollama nicht ins Log – schalte dafür `OLLAMA_DEBUG` **nicht** ein, das zeigt auch die Anfragen.
 

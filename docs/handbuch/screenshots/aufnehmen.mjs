@@ -2511,7 +2511,7 @@ main().catch((e) => {
  */
 /**
  * Reiter der Paketseite (#996): ein KI-Paket als Attrappe – Übersicht liest (eine Zeile zur KI, was das Paket meldet),
- * Einstellungen ändern (Feld des Pakets, „Was die KI lesen darf“, ein Speichern); Verlauf mit Auslastung (#1003);
+ * Einstellungen ändern (Feld des Pakets, „Was an Dienste im Netz gehen darf“, ein Speichern); Verlauf mit Auslastung (#1003);
  * Ausprobieren mit Seitenhinweisen und erzeugter Datei (#1004).
  */
 async function paketReiterBilder(s, bild, geheZu) {
@@ -2564,8 +2564,8 @@ async function paketReiterBilder(s, bild, geheZu) {
   ];
   const kern = {
     art: 'abschnitt',
-    titel: w('Was die KI lesen darf'),
-    felder: [{ schluessel: 'ki_mappentypen', name: w('Was die KI lesen darf'), typ: 'ki_mappentypen' }],
+    titel: w('Was an Dienste im Netz gehen darf'),
+    felder: [{ schluessel: 'ki_mappentypen', name: w('Was an Dienste im Netz gehen darf'), typ: 'ki_mappentypen' }],
   };
   await s.route('**/api/werkbank/pakete', async (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
@@ -2729,7 +2729,7 @@ async function paketReiterBilder(s, bild, geheZu) {
   await s.getByText(w('Meldet das Paket')).waitFor();
   await bild(s, 'werkbank-paket-uebersicht');
   await s.getByRole('tab', { name: w('Einstellungen') }).click();
-  await s.getByRole('heading', { name: w('Was die KI lesen darf') }).waitFor();
+  await s.getByRole('heading', { name: w('Was an Dienste im Netz gehen darf') }).waitFor();
   await bild(s, 'werkbank-paket-einstellungen', { fullPage: true });
   await s.getByRole('tab', { name: w('Ausprobieren') }).click();
   await s

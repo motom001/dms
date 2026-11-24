@@ -77,7 +77,8 @@ optionales:
 [Beispieldatei herunterladen](einrichtungsdatei/beispiel.yaml)
 
 - `konto` ist die Person, die einrichtet: Sie bekommt „Gesamte Verwaltung“ und arbeitet auch in der Ablage. Weitere Personen lädst du nach der Einrichtung unter Werkbank → Benutzer ein.
-- Ohne Liste `pakete` wählst du die Pakete im Assistenten; `pakete: []` heißt „keine“.
+- Ohne Liste `pakete` wählt Ablago die Pakete im Assistenten nach `darf` (siehe [Was darf Ablago?](installation.md#was-darf-ablago)); `pakete: []` heißt „keine“. Ein Paket über der Antwort in `darf` übernimmt der Assistent nicht ohne Rückfrage.
+- `optionales.beispiele: true` heißt: mit einer Beispiel-Ablage starten. Beispiele je Paket (`beispiele` unter `pakete`) zählen genauso.
 - **Dateien aus Version 0.191 und 0.192** lädt Ablago weiter: Der Abschnitt `administrator` gilt als `konto`. Einen Abschnitt `erster-benutzer` übergeht Ablago mit einem Hinweis – den ersten Benutzer gibt es im Assistenten nicht mehr. Beim Speichern steht nur noch `konto` in der Datei.
 - `nutzung` ist die Antwort auf „Wofür nutzt du Ablago?“: `privat`, `beruflich` oder `beides` ([Nutzung](installation.md#nutzung)). `beruflich` und `beides` setzen das Merkmal [beruflich genutzt](organisation.md#nutzung). Fehlt die Angabe, fragt der Assistent.
 - `organisation` gibt es nur bei `beruflich` und `beides`: `name` ist Pflicht, dazu freiwillig `strasse`, `hausnummer`, `plz`, `ort`, `email` und `telefon`. „Jetzt einrichten“ legt daraus die [eigene Organisation](organisation.md) an; das Paket `basis` muss dann in der Liste stehen.

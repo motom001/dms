@@ -12,7 +12,7 @@ For the service there is a ready-made example with **[Ollama](https://ollama.com
 - **Ask your library:** the question, the chat so far and **a few excerpts** that Ablago itself has picked out – only from folders the person asking may read, at most as many as set under [Maximum per question](pakete.md#frag-deine-ablage) (default 8 excerpts, together 6,000 characters).
 - **Fill in from document:** the document's text (at most 50,000 characters), the name of the folder type and a description of the fields – never password fields, never fields the user may not edit.
 - **Never:** the whole stock, files or images, users, passwords.
-- **Only from allowed folder types:** the AI assistant is an AI package – it only receives content from folder types that are allowed for AI services; new ones only once you allow them (see [AI services and folder types](pakete.md#ki-dienste)). When it sent what to where is shown in its [network calls](pakete.md#netzaufrufe).
+- **Only from allowed folder types:** the AI assistant is a package with network access – it only receives content from folder types that may go to services on the network; new ones only once you allow them (see [Services on the network and folder types](pakete.md#ki-dienste)). When it sent what to where is shown in its [network calls](pakete.md#netzaufrufe).
 
 If Ollama runs at your place, all of this stays in the house. The example switches off Ollama's cloud functions (`OLLAMA_NO_CLOUD=1`, no computing at Ollama on the internet). Ollama only goes to the internet to download the model. Ollama doesn't write content into the log – for that, do **not** switch on `OLLAMA_DEBUG`, which also shows the requests.
 

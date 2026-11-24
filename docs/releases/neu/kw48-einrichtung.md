@@ -1,0 +1,18 @@
+art: minor
+
+## Neu
+
+- **Einrichtung: „Was darf Ablago?“ und Ablago wählt die Pakete** (#1566): Der Einrichtungsassistent fragt vor den Paketen einmal, was Ablago darf – mit denselben zwei Fragen wie die Karte in der Werkbank-Übersicht, die empfohlenen Antworten vorgewählt. Danach steht statt der langen Paketliste „Diese Pakete richtet Ablago für euch ein“: passend zu euren Antworten, zur Nutzung und zur Empfehlung im Katalog, je Paket ein Satz, Ziele im Internet genannt, ohne Haken. Was nicht erlaubt ist, steht darunter mit Grund. „Selbst auswählen“ zeigt den ganzen Katalog, nicht Erlaubtes ausgegraut mit Grund. Ablago wählt nur bei der Einrichtung, nur aus dem offiziellen, signierten Katalog und nie über eure Antwort hinaus; welche Pakete es waren, steht im Nachweis-Journal.
+
+## Verbessert
+
+- **Nur noch eine Frage nach Beispielen** (#1592): Unter *Optionales* steht nur noch „Mit einer Beispiel-Ablage starten“. „Beispiel-Mappentypen laden“ und die Beispiele je Paket fragt der Assistent nicht mehr.
+- **„Darf an Dienste im Netz gehen“ statt „KI-Dienste“** (#1559): Die Sperre gilt für jedes Paket mit Netz, das Inhalte bekommt – nicht nur für KI. Der Haken heißt jetzt „Darf an Dienste im Netz gehen“ und steht am Mappentyp im Abschnitt *Berechtigungen* direkt unter „Standard“, nicht mehr als eigener Abschnitt ganz unten. Technisch bleibt alles, wie es war.
+
+## Behoben
+
+- **Einrichtung blieb an einem Paket hängen** (#1591): Der Assistent bot den KI-Assistenten an, obwohl „Was Ablago darf“ ihn nicht erlaubte; „Jetzt einrichten“ scheiterte dann, die Meldung stand doppelt da, und Organisation und Beispiel-Ablage fehlten. Jetzt plant der Assistent mit eurer Antwort, bietet nur Erlaubtes an, und ein einzelnes Paket hält die Einrichtung nie mehr auf.
+
+## Für Administratoren
+
+- **Einrichtungsdatei** (#1592): `optionales.beispiele: true` heißt jetzt „mit einer Beispiel-Ablage starten“; Beispiele je Paket zählen genauso. Ohne Liste `pakete` wählt Ablago nach `darf`.

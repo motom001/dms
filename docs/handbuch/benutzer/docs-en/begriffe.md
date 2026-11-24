@@ -417,6 +417,10 @@ See also: [Customise the workbench](#werkbank-anpassen), [Household](#haushalt),
 <a id="postfach"></a>**Mailbox** (*Postfach*) · ~ with explanation · administrators  
 A connected email account (IMAP) from which Ablago fetches post.
 
+<a id="darf-an-dienste-im-netz-gehen"></a>**May go to services on the network** (*Darf an Dienste im Netz gehen*) · ~ with explanation · administrators  
+Tick on the folder type, in the Permissions section right below “Default” – content of this folder type may leave Ablago through a package with network access, for example for “Ask your library” or a translation. Without the tick the folder type stays in Ablago. Applies to every package with network access that receives content, not only AI. Short form in lists “allowed on the network” or “stays in Ablago”. Not a permission rule – those decide who sees a folder, the tick decides where content flows.  
+See also: [What Ablago may do](#was-ablago-darf), [Permissions](#berechtigungen), [Package](#paket).
+
 <a id="nummernkreis"></a>**Number sequence** (*Nummernkreis*) · ✗ technical term · administrators  
 Sequential numbers following a pattern such as {jjjj}-R{zaehler:4} (giving e.g. 2026-R0001), for instance for invoice numbers.
 

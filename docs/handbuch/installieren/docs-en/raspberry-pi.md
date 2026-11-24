@@ -340,7 +340,7 @@ Leave the window open; you'll need the **setup code** (*Einrichtungscode*) in a 
 
     --8<-- "assistent-weiter.md"
 
-4. **Add text recognition:** in the step **Packages**, tick **Text recognition**. This makes scanned letters and photos searchable. The Pi takes a little longer for it than a big PC, but it runs in the background.
+4. **Check text recognition:** in the step **Packages**, Ablago includes **Text recognition** on its own – with “Choose yourself” you see the whole catalogue. This makes scanned letters and photos searchable. The Pi takes a little longer for it than a big PC, but it runs in the background.
 
     ![Adding packages in the setup wizard](bilder/einrichtung-pakete.png)
 

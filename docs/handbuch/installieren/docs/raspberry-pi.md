@@ -337,9 +337,9 @@ Lass das Fenster offen, du brauchst den **Einrichtungscode** gleich. Das Skript 
 
     --8<-- "assistent-weiter.md"
 
-4. **Texterkennung dazuholen:** Im Schritt **Pakete** hakst du **Texterkennung** an. Damit werden gescannte Briefe und Fotos durchsuchbar. Der Pi braucht dafür etwas länger als ein großer PC, das läuft aber im Hintergrund.
+4. **Texterkennung prüfen:** Im Schritt **Pakete** wählt Ablago die **Texterkennung** von selbst mit aus – mit „Selbst auswählen“ siehst du den ganzen Katalog. Damit werden gescannte Briefe und Fotos durchsuchbar. Der Pi braucht dafür etwas länger als ein großer PC, das läuft aber im Hintergrund.
 
-    ![Pakete dazuholen im Einrichtungsassistenten](bilder/einrichtung-pakete.png)
+    ![Diese Pakete richtet Ablago für euch ein – Schritt Pakete im Einrichtungsassistenten](bilder/einrichtung-pakete.png)
 
 5. **Anmelden:** Am Ende meldest du dich mit dem Administrator an, den du im Assistenten angelegt hast.
 

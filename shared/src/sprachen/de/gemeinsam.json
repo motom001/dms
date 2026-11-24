@@ -809,7 +809,7 @@
   "paketeinstellungen.laenge-hoechstens_one": "Bitte höchstens {anzahl} Zeichen.",
   "paketeinstellungen.laenge-hoechstens_other": "Bitte höchstens {anzahl} Zeichen.",
   "paketeinstellungen.muster-passt-nicht": "Der Wert hat nicht die erwartete Form.",
-  "paketreiter.kern.ki-mappentypen": "Was die KI lesen darf",
+  "paketreiter.kern.ki-mappentypen": "Was an Dienste im Netz gehen darf",
   "paketreiter.kern.fragen-grenzen": "Frag deine Ablage: Höchstmenge je Frage",
   "paketreiter.kern.erkennung-standard": "Aus Dokument ausfüllen",
   "paketreiter.kern.mappenaktionen": "Aktionen im Menü „Mappe“",

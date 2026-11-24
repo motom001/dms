@@ -809,7 +809,7 @@
   "paketeinstellungen.laenge-hoechstens_one": "Please enter no more than {anzahl} character.",
   "paketeinstellungen.laenge-hoechstens_other": "Please enter no more than {anzahl} characters.",
   "paketeinstellungen.muster-passt-nicht": "The value does not have the expected form.",
-  "paketreiter.kern.ki-mappentypen": "What the AI may read",
+  "paketreiter.kern.ki-mappentypen": "What may go to services on the network",
   "paketreiter.kern.fragen-grenzen": "Ask your Library: limits per question",
   "paketreiter.kern.erkennung-standard": "Fill in from document",
   "paketreiter.kern.mappenaktionen": "Actions in the “Folder” menu",

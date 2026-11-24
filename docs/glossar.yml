@@ -903,9 +903,17 @@ begriffe:
     nicht_verwenden: [Systembenutzer, Bot, technischer Benutzer]
     verwandt: [Paket-Läufer, Benutzer]
     code: "benutzer.art = 'dienst'"
+  - begriff: Darf an Dienste im Netz gehen
+    bereich: werkbank
+    beschreibung: Haken am Mappentyp, im Abschnitt Berechtigungen direkt unter „Standard“ – Inhalte dieses Mappentyps dürfen Ablago über ein Paket mit Netz verlassen, etwa für „Frag deine Ablage“ oder eine Übersetzung. Ohne Haken bleibt der Mappentyp in Ablago. Gilt für jedes Paket mit Netz, das Inhalte bekommt, nicht nur für KI. Kurz in Listen „im Netz erlaubt“ bzw. „bleibt in Ablago“. Keine Regel der Berechtigungen – die regeln, wer eine Mappe sieht, der Haken, wohin Inhalte fließen.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Darf an KI-Dienste gehen, KI-Dienste (für diese Sperre), KI-Paket (für Pakete mit Netz)]
+    verwandt: [Was Ablago darf, Berechtigungen, Paket]
+    code: ki_typen, istKiPaket (intern weiter KI)
   - begriff: Was Ablago darf
     bereich: werkbank
-    beschreibung: Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Steht als Karte oben in der Übersicht der Werkbank; erhöhen geht nur mit frischer Anmeldung.
+    beschreibung: Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Festgelegt im Einrichtungsassistenten („Was darf Ablago?“), danach wählt Ablago dort die Pakete; später als Karte oben in der Übersicht der Werkbank, erhöhen geht nur mit frischer Anmeldung.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Vertrauensstufe, Stufe 1/2/3, Sicherheitsstufe]

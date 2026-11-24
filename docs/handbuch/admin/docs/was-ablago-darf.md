@@ -41,6 +41,10 @@ Auf jeder Antwort fragt Ablago weiter einzeln nach bei:
 - **Erhöhen** braucht eine frische Anmeldung. Die Änderung steht mit altem und neuem Wert im Nachweis-Journal (Zugang und Rechte), und alle mit Verwaltungsrecht bekommen eine Mail. Es passiert nichts von selbst: Kein Paket wird installiert, kein Mappentyp freigegeben.
 - **Senken** wirkt sofort und steht im Journal. Passen installierte Pakete nicht mehr zur neuen Antwort, nennt Ablago sie vorher mit Grund; mit **Anhalten und speichern** werden sie [angehalten](pakete.md#anhalten) – ihre Mappentypen, Mappen und Einstellungen bleiben.
 
+## Bei der Einrichtung { #einrichtung }
+
+Der Einrichtungsassistent stellt beide Fragen im Schritt [Was darf Ablago?](installation.md#was-darf-ablago), vor den Paketen. Danach wählt Ablago die Pakete selbst – passend zur ersten Antwort, zur Nutzung und zur Empfehlung im offiziellen, signierten Katalog; was nicht erlaubt ist, steht mit Grund daneben. Das gibt es nur bei der Einrichtung: Später kommen keine Pakete von selbst dazu.
+
 ## Anbieter und Einrichtungsdatei { #anbieter }
 
 In der [Einrichtungsdatei](einrichtungsdatei.md) stehen beide Antworten unter `darf`. Ein Anbieter, der Ablago für andere betreibt, legt dort mit `hoechstens` Höchstwerte fest. Der Server setzt sie durch; höhere Antworten sind in der Karte ausgegraut mit „Von eurem Anbieter festgelegt“.

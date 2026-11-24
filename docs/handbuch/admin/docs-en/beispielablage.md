@@ -22,7 +22,7 @@ As long as there are example folders, the [overview](uebersicht.md) reminds you 
 
 ## In the setup wizard { #im-einrichtungsassistenten }
 
-If you choose packages in the wizard, **Optional → Examples** has the tick **Look around first: create example Library**. With **Set up now** Ablago then creates the example Library right after the packages.
+Under **Optional → Examples** the wizard asks its only question about examples: **Start with an example Library**. It needs the packages Basis, Household and Contracts among the chosen packages. With **Set up now** Ablago then creates the example Library right after the packages.
 
 !!! info "Example Library or load test data?"
     The example Library is for **looking at**: few, consistent folders. For measurements with many thousands of folders there is the [load test data](demo.md) (formerly "demo data"), only at the level *Everything*.
