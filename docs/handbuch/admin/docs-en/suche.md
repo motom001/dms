@@ -1,6 +1,6 @@
 # Search {#suche}
 
-The Library's search forgives typos and other spellings. What it does in the process you set under **Workbench → Search and full text → Search**, the synonyms under **Workbench → Synonyms** (both in the group *Post and intake*; from the level [*Household*](uebersicht.md#werkbank-anpassen), in *Business* and *Everything* always). How users search is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/#suchen).
+The Library's search forgives typos and other spellings. What it does in the process you set under **Workbench → Packages → Included with Ablago → Text from PDF and text recognition → Search** (up to version 0.317 *Search and full text*), the synonyms under **Workbench → Synonyms** (in the group *Post and intake*; from the level [*Household*](uebersicht.md#werkbank-anpassen), in *Business* and *Everything* always). How users search is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/#suchen).
 
 ## What always applies {#was-immer-gilt}
 
@@ -14,7 +14,7 @@ Without any setting, the search evens out:
 
 If the search finds **nothing**, it continues with similar words from your Library (similarity via letter groups, pg_trgm) and says so above the hits: "No exact hits for 'washing machien'. Similar spellings are shown." It also suggests **"Did you mean 'washing machine'?"**; a click searches for exactly this word. If there are exact hits, it stays with them – exact hits always come first.
 
-![Workbench → Search and full text → Search: typos](bilder/werkbank-suche.png)
+![Workbench → Packages → Text from PDF and text recognition → Search: typos](bilder/werkbank-suche.png)
 
 Under **Suggest “Did you mean …?”** you choose when the suggestion appears (since #1191):
 
@@ -27,7 +27,7 @@ Similar-sounding names (Meier, Mayer, Maier) are only found if they are also spe
 
 ## Synonyms { #gleichbedeutende-worter }
 
-A **group** of synonyms, e.g. *car, auto, vehicle* or *service charges, operating costs*, makes sure that searching for one of the words also finds the others. The groups have an area of their own: **Workbench → Post and intake → Synonyms**, directly below *Search and full text* (since #992; before, they were at the bottom of the page *Search and full text*, which now has a link). It is laid out like the other collections in the Workbench:
+A **group** of synonyms, e.g. *car, auto, vehicle* or *service charges, operating costs*, makes sure that searching for one of the words also finds the others. The groups have an area of their own: **Workbench → Post and intake → Synonyms** (since #992; before, they were at the bottom of the page *Search and full text*, which now has a link). It is laid out like the other collections in the Workbench:
 
 ![Workbench → Synonyms](bilder/werkbank-woerter.png)
 

@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   abschnittUmleitung,
+  ANBIETER_RECHT,
+  anbieterSeite,
   anzahlInVorlage,
+  bereichWeg,
+  darfPaketseite,
+  darfSeite,
+  LEISTEN_BEREICHE,
   bereichPasst,
   ansichtAus,
   BEREICHE,
@@ -31,6 +37,7 @@ import {
   imHandySchwerpunkt,
   einDatentraeger,
 } from '../../shared/src/werkbankansicht';
+import { EINGEBAUTE_ANBIETER } from '../../shared/src/leistungen';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
@@ -80,8 +87,9 @@ describe('Werkbank-Ansicht: Regeln', () => {
       ['anbindung', 'demo'],
     );
     assert.equal(BEREICHE.filter((x) => inVorlage('alles', x.pfad)).length, BEREICHE.length);
-    // Anzahl der Einträge in der Leiste samt Übersicht – so im Handbuch und im Rauchtest.
-    assert.deepEqual(STUFEN.map(anzahlInVorlage), [10, 30, 35, 37, 39]);
+    // Anzahl der Einträge in der Leiste samt Übersicht – so im Handbuch und im Rauchtest. Seit #1570 ohne „Suche und
+    // Volltext“ (steht unter Pakete → Von Ablago mitgeliefert).
+    assert.deepEqual(STUFEN.map(anzahlInVorlage), [10, 29, 34, 36, 38]);
     assert.deepEqual(BEREICHE.find((x) => x.pfad === 'stempel')?.in, ['haushalt', 'selbstaendig', 'organisation']);
   });
 
@@ -372,7 +380,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     // 7 ± 2: Einstellungen hat mit „Eigene Organisation“ (#1170) acht, „Ablage aufbauen“ mit der Beispiel-Ablage (#988)
     // neun – Einsteiger sehen davon nur Pakete und Beispiel-Ablage.
     for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= (g === 'ablage' ? 9 : 8), g);
-    assert.equal(bereichName('texterkennung'), 'Suche und Volltext');
+    assert.equal(bereichName('texterkennung'), 'Text aus PDF und Texterkennung');
     assert.equal(bereichName('aufbewahrung'), 'Aufbewahrung abgelaufen');
     // Aufgaben und Tägliche Zusammenfassung: ein Eintrag unter Einstellungen, Kennung bleibt „aufgaben“.
     assert.equal(bereichName('aufgaben'), 'Aufgaben');
@@ -458,8 +466,8 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
       'früherer Abschnitt des Löschkonzepts',
     );
     assert.equal(abschnittUmleitung('loeschkonzept', 'personendaten'), null);
-    // #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand.
-    assert.equal(abschnittUmleitung('texterkennung', 'automatisch-verkleinern'), '/werkbank/systemzustand#automatisch-verkleinern');
+    // #1190: „Neue PDFs automatisch verkleinern“ stand beim Speicherplatz im Systemzustand, seit #1570 bei „PDF bearbeiten“.
+    assert.equal(abschnittUmleitung('texterkennung', 'automatisch-verkleinern'), '/werkbank/pakete/ablago.pdf#automatisch-verkleinern');
     assert.equal(abschnittUmleitung('texterkennung', 'warteschlange'), null);
     // #1319: Datenschutz nur an der Stufe – ab Selbständig, sonst nur mit eigener Einblendung; das Merkmal zählt nicht.
     assert.equal(inVorlage('haushalt', 'auskuenfte'), false);
@@ -515,7 +523,7 @@ describe('Speicherplatz: ein Balken für einen Datenträger (#366)', () => {
 describe('Werkbank neu geordnet (#717, #725)', () => {
   it('alte Bereiche leiten auf den neuen Ort weiter, samt Abschnitt', () => {
     assert.equal(werkbankUmleitung('darfweg'), '/werkbank/aufbewahrung');
-    assert.equal(werkbankUmleitung('suche'), '/werkbank/texterkennung#suche');
+    assert.equal(werkbankUmleitung('suche'), '/werkbank/pakete/ablago.text#suche');
     assert.equal(werkbankUmleitung('wiederherstellung'), '/werkbank/sicherung#wiederherstellen');
     assert.equal(werkbankUmleitung('technik'), '/werkbank/systemzustand#version');
     assert.equal(werkbankUmleitung('wartungsmodus'), '/werkbank/wartung#wartungsmodus');
@@ -549,5 +557,57 @@ describe('Werkbank neu geordnet (#717, #725)', () => {
     assert.ok(!finde('Notfallblatt').includes('sicherung'));
     assert.ok(finde('notfallcode').includes('verschluesselung'));
     assert.equal(finde('').length, BEREICHE.length);
+  });
+});
+
+describe('Umzug unter Pakete → Von Ablago mitgeliefert (#1570)', () => {
+  it('„Suche und Volltext“ verlässt die Leiste; Kennung und Verwaltungsrecht bleiben', () => {
+    assert.ok(
+      BEREICHE.some((b) => b.pfad === 'texterkennung'),
+      'Recht an Personen bleibt gültig',
+    );
+    assert.ok(!LEISTEN_BEREICHE.some((b) => b.pfad === 'texterkennung'));
+    assert.equal(BEREICHE.filter((b) => !b.leiste).length, 1);
+    assert.equal(bereichWeg('texterkennung'), '/werkbank/pakete/ablago.text');
+    assert.equal(bereichWeg('pakete'), '/werkbank/pakete');
+    assert.equal(bereichWeg('uebersicht'), '/werkbank');
+    // Gespeicherte Ansichten mit dem alten Bereich bleiben lesbar; Speichern nimmt ihn nicht mehr auf.
+    assert.deepEqual(liesAnsicht({ vorlage: 'einsteiger', ein: ['texterkennung'], aus: [] })?.ein, ['texterkennung']);
+    assert.ok(!ansichtAus('einsteiger', ['texterkennung', 'pakete']).ein.includes('texterkennung'));
+    assert.ok(!ansichtAus('haushalt', []).aus.includes('texterkennung'));
+  });
+
+  it('alte Adressen führen auf die Seite des mitgelieferten Teils, samt Suche und Sprungmarke', () => {
+    assert.equal(werkbankUmleitung('texterkennung'), '/werkbank/pakete/ablago.text');
+    assert.equal(werkbankUmleitung('texterkennung', undefined, '?x=1', 'warteschlange'), '/werkbank/pakete/ablago.text?x=1#warteschlange');
+    assert.equal(werkbankUmleitung('texterkennung', 'irgendwas'), '/werkbank/pakete/ablago.text');
+    assert.equal(werkbankUmleitung('suche'), '/werkbank/pakete/ablago.text#suche');
+    assert.equal(abschnittUmleitung('texterkennung', 'archivfassung'), '/werkbank/pakete/ablago.archiv#archivfassung');
+    assert.equal(abschnittUmleitung('texterkennung', 'umwandlung'), '/werkbank/pakete/ablago.umwandeln#umwandlung');
+    assert.equal(abschnittUmleitung('systemzustand', 'automatisch-verkleinern'), '/werkbank/pakete/ablago.pdf#automatisch-verkleinern');
+    assert.equal(abschnittUmleitung('systemzustand', 'verkleinern'), null, 'Große PDFs verkleinern bleibt im Systemzustand');
+    assert.equal(werkbankUmleitung('pakete'), null);
+    assert.equal(werkbankUmleitung('pakete', 'ablago.text'), null);
+    assert.equal(anbieterSeite('ablago.pdf'), '/werkbank/pakete/ablago.pdf');
+  });
+
+  it('die Werkbank-Suche findet die alten Namen', () => {
+    const finde = (s: string) => BEREICHE.filter((b) => bereichPasst(b.pfad, s)).map((b) => b.pfad);
+    for (const s of ['Suche und Volltext', 'Texterkennung', 'OCR', 'Archivfassung', 'automatisch verkleinern', 'Tippfehler'])
+      assert.ok(finde(s).includes('texterkennung'), s);
+  });
+
+  it('Recht: die Seiten öffnet „Pakete“ oder das Recht des umgezogenen Bereichs', () => {
+    assert.ok(darfPaketseite(['pakete'], 'ablago.text'));
+    assert.ok(darfPaketseite(['texterkennung'], 'ablago.text'));
+    assert.ok(darfPaketseite(['texterkennung'], 'ablago.pdf'));
+    assert.ok(!darfPaketseite(['texterkennung'], 'ablago.briefsatz'));
+    assert.ok(!darfPaketseite(['texterkennung'], undefined), 'die Liste der Pakete nur mit „Pakete“');
+    assert.ok(!darfPaketseite(['texterkennung'], 'basis'));
+    assert.ok(darfPaketseite(null, 'ablago.erechnung'));
+    for (const r of Object.values(ANBIETER_RECHT)) assert.ok(r && darfSeite([r], r));
+    // Nur Kennungen, die es gibt (die Liste kennt sie nur als Muster, damit kein Kreis über die Leistungen entsteht).
+    for (const k of [...Object.keys(ANBIETER_RECHT), bereichWeg('texterkennung').split('/').pop()!])
+      assert.ok(Object.hasOwn(EINGEBAUTE_ANBIETER, k), k);
   });
 });

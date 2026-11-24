@@ -128,6 +128,10 @@ const REGELN: Regel[] = [
   R('PUT', '/api/werkbank/papierkorb/einstellungen', 'daten'),
   // Aufbewahrung abgeschlossener Aufträge an Leistungen (#1569).
   R('*', '/api/werkbank/leistungen/einstellungen', 'daten'),
+  // Von Ablago mitgeliefert (#1570): unter Pakete. Lesen auch, wer „Text aus PDF und Texterkennung“ verwaltet (die Seite
+  // zeigt den Schalter); schalten und wählen nur mit dem Recht auf die Pakete.
+  R('GET', '/api/werkbank/leistungen/anbieter', 'pakete', 'texterkennung'),
+  R('*', '/api/werkbank/leistungen/*', 'pakete'),
 
   // Daten sichern
   R('*', '/api/werkbank/sicherung*', 'sicherung'),

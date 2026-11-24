@@ -149,6 +149,29 @@ Beim **Update** trägt alles, was mit der neuen Version dazukommt, den Merker **
 
 Bringt ein Paket eine **Kurzanleitung** mit (drei bis fünf kurze Schritte), zeigt Ablago sie **einmal direkt nach der Installation** oben auf der Paketseite – mit **Schließen**. Danach steht sie unter **Was mitkommt** bei **So nutzt du es** zum Aufklappen. Ablago zeigt sie in deiner Sprache, sonst auf Deutsch. Große Themen erklärt kein Paket in der Anleitung, sondern ein Rundgang.
 
+## Von Ablago mitgeliefert { #von-ablago-mitgeliefert }
+
+Was Ablago selbst mit Dokumenten macht, steht unter **Werkbank → Pakete** im eigenen Abschnitt **Von Ablago mitgeliefert** – unter den installierten Paketen, in derselben Zeile wie ein Paket und mit dem Etikett **Ablago**:
+
+| Name | Macht | Einstellungen auf der Seite |
+| --- | --- | --- |
+| Text aus PDF und Texterkennung | Text lesen (Textebene von PDFs) | [Texterkennung](texterkennung.md#werkbank-suche-und-volltext) und [Suche](suche.md#tippfehler-und-meintest-du) (früher *Suche und Volltext*) |
+| Archivfassung (PDF/A) | In PDF/A umwandeln (übernimmt Originale, die schon PDF/A sind) | Stand der [Archivfassung](texterkennung.md#archivfassung-pdfa) |
+| Umwandeln | In PDF umwandeln (JPEG, PNG) | [Andere Dateitypen](texterkennung.md#andere-dateitypen) |
+| PDF bearbeiten | Seiten drehen und ordnen, PDFs zusammenfügen, PDF verkleinern, Schwärzen | [Neue PDFs automatisch verkleinern](speicherplatz.md#neue-pdfs-automatisch-verkleinern) (früher im Systemzustand) |
+| Briefsatz | Brief aus Text erstellen, Brief aus Vorlage erstellen | – |
+| E-Rechnung lesen | E-Rechnung lesen (XRechnung, ZUGFeRD) | – |
+
+Die Seite eines Eintrags zeigt oben einen **Schalter**, darunter was er macht (für welche Dateitypen) und seine Einstellungen; die technischen Namen stehen aufgeklappt unter *Für Fachleute*. Entfernen lässt sich nichts davon. Nach einem Update ist alles eingeschaltet, und die Einstellungen sind dieselben wie vorher – sie stehen nur an einer anderen Stelle. Alte Adressen (`/werkbank/texterkennung`, auch mit Sprungmarke wie `#archivfassung`) führen auf die neue Seite, und das Suchfeld der Leiste findet sie auch unter den alten Namen. Nach dem Update sagt einmal ein Tipp unter „Neu seit deinem letzten Besuch“, wohin *Suche und Volltext* und *Neue PDFs automatisch verkleinern* umgezogen sind.
+
+**Ausschalten:** Vor dem Ausschalten sagt Ablago, was dann fehlt und ob ein anderes installiertes Paket es übernimmt, z. B. „Ohne „Text aus PDF und Texterkennung“ liest Ablago den Text neuer PDFs nicht mehr … Ein anderes Paket dafür ist nicht installiert.“ – mit **Im Katalog suchen …**. Ausgeschaltet bleibt die Zeile in der Liste stehen, mit dem Etikett **aus**. Wo Ablago die Tätigkeit dann braucht, steht statt eines Fehlers „macht hier gerade niemand“ mit der Adresse im Katalog; die Texterkennung lässt neue PDFs mit diesem Grund aus.
+
+Ein- und ausschalten darf, wer die Pakete verwaltet. Wer nur *Text aus PDF und Texterkennung* verwalten darf (früher *Suche und Volltext*), öffnet dessen Seite und die der Archivfassung, von *Umwandeln* und *PDF bearbeiten* weiter, sieht den Schalter aber nur.
+
+### Wer macht das? { #wer-macht-das }
+
+Kann eine Tätigkeit mehr als einer – Ablago und ein installiertes Paket –, steht rechts auf **Werkbank → Pakete** der Abschnitt **Wer macht das?**: je Tätigkeit, wer sie macht, und für welche Dateitypen. Vorgabe ist **Ablago**. Gibt es für keine Tätigkeit eine Wahl, fehlt der Abschnitt. Auf der Seite eines Pakets, das Tätigkeiten übernehmen kann, zeigt der Reiter **Bietet an**, welche das sind und wer sie gerade macht, mit dem Weg hierher.
+
 ## Beispiele { #beispiele }
 
 Viele Pakete bringen **Beispiel-Mappen** mit erfundenen Daten mit, damit du siehst, was in eine Mappe gehört. Seit Ablago 0.223.0 können sie auch **Beispiel-Dokumente** mitbringen – etwa einen Wartungsvertrag und zwei Rechnungen zur Mappe „Heizung“. Angelegt wird beides nur, wenn du beim Installieren den Haken **Beispiel-Mappen** setzt; bei einem Update entstehen keine Beispiele.

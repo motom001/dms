@@ -47,6 +47,8 @@ export const GEMERKTE_EINSTELLUNGEN: ReadonlySet<string> = new Set([
   'wiederherstellung_abschluss',
   // Merkmale der Ablage (#1032): jede Prüfung von Rechten, Ansichten und Pflichtfeldern liest sie.
   'merkmale',
+  // Schalter und „Wer macht das?“ der Leistungen (#1570): jeder Auftrag an eine Leistung liest sie.
+  'leistungen_anbieter',
 ]);
 
 /** `mappen` (#918, Sequenz `haushaltsstand_mappen`): wie `zahlen`, aber ohne Favoriten. */

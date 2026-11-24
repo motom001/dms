@@ -984,9 +984,17 @@ begriffe:
     nicht_verwenden: [Darf weg]
   - begriff: Suche und Volltext
     bereich: werkbank
-    beschreibung: Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. „Neue PDFs automatisch verkleinern“ steht seit #1190 im Systemzustand. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
+    beschreibung: Früherer Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. Seit Version 0.318 heißt die Seite „Text aus PDF und Texterkennung“ und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten. Fasste die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
     einsteiger: erklaeren
     begegnet: admin
+    verwandt: [Von Ablago mitgeliefert]
+  - begriff: Von Ablago mitgeliefert
+    bereich: werkbank
+    beschreibung: Abschnitt unter Werkbank → Pakete für das, was Ablago selbst mit Dokumenten macht – Text aus PDF und Texterkennung, Archivfassung (PDF/A), Umwandeln, PDF bearbeiten, Briefsatz, E-Rechnung lesen. Jedes steht wie ein Paket da, mit Schalter an/aus und seinen Einstellungen; entfernen lässt es sich nicht. Kann eine Tätigkeit auch ein Paket, wählt man unter „Wer macht das?“, wer sie macht.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Anbieter, Leistung, eingebauter Anbieter]
+    verwandt: [Paket]
   - begriff: Postfach
     bereich: werkbank
     beschreibung: Ein angebundenes E-Mail-Konto (IMAP), aus dem Ablago Post abholt.
@@ -1161,7 +1169,7 @@ begriffe:
     verwandt: [Systemzustand]
   - begriff: Eingebautes Werkzeug
     bereich: betrieb
-    beschreibung: Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).
+    beschreibung: Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Text aus PDF und Texterkennung, Systemzustand).
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Abhängigkeit, Binary]

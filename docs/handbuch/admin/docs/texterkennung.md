@@ -2,7 +2,7 @@
 
 Damit die Suche auch den Text von Dokumenten findet, erzeugt Ablago zu jedem neuen Dokument einen **Volltext** – im Hintergrund, ohne dass jemand warten muss:
 
-Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter). „Neue PDFs automatisch verkleinern“ steht seit #1190 beim Speicherplatz unter [Systemzustand](speicherplatz.md#neue-pdfs-automatisch-verkleinern). Der Bereich steht ab der Stufe **Haushalt** in der Leiste. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
+Die Einstellungen stehen unter **Werkbank → Pakete → Von Ablago mitgeliefert → Text aus PDF und Texterkennung** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich). Bis Version 0.317 hieß die Seite **Suche und Volltext** und stand unter *Post und Eingänge*; die alte Adresse `/werkbank/texterkennung` führt auf die neue Seite, und das Suchfeld der Leiste findet sie auch unter dem alten Namen. Die [Archivfassung](#archivfassung-pdfa) und die [anderen Dateitypen](#andere-dateitypen) haben ihre eigene Seite daneben (*Archivfassung (PDF/A)*, *Umwandeln*), „Neue PDFs automatisch verkleinern“ steht bei *PDF bearbeiten* (siehe [Von Ablago mitgeliefert](pakete.md#von-ablago-mitgeliefert)). Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -26,7 +26,7 @@ Ohne Paket bleiben Scans und Fotos ohne Text („wartet auf Texterkennung – ke
 
 **Wie schnell?** Das Paket ist etwas langsamer als die frühere eingebaute Texterkennung, weil es als WebAssembly abgeschottet läuft: Auf einem Rechner mit 2 Kernen (amd64) brauchte es für 10 gescannte Seiten etwa 31–35 Sekunden, die eingebaute dort 25–26 Sekunden; eine einzelne Seite dauert vom Hochladen bis zum Text etwa 4–6 Sekunden. Erkannt hat es dabei genauso gut. Lange Dokumente erkennt es abschnittsweise, die Zeitgrenze des Paket-Läufers greift nicht. Mehr Messwerte stehen im README des Pakets.
 
-![Werkbank → Suche und Volltext](bilder/werkbank-texterkennung.png)
+![Werkbank → Pakete → Text aus PDF und Texterkennung](bilder/werkbank-texterkennung.png)
 
 ## Andere Dateitypen { #andere-dateitypen }
 
@@ -48,7 +48,7 @@ So sieht es aus:
 3. Mit der Fassung entsteht das Vorschaubild (Hinweis beim Darüberfahren: „Vorschau aus der umgewandelten Fassung eines Pakets“) und der Volltext. Am Dokument steht dann z. B. „Text aus dem PDF · aus der umgewandelten Fassung (Bildformate 1.0.0)“ mit dem Link **Fassung ansehen**; in der Historie der Mappe „umgewandelte Fassung erstellt“.
 4. Kann das Paket eine Datei nicht lesen (z. B. beschädigt), steht sein Grund am Dokument („Umwandlung durch Paket Bildformate: …“). **Erneut versuchen** gibt die Datei noch einmal an das Paket.
 
-**Werkbank → Suche und Volltext → Andere Dateitypen** zeigt je Dateityp, wie viele Dokumente es gibt und welches Paket sie umwandelt bzw. ihren Volltext liefert – oder welches Paket aus dem Katalog es könnte, mit **Paket installieren**.
+**Werkbank → Pakete → Von Ablago mitgeliefert → Umwandeln → Andere Dateitypen** zeigt je Dateityp, wie viele Dokumente es gibt und welches Paket sie umwandelt bzw. ihren Volltext liefert – oder welches Paket aus dem Katalog es könnte, mit **Paket installieren**.
 
 **Sicherung:** Seit Version 0.140.1 liegen die Fassungen mit den Dokumenten im Ordner der Ablage (`/data/files/<Ablage-Id>/fassungen`) und gehen mit in die [Sicherung](sicherung.md#was-eine-sicherung-enthalt) und den [Vollexport](export.md) (dort als `<Datei>.fassung.pdf` neben dem Original). Nach einer Wiederherstellung steht alles so da wie vorher – Fassung ansehen, Volltext und Vorschau –, auch **ohne** das Paket oder mit einer neueren Version, die heute anders umwandeln würde. Fassungen vom früheren Ort (`/data/files/fassungen`, Versionen 0.137 bis 0.140.0) zieht Ablago beim ersten Start von selbst um. Ältere Sicherungen ohne Fassungen lassen sich weiter einspielen; dann holt **Werkbank → Wartungsoperationen → Vorschaubilder nachholen** die Fassungen beim Paket nach, sofern es installiert ist (der Volltext ist Teil jeder Sicherung und bleibt).
 
@@ -65,18 +65,17 @@ Mit einem Paket wie **PDF/A** (Recht [Archivfassung ablegen](pakete.md#recht-arc
 - **Prüfung:** Ablago nimmt nur ein PDF mit PDF/A-Kennung an (XMP-Metadaten, ungefiltert), unverschlüsselt, bis 100 MB und 1000 Seiten. Die volle Prüfung der Konformität macht das Paket selbst (z. B. mit veraPDF in seiner CI).
 - **Vorschaubild** (#1216): Gibt es sonst keine Quelle für das kleine Bild der ersten Seite – vor allem bei **E-Mails** –, entsteht es aus der Archivfassung. Reihenfolge: die Datei selbst (PDF, JPEG, PNG) → entsperrte bzw. [umgewandelte Fassung](#andere-dateitypen) → Archivfassung; sonst steht dort die Dateiendung. Beim Darüberfahren steht wie bei umgewandelten Fassungen „Vorschau aus der umgewandelten Fassung eines Pakets“. Entsteht die Archivfassung erst später, kommt das Bild danach – auch wenn ein früherer Versuch ohne Bild blieb. **Ohne Paket für die Archivfassung** bleibt es bei der Dateiendung.
 - **Bestand:** Dokumente, die schon eine Archivfassung, aber noch kein Vorschaubild haben, holt Ablago von selbst im Hintergrund nach – alle 10 Minuten ein Stapel von höchstens 400, **mit Nachrang**: erst wenn keine neuen Dokumente auf ihr Bild warten, eins nach dem anderen mit einer Sekunde Pause und mit niedriger Priorität (`pdftoppm`, siehe [Viele gleichzeitige Anfragen](technik.md#last)). Auf einem Raspberry Pi mit vielen Mails dauert das ein paar Stunden; Ablago bleibt dabei bedienbar. Den Fortschritt zeigt der nächste Punkt („Vorschaubilder aus der Archivfassung werden nachgeholt: 120 erstellt, noch 380 offen“). Mit mehreren Servern an einer Datenbank arbeitet je Lauf nur einer.
-- **Werkbank → Suche und Volltext → Archivfassung (PDF/A)** zeigt das Paket, wie viele Archivfassungen es gibt, wie viele warten, ausgelassen oder abgelehnt sind – und die Dokumente mit Grund.
+- **Werkbank → Pakete → Von Ablago mitgeliefert → Archivfassung (PDF/A)** zeigt das Paket, wie viele Archivfassungen es gibt, wie viele warten, ausgelassen oder abgelehnt sind – und die Dokumente mit Grund.
 - **Sicherung und Vollexport:** Die Archivfassung gehört zur Sicherung (mit Probe-Wiederherstellung) und steht im Vollexport als `<Datei>.pdfa.pdf` neben dem Original. Die [Auskunft nach Art. 15](datenschutz.md) bleibt, wie sie ist: Dokumente wie abgelegt.
 - **Nicht eingebettete Schriften** (#1329): Bis 0.290 hatte das Image keine Schriften. PDFs, die ihre Schriften nicht mitbringen (oft Helvetica oder Arial in Rechnungen), bekamen deshalb Seiten-, Vorschaubilder und eine Archivfassung **ohne Text**; das Original und die Suche waren nie betroffen. Nach dem Update sucht Ablago solche PDFs einmalig (`pdffonts`) und erzeugt sie neu – im Hintergrund, alle 10 Minuten höchstens 100 PDFs geprüft und 10 neu angestoßen, mit einer halben Sekunde Pause je PDF. Die bisherige Archivfassung bleibt stehen, bis die neue die Prüfung besteht; die Historie der Mappe nennt den Grund („Archivfassung neu erzeugt (fehlende Schriften)“). Das läuft nur, wenn die Schriften da sind (siehe [Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)); fehlen sie, entsteht für solche PDFs keine neue Archivfassung – der Grund steht am Dokument.
 - **Nach Änderungen am Original** (neue Version, drehen, Seiten löschen, teilen, schwärzen) gilt die alte Archivfassung nicht mehr; angezeigt wird das Original, bis das Paket neu erzeugt hat.
 
-## Werkbank → Suche und Volltext
+## Werkbank → Pakete → Text aus PDF und Texterkennung { #werkbank-suche-und-volltext }
 
 Die Seite ist eine **Übersicht**; Einstellungen der Erkennung gibt es hier nicht mehr (sie stehen beim Paket):
 
 - **Texterkennung für Scans und Bilder:** welches Paket die Texterkennung übernimmt, mit Link zu seinen Einstellungen, und wie viele Dokumente gerade darauf warten. Fehlt das Paket, steht hier der Hinweis mit **Jetzt installieren**.
 - **Woher der Text kommt:** wie viele Dokumente ihren Text aus dem PDF haben, vom Paket, von der früheren eingebauten Texterkennung (bis 0.133), ohne Text sind, auf die Texterkennung warten oder einen Fehler hatten.
-- **Andere Dateitypen:** TIFF, WebP, Word, E-Mails und Co. – wie viele es gibt und welches Paket sie umwandelt oder ihren Volltext liefert (siehe [Andere Dateitypen](#andere-dateitypen)).
 - **Erkannte Sprachen** mit dem Hinweis, wenn dem Paket Sprachdaten fehlen (siehe [Weitere Sprachen](#weitere-sprachen)).
 - **Warteschlange** und **Aufträge** (siehe unten).
 - Darunter **Suche: Tippfehler** – ähnliche Schreibweisen und wann „Meintest du …?“ kommt (siehe [Suche](suche.md#tippfehler-und-meintest-du)) – und der Weg zu den gleichbedeutenden Wörtern.
@@ -84,6 +83,8 @@ Die Seite ist eine **Übersicht**; Einstellungen der Erkennung gibt es hier nich
 Fehlt ein [eingebautes Werkzeug](fehlersuche.md#werkzeuge) (z. B. das zum Lesen von PDFs), steht oben auf der Seite ein Hinweis mit Folge und Abhilfe – und als Meldung auch auf der [Übersicht](uebersicht.md#meldungen) der Werkbank; sind alle da, steht dazu nichts auf der Seite.
 
 Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mappentyp](mappentypen.md#register) ein (*Volltext erzeugen*, Standard: an).
+
+**Ausgeschaltet:** Oben auf der Seite steht der Schalter. Ist „Text aus PDF und Texterkennung“ ausgeschaltet und macht kein anderes Paket „Text lesen“, liest Ablago die Textebene neuer PDFs nicht mehr: Die Dokumente stehen dann auf **ausgelassen**, mit dem Grund („macht hier gerade niemand“) und der Adresse im Katalog – kein Fehler, kein erneuter Versuch. Nach dem Einschalten holt [Volltext neu erzeugen](#volltext-neu-erzeugen) sie nach.
 
 Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei *Volltext neu erzeugen* warum: **ausgeschaltet** (mit **Einschalten**) oder **pausiert, solange der Wartungsmodus an ist** (mit **Wartungsmodus beenden**). Ein nur angekündigter Wartungsmodus hält die Warteschlange nicht an. Zusätzlich sieht Ablago alle 30 Sekunden nach, ob noch Dokumente auf die Texterkennung warten – so bleibt keines dauerhaft auf *wartet* stehen, auch wenn der Anstoß nach dem Hochladen einmal ins Leere ging (z. B. weil das Dokument im selben Moment als Anlage angehängt wurde).
 
@@ -114,7 +115,7 @@ Im Paket **Texterkennung (Deutsch und Englisch)** stecken Deutsch, Englisch und 
 
 **Ob mehr Sprachen die Erkennung bremsen:** Welche Sprache eine Seite hat, erkennt das Paket am gelesenen Text anhand kurzer Wortlisten für alle oben genannten Sprachen – immer für alle, ob ihre Sprachdaten installiert sind oder nicht. Mehr Zusatzsprachen machen diese Erkennung also weder langsamer noch ungenauer. Eine Zusatzsprache kostet nur dort Zeit, wo sie gebraucht wird: Erkennt das Paket eine Seite als Französisch und ist Französisch installiert, liest es die Seite ein zweites Mal auf Französisch und nimmt die sicherere Lesung.
 
-Unter **Werkbank → Suche und Volltext → Erkannte Sprachen** siehst du, wie viele Dokumente in welcher Sprache vorliegen und ob das Paket ihre Sprachdaten hat. Fehlen sie, macht die Seite einen Vorschlag, z. B. „12 Dokumente auf Französisch – das Paket Texterkennung liest sie besser mit ‚Texterkennung – Zusatzsprache Französisch‘ (texterkennung.fra)“, mit Link zu diesem Paket. Fehlende Sprachdaten nennt das Paket außerdem im Ergebnis und im Protokoll des Paket-Läufers („Sprachdaten fehlen: fra (Zusatzpaket texterkennung.fra)“).
+Unter **Werkbank → Pakete → Text aus PDF und Texterkennung → Erkannte Sprachen** siehst du, wie viele Dokumente in welcher Sprache vorliegen und ob das Paket ihre Sprachdaten hat. Fehlen sie, macht die Seite einen Vorschlag, z. B. „12 Dokumente auf Französisch – das Paket Texterkennung liest sie besser mit ‚Texterkennung – Zusatzsprache Französisch‘ (texterkennung.fra)“, mit Link zu diesem Paket. Fehlende Sprachdaten nennt das Paket außerdem im Ergebnis und im Protokoll des Paket-Läufers („Sprachdaten fehlen: fra (Zusatzpaket texterkennung.fra)“).
 
 Nach dem Installieren einer Zusatzsprache erkennt **Volltext neu erzeugen → Für alle Dokumente** (siehe unten) die vorhandenen Dokumente neu – oder du startest einzelne unter **Aufträge → fertig** neu.
 
@@ -168,7 +169,7 @@ Läuft wie bei einem neuen Dokument: Ablago liest die Textebene neu und gibt das
 - **Für Dokumente ohne Text** – alle Dokumente, deren Volltext leer ist: noch nie gelesen (z. B. vor Version 0.11 hochgeladen), Scans, für die es noch kein Paket gab, oder nach einem Fehler. Dazu gehören auch [andere Dateitypen](#andere-dateitypen) wie TIFF: Ohne Fassung gehen sie an das Paket zum Umwandeln, mit Fassung wird diese gelesen. Ersetzt das frühere „Volltext nachholen“.
 - **Für alle Dokumente** – nach einer Rückfrage mit der Anzahl. Das ist ein **ausdrückliches Neu**: Das Paket erkennt dann auch Dokumente neu, die schon Text haben – auch wenn bei ihm „Vorhandenen Volltext verwerfen und neu erkennen“ aus ist. Sinnvoll etwa nach einem neuen Sprachpaket. Bis das Paket fertig ist, bleibt der bisherige Text für die Suche stehen.
 
-Nur Dokumente in Registern, die einen Volltext erzeugen. Es läuft als **Auftrag mit Fortschritt** („Textebene lesen und an die Texterkennung geben: 120 von 800“) und lässt sich **abbrechen**; Ablago bleibt benutzbar. Der Auftrag selbst ist schnell – die Zeit braucht die Texterkennung danach: Das Paket **Texterkennung** schafft etwa **10 Seiten in 35 Sekunden** (amd64, 2 Kerne), 1.000 Seiten also in rund einer Stunde. Wie weit es ist, siehst du unter **Werkbank → Suche und Volltext** („wartet auf Texterkennung“).
+Nur Dokumente in Registern, die einen Volltext erzeugen. Es läuft als **Auftrag mit Fortschritt** („Textebene lesen und an die Texterkennung geben: 120 von 800“) und lässt sich **abbrechen**; Ablago bleibt benutzbar. Der Auftrag selbst ist schnell – die Zeit braucht die Texterkennung danach: Das Paket **Texterkennung** schafft etwa **10 Seiten in 35 Sekunden** (amd64, 2 Kerne), 1.000 Seiten also in rund einer Stunde. Wie weit es ist, siehst du unter **Werkbank → Pakete → Text aus PDF und Texterkennung** („wartet auf Texterkennung“).
 
 Ist kein Paket für die Texterkennung installiert, sagt die Seite das mit dem Weg zu **Werkbank → Pakete**.
 

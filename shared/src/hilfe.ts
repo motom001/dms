@@ -83,6 +83,9 @@ export const HILFE = {
     'mehrere-pakete-in-einem-schritt-installieren',
   ),
   'werkbank.pakete.alle': admin('pakete/', 'Alle Pakete aktualisieren', 'alle-pakete-aktualisieren'),
+  // Von Ablago mitgeliefert (#1570): Schalter, umgezogene Einstellungen und „Wer macht das?“.
+  'werkbank.pakete.mitgeliefert': admin('pakete/', 'Von Ablago mitgeliefert', 'von-ablago-mitgeliefert'),
+  'werkbank.pakete.wer-macht': admin('pakete/', 'Wer macht das?', 'wer-macht-das'),
   'werkbank.pakete.mitkommt': admin('pakete/', 'Was mitkommt', 'was-mitkommt'),
   'werkbank.pakete.kurzanleitung': admin('pakete/', 'So nutzt du es', 'so-nutzt-du-es'),
   'werkbank.pakete.erstellen': admin('pakete/', 'Paket aus deinem Ablago erstellen', 'paket-aus-deinem-dms-erstellen'),

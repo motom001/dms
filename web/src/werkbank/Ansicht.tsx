@@ -5,7 +5,7 @@ import { Etikett, FeldGruppe } from '../bausteine';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
   ansichtAus,
-  BEREICHE,
+  LEISTEN_BEREICHE,
   fuerAlle,
   GRUPPEN,
   inVorlage,
@@ -69,7 +69,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
   const zuruecksetzen = useCallback(() => {
     const a = s?.installation ?? OHNE_EINSTELLUNG;
     setVorlage(a.vorlage);
-    setAlle(new Set(BEREICHE.filter((b) => fuerAlle(a, b.pfad)).map((b) => b.pfad)));
+    setAlle(new Set(LEISTEN_BEREICHE.filter((b) => fuerAlle(a, b.pfad)).map((b) => b.pfad)));
     setIch(new Set(s?.eigene.ein ?? []));
     setMeine(s?.eigene.vorlage ?? '');
   }, [s]);
@@ -111,7 +111,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
 
   function waehleVorlage(v: Vorlage) {
     setVorlage(v);
-    setAlle(new Set(BEREICHE.filter((b) => inVorlage(v, b.pfad)).map((b) => b.pfad)));
+    setAlle(new Set(LEISTEN_BEREICHE.filter((b) => inVorlage(v, b.pfad)).map((b) => b.pfad)));
   }
   const schalte = (menge: Set<string>, setze: (m: Set<string>) => void, pfad: string, an: boolean) => {
     const m = new Set(menge);
@@ -210,7 +210,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
           <div key={g} className="ansichtgruppe">
             <h3 className="gruppentitel">{GRUPPEN[g]}</h3>
             <ul className="stapel">
-              {BEREICHE.filter((b) => b.gruppe === g).map((b) => {
+              {LEISTEN_BEREICHE.filter((b) => b.gruppe === g).map((b) => {
                 const zst = zustand[b.pfad] ?? {};
                 const fuerAlleAn = alle.has(b.pfad);
                 const mirAn = sichtbarFuerMich(b.pfad);

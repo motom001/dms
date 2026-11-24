@@ -5,11 +5,11 @@ import type { ReactNode } from 'react';
 import { useKonto } from '../konto';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
-import { darfSeite, hatMitte, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
+import { darfOffeneSeite, darfSeite, hatMitte, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { AnsichtPanel, type BereichZustand } from './Ansicht';
-import { WerkbankNavigation } from './Uebersicht';
+import { WerkbankNavigation, type WerkbankEintrag } from './Uebersicht';
 import { useWerkbankSprung, useWerkbankZustaende1, useWerkbankZustaende2, useWerkbankZustaende3, useWiederLaden } from './rahmen/zustaende';
 import type { Kontext } from './rahmen/inhalt';
 import { seiteVon } from './rahmen/seiten';
@@ -37,7 +37,8 @@ import { useWerkbankHandy, WERKBANK_SCHMAL } from './rahmen/schmal';
  * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
  * /werkbank/verschluesselung        Schlüssel für Passwörter (#39)
  * /werkbank/papierkorb[/:id]        Papierkorb aller Benutzer und Aufbewahrung (#43)
- * /werkbank/texterkennung           Suche und Volltext: Texterkennung, Suche (#45, #356, #725)
+ * /werkbank/texterkennung           früher Suche und Volltext (#45, #356, #725); seit #1570 → /werkbank/pakete/ablago.text
+ * /werkbank/pakete/ablago.<name>    Von Ablago mitgeliefert (#1570): Schalter, Tätigkeiten, umgezogene Einstellungen
  * /werkbank/woerter[/:id|/neu[?kopie=:id]]  Gleichbedeutende Wörter (#992), dreiteilig
  * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter (#54, #366, #354; seit #725 „Aufgaben“)
  * /werkbank/daten                  Einstellungen zum Sichern: Aufbewahrung im Papierkorb, eigener Export der Benutzer (#1196, #1197)
@@ -80,7 +81,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
    * Bereiche, die eine Seite öffnen, stehen in der Liste (`auchMit`, #1184: das Löschprotokoll mit dem Löschkonzept).
    */
   const darf = (pfad: string) => darfSeite(verwaltungsmodus.bereiche, pfad);
-  const z1 = useWerkbankZustaende1(bereich, darf);
+  // Seiten der mitgelieferten Anbieter (#1570) öffnet auch das Recht der Bereiche, die dorthin umgezogen sind.
+  const darfHier = darfOffeneSeite(verwaltungsmodus.bereiche, bereich, id);
+  const z1 = useWerkbankZustaende1(bereich, darf, id);
   // Pakete: Installation über einen Link (?installieren=…) steht rechts, auch ohne gewähltes Paket.
   const installieren = bereich === 'pakete' && !id ? new URLSearchParams(location.search).get('installieren') : null;
   const automatisierungen = useAutomatisierungen(bereich === 'automatisierungen');
@@ -88,8 +91,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   // Herkunft und Paketfilter (#978) in Mappentypen, Ansichten und Nummernkreisen – nur mit Recht auf die Pakete (#818),
   // sonst gilt die Kennung des Typs (`typ.paket`).
   const pakete = usePakete(
-    bereich === 'pakete' ||
-      (['typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen'].includes(bereich) && darf('pakete')),
+    ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen'].includes(bereich) && darf('pakete'),
   );
   const z3 = useWerkbankZustaende3(bereich);
   const z = { ...z1, automatisierungen, ...z2, pakete, ...z3 };
@@ -102,7 +104,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   // Hintergrundarbeit ruht nur im aktiven Wartungsmodus (#366: Hinweis bei Texterkennung und Volltext).
   const wartungAn = wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null) === 'an';
 
-  const inhalt = inhaltVon({ bereich, id, d, z, installieren, wartungAn });
+  const inhalt = inhaltVon({ bereich, id, d, z, installieren, wartungAn, darf });
   let liste = inhalt.liste;
   let rechts = inhalt.rechts;
 
@@ -121,7 +123,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <AnsichtPanel z={ansicht} zustand={zustand} />;
   }
   // Ohne Recht auf den Bereich (#818): weder Liste noch Seite – auch nicht über einen alten Link.
-  if (!darf(bereich) && !umleitung) {
+  if (!darfHier && !umleitung) {
     liste = null;
     rechts = (
       <div className="leer">
@@ -130,7 +132,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     );
   }
   // Die Leiste entsteht nach einer Regel (#1319): Stufe und eigene Einblendungen – Datenschutz hängt nicht mehr am Merkmal „beruflich“.
-  const eigene = eintraege.filter((e) => darf(e.pfad));
+  const eigene = eintraege.filter((e) => darfEintrag(e, darf));
 
   return (
     <Dreiteilung
@@ -171,6 +173,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     </Dreiteilung>
   );
 }
+
+/** Ein Eintrag der Leiste mit Recht (#818); umgezogene (#1570) findet die Suche auch mit dem Recht auf die Pakete. */
+const darfEintrag = (e: WerkbankEintrag, darf: (pfad: string) => boolean) => darf(e.pfad) || (!!e.nurSuche && darf('pakete'));
 
 /**
  * Inhalt des offenen Bereichs (#1281): die Seite aus der Tabelle in rahmen/seiten.ts, zur Liste der Werkbank-Seiten.

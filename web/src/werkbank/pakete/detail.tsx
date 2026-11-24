@@ -32,6 +32,8 @@ import { Herausgeber, MeldungBox, SprachHerkunft, VorschauBlock } from '../Paket
 import { usePaketDetail, type DetailZustand } from './detail-zustand';
 import { datum } from './pfade';
 import { MitFlaeche, PaketReiterBlock } from './reiter';
+import { BietetAn, bietetAn } from '../mitgeliefert/wer-macht';
+import type { MitgeliefertZustand } from '../mitgeliefert/zustand';
 import { ErgaenzungenBlock, fertigText, LizenzAngabe, PaketMitkommt } from './teile';
 
 /**
@@ -498,8 +500,19 @@ function PaketKopf({ x }: { x: DetailZustand }) {
   );
 }
 
-export function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?: string }) {
-  const x = usePaketDetail(z, id, quelle);
+export function PaketDetail({
+  z,
+  id,
+  quelle,
+  mitgeliefert,
+}: {
+  z: PaketeZustand;
+  id: string;
+  quelle?: string;
+  /** Für den Reiter „Bietet an“ (#1570): Tätigkeiten, die das Paket für Ablago übernehmen kann. */
+  mitgeliefert?: MitgeliefertZustand;
+}) {
+  const x = usePaketDetail(z, id, quelle, bietetAn(mitgeliefert, id).length > 0);
   const { inst, kp, r, meldung, anleitungNeu, setAnleitungNeu, v, aus, katalog } = x;
   if (!inst && !kp)
     return (
@@ -513,7 +526,7 @@ export function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; q
       <PaketKopf x={x} />
       <MeldungBox m={meldung} />
       {inst && anleitungNeu && <Kurzanleitung k={inst.kurzanleitung} neu schliessen={() => setAnleitungNeu(false)} />}
-      <PaketReiterBlock r={r} inst={inst} z={z} />
+      <PaketReiterBlock r={r} inst={inst} z={z} bietetAn={<BietetAn z={mitgeliefert} paket={id} />} />
       {r.reiter === 'uebersicht' && (
         <MitFlaeche an={r.liste.length > 1} wert={r.reiter}>
           <section className="blatt">

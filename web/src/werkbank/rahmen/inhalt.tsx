@@ -44,6 +44,8 @@ export interface Kontext {
   z: WerkbankZustaende & { pakete: PaketeZustand; automatisierungen: ReturnType<typeof useAutomatisierungen> };
   installieren: string | null;
   wartungAn: boolean;
+  /** Verwaltungsrecht auf einen Bereich (#818). */
+  darf: (pfad: string) => boolean;
 }
 /** Eine Seite der Werkbank: zeichnet Liste und rechte Seite des offenen Bereichs. */
 export type Seite = (k: Kontext) => Inhalt;

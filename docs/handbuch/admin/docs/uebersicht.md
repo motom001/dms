@@ -8,7 +8,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 | **Ablage aufbauen** | [Pakete](pakete.md), [Beispiel-Ablage](beispielablage.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md), [Tipps](tipps.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
 | **Datenschutz** | [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen), [Löschprotokoll](datenschutz.md#loschprotokoll) |
-| **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
+| **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Daten sichern → Einstellungen](daten-einstellungen.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md#werkbank-aufgaben), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
 | **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartung](wartungsmodus.md), [Lasttest-Daten](demo.md) |
@@ -16,7 +16,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 
 Jede Einstellung hat genau einen Ort. Die Adressen der Bereiche (`/werkbank/sicherung` …) sind beim Umsortieren in Version 0.116 gleich geblieben; Lesezeichen und eine gespeicherte Auswahl unter *Werkbank anpassen* gelten weiter.
 
-Beim Aufräumen der Werkbank sind einige Bereiche zusammengezogen: **Wiederherstellen** steht als Abschnitt unter *Sicherung*, **Technik** als *Version und Updates* und die langen Datenbankzugriffe unter *Systemzustand*, **Wartungsmodus** und **Wartungsoperationen** zusammen unter *Wartung*, **Suche** unter *Suche und Volltext*, und „Darf weg“ heißt jetzt **Aufbewahrung abgelaufen**. Alte Adressen wie `/werkbank/darfweg`, `/werkbank/technik` oder `/werkbank/wartungsmodus` führen an die neue Stelle. Das Suchfeld oben in der Leiste findet einen Bereich auch unter seinem alten Namen.
+Beim Aufräumen der Werkbank sind einige Bereiche zusammengezogen: **Wiederherstellen** steht als Abschnitt unter *Sicherung*, **Technik** als *Version und Updates* und die langen Datenbankzugriffe unter *Systemzustand*, **Wartungsmodus** und **Wartungsoperationen** zusammen unter *Wartung*, **Suche** unter *Suche und Volltext*, und „Darf weg“ heißt jetzt **Aufbewahrung abgelaufen**. Alte Adressen wie `/werkbank/darfweg`, `/werkbank/technik` oder `/werkbank/wartungsmodus` führen an die neue Stelle. Das Suchfeld oben in der Leiste findet einen Bereich auch unter seinem alten Namen. Seit Version 0.318 steht **Suche und Volltext** als *Text aus PDF und Texterkennung* unter [Pakete → Von Ablago mitgeliefert](pakete.md#von-ablago-mitgeliefert), ebenso „Neue PDFs automatisch verkleinern“ (bei *PDF bearbeiten*); `/werkbank/texterkennung` führt dorthin.
 
 Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch. Am Handy gehst du in Schritten, siehe [Werkbank am Handy](#am-handy).
 
@@ -239,7 +239,6 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Postfächer](postfaecher.md) |   | ● | ● | ● | ● |
 | [Eingangsordner](eingangsordner.md) |   | ● | ● | ● | ● |
 | [WebDAV-Laufwerk](webdav.md) |   | ● | ● | ● | ● |
-| [Suche und Volltext](texterkennung.md) |   | ● | ● | ● | ● |
 | [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |   | ● | ● | ● | ● |
 | [Sicherung](sicherung.md) | ● | ● | ● | ● | ● |
 | [Vollexport](export.md) |   | ● | ● | ● | ● |
@@ -258,7 +257,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
 | [Wartung](wartungsmodus.md) |   | ● | ● | ● | ● |
 | [Lasttest-Daten](demo.md) |   |   |   |   | ● |
-| **Anzahl** | **10** | **30** | **35** | **37** | **39** |
+| **Anzahl** | **10** | **29** | **34** | **36** | **38** |
 <!-- /bereiche:stufen -->
 
 Auch die Datenschutz-Bereiche folgen nur der Stufe (ab Selbständig) und deinen Ein- und Ausblendungen – ob Ablago beruflich genutzt wird, spielt für die Leiste keine Rolle. Es entscheidet weiter, ob die eigene Organisation in Auskünften erscheint.
@@ -298,7 +297,6 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | ab Haushalt |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | ab Haushalt |
 | [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | ab Haushalt |
-| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, Tippfehler und „Meintest du …?“ in der Suche | ab Haushalt |
 | [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) | Gruppen von Wörtern, die die Suche gleich behandelt (z. B. Kfz, Auto, PKW): eigene anlegen, die aus Paketen ansehen | ab Haushalt |
 | [Sicherung](sicherung.md) | Sicherungen einrichten, prüfen und zurückspielen | ab Einsteiger |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | ab Haushalt |

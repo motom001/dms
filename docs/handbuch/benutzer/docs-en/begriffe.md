@@ -403,6 +403,10 @@ See also: [Use to find existing folders](#zum-wiederfinden-nutzen).
 Short sentence in the basics of a folder type (#937, at most 300 characters), e.g. "Contains invoice number, amount and payment deadline". Helps recognition assign a document to the right folder type. The description is for people, this sentence for recognition.  
 See also: [Can be created from post](#kann-aus-post-angelegt-werden).
 
+<a id="von-ablago-mitgeliefert"></a>**Included with Ablago** (*Von Ablago mitgeliefert*) · ~ with explanation · administrators  
+Section under Workbench → Packages for what Ablago itself does with documents – text from PDF and text recognition, archive version (PDF/A), convert, edit PDF, letter layout, read e-invoice. Each is shown like a package, with a switch on/off and its settings; it cannot be removed. If a package can do a task too, you choose under "Who does this?" who does it.  
+See also: [Package](#paket).
+
 <a id="eingangsordner"></a>**Intake folder** (*Eingangsordner*) · ~ with explanation · administrators  
 A folder that Ablago watches, e.g. for "Scan to Folder". Every file in it becomes post.
 
@@ -497,7 +501,8 @@ A folder with invented data that a package creates on request when installing (t
 See also: [Package](#paket), [Preset](#vorgabe), [Example Library](#beispiel-ablage), [Load test data](#lasttest-daten).
 
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
-The workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. "Shrink new PDFs automatically" has been under System health since
+Former workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. Since version 0.318 the page is called "Text from PDF and text recognition" and is under Packages → Included with Ablago; archive version and other file types have their own pages there. Combined the former areas "Text recognition" and "Search".  
+See also: [Included with Ablago](#von-ablago-mitgeliefert).
 
 <a id="dienstkonto"></a>**Service account** (*Dienstkonto*) · ~ with explanation · administrators  
 The account with which a package with code works in Ablago, e.g. "Package Text recognition". It never signs in, isn't listed under Users, never deletes and only has the permissions from the package. In the history it appears where the package changed something.  
@@ -567,7 +572,7 @@ An encrypted complete backup that can be restored in Ablago. Not an export – n
 See also: [Restore](#wiederherstellen), [Test restore](#probe-wiederherstellung), [Full export](#vollexport).
 
 <a id="eingebautes-werkzeug"></a>**Built-in tool** (*Eingebautes Werkzeug*) · ~ with explanation · administrators  
-A program that the Ablago image includes and that Ablago calls itself – for reading PDFs (Poppler) and for editing PDFs (qpdf). The workbench only mentions it if one is missing, then with what follows and what helps (Search and full text, System health).  
+A program that the Ablago image includes and that Ablago calls itself – for reading PDFs (Poppler) and for editing PDFs (qpdf). The workbench only mentions it if one is missing, then with what follows and what helps (Text from PDF and text recognition, System health).  
 See also: [System health](#systemzustand).
 
 <a id="konsole"></a>**Console** (*Konsole*) · ✗ technical term · advanced users  

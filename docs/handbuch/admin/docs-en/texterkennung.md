@@ -2,7 +2,7 @@
 
 So that the search also finds the text of documents, Ablago creates a **full text** for every new document – in the background, without anyone having to wait:
 
-The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own directly below since #992). "Shrink new PDFs automatically" has been next to the storage space under [System health](speicherplatz.md#neue-pdfs-automatisch-verkleinern) since #1190. The area is in the bar from the level **Household**. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
+The settings are under **Workbench → Packages → Included with Ablago → Text from PDF and text recognition** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own since #992). Up to version 0.317 the page was called **Search and full text** and was under *Post and intake*; the old address `/werkbank/texterkennung` leads to the new page, and the search field of the bar also finds it under its old name. The [archive version](#archivfassung-pdfa) and the [other file types](#andere-dateitypen) have their own page next to it (*Archive version (PDF/A)*, *Convert*), "Shrink new PDFs automatically" is at *Edit PDF* (see [Included with Ablago](pakete.md#von-ablago-mitgeliefert)). The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -26,7 +26,7 @@ Without the package, scans and photos stay without text ("waiting for text recog
 
 **How fast?** The package is somewhat slower than the former built-in text recognition because it runs sealed off as WebAssembly: on a computer with 2 cores (amd64) it needed about 31–35 seconds for 10 scanned pages, the built-in one 25–26 seconds there; a single page takes about 4–6 seconds from uploading to text. It recognised just as well. It recognises long documents in sections; the package runner's time limit doesn't apply. More measurements are in the package's README.
 
-![Workbench → Search and full text](bilder/werkbank-texterkennung.png)
+![Workbench → Packages → Text from PDF and text recognition](bilder/werkbank-texterkennung.png)
 
 ## Other file types {#andere-dateitypen}
 
@@ -48,7 +48,7 @@ This is what it looks like:
 3. With the version, the thumbnail (notice on hovering: "Preview from a package's converted version") and the full text are created. The document then says, e.g., "Text from the PDF · from the converted version (Image formats 1.0.0)" with the link **View version**; the folder's history says "converted version created".
 4. If the package can't read a file (e.g. damaged), its reason is shown on the document ("Conversion by package Image formats: …"). **Try again** gives the file to the package once more.
 
-**Workbench → Search and full text → Other file types** shows per file type how many documents there are and which package converts them or supplies their full text – or which package from the catalogue could, with **Install package**.
+**Workbench → Packages → Included with Ablago → Convert → Other file types** shows per file type how many documents there are and which package converts them or supplies their full text – or which package from the catalogue could, with **Install package**.
 
 **Backup:** since version 0.140.1 the versions are with the documents in the Library's folder (`/data/files/<Library id>/fassungen`) and go into the [backup](sicherung.md#was-eine-sicherung-enthalt) and the [full export](export.md) (there as `<file>.fassung.pdf` next to the original). After a restore everything is as before – view version, full text and preview –, even **without** the package or with a newer version that would convert differently today. Versions from the former location (`/data/files/fassungen`, versions 0.137 to 0.140.0) are moved by Ablago by itself at the first start. Older backups without versions can still be restored; then **Workbench → Maintenance operations → Catch up thumbnails** fetches the versions from the package, provided it is installed (the full text is part of every backup and stays).
 
@@ -65,18 +65,17 @@ With a package such as **PDF/A** (permission [Store archive version](pakete.md#r
 - **Check:** Ablago only accepts a PDF with a PDF/A identifier (XMP metadata, unfiltered), unencrypted, up to 100 MB and 1000 pages. The full conformance check is done by the package itself (e.g. with veraPDF in its CI).
 - **Thumbnail** (#1216): if there is no other source for the small image of the first page – above all for **emails** –, it is created from the archive version. Order: the file itself (PDF, JPEG, PNG) → unlocked or [converted version](#andere-dateitypen) → archive version; otherwise the file extension is shown. On hovering it says "Preview from a package's converted version", as for converted versions. If the archive version only comes later, the image follows – even if an earlier attempt ended without an image. **Without a package for the archive version**, the file extension stays.
 - **Existing documents:** documents that already have an archive version but no thumbnail yet are caught up by Ablago by itself in the background – every 10 minutes a batch of at most 400, **with low priority**: only when no new documents are waiting for their image, one after the other with a one-second pause and at a lower priority (`pdftoppm`, see [Many simultaneous requests](technik.md#last)). On a Raspberry Pi with many emails this takes a few hours; Ablago stays usable meanwhile. The next point shows the progress ("Catching up thumbnails from the archive version: 120 created, 380 still to go"). With several servers on one database, only one works per run.
-- **Workbench → Search and full text → Archive version (PDF/A)** shows the package, how many archive versions there are, how many are waiting, skipped or rejected – and the documents with the reason.
+- **Workbench → Packages → Included with Ablago → Archive version (PDF/A)** shows the package, how many archive versions there are, how many are waiting, skipped or rejected – and the documents with the reason.
 - **Backup and full export:** the archive version belongs to the backup (with test restore) and is in the full export as `<file>.pdfa.pdf` next to the original. The [access copy under Art. 15](datenschutz.md) stays as it is: documents as filed.
 - **Non-embedded fonts** (#1329): up to 0.290 the image had no fonts. PDFs that don't include their fonts (often Helvetica or Arial in invoices) therefore got page images, thumbnails and an archive version **without text**; the original and the search were never affected. After the update Ablago looks for such PDFs once (`pdffonts`) and recreates them – in the background, every 10 minutes at most 100 PDFs checked and 10 started again, with half a second pause per PDF. The previous archive version stays until the new one passes the check; the folder history names the reason ("Archive version recreated (missing fonts)"). This only runs when the fonts are there (see [Built-in tools](fehlersuche.md#werkzeuge)); if they are missing, no new archive version is created for such PDFs – the reason is shown at the document.
 - **After changes to the original** (new version, rotating, deleting pages, splitting, redacting), the old archive version no longer applies; the original is shown until the package has created a new one.
 
-## Workbench → Search and full text { #werkbank-suche-und-volltext }
+## Workbench → Packages → Text from PDF and text recognition { #werkbank-suche-und-volltext }
 
 The page is an **overview**; recognition settings are no longer here (they are at the package):
 
 - **Text recognition for scans and images:** which package takes over text recognition, with a link to its settings, and how many documents are waiting for it right now. If the package is missing, the notice with **Install now** is shown here.
 - **Where the text comes from:** how many documents have their text from the PDF, from the package, from the former built-in text recognition (up to 0.133), are without text, are waiting for text recognition or had an error.
-- **Other file types:** TIFF, WebP, Word, emails and co. – how many there are and which package converts them or supplies their full text (see [Other file types](#andere-dateitypen)).
 - **Recognised languages** with the notice if the package lacks language data (see [Further languages](#weitere-sprachen)).
 - **Queue** and **jobs** (see below).
 - Below that **Search: typos** – similar spellings and when “Did you mean …?” appears (see [Search](suche.md#tippfehler-und-meintest-du)) – and the way to the synonyms.
@@ -84,6 +83,8 @@ The page is an **overview**; recognition settings are no longer here (they are a
 If a [built-in tool](fehlersuche.md#werkzeuge) is missing (e.g. the one for reading PDFs), a notice at the top of the page says what follows and what helps – and a message on the workbench [Overview](uebersicht.md#meldungen) says so too; if all are there, the page says nothing about them.
 
 Whether a documents tab creates a full text at all you set on the [Folder type](mappentypen.md#register) (*Create full text*, default: on).
+
+**Switched off:** the switch is at the top of the page. If "Text from PDF and text recognition" is switched off and no other package does "Read text", Ablago no longer reads the text layer of new PDFs: the documents are then **skipped**, with the reason ("nobody does this here at the moment") and the address in the catalogue – not an error, no retry. After switching it on again, [Regenerating full text](#volltext-neu-erzeugen) catches them up.
 
 If the queue is stopped, a notice at the top of the page and at *Regenerate full text* says why: **switched off** (with **Switch on**) or **paused while maintenance mode is on** (with **End maintenance mode**). A maintenance mode that is only announced doesn't stop the queue.
 
@@ -114,7 +115,7 @@ The package **Text recognition (German and English)** contains German, English a
 
 **Whether more languages slow down recognition:** which language a page has, the package recognises from the text read, using short word lists for all the languages named above – always for all, whether their language data is installed or not. More additional languages therefore make this recognition neither slower nor less accurate. An additional language only costs time where it is needed: if the package recognises a page as French and French is installed, it reads the page a second time in French and takes the more reliable reading.
 
-Under **Workbench → Search and full text → Recognised languages** you see how many documents exist in which language and whether the package has their language data. If it is missing, the page makes a suggestion, e.g. "12 documents in French – the package Text recognition reads them better with 'Text recognition – additional language French' (texterkennung.fra)", with a link to this package. The package also names missing language data in the result and in the package runner's log ("Language data missing: fra (additional package texterkennung.fra)").
+Under **Workbench → Packages → Text from PDF and text recognition → Recognised languages** you see how many documents exist in which language and whether the package has their language data. If it is missing, the page makes a suggestion, e.g. "12 documents in French – the package Text recognition reads them better with 'Text recognition – additional language French' (texterkennung.fra)", with a link to this package. The package also names missing language data in the result and in the package runner's log ("Language data missing: fra (additional package texterkennung.fra)").
 
 After installing an additional language, **Regenerate full text → For all documents** (see below) re-recognises the existing documents – or you restart individual ones under **Jobs → ready**.
 
@@ -168,7 +169,7 @@ Runs as for a new document: Ablago reads the text layer again and gives the docu
 - **For documents without text** – all documents whose full text is empty: never read (e.g. uploaded before version 0.11), scans for which there was no package yet, or after an error. This includes [other file types](#andere-dateitypen) such as TIFF: without a version they go to the package for converting, with a version that is read. Replaces the former "Catch up full text".
 - **For all documents** – after a confirmation with the number. This is an **explicit renewal**: the package then also re-recognises documents that already have text – even if "Discard existing full text and recognise anew" is off for it. Useful, for instance, after a new language package. Until the package is finished, the previous text remains for the search.
 
-Only documents in tabs that create a full text. It runs as a **job with progress** ("Reading text layer and passing to text recognition: 120 of 800") and can be **cancelled**; Ablago stays usable. The job itself is fast – the time is needed by text recognition afterwards: the package **Text recognition** manages about **10 pages in 35 seconds** (amd64, 2 cores), so 1,000 pages in about an hour. How far it is you see under **Workbench → Search and full text** ("waiting for text recognition").
+Only documents in tabs that create a full text. It runs as a **job with progress** ("Reading text layer and passing to text recognition: 120 of 800") and can be **cancelled**; Ablago stays usable. The job itself is fast – the time is needed by text recognition afterwards: the package **Text recognition** manages about **10 pages in 35 seconds** (amd64, 2 cores), so 1,000 pages in about an hour. How far it is you see under **Workbench → Packages → Text from PDF and text recognition** ("waiting for text recognition").
 
 If no package for text recognition is installed, the page says so with the way to **Workbench → Packages**.
 

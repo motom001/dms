@@ -326,7 +326,6 @@ const STUFE_NEU = {
     'postfaecher',
     'eingangsordner',
     'webdav',
-    'texterkennung',
     'woerter',
     'vollexport',
     'daten',

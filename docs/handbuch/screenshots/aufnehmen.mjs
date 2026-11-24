@@ -2242,7 +2242,7 @@ async function main() {
       .waitFor();
   }
   await bild(s, 'werkbank-papierkorb');
-  await geheZu(s, '/werkbank/texterkennung');
+  await geheZu(s, '/werkbank/pakete/ablago.text');
   // #1189: „Werkzeuge“ nur, wenn eins fehlt – im Image sind alle da.
   await s.getByRole('heading', { name: w('Warteschlange'), exact: true }).waitFor();
   await s.getByRole('heading', { name: w('Aufträge'), exact: true }).waitFor();

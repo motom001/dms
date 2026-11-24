@@ -8,7 +8,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | **Build the Library** | [Packages](pakete.md), [Example Library](beispielablage.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Data protection** | [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Deletion log](datenschutz.md#loschprotokoll) |
-| **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
+| **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Back up data → Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md#werkbank-aufgaben), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Load test data](demo.md) |
@@ -16,7 +16,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 
 Every setting has exactly one place. The areas' addresses (`/werkbank/sicherung` …) stayed the same when they were re-sorted in version 0.116; bookmarks and a saved selection under *Customise workbench* still apply.
 
-When the workbench was tidied up, some areas were merged: **Restore** is a section under *Backup*, **Technology** is *Version and updates* and the long database accesses are under *System health*, **Maintenance mode** and **Maintenance operations** together under *Maintenance*, **Search** under *Search and full text*, and "Can go" is now called **Retention expired**. Old addresses such as `/werkbank/darfweg`, `/werkbank/technik` or `/werkbank/wartungsmodus` lead to the new place. The search field at the top of the bar also finds an area by its old name.
+When the workbench was tidied up, some areas were merged: **Restore** is a section under *Backup*, **Technology** is *Version and updates* and the long database accesses are under *System health*, **Maintenance mode** and **Maintenance operations** together under *Maintenance*, **Search** under *Search and full text*, and "Can go" is now called **Retention expired**. Old addresses such as `/werkbank/darfweg`, `/werkbank/technik` or `/werkbank/wartungsmodus` lead to the new place. The search field at the top of the bar also finds an area by its old name. Since version 0.318, **Search and full text** is under [Packages → Included with Ablago](pakete.md#von-ablago-mitgeliefert) as *Text from PDF and text recognition*, as is "Shrink new PDFs automatically" (at *Edit PDF*); `/werkbank/texterkennung` leads there.
 
 Which areas are there you decide under [Customise workbench](#werkbank-anpassen). At the very bottom of the bar are *Support the project* and the link to this manual. On a phone you go in steps, see [The workbench on a phone](#am-handy).
 
@@ -239,7 +239,6 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | [Mailboxes](postfaecher.md) |   | ● | ● | ● | ● |
 | [Intake folder](eingangsordner.md) |   | ● | ● | ● | ● |
 | [WebDAV drive](webdav.md) |   | ● | ● | ● | ● |
-| [Search and full text](texterkennung.md) |   | ● | ● | ● | ● |
 | [Synonyms](suche.md#gleichbedeutende-worter) |   | ● | ● | ● | ● |
 | [Backup](sicherung.md) | ● | ● | ● | ● | ● |
 | [Full export](export.md) |   | ● | ● | ● | ● |
@@ -258,7 +257,7 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | [Reported errors](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
 | [Maintenance](wartungsmodus.md) |   | ● | ● | ● | ● |
 | [Load test data](demo.md) |   |   |   |   | ● |
-| **Number** | **10** | **30** | **35** | **37** | **39** |
+| **Number** | **10** | **29** | **34** | **36** | **38** |
 <!-- /bereiche:stufen -->
 
 The data protection areas also follow only the level (from Self-employed) and your own shows and hides – whether Ablago is used for work does not matter for the bar. It still decides whether your own organisation appears in disclosures.
@@ -298,7 +297,6 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Mailboxes](postfaecher.md) | Fetch post from an email account | from Household |
 | [Intake folder](eingangsordner.md) | Take over scans from a folder | from Household |
 | [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | from Household |
-| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, typos and “Did you mean …?” in the search | from Household |
 | [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | from Household |
 | [Backup](sicherung.md) | Set up, check and restore backups | from Beginner |
 | [Full export](export.md) | Take all data with you in open formats | from Household |

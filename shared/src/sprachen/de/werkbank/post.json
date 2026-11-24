@@ -85,7 +85,6 @@
   "texterkennung.pausiert-solange-der-wartungsmodus": "Pausiert, solange der Wartungsmodus an ist.",
   "texterkennung.wartungsmodus-beenden-2": "Wartungsmodus beenden",
   "texterkennung.lade": "Lade …",
-  "texterkennung.werkbank": "Werkbank",
   "texterkennung.warteschlange": "Warteschlange",
   "texterkennung.zeitgrenze": "Zeitgrenze je Auftrag",
   "texterkennung.zeitgrenze.text": "Läuft ein Auftrag länger als der Grundwert plus die Zeit je Seite, bricht Ablago ihn ab: Das Dokument steht dann auf „fehlgeschlagen – Zeitgrenze“ (mit „Erneut versuchen“), und der nächste Auftrag startet. Liest ein Paket die Texte, gelten zusätzlich die Grenzen des Paket-Läufers.",

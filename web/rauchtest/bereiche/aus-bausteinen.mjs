@@ -214,7 +214,7 @@ async function werkbankSeiten(s) {
     seite('Postfach neu', '/werkbank/postfaecher/neu', (s) => s.locator('[data-sprungleiste]').waitFor()),
     seite('Eingangsordner', '/werkbank/eingangsordner'),
     seite('WebDAV', '/werkbank/webdav'),
-    seite('Texterkennung', '/werkbank/texterkennung', (s) => s.getByRole('tablist').first().waitFor()),
+    seite('Texterkennung', '/werkbank/pakete/ablago.text', (s) => s.getByRole('tablist').first().waitFor()),
     seite('Sicherung', '/werkbank/sicherung'),
     seite('Vollexport', '/werkbank/vollexport'),
     seite('Betrieb', '/werkbank/betrieb'),

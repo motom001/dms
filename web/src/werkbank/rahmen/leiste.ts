@@ -3,6 +3,7 @@ import {
   BEREICHE,
   bereichLeistenName,
   bereichName,
+  bereichWeg,
   wartungsPlakette,
   type Bereichskennung,
   type Zaehler,
@@ -42,7 +43,10 @@ export function leistenEintraege(k: LeistenKontext): WerkbankEintrag[] {
   const { uebersicht } = k.z;
   return [
     { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
-    ...BEREICHE.flatMap((b) => {
+    ...BEREICHE.flatMap((b): WerkbankEintrag[] => {
+      // Umgezogen auf die Seite eines mitgelieferten Anbieters (#1570): nur noch für die Werkbank-Suche, mit dem neuen Weg.
+      if (!b.leiste)
+        return [{ pfad: b.pfad, name: bereichName(b.pfad), gruppe: b.gruppe, nurSuche: true as const, weg: bereichWeg(b.pfad) }];
       const f = ZUSATZ[b.pfad as Bereichskennung];
       const x = f ? f(k) : {};
       // In der Leiste steht die Gruppe darüber: dort der kurze Name (#1310), sonst überall der ganze Weg.
@@ -53,7 +57,13 @@ export function leistenEintraege(k: LeistenKontext): WerkbankEintrag[] {
 
 /** „Ablage aufbauen“ (#717): Pakete, Mappentypen, Ansichten, Nummernkreise, Automatisierungen, Vorlagen, Rundgänge, Tipps. */
 const ABLAGE: Zusaetze = {
-  pakete: ({ z, uz }) => ({ zahl: zahl(z.pakete.stand?.installiert.length, uz?.pakete) }),
+  // Fehler der Texterkennung (früher am Eintrag „Suche und Volltext“) stehen seit #1570 an den Paketen: Dort steht
+  // „Text aus PDF und Texterkennung“ unter „Von Ablago mitgeliefert“.
+  pakete: ({ z, uz }) => ({
+    zahl: zahl(z.pakete.stand?.installiert.length, uz?.pakete),
+    warn: z.uebersicht.stand?.texterkennung?.fehler ? String(z.uebersicht.stand.texterkennung.fehler) : undefined,
+    warnTitel: t('werkbank.leiste.texterkennung'),
+  }),
   typen: ({ d }) => ({ zahl: d.typen.length }),
   sichten: ({ d }) => ({ zahl: d.sichten.length }),
   nummernkreise: ({ z, uz }) => ({ zahl: zahl(z.nummernkreise.liste?.length, uz?.nummernkreise) }),
@@ -91,7 +101,7 @@ const BENUTZER: Zusaetze = {
   }),
 };
 
-/** Post und Eingänge: Postfächer, Eingangsordner (nur wenn eingebunden), WebDAV, Texterkennung, gleichbedeutende Wörter. */
+/** Post und Eingänge: Postfächer, Eingangsordner (nur wenn eingebunden), WebDAV, gleichbedeutende Wörter. */
 const POST: Zusaetze = {
   postfaecher: ({ z: { uebersicht, postfaecher }, uz }) => ({
     zahl: zahl(postfaecher.liste?.length, uz?.postfaecher),
@@ -112,10 +122,6 @@ const POST: Zusaetze = {
   webdav: ({ z }) => ({
     warn: z.webdav.stand?.einstellung.aktiv ? t('werkbank.leiste.an') : undefined,
     warnTitel: t('werkbank.leiste.webdav'),
-  }),
-  texterkennung: ({ z: { uebersicht } }) => ({
-    warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined,
-    warnTitel: t('werkbank.leiste.texterkennung'),
   }),
   woerter: ({ z, uz }) => ({ zahl: zahl(z.woerter.gruppen?.length, uz?.woerter) }),
 };

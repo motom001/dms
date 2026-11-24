@@ -45,6 +45,7 @@ import type { ZugriffDienst } from '../zugriff';
 import { Anbieterliste, type Anbieter, type Anbieterergebnis, type Einschraenkungspruefung } from './anbieter';
 import { Leistungsfehler, anzeigename, eingabeFehler, hatDatei, keinAnbieter, loeseDokumente, pruefeAusgabe } from './pruefen';
 import { speicherAuftraege, type Auftragsspeicher, type Auftragszeile, type Fragender } from './speicher';
+import { Anbieterschalter } from './wahl';
 
 const log = protokoll.modul('auftraege');
 /** So oft nimmt sich ein Prozess denselben Auftrag, bevor er aufgibt (z. B. weil Ablago dabei jedes Mal endet). */
@@ -95,6 +96,8 @@ const HERKUNFT: Partial<Record<Leistungsname, Herkunft>> = {
 
 export class LeistungenDienst {
   readonly anbieter = new Anbieterliste();
+  /** Schalter und „Wer macht das?“ (#1570, Werkbank → Pakete), gespeichert als Einstellung. */
+  readonly wahl: Anbieterschalter;
   /** Im aktiven Wartungsmodus (#102) nimmt der Hintergrund nichts Neues; danach `anstossen()`. */
   pause: () => boolean = () => false;
   /** So viele Aufträge laufen in diesem Prozess gleichzeitig im Hintergrund. */
@@ -114,7 +117,9 @@ export class LeistungenDienst {
     private readonly rechte: ZugriffDienst,
     private readonly anschluss: LeistungenAnschluss,
     private speicher: Auftragsspeicher = speicherAuftraege(),
-  ) {}
+  ) {
+    this.wahl = new Anbieterschalter(this.anbieter, () => this.kern.einstellungen);
+  }
 
   /** Speicher in der Datenbank (vom Start); bis dahin im Arbeitsspeicher. */
   verbindeSpeicher(s: Auftragsspeicher) {
@@ -184,6 +189,7 @@ export class LeistungenDienst {
     await this.pruefeZiel(wer, l, a.ziel);
     const eingabe = (await loeseDokumente(l.eingabe, a.eingabe, (id) => this.datei(wer, id))) as Record<string, unknown>;
     const dateien = dateienIn(l, eingabe);
+    await this.wahl.laden();
     const wahl = await this.anbieter.waehle(name, dateien, this.pruefeEinschraenkung);
     if ('grund' in wahl) throw keinAnbieter(name, wahl.grund, dateien[0]?.mime);
     return { name, l, anbieter: wahl.anbieter, eingabe };
