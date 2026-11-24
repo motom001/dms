@@ -62,7 +62,7 @@ describe('Hauptversion von PostgreSQL beim Start (#1464)', () => {
     assert.equal(await pruefePgVersion(mitVersion('180001'), (h) => hinweise.push(h)), 18);
     assert.equal(await pruefePgVersion(mitVersion('190000'), (h) => hinweise.push(h)), 19);
     assert.equal(hinweise.length, 2);
-    assert.match(hinweise[0], /PostgreSQL 17\. Ablago wird nur noch mit PostgreSQL 18 getestet/);
+    assert.match(hinweise[0], /PostgreSQL 17 – Ablago startet mit 16 bis 18, geprüft wird aber nur mit 18;/);
     assert.match(hinweise[1], /PostgreSQL 19\. .*noch nicht geprüft/);
   });
 

@@ -45,6 +45,12 @@ export async function pruefePgVersion(sql: postgres.Sql, hinweis: (text: string)
   const urteil = pgUrteil(haupt);
   if (urteil === 'zu-alt') throw new ZuAlteDatenbankFehler(haupt);
   if (urteil === 'ungetestet')
-    hinweis(t(haupt < PG_GETESTET ? 'meldungen.db.pg-aelter' : 'meldungen.db.pg-neuer', { haupt, getestet: PG_GETESTET }));
+    hinweis(
+      t(haupt < PG_GETESTET ? 'meldungen.db.pg-aelter' : 'meldungen.db.pg-neuer', {
+        haupt,
+        mindestens: PG_MINDESTVERSION,
+        getestet: PG_GETESTET,
+      }),
+    );
   return haupt;
 }

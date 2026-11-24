@@ -30,11 +30,13 @@ The templates run on an ordinary Linux with Docker, not on the NAS itself. Wheth
 
 ### Database: PostgreSQL { #postgresql }
 
+Ablago starts with **PostgreSQL 16, 17 and 18**. **Only 18 is tested:** all quality assurance – automated tests, load tests, update checks – runs on 18 only. So choose 18 if you pick your own database.
+
 | Major version | Status | Where |
 | --- | --- | --- |
 | **18** | **tested:** all automated tests, the templates, `dms-komplett` (since Ablago 0.306) | templates, `dms-komplett`, app from the [TrueNAS catalogue](truenas.md) |
 | 17 | **no longer tested** (since Ablago 0.306; up to 0.305 all tests). Ablago starts and writes a note to the log. Only the move stays tested: back up on 17, restore on 18, data the same. | older installations with two containers |
-| 16 | not tested; Ablago starts with a note in the log | your own database |
+| 16 | not tested; Ablago starts with a note in the log. According to the PostgreSQL project, 16 gets fixes until 9 Nov 2028. | your own database |
 | 15 and older | Ablago doesn't start and states the reason | – |
 
 How to move from 17 to 18 is described under [Updating → PostgreSQL 18](https://help.ablago.app/admin/aktuell/en/aktualisieren/#postgresql-18). Ablago's backups can be restored between 17 and 18 in both directions.

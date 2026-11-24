@@ -107,7 +107,7 @@ Ablago läuft seit Version 0.306 auf **Node.js 26** (#1473; vorher 24). Node 24 
 **Prüfliste für den Wechsel** (gilt sinngemäß für jeden Wechsel der Hauptversion):
 
 1. **Version an beiden Stellen** (#1272): `engines` in `package.json` und das Basis-Image `node:26-alpine` in der Stufe `node-basis` des `Dockerfile`. Dazu `@types/node` auf die neue Hauptversion (kommt bewusst nicht über Dependabot).
-2. **Basis-Image:** Ob das Image dabei per Digest festgehalten wird, entscheidet der PR. Bisher gilt bewusst „ohne festen Prüfwert“ (Abschnitt [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)); #1473 nennt den Digest – die Abwägung steht im PR.
+2. **Basis-Image:** Es steht mit festem Prüfwert (Digest) im `Dockerfile`, z. B. `node:26-alpine@sha256:…`; beim Wechsel kommt der Digest der neuen Hauptversion dazu. Neue Stände der Reihe bringt Dependabot als PR (Abschnitt [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)).
 3. **CI:** alle Workflows grün – Tests (alle drei Teile), Rauchtests mit einem und zwei Prozessen, `image-probe` für beide Architekturen, Bilder des Handbuchs.
 4. **Läufer und Werkzeugdienst:** WebAssembly-Pakete (WASI), Worker und das Berechtigungsmodell von Node (`--permission`) gegen den Läufer testen – Änderungen am Berechtigungsmodell zwischen den Hauptversionen gezielt im Änderungsprotokoll von Node nachlesen. Ebenso den Werkzeugdienst (`DMS_WERKZEUG_DIENST`) und die Pakete mit Code ([Pakete mit Code](pakete-code.md)).
 5. **Pakete mit Bezug zur Laufzeit** gegen Node 26 prüfen, mindestens `@simplewebauthn/server` (Passkeys, Rauchtest „Passkey“), `postgres` (Datenbank, Server-Tests mit PostgreSQL), die Mail-Pakete (`nodemailer`, `imapflow`, `mailparser`) und alles mit nativen Teilen oder `node:`-Modulen, die sich geändert haben.
@@ -148,9 +148,10 @@ Der Workflow *Scorecard* bewertet wöchentlich und bei jedem Push auf `main`, wi
 - **Rechte:** Oben im Workflow nur `contents: read` (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (`packages`, `contents`, `id-token`, `attestations`, `security-events`). Einzige Ausnahme ist der Workflow *Scorecard* mit `permissions: read-all` oben – das sind nur Leserechte; für die Veröffentlichung des Ergebnisses darf dieser Workflow oben keine Schreibrechte haben.
 - **Keine Ausführung fremden Codes mit Rechten:** `pull_request_target` nur ohne Checkout (wie im Workflow *Freigabe schützen*).
 
+**Basis-Images mit festem Prüfwert** (`node:26-alpine@sha256:…` und `python:3.15-alpine@sha256:…` im `Dockerfile`, seit 13.11.2026): Ein Bau nimmt genau das geprüfte Image; ein ausgetauschtes Tag bei Docker Hub kommt nicht unbemerkt hinein. Dependabot (`package-ecosystem: docker`) hält den Prüfwert aktuell und bringt neue Stände der Reihe jede Woche als PR; Sicherheitskorrekturen an Node kommen damit über diesen PR, nicht von selbst mit dem wöchentlichen Neubau. Hauptversionen von Node wechseln weiter gezielt (Dependabot ignoriert sie). Früher galt bewusst „ohne festen Prüfwert“ (#289).
+
 Bewusst anders, als Scorecard es gern hätte:
 
-- **Basis-Images ohne festen Prüfwert** (`node:24-alpine`, `python:3.12-alpine` im `Dockerfile`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis. Das gilt auch nach der Prüfung in #289: Mit Prüfwert kämen Korrekturen an Node nur noch über einen Dependabot-PR, den jemand mergen muss.
 - **Code-Review:** Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.
 
 ### Bewertung des ersten Laufs

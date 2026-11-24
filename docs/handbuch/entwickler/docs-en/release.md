@@ -82,7 +82,7 @@ Since version 0.306 Ablago runs on **Node.js 26** (#1473; before that 24). Node 
 **Checklist for the change** (applies likewise to every change of the major version):
 
 1. **Version in both places** (#1272): `engines` in `package.json` and the base image `node:26-alpine` in the stage `node-basis` of the `Dockerfile`. Plus `@types/node` at the new major version (deliberately not via Dependabot).
-2. **Base image:** whether the image is pinned by digest is decided in the PR. So far the rule is deliberately "without a fixed checksum" (section [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)); #1473 mentions the digest – the trade-off is written down in the PR.
+2. **Base image:** it is pinned with a fixed digest in the `Dockerfile`, e.g. `node:26-alpine@sha256:…`; when switching, the digest of the new major version comes along. Dependabot brings new builds of the series as a PR (section [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)).
 3. **CI:** all workflows green – tests (all three parts), smoke tests with one and two processes, `image-probe` for both architectures, manual screenshots.
 4. **Runner and tool service:** test WebAssembly packages (WASI), workers and Node's permission model (`--permission`) against the runner – read Node's changelog specifically for changes to the permission model between major versions. Likewise the tool service (`DMS_WERKZEUG_DIENST`) and packages with code ([Packages with code](pakete-code.md)).
 5. **Packages related to the runtime** checked against Node 26, at least `@simplewebauthn/server` (passkeys, smoke test "Passkey"), `postgres` (database, server tests with PostgreSQL), the mail packages (`nodemailer`, `imapflow`, `mailparser`) and everything with native parts or `node:` modules that changed.
@@ -123,9 +123,10 @@ The workflow *Scorecard* rates weekly and with every push to `main` how the proj
 - **Permissions:** at the top of the workflow only `contents: read` (or no permissions). Only the job that needs write permissions gets them (`packages`, `contents`, `id-token`, `attestations`, `security-events`). The only exception is the workflow *Scorecard* with `permissions: read-all` at the top – those are only read permissions; for publishing the result, this workflow may have no write permissions at the top.
 - **No execution of outside code with permissions:** `pull_request_target` only without checkout (as in the workflow *Freigabe schützen*).
 
+**Base images with a fixed digest** (`node:26-alpine@sha256:…` and `python:3.15-alpine@sha256:…` in the `Dockerfile`, since 13 Nov 2026): a build takes exactly the checked image; a replaced tag on Docker Hub cannot slip in unnoticed. Dependabot (`package-ecosystem: docker`) keeps the digest current and brings new builds of the series as a weekly PR; security fixes to Node therefore come via that PR, not on their own with the weekly rebuild. Major versions of Node are still switched deliberately (Dependabot ignores them). Previously the rule was deliberately "without a fixed digest" (#289).
+
 Deliberately different from what Scorecard would like:
 
-- **Base images without a fixed digest** (`node:24-alpine`, `python:3.12-alpine` in the `Dockerfile`): the weekly rebuild is meant to fetch exactly the newest security fixes of the series. A fixed digest would need a PR of its own every week without bringing more security; the images themselves are checked and carry provenance. This also applies after the review in #289: with a digest, fixes to Node would only come via a Dependabot PR that someone has to merge.
 - **Code review:** with one maintainer there is no second person who approves every PR. Instead all checks must be green, and changes run via PRs with an issue.
 
 ### Assessment of the first run { #bewertung-des-ersten-laufs }
