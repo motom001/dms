@@ -570,7 +570,7 @@ describe('Dateien umwandeln (#796): KI-Sperre je Mappentyp', () => {
     assert.deepEqual(await x.ereignisse('datei.umwandeln'), []);
     const o = (await x.dok(id)).ocr!;
     assert.equal(o.stand, 'ausgelassen');
-    assert.match(o.info ?? '', /KI-Dienste/);
+    assert.match(o.info ?? '', /Dienste im Netz/);
     assert.equal(x.u.gesperrt((await x.dok(id)).sha256), true);
   });
 

@@ -433,7 +433,7 @@ describe('Inhalte übersetzen (#732): abschaltbar und Datenabfluss', () => {
     // KI-Dienste (#796): Der neue Mappentyp „Brief“ ist für Pakete mit Netz gesperrt, bis er zugelassen ist.
     await assert.rejects(
       x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' }),
-      (e: Fachfehler) => e.status === 409 && /KI-Dienste/.test(e.message),
+      (e: Fachfehler) => e.status === 409 && /Dienste im Netz/.test(e.message),
     );
     await x.d.ki.setzeKiTyp(x.brief.id, true, null);
     const r = await x.uebersetze(x.lena, { art: 'feld', mappe: x.m.id, feld: 'inhalt' });

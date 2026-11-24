@@ -172,7 +172,7 @@ describe('KI-Dienste (#796): Was ist ein KI-Paket?', () => {
 
   it('Rechte-Vorschau nennt die Regel mit Handbuch-Stelle – nur bei KI-Paketen', () => {
     const name = (v: string) => v;
-    assert.ok(rechtePunkte(code(WOLKE), name).some((p) => p.hilfe === 'pakete.ki' && /KI-Dienst/.test(p.text)));
+    assert.ok(rechtePunkte(code(WOLKE), name).some((p) => p.hilfe === 'pakete.ki' && /Dienst im Netz/.test(p.text)));
     assert.ok(!rechtePunkte(code(IM_HAUS), name).some((p) => p.hilfe === 'pakete.ki'));
     assert.equal(HILFE['pakete.ki'].anker, 'ki-dienste');
     assert.equal(HILFE['pakete.netzprotokoll'].anker, 'netzaufrufe');

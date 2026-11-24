@@ -6,6 +6,7 @@ import { sprachname } from '../../../shared/src/beschriftung';
 import { ausfuehren, neuerLauf } from './ausfuehren';
 import { sammelLeiste } from './ablauf';
 import { Abschluss, LaufAnsicht } from './Abschluss';
+import { DarfSchritt } from './DarfSchritt';
 import { PaketeSchritt, OptionalSchritt } from './PaketeOptional';
 import { NR, Rahmen, VOR, type Leiste } from './rahmen';
 import { AblageSchritt, KontoSchritt, NutzungSchritt } from './SammelSchritte';
@@ -15,7 +16,8 @@ import { Zusammenfassung } from './Zusammenfassung';
 /**
  * Einrichtungsassistent (#119, #804): Sprache, dann sammeln, Zusammenfassung, „Jetzt einrichten“ und Abschluss. Seit
  * #1279 in Teilen: Rahmen und Schrittleiste (rahmen.tsx), Ablauf beim Sammeln (ablauf.tsx), die Schritte
- * (SammelSchritte.tsx, PaketeOptional.tsx, Zusammenfassung.tsx) und Fortschritt mit Abschluss (Abschluss.tsx).
+ * (SammelSchritte.tsx, DarfSchritt.tsx, PaketeOptional.tsx mit PaketeVorschlag.tsx, Zusammenfassung.tsx) und Fortschritt
+ * mit Abschluss (Abschluss.tsx).
  * Diese Datei bleibt die Tür für einrichtung.tsx.
  */
 export { Rahmen, VOR, zurSprache, type Leiste } from './rahmen';
@@ -89,6 +91,7 @@ export function Sammelassistent({
   if (ansicht === 'ablage') return <AblageSchritt key={k} {...p} datei={st.aendern ? undefined : { imEinrichtungsmodus }} />;
   if (ansicht === 'konto') return <KontoSchritt key={k} {...p} />;
   if (ansicht === 'nutzung') return <NutzungSchritt key={k} {...p} />;
+  if (ansicht === 'darf') return <DarfSchritt key={k} {...p} />;
   if (ansicht === 'pakete') return <PaketeSchritt key={k} {...p} />;
   if (ansicht === 'optional') return <OptionalSchritt key={k} {...p} />;
   return <Zusammenfassung key={k} {...p} />;

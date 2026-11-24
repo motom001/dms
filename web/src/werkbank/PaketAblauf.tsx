@@ -33,8 +33,14 @@ export function PaketAblauf({
   direkt,
   sammeln,
   vorgabe,
+  sperren,
+  ohneBeispielfrage,
 }: {
   quelle: AblaufQuelle;
+  /** Nicht wählbar, mit Grund (Einrichtungsassistent nach „Was Ablago darf“, #1566). */
+  sperren?: Record<string, string>;
+  /** Keine eigene Frage nach Beispielen (Einrichtungsassistent, #1592: dort fragt die Beispiel-Ablage). */
+  ohneBeispielfrage?: boolean;
   /** Nur sammeln statt installieren (Einrichtungsassistent, #804). */
   sammeln?(w: PaketWahl): void;
   vorgabe?: PaketVorgabe;
@@ -56,7 +62,7 @@ export function PaketAblauf({
   /** Nach der Installation (Daten neu laden). */
   geaendert?(): void;
 }) {
-  const liste = kandidaten(quelle, versionen);
+  const liste = kandidaten(quelle, versionen, sperren);
   const [kategorie, setKategorie] = useState<string | null>(null);
   const [wahl, setWahl] = useState<string[]>(() => start.filter((s) => liste.some((k) => k.schluessel === s && !k.gesperrt)));
   const [plan, setPlan] = useState<AblaufPlan<PaketVorschau> | null>(null);
@@ -93,6 +99,7 @@ export function PaketAblauf({
         neuerPlan={setPlan}
         sammeln={sammeln}
         vorgabe={vorgabe}
+        ohneBeispielfrage={ohneBeispielfrage}
         fertig={(e) => {
           geaendert?.();
           if (direkt && !e.fehler) fertig(e);

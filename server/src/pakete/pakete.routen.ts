@@ -7,6 +7,7 @@ import { eigeneVersion } from '../system/system';
 import { KOERPER_SPIELRAUM, PROBE_KOERPER_MAX } from '../grundlagen/grenzen';
 import { ok } from '../http/routen-hilfen';
 import { extern } from '../system/externmessung';
+import { nachweis } from '../protokoll/nachweisjournal';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Anfrage, Route } from '../http/routen-typen';
@@ -173,7 +174,20 @@ function installierenRouten(k: RoutenKontext): Route[] {
       methode: 'POST',
       pfad: '/api/werkbank/pakete/ablauf/installieren',
       zugang: 'admin',
-      handler: async (a) => ok(await pakete.mitSperre(() => pakete.ablaufInstallieren((a.body ?? {}) as AblaufInstallation, wer(a)))),
+      handler: async (a) => {
+        const e = (a.body ?? {}) as AblaufInstallation;
+        const erg = await pakete.mitSperre(() => pakete.ablaufInstallieren(e, wer(a)));
+        // Einrichtungsassistent (#1566): Welche Pakete gewählt wurden – von Ablago oder selbst –, steht im Nachweis-Journal.
+        if ((e.einrichtung === 'ablago' || e.einrichtung === 'selbst') && x.einrichtung && (await x.einrichtung.stand()).offen)
+          void nachweis('betrieb.paket', {
+            aktion: 'einrichtung',
+            auswahl: e.einrichtung,
+            pakete: erg.installiert.map((p) => `${p.id}@${p.version}`).join(', ') || '–',
+            nicht: [...erg.fehlgeschlagen, ...erg.nichtInstalliert].map((p) => p.id).join(', ') || '–',
+            von: wer(a).email,
+          });
+        return ok(erg);
+      },
     },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
     // Anhalten und Fortsetzen (#1563): Fortsetzen nur, wenn „Was Ablago darf“ das Paket erlaubt.

@@ -58,7 +58,7 @@
   "uebersetzung.paket-fehler": "“{name}” couldn’t translate the text: {grund}",
   "uebersetzung.kein-json": "The answer is not a JSON object.",
   "uebersetzung.ohne-text": "The answer has no “text”.",
-  "uebersetzung.ki-nicht-zugelassen": "This folder type is not allowed for AI services – {name} does not receive its content.",
+  "uebersetzung.ki-nicht-zugelassen": "This folder type may not go to services on the network – {name} does not receive its content.",
   "organisation.schreibschutz_one": "{felder} can only be changed by someone managing the own organisation in administration mode or with a role released for it.",
   "organisation.schreibschutz_other": "{felder} can only be changed by someone managing the own organisation in administration mode or with a role released for it.",
   "organisation.keine-eigene": "This folder is not an own organisation – please choose an organisation with the attribute “own organisation”.",

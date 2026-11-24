@@ -2,6 +2,11 @@
  * KI-Dienste und Mappentypen (#796, #1078 aus dienst.ts): welche Mappentypen für KI-Pakete zugelassen sind (Einstellung
  * `ki_typen`, Teil der Sicherung), die Sperre je Paket und die Übersicht in der Werkbank. Schicht 2 – bekommt den Kern
  * und die Rechteprüfung.
+ *
+ * Wortlaut (#1559): In der Oberfläche heißt das „Darf an Dienste im Netz gehen“ (kurz „im Netz erlaubt“ / „bleibt in
+ * Ablago“) – die Sperre gilt für jedes Paket mit Netz, das Inhalte bekommt, nicht nur für KI. Die internen Namen
+ * (`ki_typen`, `istKiPaket`, Routen) bleiben, damit kein Umbau nötig ist. Technisch bleibt es eine eigene Sperre neben
+ * den Berechtigungen: Diese regeln, wer eine Mappe sieht; die Sperre, wohin Inhalte fließen dürfen.
  */
 import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';

@@ -583,8 +583,12 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByLabel(w('Name'), { exact: true }).fill('');
   await s.getByRole('radio', { name: w(/^Für zu Hause/) }).check();
   await s.getByRole('button', { name: w('Weiter') }).click();
-  // Pakete dazuholen (#460): Katalog abrufen (ohne Internet: Hinweis), dann überspringen.
-  await s.getByRole('heading', { name: w('Pakete dazuholen') }).waitFor();
+  // Was darf Ablago? (#1566): die empfohlenen Antworten, so wie sie vorgewählt sind.
+  await s.getByRole('heading', { name: w('Was darf Ablago?') }).waitFor();
+  await bild(s, 'einrichtung-darf', { fullPage: true });
+  await s.getByRole('button', { name: w('Weiter') }).click();
+  // Pakete (#460, #1566): Ablago wählt aus dem Katalog (ohne Internet: Hinweis), dann überspringen.
+  await s.getByRole('heading', { name: w('Diese Pakete richtet Ablago für euch ein') }).waitFor();
   await s.getByRole('button', { name: w('Überspringen') }).waitFor({ timeout: 30_000 });
   await bild(s, 'einrichtung-pakete', { fullPage: true });
   await s.getByRole('button', { name: w('Überspringen') }).click();
@@ -2507,7 +2511,7 @@ main().catch((e) => {
  */
 /**
  * Reiter der Paketseite (#996): ein KI-Paket als Attrappe – Übersicht liest (eine Zeile zur KI, was das Paket meldet),
- * Einstellungen ändern (Feld des Pakets, „Was die KI lesen darf“, ein Speichern); Verlauf mit Auslastung (#1003);
+ * Einstellungen ändern (Feld des Pakets, „Was an Dienste im Netz gehen darf“, ein Speichern); Verlauf mit Auslastung (#1003);
  * Ausprobieren mit Seitenhinweisen und erzeugter Datei (#1004).
  */
 async function paketReiterBilder(s, bild, geheZu) {
@@ -2560,8 +2564,8 @@ async function paketReiterBilder(s, bild, geheZu) {
   ];
   const kern = {
     art: 'abschnitt',
-    titel: w('Was die KI lesen darf'),
-    felder: [{ schluessel: 'ki_mappentypen', name: w('Was die KI lesen darf'), typ: 'ki_mappentypen' }],
+    titel: w('Was an Dienste im Netz gehen darf'),
+    felder: [{ schluessel: 'ki_mappentypen', name: w('Was an Dienste im Netz gehen darf'), typ: 'ki_mappentypen' }],
   };
   await s.route('**/api/werkbank/pakete', async (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
@@ -2725,7 +2729,7 @@ async function paketReiterBilder(s, bild, geheZu) {
   await s.getByText(w('Meldet das Paket')).waitFor();
   await bild(s, 'werkbank-paket-uebersicht');
   await s.getByRole('tab', { name: w('Einstellungen') }).click();
-  await s.getByRole('heading', { name: w('Was die KI lesen darf') }).waitFor();
+  await s.getByRole('heading', { name: w('Was an Dienste im Netz gehen darf') }).waitFor();
   await bild(s, 'werkbank-paket-einstellungen', { fullPage: true });
   await s.getByRole('tab', { name: w('Ausprobieren') }).click();
   await s

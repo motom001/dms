@@ -1,4 +1,4 @@
-import { Bereich, HakenFeld, type Klappe } from '../../bausteine';
+import { HakenFeld } from '../../bausteine';
 import { useEffect, useState } from 'react';
 import { sucheApi } from '../../api/suche';
 import type { KiUebersicht } from '../../../../shared/src/pakete';
@@ -6,10 +6,13 @@ import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
 
 /**
- * Abschnitt „KI-Dienste“ im Mappentyp-Editor (#796): Darf der Mappentyp an KI-Pakete gehen (Pakete, die Inhalte ins Netz
- * schicken können)? Gilt sofort, eigene Einstellung. Neue Mappentypen sind gesperrt, bis man sie hier zulässt.
+ * „Darf an Dienste im Netz gehen“ (#796, Wortlaut #1559): Dürfen Inhalte dieses Mappentyps Ablago über ein Paket mit
+ * Netz verlassen? Seit #1559 eine feste Zeile im Abschnitt Berechtigungen, direkt unter „Standard“ – dort sucht man sie.
+ * Technisch bleibt es die eigene Sperre im Server (getrennt von den Regeln; intern weiter `ki_typen`, `istKiPaket`):
+ * Regeln sagen, wer eine Mappe sieht, die Sperre, wohin Inhalte fließen. Gilt sofort, ohne „Mappentyp speichern“. Neue
+ * Mappentypen bleiben in Ablago, bis man sie hier zulässt.
  */
-export function KiAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
+export function KiAmTyp({ typId }: { typId: string }) {
   const [k, setK] = useState<KiUebersicht | null>(null);
   const [fehler, setFehler] = useState('');
   const [meldung, setMeldung] = useState('');
@@ -45,13 +48,11 @@ export function KiAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
   };
   const pakete = k?.pakete ?? [];
   return (
-    <Bereich
-      id="ki"
-      titel={t('pakete.ki.typ.titel')}
-      hilfe={<Hilfe ort="pakete.ki" />}
-      klappe={klappe}
-      kurz={k ? (!typId ? t('pakete.ki.typ.kurz.neu') : an ? t('pakete.ki.typ.kurz.an') : t('pakete.ki.typ.kurz.aus')) : undefined}
-      beschreibung={t('pakete.ki.typ.beschreibung')}>
+    <div id="ki" className="stapel">
+      <h3 className="zwischen">
+        {t('pakete.ki.typ.titel')} <Hilfe ort="pakete.ki" />
+      </h3>
+      <p className="leise klein">{t('pakete.ki.typ.beschreibung')}</p>
       {fehler && (
         <p className="hinweis schlecht" role="alert">
           {fehler}
@@ -74,6 +75,6 @@ export function KiAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
       <p className="leise klein" role="status">
         {meldung}
       </p>
-    </Bereich>
+    </div>
   );
 }

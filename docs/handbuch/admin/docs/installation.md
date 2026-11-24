@@ -11,9 +11,9 @@ Ablago läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io/
 
 ## Der Einrichtungsassistent
 
-Beim ersten Aufruf führt ein Assistent in elf Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet.
+Beim ersten Aufruf führt ein Assistent in zwölf Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet.
 
-**Erst sammeln, dann einrichten:** Sprache, Code, Datenbank und „Neu oder Sicherung“ wirken sofort, weil sie technisch nötig sind. Ab „Ablage“ sammelt der Assistent nur: Name der Ablage, dein Konto, wofür du Ablago nutzt, Pakete und Optionales. Angelegt wird dabei **nichts**. Mit **Zurück** oder einem Klick in die Schrittleiste kommst du jederzeit zu jedem dieser Schritte. Am Ende zeigt die [Zusammenfassung](#zusammenfassung) alles auf einer Seite, und erst **Jetzt einrichten** legt los. Brichst du vorher ab oder lädst die Seite neu, bleibt keine halbe Einrichtung zurück. Deine Eingaben merkt sich der Browser bis dahin, Passwörter nicht.
+**Erst sammeln, dann einrichten:** Sprache, Code, Datenbank und „Neu oder Sicherung“ wirken sofort, weil sie technisch nötig sind. Ab „Ablage“ sammelt der Assistent nur: Name der Ablage, dein Konto, wofür du Ablago nutzt, was Ablago darf, Pakete und Optionales. Angelegt wird dabei **nichts**. Mit **Zurück** oder einem Klick in die Schrittleiste kommst du jederzeit zu jedem dieser Schritte. Am Ende zeigt die [Zusammenfassung](#zusammenfassung) alles auf einer Seite, und erst **Jetzt einrichten** legt los. Brichst du vorher ab oder lädst die Seite neu, bleibt keine halbe Einrichtung zurück. Deine Eingaben merkt sich der Browser bis dahin, Passwörter nicht.
 
 **Keine einzelnen Speichern-Knöpfe:** In jedem Schritt übernimmt **Weiter** alles, was in den Feldern steht, auch Vorschläge, die du nicht geändert hast (sie tragen den Hinweis „vorgeschlagen – wird mit „Weiter“ übernommen“). Leer gelassene Felder bleiben leer, und es gibt keine versteckten Vorgaben. **Zurück** und **Weiter** stehen in jedem Schritt unten an derselben Stelle.
 
@@ -73,21 +73,38 @@ Name, E-Mail-Adresse und Passwort **deines eigenen Kontos** – mit deiner einen
 **Wofür nutzt du Ablago?** Drei Antworten: **Für zu Hause**, **Für meine Arbeit oder meinen Betrieb** oder **Beides**. Weiter geht es erst mit einer Antwort; ändern kannst du sie später unter **Werkbank → [Nutzung](organisation.md#nutzung)**.
 
 - **Für meine Arbeit oder meinen Betrieb** und **Beides** setzen das Merkmal [beruflich genutzt](organisation.md#nutzung): Mappentypen zeigen dann ihre beruflichen Felder, und Pakete, die bei beruflicher Nutzung länger aufbewahren, richten das beim Installieren gleich so ein.
-- Die Antwort **wählt im nächsten Schritt Pakete vor**: zu Hause Basis, Haushalt, Verträge und Rechnungen; beruflich Basis, Verträge, Rechnungen und Compliance; bei „Beides“ alle davon. Vorgewählt wird nur, was es im Katalog gibt – abwählen kannst du alles.
+- Die Antwort **bestimmt mit, welche Pakete Ablago wählt** ([Pakete](#pakete-dazuholen)): zu Hause Basis, Haushalt, Verträge und Rechnungen; beruflich Basis, Verträge, Rechnungen und Compliance; bei „Beides“ alle davon – soweit es sie im Katalog gibt und [Was darf Ablago?](#was-darf-ablago) sie erlaubt.
 - **Wie viel soll die Werkbank zeigen?** Nach der Antwort wählst du eine der fünf Stufen *Einsteiger*, *Haushalt*, *Selbständig*, *Betrieb* oder *Alles*. Vorgewählt ist zu Hause *Einsteiger*, beruflich *Selbständig*. Jede Person, die verwaltet, kann später für sich eine andere Stufe wählen (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)).
 
 **Deine Organisation:** Bei beruflicher Nutzung fragt der Schritt gleich darunter nach deiner eigenen Organisation – Name, Anschrift, E-Mail und Telefon. Nur der Name ist Pflicht, alles andere ist freiwillig. Mit **Jetzt einrichten** legt Ablago daraus eine Organisation mit dem Merkmal [eigene Organisation](organisation.md) an; so weiß Ablago, wer „wir“ sind, etwa für Auskünfte nach der DSGVO. Dafür braucht es das Paket **Basis** (ab 1.7.0) – ist eine Organisation angegeben, ist Basis Pflicht, und die Zusammenfassung meldet, wenn es fehlt. Lässt du alle Felder leer, legt Ablago keine an; das geht auch später in der Ablage.
 
-### Pakete dazuholen
+### Was darf Ablago? { #was-darf-ablago }
 
-![Pakete dazuholen](bilder/einrichtung-pakete.png)
+![Was darf Ablago?](bilder/einrichtung-darf.png)
 
-Installiert wird erst mit **Jetzt einrichten**; hier wählst du nur. Erst in diesem Schritt fragt Ablago den [offiziellen Paketkatalog](pakete.md) ab – vorher baut es keine Verbindung dafür auf. Die Anfrage geht an catalog.ablago.app (ausgeliefert von GitHub Pages); dabei geht nur die Anfrage selbst hinaus, keine Daten aus deiner Ablage. Die Liste zeigt je Paket Name, Beschreibung und was es anlegt; Pakete mit Code tragen „mit Code“.
+Hier legst du **einmal** fest, was Ablago darf – für die ganze Installation (siehe [Was Ablago darf](was-ablago-darf.md)). Zwei Fragen, je eine Zeile pro Antwort; der erklärende Satz steht unter der gewählten, darunter in einem Satz, was das für euch heißt. Vorgewählt sind die empfohlenen Antworten:
 
-- **Vorgewählt ist, was zu deiner Antwort im Schritt [Nutzung](#nutzung) passt, dazu Texterkennung und Benachrichtigungen** – ohne Texterkennung werden gescannte Dokumente nicht durchsuchbar, ohne Benachrichtigungen kommt keine Tägliche Zusammenfassung und keine Aufgabe „Post für dich“. Darunter fragt **Weitere Sprachen?** nach Zusatzsprachen (Deutsch und Englisch sind immer dabei). Alles andere kreuzt du an. Sprachpakete für die Oberfläche stehen nicht in der ersten Liste, sondern unter dem Filter **Sprachen**.
-- **Abhängigkeiten kommen mit**, z. B. „Basis“ für „Haushalt“; sie sind mit „kommt mit – gebraucht von …“ markiert.
-- **Weiter** führt zu **einer** Seite mit allen Fragen: die [Rechte](pakete.md#rechte-eines-pakets) aller Pakete mit Code (ein Haken für alle), Namen nur bei Konflikten, Beispiel-Mappen, mitgelieferte Automatisierungen und Pflicht-Einstellungen, dann **Pakete übernehmen und weiter**. Siehe [Mehrere Pakete in einem Schritt installieren](pakete.md#mehrere-pakete-in-einem-schritt-installieren).
-- **Überspringen** geht jederzeit; Pakete holst du später unter **Werkbank → [Pakete](pakete.md)**.
+- **Welche Pakete darf Ablago nutzen?** *Keine – nur Ablago selbst*, *Nur Vorlagen*, **Auch Helfer, die nur hier arbeiten** (empfohlen) oder *Auch Helfer mit Internet*. Ablagos eingebaute Helfer wie die Texterkennung laufen auf jeder Antwort.
+- **Wie viel soll Ablago von sich aus tun?** *Nichts von sich aus*, **Erkennen und vorlegen** (empfohlen) oder *Alles erledigen, ich prüfe danach*.
+
+Gespeichert wird mit **Jetzt einrichten**, vor den Paketen. Hat dein Anbieter in der [Einrichtungsdatei](einrichtungsdatei.md) Höchstwerte festgelegt, sind höhere Antworten gesperrt („Von eurem Anbieter festgelegt“). Ändern kannst du alles später in der [Werkbank-Übersicht](uebersicht.md) unter **Was Ablago darf**. Änderst du hier die Antwort auf die erste Frage, wählt Ablago die Pakete im nächsten Schritt neu.
+
+### Pakete dazuholen { #pakete-dazuholen }
+
+![Diese Pakete richtet Ablago für euch ein](bilder/einrichtung-pakete.png)
+
+Installiert wird erst mit **Jetzt einrichten**; hier siehst du nur, was kommt. Erst in diesem Schritt fragt Ablago den [offiziellen Paketkatalog](pakete.md) ab – vorher baut es keine Verbindung dafür auf. Die Anfrage geht an catalog.ablago.app (ausgeliefert von GitHub Pages); dabei geht nur die Anfrage selbst hinaus, keine Daten aus deiner Ablage.
+
+**Diese Pakete richtet Ablago für euch ein:** Ablago wählt die Pakete selbst – passend zu [Was darf Ablago?](#was-darf-ablago), zu deiner Antwort im Schritt [Nutzung](#nutzung) und zu dem, was der Katalog empfiehlt (darunter Texterkennung und Benachrichtigungen). Die Liste zeigt je Paket einen Satz, ohne Haken. Nutzt ein Paket das Internet, steht das Ziel dabei („Nutzt das Internet: …“). Was die Antwort auf die erste Frage nicht erlaubt, steht darunter unter **Nicht dabei**, mit einem Satz Grund – etwa „„Sicherung WebDAV“ nutzt das Internet – das habt ihr nicht erlaubt.“ Dabei gilt:
+
+- Ablago wählt **nur bei der Einrichtung** und **nur aus dem offiziellen, gültig signierten Katalog**. Ist der Katalog nicht gültig signiert, wählt es nichts von selbst.
+- **Nie über die erste Frage hinaus:** Ein Paket über der Grenze kommt nicht in die Auswahl; auch der Server installiert es nicht.
+- **Später kommen keine Pakete von selbst dazu**, auch wenn der Katalog neue empfiehlt.
+- Die Liste der installierten Pakete und wer sie gewählt hat (Ablago oder du) steht im Nachweis-Journal (Betrieb, Pakete).
+
+**Weiter** führt zu **einer** Seite mit den Fragen der Pakete: die [Rechte](pakete.md#rechte-eines-pakets) aller Pakete mit Code (ein Haken für alle), Namen nur bei Konflikten, mitgelieferte Automatisierungen und Pflicht-Einstellungen, dann **Pakete übernehmen und weiter** (siehe [Mehrere Pakete in einem Schritt installieren](pakete.md#mehrere-pakete-in-einem-schritt-installieren)). Nach Beispielen fragt erst [Optionales](#optionales).
+
+**Selbst auswählen** zeigt den ganzen Katalog wie unter Werkbank → Pakete. Was die erste Frage nicht erlaubt, ist ausgegraut, mit dem Grund in Worten. **Abhängigkeiten kommen mit**, z. B. „Basis“ für „Haushalt“; **Weitere Sprachen?** fragt nach Zusatzsprachen der Texterkennung. **Ablagos Auswahl zeigen** führt zurück. **Überspringen** geht jederzeit; Pakete holst du später unter **Werkbank → [Pakete](pakete.md)**.
 
 Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich: Es fehlen dann die Pakete, etwa die Texterkennung. Überspring den Schritt und hol die Pakete nach der Einrichtung unter **Werkbank → Pakete**, dort auch mit einer **Sammeldatei**, die du an einem anderen Gerät auf der Katalog-Webseite zusammengestellt hast (siehe [Pakete ohne Internet installieren](pakete.md#pakete-ohne-internet-installieren)).
 
@@ -99,7 +116,7 @@ Fünf gleich aufgebaute Abschnitte, ohne eigene Speichern-Knöpfe:
 
 - **Adresse von Ablago**, vorgeschlagen mit der Adresse im Browser. Feld leeren, wenn Ablago keine feste Adresse haben soll.
 - **Region:** das Bundesland für die Feiertage, anfangs *keins*. Land und Zeitzone stellst du unter [Werkbank → Einstellungen → Region](region.md) ein.
-- **Beispiele:** ohne Pakete Beispiel-Mappentypen laden; mit Paketen **Erst mal umsehen: Beispiel-Ablage anlegen** (siehe [Beispiel-Ablage](beispielablage.md)).
+- **Beispiele:** eine einzige Frage, **Mit einer Beispiel-Ablage starten** – eine kleine Ablage einer erfundenen Familie aus den Beispielen der Pakete, mit einem Klick wieder weg (siehe [Beispiel-Ablage](beispielablage.md)). Dafür braucht es die Pakete Basis, Haushalt und Verträge; fehlen sie in der Auswahl, ist der Haken gesperrt und sagt, warum.
 - **E-Mail-Versand:** erst nach dem Häkchen „E-Mail-Versand jetzt einrichten“. Für den [E-Mail-Versand](e-mail-versand.md) genügen meist deine Adresse und dein Passwort; Server, Benutzer und Absender schlägt der Assistent vor und kennzeichnet sie, **Weiter** übernimmt sie in die Zusammenfassung. Eingerichtet wird der Versand erst mit **Jetzt einrichten**. Testen kannst du ihn nach der Einrichtung unter **Werkbank → E-Mail und Adresse**.
 - **Notfallkontakte:** Vertrauenspersonen für den Ernstfall, mit Name, E-Mail und wahlweise Telefon und Notiz. Sie bekommen keinen Zugang, nur eine kurze Info-Mail ohne Link, sobald der Versand eingerichtet ist, und stehen auf dem Notfallblatt unter „Wen fragen?“. Eingetragen werden sie mit **Jetzt einrichten**, später pflegst du sie unter [Werkbank → Verschlüsselung](verschluesselung.md#notfallkontakte). In der Konfigurationsdatei stehen sie bewusst nicht – es sind Daten Dritter.
 
@@ -109,11 +126,11 @@ Alles lässt sich auch später in der Werkbank einstellen.
 
 ![Zusammenfassung](bilder/einrichtung-zusammenfassung.png)
 
-Alles auf einer Seite, je Abschnitt mit **Ändern**: Ablage, dein Konto (mit „Gesamte Verwaltung“), Nutzung (mit Vorlage der Werkbank und deiner Organisation), Pakete (mit der Zahl der eingeschalteten Automatisierungen) und Optionales. Passwörter stehen dort nur als „gesetzt“. Nach **Ändern** führt **Weiter** zurück zur Zusammenfassung; alles andere bleibt, wie es war.
+Alles auf einer Seite, je Abschnitt mit **Ändern**: Ablage, dein Konto (mit „Gesamte Verwaltung“), Nutzung (mit Vorlage der Werkbank und deiner Organisation), was Ablago darf (zwei Sätze), Pakete (mit der Zahl der eingeschalteten Automatisierungen und ob Ablago sie gewählt hat) und Optionales. Passwörter stehen dort nur als „gesetzt“. Nach **Ändern** führt **Weiter** zurück zur Zusammenfassung; alles andere bleibt, wie es war.
 
 **Als Datei speichern** legt die Einrichtung als [Konfigurationsdatei](einrichtungsdatei.md) ab, ohne Passwörter und ohne Schlüssel.
 
-**Jetzt einrichten** prüft alles noch einmal und führt es dann aus, mit Fortschritt: Ablage und dein Konto anlegen, Schlüssel erzeugen, Adresse, Bundesland, Nutzung und E-Mail-Versand speichern, Beispiele laden, Pakete installieren, deine Organisation anlegen. Klappt etwas nicht, steht dort, was und warum. Was schon erledigt ist, bleibt erhalten; mit **Ändern** korrigierst du die Angabe, mit **Erneut versuchen** geht es an dieser Stelle weiter. Doppelt angelegt wird nichts.
+**Jetzt einrichten** prüft alles noch einmal und führt es dann aus, mit Fortschritt: Ablage und dein Konto anlegen, Schlüssel erzeugen, Adresse, Bundesland, Nutzung, was Ablago darf und E-Mail-Versand speichern, Pakete installieren, deine Organisation und die Beispiel-Ablage anlegen. Klappt etwas nicht, steht dort, was und warum – jede Meldung einmal. Lassen sich die Pakete nicht installieren, hält das die Einrichtung nicht auf: Der Grund steht an der Stufe, Organisation und Beispiel-Ablage folgen trotzdem, und die Pakete holst du unter Werkbank → Pakete nach. Was schon erledigt ist, bleibt erhalten; mit **Ändern** korrigierst du die Angabe, mit **Erneut versuchen** geht es an dieser Stelle weiter. Doppelt angelegt wird nichts.
 
 ### Fertig: Notfallblatt { #fertig }
 

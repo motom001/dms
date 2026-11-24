@@ -148,7 +148,7 @@ describe('Feldarten des Kerns an der Paketseite (#996)', () => {
     const b = mitKern(eigen, { laeufer: KI })!;
     assert.deepEqual(
       b.bloecke.map((x) => (x.art === 'abschnitt' ? x.titel : '')),
-      ['Allgemein', 'Was die KI lesen darf'],
+      ['Allgemein', 'Was an Dienste im Netz gehen darf'],
       'nach den Feldern des Manifests',
     );
     const genannt = liesBeschreibung({

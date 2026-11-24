@@ -177,7 +177,7 @@ describe('Aus Dokument ausfüllen per Paket (#511)', () => {
     // KI-Dienste (#796): Ein neuer Mappentyp geht erst nach der Zulassung an ein Paket mit Netz – bis dahin eingebaut, mit Hinweis.
     const gesperrt = await x.d.erkennung.fuerTyp(x.person.id, { text: KARTE }, x.A);
     assert.deepEqual(gesperrt.engine, { art: 'eingebaut' });
-    assert.match(String(gesperrt.hinweis), /nicht für KI-Dienste zugelassen/);
+    assert.match(String(gesperrt.hinweis), /nicht an Dienste im Netz gehen/);
     await x.d.ki.setzeKiTyp(x.person.id, true, null);
     assert.deepEqual((await x.d.erkennung.fuerTyp(x.person.id, { text: KARTE }, x.A)).engine, {
       art: 'paket',

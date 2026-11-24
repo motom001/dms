@@ -42,7 +42,13 @@ export function PaketeDazuholen({
   start,
   vorgabe,
   empfohlen = VORAUSWAHL,
+  sperren,
+  ohneBeispielfrage,
 }: {
+  /** Nicht wählbar, mit Grund (Einrichtungsassistent nach „Was Ablago darf“, #1566). */
+  sperren?: Record<string, string>;
+  /** Keine eigene Frage nach Beispielen (#1592). */
+  ohneBeispielfrage?: boolean;
   weiter(e: AblaufErgebnis): void;
   ueberspringen(): void;
   /** Einrichtungsassistent (#804): nur sammeln, installiert wird erst mit „Jetzt einrichten“. */
@@ -165,6 +171,8 @@ export function PaketeDazuholen({
         empfohlen={empfohlen}
         sammeln={sammeln}
         vorgabe={vorgabe}
+        sperren={sperren}
+        ohneBeispielfrage={ohneBeispielfrage}
         aktionen={
           <>
             {zurueckKnopf}

@@ -1,7 +1,8 @@
 /** Schnittstelle (#1234): Einrichtung und Anbindung: Assistent, Datenbank, Neustart, Lasttest, Beispieldaten, Wiederherstellen. */
 import type { LasttestStand } from '../../../shared/src/lasttest';
 import type { LasttestStandMitAblauf } from '../../../shared/src/lasttestablauf';
-import type { AblaufEingabe, AblaufPlan, InstalliertesPaket, Katalog } from '../../../shared/src/pakete';
+import type { AblaufEingabe, AblaufPlan, InstalliertesPaket, Katalog, KatalogStufen } from '../../../shared/src/pakete';
+import type { PaketeGrenze } from '../../../shared/src/darf';
 import type { DateiFehler, Einrichtungsplan, Planprobleme } from '../../../shared/src/einrichtungsplan';
 import type { Auftrag } from '../../../shared/src/auftrag';
 import type { Dokumentart } from '../../../shared/src/demodaten';
@@ -198,8 +199,11 @@ export const einrichtungApi = {
       '/api/einrichtung/pakete/katalog',
       {},
     ),
-  einrichtungPaketPlan: (e: AblaufEingabe) =>
-    anfrage<AblaufPlan<PaketVorschau>>('POST', '/api/einrichtung/pakete/plan', { pakete: e.pakete ?? [] }),
+  /** `darf`: Antwort auf „Welche Pakete darf Ablago nutzen?“ aus dem Assistenten (#1591) – der Server plant damit. */
+  einrichtungPaketPlan: (e: AblaufEingabe, darf?: PaketeGrenze) =>
+    anfrage<AblaufPlan<PaketVorschau>>('POST', '/api/einrichtung/pakete/plan', { pakete: e.pakete ?? [], ...(darf ? { darf } : {}) }),
+  /** Pakete des offiziellen Katalogs nach „Was Ablago darf“ eingeordnet (#1566). */
+  einrichtungPaketStufen: (darf: PaketeGrenze) => anfrage<KatalogStufen>('POST', '/api/einrichtung/pakete/stufen', { darf }),
   /** Server zur Adresse finden (#813) im Assistenten, bevor es einen Administrator gibt. */
   einrichtungMailFinden: (email: string, thunderbird = false) =>
     anfrage<MailSuche>('POST', '/api/einrichtung/mail/finden', { email, thunderbird }),

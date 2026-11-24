@@ -206,7 +206,7 @@
           },
           "beispiele": {
             "type": "boolean",
-            "description": "Beispiel-Mappen des Pakets anlegen."
+            "description": "Zählt wie optionales.beispiele: mit einer Beispiel-Ablage starten."
           },
           "automatisierungen": {
             "type": "object",
@@ -256,7 +256,7 @@
         },
         "beispiele": {
           "type": "boolean",
-          "description": "Beispiel-Mappentypen laden."
+          "description": "Mit einer Beispiel-Ablage starten: legt nach den Paketen die Beispiel-Mappen der installierten Pakete an."
         },
         "beruflich": {
           "type": "boolean",

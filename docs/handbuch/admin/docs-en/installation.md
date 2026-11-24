@@ -11,9 +11,9 @@ Ablago runs – **recommended** – as two containers: the application (`ghcr.io
 
 ## The setup assistant {#der-einrichtungsassistent}
 
-On the first visit, an assistant guides you through setup in eleven steps. Every step has a **?** at the top that opens exactly the matching section here.
+On the first visit, an assistant guides you through setup in twelve steps. Every step has a **?** at the top that opens exactly the matching section here.
 
-**First collect, then set up:** language, code, database and "New or backup" take effect immediately because they are technically necessary. From "Library" onwards the assistant only collects: name of the Library, your account, what you use Ablago for, packages and optional items. **Nothing** is created in the process. With **Back** or a click in the step bar you can get to each of these steps at any time. At the end the [summary](#zusammenfassung) shows everything on one page, and only **Set up now** gets going. If you cancel before that or reload the page, no half-finished setup remains. The browser remembers your entries until then, but not passwords.
+**First collect, then set up:** language, code, database and "New or backup" take effect immediately because they are technically necessary. From "Library" onwards the assistant only collects: name of the Library, your account, what you use Ablago for, what Ablago may do, packages and optional items. **Nothing** is created in the process. With **Back** or a click in the step bar you can get to each of these steps at any time. At the end the [summary](#zusammenfassung) shows everything on one page, and only **Set up now** gets going. If you cancel before that or reload the page, no half-finished setup remains. The browser remembers your entries until then, but not passwords.
 
 **No individual save buttons:** in every step, **Next** takes over everything in the fields, including suggestions you haven't changed (they carry the notice "suggested – taken over with "Next""). Fields left empty stay empty, and there are no hidden defaults. **Back** and **Next** are in the same place at the bottom of every step.
 
@@ -73,21 +73,38 @@ Name, email address and password of **your own account** – with your one email
 **What will you use Ablago for?** Three answers: **For home**, **For my work or my business** or **Both**. You can only continue with an answer; you can change it later under **Workbench → [Use](organisation.md#nutzung)**.
 
 - **For my work or my business** and **Both** set the attribute [used for work](organisation.md#nutzung): folder types then show their work-related fields, and packages that keep records longer for work use set this up straight away when installed.
-- The answer **preselects packages in the next step**: for home Basis, Household, Contracts and Invoices; for work Basis, Contracts, Invoices and Compliance; for "Both" all of them. Only what exists in the catalogue is preselected – you can deselect everything.
+- The answer **helps decide which packages Ablago chooses** ([Packages](#pakete-dazuholen)): for home Basis, Household, Contracts and Invoices; for work Basis, Contracts, Invoices and Compliance; for "Both" all of them – as far as they exist in the catalogue and [What may Ablago do?](#was-darf-ablago) allows them.
 - **How much should the Workbench show?** After the answer you choose one of the five levels *Beginner*, *Household*, *Self-employed*, *Business* or *Everything*. Preselected is *Beginner* for home and *Self-employed* for work. Everyone who manages can later choose a different level for themselves (see [Customising the workbench](uebersicht.md#werkbank-anpassen)).
 
 **Your organisation:** for work use, the step asks right below for your own organisation – name, address, email and phone. Only the name is required, everything else is optional. With **Set up now**, Ablago creates an organisation with the attribute [own organisation](organisation.md) from it, so Ablago knows who "we" are, for example for GDPR access requests. This needs the **Basis** package (1.7.0 or later) – once an organisation is entered, Basis is required, and the summary tells you if it is missing. If you leave all fields empty, Ablago creates none; you can do that later in the library.
 
+### What may Ablago do? { #was-darf-ablago }
+
+![What may Ablago do?](bilder/einrichtung-darf.png)
+
+Here you decide **once** what Ablago may do – for the whole installation (see [What Ablago may do](was-ablago-darf.md)). Two questions, one line per answer; the explaining sentence is shown under the chosen one, below it in one sentence what this means for you. The recommended answers are preselected:
+
+- **Which packages may Ablago use?** *None – only Ablago itself*, *Templates only*, **Also helpers that only work here** (recommended) or *Also helpers with internet*. Ablago's built-in helpers such as text recognition run with every answer.
+- **How much should Ablago do on its own?** *Nothing on its own*, **Recognise and propose** (recommended) or *Do everything, I check afterwards*.
+
+It is saved with **Set up now**, before the packages. If your provider set maximum values in the [setup file](einrichtungsdatei.md), higher answers are locked ("Set by your provider"). You can change everything later in the [Workbench overview](uebersicht.md) under **What Ablago may do**. If you change the answer to the first question here, Ablago chooses the packages anew in the next step.
+
 ### Adding packages {#pakete-dazuholen}
 
-![Adding packages](bilder/einrichtung-pakete.png)
+![Ablago sets up these packages for you](bilder/einrichtung-pakete.png)
 
-Installation only happens with **Set up now**; here you only choose. Only in this step does Ablago query the [official package catalogue](pakete.md) – before that it opens no connection for it. The request goes to catalog.ablago.app (served by GitHub Pages); only the request itself goes out, no data from your Library. The list shows per package name, description and what it creates; packages with code are marked "with code".
+Installation only happens with **Set up now**; here you only see what is coming. Only in this step does Ablago query the [official package catalogue](pakete.md) – before that it opens no connection for it. The request goes to catalog.ablago.app (served by GitHub Pages); only the request itself goes out, no data from your Library.
 
-- **Preselected is what fits your answer in the [Use](#nutzung) step, plus Text recognition and Notifications** – without text recognition scanned documents can't be searched, without Notifications no daily summary and no “Post for you” task come. Below that, **Further languages?** asks for additional languages (German and English are always included). You tick everything else. Language packages for the interface are not in the first list but under the filter **Languages**.
-- **Dependencies come along**, e.g. "Basis" for "Household"; they are marked "comes along – needed by …".
-- **Next** leads to **one** page with all questions: the [permissions](pakete.md#rechte-eines-pakets) of all packages with code (one tick for all), names only in case of conflicts, sample folders, supplied automations and required settings, then **Take over packages and continue**. See [Installing several packages in one step](pakete.md#mehrere-pakete-in-einem-schritt-installieren).
-- **Skip** is possible at any time; you add packages later under **Workbench → [Packages](pakete.md)**.
+**Ablago sets up these packages for you:** Ablago chooses the packages itself – matching [What may Ablago do?](#was-darf-ablago), your answer in the [Use](#nutzung) step and what the catalogue recommends (including text recognition and notifications). The list shows one sentence per package, without ticks. If a package uses the internet, the destination is named ("Uses the internet: …"). What the answer to the first question does not allow is listed below under **Not included**, with one sentence of reason – for example "“WebDAV backup” uses the internet – you have not allowed that." The rules:
+
+- Ablago only chooses **during setup** and **only from the official, validly signed catalogue**. If the catalogue is not validly signed, it chooses nothing on its own.
+- **Never beyond the first question:** a package above the limit does not get into the choice; the server does not install it either.
+- **No packages are added on their own later**, even if the catalogue recommends new ones.
+- The list of installed packages and who chose them (Ablago or you) is recorded in the evidence journal (operation, packages).
+
+**Next** leads to **one** page with the packages' questions: the [permissions](pakete.md#rechte-eines-pakets) of all packages with code (one tick for all), names only in case of conflicts, supplied automations and required settings, then **Take over packages and continue** (see [Installing several packages in one step](pakete.md#mehrere-pakete-in-einem-schritt-installieren)). Examples are only asked about under [Optional items](#optionales).
+
+**Choose yourself** shows the whole catalogue as under Workbench → Packages. What the first question does not allow is greyed out, with the reason in words. **Dependencies come along**, e.g. "Basis" for "Household"; **Further languages?** asks for additional languages of text recognition. **Show Ablago's choice** leads back. **Skip** is possible at any time; you add packages later under **Workbench → [Packages](pakete.md)**.
 
 If the catalogue can't be reached (no internet), the step says so clearly: then the packages are missing, for instance text recognition. Skip the step and add the packages after setup under **Workbench → Packages**, there also with a **bundle file** that you put together on another device on the catalogue's website (see [Installing packages without internet](pakete.md#pakete-ohne-internet-installieren)).
 
@@ -99,7 +116,7 @@ Five sections of the same structure, without save buttons of their own:
 
 - **Ablago's address**, suggested with the address in the browser. Clear the field if Ablago is not to have a fixed address.
 - **Region:** the state for public holidays, at first *none*. You set country and time zone under [Workbench → Settings → Region](region.md).
-- **Examples:** without packages, load sample folder types; with packages, **Look around first: create example Library** (see [Example Library](beispielablage.md)).
+- **Examples:** a single question, **Start with an example Library** – a small Library of an invented family from the packages' examples, gone again in one click (see [Example Library](beispielablage.md)). It needs the packages Basis, Household and Contracts; if they are not in the choice, the tick is locked and says why.
 - **Email sending:** only after the tick "Set up email sending now". For [email sending](e-mail-versand.md) your address and password are usually enough; the assistant suggests server, user and sender and marks them, **Next** takes them over into the summary. Sending is only set up with **Set up now**. You can test it after setup under **Workbench → Email and address**.
 - **Emergency contacts:** people you trust for an emergency, with name, email and optionally phone and note. They get no access, only a short info email without a link once sending is set up, and appear on the emergency sheet under "Whom to ask?". They are added with **Set up now**; later you manage them under [Workbench → Encryption](verschluesselung.md#notfallkontakte). They are deliberately not in the configuration file – it's third-party data.
 
@@ -109,11 +126,11 @@ Everything can also be set later in the Workbench.
 
 ![Summary](bilder/einrichtung-zusammenfassung.png)
 
-Everything on one page, each section with **Change**: Library, your account (with "Full administration"), use (with the Workbench template and your organisation), packages (with the number of switched-on automations) and optional items. Passwords are only shown as "set". After **Change**, **Next** leads back to the summary; everything else stays as it was.
+Everything on one page, each section with **Change**: Library, your account (with "Full administration"), use (with the Workbench template and your organisation), what Ablago may do (two sentences), packages (with the number of switched-on automations and whether Ablago chose them) and optional items. Passwords are only shown as "set". After **Change**, **Next** leads back to the summary; everything else stays as it was.
 
 **Save as file** stores the setup as a [configuration file](einrichtungsdatei.md), without passwords and without the key.
 
-**Set up now** checks everything once more and then carries it out, with progress: creating the Library and your account, creating the key, saving address, state, use and email sending, loading examples, installing packages, creating your organisation. If something doesn't work, it says what and why. What is already done stays; with **Change** you correct the entry, with **Try again** it continues at this point. Nothing is created twice.
+**Set up now** checks everything once more and then carries it out, with progress: creating the Library and your account, creating the key, saving address, state, use, what Ablago may do and email sending, installing packages, creating your organisation and the example Library. If something doesn't work, it says what and why – each message once. If the packages cannot be installed, setup still goes on: the reason is shown at the stage, organisation and example Library follow anyway, and you add the packages later under Workbench → Packages. What is already done stays; with **Change** you correct the entry, with **Try again** it continues at this point. Nothing is created twice.
 
 ### Done: emergency sheet { #fertig }
 

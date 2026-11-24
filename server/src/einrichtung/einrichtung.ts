@@ -24,7 +24,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../../shared/src/merkmale';
 import { istVorlage, vorlageFuer } from '../../../shared/src/werkbankansicht';
-import { DARF_EINSTELLUNG, DARF_VORGABE, istPaketeGrenze, istSelbstStufe } from '../../../shared/src/darf';
+import { DARF_EINSTELLUNG, DARF_VORGABE, istPaketeGrenze, istSelbstStufe, ueberHoechstwert } from '../../../shared/src/darf';
 
 /**
  * Einrichtungsassistent (#119), sobald die Datenbank steht. Seit #804 sammelt der Assistent erst alles (Ablage,
@@ -162,6 +162,10 @@ function darfAus(x: unknown): { darf?: PlanDarf } {
   return Object.keys(darf).length ? { darf } : {};
 }
 
+/** Was Ablago darf (#1566): nie über den Höchstwerten des Anbieters aus der Einrichtungsdatei. */
+const darfProblem = (d: PlanDarf | undefined) =>
+  d?.hoechstens && ueberHoechstwert(d.hoechstens, d) ? t('werkbank.darf.fehler.anbieter') : null;
+
 /** Fehlermeldung einer Prüfung oder null. */
 const meldung = (f: () => unknown): string | null => {
   try {
@@ -280,6 +284,7 @@ export class Einrichtung {
     );
     dazu('optional', p.optional.adresse ? meldung(() => pruefeAdresse(p.optional.adresse)) : null);
     if (p.optional.mail?.aktiv && !p.optional.mail.host) dazu('optional', t('einrichtung.plan.mail.server'));
+    dazu('darf', darfProblem(p.darf));
     // „Deine Organisation“ (#1045): nur bei beruflicher Nutzung, Name Pflicht, E-Mail gültig – und Paket Basis dabei.
     const o = p.organisation;
     if (o) {

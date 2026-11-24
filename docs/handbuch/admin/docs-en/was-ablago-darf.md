@@ -41,6 +41,10 @@ With every answer, Ablago still asks separately about:
 - **Raising** needs a fresh sign-in. The change is recorded with the old and new value in the evidence journal (access and permissions), and everyone with administration rights gets an email. Nothing happens on its own: no package is installed, no folder type released.
 - **Lowering** takes effect immediately and is recorded in the journal. If installed packages no longer fit the new answer, Ablago names them beforehand with the reason; **Pause and save** [pauses](pakete.md#anhalten) them – their folder types, folders and settings stay.
 
+## During setup { #einrichtung }
+
+The setup assistant asks both questions in the step [What may Ablago do?](installation.md#was-darf-ablago), before the packages. Afterwards Ablago chooses the packages itself – matching the first answer, the use and the recommendation in the official, signed catalogue; what is not allowed is shown next to it with the reason. This only happens during setup: no packages are added on their own later.
+
 ## Provider and setup file { #anbieter }
 
 The [setup file](einrichtungsdatei.md) holds both answers under `darf`. A provider who runs Ablago for others sets maximum values there with `hoechstens`. The server enforces them; higher answers are greyed out in the card with "Set by your provider".

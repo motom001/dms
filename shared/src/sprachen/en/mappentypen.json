@@ -357,7 +357,6 @@
   "darstellung.entfernt": "“{name}” removed.",
   "darstellung.entfernen": "Remove “{name}”",
   "darstellung.abschnitt-hinzufuegen": "+ Section",
-  "bereich.ki": "AI services",
   "editor.chip.negativ": "negative allowed",
   "editor.negativ": "Allow negative amounts",
   "editor.negativ-hilfe": "For credit notes and refunds; the form then shows “Enter it with a minus”.",

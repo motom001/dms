@@ -378,7 +378,7 @@ code:
 
 | Type | Section in Ablago | Who gets it, even without naming it |
 |---|---|---|
-| `ki_mappentypen` | What the AI may read (new folder types blocked; applies to all AI packages) | AI packages (see [AI packages](pakete-code.md#ki-pakete)) |
+| `ki_mappentypen` | What may go to services on the network (new folder types blocked; applies to all AI packages, called “packages with network access” in the interface) | AI packages (see [AI packages](pakete-code.md#ki-pakete)) |
 | `fragen_grenzen` | Ask your Library: limits per question | packages with `dms:antworten` |
 | `erkennung_standard` | Fill in from document: use as default | packages with `dms:erkennen` |
 | `mappenaktionen` | Actions in the “Folder” menu on or off | packages with `mappenaktionen` |

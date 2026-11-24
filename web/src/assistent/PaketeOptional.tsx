@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { PAKETE_JE_NUTZUNG } from '../../../shared/src/einrichtungsplan';
+import { BEISPIEL_NOETIG } from '../../../shared/src/beispielablage';
+import { DARF_VORGABE, type PaketeGrenze } from '../../../shared/src/darf';
 import { erreichbar, NOTFALLKONTAKTE_MAX, pruefeNotfallkontakt, type NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
 import { Etikett, Feld, HakenFeld, Knopf } from '../bausteine';
 import { einrichtungApi } from '../api/einrichtung';
@@ -10,48 +12,42 @@ import { PaketeDazuholen, VORAUSWAHL } from '../werkbank/PaketeDazuholen';
 import { MailSammeln, type MailGriff } from '../werkbank/MailVersand';
 import { eingabeFehler, KontaktFormular, leererKontakt } from '../werkbank/NotfallkontaktFormular';
 import { Navigation, Probleme, pruefeSchritt, useSenden, weiterVon, zurueckVon } from './ablauf';
+import { gesperrteAus } from './paketwahl';
+import { PaketeVorschlag } from './PaketeVorschlag';
 import { NR, Rahmen, type Leiste } from './rahmen';
 import { geheim, setzeSammlung, type MailSammlung, type Sammlung } from './stand';
 
 /** Schritte „Pakete dazuholen“ und „Optionales“ mit Notfallkontakten (#1279 aus Schritte.tsx gezogen). */
 
 /** Im Assistenten wählt man Pakete über die Schnittstellen mit Einrichtungscode – installiert wird noch nichts. */
-const EINRICHTUNG_PAKETE: PaketApi = {
+const einrichtungPakete = (darf: PaketeGrenze): PaketApi => ({
   stand: () => einrichtungApi.einrichtungPakete(),
   katalog: () => einrichtungApi.einrichtungPaketKatalog(),
-  plan: (e) => einrichtungApi.einrichtungPaketPlan(e),
-};
+  // Geplant wird mit der Antwort auf „Welche Pakete darf Ablago nutzen?“ (#1591) – gespeichert ist sie noch nicht.
+  plan: (e) => einrichtungApi.einrichtungPaketPlan(e, darf),
+});
 
+/**
+ * Pakete (#460, #1566): Ablago wählt nach „Was darf Ablago?“ und zeigt die Auswahl („Diese Pakete richtet Ablago für
+ * euch ein“); „Selbst auswählen“ zeigt den Katalog, Pakete über der Grenze ausgegraut mit Grund. Beim „Ändern“, nach
+ * eigener Wahl und mit einer Konfigurationsdatei (#806) öffnet der Schritt gleich die eigene Auswahl.
+ */
 export function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void; leiste: Leiste }) {
-  // Vorbelegt beim „Ändern“ bzw. aus der Datei (#806): Auswahl, Beispiele, ausgeschaltete Automatisierungen.
-  const quelle = s.pakete
-    ? s.pakete.pakete.map((p) => ({ id: p.id, beispiele: p.beispiele, automatisierungen: p.automatisierungen, gewaehlt: p.gewaehlt }))
-    : (s.paketeVorgabe?.map((p) => ({ ...p, gewaehlt: true })) ?? null);
-  const start = quelle?.filter((p) => p.gewaehlt).map((p) => p.id);
-  const vorgabe = quelle
-    ? {
-        beispiele: quelle.filter((p) => p.beispiele).map((p) => p.id),
-        automatisierungenAus: quelle.flatMap((p) =>
-          Object.entries(p.automatisierungen)
-            .filter(([, an]) => !an)
-            .map(([k]) => `${p.id}|${k}`),
-        ),
-        automatisierungenAn: quelle.flatMap((p) =>
-          Object.entries(p.automatisierungen)
-            .filter(([, an]) => an)
-            .map(([k]) => `${p.id}|${k}`),
-        ),
-      }
-    : undefined;
-  // Vorschlag nach der Antwort auf „Wofür nutzt du Ablago?“ (#1045), dazu die bisherige Empfehlung; nur was es im Katalog gibt.
-  const empfohlen = s.nutzung ? [...new Set([...PAKETE_JE_NUTZUNG[s.nutzung], ...VORAUSWAHL])] : VORAUSWAHL;
-  const gesammelt = (w: PaketWahl | null) => {
+  const darf = s.darf?.pakete ?? DARF_VORGABE.pakete;
+  const [selbst, setSelbst] = useState(s.paketeAuswahl === 'selbst' || !!s.paketeVorgabe);
+  const api = useMemo(() => einrichtungPakete(darf), [darf]);
+  const gesammelt = (w: PaketWahl | null, auswahl?: Sammlung['paketeAuswahl']) => {
     geheim.paketEinstellungen = w?.eingabe.einstellungen;
-    setzeSammlung((x) => ({ ...x, pakete: w, paketeVorgabe: null }));
+    setzeSammlung((x) => ({ ...x, pakete: w, paketeVorgabe: null, paketeAuswahl: w ? auswahl : undefined }));
     weiterVon('pakete');
   };
+  const zurueck = () => zurueckVon('pakete', zurWahl);
   return (
-    <Rahmen aktiv={NR.pakete} titel={t('einrichtung.pakete.titel')} leiste={leiste} unter={t('einrichtung.pakete.unter')}>
+    <Rahmen
+      aktiv={NR.pakete}
+      titel={selbst ? t('einrichtung.pakete.titel') : t('einrichtung.pakete.vorschlag.titel')}
+      leiste={leiste}
+      unter={selbst ? t('einrichtung.pakete.unter') : t('einrichtung.pakete.vorschlag.unter')}>
       <Probleme liste={s.probleme.pakete} />
       <p className="leise klein">{t('einrichtung.pakete.erst')}</p>
       {s.organisation && (
@@ -59,19 +55,101 @@ export function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: ()
           <p>{t('einrichtung.pakete.basis', { name: s.organisation.name })}</p>
         </div>
       )}
-      <PaketApiKontext.Provider value={EINRICHTUNG_PAKETE}>
-        <PaketeDazuholen
-          key={JSON.stringify(start ?? null)}
-          start={start}
-          vorgabe={vorgabe}
-          empfohlen={empfohlen}
-          sammeln={gesammelt}
-          zurueck={() => zurueckVon('pakete', zurWahl)}
-          ueberspringen={() => gesammelt(null)}
-          weiter={() => {}}
-        />
+      <PaketApiKontext.Provider value={api}>
+        {selbst ? (
+          <PaketeSelbst
+            s={s}
+            darf={darf}
+            sammeln={(w) => gesammelt(w, 'selbst')}
+            zurueck={zurueck}
+            ueberspringen={() => gesammelt(null)}
+            ablago={() => setSelbst(false)}
+          />
+        ) : (
+          <PaketeVorschlag
+            s={s}
+            darf={darf}
+            selbst={() => setSelbst(true)}
+            sammeln={(w) => gesammelt(w, 'ablago')}
+            zurueck={zurueck}
+            ueberspringen={() => gesammelt(null)}
+          />
+        )}
       </PaketApiKontext.Provider>
     </Rahmen>
+  );
+}
+
+/** „Selbst auswählen“ (#1566): der Katalog wie bisher, Pakete über der Grenze ausgegraut mit Grund. */
+function PaketeSelbst({
+  s,
+  darf,
+  sammeln,
+  zurueck,
+  ueberspringen,
+  ablago,
+}: {
+  s: Sammlung;
+  darf: PaketeGrenze;
+  sammeln(w: PaketWahl): void;
+  zurueck(): void;
+  ueberspringen(): void;
+  ablago(): void;
+}) {
+  const [sperren, setSperren] = useState<Record<string, string> | null>(null);
+  useEffect(() => {
+    let aktuell = true;
+    // Ohne Einordnung (Katalog nicht erreichbar) zeigt die Auswahl selbst, was fehlt; der Server prüft beim Planen.
+    einrichtungApi.einrichtungPaketStufen(darf).then(
+      (x) => aktuell && setSperren(gesperrteAus(x.pakete)),
+      () => aktuell && setSperren({}),
+    );
+    return () => {
+      aktuell = false;
+    };
+  }, [darf]);
+  // Vorbelegt beim „Ändern“ bzw. aus der Datei (#806): Auswahl und ausgeschaltete Automatisierungen.
+  const quelle = s.pakete
+    ? s.pakete.pakete.map((p) => ({ id: p.id, automatisierungen: p.automatisierungen, gewaehlt: p.gewaehlt }))
+    : (s.paketeVorgabe?.map((p) => ({ ...p, gewaehlt: true })) ?? null);
+  const start = quelle?.filter((p) => p.gewaehlt).map((p) => p.id);
+  // Beispiele je Paket fragt der Assistent nicht mehr (#1592) – die Beispiel-Ablage unter „Optionales“ legt sie an.
+  const vorgabe = {
+    beispiele: [],
+    automatisierungenAus: (quelle ?? []).flatMap((p) =>
+      Object.entries(p.automatisierungen)
+        .filter(([, an]) => !an)
+        .map(([k]) => `${p.id}|${k}`),
+    ),
+    automatisierungenAn: (quelle ?? []).flatMap((p) =>
+      Object.entries(p.automatisierungen)
+        .filter(([, an]) => an)
+        .map(([k]) => `${p.id}|${k}`),
+    ),
+  };
+  // Vorschlag nach der Antwort auf „Wofür nutzt du Ablago?“ (#1045), dazu die bisherige Empfehlung; nur was es im Katalog gibt.
+  const empfohlen = s.nutzung ? [...new Set([...PAKETE_JE_NUTZUNG[s.nutzung], ...VORAUSWAHL])] : VORAUSWAHL;
+  if (!sperren) return <p className="leise">{t('einrichtung.pakete.vorschlag.laedt')}</p>;
+  return (
+    <>
+      <div className="knoepfe">
+        <Knopf groesse="klein" onClick={ablago}>
+          {t('einrichtung.pakete.ablago')}
+        </Knopf>
+      </div>
+      <PaketeDazuholen
+        key={JSON.stringify(start ?? null)}
+        start={start}
+        vorgabe={vorgabe}
+        empfohlen={empfohlen}
+        sperren={sperren}
+        ohneBeispielfrage
+        sammeln={sammeln}
+        zurueck={zurueck}
+        ueberspringen={ueberspringen}
+        weiter={() => {}}
+      />
+    </>
   );
 }
 
@@ -166,7 +244,8 @@ export function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: 
   // E-Mail-Versand mit demselben Formular wie in der Werkbank (#813); es sammelt nur, gespeichert wird bei „Jetzt einrichten“.
   const mail = useRef<MailGriff | null>(null);
   const vorschlag = typeof location !== 'undefined' ? location.origin : '';
-  const mitTypen = (s.pakete?.neueTypen ?? 0) > 0;
+  // Eine Frage nach Beispielen (#1592): Die Beispiel-Ablage braucht Basis, Haushalt und Verträge unter den Paketen.
+  const beispielOk = BEISPIEL_NOETIG.every((id) => s.pakete?.pakete.some((p) => p.id === id));
   const m = o.mail;
   const merke = () => {
     // Passwort nur im Speicher (geheim), im Sammelstand (sessionStorage) steht nur, ob eines eingegeben ist.
@@ -175,7 +254,12 @@ export function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: 
     geheim.mail = m ? passwort : '';
     setzeSammlung((a) => ({
       ...a,
-      optional: { ...o, beispiele: o.beispiele && !mitTypen, mail: m ? { ...m, ...angaben, mitPasswort: !!passwort } : null },
+      optional: {
+        ...o,
+        beispiele: false,
+        beispielablage: !!o.beispielablage && beispielOk,
+        mail: m ? { ...m, ...angaben, mitPasswort: !!passwort } : null,
+      },
     }));
   };
   return (
@@ -214,21 +298,16 @@ export function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: 
         </section>
         <section className="blatt">
           <h2 className="h3">{t('einrichtung.optional.beispiele.titel')}</h2>
-          <p className="leise klein">{t('einrichtung.optional.beispiele.text')}</p>
-          <HakenFeld beschriftung={t('einrichtung.optional.beispiele')} hinweis={mitTypen && t('einrichtung.optional.beispiele.pakete')}>
+          <HakenFeld
+            beschriftung={t('einrichtung.optional.beispielablage')}
+            hinweis={beispielOk ? t('einrichtung.optional.beispielablage.hinweis') : t('einrichtung.optional.beispielablage.ohne')}>
             <input
               type="checkbox"
-              checked={o.beispiele && !mitTypen}
-              disabled={mitTypen}
-              onChange={(e) => setO({ ...o, beispiele: e.target.checked })}
+              checked={!!o.beispielablage && beispielOk}
+              disabled={!beispielOk}
+              onChange={(e) => setO({ ...o, beispielablage: e.target.checked })}
             />
           </HakenFeld>
-          {/* „Erst mal umsehen“ (#988): Beispiel-Ablage aus den Beispielen der gewählten Pakete. */}
-          {mitTypen && (
-            <HakenFeld beschriftung={t('einrichtung.optional.beispielablage')} hinweis={t('einrichtung.optional.beispielablage.hinweis')}>
-              <input type="checkbox" checked={!!o.beispielablage} onChange={(e) => setO({ ...o, beispielablage: e.target.checked })} />
-            </HakenFeld>
-          )}
         </section>
         <section className="blatt" id="mail">
           <h2 className="h3">{t('einrichtung.optional.mail')}</h2>

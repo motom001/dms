@@ -81,8 +81,13 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     await werkbankApi.setzeWerkbankAnsicht({
       installation: { vorlage: s.werkbank ?? vorlageFuer({ beruflich: !!s.optional.beruflich }), ein: [], aus: [] },
     });
-    // Was Ablago darf (#1562) aus der Konfigurationsdatei: Antworten und Höchstwerte des Anbieters; sonst gilt die Vorgabe.
-    if (s.darf && Object.keys(s.darf).length) await betriebApi.darfSetzen(s.darf);
+  },
+  // Was Ablago darf (#1562, #1566): die Antworten aus dem Schritt „Was darf Ablago?“ bzw. der Konfigurationsdatei, mit
+  // Höchstwerten des Anbieters – vor den Paketen, damit der Server sie beim Installieren schon kennt. Sonst gilt die Vorgabe.
+  async darf() {
+    const d = holeStand().sammlung.darf;
+    if (!d || !Object.keys(d).length) return 'ausgelassen';
+    await betriebApi.darfSetzen(d);
   },
   async mail() {
     const m = holeStand().sammlung.optional.mail;
@@ -109,23 +114,28 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     const da = new Set((await betriebApi.notfallkontakte()).kontakte.map((k) => k.email.toLowerCase()));
     for (const k of liste) if (!da.has(k.email.trim().toLowerCase())) await betriebApi.notfallkontaktAnlegen(k);
   },
-  async beispiele() {
-    if (!holeStand().sammlung.optional.beispiele) return 'ausgelassen';
-    try {
-      await einrichtungApi.beispiele();
-    } catch (e) {
-      // 409: Es gibt schon Mappentypen – beim Wiederholen die eben geladenen.
-      if (!(e instanceof ApiFehler && e.status === 409)) throw e;
-    }
-  },
+  // Ein einzelnes Paket hält die Einrichtung nie auf (#1591): Lässt sich die Auswahl nicht installieren, steht der Grund
+  // einmal an der Stufe, und Organisation und Beispiel-Ablage folgen trotzdem. Nachholen geht unter Werkbank → Pakete.
   async pakete() {
-    const w = holeStand().sammlung.pakete;
+    const s = holeStand().sammlung;
+    const w = s.pakete;
     if (!w || !w.eingabe.pakete?.length) return 'ausgelassen';
     if (w.mitEinstellungen && !geheim.paketEinstellungen) throw new Error(t('einrichtung.lauf.pakete.einstellungen'));
     const installiert = new Set((await paketeApi.pakete()).installiert.map((p) => p.id));
     const rest = w.eingabe.pakete.filter((id) => !installiert.has(ohneVersion(id)));
     if (!rest.length) return;
-    const e = await paketeApi.paketAblaufInstallieren({ ...w.eingabe, pakete: rest, einstellungen: geheim.paketEinstellungen ?? {} });
+    let e;
+    try {
+      e = await paketeApi.paketAblaufInstallieren({
+        ...w.eingabe,
+        pakete: rest,
+        einstellungen: geheim.paketEinstellungen ?? {},
+        ...(s.paketeAuswahl ? { einrichtung: s.paketeAuswahl } : {}),
+      });
+    } catch (f) {
+      if (!(f instanceof ApiFehler) || f.status >= 500) throw f;
+      return t('einrichtung.lauf.pakete.keins', { grund: meldungEinmal(f) });
+    }
     setzeLauf((l) => ({ ...l, pakete: e }));
     const nicht = [...e.fehlgeschlagen.map((f) => f.name), ...e.nichtInstalliert.map((f) => f.name)];
     if (nicht.length) return t('einrichtung.lauf.pakete.teil', { namen: nicht.join(', ') });
@@ -156,6 +166,11 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
   },
 };
 
+/** Meldung samt Gründen – jeder Satz einmal (#1591: Oft ist die Meldung zugleich der erste Grund). */
+function meldungEinmal(e: unknown): string {
+  return [...new Set([(e as Error).message, ...(e instanceof ApiFehler ? e.gruende : [])].map((x) => x.trim()).filter(Boolean))].join(' ');
+}
+
 /** Was mit „Jetzt einrichten“ angelegt wird, nacheinander; bricht bei der ersten Stufe mit Fehler ab. */
 export async function ausfuehren() {
   const start = holeStand();
@@ -170,7 +185,7 @@ export async function ausfuehren() {
       const r = await AUSFUEHREN[s]();
       setzeStufe(s, r === 'ausgelassen' ? { zustand: 'ausgelassen' } : { zustand: 'fertig', ...(r ? { meldung: r } : {}) });
     } catch (e) {
-      setzeStufe(s, { zustand: 'fehler', meldung: [(e as Error).message, ...(e instanceof ApiFehler ? e.gruende : [])].join(' ') });
+      setzeStufe(s, { zustand: 'fehler', meldung: meldungEinmal(e) });
       setzeLauf((l) => ({ ...l, laeuft: false }));
       return;
     }
@@ -184,10 +199,7 @@ export async function ausfuehren() {
     await einrichtungApi.einrichtungSchritt('schluessel');
     if (!schon.has('pakete')) await einrichtungApi.einrichtungSchritt('pakete', !l.pakete?.installiert.length);
     if (!schon.has('optional'))
-      await einrichtungApi.einrichtungSchritt(
-        'optional',
-        !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'),
-      );
+      await einrichtungApi.einrichtungSchritt('optional', !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispielablage'));
   } catch {
     /* Der Hinweis in der Übersicht ist nicht wichtig genug, um hier aufzuhalten. */
   }
@@ -210,6 +222,7 @@ export const STUFEN_JE_SCHRITT = {
   ablage: ['ablage'],
   konto: ['ablage'],
   nutzung: ['nutzung', 'organisation'],
+  darf: ['darf', 'pakete', 'organisation'],
   pakete: ['pakete', 'organisation'],
-  optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'],
+  optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispielablage'],
 } as const satisfies Record<string, readonly Stufe[]>;

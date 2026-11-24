@@ -77,8 +77,8 @@ export async function attrappe(s) {
   });
   const kern = {
     art: 'abschnitt',
-    titel: 'Was die KI lesen darf',
-    felder: [{ schluessel: 'ki_mappentypen', name: 'Was die KI lesen darf', typ: 'ki_mappentypen' }],
+    titel: 'Was an Dienste im Netz gehen darf',
+    felder: [{ schluessel: 'ki_mappentypen', name: 'Was an Dienste im Netz gehen darf', typ: 'ki_mappentypen' }],
   };
   const stand = () => ({
     beschreibung: { bloecke: [EIGENE, kern], aktionen: [] },
@@ -242,7 +242,7 @@ rauchtest(
     // „Ändern“ führt in die Einstellungen; Feld des Pakets mit Prüfregel und die Feldart des Kerns.
     await s.getByRole('button', { name: 'Ändern' }).click();
     await s.getByRole('tab', { name: 'Einstellungen', selected: true }).waitFor();
-    await s.getByRole('heading', { name: 'Was die KI lesen darf' }).waitFor();
+    await s.getByRole('heading', { name: 'Was an Dienste im Netz gehen darf' }).waitFor();
     await s.getByLabel('Modell').fill('Groß');
     await s.getByText('Nur Kleinbuchstaben und Bindestrich.').waitFor();
     await s.getByLabel('Modell').fill('mittel');
@@ -317,7 +317,7 @@ const SEITEN = [
     name: 'Einstellungen',
     weg: async (s) => {
       await s.getByRole('tab', { name: 'Einstellungen' }).click();
-      await s.getByRole('heading', { name: 'Was die KI lesen darf' }).waitFor();
+      await s.getByRole('heading', { name: 'Was an Dienste im Netz gehen darf' }).waitFor();
     },
   },
   {

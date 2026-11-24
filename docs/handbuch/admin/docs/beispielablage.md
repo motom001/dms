@@ -22,7 +22,7 @@ Solange es Beispiel-Mappen gibt, erinnert die [Übersicht](uebersicht.md) daran 
 
 ## Im Einrichtungsassistenten
 
-Wählst du im Assistenten Pakete aus, steht unter **Optionales → Beispiele** der Haken **Erst mal umsehen: Beispiel-Ablage anlegen**. Mit **Jetzt einrichten** legt Ablago die Beispiel-Ablage dann gleich nach den Paketen an.
+Unter **Optionales → Beispiele** fragt der Assistent als einzige Frage nach Beispielen: **Mit einer Beispiel-Ablage starten**. Dafür braucht es die Pakete Basis, Haushalt und Verträge unter den gewählten Paketen. Mit **Jetzt einrichten** legt Ablago die Beispiel-Ablage dann gleich nach den Paketen an.
 
 !!! info "Beispiel-Ablage oder Lasttest-Daten?"
     Die Beispiel-Ablage ist zum **Anschauen**: wenige, stimmige Mappen. Für Messungen mit vielen tausend Mappen gibt es die [Lasttest-Daten](demo.md) (früher „Demo-Daten“), nur in der Stufe *Alles*.

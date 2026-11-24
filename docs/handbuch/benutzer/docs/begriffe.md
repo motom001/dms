@@ -386,6 +386,10 @@ Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter
 Die Stufe unter „Werkbank anpassen“ für Betriebe mit mehreren Leuten – alles aus „Selbständig“ und dazu Designs.  
 Siehe auch: [Werkbank anpassen](#werkbank-anpassen), [Stufe](#stufe).
 
+<a id="darf-an-dienste-im-netz-gehen"></a>**Darf an Dienste im Netz gehen** · ~ mit Erklärung · Administratoren  
+Haken am Mappentyp, im Abschnitt Berechtigungen direkt unter „Standard“ – Inhalte dieses Mappentyps dürfen Ablago über ein Paket mit Netz verlassen, etwa für „Frag deine Ablage“ oder eine Übersetzung. Ohne Haken bleibt der Mappentyp in Ablago. Gilt für jedes Paket mit Netz, das Inhalte bekommt, nicht nur für KI. Kurz in Listen „im Netz erlaubt“ bzw. „bleibt in Ablago“. Keine Regel der Berechtigungen – die regeln, wer eine Mappe sieht, der Haken, wohin Inhalte fließen.  
+Siehe auch: [Was Ablago darf](#was-ablago-darf), [Berechtigungen](#berechtigungen), [Paket](#paket).
+
 <a id="design"></a>**Design** · ✓ Alltagswort · Administratoren  
 Wie die Oberfläche aussieht – Logo, Schriftzug, Farben (hell, dunkel, hoher Kontrast oder nach Gerät) und eigenes CSS. Administratoren legen Designs unter Werkbank → Designs an und bestimmen den Standard; jeder Benutzer wählt seines unter Mein Konto unter „Darstellung“.  
 Siehe auch: [Darstellung](#darstellung).
@@ -519,7 +523,7 @@ Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Künd
 Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket), [Brief aus Vorlage](#brief-aus-vorlage).
 
 <a id="was-ablago-darf"></a>**Was Ablago darf** · ~ mit Erklärung · Administratoren  
-Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Steht als Karte oben in der Übersicht der Werkbank; erhöhen geht nur mit frischer Anmeldung.  
+Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Festgelegt im Einrichtungsassistenten („Was darf Ablago?“), danach wählt Ablago dort die Pakete; später als Karte oben in der Übersicht der Werkbank, erhöhen geht nur mit frischer Anmeldung.  
 Siehe auch: [Paket](#paket), [Übersicht](#ubersicht).
 
 <a id="was-mitkommt"></a>**Was mitkommt** · ✓ Alltagswort · Administratoren  
@@ -754,6 +758,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Beruflich genutzt | – | `merkmale.beruflich` |
 | Betrieb | Organisation (für die Vorlage) | `organisation (Vorlage)` |
 | Brief aus Vorlage | Serienbrief, Seriendruck, Textbaustein | `textsatz, Text setzen` |
+| Darf an Dienste im Netz gehen | Darf an KI-Dienste gehen, KI-Dienste (für diese Sperre), KI-Paket (für Pakete mit Netz) | `ki_typen, istKiPaket (intern weiter KI)` |
 | Darstellung | Theme, Ansicht (für das Aussehen) | – |
 | Design | Theme | – |
 | Dienstkonto | Systembenutzer, Bot, technischer Benutzer | `benutzer.art = 'dienst'` |

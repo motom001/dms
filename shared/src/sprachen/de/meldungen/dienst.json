@@ -474,8 +474,8 @@
   "dienst.version-gibt-es-nicht": "Version {nummer} gibt es nicht (mehr).",
   "dienst.fuer-dieses-register-ist-7": "Für dieses Register ist die Versionierung ausgeschaltet – Zurückholen ist nicht möglich.",
   "dienst.seitensprachen-liste-mit-einem": "seitensprachen: Liste mit einem Eintrag je Seite erwartet (höchstens {MAX_SEITENSPRACHEN}).",
-  "dienst.ki-nicht-zugelassen": "Mappentyp ist nicht für KI-Dienste zugelassen",
-  "dienst.ki-benutzer": "Benutzer-Mappen gehen nie an Pakete – auch nicht an KI-Dienste.",
+  "dienst.ki-nicht-zugelassen": "Mappentyp darf nicht an Dienste im Netz gehen",
+  "dienst.ki-benutzer": "Benutzer-Mappen gehen nie an Pakete – auch nicht an Dienste im Netz.",
   "dienst.anzeige-abschnitt": "Abschnitt „{name}“: {problem}",
   "dienst.merkmal-ja-nein": "Das Merkmal „{merkmal}“ ist ja oder nein (true oder false)."
 }

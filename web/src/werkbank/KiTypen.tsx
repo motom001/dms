@@ -49,7 +49,7 @@ export function KiTypenFeld({
                   onChange={(ev) => setze(ev.target.checked ? [...wert, x.id] : wert.filter((y) => y !== x.id))}
                 />
                 <span>
-                  <Link to={`/werkbank/typen/${x.id}#ki`} className="verweis">
+                  <Link to={`/werkbank/typen/${x.id}#berechtigungen`} className="verweis">
                     {x.name}
                   </Link>
                   {x.zugelassen && !bekommt.has(x.id) && <small className="hilfe">{t('pakete.ki.nicht-lesbar')}</small>}

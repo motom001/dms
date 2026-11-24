@@ -419,8 +419,11 @@ export function Fragen({
   fertig,
   sammeln,
   vorgabe,
+  ohneBeispielfrage,
 }: {
   plan: Plan;
+  /** Keine eigene Frage nach Beispielen (#1592, Einrichtungsassistent): dort fragt nur die Beispiel-Ablage. */
+  ohneBeispielfrage?: boolean;
   eingabe(): AblaufEingabe;
   zurueck(): void;
   neuerPlan(p: Plan): void;
@@ -437,7 +440,7 @@ export function Fragen({
       <Herkunft z={z} plan={plan} />
       <Rechte z={z} plan={plan} />
       <Namen z={z} />
-      <Beispiele z={z} />
+      {!ohneBeispielfrage && <Beispiele z={z} />}
       <Automatisierungen z={z} />
       <Einstellungen z={z} plan={plan} />
       <Zusammenfassung z={z} sammeln={!!sammeln} los={los} zurueck={zurueck} />

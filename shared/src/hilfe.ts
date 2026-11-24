@@ -31,6 +31,8 @@ export const HILFE = {
   'einrichtung.konto': admin('installation/', 'Dein Konto', 'dein-konto'),
   // #1045: „Wofür nutzt du Ablago?“ – privat, beruflich, beides und die eigene Organisation.
   'einrichtung.nutzung': admin('installation/', 'Nutzung', 'nutzung'),
+  // #1566: „Was darf Ablago?“ vor den Paketen; Ablago wählt danach die Pakete.
+  'einrichtung.darf': admin('installation/', 'Was darf Ablago?', 'was-darf-ablago'),
   'einrichtung.pakete': admin('installation/', 'Pakete dazuholen', 'pakete-dazuholen'),
   'einrichtung.optional': admin('installation/', 'Optionales', 'optionales'),
   'einrichtung.zusammenfassung': admin('installation/', 'Zusammenfassung', 'zusammenfassung'),
@@ -116,7 +118,7 @@ export const HILFE = {
   'pakete.recht.sicherung': admin('pakete/', 'dem Recht „Sicherung lesen“', 'recht-sicherung-lesen'),
   'pakete.erkennung': admin('pakete/', 'der Erkennung durch ein Paket', 'erkennung-durch-ein-paket'),
   'pakete.recht.adresse': admin('pakete/', 'der Dienst-Adresse eines Pakets', 'dienst-adresse'),
-  'pakete.ki': admin('pakete/', 'KI-Diensten und Mappentypen', 'ki-dienste'),
+  'pakete.ki': admin('pakete/', 'Diensten im Netz und Mappentypen', 'ki-dienste'),
   'pakete.netzprotokoll': admin('pakete/', 'dem Protokoll der Netzaufrufe', 'netzaufrufe'),
   'pakete.fragen': admin('pakete/', '„Frag deine Ablage“ (Höchstmenge je Frage)', 'frag-deine-ablage'),
   'pakete.ereignisse': admin('pakete/', 'den Ereignissen für Pakete', 'ereignisse'),
