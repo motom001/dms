@@ -85,3 +85,21 @@ export function setzeNutzlast(e: DragEvent, n: Nutzlast) {
 }
 /** Sechs Farben der Rahmen, reihum nach Nummer. */
 export const farbeVon = (nr: number) => `ue-farbe-${((nr - 1) % 6) + 1}`;
+
+/** Seite, auf der eine Marke beginnt (ab 1); ohne Stelle 1. */
+export const seiteVon = (m: Marke) => m.bereiche[0]?.seite ?? 1;
+
+/**
+ * Nummer am Feld angeklickt (#1647): zum Rahmen der Marke im Dokument rollen – auch auf eine spätere Seite, deren Platz
+ * schon feststeht –, ihn fokussieren (das Feld leuchtet mit) und kurz aufblinken lassen; bei „Bewegung reduzieren“
+ * ohne Animation. Die Rahmen tragen dafür `data-marke`.
+ */
+export function zeigeFundstelle(nr: number) {
+  const el = document.querySelector<HTMLElement>(`[data-marke="${nr}"]`);
+  if (!el) return;
+  const ruhig = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: ruhig ? 'auto' : 'smooth' });
+  el.focus({ preventScroll: true });
+  if (!ruhig && typeof el.animate === 'function')
+    el.animate([{ boxShadow: '0 0 0 0 var(--ue-f)' }, { boxShadow: '0 0 0 12px transparent' }], { duration: 700, iterations: 3 });
+}

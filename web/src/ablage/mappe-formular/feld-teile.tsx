@@ -1,9 +1,11 @@
-import { useState, type DragEvent as ReactDragEvent } from 'react';
+import { Fragment, useState, type DragEvent as ReactDragEvent } from 'react';
+import { feldLabel } from '../../../../shared/src/beschriftung';
 import { formatiere, type Feld as FeldDef } from '../../../../shared/src/model';
 import { formatFehler, mitSchema, telefonLink } from '../../../../shared/src/feldformate';
+import { Knopf } from '../../bausteine';
 import { t } from '../../sprache';
 import { Symbol } from '../../Symbol';
-import { farbeVon, liesNutzlast, useBruecke, ziehtWert } from '../bruecke';
+import { farbeVon, liesNutzlast, seiteVon, useBruecke, zeigeFundstelle, ziehtWert } from '../bruecke';
 
 /**
  * Feld auf der Seite „Dokument übernehmen“ (#934): leuchtet auf, wenn man über seinen Rahmen am Dokument fährt (und
@@ -40,12 +42,22 @@ export function useUebernahmeFeld(f: FeldDef, gesperrt: boolean) {
         b.nimm(f, n);
       },
     },
+    // Nummer als Knopf zur Fundstelle (#1647), ab Seite 2 mit der Seite dabei.
     nummern: marken.length ? (
       <span className="ue-nummern">
         {marken.map((m) => (
-          <span key={m.nr} className={`ue-nr ${farbeVon(m.nr)}`} title={t('ablage.uebernehmen.rahmen-nr', { nr: m.nr })}>
-            {m.nr}
-          </span>
+          <Fragment key={m.nr}>
+            <Knopf
+              art="eigen"
+              groesse="klein"
+              className={`ue-nr ${farbeVon(m.nr)}`}
+              nurSymbol={t('ablage.uebernehmen.fundstelle-zeigen', { nr: m.nr, feld: feldLabel(f) })}
+              title={t('ablage.uebernehmen.rahmen-nr', { nr: m.nr })}
+              onClick={() => zeigeFundstelle(m.nr)}>
+              {m.nr}
+            </Knopf>
+            {seiteVon(m) > 1 && <span className="leise klein">{t('ablage.uebernehmen.seite', { nr: seiteVon(m) })}</span>}
+          </Fragment>
         ))}
       </span>
     ) : null,
