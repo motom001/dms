@@ -118,7 +118,7 @@ describe('routenKontext: Hilfen (#1278, Schritt 6b-1)', async () => {
 
   // Mit Bausteinen (Attrappen).
   {
-    const tresor = { alsText: () => null, fingerabdruck: null };
+    const tresor = { alsText: () => null, fingerabdruck: null, nachladen: async () => {} };
     const x = {
       designs: { name: 'designs' },
       betrieb: { adresseFuerLinks: () => 'https://dms.example.org//', mailer: () => null, ansicht: () => ({ adresse: '' }) },
