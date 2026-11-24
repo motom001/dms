@@ -244,8 +244,9 @@ a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: un
   .aw-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 8px 10px; border-radius: 8px; color: var(--tinte); text-decoration: none; font-size: 16px; }
   .aw-link.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
   .aw-name { min-width: 0; overflow-wrap: anywhere; }
-  .aw-stern { flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--leise); font-size: 20px; cursor: pointer; }
-  .aw-stern.an { color: var(--warn); }
+  /* #1624: Pinnnadel statt Stern (der Stern bleibt den Favoriten); angeheftet gefüllt in Akzentfarbe statt Gelb. */
+  .aw-pin { flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--leise); font-size: 20px; cursor: pointer; }
+  .aw-pin.an { color: var(--akzent); }
   .aw-feste { border-bottom: 1px solid var(--linie); padding-bottom: 6px; }
   .aw-abschnitt { margin: 8px 10px 2px; }
   .aw-gruppenkopf .aw-pfeil { transition: transform .12s; }

@@ -19,6 +19,7 @@ import {
   type Operator,
   type Sicht,
 } from '../../shared/src/sichten';
+import { ansichtAbschnitte } from '../../shared/src/ansichtwahl';
 import type { Mappentyp } from '../../shared/src/model';
 import { ladeBeispiele } from '../src/beispiele/beispiele';
 import { speicherDateien } from '../src/dateien/dateispeicher';
@@ -134,6 +135,8 @@ function faelle() {
       const z = await d.sichten.zaehler(ICH);
       assert.equal(z.sichten[finanzen.id], 3);
       assert.equal(z.sichten[auchRechnungen.id], 2);
+      // #1623: Die Gruppe „Finanzen“ zählt Mappen, nicht Ansichten (4) und keine Summe (2 + 1 + 2).
+      assert.equal(z.gruppen[finanzen.id], 3);
       // Kreise werden verhindert
       await assert.rejects(
         d.sichtenVerwaltung.aendereSicht(finanzen.id, { ...finanzen, elternId: auchRechnungen.id }),
@@ -203,6 +206,31 @@ function faelle() {
       assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${r.id}` })).gesamt, 2, 'typ:<id>: alle Mappen, ohne Bedingungen');
       await d.sichtenVerwaltung.aendereSicht(s.id, { ...s, id: undefined });
       assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${r.id}` })).gesamt, 2);
+    });
+  });
+
+  describe('Zahl hinter Gruppen der Ansichtswahl (#1623)', () => {
+    it('„Weitere Ansichten“ zählt jede Mappe ihrer Ansichten einmal, auch wenn Ansichten sich überschneiden', async () => {
+      const { d, typ } = await mitBeispielen();
+      // Überschneidung: eine zweite oberste Ansicht nur mit Rechnungen neben der Ansicht „Rechnung“.
+      await sicht(d, 'Belege', [typ('Rechnung').id]);
+      const z = await d.sichten.zaehler(ICH);
+      const ohne = [z.neuePost, z.favoritenSicht].filter((x): x is string => !!x);
+      const weitere = ansichtAbschnitte(await d.sichtenVerwaltung.listeSichten(), { ohne }).gruppen.find(
+        (g) => g.schluessel === 'weitere',
+      )!;
+      const ids = new Set<string>();
+      let summe = 0;
+      for (const e of weitere.eintraege) {
+        const m = (await d.sichten.seite(ICH, { sicht: e.sicht.id, anzahl: 500 })).mappen;
+        summe += m.length;
+        for (const x of m) ids.add(x.id);
+      }
+      assert.equal(z.gruppen.weitere, ids.size);
+      assert.ok(summe > ids.size, 'die Ansichten überschneiden sich – addiert wäre es zu viel');
+      // Gruppen mit einer obersten Ansicht haben deren Zahl.
+      for (const g of ansichtAbschnitte(await d.sichtenVerwaltung.listeSichten(), { ohne }).gruppen)
+        if (g.schluessel !== 'weitere') assert.equal(z.gruppen[g.schluessel], z.sichten[g.schluessel], g.name);
     });
   });
 

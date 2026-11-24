@@ -19,7 +19,7 @@ import { FeldGruppe, Knopf, Suchfeld, Zahl } from '../bausteine';
 /**
  * Ansicht wählen am Handy (#498): ein Knopf „<Ansicht>“ mit Pfeil statt einer Reiterleiste mit 40 Ansichten.
  * Er öffnet ein Blatt von unten: Suche, feste Einträge (Start, Zu erledigen …), „Meine Ansichten“
- * (Stern), „Zuletzt benutzt“ und die Ansichten nach Gruppen, zuklappbar. Ausblenden gilt nur für einen selbst.
+ * (Pinnnadel, #1624), „Zuletzt benutzt“ und die Ansichten nach Gruppen, zuklappbar. Ausblenden gilt nur für einen selbst.
  * Am Rechner bleibt die Liste; darüber filtert ein kleines Suchfeld (AnsichtFilter).
  */
 
@@ -67,7 +67,7 @@ function Zeile({
       </Link>
       <Knopf
         art="eigen"
-        className={`aw-stern ${angeheftet ? 'an' : ''}`}
+        className={`aw-pin ${angeheftet ? 'an' : ''}`}
         aria-pressed={angeheftet}
         onClick={() => anheften(s.id)}
         nurSymbol={
@@ -75,7 +75,7 @@ function Zeile({
             ? t('ablage.ansichtwahl.von-meine-ansichten-loesen', { name: s.name })
             : t('ablage.ansichtwahl.bei-meine-ansichten-anheften', { name: s.name })
         }>
-        <Symbol name="stern" className={angeheftet ? 'sym-voll' : undefined} />
+        <Symbol name="pin" className={angeheftet ? 'sym-voll' : undefined} />
       </Knopf>
     </li>
   );
@@ -255,7 +255,12 @@ export function AnsichtWahl({
                     <div key={g.schluessel} className="aw-gruppe">
                       <Knopf art="eigen" className="aw-gruppenkopf" aria-expanded={auf} onClick={() => klappe(g.schluessel)}>
                         <Symbol name="pfeil-rechts" className="aw-pfeil" /> {g.name}{' '}
-                        <span className="leise klein">{g.eintraege.length}</span>
+                        {/* #1623: wie hinter jeder Ansicht die Zahl der Mappen (verschiedene, in allen Ansichten der Gruppe). */}
+                        {!d.zahlenDa ? (
+                          <ZahlWarte />
+                        ) : (
+                          d.zaehler.gruppen?.[g.schluessel] !== undefined && <Zahl wert={d.zaehler.gruppen[g.schluessel]} />
+                        )}
                       </Knopf>
                       {auf && (
                         <ul className="aw-liste">

@@ -1,0 +1,11 @@
+art: patch
+
+## Verbessert
+
+- **Zahl hinter Gruppen zählt Mappen** (#1623): In der Auswahl der Ansicht (am Handy) zählt die Zahl hinter einer Gruppe jetzt – wie hinter jeder Ansicht – Mappen statt Ansichten: alle verschiedenen Mappen in den Ansichten der Gruppe, jede nur einmal. Die Zählung läuft neben der bisherigen und macht die Liste nicht langsamer.
+- **Ansichten anheften mit der Pinnnadel** (#1624): Hinter jeder Ansicht steht zum Anheften an „Meine Ansichten“ eine Pinnnadel statt eines Sterns – umrandet = nicht angeheftet, gefüllt = angeheftet. Der Stern bedeutet nur noch „Favorit“ bei Mappen.
+- **Kosten-Tabellen per Tastatur** (#1627): Unter Systemzustand → Externe Dienste sind die Tabellen „Je Paket“, „Je Person“, „Je Funktion“ und „Teuerste Abfragen“ wie die Kennzahlen mit der Tastatur erreichbar und rollbar.
+
+## Für Entwickler
+
+- **Test „SKIP LOCKED“ wartet auf Ereignisse** (#1626): Der Test der Warteschlange der Texterkennung hält die Texterkennung pausiert, bis die Zeilensperre steht, und wartet auf das Überspringen statt auf eine feste Zeit.

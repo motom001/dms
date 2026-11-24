@@ -23,6 +23,7 @@ import {
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import type { Systemsichten } from './systemsichten';
 import type { SichtenVerwaltung } from './verwalten';
+import { gruppenZaehlung } from './gruppenzahlen';
 import { tabellenSeite } from './tabelle';
 import {
   bekanntesGesamt,
@@ -490,7 +491,7 @@ export class SichtenDienst {
   }
 
   /**
-   * Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers.
+   * Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht, je Gruppe der Ansichtswahl (#1623) und im Eingang des Benutzers.
    * Zwischengespeichert je Benutzer und Rechte (#512), solange sich am Haushalt nichts ändert
    * (`Haushaltsstand`); zeitabhängige Ansichten laufen nach Minuten bzw. um Mitternacht ab. Ob der
    * Zwischenspeicher traf, steht im Header Server-Timing (`zs`).
@@ -506,11 +507,23 @@ export class SichtenDienst {
     const typen = zg?.typen && !zg.paket ? zg.typen : new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const klauseln = sichten.map((x) => klauselnFuer(alleSichten, x.id, typen, a, verborgen));
     const zeitabh = alleSichten.some((x) => zeitabhaengig(x.bedingungen));
+    // Gruppen der Ansichtswahl (#1623): Nur Gruppen aus mehreren obersten Ansichten brauchen eine eigene Zahl; sie
+    // stehen hinter den Ansichten.
+    const rahmen = await this.zaehlerRahmen();
+    const gz = gruppenZaehlung(
+      sichten,
+      klauseln,
+      [rahmen.neuePost, rahmen.favoritenSicht].filter((x): x is string => !!x),
+    );
+    const alle = [
+      ...sichten.map((x, i) => ({ id: x.id, k: klauseln[i], gruppe: false })),
+      ...gz.eigene.map((g) => ({ id: `gruppe:${g.gruppe}`, k: g.k, gruppe: true })),
+    ];
     // Ansichten, deren Bedingungen die Person selbst meinen (z. B. „ist mein Favorit“), zählen bei ihren eigenen Zahlen;
     // alle anderen gemeinsam für alle mit denselben Eingaben.
-    const eigen = sichten.map((_, i) => JSON.stringify(klauseln[i]).includes(ich.id));
-    const gemeinsam = sichten.map((x, i) => ({ id: x.id, k: klauseln[i], i })).filter((x) => !eigen[x.i]);
-    const persoenlich = sichten.map((x, i) => ({ id: x.id, k: klauseln[i], i })).filter((x) => eigen[x.i]);
+    const eigen = (k: unknown) => JSON.stringify(k).includes(ich.id);
+    const gemeinsam = alle.filter((x) => !eigen(x.k));
+    const persoenlich = alle.filter((x) => eigen(x.k));
     // Rechte-Fingerabdruck (#742): genau die Eingaben der Zählung. Der Lesefilter enthält die Rechte samt Rollen und
     // Leserecht auf Zeit (wo eine Regel die Person selbst meint, steht ihre Id darin); die Klauseln enthalten Rollen
     // und „heute“, wo eine Ansicht sie nutzt. Der Verwaltungsmodus (alles lesen) steht zusätzlich darin. Gleiche
@@ -526,13 +539,21 @@ export class SichtenDienst {
     const [b, p] = await Promise.all([
       bestand.hole(
         bestandSchluessel,
-        async () => ({
-          wert: await this.repo.zaehleBestand(
-            gemeinsam.map((x) => x.k),
-            lesen,
-          ),
-          zeitabhaengig: zeitabh,
-        }),
+        async () => {
+          // #1623: Die Gruppen zählt eine kleine Abfrage daneben. Eine Spalte mehr im großen Lauf kann ihn über die
+          // JIT-Schwelle von PostgreSQL heben (gemessen bei 50.000 Mappen: 80 statt 340 ms).
+          const [w, gruppen] = await Promise.all([
+            this.repo.zaehleBestand(
+              gemeinsam.filter((x) => !x.gruppe).map((x) => x.k),
+              lesen,
+            ),
+            this.repo.zaehleKlauseln(
+              gemeinsam.filter((x) => x.gruppe).map((x) => x.k),
+              lesen,
+            ),
+          ]);
+          return { wert: { ...w, sichten: [...w.sichten, ...gruppen] }, zeitabhaengig: zeitabh };
+        },
         g,
       ),
       this.persoenlich.hole(
@@ -561,9 +582,13 @@ export class SichtenDienst {
       eingang: p.wert.eingang,
       favoriten: p.wert.favoriten,
       sichten: Object.fromEntries(sichten.map((x) => [x.id, n.get(x.id) ?? 0])),
+      gruppen: Object.fromEntries([
+        ...gz.wieAnsicht.map((g) => [g.gruppe, n.get(g.sicht) ?? 0] as const),
+        ...gz.eigene.map((g) => [g.gruppe, n.get(`gruppe:${g.gruppe}`) ?? 0] as const),
+      ]),
       // Papierkorb (#43): eigene gelöschte Mappen.
       papierkorb: p.wert.papierkorb,
-      ...(await this.zaehlerRahmen()),
+      ...rahmen,
     };
   }
 

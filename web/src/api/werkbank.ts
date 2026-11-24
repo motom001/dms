@@ -55,6 +55,8 @@ export interface Zaehler {
   typen: Record<string, { anzahl: number; unpassend: number; demo: number }>;
   eingang: number;
   sichten?: Record<string, number>;
+  /** Gruppen der Ansichtswahl (#1623): verschiedene Mappen je Gruppe (Schlüssel wie `WahlGruppe.schluessel`). */
+  gruppen?: Record<string, number>;
   /** Eigene Favoriten (#62). */
   favoriten?: number;
   /** Eigene Mappen im Papierkorb (#43); Tage 0 = kein Papierkorb. */

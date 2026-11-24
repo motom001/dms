@@ -16,9 +16,9 @@ On the phone, instead of the list there is a button with the current view, e.g. 
 
 - at the top a search field **Search views …** – it filters as you type (including views you have hidden);
 - the fixed entries in the same order as on the computer, with icons;
-- **My views**: views you have pinned with the star;
+- **My views**: views you have pinned with the pin next to them (filled = pinned; tap again to unpin). The star stays reserved for favourite folders;
 - **Recently used**: the last five views you opened (also on the computer);
-- then all views by group – one group per top-level view with sub-views (e.g. *Vehicles*, *House*), the rest under *More views*. You expand and collapse groups with a tap; the group of the current view is open. The number on the right says how many folders the view shows.
+- then all views by group – one group per top-level view with sub-views (e.g. *Vehicles*, *House*), the rest under *More views*. You expand and collapse groups with a tap; the group of the current view is open. The number on the right says how many folders the view shows. The number after a group counts folders as well: all different folders in its views, each only once – even if it appears in several views (*Post* contains *Incoming*, for example). For a group with one top-level view this is the same number as after that view on the computer.
 
 **Hide views …** at the very bottom: remove the tick for views you rarely need. This only applies to you and only to this selection; the view itself remains for everyone, and you still find it via the search.
 
