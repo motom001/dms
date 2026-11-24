@@ -71,7 +71,6 @@ function useOhneVertretung() {
 export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter: AufgabenFilter; offen?: string }) {
   const d = useDaten();
   const ohneVertretung = useOhneVertretung();
-  const [fehler, setFehler] = useState<string>();
   const alle = z.liste ?? [];
   const liste = filtereAufgaben(alle, filter, { jetzt: new Date(), ohneVertretung });
   const suche = filterInAdresse(filter);
@@ -83,16 +82,6 @@ export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter
     const a = alle.find((x) => x.id === id);
     return a ? `${titelOder(a.mappeTitel)} – ${a.text}` : t('werkbank.aufgaben.aufgabe');
   };
-  async function weiter(a: Aufgabe, an: string) {
-    setFehler(undefined);
-    try {
-      await aufgabenApi.aufgabeDelegieren(a.id, an);
-      await z.laden();
-      await d.neuLaden();
-    } catch (e) {
-      setFehler((e as Error).message);
-    }
-  }
   // Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ (#994, Baustein Suche #1143); Suche und Filter stehen in der Adresse.
   const filterTeil = (
     <>
@@ -189,9 +178,9 @@ export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter
           }}
         />
       )}
-      {(z.fehler || fehler) && (
+      {z.fehler && (
         <div className="hinweis schlecht">
-          <p>{z.fehler ?? fehler}</p>
+          <p>{z.fehler}</p>
         </div>
       )}
       {/* #798: Aufgaben bei Personen ohne Leserecht – offen als Warnung, sonst ein leiser Link (auch zu den vergangenen). */}
@@ -242,21 +231,11 @@ export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter
                       {a.erledigtVon ? <Person id={a.erledigtVon} /> : t('werkbank.aufgaben.selbst-mappe-passt-wieder')}
                     </span>
                   ) : (
-                    <>
-                      <span className="leise klein">
-                        {t('werkbank.aufgaben.fuer')}{' '}
-                        {a.empfaengerId ? <Person id={a.empfaengerId} /> : t('konten.verwaltende.ohneEmpfaenger')}{' '}
-                        {t('werkbank.aufgaben.weitergeben-an')}
-                      </span>
-                      <BenutzerWahl
-                        label={t('werkbank.aufgaben.aufgabe-weitergeben-an', { text: a.text })}
-                        wert=""
-                        setze={(an) => {
-                          if (an) void weiter(a, an);
-                        }}
-                        ohne={a.empfaengerId}
-                      />
-                    </>
+                    // Weitergeben einzeln rechts an der gewählten Aufgabe, mehrere über die Sammelleiste (#1605).
+                    <span className="leise klein">
+                      {t('werkbank.aufgaben.fuer')}{' '}
+                      {a.empfaengerId ? <Person id={a.empfaengerId} /> : t('konten.verwaltende.ohneEmpfaenger')}
+                    </span>
                   )}
                 </div>
               </li>
