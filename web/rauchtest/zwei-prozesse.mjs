@@ -6,7 +6,7 @@
  *
  * Ausgewählt sind Bereiche, die schreiben und gleich danach lesen, in der Reihenfolge von rauchtest.mjs und zusammen in
  * etwa einer Minute: Einrichtung mit Neustart in den Verbund, Start und Suche, Werkbank (Einstellungen, Mappentypen),
- * Post und Erwähnungen. Der erste Test hier prüft, dass wirklich zwei Prozesse laufen.
+ * Post und Erwähnungen, ein Paket mit Netzabruf (#1619). Der erste Test hier prüft, dass wirklich zwei Prozesse laufen.
  *
  *   DMS_URL=http://localhost:3000 DMS_DATENWURZEL=… DB_HOST=localhost DB_PASSWORT=dms node web/rauchtest/zwei-prozesse.mjs [fehlerordner]
  *
@@ -53,3 +53,5 @@ await import('./bereiche/start-und-suche.mjs');
 await import('./bereiche/werkbank.mjs');
 await import('./bereiche/werkbank-post.mjs');
 await import('./bereiche/erwaehnen.mjs');
+// Netzabruf eines Pakets (#1619): Ausprobieren geht über den Prozess, der den Läufer führt.
+await import('./bereiche/paket-netz.mjs');

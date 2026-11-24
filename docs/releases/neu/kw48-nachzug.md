@@ -4,3 +4,7 @@ art: patch
 
 - **Version von `:main` mit Commit** (#1613): Ein Image von `:main` nennt neben der Versionsnummer den Commit, aus dem es gebaut ist, z. B. `0.309.0+a1b2c3d` – in Systemzustand, Protokoll und Notfallblatt. So lässt sich eine Fehlermeldung zwischen zwei Releases genau zuordnen. Releases, `:latest` und `:stabil` tragen weiter die reine Nummer; der Abgleich der Fassungen läuft weiter einmal je Release.
 - **PostgreSQL-Versionen im Handbuch** (#1614): Ablago startet mit PostgreSQL 16, 17 und 18, geprüft wird nur mit 18. Der Hinweis im Protokoll bei 16 und 17 sagt das jetzt in einem Satz; das Entwicklerhandbuch beschreibt das Basis-Image mit festem Prüfwert.
+
+## Für Entwickler
+
+- **Rauchtest: Paket ruft einen Dienst im Netz wirklich ab** (#1619): Ein kleines Test-Paket ruft über den Paket-Läufer im Betriebsmodus (`--permission`) einen lokalen Test-Dienst unter seiner bestätigten Dienst-Adresse ab; eine Adresse, die es nicht nennt, lehnt der Läufer ab. Läuft mit einem und mit zwei Prozessen.
