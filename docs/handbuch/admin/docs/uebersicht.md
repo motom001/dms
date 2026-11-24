@@ -154,6 +154,8 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Probe-Wiederherstellung fehlt oder ist alt | Hinweis | `sicherung.probe` |
 | Der Sicherungsordner ist kein eigenes Volume | gelb | `sicherung.volume` |
 | Sicherungen auf derselben Platte wie die Dokumente | Hinweis | `sicherung.gleiche-platte` |
+| Nach der Neueinrichtung: nächster Schritt Kopie außer Haus einrichten ([Erste Sicherung](sicherung.md#erste-sicherung); ersetzt dann den Hinweis „dieselbe Platte“) | Hinweis (gelb bei derselben Platte) | `sicherung.ausser-haus` |
+| Die erste Sicherung nach der Einrichtung oder ihre Probe ist fehlgeschlagen – die Ursache steht unter Werkbank → Sicherung | rot | `sicherung.erste-fehler` |
 | Sicherung außer Haus fehlgeschlagen | rot | `sicherung.extern-fehler` |
 | Sicherung außer Haus mehr als 2 Tage im Rückstand | gelb | `sicherung.extern-alt` |
 | „Lokal nur die neueste behalten“ wirkt gerade nicht | gelb | `sicherung.nur-neueste` |
@@ -185,6 +187,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Ein Werkzeug zum Bearbeiten von PDFs fehlt: geschützte PDFs lassen sich nicht entsperren, Verkleinern wirkt schwächer ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)) | gelb | `werkzeug.fehlt:qpdf` |
 | Schriften für PDFs fehlen: PDFs ohne eingebettete Schriften zeigen in Seiten-, Vorschaubildern und Archivfassung keinen Text ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)) | gelb | `schriften.fehlen` |
 | Dateien zu Dokumenten fehlen im Ablageordner (z. B. `/data/files` ohne Volume) – Einzelheiten im Protokoll, Modul *Dokumente* | rot | `dateien.fehlen` |
+| „Alle Dateien prüfen“ (von Hand oder [nach Zeitplan](archiv.md#alle-dateien-prufen-zeitplan)) hat Abweichungen gefunden | rot | `dateien.befund` |
 | Niemand bekommt die Aufgaben ohne Empfänger | Hinweis | `aufgabenempfaenger` |
 | Aufgaben bei Personen ohne Leserecht | gelb | `aufgaben.ohne-leserecht` |
 | Aufgaben ohne Empfänger | Hinweis | `aufgaben.ohne-empfaenger` |

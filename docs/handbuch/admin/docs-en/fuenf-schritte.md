@@ -6,7 +6,7 @@ You've just installed Ablago and gone through the setup wizard? Then only a few 
 
 The most important thing first: the backup. Under **Workbench → [Encryption](verschluesselung.md#notfallblatt)**, download the **emergency sheet** and keep it separately from the NAS, printed or in a password safe – a backup can only be opened with the key on it. Then switch on the **schedule** under **Workbench → Backup**; from then on Ablago backs itself up and checks every week whether the backup can be restored.
 
-*You already downloaded the emergency sheet at the end of the wizard* – without it, "Finish setup" doesn't work. It also contains the **emergency code**, in case you ever lock yourself out. Only the schedule is still missing.
+*You already downloaded the emergency sheet at the end of the wizard* – without it, "Finish setup" doesn't work. It also contains the **emergency code**, in case you ever lock yourself out. After a new setup the schedule is already on too (every night at 02:00), and Ablago has right away created the first backup and restored it as a test (see [First backup after setup](sicherung.md#erste-sicherung)). The next step is an **off-site copy** – the first backup is on the same device as Ablago.
 
 ![Backup in the workbench](bilder/werkbank-sicherung.png)
 

@@ -23,6 +23,7 @@
   "verwaltung.sicherung.fehler": "The last backup failed.",
   "verwaltung.sicherung.alt": "The last backup is too old.",
   "verwaltung.probe": "The test restore failed.",
+  "verwaltung.dateien-pruefen": "\"Check all files\" found deviations: {abweichungen} of {dateien} files.",
   "verwaltung.tresor": "The key for encryption is missing or doesn’t match.",
   "verwaltung.paket": "The package “{name}” still needs settings.",
   "verwaltung.automatisierung": "The automation “{name}” is paused.",

@@ -330,6 +330,8 @@ const UEBERSICHT_BEREICHE: Record<string, { bereich: Bereichskennung | typeof NU
   texterkennungPaket: { bereich: 'texterkennung', leer: true },
   // Fehlende Dateien (#877): Der Knopf führt zu „Alle Dateien prüfen“ unter Texterkennung.
   dateienFehlen: { bereich: 'texterkennung', leer: 0 },
+  // Befund von „Alle Dateien prüfen“ (#1316).
+  dateienBefund: { bereich: 'texterkennung', leer: null },
   aufgaben: { bereich: 'aufgaben', leer: { offen: 0, ohneEmpfaenger: 0 } },
   ohneLeserecht: { bereich: 'aufgaben', leer: 0 },
   aufgabenEmpfaenger: { bereich: 'benutzer', leer: null },

@@ -28,9 +28,40 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
 import { darfHinweisGesehen, darfUebersicht } from './darf.routen';
 import { DARF_HINWEIS } from '../pakete/index';
+import { liesDateienErgebnis } from '../mappen';
+import { liesLauf, liesPruefplan, speicherePruefplan } from './dateien-pruefplan';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
-  return [...beispielUndProtokollRouten(k), ...designRouten(k), ...logoRouten(k), ...texterkennungRouten(k)];
+  return [...beispielUndProtokollRouten(k), ...designRouten(k), ...logoRouten(k), ...texterkennungRouten(k), ...pruefplanRouten(k)];
+}
+
+/** Zeitplan für „Alle Dateien prüfen“ (#1316): Plan, letztes Ergebnis und ein angefangener Lauf (setzt nach Neustart fort). */
+function pruefplanRouten(k: RoutenKontext): Route[] {
+  const { dienst, x } = k;
+  const stand = async () => {
+    const e = dienst.kern.einstellungen;
+    const s = x.sicherung ? await x.sicherung.plan() : null;
+    return {
+      plan: e ? await liesPruefplan(e) : null,
+      ergebnis: await liesDateienErgebnis(e),
+      lauf: e ? await liesLauf(e) : null,
+      sicherung: s?.aktiv ? s.uhrzeit : null,
+    };
+  };
+  return [
+    { methode: 'GET', pfad: '/api/werkbank/wartung/dateien/plan', zugang: 'admin', handler: async () => ok(await stand()) },
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/wartung/dateien/plan',
+      zugang: 'admin',
+      handler: async (a) => {
+        if (!dienst.kern.einstellungen) throw new Fachfehler(409, t('meldungen.dienst.pruefplan.takt'));
+        const s = x.sicherung ? await x.sicherung.plan() : null;
+        await speicherePruefplan(dienst.kern.einstellungen, a.body, s?.aktiv ? s.uhrzeit : null, ich(a).email);
+        return ok(await stand());
+      },
+    },
+  ];
 }
 
 /** Beispiel-Ablage (#988), Protokoll und Debug-Modus. */
@@ -364,6 +395,11 @@ function uebersichtRouten(k: RoutenKontext): Route[] {
             eingangsordner: x.eingangsordner?.vorhanden ? await sicher(() => x.eingangsordner!.meldungen()) : null,
             // #877: Dokumentdateien, die beim Lesen fehlten (und noch fehlen) – Volume vergessen, Datei gelöscht, Platte defekt.
             dateienFehlen: (await sicher(() => dienst.dateienFehlen.fehlendeDateien())) ?? 0,
+            // #1316: Letzter Lauf von „Alle Dateien prüfen“ (auch nach Zeitplan) mit Befund.
+            dateienBefund: await sicher(async () => {
+              const e = await liesDateienErgebnis(dienst.kern.einstellungen);
+              return e?.abweichungen ? e : null;
+            }),
             // #719: Wer im Alltag die Aufgaben ohne Empfänger bekommt; `moeglich` = aktive Benutzer ohne Admin-Rechte.
             aufgabenEmpfaenger: await sicher(async () => ({
               benutzerId: (await dienst.ohneEmpfaenger.alltagsEmpfaenger()).wirksam,

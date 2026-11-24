@@ -156,6 +156,8 @@
   "abschluss.fingerabdruck": "Fingerprint of the key:",
   "abschluss.herunterladen": "Download emergency sheet",
   "abschluss.geladen": "Emergency sheet downloaded. Print it and keep it safe.",
+  "abschluss.sicherung": "Ablago backs up every night at 02:00 – you can change that in the workbench. Ablago makes the first backup and a test restore right after you finish.",
+  "abschluss.sicherung.notfallblatt": "The backup is encrypted; to restore it you need your emergency sheet.",
   "abschluss.pflicht": "“Finish setup” only works once the emergency sheet has been downloaded.",
   "abschluss.zweifaktor": "Two-factor sign-in",
   "abschluss.zweifaktor.text": "In addition to the password, Ablago then asks for a code from an app on your phone when you sign in. Anyone who only knows your password can’t get in. Voluntary – you can also set it up later under My account → Security.",

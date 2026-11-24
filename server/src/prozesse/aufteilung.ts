@@ -201,7 +201,12 @@ function leiterArbeit(v: Verbund, o: TeilungsDeps, uhren: NodeJS.Timeout[]): Tei
         .catch((e: Error) => log.warn('Eingangsordner nicht neu geplant', { fehler: e.message })),
   );
   v.bediene('texterkennung.status', ([neu]) => te.status(neu === true));
-  v.bediene('sicherung.starte', async ([art, von]) => (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von))).lauf);
+  v.bediene(
+    'sicherung.starte',
+    async ([art, von, zusaetze]) =>
+      (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von), (zusaetze ?? {}) as Parameters<Sicherung['starte']>[2]))
+        .lauf,
+  );
   v.bediene('sicherung.pruefe', ([name, von]) => si.pruefe(String(name), String(von)));
   v.bediene('wiederherstellung.starte', ([e, admin, code]) =>
     wh.starte(e as Parameters<Wiederherstellung['starte']>[0], admin as { email: string } | null, code),
@@ -292,7 +297,10 @@ function spiegelVomLeiter(v: Verbund, o: TeilungsDeps): () => Promise<void> {
     s = { ...s, wiederherstellung: lauf, whLaeuft: s.whLaeuft || lauf.status === 'laeuft' };
     return lauf;
   };
-  si.starte = async (art, von) => ({ lauf: merkeSi(await v.rufe<Lauf>('sicherung.starte', [art, von])), fertig: Promise.resolve(null) });
+  si.starte = async (art, von, zusaetze = {}) => ({
+    lauf: merkeSi(await v.rufe<Lauf>('sicherung.starte', [art, von, JSON.parse(JSON.stringify(zusaetze)) as Record<string, unknown>])),
+    fertig: Promise.resolve(null),
+  });
   // Gibt hier ein Versprechen statt des Laufs zurück; die Route wartet darauf (await).
   si.pruefe = (async (name: string, von: string) =>
     merkeSi(await v.rufe<Lauf>('sicherung.pruefe', [name, von]))) as unknown as Sicherung['pruefe'];

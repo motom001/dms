@@ -56,6 +56,10 @@ export interface SicherungsMeta {
   verschluesselung: { verfahren: string; fingerabdruck: string };
   sha256: string;
   migrationen: string[];
+  /** „Wozu?“ (#1529) einer Sicherung von Hand. */
+  wozu?: string;
+  /** Vom Zeitplan nachgeholt (#1531). */
+  nachgeholt?: boolean;
 }
 /** Sicherung außer Haus (#585): schlanke Metadaten (vom Ziel) und Stand der Kopie je Paket. */
 export interface SicherungSchlank {
@@ -82,6 +86,10 @@ export interface WhLauf {
   fehler?: string;
   /** Probe (#1383): alle Schritte erledigt, nur das Ergebnis ließ sich nicht speichern (Grund in `fehler`). */
   ergebnisNichtGespeichert?: boolean;
+  /** #1530: Die Sicherung des jetzigen Stands davor ist gescheitert. */
+  vorherGescheitert?: boolean;
+  /** #1530: ohne Sicherung des jetzigen Stands (abgewählt). */
+  ohneVorher?: boolean;
 }
 
 export interface WhSchritt {
@@ -103,6 +111,8 @@ export interface WhAbgleich {
   probleme: string[];
   hinweise: string[];
   schluesselNoetig: boolean;
+  /** #1530, nur im laufenden System: geschätzte Größe der Sicherung davor und ob der Platz voraussichtlich reicht. */
+  vorher?: { reicht: boolean; frei: number | null; geschaetzt: number; mindest: number } | null;
 }
 export type DemoStufe = 'leicht' | 'realistisch' | 'schwer';
 export interface DemoOptionen {
@@ -211,7 +221,8 @@ export const einrichtungApi = {
     }>('GET', '/api/wiederherstellung/sicherungen'),
   whAbgleich: (name: string, schluessel?: string) =>
     anfrage<WhAbgleich>('POST', '/api/wiederherstellung/abgleich', { name, ...(schluessel ? { schluessel } : {}) }),
-  whStart: (d: { name: string; schluessel?: string; bestaetigt?: boolean }) => anfrage<WhLauf>('POST', '/api/wiederherstellung/start', d),
+  whStart: (d: { name: string; schluessel?: string; bestaetigt?: boolean; vorherSichern?: boolean }) =>
+    anfrage<WhLauf>('POST', '/api/wiederherstellung/start', d),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
   demoUebersicht: () => anfrage<Array<{ typId: string; name: string; demo: number; gesamt: number }>>('GET', '/api/werkbank/demo'),
   demoErzeugen: (o: DemoOptionen) => anfrage<Auftrag>('POST', '/api/werkbank/demo', o),

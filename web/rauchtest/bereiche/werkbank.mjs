@@ -135,6 +135,49 @@ rauchtest(
   },
 );
 
+// Nach der Einrichtung (#1509): Sicherung an (täglich 02:00), erste Sicherung und Probe liefen von selbst. Der Zustand
+// steht grün am Stand, der Speicherbedarf unter der Aufbewahrung rechnet beim Ändern mit; die Übersicht nennt nur den
+// nächsten Schritt „Kopie außer Haus einrichten“ – keine Warnung „noch keine Sicherung“ oder „noch keine Probe“.
+rauchtest(
+  'Werkbank: erste Sicherung und Probe nach der Einrichtung, nächster Schritt außer Haus (#1509)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }], timeout: 150_000 },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    // Mit zwei Prozessen macht der Leiter den Lauf beim nächsten Blick (höchstens eine Minute) – den Stand abfragen.
+    const stand = async () => (await s.request.get(BASIS + '/api/werkbank/sicherung', { headers: { 'x-dms': '1' } })).json();
+    let z = await stand();
+    for (let i = 0; i < 120 && ['offen', 'laeuft'].includes(z.zustand.erste?.status); i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      z = await stand();
+    }
+    assert.equal(z.zustand.erste?.status, 'ok', JSON.stringify(z.zustand.erste));
+    assert.deepEqual([z.plan.aktiv, z.plan.uhrzeit, z.plan.haeufigkeit], [true, '02:00', 'taeglich']);
+    assert.equal(z.zustand.probe.ampel, 'gruen');
+    await s.goto(BASIS + '/werkbank/sicherung');
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
+    await bearbeitung
+      .locator('.standzeile')
+      .getByText(/Erste Sicherung und Probe erfolgreich, /)
+      .waitFor();
+    assert.equal(await bearbeitung.getByText(/Es gibt noch keine Sicherung/).count(), 0);
+    // Speicherbedarf direkt unter der Aufbewahrung, rechnet vor dem Speichern mit.
+    const zeitplan = bearbeitung.locator('#zeitplan');
+    await zeitplan.getByText(/^Speicherbedarf: etwa 14 Sicherungen ≈ /).waitFor();
+    await zeitplan.getByRole('spinbutton', { name: 'Tägliche' }).fill('3');
+    await zeitplan.getByText(/^Speicherbedarf: etwa 10 Sicherungen ≈ /).waitFor();
+    // Übersicht: genau ein Hinweis zur Sicherung – der nächste Schritt, mit Handlung und „Zur Kenntnis nehmen“.
+    await s.goto(BASIS + '/werkbank');
+    const hinweis = s.locator('.hinweis', { hasText: 'Nächster Schritt: Kopie außer Haus einrichten.' });
+    await hinweis.waitFor();
+    await hinweis.getByRole('link', { name: 'Kopie außer Haus einrichten' }).waitFor();
+    await hinweis.getByRole('button', { name: 'Zur Kenntnis nehmen' }).waitFor();
+    for (const text of [/Es gibt noch keine Sicherung/, /Erst eine Probe/, /Erste Sicherung und Probe erfolgreich/])
+      assert.equal(await s.locator('.hinweis').getByText(text).count(), 0, String(text));
+  },
+);
+
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
 rauchtest(
   'Werkbank: Notfallblatt nur unter Verschlüsselung, Sicherung verweist dorthin (#993, #1193)',
@@ -179,7 +222,8 @@ rauchtest(
     const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
     await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
     await bearbeitung.getByRole('button', { name: 'Jetzt sichern' }).click();
-    const zeile = bearbeitung.locator('#liste tbody tr').first();
+    // Seit #1509 liegt schon die erste (automatische) Sicherung aus der Einrichtung da – die neue ist die von Hand.
+    const zeile = bearbeitung.locator('#liste tbody tr', { hasText: 'von Hand' }).first();
     const laden = zeile.getByRole('button', { name: 'Herunterladen' });
     await laden.waitFor({ timeout: 60_000 });
     const knoepfe = await zeile.locator('td').last().getByRole('button').allInnerTexts();

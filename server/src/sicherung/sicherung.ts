@@ -35,6 +35,15 @@ export {
 } from './sicherung-hilfen';
 export { STUECK_MAX } from '../grundlagen/grenzen';
 
+/** So lange nach einer Sicherung entfällt das Nachholen der automatischen (#1531). */
+const NACHHOLEN_SPERRE_MS = 60 * 60_000;
+/** Zur Uhrzeit gelaufen heißt: am selben Tag, höchstens so viele Minuten danach (der Zeitplan schaut jede Minute). */
+const PUENKTLICH_MIN = 15;
+const minuten = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+/** Läuft dieser Tag des Takts gerade nach (verpasst, z. B. nach einem Neustart), statt zur eingestellten Uhrzeit? */
+export const istNachgeholt = (tag: string, jetzt: { datum: string; uhr: string }, uhrzeit: string) =>
+  tag !== jetzt.datum || minuten(jetzt.uhr) - minuten(uhrzeit) > PUENKTLICH_MIN;
+
 export class Sicherung extends SicherungExtern {
   protected lauf: Lauf | null = null;
   private zeitgeber?: NodeJS.Timeout;
@@ -71,9 +80,16 @@ export class Sicherung extends SicherungExtern {
     if (plan.aktiv && !this.q.wartungAktiv?.() && !this.laeuft() && !this.sperre()) {
       // Zeitplan-Baustein (#724): heute zur Uhrzeit, verpasste Läufe noch am selben Tag (auch nach einem Neustart).
       const takt = { uhrzeit: plan.uhrzeit, an: (tag: string) => plan.haeufigkeit === 'taeglich' || wochentagVon(tag) === plan.wochentag };
-      await laufeFaellige(einstellungsMerker(this.q.einstellungen, 'sicherung_zuletzt_auto'), ortszeit(this.jetzt()), takt, async () => {
+      const jetzt = ortszeit(this.jetzt());
+      await laufeFaellige(einstellungsMerker(this.q.einstellungen, 'sicherung_zuletzt_auto'), jetzt, takt, async (tag) => {
+        // #1531: Nachholen (nicht zur Uhrzeit) entfällt, wenn es in den letzten 60 Minuten schon eine Sicherung gab.
+        const nachgeholt = istNachgeholt(tag, jetzt, plan.uhrzeit);
+        if (nachgeholt && (await this.kuerzlichGesichert())) {
+          log.info('Nachholen der automatischen Sicherung entfällt: eine Sicherung der letzten 60 Minuten zählt für heute', { tag });
+          return;
+        }
         try {
-          const { fertig } = await this.starte('automatisch', 'Zeitplan');
+          const { fertig } = await this.starte('automatisch', 'Zeitplan', { nachgeholt });
           gestartet = 'gestartet';
           void fertig.then(() => this.melde()).catch(() => {});
         } catch (e) {
@@ -83,6 +99,12 @@ export class Sicherung extends SicherungExtern {
     }
     if (gestartet === 'nichts') await this.melde();
     return gestartet;
+  }
+
+  /** Gibt es eine Sicherung (gleich welcher Art), die vor höchstens 60 Minuten begann (#1531)? */
+  async kuerzlichGesichert(): Promise<boolean> {
+    const grenze = this.jetzt().getTime() - NACHHOLEN_SPERRE_MS;
+    return (await this.liste()).some((x) => Date.parse(x.meta?.beginn ?? x.schlank?.beginn ?? '') >= grenze);
   }
 
   /**

@@ -13,6 +13,7 @@ import { titelOder } from '../seiten';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t } from '../sprache';
 import { Kopf } from './Kopf';
+import { DateienPruefplanFormular } from './DateienPruefplan';
 
 /** Werkbank → Aufbewahrung abgelaufen (#212, bis #725 „Darf weg“): Mappen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. */
 
@@ -153,6 +154,15 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
 /** Wartung (#212): jede Datei gegen ihren Prüfwert. */
 export function DateienPruefen() {
   const [auftrag, setAuftrag] = useState<Auftrag | null>(null);
+  // #1316: Ein Lauf nach Zeitplan läuft womöglich schon – dann Fortschritt und „Abbrechen“ zeigen.
+  useEffect(() => {
+    void betriebApi.auftrag().then(
+      (a) => {
+        if (a?.art === 'dateien-pruefen' && a.status === 'laeuft') setAuftrag(a);
+      },
+      () => {},
+    );
+  }, []);
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
     const timer = setInterval(() => void betriebApi.auftrag().then(setAuftrag), 1000);
@@ -163,6 +173,9 @@ export function DateienPruefen() {
       ? (auftrag.ergebnis as {
           dateien: number;
           abweichungen: Array<{ sha256: string; grund: string; dokumente: Array<{ name: string; mappeId: string; version: number }> }>;
+          /** #1316: abgebrochen nach `geprueft` Dateien. */
+          abgebrochen?: boolean;
+          geprueft?: number;
         })
       : null;
   return (
@@ -175,6 +188,11 @@ export function DateienPruefen() {
         <Knopf art="haupt" laeuft={auftrag?.status === 'laeuft'} onClick={async () => setAuftrag(await betriebApi.dateienPruefen())}>
           {t('werkbank.archiv.jetzt-pruefen')}
         </Knopf>
+        {auftrag?.status === 'laeuft' && auftrag.abbrechbar && (
+          <Knopf gesperrt={!!auftrag.abgebrochen} onClick={async () => setAuftrag(await betriebApi.auftragAbbrechen(auftrag.id))}>
+            {t('werkbank.archiv.pruefplan.abbrechen')}
+          </Knopf>
+        )}
       </div>
       {/* Fortschritt und Ergebnis unter dem Knopf (#986): darüber verschiebt sich nichts. */}
       <ErgebnisBlock anlass={auftrag?.status === 'laeuft' ? null : auftrag}>
@@ -200,11 +218,14 @@ export function DateienPruefen() {
                 ))}
               </ul>
             </div>
+          ) : e.abgebrochen ? (
+            <p className="leise">{t('werkbank.archiv.pruefplan.abgebrochen', { geprueft: e.geprueft ?? 0, dateien: e.dateien })}</p>
           ) : (
             <p className="gutertext">{t('werkbank.archiv.alle-dateien-sind-in', { dateien: e.dateien })}</p>
           ))}
         {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
       </ErgebnisBlock>
+      <DateienPruefplanFormular />
     </section>
   );
 }

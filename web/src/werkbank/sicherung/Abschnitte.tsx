@@ -6,6 +6,8 @@ import { Link } from '../../ort';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { bytes, externText, zeit, zielName } from '../sicherungFormat';
 import { TAGE } from './hilfen';
+import { ersteAktuell } from './hinweise';
+import { Symbol } from '../../Symbol';
 
 /* ---------- Sicherung außer Haus (#585) ---------- */
 
@@ -57,6 +59,7 @@ export function AusserHaus({ x }: { x: ExternZustand | null | undefined }) {
 export function StandZeile({ s }: { s: SicherungStand }) {
   const z = s.zustand;
   const teile: ReactNode[] = [
+    ...ersteTeil(z),
     <>
       {tn('werkbank.sicherung.letzte-sicherung', {
         wert: z.letzte ? zeit(z.letzte.ende) : t('werkbank.sicherung.noch-keine'),
@@ -104,6 +107,28 @@ export function StandZeile({ s }: { s: SicherungStand }) {
       ))}
     </p>
   );
+}
+
+/**
+ * Erste Sicherung samt Probe nach der Einrichtung (#1509) als Zustand am Stand, kein eigener Hinweis: grün mit Zeitpunkt,
+ * während sie läuft leise, gescheitert rot mit Ursache (die Übersicht verweist hierher).
+ */
+function ersteTeil(z: SicherungStand['zustand']): ReactNode[] {
+  const e = ersteAktuell(z);
+  if (!e) return [];
+  if (e.status === 'ok')
+    return [
+      <span className="gutertext">
+        <Symbol name="haken" /> {t('werkbank.sicherung.erste.ok', { zeit: zeit(e.am ?? e.seit) })}
+      </span>,
+    ];
+  if (e.status === 'fehler')
+    return [
+      <span className="fehlertext">
+        {e.schritt === 'probe' ? t('werkbank.sicherung.erste.probe-fehler') : t('werkbank.sicherung.erste.fehler')} {e.grund}
+      </span>,
+    ];
+  return [<span className="leise">{t('werkbank.sicherung.erste.laeuft')}</span>];
 }
 
 /** Speicherplatz: heute, Hochrechnung, belegt, frei; Warnung, wenn es knapp wird. */

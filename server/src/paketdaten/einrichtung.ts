@@ -33,6 +33,8 @@ export interface EinrichtungQuellen {
   eingangsordner?(): Promise<{ aktiv: boolean; nachher: string; doppelteUeberspringen: boolean } | null>;
   texterkennung?(): Promise<{ aktiv: boolean }>;
   typen?(): Promise<Mappentyp[]>;
+  /** Zeitplan für „Alle Dateien prüfen“ (#1316) in Kurzform: „aus“, „monatlich/HH:MM“, „woechentlich/<Wochentag>/HH:MM“. */
+  dateienPruefplan?(): Promise<string>;
   /** Ids der Mappentypen, die für KI-Dienste zugelassen sind (#796). */
   kiTypen?(): Promise<Set<string>>;
   zweifaktor?(): Promise<Record<string, boolean>>;
@@ -323,8 +325,14 @@ async function sicherung(q: EinrichtungQuellen, aus: Liste) {
 }
 
 async function unveraenderbarkeit(q: EinrichtungQuellen, aus: Liste) {
-  // „Alle Dateien prüfen“ läuft bisher nur von Hand (Werkbank → Texterkennung); einen Zeitplan gibt es noch nicht.
-  e(aus, 'unveraenderbarkeit.zeitplan', 'unveraenderbarkeit.zeitplan', k('unveraenderbarkeit.zeitplan'), null);
+  // „Alle Dateien prüfen“ (#1316): „aus“, „monatlich/HH:MM“ oder „woechentlich/<Wochentag>/HH:MM“; ohne Quelle null.
+  e(
+    aus,
+    'unveraenderbarkeit.zeitplan',
+    'unveraenderbarkeit.zeitplan',
+    k('unveraenderbarkeit.zeitplan'),
+    (await q.dateienPruefplan?.()) ?? null,
+  );
   const typen = ((await q.typen?.()) ?? []).filter((x) => !x.system);
   e(
     aus,

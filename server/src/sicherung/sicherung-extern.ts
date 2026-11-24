@@ -26,6 +26,7 @@ import {
   PROBE_TAGE,
   artAusName,
   vermerkeFehlschlag,
+  liesErste,
 } from './sicherung-hilfen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
@@ -332,6 +333,8 @@ export abstract class SicherungExtern extends SicherungAnlegen {
       extern,
       /** „Lokal nur die neueste“ (#1194): wählbar, und ob es gerade wirkt. */
       nurNeueste: { gesetzt: plan.nurNeueste, moeglich, wirksam: plan.nurNeueste && moeglich },
+      /** Erste Sicherung samt Probe nach der Einrichtung (#1509); null bei älteren Installationen. */
+      erste: await liesErste(this),
     };
   }
 

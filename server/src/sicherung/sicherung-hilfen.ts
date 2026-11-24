@@ -23,6 +23,18 @@ export const ZU_ALT_TAGE = 2;
 
 export type Sicherungsart = 'manuell' | 'automatisch' | 'vor-wiederherstellung';
 
+/** „Wozu?“ einer Sicherung von Hand (#1529): höchstens so viele Zeichen. */
+export const WOZU_MAX = 80;
+/** „Wozu?“ aus einer Eingabe: eine Zeile, gekürzt; leer = null. Wirft bei mehr als WOZU_MAX Zeichen. */
+export function bereinigeWozu(v: unknown): string | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v !== 'string') throw new Fachfehler(422, t('meldungen.sicherung.wozu-ungueltig', { max: WOZU_MAX }));
+  const text = v.replace(/\s+/g, ' ').trim();
+  if (!text) return null;
+  if ([...text].length > WOZU_MAX) throw new Fachfehler(422, t('meldungen.sicherung.wozu-ungueltig', { max: WOZU_MAX }));
+  return text;
+}
+
 /**
  * Grund einer fehlgeschlagenen Sicherung im Nachweis-Journal (#1308) – nur diese festen Kennungen, nie ein Fehlertext,
  * ein Pfad oder Zugangsdaten (Geheimnis-Sperre #1055): `platz` zu wenig Speicherplatz, `schluessel` kein Schlüssel,
@@ -92,6 +104,10 @@ export interface Metadaten {
   verschluesselung: { verfahren: string; fingerabdruck: string };
   sha256: string;
   migrationen: string[];
+  /** „Wozu?“ (#1529): kurzer Name einer Sicherung von Hand; lässt sich nachträglich ändern. */
+  wozu?: string;
+  /** Vom Zeitplan nachgeholt (#1531), nicht zur eingestellten Uhrzeit gelaufen. */
+  nachgeholt?: boolean;
 }
 
 export interface Plan {
@@ -122,6 +138,38 @@ export const PLAN_STANDARD: Plan = {
   aktivSeit: null,
   nurNeueste: false,
 };
+/**
+ * Vorbelegung für eine Neueinrichtung (#1509): an, jede Nacht um 02:00, mit kleinerer Aufbewahrung als
+ * `PLAN_STANDARD` – jede Sicherung ist vollständig, die Zahl bestimmt den Speicherbedarf. Bestehende Installationen ohne
+ * gespeicherten Plan behalten `PLAN_STANDARD` (aus).
+ */
+export const PLAN_NEU: Omit<Plan, 'aktivSeit'> = {
+  ...PLAN_STANDARD,
+  aktiv: true,
+  aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 3 },
+};
+
+/* ---------- Erste Sicherung nach der Einrichtung (#1509, erste-sicherung.ts) ---------- */
+
+export const ERSTE = 'sicherung_erste';
+
+/** Stand der ersten Sicherung samt Probe. */
+export interface Erststand {
+  status: 'offen' | 'laeuft' | 'ok' | 'fehler';
+  seit: string;
+  von: string;
+  /** Ende (ok/fehler). */
+  am?: string;
+  sicherung?: string;
+  /** Woran es scheiterte: an der Sicherung oder an der Probe. */
+  schritt?: 'sicherung' | 'probe';
+  grund?: string;
+}
+
+export async function liesErste(s: { einstellungen: Pick<Einstellungen, 'lies'> }): Promise<Erststand | null> {
+  const v = (await s.einstellungen.lies(ERSTE)) as Erststand | null;
+  return v && typeof v === 'object' && typeof v.status === 'string' ? v : null;
+}
 
 /* ---------- Sicherung außer Haus (#585) ---------- */
 

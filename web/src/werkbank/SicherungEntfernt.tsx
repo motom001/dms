@@ -1,8 +1,9 @@
-import { Knopf } from '../bausteine';
+import { Aufklapper, Knopf, Wahlhaken } from '../bausteine';
 import { useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { betriebApi, type EntfernteSicherung, type EntferntStand, type SicherungEintrag, type SicherungStand } from '../api/betrieb';
 import { heikelLaden } from '../verwaltungsmodus';
+import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { bytes, zeit } from './sicherungFormat';
@@ -30,18 +31,28 @@ export function EntfernteZeile({
   gesperrt,
   holt,
   hole,
+  an,
+  waehle,
+  ausblenden,
 }: {
   e: EntfernteSicherung;
   ortSpalte: boolean;
   gesperrt: boolean;
   holt: boolean;
   hole(danach: 'laden' | 'pruefen'): void;
+  /** Mehrfachauswahl (#1320) wie bei den lokalen. */
+  an: boolean;
+  waehle(an: boolean): void;
+  /** „Aus der Liste nehmen“ (#1320) für diese eine. */
+  ausblenden(): void;
 }) {
   const handbuch = useHandbuch();
   const wann = e.beginn ? zeit(e.beginn) : e.name;
   return (
-    <tr className="entfernt">
-      <td className="sicherung-wahl" />
+    <tr className={an ? 'entfernt an' : 'entfernt'}>
+      <td className="sicherung-wahl">
+        <Wahlhaken an={an} setze={waehle} beschriftung={t('werkbank.sicherung.liste.waehlen', { zeit: wann })} />
+      </td>
       <td className="kurz" title={e.name}>
         {wann}
       </td>
@@ -90,6 +101,9 @@ export function EntfernteZeile({
               </a>
             </>
           )}
+          <Knopf gesperrt={gesperrt} onClick={ausblenden}>
+            {t('werkbank.sicherung.ausblenden')}
+          </Knopf>
         </span>
       </td>
     </tr>
@@ -156,4 +170,73 @@ export function useHolen(s: SicherungStand, laden: () => Promise<void>, fehler: 
     }
   }
   return { holt: holt?.name ?? null, hole };
+}
+
+/**
+ * „Aus der Liste nehmen“ (#1320): Rückfrage im Aufbau wie beim Löschen (Anzahl, Zeitraum), aber nicht rot – am Ziel
+ * wird nichts gelöscht. Liefert true, wenn ausgeblendet.
+ */
+export async function ausListeNehmen(auswahl: EntfernteSicherung[]): Promise<boolean> {
+  const zeiten = auswahl
+    .map((e) => e.beginn)
+    .filter((x): x is string => !!x)
+    .sort();
+  const zeitraum = !zeiten.length
+    ? ''
+    : zeiten.length === 1 || zeiten[0] === zeiten.at(-1)
+      ? t('werkbank.sicherung.liste.frage.zeitpunkt', { zeit: zeit(zeiten[0]) })
+      : t('werkbank.sicherung.liste.frage.zeitraum', { von: zeit(zeiten[0]), bis: zeit(zeiten.at(-1)!) });
+  const ziele = [...new Set(auswahl.map((e) => (e.ziel ? `${e.paketName} (${e.ziel})` : e.paketName)))].join(', ');
+  const ok = await rueckfrage({
+    titel: t('werkbank.sicherung.ausblenden.titel', { anzahl: auswahl.length }),
+    text: `${zeitraum}${t('werkbank.sicherung.ausblenden.text', { ziel: ziele })}`,
+    ja: t('werkbank.sicherung.ausblenden'),
+  });
+  if (!ok) return false;
+  await betriebApi.sicherungAusblenden([...new Set(auswahl.map((e) => e.name))]);
+  return true;
+}
+
+/** „Ausgeblendete (n)“ (#1320): eingeklappt unter der Liste, je Zeile wer, wann und „Wieder zeigen“. */
+export function Ausgeblendete({ stand, laden }: { stand: EntferntStand; laden(): Promise<void> }) {
+  const [auf, setAuf] = useState(false);
+  const [fehler, setFehler] = useState<string>();
+  const liste = stand.ausgeblendet ?? [];
+  if (!liste.length) return null;
+  return (
+    <section className="aufklappbereich">
+      <Aufklapper offen={auf} steuert="sicherung-ausgeblendet" umschalten={() => setAuf(!auf)}>
+        <span>{t('werkbank.sicherung.ausgeblendet.titel', { anzahl: liste.length })}</span>
+        <span className="leise klein">{t('werkbank.sicherung.ausgeblendet.unter')}</span>
+      </Aufklapper>
+      {auf && (
+        <ul id="sicherung-ausgeblendet" className="aufklappinhalt akzeptiertliste">
+          {liste.map((e) => (
+            <li key={`${e.paket}:${e.name}`} className="stapel">
+              <p>
+                <strong>{e.beginn ? zeit(e.beginn) : e.name}</strong> · <EntferntOrt e={e} />
+              </p>
+              <p className="leise klein">{t('werkbank.sicherung.ausgeblendet.von', { von: e.von, am: zeit(e.am) })}</p>
+              <div className="knoepfe">
+                <Knopf
+                  onClick={() =>
+                    betriebApi
+                      .sicherungEinblenden(e.name)
+                      .then(laden)
+                      .catch((x: Error) => setFehler(x.message))
+                  }>
+                  {t('werkbank.sicherung.ausgeblendet.zeigen')}
+                </Knopf>
+              </div>
+            </li>
+          ))}
+          {fehler && (
+            <li className="fehlertext klein" role="alert">
+              {fehler}
+            </li>
+          )}
+        </ul>
+      )}
+    </section>
+  );
 }

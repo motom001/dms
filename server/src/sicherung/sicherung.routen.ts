@@ -52,10 +52,13 @@ function wiederherstellenRouten(k: RoutenKontext): Route[] {
       pfad: '/api/wiederherstellung/abgleich',
       zugang: 'offen',
       handler: async (a) => {
-        await wh().pruefeZugang(darfWiederherstellen(a), a.einrichtungscode);
-        return ok(
-          await wh().abgleich(String(b(a).name ?? ''), typeof b(a).schluessel === 'string' ? (b(a).schluessel as string) : undefined),
+        const art = await wh().pruefeZugang(darfWiederherstellen(a), a.einrichtungscode);
+        const abgleich = await wh().abgleich(
+          String(b(a).name ?? ''),
+          typeof b(a).schluessel === 'string' ? (b(a).schluessel as string) : undefined,
         );
+        // #1530: Sicherung des jetzigen Stands davor – geschätzte Größe und ob der Platz voraussichtlich reicht.
+        return ok({ ...abgleich, vorher: art === 'laufend' ? await sicherung().platzFuerNaechste() : null });
       },
     },
     {
@@ -127,7 +130,33 @@ function sicherungenRouten(k: RoutenKontext): Route[] {
       methode: 'POST',
       pfad: '/api/werkbank/sicherung/jetzt',
       zugang: 'admin',
-      handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email)).lauf),
+      handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email, { wozu: b(a).wozu })).lauf),
+    },
+    // „Wozu?“ nachträglich ändern (#1529).
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/sicherung/:name/wozu',
+      zugang: 'admin',
+      handler: async (a) => ok({ wozu: await sicherung().setzeWozu(a.params.name, b(a).wozu, ich(a).email) }),
+    },
+    // „Aus der Liste nehmen“ und „Wieder zeigen“ (#1320): nur Sicherungen, die es nur noch außer Haus gibt; am Ziel bleibt alles.
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/sicherung/ausblenden',
+      zugang: 'admin',
+      handler: async (a) => {
+        const lokal = (await sicherung().liste()).map((e) => e.name);
+        return ok({ namen: await sicherung().entfernt.ausblenden(b(a).namen, lokal, ich(a).email) });
+      },
+    },
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/sicherung/:name/einblenden',
+      zugang: 'admin',
+      handler: async (a) => {
+        await sicherung().entfernt.einblenden(a.params.name, ich(a).email);
+        return leer;
+      },
     },
     {
       methode: 'PUT',

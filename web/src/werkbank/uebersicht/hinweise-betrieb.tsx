@@ -369,6 +369,23 @@ export function aufgabenUndMappen(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/texterkennung#dateien',
       knopf: t('werkbank.uebersicht.dateien-fehlen.knopf'),
     });
+  // #1316: „Alle Dateien prüfen“ (von Hand oder nach Zeitplan) hat Abweichungen gefunden.
+  if (u.dateienBefund)
+    h.push({
+      schluessel: `dateien.befund:${u.dateienBefund.am}`,
+      datum: u.dateienBefund.am,
+      art: 'schlecht',
+      text: (
+        <>
+          <strong>
+            {t('werkbank.archiv.pruefplan.uebersicht', { abweichungen: u.dateienBefund.abweichungen, dateien: u.dateienBefund.dateien })}
+          </strong>{' '}
+          {t('werkbank.archiv.pruefplan.uebersicht.text', { datum: datum(u.dateienBefund.am) })}
+        </>
+      ),
+      ziel: '/werkbank/texterkennung#dateien',
+      knopf: t('werkbank.uebersicht.dateien-fehlen.knopf'),
+    });
   // #798: Aufgaben bei Personen ohne Leserecht – Rechte richten oder Leserecht auf Zeit geben.
   if (u.ohneLeserecht)
     h.push({

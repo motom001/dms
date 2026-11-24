@@ -53,6 +53,16 @@ Den Archivmodus eines **vorhandenen** Mappentyps ändert ein Paket nie – weder
 
 Unter **Werkbank → Wartung → Wartungsoperationen → Alle Dateien prüfen** liest Ablago jede gespeicherte Datei – auch ältere Versionen – und vergleicht sie mit ihrem Prüfwert (SHA-256). Abweichungen („Inhalt verändert“, „Datei fehlt“) stehen mit Dokument und Mappe in der Liste und im Protokoll. Prüfe das z. B. nach einem Umzug des Speichers und vor dem Vernichten von Papier.
 
+### Nach Zeitplan { #alle-dateien-prufen-zeitplan }
+
+Damit die Unveränderbarkeit regelmäßig nachgewiesen ist (GoBD), ohne dass du daran denken musst, läuft die Prüfung auch nach einem **Zeitplan** – im selben Abschnitt unter **Zeitplan**:
+
+- **Regelmäßig prüfen:** aus (Vorgabe), **monatlich** (am 1. des Monats) oder **wöchentlich** an einem Wochentag, jeweils zu einer **Uhrzeit**. Nicht gleichzeitig mit der automatischen [Sicherung](sicherung.md#zeitplan-und-aufbewahrung): Ist sie eingeschaltet, muss mindestens eine Stunde Abstand zu ihrer Uhrzeit sein.
+- Der Lauf **bremst die Ablage nicht spürbar**: Nach jeder Datei macht er eine kurze Pause (mindestens so lang, wie das Prüfen dauerte), und solange eine Sicherung, eine Wiederherstellung oder der [Wartungsmodus](wartungsmodus.md) läuft, wartet er. Mit **Abbrechen** hörst du einen laufenden Lauf auf; der nächste Termin beginnt dann von vorn.
+- Startet Ablago neu, **setzt er fort**, wo er war: Den Stand hält er alle 25 Dateien fest. Darunter steht dann „Angefangen am …: n von m Dateien geprüft“.
+- Das **Ergebnis** steht wie beim Lauf von Hand im Protokoll und in den [Nachweisen](pakete.md#recht-nachweise) (`unveraenderbarkeit.pruefung`). Mit **Befund** erscheint ein roter Hinweis auf der Startseite der Werkbank und ein Punkt in der täglichen Zusammenfassung an die Verwaltenden (bei eingerichtetem E-Mail-Versand). Ein späterer Lauf ohne Befund – nach Zeitplan oder von Hand – nimmt den Hinweis wieder weg.
+- Den Zeitplan sehen Pakete mit dem Recht [Einrichtung lesen](pakete.md#recht-einrichtung) unter `unveraenderbarkeit.zeitplan` („aus“, „monatlich/03:30“ oder „woechentlich/6/03:30“); ein Vergleich zweier Stände zeigt, wann er geändert wurde.
+
 ## Sicherung
 
 Die Archiveinstellungen gehören zum Mappentyp und sind Teil jeder [Sicherung](sicherung.md); nach einer Wiederherstellung gelten sie unverändert.

@@ -102,6 +102,20 @@ export interface SicherungEintrag {
   probe?: { am: string; ok: boolean; info: string };
   extern?: Record<string, ExternStand>;
 }
+/** Zeitplan für „Alle Dateien prüfen“ (#1316). */
+export interface DateienPruefplan {
+  takt: 'aus' | 'monatlich' | 'woechentlich';
+  uhrzeit: string;
+  wochentag: number;
+}
+export interface DateienPruefplanStand {
+  plan: DateienPruefplan | null;
+  ergebnis: { am: string; dateien: number; abweichungen: number; fehlend: number; zeitplan: boolean } | null;
+  /** Angefangener Lauf nach Zeitplan (setzt nach einem Neustart fort). */
+  lauf: { beginn: string; geprueft: number | null; dateien: number | null } | null;
+  /** Uhrzeit der eingeschalteten automatischen Sicherung. */
+  sicherung: string | null;
+}
 export interface SicherungsPlan {
   aktiv: boolean;
   uhrzeit: string;
@@ -153,6 +167,16 @@ export interface SicherungsZustand {
   extern?: ExternZustand | null;
   /** „Lokal nur die neueste“ (#1194): gesetzt im Plan; wählbar nur mit erfolgreicher Kopie außer Haus; wirksam = gesetzt und wählbar. */
   nurNeueste?: { gesetzt: boolean; moeglich: boolean; wirksam: boolean };
+  /** Erste Sicherung samt Probe nach der Einrichtung (#1509); null bei älteren Installationen. */
+  erste?: ErsteSicherung | null;
+}
+export interface ErsteSicherung {
+  status: 'offen' | 'laeuft' | 'ok' | 'fehler';
+  seit: string;
+  am?: string;
+  sicherung?: string;
+  schritt?: 'sicherung' | 'probe';
+  grund?: string;
 }
 /** Sicherung außer Haus ohne lokale Kopie (#976); grund, wenn Ablago sie nicht selbst zurückholen kann. */
 export interface EntfernteSicherung {
@@ -169,6 +193,8 @@ export interface EntfernteSicherung {
 }
 export interface EntferntStand {
   nur: EntfernteSicherung[];
+  /** Aus der Liste genommen (#1320): wer, wann; die Datei liegt weiter am Ziel. */
+  ausgeblendet?: Array<EntfernteSicherung & { von: string; am: string }>;
   auchAmZiel: Record<string, string[]>;
   fehler: Array<{ paket: string; paketName: string; grund: string }>;
 }
@@ -316,6 +342,8 @@ export interface WerkbankUebersicht {
   ohneLeserecht?: number;
   /** #877: Dokumentdateien, die beim Lesen fehlten und noch fehlen. */
   dateienFehlen?: number;
+  /** #1316: letzter Lauf von „Alle Dateien prüfen“ mit Befund. */
+  dateienBefund?: { am: string; dateien: number; abweichungen: number; fehlend: number; zeitplan: boolean } | null;
   /** #719: Alltags-Benutzer für Aufgaben ohne Empfänger; `moeglich` = aktive Benutzer ohne Admin-Rechte. */
   aufgabenEmpfaenger?: { benutzerId: string | null; moeglich: number } | null;
   unpassend: number;
@@ -568,7 +596,11 @@ export const betriebApi = {
   sicherungHolen: (name: string, paket: string) =>
     anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/holen`, { paket }),
   sicherungLauf: () => anfrage<SicherungsLauf | null>('GET', '/api/werkbank/sicherung/lauf'),
-  sicherungJetzt: () => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt'),
+  sicherungJetzt: (wozu?: string) => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt', wozu ? { wozu } : {}),
+  sicherungWozu: (name: string, wozu: string) =>
+    anfrage<{ wozu: string | null }>('PUT', `/api/werkbank/sicherung/${encodeURIComponent(name)}/wozu`, { wozu }),
+  sicherungAusblenden: (namen: string[]) => anfrage<{ namen: string[] }>('POST', '/api/werkbank/sicherung/ausblenden', { namen }),
+  sicherungEinblenden: (name: string) => anfrage<null>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/einblenden`),
   sicherungPlan: (p: Partial<SicherungsPlan>) => anfrage<SicherungsPlan>('PUT', '/api/werkbank/sicherung/plan', p),
   sicherungPruefen: (name: string) => anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/pruefen`),
   probeStarten: (name?: string) => anfrage<WhLauf>('POST', '/api/werkbank/sicherung/probe', name ? { name } : {}),
@@ -714,4 +746,6 @@ export const betriebApi = {
   vollexportUmzugGesehen: () => anfrage<null>('POST', '/api/werkbank/export/umzug-gesehen'),
   persoenlicherExport: (erlaubt: boolean) => anfrage<{ erlaubt: boolean }>('PUT', '/api/werkbank/export/persoenlich', { erlaubt }),
   dateienPruefen: () => anfrage<Auftrag>('POST', '/api/werkbank/wartung/dateien'),
+  dateienPruefplan: () => anfrage<DateienPruefplanStand>('GET', '/api/werkbank/wartung/dateien/plan'),
+  dateienPruefplanSpeichern: (p: DateienPruefplan) => anfrage<DateienPruefplanStand>('PUT', '/api/werkbank/wartung/dateien/plan', p),
 };

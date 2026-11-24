@@ -19,6 +19,8 @@ import type { vorbereiten } from './vorbereiten';
 import type { liesUmgebung } from './umgebung';
 import type { bindeDatenbankAn } from './anbindung';
 import type { richteSicherungEin } from './sicherung';
+import { laufeErste, vormerkeErste } from '../sicherung/erste-sicherung';
+import { protokoll } from '../protokoll/protokoll';
 
 /** Was richteEingangEin von früher braucht. */
 type Bisher = Pick<Awaited<ReturnType<typeof baueDienst>>, 'dienst' | 'konten' | 'wartung'> &
@@ -88,6 +90,14 @@ export async function richteEingangEin(bisher: Bisher) {
     datenbank: () => ({ host: db.host, port: db.port, datenbank: db.datenbank, benutzer: db.benutzer }),
     // „Einrichtung abschließen“ erst mit Notfallblatt (#804).
     notfallblattAktuell: async () => (await sicherung.notfallblatt()).aktuell,
+    // Danach (#1509): Sicherung an, erste Sicherung und Probe gleich im Hintergrund – im Leiter sofort, sonst beim
+    // nächsten Blick des Leiters (höchstens eine Minute später, start/hintergrund.ts).
+    nachAbschluss: async (von) => {
+      if (!(await vormerkeErste(sicherung, von)) || !leiter || wartung.aktiv) return;
+      void laufeErste(sicherung, wiederherstellung).catch((e: unknown) =>
+        protokoll.modul('sicherung').error('Erste Sicherung gestört', { fehler: (e as Error).message }),
+      );
+    },
   });
   // Eingangsordner (#195): /eingang, wenn eingebunden; nur eine Instanz übernimmt (Sperre in PostgreSQL, seit #1198 auf
   // der Sperrverbindung – geht sie verloren, holt der nächste Lauf sie neu oder überlässt ihn dem anderen Server).

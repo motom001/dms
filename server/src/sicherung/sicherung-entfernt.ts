@@ -57,9 +57,16 @@ export interface EntfernteSicherung {
   holbar: boolean;
   grund?: EntferntGrund;
 }
+/** Aus der Liste genommen (#1320): wer und wann; die Datei am Ziel bleibt. */
+interface AusgeblendeteSicherung extends EntfernteSicherung {
+  von: string;
+  am: string;
+}
 export interface EntferntStand {
   /** Sicherungen, die es nur noch außer Haus gibt. */
   nur: EntfernteSicherung[];
+  /** Aus der Liste genommen (#1320) – unter „Ausgeblendete (n)“ mit „Wieder zeigen“. */
+  ausgeblendet: AusgeblendeteSicherung[];
   /** Lokale Sicherungen, die ein Ziel ebenfalls führt: Name → Pakete. */
   auchAmZiel: Record<string, string[]>;
   /** Ziele, deren Liste nicht kam. */
@@ -83,6 +90,13 @@ type Merkeintrag = {
   pruefung?: ExternStand['pruefung'];
 };
 type Merkliste = Record<string, Record<string, Merkeintrag>>;
+/**
+ * Ausgeblendete (#1320) je Name: Prüfsumme (null, wenn das Ziel keine nennt) und die Angaben der Zeile, damit sie auch
+ * dann unter „Ausgeblendete“ steht, wenn das Ziel gerade nicht antwortet.
+ */
+type Ausblendung = { sha256: string | null; von: string; am: string; zeile: EntfernteSicherung };
+type Ausblendliste = Record<string, Ausblendung>;
+const AUSGEBLENDET = 'sicherung_ausgeblendet';
 type ZielEintrag = { name: string; groesse: number; meta: SchlankeMetadaten | null };
 type Holstand = { paket: string; name: string; groesse: number; sha256: string; meta: SchlankeMetadaten; seit: string };
 
@@ -309,7 +323,7 @@ export class EntfernteSicherungen {
     const pakete = (await this.s.extern?.pakete().catch(() => [])) ?? [];
     if (!pakete.length) return null;
     const merk = await this.merkliste();
-    const erg: EntferntStand = { nur: [], auchAmZiel: {}, fehler: [] };
+    const erg: EntferntStand = { nur: [], ausgeblendet: [], auchAmZiel: {}, fehler: [] };
     for (const p of pakete) {
       let liste: ZielListe | null = null;
       if (p.holen) {
@@ -322,7 +336,64 @@ export class EntfernteSicherungen {
       eintragen(erg, p, liste, merk, new Set(lokal));
     }
     erg.nur.sort((a, b) => (b.beginn ?? b.name).localeCompare(a.beginn ?? a.name));
+    return this.ohneAusgeblendete(erg, new Set(lokal));
+  }
+
+  private async ausblendliste(): Promise<Ausblendliste> {
+    const v = await this.s.einstellungen.lies(AUSGEBLENDET);
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Ausblendliste) : {};
+  }
+
+  /**
+   * Ausgeblendete (#1320) aus `nur` nehmen: gleicher Name und gleiche Prüfsumme. Meldet das Ziel sie beim nächsten
+   * Abgleich wieder, bleibt sie draußen; eine andere Datei gleichen Namens (andere Prüfsumme) erscheint wieder.
+   */
+  private async ohneAusgeblendete(erg: EntferntStand, lokal: Set<string>): Promise<EntferntStand> {
+    const aus = await this.ausblendliste();
+    if (!Object.keys(aus).length) return erg;
+    const passt = (e: EntfernteSicherung) => !!aus[e.name] && aus[e.name].sha256 === e.sha256;
+    const gesehen = new Set<string>();
+    for (const e of erg.nur.filter(passt)) {
+      erg.ausgeblendet.push({ ...e, von: aus[e.name].von, am: aus[e.name].am });
+      gesehen.add(e.name);
+    }
+    // Antwortet das Ziel gerade nicht: die Angaben vom Ausblenden (liegt sie inzwischen lokal, steht sie normal da).
+    for (const [name, a] of Object.entries(aus))
+      if (!gesehen.has(name) && !lokal.has(name)) erg.ausgeblendet.push({ ...a.zeile, holbar: false, von: a.von, am: a.am });
+    erg.nur = erg.nur.filter((e) => !passt(e));
+    erg.ausgeblendet.sort((a, b) => (b.beginn ?? b.name).localeCompare(a.beginn ?? a.name));
     return erg;
+  }
+
+  /**
+   * „Aus der Liste nehmen“ (#1320): nur Sicherungen, die es lokal nicht gibt. Am Ziel wird nichts gelöscht. Liefert die
+   * Namen; das Protokoll vermerkt, wer welche ausgeblendet hat.
+   */
+  async ausblenden(namen: unknown, lokal: string[], von: string): Promise<string[]> {
+    if (!Array.isArray(namen) || !namen.length || namen.length > ENTFERNT_MAX + ZIEL_LISTE_MAX || !namen.every(gueltigerName))
+      throw new Fachfehler(422, t('meldungen.sicherung.entfernt.ausblenden-ungueltig'));
+    const wunsch = [...new Set(namen)];
+    if (wunsch.some((n) => lokal.includes(n))) throw new Fachfehler(409, t('meldungen.sicherung.entfernt.ausblenden-lokal'));
+    const stand = await this.stand(lokal);
+    const aus = await this.ausblendliste();
+    const am = new Date().toISOString();
+    for (const name of wunsch) {
+      const zeile = stand?.nur.find((e) => e.name === name);
+      if (!zeile) throw new Fachfehler(404, t('meldungen.sicherung.diese-sicherung-gibt-es'));
+      aus[name] = { sha256: zeile.sha256, von, am, zeile };
+      log.info('Sicherung aus der Liste genommen (bleibt am Ziel)', { name, von, ziel: zeile.paketName, sha256: zeile.sha256 });
+    }
+    await this.s.einstellungen.schreibe(AUSGEBLENDET, aus);
+    return wunsch;
+  }
+
+  /** „Wieder zeigen“ (#1320). */
+  async einblenden(name: string, von: string): Promise<void> {
+    const aus = await this.ausblendliste();
+    if (!(name in aus)) throw new Fachfehler(404, t('meldungen.sicherung.diese-sicherung-gibt-es'));
+    delete aus[name];
+    await this.s.einstellungen.schreibe(AUSGEBLENDET, Object.keys(aus).length ? aus : null);
+    log.info('Ausgeblendete Sicherung wieder in der Liste', { name, von });
   }
 
   private holPfade(name: string) {
