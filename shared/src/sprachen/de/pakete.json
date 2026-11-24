@@ -427,6 +427,7 @@
   "selbst.ausListe": "Aus der Liste nehmen",
   "selbst.ausListeFrage": "„{name}“ aus der Liste nehmen? Ablago vergisst die Angaben und die gespeicherten Archive. Mappentypen, Ansichten und Mappen bleiben unverändert.",
   "selbst.konfliktChip": "Id auch im Katalog",
+  "darf.ungeprueft": "„{name}“ ließ sich gerade nicht prüfen – darum bietet Ablago es nicht an.",
   "ki.typ.titel": "KI-Dienste",
   "ki.typ.beschreibung": "KI-Dienste sind Pakete, die Inhalte ins Netz schicken können – etwa für „Frag deine Ablage“, „Aus Dokument ausfüllen“ oder „Übersetzung anzeigen“. Ohne Haken bekommen sie aus diesem Mappentyp nichts: keine Mappen, keine Dokumente, keine Ausschnitte. Gilt sofort.",
   "ki.typ.neu": "Neue Mappentypen gehen erst an KI-Dienste, wenn du sie zulässt – das geht hier nach dem Speichern.",

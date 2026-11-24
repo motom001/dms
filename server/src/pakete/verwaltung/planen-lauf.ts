@@ -7,6 +7,7 @@ import { pruefePaketTexte } from '../../../../shared/src/entdecken-paket';
 import { type Mappentyp } from '../../../../shared/src/model';
 import { VERSION, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogVersion } from '../../../../shared/src/pakete';
 import { type Sicht } from '../../../../shared/src/sichten';
+import type { PaketeGrenze } from '../../../../shared/src/darf';
 import { t } from '../../sprache/sprache';
 import { sichtFassung, sichtZustand } from '../index';
 import { abhaengigeTypen, abhaengigkeitsKonflikte, Namensherkunft } from '../index';
@@ -21,6 +22,11 @@ export interface PlanMehr {
   quelle?: PlanQuelle;
   sammel?: Set<string>;
   ablauf?: boolean;
+  /**
+   * Grenze aus Frage 1 statt der gespeicherten (#1591, #1566): nur der Einrichtungsassistent, der vor „Jetzt einrichten“
+   * mit der dort gewählten Antwort plant – gespeichert ist dann noch nichts.
+   */
+  grenze?: PaketeGrenze;
 }
 
 /** Stand einer Planung. */

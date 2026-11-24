@@ -135,6 +135,11 @@ export interface AblaufInstallation extends AblaufEingabe {
   adresseBestaetigt?: boolean;
   /** Erstmals gesetzte Herausgeber von Bestandspaketen bestätigt (#1084) – ein Haken für alle. */
   herausgeberBestaetigt?: boolean;
+  /**
+   * Aus dem Einrichtungsassistenten (#1566): Ablago hat die Pakete gewählt oder die Person selbst. Nur während der
+   * Einrichtung steht dann die Liste im Nachweis-Journal.
+   */
+  einrichtung?: 'ablago' | 'selbst';
 }
 export interface AblaufPaket<V> {
   /** Paket-Id (Katalog) bzw. Upload-Kennung (Sammeldatei). */

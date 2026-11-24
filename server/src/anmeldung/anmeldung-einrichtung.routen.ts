@@ -7,6 +7,7 @@ import { eigeneVersion } from '../system/system';
 import { ok, b } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
+import { DARF_VORGABE, istPaketeGrenze } from '../../../shared/src/darf';
 
 /** Einrichtungsassistent (#119): Code, Sammeln (#804) und Konfigurationsdatei (#806). */
 export function einrichtungRouten(k: RoutenKontext): Route[] {
@@ -87,12 +88,26 @@ export function einrichtungPaketeRouten(k: RoutenKontext): Route[] {
       lesend: true,
       handler: async (a) => {
         await einrichtungZugang(a);
-        const liste = (b(a) as { pakete?: unknown }).pakete;
+        const { pakete: liste, darf } = b(a) as { pakete?: unknown; darf?: unknown };
+        // Frage 1 aus dem Assistenten (#1591): geplant wird mit der dort gewählten Antwort, gespeichert ist noch nichts.
         return ok(
-          await pakete.ablaufPlan({
-            pakete: Array.isArray(liste) ? liste.filter((p): p is string => typeof p === 'string').slice(0, 100) : [],
-          }),
+          await pakete.ablaufPlan(
+            { pakete: Array.isArray(liste) ? liste.filter((p): p is string => typeof p === 'string').slice(0, 100) : [] },
+            istPaketeGrenze(darf) ? darf : undefined,
+          ),
         );
+      },
+    },
+    // Was Ablago darf (#1566): die Pakete des offiziellen Katalogs nach Frage 1 eingeordnet – nur lesend.
+    {
+      methode: 'POST',
+      pfad: '/api/einrichtung/pakete/stufen',
+      zugang: 'offen',
+      lesend: true,
+      handler: async (a) => {
+        await einrichtungZugang(a);
+        const { darf } = b(a) as { darf?: unknown };
+        return ok(await pakete.katalogStufen(istPaketeGrenze(darf) ? darf : DARF_VORGABE.pakete));
       },
     },
     // E-Mail-Versand im Assistenten (#813, #804): nur die Server-Suche, nur lesend; gespeichert wird erst mit „Jetzt einrichten“.

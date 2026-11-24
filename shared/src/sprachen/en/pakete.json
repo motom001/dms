@@ -427,6 +427,7 @@
   "selbst.ausListe": "Remove from the list",
   "selbst.ausListeFrage": "Remove “{name}” from the list? Ablago forgets the details and the stored archives. Folder types, views and folders stay unchanged.",
   "selbst.konfliktChip": "ID also in the catalogue",
+  "darf.ungeprueft": "“{name}” could not be checked just now – so Ablago does not offer it.",
   "ki.typ.titel": "AI services",
   "ki.typ.beschreibung": "AI services are packages that can send content over the network – for example for “Ask your library”, “Fill in from document” or “Show translation”. Without the tick they get nothing from this folder type: no folders, no documents, no excerpts. This takes effect immediately.",
   "ki.typ.neu": "New folder types only go to AI services once you allow them – you can do that here after saving.",

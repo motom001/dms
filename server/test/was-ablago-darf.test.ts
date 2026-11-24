@@ -364,3 +364,47 @@ describe('Beschädigtes Paket (#1551)', () => {
     assert.ok((await d.sichtenVerwaltung.listeSichten()).some((s) => s.name === 'Kontakte'));
   });
 });
+
+describe('Was Ablago darf im Einrichtungsassistenten (#1566, #1591)', () => {
+  const ocr = { 'manifest.yaml': kopf('texterkennung', '1.0.0', code('[]', 'dms:texterkennung')), 'code/modul.wasm': WASM };
+
+  for (const grenze of PAKETE_GRENZEN)
+    it(`Einordnung des Katalogs unter „${grenze}“: nie ein Paket über der Grenze, Gründe in Worten, Ziele im Internet`, async () => {
+      // Nichts gespeichert – wie im Assistenten vor „Jetzt einrichten“.
+      const { p, einst } = await aufbau([ARTEN.vorlagen, ARTEN.lokal, ARTEN.netz, ocr]);
+      const e = await p.katalogStufen(grenze);
+      assert.equal(e.signiert, true, 'offizieller, signierter Katalog');
+      for (const art of ['vorlagen', 'lokal', 'netz'] as const) {
+        const x = e.pakete.find((y) => y.id === ID[art])!;
+        assert.equal(x.stufe, art);
+        assert.equal(x.erlaubt, erlaubt(grenze, art), `${art} unter ${grenze}`);
+        assert.equal(!!x.grund, !x.erlaubt, 'Grund genau bei nicht erlaubten');
+      }
+      assert.deepEqual(e.pakete.find((y) => y.id === 'dienst')!.netz, ['https://api.example.org']);
+      const t = e.pakete.find((y) => y.id === 'texterkennung')!;
+      assert.equal(t.stufe, null, 'eingebauter Helfer');
+      assert.equal(t.erlaubt, true, 'läuft auf jeder Antwort');
+      assert.equal(await einst.lies('darf'), null, 'nichts gespeichert');
+    });
+
+  it('Plan mit der Antwort aus dem Assistenten: über der Grenze ein Problem mit Grund – gespeichert wird nichts', async () => {
+    const { p, einst } = await aufbau([ARTEN.lokal, ARTEN.netz]);
+    const plan = await p.ablaufPlan({ pakete: ['helfer', 'dienst'] }, 'lokal');
+    const dienst = plan.pakete.find((x) => x.id === 'dienst')!;
+    assert.ok(dienst.vorschau.fehlercodes.includes('darf'));
+    assert.ok(dienst.vorschau.probleme.some((x) => /„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt/.test(x)));
+    assert.ok(!plan.pakete.find((x) => x.id === 'helfer')!.vorschau.fehlercodes.includes('darf'));
+    assert.ok(!(await p.ablaufPlan({ pakete: ['dienst'] }, 'netz')).pakete[0].vorschau.fehlercodes.includes('darf'));
+    assert.equal(await einst.lies('darf'), null, 'Planen leitet keine Werte für eine bestehende Installation ab');
+  });
+
+  it('Installieren richtet sich weiter nach dem Gespeicherten, nicht nach einer Antwort im Plan', async () => {
+    const { p, d } = await aufbau([ARTEN.netz], 'lokal');
+    assert.ok((await p.ablaufPlan({ pakete: ['dienst'] }, 'netz')).pakete[0].vorschau.fehlercodes.length === 0);
+    await assert.rejects(
+      p.ablaufInstallieren({ pakete: ['dienst'], rechteStand: (await p.ablaufPlan({ pakete: ['dienst'] })).rechte.stand }, ICH),
+      /nutzt das Internet/,
+    );
+    assert.deepEqual(await d.kern.repo.listePakete(), []);
+  });
+});

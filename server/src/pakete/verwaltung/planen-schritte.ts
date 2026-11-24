@@ -13,7 +13,7 @@ import {
   neuestePassende,
   passt,
   vergleicheVersion,
-  eingebauterHelfer,
+  darfStufe,
   paketStufe,
   type Katalog,
   type KatalogVersion,
@@ -119,14 +119,12 @@ export abstract class PaketPlanSchritte extends PaketVorschauTeile {
    * neu mit Internet), sagt das so. Eingebaute Helfer von Ablago laufen auf jeder Antwort.
    */
   protected async pruefeDarf(l: PlanLauf, geprueft: boolean) {
-    const angabe = (id: string, c: typeof l.paket.code) => ({ id, herausgeber: l.herausgeber, geprueft, code: c?.info });
-    const haupt = (id: string) => {
-      const h = l.installierte.find((p) => p.id === id);
-      return !!h && eingebauterHelfer({ id: h.id, herausgeber: h.herausgeber, geprueft: h.herausgeberGeprueft !== false, code: h.laeufer });
-    };
-    if (eingebauterHelfer(angabe(l.m.id, l.paket.code), haupt)) return;
-    const stufe = l.paket.code ? paketStufe(l.paket.code.info) : l.m.code !== undefined ? 'lokal' : 'vorlagen';
-    const { pakete } = await darfStand(this.d.kern.einstellungen);
+    const stufe = darfStufe(
+      { id: l.m.id, herausgeber: l.herausgeber, geprueft, code: l.paket.code?.info, mitCode: l.m.code !== undefined },
+      l.installierte,
+    );
+    if (!stufe) return;
+    const pakete = l.grenze ?? (await darfStand(this.d.kern.einstellungen)).pakete;
     if (erlaubt(pakete, stufe)) return;
     const vorher = l.ich ? (l.ich.laeufer ? paketStufe(l.ich.laeufer) : l.ich.code ? 'lokal' : 'vorlagen') : null;
     const text =

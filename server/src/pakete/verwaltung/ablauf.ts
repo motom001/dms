@@ -18,13 +18,21 @@ import {
   type AblaufAusgelassen,
   haengenAn,
   type AblaufEingabe,
+  darfStufe,
+  dmsPasst,
+  vergleicheVersion,
+  type KatalogStufe,
+  type KatalogStufen,
+  type PaketCode,
 } from '../../../../shared/src/pakete';
+import { erlaubt, type PaketeGrenze, type PaketStufe } from '../../../../shared/src/darf';
+import { istOffiziellerHerausgeber } from '../../../../shared/src/kennungen';
 import { ueberfuehre, abschnittsfelder, type EinstellungFeld, type Verweisquelle } from '../../../../shared/src/paketeinstellungen';
 import { Fachfehler } from '../../grundlagen/fehler';
 import { t } from '../../sprache/sprache';
 import { paketEinstellungen } from '../index';
 import { type Manifest, type Paket } from './format';
-import { meldungen, sammelKennungen } from './hilfen';
+import { meldungen, offiziellBelegt, sammelKennungen } from './hilfen';
 import { log } from './optionen';
 import { mitPruefung, type Vorschau } from './plan';
 import { SAMMEL_PAKETE_MAX } from './sammeldatei';
@@ -56,14 +64,16 @@ export abstract class PaketAblauf extends PaketInstallieren {
    * eine Vorschau (Namenskonflikte auch zwischen den Paketen), die Pflicht-Einstellungen, eine Herkunft und ein Prüfwert
    * aller zu bestätigenden Rechte. Es wird nichts gespeichert – die Installation rechnet den Plan neu.
    */
-  async ablaufPlan(e: AblaufEingabe): Promise<AblaufPlan<Vorschau>> {
-    return (await this.ablaufIntern(e)).plan;
+  async ablaufPlan(e: AblaufEingabe, grenze?: PaketeGrenze): Promise<AblaufPlan<Vorschau>> {
+    return (await this.ablaufIntern(e, {}, {}, grenze)).plan;
   }
 
+  /** `grenze`: Antwort auf Frage 1 aus dem Einrichtungsassistenten statt der gespeicherten (#1591, nur zum Planen). */
   protected async ablaufIntern(
     e: AblaufEingabe,
     namen: Record<string, Record<string, string>> = {},
     sichtNamen: Record<string, Record<string, string>> = {},
+    grenze?: PaketeGrenze,
   ) {
     const installierte = await this.d.kern.repo.listePakete();
     const dms = this.o.version();
@@ -73,7 +83,7 @@ export abstract class PaketAblauf extends PaketInstallieren {
     const { teile, herkunft } = uploads.length
       ? await this.teileAusUploads(uploads, installierte, probleme)
       : await this.teileAusKatalog(e, installierte, dms, probleme, ausgelassen);
-    const pakete = await this.planeTeile(teile, namen, sichtNamen);
+    const pakete = await this.planeTeile(teile, namen, sichtNamen, grenze);
     // Ein Haken für alle Rechte: gilt nur für genau die Rechte, die der Administrator gesehen hat.
     const zuBestaetigen = pakete
       .filter((p) => p.vorschau.laeufer?.bestaetigen)
@@ -235,6 +245,7 @@ export abstract class PaketAblauf extends PaketInstallieren {
     teile: AblaufTeil[],
     namen: Record<string, Record<string, string>>,
     sichtNamen: Record<string, Record<string, string>>,
+    grenze?: PaketeGrenze,
   ): Promise<AblaufPlan<Vorschau>['pakete']> {
     const geplant = { typen: new Set<string>(), sichten: new Set<string>() };
     const offizieller = await this.offiziell();
@@ -246,6 +257,7 @@ export abstract class PaketAblauf extends PaketInstallieren {
           geplant,
           quelle: { herkunft: x.herkunft, pruefung: x.pruefung },
           ablauf: true,
+          ...(grenze ? { grenze } : {}),
           ...(x.upload ? { sammel: sammelKennungen(teile.map((y) => y.paket)) } : {}),
         }),
         x.pruefung,
@@ -268,6 +280,57 @@ export abstract class PaketAblauf extends PaketInstallieren {
       });
     }
     return pakete;
+  }
+
+  /**
+   * Pakete des offiziellen Katalogs nach „Was Ablago darf“ (#1566, #1591): für die Auswahl im Einrichtungsassistenten –
+   * je Paket die Stufe, ob es unter `grenze` erlaubt ist (Grund in Worten) und seine Ziele im Internet. Die Stufe kommt
+   * wie beim Installieren aus dem Manifest: Pakete ohne Code sind Vorlagen; Pakete mit Code lädt Ablago dafür (je
+   * Archiv einmal, nach Prüfsumme gemerkt). Lässt sich eines nicht laden, gilt es als nicht erlaubt.
+   */
+  async katalogStufen(grenze: PaketeGrenze): Promise<KatalogStufen> {
+    const installierte = await this.d.kern.repo.listePakete();
+    const { katalog, url, pruefung } = await this.aktuellerKatalog();
+    const dms = this.o.version();
+    const pakete = await mitHoechstens(katalog.pakete, 4, async (kp): Promise<KatalogStufe> => {
+      const v =
+        [...kp.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => dmsPasst(dms, x.dms)) ?? kp.versionen[0];
+      const ohne = { id: kp.id, netz: [], adressen: [] };
+      if (!v?.code) return { ...ohne, stufe: 'vorlagen', ...this.erlaubtUnter(grenze, kp.name, 'vorlagen') };
+      try {
+        const c = await this.codeAngabe(kp.id, v, url);
+        const herausgeber = c.herausgeber ?? this.standardHerausgeber({ art: 'katalog', url }, pruefung);
+        const geprueft =
+          !!herausgeber && (istOffiziellerHerausgeber(herausgeber) ? offiziellBelegt(pruefung) : pruefung.art === 'anbieter');
+        const stufe = darfStufe({ id: kp.id, herausgeber, geprueft, code: c.code, mitCode: true }, installierte);
+        return {
+          id: kp.id,
+          stufe,
+          ...(stufe ? this.erlaubtUnter(grenze, kp.name, stufe) : { erlaubt: true }),
+          netz: c.code?.netz ?? [],
+          adressen: (c.code?.adressen ?? []).map((a) => a.name),
+        };
+      } catch (f) {
+        log.warn('Einordnung nach „Was Ablago darf“: Paket lässt sich nicht laden', { paket: kp.id, fehler: meldungen(f) });
+        return { ...ohne, stufe: 'netz', erlaubt: false, grund: t('pakete.darf.ungeprueft', { name: kp.name }) };
+      }
+    });
+    return { signiert: pruefung.art === 'projekt' && pruefung.offiziell, pakete };
+  }
+
+  private erlaubtUnter(grenze: PaketeGrenze, name: string, stufe: PaketStufe) {
+    return erlaubt(grenze, stufe) ? { erlaubt: true } : { erlaubt: false, grund: t(`werkbank.darf.grund.${stufe}`, { name }) };
+  }
+
+  /** Code und Herausgeber aus dem Manifest eines Katalogpakets – je Archiv (Prüfsumme) einmal geladen. */
+  private readonly codeAngaben = new Map<string, { code: PaketCode | undefined; herausgeber: string | null }>();
+  private async codeAngabe(id: string, v: KatalogVersion, url: string) {
+    const da = this.codeAngaben.get(v.sha256);
+    if (da) return da;
+    const { paket } = await this.lade(id, v.version, url);
+    const x = { code: paket.code?.info, herausgeber: paket.manifest.herausgeber ?? null };
+    this.codeAngaben.set(v.sha256, x);
+    return x;
   }
 
   /** Werte, mit denen ein Paket nach der Installation startet: Vorgaben, ggf. behaltene Werte (wie lege). */
@@ -353,4 +416,18 @@ function umgezogeneIds(katalog: Katalog, ids: string[], versionen: Record<string
       }
     }
   }
+}
+
+/** `f` für alle Einträge, höchstens `n` zugleich; Ergebnisse in der Reihenfolge der Einträge. */
+async function mitHoechstens<T, E>(liste: readonly T[], n: number, f: (x: T) => Promise<E>): Promise<E[]> {
+  const erg: E[] = new Array<E>(liste.length);
+  let i = 0;
+  const arbeiter = async () => {
+    while (i < liste.length) {
+      const j = i++;
+      erg[j] = await f(liste[j]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(n, liste.length) }, arbeiter));
+  return erg;
 }

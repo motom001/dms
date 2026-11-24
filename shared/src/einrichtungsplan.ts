@@ -160,8 +160,8 @@ export interface DateiFehler {
   text: string;
 }
 
-/** Die Schritte, die der Assistent sammelt – in dieser Reihenfolge. */
-export const SAMMELSCHRITTE = ['ablage', 'konto', 'nutzung', 'pakete', 'optional'] as const;
+/** Die Schritte, die der Assistent sammelt – in dieser Reihenfolge (#1566: „Was darf Ablago?“ vor den Paketen). */
+export const SAMMELSCHRITTE = ['ablage', 'konto', 'nutzung', 'darf', 'pakete', 'optional'] as const;
 export type Sammelschritt = (typeof SAMMELSCHRITTE)[number];
 /** Was in einem Schritt nicht passt – je Schritt die Gründe. */
 export type Planprobleme = Partial<Record<Sammelschritt, string[]>>;

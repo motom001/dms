@@ -37,3 +37,39 @@ export function eingebauterHelfer(p: PaketHerkunftAngabe, haupt?: (id: string) =
   const h = hauptpaket(p.id);
   return !!h && !!haupt?.(h);
 }
+
+/**
+ * Stufe für „Was Ablago darf“ samt eingebautem Helfer (#1562, #1566): null = eingebauter Helfer (läuft auf jeder
+ * Antwort), sonst die Stufe aus dem Code. `mitCode` gilt für ein Paket, dessen Code sich nicht laden ließ (zählt wie
+ * „nur hier“). Ergänzungen zählen als eingebauter Helfer, wenn ihr installiertes Hauptpaket einer ist.
+ */
+export function darfStufe(
+  p: PaketHerkunftAngabe & { mitCode: boolean },
+  installierte: ReadonlyArray<{ id: string; herausgeber?: string | null; herausgeberGeprueft?: boolean; laeufer?: PaketCode | null }>,
+): PaketStufe | null {
+  const haupt = (id: string) => {
+    const h = installierte.find((x) => x.id === id);
+    return !!h && eingebauterHelfer({ id: h.id, herausgeber: h.herausgeber, geprueft: h.herausgeberGeprueft !== false, code: h.laeufer });
+  };
+  if (eingebauterHelfer(p, haupt)) return null;
+  return p.code ? paketStufe(p.code) : p.mitCode ? 'lokal' : 'vorlagen';
+}
+
+/**
+ * Ein Paket des offiziellen Katalogs, eingeordnet nach „Was Ablago darf“ (#1566): für die Auswahl im
+ * Einrichtungsassistenten. `stufe` null = eingebauter Helfer; `netz` die festen Ziele im Internet, `adressen` die
+ * Adressen, die man selbst einträgt (Name der Einstellung). `grund` sagt in Worten, warum es nicht erlaubt ist.
+ */
+export interface KatalogStufe {
+  id: string;
+  stufe: PaketStufe | null;
+  erlaubt: boolean;
+  grund?: string;
+  netz: string[];
+  adressen: string[];
+}
+/** Einordnung aller Pakete des offiziellen Katalogs; `signiert` = gültig signierter offizieller Katalog. */
+export interface KatalogStufen {
+  signiert: boolean;
+  pakete: KatalogStufe[];
+}
