@@ -563,3 +563,93 @@ rauchtest('Handy: Pakete mit 44-px-Tippflächen (#1168, #1047, #1048)', { handy:
   }
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
+
+/* ---------- Pakete anhalten (#1563) und beschädigte Pakete reparieren (#1551) ---------- */
+
+/** Anhalten, Fortsetzen und Reparieren in der Attrappe: ändern die installierten Pakete wie der Server. */
+async function lebenszyklusAttrappe(s, z) {
+  await s.route('**/api/werkbank/pakete/*/fortsetzen', (r) => {
+    const p = z.installiert.find((x) => x.id === decodeURIComponent(new URL(r.request().url()).pathname.split('/').at(-2)));
+    delete p.angehalten;
+    return r.fulfill({ json: p });
+  });
+  await s.route('**/api/werkbank/pakete/*/reparieren', (r) => {
+    const p = z.installiert.find((x) => x.id === decodeURIComponent(new URL(r.request().url()).pathname.split('/').at(-2)));
+    delete p.fehlt;
+    return r.fulfill({ json: p });
+  });
+  // Die Übersicht kennt dieselben Pakete (#1563, #1551).
+  await s.route(/\/api\/werkbank\/uebersicht$/, async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    const echt = await (await r.fetch()).json();
+    const angehalten = z.installiert
+      .filter((p) => p.angehalten)
+      .map((p) => ({ id: p.id, name: p.name, grund: `„${p.name}“ nutzt das Internet – das habt ihr nicht erlaubt.` }));
+    const beschaedigt = z.installiert.filter((p) => p.fehlt).map((p) => ({ id: p.id, name: p.name }));
+    await r.fulfill({ json: { ...echt, angehalten, beschaedigt } });
+  });
+}
+
+for (const handy of [false, true])
+  rauchtest(
+    `Pakete: angehalten mit Grund in Worten, Erlauben und Fortsetzen; Hinweis in der Übersicht${handy ? ' (Handy)' : ''} (#1563)`,
+    { als: LENA, handy },
+    async (s) => {
+      const z = await paketeAttrappe(s, {
+        installiert: [
+          installiertesPaket('dienst', 'Dienst', '1.0.0', {
+            code: true,
+            angehalten: { grund: 'darf', stufe: 'netz', am: '2026-11-24T08:00:00Z', von: LENA.email },
+          }),
+        ],
+      });
+      await lebenszyklusAttrappe(s, z);
+      await s.goto(BASIS + '/ablage/start');
+      await verwalten(s);
+      // Übersicht: ein Hinweis unter „Hinweise“, der Grund in Worten, der Weg zum Paket.
+      await s.goto(BASIS + '/werkbank');
+      const hinweis = s.locator('.hinweiszeile', { hasText: '1 Paket ist angehalten.' });
+      await hinweis.getByText(/„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt\./).waitFor();
+      await hinweis.getByRole('link', { name: 'Zu den Paketen' }).click();
+      await s.waitForURL(/\/werkbank\/pakete\/dienst$/);
+      const seite = s.getByRole('region', { name: 'Bearbeitung' });
+      await seite.getByText('„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt.').waitFor();
+      await seite.getByRole('link', { name: 'Erlauben …' }).waitFor();
+      assert.doesNotMatch(await seite.locator('.hinweis.warn').first().textContent(), /Stufe|\d/, 'keine Stufennummern');
+      const funde = [];
+      for (const schema of ['light', 'dark']) {
+        await schemaWechseln(s, schema);
+        for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${schema}: ${v}`);
+      }
+      assert.deepEqual(funde, [], `axe am angehaltenen Paket:\n${funde.join('\n')}`);
+      if (handy) assert.deepEqual(await tippflaechenPruefen(s, WERKBANK_BEREICHE), []);
+      await seite.getByRole('button', { name: 'Fortsetzen' }).click();
+      await seite.getByRole('button', { name: 'Anhalten' }).waitFor();
+      assert.equal(z.installiert[0].angehalten, undefined);
+    },
+  );
+
+rauchtest('Pakete: beschädigtes Paket – Hinweis, Reparieren, vollständig (#1551)', { als: LENA }, async (s) => {
+  const z = await paketeAttrappe(s, {
+    installiert: [installiertesPaket('kontakte', 'Kontakte', '1.0.0', { fehlt: { typen: ['kontakt'], sichten: ['kontakte'] } })],
+  });
+  await lebenszyklusAttrappe(s, z);
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank');
+  const hinweis = s.locator('.hinweiszeile', { hasText: '1 Paket ist nicht vollständig.' });
+  await hinweis.getByRole('link', { name: 'Paket reparieren' }).click();
+  await s.waitForURL(/\/werkbank\/pakete\/kontakte$/);
+  const loesungen = s.getByRole('region', { name: 'Beschädigt' });
+  await loesungen.getByText('Es fehlen: kontakt, kontakte.', { exact: false }).waitFor();
+  // Je Lösung ein Satz, was passiert und was mit vorhandenen Mappen geschieht.
+  await loesungen.getByText(/Vorhandene Mappen, Mappentypen und Einstellungen bleiben/).waitFor();
+  await loesungen.getByRole('button', { name: 'Neu installieren' }).waitFor();
+  await loesungen.getByRole('button', { name: 'Ganz entfernen' }).waitFor();
+  await loesungen.getByRole('button', { name: 'Reparieren' }).click();
+  await s.getByText('„Kontakte“ ist repariert.').waitFor();
+  await loesungen.waitFor({ state: 'detached' });
+  await s.goto(BASIS + '/werkbank');
+  await s.locator('.uebersicht-hinweise').waitFor();
+  assert.equal(await s.locator('.hinweiszeile', { hasText: 'nicht vollständig' }).count(), 0, 'Hinweis weg');
+});

@@ -250,6 +250,12 @@ export interface PaketAngehalten {
   von: string;
 }
 
+/** Was einem beschädigten Paket fehlt (#1551): Schlüssel der eigenen Mappentypen bzw. Ansichten. */
+export interface FehlendeTeile {
+  typen: string[];
+  sichten: string[];
+}
+
 export interface InstalliertesPaket {
   id: string;
   /** Angehalten (#1563); fehlt = läuft. */
@@ -297,7 +303,7 @@ export interface InstalliertesPaket {
   /** Einstellungen, wie das Paket sie beschreibt (#197); null = keine. */
   einstellungen?: import('../paketeinstellungen').Einstellungsbeschreibung | null;
   /** Nur in der Antwort der Werkbank: beschädigt (#1551) – diese eigenen Mappentypen bzw. Ansichten fehlen. */
-  fehlt?: import('./bestand').FehlendeTeile;
+  fehlt?: FehlendeTeile;
   /** Nur in der Antwort der Werkbank: Pflichtfelder der Einstellungen fehlen (#197). */
   einstellungenNoetig?: boolean;
   /** Nur in der Antwort der Werkbank: Sprachpaket (#731) – Übersetzung zu so viel Prozent vollständig (diese Version). */

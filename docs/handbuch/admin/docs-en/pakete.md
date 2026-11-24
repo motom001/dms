@@ -282,6 +282,25 @@ If you remove a package whose folder types another package knows only as an **op
 
 If the package supplies full text or converts files (e.g. **Office and email**, **Image formats**), no documents wait for it any more afterwards: without text, the document again says that there is no package for this file type; if it already had text, the text stays.
 
+## Pausing and resuming { #anhalten }
+
+A package with code can be **paused** instead of removed – by hand with **Pause** on its page, or automatically when you lower [What Ablago may do](was-ablago-darf.md) and the package no longer fits. Paused means:
+
+- Its code does not run: no events, no tasks, no services; its actions are not in the "Folder" menu, its automations rest. Even if it ran by mistake, it would not reach the network.
+- **Folder types, folders, views and templates stay** and remain usable – they belong to you, not the package. Settings and secrets stay saved.
+- The package list shows **paused**, the package page the reason in words, e.g. "“Translation” uses the internet – you have not allowed that.", with **Allow …** and **Resume**; the [overview](uebersicht.md) shows a note.
+- **Resume** works without setting it up again, but only when "What Ablago may do" allows the package again. Raising alone resumes nothing on its own.
+
+## Damaged package { #beschaedigt }
+
+If an installed package is missing folder types or views of its own version – e.g. after a removal that was cancelled earlier –, the [overview](uebersicht.md) shows "… is not complete", and the package page offers **solutions**, each with one sentence:
+
+- **Repair** creates the missing parts of the same version again; existing folders, folder types and settings stay. It works all or nothing: if it fails, nothing is changed. For an uploaded package, upload the same version again.
+- **Reinstall** removes the package and leads into the usual **Install** process for the same version – only while its folder types hold no folders of your own.
+- **Remove completely** is the usual [removal](#entfernen).
+
+**Installing and updating** also work all or nothing (#1385): if something fails halfway, the Library is as before, and a second attempt succeeds without a name conflict.
+
 ## Settings { #einstellungen }
 
 Some packages need settings – for instance rules by which they assign post, or an access key for a service. The package only **describes** them; Ablago builds a form from them, checks the values and stores them. You find it under **Workbench → Packages → *package* → tab "Settings"** – the tab only exists for packages that have something to set.

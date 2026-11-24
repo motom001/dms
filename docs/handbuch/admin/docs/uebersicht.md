@@ -167,6 +167,8 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | DMS_LASTTEST in einer echten Installation | gelb | `lasttest` |
 | Die [Beispiel-Ablage](beispielablage.md) ist angelegt (bis du sie entfernst) | Hinweis | `beispielablage` |
 | Paket braucht noch Einstellungen | gelb | `paket-einstellungen` |
+| Pakete angehalten – je mit Grund in Worten ([Anhalten](pakete.md#anhalten)) | gelb | `pakete.angehalten` |
+| Pakete nicht vollständig – Lösungen am Paket ([Beschädigtes Paket](pakete.md#beschaedigt)) | gelb | `pakete.beschaedigt` |
 | Neu: Mappentypen von KI-Diensten ausschließen (einmal nach dem Update, mit KI-Paketen; „Zur Kenntnis nehmen“) | Hinweis | `ki.typen` |
 | Neu: Was Ablago darf – bitte einmal ansehen (einmal nach dem Update; „Zur Kenntnis nehmen“) | Hinweis | `darf.neu` |
 | Aus der Einrichtung übersprungen (Adresse und E-Mail-Versand; Pakete stehen unter „Empfohlene Pakete“) | Hinweis | `einrichtung` |

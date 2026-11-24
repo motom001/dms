@@ -298,6 +298,9 @@ function lade(liste: PaketImLaeufer[], behalten: string[] = []) {
   });
 }
 
+/** Netz gesperrt: angehaltenes Paket (#1563, zweite Sicherung) oder Adresse nicht erlaubt (#807). */
+const netzGesperrt = (g: Geladen, url: string) => angehalten.has(g.info.id) || !netzErlaubt(url, g.info.netz, g.info.adressen);
+
 /** Liegt url unter der Adresse e (gleicher Ursprung, gleicher Pfad oder darunter)? */
 function unter(u: URL, e: string): boolean {
   let x: URL;
@@ -404,7 +407,7 @@ async function netz(
     return fehlerAntwort(-1, t('meldungen.prozess.ungueltige-methode'));
   }
   // Abgelehnt (#807): steht als Warnung im Protokoll des Pakets – nur der Host, nichts hinausgegangen.
-  if (angehalten.has(g.info.id) || !netzErlaubt(url, g.info.netz, g.info.adressen)) {
+  if (netzGesperrt(g, url)) {
     log({ methode, url, status: null, hin: 0, zurueck: 0, abgelehnt: true });
     return fehlerAntwort(-2, t('meldungen.prozess.netz-gesperrt-steht-weder', { url }));
   }

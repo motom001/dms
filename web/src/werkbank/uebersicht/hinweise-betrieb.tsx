@@ -219,6 +219,35 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       knopf: t('werkbank.uebersicht.zweite.knopf'),
       erledigen: t('werkbank.uebersicht.zweite.nein'),
     });
+  // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).
+  const vh = variablenHinweis(u.variablen ?? []);
+  if (vh)
+    h.push({
+      schluessel: 'variablen',
+      art: 'info',
+      text:
+        vh.zeilen.length === 1 ? (
+          <>
+            <strong>{vh.titel}</strong> <span className="mono">{vh.zeilen[0].name}</span> – {vh.zeilen[0].grund}. {vh.schluss}
+          </>
+        ) : (
+          <>
+            <strong>{vh.titel}</strong>
+            {vh.zeilen.map((z) => (
+              <span key={z.name} style={{ display: 'block' }}>
+                · <span className="mono">{z.name}</span> – {z.grund}
+              </span>
+            ))}
+            {vh.schluss}
+          </>
+        ),
+      ziel: vh.ziel,
+      knopf: vh.knopf,
+    });
+}
+
+/** Beschädigte (#1551) und angehaltene Pakete (#1563), Was Ablago darf nach dem Update (#1562). */
+export function paketeUndDarf(u: WerkbankUebersicht, h: Hinweis[]) {
   // Beschädigte Pakete (#1551): am Paket stehen die Lösungen.
   const bs = u.beschaedigt ?? [];
   if (bs.length)
@@ -262,31 +291,6 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank#was-ablago-darf',
       knopf: t('werkbank.darf.hinweis.neu.knopf'),
       erledigen: t('werkbank.uebersicht.akzeptieren'),
-    });
-  // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).
-  const vh = variablenHinweis(u.variablen ?? []);
-  if (vh)
-    h.push({
-      schluessel: 'variablen',
-      art: 'info',
-      text:
-        vh.zeilen.length === 1 ? (
-          <>
-            <strong>{vh.titel}</strong> <span className="mono">{vh.zeilen[0].name}</span> – {vh.zeilen[0].grund}. {vh.schluss}
-          </>
-        ) : (
-          <>
-            <strong>{vh.titel}</strong>
-            {vh.zeilen.map((z) => (
-              <span key={z.name} style={{ display: 'block' }}>
-                · <span className="mono">{z.name}</span> – {z.grund}
-              </span>
-            ))}
-            {vh.schluss}
-          </>
-        ),
-      ziel: vh.ziel,
-      knopf: vh.knopf,
     });
 }
 

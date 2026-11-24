@@ -90,7 +90,7 @@ async function beschaedigtePakete(dienst: Dienst, alle: InstalliertesPaket[]) {
 }
 
 /** Warum ein Paket angehalten ist, in Worten (#1563). */
-export const angehaltenGrund = (name: string, a: PaketAngehalten) =>
+const angehaltenGrund = (name: string, a: PaketAngehalten) =>
   a.grund === 'darf' && a.stufe ? t(`werkbank.darf.grund.${a.stufe}`, { name }) : t('werkbank.darf.angehalten.hand', { name });
 
 /** „Zur Kenntnis nehmen“ am Hinweis „Neu: Was Ablago darf“ – danach steht er nicht mehr da. */

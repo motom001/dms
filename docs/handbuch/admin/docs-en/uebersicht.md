@@ -167,6 +167,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | DMS_LASTTEST in a real installation | yellow | `lasttest` |
 | The [Example Library](beispielablage.md) is set up (until you remove it) | notice | `beispielablage` |
 | Package still needs settings | yellow | `paket-einstellungen` |
+| Packages paused – each with the reason in words ([Pausing](pakete.md#anhalten)) | yellow | `pakete.angehalten` |
+| Packages not complete – solutions on the package ([Damaged package](pakete.md#beschaedigt)) | yellow | `pakete.beschaedigt` |
 | New: exclude folder types from AI services (once after the update, with AI packages; “Acknowledge”) | notice | `ki.typen` |
 | New: What Ablago may do – please take a look once (once after the update; “Acknowledge”) | notice | `darf.neu` |
 | Skipped during setup (address and email sending; packages are under "Recommended packages") | notice | `einrichtung` |

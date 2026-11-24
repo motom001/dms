@@ -3,13 +3,7 @@
  * Ansichten (z. B. nach einem früher halb abgebrochenen Entfernen oder Installieren). Ablago bietet dann Lösungen an:
  * Reparieren (fehlende Teile derselben Version neu anlegen), Neu installieren, Ganz entfernen.
  */
-import type { InstalliertesPaket } from './katalog';
-
-export interface FehlendeTeile {
-  /** Schlüssel der Mappentypen bzw. Ansichten im Paket, die in der Ablage fehlen. */
-  typen: string[];
-  sichten: string[];
-}
+import type { FehlendeTeile, InstalliertesPaket } from './katalog';
 
 /** Was einem installierten Paket fehlt; null = vollständig. */
 export function fehlendeTeile(

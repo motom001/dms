@@ -39,7 +39,7 @@ Auf jeder Antwort fragt Ablago weiter einzeln nach bei:
 ## Ändern { #aendern }
 
 - **Erhöhen** braucht eine frische Anmeldung. Die Änderung steht mit altem und neuem Wert im Nachweis-Journal (Zugang und Rechte), und alle mit Verwaltungsrecht bekommen eine Mail. Es passiert nichts von selbst: Kein Paket wird installiert, kein Mappentyp freigegeben.
-- **Senken** wirkt sofort und steht im Journal. Passen installierte Pakete nicht mehr zur neuen Antwort, nennt Ablago sie vorher mit Grund; entferne sie unter [Pakete](pakete.md), danach lässt sich die Antwort ändern.
+- **Senken** wirkt sofort und steht im Journal. Passen installierte Pakete nicht mehr zur neuen Antwort, nennt Ablago sie vorher mit Grund; mit **Anhalten und speichern** werden sie [angehalten](pakete.md#anhalten) – ihre Mappentypen, Mappen und Einstellungen bleiben.
 
 ## Anbieter und Einrichtungsdatei { #anbieter }
 

@@ -4,7 +4,14 @@ import type { WerkbankUebersicht } from '../../api/betrieb';
 import { ENGPASS_VARIABLE } from '../../../../shared/src/systemlast';
 import { AufrufeUebersicht } from '../AutomatisierungAufruf';
 import { datum, platzText, type Hinweis } from './hilfen';
-import { eingangsordner, sicherungUndAnbindung, paketeUndEinrichtung, mailUndTexterkennung, aufgabenUndMappen } from './hinweise-betrieb';
+import {
+  eingangsordner,
+  sicherungUndAnbindung,
+  paketeUndEinrichtung,
+  paketeUndDarf,
+  mailUndTexterkennung,
+  aufgabenUndMappen,
+} from './hinweise-betrieb';
 
 export type { Hinweis } from './hilfen';
 
@@ -21,6 +28,7 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
   eingangsordner(u, h);
   sicherungUndAnbindung(u, h, mitNotfallblatt);
   paketeUndEinrichtung(u, h);
+  paketeUndDarf(u, h);
   mailUndTexterkennung(u, h);
   aufgabenUndMappen(u, h);
   return h;
