@@ -53,7 +53,10 @@ label.wahlkarte { flex-direction: row; align-items: center; gap: 10px; }
 .sammel-liste > li { position: relative; }
 .sammel-liste > li.mit-haken > .aufgabenzeile { padding-left: 34px; }
 .sammel-ziel { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
-.sammel-ziel select { width: auto; min-width: 0; max-width: 100%; flex: 0 1 220px; padding-top: 4px; padding-bottom: 4px; }
+/* Die Auswahl steckt im Feld-Rahmen (#1605): Der Rahmen ist so breit wie die Auswahl, höchstens 220 px. Sonst wüchse sie
+   mit dem längsten Namen (etwa mit Abwesenheit) und schöbe „Weitergeben“ in eine eigene Zeile. */
+.sammel-ziel > :has(> select) { flex: 0 1 auto; min-width: 0; max-width: 220px; }
+.sammel-ziel select { width: auto; min-width: 0; max-width: 100%; padding-top: 4px; padding-bottom: 4px; }
 .anmelden-passkey { display: flex; flex-direction: column; gap: 8px; }
 .einzug { margin-left: 26px; }
 
