@@ -164,6 +164,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | dms-komplett: the database is only stored inside the container (`/data/postgres` without a volume) and would be lost with the next update – [rescue the data](https://help.ablago.app/installieren/aktuell/en/komplett/#datenbank-retten) | red | `datenbank.ohne-volume` |
 | DATABASE_URL differs from the database connection | yellow | `anbindung.abweichend` |
 | Database connection changed, restart needed | yellow | `anbindung.neustart` |
+| Ablago still logs in to the database with MD5 – [switch to SCRAM](installation.md#scram); also in the system status | yellow | `datenbank.md5` |
 | DMS_LASTTEST in a real installation | yellow | `lasttest` |
 | The [Example Library](beispielablage.md) is set up (until you remove it) | notice | `beispielablage` |
 | Package still needs settings | yellow | `paket-einstellungen` |
