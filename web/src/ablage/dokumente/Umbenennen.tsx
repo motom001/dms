@@ -32,29 +32,36 @@ export function DokumentUmbenennen({
     }
   }
   return (
-    <form
-      className="asnform"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void benenne();
-      }}>
+    // Kein <form>: Die Zeile steht im Formular der Mappe – Enter benennt um, statt die Mappe zu speichern.
+    <div className="asnform">
       <Feld
         beschriftung={t('ablage.dokumente.umbenennen.name')}
         hinweis={endung ? t('ablage.dokumente.umbenennen.endung', { endung }) : undefined}
         fehler={fehler}>
-        <input value={name} maxLength={200} autoFocus onChange={(e) => setName(e.target.value)} />
+        <input
+          value={name}
+          maxLength={200}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              if (name.trim()) void benenne();
+            }
+          }}
+        />
       </Feld>
       {endung && (
         <span className="mono" aria-hidden="true">
           {endung}
         </span>
       )}
-      <Knopf art="haupt" groesse="klein" type="submit" gesperrt={!name.trim()}>
+      <Knopf art="haupt" groesse="klein" gesperrt={!name.trim()} onClick={benenne}>
         {t('ablage.dokumente.umbenennen.speichern')}
       </Knopf>
       <Knopf groesse="klein" onClick={schliessen}>
         {t('ablage.dokumente.abbrechen')}
       </Knopf>
-    </form>
+    </div>
   );
 }
