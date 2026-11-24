@@ -39,6 +39,8 @@ Knöpfe bedeuten überall dasselbe, und nichts erschreckt unnötig (#1210). Wer 
 
 **Geprüft wird das** an drei Stellen: Die Typprüfung verlangt bei `art="gefahr"` Rückfrage und Symbol und lässt am `Knopf` keine Art `link` zu (`web/src/bausteine/knopf/typpruefung.ts`). ESLint verbietet Farbklassen über `className` am Knopf (`ablago/knopf-farben`) und Elemente, die per Klasse `knopf` oder `textknopf` wie ein Knopf aussehen (`ablago/bausteine`, #1269; [Stil und Abhängigkeiten](stil.md#regeln)). Die Rauchtests melden auf jeder besuchten Seite Anlege-Knöpfe ohne „+“, Gefahr-Knöpfe ohne Rückfrage, rot Gefülltes außerhalb einer Rückfrage, alles, was wie ein Link aussieht, aber kein Ziel hat, und jedes kleine Element mit Rand, das weder Knopf noch Link noch Feld ist (Leitsatz 8) ([Rauchtest und Bilder](#rauchtest)).
 
+Für Anwender erklärt das Benutzerhandbuch dieselben Regeln auf einer Seite: [So sehen Knöpfe aus](https://help.ablago.app/benutzer/aktuell/knoepfe/) (#1524). Ihre Bilder (`knoepfe-*`, hell und dunkel) nimmt `musterAufnehmen` (`web/rauchtest/muster.mjs`) aus einzelnen Karten der Musterseite auf – ändert sich ein Baustein, stimmen sie von selbst.
+
 ![Musterseite, Bereich „Knopf“: Arten, Gefahr in Ruhe, mit Maus und Fokus, die Rückfrage, gesperrt in zwei Formen und die geöffnete Erklärung](bilder/muster-knopf.png){ loading=lazy }
 
 ## Am Handy { #handy }

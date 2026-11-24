@@ -31,7 +31,7 @@ import { gebietsschema } from '../../shared/src/sprache';
 import { Entdecken } from './entdecken/Entdecken';
 import { RundgangAnzeige } from './entdecken/Rundgang';
 import { EntdeckenWerkzeuge } from './entdecken/werkzeuge';
-import { starteRundgang, useEntdecken } from './entdecken/stand';
+import { useRundgangBeimBesuch } from './entdecken/besuch';
 
 /**
  * Suchfeld oben in der Werkbank (#1218)? Vorschlag Qualität (bis Thomas entscheidet): nein – die Werkbank hat ihre
@@ -71,15 +71,9 @@ export function App() {
     document.title = `${marke} – ${entdeckenSeite ? t('entdecken.menue') : { ablage: t('oberflaeche.app.ablage'), werkbank: t('oberflaeche.app.werkbank'), profil: t('oberflaeche.app.mein-konto') }[bereich]}`;
     setzeSymbol(symbol);
   }, [marke, symbol, bereich, entdeckenSeite]);
-  // Rundgang bei der ersten Anmeldung (#831): nur neue Konten (der Server entscheidet: `starten`), nur in der Ablage,
-  // nie in Vertretung – und je Laden der Seite höchstens einmal.
-  const { stand: entdecken } = useEntdecken();
-  const rundgangGestartet = useRef(false);
-  useEffect(() => {
-    if (rundgangGestartet.current || !entdecken?.starten || vertretung || !d.geladen || bereich !== 'ablage' || entdeckenSeite) return;
-    rundgangGestartet.current = true;
-    starteRundgang(entdecken.starten, true);
-  }, [entdecken, vertretung, d.geladen, bereich, entdeckenSeite]);
+  // Rundgänge von selbst (#831, #1512, #1522, #1523): bei der ersten Anmeldung bzw. beim ersten Besuch von Ablage,
+  // Mappe und Werkbank – der Server entscheidet, was aussteht; nie in Vertretung (Regeln in entdecken/besuch.tsx).
+  useRundgangBeimBesuch({ pfad, aus: !!vertretung || !d.geladen || entdeckenSeite });
   // Rückweg aus „Mein Konto“ (#1302): die zuletzt besuchte Seite der Ablage.
   useEffect(() => {
     if (bereich === 'ablage' && !entdeckenSeite && teile[0] === 'ablage') merkeAblage(pfad + suche);
@@ -183,13 +177,14 @@ export function App() {
         <Link
           to={startseiteVon(vertretung ? undefined : ich.rolle, d.einstellungen.startseite === false)}
           className="marke"
+          anker="kopf.logo"
           title={t('oberflaeche.app.zur-startseite')}>
           <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} />
           <span className="sr">{t('oberflaeche.app.startseite', { wert: schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null) })}</span>
         </Link>
         {/* #819: Kein Weg in die Werkbank aus der Ablage-Navigation – nur über das Benutzermenü („Ablago verwalten“).
             Im Verwaltungsmodus führt der Reiter zurück in die Werkbank. */}
-        <nav className="bereiche" aria-label={t('oberflaeche.app.bereiche')}>
+        <nav className="bereiche" aria-label={t('oberflaeche.app.bereiche')} data-anker="kopf.bereiche">
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>
             {t('oberflaeche.app.ablage')}
           </Link>

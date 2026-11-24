@@ -189,7 +189,7 @@ function MappeKopf({
   const mappe = details.mappe;
   const [kopiert, setKopiert] = useState<{ link: string; ok: boolean } | null>(null);
   return (
-    <div className="mappenkopf">
+    <div className="mappenkopf" data-anker="mappe.kopf">
       <p className="ueber">{typName(typ)}</p>
       {/* Kopfzeile (#427): „Mappe ▾“ neben dem Stern – gehört sichtbar zur Mappe, nicht zum Aufgaben-Banner. */}
       <div className="titelzeile">

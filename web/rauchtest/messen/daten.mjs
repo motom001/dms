@@ -97,7 +97,8 @@ export async function einrichten(basis, { code, mappen = 5000 } = {}) {
   await api('POST', '/api/werkbank/tresor/erzeugen').catch(() => {});
   await api('GET', '/api/werkbank/notfallblatt').catch(() => {});
   await api('POST', '/api/werkbank/einrichtung/schritt', { schritt: 'fertig' }).catch(() => {});
-  await api('POST', '/api/entdecken/rundgaenge/ablago', { stand: 'gesehen' }).catch(() => {});
+  for (const r of ['ablago', 'werkbank', 'mappe', 'konto'])
+    await api('POST', `/api/entdecken/rundgaenge/${r}`, { stand: 'gesehen' }).catch(() => {});
   console.log('Beispiel-Ablage …');
   await api('POST', '/api/beispiele');
   console.log(`${mappen.toLocaleString('de-DE')} Demo-Mappen …`);

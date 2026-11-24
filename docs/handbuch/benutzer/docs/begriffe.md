@@ -147,7 +147,7 @@ Siehe auch: [Feldart](#feldart).
 Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen und Historie sind feste Register jeder Mappe.
 
 <a id="rundgang"></a>**Rundgang** · ✓ Alltagswort · alle  
-Kurze Führung an der echten Oberfläche in wenigen Schritten, jeder Schritt hebt eine Stelle hervor. Ablagos eigener Rundgang startet bei der ersten Anmeldung eines neuen Kontos; alle finden ihn unter „Ablago entdecken“.  
+Kurze Führung an der echten Oberfläche in wenigen Schritten, jeder Schritt hebt eine Stelle hervor. Ablagos eigene Rundgänge starten beim ersten Besuch einer Seite (Ablage, Mappe, Werkbank; Mein Konto nur mit einem stillen Hinweis); alle finden sie unter „Ablago entdecken“.  
 Siehe auch: [Tipp](#tipp), [Ablago entdecken](#ablago-entdecken).
 
 <a id="standardwert"></a>**Standardwert** · ~ mit Erklärung · Administratoren  
@@ -162,7 +162,7 @@ Feldart ohne eigenen Wert – zeigt zwischen den Feldern einer Mappe die Mappen 
 Siehe auch: [Feldart](#feldart), [Register](#register), [Trefferliste](#trefferliste), [Verweis](#verweis).
 
 <a id="tipp"></a>**Tipp** · ✓ Alltagswort · alle  
-Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens ein neuer am Tag als „Tipp des Tages“ im Assistenten (ein Punkt am Knopf zeigt ihn an); „Zeig es mir“ führt an die Stelle oder startet einen Rundgang. In Mein Konto abschalten.  
+Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens ein neuer am Tag als „Tipp des Tages“ im Assistenten (ein Punkt am Knopf zeigt ihn an); „Zeig es mir“ führt an die Stelle, startet einen Rundgang oder öffnet eine Seite im Handbuch. In Mein Konto abschalten.  
 Siehe auch: [Rundgang](#rundgang), [Ablago entdecken](#ablago-entdecken), [Assistent](#assistent).
 
 <a id="titel"></a>**Titel** · ✓ Alltagswort · alle  

@@ -139,7 +139,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       rechts={bereich !== 'uebersicht'}
       offen={id}
       schmalBis={WERKBANK_SCHMAL}>
-      <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')}>
+      <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')} data-anker="werkbank.navigation">
         <WerkbankNavigation
           bereich={bereich}
           eintraege={eigene}
@@ -159,7 +159,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           {t('werkbank.handbuch.link')} <Symbol name="extern" />
         </a>
       </aside>
-      <section className="spalte liste" aria-label={t('werkbank.werkbank.elemente')}>
+      <section className="spalte liste" aria-label={t('werkbank.werkbank.elemente')} data-anker="werkbank.mitte">
         <HandyKopf an={h.schmal} bereich={bereich} ebene="liste" />
         {liste}
       </section>

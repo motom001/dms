@@ -30,7 +30,9 @@ Oben siehst du die Bereiche:
 - **Dein Name** – öffnet ein Menü mit *Mein Konto* (dort auch Darstellung und Abwesenheit), *Fehler melden*, *Über Ablago* und Abmelden.
 - **Der Assistent unten rechts** – auf jeder Seite an derselben Stelle: Tipps, Fragen und das Handbuch, siehe [Assistent](assistent.md).
 
-Bei der ersten Anmeldung zeigt dir ein kurzer [Rundgang](entdecken.md#rundgang) diese Stellen. Du findest ihn später jederzeit im Assistenten unter **Tipps** → *Alle Tipps und Rundgänge*.
+Beim ersten Besuch der Ablage zeigt dir ein kurzer [Rundgang](entdecken.md#rundgang) diese Stellen; eigene kurze Rundgänge gibt es für die erste Mappe und für Mein Konto. Du findest sie später jederzeit im Assistenten unter **Tipps** → *Alle Tipps und Rundgänge*.
+
+Was die verschiedenen Knöpfe bedeuten – blau, grün, mit Rand, gestrichelt –, zeigt die Seite [So sehen Knöpfe aus](knoepfe.md).
 
 Die Ablage ist in **drei Spalten** geteilt, von groß nach klein:
 

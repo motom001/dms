@@ -396,6 +396,20 @@ async function hoverUndFokus(seite) {
  *                 beobachte (wird mit jedem neuen Browser-Kontext aufgerufen, z. B. um Fehler zu sammeln)
  * @returns { bilder: string[], verstoesse: string[] } – Verstöße je Ansicht mit ihrem Namen davor
  */
+/** Bilder fürs Benutzerhandbuch „So sehen Knöpfe aus“ (#1524): Name und Karte der Musterseite. */
+const KNOEPFE_BILDER = [
+  ['arten', '[data-zustand="knopf-arten"]'],
+  ['wege', '[data-zustand="knopf-wege"]'],
+  ['gefahr', '[data-zustand="knopf-gefahr"]'],
+  ['rueckfrage', '[data-zustand="knopf-rueckfrage"]'],
+  ['blass', '[data-zustand="knopf-gesperrt"]'],
+  // Die breite Karte nur so breit wie die geöffnete Erklärung.
+  ['gesperrt', '[data-zustand="knopf-erklaerung"]', 'justify-self: start; width: 560px; max-width: 100%'],
+  ['etikett', '[data-zustand="etikett-arten"]'],
+  ['schalter', '[data-zustand="schalter-an"]'],
+  ['haken', '#feld [data-zustand="haken"]'],
+];
+
 export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', pruefen = true, beobachte } = {}) {
   const bilder = [];
   const verstoesse = [];
@@ -455,6 +469,16 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
         for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl', 'platzhalter', 'etikett', 'zahl', 'kachel', 'aufklapper', 'datum'])
           await foto(s.locator(`#${b}`), `muster-${b}${suffix}`);
+        // Benutzerhandbuch „So sehen Knöpfe aus“ (#1524): einzelne Karten der Musterseite, damit die Bilder von selbst
+        // stimmen, wenn sich ein Baustein ändert.
+        // Ohne die Überschrift der Musterseite (Fachwörter für Entwickler) und nur so hoch wie der Inhalt.
+        const stil = await s.addStyleTag({
+          content: KNOEPFE_BILDER.map(
+            ([, wo, mehr = '']) => `${wo} > h3 { display: none } ${wo} { align-self: start; height: auto; ${mehr} }`,
+          ).join('\n'),
+        });
+        for (const [name, wo] of KNOEPFE_BILDER) await foto(s.locator(wo).first(), `knoepfe-${name}${suffix}`);
+        await stil.evaluate((el) => el.remove());
       }
     } finally {
       await k.close();

@@ -55,3 +55,12 @@ dialog.rundgang.schmal .rg-karte { left: 16px; right: 16px; width: auto; }
 @media (pointer: coarse) {
   .ent-tipps .tipp-satz { display: block; padding-block: 4px; }
 }
+
+/* Stiller Hinweis auf einen Rundgang (#1523, `leise: true`): ein Satz wie ein Tipp der Startseite, kein Rahmen,
+   keine Farbe. Der Satz startet den Rundgang; × blendet ihn aus. */
+.stiller-hinweis { display: flex; align-items: center; gap: 4px; margin: 0 0 12px; }
+[data-knopf="eigen"].weg { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--leise); }
+[data-knopf="eigen"].weg:hover { background: var(--knopf-hover); color: var(--tinte); }
+@media (pointer: coarse) {
+  [data-knopf="eigen"].weg { width: 44px; height: 44px; }
+}

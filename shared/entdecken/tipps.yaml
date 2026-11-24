@@ -9,7 +9,9 @@
 #   schluessel  Name (klein, Ziffern, _)
 #   bereich     suche | post | fristen | mappen | konto | verwalten – Gruppe auf „Ablago entdecken“
 #   ziel        Anker aus anker.yaml (mit fester Seite): der Satz öffnet die Seite und hebt die Stelle hervor …
-#   rundgang    … oder der Satz startet diesen Rundgang (genau eines von beiden)
+#   rundgang    … oder der Satz startet diesen Rundgang …
+#   handbuch    … oder der Satz öffnet diese Seite im mitgelieferten Handbuch, z. B. benutzer/knoepfe/ (#1524)
+#               (genau eines der drei)
 #   fuer        lesen (alle, Vorgabe) | verwalten (nur Personen mit Verwaltungsrecht)
 #   funktion    nur, wenn eingeschaltet: fragen (Antwort-Paket) | laufwerk | mail (E-Mail-Versand)
 #   ab_version  „Neu seit deinem letzten Besuch“ für alle, die auf diese Version aktualisiert haben
@@ -21,6 +23,10 @@
 - schluessel: favoriten
   bereich: mappen
   ziel: navigation.favoriten
+# Früh (#1524): was die Knöpfe bedeuten – als Seite im Benutzerhandbuch, nicht als Schritt eines Rundgangs.
+- schluessel: knoepfe
+  bereich: mappen
+  handbuch: benutzer/knoepfe/
 - schluessel: zu_erledigen_monat
   bereich: fristen
   ziel: zu-erledigen.ansicht

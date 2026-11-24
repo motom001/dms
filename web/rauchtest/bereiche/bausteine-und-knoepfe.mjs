@@ -25,7 +25,8 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 4
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 40, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  // 40 der Musterseite und 18 fürs Benutzerhandbuch „So sehen Knöpfe aus“ (#1524, je hell und dunkel).
+  assert.equal(bilder.length, 58, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });

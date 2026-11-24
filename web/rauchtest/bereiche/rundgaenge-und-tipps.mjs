@@ -4,7 +4,18 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import {
+  api,
+  BASIS,
+  daten,
+  keineWaagerechteRolle,
+  LENA,
+  rauchtest,
+  schemaWechseln,
+  sitzung,
+  verwalten,
+  WERKBANK_BEREICHE,
+} from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 const EIGENER = `schluessel: rauchtest
@@ -25,7 +36,7 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await s.goto(BASIS + '/werkbank/rundgaenge');
   const liste = s.getByRole('region', { name: 'Elemente' });
   // Ablagos eigener Rundgang steht in der Liste, mit Start und Herkunft.
-  const ablago = liste.getByRole('link', { name: /bei der ersten Anmeldung/ }).first();
+  const ablago = liste.getByRole('link', { name: /Deine Ablage im Überblick.*beim ersten Besuch der Seite/ });
   await ablago.waitFor();
   await ablago.click();
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
@@ -48,7 +59,9 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await kopieren.click();
   await s.waitForURL(/\/werkbank\/rundgaenge\/eigen%3Aablago$/);
   await bearbeitung.locator('[role="switch"][aria-checked="false"]').waitFor();
-  assert.match(await bearbeitung.getByRole('textbox', { name: 'Datei (YAML)' }).inputValue(), /^start: manuell$/m);
+  const kopie = await bearbeitung.getByRole('textbox', { name: 'Datei (YAML)' }).inputValue();
+  assert.match(kopie, /^start: manuell$/m);
+  assert.doesNotMatch(kopie, /^(seite|leise):/m, 'Seite und „leise“ gehören nur zu Ablagos erstem Besuch');
   // Neuer Rundgang: Fehler mit Zeile, dann speichern.
   await liste.getByRole('link', { name: '+ Rundgang' }).click();
   const datei = bearbeitung.getByRole('textbox', { name: 'Datei (YAML)' });
@@ -93,7 +106,7 @@ rauchtest('Handy: Werkbank → Rundgänge, Tippflächen (#941)', { handy: true, 
   await s.goto(BASIS + '/werkbank/rundgaenge');
   await s
     .getByRole('region', { name: 'Elemente' })
-    .getByRole('link', { name: /bei der ersten Anmeldung/ })
+    .getByRole('link', { name: /Deine Ablage im Überblick/ })
     .first()
     .waitFor();
   await keineWaagerechteRolle(s);
@@ -164,3 +177,127 @@ rauchtest('Tipp „Erinnern“: öffnet eine lesbare Mappe und hebt „Mappe ▾
   await s.waitForURL(/\/ablage\/[^/]+\/[^/]+$/);
   await s.locator('[data-anker="mappe.aktionen"].anker-hervor').first().waitFor();
 });
+
+/* ---------- #1512, #1522, #1523: Rundgänge beim ersten Besuch einer Seite ---------- */
+
+/** Eine neue Person (Administratorin), die Ablago noch nicht kennt, mit eigener Mappe; angemeldet im Browser. */
+async function neuePerson(s, name) {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const person = { email: `${name.toLowerCase()}@example.org`, name, passwort: `rauchtest-passwort-${name}` };
+  const einladung = (
+    await api('POST', '/api/benutzer', { cookie: verwaltung, body: { email: person.email, name, rolle: 'admin', rollen: [] } })
+  ).daten;
+  await api('POST', '/api/konto/passwort-setzen', {
+    body: { schluessel: einladung.link.split('/passwort/')[1], passwort: person.passwort },
+  });
+  // Administratorin mit „Gesamter Verwaltung“ (#818), damit sie die Werkbank sieht.
+  const id = (await api('GET', '/api/benutzer', { cookie: verwaltung })).daten.find((b) => b.email === person.email).id;
+  await api('PUT', `/api/benutzer/${id}/verwaltung`, { cookie: verwaltung, body: { verwaltung: ['*'] } });
+  const cookie = await sitzung(person);
+  const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: daten.bausteine.id, werte: { objekt: `Keller ${name}` } } }))
+    .daten;
+  const [k, v] = cookie.split('=');
+  await s.context().addCookies([{ name: k, value: v, url: BASIS }]);
+  return { cookie, mappe };
+}
+
+/** Geht einen laufenden Rundgang durch und gibt je Schritt die Hervorhebung zurück (null: ohne Hervorhebung). */
+async function durchgehen(s, titel, anzahl) {
+  const rundgang = s.getByRole('dialog');
+  await rundgang.getByText(`Rundgang: ${titel}`, { exact: true }).waitFor();
+  const licht = [];
+  for (let i = 1; i <= anzahl; i++) {
+    await rundgang.getByText(`Schritt ${i} von ${anzahl}`).waitFor();
+    await s.waitForTimeout(400);
+    licht.push(await s.locator('.rg-licht').boundingBox());
+    await rundgang.getByRole('button', { name: i < anzahl ? 'Weiter' : 'Fertig' }).click();
+  }
+  await rundgang.waitFor({ state: 'detached' });
+  return licht;
+}
+
+const vonLinksNachRechts = (licht) => licht.every((l, i) => i === 0 || l.x >= licht[i - 1].x - 4);
+const vonObenNachUnten = (licht) => licht.every((l, i) => i === 0 || l.y >= licht[i - 1].y - 4);
+
+rauchtest(
+  'Erster Besuch: Ablage, dann Mappe, Mein Konto nur als stiller Hinweis – in Leserichtung (#1512, #1522, #1523)',
+  { timeout: 90_000 },
+  async (s) => {
+    const { mappe } = await neuePerson(s, 'Mia');
+    await s.goto(BASIS + '/ablage/start');
+    // Ablage: von selbst, sieben Schritte.
+    const ablage = await durchgehen(s, 'Deine Ablage im Überblick', 7);
+    assert.ok(ablage.every(Boolean), 'jeder Schritt hebt etwas hervor');
+    // Nach dem Ende folgt kein weiterer Rundgang von selbst auf derselben Seite.
+    await s.waitForTimeout(1500);
+    assert.equal(await s.getByRole('dialog').count(), 0, 'nach dem Rundgang Ruhe');
+    // Mappe: beim ersten Öffnen einer Mappe, oben von links nach rechts, dann nach unten.
+    await s.goto(BASIS + `/ablage/${daten.bausteine.id}/${mappe.id}`);
+    const m = await durchgehen(s, 'So arbeitest du in einer Mappe', 5);
+    assert.ok(m.every(Boolean), 'jeder Schritt der Mappe hebt etwas hervor');
+    assert.ok(vonLinksNachRechts(m.slice(0, 3)), `Kopf der Mappe nicht von links nach rechts: ${m.map((l) => Math.round(l.x)).join(', ')}`);
+    assert.ok(vonObenNachUnten(m.slice(2)), `Mappe nicht von oben nach unten: ${m.map((l) => Math.round(l.y)).join(', ')}`);
+    // Mein Konto: kein Rundgang von selbst, nur ein Satz; der startet ihn, von oben nach unten.
+    await s.goto(BASIS + '/profil/konto');
+    const hinweis = s.locator('.stiller-hinweis');
+    await hinweis.getByRole('link', { name: /^Neu hier\?/ }).waitFor();
+    await s.waitForTimeout(1500);
+    assert.equal(await s.getByRole('dialog').count(), 0, 'Mein Konto startet nichts von selbst');
+    await hinweis.getByRole('link', { name: /^Neu hier\?/ }).click();
+    const k = await durchgehen(s, 'Mein Konto', 7);
+    assert.ok(k.every(Boolean), 'jeder Schritt in Mein Konto hebt etwas hervor');
+    assert.ok(vonObenNachUnten(k), `Mein Konto nicht von oben nach unten: ${k.map((l) => Math.round(l.y)).join(', ')}`);
+    await hinweis.waitFor({ state: 'detached' });
+    // Ein zweites Laden: Ablage und Mappe bleiben ruhig.
+    await s.goto(BASIS + `/ablage/${daten.bausteine.id}/${mappe.id}`);
+    await s.getByRole('heading', { name: 'Keller Mia' }).first().waitFor();
+    await s.waitForTimeout(1500);
+    assert.equal(await s.getByRole('dialog').count(), 0, 'gesehen bleibt gesehen');
+  },
+);
+
+rauchtest(
+  'Erster Besuch: Werkbank für Verwaltende, × blendet den Hinweis in Mein Konto aus (#1512, #1523)',
+  { timeout: 60_000 },
+  async (s) => {
+    const { cookie } = await neuePerson(s, 'Ben');
+    // Im Verwaltungsmodus (dieselbe Sitzung wie im Browser) direkt in die Werkbank.
+    await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: 'rauchtest-passwort-Ben' } });
+    await s.goto(BASIS + '/werkbank');
+    await s.getByText('Rundgang: Die Werkbank im Überblick', { exact: true }).waitFor();
+    assert.deepEqual(await axePruefen(s, ['dialog.rundgang']), [], 'axe im Rundgang');
+    const w = await durchgehen(s, 'Die Werkbank im Überblick', 8);
+    assert.ok(w.every(Boolean), 'jeder Schritt der Werkbank hebt etwas hervor');
+    assert.ok(vonLinksNachRechts(w.slice(0, 3)), `Kopfzeile nicht von links nach rechts: ${w.map((l) => Math.round(l.x)).join(', ')}`);
+    // Hinweis in Mein Konto ausblenden: bleibt weg, auch nach dem Neuladen.
+    await s.goto(BASIS + '/profil/konto');
+    const hinweis = s.locator('.stiller-hinweis');
+    await hinweis.getByRole('button', { name: 'Hinweis ausblenden' }).waitFor();
+    const funde = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, ['.stiller-hinweis'])) funde.push(`${schema}: ${v}`);
+    }
+    await schemaWechseln(s, 'light');
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+    await hinweis.getByRole('button', { name: 'Hinweis ausblenden' }).click();
+    await hinweis.waitFor({ state: 'detached' });
+    await s.reload();
+    await s.getByRole('heading', { name: 'Ben', level: 1 }).waitFor();
+    assert.equal(await hinweis.count(), 0);
+  },
+);
+
+for (const handy of [false, true])
+  rauchtest(
+    `${handy ? 'Handy' : 'Rechner'}: Tipp „So sehen Knöpfe aus“ öffnet die Seite im Handbuch (#1524)`,
+    { als: LENA, handy },
+    async (s) => {
+      await s.goto(BASIS + '/entdecken');
+      const tipp = s.getByRole('region', { name: 'Tipps' }).getByRole('link', { name: /^Blau, grün, mit Rand oder gestrichelt\?/ });
+      await tipp.waitFor();
+      assert.equal(await tipp.getAttribute('href'), '/hilfe/benutzer/knoepfe/');
+      assert.equal(await tipp.getAttribute('target'), '_blank');
+    },
+  );

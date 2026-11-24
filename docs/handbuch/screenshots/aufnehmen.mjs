@@ -290,8 +290,9 @@ async function vorbereiten() {
   // Administrator und Schlüssel hat der Einrichtungsassistent angelegt (einrichtenImBrowser).
   const admin = (await api('GET', '/api/konto/status')).benutzer;
   const adminCookie = cookie;
-  // Rundgang bei der ersten Anmeldung (#831): Die Konten der Bilder kennen Ablago schon – er läge sonst über jedem Bild.
-  await api('POST', '/api/entdecken/rundgaenge/ablago', { stand: 'gesehen' });
+  // Rundgänge beim ersten Besuch (#831, #1512, #1522, #1523): Die Konten der Bilder kennen Ablago schon – sie lägen sonst
+  // über jedem Bild.
+  for (const r of ['ablago', 'werkbank', 'mappe', 'konto']) await api('POST', `/api/entdecken/rundgaenge/${r}`, { stand: 'gesehen' });
   // Die Bilder zeigen alle Bereiche der Werkbank; der Assistent stellt sonst eine kleinere Stufe ein (#281, #987).
   await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'alles', ein: [], aus: [] } });
   await api('POST', '/api/beispiele');
@@ -315,7 +316,7 @@ async function vorbereiten() {
   const schluessel = einladung.link.split('/passwort/')[1];
   await api('POST', '/api/konto/passwort-setzen', { schluessel, passwort: MITGLIED.passwort });
   await api('POST', '/api/konto/anmelden', { email: MITGLIED.email, passwort: MITGLIED.passwort });
-  await api('POST', '/api/entdecken/rundgaenge/ablago', { stand: 'gesehen' });
+  for (const r of ['ablago', 'werkbank', 'mappe', 'konto']) await api('POST', `/api/entdecken/rundgaenge/${r}`, { stand: 'gesehen' });
   cookie = adminCookie;
 
   // Vertrag bekommt einen verantwortlichen Benutzer (#26)

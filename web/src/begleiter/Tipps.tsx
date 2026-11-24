@@ -17,6 +17,9 @@ import s from './Begleiter.module.css';
  * „Nächster Tipp“ blättert durch die übrigen Tipps, die nicht ausgeblendet sind; „Zeig es mir“ schließt das Fenster,
  * öffnet die Stelle und hebt sie hervor.
  */
+/** „Zeig es mir“ gibt es, wenn der Tipp an eine Stelle, in einen Rundgang oder ins Handbuch (#1524) führt. */
+const kannZeigen = (x: TippAnzeige) => !!(x.ziel || x.rundgang || x.handbuch);
+
 export function TippKarte({ schliessen }: { schliessen(): void }) {
   const { stand } = useEntdecken();
   const d = useDaten();
@@ -51,7 +54,7 @@ export function TippKarte({ schliessen }: { schliessen(): void }) {
                 : t('entdecken.zeile.neu', { text: x.text })}
           </p>
           <div className="knoepfe">
-            {(x.ziel || x.rundgang) && (
+            {kannZeigen(x) && (
               <Knopf
                 onClick={() => {
                   schliessen();

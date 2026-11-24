@@ -91,7 +91,7 @@ describe('Rundgänge aus Paketen: Prüfung beim Installieren (#831)', () => {
     );
     assert.match(
       gruende(() => lies(RUNDGANG.replace('start: nach_installation', 'start: erste_anmeldung'))),
-      /nur für Ablagos eigenen Rundgang/,
+      /nur für Ablagos eigene Rundgänge/,
     );
   });
 
@@ -170,7 +170,10 @@ describe('Rundgänge aus Paketen: Anzeige je Person (#831)', () => {
     assert.equal(r.herkunft, 'paket:vertraege');
     assert.deepEqual(r.oeffne, { mappe: 'vertraege:vertrag' });
     assert.equal(r.schritte[0].sonstVerwalten, 'Frag die Person, die Ablago bei euch verwaltet.', 'Jonas verwaltet nicht');
-    assert.equal(s.starten, 'ablago', 'von selbst startet nur Ablagos eigener Rundgang');
+    assert.ok(
+      s.beimBesuch.every((x) => !x.schluessel.includes(':')),
+      'von selbst (beim ersten Besuch) starten nur Ablagos eigene Rundgänge',
+    );
     const angebot = s.tipps.find((x) => x.rundgang === 'vertraege:kennenlernen');
     assert.ok(angebot?.neu, 'als „Neu“ angeboten');
     assert.equal(angebot.text, 'Verträge im Überblick – kurzer Rundgang');
