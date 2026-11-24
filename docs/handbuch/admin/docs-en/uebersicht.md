@@ -154,6 +154,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | Test restore missing or old | notice | `sicherung.probe` |
 | The backup folder is not a volume of its own | yellow | `sicherung.volume` |
 | Backups on the same disk as the documents | notice | `sicherung.gleiche-platte` |
+| After a new setup: next step, set up an off-site copy ([First backup](sicherung.md#erste-sicherung); then replaces the "same disk" notice) | notice (yellow on the same disk) | `sicherung.ausser-haus` |
+| The first backup after setup or its test failed – the cause is shown under Workbench → Backup | red | `sicherung.erste-fehler` |
 | Off-site backup failed | red | `sicherung.extern-fehler` |
 | Off-site backup more than 2 days behind | yellow | `sicherung.extern-alt` |
 | “Keep only the newest locally” currently not in effect | yellow | `sicherung.nur-neueste` |
@@ -185,6 +187,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | A tool for editing PDFs is missing: protected PDFs can't be unlocked, shrinking works less well ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `werkzeug.fehlt:qpdf` |
 | Fonts for PDFs are missing: PDFs without embedded fonts show no text in page images, thumbnails and the archive version ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `schriften.fehlen` |
 | Document files are missing from the storage folder (e.g. `/data/files` without a volume) – details in the log, module *Documents* | red | `dateien.fehlen` |
+| "Check all files" (by hand or [on a schedule](archiv.md#alle-dateien-prufen-zeitplan)) found deviations | red | `dateien.befund` |
 | Nobody gets the tasks without a recipient | notice | `aufgabenempfaenger` |
 | Tasks with people without read permission | yellow | `aufgaben.ohne-leserecht` |
 | Tasks without a recipient | notice | `aufgaben.ohne-empfaenger` |
