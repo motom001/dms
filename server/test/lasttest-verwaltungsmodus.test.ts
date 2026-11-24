@@ -97,7 +97,7 @@ describe('Lasttest: Mess-Sitzung im Verwaltungsmodus (#873)', () => {
     jetzt.t += 16 * MIN;
     const vorher = { ...zaehler };
     const s = await lt.serverStand(c);
-    assert.equal(s.fehler, undefined, s.fehler);
+    assert.equal(s.fehler, undefined, String(s.fehler));
     assert.equal(zaehler.abgelehnt - vorher.abgelehnt, 1, 'genau eine 403 mit details.verwaltungsmodus');
     // Kurz vor Mitternacht braucht der Neubeginn die erneute Anmeldung (ein Versuch mehr).
     if (new Date(jetzt.t - 16 * MIN).toDateString() === new Date(jetzt.t).toDateString())
@@ -116,7 +116,7 @@ describe('Lasttest: Mess-Sitzung im Verwaltungsmodus (#873)', () => {
     const c = await lt.anmelden(LENA);
     jetzt.t += 24 * 60 * MIN;
     const s = await lt.serverStand(c);
-    assert.equal(s.fehler, undefined, s.fehler);
+    assert.equal(s.fehler, undefined, String(s.fehler));
   });
 
   it('langer Durchgang: Werte da, keine Ausfälle', async () => {

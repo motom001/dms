@@ -302,7 +302,7 @@ async function aufbau(pg: boolean, o: { mail?: boolean; adresse?: string } = {})
       body: { mappeId: max.id, auswahl: { mappen: [max.id], dokumente: [dok.id], notizen: [], historie: [] }, geprueft: true, passwort },
     });
     const f = await d.auftraege.warte();
-    assert.equal(f?.status, 'fertig', f?.fehler);
+    assert.equal(f?.status, 'fertig', String(f?.fehler));
     return f!.ergebnis as { id: string; bytes: number; verschluesselt: boolean; bis: string; name: string };
   }
   const zip = async (inhalt: unknown) => {

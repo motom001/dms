@@ -162,7 +162,8 @@ export class Arbeiterpool {
     });
     const f: Faden = { w, offen: null, beendet: false };
     w.on('message', (m: Antwort) => this.antwort(f, m));
-    w.on('error', (e) => this.absturz(f, e));
+    // Node 26 (#1473): Das Ereignis „error“ ist als unknown getypt; ein Worker meldet hier immer einen Error.
+    w.on('error', (e) => this.absturz(f, e instanceof Error ? e : new Error(String(e))));
     w.on('exit', (code) => {
       if (!f.weg) this.absturz(f, new Error(`Arbeiter beendet (Code ${code})`));
     });

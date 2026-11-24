@@ -128,7 +128,7 @@ Du nutzt Ablago? **[Erzähl uns, wie](https://github.com/motom001/dms/issues/new
 
 ## Entwicklung
 
-Voraussetzungen: Node.js 24 (LTS), Docker.
+Voraussetzungen: Node.js 26 (LTS), Docker.
 
 ```sh
 npm install

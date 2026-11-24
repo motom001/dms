@@ -13,7 +13,7 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 | Building block | Technology | What for |
 | --- | --- | --- |
 | Interface | React 19, built with Vite | Library, workbench, My account – everything in the browser |
-| Server | Node.js 24, Fastify 5, TypeScript (bundled with esbuild) | Interface under `/api`, also delivers the user interface |
+| Server | Node.js 26, Fastify 5, TypeScript (bundled with esbuild) | Interface under `/api`, also delivers the user interface |
 | Database | PostgreSQL 18 (at least 16), access with postgres.js, SQL migrations in `server/migrations` | All data except the files |
 | Files | Fixed folders `/data/files`, `/data/geheim`, `/data/sicherung` (volumes, see [Installation](installation.md#ordner-und-volumes)); each file named by its SHA-256; optionally the [Intake folder](eingangsordner.md) `/eingang` | Uploaded documents, the same content only once; key; backups; scans to collect |
 | Email | nodemailer via SMTP for sending; imapflow and mailparser via IMAP for collecting (both optional, set in the workbench) | Invitations, password links, notices, sending folders; collecting emails from [mailboxes](postfaecher.md) as post |
@@ -25,7 +25,7 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 | Workers | `node:worker_threads`, without an additional library: a small pool next to the main thread (#542), see [System health](speicherplatz.md#arbeiter-fur-pdf-und-exporte) | PDF work and large exports without other users waiting |
 | Encryption | AES-256-GCM (Node.js crypto), key as a file under `/data/geheim` | Stored passwords (#39, #46) |
 | Passkeys | WebAuthn; verified with `@simplewebauthn/server` (MIT), in the browser the built-in interface; only public keys in the database | Signing in without a password, second factor, signing in again ([Passkeys](anmeldeschutz.md#passkeys), #811) |
-| Image | `node:24-alpine`, multi-stage build, for amd64 and arm64 – each architecture on its own matching GitHub machine (without emulation), then merged into one image | Runs on the NAS next to the PostgreSQL image |
+| Image | `node:26-alpine`, multi-stage build, for amd64 and arm64 – each architecture on its own matching GitHub machine (without emulation), then merged into one image | Runs on the NAS next to the PostgreSQL image |
 | dms-komplett | The same image with PostgreSQL 18 (Alpine package) in the same container; database in the folder `/data/postgres` | Ablago and database in one container |
 | Checks | GitHub Actions: type check, tests against PostgreSQL, image build | Every push to `main`, every pull request, every version tag and once a week |
 

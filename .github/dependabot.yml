@@ -20,7 +20,7 @@ updates:
         update-types: [minor, patch]
     commit-message: { prefix: "Abhängigkeiten" }
     ignore:
-      # Node bleibt auf der LTS-Reihe des Images (24); die Typen gehören dazu. Wechsel gezielt (#236).
+      # Node bleibt auf der LTS-Reihe des Images (26, #1473); die Typen gehören dazu. Wechsel gezielt (#236).
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
       # TypeScript 7 (neuer Compiler) kommt gezielt, sobald Werkzeuge und Editoren damit sauber laufen (#236).

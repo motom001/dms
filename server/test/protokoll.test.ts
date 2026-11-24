@@ -212,7 +212,7 @@ describe('Versionsübersicht', () => {
         : mitRelease(url);
     const vorschau = (await versionsabgleich(u, {}, mitVorschau)).find((x) => x.komponente === 'Ablago')!;
     assert.equal(vorschau.status, 'neuer');
-    assert.ok(vorschau.hinweis!.startsWith(`2 neuere Versionen (bis ${neu})`), vorschau.hinweis);
+    assert.ok(vorschau.hinweis!.startsWith(`2 neuere Versionen (bis ${neu})`), String(vorschau.hinweis));
     // Genau auf der stabilen Version (Commit des Releases): „aktuell“, kein Hinweis auf main – auch wenn main weiter ist.
     const gleich = async (url: string): Promise<unknown> =>
       url.endsWith('/releases/latest')

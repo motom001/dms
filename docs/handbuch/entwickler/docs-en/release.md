@@ -21,6 +21,9 @@ A release arises as soon as there is a version number on `main` for which there 
 
 On top of that, every build gets the short hash of the commit (`:sha-…`).
 
+- **Image with stable versions only** (#1480): `ghcr.io/motom001/ablago:<version>` carries only versions that were promoted to `:stabil`. The tag is created by *:stabil befördern* (stabil.yml) with `docker buildx imagetools create` – without a new build, with the same digest as `dms:<version>`, i.e. both architectures and the same provenance (`gh attestation verify oci://ghcr.io/motom001/ablago:<version> -R motom001/dms`). There is no `:latest` and no `:stabil` there. *:stabil zurücksetzen* creates nothing there; a tag that is already published stays. Meant for app catalogues with their own updating (Renovate in the TrueNAS catalogue) that would otherwise take every release. Only `dms`, no `dms-komplett`.
+- **Version in the image** (#1447): the build sets `DMS_VERSION` to the version from `package.json` (build argument in image.yml, in the probe and when building on `main`). Log, workbench and load test already read it from `package.json` before. What is new is the **matching of versions on start** (`FassungenDienst.abgleich`): it runs once per version (marker `fassungen_abgleich`). What migrations and moves changed then gets the version "Update to Ablago <version>", entries without a version get their first, vanished ones a deletion note. Without `DMS_VERSION` the version was always "Entwicklung": the matching only ran on the very first start and never again, and the versions were called "Update to Ablago Entwicklung". With the real version, the first start after the update catches up on everything with one version per changed entry. Because only differences get a version, there are no duplicate versions and no duplicate or lost types. Locally (`npm run dev`, tests) it stays "Entwicklung", likewise with your own `docker build` without `--build-arg DMS_VERSION=…`. The update test checks the same folder types before and after the update and at most one update version per type, also after another restart.
+
 - **`:latest`** only moves with a new version, i.e. in the same run as the version number, and only once the release has been created. The weekly rebuild and pushes without a new number only set `:main`. The job re-tags the finished manifest of both architectures with `docker buildx imagetools create` and then checks that `:latest` and `:<version>` have the same digest. If a higher release already exists (two merges shortly after each other), `:latest` stays where it is. `docker/metadata-action` no longer sets `:latest` by itself (`flavor: latest=false`), not even for a tag pushed by hand.
 - **Two different “Latest”:** the “Latest” marker on the GitHub releases is on the **stable** version (`:stabil`); Ablago's “new version” notice follows it. The image tag `:latest` is the **newest** version. Between two weekly runs they usually point to different versions.
 - Checking: `docker buildx imagetools inspect ghcr.io/motom001/dms:latest` (and `dms-komplett:latest`) lists amd64 and arm64; the digest is the same as for `:<version>` of the newest release.
@@ -65,7 +68,7 @@ How to read it: is the sentence still true? If not, correct it. If it is intende
 
 ### Changing the Node major version { #node-wechsel }
 
-Ablago runs on **Node.js 24**. Node 24 has been in maintenance since 20 Oct 2026 and gets security updates until **30 Apr 2028**; **Node 26** has been active LTS since October 2026. From 2027 there is only one Node release per year. So we change early and without time pressure ([#1473](https://github.com/motom001/dms/issues/1473), follow-up from the risk profile [#1413](https://github.com/motom001/dms/issues/1413)):
+Since version 0.306 Ablago runs on **Node.js 26** (#1473; before that 24). Node 24 has been in maintenance since 20 Oct 2026 and gets security updates until **30 Apr 2028**; **Node 26** has been active LTS since October 2026. From 2027 there is only one Node release per year. The change was planned early and without time pressure and finally came in week 48 of 2026, after a trial switch (#1456) and the fix for unread file streams (#1461). The original plan ([#1473](https://github.com/motom001/dms/issues/1473), follow-up from the risk profile [#1413](https://github.com/motom001/dms/issues/1413)):
 
 | When | What |
 | --- | --- |
@@ -73,6 +76,7 @@ Ablago runs on **Node.js 24**. Node 24 has been in maintenance since 20 Oct 2026
 | February 2027 | Merge the change, release with a note for operators |
 | **31 Mar 2027 at the latest** | Node 26 in all images and workflows |
 | until 30 Apr 2028 | Node 24 only as a fallback for an older image; no security updates after that |
+| **24 Nov 2026** | done: base image `node:26-alpine`, `engines` 26.x, `@types/node` 26, all workflows (via `node-version-file`) |
 
 **Checklist for the change** (applies likewise to every change of the major version):
 

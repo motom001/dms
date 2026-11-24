@@ -127,7 +127,7 @@ describe('Entfernte Sicherungen (#976)', () => {
     assert.equal(st.nur[0].holbar, true);
     assert.equal(st.nur[0].ziel, 'WebDAV https://cloud.example.org/Ablago', 'ohne Zugangsdaten');
     const l = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
-    assert.equal(l.status, 'fertig', l.fehler);
+    assert.equal(l.status, 'fertig', String(l.fehler));
     assert.equal(l.art, 'holen');
     assert.ok(aufrufe.filter((a) => a.auftrag === 'holen').length >= 2, 'mehrere Aufrufe mit Fortsetzung');
     assert.deepEqual(await readFile(join(s.ordner, `${name}.dms-sicherung`)), ziel.dateien.get(name), 'unverändert');
@@ -173,7 +173,7 @@ describe('Entfernte Sicherungen (#976)', () => {
         return lauf;
       };
       const l = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
-      assert.equal(l.status, verfaelschen ? 'fehler' : 'fertig', l.fehler);
+      assert.equal(l.status, verfaelschen ? 'fehler' : 'fertig', String(l.fehler));
       assert.deepEqual(gesehen, [{ status: l.status, liegt: [] }], 'ein Wechsel, danach nichts Vorläufiges mehr');
     }
   });
@@ -195,7 +195,7 @@ describe('Entfernte Sicherungen (#976)', () => {
       assert.deepEqual(liegt, [`.holen-${name}.${hindernis}`], 'nur das Hindernis des Tests, keine vorläufige Datei');
       await rm(weg, { recursive: true });
       const zweite = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
-      assert.equal(zweite.status, 'fertig', zweite.fehler);
+      assert.equal(zweite.status, 'fertig', String(zweite.fehler));
       assert.deepEqual(await readFile(join(s.ordner, `${name}.dms-sicherung`)), ziel.dateien.get(name));
       assert.deepEqual((await readdir(s.ordner)).filter((n) => n.startsWith('.')), [], 'keine Teildatei');
     }

@@ -10,7 +10,7 @@
     "web"
   ],
   "engines": {
-    "node": "24.x"
+    "node": "26.x"
   },
   "scripts": {
     "dev": "npm run dev -w server & npm run dev -w web",
