@@ -7,7 +7,7 @@
 # Node steht genau einmal hier (#1272): Bau und Laufzeit bauen auf node-basis auf. Als Stufe statt als ARG, weil
 # Dependabot und Scorecard nur FROM-Zeilen lesen. Die Hauptversion passt zu `engines` in package.json (die Workflows
 # lesen sie mit node-version-file); ein Wechsel ändert beide Stellen.
-FROM node:26-alpine AS node-basis
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS node-basis
 
 FROM node-basis AS bau
 WORKDIR /app
