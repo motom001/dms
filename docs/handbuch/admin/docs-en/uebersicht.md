@@ -138,7 +138,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | CPU or memory above 90 % for 5 minutes | yellow | `auslastung` |
 | Bottleneck (waiting time, connections, workers, overload) | yellow | `engpass` |
 | Search extensions missing or in the wrong place | yellow | `erweiterungen` |
-| Maintenance mode announced or active | yellow | `wartung` |
+| Maintenance mode announced or active; active with "Maintenance mode: nothing goes in or out" ([what rests](wartungsmodus.md#nichts-geht-rein-oder-raus)) | yellow | `wartung` |
 | No key for passwords yet | yellow | `tresor.fehlt` |
 | The key for passwords is missing | red | `tresor.verloren` |
 | The key file doesn't match | red | `tresor.falsch` |
@@ -185,6 +185,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Intake folder: a person’s folder could not be renamed after the e-mail address changed | yellow | `eingangsordner.umbenennen` |
 | Text recognition is now a package (only after an update from an older version) | notice (yellow as soon as scans are waiting) | `texterkennung.paket` |
 | Documents with an error in text recognition | yellow | `texterkennung.fehler` |
+| At least 3 text recognition jobs cancelled within 24 hours because of the [time limit](texterkennung.md#zeitgrenze) | yellow | `texterkennung.zeitgrenze` |
 | A tool for reading PDFs is missing: no text from PDFs, no page images ([Built-in tools](fehlersuche.md#werkzeuge); button **View and check again**) | red | `werkzeug.fehlt:poppler` |
 | A tool for editing PDFs is missing: protected PDFs can't be unlocked, shrinking works less well ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `werkzeug.fehlt:qpdf` |
 | Fonts for PDFs are missing: PDFs without embedded fonts show no text in page images, thumbnails and the archive version ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `schriften.fehlen` |

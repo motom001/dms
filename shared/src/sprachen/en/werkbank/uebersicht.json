@@ -49,6 +49,7 @@
   "uebersicht.angekuendigt": "announced",
   "uebersicht.der-wartungsmodus-ist": "Maintenance mode is {wert}.",
   "uebersicht.nur-administratoren-koennen-arbeiten": "Only administrators can work.",
+  "uebersicht.nichts-geht-rein-oder-raus": "Maintenance mode: nothing goes in or out – mailboxes, inbox folders, deliveries and packages rest, emails are skipped.",
   "uebersicht.bald-werden-alle-anderen": "Everyone else will be signed out soon.",
   "uebersicht.zum-wartungsmodus": "To maintenance mode",
   "uebersicht.es-gibt-noch-keinen": "There is no key for passwords yet.",

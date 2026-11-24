@@ -45,7 +45,7 @@ A snapshot fits the **Ablago version** it was made with – and the PostgreSQL m
 
 Practise the restore regularly on a **test system** – not on the running system:
 
-1. **Start the test system without access to the outside network.** Otherwise it fetches real post from the mailboxes, sends reminders and calls packages. Ablago has no switch of its own for this; start the container in a Docker network without internet (`internal: true`) and turn on [maintenance mode](wartungsmodus.md) after logging in – it pauses mailbox fetching, automations and deadlines.
+1. **Start the test system without access to the outside network.** Otherwise it fetches real post from the mailboxes, sends reminders and calls packages. Preferably start the container in a Docker network without internet (`internal: true`). If [maintenance mode](wartungsmodus.md#nichts-geht-rein-oder-raus) was on in the snapshot, the test system stays quiet by itself: the mode survives the restart, and while it is on nothing goes in or out – no mailbox fetching, no Intake folder, no emails, no webhooks, no package calls, no scheduled automations. Otherwise turn it on after logging in. If you take the snapshot specifically for this, turn it on in the real system beforehand.
 2. **Adjust `datenbank.json`** if `geheim` was in the snapshot: otherwise it points to the **real database** – the test system would write into the live filing system. Change the database (and host) to the restored copy.
 3. **Start the same version**, log in and check:
     - open folders and documents, download a document;

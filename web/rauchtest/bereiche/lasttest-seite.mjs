@@ -61,7 +61,16 @@ function stand(fertig) {
       ...erledigt(durchgang('klein', 25, 'lesen', { ziel: true }), 51, 49, { p50: 48, p95: 131, jeSekunde: 210, fehlerquote: 0 }),
       erreicht: true,
     },
-    erledigt(durchgang('klein + Speichern', 25, 'speichern'), 49, 47, { p50: 70, p95: 240, jeSekunde: 150, fehlerquote: 0 }),
+    // #1453: auch die Zusatz-Durchgänge haben ein Ziel.
+    {
+      ...erledigt(durchgang('klein + Speichern', 25, 'speichern', { ziel: true }), 49, 47, {
+        p50: 70,
+        p95: 240,
+        jeSekunde: 150,
+        fehlerquote: 0,
+      }),
+      erreicht: true,
+    },
     erledigt(schritt('aufraeumen'), 47, 46),
   ];
   const mittel = [
@@ -238,6 +247,10 @@ rauchtest('Lasttest-Seite fertig: ein Ergebnis, kurz und ganz kopiert, Hinweis z
   const ablauf = s.getByRole('region', { name: 'Ablauf' });
   await ablauf.locator('.lasttest-gruppe').nth(2).getByRole('button').click();
   await ablauf.getByText('groß 75 bis groß 150: nicht nötig, die Grenze ist erreicht').waitFor();
+  // #1453: „Ziel erreicht“ auch beim Durchgang „+ Speichern“.
+  await ablauf.locator('.lasttest-gruppe').nth(0).getByRole('button').click();
+  const speichern = ablauf.locator('tr', { has: s.getByText('klein + Speichern', { exact: true }) });
+  await speichern.locator('.lasttest-ziel[data-erreicht="ja"]').waitFor();
   await keineWaagerechteRolle(s);
   await barrierefrei(s, true);
 });

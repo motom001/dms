@@ -19,7 +19,7 @@ import type { Zelle } from '../formate/xlsx';
 import { ZIP_MAX, type ZipEintrag, zipGroesse, zipStrom } from '../formate/zip';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import { ABRUF_ART, type Abrufweg, type Dokument, type Mappe, type Mappentyp, verweiseVon } from '../../../shared/src/model';
-import { zeitzone } from '../../../shared/src/region';
+import { tagIn, zeitzone } from '../../../shared/src/region';
 import { alleSichtRechte } from '../../../shared/src/sichtrechte';
 import type { Sicht } from '../../../shared/src/sichten';
 import { type GeltenderStempel, wunschAus } from '../../../shared/src/stempel';
@@ -249,7 +249,7 @@ export class AusgangExport {
     const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
     const quelle = { typen: z.typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
     const titel = sicht?.name ?? (sichtId === 'suche' ? 'Suche' : typen[0]?.name) ?? t('meldungen.dienst.export');
-    const datei = `${sichererName(titel, 60)} ${new Date().toISOString().slice(0, 10)}`;
+    const datei = `${sichererName(titel, 60)} ${tagIn(new Date())}`; // Tag in der Zone der Region (#1552)
     return { z, mappen, typen, spalten, quelle, titel, datei };
   }
 

@@ -1,0 +1,12 @@
+art: minor
+
+## Neu
+
+- **Wartungsmodus: nichts geht rein oder raus** (#1549): Solange er aktiv ist, ruhen Postfach-Abruf, Eingangsordner, Zustellungen an Webhook-Ziele, Pakete und der Zeitplan der Automatisierungen; E-Mails werden ausgelassen und im Protokoll vermerkt. Was ruht, wird nach dem Ausschalten nachgeholt – je Art beschreibt es das Handbuch. Systemzustand und Übersicht zeigen „Wartungsmodus: nichts geht rein oder raus“. Weil der Modus einen Neustart überdauert, bleibt auch ein Testsystem aus einem Snapshot ruhig.
+- **Debug-Modus 24 Stunden, auch über die Variable** (#1528): Der Schalter in der Werkbank gilt jetzt 24 Stunden und auch für Prozesse, die zwischendurch neu starten. `LOG_LEVEL=debug` schreibt ab der ersten Zeile ausführlich und schaltet nach 24 Stunden von selbst zurück, mit Hinweis im Protokoll. Systemzustand und Protokoll zeigen, ob er läuft, woher und bis wann.
+- **Zeitgrenze für die Texterkennung** (#1550): Unter Texterkennung einstellbar (Vorgabe 5 Minuten plus 30 Sekunden je Seite). Ein hängender Auftrag wird abgebrochen, das Dokument steht auf „Fehlgeschlagen – Zeitgrenze“ mit „Erneut versuchen“, der nächste startet. Häufen sich die Abbrüche, meldet es die Übersicht.
+- **Lasttest: Ziele für jeden Durchgang** (#1453): Auch „+ Speichern“, „+ Pakete und Tabellen“, „+ Anmeldeschutz“ und die Grenze von „groß“ haben jetzt ein Ziel und eine CI-Grenze; der Ablauf zeigt bei jedem „Ziel erreicht“.
+
+## Behoben
+
+- **Datum in Dateinamen und Textsatz in der Zeitzone der Region** (#1552): Export, Notfallblatt, Paketbau und Textsatz nahmen kurz nach Mitternacht noch das Datum des Vortags (UTC).

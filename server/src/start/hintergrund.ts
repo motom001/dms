@@ -18,6 +18,7 @@ import type { baueDienst } from './dienst';
 import type { teileArbeitAuf } from './aufteilung';
 import { laufeErste } from '../sicherung/erste-sicherung';
 import { DateienPruefplan } from '../werkbank/dateien-pruefplan';
+import { debugAbgleich } from '../protokoll/debugmodus';
 import { ortszeit } from '../sicherung/sicherung-hilfen';
 
 /** Was starteHintergrund von früher braucht. */
@@ -84,6 +85,14 @@ export async function starteHintergrund(bisher: Bisher) {
     zustandDb,
     aufteilung,
   } = bisher;
+  // Debug-Modus (#1528): in jedem Prozess mit der Datenbank abgleichen – gleich und dann jede Minute. Bis hierher galt
+  // die Stufe aus LOG_LEVEL, damit Fehler beim Start vollständig im Protokoll stehen.
+  if (dienst.kern.einstellungen) {
+    const e = dienst.kern.einstellungen;
+    const abgleich = () => debugAbgleich(e).catch((x) => log.warn('Debug-Modus nicht abgeglichen', { fehler: (x as Error).message }));
+    await abgleich();
+    wiederkehrend('debug-modus', 60_000, () => void abgleich());
+  }
   if (leiter) {
     await texterkennung.start({ zurueckstellen: lebt.allein });
     await laeufer.start().catch((e: unknown) => log.error('Paket-Läufer startet nicht', { fehler: (e as Error).message }));

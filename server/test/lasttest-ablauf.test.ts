@@ -52,6 +52,14 @@ describe('Lasttest-Ablauf (#1251)', () => {
     assert.ok(!a.stufen[0].zeilen.some((z) => z.art === 'schritt' && z.schritt === 'auswerten'));
     const klein = a.stufen[0].zeilen.find((z) => z.art === 'durchgang' && z.name === 'klein')!;
     assert.deepEqual([klein.art === 'durchgang' && klein.ziel, klein.art === 'durchgang' && klein.modus], [true, 'lesen']);
+    // #1453: jeder Durchgang mit Ziel zeigt „Ziel erreicht“ – bei klein, mittel und groß auch die Zusatz-Durchgänge.
+    for (const s of a.stufen)
+      for (const z of s.zeilen) if (z.art === 'durchgang' && z.modus !== 'ueberlast') assert.equal(z.ziel, true, `${z.name} hat ein Ziel`);
+    const extrem = ablaufAusPlan(lt.ablaufPlan(['extrem'], { dauer: 60 }))!;
+    assert.ok(
+      extrem.stufen[0].zeilen.some((z) => z.art === 'durchgang' && z.modus === 'speichern' && !z.ziel),
+      'extrem ohne Ziel',
+    );
     // Ohne „mit Speichern“ und ohne Zusatz-Durchgänge.
     const nur = ablaufAusPlan(lt.ablaufPlan(['klein'], { speichern: false, zusatz: false }))!;
     assert.deepEqual(nur.stufen[0].zeilen.map(kurz), ['pruefen', 'einrichten', 'demo', 'hintergrund', 'vorbereiten', 'klein', 'auswerten']);

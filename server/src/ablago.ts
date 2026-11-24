@@ -118,6 +118,8 @@ const { dienst, konten, personenMitSprache, sprachpakete, wartung, anVerwaltende
   sprachen,
   spDeps,
 });
+// Wartungsmodus (#1549): nichts geht hinaus – auch keine E-Mail (Benachrichtigungen, Zusammenfassung, Meldungen).
+betrieb.ruht = () => wartung.aktiv;
 // Notfallkontakte (#812): Info-Mail über den Versand von Ablago, Name der Ablage, eintragende Person.
 dienst.notfallkontakte.verbinde({
   mailer: () => betrieb.mailer(),

@@ -8,15 +8,18 @@
  *
  * | Stufe  | bildet ab                     | Last                                         | Daten          | Ziel (CI-Grenze)                    |
  * | klein  | Haushalt (2–5 Personen)       | 25 gleichzeitig                              | 5.000 Mappen   | p95 < 0,3 s (0,3 s), keine Fehler   |
- * | mittel | Kleinbetrieb (10–15 Personen) | 100 gleichzeitig, großer Export nebenher     | 50.000 Mappen  | p95 < 1 s (2,86 s), Fehler < 0,1 %  |
- * | gross  | Belastungsgrenze              | +25 alle 2 Minuten bis p95 > 3 s, Fehler > 1 % oder Überlastschutz greift; danach 1000 gleichzeitig | 200.000 Mappen | gemessen wird die Grenze; Pflicht: kein Absturz, Erholung |
+ * | mittel | Kleinbetrieb (10–15 Personen) | 100 gleichzeitig, großer Export nebenher     | 50.000 Mappen  | p95 < 1 s (1 s), Fehler < 0,1 %     |
+ * | gross  | Belastungsgrenze              | +25 alle 2 Minuten bis p95 > 3 s, Fehler > 1 % oder Überlastschutz greift; danach 1000 gleichzeitig | 200.000 Mappen | Grenze mindestens 200 gleichzeitig (#1453); Pflicht: kein Absturz, Erholung |
+ *
+ * Die Ziele der übrigen Durchgänge („+ Speichern“, „+ Pakete und Tabellen“, „+ Anmeldeschutz“) stehen mit denen oben
+ * in ZIELE (#1453).
  * | extrem | sehr großer Bestand (#739)    | wie gross                                    | 500.000 oder 1.000.000 Mappen (--mappen) | wie gross; nur von Hand, nicht in „alle“ und nicht im Zeitplan |
  *
  * Mit Speichern (#739): Nach dem bisherigen Durchgang jeder Stufe folgt ein zweiter mit gleicher Gleichzeitigkeit,
  * in dem rund 10 % der Anfragen schreiben (Mappe ändern, Stern, Notiz, Aufgabe anlegen und erledigen; PROFIL_SPEICHERN)
  * und 5 % die erste Seite der Historie einer Mappe öffnen (#800).
- * Bei gross und extrem läuft er nach der Erholung mit so vielen gleichzeitig, wie die Grenze war. Er ist eine Messung
- * ohne Ziel und ohne CI-Grenze und steht als eigene Zeile im Ergebnis („klein + Speichern“). Die bisherigen
+ * Bei gross und extrem läuft er nach der Erholung mit so vielen gleichzeitig, wie die Grenze war. Er steht als eigene
+ * Zeile im Ergebnis („klein + Speichern“) und hat seit #1453 ein eigenes Ziel mit CI-Grenze (ZIELE; extrem ohne). Die bisherigen
  * Durchgänge, ihre Reihenfolge und ihre Grenzen bleiben unverändert; Arbeitsspeicher und Ereignisschleife der alten
  * Zeilen zählen nur die bisherigen Durchgänge. Danach räumt der Test auf (Werte zurück, Sterne und Notizen weg, Aufgaben
  * erledigt), damit die nächste Stufe dieselben Daten misst. `--ohne-speichern` lässt den Durchgang weg.
@@ -106,6 +109,49 @@ const ECHTE_MAPPEN_MAX = 200;
 const DEMO_JE_LAUF = 50_000;
 
 /**
+ * Ziele und CI-Grenzen aller Durchgänge (#1453) – die eine Stelle dafür; das Administratorhandbuch („Die Stufen“,
+ * „Ziel und CI-Grenze“) nennt dieselben Werte (Test: server/test/lasttest-grenzen.test.ts).
+ *
+ * Je Stufe der Durchgang `lesen` (wie bisher), `speichern` („+ Speichern“), `pakete` („+ Pakete und Tabellen“) und
+ * `anmeldeschutz` („+ Anmeldeschutz“); bei gross die `grenze` (mindestens so viele gleichzeitig) und die drei
+ * Durchgänge an der Grenze. extrem ist eine Messung ohne Ziel.
+ *
+ * - `p95Ms`: Ziel – p95 darunter. Abgeleitet aus den Messungen auf dem NAS des Maintainers (0.297.1 und 0.299.0) und
+ *   auf den Rechnern von GitHub mit Aufschlag: bei klein und mittel der höchste Wert mal 2, bei gross mal 1,5 (die
+ *   Durchgänge laufen an der Grenze, wo schon das Lesen nahe 3 s liegt), aufgerundet auf 300, 400, 500, 750, 1000,
+ *   1500, 2000 … ms. Gegenprobe im Container mit 2 Kernen (klein, 24.11.2026): alle Ziele gehalten.
+ * - `ciP95Ms`: CI-Grenze – erster Lauf auf den Rechnern von GitHub + 20 %, nie unter dem Ziel; wird nur strenger,
+ *   höchstens bis zum Ziel. Heute überall gleich dem Ziel (die Messungen auf GitHub × 1,2 liegen darunter).
+ * - `fehlerquote`: 0 heißt keine Fehler und keine Anfrage ohne Antwort.
+ *
+ * Ziele sind Zusagen des Projekts: Verfehlt das Referenz-NAS eines, entsteht ein Issue „Beschleunigen“ – das Ziel wird
+ * nicht aufgeweicht.
+ */
+export const ZIELE = {
+  klein: {
+    lesen: { p95Ms: 300, ciP95Ms: 300, fehlerquote: 0 },
+    speichern: { p95Ms: 300, ciP95Ms: 300, fehlerquote: 0 },
+    pakete: { p95Ms: 400, ciP95Ms: 400, fehlerquote: 0 },
+    anmeldeschutz: { p95Ms: 750, ciP95Ms: 750, fehlerquote: 0 },
+  },
+  mittel: {
+    lesen: { p95Ms: 1000, ciP95Ms: 1000, fehlerquote: 0.001 },
+    speichern: { p95Ms: 1000, ciP95Ms: 1000, fehlerquote: 0.001 },
+    pakete: { p95Ms: 1000, ciP95Ms: 1000, fehlerquote: 0.001 },
+    anmeldeschutz: { p95Ms: 1000, ciP95Ms: 1000, fehlerquote: 0.001 },
+  },
+  gross: {
+    grenze: { mindestens: 200, ciMindestens: 200 },
+    speichern: { p95Ms: 6000, ciP95Ms: 6000, fehlerquote: 0.01 },
+    pakete: { p95Ms: 6000, ciP95Ms: 6000, fehlerquote: 0.01 },
+    anmeldeschutz: { p95Ms: 4000, ciP95Ms: 4000, fehlerquote: 0.01 },
+  },
+};
+
+/** Ziel eines Durchgangs (#1453); null: Messung ohne Ziel (extrem, unbekannte Art). */
+export const zielVon = (stufe, art) => ZIELE[stufe]?.[art] ?? null;
+
+/**
  * Stufen (#563). Startwerte des Maintainers; nachgeschärft wird nur strenger. Die Ziele von klein und mittel
  * sind deutlich strenger als die Grenzen von #544 (p95 ≤ 5 s bzw. 6 s, Fehler ≤ 1 %).
  *
@@ -124,16 +170,16 @@ export const STUFEN = {
     gleichzeitig: 25,
     mappen: 5_000,
     export: false,
-    ziel: { p95Ms: 300, fehlerquote: 0 },
-    ciGrenze: { p95Ms: 300 },
+    ziel: { p95Ms: ZIELE.klein.lesen.p95Ms, fehlerquote: ZIELE.klein.lesen.fehlerquote },
+    ciGrenze: { p95Ms: ZIELE.klein.lesen.ciP95Ms },
   },
   mittel: {
     bildet: 'Kleinbetrieb (10–15 Personen)',
     gleichzeitig: 100,
     mappen: 50_000,
     export: true,
-    ziel: { p95Ms: 1000, fehlerquote: 0.001 },
-    ciGrenze: { p95Ms: 1000 },
+    ziel: { p95Ms: ZIELE.mittel.lesen.p95Ms, fehlerquote: ZIELE.mittel.lesen.fehlerquote },
+    ciGrenze: { p95Ms: ZIELE.mittel.lesen.ciP95Ms },
   },
   gross: {
     bildet: 'Belastungsgrenze',
@@ -1807,8 +1853,8 @@ async function anmeldeschutz() {
 /* ---------- Pakete, Tabellenfelder, Anmeldeschutz mit vollem Journal (#1254) ---------- */
 
 /*
- * Drei Durchgänge, die nach den bisherigen jeder Stufe dazukommen – eigene Zeilen, ohne Ziel und (bis zum ersten Lauf auf
- * den Rechnern von GitHub) ohne CI-Grenze; die bisherigen Durchgänge, ihre Reihenfolge und Zeilen bleiben, wie sie
+ * Zwei Durchgänge, die nach den bisherigen jeder Stufe dazukommen – eigene Zeilen, seit #1453 mit eigenem Ziel und
+ * eigener CI-Grenze (ZIELE; extrem ohne); die bisherigen Durchgänge, ihre Reihenfolge und Zeilen bleiben, wie sie
  * waren. `--ohne-zusatz` lässt sie weg.
  *
  * - „+ Pakete und Tabellen“: Das Lasttest-Paket (unten, mit Code, offline aus diesem Skript) reagiert auf „Mappe
@@ -2145,7 +2191,7 @@ export const verloreneNachweise = (protokoll) =>
   (protokoll?.eintraege ?? []).filter((m) => /^Nachweis.*nicht eingetragen/.test(m.text)).reduce((s, m) => s + m.anzahl, 0);
 
 /** Beide Zusatz-Durchgänge einer Stufe mit `n` gleichzeitig (#1254). */
-async function zusatz(v, lauf, { name, n, dauer }) {
+async function zusatz(v, lauf, { name, n, dauer }, stufe) {
   if (hat('--ohne-zusatz')) return {};
   const admin = v.sitzungen.admin;
   melde({ art: 'schritt', schritt: 'vorbereiten' });
@@ -2157,6 +2203,7 @@ async function zusatz(v, lauf, { name, n, dauer }) {
   const ruhe = await paketRuhe(admin);
   pakete.paket = { ...paketAufrufe(await paketVerlauf(admin)), ruheSekunden: ruhe };
   pakete.tabelle = runde.tabelle;
+  zielPruefen(stufe, 'pakete', pakete);
   await paketEntfernen(admin);
   const aufgeraeumt = await aufraeumen(v, runde);
   // Journal einmal je Lauf füllen – der Monat bleibt derselbe, weitere Stufen messen mit vollem Journal.
@@ -2177,6 +2224,7 @@ async function zusatz(v, lauf, { name, n, dauer }) {
     neben: (ende) => fehlversuche({ ende, parallel: ZUSATZ.fehlParallel }),
   });
   anmeldung.anmeldung = { ...anmeldung.neben, verloren: verloreneNachweise(anmeldung.protokoll), gefuellt: journalGefuellt };
+  zielPruefen(stufe, 'anmeldeschutz', anmeldung);
   return { pakete, anmeldung, zusatzAufgeraeumt: aufgeraeumt };
 }
 /** Ergebnis des Füllens (einmal je Lauf). */
@@ -2228,19 +2276,91 @@ async function festeStufe(v, name, dauer, lauf) {
   const mitExport = s.export && !hat('--ohne-export');
   const e = pruefeFesteStufe(name, await lauf({ name, n: s.gleichzeitig, dauer, mitExport }));
   melde({ art: 'ziel', name, erreicht: !e.verfehlt.length && !e.zielVerfehlt.length });
-  // #739: danach derselbe Durchgang mit Schreibanteil – zählt nicht für Ziel, CI-Grenze und Exit-Code.
-  if (v.speichern) Object.assign(e, await mitSpeichern(v, lauf, { name: `${name} + Speichern`, n: s.gleichzeitig, dauer, mitExport }));
-  // #1254: danach Pakete und Tabellen, Anmeldeschutz mit vollem Journal – eigene Zeilen, ohne Ziel.
-  Object.assign(e, await zusatz(v, lauf, { name, n: s.gleichzeitig, dauer }));
-  return e;
+  // #739: danach derselbe Durchgang mit Schreibanteil; #1254: danach Pakete und Tabellen, Anmeldeschutz mit vollem
+  // Journal – eigene Zeilen, seit #1453 je mit eigenem Ziel und eigener CI-Grenze.
+  if (v.speichern)
+    Object.assign(e, await mitSpeichern(v, lauf, { name: `${name} + Speichern`, n: s.gleichzeitig, dauer, mitExport }, name));
+  Object.assign(e, await zusatz(v, lauf, { name, n: s.gleichzeitig, dauer }, name));
+  return zieleUebernehmen(e);
 }
 
-/** Durchgang „mit Speichern“ und Aufräumen danach (#739). */
-async function mitSpeichern(v, lauf, o) {
+/** Durchgang „mit Speichern“ und Aufräumen danach (#739); Ziel der Stufe `stufe` (#1453). */
+async function mitSpeichern(v, lauf, o, stufe) {
   v.speichernZiele ??= await vorbereitenSpeichern(v);
   const runde = schreibrunde(v.speichernZiele);
   const speichern = await lauf({ ...o, speichern: runde });
+  zielPruefen(stufe, 'speichern', speichern);
   return { speichern, aufgeraeumt: await aufraeumen(v, runde) };
+}
+
+/**
+ * Ziel eines Zusatz-Durchgangs (#1453): „+ Speichern“, „+ Pakete und Tabellen“, „+ Anmeldeschutz“. `verfehlt`
+ * (CI-Grenze, Fehler, Anfragen ohne Antwort, bei klein und mittel 503, verlorene Nachweise) bestimmt mit `--grenzen` den
+ * Exit-Code, `zielVerfehlt` (p95 über dem Ziel, unter der CI-Grenze) steht nur im Bericht. null ohne Ziel.
+ */
+export function pruefeDurchgang(stufe, art, d) {
+  const z = zielVon(stufe, art);
+  if (!z || !d) return null;
+  const verfehlt = [];
+  const zielVerfehlt = [];
+  if (d.p95 !== null && d.p95 >= z.ciP95Ms) verfehlt.push(`${d.name}: p95 ${d.p95} ms ≥ CI-Grenze ${z.ciP95Ms} ms (Ziel < ${z.p95Ms} ms)`);
+  else if (d.p95 !== null && d.p95 >= z.p95Ms)
+    zielVerfehlt.push(`${d.name}: p95 ${d.p95} ms ≥ Ziel ${z.p95Ms} ms (CI-Grenze ${z.ciP95Ms} ms eingehalten)`);
+  const ohne = d.ohneAntwort ?? 0;
+  if (z.fehlerquote === 0 ? (d.fehler ?? 0) + ohne > 0 : d.fehlerquote >= z.fehlerquote || ohne > 0)
+    verfehlt.push(
+      `${d.name}: Fehlerquote ${prozent(d.fehlerquote)} (${d.fehler ?? 0} Fehler, ${ohne} ohne Antwort) – erlaubt ${z.fehlerquote === 0 ? 'keine' : `< ${prozent(z.fehlerquote)}`}`,
+    );
+  // An der Grenze (gross) darf der Überlastschutz greifen; bei klein und mittel nicht.
+  if (d.abgewiesen && !GRENZSTUFEN.has(stufe))
+    verfehlt.push(`${d.name}: ${d.abgewiesen} Anfragen abgewiesen (503) – bei ${d.n} gleichzeitig darf der Überlastschutz nicht greifen`);
+  if (art === 'anmeldeschutz' && d.anmeldung?.verloren) verfehlt.push(`${d.name}: ${d.anmeldung.verloren} Nachweis-Einträge verloren`);
+  return { p95Ms: z.p95Ms, ciP95Ms: z.ciP95Ms, fehlerquote: z.fehlerquote, verfehlt, zielVerfehlt };
+}
+
+/** Ziel eines Zusatz-Durchgangs prüfen, am Durchgang vermerken (`ziel`) und der Seite melden (Spalte „Ziel“, #1453). */
+function zielPruefen(stufe, art, d) {
+  const r = pruefeDurchgang(stufe, art, d);
+  if (!r) return;
+  d.ziel = r;
+  melde({ art: 'ziel', name: d.name, erreicht: !r.verfehlt.length && !r.zielVerfehlt.length });
+}
+
+/** Ergebnisse der Zusatz-Durchgänge in die Stufe übernehmen (#1453): zählen wie die des bisherigen Durchgangs. */
+function zieleUebernehmen(e) {
+  e.zielVerfehlt ??= [];
+  for (const d of [e.speichern, e.pakete, e.anmeldung])
+    if (d?.ziel) {
+      e.verfehlt.push(...d.ziel.verfehlt);
+      e.zielVerfehlt.push(...d.ziel.zielVerfehlt);
+    }
+  return e;
+}
+
+/**
+ * Grenze von gross gegen ihr Ziel (#1453): mindestens `ZIELE.gross.grenze.mindestens` gleichzeitig; unter der
+ * CI-Grenze verfehlt, darunter nur das Ziel. null ohne Ziel (extrem).
+ */
+export function pruefeGrenze(stufe, gleichzeitig) {
+  const z = zielVon(stufe, 'grenze');
+  if (!z) return null;
+  const verfehlt = [];
+  const zielVerfehlt = [];
+  if (gleichzeitig < z.ciMindestens)
+    verfehlt.push(`Grenze ${gleichzeitig} gleichzeitig < CI-Grenze ${z.ciMindestens} (Ziel mindestens ${z.mindestens})`);
+  else if (gleichzeitig < z.mindestens)
+    zielVerfehlt.push(`Grenze ${gleichzeitig} gleichzeitig < Ziel ${z.mindestens} (CI-Grenze ${z.ciMindestens} eingehalten)`);
+  return { ...z, verfehlt, zielVerfehlt };
+}
+
+/** Kurzurteil der Grenze (#1453), z. B. „Ziel eingehalten (Grenze mindestens 200, CI-Grenze 200)“. */
+export const grenzUrteil = (z) =>
+  `${z.verfehlt.length ? 'CI-Grenze verfehlt' : z.zielVerfehlt.length ? 'Ziel verfehlt, CI-Grenze eingehalten' : 'Ziel eingehalten'} (Grenze mindestens ${z.mindestens}, CI-Grenze ${z.ciMindestens})`;
+
+/** Kurzurteil eines Durchgangs mit Ziel (#1453), z. B. „Ziel eingehalten (Ziel < 300 ms, CI-Grenze 300 ms)“. */
+export function zielUrteil(z) {
+  const u = z.verfehlt.length ? 'CI-Grenze verfehlt' : z.zielVerfehlt.length ? 'Ziel verfehlt, CI-Grenze eingehalten' : 'Ziel eingehalten';
+  return `${u} (Ziel < ${z.p95Ms} ms, CI-Grenze ${z.ciP95Ms} ms)`;
 }
 
 /** Ziel und CI-Grenze in einem Satz, z. B. „Ziel p95 < 1000 ms, CI-Grenze 1000 ms, Fehler < 0,10 %“. */
@@ -2310,26 +2430,30 @@ async function grosseStufe(v, lauf, dauer, stufe = 'gross') {
   // Erst nach allem Bisherigen, damit Schritte, Überlast und Erholung genau so laufen wie vorher.
   const nSpeichern = grenze?.n ?? stufenfolge[0] ?? start;
   const extra = v.speichern
-    ? await mitSpeichern(v, lauf, { name: `${kurz} + Speichern`, n: nSpeichern, dauer: schrittDauer, mitExport: false })
+    ? await mitSpeichern(v, lauf, { name: `${kurz} + Speichern`, n: nSpeichern, dauer: schrittDauer, mitExport: false }, stufe)
     : {};
   // #1254: zuletzt die Zusatz-Durchgänge mit derselben Zahl gleichzeitig.
-  Object.assign(extra, await zusatz(v, lauf, { name: kurz, n: nSpeichern, dauer: schrittDauer }));
-  return {
+  Object.assign(extra, await zusatz(v, lauf, { name: kurz, n: nSpeichern, dauer: schrittDauer }, stufe));
+  // #1453: Ziel der Grenze (nur gross).
+  const zg = pruefeGrenze(stufe, grenze?.n ?? 0);
+  return zieleUebernehmen({
     stufe,
     art: 'messung',
     schritte,
     ueberlast,
     erholung: erholt,
     anmeldeschutz: anmelde,
-    verfehlt,
+    verfehlt: [...verfehlt, ...(zg?.verfehlt ?? [])],
     speicher: speicherHoechstens([...schritte, ueberlast]),
     // Schon der erste Schritt zu viel: Grenze 0 heißt „unter dem ersten Schritt“.
     grenze: grenze
       ? { gleichzeitig: grenze.n, jeSekunde: grenze.jeSekunde, p95: grenze.p95 }
       : { gleichzeitig: 0, jeSekunde: 0, p95: null, unter: stufenfolge[0] ?? start },
     grund,
+    ...(zg ? { grenzZiel: zg } : {}),
     ...extra,
-  };
+    zielVerfehlt: [...(zg?.zielVerfehlt ?? [])],
+  });
 }
 
 /**
@@ -2424,7 +2548,7 @@ function speichernBericht(e) {
   const abgelehnt = Object.entries(d.abgelehnt ?? {});
   const a = e.aufgeraeumt;
   return [
-    `**${d.name}** (${d.n} gleichzeitig, rund 10 % schreibend: Mappe ändern, Stern, Notiz, Aufgabe; 5 % Historie): p50 ${f(d.median)} ms, p95 ${f(d.p95)} ms, p99 ${f(d.p99)} ms, Fehlerquote ${prozent(d.fehlerquote)}; schreibende Anfragen: ${d.schreiben.anfragen}, p50 ${f(d.schreiben.median)} ms, p95 ${f(d.schreiben.p95)} ms${d.jeArt?.Historie ? `; Historie (erste Seite, #800): ${d.jeArt.Historie.anzahl}, p50 ${f(d.jeArt.Historie.median)} ms, p95 ${f(d.jeArt.Historie.p95)} ms` : ''} – Messung ohne Ziel und ohne CI-Grenze.`,
+    `**${d.name}** (${d.n} gleichzeitig, rund 10 % schreibend: Mappe ändern, Stern, Notiz, Aufgabe; 5 % Historie): p50 ${f(d.median)} ms, p95 ${f(d.p95)} ms, p99 ${f(d.p99)} ms, Fehlerquote ${prozent(d.fehlerquote)}; schreibende Anfragen: ${d.schreiben.anfragen}, p50 ${f(d.schreiben.median)} ms, p95 ${f(d.schreiben.p95)} ms${d.jeArt?.Historie ? `; Historie (erste Seite, #800): ${d.jeArt.Historie.anzahl}, p50 ${f(d.jeArt.Historie.median)} ms, p95 ${f(d.jeArt.Historie.p95)} ms` : ''} – ${d.ziel ? `${zielUrteil(d.ziel)}.` : 'Messung ohne Ziel und ohne CI-Grenze.'}`,
     '',
     `Median und p95 je Art (${d.name}):`,
     '',
@@ -2520,6 +2644,7 @@ export function bericht(ergebnisse, x) {
           : `${titel}: Grenze bei **${e.grenze.gleichzeitig} gleichzeitigen Anfragen** (${e.grenze.jeSekunde} Anfragen je Sekunde, p95 ${f(e.grenze.p95)} ms); danach: ${e.grund}.`,
       );
       z.push(`Schritte: ${e.schritte.map((d) => `${d.n} → p95 ${f(d.p95)} ms`).join(' · ')}.`);
+      if (e.grenzZiel) z.push(`${grenzUrteil(e.grenzZiel)}.`);
       if (x.vergleich && e.stufe === 'gross')
         z.push(
           `Letzter Lauf: ${x.vergleich.vorher} gleichzeitig – ${x.vergleich.warnung ? `**WARNUNG: ${Math.round(x.vergleich.schlechter * 100)} % schlechter**` : `Abweichung ${Math.round(-x.vergleich.schlechter * 100)} %`}.`,
@@ -2627,7 +2752,7 @@ export function ergebnisblock(ergebnisse, x, u, angaben = { geraet: arg('--gerae
       );
     } else {
       kz.push(
-        `${(e.stufe === 'gross' ? 'groß' : e.stufe).padEnd(6)} Grenze: ${e.grenze.unter ? `unter ${e.grenze.unter}` : e.grenze.gleichzeitig} gleichzeitig (${e.grenze.jeSekunde}/s, p95 ${f(e.grenze.p95)} ms), Abbruch: ${e.grund}; Erholung ${e.erholung.ms === null ? 'keine' : `${sek(e.erholung.ms)} s`}`,
+        `${(e.stufe === 'gross' ? 'groß' : e.stufe).padEnd(6)} Grenze: ${e.grenze.unter ? `unter ${e.grenze.unter}` : e.grenze.gleichzeitig} gleichzeitig (${e.grenze.jeSekunde}/s, p95 ${f(e.grenze.p95)} ms), Abbruch: ${e.grund}; Erholung ${e.erholung.ms === null ? 'keine' : `${sek(e.erholung.ms)} s`}${e.grenzZiel ? ` – ${grenzUrteil(e.grenzZiel)}` : ''}`,
       );
     }
     // #874: Engpass des Durchgangs (bei groß: der Schritt an der Grenze) – eigene Zeile, die bisherige bleibt.
@@ -2687,7 +2812,7 @@ export function zusatzZeilen(e) {
     const tb = p.jeArt?.Tabelle;
     const h = p.tabelle;
     z.push(
-      `${p.name} ${String(p.n).padStart(4)} gleichzeitig: p50 ${f(p.median)} ms, p95 ${f(p.p95)} ms, p99 ${f(p.p99)} ms, Fehler ${prozent(p.fehlerquote)} – Messung ohne Ziel (Tabelle p50 ${f(tb?.median)} ms, p95 ${f(tb?.p95)} ms; Hinweis „n von m“ bei ${f(h?.mitHinweis)} von ${f(h?.seiten)} Seiten)`,
+      `${p.name} ${String(p.n).padStart(4)} gleichzeitig: p50 ${f(p.median)} ms, p95 ${f(p.p95)} ms, p99 ${f(p.p99)} ms, Fehler ${prozent(p.fehlerquote)} – ${p.ziel ? zielUrteil(p.ziel) : 'Messung ohne Ziel'} (Tabelle p50 ${f(tb?.median)} ms, p95 ${f(tb?.p95)} ms; Hinweis „n von m“ bei ${f(h?.mitHinweis)} von ${f(h?.seiten)} Seiten)`,
     );
     if (p.paket)
       z.push(
@@ -2698,7 +2823,7 @@ export function zusatzZeilen(e) {
     const m = a.anmeldung;
     const mo = a.jeArt?.['Mappe öffnen'];
     z.push(
-      `${a.name} ${String(a.n).padStart(4)} gleichzeitig: Fehlversuche ${String(m.jeSekunde).replace('.', ',')} je s (p50 ${f(m.median)} ms, p95 ${f(m.p95)} ms; ${m.bekannt} bekannte, ${m.unbekannt} unbekannte Konten, ${ZUSATZ.fehlParallel} gleichzeitig) · Mappe öffnen p95 ${f(mo?.p95)} ms · verlorene Nachweise ${m.verloren}${m.gefuellt ? ` – Journal vorher mit ${m.gefuellt.versuche} Fehlanmeldungen gefüllt (${String(m.gefuellt.jeSekunde).replace('.', ',')} je s)` : ''}`,
+      `${a.name} ${String(a.n).padStart(4)} gleichzeitig: Fehlversuche ${String(m.jeSekunde).replace('.', ',')} je s (p50 ${f(m.median)} ms, p95 ${f(m.p95)} ms; ${m.bekannt} bekannte, ${m.unbekannt} unbekannte Konten, ${ZUSATZ.fehlParallel} gleichzeitig) · Mappe öffnen p95 ${f(mo?.p95)} ms · verlorene Nachweise ${m.verloren}${m.gefuellt ? ` – Journal vorher mit ${m.gefuellt.versuche} Fehlanmeldungen gefüllt (${String(m.gefuellt.jeSekunde).replace('.', ',')} je s)` : ''}${a.ziel ? ` · p95 ${f(a.p95)} ms – ${zielUrteil(a.ziel)}` : ''}`,
     );
   }
   return z;
@@ -2711,7 +2836,7 @@ function zusatzBericht(e) {
   const a = e.anmeldung;
   if (p) {
     z.push(
-      `**${p.name}** (${p.n} gleichzeitig; Lasttest-Paket reagiert auf „Mappe geändert“, rund 5 % Mappe ändern, 10 % Tabellenfeld „Rechnungen“ am Vertrag): p50 ${f(p.median)} ms, p95 ${f(p.p95)} ms, Fehlerquote ${prozent(p.fehlerquote)} – Messung ohne Ziel und (bis zum ersten Lauf auf GitHub) ohne CI-Grenze.`,
+      `**${p.name}** (${p.n} gleichzeitig; Lasttest-Paket reagiert auf „Mappe geändert“, rund 5 % Mappe ändern, 10 % Tabellenfeld „Rechnungen“ am Vertrag): p50 ${f(p.median)} ms, p95 ${f(p.p95)} ms, Fehlerquote ${prozent(p.fehlerquote)} – ${p.ziel ? `${zielUrteil(p.ziel)}.` : 'Messung ohne Ziel und ohne CI-Grenze.'}`,
     );
     if (p.paket)
       z.push(
@@ -2734,15 +2859,18 @@ function zusatzBericht(e) {
     const m = a.anmeldung;
     z.push(
       '',
-      `**${a.name}** (${a.n} gleichzeitig lesend, dazu ${ZUSATZ.fehlParallel} Fehlanmeldungen gleichzeitig, halb bekannte, halb unbekannte Konten): ${m.versuche} Fehlversuche, ${String(m.jeSekunde).replace('.', ',')} je s, p50 ${f(m.median)} ms, p95 ${f(m.p95)} ms; Mappe öffnen anderer Personen p95 ${f(a.jeArt?.['Mappe öffnen']?.p95)} ms; verlorene Nachweis-Einträge: ${m.verloren}.${m.gefuellt ? ` Nachweis-Journal vorher gefüllt: ${m.gefuellt.versuche} Fehlanmeldungen in ${dauerText(m.gefuellt.sekunden)} (${String(m.gefuellt.jeSekunde).replace('.', ',')} je s, p95 ${f(m.gefuellt.p95)} ms).` : ''}`,
+      `**${a.name}** (${a.n} gleichzeitig lesend, dazu ${ZUSATZ.fehlParallel} Fehlanmeldungen gleichzeitig, halb bekannte, halb unbekannte Konten): ${m.versuche} Fehlversuche, ${String(m.jeSekunde).replace('.', ',')} je s, p50 ${f(m.median)} ms, p95 ${f(m.p95)} ms; Mappe öffnen anderer Personen p95 ${f(a.jeArt?.['Mappe öffnen']?.p95)} ms; verlorene Nachweis-Einträge: ${m.verloren}; alle Anfragen p95 ${f(a.p95)} ms – ${a.ziel ? zielUrteil(a.ziel) : 'Messung ohne Ziel'}.${m.gefuellt ? ` Nachweis-Journal vorher gefüllt: ${m.gefuellt.versuche} Fehlanmeldungen in ${dauerText(m.gefuellt.sekunden)} (${String(m.gefuellt.jeSekunde).replace('.', ',')} je s, p95 ${f(m.gefuellt.p95)} ms).` : ''}`,
     );
   }
   return z;
 }
 
-/** „mittel + Speichern  100 gleichzeitig: p50 …, p95 …, p99 …, Fehler … – Messung ohne Ziel (Speichern p95 … ms)“ (#739). */
+/**
+ * „mittel + Speichern  100 gleichzeitig: p50 …, p95 …, p99 …, Fehler … – Ziel eingehalten (Ziel < 1000 ms, CI-Grenze
+ * 1000 ms) (Speichern p95 … ms)“ (#739; Ziel seit #1453, ältere Läufe: „Messung ohne Ziel“).
+ */
 export function speichernZeile(d) {
-  return `${d.name} ${String(d.n).padStart(4)} gleichzeitig: p50 ${f(d.median)} ms, p95 ${f(d.p95)} ms, p99 ${f(d.p99)} ms, Fehler ${prozent(d.fehlerquote)} – Messung ohne Ziel (Speichern p50 ${f(d.schreiben?.median)} ms, p95 ${f(d.schreiben?.p95)} ms)`;
+  return `${d.name} ${String(d.n).padStart(4)} gleichzeitig: p50 ${f(d.median)} ms, p95 ${f(d.p95)} ms, p99 ${f(d.p99)} ms, Fehler ${prozent(d.fehlerquote)} – ${d.ziel ? zielUrteil(d.ziel) : 'Messung ohne Ziel'} (Speichern p50 ${f(d.schreiben?.median)} ms, p95 ${f(d.schreiben?.p95)} ms)`;
 }
 
 /**
@@ -2816,14 +2944,16 @@ export function ablaufPlan(stufen, { dauer = 120, speichern = true, zusatz = tru
       n = g.stufenfolge[0] ?? g.start;
       messDauer = g.schrittDauer;
     } else zeilen.push(d(st, n, 'lesen', dauer, { ziel: true }));
-    if (speichern) zeilen.push(d(`${name} + Speichern`, n, 'speichern', messDauer), schritt('aufraeumen'));
+    // #1453: Zusatz-Durchgänge mit Ziel zeigen „Ziel erreicht“ wie der bisherige.
+    const mitZiel = (art) => ({ ziel: !!zielVon(st, art) });
+    if (speichern) zeilen.push(d(`${name} + Speichern`, n, 'speichern', messDauer, mitZiel('speichern')), schritt('aufraeumen'));
     if (zusatz)
       zeilen.push(
         schritt('vorbereiten'),
-        d(`${name} + Pakete und Tabellen`, n, 'pakete', messDauer),
+        d(`${name} + Pakete und Tabellen`, n, 'pakete', messDauer, mitZiel('pakete')),
         schritt('aufraeumen'),
         schritt('vorbereiten', true),
-        d(`${name} + Anmeldeschutz`, n, 'anmeldeschutz', Math.min(messDauer, 60)),
+        d(`${name} + Anmeldeschutz`, n, 'anmeldeschutz', Math.min(messDauer, 60), mitZiel('anmeldeschutz')),
       );
     if (i === stufen.length - 1) zeilen.push(schritt('auswerten'));
     return { stufe: st, zeilen };

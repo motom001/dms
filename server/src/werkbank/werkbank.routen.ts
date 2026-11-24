@@ -16,6 +16,7 @@ import { proxyNetzHinweis } from '../http/proxy';
 import { kennungHinweisJetzt } from '../einrichtung/dienstbenutzer';
 import { MODULE, STUFEN, type Stufe } from '../protokoll/protokoll';
 import { protokollStand, setzeDebugAlle } from '../protokoll/alleprozesse';
+import { debugAbgleich, debugWerkbank } from '../protokoll/debugmodus';
 import { werkbankZahlen } from './werkbankzahlen';
 import { BeispielAblage } from '../beispiele/beispielablage';
 import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from './meldungen';
@@ -120,11 +121,14 @@ function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => {
         const an = !!b(a).an;
-        // Für alle Prozesse (#1490).
-        const r = await setzeDebugAlle(x.verbund, an);
+        // Mit Zeitpunkt in der Datenbank (#1528): gilt auch für Prozesse, die danach neu starten, und endet nach 24 Stunden.
+        if (dienst.kern.einstellungen) await debugWerkbank(dienst.kern.einstellungen, an, ich(a).email);
+        // Für alle laufenden Prozesse sofort (#1490); „aus“ beendet hier auch LOG_LEVEL=debug, die anderen folgen beim Abgleich.
+        let r = await setzeDebugAlle(x.verbund, an);
+        if (dienst.kern.einstellungen && !an) r = await debugAbgleich(dienst.kern.einstellungen);
         L.system.warn(
           an
-            ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: zeitzone() })}`
+            ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleString('de-DE', { timeZone: zeitzone() })}`
             : 'Debug-Modus ausgeschaltet',
         );
         return ok(r);
@@ -382,6 +386,8 @@ function uebersichtRouten(k: RoutenKontext): Route[] {
             mail: !!x.betrieb?.mailer(),
             adresse: x.betrieb ? !!x.betrieb.ansicht().adresse : true,
             texterkennung: x.texterkennung ? await sicher(() => x.texterkennung!.zaehler()) : null,
+            // #1550: Abbrüche wegen der Zeitgrenze in den letzten 24 Stunden, sobald sie sich häufen (sonst 0).
+            texterkennungZeitgrenze: x.texterkennung ? ((await sicher(() => x.texterkennung!.zeitgrenzeHaeufung())) ?? 0) : 0,
             // #459: Ist ein Paket für die Texterkennung installiert? Sonst Hinweis „Texterkennung ist jetzt ein Paket“.
             texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
             // #1329: poppler findet für nicht eingebettete Schriften keinen Ersatz – Seiten-, Vorschaubilder und Archivfassung ohne Text.
@@ -624,7 +630,12 @@ function systemuebersichtRouten(k: RoutenKontext): Route[] {
         // Dokumentwerkzeuge getrennt und begrenzt (#1354): Benutzer und Grenzen, gemessen (dms status, Probe im Image).
         const abschirmung = await sicher(() => werkzeugAbschirmung());
         return ok({
-          ...(await uebersicht(system, x.betrieb?.kurz(), await gatewayBeobachtung.stand(k.dienst.kurzzustand))),
+          ...(await uebersicht(
+            system,
+            x.betrieb?.kurz(),
+            await gatewayBeobachtung.stand(k.dienst.kurzzustand),
+            x.wartung?.stand.stufe ?? null,
+          )),
           ordner: sp?.ordner ?? null,
           variablen: x.ordner?.ueberfluessig ?? [],
           werkzeuge,

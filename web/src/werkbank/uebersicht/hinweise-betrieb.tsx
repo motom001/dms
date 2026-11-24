@@ -354,6 +354,20 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/texterkennung',
       knopf: t('werkbank.uebersicht.zur-texterkennung'),
     });
+  // #1550: Abbrüche wegen der Zeitgrenze häufen sich (ab 3 in 24 Stunden).
+  if ((u.texterkennungZeitgrenze ?? 0) > 0)
+    h.push({
+      schluessel: 'texterkennung.zeitgrenze',
+      art: 'warn',
+      text: (
+        <>
+          <strong>{t('werkbank.texterkennung.zeitgrenze.uebersicht', { anzahl: u.texterkennungZeitgrenze! })}</strong>{' '}
+          {t('werkbank.texterkennung.zeitgrenze.uebersicht.text')}
+        </>
+      ),
+      ziel: '/werkbank/texterkennung#zeitgrenze',
+      knopf: t('werkbank.uebersicht.zur-texterkennung'),
+    });
 }
 
 /**

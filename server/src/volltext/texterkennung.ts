@@ -19,6 +19,8 @@ import { AUSGABE_GROSS, MB, TEXTERKENNUNG_MAX_MB as MAX_MB } from '../grundlagen
 import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import { pruefeSchriften, schriftfehlerGesehen } from '../dateien/ersatzschriften';
 import { wiederkehrend } from '../zeitplan/streuung';
+import { gebietsschema } from '../../../shared/src/sprache';
+import { zahlformat } from '../../../shared/src/region';
 
 /**
  * Volltext (#45, #458, #459).
@@ -62,9 +64,34 @@ export interface OcrEinstellungen {
   aktiv: boolean;
   /** Gleichzeitige Aufträge (1–4). */
   auftraege: number;
+  /**
+   * Zeitgrenze je Auftrag (#1550): Grundwert in Minuten plus Sekunden je Seite (ist die Seitenzahl bekannt). Danach
+   * bricht Ablago den Auftrag ab („fehlgeschlagen – Zeitgrenze“), und der nächste startet.
+   */
+  zeitgrenze: { minuten: number; jeSeiteSekunden: number };
 }
 
-export const OCR_STANDARD: OcrEinstellungen = { aktiv: true, auftraege: 1 };
+export const OCR_STANDARD: OcrEinstellungen = { aktiv: true, auftraege: 1, zeitgrenze: { minuten: 5, jeSeiteSekunden: 30 } };
+/** Ab so vielen Abbrüchen wegen der Zeitgrenze binnen 24 Stunden ein Hinweis in der Übersicht (#1550). */
+const ZEITGRENZE_HAEUFUNG = 3;
+const ZEITGRENZE_MERKER = 'ocr_zeitgrenze_abbrueche';
+
+/** Zeitgrenze eines Auftrags in ms: Grundwert plus je Seite (#1550). */
+export const zeitgrenzeMs = (o: OcrEinstellungen, seiten: number | null | undefined) =>
+  (o.zeitgrenze.minuten * 60 + (seiten && seiten > 0 ? seiten : 0) * o.zeitgrenze.jeSeiteSekunden) * 1000;
+
+function bereinigeZeitgrenze(x: unknown, alt: OcrEinstellungen['zeitgrenze']): OcrEinstellungen['zeitgrenze'] {
+  if (x === undefined) return alt;
+  const z = (x ?? {}) as Record<string, unknown>;
+  const zahl = (v: unknown, std: number, min: number, max: number) => {
+    if (v === undefined) return std;
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < min || n > max)
+      throw new Fachfehler(422, t('meldungen.texterkennung.zeitgrenze-ungueltig', { min, max }));
+    return n;
+  };
+  return { minuten: zahl(z.minuten, alt.minuten, 1, 240), jeSeiteSekunden: zahl(z.jeSeiteSekunden, alt.jeSeiteSekunden, 0, 600) };
+}
 
 export function bereinigeOcr(e: unknown, alt: OcrEinstellungen = OCR_STANDARD): OcrEinstellungen {
   const x = (e ?? {}) as Record<string, unknown>;
@@ -74,14 +101,24 @@ export function bereinigeOcr(e: unknown, alt: OcrEinstellungen = OCR_STANDARD): 
     if (!Number.isInteger(n) || n < 1 || n > 4) throw new Fachfehler(422, t('meldungen.texterkennung.gleichzeitige-auftraege-eine-ganze'));
     auftraege = n;
   }
-  return { aktiv: x.aktiv === undefined ? alt.aktiv : x.aktiv === true, auftraege };
+  return {
+    aktiv: x.aktiv === undefined ? alt.aktiv : x.aktiv === true,
+    auftraege,
+    zeitgrenze: bereinigeZeitgrenze(x.zeitgrenze, alt.zeitgrenze),
+  };
 }
 
 /** Gespeicherte Einstellungen lesen – auch solche aus der Zeit der eingebauten Texterkennung (#459). */
 export function ocrAusGespeichert(e: unknown): OcrEinstellungen {
   const x = (e ?? {}) as Record<string, unknown>;
   const n = Number(x.auftraege);
-  return { aktiv: x.aktiv !== false, auftraege: Number.isInteger(n) && n >= 1 && n <= 4 ? n : OCR_STANDARD.auftraege };
+  let zeitgrenze = OCR_STANDARD.zeitgrenze;
+  try {
+    zeitgrenze = bereinigeZeitgrenze(x.zeitgrenze, OCR_STANDARD.zeitgrenze);
+  } catch {
+    /* ungültig gespeichert: Vorgabe */
+  }
+  return { aktiv: x.aktiv !== false, auftraege: Number.isInteger(n) && n >= 1 && n <= 4 ? n : OCR_STANDARD.auftraege, zeitgrenze };
 }
 
 /* ---------- Werkzeuge ---------- */
@@ -253,6 +290,9 @@ export const INFO_PASSWORT = t('meldungen.texterkennung.das-pdf-ist-mit');
 /** So steht im Hinweis des Volltexts, dass er aus der entsperrten Fassung eines geschützten PDFs stammt (#827). */
 export const INFO_ENTSPERRT = t('meldungen.texterkennung.aus-der-entsperrten-fassung');
 
+/** Dauer in Worten für die Meldung: Minuten mit Komma. */
+const zeitText = (ms: number) => zahlformat(gebietsschema(), { maximumFractionDigits: 1 }).format(ms / 60_000);
+
 export class Texterkennung {
   private laufend = 0;
   /** Laufende Aufträge je Dokument, damit Administratoren sie abbrechen können (#61). */
@@ -382,6 +422,58 @@ export class Texterkennung {
     }
   }
 
+  /** Zeitgrenze des Auftrags in ms (#1550); in Tests überschreibbar. */
+  zeitgrenze = async (d: Dokument): Promise<number> => zeitgrenzeMs(await this.optionen(), d.ocr?.seiten);
+
+  /**
+   * Das Ergebnis mit Zeitgrenze (#1550): Läuft der Auftrag länger, wird er abgebrochen – auch wenn die Arbeit selbst
+   * nicht auf das Signal hört, gibt das Rennen den Platz in der Warteschlange frei.
+   */
+  private async mitZeitgrenze(d: Dokument, abbruch: AbortController, neu: boolean): Promise<OcrErgebnis | 'zeitgrenze'> {
+    const ms = await this.zeitgrenze(d);
+    let uhr: NodeJS.Timeout | undefined;
+    const grenze = new Promise<'zeitgrenze'>((ok) => {
+      uhr = setTimeout(() => ok('zeitgrenze'), ms);
+      uhr.unref?.();
+    });
+    try {
+      const r = await Promise.race([this.ergebnis(d, abbruch.signal, neu), grenze]);
+      if (r === 'zeitgrenze') {
+        abbruch.abort();
+        await this.merkeZeitgrenze(d, ms);
+      }
+      return r;
+    } finally {
+      clearTimeout(uhr);
+    }
+  }
+
+  /** Abbruch wegen der Zeitgrenze protokollieren und für den Hinweis bei Häufung merken (letzte 24 Stunden). */
+  private async merkeZeitgrenze(d: Dokument, ms: number) {
+    log.warn('Texterkennung: Zeitgrenze erreicht, Auftrag abgebrochen', { dokument: d.name, id: d.id, sekunden: Math.round(ms / 1000) });
+    if (!this.einstellungen) return;
+    const grenze = Date.now() - 24 * 3600 * 1000;
+    const alt = ((await this.einstellungen.lies(ZEITGRENZE_MERKER).catch(() => null)) as string[] | null) ?? [];
+    const neu = [...alt.filter((x) => Date.parse(x) >= grenze), new Date().toISOString()].slice(-50);
+    await this.einstellungen.schreibe(ZEITGRENZE_MERKER, neu).catch(() => {});
+    if (neu.length === ZEITGRENZE_HAEUFUNG)
+      log.warn('Texterkennung: Abbrüche wegen der Zeitgrenze häufen sich', { anzahl: neu.length, stunden: 24 });
+  }
+
+  /** Abbrüche wegen der Zeitgrenze in den letzten 24 Stunden – für den Hinweis in der Übersicht ab ZEITGRENZE_HAEUFUNG. */
+  async zeitgrenzeAbbrueche(): Promise<number> {
+    if (!this.einstellungen) return 0;
+    const grenze = Date.now() - 24 * 3600 * 1000;
+    const alt = ((await this.einstellungen.lies(ZEITGRENZE_MERKER)) as string[] | null) ?? [];
+    return alt.filter((x) => Date.parse(x) >= grenze).length;
+  }
+
+  /** Für die Übersicht: Zahl der Abbrüche der letzten 24 Stunden, sobald sie sich häufen (ab ZEITGRENZE_HAEUFUNG), sonst 0. */
+  async zeitgrenzeHaeufung(): Promise<number> {
+    const n = await this.zeitgrenzeAbbrueche();
+    return n >= ZEITGRENZE_HAEUFUNG ? n : 0;
+  }
+
   /** Ein Dokument: auslassen, Text übernehmen oder erkennen. */
   private async verarbeite(d: Dokument, neu = false) {
     const start = Date.now();
@@ -390,7 +482,11 @@ export class Texterkennung {
     this.laeufe.set(d.id, abbruch);
     if (this.neuMarken.delete(d.id)) neu = true;
     try {
-      e = await this.ergebnis(d, abbruch.signal, neu);
+      const r = await this.mitZeitgrenze(d, abbruch, neu);
+      e =
+        r === 'zeitgrenze'
+          ? { stand: 'fehler', info: t('meldungen.texterkennung.zeitgrenze', { minuten: zeitText(await this.zeitgrenze(d)) }) }
+          : r;
     } catch (f) {
       const m = (f as Error).message;
       e = abbruch.signal.aborted
@@ -453,7 +549,7 @@ export class Texterkennung {
     else if (e.stand === 'ausgelassen') log.info('Texterkennung ausgelassen', daten);
     else if (e.stand === 'paket') log.info('Textebene gelesen, Texterkennung durch Paket folgt', daten);
     else log.info('Texterkennung abgeschlossen', daten);
-    // Vom Administrator abgebrochen: kein Ereignis (sonst finge das Paket gleich wieder an).
+    // Vom Administrator oder wegen der Zeitgrenze abgebrochen: kein Ereignis (sonst finge das Paket gleich wieder an).
     if (abbruch.signal.aborted) return;
     // Gemischt nur, wenn es auch Text gibt; bei text: false erkennt das Paket ohnehin alle Seiten.
     const gemischt = e.stand === 'paket' && !!e.text && hatText(e.text) && ohneText?.length ? { seitenOhneText: ohneText } : {};

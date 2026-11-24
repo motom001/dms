@@ -15,6 +15,7 @@
  *
  * Schicht 3 – bekommt Kern und Rechteprüfung; Organisation, Prüfstelle und Hochladen über den Anschluss.
  */
+import { tagIn } from '../../../shared/src/region';
 import { erwaehnungen, mitTiteln } from '../../../shared/src/markdown';
 import { anschriftZeilen, anzeigename, liesAngaben, type Angaben, type EigeneOrganisation } from '../../../shared/src/organisation';
 import { formatiere, istLeer, titelAus, type Dokument, type Feld, type Mappe, type Mappentyp, type Wert } from '../../../shared/src/model';
@@ -97,7 +98,8 @@ const TIEFE_MAX = 3;
 
 const istVorlage = (d: Dokument) => d.mime === VORLAGE_MIME || d.name.toLowerCase().endsWith('.md');
 const vorlagenName = (d: Dokument) => d.name.replace(/\.md$/i, '');
-const heuteIso = () => new Date().toISOString().slice(0, 10);
+/** „Heute“ in der Zone der Region (#1552): kurz nach Mitternacht nicht der Vortag (UTC). */
+const heuteIso = () => tagIn(new Date());
 
 /** Eine gefundene Vorlage mit Quelle und Paket. */
 interface Fund {

@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type postgres from 'postgres';
 import { t } from '../sprache/sprache';
-import { datumsformat } from '../../../shared/src/region';
+import { datumsformat, zeitText } from '../../../shared/src/region';
+import { protokoll } from '../protokoll/protokoll';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
 import { dienstbenutzer } from '../einrichtung/dienstbenutzer';
@@ -16,6 +17,17 @@ import { dienstbenutzer } from '../einrichtung/dienstbenutzer';
  * Knopfdruck – gibt es Neueres? Die Übersicht lässt sich als Text in ein
  * GitHub-Issue kopieren.
  */
+
+/** Debug-Modus in einer Zeile für den Systemzustand (#1528). */
+function debugText(): string {
+  const d = protokoll.debugStand;
+  if (d.an && d.bis)
+    return t(d.quelle === 'variable' ? 'meldungen.system.debug.aktiv-variable' : 'meldungen.system.debug.aktiv-werkbank', {
+      bis: zeitText(new Date(d.bis), { dateStyle: 'medium', timeStyle: 'short' }),
+    });
+  if (d.variableBeendet && process.env.LOG_LEVEL === 'debug') return t('meldungen.system.debug.variable-aus');
+  return t('meldungen.system.debug.aus');
+}
 
 export const REPO = 'motom001/dms';
 /** Bibliotheken des Servers, deren Version für den Support zählt. */
@@ -162,6 +174,8 @@ export async function uebersicht(
   betrieb: { mail: string; adresse: string } | undefined,
   /** Heimnetz nicht bestimmbar (#1355): Gateway-Adresse der letzten 24 Stunden, nur für den Systemzustand. */
   gateway?: { adresse: string } | null,
+  /** Stufe des Wartungsmodus (#1549): aktiv heißt „nichts geht rein oder raus“. */
+  wartung?: 'aus' | 'angekuendigt' | 'aktiv' | null,
 ): Promise<Uebersicht> {
   let datenbank: Uebersicht['datenbank'];
   try {
@@ -194,6 +208,18 @@ export async function uebersicht(
       'E-Mail': betrieb?.mail ?? 'aus',
       TRUST_PROXY: `${env.TRUST_PROXY || t('meldungen.system.nicht-gesetzt')} → ${proxyVertrauen(env.TRUST_PROXY).text}`,
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
+      // Debug-Modus (#1528): ob aktiv, woher und bis wann; nach Ablauf von LOG_LEVEL=debug der Hinweis, die Variable zu entfernen.
+      [t('meldungen.system.debug.zeile')]: debugText(),
+      ...(wartung
+        ? {
+            [t('meldungen.system.wartung.zeile')]:
+              wartung === 'aktiv'
+                ? t('meldungen.system.wartung.aktiv')
+                : wartung === 'angekuendigt'
+                  ? t('meldungen.system.wartung.angekuendigt')
+                  : t('meldungen.system.wartung.aus'),
+          }
+        : {}),
       ...heimnetzZeile(gateway),
     },
   };

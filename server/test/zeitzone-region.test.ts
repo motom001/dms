@@ -7,8 +7,12 @@
 process.env.TZ = 'UTC';
 
 import assert from 'node:assert/strict';
-import { afterEach, describe, it } from 'node:test';
-import { setzeZeitzone, STANDARD_ZEITZONE } from '../../shared/src/region';
+import { afterEach, describe, it, mock } from 'node:test';
+import { setzeZeitzone, STANDARD_ZEITZONE, tagIn } from '../../shared/src/region';
+import { Konten } from '../src/konten';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { routen, type Datei } from '../src/http/routen';
+import { wieImModus } from './hilfen';
 import { Anmeldesperre } from '../src/anmeldung/anmeldesperre';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
@@ -133,6 +137,37 @@ describe('Uhrzeiten in der Zone der Region bei abweichender Prozesszone (#1451)'
     assert.equal((await postAusMail('2026-01-02T23:30:00Z')).post.werte.datum, '2026-01-03');
     // Mitten am Tag ändert sich nichts.
     assert.equal((await postAusMail('2026-01-02T12:00:00Z')).post.werte.datum, '2026-01-02');
+  });
+});
+
+describe('Datum in Dateinamen und im Textsatz in der Zone der Region (#1552)', () => {
+  /** 23:30 UTC am 2. Januar = 00:30 am 3. Januar in Berlin. */
+  const NACH_MITTERNACHT = Date.parse('2026-01-02T23:30:00Z');
+  afterEach(() => {
+    mock.timers.reset();
+    setzeZeitzone(STANDARD_ZEITZONE);
+  });
+
+  it('„heute“ (Textsatz, Notfallblatt, Pakete bauen) ist der Tag der Region', () => {
+    setzeZeitzone('Europe/Berlin');
+    mock.timers.enable({ apis: ['Date'], now: NACH_MITTERNACHT });
+    assert.equal(new Date().toISOString().slice(0, 10), '2026-01-02', 'Gegenprobe: in UTC noch der 2.');
+    assert.equal(tagIn(new Date()), '2026-01-03');
+  });
+
+  it('Export: Datum im Dateinamen ist der Tag der Region', async () => {
+    setzeZeitzone('Europe/Berlin');
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
+    const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Vertrag', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
+    await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'V-1' } }, admin.id);
+    mock.timers.enable({ apis: ['Date'], now: NACH_MITTERNACHT });
+    const ich = (await konten.listeBenutzer()).find((b) => b.id === admin.id)!;
+    const r = await routen(d, konten, {})
+      .find((x) => x.methode === 'POST' && x.pfad === '/api/export')!
+      .handler({ body: { sicht: typ.id, format: 'csv' }, params: {}, query: {}, ip: '1', benutzer: wieImModus(ich) });
+    assert.match((r as { datei: Datei }).datei.name, /2026-01-03/);
   });
 });
 

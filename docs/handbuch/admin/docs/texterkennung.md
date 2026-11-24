@@ -118,6 +118,19 @@ Unter **Werkbank → Suche und Volltext → Erkannte Sprachen** siehst du, wie v
 
 Nach dem Installieren einer Zusatzsprache erkennt **Volltext neu erzeugen → Für alle Dokumente** (siehe unten) die vorhandenen Dokumente neu – oder du startest einzelne unter **Aufträge → fertig** neu.
 
+## Zeitgrenze je Auftrag { #zeitgrenze }
+
+Ein Auftrag der Texterkennung darf nicht ewig laufen – sonst wartet die ganze Warteschlange auf ein einziges hängendes Dokument. Unter **Zeitgrenze je Auftrag** stellst du ein, wie lange einer höchstens dauern darf: einen **Grundwert** in Minuten (Vorgabe 5, erlaubt 1 bis 240) und **dazu je Seite** Sekunden (Vorgabe 30, erlaubt 0 bis 600). Ein Dokument mit 20 Seiten darf mit der Vorgabe also 5 Minuten + 20 × 30 s = 15 Minuten brauchen. Kennt Ablago die Seitenzahl nicht, gilt der Grundwert.
+
+Läuft ein Auftrag länger, bricht Ablago ihn ab:
+
+- Das Dokument steht auf *Fehler* mit dem Grund „Fehlgeschlagen – Zeitgrenze: Der Auftrag lief länger als … Minuten und wurde abgebrochen.“ Am Dokument lässt es sich **erneut versuchen**, hier mit **Neu starten**.
+- Der nächste Auftrag startet sofort.
+- Im [Protokoll](fehlersuche.md#protokoll) steht eine Warnung (Modul `texterkennung`).
+- Häufen sich die Abbrüche – ab 3 in 24 Stunden –, meldet die [Übersicht](uebersicht.md) das mit einem Hinweis. Liegt es an sehr großen Dokumenten, erhöhe die Zeitgrenze; hängt ein Paket, sieh dir seinen Verlauf an.
+
+Liest ein Paket die Texte, gelten zusätzlich die Grenzen des [Paket-Läufers](pakete.md).
+
 ## Aufträge
 
 Unter **Aufträge** siehst du in einer Liste mit fester Höhe die Dokumente je Stand (*Fehler*, *wartet*, *läuft*, *wartet auf Texterkennung*, *ausgelassen*, *fertig*) – mit Mappe (als Link), Größe, Zeitpunkt und dem **Grund** bei Fehlern oder ausgelassenen Dokumenten.

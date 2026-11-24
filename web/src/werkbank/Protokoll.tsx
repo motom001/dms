@@ -313,14 +313,20 @@ function DebugPanel({ p }: { p: ProtokollZustand }) {
           <div className="hinweis warn">
             <p>
               {t('werkbank.protokoll.eingeschaltet-bis-uhr-danach', {
-                uhrzeit: new Date(d.bis!).toLocaleTimeString(gebietsschema(), { hour: '2-digit', minute: '2-digit' }),
-              })}
+                uhrzeit: new Date(d.bis!).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }),
+              })}{' '}
+              {d.quelle === 'variable' ? t('werkbank.protokoll.quelle.variable') : t('werkbank.protokoll.quelle.werkbank')}
             </p>
           </div>
         ) : (
           <p className="leise">
             {t('werkbank.protokoll.aus-protokolliert-wird-ab', { wert: d?.grundstufe ?? t('werkbank.protokoll.info-2') })}
           </p>
+        )}
+        {!d?.an && d?.variableBeendet && (
+          <div className="hinweis info">
+            <p>{t('werkbank.protokoll.variable-beendet')}</p>
+          </div>
         )}
         <p className="leise">{t('werkbank.protokoll.im-debug-modus-kommen')}</p>
         <div className="knoepfe">
