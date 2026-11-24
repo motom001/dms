@@ -490,7 +490,7 @@ Ein Abruf eines Postfachs schlägt gerade fehl – rot im Bereich „Stand“ mi
 Siehe auch: [Postfach](#postfach).
 
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
-Früherer Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. Seit Version 0.316 heißt die Seite „Text aus PDF und Texterkennung“ und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten. Fasste die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.  
+Früherer Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. Seit Version 0.317 heißt die Seite „Text aus PDF und Texterkennung“ und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten. Fasste die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.  
 Siehe auch: [Von Ablago mitgeliefert](#von-ablago-mitgeliefert).
 
 <a id="systemrolle"></a>**Systemrolle** · ~ mit Erklärung · Administratoren  

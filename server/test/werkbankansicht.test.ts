@@ -605,7 +605,7 @@ describe('Umzug unter Pakete → Von Ablago mitgeliefert (#1570)', () => {
     assert.ok(!darfPaketseite(['texterkennung'], undefined), 'die Liste der Pakete nur mit „Pakete“');
     assert.ok(!darfPaketseite(['texterkennung'], 'basis'));
     assert.ok(darfPaketseite(null, 'ablago.erechnung'));
-    for (const r of Object.values(ANBIETER_RECHT)) assert.ok(darfSeite([r], r));
+    for (const r of Object.values(ANBIETER_RECHT)) assert.ok(r && darfSeite([r], r));
     // Nur Kennungen, die es gibt (die Liste kennt sie nur als Muster, damit kein Kreis über die Leistungen entsteht).
     for (const k of [...Object.keys(ANBIETER_RECHT), bereichWeg('texterkennung').split('/').pop()!])
       assert.ok(Object.hasOwn(EINGEBAUTE_ANBIETER, k), k);
