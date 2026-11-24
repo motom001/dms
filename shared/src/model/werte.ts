@@ -254,7 +254,7 @@ export function formatiere(
 
 /** Zahl aus deutscher oder technischer Schreibweise lesen. null = leer, NaN = ungültig. */
 /** Nachkommastellen einer Währung (#1608): EUR 2, JPY 0 – aus `Intl.NumberFormat`; unbekannte Währung 2. */
-export function waehrungsstellen(waehrung: string | undefined): number {
+function waehrungsstellen(waehrung: string | undefined): number {
   try {
     return zahlformat('en', { style: 'currency', currency: waehrung || 'EUR' }).resolvedOptions().minimumFractionDigits ?? 2;
   } catch {
