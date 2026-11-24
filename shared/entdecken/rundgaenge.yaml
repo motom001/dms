@@ -120,3 +120,17 @@
       ziel: konto.abwesenheit
     - schluessel: fehler
       ziel: konto.bereich:fehler-melden
+
+# Dienste im Netz (#1635): Bereiche nicht an Dienste im Netz geben – zum Beispiel Gesundheit und Post ausnehmen.
+# Startet nie von selbst; im Assistenten unter „Tipps“ und aus dem Handbuch.
+- schluessel: dienste_im_netz
+  start: manuell
+  fuer: verwalten
+  oeffne: { seite: werkbank }
+  schritte:
+    - schluessel: darf
+      ziel: werkbank.darf
+      handbuch: admin/was-ablago-darf/#feinabstimmung
+    - schluessel: fein
+      ziel: werkbank.darf.feinabstimmung
+      handbuch: admin/was-ablago-darf/#feinabstimmung

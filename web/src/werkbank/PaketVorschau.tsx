@@ -1,4 +1,5 @@
 import { HerkunftZeile } from './Herkunft';
+import { FEIN_ZIEL } from './uebersicht/Feinabstimmung';
 import type { PaketVorschau } from '../api/pakete';
 import { ApiFehler } from '../api/anfrage';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
@@ -121,6 +122,18 @@ export function VorschauBlock({
         </div>
       )}
       <HinweisListe art="info" liste={v.hinweise ?? []} />
+      {/* Dienste im Netz (#1635): wer was bekommt – der Moment der Entscheidung –, mit dem Weg zur Feinabstimmung. */}
+      {v.dienste && (
+        <div className="hinweis info">
+          {v.dienste.satz && <p>{v.dienste.satz}</p>}
+          {v.dienste.gesundheit && <p>{v.dienste.gesundheit}</p>}
+          <div className="knoepfe">
+            <KnopfLink to={FEIN_ZIEL} groesse="klein">
+              {t('pakete.ki.zur-feinabstimmung')}
+            </KnopfLink>
+          </div>
+        </div>
+      )}
       {v.sprache && <SprachVorschau s={v.sprache} />}
       <EinstellungenHinweis v={v} />
       <Einleitung v={v} umbau={z.umbau.length > 0} />

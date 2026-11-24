@@ -169,5 +169,15 @@
   "ziel-zeigen.leiste": "Ziel zeigen: Klicke auf eine hervorgehobene Stelle – ihr Anker kommt in die Datei. Esc bricht ab.",
   "ziel-zeigen.abbrechen": "Abbrechen",
   "hinweis.rundgang": "Neu hier? Ein kurzer Rundgang zeigt dir, was du hier einstellen kannst.",
-  "hinweis.ausblenden": "Hinweis ausblenden"
+  "hinweis.ausblenden": "Hinweis ausblenden",
+  "rundgang.dienste-im-netz.titel": "Bereiche nicht an Dienste im Netz geben",
+  "rundgang.dienste-im-netz.beschreibung": "So nehmt ihr einzelne Bereiche wie Gesundheit oder Post aus – sie bleiben dann in Ablago.",
+  "rundgang.dienste-im-netz.ende": "Fertig. Am Mappentyp steht derselbe Haken unter Berechtigungen: „Darf an Dienste im Netz gehen“.",
+  "rundgang.dienste-im-netz.darf.titel": "Eine Entscheidung",
+  "rundgang.dienste-im-netz.darf.text": "Bei „Auch Helfer, die Dienste im Netz nutzen“ dürfen Pakete wie der KI-Assistent Inhalte aus allen Bereichen bekommen. Darunter stimmt ihr das fein ab.",
+  "rundgang.dienste-im-netz.darf.text-handy": "„Auch Helfer, die Dienste im Netz nutzen“ heißt: alle Bereiche. Darunter stimmt ihr das fein ab.",
+  "rundgang.dienste-im-netz.darf.ort": "Die Karte „Was Ablago darf“ steht oben in der Übersicht der Werkbank.",
+  "rundgang.dienste-im-netz.fein.titel": "Gesundheit und Post ausnehmen",
+  "rundgang.dienste-im-netz.fein.text": "Klappt die Feinabstimmung auf und nehmt den Haken bei Gesundheit und Post weg. Das wirkt sofort: Kein Paket mit Netz bekommt dann etwas daraus.",
+  "rundgang.dienste-im-netz.fein.ort": "Die Feinabstimmung steht in der Karte „Was Ablago darf“ unter den beiden Sätzen."
 }

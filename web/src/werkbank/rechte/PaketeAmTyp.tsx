@@ -1,48 +1,17 @@
 import { Bereich, HakenFeld, type Klappe } from '../../bausteine';
-import { useEffect, useState } from 'react';
-import { werkbankApi, type PaketAmTyp } from '../../api/werkbank';
+import type { TypNeben } from './useTypNeben';
 import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
 
 /**
  * Abschnitt „Pakete“ im Mappentyp-Editor (#686): welche Pakete mit Code Mappen dieses Typs lesen dürften – mit Haken
- * „darf diesen Mappentyp sehen“. Gilt sofort (eigene Einstellung, nicht Teil von „Mappentyp speichern“).
+ * „darf diesen Mappentyp sehen“. Seit #1640 Teil des Entwurfs wie alle anderen Felder: übernommen mit „Mappentyp
+ * speichern“, zurückgenommen mit „Änderungen verwerfen“ (gespeichert bleibt es als eigene Einstellung am Typ).
  */
-export function PaketeAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
-  const [liste, setListe] = useState<PaketAmTyp[] | null>(null);
-  const [fehler, setFehler] = useState('');
-  const [meldung, setMeldung] = useState('');
-  const [sendet, setSendet] = useState('');
-  useEffect(() => {
-    if (!typId) return;
-    let weg = false;
-    werkbankApi.paketeAmTyp(typId).then(
-      (x) => {
-        if (!weg) setListe(x);
-      },
-      (e: Error) => {
-        if (!weg) setFehler(e.message);
-      },
-    );
-    return () => {
-      weg = true;
-    };
-  }, [typId]);
+export function PaketeAmTyp({ typId, neben, klappe }: { typId: string; neben: TypNeben; klappe: Klappe }) {
+  const { liste, stand, fehler } = neben;
   if (typId && liste && !liste.length) return null;
-  const verwehrt = liste?.filter((p) => p.verwehrt).length ?? 0;
-  const setze = async (p: PaketAmTyp, darf: boolean) => {
-    setSendet(p.id);
-    setFehler('');
-    setMeldung('');
-    try {
-      setListe(await werkbankApi.paketVerwehren(typId, p.id, !darf));
-      setMeldung(t(darf ? 'pakete.amtyp.gespeichert.an' : 'pakete.amtyp.gespeichert.aus', { name: p.name }));
-    } catch (e) {
-      setFehler((e as Error).message);
-    } finally {
-      setSendet('');
-    }
-  };
+  const verwehrt = liste?.filter((p) => stand.verwehrt.includes(p.id)).length ?? 0;
   return (
     <Bereich
       id="pakete"
@@ -57,7 +26,7 @@ export function PaketeAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }
           {fehler}
         </p>
       )}
-      {liste && (
+      {typId && liste && (
         <ul className="liste-ohne">
           {liste.map((p) => (
             <li key={p.id}>
@@ -69,18 +38,14 @@ export function PaketeAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }
                 ].join(' · ')}>
                 <input
                   type="checkbox"
-                  checked={!p.verwehrt}
-                  disabled={sendet === p.id}
-                  onChange={(ev) => void setze(p, ev.target.checked)}
+                  checked={!stand.verwehrt.includes(p.id)}
+                  onChange={(ev) => neben.setzePaket(p.id, ev.target.checked)}
                 />
               </HakenFeld>
             </li>
           ))}
         </ul>
       )}
-      <p className="leise klein" role="status">
-        {meldung}
-      </p>
     </Bereich>
   );
 }

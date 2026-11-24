@@ -420,7 +420,8 @@ export interface WerkbankUebersicht {
   /** Pakete, deren Pflicht-Einstellungen fehlen (#405) – Aufgabe für den Administrator. */
   paketeEinstellungen?: Array<{ id: string; name: string }>;
   /** KI-Dienste (#796): Hinweis nach dem Update, solange niemand „Verstanden“ gewählt hat. */
-  kiTypen?: { pakete: Array<{ id: string; name: string }> } | null;
+  /** Dienste im Netz (#1635): bisherige Liste einer bestehenden Installation – einmal fragen „alle erlauben?“. */
+  kiTypen?: { pakete: Array<{ id: string; name: string }>; bisher?: string[] } | null;
   /** Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist; null = unbekannt. Welche: `zaehler` in der Liste der Werkbank-Seiten (#1281). */
   zahlen?: Record<Zaehler, number | null>;
   /** Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358). */

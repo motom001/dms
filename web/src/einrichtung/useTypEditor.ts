@@ -15,6 +15,7 @@ import { geheZu, loeseWache } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { useEntwurf } from '../Speicherleiste';
+import { useTypNeben } from '../werkbank/Berechtigungen';
 import {
   entwurfAus,
   ERST_BEIM_SPEICHERN,
@@ -55,13 +56,16 @@ export function useTypZustand(typ?: Mappentyp, vorlage?: Mappentyp) {
   const [meldung, setMeldung] = useState<string>();
   const [gruende, setGruende] = useState<string[]>([]);
   const [sendet, setSendet] = useState(false);
+  // Dienste im Netz und Pakete am Typ (#1640): Teil des Entwurfs, gespeichert mit „Mappentyp speichern“.
+  const neben = useTypNeben(typ?.id, system === 'benutzer');
   // Ein leerer neuer Mappentyp gilt nicht als Änderung – Verlassen ohne Rückfrage.
-  const ent = useEntwurf(basis, JSON.stringify(e), {
+  const ent = useEntwurf(basis + neben.basisText, JSON.stringify(e) + neben.text, {
     neu,
     liste: '/werkbank/typen',
     aus: neu && e.felder.length === 0 && e.name === '',
     zuruecksetzen: () => {
       setE(JSON.parse(basis));
+      neben.zuruecksetzen();
       setFehler(null);
       setMeldung(undefined);
       setOffen(null);
@@ -102,7 +106,7 @@ export function useTypZustand(typ?: Mappentyp, vorlage?: Mappentyp) {
   return {
     ...{ d, typ, neu, system, e, setE, basis, setBasis, offen, setOffen, ansage, setAnsage, bereiche, setFehlerOrte },
     ...{ sichtAnlegen, setSichtAnlegen, fehler, setFehler, meldung, setMeldung, gruende, setGruende, sendet, setSendet },
-    ...{ ent, gespeichert, stand, setStand, entwurfTyp, hatFehler, klappe },
+    ...{ ent, gespeichert, stand, setStand, entwurfTyp, hatFehler, klappe, neben },
   };
 }
 export type TypZustand = ReturnType<typeof useTypZustand>;
@@ -314,7 +318,13 @@ export function useTypSpeichern(z: TypZustand) {
             stand: z.stand,
             ...(doppelteBestaetigt ? { doppelteBestaetigt } : {}),
           });
+      // #1640: Dienste im Netz und Pakete am Typ nach dem Mappentyp – mit der Id auch eines neuen.
+      const nebenFehler = await z.neben.speichern(mappentyp.id).then(
+        () => '',
+        (x: Error) => x.message,
+      );
       await gespeichertAls(mappentyp);
+      if (nebenFehler) setMeldung(nebenFehler);
     } catch (err) {
       const f = err as ApiFehler;
       if (!(await konflikt(f, bestaetigt, doppelteBestaetigt))) fehlerZeigen(z, f);

@@ -350,5 +350,11 @@
   "leistungen.wahl-nicht-gespeichert": "The choice cannot be saved right now: the database is not connected.",
   "leistungen.anbieter-unbekannt": "Ablago does not include this.",
   "leistungen.an-ungueltig": "Switch on or off: an must be true or false.",
-  "leistungen.wahl-ungueltig": "The chosen package cannot do “{name}”."
+  "leistungen.wahl-ungueltig": "The chosen package cannot do “{name}”.",
+  "pakete.netz.alle": "“{name}” sends content from all areas to {ziele} – including folder types added later.",
+  "pakete.netz.alle-ausser": "“{name}” sends content from all areas to {ziele}, excluding: {aus}.",
+  "pakete.netz.liste": "“{name}” sends content from these areas to {ziele}: {bereiche}. New folder types only once you allow them.",
+  "pakete.netz.keine": "“{name}” currently receives nothing from any area for {ziele} – you can allow areas in the fine-tuning.",
+  "pakete.netz.gesundheit": "Health then joins the areas that go to services on the network ({pakete}). If you want to keep health in Ablago, exclude it in the fine-tuning.",
+  "pakete.netz.adresse": "the address from the setting “{a}”"
 }

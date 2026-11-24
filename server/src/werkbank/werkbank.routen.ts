@@ -522,11 +522,14 @@ async function uebersichtBetrieb(k: RoutenKontext, sicher: Sicher, anb: Anbindun
     // Pflicht-Einstellungen eines Pakets fehlen (#405: im Ablauf „später ausfüllen“) – Aufgabe für den Administrator.
     paketeEinstellungen:
       (await sicher(() => pakete.installierte()))?.filter((p) => p.einstellungenNoetig).map((p) => ({ id: p.id, name: p.name })) ?? [],
-    // KI-Dienste (#796): nach dem Update einmal sagen, dass sich Mappentypen jetzt ausschließen lassen (nur mit KI-Paketen).
+    // Dienste im Netz (#1635, vorher #796): Bestehende Installationen mit ihrer bisherigen Liste fragt die Übersicht einmal
+    // „Bisher gehen nur diese Bereiche hinaus – alle erlauben?“ (nur bei „Auch Helfer, die Dienste im Netz nutzen“).
     kiTypen:
       (await sicher(async () => {
         const k = await dienst.ki.kiUebersicht();
-        return k.hinweis ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })) } : null;
+        return k.hinweis
+          ? { pakete: k.pakete.map((p) => ({ id: p.id, name: p.name })), bisher: k.typen.filter((x) => x.zugelassen).map((x) => x.name) }
+          : null;
       })) ?? null,
     // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
     zahlen: await werkbankZahlen({
@@ -602,7 +605,7 @@ function meldungenRouten(k: RoutenKontext): Route[] {
         if (k === 'ki.typen') {
           if (!darfBereich(ich(a), 'pakete')) throw new Fachfehler(403, t('konten.verwaltung.fehler.vergeben'));
           await dienst.ki.kiHinweisGelesen();
-          L.werkbank.info('Hinweis „Mappentypen von KI-Diensten ausschließen“ gelesen', { von: ich(a).email });
+          L.werkbank.info('Hinweis „Bisher gehen nur diese Bereiche hinaus“ ausgeblendet', { von: ich(a).email });
           return leer;
         }
         // Aufruf von außen (#679): „Alle abschalten“ – die genannten Automatisierungen aus (ein Klick), für alle, die sie verwalten.

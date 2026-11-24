@@ -1237,7 +1237,7 @@
   "darstellung.verwendung.frist-empfaenger": "Empfänger der Frist bei „{feld}“",
   "darstellung.verwendung.archiv": "Stichtag im Archivmodus",
   "darstellung.verwendung.berechtigung": "Berechtigung „{name}“",
-  "pakete.ki-nur-zugelassene": "Dienst im Netz: bekommt nur Inhalte aus Mappentypen, die du für Dienste im Netz zulässt – neue erst nach Zulassung",
+  "pakete.ki-nur-zugelassene": "Dienst im Netz: bekommt Inhalte aus allen Bereichen, die an Dienste im Netz gehen dürfen – ausnehmen lassen sie sich in der Feinabstimmung unter „Was Ablago darf“",
   "feldarten.zeitraum.tage_one": "{anzahl} Tag",
   "feldarten.zeitraum.tage_other": "{anzahl} Tage",
   "feldarten.einheit.tage_one": "Tag",

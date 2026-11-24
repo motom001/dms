@@ -20,6 +20,7 @@ import type { Einstellungen } from '../einstellungen/einstellungen';
 import type { Einrichtungscode } from './einrichtungscode';
 import { Fachfehler } from '../grundlagen/fehler';
 import { pruefeEmail, pruefePasswortRegeln, type Konten } from '../konten';
+import { KI_ALLE } from '../mappentypen';
 import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../../shared/src/merkmale';
@@ -222,6 +223,9 @@ export class Einrichtung {
     // Was Ablago darf (#1562): neue Installationen bekommen die Vorgabe; „Jetzt einrichten“ setzt danach die Antworten
     // aus dem Assistenten bzw. der Einrichtungsdatei. Bestehende leitet der Server beim ersten Lesen ab (pakete/darf.ts).
     await this.d.einstellungen.schreibe(DARF_EINSTELLUNG, { ...DARF_VORGABE, hoechstens: {}, herkunft: 'neu' });
+    // Dienste im Netz (#1635): Eine Entscheidung reicht – neue Installationen geben alle Bereiche frei; einzelne nimmt
+    // die Feinabstimmung unter „Was Ablago darf“ aus. Ob Pakete mit Netz überhaupt laufen, entscheidet Frage 1.
+    await this.d.einstellungen.schreibe('ki_typen', KI_ALLE);
     await this.d.code?.entfernen();
     log.info('Einrichtung: Ablage und eigenes Konto mit „Gesamte Verwaltung“ angelegt', { mandant, email: r.benutzer.email });
     return r;
