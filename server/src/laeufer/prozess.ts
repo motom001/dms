@@ -351,17 +351,38 @@ export function netzZiel(url: string, erlaubt: string[], adressen: string[] = []
  * Verbindungen für Manifest-Adressen (#1628): wie „URL aufrufen“ ohne Heimnetz (`pruefendesLookup`) – jede aufgelöste
  * Adresse wird beim Verbinden geprüft, private, Loopback- und Link-Local-Adressen sind gesperrt, kein zweites Auflösen.
  * `fetch` von Node nimmt dafür einen eigenen Dispatcher; dessen Klasse (Agent aus dem in Node eingebauten undici) holen
- * wir vom globalen Dispatcher, damit keine Abhängigkeit dazukommt. Fehlt sie, ist das Netz für Manifest-Adressen zu
+ * wir vom globalen Dispatcher (`agentKlasse`), damit keine Abhängigkeit dazukommt. Fehlt sie, ist das Netz für Manifest-Adressen zu
  * (lieber kein Abruf als einer ohne Prüfung) – der Test `laeufer-manifest-netz` hält fest, dass es sie gibt.
  */
 let oeffentlich: unknown = null;
+
+type AgentKlasse = new (o: unknown) => unknown;
+const DISPATCHER_SCHLUESSEL = /^undici\.globalDispatcher\.(\d+)$/;
+
+/**
+ * Die Klasse `Agent` des in Node eingebauten undici – vom globalen Dispatcher. Der Schlüssel dafür wechselt mit der
+ * undici-Version (Node 22: `…globalDispatcher.1`, ab Node 26 `…globalDispatcher.2`, unter `.1` dann nur eine Hülle);
+ * genommen wird der höchste, dessen Wert ein `Agent` ist. Nichts gefunden → null (Netz für Manifest-Adressen zu).
+ */
+function agentKlasse(): AgentKlasse | null {
+  const g = globalThis as unknown as Record<symbol, { constructor?: unknown } | undefined>;
+  const kandidaten = Object.getOwnPropertySymbols(g)
+    .map((s) => ({ s, nr: Number(DISPATCHER_SCHLUESSEL.exec(s.description ?? '')?.[1] ?? NaN) }))
+    .filter((k) => Number.isFinite(k.nr))
+    .sort((x, y) => y.nr - x.nr);
+  for (const { s } of kandidaten) {
+    const k = g[s]?.constructor;
+    if (typeof k === 'function' && k.name === 'Agent') return k as AgentKlasse;
+  }
+  return null;
+}
+
 export async function oeffentlichesNetz(aufloesen: Aufloesen = dnsAlle): Promise<unknown> {
   if (oeffentlich && aufloesen === dnsAlle) return oeffentlich;
-  const schluessel = Symbol.for('undici.globalDispatcher.1');
-  if (!(globalThis as Record<symbol, unknown>)[schluessel]) await fetch('data:,').catch(() => undefined);
-  const global = (globalThis as Record<symbol, unknown>)[schluessel] as { constructor?: new (o: unknown) => unknown } | undefined;
-  const Agent = global?.constructor;
-  if (typeof Agent !== 'function' || Agent.name !== 'Agent') return null;
+  // Der globale Dispatcher entsteht erst beim ersten Abruf.
+  if (!agentKlasse()) await fetch('data:,').catch(() => undefined);
+  const Agent = agentKlasse();
+  if (!Agent) return null;
   const d = new Agent({ connect: { lookup: pruefendesLookup(false, aufloesen) } });
   if (aufloesen === dnsAlle) oeffentlich = d;
   return d;
