@@ -5,6 +5,7 @@
  */
 import { createHash } from 'node:crypto';
 import {
+  fehlendeTeile,
   inMB,
   type HerkunftPruefung,
   istKiPaket,
@@ -286,8 +287,15 @@ export abstract class PaketKataloge extends PaketHerkunft {
     const pakete = await this.d.kern.repo.listePakete();
     const ki = pakete.some((p) => istKiPaket(p.laeufer)) ? await this.d.ki.kiUebersicht().catch(() => null) : null;
     const kiOhne = (p: InstalliertesPaket) => istKiPaket(p.laeufer) && !!ki && !ki.pakete.find((x) => x.id === p.id)?.bekommt.length;
+    // Beschädigt (#1551): eigene Mappentypen oder Ansichten fehlen – die Paketseite bietet Lösungen an.
+    const typIds = new Set((await this.d.mappentypen.listeTypen()).map((x) => x.id));
+    const sichtIds = new Set((await this.d.sichtenVerwaltung.listeSichten()).map((x) => x.id));
+    const mitBestand = (p: InstalliertesPaket) => {
+      const fehlt = fehlendeTeile(p, typIds, sichtIds);
+      return fehlt ? { ...p, fehlt } : p;
+    };
     return Promise.all(
-      pakete.map(async (p) =>
+      pakete.map(mitBestand).map(async (p) =>
         p.einstellungen
           ? {
               ...p,

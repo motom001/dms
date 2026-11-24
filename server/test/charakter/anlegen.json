@@ -749,182 +749,6 @@
   "nachFehlerSpeichern": {
     "typen": [
       {
-        "id": "T(probe:akte)",
-        "name": "Akte",
-        "schluessel": "probe:akte",
-        "beschreibung": "Eine Akte",
-        "beschriftungen": {
-          "en": {
-            "name": "File"
-          }
-        },
-        "ausPost": null,
-        "erkennbarAn": "",
-        "titelVorlage": "{name}",
-        "felder": [
-          {
-            "key": "name",
-            "label": "Name",
-            "typ": "text",
-            "pflicht": true,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "verweisart": "bezug"
-          },
-          {
-            "key": "vorgang",
-            "label": "Letzter Vorgang",
-            "typ": "referenz",
-            "pflicht": false,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "zielTypen": ["T(probe:vorgang)"],
-            "verweisart": "bezug"
-          },
-          {
-            "key": "stelle",
-            "label": "Stelle",
-            "typ": "referenz",
-            "pflicht": false,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "zielTypen": ["T(basis:organisation)"],
-            "verweisart": "bezug"
-          },
-          {
-            "key": "wer",
-            "label": "Wer",
-            "typ": "referenz",
-            "pflicht": false,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "zielTypen": ["T(benutzer)"],
-            "verweisart": "bezug"
-          },
-          {
-            "key": "posten",
-            "label": "Posten",
-            "typ": "tabelle",
-            "pflicht": false,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "verweisart": "bezug",
-            "quelle": {
-              "typId": "T(probe:vorgang)",
-              "feldKey": "akte"
-            }
-          },
-          {
-            "key": "hinweis",
-            "label": "Hinweis",
-            "typ": "text",
-            "pflicht": false,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "verweisart": "bezug",
-            "anzeigen": {
-              "modus": "alle",
-              "bedingungen": [
-                {
-                  "art": "verweistyp",
-                  "feld": "stelle",
-                  "typ": "T(basis:organisation)"
-                }
-              ]
-            }
-          }
-        ],
-        "register": [
-          {
-            "key": "daten",
-            "name": "Daten",
-            "art": "felder",
-            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
-          },
-          {
-            "key": "vorgaenge",
-            "name": "Vorgänge",
-            "art": "verknuepfungen",
-            "quellen": [
-              {
-                "typId": "T(probe:vorgang)",
-                "feldKey": "akte"
-              }
-            ]
-          }
-        ],
-        "trefferlisten": [
-          {
-            "key": "standard",
-            "name": "Standard",
-            "spalten": ["name", "stelle"],
-            "standard": true
-          }
-        ],
-        "trefferliste": ["name", "stelle"],
-        "archiv": null,
-        "erstellenErlaubt": true,
-        "loeschenErlaubt": true,
-        "system": null,
-        "erstellt": "ZEIT",
-        "geaendert": "ZEIT",
-        "paket": "probe"
-      },
-      {
         "id": "T(basis:organisation)",
         "name": "Organisation",
         "schluessel": "basis:organisation",
@@ -1245,107 +1069,6 @@
         "erstellt": "ZEIT",
         "geaendert": "ZEIT",
         "paket": "basis"
-      },
-      {
-        "id": "T(probe:vorgang)",
-        "name": "Vorgang",
-        "schluessel": "probe:vorgang",
-        "beschreibung": "Ein Vorgang einer Akte",
-        "ausPost": null,
-        "erkennbarAn": "",
-        "titelVorlage": "{titel}",
-        "felder": [
-          {
-            "key": "titel",
-            "label": "Titel",
-            "typ": "text",
-            "pflicht": true,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "verweisart": "bezug"
-          },
-          {
-            "key": "akte",
-            "label": "Akte",
-            "typ": "referenz",
-            "pflicht": true,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "optionen": [],
-            "mehrfach": false,
-            "zielTypen": ["T(probe:akte)"],
-            "verweisart": "zugehoerigkeit"
-          },
-          {
-            "key": "betrag",
-            "label": "Betrag",
-            "typ": "betrag",
-            "pflicht": false,
-            "eindeutig": false,
-            "hilfe": "",
-            "standard": null,
-            "minLen": null,
-            "maxLen": null,
-            "muster": "",
-            "min": null,
-            "max": null,
-            "nachkomma": null,
-            "waehrung": "EUR",
-            "optionen": [],
-            "mehrfach": false,
-            "verweisart": "bezug"
-          }
-        ],
-        "register": [
-          {
-            "key": "daten",
-            "name": "Daten",
-            "art": "felder",
-            "felder": ["titel", "akte", "betrag"]
-          },
-          {
-            "key": "dok",
-            "name": "Dokumente",
-            "art": "dokumente",
-            "versionierung": true
-          }
-        ],
-        "trefferlisten": [
-          {
-            "key": "standard",
-            "name": "Standard",
-            "spalten": [],
-            "standard": true
-          }
-        ],
-        "trefferliste": [],
-        "archiv": {
-          "jahre": 6,
-          "stichtag": null
-        },
-        "erstellenErlaubt": true,
-        "loeschenErlaubt": true,
-        "teilVon": "akte",
-        "system": null,
-        "erstellt": "ZEIT",
-        "geaendert": "ZEIT",
-        "paket": "probe"
       }
     ],
     "sichten": [
@@ -1450,7 +1173,7 @@
         "name": "Organisationen",
         "beschreibung": "Alle Organisationen",
         "elternId": null,
-        "position": 60,
+        "position": 100040,
         "typen": ["T(basis:organisation)"],
         "bedingungen": [],
         "trefferliste": null,
@@ -1763,9 +1486,7 @@
       }
     ],
     "mappen": {
-      "probe:akte": [],
-      "basis:organisation": [],
-      "probe:vorgang": []
+      "basis:organisation": []
     },
     "synonyme": {
       "basis": []
@@ -4040,13 +3761,7 @@
             "key": "daten",
             "name": "Daten",
             "art": "felder",
-            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"],
-            "abschnitte": [
-              {
-                "vor": "stelle",
-                "titel": "Beteiligte"
-              }
-            ]
+            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
           },
           {
             "key": "vorgaenge",
@@ -6638,7 +6353,13 @@
                 "name": "Daten",
                 "werte": {
                   "art": "felder",
-                  "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
+                  "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"],
+                  "abschnitte": [
+                    {
+                      "vor": "stelle",
+                      "titel": "Beteiligte"
+                    }
+                  ]
                 }
               },
               {

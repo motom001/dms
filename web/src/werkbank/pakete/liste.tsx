@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { angehaltenGrund } from './angehalten';
 import { Aufklapper, Etikett, Feld, Knopf, type KnopfErgebnis, KnopfLink, Schalter } from '../../bausteine';
 import {
   herkunftText,
@@ -161,6 +162,15 @@ function Installiert({ z, offen }: { z: PaketeZustand; offen?: string }) {
                   {' '}
                   <Etikett art="warn" title={t('werkbank.pakete.pflichtfelder-in-den-einstellungen')}>
                     {t('werkbank.pakete.einstellungen-noetig')}
+                  </Etikett>
+                </>
+              )}
+              {/* Angehalten (#1563): der Grund in Worten steht als Titel und auf der Seite des Pakets. */}
+              {p.angehalten && (
+                <>
+                  {' '}
+                  <Etikett art="warn" title={angehaltenGrund(p)}>
+                    {t('werkbank.darf.angehalten')}
                   </Etikett>
                 </>
               )}

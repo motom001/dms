@@ -1,4 +1,6 @@
 import { Etikett, Feld, HakenFeld, Knopf } from '../../bausteine';
+import { Angehalten } from './angehalten';
+import { Beschaedigt } from './beschaedigt';
 import {
   hatNetz,
   hatSchnittstelle,
@@ -524,6 +526,8 @@ export function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; q
             </dl>
             <Zusaetze x={x} />
             <GehoertDazu x={x} />
+            <Beschaedigt x={x} />
+            <Angehalten x={x} />
             <Knoepfe x={x} />
             <EntfernenWahl x={x} />
           </section>

@@ -39,7 +39,7 @@ With every answer, Ablago still asks separately about:
 ## Changing { #aendern }
 
 - **Raising** needs a fresh sign-in. The change is recorded with the old and new value in the evidence journal (access and permissions), and everyone with administration rights gets an email. Nothing happens on its own: no package is installed, no folder type released.
-- **Lowering** takes effect immediately and is recorded in the journal. If installed packages no longer fit the new answer, Ablago names them beforehand with the reason; remove them under [Packages](pakete.md), then the answer can be changed.
+- **Lowering** takes effect immediately and is recorded in the journal. If installed packages no longer fit the new answer, Ablago names them beforehand with the reason; **Pause and save** [pauses](pakete.md#anhalten) them – their folder types, folders and settings stay.
 
 ## Provider and setup file { #anbieter }
 

@@ -37,8 +37,6 @@
   "darf.selbst.alles.satz": "On its own, Ablago does everything and you check afterwards.",
   "darf.selbst.heisst": "Takes effect once Ablago recognises post and documents on its own; until then nothing changes.",
   "darf.senken.titel": "These packages would no longer fit",
-  "darf.senken.entfernen": "Remove them under Packages first. Then the answer can be changed.",
-  "darf.senken.zu-den-paketen": "Go to packages",
   "darf.grund.vorlagen": "“{name}” is a package – you decided that Ablago uses no packages.",
   "darf.grund.lokal": "“{name}” brings code of its own – you have not allowed that.",
   "darf.grund.netz": "“{name}” uses the internet – you have not allowed that.",
@@ -57,5 +55,16 @@
   "darf.hinweis.neu.text": "The top of the overview now shows which packages Ablago may use and how much it does on its own. Nothing changes for you: Ablago may do as much as before. You can make it stricter if you like.",
   "darf.hinweis.neu.knopf": "View answers",
   "darf.mail.betreff": "Ablago may now do more",
-  "darf.mail.text": "{von} changed what Ablago may do.\n\nBefore: {vorher}\nNow: {nachher}\n\nNothing happens on its own: no package is installed. If this was not agreed, check the overview in the workbench."
+  "darf.mail.text": "{von} changed what Ablago may do.\n\nBefore: {vorher}\nNow: {nachher}\n\nNothing happens on its own: no package is installed. If this was not agreed, check the overview in the workbench.",
+  "darf.angehalten.hand": "“{name}” was paused by hand.",
+  "darf.angehalten": "paused",
+  "darf.angehalten.hinweis_one": "{anzahl} package is paused.",
+  "darf.angehalten.hinweis_other": "{anzahl} packages are paused.",
+  "darf.angehalten.text": "Folder types, folders and settings stay; the code does not run until you allow it and resume.",
+  "darf.angehalten.knopf": "Go to packages",
+  "darf.anhalten": "Pause",
+  "darf.fortsetzen": "Resume",
+  "darf.anhalten.erklaerung": "While paused, the package's code does not run: no events, no tasks, no actions, its automations rest. Folder types, folders, views, templates and settings stay; “Resume” works without setting it up again.",
+  "darf.senken.anhalten": "They will be paused: their code no longer runs, folder types, folders and settings stay. Resuming later works without setting them up again.",
+  "darf.senken.bestaetigen": "Pause and save"
 }

@@ -219,20 +219,6 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       knopf: t('werkbank.uebersicht.zweite.knopf'),
       erledigen: t('werkbank.uebersicht.zweite.nein'),
     });
-  // Was Ablago darf (#1562): einmal nach dem Update, bis jemand mit „Gesamte Verwaltung“ es zur Kenntnis nimmt.
-  if (u.darfNeu)
-    h.push({
-      schluessel: 'darf.neu',
-      art: 'info',
-      text: (
-        <>
-          <strong>{t('werkbank.darf.hinweis.neu')}</strong> {t('werkbank.darf.hinweis.neu.text')}
-        </>
-      ),
-      ziel: '/werkbank#was-ablago-darf',
-      knopf: t('werkbank.darf.hinweis.neu.knopf'),
-      erledigen: t('werkbank.uebersicht.akzeptieren'),
-    });
   // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).
   const vh = variablenHinweis(u.variablen ?? []);
   if (vh)
@@ -257,6 +243,54 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
         ),
       ziel: vh.ziel,
       knopf: vh.knopf,
+    });
+}
+
+/** Beschädigte (#1551) und angehaltene Pakete (#1563), Was Ablago darf nach dem Update (#1562). */
+export function paketeUndDarf(u: WerkbankUebersicht, h: Hinweis[]) {
+  // Beschädigte Pakete (#1551): am Paket stehen die Lösungen.
+  const bs = u.beschaedigt ?? [];
+  if (bs.length)
+    h.push({
+      schluessel: 'pakete.beschaedigt',
+      art: 'warn',
+      text: (
+        <>
+          <strong>{t('werkbank.pakete.beschaedigt.hinweis', { anzahl: bs.length })}</strong> {bs.map((x) => `„${x.name}“`).join(', ')}.{' '}
+          {t('werkbank.pakete.beschaedigt.hinweis.text')}
+        </>
+      ),
+      ziel: bs.length === 1 ? `/werkbank/pakete/${encodeURIComponent(bs[0].id)}` : '/werkbank/pakete',
+      knopf: t('werkbank.pakete.beschaedigt.knopf'),
+    });
+  // Angehaltene Pakete (#1563): mit Grund in Worten; zum Paket (eines) bzw. zur Liste (mehrere).
+  const ah = u.angehalten ?? [];
+  if (ah.length)
+    h.push({
+      schluessel: 'pakete.angehalten',
+      art: 'warn',
+      text: (
+        <>
+          <strong>{t('werkbank.darf.angehalten.hinweis', { anzahl: ah.length })}</strong> {ah.map((x) => x.grund).join(' ')}{' '}
+          {t('werkbank.darf.angehalten.text')}
+        </>
+      ),
+      ziel: ah.length === 1 ? `/werkbank/pakete/${encodeURIComponent(ah[0].id)}` : '/werkbank/pakete',
+      knopf: t('werkbank.darf.angehalten.knopf'),
+    });
+  // Was Ablago darf (#1562): einmal nach dem Update, bis jemand mit „Gesamte Verwaltung“ es zur Kenntnis nimmt.
+  if (u.darfNeu)
+    h.push({
+      schluessel: 'darf.neu',
+      art: 'info',
+      text: (
+        <>
+          <strong>{t('werkbank.darf.hinweis.neu')}</strong> {t('werkbank.darf.hinweis.neu.text')}
+        </>
+      ),
+      ziel: '/werkbank#was-ablago-darf',
+      knopf: t('werkbank.darf.hinweis.neu.knopf'),
+      erledigen: t('werkbank.uebersicht.akzeptieren'),
     });
 }
 

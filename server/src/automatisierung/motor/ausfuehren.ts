@@ -56,6 +56,8 @@ export abstract class AutomatisierungAusfuehren extends AutomatisierungFuellen {
   /** Eine Automatisierung für ein Ereignis ausführen; null, wenn es dazu schon einen Lauf gibt. */
   protected async fuehreAus(a: Automatisierung, anlass: Anlass, o: LaufOptionen): Promise<Lauf | null> {
     const mappeId = mappeVon(anlass);
+    // Automatisierungen eines angehaltenen Pakets (#1563) laufen nicht – nach „Fortsetzen“ wieder wie vorher.
+    if (!o.test && a.paketId && (await this.d.dienst.kern.repo.listePakete()).some((p) => p.id === a.paketId && p.angehalten)) return null;
     if (!o.test && (await this.gebremst(a, anlass))) return null;
     const l = this.neuerLauf(a, anlass, o, mappeId);
     if (!(await this.d.repo.beginne(l))) return null;

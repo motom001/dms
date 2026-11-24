@@ -158,7 +158,8 @@ export class EreignisseDienst {
     const typen = k.mappentyp ? await this.kern.repoOhneTransaktion.listeTypen() : [];
     for (const p of pakete) {
       const l = p.laeufer;
-      if (!l || (e.ausloeser.art === 'paket' && e.ausloeser.id === p.id)) continue;
+      // Angehalten (#1563): bekommt keine Ereignisse.
+      if (!l || p.angehalten || (e.ausloeser.art === 'paket' && e.ausloeser.id === p.id)) continue;
       if (e.art === 'sicherung.fertig' && !hatSchnittstelle(l, 'dms:sicherung-lesen')) continue;
       if (k.mappentyp) {
         const abonniert = l.ereignisse.includes(e.art as EreignisArt);
@@ -253,7 +254,8 @@ export class EreignisseDienst {
     const inTx = this.kern.inEigenerTransaktion();
     try {
       const p = (await this.repo.listePakete()).find((x) => x.id === paket && x.laeufer?.ereignisse.includes(art));
-      if (!p) return;
+      // Angehalten (#1563): keine Aufträge – wie ohne Paket.
+      if (!p || p.angehalten) return;
       // KI-Dienste (#796): Dateien eines nicht zugelassenen Mappentyps gehen an kein KI-Paket. „gesperrt“: Der Aufrufer
       // setzt den Stand selbst (bzw. stellt den Auftrag über ein anderes Dokument mit derselben Datei).
       if (istKiPaket(p.laeufer) && (typeof daten.mappe === 'string' || typeof daten.dokument === 'string')) {

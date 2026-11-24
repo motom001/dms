@@ -11,7 +11,9 @@
  *   des Pakets, die noch so sind, wie das Paket sie geschrieben hat (Prüfwert, #1125, pakete/sichtstand.ts).
  */
 import {
+  fehlendeTeile,
   rechteZeilen,
+  type PaketAngehalten,
   type InstalliertesPaket,
   type AblaufErgebnis,
   haengenAn,
@@ -36,6 +38,7 @@ import { ersetzenAus, herkunftFehler, installierteErsetzt, meldungen, sammelKenn
 import { type Handelnder, log, type Quelle } from './optionen';
 import { type InstallierenEingabe, type UmbauEingabe, type Vorschau } from './plan';
 import { PaketEntfernen } from './entfernen';
+import { darfStand, ueberGrenze } from '../index';
 
 /** Plan und Pakete eines Ablaufs, wie ablaufIntern sie liefert. */
 type AblaufIntern = Awaited<ReturnType<Paketverwaltung['ablaufIntern']>>;
@@ -237,6 +240,81 @@ export class Paketverwaltung extends PaketEntfernen {
       von: von.email,
     });
     return datensatz;
+  }
+
+  /**
+   * Anhalten (#1563): Läufer, Ereignisse, Aufträge, Leistungen, Aktionen und Automatisierungen des Pakets ruhen;
+   * Mappentypen, Mappen, Ansichten, Vorlagen, Einstellungen und Geheimnisse bleiben. `darf`: beim Senken von „Was
+   * Ablago darf“ (#1562), mit der Stufe, die nicht mehr erlaubt ist.
+   */
+  async halteAn(id: string, von: Handelnder, grund: PaketAngehalten['grund'] = 'hand', stufe?: PaketAngehalten['stufe']) {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    if (p.angehalten) return p;
+    const neu: InstalliertesPaket = {
+      ...p,
+      angehalten: { grund, ...(stufe ? { stufe } : {}), am: new Date().toISOString(), von: von.email ?? '' },
+    };
+    await this.d.kern.repo.speicherePaket(neu);
+    await this.o.laeufer?.codeGeaendert?.();
+    log.warn('Paket angehalten', { von: von.email, paket: id, grund });
+    void nachweis('betrieb.paket', { aktion: 'angehalten', paket: id, version: p.version, grund, von: von.email });
+    return neu;
+  }
+
+  /** Fortsetzen (#1563) ohne Neueinrichtung – nur, wenn „Was Ablago darf“ das Paket erlaubt (sonst 409 mit Grund in Worten). */
+  async setzeFort(id: string, von: Handelnder) {
+    const alle = await this.d.kern.repo.listePakete();
+    const p = alle.find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    if (!p.angehalten) return p;
+    const { pakete } = await darfStand(this.d.kern.einstellungen);
+    const nein = ueberGrenze(alle, pakete).find((x) => x.id === id);
+    if (nein) throw new Fachfehler(409, `${nein.grund} ${t('werkbank.darf.grund.erlauben')}`, { darf: true });
+    const neu: InstalliertesPaket = { ...p };
+    delete neu.angehalten;
+    await this.d.kern.repo.speicherePaket(neu);
+    await this.o.laeufer?.codeGeaendert?.();
+    log.info('Paket fortgesetzt', { von: von.email, paket: id });
+    void nachweis('betrieb.paket', { aktion: 'fortgesetzt', paket: id, version: p.version, von: von.email });
+    return neu;
+  }
+
+  /**
+   * Reparieren (#1551): fehlende eigene Mappentypen und Ansichten derselben Version neu anlegen – aus der Quelle des
+   * Pakets, in einer Transaktion wie das Entfernen; scheitert es, bleibt alles wie vorher. Vorhandene Mappen,
+   * Mappentypen und Einstellungen bleiben, wie sie sind.
+   */
+  async repariere(id: string, von: Handelnder): Promise<InstalliertesPaket> {
+    const alt = (await this.d.kern.repo.listePakete()).find((p) => p.id === id);
+    if (!alt) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const typIds = new Set((await this.d.mappentypen.listeTypen()).map((x) => x.id));
+    const sichtIds = new Set((await this.d.sichtenVerwaltung.listeSichten()).map((x) => x.id));
+    const fehlt = fehlendeTeile(alt, typIds, sichtIds);
+    if (!fehlt) return alt;
+    if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, t('werkbank.pakete.reparieren.hochgeladen', { name: alt.name }));
+    const quelle = await this.erlaubt(alt.herkunft.url);
+    const { paket, v, katalog, pruefung } = await this.lade(id, alt.version, quelle, true);
+    const ohne = (m: Record<string, string>, weg: string[]) => Object.fromEntries(Object.entries(m).filter(([k]) => !weg.includes(k)));
+    const neu = await this.d.kern.inTransaktion(async () => {
+      // Ohne die fehlenden Teile gilt die Installation als Stand vor ihnen: Die Vorschau plant sie neu.
+      const bereinigt: InstalliertesPaket = { ...alt, typen: ohne(alt.typen, fehlt.typen), sichten: ohne(alt.sichten, fehlt.sichten) };
+      await this.d.kern.repo.speicherePaket(bereinigt);
+      const plan = await this.plane(paket, v, katalog, {}, {}, { quelle: { herkunft: alt.herkunft, pruefung } });
+      const gleich = t('meldungen.pakete.version-ist-schon-installiert', { version: alt.version });
+      plan.probleme = plan.probleme.filter((x) => x !== gleich);
+      if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
+      return this.lege(paket, alt.herkunft, v, plan, false, von, bereinigt, []);
+    });
+    log.info('Paket repariert', {
+      von: von.email,
+      paket: id,
+      version: alt.version,
+      typen: fehlt.typen.join(', ') || '–',
+      sichten: fehlt.sichten.join(', ') || '–',
+    });
+    void nachweis('betrieb.paket', { aktion: 'repariert', paket: id, version: alt.version, vorher: alt.version, von: von.email });
+    return neu;
   }
 
   /** Update aus der Quelle des Pakets: ergänzt nur – neue Typen, Felder, Register, Sichten. */

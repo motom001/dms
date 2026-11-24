@@ -144,3 +144,21 @@ describe('Werkbank-Übersicht: Empfohlene Pakete (#1511)', () => {
     assert.ok(text(darf).includes('Neu: Was Ablago darf – bitte einmal ansehen.'));
   });
 });
+
+describe('Werkbank-Übersicht: angehaltene und beschädigte Pakete (#1563, #1551)', () => {
+  it('angehalten: ein gelber Hinweis mit Grund in Worten, ohne Stufennummer; beschädigt: Weg zu den Lösungen', () => {
+    const l = hinweise({
+      ...NEU,
+      angehalten: [{ id: 'dienst', name: 'Dienst', grund: '„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt.' }],
+      beschaedigt: [{ id: 'kontakte', name: 'Kontakte' }],
+    });
+    const a = l.find((x) => x.schluessel === 'pakete.angehalten')!;
+    assert.equal(a.art, 'warn');
+    assert.equal(a.ziel, '/werkbank/pakete/dienst');
+    assert.ok(text(a).includes('nutzt das Internet – das habt ihr nicht erlaubt.'));
+    assert.ok(!/Stufe|\d/.test(text(a).replace(/1 Paket/, '')), 'keine Stufennummern');
+    const b = l.find((x) => x.schluessel === 'pakete.beschaedigt')!;
+    assert.equal(b.knopf, 'Paket reparieren');
+    assert.ok(text(b).includes('„Kontakte“'));
+  });
+});

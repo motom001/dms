@@ -85,7 +85,9 @@ export abstract class PaketInstallieren extends PaketAnlegen {
   }
 
   private async legeMitUmbauIntern(a: LegeAuftrag): Promise<InstalliertesPaket> {
-    if (!this.umbauLagen.get(a.plan)?.schritte.length) return this.legeIntern(a);
+    // Ganz oder gar nicht (#1385, wie das Entfernen seit #1521): Installieren und Aktualisieren laufen in einer
+    // Transaktion – scheitert etwas, ist die Ablage danach genau wie vorher, und ein neuer Versuch gelingt.
+    if (!this.umbauLagen.get(a.plan)?.schritte.length) return this.d.kern.inTransaktion(() => this.legeIntern(a));
     try {
       return await this.d.kern.inTransaktion(() => this.legeIntern(a));
     } catch (f) {

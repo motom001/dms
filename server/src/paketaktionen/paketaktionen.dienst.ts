@@ -287,7 +287,8 @@ export class PaketAktionen {
     const typen = await this.repo.listeTypen();
     const r: Array<{ p: InstalliertesPaket; a: MappenAktion }> = [];
     for (const p of pakete) {
-      if (!p.mappenaktionen?.length) continue;
+      // Angehalten (#1563): seine Aktionen stehen nicht im Menü.
+      if (!p.mappenaktionen?.length || p.angehalten) continue;
       const aufloesen = await this.rechte.typverweise(p.id, pakete, typen);
       for (const a of p.mappenaktionen) if (aufloesen(a.mappentypen).has(mappe.typId)) r.push({ p, a });
     }

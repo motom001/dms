@@ -283,6 +283,25 @@ Ein **Sprachpaket** hat keine Mappentypen. Hat jemand seine Sprache gewählt ode
 
 Liefert das Paket Volltext oder wandelt es Dateien um (z. B. **Office und E-Mail**, **Bildformate**), warten danach keine Dokumente mehr darauf: Ohne Text steht am Dokument wieder, dass es für diesen Dateityp kein Paket gibt; hatte es schon Text, bleibt der Text stehen.
 
+## Anhalten und Fortsetzen { #anhalten }
+
+Ein Paket mit Code lässt sich **anhalten**, statt es zu entfernen – von Hand mit **Anhalten** auf seiner Seite oder von selbst, wenn du [Was Ablago darf](was-ablago-darf.md) senkst und das Paket nicht mehr dazu passt. Angehalten heißt:
+
+- Sein Code läuft nicht: keine Ereignisse, keine Aufträge, keine Leistungen; seine Aktionen stehen nicht im Menü „Mappe“, seine Automatisierungen ruhen. Auch wenn es durch einen Fehler doch liefe, käme es nicht ins Netz.
+- **Mappentypen, Mappen, Ansichten und Vorlagen bleiben** und sind normal nutzbar – sie gehören euch, nicht dem Paket. Einstellungen und Geheimnisse bleiben gespeichert.
+- In der Paketliste steht **angehalten**, auf der Seite des Pakets der Grund in Worten, etwa „„Übersetzung“ nutzt das Internet – das habt ihr nicht erlaubt.“, mit **Erlauben …** und **Fortsetzen**; die [Übersicht](uebersicht.md) zeigt einen Hinweis.
+- **Fortsetzen** geht ohne Neueinrichtung, aber nur, wenn „Was Ablago darf“ das Paket wieder erlaubt. Erhöhen allein setzt nichts von selbst fort.
+
+## Beschädigtes Paket { #beschaedigt }
+
+Fehlen einem installierten Paket eigene Mappentypen oder Ansichten derselben Version – etwa nach einem früher abgebrochenen Entfernen –, zeigt die [Übersicht](uebersicht.md) „… ist nicht vollständig“, und auf der Seite des Pakets stehen **Lösungen**, je mit einem Satz:
+
+- **Reparieren** legt die fehlenden Teile derselben Version neu an; vorhandene Mappen, Mappentypen und Einstellungen bleiben. Das läuft ganz oder gar nicht: Scheitert es, ist nichts verändert. Für ein hochgeladenes Paket lädst du dieselbe Version noch einmal hoch.
+- **Neu installieren** entfernt das Paket und führt in den gewohnten Ablauf **Installieren** derselben Version – nur, solange es in seinen Mappentypen keine eigenen Mappen gibt.
+- **Ganz entfernen** ist das gewohnte [Entfernen](#entfernen).
+
+Auch **Installieren und Aktualisieren** laufen ganz oder gar nicht (#1385): Scheitert es mittendrin, ist die Ablage wie vorher, und ein zweiter Versuch gelingt ohne Namenskonflikt.
+
 ## Einstellungen
 
 Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordnen, oder ein Zugangsschlüssel für einen Dienst. Das Paket **beschreibt** sie nur; Ablago baut daraus ein Formular, prüft die Werte und speichert sie. Du findest es unter **Werkbank → Pakete → *Paket* → Reiter „Einstellungen“** – den Reiter gibt es nur bei Paketen, die etwas einzustellen haben.
