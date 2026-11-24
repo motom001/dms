@@ -90,6 +90,21 @@ describe('Liste der Werkbank-Seiten (#1281)', () => {
   it('Mitte und Zähler kommen aus der Liste', async () => {
     assert.ok(hatMitte('uebersicht') && hatMitte('typen') && !hatMitte('region'));
     assert.deepEqual(Object.keys(await werkbankZahlen({})).sort(), [...ZAEHLER].sort());
-    assert.deepEqual([...ZAEHLER].sort(), ['benutzer', 'darfWeg', 'nummernkreise', 'pakete', 'postfaecher']);
+    // Seit #1585 hat jeder Bereich mit Zahl in der Leiste einen Zähler.
+    assert.deepEqual([...ZAEHLER].sort(), [
+      'ablaufvorlagen',
+      'anmeldeschutz',
+      'auskuenfte',
+      'automatisierungen',
+      'benutzer',
+      'darfWeg',
+      'nummernkreise',
+      'pakete',
+      'postfaecher',
+      'rundgaenge',
+      'stempel',
+      'tipps',
+      'woerter',
+    ]);
   });
 });
