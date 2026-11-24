@@ -71,7 +71,7 @@ export const TYP_BEREICHE = [
   ['berechtigungen', t('mappentypen.bereich.berechtigungen')],
   ['testlauf', t('mappentypen.bereich.testlauf')],
   ['pakete', t('mappentypen.bereich.pakete')],
-  ['ki', t('mappentypen.bereich.ki')],
+  // „Darf an Dienste im Netz gehen“ steht seit #1559 unter „Berechtigungen“, nicht mehr als eigener Bereich.
   // Fassungen (#1006): wer wann was geändert hat – erst nach dem Anlegen.
   ['fassungen', t('oberflaeche.fassungen.titel')],
 ] as const;

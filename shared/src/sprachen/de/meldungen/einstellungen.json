@@ -58,7 +58,7 @@
   "uebersetzung.paket-fehler": "„{name}“ konnte den Text nicht übersetzen: {grund}",
   "uebersetzung.kein-json": "Die Antwort ist kein JSON-Objekt.",
   "uebersetzung.ohne-text": "In der Antwort fehlt „text“.",
-  "uebersetzung.ki-nicht-zugelassen": "Dieser Mappentyp ist nicht für KI-Dienste zugelassen – {name} bekommt seine Inhalte nicht.",
+  "uebersetzung.ki-nicht-zugelassen": "Dieser Mappentyp darf nicht an Dienste im Netz gehen – {name} bekommt seine Inhalte nicht.",
   "organisation.schreibschutz_one": "{felder} ändert nur, wer im Verwaltungsmodus die eigene Organisation verwalten darf oder eine dafür freigegebene Rolle hat.",
   "organisation.schreibschutz_other": "{felder} ändert nur, wer im Verwaltungsmodus die eigene Organisation verwalten darf oder eine dafür freigegebene Rolle hat.",
   "organisation.keine-eigene": "Diese Mappe ist keine eigene Organisation – bitte eine Organisation mit dem Merkmal „eigene Organisation“ wählen.",

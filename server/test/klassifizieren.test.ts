@@ -346,7 +346,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.equal(x.eingaenge.length, 0, 'KI lokal – Ähnlichkeit bekommt weder Text noch ähnliche Typen');
     const w = r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!;
     assert.equal(w.stand, 'gesperrt');
-    assert.match(String(w.hinweis), /KI lokal – Ähnlichkeit.*nicht für KI-Dienste zugelassen/);
+    assert.match(String(w.hinweis), /KI lokal – Ähnlichkeit.*nicht an Dienste im Netz gehen/);
   });
 
   it('Ähnlichkeit: nur Typ und Maß, nur Mappen, die Person und Paket lesen dürfen, aus zugelassenen Typen', async () => {
@@ -479,7 +479,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     for (const id of ['ki_assistent', 'ki_aehnlich']) {
       const w = r.wege.find((y) => y.paket?.id === id)!;
       assert.equal(w.stand, 'gesperrt', id);
-      assert.match(String(w.hinweis), /nicht für KI-Dienste zugelassen/);
+      assert.match(String(w.hinweis), /nicht an Dienste im Netz gehen/);
     }
     assert.equal(r.vorschlag?.typId, x.rechnung.id, 'Überschrift und Abgleich tragen weiter');
     // Kein Kandidat zugelassen: kein Paket wird gefragt; Überschrift und Abgleich bleiben.

@@ -1234,7 +1234,7 @@
   "darstellung.verwendung.frist-empfaenger": "Recipient of the deadline on “{feld}”",
   "darstellung.verwendung.archiv": "Reference date in archive mode",
   "darstellung.verwendung.berechtigung": "Permission “{name}”",
-  "pakete.ki-nur-zugelassene": "AI service: only receives content from folder types you allow for AI services – new ones only once you allow them",
+  "pakete.ki-nur-zugelassene": "Service on the network: only receives content from folder types you allow for services on the network – new ones only once you allow them",
   "feldarten.zeitraum.tage_one": "{anzahl} day",
   "feldarten.zeitraum.tage_other": "{anzahl} days",
   "feldarten.einheit.tage_one": "day",

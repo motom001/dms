@@ -1,6 +1,6 @@
 import { Hilfe } from '../../Hilfe';
 import { Knopf, Bereich, type Klappe } from '../../bausteine';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import type { Mappentyp } from '../../../../shared/src/model';
 import {
   kurzStandard,
@@ -30,7 +30,10 @@ export function RegelwerkAbschnitt({
   gespeichert,
   neu,
   klappe,
+  nachStandard,
 }: {
+  /** Feste Zeile direkt unter „Standard“ (#1559: „Darf an Dienste im Netz gehen“). */
+  nachStandard?: ReactNode;
   rw: Regelwerk;
   setRw: (f: (x: Regelwerk) => Regelwerk) => void;
   typ: Mappentyp;
@@ -69,6 +72,7 @@ export function RegelwerkAbschnitt({
         </>
       }>
       {grundWahl(rw, setRw, typ)}
+      {nachStandard}
 
       <h3 className="zwischen">
         {t('werkbank.berechtigungen.regeln')} <Hilfe ort="berechtigungen.regeln" />

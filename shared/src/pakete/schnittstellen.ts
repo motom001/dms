@@ -156,7 +156,8 @@ export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = [
  * KI-Paket bzw. „KI-Dienst“ (#796): ein Paket, das Inhalte lesen oder bekommen kann (Mappen, Dokumente, Volltext,
  * Ausschnitte) und ins Netz darf. Es bekommt nur Inhalte aus Mappentypen, die der Administrator für KI-Dienste
  * zugelassen hat – neue Mappentypen erst nach ausdrücklicher Zulassung. Pakete ohne Netz rechnen im Haus und
- * sind davon nicht betroffen.
+ * sind davon nicht betroffen. In der Oberfläche heißt das seit #1559 „Darf an Dienste im Netz gehen“ (Paket mit
+ * Netz, das Inhalte bekommt); der Name hier bleibt, um keinen Umbau auszulösen.
  */
 export const istKiPaket = (c: PaketCode | undefined): boolean =>
   !!c &&

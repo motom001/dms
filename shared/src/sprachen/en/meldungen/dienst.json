@@ -474,8 +474,8 @@
   "dienst.version-gibt-es-nicht": "Version {nummer} doesn’t exist (any more).",
   "dienst.fuer-dieses-register-ist-7": "Versioning is switched off for this tab – bringing back isn’t possible.",
   "dienst.seitensprachen-liste-mit-einem": "seitensprachen: list with one entry per page expected (at most {MAX_SEITENSPRACHEN}).",
-  "dienst.ki-nicht-zugelassen": "Folder type is not allowed for AI services",
-  "dienst.ki-benutzer": "User folders never go to packages – not to AI services either.",
+  "dienst.ki-nicht-zugelassen": "Folder type may not go to services on the network",
+  "dienst.ki-benutzer": "User folders never go to packages – not to services on the network either.",
   "dienst.anzeige-abschnitt": "Section “{name}”: {problem}",
   "dienst.merkmal-ja-nein": "The attribute “{merkmal}” is yes or no (true or false)."
 }
