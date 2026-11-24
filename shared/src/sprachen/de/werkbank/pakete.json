@@ -398,5 +398,20 @@
   "paketeinstellungen.eintrag-loeschen.frage": "{eintrag} {wert} löschen?",
   "paketeinstellungen.eintrag-loeschen.text": "Der Eintrag verschwindet aus der Liste; gespeichert wird erst mit dem Knopf unten.",
   "paketeinstellungen.geheim-loeschen.frage": "Gespeicherten Wert für „{name}“ löschen?",
-  "paketeinstellungen.geheim-loeschen.text": "Danach ist nichts mehr gesetzt; gespeichert wird erst mit dem Knopf unten."
+  "paketeinstellungen.geheim-loeschen.text": "Danach ist nichts mehr gesetzt; gespeichert wird erst mit dem Knopf unten.",
+  "pakete.reparieren.hochgeladen": "„{name}“ wurde hochgeladen – zum Reparieren lade dieselbe Version noch einmal hoch.",
+  "pakete.beschaedigt": "Beschädigt",
+  "pakete.beschaedigt.titel": "„{name}“ ist nicht vollständig.",
+  "pakete.beschaedigt.text": "Es fehlen: {teile}. Das kommt von einem früher abgebrochenen Installieren oder Entfernen.",
+  "pakete.reparieren": "Reparieren",
+  "pakete.reparieren.satz": "Legt die fehlenden Teile derselben Version neu an. Vorhandene Mappen, Mappentypen und Einstellungen bleiben, wie sie sind.",
+  "pakete.reparieren.fertig": "„{name}“ ist repariert.",
+  "pakete.neu-installieren": "Neu installieren",
+  "pakete.neu-installieren.satz": "Entfernt das Paket und installiert dieselbe Version neu. Das geht nur, solange es in seinen Mappentypen keine eigenen Mappen gibt.",
+  "pakete.ganz-entfernen": "Ganz entfernen",
+  "pakete.ganz-entfernen.satz": "Entfernt das Paket mit allen Resten. Auch das geht nur ohne eigene Mappen in seinen Mappentypen.",
+  "pakete.beschaedigt.hinweis_one": "{anzahl} Paket ist nicht vollständig.",
+  "pakete.beschaedigt.hinweis_other": "{anzahl} Pakete sind nicht vollständig.",
+  "pakete.beschaedigt.hinweis.text": "Am Paket stehen Lösungen: Reparieren, Neu installieren oder Ganz entfernen.",
+  "pakete.beschaedigt.knopf": "Paket reparieren"
 }

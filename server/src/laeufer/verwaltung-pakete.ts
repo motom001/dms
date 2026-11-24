@@ -23,9 +23,14 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
     return weiter;
   }
 
+  /** Angehaltene Pakete (#1563) – der Läufer bekommt sie als Sperrliste mit (zweite Sicherung fürs Netz). */
+  private angehalten: string[] = [];
+
   private async synchronisiereJetzt() {
     const alle = await this.o.dienst.kern.repo.listePakete();
-    this.pakete = alle.filter((p) => p.laeufer?.modul);
+    // Angehalten (#1563): startet nicht, bekommt nichts, sein Dienstkonto ist aus – bis „Fortsetzen“.
+    this.pakete = alle.filter((p) => p.laeufer?.modul && !p.angehalten);
+    this.angehalten = alle.filter((p) => p.angehalten).map((p) => p.id);
     // Dienstkonten: je Paket mit Code eins; für entfernte ausschalten.
     for (const p of this.pakete) {
       const b = await this.o.konten.dienstkonto(p.id, p.name);
@@ -98,7 +103,7 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
       gesendet.set(p.id, stand);
     }
     this.gesendet = gesendet;
-    this.sende({ art: 'pakete', pakete: liste, behalten, grenzen: this.grenzen });
+    this.sende({ art: 'pakete', pakete: liste, behalten, grenzen: this.grenzen, angehalten: this.angehalten });
   }
 
   /**

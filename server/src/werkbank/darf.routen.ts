@@ -4,8 +4,8 @@
  */
 import { t } from '../sprache/sprache';
 import { darfStand, setzeDarf } from '../pakete/index';
-import type { Darf } from '../../../shared/src/darf';
-import { EMPFOHLENE_PAKETE } from '../../../shared/src/pakete';
+import type { Darf, PaketStufe } from '../../../shared/src/darf';
+import { EMPFOHLENE_PAKETE, fehlendeTeile, type InstalliertesPaket, type PaketAngehalten } from '../../../shared/src/pakete';
 import type { Dienst } from '../dienst/dienst';
 import { ich, ok, verlangeFrisch } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
@@ -33,6 +33,15 @@ export function darfRouten(k: RoutenKontext): Route[] {
             pakete,
             einrichtungOffen: async () => !!x.einrichtung && (await x.einrichtung.stand()).offen,
             frisch: () => verlangeFrisch(konten, a, 'rechte'),
+            // Senken (#1563): Pakete über der neuen Grenze anhalten, nach der Liste im Dialog.
+            ...(x.pakete
+              ? {
+                  anhalten: async (betroffen: Array<{ id: string; stufe: PaketStufe }>) => {
+                    for (const b of betroffen) await x.pakete!.halteAn(b.id, ich(a), 'darf', b.stufe);
+                    return betroffen.map((b) => b.id);
+                  },
+                }
+              : {}),
             von: ich(a).email,
             mail: async (alt, neu) => {
               const von = ich(a).name || ich(a).email;
@@ -58,15 +67,31 @@ const GESEHEN = 'darf_hinweis_gesehen';
 export async function darfUebersicht(dienst: Dienst) {
   const darf = await darfStand(dienst.kern.einstellungen);
   const gesehen = !!(await dienst.kern.einstellungen?.lies(GESEHEN));
-  const ids = new Set((await dienst.kern.repo.listePakete()).map((p) => p.id));
+  const alle = await dienst.kern.repo.listePakete();
+  const ids = new Set(alle.map((p) => p.id));
   const texterkennung = !!(await dienst.volltexte.texterkennungPaket());
   return {
     darf,
     darfNeu: darf.herkunft === 'update' && !gesehen,
     umstieg: darf.herkunft === 'update',
     empfohlenFehlt: EMPFOHLENE_PAKETE.filter((id) => (id === 'texterkennung' ? !texterkennung : !ids.has(id))),
+    // Beschädigte Pakete (#1551): eigene Mappentypen oder Ansichten fehlen.
+    beschaedigt: await beschaedigtePakete(dienst, alle),
+    // Angehaltene Pakete (#1563) mit dem Grund in Worten – unter „Hinweise“ in der Übersicht.
+    angehalten: alle.flatMap((p) => (p.angehalten ? [{ id: p.id, name: p.name, grund: angehaltenGrund(p.name, p.angehalten) }] : [])),
   };
 }
+
+/** Pakete, deren Bestand nicht zur installierten Version passt (#1551). */
+async function beschaedigtePakete(dienst: Dienst, alle: InstalliertesPaket[]) {
+  const typIds = new Set((await dienst.mappentypen.listeTypen()).map((x) => x.id));
+  const sichtIds = new Set((await dienst.sichtenVerwaltung.listeSichten()).map((x) => x.id));
+  return alle.flatMap((p) => (fehlendeTeile(p, typIds, sichtIds) ? [{ id: p.id, name: p.name }] : []));
+}
+
+/** Warum ein Paket angehalten ist, in Worten (#1563). */
+export const angehaltenGrund = (name: string, a: PaketAngehalten) =>
+  a.grund === 'darf' && a.stufe ? t(`werkbank.darf.grund.${a.stufe}`, { name }) : t('werkbank.darf.angehalten.hand', { name });
 
 /** „Zur Kenntnis nehmen“ am Hinweis „Neu: Was Ablago darf“ – danach steht er nicht mehr da. */
 export async function darfHinweisGesehen(dienst: Dienst, von: string) {

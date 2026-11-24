@@ -235,6 +235,8 @@ export abstract class PaketAnlegen extends PaketAnlegenSchritte {
       // Rundgänge und Tipps (#831, #832): wie diese Version sie mitbringt; vorher = Version vor diesem Update.
       ...(paket.entdecken ? { entdecken: { ...paket.entdecken, vorher: alt?.version ?? null } } : {}),
       typStand,
+      // Angehalten (#1563) bleibt angehalten, auch nach einem Update.
+      ...(alt?.angehalten ? { angehalten: alt.angehalten } : {}),
     };
   }
 
@@ -383,8 +385,9 @@ export abstract class PaketAnlegen extends PaketAnlegenSchritte {
   /** Fehler beim Anlegen: alles zurück, was geschrieben wurde. */
   private async rolleZurueck(l: AnlegeLauf, s: Sicherung) {
     const { m, lage, umbauErg } = l;
-    // Mit Umbau nimmt die Transaktion alles in der Datenbank zurück; außerhalb liegen nur die Einstellungen.
-    if (!lage.schritte.length) await this.zurueck(l);
+    // In der Transaktion (#1385; mit Umbau schon vorher) nimmt sie alles in der Datenbank zurück; außerhalb liegen nur
+    // die Einstellungen. Ohne Transaktion (Aufruf von außen) wie bisher Schritt für Schritt.
+    if (!lage.schritte.length && !this.d.kern.inEigenerTransaktion()) await this.zurueck(l);
     if (umbauErg)
       await nimmEinstellungenZurueck(this.d, umbauErg.einstellungenVorher).catch((e) =>
         log.error('Umbau: Einstellungen nicht zurückgenommen', {

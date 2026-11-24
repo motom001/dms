@@ -426,6 +426,10 @@ export interface WerkbankUebersicht {
   umstieg?: boolean;
   /** Empfohlene Pakete, die noch fehlen (#1511), in fester Reihenfolge. */
   empfohlenFehlt?: EmpfohlenesPaket[];
+  /** Angehaltene Pakete (#1563) mit Grund in Worten. */
+  angehalten?: Array<{ id: string; name: string; grund: string }>;
+  /** Beschädigte Pakete (#1551): eigene Teile fehlen. */
+  beschaedigt?: Array<{ id: string; name: string }>;
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';

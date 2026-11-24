@@ -195,3 +195,6 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
   .typwahl .haken, .ansichtwahl .haken { display: flex; align-items: center; min-height: 48px; }
   .farbwahl input[type="color"] { min-height: 48px; }
 }
+/* Beschädigtes Paket (#1551): Lösungen untereinander, je Knopf und ein Satz. */
+.loesungen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.loesung { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }

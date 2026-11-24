@@ -238,7 +238,9 @@ export class VolltextDienst {
   /** Das installierte Paket, das die Texterkennung übernimmt (#458, dms:texterkennung); bei mehreren das erste nach Id. */
   async texterkennungPaket(): Promise<{ id: string; name: string; version: string; sprachen: string[] } | null> {
     const alle = await this.repo.listePakete();
-    const p = alle.filter((x) => hatSchnittstelle(x.laeufer, 'dms:texterkennung')).sort((a, b) => a.id.localeCompare(b.id))[0];
+    const p = alle
+      .filter((x) => hatSchnittstelle(x.laeufer, 'dms:texterkennung') && !x.angehalten)
+      .sort((a, b) => a.id.localeCompare(b.id))[0];
     if (!p) return null;
     // Sprachen (#459): Deutsch und Englisch im Paket, weitere aus Zusatzpaketen „<paket>.<kennung>“ (#1084; bis zum Umzug
     // im Katalog „<paket>_<kennung>“), die von ihm abhängen.

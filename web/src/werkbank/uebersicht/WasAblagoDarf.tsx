@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { t } from '../../sprache';
-import { Etikett, FeldGruppe, Knopf, KnopfLink } from '../../bausteine';
+import { Etikett, FeldGruppe, Knopf } from '../../bausteine';
 import { betriebApi } from '../../api/betrieb';
 import { ApiFehler } from '../../api/anfrage';
 import { useKonto } from '../../konto';
@@ -65,7 +65,8 @@ function DarfAendern({ d, u, schliessen }: { d: DarfStand; u: UebersichtZustand;
     setSendet(true);
     setFehler(undefined);
     try {
-      await betriebApi.darfSetzen(wahl);
+      // Senken (#1563): erst die Liste, dann mit Bestätigung anhalten und speichern.
+      await betriebApi.darfSetzen({ ...wahl, ...(betroffen ? { bestaetigt: true } : {}) });
       await u.laden();
       schliessen();
     } catch (e) {
@@ -119,18 +120,13 @@ function DarfAendern({ d, u, schliessen }: { d: DarfStand; u: UebersichtZustand;
               <li key={x.id}>{x.grund}</li>
             ))}
           </ul>
-          <p>{t('werkbank.darf.senken.entfernen')}</p>
-          <div className="knoepfe">
-            <KnopfLink to="/werkbank/pakete" groesse="klein">
-              {t('werkbank.darf.senken.zu-den-paketen')}
-            </KnopfLink>
-          </div>
+          <p>{t('werkbank.darf.senken.anhalten')}</p>
         </div>
       )}
       {fehler && <p className="fehlertext">{fehler}</p>}
       <div className="knoepfe">
-        <Knopf art="haupt" type="submit" laeuft={sendet} gesperrt={!!betroffen}>
-          {t('werkbank.darf.speichern')}
+        <Knopf art="haupt" type="submit" laeuft={sendet}>
+          {betroffen ? t('werkbank.darf.senken.bestaetigen') : t('werkbank.darf.speichern')}
         </Knopf>
         <Knopf onClick={schliessen}>{t('werkbank.darf.abbrechen')}</Knopf>
       </div>

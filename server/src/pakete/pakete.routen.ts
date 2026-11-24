@@ -176,6 +176,26 @@ function installierenRouten(k: RoutenKontext): Route[] {
       handler: async (a) => ok(await pakete.mitSperre(() => pakete.ablaufInstallieren((a.body ?? {}) as AblaufInstallation, wer(a)))),
     },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
+    // Anhalten und Fortsetzen (#1563): Fortsetzen nur, wenn „Was Ablago darf“ das Paket erlaubt.
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/pakete/:id/anhalten',
+      zugang: 'admin',
+      handler: async (a) => ok(await pakete.mitSperre(() => pakete.halteAn(a.params.id, wer(a)))),
+    },
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/pakete/:id/fortsetzen',
+      zugang: 'admin',
+      handler: async (a) => ok(await pakete.mitSperre(() => pakete.setzeFort(a.params.id, wer(a)))),
+    },
+    // Beschädigtes Paket reparieren (#1551): fehlende Teile derselben Version, ganz oder gar nicht.
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/pakete/:id/reparieren',
+      zugang: 'admin',
+      handler: async (a) => ok(await pakete.mitSperre(() => pakete.repariere(a.params.id, wer(a)))),
+    },
     {
       methode: 'POST',
       pfad: '/api/werkbank/pakete/:id/aktualisieren',

@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { describe, it } from 'node:test';
+import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
@@ -17,6 +17,7 @@ import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/formate/zip';
+import type { Repo } from '../src/repo';
 
 const DATEI = fileURLToPath(new URL('./charakter/anlegen.json', import.meta.url));
 const BASIS = fileURLToPath(new URL('./pakete/basis', import.meta.url));
@@ -125,9 +126,9 @@ function probe(version: '1.0.0' | '1.1.0'): Buffer {
   });
 }
 
-function dms() {
+function dms(repo: Repo = speicherRepo()) {
   const einstellungen = speicherEinstellungen();
-  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
+  const d = new Dienst(repo, speicherDateien(), { einstellungen });
   const p = new Paketverwaltung(d, {
     version: () => '0.290.13',
     katalogUrl: 'https://katalog.test/katalog.json',
@@ -178,8 +179,8 @@ function scheitere<T extends object>(ziel: T, name: keyof T, mal = 1) {
 }
 
 /** Frische Ablage mit Basis. */
-async function mitBasis() {
-  const x = dms();
+async function mitBasis(repo?: Repo) {
+  const x = dms(repo);
   await installiere(x.p, alsZip(ordner(BASIS)), false);
   return x;
 }
@@ -190,8 +191,8 @@ const meldung = (p: Promise<unknown>) =>
   );
 
 /**
- * Je Fall eine frische Ablage. Hinweis zum Stand nach einem Fehler: Akte und Vorgang verweisen aufeinander – ohne
- * Transaktion lässt sich keiner der beiden löschen, sie bleiben (so ist es heute; der Test hält es fest).
+ * Je Fall eine frische Ablage. Seit #1385 laufen Installieren und Aktualisieren in einer Transaktion: Nach einem Fehler
+ * ist die Ablage wie vorher – auch Akte und Vorgang, die aufeinander verweisen, sind wieder weg.
  */
 async function lauf() {
   const erg: Record<string, unknown> = {};
@@ -238,3 +239,72 @@ describe('legeIntern: Charakterisierung (#1278)', () => {
     assert.deepEqual(Object.keys(ist), Object.keys(soll));
   });
 });
+
+/* ---------- #1385: ganz oder gar nicht, mit dem Speicher im Arbeitsspeicher und mit PostgreSQL ---------- */
+
+const offen: Array<() => Promise<void>> = [];
+after(async () => {
+  for (const f of offen.splice(0)) await f();
+});
+async function pgRepoFrisch(): Promise<Repo> {
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
+  const { pgRepo } = await import('../src/repo/pg');
+  const a = {
+    ...ausUrl(process.env.TEST_DATABASE_URL)!,
+    datenbank: `dms_gg_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+  };
+  await legeDatenbankAn(a);
+  const sql = verbinde(alsUrl(a));
+  offen.push(async () => {
+    await sql.end();
+    const w = verbinde(alsUrl(a, 'postgres'));
+    await w.unsafe(`DROP DATABASE IF EXISTS "${a.datenbank}"`).catch(() => {});
+    await w.end();
+  });
+  await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
+  await sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') ON CONFLICT DO NOTHING`;
+  await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, '00000000-0000-4000-8000-000000000001', ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;
+  return pgRepo(sql, '00000000-0000-4000-8000-000000000001') as never;
+}
+
+for (const pg of [false, true])
+  describe(
+    `Installieren und Aktualisieren ganz oder gar nicht (#1385)${pg ? ' – PostgreSQL' : ''}`,
+    { skip: pg && !process.env.TEST_DATABASE_URL },
+    () => {
+      const mitRepo = async () => mitBasis(pg ? await pgRepoFrisch() : undefined);
+
+      it('Typen, die aufeinander verweisen: nach dem Fehler nichts übrig, der zweite Versuch gelingt', async () => {
+        for (const [ziel, name] of [
+          ['mappentypen', 'aendereTyp'],
+          ['sichtenVerwaltung', 'legeSichtAn'],
+          ['suche', 'setzePaketSynonyme'],
+        ] as const) {
+          const { d, p } = await mitRepo();
+          const vorher = await stand(d);
+          const zurueck = scheitere(d[ziel] as object, name as never);
+          await assert.rejects(installiere(p, probe('1.0.0')), /Probefehler/);
+          zurueck();
+          assert.deepEqual(await stand(d), vorher, `nach dem Fehler in ${name}: Ablage wie vorher`);
+          await installiere(p, probe('1.0.0'));
+          assert.ok(
+            (await d.kern.repo.listePakete()).some((x) => x.id === 'probe' && x.version === '1.0.0'),
+            'zweiter Versuch ohne Namenskonflikt',
+          );
+        }
+      });
+
+      it('Gescheitertes Update: Feldregister und Rechte wie vorher, der zweite Versuch gelingt', async () => {
+        const { d, p } = await mitRepo();
+        await installiere(p, probe('1.0.0'));
+        const vorher = await stand(d);
+        const zurueck = scheitere(d.sichtenVerwaltung, 'legeSichtAn');
+        await assert.rejects(installiere(p, probe('1.1.0')), /Probefehler/);
+        zurueck();
+        assert.deepEqual(await stand(d), vorher, 'keine neuen Abschnitte, keine neuen Felder, alte Fassung');
+        await installiere(p, probe('1.1.0'));
+        assert.equal((await d.kern.repo.listePakete()).find((x) => x.id === 'probe')?.version, '1.1.0');
+      });
+    },
+  );

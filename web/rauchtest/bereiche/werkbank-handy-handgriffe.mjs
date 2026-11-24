@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
 import { api, BASIS, JONAS, LENA, rauchtest, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
-import { tippflaechenPruefen } from '../muster.mjs';
+import { seiteRuhig, tippflaechenPruefen } from '../muster.mjs';
 
 /** Lena im Verwaltungsmodus über die Schnittstelle (für Vorbereitungen, nicht für die geprüften Handgriffe). */
 async function lenaVerwaltet() {
@@ -457,6 +457,10 @@ rauchtest(
     await los.click();
     await seite.getByText('Installiert: Haushalt 1.2.0.').waitFor();
     assert.equal(z.antworten?.rechteStand, 'rauchtest', 'Die Rechte sind bestätigt mitgeschickt');
+    // #1538: Nach dem Installieren lädt die Seite Liste und Paket neu und zeichnet das installierte Paket – erst dann
+    // messen (auf den fertigen Zustand warten, keine feste Zeit): „Entfernen“ steht da, die Seite ist ruhig.
+    await seite.getByRole('button', { name: 'Entfernen' }).waitFor();
+    await seiteRuhig(s);
     await keineRolleUndTippflaechen(s, 'Fertig');
   },
 );

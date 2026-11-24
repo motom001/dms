@@ -63,7 +63,7 @@ function installierteStufe(p: InstalliertesPaket, alle: InstalliertesPaket[]): P
 const grundIn = (name: string, stufe: PaketStufe) => t(`werkbank.darf.grund.${stufe}`, { name });
 
 /** Installierte Pakete über einer Grenze, mit Grund in Worten. */
-function ueberGrenze(alle: InstalliertesPaket[], grenze: PaketeGrenze) {
+export function ueberGrenze(alle: InstalliertesPaket[], grenze: PaketeGrenze) {
   return alle.flatMap((p) => {
     const stufe = installierteStufe(p, alle);
     return stufe && !erlaubt(grenze, stufe) ? [{ id: p.id, name: p.name, stufe, grund: grundIn(p.name, stufe) }] : [];

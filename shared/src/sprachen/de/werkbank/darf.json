@@ -37,8 +37,6 @@
   "darf.selbst.alles.satz": "Von sich aus erledigt Ablago alles, ihr prüft danach.",
   "darf.selbst.heisst": "Wirkt, sobald Ablago Post und Dokumente von sich aus erkennt; bis dahin bleibt alles, wie es ist.",
   "darf.senken.titel": "Diese Pakete passen dann nicht mehr dazu",
-  "darf.senken.entfernen": "Entfernt sie zuerst unter Pakete. Danach lässt sich die Antwort ändern.",
-  "darf.senken.zu-den-paketen": "Zu den Paketen",
   "darf.grund.vorlagen": "„{name}“ ist ein Paket – ihr habt festgelegt, dass Ablago keine Pakete nutzt.",
   "darf.grund.lokal": "„{name}“ bringt eigenen Code mit – das habt ihr nicht erlaubt.",
   "darf.grund.netz": "„{name}“ nutzt das Internet – das habt ihr nicht erlaubt.",
@@ -57,5 +55,16 @@
   "darf.hinweis.neu.text": "Oben in der Übersicht steht jetzt, welche Pakete Ablago nutzen darf und wie viel es von sich aus tut. Für euch ändert sich nichts: Ablago darf so viel wie bisher. Wer möchte, stellt es strenger ein.",
   "darf.hinweis.neu.knopf": "Antworten ansehen",
   "darf.mail.betreff": "Ablago darf jetzt mehr",
-  "darf.mail.text": "{von} hat geändert, was Ablago darf.\n\nVorher: {vorher}\nJetzt: {nachher}\n\nEs passiert nichts von selbst: Kein Paket wird installiert. War das nicht abgesprochen, sieh in der Werkbank unter Übersicht nach."
+  "darf.mail.text": "{von} hat geändert, was Ablago darf.\n\nVorher: {vorher}\nJetzt: {nachher}\n\nEs passiert nichts von selbst: Kein Paket wird installiert. War das nicht abgesprochen, sieh in der Werkbank unter Übersicht nach.",
+  "darf.angehalten.hand": "„{name}“ ist von Hand angehalten.",
+  "darf.angehalten": "angehalten",
+  "darf.angehalten.hinweis_one": "{anzahl} Paket ist angehalten.",
+  "darf.angehalten.hinweis_other": "{anzahl} Pakete sind angehalten.",
+  "darf.angehalten.text": "Mappentypen, Mappen und Einstellungen bleiben; der Code läuft nicht, bis ihr es erlaubt und fortsetzt.",
+  "darf.angehalten.knopf": "Zu den Paketen",
+  "darf.anhalten": "Anhalten",
+  "darf.fortsetzen": "Fortsetzen",
+  "darf.anhalten.erklaerung": "Angehalten läuft der Code des Pakets nicht: keine Ereignisse, keine Aufträge, keine Aktionen, seine Automatisierungen ruhen. Mappentypen, Mappen, Ansichten, Vorlagen und Einstellungen bleiben; „Fortsetzen“ geht ohne Neueinrichtung.",
+  "darf.senken.anhalten": "Sie werden angehalten: Ihr Code läuft nicht mehr, Mappentypen, Mappen und Einstellungen bleiben. Fortsetzen geht später ohne Neueinrichtung.",
+  "darf.senken.bestaetigen": "Anhalten und speichern"
 }

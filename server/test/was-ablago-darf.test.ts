@@ -296,3 +296,71 @@ describe('Was Ablago darf (#1562): Stand und Ändern', () => {
     assert.equal(liesDarf(await einst.lies('darf'))!.pakete, 'netz', 'nichts geändert');
   });
 });
+
+describe('Was Ablago darf senken hält Pakete an (#1563)', () => {
+  it('nach der Liste und der Bestätigung angehalten, mit Grund; Fortsetzen erst, wenn es wieder erlaubt ist', async () => {
+    const { p, d, einst } = await aufbau([ARTEN.netz, ARTEN.vorlagen], 'netz');
+    await installiere(p, 'dienst');
+    await installiere(p, 'vorlage');
+    const k: DarfKontext = {
+      pakete: () => d.kern.repo.listePakete(),
+      einrichtungOffen: async () => false,
+      frisch: () => {},
+      mail: async () => {},
+      von: ICH.email,
+      anhalten: async (b) => {
+        for (const x of b) await p.halteAn(x.id, ICH, 'darf', x.stufe);
+        return b.map((x) => x.id);
+      },
+    };
+    await assert.rejects(setzeDarf(einst, { pakete: 'lokal' }, k), /werden angehalten/);
+    assert.ok(!(await d.kern.repo.listePakete()).some((x) => x.angehalten), 'ohne Bestätigung nichts angehalten');
+    await setzeDarf(einst, { pakete: 'lokal', bestaetigt: true }, k);
+    const jetzt = await d.kern.repo.listePakete();
+    assert.deepEqual(jetzt.find((x) => x.id === 'dienst')?.angehalten?.stufe, 'netz');
+    assert.equal(jetzt.find((x) => x.id === 'vorlage')?.angehalten, undefined, 'Vorlagen passen weiter');
+    await assert.rejects(p.setzeFort('dienst', ICH), /nutzt das Internet – das habt ihr nicht erlaubt/);
+    await setzeDarf(einst, { pakete: 'netz' }, k);
+    assert.equal(
+      (await d.kern.repo.listePakete()).find((x) => x.id === 'dienst')?.angehalten?.grund,
+      'darf',
+      'Erhöhen setzt nichts von selbst fort',
+    );
+    await p.setzeFort('dienst', ICH);
+    assert.equal((await d.kern.repo.listePakete()).find((x) => x.id === 'dienst')?.angehalten, undefined);
+  });
+});
+
+/* ---------- Beschädigtes Paket (#1551): erkennen und reparieren, ganz oder gar nicht ---------- */
+
+const MIT_TYP = {
+  'manifest.yaml': kopf('kontakte', '1.0.0', 'inhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n'),
+  'inhalt/mappentypen.yaml':
+    '- schluessel: kontakt\n  name: Kontakt\n  titelVorlage: "{name}"\n  felder:\n    - { key: name, label: Name, typ: text, pflicht: true }\n  register:\n    - { key: daten, name: Daten, art: felder, felder: [name] }\n',
+  'inhalt/sichten.yaml': '- { schluessel: kontakte, name: Kontakte, typen: [kontakt] }\n',
+};
+
+describe('Beschädigtes Paket (#1551)', () => {
+  it('fehlende Ansicht und fehlender Mappentyp werden erkannt; Reparieren legt sie neu an, scheitert es, bleibt alles', async () => {
+    const { p, d } = await aufbau([MIT_TYP], 'lokal');
+    await installiere(p, 'kontakte');
+    const inst = (await d.kern.repo.listePakete())[0];
+    // Halb entfernt wie vor #1521: Ansicht und Mappentyp sind weg, der Eintrag steht noch.
+    await d.sichtenVerwaltung.loescheSicht(inst.sichten.kontakte);
+    await d.mappentypen.loescheTyp(inst.typen.kontakt);
+    const fehlt = (await p.installierte()).find((x) => x.id === 'kontakte')?.fehlt;
+    assert.deepEqual(fehlt, { typen: ['kontakt'], sichten: ['kontakte'] });
+    // Scheitert das Reparieren mittendrin, ist nichts verändert.
+    const vorher = d.sichtenVerwaltung.legeSichtAn;
+    d.sichtenVerwaltung.legeSichtAn = () => Promise.reject(new Error('Probefehler'));
+    await assert.rejects(p.repariere('kontakte', ICH), /Probefehler/);
+    d.sichtenVerwaltung.legeSichtAn = vorher;
+    assert.deepEqual((await p.installierte()).find((x) => x.id === 'kontakte')?.fehlt, fehlt, 'wie vorher');
+    assert.ok(!(await d.mappentypen.listeTypen()).some((t) => t.name === 'Kontakt'));
+    const neu = await p.repariere('kontakte', ICH);
+    assert.equal(neu.version, '1.0.0');
+    assert.equal((await p.installierte()).find((x) => x.id === 'kontakte')?.fehlt, undefined, 'vollständig');
+    assert.ok((await d.mappentypen.listeTypen()).some((t) => t.name === 'Kontakt'));
+    assert.ok((await d.sichtenVerwaltung.listeSichten()).some((s) => s.name === 'Kontakte'));
+  });
+});

@@ -1383,6 +1383,7 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
     });
     const ergebnisse: Array<{ ok: boolean; text: string; fehler: string | null }> = [];
     const logs: string[] = [];
+    let geladen = 0;
     await new Promise<void>((fertig, fehler) => {
       const uhr = setTimeout(() => {
         kind.kill();
@@ -1396,15 +1397,26 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
             pakete: [{ id: 'echo', version: '1.0.0', modul: new Uint8Array(ECHO), daten: [], netz: [] }],
             grenzen: { speicherMB: 16, sekunden: 5, parallel: 1 },
           });
-        else if (m.art === 'geladen') {
+        else if (m.art === 'geladen' && geladen++ === 0) {
           assert.equal(m.pakete[0].fehler, null);
           kind.send({ art: 'aufruf', nr: 1, paket: 'echo', eingang: { art: 'ereignis', json: '{"art":"x"}' } });
+        } else if (m.art === 'geladen') {
+          // Angehalten (#1563): Der Läufer lädt das Paket nicht; ein Aufruf läuft ins Leere.
+          assert.deepEqual(m.pakete, []);
+          kind.send({ art: 'aufruf', nr: 3, paket: 'echo', eingang: { art: 'aktion', json: '{}' } });
         } else if (m.art === 'frage')
           kind.send({ art: 'antwort', nr: m.nr, antwort: { status: 200, body: new TextEncoder().encode('{}') } });
         else if (m.art === 'log') logs.push(m.text);
         else if (m.art === 'ergebnis') {
           ergebnisse.push(m);
           if (m.nr === 1) kind.send({ art: 'aufruf', nr: 2, paket: 'echo', eingang: { art: 'aktion', json: '{}' } });
+          else if (m.nr === 2)
+            kind.send({
+              art: 'pakete',
+              pakete: [{ id: 'echo', version: '1.0.0', modul: new Uint8Array(ECHO), daten: [], netz: [] }],
+              grenzen: { speicherMB: 16, sekunden: 5, parallel: 1 },
+              angehalten: ['echo'],
+            });
           else {
             clearTimeout(uhr);
             kind.disconnect();
@@ -1419,8 +1431,10 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
       [
         [true, null],
         [true, null],
+        [false, ergebnisse[2]?.fehler ?? null],
       ],
     );
+    assert.ok(ergebnisse[2].fehler, 'angehalten: kein Lauf');
     assert.equal(ergebnisse[1].text, 'Aktion ok');
     assert.match(logs.join(), /"art":"x"/);
   });

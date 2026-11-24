@@ -398,5 +398,20 @@
   "paketeinstellungen.eintrag-loeschen.frage": "Delete {eintrag} {wert}?",
   "paketeinstellungen.eintrag-loeschen.text": "The entry is removed from the list; it is only saved with the button below.",
   "paketeinstellungen.geheim-loeschen.frage": "Delete the stored value for “{name}”?",
-  "paketeinstellungen.geheim-loeschen.text": "Afterwards nothing is set; it is only saved with the button below."
+  "paketeinstellungen.geheim-loeschen.text": "Afterwards nothing is set; it is only saved with the button below.",
+  "pakete.reparieren.hochgeladen": "“{name}” was uploaded – to repair it, upload the same version again.",
+  "pakete.beschaedigt": "Damaged",
+  "pakete.beschaedigt.titel": "“{name}” is not complete.",
+  "pakete.beschaedigt.text": "Missing: {teile}. This comes from an installation or removal that was cancelled earlier.",
+  "pakete.reparieren": "Repair",
+  "pakete.reparieren.satz": "Creates the missing parts of the same version again. Existing folders, folder types and settings stay as they are.",
+  "pakete.reparieren.fertig": "“{name}” is repaired.",
+  "pakete.neu-installieren": "Reinstall",
+  "pakete.neu-installieren.satz": "Removes the package and installs the same version again. This only works while its folder types hold no folders of your own.",
+  "pakete.ganz-entfernen": "Remove completely",
+  "pakete.ganz-entfernen.satz": "Removes the package with all remains. This too only works without folders of your own in its folder types.",
+  "pakete.beschaedigt.hinweis_one": "{anzahl} package is not complete.",
+  "pakete.beschaedigt.hinweis_other": "{anzahl} packages are not complete.",
+  "pakete.beschaedigt.hinweis.text": "The package offers solutions: repair, reinstall or remove completely.",
+  "pakete.beschaedigt.knopf": "Repair package"
 }
