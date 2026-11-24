@@ -81,6 +81,8 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     await werkbankApi.setzeWerkbankAnsicht({
       installation: { vorlage: s.werkbank ?? vorlageFuer({ beruflich: !!s.optional.beruflich }), ein: [], aus: [] },
     });
+    // Was Ablago darf (#1562) aus der Konfigurationsdatei: Antworten und Höchstwerte des Anbieters; sonst gilt die Vorgabe.
+    if (s.darf && Object.keys(s.darf).length) await betriebApi.darfSetzen(s.darf);
   },
   async mail() {
     const m = holeStand().sammlung.optional.mail;
