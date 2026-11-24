@@ -19,6 +19,7 @@ import {
   TYPEN_DATEI_VERSION,
 } from '../../../../shared/src/typendatei';
 import { Fachfehler } from '../../grundlagen/fehler';
+import { KB } from '../../grundlagen/grenzen';
 import { t } from '../../sprache/sprache';
 import { istObjekt, type PaketTyp, str } from '../verwaltung/format';
 import { neuerLeseLauf } from '../verwaltung/lesen-lauf';
@@ -155,7 +156,7 @@ function aufbauFehler(roh: Record<string, unknown>): string[] {
 export function liesTypenDatei(text: string): TypenDatei {
   const ungueltig = (gruende: string[]) => new Fachfehler(422, t('meldungen.paketerstellung.typen-datei-ungueltig'), { gruende });
   if (Buffer.byteLength(text, 'utf8') > TYPEN_DATEI_MAX)
-    throw ungueltig([t('meldungen.paketerstellung.typen-datei-gross', { kb: TYPEN_DATEI_MAX / 1024 })]);
+    throw ungueltig([t('meldungen.paketerstellung.typen-datei-gross', { kb: TYPEN_DATEI_MAX / KB })]);
   let roh: unknown;
   try {
     roh = JSON.parse(text);
