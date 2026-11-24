@@ -89,6 +89,10 @@ export const EREIGNISKATALOG = {
   // #1082: Dann-Karte „Paket nach Zeitplan ausführen“ – nur an das Paket der Karte, nie an andere. automatisierung (Id),
   // aufgabe (Kennung oder null), zeitpunkt (geplant, ISO) und datum (Tag in der Zeitzone der Ablage).
   'zeitplan.ausgefuehrt': { gruppe: 'auftrag', felder: ['automatisierung', 'aufgabe', 'zeitpunkt', 'datum', 'werte'], paket: true },
+  // Leistungen (#1569): Antwort auf einen Auftrag im Hintergrund an den, der ihn gegeben hat – nur Ids und Fehlercode;
+  // Ergebnis und `kontext` (unverändert) liest er beim Auftrag nach. Zustellen an Pakete kommt mit #1571.
+  'leistung.fertig': { gruppe: 'auftrag', felder: ['auftrag', 'leistung', 'dokument'] },
+  'leistung.fehlgeschlagen': { gruppe: 'auftrag', felder: ['auftrag', 'leistung', 'fehler'] },
 } as const satisfies Record<string, Katalogeintrag>;
 
 export type KatalogArt = keyof typeof EREIGNISKATALOG;

@@ -113,6 +113,7 @@
   "vollexport.nicht-enthalten-stand-der": "not included: state of the numbers per user for the counter endpoint (#625, only a hash of the numbers, technical)",
   "vollexport.nicht-enthalten-stand-der-2": "not included: state of the caches (#741, #742, only two numbers, technical)",
   "vollexport.nicht-enthalten-ausgangskorb-des": "not included: outbox of the event catalogue (#670, only IDs and field keys, technical)",
+  "vollexport.nicht-enthalten-auftraege": "not included: jobs for services (#1569, work for Ablago and packages, technical)",
   "vollexport.nicht-enthalten-welche-fristen": "not included: which deadlines have already been reported as “Deadline reached” (#670, technical)",
   "vollexport.nicht-enthalten-stand-der-3": "not included: database state (it is in the manifest as a version)",
   "vollexport.mappen-exportieren": "Exporting folders",

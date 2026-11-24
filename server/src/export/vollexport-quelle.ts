@@ -74,6 +74,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   zaehlerstaende: t('meldungen.vollexport.nicht-enthalten-stand-der'),
   haushaltsstand: t('meldungen.vollexport.nicht-enthalten-stand-der-2'),
   ereignisse: t('meldungen.vollexport.nicht-enthalten-ausgangskorb-des'),
+  leistungsauftraege: t('meldungen.vollexport.nicht-enthalten-auftraege'),
   frist_meldungen: t('meldungen.vollexport.nicht-enthalten-welche-fristen'),
   schema_migrationen: t('meldungen.vollexport.nicht-enthalten-stand-der-3'),
 };

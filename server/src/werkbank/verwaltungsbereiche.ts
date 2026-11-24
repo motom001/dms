@@ -126,6 +126,8 @@ const REGELN: Regel[] = [
   R('GET', '/api/werkbank/daten', 'daten'),
   R('PUT', '/api/werkbank/export/persoenlich', 'daten'),
   R('PUT', '/api/werkbank/papierkorb/einstellungen', 'daten'),
+  // Aufbewahrung abgeschlossener Aufträge an Leistungen (#1569).
+  R('*', '/api/werkbank/leistungen/einstellungen', 'daten'),
 
   // Daten sichern
   R('*', '/api/werkbank/sicherung*', 'sicherung'),

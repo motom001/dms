@@ -72,5 +72,9 @@
   "gruppe.verarbeitung": "Verarbeitung",
   "gruppe.betrieb": "Betrieb",
   "gruppe.auftrag": "Aufträge an ein Paket",
-  "katalog.titel": "Welche Ereignisse es gibt"
+  "katalog.titel": "Welche Ereignisse es gibt",
+  "name.leistung.fertig": "Auftrag erledigt",
+  "text.leistung.fertig": "Antwort auf einen Auftrag im Hintergrund: Die Leistung ist erbracht – mit Auftrag, Leistung und abgelegtem Dokument. Ergebnis und Kontext stehen beim Auftrag.",
+  "name.leistung.fehlgeschlagen": "Auftrag fehlgeschlagen",
+  "text.leistung.fehlgeschlagen": "Antwort auf einen Auftrag im Hintergrund: Die Leistung ist gescheitert – mit Auftrag, Leistung und Fehlercode. Grund und Kontext stehen beim Auftrag."
 }

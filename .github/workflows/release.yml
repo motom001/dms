@@ -153,3 +153,15 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+      # Leistungen (#1569): Katalog, eingebaute Anbieter, Mappentypen und Testfälle maschinenlesbar für dms-registry – aus
+      # dem Stand des Releases (Tag, sonst Ziel-Commit). Releases ohne die Datei (vor #1569) bekommen keinen Anhang.
+      - name: Leistungen anhängen
+        run: |
+          stand=$(git rev-parse -q --verify "refs/tags/$TAG^{commit}" || echo "$ZIEL")
+          if git show "$stand:shared/leistungen/ablago-leistungen.json" > "$RUNNER_TEMP/ablago-leistungen.json" 2>/dev/null; then
+            gh release upload "$TAG" --clobber "$RUNNER_TEMP/ablago-leistungen.json"
+          else
+            echo "::notice title=Leistungen::$TAG hat noch keine Ausgabe der Leistungen."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

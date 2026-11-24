@@ -72,5 +72,9 @@
   "gruppe.verarbeitung": "Processing",
   "gruppe.betrieb": "Operations",
   "gruppe.auftrag": "Jobs for a package",
-  "katalog.titel": "Which events there are"
+  "katalog.titel": "Which events there are",
+  "name.leistung.fertig": "Job done",
+  "text.leistung.fertig": "Answer to a background job: the service has been delivered – with job, service and filed document. Result and context are in the job.",
+  "name.leistung.fehlgeschlagen": "Job failed",
+  "text.leistung.fehlgeschlagen": "Answer to a background job: the service failed – with job, service and error code. Reason and context are in the job."
 }

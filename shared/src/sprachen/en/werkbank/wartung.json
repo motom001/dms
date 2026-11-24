@@ -19,6 +19,7 @@
   "protokoll.modul.ereignisse": "Events",
   "protokoll.modul.automatisierung": "Automations",
   "protokoll.modul.pakete": "Packages",
+  "protokoll.modul.auftraege": "Jobs",
   "protokoll.modul.leer": "(no entries)",
   "verwaltung.sicherung.fehler": "The last backup failed.",
   "verwaltung.sicherung.alt": "The last backup is too old.",

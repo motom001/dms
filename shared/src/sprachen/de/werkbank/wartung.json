@@ -19,6 +19,7 @@
   "protokoll.modul.ereignisse": "Ereignisse",
   "protokoll.modul.automatisierung": "Automatisierungen",
   "protokoll.modul.pakete": "Pakete",
+  "protokoll.modul.auftraege": "Aufträge",
   "protokoll.modul.leer": "(keine Einträge)",
   "verwaltung.sicherung.fehler": "Die letzte Sicherung ist fehlgeschlagen.",
   "verwaltung.sicherung.alt": "Die letzte Sicherung ist zu alt.",

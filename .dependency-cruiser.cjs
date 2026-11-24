@@ -253,7 +253,7 @@ function fachordner() {
 
 /**
  * Ordner in shared/src/, die früher eine Datei waren (#1278): das Fachmodell model/ (vorher model.ts), erkennung/,
- * pakete/ und sichten/. Von außen nur über ihre Tür (`tueren`, sonst index.ts) – wie früher die eine Datei; die Teile
+ * pakete/, sichten/ und leistungen/ (#1569). Von außen nur über ihre Tür (`tueren`, sonst index.ts) – wie früher die eine Datei; die Teile
  * darin binden einander direkt ein. Das Fachmodell hat seit #1278 (Schritt 5) eine zweite Tür, model/basis.ts: die
  * Form von Feld, Mappentyp und Mappe ohne Prüfregeln und Werte – für die Teile, die das Modell selbst einbindet (über
  * index.ts entstünde ein Kreis). Je Ordner die Dateien in shared/src/, die einen Teil direkt einbinden dürfen, weil
@@ -265,6 +265,7 @@ const SHARED_ORDNER = {
   model: { tueren: 'index|basis', ausnahmen: [['^shared/src/sichten/bedingungen\\.ts$', 'feldtypen']] },
   erkennung: { ausnahmen: [['^shared/src/feldformate\\.ts$', 'angaben']] },
   pakete: { ausnahmen: [] },
+  leistungen: { ausnahmen: [] },
   sichten: { ausnahmen: [['^shared/src/model/', 'bedingungen']] },
 };
 

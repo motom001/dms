@@ -27,6 +27,7 @@ import { datenschutzRouten, abrufRouten } from '../datenschutz/datenschutz.route
 import { notfallkontakteRouten } from '../notfallkontakte/notfallkontakte.routen';
 import { organisationRouten } from '../organisation/organisation.routen';
 import { textsatzRouten } from '../textsatz/textsatz.routen';
+import { leistungenRouten } from '../leistungen/leistungen.routen';
 import { paketaktionenRouten } from '../paketaktionen/paketaktionen.routen';
 import { paketeRouten, paketeEinstellungenRouten } from '../pakete/pakete.routen';
 import { paketdatenRouten } from '../paketdaten/paketdaten.routen';
@@ -84,6 +85,7 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   abrufRouten,
   organisationRouten,
   textsatzRouten,
+  leistungenRouten,
   paketaktionenRouten,
   typenArchivRouten,
   paketeRouten,

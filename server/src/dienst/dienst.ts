@@ -62,6 +62,7 @@ import { WerkbankDienst } from '../werkbank';
 import { OrganisationDienst } from '../organisation';
 import { NotfallkontakteDienst } from '../notfallkontakte';
 import { TextsatzDienst } from '../textsatz';
+import { LeistungenDienst } from '../leistungen';
 import { PaketAktionen } from '../paketaktionen';
 import type { MailText } from '../mail/mail';
 import type { Repo } from '../repo';
@@ -274,6 +275,20 @@ export class Dienst extends DienstBauteile {
       organisation: () => this.organisation.geltende(),
       mitnehmbar: (ich, z, ids) => this.ausgang.mitnehmbar(ich, z, ids),
       ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, { ...e, herkunft: 'vorlage' }, inhalt, von),
+      darfAblegen: async (z, id) => {
+        const m = await this.repo.holeMappe(id);
+        return !!m && (await this.rechtepruefung.rechteAn(z, m)).U;
+      },
+    }));
+  }
+  private leistungenDienst?: LeistungenDienst;
+  /**
+   * Leistungen (#1569): Katalog und Vermittlung – beim ersten Gebrauch gebaut. Abgelegt wird mit dem Zugriff der
+   * Person; den Speicher in der Datenbank und den Wartungsmodus setzt der Start.
+   */
+  get leistungen(): LeistungenDienst {
+    return (this.leistungenDienst ??= new LeistungenDienst(this.kern, this.rechtepruefung, {
+      ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, e, inhalt, von),
       darfAblegen: async (z, id) => {
         const m = await this.repo.holeMappe(id);
         return !!m && (await this.rechtepruefung.rechteAn(z, m)).U;

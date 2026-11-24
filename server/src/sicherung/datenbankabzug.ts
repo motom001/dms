@@ -38,6 +38,12 @@ export const OHNE_INHALT = new Set([
  * den gefalteten Suchtext der Mappen (#615) einer aus Titel und Werten.
  */
 export const OHNE_SPALTEN: Record<string, string[]> = { dokumente: ['suchindex'], mappen: ['suchtext'] };
+/**
+ * Tabellen, von denen nur ein Teil in die Sicherung geht (#1569): von den Aufträgen an Leistungen nur die offenen, als
+ * Merkzettel – nach dem Wiederherstellen laufen sie weiter (Laufendes wie nach einem Neustart). Abgeschlossene sind
+ * nach der Aufbewahrung ohnehin weg und gehören nicht in die Sicherung.
+ */
+const NUR_ZEILEN: Record<string, string> = { leistungsauftraege: "zustand IN ('wartet', 'laeuft', 'angehalten')" };
 
 export interface Schnappschuss {
   postgres: string;
@@ -118,7 +124,11 @@ export function pgDatenquelle(sql: postgres.Sql, schema = 'public'): Datenquelle
           zaehler,
           inhalt: async (t) => {
             const strom = await tx
-              .unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) TO STDOUT`)
+              .unsafe(
+                NUR_ZEILEN[t.name]
+                  ? `COPY (SELECT ${t.spalten.map(bezeichner).join(', ')} FROM ${bezeichner(schema)}.${bezeichner(t.name)} WHERE ${NUR_ZEILEN[t.name]}) TO STDOUT`
+                  : `COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) TO STDOUT`,
+              )
               .readable();
             // Bricht der Leser ab (z. B. Platte voll), muss das COPY trotzdem zu Ende gelesen werden:
             // Ein zerstörter Strom lässt die Verbindung hängen, und die Transaktion endet nie.

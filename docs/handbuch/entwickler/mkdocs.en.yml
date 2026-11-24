@@ -107,6 +107,7 @@ nav:
       - Texts and languages: texte.md
       - Tours and tips: entdecken.md
       - Events and automations: ereignisse.md
+      - Services: leistungen.md
       - Data to the outside: nach-draussen.md
       - Dependencies: abhaengigkeiten.md
       - Composition from components: bestandteile-aufbau.md

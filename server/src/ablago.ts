@@ -659,6 +659,7 @@ const beenden = async () => {
         },
       },
       { name: 'texterkennung.stop', f: () => texterkennung.stop() },
+      { name: 'leistungen.stop', f: () => dienst.leistungen.stop() },
       { name: 'paketlaeufer.stop', f: () => paketlaeufer?.stop() },
       { name: 'dienst.ereignisse.stoppe', f: () => dienst.ereignisse.stoppe() },
       { name: 'vorschau.stop', f: () => vorschau.stop() },
