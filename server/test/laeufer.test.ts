@@ -14,7 +14,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { liesWeiter, Paketlaeufer, type ApiAufruf } from '../src/laeufer/verwaltung';
-import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
+import { laeuferRechte, ladeArgumente, pruefeModul } from '../src/laeufer/modul';
 import { liesBegrenzt, netzErlaubt } from '../src/laeufer/prozess';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { zipPuffer } from '../src/formate/zip';
@@ -1378,7 +1378,7 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
     });
     const kind = fork(join(dir, 'prozess.mjs'), [], {
       serialization: 'advanced',
-      execArgv: ['--permission', '--allow-worker', `--allow-fs-read=${dir}`, '--disable-warning=SecurityWarning'],
+      execArgv: laeuferRechte(dir),
       stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
     });
     const ergebnisse: Array<{ ok: boolean; text: string; fehler: string | null }> = [];

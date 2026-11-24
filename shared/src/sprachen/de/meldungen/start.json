@@ -111,5 +111,9 @@
   "verwaltung.netz-aufruf": "Netz: {anzahl} × {methode} {host} – {status}, {hin} hin, {zurueck} zurück",
   "verwaltung.netz-abgelehnt": "Netz abgelehnt: {anzahl} × {methode} {host} – die Adresse ist nicht erlaubt",
   "verwaltung.netz-ohne-antwort": "keine Antwort",
-  "prozess.ungueltige-methode": "Ungültige Methode – erlaubt sind nur Großbuchstaben, z. B. GET oder POST."
+  "prozess.ungueltige-methode": "Ungültige Methode – erlaubt sind nur Großbuchstaben, z. B. GET oder POST.",
+  "netz.ursache.ipv6": "Keine Verbindung zu {adresse} – Netz ohne IPv6?",
+  "netz.ursache.verweigert": "Node.js verweigert den Netzzugriff ({code}).",
+  "netz.ursache.name": "Der Name lässt sich nicht auflösen ({code}).",
+  "netz.ursache.adresse": "{code} bei {adresse}"
 }

@@ -127,6 +127,18 @@ export function pruefeModul(modul: WebAssembly.Module, bytes: Uint8Array): Modul
   };
 }
 
+/**
+ * Rechte des Läufers im Betrieb (Berechtigungsmodell von Node): nur Lesen im Programmordner, Worker erlaubt, sonst nichts
+ * (kein Schreiben, keine Kindprozesse, kein Zugriff auf Schlüssel und Daten des DMS). Netz (#1588): Seit Node 25 sperrt
+ * das Modell auch das Netz – jeder Abruf eines Pakets scheiterte dann mit „fetch failed“. Welche Adressen ein Paket
+ * erreichen darf, prüft der Läufer selbst (Manifest und bestätigte Dienst-Adressen); `--allow-net` gibt nur zurück, was
+ * vor Node 25 galt.
+ */
+export function laeuferRechte(ordner: string, flags: ReadonlySet<string> = process.allowedNodeEnvironmentFlags): string[] {
+  const netz = flags.has('--allow-net') ? ['--allow-net', '--disable-warning=ExperimentalWarning'] : [];
+  return ['--permission', '--allow-worker', `--allow-fs-read=${ordner}`, ...netz, '--disable-warning=SecurityWarning'];
+}
+
 /** Nur Lade-Argumente an den Läufer weitergeben (z. B. --import tsx in Tests, Source Maps) – keine Test-, Debug- oder Berechtigungsschalter. */
 export function ladeArgumente(argv: string[]): string[] {
   const out: string[] = [];

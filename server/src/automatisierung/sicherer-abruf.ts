@@ -4,6 +4,7 @@ import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import { AUSSEN_GRENZEN } from '../../../shared/src/automatisierung';
 import { AUSSEN_ANTWORT_MAX } from '../grundlagen/grenzen';
+import { mitNetzUrsache } from '../grundlagen/fehler';
 
 /**
  * Sicherer Abruf für „URL aufrufen“ (#671) – Schutz gegen SSRF. Eigener Baustein, weil der Abruf für Katalog und Pakete
@@ -97,7 +98,11 @@ export class AdresseGesperrt extends Error {
 type Aufloesen = (host: string, cb: (fehler: Error | null, adressen: LookupAddress[]) => void) => void;
 const dnsAlle: Aufloesen = (host, cb) => dnsLookup(host, { all: true, verbatim: true }, (e, a) => cb(e, a ?? []));
 
-/** `lookup` für die Verbindung: auflösen, alle Adressen prüfen, nur erlaubte weitergeben. */
+/**
+ * `lookup` für die Verbindung: auflösen, alle Adressen prüfen, nur erlaubte weitergeben. IPv4 zuerst (#1588): Hat das
+ * Netz keine IPv6-Route nach außen, scheiterte sonst schon die erste Adresse. Mit `all` (Happy Eyeballs, in Node
+ * Standard: `net.getDefaultAutoSelectFamily()`) probiert Node alle nacheinander – jede ist hier geprüft.
+ */
 function pruefendesLookup(heimnetz: boolean, aufloesen: Aufloesen) {
   return (
     host: string,
@@ -109,7 +114,9 @@ function pruefendesLookup(heimnetz: boolean, aufloesen: Aufloesen) {
         cb(e, '');
         return;
       }
-      const passend = adressen.filter((x) => !opt.family || x.family === opt.family);
+      const passend = adressen
+        .filter((x) => !opt.family || x.family === opt.family)
+        .sort((a, b) => (a.family === 4 ? 0 : 1) - (b.family === 4 ? 0 : 1));
       if (!passend.length) {
         cb(new Error(`${host}: keine Adresse`), '');
         return;
@@ -225,7 +232,7 @@ export const sichererAbruf: SichererAbruf = (a, o = {}) =>
       ende({
         ok: false,
         status: null,
-        fehler: e.message.slice(0, 300),
+        fehler: mitNetzUrsache(e).slice(0, 300),
         dauerhaft: e instanceof AdresseGesperrt || e.message.includes('SSRF-Schutz'),
       });
     });
