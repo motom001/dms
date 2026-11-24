@@ -61,43 +61,47 @@ rauchtest(
   },
 );
 
-rauchtest('Automatisierung: ausgeschaltet bleibt nach dem Speichern aus – im Editor und über die Liste (#1601)', { als: LENA }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s.goto(BASIS + '/werkbank/automatisierungen');
-  const liste = s.getByRole('region', { name: 'Elemente' });
-  await liste.getByRole('link', { name: /Rauchtest Auswahl A/ }).click();
-  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  const schalter = bearbeitung.getByRole('switch', { name: 'Automatisierung an oder aus' });
-  await schalter.waitFor();
-  const stellung = (an) => bearbeitung.locator(`[role="switch"][aria-checked="${an}"]`).waitFor();
-  const einschalten = async () => {
-    if ((await schalter.getAttribute('aria-checked')) !== 'true') await schalter.click();
-    await stellung(true);
-  };
-  /** Beschreibung ändern und speichern; danach ist der Schalter weiter aus – auch nach dem Neuladen. */
-  const speichernBleibtAus = async (text) => {
-    await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Grunddaten' }).click();
-    await bearbeitung.getByRole('textbox', { name: 'Beschreibung (optional)' }).fill(text);
-    await s.getByRole('button', { name: 'Automatisierung speichern' }).click();
-    await bearbeitung.getByText('Gespeichert.').waitFor();
+rauchtest(
+  'Automatisierung: ausgeschaltet bleibt nach dem Speichern aus – im Editor und über die Liste (#1601)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/automatisierungen');
+    const liste = s.getByRole('region', { name: 'Elemente' });
+    await liste.getByRole('link', { name: /Rauchtest Auswahl A/ }).click();
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    const schalter = bearbeitung.getByRole('switch', { name: 'Automatisierung an oder aus' });
+    await schalter.waitFor();
+    const stellung = (an) => bearbeitung.locator(`[role="switch"][aria-checked="${an}"]`).waitFor();
+    const einschalten = async () => {
+      if ((await schalter.getAttribute('aria-checked')) !== 'true') await schalter.click();
+      await stellung(true);
+    };
+    /** Beschreibung ändern und speichern; danach ist der Schalter weiter aus – auch nach dem Neuladen. */
+    const speichernBleibtAus = async (text) => {
+      await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Grunddaten' }).click();
+      await bearbeitung.getByRole('textbox', { name: 'Beschreibung (optional)' }).fill(text);
+      await s.getByRole('button', { name: 'Automatisierung speichern' }).click();
+      await bearbeitung.getByText('Gespeichert.').waitFor();
+      await stellung(false);
+      await s.reload();
+      await stellung(false);
+    };
+    // Weg 1: im Editor ausschalten, dann speichern.
+    await einschalten();
+    await schalter.click();
     await stellung(false);
-    await s.reload();
+    await speichernBleibtAus('Rauchtest #1601: Editor');
+    // Weg 2: über die Liste ausschalten, dann im Editor speichern.
+    await einschalten();
+    await liste.getByRole('checkbox', { name: 'Rauchtest Auswahl A auswählen' }).check();
+    await liste.getByRole('region', { name: 'Auswahl' }).getByRole('button', { name: 'Ausschalten' }).click();
+    await liste.getByText('1 Automatisierung ausgeschaltet.').waitFor({ state: 'attached' });
     await stellung(false);
-  };
-  // Weg 1: im Editor ausschalten, dann speichern.
-  await einschalten();
-  await schalter.click();
-  await stellung(false);
-  await speichernBleibtAus('Rauchtest #1601: Editor');
-  // Weg 2: über die Liste ausschalten, dann im Editor speichern.
-  await einschalten();
-  await liste.getByRole('checkbox', { name: 'Rauchtest Auswahl A auswählen' }).check();
-  await liste.getByRole('region', { name: 'Auswahl' }).getByRole('button', { name: 'Ausschalten' }).click();
-  await liste.getByText('1 Automatisierung ausgeschaltet.').waitFor({ state: 'attached' });
-  await stellung(false);
-  await speichernBleibtAus('Rauchtest #1601: Liste');
-});
+    await speichernBleibtAus('Rauchtest #1601: Liste');
+  },
+);
 
 rauchtest('Automatisierung: Platzhalter zum Anklicken an der Schreibmarke (#1177)', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
