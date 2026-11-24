@@ -167,12 +167,13 @@ rauchtest(
     await zeitplan.getByText(/^Speicherbedarf: etwa 14 Sicherungen ≈ /).waitFor();
     await zeitplan.getByRole('spinbutton', { name: 'Tägliche' }).fill('3');
     await zeitplan.getByText(/^Speicherbedarf: etwa 10 Sicherungen ≈ /).waitFor();
-    // Übersicht: genau ein Hinweis zur Sicherung – der nächste Schritt, mit Handlung und „Zur Kenntnis nehmen“.
+    // Übersicht: genau ein Hinweis zur Sicherung – der nächste Schritt, mit Handlung und „Zur Kenntnis nehmen“ (gelb) bzw.
+    // „Ausblenden“ (reiner Hinweis, #1587).
     await s.goto(BASIS + '/werkbank');
     const hinweis = s.locator('.hinweis', { hasText: 'Nächster Schritt: Kopie außer Haus einrichten.' });
     await hinweis.waitFor();
     await hinweis.getByRole('link', { name: 'Kopie außer Haus einrichten' }).waitFor();
-    await hinweis.getByRole('button', { name: 'Zur Kenntnis nehmen' }).waitFor();
+    await hinweis.getByRole('button', { name: /^(Zur Kenntnis nehmen|Ausblenden)$/ }).waitFor();
     for (const text of [/Es gibt noch keine Sicherung/, /Erst eine Probe/, /Erste Sicherung und Probe erfolgreich/])
       assert.equal(await s.locator('.hinweis').getByText(text).count(), 0, String(text));
   },

@@ -84,7 +84,7 @@ Pages for building – folder types, views, number sequences, automations and th
 
 The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – on a phone the overview alone, where **Areas ›** at the top leads to the areas. At the very top is the card **[What Ablago may do](was-ablago-darf.md)** with your two answers and **Change …**. Below it are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
 
-Below them, under **Notes**, are the **messages**, each exactly once: one or two sentences, below them a button with the action (such as **Set up email**) and next to it **Acknowledge** – **No, thanks** only where the note really asks a question. **This also applies to areas that are hidden in your template.** They are sorted by severity:
+Below them, under **Notes**, are the **messages**, each exactly once: one or two sentences, below them a button with the action (such as **Set up email**) and next to it **Acknowledge** (for plain notices **Hide**) – **No, thanks** only where the note really asks a question. **This also applies to areas that are hidden in your template.** They are sorted by severity:
 
 1. **Red – critical:** something isn't working here or data is at risk. You have to deal with it.
 2. **Yellow – warning:** something is missing or set up in a risky way.
@@ -102,9 +102,9 @@ The number after *Overview* in the bar names the red and yellow messages still o
 
 ### Deliberately accepting warnings { #bewusst-akzeptieren }
 
-Some warnings you accept deliberately, for instance "The backup folder is not a volume of its own" in a test installation. So that it doesn't stay at the top forever, choose **Acknowledge** on the message, with a short reason if you like, and then **Accept**.
+Some warnings you accept deliberately, for instance "The backup folder is not a volume of its own" in a test installation. So that it doesn't stay at the top forever, choose **Acknowledge** on the message – for a plain notice the button is called **Hide**. It takes effect immediately; for a few seconds **Undo** is shown at the top in case you clicked by mistake. A reason is optional: **Add a reason** right afterwards or later in the list at the bottom.
 
-- The message moves into the collapsed section **Deliberately accepted (…)** at the very bottom. There it says who accepted it when and with what reason. With **Show again** you bring it back to the top.
+- The message moves into the collapsed section **Deliberately accepted (…)** at the very bottom. There it says who accepted it when and with what reason; if there is none, **Add a reason** is shown there. With **Show again** you bring it back to the top.
 - The [log](fehlersuche.md#protokoll) records every accepting and showing again (module *werkbank*, with the message's identifier from the table below).
 - **If the situation changes, the message is back at the top:** when it becomes more severe (a notice becomes yellow, yellow becomes red) or when it was fixed and the same cause occurs again.
 - **Red messages can't be accepted.** They have to be dealt with.
@@ -134,7 +134,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Reminders taken over on the update | notice | `automatisierung.umgezogen` |
 | Package "Notifications" installed, but no daily summary switched on (if the package is missing, it is under "Recommended packages") | notice | `automatisierung.ohne-benachrichtigungen` |
 | No switched-on automation “Post for you” (package older than 1.3.0 or switched off) | notice | `automatisierung.ohne-post-fuer-dich` |
-| Addresses accept [calls from outside](automatisierungen.md#aufruf-von-aussen) – with **Switch all off** instead of “Acknowledge” | notice | `automatisierung.aufrufe` |
+| Addresses accept [calls from outside](automatisierungen.md#aufruf-von-aussen) – with **Switch all off** instead of “Hide” | notice | `automatisierung.aufrufe` |
 | CPU or memory above 90 % for 5 minutes | yellow | `auslastung` |
 | Bottleneck (waiting time, connections, workers, overload) | yellow | `engpass` |
 | Search extensions missing or in the wrong place | yellow | `erweiterungen` |
@@ -169,8 +169,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | Package still needs settings | yellow | `paket-einstellungen` |
 | Packages paused – each with the reason in words ([Pausing](pakete.md#anhalten)) | yellow | `pakete.angehalten` |
 | Packages not complete – solutions on the package ([Damaged package](pakete.md#beschaedigt)) | yellow | `pakete.beschaedigt` |
-| New: exclude folder types from AI services (once after the update, with AI packages; “Acknowledge”) | notice | `ki.typen` |
-| New: What Ablago may do – please take a look once (once after the update; “Acknowledge”) | notice | `darf.neu` |
+| New: exclude folder types from AI services (once after the update, with AI packages; “Hide”) | notice | `ki.typen` |
+| New: What Ablago may do – please take a look once (once after the update; “Hide”) | notice | `darf.neu` |
 | Skipped during setup (address and email sending; packages are under "Recommended packages") | notice | `einrichtung` |
 | Good if someone else can manage – only one person may manage | notice | `verwaltung.zweite-person` |
 | Environment variables that are no longer needed (each with a reason) | notice | `variablen` |

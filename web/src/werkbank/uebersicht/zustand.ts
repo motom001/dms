@@ -15,6 +15,8 @@ export function useUebersicht(offen = true) {
   const [stand, setStand] = useState<WerkbankUebersicht | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [akzeptiert, setAkzeptiert] = useState<Akzeptiert>({});
+  // Eben zur Kenntnis genommen (#1587): einige Sekunden „Rückgängig“.
+  const [zuletzt, setZuletzt] = useState<Pick<Hinweis, 'schluessel' | 'art'> | null>(null);
   const laden = useCallback(async () => {
     try {
       const s = await betriebApi.uebersicht();
@@ -66,7 +68,7 @@ export function useUebersicht(offen = true) {
   );
   // Zahl in der Leiste: offene Warnungen und rote Meldungen, ohne Hinweise und ohne bewusst akzeptierte.
   const hinweise = geordnet ? geordnet.offen.filter((h) => h.art !== 'info').length : 0;
-  return { stand, fehler, laden, hinweise, geordnet, akzeptieren, einblenden, erledigen };
+  return { stand, fehler, laden, hinweise, geordnet, akzeptieren, einblenden, erledigen, zuletzt, setZuletzt };
 }
 export type UebersichtZustand = ReturnType<typeof useUebersicht>;
 

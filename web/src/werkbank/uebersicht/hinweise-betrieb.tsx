@@ -170,8 +170,8 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ),
       ziel: `/werkbank/pakete/${u.kiTypen.pakete[0].id}`,
       knopf: t('pakete.ki.hinweis.knopf'),
-      // Einheitlich (#1511): kommt nur einmal – „Zur Kenntnis nehmen“ schließt ihn ab.
-      erledigen: t('werkbank.uebersicht.akzeptieren'),
+      // Einheitlich (#1511): kommt nur einmal – „Ausblenden“ schließt ihn ab (#1587: reiner Hinweis).
+      erledigen: t('werkbank.uebersicht.ausblenden'),
     });
   // Im Einrichtungsassistenten übersprungen (#119): hier nachholen.
   const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
@@ -290,7 +290,7 @@ export function paketeUndDarf(u: WerkbankUebersicht, h: Hinweis[]) {
       ),
       ziel: '/werkbank#was-ablago-darf',
       knopf: t('werkbank.darf.hinweis.neu.knopf'),
-      erledigen: t('werkbank.uebersicht.akzeptieren'),
+      erledigen: t('werkbank.uebersicht.ausblenden'),
     });
 }
 

@@ -84,7 +84,7 @@ Seiten zum Aufbauen – Mappentypen, Ansichten, Nummernkreise, Automatisierungen
 
 Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy die Übersicht allein, die Bereiche erreichst du dort über **Bereiche ›** oben. Ganz oben steht die Karte **[Was Ablago darf](was-ablago-darf.md)** mit deinen beiden Antworten und **Ändern …**. Darunter stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
 
-Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal: ein, zwei Sätze, darunter ein Knopf mit der Handlung (etwa **E-Mail einrichten**) und daneben **Zur Kenntnis nehmen** – **Nein, danke** nur, wo der Hinweis wirklich eine Frage stellt. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
+Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal: ein, zwei Sätze, darunter ein Knopf mit der Handlung (etwa **E-Mail einrichten**) und daneben **Zur Kenntnis nehmen** (bei reinen Hinweisen **Ausblenden**) – **Nein, danke** nur, wo der Hinweis wirklich eine Frage stellt. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
 
 1. **Rot – kritisch:** Hier geht etwas nicht oder Daten sind in Gefahr. Das musst du erledigen.
 2. **Gelb – Warnung:** Etwas fehlt oder ist riskant eingerichtet.
@@ -102,9 +102,9 @@ Die Zahl hinter *Übersicht* in der Leiste nennt die roten und gelben Meldungen,
 
 ### Warnungen bewusst akzeptieren { #bewusst-akzeptieren }
 
-Manche Warnung nimmst du bewusst in Kauf, etwa „Der Sicherungsordner ist kein eigenes Volume“ in einer Testinstallation. Damit sie nicht für immer oben steht, wählst du an der Meldung **Zur Kenntnis nehmen**, auf Wunsch mit einer kurzen Begründung, und dann **Akzeptieren**.
+Manche Warnung nimmst du bewusst in Kauf, etwa „Der Sicherungsordner ist kein eigenes Volume“ in einer Testinstallation. Damit sie nicht für immer oben steht, wählst du an der Meldung **Zur Kenntnis nehmen** – bei einem reinen Hinweis heißt der Knopf **Ausblenden**. Das wirkt sofort; ein paar Sekunden lang steht oben **Rückgängig**, falls du dich verklickt hast. Eine Begründung ist freiwillig: **Begründung ergänzen** gleich danach oder später unten in der Liste.
 
-- Die Meldung wandert in den eingeklappten Abschnitt **Bewusst akzeptiert (…)** ganz unten. Dort steht, wer sie wann akzeptiert hat und mit welcher Begründung. Mit **Wieder einblenden** holst du sie zurück nach oben.
+- Die Meldung wandert in den eingeklappten Abschnitt **Bewusst akzeptiert (…)** ganz unten. Dort steht, wer sie wann akzeptiert hat und mit welcher Begründung; fehlt eine, steht dort **Begründung ergänzen**. Mit **Wieder einblenden** holst du sie zurück nach oben.
 - Das [Protokoll](fehlersuche.md#protokoll) hält jedes Akzeptieren und Wiedereinblenden fest (Modul *werkbank*, mit der Kennung der Meldung aus der Tabelle unten).
 - **Ändert sich die Lage, steht die Meldung wieder oben:** wenn sie schwerer wird (aus einem Hinweis wird gelb, aus gelb wird rot) oder wenn sie behoben war und dieselbe Ursache erneut auftritt.
 - **Rote Meldungen lassen sich nicht akzeptieren.** Sie müssen erledigt werden.
@@ -134,7 +134,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Erinnerungen beim Update übernommen | Hinweis | `automatisierung.umgezogen` |
 | Paket „Benachrichtigungen“ installiert, aber keine Tägliche Zusammenfassung eingeschaltet (fehlt das Paket, steht es unter „Empfohlene Pakete“) | Hinweis | `automatisierung.ohne-benachrichtigungen` |
 | Keine eingeschaltete Automatisierung „Post für dich“ (Paket älter als 1.3.0 oder ausgeschaltet) | Hinweis | `automatisierung.ohne-post-fuer-dich` |
-| Adressen nehmen [Aufrufe von außen](automatisierungen.md#aufruf-von-aussen) an – mit **Alle abschalten** statt „Zur Kenntnis nehmen“ | Hinweis | `automatisierung.aufrufe` |
+| Adressen nehmen [Aufrufe von außen](automatisierungen.md#aufruf-von-aussen) an – mit **Alle abschalten** statt „Ausblenden“ | Hinweis | `automatisierung.aufrufe` |
 | CPU oder Arbeitsspeicher seit 5 Minuten über 90 % | gelb | `auslastung` |
 | Engpass (Wartezeit, Verbindungen, Arbeiter, Überlast) | gelb | `engpass` |
 | Erweiterungen der Suche fehlen oder liegen falsch | gelb | `erweiterungen` |
@@ -169,8 +169,8 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Paket braucht noch Einstellungen | gelb | `paket-einstellungen` |
 | Pakete angehalten – je mit Grund in Worten ([Anhalten](pakete.md#anhalten)) | gelb | `pakete.angehalten` |
 | Pakete nicht vollständig – Lösungen am Paket ([Beschädigtes Paket](pakete.md#beschaedigt)) | gelb | `pakete.beschaedigt` |
-| Neu: Mappentypen von KI-Diensten ausschließen (einmal nach dem Update, mit KI-Paketen; „Zur Kenntnis nehmen“) | Hinweis | `ki.typen` |
-| Neu: Was Ablago darf – bitte einmal ansehen (einmal nach dem Update; „Zur Kenntnis nehmen“) | Hinweis | `darf.neu` |
+| Neu: Mappentypen von KI-Diensten ausschließen (einmal nach dem Update, mit KI-Paketen; „Ausblenden“) | Hinweis | `ki.typen` |
+| Neu: Was Ablago darf – bitte einmal ansehen (einmal nach dem Update; „Ausblenden“) | Hinweis | `darf.neu` |
 | Aus der Einrichtung übersprungen (Adresse und E-Mail-Versand; Pakete stehen unter „Empfohlene Pakete“) | Hinweis | `einrichtung` |
 | Gut, wenn noch jemand verwalten kann – nur eine Person darf verwalten | Hinweis | `verwaltung.zweite-person` |
 | Umgebungsvariablen, die nicht mehr nötig sind (je mit Grund) | Hinweis | `variablen` |

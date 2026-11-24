@@ -4,7 +4,7 @@ import { t, tn } from '../../sprache';
 import { useHandbuch } from '../../Hilfe';
 import { Listenkopf } from '../../Listenkopf';
 import { Kachel, Kacheln, Knopf, KnopfLink } from '../../bausteine';
-import { Akzeptieren, BewusstAkzeptiert } from './Akzeptieren';
+import { Akzeptieren, BewusstAkzeptiert, ZuletztAkzeptiert } from './Akzeptieren';
 import { WasAblagoDarf } from './WasAblagoDarf';
 import { bytes, datum, zahl } from './hilfen';
 import type { UebersichtZustand } from './zustand';
@@ -61,6 +61,7 @@ function Hinweise({ u }: { u: UebersichtZustand }) {
       <h2 id="uebersicht-hinweise-titel" className="h3">
         {t('werkbank.uebersicht.hinweise-titel')}
       </h2>
+      <ZuletztAkzeptiert u={u} />
       {h.length ? (
         <ul className="uebersicht-hinweisliste">
           {h.map((x) => (
