@@ -63,3 +63,5 @@ export { anzeigeTypIds, anzeigeWartet, optionaleInTyp, quelleAnlegbar, quellenNa
 export { mitkommtVon, type MitkommtNamen } from './mitkommt';
 /** Namenskonflikte in der Vorschau (#1123). */
 export { abhaengigeTypen, abhaengigkeitsKonflikte, eigeneKonflikte, Namensherkunft, type AbhaengigeTypen } from './namen';
+// Was Ablago darf (#1562): Grenze für Pakete, Stand, Ändern.
+export { DARF_HINWEIS, darfStand, setzeDarf, type DarfKontext } from './darf';

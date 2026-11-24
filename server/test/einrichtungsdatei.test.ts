@@ -26,6 +26,8 @@ const BEISPIEL: Einrichtungsplan = {
   ablage: 'Familie Beispiel',
   konto: { name: 'Lena Beispiel', email: 'lena@example.org', passwort: '${DMS_KONTO_PASSWORT}' },
   nutzung: 'privat',
+  werkbank: 'einsteiger',
+  darf: { pakete: 'lokal', selbst: 'vorschlag' },
   pakete: [
     { id: 'texterkennung', beispiele: false, automatisierungen: {} },
     { id: 'benachrichtigungen', beispiele: false, automatisierungen: {} },
@@ -149,6 +151,35 @@ describe('Konfigurationsdatei: Nutzung und eigene Organisation (#1045)', () => {
       liesEinrichtungsdatei('ablago-einrichtung: 1\nablage: X\nkonto: { email: a@example.org }\nnutzung: beruflich\n').plan!.optional
         .beruflich,
       true,
+    );
+  });
+
+  it('Stufe der Werkbank (#1319) und Was Ablago darf (#1562): hin und zurück, fehlt = Vorgabe, Höchstwerte', () => {
+    const kopf = 'ablago-einrichtung: 1\nablage: X\nkonto: { email: a@example.org }\n';
+    const plan: Einrichtungsplan = {
+      ...BEISPIEL,
+      werkbank: 'selbstaendig',
+      darf: { pakete: 'vorlagen', selbst: 'nichts', hoechstens: { pakete: 'lokal' } },
+    };
+    const text = schreibeEinrichtungsdatei(plan);
+    assert.match(text, /^werkbank: selbstaendig$/m);
+    assert.match(text, /^darf:\n {2}pakete: vorlagen\n {2}selbst: nichts\n {2}hoechstens:\n {4}pakete: lokal$/m);
+    const gelesen = liesEinrichtungsdatei(text);
+    assert.deepEqual(gelesen.fehler, []);
+    assert.deepEqual([gelesen.plan!.werkbank, gelesen.plan!.darf], [plan.werkbank, plan.darf]);
+    assert.equal(schreibeEinrichtungsdatei(gelesen.plan!), text, 'Speichern und Laden ergeben dieselbe Datei');
+    const ohne = liesEinrichtungsdatei(kopf).plan!;
+    assert.deepEqual([ohne.werkbank, ohne.darf], [undefined, undefined], 'fehlt = Vorgabe wie bisher');
+    assert.doesNotMatch(schreibeEinrichtungsdatei(ohne), /^(werkbank|darf):/m);
+    assert.match(fehlerVon(`${kopf}werkbank: experte\n`)[0].text, /einsteiger, haushalt, selbstaendig, organisation, alles/);
+    assert.deepEqual(
+      fehlerVon(`${kopf}darf:\n  pakete: netz\n  hoechstens:\n    pakete: lokal\n`).map((x) => `${x.zeile} ${x.feld}`),
+      ['5 darf.pakete'],
+      'über dem Höchstwert des Anbieters',
+    );
+    assert.deepEqual(
+      fehlerVon(`${kopf}darf:\n  pakete: alles\n`).map((x) => x.feld),
+      ['darf.pakete'],
     );
   });
 

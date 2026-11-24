@@ -26,6 +26,8 @@ import { KOERPER_SPIELRAUM, LOGO_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, ich, grenzenUndEngpaesse, ZWEITE_ABGELEHNT, nurEigeneBereiche } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
+import { darfHinweisGesehen, darfUebersicht } from './darf.routen';
+import { DARF_HINWEIS } from '../pakete/index';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
   return [...beispielUndProtokollRouten(k), ...designRouten(k), ...logoRouten(k), ...texterkennungRouten(k)];
@@ -492,6 +494,8 @@ async function uebersichtBetrieb(k: RoutenKontext, sicher: Sicher, anb: Anbindun
     postfachAnmeldung: x.postfaecher ? ((await sicher(() => x.postfaecher!.anmeldungFehlt())) ?? []) : [],
     // Bewusst akzeptierte Meldungen (#816): wer, wann, Begründung; die Übersicht stellt sie unten zusammen.
     akzeptiert: (await sicher(() => akzeptierteMeldungen(dienst.kern.einstellungen))) ?? {},
+    // Was Ablago darf (#1562) und empfohlene Pakete (#1511).
+    ...((await sicher(() => darfUebersicht(dienst))) ?? {}),
   };
 }
 
@@ -553,7 +557,8 @@ function meldungenRouten(k: RoutenKontext): Route[] {
           if (!e) throw new Fachfehler(500, t('werkbank.uebersicht.akzeptiert.ohne-speicher'));
           await e.schreibe(ZWEITE_ABGELEHNT, { von: ich(a).name || ich(a).email, am: new Date().toISOString() });
           L.werkbank.info('Empfehlung „zweite Person mit Verwaltungsrecht“ abgelehnt', { meldung: k, von: ich(a).email });
-        } else if (k.startsWith('notfallzugang.benutzt:')) await nf().gelesen(k.slice('notfallzugang.benutzt:'.length), ich(a));
+        } else if (k === DARF_HINWEIS) await darfHinweisGesehen(dienst, ich(a).email);
+        else if (k.startsWith('notfallzugang.benutzt:')) await nf().gelesen(k.slice('notfallzugang.benutzt:'.length), ich(a));
         else throw new Fachfehler(400, t('werkbank.uebersicht.akzeptiert.ungueltig'));
         return leer;
       },

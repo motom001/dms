@@ -567,6 +567,10 @@ export class Dienst extends DienstBauteile {
   verbindeVerwaltungsmail(f: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>) {
     this.verwaltungsmail = f;
   }
+  /** Mail an alle, die einen Bereich verwalten (#1562: „Was Ablago darf“ erhöht – Bereich Übersicht, also alle). */
+  async mailAnVerwaltende(bereich: string, betreff: MailText, text: MailText) {
+    await this.verwaltungsmail?.(bereich)(betreff, text);
+  }
 
   /** Sicherung außer Haus (#585): ein Paket hat das Ereignis sicherung.fertig aufgegeben (index.ts verbindet mit der Sicherung). */
   sicherungAufgegeben?: (paket: string, name: string, fehler: string | null | undefined) => Promise<void>;

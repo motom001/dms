@@ -13,6 +13,8 @@ import {
   neuestePassende,
   passt,
   vergleicheVersion,
+  eingebauterHelfer,
+  paketStufe,
   type Katalog,
   type KatalogVersion,
 } from '../../../../shared/src/pakete';
@@ -23,7 +25,8 @@ import { t } from '../../sprache/sprache';
 import { DEUTSCH } from '../../../../shared/src/deutsch';
 import { abdeckung } from '../../../../shared/src/sprachpaket';
 import { type ErgaenzungPlan, type VorgabePlan } from '../../../../shared/src/vorgaben';
-import { planeUmbau, type UmbauLage } from '../index';
+import { darfStand, planeUmbau, type UmbauLage } from '../index';
+import { erlaubt } from '../../../../shared/src/darf';
 import { paketZeitplaene, paketZeitplan } from './automatisierungen';
 import { beispielDokumenteVon } from './beispiele';
 import {
@@ -108,6 +111,29 @@ export abstract class PaketPlanSchritte extends PaketVorschauTeile {
     this.pruefeUmzug(l);
     this.pruefeErgaenzung(l);
     return this.herausgeberStand(l);
+  }
+
+  /**
+   * Was Ablago darf (#1562): Liegt das Paket über der Grenze aus Frage 1, verhindert ein Problem mit Grund in Worten
+   * das Installieren und Aktualisieren (fehlercode `darf`). Ein Update, das ein Paket neu über die Grenze hebt (z. B.
+   * neu mit Internet), sagt das so. Eingebaute Helfer von Ablago laufen auf jeder Antwort.
+   */
+  protected async pruefeDarf(l: PlanLauf, geprueft: boolean) {
+    const angabe = (id: string, c: typeof l.paket.code) => ({ id, herausgeber: l.herausgeber, geprueft, code: c?.info });
+    const haupt = (id: string) => {
+      const h = l.installierte.find((p) => p.id === id);
+      return !!h && eingebauterHelfer({ id: h.id, herausgeber: h.herausgeber, geprueft: h.herausgeberGeprueft !== false, code: h.laeufer });
+    };
+    if (eingebauterHelfer(angabe(l.m.id, l.paket.code), haupt)) return;
+    const stufe = l.paket.code ? paketStufe(l.paket.code.info) : l.m.code !== undefined ? 'lokal' : 'vorlagen';
+    const { pakete } = await darfStand(this.d.kern.einstellungen);
+    if (erlaubt(pakete, stufe)) return;
+    const vorher = l.ich ? (l.ich.laeufer ? paketStufe(l.ich.laeufer) : l.ich.code ? 'lokal' : 'vorlagen') : null;
+    const text =
+      vorher && erlaubt(pakete, vorher)
+        ? t(`werkbank.darf.grund.update.${stufe}`, { name: l.m.name })
+        : t(`werkbank.darf.grund.${stufe}`, { name: l.m.name });
+    problem(l, 'darf', `${text} ${t('werkbank.darf.grund.erlauben')}`);
   }
 
   /** Herausgeber: app.ablago nur belegt, kein anderer als der installierte, Schlüssel des signierten Katalogs. */

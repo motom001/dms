@@ -39,6 +39,8 @@ export abstract class PaketPlanung extends PaketPlanSchritte {
     const { geplant, quelle, sammel, ablauf } = mehr;
     const l = await this.neuerPlanLauf(paket, { v, katalog, namen, sichtNamen, geplant, quelle, sammel, ablauf });
     const herkunft = this.pruefeHerkunft(l);
+    // Was Ablago darf (#1562): über der Grenze weder installieren noch aktualisieren – mit Grund in Worten.
+    await this.pruefeDarf(l, herkunft.geprueft);
     pruefeSprachpaket(l);
     const dmsTypen = await this.pruefeDmsVerweise(l);
     inhaltsHinweise(l);
