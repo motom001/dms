@@ -189,7 +189,7 @@ rauchtest(
     await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
     const vorher = (await api('GET', '/api/werkbank/darf', { cookie })).daten;
     try {
-      // Eine Dienst-Adresse ist Netz: „Was Ablago darf“ für die Dauer des Tests auf „Auch Helfer mit Internet“.
+      // Eine Dienst-Adresse ist Netz: „Was Ablago darf“ für die Dauer des Tests auf „Auch Helfer, die Dienste im Netz nutzen“.
       await api('PUT', '/api/werkbank/darf', { cookie, body: { pakete: 'netz' } });
       const adresse = `${dienst.basis}/probe`;
       const wasm = modul(

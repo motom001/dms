@@ -189,7 +189,7 @@ describe('Was Ablago darf (#1562): Installieren und Aktualisieren im Server', ()
           assert.ok((await d.kern.repo.listePakete()).some((x) => x.id === ID[art]));
           return;
         }
-        const grund = { vorlagen: /keine Pakete nutzt/, lokal: /eigenen Code mit/, netz: /nutzt das Internet/ }[art];
+        const grund = { vorlagen: /keine Pakete nutzt/, lokal: /eigenen Code mit/, netz: /nutzt Dienste im Netz/ }[art];
         const v = await p.vorschau({ id: ID[art] });
         assert.ok(v.fehlercodes.includes('darf'), 'die Vorschau sagt es vorher');
         assert.ok(v.probleme.some((x) => grund.test(x)));
@@ -205,7 +205,7 @@ describe('Was Ablago darf (#1562): Installieren und Aktualisieren im Server', ()
     await p.katalog();
     await assert.rejects(
       p.aktualisiere('helfer', { version: '1.1.0', rechteBestaetigt: true }, ICH),
-      nichtErlaubt(/Das Update für „Helfer“ nutzt neu das Internet – das habt ihr nicht erlaubt/),
+      nichtErlaubt(/Das Update für „Helfer“ nutzt neu Dienste im Netz – das habt ihr nicht erlaubt/),
     );
     assert.equal((await d.kern.repo.listePakete())[0].version, '1.0.0', 'die alte Fassung bleibt');
   });
@@ -291,7 +291,7 @@ describe('Was Ablago darf (#1562): Stand und Ändern', () => {
     const k = kontext({ pakete: () => d.kern.repo.listePakete() }).k;
     await assert.rejects(setzeDarf(einst, { pakete: 'lokal' }, k), (e: unknown) => {
       const b = (e as Fachfehler).details as { betroffen: Array<{ id: string; grund: string }> };
-      return (e as Fachfehler).status === 409 && b.betroffen.length === 1 && /„Dienst“ nutzt das Internet/.test(b.betroffen[0].grund);
+      return (e as Fachfehler).status === 409 && b.betroffen.length === 1 && /„Dienst“ nutzt Dienste im Netz/.test(b.betroffen[0].grund);
     });
     assert.equal(liesDarf(await einst.lies('darf'))!.pakete, 'netz', 'nichts geändert');
   });
@@ -319,7 +319,7 @@ describe('Was Ablago darf senken hält Pakete an (#1563)', () => {
     const jetzt = await d.kern.repo.listePakete();
     assert.deepEqual(jetzt.find((x) => x.id === 'dienst')?.angehalten?.stufe, 'netz');
     assert.equal(jetzt.find((x) => x.id === 'vorlage')?.angehalten, undefined, 'Vorlagen passen weiter');
-    await assert.rejects(p.setzeFort('dienst', ICH), /nutzt das Internet – das habt ihr nicht erlaubt/);
+    await assert.rejects(p.setzeFort('dienst', ICH), /nutzt Dienste im Netz – das habt ihr nicht erlaubt/);
     await setzeDarf(einst, { pakete: 'netz' }, k);
     assert.equal(
       (await d.kern.repo.listePakete()).find((x) => x.id === 'dienst')?.angehalten?.grund,
@@ -392,7 +392,7 @@ describe('Was Ablago darf im Einrichtungsassistenten (#1566, #1591)', () => {
     const plan = await p.ablaufPlan({ pakete: ['helfer', 'dienst'] }, 'lokal');
     const dienst = plan.pakete.find((x) => x.id === 'dienst')!;
     assert.ok(dienst.vorschau.fehlercodes.includes('darf'));
-    assert.ok(dienst.vorschau.probleme.some((x) => /„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt/.test(x)));
+    assert.ok(dienst.vorschau.probleme.some((x) => /„Dienst“ nutzt Dienste im Netz – das habt ihr nicht erlaubt/.test(x)));
     assert.ok(!plan.pakete.find((x) => x.id === 'helfer')!.vorschau.fehlercodes.includes('darf'));
     assert.ok(!(await p.ablaufPlan({ pakete: ['dienst'] }, 'netz')).pakete[0].vorschau.fehlercodes.includes('darf'));
     assert.equal(await einst.lies('darf'), null, 'Planen leitet keine Werte für eine bestehende Installation ab');
@@ -403,7 +403,7 @@ describe('Was Ablago darf im Einrichtungsassistenten (#1566, #1591)', () => {
     assert.ok((await p.ablaufPlan({ pakete: ['dienst'] }, 'netz')).pakete[0].vorschau.fehlercodes.length === 0);
     await assert.rejects(
       p.ablaufInstallieren({ pakete: ['dienst'], rechteStand: (await p.ablaufPlan({ pakete: ['dienst'] })).rechte.stand }, ICH),
-      /nutzt das Internet/,
+      /nutzt Dienste im Netz/,
     );
     assert.deepEqual(await d.kern.repo.listePakete(), []);
   });

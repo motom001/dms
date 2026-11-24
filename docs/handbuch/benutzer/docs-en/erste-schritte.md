@@ -77,7 +77,7 @@ Before something with consequences happens – deleting, signing out, discarding
 
 ## What Ablago may do {#was-ablago-darf}
 
-Whoever administers Ablago decides once **what Ablago may do**: which packages it may use – for example templates only, or also helpers that use the internet – and how much it does on its own. Ablago keeps to this and no longer asks each time within this limit. Nothing changes for your daily work; if you miss a feature from a package, ask the person who administers Ablago. Built-in helpers such as text recognition always work.
+Whoever administers Ablago decides once **what Ablago may do**: which packages it may use – for example templates only, or also helpers that use services on the network – and how much it does on its own. Ablago keeps to this and no longer asks each time within this limit. Nothing changes for your daily work; if you miss a feature from a package, ask the person who administers Ablago. What comes with Ablago, such as text recognition, always works.
 
 ## Signing out {#abmelden}
 

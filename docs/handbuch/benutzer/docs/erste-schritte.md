@@ -77,7 +77,7 @@ Bevor etwas Folgenreiches passiert – löschen, abmelden, ungespeicherte Änder
 
 ## Was Ablago darf { #was-ablago-darf }
 
-Wer Ablago verwaltet, legt einmal fest, **was Ablago darf**: welche Pakete es nutzen darf – etwa nur Vorlagen oder auch Helfer, die das Internet nutzen – und wie viel es von sich aus tut. Ablago hält sich daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Für dich ändert sich beim Arbeiten nichts; fehlt dir eine Funktion aus einem Paket, frag die Person, die Ablago verwaltet. Eingebaute Helfer wie die Texterkennung arbeiten immer.
+Wer Ablago verwaltet, legt einmal fest, **was Ablago darf**: welche Pakete es nutzen darf – etwa nur Vorlagen oder auch Helfer, die Dienste im Netz nutzen – und wie viel es von sich aus tut. Ablago hält sich daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Für dich ändert sich beim Arbeiten nichts; fehlt dir eine Funktion aus einem Paket, frag die Person, die Ablago verwaltet. Was Ablago mitbringt, etwa die Texterkennung, arbeitet immer.
 
 ## Abmelden
 

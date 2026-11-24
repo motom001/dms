@@ -584,7 +584,7 @@ async function lebenszyklusAttrappe(s, z) {
     const echt = await (await r.fetch()).json();
     const angehalten = z.installiert
       .filter((p) => p.angehalten)
-      .map((p) => ({ id: p.id, name: p.name, grund: `„${p.name}“ nutzt das Internet – das habt ihr nicht erlaubt.` }));
+      .map((p) => ({ id: p.id, name: p.name, grund: `„${p.name}“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.` }));
     const beschaedigt = z.installiert.filter((p) => p.fehlt).map((p) => ({ id: p.id, name: p.name }));
     await r.fulfill({ json: { ...echt, angehalten, beschaedigt } });
   });
@@ -609,11 +609,11 @@ for (const handy of [false, true])
       // Übersicht: ein Hinweis unter „Hinweise“, der Grund in Worten, der Weg zum Paket.
       await s.goto(BASIS + '/werkbank');
       const hinweis = s.locator('.hinweiszeile', { hasText: '1 Paket ist angehalten.' });
-      await hinweis.getByText(/„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt\./).waitFor();
+      await hinweis.getByText(/„Dienst“ nutzt Dienste im Netz – das habt ihr nicht erlaubt\./).waitFor();
       await hinweis.getByRole('link', { name: 'Zu den Paketen' }).click();
       await s.waitForURL(/\/werkbank\/pakete\/dienst$/);
       const seite = s.getByRole('region', { name: 'Bearbeitung' });
-      await seite.getByText('„Dienst“ nutzt das Internet – das habt ihr nicht erlaubt.').waitFor();
+      await seite.getByText('„Dienst“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.').waitFor();
       await seite.getByRole('link', { name: 'Erlauben …' }).waitFor();
       assert.doesNotMatch(await seite.locator('.hinweis.warn').first().textContent(), /Stufe|\d/, 'keine Stufennummern');
       const funde = [];

@@ -8,16 +8,16 @@ Die Karte **Was Ablago darf** steht ganz oben in der [Übersicht der Werkbank](u
 
 | Antwort | Was dazukommt |
 | --- | --- |
-| **Keine – nur Ablago selbst** | Ihr richtet Mappentypen und Abläufe selbst ein. Ablagos eingebaute Helfer wie die Texterkennung arbeiten trotzdem. |
+| **Keine – nur Ablago selbst** | Ihr richtet Mappentypen und Abläufe selbst ein. Was Ablago mitbringt, etwa die Texterkennung, arbeitet trotzdem. |
 | **Nur Vorlagen** | Dazu fertige Mappentypen und Ansichten wie Haushalt oder Verträge – ohne eigenen Code. |
 | **Auch Helfer, die nur hier arbeiten** (empfohlen, Vorgabe) | Dazu Pakete mit eigenem Code, etwa ein Trennblatt oder eine KI auf diesem Gerät. Nichts verlässt Ablago. |
-| **Auch Helfer mit Internet** | Dazu Pakete, die das Internet nutzen: Sicherung an ein entferntes Ziel, Mails über einen Versanddienst, ein KI-Assistent. Inhalte nur aus Bereichen, die ihr freigebt; Gesundheit bleibt immer drin. |
+| **Auch Helfer, die Dienste im Netz nutzen** | Dazu Pakete, die Dienste im Netz nutzen – im Internet oder bei euch zu Hause: Sicherung an ein entferntes Ziel, Mails über einen Versanddienst, ein KI-Assistent. Inhalte nur aus Bereichen, die ihr freigebt; Gesundheit bleibt immer drin. |
 
-Woran Ablago erkennt, wozu ein Paket gehört, steht im Paket selbst: ohne eigenen Code ist es eine Vorlage, mit Code und ohne Adressen im Netz ein Helfer, der nur hier arbeitet, mit Adressen im Netz (auch einer Dienst-Adresse aus den Einstellungen) ein Helfer mit Internet.
+Woran Ablago erkennt, wozu ein Paket gehört, steht im Paket selbst: ohne eigenen Code ist es eine Vorlage, mit Code und ohne Adressen im Netz ein Helfer, der nur hier arbeitet, mit Adressen im Netz (auch einer Dienst-Adresse aus den Einstellungen) ein Helfer, der Dienste im Netz nutzt – ob der Dienst im Internet oder bei euch zu Hause läuft, etwa eine KI auf dem NAS.
 
-- **Installieren und Aktualisieren:** Ein Paket über der Grenze lässt sich nicht installieren. Die Vorschau sagt in Worten, warum, etwa „„Übersetzung“ nutzt das Internet – das habt ihr nicht erlaubt.“, und bietet **Erlauben …** an.
-- **Updates:** Hebt ein Update ein Paket über die Grenze (zum Beispiel nutzt es neu das Internet), installiert Ablago es nicht: „Das Update für „Übersetzung“ nutzt neu das Internet – das habt ihr nicht erlaubt.“ Die installierte Fassung läuft weiter.
-- **Eingebaute Helfer** laufen auf jeder Antwort: Texterkennung, PDF/A, Volltext und Umwandeln aus dem offiziellen Katalog, ohne Internet – samt ihren Zusätzen wie weiteren Sprachen der Texterkennung. Ein Paket eines anderen Herausgebers, das so einen Helfer ersetzt, folgt Frage 1.
+- **Installieren und Aktualisieren:** Ein Paket über der Grenze lässt sich nicht installieren. Die Vorschau sagt in Worten, warum, etwa „„Übersetzung“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.“, und bietet **Erlauben …** an.
+- **Updates:** Hebt ein Update ein Paket über die Grenze (zum Beispiel nutzt es neu Dienste im Netz), installiert Ablago es nicht: „Das Update für „Übersetzung“ nutzt neu Dienste im Netz – das habt ihr nicht erlaubt.“ Die installierte Fassung läuft weiter.
+- **Was Ablago mitbringt** (eingebaute Helfer) läuft auf jeder Antwort: Texterkennung, PDF/A, Volltext und Umwandeln aus dem offiziellen Katalog, ohne Internet – samt ihren Zusätzen wie weiteren Sprachen der Texterkennung. Ein Paket eines anderen Herausgebers, das so einen Helfer ersetzt, folgt Frage 1.
 
 ## Frage 2: Wie viel soll Ablago von sich aus tun? { #selbst }
 
@@ -51,4 +51,4 @@ In der [Einrichtungsdatei](einrichtungsdatei.md) stehen beide Antworten unter `d
 
 ## Nach dem Update { #update }
 
-Installationen, die es schon vor dieser Version gab, bekommen Antworten, mit denen sich nichts ändert: bei Frage 1 „Auch Helfer mit Internet“ – so viel, wie bisher ging –, bei Frage 2 „Erkennen und vorlegen“. Nichts wird angehalten, nichts wird ungefragt strenger oder lockerer. Einmal erscheint in der Übersicht der Hinweis „Neu: Was Ablago darf – bitte einmal ansehen“. Neue Installationen starten mit den empfohlenen Antworten.
+Installationen, die es schon vor dieser Version gab, bekommen Antworten, mit denen sich nichts ändert: bei Frage 1 „Auch Helfer, die Dienste im Netz nutzen“ – so viel, wie bisher ging –, bei Frage 2 „Erkennen und vorlegen“. Nichts wird angehalten, nichts wird ungefragt strenger oder lockerer. Einmal erscheint in der Übersicht der Hinweis „Neu: Was Ablago darf – bitte einmal ansehen“. Neue Installationen starten mit den empfohlenen Antworten.
