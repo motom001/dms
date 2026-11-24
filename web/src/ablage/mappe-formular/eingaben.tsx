@@ -259,6 +259,7 @@ function verweisEingabe(p: FeldEingabeProps, { rahmen, unter, typ }: Rahmen) {
                 : undefined
             }
             vorbelegen={{ ...p.neu, ...(f.auswahlFilter?.length ? vorbelegungAus(f.auswahlFilter, ziel) : {}) }}
+            erkannt={p.neu}
             unpassend={p.unpassend}
             gruende={p.gruende}
             eigene={p.eigene}

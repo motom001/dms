@@ -44,6 +44,8 @@ export interface FormularProps {
   zuordnen?: ZuordnenNachher;
   /** Fenster „+ … anlegen“ (#935): nach dem Speichern die neue Mappe zurückgeben statt die Seite zu wechseln; „Abbrechen“ schließt. */
   imFenster?: { gespeichert(m: Mappe): void; abbrechen(): void };
+  /** Eigene Beschriftung des Hauptknopfs, z. B. „Speichern und zurück zu „Rechnung““ auf einer Ebene der Neuen Post (#1596). */
+  haupttext?: string;
   /** Seite „Dokument übernehmen“ (#934): Vorschläge aus dem Dokument, eingetragen wie bei „Aus Dokument ausfüllen“. */
   vorschlagStart?: TypVorschlaege;
   /** Kopf über dem Formular mit den aktuellen Werten (neue Mappe auf der Seite „Dokument übernehmen“). */

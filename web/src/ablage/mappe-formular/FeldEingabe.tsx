@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { feldHilfe, feldLabel } from '../../../../shared/src/beschriftung';
 import { formatiere, mehrereZiele, type Feld as FeldDef } from '../../../../shared/src/model';
 import { Etikett, type FeldProps, NurLesenFeld } from '../../bausteine';
@@ -11,6 +11,7 @@ import { ausRoh } from '../../werte';
 import { Formatiert } from '../Formatiert';
 import { TypMarke } from '../TypMarke';
 import { Uebersetzbar } from '../Uebersetzung';
+import { FeldIdPraefix } from '../ebenen';
 import { eingabe, type FeldEingabeProps } from './eingaben';
 import { FormatWert, useUebernahmeFeld } from './feld-teile';
 import { feldUebersetzbar, unpassendText } from './hilfen';
@@ -18,7 +19,8 @@ import { feldUebersetzbar, unpassendText } from './hilfen';
 export function FeldEingabe(p: FeldEingabeProps) {
   const { feld: f, fehler, eigeneId, gesperrt, gespeichert, zusatz } = p;
   const d = useDaten();
-  const id = `feld-${f.key}`;
+  // Ebenen der Neuen Post (#1596): Die Mappe darunter steht unsichtbar weiter im DOM – eigene ids je Ebene.
+  const id = `feld-${useContext(FeldIdPraefix)}${f.key}`;
   const ue = useUebernahmeFeld(f, gesperrt !== undefined);
   // Übersetzung anzeigen (#732): unter dem Feld, nur lesbar – bearbeitet wird weiter das Original im Feld.
   const uebersetzung =

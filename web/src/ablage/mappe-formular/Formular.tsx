@@ -109,7 +109,9 @@ export function Formular(p: FormularProps) {
           sendet={z.sendet}
           speicherbar={!!kopf}
           // Neue Post (#1217): „Mappe anlegen“ – passend zur Wahl „Neue Mappe“ unter „Wohin gehört das?“.
-          haupttext={!mappe && p.zuordnen ? t('ablage.mappeformular.mappe-anlegen') : t('ablage.mappeformular.mappe-speichern')}
+          haupttext={
+            p.haupttext ?? (!mappe && p.zuordnen ? t('ablage.mappeformular.mappe-anlegen') : t('ablage.mappeformular.mappe-speichern'))
+          }
           nurLesen={z.nurLesen}
           anker="mappe.speicherleiste"
           meldung={speicherMeldung(z)}

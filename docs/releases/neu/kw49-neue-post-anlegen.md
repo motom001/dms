@@ -1,0 +1,5 @@
+art: minor
+
+## Neu
+
+- **Neue Post: verknüpfte Mappe in der rechten Spalte anlegen** (#1596): „+ Vertragspartner anlegen …“ an einem Verweisfeld öffnet auf der Seite „Neue Post“ kein kleines Fenster mehr, sondern das Formular der neuen Mappe in der rechten Spalte – das Dokument bleibt in der Mitte zu sehen. Brotkrümel zeigen, wo man ist („Neue Post › Rechnung › Vertragspartner (neu)“); was Ablago im Dokument erkannt hat, steht schon in den Feldern und ist als „Vorschlag“ markiert. „Speichern und zurück zu „Rechnung““ trägt die neue Mappe ins Feld ein, „Entwurf verwerfen“ geht ohne Rückfrage zurück. Bis zu drei Ebenen; ein Sprung zurück über ungespeicherte Ebenen fragt erst nach. Am Handy mit „‹ Rechnung“, „Ebene 2 von 3“ und einem Umschalter zwischen Dokument und Mappe.
