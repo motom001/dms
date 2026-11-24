@@ -408,7 +408,7 @@ begriffe:
     beschreibung: The list of folders whose retention period has expired (Workbench → Users and security). Formerly "May go".
   Suche und Volltext:
     begriff: Search and full text
-    beschreibung: Former workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. Since version 0.317 the page is called "Text from PDF and text recognition" and is under Packages → Included with Ablago; archive version and other file types have their own pages there. Combined the former areas "Text recognition" and "Search".
+    beschreibung: Former workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. Since version 0.318 the page is called "Text from PDF and text recognition" and is under Packages → Included with Ablago; archive version and other file types have their own pages there. Combined the former areas "Text recognition" and "Search".
   Von Ablago mitgeliefert:
     begriff: Included with Ablago
     beschreibung: Section under Workbench → Packages for what Ablago itself does with documents – text from PDF and text recognition, archive version (PDF/A), convert, edit PDF, letter layout, read e-invoice. Each is shown like a package, with a switch on/off and its settings; it cannot be removed. If a package can do a task too, you choose under "Who does this?" who does it.

@@ -984,7 +984,7 @@ begriffe:
     nicht_verwenden: [Darf weg]
   - begriff: Suche und Volltext
     bereich: werkbank
-    beschreibung: Früherer Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. Seit Version 0.317 heißt die Seite „Text aus PDF und Texterkennung“ und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten. Fasste die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
+    beschreibung: Früherer Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. Seit Version 0.318 heißt die Seite „Text aus PDF und Texterkennung“ und steht unter Pakete → Von Ablago mitgeliefert; Archivfassung und andere Dateitypen haben dort eigene Seiten. Fasste die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
     einsteiger: erklaeren
     begegnet: admin
     verwandt: [Von Ablago mitgeliefert]

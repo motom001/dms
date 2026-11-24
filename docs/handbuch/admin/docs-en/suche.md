@@ -1,6 +1,6 @@
 # Search {#suche}
 
-The Library's search forgives typos and other spellings. What it does in the process you set under **Workbench → Packages → Included with Ablago → Text from PDF and text recognition → Search** (up to version 0.316 *Search and full text*), the synonyms under **Workbench → Synonyms** (in the group *Post and intake*; from the level [*Household*](uebersicht.md#werkbank-anpassen), in *Business* and *Everything* always). How users search is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/#suchen).
+The Library's search forgives typos and other spellings. What it does in the process you set under **Workbench → Packages → Included with Ablago → Text from PDF and text recognition → Search** (up to version 0.317 *Search and full text*), the synonyms under **Workbench → Synonyms** (in the group *Post and intake*; from the level [*Household*](uebersicht.md#werkbank-anpassen), in *Business* and *Everything* always). How users search is described in the [User manual](https://help.ablago.app/benutzer/aktuell/en/ablage/#suchen).
 
 ## What always applies {#was-immer-gilt}
 

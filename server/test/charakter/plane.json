@@ -270,7 +270,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird.",
       "Ansicht „Teils“ kommt ohne den Mappentyp „Zweiter“, „Org“ – den gibt es in dieser Installation nicht."
@@ -621,7 +621,7 @@
       "Das Paket enthält Code, aber kein gebautes Modul (code/modul.wasm) – im Paket-Läufer läuft deshalb nichts; Einstellungen lassen sich schon pflegen.",
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird.",
       "Ansicht „Teils“ kommt ohne den Mappentyp „Zweiter“, „Org“ – den gibt es in dieser Installation nicht."
@@ -944,7 +944,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird.",
       "Ansicht „Teils“ kommt ohne den Mappentyp „Zweiter“, „Org“ – den gibt es in dieser Installation nicht."
@@ -1293,7 +1293,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird.",
@@ -1803,7 +1803,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird.",
@@ -3013,7 +3013,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird."
@@ -3393,7 +3393,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird."
@@ -3797,7 +3797,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird."
@@ -4197,7 +4197,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird."
@@ -4526,7 +4526,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird."
@@ -4915,7 +4915,7 @@
     "hinweise": [
       "„dms:ablageort“ ist veraltet und gilt nur noch bis Ablago 1.0. Das Paket sollte stattdessen auf „basis:ablageort“ (Paket Basis) verweisen.",
       "Nutzt Mappentypen aus Ablago: Benutzer (aus Ablago), Rolle (aus Ablago).",
-      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+      "Bringt 2 Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
       "Einige Beispiele zeigen auf Beispiele von „Basis“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
       "Ansicht „Fremde“ wird nicht installiert: Den Mappentyp „Anderer Typ“ gibt es in dieser Installation nicht.",
       "Ansicht „Fremde Kinder“ wird nicht installiert: Sie steht unter „Fremde“, die nicht installiert wird."
@@ -7148,7 +7148,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 13605,
+        "gesamt": 13655,
         "prozent": 0
       },
       "uebergangen": 0,
@@ -7230,7 +7230,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 13605,
+        "gesamt": 13655,
         "prozent": 0
       },
       "uebergangen": 1,
@@ -7313,7 +7313,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 13605,
+        "gesamt": 13655,
         "prozent": 0
       },
       "uebergangen": 0,
