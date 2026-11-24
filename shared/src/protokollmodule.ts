@@ -23,5 +23,7 @@ export const MODULE = [
   'automatisierung',
   // #1490: Paket-Läufer und Paket-Code (Ausgaben, Fehler, Abstürze).
   'pakete',
+  // #1569: Aufträge an Leistungen (Arbeit für Ablago und Pakete).
+  'auftraege',
 ] as const;
 export type Modul = (typeof MODULE)[number];

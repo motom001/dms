@@ -18,6 +18,7 @@ import type { richteBetriebEin } from './betrieb';
 import type { verbindeDatenbank } from './datenbank';
 import type { vorbereiten } from './vorbereiten';
 import type { baueDienst } from './dienst';
+import { pgAuftraege } from '../leistungen';
 
 /** Was richteDokumenteEin von früher braucht. */
 type Bisher = Pick<Awaited<ReturnType<typeof richteBetriebEin>>, 'messung' | 'tresor'> &
@@ -36,6 +37,10 @@ export async function richteDokumenteEin(bisher: Bisher) {
   dienst.dokumente.verbindeTexterkennung(texterkennung);
   texterkennung.pause = () => wartung.aktiv;
   wartung.beimAusschalten(() => texterkennung.anstossen());
+  // Leistungen (#1569): Aufträge in der Datenbank; der Wartungsmodus hält den Hintergrund an, danach geht es weiter.
+  dienst.leistungen.verbindeSpeicher(pgAuftraege(sql, cfg.haushalt));
+  dienst.leistungen.pause = () => wartung.aktiv;
+  wartung.beimAusschalten(() => dienst.leistungen.anstossen());
   // Vorschaubilder der ersten Seite (#332): außerhalb des Haushaltsordners, damit sie nicht in die Sicherung gehen.
   const vorschau = new Vorschaubilder(
     ordnerAblage(join(ordner.dateien, 'vorschau', cfg.haushalt)),

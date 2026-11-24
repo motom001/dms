@@ -1,0 +1,1538 @@
+{
+  "format": 1,
+  "katalog": [
+    {
+      "name": "dokument.erstellen.aus-text",
+      "version": 1,
+      "kennung": "dokument.erstellen.aus-text@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "Brief aus Text erstellen",
+        "en": "Create letter from text"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": [],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 30,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 524288,
+            "minLength": 1
+          },
+          "titel": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "sprache": {
+            "type": "string",
+            "maxLength": 8,
+            "pattern": "^[a-z]{2,3}$"
+          }
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "kurzer-brief",
+          "eingabe": {
+            "text": "Hallo Lena,\n\ndies ist ein Testfall von Ablago.",
+            "titel": "Testfall"
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.erstellen.aus-vorlage",
+      "version": 1,
+      "kennung": "dokument.erstellen.aus-vorlage@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "Brief aus Vorlage erstellen",
+        "en": "Create letter from template"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["text/markdown"],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 30,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "vorlage": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          },
+          "werte": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platzhalter": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "wert": {
+                  "type": "string",
+                  "maxLength": 10000
+                }
+              },
+              "required": ["platzhalter", "wert"],
+              "additionalProperties": false
+            },
+            "maxItems": 500
+          },
+          "absender": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "maxItems": 12
+          },
+          "anschrift": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "maxItems": 12
+          },
+          "datum": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "sprache": {
+            "type": "string",
+            "maxLength": 8,
+            "pattern": "^[a-z]{2,3}$"
+          }
+        },
+        "required": ["vorlage"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          },
+          "luecken": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 500
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "mit-wert",
+          "eingabe": {
+            "vorlage": {
+              "testdatei": "vorlage.md"
+            },
+            "werte": [
+              {
+                "platzhalter": "vertragsnummer",
+                "wert": "V-4711"
+              }
+            ],
+            "datum": "24.11.2026"
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.umwandeln.pdf",
+      "version": 1,
+      "kennung": "dokument.umwandeln.pdf@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "In PDF umwandeln",
+        "en": "Convert to PDF"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": [
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp",
+        "text/plain",
+        "text/markdown",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "message/rfc822"
+      ],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          }
+        },
+        "required": ["datei"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "bild",
+          "eingabe": {
+            "datei": {
+              "testdatei": "bild.png"
+            }
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.umwandeln.pdfa",
+      "version": 1,
+      "kennung": "dokument.umwandeln.pdfa@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "In PDF/A umwandeln",
+        "en": "Convert to PDF/A"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf", "image/jpeg", "image/png", "image/tiff", "image/webp"],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 300,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          }
+        },
+        "required": ["datei"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          },
+          "stufe": {
+            "type": "string",
+            "maxLength": 10,
+            "enum": ["1b", "2b", "2u", "3b", "3u"]
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "pdf",
+          "eingabe": {
+            "datei": {
+              "testdatei": "brief.pdf"
+            }
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.bearbeiten.seiten",
+      "version": 1,
+      "kennung": "dokument.bearbeiten.seiten@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "Seiten drehen und ordnen",
+        "en": "Rotate and arrange pages"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf"],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          },
+          "seiten": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nr": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5000
+                },
+                "drehung": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 270
+                }
+              },
+              "required": ["nr"],
+              "additionalProperties": false
+            },
+            "maxItems": 5000,
+            "minItems": 1
+          }
+        },
+        "required": ["datei", "seiten"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "umdrehen",
+          "eingabe": {
+            "datei": {
+              "testdatei": "zwei-seiten.pdf"
+            },
+            "seiten": [
+              {
+                "nr": 2
+              },
+              {
+                "nr": 1,
+                "drehung": 90
+              }
+            ]
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.bearbeiten.zusammenfuegen",
+      "version": 1,
+      "kennung": "dokument.bearbeiten.zusammenfuegen@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "PDFs zusammenfügen",
+        "en": "Merge PDFs"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf"],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "dateien": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "format": "dokument"
+            },
+            "maxItems": 100,
+            "minItems": 2
+          }
+        },
+        "required": ["dateien"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "zwei-pdfs",
+          "eingabe": {
+            "dateien": [
+              {
+                "testdatei": "brief.pdf"
+              },
+              {
+                "testdatei": "zwei-seiten.pdf"
+              }
+            ]
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.bearbeiten.verkleinern",
+      "version": 1,
+      "kennung": "dokument.bearbeiten.verkleinern@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "PDF verkleinern",
+        "en": "Shrink PDF"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf"],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 300,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          },
+          "stufe": {
+            "type": "string",
+            "maxLength": 20,
+            "enum": ["bildschirm", "standard", "druck"]
+          }
+        },
+        "required": ["datei"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "vorher": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1099511627776
+          },
+          "nachher": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1099511627776
+          }
+        },
+        "required": ["vorher", "nachher"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "pdf",
+          "eingabe": {
+            "datei": {
+              "testdatei": "brief.pdf"
+            },
+            "stufe": "standard"
+          },
+          "erwartet": {
+            "format": "application/pdf"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.bearbeiten.schwaerzen",
+      "version": 1,
+      "kennung": "dokument.bearbeiten.schwaerzen@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "Schwärzen",
+        "en": "Redact"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf", "image/jpeg", "image/png"],
+      "formate": ["application/pdf"],
+      "zeitgrenzeS": 300,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          },
+          "bereiche": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "seite": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5000
+                },
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "b": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "h": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": ["seite", "x", "y", "b", "h"],
+              "additionalProperties": false
+            },
+            "maxItems": 5000,
+            "minItems": 1
+          }
+        },
+        "required": ["datei", "bereiche"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "seiten": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          }
+        },
+        "required": ["seiten"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "oben-links",
+          "eingabe": {
+            "datei": {
+              "testdatei": "brief.pdf"
+            },
+            "bereiche": [
+              {
+                "seite": 1,
+                "x": 0,
+                "y": 0,
+                "b": 0.5,
+                "h": 0.2
+              }
+            ]
+          },
+          "erwartet": {
+            "format": "application/pdf",
+            "daten": {
+              "seiten": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.lesen.text",
+      "version": 1,
+      "kennung": "dokument.lesen.text@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "Text lesen",
+        "en": "Read text"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf", "image/jpeg", "image/png", "image/tiff", "image/webp"],
+      "formate": [],
+      "zeitgrenzeS": 600,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          },
+          "sprachen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8,
+              "pattern": "^[a-z]{2,3}$"
+            },
+            "maxItems": 10
+          }
+        },
+        "required": ["datei"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 5000000
+          },
+          "seiten": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          },
+          "sprache": {
+            "type": "string",
+            "maxLength": 8,
+            "pattern": "^[a-z]{2,3}$"
+          }
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "textebene",
+          "eingabe": {
+            "datei": {
+              "testdatei": "brief.pdf"
+            }
+          },
+          "erwartet": {
+            "enthaelt": {
+              "text": "Testfall 4711"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.lesen.erechnung",
+      "version": 1,
+      "kennung": "dokument.lesen.erechnung@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "E-Rechnung lesen",
+        "en": "Read e-invoice"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf", "application/xml", "text/xml"],
+      "formate": [],
+      "zeitgrenzeS": 60,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          }
+        },
+        "required": ["datei"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "syntax": {
+            "type": "string",
+            "maxLength": 3,
+            "enum": ["ubl", "cii"]
+          },
+          "gutschrift": {
+            "type": "boolean"
+          },
+          "nummer": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "datum": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "faellig": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "waehrung": {
+            "type": "string",
+            "maxLength": 3
+          },
+          "netto": {
+            "type": "number",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "ust": {
+            "type": "number",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "brutto": {
+            "type": "number",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "zahlbetrag": {
+            "type": "number",
+            "minimum": -1000000000000,
+            "maximum": 1000000000000
+          },
+          "verkaeufer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "ustid": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "kennung": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "strasse": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "plz": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "ort": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "land": {
+                "type": "string",
+                "maxLength": 2
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "telefon": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "kaeufer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "ustid": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "kennung": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "strasse": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "plz": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "ort": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "land": {
+                "type": "string",
+                "maxLength": 2
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 320
+              },
+              "telefon": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "iban": {
+            "type": "string",
+            "maxLength": 34
+          },
+          "steuern": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "satz": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "netto": {
+                  "type": "number",
+                  "minimum": -1000000000000,
+                  "maximum": 1000000000000
+                },
+                "ust": {
+                  "type": "number",
+                  "minimum": -1000000000000,
+                  "maximum": 1000000000000
+                },
+                "kategorie": {
+                  "type": "string",
+                  "maxLength": 10
+                }
+              },
+              "required": ["satz"],
+              "additionalProperties": false
+            },
+            "maxItems": 50
+          },
+          "positionen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nr": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "beschreibung": {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "menge": {
+                  "type": "number",
+                  "minimum": -1000000000,
+                  "maximum": 1000000000
+                },
+                "einheit": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "einzelpreis": {
+                  "type": "number",
+                  "minimum": -1000000000000,
+                  "maximum": 1000000000000
+                },
+                "gesamt": {
+                  "type": "number",
+                  "minimum": -1000000000000,
+                  "maximum": 1000000000000
+                },
+                "ustSatz": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "maxItems": 500
+          }
+        },
+        "required": ["syntax", "gutschrift", "waehrung", "steuern", "positionen"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "cii",
+          "eingabe": {
+            "datei": {
+              "testdatei": "rechnung.xml"
+            }
+          },
+          "erwartet": {
+            "daten": {
+              "syntax": "cii",
+              "nummer": "R-2026-0815",
+              "waehrung": "EUR",
+              "brutto": 261.8
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dokument.lesen.barcode",
+      "version": 1,
+      "kennung": "dokument.lesen.barcode@1",
+      "gruppe": "dokument",
+      "anzeigename": {
+        "de": "Barcodes lesen",
+        "en": "Read barcodes"
+      },
+      "ergebnis": "exakt",
+      "dateitypen": ["application/pdf", "image/jpeg", "image/png", "image/tiff", "image/webp"],
+      "formate": [],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "datei": {
+            "type": "string",
+            "maxLength": 36,
+            "format": "dokument"
+          }
+        },
+        "required": ["datei"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "art": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "inhalt": {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                "seite": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5000
+                }
+              },
+              "required": ["art", "inhalt"],
+              "additionalProperties": false
+            },
+            "maxItems": 200
+          }
+        },
+        "required": ["codes"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "code39",
+          "eingabe": {
+            "datei": {
+              "testdatei": "barcode.png"
+            }
+          },
+          "erwartet": {
+            "enthaelt": {
+              "codes[0].inhalt": "ABLAGO-4711"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "inhalt.erkennen.felder",
+      "version": 1,
+      "kennung": "inhalt.erkennen.felder@1",
+      "gruppe": "inhalt",
+      "anzeigename": {
+        "de": "Felder erkennen",
+        "en": "Recognise fields"
+      },
+      "ergebnis": "vorschlag",
+      "dateitypen": [],
+      "formate": [],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 5000000,
+            "minLength": 1
+          },
+          "felder": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "art": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "required": ["key", "name", "art"],
+              "additionalProperties": false
+            },
+            "maxItems": 200,
+            "minItems": 1
+          }
+        },
+        "required": ["text", "felder"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "werte": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "wert": {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                "sicherheit": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": ["key", "wert"],
+              "additionalProperties": false
+            },
+            "maxItems": 200
+          }
+        },
+        "required": ["werte"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "rechnungsnummer",
+          "eingabe": {
+            "text": "Rechnung Nr. R-2026-0815 vom 05.11.2026",
+            "felder": [
+              {
+                "key": "nummer",
+                "name": "Rechnungsnummer",
+                "art": "text"
+              }
+            ]
+          },
+          "erwartet": {}
+        }
+      ]
+    },
+    {
+      "name": "inhalt.erkennen.mappentyp",
+      "version": 1,
+      "kennung": "inhalt.erkennen.mappentyp@1",
+      "gruppe": "inhalt",
+      "anzeigename": {
+        "de": "Mappentyp erkennen",
+        "en": "Recognise folder type"
+      },
+      "ergebnis": "vorschlag",
+      "dateitypen": [],
+      "formate": [],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 5000000,
+            "minLength": 1
+          },
+          "typen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": ["id", "name"],
+              "additionalProperties": false
+            },
+            "maxItems": 500,
+            "minItems": 1
+          }
+        },
+        "required": ["text", "typen"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "typ": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "sicherheit": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "rechnung",
+          "eingabe": {
+            "text": "Rechnung Nr. R-2026-0815, zahlbar bis 19.11.2026",
+            "typen": [
+              {
+                "id": "rechnung",
+                "name": "Rechnung"
+              },
+              {
+                "id": "vertrag",
+                "name": "Vertrag"
+              }
+            ]
+          },
+          "erwartet": {}
+        }
+      ]
+    },
+    {
+      "name": "inhalt.beantworten.frage",
+      "version": 1,
+      "kennung": "inhalt.beantworten.frage@1",
+      "gruppe": "inhalt",
+      "anzeigename": {
+        "de": "Fragen beantworten",
+        "en": "Answer questions"
+      },
+      "ergebnis": "vorschlag",
+      "dateitypen": ["application/pdf", "image/jpeg", "image/png", "image/tiff", "image/webp"],
+      "formate": [],
+      "zeitgrenzeS": 300,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "frage": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "dokumente": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "format": "dokument"
+            },
+            "maxItems": 50
+          }
+        },
+        "required": ["frage"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "antwort": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "quellen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "format": "uuid"
+            },
+            "maxItems": 50
+          }
+        },
+        "required": ["antwort"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "frage",
+          "eingabe": {
+            "frage": "Welche Nummer hat die Rechnung?",
+            "dokumente": [
+              {
+                "testdatei": "brief.pdf"
+              }
+            ]
+          },
+          "erwartet": {}
+        }
+      ]
+    },
+    {
+      "name": "text.uebersetzen",
+      "version": 1,
+      "kennung": "text.uebersetzen@1",
+      "gruppe": "text",
+      "anzeigename": {
+        "de": "Übersetzen",
+        "en": "Translate"
+      },
+      "ergebnis": "vorschlag",
+      "dateitypen": [],
+      "formate": [],
+      "zeitgrenzeS": 300,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 200000,
+            "minLength": 1
+          },
+          "nach": {
+            "type": "string",
+            "maxLength": 8,
+            "pattern": "^[a-z]{2,3}$"
+          },
+          "von": {
+            "type": "string",
+            "maxLength": 8,
+            "pattern": "^[a-z]{2,3}$"
+          }
+        },
+        "required": ["text", "nach"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 400000
+          },
+          "von": {
+            "type": "string",
+            "maxLength": 8,
+            "pattern": "^[a-z]{2,3}$"
+          }
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "de-en",
+          "eingabe": {
+            "text": "Guten Tag",
+            "nach": "en",
+            "von": "de"
+          },
+          "erwartet": {}
+        }
+      ]
+    },
+    {
+      "name": "text.vektor",
+      "version": 1,
+      "kennung": "text.vektor@1",
+      "gruppe": "text",
+      "anzeigename": {
+        "de": "Für die Suche nach Bedeutung aufbereiten",
+        "en": "Prepare for search by meaning"
+      },
+      "ergebnis": "intern",
+      "dateitypen": [],
+      "formate": [],
+      "zeitgrenzeS": 60,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 32000,
+            "minLength": 1
+          }
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "vektor": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "maxItems": 8192,
+            "minItems": 1
+          },
+          "modell": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": ["vektor", "modell"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "satz",
+          "eingabe": {
+            "text": "Rechnung über ein Hochbeet"
+          },
+          "erwartet": {}
+        }
+      ]
+    },
+    {
+      "name": "nachricht.senden.mail",
+      "version": 1,
+      "kennung": "nachricht.senden.mail@1",
+      "gruppe": "nachricht",
+      "anzeigename": {
+        "de": "E-Mail senden",
+        "en": "Send email"
+      },
+      "ergebnis": "wirkung",
+      "dateitypen": ["*/*"],
+      "formate": [],
+      "zeitgrenzeS": 120,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "an": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 320,
+              "pattern": "^[^@\\s]+@[^@\\s]+$"
+            },
+            "maxItems": 50,
+            "minItems": 1
+          },
+          "betreff": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 200000
+          },
+          "anhaenge": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 36,
+              "format": "dokument"
+            },
+            "maxItems": 20
+          }
+        },
+        "required": ["an", "betreff", "text"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "kennung": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "einfach",
+          "eingabe": {
+            "an": ["lena@example.org"],
+            "betreff": "Testfall",
+            "text": "Hallo Lena"
+          },
+          "erwartet": {}
+        }
+      ]
+    },
+    {
+      "name": "nachricht.aufrufen.url",
+      "version": 1,
+      "kennung": "nachricht.aufrufen.url@1",
+      "gruppe": "nachricht",
+      "anzeigename": {
+        "de": "Adresse aufrufen",
+        "en": "Call address"
+      },
+      "ergebnis": "wirkung",
+      "dateitypen": [],
+      "formate": [],
+      "zeitgrenzeS": 60,
+      "eingabe": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https?://"
+          },
+          "methode": {
+            "type": "string",
+            "maxLength": 6,
+            "enum": ["GET", "POST", "PUT"]
+          },
+          "daten": {
+            "type": "string",
+            "maxLength": 1048576
+          }
+        },
+        "required": ["url"],
+        "additionalProperties": false
+      },
+      "ausgabe": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          }
+        },
+        "required": ["status"],
+        "additionalProperties": false
+      },
+      "testfaelle": [
+        {
+          "name": "get",
+          "eingabe": {
+            "url": "https://example.org/",
+            "methode": "GET"
+          },
+          "erwartet": {}
+        }
+      ]
+    }
+  ],
+  "eingebaut": [],
+  "mappentypen": ["benutzer", "rolle", "post"],
+  "testdateien": {
+    "brief.pdf": {
+      "mime": "application/pdf",
+      "base64": "JVBERi0xLjcKJYGBgYEKCjEgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFsgNSAwIFIgXQovQ291bnQgMQo+PgplbmRvYmoKCjIgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDEgMCBSCj4+CmVuZG9iagoKMyAwIG9iago8PAovUHJvZHVjZXIgPEZFRkYwMDQxMDA2MjAwNkMwMDYxMDA2NzAwNkYwMDIwMDA1NDAwNjUwMDczMDA3NDAwNjYwMDYxMDA2QzAwNkM+Ci9Nb2REYXRlIChEOjIwMjYxMTI0MDAwMDAwWikKL0NyZWF0b3IgPEZFRkYwMDQxMDA2MjAwNkMwMDYxMDA2NzAwNkYwMDIwMDA1NDAwNjUwMDczMDA3NDAwNjYwMDYxMDA2QzAwNkM+Ci9DcmVhdGlvbkRhdGUgKEQ6MjAyNjExMjQwMDAwMDBaKQo+PgplbmRvYmoKCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCi9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nCj4+CmVuZG9iagoKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDEgMCBSCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0hlbHZldGljYS03MDk4NDgwNzg5IDQgMCBSCi9IZWx2ZXRpY2EtOTc0MjY4MjU2OCA0IDAgUgovSGVsdmV0aWNhLTIwMDA4MDU5ODYgNCAwIFIKPj4KL1hPYmplY3QgPDwKPj4KL0V4dEdTdGF0ZSA8PAo+Pgo+PgovTWVkaWFCb3ggWyAwIDAgNTk1IDg0MiBdCi9Bbm5vdHMgWyBdCi9Db250ZW50cyBbIDYgMCBSIF0KPj4KZW5kb2JqCgo2IDAgb2JqCjw8Ci9GaWx0ZXIgL0ZsYXRlRGVjb2RlCi9MZW5ndGggMjEyCj4+CnN0cmVhbQp4nI2QwUqEMQyE73mKngXZNE0nKYiH/bfLHrwIfQGRVVb0sCI+v6nrQQ8/SCgJIeWbmTNtB3Ga9f5Mm8Px9fP4cXp8uDZurs7mLWVJ44lE07ij/H2ak0kycBpvdKMZggUZhr1wVVQrpkBsFizCRYuVXPJtGi80rqgPuqfzGreZClwqfJWrF24VVBQ4ulV0mLB2E+mhQWRXpHA8xMTFg1//xxdmdq7NscqXH99+cThd64KpIUv4haLNDGJqM4noNTb9VzaKPbahejd/xUX/o+0Lf3ZYIgplbmRzdHJlYW0KZW5kb2JqCgp4cmVmCjAgNwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTYgMDAwMDAgbiAKMDAwMDAwMDA3NiAwMDAwMCBuIAowMDAwMDAwMTI2IDAwMDAwIG4gCjAwMDAwMDAzNjQgMDAwMDAgbiAKMDAwMDAwMDQ2MiAwMDAwMCBuIAowMDAwMDAwNzEzIDAwMDAwIG4gCgp0cmFpbGVyCjw8Ci9TaXplIDcKL1Jvb3QgMiAwIFIKL0luZm8gMyAwIFIKPj4KCnN0YXJ0eHJlZgo5OTgKJSVFT0Y="
+    },
+    "zwei-seiten.pdf": {
+      "mime": "application/pdf",
+      "base64": "JVBERi0xLjcKJYGBgYEKCjEgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFsgNSAwIFIgNyAwIFIgXQovQ291bnQgMgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDEgMCBSCj4+CmVuZG9iagoKMyAwIG9iago8PAovUHJvZHVjZXIgPEZFRkYwMDQxMDA2MjAwNkMwMDYxMDA2NzAwNkYwMDIwMDA1NDAwNjUwMDczMDA3NDAwNjYwMDYxMDA2QzAwNkM+Ci9Nb2REYXRlIChEOjIwMjYxMTI0MDAwMDAwWikKL0NyZWF0b3IgPEZFRkYwMDQxMDA2MjAwNkMwMDYxMDA2NzAwNkYwMDIwMDA1NDAwNjUwMDczMDA3NDAwNjYwMDYxMDA2QzAwNkM+Ci9DcmVhdGlvbkRhdGUgKEQ6MjAyNjExMjQwMDAwMDBaKQo+PgplbmRvYmoKCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCi9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nCj4+CmVuZG9iagoKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDEgMCBSCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0hlbHZldGljYS03MDk4NDgwNzg5IDQgMCBSCj4+Ci9YT2JqZWN0IDw8Cj4+Ci9FeHRHU3RhdGUgPDwKPj4KPj4KL01lZGlhQm94IFsgMCAwIDU5NSA4NDIgXQovQW5ub3RzIFsgXQovQ29udGVudHMgWyA2IDAgUiBdCj4+CmVuZG9iagoKNiAwIG9iago8PAovRmlsdGVyIC9GbGF0ZURlY29kZQovTGVuZ3RoIDEwMAo+PgpzdHJlYW0KeJwr5HIK4TJQAMGidC59j9ScstSSzOREXXMDSwsTCwNzC0sFQyOFkDQuIxOFEB8uQ7BSQwVzIwVzMwOFkFwuG1NjM1MzS3MTM1MjAxDLzNXc2E4hJIsrRIvLNYQrkAsAjFIWBwplbmRzdHJlYW0KZW5kb2JqCgo3IDAgb2JqCjw8Ci9UeXBlIC9QYWdlCi9QYXJlbnQgMSAwIFIKL1Jlc291cmNlcyA8PAovRm9udCA8PAovSGVsdmV0aWNhLTk3NDI2ODI1NjggNCAwIFIKPj4KL1hPYmplY3QgPDwKPj4KL0V4dEdTdGF0ZSA8PAo+Pgo+PgovTWVkaWFCb3ggWyAwIDAgNTk1IDg0MiBdCi9Bbm5vdHMgWyBdCi9Db250ZW50cyBbIDggMCBSIF0KPj4KZW5kb2JqCgo4IDAgb2JqCjw8Ci9GaWx0ZXIgL0ZsYXRlRGVjb2RlCi9MZW5ndGggOTkKPj4Kc3RyZWFtCnicK+RyCuEyUADBonQufY/UnLLUkszkRF1LcxMjMwsjUzMLBUMjhZA0LiMThRAfLkOwUkMFcyMFczMDhZBcLhtTYzNTM6ByM1MjA3NHc3MQz04hJIsrRIvLNYQrkAsAi9IWBQplbmRzdHJlYW0KZW5kb2JqCgp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTYgMDAwMDAgbiAKMDAwMDAwMDA4MiAwMDAwMCBuIAowMDAwMDAwMTMyIDAwMDAwIG4gCjAwMDAwMDAzNzAgMDAwMDAgbiAKMDAwMDAwMDQ2OCAwMDAwMCBuIAowMDAwMDAwNjYzIDAwMDAwIG4gCjAwMDAwMDA4MzYgMDAwMDAgbiAKMDAwMDAwMTAzMSAwMDAwMCBuIAoKdHJhaWxlcgo8PAovU2l6ZSA5Ci9Sb290IDIgMCBSCi9JbmZvIDMgMCBSCj4+CgpzdGFydHhyZWYKMTIwMgolJUVPRg=="
+    },
+    "bild.png": {
+      "mime": "image/png",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAAAAAD38O5VAAAAQ0lEQVR42u3YsQ0AAAjDsP7/NDxRiQHnAe/JHBUwGAwGg8Fg8BGcbmAwGAwGg8FgMBgMBoPB4N+wswcGg8FgMBjcbAEYy18Bll8kPgAAAABJRU5ErkJggg=="
+    },
+    "rechnung.xml": {
+      "mime": "application/xml",
+      "base64": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBCZWlzcGllbCwgZXJmdW5kZW4gLS0+Cjxyc206Q3Jvc3NJbmR1c3RyeUludm9pY2UgeG1sbnM6cnNtPSJ1cm46dW46dW5lY2U6dW5jZWZhY3Q6ZGF0YTpzdGFuZGFyZDpDcm9zc0luZHVzdHJ5SW52b2ljZToxMDAiIHhtbG5zOnJhbT0idXJuOnVuOnVuZWNlOnVuY2VmYWN0OmRhdGE6c3RhbmRhcmQ6UmV1c2FibGVBZ2dyZWdhdGVCdXNpbmVzc0luZm9ybWF0aW9uRW50aXR5OjEwMCIgeG1sbnM6dWR0PSJ1cm46dW46dW5lY2U6dW5jZWZhY3Q6ZGF0YTpzdGFuZGFyZDpVbnF1YWxpZmllZERhdGFUeXBlOjEwMCI+CiAgPHJzbTpFeGNoYW5nZWREb2N1bWVudENvbnRleHQ+PHJhbTpHdWlkZWxpbmVTcGVjaWZpZWREb2N1bWVudENvbnRleHRQYXJhbWV0ZXI+PHJhbTpJRD51cm46Y2VuLmV1OmVuMTY5MzE6MjAxNzwvcmFtOklEPjwvcmFtOkd1aWRlbGluZVNwZWNpZmllZERvY3VtZW50Q29udGV4dFBhcmFtZXRlcj48L3JzbTpFeGNoYW5nZWREb2N1bWVudENvbnRleHQ+CiAgPHJzbTpFeGNoYW5nZWREb2N1bWVudD48cmFtOklEPlItMjAyNi0wODE1PC9yYW06SUQ+PHJhbTpUeXBlQ29kZT4zODA8L3JhbTpUeXBlQ29kZT4KICAgIDxyYW06SXNzdWVEYXRlVGltZT48dWR0OkRhdGVUaW1lU3RyaW5nIGZvcm1hdD0iMTAyIj4yMDI2MTEwNTwvdWR0OkRhdGVUaW1lU3RyaW5nPjwvcmFtOklzc3VlRGF0ZVRpbWU+PC9yc206RXhjaGFuZ2VkRG9jdW1lbnQ+CiAgPHJzbTpTdXBwbHlDaGFpblRyYWRlVHJhbnNhY3Rpb24+CiAgICA8cmFtOkluY2x1ZGVkU3VwcGx5Q2hhaW5UcmFkZUxpbmVJdGVtPgogICAgICA8cmFtOkFzc29jaWF0ZWREb2N1bWVudExpbmVEb2N1bWVudD48cmFtOkxpbmVJRD4xPC9yYW06TGluZUlEPjwvcmFtOkFzc29jaWF0ZWREb2N1bWVudExpbmVEb2N1bWVudD4KICAgICAgPHJhbTpTcGVjaWZpZWRUcmFkZVByb2R1Y3Q+PHJhbTpTZWxsZXJBc3NpZ25lZElEPkhCLTIwMDwvcmFtOlNlbGxlckFzc2lnbmVkSUQ+PHJhbTpOYW1lPkhvY2hiZWV0IEzDpHJjaGUgJmFtcDsgWnViZWjDtnI8L3JhbTpOYW1lPjwvcmFtOlNwZWNpZmllZFRyYWRlUHJvZHVjdD4KICAgICAgPHJhbTpTcGVjaWZpZWRMaW5lVHJhZGVBZ3JlZW1lbnQ+PHJhbTpOZXRQcmljZVByb2R1Y3RUcmFkZVByaWNlPjxyYW06Q2hhcmdlQW1vdW50PjEwMC4wMDwvcmFtOkNoYXJnZUFtb3VudD48L3JhbTpOZXRQcmljZVByb2R1Y3RUcmFkZVByaWNlPjwvcmFtOlNwZWNpZmllZExpbmVUcmFkZUFncmVlbWVudD4KICAgICAgPHJhbTpTcGVjaWZpZWRMaW5lVHJhZGVEZWxpdmVyeT48cmFtOkJpbGxlZFF1YW50aXR5IHVuaXRDb2RlPSJDNjIiPjI8L3JhbTpCaWxsZWRRdWFudGl0eT48L3JhbTpTcGVjaWZpZWRMaW5lVHJhZGVEZWxpdmVyeT4KICAgICAgPHJhbTpTcGVjaWZpZWRMaW5lVHJhZGVTZXR0bGVtZW50PjxyYW06QXBwbGljYWJsZVRyYWRlVGF4PjxyYW06UmF0ZUFwcGxpY2FibGVQZXJjZW50PjE5PC9yYW06UmF0ZUFwcGxpY2FibGVQZXJjZW50PjwvcmFtOkFwcGxpY2FibGVUcmFkZVRheD4KICAgICAgICA8cmFtOlNwZWNpZmllZFRyYWRlU2V0dGxlbWVudExpbmVNb25ldGFyeVN1bW1hdGlvbj48cmFtOkxpbmVUb3RhbEFtb3VudD4yMDAuMDA8L3JhbTpMaW5lVG90YWxBbW91bnQ+PC9yYW06U3BlY2lmaWVkVHJhZGVTZXR0bGVtZW50TGluZU1vbmV0YXJ5U3VtbWF0aW9uPjwvcmFtOlNwZWNpZmllZExpbmVUcmFkZVNldHRsZW1lbnQ+CiAgICA8L3JhbTpJbmNsdWRlZFN1cHBseUNoYWluVHJhZGVMaW5lSXRlbT4KICAgIDxyYW06SW5jbHVkZWRTdXBwbHlDaGFpblRyYWRlTGluZUl0ZW0+CiAgICAgIDxyYW06QXNzb2NpYXRlZERvY3VtZW50TGluZURvY3VtZW50PjxyYW06TGluZUlEPjI8L3JhbTpMaW5lSUQ+PC9yYW06QXNzb2NpYXRlZERvY3VtZW50TGluZURvY3VtZW50PgogICAgICA8cmFtOlNwZWNpZmllZFRyYWRlUHJvZHVjdD48cmFtOk5hbWU+PCFbQ0RBVEFbTGllZmVydW5nIDxQYXVzY2hhbGU+XV0+PC9yYW06TmFtZT48L3JhbTpTcGVjaWZpZWRUcmFkZVByb2R1Y3Q+CiAgICAgIDxyYW06U3BlY2lmaWVkTGluZVRyYWRlQWdyZWVtZW50PjxyYW06TmV0UHJpY2VQcm9kdWN0VHJhZGVQcmljZT48cmFtOkNoYXJnZUFtb3VudD4yMC4wMDwvcmFtOkNoYXJnZUFtb3VudD48L3JhbTpOZXRQcmljZVByb2R1Y3RUcmFkZVByaWNlPjwvcmFtOlNwZWNpZmllZExpbmVUcmFkZUFncmVlbWVudD4KICAgICAgPHJhbTpTcGVjaWZpZWRMaW5lVHJhZGVEZWxpdmVyeT48cmFtOkJpbGxlZFF1YW50aXR5IHVuaXRDb2RlPSJMUyI+MTwvcmFtOkJpbGxlZFF1YW50aXR5PjwvcmFtOlNwZWNpZmllZExpbmVUcmFkZURlbGl2ZXJ5PgogICAgICA8cmFtOlNwZWNpZmllZExpbmVUcmFkZVNldHRsZW1lbnQ+PHJhbTpBcHBsaWNhYmxlVHJhZGVUYXg+PHJhbTpSYXRlQXBwbGljYWJsZVBlcmNlbnQ+MTk8L3JhbTpSYXRlQXBwbGljYWJsZVBlcmNlbnQ+PC9yYW06QXBwbGljYWJsZVRyYWRlVGF4PgogICAgICAgIDxyYW06U3BlY2lmaWVkVHJhZGVTZXR0bGVtZW50TGluZU1vbmV0YXJ5U3VtbWF0aW9uPjxyYW06TGluZVRvdGFsQW1vdW50PjIwLjAwPC9yYW06TGluZVRvdGFsQW1vdW50PjwvcmFtOlNwZWNpZmllZFRyYWRlU2V0dGxlbWVudExpbmVNb25ldGFyeVN1bW1hdGlvbj48L3JhbTpTcGVjaWZpZWRMaW5lVHJhZGVTZXR0bGVtZW50PgogICAgPC9yYW06SW5jbHVkZWRTdXBwbHlDaGFpblRyYWRlTGluZUl0ZW0+CiAgICA8cmFtOkFwcGxpY2FibGVIZWFkZXJUcmFkZUFncmVlbWVudD4KICAgICAgPHJhbTpCdXllclJlZmVyZW5jZT4wNDAxMTAwMC0xMjM0NS0zNDwvcmFtOkJ1eWVyUmVmZXJlbmNlPgogICAgICA8cmFtOlNlbGxlclRyYWRlUGFydHk+PHJhbTpOYW1lPkdhcnRlbmJhdSBCZWlzcGllbCBHbWJIPC9yYW06TmFtZT4KICAgICAgICA8cmFtOlBvc3RhbFRyYWRlQWRkcmVzcz48cmFtOlBvc3Rjb2RlQ29kZT4wMTA2NzwvcmFtOlBvc3Rjb2RlQ29kZT48cmFtOkxpbmVPbmU+QW0gV2Fzc2VydHVybSAzPC9yYW06TGluZU9uZT48cmFtOkNpdHlOYW1lPk11c3RlcnN0YWR0PC9yYW06Q2l0eU5hbWU+PHJhbTpDb3VudHJ5SUQ+REU8L3JhbTpDb3VudHJ5SUQ+PC9yYW06UG9zdGFsVHJhZGVBZGRyZXNzPgogICAgICAgIDxyYW06U3BlY2lmaWVkVGF4UmVnaXN0cmF0aW9uPjxyYW06SUQgc2NoZW1lSUQ9IlZBIj5ERTEyMzQ1Njc4OTwvcmFtOklEPjwvcmFtOlNwZWNpZmllZFRheFJlZ2lzdHJhdGlvbj48L3JhbTpTZWxsZXJUcmFkZVBhcnR5PgogICAgICA8cmFtOkJ1eWVyVHJhZGVQYXJ0eT48cmFtOklEPkstNDcxMTwvcmFtOklEPjxyYW06TmFtZT5MZW5hIE11c3RlcjwvcmFtOk5hbWU+PC9yYW06QnV5ZXJUcmFkZVBhcnR5PgogICAgICA8cmFtOkJ1eWVyT3JkZXJSZWZlcmVuY2VkRG9jdW1lbnQ+PHJhbTpJc3N1ZXJBc3NpZ25lZElEPkItNzc8L3JhbTpJc3N1ZXJBc3NpZ25lZElEPjwvcmFtOkJ1eWVyT3JkZXJSZWZlcmVuY2VkRG9jdW1lbnQ+CiAgICA8L3JhbTpBcHBsaWNhYmxlSGVhZGVyVHJhZGVBZ3JlZW1lbnQ+CiAgICA8cmFtOkFwcGxpY2FibGVIZWFkZXJUcmFkZURlbGl2ZXJ5PjxyYW06RGVzcGF0Y2hBZHZpY2VSZWZlcmVuY2VkRG9jdW1lbnQ+PHJhbTpJc3N1ZXJBc3NpZ25lZElEPkxTLTIwMjYtMDA0MjwvcmFtOklzc3VlckFzc2lnbmVkSUQ+PC9yYW06RGVzcGF0Y2hBZHZpY2VSZWZlcmVuY2VkRG9jdW1lbnQ+PC9yYW06QXBwbGljYWJsZUhlYWRlclRyYWRlRGVsaXZlcnk+CiAgICA8cmFtOkFwcGxpY2FibGVIZWFkZXJUcmFkZVNldHRsZW1lbnQ+CiAgICAgIDxyYW06SW52b2ljZUN1cnJlbmN5Q29kZT5FVVI8L3JhbTpJbnZvaWNlQ3VycmVuY3lDb2RlPgogICAgICA8cmFtOlNwZWNpZmllZFRyYWRlU2V0dGxlbWVudFBheW1lbnRNZWFucz48cmFtOlR5cGVDb2RlPjU4PC9yYW06VHlwZUNvZGU+PHJhbTpQYXllZVBhcnR5Q3JlZGl0b3JGaW5hbmNpYWxBY2NvdW50PjxyYW06SUJBTklEPkRFODkzNzA0MDA0NDA1MzIwMTMwMDA8L3JhbTpJQkFOSUQ+PC9yYW06UGF5ZWVQYXJ0eUNyZWRpdG9yRmluYW5jaWFsQWNjb3VudD48L3JhbTpTcGVjaWZpZWRUcmFkZVNldHRsZW1lbnRQYXltZW50TWVhbnM+CiAgICAgIDxyYW06QXBwbGljYWJsZVRyYWRlVGF4PjxyYW06Q2FsY3VsYXRlZEFtb3VudD40MS44MDwvcmFtOkNhbGN1bGF0ZWRBbW91bnQ+PHJhbTpSYXRlQXBwbGljYWJsZVBlcmNlbnQ+MTk8L3JhbTpSYXRlQXBwbGljYWJsZVBlcmNlbnQ+PC9yYW06QXBwbGljYWJsZVRyYWRlVGF4PgogICAgICA8cmFtOlNwZWNpZmllZFRyYWRlUGF5bWVudFRlcm1zPjxyYW06RHVlRGF0ZURhdGVUaW1lPjx1ZHQ6RGF0ZVRpbWVTdHJpbmcgZm9ybWF0PSIxMDIiPjIwMjYxMTE5PC91ZHQ6RGF0ZVRpbWVTdHJpbmc+PC9yYW06RHVlRGF0ZURhdGVUaW1lPjwvcmFtOlNwZWNpZmllZFRyYWRlUGF5bWVudFRlcm1zPgogICAgICA8cmFtOlNwZWNpZmllZFRyYWRlU2V0dGxlbWVudEhlYWRlck1vbmV0YXJ5U3VtbWF0aW9uPgogICAgICAgIDxyYW06TGluZVRvdGFsQW1vdW50PjIyMC4wMDwvcmFtOkxpbmVUb3RhbEFtb3VudD48cmFtOlRheEJhc2lzVG90YWxBbW91bnQ+MjIwLjAwPC9yYW06VGF4QmFzaXNUb3RhbEFtb3VudD4KICAgICAgICA8cmFtOlRheFRvdGFsQW1vdW50IGN1cnJlbmN5SUQ9IkVVUiI+NDEuODA8L3JhbTpUYXhUb3RhbEFtb3VudD48cmFtOkdyYW5kVG90YWxBbW91bnQ+MjYxLjgwPC9yYW06R3JhbmRUb3RhbEFtb3VudD48cmFtOkR1ZVBheWFibGVBbW91bnQ+MjYxLjgwPC9yYW06RHVlUGF5YWJsZUFtb3VudD4KICAgICAgPC9yYW06U3BlY2lmaWVkVHJhZGVTZXR0bGVtZW50SGVhZGVyTW9uZXRhcnlTdW1tYXRpb24+CiAgICA8L3JhbTpBcHBsaWNhYmxlSGVhZGVyVHJhZGVTZXR0bGVtZW50PgogIDwvcnNtOlN1cHBseUNoYWluVHJhZGVUcmFuc2FjdGlvbj4KPC9yc206Q3Jvc3NJbmR1c3RyeUludm9pY2U+Cg=="
+    },
+    "barcode.png": {
+      "mime": "image/png",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAApkAAACgCAAAAABiLijCAAACG0lEQVR42u3SOw6AIBBAwb3/pbWxIfLZ1QKKeRUhoBsycUknFp5AZEpkikyJTJEpkSmRKTIlMkWmRKbIlMiUyBSZEpkiUyJT+iIzItplPL2Wg43Z7d5G6XB7ZTbX+svJz5XG723kB/33uMOflCZaHM7bIJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTDLJJJNMMskkk0wyySSTTGl/ZIpMiUyRKZEpMiUyJTJFpkSmyJTIFJkSmRKZIlMiU2RKu7oBCLEMSbsHfOUAAAAASUVORK5CYII="
+    },
+    "vorlage.md": {
+      "mime": "text/markdown",
+      "base64": "IyBJaHIgVmVydHJhZyB7dmVydHJhZ3NudW1tZXJ9CgpHdXRlbiBUYWcsCgpoaWVybWl0IGJlc3TDpHRpZ2VuIHdpciBkZW4gVmVydHJhZyB7dmVydHJhZ3NudW1tZXJ9LgoKRnJldW5kbGljaGUgR3LDvMOfZQo="
+    }
+  }
+}

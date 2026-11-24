@@ -113,6 +113,7 @@
   "vollexport.nicht-enthalten-stand-der": "nicht enthalten: Stand der Zahlen je Benutzer für den Zähler-Endpunkt (#625, nur ein Hash der Zahlen, technisch)",
   "vollexport.nicht-enthalten-stand-der-2": "nicht enthalten: Stand der Zwischenspeicher (#741, #742, nur zwei Zahlen, technisch)",
   "vollexport.nicht-enthalten-ausgangskorb-des": "nicht enthalten: Ausgangskorb des Ereigniskatalogs (#670, nur Ids und Feldschlüssel, technisch)",
+  "vollexport.nicht-enthalten-auftraege": "nicht enthalten: Aufträge an Leistungen (#1569, Arbeit für Ablago und Pakete, technisch)",
   "vollexport.nicht-enthalten-welche-fristen": "nicht enthalten: welche Fristen schon als „Frist erreicht“ gemeldet sind (#670, technisch)",
   "vollexport.nicht-enthalten-stand-der-3": "nicht enthalten: Stand der Datenbank (steht als Version im Manifest)",
   "vollexport.mappen-exportieren": "Mappen exportieren",

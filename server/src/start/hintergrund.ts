@@ -1,5 +1,5 @@
 /**
- * Start (#1278, aus `ablago.ts`): Texterkennung, Paket-Läufer und die wiederkehrenden Läufe des Leiters; die anderen
+ * Start (#1278, aus `ablago.ts`): Texterkennung, Leistungen (#1569), Paket-Läufer und die wiederkehrenden Läufe des Leiters; die anderen
  * Prozesse fragen den Stand des Läufers ab.
  */
 import { wiederkehrend } from '../zeitplan/streuung';
@@ -64,6 +64,18 @@ function starteDateienPruefplan(b: Pick<Bisher, 'dienst' | 'wartung' | 'wiederhe
   );
 }
 
+/**
+ * Debug-Modus (#1528): in jedem Prozess mit der Datenbank abgleichen – gleich und dann jede Minute. Bis hierher galt
+ * die Stufe aus LOG_LEVEL, damit Fehler beim Start vollständig im Protokoll stehen.
+ */
+async function gleicheDebugModusAb({ dienst, log }: Pick<Bisher, 'dienst' | 'log'>) {
+  if (!dienst.kern.einstellungen) return;
+  const e = dienst.kern.einstellungen;
+  const abgleich = () => debugAbgleich(e).catch((x) => log.warn('Debug-Modus nicht abgeglichen', { fehler: (x as Error).message }));
+  await abgleich();
+  wiederkehrend('debug-modus', 60_000, () => void abgleich());
+}
+
 /** Hintergrund und wiederkehrende Läufe. */
 export async function starteHintergrund(bisher: Bisher) {
   const {
@@ -85,14 +97,9 @@ export async function starteHintergrund(bisher: Bisher) {
     zustandDb,
     aufteilung,
   } = bisher;
-  // Debug-Modus (#1528): in jedem Prozess mit der Datenbank abgleichen – gleich und dann jede Minute. Bis hierher galt
-  // die Stufe aus LOG_LEVEL, damit Fehler beim Start vollständig im Protokoll stehen.
-  if (dienst.kern.einstellungen) {
-    const e = dienst.kern.einstellungen;
-    const abgleich = () => debugAbgleich(e).catch((x) => log.warn('Debug-Modus nicht abgeglichen', { fehler: (x as Error).message }));
-    await abgleich();
-    wiederkehrend('debug-modus', 60_000, () => void abgleich());
-  }
+  await gleicheDebugModusAb(bisher);
+  // Leistungen (#1569): in jedem Prozess (Sperre in der Datenbank); Laufendes zurückstellen nur der Leiter, und nur allein.
+  await dienst.leistungen.start({ zurueckstellen: leiter && lebt.allein });
   if (leiter) {
     await texterkennung.start({ zurueckstellen: lebt.allein });
     await laeufer.start().catch((e: unknown) => log.error('Paket-Läufer startet nicht', { fehler: (e as Error).message }));
