@@ -209,7 +209,7 @@
   "wiederherstellen.lade": "Lade …",
   "wiederherstellen.keine-sicherung-im-ordner": "Keine Sicherung im Ordner gefunden.",
   "wiederherstellen.ablago-mappen": "· {wert} · Ablago {dms} · {mappen} Mappen · {groesse}",
-  "wiederherstellen.metadaten-json-fehlen": "– Metadaten (.json) fehlen",
+  "wiederherstellen.nur-datei": "nur die Sicherungsdatei – Version und Umfang liest Ablago mit dem Schlüssel",
   "wiederherstellen.abgleich-damals-heute": "Abgleich: damals ↔ heute",
   "wiederherstellen.in-der-sicherung": "In der Sicherung",
   "wiederherstellen.diese-installation": "Diese Installation",

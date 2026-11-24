@@ -91,8 +91,8 @@ function OrtZelle({ e, s }: { e: SicherungEintrag; s: SicherungStand }) {
 }
 
 /**
- * Nach „Herunterladen“ (#975): der Hinweis auf das Notfallblatt, Größe und Prüfsumme zum späteren Prüfen der Kopie und
- * die Metadaten (.json), ohne die sich die Sicherung auf einem neuen Gerät nicht einspielen lässt.
+ * Nach „Herunterladen“ (#975): der Hinweis auf das Notfallblatt, Größe und Prüfsumme zum späteren Prüfen der Kopie. Die
+ * Datei genügt zum Einspielen (#1611) – getrennt aufbewahren muss man nur den Schlüssel.
  */
 function Heruntergeladen({ e, schliessen }: { e: SicherungEintrag; schliessen(): void }) {
   const handbuch = useHandbuch();
@@ -112,17 +112,8 @@ function Heruntergeladen({ e, schliessen }: { e: SicherungEintrag; schliessen():
         <dt>{t('werkbank.sicherung.laden.sha256')}</dt>
         <dd className="mono umbruch">{sha ?? t('werkbank.sicherung.metadaten-fehlen')}</dd>
       </dl>
-      {(e.meta || e.schlank) && (
-        <p>
-          {tn('werkbank.sicherung.laden.metadaten', {
-            link: (
-              <a href={betriebApi.sicherungMetadatenUrl(e.name)} download className="verweis">
-                {t('werkbank.sicherung.laden.metadaten-link')}
-              </a>
-            ),
-          })}
-        </p>
-      )}
+      {/* #1611: Ein Download ist eine Datei – getrennt aufbewahren nur den Schlüssel. */}
+      <p>{t('werkbank.sicherung.laden.eine-datei')}</p>
       <div className="knoepfe">
         <a href={`${handbuch('admin', 'sicherung/')}#kopie-prufen`} target="_blank" rel="noreferrer" className="verweis">
           {t('werkbank.sicherung.laden.handbuch')}
@@ -250,7 +241,7 @@ function Zeile({
         ) : x.schlank ? (
           <span className="leise">{t('werkbank.sicherung.extern.zurueck')}</span>
         ) : (
-          <span className="fehlertext">{t('werkbank.sicherung.metadaten-fehlen')}</span>
+          <span className="leise">{t('werkbank.sicherung.nur-datei')}</span>
         )}
         {x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck && (
           <>

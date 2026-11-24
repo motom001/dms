@@ -16,14 +16,14 @@ You restore a [backup](sicherung.md) in the workbench – without a command line
 
 ## New NAS, old backup { #neues-nas-alte-sicherung }
 
-You need: the two backup files (`.dms-sicherung` and `.json`) and the [emergency sheet](verschluesselung.md#notfallblatt). If the old device still runs, you [download](sicherung.md#sicherung-herunterladen) both in the Workbench.
+You need: the backup file (`.dms-sicherung`) and the [emergency sheet](verschluesselung.md#notfallblatt). If the old device still runs, you [download](sicherung.md#sicherung-herunterladen) it in the Workbench. If the metadata file (`.json`) is still next to it – for example with a copy of the whole backup folder – take it along; it is not needed.
 
 1. On the new NAS, create the folder for Ablago, inside it `postgres`, `files`, `geheim` and `sicherung` (see [Installation](installation.md)).
 2. Install Ablago anew, as described under [How do I get a DMS?](https://help.ablago.app/installieren/aktuell/en/) – recommended with two containers (e.g. the [Compose template](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) with a `.env` with a new `DB_PASSWORD`), or with [dms-komplett](https://help.ablago.app/installieren/aktuell/en/komplett/) without a password.
-3. Copy the two backup files into the `sicherung` folder.
+3. Copy the backup file (and, if present, the `.json` next to it) into the `sicherung` folder.
 4. Start the project and open Ablago in the browser. The [setup wizard](installation.md#der-einrichtungsassistent) asks for the **setup code** and – if needed – the database. Then choose **Restore from a backup**; you don't need a "throwaway admin".
 5. Choose the backup. The **comparison** shows which version it was made with and what is running today (Ablago, database state, PostgreSQL, architecture, Library id). If the backup belongs to another tenant, Ablago takes over its id.
-6. Enter the **key from the emergency sheet** (spaces don't count) and **Check key** – Ablago compares it with the fingerprint from the metadata.
+6. Enter the **key from the emergency sheet** (spaces don't count) and **Check key** – Ablago compares it with the fingerprint from the head of the backup. Without a `.json` next to it, only then does Ablago read database state, Library id and counts from the backup itself; the Ablago version it was made with is shown as "unknown" in the comparison – the database state is what counts. Instead of the checksum, decrypting then checks whether the file is genuine (GCM check value); Ablago only switches over once everything has been read.
 7. **Restore**. The screen shows every step; you can reload the page. At the end Ablago restarts.
 8. **Continue to sign-in** and sign in with the previous credentials. Ablago created the key file itself in the process.
 
@@ -39,7 +39,7 @@ If the device is gone, you fetch both files from the [off-site target](sicherung
 
 Ablago does **not need internet access** for a restore – neither the [package catalogue](pakete.md) nor a download. Without a network, though, you cannot fetch anything you have not put aside beforehand. So keep these in a safe place:
 
-1. **the backup file** (`.dms-sicherung`) with the **`.json` next to it**,
+1. **the backup file** (`.dms-sicherung`),
 2. **the key**: the key file from the `geheim` folder (in the container `/data/geheim`) or the [emergency sheet](verschluesselung.md#notfallblatt) – it is never in the backup,
 3. **the Ablago image** in the same or a newer version than the backup, saved beforehand e.g. with `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` and loaded on the new device with `docker load -i ablago.tar`. Without internet it cannot be pulled. With [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) the same with `ghcr.io/motom001/dms-komplett:stabil`; with two containers also the database image (e.g. `postgres:18`),
 4. **your Compose file** and the `.env` or your environment variables.

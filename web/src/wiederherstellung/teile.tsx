@@ -179,8 +179,12 @@ export function SicherungsListe({ w }: { w: Wiederherstellung }) {
                     · {t('werkbank.sicherung.extern.schlank', { datum: zeit(x.schlank.beginn) })} · {groesse(x.bytes)}
                   </span>
                 )}
+                {/* #1611: nur die Sicherungsdatei, z. B. heruntergeladen – lässt sich mit dem Schlüssel einspielen. */}
                 {!x.meta && !x.schlank && (
-                  <span className="fehlertext klein"> {t('oberflaeche.wiederherstellen.metadaten-json-fehlen')}</span>
+                  <span className="leise klein">
+                    {' '}
+                    · {t('oberflaeche.wiederherstellen.nur-datei')} · {groesse(x.bytes)}
+                  </span>
                 )}
               </span>
             </label>
