@@ -26,6 +26,7 @@ import { liesErweiterungen } from './datenbank/erweiterungen';
 import { Paketverwaltung } from './pakete/verwaltung/index';
 import { Fachfehler } from './grundlagen/fehler';
 import { t } from './sprache/sprache';
+import { liesDateienErgebnis } from './mappen';
 import { Notfallzugang } from './notfall/notfall';
 import { Verwaltung } from './werkbank/verwaltung';
 import { pgEinstellungen } from './einstellungen/einstellungen';
@@ -332,6 +333,19 @@ const verwaltung = new Verwaltung({
           ? [{ bereich: 'sicherung', schluessel: `probe:${z.probe.letzte?.am ?? ''}`, text: t('werkbank.verwaltung.probe') }]
           : []),
       ];
+    },
+    // #1316: „Alle Dateien prüfen“ (von Hand oder nach Zeitplan) hat Abweichungen gefunden.
+    async () => {
+      const e = dienst.kern.einstellungen ? await liesDateienErgebnis(dienst.kern.einstellungen) : null;
+      return e?.abweichungen
+        ? [
+            {
+              bereich: 'texterkennung',
+              schluessel: `dateien-pruefen:${e.am}`,
+              text: t('werkbank.verwaltung.dateien-pruefen', { abweichungen: e.abweichungen, dateien: e.dateien }),
+            },
+          ]
+        : [];
     },
     async () =>
       tresor.zustand === 'vorhanden'

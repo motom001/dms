@@ -23,6 +23,7 @@
   "verwaltung.sicherung.fehler": "Die letzte Sicherung ist fehlgeschlagen.",
   "verwaltung.sicherung.alt": "Die letzte Sicherung ist zu alt.",
   "verwaltung.probe": "Die Probe-Wiederherstellung ist fehlgeschlagen.",
+  "verwaltung.dateien-pruefen": "„Alle Dateien prüfen“ hat Abweichungen gefunden: {abweichungen} von {dateien} Dateien.",
   "verwaltung.tresor": "Der Schlüssel für die Verschlüsselung fehlt oder passt nicht.",
   "verwaltung.paket": "Das Paket „{name}“ braucht noch Einstellungen.",
   "verwaltung.automatisierung": "Die Automatisierung „{name}“ ist angehalten.",

@@ -23,6 +23,7 @@ import { ok, ich } from '../http/routen-hilfen';
 import { istPaketdatenBereich, MONAT, type PaketdatenArt, type PaketdatenBereich } from '../../../shared/src/paketdaten';
 import type { Anfrage, Route } from '../http/routen-typen';
 import { routenKontext, type RoutenKontext } from '../http/routen-kontext';
+import { liesPruefplan, pruefplanText } from '../werkbank/dateien-pruefplan';
 
 const sicher = async <T>(f: () => Promise<T>, sonst: T): Promise<T> => {
   try {
@@ -74,6 +75,8 @@ export function einrichtungQuellen(k: RoutenKontext): EinrichtungQuellen {
       : {}),
     ...(x.texterkennung ? { texterkennung: async () => ({ aktiv: (await x.texterkennung!.optionen()).aktiv }) } : {}),
     typen: () => dienst.mappentypen.listeTypen(),
+    // „Alle Dateien prüfen“ nach Zeitplan (#1316).
+    ...(dienst.kern.einstellungen ? { dateienPruefplan: async () => pruefplanText(await liesPruefplan(dienst.kern.einstellungen!)) } : {}),
     kiTypen: async () => new Set((await dienst.ki.kiUebersicht()).typen.filter((t) => t.zugelassen).map((t) => t.id)),
     ...(konten.zweifaktor ? { zweifaktor: async () => ({ ...(await konten.zweifaktor!.pflicht()) }) } : {}),
     ...(konten.passkeys
