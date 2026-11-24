@@ -6,7 +6,7 @@ import { proxyVertrauen } from '../http/proxy';
 import { einbettenAus } from '../http/koepfe';
 import { protokoll } from '../protokoll/protokoll';
 import { pruefeOrdner } from '../dateien/ordner';
-import { eigeneVersion, setzeStandSalz } from '../system/system';
+import { eigeneVersion, releaseVersion, setzeStandSalz } from '../system/system';
 import { prozesseAus, verbundFuerProzess, PROZESSE_MAX } from '../prozesse/prozesse';
 import { teileZwischenspeicher } from '../zwischenspeicher/zwischenspeicher';
 import { MB } from '../grundlagen/grenzen';
@@ -39,8 +39,9 @@ export async function vorbereiten(bisher: Bisher) {
   // Kennung des Stands ohne erkennbare Version (#1067): Zufallswert der Installation, vor jedem Startmodus.
   setzeStandSalz(ordner.geheim);
   // Version für den Abgleich der Fassungen beim Start (#1447): im Image die Release-Version (DMS_VERSION, beim Bau
-  // gesetzt), in der Entwicklung „Entwicklung“. Leer (eigener Bau ohne Angabe) zählt wie nicht gesetzt.
-  const version = env.DMS_VERSION || 'Entwicklung';
+  // gesetzt), in der Entwicklung „Entwicklung“. Leer (eigener Bau ohne Angabe) zählt wie nicht gesetzt. Ein Bau von
+  // :main trägt dazu den Commit („0.309.0+a1b2c3d“, #1613); abgeglichen wird trotzdem nur einmal je Release.
+  const version = releaseVersion(env.DMS_VERSION) || 'Entwicklung';
   // Mehrere Prozesse (#745): Rolle dieses Prozesses. Mit einem Prozess (Vorgabe) ist er Leiter und erledigt alles selbst.
   const prozessEinstellung = prozesseAus(env);
   const verbund = await verbundFuerProzess();

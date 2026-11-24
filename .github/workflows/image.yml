@@ -801,11 +801,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: zeit
+        env:
+          NEU: ${{ needs.version.outputs.neu }}
         run: |
           echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-          # Release-Version aus package.json (#1447): das Image setzt DMS_VERSION selbst.
-          echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+          # Release-Version aus package.json (#1447): das Image setzt DMS_VERSION selbst. Ein Bau von :main ohne neue
+          # Version (Merge, wöchentlicher Neubau) trägt dazu den kurzen Commit (#1613), z. B. 0.309.0+a1b2c3d – wie das
+          # Tag sha-a1b2c3d. Ein Release (neue Version oder Tag v*) und damit :latest und :stabil bleiben bei der Nummer.
+          version=$(jq -r .version package.json)
+          if [ "$NEU" != true ] && [[ "$GITHUB_REF" != refs/tags/v* ]]; then version="$version+${GITHUB_SHA::7}"; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - id: bau
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

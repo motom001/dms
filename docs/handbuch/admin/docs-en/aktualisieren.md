@@ -98,6 +98,8 @@ With two containers, PostgreSQL gets its security updates through its own image 
 
 From Ablago 0.306, **PostgreSQL 18** is the standard: `dms-komplett` includes 18, the templates suggest `postgres:18`, and all automated tests run with 18. On a NAS, Ablago handled a good third more requests under high load with 18, with shorter response times ([#1456](https://github.com/motom001/dms/issues/1456)). PostgreSQL 18 can't open a database from 17; moving works via a backup.
 
+**Which versions work?** Ablago starts with PostgreSQL 16, 17 and 18, **but only 18 is tested**: tests, load tests and the update checks run on 18 only. With 16 or 17 there is a note in the log at start. According to the PostgreSQL project, PostgreSQL 16 gets fixes until 9 Nov 2028. Overview: [Platforms → PostgreSQL](https://help.ablago.app/installieren/aktuell/en/plattformen/#postgresql).
+
 !!! warning "Note when updating"
     **dms-komplett** no longer starts with its current database folder. The page at the usual address then shows "Ablago could not start" with the reason and the way out; nothing is deleted. This is how you move:
 

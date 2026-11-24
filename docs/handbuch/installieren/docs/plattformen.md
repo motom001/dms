@@ -30,11 +30,13 @@ Die Vorlagen laufen dabei auf einem gewöhnlichen Linux mit Docker, nicht auf de
 
 ### Datenbank: PostgreSQL { #postgresql }
 
+Ablago startet mit **PostgreSQL 16, 17 und 18**. **Geprüft wird nur mit 18:** Die ganze Qualitätssicherung – automatische Tests, Lasttests, Update-Prüfungen – läuft ausschließlich auf 18. Nimm deshalb 18, wenn du eine eigene Datenbank wählst.
+
 | Hauptversion | Stand | Wo |
 | --- | --- | --- |
 | **18** | **geprüft:** alle automatischen Tests, die Vorlagen, `dms-komplett` (seit Ablago 0.306) | Vorlagen, `dms-komplett`, App aus dem [TrueNAS-Katalog](truenas.md) |
 | 17 | **nicht mehr geprüft** (seit Ablago 0.306; bis 0.305 alle Tests). Ablago startet und schreibt einen Hinweis ins Protokoll. Geprüft bleibt nur der Umzug: Sicherung auf 17 ziehen, auf 18 einspielen, Daten gleich. | ältere Installationen mit zwei Containern |
-| 16 | nicht geprüft; Ablago startet mit Hinweis im Protokoll | eigene Datenbank |
+| 16 | nicht geprüft; Ablago startet mit Hinweis im Protokoll. Korrekturen von PostgreSQL gibt es laut PostgreSQL-Projekt bis zum 09.11.2028. | eigene Datenbank |
 | 15 und älter | Ablago startet nicht und nennt den Grund | – |
 
 Wie du von 17 auf 18 umziehst, steht unter [Aktualisieren → PostgreSQL 18](https://help.ablago.app/admin/aktuell/aktualisieren/#postgresql-18). Sicherungen von Ablago lassen sich zwischen 17 und 18 in beide Richtungen einspielen.

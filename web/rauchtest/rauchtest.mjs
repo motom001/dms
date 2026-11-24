@@ -38,6 +38,7 @@ import './bereiche/start-und-suche.mjs';
 import './bereiche/pakete.mjs';
 import './bereiche/paket-reiter.mjs';
 import './bereiche/paket-daten.mjs';
+import './bereiche/paket-netz.mjs';
 import './bereiche/werkbank.mjs';
 import './bereiche/sicherung-und-export.mjs';
 import './bereiche/handy-und-tabellen.mjs';
