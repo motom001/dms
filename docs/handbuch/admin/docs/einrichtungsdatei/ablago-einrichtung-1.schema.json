@@ -133,6 +133,60 @@
         }
       }
     },
+    "werkbank": {
+      "enum": [
+        "einsteiger",
+        "haushalt",
+        "selbstaendig",
+        "organisation",
+        "alles"
+      ],
+      "description": "Stufe der Werkbank für die ganze Installation (Einsteiger, Haushalt, Selbständig, Betrieb, Alles). Fehlt sie, gilt die Vorgabe zur Nutzung: beruflich Selbständig, sonst Einsteiger."
+    },
+    "darf": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Was Ablago darf: welche Pakete (pakete: keine, vorlagen, lokal, netz) und wie viel von sich aus (selbst: nichts, vorschlag, alles). Fehlt etwas, gilt die Vorgabe (lokal, vorschlag).",
+      "properties": {
+        "pakete": {
+          "enum": [
+            "keine",
+            "vorlagen",
+            "lokal",
+            "netz"
+          ]
+        },
+        "selbst": {
+          "enum": [
+            "nichts",
+            "vorschlag",
+            "alles"
+          ]
+        },
+        "hoechstens": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Höchstwerte vom Anbieter: Höhere Antworten lassen sich danach in Ablago nicht wählen.",
+          "properties": {
+            "pakete": {
+              "enum": [
+                "keine",
+                "vorlagen",
+                "lokal",
+                "netz"
+              ]
+            },
+            "selbst": {
+              "enum": [
+                "nichts",
+                "vorschlag",
+                "alles"
+              ]
+            }
+          }
+        }
+      }
+    },
     "pakete": {
       "type": "array",
       "maxItems": 100,

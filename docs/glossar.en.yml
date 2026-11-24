@@ -373,6 +373,9 @@ begriffe:
   Dienstkonto:
     begriff: Service account
     beschreibung: The account with which a package with code works in Ablago, e.g. "Package Text recognition". It never signs in, isn't listed under Users, never deletes and only has the permissions from the package. In the history it appears where the package changed something.
+  Was Ablago darf:
+    begriff: What Ablago may do
+    beschreibung: Two answers for the whole installation – which packages Ablago may use (none, templates only, also helpers that only work here, also helpers with internet) and how much it does on its own (nothing, recognise and propose, do everything). Ablago keeps to this in the server and no longer asks each time within this limit. Built-in helpers such as text recognition work with every answer. Shown as a card at the top of the workbench overview; raising it needs a fresh sign-in.
   Werkbank anpassen:
     begriff: Customise the workbench
     beschreibung: Sets which areas are on the left of the workbench – following a level ("Beginner", "Household", "Self-employed", "Business" or "Everything") and with exceptions. Under "My sidebar" everyone who administers chooses a different level for themselves. Hiding doesn't switch anything off. New installations start with the level from the setup wizard; installations from before this setting show everything.

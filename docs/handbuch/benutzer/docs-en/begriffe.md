@@ -541,6 +541,10 @@ An account with which someone signs in. Stored as a system folder in Ablago. Peo
 A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.  
 See also: [Version](#version), [Version of Ablago](#version-von-ablago).
 
+<a id="was-ablago-darf"></a>**What Ablago may do** (*Was Ablago darf*) · ~ with explanation · administrators  
+Two answers for the whole installation – which packages Ablago may use (none, templates only, also helpers that only work here, also helpers with internet) and how much it does on its own (nothing, recognise and propose, do everything). Ablago keeps to this in the server and no longer asks each time within this limit. Built-in helpers such as text recognition work with every answer. Shown as a card at the top of the workbench overview; raising it needs a fresh sign-in.  
+See also: [Package](#paket), [Overview](#ubersicht).
+
 <a id="was-mitkommt"></a>**What comes with it** (*Was mitkommt*) · ✓ everyday word · administrators  
 Everything a package brings – folder types, views, included folders, examples, word lists, automations, automation templates, actions in the "Folder" menu, settings, permissions and network – in the same order as in the catalogue. Shown on the package page and in the preview; on an update, new things are marked "new in this version". Plus the quick guide "How to use it", which Ablago shows once right after the installation.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).
@@ -640,4 +644,4 @@ See also: [Version](#version).
 
 Which German words are still being discussed, which questions have been decided and which words the German texts avoid is listed on the [German page](../../begriffe/). It concerns the German wording.
 
-*As of: 2026-11-15*
+*As of: 2026-11-24*

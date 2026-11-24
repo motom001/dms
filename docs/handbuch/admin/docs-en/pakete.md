@@ -34,6 +34,8 @@ GitHub counts how often a release file is downloaded; the numbers in the catalog
 
 ## Installing { #installieren }
 
+[What Ablago may do](was-ablago-darf.md) decides which packages can be installed. If a package or an update is above it, the preview says why in words and offers **Allow …**; it is then not installed.
+
 1. Choose a package under **Available** and, if needed, an older version.
 2. Click **Install …**. The [common process](#mehrere-pakete-in-einem-schritt-installieren) opens: at the top the package, below it what it needs ("Needs: …"), and its **add-ons** as ticks – for text recognition, for instance, **Further languages?** with French, Spanish, Turkish …
 3. Click **Continue with … packages**. On **one page**, Ablago now asks everything that is necessary, and only that:
@@ -534,7 +536,7 @@ An AI package **only receives content from folder types that are allowed for AI 
 - **Per folder type:** Workbench → Folder types → *folder type* → section **AI services** → **May go to AI services**. Without the tick no AI package gets anything from this folder type – no folders, no documents, no excerpts, no events. This takes effect immediately and for all AI packages.
 - **On the package's page:** Workbench → Packages → *AI package* shows only one line in the **Overview**, “Receives content from *n* folder types”, with **Change**. You allow and block in the **Settings** tab, section **What the AI may read**: which folder types the package receives, and below all folder types with ticks – saved with the tab's button. For packages that read folders themselves, their permissions and [Packages on the folder type](berechtigungen.md#pakete-am-mappentyp) also count.
 - **New folder types are blocked until you allow them.** That way sensitive folder types such as *Health* never go out unintentionally – not even when a package brings them or you copy a folder type. A **new installation** has nothing allowed yet; after installing an AI package you allow on its page what it should receive.
-- **After the update** your existing folder types stay allowed as before, so nothing quietly stops working. The [Overview](uebersicht.md) points this out once (*New: exclude folder types from AI services*) as long as AI packages are installed; **Got it** hides the notice.
+- **After the update** your existing folder types stay allowed as before, so nothing quietly stops working. The [Overview](uebersicht.md) points this out once (*New: exclude folder types from AI services*) as long as AI packages are installed; **Acknowledge** hides the notice.
 - **Users** never go to a package.
 
 **What blocked means, per path:**

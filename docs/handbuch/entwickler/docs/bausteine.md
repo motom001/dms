@@ -43,6 +43,16 @@ Für Anwender erklärt das Benutzerhandbuch dieselben Regeln auf einer Seite: [S
 
 ![Musterseite, Bereich „Knopf“: Arten, Gefahr in Ruhe, mit Maus und Fokus, die Rückfrage, gesperrt in zwei Formen und die geöffnete Erklärung](bilder/muster-knopf.png){ loading=lazy }
 
+## Muster: Hinweis in der Übersicht { #hinweis-uebersicht }
+
+Alle Hinweise unter „Hinweise“ in der Übersicht der Werkbank folgen einem Muster (#1511, Eintrag im Musterkatalog). Neue Hinweise entstehen in `web/src/werkbank/uebersicht/hinweise.tsx` bzw. `hinweise-betrieb.tsx` als `Hinweis` und halten sich daran:
+
+- **Aufbau:** Titel fett, danach ein bis zwei Sätze. Darunter **ein** Hauptknopf mit der Handlung (Verb und Gegenstand, z. B. „E-Mail einrichten“, „Paket installieren“) und daneben als Neben-Knopf **„Zur Kenntnis nehmen“** (`Akzeptieren.tsx`). Zur Kenntnis genommene Hinweise stehen eingeklappt unten unter „Bewusst akzeptiert (n)“.
+- **„Nein, danke“** nur, wo der Hinweis eine echte Ja/Nein-Frage stellt (z. B. „zweite Person mit Verwaltungsrecht?“); dazu die Variante **„Gelesen“** für rote Meldungen, die man nur zur Kenntnis nehmen kann. Beides über `erledigen`. Ein Hinweis, der nur einmal kommt (z. B. nach einem Update), schließt mit `erledigen: „Zur Kenntnis nehmen“` ab.
+- **Liste im Hinweis:** Mehrere gleiche Handlungen stehen als Zeilen in **einem** Hinweis, nicht als mehrere Hinweise – je Zeile Name, ein Satz und derselbe Neben-Knopf in gleicher Breite untereinander, darunter ein Link auf alle (`eigeneKnoepfe`, Beispiel „Empfohlene Pakete“). Keine Kacheln, keine Bilder. Ist die Liste leer, verschwindet der Hinweis ganz.
+- **Umstiegs-Hinweise** („… ist jetzt ein Paket“) nur für Installationen, die von einer älteren Version kommen (`umstieg` in der Antwort der Übersicht), nie nach einer Neueinrichtung.
+- Nach einer Handlung lädt die Übersicht ihre Hinweise beim Zurückkommen selbst neu (#1513); erledigte Hinweise verschwinden ohne „Neu laden“.
+
 ## Am Handy { #handy }
 
 Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement eines Bausteins bei **`(pointer: coarse)`** (Touch als Hauptzeiger) eine **Tippfläche von mindestens 44 × 44 px** (Musterkatalog D6, #1027; WCAG 2.5.8 verlangt 24 px). Mit der Maus (`pointer: fine`) bleibt alles, wie es ist.

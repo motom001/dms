@@ -75,6 +75,10 @@ Bevor etwas Folgenreiches passiert – löschen, abmelden, ungespeicherte Änder
 - Bei sehr Folgenreichem (Wiederherstellen einer Sicherung, Schlüssel wechseln) tippst du zur Bestätigung ein Wort ein.
 - Auf dem Smartphone erscheint die Frage unten am Bildschirm, mit großen Knöpfen.
 
+## Was Ablago darf { #was-ablago-darf }
+
+Wer Ablago verwaltet, legt einmal fest, **was Ablago darf**: welche Pakete es nutzen darf – etwa nur Vorlagen oder auch Helfer, die das Internet nutzen – und wie viel es von sich aus tut. Ablago hält sich daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Für dich ändert sich beim Arbeiten nichts; fehlt dir eine Funktion aus einem Paket, frag die Person, die Ablago verwaltet. Eingebaute Helfer wie die Texterkennung arbeiten immer.
+
 ## Abmelden
 
 Über das Menü unter deinem Namen → **Abmelden**. Auf fremden Geräten solltest du dich immer abmelden.

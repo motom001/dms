@@ -31,14 +31,12 @@ SPRACHEN = {
     'de': {'texte': TEXTE, 'ziel': ZIEL,
            'bereich': 'Bereich', 'anzahl': 'Anzahl', 'ab': 'ab {v}', 'nur': 'nur {v}',
            'kopf_gruppen': '| Gruppe | Bereiche |', 'kopf_wofuer': '| Bereich | Wofür | Stufe |',
-           'bedingt': {'aufbewahrung': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ordner eingebunden ist',
-                       'auskuenfte': 'nur bei beruflicher Nutzung', 'loeschkonzept': 'nur bei beruflicher Nutzung', 'loeschprotokoll': 'nur bei beruflicher Nutzung'}},
+           'bedingt': {'aufbewahrung': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ordner eingebunden ist'}},
     'en': {'texte': WURZEL / 'shared' / 'src' / 'sprachen' / 'en' / 'werkbank',
            'ziel': WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs-en' / 'uebersicht.md',
            'bereich': 'Area', 'anzahl': 'Number', 'ab': 'from {v}', 'nur': '{v} only',
            'kopf_gruppen': '| Group | Areas |', 'kopf_wofuer': '| Area | What for | Level |',
-           'bedingt': {'aufbewahrung': 'only with archive mode', 'eingangsordner': 'only if the folder is mounted',
-                       'auskuenfte': 'only when used for work', 'loeschkonzept': 'only when used for work', 'loeschprotokoll': 'only when used for work'}},
+           'bedingt': {'aufbewahrung': 'only with archive mode', 'eingangsordner': 'only if the folder is mounted'}},
 }
 
 HILFE = WURZEL / 'shared' / 'src' / 'hilfe.ts'
