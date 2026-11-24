@@ -16,9 +16,9 @@ Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansi
 
 - oben ein Suchfeld **Ansicht suchen …** – es filtert beim Tippen (auch Ansichten, die du ausgeblendet hast);
 - die festen Einträge in derselben Reihenfolge wie am Rechner, mit Symbol;
-- **Meine Ansichten**: Ansichten, die du mit dem Stern angeheftet hast;
+- **Meine Ansichten**: Ansichten, die du mit der Pinnnadel rechts daneben angeheftet hast (gefüllt = angeheftet; ein zweiter Tipp löst sie wieder). Der Stern bleibt den Favoriten unter den Mappen;
 - **Zuletzt benutzt**: die letzten fünf Ansichten, die du geöffnet hast (auch am Rechner);
-- danach alle Ansichten nach Gruppen – je Ansicht der obersten Ebene mit Unteransichten eine Gruppe (z. B. *Fahrzeuge*, *Haus*), die übrigen unter *Weitere Ansichten*. Gruppen klappst du mit einem Tipp auf und zu; die Gruppe der aktuellen Ansicht ist offen. Die Zahl rechts sagt, wie viele Mappen die Ansicht zeigt.
+- danach alle Ansichten nach Gruppen – je Ansicht der obersten Ebene mit Unteransichten eine Gruppe (z. B. *Fahrzeuge*, *Haus*), die übrigen unter *Weitere Ansichten*. Gruppen klappst du mit einem Tipp auf und zu; die Gruppe der aktuellen Ansicht ist offen. Die Zahl rechts sagt, wie viele Mappen die Ansicht zeigt. Die Zahl hinter einer Gruppe zählt ebenso Mappen: alle verschiedenen Mappen in ihren Ansichten, jede nur einmal – auch wenn sie in mehreren Ansichten steht (*Post* enthält zum Beispiel *Eingegangen*). Bei einer Gruppe mit einer Ansicht der obersten Ebene ist das dieselbe Zahl wie hinter dieser Ansicht am Rechner.
 
 **Ansichten ausblenden …** ganz unten: Nimm den Haken bei Ansichten weg, die du selten brauchst. Das gilt nur für dich und nur für diese Auswahl; die Ansicht selbst bleibt für alle, und über die Suche findest du sie weiter.
 

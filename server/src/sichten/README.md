@@ -13,6 +13,8 @@ und die mitgelieferten Ansichten. Schicht 3 der Zielaufteilung – über Mappen,
   `sichtVorschau`, `sichtFuerTyp`, `belegung`.
 - `tabelle.ts` – `tabellenSeite` (#1030): Zeilen der Feldart Tabelle an einer Mappe – dieselbe Seite aus dem Repo
   (Lesefilter in der Anfrage, auch für die Zahl; Sortierung wie die Trefferliste; je 50), nur die Werte der Spalten.
+- `gruppenzahlen.ts` – `gruppenZaehlung` (#1623): welche Gruppe der Ansichtswahl die Zahl ihrer obersten Ansicht hat
+  und welche („Weitere Ansichten“) eine eigene kleine Zählung neben der großen braucht.
 - `systemsichten.ts` – `Systemsichten`: „Neue Post“, „Eingegangen“, „Versendet“ (#192), „Favoriten“ (#725).
 - `index.ts` – die einzige Tür. `sichten.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 

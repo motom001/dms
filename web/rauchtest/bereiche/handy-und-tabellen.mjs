@@ -205,3 +205,40 @@ rauchtest('Fassungen: Bereich im Mappentyp, Liste mit der ersten Fassung (#1006)
   );
   await keineWaagerechteRolle(s);
 });
+
+/* ---------- Ansicht wählen am Handy (#1623, #1624) ---------- */
+
+// #1623: Die Zahl hinter einer Gruppe zählt Mappen wie hinter jeder Ansicht – die verschiedenen Mappen aller ihrer
+// Ansichten, nicht die Zahl der Ansichten. #1624: Angeheftet wird mit der Pinnnadel; der Stern bleibt den Favoriten.
+rauchtest('Handy: Ansicht wählen – Gruppen zählen Mappen, Pinnnadel heftet an (#1623, #1624)', { handy: true, als: LENA }, async (s) => {
+  const zahlen = (await api('GET', '/api/sichten', { cookie: await sitzung(LENA) })).daten;
+  await s.goto(BASIS + '/ablage/start');
+  await s.locator('[data-anker="navigation.ansicht-waehlen"]').click();
+  const blatt = s.getByRole('dialog', { name: 'Ansicht wählen' });
+  await blatt.waitFor();
+  // Gruppe „Post“ (mit „Eingegangen“, „Versendet“): dieselbe Zahl wie die Ansicht „Post“; „Weitere Ansichten“ wie der Server.
+  const kopf = (name) => blatt.locator('.aw-gruppenkopf', { hasText: name });
+  const zahl = (wo) => wo.locator('[data-zahl]').first().innerText();
+  await kopf('Post').locator('[data-zahl]').waitFor();
+  if ((await kopf('Post').getAttribute('aria-expanded')) !== 'true') await kopf('Post').click();
+  const post = blatt.locator('.aw-zeile', { has: s.getByRole('link', { name: /^Post\b/ }) }).first();
+  assert.equal(await zahl(kopf('Post')), await zahl(post), 'Gruppe „Post“ zählt wie die Ansicht „Post“');
+  const weitere = kopf('Weitere Ansichten');
+  assert.equal(Number((await zahl(weitere)).replace(/\./g, '')), zahlen.gruppen.weitere, '„Weitere Ansichten“: verschiedene Mappen');
+  assert.equal(await weitere.locator('[data-zahl]').getAttribute('data-zahl'), 'menge', 'reine Menge, leise grau');
+  // Anheften mit der Pinnnadel (umrandet → gefüllt), Hinweis beim Darüberfahren; danach wieder lösen.
+  if ((await weitere.getAttribute('aria-expanded')) !== 'true') await weitere.click();
+  const an = blatt.getByRole('button', { name: '„Rechnung“ bei „Meine Ansichten“ anheften' }).first();
+  assert.equal(await an.getAttribute('title'), '„Rechnung“ bei „Meine Ansichten“ anheften');
+  assert.equal(await an.locator('svg path').first().getAttribute('d'), 'M12 17v5', 'Pinnnadel, kein Stern');
+  assert.equal(await an.locator('svg.sym-voll').count(), 0, 'nicht angeheftet: umrandet');
+  await an.click();
+  await blatt.getByRole('heading', { name: 'Meine Ansichten' }).waitFor();
+  const los = blatt.getByRole('button', { name: '„Rechnung“ von „Meine Ansichten“ lösen' }).first();
+  assert.equal(await los.getAttribute('aria-pressed'), 'true');
+  assert.equal(await los.locator('svg.sym-voll').count(), 1, 'angeheftet: gefüllt');
+  assert.deepEqual(await axePruefen(s, ['.aw-blatt']), []);
+  assert.deepEqual(await tippflaechenPruefen(s, ['.aw-blatt']), []);
+  await los.click();
+  await blatt.getByRole('heading', { name: 'Meine Ansichten' }).waitFor({ state: 'detached' });
+});

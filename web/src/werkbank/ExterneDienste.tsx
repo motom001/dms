@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { WARNUNG_AB, type KostenEinstellung, type Preis } from '../../../shared/src/extern';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { ApiFehler } from '../api/anfrage';
@@ -85,11 +85,19 @@ function Zeitraum({ stunden, setze }: { stunden: number; setze: (h: number) => v
 }
 
 /** Tabelle der Kennzahlen je Dienst (und Paket). */
+/** Rollt eine Tabelle am Handy waagerecht, erreicht man sie mit der Tastatur (#1290, #1627; axe scrollable-region-focusable). */
+function Rollrahmen({ beschriftung, children }: { beschriftung: string; children: ReactNode }) {
+  return (
+    <div className="tabellenrahmen" tabIndex={0} role="region" aria-label={beschriftung}>
+      {children}
+    </div>
+  );
+}
+
 export function Kennzahlen({ u, pakete }: { u: ExternUebersicht; pakete?: Record<string, string> }) {
   if (!u.dienste.length) return <p className="leise">{t('systemzustand.extern.keine', { anzahl: u.stunden })}</p>;
   return (
-    // Rollt die Tabelle am Handy waagerecht, erreicht man sie mit der Tastatur (#1290, axe scrollable-region-focusable).
-    <div className="tabellenrahmen" tabIndex={0} role="region" aria-label={t('systemzustand.extern.titel')}>
+    <Rollrahmen beschriftung={t('systemzustand.extern.titel')}>
       <table className="tabelle klein">
         <thead>
           <tr>
@@ -127,7 +135,7 @@ export function Kennzahlen({ u, pakete }: { u: ExternUebersicht; pakete?: Record
           ))}
         </tbody>
       </table>
-    </div>
+    </Rollrahmen>
   );
 }
 
@@ -316,6 +324,7 @@ export function KiKostenAbschnitt({
       <Summe k={k} />
       <h3 className="h4">{t('systemzustand.extern.kosten.je-paket')}</h3>
       <Summen
+        beschriftung={t('systemzustand.extern.kosten.je-paket')}
         zeilen={k.jePaket}
         name={name.paket}
         waehrung={w}
@@ -324,6 +333,7 @@ export function KiKostenAbschnitt({
       />
       <h3 className="h4">{t('systemzustand.extern.kosten.je-person')}</h3>
       <Summen
+        beschriftung={t('systemzustand.extern.kosten.je-person')}
         zeilen={k.jePerson}
         name={name.person}
         waehrung={w}
@@ -332,6 +342,7 @@ export function KiKostenAbschnitt({
       />
       <h3 className="h4">{t('systemzustand.extern.kosten.je-funktion')}</h3>
       <Summen
+        beschriftung={t('systemzustand.extern.kosten.je-funktion')}
         zeilen={k.jeFunktion}
         name={funktionName}
         waehrung={w}
@@ -393,16 +404,19 @@ function Summen({
   waehrung,
   spalte,
   leer,
+  beschriftung,
 }: {
   zeilen: ExternSummeZeile[];
   name: (x: string | null) => string;
   waehrung: string;
   spalte: string;
   leer: string;
+  /** Name der Tabelle für die Tastatur und Bildschirmleser (#1627): die Überschrift darüber. */
+  beschriftung: string;
 }) {
   if (!zeilen.length) return <p className="leise klein">{leer}</p>;
   return (
-    <div className="tabellenrahmen">
+    <Rollrahmen beschriftung={beschriftung}>
       <table className="tabelle klein">
         <thead>
           <tr>
@@ -423,14 +437,14 @@ function Summen({
           ))}
         </tbody>
       </table>
-    </div>
+    </Rollrahmen>
   );
 }
 
 function Teuerste({ k, name }: { k: ExternKosten; name: { paket: (x: string | null) => string; person: (x: string | null) => string } }) {
   if (!k.teuerste.length) return <p className="leise klein">{t('systemzustand.extern.kosten.teuerste.leer', { tage: k.rohTage })}</p>;
   return (
-    <div className="tabellenrahmen">
+    <Rollrahmen beschriftung={t('systemzustand.extern.kosten.teuerste')}>
       <table className="tabelle klein">
         <thead>
           <tr>
@@ -457,7 +471,7 @@ function Teuerste({ k, name }: { k: ExternKosten; name: { paket: (x: string | nu
           ))}
         </tbody>
       </table>
-    </div>
+    </Rollrahmen>
   );
 }
 
